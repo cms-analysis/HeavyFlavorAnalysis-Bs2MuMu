@@ -117,7 +117,7 @@
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
 
 // ----------------------------------------------------------------------
- 
+
 using namespace edm;
 using namespace reco;
 
@@ -125,6 +125,7 @@ class TFile;
 class TTree;
 class TH1D;
 
+class TAna00Event;
 class anaStuff;
 class candStuff;
 
@@ -150,6 +151,8 @@ private:
   virtual void printMuonTracks(const edm::Event&);
   virtual void printReco2Sim(const edm::Event&, const char *option);
 
+  virtual void decayChannel(const char *name);
+
   virtual void fillGeneratorBlock(const edm::Event&);
   virtual void fillRecTracks(const edm::Event&);
 
@@ -172,7 +175,7 @@ private:
   
   int idRecTrack(const reco::Track *track);
   // ----------member data ---------------------------
-  string fLabel, fSourceLabel, fTracksLabel, fMuonLabel, fAssocLabel;
+  string fLabel, fSourceLabel, fTracksLabel, fMuonLabel, fAssocLabel, fChannel, fPrintChannel;
   int fGenVerbose, fSimVerbose, fRecVerbose, fGlbVerbose, fR2SVerbose;
 
   int fNevt; 
@@ -181,6 +184,7 @@ private:
 
   unsigned int fNtracks;
   unsigned int fType;
+  int fTruthMC, fTruthMC2, fTruthMC_mom;
 
   TFile *fFile; 
   TTree        *fTree;

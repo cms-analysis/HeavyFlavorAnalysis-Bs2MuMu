@@ -3,7 +3,7 @@
 // Package:    Bs2MuMu
 // Class:      Bs2MuMu
 // 
-/**\class Bs2MuMu Bs2MuMu.cc analysis/Bs2MuMu/src/Bs2MuMu.cc
+/**\class Bs2MuMu Bs2MuMu.cc HeavyFlavorAnalysis/Bs2MuMu/src/Bs2MuMu.cc
 
  Description: <one line class summary>
 
@@ -11,9 +11,9 @@
      <Notes on implementation>
 */
 //
-// Original Author:  Urs Langenegger
+// Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.28 2007/07/13 15:43:02 eggel Exp $
+// $Id: Bs2MuMu.cc,v 1.1 2007/08/29 14:17:41 eggel Exp $
 //
 //
 
@@ -95,7 +95,6 @@ struct candStuff {
   std::vector<double> InvMass;
 };
 
-
 // ----------------------------------------------------------------------
 // ======================================================================
 
@@ -111,6 +110,7 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
   fNevt = 0; 
   fNgen = 0;
   fNrec = 0;
+
 
   // -- Config. File input
   //  fLabel          = iConfig.getUntrackedParameter("moduleLabel",std::string("source"));
@@ -136,11 +136,16 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
 
 
   // -- ROOT output
-  fFile = new TFile(iConfig.getParameter<string>( "fileName" ).c_str(), "RECREATE");
+  fChannel = iConfig.getParameter<string>("channel");
+  fFile = new TFile(iConfig.getParameter<string>("fileName").c_str(), "RECREATE");
   fTree = new TTree("T1","CMSSW Bs -> mu+mu- tree");
   fEvent = new TAna00Event(0);
   fTree->Branch("TAna00Event", "TAna00Event", &fEvent, 256000/8, 1);
 
+  // -- Default decay mode (signal and rare BG)
+  fTruthMC = 13; fTruthMC2 = -1;
+  fTruthMC_mom = 531;
+  decayChannel(fChannel.c_str());
 
   // -- Troubleshoot histogramm
   fEff = new TH1D("eff", "Efficiencies", 100, 0., 100. );
@@ -611,7 +616,8 @@ void Bs2MuMu::fillRecTracks(const edm::Event &iEvent) {
 void Bs2MuMu::bmmTracks1(const edm::Event &iEvent) {
 
   cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>bmmTracks1> Matching muons, truth-matched to be decay products of Bs, event: " << fNevt << endl;
+  cout << "==>bmmTracks1> Matching particle, truth-matched to be particle PDG #" 
+       << fTruthMC << " and a decay products of particle PDG #" << fTruthMC_mom << ", event: " << fNevt << endl;
 
   // -- get the collection of RecoTracks 
   edm::Handle<reco::TrackCollection> tracks;
@@ -674,7 +680,8 @@ void Bs2MuMu::bmmTracks1(const edm::Event &iEvent) {
 	cout << ".. Gen. Particle #" << gen_id << " pT = " << genPar->Momentum().perp() << " ---> PDG ID: " << gen_pdg_id << endl;
 	
 	
-	if ( abs(gen_pdg_id) == 13 ) { 
+	if ( (abs(gen_pdg_id) == fTruthMC) ||  
+	     (abs(gen_pdg_id) == fTruthMC2) ) { 
 	  
 	  genMom = genPar->mother();
 	  mom_pdg_id = genMom->ParticleID();
@@ -684,7 +691,7 @@ void Bs2MuMu::bmmTracks1(const edm::Event &iEvent) {
 	  cout << endl << ".. and Mother Particle #" << mom_id << " pT = " << genMom->Momentum().perp() 
 	               << " ---> PDG ID: " << mom_pdg_id;
 	  
-	  if ( abs(mom_pdg_id) == 531) { 
+	  if ( abs(mom_pdg_id) == fTruthMC_mom ) { 
 	    
 	    ncand++;
 
@@ -693,7 +700,7 @@ void Bs2MuMu::bmmTracks1(const edm::Event &iEvent) {
 	    fStuff->BmmRecTracks.push_back(tt);
 	    fStuff->BmmRecTracksIndex.push_back(track.index());
 	    
-	    cout << "    *** Bs -> mu- mu+ (" << ncand << ") *** ";
+	    cout << "    *** " << fPrintChannel << " (" << ncand << ") *** ";
 	  }
 	  
 	  cout << endl; 
@@ -728,7 +735,8 @@ void Bs2MuMu::bmmTracks1(const edm::Event &iEvent) {
 void Bs2MuMu::bmmTracks2(const edm::Event &iEvent) {
 
   cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>bmmTracks2> Matching muons, truth matched to be muons in the generator block, event: " << fNevt << endl;
+  cout << "==>bmmTracks2> Matching particle, truth matched to be particle PDG #" 
+       << fTruthMC << "in the generator block, event: " << fNevt << endl;
 
   // -- get the collection of RecoTracks 
   edm::Handle<reco::TrackCollection> tracks;
@@ -771,7 +779,8 @@ void Bs2MuMu::bmmTracks2(const edm::Event &iEvent) {
 	gen_pdg_id = genPar->ParticleID();
 	gen_id     = genPar->barcode()-1;
 
-	if ( abs(gen_pdg_id) == 13 ) { 
+	if ( (abs(gen_pdg_id) == fTruthMC) || 
+	     (abs(gen_pdg_id) == fTruthMC2) ) { 
 	  
 	  ncand++;
 	  tt = &(*track);
@@ -793,9 +802,9 @@ void Bs2MuMu::bmmTracks2(const edm::Event &iEvent) {
 	  cout << endl << ".. Mother Particle #" << mom_id << " pT = " << genMom->Momentum().perp() 
 	               << " ---> PDG ID: " << mom_pdg_id;
 	    
-	  if ( abs(mom_pdg_id) == 13 ) { 
+	  if ( abs(mom_pdg_id) == fTruthMC ) { 
 	    
-	    cout << "    *** Bs -> mu- mu+ (" << ncand << ") *** ";
+	    cout << "    *** " << fPrintChannel << " (" << ncand << ") *** ";
 	  }
 	  
 	  cout << endl; 
@@ -2270,6 +2279,53 @@ int Bs2MuMu::idRecTrack(const reco::Track *track) {
   } else {
     return -1;
   }
+
+}
+
+// ----------------------------------------------------------------------
+void Bs2MuMu::decayChannel(const char *fileName) {
+
+  //  if ( !strcmp("bd2pi", fileName.Data()) ) {
+  if ( !strcmp("Bs2KpKm", fileName) ) {
+
+    fTruthMC = 321;  fTruthMC2 = -1;
+    fTruthMC_mom = 531;
+    fPrintChannel = "Bs -> K+ K-";
+    cout << "Selected decay mode: Bs (" << fTruthMC_mom << ") to K+ K- (" << fTruthMC << ")" << endl;
+
+  } else if ( !strcmp("Bd2PiPi", fileName) ) {
+
+    fTruthMC = 211;  fTruthMC2 = -1;
+    fTruthMC_mom = 511;
+    fPrintChannel = "Bd -> pi+ pi-";
+    cout << "Selected decay mode: Bd (" << fTruthMC_mom << ") to pi+ pi- (" << fTruthMC << ")" << endl;
+
+  } else if ( !strcmp("Lb2PKm", fileName) ) {
+
+    fTruthMC = 321;  fTruthMC2 = 2212;
+    fTruthMC_mom = 5122;
+    fPrintChannel = "Lb -> p+ K-";
+    cout << "Selected decay mode: Lb (" << fTruthMC_mom << ") to p+ (" 	 << fTruthMC2 
+	 << ") K- (" << fTruthMC << ")" << endl;
+
+  } else {
+    
+    fTruthMC = 13;  fTruthMC2 = 13;
+    fTruthMC_mom = 531;
+    fPrintChannel = "Bs -> mu+ mu-";
+    cout << "Selected decay mode: Bs (" << fTruthMC_mom << ") to mu+ mu- (" << fTruthMC << ")" << endl;
+  }
+
+  cout << "   ---> Channel (" << fChannel << "): " << fPrintChannel << endl;
+
+//   } else if ( !strcmp("bsmumug", fileName.Data()) || 
+// 	    !strcmp("bsmumup0", fileName.Data()) ||
+// 	    !strcmp("bu3munu", fileName.Data()) ||
+// 	    !strcmp("bc3munu", fileName.Data()) ||
+// 	    !strcmp("bcjpmunu", fileName.Data()) ) {
+    
+//     fTruthMC = 13;  fTruthMC2 = 13;
+//     fChannel = TString("2mu_rare");
 
 }
 
