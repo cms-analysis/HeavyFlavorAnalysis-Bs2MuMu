@@ -1,0 +1,99 @@
+// ======================================================================
+// -- This file contains general setup stuff 
+// ======================================================================
+
+// ----------------------------------------------------------------------
+treeBmm::treeBmm(TChain *chain, TString evtClassName) {
+  if (chain == 0) {
+    cout << "You need to pass a chain!" << endl;
+  }
+  fpChain = chain; 
+  fNentries = chain->GetEntries();
+  init(evtClassName);
+}
+
+// ----------------------------------------------------------------------
+void treeBmm::init(TString evtClassName) {
+  fpEvt = new TAna00Event(0);
+  fpChain->SetBranchAddress(evtClassName, &fpEvt);
+}
+
+// ----------------------------------------------------------------------
+treeBmm::~treeBmm() {
+  if (!fpChain) return;
+  delete fpChain->GetCurrentFile();
+}
+
+// ----------------------------------------------------------------------
+void treeBmm::openHistFile(TString filename) {
+  fpHistFile = new TFile(filename.Data(), "RECREATE");
+  fpHistFile->cd();
+  cout << "==> Opened " << fpHistFile->GetName() << endl;
+}
+
+// ----------------------------------------------------------------------
+void treeBmm::closeHistFile() {
+  cout << "==> Writing " << fpHistFile->GetName() << endl;
+  fpHistFile->cd();
+  fpHistFile->Write();
+  fpHistFile->Close();
+  delete fpHistFile;
+
+//  fFSarah->cd();
+//  fFSarah->Write();
+//  fFSarah->Close();
+
+}
+
+// ----------------------------------------------------------------------
+void treeBmm::chainFileName(const char *name) {
+  fChainFileName = TString(name); 
+}
+
+
+// ----------------------------------------------------------------------
+int treeBmm::loop(int nevents, int start) {
+  int nb = 0, maxEvents(0);
+
+  cout << "==> Chain has a total of " << fNentries << " events" << endl;
+ 
+  // -- Setup for restricted running (not yet foolproof, i.e. bugfree)
+  if (nevents < 0) {
+    maxEvents = fNentries;
+  } else {
+    cout << "==> Running over " << nevents << " events" << endl;
+    maxEvents = nevents;
+  }
+  if (start < 0) {
+    start = 0; 
+  } else {
+    cout << "==> Starting at event " << start << endl;
+    if (maxEvents >  fNentries) {
+      cout << "==> Requested to run until event " << maxEvents << ", but will run only to end of chain at ";
+      maxEvents = fNentries;
+      cout << maxEvents << endl;
+    } else {
+      cout << "==> Requested to run until event " << maxEvents << endl;
+    }
+  }
+
+
+  // -- The main loop
+  int step(50000); 
+  if (maxEvents < 1000000) step = 10000; 
+  if (maxEvents < 100000)  step = 5000; 
+  if (maxEvents < 10000)   step = 500; 
+  if (maxEvents < 1000)    step = 100; 
+
+  for (int jEvent = start; jEvent < maxEvents; ++jEvent) {
+    if (jEvent%step == 0) cout << " .. Event " << jEvent << endl;
+
+    fEvent = jEvent; 
+    fpEvt->Clear();                        
+    nb += fpChain->GetEvent(jEvent);          
+
+    eventProcessing(); 
+  }
+  return 0;
+
+}

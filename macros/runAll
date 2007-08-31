@@ -1,0 +1,162 @@
+#! /usr/bin/perl
+
+#----adjust to your setup ----------------------
+
+$workspace       = "/home/chi/bsmumu/Bs2MuMu";
+$perl            = "/home/chi/perl";  
+
+#----adjust to your setup ----------------------
+
+use Getopt::Std;
+getopts('t:usbnhqA');
+
+if ( $opt_s && $opt_n ) {
+
+    print "\n \t\t ********  The options -s and -n cannot be combined ********* \n";
+    print "\n \t\t ********          Aborting             ********* \n\n";
+    exit;
+
+
+}
+
+if ( !$opt_t ) {
+    $opt_t = "bmm.default.cuts";
+}
+
+if ( $opt_n ) {
+    $opt_t = "bjk.default.cuts";
+}
+
+$cuts = $opt_t;
+$cuts =~ s/bmm//g;
+$cuts =~ s/bjk//g;
+$cuts =~ s/cuts\///g;
+$cuts =~ s/cuts//g;
+$cuts =~ s/\.//g;
+
+chdir("$workspace/macros");
+
+if ($opt_u) {
+
+    system("$perl/mkChains");
+    system("$perl/mkCheckedChains");
+}
+
+@chain2del= `ls -1 chains/*~`;
+
+foreach $del (@chain2del) { 
+    chop($del);
+    print  "\nRemoving $del ... \n";
+    system("rm -f $del");
+}
+
+if ($opt_A) {
+
+    $opt_s = 1;
+    $opt_b = 1;
+    $opt_h = 1;
+    $opt_q = 1;
+
+}
+
+print "\n ... START BMM ANALYSIS ... \n\n";
+
+if ( $opt_s || $opt_b ) {
+
+    chdir("$workspace/macros/chains");
+
+    if ( $opt_s )     {  push(@chain, `ls -1 csg-003`);     }
+    if ( $opt_b )     {  push(@chain, `ls -1 cbg-001`);     }
+
+    chdir("$workspace/macros");
+
+    foreach $file (@chain) {
+	
+	chop($file);
+	
+	if ( -e "treebmm/$file.log" ) { system("rm -f treebmm/$file.log");  }
+
+	if ( $file eq "csg-001" || $file eq "csg-002" || $file eq "cbg-001" ) { 
+	    print  "./bmm -C cuts/$opt_t -D treebmm -c chains/$file -o \>\& treebmm/$file\.$cuts\.log\n";
+	    system("./bmm -C cuts/$opt_t -D treebmm -c chains/$file -o \>\& treebmm/$file\.$cuts\.log");
+	} else {
+	    print  "./bmm -C cuts/$opt_t -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log\n";
+	    system("./bmm -C cuts/$opt_t -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log");
+	}
+
+    }
+}
+    
+    
+if ( $opt_n )     {  
+
+    chdir("$workspace/macros/chains");
+
+    push(@chain, `ls -1 csg-00{4,5}`);   
+
+    chdir("$workspace/macros");
+
+    foreach $file (@chain) {
+	
+	chop($file);
+	
+	if ( -e "treebmm/$file.$cuts.log" ) { system("rm -f treebmm/$file.$cuts.log");  }
+
+	print  "./bmm -C cuts/$opt_t -D treebmm -c chains/$file -b bjk -v 1 \>\& treebmm/$file\.$cuts\.log\n";
+	system("./bmm -C cuts/$opt_t -D treebmm -c chains/$file -b bjk -v 1 \>\& treebmm/$file\.$cuts\.log");
+       # add option -v 2 to run verbose
+    }
+}
+
+
+if ( $opt_h )  {  
+
+    chdir("$workspace/macros/chains");
+
+    $file= "cbg-111";  
+
+    if ( -e "$file") {
+
+	open(IN, "$file") || die "Cannot open $file\n";
+	@channel = <IN>;
+	
+	chdir("$workspace/macros");
+
+	foreach $ch ( @channel ) {
+
+	    @tmp1 = split(/\ /, $ch);
+	    @tmp2 = split(/\//, @tmp1[0]);
+	    ($chName, $tmp3) = split(/\./, @tmp2[$#tmp]);
+
+	    $fileName = @tmp1[0];
+
+	    if ( -e "treebmm/$chName\.$cuts\.log" ) { system("rm -f  treebmm/$chName\.$cuts\.log"); }
+
+	    print  "./bmm -C cuts/$opt_t -D treebmm -f $fileName -b $chName \>\& treebmm/$chName\.$cuts\.log\n";
+	    system("./bmm -C cuts/$opt_t -D treebmm -f $fileName -b $chName \>\& treebmm/$chName\.$cuts\.log");
+	}
+    }
+}
+
+
+if ( $opt_q )  { 
+
+    chdir("$workspace/macros/chains");
+
+    $file = "cbg-030";
+
+    if ( -e "$file") {
+
+	chdir("$workspace/macros");
+
+	if ( -e "treebmm/$file\.$cuts\.log" ) { system("rm -f  treebmm/$file\.$cuts\.log"); }
+
+	print  "./bmm -C cuts/$opt_t -D treebmm -c chains/$file -b qcd \>\& treebmm/$file\.$cuts\.log\n";
+	system("./bmm -C cuts/$opt_t -D treebmm -c chains/$file -b qcd \>\& treebmm/$file\.$cuts\.log");
+
+	system("mv treebmm/$file.$cuts.root treebmm/qcd.$cuts.root");
+
+    }
+}
+
+print  " \n\n ... DONE ... \n\n";
