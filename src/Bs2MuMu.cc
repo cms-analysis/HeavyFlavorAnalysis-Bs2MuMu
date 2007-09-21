@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.1 2007/08/29 14:17:41 eggel Exp $
+// $Id: Bs2MuMu.cc,v 1.2 2007/08/31 15:01:18 ceggel Exp $
 //
 //
 
@@ -49,8 +49,6 @@ class TrackerHitAssociator;
 // ----------------------------------------------------------------------
 struct anaStuff {
 
-  TH1D *fH1;
-
   reco::VertexCollection *theVtxCollection;
 
   const reco::MuonCollection       *theMuonCollection;
@@ -60,39 +58,52 @@ struct anaStuff {
   reco::RecoToSimCollection        *recSimCollection;
   //  reco::VertexRecoToSimCollection  *recSimCollectionVertex;
 
-  std::vector<const reco::Vertex*> BmmPVTracks;
+  // ----------Tracks--------------------------     
+       
+  // -- Muons (TM=2 or GM=3) 
+  std::vector<const reco::Track*> MuonRecTracks; 
+  std::vector<int> MuonRecTracksIndex;
 
-  std::vector<const reco::Track*> BmmRecTracks; 
-  std::vector<int> BmmRecTracksIndex;
+  // -- Muons (full TM=1)
+  std::vector<const reco::Track*> BmmRecTracks;
+  std::vector<int> BmmRecTracksIndex;          
+  std::vector<int> BmmRecTracksB;                 // Index of B-mother
 
-  double fPtMin;
+  std::vector<const reco::Track*> JpsiRecTracks; 
+  std::vector<int> JpsiRecTracksIndex;
+  std::vector<int> JpsiRecTracksB;                // Index of B-grandmother
+
+  // -- Kaons (full TM=1)
+  std::vector<const reco::Track*> KaonRecTracks; 
+  std::vector<int> KaonRecTracksIndex;
+  std::vector<int> KaonRecTracksB;                // Index of B-mother
+
+
+  // --------Candidates------------------------
+
+  // -- Muons signal
+  std::vector< std::pair<const reco::Track*, const reco::Track*> > BmmPairTracks;
+  std::vector< std::pair<int, int> > BmmPairTracksIndex;
+
+  // -- Muons norm
+  std::vector< std::pair<const reco::Track*, const reco::Track*> > JpsiPairTracks;
+  std::vector< std::pair<int, int> > JpsiPairTracksIndex;
+
+  // -- Kaons norm
+  std::vector<const reco::Track*> KaonTrack; 
+  std::vector<int> KaonTrackIndex;
+  // ------------------------------------------
+  // -- Vertex tracks
+  std::vector<const reco::Track*> RecTracks; 
+  std::vector<int> RecTracksIndex;
+  // ------------------------------------------ 
+
+
   int fBmmSel;
 
   reco::Vertex primaryVertex;
   reco::Vertex primaryVertex2;
 
-  TVector3 secondaryVertex;
-};
-
-
-
-// ----------------------------------------------------------------------
-struct candStuff {
-
-  std::vector<const reco::Track*> BmmRecTracks; 
-  std::vector<int> BmmRecTracksIndex;
-
-  std::vector<int> parPdgId;
-  std::vector<int> parIndex;
-
-  std::vector<int> momPdgId;
-  std::vector<int> momIndex;
-
-  std::vector<int> gmoPdgId;
-  std::vector<int> gmoIndex;
-
-  std::vector<double> SecVtxChi2;
-  std::vector<double> InvMass;
 };
 
 // ----------------------------------------------------------------------
@@ -104,7 +115,6 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
 
   // -- Setup "class variables"
   fStuff = new anaStuff;
-  fCand  = new candStuff;
 
   // -- Counters
   fNevt = 0; 
@@ -121,6 +131,7 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
 
   fStuff->fBmmSel = iConfig.getParameter<int>("bmmsel");
 
+  fVerbose     = iConfig.getParameter<int>("Verbose");
   fGenVerbose     = iConfig.getParameter<int>("GenVerbose");
   fSimVerbose     = iConfig.getParameter<int>("SimVerbose");
   fRecVerbose     = iConfig.getParameter<int>("RecVerbose");
@@ -142,9 +153,7 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
   fEvent = new TAna00Event(0);
   fTree->Branch("TAna00Event", "TAna00Event", &fEvent, 256000/8, 1);
 
-  // -- Default decay mode (signal and rare BG)
-  fTruthMC = 13; fTruthMC2 = -1;
-  fTruthMC_mom = 531;
+  // -- Decay mode
   decayChannel(fChannel.c_str());
 
   // -- Troubleshoot histogramm
@@ -225,6 +234,7 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   ++fNevt; 
 
+  cout << endl << "*****************************NEW*************************************" << endl;
   cout << endl << "*********************************************************************" << endl;
   cout << "===>> Bs2MuMu >>> Start with event: " << fNevt << endl;
 
@@ -244,26 +254,15 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   fStuff->theTPCollection = 0;
   fStuff->recSimCollection = 0;
 
-  fStuff->BmmRecTracks.clear();
-  fStuff->BmmPVTracks.clear();
-  fStuff->BmmRecTracksIndex.clear();
+  clearTracks();
+  clearCandidateTracks();
+
+
+  fStuff->RecTracks.clear();
+  fStuff->RecTracksIndex.clear();
 
 //   fStuff->primaryVertex  = 0;
 //   fStuff->primaryVertex2 = 0;
-
-
-   fCand->BmmRecTracksIndex.clear();
-   fCand->BmmRecTracks.clear();
-
-   fCand->SecVtxChi2.clear();
-   fCand->InvMass.clear();
-
-   fCand->parIndex.clear();
-   fCand->parPdgId.clear();
-   fCand->momIndex.clear();
-   fCand->momPdgId.clear();
-   fCand->gmoIndex.clear();
-   fCand->gmoPdgId.clear();
 
   // === Fill event record ===
 
@@ -308,19 +307,19 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   // -- perform association by either hits or chi2 (in config-file)
   if ( !strcmp( (fAssocLabel.c_str()), "TrackAssociatorByHits") ) {
       
-    cout << "==> -- Track Associator by hits --" << endl;  
+    if (fVerbose) cout << "==> -- Track Associator by hits --" << endl;  
     fStuff->recSimCollection = new 
       reco::RecoToSimCollection(associatorByHits->associateRecoToSim(tracks, TPCollectionH, &iEvent));
   }
   if ( !strcmp( (fAssocLabel.c_str()), "TrackAssociatorByChi2") ) {
       
-    cout << "==> -- Track Associator by chi2 --" << endl;  
+    if (fVerbose) cout << "==> -- Track Associator by chi2 --" << endl;  
     fStuff->recSimCollection = new   
       reco::RecoToSimCollection(associatorByChi2->associateRecoToSim(tracks, TPCollectionH, &iEvent));
   }
     
 
-//**  cout << "==> -- Vertex Associator by tracks --" << endl; 
+//**  if (fVerbose) cout << "==> -- Vertex Associator by tracks --" << endl; 
 //**   fStuff->recSimCollectionVertex = new
 //**     reco::VertexRecoToSimCollection(associatorByTracks->associateRecoToSim(primaryVertexH, TVCollectionH, iEvent
 //**  									   , (*fStuff->recSimCollection)));
@@ -347,47 +346,42 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
     printMuonTracks(iEvent);
   }
 
-
   // -- Reconstructed Tracks
-  fillRecTracks(iEvent);  
-
-  // -- (Rec.) Signal Tracks
-  if (fStuff->fBmmSel == 1) {
-    bmmTracks1(iEvent);
-  } else if (fStuff->fBmmSel == 2) {
-    bmmTracks2(iEvent);
-  } else if (fStuff->fBmmSel == 3) {
-    bmmTracks3(iEvent);
-  } else if (fStuff->fBmmSel == 100) {
-    bmmkTracks1(iEvent, iSetup);
-  } else if (fStuff->fBmmSel == 300) {
-    bmmkTracks3(iEvent, iSetup);
-  }
-
-  if ( fStuff->fBmmSel/100. < 1 ) {
-    fNtracks = 2;  fType = 1; // Vertex TYPE = 1  ( -> mu mu or BG from B), 2 TRACKS
-  } else {
-    fNtracks = 3;  fType = 3; // Vertex TYPE = 3  ( -> mu mu K ), 3 TRACKS
-  }
+  fillRecTracks(iEvent);
 
   // -- Primary Vertex
   int npv = primaryVertex(iEvent);
 
-  if ( npv && fStuff->BmmRecTracks.size() == fNtracks )  {
+  // -- (Rec.) Signal Tracks
+  if (fStuff->fBmmSel == 1) {
+    bmmTracks1(iEvent);
+    truthCandTracks(iEvent, iSetup);
+    if ( npv ) {
+      secondaryVertex(iEvent, iSetup);
+    }
+  } else if (fStuff->fBmmSel == 2) {
+    bmmTracks2(iEvent);
+    muonCandTracks(iEvent, iSetup, 5.369, 3.096);
+    kaonCandTracks(iEvent, iSetup, 1.5);
+    if ( npv ) {
+      secondaryVertex(iEvent, iSetup);
+    }
+  } else if (fStuff->fBmmSel == 3) {
+    bmmTracks3(iEvent);
+    muonCandTracks(iEvent, iSetup, 5.369, 3.096);
+    kaonCandTracks(iEvent, iSetup, 1.5);
+    if ( npv ) {
+      secondaryVertex(iEvent, iSetup);
+    }
+  } 
 
-    bmmVertex(iEvent, iSetup, fType, fNtracks); 
-  }
-  else {
-
-    cout << "Not enough tracks: " << fStuff->BmmRecTracks.size() << ", needed " << fNtracks
-	 << ". And/Or no primary Vtx found: "  << npv << " vertices found."<< endl;
-  }
  
   // -- Dump tree
   fTree->Fill();
 
   cout << endl << "===>> Bs2MuMu >>> Done with event: " << fNevt << endl;
   cout << "*********************************************************************" << endl;
+  cout << endl << "*****************************NEW*************************************" << endl;
     
 }
 
@@ -400,8 +394,8 @@ void Bs2MuMu::fillGeneratorBlock(const edm::Event &iEvent) {
 
   fNgen++;
 
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>fillGeneratorBlock> Starting to fill generator block, event: " << fNevt << endl;
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>fillGeneratorBlock> Starting to fill generator block, event: " << fNevt << endl;
 
   TGenCand *pCand;
 
@@ -411,7 +405,7 @@ void Bs2MuMu::fillGeneratorBlock(const edm::Event &iEvent) {
   
 
   int gcnt = genEvent->particles_size();
-  cout << "Counted " << gcnt  << " genTracks in generator block" << endl;
+  if (fVerbose) cout << "Counted " << gcnt  << " genTracks in generator block" << endl;
   gcnt = 0;
 
   int aid(0); 
@@ -475,17 +469,17 @@ void Bs2MuMu::fillGeneratorBlock(const edm::Event &iEvent) {
 
     // -- Print-out of Bs-Muon-Indeces in Generator Block
      if ( pCand->fDau1 != tmpDau1 && pCand->fDau2 == tmpDau2 ) {
-//        cout << " SCREWED INDEED --> 1: DAU1 "
+//        if (fVerbose) cout << " SCREWED INDEED --> 1: DAU1 "
 //  	   << tmpDau1 << " != " << pCand->fDau1 << " !!!!!!!!!!" << endl;
        scr0++;
      }
      if ( pCand->fDau1 == tmpDau1 && pCand->fDau2 != tmpDau2 ) {
-//        cout << " SCREWED INDEED --> 1: DAU2 "
+//        if (fVerbose) cout << " SCREWED INDEED --> 1: DAU2 "
 //  	   << tmpDau2 << " != " << pCand->fDau2 << " !!!!!!!!!!" << endl;
        scr1++;
      }
      if ( pCand->fDau1 != tmpDau1 && pCand->fDau2 != tmpDau2 ) {
-//        cout << " SCREWED INDEED --> 2: DAU1 "
+//        if (fVerbose) cout << " SCREWED INDEED --> 2: DAU1 "
 //  	   << tmpDau1 << " != " << pCand->fDau1 << " and DAU2 "
 //  	   << tmpDau2 << " != " << pCand->fDau2 << " !!!!!!!!!!" << endl;
        scr2++;
@@ -493,10 +487,10 @@ void Bs2MuMu::fillGeneratorBlock(const edm::Event &iEvent) {
 
     if (abs(pCand->fID) == 531) {
 
-      cout << "Daughters: #" << (*p)->beginDaughters()->barcode() - 1
+      if (fVerbose) cout << "Daughters: #" << (*p)->beginDaughters()->barcode() - 1
 	   << " - #" << (*p)->endDaughters()->barcode() - 1 << endl;
-      cout << "1. Muon (fDau1)    " << pCand->fDau1 << endl;
-      cout << "2. Muon (fDau2)    " << pCand->fDau2 << endl;
+      if (fVerbose) cout << "1. Muon (fDau1)    " << pCand->fDau1 << endl;
+      if (fVerbose) cout << "2. Muon (fDau2)    " << pCand->fDau2 << endl;
     }
 
 
@@ -517,11 +511,11 @@ void Bs2MuMu::fillGeneratorBlock(const edm::Event &iEvent) {
 
     aid = abs( (*p)->pdg_id() );
     //     if (5 == aid) {
-    //       cout << "  ----> Found a b quark ..." << endl;
+    //       if (fVerbose) cout << "  ----> Found a b quark ..." << endl;
     //     }
 
     if (531 == aid) {
-      cout << "  ----> Found a Bs -- event " << fNgen << " should be kept!! pT = " << (*p)->Momentum().perp() << endl;
+      if (fVerbose) cout << "  ----> Found a Bs -- event " << fNgen << " should be kept!! pT = " << (*p)->Momentum().perp() << endl;
     }
   }
 
@@ -530,10 +524,10 @@ void Bs2MuMu::fillGeneratorBlock(const edm::Event &iEvent) {
   fEff->AddBinContent(12, scr1);
   fEff->AddBinContent(13, scr2);
 
-//   cout << "============================================================================================" << endl;
+//   if (fVerbose) cout << "============================================================================================" << endl;
 //   fEvent->dumpGenBlock();
-//   cout << "============================================================================================" << endl;
-//   cout << "==>Bs2MuMu> Done with generator block." << endl;
+//   if (fVerbose) cout << "============================================================================================" << endl;
+//   if (fVerbose) cout << "==>Bs2MuMu> Done with generator block." << endl;
 
 }
 
@@ -543,8 +537,8 @@ void Bs2MuMu::fillRecTracks(const edm::Event &iEvent) {
   
   fNrec++;
 
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>fillRecTracks> Starting to fill reconstructed tracks, event: " << fNevt << endl;
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>fillRecTracks> Starting to fill reconstructed tracks, event: " << fNevt << endl;
 
   TAnaTrack *pTrack;
 
@@ -554,7 +548,7 @@ void Bs2MuMu::fillRecTracks(const edm::Event &iEvent) {
   const  reco::TrackCollection  recTC = *(tracks.product());
 
   int rcnt = tracks->size();
-  cout << "Counted " << rcnt  << " reconstructed tracks." << endl;
+  if (fVerbose) cout << "Counted " << rcnt  << " reconstructed tracks." << endl;
   rcnt = 0;
 
   // -- get the collection of TrackingParticles 
@@ -563,7 +557,7 @@ void Bs2MuMu::fillRecTracks(const edm::Event &iEvent) {
   const TrackingParticleCollection tPC   = *(TPCollectionH.product()); 
 
   int scnt = TPCollectionH->size();
-  cout << "Counted " << scnt  << " simulated tracks." << endl;
+  if (fVerbose) cout << "Counted " << scnt  << " simulated tracks." << endl;
   scnt = 0;
 
   // -- Print Reco-To-Sim-Levels
@@ -615,9 +609,9 @@ void Bs2MuMu::fillRecTracks(const edm::Event &iEvent) {
 // ----------------------------------------------------------------------
 void Bs2MuMu::bmmTracks1(const edm::Event &iEvent) {
 
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>bmmTracks1> Matching particle, truth-matched to be particle PDG #" 
-       << fTruthMC << " and a decay products of particle PDG #" << fTruthMC_mom << ", event: " << fNevt << endl;
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>bmmTracks1> Matching particle, truth-matched to be particle PDG #" 
+       << fTruthMC_I << " and a decay products of particle PDG #" << fTruthMC_mom << ", event: " << fNevt << endl;
 
   // -- get the collection of RecoTracks 
   edm::Handle<reco::TrackCollection> tracks;
@@ -626,286 +620,30 @@ void Bs2MuMu::bmmTracks1(const edm::Event &iEvent) {
  
  // -- track association
   reco::RecoToSimCollection recSimColl = (*fStuff->recSimCollection); 
+
+  // -- Clear tracks
+  clearTracks();
+  clearCandidateTracks();
 
  // -- perform association by either hits or chi2
 //   reco::RecoToSimCollection recSimColl; 
 //   if ( !strcmp( (fAssocLabel.c_str()), "TrackAssociatorByHits") ) {
 
-//     cout << "==>bmmTracks1> -- Associator by hits --" << endl;  
+//     if (fVerbose) cout << "==>bmmTracks1> -- Associator by hits --" << endl;  
 //     recSimColl = associatorByHits->associateRecoToSim (tracks, TPCollectionH, &iEvent);
 //   }
 //   if ( !strcmp( (fAssocLabel.c_str()), "TrackAssociatorByChi2") ) {
 
-//     cout << "==>bmmTracks1> -- Associator by chi2 --" << endl;  
+//     if (fVerbose) cout << "==>bmmTracks1> -- Associator by chi2 --" << endl;  
 //     recSimColl = associatorByChi2->associateRecoToSim (tracks, TPCollectionH, &iEvent );
 //   }
-
-  const reco::Track* tt = 0;
-  const HepMC::GenParticle* genMom = 0;
-  const HepMC::GenParticle* genPar = 0; 
-
-  int ncand(0);
-  int mom_pdg_id(-99999), mom_id(-99999);
-  int gen_pdg_id(-99999), gen_id(-99999);
-  int gen_cnt(0);
-
-  for(TrackCollection::size_type i=0; i<recTC.size(); ++i) {
-
-    TrackRef track(tracks, i);
-
-    try{ 
-
-      std::vector<std::pair<TrackingParticleRef, double> > tp = recSimColl[track];
-//       for (std::vector<std::pair<TrackingParticleRef, double> >::const_iterator it = tp.begin(); 
-// 	     it != tp.end(); ++it) {
-
-      TrackingParticleRef tpr = tp.begin()->first;  // ??? This takes the first associated simulated track ???	    
-      double assocChi2 = tp.begin()->second;
-
-      cout << "-.-.-.-.-.-.-.-.-.-.-.-.-.-.-." <<endl;
-      
-      gen_cnt = 0; gen_pdg_id = -99999; gen_id = -99999;
-
-      for ( TrackingParticle::genp_iterator pit=tpr->genParticle_begin(); pit!=tpr->genParticle_end(); pit++ ){
-	
-	genPar=pit->get();
-	
-	cout << ".. Rec. Track #" << track.index() << " pT = " << track->pt() << endl;
-	cout << ".. Sim. Particle #" << tpr.index() << " pT = " << tpr->pt()  
-	     << " PDG ID: " << tpr->pdgId() << " (NShared: "  << assocChi2 << ")" << endl;
-	
-	gen_pdg_id = genPar->ParticleID();
-	gen_id     = genPar->barcode()-1;
-	
-	cout << ".. Gen. Particle #" << gen_id << " pT = " << genPar->Momentum().perp() << " ---> PDG ID: " << gen_pdg_id << endl;
-	
-	
-	if ( (abs(gen_pdg_id) == fTruthMC) ||  
-	     (abs(gen_pdg_id) == fTruthMC2) ) { 
-	  
-	  genMom = genPar->mother();
-	  mom_pdg_id = genMom->ParticleID();
-	  mom_id     = genMom->barcode()-1;
-	  
-	  
-	  cout << endl << ".. and Mother Particle #" << mom_id << " pT = " << genMom->Momentum().perp() 
-	               << " ---> PDG ID: " << mom_pdg_id;
-	  
-	  if ( abs(mom_pdg_id) == fTruthMC_mom ) { 
-	    
-	    ncand++;
-
-	    tt = &(*track);
-	    
-	    fStuff->BmmRecTracks.push_back(tt);
-	    fStuff->BmmRecTracksIndex.push_back(track.index());
-	    
-	    cout << "    *** " << fPrintChannel << " (" << ncand << ") *** ";
-	  }
-	  
-	  cout << endl; 
-	}
-
-	gen_cnt++;	 
-      }
-
-      if ( gen_cnt == 0 ) {
-	
-	cout << "%%> no match in gen. block for sim. particle #" << tpr.index() << endl;
-      }
-
-      if ( gen_cnt > 1 ) {
-	
-	cout << " ==> !!! More than one gen. particle for sim. particle #" << tpr.index() << " !!!" << endl;
-      }
-    } catch (Exception event) {
-
-      cout << "%%>   Rec. Track #" << setw(2) << track.index() << " pT: " 
-	   << setprecision(2) << setw(6) << track->pt() 
-	   <<  " matched to 0 MC Tracks" << endl;
-    } 
-    
-  } 
-
-  trimBmmTracks(iEvent);
-}
-
-
-// ----------------------------------------------------------------------
-void Bs2MuMu::bmmTracks2(const edm::Event &iEvent) {
-
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>bmmTracks2> Matching particle, truth matched to be particle PDG #" 
-       << fTruthMC << "in the generator block, event: " << fNevt << endl;
-
-  // -- get the collection of RecoTracks 
-  edm::Handle<reco::TrackCollection> tracks;
-  iEvent.getByLabel(fTracksLabel.c_str(), tracks );  
-  const  reco::TrackCollection  recTC = *(tracks.product());
-
- // -- track association
-  reco::RecoToSimCollection recSimColl = (*fStuff->recSimCollection); 
-
-  const reco::Track* tt = 0;
-  const HepMC::GenParticle* genPar = 0; 
-  const HepMC::GenParticle* genMom = 0;
-
-  int ncand(0);
-  int gen_pdg_id(-99999), gen_id(-99999);
-  int mom_pdg_id(-99999), mom_id(-99999);
-  int gen_cnt(0);
-
-  for(TrackCollection::size_type i=0; i<recTC.size(); ++i) {
-
-    TrackRef track(tracks, i);
-
-    try{ 
-
-      std::vector<std::pair<TrackingParticleRef, double> > tp = recSimColl[track];
-//       for (std::vector<std::pair<TrackingParticleRef, double> >::const_iterator it = tp.begin(); 
-// 	     it != tp.end(); ++it) {
-
-      TrackingParticleRef tpr = tp.begin()->first;  // ??? This takes the first associated simulated track ???	    
-      double assocChi2 = tp.begin()->second;
-
-      cout << "-.-.-.-.-.-.-.-.-.-.-.-.-.-.-." <<endl;
-      
-      gen_cnt = 0; gen_pdg_id = -99999; gen_id = -99999;
-
-      for ( TrackingParticle::genp_iterator pit=tpr->genParticle_begin(); pit!=tpr->genParticle_end(); pit++ ){
-	
-	genPar=pit->get();
-		
-	gen_pdg_id = genPar->ParticleID();
-	gen_id     = genPar->barcode()-1;
-
-	if ( (abs(gen_pdg_id) == fTruthMC) || 
-	     (abs(gen_pdg_id) == fTruthMC2) ) { 
-	  
-	  ncand++;
-	  tt = &(*track);
-
-	  cout << ".. Rec. Track #" << track.index() << " pT = " << track->pt() << endl;
-	  cout << ".. Sim. Particle #" << tpr.index() << " pT = " << tpr->pt() 
-	       << " PDG ID: " << tpr->pdgId() << " (NShared: "  << assocChi2 << ")" << endl;
-	  cout << ".. Gen. Particle #" << gen_id << " pT = " << genPar->Momentum().perp() 
-	       << " ---> PDG ID: " << gen_pdg_id << endl;
-	  
-	  
-	  fStuff->BmmRecTracks.push_back(tt);
-	  fStuff->BmmRecTracksIndex.push_back(track.index());
-
-	  genMom = genPar->mother();
-	  mom_pdg_id = genMom->ParticleID();
-	  mom_id     = genMom->barcode()-1;
-		  
-	  cout << endl << ".. Mother Particle #" << mom_id << " pT = " << genMom->Momentum().perp() 
-	               << " ---> PDG ID: " << mom_pdg_id;
-	    
-	  if ( abs(mom_pdg_id) == fTruthMC ) { 
-	    
-	    cout << "    *** " << fPrintChannel << " (" << ncand << ") *** ";
-	  }
-	  
-	  cout << endl; 
-	}
-
-	gen_cnt++;	 
-      }
-
-      if ( gen_cnt == 0 ) {
-	
-	cout << "%%> no match in gen. block for sim. particle #" << tpr.index() << endl;
-      }
-
-      if ( gen_cnt > 1 ) {
-	
-	cout << " ==> !!! More than one gen. particle for sim. particle #" << tpr.index() << " !!!" << endl;
-      }
-    } catch (Exception event) {
-
-      cout << "%%>   Rec. Track #" << setw(2) << track.index() << " pT: " 
-	   << setprecision(2) << setw(6) << track->pt() 
-	   <<  " matched to 0 MC Tracks" << endl;
-    }
-  }
-
-  trimBmmTracks(iEvent);
-}
-
-
-// ----------------------------------------------------------------------
-void Bs2MuMu::bmmTracks3(const edm::Event &iEvent) {
-
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>bmmTracks3> Matching muons, rec PID as muons, event: " << fNevt << endl;
-
-  if (0 == fStuff->theMuonCollection ) {
-    
-    cout << "==>bmmTrack3> getting the muon collection ..." << endl;
-    
-    edm::Handle<reco::MuonCollection> MuCollection;
-    iEvent.getByLabel(fMuonLabel.c_str(), MuCollection);
-    fStuff->theMuonCollection   = new reco::MuonCollection(*(MuCollection.product()));
-  }
-
-  int nMuon  = fStuff->theMuonCollection->size();
-  int nTrack = fStuff->theTkCollection->size();
-
-  cout << "==>bmmTracks3>  tracks found: " << nTrack << endl
-       << "==>bmmTracks3>  muons  found: " << nMuon  << endl;  
-
-//   reco::MuonRefVector glbMuons1, glbMuons2;
-  int mcnt(0);
-
-  const reco::Track* tt = 0;
-
-  for (MuonCollection::const_iterator glbMuon = (*fStuff->theMuonCollection).begin(); 
-       glbMuon != (*fStuff->theMuonCollection).end(); 
-       ++glbMuon){
-
-    TrackRef glbTrack = glbMuon->combinedMuon();
-    tt = &(*glbTrack);
-
-    int idrec = idRecTrack(tt);
-
-    if ( idrec > -1 ) {
-
-      fStuff->BmmRecTracks.push_back(tt);
-      fStuff->BmmRecTracksIndex.push_back(idrec);
-    } else {
-      cout << "==>bmmTracks3> Coulnd't find rec. track for muon #" << mcnt << endl;  
-    }
-    
-    mcnt++;
-//     glbMuons1.push_back(MuonRef(MuCollection,mcnt-1));
-//     glbMuons2.push_back(MuonRef(MuCollection,mcnt-1));
-  }
-
-  trimBmmTracks(iEvent);
-}
-
-
-// ----------------------------------------------------------------------
-void Bs2MuMu::bmmkTracks1(const edm::Event &iEvent, const edm::EventSetup& iSetup) {
-
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>bmmkTracks1> Matching J/Psi K, truth-matched to be decay products of B+, event: " << fNevt << endl;
-
-  // -- get the collection of RecoTracks 
-  edm::Handle<reco::TrackCollection> tracks;
-  iEvent.getByLabel(fTracksLabel.c_str(), tracks );  
-  const  reco::TrackCollection  recTC = *(tracks.product()); 
- 
- // -- track association
-  reco::RecoToSimCollection recSimColl = (*fStuff->recSimCollection); 
 
   const reco::Track* tt = 0;
   const HepMC::GenParticle* genGmo = 0;
   const HepMC::GenParticle* genMom = 0;
   const HepMC::GenParticle* genPar = 0; 
 
-  int mcand(0), kcand(0);
+  int mcand1(0), mcand2(0), kcand(0);
   int gmo_pdg_id(-99999), gmo_id(-99999);
   int mom_pdg_id(-99999), mom_id(-99999);
   int gen_pdg_id(-99999), gen_id(-99999);
@@ -924,226 +662,272 @@ void Bs2MuMu::bmmkTracks1(const edm::Event &iEvent, const edm::EventSetup& iSetu
       TrackingParticleRef tpr = tp.begin()->first;  // ??? This takes the first associated simulated track ???	    
       double assocChi2 = tp.begin()->second;
 
-      cout << "-.-.-.-.-.-.-.-.-.-.-.-.-.-.-." <<endl;
+      if (fVerbose) cout << "-.-.-.-.-.-.-.-.-.-.-.-.-.-.-." <<endl;
       
       gen_cnt = 0; gen_pdg_id = -99999; gen_id = -99999;
-      mom_pdg_id = -99999; mom_id = -99999;
-      gmo_pdg_id = -99999; gmo_id = -99999;
 
       for ( TrackingParticle::genp_iterator pit=tpr->genParticle_begin(); pit!=tpr->genParticle_end(); pit++ ){
 	
 	genPar=pit->get();
 	
-	cout << ".. Rec. Track #" << track.index() << " pT = " << track->pt() << endl;
-	cout << ".. Sim. Particle #" << tpr.index() << " pT = " << tpr->pt() 
-	                                            << " (NShared: "  << assocChi2 << ")" << endl;
-	
+	if (fVerbose) {
+
+	  cout << ".. Rec. Track #" << track.index() << " pT = " << track->pt() << endl;
+	  cout << ".. Sim. Particle #" << tpr.index() << " pT = " << tpr->pt()  
+	       << " PDG ID: " << tpr->pdgId() << " (NShared: "  << assocChi2 << ")" << endl;
+	}
+
 	gen_pdg_id = genPar->ParticleID();
 	gen_id     = genPar->barcode()-1;
 	
-	cout << ".. Gen. Particle #" << gen_id << " pT = " << genPar->Momentum().perp() << " ---> PDG ID: " << gen_pdg_id << endl;
+	if (fVerbose) cout << ".. Gen. Particle #" << gen_id << " pT = " << genPar->Momentum().perp() << " ---> PDG ID: " << gen_pdg_id << endl;
 	
-	if ( abs(gen_pdg_id) == 13 ) { 
+
+
+	// -- Two body decays
+	if ( (abs(gen_pdg_id) == fTruthMC_I) ||  
+	     (abs(gen_pdg_id) == fTruthMC_II) ) { 
 	  
 	  genMom = genPar->mother();
 	  mom_pdg_id = genMom->ParticleID();
 	  mom_id     = genMom->barcode()-1;
 	  
 	  
- 	  cout << endl << ".. and Mother Particle #" << mom_id << " pT = " << genMom->Momentum().perp() 
-	       << " ---> PDG ID: " << mom_pdg_id;
+	  if (fVerbose) cout << endl << ".. and Mother Particle #" << mom_id << " pT = " << genMom->Momentum().perp() 
+			     << " ---> PDG ID: " << mom_pdg_id;
 	  
-	  if ( abs(mom_pdg_id) == 443) { 
+	  // -- Cand 1 (Bs)
+	  if ( abs(mom_pdg_id) == fTruthMC_mom ) { 
+	    
+	    mcand1++;
+	    
+	    tt = &(*track);
+	    
+	    fStuff->BmmRecTracks.push_back(tt);
+	    fStuff->BmmRecTracksIndex.push_back(track.index());
+	    fStuff->BmmRecTracksB.push_back(mom_id);
 
+	    fStuff->MuonRecTracks.push_back(tt);
+	    fStuff->MuonRecTracksIndex.push_back(track.index());
+	    
+	    if (fVerbose) cout << "    *** " << fPrintChannel << " (" << mcand1 << ") *** ";
+	  }	  
+	  
+	  // -- Cand 2 (J/Psi)
+	  if ( abs(mom_pdg_id) == fTruthMC2_mom ) { 
+	    
 	    genGmo = genMom->mother();
 	    gmo_pdg_id = genGmo->ParticleID();
 	    gmo_id     = genGmo->barcode()-1;
-
-	    cout << endl << ".. and Grandmother Particle #" << gmo_id << " pT = " << genGmo->Momentum().perp() 
-		 << " ---> PDG ID: " << gmo_pdg_id;
 	    
-	    if ( abs(gmo_pdg_id) == 521) { 
+	    if (fVerbose) cout << endl << ".. and Grandmother Particle #" << gmo_id << " pT = " 
+			       << genGmo->Momentum().perp() << " ---> PDG ID: " << gmo_pdg_id;
 	    
-	      mcand++;
+	    if ( abs(gmo_pdg_id) == fTruthMC2_gmo ) { 
+	      
+	      mcand2++;
 	      
 	      tt = &(*track);
 	      
-	      fCand->BmmRecTracks.push_back(tt);
-	      fCand->BmmRecTracksIndex.push_back(track.index());
+	      fStuff->JpsiRecTracks.push_back(tt);
+	      fStuff->JpsiRecTracksIndex.push_back(track.index());
+	      fStuff->JpsiRecTracksB.push_back(gmo_id);
 
-	      fCand->parIndex.push_back(gen_id);
-	      fCand->parPdgId.push_back(gen_pdg_id);
-
-	      fCand->momIndex.push_back(mom_id);
-	      fCand->momPdgId.push_back(mom_pdg_id);
-
-	      fCand->gmoIndex.push_back(gmo_id);
-	      fCand->gmoPdgId.push_back(gmo_pdg_id);
+	      fStuff->MuonRecTracks.push_back(tt);
+	      fStuff->MuonRecTracksIndex.push_back(track.index());
 	      
-	      cout << "    *** B+ -> (J/Psi->mu-mu+) K+ (" << mcand << ". muon-cand.) *** ";
+	      if (fVerbose) cout << "    *** " << fPrintChannel2 << " (" << mcand2 << ". mu) *** ";
 	    }
+	    
 	  }
 	  
-	  cout << endl; 
+	  if (fVerbose) cout << endl; 
 	}
+	
+	// -- Cand 3 (only Kaon)
+	if ( abs(gen_pdg_id) == fTruthMC2  ) { 
+	  
+	  genMom = genPar->mother();
+	  mom_pdg_id = genMom->ParticleID();
+	  mom_id     = genMom->barcode()-1;
+	  
+	  
+	  if (fVerbose) cout << endl << ".. and Mother Particle #" << mom_id << " pT = " << genMom->Momentum().perp() 
+			     << " ---> PDG ID: " << mom_pdg_id;
+	  
+	  if ( abs(mom_pdg_id) == fTruthMC2_gmo ) { 
+	    
+	    kcand++;
+	    
+	    tt = &(*track);
+	    
+	    fStuff->KaonRecTracks.push_back(tt);
+	    fStuff->KaonRecTracksIndex.push_back(track.index());
+	    fStuff->KaonRecTracksB.push_back(mom_id);
+	    
+	    if (fVerbose) cout << "    *** " << fPrintChannel2 << " (" << kcand << ". K) *** ";
+	  }
+	  
+	  if (fVerbose) cout << endl; 
+	}
+	     
+	gen_cnt++;	 
+      }
 
-	if ( abs(gen_pdg_id) == 321 ) { 
+
+	
+      if ( gen_cnt == 0 ) {
+	  
+	if (fVerbose) cout << "%%> no match in gen. block for sim. particle #" << tpr.index() << endl;
+      }
+
+	if ( gen_cnt > 1 ) {
+	
+	if (fVerbose) cout << " ==> !!! More than one gen. particle for sim. particle #" << tpr.index() << " !!!" << endl;
+      }
+    } catch (Exception event) {
+
+      if (fVerbose) cout << "%%>   Rec. Track #" << setw(2) << track.index() << " pT: " 
+	   << setprecision(2) << setw(6) << track->pt() 
+	   <<  " matched to 0 MC Tracks" << endl;
+    } 
+    
+  } 
+
+  //  trimBmmTracks(iEvent);
+}
+
+
+// ----------------------------------------------------------------------
+void Bs2MuMu::bmmTracks2(const edm::Event &iEvent) {
+
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>bmmTracks2> Matching particle, truth matched to be particle PDG #" 
+       << fTruthMC_I << "in the generator block, event: " << fNevt << endl;
+
+  // -- get the collection of RecoTracks 
+  edm::Handle<reco::TrackCollection> tracks;
+  iEvent.getByLabel(fTracksLabel.c_str(), tracks );  
+  const  reco::TrackCollection  recTC = *(tracks.product());
+
+ // -- track association
+  reco::RecoToSimCollection recSimColl = (*fStuff->recSimCollection);
+
+  // -- Clear tracks
+  clearTracks();
+  clearCandidateTracks();
+
+  const reco::Track* tt = 0;
+  const HepMC::GenParticle* genGmo = 0;
+  const HepMC::GenParticle* genMom = 0;
+  const HepMC::GenParticle* genPar = 0; 
+
+  int mcand(0);
+  int gmo_pdg_id(-99999), gmo_id(-99999);
+  int mom_pdg_id(-99999), mom_id(-99999);
+  int gen_pdg_id(-99999), gen_id(-99999);
+  int gen_cnt(0);
+
+  for(TrackCollection::size_type i=0; i<recTC.size(); ++i) {
+
+    TrackRef track(tracks, i);
+
+    try{ 
+
+      std::vector<std::pair<TrackingParticleRef, double> > tp = recSimColl[track];
+//       for (std::vector<std::pair<TrackingParticleRef, double> >::const_iterator it = tp.begin(); 
+// 	     it != tp.end(); ++it) {
+
+      TrackingParticleRef tpr = tp.begin()->first;  // ??? This takes the first associated simulated track ???	    
+      double assocChi2 = tp.begin()->second;
+
+      if (fVerbose) cout << "-.-.-.-.-.-.-.-.-.-.-.-.-.-.-." <<endl;
+      
+      gen_cnt = 0; gen_pdg_id = -99999; gen_id = -99999;
+
+      for ( TrackingParticle::genp_iterator pit=tpr->genParticle_begin(); pit!=tpr->genParticle_end(); pit++ ){
+	
+	genPar=pit->get();
+		
+	gen_pdg_id = genPar->ParticleID();
+	gen_id     = genPar->barcode()-1;
+
+	if ( (abs(gen_pdg_id) == fTruthMC_I) || 
+	     (abs(gen_pdg_id) == fTruthMC_II) ) { 
+	  
+	  mcand++;
+	  tt = &(*track);
+
+	  if (fVerbose) {
+	    
+	    cout << ".. Rec. Track #" << track.index() << " pT = " << track->pt() << endl;
+	    cout << ".. Sim. Particle #" << tpr.index() << " pT = " << tpr->pt() 
+		 << " PDG ID: " << tpr->pdgId() << " (NShared: "  << assocChi2 << ")" << endl;
+	    cout << ".. Gen. Particle #" << gen_id << " pT = " << genPar->Momentum().perp() 
+		 << " ---> PDG ID: " << gen_pdg_id << endl;
+	  
+	  }
 
 	  genMom = genPar->mother();
 	  mom_pdg_id = genMom->ParticleID();
 	  mom_id     = genMom->barcode()-1;
+     
 
-  	  cout << endl << ".. and Mother Particle #" << mom_id << " pT = " << genMom->Momentum().perp() 
- 	       << " ---> PDG ID: " << mom_pdg_id;
+	  if (fVerbose) cout << endl << ".. Mother Particle #" << mom_id << " pT = " << genMom->Momentum().perp() 
+	               << " ---> PDG ID: " << mom_pdg_id;
+
+	  genGmo = genMom->mother();
+	  gmo_pdg_id = genGmo->ParticleID();
+	  gmo_id     = genGmo->barcode()-1;
 	  
-	  if ( abs(mom_pdg_id) == 521) { 
+	  if (fVerbose) cout << endl << ".. and Grandmother Particle #" << gmo_id << " pT = " 
+			     << genGmo->Momentum().perp() << " ---> PDG ID: " << gmo_pdg_id;
 
-	    gmo_pdg_id = mom_pdg_id;
-	    gmo_id     = mom_id;
-
-	    cout << endl << ".. and Grandmother Particle was set to #" << gmo_id  
-		 << " ---> PDG ID: " << gmo_pdg_id;
-
-	    kcand++;
-
-	    tt = &(*track);
 	    
-	    fCand->BmmRecTracks.push_back(tt);
-	    fCand->BmmRecTracksIndex.push_back(track.index());
-
-	    fCand->parIndex.push_back(gen_id);
-	    fCand->parPdgId.push_back(gen_pdg_id);
-
-	    fCand->momIndex.push_back(mom_id);
-	    fCand->momPdgId.push_back(mom_pdg_id);
-	    
-	    fCand->gmoIndex.push_back(gmo_id);
-	    fCand->gmoPdgId.push_back(gmo_pdg_id);
-	    
-	    cout << "    *** B+ -> (J/Psi->mu-mu+) K+ (" << kcand << ". kaon-cand.) *** ";
-	  }
-	  
-	  cout << endl; 
+	  fStuff->MuonRecTracks.push_back(tt);
+	  fStuff->MuonRecTracksIndex.push_back(track.index());
+ 
+	  if (fVerbose) cout << "    *** " << fPrintChannel << " (" << mcand << ") *** " << endl;
 	}
 
 	gen_cnt++;	 
       }
 
+
       if ( gen_cnt == 0 ) {
 	
-	cout << "%%> no match in gen. block for sim. particle #" << tpr.index() << endl;
+	if (fVerbose) cout << "%%> no match in gen. block for sim. particle #" << tpr.index() << endl;
       }
 
       if ( gen_cnt > 1 ) {
 	
-	cout << " ==> !!! More than one gen. particle for sim. particle #" << tpr.index() << " !!!" << endl;
+	if (fVerbose) cout << " ==> !!! More than one gen. particle for sim. particle #" << tpr.index() << " !!!" << endl;
       }
     } catch (Exception event) {
 
-      cout << "%%>   Rec. Track #" << setw(2) << track.index() << " pT: " 
+      if (fVerbose) cout << "%%>   Rec. Track #" << setw(2) << track.index() << " pT: " 
 	   << setprecision(2) << setw(6) << track->pt() 
 	   <<  " matched to 0 MC Tracks" << endl;
-    } 
-    
-  }
-
-  if ( kcand < 9 ) { fEff->Fill(60.1 + kcand); } else { fEff->Fill(69.1); }
-  if ( mcand < 9 ) { fEff->Fill(70.1 + mcand); } else { fEff->Fill(79.1); }
-
-  if ( kcand >= 1 && mcand >= 2 ) { 
-
-    fEff->Fill(80.1); 
-
-  } else { 
-
-    fEff->Fill(81.1); 
-
-  }
-
-  // -- Finding the daughters from same B+
-  int bs_index(-1), k_index(-1), dcnt(0);
-  std::vector<int> mu_index;
-
-  for ( unsigned int i = 0; i < fCand->parIndex.size(); i++) {
-
-    mu_index.clear();
-    bs_index = -1;
-    k_index  = -1;
-    dcnt = 0;
-
-    if ( abs(fCand->parPdgId[i]) == 321 ) {
-
-      bs_index = fCand->momIndex[i];
-      k_index  = i;  // Kaon Index
-
-      for (unsigned int j = 0; j < fCand->parIndex.size(); j++ ) {
-
-	if ( (fCand->gmoIndex[j] == bs_index) && (i != j)  ) {
-	 
-	  if ( abs(fCand->parPdgId[j]) == 321 ) {
-
-	    cout << "==> !!! Found another kaon from same B+ !!!" << endl;
-	  }
-	  if ( (abs(fCand->parPdgId[j]) == 321) && ((*fCand->BmmRecTracks[j]).pt() > (*fCand->BmmRecTracks[i]).pt()) ) {
-
-	    cout << "==> !!! Found another kaon from same B+ with higher pT !!!" << endl;
-	    k_index = j;  // Kaon Index
-	  }
-	  if ( abs(fCand->parPdgId[j]) == 13 ) {
-
-	    mu_index.push_back(j);  // Muon Index
-      	  }
-	}
-      }
-
-      if ( mu_index.size() >= 2 ) {
-	
-	int id(-1);
-
-	// -- Fill in muons --
-	for (unsigned int k = 0; k < mu_index.size(); k++) {
-	  
-	  id = mu_index[k];
-	  fStuff->BmmRecTracks.push_back(fCand->BmmRecTracks[id]);
-	  fStuff->BmmRecTracksIndex.push_back(fCand->BmmRecTracksIndex[id]);
-	}
-	
-	// ... trim and add 2 muons to signal tracks block in ntuple
-	trimBmmTracks(iEvent);            // including fillTracks (adds 2 muon signal tracks)
-	bmmVertex(iEvent, iSetup, 2, 2);  // including fillVertex (adds J/Psi candidates) 
-	                                  // Vertex TYPE = 2 (-> mu mu from J/Psi)
-	
-	// -- Fill in kaon --
-	id = k_index;
-	fStuff->BmmRecTracks.push_back(fCand->BmmRecTracks[id]);
-	fStuff->BmmRecTracksIndex.push_back(fCand->BmmRecTracksIndex[id]);  
-	
-	// ... and add to signal tracks block in ntuple
-	reco::Track tt(*fCand->BmmRecTracks[id]);
-	cout << " Adding to signal tracks, track #" << fCand->BmmRecTracksIndex[id]
-	     << " (index in RecTracks), pT = " << tt.pt()
-	     << endl;
-
-	TAnaTrack *pTrack;
-	pTrack = fEvent->addSigTrack();
-	pTrack->fIndex = fCand->BmmRecTracksIndex[id];
-	
-	fillTrack(iEvent, pTrack, &tt, fCand->BmmRecTracksIndex[id], 1);
-	
-	break;
-      }
     }
   }
-}
-// ----------------------------------------------------------------------
-void Bs2MuMu::bmmkTracks3(const edm::Event &iEvent, const edm::EventSetup& iSetup) {
 
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>bmmkTracks3> Matching muons from J/Psi, rec PID as muons and searching for kaon, event: " << fNevt << endl;
+  //  trimBmmTracks(iEvent);
+}
+
+
+// ----------------------------------------------------------------------
+void Bs2MuMu::bmmTracks3(const edm::Event &iEvent) {
+
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>bmmTracks3> Matching muons, rec PID as muons, event: " << fNevt << endl;
+
+  // -- Clear tracks
+  clearTracks();
+  clearCandidateTracks();
 
   if (0 == fStuff->theMuonCollection ) {
     
-    cout << "==>bmmkTracks3> getting the muon collection ..." << endl;
+    if (fVerbose) cout << "==>bmmTrack3> getting the muon collection ..." << endl;
     
     edm::Handle<reco::MuonCollection> MuCollection;
     iEvent.getByLabel(fMuonLabel.c_str(), MuCollection);
@@ -1153,13 +937,14 @@ void Bs2MuMu::bmmkTracks3(const edm::Event &iEvent, const edm::EventSetup& iSetu
   int nMuon  = fStuff->theMuonCollection->size();
   int nTrack = fStuff->theTkCollection->size();
 
-  cout << "==>bmmkTracks3>  tracks found: " << nTrack << endl
-       << "==>bmmkTracks3>  muons  found: " << nMuon  << endl;  
+  if (fVerbose) cout << "==>bmmTracks3>  tracks found: " << nTrack << endl
+       << "==>bmmTracks3>  muons  found: " << nMuon  << endl;  
+
+//   reco::MuonRefVector glbMuons1, glbMuons2;
+  int mcnt(0);
 
   const reco::Track* tt = 0;
 
-  int mcnt(0);
-  int mcand(0), kcand(0);
   for (MuonCollection::const_iterator glbMuon = (*fStuff->theMuonCollection).begin(); 
        glbMuon != (*fStuff->theMuonCollection).end(); 
        ++glbMuon){
@@ -1169,81 +954,352 @@ void Bs2MuMu::bmmkTracks3(const edm::Event &iEvent, const edm::EventSetup& iSetu
 
     int idrec = idRecTrack(tt);
 
-    //    if ( (idrec > -1) && (tt->pt() > 3.) ) {
-    if ( idrec > -1 ) {  // pT Cut removed !!!!!
+    if ( idrec > -1 ) {
 
-      mcand++;
-      fStuff->BmmRecTracks.push_back(tt);
-      fStuff->BmmRecTracksIndex.push_back(idrec);
+	    
+      fStuff->MuonRecTracks.push_back(tt);
+      fStuff->MuonRecTracksIndex.push_back(idrec);
+
     } else {
-      cout << "==>bmmkTracks3> Coulnd't find rec. track for muon #" << mcnt << endl;  
+      if (fVerbose) cout << "==>bmmTracks3> Coulnd't find rec. track for muon #" << mcnt << endl;  
     }
-
+    
     mcnt++;
+//     glbMuons1.push_back(MuonRef(MuCollection,mcnt-1));
+//     glbMuons2.push_back(MuonRef(MuCollection,mcnt-1));
   }
-  
-  // ... trim and add 2 muons to signal tracks block in ntuple
+
+  trimBmmTracks(iEvent);
+}
+
+
+
+// ----------------------------------------------------------------------
+void Bs2MuMu::truthCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup) {
+
   if ( fStuff->BmmRecTracks.size() > 1 ) {
-    if ( jpsiCandidate(iEvent) > 0 ) {      // two muons in J/Psi mass window
-      
-      trimBmmTracks(iEvent);                // including fillTracks (adds 2 muon signal tracks)
-      bmmVertex(iEvent, iSetup, 2, 2);      // including fillVertex (adds J/Psi candidates)
-                                            // Vertex TYPE = 2 (-> mu mu from J/Psi)  
 
-      // ... find kaon and add to signal tracks block in ntuple
-      int id = kaonCandidate(iEvent, iSetup);  // Vertex all candidate tracks, 
-                                               // cut on dR & select best chi2 
-      if ( id >= 0  ) {
-	
-	kcand++;
-	fStuff->BmmRecTracks.push_back(fCand->BmmRecTracks[id]);
-	fStuff->BmmRecTracksIndex.push_back(fCand->BmmRecTracksIndex[id]);  
+    for ( unsigned int i=0; i<fStuff->BmmRecTracks.size(); i++ ) { 
 
-	reco::Track kt(*fCand->BmmRecTracks[id]);
-	
-	cout << "==> Adding to signal tracks, track #" << fCand->BmmRecTracksIndex[id]
-	     << " (index in RecTracks), pT = " << kt.pt()
-	     << endl;
-	
-	TAnaTrack *pTrack;
-	pTrack = fEvent->addSigTrack();
-	pTrack->fIndex = fCand->BmmRecTracksIndex[id];
-	
-	fillTrack(iEvent, pTrack, &kt, fCand->BmmRecTracksIndex[id], 1);
-      } else {
-	cout << "==>bmmkTracks3> Aborting, couldn't find kaon !!!" << endl;  
+      for ( unsigned int j=0; j<fStuff->BmmRecTracks.size(); j++ ) { 
+
+	if (i == j) { continue; }
+
+	if (fStuff->BmmRecTracksB[i] == fStuff->BmmRecTracksB[j]) {
+	  
+	  if ((*fStuff->BmmRecTracks[j]).pt() > (*fStuff->BmmRecTracks[i]).pt() ) { 
+	    fStuff->BmmPairTracks.push_back(pair<const reco::Track*, const reco::Track*>
+					    (fStuff->BmmRecTracks[j],fStuff->BmmRecTracks[i]));
+	    fStuff->BmmPairTracksIndex.push_back(pair<int, int>
+						 (fStuff->BmmRecTracksIndex[j],fStuff->BmmRecTracksIndex[i]));
+	  } else {
+	    fStuff->BmmPairTracks.push_back(pair<const reco::Track*, const reco::Track*>
+					    (fStuff->BmmRecTracks[i],fStuff->BmmRecTracks[j]));
+	    fStuff->BmmPairTracksIndex.push_back(pair<int, int>
+						 (fStuff->BmmRecTracksIndex[i],fStuff->BmmRecTracksIndex[j]));
+	  }
+
+	}
       }
     }
-    else {
-      fStuff->BmmRecTracks.clear();
-      fStuff->BmmRecTracksIndex.clear();
-      cout << "==>bmmkTracks3> Aborting, couldn't find two muons in J/Psi mass window !!!" << endl;  
+  }  
+
+  
+  if ( fStuff->JpsiRecTracks.size() > 1 ) {
+    
+    for ( unsigned int i=0; i<fStuff->JpsiRecTracks.size(); i++ ) { 
+      
+      for ( unsigned int j=0; j<fStuff->JpsiRecTracks.size(); j++ ) { 
+	
+	if (i == j) { continue; }
+	
+	if (fStuff->JpsiRecTracksB[i] == fStuff->JpsiRecTracksB[j]) {
+	  
+
+	  if ( fStuff->KaonRecTracks.size() > 0 ) {
+
+	    for ( unsigned int k=0; k<fStuff->KaonRecTracks.size(); k++ ) {
+	      
+	      if (fStuff->JpsiRecTracksB[i] == fStuff->KaonRecTracksB[k]) {
+		
+		if ((*fStuff->JpsiRecTracks[j]).pt() > (*fStuff->JpsiRecTracks[i]).pt() ) { 
+		  fStuff->JpsiPairTracks.push_back(pair<const reco::Track*, const reco::Track*>
+						   (fStuff->JpsiRecTracks[j],fStuff->JpsiRecTracks[i]));
+		  fStuff->JpsiPairTracksIndex.push_back(pair<int, int>
+							(fStuff->JpsiRecTracksIndex[j],fStuff->JpsiRecTracksIndex[i]));
+		} else {
+		  fStuff->JpsiPairTracks.push_back(pair<const reco::Track*, const reco::Track*>
+						   (fStuff->JpsiRecTracks[i],fStuff->JpsiRecTracks[j]));
+		  fStuff->JpsiPairTracksIndex.push_back(pair<int, int>
+							(fStuff->JpsiRecTracksIndex[i],fStuff->JpsiRecTracksIndex[j]));
+		}
+		
+		fStuff->KaonTrack.push_back(fStuff->KaonRecTracks[k]);
+		fStuff->KaonTrackIndex.push_back(fStuff->KaonRecTracksIndex[k]);
+	      }
+	    }
+	  }
+	}
+      }
     }
-  } else if ( mcnt == 0 ){
-    cout << "==>bmmkTracks3> Aborting, no global muons !!!" << endl;  
-  } else {
-    cout << "==>bmmkTracks3> Aborting, not enough global muons !!!" << endl;
   }
+}
 
-  if ( kcand < 9 ) { fEff->Fill(60.1 + kcand); } else { fEff->Fill(69.1); }
-  if ( mcand < 9 ) { fEff->Fill(70.1 + kcand); } else { fEff->Fill(79.1); }
+// ----------------------------------------------------------------------
+void Bs2MuMu::muonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup, double m_cand1, double m_cand2) {
 
-  if ( kcand >= 1 && mcand >= 2 ) { 
+  int type(0);
 
-    fEff->Fill(80.1); 
+  if ( fStuff->MuonRecTracks.size() > 1 ) {
 
-  } else { 
+    for ( unsigned int i=0; i<fStuff->MuonRecTracks.size(); i++ ) { 
 
-    fEff->Fill(81.1); 
+      for ( unsigned int j=0; j<fStuff->MuonRecTracks.size(); j++ ) { 
 
+	if (i == j) { continue; }
+
+	fStuff->RecTracks.clear();
+
+	fStuff->RecTracks.push_back(fStuff->MuonRecTracks[i]);
+	fStuff->RecTracks.push_back(fStuff->MuonRecTracks[j]);
+
+	fStuff->RecTracksIndex.push_back(i);
+	fStuff->RecTracksIndex.push_back(j);
+      
+	m_cand1 = 3.096; 
+	m_cand2  = 5.369;
+
+	type = massMuonCand(iEvent, iSetup, m_cand1, m_cand2);   //  < ------- here
+
+	if ( type == 1 ) {
+
+	  if ((*fStuff->MuonRecTracks[j]).pt() > (*fStuff->MuonRecTracks[i]).pt() ) { 
+	    fStuff->BmmPairTracks.push_back(pair<const reco::Track*, const reco::Track*>
+					    (fStuff->MuonRecTracks[j],fStuff->MuonRecTracks[i]));
+	    fStuff->BmmPairTracksIndex.push_back(pair<int, int>
+						 (fStuff->MuonRecTracksIndex[j],fStuff->MuonRecTracksIndex[i]));
+	  } else {
+	    fStuff->BmmPairTracks.push_back(pair<const reco::Track*, const reco::Track*>
+					    (fStuff->MuonRecTracks[i],fStuff->MuonRecTracks[j]));
+	    fStuff->BmmPairTracksIndex.push_back(pair<int, int>
+						 (fStuff->MuonRecTracksIndex[i],fStuff->MuonRecTracksIndex[j]));
+	  }
+	}
+
+	    
+	if ( type == 2 ) {
+	      
+	  if ((*fStuff->MuonRecTracks[j]).pt() > (*fStuff->MuonRecTracks[i]).pt() ) { 
+	    fStuff->JpsiPairTracks.push_back(pair<const reco::Track*, const reco::Track*>
+					     (fStuff->MuonRecTracks[j],fStuff->MuonRecTracks[i]));
+	    fStuff->JpsiPairTracksIndex.push_back(pair<int, int>
+						  (fStuff->MuonRecTracksIndex[j],fStuff->MuonRecTracksIndex[i]));
+	  } else {
+	    fStuff->JpsiPairTracks.push_back(pair<const reco::Track*, const reco::Track*>
+					     (fStuff->MuonRecTracks[i],fStuff->MuonRecTracks[j]));
+	    fStuff->JpsiPairTracksIndex.push_back(pair<int, int>
+						  (fStuff->MuonRecTracksIndex[i],fStuff->MuonRecTracksIndex[j]));
+	  }
+	}
+      }
+    }
+  }
+}
+
+
+// ----------------------------------------------------------------------
+void Bs2MuMu::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup, double cone) { 
+   
+  const reco::Track* tt = 0;
+
+  fStuff->KaonTrack.push_back(tt);
+  fStuff->KaonTrackIndex.push_back(-1);
+
+  int index(0);
+  double chi2_min(99999.), chi2(-1.);
+
+  if ( fStuff->JpsiPairTracks.size() > 0 ) {
+
+    for ( unsigned int i=0; i<fStuff->JpsiPairTracks.size(); i++ ) { 
+
+      fStuff->RecTracks.clear();
+
+      fStuff->RecTracks.push_back(fStuff->JpsiPairTracks[i].first);
+      fStuff->RecTracks.push_back(fStuff->JpsiPairTracks[i].second);  
+
+      fStuff->RecTracksIndex.push_back(fStuff->JpsiPairTracksIndex[i].first);
+      fStuff->RecTracksIndex.push_back(fStuff->JpsiPairTracksIndex[i].second);  
+
+      // ------------------------------------------------------------------------
+      // -- Find kaon for given muon pair
+      index = 0;
+      for (TrackCollection::const_iterator it = (*fStuff->theTkCollection).begin(); 
+	   it != (*fStuff->theTkCollection).end(); 
+	   ++it){
+	
+	if (index == fStuff->RecTracksIndex[0]) { continue; }
+	if (index == fStuff->RecTracksIndex[1]) { continue; }
+	
+	tt = &(*it);
+	
+	fStuff->RecTracks.push_back(tt);
+	fStuff->RecTracksIndex.push_back(index);
+     
+	chi2 =  rmmKaonCand(iEvent, iSetup, cone);   //  < ------- here
+
+	fStuff->RecTracks.pop_back();
+	fStuff->RecTracksIndex.pop_back();
+	
+	if (chi2 > 0 && chi2 < chi2_min) {
+
+	  chi2_min  = chi2;
+
+	  fStuff->KaonTrack.pop_back();
+	  fStuff->KaonTrackIndex.pop_back();
+
+	  fStuff->KaonTrack.push_back(tt);
+	  fStuff->KaonTrackIndex.push_back(index);
+	}
+
+	index++;	
+      }
+
+      // ------------------------------------------------------------------------
+    }
+  }
+}
+// ----------------------------------------------------------------------
+int Bs2MuMu::massMuonCand(const edm::Event &iEvent, const edm::EventSetup& iSetup, double m_cand1, double m_cand2) {  
+
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>massMuonCand> Looking for two muons in mass-windows around "
+		     << m_cand1 << " and " << m_cand2 << ", event: " << fNevt << endl;
+
+  TLorentzVector m0, m1, cand; 
+  double mass(-1.);
+  double dmass(0.2);
+  
+  m0.SetXYZM((*fStuff->RecTracks[0]).px(),
+	     (*fStuff->RecTracks[0]).py(),
+	     (*fStuff->RecTracks[0]).pz(),
+	     0.1056583);
+      
+  m1.SetXYZM((*fStuff->RecTracks[1]).px(),
+	     (*fStuff->RecTracks[1]).py(),
+	     (*fStuff->RecTracks[1]).pz(),
+	     0.1056583);
+    
+  cand  = m0 + m1;
+  mass  = cand.M();
+
+  if ( mass > (m_cand1 - dmass)  && mass < (m_cand1 + dmass) &&
+       fStuff->RecTracks[0]->charge() != fStuff->RecTracks[1]->charge() ) { 
+
+
+    if (fVerbose) cout << endl << "==>massCandidate> : Found B candidates with muons \t #"
+		       << fStuff->RecTracksIndex[0] << " \t #" <<  fStuff->RecTracksIndex[1]
+		       << "\t --->  Inv. Mass: "  << mass
+		       << "( q1 = " << fStuff->RecTracks[0]->charge()
+		       << ", q2 = " << fStuff->RecTracks[1]->charge()
+		       << ")" << endl;
+    return 1;
+	  
+  } else if ( mass > (m_cand2 - dmass)  && mass < (m_cand2 + dmass) &&
+	      fStuff->RecTracks[0]->charge() != fStuff->RecTracks[1]->charge() ) { 
+
+    if (fVerbose) cout << endl << "==>massCandidate> : Found J/Psi candidates with muons \t #"
+		       << fStuff->RecTracksIndex[0] << " \t #" <<  fStuff->RecTracksIndex[1]
+		       << "\t --->  Inv. Mass: "  << mass
+		       << "( q1 = " << fStuff->RecTracks[0]->charge()
+		       << ", q2 = " << fStuff->RecTracks[1]->charge()
+		       << ")" << endl;
+    return 2;
+
+  } else {
+
+    return -1;
+  }
+}
+
+
+// ----------------------------------------------------------------------
+double Bs2MuMu::rmmKaonCand(const edm::Event &iEvent, const edm::EventSetup& iSetup, double cone) {  
+
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>rmmKaonCand> Looking for kaon in cone of "
+		     << cone << " around J/Psi, event: " << fNevt << endl;
+
+  TransientVertex *v = 0;
+  kalmanVertexFit(iEvent, iSetup, v, 0, 3);  //  Vertex TYPE = 0, B+ -> mu mu K (all K-candidates)
+
+  std::vector<reco::TransientTrack> refTT = v->refittedTracks();
+  std::vector<reco::Track> refitted;
+
+  for(vector<reco::TransientTrack>::const_iterator i = refTT.begin(); 
+      i != refTT.end(); i++) {
+
+    const Track & ftt = i->track();
+    refitted.push_back(ftt);
+  }
+  
+  TLorentzVector m0, m1, kp;
+  TLorentzVector jpsi, bs;
+
+  
+  fEff->Fill(31.1);
+  
+  m0.SetXYZM(refitted[0].px(),
+	     refitted[0].py(),
+	     refitted[0].pz(),
+	     0.1056583);
+  
+  m1.SetXYZM(refitted[1].px(),
+	     refitted[1].py(),
+	     refitted[1].pz(),
+	     0.1056583);
+  
+  kp.SetXYZM(refitted[2].px(),
+	     refitted[2].py(),
+	     refitted[2].pz(),
+	     0.493677);
+  
+  jpsi = m0 + m1;
+  bs   = m0 + m1 + kp;
+  
+  TVector3 jpsi_plab = jpsi.Vect();
+  TVector3 kp_plab   = kp.Vect();
+  
+  ChiSquared chi(v->totalChiSquared(), v->degreesOfFreedom());  
+  
+  double dphi = jpsi_plab.DeltaPhi(kp_plab);
+  double deta = kp_plab.Eta() - jpsi_plab.Eta();
+  double dr   = TMath::Sqrt(dphi*dphi + deta*deta);
+  
+  if ( dr < cone ) {
+    
+    if (fVerbose) cout << "==>rmmKaonCand> Found kaon candidate, corresponding to track #" 
+		       << fStuff->RecTracksIndex[2] 	   << " with dr = " << dr << ", Bs mass " 
+		       << bs.M() << " and chi2 " << chi.value() << endl;
+    
+    
+    fK100->Fill(chi.value(), bs.M());
+    return chi.value();
+    
+  }
+  else {
+    
+    if (fVerbose) cout << "==>rmmKaonCand> !!! Kaon candidate rejected, ouside cone:  dr = " << dr
+		       << ", Bs mass " << bs.M() << " and chi2 " << chi.value() << " !!!" <<endl;
+
+    return -1.;
   }
 }
 
 // ----------------------------------------------------------------------
 void Bs2MuMu::trimBmmTracks(const edm::Event &iEvent) {  
 
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>trimBmmTracks> Trimming bmm-track vector of size " << fStuff->BmmRecTracks.size() 
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>trimBmmTracks> Trimming global muon vector of size " << fStuff->MuonRecTracks.size() 
        << ", event: " << fNevt << endl;
 
   TAnaTrack *pTrack;
@@ -1251,10 +1307,10 @@ void Bs2MuMu::trimBmmTracks(const edm::Event &iEvent) {
   // -- get the two highest-pT muons 
   int m0(-1), m1(-1);
   double ptMu(0.), pT0(0.), pT1(0.);
-  for (unsigned int i = 0; i < fStuff->BmmRecTracks.size(); ++i) {
+  for (unsigned int i = 0; i < fStuff->MuonRecTracks.size(); ++i) {
     
-    ptMu = (*fStuff->BmmRecTracks[i]).pt();
-    cout << "  " << i << " with pT = " << ptMu << endl;
+    ptMu = (*fStuff->MuonRecTracks[i]).pt();
+    if (fVerbose) cout << "  " << i << " with pT = " << ptMu << endl;
     if (ptMu > pT0) {
       if (m0 > -1) {
  	m1 = m0;
@@ -1275,65 +1331,60 @@ void Bs2MuMu::trimBmmTracks(const edm::Event &iEvent) {
   if ((m0 > -1) && (m1 > -1)) {
     
     // -- RecTrack vector
-    const reco::Track* tM0 = fStuff->BmmRecTracks[m0];
-    const reco::Track* tM1 = fStuff->BmmRecTracks[m1];
+    const reco::Track* tM0 = fStuff->MuonRecTracks[m0];
+    const reco::Track* tM1 = fStuff->MuonRecTracks[m1];
     
-    fStuff->BmmRecTracks.clear();
+    fStuff->RecTracks.clear();
     
-    fStuff->BmmRecTracks.push_back(tM0);
-    fStuff->BmmRecTracks.push_back(tM1);
+    fStuff->RecTracks.push_back(tM0);
+    fStuff->RecTracks.push_back(tM1);
     
     // -- Index into bmm-track vector 
-    m0 = fStuff->BmmRecTracksIndex[m0];
-    m1 = fStuff->BmmRecTracksIndex[m1];
+    m0 = fStuff->MuonRecTracksIndex[m0];
+    m1 = fStuff->MuonRecTracksIndex[m1];
     
-    fStuff->BmmRecTracksIndex.clear();
+    fStuff->RecTracksIndex.clear();
     
-    fStuff->BmmRecTracksIndex.push_back(m0);
-    fStuff->BmmRecTracksIndex.push_back(m1);
-    
-    //    fSel = 1;
-    
-    for (unsigned int i = 0; i < fStuff->BmmRecTracks.size(); ++i) {
+    fStuff->RecTracksIndex.push_back(m0);
+    fStuff->RecTracksIndex.push_back(m1);
+
+    for (unsigned int i = 0; i < fStuff->RecTracks.size(); ++i) {
 
 
       // -- Add to signal tracks block in ntuple
-      reco::Track tt(*fStuff->BmmRecTracks[i]);
-      cout << "==>trimBmmTracks>  Adding to signal tracks, track # " << fStuff->BmmRecTracksIndex[i]
- 	   << " (index in RecTracks), pT = " << tt.pt()
- 	   << endl;
+      reco::Track tt(*fStuff->RecTracks[i]);
+
+      if (fVerbose) cout << "==>trimBmmTracks>  Adding to signal tracks, track # " << fStuff->RecTracksIndex[i]
+			 << " (index in RecTracks), pT = " << tt.pt()
+			 << endl;
 
       pTrack = fEvent->addSigTrack();
-      pTrack->fIndex = fStuff->BmmRecTracksIndex[i];
+      pTrack->fIndex = fStuff->RecTracksIndex[i];
 
-      fillTrack(iEvent, pTrack, &tt, fStuff->BmmRecTracksIndex[i], 1);
+      fillTrack(iEvent, pTrack, &tt, fStuff->RecTracksIndex[i], 1);
     }
-
-    //    fNrec++;
 
   } else {
-    cout << "========> Not enough tracks for signal block" << endl;  
+
+    if (fVerbose) cout << "========> Not enough tracks for signal block" << endl;  
       
-    for (unsigned int i = 0; i < fStuff->BmmRecTracks.size(); ++i) {
+    for (unsigned int i = 0; i < fStuff->RecTracks.size(); ++i) {
 
-      const reco::Track tt(*fStuff->BmmRecTracks[i]);
+      const reco::Track tt(*fStuff->RecTracks[i]);
 
-      cout << " NOT added to signal tracks, track #" << fStuff->BmmRecTracksIndex[i]
- 	   << " (index in RecTracks), pT = " << tt.pt()
- 	   << endl;
+      if (fVerbose) cout << " NOT added to signal tracks, track #" << fStuff->RecTracksIndex[i]
+			 << " (index in RecTracks), pT = " << tt.pt()
+			 << endl;
     }
-
-    //    fSel = 0;
   }
 }
 
 
 // ----------------------------------------------------------------------
-int Bs2MuMu::primaryVertex(const edm::Event &iEvent) {  
+int Bs2MuMu::primaryVertex(const edm::Event &iEvent) {
 
-
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>primaryVertex> List of primary vertices, event: " << fNevt << endl;
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>primaryVertex> List of primary vertices, event: " << fNevt << endl;
 
   int nvtx(0);
   const reco::Vertex* pV = 0;
@@ -1359,7 +1410,7 @@ int Bs2MuMu::primaryVertex(const edm::Event &iEvent) {
     
   }
 
-  cout << endl << "====> Primary Vertices from CTF Tracks: " << nvtx << " vertices found." << endl;
+  if (fVerbose) cout << endl << "====> Primary Vertices from CTF Tracks: " << nvtx << " vertices found." << endl;
 
   if ( nvtx < 9 )  { fEff->Fill(20.1 + nvtx); } else { fEff->Fill(29.1); }
 
@@ -1387,13 +1438,60 @@ int Bs2MuMu::primaryVertex(const edm::Event &iEvent) {
   return nvtx;
 }
 
+// ----------------------------------------------------------------------
+void Bs2MuMu::secondaryVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup) { 
+  
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>secondaryVertex> Fitting secondary vertices, event: " << fNevt << endl;
+
+  if (fVerbose) cout << "==>secondaryVertex> " << fStuff->BmmPairTracks.size() << " Bs -> mu+ mu- pair(s) " << endl; 
+  if (fVerbose) cout << "==>secondaryVertex> " << fStuff->JpsiPairTracks.size() << " J/Psi -> mu+ mu- pair(s) " << endl;
+  if (fVerbose) cout << "==>secondaryVertex> " << fStuff->KaonTrack.size() << " Kaon(s) for B+ -> J/Psi K+ " << endl; 
+
+  TransientVertex *v = 0;
+  if ( fStuff->BmmPairTracks.size() > 0 ) {
+    
+    for ( unsigned int i=0; i<fStuff->BmmPairTracks.size(); i++ ) { 
+      
+      fStuff->RecTracks.clear();
+
+      fStuff->RecTracks.push_back(fStuff->BmmPairTracks[i].first);
+      fStuff->RecTracks.push_back(fStuff->BmmPairTracks[i].second);
+
+      kalmanVertexFit(iEvent, iSetup, v, 1, 2);  // Vertex TYPE = 1  ( -> mu mu or BG from B), 2 TRACKS => Cand 1
+    }
+  }
+ 
+  if ( fStuff->JpsiPairTracks.size() > 0 ) {
+    
+    for ( unsigned int i=0; i<fStuff->JpsiPairTracks.size(); i++ ) { 
+      
+      if ( fStuff->KaonTrackIndex[i] > 0 ) {
+
+	fStuff->RecTracks.clear();
+	
+	fStuff->RecTracks.push_back(fStuff->JpsiPairTracks[i].first);
+	fStuff->RecTracks.push_back(fStuff->JpsiPairTracks[i].second);
+	
+	kalmanVertexFit(iEvent, iSetup, v, 2, 2);  // Vertex TYPE = 2 (-> mu mu from J/Psi), 2 TRACKS => Cand 2
+	
+
+	fStuff->RecTracks.push_back(fStuff->KaonTrack[i]);
+	
+	kalmanVertexFit(iEvent, iSetup, v, 3, 3);  // Vertex TYPE = 3  ( -> mu mu K ), 3 TRACKS => Cand 3
+      }
+    }
+  }
+}
+
 
 // ----------------------------------------------------------------------
-void Bs2MuMu::bmmVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup, int type, unsigned int ntracks) {
+void Bs2MuMu::kalmanVertexFit(const edm::Event &iEvent, const edm::EventSetup& iSetup
+			, TransientVertex *vtx, int type, unsigned int ntracks) {
 
 
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>bmmVertex> Starting with secondary vertex, event: " << fNevt << endl;
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>kalmanVertexFit> Starting with secondary vertex, event: " << fNevt << endl;
 
   // -- MC truth vertices
 //   Handle<SimVertexContainer> simVertexCollection;
@@ -1408,32 +1506,33 @@ void Bs2MuMu::bmmVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup,
   edm::ESHandle<TransientTrackBuilder> theB;
   iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",theB);
 
-  cout << "==>bmmVertex> Vertexing with " << fStuff->BmmRecTracks.size() << " reco. tracks." << endl;
+  if (fVerbose) cout << "==>kalmanVertexFit> Vertexing with " << fStuff->RecTracks.size() << " reco. tracks." << endl;
    
   //get transient track 
-  for ( unsigned int i=0; i<fStuff->BmmRecTracks.size(); i++ ) { 
+  for ( unsigned int i=0; i<fStuff->RecTracks.size(); i++ ) { 
 
-    RecoTransientTrack.push_back( (theB->build( &(*fStuff->BmmRecTracks[i]) )) );
+    RecoTransientTrack.push_back( (theB->build( &(*fStuff->RecTracks[i]) )) );
   }
 
   //get secondary vertex 
-  cout << "==>bmmVertex> Vertexing with " << RecoTransientTrack.size() << " trans. tracks " << endl;
+  if (fVerbose) cout << "==>kalmanVertexFit> Vertexing with " << RecoTransientTrack.size() << " trans. tracks " << endl;
   KalmanVertexFitter theFitter(true);
   
-  cout << "==>bmmVertex> Starting fitter TransSecVtx" << endl;
+  if (fVerbose) cout << "==>kalmanVertexFit> Starting fitter TransSecVtx" << endl;
 
   // -- Does not work for CMSSW_1_2_0
   TransientVertex TransSecVtx = theFitter.vertex(RecoTransientTrack); 
+  vtx = &TransSecVtx;
   
   if ( TransSecVtx.isValid() ) {
-    cout << "==>bmmVertex> KVF successful!" << endl; 
+    cout << "==>kalmanVertexFit> KVF successful!" << endl; 
   } else {
-    cout << "==>bmmVertex> KVF failed!" << endl;
-    cout << "==>bmmVertex> Aborting... !" << endl;
+    cout << "==>kalmanVertexFit> KVF failed!" << endl;
+    cout << "==>kalmanVertexFit> Aborting... !" << endl;
     return;
   }
 
-  cout << "==>bmmVertex> Filling vector SecVtx" << endl;
+  if (fVerbose) cout << "==>kalmanVertexFit> Filling vector SecVtx" << endl;
   
   TVector3 SecVtx; 
 
@@ -1444,17 +1543,9 @@ void Bs2MuMu::bmmVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup,
   printf ("RECO SecVtx (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", SecVtx.X(), SecVtx.Y(), SecVtx.Z());
 
   ChiSquared chi(TransSecVtx.totalChiSquared(), TransSecVtx.degreesOfFreedom());
-  cout << "Chi2 of SecVtx-Fit: " << chi.value() << endl;
+  if (fVerbose) cout << "Chi2 of SecVtx-Fit: " << chi.value() << endl;
 
-  if ( type ) {
-
-    fStuff->secondaryVertex = SecVtx;
-    fillVertex(iEvent, iSetup, &TransSecVtx, type, ntracks);
-  } 
-  else { 
-
-    kaonDeltaR(iEvent, &TransSecVtx, type, ntracks);
-  }
+  fillVertex(iEvent, iSetup, &TransSecVtx, type, ntracks);
 }
 
 
@@ -1462,8 +1553,8 @@ void Bs2MuMu::bmmVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup,
 void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track *it, int idx, int verb) {
 
   if ( verb == 1 ) {
-    cout << "----------------------------------------------------------------------" << endl;
-    cout << "==>fillTrack> Filling track #" << idx << ", event: " << fNevt << endl;
+    if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+    if (fVerbose) cout << "==>fillTrack> Filling track #" << idx << ", event: " << fNevt << endl;
   }
 
   // -- get the collection of RecoTracks 
@@ -1560,7 +1651,7 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
 
     if ( (index > 0) && (verb == 1) ) {
       
-      cout << "--> Track #" << idx 
+      if (fVerbose) cout << "--> Track #" << idx 
 	   << " (pT = " << it->pt()
 	   << ", eta = " << it->eta() << ", " << it->charge() << ")"
 	   << " matched to Gen. Part. #" << index 
@@ -1570,13 +1661,13 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
     }
     else if (verb == 1) {
       
-      cout << "\t%%> no match in gen. block for sim. particle #" << tpr.index() << endl;
+      if (fVerbose) cout << "\t%%> no match in gen. block for sim. particle #" << tpr.index() << endl;
     }
   } catch (Exception event) {
 
     if (verb == 1) {
 
-      cout << "%%>   Rec. Track #" << setw(2) << track.index() << " pT: " 
+      if (fVerbose) cout << "%%>   Rec. Track #" << setw(2) << track.index() << " pT: " 
 	   << setprecision(2) << setw(6) << track->pt() 
 	   <<  " matched to 0 MC Tracks" << endl;
     }
@@ -1612,7 +1703,7 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
       pTrack->fMuID = 1.0;
 
       if (verb == 1) {
-	cout << " --> Track #" << idx 
+	if (fVerbose) cout << " --> Track #" << idx 
 	     << " (pT = " << it->pt()
 	     << ", eta = " << it->eta() << ", " << it->charge() << ")"
 	     << " matched to Global Muon #" << mcnt
@@ -1655,8 +1746,8 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
   //      = 2: J/Psi->mu mu
   //      = 3: B->mu mu K
 
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>fillVertex> Filling vertex, event: " << fNevt << endl;
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>fillVertex> Filling vertex, event: " << fNevt << endl;
   
   using namespace edm;
   using namespace reco;
@@ -1671,7 +1762,7 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
       i != refTT.end(); i++) {
 
     const Track & ftt = i->track();
-    // cout << "mmmmmmm : " << ftt->innermomentum() << endl;
+    // if (fVerbose) cout << "mmmmmmm : " << ftt->innermomentum() << endl;
     refitted.push_back(ftt);
   }
 
@@ -1695,7 +1786,7 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
 
     if ( ntracks == 2 ) {
       
-      cout << "--- Vertex with number of refitted tracks: " << refitted.size() << " ---" << endl;
+      if (fVerbose) cout << "--- Vertex with number of refitted tracks: " << refitted.size() << " ---" << endl;
       
       m0.SetXYZM(refitted[0].px(),
 		 refitted[0].py(),
@@ -1712,11 +1803,11 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
       double mass(0.);
       mass = bs.M();
       if ( mass ) {
-	cout << "fillVertex> Inv. Mass = " << mass << endl;
+	if (fVerbose) cout << "fillVertex> Inv. Mass = " << mass << endl;
 	fM100->Fill(mass);
       }
       else {
-	cout << "fillVertex> no mass" << endl;
+	if (fVerbose) cout << "fillVertex> no mass" << endl;
       }
 
       i1 = fEvent->getSigTrack(0)->fIndex;
@@ -1725,7 +1816,7 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
       
     if ( ntracks == 3 ) {
       
-      cout << "--- Vertex with number of refitted tracks: " << refitted.size() << " ---" << endl;
+      if (fVerbose) cout << "--- Vertex with number of refitted tracks: " << refitted.size() << " ---" << endl;
       
       m0.SetXYZM(refitted[0].px(),
 		 refitted[0].py(),
@@ -1748,11 +1839,11 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
       double mass(0.);
       mass = bs.M();
       if ( mass ) {
-	cout << "fillVertex> Inv. Mass = " << mass << endl;
+	if (fVerbose) cout << "fillVertex> Inv. Mass = " << mass << endl;
 	fM200->Fill(mass);
       }
       else {
-	cout << "fillVertex> no mass" << endl;
+	if (fVerbose) cout << "fillVertex> no mass" << endl;
       }
 
       i1 = fEvent->getSigTrack(0)->fIndex;
@@ -1761,14 +1852,14 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
     }
   } else if ( original.size() == ntracks ) {
 
-    cout << "--- Not enough refitted tracks for this Vertex: " << refitted.size()  << " ---" << endl;
-    cout << "--- Use original tracks instead ---" << endl;
+    if (fVerbose) cout << "--- Not enough refitted tracks for this Vertex: " << refitted.size()  << " ---" << endl;
+    if (fVerbose) cout << "--- Use original tracks instead ---" << endl;
     
     fEff->Fill(32.1);
 
     if ( ntracks == 2 ) {
       
-      cout << "--- Vertex with number of original tracks: " << original.size() << " ---" << endl;
+      if (fVerbose) cout << "--- Vertex with number of original tracks: " << original.size() << " ---" << endl;
       
       m0.SetXYZM(original[0].px(),
 		 original[0].py(),
@@ -1785,11 +1876,11 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
       double mass(0.);
       mass = bs.M();
       if ( mass ) {
-	cout << "fillVertex> Inv. Mass = " << mass << endl;
+	if (fVerbose) cout << "fillVertex> Inv. Mass = " << mass << endl;
 	fM100->Fill(mass);
       }
       else {
-	cout << "fillVertex> no mass" << endl;
+	if (fVerbose) cout << "fillVertex> no mass" << endl;
       }
       
       i1 = fEvent->getSigTrack(0)->fIndex;
@@ -1798,7 +1889,7 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
       
     if ( ntracks == 3 ) {
       
-      cout << "--- Vertex with number of original tracks: " << original.size() << " ---" << endl;
+      if (fVerbose) cout << "--- Vertex with number of original tracks: " << original.size() << " ---" << endl;
       
       m0.SetXYZM(original[0].px(),
 		 original[0].py(),
@@ -1820,11 +1911,11 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
       double mass(0.);
       mass = bs.M();
       if ( mass ) {
-	cout << "fillVertex> Inv. Mass = " << mass << endl;
+	if (fVerbose) cout << "fillVertex> Inv. Mass = " << mass << endl;
 	fM200->Fill(mass);
       }
       else {
-	cout << "fillVertex> no mass" << endl;
+	if (fVerbose) cout << "fillVertex> no mass" << endl;
       }
       
       i1 = fEvent->getSigTrack(0)->fIndex;
@@ -1833,7 +1924,7 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
     }
   } else {
       fEff->Fill(33.1);
-      cout << "!!! Not enough tracks for this Vertex: " << refitted.size() 
+      if (fVerbose) cout << "!!! Not enough tracks for this Vertex: " << refitted.size() 
 	   << " refitted and " << original.size() << "original tracks !!!" << endl;
   }
   
@@ -1880,10 +1971,10 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
   
   pCand->fVtx  = *pVtx;
 
-  cout << "   KVF Vertex/cand of type " << type << " points to signal tracks: " << i1 << " and " << i2 << endl;
-  cout << "      mass: " << pCand->fMass << endl;
-  cout << "      PVF xy: " << dXY << " +/- " << dXYE << "   comp: " << compXY << endl;
-  cout << "      PVF 3d: " << d3d << " +/- " << d3dE << "   comp: " << comp3d << endl;
+  if (fVerbose) cout << "   KVF Vertex/cand of type " << type << " points to signal tracks: " << i1 << " and " << i2 << endl;
+  if (fVerbose) cout << "      mass: " << pCand->fMass << endl;
+  if (fVerbose) cout << "      PVF xy: " << dXY << " +/- " << dXYE << "   comp: " << compXY << endl;
+  if (fVerbose) cout << "      PVF 3d: " << d3d << " +/- " << d3dE << "   comp: " << comp3d << endl;
 
 
   // -----------------------------------------------------------------------------------
@@ -1934,7 +2025,7 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
 //**       double zmiss = simPos.Z() - recoPos.Z();
 //**       double rmiss = sqrt(xmiss*xmiss+ymiss*ymiss+zmiss*zmiss);
 
-//**       cout << " Qual. = " << qual
+//**       if (fVerbose) cout << " Qual. = " << qual
 //** 	   << " xmiss = " << xmiss
 //** 	   << " ymiss = " << ymiss
 //** 	   << " zmiss = " << zmiss
@@ -1955,278 +2046,13 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
 // 			   );
 //   }
 
-//   cout << "      sim position: pos  = " 
+//   if (fVerbose) cout << "      sim position: pos  = " 
 //        << " " << pVtx->fSimPoint.X()
 //        << " " << pVtx->fSimPoint.Y()
 //        << " " << pVtx->fSimPoint.Z()
 //        << endl;//
 //
 
-}
-// ----------------------------------------------------------------------
-int Bs2MuMu::jpsiCandidate(const edm::Event &iEvent) {  
-
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>jpsiCandidate> Looking for two muons in J/Psi-mass-window, event: " << fNevt << endl;
-
-  TLorentzVector m0, m1, jpsi; 
-  int i0(-1), i1(-1);
-  double mJpsi(-1.); //double dmJpsi(9999.);
-  int done(0);
-  
-  for (unsigned int i = 0; i < fStuff->BmmRecTracks.size(); ++i) {
-      
-    m0.SetXYZM((*fStuff->BmmRecTracks[i]).px(),
-	       (*fStuff->BmmRecTracks[i]).py(),
-	       (*fStuff->BmmRecTracks[i]).pz(),
-	       0.1056583);
-
-    for (unsigned int j = 0; j < fStuff->BmmRecTracks.size(); ++j) {
-      
-      if ( i == j ) { continue; }
-      
-      m1.SetXYZM((*fStuff->BmmRecTracks[j]).px(),
-		 (*fStuff->BmmRecTracks[j]).py(),
-		 (*fStuff->BmmRecTracks[j]).pz(),
-		 0.1056583);
-    
-      jpsi = m0 + m1;
-      mJpsi = jpsi.M();
-
-      if ( mJpsi > 2.9 && mJpsi < 3.2 ) { 
-
-	if ( fStuff->BmmRecTracks[i]->charge() != fStuff->BmmRecTracks[j]->charge() ) {
-
-	  //	if ( abs(5.29 - mJpsi) < dmJpsi ) {	  
-	  //	  dmJpsi = abs(5.29 - mJpsi);
-
-	  i0 = i;
-	  i1 = j;	
-	  
-	  cout << endl << "==>jpsiCandidate> : Found J/Psi candidates with muons \t #"
-	       <<  fStuff->BmmRecTracksIndex[i0] << " \t #" <<  fStuff->BmmRecTracksIndex[i1]
-	       << "\t --->  Inv. Mass: "  << mJpsi
-	       << "( q1 = " << fStuff->BmmRecTracks[i0]->charge()
-	       << ", q2 = " << fStuff->BmmRecTracks[i1]->charge()
-	       << ")" << endl;
-
-	  done = 1;
-	  
-	}
-      }
-
-      if ( done ) { break; }
-    }
-
-    if ( done ) { break; }
-  }
-
-  if ((i0 > -1) && (i1 > -1)) {
-    
-    // -- RecTrack vector
-    const reco::Track* tM0 = fStuff->BmmRecTracks[i0];
-    const reco::Track* tM1 = fStuff->BmmRecTracks[i1];
-    
-    fStuff->BmmRecTracks.clear();
-    
-    fStuff->BmmRecTracks.push_back(tM0);
-    fStuff->BmmRecTracks.push_back(tM1);
-    
-    // -- Index into bmm-track vector 
-    i0 = fStuff->BmmRecTracksIndex[i0];
-    i1 = fStuff->BmmRecTracksIndex[i1];
-    
-    fStuff->BmmRecTracksIndex.clear();
-    
-    fStuff->BmmRecTracksIndex.push_back(i0);
-    fStuff->BmmRecTracksIndex.push_back(i1);
-
-    return 1;
-  
-  } else {
-    return 0;
-  }
-}
-
-
-// ----------------------------------------------------------------------
-int Bs2MuMu::kaonCandidate(const edm::Event &iEvent, const edm::EventSetup& iSetup) {
-
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>kaonCandidate> Checking all tracks as potential kaon candidates, event: " << fNevt << endl;
-
-  const reco::Track* tt = 0;
-
-  int index(0);
-  for (TrackCollection::const_iterator it = (*fStuff->theTkCollection).begin(); 
-       it != (*fStuff->theTkCollection).end(); 
-       ++it){
-    
-    if (index == fStuff->BmmRecTracksIndex[0]) { continue; }
-    if (index == fStuff->BmmRecTracksIndex[1]) { continue; }
-
-    tt = &(*it);
-
-    fStuff->BmmRecTracks.push_back(tt);
-    fStuff->BmmRecTracksIndex.push_back(index);
-
-    bmmVertex(iEvent, iSetup, 0, 3);  //  Vertex TYPE = 0, B+ -> mu mu K with kaonDeltaR() 
-                                      //   = list of candidates and filling in all vertices (with TYPE = 0)
-    fStuff->BmmRecTracks.pop_back();
-    fStuff->BmmRecTracksIndex.pop_back();
-    index++;
-  }
-
-	
-  double chi_min(99999.);
-  int id(-1);
-  for (unsigned int i = 0; i < fCand->SecVtxChi2.size(); ++i) {
-    
-    if ( fCand->SecVtxChi2[i] < chi_min ) {
-      
-      id = i;
-      chi_min = fCand->SecVtxChi2[i];
-    }
-   }
-  
-  if ( fCand->BmmRecTracks.size() > 0 ) {
-    cout << "======================================================================" << endl;
-    cout << "==>kaonCandidate> Selected kaon candidate : Candidate #" << id 
- 	 << " which corresponds to track #" << fCand->BmmRecTracksIndex[id] << endl;
-    cout << " Inv. Mass m = " << fCand->InvMass[id] << " and Chi2 = " << fCand->SecVtxChi2[id] << endl;
-    cout << "======================================================================" << endl;
-    
-    fK200->Fill( fCand->SecVtxChi2[id], fCand->InvMass[id] );
-    
-    return id;
-  
-  } else {
-    return -1;
-  }	
-}
-
-
-// ----------------------------------------------------------------------
-void Bs2MuMu::kaonDeltaR(const edm::Event &iEvent, TransientVertex *v, int type, unsigned int ntracks) {
-
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>kaonDeltaR> Calculating deltaR of kaon candidate, event: " << fNevt << endl;
-
-  std::vector<reco::TransientTrack> refTT = v->refittedTracks();
-  std::vector<reco::Track> refitted;
-
-  for(vector<reco::TransientTrack>::const_iterator i = refTT.begin(); 
-      i != refTT.end(); i++) {
-
-    const Track & ftt = i->track();
-    refitted.push_back(ftt);
-  }
-  
-  TLorentzVector m0, m1, kp;
-  TLorentzVector jpsi, bs;
-
-  fEff->Fill(30.1);
-
-  if ( refitted.size() == ntracks ) {
-
-    fEff->Fill(31.1);
-
-    m0.SetXYZM(refitted[0].px(),
-	       refitted[0].py(),
-	       refitted[0].pz(),
-	       0.1056583);
-    
-    m1.SetXYZM(refitted[1].px(),
-	       refitted[1].py(),
-	       refitted[1].pz(),
-	       0.1056583);
-    
-    kp.SetXYZM(refitted[2].px(),
-	       refitted[2].py(),
-	       refitted[2].pz(),
-	       0.493677);
-
-    jpsi = m0 + m1;
-    bs   = m0 + m1 + kp;
-
-    TVector3 jpsi_plab = jpsi.Vect();
-    TVector3 kp_plab   = kp.Vect();
-    
-    ChiSquared chi(v->totalChiSquared(), v->degreesOfFreedom());  
-    
-    int i1 = fStuff->BmmRecTracksIndex[0];
-    int i2 = fStuff->BmmRecTracksIndex[2];
-
-    // -- Adding vertex to ntuple ...
-    TAnaVertex *pVtx = new TAnaVertex();
-    
-    //    pVtx->setInfo(chi2.value(), chi2.degreesOfFreedom(), chi2.probability(), 0, 2); ??? change ndof to double ???
-    pVtx->setInfo(chi.value(), int(chi.degreesOfFreedom()), chi.probability(), 1, type);
-    pVtx->fPoint.SetXYZ(v->position().x(), v->position().y(), v->position().z());
-    
-    pVtx->addTrack(i1);
-    pVtx->addTrack(i2);
-    
-    VertexDistanceXY axy;
-    double dXY      = axy.distance(fStuff->primaryVertex2, *v).value();
-    double dXYE     = axy.distance(fStuff->primaryVertex2, *v).error();
-    double compXY   = axy.compatibility(fStuff->primaryVertex2, *v);
-    
-    VertexDistance3D a3d;
-    double d3d      = a3d.distance(fStuff->primaryVertex2, *v).value();
-    double d3dE     = a3d.distance(fStuff->primaryVertex2, *v).error();
-    double comp3d   = a3d.compatibility(fStuff->primaryVertex2, *v);
-    
-    pVtx->fDxy  = dXY; 
-    pVtx->fDxyE = dXYE; 
-    pVtx->fCxy  = compXY; 
-    
-    pVtx->fD3d  = d3d; 
-    pVtx->fD3dE = d3dE; 
-    pVtx->fC3d  = comp3d; 
-  
-
-    // -- Adding Candidate to ntuple...
-    TAnaCand  *pCand = fEvent->addCand();
-    
-    pCand->fPlab =  bs.Vect();
-    pCand->fMass = bs.M();
-    
-    pCand->fSig1 = i1;  
-    pCand->fSig2 = i2;  
-    pCand->fType = type;
-    
-    pCand->fVtx  = *pVtx;
-    
-    
-    double dphi = jpsi_plab.DeltaPhi(kp_plab);
-    double deta = kp_plab.Eta() - jpsi_plab.Eta();
-    double dr   = TMath::Sqrt(dphi*dphi + deta*deta);
-
-    if ( dr < 1.5 ) {
-      cout << "==>kaonDeltaR> Adding kaon candidate #" << fCand->SecVtxChi2.size()+1 
-	   <<", corresponding to track #" << fStuff->BmmRecTracksIndex[2] 
-	   << " with dr = " << dr << ", Bs mass " << bs.M() << " and chi2 " << chi.value() << endl;
-      
-      fCand->InvMass.push_back(bs.M());
-      fCand->SecVtxChi2.push_back(chi.value());
-
-      fCand->BmmRecTracks.push_back(fStuff->BmmRecTracks[2]);
-      fCand->BmmRecTracksIndex.push_back(fStuff->BmmRecTracksIndex[2]);
-
-      fK100->Fill(chi.value(), bs.M());
-
-    }
-    else {
-      cout << "==>kaonDeltaR> !!! Kaon candidate rejected, ouside cone:  dr = " << dr
-	   << ", Bs mass " << bs.M() << " and chi2 " << chi.value() << " !!!" <<endl;
-    }
-    
-  } else {
-      fEff->Fill(33.1);
-      cout << "==>kaonDeltaR> !!! Not enough tracks for this Vertex: " << refitted.size() 
-	   << " refitted tracks !!!" << endl;
-  }  
 }
 
 // ----------------------------------------------------------------------
@@ -2269,7 +2095,7 @@ int Bs2MuMu::idRecTrack(const reco::Track *track) {
     ++index;
   }
 
-  // cout << mdpt << " " << mdphi << " " << mdeta << " " << found << endl;
+  // if (fVerbose) cout << mdpt << " " << mdphi << " " << mdeta << " " << found << endl;
 
   if ((mdpt < ept)
       && (mdphi < ephi)
@@ -2285,38 +2111,51 @@ int Bs2MuMu::idRecTrack(const reco::Track *track) {
 // ----------------------------------------------------------------------
 void Bs2MuMu::decayChannel(const char *fileName) {
 
+  fTruthMC_I = 13;  fTruthMC_II = 13; fTruthMC2 = -1;
+  fTruthMC_mom = 531;                 fTruthMC2_mom = -1;
+  fTruthMC_gmo = -1;                  fTruthMC2_gmo = -1;
+
+  fPrintChannel = "N/D";              fPrintChannel2 = "N/D";
+
   //  if ( !strcmp("bd2pi", fileName.Data()) ) {
   if ( !strcmp("Bs2KpKm", fileName) ) {
 
-    fTruthMC = 321;  fTruthMC2 = -1;
+    fTruthMC_I = 321;  fTruthMC_II = -1;
     fTruthMC_mom = 531;
     fPrintChannel = "Bs -> K+ K-";
-    cout << "Selected decay mode: Bs (" << fTruthMC_mom << ") to K+ K- (" << fTruthMC << ")" << endl;
+    if (fVerbose) cout << "Selected decay mode: Bs (" << fTruthMC_mom << ") to K+ K- (" << fTruthMC_I << ")" << endl;
 
   } else if ( !strcmp("Bd2PiPi", fileName) ) {
 
-    fTruthMC = 211;  fTruthMC2 = -1;
+    fTruthMC_I = 211;  fTruthMC_II = -1;
     fTruthMC_mom = 511;
     fPrintChannel = "Bd -> pi+ pi-";
-    cout << "Selected decay mode: Bd (" << fTruthMC_mom << ") to pi+ pi- (" << fTruthMC << ")" << endl;
+    if (fVerbose) cout << "Selected decay mode: Bd (" << fTruthMC_mom << ") to pi+ pi- (" << fTruthMC_I << ")" << endl;
 
   } else if ( !strcmp("Lb2PKm", fileName) ) {
 
-    fTruthMC = 321;  fTruthMC2 = 2212;
-    fTruthMC_mom = 5122;
+    fTruthMC_I = 321;  fTruthMC_II = 2212;
+    fTruthMC_mom = 5122;                  
+
     fPrintChannel = "Lb -> p+ K-";
-    cout << "Selected decay mode: Lb (" << fTruthMC_mom << ") to p+ (" 	 << fTruthMC2 
-	 << ") K- (" << fTruthMC << ")" << endl;
+    if (fVerbose) cout << "Selected decay mode: Lb (" << fTruthMC_mom << ") to p+ (" 	 << fTruthMC_II 
+	 << ") K- (" << fTruthMC_I << ")" << endl;
 
   } else {
     
-    fTruthMC = 13;  fTruthMC2 = 13;
-    fTruthMC_mom = 531;
+    fTruthMC_I = 13;  fTruthMC_II = 13; fTruthMC2 = 321;
+    fTruthMC_mom = 531;                 fTruthMC2_mom = 443;
+    fTruthMC_gmo = -1;                  fTruthMC2_gmo = 521;
+
     fPrintChannel = "Bs -> mu+ mu-";
-    cout << "Selected decay mode: Bs (" << fTruthMC_mom << ") to mu+ mu- (" << fTruthMC << ")" << endl;
+    fPrintChannel2 = "B+ -> J/Psi K+";
+
+    if (fVerbose) cout << "Selected decay modes: Bs (" << fTruthMC_mom << ") to mu+ mu- (" << fTruthMC_I << ")" << endl
+		       << "     and B+ (" << fTruthMC2_gmo << ") to J/Psi (" << fTruthMC2_mom << ") K+ (" << fTruthMC2
+		       << ") where J/Psi to mu+ mu- (" << fTruthMC_I  << ")" << endl;
   }
 
-  cout << "   ---> Channel (" << fChannel << "): " << fPrintChannel << endl;
+  if (fVerbose) cout << "   ---> Channel (" << fChannel << "): " << fPrintChannel << endl;
 
 //   } else if ( !strcmp("bsmumug", fileName.Data()) || 
 // 	    !strcmp("bsmumup0", fileName.Data()) ||
@@ -2329,6 +2168,37 @@ void Bs2MuMu::decayChannel(const char *fileName) {
 
 }
 
+// ----------------------------------------------------------------------
+void Bs2MuMu::clearTracks() {
+
+  fStuff->BmmRecTracks.clear();
+  fStuff->BmmRecTracksIndex.clear();
+  fStuff->BmmRecTracksB.clear();
+
+  fStuff->JpsiRecTracks.clear();
+  fStuff->JpsiRecTracksIndex.clear();
+  fStuff->JpsiRecTracksB.clear();
+
+  fStuff->KaonRecTracks.clear();
+  fStuff->KaonRecTracksIndex.clear();
+  fStuff->KaonRecTracksB.clear();
+
+  fStuff->MuonRecTracks.clear();
+  fStuff->MuonRecTracksIndex.clear(); 
+}
+
+// ----------------------------------------------------------------------
+void Bs2MuMu::clearCandidateTracks() {
+
+
+  fStuff->BmmPairTracks.clear();
+  fStuff->JpsiPairTracks.clear();
+  fStuff->KaonTrack.clear();
+
+  fStuff->BmmPairTracksIndex.clear();
+  fStuff->JpsiPairTracksIndex.clear();
+  fStuff->KaonTrackIndex.clear();
+}
 
 // ==============================================================================
 //                           PRINT OUT
@@ -2336,8 +2206,8 @@ void Bs2MuMu::decayChannel(const char *fileName) {
 
 void Bs2MuMu::printGenTracks(const edm::Event &iEvent) {
   
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>printGenTracks> Starting to print generator block, event: " << fNevt << endl;
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>printGenTracks> Starting to print generator block, event: " << fNevt << endl;
 
 
   edm::Handle<HepMCProduct> evt;
@@ -2345,14 +2215,14 @@ void Bs2MuMu::printGenTracks(const edm::Event &iEvent) {
   const HepMC::GenEvent *genEvent = evt->GetEvent();
 
   int gcnt = genEvent->particles_size();
-  cout << "Counted " << gcnt  << " genTracks in generator block" << endl;
+  if (fVerbose) cout << "Counted " << gcnt  << " genTracks in generator block" << endl;
   gcnt = 0;
   
   for (HepMC::GenEvent::particle_const_iterator p = genEvent->particles_begin();
        p != genEvent->particles_end();
        ++p) {
       
-    cout << "GenTrack " <<  gcnt
+    if (fVerbose) cout << "GenTrack " <<  gcnt
 	 << "   Particle ID: " << (*p)->pdg_id()
 	 << ", Status "        << (*p)->StatusCode()
 	 << ", pT "            << (*p)->Momentum().perp()
@@ -2365,12 +2235,12 @@ void Bs2MuMu::printGenTracks(const edm::Event &iEvent) {
 // ----------------------------------------------------------------------
 void Bs2MuMu::printSimTracks(const edm::Event &iEvent) {
 
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>printSimTracks> Starting to print simulated tracks, event: " << fNevt << endl;
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>printSimTracks> Starting to print simulated tracks, event: " << fNevt << endl;
 
 
   int scnt = (*fStuff->theTPCollection).size();
-  cout << "Counted " << scnt  << " simulated tracks." << endl;
+  if (fVerbose) cout << "Counted " << scnt  << " simulated tracks." << endl;
   scnt = 0;
 
   const HepMC::GenParticle* genPar = 0; 
@@ -2381,7 +2251,7 @@ void Bs2MuMu::printSimTracks(const edm::Event &iEvent) {
        tpr != (*fStuff->theTPCollection).end(); 
        ++tpr){
 
-    cout << "SimTrack #" <<  scnt
+    if (fVerbose) cout << "SimTrack #" <<  scnt
 	 << ": pT "     <<  (*tpr).pt()
 	 << ", eta "    <<  (*tpr).eta()
 	 << ", charge " <<  (*tpr).charge()
@@ -2393,10 +2263,10 @@ void Bs2MuMu::printSimTracks(const edm::Event &iEvent) {
 				    (*tpr).pdgId());
     if ( index < 0 ) {
       
-      cout << "%%> Did not find a match in generator block (fEvent->getGenIndex)" << endl;
+      if (fVerbose) cout << "%%> Did not find a match in generator block (fEvent->getGenIndex)" << endl;
     }
     else {
-      cout << "==> matches to generator block particle #" << index << " (fEvent->getGenIndex)" <<endl;
+      if (fVerbose) cout << "==> matches to generator block particle #" << index << " (fEvent->getGenIndex)" <<endl;
     }
 
 
@@ -2411,12 +2281,12 @@ void Bs2MuMu::printSimTracks(const edm::Event &iEvent) {
 
       if ( gen_id == index ) {
 
-	cout << "==> matches to generator block particle #" << gen_id
+	if (fVerbose) cout << "==> matches to generator block particle #" << gen_id
 	     << " with pT = " << (*genPar).Momentum().perp() 
 	     << " and (gen) PDG ID: " << gen_pdg_id << endl;
       }
       else {
-	cout << "==> matches to generator block particle #" << gen_id << " (disagreement!)"
+	if (fVerbose) cout << "==> matches to generator block particle #" << gen_id << " (disagreement!)"
 	     << " with pT = " << (*genPar).Momentum().perp() 
 	     << " and (gen) PDG ID: " << gen_pdg_id << endl;
       }
@@ -2428,14 +2298,14 @@ void Bs2MuMu::printSimTracks(const edm::Event &iEvent) {
 
     if ( gen_cnt == 0 ) {
 	
-      cout << "%%> no match in gen. block for sim. particle #" << scnt << endl;
+      if (fVerbose) cout << "%%> no match in gen. block for sim. particle #" << scnt << endl;
     }
     else if ( gen_cnt > 1 ) {
 
-      cout << " ==> !!! More than one gen. particle for sim. particle #" << scnt << " !!!" << endl;
+      if (fVerbose) cout << " ==> !!! More than one gen. particle for sim. particle #" << scnt << " !!!" << endl;
     }
 
-    cout << endl;
+    if (fVerbose) cout << endl;
     scnt++;
   }
 }
@@ -2444,8 +2314,8 @@ void Bs2MuMu::printSimTracks(const edm::Event &iEvent) {
 // ----------------------------------------------------------------------
 void Bs2MuMu::printRecTracks(const edm::Event &iEvent) {
 
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>printRecTracks> Starting to print reconstructed tracks, event: " << fNevt << endl;
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>printRecTracks> Starting to print reconstructed tracks, event: " << fNevt << endl;
 
   // -- get the collection of RecoTracks 
   edm::Handle<reco::TrackCollection> tracks;
@@ -2457,7 +2327,7 @@ void Bs2MuMu::printRecTracks(const edm::Event &iEvent) {
   int index(-99999), type(-99999);
 
   int rcnt = (*fStuff->theTkCollection).size();
-  cout << "Counted " << rcnt  << " reconstructed tracks." << endl;
+  if (fVerbose) cout << "Counted " << rcnt  << " reconstructed tracks." << endl;
   rcnt = 0;  
 
   for (TrackCollection::const_iterator itTrack = (*fStuff->theTkCollection).begin(); 
@@ -2465,7 +2335,7 @@ void Bs2MuMu::printRecTracks(const edm::Event &iEvent) {
        ++itTrack){
 
     // -- Track parameters
-    cout << "RecTrack #"  <<  rcnt
+    if (fVerbose) cout << "RecTrack #"  <<  rcnt
 	 << "\t : momentum " <<  (*itTrack).momentum() 
 	 << ", pT "        <<  (*itTrack).pt()
 	 << ", eta "       <<  (*itTrack).eta() << " +- " << (*itTrack).etaError() 
@@ -2498,18 +2368,18 @@ void Bs2MuMu::printRecTracks(const edm::Event &iEvent) {
 
 	if ( index > 0 ) {
 
-	  cout << "\t ----> Found gen. MC Track #" << index << " with PDG ID " << type 
+	  if (fVerbose) cout << "\t ----> Found gen. MC Track #" << index << " with PDG ID " << type 
 	       << " (NShared: " << assocChi2 << ")" << endl;
 	}
 	else {
 
-	  cout << "\t%%> no match in gen. block for sim. particle #" << tpr.index() << endl;
+	  if (fVerbose) cout << "\t%%> no match in gen. block for sim. particle #" << tpr.index() << endl;
 	}
       }   
 
     } catch (Exception event) {
 
-      cout << "\t%%> no MC match found for rec. Track #" << rcnt << endl;
+      if (fVerbose) cout << "\t%%> no MC match found for rec. Track #" << rcnt << endl;
     }
 
     rcnt++;
@@ -2519,12 +2389,12 @@ void Bs2MuMu::printRecTracks(const edm::Event &iEvent) {
 // ----------------------------------------------------------------------
 void Bs2MuMu::printMuonTracks(const edm::Event &iEvent) {
 
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>printMuonTracks> Starting to print tracks reconstructed as muons, event: " << fNevt << endl;
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>printMuonTracks> Starting to print tracks reconstructed as muons, event: " << fNevt << endl;
 
 
   int mcnt = (*fStuff->theMuonCollection).size();
-  cout << "Counted " << mcnt  << " reconstructed tracks." << endl;
+  if (fVerbose) cout << "Counted " << mcnt  << " reconstructed tracks." << endl;
   mcnt = 0;  
 
   for (MuonCollection::const_iterator glbMuon = (*fStuff->theMuonCollection).begin(); 
@@ -2533,7 +2403,7 @@ void Bs2MuMu::printMuonTracks(const edm::Event &iEvent) {
 
     TrackRef glbTrack = glbMuon->combinedMuon();
 
-    cout << "MuonTrack #" <<  mcnt
+    if (fVerbose) cout << "MuonTrack #" <<  mcnt
 	 << ": pT "     <<  (*glbTrack).pt()
 	 << ", eta "    <<  (*glbTrack).eta()
 	 << ", charge " <<  (*glbTrack).charge()
@@ -2548,8 +2418,8 @@ void Bs2MuMu::printMuonTracks(const edm::Event &iEvent) {
 void Bs2MuMu::printReco2Sim(const edm::Event &iEvent, const char *option) {
  
 
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "==>printReco2Sim> Associating recontructed tracks to simulated tracks, event: " << fNevt << endl;
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>printReco2Sim> Associating recontructed tracks to simulated tracks, event: " << fNevt << endl;
 
   // -- get the collection of RecoTracks 
   edm::Handle<reco::TrackCollection> tracks;
@@ -2565,7 +2435,7 @@ void Bs2MuMu::printReco2Sim(const edm::Event &iEvent, const char *option) {
   // -- perform association by hits
   if ( !strcmp(option,"hits") ) {
 
-    cout << "-- Associator by hits --" << endl;  
+    if (fVerbose) cout << "-- Associator by hits --" << endl;  
     reco::RecoToSimCollection recSimColl = 
       associatorByHits->associateRecoToSim (tracks, TPCollectionH, &iEvent);
     
@@ -2574,7 +2444,7 @@ void Bs2MuMu::printReco2Sim(const edm::Event &iEvent, const char *option) {
       TrackRef track(tracks, i);
       try{ 
 	std::vector<std::pair<TrackingParticleRef, double> > tp = recSimColl[track];
-	cout << "Reco Track " << setw(2) << track.index() << " pT: "  << setw(6) << track->pt() 
+	if (fVerbose) cout << "Reco Track " << setw(2) << track.index() << " pT: "  << setw(6) << track->pt() 
 	     <<  " matched to " << tp.size() << " MC Tracks" << std::endl;
 
 	for (std::vector<std::pair<TrackingParticleRef, double> >::const_iterator it = tp.begin(); 
@@ -2582,17 +2452,17 @@ void Bs2MuMu::printReco2Sim(const edm::Event &iEvent, const char *option) {
 	  
 	  TrackingParticleRef tpr = it->first;
 	  double assocChi2 = it->second;
-	  cout << "\t\tMCTrack " << setw(2) << tpr.index() << " pdgId: " << setw(2) << tpr->pdgId() 
+	  if (fVerbose) cout << "\t\tMCTrack " << setw(2) << tpr.index() << " pdgId: " << setw(2) << tpr->pdgId() 
 	       << " pT: " << setw(6) << tpr->pt() 
 	       << " NShared: " << assocChi2 << endl;
 	  
  	  ptRes=track->pt()-sqrt(tpr->momentum().Perp2());
- 	  cout << "  res = " << ptRes << endl;
+ 	  if (fVerbose) cout << "  res = " << ptRes << endl;
  	  fPT310->Fill(ptRes);
 	}
       } catch (Exception event) {
 
-	cout << "%%> Rec. Track #" << setw(2) << track.index() << " pT: " 
+	if (fVerbose) cout << "%%> Rec. Track #" << setw(2) << track.index() << " pT: " 
 	     << setprecision(2) << setw(6) << track->pt() 
 	     <<  " matched to 0 MC Tracks" << endl;
       }
@@ -2602,7 +2472,7 @@ void Bs2MuMu::printReco2Sim(const edm::Event &iEvent, const char *option) {
   // -- perform association by chi2
   else if ( !strcmp(option,"chi2") ) {
 
-    cout << "-- Associator by chi2 --" << endl;  
+    if (fVerbose) cout << "-- Associator by chi2 --" << endl;  
     reco::RecoToSimCollection recSimColl = 
       associatorByChi2->associateRecoToSim (tracks, TPCollectionH, &iEvent );
 
@@ -2611,24 +2481,24 @@ void Bs2MuMu::printReco2Sim(const edm::Event &iEvent, const char *option) {
       TrackRef track(tracks, i);
       try{ 
 	std::vector<std::pair<TrackingParticleRef, double> > tp = recSimColl[track];
-	cout << "Reco Track " << setw(2) << track.index() << " pT: "  << setw(6) << track->pt() 
+	if (fVerbose) cout << "Reco Track " << setw(2) << track.index() << " pT: "  << setw(6) << track->pt() 
 	     <<  " matched to " << tp.size() << " MC Tracks" << std::endl;
 	for (std::vector<std::pair<TrackingParticleRef, double> >::const_iterator it = tp.begin(); 
 	     it != tp.end(); ++it) {
 	  
 	  TrackingParticleRef tpr = it->first;
 	  double assocChi2 = it->second;
-	  cout << "\t\tMCTrack " << setw(2) << tpr.index() << " pdgId: " << setw(2) << tpr->pdgId() 
+	  if (fVerbose) cout << "\t\tMCTrack " << setw(2) << tpr.index() << " pdgId: " << setw(2) << tpr->pdgId() 
 	       << " pT: " << setw(6) << tpr->pt() 
 	       << " NShared: " << assocChi2 << endl;
 	  
 	  ptRes=track->pt()-sqrt(tpr->momentum().Perp2());
-	  cout << "  res = " << ptRes << endl;
+	  if (fVerbose) cout << "  res = " << ptRes << endl;
 	  fPT320->Fill(ptRes);
 	}
       } catch (Exception event) {
 
-	cout << "%%>   Rec. Track #" << setw(2) << track.index() << " pT: " 
+	if (fVerbose) cout << "%%>   Rec. Track #" << setw(2) << track.index() << " pT: " 
 	     << setprecision(2) << setw(6) << track->pt() 
 	     <<  " matched to 0 MC Tracks" << endl;
       }
@@ -2636,7 +2506,7 @@ void Bs2MuMu::printReco2Sim(const edm::Event &iEvent, const char *option) {
   }
   else {
 
-    cout << "-- " << fAssocLabel.c_str() << " --" << endl;  
+    if (fVerbose) cout << "-- " << fAssocLabel.c_str() << " --" << endl;  
 
     reco::RecoToSimCollection recSimColl = (*fStuff->recSimCollection);
 
@@ -2648,24 +2518,24 @@ void Bs2MuMu::printReco2Sim(const edm::Event &iEvent, const char *option) {
       
       try{ 
 	std::vector<std::pair<TrackingParticleRef, double> > tp = recSimColl[track];
-	cout << "Reco Track " << setw(2) << track.index() << " pT: "  << setw(6) << track->pt() 
+	if (fVerbose) cout << "Reco Track " << setw(2) << track.index() << " pT: "  << setw(6) << track->pt() 
 	     <<  " matched to " << tp.size() << " MC Tracks" << std::endl;
 	for (std::vector<std::pair<TrackingParticleRef, double> >::const_iterator it = tp.begin(); 
 	     it != tp.end(); ++it) {
 	  
 	  TrackingParticleRef tpr = it->first;
 	  double assocChi2 = it->second;
-	  cout << "\t\tMCTrack " << setw(2) << tpr.index() << " pdgId: " << setw(2) << tpr->pdgId() 
+	  if (fVerbose) cout << "\t\tMCTrack " << setw(2) << tpr.index() << " pdgId: " << setw(2) << tpr->pdgId() 
 	       << " pT: " << setw(6) << tpr->pt() 
 	       << " NShared: " << assocChi2 << endl;
 	  
 	  ptRes=track->pt()-sqrt(tpr->momentum().Perp2());
-	  cout << "  res = " << ptRes << endl;
+	  if (fVerbose) cout << "  res = " << ptRes << endl;
 	  fPT300->Fill(ptRes);
 	}
       } catch (Exception event) {
 
-	cout << "%%>   Rec. Track #" << setw(2) << track.index() << " pT: " 
+	if (fVerbose) cout << "%%>   Rec. Track #" << setw(2) << track.index() << " pT: " 
 	     << setprecision(2) << setw(6) << track->pt() 
 	     <<  " matched to 0 MC Tracks" << endl;
       }

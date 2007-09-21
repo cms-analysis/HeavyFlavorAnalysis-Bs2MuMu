@@ -152,6 +152,8 @@ private:
   virtual void printReco2Sim(const edm::Event&, const char *option);
 
   virtual void decayChannel(const char *name);
+  virtual void clearTracks();
+  virtual void clearCandidateTracks();
 
   virtual void fillGeneratorBlock(const edm::Event&);
   virtual void fillRecTracks(const edm::Event&);
@@ -159,24 +161,27 @@ private:
   virtual void bmmTracks1(const edm::Event&);
   virtual void bmmTracks2(const edm::Event&);
   virtual void bmmTracks3(const edm::Event&);
-  virtual void bmmkTracks1(const edm::Event&, const edm::EventSetup&);
-  virtual void bmmkTracks3(const edm::Event&, const edm::EventSetup&);
 
   virtual void trimBmmTracks(const edm::Event&);
 
   int primaryVertex(const edm::Event&);
-  virtual void bmmVertex(const edm::Event&, const edm::EventSetup&, int type, unsigned int ntracks);
+  virtual void secondaryVertex(const edm::Event&, const edm::EventSetup&);
+  virtual void kalmanVertexFit(const edm::Event&, const edm::EventSetup&, TransientVertex *v, int type, unsigned int ntracks);
 
   virtual void fillTrack(const edm::Event&, TAnaTrack *pTrack, reco::Track *it, int idx, int verb);
   virtual void fillVertex(const edm::Event&, const edm::EventSetup&, TransientVertex *v, int type, unsigned int ntracks);
-  virtual void kaonDeltaR(const edm::Event &iEvent, TransientVertex *v, int type, unsigned int ntracks);
+  virtual void truthCandTracks(const edm::Event&, const edm::EventSetup&);
+  virtual void muonCandTracks(const edm::Event&, const edm::EventSetup&, double m_cand1, double m_cand2);
+  virtual void kaonCandTracks(const edm::Event&, const edm::EventSetup&, double cone);
+  int massMuonCand(const edm::Event&, const edm::EventSetup&, double m_cand1, double m_cand2);
+  double rmmKaonCand(const edm::Event&, const edm::EventSetup&, double cone);
   int kaonCandidate(const edm::Event&, const edm::EventSetup&);
-  int jpsiCandidate(const edm::Event&);
   
   int idRecTrack(const reco::Track *track);
   // ----------member data ---------------------------
-  string fLabel, fSourceLabel, fTracksLabel, fMuonLabel, fAssocLabel, fChannel, fPrintChannel;
-  int fGenVerbose, fSimVerbose, fRecVerbose, fGlbVerbose, fR2SVerbose;
+  string fLabel, fSourceLabel, fTracksLabel, fMuonLabel, fAssocLabel
+    , fChannel, fPrintChannel, fPrintChannel2;
+  int fVerbose, fGenVerbose, fSimVerbose, fRecVerbose, fGlbVerbose, fR2SVerbose;
 
   int fNevt; 
   int fNgen;
@@ -184,14 +189,14 @@ private:
 
   unsigned int fNtracks;
   unsigned int fType;
-  int fTruthMC, fTruthMC2, fTruthMC_mom;
+  int fTruthMC_I, fTruthMC_II, fTruthMC_mom, fTruthMC_gmo;
+  int fTruthMC2, fTruthMC2_mom, fTruthMC2_gmo;
 
   TFile *fFile; 
   TTree        *fTree;
   TAna00Event  *fEvent;
 
   anaStuff  *fStuff; // contains most of the class data members
-  candStuff *fCand;  // contains most of the class data members
 
   TrackAssociatorBase*  associatorByChi2;
   TrackAssociatorBase*  associatorByHits;
