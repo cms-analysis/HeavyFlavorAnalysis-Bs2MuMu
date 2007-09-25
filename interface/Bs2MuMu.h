@@ -166,7 +166,7 @@ private:
 
   int primaryVertex(const edm::Event&);
   virtual void secondaryVertex(const edm::Event&, const edm::EventSetup&);
-  virtual void kalmanVertexFit(const edm::Event&, const edm::EventSetup&, TransientVertex *v, int type, unsigned int ntracks);
+  double kalmanVertexFit(const edm::Event&, const edm::EventSetup&, int type, unsigned int ntracks);
 
   virtual void fillTrack(const edm::Event&, TAnaTrack *pTrack, reco::Track *it, int idx, int verb);
   virtual void fillVertex(const edm::Event&, const edm::EventSetup&, TransientVertex *v, int type, unsigned int ntracks);
@@ -178,17 +178,17 @@ private:
   int kaonCandidate(const edm::Event&, const edm::EventSetup&);
   
   int idRecTrack(const reco::Track *track);
+
   // ----------member data ---------------------------
   string fLabel, fSourceLabel, fTracksLabel, fMuonLabel, fAssocLabel
     , fChannel, fPrintChannel, fPrintChannel2;
+
+  double fMass, fMass2;
+
   int fVerbose, fGenVerbose, fSimVerbose, fRecVerbose, fGlbVerbose, fR2SVerbose;
 
-  int fNevt; 
-  int fNgen;
-  int fNrec;
+  int fNevt, fNgen, fNrec;
 
-  unsigned int fNtracks;
-  unsigned int fType;
   int fTruthMC_I, fTruthMC_II, fTruthMC_mom, fTruthMC_gmo;
   int fTruthMC2, fTruthMC2_mom, fTruthMC2_gmo;
 
@@ -202,17 +202,11 @@ private:
   TrackAssociatorBase*  associatorByHits;
   //  VertexAssociatorBase* associatorByTracks;
   
-  TH1D *fEff;
+  TH1D *fEff;  
 
-  TH1D  *fM100;
-  TH1D  *fM200;
-
-  TH2D  *fK100;
-  TH2D  *fK200;
-
-  TH1D  *fPT300;
-  TH1D  *fPT310;
-  TH1D  *fPT320;
+  TH1D  *fM000[3], *fM100[3], *fM200[3], *fM300[3];
+  TH2D  *fK100, *fK200;
+  TH1D  *fPT300, *fPT310, *fPT320;
 
 
 };

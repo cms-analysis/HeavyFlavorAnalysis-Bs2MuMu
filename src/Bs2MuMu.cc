@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.2 2007/08/31 15:01:18 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.3 2007/09/21 15:36:21 ceggel Exp $
 //
 //
 
@@ -96,6 +96,7 @@ struct anaStuff {
   // -- Vertex tracks
   std::vector<const reco::Track*> RecTracks; 
   std::vector<int> RecTracksIndex;
+  std::vector<reco::Track> RefittedTracks;
   // ------------------------------------------ 
 
 
@@ -103,6 +104,9 @@ struct anaStuff {
 
   reco::Vertex primaryVertex;
   reco::Vertex primaryVertex2;
+
+  std::vector<double> SecVtxChi2;
+  std::vector<double> InvMass;
 
 };
 
@@ -160,8 +164,14 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
   fEff = new TH1D("eff", "Efficiencies", 100, 0., 100. );
 
   // -- Invariant mass & control histograms
-  fM100  = new TH1D("m100", "inv. Mass Cand1", 1000, 0., 10. );
-  fM200  = new TH1D("m200", "inv. Mass Cand2", 1000, 0., 10. );
+
+  for (int i = 0; i < 3; i++) {
+
+    fM000[i]  = new TH1D(Form("m000_%i", i+1), "inv. Mass Cand0 (all kaon cand.)", 1000, 0., 10. );
+    fM100[i]  = new TH1D(Form("m531_%i", i+1), "inv. Mass Cand1 (bmm)", 1000, 0., 10. );
+    fM200[i]  = new TH1D(Form("m443_%i", i+1), "inv. Mass Cand2 (jpsi)", 1000, 0., 10. );
+    fM300[i]  = new TH1D(Form("m521_%i", i+1), "inv. Mass Cand3 (bjk)", 1000, 0., 10. );
+  }
 
   // -- Kaon Selection
   fK100  = new TH2D("k100", "inv. Mass Cand2 vs. Chi2 (candidates)", 500, 0., 50., 500, 0., 100. );
@@ -193,8 +203,13 @@ Bs2MuMu::~Bs2MuMu() {
  
   fEff->Write();
 
-  fM100->Write(); 
-  fM200->Write();
+  for (int i = 0; i < 3; i++) {
+   
+    fM000[i]->Write(); 
+    fM100[i]->Write(); 
+    fM200[i]->Write();
+    fM300[i]->Write();
+  }
 
   fK100->Write(); 
   fK200->Write();
@@ -234,7 +249,6 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   ++fNevt; 
 
-  cout << endl << "*****************************NEW*************************************" << endl;
   cout << endl << "*********************************************************************" << endl;
   cout << "===>> Bs2MuMu >>> Start with event: " << fNevt << endl;
 
@@ -351,29 +365,51 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   // -- Primary Vertex
   int npv = primaryVertex(iEvent);
+  if (!npv) {
+    cout << "*********** No primary vertex found !!!" << endl;  
+  }
 
   // -- (Rec.) Signal Tracks
   if (fStuff->fBmmSel == 1) {
+
     bmmTracks1(iEvent);
     truthCandTracks(iEvent, iSetup);
-    if ( npv ) {
-      secondaryVertex(iEvent, iSetup);
-    }
+    secondaryVertex(iEvent, iSetup);
+
   } else if (fStuff->fBmmSel == 2) {
+
     bmmTracks2(iEvent);
-    muonCandTracks(iEvent, iSetup, 5.369, 3.096);
+    muonCandTracks(iEvent, iSetup, fMass, fMass2);
     kaonCandTracks(iEvent, iSetup, 1.5);
-    if ( npv ) {
-      secondaryVertex(iEvent, iSetup);
-    }
+    secondaryVertex(iEvent, iSetup);
+
   } else if (fStuff->fBmmSel == 3) {
+
     bmmTracks3(iEvent);
-    muonCandTracks(iEvent, iSetup, 5.369, 3.096);
+    muonCandTracks(iEvent, iSetup, fMass, fMass2);
     kaonCandTracks(iEvent, iSetup, 1.5);
-    if ( npv ) {
-      secondaryVertex(iEvent, iSetup);
-    }
-  } 
+    secondaryVertex(iEvent, iSetup);
+  } else {
+
+    fStuff->fBmmSel = 1;
+    bmmTracks1(iEvent);
+    truthCandTracks(iEvent, iSetup);
+    secondaryVertex(iEvent, iSetup);
+
+    fStuff->fBmmSel = 2;
+    bmmTracks2(iEvent);
+    muonCandTracks(iEvent, iSetup, fMass, fMass2);
+    kaonCandTracks(iEvent, iSetup, 1.5);
+    secondaryVertex(iEvent, iSetup);
+
+    fStuff->fBmmSel = 3;
+    bmmTracks3(iEvent);
+    muonCandTracks(iEvent, iSetup, fMass, fMass2);
+    kaonCandTracks(iEvent, iSetup, 1.5);
+    secondaryVertex(iEvent, iSetup);
+
+    fStuff->fBmmSel = -1;
+  }
 
  
   // -- Dump tree
@@ -381,7 +417,6 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   cout << endl << "===>> Bs2MuMu >>> Done with event: " << fNevt << endl;
   cout << "*********************************************************************" << endl;
-  cout << endl << "*****************************NEW*************************************" << endl;
     
 }
 
@@ -977,11 +1012,15 @@ void Bs2MuMu::bmmTracks3(const edm::Event &iEvent) {
 // ----------------------------------------------------------------------
 void Bs2MuMu::truthCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup) {
 
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>truthCandTracks> Sort muon and kaon candidates depending on ID of B-mother, event: " 
+		     << fNevt << endl;
+
   if ( fStuff->BmmRecTracks.size() > 1 ) {
 
     for ( unsigned int i=0; i<fStuff->BmmRecTracks.size(); i++ ) { 
 
-      for ( unsigned int j=0; j<fStuff->BmmRecTracks.size(); j++ ) { 
+      for ( unsigned int j=i; j<fStuff->BmmRecTracks.size(); j++ ) { 
 
 	if (i == j) { continue; }
 
@@ -1009,7 +1048,7 @@ void Bs2MuMu::truthCandTracks(const edm::Event &iEvent, const edm::EventSetup& i
     
     for ( unsigned int i=0; i<fStuff->JpsiRecTracks.size(); i++ ) { 
       
-      for ( unsigned int j=0; j<fStuff->JpsiRecTracks.size(); j++ ) { 
+      for ( unsigned int j=i; j<fStuff->JpsiRecTracks.size(); j++ ) { 
 	
 	if (i == j) { continue; }
 	
@@ -1048,26 +1087,28 @@ void Bs2MuMu::truthCandTracks(const edm::Event &iEvent, const edm::EventSetup& i
 // ----------------------------------------------------------------------
 void Bs2MuMu::muonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup, double m_cand1, double m_cand2) {
 
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>muonCandTracks> Sort opposite charge muons into pairs depending on inv. mass ("
+		     << m_cand1 << " GeV) or (" << m_cand2 << " GeV), event: " << fNevt << endl;
+
   int type(0);
 
   if ( fStuff->MuonRecTracks.size() > 1 ) {
 
     for ( unsigned int i=0; i<fStuff->MuonRecTracks.size(); i++ ) { 
 
-      for ( unsigned int j=0; j<fStuff->MuonRecTracks.size(); j++ ) { 
+      for ( unsigned int j=i; j<fStuff->MuonRecTracks.size(); j++ ) {  // < ---- ??????
 
 	if (i == j) { continue; }
 
 	fStuff->RecTracks.clear();
+	fStuff->RecTracksIndex.clear();
 
 	fStuff->RecTracks.push_back(fStuff->MuonRecTracks[i]);
 	fStuff->RecTracks.push_back(fStuff->MuonRecTracks[j]);
 
 	fStuff->RecTracksIndex.push_back(i);
 	fStuff->RecTracksIndex.push_back(j);
-      
-	m_cand1 = 3.096; 
-	m_cand2  = 5.369;
 
 	type = massMuonCand(iEvent, iSetup, m_cand1, m_cand2);   //  < ------- here
 
@@ -1110,35 +1151,43 @@ void Bs2MuMu::muonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iS
 // ----------------------------------------------------------------------
 void Bs2MuMu::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup, double cone) { 
    
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>kaonCandTracks> Find kaon candidate with best chi2, from all tracks in cone "
+		     << cone << " around reconstructed J/Psi , event: " << fNevt << endl;
+
   const reco::Track* tt = 0;
 
-  fStuff->KaonTrack.push_back(tt);
-  fStuff->KaonTrackIndex.push_back(-1);
-
-  int index(0);
+  int index(0), trk(-1), ncand(0), cand(-1);
   double chi2_min(99999.), chi2(-1.);
 
   if ( fStuff->JpsiPairTracks.size() > 0 ) {
+    
+    fStuff->KaonTrack.push_back(tt);
+    fStuff->KaonTrackIndex.push_back(-1);
 
     for ( unsigned int i=0; i<fStuff->JpsiPairTracks.size(); i++ ) { 
 
       fStuff->RecTracks.clear();
+      fStuff->RecTracksIndex.clear();
 
       fStuff->RecTracks.push_back(fStuff->JpsiPairTracks[i].first);
-      fStuff->RecTracks.push_back(fStuff->JpsiPairTracks[i].second);  
-
       fStuff->RecTracksIndex.push_back(fStuff->JpsiPairTracksIndex[i].first);
+
+      fStuff->RecTracks.push_back(fStuff->JpsiPairTracks[i].second); 
       fStuff->RecTracksIndex.push_back(fStuff->JpsiPairTracksIndex[i].second);  
 
       // ------------------------------------------------------------------------
       // -- Find kaon for given muon pair
-      index = 0;
+      index = 0; trk = -1; ncand = 0; cand = -1;
+      fStuff->SecVtxChi2.clear();
+      fStuff->InvMass.clear();
+
       for (TrackCollection::const_iterator it = (*fStuff->theTkCollection).begin(); 
 	   it != (*fStuff->theTkCollection).end(); 
 	   ++it){
 	
-	if (index == fStuff->RecTracksIndex[0]) { continue; }
-	if (index == fStuff->RecTracksIndex[1]) { continue; }
+	if (index == fStuff->RecTracksIndex[0]) { index++;  continue; }
+	if (index == fStuff->RecTracksIndex[1]) { index++;  continue; }
 	
 	tt = &(*it);
 	
@@ -1150,21 +1199,45 @@ void Bs2MuMu::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iS
 	fStuff->RecTracks.pop_back();
 	fStuff->RecTracksIndex.pop_back();
 	
-	if (chi2 > 0 && chi2 < chi2_min) {
+	if (chi2 > 0) {
 
-	  chi2_min  = chi2;
-
-	  fStuff->KaonTrack.pop_back();
-	  fStuff->KaonTrackIndex.pop_back();
-
-	  fStuff->KaonTrack.push_back(tt);
-	  fStuff->KaonTrackIndex.push_back(index);
+	  if (chi2 < chi2_min) {
+	    
+	    chi2_min  = chi2;
+	    
+	    fStuff->KaonTrack.pop_back();
+	    fStuff->KaonTrackIndex.pop_back();
+	    
+	    fStuff->KaonTrack.push_back(tt);
+	    fStuff->KaonTrackIndex.push_back(index);
+	    
+	    trk  = index;
+	    cand = ncand;
+	  }
+	  ncand++;
 	}
-
+	
 	index++;	
       }
 
-      // ------------------------------------------------------------------------
+      if (ncand)  fK200->Fill(fStuff->SecVtxChi2[cand], fStuff->InvMass[cand]);
+      
+      if (fVerbose) {
+
+	if (ncand) { 
+	  
+	  cout << "==>kaonCandTracks> Fount " << ncand << " kaon candidate tracks for J/Psi candidate #"
+	       << i << ". Selected track #" << trk << ", with chi2 = " << chi2_min << "   (chi2=" 
+	       << fStuff->SecVtxChi2[cand] << ", m=" << fStuff->InvMass[cand] << ")." << endl; 
+
+	} else {	
+	  
+	  cout << "==>kaonCandTracks> No kaon candidates found for J/Psi candidate #" 
+	       << i << "." << endl;
+	}
+      }
+
+      // ------------------------------------------------------------------------      
     }
   }
 }
@@ -1217,6 +1290,13 @@ int Bs2MuMu::massMuonCand(const edm::Event &iEvent, const edm::EventSetup& iSetu
 
   } else {
 
+    if (fVerbose) cout << endl << "==>massCandidate> : Muons not in any of the mass windows \t #"
+		       << fStuff->RecTracksIndex[0] << " \t #" <<  fStuff->RecTracksIndex[1]
+		       << "\t --->  Inv. Mass: "  << mass
+		       << "( q1 = " << fStuff->RecTracks[0]->charge()
+		       << ", q2 = " << fStuff->RecTracks[1]->charge()
+		       << ")" << endl;
+
     return -1;
   }
 }
@@ -1229,38 +1309,24 @@ double Bs2MuMu::rmmKaonCand(const edm::Event &iEvent, const edm::EventSetup& iSe
   if (fVerbose) cout << "==>rmmKaonCand> Looking for kaon in cone of "
 		     << cone << " around J/Psi, event: " << fNevt << endl;
 
-  TransientVertex *v = 0;
-  kalmanVertexFit(iEvent, iSetup, v, 0, 3);  //  Vertex TYPE = 0, B+ -> mu mu K (all K-candidates)
-
-  std::vector<reco::TransientTrack> refTT = v->refittedTracks();
-  std::vector<reco::Track> refitted;
-
-  for(vector<reco::TransientTrack>::const_iterator i = refTT.begin(); 
-      i != refTT.end(); i++) {
-
-    const Track & ftt = i->track();
-    refitted.push_back(ftt);
-  }
+  double chi2 = kalmanVertexFit(iEvent, iSetup, 0, 3);  //  Vertex TYPE = 0, B+ -> mu mu K (all K-candidates)
   
   TLorentzVector m0, m1, kp;
   TLorentzVector jpsi, bs;
-
   
-  fEff->Fill(31.1);
-  
-  m0.SetXYZM(refitted[0].px(),
-	     refitted[0].py(),
-	     refitted[0].pz(),
+  m0.SetXYZM(fStuff->RefittedTracks[0].px(),
+	     fStuff->RefittedTracks[0].py(),
+	     fStuff->RefittedTracks[0].pz(),
 	     0.1056583);
   
-  m1.SetXYZM(refitted[1].px(),
-	     refitted[1].py(),
-	     refitted[1].pz(),
+  m1.SetXYZM(fStuff->RefittedTracks[1].px(),
+	     fStuff->RefittedTracks[1].py(),
+	     fStuff->RefittedTracks[1].pz(),
 	     0.1056583);
   
-  kp.SetXYZM(refitted[2].px(),
-	     refitted[2].py(),
-	     refitted[2].pz(),
+  kp.SetXYZM(fStuff->RefittedTracks[2].px(),
+	     fStuff->RefittedTracks[2].py(),
+	     fStuff->RefittedTracks[2].pz(),
 	     0.493677);
   
   jpsi = m0 + m1;
@@ -1269,27 +1335,28 @@ double Bs2MuMu::rmmKaonCand(const edm::Event &iEvent, const edm::EventSetup& iSe
   TVector3 jpsi_plab = jpsi.Vect();
   TVector3 kp_plab   = kp.Vect();
   
-  ChiSquared chi(v->totalChiSquared(), v->degreesOfFreedom());  
-  
   double dphi = jpsi_plab.DeltaPhi(kp_plab);
   double deta = kp_plab.Eta() - jpsi_plab.Eta();
   double dr   = TMath::Sqrt(dphi*dphi + deta*deta);
   
   if ( dr < cone ) {
     
-    if (fVerbose) cout << "==>rmmKaonCand> Found kaon candidate, corresponding to track #" 
-		       << fStuff->RecTracksIndex[2] 	   << " with dr = " << dr << ", Bs mass " 
-		       << bs.M() << " and chi2 " << chi.value() << endl;
+    if (fVerbose) cout << "==>rmmKaonCand> Fount kaon candidate, corresponding to track #" 
+		       << fStuff->RecTracksIndex[2] 	   << " with dr = " << dr << ", B mass " 
+		       << bs.M() << " and chi2 " << chi2 << endl;
     
     
-    fK100->Fill(chi.value(), bs.M());
-    return chi.value();
-    
-  }
-  else {
+    fStuff->InvMass.push_back(bs.M());
+    fStuff->SecVtxChi2.push_back(chi2);
+
+    fK100->Fill(chi2, bs.M());
+
+    return chi2;
+  
+  } else {
     
     if (fVerbose) cout << "==>rmmKaonCand> !!! Kaon candidate rejected, ouside cone:  dr = " << dr
-		       << ", Bs mass " << bs.M() << " and chi2 " << chi.value() << " !!!" <<endl;
+		       << ", B mass " << bs.M() << " and chi2 " << chi2 << " !!!" <<endl;
 
     return -1.;
   }
@@ -1354,6 +1421,7 @@ void Bs2MuMu::trimBmmTracks(const edm::Event &iEvent) {
       // -- Add to signal tracks block in ntuple
       reco::Track tt(*fStuff->RecTracks[i]);
 
+      if (fVerbose) cout << "-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-" << endl;
       if (fVerbose) cout << "==>trimBmmTracks>  Adding to signal tracks, track # " << fStuff->RecTracksIndex[i]
 			 << " (index in RecTracks), pT = " << tt.pt()
 			 << endl;
@@ -1433,6 +1501,17 @@ int Bs2MuMu::primaryVertex(const edm::Event &iEvent) {
 
     fStuff->primaryVertex2 = *pV;
     fEvent->fPrimaryVertex2 = *pVtx;
+
+  } else {
+    
+    TAnaVertex *pVtx;
+    pVtx = new TAnaVertex();
+
+    //    pVtx->setInfo(chi2.value(), chi2.degreesOfFreedom(), chi2.probability(), 0, 2); ??? change ndof to double ???
+    pVtx->setInfo(-1., -1, -1., -1, -1);
+    pVtx->fPoint.SetXYZ(-100., -100., -100.);
+
+    fEvent->fPrimaryVertex2 = *pVtx;
   }
 
   return nvtx;
@@ -1444,21 +1523,33 @@ void Bs2MuMu::secondaryVertex(const edm::Event &iEvent, const edm::EventSetup& i
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>secondaryVertex> Fitting secondary vertices, event: " << fNevt << endl;
 
-  if (fVerbose) cout << "==>secondaryVertex> " << fStuff->BmmPairTracks.size() << " Bs -> mu+ mu- pair(s) " << endl; 
-  if (fVerbose) cout << "==>secondaryVertex> " << fStuff->JpsiPairTracks.size() << " J/Psi -> mu+ mu- pair(s) " << endl;
-  if (fVerbose) cout << "==>secondaryVertex> " << fStuff->KaonTrack.size() << " Kaon(s) for B+ -> J/Psi K+ " << endl; 
+  if (fVerbose) {
 
-  TransientVertex *v = 0;
+    cout << "==>secondaryVertex> " << fStuff->BmmPairTracks.size() << " Bs -> mu+ mu- pair(s), event: " 
+	 << fNevt << ", sel = " << fStuff->fBmmSel << endl; 
+    cout << "==>secondaryVertex> " << fStuff->JpsiPairTracks.size() << " J/Psi -> mu+ mu- pair(s), event: " 
+	 << fNevt << ", sel = " << fStuff->fBmmSel << endl; 
+    cout << "==>secondaryVertex> " << fStuff->KaonTrack.size() << " Kaon(s) for B+ -> J/Psi K+, event: " 
+	 << fNevt << ", sel = " << fStuff->fBmmSel << endl; 
+  }
+
+  double chi2(-1.);
+
   if ( fStuff->BmmPairTracks.size() > 0 ) {
     
     for ( unsigned int i=0; i<fStuff->BmmPairTracks.size(); i++ ) { 
       
       fStuff->RecTracks.clear();
+      fStuff->RecTracksIndex.clear();
 
       fStuff->RecTracks.push_back(fStuff->BmmPairTracks[i].first);
       fStuff->RecTracks.push_back(fStuff->BmmPairTracks[i].second);
 
-      kalmanVertexFit(iEvent, iSetup, v, 1, 2);  // Vertex TYPE = 1  ( -> mu mu or BG from B), 2 TRACKS => Cand 1
+      fStuff->RecTracksIndex.push_back(fStuff->BmmPairTracksIndex[i].first);
+      fStuff->RecTracksIndex.push_back(fStuff->BmmPairTracksIndex[i].second);
+
+      chi2 = kalmanVertexFit(iEvent, iSetup, 5310+fStuff->fBmmSel, 2);  // Vertex TYPE = 531x  
+                                                                        // -> mu mu or BG from B, 2 TRACKS => Cand 1
     }
   }
  
@@ -1469,16 +1560,22 @@ void Bs2MuMu::secondaryVertex(const edm::Event &iEvent, const edm::EventSetup& i
       if ( fStuff->KaonTrackIndex[i] > 0 ) {
 
 	fStuff->RecTracks.clear();
+	fStuff->RecTracksIndex.clear();
 	
 	fStuff->RecTracks.push_back(fStuff->JpsiPairTracks[i].first);
-	fStuff->RecTracks.push_back(fStuff->JpsiPairTracks[i].second);
-	
-	kalmanVertexFit(iEvent, iSetup, v, 2, 2);  // Vertex TYPE = 2 (-> mu mu from J/Psi), 2 TRACKS => Cand 2
-	
+	fStuff->RecTracksIndex.push_back(fStuff->JpsiPairTracksIndex[i].first);
 
-	fStuff->RecTracks.push_back(fStuff->KaonTrack[i]);
+	fStuff->RecTracks.push_back(fStuff->JpsiPairTracks[i].second);
+	fStuff->RecTracksIndex.push_back(fStuff->JpsiPairTracksIndex[i].second);
 	
-	kalmanVertexFit(iEvent, iSetup, v, 3, 3);  // Vertex TYPE = 3  ( -> mu mu K ), 3 TRACKS => Cand 3
+	chi2 = kalmanVertexFit(iEvent, iSetup, 4430+fStuff->fBmmSel , 2);  // Vertex TYPE = 443x 
+	                                                                   // -> mu mu from J/Psi, 2 TRACKS => Cand 2
+	
+	fStuff->RecTracks.push_back(fStuff->KaonTrack[i]);
+	fStuff->RecTracksIndex.push_back(fStuff->KaonTrackIndex[i]);
+	
+	chi2 = kalmanVertexFit(iEvent, iSetup, 5210+fStuff->fBmmSel, 3);  // Vertex TYPE = 521x  
+	                                                                  // -> mu mu K, 3 TRACKS => Cand 3
       }
     }
   }
@@ -1486,9 +1583,15 @@ void Bs2MuMu::secondaryVertex(const edm::Event &iEvent, const edm::EventSetup& i
 
 
 // ----------------------------------------------------------------------
-void Bs2MuMu::kalmanVertexFit(const edm::Event &iEvent, const edm::EventSetup& iSetup
-			, TransientVertex *vtx, int type, unsigned int ntracks) {
+double Bs2MuMu::kalmanVertexFit(const edm::Event &iEvent, const edm::EventSetup& iSetup
+				, int type, unsigned int ntracks) {
 
+  // TYPE =    -1: fillVertex without filling vertex/candidate in ntuple
+  //     
+  //      =     0: B->mu mu K (all candidates)
+  //      =  531x: B->mu mu                    ----> where x = bmmsel mode
+  //      =  443x: J/Psi->mu mu
+  //      =  521x: B->mu mu K
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>kalmanVertexFit> Starting with secondary vertex, event: " << fNevt << endl;
@@ -1501,7 +1604,6 @@ void Bs2MuMu::kalmanVertexFit(const edm::Event &iEvent, const edm::EventSetup& i
   // -- Kalman Vertex Fit
   std::vector<reco::TransientTrack> RecoTransientTrack;
   RecoTransientTrack.clear();
-  
   
   edm::ESHandle<TransientTrackBuilder> theB;
   iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",theB);
@@ -1522,14 +1624,13 @@ void Bs2MuMu::kalmanVertexFit(const edm::Event &iEvent, const edm::EventSetup& i
 
   // -- Does not work for CMSSW_1_2_0
   TransientVertex TransSecVtx = theFitter.vertex(RecoTransientTrack); 
-  vtx = &TransSecVtx;
   
   if ( TransSecVtx.isValid() ) {
     cout << "==>kalmanVertexFit> KVF successful!" << endl; 
   } else {
     cout << "==>kalmanVertexFit> KVF failed!" << endl;
     cout << "==>kalmanVertexFit> Aborting... !" << endl;
-    return;
+    return -1;
   }
 
   if (fVerbose) cout << "==>kalmanVertexFit> Filling vector SecVtx" << endl;
@@ -1546,6 +1647,8 @@ void Bs2MuMu::kalmanVertexFit(const edm::Event &iEvent, const edm::EventSetup& i
   if (fVerbose) cout << "Chi2 of SecVtx-Fit: " << chi.value() << endl;
 
   fillVertex(iEvent, iSetup, &TransSecVtx, type, ntracks);
+
+  return chi.value();
 }
 
 
@@ -1553,7 +1656,6 @@ void Bs2MuMu::kalmanVertexFit(const edm::Event &iEvent, const edm::EventSetup& i
 void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track *it, int idx, int verb) {
 
   if ( verb == 1 ) {
-    if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
     if (fVerbose) cout << "==>fillTrack> Filling track #" << idx << ", event: " << fNevt << endl;
   }
 
@@ -1741,10 +1843,12 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
 void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
 			 , TransientVertex *v, int type, unsigned int ntracks) {
 
-  // TYPE = 0: B->mu mu K (all candidates)
-  //      = 1: B->mu mu
-  //      = 2: J/Psi->mu mu
-  //      = 3: B->mu mu K
+  // TYPE =    -1: without filling vertex/candidate in ntuple
+  //     
+  //      =     0: B->mu mu K (all candidates)
+  //      =  531x: B->mu mu                    ----> where x = bmmsel mode
+  //      =  443x: J/Psi->mu mu
+  //      =  521x: B->mu mu K
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>fillVertex> Filling vertex, event: " << fNevt << endl;
@@ -1758,12 +1862,15 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
   std::vector<reco::Track> refitted;
   std::vector<reco::Track> original;
 
+  fStuff->RefittedTracks.clear();
+
   for(vector<reco::TransientTrack>::const_iterator i = refTT.begin(); 
       i != refTT.end(); i++) {
 
     const Track & ftt = i->track();
     // if (fVerbose) cout << "mmmmmmm : " << ftt->innermomentum() << endl;
     refitted.push_back(ftt);
+    fStuff->RefittedTracks.push_back(ftt);
   }
 
   for(vector<reco::TransientTrack>::const_iterator i = orgTT.begin(); 
@@ -1777,8 +1884,12 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
   TLorentzVector bs;
 
   int i1(0), i2(0);
+  double mass(-1.);
 
   fEff->Fill(30.1);
+
+  // ==============================================================================================
+  // ----------------------------- REFITTED TRACKS ------------------------------------------------
 
   if ( refitted.size() == ntracks ) {
 
@@ -1786,8 +1897,11 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
 
     if ( ntracks == 2 ) {
       
-      if (fVerbose) cout << "--- Vertex with number of refitted tracks: " << refitted.size() << " ---" << endl;
+      if (fVerbose) cout << "--- Vertex with number of refitted tracks: " << refitted.size() << " of 2 ---" << endl;
       
+      i1 = fStuff->RecTracksIndex[0];
+      i2 = fStuff->RecTracksIndex[1];
+
       m0.SetXYZM(refitted[0].px(),
 		 refitted[0].py(),
 		 refitted[0].pz(),
@@ -1800,24 +1914,16 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
   
       bs = m0 + m1;
    
-      double mass(0.);
       mass = bs.M();
-      if ( mass ) {
-	if (fVerbose) cout << "fillVertex> Inv. Mass = " << mass << endl;
-	fM100->Fill(mass);
-      }
-      else {
-	if (fVerbose) cout << "fillVertex> no mass" << endl;
-      }
-
-      i1 = fEvent->getSigTrack(0)->fIndex;
-      i2 = fEvent->getSigTrack(1)->fIndex;
     }
       
     if ( ntracks == 3 ) {
       
-      if (fVerbose) cout << "--- Vertex with number of refitted tracks: " << refitted.size() << " ---" << endl;
+      if (fVerbose) cout << "--- Vertex with number of refitted tracks: " << refitted.size() << " of 3 ---" << endl;
       
+      i1 = fStuff->RecTracksIndex[0];
+      i2 = fStuff->RecTracksIndex[2];  // This should be the K+
+
       m0.SetXYZM(refitted[0].px(),
 		 refitted[0].py(),
 		 refitted[0].pz(),
@@ -1835,22 +1941,13 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
       
       bs = m0 + m1 + kp;
       
-
-      double mass(0.);
-      mass = bs.M();
-      if ( mass ) {
-	if (fVerbose) cout << "fillVertex> Inv. Mass = " << mass << endl;
-	fM200->Fill(mass);
-      }
-      else {
-	if (fVerbose) cout << "fillVertex> no mass" << endl;
-      }
-
-      i1 = fEvent->getSigTrack(0)->fIndex;
-      i2 = fEvent->getSigTrack(2)->fIndex;  // This should be the K+
-      
+      mass = bs.M();     
     }
-  } else if ( original.size() == ntracks ) {
+  }
+  
+  // ----------------------------- ORIGINAL TRACKS --------------------------------------------------
+  
+  else if ( original.size() == ntracks ) {
 
     if (fVerbose) cout << "--- Not enough refitted tracks for this Vertex: " << refitted.size()  << " ---" << endl;
     if (fVerbose) cout << "--- Use original tracks instead ---" << endl;
@@ -1859,7 +1956,10 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
 
     if ( ntracks == 2 ) {
       
-      if (fVerbose) cout << "--- Vertex with number of original tracks: " << original.size() << " ---" << endl;
+      if (fVerbose) cout << "--- Vertex with number of original tracks: " << original.size() << " of 2 ---" << endl;
+      
+      i1 = fStuff->RecTracksIndex[0];
+      i2 = fStuff->RecTracksIndex[1];
       
       m0.SetXYZM(original[0].px(),
 		 original[0].py(),
@@ -1873,24 +1973,16 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
       
       bs = m0 + m1;
 
-      double mass(0.);
       mass = bs.M();
-      if ( mass ) {
-	if (fVerbose) cout << "fillVertex> Inv. Mass = " << mass << endl;
-	fM100->Fill(mass);
-      }
-      else {
-	if (fVerbose) cout << "fillVertex> no mass" << endl;
-      }
-      
-      i1 = fEvent->getSigTrack(0)->fIndex;
-      i2 = fEvent->getSigTrack(1)->fIndex;
     }
       
     if ( ntracks == 3 ) {
       
-      if (fVerbose) cout << "--- Vertex with number of original tracks: " << original.size() << " ---" << endl;
+      if (fVerbose) cout << "--- Vertex with number of original tracks: " << original.size() << "of 3 ---" << endl;
       
+      i1 = fStuff->RecTracksIndex[0];
+      i2 = fStuff->RecTracksIndex[2];  // This should be the K+
+
       m0.SetXYZM(original[0].px(),
 		 original[0].py(),
 		 original[0].pz(),
@@ -1908,37 +2000,30 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
       
       bs = m0 + m1 + kp;
 
-      double mass(0.);
       mass = bs.M();
-      if ( mass ) {
-	if (fVerbose) cout << "fillVertex> Inv. Mass = " << mass << endl;
-	fM200->Fill(mass);
-      }
-      else {
-	if (fVerbose) cout << "fillVertex> no mass" << endl;
-      }
-      
-      i1 = fEvent->getSigTrack(0)->fIndex;
-      i2 = fEvent->getSigTrack(2)->fIndex;  // This should be the K+
-      
     }
-  } else {
-      fEff->Fill(33.1);
-      if (fVerbose) cout << "!!! Not enough tracks for this Vertex: " << refitted.size() 
-	   << " refitted and " << original.size() << "original tracks !!!" << endl;
+  }
+
+  // ----------------------------- NO TRACKS ?! --------------------------------------------------
+
+  else {
+
+    fEff->Fill(33.1);
+    if (fVerbose) cout << "!!! Not enough tracks for this Vertex: " << refitted.size() 
+		       << " refitted and " << original.size() << "original tracks !!!" << endl;
   }
   
+  // ---------------------------------------------------------------------------------------------
+  // ==============================================================================================
+
+
+  if (type == 0)            fM000[fStuff->fBmmSel-1]->Fill(mass);
+  if (int(type/10) == 531)  fM100[fStuff->fBmmSel-1]->Fill(mass);
+  if (int(type/10) == 443)  fM200[fStuff->fBmmSel-1]->Fill(mass);
+  if (int(type/10) == 521)  fM300[fStuff->fBmmSel-1]->Fill(mass);
+
+
   ChiSquared chi(v->totalChiSquared(), v->degreesOfFreedom());
-
-  // -- Adding vertex to ntuple ...
-  TAnaVertex *pVtx = new TAnaVertex();
-
-    //    pVtx->setInfo(chi2.value(), chi2.degreesOfFreedom(), chi2.probability(), 0, 2); ??? change ndof to double ???
-  pVtx->setInfo(chi.value(), int(chi.degreesOfFreedom()), chi.probability(), 1, type);
-  pVtx->fPoint.SetXYZ(v->position().x(), v->position().y(), v->position().z());
-
-  pVtx->addTrack(i1);
-  pVtx->addTrack(i2);
 
   VertexDistanceXY axy;
   double dXY      = axy.distance(fStuff->primaryVertex2, *v).value();
@@ -1950,31 +2035,51 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
   double d3dE     = a3d.distance(fStuff->primaryVertex2, *v).error();
   double comp3d   = a3d.compatibility(fStuff->primaryVertex2, *v);
 
-  pVtx->fDxy  = dXY; 
-  pVtx->fDxyE = dXYE; 
-  pVtx->fCxy  = compXY; 
 
-  pVtx->fD3d  = d3d; 
-  pVtx->fD3dE = d3dE; 
-  pVtx->fC3d  = comp3d; 
+  if (fVerbose) {
+
+    cout << "   KVF Vertex/cand of type " << type << " points to signal tracks: " << i1 << " and " << i2 << endl;
+    cout << "      mass: " << mass << endl;
+    cout << "      PVF xy: " << dXY << " +/- " << dXYE << "   comp: " << compXY << endl;
+    cout << "      PVF 3d: " << d3d << " +/- " << d3dE << "   comp: " << comp3d << endl;
+  }
+
+  if ( type > -1 ) {  
 
 
-  // -- Adding Candidate to ntuple...
-  TAnaCand  *pCand = fEvent->addCand();
+    // -- Adding vertex to ntuple ...
+    TAnaVertex *pVtx = new TAnaVertex();
+    
+    //    pVtx->setInfo(chi2.value(), chi2.degreesOfFreedom(), chi2.probability(), 0, 2); ??? change ndof to double ???
+    pVtx->setInfo(chi.value(), int(chi.degreesOfFreedom()), chi.probability(), 1, type);
+    pVtx->fPoint.SetXYZ(v->position().x(), v->position().y(), v->position().z());
+    
+    pVtx->addTrack(i1);
+    pVtx->addTrack(i2);
+    
+    pVtx->fDxy  = dXY; 
+    pVtx->fDxyE = dXYE; 
+    pVtx->fCxy  = compXY; 
+    
+    pVtx->fD3d  = d3d; 
+    pVtx->fD3dE = d3dE; 
+    pVtx->fC3d  = comp3d; 
+    
+    // -- Adding Candidate to ntuple.
+    TAnaCand  *pCand = fEvent->addCand();
+    
+    pCand->fPlab = bs.Vect();
+    pCand->fMass = bs.M();
+    
+    pCand->fSig1 = i1;  
+    pCand->fSig2 = i2;  
+    pCand->fType = type;
+    
+    pCand->fVtx  = *pVtx;    
 
-  pCand->fPlab =  bs.Vect();
-  pCand->fMass = bs.M();
-
-  pCand->fSig1 = i1;  
-  pCand->fSig2 = i2;  
-  pCand->fType = type;
+    if (fVerbose) cout << "fillVertex> Vertex/cand Added to ntuple ... " << endl; 
+  }    
   
-  pCand->fVtx  = *pVtx;
-
-  if (fVerbose) cout << "   KVF Vertex/cand of type " << type << " points to signal tracks: " << i1 << " and " << i2 << endl;
-  if (fVerbose) cout << "      mass: " << pCand->fMass << endl;
-  if (fVerbose) cout << "      PVF xy: " << dXY << " +/- " << dXYE << "   comp: " << compXY << endl;
-  if (fVerbose) cout << "      PVF 3d: " << d3d << " +/- " << d3dE << "   comp: " << comp3d << endl;
 
 
   // -----------------------------------------------------------------------------------
@@ -2114,6 +2219,7 @@ void Bs2MuMu::decayChannel(const char *fileName) {
   fTruthMC_I = 13;  fTruthMC_II = 13; fTruthMC2 = -1;
   fTruthMC_mom = 531;                 fTruthMC2_mom = -1;
   fTruthMC_gmo = -1;                  fTruthMC2_gmo = -1;
+  fMass = 5.367;                      fMass2 = -1;
 
   fPrintChannel = "N/D";              fPrintChannel2 = "N/D";
 
@@ -2122,6 +2228,8 @@ void Bs2MuMu::decayChannel(const char *fileName) {
 
     fTruthMC_I = 321;  fTruthMC_II = -1;
     fTruthMC_mom = 531;
+    fMass = 5.367;
+
     fPrintChannel = "Bs -> K+ K-";
     if (fVerbose) cout << "Selected decay mode: Bs (" << fTruthMC_mom << ") to K+ K- (" << fTruthMC_I << ")" << endl;
 
@@ -2129,23 +2237,27 @@ void Bs2MuMu::decayChannel(const char *fileName) {
 
     fTruthMC_I = 211;  fTruthMC_II = -1;
     fTruthMC_mom = 511;
+    fMass = 5.279;
+
     fPrintChannel = "Bd -> pi+ pi-";
     if (fVerbose) cout << "Selected decay mode: Bd (" << fTruthMC_mom << ") to pi+ pi- (" << fTruthMC_I << ")" << endl;
 
   } else if ( !strcmp("Lb2PKm", fileName) ) {
 
     fTruthMC_I = 321;  fTruthMC_II = 2212;
-    fTruthMC_mom = 5122;                  
+    fTruthMC_mom = 5122; 
+    fMass = 5.624;                 
 
     fPrintChannel = "Lb -> p+ K-";
     if (fVerbose) cout << "Selected decay mode: Lb (" << fTruthMC_mom << ") to p+ (" 	 << fTruthMC_II 
-	 << ") K- (" << fTruthMC_I << ")" << endl;
+		       << ") K- (" << fTruthMC_I << ")" << endl;
 
   } else {
     
     fTruthMC_I = 13;  fTruthMC_II = 13; fTruthMC2 = 321;
     fTruthMC_mom = 531;                 fTruthMC2_mom = 443;
     fTruthMC_gmo = -1;                  fTruthMC2_gmo = 521;
+    fMass = 5.367;                      fMass2 = 3.096;
 
     fPrintChannel = "Bs -> mu+ mu-";
     fPrintChannel2 = "B+ -> J/Psi K+";
@@ -2153,9 +2265,9 @@ void Bs2MuMu::decayChannel(const char *fileName) {
     if (fVerbose) cout << "Selected decay modes: Bs (" << fTruthMC_mom << ") to mu+ mu- (" << fTruthMC_I << ")" << endl
 		       << "     and B+ (" << fTruthMC2_gmo << ") to J/Psi (" << fTruthMC2_mom << ") K+ (" << fTruthMC2
 		       << ") where J/Psi to mu+ mu- (" << fTruthMC_I  << ")" << endl;
-  }
+  }          
 
-  if (fVerbose) cout << "   ---> Channel (" << fChannel << "): " << fPrintChannel << endl;
+  if (fVerbose) cout << "   ---> Channels (" << fChannel << "): " << fPrintChannel << " " << fPrintChannel2 << endl;
 
 //   } else if ( !strcmp("bsmumug", fileName.Data()) || 
 // 	    !strcmp("bsmumup0", fileName.Data()) ||
