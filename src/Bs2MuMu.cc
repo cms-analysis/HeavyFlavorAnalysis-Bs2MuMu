@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.3 2007/09/21 15:36:21 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.4 2007/09/25 15:25:41 ceggel Exp $
 //
 //
 
@@ -167,10 +167,10 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
 
   for (int i = 0; i < 3; i++) {
 
-    fM000[i]  = new TH1D(Form("m000_%i", i+1), "inv. Mass Cand0 (all kaon cand.)", 1000, 0., 10. );
-    fM100[i]  = new TH1D(Form("m531_%i", i+1), "inv. Mass Cand1 (bmm)", 1000, 0., 10. );
-    fM200[i]  = new TH1D(Form("m443_%i", i+1), "inv. Mass Cand2 (jpsi)", 1000, 0., 10. );
-    fM300[i]  = new TH1D(Form("m521_%i", i+1), "inv. Mass Cand3 (bjk)", 1000, 0., 10. );
+    fM000[i]  = new TH1D(Form("m000_%i", i+1), Form("inv. Mass Cand0 (all kaon cand.), sel = %i", i+1), 1000, 0., 10. );
+    fM100[i]  = new TH1D(Form("m531_%i", i+1), Form("inv. Mass Cand1 (bmm), sel = %i", i+1), 1000, 0., 10. );
+    fM200[i]  = new TH1D(Form("m443_%i", i+1), Form("inv. Mass Cand2 (jpsi), sel = %i", i+1), 1000, 0., 10. );
+    fM300[i]  = new TH1D(Form("m521_%i", i+1), Form("inv. Mass Cand3 (bjk), sel = %i", i+1), 1000, 0., 10. );
   }
 
   // -- Kaon Selection
@@ -363,6 +363,9 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   // -- Reconstructed Tracks
   fillRecTracks(iEvent);
 
+  // -- Signal Tracks (Global Muons)
+  trimBmmTracks(iEvent);
+
   // -- Primary Vertex
   int npv = primaryVertex(iEvent);
   if (!npv) {
@@ -411,7 +414,6 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
     fStuff->fBmmSel = -1;
   }
 
- 
   // -- Dump tree
   fTree->Fill();
 
@@ -828,8 +830,6 @@ void Bs2MuMu::bmmTracks1(const edm::Event &iEvent) {
     } 
     
   } 
-
-  //  trimBmmTracks(iEvent);
 }
 
 
@@ -945,8 +945,6 @@ void Bs2MuMu::bmmTracks2(const edm::Event &iEvent) {
 	   <<  " matched to 0 MC Tracks" << endl;
     }
   }
-
-  //  trimBmmTracks(iEvent);
 }
 
 
@@ -1003,10 +1001,7 @@ void Bs2MuMu::bmmTracks3(const edm::Event &iEvent) {
 //     glbMuons1.push_back(MuonRef(MuCollection,mcnt-1));
 //     glbMuons2.push_back(MuonRef(MuCollection,mcnt-1));
   }
-
-  trimBmmTracks(iEvent);
 }
-
 
 
 // ----------------------------------------------------------------------
@@ -1250,7 +1245,8 @@ int Bs2MuMu::massMuonCand(const edm::Event &iEvent, const edm::EventSetup& iSetu
 
   TLorentzVector m0, m1, cand; 
   double mass(-1.);
-  double dmass(0.2);
+  double dmass_1(0.6);
+  double dmass_2(0.2);
   
   m0.SetXYZM((*fStuff->RecTracks[0]).px(),
 	     (*fStuff->RecTracks[0]).py(),
@@ -1265,7 +1261,7 @@ int Bs2MuMu::massMuonCand(const edm::Event &iEvent, const edm::EventSetup& iSetu
   cand  = m0 + m1;
   mass  = cand.M();
 
-  if ( mass > (m_cand1 - dmass)  && mass < (m_cand1 + dmass) &&
+  if ( mass > (m_cand1 - dmass_1)  && mass < (m_cand1 + dmass_1) &&
        fStuff->RecTracks[0]->charge() != fStuff->RecTracks[1]->charge() ) { 
 
 
@@ -1277,7 +1273,7 @@ int Bs2MuMu::massMuonCand(const edm::Event &iEvent, const edm::EventSetup& iSetu
 		       << ")" << endl;
     return 1;
 	  
-  } else if ( mass > (m_cand2 - dmass)  && mass < (m_cand2 + dmass) &&
+  } else if ( mass > (m_cand2 - dmass_2)  && mass < (m_cand2 + dmass_2) &&
 	      fStuff->RecTracks[0]->charge() != fStuff->RecTracks[1]->charge() ) { 
 
     if (fVerbose) cout << endl << "==>massCandidate> : Found J/Psi candidates with muons \t #"
