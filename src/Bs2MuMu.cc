@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.5 2007/09/27 09:00:56 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.6 2007/09/27 09:42:06 ceggel Exp $
 //
 //
 
@@ -1671,10 +1671,17 @@ double Bs2MuMu::kalmanVertexFit(const edm::Event &iEvent, const edm::EventSetup&
   
   if ( TransSecVtx.isValid() ) {
     cout << "==>kalmanVertexFit> KVF successful!" << endl; 
+
+    if ( isnan(TransSecVtx.position().x()) || isnan(TransSecVtx.position().y()) || isnan(TransSecVtx.position().z()) ) {
+
+      cout << "==>kalmanVertexFit> Something went wrong!" << endl;
+      cout << "==>kalmanVertexFit> SecVtx nan - Aborting... !" << endl;
+      return -2.;
+    }
   } else {
     cout << "==>kalmanVertexFit> KVF failed!" << endl;
     cout << "==>kalmanVertexFit> Aborting... !" << endl;
-    return -1;
+    return -1.;
   }
 
   if (fVerbose) cout << "==>kalmanVertexFit> Filling vector SecVtx" << endl;
@@ -1688,6 +1695,7 @@ double Bs2MuMu::kalmanVertexFit(const edm::Event &iEvent, const edm::EventSetup&
   printf ("RECO SecVtx (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", SecVtx.X(), SecVtx.Y(), SecVtx.Z());
 
   ChiSquared chi(TransSecVtx.totalChiSquared(), TransSecVtx.degreesOfFreedom());
+
   if (fVerbose) cout << "Chi2 of SecVtx-Fit: " << chi.value() << endl;
 
   fillVertex(iEvent, iSetup, &TransSecVtx, type, ntracks);
