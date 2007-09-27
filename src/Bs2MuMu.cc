@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.4 2007/09/25 15:25:41 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.5 2007/09/27 09:00:56 ceggel Exp $
 //
 //
 
@@ -928,6 +928,21 @@ void Bs2MuMu::bmmTracks2(const edm::Event &iEvent) {
 	gen_cnt++;	 
       }
 
+      // -- eff. histogram ---------------------------
+
+      if ( fStuff->MuonRecTracks.size() >= 0 ) {
+
+	if ( fStuff->MuonRecTracks.size() < 9 ) {
+	  
+	  fEff->Fill(60.1 + fStuff->MuonRecTracks.size());
+
+	} else {
+	  
+	  fEff->Fill(69.1);
+	}
+      }
+
+      // ----------------------------------------------
 
       if ( gen_cnt == 0 ) {
 	
@@ -1001,6 +1016,21 @@ void Bs2MuMu::bmmTracks3(const edm::Event &iEvent) {
 //     glbMuons1.push_back(MuonRef(MuCollection,mcnt-1));
 //     glbMuons2.push_back(MuonRef(MuCollection,mcnt-1));
   }
+
+  // -- eff. histogram ---------------------------
+  
+  if ( fStuff->MuonRecTracks.size() >= 0 ) {
+    
+    if ( fStuff->MuonRecTracks.size() < 9 ) {
+      
+      fEff->Fill(70.1 + fStuff->MuonRecTracks.size());
+      
+    } else {
+      
+      fEff->Fill(79.1);
+    }
+  }
+  // ----------------------------------------------
 }
 
 
@@ -1215,6 +1245,8 @@ void Bs2MuMu::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iS
 	index++;	
       }
 
+      // ------------------------------------------------------------------------  
+
       if (ncand)  fK200->Fill(fStuff->SecVtxChi2[cand], fStuff->InvMass[cand]);
       
       if (fVerbose) {
@@ -1231,8 +1263,20 @@ void Bs2MuMu::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iS
 	       << i << "." << endl;
 	}
       }
+ 
+      // -- eff. histogram ---------------------------
 
-      // ------------------------------------------------------------------------      
+      if ( ncand < 9 ) {
+	
+	fEff->Fill(80.1 + ncand );
+	
+      } else {
+	
+	fEff->Fill(89.1);
+      }
+
+      // ----------------------------------------------  
+ 
     }
   }
 }
@@ -1575,6 +1619,10 @@ void Bs2MuMu::secondaryVertex(const edm::Event &iEvent, const edm::EventSetup& i
       }
     }
   }
+
+  if (fStuff->BmmPairTracks.size() >= 0 ) fEff->Fill(100.1 + (fStuff->fBmmSel-1)*100 + fStuff->BmmPairTracks.size());
+  if (fStuff->JpsiPairTracks.size() >= 0 )fEff->Fill(120.1 + (fStuff->fBmmSel-1)*100 + fStuff->JpsiPairTracks.size());
+  if (fStuff->KaonTrack.size() >= 0 )     fEff->Fill(140.1 + (fStuff->fBmmSel-1)*100 + fStuff->KaonTrack.size());
 }
 
 
