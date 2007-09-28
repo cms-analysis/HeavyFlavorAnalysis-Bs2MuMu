@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.6 2007/09/27 09:42:06 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.7 2007/09/27 15:39:50 ceggel Exp $
 //
 //
 
@@ -161,7 +161,7 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
   decayChannel(fChannel.c_str());
 
   // -- Troubleshoot histogramm
-  fEff = new TH1D("eff", "Efficiencies", 100, 0., 100. );
+  fEff = new TH1D("eff", "Efficiencies", 100, 0., 1000. );
 
   // -- Invariant mass & control histograms
 
@@ -1239,6 +1239,7 @@ void Bs2MuMu::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iS
 	    trk  = index;
 	    cand = ncand;
 	  }
+
 	  ncand++;
 	}
 	
