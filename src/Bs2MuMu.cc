@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.7 2007/09/27 15:39:50 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.8 2007/09/28 16:33:47 ceggel Exp $
 //
 //
 
@@ -838,7 +838,7 @@ void Bs2MuMu::bmmTracks2(const edm::Event &iEvent) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>bmmTracks2> Matching particle, truth matched to be particle PDG #" 
-       << fTruthMC_I << "in the generator block, event: " << fNevt << endl;
+       << fTruthMC_I << " in the generator block, event: " << fNevt << endl;
 
   // -- get the collection of RecoTracks 
   edm::Handle<reco::TrackCollection> tracks;
@@ -1132,8 +1132,8 @@ void Bs2MuMu::muonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iS
 	fStuff->RecTracks.push_back(fStuff->MuonRecTracks[i]);
 	fStuff->RecTracks.push_back(fStuff->MuonRecTracks[j]);
 
-	fStuff->RecTracksIndex.push_back(i);
-	fStuff->RecTracksIndex.push_back(j);
+	fStuff->RecTracksIndex.push_back(fStuff->MuonRecTracksIndex[i]);
+	fStuff->RecTracksIndex.push_back(fStuff->MuonRecTracksIndex[j]);
 
 	type = massMuonCand(iEvent, iSetup, m_cand1, m_cand2);   //  < ------- here
 
@@ -1177,7 +1177,8 @@ void Bs2MuMu::muonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iS
 void Bs2MuMu::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup, double cone) { 
    
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
-  if (fVerbose) cout << "==>kaonCandTracks> Find kaon candidate with best chi2, from all tracks in cone "
+  if (fVerbose) cout << "==>kaonCandTracks> Find " << fStuff->JpsiPairTracks.size() 
+		     << " kaon candidate(s) with best chi2, from all tracks in cone "
 		     << cone << " around reconstructed J/Psi , event: " << fNevt << endl;
 
   const reco::Track* tt = 0;
@@ -1187,11 +1188,9 @@ void Bs2MuMu::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iS
 
   if ( fStuff->JpsiPairTracks.size() > 0 ) {
     
-    fStuff->KaonTrack.push_back(tt);
-    fStuff->KaonTrackIndex.push_back(-1);
+    for ( unsigned int i=0; i<fStuff->JpsiPairTracks.size(); i++ ) {
 
-    for ( unsigned int i=0; i<fStuff->JpsiPairTracks.size(); i++ ) { 
-
+      // -- Muons from J/Psi
       fStuff->RecTracks.clear();
       fStuff->RecTracksIndex.clear();
 
@@ -1202,8 +1201,12 @@ void Bs2MuMu::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iS
       fStuff->RecTracksIndex.push_back(fStuff->JpsiPairTracksIndex[i].second);  
 
       // ------------------------------------------------------------------------
-      // -- Find kaon for given muon pair
+      // -- Find kaon for given muon pair (if no kaon cand. found, index remains -1)
+      fStuff->KaonTrack.push_back(tt);
+      fStuff->KaonTrackIndex.push_back(-1);
+
       index = 0; trk = -1; ncand = 0; cand = -1;
+
       fStuff->SecVtxChi2.clear();
       fStuff->InvMass.clear();
 
@@ -1219,7 +1222,7 @@ void Bs2MuMu::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iS
 	fStuff->RecTracks.push_back(tt);
 	fStuff->RecTracksIndex.push_back(index);
      
-	chi2 =  rmmKaonCand(iEvent, iSetup, cone);   //  < ------- here
+	chi2 =  rmmKaonCand(iEvent, iSetup, cone);   //  < ------- here: chi2 = -1, if outside cone!
 
 	fStuff->RecTracks.pop_back();
 	fStuff->RecTracksIndex.pop_back();
@@ -1576,6 +1579,10 @@ void Bs2MuMu::secondaryVertex(const edm::Event &iEvent, const edm::EventSetup& i
 
   double chi2(-1.);
 
+  int nbs0  = fStuff->BmmPairTracks.size();
+  int njpsi = fStuff->JpsiPairTracks.size();
+  int nkaon = fStuff->KaonTrack.size();
+
   if ( fStuff->BmmPairTracks.size() > 0 ) {
     
     for ( unsigned int i=0; i<fStuff->BmmPairTracks.size(); i++ ) { 
@@ -1596,34 +1603,43 @@ void Bs2MuMu::secondaryVertex(const edm::Event &iEvent, const edm::EventSetup& i
  
   if ( fStuff->JpsiPairTracks.size() > 0 ) {
     
-    for ( unsigned int i=0; i<fStuff->JpsiPairTracks.size(); i++ ) { 
-      
-      if ( fStuff->KaonTrackIndex[i] > 0 ) {
+    if ( fStuff->JpsiPairTracks.size() == fStuff->KaonTrack.size() ) {
 
-	fStuff->RecTracks.clear();
-	fStuff->RecTracksIndex.clear();
+      for ( unsigned int i=0; i<fStuff->JpsiPairTracks.size(); i++ ) { 
 	
-	fStuff->RecTracks.push_back(fStuff->JpsiPairTracks[i].first);
-	fStuff->RecTracksIndex.push_back(fStuff->JpsiPairTracksIndex[i].first);
-
-	fStuff->RecTracks.push_back(fStuff->JpsiPairTracks[i].second);
-	fStuff->RecTracksIndex.push_back(fStuff->JpsiPairTracksIndex[i].second);
-	
-	chi2 = kalmanVertexFit(iEvent, iSetup, 4430+fStuff->fBmmSel , 2);  // Vertex TYPE = 443x 
-	                                                                   // -> mu mu from J/Psi, 2 TRACKS => Cand 2
-	
-	fStuff->RecTracks.push_back(fStuff->KaonTrack[i]);
-	fStuff->RecTracksIndex.push_back(fStuff->KaonTrackIndex[i]);
-	
-	chi2 = kalmanVertexFit(iEvent, iSetup, 5210+fStuff->fBmmSel, 3);  // Vertex TYPE = 521x  
-	                                                                  // -> mu mu K, 3 TRACKS => Cand 3
+	if ( fStuff->KaonTrackIndex[i] > 0 ) {
+	  
+	  fStuff->RecTracks.clear();
+	  fStuff->RecTracksIndex.clear();
+	  
+	  fStuff->RecTracks.push_back(fStuff->JpsiPairTracks[i].first);
+	  fStuff->RecTracksIndex.push_back(fStuff->JpsiPairTracksIndex[i].first);
+	  
+	  fStuff->RecTracks.push_back(fStuff->JpsiPairTracks[i].second);
+	  fStuff->RecTracksIndex.push_back(fStuff->JpsiPairTracksIndex[i].second);
+	  
+	  chi2 = kalmanVertexFit(iEvent, iSetup, 4430+fStuff->fBmmSel , 2);  // Vertex TYPE = 443x 
+	                                                                     // -> mu mu from J/Psi, 2 TRACKS => Cand 2
+	  
+	  fStuff->RecTracks.push_back(fStuff->KaonTrack[i]);
+	  fStuff->RecTracksIndex.push_back(fStuff->KaonTrackIndex[i]);
+	  
+	  chi2 = kalmanVertexFit(iEvent, iSetup, 5210+fStuff->fBmmSel, 3);  // Vertex TYPE = 521x  
+	                                                                    // -> mu mu K, 3 TRACKS => Cand 3
+	}
       }
+    } else {
+
+      cout << "****ERROR: Number of kaon candidates: " << fStuff->KaonTrack.size()
+	   << ", is not equal to number of J/Psi candidates: " <<  fStuff->JpsiPairTracks.size() << "!!!! ****" <<endl;
+      nkaon = 9;
+      njpsi = 9;
     }
   }
 
-  if (fStuff->BmmPairTracks.size() >= 0 ) fEff->Fill(100.1 + (fStuff->fBmmSel-1)*100 + fStuff->BmmPairTracks.size());
-  if (fStuff->JpsiPairTracks.size() >= 0 )fEff->Fill(120.1 + (fStuff->fBmmSel-1)*100 + fStuff->JpsiPairTracks.size());
-  if (fStuff->KaonTrack.size() >= 0 )     fEff->Fill(140.1 + (fStuff->fBmmSel-1)*100 + fStuff->KaonTrack.size());
+  if (nbs0  >= 0 && nbs0  < 10) fEff->Fill(100.1 + (fStuff->fBmmSel-1)*100 + nbs0);
+  if (njpsi >= 0 && njpsi < 10) fEff->Fill(120.1 + (fStuff->fBmmSel-1)*100 + njpsi);
+  if (nkaon >= 0 && nkaon < 10) fEff->Fill(140.1 + (fStuff->fBmmSel-1)*100 + nkaon);
 }
 
 
