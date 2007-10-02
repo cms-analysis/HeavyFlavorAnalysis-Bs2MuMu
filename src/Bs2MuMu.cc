@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.8 2007/09/28 16:33:47 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.9 2007/10/01 11:53:02 ceggel Exp $
 //
 //
 
@@ -1293,7 +1293,7 @@ int Bs2MuMu::massMuonCand(const edm::Event &iEvent, const edm::EventSetup& iSetu
 
   TLorentzVector m0, m1, cand; 
   double mass(-1.);
-  double dmass_1(0.6);
+  double dmass_1(5.);
   double dmass_2(0.2);
   
   m0.SetXYZM((*fStuff->RecTracks[0]).px(),
