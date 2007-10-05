@@ -184,6 +184,7 @@ private:
     , fChannel, fPrintChannel, fPrintChannel2;
 
   double fMass, fMass2;
+  double fMassRange, fMassRange2, fMassKaon;
 
   int fVerbose, fGenVerbose, fSimVerbose, fRecVerbose, fGlbVerbose, fR2SVerbose;
 

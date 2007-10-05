@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.9 2007/10/01 11:53:02 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.10 2007/10/02 13:09:00 ceggel Exp $
 //
 //
 
@@ -750,38 +750,57 @@ void Bs2MuMu::bmmTracks1(const edm::Event &iEvent) {
 	    if (fVerbose) cout << "    *** " << fPrintChannel << " (" << mcand1 << ") *** ";
 	  }	  
 	  
-	  // -- Cand 2 (J/Psi)
+	  // -- Cand 2 (from J/Psi or from B directly)
 	  if ( abs(mom_pdg_id) == fTruthMC2_mom ) { 
-	    
-	    genGmo = genMom->mother();
-	    gmo_pdg_id = genGmo->ParticleID();
-	    gmo_id     = genGmo->barcode()-1;
-	    
-	    if (fVerbose) cout << endl << ".. and Grandmother Particle #" << gmo_id << " pT = " 
-			       << genGmo->Momentum().perp() << " ---> PDG ID: " << gmo_pdg_id;
-	    
-	    if ( abs(gmo_pdg_id) == fTruthMC2_gmo ) { 
-	      
-	      mcand2++;
-	      
-	      tt = &(*track);
-	      
-	      fStuff->JpsiRecTracks.push_back(tt);
-	      fStuff->JpsiRecTracksIndex.push_back(track.index());
-	      fStuff->JpsiRecTracksB.push_back(gmo_id);
 
-	      fStuff->MuonRecTracks.push_back(tt);
-	      fStuff->MuonRecTracksIndex.push_back(track.index());
+	    if ( fTruthMC2_gmo > 0 ) {
+	    
+	      genGmo = genMom->mother();
+	      gmo_pdg_id = genGmo->ParticleID();
+	      gmo_id     = genGmo->barcode()-1;
 	      
-	      if (fVerbose) cout << "    *** " << fPrintChannel2 << " (" << mcand2 << ". mu) *** ";
+	      if (fVerbose) cout << endl << ".. and Grandmother Particle #" << gmo_id << " pT = " 
+				 << genGmo->Momentum().perp() << " ---> PDG ID: " << gmo_pdg_id;
+	      
+	      if ( abs(gmo_pdg_id) == fTruthMC2_gmo ) { 
+		
+		mcand2++;
+		
+		tt = &(*track);
+		
+		fStuff->JpsiRecTracks.push_back(tt);
+		fStuff->JpsiRecTracksIndex.push_back(track.index());
+		fStuff->JpsiRecTracksB.push_back(gmo_id);
+		
+		fStuff->MuonRecTracks.push_back(tt);
+		fStuff->MuonRecTracksIndex.push_back(track.index());
+		
+		if (fVerbose) cout << "    *** " << fPrintChannel2 << " (" << mcand2 << ". mu) *** ";
+	      }
+	    
+	    } else { 
+		
+		mcand2++;
+		
+		tt = &(*track);
+		
+		fStuff->JpsiRecTracks.push_back(tt);
+		fStuff->JpsiRecTracksIndex.push_back(track.index());
+		fStuff->JpsiRecTracksB.push_back(mom_id);
+		
+		fStuff->MuonRecTracks.push_back(tt);
+		fStuff->MuonRecTracksIndex.push_back(track.index());
+		
+		if (fVerbose) cout << "    *** " << fPrintChannel2 << " (" << mcand2 << ". mu) *** ";
+
+
 	    }
 	    
+	    if (fVerbose) cout << endl; 
 	  }
-	  
-	  if (fVerbose) cout << endl; 
 	}
 	
-	// -- Cand 3 (only Kaon)
+	// -- Cand 3 (only Kaon or 3rd track)
 	if ( abs(gen_pdg_id) == fTruthMC2  ) { 
 	  
 	  genMom = genPar->mother();
@@ -1049,7 +1068,7 @@ void Bs2MuMu::truthCandTracks(const edm::Event &iEvent, const edm::EventSetup& i
 
 	if (i == j) { continue; }
 
-	if (fStuff->BmmRecTracksB[i] == fStuff->BmmRecTracksB[j]) {
+	if ( fStuff->BmmRecTracksB[i] == fStuff->BmmRecTracksB[j] ) {
 	  
 	  if ((*fStuff->BmmRecTracks[j]).pt() > (*fStuff->BmmRecTracks[i]).pt() ) { 
 	    fStuff->BmmPairTracks.push_back(pair<const reco::Track*, const reco::Track*>
@@ -1083,6 +1102,8 @@ void Bs2MuMu::truthCandTracks(const edm::Event &iEvent, const edm::EventSetup& i
 	  if ( fStuff->KaonRecTracks.size() > 0 ) {
 
 	    for ( unsigned int k=0; k<fStuff->KaonRecTracks.size(); k++ ) {
+
+	      if ( k == i || k == j ) { continue; }
 	      
 	      if (fStuff->JpsiRecTracksB[i] == fStuff->KaonRecTracksB[k]) {
 		
@@ -1293,8 +1314,8 @@ int Bs2MuMu::massMuonCand(const edm::Event &iEvent, const edm::EventSetup& iSetu
 
   TLorentzVector m0, m1, cand; 
   double mass(-1.);
-  double dmass_1(5.);
-  double dmass_2(0.2);
+  double dmass_1 = fMassRange;
+  double dmass_2 = fMassRange2;
   
   m0.SetXYZM((*fStuff->RecTracks[0]).px(),
 	     (*fStuff->RecTracks[0]).py(),
@@ -1309,7 +1330,7 @@ int Bs2MuMu::massMuonCand(const edm::Event &iEvent, const edm::EventSetup& iSetu
   cand  = m0 + m1;
   mass  = cand.M();
 
-  if ( mass > (m_cand1 - dmass_1)  && mass < (m_cand1 + dmass_1) &&
+  if ( m_cand1 > 0 && mass > (m_cand1 - dmass_1)  && mass < (m_cand1 + dmass_1) &&
        fStuff->RecTracks[0]->charge() != fStuff->RecTracks[1]->charge() ) { 
 
 
@@ -1321,7 +1342,7 @@ int Bs2MuMu::massMuonCand(const edm::Event &iEvent, const edm::EventSetup& iSetu
 		       << ")" << endl;
     return 1;
 	  
-  } else if ( mass > (m_cand2 - dmass_2)  && mass < (m_cand2 + dmass_2) &&
+  } else if ( m_cand2 > 0 && mass > (m_cand2 - dmass_2)  && mass < (m_cand2 + dmass_2) &&
 	      fStuff->RecTracks[0]->charge() != fStuff->RecTracks[1]->charge() ) { 
 
     if (fVerbose) cout << endl << "==>massCandidate> : Found J/Psi candidates with muons \t #"
@@ -2006,7 +2027,7 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
       kp.SetXYZM(refitted[2].px(),
 		 refitted[2].py(),
 		 refitted[2].pz(),
-		 0.493677);
+		 fMassKaon);
       
       bs = m0 + m1 + kp;
       
@@ -2285,44 +2306,212 @@ int Bs2MuMu::idRecTrack(const reco::Track *track) {
 // ----------------------------------------------------------------------
 void Bs2MuMu::decayChannel(const char *fileName) {
 
+  // -- sel = 1 settings
+  fPrintChannel = "N/D";              fPrintChannel2 = "N/D";
   fTruthMC_I = 13;  fTruthMC_II = 13; fTruthMC2 = -1;
   fTruthMC_mom = 531;                 fTruthMC2_mom = -1;
   fTruthMC_gmo = -1;                  fTruthMC2_gmo = -1;
+
+  // -- sel = 2, 3 settings
   fMass = 5.367;                      fMass2 = -1;
+  fMassRange = 5.;                    fMassRange2 = 0.2; 
+  fMassKaon = 0.493677;
 
-  fPrintChannel = "N/D";              fPrintChannel2 = "N/D";
 
-  //  if ( !strcmp("bd2pi", fileName.Data()) ) {
-  if ( !strcmp("Bs2KpKm", fileName) ) {
+  // ****************************************** Bd decays *********************************************************
+  if ( !strcmp("Bd2PiKp", fileName) ) { 
 
-    fTruthMC_I = 321;  fTruthMC_II = -1;
+    fTruthMC_I = 211;  fTruthMC_II = 321;
+    fTruthMC_mom = 511;
+    fMass = 5.367; //    fMass = 5.279;
+
+    fPrintChannel = "Bd -> pi- K+";
+
+    if (fVerbose) cout << "Selected decay mode: Bd (" << fTruthMC_mom << ") to K+ (" 	 << fTruthMC_II 
+		       << ") pi- (" << fTruthMC_I << ")" << endl;
+
+  } else if ( !strcmp("Bd2PiMuNu", fileName) ) {
+
+    fTruthMC_I = 211;  fTruthMC_II = 13;
+    fTruthMC_mom = 511;
+    fMass = 5.367; //    fMass = 5.279;
+
+    fPrintChannel = "Bd -> pi- mu+ nu_mu";
+
+    if (fVerbose) cout << "Selected decay mode: Bd (" << fTruthMC_mom << ") to mu+ (" 	 << fTruthMC_II 
+		       << ") pi- (" << fTruthMC_I << ") nu_mu" << endl;
+
+  } else if ( !strcmp("Bd2PiPi", fileName) ) {
+
+    fTruthMC_I = 211;  fTruthMC_II = 211;
+    fTruthMC_mom = 511;
+    fMass = 5.367; //    fMass = 5.279;
+
+    fPrintChannel = "Bd -> pi+ pi-";
+
+    if (fVerbose) cout << "Selected decay mode: Bd (" << fTruthMC_mom << ") to pi+ pi- (" << fTruthMC_I << ")" << endl;
+
+  } else if ( !strcmp("Bd2MuMu", fileName) ) {
+
+    fTruthMC_I = 13;  fTruthMC_II = 13;
+    fTruthMC_mom = 511;
+    fMass = 5.367; //    fMass = 5.279;
+
+    fPrintChannel = "Bd -> mu+ mu-";
+
+    if (fVerbose) cout << "Selected decay mode: Bd (" << fTruthMC_mom << ") to mu+ mu- (" << fTruthMC_I << ")" << endl;
+
+  } else if ( !strcmp("Bd2MuMuPi0", fileName) ) {
+
+    fTruthMC_I = 13;  fTruthMC_II = 13; fTruthMC2 = 111;
+    fTruthMC_mom = 511;                 fTruthMC2_mom = 511;
+    fTruthMC_gmo = -1;                  fTruthMC2_gmo = -1;
+    fMass = 5.367;  /* fMass = 5.279;*/ fMass2 = -1;
+    fMassKaon = 0.1349766;
+
+    fPrintChannel = "Bd -> mu+ mu-";
+    fPrintChannel2 = "Bd -> mu+ mu- pi0 ";
+
+    if (fVerbose) cout << "Selected decay modes: Bd (" << fTruthMC_mom << ") to mu+ mu- (" << fTruthMC_I << ")" << endl
+		       << "     and Bd (" << fTruthMC2_mom  << ") to mu+ mu- (" << fTruthMC_I << ") and pi0 (" 
+		       << fTruthMC2  << ")" << endl;
+
+  // ****************************************** Bs decays *********************************************************
+
+  }  else if ( !strcmp("Bs2KmMuNu", fileName) ) {   
+
+    fTruthMC_I = 321;  fTruthMC_II = 13;
+    fTruthMC_mom = 531;
+    fMass = 5.367;
+
+    fPrintChannel = "Bs -> K- mu+ nu_mu";
+
+    if (fVerbose) cout << "Selected decay mode: Bs (" << fTruthMC_mom << ") to mu+ (" 	 << fTruthMC_II 
+		       << ") K- (" << fTruthMC_I << ") nu_mu" << endl;
+
+  } else if ( !strcmp("Bs2KmPi", fileName) ) {
+
+    fTruthMC_I = 321;  fTruthMC_II = 211;
+    fTruthMC_mom = 531;
+    fMass = 5.367;
+
+    fPrintChannel = "Bs -> K- pi+";
+
+    if (fVerbose) cout << "Selected decay mode: Bs (" << fTruthMC_mom << ") to pi+ (" 	 << fTruthMC_II 
+		       << ") K- (" << fTruthMC_I << ")" << endl;
+
+  } else if ( !strcmp("Bs2KpKm", fileName) ) {
+
+    fTruthMC_I = 321;  fTruthMC_II = 321;
     fTruthMC_mom = 531;
     fMass = 5.367;
 
     fPrintChannel = "Bs -> K+ K-";
+
     if (fVerbose) cout << "Selected decay mode: Bs (" << fTruthMC_mom << ") to K+ K- (" << fTruthMC_I << ")" << endl;
 
-  } else if ( !strcmp("Bd2PiPi", fileName) ) {
+  }  else if ( !strcmp("Bs2PiPi", fileName) ) {
 
-    fTruthMC_I = 211;  fTruthMC_II = -1;
-    fTruthMC_mom = 511;
-    fMass = 5.279;
+    fTruthMC_I = 211;  fTruthMC_II = 211;
+    fTruthMC_mom = 531;
+    fMass = 5.367;
 
-    fPrintChannel = "Bd -> pi+ pi-";
-    if (fVerbose) cout << "Selected decay mode: Bd (" << fTruthMC_mom << ") to pi+ pi- (" << fTruthMC_I << ")" << endl;
+    fPrintChannel = "Bs -> pi+ pi-";
 
-  } else if ( !strcmp("Lb2PKm", fileName) ) {
+    if (fVerbose) cout << "Selected decay mode: Bs (" << fTruthMC_mom << ") to pi+ pi- (" << fTruthMC_I << ")" << endl;
+
+  } else if ( !strcmp("Bs2MuMuGamma", fileName) ) {
+
+    fTruthMC_I = 13;  fTruthMC_II = 13; fTruthMC2 = 22;
+    fTruthMC_mom = 531;                 fTruthMC2_mom = 531;
+    fTruthMC_gmo = -1;                  fTruthMC2_gmo = -1;
+    fMass = 5.367;                      fMass2 = -1;
+    fMassKaon = 0.;
+
+    fPrintChannel = "Bs -> mu+ mu-";
+    fPrintChannel2 = "Bs -> mu+ mu- gamma ";
+
+    if (fVerbose) cout << "Selected decay modes: Bs (" << fTruthMC_mom << ") to mu+ mu- (" << fTruthMC_I << ")" << endl
+		       << "     and Bs (" << fTruthMC2_mom  << ") to mu+ mu- (" << fTruthMC_I << ") and gamma (" 
+		       << fTruthMC2  << ")" << endl;
+
+  // ****************************************** Bu decays *********************************************************
+
+  } else if ( !strcmp("Bu2MuMuMuNu", fileName) ) {
+
+    fTruthMC_I = 13;  fTruthMC_II = 13; fTruthMC2 = 13;
+    fTruthMC_mom = 521;                 fTruthMC2_mom = 521;
+    fTruthMC_gmo = -1;                  fTruthMC2_gmo = -1;
+    fMass = 5.367; /* fMass = 5.279; */ fMass2 = -1;
+    fMassKaon = 0.1056583;
+
+    fPrintChannel = "Bu -> mu+ mu-";
+    fPrintChannel2 = "Bu -> mu+ mu- mu+ nu_mu ";
+
+    if (fVerbose) cout << "Selected decay modes: Bu (" << fTruthMC_mom << ") to mu+ mu- (" << fTruthMC_I << ")" << endl
+		       << "     and Bu (" << fTruthMC2_mom  << ") to mu+ mu- (" << fTruthMC_I << ") and mu+ (" 
+		       << fTruthMC2  << ") nu_mu" << endl;
+
+  // ****************************************** Bs decays *********************************************************
+
+  } else if ( !strcmp("Bc2MuMuMuNu", fileName) ) {
+
+    fTruthMC_I = 13;  fTruthMC_II = 13; fTruthMC2 = 13;
+    fTruthMC_mom = 521;                 fTruthMC2_mom = 521;
+    fTruthMC_gmo = -1;                  fTruthMC2_gmo = -1;
+    fMass = 5.367; /* fMass = 6.286; */ fMass2 = -1;
+    fMassKaon = 0.1056583;
+
+    fPrintChannel = "Bu -> mu+ mu-";
+    fPrintChannel2 = "Bu -> mu+ mu- mu+ nu_mu ";
+
+    if (fVerbose) cout << "Selected decay modes: Bc (" << fTruthMC_mom << ") to mu+ mu- (" << fTruthMC_I << ")" << endl
+		       << "     and Bc (" << fTruthMC2_mom  << ") to mu+ mu- (" << fTruthMC_I << ") and mu+ (" 
+		       << fTruthMC2  << ") nu_mu" << endl;
+
+  } else if ( !strcmp("Bc2JpsiMuNu", fileName) ){
+    
+    fTruthMC_I = 13;  fTruthMC_II = 13; fTruthMC2 = 321;
+    fTruthMC_mom = -1;                  fTruthMC2_mom = 443;
+    fTruthMC_gmo = -1;                  fTruthMC2_gmo = 521;
+    fMass = 5.367; /* fMass = 6.286;*/  fMass2 = 3.096;
+    fMassKaon = 0.1056583;
+
+    fPrintChannel  = "Bc -> J/Psi mu+ nu_mu";
+    fPrintChannel2 = "Bc -> J/Psi mu+ nu_mu";
+
+    if (fVerbose) cout << "Selected decay modes: Bc (" << fTruthMC_mom << ") to mu+ mu- (" << fTruthMC_I << ")" << endl
+		       << "     and Bc (" << fTruthMC2_gmo << ") to J/Psi (" << fTruthMC2_mom << ") mu+ (" << fTruthMC2
+		       << ") where J/Psi to mu+ mu- (" << fTruthMC_I  << ")" << endl;
+
+  // *************************************** Lambda_b decays ******************************************************
+
+  } else if ( !strcmp("Lb2PKm", fileName) ) { 
 
     fTruthMC_I = 321;  fTruthMC_II = 2212;
     fTruthMC_mom = 5122; 
-    fMass = 5.624;                 
+    fMass = 5.367; //    fMass = 5.624;                 
 
     fPrintChannel = "Lb -> p+ K-";
+
     if (fVerbose) cout << "Selected decay mode: Lb (" << fTruthMC_mom << ") to p+ (" 	 << fTruthMC_II 
 		       << ") K- (" << fTruthMC_I << ")" << endl;
 
-  } else {
-    
+  } else if ( !strcmp("Lb2PPi", fileName) ) {
+
+    fTruthMC_I = 211;  fTruthMC_II = 2212;
+    fTruthMC_mom = 5122; 
+    fMass = 5.367; //    fMass = 5.624;                 
+
+    fPrintChannel = "Lb -> p+ pi-";
+
+    if (fVerbose) cout << "Selected decay mode: Lb (" << fTruthMC_mom << ") to p+ (" 	 << fTruthMC_II 
+		       << ") pi- (" << fTruthMC_I << ")" << endl;
+
+  // ******************************* Signal & normalization channel *************************************************
+      
+  }  else {  
+
     fTruthMC_I = 13;  fTruthMC_II = 13; fTruthMC2 = 321;
     fTruthMC_mom = 531;                 fTruthMC2_mom = 443;
     fTruthMC_gmo = -1;                  fTruthMC2_gmo = 521;
@@ -2336,16 +2525,9 @@ void Bs2MuMu::decayChannel(const char *fileName) {
 		       << ") where J/Psi to mu+ mu- (" << fTruthMC_I  << ")" << endl;
   }          
 
+  // --------------------------------------------------------------------------------------------------------------
   if (fVerbose) cout << "   ---> Channels (" << fChannel << "): " << fPrintChannel << " " << fPrintChannel2 << endl;
-
-//   } else if ( !strcmp("bsmumug", fileName.Data()) || 
-// 	    !strcmp("bsmumup0", fileName.Data()) ||
-// 	    !strcmp("bu3munu", fileName.Data()) ||
-// 	    !strcmp("bc3munu", fileName.Data()) ||
-// 	    !strcmp("bcjpmunu", fileName.Data()) ) {
-    
-//     fTruthMC = 13;  fTruthMC2 = 13;
-//     fChannel = TString("2mu_rare");
+  // --------------------------------------------------------------------------------------------------------------
 
 }
 
