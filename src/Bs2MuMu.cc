@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.10 2007/10/02 13:09:00 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.11 2007/10/05 15:58:17 ceggel Exp $
 //
 //
 
@@ -811,19 +811,35 @@ void Bs2MuMu::bmmTracks1(const edm::Event &iEvent) {
 	  if (fVerbose) cout << endl << ".. and Mother Particle #" << mom_id << " pT = " << genMom->Momentum().perp() 
 			     << " ---> PDG ID: " << mom_pdg_id;
 	  
-	  if ( abs(mom_pdg_id) == fTruthMC2_gmo ) { 
+	  if ( fTruthMC2_gmo > 0 ) {
+
+	    if ( abs(mom_pdg_id) == fTruthMC2_gmo ) { 
+	      
+	      kcand++;
+	      
+	      tt = &(*track);
 	    
-	    kcand++;
+	      fStuff->KaonRecTracks.push_back(tt);
+	      fStuff->KaonRecTracksIndex.push_back(track.index());
+	      fStuff->KaonRecTracksB.push_back(mom_id);
+	      
+	      if (fVerbose) cout << "    *** " << fPrintChannel2 << " (" << kcand << ". K or 3rd track) *** ";
+	    }
+	  } else {
+
+	    if ( abs(mom_pdg_id) == fTruthMC2_mom ) { 
+	      
+	      kcand++;
+	      
+	      tt = &(*track);
 	    
-	    tt = &(*track);
-	    
-	    fStuff->KaonRecTracks.push_back(tt);
-	    fStuff->KaonRecTracksIndex.push_back(track.index());
-	    fStuff->KaonRecTracksB.push_back(mom_id);
-	    
-	    if (fVerbose) cout << "    *** " << fPrintChannel2 << " (" << kcand << ". K) *** ";
+	      fStuff->KaonRecTracks.push_back(tt);
+	      fStuff->KaonRecTracksIndex.push_back(track.index());
+	      fStuff->KaonRecTracksB.push_back(mom_id);
+	      
+	      if (fVerbose) cout << "    *** " << fPrintChannel2 << " (" << kcand << ". K or 3rd track) *** ";
+	    }
 	  }
-	  
 	  if (fVerbose) cout << endl; 
 	}
 	     
@@ -1103,8 +1119,9 @@ void Bs2MuMu::truthCandTracks(const edm::Event &iEvent, const edm::EventSetup& i
 
 	    for ( unsigned int k=0; k<fStuff->KaonRecTracks.size(); k++ ) {
 
-	      if ( k == i || k == j ) { continue; }
-	      
+	      if ( fStuff->KaonRecTracksIndex[k] == fStuff->JpsiRecTracksIndex[i] ||
+		   fStuff->KaonRecTracksIndex[k] == fStuff->JpsiRecTracksIndex[j] ) { continue; }
+
 	      if (fStuff->JpsiRecTracksB[i] == fStuff->KaonRecTracksB[k]) {
 		
 		if ((*fStuff->JpsiRecTracks[j]).pt() > (*fStuff->JpsiRecTracks[i]).pt() ) { 
@@ -2452,7 +2469,7 @@ void Bs2MuMu::decayChannel(const char *fileName) {
 		       << "     and Bu (" << fTruthMC2_mom  << ") to mu+ mu- (" << fTruthMC_I << ") and mu+ (" 
 		       << fTruthMC2  << ") nu_mu" << endl;
 
-  // ****************************************** Bs decays *********************************************************
+  // ****************************************** Bc decays *********************************************************
 
   } else if ( !strcmp("Bc2MuMuMuNu", fileName) ) {
 
@@ -2471,7 +2488,7 @@ void Bs2MuMu::decayChannel(const char *fileName) {
 
   } else if ( !strcmp("Bc2JpsiMuNu", fileName) ){
     
-    fTruthMC_I = 13;  fTruthMC_II = 13; fTruthMC2 = 321;
+    fTruthMC_I = 13;  fTruthMC_II = 13; fTruthMC2 = 13;
     fTruthMC_mom = -1;                  fTruthMC2_mom = 443;
     fTruthMC_gmo = -1;                  fTruthMC2_gmo = 521;
     fMass = 5.367; /* fMass = 6.286;*/  fMass2 = 3.096;
