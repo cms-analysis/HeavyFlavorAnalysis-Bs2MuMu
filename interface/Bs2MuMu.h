@@ -36,6 +36,10 @@
 //#include "SimTracker/VertexAssociation/interface/VertexAssociatorByTracks.h"
 #include "SimGeneral/HepPDT/interface/HepPDTable.h" 
 
+#include "DataFormats/HLTReco/interface/HLTFilterObject.h"
+#include "DataFormats/Common/interface/TriggerResults.h"
+#include "DataFormats/L1Trigger/interface/L1ParticleMap.h"
+
 #include "DataFormats/TrackReco/interface/TrackExtraFwd.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/TrackReco/interface/Track.h"
@@ -155,6 +159,8 @@ private:
   virtual void clearTracks();
   virtual void clearCandidateTracks();
 
+  virtual void triggerBits(const edm::Event&)
+;
   virtual void fillGeneratorBlock(const edm::Event&);
   virtual void fillRecTracks(const edm::Event&);
 
@@ -210,6 +216,8 @@ private:
   TH1D  *fPT300, *fPT310, *fPT320;
 
 
+  std::vector<int> numTotL1BitsBeforeCuts;
+  std::vector<int> numTotHltBitsBeforeCuts;
 };
 
 #endif

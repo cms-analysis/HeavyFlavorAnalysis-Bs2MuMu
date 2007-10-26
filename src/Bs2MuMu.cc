@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.12 2007/10/08 16:10:15 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.13 2007/10/16 15:36:51 ceggel Exp $
 //
 //
 
@@ -338,6 +338,9 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 //**     reco::VertexRecoToSimCollection(associatorByTracks->associateRecoToSim(primaryVertexH, TVCollectionH, iEvent
 //**  									   , (*fStuff->recSimCollection)));
   // === Start analysis ===
+  
+  // -- Trigger results
+  // triggerBits(iEvent);
 
   // -- Generator level
   fillGeneratorBlock(iEvent);
@@ -426,7 +429,73 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
 // ----------------------------------------------------------------------
 // ======================================================================
+void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
 
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>triggerBits> L1 & HLT trigger results, event: " << fNevt << endl;
+
+
+  // -- L1 Trigger
+  Handle<l1extra::L1ParticleMapCollection> L1PMC;
+  
+  try {
+
+    iEvent.getByType(L1PMC);
+
+  } catch (Exception event) {
+   
+    if (fVerbose) cout << "Couldn't get handle on L1 Trigger!" << endl;
+  }
+  
+  std::vector<int> l1bits;
+  
+  if (!L1PMC.isValid()) {
+  
+    if (fVerbose) cout << "L1ParticleMapCollection Not Valid!" << endl;
+  
+  } else {   
+    
+    int nL1size = L1PMC->size();
+    
+    for (int i = 0; i < nL1size; ++i) {
+      cout << " -----> L1 Trigger decision of Event " << fNevt << ":\t" << (*L1PMC)[i].triggerDecision() << endl;
+      l1bits.push_back((*L1PMC)[i].triggerDecision());
+      if((*L1PMC)[i].triggerDecision()) numTotL1BitsBeforeCuts[i]++;
+    }
+  }
+
+  
+  // -- HLT trigger
+  Handle<TriggerResults> trh;
+  
+  try {
+
+    iEvent.getByLabel("TriggerResults", trh);
+
+  } catch (Exception event) {
+   
+    if (fVerbose) cout << "Couldn't get handle on HLT Trigger!" << endl;
+  }
+    
+  std::vector<int> hltbits;
+  
+  if (!trh.isValid()) {
+    
+    if (fVerbose) cout << "HLTriggerResult Not Valid!" << endl;
+
+  } else {   
+    
+    for(unsigned int i = 0; i < trh->size(); i++) {
+      
+      cout << " -----> L1 Trigger decision of Event " << fNevt << ":\t" << (*L1PMC)[i].triggerDecision() << endl;
+      hltbits.push_back((*trh)[i].accept());
+      if((*trh)[i].accept()) numTotHltBitsBeforeCuts[i]++;
+    }
+  }
+}
+
+
+// ----------------------------------------------------------------------
 void Bs2MuMu::fillGeneratorBlock(const edm::Event &iEvent) {
 
   fNgen++;
