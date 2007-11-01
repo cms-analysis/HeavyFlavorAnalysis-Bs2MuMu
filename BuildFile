@@ -39,6 +39,8 @@
 <use name=TrackingTools/GeomPropagators>
 <use name=TrackingTools/TrajectoryState>
 <use name=TrackingTools/TransientTrack>
+<use name=DataFormats/L1Trigger>
+<use name=DataFormats/L1GlobalTrigger>
 <use name=Geometry/TrackerGeometryBuilder>
 <use name=Geometry/Records>
 <use name=Geometry/CommonDetUnit>
@@ -83,6 +85,7 @@
   <use name=Foundation/PluginManager>
   <use name=SimDataFormats/HepMCProduct> 
   <use name=SimDataFormats/TrackingAnalysis>
+  <use name=DataFormats/L1Trigger>
   <use name=clhep>
   <use name=boost>
   <use name=root>

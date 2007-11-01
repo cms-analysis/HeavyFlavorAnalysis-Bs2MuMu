@@ -36,8 +36,10 @@
 //#include "SimTracker/VertexAssociation/interface/VertexAssociatorByTracks.h"
 #include "SimGeneral/HepPDT/interface/HepPDTable.h" 
 
-#include "DataFormats/HLTReco/interface/HLTFilterObject.h"
+#include "DataFormats/Common/interface/Handle.h"
+#include "DataFormats/Common/interface/RefToBase.h"
 #include "DataFormats/Common/interface/TriggerResults.h"
+#include "DataFormats/HLTReco/interface/HLTFilterObject.h"
 #include "DataFormats/L1Trigger/interface/L1ParticleMap.h"
 
 #include "DataFormats/TrackReco/interface/TrackExtraFwd.h"
@@ -218,6 +220,16 @@ private:
 
   std::vector<int> numTotL1BitsBeforeCuts;
   std::vector<int> numTotHltBitsBeforeCuts;
+
+  edm::InputTag isoEmSource_ ;
+  edm::InputTag nonIsoEmSource_ ;
+  edm::InputTag cenJetSource_ ;
+  edm::InputTag forJetSource_ ;
+  edm::InputTag tauJetSource_ ;
+  edm::InputTag muonSource_ ;
+  edm::InputTag etMissSource_ ;
+  edm::InputTag gtReadoutSource_ ;
+  edm::InputTag particleMapSource_ ;
 };
 
 #endif

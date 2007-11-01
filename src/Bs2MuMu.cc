@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.13 2007/10/16 15:36:51 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.14 2007/10/26 12:08:47 ceggel Exp $
 //
 //
 
@@ -340,7 +340,7 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   // === Start analysis ===
   
   // -- Trigger results
-  // triggerBits(iEvent);
+  triggerBits(iEvent);
 
   // -- Generator level
   fillGeneratorBlock(iEvent);
@@ -432,49 +432,118 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
-  if (fVerbose) cout << "==>triggerBits> L1 & HLT trigger results, event: " << fNevt << endl;
+  if (fVerbose) cout << "==>triggerBits> L1 & HLT trigger results, event: " << fNevt << endl << endl;
 
+  // L1 Trigger
+  if (fVerbose) cout << "============================L1 Trigger ===================================" << endl;
+  using namespace l1extra;
 
-  // -- L1 Trigger
-  Handle<l1extra::L1ParticleMapCollection> L1PMC;
-  
+  Handle<L1ParticleMapCollection> mapColl;
+
   try {
 
-    iEvent.getByType(L1PMC);
+    iEvent.getByLabel( "l1extraParticleMap", mapColl);
 
   } catch (Exception event) {
-   
-    if (fVerbose) cout << "Couldn't get handle on L1 Trigger!" << endl;
-  }
-  
-  std::vector<int> l1bits;
-  
-  if (!L1PMC.isValid()) {
-  
-    if (fVerbose) cout << "L1ParticleMapCollection Not Valid!" << endl;
-  
-  } else {   
-    
-    int nL1size = L1PMC->size();
-    
-    for (int i = 0; i < nL1size; ++i) {
-      cout << " -----> L1 Trigger decision of Event " << fNevt << ":\t" << (*L1PMC)[i].triggerDecision() << endl;
-      l1bits.push_back((*L1PMC)[i].triggerDecision());
-      if((*L1PMC)[i].triggerDecision()) numTotL1BitsBeforeCuts[i]++;
-    }
+
+    if (fVerbose) cout << " ---> Couldn't get handle on L1 Trigger!" << endl;
   }
 
+  if (!mapColl.isValid()) {
+    
+    if (fVerbose) cout << " ---> L1ParticleMapCollection with label [l1extraParticleMap] not found!" << endl;
+    
+  } else {  
+
+    std::vector<int> l1bits;
+    
+    cout << " Number of particle maps " << mapColl->size() << endl;
+    
+    for( int imap = 0; imap < L1ParticleMap::kNumOfL1TriggerTypes; ++imap ) {
+      
+      l1bits.push_back((*mapColl)[imap].triggerDecision());
+
+      const L1ParticleMap& map = (*mapColl)[imap];
+      
+      cout << " L1-Trigger #" << map.triggerType()
+	   << "\t" << map.triggerName()
+	   << "     \t decision " << map.triggerDecision()
+	   << "\t #objs " << map.numOfObjects() ;
+      cout << "\t types" ;
+      
+      
+      for( int i = 0; i < map.numOfObjects(); ++i) {
+	
+        cout << " " << map.objectTypes()[i];
+      }
+      
+      cout << endl ;
+      
+      if( map.triggerDecision() ) {
+	
+	//         const L1EmParticleVectorRef& ems = map.emParticles() ;
+	//         cout << "  EM particles ET" ;
+	//         for( L1EmParticleVectorRef::const_iterator emItr = ems.begin() ;
+	//              emItr != ems.end() ; ++emItr )
+	//         {
+	//            cout << " " << ( *emItr )->et() ;
+	//         }
+	//         cout << endl ;
+	
+	//         const L1JetParticleVectorRef& jets = map.jetParticles() ;
+	//         cout << "  Jet particles ET" ;
+	//         for( L1JetParticleVectorRef::const_iterator jetItr = jets.begin() ;
+	//              jetItr != jets.end() ; ++jetItr )
+	//         {
+	//            cout << " " << ( *jetItr )->et() ;
+	//         }
+	//         cout << endl ;
+	
+	const L1MuonParticleVectorRef& muons = map.muonParticles();
+	
+	cout << endl << " ==>  Muon particles ET" << endl;;
+	for( L1MuonParticleVectorRef::const_iterator muonItr = muons.begin() ;
+	     muonItr != muons.end() ; ++muonItr ) {
+	  
+	  cout << "\t pT = " << (*muonItr)->pt() << ", eta = " << (*muonItr)->eta()  << endl;
+	}
+	
+	cout << endl;
+      }
+      //         cout << "  Particle combinations" ;
+      //         const L1ParticleMap::L1IndexComboVector& combos = map.indexCombos() ;
+      //         for( L1ParticleMap::L1IndexComboVector::const_iterator comboItr =
+      //                 combos.begin() ; comboItr != combos.end() ; ++comboItr )
+      //         {
+      //            cout << " {" ;
+      //            for( L1ParticleMap::L1IndexCombo::const_iterator indexItr =
+      //                    comboItr->begin() ;
+      //                 indexItr != comboItr->end() ; ++indexItr )
+      //            {
+      //               cout << *indexItr ;
+      //            }
+      //            cout << "}" ;
+      //         }
+      
+      //         cout << endl ;
+      //      }
+      
+    }
+  }
   
+
+
   // -- HLT trigger
+  if (fVerbose) cout << endl << "============================HLT Trigger ===================================" << endl;
   Handle<TriggerResults> trh;
   
   try {
-
+      
     iEvent.getByLabel("TriggerResults", trh);
 
   } catch (Exception event) {
    
-    if (fVerbose) cout << "Couldn't get handle on HLT Trigger!" << endl;
+    if (fVerbose) cout << " Couldn't get handle on HLT Trigger!" << endl;
   }
     
   std::vector<int> hltbits;
@@ -484,14 +553,57 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
     if (fVerbose) cout << "HLTriggerResult Not Valid!" << endl;
 
   } else {   
-    
+    cout << " -----> HLT Trigger decision of Event " << fNevt << "." << endl;
     for(unsigned int i = 0; i < trh->size(); i++) {
       
-      cout << " -----> L1 Trigger decision of Event " << fNevt << ":\t" << (*L1PMC)[i].triggerDecision() << endl;
+      cout << " -----> HLT Trigger #" << i << ":\t" << (*trh)[i].accept() << endl;
       hltbits.push_back((*trh)[i].accept());
-      if((*trh)[i].accept()) numTotHltBitsBeforeCuts[i]++;
+      //if((*trh)[i].accept()) numTotHltBitsBeforeCuts[i]++;
     }
-  }
+  }   
+
+   // get hold of requested filter object
+   Handle<HLTFilterObjectWithRefs> ref;
+   try {iEvent.getByLabel("displacedJpsitoMumuFilter",ref);} catch(...) {;}
+   if (ref.isValid()) {
+     const unsigned int n(ref->size());
+     cout << endl << " ** displacedJpsitoMumuFilter Size = " << n << endl;
+     for (unsigned int i=0; i!=n; i++) {
+       // some Xchecks
+       HLTParticle particle(ref->getParticle(i));
+       const Candidate* candidate((ref->getParticleRef(i)).get());
+       cout << i << " E: " 
+		    << particle.energy() << " " << candidate->energy() << " "  
+		    << typeid(*candidate).name() << " "
+		    << particle.eta() << " " << particle.phi() ;
+     }
+
+     //
+     // using HLTFilterObjectsWithRefs like a ConcreteCollection:
+     //
+     HLTFilterObjectWithRefs::const_iterator a(ref->begin());
+     HLTFilterObjectWithRefs::const_iterator o(ref->end());
+     HLTFilterObjectWithRefs::const_iterator i;
+     const HLTFilterObjectWithRefs& V(*ref);
+     cout << endl << " ** displacedJpsitoMumuFilter Size: " << V.size() << endl;
+     for (i=a; i!=o; i++) {
+       unsigned int I(i-a);
+       cout << "Const_Iterator: " << I << " " << typeid(*i).name()
+		    << " " << i->energy();
+       cout << "Handle->at(i):  " << I << " " << typeid(ref->at(I)).name()
+		    << " " << (ref->at(I)).energy();
+       cout << "Vector[i]:      " << I << " " << typeid(V[I]).name()
+		    << " " << V[I].energy();
+       cout << "Vector.at(i):   " << I << " " << typeid(V.at(I)).name()
+		    << " " << V.at(I).energy();
+       cout << "                " << I << " " << typeid(&(*i)).name();
+       cout << "                " << I << " " << typeid(  *i ).name();
+       cout << "                " << I << " " << typeid(   i ).name();
+     }
+     //
+   } else {
+     cout << endl << " ** Filterobject displacedJpsitoMumuFilter not found!";
+   }
 }
 
 
@@ -2060,7 +2172,8 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>fillVertex> Filling vertex, event: " << fNevt << endl;
   
-  using namespace edm;
+  using namespace edm;    
+  using namespace l1extra ;
   using namespace reco;
 
   std::vector<reco::TransientTrack> refTT = v->refittedTracks();
