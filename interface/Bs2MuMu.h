@@ -12,7 +12,7 @@
 #include "FWCore/Framework/interface/Handle.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/Framework/interface/EventSetup.h"
-#include "FWCore/Framework/interface/TriggerNames.h"
+//#include "FWCore/Framework/interface/TriggerNames.h"
 #include "FWCore/PluginManager/interface/ModuleDef.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
@@ -40,9 +40,17 @@
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/RefToBase.h"
 
+#include "DataFormats/L1Trigger/interface/L1ParticleMap.h"
+#include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
+#include "DataFormats/L1Trigger/interface/L1EmParticle.h"
+#include "DataFormats/L1Trigger/interface/L1MuonParticle.h"
+#include "DataFormats/L1Trigger/interface/L1JetParticle.h"
+#include "DataFormats/L1Trigger/interface/L1EtMissParticle.h"
+#include "DataFormats/L1Trigger/interface/L1ParticleMap.h"
+
+#include "DataFormats/Candidate/interface/Candidate.h"
 #include "DataFormats/Common/interface/TriggerResults.h"
 #include "DataFormats/HLTReco/interface/HLTFilterObject.h"
-#include "DataFormats/L1Trigger/interface/L1ParticleMap.h"
 
 #include "DataFormats/TrackReco/interface/TrackExtraFwd.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
@@ -163,8 +171,10 @@ private:
   virtual void clearTracks();
   virtual void clearCandidateTracks();
 
-  virtual void triggerBits(const edm::Event&)
-;
+  virtual void l1Report(const edm::Event&);
+  virtual void hltReport(const edm::Event&);
+  virtual void triggerBits(const edm::Event&);
+
   virtual void fillGeneratorBlock(const edm::Event&);
   virtual void fillRecTracks(const edm::Event&);
 
@@ -188,9 +198,11 @@ private:
   int kaonCandidate(const edm::Event&, const edm::EventSetup&);
   
   int idRecTrack(const reco::Track *track);
+  int idL1Muon(const reco::Track *track);
 
   // ----------member data ---------------------------
-  string fLabel, fSourceLabel, fTracksLabel, fMuonLabel, fAssocLabel
+  string fLabel, fSourceLabel, fTracksLabel, fMuonLabel, fL1MuonLabel, fAssocLabel
+    , fL1ParticleMap, fHLTriggerResults, fL1GTReadoutRec
     , fChannel, fPrintChannel, fPrintChannel2;
 
   double fMass, fMass2;
@@ -219,34 +231,36 @@ private:
   TH2D  *fK100, *fK200;
   TH1D  *fPT300, *fPT310, *fPT320;
 
-  // -- trigger stuff
-  unsigned int Ntp; // # of trigger paths (should be the same for all events!)
- 
-  typedef std::map<std::string, unsigned int> trigPath;
+  // -- for L1 trigger report -------------------------------------------------------
 
-  trigPath Ntrig; // # of triggered events per path
+  unsigned int  l1_nEvents_;            // number of events processed
+  unsigned int  l1_nErrors_;            // number of events with error (EDProduct[s] not found)
+  unsigned int  l1_nAccepts_;           // number of events accepted by (any) L1 algorithm
+  
+  std::vector<unsigned int> l1Accepts_; // number of events accepted by each L1 algorithm
+  std::vector<std::string> l1Names_;    // name of each L1 algorithm
+  
+  bool l1_init_;                           // vectors initialised or not
+  
 
-  // # of cross-triggered events per path
-  // (pairs with same name correspond to unique trigger rates for that path)
-  std::map<std::string, trigPath> Ncross;
+  // -- for HLT trigger report -------------------------------------------------------
 
-  // whether a trigger path has fired for given event
-  // (variable with event-scope)
-  std::map<std::string, bool> fired; 
+  unsigned int  hl_nEvents_;           // number of events processed
+  
+  unsigned int  hl_nWasRun_;           // # where at least one HLT was run
+  unsigned int  hl_nAccept_;           // # of accepted events
+  unsigned int  hl_nErrors_;           // # where at least one HLT had error
+  
+  std::vector<unsigned int> hlWasRun_; // # where HLT[i] was run
+  std::vector<unsigned int> hlAccept_; // # of events accepted by HLT[i]
+  std::vector<unsigned int> hlErrors_; // # of events with error in HLT[i]
+  
+  std::vector<std::string>  hlNames_;  // name of each L1 algorithm
+  bool hl_init_;                          // vectors initialised or not
 
 
-  std::vector<int> numTotL1BitsBeforeCuts;
-  std::vector<int> numTotHltBitsBeforeCuts;
+// -- trigger stuff
 
-  edm::InputTag isoEmSource_ ;
-  edm::InputTag nonIsoEmSource_ ;
-  edm::InputTag cenJetSource_ ;
-  edm::InputTag forJetSource_ ;
-  edm::InputTag tauJetSource_ ;
-  edm::InputTag muonSource_ ;
-  edm::InputTag etMissSource_ ;
-  edm::InputTag gtReadoutSource_ ;
-  edm::InputTag particleMapSource_ ;
 };
 
 #endif

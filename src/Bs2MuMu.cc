@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.15 2007/11/01 11:43:51 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.16 2007/11/09 09:10:10 ceggel Exp $
 //
 //
 
@@ -23,6 +23,8 @@
 #include <memory>
 #include <iostream>
 #include <string>
+#include <vector>
+#include <map>
 
 #include <TROOT.h>
 #include <TSystem.h>
@@ -50,7 +52,8 @@ class TrackerHitAssociator;
 struct anaStuff {
 
   reco::VertexCollection *theVtxCollection;
-
+ 
+  const l1extra::L1MuonParticleCollection *theL1MuonCollection;
   const reco::MuonCollection       *theMuonCollection;
   const reco::TrackCollection      *theTkCollection;
   const TrackingParticleCollection *theTPCollection;
@@ -125,6 +128,22 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
   fNgen = 0;
   fNrec = 0;
 
+  l1_nEvents_ = 0;
+  l1_nErrors_ = 0;
+  l1_nAccepts_ = 0;
+  l1Accepts_.clear();
+  l1Names_.clear();
+  l1_init_ = false;  
+
+  hl_nEvents_ = 0;
+  hl_nWasRun_ = 0;
+  hl_nAccept_ = 0;
+  hl_nErrors_ = 0;
+  hlWasRun_.clear();
+  hlAccept_.clear();
+  hlErrors_.clear();
+  hlNames_.clear();
+  hl_init_ = false;
 
   // -- Config. File input
   //  fLabel          = iConfig.getUntrackedParameter("moduleLabel",std::string("source"));
@@ -132,6 +151,12 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
   fTracksLabel    = iConfig.getParameter<string>("tracks");
   fAssocLabel     = iConfig.getParameter<string>("associator");
   fMuonLabel      = iConfig.getParameter<string>("Muons");
+
+  fL1MuonLabel    = iConfig.getParameter<string>("l1extramc");
+
+  fL1ParticleMap     = iConfig.getParameter<string>("particleMapSource");
+  fL1GTReadoutRec    = iConfig.getParameter<string>("l1GTReadoutRecord");
+  fHLTriggerResults  = iConfig.getParameter<string>("hltTriggerResults");
 
   fStuff->fBmmSel = iConfig.getParameter<int>("bmmsel");
 
@@ -263,6 +288,7 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   fEvent->fEventNumber = iEvent.id().event();
 
   fStuff->theVtxCollection = 0;
+  fStuff->theL1MuonCollection = 0;
   fStuff->theMuonCollection = 0;
   fStuff->theTkCollection = 0;
   fStuff->theTPCollection = 0;
@@ -292,6 +318,12 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   fStuff->theTPCollection  = TPCollectionH.product();  
   // fStuff->theTPCollection  = new TrackingParticleCollection(*(TPCollectionH.product()));  
    
+  // -- get the collection of L1 muons 
+  edm::Handle<l1extra::L1MuonParticleCollection> L1MuCollection;
+  iEvent.getByLabel(fL1MuonLabel.c_str(), L1MuCollection);
+  fStuff->theL1MuonCollection   = L1MuCollection.product();
+  // fStuff->theMuonCollection   = new reco::MuonCollection(*(MuCollection.product()));  
+
   // -- get the collection of MuonTracks 
   edm::Handle<reco::MuonCollection> MuCollection;
   iEvent.getByLabel(fMuonLabel.c_str(), MuCollection);
@@ -340,6 +372,8 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   // === Start analysis ===
   
   // -- Trigger results
+  l1Report(iEvent);
+  hltReport(iEvent);
   triggerBits(iEvent);
 
   // -- Generator level
@@ -426,7 +460,120 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 }
 
 
+// ----------------------------------------------------------------------
+// ======================================================================
+void Bs2MuMu::l1Report(const edm::Event &iEvent) {
 
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>l1Report> L1 trigger results, event: " << fNevt << endl << endl;
+
+  using namespace std;
+  using namespace edm;
+  using namespace reco;
+  const unsigned int n(l1extra::L1ParticleMap::kNumOfL1TriggerTypes);
+
+  l1_nEvents_++;
+
+  // get hold of L1GlobalReadoutRecord
+  Handle<L1GlobalTriggerReadoutRecord> L1GTRR;
+  try {iEvent.getByLabel(fL1GTReadoutRec.c_str(),L1GTRR);} catch (...) {;}
+  if (L1GTRR.isValid()) {
+    const bool accept(L1GTRR->decision());
+    if (fVerbose) cout << "L1GlobalTriggerReadoutRecord decision: " << accept;
+    if (accept) ++l1_nAccepts_;
+  } else {
+    if (fVerbose) cout << "L1GlobalTriggerReadoutRecord with label [" << fL1GTReadoutRec.c_str() << "] not found!";
+    l1_nErrors_++;
+    return;
+  }
+
+  // get hold of L1ParticleMapCollection
+  Handle<l1extra::L1ParticleMapCollection> L1PMC;
+  try {iEvent.getByLabel(fL1ParticleMap.c_str(),L1PMC);} catch (...) {;}
+  if (L1PMC.isValid()) {
+    if (fVerbose) cout << "L1ParticleMapCollection contains " << L1PMC->size() << " maps.";
+  } else {
+    if (fVerbose) cout << "L1ParticleMapCollection with label [" << fL1ParticleMap.c_str() << "] not found!";
+    l1_nErrors_++;
+    return;
+  }
+
+  // initialisation (could be made dynamic)
+  assert(n==L1PMC->size());
+  if (!l1_init_) {
+    l1_init_=true;
+    l1Names_.resize(n);
+    l1Accepts_.resize(n);
+    for (unsigned int i=0; i!=n; ++i) {
+      l1Accepts_[i]=0;
+      if (i<l1extra::L1ParticleMap::kNumOfL1TriggerTypes) {
+	l1extra::L1ParticleMap::L1TriggerType 
+	  type(static_cast<l1extra::L1ParticleMap::L1TriggerType>(i));
+	l1Names_[i]=l1extra::L1ParticleMap::triggerName(type);
+      } else {
+	l1Names_[i]="@@NameNotFound??";
+      }
+    }
+  }
+
+  // decision for each L1 algorithm
+  for (unsigned int i=0; i!=n; ++i) {
+    if ((*L1PMC)[i].triggerDecision()) l1Accepts_[i]++;
+    //    if (L1GTRR->decisionWord()[i]) l1Accepts_[i]++;
+  }
+}
+
+
+// ----------------------------------------------------------------------
+// ======================================================================
+void Bs2MuMu::hltReport(const edm::Event &iEvent) {
+
+  if (fVerbose) cout << "--------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>hltReport> HLT trigger results, event: " << fNevt << endl << endl;
+  using namespace std;
+  using namespace edm;
+
+  hl_nEvents_++;
+
+  // get hold of TriggerResults
+  Handle<TriggerResults> HLTR;
+  try {iEvent.getByLabel(fHLTriggerResults.c_str(),HLTR);} catch (...) {;}
+  if (HLTR.isValid()) {
+    if (HLTR->wasrun()) hl_nWasRun_++;
+    const bool accept(HLTR->accept());
+    if (fVerbose) cout << "HL TriggerResults decision: " << accept;
+    if (accept) ++hl_nAccept_;
+    if (HLTR->error() ) hl_nErrors_++;
+  } else {
+    if (fVerbose) cout << "HL TriggerResults with label [" << fHLTriggerResults.c_str() << "] not found!";
+    hl_nErrors_++;
+    return;
+  }
+
+  // initialisation (could be made dynamic)
+  if (!hl_init_) {
+    hl_init_=true;
+    hlNames_=HLTR->getTriggerNames();
+    const unsigned int n(hlNames_.size());
+    hlWasRun_.resize(n);
+    hlAccept_.resize(n);
+    hlErrors_.resize(n);
+    for (unsigned int i=0; i!=n; ++i) {
+      hlWasRun_[i]=0;
+      hlAccept_[i]=0;
+      hlErrors_[i]=0;
+    }
+  }
+
+  // decision for each HL algorithm
+  const unsigned int n(hlNames_.size());
+  for (unsigned int i=0; i!=n; ++i) {
+    if (HLTR->wasrun(i)) hlWasRun_[i]++;
+    if (HLTR->accept(i)) hlAccept_[i]++;
+    if (HLTR->error(i) ) hlErrors_[i]++;
+  }
+
+}
 // ----------------------------------------------------------------------
 // ======================================================================
 void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
@@ -435,25 +582,26 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
   if (fVerbose) cout << "==>triggerBits> L1 & HLT trigger results, event: " << fNevt << endl << endl;
 
 
-  // L1 Trigger
+  // -- L1 Trigger  //
 
-  if (fVerbose) cout << "============================L1 Trigger ===================================" << endl;
+  if (fVerbose) cout << "============================ L1 Trigger ===================================" << endl;
   using namespace l1extra;
 
   Handle<L1ParticleMapCollection> mapColl;
 
   try {
 
-    iEvent.getByLabel( "l1extraParticleMap", mapColl);
+    iEvent.getByLabel(fL1ParticleMap.c_str(), mapColl);
 
   } catch (Exception event) {
 
-    if (fVerbose) cout << " ---> Couldn't get handle on L1 Trigger!" << endl;
+    if (fVerbose) cout << "%L1-Report -- Couldn't get handle on L1 Trigger!" << endl;
   }
 
   if (!mapColl.isValid()) {
     
-    if (fVerbose) cout << " ---> L1ParticleMapCollection with label [l1extraParticleMap] not found!" << endl;
+    if (fVerbose) cout << " %L1-Report -- L1ParticleMapCollection with label [" 
+		       << fL1ParticleMap.c_str() << "] not found!" << endl;
     
   } else {  
 
@@ -467,11 +615,11 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
 
       const L1ParticleMap& map = (*mapColl)[imap];
       
-      cout << " L1-Trigger #" << map.triggerType()
-	   << "\t" << map.triggerName()
-	   << "     \t decision " << map.triggerDecision()
-	   << "\t #objs " << map.numOfObjects() ;
-      cout << "\t types" ;
+      cout << "%L1-Report --  #" << map.triggerType()
+	   << right << setw(10)  << map.triggerName()
+	   << right << setw(10) << "decision " << map.triggerDecision()
+	   << right << setw(10) << "#objs " << map.numOfObjects() ;
+      cout << right << setw(10) << "types" ;
       
       
       for( int i = 0; i < map.numOfObjects(); ++i) {
@@ -535,89 +683,46 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
   
 
 
-  // -- HLT trigger  // 
+  // -- HLT trigger   //
   
-  if (fVerbose) cout << endl << "============================HLT Trigger ===================================" << endl;
+  if (fVerbose) cout << endl << "============================ HLT Trigger ===================================" << endl;
   Handle<TriggerResults> trh;
   
   try {
       
-    iEvent.getByLabel("TriggerResults", trh);
-    // iEvent.getByType(trh);
+    //iEvent.getByLabel(fHLTriggerResults.c_str(), trh);
+    iEvent.getByType(trh);
 
   } catch (Exception event) {
    
-    if (fVerbose) cout << " Couldn't get handle on HLT Trigger!" << endl;
+    if (fVerbose) cout << "%HLT-Report -- Couldn't get handle on HLT Trigger!" << endl;
   }
     
   std::vector<int> hltbits;
   
   if (!trh.isValid()) {
     
-    if (fVerbose) cout << "HLTriggerResult Not Valid!" << endl;
+    if (fVerbose) cout << "%HLT-Report -- No Trigger Result!" << endl;
 
-  } else {   
-    cout << " -----> HLT Trigger decision of Event " << fNevt << "." << endl;
+  } else {    
+
+    int ntrigs=trh->size();
+
+    if (ntrigs==0){
+      if (fVerbose) cout << "%HLT-Report -- No trigger name given in TriggerResults of the input " << endl; 
+    }
+    
+    cout << "%HLT-Report, Event " << fNevt << "\t --> Number of HLT Triggers:  " << ntrigs << endl;
+
     for(unsigned int i = 0; i < trh->size(); i++) {
-      
-      cout << " -----> HLT Trigger #" << i << ":\t" << (*trh)[i].accept() << endl;
+
       hltbits.push_back((*trh)[i].accept());
+      
+      cout << "%HLT-Report --  #" << i 
+	   << right << setw(10) << trh->name(i)
+	   << right << setw(10) << "decision" << trh->accept(i) << endl;
     }
   }   
-
-  unsigned int size = trh->size();
-  if(Ntp) {
-    assert(Ntp == size);
-  } else {
-    Ntp = size;
-  }
-
-  cout << "Nevents = " << fNevt << " " << Ntp << " " << (int)trh->accept() <<endl;
-  
-  // loop over all paths, get trigger decision
-  for(unsigned i = 0; i != size; ++i) {
-
-    std::string name = trh.name(i);
-    fired[name] = trh->accept(i);
-    cout <<"trigger bit "<< i << " " << name << " " << fired[name] <<endl;
-    if(fired[name])
-      ++(Ntrig[name]);
-  }
-
-  //  /*  
-  // NOTE: WE SHOULD MAKE THIS A SYMMETRIC MATRIX...
-  // double-loop over all paths, get trigger overlaps
-  for(unsigned i = 0; i != size; ++i) {
-
-    std::string name = trh.name(i);
-
-    if(!fired[name])continue;
-    
-    bool correlation = false;
-    
-    for(unsigned j = 0; j != size; ++j) {
-      // skip the same name; 
-      // this entry correponds to events triggered by single trigger
-      if(i == j) continue;
-
-      std::string name2 = trh.name(j);
-      if(fired[name2]) {
-	correlation = true;
-	++(Ncross[name][name2]);
-      }
-    } // loop over j-trigger paths
-    
-    if(!correlation) // events triggered by single trigger
-      ++(Ncross[name][name]);
-    
-  } //  // loop over i-trigger paths
-  // */
-
-
-
-
-
-
 
 
 
@@ -630,38 +735,41 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
    if (ref.isValid()) {
      const unsigned int n(ref->size());
      cout << endl << " ** displacedJpsitoMumuFilter Size = " << n << endl;
-     for (unsigned int i=0; i!=n; i++) {
-       // some Xchecks
-       HLTParticle particle(ref->getParticle(i));
-       const Candidate* candidate((ref->getParticleRef(i)).get());
-       cout << i << " E: " 
-		    << particle.energy() << " " << candidate->energy() << " "  
-		    << typeid(*candidate).name() << " "
-		    << particle.eta() << " " << particle.phi() ;
-     }
+//      for (unsigned int i=0; i!=n; i++) {
+//        // some Xchecks
+//        HLTParticle particle(ref->getParticle(i));
+//        const Candidate* candidate((ref->getParticleRef(i)).get());
+//        cout << i << " E: " 
+// 		    << particle.energy() << " " << candidate->energy() << " "  
+// 		    << typeid(*candidate).name() << " "
+// 		    << particle.eta() << " " << particle.phi() ;
+//      }
 
      //
      // using HLTFilterObjectsWithRefs like a ConcreteCollection:
      //
-     HLTFilterObjectWithRefs::const_iterator a(ref->begin());
-     HLTFilterObjectWithRefs::const_iterator o(ref->end());
-     HLTFilterObjectWithRefs::const_iterator i;
-     const HLTFilterObjectWithRefs& V(*ref);
-     cout << endl << " ** displacedJpsitoMumuFilter Size: " << V.size() << endl;
-     for (i=a; i!=o; i++) {
-       unsigned int I(i-a);
-       cout << "Const_Iterator: " << I << " " << typeid(*i).name()
-		    << " " << i->energy();
-       cout << "Handle->at(i):  " << I << " " << typeid(ref->at(I)).name()
-		    << " " << (ref->at(I)).energy();
-       cout << "Vector[i]:      " << I << " " << typeid(V[I]).name()
-		    << " " << V[I].energy();
-       cout << "Vector.at(i):   " << I << " " << typeid(V.at(I)).name()
-		    << " " << V.at(I).energy();
-       cout << "                " << I << " " << typeid(&(*i)).name();
-       cout << "                " << I << " " << typeid(  *i ).name();
-       cout << "                " << I << " " << typeid(   i ).name();
-     }
+//      HLTFilterObjectWithRefs::const_iterator a(ref->begin());
+//      HLTFilterObjectWithRefs::const_iterator o(ref->end());
+//      HLTFilterObjectWithRefs::const_iterator i;
+
+//      const HLTFilterObjectWithRefs& V(*ref);
+
+//      cout << endl << " ** displacedJpsitoMumuFilter Size: " << V.size() << endl;
+
+//      for (i=a; i!=o; i++) {
+  //      unsigned int I(i-a);
+//        cout << "Const_Iterator: " << I << " " << typeid(*i).name()
+// 		    << " " << i->energy();
+//        cout << "Handle->at(i):  " << I << " " << typeid(ref->at(I)).name()
+// 		    << " " << (ref->at(I)).energy();
+//        cout << "Vector[i]:      " << I << " " << typeid(V[I]).name()
+// 		    << " " << V[I].energy();
+//        cout << "Vector.at(i):   " << I << " " << typeid(V.at(I)).name()
+// 		    << " " << V.at(I).energy();
+//        cout << "                " << I << " " << typeid(&(*i)).name();
+//        cout << "                " << I << " " << typeid(  *i ).name();
+//        cout << "                " << I << " " << typeid(   i ).name();
+//      }
      //
    } else {
      cout << endl << " ** Filterobject displacedJpsitoMumuFilter not found!";
@@ -2541,6 +2649,73 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
 //
 
 }
+// ----------------------------------------------------------------------
+int Bs2MuMu::idL1Muon(const reco::Track *track) {
+
+  int found(-1), index(0);
+
+  double ept(0.2), ephi(0.01), eeta(0.01);
+  double mdpt(9999.), mdphi(9999.), mdeta(9999.);
+  double dpt(0.),  dphi(0.),  deta(0.);
+
+  //  double dhits(0.), mdhits(9999.)
+
+  double pt  = track->pt();
+  double phi = track->phi();
+  double eta = track->eta();
+  
+  
+  for (l1extra::L1MuonParticleCollection::const_iterator muItr = (*fStuff->theL1MuonCollection).begin(); 
+       muItr != (*fStuff->theL1MuonCollection).end(); 
+       ++muItr) {
+
+    cout << "pt " <<  muItr->pt()
+	 << "E  " << muItr->energy()
+	 << "eta " << muItr->eta()
+	 << "phi " << muItr->phi()
+	 << "iso " << muItr->isIsolated()    // = 1 for Isolated ?
+	 << "mip " <<  muItr->isMip()        // = 1 for Mip ?
+	 << endl;
+  }
+
+
+  for (TrackCollection::const_iterator it = (*fStuff->theTkCollection).begin(); 
+       it != (*fStuff->theTkCollection).end(); 
+       ++it){
+
+
+    dpt  = fabs(pt - it->pt());
+    dphi = phi - it->phi();
+    while (dphi >= M_PI) dphi -= 2*M_PI;
+    while (dphi < -M_PI) dphi += 2*M_PI;
+    dphi = fabs(dphi);
+    deta = fabs(eta - it->eta());
+
+    if ((dpt < mdpt)
+	&& (dphi < mdphi)
+	&& (deta < mdeta)
+	) {
+      mdpt = dpt;
+      mdphi = dphi;
+      mdeta = deta;
+      found = index;
+    }
+
+    ++index;
+  }
+
+  // if (fVerbose) cout << mdpt << " " << mdphi << " " << mdeta << " " << found << endl;
+
+  if ((mdpt < ept)
+      && (mdphi < ephi)
+      && (mdeta < eeta)
+      ) {
+    return found;
+  } else {
+    return -1;
+  }
+
+}
 
 // ----------------------------------------------------------------------
 int Bs2MuMu::idRecTrack(const reco::Track *track) {
@@ -3222,7 +3397,87 @@ void Bs2MuMu::beginJob(const edm::EventSetup& setup) {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void Bs2MuMu::endJob() {
+void Bs2MuMu::endJob() {  
+
+  // -- L1-Report -------------------------------------------------
+
+  using namespace std;
+  const unsigned int n(l1extra::L1ParticleMap::kNumOfL1TriggerTypes);
+
+    cout << endl;
+    cout << "L1T-Report " << "---------- Event  Summary ------------\n";
+    cout << "L1T-Report"
+	 << " Events total = " << l1_nEvents_
+	 << " passed = " << l1_nAccepts_
+	 << " failed = " << l1_nEvents_-l1_nErrors_-l1_nAccepts_
+	 << " errors = " << l1_nErrors_
+	 << "\n";
+
+    cout << endl;
+    cout << "L1T-Report " << "---------- L1Trig Summary ------------\n";
+    cout << "L1T-Report "
+	 << right << setw(10) << "L1T  Bit#" << " "
+	 << right << setw(10) << "Passed" << " "
+	 << right << setw(10) << "Failed" << " "
+	 << right << setw(10) << "Errors" << " "
+	 << "Name" << "\n";
+
+  if (l1_init_) {
+    for (unsigned int i=0; i!=n; ++i) {
+      cout << "L1T-Report "
+	   << right << setw(10) << i << " "
+	   << right << setw(10) << l1Accepts_[i] << " "
+	   << right << setw(10) << l1_nEvents_-l1_nErrors_-l1Accepts_[i] << " "
+	   << right << setw(10) << l1_nErrors_ << " "
+	   << l1Names_[i] << "\n";
+    }
+  } else {
+    cout << "L1T-Report - No L1 GTRRs found!" << endl;
+  }
+
+    cout << endl;
+    cout << "L1T-Report end!" << endl;
+
+
+  // -- HLT-Report -------------------------------------------------
+
+  const unsigned int m(hlNames_.size());
+
+    cout << endl;
+    cout << "HLT-Report " << "---------- Event  Summary ------------\n";
+    cout << "HLT-Report"
+	 << " Events total = " << hl_nEvents_
+	 << " wasrun = " << hl_nWasRun_
+	 << " passed = " << hl_nAccept_
+	 << " errors = " << hl_nErrors_
+	 << "\n";
+
+    cout << endl;
+    cout << "HLT-Report " << "---------- HLTrig Summary ------------\n";
+    cout << "HLT-Report "
+	 << right << setw(10) << "HLT  Bit#" << " "
+	 << right << setw(10) << "WasRun" << " "
+	 << right << setw(10) << "Passed" << " "
+	 << right << setw(10) << "Errors" << " "
+	 << "Name" << "\n";
+
+  if (hl_init_) {
+    for (unsigned int i=0; i!=m; ++i) {
+      cout << "HLT-Report "
+	   << right << setw(10) << i << " "
+	   << right << setw(10) << hlWasRun_[i] << " "
+	   << right << setw(10) << hlAccept_[i] << " "
+	   << right << setw(10) << hlErrors_[i] << " "
+	   << hlNames_[i] << "\n";
+    }
+  } else {
+    cout << "HLT-Report - No HL TriggerResults found!" << endl;
+  }
+
+    cout << endl;
+    cout << "HLT-Report end!" << endl;
+    cout << endl;
+
 }
 
 //define this as a plug-in
