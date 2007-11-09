@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.14 2007/10/26 12:08:47 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.15 2007/11/01 11:43:51 ceggel Exp $
 //
 //
 
@@ -434,7 +434,9 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>triggerBits> L1 & HLT trigger results, event: " << fNevt << endl << endl;
 
+
   // L1 Trigger
+
   if (fVerbose) cout << "============================L1 Trigger ===================================" << endl;
   using namespace l1extra;
 
@@ -478,7 +480,7 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
       }
       
       cout << endl ;
-      
+     
       if( map.triggerDecision() ) {
 	
 	//         const L1EmParticleVectorRef& ems = map.emParticles() ;
@@ -533,13 +535,15 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
   
 
 
-  // -- HLT trigger
+  // -- HLT trigger  // 
+  
   if (fVerbose) cout << endl << "============================HLT Trigger ===================================" << endl;
   Handle<TriggerResults> trh;
   
   try {
       
     iEvent.getByLabel("TriggerResults", trh);
+    // iEvent.getByType(trh);
 
   } catch (Exception event) {
    
@@ -558,9 +562,67 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
       
       cout << " -----> HLT Trigger #" << i << ":\t" << (*trh)[i].accept() << endl;
       hltbits.push_back((*trh)[i].accept());
-      //if((*trh)[i].accept()) numTotHltBitsBeforeCuts[i]++;
     }
   }   
+
+  unsigned int size = trh->size();
+  if(Ntp) {
+    assert(Ntp == size);
+  } else {
+    Ntp = size;
+  }
+
+  cout << "Nevents = " << fNevt << " " << Ntp << " " << (int)trh->accept() <<endl;
+  
+  // loop over all paths, get trigger decision
+  for(unsigned i = 0; i != size; ++i) {
+
+    std::string name = trh.name(i);
+    fired[name] = trh->accept(i);
+    cout <<"trigger bit "<< i << " " << name << " " << fired[name] <<endl;
+    if(fired[name])
+      ++(Ntrig[name]);
+  }
+
+  //  /*  
+  // NOTE: WE SHOULD MAKE THIS A SYMMETRIC MATRIX...
+  // double-loop over all paths, get trigger overlaps
+  for(unsigned i = 0; i != size; ++i) {
+
+    std::string name = trh.name(i);
+
+    if(!fired[name])continue;
+    
+    bool correlation = false;
+    
+    for(unsigned j = 0; j != size; ++j) {
+      // skip the same name; 
+      // this entry correponds to events triggered by single trigger
+      if(i == j) continue;
+
+      std::string name2 = trh.name(j);
+      if(fired[name2]) {
+	correlation = true;
+	++(Ncross[name][name2]);
+      }
+    } // loop over j-trigger paths
+    
+    if(!correlation) // events triggered by single trigger
+      ++(Ncross[name][name]);
+    
+  } //  // loop over i-trigger paths
+  // */
+
+
+
+
+
+
+
+
+
+
+
 
    // get hold of requested filter object
    Handle<HLTFilterObjectWithRefs> ref;

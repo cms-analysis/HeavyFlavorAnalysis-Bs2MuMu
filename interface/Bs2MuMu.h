@@ -12,6 +12,7 @@
 #include "FWCore/Framework/interface/Handle.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/Framework/interface/EventSetup.h"
+#include "FWCore/Framework/interface/TriggerNames.h"
 #include "FWCore/PluginManager/interface/ModuleDef.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
@@ -38,6 +39,7 @@
 
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/RefToBase.h"
+
 #include "DataFormats/Common/interface/TriggerResults.h"
 #include "DataFormats/HLTReco/interface/HLTFilterObject.h"
 #include "DataFormats/L1Trigger/interface/L1ParticleMap.h"
@@ -216,6 +218,21 @@ private:
   TH1D  *fM000[3], *fM100[3], *fM200[3], *fM300[3];
   TH2D  *fK100, *fK200;
   TH1D  *fPT300, *fPT310, *fPT320;
+
+  // -- trigger stuff
+  unsigned int Ntp; // # of trigger paths (should be the same for all events!)
+ 
+  typedef std::map<std::string, unsigned int> trigPath;
+
+  trigPath Ntrig; // # of triggered events per path
+
+  // # of cross-triggered events per path
+  // (pairs with same name correspond to unique trigger rates for that path)
+  std::map<std::string, trigPath> Ncross;
+
+  // whether a trigger path has fired for given event
+  // (variable with event-scope)
+  std::map<std::string, bool> fired; 
 
 
   std::vector<int> numTotL1BitsBeforeCuts;
