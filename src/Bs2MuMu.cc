@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.16 2007/11/09 09:10:10 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.17 2007/11/09 16:03:11 ceggel Exp $
 //
 //
 
@@ -479,10 +479,10 @@ void Bs2MuMu::l1Report(const edm::Event &iEvent) {
   try {iEvent.getByLabel(fL1GTReadoutRec.c_str(),L1GTRR);} catch (...) {;}
   if (L1GTRR.isValid()) {
     const bool accept(L1GTRR->decision());
-    if (fVerbose) cout << "L1GlobalTriggerReadoutRecord decision: " << accept;
+    if (fVerbose) cout << "L1GlobalTriggerReadoutRecord decision: " << accept << endl;
     if (accept) ++l1_nAccepts_;
   } else {
-    if (fVerbose) cout << "L1GlobalTriggerReadoutRecord with label [" << fL1GTReadoutRec.c_str() << "] not found!";
+    if (fVerbose) cout << "L1GlobalTriggerReadoutRecord with label [" << fL1GTReadoutRec.c_str() << "] not found!" << endl;
     l1_nErrors_++;
     return;
   }
@@ -491,9 +491,9 @@ void Bs2MuMu::l1Report(const edm::Event &iEvent) {
   Handle<l1extra::L1ParticleMapCollection> L1PMC;
   try {iEvent.getByLabel(fL1ParticleMap.c_str(),L1PMC);} catch (...) {;}
   if (L1PMC.isValid()) {
-    if (fVerbose) cout << "L1ParticleMapCollection contains " << L1PMC->size() << " maps.";
+    if (fVerbose) cout << "L1ParticleMapCollection contains " << L1PMC->size() << " maps." << endl ;
   } else {
-    if (fVerbose) cout << "L1ParticleMapCollection with label [" << fL1ParticleMap.c_str() << "] not found!";
+    if (fVerbose) cout << "L1ParticleMapCollection with label [" << fL1ParticleMap.c_str() << "] not found!"<< endl;
     l1_nErrors_++;
     return;
   }
@@ -541,11 +541,11 @@ void Bs2MuMu::hltReport(const edm::Event &iEvent) {
   if (HLTR.isValid()) {
     if (HLTR->wasrun()) hl_nWasRun_++;
     const bool accept(HLTR->accept());
-    if (fVerbose) cout << "HL TriggerResults decision: " << accept;
+    if (fVerbose) cout << "HL TriggerResults decision: " << accept << endl;
     if (accept) ++hl_nAccept_;
     if (HLTR->error() ) hl_nErrors_++;
   } else {
-    if (fVerbose) cout << "HL TriggerResults with label [" << fHLTriggerResults.c_str() << "] not found!";
+    if (fVerbose) cout << "HL TriggerResults with label [" << fHLTriggerResults.c_str() << "] not found!" << endl;
     hl_nErrors_++;
     return;
   }
@@ -580,7 +580,9 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>triggerBits> L1 & HLT trigger results, event: " << fNevt << endl << endl;
-
+  
+  fEvent->fDiMuonTriggerDecision = 0;
+  fEvent->fTriggerDecision = 0;
 
   // -- L1 Trigger  //
 
@@ -615,20 +617,26 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
 
       const L1ParticleMap& map = (*mapColl)[imap];
       
-      cout << "%L1-Report --  #" << map.triggerType()
-	   << right << setw(10)  << map.triggerName()
-	   << right << setw(10) << "decision " << map.triggerDecision()
-	   << right << setw(10) << "#objs " << map.numOfObjects() ;
-      cout << right << setw(10) << "types" ;
-      
-      
-      for( int i = 0; i < map.numOfObjects(); ++i) {
+      cout << "%L1-Report --  #" << map.triggerType() << "   "
+	   << right << setw(20)  << map.triggerName()
+	   << right << setw(10) << " decision " << map.triggerDecision()
+	   << right << setw(10) << " #objs " << map.numOfObjects() ;
+      cout << right << setw(10) << " types " ;
+     for( int i = 0; i < map.numOfObjects(); ++i) {
 	
         cout << " " << map.objectTypes()[i];
       }
       
       cout << endl ;
      
+      //if ( !strcmp(map.triggerName(), "DoubleMuon" ) ) { // !!!! FIXME !!!!
+      if ( map.triggerType() == 5 ) {
+
+	cout << "!!! changing " << map.triggerName() << " " << fEvent->fDiMuonTriggerDecision;
+	fEvent->fDiMuonTriggerDecision = map.triggerDecision();
+	cout << " to " << fEvent->fDiMuonTriggerDecision << endl;
+      }
+
       if( map.triggerDecision() ) {
 	
 	//         const L1EmParticleVectorRef& ems = map.emParticles() ;
@@ -718,9 +726,16 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
 
       hltbits.push_back((*trh)[i].accept());
       
-      cout << "%HLT-Report --  #" << i 
-	   << right << setw(10) << trh->name(i)
-	   << right << setw(10) << "decision" << trh->accept(i) << endl;
+      cout << "%HLT-Report --  #" << i << "    "
+	   << right << setw(20) << trh->name(i)
+	   << right << setw(10) << " decision " << trh->accept(i) << endl;
+      //  if ( !strcmp(trh->name(i), "HLTBJPsiMuMu" ) ) { // !!!! FIXME !!!!
+      if ( i == 47 ) {
+	cout << "!!! changing " << fEvent->fTriggerDecision;
+	fEvent->fTriggerDecision = trh->accept(i);
+	cout << " to " << fEvent->fTriggerDecision << endl;
+	
+      }
     }
   }   
 
@@ -772,7 +787,7 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
 //      }
      //
    } else {
-     cout << endl << " ** Filterobject displacedJpsitoMumuFilter not found!";
+     cout << endl << " ** Filterobject displacedJpsitoMumuFilter not found!" << endl;
    }
 }
 
@@ -969,6 +984,17 @@ void Bs2MuMu::fillRecTracks(const edm::Event &iEvent) {
     pTrack = fEvent->addRecTrack();
     pTrack->fIndex = track.index();
 
+    int l1rec = idL1Muon(&tt);
+    if (fVerbose) {
+      if ( l1rec > 0 ) {
+	cout << " %%% track #" << i << " --> (pt=" << tt.pt() 
+	     << ", eta=" << tt.eta() << ", phi=" << tt.phi() << ")" << " could be L1 muon " << l1rec << "!" << endl;
+      } else {
+	cout << " %%% no match for track #" << i << " --> (pt=" << tt.pt() 
+	     << ", eta=" << tt.eta() << ", phi=" << tt.phi() << ")" << " to L1 muon!"<< endl;
+      }
+    }
+
     fillTrack(iEvent, pTrack, &tt, i, 0);
 
   }
@@ -990,6 +1016,7 @@ void Bs2MuMu::fillRecTracks(const edm::Event &iEvent) {
       fEff->Fill(52.1);
     }
     // -----------------------------------------------
+
   }
 }
 
@@ -2650,11 +2677,11 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
 
 }
 // ----------------------------------------------------------------------
-int Bs2MuMu::idL1Muon(const reco::Track *track) {
+int Bs2MuMu::idL1Muon(reco::Track *track) {
 
   int found(-1), index(0);
 
-  double ept(0.2), ephi(0.01), eeta(0.01);
+  double ept(0.3), ephi(0.5), eeta(2.);
   double mdpt(9999.), mdphi(9999.), mdeta(9999.);
   double dpt(0.),  dphi(0.),  deta(0.);
 
@@ -2669,28 +2696,13 @@ int Bs2MuMu::idL1Muon(const reco::Track *track) {
        muItr != (*fStuff->theL1MuonCollection).end(); 
        ++muItr) {
 
-    cout << "pt " <<  muItr->pt()
-	 << "E  " << muItr->energy()
-	 << "eta " << muItr->eta()
-	 << "phi " << muItr->phi()
-	 << "iso " << muItr->isIsolated()    // = 1 for Isolated ?
-	 << "mip " <<  muItr->isMip()        // = 1 for Mip ?
-	 << endl;
-  }
-
-
-  for (TrackCollection::const_iterator it = (*fStuff->theTkCollection).begin(); 
-       it != (*fStuff->theTkCollection).end(); 
-       ++it){
-
-
-    dpt  = fabs(pt - it->pt());
-    dphi = phi - it->phi();
+    dpt  = fabs(pt - muItr->pt());
+    dphi = phi - muItr->phi();
     while (dphi >= M_PI) dphi -= 2*M_PI;
     while (dphi < -M_PI) dphi += 2*M_PI;
     dphi = fabs(dphi);
-    deta = fabs(eta - it->eta());
-
+    deta = fabs(eta - muItr->eta());
+    
     if ((dpt < mdpt)
 	&& (dphi < mdphi)
 	&& (deta < mdeta)
@@ -2700,9 +2712,10 @@ int Bs2MuMu::idL1Muon(const reco::Track *track) {
       mdeta = deta;
       found = index;
     }
-
+    
     ++index;
   }
+
 
   // if (fVerbose) cout << mdpt << " " << mdphi << " " << mdeta << " " << found << endl;
 
@@ -2714,7 +2727,6 @@ int Bs2MuMu::idL1Muon(const reco::Track *track) {
   } else {
     return -1;
   }
-
 }
 
 // ----------------------------------------------------------------------
@@ -3226,7 +3238,7 @@ void Bs2MuMu::printMuonTracks(const edm::Event &iEvent) {
 
 
   int mcnt = (*fStuff->theMuonCollection).size();
-  if (fVerbose) cout << "Counted " << mcnt  << " reconstructed tracks." << endl;
+  if (fVerbose) cout << "Counted " << mcnt  << " global muon tracks." << endl;
   mcnt = 0;  
 
   for (MuonCollection::const_iterator glbMuon = (*fStuff->theMuonCollection).begin(); 
@@ -3243,6 +3255,27 @@ void Bs2MuMu::printMuonTracks(const edm::Event &iEvent) {
 	 << endl; 
 
     mcnt++;
+  }
+  
+  cout << endl << endl;
+
+  int l1cnt = (*fStuff->theL1MuonCollection).size();
+  if (fVerbose) cout << "Counted " << l1cnt  << " L1 muon tracks." << endl;
+  l1cnt = 0;  
+
+  for (l1extra::L1MuonParticleCollection::const_iterator muItr = (*fStuff->theL1MuonCollection).begin(); 
+       muItr != (*fStuff->theL1MuonCollection).end(); 
+       ++muItr) {
+
+      cout << "%%%%%%% L1 Muon #" << l1cnt << ": pt = " <<  muItr->pt()
+	   << ", E =  " << muItr->energy()
+	   << ", eta = " << muItr->eta()
+	   << ", phi = " << muItr->phi()
+	   << ", iso = " << muItr->isIsolated()    // = 1 for Isolated ?
+	   << ", mip = " <<  muItr->isMip()        // = 1 for Mip ?
+	   << " %%%%%%%%" << endl;
+
+      l1cnt++;
   }
 }
 

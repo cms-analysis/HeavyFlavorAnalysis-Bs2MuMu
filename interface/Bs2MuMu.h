@@ -46,7 +46,6 @@
 #include "DataFormats/L1Trigger/interface/L1MuonParticle.h"
 #include "DataFormats/L1Trigger/interface/L1JetParticle.h"
 #include "DataFormats/L1Trigger/interface/L1EtMissParticle.h"
-#include "DataFormats/L1Trigger/interface/L1ParticleMap.h"
 
 #include "DataFormats/Candidate/interface/Candidate.h"
 #include "DataFormats/Common/interface/TriggerResults.h"
@@ -198,7 +197,7 @@ private:
   int kaonCandidate(const edm::Event&, const edm::EventSetup&);
   
   int idRecTrack(const reco::Track *track);
-  int idL1Muon(const reco::Track *track);
+  int idL1Muon(reco::Track *track);
 
   // ----------member data ---------------------------
   string fLabel, fSourceLabel, fTracksLabel, fMuonLabel, fL1MuonLabel, fAssocLabel
