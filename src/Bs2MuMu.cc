@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.17 2007/11/09 16:03:11 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.18 2007/11/12 17:24:49 ceggel Exp $
 //
 //
 
@@ -209,6 +209,12 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
     fPT310 = new TH1D("p310", "pT Resoultion (chi2)", 400, -2., 2. );
     fPT320 = new TH1D("p320", "pT Resoultion (hits)", 400, -2., 2. );
   }
+
+  // -- L1 Muon eff.
+  f100  = new TH2D("e100", "l1 muon: eta res. vs. phi res.", 100, -10., 10., 50, -5., 5.);
+  f200  = new TH1D("e100_x", "l1 muon: eta res.", 200, -5., 5.);
+  f300  = new TH1D("e100_y", "l1 muon: phi res.", 400, -10., 10.);
+  f400  = new TH1D("e100_z", "l1 muon: pt res.", 320, -40., 40.);
 }
 
 // ======================================================================
@@ -238,6 +244,11 @@ Bs2MuMu::~Bs2MuMu() {
 
   fK100->Write(); 
   fK200->Write();
+
+  f100->Write(); 
+  f200->Write();
+  f300->Write();
+  f400->Write();
 
   if ( fR2SVerbose == 1) {
    
@@ -983,17 +994,6 @@ void Bs2MuMu::fillRecTracks(const edm::Event &iEvent) {
 
     pTrack = fEvent->addRecTrack();
     pTrack->fIndex = track.index();
-
-    int l1rec = idL1Muon(&tt);
-    if (fVerbose) {
-      if ( l1rec > 0 ) {
-	cout << " %%% track #" << i << " --> (pt=" << tt.pt() 
-	     << ", eta=" << tt.eta() << ", phi=" << tt.phi() << ")" << " could be L1 muon " << l1rec << "!" << endl;
-      } else {
-	cout << " %%% no match for track #" << i << " --> (pt=" << tt.pt() 
-	     << ", eta=" << tt.eta() << ", phi=" << tt.phi() << ")" << " to L1 muon!"<< endl;
-      }
-    }
 
     fillTrack(iEvent, pTrack, &tt, i, 0);
 
@@ -2235,7 +2235,8 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
       gen_cnt++;
 
     }
-
+    
+    
     // -- trouble histo for sim2gen -----------------
     fEff->Fill(0.1);
     if ( abs(type) != abs(gen_pdg_id) ) {
@@ -2257,12 +2258,15 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
     fEff->Fill(41.1);
     // -----------------------------------------------
 
-    if ( (gen_cnt > 0) && (abs(type) == abs(gen_pdg_id)) ) {
-      index = gen_id;
-    // -- trouble histo for sim2gen -----------------
+
+    if (gen_cnt > 0) {
+
+      index = gen_id; 
+      type  = gen_pdg_id;
+
+      // -- trouble histo for sim2gen -----------------
       fEff->Fill(6.1);
-    }
-    else {
+    } else {
       fEff->Fill(7.1);
     // -----------------------------------------------
     }
@@ -2298,10 +2302,36 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
    pTrack->fGenIndex = index;
    pTrack->fMCID     = type;
 
+   // -- Track matching to !L1! Muon Track 
 
-  // -- Track matching to Muon Track 
+   pTrack->fElID = 0.0;
+
+   if ( abs(type) == 13 ) {
+     
+     reco::Track tt(*track);
+     int l1rec = idL1Muon(&tt);
+     
+     if ( l1rec > 0 ) {
+
+       pTrack->fElID = 1.0;
+
+       if (fVerbose) cout << " %%% track #" << idx << " --> (pt=" << tt.pt() 
+			  << ", eta=" << tt.eta() << ", phi=" << tt.phi() << ")" 
+			  << " matched to L1 muon " << l1rec << "!" << endl;
+
+     } else {
+
+       if (fVerbose) cout << " %%% no match for track #" << idx << " --> (pt=" << tt.pt() 
+			  << ", eta=" << tt.eta() << ", phi=" << tt.phi() << ")" 
+			  << " to L1 muon!"<< endl;
+
+     }
+   }
+
+  // -- Track matching to Global Muon Track 
   int idrec(-99999);
   int mcnt(0);
+
   pTrack->fMuID = 0.0;
 
   const reco::Track* tt = 0;
@@ -2681,9 +2711,11 @@ int Bs2MuMu::idL1Muon(reco::Track *track) {
 
   int found(-1), index(0);
 
-  double ept(0.3), ephi(0.5), eeta(2.);
+  double ept(100.), ephi(1.5), eeta(0.8);
   double mdpt(9999.), mdphi(9999.), mdeta(9999.);
+  double mdpt_sign(9999.), mdphi_sign(9999.), mdeta_sign(9999.);
   double dpt(0.),  dphi(0.),  deta(0.);
+  double dpt_sign(0.),  dphi_sign(0.),  deta_sign(0.);
 
   //  double dhits(0.), mdhits(9999.)
 
@@ -2696,26 +2728,40 @@ int Bs2MuMu::idL1Muon(reco::Track *track) {
        muItr != (*fStuff->theL1MuonCollection).end(); 
        ++muItr) {
 
-    dpt  = fabs(pt - muItr->pt());
-    dphi = phi - muItr->phi();
-    while (dphi >= M_PI) dphi -= 2*M_PI;
-    while (dphi < -M_PI) dphi += 2*M_PI;
-    dphi = fabs(dphi);
-    deta = fabs(eta - muItr->eta());
+    dpt_sign  = pt - muItr->pt();
+    deta_sign = eta - muItr->eta();
+
+    dphi_sign = phi - muItr->phi();
+    while (dphi_sign >= M_PI) dphi_sign -= 2*M_PI;
+    while (dphi_sign < -M_PI) dphi_sign += 2*M_PI;
+
+    dpt  = fabs(dpt_sign);
+    deta = fabs(deta_sign);
+    dphi = fabs(dphi_sign);
     
-    if ((dpt < mdpt)
-	&& (dphi < mdphi)
-	&& (deta < mdeta)
-	) {
-      mdpt = dpt;
-      mdphi = dphi;
-      mdeta = deta;
+//     if ((dpt < mdpt)
+// 	&& (dphi < mdphi)
+// 	&& (deta < mdeta)
+// 	) {
+
+    if ( (deta < mdeta) && (dphi < mdphi)   ||
+	 (deta < mdeta) && (dphi < ephi/2.) ||
+	 (dphi < mdphi) && (deta < eeta/2.) ) {
+
+      mdpt  = dpt;   mdpt_sign  = dpt_sign;
+      mdphi = dphi;  mdphi_sign = dphi_sign;
+      mdeta = deta;  mdeta_sign = deta_sign;
+
       found = index;
     }
     
     ++index;
   }
 
+  f100->Fill(mdeta_sign, mdphi_sign);
+  f200->Fill(mdeta_sign);
+  f300->Fill(mdphi_sign);
+  f400->Fill(mdpt_sign);
 
   // if (fVerbose) cout << mdpt << " " << mdphi << " " << mdeta << " " << found << endl;
 
