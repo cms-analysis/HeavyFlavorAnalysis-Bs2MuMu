@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.18 2007/11/12 17:24:49 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.19 2007/11/13 16:52:49 ceggel Exp $
 //
 //
 
@@ -211,9 +211,9 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
   }
 
   // -- L1 Muon eff.
-  f100  = new TH2D("e100", "l1 muon: eta res. vs. phi res.", 100, -10., 10., 50, -5., 5.);
+  f100  = new TH2D("e100", "l1 muon: phi res. vs. eta res.", 100, -5., 5., 100, -5., 5.);
   f200  = new TH1D("e100_x", "l1 muon: eta res.", 200, -5., 5.);
-  f300  = new TH1D("e100_y", "l1 muon: phi res.", 400, -10., 10.);
+  f300  = new TH1D("e100_y", "l1 muon: phi res.", 200, -5., 5.);
   f400  = new TH1D("e100_z", "l1 muon: pt res.", 320, -40., 40.);
 }
 
@@ -620,7 +620,7 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
 
     std::vector<int> l1bits;
     
-    cout << " Number of particle maps " << mapColl->size() << endl;
+    if (fVerbose) cout << " Number of particle maps " << mapColl->size() << endl;
     
     for( int imap = 0; imap < L1ParticleMap::kNumOfL1TriggerTypes; ++imap ) {
       
@@ -628,24 +628,25 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
 
       const L1ParticleMap& map = (*mapColl)[imap];
       
-      cout << "%L1-Report --  #" << map.triggerType() << "   "
-	   << right << setw(20)  << map.triggerName()
-	   << right << setw(10) << " decision " << map.triggerDecision()
-	   << right << setw(10) << " #objs " << map.numOfObjects() ;
-      cout << right << setw(10) << " types " ;
-     for( int i = 0; i < map.numOfObjects(); ++i) {
+      if (fVerbose) cout << "%L1-Report --  #" << map.triggerType() << "   "
+			 << right << setw(20)  << map.triggerName()
+			 << right << setw(10) << " decision " << map.triggerDecision()
+			 << right << setw(10) << " #objs " << map.numOfObjects() ;
+      if (fVerbose) cout << right << setw(10) << " types " ;
+      
+      for( int i = 0; i < map.numOfObjects(); ++i) {
 	
-        cout << " " << map.objectTypes()[i];
+        if (fVerbose) cout << " " << map.objectTypes()[i];
       }
       
-      cout << endl ;
+      if (fVerbose) cout << endl ;
      
-      //if ( !strcmp(map.triggerName(), "DoubleMuon" ) ) { // !!!! FIXME !!!!
-      if ( map.triggerType() == 5 ) {
+      // if ( !strcmp(map.triggerName(), "A_DoubleMu3" ) ) { // !!!! FIXME !!!!
+      if ( map.triggerType() == 46 ) {
 
-	cout << "!!! changing " << map.triggerName() << " " << fEvent->fDiMuonTriggerDecision;
+	if (fVerbose) cout << "!!! changing " << map.triggerName() << " " << fEvent->fDiMuonTriggerDecision;
 	fEvent->fDiMuonTriggerDecision = map.triggerDecision();
-	cout << " to " << fEvent->fDiMuonTriggerDecision << endl;
+	if (fVerbose) cout << " to " << fEvent->fDiMuonTriggerDecision << endl;
       }
 
       if( map.triggerDecision() ) {
@@ -670,14 +671,14 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
 	
 	const L1MuonParticleVectorRef& muons = map.muonParticles();
 	
-	cout << endl << " ==>  Muon particles ET" << endl;;
+	if (fVerbose) cout << endl << " ==>  Muon particles ET" << endl;;
 	for( L1MuonParticleVectorRef::const_iterator muonItr = muons.begin() ;
 	     muonItr != muons.end() ; ++muonItr ) {
 	  
-	  cout << "\t pT = " << (*muonItr)->pt() << ", eta = " << (*muonItr)->eta()  << endl;
+	  if (fVerbose) cout << "\t pT = " << (*muonItr)->pt() << ", eta = " << (*muonItr)->eta()  << endl;
 	}
 	
-	cout << endl;
+	if (fVerbose) cout << endl;
       }
       //         cout << "  Particle combinations" ;
       //         const L1ParticleMap::L1IndexComboVector& combos = map.indexCombos() ;
@@ -731,27 +732,26 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
       if (fVerbose) cout << "%HLT-Report -- No trigger name given in TriggerResults of the input " << endl; 
     }
     
-    cout << "%HLT-Report, Event " << fNevt << "\t --> Number of HLT Triggers:  " << ntrigs << endl;
+    if (fVerbose) cout << "%HLT-Report, Event " << fNevt << "\t --> Number of HLT Triggers:  " << ntrigs << endl;
 
     for(unsigned int i = 0; i < trh->size(); i++) {
 
       hltbits.push_back((*trh)[i].accept());
       
-      cout << "%HLT-Report --  #" << i << "    "
-	   << right << setw(20) << trh->name(i)
-	   << right << setw(10) << " decision " << trh->accept(i) << endl;
-      //  if ( !strcmp(trh->name(i), "HLTBJPsiMuMu" ) ) { // !!!! FIXME !!!!
+      if (fVerbose) cout << "%HLT-Report --  #" << i << "    "
+			 << right << setw(20) << trh->name(i)
+			 << right << setw(10) << " decision " << trh->accept(i) << endl;
+
+      // if ( !strcmp(trh->name(i), "HLTBJPsiMuMu" ) ) {
       if ( i == 47 ) {
-	cout << "!!! changing " << fEvent->fTriggerDecision;
+	if (fVerbose) cout << "!!! changing " << fEvent->fTriggerDecision;
 	fEvent->fTriggerDecision = trh->accept(i);
-	cout << " to " << fEvent->fTriggerDecision << endl;
+	if (fVerbose) cout << " to " << fEvent->fTriggerDecision << endl;
 	
       }
     }
   }   
-
-
-
+  
 
 
 
@@ -760,7 +760,7 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
    try {iEvent.getByLabel("displacedJpsitoMumuFilter",ref);} catch(...) {;}
    if (ref.isValid()) {
      const unsigned int n(ref->size());
-     cout << endl << " ** displacedJpsitoMumuFilter Size = " << n << endl;
+     if (fVerbose) cout << endl << " ** displacedJpsitoMumuFilter Size = " << n << endl;
 //      for (unsigned int i=0; i!=n; i++) {
 //        // some Xchecks
 //        HLTParticle particle(ref->getParticle(i));
@@ -798,7 +798,7 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
 //      }
      //
    } else {
-     cout << endl << " ** Filterobject displacedJpsitoMumuFilter not found!" << endl;
+     if (fVerbose) cout << endl << " ** Filterobject displacedJpsitoMumuFilter not found!" << endl;
    }
 }
 
@@ -2198,6 +2198,7 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
 
   // -- Track matching to MC Track
   int index(-99999), type(-99999), mu(0);
+  double pt(0.);
   reco::RecoToSimCollection recSimColl = (*fStuff->recSimCollection); 
 
   std::vector<reco::Track> trackvector;
@@ -2224,6 +2225,7 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
     const HepMC::GenParticle* genPar = 0; 
     int gen_pdg_id(-99999), gen_id(-99999); 
     int gen_cnt(0);
+    double gen_pt(0.);
 
     for ( TrackingParticle::genp_iterator pit=tpr->genParticle_begin(); pit!=tpr->genParticle_end(); pit++ ){
 
@@ -2231,6 +2233,7 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
 
       gen_pdg_id = (*genPar).ParticleID();
       gen_id     = (*genPar).barcode()-1;
+      gen_pt     = (*genPar).Momentum().perp();
 
       gen_cnt++;
 
@@ -2263,6 +2266,7 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
 
       index = gen_id; 
       type  = gen_pdg_id;
+      pt    = gen_pt;
 
       // -- trouble histo for sim2gen -----------------
       fEff->Fill(6.1);
@@ -2306,7 +2310,7 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
 
    pTrack->fElID = 0.0;
 
-   if ( abs(type) == 13 ) {
+   if ( abs(type) == 13 && pt > 2.5 ) {
      
      reco::Track tt(*track);
      int l1rec = idL1Muon(&tt);
@@ -2711,7 +2715,7 @@ int Bs2MuMu::idL1Muon(reco::Track *track) {
 
   int found(-1), index(0);
 
-  double ept(100.), ephi(1.5), eeta(0.8);
+  double ept(100.), ephi(0.9), eeta(0.4);
   double mdpt(9999.), mdphi(9999.), mdeta(9999.);
   double mdpt_sign(9999.), mdphi_sign(9999.), mdeta_sign(9999.);
   double dpt(0.),  dphi(0.),  deta(0.);
@@ -2720,7 +2724,7 @@ int Bs2MuMu::idL1Muon(reco::Track *track) {
   //  double dhits(0.), mdhits(9999.)
 
   double pt  = track->pt();
-  double phi = track->phi();
+  double phi = track->outerPhi();
   double eta = track->eta();
   
   
