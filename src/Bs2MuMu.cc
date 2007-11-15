@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.19 2007/11/13 16:52:49 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.20 2007/11/14 17:30:15 ceggel Exp $
 //
 //
 
@@ -303,7 +303,7 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   fStuff->theMuonCollection = 0;
   fStuff->theTkCollection = 0;
   fStuff->theTPCollection = 0;
-  fStuff->recSimCollection = 0;
+  //  fStuff->recSimCollection = 0;
 
   clearTracks();
   clearCandidateTracks();
@@ -464,6 +464,8 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   // -- Dump tree
   fTree->Fill();
+
+  delete fStuff->recSimCollection;
 
   cout << endl << "===>> Bs2MuMu >>> Done with event: " << fNevt << endl;
   cout << "*********************************************************************" << endl;
