@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.20 2007/11/14 17:30:15 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.21 2007/11/15 16:26:51 ceggel Exp $
 //
 //
 
@@ -186,7 +186,7 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
   decayChannel(fChannel.c_str());
 
   // -- Troubleshoot histogramm
-  fEff = new TH1D("eff", "Efficiencies", 100, 0., 1000. );
+  fEff = new TH1D("eff", "Efficiencies", 1000, 0., 1000. );
 
   // -- Invariant mass & control histograms
 
@@ -2317,7 +2317,7 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
      reco::Track tt(*track);
      int l1rec = idL1Muon(&tt);
      
-     if ( l1rec > 0 ) {
+     if ( l1rec > -1 ) {
 
        pTrack->fElID = 1.0;
 
