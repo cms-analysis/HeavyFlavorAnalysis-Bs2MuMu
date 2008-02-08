@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.21 2007/11/15 16:26:51 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.22 2007/12/20 09:53:44 ceggel Exp $
 //
 //
 
@@ -198,9 +198,6 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
     fM300[i]  = new TH1D(Form("m521_%i", i+1), Form("inv. Mass Cand3 (bjk), sel = %i", i+1), 1000, 0., 10. );
   }
 
-  // -- Kaon Selection
-  fK100  = new TH2D("k100", "inv. Mass Cand2 vs. Chi2 (candidates)", 500, 0., 50., 500, 0., 100. );
-  fK200  = new TH2D("k200", "inv. Mass Cand2 vs. Chi2 (selected cand.)", 500, 0., 50., 500, 0., 100. );
 
   // -- pT Resolution (filled in printReco2Sim)
   if ( fR2SVerbose == 1) {
@@ -210,11 +207,6 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
     fPT320 = new TH1D("p320", "pT Resoultion (hits)", 400, -2., 2. );
   }
 
-  // -- L1 Muon eff.
-  f100  = new TH2D("e100", "l1 muon: phi res. vs. eta res.", 100, -5., 5., 100, -5., 5.);
-  f200  = new TH1D("e100_x", "l1 muon: eta res.", 200, -5., 5.);
-  f300  = new TH1D("e100_y", "l1 muon: phi res.", 200, -5., 5.);
-  f400  = new TH1D("e100_z", "l1 muon: pt res.", 320, -40., 40.);
 }
 
 // ======================================================================
@@ -241,14 +233,6 @@ Bs2MuMu::~Bs2MuMu() {
     fM200[i]->Write();
     fM300[i]->Write();
   }
-
-  fK100->Write(); 
-  fK200->Write();
-
-  f100->Write(); 
-  f200->Write();
-  f300->Write();
-  f400->Write();
 
   if ( fR2SVerbose == 1) {
    
@@ -389,6 +373,9 @@ void Bs2MuMu::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   // -- Generator level
   fillGeneratorBlock(iEvent);
+
+  // -- Muons
+  fillMuonBlock(iEvent);
 
   // -- Print Gen-/Sim-/Rec-Block
   if ( fGenVerbose == 1 ) {
@@ -673,13 +660,14 @@ void Bs2MuMu::triggerBits(const edm::Event &iEvent) {
 	
 	const L1MuonParticleVectorRef& muons = map.muonParticles();
 	
-	if (fVerbose) cout << endl << " ==>  Muon particles ET" << endl;;
+	if (fVerbose) cout << endl << " ==>  Muon particles ET" << endl;
+
 	for( L1MuonParticleVectorRef::const_iterator muonItr = muons.begin() ;
 	     muonItr != muons.end() ; ++muonItr ) {
 	  
 	  if (fVerbose) cout << "\t pT = " << (*muonItr)->pt() << ", eta = " << (*muonItr)->eta()  << endl;
 	}
-	
+
 	if (fVerbose) cout << endl;
       }
       //         cout << "  Particle combinations" ;
@@ -949,6 +937,82 @@ void Bs2MuMu::fillGeneratorBlock(const edm::Event &iEvent) {
 
 
 // ----------------------------------------------------------------------
+void Bs2MuMu::fillMuonBlock(const edm::Event &iEvent) {
+
+  if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>fillMuonBlock> Starting to fill muon block, event: " << fNevt << endl;
+
+  TAnaTrack *pTrack;
+
+  int mcnt = (*fStuff->theMuonCollection).size();
+  if (fVerbose) cout << "Counted " << mcnt  << " global muon tracks." << endl;
+  mcnt = 0;  
+
+  for (MuonCollection::const_iterator glbMuon = (*fStuff->theMuonCollection).begin(); 
+       glbMuon != (*fStuff->theMuonCollection).end(); 
+       ++glbMuon){
+
+    // -- standalone muon
+    TrackRef staTrack = glbMuon->standAloneMuon();
+    const reco::Track* at = &(*staTrack);
+
+    pTrack = fEvent->addSigTrack();
+    pTrack->fIndex = mcnt;
+    pTrack->fMuType  |= (0x1 << 1);
+
+    fillMuon(iEvent, pTrack, at, mcnt);
+
+
+    // -- tracker muon
+    TrackRef trkTrack = glbMuon->track();
+    const reco::Track* tt = &(*trkTrack);
+
+    pTrack = fEvent->addSigTrack();
+    pTrack->fIndex = mcnt;
+    pTrack->fMuType  |= (0x1 << 2);
+
+    fillMuon(iEvent, pTrack, tt, mcnt);
+
+
+    // -- global muon
+    TrackRef glbTrack = glbMuon->combinedMuon();
+    const reco::Track* gt = &(*glbTrack);
+
+    pTrack = fEvent->addSigTrack();
+    pTrack->fIndex = mcnt;
+    pTrack->fMuType  |= (0x1 << 1);
+    pTrack->fMuType  |= (0x1 << 2);
+
+    fillMuon(iEvent, pTrack, gt, mcnt);
+
+
+    mcnt++;
+  }
+  
+
+  int l1cnt = (*fStuff->theL1MuonCollection).size();
+  if (fVerbose) cout << "Counted " << l1cnt  << " L1 muon tracks." << endl;
+  l1cnt = 0;  
+
+  for (l1extra::L1MuonParticleCollection::const_iterator muItr = (*fStuff->theL1MuonCollection).begin(); 
+       muItr != (*fStuff->theL1MuonCollection).end(); 
+       ++muItr) {
+
+    pTrack = fEvent->addSigTrack();
+    pTrack->fIndex = l1cnt;
+    pTrack->fMuType  |= (0x1 << 3);
+
+    pTrack->fPlab.SetPtEtaPhi(muItr->pt(),
+			      muItr->eta(),
+			      muItr->phi()
+			      );
+
+
+    l1cnt++;
+  }
+}
+
+// ----------------------------------------------------------------------
 void Bs2MuMu::fillRecTracks(const edm::Event &iEvent) {
   
   fNrec++;
@@ -1007,15 +1071,32 @@ void Bs2MuMu::fillRecTracks(const edm::Event &iEvent) {
 
     TrackRef glbTrack = glbMuon->combinedMuon();
     const reco::Track* tt = &(*glbTrack);
-
-    int idrec = idRecTrack(tt);
-
+    
+    int idrec = idRecTrack(tt->pt(), tt->eta(), tt->phi());
+   
     // -- trouble histo for muon2reco-----------------
     fEff->Fill(50.1);
     if ( idrec > -1 ) {
       fEff->Fill(51.1);
     } else {
       fEff->Fill(52.1);
+    }
+    // -----------------------------------------------
+
+  }
+
+  for (l1extra::L1MuonParticleCollection::const_iterator muItr = (*fStuff->theL1MuonCollection).begin(); 
+       muItr != (*fStuff->theL1MuonCollection).end(); 
+       ++muItr) {
+    
+    int l1rec = idRecTrack(muItr->pt(), muItr->eta(), muItr->phi(), 100., 0.4, 0.9);
+    
+    // -- trouble histo for muon2reco-----------------
+    fEff->Fill(150.1);
+    if ( l1rec > -1 ) {
+      fEff->Fill(151.1);
+    } else {
+      fEff->Fill(152.1);
     }
     // -----------------------------------------------
 
@@ -1415,7 +1496,7 @@ void Bs2MuMu::bmmTracks3(const edm::Event &iEvent) {
     TrackRef glbTrack = glbMuon->combinedMuon();
     tt = &(*glbTrack);
 
-    int idrec = idRecTrack(tt);
+    int idrec = idRecTrack(tt->pt(), tt->eta(), tt->phi());
 
     if ( idrec > -1 ) {
 
@@ -1540,9 +1621,7 @@ void Bs2MuMu::muonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iS
 
     for ( unsigned int i=0; i<fStuff->MuonRecTracks.size(); i++ ) { 
 
-      for ( unsigned int j=i; j<fStuff->MuonRecTracks.size(); j++ ) {  // < ---- ??????
-
-	if (i == j) { continue; }
+      for ( unsigned int j=i+1; j<fStuff->MuonRecTracks.size(); j++ ) {
 
 	fStuff->RecTracks.clear();
 	fStuff->RecTracksIndex.clear();
@@ -1696,8 +1775,6 @@ void Bs2MuMu::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iS
 
       // ------------------------------------------------------------------------  
 
-      if (ncand)  fK200->Fill(fStuff->SecVtxChi2[cand], fStuff->InvMass[cand]);
-      
       if (fVerbose) {
 
 	if (ncand) { 
@@ -1842,8 +1919,6 @@ double Bs2MuMu::rmmKaonCand(const edm::Event &iEvent, const edm::EventSetup& iSe
     fStuff->InvMass.push_back(bs.M());
     fStuff->SecVtxChi2.push_back(chi2);
 
-    fK100->Fill(chi2, bs.M());
-
     return chi2;
   
   } else {
@@ -1921,6 +1996,7 @@ void Bs2MuMu::trimBmmTracks(const edm::Event &iEvent) {
 
       pTrack = fEvent->addSigTrack();
       pTrack->fIndex = fStuff->RecTracksIndex[i];
+      pTrack->fMuType = 0;
 
       fillTrack(iEvent, pTrack, &tt, fStuff->RecTracksIndex[i], 1);
     }
@@ -2181,8 +2257,9 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
   edm::Handle<reco::TrackCollection> tracks;
   iEvent.getByLabel(fTracksLabel.c_str(), tracks );  
 
-
+  //===============================================================================
   // -- Track parameters
+  //===============================================================================
 
   pTrack->fPlab.SetPtEtaPhi(it->pt(),
 			    it->eta(),
@@ -2198,8 +2275,11 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
   pTrack->fHits = it->numberOfValidHits();  
 
 
+  //===============================================================================
   // -- Track matching to MC Track
-  int index(-99999), type(-99999), mu(0);
+  //===============================================================================
+
+  int index(-99999), type(-99999), mu(0), l1(0);
   double pt(0.);
   reco::RecoToSimCollection recSimColl = (*fStuff->recSimCollection); 
 
@@ -2307,87 +2387,128 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
 
    pTrack->fGenIndex = index;
    pTrack->fMCID     = type;
-
-   // -- Track matching to !L1! Muon Track 
-
+   
+   //===============================================================================
+   // -- Track matching to L1 Muon Track 
+   //===============================================================================
+   int l1rec(-99999);
+   int lcnt(0);
+   
    pTrack->fElID = 0.0;
+   
+   for (l1extra::L1MuonParticleCollection::const_iterator muItr = (*fStuff->theL1MuonCollection).begin(); 
+	muItr != (*fStuff->theL1MuonCollection).end(); 
+	++muItr) {
+    
+     l1rec = idRecTrack(muItr->pt(), muItr->eta(), muItr->phi(), 100., 0.4, 0.9);
+        
+     if ( l1rec == idx ) {
+       
+       l1 = 1;
+       pTrack->fElID = lcnt;
+       
+       if (verb == 1) {
+	 if (fVerbose) cout << " --> Track #" << idx 
+			    << " (pT = " << it->pt()
+			    << ", eta = " << it->eta() 
+			    << ", phi = " << it->phi()
+			    << ",  " << it->charge() << ")"
+			    << " matched to L1 Muon #" << lcnt
+			    << " (pT = " << muItr->pt()
+			    << ", eta = " << muItr->eta()
+			    << ", phi = " << muItr->phi()
+			    << ", " << muItr->charge() << ")" << endl;
+       } 
 
-   if ( abs(type) == 13 && pt > 2.5 ) {
-     
-     reco::Track tt(*track);
-     int l1rec = idL1Muon(&tt);
-     
-     if ( l1rec > -1 ) {
-
-       pTrack->fElID = 1.0;
-
-       if (fVerbose) cout << " %%% track #" << idx << " --> (pt=" << tt.pt() 
-			  << ", eta=" << tt.eta() << ", phi=" << tt.phi() << ")" 
-			  << " matched to L1 muon " << l1rec << "!" << endl;
-
-     } else {
-
-       if (fVerbose) cout << " %%% no match for track #" << idx << " --> (pt=" << tt.pt() 
-			  << ", eta=" << tt.eta() << ", phi=" << tt.phi() << ")" 
-			  << " to L1 muon!"<< endl;
-
+       break;
      }
+
+     lcnt++;
    }
 
-  // -- Track matching to Global Muon Track 
-  int idrec(-99999);
-  int mcnt(0);
 
-  pTrack->fMuID = 0.0;
+   //===============================================================================
+   // -- Track matching to Global Muon Track 
+   //===============================================================================
+   int idrec(-99999);
+   int mcnt(0);
+   
+   pTrack->fMuID = 0.0;
+   
+   const reco::Track* tt = 0;
+   
+   for (MuonCollection::const_iterator glbMuon = (*fStuff->theMuonCollection).begin(); 
+	glbMuon != (*fStuff->theMuonCollection).end(); 
+	++glbMuon){
+     
+     
+     TrackRef glbTrack = glbMuon->combinedMuon();
+     tt = &(*glbTrack);
+     
+     idrec = idRecTrack(tt->pt(), tt->eta(), tt->phi());
+          
+     if ( idrec == idx ) {
+       
+       mu = 1;
+       pTrack->fMuID = mcnt;
+       
+       if (verb == 1) {
+	 if (fVerbose) cout << " --> Track #" << idx 
+			    << " (pT = " << it->pt()
+			    << ", eta = " << it->eta()
+			    << ", phi = " << it->phi() 
+			    << ", " << it->charge() << ")"
+			    << " matched to Global Muon #" << mcnt
+			    << " (pT = " << tt->pt()
+			    << ", eta = " << tt->eta() 
+			    << ", phi = " << tt->phi() 
+			    << ", " << tt->charge()<< ")" << endl;
+       } 
 
-  const reco::Track* tt = 0;
+       break;
+     }
 
-  for (MuonCollection::const_iterator glbMuon = (*fStuff->theMuonCollection).begin(); 
-       glbMuon != (*fStuff->theMuonCollection).end(); 
-       ++glbMuon){
+     mcnt++;
+   }
+   
+   // -- trouble histo for muon2reco ---------------
+   if (TMath::Abs(type) == 13) {
+     if (mu) {
+       fEff->Fill(43.1);
+     }
+     else {
+       fEff->Fill(44.1);
+     }
+   }
+   else {
+     if (!mu) {
+       fEff->Fill(45.1);
+     }
+     else {
+       fEff->Fill(46.1);
+     }
+   }
+   // ----------------------------------------------
+}
 
-    TrackRef glbTrack = glbMuon->combinedMuon();
-    tt = &(*glbTrack);
+// ----------------------------------------------------------------------
+void Bs2MuMu::fillMuon(const edm::Event &iEvent, TAnaTrack *pTrack, const reco::Track *it, int idx) {
 
-    idrec = idRecTrack(tt);
+  if (fVerbose) cout << "==>fillMuon> Filling muon #" << idx << ", event: " << fNevt << endl;
+    
+  pTrack->fPlab.SetPtEtaPhi(it->pt(),
+			    it->eta(),
+			    it->phi()
+			    );
 
-    if ( idrec == idx ) {
+  pTrack->fTip = it->d0();
+  pTrack->fLip = it->dz();
+  pTrack->fQ = it->charge();
+  pTrack->fChi2 = it->chi2();
+  //   pTrack->fDof = it->ndof();       ??? change ndof to double ???
+  pTrack->fDof = int(it->ndof());
+  pTrack->fHits = it->numberOfValidHits();
 
-      mu = 1;
-      pTrack->fMuID = 1.0;
-
-      if (verb == 1) {
-	if (fVerbose) cout << " --> Track #" << idx 
-	     << " (pT = " << it->pt()
-	     << ", eta = " << it->eta() << ", " << it->charge() << ")"
-	     << " matched to Global Muon #" << mcnt
-	     << " (" << tt->pt()
-	     << ", " << tt->eta() 
-	     << ", " << tt->charge()<< ")" << endl;
-      } 
-      break;
-    }
-    mcnt++;
-  }
-
-  // -- trouble histo for muon2reco ---------------
-  if (TMath::Abs(type) == 13) {
-    if (mu) {
-      fEff->Fill(43.1);
-    }
-    else {
-      fEff->Fill(44.1);
-    }
-  }
-  else {
-    if (!mu) {
-      fEff->Fill(45.1);
-    }
-    else {
-      fEff->Fill(46.1);
-    }
-  }
-  // ----------------------------------------------
 }
 
 
@@ -2712,89 +2833,16 @@ void Bs2MuMu::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
 //
 
 }
+
+
 // ----------------------------------------------------------------------
-int Bs2MuMu::idL1Muon(reco::Track *track) {
+int Bs2MuMu::idRecTrack(double pt, double eta, double phi
+			, double ept, double eeta, double ephi) {
 
   int found(-1), index(0);
 
-  double ept(100.), ephi(0.9), eeta(0.4);
-  double mdpt(9999.), mdphi(9999.), mdeta(9999.);
-  double mdpt_sign(9999.), mdphi_sign(9999.), mdeta_sign(9999.);
   double dpt(0.),  dphi(0.),  deta(0.);
-  double dpt_sign(0.),  dphi_sign(0.),  deta_sign(0.);
-
-  //  double dhits(0.), mdhits(9999.)
-
-  double pt  = track->pt();
-  double phi = track->outerPhi();
-  double eta = track->eta();
-  
-  
-  for (l1extra::L1MuonParticleCollection::const_iterator muItr = (*fStuff->theL1MuonCollection).begin(); 
-       muItr != (*fStuff->theL1MuonCollection).end(); 
-       ++muItr) {
-
-    dpt_sign  = pt - muItr->pt();
-    deta_sign = eta - muItr->eta();
-
-    dphi_sign = phi - muItr->phi();
-    while (dphi_sign >= M_PI) dphi_sign -= 2*M_PI;
-    while (dphi_sign < -M_PI) dphi_sign += 2*M_PI;
-
-    dpt  = fabs(dpt_sign);
-    deta = fabs(deta_sign);
-    dphi = fabs(dphi_sign);
-    
-//     if ((dpt < mdpt)
-// 	&& (dphi < mdphi)
-// 	&& (deta < mdeta)
-// 	) {
-
-    if ( (deta < mdeta) && (dphi < mdphi)   ||
-	 (deta < mdeta) && (dphi < ephi/2.) ||
-	 (dphi < mdphi) && (deta < eeta/2.) ) {
-
-      mdpt  = dpt;   mdpt_sign  = dpt_sign;
-      mdphi = dphi;  mdphi_sign = dphi_sign;
-      mdeta = deta;  mdeta_sign = deta_sign;
-
-      found = index;
-    }
-    
-    ++index;
-  }
-
-  f100->Fill(mdeta_sign, mdphi_sign);
-  f200->Fill(mdeta_sign);
-  f300->Fill(mdphi_sign);
-  f400->Fill(mdpt_sign);
-
-  // if (fVerbose) cout << mdpt << " " << mdphi << " " << mdeta << " " << found << endl;
-
-  if ((mdpt < ept)
-      && (mdphi < ephi)
-      && (mdeta < eeta)
-      ) {
-    return found;
-  } else {
-    return -1;
-  }
-}
-
-// ----------------------------------------------------------------------
-int Bs2MuMu::idRecTrack(const reco::Track *track) {
-
-  int found(-1), index(0);
-
-  double ept(0.2), ephi(0.01), eeta(0.01);
   double mdpt(9999.), mdphi(9999.), mdeta(9999.);
-  double dpt(0.),  dphi(0.),  deta(0.);
-
-  //  double dhits(0.), mdhits(9999.)
-
-  double pt  = track->pt();
-  double phi = track->phi();
-  double eta = track->eta();
 
   for (TrackCollection::const_iterator it = (*fStuff->theTkCollection).begin(); 
        it != (*fStuff->theTkCollection).end(); 
@@ -2808,13 +2856,25 @@ int Bs2MuMu::idRecTrack(const reco::Track *track) {
     dphi = fabs(dphi);
     deta = fabs(eta - it->eta());
 
-    if ((dpt < mdpt)
-	&& (dphi < mdphi)
-	&& (deta < mdeta)
-	) {
-      mdpt = dpt;
+//     if ((dpt < mdpt)
+// 	&& (dphi < mdphi)
+// 	&& (deta < mdeta)
+// 	) {
+
+    if ( 
+	 ((dpt < mdpt) && (deta < mdeta) && (dphi < mdphi))  ||
+	
+	 ((dpt < mdpt) && (deta < eeta/2.) && (dphi < ephi/2.)) ||
+	 ((deta < mdeta) && (dpt < ept/2.) && (dphi < ephi/2.)) ||
+	 ((dphi < mdphi) && (dpt < ept/2.) && (deta < eeta/2.)) 
+
+	 ) {
+	 
+
+      mdpt  = dpt;
       mdphi = dphi;
       mdeta = deta;
+
       found = index;
     }
 
@@ -3298,12 +3358,15 @@ void Bs2MuMu::printMuonTracks(const edm::Event &iEvent) {
        ++glbMuon){
 
     TrackRef glbTrack = glbMuon->combinedMuon();
+    const reco::Track* tt = &(*glbTrack);
+    
+    int idrec = idRecTrack(tt->pt(), tt->eta(), tt->phi());
 
     if (fVerbose) cout << "MuonTrack #" <<  mcnt
 	 << ": pT "     <<  (*glbTrack).pt()
 	 << ", eta "    <<  (*glbTrack).eta()
 	 << ", charge " <<  (*glbTrack).charge()
-	 << " matched to track #" << idRecTrack(&*glbTrack)
+	 << " matched to track #" << idrec
 	 << endl; 
 
     mcnt++;

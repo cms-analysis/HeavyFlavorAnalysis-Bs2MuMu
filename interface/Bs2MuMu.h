@@ -175,6 +175,7 @@ private:
   virtual void triggerBits(const edm::Event&);
 
   virtual void fillGeneratorBlock(const edm::Event&);
+  virtual void fillMuonBlock(const edm::Event&);
   virtual void fillRecTracks(const edm::Event&);
 
   virtual void bmmTracks1(const edm::Event&);
@@ -188,6 +189,7 @@ private:
   double kalmanVertexFit(const edm::Event&, const edm::EventSetup&, int type, unsigned int ntracks);
 
   virtual void fillTrack(const edm::Event&, TAnaTrack *pTrack, reco::Track *it, int idx, int verb);
+  virtual void fillMuon(const edm::Event&, TAnaTrack *pTrack, const reco::Track *it, int idx);
   virtual void fillVertex(const edm::Event&, const edm::EventSetup&, TransientVertex *v, int type, unsigned int ntracks);
   virtual void truthCandTracks(const edm::Event&, const edm::EventSetup&);
   virtual void muonCandTracks(const edm::Event&, const edm::EventSetup&, double m_cand1, double m_cand2);
@@ -196,8 +198,8 @@ private:
   double rmmKaonCand(const edm::Event&, const edm::EventSetup&, double cone);
   int kaonCandidate(const edm::Event&, const edm::EventSetup&);
   
-  int idRecTrack(const reco::Track *track);
-  int idL1Muon(reco::Track *track);
+  int idRecTrack(double pt, double eta, double phi
+		 , double ept = 0.2, double eeta = 0.01, double ephi = 0.01);
 
   // ----------member data ---------------------------
   string fLabel, fSourceLabel, fTracksLabel, fMuonLabel, fL1MuonLabel, fAssocLabel
@@ -227,10 +229,7 @@ private:
   TH1D *fEff;  
 
   TH1D  *fM000[3], *fM100[3], *fM200[3], *fM300[3];
-  TH2D  *fK100, *fK200;
   TH1D  *fPT300, *fPT310, *fPT320;
-  TH2D  *f100;
-  TH1D  *f200, *f300, *f400;
 
   // -- for L1 trigger report -------------------------------------------------------
 
