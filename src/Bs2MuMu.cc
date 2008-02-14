@@ -207,6 +207,8 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
     fPT320 = new TH1D("p320", "pT Resoultion (hits)", 400, -2., 2. );
   }
 
+  fGlb  = new TH2D("glb", "N_{#mu}^{glb} / event  ",        100, 0., 100., 100, 0., 100.);
+
 }
 
 // ======================================================================
@@ -945,7 +947,7 @@ void Bs2MuMu::fillMuonBlock(const edm::Event &iEvent) {
   TAnaTrack *pTrack;
 
   int mcnt = (*fStuff->theMuonCollection).size();
-  if (fVerbose) cout << "Counted " << mcnt  << " global muon tracks." << endl;
+  if (fVerbose) cout << "Counted " << mcnt  << " global muon tracks." << endl << endl;
   mcnt = 0;  
 
   for (MuonCollection::const_iterator glbMuon = (*fStuff->theMuonCollection).begin(); 
@@ -958,7 +960,8 @@ void Bs2MuMu::fillMuonBlock(const edm::Event &iEvent) {
 
     pTrack = fEvent->addSigTrack();
     pTrack->fIndex = mcnt;
-    pTrack->fMuType  |= (0x1 << 1);
+    //pTrack->fMuType  |= (0x1 << 1);
+    pTrack->fMuType  = 1;
 
     fillMuon(iEvent, pTrack, at, mcnt);
 
@@ -969,7 +972,7 @@ void Bs2MuMu::fillMuonBlock(const edm::Event &iEvent) {
 
     pTrack = fEvent->addSigTrack();
     pTrack->fIndex = mcnt;
-    pTrack->fMuType  |= (0x1 << 2);
+    pTrack->fMuType  = 2;
 
     fillMuon(iEvent, pTrack, tt, mcnt);
 
@@ -980,8 +983,7 @@ void Bs2MuMu::fillMuonBlock(const edm::Event &iEvent) {
 
     pTrack = fEvent->addSigTrack();
     pTrack->fIndex = mcnt;
-    pTrack->fMuType  |= (0x1 << 1);
-    pTrack->fMuType  |= (0x1 << 2);
+    pTrack->fMuType  = 3;
 
     fillMuon(iEvent, pTrack, gt, mcnt);
 
@@ -991,7 +993,7 @@ void Bs2MuMu::fillMuonBlock(const edm::Event &iEvent) {
   
 
   int l1cnt = (*fStuff->theL1MuonCollection).size();
-  if (fVerbose) cout << "Counted " << l1cnt  << " L1 muon tracks." << endl;
+  if (fVerbose) cout << "Counted " << l1cnt  << " L1 muon tracks." << endl << endl;
   l1cnt = 0;  
 
   for (l1extra::L1MuonParticleCollection::const_iterator muItr = (*fStuff->theL1MuonCollection).begin(); 
@@ -1000,7 +1002,7 @@ void Bs2MuMu::fillMuonBlock(const edm::Event &iEvent) {
 
     pTrack = fEvent->addSigTrack();
     pTrack->fIndex = l1cnt;
-    pTrack->fMuType  |= (0x1 << 3);
+    pTrack->fMuType  = 4;
 
     pTrack->fPlab.SetPtEtaPhi(muItr->pt(),
 			      muItr->eta(),
@@ -1078,6 +1080,7 @@ void Bs2MuMu::fillRecTracks(const edm::Event &iEvent) {
     fEff->Fill(50.1);
     if ( idrec > -1 ) {
       fEff->Fill(51.1);
+      fGlb->Fill(fNevt - 100*int(fNevt/100), int(fNevt/100));
     } else {
       fEff->Fill(52.1);
     }
@@ -2494,8 +2497,6 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
 // ----------------------------------------------------------------------
 void Bs2MuMu::fillMuon(const edm::Event &iEvent, TAnaTrack *pTrack, const reco::Track *it, int idx) {
 
-  if (fVerbose) cout << "==>fillMuon> Filling muon #" << idx << ", event: " << fNevt << endl;
-    
   pTrack->fPlab.SetPtEtaPhi(it->pt(),
 			    it->eta(),
 			    it->phi()

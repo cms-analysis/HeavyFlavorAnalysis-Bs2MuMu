@@ -231,6 +231,8 @@ private:
   TH1D  *fM000[3], *fM100[3], *fM200[3], *fM300[3];
   TH1D  *fPT300, *fPT310, *fPT320;
 
+  TH2D *fGlb;
+
   // -- for L1 trigger report -------------------------------------------------------
 
   unsigned int  l1_nEvents_;            // number of events processed
