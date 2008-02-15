@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.22 2007/12/20 09:53:44 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.24 2008/02/14 15:16:34 ceggel Exp $
 //
 //
 
@@ -118,7 +118,8 @@ struct anaStuff {
 
 Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
 
-  cout << endl << "===>> Bs2MuMu >>> ctor, instantiating histogramms, etc." << endl;
+  cout << "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" << endl;
+  cout << "===>> Bs2MuMu >>> ctor, instantiating histogramms, etc." << endl;
 
   // -- Setup "class variables"
   fStuff = new anaStuff;
@@ -209,6 +210,8 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
 
   fGlb  = new TH2D("glb", "N_{#mu}^{glb} / event  ",        100, 0., 100., 100, 0., 100.);
 
+  cout << "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" << endl << endl << endl;
+
 }
 
 // ======================================================================
@@ -221,6 +224,7 @@ Bs2MuMu::Bs2MuMu(const edm::ParameterSet& iConfig) {
 
 Bs2MuMu::~Bs2MuMu() {
 
+  cout << endl << "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" << endl;
   cout << "===>> Bs2MuMu >>> dtor, writing histogramms to file" << endl;
 
   // -- Save output
@@ -248,6 +252,8 @@ Bs2MuMu::~Bs2MuMu() {
   fFile->Write();
   fFile->Close();
   delete fFile;
+
+  cout << "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" << endl << endl << endl;
 
 }
 
@@ -942,7 +948,7 @@ void Bs2MuMu::fillGeneratorBlock(const edm::Event &iEvent) {
 void Bs2MuMu::fillMuonBlock(const edm::Event &iEvent) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
-  if (fVerbose) cout << "==>fillMuonBlock> Starting to fill muon block, event: " << fNevt << endl;
+  if (fVerbose) cout << "==>fillMuonBlock> Starting to fill muon block, event: " << fNevt << endl << endl;
 
   TAnaTrack *pTrack;
 

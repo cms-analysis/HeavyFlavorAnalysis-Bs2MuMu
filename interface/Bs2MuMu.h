@@ -28,7 +28,7 @@
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
 #include "SimDataFormats/HepMCProduct/interface/HepMCProduct.h"
 
-#include "SimTracker/TrackAssociation/test/testTrackAssociator.h"
+// #include "SimTracker/TrackAssociation/test/testTrackAssociator.h"
 #include "SimTracker/Records/interface/TrackAssociatorRecord.h"
 //#include "SimTracker/Records/interface/VertexAssociatorRecord.h"
 #include "SimTracker/TrackAssociation/interface/TrackAssociatorBase.h" 
