@@ -13,7 +13,7 @@
 //
 // Original Author:  Christina Eggel
 //         Created:  Mon Oct 23 15:14:30 CEST 2006
-// $Id: Bs2MuMu.cc,v 1.24 2008/02/14 15:16:34 ceggel Exp $
+// $Id: Bs2MuMu.cc,v 1.25 2008/02/15 13:53:51 ceggel Exp $
 //
 //
 
@@ -1069,8 +1069,7 @@ void Bs2MuMu::fillRecTracks(const edm::Event &iEvent) {
     pTrack = fEvent->addRecTrack();
     pTrack->fIndex = track.index();
 
-    fillTrack(iEvent, pTrack, &tt, i, 0);
-
+    fillTrack(iEvent, pTrack, &tt, i, 0); 
   }
 
   for (MuonCollection::const_iterator glbMuon = (*fStuff->theMuonCollection).begin(); 
@@ -2403,7 +2402,7 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
    int l1rec(-99999);
    int lcnt(0);
    
-   pTrack->fElID = 0.0;
+   pTrack->fElID = -1.;
    
    for (l1extra::L1MuonParticleCollection::const_iterator muItr = (*fStuff->theL1MuonCollection).begin(); 
 	muItr != (*fStuff->theL1MuonCollection).end(); 
@@ -2442,7 +2441,7 @@ void Bs2MuMu::fillTrack(const edm::Event &iEvent, TAnaTrack *pTrack, reco::Track
    int idrec(-99999);
    int mcnt(0);
    
-   pTrack->fMuID = 0.0;
+   pTrack->fMuID = -1.;
    
    const reco::Track* tt = 0;
    
@@ -2850,6 +2849,7 @@ int Bs2MuMu::idRecTrack(double pt, double eta, double phi
 
   double dpt(0.),  dphi(0.),  deta(0.);
   double mdpt(9999.), mdphi(9999.), mdeta(9999.);
+  // double ept(0.2), ephi(0.01), eeta(0.01);
 
   for (TrackCollection::const_iterator it = (*fStuff->theTkCollection).begin(); 
        it != (*fStuff->theTkCollection).end(); 
@@ -2863,19 +2863,19 @@ int Bs2MuMu::idRecTrack(double pt, double eta, double phi
     dphi = fabs(dphi);
     deta = fabs(eta - it->eta());
 
-//     if ((dpt < mdpt)
-// 	&& (dphi < mdphi)
-// 	&& (deta < mdeta)
-// 	) {
+    if ((dpt < mdpt)
+	&& (dphi < mdphi)
+	&& (deta < mdeta)
+	) {
 
-    if ( 
-	 ((dpt < mdpt) && (deta < mdeta) && (dphi < mdphi))  ||
+//     if ( 
+// 	 ((dpt < mdpt) && (deta < mdeta) && (dphi < mdphi))  ||
 	
-	 ((dpt < mdpt) && (deta < eeta/2.) && (dphi < ephi/2.)) ||
-	 ((deta < mdeta) && (dpt < ept/2.) && (dphi < ephi/2.)) ||
-	 ((dphi < mdphi) && (dpt < ept/2.) && (deta < eeta/2.)) 
+// 	 ((dpt < mdpt) && (deta < eeta/2.) && (dphi < ephi/2.)) ||
+// 	 ((deta < mdeta) && (dpt < ept/2.) && (dphi < ephi/2.)) ||
+// 	 ((dphi < mdphi) && (dpt < ept/2.) && (deta < eeta/2.)) 
 
-	 ) {
+// 	 ) {
 	 
 
       mdpt  = dpt;
@@ -3355,6 +3355,7 @@ void Bs2MuMu::printMuonTracks(const edm::Event &iEvent) {
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>printMuonTracks> Starting to print tracks reconstructed as muons, event: " << fNevt << endl;
 
+  cout << endl;
 
   int mcnt = (*fStuff->theMuonCollection).size();
   if (fVerbose) cout << "Counted " << mcnt  << " global muon tracks." << endl;
@@ -3370,12 +3371,11 @@ void Bs2MuMu::printMuonTracks(const edm::Event &iEvent) {
     int idrec = idRecTrack(tt->pt(), tt->eta(), tt->phi());
 
     if (fVerbose) cout << "MuonTrack #" <<  mcnt
-	 << ": pT "     <<  (*glbTrack).pt()
-	 << ", eta "    <<  (*glbTrack).eta()
-	 << ", charge " <<  (*glbTrack).charge()
-	 << " matched to track #" << idrec
-	 << endl; 
-
+		       << ": pT "     <<  (*glbTrack).pt()
+		       << ", eta "    <<  (*glbTrack).eta()
+		       << ", charge " <<  (*glbTrack).charge()
+		       << " matched to track #" << idrec
+		       << endl; 
     mcnt++;
   }
   
@@ -3389,15 +3389,18 @@ void Bs2MuMu::printMuonTracks(const edm::Event &iEvent) {
        muItr != (*fStuff->theL1MuonCollection).end(); 
        ++muItr) {
 
-      cout << "%%%%%%% L1 Muon #" << l1cnt << ": pt = " <<  muItr->pt()
-	   << ", E =  " << muItr->energy()
-	   << ", eta = " << muItr->eta()
-	   << ", phi = " << muItr->phi()
-	   << ", iso = " << muItr->isIsolated()    // = 1 for Isolated ?
-	   << ", mip = " <<  muItr->isMip()        // = 1 for Mip ?
-	   << " %%%%%%%%" << endl;
+    int l1rec = idRecTrack(muItr->pt(), muItr->eta(), muItr->phi(), 100., 0.4, 0.9);
 
-      l1cnt++;
+    if (fVerbose) cout << "%%%%%%% L1 Muon #" << l1cnt << ": pt = " <<  muItr->pt()
+		       << ", E =  " << muItr->energy()
+		       << ", eta = " << muItr->eta()
+		       << ", phi = " << muItr->phi()
+		       << ", iso = " << muItr->isIsolated()    // = 1 for Isolated ?
+		       << ", mip = " <<  muItr->isMip()        // = 1 for Mip ?
+		       << " matched to track #" << l1rec
+		       << " %%%%%%%%" << endl;
+
+    l1cnt++;
   }
 }
 
