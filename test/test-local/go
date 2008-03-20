@@ -5,7 +5,7 @@ getopts('p');
 
 @files = `ls -1 test-*-*.cfg`;
 
-open(LOG, ">cmsRun.log");
+open(LOG, ">cmsRun.local.log");
 
 foreach $f ( @files ) {
 

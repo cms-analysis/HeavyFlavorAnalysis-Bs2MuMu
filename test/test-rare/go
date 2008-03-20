@@ -28,6 +28,8 @@ my @backgrounds = ("Bd2MuMuPi0", "Bd2MuMu", "Bd2PiMuNu", "Bd2PiKp", "Bd2PiPi", "
 
 chdir($dir);
 
+if ( !$opt_p ) { open(LOG, ">cmsRun.rare.log"); }
+
 foreach $channel ( @backgrounds ) {
 
     @files = `ls -1 test-rare/$channel-*.cff`;
@@ -43,7 +45,7 @@ foreach $channel ( @backgrounds ) {
 	
 	if ( -e "$cfg" )  { system("rm -f $cfg"); }
 	
-	system("cp test-rare.cfg $cfg");
+	system("cp test-rare/test-rare.cfg $cfg");
 
 	system("perl -pi -e \"s/FILELIST/$channel-$fn/g\" $cfg");
 	system("perl -pi -e \"s/OUTPUT/$channel-$fn/g\" $cfg");
@@ -51,23 +53,28 @@ foreach $channel ( @backgrounds ) {
 	
 	if ( $opt_p ) { 
 	    
-	    if ( -e "analyzer/rare/test/$log" ) { system("rm -f analyzer/rare/test/$log"); }
-	    print "nice cmsRun $cfg \>\& analyzer/rare/test/$log\n";
-	    system("touch analyzer/rare/test/$log"); 	
-	    system("cat $cfg >> analyzer/rare/test/$log");
-	    system("cat test-rare/$channel-$fn.cff >> analyzer/rare/test/$log");
+	    if ( -e "analyzer/rare_new/test/$log" ) { system("rm -f analyzer/rare_new/test/$log"); }
+	    print "nice cmsRun $cfg \>\& analyzer/rare_new/test/$log\n";
+	    system("touch analyzer/rare_new/test/$log"); 	
+	    system("cat $cfg >> analyzer/rare_new/test/$log");
+	    system("cat test-rare/$channel-$fn.cff >> analyzer/rare_new/test/$log");
 	    
 	} else {  
 	    
-	    if ( -e "analyzer/rare/$log" ) { system("rm -f analyzer/rare/$log"); }
-	    print "nice cmsRun $cfg \>\& analyzer/rare/$log\n";
-	    system("nice cmsRun $cfg \>\& analyzer/rare/$log");		
-	    system("cat $cfg >> analyzer/rare/$log");
-	    system("cat test-rare/$channel-$fn.cff >> analyzer/rare/$log");
+	    if ( -e "analyzer/rare_new/$log" ) { system("rm -f analyzer/rare_new/$log"); }
+
+	    $date = `date`; chop($date);
+	    print LOG "$date \"nice cmsRun $cfg \>\& analyzer/rare_new/$log\"\n";
+
+	    system("nice cmsRun $cfg \>\& analyzer/rare_new/$log");		
+	    system("cat $cfg >> analyzer/rare_new/$log");
+	    system("cat test-rare/$channel-$fn.cff >> analyzer/rare_new/$log");
 	}
 	
 	system("rm -f $cfg");
     }
 }    
+
+if ( !$opt_p ) { close(LOG); }
 
 print "\n";
