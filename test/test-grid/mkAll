@@ -1,0 +1,101 @@
+#! /usr/bin/perl
+#
+#==============================================================================================
+#
+# OPTIONS : -d <directory>   specify input directory on manno (i.e. directory of private data-samples)
+#           -p               dry-run
+
+use Getopt::Std;
+getopts('d:p');
+
+print "\n";
+
+$dir  = `pwd`;
+chop($dir);
+
+$gsi  = "gsiftp://storage01.lcg.cscs.ch/pnfs/projects.cscs.ch/cms/local/eggel/HLTrigger";
+#$dcap = "dcap:\\\/\\\/storage01.lcg.cscs.ch:22125\\\/pnfs\\\/projects.cscs.ch\\\/cms\\\/local\\\/eggel\\\/HLTrigger";
+#$srm  = "srm://storage01-lcg.projects.cscs.ch:8443/pnfs/projects.cscs.ch/cms/eggel/HLTrigger";
+$dcap = "dcap:\\\/\\\/storage01.lcg.cscs.ch:22125\\\/pnfs\\\/lcg.cscs.ch\\\/cms\\\/local\\\/eggel\\\/HLTrigger";
+
+@directories = ("Bs2MuMu","Bp2JpsiKp","Bm2JpsiKm","BB2MuMu","NonPromptJpsi","CC2MuMu","Bs2MuMuGamma","Bs2MuMuPi0");
+
+if ( $opt_d ) {
+
+    $#directories = -1;
+    @directories = ("$opt_d");
+}
+
+
+foreach $channel ( @directories ) {
+
+    chdir("$dir");
+
+    if (!(-d "$channel")) { system("mkdir $channel"); }
+    
+    $tmp = `pwd`;
+    
+    @file = `edg-gridftp-ls $gsi/$channel`;
+    
+    
+    $nof = $#file+1;
+
+    print " ----> channel : $channel total $nof root files \n";
+    
+    chdir("$channel");
+
+    $tmp = `pwd`;
+    print " ... creating files in $tmp\n";
+    
+    foreach $fn ( 0 .. $#file ) {
+	
+	chop(@file[$fn]); 
+	
+	$number = @file[$fn];
+	$number =~ s/output\_//;
+	$number =~ s/\.root//;
+
+	$file_nr = sprintf("%04d", $number);
+	
+	$cfg = "test-$file_nr.cfg";	   
+	$jdl = "test-$file_nr.jdl";
+	
+	if ( $opt_p ) {
+
+	    print "---------------------------------------------------------------------------------\n";
+	    print "cp $dir/test-grid.cfg $cfg\n";
+	    print "perl -pi -e \"s/FILELIST/$dcap\\\/$channel\\\/@file[$fn]/g\" $cfg\n";
+	    print "\n";
+
+
+	    print "cp $dir/test-grid.jdl $jdl\n";
+	    print "perl -pi -e \"s/OUTPUT/@file[$fn]/g\" $jdl\n";		    	    
+	    print "perl -pi -e \"s/CFGFILE/$cfg/g\" $jdl\n";    	    
+	    print "perl -pi -e \"s/NUMBER/$file_nr/g\" $jdl\n";	    	    
+	    print "perl -pi -e \"s/CHANNEL/$channel/g\" $jdl\n\n";
+	    print "\n";
+
+	} else {
+
+	    if ( -e "$cfg" ) { system("rm -f $cfg"); }
+	    if ( -e "$jdl" ) { system("rm -f $jdl"); }
+	    
+	    system("cp $dir/test-grid.cfg $cfg");
+	    system("perl -pi -e \"s/FILELIST/$dcap\\\/$channel\\\/@file[$fn]/g\" $cfg");
+	
+	    system("cp $dir/test-grid.jdl $jdl");
+	    system("perl -pi -e \"s/OUTPUT/@file[$fn]/g\" $jdl");		    	    
+	    system("perl -pi -e \"s/CFGFILE/$cfg/g\" $jdl");    	    
+	    system("perl -pi -e \"s/NUMBER/$file_nr/g\" $jdl");	    	    
+	    system("perl -pi -e \"s/CHANNEL/$channel/g\" $jdl");
+   
+	}
+    }
+ 
+    system("cp $dir/runAnalysis.sh .");	 
+    if (!(-e "re"))      { system("ln -s /home/ceggel/perl/reAll re"); }
+    if (!(-d "report"))  { system("mkdir report"); }
+    if (!(-d "old_jobs")){ system("mkdir old_jobs"); }
+}
+
+print "\n";

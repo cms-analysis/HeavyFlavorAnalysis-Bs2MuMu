@@ -1,0 +1,410 @@
+#! /usr/bin/perl
+#
+#==============================================================================================
+# This script submit jobs to the grid and store the job ID together with the jdl-file for later
+# resubmission in case the job has been aborted. All print-outs are writtern to a file in the 
+# directory report.
+#
+# OPTIONS : -c               check jobs only
+#           -a               check the status of the job ID in myjobs.list, resubmit if "Aborted"
+#           -o               check for job output on the SE, resubmit if no root output on SE
+#           -p               dry-run
+#           -f               submit to fnal
+
+use Getopt::Std;
+getopts('pcoaf');
+
+if ( $opt_c ) {
+    
+    &jobStatus();
+    exit;
+}
+
+my $site = "cscs";
+my $gsi  = "gsiftp://storage01.lcg.cscs.ch/pnfs/projects.cscs.ch/cms/local/eggel/analysed_Spring07_withHLT_new";
+
+if ( $opt_f ) {
+
+    $site = "fnal";
+    $gsi = "gsiftp://cmsstor32.fnal.gov:2811///WAX/resilient/ceggel/analysed_Spring07_withHLT_new";
+}
+
+my $command = "edg-job-submit -o jobs.list";
+my $gmat = "edg-job-list-match";
+my $ginf = "lcg-infosites --vo cms ce";
+my $info = "\#CPU    Free    Total Jobs      Running Waiting ComputingElement";
+
+my $wait_site   = 10;
+my $wait_status = 10;
+my $wait_submit = 60;
+
+$dir  = `pwd`;
+chop($dir);
+
+
+($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+$year = sprintf("%02d", $year % 100);
+my $log =  sprintf("$dir/report/submit-%02d%02d%02d.%02d:%02d", $year, $mon+1, $mday, $hour, $min); # mon is off by 1??
+
+system("touch $log");
+
+open(LOG, ">$log");
+
+print LOG "\n";
+print LOG " %% ============================ %%  \n";
+print LOG " %% GRID REPORT $subdir \t %%\n";
+print LOG " %% ============================ %%\n\n";
+
+if ( $opt_a || $opt_o ) {
+
+    print LOG "Job\t Status \t resubmit with\n";
+    print LOG "----------------------------------------------\n";
+}
+
+
+@tmp = split(/\//, $dir);
+$subdir = @tmp[$#tmp];
+
+@output = `edg-gridftp-ls $gsi/$subdir`;
+@files       = `ls -1 test-*.jdl`;
+
+$tot = $#files+1 - $#output;
+$cnt = 0;
+
+if ( !$opt_p ) {
+
+    &jobsLog();
+
+}
+
+foreach $file ( @files ) {
+
+    if ( $cnt > 0 && !$opt_p ) { sleep(30); }
+
+    $cnt++;
+
+    $submit = 0;
+
+    if ( $opt_o ) {
+
+	$submit = &checkJobOutput($file);
+   
+    } elsif ( $opt_a ){
+
+	$submit = &checkJobID($file);
+
+    } else {
+
+	$submit = 1;
+    }
+	
+    if ( $opt_p ) { next; }
+
+    # ------------------- Start job submission ---------------------
+    
+    if ( $submit ) {
+	
+	chop($file);
+	
+	if ( -e "myjobs.list" ) { 
+	    
+	    system("perl -pi -e \"s/$file/\\\#$file/g\" myjobs.list"); 
+	    system("perl -pi -e \"s/\\\#\\\#/\\\#/g\" myjobs.list"); 
+	}
+	
+	
+	$submitted = 0;
+
+	while ( !$submitted ) {
+	    
+	    
+	    $ready = &siteCheck($file, $cnt);
+	    
+	    if ( $ready ) {
+		
+		&submitJob($file);
+		$submitted = 1;
+		
+	    } else {
+		
+		print LOG " waiting for $site, try again in $wait_site sec \n";
+		$submitted = 0;
+		sleep($wait_site);
+	    }
+	}
+    }
+}
+
+print LOG "\n";
+
+
+#-----------------------------------------------------------------------------
+
+sub jobsLog() {
+
+    if ( -e "myjobs.list" ) {
+	
+	$tmp = `date`; chop($tmp);
+	system("echo \"  \" >> myjobs.list");
+	system("echo \" ========================  \" >> myjobs.list");
+	system("echo \" resubmitting new batch \t $tmp \" >> myjobs.list");
+	system("echo \" ========================  \" >> myjobs.list");
+
+    } else {
+	
+	$tmp = `date`; chop($tmp);
+	system("echo \" ======================  \" > myjobs.list");
+	system("echo \" submitting new batch \t $tmp \" >> myjobs.list");
+	system("echo \" ======================  \" >> myjobs.list");
+    }
+}
+
+#-----------------------------------------------------------------------------
+
+sub siteCheck() {
+    my ($file, $number) = @_;
+    
+    print LOG "\n\t\t > matching job $number to $site <\n";
+    print LOG "\t\t   -----------------------\n";
+    $test2  = `$ginf \| grep $site`;
+    print LOG "$info\n";
+    print LOG "$test2";
+    
+    $test1  = `$gmat $file \| grep $site`;
+    print LOG "  job site match...\t $test1";
+
+    if ( $test1 ne "" && $test1 ne "" ) {
+	
+	$ready = 1;
+	$done = 1; $finished = 1;
+
+    } else {
+
+	$ready = 0;
+	$done = 0; $finished = 0;
+    }
+
+    return $ready;
+}
+
+#-----------------------------------------------------------------------------
+
+sub submitJob() {
+    my ($file) = @_;	
+
+    print LOG "\t\t $command $file\n\n";
+    system("$command $file \>\> $log ");
+    sleep(10);
+    
+    $jobID = 0;
+    $old = ""; $last = "";
+    
+		
+    print LOG "\n================================ edg-job-submit to $site Start ============================\n\n";
+
+    while ( !$jobID ) {
+	
+	open(INFO, "jobs.list");
+	@lines = <INFO>;
+	$old  = $last;
+	$last = @lines[$#lines];
+	close(INFO);
+		
+	if ( $last eq $old ) { 
+	    
+	    print LOG "% waiting for new job ID to put in myjobs.list together with job \#$cnt ($file) \n";
+	    sleep(2);
+	    
+	} else {
+	    
+	    open(MYINFO, ">>myjobs.list");	
+	    print MYINFO "$file $last";	
+	    close(MYINFO);
+	    $jobID = 1;
+	}
+    }
+
+    sleep($wait_submit);    
+}
+
+#-----------------------------------------------------------------------------
+
+sub checkJobID() {
+    my ($file) = @_;
+
+    $number = substr($file, 5, 4);
+    $number /= 1;
+
+    $re = 0;
+    $job_submitted = 0;
+
+    open(IN, "myjobs.list") || die "Cannot open myjobs.list\n";
+
+    while (<IN>) {
+ 
+	if ( substr($_, 0, 1) ne "t" ) { next; }
+
+	($jdl, $id) = split(/\ /, $_);
+	chop($id);
+
+	if ($jdl eq $file ) { 
+
+	    $job_submitted = 1;
+
+	    $status = `edg-job-status $id \| grep Current`;
+	    
+	    if ($status =~ /Cleared/)   { $re = 0; $stat = "Cleared"; }
+	    if ($status =~ /Running/)   { $re = 0; $stat = "Running"; }
+	    if ($status =~ /Done/)      { $re = 0; $stat = "Done"; }
+	    if ($status =~ /Scheduled/) { $re = 0; $stat = "Scheduled"; }
+	    if ($status =~ /Ready/)     { $re = 0; $stat = "Ready";} 
+	    if ($status =~ /Aborted/)   { $re = 1; $stat = "Aborted";}  
+	    if ($status =~ /Cancelled/) { $re = 1; $stat = "Cancelled";} 
+
+	    last;
+       	
+	} else { 
+
+	    next;
+	}
+    
+    }
+
+    close(IN);
+    
+    if ( $job_submitted ) {
+
+	if ( $re ) {
+	
+	    print LOG "$number \t $stat \t \"edg-job-submit -o jobs.list $file\"\n";
+	
+	} else {
+
+	    print LOG "$number \t $stat \n";
+	}   
+    } 
+
+    return $re;
+}
+
+#-----------------------------------------------------------------------------
+
+sub checkJobOutput() {
+    my ($file) = @_; 
+
+
+    $number = substr($file, 5, 4);
+    $number /= 1;
+
+
+    $cleared = 0;
+    @directories = `ls -1 CMSSW_*`;
+    foreach $drc ( @directories ) {
+
+	$number1 = substr($drc, 6, 4);
+	$number1 /= 1;
+
+	if ( $number == $number1 ) { $cleared = 1; last; }
+
+    }
+
+    $root = 0;
+    @output = `glite-gridftp-ls $gsi/$subdir`;
+    foreach $out ( @output ) {
+	
+	chop($out);
+	$number2 = $out;
+	$number2 =~ s/output\_//;
+	$number2 =~ s/\.root//;
+	$number2 /= 1;
+	if ( $number == $number2 ) { $root = 1; last; }
+	
+    }
+    
+
+    if ( $root ) {
+
+	$re = 0;
+
+	if ( !$cleared ) {
+	    
+	    print LOG "$number \t Done (Get logfile)  \t \"gbg\"\n";
+
+	} else {
+
+	    print LOG "$number \t Cleared  \t\n";
+	}
+	
+    } else { 
+
+	$re = 1;
+
+	if ( !$cleared ) {
+
+	    chop($file);
+	    print LOG "$number \t no output \t \"edg-job-submit -o jobs.list $file\"\n";
+
+	} else {
+
+	    chop($file);
+	    print LOG "$number \t no output (but logfile!?) \t \"edg-job-submit -o jobs.list $file\"\n";
+	}
+    }
+    
+    return $re;
+}
+
+#-----------------------------------------------------------------------------
+
+sub jobStatus() {
+
+$date = `date`; 
+chop($date);
+
+$dir = `pwd`;
+@tmp = split(/\//, $dir);
+$dir = @tmp[$#tmp];
+chop($dir);
+
+print "\n\n%%%%%%%% $dir %%%%%%%\n";
+print "\n%% Job report: $date \n";
+
+@status = `edg-job-status --noint -i jobs.list | grep Current`;
+#sleep($wait_status);
+
+my $run = 0;
+my $don = 0;
+my $sch = 0;
+my $rea = 0;
+my $abo = 0;
+my $can = 0;
+
+foreach $stat ( @status ) {
+
+    if ($stat =~ /Cleared/) { $clr++; }
+    if ($stat =~ /Running/) { $run++; }
+    if ($stat =~ /Done/)    { $don++; }
+    if ($stat =~ /Scheduled/)     { $sch++; }
+    if ($stat =~ /Ready/)     { $rea++; }
+    if ($stat =~ /Aborted/)     { $abo++; }
+    if ($stat =~ /Cancelled/)     { $can++; }
+
+
+}
+
+print "%%  Cleared \t $clr\n";
+print "%%  Running \t $run\n";
+
+if ( $don ) { 
+    print "%%  Done    \t $don <======== Get log-files !!!\n";
+} else { 
+    print "%%  Done    \t $don\n";
+}
+
+print "%%  Scheduled\t $sch\n";
+print "%%  Ready    \t $rea\n";
+print "%%  Aborted  \t $abo\n";
+print "%%  Cancelled\t $can\n";
+print "\n";
+
+}

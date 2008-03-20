@@ -1,0 +1,10 @@
+Executable = "runAnalysis.sh";
+Arguments = "-c test.cfg -o  srm://storage01.lcg.cscs.ch:8443/pnfs/lcg.cscs.ch/cms/local/eggel/test/output_manno.root -t  srm://storage01.lcg.cscs.ch:8443/pnfs/lcg.cscs.ch/cms/local/eggel/libHeavyFlavorAnalysisBs2MuMu.tar.gz";
+StdOutput = "CMSSW_test.stdout";
+StdError = "CMSSW_test.stderr";
+//StdInput = "";
+InputSandbox = {"runAnalysis.sh","test.cfg"};
+OutputSandbox = {"CMSSW_test.stdout","CMSSW_test.stderr"};
+//Environment = {"MYENVA=$HOME/gaga"};
+Requirements = other.GlueCEUniqueID == "ce01.lcg.cscs.ch:2119/jobmanager-lcgpbs-cms";
+

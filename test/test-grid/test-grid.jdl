@@ -1,0 +1,13 @@
+Executable = "runAnalysis.sh";
+Arguments = "-c CFGFILE -o srm://storage01.lcg.cscs.ch:8443/pnfs/lcg.cscs.ch/cms/local/eggel/analysed_Spring07_withHLT_new/CHANNEL/OUTPUT -t srm://storage01.lcg.cscs.ch:8443/pnfs/lcg.cscs.ch/cms/local/eggel/test/libHeavyFlavorAnalysisBs2MuMu.tar.gz";
+StdOutput = "CMSSW_NUMBER.stdout";
+StdError = "CMSSW_NUMBER.stderr";
+//StdInput = "";
+InputSandbox = {"runAnalysis.sh","CFGFILE"};
+OutputSandbox = {"CMSSW_NUMBER.stdout","CMSSW_NUMBER.stderr"};
+//Environment = {"MYENVA=$HOME/gaga"};
+MyProxyServer = "myproxy.cern.ch";
+VirtualOrganisation = "cms";
+Requirements = other.GlueCEUniqueID == "ce01.lcg.cscs.ch:2119/jobmanager-lcgpbs-cms";
+RetryCount = 10;
+

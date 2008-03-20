@@ -1,0 +1,78 @@
+Preparation
+------------
+
+Copy the most recent library tar-file to SE on manno
+
+cd cern_cvs/cmssw/CMSSW_1_3_1_HLT6/lib/slc3_ia32_gcc323
+rm libAna00.so
+cp ../../src/AnalysisDataFormats/HeavyFlavorObjects/lib/libAna00.so .
+cd ../..
+
+tar cvf - lib module src/HeavyFlavorAnalysis/Bs2MuMu/data/*.cf? | gzip > test.tar.gz
+tar -tzf test.tar.gz
+edg-gridftp-ls $GSIFTP/cms/local_tests/libHeavyFlavorAnalysisBs2MuMu.tar.gz
+edg-gridftp-rm $GSIFTP/cms/local_tests/libHeavyFlavorAnalysisBs2MuMu.tar.gz
+
+globus-url-copy file:/home/ceggel/cern_cvs/cmssw/CMSSW_1_3_1_HLT6/test.tar.gz $GSIFTP/cms/local_tests/libHeavyFlavorAnalysisBs2MuMu.tar.gz
+globus-url-copy $GSIFTP/cms/local_tests/libHeavyFlavorAnalysisBs2MuMu.tar.gz file:/home/ceggel/cern_cvs/cmssw/CMSSW_1_3_1_HLT6/testMe.tar.gz
+
+edg-gridftp-ls $GSIFTP/cms/local_tests/libHeavyFlavorAnalysisBs2MuMu.tar.gz
+
+Modification
+------------
+
+Modify the template
+
+- test-grid.jdl  --> storage element, directory on storage element, output filename, computing element
+- test-grid.cfg  --> number of events
+
+Job Creation
+------------
+
+Create all cfg/jdl for a certain channel (e.g. Bs2MuMu)
+by running mkAll specifying the channel with the -d option.
+As an example "./mkAll -d Bs2MuMu" (-p for dry run). This will
+
+- check for all reskimmed sample on storage element in eggel/HLTrigger/Bs2MuMu
+- make a cfg/jdl per availble sample and move it to ./Bs2MuMu
+- copy the wrapper script runAnalysis.sh to ./Bs2MuMu
+
+Job Submission
+--------------
+
+Test one of the jdl files:
+
+gmat_ test-0001.jdl
+
+Submit all jobs with 
+
+#go (= ~/perl/grAll *.jdl, with -p option)
+./re
+
+Check job status with
+
+./re -c
+
+Submit jobs with
+
+./re (-p to test)
+
+Resubmit aborted jobs
+
+./re -i
+
+Job Output
+----------
+
+gbg ---> retrieves output sandbox
+gbu ---> unmangles directory names
+
+
+
+
+
+
+
+
+
+
