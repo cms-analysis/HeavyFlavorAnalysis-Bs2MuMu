@@ -30,7 +30,7 @@ chdir($dir);
 
 foreach $channel ( @backgrounds ) {
 
-    @files = `ls -1 input/$channel-*.cff`;
+    @files = `ls -1 test-rare/$channel-*.cff`;
 
     foreach $fn ( 0 .. $#files ) {
 
@@ -55,7 +55,7 @@ foreach $channel ( @backgrounds ) {
 	    print "nice cmsRun $cfg \>\& analyzer/rare/test/$log\n";
 	    system("touch analyzer/rare/test/$log"); 	
 	    system("cat $cfg >> analyzer/rare/test/$log");
-	    system("cat input/$channel-$fn.cff >> analyzer/rare/test/$log");
+	    system("cat test-rare/$channel-$fn.cff >> analyzer/rare/test/$log");
 	    
 	} else {  
 	    
@@ -63,7 +63,7 @@ foreach $channel ( @backgrounds ) {
 	    print "nice cmsRun $cfg \>\& analyzer/rare/$log\n";
 	    system("nice cmsRun $cfg \>\& analyzer/rare/$log");		
 	    system("cat $cfg >> analyzer/rare/$log");
-	    system("cat input/$channel-$fn.cff >> analyzer/rare/$log");
+	    system("cat test-rare/$channel-$fn.cff >> analyzer/rare/$log");
 	}
 	
 	system("rm -f $cfg");

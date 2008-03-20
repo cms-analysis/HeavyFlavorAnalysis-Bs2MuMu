@@ -30,7 +30,7 @@ foreach $bg ( @backgrounds ) {
     $nof = $#rbg+1;
     print " ----> channel : $bg total $nof root files \n\n";
     
-    chdir("$dir/input");
+    chdir("$dir/test-rare");
     system("rm -f $bg-*.cff");
     
     if ( !$opt_s ) {
