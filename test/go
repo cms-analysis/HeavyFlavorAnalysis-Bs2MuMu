@@ -1,0 +1,73 @@
+#! /usr/bin/perl
+#
+#==============================================================================================
+#
+# OPTIONS : -m: -1 or 1,2,3,...     min number of output file
+#           -n: -1 or 1,2,3,...     max number of output file
+#           -p: dry-run
+
+use Getopt::Std;
+getopts('m:n:p');
+
+print "\n";
+
+if ( !$opt_n ) {
+    $opt_n = -1;
+}
+
+if (!$opt_m ) { 
+    $opt_m = -1; 
+}
+
+$dir  = "/home/ceggel/workspace/test";
+
+my @backgrounds = ("Bd2MuMuPi0", "Bd2MuMu", "Bd2PiMuNu", "Bd2PiKp", "Bd2PiPi", "Bu2MuMuMuNu",
+		   "Bs2MuMu", "Bs2KpKm", "Bs2KmPi", "Bs2KmMuNu", "Bs2PiPi", "Bs2JpsiPhi", "Bc2MuMuMuNu",
+		   "Bc2JpsiMuNu", "Lb2PPi", "Lb2PKm");
+
+
+chdir($dir);
+
+foreach $channel ( @backgrounds ) {
+
+    @files = `ls -1 input/$channel-*.cff`;
+
+    foreach $fn ( 0 .. $#files ) {
+
+	if ( $opt_n > 0 && $fn > $opt_n ) { next; } 
+	if ( $opt_m > 0 && $fn < $opt_m ) { next; } 
+	
+	
+	$cfg = "$channel-$fn.cfg";
+	$log = "$channel-$fn.log";
+	
+	if ( -e "$cfg" )  { system("rm -f $cfg"); }
+	
+	system("cp test-rare.cfg $cfg");
+
+	system("perl -pi -e \"s/FILELIST/$channel-$fn/g\" $cfg");
+	system("perl -pi -e \"s/OUTPUT/$channel-$fn/g\" $cfg");
+	system("perl -pi -e \"s/CHANNEL/$channel/g\" $cfg");
+	
+	if ( $opt_p ) { 
+	    
+	    if ( -e "analyzer/rare/test/$log" ) { system("rm -f analyzer/rare/test/$log"); }
+	    print "nice cmsRun $cfg \>\& analyzer/rare/test/$log\n";
+	    system("touch analyzer/rare/test/$log"); 	
+	    system("cat $cfg >> analyzer/rare/test/$log");
+	    system("cat input/$channel-$fn.cff >> analyzer/rare/test/$log");
+	    
+	} else {  
+	    
+	    if ( -e "analyzer/rare/$log" ) { system("rm -f analyzer/rare/$log"); }
+	    print "nice cmsRun $cfg \>\& analyzer/rare/$log\n";
+	    system("nice cmsRun $cfg \>\& analyzer/rare/$log");		
+	    system("cat $cfg >> analyzer/rare/$log");
+	    system("cat input/$channel-$fn.cff >> analyzer/rare/$log");
+	}
+	
+	system("rm -f $cfg");
+    }
+}    
+
+print "\n";

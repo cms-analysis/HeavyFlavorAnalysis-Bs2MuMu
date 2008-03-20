@@ -1,0 +1,28 @@
+#! /usr/bin/perl
+
+use Getopt::Std;
+getopts('p');
+
+@files = `ls -1 test-*-*.cfg`;
+
+open(LOG, ">cmsRun.log");
+
+foreach $f ( @files ) {
+
+    ($run, $bla) = split(/\./,$f);
+    
+    if ( !$opt_p && (-e "test/$f.log") ) { 
+
+	system("rm -f test/$f.log"); 
+    }
+
+    $date = `date`; chop($date);
+    if ( !$opt_p ) { 
+	print LOG "$date \"nice cmsRun $run.cfg \>\& test/$run.log\"\n";
+	system("nice cmsRun $run.cfg \>\& test/$run.log");
+    } else {
+	print "$date \"nice cmsRun $run.cfg \>\& test/$run.log\"\n";
+    }
+}
+
+close(LOG);
