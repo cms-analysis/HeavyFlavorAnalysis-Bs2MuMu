@@ -37,29 +37,35 @@ public:
   void init(const char *files);
   void loadFiles();
   void loadFiles(const char *filename);
-  void loadDa(const char *filename, double vxs, const char *sign);
-  void loadMc(const char *filename, double vxs, const char *sign);
-  void loadSg(const char *filename, double vxs, const char *sign);
+  void loadDa(const char *filename, double vxs, const char *sign, const char *type);
+  void loadMc(const char *filename, double vxs, const char *sign, const char *type);
+  void loadSg(const char *filename, double vxs, const char *sign, const char *type);
   void dumpFiles();
 
   // -- main methods
   // --------------
   void makeAllPlots();
-  void breco(int o = 0); 
-  void jreco(int o = 0); 
+  void jreco(int o = 4); 
+  void breco(int o = 2, const char *hist = "c030"); 
+  void nreco(int o = 5, const char *hist = "c030");
+  void bgOverlay(const char *s = "c030", const int npers = 6);
+  void nbgOverlay(const char *s = "c030", const int npers = 6);
   void dumpCuts();
   void effTables();
   void effTable(TFile *f, const char *tag); 
   void showDistributions(int offset = 0, int wait = 0); 
-  void showDistribution(const char *hname, int mode = 0, double x = -9999., double y = -9999.); 
-  void calculateUpperLimit();
+  void showDistribution(const char *hname, int mode = 0, double x = -9999., double y = -9999.);
+  void calculateUpperLimit(); 
+  void normalizedUpperLimit();
   double massReduction(const char *s = "c030", const char *tag = "m0");
 
-  void plotRareDecays();
-  void muonMisId();
-  void singleHBG(const char *s = "c030");
-  void overlayHBG(const char *s = "c030", const int npers = 6);
-  void stackHBG(const char *s = "c030");
+  void sgRecos();
+  void combiRecos();
+  void bgOverlays();
+  void fakeMuons();
+
+  void signalPlots();
+
   void plotAll(const char *s = "c030");
  
 
@@ -77,9 +83,6 @@ public:
 
   void mcValidation(int wait = 0); 
   void mcVal(const char *hname); 
-  void mcVal2(const char *hname); 
-  void mcVal3(const char *hname); 
-
 
   // -- Utilities and helper methods
   // -------------------------------
@@ -89,6 +92,7 @@ public:
   void channelEff(TFile *f, double &fnorm_Ch, double &eff1_Ch, double &eff2_Ch);
   TH1D* DivideHisto(TH1D *hist1, TH1D *hist2);
   TH2D* DivideHisto2(TH2D *hist1, TH2D *hist2);
+  void writeFitPar(TF1 *f, int o, double mean, double sigma, int npar);
  
   int  wait();
 
@@ -99,23 +103,26 @@ public:
   void setTitles2(TH2 *h, const char *sx, const char *sy, 
 		 float size = 0.05, float xoff = 1.1, float yoff = 1.1, float lsize = 0.05, int font = 132);
   void setHist(TH1 *h, int color = kBlack, int symbol = 20, double size = 1., double width = 2.);
-  void setFilledHist(TH1 *h, int lcol = kBlack, int fcol = kYellow, int fstyle = 1000, int width = 1);
+  void emptyBinError(TH1 *h);
+  void setFilledHist(TH1 *h, int lcol = kBlack, int fcol = kYellow, int fstyle = 1000, int width = 1, int style = 1);
 
   TString texForm(double e);
   TString texForm2(double e);
   TString texForm31(double e);
+  TString formatTex(double n, const char *name, const char *tag);
   TString scaleFactor(int exp);
   double dBinomial(double n, double N);
   double dEff(int in, int iN);
   double nul(int nobs); 
   double barlow(int nobs, double bg = 0., double bgE = 0., double sE = 0.);
-  void   getSignature(TString in, TString &out);
-  TString getRareType(TString in);
+  void   getSignature(TString in, TString &out, TString &out2);
+  TString getSubGroup(TString in);
+  int checkIf(int mc, const char *sel);
   double getMisID(TString in);
 
   // -- Files for Signal, Data, Monte Carlo, and Control Samples
   int nSg, nMc, nDa;
-  TFile *fS[10], *fD[10], *fM[20], *fCS[10];
+  TFile *fS[10], *fD[10], *fM[30], *fCS[10];
 
   int fShow; 
   TString fFile; 
@@ -125,26 +132,34 @@ public:
 private:
 
   // -- for normalization
-  double fvXsS[10],  fvXsD[10],  fvXsM[20];  // this is entered by hand from NSEL/NGEN
-  double fLumiS[10], fLumiD[10], fLumiM[20]; // this is computed in loadFiles()
-  double fNevtS[10], fNevtD[10], fNevtM[20]; // this is filled in loadFiles()
-  double fNexpS[10], fNexpD[10], fNexpM[20]; // this is filled in loadFiles()
-  double fMisIdM[20];                         // this is filled in loadFiles()
-  TString fSignS[10], fSignD[10], fSignM[20]; // this is filled in muonMisId()
-  TString fSignTitleS[10], fSignTitleD[10], fSignTitleM[20]; // this is filled in loadFiles()
+  double fvXsS[10],  fvXsD[10],  fvXsM[30];  // this is entered by hand from NSEL/NGEN
+  double fLumiS[10], fLumiD[10], fLumiM[30]; // this is computed in loadFiles()
+  double fNevtS[10], fNevtD[10], fNevtM[30]; // this is filled in loadFiles()
+  double fNexpS[10], fNexpD[10], fNexpM[30]; // this is filled in loadFiles()
+  double fMisIdM[30];                         // this is filled in muonMisId()
+  TString fSignS[10], fSignD[10], fSignM[30]; // this is filled in loadFiles()
+  TString fTypeS[10], fTypeD[10], fTypeM[30]; // this is filled in loadFiles()
+  TString fSignTexS[10], fSignTexD[10], fSignTexM[30]; // this is filled in loadFiles()
+  TString fSignLeggS[10], fSignLeggD[10], fSignLeggM[30]; // this is filled in loadFiles()
 
   // -- misc
   double fFom;
 
-  double fMassBs;
+  double fMassBs, fMassBp;
 
   // -- Upper Limit determination
-  double fEsg, fEsgE; // efficiency and error
-  double fNsg, fNsgE; // expected number of signal events 
-  double fNbg, fNbgE; // expected number of background events 
-  double fNrbg, fNrbgE; // expected number of rare background events 
+  double fEsg0, fEsgE0;       // efficiency and error (w/o fact. in 5-6 GeV window)
+  double fEsg, fEsgE;         // efficiency and error
+  double fNsg, fNsgE;         // expected number of signal events 
+  double fNbg, fNbgE;         // expected number of background events 
+  double fNrbg, fNrbgE;       // expected number of rare background events
 
+  double fEsg_norm, fEsgE_norm;         // efficiency and error (norm. channel)
+  double fNsg_norm, fNsgE_norm;         // expected number of signal events (norm. channel)
+  double fNbg_norm, fNbgE_norm;         // expected number of background events (norm. channel)
 
+  int sgIndex, bgIndex, normSgIndex, normBgIndex; 
+  
   double fMu
     , fPi
     , fKa
@@ -167,8 +182,8 @@ private:
     ;
   
   // -- functions
-  TF1 *f0, *f1, *f2, *f3, *f4; 
-  TF1 *f10;
+  TF1 *f0, *f1, *f2, *f3, *f4, *f5, *f6; 
+  TF1 *f10, *f11;
 
   // -- totals counters for background table
   double fBgTotal, fBgTotalE;

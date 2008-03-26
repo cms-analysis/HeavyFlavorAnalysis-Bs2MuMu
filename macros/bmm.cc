@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-v"))  {isVerbose  = atoi(argv[++i]);  }                 // debug level
     if (!strcmp(argv[i],"-b"))  {decaySign  = TString(argv[++i]); }               // Decay channel of background
     if (!strcmp(argv[i],"-o"))  {genPt = 3.0; genEta = 2.4; }           // Gen. threshold for pT and eta
-    else                        {genPt = 2.5; genEta = 2.5; }          //   are different for CMSSW samples
+    else                        {genPt = 2.5; genEta = 2.5; }           //   are different for CMSSW samples
   }
 
 
@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) {
     if (barefile.Contains("chains/")) {
       meta = barefile;
       barefile.ReplaceAll("chains/", "");
+      barefile.ReplaceAll("cbg-111-", "");
       histfile = barefile + "." + fn + ".root";
       if (dirspec) {
         histfile = dirBase + "/" + dirName + "/" + histfile;

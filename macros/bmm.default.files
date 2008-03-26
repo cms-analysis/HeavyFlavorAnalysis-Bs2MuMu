@@ -8,35 +8,75 @@
 # ----------------------------------------------------------------------
 #
 # visible x-section [fb]: 38.9657    = 5.522E+01*1.E12*(5000./24.8e6)*3.5e-9 
-type=sg file=treebmm/csg-001.default.root vxs=38.9657e+00 signature=bsmumu
-type=sg file=treebmm/csg-002.default.root vxs=38.9657e+00 signature=bsmumu
-type=sg file=treebmm/csg-003.default.root vxs=38.9657e+00 signature=bsmumu
-type=sg file=treebmm/csg-004.default.root vxs=10.4545e+02 signature=bpjpsikp
-type=sg file=treebmm/csg-005.default.root vxs=10.4545e+02 signature=bpjpsikp
+type=sg file=treebmm/csg-001.default.root vxs=39.126e+00 signature=bsmumu
+type=sg file=treebmm/csg-002.default.root vxs=39.126e+00 signature=bsmumu
+type=mysg file=treebmm/csg-003.default.root vxs=53.900e+00 signature=bsmumu
+type=sg file=treebmm/csg-003p.default.root vxs=86.625E+00 signature=bsmumu
+#
+type=mynsg file=treebmm/csg-004.norm.root vxs=20.9091e+05 signature=bpjpsikp
+type=nsg file=treebmm/csg-004m.norm.root vxs=10.4545e+05 signature=bpjpsikp
+type=nsg file=treebmm/csg-004j.norm.root vxs=1.3112e+08 signature=NonPrompt
+#
+# HLT samples
+#type=sg file=treebmm/csg-003f.default.root vxs=53.900e+00 signature=bsmumu
+#type=nsg file=treebmm/csg-004f.norm.root vxs=10.4545e+05 signature=bpjpsikp
+#type=sg file=treebmm/csg-003.default.sel3.root vxs=53.900e+00 signature=bsmumu
 #
 # visible x-section [fb]: 1.7424e+07 = 1.1E+01*1.E12*1.584e-6
-type=mc file=treebmm/cbg-001.default.root vxs=1.7424e+07 signature=bbbar
+type=mc file=treebmm/cbg-001.default.root vxs=1.7286e+07 signature=bbbar
+type=mymc file=treebmm/cbg-003.default.root vxs=1.3051e+08 signature=BB
+type=mc file=treebmm/cbg-004.default.root vxs=1.3112e+08 signature=NonPrompt
+type=mc file=treebmm/cbg-005.default.root vxs=1.4168e+07 signature=CC
 #
-type=hmc file=treebmm/bskk.default.root vxs=2.7384e+05 signature=hbg
-type=hmc file=treebmm/bs2pi.default.root vxs=9.4473e+03 signature=hbg
-type=hmc file=treebmm/bskpi.default.root vxs=3.0811e+04 signature=hbg
-type=hmc file=treebmm/bskmunu.default.root vxs=2.800e+05 signature=hbg
-type=hmc file=treebmm/bsmumug.default.root vxs=1.2930e+01 signature=hbg
-type=hmc file=treebmm/bsmumup0.default.root vxs=3.7651e+01 signature=hbg
+type=nmc file=treebmm/cbg-003.norm.root vxs=1.3051e+08 signature=BB
+type=mynmc file=treebmm/cbg-004.norm.root vxs=1.3112e+08 signature=NonPrompt
+type=nmc file=treebmm/cbg-005.norm.root vxs=1.4168e+07 signature=CC
 #
-type=hmc file=treebmm/bd2pi.default.root vxs=8.3384e+04 signature=hbg
-type=hmc file=treebmm/bdpik.default.root vxs=3.7370e+05 signature=hbg
-type=hmc file=treebmm/bdpimunu.default.root vxs=1.2503e+06 signature=hbg
+# HLT samples
+#type=mc file=treebmm/cbg-003f.default.root vxs=1.3051e+08 signature=BB
+#type=mc file=treebmm/cbg-003.default.sel3.root vxs=1.3051e+08 signature=BB
+#type=mc file=treebmm/cbg-003f.default.sel3.root vxs=1.3051e+08 signature=BB
 #
-type=hmc file=treebmm/bu3munu.default.root vxs=2.2392e+03 signature=hbg
+# Rare BG
+# 7
+type=rmc file=treebmm/bskk.default.root vxs=4.2944E+05 signature=rare
+# 8
+type=rmc file=treebmm/bs2pi.default.root vxs=7.7000e+03 signature=rare
+# 9
+type=rmc file=treebmm/bskpi.default.root vxs=7.7000E+04 signature=rare
+# 10
+type=rmc file=treebmm/bskmunu.default.root vxs=1.6170E+06 signature=rare
+# 11
+type=rmc file=treebmm/bsmumug.default.root vxs=3.080E+02 signature=rare
+# 
+#type=rmc file=treebmm/bsmumupi0.default.root vxs=3.080E+02 signature=rare
 #
-type=hmc file=treebmm/bc3munu.default.root vxs=2.0057e+01 signature=hbg
-type=hmc file=treebmm/bcjpmunu.default.root vxs=1.8883e+03 signature=hbg
+# 12
+type=rmc file=treebmm/bd2pi.default.root vxs=2.1164e+05 signature=rare
+# 13
+type=rmc file=treebmm/bdpik.default.root vxs=7.7000e+05 signature=rare
+# 14
+type=rmc file=treebmm/bdpimunu.default.root vxs=5.0820e+06 signature=rare
+# 15
+type=rmc file=treebmm/bdmumupi0.default.root vxs=3.3000e+02 signature=rare
+# 
+# 16
+type=rmc file=treebmm/lbppi.default.root vxs=9.3500E+03 signature=rare
+# 17
+type=rmc file=treebmm/lbpk.default.root vxs=1.9800E+04 signature=rare
+# 
+# 18
+type=rmc file=treebmm/bu3munu.default.root vxs=1.0450E+05 signature=rare
+# 
+# 19
+type=rmc file=treebmm/bc3munu.default.root vxs=2.4750E+02 signature=rare
+# 20
+type=rmc file=treebmm/bcjpmunu.default.root vxs=3.9138E+04 signature=rare
+# 21
+type=rmc file=treebmm/bcjpmunu.default.root vxs=3.9138E+04 signature=rare
 #
-type=hmc file=treebmm/lbppi.default.root vxs=4.2234e+03 signature=hbg
-type=hmc file=treebmm/lbpk.default.root vxs=8.4467e+03 signature=hbg
-#
-type=hmc file=treebmm/qcd.default.root vxs=2.2416e+11 signature=hbg
+# QCD
+#type=rmc file=treebmm/qcd.default.root vxs=2.2416e+11 signature=rare
 #
 #
 # ----------------------------------------------------------------------

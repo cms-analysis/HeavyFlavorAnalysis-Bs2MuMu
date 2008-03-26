@@ -1,6 +1,8 @@
 #ifndef TREEBMM_H
 #define TREEBMM_H
 
+#define NSUBSEL 4
+
 #include <iostream>
 
 #include <TROOT.h>
@@ -14,7 +16,7 @@
 #include <TProfile.h>
 #include <TTree.h>
 
-#include "..//rootio/TAna00Event.hh"
+#include "../rootio/TAna00Event.hh"
 #include "../rootio/TGenCand.hh"
 #include "../rootio/TAnaCand.hh"
 #include "../rootio/TAnaTrack.hh"
@@ -48,8 +50,8 @@ public:
 
   void        startAnalysis();
   int         loop(int nevents = 1, int start = -1);
-  void        initVariables();   // returns number of reconstructed Bs candidates
-  void        vertexResolution();
+  int         getSigCand(int cand = 531, int sel = 2, int crit = 1);
+  int         getNormCand(int cand = 521, int subcand = 433, int sel = 2, int crit = 1);
   void        eventProcessing();
 
   void        isMC(int i) {fIsMC = i;}
@@ -59,23 +61,33 @@ public:
   void        sameSign(int i) {fSameSign = i;}
   void        isSignal(int i)  {fIsSignal = i;}
 
-  void        kinematicSelection(int offset = 0);
   void        processDiscrimination();
-  void        muonMisIdRate();
+  void        muonEfficiency();
+  void        vertexResiduals();
+  void        ptResiduals();
+
+  void        initVariables();
+  void        kinematicSelection(int offset = 0);
   void        L1Selection(int offset = 100);
-  void        cutJunk(int offset = 200);
-  void        HLTSelection(int offset = 300);
+  void        HLTSelection(int offset = 200);
+  void        candidateSelection(int offset = 300);
   void        trackSelection(int offset = 400);
-  void        pidSelection(int offset = 500);
-  void        candidateSelection(int offset = 600);
-  void        normSample(int offset = 700);
-  void        kaonPlots();
+  void        trackProperties();
+  void        candidateProperties();
+  void        kaonCandidates();
 
   void        fillHist();
+  void        fillTriggerEff();
+  void        fillAnalysisEff(); 
+  void        offlineEff(int bs_index, int sel); 
   void        book(int offset);
   void        book2(int offset);
   void        histogram(int offset); 
-  void        fillAnalysisEff(); 
+  void        signalPlots(); 
+  void        fillEventStats(); 
+
+  int         genPartType(int i);
+  int         getNrOfDaughters(int i);
 
   void        boxes();
 
@@ -95,10 +107,14 @@ private:
   int         fNentries;      // number of events in chain
   int         fEvent;         // current event number
 
-  TAna00Event*fpEvt; 
-  TAnaTrack  *fpL1, *fpL2, *fpK;
-  TAnaCand   *fpB, *fpJpsi;       
-  int        fSTI[3];         // Index for signal track
+  TAna00Event *fpEvt;
+  TAnaTrack   *fpL1, *fpL2, *fpK;
+  TAnaCand    *fpB, *fpJpsi;
+
+  int         fBCI;            // Index of B candidate 
+  int         fSTI[3];         // Index of signal tracks
+  int         fSel, fSubSel;
+  double      fMassB;
 
   std::vector<int>    fKTI;        // Index for all kaon candidates 
   std::vector<int>    fKCI;        // Index for all kaon candidte tracks 
@@ -109,7 +125,11 @@ private:
   // -- Histogram pointers 
   TTree *fTree;
 
-  TH1D  *fER1, *fAR1, *fMisID;
+  TH2D *fNR0, *fNR1, *fNR2, *fNR3, *fNR4, *fNR5, *fNR6;
+  TH1D *fER1, *fAR1, *fMisID;
+
+  TH1D *fOR1[NSUBSEL];
+  int  fSubCand[NSUBSEL];
 
   // -- Cut values
   double PTBS
@@ -125,17 +145,33 @@ private:
     , LXYLO
     , LXYSXYLO
     , L3DLO
-    , ISOVETO
+    , L3DS3DLO
+    , MASSLO
+    , MASSHI
+    , MASSWI
     , ISOLATION
     , ISOCONE
+    , ISOPTLO
     ; 
+
+  int TYPE
+    , ISOVETO
+    , BMMSEL
+    , SUBSEL
+    , SETL1
+    , SETHLT
+    ;
 
   // - generator cuts
   double fMinPt
     , fMaxEta
     ;
 
-  int TYPE;
+  int fgB, fgJ, fgBmm, fgJmm, fgrB, fgrJ, fnB, fnJ;
+  int fgMu, fnMu, frMu, fgK, frK;
+  int fnSigMu, frSigMu, frSigK;
+  int fnTmMu, fnTmK;
+  int fSig1, fSig2, fSig3, fSigB, fSigJ;
 
   // -- Vertex resolution
   double fDvtxPerp
@@ -143,22 +179,42 @@ private:
     , fDpVtxX
     , fDpVtxY
     , fDpVtxZ
+    , fDsVtxX
+    , fDsVtxY
+    , fDsVtxZ
     , fFltR
     , fFltG
     , fFltRes
+    , fFltR3D
+    , fFltG3D
+    , fFltRes3D
     ;
 
   // -- Event selection counters
-  int fAllEvent
-    , fGoodCand
+  int fGoodKinematics
+    , fGoodL1
+    , fGoodHLT
     , fGoodPV
-    , fGoodTT
-    , fGoodPid
-    , fGoodHLTTrigger
+    , fGoodCand
     , fGoodEvent
-    , fGoodL1Trigger
-    , fGoodKinematics
+    , fGoodAna
+    , fGoodAnaF
+    , fGoodIsoF
+    , fGoodVtxF
+    , fGoodTT
     , fProcessType
+    ;
+
+  int fGoodPtMu
+    , fGoodRmm
+    , fGoodMass
+    , fGoodWindow
+    , fGoodPtB
+    , fGoodEtaB
+    , fGoodCosa
+    , fGoodLength
+    , fGoodIso
+    , fGoodVtx
     ;
 
   int fSkipEvent;
@@ -167,18 +223,32 @@ private:
   int fSignalBox, fLoSide, fHiSide;
 
   // -- Event variables
+  int fNorm;
+
   int fRun
     , fD0
     , fD1
     , fD2
-    , fGenMuIDL0
-    , fGenMuIDL1
-    , fGenMuIDK
+    , fMcL0
+    , fMcL1
+    , fMcK
+    , fMomL0
+    , fMomL1
+    , fMomK
+    , fGMoL0
+    , fGMoL1
+    , fGMoK
+    , fTruthL0
+    , fTruthL1
+    , fTruthK
+    , fTruthJ
+    , fTruthB
     ;
 
-  double fMuIDL0
-    , fMuIDL1
-    , fMuIDK;
+  double fMuL0
+    , fMuL1
+    , fMuK
+    ;
 
 
   // -- Secondary vertex variables
@@ -201,22 +271,38 @@ private:
 
 
 
-  // -- Variables for THE B candidate
+  // -- Variables for the genereated and reconstr. B candidate
+  double fgQL0
+    , fgQL1
+    , fgMuL0
+    , fgMuL1
+    , fgPtL0
+    , fgPtL1
+    , fgEtaL0
+    , fgEtaL1
+    , fgChi2
+    , fgS3d
+    , fgRMM
+    ;
+
+  // -- Variables for the chosen B candidate
   double fMass
     , fPt, fGPt
     , fP
     , fEta
     , fTau
     , fTxy
+    , fDphi
+    , fDeta
     , fRMM
     , fIso
-    , fIso05, fIso06, fIso08, fIso10, fIso12, fIso14
+    , fIso05, fIso06, fIso08, fIso10, fIso11, fIso12, fIso14
     ;
 
   int fIsoVeto
-    , fIsoVeto05, fIsoVeto06, fIsoVeto08, fIsoVeto10, fIsoVeto12, fIsoVeto14;
+    , fIsoVeto05, fIsoVeto06, fIsoVeto08, fIsoVeto10, fIsoVeto11, fIsoVeto12, fIsoVeto14;
 
-  // -- Variables for THE Jpsi candidate
+  // -- Variables for the chosen Jpsi candidate
   double fMassJ
     , fPtJ, fGPtJ
     , fPJ
@@ -225,8 +311,6 @@ private:
     , fTxyJ
     , fRMJ1, fRMJ2, fRKJ
     ;
-
-
 
   // -- B and SV
   double fCosAngle
