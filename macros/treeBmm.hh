@@ -16,11 +16,11 @@
 #include <TProfile.h>
 #include <TTree.h>
 
-#include "../rootio/TAna00Event.hh"
-#include "../rootio/TGenCand.hh"
-#include "../rootio/TAnaCand.hh"
-#include "../rootio/TAnaTrack.hh"
-#include "../rootio/TAnaVertex.hh"
+#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna00Event.hh"
+#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TGenCand.hh"
+#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaCand.hh"
+#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
+#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
 
 
 using namespace std;

@@ -4,10 +4,10 @@
   gSystem->Load("libPhysics.so");
 
   cout << "Loading libAna00.so" << endl;
-  gSystem->Load("../rootio/lib/libAna00.so");
+  gSystem->Load("../../../AnalysisDataFormats/HeavyFlavorObjects/lib/libAna00.so");
 
   cout << "Loading libAnaClasses.so" << endl;
-  gSystem->Load("../rootio/lib/libAnaClasses.so");
+  gSystem->Load("../../../AnalysisDataFormats/HeavyFlavorObjects/lib/libAnaClasses.so");
 
   gROOT->SetStyle("Plain");
 

@@ -11,7 +11,7 @@
 
 #----adjust to your setup ----------------------
 
-$workspace       = "/home/ceggel/analysis";
+$workspace       = "/home/ceggel/workspace/macros";
 $perl            = "/home/ceggel/perl";  
 
 #$workspace       = "/home/chi/bsmumu/Bs2MuMu";

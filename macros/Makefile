@@ -37,11 +37,11 @@ bmm: bmm.cc treeBmm.cc
 	$(CXX) $(CXXFLAGS) -I../ -c treeBmm.cc -o treeBmm.o
 	$(ROOTSYS)/bin/rootcint -f treeBmmDict.cc -c treeBmm.hh LinkDef.h
 	$(CXX) $(CXXFLAGS) -o bmm.o -c bmm.cc
-	$(LD) $(LDFLAGS)  -o bmm $(GLIBS) ../rootio/lib/libAna00.so bmm.o treeBmm.o
+	$(LD) $(LDFLAGS)  -o bmm $(GLIBS) ../../../AnalysisDataFormats/HeavyFlavorObjects/lib/libAna00.so bmm.o treeBmm.o
 
 
 ana: $(ANACLASSES)
-	$(CXX) $(SOFLAGS) $(ANACLASSES) -o ../rootio/lib/libAnaClasses.so
+	$(CXX) $(SOFLAGS) $(ANACLASSES) -o ../../../AnalysisDataFormats/HeavyFlavorObjects/lib/libAnaClasses.so
 
 anaBmmDict.cc: anaBmm.hh 
 	$(ROOTSYS)/bin/rootcint  -f anaBmmDict.cc -c anaBmm.hh
@@ -56,4 +56,4 @@ cleanall:
 	@$(MAKE) clean
 	rm -f *.o *Dict.* *~
 	rm -f bmm
-	rm -f ../rootio/lib/libAna00.so ../rootio/lib/libAnaClasses.
+	rm -f ../../../AnalysisDataFormats/HeavyFlavorObjects/lib/libAnaClasses.so
