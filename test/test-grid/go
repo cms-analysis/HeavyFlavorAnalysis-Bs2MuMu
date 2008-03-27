@@ -30,6 +30,7 @@ if ( $opt_f ) {
 }
 
 my $command = "edg-job-submit -o jobs.list";
+# my $command = "edg-job-submit -o jobs.list --config gdrb08.config --config-vo gdrb08.vo"; 
 my $gmat = "edg-job-list-match";
 my $ginf = "lcg-infosites --vo cms ce";
 my $info = "\#CPU    Free    Total Jobs      Running Waiting ComputingElement";

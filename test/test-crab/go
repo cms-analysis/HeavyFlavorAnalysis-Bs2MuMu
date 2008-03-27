@@ -1,0 +1,56 @@
+#! /usr/bin/perl
+#
+#==============================================================================================
+#
+# OPTIONS :  -p: dry-run
+
+#===============================================================
+# Directory
+# ---------
+# $dir      = "/home/ceggel/workspace/test";
+# $crab      = "/home/ceggel/workspace/test/test-crab";
+# $output = "test";
+#
+#===============================================================
+
+
+use Getopt::Std;
+getopts('p');
+
+print "\n";
+
+$dir = `pwd`; chop($dir);
+$crab = "$dir/test-crab";
+
+chdir($crab);
+@files = `ls -1 crab-*.cfg`;
+
+
+if ( !$opt_p ) { open(LOG, ">cmsRun.crab.log"); }
+
+foreach $file ( @files ) {
+
+    chop($file);
+
+    $date = `date`; chop($date);
+
+    $ui_work = `grep ui_working_dir $file`;
+    @run = split(/\//,$ui_work);
+    $workdir = @run[$#run]; chop($workdir);
+
+
+    if ( !$opt_p ) {     
+
+	print LOG "$date \"crab -create -cfg $file\"\n";
+	system("crab -create -cfg $file");
+	print LOG "$date \"crab -submit -c $workdir\"\n\n";		
+	system("crab -submit -c $workdir");
+
+    } else {
+
+	print "$date \"crab -create -cfg $file\"\n";
+	print "$date \"crab -submit -c $workdir\"\n\n";
+    }
+}
+
+if ( !$opt_p ) { close(LOG); }
