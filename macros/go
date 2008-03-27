@@ -1,7 +1,6 @@
 #! /usr/bin/perl
 #
-# usage: ./runAll -u        to update chains
-#        ./runAll -s or b  for Bs2MuMu signal and/or bg
+# usage: ./runAll -s or b  for Bs2MuMu signal and/or bg
 #        ./runAll -n or m  for Bp2JpsiKp signal and/or bg
 #        ./runAll -r or q  for rare BG and/or QCD bg
 #        ./runAll -A
@@ -9,7 +8,8 @@
 #
 
 
-#----adjust to your setup ----------------------
+
+#===========================================================
 
 $workspace       = "/home/ceggel/workspace/macros";
 $perl            = "/home/ceggel/perl";  
@@ -17,15 +17,14 @@ $perl            = "/home/ceggel/perl";
 #$workspace       = "/home/chi/bsmumu/Bs2MuMu";
 #$perl            = "/home/chi/perl";  
 
-#----adjust to your setup ----------------------
+#===========================================================
 
 use Getopt::Std;
-getopts('t:usbnmrqAp');
+getopts('t:sbnmrqAp');
 
-if ( !$opt_t &&!$opt_u &&!$opt_s &&!$opt_b &&!$opt_n &&!$opt_m &&!$opt_r &&!$opt_q &&!$opt_A ) {
+if ( !$opt_t && !$opt_s &&!$opt_b &&!$opt_n &&!$opt_m &&!$opt_r &&!$opt_q &&!$opt_A ) {
     
     print "\n\n ---> USAGE : \n";
-    print "\t\t./runAll -u       to update chains\n";
     print "\t\t./runAll -s or b  for Bs2MuMu signal and/or bg\n";
     print "\t\t./runAll -n or m  for Bp2JpsiKp signal and/or bg\n";
     print "\t\t./runAll -r or q  for rare BG and/or QCD bg\n";
@@ -58,23 +57,6 @@ $cuts =~ s/cuts\///g;
 $cuts =~ s/cuts//g;
 $cuts =~ s/\.//g;
 
-chdir("$workspace");
-
-if ($opt_u) {
-
-    print "\n\nMaking chains ...\n";
-    system("$perl/mkChains");
-    print "\nChecing chains ...\n";
-    system("$perl/mkCheckedChains");
-}
-
-@chain2del= `ls -1 chains/*~`;
-
-foreach $del (@chain2del) { 
-    chop($del);
-    print  "\nRemoving $del ... \n";
-    system("rm -f $del");
-}
 
 if ($opt_A) {
 

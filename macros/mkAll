@@ -1,0 +1,38 @@
+#! /usr/bin/perl
+#
+# OPTIONS :  -o s,b,r  mkCheckedChain option for signal, bg or rare bg  
+#
+#===========================================================
+
+$workspace       = "/home/ceggel/workspace/macros";
+$perl            = "/home/ceggel/perl";  
+
+#$workspace       = "/home/chi/bsmumu/Bs2MuMu";
+#$perl            = "/home/chi/perl";  
+
+#===========================================================
+
+use Getopt::Std;
+getopts('o:');
+
+
+chdir("$workspace");
+
+
+@chain2del= `ls -1 chains/*~`;
+
+foreach $del (@chain2del) { 
+    chop($del);
+    print  "\nRemoving $del ... \n";
+    system("rm -f $del");
+}
+
+print "\n\nMaking chains ...\n";
+system("$perl/mkChains");
+print "\nChecking chains ...\n";
+
+if ( $opt_o ) {
+    system("$perl/mkCheckedChains -$opt_o");
+} else {
+    system("$perl/mkCheckedChains");
+}
