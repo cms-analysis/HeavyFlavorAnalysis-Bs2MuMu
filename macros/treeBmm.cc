@@ -3398,7 +3398,7 @@ void treeBmm::muonEfficiency() {
     
     ((TH1D*)gDirectory->Get("m000"))->Fill(mcID);
 
-    if ( recMu >= 0. ) {
+    if ( recMu > -0.5 ) {
       
       fnMu++;
     }
@@ -3443,7 +3443,7 @@ void treeBmm::muonEfficiency() {
 	
 	frSigMu++;
 
-	if (recMu >= 0.) {
+	if (recMu > -0.5) {
 	  
 	  fnSigMu++;
 	}
@@ -3458,7 +3458,7 @@ void treeBmm::muonEfficiency() {
 	
 	frSigMu++;
 
-	if (recMu >= 0.) {
+	if (recMu > -0.5) {
 	  
 	  fnSigMu++;
 	}
@@ -3500,7 +3500,7 @@ void treeBmm::muonEfficiency() {
 	((TH1D*)gDirectory->Get("m110"))->Fill(eta);
 	((TH2D*)gDirectory->Get("M100"))->Fill(pT, eta);
 	
-	if ( recMu >= 0. ) {
+	if ( recMu > -0.5 ) {
 	  
 	  fMisID->Fill(1.1);
 	  
@@ -3510,7 +3510,7 @@ void treeBmm::muonEfficiency() {
 	  
 	}
 	
-	if ( recMu < 0. ) {
+	if ( recMu < -0.5 ) {
 	  
 	  fMisID->Fill(2.1);
 	  
@@ -3533,7 +3533,7 @@ void treeBmm::muonEfficiency() {
       ((TH1D*)gDirectory->Get("m210"))->Fill(eta);
       ((TH2D*)gDirectory->Get("M200"))->Fill(pT, eta);
 
-	if ( recMu >= 0. ) {
+	if ( recMu > -0.5 ) {
 
 	  fMisID->Fill(11.1);
  
@@ -3543,7 +3543,7 @@ void treeBmm::muonEfficiency() {
 
 	}
 
-	if ( recMu < 0. ) {
+	if ( recMu < -0.5 ) {
 
 	  fMisID->Fill(12.1);
 
@@ -3566,7 +3566,7 @@ void treeBmm::muonEfficiency() {
 	((TH1D*)gDirectory->Get("m310"))->Fill(eta);
 	((TH2D*)gDirectory->Get("M300"))->Fill(pT, eta);
 	
-	if ( recMu >= 0. ) {
+	if ( recMu > -0.5 ) {
 
 	  fMisID->Fill(21.1);
  
@@ -3576,7 +3576,7 @@ void treeBmm::muonEfficiency() {
 
 	}
 
-	if ( recMu < 0. ) {
+	if ( recMu < -0.5 ) {
 
 	  fMisID->Fill(22.1);
 
@@ -3599,7 +3599,7 @@ void treeBmm::muonEfficiency() {
 	((TH1D*)gDirectory->Get("m410"))->Fill(eta);
 	((TH2D*)gDirectory->Get("M400"))->Fill(pT, eta);
 	
-	if ( recMu >= 0. ) {
+	if ( recMu > -0.5 ) {
 	  
 	  fMisID->Fill(31.1);
 	  
@@ -3609,7 +3609,7 @@ void treeBmm::muonEfficiency() {
 	  
 	}
 
-	if ( recMu < 0. ) {
+	if ( recMu < -0.5 ) {
 
 	  fMisID->Fill(32.1);
 
@@ -3744,7 +3744,7 @@ void treeBmm::signalPlots() {
       
       tt = fpEvt->getRecTrack(it);
       
-      if ( (fSel == 3 && tt->fMuID >= 0.) ||
+      if ( (fSel == 3 && tt->fMuID > -0.5) ||
 	   (fSel == 2 && TMath::Abs(tt->fMCID) == 13) ) {
 	
 	// -- Leading muon of event
@@ -3765,7 +3765,7 @@ void treeBmm::signalPlots() {
 	  
 	  ts  = fpEvt->getRecTrack(is);
 	  
-	  if ( (fSel == 3 && ts->fMuID >= 0.) ||
+	  if ( (fSel == 3 && ts->fMuID > -0.5) ||
 	       (fSel == 2 && TMath::Abs(ts->fMCID) == 13) ) {
 	  
 	    dphi = ts->fPlab.DeltaPhi(tt->fPlab);
@@ -3962,7 +3962,7 @@ void treeBmm::ptResiduals() {
       if ( genPt > 0 ) res1    = (trkPt - genPt)/genPt;
 
        // -- pT Resolution of GlobalMuons
-      if ( muonID >= 0. ) {
+      if ( muonID > -0.5 ) {
 
 	((TProfile*)gDirectory->Get("r100"))->Fill(genPt, res0, 1);
 	((TProfile*)gDirectory->Get("r101"))->Fill(genPt, res1, 1);
