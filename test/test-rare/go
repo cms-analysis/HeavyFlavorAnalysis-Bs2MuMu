@@ -6,8 +6,20 @@
 #           -n: -1 or 1,2,3,...     max number of output file
 #           -p: dry-run
 
+#==============================================================================================
+# Directory
+# ---------
+# $dir  = "/home/ceggel/workspace/test";
+# $rare = "/home/ceggel/workspace/test/test-rare";
+$output = "analyzer/rare_new";
+#
+#==============================================================================================
+
 use Getopt::Std;
 getopts('m:n:p');
+
+$dir = `pwd`; chop($dir);
+$rare = "$dir/test-rare";
 
 print "\n";
 
@@ -19,20 +31,27 @@ if (!$opt_m ) {
     $opt_m = -1; 
 }
 
-$dir  = "/home/ceggel/workspace/test";
 
 my @backgrounds = ("Bd2MuMuPi0", "Bd2MuMu", "Bd2PiMuNu", "Bd2PiKp", "Bd2PiPi", "Bu2MuMuMuNu",
 		   "Bs2MuMu", "Bs2KpKm", "Bs2KmPi", "Bs2KmMuNu", "Bs2PiPi", "Bs2JpsiPhi", "Bc2MuMuMuNu",
 		   "Bc2JpsiMuNu", "Lb2PPi", "Lb2PKm");
 
-
 chdir($dir);
+
+
+if (-d "$output") {
+    print "\n ----> Output files will be written to directory: $output\n\n";
+} else {
+    print "\n ----> Output directory \"$output\" does not exist, please create link first.\n";
+    print "\n ----> ABORTING ...\n\n";
+    exit;
+}
 
 if ( !$opt_p ) { open(LOG, ">cmsRun.rare.log"); }
 
 foreach $channel ( @backgrounds ) {
 
-    @files = `ls -1 test-rare/$channel-*.cff`;
+    @files = `ls -1 $rare/$channel-*.cff`;
 
     foreach $fn ( 0 .. $#files ) {
 
@@ -45,7 +64,7 @@ foreach $channel ( @backgrounds ) {
 	
 	if ( -e "$cfg" )  { system("rm -f $cfg"); }
 	
-	system("cp test-rare/test-rare.cfg $cfg");
+	system("cp $rare/test-rare.cfg $cfg");
 
 	system("perl -pi -e \"s/FILELIST/$channel-$fn/g\" $cfg");
 	system("perl -pi -e \"s/OUTPUT/$channel-$fn/g\" $cfg");
@@ -53,22 +72,22 @@ foreach $channel ( @backgrounds ) {
 	
 	if ( $opt_p ) { 
 	    
-	    if ( -e "analyzer/rare_new/test/$log" ) { system("rm -f analyzer/rare_new/test/$log"); }
-	    print "nice cmsRun $cfg \>\& analyzer/rare_new/test/$log\n";
-	    system("touch analyzer/rare_new/test/$log"); 	
-	    system("cat $cfg >> analyzer/rare_new/test/$log");
-	    system("cat test-rare/$channel-$fn.cff >> analyzer/rare_new/test/$log");
+	    if ( -e "$output/test/$log" ) { system("rm -f $output/test/$log"); }
+	    print "nice cmsRun $cfg \>\& $output/test/$log\n";
+	    system("touch $output/test/$log"); 	
+	    system("cat $cfg >> $output/test/$log");
+	    system("cat $rare/$channel-$fn.cff >> $output/test/$log");
 	    
 	} else {  
 	    
-	    if ( -e "analyzer/rare_new/$log" ) { system("rm -f analyzer/rare_new/$log"); }
+	    if ( -e "$output/$log" ) { system("rm -f $output/$log"); }
 
 	    $date = `date`; chop($date);
-	    print LOG "$date \"nice cmsRun $cfg \>\& analyzer/rare_new/$log\"\n";
+	    print LOG "$date \"nice cmsRun $cfg \>\& $output/$log\"\n";
 
-	    system("nice cmsRun $cfg \>\& analyzer/rare_new/$log");		
-	    system("cat $cfg >> analyzer/rare_new/$log");
-	    system("cat test-rare/$channel-$fn.cff >> analyzer/rare_new/$log");
+	    system("nice cmsRun $cfg \>\& $output/$log");		
+	    system("cat $cfg >> $output/$log");
+	    system("cat $rare/$channel-$fn.cff >> $output/$log");
 	}
 	
 	system("rm -f $cfg");

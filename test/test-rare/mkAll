@@ -4,12 +4,20 @@
 #
 # OPTIONS :   -s:                     do not split into several cff files (rare BGs only)
 
+#==============================================================================================
+# Directory
+# ---------
+# $dir  = "/home/ceggel/workspace/test";
+# $rare = "/home/ceggel/workspace/test/test-rare";
+#
+#==============================================================================================
+
 use Getopt::Std;
 getopts('s');
 
 print "\n";
 
-$dir  = "/home/ceggel/workspace/test";
+$dir = `pwd`; chop($dir);
 
 my @backgrounds = ("Bd2MuMuPi0", "Bd2MuMu", "Bd2PiMuNu", "Bd2PiKp", "Bd2PiPi", "Bu2MuMuMuNu",
 		   "Bs2MuMu", "Bs2KpKm", "Bs2KmPi", "Bs2KmMuNu", "Bs2PiPi", "Bs2JpsiPhi", "Bc2MuMuMuNu",
@@ -23,6 +31,7 @@ foreach $bg ( @backgrounds ) {
     
     $data = "/net/moor/export/data2/ursl/cmssw/CMSSW_1_3_6/rec";
     chdir("$data");
+
     $tmp = `pwd`;
     print "$tmp";
 
@@ -30,7 +39,7 @@ foreach $bg ( @backgrounds ) {
     $nof = $#rbg+1;
     print " ----> channel : $bg total $nof root files \n\n";
     
-    chdir("$dir/test-rare");
+    chdir($dir);
     system("rm -f $bg-*.cff");
     
     if ( !$opt_s ) {
