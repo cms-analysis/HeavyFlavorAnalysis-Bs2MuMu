@@ -3,7 +3,6 @@
 # usage: ./runAll -s or b  for Bs2MuMu signal and/or bg
 #        ./runAll -n or m  for Bp2JpsiKp signal and/or bg
 #        ./runAll -r or q  for rare BG and/or QCD bg
-#        ./runAll -A
 #        ./runAll -[..] -p    dry-run
 #
 
@@ -20,60 +19,33 @@ $perl            = "/home/ceggel/perl";
 #===========================================================
 
 use Getopt::Std;
-getopts('t:sbnmrqAp');
+getopts('sbnmrqp');
 
-if ( !$opt_t && !$opt_s &&!$opt_b &&!$opt_n &&!$opt_m &&!$opt_r &&!$opt_q &&!$opt_A ) {
+if ( !$opt_s &&!$opt_b &&!$opt_n &&!$opt_m &&!$opt_r &&!$opt_q ) {
     
-    print "\n\n ---> USAGE : \n";
-    print "\t\t./runAll -s or b  for Bs2MuMu signal and/or bg\n";
-    print "\t\t./runAll -n or m  for Bp2JpsiKp signal and/or bg\n";
-    print "\t\t./runAll -r or q  for rare BG and/or QCD bg\n";
-    print "\t\t./runAll -A\n\n";
-    exit;
-}
 
-
-if ( $opt_s && $opt_n ) {
-
-    print "\n \t\t ********  The options -s and -n cannot be combined ********* \n";
-    print "\n \t\t ********          Aborting             ********* \n\n";
-    exit;
-
-
-}
-
-if ( !$opt_t ) {
-    $opt_t = "bmm.default.cuts";
-}
-
-if ( $opt_n || $opt_m ) {
-    $opt_t = "bjk.norm.cuts";
-}
-
-$cuts = $opt_t;
-$cuts =~ s/bmm//g;
-$cuts =~ s/bjk//g;
-$cuts =~ s/cuts\///g;
-$cuts =~ s/cuts//g;
-$cuts =~ s/\.//g;
-
-
-if ($opt_A) {
-
-    $opt_s = 1;
-    $opt_b = 1;
-    $opt_r = 1;
-    $opt_q = 1;
-
+    $opt_s = 1;  $opt_b = 1;
+    $opt_n = 1;  $opt_m = 1;
+    $opt_r = 1;  # $opt_q = 1;
 }
 
 print "\n ... START BMM ANALYSIS ... \n\n";
 
 # ---------------
-# Bs2MuMu signal 
+# Signal & BG
 # ---------------
 
 if ( $opt_s || $opt_b ) {
+
+    $cut_file = "bmm.default.cuts";
+    
+    $cuts = $cut_file;
+    $cuts =~ s/bmm//g;
+    $cuts =~ s/cuts//g;
+    $cuts =~ s/\///g;
+    $cuts =~ s/\.//g;
+
+    $#chain = -1;
 
     chdir("$workspace/chains");
 
@@ -93,24 +65,34 @@ if ( $opt_s || $opt_b ) {
 	if ( -e "treebmm/$file.log" ) { if (!$opt_p) { system("rm -f treebmm/$file.log"); }  }
 
 	if ( $file eq "csg-001" || $file eq "csg-002" || $file eq "cbg-001" ) { 
-	    print  "./bmm -C cuts/$opt_t -D treebmm -c chains/$file -o \>\& treebmm/$file\.$cuts\.log\n";
+	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -o \>\& treebmm/$file\.$cuts\.log\n";
 	    if (!$opt_p) { 
-		system("./bmm -C cuts/$opt_t -D treebmm -c chains/$file -o \>\& treebmm/$file\.$cuts\.log"); 
+		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -o \>\& treebmm/$file\.$cuts\.log"); 
 	    }
 	} else {
-	    print  "./bmm -C cuts/$opt_t -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log\n";
+	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log\n";
 	    if (!$opt_p) { 
-		system("./bmm -C cuts/$opt_t -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log"); 
+		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log"); 
 	    }
 	}
     }
 }
   
-# ---------------
-# Bp2JpsiKp norm. 
-# --------------- 
-    
+# -------------------
+# Normalization & BG 
+# -------------------
+   
 if ( $opt_n || $opt_m )     {  
+
+    $cut_file = "bjk.norm.cuts";
+    
+    $cuts = $cut_file;
+    $cuts =~ s/bjk//g;
+    $cuts =~ s/cuts//g;
+    $cuts =~ s/\///g;
+    $cuts =~ s/\.//g;
+
+    $#chain = -1;
 
     chdir("$workspace/chains");
 
@@ -127,9 +109,9 @@ if ( $opt_n || $opt_m )     {
 	
 	if ( -e "treebmm/$file.$cuts.log" ) { if (!$opt_p) { system("rm -f treebmm/$file.$cuts.log"); } }
 
-	print  "./bmm -C cuts/$opt_t -D treebmm -c chains/$file -b bjk -v 1 \>\& treebmm/$file\.$cuts\.log\n";
+	print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -v 1 \>\& treebmm/$file\.$cuts\.log\n";
 	if (!$opt_p) { 
-	    system("./bmm -C cuts/$opt_t -D treebmm -c chains/$file -b bjk -v 1 \>\& treebmm/$file\.$cuts\.log"); 
+	    system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -v 1 \>\& treebmm/$file\.$cuts\.log"); 
 	}
        # add option -v 2 to run verbose
     }
@@ -142,6 +124,17 @@ if ( $opt_n || $opt_m )     {
 
 if ( $opt_r )  {  
     
+
+    $cut_file = "bmm.default.cuts";
+    
+    $cuts = $cut_file;
+    $cuts =~ s/bmm//g;
+    $cuts =~ s/cuts//g;
+    $cuts =~ s/\///g;
+    $cuts =~ s/\.//g;
+
+    $#chain = -1;
+
     chdir("$workspace/chains"); 
     
     @chain = `ls -1 cbg-111-*`;   
@@ -157,9 +150,9 @@ if ( $opt_r )  {
 	
 	if ( -e "treebmm/$file.$cuts.log" ) { if (!$opt_p) { system("rm -f treebmm/$file.$cuts.log"); }  }
 	
-	print  "./bmm -C cuts/$opt_t -D treebmm -c chains/$file -b $chName -v 1 \>\& treebmm/$chName\.$cuts\.log\n";
+	print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b $chName -v 1 \>\& treebmm/$chName\.$cuts\.log\n";
 	if (!$opt_p) { 
-	    system("./bmm -C cuts/$opt_t -D treebmm -c chains/$file -b $chName -v 1 \>\& treebmm/$chName\.$cuts\.log"); 
+	    system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b $chName -v 1 \>\& treebmm/$chName\.$cuts\.log"); 
 	}
     }
 }
@@ -171,6 +164,16 @@ if ( $opt_r )  {
 
 if ( $opt_q )  { 
 
+    $cut_file = "bmm.default.cuts";
+    
+    $cuts = $cut_file;
+    $cuts =~ s/bmm//g;
+    $cuts =~ s/cuts//g;
+    $cuts =~ s/\///g;
+    $cuts =~ s/\.//g;
+
+    $#chain = -1;
+
     chdir("$workspace/chains");
 
     $file = "cbg-030";
@@ -181,9 +184,9 @@ if ( $opt_q )  {
 
 	if ( -e "treebmm/$file\.$cuts\.log" ) { if (!$opt_p) { system("rm -f  treebmm/$file\.$cuts\.log"); } }
 
-	print  "./bmm -C cuts/$opt_t -D treebmm -c chains/$file -b qcd \>\& treebmm/$file\.$cuts\.log\n";
+	print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b qcd \>\& treebmm/$file\.$cuts\.log\n";
 	if (!$opt_p) { 
-	    system("./bmm -C cuts/$opt_t -D treebmm -c chains/$file -b qcd \>\& treebmm/$file\.$cuts\.log"); 
+	    system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b qcd \>\& treebmm/$file\.$cuts\.log"); 
 	}
 
 	if (!$opt_p) { 
