@@ -35,66 +35,67 @@ public:
   // -- initialization and setup
   // ---------------------------
   void init(const char *files);
-  void loadFiles();
   void loadFiles(const char *filename);
   void loadDa(const char *filename, double vxs, const char *sign, const char *type);
   void loadMc(const char *filename, double vxs, const char *sign, const char *type);
   void loadSg(const char *filename, double vxs, const char *sign, const char *type);
   void dumpFiles();
+  void dumpCuts();
 
   // -- main methods
   // --------------
   void makeAllPlots();
-  void jreco(int o = 4); 
-  void breco(int o = 2, const char *hist = "c030"); 
-  void nreco(int o = 5, const char *hist = "c030");
-  void bgOverlay(const char *s = "c030", const int npers = 6);
-  void nbgOverlay(const char *s = "c030", const int npers = 6);
-  void dumpCuts();
-  void effTables();
-  void effTable(TFile *f, const char *tag); 
+
+  void distributions();
   void showDistributions(int offset = 0, int wait = 0); 
   void showDistribution(const char *hname, int mode = 0, double x = -9999., double y = -9999.);
-  void calculateUpperLimit(); 
-  void normalizedUpperLimit();
+
+  void effTables();
+  void effTable(TFile *f, const char *tag); 
   double massReduction(const char *s = "c030", const char *tag = "m0");
 
   void sgRecos();
-  void combiRecos();
+  void jreco(int o = 4); 
+  void breco(int o = 2, const char *hist = "c030"); 
+  void nreco(int o = 5, const char *hist = "c030");
+
   void bgOverlays();
+  void bgOverlay(const char *s = "c030", const int npers = 6);
+  void nbgOverlay(const char *s = "c030", const int npers = 6);
+
+  void calculateUpperLimit(); 
+  void normalizedUpperLimit();
+
   void fakeMuons();
-
-  void signalPlots();
-
-  void plotAll(const char *s = "c030");
- 
-
-  // -- temporary 'working' methods
-  void loopOptimization(double pt = 4.); 
-  void optimizerNumbers(const char *precuts, const char *line, double &eff, double &sg, double &bg);
-  void runOptimization(const char *aoCuts, const char *extraVar, int nbin, double min, double max);
-  void handOptimization(const char *aoCuts, const char *extraCuts); 
-
 
   // -- Special studies
   // ------------------
+  void processes();
   void showProcesses(int signal = 1);
   void plotProcesses(const char *cut, const char *var, const char *axis, int bin, double lo, double hi, int legend = 1);
 
   void mcValidation(int wait = 0); 
   void mcVal(const char *hname); 
 
+
+  // -- temporary 'working' methods
+  // -------------------------------
+  void loopOptimization(double pt = 4.); 
+  void optimizerNumbers(const char *precuts, const char *line, double &eff, double &sg, double &bg);
+  void runOptimization(const char *aoCuts, const char *extraVar, int nbin, double min, double max);
+  void handOptimization(const char *aoCuts, const char *extraCuts); 
+
   // -- Utilities and helper methods
   // -------------------------------
   double  expUL(double sig, double bg);
+
   TH1* sumHistMC(const char *hist, int draw = 0, const char *sel = "c0");
   void sumHistMC_Add(int ch, const char *hist, TH1 *hist1, TH1 *hist2);
   void channelEff(TFile *f, double &fnorm_Ch, double &eff1_Ch, double &eff2_Ch);
-  TH1D* DivideHisto(TH1D *hist1, TH1D *hist2);
-  TH2D* DivideHisto2(TH2D *hist1, TH2D *hist2);
+
   void writeFitPar(TF1 *f, int o, double mean, double sigma, int npar);
+  void fillInTheRest(const char *tag);
  
-  int  wait();
 
   void makeCanvas(int i = 3);
   void shrinkPad(double b = 0.1, double l = 0.1, double r = 0.1, double t = 0.1);
@@ -103,16 +104,23 @@ public:
   void setTitles2(TH2 *h, const char *sx, const char *sy, 
 		 float size = 0.05, float xoff = 1.1, float yoff = 1.1, float lsize = 0.05, int font = 132);
   void setHist(TH1 *h, int color = kBlack, int symbol = 20, double size = 1., double width = 2.);
-  void emptyBinError(TH1 *h);
   void setFilledHist(TH1 *h, int lcol = kBlack, int fcol = kYellow, int fstyle = 1000, int width = 1, int style = 1);
+  void emptyBinError(TH1 *h);
+
+  TH1D* DivideHisto(TH1D *hist1, TH1D *hist2);
+  TH2D* DivideHisto2(TH2D *hist1, TH2D *hist2);
 
   TString texForm(double e);
   TString texForm2(double e);
   TString texForm31(double e);
   TString formatTex(double n, const char *name, const char *tag);
   TString scaleFactor(int exp);
+
   double dBinomial(double n, double N);
   double dEff(int in, int iN);
+
+  int  wait();
+
   double nul(int nobs); 
   double barlow(int nobs, double bg = 0., double bgE = 0., double sE = 0.);
   void   getSignature(TString in, TString &out, TString &out2);

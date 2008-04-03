@@ -27,8 +27,10 @@
 
 ClassImp(anaBmm)
 
+//===========================================================================================
+// -- Fit functions
+//===========================================================================================
 
-// ----------------------------------------------------------------------
 double f_Gauss(double *x, double *par) {
   // par[0] -> area
   // par[1] -> mean
@@ -189,7 +191,9 @@ double f_eag(double *x, double *par) {
 double f_expo(double *x, double *par) {
   return par[0]*TMath::Exp(-x[0]*par[1]);
 }
-// ----------------------------------------------------------------------
+
+//===========================================================================================
+
 anaBmm::anaBmm(const char *files) { 
   init(files);
 }
@@ -244,67 +248,22 @@ void anaBmm::init(const char *files) {
     fM[i] = 0; 
   }
 
+  fLumiD[0] = 1.;
+  cout << "================================" << endl;
+  cout << "--> Setting Lumi to " << fLumiD[0] << " /fb <--" << endl;
+  cout << "================================" << endl<< endl;
+
   cout << "--> Loading rootfiles" << endl;
-  fLumiD[0] = 1.; 
-  if (!strcmp(files, "nada")) {
-    loadFiles();
-  } else {
-    loadFiles(files);
-  }
+  loadFiles(files);
 }
 
 
-// ----------------------------------------------------------------------
-void anaBmm::loadFiles() {
+//===========================================================================================
+// -- load files
+//===========================================================================================
 
-  // ----------------------------------------------------------------------
-  // vXs = visible cross-section 
-  //     = \sigma * (NSEL/NGEN) * BF-corrections * kinematic-cuts
-  //       +-----------------------------------+   +------------+
-  //         -> from PYTHIA logfiles                -> possibly add.
-  //                                                cuts in bmmTree
-  //                                                (to unify kinematic cuts)
-  // ----------------------------------------------------------------------
-
-  //   TH1D *h; 
-
-  // -- private MC
-  //   fS[0]     = new TFile(Form("%s/csg.default-001.root",inDir));  
-  //   fS[0]     = new TFile(Form("%st/csg-001.hard2.root", inDir));  
-  //   fS[0]     = new TFile(Form("%/csg-001.root", inDir));  
-  //   cout << "Loaded " << fS[0]->GetName() << endl;
-  //   h         = (TH1D*)fS[0]->Get("ER1");
-  //   fvXsS[0]  = 5.522E+01*1.E12*(5000./24.8e6)*3.5e-9;
-  //   fNevtS[0] = h->GetBinContent(h->FindBin(1.1));
-  //   fLumiS[0] = fNevtS[0]/fvXsS[0] ;
-
-  //   // -- official MC
-  //   fS[1]     = new TFile("/data/ursl/060316/sg-001.root");  
-  //   h         = (TH1D*)fS[1]->Get("ER1");
-  //   fvXsS[1]  = 5.522E+01*1.E12*(5000./24.8e6)*3.5e-9;
-  //   fNevtS[1] =  h->GetBinContent(h->FindBin(1.1));
-  //   fLumiS[1] = fNevtS[1]/fvXsS[1] ;
-
-  //   // -- default
-  //   fM[0]     = new TFile(Form("%s/cbg.default-001.root",inDir));  
-  //   //  fM[0]     = new TFile(Form("%s/cbg-001.hard2.root", inDir));  
-  //   //  fM[0]     = new TFile(Form("%s/cbg-001.root", inDir));  
-  //   cout << "Loaded " << fM[0]->GetName() << endl;
-  //   h         = (TH1D*)fM[0]->Get("ER1");
-  //   fvXsM[0]  = 1.1E+01*1.E12*1.584e-6;
-  //   fNevtM[0] =  h->GetBinContent(h->FindBin(1.1));
-  //   fLumiM[0] = fNevtM[0]/fvXsM[0] ;
-
-  //   fNumbersFileName = TString(Form("%s/anaBmm.tex", outDir));
-  //   sprintf(line, "rm -f %s", fNumbersFileName.Data());
-  //   system(line);
-  //   dumpFiles();
-  
-}
-
-
-// ----------------------------------------------------------------------
 void anaBmm::loadFiles(const char *filename) {
+
   char buffer[200];
   char type[100];
   char file[100];
@@ -415,7 +374,10 @@ void anaBmm::loadFiles(const char *filename) {
   fNumbersFileName = TString(Form("%s/anaBmm.%s.tex", outDir, fn.Data()));
   sprintf(line, "rm -f %s", fNumbersFileName.Data());
   system(line);
+
   dumpFiles();
+
+  dumpCuts();
 }
 
 
@@ -494,129 +456,71 @@ void anaBmm::loadDa(const char *name, double lumi, const char *sign, const char 
 }
 
 
-// ----------------------------------------------------------------------
-void anaBmm::dumpFiles() {
+//===========================================================================================
+// -- produce plots & number for note
+//===========================================================================================
 
-  cout << endl << "Assuming data luminosity " << Form("%2.1f", fLumiD[0]) << " /fb" << endl << endl;
-  ofstream OUT(fNumbersFileName, ios::app);
-  OUT << "% ----------------------------------------------------------------------" << endl;
-  OUT << "% -- X-sections, NEVT, and lumi" << endl;
-  OUT << Form("\\vdef{Lumi:d0}    {\\ensuremath{ {%2.1f } } }", fLumiD[0]) << endl;
-  for (int i = 0; i < 10; ++i) {
-
-    if (fS[i]) {
-
-      fNexpS[i] = fLumiD[0]*fvXsS[i];
-
-       cout << Form("Signal MC[%d]     visible cross-section: %3.2e fb, Nevt: %8.0f -> Lumi: %3.2e /fb   Signature: %s Title: %s", 
- 		   i, fvXsS[i], fNevtS[i], fLumiS[i], fSignS[i].Data(), fSignTexS[i].Data()) 
- 	   << endl;
-
-
-      OUT << Form("\\vdef{channel:s%i} {\\ensuremath{ {%s } } }", i, fSignTexS[i].Data()) << endl;
-      OUT << Form("\\vdef{vXs:s%i}     {\\ensuremath{ {%s } } }", i, (texForm(fvXsS[i]).Data())) << endl;
-      OUT << Form("\\vdef{vNevt:s%i}   {\\ensuremath{ {%5.0f } } }", i, fNevtS[i]) << endl;
-
-      if ( fNexpS[i] < 1 ) {
-	OUT << Form("\\vdef{vNexp:s%i}   {\\ensuremath{ {%s } } }", i, (texForm(fNexpS[i]).Data())) << endl;
-      } else if ( fNexpS[i] < 1.e4 ) {
-	OUT << Form("\\vdef{vNexp:s%i}   {\\ensuremath{ {%5.0f } } }", i, fNexpS[i]) << endl;
-      } else if ( fNexpS[i] < 1.e9 ) {	
-	OUT << Form("\\vdef{vNexp:s%i}   {\\ensuremath{ {%s } } }", i, (texForm(fNexpS[i]).Data())) << endl;
-      } else {
-	OUT << Form("\\vdef{vNexp:s%i}   {\\ensuremath{ {%s } } }", i, (texForm2(fNexpS[i]).Data())) << endl;
-      }
-
-      OUT << Form("\\vdef{vLumi:s%i}   {\\ensuremath{ {%s } } }", i, (texForm(fLumiS[i]).Data())) << endl;
-    }
-  }
- 
-  for (int i = 0; i < 30; ++i) {
-
-    if (fM[i]) {
-
-      fMisIdM[i] = getMisID(fSignM[i]);
-      fNexpM[i] = fLumiD[0]*fvXsM[i]*fMisIdM[i];
-
-
-      cout << Form("Background MC[%d] visible cross-section: %3.2e fb, Nevt: %8.0f -> lumi: %3.2e /fb   Signature: %s Title: %s", 
-		   i, fvXsM[i], fNevtM[i], fLumiM[i], fSignM[i].Data(), fSignTexM[i].Data()) 
-	   << endl;
-
-      OUT << Form("\\vdef{channel:m%i} {\\ensuremath{ {%s } } }", i, fSignTexM[i].Data()) << endl;
-
-    //   if ( fvXsM[i] < 1.e4) {
-// 	OUT << Form("\\vdef{vXs:m%i}     {\\ensuremath{ {%4.1f } } }", i, fvXsM[i]) << endl;
-//       } else if ( fvXsM[i] < 1.e9) {
-// 	OUT << Form("\\vdef{vXs:m%i}     {\\ensuremath{ {%s } } }", i, (texForm(fvXsM[i])).Data()) << endl;
-//       } else {
-// 	OUT << Form("\\vdef{vXs:m%i}     {\\ensuremath{ {%s } } }", i, (texForm2(fvXsM[i])).Data()) << endl;
-//       }
-
-      OUT << Form("\\vdef{vXs:m%i}     {\\ensuremath{ {%s } } }", i, (texForm(fvXsM[i]).Data())) << endl;
-      
-      OUT << Form("\\vdef{vLumi:m%i}   {\\ensuremath{ {%s } } }", i, (texForm(fLumiM[i]).Data())) << endl;
-      OUT << Form("\\vdef{vNevt:m%i}   {\\ensuremath{ {%5.0f } } }", i, fNevtM[i]) << endl;
-
-      if ( fNexpM[i] < 1 ) {
-	OUT << Form("\\vdef{vNexp:m%i}   {\\ensuremath{ {%s } } }", i, (texForm(fNexpM[i]).Data())) << endl;
-      } else if ( fNexpM[i] < 1.e4 ) {
-	OUT << Form("\\vdef{vNexp:m%i}   {\\ensuremath{ {%5.0f } } }", i, fNexpM[i]) << endl;
-      } else if ( fNexpM[i] < 1.e9 ) {	
-	OUT << Form("\\vdef{vNexp:m%i}   {\\ensuremath{ {%s } } }", i, (texForm(fNexpM[i]).Data())) << endl;
-      } else {
-	OUT << Form("\\vdef{vNexp:m%i}   {\\ensuremath{ {%s } } }", i, (texForm2(fNexpM[i]).Data())) << endl;
-      }
-
-      //      OUT << Form("\\vdef{vNexp:m%i}   {\\ensuremath{ \\tt  {%5.0f } } }", i, fNexpM[i]) << endl;
-    }
-
-  }
-}
-
-
-// ----------------------------------------------------------------------
 void anaBmm::makeAllPlots() {
    
 
   // mcValidation();
-
-  signalPlots();
 
   sgRecos();  
 
   fakeMuons();
 
   effTables();
+
   bgOverlays();
 
   calculateUpperLimit();
   normalizedUpperLimit();
-  dumpCuts();
- 
-  showDistributions(0, 0);
-  showDistributions(1, 0);  
-
-  showDistributions(2, 0);
-  showDistributions(3, 0);
-
-  showDistributions(4, 0);
-  showDistributions(5, 0);
-
-  showDistributions(10, 0);
-  showDistributions(11, 0);
-  showDistributions(12, 0);
-  showDistributions(13, 0);
-  showDistributions(14, 0);
-  showDistributions(15, 0);
-  showDistributions(16, 0);
-   
-  showProcesses(1);
-  showProcesses(0);
+  
+  distributions();
+  processes();
   
 }
 
-// -----------------------------------------------------
+// ----------------------------------------------------------------------
+
+void anaBmm::mcValidation(int wiat) {
+
+
+  mcVal("c000"); if (wiat) if (wait()) goto end;
+  mcVal("c001"); if (wiat) if (wait()) goto end;
+  mcVal("c010"); if (wiat) if (wait()) goto end;
+  mcVal("c011"); if (wiat) if (wait()) goto end;
+  mcVal("c020"); if (wiat) if (wait()) goto end;
+  mcVal("c021"); if (wiat) if (wait()) goto end;
+  mcVal("c024"); if (wiat) if (wait()) goto end;
+  mcVal("c025"); if (wiat) if (wait()) goto end;
+  mcVal("c030"); if (wiat) if (wait()) goto end;
+  mcVal("c023"); if (wiat) if (wait()) goto end;
+  mcVal("c026"); if (wiat) if (wait()) goto end;
+  mcVal("c027"); if (wiat) if (wait()) goto end;
+  mcVal("c035"); if (wiat) if (wait()) goto end;
+  mcVal("c022"); if (wiat) if (wait()) goto end;
+
+  mcVal("c300"); if (wiat) if (wait()) goto end;
+  mcVal("c301"); if (wiat) if (wait()) goto end;
+  mcVal("c310"); if (wiat) if (wait()) goto end;
+  mcVal("c311"); if (wiat) if (wait()) goto end;
+  mcVal("c320"); if (wiat) if (wait()) goto end;
+  mcVal("c321"); if (wiat) if (wait()) goto end;
+  mcVal("c324"); if (wiat) if (wait()) goto end;
+  mcVal("c325"); if (wiat) if (wait()) goto end;
+  mcVal("c330"); if (wiat) if (wait()) goto end;
+  mcVal("c323"); if (wiat) if (wait()) goto end;
+  mcVal("c326"); if (wiat) if (wait()) goto end;
+  mcVal("c327"); if (wiat) if (wait()) goto end;
+  mcVal("c335"); if (wiat) if (wait()) goto end;
+  mcVal("c322"); if (wiat) if (wait()) goto end;
+ end:;
+
+}
+
+// ----------------------------------------------------------------------
+
 void anaBmm::sgRecos() {
 
   breco(-1);
@@ -646,7 +550,28 @@ void anaBmm::sgRecos() {
   jreco(5);
 }
 
-// -----------------------------------------------------
+// ----------------------------------------------------------------------
+
+void anaBmm::effTables() {
+
+  effTable(fS[sgIndex], "mysg");
+  effTable(fM[bgIndex], "mymc");
+
+  effTable(fS[normSgIndex], "mynsg");
+  effTable(fM[normBgIndex], "mynmc");
+  
+  effTable(fM[bgIndex], "2mId");
+  effTable(fM[bgIndex], "mIdMu+");
+  effTable(fM[bgIndex], "2mu+");
+  
+  //  effTable(fM[bgIndex], "qcd");
+  
+  effTable(fM[bgIndex], "r0"); // has to be before c0 !!!
+  effTable(fM[bgIndex], "c0");
+}
+
+// ----------------------------------------------------------------------
+
 void anaBmm::bgOverlays() {
 
   bgOverlay("c033", 6); // overlay of different rare background with sg + bg
@@ -660,8 +585,41 @@ void anaBmm::bgOverlays() {
   nbgOverlay("c530", 5); // overlay of sg + bg (norm)
 }
 
+// ----------------------------------------------------------------------
+
+void anaBmm::distributions() {
+
+  showDistributions(0, 0);
+  showDistributions(1, 0);  
+
+  showDistributions(2, 0);
+  showDistributions(3, 0);
+
+  showDistributions(4, 0);
+  showDistributions(5, 0);
+
+  showDistributions(10, 0);
+  showDistributions(11, 0);
+  showDistributions(12, 0);
+  showDistributions(13, 0);
+  showDistributions(14, 0);
+  showDistributions(15, 0);
+  showDistributions(16, 0);
+}
 
 // ----------------------------------------------------------------------
+
+void anaBmm::processes() {
+
+  showProcesses(1);
+  showProcesses(0);
+}
+
+
+//===========================================================================================
+// -- Upper limit calculation
+//===========================================================================================
+
 void anaBmm::calculateUpperLimit() {
 
   double nBs  = fLumiD[0] * 500.*1.e9 * 0.107 * 2.;
@@ -794,165 +752,785 @@ double anaBmm::expUL(double s0, double b0) {
 }
 
 
-// ----------------------------------------------------------------------
-void anaBmm::effTables() {
+//===========================================================================================
+// -- Signal reconstruction
+//===========================================================================================
 
-  effTable(fS[sgIndex], "mysg");
-  effTable(fM[bgIndex], "mymc");
+void anaBmm::breco(int o, const char *hist) {
+
+  gStyle->SetOptTitle(0);
+  gStyle->SetOptStat(0);
+  gStyle->SetOptFit(0);
+
+  TH1D *h1;
+  TH1D *hs;
+  TH1D *hr;
+
+  double mean(0.), sigma(0.);
+
+
+  // -- Signal & norm. channel
+  // =========================
+
+  if ( o > -1 ) {
+    
+    h1 = (TH1D*)(fS[o]->Get(hist))->Clone();
+    
+    cout << endl << " ----> N_gen " << h1->GetSumOfWeights() << endl;
+    h1->Scale(fLumiD[0]/fLumiS[o]);
+    cout << " ----> N_exp " << h1->GetSumOfWeights() << endl << endl;
+    
+    c0->Clear();
+    shrinkPad(0.15, 0.15);
+    setFilledHist(h1, kBlack, kYellow, 1000);    
+    
+ 
+    // -- Signal (double gauss)
+    if ( o < 4 ) {
+
+      f1->SetParameters(h1->GetMaximum()*0.8, h1->GetMean(), 0.5*h1->GetRMS(), 
+			h1->GetMaximum()*0.2, h1->GetMean(), 3.*h1->GetRMS());
+
+      setTitles(h1, "m_{#mu#mu} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
+      h1->SetMaximum(1.4*h1->GetMaximum());
+
+      h1->DrawCopy("hist");
+      h1->Fit(f1, "0");
+      f1->DrawCopy("same");
+
+      mean = TMath::Sqrt((f1->GetParameter(0)*f1->GetParameter(0)*f1->GetParameter(1)*f1->GetParameter(1)
+			  + f1->GetParameter(3)*f1->GetParameter(3)*f1->GetParameter(4)*f1->GetParameter(4))
+			 /
+			 (f1->GetParameter(0)*f1->GetParameter(0) + f1->GetParameter(3)*f1->GetParameter(3))
+			 );
+
+      sigma = TMath::Sqrt((f1->GetParameter(0)*f1->GetParameter(0)*f1->GetParameter(2)*f1->GetParameter(2)
+			   + f1->GetParameter(3)*f1->GetParameter(3)*f1->GetParameter(5)*f1->GetParameter(5))
+			  /
+			  (f1->GetParameter(0)*f1->GetParameter(0) + f1->GetParameter(3)*f1->GetParameter(3))
+			  );
+
+      writeFitPar(f1, o, mean, sigma, 6);
+
+    // -- Normalization (double gauss + pol1)
+    } else {
+
+      f6->SetParameters(h1->GetMaximum()*0.8, 5.3, 0.01, 
+			h1->GetMaximum()*0.2, 5.3, 0.03,
+			0.8*h1->GetBinContent(1), 1.);
+      
+      
+      setTitles(h1, "m_{#mu#mu K} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
+      h1->SetMaximum(1.4*h1->GetMaximum());
+      
+      h1->DrawCopy("hist");
+      h1->Fit(f6, "0");
+      f6->DrawCopy("same");
+
+      mean = TMath::Sqrt((f6->GetParameter(0)*f6->GetParameter(0)*f6->GetParameter(1)*f6->GetParameter(1)
+			  + f6->GetParameter(3)*f6->GetParameter(3)*f6->GetParameter(4)*f6->GetParameter(4))
+			 /
+			 (f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
+			 );
+
+      sigma = TMath::Sqrt((f6->GetParameter(0)*f6->GetParameter(0)*f6->GetParameter(2)*f6->GetParameter(2)
+			   + f6->GetParameter(3)*f6->GetParameter(3)*f6->GetParameter(5)*f6->GetParameter(5))
+			  /
+			  (f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
+			  );
+
+      writeFitPar(f6, o, mean, sigma, 3);
+    }
+    
+    
+    tl->SetTextColor(kBlack);  
+    tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
+    
+    tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, 0.001));
+    tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, 0.001));
+
+    if (h1->GetSumOfWeights()<0.001) {
+      tl->DrawLatex(0.16, 0.73, Form("N: %4.2e", h1->GetSumOfWeights()));
+    } else if (h1->GetSumOfWeights() < 1.) {
+      tl->DrawLatex(0.16, 0.73, Form("N: %5.3f", h1->GetSumOfWeights()));
+    } else if (h1->GetSumOfWeights() < 1000.) {
+      tl->DrawLatex(0.16, 0.73, Form("N: %5.1f", h1->GetSumOfWeights()));
+    } else {
+      tl->DrawLatex(0.16, 0.73, Form("N: %4.2e", h1->GetSumOfWeights()));
+    }
+
+    tl->SetTextSize(0.06); tl->SetTextColor(kBlue);
+    tl->DrawLatex(0.56, 0.65, Form("%s", fSignLeggS[o].Data()));
+    
+    if ( o == 0 ) {
+      tl->DrawLatex(0.48, 0.72, "ORCA/OSCAR (priv.)");
+    } else if ( o == 1 ) {
+      tl->DrawLatex(0.50, 0.72, "official MC");
+    } else if ( o == 2 ) {
+      tl->DrawLatex(0.52, 0.72, "Spring07");
+    } else if ( o == 3 ) {
+      tl->DrawLatex(0.52, 0.72, "CMSSW (priv.)");
+    } else if ( o == 4 ) {
+      tl->DrawLatex(0.56, 0.72, "perfect align.");
+    } else if ( o == 5 ) {
+      tl->DrawLatex(0.52, 0.72, "short-term align.");
+    } else {  
+      tl->DrawLatex(0.52, 0.72, Form("MC%i",o));
+    }
+    
+    
+    c0->SaveAs(Form("%s/breco/s%d-breco-%s.eps", outDir, o, hist));
+    delete h1;
+
+
+  // -- Rare backgrounds
+  // ===================
+
+  } else {
+    
+    int EColor[]     = {   2,    4,    108,  6,  107,   93,   1, 
+			   2,    4,    108,  6,  107,   93,   1,  
+			   2,    4,    108,  6,  107,   93,   1   }; 
   
-  effTable(fS[normSgIndex], "mynsg");
-  effTable(fM[normBgIndex], "mynbg");
+    legg = new TLegend(0.60,0.8,0.89,0.89);
+    legg->SetFillStyle(1001); legg->SetBorderSize(0); legg->SetTextSize(0.035);  legg->SetFillColor(0);
   
-  effTable(fM[bgIndex], "2mId");
-  effTable(fM[bgIndex], "mIdMu+");
-  effTable(fM[bgIndex], "2mu+");
-  
-  //  effTable(fM[bgIndex], "qcd");
-  
-  effTable(fM[bgIndex], "r0"); // has to be before c0 !!!
-  effTable(fM[bgIndex], "c0");
+    char hist[200]; 
+    int fit(0), log(0);
+
+    const int nhist = nMc;
+    
+    for (int i = 0; i < nhist - 1; i++) {  // FIX ME: last histogram is screwd up -> takes signal instead ???????
+ 
+      if ( !strcmp( getSubGroup(fSignM[i]).Data(), "2mId") ) { 
+	sprintf(hist, "c030"); 
+	fit = 1; log = 0;
+
+      } else if ( !strcmp( getSubGroup(fSignM[i]).Data(), "mIdMu+") ) { 
+	sprintf(hist, "c030"); 
+	fit = 0; log = 0;
+
+      } else if ( !strcmp(fTypeM[i].Data(), "rmc") ){ 
+	sprintf(hist, "c033"); 
+	fit = 0; log = 1;
+
+      } else {
+
+	continue;
+      }
+
+      hs = (TH1D*)(fS[sgIndex]->Get(hist))->Clone();
+      if (fit) hs->GetXaxis()->SetRangeUser(4.9, 5.9);
+      setFilledHist(hs, kBlack, kYellow, 3004, 2, 2);
+      setTitles(hs, "m_{#mu#mu} [GeV]", "events/bin", 0.06, 1.1, 1.3);
+      
+      hr = (TH1D*)(fM[i]->Get(hist))->Clone();
+      setHist(hr,  EColor[i]);
+
+      c0->Clear();
+      shrinkPad(0.2, 0.2);
+      gPad->SetLogy(1);
+
+      cout << endl << " ----> N_gen " << hr->GetSumOfWeights() << " for " 
+	   << fSignM[i].Data()  << endl;
+
+      hr->Scale(fMisIdM[i]*fLumiD[0]/fLumiM[i]);
+
+      cout << " ----> N_exp " << hr->GetSumOfWeights() << " for " << fSignM[i].Data() 
+	   << " assuming fake rate = " << fMisIdM[i]<< endl << endl;
+   
+      if ( hr->GetSumOfWeights() > 0  && hr->GetMaximum() > 0 ) {
+
+	hs->Scale(hr->GetSumOfWeights()/hs->GetSumOfWeights());
+
+	gPad->SetLogy(log);
+
+	if (log) {
+	  hs->GetYaxis()->SetRangeUser(0.1*hs->GetMinimum(1.e-20), 100*hs->GetMaximum());
+    	} else {
+	  hs->GetYaxis()->SetRangeUser(0, 1.2*hs->GetMaximum());
+	}
+
+	hs->DrawCopy("hist");
+	hr->DrawCopy("same");
+
+	if (fit) {
+	  
+
+	  f6->SetParameters(0.8*hr->GetMaximum(), 5.3, 0.03, 
+			    0.8*hr->GetBinContent(1), 1.);
+	  
+	  hr->Fit(f6, "0");
+	  f6->DrawCopy("same");
+
+
+	  mean = TMath::Sqrt((f6->GetParameter(0)*f6->GetParameter(0)*f6->GetParameter(1)*f6->GetParameter(1)
+			      + f6->GetParameter(3)*f6->GetParameter(3)*f6->GetParameter(4)*f6->GetParameter(4))
+			     /
+			     (f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
+			     );
+	  
+	  sigma = TMath::Sqrt((f6->GetParameter(0)*f6->GetParameter(0)*f6->GetParameter(2)*f6->GetParameter(2)
+			       + f6->GetParameter(3)*f6->GetParameter(3)*f6->GetParameter(5)*f6->GetParameter(5))
+			      /
+			      (f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
+			      );
+	  
+	  
+	  tl->SetTextColor(kBlack);  
+	  tl->SetNDC(kTRUE); tl->SetTextSize(0.04);
+	  tl->DrawLatex(0.24, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, 0.001));
+	  tl->DrawLatex(0.24, 0.81, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, 0.001));
+	  tl->DrawLatex(0.24, 0.77, Form("N: %4.2e", hr->GetSumOfWeights()));
+	
+	} else {
+
+	  tl->SetTextColor(kBlack);  
+	  tl->SetNDC(kTRUE); tl->SetTextSize(0.04);
+	  tl->DrawLatex(0.24, 0.85, Form("N: %4.2e", hr->GetSumOfWeights()));
+	}
+
+      } else {
+
+	hs->DrawCopy("hist");
+      }
+
+      legg->Clear();
+      
+      legge = legg->AddEntry(hs, "Signal (scaled)", "f"); legge->SetTextColor(kBlack);
+      legge = legg->AddEntry(hr, "Background", "p");
+      
+      legge->SetTextColor(EColor[i]);
+      legg->Draw();
+      
+      tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
+      tl->SetTextColor(kBlack);    
+      tl->DrawLatex(0.22, 0.92, Form("%s",  fSignLeggM[i].Data()));
+      
+      c0->SaveAs(Form("%s/breco/%s-breco.eps", outDir, fSignM[i].Data()));
+      delete hs;
+      delete hr;
+    }
+
+    // -------------------------------------------------------------------------------------------
+
+  }
+
+  gPad->SetLogy(0);
 }
 
 
 // ----------------------------------------------------------------------
-void anaBmm::dumpCuts() {
+void anaBmm::nreco(int o, const char *hist) {
 
-  TH1D *hS = (TH1D*)fS[sgIndex]->Get("hcuts");
-  TH1D *hM = (TH1D*)fM[bgIndex]->Get("hcuts");
 
-  ofstream OUT(fNumbersFileName, ios::app);
-  OUT << "% ----------------------------------------------------------------------" << endl;
-  OUT << "% -- Cuts" << endl;
+  // -- Norm. channel
+  // ================
 
-  char label[100];
-  sprintf(label, "%s", hS->GetXaxis()->GetBinLabel(1));
+  gStyle->SetOptTitle(0);
+  gStyle->SetOptStat(0);
+  gStyle->SetOptFit(0);
 
-  double sVal, mVal;
-  for (int i = 1; i < hS->GetNbinsX(); ++i) {
-    if (strcmp(hS->GetXaxis()->GetBinLabel(i), "")) {
-      cout << hS->GetXaxis()->GetBinLabel(i) << endl;
-      sVal = hS->GetBinContent(i);
-      mVal = hM->GetBinContent(i);
+  TH1D *h1;
+  TH1D *h2;
+  
+  h1 = (TH1D*)(fS[o]->Get(hist))->Clone();
+  h2 = (TH1D*)(fS[o]->Get(hist))->Clone();
 
-      if (sVal != mVal) {
-	cout << "====> Error: Signal and BG MC run with different cut values!" << endl;
-      } else {
+  emptyBinError(h1);
+  
+  cout << endl << " ----> N_gen " << h1->GetSumOfWeights() << endl;
+  h1->Scale(fLumiD[0]/fLumiS[o]);
+  h2->Scale(fLumiD[0]/fLumiS[o]);
+  cout << " ----> N_exp " << h1->GetSumOfWeights() << endl << endl;
+    
+  
+  c0->Clear();
+  shrinkPad(0.15, 0.15);
+  setFilledHist(h1, kBlack, kYellow, 1000);
+  setFilledHist(h2, kBlack, kYellow, 1000);
+  
+  f5->SetParameters(0.2*h1->GetMaximum(), 5.3, 0.04, 
+		     0.8*h1->GetBinContent(1), 1.);
+  
+  setTitles(h2, "m_{#mu#mu K} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
+  h1->SetMaximum(1.4*h1->GetMaximum());
+  h2->SetMaximum(1.4*h2->GetMaximum());
+  
+  h2->DrawCopy();
+  h1->Fit(f5, "0");
+  f5->DrawCopy("same");
+  
+  f10->SetParameters(f5->GetParameter(3), f5->GetParameter(4));
+  f10->SetLineStyle(7);
+  f10->SetLineColor(108);
+  f10->DrawCopy("same");
+  
+  f11->SetParameters(f5->GetParameter(0), f5->GetParameter(1), f5->GetParameter(2));
+  f11->SetLineColor(2);
+  f11->SetFillColor(2);
+  f11->SetFillStyle(3004);
+  f11->DrawCopy("same");
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}(B_{s}) [GeV]")) {
-	  OUT  << Form("\\vdef{cut:%s:ptbs}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	}
+  double mean  = f5->GetParameter(1);
+  double sigma = f5->GetParameter(2);
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}^{min}(l) [GeV]")) {
-	  OUT  << Form("\\vdef{cut:%s:ptlo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	}
+  double meanE  = f5->GetParError(1);
+  double sigmaE = f5->GetParError(2);
+     
+  double totalBG = f10->Integral(h1->GetBinLowEdge(1), h1->GetBinLowEdge(h1->GetNbinsX()))/h1->GetBinWidth(2); 
+  double totalSG = (f5->Integral(fMassBs - 0.1, fMassBs + 0.1)/h1->GetBinWidth(2))
+                  - (f10->Integral(fMassBs - 0.1, fMassBs + 0.1)/h1->GetBinWidth(2));
+  
+  tl->SetTextColor(kBlack);  
+  tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
+  
+  tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, meanE));
+  tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, sigmaE));
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}^{max}(l) [GeV]")) {
-	  OUT  << Form("\\vdef{cut:%s:pthi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	}
+  tl->SetTextSize(0.05);
+  tl->SetTextColor(108); 
+  tl->DrawLatex(0.60, 0.61, Form("N_{bg} = %4.2e", totalBG)); tl->SetTextColor(2);  
+  tl->DrawLatex(0.60, 0.54, Form("N_{sg} = %4.2e", totalSG)); tl->SetTextColor(1);  
+  
+  tl->SetTextSize(0.06); tl->SetTextColor(kBlue);
+  tl->DrawLatex(0.40, 0.72, Form("%s", fSignLeggS[o].Data()));
+  
+  
+  c0->SaveAs(Form("%s/breco/s%d-nreco-%s.eps", outDir, o, hist));
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{#mu#mu}^{min}")) {
-	  OUT  << Form("\\vdef{cut:%s:rmmlo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	}
+  delete h1;
+}
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{#mu#mu}^{max}")) {
-	  OUT  << Form("\\vdef{cut:%s:rmmhi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	}
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#eta_{T}^{min}(l)")) {
-	  OUT  << Form("\\vdef{cut:%s:etalo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	}
+// ----------------------------------------------------------------------
+void anaBmm::jreco(int o) {
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#eta_{T}^{max}(l)")) {
-	  OUT  << Form("\\vdef{cut:%s:etahi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	}
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "TIP(l) [cm]")) {
-	  OUT  << Form("\\vdef{cut:%s:tip}      {\\ensuremath{%5.3f } } ", label, sVal) << endl;
-	}
+  // -- J/Psi peak
+  // =============
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#chi^2")) {
-	  OUT  << Form("\\vdef{cut:%s:chi2}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	}
+  gStyle->SetOptTitle(0);
+  gStyle->SetOptStat(0);
+  gStyle->SetOptFit(0);
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{3d} [cm]")) {
-	  OUT  << Form("\\vdef{cut:%s:l3d}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
-	}
+  TH1D *h1;
+  h1 = (TH1D*)(fS[o]->Get("j101"))->Clone();
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "cos(#alpha)")) {
-	  OUT  << Form("\\vdef{cut:%s:cosalpha}    {\\ensuremath{%5.4f } } ", label, sVal) << endl;
-	}
+  cout << endl << " ----> N_gen " << h1->GetSumOfWeights() << endl;
+  h1->Scale(fLumiD[0]/fLumiS[o]);
+  cout << " ----> N_exp " << h1->GetSumOfWeights() << endl << endl;
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{xy} [cm]")) {
-	  OUT  << Form("\\vdef{cut:%s:lxy}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
-	}
+  c0->Clear();
+  shrinkPad(0.15, 0.15);
+  setFilledHist(h1, kBlack, kYellow, 1000);
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{xy}/#sigma_{xy}")) {
-	  OUT  << Form("\\vdef{cut:%s:lxy/sxy}    {\\ensuremath{%3.1f } } ", label, sVal) << endl;
-	}
+  h1->SetMaximum(1.3*h1->GetMaximum());
+  setTitles(h1, "m_{#mu#mu} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "I_{veto}")) {
-	  OUT  << Form("\\vdef{cut:%s:isoveto}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	}
+  f1->SetParameters(h1->GetMaximum()*0.8, h1->GetMean(), 0.5*h1->GetRMS(), 
+		    h1->GetMaximum()*0.2, h1->GetMean(), 3.*h1->GetRMS());
+ 
+  h1->DrawCopy("hist");
+  h1->Fit(f1, "0");
+  f1->DrawCopy("same");
+  
+  double mean = TMath::Sqrt((f1->GetParameter(0)*f1->GetParameter(0)*f1->GetParameter(1)*f1->GetParameter(1)
+		      + f1->GetParameter(3)*f1->GetParameter(3)*f1->GetParameter(4)*f1->GetParameter(4))
+		     /
+		     (f1->GetParameter(0)*f1->GetParameter(0) + f1->GetParameter(3)*f1->GetParameter(3))
+		     );
+  
+  double sigma = TMath::Sqrt((f1->GetParameter(0)*f1->GetParameter(0)*f1->GetParameter(2)*f1->GetParameter(2)
+		       + f1->GetParameter(3)*f1->GetParameter(3)*f1->GetParameter(5)*f1->GetParameter(5))
+		      /
+		      (f1->GetParameter(0)*f1->GetParameter(0) + f1->GetParameter(3)*f1->GetParameter(3))
+		      );
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{I}")) {
-	  OUT  << Form("\\vdef{cut:%s:isocone}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	}
+  tl->SetTextColor(kBlack);  
+  tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
+  
+  tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, 0.001));
+  tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, 0.001));
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "I")) {
-	  OUT  << Form("\\vdef{cut:%s:isolation}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
-	}
+  tl->SetTextSize(0.06); tl->SetTextColor(kBlue);
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "BMMSEL")) {
-	  OUT  << Form("\\vdef{cut:%s:bmmsel}    {\\ensuremath{%i } } ", label, sVal) << endl;
-	}
+  if ( o == 4 ) {
+    tl->DrawLatex(0.19, 0.74, "perfect align.");
+    tl->DrawLatex(0.2, 0.67, "J/#psi #rightarrow #mu #mu");
+  } else if ( o == 5 ) {
+    tl->DrawLatex(0.19, 0.74, "short-term align.");
+    tl->DrawLatex(0.2, 0.67, "J/#psi #rightarrow #mu #mu");
+  } else {  
+    tl->SetTextSize(0.1);
+    tl->DrawLatex(0.70, 0.82, Form("MC%i",o));
+  }
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "SUBSEL")) {
-	  OUT  << Form("\\vdef{cut:%s:subsel}    {\\ensuremath{%i } } ", label, sVal) << endl;
-	}
+  c0->SaveAs(Form("%s/breco/s%d-jreco.eps", outDir, o));
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{3D}/#sigma_{3D}")) {
-	  OUT  << Form("\\vdef{cut:%s:l3d/s3d}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
-	}
+  delete h1;
+}
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "m_{min}^{#mu #mu}")) {
-	  OUT  << Form("\\vdef{cut:%s:masslo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	}
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "m_{max}^{#mu #mu}")) {
-	  OUT  << Form("\\vdef{cut:%s:masshi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	}
+//===========================================================================================
+// -- MC Validation
+//===========================================================================================
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "iso. p_{T}^{min}")) {
-	  OUT  << Form("\\vdef{cut:%s:isoptmin}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	}
+void anaBmm::mcVal(const char *hname) {
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "L1 available")) {
-	  OUT  << Form("\\vdef{cut:%s:setl1}    {\\ensuremath{%i } } ", label, sVal) << endl;
-	}
+  gStyle->SetOptTitle(0);
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "HLT available")) {
-	  OUT  << Form("\\vdef{cut:%s:sethlt}    {\\ensuremath{%i } } ", label, sVal) << endl;
-	}
+  TH1D *h0, *h1;
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#Delta m{#mu #mu}")) {
-	  OUT  << Form("\\vdef{cut:%s:masswi}    {\\ensuremath{%5.0f } } ", label, sVal) << endl;
-	}
-      }
+  const int num = 7;
+
+  int i[] = {1, 2, 2, 2, 2, 4, 4};
+  int j[] = {0, 0, 3, 6, 8, 5, 7};
+
+  TString sample_i[] = { TString("sm06_bsmumu"), TString("CMSSW (Spring07)"), TString("Spring07"), 
+			 TString("before HLT"), TString("bmmsel 2"), TString("perfect alignment"), TString("before HLT") };
+
+  TString sample_j[] = { TString("private prod."), TString("ORCA/OSCAR (priv.)"), TString("private prod."), 
+			 TString("after HLT"), TString("bmmsel 3"), TString("short-term misal."), TString("after HLT") };
+
+  int n(0), m(0);
+  char name_n[200], name_m[200];
+
+  for (int k = 0; k < num; k++ ) { 
+
+    n = i[k]; sprintf(name_n, "%s", sample_i[k].Data());
+    m = j[k]; sprintf(name_m, "%s", sample_j[k].Data()); 
+    
+
+    fS[n]->cd();
+    h0 = (TH1D*)(fS[n]->Get(hname))->Clone();
+    if (0 == h0) {
+      cout << "Histogram with name " << hname << " does not exist" << endl;
+      return;
     }
+
+    fS[m]->cd();
+    h1 = (TH1D*)(fS[m]->Get(hname))->Clone();
+    if (0 == h1) {
+      cout << "Histogram with name " << hname << " does not exist" << endl;
+      return;
+    }
+
+    h0->Scale(1./h0->GetSumOfWeights());
+    h1->Scale(1./h1->GetSumOfWeights());
+  
+    c0->Clear();
+    shrinkPad(0.15, 0.2);
+    setHist(h0, kBlack, 20, 2);
+    setTitles(h0, h0->GetXaxis()->GetTitle(), h0->GetYaxis()->GetTitle(), 0.06, 1.1, 1.8);
+    gPad->SetLogy(1);
+    h0->DrawCopy();
+
+    setHist(h1, kBlue, 24, 2);
+    h1->DrawCopy("same");
+
+    //    if (!strcmp(hname, "c000")) {
+    if (1) {
+      legg = new TLegend(0.3,0.2,0.7,0.3);
+      legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.05);  legg->SetFillColor(0); 
+      legge = legg->AddEntry(h1, Form("%s", name_m), "p"); legge->SetTextColor(kBlue);
+      legge = legg->AddEntry(h0, Form("%s", name_n), "p"); legge->SetTextColor(kBlack);
+      legg->Draw();
+    }
+
+    c0->Draw(); 
+    c0->Update();
+
+    c0->SaveAs(Form("%s/mcval/mcval-%i-%s.eps", outDir, k, hname));
+
+    gPad->SetLogy(0);
+
+    delete h0;
+    delete h1;
+  }
+
+
+  // -- same but for background plots
+  const int num2 = 4;
+
+  int i2[] = {8, 1, 8, 9};
+  int j2[] = {0, 7, 1, 7};
+
+  TString sample_i2[] = { TString("CMSSW (Spring07)"), TString("before HLT"), TString("bmmsel 3"), 
+			  TString("after HLT (sel3)") };
+
+  TString sample_j2[] = { TString("ORCA/OSCAR (priv.)"), TString("after HLT"), TString("bmmsel 2"), 
+			  TString("after HLT (sel2)")  };
+
+  int index = 0;
+
+  for (int k = num; k < num + num2; k++ ) {
+
+    index = k -num;
+    n = i2[index]; sprintf(name_n, "%s", sample_i2[index].Data());
+    m = j2[index]; sprintf(name_m, "%s", sample_j2[index].Data()); 
+    
+
+    fM[n]->cd();
+    h0 = (TH1D*)(fM[n]->Get(hname))->Clone();
+    if (0 == h0) {
+      cout << "Histogram with name " << hname << " does not exist" << endl;
+      return;
+    }
+
+    fM[m]->cd();
+    h1 = (TH1D*)(fM[m]->Get(hname))->Clone();
+    if (0 == h1) {
+      cout << "Histogram with name " << hname << " does not exist" << endl;
+      return;
+    }
+
+    h0->Scale(1./h0->GetSumOfWeights());
+    h1->Scale(1./h1->GetSumOfWeights());
+  
+    c0->Clear();
+    shrinkPad(0.15, 0.2);
+    setHist(h0, kBlack, 20, 2);
+    setTitles(h0, h0->GetXaxis()->GetTitle(), h0->GetYaxis()->GetTitle(), 0.06, 1.1, 1.8);
+    gPad->SetLogy(1);
+    h0->DrawCopy();
+
+    setHist(h1, kBlue, 24, 2);
+    h1->DrawCopy("same");
+
+    //    if (!strcmp(hname, "c000")) {
+    if (1) {
+      legg = new TLegend(0.3,0.2,0.7,0.3);
+      legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.05);  legg->SetFillColor(0); 
+      legge = legg->AddEntry(h1, Form("%s", name_m), "p"); legge->SetTextColor(kBlue);
+      legge = legg->AddEntry(h0, Form("%s", name_n), "p"); legge->SetTextColor(kBlack);
+      legg->Draw();
+    }
+
+    c0->Draw(); 
+    c0->Update();
+
+    c0->SaveAs(Form("%s/mcval/mcval-%i-%s.eps", outDir, k, hname));
+
+    gPad->SetLogy(0);
+
+    delete h0;
+    delete h1;
   }
 }
 
+
+//===========================================================================================
+// -- Distributions
+//===========================================================================================
+
+void anaBmm::showDistributions(int offset, int wiat) { 
+
+  int logy(100);   
+
+  showDistribution(Form("c%d00", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d01", offset), 2);            if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d10", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d11", offset), 2);            if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d12", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+
+  showDistribution(Form("c%d14", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d15", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+
+  showDistribution(Form("c%d20", offset), 2,      0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d21", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d22", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d23", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d26", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d16", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d24", offset), 2,      0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d25", offset), 2,      0.3, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d27", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d37", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+
+  showDistribution(Form("c%d30", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d35", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d40", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d41", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d42", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d62", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+
+
+ end:;
+
+}
+
+
 // ----------------------------------------------------------------------
+void anaBmm::showDistribution(const char *hname, int mode, double x, double y) { 
+
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+
+  c0->Clear();
+  shrinkPad(0.15, 0.2);
+  
+  //  TH1 *hm = sumHistMC(hname);
+  TH1 *hm = (TH1D*)fM[bgIndex]->Get(hname);
+  setHist(hm, kBlack, kBlack);
+  setTitles(hm, hm->GetXaxis()->GetTitle(), hm->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
+
+  TH1D *hs = new TH1D(*((TH1D*)fS[sgIndex]->Get(hname)));
+  hs->SetName(Form("SIG:%s", hname)); 
+  setFilledHist(hs, kBlue, kBlue, 3004, 2);
+  setTitles(hs, hs->GetXaxis()->GetTitle(), hs->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
+
+  int logy(0); 
+  if (mode > 99) {
+    mode -= 100;
+    logy = 1;
+  }  
+  
+  c0->SetLogy(logy);
+  
+  if (mode == 0) {
+    cout << hname << " drawn as is: sg, bg" << endl;
+    hs->Draw("hist");
+    hm->Draw("samehist");
+  } else if (mode == 1) {
+    cout << hname << " drawn as is: bg, sg" << endl;
+    hm->Draw("hist");
+    hs->Draw("samehist");
+  } else if (mode == 2) {
+    cout << hname << " scale to unity" << endl;
+    hm->Scale(1./hm->GetSumOfWeights()); 
+    hs->Scale(1./hs->GetSumOfWeights()); 
+    hs->SetMaximum(1.1*(hm->GetMaximum() > hs->GetMaximum()? hm->GetMaximum(): hs->GetMaximum()));
+    hs->Draw("hist");
+    hm->Draw("samehist");
+  } else if (mode == 3) {
+    cout << hname << " scale sg to bg" << endl;
+    hs->Scale(hm->GetSumOfWeights()/hs->GetSumOfWeights()); 
+    hm->Draw("hist");
+    hs->Draw("samehist");
+  } else if (mode == 4) {
+    cout << hname << " scale to L = " << fLumiD[0] << "/fb" << endl;
+    hs->Scale(fLumiD[0]/fLumiS[sgIndex]); 
+    hm->Scale(fLumiD[0]/fLumiM[bgIndex]); 
+    hm->Draw("hist");
+    hs->Draw("samehist");
+  }
+
+  if (x > 0) {
+    legg = new TLegend(x, y, x+0.15, y+0.1);
+    legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.04);  legg->SetFillColor(0); 
+    //     legge = legg->AddEntry(hs, Form("S: %5.1f", hs->GetSumOfWeights()), "f"); legge->SetTextColor(kBlack);
+    //     legge = legg->AddEntry(hm, Form("B: %5.1f", hm->GetSumOfWeights()), "f"); legge->SetTextColor(kBlack);
+    legge = legg->AddEntry(hs, Form("Signal"), "f"); legge->SetTextColor(kBlack);
+    legge = legg->AddEntry(hm, Form("Background"), "f"); legge->SetTextColor(kBlack);
+    legg->Draw();
+  }
+ 
+  c0->SaveAs(Form("%s/dist/dist-%s.eps", outDir, hname));
+
+  c0->SetLogy(0);
+
+}
+  
+
+//===========================================================================================
+// -- Production prosesse (GGF, FEX, GSP)
+//===========================================================================================
+
+void anaBmm::showProcesses(int signal) {
+
+  TString label;
+  if (1 == signal) {
+    fS[sgIndex]->cd();
+    label = TString("sproc");
+  } else {
+    fM[bgIndex]->cd();
+    label = TString("bproc");
+  }
+
+
+  const char *cuts = "pt>5 && ptl1>4";
+
+  plotProcesses(cuts, "pt", "p_{T, B} [GeV]", 10, 0., 50., 1);
+  c0->SaveAs(Form("%s/proc/%s-pt.eps", outDir, label.Data()));
+
+  plotProcesses(cuts, "iso", "I", 20, 0., 1., 0);
+  c0->SaveAs(Form("%s/proc/%s-isolation.eps", outDir, label.Data()));
+
+  plotProcesses(cuts, "rmm", "#Delta R(#mu,#mu)", 10, 0., 2., 0);
+  c0->SaveAs(Form("%s/proc/%s-rmm.eps", outDir, label.Data()));
+
+  plotProcesses(cuts, "mass", "m_{#mu#mu} [GeV]", 20, 5., 6., 0);
+  c0->SaveAs(Form("%s/proc/%s-mass.eps", outDir, label.Data()));
+
+}
+
+// ----------------------------------------------------------------------
+void anaBmm::plotProcesses(const char *cut, const char *var, const char *axis, int bin, double lo, double hi, int legend) {
+
+  TTree *tS = (TTree*)gFile->Get("events");
+  TH1D *hGSP = new TH1D("hGSP", "", bin, lo, hi); //hGSP->Sumw2();
+  TH1D *hFEX = new TH1D("hFEX", "", bin, lo, hi); //hFEX->Sumw2();
+  TH1D *hGGF = new TH1D("hGGF", "", bin, lo, hi); //hGGF->Sumw2();
+  TH1D *hSum = new TH1D("hSum", "", bin, lo, hi); //hSum->Sumw2();
+
+  tS->Draw(Form("%s >> hGSP", var), Form("%s && process == 42", cut)); 
+  tS->Draw(Form("%s >> hFEX", var), Form("%s && process == 41", cut)); 
+  tS->Draw(Form("%s >> hGGF", var), Form("%s && process == 40", cut)); 
+
+  hSum->Add(hGSP);
+  hSum->Add(hFEX);
+  hSum->Add(hGGF);
+
+  //   hGSP->Divide(hGSP, hSum, 1., 1.);
+  //   hFEX->Divide(hFEX, hSum, 1., 1.);
+  //   hGGF->Divide(hGGF, hSum, 1., 1.);
+  
+  //   hGSP->SetMinimum(0.);
+  //   hGSP->SetMaximum(1.);
+
+  double max = hGSP->GetMaximum();
+  if (hFEX->GetMaximum() > max) {
+    max = hFEX->GetMaximum();
+  } 
+  if (hGGF->GetMaximum() > max) {
+    max = hGGF->GetMaximum();
+  } 
+  
+  gStyle->SetOptStat(0);
+  shrinkPad(0.15, 0.15);
+  setTitles(hGSP, axis, "arbitrary units", 0.05, 1.1, 1.5);
+
+  hGSP->SetMaximum(1.1*max);
+  hGSP->SetMinimum(0.0);
+  setHist(hGSP, kBlue, 20, 2); 
+  setHist(hFEX, kRed, 20, 2);    hFEX->SetLineStyle(kDashed);
+  setHist(hGGF, kBlack, 20, 2);  hGGF->SetLineStyle(kDotted);
+
+  hGSP->Draw("hist");
+  hFEX->Draw("histsame");
+  hGGF->Draw("histsame");
+
+  if (1 == legend) {
+    legg = new TLegend(0.5,0.7,0.8,0.89);
+    legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.04);  legg->SetFillColor(0); 
+    legge = legg->AddEntry(hGSP, Form("gluon splitting"), "l"); legge->SetTextColor(kBlue);
+    legge = legg->AddEntry(hFEX, Form("flavor excitation"), "l"); legge->SetTextColor(kRed);
+    legge = legg->AddEntry(hGGF, Form("gluon-gluon fusion"), "l"); legge->SetTextColor(kBlack);
+    legg->Draw();
+  }
+
+
+}
+
+
+//===========================================================================================
+// -- Efficiency tables
+//===========================================================================================
+
 void anaBmm::effTable(TFile *f, const char *tag) {
 
-  TH1D *h = (TH1D*)f->Get("ER1");
-  ofstream OUT(fNumbersFileName, ios::app);
-  OUT << "% ----------------------------------------------------------------------" << endl;
-  OUT << "% -- Efficiency" << endl;
-
-  double n;
-
-  // -- Fix lumi normalisation scaling factor
+  // -- Lumi normalisation scaling factor
   double SF(0.), comb(0.);
   char sname[200];
 
@@ -971,7 +1549,7 @@ void anaBmm::effTable(TFile *f, const char *tag) {
     SF = fLumiD[0]/fLumiS[normSgIndex];
     sprintf(sname, "s%i", normSgIndex);
   
-  } else if (!strcmp(tag, "mynbg")) {
+  } else if (!strcmp(tag, "mynmc")) {
    
     SF = fLumiD[0]/fLumiM[normBgIndex];
     sprintf(sname, "m%i", normBgIndex);
@@ -979,210 +1557,17 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   } else {
     
     SF = 1; comb = 1;
-    
-    TH1 *sumER1 = sumHistMC("ER1", 2, tag);  
-    h = (TH1D*)sumER1;
-    sprintf(sname, "%s", tag);
   }
 
-  //  SF = 1.;
-
-
-//   double nchain = h->GetBinContent(h->FindBin(0.1));
-//   OUT  << Form("\\vdef{which:%s}     {\\ensuremath{{%s    } } }", tag, sname) << endl;
-//   OUT  << Form("\\vdef{nchain:%s}    {\\ensuremath{{%5.1f } } }", tag, nchain) << endl;
-
-//   // -- kinematic cuts
-//   n = h->GetBinContent(h->FindBin(1.1));
-//   OUT  << Form("\\vdef{cutKin:%s}    {\\ensuremath{{%5.1f } } }", tag, SF*n) << endl;
-//   OUT  << Form("\\vdef{effKin:%s}    {\\ensuremath{{%4.3f } } }", tag, n/nchain) << endl;
-//   OUT  << Form("\\vdef{effKinE:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nchain))) << endl;
-//   double nkin = n; 
-
-//   // -- L1
-//   n = h->GetBinContent(h->FindBin(101.1));
-//   OUT  << Form("\\vdef{cutL1:%s}    {\\ensuremath{{%5.1f } } }", tag, SF*n) << endl;
-//   OUT  << Form("\\vdef{effL1:%s}    {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-//   OUT  << Form("\\vdef{effL1E:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
-//   double nl1 = n;
-
-//   // -- PV and two signal tracks
-//   n = h->GetBinContent(h->FindBin(203.1));
-//   OUT  << Form("\\vdef{cutJunk:%s}    {\\ensuremath{{%5.1f } } }", tag, SF*n) << endl;
-//   OUT  << Form("\\vdef{effJunk:%s}    {\\ensuremath{{%4.3f } } }", tag, n/nl1) << endl;
-//   OUT  << Form("\\vdef{effJunkE:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nl1))) << endl;
-//   OUT  << Form("\\vdef{effcJunk:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-//   OUT  << Form("\\vdef{effcJunkE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nkin))) << endl;
-
-//   // -- HLT
-//   n = h->GetBinContent(h->FindBin(305.1));
-//   OUT  << Form("\\vdef{cutHLT:%s}    {\\ensuremath{{%5.1f } } }", tag, SF*n) << endl;
-//   OUT  << Form("\\vdef{effHLT:%s}    {\\ensuremath{{%4.3f } } }", tag, n/nl1) << endl;
-//   OUT  << Form("\\vdef{effHLTE:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nl1))) << endl;
-
-//   if (strstr(tag, "bg")) {
-//     OUT  << Form("\\vdef{effcHLT:%s} {\\ensuremath{{%4.3E } } }", tag, n/nkin) << endl;
-//     OUT  << Form("\\vdef{effcHLTE:%s}{\\ensuremath{{%4.3E } } }", tag, dEff(int(n),int(nkin))) << endl;
-//   } else {
-//     OUT  << Form("\\vdef{effcHLT:%s} {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-//     OUT  << Form("\\vdef{effcHLTE:%s}{\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nkin))) << endl;
-//   }
-//   double nhlt = n;
-
-
-//   // -- Tracking cuts
-//   double nt = h->GetBinContent(h->FindBin(420.1));
-//   n  = h->GetBinContent(h->FindBin(421.1));
-//   OUT  << Form("\\vdef{cutL0PT:%s}     {\\ensuremath{{%5.1f } } }", tag, SF*n) << endl;
-//   if (strstr(tag, "bg")) {
-//     OUT  << Form("\\vdef{effL0PT:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nt) << endl;
-//     OUT  << Form("\\vdef{effL0PTE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nt))) << endl;
-//   } else {
-//     OUT  << Form("\\vdef{effL0PT:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nt) << endl;
-//     OUT  << Form("\\vdef{effL0PTE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nt))) << endl;
-//   }
-
-//   n  = h->GetBinContent(h->FindBin(422.1));
-//   OUT  << Form("\\vdef{cutL0ETA:%s}     {\\ensuremath{{%5.1f } } }", tag, SF*n) << endl;
-//   if (strstr(tag, "bg")) {
-//     OUT  << Form("\\vdef{effL0ETA:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nt) << endl;
-//     OUT  << Form("\\vdef{effL0ETAE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nt))) << endl;
-//   } else {
-//     OUT  << Form("\\vdef{effL0ETA:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nt) << endl;
-//     OUT  << Form("\\vdef{effL0ETAE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nt))) << endl;
-//   }
-
-//   n  = h->GetBinContent(h->FindBin(423.1));
-//   OUT  << Form("\\vdef{cutL0TIP:%s}     {\\ensuremath{{%5.1f } } }", tag, SF*n) << endl;
-//   if (strstr(tag, "bg")) {
-//     OUT  << Form("\\vdef{effL0TIP:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nt) << endl;
-//     OUT  << Form("\\vdef{effL0TIPE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nt))) << endl;
-//   } else {
-//     OUT  << Form("\\vdef{effL0TIP:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nt) << endl;
-//     OUT  << Form("\\vdef{effL0TIPE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nt))) << endl;
-//   }
-
-//   n  = h->GetBinContent(h->FindBin(431.1));
-//   OUT  << Form("\\vdef{cutL1PT:%s}     {\\ensuremath{{%5.1f } } }", tag, SF*n) << endl;
-//   if (strstr(tag, "bg")) {
-//     OUT  << Form("\\vdef{effL1PT:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nt) << endl;
-//     OUT  << Form("\\vdef{effL1PTE:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nt))) << endl;
-//   } else {
-//     OUT  << Form("\\vdef{effL1PT:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nt) << endl;
-//     OUT  << Form("\\vdef{effL1PTE:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nt))) << endl;
-//   }
-
-//   n  = h->GetBinContent(h->FindBin(432.1));
-//   OUT  << Form("\\vdef{cutL1ETA:%s}     {\\ensuremath{{%5.1f } } }", tag, SF*n) << endl;
-//   if (strstr(tag, "bg")) {
-//     OUT  << Form("\\vdef{effL1ETA:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nt) << endl;
-//     OUT  << Form("\\vdef{effL1ETAE:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nt))) << endl;
-//   } else {
-//     OUT  << Form("\\vdef{effL1ETA:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nt) << endl;
-//     OUT  << Form("\\vdef{effL1ETAE:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nt))) << endl;
-//   }
-
-//   n  = h->GetBinContent(h->FindBin(433.1));
-//   OUT  << Form("\\vdef{cutL1TIP:%s}     {\\ensuremath{{%5.1f } } }", tag, SF*n) << endl;
-//   if (strstr(tag, "bg")) {
-//     OUT  << Form("\\vdef{effL1TIP:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nt) << endl;
-//     OUT  << Form("\\vdef{effL1TIPE:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nt))) << endl;
-//   } else {
-//     OUT  << Form("\\vdef{effL1TIP:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nt) << endl;
-//     OUT  << Form("\\vdef{effL1TIPE:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nt))) << endl;
-//   }
-
-//   n  = h->GetBinContent(h->FindBin(407.1));
-//   OUT  << Form("\\vdef{cutTRK:%s}     {\\ensuremath{{%5.1f } } }", tag, SF*n) << endl;
-//   if (strstr(tag, "bg")) {
-//     OUT  << Form("\\vdef{effTRK:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nhlt) << endl;
-//     OUT  << Form("\\vdef{effTRKE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nhlt))) << endl;
-//     OUT  << Form("\\vdef{effcTRK:%s}  {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-//     OUT  << Form("\\vdef{effcTRKE:%s} {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nkin))) << endl;
-//   } else {
-//     OUT  << Form("\\vdef{effTRK:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nhlt) << endl;
-//     OUT  << Form("\\vdef{effTRKE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nhlt))) << endl;
-//     OUT  << Form("\\vdef{effcTRK:%s}  {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-//     OUT  << Form("\\vdef{effcTRKE:%s} {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nkin))) << endl;
-//   }
-//   nt = n; // nt now contains nevt with goodtt
-
-//   // -- PID cuts
-//   n  = h->GetBinContent(h->FindBin(509.1));
-//   OUT  << Form("\\vdef{cutPID:%s}      {\\ensuremath{{%5.1f } } }", tag, SF*n) << endl;
-//   if (strstr(tag, "bg")) {
-//     OUT  << Form("\\vdef{effPID:%s}    {\\ensuremath{{%4.3f } } }", tag, n/nt) << endl;
-//     OUT  << Form("\\vdef{effPIDE:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nt))) << endl;
-//     OUT  << Form("\\vdef{effcPID:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-//     OUT  << Form("\\vdef{effcPIDE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nkin))) << endl;
-//   } else {
-//     OUT  << Form("\\vdef{effPID:%s}    {\\ensuremath{{%4.3f } } }", tag, n/nt) << endl;
-//     OUT  << Form("\\vdef{effPIDE:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nt))) << endl;
-//     OUT  << Form("\\vdef{effcPID:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-//     OUT  << Form("\\vdef{effcPIDE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n),int(nkin))) << endl;
-//   }
-
-//   // -- HLT selection
-//   double normc   = h->GetBinContent(h->FindBin(330.1));
-//   double norm1   = h->GetBinContent(h->FindBin(330.1));
-//   OUT  << Form("\\vdef{nH0:%s}      {\\ensuremath{{%5.1f } } }", tag, normc) << endl;
-//   n  = h->GetBinContent(h->FindBin(331.1));
-//   OUT  << Form("\\vdef{eHpt:%s}     {\\ensuremath{{%4.3f } } }", tag, n/norm1) << endl;
-//   OUT  << Form("\\vdef{eHptE:%s}    {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm1))) << endl;
-//   OUT  << Form("\\vdef{cHpt:%s}     {\\ensuremath{{%4.3f } } }", tag, n/normc) << endl;
-//   OUT  << Form("\\vdef{cHptE:%s}    {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(normc))) << endl;
-
-//   norm1 = n;
-//   n  = h->GetBinContent(h->FindBin(332.1));
-//   OUT  << Form("\\vdef{eHlrap:%s}     {\\ensuremath{{%4.3f } } }", tag, n/norm1) << endl;
-//   OUT  << Form("\\vdef{eHlrapE:%s}    {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm1))) << endl;
-//   OUT  << Form("\\vdef{cHlrap:%s}     {\\ensuremath{{%4.3f } } }", tag, n/normc) << endl;
-//   OUT  << Form("\\vdef{cHlrapE:%s}    {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(normc))) << endl;
-
-//   norm1 = n;
-//   n  = h->GetBinContent(h->FindBin(333.1));
-//   OUT  << Form("\\vdef{eHqq:%s}     {\\ensuremath{{%4.3f } } }", tag, n/norm1) << endl;
-//   OUT  << Form("\\vdef{eHqqE:%s}    {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm1))) << endl;
-//   OUT  << Form("\\vdef{cHqq:%s}     {\\ensuremath{{%4.3f } } }", tag, n/normc) << endl;
-//   OUT  << Form("\\vdef{cHqqE:%s}    {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(normc))) << endl;
-
-//   norm1 = n;
-//   n  = h->GetBinContent(h->FindBin(334.1));
-//   OUT  << Form("\\vdef{eHtip:%s}     {\\ensuremath{{%4.3f } } }", tag, n/norm1) << endl;
-//   OUT  << Form("\\vdef{eHtipE:%s}    {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm1))) << endl;
-//   OUT  << Form("\\vdef{cHtip:%s}     {\\ensuremath{{%4.3f } } }", tag, n/normc) << endl;
-//   OUT  << Form("\\vdef{cHtipE:%s}    {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(normc))) << endl;
-
-//   norm1 = n;
-//   n  = h->GetBinContent(h->FindBin(335.1));
-//   OUT  << Form("\\vdef{eHchi2:%s}     {\\ensuremath{{%4.3f } } }", tag, n/norm1) << endl;
-//   OUT  << Form("\\vdef{eHchi2E:%s}    {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm1))) << endl;
-//   OUT  << Form("\\vdef{cHchi2:%s}     {\\ensuremath{{%4.3f } } }", tag, n/normc) << endl;
-//   OUT  << Form("\\vdef{cHchi2E:%s}    {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(normc))) << endl;
-
-//   norm1 = n;
-//   n  = h->GetBinContent(h->FindBin(336.1));
-//   OUT  << Form("\\vdef{eHl3d:%s}     {\\ensuremath{{%4.3f } } }", tag, n/norm1) << endl;
-//   OUT  << Form("\\vdef{eHl3dE:%s}    {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm1))) << endl;
-//   OUT  << Form("\\vdef{cHl3d:%s}     {\\ensuremath{{%4.3f } } }", tag, n/normc) << endl;
-//   OUT  << Form("\\vdef{cHl3dE:%s}    {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(normc))) << endl;
-
-//   norm1 = n;
-//   n  = h->GetBinContent(h->FindBin(337.1));
-//   OUT  << Form("\\vdef{eHm:%s}     {\\ensuremath{{%4.3f } } }", tag, n/norm1) << endl;
-//   OUT  << Form("\\vdef{eHmE:%s}    {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm1))) << endl;
-//   OUT  << Form("\\vdef{cHm:%s}     {\\ensuremath{{%4.3f } } }", tag, n/normc) << endl;
-//   OUT  << Form("\\vdef{cHmE:%s}    {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(normc))) << endl;
-
-
-
-
-
-  // ***********************************************************************************************
+  
   // -- Analysis Efficiency
-  // ***********************************************************************************************
+  // ----------------------
 
-  h = (TH1D*)f->Get("AR1");
+  ofstream OUT(fNumbersFileName, ios::app);
+  OUT << "% ----------------------------------------------------------------------" << endl;
+  OUT << "% -- Efficiency" << endl;
+
+  TH1D *h = (TH1D*)f->Get("AR1");
 
   // -- rare/combined backgrounds 
   if (comb) {
@@ -1191,282 +1576,225 @@ void anaBmm::effTable(TFile *f, const char *tag) {
     h = (TH1D*)sumAR1;
   }
   
-  double norm  = h->GetBinContent(h->FindBin(0.1));
-  norm  = h->GetBinContent(h->FindBin(1.1));  // ******** FIXME (old files) *********
+  double n     = h->GetBinContent(h->FindBin(0.1));
+  double norm  = h->GetBinContent(h->FindBin(1.1));  // FIXME: Should be Bin(0.1) but old files have empty Bin(0.1)
   double nkin  = h->GetBinContent(h->FindBin(1.1));
   double nexp  = SF*norm;
 
   cout << " #expected events [" << fLumiD[0] << "/fb]: " << SF << " x " << norm 
        << " = " << Form("%5.1f",SF*norm) << endl;
 
-  OUT  << Form("\\vdef{nA0:%s}      {\\ensuremath{{%5.1f } } }", tag, SF*norm) << endl;
+
+  // -- analysis efficiencies
+  // ------------------------
+  // -- exp. events, from (1.1)
+  n  = h->GetBinContent(h->FindBin(1.1));
+
+  double nevt  = SF*norm;
+  double enorm = n/norm;
+  double dnorm = dEff(int(n), int(norm));
+  double ekin  = n/nkin;
+  double dkin  = dEff(int(n), int(nkin));
+
+  nevt  = SF*norm;
+  OUT << Form("%s", (formatTex(nevt, "nA0" , tag)).Data()) << endl;
 
   // -- generator kinematics
   // ------------------------
   // -- exp. events, from (1.1)
   n  = h->GetBinContent(h->FindBin(1.1));
 
-  if (SF*n < 1.e4) {
-    OUT  << Form("\\vdef{nAkin:%s}    {\\ensuremath{{%4.1f } } }", tag, SF*n) << endl;
-  } else if (SF*n < 1.e10){
-    OUT  << Form("\\vdef{nAkin:%s}   {\\ensuremath{{%s } } }", tag, (texForm(SF*n)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nAkin:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(SF*n)).Data()) << endl;
-  }
+  nevt  = SF*n;
+  enorm = n/norm;
+  dnorm = dEff(int(n), int(norm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-  // -- eff / norm
-  OUT  << Form("\\vdef{eAkin:%s}    {\\ensuremath{{%4.3f } } }", tag, n/norm) << endl;
-  OUT  << Form("\\vdef{eAkinE:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm))) << endl;
+  OUT << Form("%s", (formatTex(nevt,  "nAkin"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eAkin"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eAkinE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cAkin"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cAkinE" , tag)).Data()) << endl;
 
-  // -- eff / nkin
-  OUT  << Form("\\vdef{cAkin:%s}    {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-  OUT  << Form("\\vdef{cAkinE:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
 
   // -- L1 trigger
   // --------------
   // -- exp. events, from (11.1)
   n  = h->GetBinContent(h->FindBin(11.1));
 
-  if (SF*n < 1.e4) {
-    OUT  << Form("\\vdef{nAL1:%s}    {\\ensuremath{{%4.1f } } }", tag, SF*n) << endl;
-  } else if (SF*n < 1.e10) {
-    OUT  << Form("\\vdef{nAL1:%s}   {\\ensuremath{{%s } } }", tag, (texForm(SF*n)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nAL1:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(SF*n)).Data()) << endl;
-  }
+  nevt  = SF*n;
+  enorm = n/norm;
+  dnorm = dEff(int(n), int(norm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-  // -- eff / norm
-  OUT  << Form("\\vdef{eAL1:%s}    {\\ensuremath{{%4.3f } } }", tag, n/norm) << endl;
+  OUT << Form("%s", (formatTex(nevt,  "nAL1"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eAL1"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eAL1E" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cAL1"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cAL1E" , tag)).Data()) << endl;
+
 
   // -- HLT trigger
   // ---------------
   // -- exp. events, from (21.1)
   n  = h->GetBinContent(h->FindBin(21.1));
 
-  if (SF*n < 1.e4) {
-    OUT  << Form("\\vdef{nAHLT:%s}   {\\ensuremath{{%4.1f } } }", tag, SF*n) << endl;
-  } else if (SF*n < 1.e10) {
-    OUT  << Form("\\vdef{nAHLT:%s}   {\\ensuremath{{%s } } }", tag, (texForm(SF*n)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nAHLT:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(SF*n)).Data()) << endl;
-  }
+  nevt  = SF*n;
+  enorm = n/norm;
+  dnorm = dEff(int(n), int(norm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-  // -- eff / norm
-  if (n/norm < 1.e-2 && n/norm) {
-    OUT  << Form("\\vdef{eAHLT:%s}   {\\ensuremath{{%s } } }", tag, (texForm(n/norm)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{eAHLT:%s}   {\\ensuremath{{%4.3f } } }", tag, n/norm) << endl;
-  }
-  OUT  << Form("\\vdef{eAHLTE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm))) << endl;
+  OUT << Form("%s", (formatTex(nevt,  "nAHLT"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eAHLT"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eAHLTE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cAHLT"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cAHLTE" , tag)).Data()) << endl;
 
-  // -- eff / nkin
-  OUT  << Form("\\vdef{cAHLT:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-  OUT  << Form("\\vdef{cAHLTE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
-  OUT  << Form("\\vdef{eAL1E:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm))) << endl;
-
-  // -- eff / nkin
-  OUT  << Form("\\vdef{cAL1:%s}    {\\ensuremath{{%4.3f } } }", tag, SF*n/nkin) << endl;
-  OUT  << Form("\\vdef{cAL1E:%s}   {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
 
   // -- Good event (rec. cand. & PV)
   // -------------------------------
   // -- exp. events, from (51.1)
   n  = h->GetBinContent(h->FindBin(51.1));
 
-  if (SF*n < 1.e4) {
-    OUT  << Form("\\vdef{nABX:%s}   {\\ensuremath{{%4.1f } } }", tag, SF*n) << endl;
-  } else if (SF*n < 1.e10) {
-    OUT  << Form("\\vdef{nABX:%s}   {\\ensuremath{{%s } } }", tag, (texForm(SF*n)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nABX:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(SF*n)).Data()) << endl;
-  }
+  nevt  = SF*n;
+  enorm = n/norm;
+  dnorm = dEff(int(n), int(norm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-  // -- eff / norm
-  if (n/norm < 1.e-2 && n/norm) {
-    OUT  << Form("\\vdef{eABX:%s}   {\\ensuremath{{%s } } }", tag, (texForm(n/norm)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{eABX:%s}   {\\ensuremath{{%4.3f } } }", tag, n/norm) << endl;
-  }
-  OUT  << Form("\\vdef{eABXE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm))) << endl;
+  OUT << Form("%s", (formatTex(nevt,  "nABX"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eABX"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eABXE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cABX"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cABXE" , tag)).Data()) << endl;
 
-  // -- eff / nkin
-  OUT  << Form("\\vdef{cABX:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-  OUT  << Form("\\vdef{cABXE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
 
   // -- Lepton pT
   // -------------
   // -- exp. events, from (100.1)
   n  = h->GetBinContent(h->FindBin(100.1));
 
-  if (SF*n < 1.e4) {
-    OUT  << Form("\\vdef{nALPT:%s}   {\\ensuremath{{%4.1f } } }", tag, SF*n) << endl;
-  } else if (SF*n < 1.e10) {
-    OUT  << Form("\\vdef{nALPT:%s}   {\\ensuremath{{%s } } }", tag, (texForm(SF*n)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nALPT:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(SF*n)).Data()) << endl;
-  }
+  nevt  = SF*n;
+  enorm = n/norm;
+  dnorm = dEff(int(n), int(norm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-  // -- eff / norm
-  if (n/norm < 1.e-2 && n/norm) {
-    OUT  << Form("\\vdef{eALPT:%s}   {\\ensuremath{{%s } } }", tag, (texForm(n/norm)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{eALPT:%s}   {\\ensuremath{{%4.3f } } }", tag, n/norm) << endl;
-  }
-  OUT  << Form("\\vdef{eALPTE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm))) << endl;
+  OUT << Form("%s", (formatTex(nevt,  "nALPT"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eALPT"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eALPTE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cALPT"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cALPTE" , tag)).Data()) << endl;
 
-  // -- eff / nkin
-  OUT  << Form("\\vdef{cALPT:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-  OUT  << Form("\\vdef{cALPTE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
 
   // -- Delta R(mm)
   // ---------------
   // -- exp. events, from (101.1)
   n  = h->GetBinContent(h->FindBin(101.1));
 
-  if (SF*n < 1.e4) {
-    OUT  << Form("\\vdef{nARmm:%s}   {\\ensuremath{{%4.1f } } }", tag, SF*n) << endl;
-  } else if (SF*n < 1.e10) {
-    OUT  << Form("\\vdef{nARmm:%s}   {\\ensuremath{{%s } } }", tag, (texForm(SF*n)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nARmm:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(SF*n)).Data()) << endl;
-  }
+  nevt  = SF*n;
+  enorm = n/norm;
+  dnorm = dEff(int(n), int(norm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-  // -- eff / norm
-  if (n/norm < 1.e-2 && n/norm) {
-    OUT  << Form("\\vdef{eARmm:%s}   {\\ensuremath{{%s } } }", tag, (texForm(n/norm)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{eARmm:%s}   {\\ensuremath{{%4.3f } } }", tag, n/norm) << endl;
-  }
-  OUT  << Form("\\vdef{eARmmE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm))) << endl;
+  OUT << Form("%s", (formatTex(nevt,  "nARmm"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eARmm"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eARmmE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cARmm"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cARmmE" , tag)).Data()) << endl;
 
-  // -- eff / nkin
-  OUT  << Form("\\vdef{cARmmT:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-  OUT  << Form("\\vdef{cARmmE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
 
   // -- ???? B-candidate:  mass ????
   // --------------------------------
   // -- exp. events, from (110.1)
   n  = h->GetBinContent(h->FindBin(110.1));
 
-  if (SF*n < 1.e4) {
-    OUT  << Form("\\vdef{nABmass:%s}   {\\ensuremath{{%4.1f } } }", tag, SF*n) << endl;
-  } else if (SF*n < 1.e10) {
-    OUT  << Form("\\vdef{nABmass:%s}   {\\ensuremath{{%s } } }", tag, (texForm(SF*n)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nABmass:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(SF*n)).Data()) << endl;
-  }
+  nevt  = SF*n;
+  enorm = n/norm;
+  dnorm = dEff(int(n), int(norm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-  // -- eff / norm
-  if (n/norm < 1.e-2 && n/norm) {
-    OUT  << Form("\\vdef{eABmass:%s}   {\\ensuremath{{%s } } }", tag, (texForm(n/norm)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{eABmass:%s}   {\\ensuremath{{%4.3f } } }", tag, n/norm) << endl;
-  }
-  OUT  << Form("\\vdef{eABmassE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm))) << endl;
+  OUT << Form("%s", (formatTex(nevt,  "nABmass"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eABmass"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eABmassE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cABmass"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cABmassE" , tag)).Data()) << endl;
 
-  // -- eff / nkin
-  OUT  << Form("\\vdef{cABmass:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-  OUT  << Form("\\vdef{cABmassE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
 
   // -- B-candidate: pT
   // -------------------
   // -- exp. events, from (120.1)
   n  = h->GetBinContent(h->FindBin(120.1));
 
-  if (SF*n < 1.e4) {
-    OUT  << Form("\\vdef{nABpT:%s}   {\\ensuremath{{%4.1f } } }", tag, SF*n) << endl;
-  } else if (SF*n < 1.e10) {
-    OUT  << Form("\\vdef{nABpT:%s}   {\\ensuremath{{%s } } }", tag, (texForm(SF*n)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nABpT:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(SF*n)).Data()) << endl;
-  }
+  nevt  = SF*n;
+  enorm = n/norm;
+  dnorm = dEff(int(n), int(norm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-  // -- eff / norm
-  if (n/norm < 1.e-2 && n/norm) {
-    OUT  << Form("\\vdef{eABpT:%s}   {\\ensuremath{{%s } } }", tag, (texForm(n/norm)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{eABpT:%s}   {\\ensuremath{{%4.3f } } }", tag, n/norm) << endl;
-  }
-  OUT  << Form("\\vdef{eABpTE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm))) << endl;
+  OUT << Form("%s", (formatTex(nevt,  "nABpT"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eABpT"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eABpTE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cABpT"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cABpTE" , tag)).Data()) << endl;
 
-  // -- eff / nkin
-  OUT  << Form("\\vdef{cABpT:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-  OUT  << Form("\\vdef{cABpTE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
 
   // -- B-candidate: eta
   // --------------------
   // -- exp. events, from (121.1)
   n  = h->GetBinContent(h->FindBin(121.1));
 
-  if (SF*n < 1.e4) {
-    OUT  << Form("\\vdef{nABeta:%s}   {\\ensuremath{{%4.1f } } }", tag, SF*n) << endl;
-  } else if (SF*n < 1.e10) {
-    OUT  << Form("\\vdef{nABeta:%s}   {\\ensuremath{{%s } } }", tag, (texForm(SF*n)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nABeta:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(SF*n)).Data()) << endl;
-  }
+  nevt  = SF*n;
+  enorm = n/norm;
+  dnorm = dEff(int(n), int(norm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-  // -- eff / norm
-  if (n/norm < 1.e-2 && n/norm) {
-    OUT  << Form("\\vdef{eABeta:%s}   {\\ensuremath{{%s } } }", tag, (texForm(n/norm)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{eABeta:%s}   {\\ensuremath{{%4.3f } } }", tag, n/norm) << endl;
-  }
-  OUT  << Form("\\vdef{eABetaE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm))) << endl;
+  OUT << Form("%s", (formatTex(nevt,  "nABeta"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eABeta"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eABetaE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cABeta"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cABetaE" , tag)).Data()) << endl;
 
-  // -- eff / nkin
-  OUT  << Form("\\vdef{cABeta:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-  OUT  << Form("\\vdef{cABetaE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
 
   // -- B-candidate: cos(alpha)
   // --------------------------
   // -- exp. events, from (122.1)
   n  = h->GetBinContent(h->FindBin(122.1));
 
-  if (SF*n < 1.e4) {
-    OUT  << Form("\\vdef{nABcos:%s}   {\\ensuremath{{%4.1f } } }", tag, SF*n) << endl;
-  } else if (SF*n < 1.e10) {
-    OUT  << Form("\\vdef{nABcos:%s}   {\\ensuremath{{%s } } }", tag, (texForm(SF*n)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nABcos:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(SF*n)).Data()) << endl;
-  }
+  nevt  = SF*n;
+  enorm = n/norm;
+  dnorm = dEff(int(n), int(norm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-  // -- eff / norm
-  if (n/norm < 1.e-2 && n/norm) {
-    OUT  << Form("\\vdef{eABcos:%s}   {\\ensuremath{{%s } } }", tag, (texForm(n/norm)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{eABcos:%s}   {\\ensuremath{{%4.3f } } }", tag, n/norm) << endl;
-  }
-  OUT  << Form("\\vdef{eABcosE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm))) << endl;
+  OUT << Form("%s", (formatTex(nevt,  "nABcos"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eABcos"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eABcosE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cABcos"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cABcosE" , tag)).Data()) << endl;
 
-  // -- eff / nkin
-  OUT  << Form("\\vdef{cABcos:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-  OUT  << Form("\\vdef{cABcosE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
 
   // -- B-candidate: Decay length significance
   // ------------------------------------------
   // -- exp. events, from (123.1)
   n  = h->GetBinContent(h->FindBin(123.1));
 
-  if (SF*n < 1.e4) {
-    OUT  << Form("\\vdef{nABlxy:%s}   {\\ensuremath{{%4.1f } } }", tag, SF*n) << endl;
-  } else if (SF*n < 1.e10) {
-    OUT  << Form("\\vdef{nABlxy:%s}   {\\ensuremath{{%s } } }", tag, (texForm(SF*n)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nABlxy:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(SF*n)).Data()) << endl;
-  }
+  nevt  = SF*n;
+  enorm = n/norm;
+  dnorm = dEff(int(n), int(norm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-  // -- eff / norm
-  if (n/norm < 1.e-2 && n/norm) {
-    OUT  << Form("\\vdef{eABlxy:%s}   {\\ensuremath{{%s } } }", tag, (texForm(n/norm)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{eABlxy:%s}   {\\ensuremath{{%4.3f } } }", tag, n/norm) << endl;
-  }
-  OUT  << Form("\\vdef{eABlxyE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm))) << endl;
-
-  // -- eff / nkin
-  OUT  << Form("\\vdef{cABlxy:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-  OUT  << Form("\\vdef{cABlxyE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
+  OUT << Form("%s", (formatTex(nevt,  "nABlxy"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eABlxy"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eABlxyE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cABlxy"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cABlxyE" , tag)).Data()) << endl;
 
   double fnorm = n;
   double eff = n/norm;
@@ -1476,44 +1804,35 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   // -- exp. events, from (124.1)
   n  = h->GetBinContent(h->FindBin(124.1));
 
-  if (SF*n < 1.e4) {
-    OUT  << Form("\\vdef{nABiso:%s}   {\\ensuremath{{%4.1f } } }", tag, SF*n) << endl;
-  } else if (SF*n < 1.e10) {
-    OUT  << Form("\\vdef{nABiso:%s}   {\\ensuremath{{%s } } }", tag, (texForm(SF*n)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nABiso:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(SF*n)).Data()) << endl;
-  }
+  nevt  = SF*n;
+  enorm = n/norm;
+  dnorm = dEff(int(n), int(norm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-  // -- eff / norm
-  OUT  << Form("\\vdef{eABiso:%s}   {\\ensuremath{{%4.3f } } }", tag, n/norm) << endl;
-  OUT  << Form("\\vdef{eABisoE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(norm))) << endl;
+  OUT << Form("%s", (formatTex(nevt,  "nABiso"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eABiso"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eABisoE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cABiso"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cABisoE" , tag)).Data()) << endl;
 
-  // -- eff / nkin
-  OUT  << Form("\\vdef{cABiso:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-  OUT  << Form("\\vdef{cABisoE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
 
   // -- B-candidate: Vertex quality (chi2)
   // --------------------------------------
   // -- exp. events, from (125.1)
   n  = h->GetBinContent(h->FindBin(125.1));
-  if (SF*n < 1.e4) {
-    OUT  << Form("\\vdef{nABchi2:%s}   {\\ensuremath{{%4.1f } } }", tag, SF*n) << endl;
-  } else if (SF*n < 1.e10) {
-    OUT  << Form("\\vdef{nABchi2:%s}   {\\ensuremath{{%s } } }", tag, (texForm(SF*n)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nABchi2:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(SF*n)).Data()) << endl;
-  }
 
-  // -- eff / norm
-  double myEff =  n/norm;
-  double dE = dEff(int(n), int(norm));
+  nevt  = SF*n;
+  enorm = n/norm;
+  dnorm = dEff(int(n), int(norm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-  OUT << Form("%s", (formatTex(myEff, "eABchi2", tag)).Data()) << endl;
-  OUT << Form("%s", (formatTex(dE, "eABchi2E", tag)).Data()) << endl;
- 
-  // -- eff / nkin
-  OUT  << Form("\\vdef{cABchi2:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-  OUT  << Form("\\vdef{cABchi2E:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
+  OUT << Form("%s", (formatTex(nevt,  "nABchi2"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eABchi2"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eABchi2E" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cABchi2"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cABchi2E" , tag)).Data()) << endl;
 
 
   // ===================================================================================
@@ -1530,6 +1849,12 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   // --------------------------------------------
 
   double pnorm = h->GetBinContent(h->FindBin(220.1));
+
+  if ( pnorm == 0. ) {
+
+    fillInTheRest(tag);
+    return;
+  }
  
   // -- Isolation cut efficiciency
   // ------------------------------
@@ -1537,26 +1862,17 @@ void anaBmm::effTable(TFile *f, const char *tag) {
 
   double eff1 = n/pnorm;
 
-  if ( pnorm ) {
+  nevt  = SF*n;
+  enorm = n/pnorm;
+  dnorm = dEff(int(n), int(pnorm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-    // -- eff / norm
-    OUT  << Form("\\vdef{eAfBiso:%s}   {\\ensuremath{{%4.3f } } }", tag, n/pnorm) << endl;
-    OUT  << Form("\\vdef{eAfBisoE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(pnorm))) << endl;
-
-    // -- eff / nkin
-    OUT  << Form("\\vdef{cAfBiso:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-    OUT  << Form("\\vdef{cAfBisoE:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
-  
-  } else {
-
-    // -- eff / norm
-    OUT  << Form("\\vdef{eAfBiso:%s}   {\\ensuremath{{- } } }", tag) << endl;
-    OUT  << Form("\\vdef{eAfBisoE:%s}  {\\ensuremath{{- } } }", tag) << endl;
-
-    // -- eff / nkin
-    OUT  << Form("\\vdef{cAfBiso:%s}   {\\ensuremath{{- } } }", tag) << endl;
-    OUT  << Form("\\vdef{cAfBisoE:%s}  {\\ensuremath{{- } } }", tag) << endl;
-  }
+  OUT << Form("%s", (formatTex(nevt,  "nAfBiso"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eAfBiso"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eAfBisoE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cAfBiso"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cAfBisoE" , tag)).Data()) << endl;
 
 
   // -- Vertex cut efficiciency
@@ -1565,26 +1881,17 @@ void anaBmm::effTable(TFile *f, const char *tag) {
 
   double eff2 = n/pnorm;
 
-  if ( pnorm ) {
+  nevt  = SF*n;
+  enorm = n/pnorm;
+  dnorm = dEff(int(n), int(pnorm));
+  ekin  = n/nkin;
+  dkin  = dEff(int(n), int(nkin));
 
-    // -- eff / norm
-    OUT  << Form("\\vdef{eAfBchi2:%s}   {\\ensuremath{{%4.3f } } }", tag, n/pnorm) << endl;
-    OUT  << Form("\\vdef{eAfBchi2E:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(pnorm))) << endl;
-
-    // -- eff / nkin
-    OUT  << Form("\\vdef{cAfBchi2:%s}   {\\ensuremath{{%4.3f } } }", tag, n/nkin) << endl;
-    OUT  << Form("\\vdef{cAfBchi2E:%s}  {\\ensuremath{{%4.3f } } }", tag, dEff(int(n), int(nkin))) << endl;
-  
-  } else {
-
-    // -- eff / norm
-    OUT  << Form("\\vdef{eAfBchi2:%s}   {\\ensuremath{{- } } }", tag) << endl;
-    OUT  << Form("\\vdef{eAfBchi2E:%s}  {\\ensuremath{{- } } }", tag) << endl;
-
-    // -- eff / nkin
-    OUT  << Form("\\vdef{cAfBchi2:%s}   {\\ensuremath{{- } } }", tag) << endl;
-    OUT  << Form("\\vdef{cAfBchi2E:%s}  {\\ensuremath{{- } } }", tag) << endl;
-  }
+  OUT << Form("%s", (formatTex(nevt,  "nAfBchi2"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enorm, "eAfBchi2"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnorm, "eAfBchi2E" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekin,  "cAfBchi2"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkin,  "cAfBchi2E" , tag)).Data()) << endl;
 
 
   // ===================================================================================
@@ -1593,97 +1900,66 @@ void anaBmm::effTable(TFile *f, const char *tag) {
 
   // -- fact. Isolation
   // -------------------
-  double nIsoFact      = SF*fnorm*eff1;
-  double nIsoFactE     = SF*TMath::Sqrt(fnorm)*eff1; 
+  double nfact   = SF*fnorm*eff1;
+  double nfactE  = SF*TMath::Sqrt(fnorm)*eff1;
+  double efact   = nfact/nexp;  // = eff*eff1 for single channel
+  double efactE  = (fEsgE0/fEsg0)*efact;
 
   if (comb) {
-    nIsoFact      = h->GetBinContent(h->FindBin(424.1));
-    nIsoFactE     = -9999; 
+
+    nfact      = h->GetBinContent(h->FindBin(424.1));
+    nfactE     = -9999; 
+    efact      = nfact/nexp;
+    efactE     = (fEsgE0/fEsg0)*efact;
   }
+ 
+  OUT << Form("%s", (formatTex(nfact,  "nTotEffIso"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nfactE, "nTotEffIsoE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(efact,  "eTotEffIso"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(efactE, "eTotEffIsoE" , tag)).Data()) << endl;
 
-  double eIsoFact  = nIsoFact/nexp;  // = eff*eff1 for single channel
-  double eIsoFactE = (fEsgE0/fEsg0)*eIsoFact;
-
-  OUT  << Form("\\vdef{nAfBiso:%s}   {\\ensuremath{{%4.1f } } }", tag, nIsoFact) << endl;
-  OUT  << Form("\\vdef{nAfBisoE:%s}  {\\ensuremath{{%5.1f} } }" , tag, nIsoFactE) << endl;
-
-  if (!strcmp(tag, "mysg")) {
-    OUT  << Form("\\vdef{eTotEffIso:%s}   {\\ensuremath{{%s } } }", tag, (texForm(eIsoFact)).Data()) << endl;
-  } else if (eIsoFact > 1.e-9) {
-    OUT  << Form("\\vdef{eTotEffIso:%s}   {\\ensuremath{{%s } } }", tag, (texForm(eIsoFact)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{eTotEffIso:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(eIsoFact)).Data()) << endl;
-  }
-  OUT  << Form("\\vdef{eTotEffIsoE:%s}   {\\ensuremath{{%4.3f } } }", tag, eIsoFactE) << endl;
 
   // -- fact. Vertex 
   // ---------------- 
-  double nChiFact      = SF*fnorm*eff2; 
-  double nChiFactE     = SF*TMath::Sqrt(fnorm)*eff2;
+  nfact   = SF*fnorm*eff2;
+  nfactE  = SF*TMath::Sqrt(fnorm)*eff2;
+  efact   = nfact/nexp;  // = eff*eff2 for single channel
+  efactE  = (fEsgE0/fEsg0)*efact;
 
   if (comb) {
 
-    nChiFact      = h->GetBinContent(h->FindBin(426.1)); 
-    nChiFactE     = -9999; 
+    nfact      = h->GetBinContent(h->FindBin(426.1));
+    nfactE     = -9999; 
+    efact      = nfact/nexp;
+    efactE     = (fEsgE0/fEsg0)*efact;
   }
-
-  double eChiFact     = nChiFact/nexp;  // = eff*eff1 for single channel
-  double eChiFactE    = (fEsgE0/fEsg0)*eChiFact;
-
-  OUT  << Form("\\vdef{nAfBchi2:%s}   {\\ensuremath{{%4.1f } } }", tag, nChiFact) << endl;
-  OUT  << Form("\\vdef{nAfBchi2E:%s}  {\\ensuremath{{%5.1f} } }", tag, nChiFactE) << endl;
-
-  if (!strcmp(tag, "mysg")) {
-    OUT  << Form("\\vdef{eTotEffChi2:%s}  {\\ensuremath{{%s } } }", tag, (texForm(eChiFact)).Data()) << endl;
-  } else if (eChiFact > 1.e-9) {
-    OUT  << Form("\\vdef{eTotEffChi2:%s}  {\\ensuremath{{%s } } }", tag, (texForm(eChiFact)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{eTotEffChi2:%s}  {\\ensuremath{{%s } } }", tag, (texForm2(eChiFact)).Data()) << endl;
-  }
-  OUT  << Form("\\vdef{eTotEffChi2E:%s}   {\\ensuremath{{%4.3f } } }", tag, eChiFactE) << endl;
+ 
+  OUT << Form("%s", (formatTex(nfact,  "nTotEffChi2"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nfactE, "nTotEffChi2E" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(efact,  "eTotEffChi2"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(efactE, "eTotEffChi2E" , tag)).Data()) << endl;
 
 
   // -- all Cuts
   // ------------
-  double nAllCutsFact  = SF*fnorm*eff1*eff2;       
-  double nAllCutsFactE = SF*TMath::Sqrt(fnorm)*eff1*eff2;
+  nfact   = SF*fnorm*eff1*eff2;
+  nfactE  = SF*TMath::Sqrt(fnorm)*eff1*eff2;
+  efact   = nfact/nexp;  // = eff*eff2 for single channel
+  efactE  = (fEsgE0/fEsg0)*efact;
 
   if (comb) {
 
-    nAllCutsFact  = h->GetBinContent(h->FindBin(428.1));
-    nAllCutsFactE = -9999; 
+    nfact      = h->GetBinContent(h->FindBin(428.1));
+    nfactE     = -9999; 
+    efact      = nfact/nexp;
+    efactE     = (fEsgE0/fEsg0)*efact;
   }
+ 
+  OUT << Form("%s", (formatTex(nfact,  "nAllCutsFact"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nfactE, "nAllCutsFactE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(efact,  "eAllCutsFact"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(efactE, "eAllCutsFactE" , tag)).Data()) << endl;
 
-  if (nAllCutsFact < 1.e4) {
-    OUT  << Form("\\vdef{nAllCutsFact:%s}   {\\ensuremath{{%4.1f } } }", tag, nAllCutsFact) << endl;
-  } else if (nAllCutsFact < 1.e10) {
-    OUT  << Form("\\vdef{nAllCutsFact:%s}   {\\ensuremath{{%s } } }", tag, (texForm(nAllCutsFact)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nAllCutsFact:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(nAllCutsFact)).Data()) << endl;
-  }
-  OUT  << Form("\\vdef{nAllCutsFactE:%s}  {\\ensuremath{{%5.1f} } }", tag, nAllCutsFactE) << endl;
-
-
-  double eAllCutsFact  = nAllCutsFact/nexp;   // = eff*eff1*eff2 for single channel  
-  double eAllCutsFactE = (fEsgE0/fEsg0)*eAllCutsFact;
-
-  if (!strcmp(tag, "mysg")) {
-    OUT  << Form("\\vdef{eAllCutsFact:%s}  {\\ensuremath{{%4.3f } } }", tag, eAllCutsFact) << endl;
-  } else if (eAllCutsFact > 1.e-9 ) {
-    OUT  << Form("\\vdef{eAllCutsFact:%s}  {\\ensuremath{{%s } } }", tag, (texForm(eAllCutsFact)).Data()) << endl;
-  } else if (eAllCutsFact ) {
-    OUT  << Form("\\vdef{eAllCutsFact:%s}  {\\ensuremath{{%s } } }", tag, (texForm2(eAllCutsFact)).Data()) << endl;
-  } else  {
-    OUT  << Form("\\vdef{eAllCutsFact:%s}  {\\ensuremath{{%4.3f } } }", tag, eAllCutsFact) << endl;
-  }
-
-  if (!strcmp(tag, "mysg")) {
-    OUT  << Form("\\vdef{eAllCutsFactE:%s} {\\ensuremath{{%4.3f } } }", tag, eAllCutsFactE) << endl;
-  } else if (eAllCutsFactE > 1.e-9) {
-    OUT  << Form("\\vdef{eAllCutsFactE:%s}  {\\ensuremath{{%s } } }", tag, (texForm(eAllCutsFactE).Data())) << endl;
-  } else {
-    OUT  << Form("\\vdef{eAllCutsFactE:%s}  {\\ensuremath{{%s } } }", tag, (texForm2(eAllCutsFactE).Data())) << endl;
-  }
 
   // ===================================================================================
   // -- Mass reduction in 100 MeV window
@@ -1696,44 +1972,32 @@ void anaBmm::effTable(TFile *f, const char *tag) {
 
   double massRed   = massReduction("c330", tag);
 
-  double nMassAllCutsFact  = massRed*nAllCutsFact;
-  double nMassAllCutsFactE = 1.6*massRed*nAllCutsFactE;     // XXXX FIXME XXXX
+  // -- mass window
+  // --------------
 
-  double eMassAllCutsFact  = nMassAllCutsFact/nexp; 
-  double eMassAllCutsFactE = (fEsgE0/fEsg0)*eMassAllCutsFact; // XXXX FIXME XXXX
+  double nmass   = massRed*nfact;
+  double nmassE  = 1.6*massRed*nfactE;   // XXXX FIXME XXXX
+  double emass   = nmass/nexp;
+  double emassE  = (fEsgE0/fEsg0)*emass; // XXXX FIXME XXXX
 
+  
   if (comb) {
 
     massRed = massRed5; 
-     
-    nMassAllCutsFact = massRed*nAllCutsFact;
-    nMassAllCutsFactE = -9999;
 
-    eMassAllCutsFact = eAllCutsFact*nMassAllCutsFact/nAllCutsFact;
-    eMassAllCutsFactE = -9999; 
+    nmass   = massRed*nfact;
+    nmassE  = -9999;                // XXXX FIXME XXXX
+    emass   = efact*nmass/nfact;
+    emassE  = (fEsgE0/fEsg0)*emass; // XXXX FIXME XXXX
   }
   
+  OUT << Form("%s", (formatTex(nmass,  "nMassAllCutsFact"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nmassE, "nMassAllCutsFactE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(emass,  "eMassAllCutsFact"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(emassE, "eMassAllCutsFactE" , tag)).Data()) << endl;
 
   OUT  << Form("\\vdef{massReduction:%s}  {\\ensuremath{{%3.2f} } }", tag, massRed) << endl;
 
-  if (nMassAllCutsFact < 1.e4) {
-    OUT  << Form("\\vdef{nMassAllCutsFact:%s}   {\\ensuremath{{%4.1f } } }", tag, nMassAllCutsFact) << endl;
-  } else if (nMassAllCutsFact < 1.e10) {
-    OUT  << Form("\\vdef{nMassAllCutsFact:%s}   {\\ensuremath{{%s } } }", tag, (texForm(nMassAllCutsFact)).Data()) << endl;
-  } else {
-    OUT  << Form("\\vdef{nMassAllCutsFact:%s}   {\\ensuremath{{%s } } }", tag, (texForm2(nMassAllCutsFact)).Data()) << endl;
-  }
-  OUT  << Form("\\vdef{nMassAllCutsFactE:%s} {\\ensuremath{{%5.1f} } }", tag, nMassAllCutsFactE) << endl;
-
-  if (!strcmp(tag, "mysg")) {
-    OUT  << Form("\\vdef{eMassAllCutsFact:%s} {\\ensuremath{{%4.3f } } }", tag, eMassAllCutsFact) << endl;
-  } else if (eMassAllCutsFact > 1.e-9) {
-    OUT  << Form("\\vdef{eMassAllCutsFact:%s}  {\\ensuremath{{%s } } }", tag, (texForm(eMassAllCutsFact).Data())) << endl;
-  } else {
-    OUT  << Form("\\vdef{eMassAllCutsFact:%s}  {\\ensuremath{{%s } } }", tag, (texForm2(eMassAllCutsFact).Data())) << endl;
-  }
-
-  OUT << Form("%s", (formatTex(eMassAllCutsFactE, "eMassAllCutsFactE", tag)).Data()) << endl;
 
   // ===================================================================================
   // -- Event reduction
@@ -1741,46 +2005,47 @@ void anaBmm::effTable(TFile *f, const char *tag) {
 
   if (!strcmp(tag, "mysg")) {
 
-    fNsg  = nMassAllCutsFact;
-    fNsgE = nMassAllCutsFactE;
+    fNsg  = nmass;
+    fNsgE = nmassE;
   }
 
   if (!strcmp(tag, "mymc")) {
 
-    fNbg  = nMassAllCutsFact;
-    fNbgE = nMassAllCutsFactE;
+    fNbg  = nmass;
+    fNbgE = nmassE;
   }
 
   if (!strcmp(tag, "mynsg")) {
 
-    fNsg_norm  = nMassAllCutsFact;
-    fNsgE_norm = nMassAllCutsFactE;
+    fNsg_norm  = nmass;
+    fNsgE_norm = nmassE;
   }
 
-  if (!strcmp(tag, "mynbg")) {
+  if (!strcmp(tag, "mynmc")) {
 
-    fNbg_norm  = nMassAllCutsFact;
-    fNbgE_norm = nMassAllCutsFactE;
+    fNbg_norm  = nmass;
+    fNbgE_norm = nmassE;
   }
 
   if (!strcmp(tag, "r0")) {
 
-    fNrbg  = nMassAllCutsFact;
-    fNrbgE = nMassAllCutsFactE;
+    fNrbg  = nmass;
+    fNrbgE = nmassE;
   }
 
 
   // ===================================================================================
   // -- Factorizing efficiency of all cuts
   // ===================================================================================
+
   if (!strcmp(tag, "mysg")) {
-    fEsg  = eMassAllCutsFact;
-    fEsgE = eMassAllCutsFactE;
+    fEsg  = emass;
+    fEsgE = emassE;
   }
 
   if (!strcmp(tag, "mynsg")) {
-    fEsg_norm  = eMassAllCutsFact;
-    fEsgE_norm = eMassAllCutsFactE;
+    fEsg_norm  = emass;
+    fEsgE_norm = emassE;
   }
 
 
@@ -1791,397 +2056,55 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   double n_cuts(0), n_fact(0);
   double e_iso(0.), e_vtx(0.);
 
-  if (comb) {
+  if (!strcmp(tag, "mysg") || !strcmp(tag, "mymc") || !strcmp(tag, "mynsg") || !strcmp(tag, "mynmc")   ) {
 
-    return;
-  }
-
-  for (int i= 1; i < 5; i++) {
+    for (int i= 1; i < 5; i++) {
 
     
-    h = (TH1D*)f->Get(Form("OR1_%i",i));
+      h = (TH1D*)f->Get(Form("OR1_%i",i));
 
-    n_cuts  = h->GetBinContent(h->FindBin(126.1));
-    // for bg:  n_fact  = massRed*e_iso*e_vtx*h->GetBinContent(h->FindBin(125.1)); ????
+      n_cuts  = h->GetBinContent(h->FindBin(126.1));
+      // for bg:  n_fact  = massRed*e_iso*e_vtx*h->GetBinContent(h->FindBin(125.1)); ????
 
-    if (h->GetBinContent(h->FindBin(220.1)) > 0) {
+      if (h->GetBinContent(h->FindBin(220.1)) > 0) {
     
-      e_iso   = h->GetBinContent(h->FindBin(224.1))/h->GetBinContent(h->FindBin(220.1));
-      e_vtx   = h->GetBinContent(h->FindBin(225.1))/h->GetBinContent(h->FindBin(220.1));
-      n_fact  = e_iso*e_vtx*h->GetBinContent(h->FindBin(210.1));
-      // for bg:  n_fact  = massRed*e_iso*e_vtx*h->GetBinContent(h->FindBin(123.1)); ????
+	e_iso   = h->GetBinContent(h->FindBin(224.1))/h->GetBinContent(h->FindBin(220.1));
+	e_vtx   = h->GetBinContent(h->FindBin(225.1))/h->GetBinContent(h->FindBin(220.1));
+	n_fact  = e_iso*e_vtx*h->GetBinContent(h->FindBin(210.1));
+	// for bg:  n_fact  = massRed*e_iso*e_vtx*h->GetBinContent(h->FindBin(123.1)); ????
     
-    } else {
+      } else {
       
-      e_iso = 0., e_vtx = 0.; n_fact = 0.;
+	e_iso = 0., e_vtx = 0.; n_fact = 0.;
 
-    }
+      }
 
-    OUT  << Form("\\vdef{tsel%i:%s}      {\\ensuremath{{%5.0f } } }"   , i, tag, n_cuts)        << endl;
+      nevt  = SF*n_cuts;
+      enorm = n_cuts/norm;
+      dnorm = dEff(int(n_cuts), int(norm));
 
-    if ( n_cuts && SF*n_cuts < 0.1 ) {
-      OUT  << Form("\\vdef{nsel%i:%s}      {\\ensuremath{{%s } } }", i, tag,(texForm(SF*n_cuts).Data())) << endl;
-    } else {
-      OUT  << Form("\\vdef{nsel%i:%s}      {\\ensuremath{{%5.2f } } }", i, tag, SF*n_cuts)     << endl;
-    }
+      OUT << Form("%s", (formatTex(n_cuts, Form("tsel%i",i),  tag)).Data()) << endl;
+      OUT << Form("%s", (formatTex(nevt,   Form("nsel%i",i),  tag)).Data()) << endl;
+      OUT << Form("%s", (formatTex(enorm,  Form("esel%i",i),  tag)).Data()) << endl;
+      OUT << Form("%s", (formatTex(dnorm,  Form("eselE%i",i), tag)).Data()) << endl;
 
-    if ( n_cuts && n_cuts/norm < 0.01) {
-      OUT  << Form("\\vdef{esel%i:%s}      {\\ensuremath{{%s } } }", i, tag, (texForm(n_cuts/norm).Data())) << endl;
-    } else {
-      OUT  << Form("\\vdef{esel%i:%s}      {\\ensuremath{{%5.3f } } }", i, tag, n_cuts/norm) << endl;
-    }
-    
+      nevt  = SF*n_fact;
+      enorm = n_fact/norm;
+      dnorm = dEff(int(n_fact), int(norm));
 
-    if ( n_fact && n_fact < 0.1) {      
-      OUT  << Form("\\vdef{tselFact%i:%s}    {\\ensuremath{{%s } } }"   , i, tag, (texForm(n_fact).Data())) << endl;
-    } else {
-      OUT  << Form("\\vdef{tselFact%i:%s}    {\\ensuremath{{%5.2f } } }"   , i, tag, n_fact)        << endl;
-    }
+      OUT << Form("%s", (formatTex(n_fact, Form("tselFact%i",i),  tag)).Data()) << endl;
+      OUT << Form("%s", (formatTex(nevt,   Form("nselFact%i",i),  tag)).Data()) << endl;
+      OUT << Form("%s", (formatTex(enorm,  Form("eselFact%i",i),  tag)).Data()) << endl;
+      OUT << Form("%s", (formatTex(dnorm,  Form("eselFactE%i",i), tag)).Data()) << endl;
 
-    if ( n_fact && SF*n_fact < 0.1) {
-      OUT  << Form("\\vdef{nselFact%i:%s}    {\\ensuremath{{%s } } }", i, tag, (texForm(SF*n_fact).Data())) << endl;
-    } else {
-      OUT  << Form("\\vdef{nselFact%i:%s}    {\\ensuremath{{%5.2f } } }", i, tag, SF*n_fact)     << endl;
-    }
-
-    if ( n_fact && n_fact/norm < 0.01) {    
-      OUT  << Form("\\vdef{eselFact%i:%s}   {\\ensuremath{{%s } } }", i, tag, (texForm(n_fact/norm).Data())) << endl;
-    } else {
-      OUT  << Form("\\vdef{eselFact%i:%s}      {\\ensuremath{{%5.3f } } }", i, tag, n_fact/norm) << endl;
     }
   }
 
+  OUT.close();
 }
 
- 
-// ----------------------------------------------------------------------
-void anaBmm::bgOverlay(const char *hist, const int npers) {
+// ---------------------------------------------------------------------------------------------
 
-  int EColor[]     = {   13,    2,    4,    108,  6,  107,   93,   1, 
-			 13,    2,    4,    108,  6,  107,   93,   1   }; 
-  
-  double min(9999.), max(0.), maxSoW(0.);
-  double fnorm_Ch, eff1_Ch, eff2_Ch;  
-
-  // -- signal
-  TH1D *hs = (TH1D*)fS[sgIndex]->Get(hist)->Clone();
-
-  if ( !strcmp(hist,"c530") ) {
-
-    channelEff(fS[sgIndex], fnorm_Ch, eff1_Ch, eff2_Ch);
-    hs->Scale((fLumiD[0]/fLumiS[sgIndex])*eff1_Ch*eff2_Ch);
-
-  } else {
-    
-    hs->Scale(fLumiD[0]/fLumiS[sgIndex]);
-  } 
-
-  setFilledHist(hs, kBlack, kYellow, 1001, 2);
-  setTitles(hs, "m_{#mu#mu} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
-
-  if (hs->GetMinimum(1.e-20) < min ) { min = hs->GetMinimum(1.e-20);      }
-  if (hs->GetMaximum()       > max ) { max = hs->GetMaximum();            }
- 
- 
-  // -- background
-  TH1D *hb = (TH1D*)fM[bgIndex]->Get(hist)->Clone();
-
-  if ( !strcmp(hist,"c530") ) {
-
-    channelEff(fM[bgIndex], fnorm_Ch, eff1_Ch, eff2_Ch);
-    hb->Scale((fLumiD[0]/fLumiM[bgIndex])*eff1_Ch*eff2_Ch);
-  
-  } else {
-    
-    hb->Scale(fLumiD[0]/fLumiM[bgIndex]);
-  }
-
-  hb->SetLineStyle(kDashed);
-  setFilledHist(hb, 13, 13, 3005, 2);
-
-  if (hb->GetMinimum(1.e-20) < min ) { min = hb->GetMinimum(1.e-20);      }
-  if (hb->GetMaximum()       > max ) { max = hb->GetMaximum();            }
-
-  gStyle->SetOptStat(0);
-  gStyle->SetOptTitle(0);
-  gPad->SetTopMargin(0.25);
-  gPad->SetRightMargin(0.2);
-
-  gPad->SetLogy(1);
-
-  // -- Other backgrounds
-  const int nhist = nMc;
-  const int sets = int(nhist/npers)+1;
-
-  TH1D *bg[nhist];
-
-  for (int i = 0; i < nhist; ++i) {
-
-    bg[i] = (TH1D*)fM[i]->Get(hist)->Clone();
-    
-    if ( i == bgIndex || !strcmp(fTypeM[i], "nmc") ) { continue; }
-
-    if ( !strcmp(hist,"c530") ) {
-
-      channelEff(fM[i], fnorm_Ch, eff1_Ch, eff2_Ch);
-      bg[i]->Scale((fMisIdM[i]*fLumiD[0]/fLumiM[i])*eff1_Ch*eff2_Ch);
-    
-    } else {
-
-      bg[i]->Scale(fMisIdM[i]*fLumiD[0]/fLumiM[i]);
-    }
-
-    if (bg[i]->GetSumOfWeights()  > maxSoW )  { maxSoW = bg[i]->GetSumOfWeights();  }
-    if (bg[i]->GetMinimum(1.e-20) < min )     { min = bg[i]->GetMinimum(1.e-20); }
-    if (bg[i]->GetMaximum()       > max )     { max = bg[i]->GetMaximum();       }
-  }
-
-  // -- Draw & Legends
-  legg = new TLegend(0.49,0.62,0.99,0.99);
-  legg->SetFillStyle(1001); legg->SetBorderSize(0); legg->SetTextSize(0.035);  legg->SetFillColor(10); 
-
-  int i(0), cont (0), note(0);
-
-  for (int k = 0; (k < sets) && (i < nhist); k++ ) {
-    
-    if ( note ) {
-
-      legge = legg->AddEntry(hs, Form("%s", fSignLeggS[sgIndex].Data()), "f");
-      legge = legg->AddEntry(hb, Form("%s", fSignLeggM[bgIndex].Data()), "f");
-    
-    } else {
-
-      legge = legg->AddEntry(hs, Form("%s (%4.1f)", fSignLeggS[sgIndex].Data(), hs->GetSumOfWeights()), "f");
-      
-      if ( hb->GetSumOfWeights() > 1000 ) {
-	
-	legge = legg->AddEntry(hb, Form("%s (%4.1e)",fSignLeggM[bgIndex].Data(), hb->GetSumOfWeights()), "f");
-      }
-      else if ( hb->GetSumOfWeights() < 0.1 ) {
-	
-	legge = legg->AddEntry(hb, Form("%s (%4.1e)",fSignLeggM[bgIndex].Data(), hb->GetSumOfWeights()), "f");
-      }
-      else if ( hb->GetSumOfWeights() ) {
-	
-	legge = legg->AddEntry(hb, Form("%s (%4.1f)",fSignLeggM[bgIndex].Data(), hb->GetSumOfWeights()), "f");
-      }
-    }
- 
-  
-    // -- Draw plots
-    hs->GetYaxis()->SetRangeUser(0.1*min, 100*max);
- 
-    hs->DrawCopy("hist"); 
-    hb->DrawCopy("histsame");    
-    
-    cont = 1;
-    for (i = npers*k+0; (cont < npers+1) && (i < nhist); ++i) {
-   
-      if ( i == bgIndex || !strcmp(fTypeM[i], "nmc") ) { continue; }
-      
-      if ( bg[i]->GetSumOfWeights() > 0 && bg[i]->GetMaximum() > 0 ) {
-	
-	cont++;
-
-	setHist(bg[i], EColor[cont]);
-
-	if ( note ) {
-	  
-	  legge = legg->AddEntry(bg[i], Form("%s", fSignLeggM[i].Data()), "p");
-
-	} else {
-
-	  if ( bg[i]->GetSumOfWeights() > 1000 ) {
-	    legge = legg->AddEntry(bg[i], Form("%s (%4.1e)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
-	  }
-	  else if (bg[i]->GetSumOfWeights() < 0.1 ) {
-	    legge = legg->AddEntry(bg[i], Form("%s (%4.1e)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
-	  }
-	  else {
-	    legge = legg->AddEntry(bg[i], Form("%s (%4.1f)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
-	  }
-	}
-	
-	legge->SetTextColor(kBlack);  legge->SetFillStyle(1001);  legge->SetFillColor(10); 
-		
-	bg[i]->DrawCopy("same");
-
-      }
-    }
-    
-    legg->Draw();
-    c0->SaveAs(Form("%s/bgOverlay-%i-%s.eps", outDir, k, hist));
-    legg->Clear();
-  }
-
-  gPad->SetLogy(0);
-
-}
-// ----------------------------------------------------------------------
-void anaBmm::nbgOverlay(const char *hist, const int npers) {
-
-  int EColor[]     = {   13,    2,    4,    108,  6,  107,   93,   1, 
-			 13,    2,    4,    108,  6,  107,   93,   1   }; 
-  
-  double min(9999.), max(0.), maxSoW(0.);
-  double fnorm_Ch, eff1_Ch, eff2_Ch;  
-
-  // -- signal
-  TH1D *hs = (TH1D*)fS[normSgIndex]->Get(hist)->Clone();
-
-  if ( !strcmp(hist,"c530") ) {
-
-    channelEff(fS[normSgIndex], fnorm_Ch, eff1_Ch, eff2_Ch);
-    hs->Scale((fLumiD[0]/fLumiS[normSgIndex])*eff1_Ch*eff2_Ch);
-
-  } else {
-    
-    hs->Scale(fLumiD[0]/fLumiS[normSgIndex]);
-  } 
-
-  setFilledHist(hs, kBlack, kYellow, 1001, 2);
-  setTitles(hs, "m_{#mu#mu} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
-
-  if (hs->GetMinimum(1.e-20) < min ) { min = hs->GetMinimum(1.e-20);      }
-  if (hs->GetMaximum()       > max ) { max = hs->GetMaximum();            }
- 
- 
-  // -- background
-  TH1D *hb = (TH1D*)fM[normBgIndex]->Get(hist)->Clone();
-
-  if ( !strcmp(hist,"c530") ) {
-
-    channelEff(fM[normBgIndex], fnorm_Ch, eff1_Ch, eff2_Ch);
-    hb->Scale((fLumiD[0]/fLumiM[normBgIndex])*eff1_Ch*eff2_Ch);
-  
-  } else {
-    
-    hb->Scale(fLumiD[0]/fLumiM[normBgIndex]);
-  }
-
-  hb->SetLineStyle(kDashed);
-  setFilledHist(hb, 13, 13, 3005, 2);
-
-  if (hb->GetMinimum(1.e-20) < min ) { min = hb->GetMinimum(1.e-20);      }
-  if (hb->GetMaximum()       > max ) { max = hb->GetMaximum();            }
-
-  gStyle->SetOptStat(0);
-  gStyle->SetOptTitle(0);
-  gPad->SetTopMargin(0.25);
-  gPad->SetRightMargin(0.2);
-
-  gPad->SetLogy(1);
-
-  // -- Other backgrounds
-  const int nhist = nMc;
-  const int sets = int(nhist/npers)+1;
-
-  TH1D *bg[nhist];
-
-  for (int i = 0; i < nhist; ++i) {
-
-    bg[i] = (TH1D*)fM[i]->Get(hist)->Clone();
-    
-    if ( i == normBgIndex  || !strcmp(fTypeM[i], "mc") || !strcmp(fTypeM[i], "rmc") ) { continue; }
-
-    if ( !strcmp(hist,"c530") ) {
-
-      channelEff(fM[i], fnorm_Ch, eff1_Ch, eff2_Ch);
-      bg[i]->Scale((fMisIdM[i]*fLumiD[0]/fLumiM[i])*eff1_Ch*eff2_Ch);
-    
-    } else {
-
-      bg[i]->Scale(fMisIdM[i]*fLumiD[0]/fLumiM[i]);
-    }
-
-    if (bg[i]->GetSumOfWeights()  > maxSoW )  { maxSoW = bg[i]->GetSumOfWeights();  }
-    if (bg[i]->GetMinimum(1.e-20) < min )     { min = bg[i]->GetMinimum(1.e-20); }
-    if (bg[i]->GetMaximum()       > max )     { max = bg[i]->GetMaximum();       }
-  }
-
-  // -- Draw & Legends
-  legg = new TLegend(0.49,0.62,0.99,0.99);
-  legg->SetFillStyle(1001); legg->SetBorderSize(0); legg->SetTextSize(0.035);  legg->SetFillColor(10); 
-
-  int i(0), cont (0), note(0);
-
-  for (int k = 0; (k < sets) && (i < nhist); k++ ) {
-    
-    if ( note ) {
-
-      legge = legg->AddEntry(hs, Form("%s", fSignLeggS[normSgIndex].Data()), "f");
-      legge = legg->AddEntry(hb, Form("%s", fSignLeggM[normBgIndex].Data()), "f");
-    
-    } else {
-
-      legge = legg->AddEntry(hs, Form("%s (%4.1f)", fSignLeggS[normSgIndex].Data(), hs->GetSumOfWeights()), "f");
-      
-      if ( hb->GetSumOfWeights() > 1000 ) {
-	
-	legge = legg->AddEntry(hb, Form("%s (%4.1e)",fSignLeggM[normBgIndex].Data(), hb->GetSumOfWeights()), "f");
-      }
-      else if ( hb->GetSumOfWeights() < 0.1 ) {
-	
-	legge = legg->AddEntry(hb, Form("%s (%4.1e)",fSignLeggM[normBgIndex].Data(), hb->GetSumOfWeights()), "f");
-      }
-      else if ( hb->GetSumOfWeights() ) {
-	
-	legge = legg->AddEntry(hb, Form("%s (%4.1f)",fSignLeggM[normBgIndex].Data(), hb->GetSumOfWeights()), "f");
-      }
-    }
- 
-  
-    // -- Draw plots
-    hs->GetYaxis()->SetRangeUser(0.1*min, 100*max);
- 
-    hs->DrawCopy("hist"); 
-    hb->DrawCopy("histsame");    
-    
-    cont = 1;
-    for (i = npers*k+0; (cont < npers+1) && (i < nhist); ++i) {
-   
-      if ( i == normBgIndex || !strcmp(fTypeM[i], "mc") || !strcmp(fTypeM[i], "rmc") ) { continue; }
-      
-      if ( bg[i]->GetSumOfWeights() > 0 && bg[i]->GetMaximum() > 0 ) {
-	
-	cont++;
-
-	setHist(bg[i], EColor[cont]);
-
-	if ( note ) {
-	  
-	  legge = legg->AddEntry(bg[i], Form("%s", fSignLeggM[i].Data()), "p");
-
-	} else {
-
-	  if ( bg[i]->GetSumOfWeights() > 1000 ) {
-	    legge = legg->AddEntry(bg[i], Form("%s (%4.1e)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
-	  }
-	  else if (bg[i]->GetSumOfWeights() < 0.1 ) {
-	    legge = legg->AddEntry(bg[i], Form("%s (%4.1e)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
-	  }
-	  else {
-	    legge = legg->AddEntry(bg[i], Form("%s (%4.1f)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
-	  }
-	}
-	
-	legge->SetTextColor(kBlack);  legge->SetFillStyle(1001);  legge->SetFillColor(10); 
-		
-	bg[i]->DrawCopy("same");
-
-      }
-    }
-    
-    legg->Draw();
-    c0->SaveAs(Form("%s/nbgOverlay-%i-%s.eps", outDir, k, hist));
-    legg->Clear();
-  }
-
-  gPad->SetLogy(0);
-
-}
-
-// ----------------------------------------------------------------------
 double anaBmm::massReduction(const char *hist, const char *sel) {
 
   cout << "---------------------------------------------------------------------------" << endl;
@@ -2224,7 +2147,7 @@ double anaBmm::massReduction(const char *hist, const char *sel) {
     cout << "return mass reduction " << endl;
     return massRed;
 
-  } else if ( !strcmp(sel, "mynbg") ) {
+  } else if ( !strcmp(sel, "mynmc") ) {
 
     TH1D *h1 = (TH1D*)fM[normBgIndex]->Get(hist)->Clone();
     TH1D *h2 = (TH1D*)fM[normBgIndex]->Get(hist)->Clone();
@@ -2403,1016 +2326,344 @@ double anaBmm::massReduction(const char *hist, const char *sel) {
   }
 }
 
-// ----------------------------------------------------------------------
-void anaBmm::runOptimization(const char *aoCuts, const char *extraVar, int nbin, double min, double max) {
 
-  double cut, maxFom(-99.), maxCut(0.); 
-  for (int i = 0; i < nbin; ++i) {
-    cut = min + i*(max-min)/nbin; 
-    handOptimization(aoCuts, Form("%s %5.4f", extraVar, cut));
-    if (fFom > maxFom) {
-      maxFom = fFom; 
-      maxCut = cut;
-    }
-  }
+//===========================================================================================
+// -- Overlays
+//===========================================================================================
 
-  cout << "==> maximum fom: " << maxFom << " at cut " << extraVar << maxCut << endl;
-}
+void anaBmm::bgOverlay(const char *hist, const int npers) {
 
-
-
-// ----------------------------------------------------------------------
-void anaBmm::handOptimization(const char *aoCuts, const char *extraCuts) {
- 
-  char filename[200];
-  sprintf(filename, "%s/handOptimization.txt", outDir); 
+  int EColor[]     = {   13,    2,    4,    108,  6,  107,   93,   1, 
+			 13,    2,    4,    108,  6,  107,   93,   1   }; 
   
-  //   system(Form("/bin/mv %s old.%s", filename, filename));
-  ofstream OUT(filename, ios::app);
+  double min(9999.), max(0.), maxSoW(0.);
+  double fnorm_Ch, eff1_Ch, eff2_Ch;  
 
-  // -- Fix lumi normalisation scaling factor
-  double SF = fLumiD[0]/fLumiM[bgIndex];
-  
-  // -- Run on signal MC to determine efficiency 
-  fS[sgIndex]->cd(); 
-  TH1D *hSG = (TH1D*)gROOT->FindObject("hSG"); 
-  if (!hSG) hSG = new TH1D("hSG", "", 50, 5., 6.);
-  TTree *s = (TTree*)gFile->Get("events");
-  s->Draw("mass>>hSG", Form("goodKinematics"), "goff"); 
-  double sNorm = hSG->GetSumOfWeights();
-  s->Draw("mass>>hSG", Form("%s", aoCuts), "goff"); 
-  double s1Norm = hSG->GetSumOfWeights();
-  s->Draw("mass>>hSG", Form("%s", extraCuts), "goff"); 
-  double s2Norm  =  hSG->GetSumOfWeights();
-  s->Draw("mass>>hSG", Form("%s && %s", aoCuts, extraCuts), "goff"); 
-  double s12Norm  =  hSG->GetSumOfWeights();
+  // -- signal
+  TH1D *hs = (TH1D*)fS[sgIndex]->Get(hist)->Clone();
 
-  // -- Run on bg MC
-  fM[bgIndex]->cd(); 
-  TH1D *hBG = (TH1D*)gROOT->FindObject("hBG"); 
-  if (!hBG) hBG = new TH1D("hBG", "", 50, 5., 6.);
-  TTree *b = (TTree*)gFile->Get("events");
-  b->Draw("mass>>hBG", Form("goodKinematics"), "goff"); 
-  double bNorm   = hBG->GetSumOfWeights();
-  b->Draw("mass>>hBG", Form("%s", aoCuts), "goff"); 
-  double b1Norm  = hBG->GetSumOfWeights();
-  b->Draw("mass>>hBG", Form("%s", extraCuts), "goff"); 
-  double b2Norm  = hBG->GetSumOfWeights();
-  double e2      = b2Norm/bNorm;
-  b->Draw("mass>>hBG", Form("%s && %s", aoCuts, extraCuts), "goff"); 
-  double b12Norm  =  hSG->GetSumOfWeights();
-  
-  fFom = (s12Norm/sNorm) / (1. + TMath::Sqrt(e2*b1Norm*SF)) ;
-  
-  cout << Form("%4.2e s:%4.3f/%4.3f b:%4.3e/%4.3e #bg:%5.2f (%3.1e,%3.1e)", 
-	       fFom, s12Norm/sNorm, (s1Norm/sNorm)*(s2Norm/sNorm), b12Norm/bNorm, (b1Norm/bNorm)*(b2Norm/bNorm), e2*b1Norm*SF, b1Norm, b2Norm)
-       << " cuts: \"" << aoCuts << "\", \"" << extraCuts << "\" " << endl;
+  if ( !strcmp(hist,"c530") ) {
 
-  OUT << Form("%4.2e e12/e1e2:%4.3f/%4.3f bg:%5.2f (%3.1e,%3.1e)", 
-	      fFom, s12Norm/sNorm, (s1Norm/sNorm)*(s2Norm/sNorm), e2*b1Norm*SF, b1Norm, b2Norm)
-      << " cuts: \"" << aoCuts << "\", \"" << extraCuts << "\" " << endl;
-
-}
-
-
-// ----------------------------------------------------------------------
-// -- loop for stupid loop over all  cuts
-// -- ptl1, chi2, lxy/sxy, iso, cosa
-void anaBmm::loopOptimization(double pt) {
-
-  double pTlo;
-  TH1D *h = (TH1D*)fS[sgIndex]->Get("hcuts");
-  for (int i = 1; i < h->GetNbinsX(); ++i) {
-    if (!strcmp(h->GetXaxis()->GetBinLabel(i), "p_{T}^{min}(l) [GeV]")) {
-      pTlo = h->GetBinContent(i);
-    }
-  }
-
-  char filename[200];
-  sprintf(filename, "%s/loopOptimization-pt:%3.2f.txt", outDir, pt); 
-
-  system(Form("/bin/rm -f %s", filename));
-  ofstream OUT(filename, ios::app);
-
-
-  char line[2000];
-  char precuts[2000]; 
-
-
-  sprintf(precuts, Form("goodL1 && goodKinematics && ptl1 > %f", pt));
-  cout << "Running with precuts: " << precuts << endl;
-
-  double eff, bg, sg;
-  double cut1(0.), cut2(0.),   cut3(0.),   cut4(0.); 
-  char scut1[200], scut2[200], scut3[200], scut4[200];
-  double fom(-1);
-
-  int IMAX1(5), IMAX2(5), IMAX3(5), IMAX4(5),  IMAX5(1); 
-  TH1D *hOpt = new TH1D("hOpt", "", IMAX1*IMAX2*IMAX3*IMAX4*IMAX5, 0., IMAX1*IMAX2*IMAX3*IMAX4*IMAX5);
-  
-  // -- Significance of UL: figure of merit should be maximized
-  double a(1.64); // a = 2:    95% CL UL
-                  // a = 1.64: 90% CL UL
-
-  double maxFom(-9.), i1max, i2max; 
-
-  for (int i1 = 0; i1 < IMAX1; ++i1) {
-    cut1 = 10. + i1*3.;
-    sprintf(scut1, "lxy/sxy > %f", cut1);
-    cout << "i1: " << scut1 << endl;
-
-    for (int i2 = 0; i2 < IMAX2; ++i2) {
-      cut2 = 0.95 + i2*0.005;
-      sprintf(scut2, "cosa > %f", cut2);
-      cout << " i2: " << scut2 << endl;
-
-      for (int i3 = 0; i3 < IMAX3; ++i3) {
-	cut3 = 0.7 + i3*0.05;
-	sprintf(scut3, "iso > %f", cut3);
-	cout << "i3: " << scut3 << endl;
-
-	for (int i4 = 0; i4 < IMAX4; ++i4) {
-	  cut4 = 1.0 + i4*0.5;
-	  sprintf(scut4, "chi2 < %f", cut4);
-	
-	  sprintf(line, "%s && %s && %s && %s", scut1, scut2, scut3, scut4); 
-	  optimizerNumbers(precuts, line, eff, sg, bg);
-	  
-	  fom = eff/(a + TMath::Sqrt(bg));
-	  hOpt->SetBinContent(i1*IMAX1 + i2, fom);
-
-	  if (fom > maxFom) {
-	    maxFom = fom; 
-	    i1max = i1;
-	    i2max = i2; 
-	  }
-      
-	  OUT << Form("lxy: %4.3f /cosa: %6.5f /iso: %4.3f /chi2: %4.3f /eff: %5.2f /SG: %5.2f /BG: %5.2f /fom: %7.6f", 
-		      cut1, cut2, cut3, cut4, eff, sg, bg, fom) 
-	      << endl;
-	}
-      }
-    }
-  }
-
-  hOpt->Draw();
-
-  cout << "Maximum fom: " << maxFom << " at lxy/sxy > " << 5. + i1max*2 << " and cos > " << 0.95 + i2max*0.005 << endl;
-
-}
-
-
-
-
-
-// ----------------------------------------------------------------------
-void anaBmm::optimizerNumbers(const char *precuts, const char *line, double &eff, double &sg, double &bg) {
-
-  // -- Run on signal MC to determine efficiency 
-  fS[sgIndex]->cd(); 
-  TH1D *hSG = (TH1D*)gROOT->FindObject("hSG"); 
-  if (!hSG) hSG = new TH1D("hSG", "", 50, 5., 6.);
-  TTree *s = (TTree*)gFile->Get("events");
-  s->Draw("mass>>hSG", Form("%s", precuts), "goff"); 
-  double norm = hSG->GetSumOfWeights();
-  s->Draw("mass>>hSG", Form("%s && %s", precuts, line), "goff"); 
-  sg =  hSG->GetSumOfWeights();
-  eff = sg/norm;
-
-  // -- And now MC for background expectation
-  fM[bgIndex]->cd(); 
-  TH1D *hBG = (TH1D*)gROOT->FindObject("hBG"); 
-  if (!hBG) hBG = new TH1D("hBG", "", 50, 5., 6.);
-  TTree *b = (TTree*)gFile->Get("events");
-  b->Draw("mass>>hBG", Form("%s && %s", precuts, line), "goff"); 
-  bg =  hBG->GetSumOfWeights();
-
-  //   cout << " sg: " << sg << " and norm: " << norm << "bg: " << bg << endl;
-
-}
-
-
-// ----------------------------------------------------------------------
-void anaBmm::breco(int o, const char *hist) {
-
-  gStyle->SetOptTitle(0);
-  gStyle->SetOptStat(0);
-  gStyle->SetOptFit(0);
-
-  TH1D *h1;
-  TH1D *hs;
-  TH1D *hr;
-
-  double mean(0.), sigma(0.);
-
-  // ========================================================================================
-  // -- Signal & norm. channel
-  // ========================================================================================
-
-  if ( o > -1 ) {
-    
-    h1 = (TH1D*)(fS[o]->Get(hist))->Clone();
-    
-    cout << endl << " ----> N_gen " << h1->GetSumOfWeights() << endl;
-    h1->Scale(fLumiD[0]/fLumiS[o]);
-    cout << " ----> N_exp " << h1->GetSumOfWeights() << endl << endl;
-    
-    c0->Clear();
-    shrinkPad(0.15, 0.15);
-    setFilledHist(h1, kBlack, kYellow, 1000);    
-    
- 
-    // -- Signal (double gauss)
-    if ( o < 4 ) {
-
-      f1->SetParameters(h1->GetMaximum()*0.8, h1->GetMean(), 0.5*h1->GetRMS(), 
-			h1->GetMaximum()*0.2, h1->GetMean(), 3.*h1->GetRMS());
-
-      setTitles(h1, "m_{#mu#mu} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
-      h1->SetMaximum(1.4*h1->GetMaximum());
-
-      h1->DrawCopy("hist");
-      h1->Fit(f1, "0");
-      f1->DrawCopy("same");
-
-      mean = TMath::Sqrt((f1->GetParameter(0)*f1->GetParameter(0)*f1->GetParameter(1)*f1->GetParameter(1)
-			  + f1->GetParameter(3)*f1->GetParameter(3)*f1->GetParameter(4)*f1->GetParameter(4))
-			 /
-			 (f1->GetParameter(0)*f1->GetParameter(0) + f1->GetParameter(3)*f1->GetParameter(3))
-			 );
-
-      sigma = TMath::Sqrt((f1->GetParameter(0)*f1->GetParameter(0)*f1->GetParameter(2)*f1->GetParameter(2)
-			   + f1->GetParameter(3)*f1->GetParameter(3)*f1->GetParameter(5)*f1->GetParameter(5))
-			  /
-			  (f1->GetParameter(0)*f1->GetParameter(0) + f1->GetParameter(3)*f1->GetParameter(3))
-			  );
-
-      writeFitPar(f1, o, mean, sigma, 6);
-
-    // -- Normalization (double gauss + pol1)
-    } else {
-
-      f6->SetParameters(h1->GetMaximum()*0.8, 5.3, 0.01, 
-			h1->GetMaximum()*0.2, 5.3, 0.03,
-			0.8*h1->GetBinContent(1), 1.);
-      
-      
-      setTitles(h1, "m_{#mu#mu K} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
-      h1->SetMaximum(1.4*h1->GetMaximum());
-      
-      h1->DrawCopy("hist");
-      h1->Fit(f6, "0");
-      f6->DrawCopy("same");
-
-      mean = TMath::Sqrt((f6->GetParameter(0)*f6->GetParameter(0)*f6->GetParameter(1)*f6->GetParameter(1)
-			  + f6->GetParameter(3)*f6->GetParameter(3)*f6->GetParameter(4)*f6->GetParameter(4))
-			 /
-			 (f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
-			 );
-
-      sigma = TMath::Sqrt((f6->GetParameter(0)*f6->GetParameter(0)*f6->GetParameter(2)*f6->GetParameter(2)
-			   + f6->GetParameter(3)*f6->GetParameter(3)*f6->GetParameter(5)*f6->GetParameter(5))
-			  /
-			  (f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
-			  );
-
-      writeFitPar(f6, o, mean, sigma, 3);
-    }
-    
-    
-    tl->SetTextColor(kBlack);  
-    tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
-    
-    tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, 0.001));
-    tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, 0.001));
-
-    if (h1->GetSumOfWeights()<0.001) {
-      tl->DrawLatex(0.16, 0.73, Form("N: %4.2e", h1->GetSumOfWeights()));
-    } else if (h1->GetSumOfWeights() < 1.) {
-      tl->DrawLatex(0.16, 0.73, Form("N: %5.3f", h1->GetSumOfWeights()));
-    } else if (h1->GetSumOfWeights() < 1000.) {
-      tl->DrawLatex(0.16, 0.73, Form("N: %5.1f", h1->GetSumOfWeights()));
-    } else {
-      tl->DrawLatex(0.16, 0.73, Form("N: %4.2e", h1->GetSumOfWeights()));
-    }
-
-    tl->SetTextSize(0.06); tl->SetTextColor(kBlue);
-    tl->DrawLatex(0.56, 0.65, Form("%s", fSignLeggS[o].Data()));
-    
-    if ( o == 0 ) {
-      tl->DrawLatex(0.48, 0.72, "ORCA/OSCAR (priv.)");
-    } else if ( o == 1 ) {
-      tl->DrawLatex(0.50, 0.72, "official MC");
-    } else if ( o == 2 ) {
-      tl->DrawLatex(0.52, 0.72, "Spring07");
-    } else if ( o == 3 ) {
-      tl->DrawLatex(0.52, 0.72, "CMSSW (priv.)");
-    } else if ( o == 4 ) {
-      tl->DrawLatex(0.56, 0.72, "perfect align.");
-    } else if ( o == 5 ) {
-      tl->DrawLatex(0.52, 0.72, "short-term align.");
-    } else {  
-      tl->DrawLatex(0.52, 0.72, Form("MC%i",o));
-    }
-    
-    
-    c0->SaveAs(Form("%s/breco/s%d-breco-%s.eps", outDir, o, hist));
-    delete h1;
-
-
-  // ========================================================================================
-  // -- Rare backgrounds
-  // ========================================================================================
+    channelEff(fS[sgIndex], fnorm_Ch, eff1_Ch, eff2_Ch);
+    hs->Scale((fLumiD[0]/fLumiS[sgIndex])*eff1_Ch*eff2_Ch);
 
   } else {
     
-    int EColor[]     = {   2,    4,    108,  6,  107,   93,   1, 
-			   2,    4,    108,  6,  107,   93,   1,  
-			   2,    4,    108,  6,  107,   93,   1   }; 
-  
-    legg = new TLegend(0.60,0.8,0.89,0.89);
-    legg->SetFillStyle(1001); legg->SetBorderSize(0); legg->SetTextSize(0.035);  legg->SetFillColor(0);
-  
-    char hist[200]; 
-    int fit(0), log(0);
+    hs->Scale(fLumiD[0]/fLumiS[sgIndex]);
+  } 
 
-    const int nhist = nMc;
-    
-    for (int i = 0; i < nhist - 1; i++) {  // FIX ME: last histogram is screwd up -> takes signal instead ???????
+  setFilledHist(hs, kBlack, kYellow, 1001, 2);
+  setTitles(hs, "m_{#mu#mu} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
+
+  if (hs->GetMinimum(1.e-20) < min ) { min = hs->GetMinimum(1.e-20);      }
+  if (hs->GetMaximum()       > max ) { max = hs->GetMaximum();            }
  
-      if ( !strcmp( getSubGroup(fSignM[i]).Data(), "2mId") ) { 
-	sprintf(hist, "c030"); 
-	fit = 1; log = 0;
+ 
+  // -- background
+  TH1D *hb = (TH1D*)fM[bgIndex]->Get(hist)->Clone();
 
-      } else if ( !strcmp( getSubGroup(fSignM[i]).Data(), "mIdMu+") ) { 
-	sprintf(hist, "c030"); 
-	fit = 0; log = 0;
+  if ( !strcmp(hist,"c530") ) {
 
-      } else if ( !strcmp(fTypeM[i].Data(), "rmc") ){ 
-	sprintf(hist, "c033"); 
-	fit = 0; log = 1;
+    channelEff(fM[bgIndex], fnorm_Ch, eff1_Ch, eff2_Ch);
+    hb->Scale((fLumiD[0]/fLumiM[bgIndex])*eff1_Ch*eff2_Ch);
+  
+  } else {
+    
+    hb->Scale(fLumiD[0]/fLumiM[bgIndex]);
+  }
 
-      } else {
+  hb->SetLineStyle(kDashed);
+  setFilledHist(hb, 13, 13, 3005, 2);
 
-	continue;
-      }
+  if (hb->GetMinimum(1.e-20) < min ) { min = hb->GetMinimum(1.e-20);      }
+  if (hb->GetMaximum()       > max ) { max = hb->GetMaximum();            }
 
-      hs = (TH1D*)(fS[sgIndex]->Get(hist))->Clone();
-      if (fit) hs->GetXaxis()->SetRangeUser(4.9, 5.9);
-      setFilledHist(hs, kBlack, kYellow, 3004, 2, 2);
-      setTitles(hs, "m_{#mu#mu} [GeV]", "events/bin", 0.06, 1.1, 1.3);
-      
-      hr = (TH1D*)(fM[i]->Get(hist))->Clone();
-      setHist(hr,  EColor[i]);
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+  gPad->SetTopMargin(0.25);
+  gPad->SetRightMargin(0.2);
 
-      c0->Clear();
-      shrinkPad(0.2, 0.2);
-      gPad->SetLogy(1);
+  gPad->SetLogy(1);
 
-      cout << endl << " ----> N_gen " << hr->GetSumOfWeights() << " for " 
-	   << fSignM[i].Data()  << endl;
+  // -- Other backgrounds
+  const int nhist = nMc;
+  const int sets = int(nhist/npers)+1;
 
-      hr->Scale(fMisIdM[i]*fLumiD[0]/fLumiM[i]);
+  TH1D *bg[nhist];
 
-      cout << " ----> N_exp " << hr->GetSumOfWeights() << " for " << fSignM[i].Data() 
-	   << " assuming fake rate = " << fMisIdM[i]<< endl << endl;
-   
-      if ( hr->GetSumOfWeights() > 0  && hr->GetMaximum() > 0 ) {
+  for (int i = 0; i < nhist; ++i) {
 
-	hs->Scale(hr->GetSumOfWeights()/hs->GetSumOfWeights());
+    bg[i] = (TH1D*)fM[i]->Get(hist)->Clone();
+    
+    if ( i == bgIndex || !strcmp(fTypeM[i], "nmc") ) { continue; }
 
-	gPad->SetLogy(log);
+    if ( !strcmp(hist,"c530") ) {
 
-	if (log) {
-	  hs->GetYaxis()->SetRangeUser(0.1*hs->GetMinimum(1.e-20), 100*hs->GetMaximum());
-    	} else {
-	  hs->GetYaxis()->SetRangeUser(0, 1.2*hs->GetMaximum());
-	}
+      channelEff(fM[i], fnorm_Ch, eff1_Ch, eff2_Ch);
+      bg[i]->Scale((fMisIdM[i]*fLumiD[0]/fLumiM[i])*eff1_Ch*eff2_Ch);
+    
+    } else {
 
-	hs->DrawCopy("hist");
-	hr->DrawCopy("same");
-
-	if (fit) {
-	  
-
-	  f4->SetParameters(0.8*hr->GetMaximum(), hr->GetMean(), 0.01, 
-			    0.8*hr->GetBinContent(1), 1.);
-	  
-	  hr->Fit(f4, "0");
-	  f4->DrawCopy("same");
-
-	  mean  = f4->GetParameter(1);
-	  sigma = f4->GetParameter(2);
-
-	  tl->SetTextColor(kBlack);  
-	  tl->SetNDC(kTRUE); tl->SetTextSize(0.04);
-	  tl->DrawLatex(0.24, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, 0.001));
-	  tl->DrawLatex(0.24, 0.81, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, 0.001));
-	  tl->DrawLatex(0.24, 0.77, Form("N: %4.2e", hr->GetSumOfWeights()));
-	
-	} else {
-
-	  tl->SetTextColor(kBlack);  
-	  tl->SetNDC(kTRUE); tl->SetTextSize(0.04);
-	  tl->DrawLatex(0.24, 0.85, Form("N: %4.2e", hr->GetSumOfWeights()));
-	}
-
-      } else {
-
-	hs->DrawCopy("hist");
-      }
-
-      legg->Clear();
-      
-      legge = legg->AddEntry(hs, "Signal (scaled)", "f"); legge->SetTextColor(kBlack);
-      legge = legg->AddEntry(hr, "Background", "p");
-      
-      legge->SetTextColor(EColor[i]);
-      legg->Draw();
-      
-      tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
-      tl->SetTextColor(kBlack);    
-      tl->DrawLatex(0.22, 0.92, Form("%s",  fSignLeggM[i].Data()));
-      
-      c0->SaveAs(Form("%s/breco/%s-breco.eps", outDir, fSignM[i].Data()));
-      delete hs;
-      delete hr;
+      bg[i]->Scale(fMisIdM[i]*fLumiD[0]/fLumiM[i]);
     }
 
-    // -------------------------------------------------------------------------------------------
+    if (bg[i]->GetSumOfWeights()  > maxSoW )  { maxSoW = bg[i]->GetSumOfWeights();  }
+    if (bg[i]->GetMinimum(1.e-20) < min )     { min = bg[i]->GetMinimum(1.e-20); }
+    if (bg[i]->GetMaximum()       > max )     { max = bg[i]->GetMaximum();       }
+  }
 
+  // -- Draw & Legends
+  legg = new TLegend(0.49,0.62,0.99,0.99);
+  legg->SetFillStyle(1001); legg->SetBorderSize(0); legg->SetTextSize(0.035);  legg->SetFillColor(10); 
+
+  int i(0), cont (0), note(0);
+
+  for (int k = 0; (k < sets) && (i < nhist); k++ ) {
+    
+    if ( note ) {
+
+      legge = legg->AddEntry(hs, Form("%s", fSignLeggS[sgIndex].Data()), "f");
+      legge = legg->AddEntry(hb, Form("%s", fSignLeggM[bgIndex].Data()), "f");
+    
+    } else {
+
+      legge = legg->AddEntry(hs, Form("%s (%4.1f)", fSignLeggS[sgIndex].Data(), hs->GetSumOfWeights()), "f");
+      
+      if ( hb->GetSumOfWeights() > 1000 ) {
+	
+	legge = legg->AddEntry(hb, Form("%s (%4.1e)",fSignLeggM[bgIndex].Data(), hb->GetSumOfWeights()), "f");
+      }
+      else if ( hb->GetSumOfWeights() < 0.1 ) {
+	
+	legge = legg->AddEntry(hb, Form("%s (%4.1e)",fSignLeggM[bgIndex].Data(), hb->GetSumOfWeights()), "f");
+      }
+      else if ( hb->GetSumOfWeights() ) {
+	
+	legge = legg->AddEntry(hb, Form("%s (%4.1f)",fSignLeggM[bgIndex].Data(), hb->GetSumOfWeights()), "f");
+      }
+    }
+ 
+  
+    // -- Draw plots
+    hs->GetYaxis()->SetRangeUser(0.1*min, 100*max);
+ 
+    hs->DrawCopy("hist"); 
+    hb->DrawCopy("histsame");    
+    
+    cont = 1;
+    for (i = npers*k+0; (cont < npers+1) && (i < nhist); ++i) {
+   
+      if ( i == bgIndex || !strcmp(fTypeM[i], "nmc") ) { continue; }
+      
+      if ( bg[i]->GetSumOfWeights() > 0 && bg[i]->GetMaximum() > 0 ) {
+	
+	cont++;
+
+	setHist(bg[i], EColor[cont]);
+
+	if ( note ) {
+	  
+	  legge = legg->AddEntry(bg[i], Form("%s", fSignLeggM[i].Data()), "p");
+
+	} else {
+
+	  if ( bg[i]->GetSumOfWeights() > 1000 ) {
+	    legge = legg->AddEntry(bg[i], Form("%s (%4.1e)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
+	  }
+	  else if (bg[i]->GetSumOfWeights() < 0.1 ) {
+	    legge = legg->AddEntry(bg[i], Form("%s (%4.1e)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
+	  }
+	  else {
+	    legge = legg->AddEntry(bg[i], Form("%s (%4.1f)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
+	  }
+	}
+	
+	legge->SetTextColor(kBlack);  legge->SetFillStyle(1001);  legge->SetFillColor(10); 
+		
+	bg[i]->DrawCopy("same");
+
+      }
+    }
+    
+    legg->Draw();
+    c0->SaveAs(Form("%s/bgOverlay-%i-%s.eps", outDir, k, hist));
+    legg->Clear();
   }
 
   gPad->SetLogy(0);
-}
-
-
-// ----------------------------------------------------------------------
-void anaBmm::jreco(int o) {
-
-  gStyle->SetOptTitle(0);
-  gStyle->SetOptStat(0);
-  gStyle->SetOptFit(0);
-
-  TH1D *h1;
-  h1 = (TH1D*)(fS[o]->Get("j101"))->Clone();
-
-  cout << endl << " ----> N_gen " << h1->GetSumOfWeights() << endl;
-  h1->Scale(fLumiD[0]/fLumiS[o]);
-  cout << " ----> N_exp " << h1->GetSumOfWeights() << endl << endl;
-
-  c0->Clear();
-  shrinkPad(0.15, 0.15);
-  setFilledHist(h1, kBlack, kYellow, 1000);
-
-  h1->SetMaximum(1.3*h1->GetMaximum());
-  setTitles(h1, "m_{#mu#mu} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
-
-  f1->SetParameters(h1->GetMaximum()*0.8, h1->GetMean(), 0.5*h1->GetRMS(), 
-		    h1->GetMaximum()*0.2, h1->GetMean(), 3.*h1->GetRMS());
- 
-  h1->DrawCopy("hist");
-  h1->Fit(f1, "0");
-  f1->DrawCopy("same");
-  
-  double mean = TMath::Sqrt((f1->GetParameter(0)*f1->GetParameter(0)*f1->GetParameter(1)*f1->GetParameter(1)
-		      + f1->GetParameter(3)*f1->GetParameter(3)*f1->GetParameter(4)*f1->GetParameter(4))
-		     /
-		     (f1->GetParameter(0)*f1->GetParameter(0) + f1->GetParameter(3)*f1->GetParameter(3))
-		     );
-  
-  double sigma = TMath::Sqrt((f1->GetParameter(0)*f1->GetParameter(0)*f1->GetParameter(2)*f1->GetParameter(2)
-		       + f1->GetParameter(3)*f1->GetParameter(3)*f1->GetParameter(5)*f1->GetParameter(5))
-		      /
-		      (f1->GetParameter(0)*f1->GetParameter(0) + f1->GetParameter(3)*f1->GetParameter(3))
-		      );
-
-  tl->SetTextColor(kBlack);  
-  tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
-  
-  tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, 0.001));
-  tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, 0.001));
-
-  tl->SetTextSize(0.06); tl->SetTextColor(kBlue);
-
-  if ( o == 4 ) {
-    tl->DrawLatex(0.19, 0.74, "perfect align.");
-    tl->DrawLatex(0.2, 0.67, "J/#psi #rightarrow #mu #mu");
-  } else if ( o == 5 ) {
-    tl->DrawLatex(0.19, 0.74, "short-term align.");
-    tl->DrawLatex(0.2, 0.67, "J/#psi #rightarrow #mu #mu");
-  } else {  
-    tl->SetTextSize(0.1);
-    tl->DrawLatex(0.70, 0.82, Form("MC%i",o));
-  }
-
-  c0->SaveAs(Form("%s/breco/s%d-jreco.eps", outDir, o));
-
-  delete h1;
-}
-// ----------------------------------------------------------------------
-void anaBmm::nreco(int o, const char *hist) {
-
-  gStyle->SetOptTitle(0);
-  gStyle->SetOptStat(0);
-  gStyle->SetOptFit(0);
-
-  TH1D *h1;
-  TH1D *h2;
-
-  // ========================================================================================
-  // -- Norm. channel
-  // ========================================================================================
-  
-  h1 = (TH1D*)(fS[o]->Get(hist))->Clone();
-  h2 = (TH1D*)(fS[o]->Get(hist))->Clone();
-
-  emptyBinError(h1);
-  
-  cout << endl << " ----> N_gen " << h1->GetSumOfWeights() << endl;
-  h1->Scale(fLumiD[0]/fLumiS[o]);
-  h2->Scale(fLumiD[0]/fLumiS[o]);
-  cout << " ----> N_exp " << h1->GetSumOfWeights() << endl << endl;
-    
-  
-  c0->Clear();
-  shrinkPad(0.15, 0.15);
-  setFilledHist(h1, kBlack, kYellow, 1000);
-  setFilledHist(h2, kBlack, kYellow, 1000);
-  
-  f5->SetParameters(0.2*h1->GetMaximum(), 5.3, 0.04, 
-		     0.8*h1->GetBinContent(1), 1.);
-  
-  setTitles(h2, "m_{#mu#mu K} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
-  h1->SetMaximum(1.4*h1->GetMaximum());
-  h2->SetMaximum(1.4*h2->GetMaximum());
-  
-  h2->DrawCopy();
-  h1->Fit(f5, "0");
-  f5->DrawCopy("same");
-  
-  f10->SetParameters(f5->GetParameter(3), f5->GetParameter(4));
-  f10->SetLineStyle(7);
-  f10->SetLineColor(108);
-  f10->DrawCopy("same");
-  
-  f11->SetParameters(f5->GetParameter(0), f5->GetParameter(1), f5->GetParameter(2));
-  f11->SetLineColor(2);
-  f11->SetFillColor(2);
-  f11->SetFillStyle(3004);
-  f11->DrawCopy("same");
-
-  double mean  = f5->GetParameter(1);
-  double sigma = f5->GetParameter(2);
-     
-  double totalBG = f10->Integral(h1->GetBinLowEdge(1), h1->GetBinLowEdge(h1->GetNbinsX()))/h1->GetBinWidth(2); 
-  double totalSG = (f5->Integral(fMassBs - 0.1, fMassBs + 0.1)/h1->GetBinWidth(2))
-                  - (f10->Integral(fMassBs - 0.1, fMassBs + 0.1)/h1->GetBinWidth(2));
-  
-  tl->SetTextColor(kBlack);  
-  tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
-  
-  tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, 0.001));
-  tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, 0.001));
-
-  tl->SetTextSize(0.05);
-  //tl->DrawLatex(0.65, 0.66, Form("N = %4.2e", total)); 
-  tl->SetTextColor(108); 
-  tl->DrawLatex(0.60, 0.61, Form("N_{bg} = %4.2e", totalBG)); tl->SetTextColor(2);  
-  tl->DrawLatex(0.60, 0.54, Form("N_{sg} = %4.2e", totalSG)); tl->SetTextColor(1);  
-  
-  tl->SetTextSize(0.06); tl->SetTextColor(kBlue);
-  tl->DrawLatex(0.40, 0.72, Form("%s", fSignLeggS[o].Data()));
-  
-  
-  c0->SaveAs(Form("%s/breco/s%d-nreco-%s.eps", outDir, o, hist));
-
-  delete h1;
-}
-
-
-// ----------------------------------------------------------------------
-void anaBmm::mcValidation(int wiat) {
-
-
-  mcVal("c000"); if (wiat) if (wait()) goto end;
-  mcVal("c001"); if (wiat) if (wait()) goto end;
-  mcVal("c010"); if (wiat) if (wait()) goto end;
-  mcVal("c011"); if (wiat) if (wait()) goto end;
-  mcVal("c020"); if (wiat) if (wait()) goto end;
-  mcVal("c021"); if (wiat) if (wait()) goto end;
-  mcVal("c024"); if (wiat) if (wait()) goto end;
-  mcVal("c025"); if (wiat) if (wait()) goto end;
-  mcVal("c030"); if (wiat) if (wait()) goto end;
-  mcVal("c023"); if (wiat) if (wait()) goto end;
-  mcVal("c026"); if (wiat) if (wait()) goto end;
-  mcVal("c027"); if (wiat) if (wait()) goto end;
-  mcVal("c035"); if (wiat) if (wait()) goto end;
-  mcVal("c022"); if (wiat) if (wait()) goto end;
-
-  mcVal("c300"); if (wiat) if (wait()) goto end;
-  mcVal("c301"); if (wiat) if (wait()) goto end;
-  mcVal("c310"); if (wiat) if (wait()) goto end;
-  mcVal("c311"); if (wiat) if (wait()) goto end;
-  mcVal("c320"); if (wiat) if (wait()) goto end;
-  mcVal("c321"); if (wiat) if (wait()) goto end;
-  mcVal("c324"); if (wiat) if (wait()) goto end;
-  mcVal("c325"); if (wiat) if (wait()) goto end;
-  mcVal("c330"); if (wiat) if (wait()) goto end;
-  mcVal("c323"); if (wiat) if (wait()) goto end;
-  mcVal("c326"); if (wiat) if (wait()) goto end;
-  mcVal("c327"); if (wiat) if (wait()) goto end;
-  mcVal("c335"); if (wiat) if (wait()) goto end;
-  mcVal("c322"); if (wiat) if (wait()) goto end;
- end:;
 
 }
 
-// ----------------------------------------------------------------------
-void anaBmm::mcVal(const char *hname) {
+// ----------------------------------------------------------------------------------
 
-  gStyle->SetOptTitle(0);
+void anaBmm::nbgOverlay(const char *hist, const int npers) {
 
-  TH1D *h0, *h1;
-
-  const int num = 7;
-
-  int i[] = {1, 2, 2, 2, 2, 4, 4};
-  int j[] = {0, 0, 3, 6, 8, 5, 7};
-
-  TString sample_i[] = { TString("sm06_bsmumu"), TString("CMSSW (Spring07)"), TString("Spring07"), 
-			 TString("before HLT"), TString("bmmsel 2"), TString("perfect alignment"), TString("before HLT") };
-
-  TString sample_j[] = { TString("private prod."), TString("ORCA/OSCAR (priv.)"), TString("private prod."), 
-			 TString("after HLT"), TString("bmmsel 3"), TString("short-term misal."), TString("after HLT") };
-
-  int n(0), m(0);
-  char name_n[200], name_m[200];
-
-  for (int k = 0; k < num; k++ ) { 
-
-    n = i[k]; sprintf(name_n, "%s", sample_i[k].Data());
-    m = j[k]; sprintf(name_m, "%s", sample_j[k].Data()); 
-    
-
-    fS[n]->cd();
-    h0 = (TH1D*)(fS[n]->Get(hname))->Clone();
-    if (0 == h0) {
-      cout << "Histogram with name " << hname << " does not exist" << endl;
-      return;
-    }
-
-    fS[m]->cd();
-    h1 = (TH1D*)(fS[m]->Get(hname))->Clone();
-    if (0 == h1) {
-      cout << "Histogram with name " << hname << " does not exist" << endl;
-      return;
-    }
-
-    h0->Scale(1./h0->GetSumOfWeights());
-    h1->Scale(1./h1->GetSumOfWeights());
+  int EColor[]     = {   13,    2,    4,    108,  6,  107,   93,   1, 
+			 13,    2,    4,    108,  6,  107,   93,   1   }; 
   
-    c0->Clear();
-    shrinkPad(0.15, 0.2);
-    setHist(h0, kBlack, 20, 2);
-    setTitles(h0, h0->GetXaxis()->GetTitle(), h0->GetYaxis()->GetTitle(), 0.06, 1.1, 1.8);
-    gPad->SetLogy(1);
-    h0->DrawCopy();
+  double min(9999.), max(0.), maxSoW(0.);
+  double fnorm_Ch, eff1_Ch, eff2_Ch;  
 
-    setHist(h1, kBlue, 24, 2);
-    h1->DrawCopy("same");
+  // -- signal
+  TH1D *hs = (TH1D*)fS[normSgIndex]->Get(hist)->Clone();
 
-    //    if (!strcmp(hname, "c000")) {
-    if (1) {
-      legg = new TLegend(0.3,0.2,0.7,0.3);
-      legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.05);  legg->SetFillColor(0); 
-      legge = legg->AddEntry(h1, Form("%s", name_m), "p"); legge->SetTextColor(kBlue);
-      legge = legg->AddEntry(h0, Form("%s", name_n), "p"); legge->SetTextColor(kBlack);
-      legg->Draw();
-    }
+  if ( !strcmp(hist,"c530") ) {
 
-    c0->Draw(); 
-    c0->Update();
+    channelEff(fS[normSgIndex], fnorm_Ch, eff1_Ch, eff2_Ch);
+    hs->Scale((fLumiD[0]/fLumiS[normSgIndex])*eff1_Ch*eff2_Ch);
 
-    c0->SaveAs(Form("%s/mcval/mcval-%i-%s.eps", outDir, k, hname));
-
-    gPad->SetLogy(0);
-
-    delete h0;
-    delete h1;
-  }
-
-
-  // -- same but for background plots
-  const int num2 = 4;
-
-  int i2[] = {8, 1, 8, 9};
-  int j2[] = {0, 7, 1, 7};
-
-  TString sample_i2[] = { TString("CMSSW (Spring07)"), TString("before HLT"), TString("bmmsel 3"), 
-			  TString("after HLT (sel3)") };
-
-  TString sample_j2[] = { TString("ORCA/OSCAR (priv.)"), TString("after HLT"), TString("bmmsel 2"), 
-			  TString("after HLT (sel2)")  };
-
-  int index = 0;
-
-  for (int k = num; k < num + num2; k++ ) {
-
-    index = k -num;
-    n = i2[index]; sprintf(name_n, "%s", sample_i2[index].Data());
-    m = j2[index]; sprintf(name_m, "%s", sample_j2[index].Data()); 
-    
-
-    fM[n]->cd();
-    h0 = (TH1D*)(fM[n]->Get(hname))->Clone();
-    if (0 == h0) {
-      cout << "Histogram with name " << hname << " does not exist" << endl;
-      return;
-    }
-
-    fM[m]->cd();
-    h1 = (TH1D*)(fM[m]->Get(hname))->Clone();
-    if (0 == h1) {
-      cout << "Histogram with name " << hname << " does not exist" << endl;
-      return;
-    }
-
-    h0->Scale(1./h0->GetSumOfWeights());
-    h1->Scale(1./h1->GetSumOfWeights());
-  
-    c0->Clear();
-    shrinkPad(0.15, 0.2);
-    setHist(h0, kBlack, 20, 2);
-    setTitles(h0, h0->GetXaxis()->GetTitle(), h0->GetYaxis()->GetTitle(), 0.06, 1.1, 1.8);
-    gPad->SetLogy(1);
-    h0->DrawCopy();
-
-    setHist(h1, kBlue, 24, 2);
-    h1->DrawCopy("same");
-
-    //    if (!strcmp(hname, "c000")) {
-    if (1) {
-      legg = new TLegend(0.3,0.2,0.7,0.3);
-      legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.05);  legg->SetFillColor(0); 
-      legge = legg->AddEntry(h1, Form("%s", name_m), "p"); legge->SetTextColor(kBlue);
-      legge = legg->AddEntry(h0, Form("%s", name_n), "p"); legge->SetTextColor(kBlack);
-      legg->Draw();
-    }
-
-    c0->Draw(); 
-    c0->Update();
-
-    c0->SaveAs(Form("%s/mcval/mcval-%i-%s.eps", outDir, k, hname));
-
-    gPad->SetLogy(0);
-
-    delete h0;
-    delete h1;
-  }
-}
-
-// ----------------------------------------------------------------------
-void anaBmm::showDistributions(int offset, int wiat) { 
-
-  int logy(100);   
-
-  showDistribution(Form("c%d00", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d01", offset), 2);            if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d10", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d11", offset), 2);            if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d12", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-
-  showDistribution(Form("c%d14", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d15", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-
-  showDistribution(Form("c%d20", offset), 2,      0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d21", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d22", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d23", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d26", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d16", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d24", offset), 2,      0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d25", offset), 2,      0.3, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d27", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d37", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-
-  showDistribution(Form("c%d30", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d35", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d40", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d41", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d42", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d62", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
-
-
- end:;
-
-}
-
-
-// ----------------------------------------------------------------------
-void anaBmm::showDistribution(const char *hname, int mode, double x, double y) { 
-
-  gStyle->SetOptStat(0);
-  gStyle->SetOptTitle(0);
-
-  c0->Clear();
-  shrinkPad(0.15, 0.2);
-  
-  //  TH1 *hm = sumHistMC(hname);
-  TH1 *hm = (TH1D*)fM[bgIndex]->Get(hname);
-  setHist(hm, kBlack, kBlack);
-  setTitles(hm, hm->GetXaxis()->GetTitle(), hm->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
-
-  TH1D *hs = new TH1D(*((TH1D*)fS[sgIndex]->Get(hname)));
-  hs->SetName(Form("SIG:%s", hname)); 
-  setFilledHist(hs, kBlue, kBlue, 3004, 2);
-  setTitles(hs, hs->GetXaxis()->GetTitle(), hs->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
-
-  int logy(0); 
-  if (mode > 99) {
-    mode -= 100;
-    logy = 1;
-  }  
-  
-  c0->SetLogy(logy);
-  
-  if (mode == 0) {
-    cout << hname << " drawn as is: sg, bg" << endl;
-    hs->Draw("hist");
-    hm->Draw("samehist");
-  } else if (mode == 1) {
-    cout << hname << " drawn as is: bg, sg" << endl;
-    hm->Draw("hist");
-    hs->Draw("samehist");
-  } else if (mode == 2) {
-    cout << hname << " scale to unity" << endl;
-    hm->Scale(1./hm->GetSumOfWeights()); 
-    hs->Scale(1./hs->GetSumOfWeights()); 
-    hs->SetMaximum(1.1*(hm->GetMaximum() > hs->GetMaximum()? hm->GetMaximum(): hs->GetMaximum()));
-    hs->Draw("hist");
-    hm->Draw("samehist");
-  } else if (mode == 3) {
-    cout << hname << " scale sg to bg" << endl;
-    hs->Scale(hm->GetSumOfWeights()/hs->GetSumOfWeights()); 
-    hm->Draw("hist");
-    hs->Draw("samehist");
-  } else if (mode == 4) {
-    cout << hname << " scale to L = " << fLumiD[0] << "/fb" << endl;
-    hs->Scale(fLumiD[0]/fLumiS[sgIndex]); 
-    hm->Scale(fLumiD[0]/fLumiM[bgIndex]); 
-    hm->Draw("hist");
-    hs->Draw("samehist");
-  }
-
-  if (x > 0) {
-    legg = new TLegend(x, y, x+0.15, y+0.1);
-    legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.04);  legg->SetFillColor(0); 
-    //     legge = legg->AddEntry(hs, Form("S: %5.1f", hs->GetSumOfWeights()), "f"); legge->SetTextColor(kBlack);
-    //     legge = legg->AddEntry(hm, Form("B: %5.1f", hm->GetSumOfWeights()), "f"); legge->SetTextColor(kBlack);
-    legge = legg->AddEntry(hs, Form("Signal"), "f"); legge->SetTextColor(kBlack);
-    legge = legg->AddEntry(hm, Form("Background"), "f"); legge->SetTextColor(kBlack);
-    legg->Draw();
-  }
- 
-  c0->SaveAs(Form("%s/dist/dist-%s.eps", outDir, hname));
-
-  c0->SetLogy(0);
-
-}
-  
-
-
-// ----------------------------------------------------------------------
-void anaBmm::showProcesses(int signal) {
-
-  TString label;
-  if (1 == signal) {
-    fS[sgIndex]->cd();
-    label = TString("sproc");
   } else {
-    fM[bgIndex]->cd();
-    label = TString("bproc");
+    
+    hs->Scale(fLumiD[0]/fLumiS[normSgIndex]);
+  } 
+
+  setFilledHist(hs, kBlack, kYellow, 1001, 2);
+  setTitles(hs, "m_{#mu#mu} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
+
+  if (hs->GetMinimum(1.e-20) < min ) { min = hs->GetMinimum(1.e-20);      }
+  if (hs->GetMaximum()       > max ) { max = hs->GetMaximum();            }
+ 
+ 
+  // -- background
+  TH1D *hb = (TH1D*)fM[normBgIndex]->Get(hist)->Clone();
+
+  if ( !strcmp(hist,"c530") ) {
+
+    channelEff(fM[normBgIndex], fnorm_Ch, eff1_Ch, eff2_Ch);
+    hb->Scale((fLumiD[0]/fLumiM[normBgIndex])*eff1_Ch*eff2_Ch);
+  
+  } else {
+    
+    hb->Scale(fLumiD[0]/fLumiM[normBgIndex]);
   }
 
+  hb->SetLineStyle(kDashed);
+  setFilledHist(hb, 13, 13, 3005, 2);
 
-  const char *cuts = "pt>5 && ptl1>4";
+  if (hb->GetMinimum(1.e-20) < min ) { min = hb->GetMinimum(1.e-20);      }
+  if (hb->GetMaximum()       > max ) { max = hb->GetMaximum();            }
 
-  plotProcesses(cuts, "pt", "p_{T, B} [GeV]", 10, 0., 50., 1);
-  c0->SaveAs(Form("%s/proc/%s-pt.eps", outDir, label.Data()));
-
-  plotProcesses(cuts, "iso", "I", 20, 0., 1., 0);
-  c0->SaveAs(Form("%s/proc/%s-isolation.eps", outDir, label.Data()));
-
-  plotProcesses(cuts, "rmm", "#Delta R(#mu,#mu)", 10, 0., 2., 0);
-  c0->SaveAs(Form("%s/proc/%s-rmm.eps", outDir, label.Data()));
-
-  plotProcesses(cuts, "mass", "m_{#mu#mu} [GeV]", 20, 5., 6., 0);
-  c0->SaveAs(Form("%s/proc/%s-mass.eps", outDir, label.Data()));
-
-}
-
-// ----------------------------------------------------------------------
-void anaBmm::signalPlots() {
-
-  TString label;
-  fS[sgIndex]->cd();
-  label = TString("smu");
-
-  TH2D *h2;
-
-
-  h2 =  (TH2D*)gDirectory->Get("S106");
-  h2->Draw("colztext");
-  c0->SaveAs(Form("%s/smuons/%s-global.eps", outDir, label.Data()));
-
-  h2 =  (TH2D*)gDirectory->Get("S107");
-  h2->Draw("colztext");
-  c0->SaveAs(Form("%s/smuons/%s-sel.eps", outDir, label.Data()));
-
-  h2 =  (TH2D*)gDirectory->Get("S108");
-  h2->Draw("colztext");
-  c0->SaveAs(Form("%s/smuons/%s-ranking.eps", outDir, label.Data()));
-
-  h2 =  (TH2D*)gDirectory->Get("S108");
-  h2->Draw("colztext");
-  c0->SaveAs(Form("%s/smuons/%s-leading.eps", outDir, label.Data()));
-
-
-  h2 =  (TH2D*)gDirectory->Get("S109");
-  h2->Draw("colztext");
-  c0->SaveAs(Form("%s/smuons/%s-closest.eps", outDir, label.Data()));
-
-
-  h2 =  (TH2D*)gDirectory->Get("S110");
-  h2->Draw("colztext");
-  c0->SaveAs(Form("%s/smuons/%s-lead-closest.eps", outDir, label.Data()));
-
-  
-
-}
-
-// ----------------------------------------------------------------------
-void anaBmm::plotProcesses(const char *cut, const char *var, const char *axis, int bin, double lo, double hi, int legend) {
-
-  TTree *tS = (TTree*)gFile->Get("events");
-  TH1D *hGSP = new TH1D("hGSP", "", bin, lo, hi); //hGSP->Sumw2();
-  TH1D *hFEX = new TH1D("hFEX", "", bin, lo, hi); //hFEX->Sumw2();
-  TH1D *hGGF = new TH1D("hGGF", "", bin, lo, hi); //hGGF->Sumw2();
-  TH1D *hSum = new TH1D("hSum", "", bin, lo, hi); //hSum->Sumw2();
-
-  tS->Draw(Form("%s >> hGSP", var), Form("%s && process == 42", cut)); 
-  tS->Draw(Form("%s >> hFEX", var), Form("%s && process == 41", cut)); 
-  tS->Draw(Form("%s >> hGGF", var), Form("%s && process == 40", cut)); 
-
-  hSum->Add(hGSP);
-  hSum->Add(hFEX);
-  hSum->Add(hGGF);
-
-  //   hGSP->Divide(hGSP, hSum, 1., 1.);
-  //   hFEX->Divide(hFEX, hSum, 1., 1.);
-  //   hGGF->Divide(hGGF, hSum, 1., 1.);
-  
-  //   hGSP->SetMinimum(0.);
-  //   hGSP->SetMaximum(1.);
-
-  double max = hGSP->GetMaximum();
-  if (hFEX->GetMaximum() > max) {
-    max = hFEX->GetMaximum();
-  } 
-  if (hGGF->GetMaximum() > max) {
-    max = hGGF->GetMaximum();
-  } 
-  
   gStyle->SetOptStat(0);
-  shrinkPad(0.15, 0.15);
-  setTitles(hGSP, axis, "arbitrary units", 0.05, 1.1, 1.5);
+  gStyle->SetOptTitle(0);
+  gPad->SetTopMargin(0.25);
+  gPad->SetRightMargin(0.2);
 
-  hGSP->SetMaximum(1.1*max);
-  hGSP->SetMinimum(0.0);
-  setHist(hGSP, kBlue, 20, 2); 
-  setHist(hFEX, kRed, 20, 2);    hFEX->SetLineStyle(kDashed);
-  setHist(hGGF, kBlack, 20, 2);  hGGF->SetLineStyle(kDotted);
+  gPad->SetLogy(1);
 
-  hGSP->Draw("hist");
-  hFEX->Draw("histsame");
-  hGGF->Draw("histsame");
+  // -- Other backgrounds
+  const int nhist = nMc;
+  const int sets = int(nhist/npers)+1;
 
-  if (1 == legend) {
-    legg = new TLegend(0.5,0.7,0.8,0.89);
-    legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.04);  legg->SetFillColor(0); 
-    legge = legg->AddEntry(hGSP, Form("gluon splitting"), "l"); legge->SetTextColor(kBlue);
-    legge = legg->AddEntry(hFEX, Form("flavor excitation"), "l"); legge->SetTextColor(kRed);
-    legge = legg->AddEntry(hGGF, Form("gluon-gluon fusion"), "l"); legge->SetTextColor(kBlack);
-    legg->Draw();
+  TH1D *bg[nhist];
+
+  for (int i = 0; i < nhist; ++i) {
+
+    bg[i] = (TH1D*)fM[i]->Get(hist)->Clone();
+    
+    if ( i == normBgIndex  || !strcmp(fTypeM[i], "mc") || !strcmp(fTypeM[i], "rmc") ) { continue; }
+
+    if ( !strcmp(hist,"c530") ) {
+
+      channelEff(fM[i], fnorm_Ch, eff1_Ch, eff2_Ch);
+      bg[i]->Scale((fMisIdM[i]*fLumiD[0]/fLumiM[i])*eff1_Ch*eff2_Ch);
+    
+    } else {
+
+      bg[i]->Scale(fMisIdM[i]*fLumiD[0]/fLumiM[i]);
+    }
+
+    if (bg[i]->GetSumOfWeights()  > maxSoW )  { maxSoW = bg[i]->GetSumOfWeights();  }
+    if (bg[i]->GetMinimum(1.e-20) < min )     { min = bg[i]->GetMinimum(1.e-20); }
+    if (bg[i]->GetMaximum()       > max )     { max = bg[i]->GetMaximum();       }
   }
 
+  // -- Draw & Legends
+  legg = new TLegend(0.49,0.62,0.99,0.99);
+  legg->SetFillStyle(1001); legg->SetBorderSize(0); legg->SetTextSize(0.035);  legg->SetFillColor(10); 
+
+  int i(0), cont (0), note(0);
+
+  for (int k = 0; (k < sets) && (i < nhist); k++ ) {
+    
+    if ( note ) {
+
+      legge = legg->AddEntry(hs, Form("%s", fSignLeggS[normSgIndex].Data()), "f");
+      legge = legg->AddEntry(hb, Form("%s", fSignLeggM[normBgIndex].Data()), "f");
+    
+    } else {
+
+      legge = legg->AddEntry(hs, Form("%s (%4.1f)", fSignLeggS[normSgIndex].Data(), hs->GetSumOfWeights()), "f");
+      
+      if ( hb->GetSumOfWeights() > 1000 ) {
+	
+	legge = legg->AddEntry(hb, Form("%s (%4.1e)",fSignLeggM[normBgIndex].Data(), hb->GetSumOfWeights()), "f");
+      }
+      else if ( hb->GetSumOfWeights() < 0.1 ) {
+	
+	legge = legg->AddEntry(hb, Form("%s (%4.1e)",fSignLeggM[normBgIndex].Data(), hb->GetSumOfWeights()), "f");
+      }
+      else if ( hb->GetSumOfWeights() ) {
+	
+	legge = legg->AddEntry(hb, Form("%s (%4.1f)",fSignLeggM[normBgIndex].Data(), hb->GetSumOfWeights()), "f");
+      }
+    }
+ 
+  
+    // -- Draw plots
+    hs->GetYaxis()->SetRangeUser(0.1*min, 100*max);
+ 
+    hs->DrawCopy("hist"); 
+    hb->DrawCopy("histsame");    
+    
+    cont = 1;
+    for (i = npers*k+0; (cont < npers+1) && (i < nhist); ++i) {
+   
+      if ( i == normBgIndex || !strcmp(fTypeM[i], "mc") || !strcmp(fTypeM[i], "rmc") ) { continue; }
+      
+      if ( bg[i]->GetSumOfWeights() > 0 && bg[i]->GetMaximum() > 0 ) {
+	
+	cont++;
+
+	setHist(bg[i], EColor[cont]);
+
+	if ( note ) {
+	  
+	  legge = legg->AddEntry(bg[i], Form("%s", fSignLeggM[i].Data()), "p");
+
+	} else {
+
+	  if ( bg[i]->GetSumOfWeights() > 1000 ) {
+	    legge = legg->AddEntry(bg[i], Form("%s (%4.1e)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
+	  }
+	  else if (bg[i]->GetSumOfWeights() < 0.1 ) {
+	    legge = legg->AddEntry(bg[i], Form("%s (%4.1e)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
+	  }
+	  else {
+	    legge = legg->AddEntry(bg[i], Form("%s (%4.1f)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
+	  }
+	}
+	
+	legge->SetTextColor(kBlack);  legge->SetFillStyle(1001);  legge->SetFillColor(10); 
+		
+	bg[i]->DrawCopy("same");
+
+      }
+    }
+    
+    legg->Draw();
+    c0->SaveAs(Form("%s/nbgOverlay-%i-%s.eps", outDir, k, hist));
+    legg->Clear();
+  }
+
+  gPad->SetLogy(0);
 
 }
 
 
+//===========================================================================================
+// -- Adding histogram - SPECIAL!
+//===========================================================================================
 
-// ----------------------------------------------------------------------
 TH1* anaBmm::sumHistMC(const char *hname, int mode, const char *selection) {
  
   // mode: 0 weighted by xsec
@@ -3471,7 +2722,7 @@ TH1* anaBmm::sumHistMC(const char *hname, int mode, const char *selection) {
 		 << " from file " << fM[i]->GetName() << endl;
 	    
 	  } else {
-	    
+	    // cout << " summing " << fSignM[i] << " to " << selection << endl;
 	    sumHistMC_Add(i, hname, h1, h2);
 	    //h1->Add(h2,  (fMisIdM[i]*fLumiD[0]/fLumiM[i]));
 	    
@@ -3485,59 +2736,6 @@ TH1* anaBmm::sumHistMC(const char *hname, int mode, const char *selection) {
   return h1; 
 
 }
-
-
-// -----------------------------------------------------
-int anaBmm::checkIf(int mc, const char *sel) {
-  
-  int accept;
-  // -- only accepts rare backgrounds (signal)
-  if ( !strcmp(sel,"r0") ) {
-    
-    if ( !strcmp(fTypeM[mc].Data(), "rmc") ) {
-      
-      accept = 1;
-    }
-    
-  // -- only accepts rare backgrounds
-  } else if ( !strcmp(sel,"c0") ) {
-
-    if ( !strcmp(fTypeM[mc].Data(), "nmc") ) {
-      
-      accept = 0;
-    }
-    
-  // -- sum-up sub-groups of rare backgrounds (2mu+, 2mId, etc)
-  } else {
-    
-    if ( !strcmp(getSubGroup(fSignM[mc]).Data(), sel) ) {
-      
-      accept = 1;	    
-    }
-  }
-
-  return accept;
-}
-
-
-// -----------------------------------------------------
-void anaBmm::channelEff(TFile *f, double &fnorm_Ch, double &eff1_Ch, double &eff2_Ch) {
-  
-  TH1D *tAR1 = (TH1D*)f->Get("AR1")->Clone();
-  fnorm_Ch = 0.; eff1_Ch = 0.; eff2_Ch = 0.;
-
-  fnorm_Ch = tAR1->GetBinContent(tAR1->FindBin(123.1));
-  
-  if ( tAR1->GetBinContent(tAR1->FindBin(220.1)) ) {
-    
-    eff1_Ch  = tAR1->GetBinContent(tAR1->FindBin(224.1))/
-              (tAR1->GetBinContent(tAR1->FindBin(220.1)));
-    
-    eff2_Ch  = tAR1->GetBinContent(tAR1->FindBin(225.1))/
-              (tAR1->GetBinContent(tAR1->FindBin(220.1)));
-  }
-}
-
 
 // -----------------------------------------------------
 void anaBmm::sumHistMC_Add(int ch, const char *hist, TH1 *hist1, TH1 *hist2) {
@@ -3572,8 +2770,29 @@ void anaBmm::sumHistMC_Add(int ch, const char *hist, TH1 *hist1, TH1 *hist2) {
   }
 }
 
-
 // -----------------------------------------------------
+void anaBmm::channelEff(TFile *f, double &fnorm_Ch, double &eff1_Ch, double &eff2_Ch) {
+  
+  TH1D *tAR1 = (TH1D*)f->Get("AR1")->Clone();
+  fnorm_Ch = 0.; eff1_Ch = 0.; eff2_Ch = 0.;
+
+  fnorm_Ch = tAR1->GetBinContent(tAR1->FindBin(123.1));
+  
+  if ( tAR1->GetBinContent(tAR1->FindBin(220.1)) ) {
+    
+    eff1_Ch  = tAR1->GetBinContent(tAR1->FindBin(224.1))/
+              (tAR1->GetBinContent(tAR1->FindBin(220.1)));
+    
+    eff2_Ch  = tAR1->GetBinContent(tAR1->FindBin(225.1))/
+              (tAR1->GetBinContent(tAR1->FindBin(220.1)));
+  }
+}
+
+
+//===========================================================================================
+// -- Muon mis-identification
+//===========================================================================================
+
 void anaBmm::fakeMuons() {
 
   tl->SetNDC(kTRUE);
@@ -3883,12 +3102,213 @@ void anaBmm::fakeMuons() {
   OUT << Form("\\vdef{misIdKaons}    {\\ensuremath{ {%4.3E } } }", fKa)   << endl;
   OUT << Form("\\vdef{misIdProtons}  {\\ensuremath{ {%4.3E } } }", fProt) << endl;
 
+  OUT.close();
+}
 
+
+//===========================================================================================
+// -- Dump stuff
+//===========================================================================================
+
+void anaBmm::dumpFiles() {
+
+  cout << endl << "Assuming data luminosity " << Form("%2.1f", fLumiD[0]) << " /fb" << endl << endl;
+
+  ofstream OUT(fNumbersFileName, ios::app);
+  OUT << "% ----------------------------------------------------------------------" << endl;
+  OUT << "% -- X-sections, NEVT, and lumi" << endl;
+  OUT << Form("%s", (formatTex(fLumiD[0], "Lumi" , "d0")).Data()) << endl;
+
+  for (int i = 0; i < 10; ++i) {
+
+    if (fS[i]) {
+
+      fNexpS[i] = fLumiD[0]*fvXsS[i];
+
+       cout << Form("Signal MC[%d]     visible cross-section: %3.2e fb, \
+                     Nevt: %8.0f -> Lumi: %3.2e /fb   Signature: %s Title: %s"
+		    , i, fvXsS[i], fNevtS[i], fLumiS[i], fSignS[i].Data(), fSignTexS[i].Data()) 
+	    << endl;
+
+      OUT << Form("\\vdef{channel:s%i} {\\ensuremath{ {%s } } }", i, fSignTexS[i].Data()) << endl;
+      OUT << Form("\\vdef{vNevt:s%i} {\\ensuremath{ {%4.0f } } }", i, fNevtS[i]) << endl;
+      OUT << Form("\\vdef{vLumi:s%i} {\\ensuremath{ {%s } } }", i, (texForm(fLumiS[i])).Data()) << endl;
+
+      if ( i == sgIndex ) {
+	OUT << Form("\\vdef{vXs:s%i} {\\ensuremath{ {%4.1f } } }", i, fvXsS[i]) << endl;
+	OUT << Form("\\vdef{vNexp:s%i} {\\ensuremath{ {%4.1f } } }", i, fNexpS[i]) << endl;
+      } else {
+	OUT << Form("\\vdef{vXs:s%i} {\\ensuremath{ {%s } } }", i, (texForm(fvXsS[i])).Data()) << endl;
+	OUT << Form("\\vdef{vNexp:s%i} {\\ensuremath{ {%s } } }", i, (texForm(fNexpS[i])).Data()) << endl;
+      }
+    }
+  }
+ 
+  for (int i = 0; i < 30; ++i) {
+
+    if (fM[i]) {
+
+      fMisIdM[i] = getMisID(fSignM[i]);
+      fNexpM[i] = fLumiD[0]*fvXsM[i]*fMisIdM[i];
+
+
+      cout << Form("Background MC[%d] visible cross-section: %3.2e fb, \
+                    Nevt: %8.0f -> lumi: %3.2e /fb   Signature: %s Title: %s"
+		   , i, fvXsM[i], fNevtM[i], fLumiM[i], fSignM[i].Data(), fSignTexM[i].Data()) 
+	   << endl;
+
+      OUT << Form("\\vdef{channel:m%i} {\\ensuremath{ {%s } } }", i, fSignTexM[i].Data()) << endl;
+
+      OUT << Form("\\vdef{channel:m%i} {\\ensuremath{ {%s } } }", i, fSignTexM[i].Data()) << endl;
+      OUT << Form("\\vdef{vNevt:m%i} {\\ensuremath{ {%4.0f } } }", i, fNevtM[i]) << endl;
+      OUT << Form("\\vdef{vLumi:m%i} {\\ensuremath{ {%s } } }", i, (texForm(fLumiM[i])).Data()) << endl;
+
+
+      OUT << Form("\\vdef{vXs:m%i} {\\ensuremath{ {%s } } }", i, (texForm(fvXsM[i])).Data()) << endl;
+      OUT << Form("\\vdef{vNexp:m%i} {\\ensuremath{ {%s } } }", i, (texForm(fNexpM[i])).Data()) << endl;
+    }
+  }
+  
+  OUT.close();
+}
+
+
+// ----------------------------------------------------------------------
+void anaBmm::dumpCuts() {
+
+  TH1D *hS = (TH1D*)fS[sgIndex]->Get("hcuts");
+  TH1D *hM = (TH1D*)fM[bgIndex]->Get("hcuts");
+
+  ofstream OUT(fNumbersFileName, ios::app);
+  OUT << "% ----------------------------------------------------------------------" << endl;
+  OUT << "% -- Cuts" << endl;
+
+  char label[100];
+  sprintf(label, "%s", hS->GetXaxis()->GetBinLabel(1));
+
+  double sVal, mVal;
+
+  // cout << " -- Cuts signal (mc)"  << endl;
+
+  for (int i = 1; i < hS->GetNbinsX(); ++i) {
+    if (strcmp(hS->GetXaxis()->GetBinLabel(i), "")) {
+
+      sVal = hS->GetBinContent(i);
+      mVal = hM->GetBinContent(i);
+
+      // cout << hS->GetXaxis()->GetBinLabel(i) << " = " << sVal << " (" <<  mVal  << ")" << endl;
+
+      if (sVal != mVal) {
+	cout << "====> Error: Signal and BG MC run with different cut values!" << endl;
+      } else {
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}(B_{s}) [GeV]")) {
+	  OUT  << Form("\\vdef{cut:%s:ptbs}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}^{min}(l) [GeV]")) {
+	  OUT  << Form("\\vdef{cut:%s:ptlo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}^{max}(l) [GeV]")) {
+	  OUT  << Form("\\vdef{cut:%s:pthi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{#mu#mu}^{min}")) {
+	  OUT  << Form("\\vdef{cut:%s:rmmlo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{#mu#mu}^{max}")) {
+	  OUT  << Form("\\vdef{cut:%s:rmmhi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#eta_{T}^{min}(l)")) {
+	  OUT  << Form("\\vdef{cut:%s:etalo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#eta_{T}^{max}(l)")) {
+	  OUT  << Form("\\vdef{cut:%s:etahi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "TIP(l) [cm]")) {
+	  OUT  << Form("\\vdef{cut:%s:tip}      {\\ensuremath{%5.3f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#chi^2")) {
+	  OUT  << Form("\\vdef{cut:%s:chi2}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{3d} [cm]")) {
+	  OUT  << Form("\\vdef{cut:%s:l3d}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "cos(#alpha)")) {
+	  OUT  << Form("\\vdef{cut:%s:cosalpha}    {\\ensuremath{%5.4f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{xy} [cm]")) {
+	  OUT  << Form("\\vdef{cut:%s:lxy}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{xy}/#sigma_{xy}")) {
+	  OUT  << Form("\\vdef{cut:%s:lxy/sxy}    {\\ensuremath{%3.1f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "I_{veto}")) {
+	  OUT  << Form("\\vdef{cut:%s:isoveto}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{I}")) {
+	  OUT  << Form("\\vdef{cut:%s:isocone}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "I")) {
+	  OUT  << Form("\\vdef{cut:%s:isolation}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "BMMSEL")) {
+	  OUT  << Form("\\vdef{cut:%s:bmmsel}    {\\ensuremath{%i } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "SUBSEL")) {
+	  OUT  << Form("\\vdef{cut:%s:subsel}    {\\ensuremath{%i } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{3D}/#sigma_{3D}")) {
+	  OUT  << Form("\\vdef{cut:%s:l3d/s3d}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "m_{min}^{#mu #mu}")) {
+	  OUT  << Form("\\vdef{cut:%s:masslo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "m_{max}^{#mu #mu}")) {
+	  OUT  << Form("\\vdef{cut:%s:masshi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "iso. p_{T}^{min}")) {
+	  OUT  << Form("\\vdef{cut:%s:isoptmin}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "L1 available")) {
+	  OUT  << Form("\\vdef{cut:%s:setl1}    {\\ensuremath{%i } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "HLT available")) {
+	  OUT  << Form("\\vdef{cut:%s:sethlt}    {\\ensuremath{%i } } ", label, sVal) << endl;
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#Delta m{#mu #mu}")) {
+	  OUT  << Form("\\vdef{cut:%s:masswi}    {\\ensuremath{%5.0f } } ", label, sVal) << endl;
+	}
+      }
+    }
+  }
 
   OUT.close();
 }
 
-// -----------------------------------------------------
+// ----------------------------------------------------------------------
 void anaBmm::writeFitPar(TF1 *f, int o, double mean, double sigma, int npar) {
 
     ofstream OUT(fNumbersFileName, ios::app);
@@ -3919,9 +3339,243 @@ void anaBmm::writeFitPar(TF1 *f, int o, double mean, double sigma, int npar) {
       OUT << Form("\\vdef{mBg2s:s%i}  {\\ensuremath {%4.1f } }", o, 1000.*f->GetParameter(5)) << endl;
       OUT << Form("\\vdef{mBg2sE:s%i} {\\ensuremath {%4.1f } }", o, 1000.*f->GetParError(5)) << endl;
     }
+
+    OUT.close();
 }
 
-// ================================================================================
+// ----------------------------------------------------------------------
+void anaBmm::fillInTheRest(const char *tag) { 
+
+  ofstream OUT(fNumbersFileName, ios::app);
+
+  OUT << Form("%s", (formatTex(0.,  "nMassAllCutsFact"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0., "nMassAllCutsFactE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0.,  "eMassAllCutsFact"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0., "eMassAllCutsFactE" , tag)).Data()) << endl;
+
+  OUT << Form("%s", (formatTex(0.,  "nAllCutsFact"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0., "nAllCutsFactE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0.,  "eAllCutsFact"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0., "eAllCutsFactE" , tag)).Data()) << endl;
+ 
+  OUT << Form("%s", (formatTex(0.,  "nTotEffChi2"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0., "nTotEffChi2E" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0.,  "eTotEffChi2"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0., "eTotEffChi2E" , tag)).Data()) << endl;
+ 
+  OUT << Form("%s", (formatTex(0.,  "nTotEffIso"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0., "nTotEffIsoE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0.,  "eTotEffIso"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0., "eTotEffIsoE" , tag)).Data()) << endl;
+
+  OUT << Form("%s", (formatTex(0.,  "nAfBchi2"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0., "eAfBchi2"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0., "eAfBchi2E" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0.,  "cAfBchi2"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0.,  "cAfBchi2E" , tag)).Data()) << endl;
+
+  OUT << Form("%s", (formatTex(0.,  "nAfBiso"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0., "eAfBiso"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0., "eAfBisoE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0.,  "cAfBiso"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0.,  "cAfBisoE" , tag)).Data()) << endl;
+
+  OUT.close();
+}
+
+
+//===========================================================================================
+// -- Optimization
+//===========================================================================================
+
+void anaBmm::runOptimization(const char *aoCuts, const char *extraVar, int nbin, double min, double max) {
+
+  double cut, maxFom(-99.), maxCut(0.); 
+  for (int i = 0; i < nbin; ++i) {
+    cut = min + i*(max-min)/nbin; 
+    handOptimization(aoCuts, Form("%s %5.4f", extraVar, cut));
+    if (fFom > maxFom) {
+      maxFom = fFom; 
+      maxCut = cut;
+    }
+  }
+
+  cout << "==> maximum fom: " << maxFom << " at cut " << extraVar << maxCut << endl;
+}
+
+// ----------------------------------------------------------------------
+void anaBmm::handOptimization(const char *aoCuts, const char *extraCuts) {
+ 
+  char filename[200];
+  sprintf(filename, "%s/handOptimization.txt", outDir); 
+  
+  //   system(Form("/bin/mv %s old.%s", filename, filename));
+  ofstream OUT(filename, ios::app);
+
+  // -- Fix lumi normalisation scaling factor
+  double SF = fLumiD[0]/fLumiM[bgIndex];
+  
+  // -- Run on signal MC to determine efficiency 
+  fS[sgIndex]->cd(); 
+  TH1D *hSG = (TH1D*)gROOT->FindObject("hSG"); 
+  if (!hSG) hSG = new TH1D("hSG", "", 50, 5., 6.);
+  TTree *s = (TTree*)gFile->Get("events");
+  s->Draw("mass>>hSG", Form("goodKinematics"), "goff"); 
+  double sNorm = hSG->GetSumOfWeights();
+  s->Draw("mass>>hSG", Form("%s", aoCuts), "goff"); 
+  double s1Norm = hSG->GetSumOfWeights();
+  s->Draw("mass>>hSG", Form("%s", extraCuts), "goff"); 
+  double s2Norm  =  hSG->GetSumOfWeights();
+  s->Draw("mass>>hSG", Form("%s && %s", aoCuts, extraCuts), "goff"); 
+  double s12Norm  =  hSG->GetSumOfWeights();
+
+  // -- Run on bg MC
+  fM[bgIndex]->cd(); 
+  TH1D *hBG = (TH1D*)gROOT->FindObject("hBG"); 
+  if (!hBG) hBG = new TH1D("hBG", "", 50, 5., 6.);
+  TTree *b = (TTree*)gFile->Get("events");
+  b->Draw("mass>>hBG", Form("goodKinematics"), "goff"); 
+  double bNorm   = hBG->GetSumOfWeights();
+  b->Draw("mass>>hBG", Form("%s", aoCuts), "goff"); 
+  double b1Norm  = hBG->GetSumOfWeights();
+  b->Draw("mass>>hBG", Form("%s", extraCuts), "goff"); 
+  double b2Norm  = hBG->GetSumOfWeights();
+  double e2      = b2Norm/bNorm;
+  b->Draw("mass>>hBG", Form("%s && %s", aoCuts, extraCuts), "goff"); 
+  double b12Norm  =  hSG->GetSumOfWeights();
+  
+  fFom = (s12Norm/sNorm) / (1. + TMath::Sqrt(e2*b1Norm*SF)) ;
+  
+  cout << Form("%4.2e s:%4.3f/%4.3f b:%4.3e/%4.3e #bg:%5.2f (%3.1e,%3.1e)", 
+	       fFom, s12Norm/sNorm, (s1Norm/sNorm)*(s2Norm/sNorm), b12Norm/bNorm, (b1Norm/bNorm)*(b2Norm/bNorm), e2*b1Norm*SF, b1Norm, b2Norm)
+       << " cuts: \"" << aoCuts << "\", \"" << extraCuts << "\" " << endl;
+
+  OUT << Form("%4.2e e12/e1e2:%4.3f/%4.3f bg:%5.2f (%3.1e,%3.1e)", 
+	      fFom, s12Norm/sNorm, (s1Norm/sNorm)*(s2Norm/sNorm), e2*b1Norm*SF, b1Norm, b2Norm)
+      << " cuts: \"" << aoCuts << "\", \"" << extraCuts << "\" " << endl;
+
+  OUT.close();
+}
+
+// ----------------------------------------------------------------------
+// -- loop for stupid loop over all  cuts
+// -- ptl1, chi2, lxy/sxy, iso, cosa
+void anaBmm::loopOptimization(double pt) {
+
+  double pTlo;
+  TH1D *h = (TH1D*)fS[sgIndex]->Get("hcuts");
+  for (int i = 1; i < h->GetNbinsX(); ++i) {
+    if (!strcmp(h->GetXaxis()->GetBinLabel(i), "p_{T}^{min}(l) [GeV]")) {
+      pTlo = h->GetBinContent(i);
+    }
+  }
+
+  char filename[200];
+  sprintf(filename, "%s/loopOptimization-pt:%3.2f.txt", outDir, pt); 
+
+  system(Form("/bin/rm -f %s", filename));
+  ofstream OUT(filename, ios::app);
+
+
+  char line[2000];
+  char precuts[2000]; 
+
+
+  sprintf(precuts, Form("goodL1 && goodKinematics && ptl1 > %f", pt));
+  cout << "Running with precuts: " << precuts << endl;
+
+  double eff, bg, sg;
+  double cut1(0.), cut2(0.),   cut3(0.),   cut4(0.); 
+  char scut1[200], scut2[200], scut3[200], scut4[200];
+  double fom(-1);
+
+  int IMAX1(5), IMAX2(5), IMAX3(5), IMAX4(5),  IMAX5(1); 
+  TH1D *hOpt = new TH1D("hOpt", "", IMAX1*IMAX2*IMAX3*IMAX4*IMAX5, 0., IMAX1*IMAX2*IMAX3*IMAX4*IMAX5);
+  
+  // -- Significance of UL: figure of merit should be maximized
+  double a(1.64); // a = 2:    95% CL UL
+                  // a = 1.64: 90% CL UL
+
+  double maxFom(-9.), i1max, i2max; 
+
+  for (int i1 = 0; i1 < IMAX1; ++i1) {
+    cut1 = 10. + i1*3.;
+    sprintf(scut1, "lxy/sxy > %f", cut1);
+    cout << "i1: " << scut1 << endl;
+
+    for (int i2 = 0; i2 < IMAX2; ++i2) {
+      cut2 = 0.95 + i2*0.005;
+      sprintf(scut2, "cosa > %f", cut2);
+      cout << " i2: " << scut2 << endl;
+
+      for (int i3 = 0; i3 < IMAX3; ++i3) {
+	cut3 = 0.7 + i3*0.05;
+	sprintf(scut3, "iso > %f", cut3);
+	cout << "i3: " << scut3 << endl;
+
+	for (int i4 = 0; i4 < IMAX4; ++i4) {
+	  cut4 = 1.0 + i4*0.5;
+	  sprintf(scut4, "chi2 < %f", cut4);
+	
+	  sprintf(line, "%s && %s && %s && %s", scut1, scut2, scut3, scut4); 
+	  optimizerNumbers(precuts, line, eff, sg, bg);
+	  
+	  fom = eff/(a + TMath::Sqrt(bg));
+	  hOpt->SetBinContent(i1*IMAX1 + i2, fom);
+
+	  if (fom > maxFom) {
+	    maxFom = fom; 
+	    i1max = i1;
+	    i2max = i2; 
+	  }
+      
+	  OUT << Form("lxy: %4.3f /cosa: %6.5f /iso: %4.3f /chi2: %4.3f /eff: %5.2f /SG: %5.2f /BG: %5.2f /fom: %7.6f", 
+		      cut1, cut2, cut3, cut4, eff, sg, bg, fom) 
+	      << endl;
+	}
+      }
+    }
+  }
+
+  hOpt->Draw();
+
+  cout << "Maximum fom: " << maxFom << " at lxy/sxy > " << 5. + i1max*2 << " and cos > " << 0.95 + i2max*0.005 << endl;
+
+  OUT.close();
+}
+
+
+// ----------------------------------------------------------------------
+void anaBmm::optimizerNumbers(const char *precuts, const char *line, double &eff, double &sg, double &bg) {
+
+  // -- Run on signal MC to determine efficiency 
+  fS[sgIndex]->cd(); 
+  TH1D *hSG = (TH1D*)gROOT->FindObject("hSG"); 
+  if (!hSG) hSG = new TH1D("hSG", "", 50, 5., 6.);
+  TTree *s = (TTree*)gFile->Get("events");
+  s->Draw("mass>>hSG", Form("%s", precuts), "goff"); 
+  double norm = hSG->GetSumOfWeights();
+  s->Draw("mass>>hSG", Form("%s && %s", precuts, line), "goff"); 
+  sg =  hSG->GetSumOfWeights();
+  eff = sg/norm;
+
+  // -- And now MC for background expectation
+  fM[bgIndex]->cd(); 
+  TH1D *hBG = (TH1D*)gROOT->FindObject("hBG"); 
+  if (!hBG) hBG = new TH1D("hBG", "", 50, 5., 6.);
+  TTree *b = (TTree*)gFile->Get("events");
+  b->Draw("mass>>hBG", Form("%s && %s", precuts, line), "goff"); 
+  bg =  hBG->GetSumOfWeights();
+
+  //   cout << " sg: " << sg << " and norm: " << norm << "bg: " << bg << endl;
+
+}
+
+
+//===========================================================================================
+// -- Utilities
+//===========================================================================================
+
 void anaBmm::makeCanvas(int i) {
   if (i & 16) { 
     c5 = new TCanvas("c5", "c5", 210,   0, 800, 1000);
@@ -3946,17 +3600,6 @@ void anaBmm::makeCanvas(int i) {
   }
 }
 
-
-// ----------------------------------------------------------------------
-int anaBmm::wait() {
-  cout << " Continue [<RET>|q]?  "; 
-  char x;
-  x = getchar();
-  if ((x == 'q') || (x == 'Q')) return 1;
-  return 0;
-}
-
-
 // ----------------------------------------------------------------------
 void anaBmm::shrinkPad(double b, double l, double r, double t) {
   gPad->SetBottomMargin(b); 
@@ -3964,7 +3607,6 @@ void anaBmm::shrinkPad(double b, double l, double r, double t) {
   gPad->SetRightMargin(r);
   gPad->SetTopMargin(t);
 }
-
 
 // ----------------------------------------------------------------------
 void anaBmm::setTitles(TH1 *h, const char *sx, const char *sy, float size, 
@@ -3998,20 +3640,6 @@ void anaBmm::setTitles2(TH2 *h, const char *sx, const char *sy, float size,
   }
 }
 
-
-// ----------------------------------------------------------------------
-void anaBmm::emptyBinError(TH1 *h) {
-
-  for (int i = 0; i < h->GetNbinsX(); i++ ) {
-    
-    if ( h->GetBinContent(i) == 0 ) {
-      
-      h->SetBinError(i, 1);
-    }
-  }
-}
-
-
 // ----------------------------------------------------------------------
 void anaBmm::setHist(TH1 *h, Int_t color, Int_t symbol, Double_t size, Double_t width) {
   h->SetLineColor(color);   h->SetLineWidth(int(width));
@@ -4030,101 +3658,6 @@ void anaBmm::setFilledHist(TH1 *h, Int_t color, Int_t fillcolor, Int_t fillstyle
   h->SetFillStyle(fillstyle); h->SetFillColor(fillcolor);
 }
 
-
-
-
-// ----------------------------------------------------------------------
-double anaBmm::nul(int nobs) {
-  if (nobs <= 0) return  2.3;
-  if (nobs == 1) return  3.89; 
-  if (nobs == 2) return  5.32;
-  if (nobs == 3) return  6.68;
-  if (nobs == 4) return  7.99;
-  if (nobs == 5) return  9.27;
-  if (nobs == 6) return 10.53;
-  if (nobs == 7) return 11.77;
-  if (nobs == 8) return 12.99;
-  if (nobs == 9) return 14.21;
-  if (nobs ==10) return 15.41;
-  return -1.;
-}
-
-
-// ----------------------------------------------------------------------
-double anaBmm::barlow(int nobs, double bg, double bgE, double sE) {
-
-  double ul(-99.); 
-
-  if (nobs > 10)  {
-    cout << "barlow: dunno" << endl;
-    return ul; 
-  }
-
-  // -- "unified confidence limits" from PDG as intervals to probe 
-  double uclLo[] = {0.00, 0.11, 0.53, 1.10, 1.47, 1.84, 2.21, 3.56, 3.96, 4.36, 5.50};
-  double uclHi[] = {2.44, 4.36, 5.91, 7.42, 8.60, 9.99,11.47,12.53,13.99,15.30,16.50};
-
-  double cl(0.1); // this is 90% UL!
-
-  // -- Set up Gaussian pdf for expected background 
-  double bgSig= (bgE > 0. ? bgE : bg/3.); 
-
-  // -- Set up Gaussian pdf for sensitivity
-  double sSig= (sE > 0. ? sE : 0.1); 
-
-  // -- Set up histogram for counting
-  TH1D *h = (TH1D*)gROOT->FindObject("hbarlow"); 
-  if (h) {
-    h->Reset();
-  } else {
-    //    h = new TH1D("hbarlow", "", 10000, 0., 100.); 
-    h = new TH1D("hbarlow", "", 50, 0., 50.); 
-  }
-
-  int bin = h->FindBin(nobs); 
-
-  // -- Run toy
-  double tSignal(0.), tBackground(0.), tSensitivity(1.), tCounts(0.);
-  double tFraction(0.); 
-  double minDeviation(99.), bestAlpha(99.); 
-
-  int NSTEPS(100); 
-  double step = (uclHi[nobs] - uclLo[nobs])/NSTEPS; 
-
-  if (nobs <= 2) {
-    step   = 0.02; 
-  } else {
-    step   = 0.1; 
-  }
-  NSTEPS = int((uclHi[nobs] - uclLo[nobs])/step + 1);
-
-  // -- This loop is quite rough ...?
-  for (int k = 0; k < NSTEPS; ++k) {
-    h->Reset();
-    tSignal = uclLo[nobs] + k*step; 
-    
-    for (int i = 0; i < 100000; ++i) {
-      tBackground  = gRandom->Gaus(bg, bgSig); 
-      tSensitivity = gRandom->Gaus(1., sSig); 
-    
-      tCounts = gRandom->Poisson((tSignal+tBackground)*tSensitivity);
-      h->Fill(tCounts); 
-    }
-    tFraction= h->Integral(1, bin) / h->Integral();
-    if (TMath::Abs(tFraction - cl) < minDeviation) {
-      minDeviation = TMath::Abs(tFraction - cl); 
-      bestAlpha    = tFraction; 
-      ul           = tSignal;
-    }
-
-    if (tFraction < (cl - minDeviation)) {
-      cout << "break " << tFraction << " bestAlpha: " << bestAlpha << " (should be " << cl << ")" << endl;
-      break;
-    }
-  }
-
-  return ul; 
-}
 // ----------------------------------------------------------------------
 TString anaBmm::texForm(double e) {
   TString seff1(Form("%4.2e", e)); 
@@ -4157,12 +3690,16 @@ TString anaBmm::formatTex(double n, const char *name, const char *tag) {
     out.Form("\\vdef{%s:%s}   {\\ensuremath{{%4.0f } } }", name, tag, n);
   } else if ( n > 1. ) {
     out.Form("\\vdef{%s:%s}   {\\ensuremath{{%4.1f } } }", name, tag, n);
+  } else if ( n > 1.e-2) {
+    out.Form("\\vdef{%s:%s}   {\\ensuremath{{%4.2f } } }", name, tag, n);
   } else if ( n > 1.e-3) {
     out.Form("\\vdef{%s:%s}   {\\ensuremath{{%4.3f } } }", name, tag, n);
   } else if ( n > 1.e-9 ) {
     out.Form("\\vdef{%s:%s}   {\\ensuremath{{%s } } }", name, tag, (texForm(n)).Data());
-  } else {
+  } else if ( n > 1.e-19 ){
     out.Form("\\vdef{%s:%s}   {\\ensuremath{{%s } } }", name, tag, (texForm2(n)).Data());
+  } else {
+    out.Form("\\vdef{%s:%s}   {\\ensuremath{{0.0 } } }", name, tag);
   }
   
   return out;
@@ -4267,19 +3804,12 @@ TString anaBmm::scaleFactor(int exp) {
   TString factor;
 
   if ( exp == 0 ) {
-    
     factor = TString(""); 
-  }
-  else if ( exp == 1 ) {
-    
+  } else if ( exp == 1 ) {
     factor = TString("(x 10)"); 
-  }
-  else if ( exp > -100 ) { 
-    
+  } else if ( exp > -100 ) { 
     factor = TString(Form("(10^{%i})", exp));
-  }
-  else {
-
+  } else {
     factor = TString("");
   }
 
@@ -4288,6 +3818,153 @@ TString anaBmm::scaleFactor(int exp) {
 }
 
 // ----------------------------------------------------------------------
+void anaBmm::emptyBinError(TH1 *h) {
+
+  for (int i = 0; i < h->GetNbinsX(); i++ ) {
+    if ( h->GetBinContent(i) == 0 ) {
+      h->SetBinError(i, 1);
+    }
+  }
+}
+
+
+//===========================================================================================
+// -- Other
+//===========================================================================================
+
+double anaBmm::barlow(int nobs, double bg, double bgE, double sE) {
+
+  double ul(-99.); 
+
+  if (nobs > 10)  {
+    cout << "barlow: dunno" << endl;
+    return ul; 
+  }
+
+  // -- "unified confidence limits" from PDG as intervals to probe 
+  double uclLo[] = {0.00, 0.11, 0.53, 1.10, 1.47, 1.84, 2.21, 3.56, 3.96, 4.36, 5.50};
+  double uclHi[] = {2.44, 4.36, 5.91, 7.42, 8.60, 9.99,11.47,12.53,13.99,15.30,16.50};
+
+  double cl(0.1); // this is 90% UL!
+
+  // -- Set up Gaussian pdf for expected background 
+  double bgSig= (bgE > 0. ? bgE : bg/3.); 
+
+  // -- Set up Gaussian pdf for sensitivity
+  double sSig= (sE > 0. ? sE : 0.1); 
+
+  // -- Set up histogram for counting
+  TH1D *h = (TH1D*)gROOT->FindObject("hbarlow"); 
+  if (h) {
+    h->Reset();
+  } else {
+    //    h = new TH1D("hbarlow", "", 10000, 0., 100.); 
+    h = new TH1D("hbarlow", "", 50, 0., 50.); 
+  }
+
+  int bin = h->FindBin(nobs); 
+
+  // -- Run toy
+  double tSignal(0.), tBackground(0.), tSensitivity(1.), tCounts(0.);
+  double tFraction(0.); 
+  double minDeviation(99.), bestAlpha(99.); 
+
+  int NSTEPS(100); 
+  double step = (uclHi[nobs] - uclLo[nobs])/NSTEPS; 
+
+  if (nobs <= 2) {
+    step   = 0.02; 
+  } else {
+    step   = 0.1; 
+  }
+  NSTEPS = int((uclHi[nobs] - uclLo[nobs])/step + 1);
+
+  // -- This loop is quite rough ...?
+  for (int k = 0; k < NSTEPS; ++k) {
+    h->Reset();
+    tSignal = uclLo[nobs] + k*step; 
+    
+    for (int i = 0; i < 100000; ++i) {
+      tBackground  = gRandom->Gaus(bg, bgSig); 
+      tSensitivity = gRandom->Gaus(1., sSig); 
+    
+      tCounts = gRandom->Poisson((tSignal+tBackground)*tSensitivity);
+      h->Fill(tCounts); 
+    }
+    tFraction= h->Integral(1, bin) / h->Integral();
+    if (TMath::Abs(tFraction - cl) < minDeviation) {
+      minDeviation = TMath::Abs(tFraction - cl); 
+      bestAlpha    = tFraction; 
+      ul           = tSignal;
+    }
+
+    if (tFraction < (cl - minDeviation)) {
+      cout << "break " << tFraction << " bestAlpha: " << bestAlpha << " (should be " << cl << ")" << endl;
+      break;
+    }
+  }
+
+  return ul; 
+}
+
+// ----------------------------------------------------------------------
+int anaBmm::wait() {
+  cout << " Continue [<RET>|q]?  "; 
+  char x;
+  x = getchar();
+  if ((x == 'q') || (x == 'Q')) return 1;
+  return 0;
+}
+
+// ----------------------------------------------------------------------
+double anaBmm::nul(int nobs) {
+  if (nobs <= 0) return  2.3;
+  if (nobs == 1) return  3.89; 
+  if (nobs == 2) return  5.32;
+  if (nobs == 3) return  6.68;
+  if (nobs == 4) return  7.99;
+  if (nobs == 5) return  9.27;
+  if (nobs == 6) return 10.53;
+  if (nobs == 7) return 11.77;
+  if (nobs == 8) return 12.99;
+  if (nobs == 9) return 14.21;
+  if (nobs ==10) return 15.41;
+  return -1.;
+}
+
+
+//===========================================================================================
+// -- Assignments
+//===========================================================================================
+
+int anaBmm::checkIf(int mc, const char *sel) {
+  
+  int accept(0);
+  // -- only accepts rare backgrounds (signal)
+  if ( !strcmp(sel,"r0") ) {
+    if ( !strcmp(fTypeM[mc].Data(), "rmc") ) {
+      accept = 1;
+    }
+    
+  // -- only accepts backgrounds & rare backgrounds (signal)
+  } else if ( !strcmp(sel,"c0") ) {
+    accept = 1;
+    if ( !strcmp(fTypeM[mc].Data(), "nmc") ) {
+      accept = 0;
+    }
+    
+  // -- sum-up sub-groups of rare backgrounds (2mu+, 2mId, etc)
+  } else {
+    if ( !strcmp(getSubGroup(fSignM[mc]).Data(), sel) ) {
+      accept = 1;	    
+    }
+  }
+
+  return accept;
+}
+
+// -----------------------------------------------------
+
 void anaBmm::getSignature(TString signIn, TString &signOut, TString &signOut2) {
  
  signOut  = signIn;
