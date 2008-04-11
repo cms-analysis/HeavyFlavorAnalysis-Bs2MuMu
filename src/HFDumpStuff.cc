@@ -28,21 +28,25 @@ extern TAna00Event *gHFEvent;
 
 using namespace std;
 using namespace edm;
+using namespace reco;
 
 
 // ----------------------------------------------------------------------
 HFDumpStuff::HFDumpStuff(const edm::ParameterSet& iConfig):
+  fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fGenEventScaleLabel(iConfig.getUntrackedParameter<string>("GenEventScaleLabel", string("genEventScale"))),
   fPrimaryVertexLabel(iConfig.getUntrackedParameter<string>("PrimaryVertexLabel", string("offlinePrimaryVerticesFromCTFTracks")))
-//   fCandidates1Label(iConfig.getUntrackedParameter<string>("Candidates1Label", string("JPsiToMuMu"))),
-//   fCandidates2Label(iConfig.getUntrackedParameter<string>("Candidates2Label", string("JPsiToMuMu"))),
-//   fCandidates3Label(iConfig.getUntrackedParameter<string>("Candidates3Label", string("JPsiToMuMu")))
 {
+  using namespace std;
+
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFDumpStuff constructor" << endl;
-  cout << "--- GenEventScaleLabel: " << fGenEventScaleLabel.c_str() << endl;
-  cout << "--- PrimaryVertexLabel: " << fPrimaryVertexLabel.c_str() << endl;
+  cout << "--- Verbose            : " << fVerbose << endl;
+  cout << "--- GenEventScaleLabel : " << fGenEventScaleLabel.c_str() << endl;
+  cout << "--- PrimaryVertexLabel : " << fPrimaryVertexLabel.c_str() << endl;
   cout << "----------------------------------------------------------------------" << endl;
+
+  fNevt = 0;
 }
 
 
@@ -55,14 +59,41 @@ HFDumpStuff::~HFDumpStuff() {
 // ----------------------------------------------------------------------
 void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   
+
+  fNevt++; 
+
+  if (fVerbose > 0) cout << "==>HFDumpStuff>  Get primary vertex, event: " << fNevt << endl;
+
   // -- Primary vertex
+  int nvtx(0);
   try {
+
     edm::Handle<reco::VertexCollection> recoPrimaryVertexCollection;
     iEvent.getByLabel(fPrimaryVertexLabel.c_str(), recoPrimaryVertexCollection);
     const reco::VertexCollection vertices = *(recoPrimaryVertexCollection.product());
+
+    for(reco::VertexCollection::const_iterator v=recoPrimaryVertexCollection->begin(); 
+	v!=recoPrimaryVertexCollection->end(); 
+	++v){    
+      
+      nvtx++;
+
+      if ( fVerbose > 0 ) {
+	printf ("==>HFDumpStuff>  %i. Primary Vertex (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", 
+		nvtx, v->x(), v->y(), v->z());
+      }
+    }
+
+    if ( nvtx == 0 ) {
+
+      if ( fVerbose > 0 )  cout << "==>HFDumpStuff>  no primary vertex in recoPrimaryVertexCollection" << endl;
+      return;
+    }
+
     const reco::Vertex pV = vertices[0]; // ???? 
     ChiSquared chi2(pV.chi2(), pV.ndof());
-    
+
+
     TAnaVertex *pVtx = new TAnaVertex();
     pVtx->setInfo(chi2.value(), int(chi2.degreesOfFreedom()), chi2.probability(), 0, 0);
     pVtx->fPoint.SetXYZ(pV.position().x(),

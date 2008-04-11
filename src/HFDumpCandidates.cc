@@ -15,11 +15,13 @@
 #include "CommonTools/Statistics/interface/ChiSquared.h"
 
 #include "SimTracker/Records/interface/TrackAssociatorRecord.h"
-//#include "SimTracker/Records/interface/VertexAssociatorRecord.h"
 #include "SimTracker/TrackAssociation/interface/TrackAssociatorBase.h" 
 #include "SimTracker/TrackAssociation/interface/TrackAssociatorByChi2.h"
 #include "SimTracker/TrackAssociation/interface/TrackAssociatorByHits.h"
-//#include "SimTracker/VertexAssociation/interface/VertexAssociatorByTracks.h"
+
+#include "SimTracker/Records/interface/VertexAssociatorRecord.h"
+#include "SimTracker/VertexAssociation/interface/VertexAssociatorBase.h" 
+#include "SimTracker/VertexAssociation/interface/VertexAssociatorByTracks.h"
 
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/Wrapper.h"
@@ -40,16 +42,40 @@ using namespace reco;
 using namespace edm;
 
 
-class TrackAssociatorByHits;
-class TrackAssociatorByChi2; 
-class VertexAssociatorByTrack;
-class TrackerHitAssociator;
-
 
 // ----------------------------------------------------------------------
 // ======================================================================
-HFDumpCandidates::HFDumpCandidates(const edm::ParameterSet& iConfig) {
+HFDumpCandidates::HFDumpCandidates(const edm::ParameterSet& iConfig):
+  fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
+  fBmmSel(iConfig.getUntrackedParameter<int>("bmmsel", -1)),
+  fChannel(iConfig.getUntrackedParameter<string>("channel","default")),
+  fPrimaryVertexLabel(iConfig.getUntrackedParameter<string>("PrimaryVertexLabel"
+							    , string("offlinePrimaryVerticesFromCTFTracks"))),
+  fGenEventLabel(iConfig.getUntrackedParameter<string>("generatorEventLabel", string("source"))),
+  fTrackingParticlesLabel(iConfig.getUntrackedParameter<string>("trackingParticlesLabel", string("trackingParticles"))),
+  fTrackingVertexLabel(iConfig.getUntrackedParameter<string>("trackingVertexLabel", string("trackingParticles"))),
+  fTracksLabel(iConfig.getUntrackedParameter<string>("tracksLabel", string("ctfWithMaterialTracks"))),
+  fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
+  fVtxAssociatorLabel(iConfig.getUntrackedParameter<string>("vertexAssociatorLabel", string("VertexAssociatorByTracks"))), 
+  fAssociatorLabel(iConfig.getUntrackedParameter<string>("associatorLabel", string("TrackAssociatorByChi2"))), 
+  fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1))  {
+
   using namespace std;
+
+  cout << "----------------------------------------------------------------------" << endl;
+  cout << "--- HFDumpCandidates constructor" << endl;
+  cout << "--- Verbose                : " << fVerbose << endl;
+  cout << "--- BmmSel                 : " << fBmmSel << endl;
+  cout << "--- Channel                : " << fChannel.c_str() << endl;
+  cout << "--- prim. Vertex Label     : " << fPrimaryVertexLabel.c_str() << endl;
+  cout << "--- generatorEventLabel    : " << fGenEventLabel.c_str() << endl;
+  cout << "--- trackingParticlesLabel : " << fTrackingParticlesLabel.c_str() << endl;
+  cout << "--- tracksLabel            : " << fTracksLabel.c_str() << endl;
+  cout << "--- muonsLabel             : " << fMuonsLabel << endl;
+  cout << "--- associatorLabel        : " << fAssociatorLabel.c_str() << endl;
+  cout << "--- doTruthMatching        : " << fDoTruthMatching << endl;  // 0 = nothing, 1 = TrackingParticles, 2 = FAMOS
+  cout << "----------------------------------------------------------------------" << endl;
+
   cout << "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" << endl;
   cout << "===>> HFDumpCandidates >>> ctor, instantiating histogramms, etc." << endl;
 
@@ -59,39 +85,16 @@ HFDumpCandidates::HFDumpCandidates(const edm::ParameterSet& iConfig) {
   fNgen = 0;
   fNrec = 0;
 
-  // -- Config. File input
-  //  fLabel          = iConfig.getUntrackedParameter("moduleLabel",std::string("source"));
-  fPrimaryVertexLabel = iConfig.getUntrackedParameter<string>("PrimaryVertexLabel", 
-							      string("offlinePrimaryVerticesFromCTFTracks"));
-  
-  fGenEventLabel  = iConfig.getUntrackedParameter<string>("generatorEvent", string("Source"));
-  fTracksLabel    = iConfig.getParameter<string>("tracks");
-  fAssocLabel     = iConfig.getParameter<string>("associator");
-  fMuonLabel      = iConfig.getParameter<string>("Muons");
 
-  fL1MuonLabel    = iConfig.getParameter<string>("l1extramc");
-
-  fBmmSel = iConfig.getParameter<int>("bmmsel");
-
-  fVerbose     = iConfig.getParameter<int>("Verbose");
-
-  if ( strcmp( (fAssocLabel.c_str()), "TrackAssociatorByHits") && 
-       strcmp( (fAssocLabel.c_str()), "TrackAssociatorByChi2") )  {
+  if ( strcmp( (fAssociatorLabel.c_str()), "TrackAssociatorByHits") && 
+       strcmp( (fAssociatorLabel.c_str()), "TrackAssociatorByChi2") )  {
   
     cout << " Please set your track associator option to either \"TrackAssociatorByHits\"                                                              or \"TrackAssociatorByChi2\" .... Abort!" << endl;
     return;
   }
 
 
-
-  cout << "----------------------------------------------------------------------" << endl;
-  cout << "--- HFDumpCandidates constructor" << endl;
-  cout << "--- tracksLabel:            " << fTracksLabel.c_str() << endl;
-  cout << "--- muonsLabel:             " << fMuonLabel.c_str() << endl;
-  cout << "----------------------------------------------------------------------" << endl;
-
   // -- ROOT output
-  fChannel = iConfig.getParameter<string>("channel");
 //   gHFFile = new TFile(iConfig.getParameter<string>("fileName").c_str(), "RECREATE");
 //   fTree = new TTree("T1","CMSSW Bs -> mu+mu- tree");
 //   gHFEvent = new TAna00Event(0);
@@ -133,15 +136,15 @@ HFDumpCandidates::~HFDumpCandidates() {
   cout << endl << "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" << endl;
   cout << "===>> HFDumpCandidates >>> dtor, writing histogramms to file" << endl;
 
-  fEff->Write();
+//   fEff->Write();
 
-  for (int i = 0; i < 3; i++) {
+//   for (int i = 0; i < 3; i++) {
    
-    fM000[i]->Write(); 
-    fM100[i]->Write(); 
-    fM200[i]->Write();
-    fM300[i]->Write();
-  }
+//     fM000[i]->Write(); 
+//     fM100[i]->Write(); 
+//     fM200[i]->Write();
+//     fM300[i]->Write();
+//   }
 
 //   fTree->Write();
 
@@ -181,12 +184,11 @@ void HFDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
   // === Initialize event record ===
 
-  theVtxCollection = 0;
-  theL1MuonCollection = 0;
   theMuonCollection = 0;
   theTkCollection = 0;
-  theTPCollection = 0;
+  theGenCollection.clear();
   //  recSimCollection = 0;
+  //  recSimCollectionVertex = 0;
 
   clearTracks();
   clearCandidateTracks();
@@ -197,12 +199,6 @@ void HFDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   // primaryVertex2 = 0;
 
   // === Fill event record ===
-
-  // -- get the collection of RecoTracks 
-  edm::Handle<reco::TrackCollection> tracks;
-  iEvent.getByLabel(fTracksLabel.c_str(), tracks );  
-  theTkCollection  = tracks.product();
-  // theTkCollection  = new reco::TrackCollection(*(tracks.product()));
 
   // -- Get generator block directly
   Handle<HepMCProduct> evt;
@@ -216,22 +212,15 @@ void HFDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     theGenCollection.push_back((*p));
   }
 
-
-  // -- get the collection of TrackingParticles 
-  edm::Handle<TrackingParticleCollection>  TPCollectionH ;
-  iEvent.getByLabel("trackingtruth","TrackTruth",TPCollectionH);
-  theTPCollection  = TPCollectionH.product();  
-  // theTPCollection  = new TrackingParticleCollection(*(TPCollectionH.product()));  
+  // -- get the collection of RecoTracks 
+  edm::Handle<reco::TrackCollection> tracks;
+  iEvent.getByLabel(fTracksLabel.c_str(), tracks );  
+  theTkCollection  = tracks.product();
+  // theTkCollection  = new reco::TrackCollection(*(tracks.product()));
    
-  // -- get the collection of L1 muons 
-  edm::Handle<l1extra::L1MuonParticleCollection> L1MuCollection;
-  iEvent.getByLabel(fL1MuonLabel.c_str(), L1MuCollection);
-  theL1MuonCollection   = L1MuCollection.product();
-  // theMuonCollection   = new reco::MuonCollection(*(MuCollection.product()));  
-
   // -- get the collection of MuonTracks 
   edm::Handle<reco::MuonCollection> MuCollection;
-  iEvent.getByLabel(fMuonLabel.c_str(), MuCollection);
+  iEvent.getByLabel(fMuonsLabel, MuCollection);
   theMuonCollection   = MuCollection.product();
   // theMuonCollection   = new reco::MuonCollection(*(MuCollection.product()));  
 
@@ -245,35 +234,26 @@ void HFDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 //   iEvent.getByLabel("g4SimHits", simVertexCollection);
 //   const SimVertexContainer simVC = *(simVertexCollection.product());
 
+  // -- get the collection of TrackingParticles 
+  edm::Handle<TrackingParticleCollection> trackingParticles;
+  iEvent.getByLabel(fTrackingParticlesLabel.c_str(), trackingParticles);
+
+  recSimCollection =  new 
+      reco::RecoToSimCollection(fAssociator->associateRecoToSim(tracks, trackingParticles, &iEvent)); 
+
   // -- get the collection of TrackingVertices
   edm::Handle<TrackingVertexCollection>  TVCollectionH ;
-  iEvent.getByLabel("trackingtruth","VertexTruth",TVCollectionH);
-  const TrackingVertexCollection tVC   = *(TVCollectionH.product());
+  iEvent.getByLabel(fTrackingVertexLabel.c_str(), TVCollectionH);
+
 
   // -- get the collection of primary Vertices
-  edm::Handle<reco::VertexCollection>  primaryVertexH ;
-  iEvent.getByLabel("offlinePrimaryVerticesFromCTFTracks","",primaryVertexH);
-  const reco::VertexCollection primaryVertexCollection   = *(primaryVertexH.product());
+//  edm::Handle<reco::VertexCollection> recoPrimaryVertexCollection;
+//  iEvent.getByLabel(fPrimaryVertexLabel.c_str(), recoPrimaryVertexCollection);
 
-  // -- perform association by either hits or chi2 (in config-file)
-  if ( !strcmp( (fAssocLabel.c_str()), "TrackAssociatorByHits") ) {
-      
-    if (fVerbose) cout << "==> -- Track Associator by hits --" << endl;  
-    recSimCollection = new 
-      reco::RecoToSimCollection(associatorByHits->associateRecoToSim(tracks, TPCollectionH, &iEvent));
-  }
-  if ( !strcmp( (fAssocLabel.c_str()), "TrackAssociatorByChi2") ) {
-      
-    if (fVerbose) cout << "==> -- Track Associator by chi2 --" << endl;  
-    recSimCollection = new   
-      reco::RecoToSimCollection(associatorByChi2->associateRecoToSim(tracks, TPCollectionH, &iEvent));
-  }
-    
-
-//**  if (fVerbose) cout << "==> -- Vertex Associator by tracks --" << endl; 
-//**   recSimCollectionVertex = new
-//**     reco::VertexRecoToSimCollection(associatorByTracks->associateRecoToSim(primaryVertexH, TVCollectionH, iEvent
-//**  									   , (*recSimCollection)));
+//  recSimCollectionVertex =  new 
+//    reco::VertexRecoToSimCollection(fVtxAssociator->associateRecoToSim(recoPrimaryVertexCollection, 
+// 									  TVCollectionH, iEvent,
+//  									  (*recSimCollection)));
   // === Start analysis ===
 
   // -- Primary Vertex
@@ -329,6 +309,7 @@ void HFDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 //   fTree->Fill();
 
   delete recSimCollection;
+  // delete recSimCollectionVertex;
 
   cout << endl << "===>> HFDumpCandidates >>> Done with event: " << fNevt << endl;
   cout << "*********************************************************************" << endl;
@@ -372,6 +353,8 @@ void HFDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
   int gen_pdg_id(-99999), gen_id(-99999);
   int gen_cnt(0);
 
+  int motherBarcode(-99999), grandmotherBarcode(-99999);
+
   for(TrackCollection::size_type i=0; i<recTC.size(); ++i) {
 
     TrackRef track(tracks, i);
@@ -411,11 +394,29 @@ void HFDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 	if ( (abs(gen_pdg_id) == fTruthMC_I) ||  
 	     (abs(gen_pdg_id) == fTruthMC_II) ) { 
 	  
-	  int motherBarcode = genPar->production_vertex() && 
+	  motherBarcode = -99999;
+
+	  motherBarcode = genPar->production_vertex() && 
 	    genPar->production_vertex()->particles_in_const_begin() !=
 	    genPar->production_vertex()->particles_in_const_end() ?
 	    (*(genPar->production_vertex()->particles_in_const_begin()))->barcode()-1 : 0;
 	  
+	  if ( motherBarcode < 0 ) {
+
+	    if ( fVerbose ) {
+	      cout << " --> No good mother barcode " << motherBarcode << " <--- " << endl;
+	      continue;
+	    }
+	  }
+
+	  if ( motherBarcode > theGenCollection.size() ) {
+	    
+	    if ( fVerbose ) {
+	      cout << " --> Mother barcode " << motherBarcode << " outside GenCollection <--- " << endl;
+	      continue;
+	    }
+	  }
+
     	  genMom = theGenCollection[motherBarcode];
 	  
 	  mom_pdg_id = genMom->pdg_id();
@@ -447,11 +448,30 @@ void HFDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 
 	    if ( fTruthMC2_gmo > 0 ) {
 	      
-	      int grandmotherBarcode = genMom->production_vertex() && 
+	      grandmotherBarcode = -99999;
+	  
+	      grandmotherBarcode = genMom->production_vertex() && 
 		genMom->production_vertex()->particles_in_const_begin() !=
 		genMom->production_vertex()->particles_in_const_end() ?
 		(*(genMom->production_vertex()->particles_in_const_begin()))->barcode()-1 : 0;
+	      	  
 	      
+	      if ( grandmotherBarcode < 0 ) {
+		
+		if ( fVerbose ) {
+		  cout << " --> No good grandmother barcode " << grandmotherBarcode << " <--- " << endl;
+		  continue;
+		}
+	      }
+	      
+	      if ( grandmotherBarcode > theGenCollection.size() ) {
+		
+		if ( fVerbose ) {
+		  cout << " --> Grandmother barcode " << grandmotherBarcode << " outside GenCollection <--- " << endl;
+		  continue;
+		}
+	      }
+
 	      genGmo = theGenCollection[grandmotherBarcode];
 	      
 	      gmo_pdg_id = genGmo->pdg_id();
@@ -501,12 +521,29 @@ void HFDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 	// -- Cand 3 (only Kaon or 3rd track)
 	if ( abs(gen_pdg_id) == fTruthMC2  ) { 
 	  
-	  
-	  int motherBarcode = genPar->production_vertex() && 
+	  motherBarcode = -99999;	  
+
+	  motherBarcode = genPar->production_vertex() && 
 	    genPar->production_vertex()->particles_in_const_begin() !=
 	    genPar->production_vertex()->particles_in_const_end() ?
 	    (*(genPar->production_vertex()->particles_in_const_begin()))->barcode()-1 : 0;
+	  	  
+	  if ( motherBarcode < 0 ) {
+
+	    if ( fVerbose ) {
+	      cout << " --> No good mother barcode <--- " << endl;
+	      continue;
+	    }
+	  }
 	  
+	  if ( motherBarcode > theGenCollection.size() ) {
+	    
+	    if ( fVerbose ) {
+	      cout << " --> Mother barcode outside GenCollection <--- " << endl;
+	      continue;
+	    }
+	  }
+
     	  genMom = theGenCollection[motherBarcode];
 	  mom_pdg_id = genMom->pdg_id();
 	  mom_id     = genMom->barcode()-1;
@@ -592,15 +629,12 @@ void HFDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
   clearCandidateTracks();
 
   const reco::Track* tt = 0;
-  const HepMC::GenParticle* genGmo = 0;
-  const HepMC::GenParticle* genMom = 0;
   const HepMC::GenParticle* genPar = 0; 
 
   int mcand(0);
-  int gmo_pdg_id(-99999), gmo_id(-99999);
-  int mom_pdg_id(-99999), mom_id(-99999);
   int gen_pdg_id(-99999), gen_id(-99999);
   int gen_cnt(0);
+
 
   for(TrackCollection::size_type i=0; i<recTC.size(); ++i) {
 
@@ -631,6 +665,9 @@ void HFDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
 	  
 	  mcand++;
 	  tt = &(*track);
+	    
+	  MuonRecTracks.push_back(tt);
+	  MuonRecTracksIndex.push_back(track.index());
 
 	  if (fVerbose) {
 	    
@@ -638,47 +675,11 @@ void HFDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
 	    cout << ".. Sim. Particle #" << tpr.index() << " pT = " << tpr->pt() 
 		 << " PDG ID: " << tpr->pdgId() << " (NShared: "  << assocChi2 << ")" << endl;
 	    cout << ".. Gen. Particle #" << gen_id << " pT = " << genPar->momentum().perp() 
-		 << " ---> PDG ID: " << gen_pdg_id << endl;
-	  
+		 << " ---> PDG ID: " << gen_pdg_id << "    *** " << fPrintChannel << " (" << mcand << ") *** " << endl;
 	  }
-
-	  
-	  int motherBarcode = genPar->production_vertex() && 
-	    genPar->production_vertex()->particles_in_const_begin() !=
-	    genPar->production_vertex()->particles_in_const_end() ?
-	    (*(genPar->production_vertex()->particles_in_const_begin()))->barcode()-1 : 0;
-	  
-    	  genMom = theGenCollection[motherBarcode];
-
-	  mom_pdg_id = genMom->pdg_id();
-	  mom_id     = genMom->barcode()-1;
-     
-
-	  if (fVerbose) cout << endl << ".. Mother Particle #" << mom_id << " pT = " << genMom->momentum().perp() 
-	               << " ---> PDG ID: " << mom_pdg_id;
-
-	      
-	  int grandmotherBarcode = genMom->production_vertex() && 
-	    genMom->production_vertex()->particles_in_const_begin() !=
-	    genMom->production_vertex()->particles_in_const_end() ?
-	    (*(genMom->production_vertex()->particles_in_const_begin()))->barcode()-1 : 0;
-	  
-	  genGmo = theGenCollection[grandmotherBarcode];
-	  
-	  gmo_pdg_id = genGmo->pdg_id();
-	  gmo_id     = genGmo->barcode()-1;
-	  
-	  if (fVerbose) cout << endl << ".. and Grandmother Particle #" << gmo_id << " pT = " 
-			     << genGmo->momentum().perp() << " ---> PDG ID: " << gmo_pdg_id;
-
-	    
-	  MuonRecTracks.push_back(tt);
-	  MuonRecTracksIndex.push_back(track.index());
- 
-	  if (fVerbose) cout << "    *** " << fPrintChannel << " (" << mcand << ") *** " << endl;
 	}
-
-	gen_cnt++;	 
+	
+	gen_cnt++;
       }
 
       // -- eff. histogram ---------------------------
@@ -731,7 +732,7 @@ void HFDumpCandidates::bmmTracks3(const edm::Event &iEvent) {
     if (fVerbose) cout << "==>bmmTrack3> getting the muon collection ..." << endl;
     
     edm::Handle<reco::MuonCollection> MuCollection;
-    iEvent.getByLabel(fMuonLabel.c_str(), MuCollection);
+    iEvent.getByLabel(fMuonsLabel, MuCollection);
     theMuonCollection   = new reco::MuonCollection(*(MuCollection.product()));
   }
 
@@ -1203,35 +1204,46 @@ int HFDumpCandidates::primaryVertex(const edm::Event &iEvent) {
     iEvent.getByLabel(fPrimaryVertexLabel.c_str(), recoPrimaryVertexCollection);
     const reco::VertexCollection vertices = *(recoPrimaryVertexCollection.product());
 
-    const reco::Vertex pV = vertices[0]; // ????  
-
     // const reco::Vertex* primVtx = 0;
     for(reco::VertexCollection::const_iterator v=recoPrimaryVertexCollection->begin(); 
 	v!=recoPrimaryVertexCollection->end(); 
-	++v){
-      
+	++v){    
       
       nvtx++;
-      
-      printf ("%i. Primary Vertex (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", nvtx, v->x(), v->y(), v->z());
-      
+
+      if ( fVerbose > 0 ) {
+	printf ("==>HFDumpStuff>  %i. Primary Vertex (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", 
+		nvtx, v->x(), v->y(), v->z());
+      }
+
       //     primVtx = &(*v);
       
       //     primVtx.SetX(v->x()*10);   //*10 to get mm (same unit as gen info)
       //     primVtx.SetY(v->y()*10);
       //     primVtx.SetZ(v->z()*10);
-      
     }
+
+    if ( nvtx == 0 ) {
+
+      if ( fVerbose > 0 ) {
+	cout << "==>HFDumpStuff>  no primary vertex in recoPrimaryVertexCollection" << endl;
+      }
+
+      return nvtx;
+    }
+
+    const reco::Vertex pV = vertices[0]; // ???? 
 
     if ( fVerbose ) cout << endl << "====> Primary Vertices from CTF Tracks: " << nvtx << " vertices found." << endl;
     
     if ( nvtx < 9 )  { fEff->Fill(20.1 + nvtx); } else { fEff->Fill(29.1); }
-    
-    
+        
     if (nvtx > 0) {
       
       //    printf ("Taking Primary Vertex (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", pV.x(), pV.y(), pV.z());
-      printf ("Taking Primary Vertex (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", 10*pV.x(), 10*pV.y(), 10*pV.z());
+      if ( fVerbose > 0 ) {
+	printf ("Taking Primary Vertex (x, y, z)/10. = ( %5.4f, %5.4f, %5.4f)\n", 10*pV.x(), 10*pV.y(), 10*pV.z());
+      }
       
       ChiSquared chi2(pV.chi2(),pV.ndof());
       
@@ -1252,7 +1264,10 @@ int HFDumpCandidates::primaryVertex(const edm::Event &iEvent) {
    
     //    cout << ex.explainSelf() << endl;
     
-    cout << "==>primaryVertex> primaryVertex " << fPrimaryVertexLabel.c_str() << " not found " << endl;    
+    if ( fVerbose > 0 ) {
+      cout << "==>primaryVertex> primaryVertex " << fPrimaryVertexLabel.c_str() << " not found " << endl;  
+    }
+  
     TAnaVertex *pVtx;
     pVtx = new TAnaVertex();
 
@@ -1440,7 +1455,6 @@ void HFDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSetu
   if (fVerbose) cout << "==>fillVertex> Filling vertex, event: " << fNevt << endl;
   
   using namespace edm;    
-  using namespace l1extra ;
   using namespace reco;
 
   std::vector<reco::TransientTrack> refTT = v->refittedTracks();
@@ -2018,18 +2032,14 @@ void HFDumpCandidates::beginJob(const edm::EventSetup& setup) {
 
    edm::ESHandle<MagneticField> theMF;
    setup.get<IdealMagneticFieldRecord>().get(theMF);
-
-   edm::ESHandle<TrackAssociatorBase> theChiAssociator;
-   setup.get<TrackAssociatorRecord>().get("TrackAssociatorByChi2",theChiAssociator);
-   associatorByChi2 = (TrackAssociatorBase *) theChiAssociator.product();
-
-   edm::ESHandle<TrackAssociatorBase> theHitsAssociator;
-   setup.get<TrackAssociatorRecord>().get("TrackAssociatorByHits",theHitsAssociator);
-   associatorByHits = (TrackAssociatorBase *) theHitsAssociator.product();
-
-//**    edm::ESHandle<VertexAssociatorBase> theTracksAssociator;
-//**    setup.get<VertexAssociatorRecord>().get("VertexAssociatorByTracks",theTracksAssociator);
-//**    associatorByTracks = (VertexAssociatorBase *) theTracksAssociator.product();
+   
+   edm::ESHandle<TrackAssociatorBase> theAssociator;
+   setup.get<TrackAssociatorRecord>().get(fAssociatorLabel.c_str(), theAssociator);
+   fAssociator = (TrackAssociatorBase*)theAssociator.product();
+   
+//    edm::ESHandle<VertexAssociatorBase> theTracksAssociator;
+//    setup.get<VertexAssociatorRecord>().get(fVtxAssociatorLabel.c_str(), theTracksAssociator);
+//    fVtxAssociator = (VertexAssociatorBase *) theTracksAssociator.product();
 
 }
 

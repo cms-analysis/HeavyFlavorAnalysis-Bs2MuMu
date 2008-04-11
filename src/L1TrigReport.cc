@@ -2,14 +2,22 @@
  *
  * See header file for documentation
  *
- *  $Date: 2007/12/18 08:28:02 $
- *  $Revision: 1.11 $
+ *  $Date: 2007/09/27 23:03:38 $
+ *  $Revision: 1.4 $
  *
  *  \author Martin Grunewald
  *
  */
-
+ 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/L1TrigReport.h"
+ 
+#include "DataFormats/Common/interface/Handle.h"
+ 
+#include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
+#include "DataFormats/L1Trigger/interface/L1ParticleMap.h"
+#include "DataFormats/L1Trigger/interface/L1ParticleMapFwd.h"
+ 
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna00Event.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
@@ -17,15 +25,10 @@
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TGenCand.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
 
-#include "DataFormats/Common/interface/Handle.h"
-
-#include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
-
-#include "FWCore/MessageLogger/interface/MessageLogger.h"
-
 #include <TFile.h>
 #include <TH1.h>
 
+#include <cassert>
 #include <iomanip>
 #include <iostream>
 
@@ -34,85 +37,98 @@
 extern TAna00Event *gHFEvent;
 extern TFile       *gHFFile;
 
-//
+
 // constructors and destructor
 //
 L1TrigReport::L1TrigReport(const edm::ParameterSet& iConfig) :
+  l1ParticleMapTag_ (iConfig.getParameter<edm::InputTag> ("L1ExtraParticleMap")),
   l1GTReadoutRecTag_(iConfig.getParameter<edm::InputTag> ("L1GTReadoutRecord")),
   nEvents_(0),
   nErrors_(0),
   nAccepts_(0),
   l1Accepts_(0),
   l1Names_(0),
-  init_(false),
-  nSize_(0)
+  init_(false)
 {
   LogDebug("") << "Level-1 Global Trigger Readout Record: " + l1GTReadoutRecTag_.encode();
-  fL1 = new TH1D("l1", "L1 names", 128, 0., 128. );
 }
+ 
 
 L1TrigReport::~L1TrigReport()
 { 
   // -- Save output
-  gHFFile->cd();
-
-  fL1->Write();
+  //fL1->Write();
 
 }
-
+ 
 //
 // member functions
 //
-
+ 
 // ------------ method called to produce the data  ------------
 void L1TrigReport::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   // accumulation of statistics event by event
-
+ 
   using namespace std;
   using namespace edm;
-
+  using namespace reco;
+  const unsigned int n(l1extra::L1ParticleMap::kNumOfL1TriggerTypes);
+ 
+  nEvents_++;
+ 
   // get hold of L1GlobalReadoutRecord
   Handle<L1GlobalTriggerReadoutRecord> L1GTRR;
-  iEvent.getByLabel(l1GTReadoutRecTag_,L1GTRR); 
-
+  try {iEvent.getByLabel(l1GTReadoutRecTag_,L1GTRR);} catch (...) {;}
   if (L1GTRR.isValid()) {
-    const unsigned int n(L1GTRR->decisionWord().size());
-    // initialisation
-    if ( (!init_) || (nSize_!=n) ) {
-      if (!init_) {
-	init_=true;
-      } else {
-	endJob();
-	nEvents_=0;
-	nErrors_=0;
-	nAccepts_=0;
-      }
-      nSize_=n;
-      l1Names_.resize(n);
-      l1Accepts_.resize(n);
-      for (unsigned int i=0; i!=n; ++i) {
-	l1Accepts_[i]=0;
-	l1Names_[i]="NameNotAvailable";
-      }
-    }
     const bool accept(L1GTRR->decision());
-    LogDebug("") << "L1GlobalTriggerReadoutRecord decision: " << accept;
-    nEvents_++;
+    //LogDebug("") << "L1GlobalTriggerReadoutRecord decision: " << accept;
     if (accept) ++nAccepts_;
-    // decision for each L1 algorithm
-    for (unsigned int i=0; i!=n; ++i) {
-      if (L1GTRR->decisionWord()[i]) l1Accepts_[i]++;
-    }
   } else {
-    LogDebug("") << "L1GlobalTriggerReadoutRecord with label ["+l1GTReadoutRecTag_.encode()+"] not found!";
-    nEvents_++;
+    //LogDebug("") << "L1GlobalTriggerReadoutRecord with label ["+l1GTReadoutRecTag_.encode()+"] not found!";
     nErrors_++;
+    return;
   }
-
+ 
+  // get hold of L1ParticleMapCollection
+  Handle<l1extra::L1ParticleMapCollection> L1PMC;
+  try {iEvent.getByLabel(l1ParticleMapTag_,L1PMC);} catch (...) {;}
+  if (L1PMC.isValid()) {
+    //LogDebug("") << "L1ParticleMapCollection contains " << L1PMC->size() << " maps.";
+  } else {
+    //LogDebug("") << "L1ParticleMapCollection with label ["+l1ParticleMapTag_.encode()+"] not found!";
+    nErrors_++;
+    return;
+  }
+ 
+  // initialisation (could be made dynamic)
+  assert(n==L1PMC->size());
+  if (!init_) {
+    init_=true;
+    l1Names_.resize(n);
+    l1Accepts_.resize(n);
+    for (unsigned int i=0; i!=n; ++i) {
+      l1Accepts_[i]=0;
+      if (i<l1extra::L1ParticleMap::kNumOfL1TriggerTypes) {
+	l1extra::L1ParticleMap::L1TriggerType 
+	  type(static_cast<l1extra::L1ParticleMap::L1TriggerType>(i));
+	l1Names_[i]=l1extra::L1ParticleMap::triggerName(type);
+      } else {
+	l1Names_[i]="@@NameNotFound??";
+      }
+    }
+  }
+ 
+  // decision for each L1 algorithm
+  for (unsigned int i=0; i!=n; ++i) {
+    if ((*L1PMC)[i].triggerDecision()) l1Accepts_[i]++;
+    //    if (L1GTRR->decisionWord()[i]) l1Accepts_[i]++;
+  }
+ 
   return;
-
+ 
 }
+ 
 void  L1TrigReport::beginJob() {
 
   gHFFile->cd();
@@ -122,29 +138,30 @@ void  L1TrigReport::beginJob() {
 void L1TrigReport::endJob()
 {
   // final printout of accumulated statistics
-
+ 
   using namespace std;
-
-    cout << dec << endl;
-    cout << "L1T-Report " << "---------- Event  Summary ------------\n";
-    cout << "L1T-Report"
-	 << " Events total = " << nEvents_
-	 << " passed = " << nAccepts_
-	 << " failed = " << nEvents_-nErrors_-nAccepts_
-	 << " errors = " << nErrors_
-	 << "\n";
-
-    cout << endl;
-    cout << "L1T-Report " << "---------- L1Trig Summary ------------\n";
-    cout << "L1T-Report "
-	 << right << setw(10) << "L1T  Bit#" << " "
-	 << right << setw(10) << "Passed" << " "
-	 << right << setw(10) << "Failed" << " "
-	 << right << setw(10) << "Errors" << " "
-	 << "Name" << "\n";
-
+  const unsigned int n(l1extra::L1ParticleMap::kNumOfL1TriggerTypes);
+ 
+  cout << dec << endl;
+  cout << "L1T-Report " << "---------- Event  Summary ------------\n";
+  cout << "L1T-Report"
+       << " Events total = " << nEvents_
+       << " passed = " << nAccepts_
+       << " failed = " << nEvents_-nErrors_-nAccepts_
+       << " errors = " << nErrors_
+       << "\n";
+ 
+  cout << endl;
+  cout << "L1T-Report " << "---------- L1Trig Summary ------------\n";
+  cout << "L1T-Report "
+       << right << setw(10) << "L1T  Bit#" << " "
+       << right << setw(10) << "Passed" << " "
+       << right << setw(10) << "Failed" << " "
+       << right << setw(10) << "Errors" << " "
+       << "Name" << "\n";
+ 
   if (init_) {
-    for (unsigned int i=0; i!=nSize_; ++i) {
+    for (unsigned int i=0; i!=n; ++i) {
       cout << "L1T-Report "
 	   << right << setw(10) << i << " "
 	   << right << setw(10) << l1Accepts_[i] << " "
@@ -158,10 +175,19 @@ void L1TrigReport::endJob()
   } else {
     cout << "L1T-Report - No L1 GTRRs found!" << endl;
   }
+ 
+  cout << endl;
+  cout << "L1T-Report end!" << endl;
+  cout << endl;
 
-    cout << endl;
-    cout << "L1T-Report end!" << endl;
-    cout << endl;
-
-    return;
+  return;
 }
+
+
+
+
+
+
+
+
+

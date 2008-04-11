@@ -26,20 +26,21 @@ using namespace edm;
 
 // ----------------------------------------------------------------------
 HFDumpTrigger::HFDumpTrigger(const edm::ParameterSet& iConfig):
-  fTriggerLabel(iConfig.getParameter<edm::InputTag>("triggerLabel")),
-  fL1MuLabel(iConfig.getUntrackedParameter< std::string > ("L1MuLabel")),
-  fparticleMap(iConfig.getUntrackedParameter< std::string > ("particleMap")),
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
+  fparticleMap(iConfig.getUntrackedParameter< std::string > ("particleMap")),
+  fL1MuLabel(iConfig.getUntrackedParameter< std::string > ("L1MuLabel")),
   fL1TriggerName(iConfig.getUntrackedParameter<string>("L1TriggerName", string("L1_DoubleMu3"))),
+  fTriggerLabel(iConfig.getParameter<edm::InputTag>("triggerLabel")),
   fHLTriggerName(iConfig.getUntrackedParameter<string>("triggerName",  string("HLTBJPsiMuMu"))) {
+
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFDumpTrigger constructor" << endl;
-  cout << "--- Verbose: " << fVerbose << endl;
-  cout << "--- " << fTriggerLabel.encode() << endl;
-  cout << "--- " << fparticleMap.c_str() << endl;
-  cout << "--- " << fL1MuLabel.c_str() << endl;
-  cout << "--- " << fL1TriggerName.c_str() << endl;
-  cout << "--- " << fHLTriggerName.c_str() << endl;
+  cout << "--- Verbose          : " << fVerbose << endl;
+  cout << "--- particle Map     : " << fparticleMap.c_str() << endl;
+  cout << "--- L1 Mu Label      : " << fL1MuLabel.c_str() << endl;
+  cout << "--- L1 Trigger Name  : " << fL1TriggerName.c_str() << endl;
+  cout << "--- HLT Label        : " << fTriggerLabel.encode() << endl;
+  cout << "--- HLT Trigger Name : " << fHLTriggerName.c_str() << endl;
   cout << "----------------------------------------------------------------------" << endl; 
   
 }

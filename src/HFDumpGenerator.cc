@@ -31,9 +31,13 @@ HFDumpGenerator::HFDumpGenerator(const ParameterSet& iConfig):
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fGenCandidatesLabel(iConfig.getUntrackedParameter<string>("generatorCandidates", string("MCCandidate"))), 
   fGenEventLabel(iConfig.getUntrackedParameter<string>("generatorEvent", string("Source")))  {
+
   using namespace std;
+
   cout << "----------------------------------------------------------------------" << endl;
-  cout << "--- HFDumpGenerator constructor: " << fGenCandidatesLabel << "  " << fGenEventLabel << endl;
+  cout << "--- HFDumpGenerator constructor" << endl;
+  cout << "--- Verbose                     : " << fVerbose            << endl;
+  cout << "--- HFDumpGenerator constructor : " << fGenCandidatesLabel << "  " << fGenEventLabel << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
   fNevt = 0;
@@ -56,7 +60,7 @@ void HFDumpGenerator::analyze(const Event& iEvent, const EventSetup& iSetup) {
   Handle<CandidateCollection> hMCCandidates;
   iEvent.getByLabel(fGenCandidatesLabel.c_str(), hMCCandidates);
 
-  if (fVerbose > 0) cout << "==>HFDumpTracks> nMCCAndidates = " << hMCCandidates->size() 
+  if (fVerbose > 0) cout << "==>HFDumpGenerator> nMCCAndidates = " << hMCCandidates->size() 
 			 << ", event: " << fNevt << endl;
 
   TGenCand  *aGen = new TGenCand;
@@ -98,6 +102,8 @@ void HFDumpGenerator::analyze(const Event& iEvent, const EventSetup& iSetup) {
   TGenCand  *pGen;
   int gcnt(0); 
   double x, y, z;
+  int motherBarcode(-99999);
+
   for (HepMC::GenEvent::particle_const_iterator p = genEvent->particles_begin();
        p != genEvent->particles_end();
        ++p) {
@@ -122,10 +128,30 @@ void HFDumpGenerator::analyze(const Event& iEvent, const EventSetup& iSetup) {
     pGen->fV.SetXYZ(x, y, z);
 
     // -- Get one mother barcode
-    int motherBarcode = (*p)->production_vertex() && 
+    motherBarcode = -99999;
+    
+    motherBarcode = (*p)->production_vertex() && 
       (*p)->production_vertex()->particles_in_const_begin() !=
       (*p)->production_vertex()->particles_in_const_end() ?
       (*((*p)->production_vertex()->particles_in_const_begin()))->barcode()-1 : 0;
+    
+    
+    if ( motherBarcode < 0 ) {
+      
+      if ( fVerbose ) {
+	cout << " --> No good mother barcode " << motherBarcode << " <--- " << endl;
+	motherBarcode = -1;
+      }
+    }
+    
+    if ( motherBarcode > genEvent->particles_size() ) {
+      
+      if ( fVerbose ) {
+	cout << " --> Mother barcode " << motherBarcode << " outside GenEvent <--- " << endl;
+	motherBarcode = -1;
+      }
+    }
+    
     pGen->fMom1 = motherBarcode;
     pGen->fMom2 = -1;
 

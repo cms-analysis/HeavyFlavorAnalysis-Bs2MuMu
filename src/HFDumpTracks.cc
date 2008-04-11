@@ -7,6 +7,7 @@
 #include "SimTracker/Records/interface/TrackAssociatorRecord.h"
 #include "SimTracker/TrackAssociation/interface/TrackAssociatorBase.h" 
 #include "SimTracker/TrackAssociation/interface/TrackAssociatorByChi2.h"
+#include "SimTracker/TrackAssociation/interface/TrackAssociatorByHits.h"
 #include "SimDataFormats/HepMCProduct/interface/HepMCProduct.h"
 #include "SimDataFormats/Track/interface/SimTrack.h"
 #include "SimDataFormats/Track/interface/SimTrackContainer.h"
@@ -40,23 +41,27 @@ using namespace reco;
 
 // ----------------------------------------------------------------------
 HFDumpTracks::HFDumpTracks(const edm::ParameterSet& iConfig):
-  fTracksLabel(iConfig.getUntrackedParameter<string>("tracksLabel", string("ctfWithMaterialTracks"))),
-  fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
+  fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fGenEventLabel(iConfig.getUntrackedParameter<string>("generatorEventLabel", string("source"))),
   fSimTracksLabel(iConfig.getUntrackedParameter<string>("simTracksLabel", string("famosSimHits"))),
-  fAssociatorLabel(iConfig.getUntrackedParameter<string>("associatorLabel", string("TrackAssociatorByChi2"))), 
   fTrackingParticlesLabel(iConfig.getUntrackedParameter<string>("trackingParticlesLabel", string("trackingParticles"))),
-  fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
+  fTracksLabel(iConfig.getUntrackedParameter<string>("tracksLabel", string("ctfWithMaterialTracks"))),
+  fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
+  fAssociatorLabel(iConfig.getUntrackedParameter<string>("associatorLabel", string("TrackAssociatorByChi2"))), 
   fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1)) {
+
+  using namespace std;
+
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFDumpTracks constructor" << endl;
-  cout << "--- Verbose: " << fVerbose << endl;
-  cout << "--- tracksLabel: " << fTracksLabel.c_str() << endl;
-  cout << "--- generatorEventLabel: " << fGenEventLabel.c_str() << endl;
-  cout << "--- simTracksLabel     : " << fSimTracksLabel.c_str() << endl;
-  cout << "--- trackingParticlesLabel: " << fTrackingParticlesLabel.c_str() << endl;
-  cout << "--- associatorLabel: " << fAssociatorLabel.c_str() << endl;
-  cout << "--- doTruthMatching: " << fDoTruthMatching << endl;  // 0 = nothing, 1 = TrackingParticles, 2 = FAMOS
+  cout << "--- Verbose                : " << fVerbose << endl;
+  cout << "--- generatorEventLabel    : " << fGenEventLabel.c_str() << endl;
+  cout << "--- simTracksLabel         : " << fSimTracksLabel.c_str() << endl;
+  cout << "--- trackingParticlesLabel : " << fTrackingParticlesLabel.c_str() << endl;
+  cout << "--- tracksLabel            : " << fTracksLabel.c_str() << endl;
+  cout << "--- muonsLabel             : " << fMuonsLabel << endl;
+  cout << "--- associatorLabel        : " << fAssociatorLabel.c_str() << endl;
+  cout << "--- doTruthMatching        : " << fDoTruthMatching << endl;  // 0 = nothing, 1 = TrackingParticles, 2 = FAMOS
   cout << "----------------------------------------------------------------------" << endl;
 
   fNevt = 0;

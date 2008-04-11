@@ -31,9 +31,11 @@ HFDumpMuons::HFDumpMuons(const edm::ParameterSet& iConfig) :
 
 {
   using namespace std;
+
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFDumpMuons constructor" << endl;
-  cout << "--- muonsLabel:             " << fMuonsLabel << endl;
+  cout << "--- Verbose         : " << fVerbose << endl;
+  cout << "--- muonsLabel      : " << fMuonsLabel << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
 }
@@ -67,6 +69,10 @@ void HFDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   for (reco::MuonCollection::const_iterator muon = hMuons->begin(); muon != hMuons->end(); ++muon) {
     
     mcnt++;
+
+    if (fVerbose > 0) {
+      cout << "--------------------------------------------------------------------" << endl;; 
+    }
 
     // -- standalone muon
     type = 1;
@@ -108,7 +114,7 @@ void HFDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     pTrack->fIndex  = (muon->track()).index();
 
     if (fVerbose > 0) {
-      cout << "%%>  Type-" << type <<  "  Muon #" << setw(2)  << mcnt << ": "; 
+      cout << "%%> Type-" << type <<  "  Muon #" << setw(2)  << mcnt << ": "; 
       pTrack->dump(); 
     }
 
@@ -131,8 +137,12 @@ void HFDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     pTrack->fIndex  = (muon->track()).index();
 
     if (fVerbose > 0) {
-      cout << "%%>  Type-" << type <<  " Muon #" << setw(2)  << mcnt << ": "; 
+      cout << "%%> Type-" << type <<  "  Muon #" << setw(2)  << mcnt << ": "; 
       pTrack->dump(); 
+    }
+
+    if (fVerbose > 0) {
+      cout << "--------------------------------------------------------------------" << endl;; 
     }
   }
 }

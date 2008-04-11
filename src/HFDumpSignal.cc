@@ -38,19 +38,26 @@ using namespace edm;
 HFDumpSignal::HFDumpSignal(const edm::ParameterSet& iConfig) :
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fTracksLabel(iConfig.getUntrackedParameter<string>("tracksLabel", string("goodTracks"))), 
-  fPrimaryVertexLabel(iConfig.getUntrackedParameter<string>("PrimaryVertexLabel", string("offlinePrimaryVerticesFromCTFTracks"))),
-  // fMuonsLabel(iConfig.getUntrackedParameter<string>("muonsLabel", string("goodTracks"))) {
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
+  // fMuonsLabel(iConfig.getUntrackedParameter<string>("muonsLabel", string("goodTracks"))),
+  fPrimaryVertexLabel(iConfig.getUntrackedParameter<string>("PrimaryVertexLabel", string("offlinePrimaryVerticesFromCTFTracks"))),
   fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 1.0)), 
   fKaonPt(iConfig.getUntrackedParameter<double>("kaonPt", 1.0)), 
-  fDeltaR(iConfig.getUntrackedParameter<double>("deltaR", 1.5)) {
+  fDeltaR(iConfig.getUntrackedParameter<double>("deltaR", 1.5)) 
+
+{
+
   using namespace std;
+
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFDumpSignal constructor" << endl;
-  cout << "--- tracksLabel:            " << fTracksLabel.c_str() << endl;
-  cout << "--- muonsLabel:             " << fMuonsLabel << endl;
-  cout << "--- kaonPt:                 " << fKaonPt << endl;
-  cout << "--- deltaR:                 " << fDeltaR << endl;
+  cout << "--- Verbose            : " << fVerbose << endl;
+  cout << "--- tracksLabel        : " << fTracksLabel.c_str() << endl;
+  cout << "--- muonsLabel         : " << fMuonsLabel << endl;
+  cout << "--- prim. Vertex Label : " << fPrimaryVertexLabel.c_str() << endl;
+  cout << "--- muonPt             : " << fMuonPt << endl;
+  cout << "--- kaonPt             : " << fKaonPt << endl;
+  cout << "--- deltaR             : " << fDeltaR << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
 }

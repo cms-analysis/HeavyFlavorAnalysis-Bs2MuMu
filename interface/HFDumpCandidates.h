@@ -27,27 +27,16 @@
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingVertex.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
 
-#include "SimTracker/Records/interface/TrackAssociatorRecord.h"
-//#include "SimTracker/Records/interface/VertexAssociatorRecord.h"
-#include "SimTracker/TrackAssociation/interface/TrackAssociatorBase.h" 
-#include "SimTracker/TrackAssociation/interface/TrackAssociatorByChi2.h"
-#include "SimTracker/TrackAssociation/interface/TrackAssociatorByHits.h"
-//#include "SimTracker/VertexAssociation/interface/VertexAssociatorByTracks.h"
-
 #include "DataFormats/Common/interface/RefToBase.h"
-
-#include "DataFormats/L1Trigger/interface/L1ParticleMap.h"
-#include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
-#include "DataFormats/L1Trigger/interface/L1EmParticle.h"
-#include "DataFormats/L1Trigger/interface/L1MuonParticle.h"
-#include "DataFormats/L1Trigger/interface/L1JetParticle.h"
-#include "DataFormats/L1Trigger/interface/L1EtMissParticle.h"
 
 #include "DataFormats/TrackReco/interface/TrackExtraFwd.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
+
+#include "SimTracker/VertexAssociation/interface/VertexAssociatorBase.h"
+#include "SimTracker/TrackAssociation/interface/TrackAssociatorBase.h" 
 
 #include "RecoPixelVertexing/PixelVertexFinding/interface/PVPositionBuilder.h"
 #include "RecoPixelVertexing/PixelVertexFinding/interface/PVClusterComparer.h"
@@ -88,20 +77,17 @@
 #include <TVector3.h>
 #include <TLorentzVector.h>
 
-// ----------------------------------------------------------------------
-
-using namespace edm;
-using namespace reco;
-
 class TFile;
 class TTree;
+class TTree;
 class TH1D;
+class TAna00Event;
 
+class TrackAssociatorBase;
+/* class VertexAssociatorBase; */
+
+// ----------------------------------------------------------------------
 class HFDumpCandidates : public edm::EDAnalyzer {
-
-  //class TrackAssociatorBase;
-  //class VertexAssociatorBase;
-
 
 public:
   explicit HFDumpCandidates(const edm::ParameterSet&);
@@ -135,13 +121,25 @@ private:
   int kaonCandidate(const edm::Event&, const edm::EventSetup&);
 
   // ----------member data ---------------------------
-  string fLabel, fGenEventLabel, fTracksLabel, fMuonLabel, fL1MuonLabel, fAssocLabel
-    , fPrimaryVertexLabel, fChannel, fPrintChannel, fPrintChannel2;
+  std::string fGenEventLabel;
+  std::string fTracksLabel;
+  std::string fVtxAssociatorLabel;
+  std::string fAssociatorLabel;
+  std::string fTrackingParticlesLabel;
+  std::string fTrackingVertexLabel;
+
+  std::string fPrimaryVertexLabel;
+  std::string fChannel;
+  std::string fPrintChannel, fPrintChannel2;
+
+  edm::InputTag fMuonsLabel;
 
   double fMass, fMass2;
   double fMassRange, fMassRange2, fMassKaon;
 
+  int fBmmSel;
   int fVerbose;
+  int fDoTruthMatching;
 
   int fNevt, fNgen, fNrec;
 
@@ -150,9 +148,8 @@ private:
 
   TFile *fFile; 
 
-  TrackAssociatorBase*  associatorByChi2;
-  TrackAssociatorBase*  associatorByHits;
-  //  VertexAssociatorBase* associatorByTracks;
+  TrackAssociatorBase  *fAssociator;
+/*   VertexAssociatorBase *fVtxAssociator; */
   
   TH1D *fEff;  
 
@@ -163,25 +160,19 @@ private:
   // -- Stuff -----------------------------------------------------
 
 
-  int fBmmSel;
-
   std::vector<double> SecVtxChi2;
   std::vector<double> InvMass;
 
   // ---------------
   // -- Collections
   // ---------------
-
-  reco::VertexCollection *theVtxCollection;
  
-  const l1extra::L1MuonParticleCollection *theL1MuonCollection;
   const reco::MuonCollection       *theMuonCollection;
   const reco::TrackCollection      *theTkCollection;
-  const TrackingParticleCollection *theTPCollection;
   std::vector<HepMC::GenParticle*> theGenCollection;
 
   reco::RecoToSimCollection        *recSimCollection;
-  //  reco::VertexRecoToSimCollection  *recSimCollectionVertex;
+  reco::VertexRecoToSimCollection  *recSimCollectionVertex;
 
   // ----------
   // -- Tracks
