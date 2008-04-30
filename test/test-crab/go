@@ -23,7 +23,7 @@ $dir = `pwd`; chop($dir);
 $crab = "$dir/test-crab";
 
 chdir($crab);
-@files = `ls -1 crab-*.cfg`;
+@files = `ls -1 crab-{l,b}*.cfg`;
 
 
 if ( !$opt_p ) { open(LOG, ">cmsRun.crab.log"); }
@@ -38,11 +38,32 @@ foreach $file ( @files ) {
     @run = split(/\//,$ui_work);
     $workdir = @run[$#run]; chop($workdir);
 
+    if ( $file eq "crab-test.cfg" ) { next; }
+
+    if ( ($file eq "crab-bmm.cfg") || 
+	  ($file eq "crab-BB.cfg") || 
+	  ($file eq "crab-CC.cfg")
+	 ) {
+	
+	$channel = "default";
+
+    } else {
+	
+	$channel = $workdir;
+    }
+
+    
+    print "\n ---> Changing default channel to $channel for $file\n\n";
+    system("perl -pi -e \"s\/default\/$channel\/g\" test-crab.cfg");
+    #system("cp test-crab.cfg test-crab.$channel.cfg");
 
     if ( !$opt_p ) {     
 
 	print LOG "$date \"crab -create -cfg $file\"\n";
 	system("crab -create -cfg $file");
+
+        system("cp test-crab.cfg $workdir/test-crab.cfg");
+
 	print LOG "$date \"crab -submit -c $workdir\"\n\n";		
 	system("crab -submit -c $workdir");
 
@@ -51,6 +72,8 @@ foreach $file ( @files ) {
 	print "$date \"crab -create -cfg $file\"\n";
 	print "$date \"crab -submit -c $workdir\"\n\n";
     }
+
+    system("perl -pi -e \"s\/$channel\/default\/g\" test-crab.cfg");
 }
 
 if ( !$opt_p ) { close(LOG); }
