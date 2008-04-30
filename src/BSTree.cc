@@ -46,7 +46,7 @@ HFTree::HFTree(const edm::ParameterSet& iConfig):
   TH1D *h1;
   TH2D *h2;
 
-  // -- histograms filled in BmmDumpCandidates 
+  // -- histograms filled in BSDumpCandidates 
   h1 = new TH1D("eff", "Efficiencies", 1000, 0., 1000. );
 
   for (int i = 0; i < 4; i++) {
@@ -62,7 +62,7 @@ HFTree::HFTree(const edm::ParameterSet& iConfig):
   h1 = new TH1D("L1" , "L1-Trigger names",        200, 0., 200.);
   h1 = new TH1D("HLT", "HL-Trigger names",        200, 0., 200.);
  
-  // -- histograms filled in BmmDumpMuons
+  // -- histograms filled in BSDumpMuons
   h2  = new TH2D("nmuons", "N_{#mu} / event  ",        100, 0., 100., 100, 0., 100.);
 
   fNevt = 0;

@@ -1,5 +1,5 @@
-#ifndef _BMMDUMPSIGNAL_h_
-#define _BMMDUMPSIGNAL_h_
+#ifndef _BSDUMPSIGNAL_h_
+#define _BSDUMPSIGNAL_h_
 
 #include <memory>
 
@@ -16,10 +16,10 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
 // ----------------------------------------------------------------------
-class BmmDumpSignal : public edm::EDAnalyzer {
+class BSDumpSignal : public edm::EDAnalyzer {
  public:
-  explicit BmmDumpSignal(const edm::ParameterSet&);
-  ~BmmDumpSignal();
+  explicit BSDumpSignal(const edm::ParameterSet&);
+  ~BSDumpSignal();
   
  private:
   virtual void beginJob(const edm::EventSetup&) ;

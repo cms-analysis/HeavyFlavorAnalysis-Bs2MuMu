@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/BmmDumpCandidates.h"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/BSDumpCandidates.h"
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna00Event.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
@@ -45,7 +45,7 @@ using namespace edm;
 
 // ----------------------------------------------------------------------
 // ======================================================================
-BmmDumpCandidates::BmmDumpCandidates(const edm::ParameterSet& iConfig):
+BSDumpCandidates::BSDumpCandidates(const edm::ParameterSet& iConfig):
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fBmmSel(iConfig.getUntrackedParameter<int>("bmmsel", -1)),
   fChannel(iConfig.getUntrackedParameter<string>("channel","default")),
@@ -64,7 +64,7 @@ BmmDumpCandidates::BmmDumpCandidates(const edm::ParameterSet& iConfig):
   using namespace std;
 
   cout << "----------------------------------------------------------------------" << endl;
-  cout << "--- BmmDumpCandidates constructor" << endl;
+  cout << "--- BSDumpCandidates constructor" << endl;
   cout << "--- Verbose                : " << fVerbose << endl;
   cout << "--- BmmSel                 : " << fBmmSel << endl;
   cout << "--- Channel                : " << fChannel.c_str() << endl;
@@ -79,7 +79,7 @@ BmmDumpCandidates::BmmDumpCandidates(const edm::ParameterSet& iConfig):
   cout << "----------------------------------------------------------------------" << endl;
 
   cout << "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" << endl;
-  cout << "===>> BmmDumpCandidates >>> ctor, decay mode" << endl;
+  cout << "===>> BSDumpCandidates >>> ctor, decay mode" << endl;
 
 
   // -- Counters
@@ -110,10 +110,10 @@ BmmDumpCandidates::BmmDumpCandidates(const edm::ParameterSet& iConfig):
 // ----------------------------------------------------------------------
 // ======================================================================
 
-BmmDumpCandidates::~BmmDumpCandidates() {
+BSDumpCandidates::~BSDumpCandidates() {
 
   cout << endl << "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" << endl;
-  cout << "===>> BmmDumpCandidates >>> dtor, bye ..." << endl;
+  cout << "===>> BSDumpCandidates >>> dtor, bye ..." << endl;
   cout << "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" << endl << endl << endl;
 
 }
@@ -124,7 +124,7 @@ BmmDumpCandidates::~BmmDumpCandidates() {
 
 
 // ------------ method called to for each event  ------------
-void BmmDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void BSDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   
 #ifdef THIS_IS_AN_EVENT_EXAMPLE
   Handle<ExampleData> pIn;
@@ -139,7 +139,7 @@ void BmmDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup&
   ++fNevt; 
 
   cout << endl << "*********************************************************************" << endl;
-  cout << "===>> BmmDumpCandidates >>> Start with event: " << fNevt << endl;
+  cout << "===>> BSDumpCandidates >>> Start with event: " << fNevt << endl;
 
   using reco::TrackCollection;
   using reco::MuonCollection;
@@ -293,7 +293,7 @@ void BmmDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup&
   delete recSimCollection;
   // delete recSimCollectionVertex;
 
-  cout << endl << "===>> BmmDumpCandidates >>> Done with event: " << fNevt << endl;
+  cout << endl << "===>> BSDumpCandidates >>> Done with event: " << fNevt << endl;
   cout << "*********************************************************************" << endl;
     
 }
@@ -305,7 +305,7 @@ void BmmDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup&
 
 
 // ----------------------------------------------------------------------
-void BmmDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
+void BSDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>bmmTracks1> Matching particle, truth-matched to be particle PDG #" 
@@ -592,7 +592,7 @@ void BmmDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 
 
 // ----------------------------------------------------------------------
-void BmmDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
+void BSDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>bmmTracks2> Matching particle, truth matched to be particle PDG #" 
@@ -700,7 +700,7 @@ void BmmDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
 
 
 // ----------------------------------------------------------------------
-void BmmDumpCandidates::bmmTracks3(const edm::Event &iEvent) {
+void BSDumpCandidates::bmmTracks3(const edm::Event &iEvent) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>bmmTracks3> Get global muon tracks, event: " << fNevt << endl;
@@ -826,7 +826,7 @@ void BmmDumpCandidates::bmmTracks3(const edm::Event &iEvent) {
 
 
 // ----------------------------------------------------------------------
-void BmmDumpCandidates::bmmTracks4(const edm::Event &iEvent) {
+void BSDumpCandidates::bmmTracks4(const edm::Event &iEvent) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>bmmTracks4> Matching tracks, rec PID as muons, event: " << fNevt << endl;
@@ -944,7 +944,7 @@ void BmmDumpCandidates::bmmTracks4(const edm::Event &iEvent) {
 
 
 // ----------------------------------------------------------------------
-void BmmDumpCandidates::truthCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup) {
+void BSDumpCandidates::truthCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup) {
 
   if (fVerbose) cout << endl << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>truthCandTracks> Sort muon and kaon candidates depending on ID of B-mother, event: " 
@@ -1022,7 +1022,7 @@ void BmmDumpCandidates::truthCandTracks(const edm::Event &iEvent, const edm::Eve
 }
 
 // ----------------------------------------------------------------------
-void BmmDumpCandidates::muonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup, double m_cand1, double m_cand2) {
+void BSDumpCandidates::muonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup, double m_cand1, double m_cand2) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>muonCandTracks> Sort opposite charge muons into pairs depending on inv. mass ("
@@ -1111,7 +1111,7 @@ void BmmDumpCandidates::muonCandTracks(const edm::Event &iEvent, const edm::Even
 
 
 // ----------------------------------------------------------------------
-void BmmDumpCandidates::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup, double cone) { 
+void BSDumpCandidates::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup, double cone) { 
    
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>kaonCandTracks> Find " << JpsiPairTracks.size() 
@@ -1221,7 +1221,7 @@ void BmmDumpCandidates::kaonCandTracks(const edm::Event &iEvent, const edm::Even
   }
 }
 // ----------------------------------------------------------------------
-int BmmDumpCandidates::massMuonCand(const edm::Event &iEvent, const edm::EventSetup& iSetup, double m_cand1, double m_cand2) {  
+int BSDumpCandidates::massMuonCand(const edm::Event &iEvent, const edm::EventSetup& iSetup, double m_cand1, double m_cand2) {  
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>massMuonCand> Looking for two muons in mass-windows around "
@@ -1287,7 +1287,7 @@ int BmmDumpCandidates::massMuonCand(const edm::Event &iEvent, const edm::EventSe
 
 
 // ----------------------------------------------------------------------
-double BmmDumpCandidates::rmmKaonCand(const edm::Event &iEvent, const edm::EventSetup& iSetup, double cone) {  
+double BSDumpCandidates::rmmKaonCand(const edm::Event &iEvent, const edm::EventSetup& iSetup, double cone) {  
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>rmmKaonCand> Looking for kaon in cone of "
@@ -1346,7 +1346,7 @@ double BmmDumpCandidates::rmmKaonCand(const edm::Event &iEvent, const edm::Event
 
 
 // ----------------------------------------------------------------------
-int BmmDumpCandidates::primaryVertex(const edm::Event &iEvent) {
+int BSDumpCandidates::primaryVertex(const edm::Event &iEvent) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>primaryVertex> List of primary vertices, event: " << fNevt << endl;
@@ -1370,7 +1370,7 @@ int BmmDumpCandidates::primaryVertex(const edm::Event &iEvent) {
       nvtx++;
 
       if ( fVerbose > 0 ) {
-	printf ("==>BmmDumpStuff>  %i. Primary Vertex (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", 
+	printf ("==>BSDumpStuff>  %i. Primary Vertex (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", 
 		nvtx, v->x(), v->y(), v->z());
       }
 
@@ -1384,7 +1384,7 @@ int BmmDumpCandidates::primaryVertex(const edm::Event &iEvent) {
     if ( nvtx == 0 ) {
 
       if ( fVerbose > 0 ) {
-	cout << "==>BmmDumpStuff>  no primary vertex in recoPrimaryVertexCollection" << endl;
+	cout << "==>BSDumpStuff>  no primary vertex in recoPrimaryVertexCollection" << endl;
       }
 
       return nvtx;
@@ -1439,7 +1439,7 @@ int BmmDumpCandidates::primaryVertex(const edm::Event &iEvent) {
 }
 
 // ----------------------------------------------------------------------
-void BmmDumpCandidates::secondaryVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup) { 
+void BSDumpCandidates::secondaryVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup) { 
   
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>secondaryVertex> Fitting secondary vertices, event: " << fNevt << endl;
@@ -1522,7 +1522,7 @@ void BmmDumpCandidates::secondaryVertex(const edm::Event &iEvent, const edm::Eve
 
 
 // ----------------------------------------------------------------------
-double BmmDumpCandidates::kalmanVertexFit(const edm::Event &iEvent, const edm::EventSetup& iSetup
+double BSDumpCandidates::kalmanVertexFit(const edm::Event &iEvent, const edm::EventSetup& iSetup
 				, int type, unsigned int ntracks) {
 
   // TYPE =    -1: fillVertex without filling vertex/candidate in ntuple
@@ -1600,7 +1600,7 @@ double BmmDumpCandidates::kalmanVertexFit(const edm::Event &iEvent, const edm::E
 
 
 // ----------------------------------------------------------------------
-void BmmDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
+void BSDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
 			 , TransientVertex *v, int type, unsigned int ntracks) {
 
   // TYPE =    -1: without filling vertex/candidate in ntuple
@@ -1922,7 +1922,7 @@ void BmmDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSet
 }
 
 // ----------------------------------------------------------------------
-void BmmDumpCandidates::decayChannel(const char *fileName) {
+void BSDumpCandidates::decayChannel(const char *fileName) {
 
   // -- sel = 1 settings
   fPrintChannel = "N/D";              fPrintChannel2 = "N/D";
@@ -2152,7 +2152,7 @@ void BmmDumpCandidates::decayChannel(const char *fileName) {
 }
 
 // ----------------------------------------------------------------------
-void BmmDumpCandidates::clearTracks() {
+void BSDumpCandidates::clearTracks() {
 
   BmmRecTracks.clear();
   BmmRecTracksIndex.clear();
@@ -2171,7 +2171,7 @@ void BmmDumpCandidates::clearTracks() {
 }
 
 // ----------------------------------------------------------------------
-void BmmDumpCandidates::clearCandidateTracks() {
+void BSDumpCandidates::clearCandidateTracks() {
 
 
   BmmPairTracks.clear();
@@ -2186,7 +2186,7 @@ void BmmDumpCandidates::clearCandidateTracks() {
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void BmmDumpCandidates::beginJob(const edm::EventSetup& setup) {  
+void BSDumpCandidates::beginJob(const edm::EventSetup& setup) {  
  
    gHFFile->cd();
 
@@ -2204,9 +2204,9 @@ void BmmDumpCandidates::beginJob(const edm::EventSetup& setup) {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void BmmDumpCandidates::endJob() {  
+void BSDumpCandidates::endJob() {  
 
 }
 
 //define this as a plug-in
-// DEFINE_FWK_MODULE(BmmDumpCandidates);
+// DEFINE_FWK_MODULE(BSDumpCandidates);

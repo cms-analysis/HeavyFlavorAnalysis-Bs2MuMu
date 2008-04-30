@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/BmmDumpTracks.h"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/BSDumpTracks.h"
 
 #include "DataFormats/Common/interface/Handle.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
@@ -46,7 +46,7 @@ using namespace l1extra ;
 
 
 // ----------------------------------------------------------------------
-BmmDumpTracks::BmmDumpTracks(const edm::ParameterSet& iConfig):
+BSDumpTracks::BSDumpTracks(const edm::ParameterSet& iConfig):
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fGenEventLabel(iConfig.getUntrackedParameter<string>("generatorEventLabel", string("source"))),
   fSimTracksLabel(iConfig.getUntrackedParameter<string>("simTracksLabel", string("famosSimHits"))),
@@ -61,7 +61,7 @@ BmmDumpTracks::BmmDumpTracks(const edm::ParameterSet& iConfig):
   using namespace std;
 
   cout << "----------------------------------------------------------------------" << endl;
-  cout << "--- BmmDumpTracks constructor" << endl;
+  cout << "--- BSDumpTracks constructor" << endl;
   cout << "--- Verbose                : " << fVerbose << endl;
   cout << "--- generatorEventLabel    : " << fGenEventLabel.c_str() << endl;
   cout << "--- simTracksLabel         : " << fSimTracksLabel.c_str() << endl;
@@ -79,13 +79,13 @@ BmmDumpTracks::BmmDumpTracks(const edm::ParameterSet& iConfig):
 
 
 // ----------------------------------------------------------------------
-BmmDumpTracks::~BmmDumpTracks() {
+BSDumpTracks::~BSDumpTracks() {
   
 }
 
 
 // ----------------------------------------------------------------------
-void BmmDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void BSDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   fNevt++; 
 
@@ -98,14 +98,14 @@ void BmmDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   iEvent.getByLabel(fTracksLabel.c_str(), tracks);
   theTkCollection  = tracks.product();  
 
-  if (fVerbose > 0) cout << "==>BmmDumpTracks> nTracks = " << tracks->size() 
+  if (fVerbose > 0) cout << "==>BSDumpTracks> nTracks = " << tracks->size() 
 			 << ", event: " << fNevt << endl;
 
   // -------- get the collection of global muons -----------
   Handle<MuonCollection> hMuons;
   iEvent.getByLabel(fMuonsLabel1, hMuons);
 
-  if (fVerbose > 0) cout << "==>BmmDumpTracks> globalMuons = " << hMuons->size() << endl;
+  if (fVerbose > 0) cout << "==>BSDumpTracks> globalMuons = " << hMuons->size() << endl;
 
   // -- store their muon track indices
   vector<int> muonIndices;
@@ -118,7 +118,7 @@ void BmmDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   Handle<MuonCollection> tkMuons;
   iEvent.getByLabel(fMuonsLabel2, tkMuons);
 
-  if (fVerbose > 0) cout << "==>BmmDumpTracks> trackerMuons = " << tkMuons->size() << endl;
+  if (fVerbose > 0) cout << "==>BSDumpTracks> trackerMuons = " << tkMuons->size() << endl;
 
   // -- store their muon track indices
   vector<int> tkMuonIndices;
@@ -133,7 +133,7 @@ void BmmDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   
   const l1extra::L1MuonParticleCollection& L1ExtMu = *l1extmu;
   
-  if ( fVerbose ) cout << "==>BmmDumpTracks> L1Muons = " << l1extmu->size() << endl;
+  if ( fVerbose ) cout << "==>BSDumpTracks> L1Muons = " << l1extmu->size() << endl;
 
 
   // -- store their muon track indices
@@ -150,7 +150,7 @@ void BmmDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // -- get the tracking particle collection needed for truth matching. Only on RECO data tier!
   RecoToSimCollection recSimColl;
   if (1 == fDoTruthMatching) {
-  if (fVerbose > 0) cout << "==>BmmDumpTracks> Get tracking particles for TrackAssociator" << endl;
+  if (fVerbose > 0) cout << "==>BSDumpTracks> Get tracking particles for TrackAssociator" << endl;
     try {
       edm::Handle<TrackingParticleCollection> trackingParticles;
       iEvent.getByLabel(fTrackingParticlesLabel.c_str(), trackingParticles);
@@ -165,7 +165,7 @@ void BmmDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   const HepMC::GenEvent *genEvent = 0;
   edm::Handle<std::vector<SimTrack> > simTracks;
   if (2 == fDoTruthMatching) {
-  if (fVerbose > 0) cout << "==>BmmDumpTracks> Get sim. track for FAMOS truth matching" << endl;
+  if (fVerbose > 0) cout << "==>BSDumpTracks> Get sim. track for FAMOS truth matching" << endl;
     iEvent.getByLabel(fGenEventLabel.c_str(), hepmc);
     genEvent = hepmc->GetEvent();
     iEvent.getByLabel(fSimTracksLabel.c_str(), simTracks); 
@@ -286,7 +286,7 @@ void BmmDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
 
 // ----------------------------------------------------------------------
-int BmmDumpTracks::idRecTrack(double pt, double eta, double phi, double ept, double eeta, double ephi) {
+int BSDumpTracks::idRecTrack(double pt, double eta, double phi, double ept, double eeta, double ephi) {
   
   int found(-1), index(0);
 
@@ -344,7 +344,7 @@ int BmmDumpTracks::idRecTrack(double pt, double eta, double phi, double ept, dou
 }
 
 // ------------ method called once each job just before starting event loop  ------------
-void  BmmDumpTracks::beginJob(const edm::EventSetup& setup) {
+void  BSDumpTracks::beginJob(const edm::EventSetup& setup) {
   edm::ESHandle<TrackAssociatorBase> theAssociator;
   setup.get<TrackAssociatorRecord>().get(fAssociatorLabel.c_str(), theAssociator);
   fAssociator = (TrackAssociatorBase*)theAssociator.product();
@@ -354,8 +354,8 @@ void  BmmDumpTracks::beginJob(const edm::EventSetup& setup) {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void  BmmDumpTracks::endJob() {
+void  BSDumpTracks::endJob() {
 }
 
 //define this as a plug-in
-//DEFINE_FWK_MODULE(BmmDumpTracks);
+//DEFINE_FWK_MODULE(BSDumpTracks);

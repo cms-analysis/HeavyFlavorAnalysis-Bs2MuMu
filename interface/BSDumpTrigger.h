@@ -16,10 +16,10 @@ class TAna00Event;
 
 
 // ----------------------------------------------------------------------
-class BmmDumpTrigger : public edm::EDAnalyzer {
+class BSDumpTrigger : public edm::EDAnalyzer {
  public:
-  explicit BmmDumpTrigger(const edm::ParameterSet&);
-  ~BmmDumpTrigger();
+  explicit BSDumpTrigger(const edm::ParameterSet&);
+  ~BSDumpTrigger();
   
  private:
   virtual void beginJob(const edm::EventSetup&) ;

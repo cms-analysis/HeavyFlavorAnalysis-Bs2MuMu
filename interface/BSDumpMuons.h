@@ -1,5 +1,5 @@
-#ifndef _BMMDUMPMUONS_h_
-#define _BMMDUMPMUONS_h_
+#ifndef _BSDUMPMUONS_h_
+#define _BSDUMPMUONS_h_
 
 #include <memory>
 
@@ -32,10 +32,10 @@ class TH2D;
 class TAna00Event;
 
 // ----------------------------------------------------------------------
-class BmmDumpMuons : public edm::EDAnalyzer {
+class BSDumpMuons : public edm::EDAnalyzer {
  public:
-  explicit BmmDumpMuons(const edm::ParameterSet&);
-  ~BmmDumpMuons();
+  explicit BSDumpMuons(const edm::ParameterSet&);
+  ~BSDumpMuons();
   
  private:
   virtual void beginJob(const edm::EventSetup&) ;

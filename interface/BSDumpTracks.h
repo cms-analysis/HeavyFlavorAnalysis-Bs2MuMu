@@ -1,5 +1,5 @@
-#ifndef _BMMDUMPTRACKS_h_
-#define _BMMDUMPTRACKS_h_
+#ifndef _BSDUMPTRACKS_h_
+#define _BSDUMPTRACKS_h_
 
 #include <memory>
 
@@ -31,10 +31,10 @@ class TAna00Event;
 class TrackAssociatorBase;
 
 // ----------------------------------------------------------------------
-class BmmDumpTracks : public edm::EDAnalyzer {
+class BSDumpTracks : public edm::EDAnalyzer {
  public:
-  explicit BmmDumpTracks(const edm::ParameterSet&);
-  ~BmmDumpTracks();
+  explicit BSDumpTracks(const edm::ParameterSet&);
+  ~BSDumpTracks();
   
  private:
   virtual void beginJob(const edm::EventSetup&) ;

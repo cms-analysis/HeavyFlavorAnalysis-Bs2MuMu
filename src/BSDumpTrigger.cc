@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/BmmDumpTrigger.h"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/BSDumpTrigger.h"
 
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/TriggerResults.h"
@@ -27,7 +27,7 @@ using namespace l1extra ;
 
 
 // ----------------------------------------------------------------------
-BmmDumpTrigger::BmmDumpTrigger(const edm::ParameterSet& iConfig):
+BSDumpTrigger::BSDumpTrigger(const edm::ParameterSet& iConfig):
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fparticleMap(iConfig.getUntrackedParameter< std::string > ("particleMap")),
   fL1MuLabel(iConfig.getUntrackedParameter< std::string > ("L1MuLabel")),
@@ -41,7 +41,7 @@ BmmDumpTrigger::BmmDumpTrigger(const edm::ParameterSet& iConfig):
   fHLTFilterObject4(iConfig.getUntrackedParameter<string>("HLTfiltObj4",  string("displacedJpsitoMumuFilter"))) {
 
   cout << "----------------------------------------------------------------------" << endl;
-  cout << "--- BmmDumpTrigger constructor" << endl;
+  cout << "--- BSDumpTrigger constructor" << endl;
   cout << "--- Verbose          : " << fVerbose << endl;
   cout << "--- particle Map     : " << fparticleMap.c_str() << endl;
   cout << "--- L1 Mu Label      : " << fL1MuLabel.c_str() << endl;
@@ -62,13 +62,13 @@ BmmDumpTrigger::BmmDumpTrigger(const edm::ParameterSet& iConfig):
 
 
 // ----------------------------------------------------------------------
-BmmDumpTrigger::~BmmDumpTrigger() {
+BSDumpTrigger::~BSDumpTrigger() {
   
 }
 
 
 // ----------------------------------------------------------------------
-void BmmDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   fNevt++;
 
@@ -140,7 +140,7 @@ void BmmDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
     }
   }
   else {
-    if ( fVerbose ) cout << "%BmmDumpTrigger -- No L1 MU object" << endl;
+    if ( fVerbose ) cout << "%BSDumpTrigger -- No L1 MU object" << endl;
   }
 
 
@@ -235,7 +235,7 @@ void BmmDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
     
   } else {
     
-    if ( fVerbose ) cout << "%BmmDumpTrigger -- No L1 Map Collection" << endl;
+    if ( fVerbose ) cout << "%BSDumpTrigger -- No L1 Map Collection" << endl;
   }
 
 
@@ -254,16 +254,16 @@ void BmmDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
     iEvent.getByLabel(fHLTriggerLabel,hltresults);
     
   } catch (Exception event) {
-    if ( fVerbose ) cout << "%BmmDumpTrigger -- Couldn't get handle on HLT Trigger!" << endl;
+    if ( fVerbose ) cout << "%BSDumpTrigger -- Couldn't get handle on HLT Trigger!" << endl;
   }
    
   if (!hltresults.isValid()) {
-    if ( fVerbose ) cout << "%BmmDumpTrigger -- No Trigger Result!" << endl;
+    if ( fVerbose ) cout << "%BSDumpTrigger -- No Trigger Result!" << endl;
   } 
   else {
     int ntrigs=hltresults->size();
     if (ntrigs==0){
-	if ( fVerbose ) cout << "%BmmDumpTrigger -- No trigger name given in TriggerResults of the input " << endl;
+	if ( fVerbose ) cout << "%BSDumpTrigger -- No trigger name given in TriggerResults of the input " << endl;
     } 
 
     // get hold of trigger names - based on TriggerResults object!
@@ -502,14 +502,14 @@ void BmmDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void  BmmDumpTrigger::beginJob(const edm::EventSetup& setup) {
+void  BSDumpTrigger::beginJob(const edm::EventSetup& setup) {
 
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void  BmmDumpTrigger::endJob() {
+void  BSDumpTrigger::endJob() {
 
 }
 
 //define this as a plug-in
-//DEFINE_FWK_MODULE(BmmDumpTrigger);
+//DEFINE_FWK_MODULE(BSDumpTrigger);

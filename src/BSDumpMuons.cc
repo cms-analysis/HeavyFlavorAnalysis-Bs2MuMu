@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/BmmDumpMuons.h"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/BSDumpMuons.h"
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna00Event.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
@@ -26,7 +26,7 @@ using namespace reco;
 using namespace edm;
 
 // ----------------------------------------------------------------------
-BmmDumpMuons::BmmDumpMuons(const edm::ParameterSet& iConfig) :
+BSDumpMuons::BSDumpMuons(const edm::ParameterSet& iConfig) :
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fMuonsLabel1(iConfig.getUntrackedParameter<InputTag>("muonsLabel1")),
   fMuonsLabel2(iConfig.getUntrackedParameter<InputTag>("muonsLabel2")),
@@ -42,7 +42,7 @@ BmmDumpMuons::BmmDumpMuons(const edm::ParameterSet& iConfig) :
   using namespace std;
 
   cout << "----------------------------------------------------------------------" << endl;
-  cout << "--- BmmDumpMuons constructor" << endl;
+  cout << "--- BSDumpMuons constructor" << endl;
   cout << "--- Verbose         : " << fVerbose << endl;
   cout << "--- muonsLabel1      : " << fMuonsLabel1 << endl;
   cout << "--- muonsLabel2      : " << fMuonsLabel2 << endl;
@@ -61,13 +61,13 @@ BmmDumpMuons::BmmDumpMuons(const edm::ParameterSet& iConfig) :
 
 
 // ----------------------------------------------------------------------
-BmmDumpMuons::~BmmDumpMuons() {
+BSDumpMuons::~BSDumpMuons() {
   
 }
 
 
 // ----------------------------------------------------------------------
-void BmmDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   fNevt++;
 
@@ -90,7 +90,7 @@ void BmmDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   Handle<reco::MuonCollection> hMuons;
   iEvent.getByLabel(fMuonsLabel1, hMuons);
 
-  if (fVerbose > 0) cout << "==>BmmDumpMuons> nGlobalMuons = " << hMuons->size() << ", event: " << fNevt << endl;
+  if (fVerbose > 0) cout << "==>BSDumpMuons> nGlobalMuons = " << hMuons->size() << ", event: " << fNevt << endl;
 
   for (reco::MuonCollection::const_iterator muon = hMuons->begin(); muon != hMuons->end(); ++muon) {
   
@@ -218,7 +218,7 @@ void BmmDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   Handle<reco::MuonCollection> tkMuons;
   iEvent.getByLabel(fMuonsLabel2, tkMuons);
 
-  if (fVerbose > 0) cout << "==>BmmDumpMuons> nTrackerMuons = " << tkMuons->size() << ", event: " << fNevt << endl;
+  if (fVerbose > 0) cout << "==>BSDumpMuons> nTrackerMuons = " << tkMuons->size() << ", event: " << fNevt << endl;
 
   for (reco::MuonCollection::const_iterator tkmu = tkMuons->begin(); tkmu != tkMuons->end(); ++tkmu) {
     
@@ -635,12 +635,12 @@ void BmmDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 }
 
 // ------------ method called once each job just before starting event loop  ------------
-void  BmmDumpMuons::beginJob(const edm::EventSetup& setup) {
+void  BSDumpMuons::beginJob(const edm::EventSetup& setup) {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void  BmmDumpMuons::endJob() {
+void  BSDumpMuons::endJob() {
 }
 
 //define this as a plug-in
-//DEFINE_FWK_MODULE(BmmDumpMuons);
+//DEFINE_FWK_MODULE(BSDumpMuons);

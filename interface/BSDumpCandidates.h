@@ -1,5 +1,5 @@
-#ifndef _BMMDUMPCANDIDATES_h_
-#define _BMMDUMPCANDIDATES_h_
+#ifndef _BSDUMPCANDIDATES_h_
+#define _BSDUMPCANDIDATES_h_
 
 // system include files
 #include <memory>
@@ -86,11 +86,11 @@ class TrackAssociatorBase;
 /* class VertexAssociatorBase; */
 
 // ----------------------------------------------------------------------
-class BmmDumpCandidates : public edm::EDAnalyzer {
+class BSDumpCandidates : public edm::EDAnalyzer {
 
 public:
-  explicit BmmDumpCandidates(const edm::ParameterSet&);
-  ~BmmDumpCandidates();
+  explicit BSDumpCandidates(const edm::ParameterSet&);
+  ~BSDumpCandidates();
   
   
 private:

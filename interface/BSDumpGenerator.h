@@ -1,5 +1,5 @@
-#ifndef _BMMDUMPSTUFF_h_
-#define _BMMDUMPSTUFF_h_
+#ifndef _BSDUMPGENERATOR_h_
+#define _BSDUMPGENERATOR_h_
 
 #include <memory>
 
@@ -16,23 +16,20 @@ class TFile;
 class TTree;
 class TAna00Event;
 
-class TrackAssociatorBase;
-
 // ----------------------------------------------------------------------
-class BmmDumpStuff : public edm::EDAnalyzer {
+class BSDumpGenerator : public edm::EDAnalyzer {
  public:
-  explicit BmmDumpStuff(const edm::ParameterSet&);
-  ~BmmDumpStuff();
+  explicit BSDumpGenerator(const edm::ParameterSet&);
+  ~BSDumpGenerator();
   
  private:
   virtual void beginJob(const edm::EventSetup&) ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 
-  std::string          fGenEventScaleLabel, fPrimaryVertexLabel;
-
-  int                  fVerbose;
-  int                  fNevt;
+  int         fVerbose;
+  int         fNevt;
+  std::string fGenCandidatesLabel, fGenEventLabel;
 
 };
 
