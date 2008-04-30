@@ -2,7 +2,7 @@
 
 #include <TRandom.h>
 
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFDumpGenerator.h"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/BmmDumpGenerator.h"
 #include "SimDataFormats/HepMCProduct/interface/HepMCProduct.h"
 
 #include "HepMC/GenVertex.h"
@@ -27,7 +27,7 @@ using namespace reco;
 using namespace HepMC;
 
 // ----------------------------------------------------------------------
-HFDumpGenerator::HFDumpGenerator(const ParameterSet& iConfig):
+BmmDumpGenerator::BmmDumpGenerator(const ParameterSet& iConfig):
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fGenCandidatesLabel(iConfig.getUntrackedParameter<string>("generatorCandidates", string("MCCandidate"))), 
   fGenEventLabel(iConfig.getUntrackedParameter<string>("generatorEvent", string("Source")))  {
@@ -35,9 +35,9 @@ HFDumpGenerator::HFDumpGenerator(const ParameterSet& iConfig):
   using namespace std;
 
   cout << "----------------------------------------------------------------------" << endl;
-  cout << "--- HFDumpGenerator constructor" << endl;
+  cout << "--- BmmDumpGenerator constructor" << endl;
   cout << "--- Verbose                     : " << fVerbose            << endl;
-  cout << "--- HFDumpGenerator constructor : " << fGenCandidatesLabel << "  " << fGenEventLabel << endl;
+  cout << "--- BmmDumpGenerator constructor : " << fGenCandidatesLabel << "  " << fGenEventLabel << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
   fNevt = 0;
@@ -46,13 +46,13 @@ HFDumpGenerator::HFDumpGenerator(const ParameterSet& iConfig):
 
 
 // ----------------------------------------------------------------------
-HFDumpGenerator::~HFDumpGenerator() {
+BmmDumpGenerator::~BmmDumpGenerator() {
   
 }
 
 
 // ----------------------------------------------------------------------
-void HFDumpGenerator::analyze(const Event& iEvent, const EventSetup& iSetup) {
+void BmmDumpGenerator::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
   fNevt++; 
   // -- Get candidates from generator block
@@ -60,7 +60,7 @@ void HFDumpGenerator::analyze(const Event& iEvent, const EventSetup& iSetup) {
   Handle<CandidateCollection> hMCCandidates;
   iEvent.getByLabel(fGenCandidatesLabel.c_str(), hMCCandidates);
 
-  if (fVerbose > 0) cout << "==>HFDumpGenerator> nMCCAndidates = " << hMCCandidates->size() 
+  if (fVerbose > 0) cout << "==>BmmDumpGenerator> nMCCAndidates = " << hMCCandidates->size() 
 			 << ", event: " << fNevt << endl;
 
   TGenCand  *aGen = new TGenCand;
@@ -196,12 +196,12 @@ void HFDumpGenerator::analyze(const Event& iEvent, const EventSetup& iSetup) {
 }
 
 // ------------ method called once each job just before starting event loop  ------------
-void  HFDumpGenerator::beginJob(const EventSetup& setup) {
+void  BmmDumpGenerator::beginJob(const EventSetup& setup) {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void  HFDumpGenerator::endJob() {
+void  BmmDumpGenerator::endJob() {
 }
 
 //define this as a plug-in
-//DEFINE_FWK_MODULE(HFDumpGenerator);
+//DEFINE_FWK_MODULE(BmmDumpGenerator);

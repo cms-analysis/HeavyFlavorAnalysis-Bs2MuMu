@@ -1,6 +1,4 @@
-#ifndef _HFDUMPSTUFF_h_
-#define _HFDUMPSTUFF_h_
-
+// system include files
 #include <memory>
 
 // user include files
@@ -16,24 +14,31 @@ class TFile;
 class TTree;
 class TAna00Event;
 
-class TrackAssociatorBase;
 
 // ----------------------------------------------------------------------
-class HFDumpStuff : public edm::EDAnalyzer {
+class BmmDumpTrigger : public edm::EDAnalyzer {
  public:
-  explicit HFDumpStuff(const edm::ParameterSet&);
-  ~HFDumpStuff();
+  explicit BmmDumpTrigger(const edm::ParameterSet&);
+  ~BmmDumpTrigger();
   
  private:
   virtual void beginJob(const edm::EventSetup&) ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 
-  std::string          fGenEventScaleLabel, fPrimaryVertexLabel;
+  int           fVerbose;
+  int           fNevt;
+  edm::InputTag fHLTriggerLabel;
+  std::string   fHLTriggerName;
+  std::string   fL1MuLabel;
+  std::string   fL1TriggerName;
+  std::string   fparticleMap;
 
-  int                  fVerbose;
-  int                  fNevt;
+  std::string   fHLTFilterObject0;
+  std::string   fHLTFilterObject1;
+  std::string   fHLTFilterObject2;
+  std::string   fHLTFilterObject3;
+  std::string   fHLTFilterObject4;
 
 };
 
-#endif

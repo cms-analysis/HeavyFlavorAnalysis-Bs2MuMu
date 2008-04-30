@@ -7,8 +7,8 @@
  *  This class is an EDAnalyzer implementing TrigReport (statistics
  *  printed to log file) for L1 triggers
  *
- *  $Date: 2007/03/28 12:58:54 $
- *  $Revision: 1.1 $
+ *  $Date: 2008/04/11 15:06:59 $
+ *  $Revision: 1.2 $
  *
  *  \author Martin Grunewald
  *
@@ -19,7 +19,6 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include<vector>
 #include<string>
-#include <TH1.h>
  
 //
 // class declaration
@@ -47,8 +46,6 @@ class L1TrigReport : public edm::EDAnalyzer {
   std::vector<std::string> l1Names_;    // name of each L1 algorithm
  
   bool init_;                           // vectors initialised or not
-
-  TH1D          *fL1;                   // trigger names
  
 };
  

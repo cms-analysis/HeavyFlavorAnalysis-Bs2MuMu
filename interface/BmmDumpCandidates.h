@@ -1,5 +1,5 @@
-#ifndef _HFDUMPCANDIDATES_h_
-#define _HFDUMPCANDIDATES_h_
+#ifndef _BMMDUMPCANDIDATES_h_
+#define _BMMDUMPCANDIDATES_h_
 
 // system include files
 #include <memory>
@@ -79,7 +79,6 @@
 
 class TFile;
 class TTree;
-class TTree;
 class TH1D;
 class TAna00Event;
 
@@ -87,11 +86,11 @@ class TrackAssociatorBase;
 /* class VertexAssociatorBase; */
 
 // ----------------------------------------------------------------------
-class HFDumpCandidates : public edm::EDAnalyzer {
+class BmmDumpCandidates : public edm::EDAnalyzer {
 
 public:
-  explicit HFDumpCandidates(const edm::ParameterSet&);
-  ~HFDumpCandidates();
+  explicit BmmDumpCandidates(const edm::ParameterSet&);
+  ~BmmDumpCandidates();
   
   
 private:
@@ -106,6 +105,7 @@ private:
   virtual void bmmTracks1(const edm::Event&);
   virtual void bmmTracks2(const edm::Event&);
   virtual void bmmTracks3(const edm::Event&);
+  virtual void bmmTracks4(const edm::Event&);
 
   int primaryVertex(const edm::Event&);
   virtual void secondaryVertex(const edm::Event&, const edm::EventSetup&);
@@ -132,7 +132,8 @@ private:
   std::string fChannel;
   std::string fPrintChannel, fPrintChannel2;
 
-  edm::InputTag fMuonsLabel;
+  edm::InputTag fMuonsLabel1;
+  edm::InputTag fMuonsLabel2;
 
   double fMass, fMass2;
   double fMassRange, fMassRange2, fMassKaon;
@@ -151,14 +152,8 @@ private:
   TrackAssociatorBase  *fAssociator;
 /*   VertexAssociatorBase *fVtxAssociator; */
   
-  TH1D *fEff;  
-
-  TH1D  *fM000[3], *fM100[3], *fM200[3], *fM300[3];
-
-  TH2D *fGlb;
 
   // -- Stuff -----------------------------------------------------
-
 
   std::vector<double> SecVtxChi2;
   std::vector<double> InvMass;
@@ -167,7 +162,8 @@ private:
   // -- Collections
   // ---------------
  
-  const reco::MuonCollection       *theMuonCollection;
+  const reco::MuonCollection       *theGlobalMuonCollection;
+  const reco::MuonCollection       *theTrackerMuonCollection;
   const reco::TrackCollection      *theTkCollection;
   std::vector<HepMC::GenParticle*> theGenCollection;
 

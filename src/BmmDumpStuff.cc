@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFDumpStuff.h"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/BmmDumpStuff.h"
 
 #include "DataFormats/Common/interface/Handle.h"
 // #include "DataFormats/METReco/interface/CaloMET.h"
@@ -32,7 +32,7 @@ using namespace reco;
 
 
 // ----------------------------------------------------------------------
-HFDumpStuff::HFDumpStuff(const edm::ParameterSet& iConfig):
+BmmDumpStuff::BmmDumpStuff(const edm::ParameterSet& iConfig):
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fGenEventScaleLabel(iConfig.getUntrackedParameter<string>("GenEventScaleLabel", string("genEventScale"))),
   fPrimaryVertexLabel(iConfig.getUntrackedParameter<string>("PrimaryVertexLabel", string("offlinePrimaryVerticesFromCTFTracks")))
@@ -40,7 +40,7 @@ HFDumpStuff::HFDumpStuff(const edm::ParameterSet& iConfig):
   using namespace std;
 
   cout << "----------------------------------------------------------------------" << endl;
-  cout << "--- HFDumpStuff constructor" << endl;
+  cout << "--- BmmDumpStuff constructor" << endl;
   cout << "--- Verbose            : " << fVerbose << endl;
   cout << "--- GenEventScaleLabel : " << fGenEventScaleLabel.c_str() << endl;
   cout << "--- PrimaryVertexLabel : " << fPrimaryVertexLabel.c_str() << endl;
@@ -51,18 +51,18 @@ HFDumpStuff::HFDumpStuff(const edm::ParameterSet& iConfig):
 
 
 // ----------------------------------------------------------------------
-HFDumpStuff::~HFDumpStuff() {
+BmmDumpStuff::~BmmDumpStuff() {
   
 }
 
 
 // ----------------------------------------------------------------------
-void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void BmmDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   
 
   fNevt++; 
 
-  if (fVerbose > 0) cout << "==>HFDumpStuff>  Get primary vertex, event: " << fNevt << endl;
+  if (fVerbose > 0) cout << "==>BmmDumpStuff>  Get primary vertex, event: " << fNevt << endl;
 
   // -- Primary vertex
   int nvtx(0);
@@ -79,14 +79,14 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       nvtx++;
 
       if ( fVerbose > 0 ) {
-	printf ("==>HFDumpStuff>  %i. Primary Vertex (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", 
+	printf ("==>BmmDumpStuff>  %i. Primary Vertex (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", 
 		nvtx, v->x(), v->y(), v->z());
       }
     }
 
     if ( nvtx == 0 ) {
 
-      if ( fVerbose > 0 )  cout << "==>HFDumpStuff>  no primary vertex in recoPrimaryVertexCollection" << endl;
+      if ( fVerbose > 0 )  cout << "==>BmmDumpStuff>  no primary vertex in recoPrimaryVertexCollection" << endl;
       return;
     }
 
@@ -104,7 +104,7 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
   } catch (cms::Exception &ex) {
     //    cout << ex.explainSelf() << endl;
-    cout << "==>HFDumpStuff> primaryVertex " << fPrimaryVertexLabel.c_str() << " not found " << endl;
+    cout << "==>BmmDumpStuff> primaryVertex " << fPrimaryVertexLabel.c_str() << " not found " << endl;
   } 
 
 
@@ -115,7 +115,7 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 //     iEvent.getByLabel(fCandidates1Label.c_str(), candidates1Handle);
 //     for (int i = 0; i < candidates1Handle->size(); ++ i ) {
 //       const Candidate &p = (*candidates1Handle)[i];
-//       cout << "==>HFDumpStuff>  candidates1 " << i << " id = " << p.pdgId() 
+//       cout << "==>BmmDumpStuff>  candidates1 " << i << " id = " << p.pdgId() 
 // 	   << " mass = " << p.mass()
 // 	   << " pt = " << p.pt() 
 // 	   << " phi = " << p.phi() 
@@ -124,7 +124,7 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 //     }
 //   } catch (cms::Exception &ex) {
 //     //    cout << ex.explainSelf() << endl;
-//     cout << "==>HFDumpStuff> Candidate list " << fCandidates1Label.c_str() << " not found " << endl;
+//     cout << "==>BmmDumpStuff> Candidate list " << fCandidates1Label.c_str() << " not found " << endl;
 //   }
 
 //   try {
@@ -141,12 +141,12 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 }
 
 // ------------ method called once each job just before starting event loop  ------------
-void  HFDumpStuff::beginJob(const edm::EventSetup& setup) {
+void  BmmDumpStuff::beginJob(const edm::EventSetup& setup) {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void  HFDumpStuff::endJob() {
+void  BmmDumpStuff::endJob() {
 }
 
 //define this as a plug-in
-//DEFINE_FWK_MODULE(HFDumpStuff);
+//DEFINE_FWK_MODULE(BmmDumpStuff);

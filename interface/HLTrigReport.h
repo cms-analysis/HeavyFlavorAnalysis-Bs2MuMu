@@ -7,7 +7,7 @@
  *  This class is an EDAnalyzer implementing TrigReport (statistics
  *  printed to log file) for HL triggers
  *
- *  $Date: 2007/06/19 11:47:50 $
+ *  $Date: 2008/04/11 15:06:59 $
  *  $Revision: 1.2 $
  *
  *  \author Martin Grunewald
@@ -24,7 +24,6 @@
 #include <iostream>
 #include<vector>
 #include<string>
-#include <TH1.h>
 
 //
 // class declaration
@@ -57,8 +56,6 @@ class HLTrigReport : public edm::EDAnalyzer {
  
   std::vector<std::string>  hlNames_;  // name of each HLT algorithm
   bool init_;                          // vectors initialised or not
-
-  TH1D  *fHLT;                         // trigger names
  
 };
  

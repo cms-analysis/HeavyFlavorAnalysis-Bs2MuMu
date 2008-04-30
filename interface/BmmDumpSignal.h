@@ -1,5 +1,5 @@
-#ifndef _HFDUMPGENERATOR_h_
-#define _HFDUMPGENERATOR_h_
+#ifndef _BMMDUMPSIGNAL_h_
+#define _BMMDUMPSIGNAL_h_
 
 #include <memory>
 
@@ -7,29 +7,29 @@
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
 
+#include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
+#include "TrackingTools/Records/interface/TransientTrackRecord.h"
+
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-class TFile;
-class TTree;
-class TAna00Event;
-
 // ----------------------------------------------------------------------
-class HFDumpGenerator : public edm::EDAnalyzer {
+class BmmDumpSignal : public edm::EDAnalyzer {
  public:
-  explicit HFDumpGenerator(const edm::ParameterSet&);
-  ~HFDumpGenerator();
+  explicit BmmDumpSignal(const edm::ParameterSet&);
+  ~BmmDumpSignal();
   
  private:
   virtual void beginJob(const edm::EventSetup&) ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 
-  int         fVerbose;
-  int         fNevt;
-  std::string fGenCandidatesLabel, fGenEventLabel;
+  int           fVerbose; 
+  std::string   fTracksLabel, fPrimaryVertexLabel;
+  edm::InputTag fMuonsLabel;
+  double        fMuonPt, fKaonPt, fDeltaR;
 
 };
 

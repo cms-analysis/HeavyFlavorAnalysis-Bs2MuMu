@@ -2,8 +2,8 @@
  *
  * See header file for documentation
  *
- *  $Date: 2007/09/27 23:03:38 $
- *  $Revision: 1.4 $
+ *  $Date: 2008/04/11 15:07:00 $
+ *  $Revision: 1.2 $
  *
  *  \author Martin Grunewald
  *
@@ -50,14 +50,13 @@ L1TrigReport::L1TrigReport(const edm::ParameterSet& iConfig) :
   l1Names_(0),
   init_(false)
 {
-  LogDebug("") << "Level-1 Global Trigger Readout Record: " + l1GTReadoutRecTag_.encode();
+  //LogDebug("") << "Level-1 Global Trigger Readout Record: " + l1GTReadoutRecTag_.encode();  
+
 }
  
 
 L1TrigReport::~L1TrigReport()
 { 
-  // -- Save output
-  //fL1->Write();
 
 }
  
@@ -69,10 +68,10 @@ L1TrigReport::~L1TrigReport()
 void L1TrigReport::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   // accumulation of statistics event by event
- 
   using namespace std;
   using namespace edm;
   using namespace reco;
+  
   const unsigned int n(l1extra::L1ParticleMap::kNumOfL1TriggerTypes);
  
   nEvents_++;
@@ -161,6 +160,8 @@ void L1TrigReport::endJob()
        << "Name" << "\n";
  
   if (init_) {
+
+    TH1D *h1 = (TH1D*)gHFFile->Get("L1");
     for (unsigned int i=0; i!=n; ++i) {
       cout << "L1T-Report "
 	   << right << setw(10) << i << " "
@@ -169,8 +170,8 @@ void L1TrigReport::endJob()
 	   << right << setw(10) << nErrors_ << " "
 	   << l1Names_[i] << "\n";
 
-      fL1->SetBinContent(i, l1Accepts_[i]);
-      fL1->GetXaxis()->SetBinLabel(i, Form("%s", l1Names_[i].c_str()));
+      h1->SetBinContent(i, l1Accepts_[i]);
+      h1->GetXaxis()->SetBinLabel(i, Form("%s", l1Names_[i].c_str()));
     }
   } else {
     cout << "L1T-Report - No L1 GTRRs found!" << endl;

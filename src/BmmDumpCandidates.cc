@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFDumpCandidates.h"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/BmmDumpCandidates.h"
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna00Event.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
@@ -45,7 +45,7 @@ using namespace edm;
 
 // ----------------------------------------------------------------------
 // ======================================================================
-HFDumpCandidates::HFDumpCandidates(const edm::ParameterSet& iConfig):
+BmmDumpCandidates::BmmDumpCandidates(const edm::ParameterSet& iConfig):
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fBmmSel(iConfig.getUntrackedParameter<int>("bmmsel", -1)),
   fChannel(iConfig.getUntrackedParameter<string>("channel","default")),
@@ -55,7 +55,8 @@ HFDumpCandidates::HFDumpCandidates(const edm::ParameterSet& iConfig):
   fTrackingParticlesLabel(iConfig.getUntrackedParameter<string>("trackingParticlesLabel", string("trackingParticles"))),
   fTrackingVertexLabel(iConfig.getUntrackedParameter<string>("trackingVertexLabel", string("trackingParticles"))),
   fTracksLabel(iConfig.getUntrackedParameter<string>("tracksLabel", string("ctfWithMaterialTracks"))),
-  fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
+  fMuonsLabel1(iConfig.getUntrackedParameter<InputTag>("muonsLabel1")),
+  fMuonsLabel2(iConfig.getUntrackedParameter<InputTag>("muonsLabel2")),
   fVtxAssociatorLabel(iConfig.getUntrackedParameter<string>("vertexAssociatorLabel", string("VertexAssociatorByTracks"))), 
   fAssociatorLabel(iConfig.getUntrackedParameter<string>("associatorLabel", string("TrackAssociatorByChi2"))), 
   fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1))  {
@@ -63,7 +64,7 @@ HFDumpCandidates::HFDumpCandidates(const edm::ParameterSet& iConfig):
   using namespace std;
 
   cout << "----------------------------------------------------------------------" << endl;
-  cout << "--- HFDumpCandidates constructor" << endl;
+  cout << "--- BmmDumpCandidates constructor" << endl;
   cout << "--- Verbose                : " << fVerbose << endl;
   cout << "--- BmmSel                 : " << fBmmSel << endl;
   cout << "--- Channel                : " << fChannel.c_str() << endl;
@@ -71,13 +72,14 @@ HFDumpCandidates::HFDumpCandidates(const edm::ParameterSet& iConfig):
   cout << "--- generatorEventLabel    : " << fGenEventLabel.c_str() << endl;
   cout << "--- trackingParticlesLabel : " << fTrackingParticlesLabel.c_str() << endl;
   cout << "--- tracksLabel            : " << fTracksLabel.c_str() << endl;
-  cout << "--- muonsLabel             : " << fMuonsLabel << endl;
+  cout << "--- muonsLabel1            : " << fMuonsLabel1 << endl;
+  cout << "--- muonsLabel2            : " << fMuonsLabel2 << endl;
   cout << "--- associatorLabel        : " << fAssociatorLabel.c_str() << endl;
   cout << "--- doTruthMatching        : " << fDoTruthMatching << endl;  // 0 = nothing, 1 = TrackingParticles, 2 = FAMOS
   cout << "----------------------------------------------------------------------" << endl;
 
   cout << "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" << endl;
-  cout << "===>> HFDumpCandidates >>> ctor, instantiating histogramms, etc." << endl;
+  cout << "===>> BmmDumpCandidates >>> ctor, decay mode" << endl;
 
 
   // -- Counters
@@ -93,31 +95,8 @@ HFDumpCandidates::HFDumpCandidates(const edm::ParameterSet& iConfig):
     return;
   }
 
-
-  // -- ROOT output
-//   gHFFile = new TFile(iConfig.getParameter<string>("fileName").c_str(), "RECREATE");
-//   fTree = new TTree("T1","CMSSW Bs -> mu+mu- tree");
-//   gHFEvent = new TAna00Event(0);
-//   fTree->Branch("TAna00Event", "TAna00Event", &gHFEvent, 256000/8, 1);
-
   // -- Decay mode
   decayChannel(fChannel.c_str());
-
-  // -- Troubleshoot histogramm
-  fEff = new TH1D("eff", "Efficiencies", 1000, 0., 1000. );
-
-  // -- Invariant mass & control histograms
-
-  for (int i = 0; i < 3; i++) {
-
-    fM000[i]  = new TH1D(Form("m000_%i", i+1), Form("inv. Mass Cand0 (all kaon cand.), sel = %i", i+1), 1000, 0., 10. );
-    fM100[i]  = new TH1D(Form("m531_%i", i+1), Form("inv. Mass Cand1 (bmm), sel = %i", i+1), 1000, 0., 10. );
-    fM200[i]  = new TH1D(Form("m443_%i", i+1), Form("inv. Mass Cand2 (jpsi), sel = %i", i+1), 1000, 0., 10. );
-    fM300[i]  = new TH1D(Form("m521_%i", i+1), Form("inv. Mass Cand3 (bjk), sel = %i", i+1), 1000, 0., 10. );
-  }
-
-
-  fGlb  = new TH2D("glb", "N_{#mu}^{glb} / event  ",        100, 0., 100., 100, 0., 100.);
 
   cout << "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" << endl << endl << endl;
 
@@ -131,27 +110,10 @@ HFDumpCandidates::HFDumpCandidates(const edm::ParameterSet& iConfig):
 // ----------------------------------------------------------------------
 // ======================================================================
 
-HFDumpCandidates::~HFDumpCandidates() {
+BmmDumpCandidates::~BmmDumpCandidates() {
 
   cout << endl << "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" << endl;
-  cout << "===>> HFDumpCandidates >>> dtor, writing histogramms to file" << endl;
-
-//   fEff->Write();
-
-//   for (int i = 0; i < 3; i++) {
-   
-//     fM000[i]->Write(); 
-//     fM100[i]->Write(); 
-//     fM200[i]->Write();
-//     fM300[i]->Write();
-//   }
-
-//   fTree->Write();
-
-//   gHFFile->Write();
-//   gHFFile->Close();
-//   delete gHFFile;
-
+  cout << "===>> BmmDumpCandidates >>> dtor, bye ..." << endl;
   cout << "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo" << endl << endl << endl;
 
 }
@@ -162,7 +124,7 @@ HFDumpCandidates::~HFDumpCandidates() {
 
 
 // ------------ method called to for each event  ------------
-void HFDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void BmmDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   
 #ifdef THIS_IS_AN_EVENT_EXAMPLE
   Handle<ExampleData> pIn;
@@ -177,14 +139,15 @@ void HFDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   ++fNevt; 
 
   cout << endl << "*********************************************************************" << endl;
-  cout << "===>> HFDumpCandidates >>> Start with event: " << fNevt << endl;
+  cout << "===>> BmmDumpCandidates >>> Start with event: " << fNevt << endl;
 
   using reco::TrackCollection;
   using reco::MuonCollection;
 
   // === Initialize event record ===
 
-  theMuonCollection = 0;
+  theGlobalMuonCollection = 0;
+  theTrackerMuonCollection = 0;
   theTkCollection = 0;
   theGenCollection.clear();
   //  recSimCollection = 0;
@@ -218,11 +181,17 @@ void HFDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   theTkCollection  = tracks.product();
   // theTkCollection  = new reco::TrackCollection(*(tracks.product()));
    
-  // -- get the collection of MuonTracks 
+  // -- get the collection of globalMuonTracks 
   edm::Handle<reco::MuonCollection> MuCollection;
-  iEvent.getByLabel(fMuonsLabel, MuCollection);
-  theMuonCollection   = MuCollection.product();
-  // theMuonCollection   = new reco::MuonCollection(*(MuCollection.product()));  
+  iEvent.getByLabel(fMuonsLabel1, MuCollection);
+  theGlobalMuonCollection   = MuCollection.product();
+  // theGlobalMuonCollection   = new reco::MuonCollection(*(MuCollection.product()));  
+   
+  // -- get the collection of trackerMuonTracks 
+  edm::Handle<reco::MuonCollection> tkMuCollection;
+  iEvent.getByLabel(fMuonsLabel2, tkMuCollection);
+  theTrackerMuonCollection   = tkMuCollection.product();
+  // theTrackerMuonCollection   = new reco::MuonCollection(*(tkMuCollection.product()));  
 
   // -- get the collection of sim. Tracks
 //   Handle<SimTrackContainer> simTrackCollection;
@@ -283,6 +252,13 @@ void HFDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     kaonCandTracks(iEvent, iSetup, 1.5);
     secondaryVertex(iEvent, iSetup);
 
+  } else if (fBmmSel == 4) {
+
+    bmmTracks4(iEvent);
+    muonCandTracks(iEvent, iSetup, fMass, fMass2);
+    kaonCandTracks(iEvent, iSetup, 1.5);
+    secondaryVertex(iEvent, iSetup);
+
   } else {
 
     fBmmSel = 1;
@@ -302,6 +278,12 @@ void HFDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     kaonCandTracks(iEvent, iSetup, 1.5);
     secondaryVertex(iEvent, iSetup);
 
+    fBmmSel = 4;
+    bmmTracks4(iEvent);
+    muonCandTracks(iEvent, iSetup, fMass, fMass2);
+    kaonCandTracks(iEvent, iSetup, 1.5);
+    secondaryVertex(iEvent, iSetup);
+
     fBmmSel = -1;
   }
 
@@ -311,7 +293,7 @@ void HFDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   delete recSimCollection;
   // delete recSimCollectionVertex;
 
-  cout << endl << "===>> HFDumpCandidates >>> Done with event: " << fNevt << endl;
+  cout << endl << "===>> BmmDumpCandidates >>> Done with event: " << fNevt << endl;
   cout << "*********************************************************************" << endl;
     
 }
@@ -323,7 +305,7 @@ void HFDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
 
 // ----------------------------------------------------------------------
-void HFDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
+void BmmDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>bmmTracks1> Matching particle, truth-matched to be particle PDG #" 
@@ -610,7 +592,7 @@ void HFDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 
 
 // ----------------------------------------------------------------------
-void HFDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
+void BmmDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>bmmTracks2> Matching particle, truth matched to be particle PDG #" 
@@ -635,6 +617,7 @@ void HFDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
   int gen_pdg_id(-99999), gen_id(-99999);
   int gen_cnt(0);
 
+  TH1D *h1 = (TH1D*)gHFFile->Get("eff");
 
   for(TrackCollection::size_type i=0; i<recTC.size(); ++i) {
 
@@ -660,8 +643,7 @@ void HFDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
 	gen_pdg_id = genPar->pdg_id();
 	gen_id     = genPar->barcode()-1;
 
-	if ( (abs(gen_pdg_id) == fTruthMC_I) || 
-	     (abs(gen_pdg_id) == fTruthMC_II) ) { 
+	if ( abs(gen_pdg_id) == 13 ) {
 	  
 	  mcand++;
 	  tt = &(*track);
@@ -688,11 +670,11 @@ void HFDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
 
 	if ( MuonRecTracks.size() < 9 ) {
 	  
-	  fEff->Fill(60.1 + MuonRecTracks.size());
+	  h1->Fill(60.1 + MuonRecTracks.size());
 
 	} else {
 	  
-	  fEff->Fill(69.1);
+	  h1->Fill(69.1);
 	}
       }
 
@@ -718,37 +700,27 @@ void HFDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
 
 
 // ----------------------------------------------------------------------
-void HFDumpCandidates::bmmTracks3(const edm::Event &iEvent) {
+void BmmDumpCandidates::bmmTracks3(const edm::Event &iEvent) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
-  if (fVerbose) cout << "==>bmmTracks3> Matching muons, rec PID as muons, event: " << fNevt << endl;
+  if (fVerbose) cout << "==>bmmTracks3> Get global muon tracks, event: " << fNevt << endl;
 
   // -- Clear tracks
   clearTracks();
   clearCandidateTracks();
 
-  if (0 == theMuonCollection ) {
-    
-    if (fVerbose) cout << "==>bmmTrack3> getting the muon collection ..." << endl;
-    
-    edm::Handle<reco::MuonCollection> MuCollection;
-    iEvent.getByLabel(fMuonsLabel, MuCollection);
-    theMuonCollection   = new reco::MuonCollection(*(MuCollection.product()));
-  }
+  int globalMuon  = theGlobalMuonCollection->size();
+  int trackerMuon      = theTrackerMuonCollection->size();
 
-  int nMuon  = theMuonCollection->size();
-  int nTrack = theTkCollection->size();
-
-  if (fVerbose) cout << "==>bmmTracks3>  tracks found: " << nTrack << endl
-       << "==>bmmTracks3>  muons  found: " << nMuon  << endl;  
-
-//   reco::MuonRefVector glbMuons1, glbMuons2;
-  int mcnt(0);
+  if (fVerbose) cout << "==>bmmTracks3>  muons  found: " << globalMuon  << " global muons,  "
+		     << trackerMuon << " tracker muons"  << endl;  
 
   const reco::Track* tt = 0;
 
-  for (MuonCollection::const_iterator glbMuon = (*theMuonCollection).begin(); 
-       glbMuon != (*theMuonCollection).end(); 
+  // -- Get global muons
+  int mcnt(0), mcand(0);
+  for (MuonCollection::const_iterator glbMuon = (*theGlobalMuonCollection).begin(); 
+       glbMuon != (*theGlobalMuonCollection).end(); 
        ++glbMuon){
 
     TrackRef glbTrack = glbMuon->combinedMuon();
@@ -757,41 +729,224 @@ void HFDumpCandidates::bmmTracks3(const edm::Event &iEvent) {
     int idrec = (glbMuon->track()).index();
 
     if ( idrec > -1 ) {
-
 	    
+      mcand++;
       MuonRecTracks.push_back(tt);
       MuonRecTracksIndex.push_back(idrec);
 
     } else {
-      if (fVerbose) cout << "==>bmmTracks3> Coulnd't find rec. track for muon #" << mcnt << endl;  
+
+      if (fVerbose) cout << "==>bmmTracks3> Coulnd't find rec. track for global muon #" << mcnt << endl;  
     }
     
     mcnt++;
-//     glbMuons1.push_back(MuonRef(MuCollection,mcnt-1));
-//     glbMuons2.push_back(MuonRef(MuCollection,mcnt-1));
+
   }
 
-  // -- eff. histogram ---------------------------
-  
-  if ( MuonRecTracks.size() >= 0 ) {
-    
-    if ( MuonRecTracks.size() < 9 ) {
-      
-      fEff->Fill(70.1 + MuonRecTracks.size());
-      
+
+  // -- Find tracker muons, that were not found as global muons
+  int tcnt(0), tcand(0);
+  for (MuonCollection::const_iterator tkMuon = (*theTrackerMuonCollection).begin(); 
+       tkMuon != (*theTrackerMuonCollection).end(); 
+       ++tkMuon){
+
+    TrackRef tkTrack = tkMuon->track();
+    tt = &(*tkTrack);
+
+    int idrec = (tkMuon->track()).index();
+
+    int isGlobal(0);
+    for ( unsigned int i=0; i<MuonRecTracksIndex.size(); i++ ) { 
+      isGlobal = 0;
+      if (idrec == MuonRecTracksIndex[i]) {
+	isGlobal = 1;
+	break;
+      }
+    }
+
+    if ( !isGlobal && (idrec > -1) ) {
+	  
+      tcand++;  
+      MuonRecTracks.push_back(tt);
+      MuonRecTracksIndex.push_back(idrec);
+
     } else {
-      
-      fEff->Fill(79.1);
+
+      if (fVerbose) {
+	if ( idrec < 0 ) cout << "==>bmmTracks3> Coulnd't find rec. track for tracker muon #" << tcnt << endl;  
+      }
+    }
+    
+    tcnt++;
+  }
+
+
+  if (fVerbose) cout << "==>bmmTracks3> Taking " << mcand << "/" << mcnt << " global and " 
+		     << tcand  << "/" << tcnt <<  " tracker muons " <<  endl;
+
+
+  // -- eff. histogram ---------------------------
+
+  TH1D *h1 = (TH1D*)gHFFile->Get("eff");
+
+  if ( MuonRecTracks.size() >= 0 ) {
+    if ( MuonRecTracks.size() < 9 ) {
+      h1->Fill(70.1 + MuonRecTracks.size());
+    } else {
+      h1->Fill(79.1);
     }
   }
+
+  if ( mcnt < 9 ) {
+    h1->Fill(170.1 + mcnt);
+  } else {
+    h1->Fill(179.1);
+  }
+
+  if ( tcnt < 9 ) {
+    h1->Fill(180.1 + tcnt);
+  } else {
+    h1->Fill(189.1);
+  }
+    
+  if ( mcand < 9 ) {
+    h1->Fill(270.1 + mcand);
+  } else {
+    h1->Fill(279.1);
+  }
+
+  if ( tcand < 9 ) {
+    h1->Fill(280.1 + tcand);
+  } else {
+    h1->Fill(289.1);
+  }
+
   // ----------------------------------------------
 }
 
 
 // ----------------------------------------------------------------------
-void HFDumpCandidates::truthCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup) {
+void BmmDumpCandidates::bmmTracks4(const edm::Event &iEvent) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
+  if (fVerbose) cout << "==>bmmTracks4> Matching tracks, rec PID as muons, event: " << fNevt << endl;
+
+  // -- Clear tracks
+  clearTracks();
+  clearCandidateTracks();
+
+  int globalMuon   = theGlobalMuonCollection->size();
+  int trackerMuon = theTrackerMuonCollection->size();
+  int nTrack       = theTkCollection->size();
+
+  if (fVerbose) cout << "==>bmmTracks4>  tracks found: " << nTrack << endl
+		     << "==>bmmTracks4>  muons  found: " << globalMuon  << " global muons,  "
+		     << trackerMuon << " tracker muons"  << endl;  
+
+ 
+  const reco::Track* glt = 0;
+
+  // -- Get tracks matched to global muons
+  int mcnt(0), mcand(0);
+  for (MuonCollection::const_iterator glbMuon = (*theGlobalMuonCollection).begin(); 
+       glbMuon != (*theGlobalMuonCollection).end(); 
+       ++glbMuon){
+
+    TrackRef glbTrack = glbMuon->combinedMuon();
+    glt = &(*glbTrack);
+
+    int idrec = (glbMuon->track()).index();
+
+    if ( (idrec > -1) && (idrec < (*theTkCollection).size()) ) {
+	    
+      int index(0);
+      for (TrackCollection::const_iterator it = (*theTkCollection).begin(); 
+	   it != (*theTkCollection).end(); 
+	   ++it){
+	
+	if (index == idrec ) {	
+	  glt = &(*it);
+	  break;
+	}
+
+	index++;
+      }
+	
+      mcand++;
+      MuonRecTracks.push_back(glt);
+      MuonRecTracksIndex.push_back(idrec);
+
+    } else {
+      if (fVerbose) cout << "==>bmmTracks4> Coulnd't find rec. track for global muon #" << mcnt << endl;  
+    }
+    
+    mcnt++;
+
+  }
+
+
+  const reco::Track* tkt = 0;
+
+  // -- Get tracks matched to tracker muons, that were not found as global muons
+  int tcnt(0), tcand(0);
+  for (MuonCollection::const_iterator tkMuon = (*theTrackerMuonCollection).begin(); 
+       tkMuon != (*theTrackerMuonCollection).end(); 
+       ++tkMuon){
+
+    TrackRef tkTrack = tkMuon->track();
+    tkt = &(*tkTrack);
+
+    int idrec = (tkMuon->track()).index();
+
+    int isGlobal(0);
+    for ( unsigned int i=0; i<MuonRecTracksIndex.size(); i++ ) { 
+      isGlobal = 0;
+      if (idrec == MuonRecTracksIndex[i]) {
+	isGlobal = 1;
+	break;
+      }
+    }
+
+    if ( !isGlobal && (idrec > -1) && (idrec < (*theTkCollection).size()) ) {
+ 	    
+      int index(0);
+      for (TrackCollection::const_iterator it = (*theTkCollection).begin(); 
+	   it != (*theTkCollection).end(); 
+	   ++it){
+	
+	if (index == idrec ) {	
+	  tkt = &(*it);
+	  break;
+	}
+
+	index++;
+      }
+	
+      tcand++;	
+      MuonRecTracks.push_back(tkt);
+      MuonRecTracksIndex.push_back(idrec);
+
+    } else {
+
+      if (fVerbose) {
+	if ( idrec < 0 ) cout << "==>bmmTracks4> Coulnd't find rec. track for tracker muon #" << tcnt << endl;  
+      }
+    }
+    
+    tcnt++;
+
+  }
+  
+  if (fVerbose) cout << "==>bmmTracks4> Taking " << mcand << "/" << mcnt << " global and " 
+		     << tcand  << "/" << tcnt <<  " tracker muons " <<  endl;
+  
+}
+
+
+// ----------------------------------------------------------------------
+void BmmDumpCandidates::truthCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup) {
+
+  if (fVerbose) cout << endl << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>truthCandTracks> Sort muon and kaon candidates depending on ID of B-mother, event: " 
 		     << fNevt << endl;
 
@@ -867,7 +1022,7 @@ void HFDumpCandidates::truthCandTracks(const edm::Event &iEvent, const edm::Even
 }
 
 // ----------------------------------------------------------------------
-void HFDumpCandidates::muonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup, double m_cand1, double m_cand2) {
+void BmmDumpCandidates::muonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup, double m_cand1, double m_cand2) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>muonCandTracks> Sort opposite charge muons into pairs depending on inv. mass ("
@@ -956,7 +1111,7 @@ void HFDumpCandidates::muonCandTracks(const edm::Event &iEvent, const edm::Event
 
 
 // ----------------------------------------------------------------------
-void HFDumpCandidates::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup, double cone) { 
+void BmmDumpCandidates::kaonCandTracks(const edm::Event &iEvent, const edm::EventSetup& iSetup, double cone) { 
    
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>kaonCandTracks> Find " << JpsiPairTracks.size() 
@@ -1049,14 +1204,15 @@ void HFDumpCandidates::kaonCandTracks(const edm::Event &iEvent, const edm::Event
       }
  
       // -- eff. histogram ---------------------------
+      TH1D *h1 = (TH1D*)gHFFile->Get("eff");
 
       if ( ncand < 9 ) {
 	
-	fEff->Fill(80.1 + ncand );
+	h1->Fill(80.1 + ncand );
 	
       } else {
 	
-	fEff->Fill(89.1);
+	h1->Fill(89.1);
       }
 
       // ----------------------------------------------  
@@ -1065,7 +1221,7 @@ void HFDumpCandidates::kaonCandTracks(const edm::Event &iEvent, const edm::Event
   }
 }
 // ----------------------------------------------------------------------
-int HFDumpCandidates::massMuonCand(const edm::Event &iEvent, const edm::EventSetup& iSetup, double m_cand1, double m_cand2) {  
+int BmmDumpCandidates::massMuonCand(const edm::Event &iEvent, const edm::EventSetup& iSetup, double m_cand1, double m_cand2) {  
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>massMuonCand> Looking for two muons in mass-windows around "
@@ -1131,7 +1287,7 @@ int HFDumpCandidates::massMuonCand(const edm::Event &iEvent, const edm::EventSet
 
 
 // ----------------------------------------------------------------------
-double HFDumpCandidates::rmmKaonCand(const edm::Event &iEvent, const edm::EventSetup& iSetup, double cone) {  
+double BmmDumpCandidates::rmmKaonCand(const edm::Event &iEvent, const edm::EventSetup& iSetup, double cone) {  
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>rmmKaonCand> Looking for kaon in cone of "
@@ -1190,13 +1346,15 @@ double HFDumpCandidates::rmmKaonCand(const edm::Event &iEvent, const edm::EventS
 
 
 // ----------------------------------------------------------------------
-int HFDumpCandidates::primaryVertex(const edm::Event &iEvent) {
+int BmmDumpCandidates::primaryVertex(const edm::Event &iEvent) {
 
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>primaryVertex> List of primary vertices, event: " << fNevt << endl;
 
   int nvtx(0);
-  
+
+  TH1D *h1 = (TH1D*)gHFFile->Get("eff");
+
   // -- Primary vertex
   try {
 
@@ -1212,7 +1370,7 @@ int HFDumpCandidates::primaryVertex(const edm::Event &iEvent) {
       nvtx++;
 
       if ( fVerbose > 0 ) {
-	printf ("==>HFDumpStuff>  %i. Primary Vertex (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", 
+	printf ("==>BmmDumpStuff>  %i. Primary Vertex (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", 
 		nvtx, v->x(), v->y(), v->z());
       }
 
@@ -1226,7 +1384,7 @@ int HFDumpCandidates::primaryVertex(const edm::Event &iEvent) {
     if ( nvtx == 0 ) {
 
       if ( fVerbose > 0 ) {
-	cout << "==>HFDumpStuff>  no primary vertex in recoPrimaryVertexCollection" << endl;
+	cout << "==>BmmDumpStuff>  no primary vertex in recoPrimaryVertexCollection" << endl;
       }
 
       return nvtx;
@@ -1236,7 +1394,7 @@ int HFDumpCandidates::primaryVertex(const edm::Event &iEvent) {
 
     if ( fVerbose ) cout << endl << "====> Primary Vertices from CTF Tracks: " << nvtx << " vertices found." << endl;
     
-    if ( nvtx < 9 )  { fEff->Fill(20.1 + nvtx); } else { fEff->Fill(29.1); }
+    if ( nvtx < 9 )  { h1->Fill(20.1 + nvtx); } else { h1->Fill(29.1); }
         
     if (nvtx > 0) {
       
@@ -1281,7 +1439,7 @@ int HFDumpCandidates::primaryVertex(const edm::Event &iEvent) {
 }
 
 // ----------------------------------------------------------------------
-void HFDumpCandidates::secondaryVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup) { 
+void BmmDumpCandidates::secondaryVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup) { 
   
   if (fVerbose) cout << "----------------------------------------------------------------------" << endl;
   if (fVerbose) cout << "==>secondaryVertex> Fitting secondary vertices, event: " << fNevt << endl;
@@ -1356,14 +1514,15 @@ void HFDumpCandidates::secondaryVertex(const edm::Event &iEvent, const edm::Even
     }
   }
 
-  if (nbs0  >= 0 && nbs0  < 10) fEff->Fill(100.1 + (fBmmSel-1)*100 + nbs0);
-  if (njpsi >= 0 && njpsi < 10) fEff->Fill(120.1 + (fBmmSel-1)*100 + njpsi);
-  if (nkaon >= 0 && nkaon < 10) fEff->Fill(140.1 + (fBmmSel-1)*100 + nkaon);
+  TH1D *h1 = (TH1D*)gHFFile->Get("eff");
+  if (nbs0  >= 0 && nbs0  < 10) h1->Fill(100.1 + (fBmmSel-1)*100 + nbs0);
+  if (njpsi >= 0 && njpsi < 10) h1->Fill(120.1 + (fBmmSel-1)*100 + njpsi);
+  if (nkaon >= 0 && nkaon < 10) h1->Fill(140.1 + (fBmmSel-1)*100 + nkaon);
 }
 
 
 // ----------------------------------------------------------------------
-double HFDumpCandidates::kalmanVertexFit(const edm::Event &iEvent, const edm::EventSetup& iSetup
+double BmmDumpCandidates::kalmanVertexFit(const edm::Event &iEvent, const edm::EventSetup& iSetup
 				, int type, unsigned int ntracks) {
 
   // TYPE =    -1: fillVertex without filling vertex/candidate in ntuple
@@ -1441,7 +1600,7 @@ double HFDumpCandidates::kalmanVertexFit(const edm::Event &iEvent, const edm::Ev
 
 
 // ----------------------------------------------------------------------
-void HFDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
+void BmmDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup
 			 , TransientVertex *v, int type, unsigned int ntracks) {
 
   // TYPE =    -1: without filling vertex/candidate in ntuple
@@ -1487,14 +1646,16 @@ void HFDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSetu
   int i1(0), i2(0);
   double mass(-1.);
 
-  fEff->Fill(30.1);
+  TH1D *h1 = (TH1D*)gHFFile->Get("eff");
+
+  h1->Fill(30.1);
 
   // ==============================================================================================
   // ----------------------------- REFITTED TRACKS ------------------------------------------------
 
   if ( refitted.size() == ntracks ) {
 
-    fEff->Fill(31.1);
+    h1->Fill(31.1);
 
     if ( ntracks == 2 ) {
       
@@ -1553,7 +1714,7 @@ void HFDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSetu
     if (fVerbose) cout << "--- Not enough refitted tracks for this Vertex: " << refitted.size()  << " ---" << endl;
     if (fVerbose) cout << "--- Use original tracks instead ---" << endl;
     
-    fEff->Fill(32.1);
+    h1->Fill(32.1);
 
     if ( ntracks == 2 ) {
       
@@ -1609,7 +1770,7 @@ void HFDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSetu
 
   else {
 
-    fEff->Fill(33.1);
+    h1->Fill(33.1);
     if (fVerbose) cout << "!!! Not enough tracks for this Vertex: " << refitted.size() 
 		       << " refitted and " << original.size() << "original tracks !!!" << endl;
   }
@@ -1617,12 +1778,11 @@ void HFDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSetu
   // ---------------------------------------------------------------------------------------------
   // ==============================================================================================
 
+  if ( type > -1 ) {
 
-  if (type == 0)            fM000[fBmmSel-1]->Fill(mass);
-  if (int(type/10) == 531)  fM100[fBmmSel-1]->Fill(mass);
-  if (int(type/10) == 443)  fM200[fBmmSel-1]->Fill(mass);
-  if (int(type/10) == 521)  fM300[fBmmSel-1]->Fill(mass);
-
+    TH1D *h1 = (TH1D*)gHFFile->Get(Form("m%.3i_%i", int(type/10), fBmmSel));
+    h1->Fill(mass);
+  }
 
   ChiSquared chi(v->totalChiSquared(), v->degreesOfFreedom());
 
@@ -1762,7 +1922,7 @@ void HFDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSetu
 }
 
 // ----------------------------------------------------------------------
-void HFDumpCandidates::decayChannel(const char *fileName) {
+void BmmDumpCandidates::decayChannel(const char *fileName) {
 
   // -- sel = 1 settings
   fPrintChannel = "N/D";              fPrintChannel2 = "N/D";
@@ -1992,7 +2152,7 @@ void HFDumpCandidates::decayChannel(const char *fileName) {
 }
 
 // ----------------------------------------------------------------------
-void HFDumpCandidates::clearTracks() {
+void BmmDumpCandidates::clearTracks() {
 
   BmmRecTracks.clear();
   BmmRecTracksIndex.clear();
@@ -2011,7 +2171,7 @@ void HFDumpCandidates::clearTracks() {
 }
 
 // ----------------------------------------------------------------------
-void HFDumpCandidates::clearCandidateTracks() {
+void BmmDumpCandidates::clearCandidateTracks() {
 
 
   BmmPairTracks.clear();
@@ -2026,7 +2186,7 @@ void HFDumpCandidates::clearCandidateTracks() {
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void HFDumpCandidates::beginJob(const edm::EventSetup& setup) {  
+void BmmDumpCandidates::beginJob(const edm::EventSetup& setup) {  
  
    gHFFile->cd();
 
@@ -2044,9 +2204,9 @@ void HFDumpCandidates::beginJob(const edm::EventSetup& setup) {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void HFDumpCandidates::endJob() {  
+void BmmDumpCandidates::endJob() {  
 
 }
 
 //define this as a plug-in
-// DEFINE_FWK_MODULE(HFDumpCandidates);
+// DEFINE_FWK_MODULE(BmmDumpCandidates);

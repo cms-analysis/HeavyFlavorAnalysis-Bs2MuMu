@@ -1,5 +1,5 @@
-#ifndef _HFDUMPTRACKS_h_
-#define _HFDUMPTRACKS_h_
+#ifndef _BMMDUMPTRACKS_h_
+#define _BMMDUMPTRACKS_h_
 
 #include <memory>
 
@@ -12,6 +12,18 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
+#include "DataFormats/TrackReco/interface/TrackExtraFwd.h"
+#include "DataFormats/TrackReco/interface/TrackFwd.h"
+#include "DataFormats/TrackReco/interface/Track.h"
+
+#include <iostream>
+#include <string>
+#include <map>
+#include <set>
+
+#include <TROOT.h>
+#include <TSystem.h>
+
 class TFile;
 class TTree;
 class TAna00Event;
@@ -19,20 +31,27 @@ class TAna00Event;
 class TrackAssociatorBase;
 
 // ----------------------------------------------------------------------
-class HFDumpTracks : public edm::EDAnalyzer {
+class BmmDumpTracks : public edm::EDAnalyzer {
  public:
-  explicit HFDumpTracks(const edm::ParameterSet&);
-  ~HFDumpTracks();
+  explicit BmmDumpTracks(const edm::ParameterSet&);
+  ~BmmDumpTracks();
   
  private:
   virtual void beginJob(const edm::EventSetup&) ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 
+  int idRecTrack(double pt, double eta, double phi, double ept = 0.2, double eeta = 0.01, double ephi = 0.01);
+
+  const reco::TrackCollection      *theTkCollection;
+
   std::string          fTracksLabel, 
                        fGenEventLabel, fSimTracksLabel,
                        fAssociatorLabel, fTrackingParticlesLabel;
-  edm::InputTag        fMuonsLabel;
+
+  edm::InputTag        fMuonsLabel1;
+  edm::InputTag        fMuonsLabel2;
+  edm::InputTag        fL1MuLabel;
 
   int                  fVerbose, fDoTruthMatching, fNevt; 
 

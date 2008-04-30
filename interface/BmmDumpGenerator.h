@@ -1,5 +1,5 @@
-#ifndef _HFDUMPMUONS_h_
-#define _HFDUMPMUONS_h_
+#ifndef _BMMDUMPGENERATOR_h_
+#define _BMMDUMPGENERATOR_h_
 
 #include <memory>
 
@@ -12,19 +12,24 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
+class TFile;
+class TTree;
+class TAna00Event;
+
 // ----------------------------------------------------------------------
-class HFDumpMuons : public edm::EDAnalyzer {
+class BmmDumpGenerator : public edm::EDAnalyzer {
  public:
-  explicit HFDumpMuons(const edm::ParameterSet&);
-  ~HFDumpMuons();
+  explicit BmmDumpGenerator(const edm::ParameterSet&);
+  ~BmmDumpGenerator();
   
  private:
   virtual void beginJob(const edm::EventSetup&) ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 
-  int           fVerbose; 
-  edm::InputTag fMuonsLabel;
+  int         fVerbose;
+  int         fNevt;
+  std::string fGenCandidatesLabel, fGenEventLabel;
 
 };
 

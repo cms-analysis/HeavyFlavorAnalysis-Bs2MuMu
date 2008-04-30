@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFDumpSignal.h"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/BmmDumpSignal.h"
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna00Event.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
@@ -35,7 +35,7 @@ using namespace edm;
 #define MKAON 0.49368
 
 // ----------------------------------------------------------------------
-HFDumpSignal::HFDumpSignal(const edm::ParameterSet& iConfig) :
+BmmDumpSignal::BmmDumpSignal(const edm::ParameterSet& iConfig) :
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fTracksLabel(iConfig.getUntrackedParameter<string>("tracksLabel", string("goodTracks"))), 
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
@@ -50,7 +50,7 @@ HFDumpSignal::HFDumpSignal(const edm::ParameterSet& iConfig) :
   using namespace std;
 
   cout << "----------------------------------------------------------------------" << endl;
-  cout << "--- HFDumpSignal constructor" << endl;
+  cout << "--- BmmDumpSignal constructor" << endl;
   cout << "--- Verbose            : " << fVerbose << endl;
   cout << "--- tracksLabel        : " << fTracksLabel.c_str() << endl;
   cout << "--- muonsLabel         : " << fMuonsLabel << endl;
@@ -64,20 +64,20 @@ HFDumpSignal::HFDumpSignal(const edm::ParameterSet& iConfig) :
 
 
 // ----------------------------------------------------------------------
-HFDumpSignal::~HFDumpSignal() {
+BmmDumpSignal::~BmmDumpSignal() {
   
 }
 
 
 // ----------------------------------------------------------------------
-void HFDumpSignal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void BmmDumpSignal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   // -- get the primary vertex
   edm::Handle<reco::VertexCollection> recoPrimaryVertexCollection;
   iEvent.getByLabel(fPrimaryVertexLabel.c_str(), recoPrimaryVertexCollection);
   const reco::VertexCollection vertices = *(recoPrimaryVertexCollection.product());
   if (vertices.size() == 0) {
-    cout << "==>HFDumpSignal> No primary vertex found, skipping" << endl;
+    cout << "==>BmmDumpSignal> No primary vertex found, skipping" << endl;
     return;
   }
   const reco::Vertex pV = vertices[0]; // ???? 
@@ -96,8 +96,8 @@ void HFDumpSignal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   TAnaTrack *pTrack;
 
   // -- Look at muons
-  if (fVerbose > 0) cout << "==>HFDumpSignal> nTracks = " << hTracks->size() << endl;
-  if (fVerbose > 0) cout << "==>HFDumpSignal> nMuons  = " << hMuons->size() << endl;
+  if (fVerbose > 0) cout << "==>BmmDumpSignal> nTracks = " << hTracks->size() << endl;
+  if (fVerbose > 0) cout << "==>BmmDumpSignal> nMuons  = " << hMuons->size() << endl;
 
   vector<int> muonIndices;
   vector<int> trackIndices;
@@ -159,7 +159,7 @@ void HFDumpSignal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       foundTrack = i;
     }
     if (-1 == foundTrack) {
-      cout << "==>HFDumpSignal> No additional track found close to dimuons" << endl;
+      cout << "==>BmmDumpSignal> No additional track found close to dimuons" << endl;
       return;
     }
     reco::TrackRef rTrack(hTracks, foundTrack);
@@ -192,11 +192,11 @@ void HFDumpSignal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       if ( isnan(TransSecVtx.position().x()) 
 	   || isnan(TransSecVtx.position().y()) 
 	   || isnan(TransSecVtx.position().z()) ) {
-	cout << "==>HFDumpSignal> Something went wrong! SecVtx nan - Aborting... !" << endl;
+	cout << "==>BmmDumpSignal> Something went wrong! SecVtx nan - Aborting... !" << endl;
 	return;
       }
     } else {
-      cout << "==>HFDumpSignal> KVF failed! Aborting... !" << endl;
+      cout << "==>BmmDumpSignal> KVF failed! Aborting... !" << endl;
       return;
     }
 
@@ -281,10 +281,10 @@ void HFDumpSignal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     
     pCand->fVtx  = *pVtx;    
 
-    cout << "==>HFDumpSignal: Fitted and filled B candidate !!!!!!!!!!!!!!! " << endl;
+    cout << "==>BmmDumpSignal: Fitted and filled B candidate !!!!!!!!!!!!!!! " << endl;
 
   } else {
-    cout << "==>HFDumpSignal: Found only " << recTracks.size() << " muons, not fitting" << endl;
+    cout << "==>BmmDumpSignal: Found only " << recTracks.size() << " muons, not fitting" << endl;
   }
 
     
@@ -292,12 +292,12 @@ void HFDumpSignal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 }
 
 // ------------ method called once each job just before starting event loop  ------------
-void  HFDumpSignal::beginJob(const edm::EventSetup& setup) {
+void  BmmDumpSignal::beginJob(const edm::EventSetup& setup) {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void  HFDumpSignal::endJob() {
+void  BmmDumpSignal::endJob() {
 }
 
 //define this as a plug-in
-//DEFINE_FWK_MODULE(HFDumpSignal);
+//DEFINE_FWK_MODULE(BmmDumpSignal);
