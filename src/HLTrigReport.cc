@@ -2,8 +2,8 @@
  *
  * See header file for documentation
  *
- *  $Date: 2008/04/11 15:07:00 $
- *  $Revision: 1.2 $
+ *  $Date: 2008/04/30 14:57:23 $
+ *  $Revision: 1.3 $
  *
  *  \author Martin Grunewald
  *
@@ -31,8 +31,8 @@
 
 
  // -- Yikes!
-extern TAna00Event *gHFEvent;
-extern TFile       *gHFFile;
+extern TAna00Event *gBSEvent;
+extern TFile       *gBSFile;
 
 
 //
@@ -120,7 +120,7 @@ void HLTrigReport::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
 void  HLTrigReport::beginJob() {
 
-  gHFFile->cd();
+  gBSFile->cd();
 
 }
 
@@ -151,7 +151,7 @@ void HLTrigReport::endJob()
  
   if (init_) {
 
-    TH1D *h1 = (TH1D*)gHFFile->Get("HLT");
+    TH1D *h1 = (TH1D*)gBSFile->Get("HLT");
     for (unsigned int i=0; i!=n; ++i) {
       cout << "HLT-Report "
 	   << right << setw(10) << i << " "

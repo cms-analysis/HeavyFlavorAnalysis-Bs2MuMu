@@ -19,7 +19,7 @@
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
 
 // -- Yikes!
-extern TAna00Event *gHFEvent;
+extern TAna00Event *gBSEvent;
 
 using namespace std;
 using namespace edm;
@@ -117,7 +117,7 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       }
 
 
-      pTrack   = gHFEvent->addSigTrack();
+      pTrack   = gBSEvent->addSigTrack();
       pTrack->fMuType   = 11;
       pTrack->fChi2     = gmtCand.quality();
       pTrack->fMuID     = il1exmu;
@@ -148,8 +148,8 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
   if ( fVerbose ) cout << endl << "============================ L1 Trigger ===================================" << endl; 
 
-  gHFEvent->fL1Decision=0;
-  gHFEvent->fL1w1=0; gHFEvent->fL1w2=0; gHFEvent->fL1w3=0; gHFEvent->fL1w4=0; 
+  gBSEvent->fL1Decision=0;
+  gBSEvent->fL1w1=0; gBSEvent->fL1w2=0; gBSEvent->fL1w3=0; gBSEvent->fL1w4=0; 
 
   edm::Handle<l1extra::L1ParticleMapCollection> l1mapcoll; 
   try {
@@ -175,19 +175,19 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 			    << setw(30) << trigName << " = " << l1flag;
    
       if (itrig < 32 && l1flag) {
-	gHFEvent->fL1w1 |= (0x1 << itrig);
+	gBSEvent->fL1w1 |= (0x1 << itrig);
       } else if (itrig < 64 && l1flag) {
-	gHFEvent->fL1w2 |= (0x1 << itrig);
+	gBSEvent->fL1w2 |= (0x1 << itrig);
       } else if (itrig < 96 && l1flag) {
-	gHFEvent->fL1w3 |= (0x1 << itrig);
+	gBSEvent->fL1w3 |= (0x1 << itrig);
       } else if (itrig < 128 && l1flag) {
-	gHFEvent->fL1w4 |= (0x1 << itrig);
+	gBSEvent->fL1w4 |= (0x1 << itrig);
       }
 
       if ( !strcmp(trigName, fL1TriggerName.c_str()) && l1flag ) {
 	
 	if ( fVerbose ) cout << " =============>  L1 decision set to " << l1flag;
-	gHFEvent->fL1Decision = l1flag;      
+	gBSEvent->fL1Decision = l1flag;      
       }
 
       // -- adding different L1 muons to signal block
@@ -216,7 +216,7 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 	  if (fVerbose) cout << "\t pT = " << (*muonItr)->pt() << ", eta = " << (*muonItr)->eta() << endl ;
 	  
 	  
-	  pTrack   = gHFEvent->addSigTrack();
+	  pTrack   = gBSEvent->addSigTrack();
 	  pTrack->fMuType   = muon_type;
 	  pTrack->fMCID     = (*muonItr)->charge()*-13; 
 	  pTrack->fMuID     = l1cnt;
@@ -244,8 +244,8 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // -- HLT trigger
   // ===================================================================================
   
-  gHFEvent->fHLTDecision=0;
-  gHFEvent->fHLTw1=0; gHFEvent->fHLTw2=0; gHFEvent->fHLTw3=0; gHFEvent->fHLTw4=0; 
+  gBSEvent->fHLTDecision=0;
+  gBSEvent->fHLTw1=0; gBSEvent->fHLTw2=0; gBSEvent->fHLTw3=0; gBSEvent->fHLTw4=0; 
 
   if ( fVerbose ) cout << endl << "============================ HLT Trigger ===================================" << endl;
   edm::Handle<edm::TriggerResults> hltresults;
@@ -280,18 +280,18 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 			   << " was run " << wasrun  << ", decision " << hltflag;
          
       if (itrig < 32 && hltflag) {
-	gHFEvent->fHLTw1 |= (0x1 << itrig);
+	gBSEvent->fHLTw1 |= (0x1 << itrig);
       } else if (itrig < 64 && hltflag) {
-	gHFEvent->fHLTw2 |= (0x1 << itrig);
+	gBSEvent->fHLTw2 |= (0x1 << itrig);
       } else if (itrig < 96 && hltflag) {
-	gHFEvent->fHLTw3 |= (0x1 << itrig);
+	gBSEvent->fHLTw3 |= (0x1 << itrig);
       } else if (itrig < 128 && hltflag) {
-	gHFEvent->fHLTw4 |= (0x1 << itrig);
+	gBSEvent->fHLTw4 |= (0x1 << itrig);
       }
 
       if ( !strcmp(trigName, fHLTriggerName.c_str() ) && hltflag ) {     
 	if ( fVerbose ) cout << " =============>  HLT decision set to " << hltflag;
-	gHFEvent->fHLTDecision = hltflag;
+	gBSEvent->fHLTDecision = hltflag;
       }
     } 
   }
@@ -321,7 +321,7 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       if ( fVerbose ) cout << endl << "==> " << fHLTFilterObject0.c_str() << setw(20) << "    Muon " 
 			   << i << ": pt " << pt << " phi " << phi << " eta " << eta << endl; 
 
-      pTrack   = gHFEvent->addSigTrack();
+      pTrack   = gBSEvent->addSigTrack();
       pTrack->fMuType   = 20;
       pTrack->fMCID     = filtercands0->getParticleRef(i).get()->charge()*-13; 
       pTrack->fMuID     = hltcnt;
@@ -361,7 +361,7 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       if ( fVerbose ) cout << endl << "==> " << fHLTFilterObject1.c_str() << setw(20) << "    Muon " 
 			   << i << ": pt " << pt << " phi " << phi << " eta " << eta << endl; 
 
-      pTrack   = gHFEvent->addSigTrack();
+      pTrack   = gBSEvent->addSigTrack();
       pTrack->fMuType   = 21;
       pTrack->fMCID     = filtercands1->getParticleRef(i).get()->charge()*-13; 
       pTrack->fMuID     = hltcnt;
@@ -401,7 +401,7 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       if ( fVerbose ) cout << endl << "==> " << fHLTFilterObject2.c_str() << setw(20) << "    Muon " 
 			   << i << ": pt " << pt << " phi " << phi << " eta " << eta << endl; 
     
-      pTrack   = gHFEvent->addSigTrack();
+      pTrack   = gBSEvent->addSigTrack();
       pTrack->fMuType   = 22;
       pTrack->fMCID     = filtercands2->getParticleRef(i).get()->charge()*-13; 
       pTrack->fMuID     = hltcnt;
@@ -440,7 +440,7 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       if ( fVerbose ) cout << endl << "==> " << fHLTFilterObject3.c_str() << setw(20) << "    Muon " 
 			   << i << ": pt " << pt << " phi " << phi << " eta " << eta << endl; 
 
-      pTrack   = gHFEvent->addSigTrack();
+      pTrack   = gBSEvent->addSigTrack();
       pTrack->fMuType   = 23;
       pTrack->fMCID     = filtercands3->getParticleRef(i).get()->charge()*-13; 
       pTrack->fMuID     = hltcnt;
@@ -478,7 +478,7 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       if ( fVerbose ) cout << endl << "==> " << fHLTFilterObject4.c_str() << setw(20) << "    Muon " 
 			   << i << ": pt " << pt << " phi " << phi << " eta " << eta << endl; 
 
-      pTrack   = gHFEvent->addSigTrack();
+      pTrack   = gBSEvent->addSigTrack();
       pTrack->fMuType   = 24;
       pTrack->fMCID     = filtercands4->getParticleRef(i).get()->charge()*-13; 
       pTrack->fMuID     = hltcnt;

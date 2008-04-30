@@ -1,5 +1,5 @@
-#ifndef _HFTREE_h_
-#define _HFTREE_h_
+#ifndef _BSTREE_h_
+#define _BSTREE_h_
 
 #include <memory>
 
@@ -17,10 +17,10 @@ class TTree;
 class TAna00Event;
 
 // ----------------------------------------------------------------------
-class HFTree : public edm::EDAnalyzer {
+class BSTree : public edm::EDAnalyzer {
  public:
-  explicit HFTree(const edm::ParameterSet&);
-  ~HFTree();
+  explicit BSTree(const edm::ParameterSet&);
+  ~BSTree();
   
  private:
   virtual void beginJob(const edm::EventSetup&) ;

@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTree.h"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/BSTree.h"
 
 
 #include "DataFormats/Common/interface/Handle.h"
@@ -19,29 +19,29 @@
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
 
 // -- Yikes!
-TAna00Event  *gHFEvent;
-TFile        *gHFFile;
+TAna00Event  *gBSEvent;
+TFile        *gBSFile;
 
 using namespace::std;
 
 // ----------------------------------------------------------------------
-HFTree::HFTree(const edm::ParameterSet& iConfig):
+BSTree::BSTree(const edm::ParameterSet& iConfig):
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)) {
 
   using namespace std;
 
   cout << "----------------------------------------------------------------------" << endl;
-  cout << "--- HFTree constructor" << endl;
+  cout << "--- BSTree constructor" << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
   fFile = new TFile(iConfig.getParameter<string>("fileName").c_str(), "RECREATE");
-  fTree = new TTree("T1","CMSSW HF tree");
+  fTree = new TTree("T1","CMSSW BS tree");
   fEvent = new TAna00Event(0);
 
   fTree->Branch("TAna00Event", "TAna00Event", &fEvent, 256000/8, 1);
 
-  gHFEvent = fEvent;
-  gHFFile  = fFile;
+  gBSEvent = fEvent;
+  gBSFile  = fFile;
 
   TH1D *h1;
   TH2D *h2;
@@ -71,7 +71,7 @@ HFTree::HFTree(const edm::ParameterSet& iConfig):
 
 
 // ----------------------------------------------------------------------
-HFTree::~HFTree() {
+BSTree::~BSTree() {
   
   // -- Save output
   fFile->cd();
@@ -83,7 +83,7 @@ HFTree::~HFTree() {
 
 
 // ----------------------------------------------------------------------
-void HFTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void BSTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   
   fNevt++;
 
@@ -91,29 +91,29 @@ void HFTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
     
     cout << endl;
     cout << "-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*" << endl;
-    cout << "==>HFTree> Start event: " << fNevt << endl;
+    cout << "==>BSTree> Start event: " << fNevt << endl;
   }
 
-  gHFEvent->fRunNumber   = iEvent.id().run();
-  gHFEvent->fEventNumber = iEvent.id().event();
+  gBSEvent->fRunNumber   = iEvent.id().run();
+  gBSEvent->fEventNumber = iEvent.id().event();
 
 
-  if (fVerbose > 0)  cout << "HFTree> filling tree for run: " << gHFEvent->fRunNumber
-			  << ", event: "  << gHFEvent->fEventNumber 
+  if (fVerbose > 0)  cout << "BSTree> filling tree for run: " << gBSEvent->fRunNumber
+			  << ", event: "  << gBSEvent->fEventNumber 
 			  << endl;
   
   fTree->Fill();
 
-  gHFEvent->Clear();
+  gBSEvent->Clear();
 }
 
 // ------------ method called once each job just before starting event loop  ------------
-void  HFTree::beginJob(const edm::EventSetup&) {
+void  BSTree::beginJob(const edm::EventSetup&) {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void  HFTree::endJob() {
+void  BSTree::endJob() {
 }
 
 //define this as a plug-in
-//DEFINE_FWK_MODULE(HFTree);
+//DEFINE_FWK_MODULE(BSTree);

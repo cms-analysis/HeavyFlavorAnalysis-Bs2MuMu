@@ -18,8 +18,8 @@
 
 
 // -- Yikes!
-extern TAna00Event *gHFEvent;
-extern TFile       *gHFFile;
+extern TAna00Event *gBSEvent;
+extern TFile       *gBSFile;
 
 using namespace std;
 using namespace reco;
@@ -103,7 +103,7 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     TrackRef stagTrack = muon->standAloneMuon();
     atg = &(*stagTrack);
 
-    pTrack   = gHFEvent->addSigTrack(); 
+    pTrack   = gBSEvent->addSigTrack(); 
     pTrack->fMuType   = type;
     pTrack->fMuID     = mcnt;
     pTrack->fIndex    = idrec;
@@ -138,7 +138,7 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     TrackRef trkgTrack = muon->track();
     ttg = &(*trkgTrack);
 
-    pTrack   = gHFEvent->addSigTrack(); 
+    pTrack   = gBSEvent->addSigTrack(); 
     pTrack->fMuType   = type;
     pTrack->fMuID     = mcnt;
     pTrack->fIndex    = idrec;
@@ -167,7 +167,7 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     TrackRef comgTrack = muon->combinedMuon();
     ctg = &(*comgTrack);
 
-    pTrack   = gHFEvent->addSigTrack(); 
+    pTrack   = gBSEvent->addSigTrack(); 
     pTrack->fMuType   = type;
     pTrack->fMuID     = mcnt;
     pTrack->fIndex    = idrec;
@@ -198,7 +198,7 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
   if  (fNevt < 10000) {  
     
-    TH2D *h2 = (TH2D*)gHFFile->Get("nmuons");
+    TH2D *h2 = (TH2D*)gBSFile->Get("nmuons");
     h2->SetBinContent(fNevt - 100*int(fNevt/100), int(fNevt/100), mcnt);
   }  
 
@@ -231,7 +231,7 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 //     TrackRef statTrack = tkmu->standAloneMuon();
 //     atm = &(*statTrack);
 
-//     pTrack   = gHFEvent->addSigTrack(); 
+//     pTrack   = gBSEvent->addSigTrack(); 
 //     pTrack->fMuType   = type;
 //     pTrack->fMuID     = mcnt;
 //     pTrack->fIndex    = idrec;
@@ -267,7 +267,7 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     TrackRef trktTrack = tkmu->track();
     ttm = &(*trktTrack);
 
-    pTrack   = gHFEvent->addSigTrack(); 
+    pTrack   = gBSEvent->addSigTrack(); 
     pTrack->fMuType   = type;
     pTrack->fMuID     = mcnt;
     pTrack->fIndex    = idrec;
@@ -296,7 +296,7 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 //     TrackRef comtTrack = tkmu->combinedMuon();
 //     ctm = &(*comtTrack);
 
-//     pTrack   = gHFEvent->addSigTrack(); 
+//     pTrack   = gBSEvent->addSigTrack(); 
 //     pTrack->fMuType   = type;
 //     pTrack->fMuID     = mcnt;
 //     pTrack->fIndex    = idrec;
@@ -347,7 +347,7 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     TrackRef rTrack(globalMuons, i);
     Track track(*rTrack);    
 
-    pTrack = gHFEvent->addSigTrack();
+    pTrack = gBSEvent->addSigTrack();
     pTrack->fMuType   = type;
     pTrack->fMuID     = i;
     pTrack->fMCID     = track.charge()*-13; 
@@ -390,7 +390,7 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     TrackRef rTrack(staMuons, i);
     Track track(*rTrack);    
 
-    pTrack = gHFEvent->addSigTrack();
+    pTrack = gBSEvent->addSigTrack();
     pTrack->fMuType   = type;
     pTrack->fMuID     = i;
     pTrack->fMCID     = track.charge()*-13; 
@@ -433,7 +433,7 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     TrackRef rTrack(staVtxMuons, i);
     Track track(*rTrack);    
 
-    pTrack = gHFEvent->addSigTrack();
+    pTrack = gBSEvent->addSigTrack();
     pTrack->fMuType   = type;
     pTrack->fMuID     = i;
     pTrack->fMCID     = track.charge()*-13; 
@@ -475,7 +475,7 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     TrackRef rTrack(hlt2Muons, i);
     Track track(*rTrack);    
 
-    pTrack = gHFEvent->addSigTrack();
+    pTrack = gBSEvent->addSigTrack();
     pTrack->fMuType   = type;
     pTrack->fMuID     = i;
     pTrack->fMCID     = track.charge()*-13; 
@@ -518,7 +518,7 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     TrackRef rTrack(hlt2VtxMuons, i);
     Track track(*rTrack);    
 
-    pTrack = gHFEvent->addSigTrack();
+    pTrack = gBSEvent->addSigTrack();
     pTrack->fMuType   = type;
     pTrack->fMuID     = i;
     pTrack->fMCID     = track.charge()*-13; 
@@ -561,7 +561,7 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     TrackRef rTrack(hlt3Muons, i);
     Track track(*rTrack);    
 
-    pTrack = gHFEvent->addSigTrack();
+    pTrack = gBSEvent->addSigTrack();
     pTrack->fMuType   = type;
     pTrack->fMuID     = i;
     pTrack->fMCID     = track.charge()*-13; 
@@ -604,7 +604,7 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     TrackRef rTrack(hlt3seededMuons, i);
     Track track(*rTrack);    
 
-    pTrack = gHFEvent->addSigTrack();
+    pTrack = gBSEvent->addSigTrack();
     pTrack->fMuType   = type;
     pTrack->fMuID     = i;
     pTrack->fMCID     = track.charge()*-13; 

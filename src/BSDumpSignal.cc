@@ -25,7 +25,7 @@
 
 
 // -- Yikes!
-extern TAna00Event *gHFEvent;
+extern TAna00Event *gBSEvent;
 
 using namespace std;
 using namespace reco;
@@ -165,7 +165,7 @@ void BSDumpSignal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     reco::TrackRef rTrack(hTracks, foundTrack);
     reco::Track track(*rTrack);
     recTracks.push_back(&track); 
-    pTrack   = gHFEvent->addSigTrack();  
+    pTrack   = gBSEvent->addSigTrack();  
     pTrack->fMCID     = track.charge()*-13; 
     pTrack->fGenIndex = -1; 
     pTrack->fQ        = track.charge();
@@ -216,15 +216,15 @@ void BSDumpSignal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     comp = M1 + M2 + K1;
 
     // -- Update signal tracks with refitted momentum
-    gHFEvent->getSigTrack(0)->fPlab.SetXYZ(refT[0].px(),
+    gBSEvent->getSigTrack(0)->fPlab.SetXYZ(refT[0].px(),
 					   refT[0].py(),
 					   refT[0].pz()
 					   ); 
-    gHFEvent->getSigTrack(1)->fPlab.SetXYZ(refT[1].px(),
+    gBSEvent->getSigTrack(1)->fPlab.SetXYZ(refT[1].px(),
 					   refT[1].py(),
 					   refT[1].pz()
 					   ); 
-    gHFEvent->getSigTrack(2)->fPlab.SetXYZ(refT[2].px(),
+    gBSEvent->getSigTrack(2)->fPlab.SetXYZ(refT[2].px(),
 					   refT[2].py(),
 					   refT[2].pz()
 					   ); 
@@ -244,9 +244,9 @@ void BSDumpSignal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 			TransSecVtx.position().y(), 
 			TransSecVtx.position().z());
     
-    pVtx->addTrack(gHFEvent->getSigTrack(0)->fIndex);
-    pVtx->addTrack(gHFEvent->getSigTrack(1)->fIndex);
-    pVtx->addTrack(gHFEvent->getSigTrack(2)->fIndex);
+    pVtx->addTrack(gBSEvent->getSigTrack(0)->fIndex);
+    pVtx->addTrack(gBSEvent->getSigTrack(1)->fIndex);
+    pVtx->addTrack(gBSEvent->getSigTrack(2)->fIndex);
 
     // -- Distance to primary vertex
 
@@ -270,7 +270,7 @@ void BSDumpSignal::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
     
     // -- Build candidate: B+
-    TAnaCand  *pCand = gHFEvent->addCand();
+    TAnaCand  *pCand = gBSEvent->addCand();
     
     pCand->fPlab = comp.Vect();
     pCand->fMass = comp.M();

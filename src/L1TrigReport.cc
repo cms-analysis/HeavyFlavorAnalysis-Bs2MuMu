@@ -2,8 +2,8 @@
  *
  * See header file for documentation
  *
- *  $Date: 2008/04/11 15:07:00 $
- *  $Revision: 1.2 $
+ *  $Date: 2008/04/30 14:57:23 $
+ *  $Revision: 1.3 $
  *
  *  \author Martin Grunewald
  *
@@ -34,8 +34,8 @@
 
 
 // -- Yikes!
-extern TAna00Event *gHFEvent;
-extern TFile       *gHFFile;
+extern TAna00Event *gBSEvent;
+extern TFile       *gBSFile;
 
 
 // constructors and destructor
@@ -130,7 +130,7 @@ void L1TrigReport::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
  
 void  L1TrigReport::beginJob() {
 
-  gHFFile->cd();
+  gBSFile->cd();
 
 }
 
@@ -161,7 +161,7 @@ void L1TrigReport::endJob()
  
   if (init_) {
 
-    TH1D *h1 = (TH1D*)gHFFile->Get("L1");
+    TH1D *h1 = (TH1D*)gBSFile->Get("L1");
     for (unsigned int i=0; i!=n; ++i) {
       cout << "L1T-Report "
 	   << right << setw(10) << i << " "

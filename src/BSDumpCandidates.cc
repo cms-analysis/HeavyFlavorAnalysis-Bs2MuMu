@@ -33,8 +33,8 @@
 
 
 // -- Yikes!
-extern TAna00Event *gHFEvent;
-extern TFile       *gHFFile;
+extern TAna00Event *gBSEvent;
+extern TFile       *gBSFile;
 
 
 using namespace std;
@@ -617,7 +617,7 @@ void BSDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
   int gen_pdg_id(-99999), gen_id(-99999);
   int gen_cnt(0);
 
-  TH1D *h1 = (TH1D*)gHFFile->Get("eff");
+  TH1D *h1 = (TH1D*)gBSFile->Get("eff");
 
   for(TrackCollection::size_type i=0; i<recTC.size(); ++i) {
 
@@ -787,7 +787,7 @@ void BSDumpCandidates::bmmTracks3(const edm::Event &iEvent) {
 
   // -- eff. histogram ---------------------------
 
-  TH1D *h1 = (TH1D*)gHFFile->Get("eff");
+  TH1D *h1 = (TH1D*)gBSFile->Get("eff");
 
   if ( MuonRecTracks.size() >= 0 ) {
     if ( MuonRecTracks.size() < 9 ) {
@@ -1204,7 +1204,7 @@ void BSDumpCandidates::kaonCandTracks(const edm::Event &iEvent, const edm::Event
       }
  
       // -- eff. histogram ---------------------------
-      TH1D *h1 = (TH1D*)gHFFile->Get("eff");
+      TH1D *h1 = (TH1D*)gBSFile->Get("eff");
 
       if ( ncand < 9 ) {
 	
@@ -1353,7 +1353,7 @@ int BSDumpCandidates::primaryVertex(const edm::Event &iEvent) {
 
   int nvtx(0);
 
-  TH1D *h1 = (TH1D*)gHFFile->Get("eff");
+  TH1D *h1 = (TH1D*)gBSFile->Get("eff");
 
   // -- Primary vertex
   try {
@@ -1415,7 +1415,7 @@ int BSDumpCandidates::primaryVertex(const edm::Event &iEvent) {
 			  pV.position().z());
       
       primaryVertex2 = pV;
-      gHFEvent->fPrimaryVertex2 = *pVtx;
+      gBSEvent->fPrimaryVertex2 = *pVtx;
     }
       
   } catch (cms::Exception &ex) {
@@ -1432,7 +1432,7 @@ int BSDumpCandidates::primaryVertex(const edm::Event &iEvent) {
     pVtx->setInfo(-1., -1, -1., -1, -1);
     pVtx->fPoint.SetXYZ(-100., -100., -100.);
 
-    gHFEvent->fPrimaryVertex2 = *pVtx;
+    gBSEvent->fPrimaryVertex2 = *pVtx;
   } 
 
   return nvtx;
@@ -1514,7 +1514,7 @@ void BSDumpCandidates::secondaryVertex(const edm::Event &iEvent, const edm::Even
     }
   }
 
-  TH1D *h1 = (TH1D*)gHFFile->Get("eff");
+  TH1D *h1 = (TH1D*)gBSFile->Get("eff");
   if (nbs0  >= 0 && nbs0  < 10) h1->Fill(100.1 + (fBmmSel-1)*100 + nbs0);
   if (njpsi >= 0 && njpsi < 10) h1->Fill(120.1 + (fBmmSel-1)*100 + njpsi);
   if (nkaon >= 0 && nkaon < 10) h1->Fill(140.1 + (fBmmSel-1)*100 + nkaon);
@@ -1646,7 +1646,7 @@ void BSDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSetu
   int i1(0), i2(0);
   double mass(-1.);
 
-  TH1D *h1 = (TH1D*)gHFFile->Get("eff");
+  TH1D *h1 = (TH1D*)gBSFile->Get("eff");
 
   h1->Fill(30.1);
 
@@ -1780,7 +1780,7 @@ void BSDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSetu
 
   if ( type > -1 ) {
 
-    TH1D *h1 = (TH1D*)gHFFile->Get(Form("m%.3i_%i", int(type/10), fBmmSel));
+    TH1D *h1 = (TH1D*)gBSFile->Get(Form("m%.3i_%i", int(type/10), fBmmSel));
     h1->Fill(mass);
   }
 
@@ -1827,7 +1827,7 @@ void BSDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSetu
     pVtx->fC3d  = comp3d; 
     
     // -- Adding Candidate to ntuple.
-    TAnaCand  *pCand = gHFEvent->addCand();
+    TAnaCand  *pCand = gBSEvent->addCand();
     
     pCand->fPlab = bs.Vect();
     pCand->fMass = bs.M();
@@ -2188,7 +2188,7 @@ void BSDumpCandidates::clearCandidateTracks() {
 // ------------ method called once each job just before starting event loop  ------------
 void BSDumpCandidates::beginJob(const edm::EventSetup& setup) {  
  
-   gHFFile->cd();
+   gBSFile->cd();
 
    edm::ESHandle<MagneticField> theMF;
    setup.get<IdealMagneticFieldRecord>().get(theMF);

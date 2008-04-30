@@ -24,7 +24,7 @@
 #include <TVector3.h>
 
 // -- Yikes!
-extern TAna00Event *gHFEvent;
+extern TAna00Event *gBSEvent;
 
 using namespace std;
 using namespace edm;
@@ -100,7 +100,7 @@ void BSDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
                         pV.position().y(),
                         pV.position().z());
 
-    gHFEvent->fPrimaryVertex = *pVtx;
+    gBSEvent->fPrimaryVertex = *pVtx;
 
   } catch (cms::Exception &ex) {
     //    cout << ex.explainSelf() << endl;

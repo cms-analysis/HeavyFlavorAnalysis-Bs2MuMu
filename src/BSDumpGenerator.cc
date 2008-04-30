@@ -19,7 +19,7 @@
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
 
 // -- Yikes!
-extern TAna00Event *gHFEvent;
+extern TAna00Event *gBSEvent;
 
 using namespace std;
 using namespace edm;
@@ -108,7 +108,7 @@ void BSDumpGenerator::analyze(const Event& iEvent, const EventSetup& iSetup) {
        p != genEvent->particles_end();
        ++p) {
 
-    pGen = gHFEvent->addGenCand();
+    pGen = gBSEvent->addGenCand();
     pGen->fNumber = (*p)->barcode() - 1;
     pGen->fID     = (*p)->pdg_id();
     pGen->fStatus = (*p)->status();

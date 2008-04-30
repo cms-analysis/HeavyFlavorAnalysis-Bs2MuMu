@@ -35,8 +35,8 @@
 #include <TH1.h>
 
 // -- Yikes!
-extern TAna00Event *gHFEvent;
-extern TFile       *gHFFile;
+extern TAna00Event *gBSEvent;
+extern TFile       *gBSFile;
 
 using namespace std;
 using namespace edm;
@@ -172,8 +172,8 @@ void BSDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   }      
 
   TAnaTrack *pTrack; 
-//   TH1D *h1 = (TH1D*)gHFFile->Get("h1");
-//   TH1D *h2 = (TH1D*)gHFFile->Get("h2");
+//   TH1D *h1 = (TH1D*)gBSFile->Get("h1");
+//   TH1D *h2 = (TH1D*)gBSFile->Get("h2");
 //   h1->Fill(tracks->size());
 //   h2->Fill(tracks->size());
 
@@ -182,7 +182,7 @@ void BSDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     TrackRef rTrack(tracks, i);
     Track track(*rTrack);
 
-    pTrack = gHFEvent->addRecTrack();
+    pTrack = gBSEvent->addRecTrack();
     pTrack->fIndex = rTrack.index();
     pTrack->fPlab.SetPtEtaPhi(track.pt(),
 			      track.eta(),
@@ -349,7 +349,7 @@ void  BSDumpTracks::beginJob(const edm::EventSetup& setup) {
   setup.get<TrackAssociatorRecord>().get(fAssociatorLabel.c_str(), theAssociator);
   fAssociator = (TrackAssociatorBase*)theAssociator.product();
 
-  gHFFile->cd();
+  gBSFile->cd();
 
 }
 
