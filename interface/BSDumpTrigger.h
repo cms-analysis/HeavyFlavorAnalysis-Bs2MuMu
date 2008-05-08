@@ -26,13 +26,14 @@ class BSDumpTrigger : public edm::EDAnalyzer {
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 
-  int           fVerbose;
   int           fNevt;
-  edm::InputTag fHLTriggerLabel;
-  std::string   fHLTriggerName;
+
+  int           fVerbose;
+  std::string   fparticleMap;
   std::string   fL1MuLabel;
   std::string   fL1TriggerName;
-  std::string   fparticleMap;
+  edm::InputTag fHLTriggerLabel;
+  std::string   fHLTriggerName;
 
   std::string   fHLTFilterObject0;
   std::string   fHLTFilterObject1;

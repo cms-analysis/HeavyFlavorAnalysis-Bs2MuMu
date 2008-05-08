@@ -55,10 +55,10 @@ BSDumpCandidates::BSDumpCandidates(const edm::ParameterSet& iConfig):
   fTrackingParticlesLabel(iConfig.getUntrackedParameter<string>("trackingParticlesLabel", string("trackingParticles"))),
   fTrackingVertexLabel(iConfig.getUntrackedParameter<string>("trackingVertexLabel", string("trackingParticles"))),
   fTracksLabel(iConfig.getUntrackedParameter<string>("tracksLabel", string("ctfWithMaterialTracks"))),
+  fAssociatorLabel(iConfig.getUntrackedParameter<string>("associatorLabel", string("TrackAssociatorByChi2"))), 
+  fVtxAssociatorLabel(iConfig.getUntrackedParameter<string>("vertexAssociatorLabel", string("VertexAssociatorByTracks"))), 
   fMuonsLabel1(iConfig.getUntrackedParameter<InputTag>("muonsLabel1")),
   fMuonsLabel2(iConfig.getUntrackedParameter<InputTag>("muonsLabel2")),
-  fVtxAssociatorLabel(iConfig.getUntrackedParameter<string>("vertexAssociatorLabel", string("VertexAssociatorByTracks"))), 
-  fAssociatorLabel(iConfig.getUntrackedParameter<string>("associatorLabel", string("TrackAssociatorByChi2"))), 
   fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1))  {
 
   using namespace std;
@@ -164,58 +164,98 @@ void BSDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   // === Fill event record ===
 
   // -- Get generator block directly
-  Handle<HepMCProduct> evt;
-  iEvent.getByLabel(fGenEventLabel.c_str(), evt);
-  const HepMC::GenEvent *genEvent = evt->GetEvent();
+  try {
+  
+    Handle<HepMCProduct> evt;
+    iEvent.getByLabel(fGenEventLabel.c_str(), evt);
+    const HepMC::GenEvent *genEvent = evt->GetEvent();
 
-  for (HepMC::GenEvent::particle_const_iterator p = genEvent->particles_begin();
-       p != genEvent->particles_end();
-       ++p) { 
+    for (HepMC::GenEvent::particle_const_iterator p = genEvent->particles_begin();
+	 p != genEvent->particles_end();
+	 ++p) { 
+      
+      theGenCollection.push_back((*p));
+    }
 
-    theGenCollection.push_back((*p));
+  } catch (Exception event) {
+    cout << "%% -- No HepMCProduct with label " << fGenEventLabel.c_str() << endl;
   }
 
-  // -- get the collection of RecoTracks 
+  // -- get the collection of RecoTracks
   edm::Handle<reco::TrackCollection> tracks;
   iEvent.getByLabel(fTracksLabel.c_str(), tracks );  
   theTkCollection  = tracks.product();
   // theTkCollection  = new reco::TrackCollection(*(tracks.product()));
-   
-  // -- get the collection of globalMuonTracks 
-  edm::Handle<reco::MuonCollection> MuCollection;
-  iEvent.getByLabel(fMuonsLabel1, MuCollection);
-  theGlobalMuonCollection   = MuCollection.product();
-  // theGlobalMuonCollection   = new reco::MuonCollection(*(MuCollection.product()));  
-   
+  
+  // -- get the collection of globalMuonTracks
+  try {
+
+    edm::Handle<reco::MuonCollection> MuCollection;
+    iEvent.getByLabel(fMuonsLabel1, MuCollection);
+    theGlobalMuonCollection   = MuCollection.product();
+    // theGlobalMuonCollection   = new reco::MuonCollection(*(MuCollection.product()));  
+    
+  } catch (Exception event) {
+    cout << "%% -- No MuonCollection with label " << fMuonsLabel1 << endl;
+  }
+
   // -- get the collection of trackerMuonTracks 
-  edm::Handle<reco::MuonCollection> tkMuCollection;
-  iEvent.getByLabel(fMuonsLabel2, tkMuCollection);
-  theTrackerMuonCollection   = tkMuCollection.product();
-  // theTrackerMuonCollection   = new reco::MuonCollection(*(tkMuCollection.product()));  
+  try {
+    edm::Handle<reco::MuonCollection> tkMuCollection;
+    iEvent.getByLabel(fMuonsLabel2, tkMuCollection);
+    theTrackerMuonCollection   = tkMuCollection.product();
+    // theTrackerMuonCollection   = new reco::MuonCollection(*(tkMuCollection.product()));   
+    
+  } catch (Exception event) {
+    cout << "%% -- No MuonCollection with label " << fMuonsLabel2 << endl;
+  }
 
   // -- get the collection of sim. Tracks
+//   try {
 //   Handle<SimTrackContainer> simTrackCollection;
 //   iEvent.getByLabel("g4SimHits", simTrackCollection);
-//   const SimTrackContainer simTC = *(simTrackCollection.product());
+//   const SimTrackContainer simTC = *(simTrackCollection.product());  
+    
+//   } catch (Exception event) {
+//     cout << "%% -- No SimTrackContainer with label " << "g4SimHits" << endl;
+//   }
 
   // -- get the collection of sim. Vertices
+//   try {
 //   Handle<SimVertexContainer> simVertexCollection;
 //   iEvent.getByLabel("g4SimHits", simVertexCollection);
 //   const SimVertexContainer simVC = *(simVertexCollection.product());
+    
+//   } catch (Exception event) {
+//     cout << "%% -- No SimVertexContainer with label " << "g4SimHits" << endl;
+//   }
 
   // -- get the collection of TrackingParticles 
-  edm::Handle<TrackingParticleCollection> trackingParticles;
-  iEvent.getByLabel(fTrackingParticlesLabel.c_str(), trackingParticles);
+  try {
 
-  recSimCollection =  new 
+    edm::Handle<TrackingParticleCollection> trackingParticles;
+    iEvent.getByLabel(fTrackingParticlesLabel.c_str(), trackingParticles);
+    
+    recSimCollection =  new 
       reco::RecoToSimCollection(fAssociator->associateRecoToSim(tracks, trackingParticles, &iEvent)); 
+    
+  } catch (Exception event) {
+    cout << "%% -- No TrackingParticleCollection with label " << fTrackingParticlesLabel.c_str() << endl;
+  }
 
   // -- get the collection of TrackingVertices
-  edm::Handle<TrackingVertexCollection>  TVCollectionH ;
-  iEvent.getByLabel(fTrackingVertexLabel.c_str(), TVCollectionH);
+  try {
+
+    edm::Handle<TrackingVertexCollection>  TVCollectionH ;
+    iEvent.getByLabel(fTrackingVertexLabel.c_str(), TVCollectionH);
+    
+  } catch (Exception event) {
+    cout << "%% -- No TrackingVertexCollection with label " << fTrackingVertexLabel.c_str() << endl;
+  }
 
 
   // -- get the collection of primary Vertices
+//   try {
 //  edm::Handle<reco::VertexCollection> recoPrimaryVertexCollection;
 //  iEvent.getByLabel(fPrimaryVertexLabel.c_str(), recoPrimaryVertexCollection);
 
@@ -223,6 +263,11 @@ void BSDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 //    reco::VertexRecoToSimCollection(fVtxAssociator->associateRecoToSim(recoPrimaryVertexCollection, 
 // 									  TVCollectionH, iEvent,
 //  									  (*recSimCollection)));
+ 
+//   } catch (Exception event) {
+//     cout << "%% -- No VertexCollection with label " << fPrimaryVertexLabel.c_str() << endl;
+//   }
+
   // === Start analysis ===
 
   // -- Primary Vertex

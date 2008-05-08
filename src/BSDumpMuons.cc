@@ -87,113 +87,119 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   // -- Muon Collection: Global Muons
   // ===============================================================================================
 
-  Handle<reco::MuonCollection> hMuons;
-  iEvent.getByLabel(fMuonsLabel1, hMuons);
+  try{
 
-  if (fVerbose > 0) cout << "==>BSDumpMuons> nGlobalMuons = " << hMuons->size() << ", event: " << fNevt << endl;
+    Handle<reco::MuonCollection> hMuons;
+    iEvent.getByLabel(fMuonsLabel1, hMuons);
 
-  for (reco::MuonCollection::const_iterator muon = hMuons->begin(); muon != hMuons->end(); ++muon) {
+    if (fVerbose > 0) cout << "==>BSDumpMuons> nGlobalMuons = " << hMuons->size() << ", event: " << fNevt << endl;
+
+    for (reco::MuonCollection::const_iterator muon = hMuons->begin(); muon != hMuons->end(); ++muon) {
   
-    mcnt++;
+      mcnt++;
 
-    idrec = (muon->track()).index();
+      idrec = (muon->track()).index();
 
-    // -- standalone muon
-    type = 31;
-    TrackRef stagTrack = muon->standAloneMuon();
-    atg = &(*stagTrack);
+      // -- standalone muon
+      type = 31;
+      TrackRef stagTrack = muon->standAloneMuon();
+      atg = &(*stagTrack);
 
-    pTrack   = gBSEvent->addSigTrack(); 
-    pTrack->fMuType   = type;
-    pTrack->fMuID     = mcnt;
-    pTrack->fIndex    = idrec;
-    pTrack->fGenIndex = -1; 
-    pTrack->fMCID     = atg->charge()*-13; 
-    pTrack->fQ        = atg->charge();
+      pTrack   = gBSEvent->addSigTrack(); 
+      pTrack->fMuType   = type;
+      pTrack->fMuID     = mcnt;
+      pTrack->fIndex    = idrec;
+      pTrack->fGenIndex = -1; 
+      pTrack->fMCID     = atg->charge()*-13; 
+      pTrack->fQ        = atg->charge();
 
-    pTrack->fPlab.SetPtEtaPhi(atg->pt(),
-			      atg->eta(),
-			      atg->phi()
-			      );
+      pTrack->fPlab.SetPtEtaPhi(atg->pt(),
+				atg->eta(),
+				atg->phi()
+				);
 
-    pTrack->fTip  = atg->d0();
-    pTrack->fLip  = atg->dz();
-    pTrack->fChi2 = atg->chi2();
-    pTrack->fDof  = int(atg->ndof());
-    pTrack->fHits = atg->numberOfValidHits();  
+      pTrack->fTip  = atg->d0();
+      pTrack->fLip  = atg->dz();
+      pTrack->fChi2 = atg->chi2();
+      pTrack->fDof  = int(atg->ndof());
+      pTrack->fHits = atg->numberOfValidHits();  
 
 
-    if (fVerbose > 0) {
+      if (fVerbose > 0) {
 
-      cout << "--------------------------------------------------------------------" << endl; 
-      cout << "-- Muon " <<fMuonsLabel1 << ", #" << mcnt <<  ",  track index (" 
-	   << (muon->track()).index() << ")" << endl;
+	cout << "--------------------------------------------------------------------" << endl; 
+	cout << "-- Muon " <<fMuonsLabel1 << ", #" << mcnt <<  ",  track index (" 
+	     << (muon->track()).index() << ")" << endl;
   
-      cout << "%%> Type-" << type << ": " ; 
-      pTrack->dump(); 
-    }
+	cout << "%%> Type-" << type << ": " ; 
+	pTrack->dump(); 
+      }
     
-    // -- tracker muon
-    type = 32;
-    TrackRef trkgTrack = muon->track();
-    ttg = &(*trkgTrack);
+      // -- tracker muon
+      type = 32;
+      TrackRef trkgTrack = muon->track();
+      ttg = &(*trkgTrack);
 
-    pTrack   = gBSEvent->addSigTrack(); 
-    pTrack->fMuType   = type;
-    pTrack->fMuID     = mcnt;
-    pTrack->fIndex    = idrec;
-    pTrack->fGenIndex = -1; 
-    pTrack->fMCID     = ttg->charge()*-13; 
-    pTrack->fQ        = ttg->charge();
+      pTrack   = gBSEvent->addSigTrack(); 
+      pTrack->fMuType   = type;
+      pTrack->fMuID     = mcnt;
+      pTrack->fIndex    = idrec;
+      pTrack->fGenIndex = -1; 
+      pTrack->fMCID     = ttg->charge()*-13; 
+      pTrack->fQ        = ttg->charge();
 
-    pTrack->fPlab.SetPtEtaPhi(ttg->pt(),
-			      ttg->eta(),
-			      ttg->phi()
-			      );
+      pTrack->fPlab.SetPtEtaPhi(ttg->pt(),
+				ttg->eta(),
+				ttg->phi()
+				);
 
-    pTrack->fTip  = ttg->d0();
-    pTrack->fLip  = ttg->dz();
-    pTrack->fChi2 = ttg->chi2();
-    pTrack->fDof  = int(ttg->ndof());
-    pTrack->fHits = ttg->numberOfValidHits();  
+      pTrack->fTip  = ttg->d0();
+      pTrack->fLip  = ttg->dz();
+      pTrack->fChi2 = ttg->chi2();
+      pTrack->fDof  = int(ttg->ndof());
+      pTrack->fHits = ttg->numberOfValidHits();  
 
-    if (fVerbose > 0) {
-      cout << "%%> Type-" << type <<  ": "; 
-      pTrack->dump(); 
+      if (fVerbose > 0) {
+	cout << "%%> Type-" << type <<  ": "; 
+	pTrack->dump(); 
+      }
+
+      // -- combined muon
+      type = 33;
+      TrackRef comgTrack = muon->combinedMuon();
+      ctg = &(*comgTrack);
+
+      pTrack   = gBSEvent->addSigTrack(); 
+      pTrack->fMuType   = type;
+      pTrack->fMuID     = mcnt;
+      pTrack->fIndex    = idrec;
+      pTrack->fGenIndex = -1; 
+      pTrack->fMCID     = ctg->charge()*-13; 
+      pTrack->fQ        = ctg->charge();
+
+      pTrack->fPlab.SetPtEtaPhi(ctg->pt(),
+				ctg->eta(),
+				ctg->phi()
+				);
+
+      pTrack->fTip  = ctg->d0();
+      pTrack->fLip  = ctg->dz();
+      pTrack->fChi2 = ctg->chi2();
+      pTrack->fDof  = int(ctg->ndof());
+      pTrack->fHits = ctg->numberOfValidHits();  
+
+      if (fVerbose > 0) {
+	cout << "%%> Type-" << type << ": "; 
+	pTrack->dump(); 
+      }
+
+      if (fVerbose > 0) {
+	cout << "--------------------------------------------------------------------" << endl;; 
+      }
     }
 
-    // -- combined muon
-    type = 33;
-    TrackRef comgTrack = muon->combinedMuon();
-    ctg = &(*comgTrack);
-
-    pTrack   = gBSEvent->addSigTrack(); 
-    pTrack->fMuType   = type;
-    pTrack->fMuID     = mcnt;
-    pTrack->fIndex    = idrec;
-    pTrack->fGenIndex = -1; 
-    pTrack->fMCID     = ctg->charge()*-13; 
-    pTrack->fQ        = ctg->charge();
-
-    pTrack->fPlab.SetPtEtaPhi(ctg->pt(),
-			      ctg->eta(),
-			      ctg->phi()
-			      );
-
-    pTrack->fTip  = ctg->d0();
-    pTrack->fLip  = ctg->dz();
-    pTrack->fChi2 = ctg->chi2();
-    pTrack->fDof  = int(ctg->ndof());
-    pTrack->fHits = ctg->numberOfValidHits();  
-
-    if (fVerbose > 0) {
-      cout << "%%> Type-" << type << ": "; 
-      pTrack->dump(); 
-    }
-
-    if (fVerbose > 0) {
-      cout << "--------------------------------------------------------------------" << endl;; 
-    }
+  } catch (Exception event) {
+    cout << "%% -- No MuonCollection with label " << fMuonsLabel1 << endl;
   }
 
   if  (fNevt < 10000) {  
@@ -215,114 +221,120 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   // -- Muon Collection: Tracker Muons
   // ===============================================================================================
 
-  Handle<reco::MuonCollection> tkMuons;
-  iEvent.getByLabel(fMuonsLabel2, tkMuons);
+  try{
 
-  if (fVerbose > 0) cout << "==>BSDumpMuons> nTrackerMuons = " << tkMuons->size() << ", event: " << fNevt << endl;
+    Handle<reco::MuonCollection> tkMuons;
+    iEvent.getByLabel(fMuonsLabel2, tkMuons);
 
-  for (reco::MuonCollection::const_iterator tkmu = tkMuons->begin(); tkmu != tkMuons->end(); ++tkmu) {
+    if (fVerbose > 0) cout << "==>BSDumpMuons> nTrackerMuons = " << tkMuons->size() << ", event: " << fNevt << endl;
+
+    for (reco::MuonCollection::const_iterator tkmu = tkMuons->begin(); tkmu != tkMuons->end(); ++tkmu) {
     
-    tcnt++;
+      tcnt++;
 
-    idrec = (tkmu->track()).index();
+      idrec = (tkmu->track()).index();
 
-    // -- standalone muon (no links are filled in CMSSW_1_6_x)
-//     type = 41;
-//     TrackRef statTrack = tkmu->standAloneMuon();
-//     atm = &(*statTrack);
+      // -- standalone muon (no links are filled in CMSSW_1_6_x)
+      //     type = 41;
+      //     TrackRef statTrack = tkmu->standAloneMuon();
+      //     atm = &(*statTrack);
 
-//     pTrack   = gBSEvent->addSigTrack(); 
-//     pTrack->fMuType   = type;
-//     pTrack->fMuID     = mcnt;
-//     pTrack->fIndex    = idrec;
-//     pTrack->fGenIndex = -1; 
-//     pTrack->fMCID     = atm->charge()*-13; 
-//     pTrack->fQ        = atm->charge();
+      //     pTrack   = gBSEvent->addSigTrack(); 
+      //     pTrack->fMuType   = type;
+      //     pTrack->fMuID     = mcnt;
+      //     pTrack->fIndex    = idrec;
+      //     pTrack->fGenIndex = -1; 
+      //     pTrack->fMCID     = atm->charge()*-13; 
+      //     pTrack->fQ        = atm->charge();
 
-//     pTrack->fPlab.SetPtEtaPhi(atm->pt(),
-// 			      atm->eta(),
-// 			      atm->phi()
-// 			      );
+      //     pTrack->fPlab.SetPtEtaPhi(atm->pt(),
+      // 			      atm->eta(),
+      // 			      atm->phi()
+      // 			      );
 
-//     pTrack->fTip  = atm->d0();
-//     pTrack->fLip  = atm->dz();
-//     pTrack->fChi2 = atm->chi2();
-//     pTrack->fDof  = int(atm->ndof());
-//     pTrack->fHits = atm->numberOfValidHits();  
+      //     pTrack->fTip  = atm->d0();
+      //     pTrack->fLip  = atm->dz();
+      //     pTrack->fChi2 = atm->chi2();
+      //     pTrack->fDof  = int(atm->ndof());
+      //     pTrack->fHits = atm->numberOfValidHits();  
 
-    if (fVerbose > 0) {
+      if (fVerbose > 0) {
 
-      cout << "--------------------------------------------------------------------" << endl; 
-      cout << "-- Muon " <<fMuonsLabel2 << ", #" << tcnt <<  ",  track index (" 
-	   << (tkmu->track()).index() << ")" << endl;
-    }
+	cout << "--------------------------------------------------------------------" << endl; 
+	cout << "-- Muon " <<fMuonsLabel2 << ", #" << tcnt <<  ",  track index (" 
+	     << (tkmu->track()).index() << ")" << endl;
+      }
    
-//     if ( fVerbose > 0 )
-//       cout << "%%> Type-" << type << ": "; 
-//       pTrack->dump(); 
-//     }
+      //     if ( fVerbose > 0 )
+      //       cout << "%%> Type-" << type << ": "; 
+      //       pTrack->dump(); 
+      //     }
     
-    // -- tracker muon
-    type = 42;
-    TrackRef trktTrack = tkmu->track();
-    ttm = &(*trktTrack);
+      // -- tracker muon
+      type = 42;
+      TrackRef trktTrack = tkmu->track();
+      ttm = &(*trktTrack);
 
-    pTrack   = gBSEvent->addSigTrack(); 
-    pTrack->fMuType   = type;
-    pTrack->fMuID     = mcnt;
-    pTrack->fIndex    = idrec;
-    pTrack->fGenIndex = -1; 
-    pTrack->fMCID     = ttm->charge()*-13; 
-    pTrack->fQ        = ttm->charge();
+      pTrack   = gBSEvent->addSigTrack(); 
+      pTrack->fMuType   = type;
+      pTrack->fMuID     = mcnt;
+      pTrack->fIndex    = idrec;
+      pTrack->fGenIndex = -1; 
+      pTrack->fMCID     = ttm->charge()*-13; 
+      pTrack->fQ        = ttm->charge();
 
-    pTrack->fPlab.SetPtEtaPhi(ttm->pt(),
-			      ttm->eta(),
-			      ttm->phi()
-			      );
+      pTrack->fPlab.SetPtEtaPhi(ttm->pt(),
+				ttm->eta(),
+				ttm->phi()
+				);
 
-    pTrack->fTip  = ttm->d0();
-    pTrack->fLip  = ttm->dz();
-    pTrack->fChi2 = ttm->chi2();
-    pTrack->fDof  = int(ttm->ndof());
-    pTrack->fHits = ttm->numberOfValidHits();  
+      pTrack->fTip  = ttm->d0();
+      pTrack->fLip  = ttm->dz();
+      pTrack->fChi2 = ttm->chi2();
+      pTrack->fDof  = int(ttm->ndof());
+      pTrack->fHits = ttm->numberOfValidHits();  
 
-    if (fVerbose > 0) {
-      cout << "%%> Type-" << type <<  ": "; 
-      pTrack->dump(); 
+      if (fVerbose > 0) {
+	cout << "%%> Type-" << type <<  ": "; 
+	pTrack->dump(); 
+      }
+
+      // -- combined muon (no links are filled in CMSSW_1_6_x)
+      //     type = 43;
+      //     TrackRef comtTrack = tkmu->combinedMuon();
+      //     ctm = &(*comtTrack);
+
+      //     pTrack   = gBSEvent->addSigTrack(); 
+      //     pTrack->fMuType   = type;
+      //     pTrack->fMuID     = mcnt;
+      //     pTrack->fIndex    = idrec;
+      //     pTrack->fGenIndex = -1; 
+      //     pTrack->fMCID     = ctm->charge()*-13; 
+      //     pTrack->fQ        = ctm->charge();
+
+      //     pTrack->fPlab.SetPtEtaPhi(ctm->pt(),
+      // 			      ctm->eta(),
+      // 			      ctm->phi()
+      // 			      );
+
+      //     pTrack->fTip  = ctm->d0();
+      //     pTrack->fLip  = ctm->dz();
+      //     pTrack->fChi2 = ctm->chi2();
+      //     pTrack->fDof  = int(ctm->ndof());
+      //     pTrack->fHits = ctm->numberOfValidHits();  
+
+      //     if (fVerbose > 0) {
+      //       cout << "%%> Type-" << type  << ": "; 
+      //       pTrack->dump(); 
+      //     }
+
+      if (fVerbose > 0) {
+	cout << "--------------------------------------------------------------------" << endl;; 
+      }
     }
 
-    // -- combined muon (no links are filled in CMSSW_1_6_x)
-//     type = 43;
-//     TrackRef comtTrack = tkmu->combinedMuon();
-//     ctm = &(*comtTrack);
-
-//     pTrack   = gBSEvent->addSigTrack(); 
-//     pTrack->fMuType   = type;
-//     pTrack->fMuID     = mcnt;
-//     pTrack->fIndex    = idrec;
-//     pTrack->fGenIndex = -1; 
-//     pTrack->fMCID     = ctm->charge()*-13; 
-//     pTrack->fQ        = ctm->charge();
-
-//     pTrack->fPlab.SetPtEtaPhi(ctm->pt(),
-// 			      ctm->eta(),
-// 			      ctm->phi()
-// 			      );
-
-//     pTrack->fTip  = ctm->d0();
-//     pTrack->fLip  = ctm->dz();
-//     pTrack->fChi2 = ctm->chi2();
-//     pTrack->fDof  = int(ctm->ndof());
-//     pTrack->fHits = ctm->numberOfValidHits();  
-
-//     if (fVerbose > 0) {
-//       cout << "%%> Type-" << type  << ": "; 
-//       pTrack->dump(); 
-//     }
-
-    if (fVerbose > 0) {
-      cout << "--------------------------------------------------------------------" << endl;; 
-    }
+  } catch (Exception event) {
+    cout << "%% -- No MuonCollection with label " << fMuonsLabel2 << endl;
   }
 
 
@@ -334,304 +346,340 @@ void BSDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
   type = 100;
 
-  edm::Handle<TrackCollection> globalMuons;
-  iEvent.getByLabel(fTracksLabel1, globalMuons);    
+  try{
+ 
+    edm::Handle<TrackCollection> globalMuons;
+    iEvent.getByLabel(fTracksLabel1, globalMuons);    
 
-  if (fVerbose > 0) {
-    cout << "--------------------------------------------------------------------" << endl; 
-    cout << "-- Muon " <<fTracksLabel1 << endl;
-  }
-
-  for (unsigned int i = 0; i < globalMuons->size(); ++i){
-    
-    TrackRef rTrack(globalMuons, i);
-    Track track(*rTrack);    
-
-    pTrack = gBSEvent->addSigTrack();
-    pTrack->fMuType   = type;
-    pTrack->fMuID     = i;
-    pTrack->fMCID     = track.charge()*-13; 
-    pTrack->fGenIndex = -1;
-    pTrack->fIndex    = -1;
-    //    pTrack->fIndex = rTrack.index();
-    pTrack->fPlab.SetPtEtaPhi(track.pt(),
-			      track.eta(),
-			      track.phi()
-			      );
-    pTrack->fTip = track.d0();
-    pTrack->fLip = track.dz();
-    pTrack->fQ = track.charge();
-    pTrack->fChi2 = track.chi2();
-    pTrack->fDof = int(track.ndof());
-    pTrack->fHits = track.numberOfValidHits();  
-    pTrack->fMuID = 1.; 
-     
     if (fVerbose > 0) {
-      cout << "%%> Type-" << type << ": "; 
-      pTrack->dump(); 
+      cout << "--------------------------------------------------------------------" << endl; 
+      cout << "-- Muon " <<fTracksLabel1 << endl;
     }
+
+    for (unsigned int i = 0; i < globalMuons->size(); ++i){
+    
+      TrackRef rTrack(globalMuons, i);
+      Track track(*rTrack);    
+
+      pTrack = gBSEvent->addSigTrack();
+      pTrack->fMuType   = type;
+      pTrack->fMuID     = i;
+      pTrack->fMCID     = track.charge()*-13; 
+      pTrack->fGenIndex = -1;
+      pTrack->fIndex    = -1;
+      //    pTrack->fIndex = rTrack.index();
+      pTrack->fPlab.SetPtEtaPhi(track.pt(),
+				track.eta(),
+				track.phi()
+				);
+      pTrack->fTip = track.d0();
+      pTrack->fLip = track.dz();
+      pTrack->fQ = track.charge();
+      pTrack->fChi2 = track.chi2();
+      pTrack->fDof = int(track.ndof());
+      pTrack->fHits = track.numberOfValidHits();  
+      pTrack->fMuID = 1.; 
+     
+      if (fVerbose > 0) {
+	cout << "%%> Type-" << type << ": "; 
+	pTrack->dump(); 
+      }
+    }
+
+  } catch (Exception event) {
+    cout << "%% -- No TrackCollection with label " << fTracksLabel1 << endl;
   }
 
 
   // -- standAloneMuons
 
-  edm::Handle<TrackCollection> staMuons;
-  iEvent.getByLabel(fTracksLabel2, staMuons);    
+  try{
 
-  type = 101;
+    edm::Handle<TrackCollection> staMuons;
+    iEvent.getByLabel(fTracksLabel2, staMuons);    
 
-  if (fVerbose > 0) {
-    cout << "--------------------------------------------------------------------" << endl; 
-    cout << "-- Muon " <<fTracksLabel2 << endl;
-  }
+    type = 101;
 
-  for (unsigned int i = 0; i < staMuons->size(); ++i){
-    
-    TrackRef rTrack(staMuons, i);
-    Track track(*rTrack);    
-
-    pTrack = gBSEvent->addSigTrack();
-    pTrack->fMuType   = type;
-    pTrack->fMuID     = i;
-    pTrack->fMCID     = track.charge()*-13; 
-    pTrack->fGenIndex = -1;
-    pTrack->fIndex    = -1;
-    //    pTrack->fIndex = rTrack.index();
-    pTrack->fPlab.SetPtEtaPhi(track.pt(),
-			      track.eta(),
-			      track.phi()
-			      );
-    pTrack->fTip = track.d0();
-    pTrack->fLip = track.dz();
-    pTrack->fQ = track.charge();
-    pTrack->fChi2 = track.chi2();
-    pTrack->fDof = int(track.ndof());
-    pTrack->fHits = track.numberOfValidHits();  
-    pTrack->fMuID = 1.;  
-     
     if (fVerbose > 0) {
-      cout << "%%> Type-" << type << ": "; 
-      pTrack->dump(); 
+      cout << "--------------------------------------------------------------------" << endl; 
+      cout << "-- Muon " <<fTracksLabel2 << endl;
     }
+
+    for (unsigned int i = 0; i < staMuons->size(); ++i){
+    
+      TrackRef rTrack(staMuons, i);
+      Track track(*rTrack);    
+
+      pTrack = gBSEvent->addSigTrack();
+      pTrack->fMuType   = type;
+      pTrack->fMuID     = i;
+      pTrack->fMCID     = track.charge()*-13; 
+      pTrack->fGenIndex = -1;
+      pTrack->fIndex    = -1;
+      //    pTrack->fIndex = rTrack.index();
+      pTrack->fPlab.SetPtEtaPhi(track.pt(),
+				track.eta(),
+				track.phi()
+				);
+      pTrack->fTip = track.d0();
+      pTrack->fLip = track.dz();
+      pTrack->fQ = track.charge();
+      pTrack->fChi2 = track.chi2();
+      pTrack->fDof = int(track.ndof());
+      pTrack->fHits = track.numberOfValidHits();  
+      pTrack->fMuID = 1.;  
+     
+      if (fVerbose > 0) {
+	cout << "%%> Type-" << type << ": "; 
+	pTrack->dump(); 
+      }
+    }
+
+  } catch (Exception event) {
+    cout << "%% -- No TrackCollection with label " << fTracksLabel2 << endl;
   }
 
 
   // -- standAloneMuons updated at Vtx
 
-  edm::Handle<TrackCollection> staVtxMuons;
-  iEvent.getByLabel(fTracksLabel3, staVtxMuons);    
+  try{ 
 
-  type = 102;
-
-  if (fVerbose > 0) {
-    cout << "--------------------------------------------------------------------" << endl; 
-    cout << "-- Muon " <<fTracksLabel3 << endl;
-  }
-
-  for (unsigned int i = 0; i < staVtxMuons->size(); ++i){
+    edm::Handle<TrackCollection> staVtxMuons;
+    iEvent.getByLabel(fTracksLabel3, staVtxMuons);    
     
-    TrackRef rTrack(staVtxMuons, i);
-    Track track(*rTrack);    
-
-    pTrack = gBSEvent->addSigTrack();
-    pTrack->fMuType   = type;
-    pTrack->fMuID     = i;
-    pTrack->fMCID     = track.charge()*-13; 
-    pTrack->fGenIndex = -1;
-    pTrack->fIndex    = -1;
-    //    pTrack->fIndex = rTrack.index();
-    pTrack->fPlab.SetPtEtaPhi(track.pt(),
-			      track.eta(),
-			      track.phi()
-			      );
-    pTrack->fTip = track.d0();
-    pTrack->fLip = track.dz();
-    pTrack->fQ = track.charge();
-    pTrack->fChi2 = track.chi2();
-    pTrack->fDof = int(track.ndof());
-    pTrack->fHits = track.numberOfValidHits();  
-    pTrack->fMuID = 1.;  
-     
+    type = 102;
+    
     if (fVerbose > 0) {
-      cout << "%%> Type-" << type << ": "; 
-      pTrack->dump(); 
+      cout << "--------------------------------------------------------------------" << endl; 
+      cout << "-- Muon " <<fTracksLabel3 << endl;
     }
-  }
+    
+    for (unsigned int i = 0; i < staVtxMuons->size(); ++i){
+      
+      TrackRef rTrack(staVtxMuons, i);
+      Track track(*rTrack);    
+      
+      pTrack = gBSEvent->addSigTrack();
+      pTrack->fMuType   = type;
+      pTrack->fMuID     = i;
+      pTrack->fMCID     = track.charge()*-13; 
+      pTrack->fGenIndex = -1;
+      pTrack->fIndex    = -1;
+      //    pTrack->fIndex = rTrack.index();
+      pTrack->fPlab.SetPtEtaPhi(track.pt(),
+				track.eta(),
+				track.phi()
+				);
+      pTrack->fTip = track.d0();
+      pTrack->fLip = track.dz();
+      pTrack->fQ = track.charge();
+      pTrack->fChi2 = track.chi2();
+      pTrack->fDof = int(track.ndof());
+      pTrack->fHits = track.numberOfValidHits();  
+      pTrack->fMuID = 1.;  
+      
+      if (fVerbose > 0) {
+	cout << "%%> Type-" << type << ": "; 
+	pTrack->dump(); 
+      }
+    } 
 
+  } catch (Exception event) {
+    cout << "%% -- No TrackCollection with label " << fTracksLabel3 << endl;
+  }
+  
   // -- hlt2
 
-  edm::Handle<TrackCollection> hlt2Muons;
-  iEvent.getByLabel(fTracksLabel4, hlt2Muons);    
+  try{
 
-  type = 103;
+    edm::Handle<TrackCollection> hlt2Muons;
+    iEvent.getByLabel(fTracksLabel4, hlt2Muons);    
 
-  if (fVerbose > 0) {
-    cout << "--------------------------------------------------------------------" << endl; 
-    cout << "-- Muon " <<fTracksLabel4 << endl;
-  }
+    type = 103;
 
-  for (unsigned int i = 0; i < hlt2Muons->size(); ++i){
-    
-    TrackRef rTrack(hlt2Muons, i);
-    Track track(*rTrack);    
-
-    pTrack = gBSEvent->addSigTrack();
-    pTrack->fMuType   = type;
-    pTrack->fMuID     = i;
-    pTrack->fMCID     = track.charge()*-13; 
-    pTrack->fGenIndex = -1;
-    pTrack->fIndex    = -1;
-    //    pTrack->fIndex = rTrack.index();
-    pTrack->fPlab.SetPtEtaPhi(track.pt(),
-			      track.eta(),
-			      track.phi()
-			      );
-    pTrack->fTip = track.d0();
-    pTrack->fLip = track.dz();
-    pTrack->fQ = track.charge();
-    pTrack->fChi2 = track.chi2();
-    pTrack->fDof = int(track.ndof());
-    pTrack->fHits = track.numberOfValidHits();  
-    pTrack->fMuID = 1.;  
-     
     if (fVerbose > 0) {
-      cout << "%%> Type-" << type << ": "; 
-      pTrack->dump(); 
+      cout << "--------------------------------------------------------------------" << endl; 
+      cout << "-- Muon " <<fTracksLabel4 << endl;
     }
-  }  
 
+    for (unsigned int i = 0; i < hlt2Muons->size(); ++i){
+    
+      TrackRef rTrack(hlt2Muons, i);
+      Track track(*rTrack);    
+
+      pTrack = gBSEvent->addSigTrack();
+      pTrack->fMuType   = type;
+      pTrack->fMuID     = i;
+      pTrack->fMCID     = track.charge()*-13; 
+      pTrack->fGenIndex = -1;
+      pTrack->fIndex    = -1;
+      //    pTrack->fIndex = rTrack.index();
+      pTrack->fPlab.SetPtEtaPhi(track.pt(),
+				track.eta(),
+				track.phi()
+				);
+      pTrack->fTip = track.d0();
+      pTrack->fLip = track.dz();
+      pTrack->fQ = track.charge();
+      pTrack->fChi2 = track.chi2();
+      pTrack->fDof = int(track.ndof());
+      pTrack->fHits = track.numberOfValidHits();  
+      pTrack->fMuID = 1.;  
+     
+      if (fVerbose > 0) {
+	cout << "%%> Type-" << type << ": "; 
+	pTrack->dump(); 
+      }
+    }  
+
+  } catch (Exception event) {
+    cout << "%% -- No TrackCollection with label " << fTracksLabel4 << endl;
+  }
 
   // -- hlt2 updated at Vtx
 
-  edm::Handle<TrackCollection> hlt2VtxMuons;
-  iEvent.getByLabel(fTracksLabel5, hlt2VtxMuons);    
+  try{
 
-  type = 104;
+    edm::Handle<TrackCollection> hlt2VtxMuons;
+    iEvent.getByLabel(fTracksLabel5, hlt2VtxMuons);    
 
-  if (fVerbose > 0) {
-    cout << "--------------------------------------------------------------------" << endl; 
-    cout << "-- Muon " <<fTracksLabel5 << endl;
-  }
+    type = 104;
 
-  for (unsigned int i = 0; i < hlt2VtxMuons->size(); ++i){
-    
-    TrackRef rTrack(hlt2VtxMuons, i);
-    Track track(*rTrack);    
-
-    pTrack = gBSEvent->addSigTrack();
-    pTrack->fMuType   = type;
-    pTrack->fMuID     = i;
-    pTrack->fMCID     = track.charge()*-13; 
-    pTrack->fGenIndex = -1;
-    pTrack->fIndex    = -1;
-    //    pTrack->fIndex = rTrack.index();
-    pTrack->fPlab.SetPtEtaPhi(track.pt(),
-			      track.eta(),
-			      track.phi()
-			      );
-    pTrack->fTip = track.d0();
-    pTrack->fLip = track.dz();
-    pTrack->fQ = track.charge();
-    pTrack->fChi2 = track.chi2();
-    pTrack->fDof = int(track.ndof());
-    pTrack->fHits = track.numberOfValidHits();  
-    pTrack->fMuID = 1.;  
-     
     if (fVerbose > 0) {
-      cout << "%%> Type-" << type << ": "; 
-      pTrack->dump(); 
+      cout << "--------------------------------------------------------------------" << endl; 
+      cout << "-- Muon " <<fTracksLabel5 << endl;
     }
+
+    for (unsigned int i = 0; i < hlt2VtxMuons->size(); ++i){
+    
+      TrackRef rTrack(hlt2VtxMuons, i);
+      Track track(*rTrack);    
+
+      pTrack = gBSEvent->addSigTrack();
+      pTrack->fMuType   = type;
+      pTrack->fMuID     = i;
+      pTrack->fMCID     = track.charge()*-13; 
+      pTrack->fGenIndex = -1;
+      pTrack->fIndex    = -1;
+      //    pTrack->fIndex = rTrack.index();
+      pTrack->fPlab.SetPtEtaPhi(track.pt(),
+				track.eta(),
+				track.phi()
+				);
+      pTrack->fTip = track.d0();
+      pTrack->fLip = track.dz();
+      pTrack->fQ = track.charge();
+      pTrack->fChi2 = track.chi2();
+      pTrack->fDof = int(track.ndof());
+      pTrack->fHits = track.numberOfValidHits();  
+      pTrack->fMuID = 1.;  
+     
+      if (fVerbose > 0) {
+	cout << "%%> Type-" << type << ": "; 
+	pTrack->dump(); 
+      }
+    }
+
+  } catch (Exception event) {
+    cout << "%% -- No TrackCollection with label " << fTracksLabel5 << endl;
   }
 
 
   // -- hlt3
 
-  edm::Handle<TrackCollection> hlt3Muons;
-  iEvent.getByLabel(fTracksLabel6, hlt3Muons);    
+  try{ 
+    edm::Handle<TrackCollection> hlt3Muons;
+    iEvent.getByLabel(fTracksLabel6, hlt3Muons);    
 
-  type = 105;
+    type = 105;
 
-  if (fVerbose > 0) {
-    cout << "--------------------------------------------------------------------" << endl; 
-    cout << "-- Muon " <<fTracksLabel6 << endl;
-  }
-
-  for (unsigned int i = 0; i < hlt3Muons->size(); ++i){
-    
-    TrackRef rTrack(hlt3Muons, i);
-    Track track(*rTrack);    
-
-    pTrack = gBSEvent->addSigTrack();
-    pTrack->fMuType   = type;
-    pTrack->fMuID     = i;
-    pTrack->fMCID     = track.charge()*-13; 
-    pTrack->fGenIndex = -1;
-    pTrack->fIndex    = -1;
-    //    pTrack->fIndex = rTrack.index();
-    pTrack->fPlab.SetPtEtaPhi(track.pt(),
-			      track.eta(),
-			      track.phi()
-			      );
-    pTrack->fTip = track.d0();
-    pTrack->fLip = track.dz();
-    pTrack->fQ = track.charge();
-    pTrack->fChi2 = track.chi2();
-    pTrack->fDof = int(track.ndof());
-    pTrack->fHits = track.numberOfValidHits();  
-    pTrack->fMuID = 1.;  
-     
     if (fVerbose > 0) {
-      cout << "%%> Type-" << type << ": "; 
-      pTrack->dump(); 
+      cout << "--------------------------------------------------------------------" << endl; 
+      cout << "-- Muon " <<fTracksLabel6 << endl;
     }
-  }  
+
+    for (unsigned int i = 0; i < hlt3Muons->size(); ++i){
+    
+      TrackRef rTrack(hlt3Muons, i);
+      Track track(*rTrack);    
+
+      pTrack = gBSEvent->addSigTrack();
+      pTrack->fMuType   = type;
+      pTrack->fMuID     = i;
+      pTrack->fMCID     = track.charge()*-13; 
+      pTrack->fGenIndex = -1;
+      pTrack->fIndex    = -1;
+      //    pTrack->fIndex = rTrack.index();
+      pTrack->fPlab.SetPtEtaPhi(track.pt(),
+				track.eta(),
+				track.phi()
+				);
+      pTrack->fTip = track.d0();
+      pTrack->fLip = track.dz();
+      pTrack->fQ = track.charge();
+      pTrack->fChi2 = track.chi2();
+      pTrack->fDof = int(track.ndof());
+      pTrack->fHits = track.numberOfValidHits();  
+      pTrack->fMuID = 1.;  
+     
+      if (fVerbose > 0) {
+	cout << "%%> Type-" << type << ": "; 
+	pTrack->dump(); 
+      }
+    }  
+
+  } catch (Exception event) {
+    cout << "%% -- No TrackCollection with label " << fTracksLabel6 << endl;
+  }
 
 
   // -- hlt3 seeded
 
-  edm::Handle<TrackCollection> hlt3seededMuons;
-  iEvent.getByLabel(fTracksLabel7, hlt3seededMuons);    
+  try{
 
-  type = 106;
+    edm::Handle<TrackCollection> hlt3seededMuons;
+    iEvent.getByLabel(fTracksLabel7, hlt3seededMuons);    
 
-  if (fVerbose > 0) {
-    cout << "--------------------------------------------------------------------" << endl; 
-    cout << "-- Muon " <<fTracksLabel7 << endl;
-  }
+    type = 106;
 
-  for (unsigned int i = 0; i < hlt3seededMuons->size(); ++i){
-    
-    TrackRef rTrack(hlt3seededMuons, i);
-    Track track(*rTrack);    
-
-    pTrack = gBSEvent->addSigTrack();
-    pTrack->fMuType   = type;
-    pTrack->fMuID     = i;
-    pTrack->fMCID     = track.charge()*-13; 
-    pTrack->fGenIndex = -1;
-    pTrack->fIndex = -1;
-    //    pTrack->fIndex = rTrack.index();
-    pTrack->fPlab.SetPtEtaPhi(track.pt(),
-			      track.eta(),
-			      track.phi()
-			      );
-    pTrack->fTip = track.d0();
-    pTrack->fLip = track.dz();
-    pTrack->fQ = track.charge();
-    pTrack->fChi2 = track.chi2();
-    pTrack->fDof = int(track.ndof());
-    pTrack->fHits = track.numberOfValidHits();  
-    pTrack->fMuID = 1.;  
-     
     if (fVerbose > 0) {
-      cout << "%%> Type-" << type << ": "; 
-      pTrack->dump(); 
+      cout << "--------------------------------------------------------------------" << endl; 
+      cout << "-- Muon " <<fTracksLabel7 << endl;
     }
+
+    for (unsigned int i = 0; i < hlt3seededMuons->size(); ++i){
+    
+      TrackRef rTrack(hlt3seededMuons, i);
+      Track track(*rTrack);    
+
+      pTrack = gBSEvent->addSigTrack();
+      pTrack->fMuType   = type;
+      pTrack->fMuID     = i;
+      pTrack->fMCID     = track.charge()*-13; 
+      pTrack->fGenIndex = -1;
+      pTrack->fIndex = -1;
+      //    pTrack->fIndex = rTrack.index();
+      pTrack->fPlab.SetPtEtaPhi(track.pt(),
+				track.eta(),
+				track.phi()
+				);
+      pTrack->fTip = track.d0();
+      pTrack->fLip = track.dz();
+      pTrack->fQ = track.charge();
+      pTrack->fChi2 = track.chi2();
+      pTrack->fDof = int(track.ndof());
+      pTrack->fHits = track.numberOfValidHits();  
+      pTrack->fMuID = 1.;  
+     
+      if (fVerbose > 0) {
+	cout << "%%> Type-" << type << ": "; 
+	pTrack->dump(); 
+      }
+    }
+
+  } catch (Exception event) {
+    cout << "%% -- No TrackCollection with label " << fTracksLabel7 << endl;
   }
-
-
-
-
 }
 
 // ------------ method called once each job just before starting event loop  ------------

@@ -121,26 +121,29 @@ private:
   int kaonCandidate(const edm::Event&, const edm::EventSetup&);
 
   // ----------member data ---------------------------
+  int fVerbose;
+  int fBmmSel;
+
+  std::string fChannel;
+  std::string fPrimaryVertexLabel;
   std::string fGenEventLabel;
-  std::string fTracksLabel;
-  std::string fVtxAssociatorLabel;
-  std::string fAssociatorLabel;
   std::string fTrackingParticlesLabel;
   std::string fTrackingVertexLabel;
-
-  std::string fPrimaryVertexLabel;
-  std::string fChannel;
-  std::string fPrintChannel, fPrintChannel2;
+  std::string fTracksLabel;
+  std::string fAssociatorLabel;
+  std::string fVtxAssociatorLabel;
 
   edm::InputTag fMuonsLabel1;
   edm::InputTag fMuonsLabel2;
 
+  int fDoTruthMatching;
+
+  std::string fPrintChannel, fPrintChannel2;
+
+
   double fMass, fMass2;
   double fMassRange, fMassRange2, fMassKaon;
 
-  int fBmmSel;
-  int fVerbose;
-  int fDoTruthMatching;
 
   int fNevt, fNgen, fNrec;
 

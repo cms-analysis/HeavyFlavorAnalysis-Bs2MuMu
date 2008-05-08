@@ -146,7 +146,7 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
   // -- Getting L1 trigger bits
 
-  if ( fVerbose ) cout << endl << "============================ L1 Trigger ===================================" << endl; 
+  if ( fVerbose > 1 ) cout << endl << "============================ L1 Trigger ===================================" << endl; 
 
   gBSEvent->fL1Decision=0;
   gBSEvent->fL1w1=0; gBSEvent->fL1w2=0; gBSEvent->fL1w3=0; gBSEvent->fL1w4=0; 
@@ -171,7 +171,7 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       const l1extra::L1ParticleMap& map = ( L1MapColl )[ itrig ] ;
       TString trigName = map.triggerName();
       int l1flag = map.triggerDecision();
-      if ( fVerbose ) cout  << endl << "%L1-Report --  #"  << setw(3)<< itrig << " : "  
+      if ( fVerbose > 1 ) cout  << endl << "%L1-Report --  #"  << setw(3)<< itrig << " : "  
 			    << setw(30) << trigName << " = " << l1flag;
    
       if (itrig < 32 && l1flag) {
@@ -186,7 +186,7 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
       if ( !strcmp(trigName, fL1TriggerName.c_str()) && l1flag ) {
 	
-	if ( fVerbose ) cout << " =============>  L1 decision set to " << l1flag;
+	if ( fVerbose > 1 ) cout << " =============>  L1 decision set to " << l1flag;
 	gBSEvent->fL1Decision = l1flag;      
       }
 
@@ -206,14 +206,14 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
 	const L1MuonParticleVectorRef& muons = map.muonParticles();
 	
-	if (fVerbose) cout << endl << " ==>  Muon particles pT, eta:" << endl;
+	if (fVerbose > 1) cout << endl << " ==>  Muon particles pT, eta:" << endl;
 	
 	int l1cnt(0);
 	for( L1MuonParticleVectorRef::const_iterator muonItr = muons.begin() ;
 	     muonItr != muons.end() ; ++muonItr ) {
 	  
 
-	  if (fVerbose) cout << "\t pT = " << (*muonItr)->pt() << ", eta = " << (*muonItr)->eta() << endl ;
+	  if (fVerbose > 1) cout << "\t pT = " << (*muonItr)->pt() << ", eta = " << (*muonItr)->eta() << endl ;
 	  
 	  
 	  pTrack   = gBSEvent->addSigTrack();
@@ -247,7 +247,7 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   gBSEvent->fHLTDecision=0;
   gBSEvent->fHLTw1=0; gBSEvent->fHLTw2=0; gBSEvent->fHLTw3=0; gBSEvent->fHLTw4=0; 
 
-  if ( fVerbose ) cout << endl << "============================ HLT Trigger ===================================" << endl;
+  if ( fVerbose > 1 ) cout << endl << "============================ HLT Trigger ===================================" << endl;
   edm::Handle<edm::TriggerResults> hltresults;
     
   try {
@@ -276,7 +276,7 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       int hltflag = (*hltresults)[itrig].accept();
       int wasrun  = (*hltresults)[itrig].wasrun();
 
-      if ( fVerbose ) cout << endl << "%HLT-Report --  #"  << setw(3) << itrig << setw(30)  <<  trigName
+      if ( fVerbose > 1 ) cout << endl << "%HLT-Report --  #"  << setw(3) << itrig << setw(30)  <<  trigName
 			   << " was run " << wasrun  << ", decision " << hltflag;
          
       if (itrig < 32 && hltflag) {
@@ -290,7 +290,7 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       }
 
       if ( !strcmp(trigName, fHLTriggerName.c_str() ) && hltflag ) {     
-	if ( fVerbose ) cout << " =============>  HLT decision set to " << hltflag;
+	if ( fVerbose > 1 ) cout << " =============>  HLT decision set to " << hltflag;
 	gBSEvent->fHLTDecision = hltflag;
       }
     } 

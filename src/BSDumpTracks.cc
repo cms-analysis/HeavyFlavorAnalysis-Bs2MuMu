@@ -52,10 +52,10 @@ BSDumpTracks::BSDumpTracks(const edm::ParameterSet& iConfig):
   fSimTracksLabel(iConfig.getUntrackedParameter<string>("simTracksLabel", string("famosSimHits"))),
   fTrackingParticlesLabel(iConfig.getUntrackedParameter<string>("trackingParticlesLabel", string("trackingParticles"))),
   fTracksLabel(iConfig.getUntrackedParameter<string>("tracksLabel", string("ctfWithMaterialTracks"))),
+  fAssociatorLabel(iConfig.getUntrackedParameter<string>("associatorLabel", string("TrackAssociatorByChi2"))), 
+  fL1MuLabel(iConfig.getUntrackedParameter<string> ("L1MuLabel")),
   fMuonsLabel1(iConfig.getUntrackedParameter<InputTag>("muonsLabel1")),
   fMuonsLabel2(iConfig.getUntrackedParameter<InputTag>("muonsLabel2")),
-  fL1MuLabel(iConfig.getUntrackedParameter< std::string > ("L1MuLabel")),
-  fAssociatorLabel(iConfig.getUntrackedParameter<string>("associatorLabel", string("TrackAssociatorByChi2"))), 
   fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1)) {
 
   using namespace std;
@@ -102,49 +102,67 @@ void BSDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 			 << ", event: " << fNevt << endl;
 
   // -------- get the collection of global muons -----------
-  Handle<MuonCollection> hMuons;
-  iEvent.getByLabel(fMuonsLabel1, hMuons);
-
-  if (fVerbose > 0) cout << "==>BSDumpTracks> globalMuons = " << hMuons->size() << endl;
-
-  // -- store their muon track indices
   vector<int> muonIndices;
-  for (MuonCollection::const_iterator muon = hMuons->begin(); muon != hMuons->end(); ++muon) {
-    TrackRef track = muon->track();
-    muonIndices.push_back((muon->track()).index());
+
+  try {
+
+    Handle<MuonCollection> hMuons;
+    iEvent.getByLabel(fMuonsLabel1, hMuons);
+    
+    if (fVerbose > 0) cout << "==>BSDumpTracks> globalMuons = " << hMuons->size() << endl;
+    
+        for (MuonCollection::const_iterator muon = hMuons->begin(); muon != hMuons->end(); ++muon) {
+      TrackRef track = muon->track();
+      muonIndices.push_back((muon->track()).index());
+    }
+    
+  } catch (Exception event) {
+    cout << "%% -- No MuonCollection with label " << fMuonsLabel1 << endl;
   }
 
    // ------- get the collection of tracker muons -----------
-  Handle<MuonCollection> tkMuons;
-  iEvent.getByLabel(fMuonsLabel2, tkMuons);
-
-  if (fVerbose > 0) cout << "==>BSDumpTracks> trackerMuons = " << tkMuons->size() << endl;
-
-  // -- store their muon track indices
   vector<int> tkMuonIndices;
-  for (MuonCollection::const_iterator tkmu = tkMuons->begin(); tkmu != tkMuons->end(); ++tkmu) {
-    TrackRef track = tkmu->track();
-    tkMuonIndices.push_back((tkmu->track()).index());
+
+  try {
+
+    Handle<MuonCollection> tkMuons;
+    iEvent.getByLabel(fMuonsLabel2, tkMuons);
+    
+    if (fVerbose > 0) cout << "==>BSDumpTracks> trackerMuons = " << tkMuons->size() << endl;
+    
+    for (MuonCollection::const_iterator tkmu = tkMuons->begin(); tkmu != tkMuons->end(); ++tkmu) {
+      TrackRef track = tkmu->track();
+      tkMuonIndices.push_back((tkmu->track()).index());
+    }
+    
+  } catch (Exception event) {
+    cout << "%% -- No MuonCollection with label " << fMuonsLabel2 << endl;
   }
 
   // ------- get the collection of L1 muons -----------
-  edm::Handle<l1extra::L1MuonParticleCollection> l1extmu;
-  iEvent.getByLabel(fL1MuLabel,l1extmu);
-  
-  const l1extra::L1MuonParticleCollection& L1ExtMu = *l1extmu;
-  
-  if ( fVerbose ) cout << "==>BSDumpTracks> L1Muons = " << l1extmu->size() << endl;
-
-
-  // -- store their muon track indices
   vector<int> l1MuonIndices;
-  if (&L1ExtMu) {
+
+  try {
+
+    edm::Handle<l1extra::L1MuonParticleCollection> l1extmu;
+    iEvent.getByLabel(fL1MuLabel,l1extmu);
     
-    for (l1extra::L1MuonParticleCollection::const_iterator muItr = L1ExtMu.begin(); muItr != L1ExtMu.end(); ++muItr) {
+    const l1extra::L1MuonParticleCollection& L1ExtMu = *l1extmu;
+    
+    if ( fVerbose ) cout << "==>BSDumpTracks> L1Muons = " << l1extmu->size() << endl;
+    
+    
+    if (&L1ExtMu) {
       
-      int idrec = idRecTrack(muItr->pt(), muItr->eta(), muItr->phi(), 100., 0.4, 0.9);
-      l1MuonIndices.push_back(idrec);
+      for (l1extra::L1MuonParticleCollection::const_iterator muItr = L1ExtMu.begin(); muItr != L1ExtMu.end(); ++muItr) {
+	
+	int idrec = idRecTrack(muItr->pt(), muItr->eta(), muItr->phi(), 100., 0.4, 0.9);
+	l1MuonIndices.push_back(idrec);
+      }
     }
+    
+  } catch (Exception event) {
+    cout << "%% -- No MuonCollection with label " << fL1MuLabel << endl;
   }
   
   // -- get the tracking particle collection needed for truth matching. Only on RECO data tier!
@@ -165,12 +183,23 @@ void BSDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   const HepMC::GenEvent *genEvent = 0;
   edm::Handle<std::vector<SimTrack> > simTracks;
   if (2 == fDoTruthMatching) {
-  if (fVerbose > 0) cout << "==>BSDumpTracks> Get sim. track for FAMOS truth matching" << endl;
-    iEvent.getByLabel(fGenEventLabel.c_str(), hepmc);
-    genEvent = hepmc->GetEvent();
-    iEvent.getByLabel(fSimTracksLabel.c_str(), simTracks); 
-  }      
-
+    
+    if (fVerbose > 0) cout << "==>BSDumpTracks> Get sim. track for FAMOS truth matching" << endl;
+    
+    try { 
+      iEvent.getByLabel(fGenEventLabel.c_str(), hepmc);
+      genEvent = hepmc->GetEvent();
+    } catch (Exception event) {
+      cout << "%% -- No HepMCProduct with label " << fGenEventLabel.c_str() << endl;
+    }
+    
+    try {
+      iEvent.getByLabel(fSimTracksLabel.c_str(), simTracks); 
+    } catch (Exception event) {
+      cout << "%% -- No SimTrack  with label " << fSimTracksLabel.c_str() << endl;
+    }
+  }   
+  
   TAnaTrack *pTrack; 
 //   TH1D *h1 = (TH1D*)gBSFile->Get("h1");
 //   TH1D *h2 = (TH1D*)gBSFile->Get("h2");

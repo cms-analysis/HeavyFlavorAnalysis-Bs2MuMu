@@ -45,15 +45,20 @@ class BSDumpTracks : public edm::EDAnalyzer {
 
   const reco::TrackCollection      *theTkCollection;
 
-  std::string          fTracksLabel, 
-                       fGenEventLabel, fSimTracksLabel,
-                       fAssociatorLabel, fTrackingParticlesLabel;
+  int                  fNevt;
+
+  int                  fVerbose;
+  std::string          fGenEventLabel; 
+  std::string          fSimTracksLabel;
+  std::string          fTrackingParticlesLabel;
+  std::string          fTracksLabel;
+  std::string          fAssociatorLabel;
+  std::string          fL1MuLabel;
+
 
   edm::InputTag        fMuonsLabel1;
   edm::InputTag        fMuonsLabel2;
-  edm::InputTag        fL1MuLabel;
-
-  int                  fVerbose, fDoTruthMatching, fNevt; 
+  int                  fDoTruthMatching;
 
   TrackAssociatorBase *fAssociator;
 };

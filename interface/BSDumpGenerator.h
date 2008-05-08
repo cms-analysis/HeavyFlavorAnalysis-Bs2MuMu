@@ -27,9 +27,10 @@ class BSDumpGenerator : public edm::EDAnalyzer {
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 
-  int         fVerbose;
   int         fNevt;
-  std::string fGenCandidatesLabel, fGenEventLabel;
+  int         fVerbose;
+  std::string fGenCandidatesLabel;
+  std::string fGenEventLabel;
 
 };
 

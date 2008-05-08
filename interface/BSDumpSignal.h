@@ -27,9 +27,12 @@ class BSDumpSignal : public edm::EDAnalyzer {
   virtual void endJob() ;
 
   int           fVerbose; 
-  std::string   fTracksLabel, fPrimaryVertexLabel;
+  std::string   fTracksLabel;
   edm::InputTag fMuonsLabel;
-  double        fMuonPt, fKaonPt, fDeltaR;
+  std::string   fPrimaryVertexLabel;
+  double        fMuonPt; 
+  double        fKaonPt; 
+  double        fDeltaR;
 
 };
 

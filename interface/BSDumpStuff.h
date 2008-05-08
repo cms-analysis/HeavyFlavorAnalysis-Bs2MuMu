@@ -29,10 +29,11 @@ class BSDumpStuff : public edm::EDAnalyzer {
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 
-  std::string          fGenEventScaleLabel, fPrimaryVertexLabel;
-
-  int                  fVerbose;
   int                  fNevt;
+  int                  fVerbose;
+
+  std::string          fGenEventScaleLabel;
+  std::string          fPrimaryVertexLabel;
 
 };
 
