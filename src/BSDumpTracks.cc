@@ -8,6 +8,7 @@
 #include "SimTracker/TrackAssociation/interface/TrackAssociatorBase.h" 
 #include "SimTracker/TrackAssociation/interface/TrackAssociatorByChi2.h"
 #include "SimTracker/TrackAssociation/interface/TrackAssociatorByHits.h"
+
 #include "SimDataFormats/HepMCProduct/interface/HepMCProduct.h"
 #include "SimDataFormats/Track/interface/SimTrack.h"
 #include "SimDataFormats/Track/interface/SimTrackContainer.h"
@@ -168,11 +169,13 @@ void BSDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   // -- get the tracking particle collection needed for truth matching. Only on RECO data tier!
   RecoToSimCollection recSimColl;
   if (1 == fDoTruthMatching) {
-  if (fVerbose > 0) cout << "==>BSDumpTracks> Get tracking particles for TrackAssociator" << endl;
+    if (fVerbose > 0) cout << "==>BSDumpTracks> Get tracking particles for TrackAssociator" << endl;
     try {
+
       edm::Handle<TrackingParticleCollection> trackingParticles;
       iEvent.getByLabel(fTrackingParticlesLabel.c_str(), trackingParticles);
       recSimColl = fAssociator->associateRecoToSim(tracks, trackingParticles, &iEvent); 
+
     } catch (cms::Exception &ex) {
       cout << ex.explainSelf() << endl;
     }
@@ -201,10 +204,6 @@ void BSDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   }   
   
   TAnaTrack *pTrack; 
-//   TH1D *h1 = (TH1D*)gBSFile->Get("h1");
-//   TH1D *h2 = (TH1D*)gBSFile->Get("h2");
-//   h1->Fill(tracks->size());
-//   h2->Fill(tracks->size());
 
   for (unsigned int i = 0; i < tracks->size(); ++i){
 
@@ -253,7 +252,8 @@ void BSDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
     // -- RECO truth matching with TrackingParticle
     if (1 == fDoTruthMatching) {
-      try{ 
+      try{
+
 	std::vector<std::pair<TrackingParticleRef, double> > tp = recSimColl[rTrack];
 	TrackingParticleRef tpr = tp.begin()->first;  
 	const HepMC::GenParticle *genPar = 0; 
@@ -374,6 +374,7 @@ int BSDumpTracks::idRecTrack(double pt, double eta, double phi, double ept, doub
 
 // ------------ method called once each job just before starting event loop  ------------
 void  BSDumpTracks::beginJob(const edm::EventSetup& setup) {
+
   edm::ESHandle<TrackAssociatorBase> theAssociator;
   setup.get<TrackAssociatorRecord>().get(fAssociatorLabel.c_str(), theAssociator);
   fAssociator = (TrackAssociatorBase*)theAssociator.product();

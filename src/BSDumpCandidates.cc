@@ -14,6 +14,7 @@
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 #include "CommonTools/Statistics/interface/ChiSquared.h"
 
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
 #include "SimTracker/Records/interface/TrackAssociatorRecord.h"
 #include "SimTracker/TrackAssociation/interface/TrackAssociatorBase.h" 
 #include "SimTracker/TrackAssociation/interface/TrackAssociatorByChi2.h"
@@ -23,6 +24,10 @@
 #include "SimTracker/VertexAssociation/interface/VertexAssociatorBase.h" 
 #include "SimTracker/VertexAssociation/interface/VertexAssociatorByTracks.h"
 
+#include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
+#include "MagneticField/Engine/interface/MagneticField.h"
+
+#include "FWCore/Framework/interface/ESHandle.h"
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/Wrapper.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
@@ -31,6 +36,9 @@
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 
+#include <memory>
+#include <iostream>
+#include <string>
 
 // -- Yikes!
 extern TAna00Event *gBSEvent;
@@ -40,6 +48,12 @@ extern TFile       *gBSFile;
 using namespace std;
 using namespace reco;
 using namespace edm;
+
+
+//class TrackAssociator; 
+class TrackAssociatorByHits; 
+class TrackerHitAssociator; 
+
 
 
 
@@ -86,14 +100,6 @@ BSDumpCandidates::BSDumpCandidates(const edm::ParameterSet& iConfig):
   fNevt = 0; 
   fNgen = 0;
   fNrec = 0;
-
-
-  if ( strcmp( (fAssociatorLabel.c_str()), "TrackAssociatorByHits") && 
-       strcmp( (fAssociatorLabel.c_str()), "TrackAssociatorByChi2") )  {
-  
-    cout << " Please set your track associator option to either \"TrackAssociatorByHits\"                                                              or \"TrackAssociatorByChi2\" .... Abort!" << endl;
-    return;
-  }
 
   // -- Decay mode
   decayChannel(fChannel.c_str());
@@ -145,7 +151,6 @@ void BSDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   using reco::MuonCollection;
 
   // === Initialize event record ===
-
   theGlobalMuonCollection = 0;
   theTrackerMuonCollection = 0;
   theTkCollection = 0;
@@ -230,17 +235,19 @@ void BSDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 //     cout << "%% -- No SimVertexContainer with label " << "g4SimHits" << endl;
 //   }
 
-  // -- get the collection of TrackingParticles 
+  // -- get the collection of TrackingParticles
   try {
 
     edm::Handle<TrackingParticleCollection> trackingParticles;
     iEvent.getByLabel(fTrackingParticlesLabel.c_str(), trackingParticles);
     
-    recSimCollection =  new 
-      reco::RecoToSimCollection(fAssociator->associateRecoToSim(tracks, trackingParticles, &iEvent)); 
+    recSimCollection = fAssociator->associateRecoToSim(tracks, trackingParticles, &iEvent); 
+
+//     recSimCollection =  new 
+//       reco::RecoToSimCollection(fAssociator->associateRecoToSim(tracks, trackingParticles, &iEvent)); 
     
-  } catch (Exception event) {
-    cout << "%% -- No TrackingParticleCollection with label " << fTrackingParticlesLabel.c_str() << endl;
+  } catch (cms::Exception &ex) {
+    cout << ex.explainSelf() << endl;
   }
 
   // -- get the collection of TrackingVertices
@@ -249,8 +256,9 @@ void BSDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     edm::Handle<TrackingVertexCollection>  TVCollectionH ;
     iEvent.getByLabel(fTrackingVertexLabel.c_str(), TVCollectionH);
     
-  } catch (Exception event) {
-    cout << "%% -- No TrackingVertexCollection with label " << fTrackingVertexLabel.c_str() << endl;
+  } catch (cms::Exception &ex) {
+
+    cout << ex.explainSelf() << endl;
   }
 
 
@@ -335,7 +343,7 @@ void BSDumpCandidates::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   // -- Dump tree
 //   fTree->Fill();
 
-  delete recSimCollection;
+//   delete recSimCollection;
   // delete recSimCollectionVertex;
 
   cout << endl << "===>> BSDumpCandidates >>> Done with event: " << fNevt << endl;
@@ -359,11 +367,21 @@ void BSDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
   // -- get the collection of RecoTracks 
   edm::Handle<reco::TrackCollection> tracks;
   iEvent.getByLabel(fTracksLabel.c_str(), tracks );  
-  const  reco::TrackCollection  recTC = *(tracks.product()); 
- 
- // -- track association
-  reco::RecoToSimCollection recSimColl = (*recSimCollection); 
+  const  reco::TrackCollection  recTC = *(tracks.product());  
 
+  // -- get the tracking particle collection needed for truth matching. Only on RECO data tier!
+  RecoToSimCollection recSimColl;
+  try {
+    
+    edm::Handle<TrackingParticleCollection> trackingParticles;
+    iEvent.getByLabel(fTrackingParticlesLabel.c_str(), trackingParticles);
+    recSimColl = fAssociator->associateRecoToSim(tracks, trackingParticles, &iEvent); 
+    
+  } catch (cms::Exception &ex) {
+    cout << ex.explainSelf() << endl;
+    cout << "==>bmmTracks1> Cannot match particles, returning now! " << endl; 
+    return;
+  }
 
   // -- Clear tracks
   clearTracks();
@@ -384,17 +402,17 @@ void BSDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 
   for(TrackCollection::size_type i=0; i<recTC.size(); ++i) {
 
-    TrackRef track(tracks, i);
+    TrackRef rTrack(tracks, i);
+    Track track(*rTrack);
 
     try{ 
 
-      std::vector<std::pair<TrackingParticleRef, double> > tp = recSimColl[track];
+      std::vector<std::pair<TrackingParticleRef, double> > tp = recSimColl[rTrack];
 //       for (std::vector<std::pair<TrackingParticleRef, double> >::const_iterator it = tp.begin(); 
 // 	     it != tp.end(); ++it) {
-
-      TrackingParticleRef tpr = tp.begin()->first;  // ??? This takes the first associated simulated track ???	    
+      TrackingParticleRef tpr = tp.begin()->first;
       double assocChi2 = tp.begin()->second;
-
+    
       if (fVerbose) cout << "-.-.-.-.-.-.-.-.-.-.-.-.-.-.-." <<endl;
       
       gen_cnt = 0; gen_pdg_id = -99999; gen_id = -99999;
@@ -405,13 +423,13 @@ void BSDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 	
 	if (fVerbose) {
 
-	  cout << ".. Rec. Track #" << track.index() << " pT = " << track->pt() << endl;
+	  cout << ".. Rec. Track #" << rTrack.index() << " pT = " << track.pt() << endl;
 	  cout << ".. Sim. Particle #" << tpr.index() << " pT = " << tpr->pt()  
 	       << " PDG ID: " << tpr->pdgId() << " (NShared: "  << assocChi2 << ")" << endl;
 	}
 
-	gen_pdg_id = genPar->pdg_id();
-	gen_id     = genPar->barcode()-1;
+	gen_pdg_id = (*genPar).pdg_id();
+	gen_id     = (*genPar).barcode()-1;
 	
 	if (fVerbose) cout << ".. Gen. Particle #" << gen_id << " pT = " << genPar->momentum().perp() << " ---> PDG ID: " << gen_pdg_id << endl;
 	
@@ -458,14 +476,14 @@ void BSDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 	    
 	    mcand1++;
 	    
-	    tt = &(*track);
+	    tt = &(*rTrack);
 	    
 	    BmmRecTracks.push_back(tt);
-	    BmmRecTracksIndex.push_back(track.index());
+	    BmmRecTracksIndex.push_back(rTrack.index());
 	    BmmRecTracksB.push_back(mom_id);
 
 	    MuonRecTracks.push_back(tt);
-	    MuonRecTracksIndex.push_back(track.index());
+	    MuonRecTracksIndex.push_back(rTrack.index());
 	    
 	    if (fVerbose) cout << "    *** " << fPrintChannel << " (" << mcand1 << ") *** ";
 	  }	  
@@ -511,14 +529,14 @@ void BSDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 		
 		mcand2++;
 		
-		tt = &(*track);
+		tt = &(*rTrack);
 		
 		JpsiRecTracks.push_back(tt);
-		JpsiRecTracksIndex.push_back(track.index());
+		JpsiRecTracksIndex.push_back(rTrack.index());
 		JpsiRecTracksB.push_back(gmo_id);
 		
 		MuonRecTracks.push_back(tt);
-		MuonRecTracksIndex.push_back(track.index());
+		MuonRecTracksIndex.push_back(rTrack.index());
 		
 		if (fVerbose) cout << "    *** " << fPrintChannel2 << " (" << mcand2 << ". mu) *** ";
 	      }
@@ -527,14 +545,14 @@ void BSDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 		
 		mcand2++;
 		
-		tt = &(*track);
+		tt = &(*rTrack);
 		
 		JpsiRecTracks.push_back(tt);
-		JpsiRecTracksIndex.push_back(track.index());
+		JpsiRecTracksIndex.push_back(rTrack.index());
 		JpsiRecTracksB.push_back(mom_id);
 		
 		MuonRecTracks.push_back(tt);
-		MuonRecTracksIndex.push_back(track.index());
+		MuonRecTracksIndex.push_back(rTrack.index());
 		
 		if (fVerbose) cout << "    *** " << fPrintChannel2 << " (" << mcand2 << ". mu) *** ";
 
@@ -585,10 +603,10 @@ void BSDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 	      
 	      kcand++;
 	      
-	      tt = &(*track);
+	      tt = &(*rTrack);
 	    
 	      KaonRecTracks.push_back(tt);
-	      KaonRecTracksIndex.push_back(track.index());
+	      KaonRecTracksIndex.push_back(rTrack.index());
 	      KaonRecTracksB.push_back(mom_id);
 	      
 	      if (fVerbose) cout << "    *** " << fPrintChannel2 << " (" << kcand << ". K or 3rd track) *** ";
@@ -599,10 +617,10 @@ void BSDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 	      
 	      kcand++;
 	      
-	      tt = &(*track);
+	      tt = &(*rTrack);
 	    
 	      KaonRecTracks.push_back(tt);
-	      KaonRecTracksIndex.push_back(track.index());
+	      KaonRecTracksIndex.push_back(rTrack.index());
 	      KaonRecTracksB.push_back(mom_id);
 	      
 	      if (fVerbose) cout << "    *** " << fPrintChannel2 << " (" << kcand << ". K or 3rd track) *** ";
@@ -621,14 +639,14 @@ void BSDumpCandidates::bmmTracks1(const edm::Event &iEvent) {
 	if (fVerbose) cout << "%%> no match in gen. block for sim. particle #" << tpr.index() << endl;
       }
 
-	if ( gen_cnt > 1 ) {
+      if ( gen_cnt > 1 ) {
 	
 	if (fVerbose) cout << " ==> !!! More than one gen. particle for sim. particle #" << tpr.index() << " !!!" << endl;
       }
     } catch (Exception event) {
 
-      if (fVerbose) cout << "%%>   Rec. Track #" << setw(2) << track.index() << " pT: " 
-	   << setprecision(2) << setw(6) << track->pt() 
+      if (fVerbose) cout << "%%>   Rec. Track #" << setw(2) << rTrack.index() << " pT: " 
+	   << setprecision(2) << setw(6) << track.pt() 
 	   <<  " matched to 0 MC Tracks" << endl;
     } 
     
@@ -643,13 +661,26 @@ void BSDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
   if (fVerbose) cout << "==>bmmTracks2> Matching particle, truth matched to be particle PDG #" 
        << fTruthMC_I << " in the generator block, event: " << fNevt << endl;
 
+
   // -- get the collection of RecoTracks 
   edm::Handle<reco::TrackCollection> tracks;
   iEvent.getByLabel(fTracksLabel.c_str(), tracks );  
   const  reco::TrackCollection  recTC = *(tracks.product());
 
- // -- track association
-  reco::RecoToSimCollection recSimColl = (*recSimCollection);
+  // -- get the tracking particle collection needed for truth matching. Only on RECO data tier!
+  RecoToSimCollection recSimColl;
+  try {
+    
+    edm::Handle<TrackingParticleCollection> trackingParticles;
+    iEvent.getByLabel(fTrackingParticlesLabel.c_str(), trackingParticles);
+    recSimColl = fAssociator->associateRecoToSim(tracks, trackingParticles, &iEvent); 
+    
+  } catch (cms::Exception &ex) {
+    cout << ex.explainSelf() << endl;
+    cout << "==>bmmTracks2> Cannot match particles, returning now! " << endl; 
+    return;
+  }
+
 
   // -- Clear tracks
   clearTracks();
@@ -666,11 +697,12 @@ void BSDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
 
   for(TrackCollection::size_type i=0; i<recTC.size(); ++i) {
 
-    TrackRef track(tracks, i);
+    TrackRef rTrack(tracks, i);
+    Track track(*rTrack);
 
     try{ 
 
-      std::vector<std::pair<TrackingParticleRef, double> > tp = recSimColl[track];
+      std::vector<std::pair<TrackingParticleRef, double> > tp = recSimColl[rTrack];
 //       for (std::vector<std::pair<TrackingParticleRef, double> >::const_iterator it = tp.begin(); 
 // 	     it != tp.end(); ++it) {
 
@@ -691,14 +723,14 @@ void BSDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
 	if ( abs(gen_pdg_id) == 13 ) {
 	  
 	  mcand++;
-	  tt = &(*track);
+	  tt = &(*rTrack);
 	    
 	  MuonRecTracks.push_back(tt);
-	  MuonRecTracksIndex.push_back(track.index());
+	  MuonRecTracksIndex.push_back(rTrack.index());
 
 	  if (fVerbose) {
 	    
-	    cout << ".. Rec. Track #" << track.index() << " pT = " << track->pt() << endl;
+	    cout << ".. Rec. Track #" << rTrack.index() << " pT = " << track.pt() << endl;
 	    cout << ".. Sim. Particle #" << tpr.index() << " pT = " << tpr->pt() 
 		 << " PDG ID: " << tpr->pdgId() << " (NShared: "  << assocChi2 << ")" << endl;
 	    cout << ".. Gen. Particle #" << gen_id << " pT = " << genPar->momentum().perp() 
@@ -736,8 +768,8 @@ void BSDumpCandidates::bmmTracks2(const edm::Event &iEvent) {
       }
     } catch (Exception event) {
 
-      if (fVerbose) cout << "%%>   Rec. Track #" << setw(2) << track.index() << " pT: " 
-	   << setprecision(2) << setw(6) << track->pt() 
+      if (fVerbose) cout << "%%>   Rec. Track #" << setw(2) << rTrack.index() << " pT: " 
+	   << setprecision(2) << setw(6) << track.pt() 
 	   <<  " matched to 0 MC Tracks" << endl;
     }
   }
@@ -2237,19 +2269,18 @@ void BSDumpCandidates::clearCandidateTracks() {
 
 // ------------ method called once each job just before starting event loop  ------------
 void BSDumpCandidates::beginJob(const edm::EventSetup& setup) {  
- 
-   gBSFile->cd();
-
-   edm::ESHandle<MagneticField> theMF;
-   setup.get<IdealMagneticFieldRecord>().get(theMF);
-   
-   edm::ESHandle<TrackAssociatorBase> theAssociator;
-   setup.get<TrackAssociatorRecord>().get(fAssociatorLabel.c_str(), theAssociator);
-   fAssociator = (TrackAssociatorBase*)theAssociator.product();
-   
+  edm::ESHandle<MagneticField> theMF;
+  setup.get<IdealMagneticFieldRecord>().get(theMF);
+  
+  edm::ESHandle<TrackAssociatorBase> theAssociator;
+  setup.get<TrackAssociatorRecord>().get(fAssociatorLabel.c_str(), theAssociator);
+  fAssociator = (TrackAssociatorBase*)theAssociator.product();
+  
 //    edm::ESHandle<VertexAssociatorBase> theTracksAssociator;
 //    setup.get<VertexAssociatorRecord>().get(fVtxAssociatorLabel.c_str(), theTracksAssociator);
 //    fVtxAssociator = (VertexAssociatorBase *) theTracksAssociator.product();
+
+   gBSFile->cd();
 
 }
 

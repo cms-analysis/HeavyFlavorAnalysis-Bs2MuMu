@@ -11,6 +11,7 @@
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
 
+#include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 
@@ -154,6 +155,7 @@ private:
 
   TrackAssociatorBase  *fAssociator;
 /*   VertexAssociatorBase *fVtxAssociator; */
+
   
 
   // -- Stuff -----------------------------------------------------
@@ -170,8 +172,8 @@ private:
   const reco::TrackCollection      *theTkCollection;
   std::vector<HepMC::GenParticle*> theGenCollection;
 
-  reco::RecoToSimCollection        *recSimCollection;
-  reco::VertexRecoToSimCollection  *recSimCollectionVertex;
+  reco::RecoToSimCollection        recSimCollection;
+  reco::VertexRecoToSimCollection  recSimCollectionVertex;
 
   // ----------
   // -- Tracks
