@@ -1589,60 +1589,65 @@ double BSDumpCandidates::kalmanVertexFit(const edm::Event &iEvent, const edm::Ev
   std::vector<reco::TransientTrack> RecoTransientTrack;
   RecoTransientTrack.clear();
   
-  edm::ESHandle<TransientTrackBuilder> theB;
-  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",theB);
+  try {
 
-  if (fVerbose) cout << "==>kalmanVertexFit> Vertexing with " << RecTracks.size() << " reco. tracks." << endl;
-   
-  //get transient track 
-  for ( unsigned int i=0; i<RecTracks.size(); i++ ) { 
-
-    RecoTransientTrack.push_back( (theB->build( &(*RecTracks[i]) )) );
-  }
-
-  //get secondary vertex 
-  if (fVerbose) cout << "==>kalmanVertexFit> Vertexing with " << RecoTransientTrack.size() << " trans. tracks " << endl;
-  KalmanVertexFitter theFitter(true);
-  
-  if (fVerbose) cout << "==>kalmanVertexFit> Starting fitter TransSecVtx" << endl;
-
-  // -- Does not work for CMSSW_1_2_0
-  TransientVertex TransSecVtx = theFitter.vertex(RecoTransientTrack); 
-  
-  if ( TransSecVtx.isValid() ) {
-    cout << "==>kalmanVertexFit> KVF successful!" << endl; 
-
-    if ( isnan(TransSecVtx.position().x()) || isnan(TransSecVtx.position().y()) || isnan(TransSecVtx.position().z()) ) {
-
-      cout << "==>kalmanVertexFit> Something went wrong!" << endl;
-      cout << "==>kalmanVertexFit> SecVtx nan - Aborting... !" << endl;
-      return -2.;
+    edm::ESHandle<TransientTrackBuilder> theB;
+    iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",theB);
+    
+    if (fVerbose) cout << "==>kalmanVertexFit> Vertexing with " << RecTracks.size() << " reco. tracks." << endl;
+    
+    //get transient track 
+    for ( unsigned int i=0; i<RecTracks.size(); i++ ) { 
+      
+      RecoTransientTrack.push_back( (theB->build( &(*RecTracks[i]) )) );
     }
-  } else {
-    cout << "==>kalmanVertexFit> KVF failed!" << endl;
-    cout << "==>kalmanVertexFit> Aborting... !" << endl;
-    return -1.;
+    
+    //get secondary vertex 
+    if (fVerbose) cout << "==>kalmanVertexFit> Vertexing with " << RecoTransientTrack.size() << " trans. tracks " << endl;
+    KalmanVertexFitter theFitter(true);
+    
+    if (fVerbose) cout << "==>kalmanVertexFit> Starting fitter TransSecVtx" << endl;
+    
+    TransientVertex TransSecVtx = theFitter.vertex(RecoTransientTrack); 
+    
+    if ( TransSecVtx.isValid() ) {
+      cout << "==>kalmanVertexFit> KVF successful!" << endl; 
+      
+      if ( isnan(TransSecVtx.position().x()) || isnan(TransSecVtx.position().y()) || isnan(TransSecVtx.position().z()) ) {
+	
+	cout << "==>kalmanVertexFit> Something went wrong!" << endl;
+	cout << "==>kalmanVertexFit> SecVtx nan - Aborting... !" << endl;
+	return -2.;
+      }
+    } else {
+      cout << "==>kalmanVertexFit> KVF failed!" << endl;
+      cout << "==>kalmanVertexFit> Aborting... !" << endl;
+      return -1.;
+    }
+    
+    if (fVerbose) cout << "==>kalmanVertexFit> Filling vector SecVtx" << endl;
+    
+    TVector3 SecVtx; 
+    
+    SecVtx.SetX(TransSecVtx.position().x()*10);  //*10 to get mm (same unit as gen info)
+    SecVtx.SetY(TransSecVtx.position().y()*10);
+    SecVtx.SetZ(TransSecVtx.position().z()*10);
+    
+    printf ("RECO SecVtx (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", SecVtx.X(), SecVtx.Y(), SecVtx.Z());
+    
+    ChiSquared chi(TransSecVtx.totalChiSquared(), TransSecVtx.degreesOfFreedom());
+    
+    if (fVerbose) cout << "Chi2 of SecVtx-Fit: " << chi.value() << endl;
+    
+    fillVertex(iEvent, iSetup, &TransSecVtx, type, ntracks);
+    
+    return chi.value();
+  } catch (Exception event) {
+
+    cout << "%% -- No TransientTrackRecord with label " << "TransientTrackBuilder" << endl;
+    return -99.;
   }
-
-  if (fVerbose) cout << "==>kalmanVertexFit> Filling vector SecVtx" << endl;
-  
-  TVector3 SecVtx; 
-
-  SecVtx.SetX(TransSecVtx.position().x()*10);  //*10 to get mm (same unit as gen info)
-  SecVtx.SetY(TransSecVtx.position().y()*10);
-  SecVtx.SetZ(TransSecVtx.position().z()*10);
-  
-  printf ("RECO SecVtx (x, y, z) = ( %5.4f, %5.4f, %5.4f)\n", SecVtx.X(), SecVtx.Y(), SecVtx.Z());
-
-  ChiSquared chi(TransSecVtx.totalChiSquared(), TransSecVtx.degreesOfFreedom());
-
-  if (fVerbose) cout << "Chi2 of SecVtx-Fit: " << chi.value() << endl;
-
-  fillVertex(iEvent, iSetup, &TransSecVtx, type, ntracks);
-
-  return chi.value();
 }
-
 
 // ----------------------------------------------------------------------
 void BSDumpCandidates::fillVertex(const edm::Event &iEvent, const edm::EventSetup& iSetup

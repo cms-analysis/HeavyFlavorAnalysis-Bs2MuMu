@@ -2,8 +2,8 @@
  *
  * See header file for documentation
  *
- *  $Date: 2008/04/30 14:57:23 $
- *  $Revision: 1.3 $
+ *  $Date: 2008/04/30 15:28:25 $
+ *  $Revision: 1.4 $
  *
  *  \author Martin Grunewald
  *
@@ -162,6 +162,7 @@ void L1TrigReport::endJob()
   if (init_) {
 
     TH1D *h1 = (TH1D*)gBSFile->Get("L1");
+
     for (unsigned int i=0; i!=n; ++i) {
       cout << "L1T-Report "
 	   << right << setw(10) << i << " "
@@ -170,8 +171,10 @@ void L1TrigReport::endJob()
 	   << right << setw(10) << nErrors_ << " "
 	   << l1Names_[i] << "\n";
 
-      h1->SetBinContent(i, l1Accepts_[i]);
-      h1->GetXaxis()->SetBinLabel(i, Form("%s", l1Names_[i].c_str()));
+      if ( (i >= 0) && (i < h1->GetNbinsX()) ) {
+	h1->SetBinContent(i+1, l1Accepts_[i]);
+	h1->GetXaxis()->SetBinLabel(i+1, Form("%s", l1Names_[i].c_str()));
+      }
     }
   } else {
     cout << "L1T-Report - No L1 GTRRs found!" << endl;

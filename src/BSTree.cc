@@ -59,8 +59,8 @@ BSTree::BSTree(const edm::ParameterSet& iConfig):
 
 
   // -- histograms filled in L1/HLTriggerReport
-  h1 = new TH1D("L1" , "L1-Trigger names",        200, 0., 200.);
-  h1 = new TH1D("HLT", "HL-Trigger names",        200, 0., 200.);
+  h1 = new TH1D("L1" , "L1-Trigger names",        500, 0., 500.);
+  h1 = new TH1D("HLT", "HL-Trigger names",        500, 0., 500.);
  
   // -- histograms filled in BSDumpMuons
   h2  = new TH2D("nmuons", "N_{#mu} / event  ",        100, 0., 100., 100, 0., 100.);

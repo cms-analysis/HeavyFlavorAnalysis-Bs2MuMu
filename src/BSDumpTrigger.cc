@@ -495,7 +495,7 @@ void BSDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     }
   } catch (Exception event) {
    
-    if ( fVerbose ) cout << "  -- No HLT " << fHLTFilterObject4.c_str() <<  " Collection " << endl;
+    if ( fVerbose ) cout << "  -- No HLT " << fHLTFilterObject4.c_str() <<  " Collection " << endl << endl;
 
   }
 }

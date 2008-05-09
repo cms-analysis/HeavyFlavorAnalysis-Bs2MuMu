@@ -2,8 +2,8 @@
  *
  * See header file for documentation
  *
- *  $Date: 2008/04/30 14:57:23 $
- *  $Revision: 1.3 $
+ *  $Date: 2008/04/30 15:28:25 $
+ *  $Revision: 1.4 $
  *
  *  \author Martin Grunewald
  *
@@ -160,8 +160,10 @@ void HLTrigReport::endJob()
 	   << right << setw(10) << hlErrors_[i] << " "
 	   << hlNames_[i] << "\n";
 
-      h1->SetBinContent(i, hlAccept_[i]);
-      h1->GetXaxis()->SetBinLabel(i, Form("%s",hlNames_[i].c_str()));
+      if ( (i >= 0) && (i < h1->GetNbinsX()) ) {
+	h1->SetBinContent(i+1, hlAccept_[i]);
+	h1->GetXaxis()->SetBinLabel(i+1, Form("%s",hlNames_[i].c_str()));
+      }
     }
   } else {
     cout << "HLT-Report - No HL TriggerResults found!" << endl;
