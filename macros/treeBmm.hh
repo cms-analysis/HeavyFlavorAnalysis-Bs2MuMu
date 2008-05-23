@@ -56,6 +56,8 @@ public:
 
   void        isMC(int i) {fIsMC = i;}
   void        debugLevel(int i) {fDebug = i;}
+  void        candSelEff(int i) {fOffCand = i;}
+  void        triggerDecisions(int i, int j) {SETL1 = i; SETHLT = j;}
   void        dumpEvent();
 
   void        sameSign(int i) {fSameSign = i;}
@@ -113,7 +115,7 @@ private:
 
   int         fBCI;            // Index of B candidate 
   int         fSTI[3];         // Index of signal tracks
-  int         fSel, fSubSel;
+  int         fSel, fSubSel, fOffCand;
   double      fMassB;
 
   std::vector<int>    fKTI;        // Index for all kaon candidates 
@@ -125,6 +127,9 @@ private:
   // -- Histogram pointers 
   TTree *fTree;
 
+
+  TH1D *fNgen, *fNrec, *fNglb, *fErec, *fEglb;
+  TH1D *fNgenJ, *fNrecJ, *fNgenB, *fNrecB;
   TH2D *fNR0, *fNR1, *fNR2, *fNR3, *fNR4, *fNR5, *fNR6;
   TH1D *fER1, *fAR1, *fMisID;
 

@@ -413,12 +413,12 @@ void treeBmm::initVariables() {
   // ======================================================================
   // -- muon ID
   if (0 && gRandom->Rndm() < 0.01) {
-    fpEvt->fDiMuonTriggerDecision = 1; 
+    fpEvt->fL1Decision = 1; 
   }
 
   // -- L1
-  if (0 && fpEvt->fDiMuonTriggerDecision == 0 && gRandom->Rndm() < 0.05) {
-    fpEvt->fDiMuonTriggerDecision = 1; 
+  if (0 && fpEvt->fL1Decision == 0 && gRandom->Rndm() < 0.05) {
+    fpEvt->fL1Decision = 1; 
   }
 
   // -- Tracking efficiency 2*1%
@@ -678,7 +678,7 @@ int treeBmm::genPartType(int index) {
       // -- generated J/Psi+ -> mu+ mu-
       if (TMath::Abs(pG->fID) == 443) {
 
-	((TH1D*)gDirectory->Get("m502"))->Fill(nD);
+	((TH1D*)gDirectory->Get("m702"))->Fill(nD);
 
 	if (nD == 2) {
 	  
@@ -689,7 +689,7 @@ int treeBmm::genPartType(int index) {
       // -- generated Bs0 -> mu+ mu-
       if (TMath::Abs(pG->fID) == 531) {
 
-	((TH1D*)gDirectory->Get("m500"))->Fill(nD);
+	((TH1D*)gDirectory->Get("m700"))->Fill(nD);
 	
 	if (nD == 2) {
 
@@ -711,7 +711,7 @@ int treeBmm::genPartType(int index) {
 	if ( TMath::Abs(pGD1->fID) == 13 && TMath::Abs(pGD2->fID) == 13 &&
 	     getNrOfDaughters(subidx) == 2 ) {
 	    
-	  ((TH1D*)gDirectory->Get("m501"))->Fill(nD);
+	  ((TH1D*)gDirectory->Get("m701"))->Fill(nD);
 
 	  if (nD == 2) {
 
@@ -733,7 +733,7 @@ int treeBmm::genPartType(int index) {
 	if ( TMath::Abs(pGD1->fID) == 13 && TMath::Abs(pGD2->fID) == 13 &&
 	     getNrOfDaughters(subidx) == 2 ) {
 	    
-	  ((TH1D*)gDirectory->Get("m501"))->Fill(nD);
+	  ((TH1D*)gDirectory->Get("m701"))->Fill(nD);
 	  
 	  if (nD == 2) {
 
@@ -1180,7 +1180,7 @@ void treeBmm::L1Selection(int o) {
 
   fGoodL1 = 1;
   
-  int L1 = fpEvt->fDiMuonTriggerDecision;
+  int L1 = fpEvt->fL1Decision;
 
   // -- Rare backgrounds
   if ( fD0 != 13 || fD1 != 13 || SETL1 > 0) { 
@@ -1219,7 +1219,7 @@ void treeBmm::HLTSelection(int o) {
 
   fGoodHLT = 1;
 
-  int HLT = fpEvt->fTriggerDecision;
+  int HLT = fpEvt->fHLTDecision;
 
   // -- Rare backgrounds
   if ( fD0 != 13 || fD1 != 13 || SETHLT > 0) { 
@@ -2600,6 +2600,19 @@ void treeBmm::bookHist() {
   h = new TH1D("mass", "mass ",             70, 5.,    5.7);
 
   // -- data sample check
+  fNgen  = new TH1D("ngen", "N_{#mu}^{gen}",   100, 0., 100. );    fNgen->Sumw2();
+  fNrec  = new TH1D("nrec", "N_{#mu}^{rec}",   100, 0., 100. );    fNrec->Sumw2();
+  fNglb  = new TH1D("nglb", "N_{#mu}^{glb}",   100, 0., 100. );    fNglb->Sumw2();
+
+  fNgenJ  = new TH1D("ngenJ", "N_{J/#psi}^{gen}",   100, 0., 100. );    fNgenJ->Sumw2();
+  fNrecJ  = new TH1D("nrecJ", "N_{J/#psi}^{rec}",   100, 0., 100. );    fNrecJ->Sumw2();
+
+  fNgenB  = new TH1D("ngenB", "N_{B}^{gen}",   100, 0., 100. );    fNgenB->Sumw2();
+  fNrecB  = new TH1D("nrecB", "N_{B}^{rec}",   100, 0., 100. );    fNrecB->Sumw2();
+
+  fErec  = new TH1D("erec", "#epsilon_{#mu}^{rec}",   10, 0., 1. );    fErec->Sumw2();
+  fEglb = new TH1D("eglb", "#epsilon_{#mu}^{glb}",   10, 0., 1. );    fEglb->Sumw2();
+
   fNR0  = new TH2D("NR0", "Good Event",                     1000, 0., 1000., 1000, 0., 1000.);    fNR0->Sumw2();
   fNR1  = new TH2D("NR1", "N_{B_{s}^{0}}^{cand} / event ",  1000, 0., 1000., 1000, 0., 1000.);    fNR1->Sumw2();
   fNR2  = new TH2D("NR2", "N_{B_{s}^{0}}^{gen} / event ",   1000, 0., 1000., 1000, 0., 1000.);    fNR2->Sumw2();
@@ -2854,9 +2867,9 @@ void treeBmm::bookHist() {
   //---------------
 
   // -- Counter histograms
-  h = new TH1D("m500", "N_{#mu} in decay B_{s}^{0} #rightarrow #mu #mu)", 100, 0., 100.);  h->Sumw2();
-  h = new TH1D("m501", "N_{#mu} in decay B #rightarrow J/#psi(#rightarrow mu mu) K", 100, 0., 100.);  h->Sumw2();
-  h = new TH1D("m502", "N_{#mu} in decay J/#psi #rightarrow mu mu", 100, 0., 100.);  h->Sumw2();
+  h = new TH1D("m700", "N_{#mu} in decay B_{s}^{0} #rightarrow #mu #mu)", 100, 0., 100.);  h->Sumw2();
+  h = new TH1D("m701", "N_{#mu} in decay B #rightarrow J/#psi(#rightarrow mu mu) K", 100, 0., 100.);  h->Sumw2();
+  h = new TH1D("m702", "N_{#mu} in decay J/#psi #rightarrow mu mu", 100, 0., 100.);  h->Sumw2();
 
   // -- pions
   h = new TH1D("m000", "PDG id all tracks", 5000, 0., 5000.);  h->Sumw2();
@@ -2888,14 +2901,32 @@ void treeBmm::bookHist() {
   h = new TH1D("m311", "#eta (p = #mu)", 50, -5., 5.);  h->Sumw2();
   h = new TH1D("m312", "#eta (p != #mu)", 50, -5., 5.);  h->Sumw2();
 
-  // -- not identified muons
-  h = new TH1D("m400", "p_{T} (all #mu) [GeV]", 50, 0., 25.);  h->Sumw2();
-  h = new TH1D("m401", "p_{T} (#mu = #mu) [GeV]", 50, 0., 25.);  h->Sumw2();
-  h = new TH1D("m402", "p_{T} (#mu != #mu) [GeV]", 50, 0., 25.);  h->Sumw2();
+  // -- global muons
+  h = new TH1D("m400", "p_{T} (all #mu, global) [GeV]", 50, 0., 25.);  h->Sumw2();
+  h = new TH1D("m401", "p_{T} (#mu = #mu, global) [GeV]", 50, 0., 25.);  h->Sumw2();
+  h = new TH1D("m402", "p_{T} (#mu != #mu, global) [GeV]", 50, 0., 25.);  h->Sumw2();
 
-  h = new TH1D("m410", "#eta (all #mu)", 50, -5., 5.);  h->Sumw2();
-  h = new TH1D("m411", "#eta (#mu = #mu)", 50, -5., 5.);  h->Sumw2();
-  h = new TH1D("m412", "#eta (#mu != #mu)", 50, -5., 5.);  h->Sumw2();
+  h = new TH1D("m410", "#eta (all #mu, global)", 50, -5., 5.);  h->Sumw2();
+  h = new TH1D("m411", "#eta (#mu = #mu, global)", 50, -5., 5.);  h->Sumw2();
+  h = new TH1D("m412", "#eta (#mu != #mu, global)", 50, -5., 5.);  h->Sumw2();
+
+  // -- tracker muons
+  h = new TH1D("m500", "p_{T} (all #mu, tracker) [GeV]", 50, 0., 25.);  h->Sumw2();
+  h = new TH1D("m501", "p_{T} (#mu = #mu, tracker) [GeV]", 50, 0., 25.);  h->Sumw2();
+  h = new TH1D("m502", "p_{T} (#mu != #mu, tracker) [GeV]", 50, 0., 25.);  h->Sumw2();
+
+  h = new TH1D("m510", "#eta (all #mu, tracker)", 50, -5., 5.);  h->Sumw2();
+  h = new TH1D("m511", "#eta (#mu = #mu, tracker)", 50, -5., 5.);  h->Sumw2();
+  h = new TH1D("m512", "#eta (#mu != #mu, tracker)", 50, -5., 5.);  h->Sumw2();
+
+  // -- l1 muons
+  h = new TH1D("m600", "p_{T} (all #mu, l1) [GeV]", 50, 0., 25.);  h->Sumw2();
+  h = new TH1D("m601", "p_{T} (#mu = #mu, l1) [GeV]", 50, 0., 25.);  h->Sumw2();
+  h = new TH1D("m602", "p_{T} (#mu != #mu, l1) [GeV]", 50, 0., 25.);  h->Sumw2();
+
+  h = new TH1D("m610", "#eta (all #mu, l1)", 50, -5., 5.);  h->Sumw2();
+  h = new TH1D("m611", "#eta (#mu = #mu, l1)", 50, -5., 5.);  h->Sumw2();
+  h = new TH1D("m612", "#eta (#mu != #mu, l1)", 50, -5., 5.);  h->Sumw2();
 
 
   // 2D-histograms
@@ -2916,10 +2947,20 @@ void treeBmm::bookHist() {
   h2 = new TH2D("M301", "p_{T}  vs. #eta (p = #mu) [GeV]", 50, 0., 25., 50, -5., 5.);  h2->Sumw2();
   h2 = new TH2D("M302", "p_{T} vs. #eta  (p != #mu) [GeV]", 50, 0., 25., 50, -5., 5.);  h2->Sumw2();
 
-  // -- not identified muons
-  h2 = new TH2D("M400", "p_{T} vs. #eta (all #mu) [GeV]", 50, 0., 25., 50, -5., 5.);  h2->Sumw2();
-  h2 = new TH2D("M401", "p_{T}  vs. #eta (#mu = #mu) [GeV]", 50, 0., 25., 50, -5., 5.);  h2->Sumw2();
-  h2 = new TH2D("M402", "p_{T} vs. #eta  (#mu != #mu) [GeV]", 50, 0., 25., 50, -5., 5.);  h2->Sumw2();
+  // -- global muons
+  h2 = new TH2D("M400", "p_{T} vs. #eta (all #mu, global) [GeV]", 50, 0., 25., 50, -5., 5.);  h2->Sumw2();
+  h2 = new TH2D("M401", "p_{T}  vs. #eta (#mu = #mu, global) [GeV]", 50, 0., 25., 50, -5., 5.);  h2->Sumw2();
+  h2 = new TH2D("M402", "p_{T} vs. #eta  (#mu != #mu, global) [GeV]", 50, 0., 25., 50, -5., 5.);  h2->Sumw2();
+
+  // -- tracker muons
+  h2 = new TH2D("M500", "p_{T} vs. #eta (all #mu, tracker) [GeV]", 50, 0., 25., 50, -5., 5.);  h2->Sumw2();
+  h2 = new TH2D("M501", "p_{T}  vs. #eta (#mu = #mu, tracker) [GeV]", 50, 0., 25., 50, -5., 5.);  h2->Sumw2();
+  h2 = new TH2D("M502", "p_{T} vs. #eta  (#mu != #mu, tracker) [GeV]", 50, 0., 25., 50, -5., 5.);  h2->Sumw2();
+
+  // -- l1 muons
+  h2 = new TH2D("M600", "p_{T} vs. #eta (all #mu, l1) [GeV]", 50, 0., 25., 50, -5., 5.);  h2->Sumw2();
+  h2 = new TH2D("M601", "p_{T}  vs. #eta (#mu = #mu, l1) [GeV]", 50, 0., 25., 50, -5., 5.);  h2->Sumw2();
+  h2 = new TH2D("M602", "p_{T} vs. #eta  (#mu != #mu, l1) [GeV]", 50, 0., 25., 50, -5., 5.);  h2->Sumw2();
 
   if (fDebug & 2) { cout << "bookHist> End" << endl; }
 }
@@ -3382,7 +3423,7 @@ void treeBmm::muonEfficiency() {
 
   if (fDebug & 2) { cout << "muonEfficiency> Start" << endl; }
 
-  double recMu(-1.);
+  double recMu(-1.), trkMu(-1.), l1Mu(-1.);
   int mcID(-1), genIdx(-1), momIdx(-1), gmoIdx(-1);
   double pT(0.), eta(0.);
   int mu_per_track(1);
@@ -3390,6 +3431,9 @@ void treeBmm::muonEfficiency() {
   for (int it = 0; it < fpEvt->nRecTracks(); ++it) {
 
     recMu  = fpEvt->getRecTrack(it)->fMuID;
+    trkMu  = fpEvt->getRecTrack(it)->fKaID;
+    l1Mu  = fpEvt->getRecTrack(it)->fElID;
+
     mcID   = fpEvt->getRecTrack(it)->fMCID;
     genIdx = fpEvt->getRecTrack(it)->fGenIndex;
 
@@ -3588,7 +3632,7 @@ void treeBmm::muonEfficiency() {
       }
     }    
 
-    // -- Muons
+    // -- Global Muons
     if ( TMath::Abs(mcID) == 13 ) { 
 
       if ( pT > 3. ) { 
@@ -3620,6 +3664,72 @@ void treeBmm::muonEfficiency() {
 	}
       }
     }
+
+    // -- Tracker Muons
+    if ( TMath::Abs(mcID) == 13 ) { 
+
+      if ( pT > 3. ) { 
+	
+	fMisID->Fill(40.1);
+	
+	((TH1D*)gDirectory->Get("m500"))->Fill(pT);      // all Muons
+	((TH1D*)gDirectory->Get("m510"))->Fill(eta);
+	((TH2D*)gDirectory->Get("M500"))->Fill(pT, eta);
+	
+	if ( trkMu > -0.5 ) {
+	  
+	  fMisID->Fill(41.1);
+	  
+	  ((TH1D*)gDirectory->Get("m501"))->Fill(pT);   // correct-id. Muons
+	  ((TH1D*)gDirectory->Get("m511"))->Fill(eta);
+	  ((TH2D*)gDirectory->Get("M501"))->Fill(pT, eta);
+	  
+	}
+
+	if ( trkMu < -0.5 ) {
+
+	  fMisID->Fill(42.1);
+
+	  ((TH1D*)gDirectory->Get("m502"))->Fill(pT);   // mis-id. Muons
+	  ((TH1D*)gDirectory->Get("m512"))->Fill(eta);
+	  ((TH2D*)gDirectory->Get("M502"))->Fill(pT, eta);
+
+	}
+      }
+    }
+
+    // -- L1 Muons
+    if ( TMath::Abs(mcID) == 13 ) { 
+
+      if ( pT > 3. ) { 
+
+	fMisID->Fill(50.1);
+	
+	((TH1D*)gDirectory->Get("m600"))->Fill(pT);      // all Muons
+	((TH1D*)gDirectory->Get("m610"))->Fill(eta);
+	((TH2D*)gDirectory->Get("M600"))->Fill(pT, eta);
+	
+	if ( l1Mu > -0.5 ) {
+	  
+	  fMisID->Fill(51.1);
+	  
+	  ((TH1D*)gDirectory->Get("m601"))->Fill(pT);   // correct-id. Muons
+	  ((TH1D*)gDirectory->Get("m611"))->Fill(eta);
+	  ((TH2D*)gDirectory->Get("M601"))->Fill(pT, eta);
+	  
+	}
+
+	if ( l1Mu < -0.5 ) {
+
+	  fMisID->Fill(52.1);
+
+	  ((TH1D*)gDirectory->Get("m602"))->Fill(pT);   // mis-id. Muons
+	  ((TH1D*)gDirectory->Get("m612"))->Fill(eta);
+	  ((TH2D*)gDirectory->Get("M602"))->Fill(pT, eta);
+
+	}
+      }
+    }
   }
 
   if (fDebug & 2) { cout << "muonEfficiency> End" << endl; }
@@ -3635,6 +3745,19 @@ void treeBmm::fillEventStats() {
   signalPlots();
 
   // -- data sample control plots
+  fNgen->Fill(fgMu);
+  fNrec->Fill(frMu);
+  fNglb->Fill(fnMu);
+
+  fNgenJ->Fill(fgJ);
+  fNrecJ->Fill(fgJmm);
+
+  fNgenB->Fill(fgB);
+  fNrecB->Fill(fgBmm);
+
+  fErec->Fill(frMu/(1.*fgMu));
+  fEglb->Fill(fnMu/(1.*frMu));
+
   if ( fEvent < 1000000 ) {
 
     fNR0->SetBinContent(fEvent - 1000*int(fEvent/1000), int(fEvent/1000), fGoodEvent);
@@ -4503,22 +4626,6 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
        ibin = 115;
        hcuts->SetBinContent(ibin, ISOPTLO);
        hcuts->GetXaxis()->SetBinLabel(ibin, "iso. p_{T}^{min}");
-     }
-
-     if (!strcmp(CutName, "SETL1")) {
-       SETL1 = int(CutValue); ok = 1;
-       if (dump) cout << "SETL1:           " << SETL1 << endl;
-       ibin = 116;
-       hcuts->SetBinContent(ibin, SETL1);
-       hcuts->GetXaxis()->SetBinLabel(ibin, "L1 available");
-     }
-
-     if (!strcmp(CutName, "SETHLT")) {
-       SETHLT = int(CutValue); ok = 1;
-       if (dump) cout << "SETHLT:           " << SETHLT << endl;
-       ibin = 117;
-       hcuts->SetBinContent(ibin, SETHLT);
-       hcuts->GetXaxis()->SetBinLabel(ibin, "HLT available");
      }
 
      if (!strcmp(CutName, "MASSWI")) {

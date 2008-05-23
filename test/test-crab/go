@@ -7,8 +7,8 @@
 #===============================================================
 # Directory
 # ---------
-# $dir      = "/home/ceggel/workspace/test";
-# $crab      = "/home/ceggel/workspace/test/test-crab";
+# $dir      = "/home/ceggel/new/test";
+# $crab      = "/home/ceggel/new/test/test-crab";
 # $output = "test";
 #
 #===============================================================
@@ -23,7 +23,7 @@ $dir = `pwd`; chop($dir);
 $crab = "$dir/test-crab";
 
 chdir($crab);
-@files = `ls -1 crab-{l,b}*.cfg`;
+@files = `ls -1 crab-*.cfg`;
 
 
 if ( !$opt_p ) { open(LOG, ">cmsRun.crab.log"); }
@@ -39,6 +39,7 @@ foreach $file ( @files ) {
     $workdir = @run[$#run]; chop($workdir);
 
     if ( $file eq "crab-test.cfg" ) { next; }
+    if ( $file eq "crab-bmm.cfg" ) { next; }
 
     if ( ($file eq "crab-bmm.cfg") || 
 	  ($file eq "crab-BB.cfg") || 
@@ -59,21 +60,33 @@ foreach $file ( @files ) {
 
     if ( !$opt_p ) {     
 
-	print LOG "$date \"crab -create -cfg $file\"\n";
-	system("crab -create -cfg $file");
+       if ( -d $workdir ) { 
 
-        system("cp test-crab.cfg $workdir/test-crab.cfg");
+         print LOG "$date directory $workdir exist, skipping\n";
+       
+        } else {
+ 
+	  print LOG "$date \"crab -create -cfg $file\"\n";
+	  system("crab -create -cfg $file");
 
-	print LOG "$date \"crab -submit -c $workdir\"\n\n";		
-	system("crab -submit -c $workdir");
+          system("cp test-crab.cfg $workdir/test-crab.cfg");
 
+	  print LOG "$date \"crab -submit -c $workdir\"\n\n";		
+	  system("crab -submit -c $workdir");
+          sleep 360;
+      }
     } else {
 
-	print "$date \"crab -create -cfg $file\"\n";
-	print "$date \"crab -submit -c $workdir\"\n\n";
+        if ( -d $workdir ) { 
+          print "$date directory $workdir exists, skipping\n"; 
+        } else {
+	  print "$date \"crab -create -cfg $file\"\n";
+	  print "$date \"crab -submit -c $workdir\"\n\n";
+        }
     }
 
     system("perl -pi -e \"s\/$channel\/default\/g\" test-crab.cfg");
+
 }
 
 if ( !$opt_p ) { close(LOG); }

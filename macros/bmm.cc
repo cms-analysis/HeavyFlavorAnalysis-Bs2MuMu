@@ -27,7 +27,8 @@ int main(int argc, char *argv[]) {
 
   TString progName  = argv[0]; 
   TString writeName, fileName;
-  Int_t isMC(0), isVerbose(0), isSignal(0);
+  Int_t isMC(0), isVerbose(0), isSignal(0), doCandSel(0);
+  Int_t setL1(-1), setHLT(-1);
   Int_t file(0);
   Int_t dirspec(0);
   Int_t nevents(-1), start(-1);
@@ -57,6 +58,10 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-s"))  {sameSign   = 1; }                                // same sign
     if (!strcmp(argv[i],"-S"))  {isSignal   = 1; }                                // signal MC
     if (!strcmp(argv[i],"-v"))  {isVerbose  = atoi(argv[++i]);  }                 // debug level
+    if (!strcmp(argv[i],"-a"))  {doCandSel  = 1;  }                               // candidate selection efficiency
+    if (!strcmp(argv[i],"-l"))  {setL1  = 1;  }                                   // set L1 to 1
+    if (!strcmp(argv[i],"-h"))  {setHLT = 1;  }                                   // set HLT to 1
+    if (!strcmp(argv[i],"-t"))  {setL1  = 1; setHLT  = 1; }                       // set L1 & HLT to 1
     if (!strcmp(argv[i],"-b"))  {decaySign  = TString(argv[++i]); }               // Decay channel of background
     if (!strcmp(argv[i],"-o"))  {genPt = 3.0; genEta = 2.4; }           // Gen. threshold for pT and eta
     else                        {genPt = 2.5; genEta = 2.5; }           //   are different for CMSSW samples
@@ -69,6 +74,7 @@ int main(int argc, char *argv[]) {
   fn.ReplaceAll("bmm", "");
   fn.ReplaceAll("bjk", "");
   fn.ReplaceAll("cuts", "");
+  fn.ReplaceAll("notrig", "");
   fn.ReplaceAll(".", "");
   
   // -- Determine filename for output histograms and 'final' small/reduced tree
@@ -79,6 +85,7 @@ int main(int argc, char *argv[]) {
       meta = barefile;
       barefile.ReplaceAll("chains/", "");
       barefile.ReplaceAll("cbg-111-", "");
+      barefile.ReplaceAll("cbg-222-", "");
       histfile = barefile + "." + fn + ".root";
       if (dirspec) {
         histfile = dirBase + "/" + dirName + "/" + histfile;
@@ -150,7 +157,9 @@ int main(int argc, char *argv[]) {
   a.openHistFile(histfile); 
   a.bookHist(); 
 
-  a.debugLevel(isVerbose); 
+  a.debugLevel(isVerbose);
+  a.candSelEff(doCandSel);
+  a.triggerDecisions(setL1, setHLT);
   a.isMC(isMC); 
   a.readCuts(cutFile, 1, genPt, genEta);
   a.decayChannel(decaySign, 1);

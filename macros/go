@@ -10,7 +10,7 @@
 
 #===========================================================
 
-$workspace       = "/home/ceggel/workspace/macros";
+$workspace       = "/home/ceggel/new/macros";
 $perl            = "/home/ceggel/perl";  
 
 #$workspace       = "/home/chi/bsmumu/Bs2MuMu";
@@ -50,9 +50,9 @@ if ( $opt_s || $opt_b ) {
     chdir("$workspace/chains");
 
     if ( $opt_s ) { #push(@chain, `ls -1 csg-003`); push(@chain, `ls -1 csg-003p`); }
-		    push(@chain, `ls -1 csg-003`); }
+		    push(@chain, `ls -1 csg-00{3,4}`); }
 
-    if ( $opt_b ) { push(@chain, `ls -1 cbg-00{3,4,5}`); }
+    if ( $opt_b ) { push(@chain, `ls -1 cbg-00{3,4,5,6,7}`); }
 		    #push(@chain, `ls -1 cbg-003`); }
 
 
@@ -65,11 +65,25 @@ if ( $opt_s || $opt_b ) {
 	if ( -e "treebmm/$file.log" ) { if (!$opt_p) { system("rm -f treebmm/$file.log"); }  }
 
 	if ( $file eq "csg-001" || $file eq "csg-002" || $file eq "cbg-001" ) { 
+
 	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -o \>\& treebmm/$file\.$cuts\.log\n";
 	    if (!$opt_p) { 
 		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -o \>\& treebmm/$file\.$cuts\.log"); 
 	    }
+
+	} elsif ( $file eq "csg-004" || $file eq "cbg-004") {
+ 
+	    $old_cf = $cut_file;  $cut_file = "bmm.default.notrig.cuts";
+
+	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log\n";
+	    if (!$opt_p) { 
+		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log"); 
+	    }
+
+	    $cut_file = $old_cf;
+
 	} else {
+
 	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log\n";
 	    if (!$opt_p) { 
 		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log"); 
@@ -96,8 +110,8 @@ if ( $opt_n || $opt_m )     {
 
     chdir("$workspace/chains");
 
-    if ( $opt_n )     {  push(@chain, `ls -1 csg-004`); push(@chain, `ls -1 csg-004j`); }
-			 #push(@chain, `ls -1 csg-004f`); }   
+    if ( $opt_n )     {  push(@chain, `ls -1 csg-004`); }
+			 #push(@chain, `ls -1 csg-004j`); push(@chain, `ls -1 csg-004f`); }   
     if ( $opt_m )     {  push(@chain, `ls -1 cbg-00{3,4,5}`); } 
 			 #push(@chain, `ls -1 cbg-004f`);}
 
@@ -106,14 +120,28 @@ if ( $opt_n || $opt_m )     {
     foreach $file (@chain) {
 	
 	chop($file);
-	
+
 	if ( -e "treebmm/$file.$cuts.log" ) { if (!$opt_p) { system("rm -f treebmm/$file.$cuts.log"); } }
 
-	print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -v 1 \>\& treebmm/$file\.$cuts\.log\n";
-	if (!$opt_p) { 
-	    system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -v 1 \>\& treebmm/$file\.$cuts\.log"); 
+	if ( $file eq "csg-004" || $file eq "cbg-004") { 
+
+	    $old_cf = $cut_file;  $cut_file = "bjk.default.notrig.cuts";
+
+	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log\n";
+	    if (!$opt_p) { 
+		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log"); 
+	    }
+
+	    $cut_file = $old_cf;
+
+	} else {
+	    
+	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -v 1 \>\& treebmm/$file\.$cuts\.log\n";
+	    if (!$opt_p) { 
+		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -v 1 \>\& treebmm/$file\.$cuts\.log"); 
+	    }
+	    # add option -v 2 to run verbose
 	}
-       # add option -v 2 to run verbose
     }
 }
 
@@ -137,7 +165,7 @@ if ( $opt_r )  {
 
     chdir("$workspace/chains"); 
     
-    @chain = `ls -1 cbg-111-*`;   
+    @chain = `ls -1 cbg-222-*`;   
 
     chdir("$workspace");
 
