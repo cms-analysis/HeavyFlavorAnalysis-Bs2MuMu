@@ -4,6 +4,8 @@
 #include "THStack.h"
 #include "TTree.h"
 #include "TLatex.h"
+#include "TLine.h"
+#include "TString.h"
 #include "TRandom.h"
 #include "TMath.h"
 
@@ -597,18 +599,106 @@ void anaBmm::distributions() {
 
   showDistributions(4, 0);
   showDistributions(5, 0);
-
-  showDistributions(10, 0);
-  showDistributions(11, 0);
-  showDistributions(12, 0);
-  showDistributions(13, 0);
-  showDistributions(14, 0);
-  showDistributions(15, 0);
-  showDistributions(16, 0);
 }
 
 // ----------------------------------------------------------------------
 
+void anaBmm::cuts() {
+  
+ 
+  TString histos[] = { TString("PTLO"),  TString("RMM"),  TString("MASSBAND"),  TString("PTBS"),  TString("ETABS"),  TString("COSALPHA"),  TString("LXYSXY"),  TString("ISOLATION"),  TString("VTXCHI"),   TString("MASSWI") } ;
+  int logy[]  = {0,0,0,0,0,1,1,0,1,0};
+  double lo[] = {ptmulo, rmmlo, masslo, ptbs, etalo, coslo, lxylo, isolo, vtxhi, 5.369-masswi };
+  double hi[] = {25.,    rmmhi, masshi,  30., etahi,    1.,   50.,   1.1,    0., 5.369+masswi };
+
+  TString histosF[] = { TString("MASSWI_F"),  TString("ISOLATION_F"),   TString("VTXCHI_F"),  TString("LXYSXY_PRE"),   TString("ISOLATION_PRE"),  TString("VTXCHI_PRE") };
+  int logyF[] = {0,0,1,1,0,1};
+  double loF[] = {5.369-masswi, isolo, vtxhi, 7., isolo, vtxhi};
+  double hiF[] = {5.369+masswi,   1.1,    0.,50.,   1.1,    0.};
+
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+
+  c0->Clear();
+
+  TH1D *hs, *hm;
+  double x(0.6), y(0.75);
+  pl->SetLineColor(2);
+  pl->SetLineWidth(2);
+  for (int i = 0; i < 10; i++ ) {
+    
+    hs = (TH1D*)fS[sgIndex]->Get(Form("%s", histos[i].Data()));
+    hm = (TH1D*)fM[bgIndex]->Get(Form("%s", histos[i].Data()));
+
+    c0->cd((i+1)%6);
+    gPad->SetLogy(logy[i]);
+    shrinkPad(0.15, 0.2);
+    
+    setHist(hm, kBlack, kBlack);
+    setTitles(hm, hm->GetXaxis()->GetTitle(), hm->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
+    
+    setFilledHist(hs, kBlue, kBlue, 3004, 2);
+    setTitles(hs, hs->GetXaxis()->GetTitle(), hs->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
+    
+    hm->Scale(1./hm->GetSumOfWeights()); 
+    hs->Scale(1./hs->GetSumOfWeights()); 
+    hs->SetMaximum(1.1*(hm->GetMaximum() > hs->GetMaximum()? hm->GetMaximum(): hs->GetMaximum()));
+    hs->DrawCopy("hist");
+    hm->DrawCopy("samehist");
+
+
+    legg = new TLegend(x, y, x+0.15, y+0.1);
+    legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.04);  legg->SetFillColor(0); 
+    legge = legg->AddEntry(hs, Form("Signal"), "f"); legge->SetTextColor(kBlack);
+    legge = legg->AddEntry(hm, Form("Background"), "f"); legge->SetTextColor(kBlack);
+    legg->Draw();
+
+    pl->DrawLine(lo[i], 0, lo[i], hs->GetMaximum());
+    pl->DrawLine(hi[i], 0, hi[i], hs->GetMaximum());
+
+    c0->SaveAs(Form("%s/dist/dist-before-c%i%s.eps", outDir, i, histos[i].Data()));
+    
+  }
+
+
+  for (int i = 0; i < 6; i++ ) {
+    
+    hs = (TH1D*)fS[sgIndex]->Get(Form("%s", histosF[i].Data()));
+    hm = (TH1D*)fM[bgIndex]->Get(Form("%s", histosF[i].Data()));
+    
+    c0->cd(i+1);
+    gPad->SetLogy(logyF[i]);
+    shrinkPad(0.15, 0.2);
+    
+    setHist(hm, kBlack, kBlack);
+    setTitles(hm, hm->GetXaxis()->GetTitle(), hm->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
+    
+    setFilledHist(hs, kBlue, kBlue, 3004, 2);
+    setTitles(hs, hs->GetXaxis()->GetTitle(), hs->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
+    
+    hm->Scale(1./hm->GetSumOfWeights()); 
+    hs->Scale(1./hs->GetSumOfWeights()); 
+    hs->SetMaximum(1.1*(hm->GetMaximum() > hs->GetMaximum()? hm->GetMaximum(): hs->GetMaximum()));
+    hs->Draw("hist");
+    hm->Draw("samehist");
+
+    legg = new TLegend(x, y, x+0.15, y+0.1);
+    legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.04);  legg->SetFillColor(0); 
+    legge = legg->AddEntry(hs, Form("Signal"), "f"); legge->SetTextColor(kBlack);
+    legge = legg->AddEntry(hm, Form("Background"), "f"); legge->SetTextColor(kBlack);
+    legg->Draw();
+
+    pl->DrawLine(loF[i], 0, loF[i], hs->GetMaximum());
+    pl->DrawLine(hiF[i], 0, hiF[i], hs->GetMaximum());
+
+    c0->SaveAs(Form("%s/dist/dist-before-f%i%s.eps", outDir, i, histosF[i].Data()));
+    
+  }
+  
+}
+
+
+// ----------------------------------------------------------------------
 void anaBmm::processes() {
 
   showProcesses(1);
@@ -3204,10 +3294,12 @@ void anaBmm::dumpCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}(B_{s}) [GeV]")) {
 	  OUT  << Form("\\vdef{cut:%s:ptbs}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	  ptbs = sVal;
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}^{min}(l) [GeV]")) {
 	  OUT  << Form("\\vdef{cut:%s:ptlo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	  ptmulo = sVal;
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}^{max}(l) [GeV]")) {
@@ -3216,18 +3308,22 @@ void anaBmm::dumpCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{#mu#mu}^{min}")) {
 	  OUT  << Form("\\vdef{cut:%s:rmmlo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	  rmmlo = sVal;
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{#mu#mu}^{max}")) {
 	  OUT  << Form("\\vdef{cut:%s:rmmhi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	  rmmhi = sVal;
 	}
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#eta_{T}^{min}(l)")) {
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#eta_{B}^{min}")) {
 	  OUT  << Form("\\vdef{cut:%s:etalo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	  etalo = sVal;
 	}
 
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#eta_{T}^{max}(l)")) {
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#eta_{B}^{max}")) {
 	  OUT  << Form("\\vdef{cut:%s:etahi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	  etahi = sVal;
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "TIP(l) [cm]")) {
@@ -3236,6 +3332,7 @@ void anaBmm::dumpCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#chi^2")) {
 	  OUT  << Form("\\vdef{cut:%s:chi2}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	  vtxhi = sVal;
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{3d} [cm]")) {
@@ -3244,6 +3341,7 @@ void anaBmm::dumpCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "cos(#alpha)")) {
 	  OUT  << Form("\\vdef{cut:%s:cosalpha}    {\\ensuremath{%5.4f } } ", label, sVal) << endl;
+	  coslo = sVal;
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{xy} [cm]")) {
@@ -3252,6 +3350,7 @@ void anaBmm::dumpCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{xy}/#sigma_{xy}")) {
 	  OUT  << Form("\\vdef{cut:%s:lxy/sxy}    {\\ensuremath{%3.1f } } ", label, sVal) << endl;
+	  lxylo = sVal;
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "I_{veto}")) {
@@ -3264,6 +3363,7 @@ void anaBmm::dumpCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "I")) {
 	  OUT  << Form("\\vdef{cut:%s:isolation}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
+	  isolo = sVal;
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "BMMSEL")) {
@@ -3280,10 +3380,12 @@ void anaBmm::dumpCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "m_{min}^{#mu #mu}")) {
 	  OUT  << Form("\\vdef{cut:%s:masslo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	  masslo = sVal;
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "m_{max}^{#mu #mu}")) {
 	  OUT  << Form("\\vdef{cut:%s:masshi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	  masshi = sVal;
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "iso. p_{T}^{min}")) {
@@ -3300,6 +3402,7 @@ void anaBmm::dumpCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#Delta m{#mu #mu}")) {
 	  OUT  << Form("\\vdef{cut:%s:masswi}    {\\ensuremath{%5.0f } } ", label, sVal) << endl;
+	  masswi = 0.001*sVal;
 	}
       }
     }

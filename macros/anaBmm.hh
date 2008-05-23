@@ -71,6 +71,7 @@ public:
   // -- Special studies
   // ------------------
   void processes();
+  void cuts();
   void showProcesses(int signal = 1);
   void plotProcesses(const char *cut, const char *var, const char *axis, int bin, double lo, double hi, int legend = 1);
 
@@ -189,6 +190,9 @@ private:
     , *fProtMid2
     ;
   
+  // -- cuts
+  double ptbs, ptmulo, rmmlo, rmmhi, etalo, etahi, vtxhi, coslo, lxylo, isolo, masslo, masshi, masswi;
+
   // -- functions
   TF1 *f0, *f1, *f2, *f3, *f4, *f5, *f6; 
   TF1 *f10, *f11;

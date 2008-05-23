@@ -1,2 +1,17 @@
-mc macros/bmm-10200.root   10.
-mc macros/bmm-test.root    10.
+# ----------------------------------------------------------------------
+# vXs = visible cross-section 
+#     = \sigma * (NSEL/NGEN) * BF-corrections * kinematic-cuts
+#       +-----------------------------------+   +------------+
+#         -> from PYTHIA logfiles                -> possibly add.
+#                                                cuts in bmmTree
+#                                                (to unify kinematic cuts)
+# ----------------------------------------------------------------------
+#
+# visible x-section [fb]: 38.9657    = 5.522E+01*1.E12*(5000./24.8e6)*3.5e-9 
+type=mysg file=treebmm/csg-003.default.root vxs=53.900e+00 signature=bsmumu
+#
+type=mymc file=treebmm/cbg-003.default.root vxs=1.3051e+08 signature=BB
+#
+# ----------------------------------------------------------------------
+# do not leave empty lines at the end of this file
+# ----------------------------------------------------------------------

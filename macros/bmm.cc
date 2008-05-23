@@ -155,9 +155,9 @@ int main(int argc, char *argv[]) {
   treeBmm a(chain, evtClassName);
   a.chainFileName(fileName);
   a.openHistFile(histfile); 
+  a.debugLevel(isVerbose);
   a.bookHist(); 
 
-  a.debugLevel(isVerbose);
   a.candSelEff(doCandSel);
   a.triggerDecisions(setL1, setHLT);
   a.isMC(isMC); 

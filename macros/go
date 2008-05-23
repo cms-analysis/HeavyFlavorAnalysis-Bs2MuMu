@@ -73,14 +73,11 @@ if ( $opt_s || $opt_b ) {
 
 	} elsif ( $file eq "csg-004" || $file eq "cbg-004") {
  
-	    $old_cf = $cut_file;  $cut_file = "bmm.default.notrig.cuts";
-
-	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log\n";
+	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -t -v 1 \>\& treebmm/$file\.$cuts\.log\n";
 	    if (!$opt_p) { 
-		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log"); 
+		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -t -v 1 \>\& treebmm/$file\.$cuts\.log"); 
 	    }
 
-	    $cut_file = $old_cf;
 
 	} else {
 
@@ -125,14 +122,10 @@ if ( $opt_n || $opt_m )     {
 
 	if ( $file eq "csg-004" || $file eq "cbg-004") { 
 
-	    $old_cf = $cut_file;  $cut_file = "bjk.default.notrig.cuts";
-
-	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log\n";
+	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -t -v 1 \>\& treebmm/$file\.$cuts\.log\n";
 	    if (!$opt_p) { 
-		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log"); 
+		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -t -v 1 \>\& treebmm/$file\.$cuts\.log"); 
 	    }
-
-	    $cut_file = $old_cf;
 
 	} else {
 	    

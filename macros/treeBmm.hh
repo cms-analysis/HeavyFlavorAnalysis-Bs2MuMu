@@ -129,7 +129,7 @@ private:
 
 
   TH1D *fNgen, *fNrec, *fNglb, *fErec, *fEglb;
-  TH1D *fNgenJ, *fNrecJ, *fNgenB, *fNrecB;
+  TH1D *fNgenJ, *fNdecJ, *fNgenB, *fNdecB;
   TH2D *fNR0, *fNR1, *fNR2, *fNR3, *fNR4, *fNR5, *fNR6;
   TH1D *fER1, *fAR1, *fMisID;
 
@@ -220,6 +220,7 @@ private:
     , fGoodLength
     , fGoodIso
     , fGoodVtx
+    , fGoodPresel
     ;
 
   int fSkipEvent;

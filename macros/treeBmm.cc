@@ -1366,7 +1366,10 @@ void treeBmm::candidateSelection(int o) {
     sub_i = i + 1;
     bs_i  = fSubCand[i];
 
-    offlineEff(bs_i, sub_i);
+    if ( fOffCand > 0 ) { 
+
+      offlineEff(bs_i, sub_i);
+    }
   }
 
   if (fDebug & 2) { cout << "candidateSelection> End" << endl; }
@@ -2090,6 +2093,7 @@ void treeBmm::fillAnalysisEff() {
   if (fLxy/fSxy > LXYSXYLO)                   { fGoodLength = 1; }
   if (fIso > ISOLATION)                       { fGoodIso    = 1; }
   if (fChi2 < VTXCHI)                         { fGoodVtx    = 1; }
+  if ( fLxy/fSxy > 7 )                        { fGoodPresel = 1; }
 
 
   //--------------------------------------------------------------------
@@ -2097,13 +2101,20 @@ void treeBmm::fillAnalysisEff() {
   //--------------------------------------------------------------------
   if (1 == fGoodKinematics && 1 == fGoodL1  && 1 == fGoodHLT) {
 
+    ((TH1D*)gDirectory->Get("PTLO"))->Fill(fPt);
+
     if ((fPtL0 > PTLO) && (fPtL1 > PTLO)) {
-      fAR1->Fill(100.1); histogram(10);
+      fAR1->Fill(100.1); // histogram(10);
       fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(100.1), "p_{T}(#mu) (100.1)");
 
+
+      ((TH1D*)gDirectory->Get("RMM"))->Fill(fRMM);
+
       if ((RMMLO < fRMM) && (fRMM < RMMHI)) {
-	fAR1->Fill(101.1); histogram(11);
+	fAR1->Fill(101.1); // histogram(11);
 	fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(101.1), "#Delta R(#mu #mu) (101.1)");
+
+	((TH1D*)gDirectory->Get("MASSBAND"))->Fill(fMass);
 	
 	if ( (MASSLO < fMass) && (fMass < MASSHI) ) {
 	  fAR1->Fill(110.1); 
@@ -2111,37 +2122,60 @@ void treeBmm::fillAnalysisEff() {
 	  	    
 	  // -- offline cuts (w/o factorization) 
 	  // ----------------------------------
+
+	  ((TH1D*)gDirectory->Get("PTBS"))->Fill(fPt);
+
 	  if (fPt > PTBS) {
-	    fAR1->Fill(120.1); histogram(12);
+	    fAR1->Fill(120.1); // histogram(12);
 	    fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(120.1), "pT(B) (120.1)");
+	    
+	    ((TH1D*)gDirectory->Get("ETABS"))->Fill(fEta);
 	      
 	    if (ETALO < fEta && fEta < ETAHI) {
-	      fAR1->Fill(121.1); histogram(13);
+	      fAR1->Fill(121.1); // histogram(13);
 	      fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(121.1), "eta(B) (121.1)");
+
+	      ((TH1D*)gDirectory->Get("COSALPHA"))->Fill(fCosAngle);
 		
 	      if (fCosAngle > COSALPHA) {
-		fAR1->Fill(122.1); histogram(14);
+		fAR1->Fill(122.1); // histogram(14);
 		fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(122.1), "cos(#alpha_{xy}) (122.1)");
+
+		((TH1D*)gDirectory->Get("LXYSXY"))->Fill(fLxy/fSxy);
 		  
 		if (fLxy/fSxy > LXYSXYLO) {
-		  fAR1->Fill(123.1); histogram(15); histogram(5);
+		  fAR1->Fill(123.1); //histogram(15); 
 		  fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(123.1), "l_{xy}/#sigma_{xy} (123.1)");
-		  fGoodAnaF = 1;  // <-------- good ana. (before factorizing)
+		  fGoodAnaF = 1;  // <-------- good ana.     (before factorizing)
+		  histogram(5);   // <-------- distributions (before factorizing)
+
+		  ((TH1D*)gDirectory->Get("MASSWI_F"))->Fill(fMass);
 		    
 		  // -- signal window before 'factorizing' cuts
 		  if ( TMath::Abs(fMass - fMassB) < MASSWI ) {
 		    fAR1->Fill(210.1);
 		    fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(210.1), "m_{B} #pm 100 MeV (w/o fact) (210.1)");
+		    ((TH1D*)gDirectory->Get("ISOLATION_F"))->Fill(fIso);
+		    ((TH1D*)gDirectory->Get("VTXCHI_F"))->Fill(fChi2);
 		  }
-		    
+		  
+		  ((TH1D*)gDirectory->Get("ISOLATION"))->Fill(fIso);
+
 		  // -- 'factorizing' cuts
 		  if (fIso > ISOLATION) {
-		    fAR1->Fill(124.1); histogram(16);
+		    fAR1->Fill(124.1); // histogram(16);
 		    fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(124.1), "Iso (124.1)");
+
+		    ((TH1D*)gDirectory->Get("VTXCHI"))->Fill(fChi2);
+
 		    if (fChi2 < VTXCHI) {
-		      fAR1->Fill(125.1);  histogram(4); 
+		      fAR1->Fill(125.1);  
 		      fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(125.1), "Vertex (125.1)");
 		      fGoodAna = 1;  // <-------- good ana.
+		      histogram(4);  // <-------- distributions
+		      
+		      ((TH1D*)gDirectory->Get("MASSWI"))->Fill(fMass);
+
 		      if ( TMath::Abs(fMass - fMassB) < MASSWI ) {
 			fAR1->Fill(126.1);
 			fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(126.1), "m_{B} #pm 100 MeV (126.1)");
@@ -2157,20 +2191,24 @@ void treeBmm::fillAnalysisEff() {
 	  // ----------------------------------
 	    
 	  // -- somewhat tightened preselection 
+	  ((TH1D*)gDirectory->Get("LXYSXY_PRE"))->Fill(fLxy/fSxy);
 	  if ( fLxy/fSxy > 7 ) {    // && fCosAngle > 0.9
 	      
-	    fAR1->Fill(220.1); histogram(20);
+	    fAR1->Fill(220.1); // histogram(20);
 	    fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(220.1), "preselection (fact) (220.1)");
 	      
+	    ((TH1D*)gDirectory->Get("ISOLATION_PRE"))->Fill(fIso);
+	    ((TH1D*)gDirectory->Get("VTXCHI_PRE"))->Fill(fChi2);
+
 	    // -- 'factorizing' cuts
 	    if (fIso > ISOLATION) {
-	      fAR1->Fill(224.1); histogram(21);
+	      fAR1->Fill(224.1); // histogram(21);
 	      fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(224.1), "Iso (fact) (224.1)");
 	      fGoodIsoF = 1;  // <-------- good iso. (factorizing)
 	    }
 	      
 	    if (fChi2 < VTXCHI) {
-	      fAR1->Fill(225.1); histogram(22);
+	      fAR1->Fill(225.1); // histogram(22);
 	      fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(225.1), "Vertex (fact) (225.1)");
 	      fGoodVtxF = 1;  // <-------- good vtx. (factorizing)
 	    }
@@ -2393,35 +2431,37 @@ void treeBmm::bookHist() {
   book(2);   // histogram(2) reco level, after L1 cuts
   book(3);   // histogram(3) reco level, after HLT cuts
   book(4);   // histogram(4) reco level, after all offline cuts
+  book(5); // histogram(15) reco level, after offline cuts without factorizing cuts (Vertex&Isolation)
 
   book2(0);   // histogram(0) reco level, before any cuts
   book2(1);   // histogram(1) reco level, after kinematic cuts on generator level have been applied
   book2(2);   // histogram(2) reco level, after L1 cuts
   book2(3);   // histogram(3) reco level, after HLT cuts
   book2(4);   // histogram(4) reco level, after all offline cuts
+  book2(5);   // histogram(15) reco level, after offline cuts without factorizing cuts (Vertex&Isolation)
 
   // -- single cuts histograms
-  book(10);
-  book(11);
-  book(12);
-  book(13);
-  book(14);
-  book(15); book(5); // histogram(15) reco level, after offline cuts without factorizing cuts (Vertex&Isolation)
-  book(16);
-  book(20);
-  book(21);
-  book(22);
+//   book(10);
+//   book(11);
+//   book(12);
+//   book(13);
+//   book(14);
+//   book(15); book(5); // histogram(15) reco level, after offline cuts without factorizing cuts (Vertex&Isolation)
+//   book(16);
+//   book(20);
+//   book(21);
+//   book(22);
 
-  book2(10);
-  book2(11);
-  book2(12);
-  book2(13);
-  book2(14);
-  book2(15); book2(5);   // histogram(15) reco level, after offline cuts without factorizing cuts (Vertex&Isolation)
-  book2(16);
-  book2(20);
-  book2(21);
-  book2(22);
+//   book2(10);
+//   book2(11);
+//   book2(12);
+//   book2(13);
+//   book2(14);
+//   book2(15); book2(5);   // histogram(15) reco level, after offline cuts without factorizing cuts (Vertex&Isolation)
+//   book2(16);
+//   book2(20);
+//   book2(21);
+//   book2(22);
 
   //*******************************************************************************
   // Reduced Tree 
@@ -2599,16 +2639,36 @@ void treeBmm::bookHist() {
   h = new TH1D("runs", "runs ",         100000, 0., 100000);
   h = new TH1D("mass", "mass ",             70, 5.,    5.7);
 
+  // -- cuts
+  h = new TH1D("PTLO", " ",              50,  0.,    25.); h->Sumw2(); setTitles(h,  "p_{T, #mu} [GeV]", "events/bin");
+  h = new TH1D("RMM", " ",               50,  0.,     5.); h->Sumw2(); setTitles(h,  "#Delta R(#mu#mu)", "events/bin");
+  h = new TH1D("MASSBAND", " ",         400,  2.,    10.); h->Sumw2(); setTitles(h,  "m_{#mu#mu} [GeV]", "events/bin");
+  h = new TH1D("PTBS", " ",              60,  0.,    30.); h->Sumw2(); setTitles(h,  "p_{T, B} [GeV]", "events/bin");
+  h = new TH1D("ETABS", " ",             50, -5.,     5.); h->Sumw2(); setTitles(h,  "#eta_{B} [GeV]", "events/bin");
+  h = new TH1D("COSALPHA", " ",         200,  0.97,   1.); h->Sumw2(); setTitles(h,  "cos #alpha_{xy}", "events/bin");
+  h = new TH1D("LXYSXY", " ",            50,  0.,    50.); h->Sumw2(); setTitles(h, "l_{xy}/#sigma_{xy}", "events/bin");
+  h = new TH1D("ISOLATION", " ",         55,  0.,    1.1); h->Sumw2(); setTitles(h,  "I", "events/bin");
+  h = new TH1D("VTXCHI", " ",           200,  0.,    20.); h->Sumw2(); setTitles(h,  "#chi^{2}", "events/bin");
+  h = new TH1D("MASSWI", " ",           120, 4.8,     6.); h->Sumw2(); setTitles(h,  "m_{#mu#mu} [GeV]", "events/bin");
+ 
+  h = new TH1D("MASSWI_F", " ",          120, 4.8,     6.); h->Sumw2(); setTitles(h,  "m_{#mu#mu} [GeV]", "events/bin");
+  h = new TH1D("ISOLATION_F", " ",        55,  0.,    1.1); h->Sumw2(); setTitles(h,  "I", "events/bin");
+  h = new TH1D("VTXCHI_F", " ",          200,  0.,    20.); h->Sumw2(); setTitles(h,  "#chi^{2}", "events/bin");
+
+  h = new TH1D("LXYSXY_PRE", " ",         50,  0.,    50.); h->Sumw2(); setTitles(h,"l_{xy}/#sigma_{xy}", "events/bin");
+  h = new TH1D("ISOLATION_PRE", " ",      55,  0.,    1.1); h->Sumw2(); setTitles(h,  "I", "events/bin");
+  h = new TH1D("VTXCHI_PRE", " ",        200,  0.,    20.); h->Sumw2(); setTitles(h,  "#chi^{2}", "events/bin");
+
   // -- data sample check
-  fNgen  = new TH1D("ngen", "N_{#mu}^{gen}",   100, 0., 100. );    fNgen->Sumw2();
-  fNrec  = new TH1D("nrec", "N_{#mu}^{rec}",   100, 0., 100. );    fNrec->Sumw2();
-  fNglb  = new TH1D("nglb", "N_{#mu}^{glb}",   100, 0., 100. );    fNglb->Sumw2();
+  fNgen  = new TH1D("ngen", "N_{#mu}^{gen}",   10, 0., 10. );    fNgen->Sumw2();
+  fNrec  = new TH1D("nrec", "N_{#mu}^{rec}",   10, 0., 10. );    fNrec->Sumw2();
+  fNglb  = new TH1D("nglb", "N_{#mu}^{glb}",   10, 0., 10. );    fNglb->Sumw2();
 
-  fNgenJ  = new TH1D("ngenJ", "N_{J/#psi}^{gen}",   100, 0., 100. );    fNgenJ->Sumw2();
-  fNrecJ  = new TH1D("nrecJ", "N_{J/#psi}^{rec}",   100, 0., 100. );    fNrecJ->Sumw2();
+  fNgenJ  = new TH1D("ngenJ", "N_{J/#psi}^{gen}",   10, 0., 10. );    fNgenJ->Sumw2();
+  fNdecJ  = new TH1D("ndecJ", "N_{J/#psi #rightarrow #mu #mu}^{gen}",   10, 0., 10. );    fNdecJ->Sumw2();
 
-  fNgenB  = new TH1D("ngenB", "N_{B}^{gen}",   100, 0., 100. );    fNgenB->Sumw2();
-  fNrecB  = new TH1D("nrecB", "N_{B}^{rec}",   100, 0., 100. );    fNrecB->Sumw2();
+  fNgenB  = new TH1D("ngenB", "N_{B}^{gen}",   10, 0., 10. );    fNgenB->Sumw2();
+  fNdecB  = new TH1D("ndecB", "N_{B #rightarrow #mu #mu}^{gen}",   10, 0., 10. );    fNdecB->Sumw2();
 
   fErec  = new TH1D("erec", "#epsilon_{#mu}^{rec}",   10, 0., 1. );    fErec->Sumw2();
   fEglb = new TH1D("eglb", "#epsilon_{#mu}^{glb}",   10, 0., 1. );    fEglb->Sumw2();
@@ -3749,11 +3809,12 @@ void treeBmm::fillEventStats() {
   fNrec->Fill(frMu);
   fNglb->Fill(fnMu);
 
+
   fNgenJ->Fill(fgJ);
-  fNrecJ->Fill(fgJmm);
+  fNdecJ->Fill(fgJmm);
 
   fNgenB->Fill(fgB);
-  fNrecB->Fill(fgBmm);
+  fNdecB->Fill(fgBmm);
 
   fErec->Fill(frMu/(1.*fgMu));
   fEglb->Fill(fnMu/(1.*frMu));
@@ -4458,6 +4519,7 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
       ibin = 11;
       hcuts->SetBinContent(ibin, PTLO);
       hcuts->GetXaxis()->SetBinLabel(ibin, "p_{T}^{min}(l) [GeV]");
+      ((TH1D*)gDirectory->Get("PTLO"))->SetTitle(Form("p_{T}^{#mu} > %4.2f", PTLO));
     }
 
     if (!strcmp(CutName, "PTHI")) {
@@ -4473,7 +4535,7 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
       if (dump) cout << "ETALO:           " << ETALO << endl;
       ibin = 13;
       hcuts->SetBinContent(ibin, ETALO);
-      hcuts->GetXaxis()->SetBinLabel(ibin, "#eta_{T}^{min}(l)");
+      hcuts->GetXaxis()->SetBinLabel(ibin, "#eta_{B}^{min}");
     }
 
     if (!strcmp(CutName, "ETAHI")) {
@@ -4481,7 +4543,8 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
       if (dump) cout << "ETAHI:           " << ETAHI << endl;
       ibin = 14;
       hcuts->SetBinContent(ibin, ETAHI);
-      hcuts->GetXaxis()->SetBinLabel(ibin, "#eta_{T}^{max}(l)");
+      hcuts->GetXaxis()->SetBinLabel(ibin, "#eta_{B}^{max}");
+      ((TH1D*)gDirectory->Get("ETABS"))->SetTitle(Form("%4.2f < #eta_{B} < %4.2f", ETALO, ETAHI));
     }
 
     if (!strcmp(CutName, "RMMLO")) {
@@ -4498,6 +4561,7 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
       ibin = 16;
       hcuts->SetBinContent(ibin, RMMHI);
       hcuts->GetXaxis()->SetBinLabel(ibin, "R_{#mu#mu}^{max}");
+      ((TH1D*)gDirectory->Get("RMM"))->SetTitle(Form("%4.2f < R_{#mu#mu} < %4.2f", RMMLO, RMMHI));
     }
 
     if (!strcmp(CutName, "TIPHI")) {
@@ -4514,6 +4578,7 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
       ibin = 100; 
       hcuts->SetBinContent(ibin, PTBS);
       hcuts->GetXaxis()->SetBinLabel(ibin, "p_{T}(B_{s}) [GeV]");
+      ((TH1D*)gDirectory->Get("PTBS"))->SetTitle(Form("p_{T}(B_{s}) > %4.2f", PTBS));
     }
 
     if (!strcmp(CutName, "VTXCHI")) {
@@ -4522,6 +4587,9 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
       ibin = 102;
       hcuts->SetBinContent(ibin, VTXCHI);
       hcuts->GetXaxis()->SetBinLabel(ibin, "#chi^2");
+      ((TH1D*)gDirectory->Get("VTXCHI"))->SetTitle(Form("#chi^2 < %4.2f", VTXCHI));
+      ((TH1D*)gDirectory->Get("VTXCHI_F"))->SetTitle(Form("#chi^2 < %4.2f", VTXCHI));
+      ((TH1D*)gDirectory->Get("VTXCHI_PRE"))->SetTitle(Form("#chi^2 < %4.2f", VTXCHI));
     }
 
     if (!strcmp(CutName, "L3DLO")) {
@@ -4538,6 +4606,8 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
       ibin = 104;
       hcuts->SetBinContent(ibin, LXYSXYLO);
       hcuts->GetXaxis()->SetBinLabel(ibin, "l_{xy}/#sigma_{xy}");
+      ((TH1D*)gDirectory->Get("LXYSXY"))->SetTitle(Form("l_{xy}/#sigma_{xy} > %4.2f", LXYSXYLO));
+      ((TH1D*)gDirectory->Get("LXYSXY_PRE"))->SetTitle("l_{xy}/#sigma_{xy} > 7");
     }
 
     if (!strcmp(CutName, "LXYLO")) {
@@ -4554,6 +4624,7 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
       ibin = 106;
       hcuts->SetBinContent(ibin, COSALPHA);
       hcuts->GetXaxis()->SetBinLabel(ibin, "cos(#alpha)");
+      ((TH1D*)gDirectory->Get("COSALPHA"))->SetTitle(Form("cos(#alpha) > %4.2f", COSALPHA));
     }
 
     if (!strcmp(CutName, "ISOVETO")) {
@@ -4570,6 +4641,9 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
       ibin = 108;
       hcuts->SetBinContent(ibin, ISOLATION);
       hcuts->GetXaxis()->SetBinLabel(ibin, "I");
+      ((TH1D*)gDirectory->Get("ISOLATION"))->SetTitle(Form("Isolation < %4.2f", ISOLATION));
+      ((TH1D*)gDirectory->Get("ISOLATION_F"))->SetTitle(Form("Isolation < %4.2f", ISOLATION));
+      ((TH1D*)gDirectory->Get("ISOLATION_PRE"))->SetTitle(Form("Isolation < %4.2f", ISOLATION));
     }
 
     if (!strcmp(CutName, "ISOCONE")) {
@@ -4618,6 +4692,7 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
        ibin = 114;
        hcuts->SetBinContent(ibin, MASSHI);
        hcuts->GetXaxis()->SetBinLabel(ibin, "m_{max}^{#mu #mu}");
+      ((TH1D*)gDirectory->Get("MASSBAND"))->SetTitle(Form("%4.2f < m_{#mu #mu} < %4.2f", MASSLO, MASSHI));
      }
 
      if (!strcmp(CutName, "ISOPTLO")) {
@@ -4634,6 +4709,8 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
        ibin = 118;
        hcuts->SetBinContent(ibin, 1000.*MASSWI);
        hcuts->GetXaxis()->SetBinLabel(ibin, "#Delta m{#mu #mu}");
+      ((TH1D*)gDirectory->Get("MASSWI"))->SetTitle(Form("#Delta m{#mu #mu} < %4.2f", MASSWI));
+      ((TH1D*)gDirectory->Get("MASSWI_F"))->SetTitle(Form("#Delta m{#mu #mu} < %4.2f", MASSWI));
      }
 
      if (!ok) cout << "==> ERROR: Don't know about variable " << CutName << endl;
@@ -4760,6 +4837,16 @@ void treeBmm::decayChannel(TString ch, int dump) {
   cout << "-----------------------------------------------------" << endl;
   cout << "       Muon selection with SEL = " << fSel << "." << endl;
   cout << "  Candidate selection with sub-SEL = " << fSubSel << "." << endl;
+  cout << "-----------------------------------------------------" << endl;
+  if ( SETL1  > 0 ) cout << "             ***  L1 = 1 ***" << endl;
+  if ( SETHLT > 0 ) cout << "             *** HLT = 1 ***" << endl;
+  if ( SETL1  > 0 || SETHLT > 0 ) cout << "-----------------------------------------------------" << endl;
+
+  if ( fOffCand > 0 ) {
+    cout << " ... candidate selection 1 - 4 activated" << endl;
+  } else {
+    cout << " ... not doing candidate selection 1 - 4!" << endl;
+  }
   cout << "-----------------------------------------------------" << endl;
 
   if (fDebug & 2) { cout << "decayChannel> End" << endl; }
