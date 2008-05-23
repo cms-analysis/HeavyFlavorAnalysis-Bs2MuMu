@@ -1,0 +1,122 @@
+-1 Error return without specification
+0 ok
+1 Hangup (POSIX)
+2 Interrupt (ANSI)
+3 unknown
+4 Illegal instruction (ANSI)
+5 Trace trap (POSIX)
+6 Abort (ANSI) or IOT trap (4.2BSD)
+7 BUS error (4.2BSD)
+8 Floating point exception (ANSI)
+9 killed, unblockable (POSIX) kill -9
+10 User defined
+11 segmentation violation (ANSI)
+12 User defined
+15 Termination (ANSI)
+25 File size limit exceeded (4.2 BSD)
+29 nondefined
+30 Power failure restart (System V.)
+33 nondefined
+64 I/O error: cannot open data file (SEAL)
+65 End of job from user application (CMSSW)
+66 Application exception
+67 unknown
+68 unknown
+88 unknown
+90 Application exception
+100 nondefined
+126 unknown
+127 -Error while loading shared library
+129 Hangup (POSIX)
+132 Illegal instruction (ANSI)
+133 Trace trap (POSIX)
+134 Abort (ANSI) or IOT trap (4.2 BSD)
+135 Bus error (4.2 BSD)
+136 unknown
+137 killed, unblockable (POSIX) kill -9
+138 User defined
+139 Segmentation violation (ANSI)
+140 User defined
+143 Termination (ANSI)
+152 CPU limit exceeded (4.2 BSD)
+153 File size limit exceeded (4.2 BSD)
+155 Profiling alarm clock (4.2 BSD)
+251 nondefined
+255 nondefined
+256 Application exception
+512 nondefined
+2304 nondefined
+0001 Plug-in or message service initialization Exception
+7000 Exception from command line processing
+7001 Config File Not Found
+7002 Config File Read Error
+8000 SEAL Exception (obsolete)
+8001 CMS Exception
+8002 std Exception
+8003 Unknown Exception
+8004 std::bad_alloc exception (memory exhaustion) 
+10001 LD_LIBRARY_PATH is not defined
+10002 Failed to setup LCG_LD_LIBRAR_PATH
+10004 DAR environment setup script is not found obsolete
+10005 DAR environment setup script failed obsolete
+10016 OSG $WORKING_DIR could not be created
+10017 OSG $WORKING_DIR could not be deleted
+10018 OSG $WORKING_DIR could not be deleted
+10020 Shell script cmsset_default.sh to setup cms environment is not found
+10021 Failed to scram application project using the afs release area
+10022 Failed to scram application project using CMS sw disribution on the LCG2
+10030 middleware not identified
+10031 Directory VO_CMS_SW_DIR not found
+10032 Failed to source CMS Environment setup script such as cmssset_default.sh, grid system or site 
+10033 Platform is incompatible with the scram version
+10034 Required application version is not found at the site
+10035 Scram Project Command Failed in ProdAgent production job
+10036 Scram Runtime Command Failed in ProdAgent production job
+10037 Failed to find cms_site_config file in software area
+10038 Failed to find cms_site_catalogue.sh file in software area
+10039 cms_site_catalogue.sh failed to provide the catalogue
+10040 failed to generate cmsRun cfg file at runtime 
+20001 Failed to copy PubDB catalogue to the worker node obsolete
+20002 Failed to copy DAR distribution to the worker node obsolete
+20070 lcg-lr failed obsolete
+20071 lcg-cp failed obsolete 
+30001 Fail to read input file(s)
+30100 Staging.sh file is not found (production only) obsolete
+31100 Failed to stage in input file to the local disk (production only) obsolete
+30301 StageInFiles?:Neither zip nor tar are found obsolete
+30303 StageInFiles?:failed to uncompress the archive obsolete 
+40101 FCpublish command failed
+40103 PU catalog not found
+40104 Attachment failed
+40105 FixColl? failed
+40500 FCrenamePFN? failed"
+41030 Problems renaming pfns of PU META files
+41031 Problems merging the PU Catalog 
+50110 Executable file is not found
+50111 Executable file has no exe permissions
+50112 User executable shell file is not found
+50113 Executable did not get enough arguments
+50114 OSG $WORKING_DIR could not be deleted
+50115 cmsRun did not produce a valid/readable job report at runtime
+50116 Could not determine exit code of cmsRun executable at runtime
+50117 Could not update exit code in job report
+50999 OSG $WORKING_DIR could not be deleted 
+60300 Either OutputSE? or OutputSE?_DIR not defined
+60301 Neither zip nor tar exists
+60302 Output file(s) not found
+60303 File already exists on the SE
+60304 Failed to create the summary file (production)
+60305 Failed to create a zipped archive (production)
+60306 Failed to copy and register output file
+60307 Failed to copy an output file to the SE
+60308 Failed to create a directory on the SE with gsiftp command
+60309 Failed to create an output directory in the catalogue
+60310 Failed to register an output file in the catalogue
+60311 Stage Out Failure in ProdAgent job
+60312 Failed to get file TURL via lcg-lr command
+60313 Failed to delete the output from the previous run via lcg-del command
+60314 Failed to invoke ProdAgent StageOut? Script
+60315 ProdAgent StageOut? initialisation error (Due to TFC, SITECONF etc)
+60999 SG $WORKING_DIR could not be deleted 
+70000 Output_sandbox too big for WMS: output can not be retrieved
+70500 Warning: problem with ModifyJobReport? 

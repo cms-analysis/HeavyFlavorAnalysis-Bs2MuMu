@@ -1,0 +1,396 @@
+#! /usr/bin/perl
+#
+#==============================================================================================
+# START the script in the directories, from where you submit your CRAB jobs !
+# SET-UP  : The scripts needs the file exit_codes.list in these directories: 
+#              cp /home/ceggel/public_html/howTo/macros/misc/exit_codes.list .
+#==============================================================================================
+# IGNORE  : "error globus_ftp_client: the server responded with an error" print out !!!
+#==============================================================================================
+# 
+# DESCRIPTION:
+# This script checks the output of the job on the SE. 
+#
+# If no output was found:
+#  It checks the status of the jobs, and resubmits the job if it was "Aborted" or "Killed",
+#  or if it was "Cleared" and has EXE_EXIT_CODE = 0 and JOB_EXIT_CODE matches one of the number 
+#  in the array @retry.  If the job is in Done status, it retrieves the output.
+#
+# If output was found:
+#  It will retrieve the logfiles (if necessary).
+#
+#==============================================================================================
+#
+# USAGE   : ./recrab <dir>     , where <dir> = directory of a crab job (e.g. crab_1_date_time)
+#           ./recrab hf*       , this run over all directories  hf*
+#
+# ------------------> use option -p for a dry-run first ! <-----------------------------------
+
+#           ./recrab -p <dir>  , tests the script
+# 
+#
+#
+# OUTPUT  : log_080515.11:29   , summary of job status & actions taken
+#           sys_080515.11:29   , detailed crab report
+#
+#==============================================================================================
+
+use Getopt::Std;
+getopts('p');
+
+
+print "\n\n------------------------------------\n";
+print "......... RECRAB START .............\n";
+print "------------------------------------\n\n";
+
+# ********************************************************************************************
+# Modify this to your set-up
+# ============================================================================================
+
+# List of JOB exit codes, that are acceptable (no need to resubmit)
+my @good  = ("70000","143");
+
+# List of JOB exit codes: resubmit if job has terminated with one of these exit codes
+my @retry   = ("50115");
+
+# List of directories to skip
+my @skip = ("BB2MuMu", "CC2MuMu");
+
+# ============================================================================================
+
+my $gsi  = "gsiftp://storage01.lcg.cscs.ch";
+
+($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+$year = sprintf("%02d", $year % 100);
+my $log =  sprintf("sys_%02d%02d%02d.%02d:%02d", $year, $mon+1, $mday, $hour, $min); # mon is off by 1??
+my $sum =  sprintf("log_%02d%02d%02d.%02d:%02d", $year, $mon+1, $mday, $hour, $min); # mon is off by 1??
+
+open(LOG, ">$log");
+open(SUM, ">$sum");
+
+my @status;
+my $path;
+
+foreach $dir ( @ARGV ) {
+
+    $skip = 0;
+    foreach ( @skip ) {
+
+	if ( $dir eq $_ ) { $skip = 1; }
+    }
+
+    if ( $skip ) {
+	print SUM "\nooooooooooooooooooooooooooooooooooooo\n";
+	print SUM " $dir: skipped\n";
+	print SUM "ooooooooooooooooooooooooooooooooooooo\n";
+	next;
+    }
+
+    if ( -e "$dir/log/crab.log" ) {
+
+	$#status = -1;
+	print LOG "crab -status  -c $dir\n";
+	@status = `crab -status  -c $dir`;
+
+	print LOG "@status\n";
+	print LOG "\noooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo\n";
+
+  
+	
+	$jobs = &nrOfJobs($dir);
+	
+	if ( $jobs > 0 ) {
+	    
+	    print SUM "\nooooooooooooooooooooooooooooooooooooo\n";
+	    print SUM "$jobs jobs ($dir)\n";
+	    print SUM "ooooooooooooooooooooooooooooooooooooo\n";
+	    
+	    $path = &getSEpath($dir);
+	    print SUM " \n Directory on SE: $gsi$path\n\n";
+
+	    foreach $nr ( 1..$jobs ) {
+		
+		print SUM "Job $nr:   ";
+		
+		$resubmit = &checkOutput($dir, $nr);
+		
+		if ( $resubmit ) {
+		    
+		    $go = &jobStatus($dir, $nr);
+		    
+		    # status: Done
+		    if ( $go == 1 ) {
+			print SUM " get stderr and stdout... ";
+			print LOG "crab -getoutput $nr -c $dir\n";
+			if ( !$opt_p ) { system("crab -getoutput $nr -c $dir >> $log"); }
+			print SUM " done!\n"; 
+		    }
+		    
+		    # status: Aborted / Killed
+		    if (  $go == 2 ) {
+			print SUM " resubmit ... ";
+			print LOG "crab -resubmit $nr -c $dir\n";
+			if ( !$opt_p ) { system("crab -resubmit $nr -c $dir >> $log"); }
+			print SUM " done!\n"; 
+		    }
+
+		    # status: Waiting
+		    if (  $go == 3 ) {
+			print SUM " kill it ... ";
+			print LOG "crab -kill $nr -c $dir\n";
+			if ( !$opt_p ) { system("crab -kill $nr -c $dir >> $log"); }
+
+			print SUM " resubmit ... ";
+			print LOG "crab -resubmit $nr -c $dir\n";
+			if ( !$opt_p ) { system("crab -resubmit $nr -c $dir >> $log"); }
+			print SUM " done!\n"; 
+		    }
+
+		    # status: Cleared, but no output
+		    if (  $go == 4 ) {
+			print SUM " resubmit ... ";
+			print LOG "crab -resubmit $nr -c $dir\n";
+			if ( !$opt_p ) { system("crab -resubmit $nr -c $dir >> $log"); }
+			print SUM " done!\n"; 
+		    }
+		    		    
+		} else {
+		    
+		    print SUM " output found .... ";
+		    $go = &jobStatus($dir, $nr);
+		    if ( $go == 1 ) {
+			print SUM " get stderr and stdout...";
+			print LOG "crab -getoutput $nr -c $dir\n";
+			if ( !$opt_p ) { system("crab -getoutput $nr -c $dir >> $log"); }
+			print SUM " done!\n"; 
+		    }
+
+                    # Output found and Scheduled ?
+		    if (  $go == 5 ) {
+			print SUM "Job $nr:  ----> Strange (!):  kill it ... ";
+			print LOG "crab -kill $nr -c $dir\n";
+			if ( !$opt_p ) { system("crab -kill $nr -c $dir >> $log"); }
+			print SUM " done!\n"; 
+		    }
+
+                    # Output found and Running ?
+#		    if (  $go == 6 ) {
+#
+#			print SUM "Job $nr:  ----> Strange (!):   remove output on SE ... ";
+#			print LOG "\"edg-gridftp-rm $gsi$path/output_$i.root\n\"";
+#			if ( !$opt_p ) { system("edg-gridftp-rm $gsi$path/output_$i.root >> $log"); }
+#			print SUM " done!\n"; 
+#		    }
+		}
+	    }
+	}
+    }
+}
+
+close(SUM);
+close(LOG);
+
+print "\n\n------------------------------------\n";
+print "......... RECRAB DONE ..............\n";
+print "------------------------------------\n\n";
+
+
+#-----------------------------------------------------------------------------
+
+sub explCode() {
+    my ($code) = @_;
+    
+    $meaning = "$code: not found";
+
+    @bla = `grep \"$code\" exit_codes.list`;
+    #print SUM "@bla";
+
+    foreach ( @bla ) {
+
+	@z = split(/\ /, $_);
+	if ( $code == @z[0] ) {
+	    $meaning = $_; chop($meaning);
+	    last;
+	}
+    }
+
+    # print SUM "*MEANS $meaning*\n";
+    return $meaning;
+}
+
+#-----------------------------------------------------------------------------
+
+sub getSEpath() {
+    my ($d) = @_;
+
+
+    @bla = `grep \"storage_path\" $d/share/crab.cfg`;
+    #print SUM "@bla";
+
+    @u = split(/\s{1,5}/, @bla[0]);
+    $pth = @u[$#u];
+
+    return $pth;
+}
+
+#-----------------------------------------------------------------------------
+
+sub nrOfJobs() {
+    my ($d) = @_;
+
+    $n = -1;
+
+    @bla = `grep \"jobs submitted.\" $d/log/crab.log`;
+    #print SUM "@bla";
+
+    foreach $line ( @bla ) {
+	@w = split(/\s{1,5}/, $line);
+	
+	if ( @w[0] == "Total" && @w[1] == "of" && @w[4] == "jobs" )  {
+	    
+	    $n = @w[2];
+	    last;
+	}
+    }
+
+    return $n;
+}
+
+
+#-----------------------------------------------------------------------------
+
+sub checkOutput() {
+    my ($d, $i) = @_; 
+
+    #print SUM "edg-gridftp-ls $gsi/$path/output_$i.root\n";
+    $root = `edg-gridftp-ls $gsi$path/output_$i.root`; chop($root);
+
+    #print SUM "---> Found output: $root for $d\n";
+   
+
+    if ( $root eq "output_$i.root" ) {
+
+	$re = 0;
+
+    } else {
+
+	$re = 1;
+    }
+    
+    return $re;
+}
+
+
+#-----------------------------------------------------------------------------
+
+sub jobStatus() {
+    my ($d, $i) = @_; 
+
+    # get job status and exit codes
+    $found = 0;
+    foreach (@status) {
+
+	@v = split(/\s{1,30}/, $_);
+	$job_nr = @v[0];
+	$job_status = @v[1];
+	
+	$exe_code = @v[3];
+	$job_code = @v[4];
+
+	if ( $job_nr == $i ) {
+	    #print SUM "Status of $i for $d: $job_status, exe = $exe_code, job = $job_code\n";
+	    $found = 1;
+	    last;
+	}
+    }
+   
+
+    if ( !$found ) { $job_status = "not found"; $job_code =-1; $exe_code = -1; }
+
+    # what to do
+    if ( $job_status eq  "Done") {
+
+	print SUM "  Job $i is \"$job_status\"   --> ";
+	return 1;
+	
+    } elsif ( $job_status eq  "Cleared") {
+	
+	if ( $exe_code == 0 || $exe_code == 50115 ) {
+
+	    if (  $job_code == 0 ) {
+		print SUM "  Job $i is \"$job_status (exe=$exe_code, job=$job_code)\" -->  ok!\n";
+		return 0;
+	    }
+
+	    $expl = &explCode($job_code);
+
+	    foreach ( @good ) {
+		if ( $job_code == $_ ) {
+		    print SUM "\t Job $i is \"$job_status (exe=$exe_code, job=$expl)\" -->  ok!\n";
+		    return 0;
+		}
+	    }
+
+	    foreach ( @retry ) {
+		if ( $job_code == $_ ) {
+		    print SUM "\t Job $i is \"$job_status (exe=$exe_code, job=$expl)\" --> ";
+		    return 4;
+		}
+	    }
+	    
+	    print SUM "\t Job $i is \"$job_status (exe=$exe_code, job=$expl)\" --> *** check job! ***  \n";
+	    return 0;
+	 		    
+	} else {
+	    $expl = &explCode($job_code);
+	    $expl2 = &explCode($exe_code);
+	    print SUM "\t Job $i is \"$job_status ( exe = $expl2, job=$expl)\" --> *** check exe! ***  \n";
+	    return 0;
+	} 
+	
+    } elsif ( $job_status eq  "Aborted") {
+
+	print SUM "\t\t\t Job $i is \"$job_status\"  --> ";
+	return 2;
+
+    } elsif ( $job_status eq  "Cancelled") {
+
+	print SUM "\t\t\t Job $i is \"$job_status\"  --> ";
+	return 2;
+
+    } elsif ( $job_status eq  "Killed") {
+
+	print SUM "\t\t\t Job $i is \"$job_status\"  --> ";
+	return 2;
+
+    }  elsif ( $job_status eq  "Running") {
+
+	print SUM "\t\t\t Job $i is \"$job_status\"  --> running on CE --> ok!\n";
+	return 0;
+
+    } elsif ( $job_status eq  "Scheduled" ) {
+
+	print SUM "\t\t\t Job $i is \"$job_status\"  --> waiting in queue on CE --> ok!\n";
+	return 5;
+
+    } elsif ( $job_status eq  "Ready" ) {
+
+	print SUM "\t\t\t Job $i is \"$job_status\"  --> waiting for transfer from RB to CE --> ok!\n";
+	return 5;
+
+    } elsif ( $job_status eq  "Waiting" ) {
+
+	print SUM "\t\t\t Job $i is \"$job_status\"  --> waiting on RB ";
+	return 3;
+
+    } elsif ( $job_status eq  "Submitted") {
+
+	print SUM "\t\t\t Job $i is \"$job_status\"  --> submitted to RB --> ok!\n";
+	return 5;
+
+    } else {
+
+	print SUM "\t\t\t Job $i is \"$job_status ($exe_code, $job_code)\" --> *** status not found! ***  \n";
+	return -1;
+    }
+}
