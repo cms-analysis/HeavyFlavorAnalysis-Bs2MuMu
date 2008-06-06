@@ -269,6 +269,7 @@ void anaBmm::loadFiles(const char *filename) {
   char buffer[200];
   char type[100];
   char file[100];
+  char name[100];
   char signature[100];
   float visXsection;
   ifstream is(filename);
@@ -284,11 +285,14 @@ void anaBmm::loadFiles(const char *filename) {
     TString cn(file);
     cn.ReplaceAll("bmmroot", "");
     cn.ReplaceAll("default", "");
+    cn.ReplaceAll("norm", "");
     cn.ReplaceAll("treebmm", "");
     cn.ReplaceAll("BAK", "");
     cn.ReplaceAll("root", "");
     cn.ReplaceAll(".", "");
     cn.ReplaceAll("/", "");
+
+    sprintf(name, "%s", cn.Data());
 
     if (!strcmp(type, "mysg")) {
 
@@ -297,7 +301,7 @@ void anaBmm::loadFiles(const char *filename) {
       sprintf(line, "fS[%d] = ", nSg);
       cout << "Loading signal file   " << line << file << " and vis x-section: " << visXsection 
 	   << " (" << signature << "). \t\t <<<<<< my signal sample" <<  endl;
-      loadSg(file, visXsection, signature, type);
+      loadSg(file, visXsection, signature, type, name);
       
     } else if (!strcmp(type, "mynsg")) {
       
@@ -306,7 +310,7 @@ void anaBmm::loadFiles(const char *filename) {
       sprintf(line, "fS[%d] = ", nSg);
       cout << "Loading signal file   " << line << file << " and vis x-section: " << visXsection 
 	   << " (" << signature << "). \t <<<<<< my norm. sample" <<  endl;
-      loadSg(file, visXsection, signature, type);
+      loadSg(file, visXsection, signature, type, name);
     
     } else if (!strcmp(type, "mymc")) {
       
@@ -315,7 +319,7 @@ void anaBmm::loadFiles(const char *filename) {
       sprintf(line, "fM[%d] = ", nMc);
       cout << "Loading MC file   " << line << file << " and vis x-section: " << visXsection 
 	   << " (" << signature << "). \t\t <<<<<< my background sample" <<  endl;
-      loadMc(file, visXsection, signature, type);
+      loadMc(file, visXsection, signature, type, name);
       
     } else if (!strcmp(type, "mynmc")) {
       
@@ -324,21 +328,21 @@ void anaBmm::loadFiles(const char *filename) {
       sprintf(line, "fM[%d] = ", nMc);
       cout << "Loading MC file   " << line << file << " and vis x-section: " << visXsection 
 	   << " (" << signature << "). \t\t <<<<<< my norm. background sample" <<  endl;
-      loadMc(file, visXsection, signature, type);
+      loadMc(file, visXsection, signature, type, name);
     
     } else if (!strcmp(type, "sg") || !strcmp(type, "nsg") ) {
       
       sprintf(line, "fS[%d] = ", nSg);
       cout << "Loading signal file   " << line << file << " and vis x-section: " << visXsection 
 	   << " (" << signature << ")." <<  endl;
-      loadSg(file, visXsection, signature, type);
+      loadSg(file, visXsection, signature, type, name);
     
     } else if (!strcmp(type, "mc") || !strcmp(type, "nmc") ) {
 
       sprintf(line, "fM[%d] = ", nMc);
       cout << "Loading MC file   " << line << file << " and vis x-section: " << visXsection 
 	   << " (" << signature << ")." <<  endl;
-      loadMc(file, visXsection, signature, type);
+      loadMc(file, visXsection, signature, type, name);
 
 
     } else if (!strcmp(type, "rmc")) {
@@ -347,7 +351,7 @@ void anaBmm::loadFiles(const char *filename) {
       sprintf(line, "fM[%d] = ", nMc);
       cout << "Loading MC file   " << line << file << " and vis x-section: " << visXsection 
 	   << " (" << signature << ")." <<  endl;
-      loadMc(file, visXsection, signature, type);
+      loadMc(file, visXsection, signature, type, name);
 
     } else if (!strcmp(type, "da")) {
 
@@ -355,7 +359,7 @@ void anaBmm::loadFiles(const char *filename) {
       sprintf(line, "fD[%d] = ", nDa);
       cout << "Loading data file  " << line << file << " and vis x-section: " << visXsection  
 	   << " (" << signature << ")." <<  endl;
-      loadDa(file, visXsection, signature, type);
+      loadDa(file, visXsection, signature, type, name);
     
     }  else {
       //
@@ -385,7 +389,7 @@ void anaBmm::loadFiles(const char *filename) {
 
 
 // ----------------------------------------------------------------------
-void anaBmm::loadSg(const char *name, double lumi, const char *sign, const char *type) {
+void anaBmm::loadSg(const char *name, double lumi, const char *sign, const char *type, const char *filename) {
 
   if (nSg > 10) {
     cout << " **** !!!! Too many open Signal files. Increase nSg. !!!! **** " << endl;
@@ -395,21 +399,22 @@ void anaBmm::loadSg(const char *name, double lumi, const char *sign, const char 
   fS[nSg] = new TFile(name);
   fLumiS[nSg] = lumi;
 
-  //cout << "Loaded " << fS[nSg]->GetName() << " with vis x-section " << lumi << " and signature " << sign << endl;
   TH1 *h      = (TH1D*)fS[nSg]->Get("AR1");
   fvXsS[nSg]  = lumi;
   fNevtS[nSg] = h->GetBinContent(h->FindBin(0.1));
-  fNevtS[nSg] = h->GetBinContent(h->FindBin(1.1));
+  //  fNevtS[nSg] = h->GetBinContent(h->FindBin(1.1));
   fLumiS[nSg] = fNevtS[nSg]/fvXsS[nSg] ;
   fSignS[nSg] = TString(sign);
   fTypeS[nSg] = TString(type);
+  fFileS[nSg] = TString(filename);
+
   getSignature(fSignS[nSg], fSignTexS[nSg], fSignLeggS[nSg]);
 
   ++nSg; 
 }
 
 // ----------------------------------------------------------------------
-void anaBmm::loadMc(const char *name, double lumi, const char *sign, const char *type) {
+void anaBmm::loadMc(const char *name, double lumi, const char *sign, const char *type, const char *filename) {
 
   if (nMc > 30) {
     cout << " **** !!!! Too many open MC files. Increase nMc. !!!! **** " << endl;
@@ -419,14 +424,14 @@ void anaBmm::loadMc(const char *name, double lumi, const char *sign, const char 
   fM[nMc] = new TFile(name);
   fLumiM[nMc] = lumi;
 
-  //cout << "Loaded " << fM[nMc]->GetName() << " with vis x-section " << lumi << " and signature " << sign << endl;
   TH1 *h      = (TH1D*)fM[nMc]->Get("AR1");
   fvXsM[nMc]  = lumi;
   fNevtM[nMc] = h->GetBinContent(h->FindBin(0.1));
-  fNevtM[nMc] = h->GetBinContent(h->FindBin(1.1));
+  //  fNevtM[nMc] = h->GetBinContent(h->FindBin(1.1));
   fLumiM[nMc] = fNevtM[nMc]/fvXsM[nMc] ;
   fSignM[nMc] = TString(sign);
   fTypeM[nMc] = TString(type);
+  fFileM[nMc] = TString(filename);
 
   getSignature(fSignM[nMc], fSignTexM[nMc], fSignLeggM[nMc]);
  
@@ -434,7 +439,7 @@ void anaBmm::loadMc(const char *name, double lumi, const char *sign, const char 
 }
 
 // ----------------------------------------------------------------------
-void anaBmm::loadDa(const char *name, double lumi, const char *sign, const char *type) {
+void anaBmm::loadDa(const char *name, double lumi, const char *sign, const char *type, const char *filename) {
 
   if (nDa > 10) {
     cout << " **** !!!! Too many open DATA files. Increase nDa.  !!!! **** " << endl;
@@ -444,14 +449,15 @@ void anaBmm::loadDa(const char *name, double lumi, const char *sign, const char 
   fD[nDa] = new TFile(name);
   fLumiD[nDa] = lumi;
 
-  //cout << "Loaded " << fD[nDa]->GetName() << " with vis x-section " << lumi << " and signature " << sign << endl;
   TH1 *h      = (TH1D*)fD[nDa]->Get("AR1");
   fvXsD[nDa]  = lumi;
   fNevtD[nDa] = h->GetBinContent(h->FindBin(0.1));
-  fNevtD[nDa] = h->GetBinContent(h->FindBin(1.1));
+  //  fNevtD[nDa] = h->GetBinContent(h->FindBin(1.1));
   fLumiD[nDa] = fNevtD[nDa]/fvXsD[nDa] ;
   fSignD[nDa] = TString(sign);
   fTypeD[nDa] = TString(type);
+  fFileD[nDa] = TString(filename);
+
   getSignature(fSignD[nDa], fSignTexD[nDa], fSignLeggD[nDa]);
 
   ++nDa; 
@@ -465,11 +471,13 @@ void anaBmm::loadDa(const char *name, double lumi, const char *sign, const char 
 void anaBmm::makeAllPlots() {
    
 
-  // mcValidation();
+  validations();
+  distributions();
 
-  sgRecos();  
-
+  processes();
   fakeMuons();
+
+  brecos();  
 
   effTables();
 
@@ -478,78 +486,184 @@ void anaBmm::makeAllPlots() {
   calculateUpperLimit();
   normalizedUpperLimit();
   
-  distributions();
-  processes();
-  
 }
 
 // ----------------------------------------------------------------------
 
-void anaBmm::mcValidation(int wiat) {
+void anaBmm::validations() {
+
+  mcValidation(0);
+  mcValidation(3);
+
+}
+
+// -- validation
+
+void anaBmm::mcValidation(int offset, int wiat) {
+
+  int logy(100);   
+
+  mcVal(Form("c%d00", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d01", offset), 2, 0.4, 0.15); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d10", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d11", offset), 2, 0.4, 0.15); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d12", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+
+  mcVal(Form("c%d20", offset), 2,      0.6, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d21", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d22", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d23", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d26", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d24", offset), 2,      0.6, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d25", offset), 2,      0.3, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d27", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+
+  mcVal(Form("c%d30", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d35", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d40", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d41", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d42", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+
+  mcVal(Form("c%d14", offset), logy+10, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d15", offset), logy+10, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d16", offset), logy+10, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d37", offset), logy+10, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d62", offset), logy+10, 0.3, 0.75); if (wiat) if (wait()) goto end;
 
 
-  mcVal("c000"); if (wiat) if (wait()) goto end;
-  mcVal("c001"); if (wiat) if (wait()) goto end;
-  mcVal("c010"); if (wiat) if (wait()) goto end;
-  mcVal("c011"); if (wiat) if (wait()) goto end;
-  mcVal("c020"); if (wiat) if (wait()) goto end;
-  mcVal("c021"); if (wiat) if (wait()) goto end;
-  mcVal("c024"); if (wiat) if (wait()) goto end;
-  mcVal("c025"); if (wiat) if (wait()) goto end;
-  mcVal("c030"); if (wiat) if (wait()) goto end;
-  mcVal("c023"); if (wiat) if (wait()) goto end;
-  mcVal("c026"); if (wiat) if (wait()) goto end;
-  mcVal("c027"); if (wiat) if (wait()) goto end;
-  mcVal("c035"); if (wiat) if (wait()) goto end;
-  mcVal("c022"); if (wiat) if (wait()) goto end;
-
-  mcVal("c300"); if (wiat) if (wait()) goto end;
-  mcVal("c301"); if (wiat) if (wait()) goto end;
-  mcVal("c310"); if (wiat) if (wait()) goto end;
-  mcVal("c311"); if (wiat) if (wait()) goto end;
-  mcVal("c320"); if (wiat) if (wait()) goto end;
-  mcVal("c321"); if (wiat) if (wait()) goto end;
-  mcVal("c324"); if (wiat) if (wait()) goto end;
-  mcVal("c325"); if (wiat) if (wait()) goto end;
-  mcVal("c330"); if (wiat) if (wait()) goto end;
-  mcVal("c323"); if (wiat) if (wait()) goto end;
-  mcVal("c326"); if (wiat) if (wait()) goto end;
-  mcVal("c327"); if (wiat) if (wait()) goto end;
-  mcVal("c335"); if (wiat) if (wait()) goto end;
-  mcVal("c322"); if (wiat) if (wait()) goto end;
  end:;
 
 }
 
 // ----------------------------------------------------------------------
 
-void anaBmm::sgRecos() {
+void anaBmm::distributions() {
+
+  showDistributions(0);
+  showDistributions(1);  
+
+  showDistributions(2);
+  showDistributions(3);
+
+  showDistributions(4);
+  showDistributions(5);
+}
+
+// -- distribution
+void anaBmm::showDistributions(int offset, int wiat) { 
+
+  int logy(100);   
+
+  showDistribution(Form("c%d00", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d01", offset), 2);            if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d10", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d11", offset), 2);            if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d12", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+
+  showDistribution(Form("c%d14", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d15", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+
+  showDistribution(Form("c%d20", offset), 2,      0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d21", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d22", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d23", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d26", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d16", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d24", offset), 2,      0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d25", offset), 2,      0.3, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d27", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d37", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+
+  showDistribution(Form("c%d30", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d35", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d40", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d41", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d42", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d62", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+
+
+ end:;
+
+}
+
+// ----------------------------------------------------------------------
+void anaBmm::processes() {
+
+  showProcesses(1);
+  showProcesses(0);
+}
+
+
+// ----------------------------------------------------------------------
+
+void anaBmm::brecos() {
 
   breco(-1);
-  
-  breco(0);
-  breco(2);
-  breco(2, "c230");
-  breco(2, "c330");
-  breco(2, "c430");
-  breco(2, "c530");
-  breco(3);
-  
-  breco(4);
-  breco(4, "c230");
-  breco(4, "c330");
-  breco(4, "c430");
-  breco(4, "c530");
-  breco(5);
-  
-  nreco(6);
-  nreco(6, "c230");
-  nreco(6, "c330");
-  nreco(6, "c430");
-  nreco(6, "c530");
-  
-  jreco(4);
-  jreco(5);
+
+  char f_n[200];
+  int n(0);
+
+  // -- J/Psi-peaks from other samples
+  int njf = 2;
+  TString jfiles[]    = { TString("csg-004") , TString("csg-004m") };
+
+  // -- B-peaks from signal samples
+  int nbf = 4;
+  TString bfiles[]    = {  TString("csg-003") , TString("csg-003h") 
+			 , TString("csg-004h") , TString("csg-004m") };
+
+  // -- B-peaks from other samples
+  int nnf = 2;
+  TString nfiles[]    = { TString("csg-004"), TString("csg-004j") };
+
+
+  for (int i = 0; i < nbf; i++ ) {
+
+    sprintf(f_n,"%s", bfiles[i].Data());
+    n = findIndex(f_n);
+    
+    if ( n < 0 ) {
+      cout << " ====> Error: couldn't find index of file " << f_n << endl;
+      continue;
+    }
+
+    breco(n, "c030");
+    breco(n, "c230");
+    breco(n, "c330");
+    breco(n, "c430");
+    breco(n, "c530");
+  }
+
+  for (int i = 0; i < nnf; i++ ) {
+
+    sprintf(f_n,"%s", nfiles[i].Data());
+    n = findIndex(f_n);
+    
+    if ( n < 0 ) {
+      cout << " ====> Error: couldn't find index of file " << f_n << endl;
+      continue;
+    }
+
+    nreco(n, "c030");
+    nreco(n, "c230");
+    nreco(n, "c330");
+    nreco(n, "c430");
+    nreco(n, "c530"); 
+
+  }
+
+  for (int i = 0; i < njf; i++ ) {
+
+    sprintf(f_n,"%s", jfiles[i].Data());
+    n = findIndex(f_n); 
+    
+    if ( n < 0 ) {
+      cout << " ====> Error: couldn't find index of file " << f_n << endl;
+      continue;
+    }
+
+    jreco(n);
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -589,50 +703,38 @@ void anaBmm::bgOverlays() {
 
 // ----------------------------------------------------------------------
 
-void anaBmm::distributions() {
-
-  showDistributions(0, 0);
-  showDistributions(1, 0);  
-
-  showDistributions(2, 0);
-  showDistributions(3, 0);
-
-  showDistributions(4, 0);
-  showDistributions(5, 0);
-}
-
-// ----------------------------------------------------------------------
-
 void anaBmm::cuts() {
   
  
-  TString histos[] = { TString("PTLO"),  TString("RMM"),  TString("MASSBAND"),  TString("PTBS"),  TString("ETABS"),  TString("COSALPHA"),  TString("LXYSXY"),  TString("ISOLATION"),  TString("VTXCHI"),   TString("MASSWI") } ;
-  int logy[]  = {0,0,0,0,0,1,1,0,1,0};
-  double lo[] = {ptmulo, rmmlo, masslo, ptbs, etalo, coslo, lxylo, isolo, vtxhi, 5.369-masswi };
-  double hi[] = {25.,    rmmhi, masshi,  30., etahi,    1.,   50.,   1.1,    0., 5.369+masswi };
+  TString histos[] = { TString("PTLO"),  TString("RMM"),  TString("MASSBAND"),  TString("PTBS"),  TString("ETABS"),  TString("COSALPHA"),  TString("LXYSXY"),  TString("L3DS3D"),  TString("ISOLATION"),  TString("VTXCHI"),   TString("MASSWI") } ;
+  int logy[]  = {0,0,1,0,0,1,1,1,0,1,0};
+  double lo[] = {ptmulo, rmmlo, masslo, ptbs, etalo, coslo, lxylo, l3dlo, isolo, vtxhi, 5.369-masswi };
+  double hi[] = {25.,    rmmhi, masshi,  30., etahi,    1.,   50.,   50.,   1.1,    0., 5.369+masswi };
 
-  TString histosF[] = { TString("MASSWI_F"),  TString("ISOLATION_F"),   TString("VTXCHI_F"),  TString("LXYSXY_PRE"),   TString("ISOLATION_PRE"),  TString("VTXCHI_PRE") };
-  int logyF[] = {0,0,1,1,0,1};
-  double loF[] = {5.369-masswi, isolo, vtxhi, 7., isolo, vtxhi};
-  double hiF[] = {5.369+masswi,   1.1,    0.,50.,   1.1,    0.};
+  TString histosF[] = { TString("LXYSXY_PRE"),   TString("L3DS3D_PRE"),   TString("ISOLATION_PRE"),  TString("VTXCHI_PRE"), TString("MASSWI_F"),  TString("ISOLATION_F"),   TString("VTXCHI_F") };
+  int logyF[] = {1,1,0,1,0,0,1};
+  double loF[] = { 7.,  7., isolo, vtxhi, 5.369-masswi, isolo, vtxhi };
+  double hiF[] = {50., 50.,   1.1,    0., 5.369+masswi,   1.1,    0.,};
 
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
 
   c0->Clear();
 
+  TCanvas *c1 = new TCanvas("c1", "cuts", 1000, 800);
+  c1->Clear();
+  c1->Divide(4,3);
+
   TH1D *hs, *hm;
   double x(0.6), y(0.75);
   pl->SetLineColor(2);
   pl->SetLineWidth(2);
-  for (int i = 0; i < 10; i++ ) {
+  for (int i = 0; i < 11; i++ ) {
     
     hs = (TH1D*)fS[sgIndex]->Get(Form("%s", histos[i].Data()));
     hm = (TH1D*)fM[bgIndex]->Get(Form("%s", histos[i].Data()));
 
-    c0->cd((i+1)%6);
-    gPad->SetLogy(logy[i]);
-    shrinkPad(0.15, 0.2);
+    //    c0->cd((i+1)%6);
     
     setHist(hm, kBlack, kBlack);
     setTitles(hm, hm->GetXaxis()->GetTitle(), hm->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
@@ -643,9 +745,28 @@ void anaBmm::cuts() {
     hm->Scale(1./hm->GetSumOfWeights()); 
     hs->Scale(1./hs->GetSumOfWeights()); 
     hs->SetMaximum(1.1*(hm->GetMaximum() > hs->GetMaximum()? hm->GetMaximum(): hs->GetMaximum()));
+
+    c0->cd();
+    gPad->SetLogy(logy[i]);
+    shrinkPad(0.15, 0.2);
     hs->DrawCopy("hist");
     hm->DrawCopy("samehist");
 
+    legg = new TLegend(x, y, x+0.15, y+0.1);
+    legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.04);  legg->SetFillColor(0); 
+    legge = legg->AddEntry(hs, Form("Signal"), "f"); legge->SetTextColor(kBlack);
+    legge = legg->AddEntry(hm, Form("Background"), "f"); legge->SetTextColor(kBlack);
+    legg->Draw();
+
+    pl->DrawLine(lo[i], 0, lo[i], hs->GetMaximum());
+    pl->DrawLine(hi[i], 0, hi[i], hs->GetMaximum());
+
+
+    c1->cd(i+1);
+    gPad->SetLogy(logy[i]);
+    shrinkPad(0.15, 0.2);
+    hs->DrawCopy("hist");
+    hm->DrawCopy("samehist");
 
     legg = new TLegend(x, y, x+0.15, y+0.1);
     legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.04);  legg->SetFillColor(0); 
@@ -660,16 +781,19 @@ void anaBmm::cuts() {
     
   }
 
+  c1->SaveAs(Form("%s/dist/dist-before-cuts.eps", outDir));
+  //  delete c1;
 
-  for (int i = 0; i < 6; i++ ) {
+  TCanvas *c2 = new TCanvas("c2", "fact", 1000, 500);
+  c2->Clear();
+  c2->Divide(4,2);
+
+  for (int i = 0; i < 7; i++ ) {
     
     hs = (TH1D*)fS[sgIndex]->Get(Form("%s", histosF[i].Data()));
     hm = (TH1D*)fM[bgIndex]->Get(Form("%s", histosF[i].Data()));
     
-    c0->cd(i+1);
-    gPad->SetLogy(logyF[i]);
-    shrinkPad(0.15, 0.2);
-    
+    //   c0->cd(i+1);    
     setHist(hm, kBlack, kBlack);
     setTitles(hm, hm->GetXaxis()->GetTitle(), hm->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
     
@@ -679,8 +803,12 @@ void anaBmm::cuts() {
     hm->Scale(1./hm->GetSumOfWeights()); 
     hs->Scale(1./hs->GetSumOfWeights()); 
     hs->SetMaximum(1.1*(hm->GetMaximum() > hs->GetMaximum()? hm->GetMaximum(): hs->GetMaximum()));
-    hs->Draw("hist");
-    hm->Draw("samehist");
+
+    c0->cd();
+    gPad->SetLogy(logyF[i]);
+    shrinkPad(0.15, 0.2);
+    hs->DrawCopy("hist");
+    hm->DrawCopy("samehist");
 
     legg = new TLegend(x, y, x+0.15, y+0.1);
     legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.04);  legg->SetFillColor(0); 
@@ -692,18 +820,31 @@ void anaBmm::cuts() {
     pl->DrawLine(hiF[i], 0, hiF[i], hs->GetMaximum());
 
     c0->SaveAs(Form("%s/dist/dist-before-f%i%s.eps", outDir, i, histosF[i].Data()));
-    
+
+    c2->cd(i+1);
+    gPad->SetLogy(logyF[i]);
+    shrinkPad(0.15, 0.2);
+    hs->DrawCopy("hist");
+    hm->DrawCopy("samehist");
+
+    legg = new TLegend(x, y, x+0.15, y+0.1);
+    legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.04);  legg->SetFillColor(0); 
+    legge = legg->AddEntry(hs, Form("Signal"), "f"); legge->SetTextColor(kBlack);
+    legge = legg->AddEntry(hm, Form("Background"), "f"); legge->SetTextColor(kBlack);
+    legg->Draw();
+
+    pl->DrawLine(loF[i], 0, loF[i], hs->GetMaximum());
+    pl->DrawLine(hiF[i], 0, hiF[i], hs->GetMaximum());
   }
   
+  c2->SaveAs(Form("%s/dist/dist-before-fact.eps", outDir));
+  
+  //  delete c2;
+  delete hs;
+  delete hm;
 }
 
 
-// ----------------------------------------------------------------------
-void anaBmm::processes() {
-
-  showProcesses(1);
-  showProcesses(0);
-}
 
 
 //===========================================================================================
@@ -858,87 +999,89 @@ void anaBmm::breco(int o, const char *hist) {
 
   double mean(0.), sigma(0.);
 
-
-  // -- Signal & norm. channel
-  // =========================
-
   if ( o > -1 ) {
-    
-    h1 = (TH1D*)(fS[o]->Get(hist))->Clone();
-    
-    cout << endl << " ----> N_gen " << h1->GetSumOfWeights() << endl;
-    h1->Scale(fLumiD[0]/fLumiS[o]);
-    cout << " ----> N_exp " << h1->GetSumOfWeights() << endl << endl;
-    
-    c0->Clear();
-    shrinkPad(0.15, 0.15);
-    setFilledHist(h1, kBlack, kYellow, 1000);    
-    
- 
-    // -- Signal (double gauss)
-    if ( o < 4 ) {
 
+    // -- Signal (double gauss)
+    // =========================_
+    if ( !strcmp(fTypeS[o].Data(), "sg") || !strcmp(fTypeS[o].Data(), "mysg") ) {
+    
+      h1 = (TH1D*)(fS[o]->Get(hist))->Clone();
+      h1->Scale(fLumiD[0]/fLumiS[o]);
+    
+      c0->Clear();
+      shrinkPad(0.15, 0.15);
+      setFilledHist(h1, kBlack, kYellow, 1000);    
+    
       f1->SetParameters(h1->GetMaximum()*0.8, h1->GetMean(), 0.5*h1->GetRMS(), 
 			h1->GetMaximum()*0.2, h1->GetMean(), 3.*h1->GetRMS());
 
       setTitles(h1, "m_{#mu#mu} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
       h1->SetMaximum(1.4*h1->GetMaximum());
-
+    
       h1->DrawCopy("hist");
       h1->Fit(f1, "0");
       f1->DrawCopy("same");
-
+    
       mean = TMath::Sqrt((f1->GetParameter(0)*f1->GetParameter(0)*f1->GetParameter(1)*f1->GetParameter(1)
 			  + f1->GetParameter(3)*f1->GetParameter(3)*f1->GetParameter(4)*f1->GetParameter(4))
 			 /
 			 (f1->GetParameter(0)*f1->GetParameter(0) + f1->GetParameter(3)*f1->GetParameter(3))
 			 );
-
+    
       sigma = TMath::Sqrt((f1->GetParameter(0)*f1->GetParameter(0)*f1->GetParameter(2)*f1->GetParameter(2)
 			   + f1->GetParameter(3)*f1->GetParameter(3)*f1->GetParameter(5)*f1->GetParameter(5))
 			  /
 			  (f1->GetParameter(0)*f1->GetParameter(0) + f1->GetParameter(3)*f1->GetParameter(3))
 			  );
-
+    
       writeFitPar(f1, o, mean, sigma, 6);
-
-    // -- Normalization (double gauss + pol1)
-    } else {
-
+    }
+  
+    // --  norm. channel (double gauss + pol1)
+    // =====================================
+    if ( !strcmp(fTypeS[o].Data(), "nsg") || !strcmp(fTypeS[o].Data(), "mynsg") ) {
+    
+      h1 = (TH1D*)(fS[o]->Get(hist))->Clone();
+      h1->Scale(fLumiD[0]/fLumiS[o]);
+    
+      c0->Clear();
+      shrinkPad(0.15, 0.15);
+      setFilledHist(h1, kBlack, kYellow, 1000);   
+    
       f6->SetParameters(h1->GetMaximum()*0.8, 5.3, 0.01, 
 			h1->GetMaximum()*0.2, 5.3, 0.03,
 			0.8*h1->GetBinContent(1), 1.);
-      
-      
+    
+    
       setTitles(h1, "m_{#mu#mu K} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
       h1->SetMaximum(1.4*h1->GetMaximum());
-      
+    
       h1->DrawCopy("hist");
       h1->Fit(f6, "0");
       f6->DrawCopy("same");
-
+    
       mean = TMath::Sqrt((f6->GetParameter(0)*f6->GetParameter(0)*f6->GetParameter(1)*f6->GetParameter(1)
 			  + f6->GetParameter(3)*f6->GetParameter(3)*f6->GetParameter(4)*f6->GetParameter(4))
 			 /
 			 (f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
 			 );
-
+    
       sigma = TMath::Sqrt((f6->GetParameter(0)*f6->GetParameter(0)*f6->GetParameter(2)*f6->GetParameter(2)
 			   + f6->GetParameter(3)*f6->GetParameter(3)*f6->GetParameter(5)*f6->GetParameter(5))
 			  /
 			  (f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
 			  );
-
+    
       writeFitPar(f6, o, mean, sigma, 3);
     }
     
     
     tl->SetTextColor(kBlack);  
     tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
-    
+  
     tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, 0.001));
     tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, 0.001));
-
+  
     if (h1->GetSumOfWeights()<0.001) {
       tl->DrawLatex(0.16, 0.73, Form("N: %4.2e", h1->GetSumOfWeights()));
     } else if (h1->GetSumOfWeights() < 1.) {
@@ -951,32 +1094,31 @@ void anaBmm::breco(int o, const char *hist) {
 
     tl->SetTextSize(0.06); tl->SetTextColor(kBlue);
     tl->DrawLatex(0.56, 0.65, Form("%s", fSignLeggS[o].Data()));
+  
+//     if ( o == 0 ) {
+//       tl->DrawLatex(0.48, 0.72, "ORCA/OSCAR (priv.)");
+//     } else if ( o == 1 ) {
+//       tl->DrawLatex(0.50, 0.72, "official MC");
+//     } else if ( o == 2 ) {
+//       tl->DrawLatex(0.52, 0.72, "CSA07");
+//     } else if ( o == 3 ) {
+//       tl->DrawLatex(0.52, 0.72, "Spring07");
+//     } else if ( o == 4 ) {
+//       tl->DrawLatex(0.56, 0.72, "perfect align.");
+//     } else if ( o == 5 ) {
+//       tl->DrawLatex(0.52, 0.72, "short-term align.");
+//     } else {  
+//       tl->DrawLatex(0.52, 0.72, Form("MC%i",o));
+//     }
     
-    if ( o == 0 ) {
-      tl->DrawLatex(0.48, 0.72, "ORCA/OSCAR (priv.)");
-    } else if ( o == 1 ) {
-      tl->DrawLatex(0.50, 0.72, "official MC");
-    } else if ( o == 2 ) {
-      tl->DrawLatex(0.52, 0.72, "Spring07");
-    } else if ( o == 3 ) {
-      tl->DrawLatex(0.52, 0.72, "CMSSW (priv.)");
-    } else if ( o == 4 ) {
-      tl->DrawLatex(0.56, 0.72, "perfect align.");
-    } else if ( o == 5 ) {
-      tl->DrawLatex(0.52, 0.72, "short-term align.");
-    } else {  
-      tl->DrawLatex(0.52, 0.72, Form("MC%i",o));
-    }
-    
-    
+  
     c0->SaveAs(Form("%s/breco/s%d-breco-%s.eps", outDir, o, hist));
     delete h1;
-
+  }
 
   // -- Rare backgrounds
   // ===================
-
-  } else {
+  if ( o < 0 ) {
     
     int EColor[]     = {   2,    4,    108,  6,  107,   93,   1, 
 			   2,    4,    108,  6,  107,   93,   1,  
@@ -1021,13 +1163,7 @@ void anaBmm::breco(int o, const char *hist) {
       shrinkPad(0.2, 0.2);
       gPad->SetLogy(1);
 
-      cout << endl << " ----> N_gen " << hr->GetSumOfWeights() << " for " 
-	   << fSignM[i].Data()  << endl;
-
       hr->Scale(fMisIdM[i]*fLumiD[0]/fLumiM[i]);
-
-      cout << " ----> N_exp " << hr->GetSumOfWeights() << " for " << fSignM[i].Data() 
-	   << " assuming fake rate = " << fMisIdM[i]<< endl << endl;
    
       if ( hr->GetSumOfWeights() > 0  && hr->GetMaximum() > 0 ) {
 
@@ -1101,9 +1237,6 @@ void anaBmm::breco(int o, const char *hist) {
       delete hs;
       delete hr;
     }
-
-    // -------------------------------------------------------------------------------------------
-
   }
 
   gPad->SetLogy(0);
@@ -1129,10 +1262,8 @@ void anaBmm::nreco(int o, const char *hist) {
 
   emptyBinError(h1);
   
-  cout << endl << " ----> N_gen " << h1->GetSumOfWeights() << endl;
   h1->Scale(fLumiD[0]/fLumiS[o]);
   h2->Scale(fLumiD[0]/fLumiS[o]);
-  cout << " ----> N_exp " << h1->GetSumOfWeights() << endl << endl;
     
   
   c0->Clear();
@@ -1140,7 +1271,7 @@ void anaBmm::nreco(int o, const char *hist) {
   setFilledHist(h1, kBlack, kYellow, 1000);
   setFilledHist(h2, kBlack, kYellow, 1000);
   
-  f5->SetParameters(0.2*h1->GetMaximum(), 5.3, 0.04, 
+  f5->SetParameters(0.2*h1->GetMaximum(), 5.25, 0.04, 
 		     0.8*h1->GetBinContent(1), 1.);
   
   setTitles(h2, "m_{#mu#mu K} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
@@ -1207,9 +1338,7 @@ void anaBmm::jreco(int o) {
   TH1D *h1;
   h1 = (TH1D*)(fS[o]->Get("j101"))->Clone();
 
-  cout << endl << " ----> N_gen " << h1->GetSumOfWeights() << endl;
   h1->Scale(fLumiD[0]/fLumiS[o]);
-  cout << " ----> N_exp " << h1->GetSumOfWeights() << endl << endl;
 
   c0->Clear();
   shrinkPad(0.15, 0.15);
@@ -1266,146 +1395,180 @@ void anaBmm::jreco(int o) {
 // -- MC Validation
 //===========================================================================================
 
-void anaBmm::mcVal(const char *hname) {
-
+void anaBmm::mcVal(const char *hname, int mode, double x, double y) {
+  
   gStyle->SetOptTitle(0);
 
+  // -- compare files1 with files2 for signal AND equivalent for background
+  TString sgfiles1[]    = { TString("csg-003") , TString("csg-003") };
+  TString sgfiles2[]    = { TString("csg-001") , TString("csg-003h") };
+
+  TString bgfiles1[]    = { TString("cbg-003") , TString("cbg-003") };
+  TString bgfiles2[]    = { TString("cbg-002") , TString("cbg-003h") };
+
+  // -- sample descriptions for sg AND bg
+  TString samples1[] = { TString("CMSSW (CSA07)"), TString("CSA07") }; 
+  TString samples2[] = { TString("ORCA (priv.)"), TString("Spring07") };
+
+  TString labels[]   = { TString("orca"), TString("spring07") };
+
   TH1D *h0, *h1;
-
-  const int num = 7;
-
-  int i[] = {1, 2, 2, 2, 2, 4, 4};
-  int j[] = {0, 0, 3, 6, 8, 5, 7};
-
-  TString sample_i[] = { TString("sm06_bsmumu"), TString("CMSSW (Spring07)"), TString("Spring07"), 
-			 TString("before HLT"), TString("bmmsel 2"), TString("perfect alignment"), TString("before HLT") };
-
-  TString sample_j[] = { TString("private prod."), TString("ORCA/OSCAR (priv.)"), TString("private prod."), 
-			 TString("after HLT"), TString("bmmsel 3"), TString("short-term misal."), TString("after HLT") };
-
   int n(0), m(0);
-  char name_n[200], name_m[200];
+  char name_n[200], name_m[200], hist[200];
+  char f_n[200], f_m[200];
 
-  for (int k = 0; k < num; k++ ) { 
+  sprintf(hist,"%s", hname);  // ??? Crashes when using hname instead of hist ???
 
-    n = i[k]; sprintf(name_n, "%s", sample_i[k].Data());
-    m = j[k]; sprintf(name_m, "%s", sample_j[k].Data()); 
-    
+  //  int num = sizeof(sgfiles1) - 1;  // not working
+  int num = 2;
 
-    fS[n]->cd();
-    h0 = (TH1D*)(fS[n]->Get(hname))->Clone();
-    if (0 == h0) {
-      cout << "Histogram with name " << hname << " does not exist" << endl;
-      return;
-    }
+  if ( (sizeof(sgfiles2) != sizeof(sgfiles1)) || (sizeof(labels) != sizeof(sgfiles1)) ||
+       (sizeof(samples1) != sizeof(sgfiles1)) || (sizeof(samples2) != sizeof(sgfiles1))||
+       (sizeof(bgfiles1) != sizeof(sgfiles1)) || (sizeof(bgfiles2) != sizeof(sgfiles1)) ) {
 
-    fS[m]->cd();
-    h1 = (TH1D*)(fS[m]->Get(hname))->Clone();
-    if (0 == h1) {
-      cout << "Histogram with name " << hname << " does not exist" << endl;
-      return;
-    }
-
-    h0->Scale(1./h0->GetSumOfWeights());
-    h1->Scale(1./h1->GetSumOfWeights());
-  
-    c0->Clear();
-    shrinkPad(0.15, 0.2);
-    setHist(h0, kBlack, 20, 2);
-    setTitles(h0, h0->GetXaxis()->GetTitle(), h0->GetYaxis()->GetTitle(), 0.06, 1.1, 1.8);
-    gPad->SetLogy(1);
-    h0->DrawCopy();
-
-    setHist(h1, kBlue, 24, 2);
-    h1->DrawCopy("same");
-
-    //    if (!strcmp(hname, "c000")) {
-    if (1) {
-      legg = new TLegend(0.3,0.2,0.7,0.3);
-      legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.05);  legg->SetFillColor(0); 
-      legge = legg->AddEntry(h1, Form("%s", name_m), "p"); legge->SetTextColor(kBlue);
-      legge = legg->AddEntry(h0, Form("%s", name_n), "p"); legge->SetTextColor(kBlack);
-      legg->Draw();
-    }
-
-    c0->Draw(); 
-    c0->Update();
-
-    c0->SaveAs(Form("%s/mcval/mcval-%i-%s.eps", outDir, k, hname));
-
-    gPad->SetLogy(0);
-
-    delete h0;
-    delete h1;
+    cout << " ====> Error: Sizes of arrays are not consistent !!!" << endl;
+    return; 
   }
 
-
-  // -- same but for background plots
-  const int num2 = 4;
-
-  int i2[] = {8, 1, 8, 9};
-  int j2[] = {0, 7, 1, 7};
-
-  TString sample_i2[] = { TString("CMSSW (Spring07)"), TString("before HLT"), TString("bmmsel 3"), 
-			  TString("after HLT (sel3)") };
-
-  TString sample_j2[] = { TString("ORCA/OSCAR (priv.)"), TString("after HLT"), TString("bmmsel 2"), 
-			  TString("after HLT (sel2)")  };
-
-  int index = 0;
-
-  for (int k = num; k < num + num2; k++ ) {
-
-    index = k -num;
-    n = i2[index]; sprintf(name_n, "%s", sample_i2[index].Data());
-    m = j2[index]; sprintf(name_m, "%s", sample_j2[index].Data()); 
-    
-
-    fM[n]->cd();
-    h0 = (TH1D*)(fM[n]->Get(hname))->Clone();
-    if (0 == h0) {
-      cout << "Histogram with name " << hname << " does not exist" << endl;
-      return;
-    }
-
-    fM[m]->cd();
-    h1 = (TH1D*)(fM[m]->Get(hname))->Clone();
-    if (0 == h1) {
-      cout << "Histogram with name " << hname << " does not exist" << endl;
-      return;
-    }
-
-    h0->Scale(1./h0->GetSumOfWeights());
-    h1->Scale(1./h1->GetSumOfWeights());
+  int logy(0); 
+  if (mode > 99) {
+    mode -= 100;
+    logy = 1;
+  }  
   
-    c0->Clear();
-    shrinkPad(0.15, 0.2);
-    setHist(h0, kBlack, 20, 2);
-    setTitles(h0, h0->GetXaxis()->GetTitle(), h0->GetYaxis()->GetTitle(), 0.06, 1.1, 1.8);
-    gPad->SetLogy(1);
-    h0->DrawCopy();
+  for (int i = 0; i < num; i++ ) {
 
-    setHist(h1, kBlue, 24, 2);
-    h1->DrawCopy("same");
-
-    //    if (!strcmp(hname, "c000")) {
-    if (1) {
-      legg = new TLegend(0.3,0.2,0.7,0.3);
-      legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.05);  legg->SetFillColor(0); 
-      legge = legg->AddEntry(h1, Form("%s", name_m), "p"); legge->SetTextColor(kBlue);
-      legge = legg->AddEntry(h0, Form("%s", name_n), "p"); legge->SetTextColor(kBlack);
-      legg->Draw();
+    // -- in case of missing histograms in old samples
+    if (mode == 10) {
+      if ( i == 0 ) { continue; }
     }
 
-    c0->Draw(); 
-    c0->Update();
 
-    c0->SaveAs(Form("%s/mcval/mcval-%i-%s.eps", outDir, k, hname));
+    sprintf(name_n, "%s", samples1[i].Data());
+    sprintf(name_m, "%s", samples2[i].Data());
 
-    gPad->SetLogy(0);
+    // --------------
+    // -- Signal
+    // --------------
+    sprintf(f_n,"%s",sgfiles1[i].Data());
+    sprintf(f_m,"%s",sgfiles2[i].Data());
 
-    delete h0;
-    delete h1;
+    n = findIndex(f_n);
+    m = findIndex(f_m);  
+
+    if ( n > -1 && m > -1 && n < nSg && m < nSg) { 
+  
+      fS[n]->cd();
+      h0 = (TH1D*)(fS[n]->Get(hist))->Clone();
+      if (!h0) {
+	cout << "Histogram with name " << hist << " does not exist" << endl;
+	return;
+      }
+
+      fS[m]->cd();
+      h1 = (TH1D*)(fS[m]->Get(hist))->Clone();
+      if (!h1) {
+	cout << "Histogram with name " << hist << " does not exist" << endl;
+	return;
+      }
+
+      h0->Scale(1./h0->GetSumOfWeights());
+      h1->Scale(1./h1->GetSumOfWeights());
+  
+      c0->Clear();
+      gPad->SetLogy(logy);
+      shrinkPad(0.15, 0.2);
+      setHist(h0, kBlack, 20, 2);
+      setHist(h1, kBlue, 24, 2);
+      setTitles(h0, h0->GetXaxis()->GetTitle(), h0->GetYaxis()->GetTitle(), 0.06, 1.1, 1.8);
+      h0->SetMaximum(1.1*(h1->GetMaximum() > h0->GetMaximum()? h1->GetMaximum(): h0->GetMaximum()));
+
+      h0->DrawCopy();
+      h1->DrawCopy("same");
+
+      if (x > 0) {
+	legg = new TLegend(x, y, x+0.4, y+0.1);
+	legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.04);  
+	legg->SetFillColor(0); legg->SetFillStyle(1000); 
+	legge = legg->AddEntry(h1, Form("%s", name_m), "p"); legge->SetTextColor(kBlue);
+	legge = legg->AddEntry(h0, Form("%s", name_n), "p"); legge->SetTextColor(kBlack);
+	legg->Draw();
+      }
+
+      c0->Draw(); 
+      c0->Update();
+
+      c0->SaveAs(Form("%s/mcval/sgval-%s-%s.eps", outDir, labels[i].Data(), hist));
+
+      delete h0;
+      delete h1;  
+
+    } else {
+      if ( n < 0 ) cout << " ====> Error: couldn't index of find file " << f_n << endl;
+      if ( m < 0 ) cout << " ====> Error: couldn't index of find file " << f_m << endl;
+    }  
+
+
+    // --------------
+    // -- Background
+    // --------------  
+    sprintf(f_n,"%s",bgfiles1[i].Data());
+    sprintf(f_m,"%s",bgfiles2[i].Data());
+
+    n = findIndex(f_n);
+    m = findIndex(f_m);  
+
+    if ( n > -1 && m > -1 && n < nMc && m < nMc) {   
+
+      fM[n]->cd();
+      h0 = (TH1D*)(fM[n]->Get(hist))->Clone();
+      if (0 == h0) {
+	cout << "Histogram with name " << hist << " does not exist" << endl;
+	return;
+      }
+
+      fM[m]->cd();
+      h1 = (TH1D*)(fM[m]->Get(hist))->Clone();
+      if (0 == h1) {
+	cout << "Histogram with name " << hist << " does not exist" << endl;
+	return;
+      }
+
+      h0->Scale(1./h0->GetSumOfWeights());
+      h1->Scale(1./h1->GetSumOfWeights());
+  
+      c0->Clear();
+      gPad->SetLogy(logy);
+      shrinkPad(0.15, 0.2);
+      setHist(h0, kBlack, 20, 2);
+      setHist(h1, kBlue, 24, 2);
+      setTitles(h0, h0->GetXaxis()->GetTitle(), h0->GetYaxis()->GetTitle(), 0.06, 1.1, 1.8);
+      h0->SetMaximum(1.1*(h1->GetMaximum() > h0->GetMaximum()? h1->GetMaximum(): h0->GetMaximum()));
+
+      h0->DrawCopy();
+      h1->DrawCopy("same");
+
+      if (x > 0) {
+	legg = new TLegend(x, y, x+0.4, y+0.1);
+	legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.04);
+	legg->SetFillColor(0); legg->SetFillStyle(1000); 
+	legge = legg->AddEntry(h1, Form("%s", name_m), "p"); legge->SetTextColor(kBlue);
+	legge = legg->AddEntry(h0, Form("%s", name_n), "p"); legge->SetTextColor(kBlack);
+	legg->Draw();
+      }
+
+      c0->Draw(); 
+      c0->Update();
+
+      c0->SaveAs(Form("%s/mcval/bgval-%s-%s.eps", outDir, labels[i].Data(), hist));
+
+      delete h0;
+      delete h1;
+
+    } else {
+      if ( n < 0 ) cout << " ====> Error: couldn't find index of file " << f_n << endl;
+      if ( m < 0 ) cout << " ====> Error: couldn't find index of file " << f_m << endl;
+    }
   }
 }
 
@@ -1413,45 +1576,6 @@ void anaBmm::mcVal(const char *hname) {
 //===========================================================================================
 // -- Distributions
 //===========================================================================================
-
-void anaBmm::showDistributions(int offset, int wiat) { 
-
-  int logy(100);   
-
-  showDistribution(Form("c%d00", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d01", offset), 2);            if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d10", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d11", offset), 2);            if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d12", offset), 2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-
-  showDistribution(Form("c%d14", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d15", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-
-  showDistribution(Form("c%d20", offset), 2,      0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d21", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d22", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d23", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d26", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d16", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d24", offset), 2,      0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d25", offset), 2,      0.3, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d27", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d37", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
-
-  showDistribution(Form("c%d30", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d35", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d40", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d41", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d42", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
-  showDistribution(Form("c%d62", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
-
-
- end:;
-
-}
-
-
-// ----------------------------------------------------------------------
 void anaBmm::showDistribution(const char *hname, int mode, double x, double y) { 
 
   gStyle->SetOptStat(0);
@@ -1475,7 +1599,7 @@ void anaBmm::showDistribution(const char *hname, int mode, double x, double y) {
     mode -= 100;
     logy = 1;
   }  
-  
+
   c0->SetLogy(logy);
   
   if (mode == 0) {
@@ -1667,7 +1791,8 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   }
   
   double n     = h->GetBinContent(h->FindBin(0.1));
-  double norm  = h->GetBinContent(h->FindBin(1.1));  // FIXME: Should be Bin(0.1) but old files have empty Bin(0.1)
+  double norm  = h->GetBinContent(h->FindBin(0.1));  // FIXME: Should be Bin(0.1) but old files have empty Bin(0.1)
+  //  double norm  = h->GetBinContent(h->FindBin(1.1));  // FIXME: Should be Bin(0.1) but old files have empty Bin(0.1)
   double nkin  = h->GetBinContent(h->FindBin(1.1));
   double nexp  = SF*norm;
 
@@ -1677,8 +1802,9 @@ void anaBmm::effTable(TFile *f, const char *tag) {
 
   // -- analysis efficiencies
   // ------------------------
-  // -- exp. events, from (1.1)
-  n  = h->GetBinContent(h->FindBin(1.1));
+  // -- exp. events, from (0.1)
+  //  n  = h->GetBinContent(h->FindBin(1.1));
+  n  = h->GetBinContent(h->FindBin(0.1));
 
   double nevt  = SF*norm;
   double enorm = n/norm;
@@ -2883,14 +3009,15 @@ void anaBmm::channelEff(TFile *f, double &fnorm_Ch, double &eff1_Ch, double &eff
 // -- Muon mis-identification
 //===========================================================================================
 
-void anaBmm::fakeMuons() {
+void anaBmm::fakeMuons(const char *prod) {
 
   tl->SetNDC(kTRUE);
   tl->SetTextSize(0.06);
   tl->SetTextColor(kBlack);
+  
+  int i = -1;
+  char f_n[200];
 
-  const int mhist = nMc;
-  const int shist = nSg;
   //  const int nhist = 8;
   double mis(0.), eff(0.), tot(0.);
   
@@ -2907,49 +3034,110 @@ void anaBmm::fakeMuons() {
   TH1D *P_pT, *fakeP_pT, *P_eta, *fakeP_eta;
   TH1D *Mu_pT, *effMu_pT, *Mu_eta, *effMu_eta;
 
-  TH2D *Pi, *fakePi, *K, *fakeK, *P, *fakeP, *Mu, *effMu; 
+  TH2D *Pi, *fakePi, *K, *fakeK, *P, *fakeP, *Mu, *effMu;
 
+  // -- How to do this more efficient ???
+  int nsg(0), nbg(0);
+  TString sgfiles[20], bgfiles[20];
+  // -- CSA07
+  if ( !strcmp(prod,"csa07") ) {
+
+    nsg = 2;
+    sgfiles[0] = TString("csg-003");
+    sgfiles[1] = TString("csg-004");
+
+    nbg = 5;
+    bgfiles[0] = TString("cbg-003");
+    bgfiles[1] = TString("cbg-004");
+    bgfiles[2] = TString("cbg-005");
+    bgfiles[3] = TString("cbg-006");
+    bgfiles[4] = TString("cbg-007");
+  } 
+  // -- Spring07
+  else if ( !strcmp(prod,"spring07") ) {
+    
+
+    nsg = 2;
+    sgfiles[0] = TString("csg-003h");
+    sgfiles[1] = TString("csg-004h");
+
+    nbg = 3;
+    bgfiles[0] = TString("cbg-003h");
+    bgfiles[1] = TString("cbg-004h");
+    bgfiles[2] = TString("cbg-005h");
+  }
+
+  // -- Spring07
+  else if ( !strcmp(prod,"orca") ) {
+
+    nsg = 2;
+    sgfiles[0] = TString("csg-001");
+    sgfiles[1] = TString("csg-002");
+
+    nbg = 1;
+    bgfiles[0] = TString("cbg-002");
+    
+  } else {
+
+    cout << " ====> Error: No production found, for " << prod << endl;
+    return;
+  }
 
   // -- from signal
+  sprintf(f_n,"%s",sgfiles[0].Data());
+  int index = findIndex(f_n);
 
-  cout << " Muon efficiencies / fake rates from ---> " <<  fSignS[sgIndex].Data() << endl;
+  if ( index < 0 ) {
+    cout << " ====> Error: couldn't find index of file " << f_n << endl;
+    return;
+  }
 
-  h = (TH1D*)fS[sgIndex]->Get("MisID");
-  
-  Pi_pT = (TH1D*)fS[sgIndex]->Get("m100");    
-  fakePi_pT = (TH1D*)fS[sgIndex]->Get("m101");      
-  Pi_eta = (TH1D*)fS[sgIndex]->Get("m110");
-  fakePi_eta = (TH1D*)fS[sgIndex]->Get("m111");
-  
-  K_pT = (TH1D*)fS[sgIndex]->Get("m200");    
-  fakeK_pT = (TH1D*)fS[sgIndex]->Get("m201");      
-  K_eta = (TH1D*)fS[sgIndex]->Get("m210");
-  fakeK_eta = (TH1D*)fS[sgIndex]->Get("m211");
-  
-  P_pT = (TH1D*)fS[sgIndex]->Get("m300");    
-  fakeP_pT = (TH1D*)fS[sgIndex]->Get("m301");      
-  P_eta = (TH1D*)fS[sgIndex]->Get("m310");
-  fakeP_eta = (TH1D*)fS[sgIndex]->Get("m311");
-  
-  Mu_pT = (TH1D*)fS[sgIndex]->Get("m400");    
-  effMu_pT = (TH1D*)fS[sgIndex]->Get("m401");      
-  Mu_eta = (TH1D*)fS[sgIndex]->Get("m410");
-  effMu_eta = (TH1D*)fS[sgIndex]->Get("m411");
-  
-  Pi = (TH2D*)fS[sgIndex]->Get("M100");
-  fakePi = (TH2D*)fS[sgIndex]->Get("M101"); 
-  K = (TH2D*)fS[sgIndex]->Get("M200");
-  fakeK = (TH2D*)fS[sgIndex]->Get("M201");
-  P = (TH2D*)fS[sgIndex]->Get("M300");
-  fakeP = (TH2D*)fS[sgIndex]->Get("M301");
-  Mu = (TH2D*)fS[sgIndex]->Get("M400");
-  effMu = (TH2D*)fS[sgIndex]->Get("M401");  
-  
-  for ( int i = 2; i < 4 && i < shist; i++ ) {
+  cout << " Muon efficiencies / fake rates from ---> " <<  fFileS[index].Data() 
+       << " (" << fSignS[index].Data() << ")" << endl;
 
-    if ( !(i == normSgIndex) ) { continue; }
+  h = (TH1D*)fS[index]->Get("MisID");
+  
+  Pi_pT = (TH1D*)fS[index]->Get("m100");    
+  fakePi_pT = (TH1D*)fS[index]->Get("m101");      
+  Pi_eta = (TH1D*)fS[index]->Get("m110");
+  fakePi_eta = (TH1D*)fS[index]->Get("m111");
+  
+  K_pT = (TH1D*)fS[index]->Get("m200");    
+  fakeK_pT = (TH1D*)fS[index]->Get("m201");      
+  K_eta = (TH1D*)fS[index]->Get("m210");
+  fakeK_eta = (TH1D*)fS[index]->Get("m211");
+  
+  P_pT = (TH1D*)fS[index]->Get("m300");    
+  fakeP_pT = (TH1D*)fS[index]->Get("m301");      
+  P_eta = (TH1D*)fS[index]->Get("m310");
+  fakeP_eta = (TH1D*)fS[index]->Get("m311");
+  
+  Mu_pT = (TH1D*)fS[index]->Get("m400");    
+  effMu_pT = (TH1D*)fS[index]->Get("m401");      
+  Mu_eta = (TH1D*)fS[index]->Get("m410");
+  effMu_eta = (TH1D*)fS[index]->Get("m411");
+  
+  Pi = (TH2D*)fS[index]->Get("M100");
+  fakePi = (TH2D*)fS[index]->Get("M101"); 
+  K = (TH2D*)fS[index]->Get("M200");
+  fakeK = (TH2D*)fS[index]->Get("M201");
+  P = (TH2D*)fS[index]->Get("M300");
+  fakeP = (TH2D*)fS[index]->Get("M301");
+  Mu = (TH2D*)fS[index]->Get("M400");
+  effMu = (TH2D*)fS[index]->Get("M401");  
 
-    cout << " Muon efficiencies / fake rates from ---> " <<  fSignS[i].Data() << endl;
+  for ( int j = 1; j < nsg; j++ ) {
+
+    sprintf(f_n,"%s",sgfiles[j].Data());
+    i = findIndex(f_n);
+
+    if ( i < 0 ) {
+      cout << " ====> Error: couldn't find index of file " << f_n << endl;
+      continue;
+    }
+
+    cout << " Muon efficiencies / fake rates from ---> " <<  fFileS[i].Data() 
+       << " (" << fSignS[i].Data() << ")" << endl;
  
     h->Add((TH1D*)fS[i]->Get("MisID"));
 
@@ -2986,12 +3174,18 @@ void anaBmm::fakeMuons() {
 
 
   // -- from background
+  for ( int j = 0; j < nbg; j++ ) {
 
-  for (int i = 0; i < mhist; i++) {
+    sprintf(f_n,"%s",bgfiles[j].Data());
+    i = findIndex(f_n);
 
-    if ( !(i == bgIndex) && !(i == normBgIndex) ) { continue; }
+    if ( i < 0 ) {
+      cout << " ====> Error: couldn't find index of file " << f_n << endl;
+      continue;
+    }
 
-    cout << " Muon efficiencies / fake rates from ---> " <<  fSignM[i].Data() << endl;
+    cout << " Muon efficiencies / fake rates from ---> " <<  fFileM[i].Data() 
+       << " (" << fSignM[i].Data() << ")" << endl;
 
     h->Add((TH1D*)fM[i]->Get("MisID"));
 
@@ -3059,98 +3253,71 @@ void anaBmm::fakeMuons() {
   shrinkPad(0.15, 0.15);
 
   // -- 1D histograms
-  // -- Pions
-  Pi_pT->Draw("hist");
-  fakePi_pT->Draw("psame");
-  tl->DrawLatex(0.16, 0.92, "Fake muons from pions");
-  c0->SaveAs(Form("%s/muonID/fakes_pionsPt.eps", outDir));
-
   // - pT
   fPiMid = DivideHisto(fakePi_pT, Pi_pT);
-  fPiMid->GetYaxis()->SetRangeUser(0,0.011);
+  fPiMid->GetYaxis()->SetRangeUser(0,0.021);
   fPiMid->GetYaxis()->SetNdivisions(6, kTRUE);
   setTitles(fPiMid, "p_{T}", "#varepsilon", 0.06, 1.1, 1.1);
   fPiMid->Draw();
-  // tl->DrawLatex(0.16, 0.92,  "Rate of fake muons from pions (p_{T})");
-  c0->SaveAs(Form("%s/muonID/fakerate_pionsPt.eps", outDir));
+  c0->SaveAs(Form("%s/muonID/%s/fakerate_pionsPt.eps", outDir, prod));
 
   // - eta
   TH1D* MisID = DivideHisto(fakePi_eta, Pi_eta);
-  MisID->GetYaxis()->SetRangeUser(0,0.011);
+  MisID->GetYaxis()->SetRangeUser(0,0.021);
+  setTitles(MisID, "#eta", "#varepsilon", 0.06, 1.1, 1.1);
   MisID->Draw();
-  tl->DrawLatex(0.16, 0.92, "Rate of fake muons from pions (#eta)");
-  c0->SaveAs(Form("%s/muonID/fakerate_pionsEta.eps", outDir));
+  c0->SaveAs(Form("%s/muonID/%s/fakerate_pionsEta.eps",  outDir, prod));
 
 
   // -- Kaons
-  K_pT->Draw("hist");
-  fakeK_pT->Draw("psame");
-  tl->DrawLatex(0.16, 0.92, "Fake muons from kaons");
-  c0->SaveAs(Form("%s/muonID/fakes_kaonsPt.eps", outDir));
-
   // - pT
   fKaMid = DivideHisto(fakeK_pT, K_pT);
-  fKaMid->GetYaxis()->SetRangeUser(0,0.011); 
+  fKaMid->GetYaxis()->SetRangeUser(0,0.021); 
   fKaMid->GetYaxis()->SetNdivisions(6, kTRUE);
   setTitles(fKaMid, "p_{T}", "#varepsilon", 0.06, 1.1, 1.1);
   fKaMid->Draw();
-  // tl->DrawLatex(0.16, 0.92,  "Rate of fake muons from kaons (p_{T})");
-  c0->SaveAs(Form("%s/muonID/fakerate_kaonsPt.eps", outDir));
+  c0->SaveAs(Form("%s/muonID/%s/fakerate_kaonsPt.eps",  outDir, prod));
 
   // - eta
   MisID = DivideHisto(fakeK_eta, K_eta);
-  MisID->GetYaxis()->SetRangeUser(0,0.011);
+  MisID->GetYaxis()->SetRangeUser(0,0.021);
+  setTitles(MisID, "#eta", "#varepsilon", 0.06, 1.1, 1.1);
   MisID->Draw();
-  tl->DrawLatex(0.16, 0.92, "Rate of fake muons from kaons (#eta)");
-  c0->SaveAs(Form("%s/muonID/fakerate_kaonsEta.eps", outDir));
+  c0->SaveAs(Form("%s/muonID/%s/fakerate_kaonsEta.eps",  outDir, prod));
 
 
   // -- Protons
-  P_pT->Draw("hist");
-  fakeP_pT->Draw("psame");
-  tl->DrawLatex(0.16, 0.92, "Fake muons from protons");
-  c0->SaveAs(Form("%s/muonID/fakes_protonsPt.eps", outDir));
-
   // - pT
   fProtMid = DivideHisto(fakeP_pT, P_pT);
-  fProtMid->GetYaxis()->SetRangeUser(0,0.011);
+  fProtMid->GetYaxis()->SetRangeUser(0,0.021);
   fProtMid->GetYaxis()->SetNdivisions(6, kTRUE);
   setTitles(fProtMid, "p_{T}", "#varepsilon", 0.06, 1.1, 1.1);
-
   fProtMid->Draw();
-  // tl->DrawLatex(0.16, 0.92,  "Rate of fake muons from protons (p_{T})");
-  c0->SaveAs(Form("%s/muonID/fakerate_protonsPt.eps", outDir));
+  c0->SaveAs(Form("%s/muonID/%s/fakerate_protonsPt.eps",  outDir, prod));
 
   // - eta
   MisID = DivideHisto(fakeP_eta, P_eta);
-  MisID->GetYaxis()->SetRangeUser(0,0.011);
-  setTitles(MisID, "p_{T}", "#varepsilon", 0.06, 1.1, 1.1);
+  MisID->GetYaxis()->SetRangeUser(0,0.021);
+  setTitles(MisID, "#eta", "#varepsilon", 0.06, 1.1, 1.1);
   MisID->Draw();
-  tl->DrawLatex(0.16, 0.92, "Rate of fake muons from protons (#eta)");
-  c0->SaveAs(Form("%s/muonID/fakerate_protonsEta.eps", outDir));
+  c0->SaveAs(Form("%s/muonID/%s/fakerate_protonsEta.eps",  outDir, prod));
 
 
   // -- Muons
-  Mu_pT->Draw("hist");
-  effMu_pT->Draw("psame");
-  tl->DrawLatex(0.16, 0.92, "Muon identification");
-  c0->SaveAs(Form("%s/muonID/identified_muonsPt.eps", outDir));
-
   // - pT
   fMuEff = DivideHisto(effMu_pT, Mu_pT);
   fMuEff->GetYaxis()->SetRangeUser(0,1.1);
   setTitles(fMuEff, "p_{T}", "#varepsilon", 0.06, 1.1, 1.1);
   //  fMuEff->GetYaxis()->SetNdivisions(6, kTRUE);
   fMuEff->Draw();
-  // tl->DrawLatex(0.16, 0.92, "Muon efficiency (p_{T})");
-  c0->SaveAs(Form("%s/muonID/efficiency_muonsPt.eps", outDir));
+  c0->SaveAs(Form("%s/muonID/%s/efficiency_muonsPt.eps",  outDir, prod));
+
   // - eta
   MisID = DivideHisto(effMu_eta, Mu_eta);
   MisID->GetYaxis()->SetRangeUser(0,1.1);
   setTitles(MisID, "#eta", "#varepsilon", 0.06, 1.1, 1.1);
   MisID->Draw();
-  // tl->DrawLatex(0.16, 0.92, "Muon efficiency  (#eta)");
-  c0->SaveAs(Form("%s/muonID/efficiency_muonsEta.eps", outDir));
+  c0->SaveAs(Form("%s/muonID/%s/efficiency_muonsEta.eps",  outDir, prod));
 
 
   // -- 2D histograms
@@ -3158,29 +3325,24 @@ void anaBmm::fakeMuons() {
   fPiMid2 = DivideHisto2(fakePi, Pi);
   setTitles2(fPiMid2, "p_{T}", "#eta", 0.06, 1.1, 1.1);
   fPiMid2->Draw("colz");
-  tl->DrawLatex(0.16, 0.92, "Rate of fake muons from pions");
-  c0->SaveAs(Form("%s/muonID/fakerate_pions.eps", outDir));
+  c0->SaveAs(Form("%s/muonID/%s/fakerate_pionsEtaPt.eps",  outDir, prod));
 
   fKaMid2 = DivideHisto2(fakeK, K);
   setTitles2(fKaMid2, "p_{T}", "#eta", 0.06, 1.1, 1.1);
   fKaMid2->Draw("colz");
-  tl->DrawLatex(0.16, 0.92, "Rate of fake muons from kaons");
-  c0->SaveAs(Form("%s/muonID/fakerate_kaons.eps", outDir));
+  c0->SaveAs(Form("%s/muonID/%s/fakerate_kaonsEtaPt.eps",  outDir, prod));
 
   fProtMid2 = DivideHisto2(fakeP, P);
   setTitles2(fProtMid2, "p_{T}", "#eta", 0.06, 1.1, 1.1);
   fProtMid2->Draw("colz");
-  tl->DrawLatex(0.16, 0.92, "Rate of fake muons from protons");
-  c0->SaveAs(Form("%s/muonID/fakerate_protons.eps", outDir));
+  c0->SaveAs(Form("%s/muonID/%s/fakerate_protonsEtaPt.eps",  outDir, prod));
 
   fMuEff2 = DivideHisto2(effMu, Mu);
   setTitles2(fMuEff2, "p_{T}", "#eta", 0.06, 1.1, 1.1); 
   fMuEff2->GetZaxis()->SetRangeUser(0.,1.);
   fMuEff2->GetZaxis()->SetNdivisions(6, kTRUE);
-  fMuEff2->GetYaxis()->SetNdivisions(6, kTRUE);
   fMuEff2->Draw("colz");
-  // tl->DrawLatex(0.16, 0.92, Form("Muon efficiency"));
-  c0->SaveAs(Form("%s/muonID/efficiency_muons.eps", outDir));
+  c0->SaveAs(Form("%s/muonID/%s/efficiency_muonsEtaPt.eps",  outDir, prod));
   
   OUT << Form("\\vdef{effIdMuonsSim}    {\\ensuremath{ {%4.3E } } }", effMuons)   << endl;
   OUT << Form("\\vdef{misIdPionsSim}    {\\ensuremath{ {%4.3E } } }", frPions)   << endl;
@@ -3216,8 +3378,8 @@ void anaBmm::dumpFiles() {
       fNexpS[i] = fLumiD[0]*fvXsS[i];
 
        cout << Form("Signal MC[%d]     visible cross-section: %3.2e fb, \
-                     Nevt: %8.0f -> Lumi: %3.2e /fb   Signature: %s Title: %s"
-		    , i, fvXsS[i], fNevtS[i], fLumiS[i], fSignS[i].Data(), fSignTexS[i].Data()) 
+       Nevt: %8.0f -> Lumi: %3.2e /fb   Signature: %s Title: %s File: %s"
+		    , i, fvXsS[i], fNevtS[i], fLumiS[i], fSignS[i].Data(), fSignTexS[i].Data(), fFileS[i].Data()) 
 	    << endl;
 
       OUT << Form("\\vdef{channel:s%i} {\\ensuremath{ {%s } } }", i, fSignTexS[i].Data()) << endl;
@@ -3243,8 +3405,8 @@ void anaBmm::dumpFiles() {
 
 
       cout << Form("Background MC[%d] visible cross-section: %3.2e fb, \
-                    Nevt: %8.0f -> lumi: %3.2e /fb   Signature: %s Title: %s"
-		   , i, fvXsM[i], fNevtM[i], fLumiM[i], fSignM[i].Data(), fSignTexM[i].Data()) 
+      Nevt: %8.0f -> lumi: %3.2e /fb   Signature: %s Title: %s File: %s"
+		   , i, fvXsM[i], fNevtM[i], fLumiM[i], fSignM[i].Data(), fSignTexM[i].Data(), fFileM[i].Data()) 
 	   << endl;
 
       OUT << Form("\\vdef{channel:m%i} {\\ensuremath{ {%s } } }", i, fSignTexM[i].Data()) << endl;
@@ -3277,6 +3439,7 @@ void anaBmm::dumpCuts() {
   sprintf(label, "%s", hS->GetXaxis()->GetBinLabel(1));
 
   double sVal, mVal;
+  int show = 0, problem = 0;
 
   // cout << " -- Cuts signal (mc)"  << endl;
 
@@ -3289,125 +3452,154 @@ void anaBmm::dumpCuts() {
       // cout << hS->GetXaxis()->GetBinLabel(i) << " = " << sVal << " (" <<  mVal  << ")" << endl;
 
       if (sVal != mVal) {
-	cout << "====> Error: Signal and BG MC run with different cut values!" << endl;
+	cout << endl << "  Cut bin " << i << ": Signal  = " << sVal << ", BG = " << mVal << " for " ;
+	show = 1; problem = 1;
       } else {
-
+	show = 0;
+      }
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}(B_{s}) [GeV]")) {
 	  OUT  << Form("\\vdef{cut:%s:ptbs}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  ptbs = sVal;
+	  if ( show ) { cout << "pT(Bs)" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}^{min}(l) [GeV]")) {
 	  OUT  << Form("\\vdef{cut:%s:ptlo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  ptmulo = sVal;
+	  if ( show ) { cout << "pT_min" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}^{max}(l) [GeV]")) {
 	  OUT  << Form("\\vdef{cut:%s:pthi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	  if ( show ) { cout << "pT_max" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{#mu#mu}^{min}")) {
 	  OUT  << Form("\\vdef{cut:%s:rmmlo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  rmmlo = sVal;
+	  if ( show ) { cout << "Rmm_min" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{#mu#mu}^{max}")) {
 	  OUT  << Form("\\vdef{cut:%s:rmmhi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  rmmhi = sVal;
+	  if ( show ) { cout << "Rmm_max" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#eta_{B}^{min}")) {
 	  OUT  << Form("\\vdef{cut:%s:etalo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  etalo = sVal;
+	  if ( show ) { cout << "eta(B)_min" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#eta_{B}^{max}")) {
 	  OUT  << Form("\\vdef{cut:%s:etahi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  etahi = sVal;
+	  if ( show ) { cout << "eta(B)_max" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "TIP(l) [cm]")) {
 	  OUT  << Form("\\vdef{cut:%s:tip}      {\\ensuremath{%5.3f } } ", label, sVal) << endl;
+	  if ( show ) { cout << "TIP" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#chi^2")) {
 	  OUT  << Form("\\vdef{cut:%s:chi2}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  vtxhi = sVal;
+	  if ( show ) { cout << "chi2" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{3d} [cm]")) {
 	  OUT  << Form("\\vdef{cut:%s:l3d}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
+	  if ( show ) { cout << "L3D" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "cos(#alpha)")) {
 	  OUT  << Form("\\vdef{cut:%s:cosalpha}    {\\ensuremath{%5.4f } } ", label, sVal) << endl;
 	  coslo = sVal;
+	  if ( show ) { cout << "cos(alpha)" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{xy} [cm]")) {
 	  OUT  << Form("\\vdef{cut:%s:lxy}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
+	  if ( show ) { cout << "LXY" << endl; }
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{3D}/#sigma_{3D}")) {
+	  OUT  << Form("\\vdef{cut:%s:l3d/s3d}    {\\ensuremath{%3.1f } } ", label, sVal) << endl;
+	  l3dlo = sVal;
+	  if ( show ) { cout << "L3D/S3D" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{xy}/#sigma_{xy}")) {
 	  OUT  << Form("\\vdef{cut:%s:lxy/sxy}    {\\ensuremath{%3.1f } } ", label, sVal) << endl;
 	  lxylo = sVal;
+	  if ( show ) { cout << "LXY/SXY" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "I_{veto}")) {
 	  OUT  << Form("\\vdef{cut:%s:isoveto}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	  if ( show ) { cout << "I_veto" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{I}")) {
 	  OUT  << Form("\\vdef{cut:%s:isocone}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	  if ( show ) { cout << "IsoCone" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "I")) {
 	  OUT  << Form("\\vdef{cut:%s:isolation}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
 	  isolo = sVal;
+	  if ( show ) { cout << "Isolation" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "BMMSEL")) {
 	  OUT  << Form("\\vdef{cut:%s:bmmsel}    {\\ensuremath{%i } } ", label, sVal) << endl;
+	  if ( show ) { cout << "BMMSEL" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "SUBSEL")) {
 	  OUT  << Form("\\vdef{cut:%s:subsel}    {\\ensuremath{%i } } ", label, sVal) << endl;
-	}
-
-	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{3D}/#sigma_{3D}")) {
-	  OUT  << Form("\\vdef{cut:%s:l3d/s3d}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
+	  if ( show ) { cout << "SUBSEL" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "m_{min}^{#mu #mu}")) {
 	  OUT  << Form("\\vdef{cut:%s:masslo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  masslo = sVal;
+	  if ( show ) { cout << "mass_min" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "m_{max}^{#mu #mu}")) {
 	  OUT  << Form("\\vdef{cut:%s:masshi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  masshi = sVal;
+	  if ( show ) { cout << "mass_max" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "iso. p_{T}^{min}")) {
 	  OUT  << Form("\\vdef{cut:%s:isoptmin}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
+	  if ( show ) { cout << "pT_iso" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "L1 available")) {
 	  OUT  << Form("\\vdef{cut:%s:setl1}    {\\ensuremath{%i } } ", label, sVal) << endl;
+	  if ( show ) { cout << "L1" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "HLT available")) {
 	  OUT  << Form("\\vdef{cut:%s:sethlt}    {\\ensuremath{%i } } ", label, sVal) << endl;
+	  if ( show ) { cout << "HLT" << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#Delta m{#mu #mu}")) {
 	  OUT  << Form("\\vdef{cut:%s:masswi}    {\\ensuremath{%5.0f } } ", label, sVal) << endl;
 	  masswi = 0.001*sVal;
+	  if ( show ) { cout << "deltaMass" << endl; }
 	}
-      }
+	//      }
     }
   }
 
+  if ( problem ) cout << "====> Error: Signal and BG MC run with different cut values !!!" << endl;
   OUT.close();
 }
 
@@ -4065,6 +4257,37 @@ int anaBmm::checkIf(int mc, const char *sel) {
 
   return accept;
 }
+
+// -----------------------------------------------------
+
+int anaBmm::findIndex(const char *filename) {
+
+
+  int index(-1);
+
+
+  for (int i = 0; i < nSg; ++i) {
+    if ( !strcmp(filename, fFileS[i].Data()) ) {
+      index = i; goto rtn;
+    }
+  }
+
+  for (int i = 0; i < nMc; ++i) {
+    if ( !strcmp(filename, fFileM[i].Data()) ) {
+      index = i; goto rtn;
+    }
+  }
+
+  for (int i = 0; i < nDa; ++i) {
+    if ( !strcmp(filename, fFileD[i].Data()) ) {
+      index = i; goto rtn;
+    }
+  }
+
+  rtn:;
+  return index;
+}
+
 
 // -----------------------------------------------------
 

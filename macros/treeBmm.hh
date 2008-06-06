@@ -218,6 +218,7 @@ private:
     , fGoodEtaB
     , fGoodCosa
     , fGoodLength
+    , fGood3DLength
     , fGoodIso
     , fGoodVtx
     , fGoodPresel

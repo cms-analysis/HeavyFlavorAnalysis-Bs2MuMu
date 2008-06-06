@@ -1409,6 +1409,7 @@ void treeBmm::candidateProperties() {
   
   // -- ISOLATION:   Compute isolation with tracks
   TVector3 ptv;
+  int absQ(0);
   double df2, de2;
   double dr(0.), drmin(99.);
   double sum(0.), sum05(0.), sum06(0.), sum08(0.), sum10(0.), sum11(0.), sum12(0.), sum14(0.);
@@ -1419,7 +1420,8 @@ void treeBmm::candidateProperties() {
 
   for (int it = 0; it < fpEvt->nRecTracks(); ++it) {
 
-    ptv   = fpEvt->getRecTrack(it)->fPlab;
+    ptv    = fpEvt->getRecTrack(it)->fPlab;
+    absQ   = TMath::Abs(fpEvt->getRecTrack(it)->fQ);
 
     if ( fNorm ) {
 
@@ -1434,7 +1436,7 @@ void treeBmm::candidateProperties() {
       ((TH1D*)gDirectory->Get("i300"))->Fill(df2);
       ((TH1D*)gDirectory->Get("i301"))->Fill(ptv.Pt());
 
-      if ((ptv.Pt() > ISOPTLO) && (dr < cone)) {
+      if ((ptv.Pt() > ISOPTLO) && (dr < cone) && (absQ > 0) ) {
 	((TH1D*)gDirectory->Get("i302"))->Fill(ptv.Pt());
       }
     
@@ -1451,7 +1453,7 @@ void treeBmm::candidateProperties() {
     ((TH1D*)gDirectory->Get("i200"))->Fill(df2);
     ((TH1D*)gDirectory->Get("i201"))->Fill(ptv.Pt());
 
-    if ((dr < cone) && (ptv.Pt() > ISOPTLO)) {
+    if ((dr < cone) && (ptv.Pt() > ISOPTLO) && (absQ > 0) ) {
       sum += ptv.Pt();
       ((TH1D*)gDirectory->Get("i202"))->Fill(ptv.Pt());
     }
@@ -1461,20 +1463,20 @@ void treeBmm::candidateProperties() {
     double lostTrack = (gRandom->Rndm() < 0.01? 0. : 1.);
     lostTrack = 1.0; // this is equivalent to NO smearing
     
-    if ((dr < 0.5) && (ptv.Pt() > ISOPTLO)) { sum05 += lostTrack*ptv.Pt(); ++fIsoVeto05; }
-    if ((dr < 0.6) && (ptv.Pt() > ISOPTLO)) { sum06 += lostTrack*ptv.Pt(); ++fIsoVeto06; }
-    if ((dr < 0.8) && (ptv.Pt() > ISOPTLO)) { sum08 += lostTrack*ptv.Pt(); ++fIsoVeto08; }
-    if ((dr < 1.0) && (ptv.Pt() > ISOPTLO)) { sum10 += lostTrack*ptv.Pt(); ++fIsoVeto10; }
-    if ((dr < 1.1) && (ptv.Pt() > ISOPTLO)) { sum11 += lostTrack*ptv.Pt(); ++fIsoVeto11; }
-    if ((dr < 1.2) && (ptv.Pt() > ISOPTLO)) { sum12 += lostTrack*ptv.Pt(); ++fIsoVeto12; }
-    if ((dr < 1.4) && (ptv.Pt() > ISOPTLO)) { sum14 += lostTrack*ptv.Pt(); ++fIsoVeto14; }
+    if ((dr < 0.5) && (ptv.Pt() > ISOPTLO) && (absQ > 0) ) { sum05 += lostTrack*ptv.Pt(); ++fIsoVeto05; }
+    if ((dr < 0.6) && (ptv.Pt() > ISOPTLO) && (absQ > 0) ) { sum06 += lostTrack*ptv.Pt(); ++fIsoVeto06; }
+    if ((dr < 0.8) && (ptv.Pt() > ISOPTLO) && (absQ > 0) ) { sum08 += lostTrack*ptv.Pt(); ++fIsoVeto08; }
+    if ((dr < 1.0) && (ptv.Pt() > ISOPTLO) && (absQ > 0) ) { sum10 += lostTrack*ptv.Pt(); ++fIsoVeto10; }
+    if ((dr < 1.1) && (ptv.Pt() > ISOPTLO) && (absQ > 0) ) { sum11 += lostTrack*ptv.Pt(); ++fIsoVeto11; }
+    if ((dr < 1.2) && (ptv.Pt() > ISOPTLO) && (absQ > 0) ) { sum12 += lostTrack*ptv.Pt(); ++fIsoVeto12; }
+    if ((dr < 1.4) && (ptv.Pt() > ISOPTLO) && (absQ > 0) ) { sum14 += lostTrack*ptv.Pt(); ++fIsoVeto14; }
 
-    if ((ptv.Pt() > ISOPTLO) && (dr < cone)) {
+    if ((ptv.Pt() > ISOPTLO) && (dr < cone)  && (absQ > 0) ) {
       ++fIsoVeto;
       //      cout << "  ... isolation veto triggered" << endl;
     }
 
-    if ((ptv.Pt() > ISOPTLO) && (dr < drmin)) {
+    if ((ptv.Pt() > ISOPTLO) && (dr < drmin) && (absQ > 0) ) {
       drmin = dr;
     }
   }
@@ -2054,7 +2056,7 @@ void treeBmm::fillAnalysisEff() {
 
   fGoodAna  = fGoodAnaF = fGoodVtxF = fGoodIsoF   = 0;
   fGoodPtMu = fGoodRmm  = fGoodMass = fGoodWindow = 0;
-  fGoodPtB  = fGoodEtaB = fGoodCosa = fGoodLength = 0;
+  fGoodPtB  = fGoodEtaB = fGoodCosa = fGoodLength = fGood3DLength = 0;
   fGoodIso  = fGoodVtx  = 0;
 
   //--------------------------------------------------------------------
@@ -2083,17 +2085,18 @@ void treeBmm::fillAnalysisEff() {
   // -- single cut effiencies (offline)
   //--------------------------------------------------------------------
 
-  if ((fPtL0 > PTLO) && (fPtL1 > PTLO))       { fGoodPtMu   = 1; }
-  if ((RMMLO < fRMM) && (fRMM < RMMHI))       { fGoodRmm    = 1; }
-  if ((MASSLO < fMass) && (fMass < MASSHI))   { fGoodMass   = 1; }
-  if ( TMath::Abs(fMass - fMassB) < MASSWI)   { fGoodWindow = 1; }
-  if (fPt > PTBS)                             { fGoodPtB    = 1; }
-  if (ETALO < fEta && fEta < ETAHI)           { fGoodEtaB   = 1; }
-  if (fCosAngle > COSALPHA)                   { fGoodCosa   = 1; }
-  if (fLxy/fSxy > LXYSXYLO)                   { fGoodLength = 1; }
-  if (fIso > ISOLATION)                       { fGoodIso    = 1; }
-  if (fChi2 < VTXCHI)                         { fGoodVtx    = 1; }
-  if ( fLxy/fSxy > 7 )                        { fGoodPresel = 1; }
+  if ((fPtL0 > PTLO) && (fPtL1 > PTLO))       { fGoodPtMu     = 1; }
+  if ((RMMLO < fRMM) && (fRMM < RMMHI))       { fGoodRmm      = 1; }
+  if ((MASSLO < fMass) && (fMass < MASSHI))   { fGoodMass     = 1; }
+  if ( TMath::Abs(fMass - fMassB) < MASSWI)   { fGoodWindow   = 1; }
+  if (fPt > PTBS)                             { fGoodPtB      = 1; }
+  if (ETALO < fEta && fEta < ETAHI)           { fGoodEtaB     = 1; }
+  if (fCosAngle > COSALPHA)                   { fGoodCosa     = 1; }
+  if (fLxy/fSxy > LXYSXYLO)                   { fGoodLength   = 1; }
+  if (fL3d/fS3d > L3DS3DLO)                   { fGood3DLength = 1; }
+  if (fIso > ISOLATION)                       { fGoodIso      = 1; }
+  if (fChi2 < VTXCHI)                         { fGoodVtx      = 1; }
+  if ( fLxy/fSxy > 7 )                        { fGoodPresel   = 1; }
 
 
   //--------------------------------------------------------------------
@@ -2142,6 +2145,7 @@ void treeBmm::fillAnalysisEff() {
 		fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(122.1), "cos(#alpha_{xy}) (122.1)");
 
 		((TH1D*)gDirectory->Get("LXYSXY"))->Fill(fLxy/fSxy);
+		((TH1D*)gDirectory->Get("L3DS3D"))->Fill(fL3d/fS3d);
 		  
 		if (fLxy/fSxy > LXYSXYLO) {
 		  fAR1->Fill(123.1); //histogram(15); 
@@ -2155,11 +2159,13 @@ void treeBmm::fillAnalysisEff() {
 		  if ( TMath::Abs(fMass - fMassB) < MASSWI ) {
 		    fAR1->Fill(210.1);
 		    fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(210.1), "m_{B} #pm 100 MeV (w/o fact) (210.1)");
-		    ((TH1D*)gDirectory->Get("ISOLATION_F"))->Fill(fIso);
-		    ((TH1D*)gDirectory->Get("VTXCHI_F"))->Fill(fChi2);
 		  }
 		  
 		  ((TH1D*)gDirectory->Get("ISOLATION"))->Fill(fIso);
+
+		  ((TH1D*)gDirectory->Get("ISOLATION_F"))->Fill(fIso);
+		  ((TH1D*)gDirectory->Get("VTXCHI_F"))->Fill(fChi2);
+
 
 		  // -- 'factorizing' cuts
 		  if (fIso > ISOLATION) {
@@ -2192,6 +2198,7 @@ void treeBmm::fillAnalysisEff() {
 	    
 	  // -- somewhat tightened preselection 
 	  ((TH1D*)gDirectory->Get("LXYSXY_PRE"))->Fill(fLxy/fSxy);
+	  ((TH1D*)gDirectory->Get("L3DS3D_PRE"))->Fill(fL3d/fS3d);
 	  if ( fLxy/fSxy > 7 ) {    // && fCosAngle > 0.9
 	      
 	    fAR1->Fill(220.1); // histogram(20);
@@ -2299,6 +2306,7 @@ void treeBmm::offlineEff(int bs_index, int sel) {
   
   // -- Isolation
   TVector3 ptv;
+  int absQ(0);
   double df2, de2;
   double dr(0.);
   double sum(0.);
@@ -2306,15 +2314,17 @@ void treeBmm::offlineEff(int bs_index, int sel) {
   for (int it = 0; it < fpEvt->nRecTracks(); ++it) {
     
     ptv   = fpEvt->getRecTrack(it)->fPlab;
+    absQ   = TMath::Abs(fpEvt->getRecTrack(it)->fQ);
     
     if (it == STI[0]) { continue; }
     if (it == STI[1]) { continue; }
+    if ( fNorm && it == STI[2]) { continue; }
     
     df2 = B->fPlab.DeltaPhi(ptv);
     de2 = (ptv.Eta() - B->fPlab.Eta());
     dr  = TMath::Sqrt(df2*df2 + de2*de2);
     
-    if ((dr < ISOCONE) && (ptv.Pt() > ISOPTLO)) { 
+    if ( (dr < ISOCONE) && (ptv.Pt() > ISOPTLO) && (absQ > 0) ) { 
 
       sum += ptv.Pt();
     }
@@ -2493,6 +2503,7 @@ void treeBmm::bookHist() {
   fTree->Branch("goodPtB",        &fGoodPtB  ,        "goodPtB/I");
   fTree->Branch("goodCosa",       &fGoodCosa  ,       "goodCosa/I");
   fTree->Branch("goodLength",     &fGoodLength  ,     "goodLength/I");
+  fTree->Branch("good3DLength",   &fGood3DLength  ,   "good3DLength/I");
   fTree->Branch("goodVtx",        &fGoodVtx  ,        "goodVtx/I");
   fTree->Branch("goodIso",        &fGoodIso  ,        "goodIso/I");
   fTree->Branch("goodWindow",     &fGoodWindow  ,     "goodWindow/I");
@@ -2647,6 +2658,7 @@ void treeBmm::bookHist() {
   h = new TH1D("ETABS", " ",             50, -5.,     5.); h->Sumw2(); setTitles(h,  "#eta_{B} [GeV]", "events/bin");
   h = new TH1D("COSALPHA", " ",         200,  0.97,   1.); h->Sumw2(); setTitles(h,  "cos #alpha_{xy}", "events/bin");
   h = new TH1D("LXYSXY", " ",            50,  0.,    50.); h->Sumw2(); setTitles(h, "l_{xy}/#sigma_{xy}", "events/bin");
+  h = new TH1D("L3DS3D", " ",            50,  0.,    50.); h->Sumw2(); setTitles(h, "l_{3D}/#sigma_{3D}", "events/bin");
   h = new TH1D("ISOLATION", " ",         55,  0.,    1.1); h->Sumw2(); setTitles(h,  "I", "events/bin");
   h = new TH1D("VTXCHI", " ",           200,  0.,    20.); h->Sumw2(); setTitles(h,  "#chi^{2}", "events/bin");
   h = new TH1D("MASSWI", " ",           120, 4.8,     6.); h->Sumw2(); setTitles(h,  "m_{#mu#mu} [GeV]", "events/bin");
@@ -2656,6 +2668,7 @@ void treeBmm::bookHist() {
   h = new TH1D("VTXCHI_F", " ",          200,  0.,    20.); h->Sumw2(); setTitles(h,  "#chi^{2}", "events/bin");
 
   h = new TH1D("LXYSXY_PRE", " ",         50,  0.,    50.); h->Sumw2(); setTitles(h,"l_{xy}/#sigma_{xy}", "events/bin");
+  h = new TH1D("L3DS3D_PRE", " ",         50,  0.,    50.); h->Sumw2(); setTitles(h,"l_{3D}/#sigma_{3D}", "events/bin");
   h = new TH1D("ISOLATION_PRE", " ",      55,  0.,    1.1); h->Sumw2(); setTitles(h,  "I", "events/bin");
   h = new TH1D("VTXCHI_PRE", " ",        200,  0.,    20.); h->Sumw2(); setTitles(h,  "#chi^{2}", "events/bin");
 
@@ -4592,6 +4605,16 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
       ((TH1D*)gDirectory->Get("VTXCHI_PRE"))->SetTitle(Form("#chi^2 < %4.2f", VTXCHI));
     }
 
+    if (!strcmp(CutName, "L3DS3DLO")) {
+      L3DS3DLO = CutValue; ok = 1;
+      if (dump) cout << "L3DS3DLO:           " << L3DS3DLO << endl;
+      ibin = 112;
+      hcuts->SetBinContent(ibin, L3DS3DLO);
+      hcuts->GetXaxis()->SetBinLabel(ibin, "l_{3D}/#sigma_{3D}");
+      ((TH1D*)gDirectory->Get("L3DS3D"))->SetTitle(Form("l_{3D}/#sigma_{3D} > %4.2f", LXYSXYLO));
+      ((TH1D*)gDirectory->Get("L3DS3D_PRE"))->SetTitle("l_{3D}/#sigma_{3D} > 7");
+    }
+    
     if (!strcmp(CutName, "L3DLO")) {
       L3DLO = CutValue; ok = 1;
       if (dump) cout << "L3DLO:           " << L3DLO << endl;
@@ -4654,69 +4677,60 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
       hcuts->GetXaxis()->SetBinLabel(ibin, "R_{I}");
     }
 
-     if (!strcmp(CutName, "BMMSEL")) {
-       BMMSEL = int(CutValue); ok = 1;
-       if (dump) cout << "BMMSEL:           " << BMMSEL << endl;
-       ibin = 110;
-       hcuts->SetBinContent(ibin, BMMSEL);
-       hcuts->GetXaxis()->SetBinLabel(ibin, "BMMSEL");
-     }
-
-     if (!strcmp(CutName, "SUBSEL")) {
-       SUBSEL = int(CutValue); ok = 1;
-       if (dump) cout << "SUBSEL:           " << SUBSEL << endl;
-       ibin = 111;
-       hcuts->SetBinContent(ibin, SUBSEL);
-       hcuts->GetXaxis()->SetBinLabel(ibin, "SUBSEL");
-     }
-
-     if (!strcmp(CutName, "L3DS3DLO")) {
-       L3DS3DLO = CutValue; ok = 1;
-       if (dump) cout << "L3DS3DLO:           " << L3DS3DLO << endl;
-       ibin = 112;
-       hcuts->SetBinContent(ibin, L3DS3DLO);
-       hcuts->GetXaxis()->SetBinLabel(ibin, "l_{3D}/#sigma_{3D}");
-     }
-
-     if (!strcmp(CutName, "MASSLO")) {
-       MASSLO = CutValue; ok = 1;
-       if (dump) cout << "MASSLO:           " << MASSLO << endl;
-       ibin = 113;
-       hcuts->SetBinContent(ibin, MASSLO);
-       hcuts->GetXaxis()->SetBinLabel(ibin, "m_{min}^{#mu #mu}");
-     }
-
-     if (!strcmp(CutName, "MASSHI")) {
-       MASSHI = CutValue; ok = 1;
-       if (dump) cout << "MASSHI:           " << MASSHI << endl;
-       ibin = 114;
-       hcuts->SetBinContent(ibin, MASSHI);
-       hcuts->GetXaxis()->SetBinLabel(ibin, "m_{max}^{#mu #mu}");
+    if (!strcmp(CutName, "BMMSEL")) {
+      BMMSEL = int(CutValue); ok = 1;
+      if (dump) cout << "BMMSEL:           " << BMMSEL << endl;
+      ibin = 110;
+      hcuts->SetBinContent(ibin, BMMSEL);
+      hcuts->GetXaxis()->SetBinLabel(ibin, "BMMSEL");
+    }
+    
+    if (!strcmp(CutName, "SUBSEL")) {
+      SUBSEL = int(CutValue); ok = 1;
+      if (dump) cout << "SUBSEL:           " << SUBSEL << endl;
+      ibin = 111;
+      hcuts->SetBinContent(ibin, SUBSEL);
+      hcuts->GetXaxis()->SetBinLabel(ibin, "SUBSEL");
+    }
+    
+    if (!strcmp(CutName, "MASSLO")) {
+      MASSLO = CutValue; ok = 1;
+      if (dump) cout << "MASSLO:           " << MASSLO << endl;
+      ibin = 113;
+      hcuts->SetBinContent(ibin, MASSLO);
+      hcuts->GetXaxis()->SetBinLabel(ibin, "m_{min}^{#mu #mu}");
+    }
+    
+    if (!strcmp(CutName, "MASSHI")) {
+      MASSHI = CutValue; ok = 1;
+      if (dump) cout << "MASSHI:           " << MASSHI << endl;
+      ibin = 114;
+      hcuts->SetBinContent(ibin, MASSHI);
+      hcuts->GetXaxis()->SetBinLabel(ibin, "m_{max}^{#mu #mu}");
       ((TH1D*)gDirectory->Get("MASSBAND"))->SetTitle(Form("%4.2f < m_{#mu #mu} < %4.2f", MASSLO, MASSHI));
-     }
-
-     if (!strcmp(CutName, "ISOPTLO")) {
-       ISOPTLO = CutValue; ok = 1;
-       if (dump) cout << "ISOPTLO:           " << ISOPTLO << endl;
-       ibin = 115;
-       hcuts->SetBinContent(ibin, ISOPTLO);
-       hcuts->GetXaxis()->SetBinLabel(ibin, "iso. p_{T}^{min}");
-     }
-
-     if (!strcmp(CutName, "MASSWI")) {
-       MASSWI = CutValue; ok = 1;
-       if (dump) cout << "MASSWI:           " << MASSWI << endl;
-       ibin = 118;
-       hcuts->SetBinContent(ibin, 1000.*MASSWI);
-       hcuts->GetXaxis()->SetBinLabel(ibin, "#Delta m{#mu #mu}");
+    }
+    
+    if (!strcmp(CutName, "ISOPTLO")) {
+      ISOPTLO = CutValue; ok = 1;
+      if (dump) cout << "ISOPTLO:           " << ISOPTLO << endl;
+      ibin = 115;
+      hcuts->SetBinContent(ibin, ISOPTLO);
+      hcuts->GetXaxis()->SetBinLabel(ibin, "iso. p_{T}^{min}");
+    }
+    
+    if (!strcmp(CutName, "MASSWI")) {
+      MASSWI = CutValue; ok = 1;
+      if (dump) cout << "MASSWI:           " << MASSWI << endl;
+      ibin = 118;
+      hcuts->SetBinContent(ibin, 1000.*MASSWI);
+      hcuts->GetXaxis()->SetBinLabel(ibin, "#Delta m{#mu #mu}");
       ((TH1D*)gDirectory->Get("MASSWI"))->SetTitle(Form("#Delta m{#mu #mu} < %4.2f", MASSWI));
       ((TH1D*)gDirectory->Get("MASSWI_F"))->SetTitle(Form("#Delta m{#mu #mu} < %4.2f", MASSWI));
-     }
-
-     if (!ok) cout << "==> ERROR: Don't know about variable " << CutName << endl;
+    }
+    
+    if (!ok) cout << "==> ERROR: Don't know about variable " << CutName << endl;
   }
-
-
+  
   if (fDebug & 2) { cout << "readCuts> End" << endl; }
 }
 

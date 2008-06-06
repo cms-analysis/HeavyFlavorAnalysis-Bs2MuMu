@@ -36,15 +36,19 @@ public:
   // ---------------------------
   void init(const char *files);
   void loadFiles(const char *filename);
-  void loadDa(const char *filename, double vxs, const char *sign, const char *type);
-  void loadMc(const char *filename, double vxs, const char *sign, const char *type);
-  void loadSg(const char *filename, double vxs, const char *sign, const char *type);
+  void loadDa(const char *filename, double vxs, const char *sign, const char *type, const char *filename);
+  void loadMc(const char *filename, double vxs, const char *sign, const char *type, const char *filename);
+  void loadSg(const char *filename, double vxs, const char *sign, const char *type, const char *filename);
   void dumpFiles();
   void dumpCuts();
 
   // -- main methods
   // --------------
   void makeAllPlots();
+
+  void validations();
+  void mcValidation(int offset = 0, int wait = 0); 
+  void mcVal(const char *hname, int mode = 0, double x = -9999., double y = -9999.); 
 
   void distributions();
   void showDistributions(int offset = 0, int wait = 0); 
@@ -54,7 +58,7 @@ public:
   void effTable(TFile *f, const char *tag); 
   double massReduction(const char *s = "c030", const char *tag = "m0");
 
-  void sgRecos();
+  void brecos();
   void jreco(int o = 4); 
   void breco(int o = 2, const char *hist = "c030"); 
   void nreco(int o = 5, const char *hist = "c030");
@@ -66,7 +70,7 @@ public:
   void calculateUpperLimit(); 
   void normalizedUpperLimit();
 
-  void fakeMuons();
+  void fakeMuons(const char *prod = "csa07");
 
   // -- Special studies
   // ------------------
@@ -74,10 +78,6 @@ public:
   void cuts();
   void showProcesses(int signal = 1);
   void plotProcesses(const char *cut, const char *var, const char *axis, int bin, double lo, double hi, int legend = 1);
-
-  void mcValidation(int wait = 0); 
-  void mcVal(const char *hname); 
-
 
   // -- temporary 'working' methods
   // -------------------------------
@@ -124,6 +124,7 @@ public:
 
   double nul(int nobs); 
   double barlow(int nobs, double bg = 0., double bgE = 0., double sE = 0.);
+  int findIndex(const char *filename);
   void   getSignature(TString in, TString &out, TString &out2);
   TString getSubGroup(TString in);
   int checkIf(int mc, const char *sel);
@@ -148,6 +149,7 @@ private:
   double fMisIdM[30];                         // this is filled in muonMisId()
   TString fSignS[10], fSignD[10], fSignM[30]; // this is filled in loadFiles()
   TString fTypeS[10], fTypeD[10], fTypeM[30]; // this is filled in loadFiles()
+  TString fFileS[10], fFileD[10], fFileM[30]; // this is filled in loadFiles()
   TString fSignTexS[10], fSignTexD[10], fSignTexM[30]; // this is filled in loadFiles()
   TString fSignLeggS[10], fSignLeggD[10], fSignLeggM[30]; // this is filled in loadFiles()
 
@@ -191,7 +193,7 @@ private:
     ;
   
   // -- cuts
-  double ptbs, ptmulo, rmmlo, rmmhi, etalo, etahi, vtxhi, coslo, lxylo, isolo, masslo, masshi, masswi;
+  double ptbs, ptmulo, rmmlo, rmmhi, etalo, etahi, vtxhi, coslo, lxylo, l3dlo, isolo, masslo, masshi, masswi;
 
   // -- functions
   TF1 *f0, *f1, *f2, *f3, *f4, *f5, *f6; 
