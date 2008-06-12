@@ -18,13 +18,13 @@ double dgausn(double P);
 double  gfunk(double zxlam,double x);
 double revgam(double z);
 
-double scp(double sig, double bkg, double sigma_b, double delta_b)
+double scp(double sig, double bkg, double sigma_b, double delta_b, int verb=0)
 {
 double fac2  = sqrt(bkg+delta_b)/sqrt(bkg+sigma_b*sigma_b+delta_b);
 double Sc12_sys = 2*(sqrt(sig+bkg)-sqrt(bkg+delta_b))*fac2;
 
 double Scp = scpfor(sig,bkg, sigma_b,delta_b);
- cout << " Scp " << Scp << " Sc12 " << Sc12_sys << endl; 
+ if (verb>0) cout << " Scp " << Scp << " Sc12 " << Sc12_sys << endl; 
  if (Scp>6.25) {return TMath::Max(Sc12_sys,Scp);} else {return Scp;}
 }
 double scpfor(double amus,double amub, double dmb,double dtun)

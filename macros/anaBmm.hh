@@ -1,6 +1,8 @@
 #ifndef ANABMM
 #define ANABMM
 
+#define NCUTS 10
+
 #include "TLatex.h"
 #include "TLegend.h"
 #include "TLegendEntry.h"
@@ -30,7 +32,7 @@ class anaBmm: public TObject {
 
 public:
 
-  anaBmm(const char *files = "nada");
+  anaBmm(const char *files = "bmm.default.files");
 
   // -- initialization and setup
   // ---------------------------
@@ -67,7 +69,7 @@ public:
   void bgOverlay(const char *s = "c030", const int npers = 6);
   void nbgOverlay(const char *s = "c030", const int npers = 6);
 
-  void calculateUpperLimit(); 
+  double calculateUpperLimit(); 
   void normalizedUpperLimit();
 
   void fakeMuons(const char *prod = "csa07");
@@ -81,10 +83,23 @@ public:
 
   // -- temporary 'working' methods
   // -------------------------------
+  double getCutEffB(const char *aCuts, const char *preCut = "1");
+  double getCutEffS(const char *aCuts, const char *preCut = "1");
+  void quick(double vptmu=3.0, double vrmmlo=0.3, double vrmmhi=1.2, double vptb=5.0, double vetab=2.4,
+	     double vcosa=0.995, double vlxysxy=18., double vl3ds3d=-1., double vchi2=1.0, double viso=0.85, 
+	     double vpre=7.0);
+  void quickUL(const char *aCuts, const char *preCuts, const char *f1Cut, const char *f2Cut);
+  void loopULOptimization();
+  void loopHandOptimization();
+  void loopOptimizedCuts3D();
+  void loopOptimizedCuts2D();
   void loopOptimization(double pt = 4.); 
+  void cutEfficiency(const char *aoCuts, const char *extraCuts, int icut = 1);
   void optimizerNumbers(const char *precuts, const char *line, double &eff, double &sg, double &bg);
-  void runOptimization(const char *aoCuts, const char *extraVar, int nbin, double min, double max);
-  void handOptimization(const char *aoCuts, const char *extraCuts); 
+  void runHandOptimization(const char *aoCuts, const char *extraVar, int nbin, double min, double max, int icut=0);
+  void handOptimization(const char *aoCuts, const char *extraCuts, int verbose = 1);
+  void ulOptimization(const char *aoCuts, const char *preCuts, const char *f1Cut, const char *f2Cut);
+  void overlay(const char *var, const char *cuts, double min, double max, int nbin=40);
 
   // -- Utilities and helper methods
   // -------------------------------
@@ -154,7 +169,7 @@ private:
   TString fSignLeggS[10], fSignLeggD[10], fSignLeggM[30]; // this is filled in loadFiles()
 
   // -- misc
-  double fFom;
+  double fFom, fUL, fMaxUL;
 
   double fMassBs, fMassBp;
 
@@ -191,7 +206,18 @@ private:
     , *fKaMid2
     , *fProtMid2
     ;
+
+  TH1D *hopt[NCUTS];
   
+  TH1D *hoptSg
+    , *hoptSgF
+    , *hoptBg
+    , *hoptBgF;
+  
+
+  double optCutValue[NCUTS];
+  TString optimizedCut[NCUTS];
+
   // -- cuts
   double ptbs, ptmulo, rmmlo, rmmhi, etalo, etahi, vtxhi, coslo, lxylo, l3dlo, isolo, masslo, masshi, masswi;
 

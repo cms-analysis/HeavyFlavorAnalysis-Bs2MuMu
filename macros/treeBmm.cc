@@ -2147,7 +2147,7 @@ void treeBmm::fillAnalysisEff() {
 		((TH1D*)gDirectory->Get("LXYSXY"))->Fill(fLxy/fSxy);
 		((TH1D*)gDirectory->Get("L3DS3D"))->Fill(fL3d/fS3d);
 		  
-		if (fLxy/fSxy > LXYSXYLO) {
+		if (fL3d/fS3d > L3DS3DLO && fLxy/fSxy > LXYSXYLO) {
 		  fAR1->Fill(123.1); //histogram(15); 
 		  fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(123.1), "l_{xy}/#sigma_{xy} (123.1)");
 		  fGoodAnaF = 1;  // <-------- good ana.     (before factorizing)
@@ -2365,7 +2365,7 @@ void treeBmm::offlineEff(int bs_index, int sel) {
 		fOR1[hist_i]->Fill(122.1);
 		fOR1[hist_i]->GetXaxis()->SetBinLabel(fOR1[hist_i]->FindBin(122.1), "cos(#alpha) (122.1)");
 	      
-		if (Lxy/Sxy > LXYSXYLO) {
+		  if (L3d/S3d > L3DS3DLO && Lxy/Sxy > LXYSXYLO) {
 		  fOR1[hist_i]->Fill(123.1);
 		  fOR1[hist_i]->GetXaxis()->SetBinLabel(fOR1[hist_i]->FindBin(123.1), "l_{xy}/#sigma_{xy} (123.1)");
 		
@@ -4611,7 +4611,7 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
       ibin = 112;
       hcuts->SetBinContent(ibin, L3DS3DLO);
       hcuts->GetXaxis()->SetBinLabel(ibin, "l_{3D}/#sigma_{3D}");
-      ((TH1D*)gDirectory->Get("L3DS3D"))->SetTitle(Form("l_{3D}/#sigma_{3D} > %4.2f", LXYSXYLO));
+      ((TH1D*)gDirectory->Get("L3DS3D"))->SetTitle(Form("l_{3D}/#sigma_{3D} > %4.2f", L3DS3DLO));
       ((TH1D*)gDirectory->Get("L3DS3D_PRE"))->SetTitle("l_{3D}/#sigma_{3D} > 7");
     }
     

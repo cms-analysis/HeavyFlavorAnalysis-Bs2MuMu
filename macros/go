@@ -19,7 +19,7 @@ $perl            = "/home/ceggel/perl";
 #===========================================================
 
 use Getopt::Std;
-getopts('sbnmrqp');
+getopts('sbnmrqpc:');
 
 if ( !$opt_s &&!$opt_b &&!$opt_n &&!$opt_m &&!$opt_r &&!$opt_q ) {
     
@@ -38,6 +38,7 @@ print "\n ... START BMM ANALYSIS ... \n\n";
 if ( $opt_s || $opt_b ) {
 
     $cut_file = "bmm.default.cuts";
+    if ( $opt_c ) { $cut_file = $opt_c; }
     
     $cuts = $cut_file;
     $cuts =~ s/bmm//g;
@@ -50,10 +51,12 @@ if ( $opt_s || $opt_b ) {
     chdir("$workspace/chains");
 
     if ( $opt_s ) { #push(@chain, `ls -1 csg-003`); push(@chain, `ls -1 csg-003p`); }
-		    push(@chain, `ls -1 csg-00{3,4}`); }
+		    #push(@chain, `ls -1 csg-00{3,4}`);
+		    push(@chain, `ls -1 csg-003`); }
 
-    if ( $opt_b ) { push(@chain, `ls -1 cbg-00{3,4,5,6,7}`); }
+    if ( $opt_b ) { #push(@chain, `ls -1 cbg-00{3,4,5,6,7}`); }
 		    #push(@chain, `ls -1 cbg-003`); }
+	            push(@chain, `ls -1 cbg-003`); }
 
 
     chdir("$workspace");
