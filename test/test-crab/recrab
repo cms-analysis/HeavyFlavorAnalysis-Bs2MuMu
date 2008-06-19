@@ -1,8 +1,8 @@
 #! /usr/bin/perl
 #
 #==============================================================================================
-# START the script in the directories, from where you submit your CRAB jobs !
-# SET-UP  : The scripts needs the file exit_codes.list in these directories: 
+# START the script in the directoriy, from where you submit your CRAB jobs !
+# SET-UP  : The scripts needs the file exit_codes.list in that directory: 
 #              cp /home/ceggel/public_html/howTo/macros/misc/exit_codes.list .
 #==============================================================================================
 # IGNORE  : "error globus_ftp_client: the server responded with an error" print out !!!
@@ -31,7 +31,7 @@
 #
 #
 # OUTPUT  : log_080515.11:29   , summary of job status & actions taken
-#           sys_080515.11:29   , detailed crab report
+#           sys_080515.11:29   , crab output (from status, submit etc.)
 #
 #==============================================================================================
 
@@ -51,7 +51,9 @@ print "------------------------------------\n\n";
 my @good  = ("70000","143");
 
 # List of JOB exit codes: resubmit if job has terminated with one of these exit codes
-my @retry   = ("50115");
+my @retry   = ("50115","60302","135");
+
+# List of EXE exit codes: ---> modify in code in line 320 
 
 # List of directories to skip
 my @skip = ("BB2MuMu", "CC2MuMu");
@@ -121,8 +123,8 @@ foreach $dir ( @ARGV ) {
 		    # status: Done
 		    if ( $go == 1 ) {
 			print SUM " get stderr and stdout... ";
-			print LOG "crab -getoutput $nr -c $dir\n";
-			if ( !$opt_p ) { system("crab -getoutput $nr -c $dir >> $log"); }
+			print LOG "crab -get $nr -c $dir\n";
+			if ( !$opt_p ) { system("crab -get $nr -c $dir >> $log"); }
 			print SUM " done!\n"; 
 		    }
 		    
@@ -160,17 +162,22 @@ foreach $dir ( @ARGV ) {
 		    $go = &jobStatus($dir, $nr);
 		    if ( $go == 1 ) {
 			print SUM " get stderr and stdout...";
-			print LOG "crab -getoutput $nr -c $dir\n";
-			if ( !$opt_p ) { system("crab -getoutput $nr -c $dir >> $log"); }
+			print LOG "crab -get $nr -c $dir\n";
+			if ( !$opt_p ) { system("crab -get $nr -c $dir >> $log"); }
 			print SUM " done!\n"; 
 		    }
 
                     # Output found and Scheduled ?
-		    if (  $go == 5 ) {
+		    if (  $go == 5 || $go == 3 ) {
 			print SUM "Job $nr:  ----> Strange (!):  kill it ... ";
 			print LOG "crab -kill $nr -c $dir\n";
 			if ( !$opt_p ) { system("crab -kill $nr -c $dir >> $log"); }
 			print SUM " done!\n"; 
+		    }
+
+                    # Output found and Scheduled ?
+		    if (  $go == 2 ) {
+			print SUM "Job $nr:  ----> Strange (!) \n";
 		    }
 
                     # Output found and Running ?
@@ -313,9 +320,9 @@ sub jobStatus() {
 	print SUM "  Job $i is \"$job_status\"   --> ";
 	return 1;
 	
-    } elsif ( $job_status eq  "Cleared") {
+    } elsif ( $job_status eq  "Cleared" || $job_status eq  "Retrieved" ) {
 	
-	if ( $exe_code == 0 || $exe_code == 50115 ) {
+	if ( $exe_code == 0 || $exe_code == 50115 || $exe_code == 135 ) {
 
 	    if (  $job_code == 0 ) {
 		print SUM "  Job $i is \"$job_status (exe=$exe_code, job=$job_code)\" -->  ok!\n";

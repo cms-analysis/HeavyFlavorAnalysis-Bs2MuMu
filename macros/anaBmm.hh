@@ -1,7 +1,7 @@
 #ifndef ANABMM
 #define ANABMM
 
-#define NCUTS 10
+#define NCUTS 12
 
 #include "TLatex.h"
 #include "TLegend.h"
@@ -85,9 +85,9 @@ public:
   // -------------------------------
   double getCutEffB(const char *aCuts, const char *preCut = "1");
   double getCutEffS(const char *aCuts, const char *preCut = "1");
-  void quick(double vptmu=3.0, double vrmmlo=0.3, double vrmmhi=1.2, double vptb=5.0, double vetab=2.4,
-	     double vcosa=0.995, double vlxysxy=18., double vl3ds3d=-1., double vchi2=1.0, double viso=0.85, 
-	     double vpre=7.0);
+  void quickAna(double vptmu=3.0, double vetamu=100., double vrmmlo=0.3, double vrmmhi=1.2, double vptb=5.0, 
+		double vetab=2.4, double vcosa=0.995, double vcosa3=-1.1, double vlxysxy=18., double vl3ds3d=-1., 
+		double vchi2=1.0, double viso=0.85, double vpre=7.0);
   void quickUL(const char *aCuts, const char *preCuts, const char *f1Cut, const char *f2Cut);
   void loopULOptimization();
   void loopHandOptimization();
@@ -96,7 +96,7 @@ public:
   void loopOptimization(double pt = 4.); 
   void cutEfficiency(const char *aoCuts, const char *extraCuts, int icut = 1);
   void optimizerNumbers(const char *precuts, const char *line, double &eff, double &sg, double &bg);
-  void runHandOptimization(const char *aoCuts, const char *extraVar, int nbin, double min, double max, int icut=0);
+  void runHandOptimization(const char *aoCuts, char *extraVar, int nbin, double min, double max, int icut=0);
   void handOptimization(const char *aoCuts, const char *extraCuts, int verbose = 1);
   void ulOptimization(const char *aoCuts, const char *preCuts, const char *f1Cut, const char *f2Cut);
   void overlay(const char *var, const char *cuts, double min, double max, int nbin=40);
@@ -172,6 +172,7 @@ private:
   double fFom, fUL, fMaxUL;
 
   double fMassBs, fMassBp;
+  double fSgReduction, fBgReduction;
 
   // -- Upper Limit determination
   double fEsg0, fEsgE0;       // efficiency and error (w/o fact. in 5-6 GeV window)
@@ -219,7 +220,7 @@ private:
   TString optimizedCut[NCUTS];
 
   // -- cuts
-  double ptbs, ptmulo, rmmlo, rmmhi, etalo, etahi, vtxhi, coslo, lxylo, l3dlo, isolo, masslo, masshi, masswi;
+  double ptbs, ptmulo, rmmlo, rmmhi, etalo, etahi, vtxhi, coslo, cos3lo, lxylo, l3dlo, isolo, masslo, masshi, masswi;
 
   // -- functions
   TF1 *f0, *f1, *f2, *f3, *f4, *f5, *f6; 

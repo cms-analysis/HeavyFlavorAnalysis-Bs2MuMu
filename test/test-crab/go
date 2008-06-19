@@ -30,20 +30,33 @@ if ( !$opt_p ) { open(LOG, ">cmsRun.crab.log"); }
 
 foreach $file ( @files ) {
 
+    $date = `date`; chop($date);
+
     chop($file);
 
-    $date = `date`; chop($date);
+    ($crabfile, $ext) = split(/\./, $file);
+    ($p1, $p2) = split(/\-/, $crabfile);
+    $beginswith = substr($p2, 0, 3);
 
     $ui_work = `grep ui_working_dir $file`;
     @run = split(/\//,$ui_work);
     $workdir = @run[$#run]; chop($workdir);
 
-    if ( $file eq "crab-test.cfg" ) { next; }
-    if ( $file eq "crab-bmm.cfg" ) { next; }
+    if ( $p2 eq "test" ) {
 
-    if ( ($file eq "crab-bmm.cfg") || 
-	  ($file eq "crab-BB.cfg") || 
-	  ($file eq "crab-CC.cfg")
+	next; 
+    }
+
+    if ( $p2 eq "bmm" ||
+	 $p2 eq "BB" ||
+	 $p2 eq "CC" ||
+	 $p2 eq "bbartojpsi" ||
+	 $p2 eq "btojpsi" ||
+	 $p2 eq "muonppmux" ||
+	 $p2 eq "ppmux" ||
+	 $p2 eq "charmonium1" ||
+	 $p2 eq "charmonium2" ||
+	 $beginswith eq "qcd"
 	 ) {
 	
 	$channel = "default";
@@ -60,31 +73,32 @@ foreach $file ( @files ) {
 
     if ( !$opt_p ) {     
 
-       if ( -d $workdir ) { 
+	if ( -d $workdir ) { 
 
-         print LOG "$date directory $workdir exist, skipping\n";
-       
-        } else {
- 
-	  print LOG "$date \"crab -create -cfg $file\"\n";
-	  system("crab -create -cfg $file");
-
-          system("cp test-crab.cfg $workdir/test-crab.cfg");
-
-	  print LOG "$date \"crab -submit -c $workdir\"\n\n";		
-	  system("crab -submit -c $workdir");
-          sleep 360;
-      }
+	    print LOG "$date directory $workdir exist, skipping\n";
+	    
+	} else {
+	    
+	    print LOG "$date \"crab -create -cfg $file\"\n";
+	    system("crab -create -cfg $file");
+	    
+	    system("cp test-crab.cfg $workdir/test-crab.cfg");
+	    
+	    print LOG "$date \"crab -submit -c $workdir\"\n\n";		
+	    system("crab -submit -c $workdir");
+	    sleep 360;
+	}
+	
     } else {
-
+	
         if ( -d $workdir ) { 
           print "$date directory $workdir exists, skipping\n"; 
-        } else {
+      } else {
 	  print "$date \"crab -create -cfg $file\"\n";
 	  print "$date \"crab -submit -c $workdir\"\n\n";
-        }
+      }
     }
-
+    
     system("perl -pi -e \"s\/$channel\/default\/g\" test-crab.cfg");
 
 }
