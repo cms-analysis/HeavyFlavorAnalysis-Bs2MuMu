@@ -54,9 +54,9 @@ if ( $opt_s || $opt_b ) {
 		    #push(@chain, `ls -1 csg-00{3,4}`);
 		    push(@chain, `ls -1 csg-003`); }
 
-    if ( $opt_b ) { #push(@chain, `ls -1 cbg-00{3,4,5,6,7}`); }
+    if ( $opt_b ) { push(@chain, `ls -1 cbg-009`); push(@chain, `ls -1 cbg-00{3,4,5,6,7,8}`); }
 		    #push(@chain, `ls -1 cbg-003`); }
-	            push(@chain, `ls -1 cbg-003`); }
+	            #push(@chain, `ls -1 cbg-003`); }
 
 
     chdir("$workspace");
@@ -74,7 +74,7 @@ if ( $opt_s || $opt_b ) {
 		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -o \>\& treebmm/$file\.$cuts\.log"); 
 	    }
 
-	} elsif ( $file eq "csg-004" || $file eq "cbg-004") {
+	} elsif ( $file eq "csg-004" || $file eq "cbg-004" || $file eq "cbg-008") {
  
 	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -t -v 1 \>\& treebmm/$file\.$cuts\.log\n";
 	    if (!$opt_p) { 
@@ -112,7 +112,7 @@ if ( $opt_n || $opt_m )     {
 
     if ( $opt_n )     {  push(@chain, `ls -1 csg-004`); }
 			 #push(@chain, `ls -1 csg-004j`); push(@chain, `ls -1 csg-004f`); }   
-    if ( $opt_m )     {  push(@chain, `ls -1 cbg-00{3,4,5}`); } 
+    if ( $opt_m )     {  push(@chain, `ls -1 cbg-009`); push(@chain, `ls -1 cbg-00{3,4,5,6,7,8}`); } 
 			 #push(@chain, `ls -1 cbg-004f`);}
 
     chdir("$workspace");
@@ -123,7 +123,7 @@ if ( $opt_n || $opt_m )     {
 
 	if ( -e "treebmm/$file.$cuts.log" ) { if (!$opt_p) { system("rm -f treebmm/$file.$cuts.log"); } }
 
-	if ( $file eq "csg-004" || $file eq "cbg-004") { 
+	if ( $file eq "csg-004" || $file eq "cbg-004" || $file eq "cbg-008") { 
 
 	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -t -v 1 \>\& treebmm/$file\.$cuts\.log\n";
 	    if (!$opt_p) { 

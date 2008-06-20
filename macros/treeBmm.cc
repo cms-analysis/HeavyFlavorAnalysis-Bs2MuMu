@@ -2365,7 +2365,7 @@ void treeBmm::offlineEff(int bs_index, int sel) {
 		fOR1[hist_i]->Fill(122.1);
 		fOR1[hist_i]->GetXaxis()->SetBinLabel(fOR1[hist_i]->FindBin(122.1), "cos(#alpha) (122.1)");
 	      
-		  if (L3d/S3d > L3DS3DLO && Lxy/Sxy > LXYSXYLO) {
+		if (L3d/S3d > L3DS3DLO && Lxy/Sxy > LXYSXYLO) {
 		  fOR1[hist_i]->Fill(123.1);
 		  fOR1[hist_i]->GetXaxis()->SetBinLabel(fOR1[hist_i]->FindBin(123.1), "l_{xy}/#sigma_{xy} (123.1)");
 		
@@ -2921,7 +2921,9 @@ void treeBmm::bookHist() {
 
   // -- sec. vertex residuals
   h = new TH1D("v200", "Decay length resolution (2D)", 500, -0.05, 0.05); h->Sumw2(); setTitles(h, "l_{xy}^{rec} - l_{xy}^{sim} [cm]", "events/bin");
-  h = new TH1D("v201", "Decay length resolution (3D)", 500, -0.01, 0.01); h->Sumw2(); setTitles(h, "l_{3D}^{rec} - l_{3D}^{sim} [cm]", "events/bin");
+  h = new TH1D("v201", "Decay length resolution (3D)", 500, -0.1, 0.1); h->Sumw2(); setTitles(h, "l_{3D}^{rec} - l_{3D}^{sim} [cm]", "events/bin");
+  // for Norm change to:
+//   h = new TH1D("v201", "Decay length resolution (3D)", 500, -0.01, 0.01); h->Sumw2(); setTitles(h, "l_{3D}^{rec} - l_{3D}^{sim} [cm]", "events/bin");
   h = new TH1D("v202", "Proper decay time resolution (2D)", 500, -0.05, 0.05); h->Sumw2(); setTitles(h, "#tau_{xy}^{rec} - #tau_{xy}^{sim} [cm/c]", "events/bin");
   h = new TH1D("v203", "Proper decay time resolution (3D)", 500, -0.05, 0.05); h->Sumw2(); setTitles(h, "#tau_{3D}^{rec} - #tau_{3D}^{sim} [cm/c]", "events/bin");
   h = new TH1D("v204", "Proper decay time resolution (2D)", 500, -1000., 1000.); h->Sumw2(); setTitles(h, "#tau_{xy}^{rec} - #tau_{xy}^{sim} [fs]", "events/bin");
@@ -4333,6 +4335,8 @@ void treeBmm::vertexResiduals() {
       genPt    = pM->fP.Perp();
       genPlab  = pM->fP.P();
       mass     = pM->fMass;
+
+      if ( mass < 0.5 ) mass = fMassB;
 	    
       simVtx = 1;
 	    
@@ -4446,16 +4450,20 @@ void treeBmm::vertexResiduals() {
 
   double DTxy = fltRec.Perp()*fMass/fPt - fltGen.Perp()*mass/genPt;
   double DT3d = fltRec.Mag()*fMass/fP - fltGen.Mag()*mass/genPlab;
+
   double DTxy_s = (0.01*1.E15/299792458.)*(fltRec.Perp()*fMass/fPt - fltGen.Perp()*mass/genPt);
   double DT3d_s = (0.01*1.E15/299792458.)*(fltRec.Mag()*fMass/fP - fltGen.Mag()*mass/genPlab);
 
-  if (fDebug & 4) {
+  if (fDebug & 2) {
 
     cout << " DLxy = " << DLxy
 	 << " DL3d = " << DL3d << endl;
 
     cout << " DTxy = " << DTxy
 	 << " DT3d = " << DT3d << endl;
+
+    cout << " DTxy_s = " << DTxy_s
+	 << " DT3d_s = " << DT3d_s << endl;
   }
   
   h = (TH1D*)gDirectory->Get("v200"); h->Fill(DLxy);

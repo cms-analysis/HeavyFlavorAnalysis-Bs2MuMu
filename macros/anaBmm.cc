@@ -2368,7 +2368,11 @@ void anaBmm::effTable(TFile *f, const char *tag) {
 
 // ---------------------------------------------------------------------------------------------
 
-double anaBmm::massReduction(const char *hist, const char *sel) {
+double anaBmm::massReduction(const char *hist, const char *sel, double window) {
+
+  if (window < 0.) {
+    window = masswi;
+  }
 
   cout << "---------------------------------------------------------------------------" << endl;
 
@@ -2390,11 +2394,11 @@ double anaBmm::massReduction(const char *hist, const char *sel) {
     c0->SaveAs(Form("%s/massReduction/massReduction-%s-%s.eps", outDir, sel, hist));
     
     double total = f1->Integral(h1->GetBinLowEdge(1), h1->GetBinLowEdge(h1->GetNbinsX()))/h1->GetBinWidth(2); 
-    double massW = f1->Integral(fMassBs - 0.1, fMassBs + 0.1)/h1->GetBinWidth(2);
+    double massW = f1->Integral(fMassBs - window, fMassBs + window)/h1->GetBinWidth(2);
     double massRed = massW/total;
     
     double histT =  h1->GetSumOfWeights();
-    double histW =  h1->Integral(h1->FindBin(fMassBs - 0.1), h1->FindBin(fMassBs + 0.1));
+    double histW =  h1->Integral(h1->FindBin(fMassBs - window), h1->FindBin(fMassBs + window));
     double histRed = histW/histT;
 
     cout << endl << " --> " << hist
@@ -2428,11 +2432,11 @@ double anaBmm::massReduction(const char *hist, const char *sel) {
     c0->SaveAs(Form("%s/massReduction/massReduction-%s-%s.eps", outDir, sel, hist));
 
     double total = f1->Integral(h1->GetBinLowEdge(1), h1->GetBinLowEdge(h1->GetNbinsX()))/h1->GetBinWidth(2); 
-    double massW = f1->Integral(fMassBp - 0.1, fMassBp + 0.1)/h1->GetBinWidth(2);
+    double massW = f1->Integral(fMassBp - window, fMassBp + window)/h1->GetBinWidth(2);
     double massRed = massW/total;
     
     double histT =  h1->GetSumOfWeights();
-    double histW =  h1->Integral(h1->FindBin(fMassBp - 0.1), h1->FindBin(fMassBp + 0.1));
+    double histW =  h1->Integral(h1->FindBin(fMassBp - window), h1->FindBin(fMassBp + window));
     double histRed = histW/histT;
 
     cout << endl << " --> " << hist
@@ -2479,11 +2483,11 @@ double anaBmm::massReduction(const char *hist, const char *sel) {
     c0->SaveAs(Form("%s/massReduction/massReduction-%s-%s.eps", outDir, sel, hist));
 
     double total = f1->Integral(h1->GetBinLowEdge(1), h1->GetBinLowEdge(h1->GetNbinsX()))/h1->GetBinWidth(2); 
-    double massW = f1->Integral(fMassBs - 0.1, fMassBs + 0.1)/h1->GetBinWidth(2);
+    double massW = f1->Integral(fMassBs - window, fMassBs + window)/h1->GetBinWidth(2);
     double massRed = massW/total;
     
     double histT =  h1->GetSumOfWeights();
-    double histW =  h1->Integral(h1->FindBin(fMassBs - 0.1), h1->FindBin(fMassBs + 0.1));
+    double histW =  h1->Integral(h1->FindBin(fMassBs - window), h1->FindBin(fMassBs + window));
     double histRed = histW/histT;
 
     
@@ -2520,11 +2524,11 @@ double anaBmm::massReduction(const char *hist, const char *sel) {
     c0->SaveAs(Form("%s/massReduction/massReduction-%s-%s.eps", outDir, sel, hist));
     
     double total = f6->Integral(h1->GetBinLowEdge(1), h1->GetBinLowEdge(h1->GetNbinsX()))/h1->GetBinWidth(2); 
-    double massW = f6->Integral(fMassBp - 0.1, fMassBp + 0.1)/h1->GetBinWidth(2);
+    double massW = f6->Integral(fMassBp - window, fMassBp + window)/h1->GetBinWidth(2);
     double massRed = massW/total;
     
     double histT =  h1->GetSumOfWeights();
-    double histW =  h1->Integral(h1->FindBin(fMassBp - 0.1), h1->FindBin(fMassBp + 0.1));
+    double histW =  h1->Integral(h1->FindBin(fMassBp - window), h1->FindBin(fMassBp + window));
     double histRed = histW/histT;
     
     double mean = TMath::Sqrt((f6->GetParameter(0)*f6->GetParameter(0)*f6->GetParameter(1)*f6->GetParameter(1)
@@ -2572,7 +2576,7 @@ double anaBmm::massReduction(const char *hist, const char *sel) {
 	channelEff(fM[i], fnorm_Ch, eff1_Ch, eff2_Ch);
 	h1[i]->Scale((fMisIdM[i]*fLumiD[0]/fLumiM[i])*eff1_Ch*eff2_Ch);
 	histT +=  h1[i]->GetSumOfWeights();
-	histW +=  h1[i]->Integral(h1[i]->FindBin(fMassBs - 0.1), h1[i]->FindBin(fMassBs + 0.1));
+	histW +=  h1[i]->Integral(h1[i]->FindBin(fMassBs - window), h1[i]->FindBin(fMassBs + window));
       }
     }
 
@@ -3438,6 +3442,7 @@ void anaBmm::dumpFiles() {
 	OUT << Form("\\vdef{vNexp:s%i} {\\ensuremath{ {%4.1f } } }", i, fNexpS[i]) << endl;
       } else {
 	OUT << Form("\\vdef{vXs:s%i} {\\ensuremath{ {%s } } }", i, (texForm(fvXsS[i])).Data()) << endl;
+	//OUT << Form("%s", formatTex(fNexpS[i], "vNexp", Form("s%i", i) )) << endl;
 	OUT << Form("\\vdef{vNexp:s%i} {\\ensuremath{ {%s } } }", i, (texForm(fNexpS[i])).Data()) << endl;
       }
     }
@@ -3464,7 +3469,8 @@ void anaBmm::dumpFiles() {
 
 
       OUT << Form("\\vdef{vXs:m%i} {\\ensuremath{ {%s } } }", i, (texForm(fvXsM[i])).Data()) << endl;
-      OUT << Form("\\vdef{vNexp:m%i} {\\ensuremath{ {%s } } }", i, (texForm(fNexpM[i])).Data()) << endl;
+      OUT << Form("%s", formatTex(fNexpM[i], "vNexp", Form("m%i", i)).Data()) << endl;
+      //OUT << Form("\\vdef{vNexp:m%i} {\\ensuremath{ {%s } } }", i, (texForm(fNexpM[i])).Data()) << endl;
     }
   }
   
@@ -3496,10 +3502,10 @@ void anaBmm::dumpCuts() {
       sVal = hS->GetBinContent(i);
       mVal = hM->GetBinContent(i);
 
-      // cout << hS->GetXaxis()->GetBinLabel(i) << " = " << sVal << " (" <<  mVal  << ")" << endl;
+      // cout << hS->GetXaxis()->GetBinLabel(i) << " =  " << sVal << " (" <<  mVal  << ")" << endl;
 
       if (sVal != mVal) {
-	cout << endl << "  Cut bin " << i << ": Signal  = " << sVal << ", BG = " << mVal << " for " ;
+	cout << endl << "  Cut bin " << i << ": Signal  =  " << sVal << ", BG = " << mVal << " for " ;
 	show = 1; problem = 1;
       } else {
 	show = 0;
@@ -3508,33 +3514,33 @@ void anaBmm::dumpCuts() {
 	  OUT  << Form("\\vdef{cut:%s:ptbs}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  ptbs = sVal;
 	  optimizedCut[4] = TString(Form("pt>%5.4f", sVal));
-	  if ( show ) { cout << "pT(Bs)" << endl; }
+	  if ( show ) { cout << "pT(Bs) " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}^{min}(l) [GeV]")) {
 	  OUT  << Form("\\vdef{cut:%s:ptlo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  ptmulo = sVal;
 	  optimizedCut[0] = TString(Form("ptl1>%5.4f", sVal));
-	  if ( show ) { cout << "pT_min" << endl; }
+	  if ( show ) { cout << "pT_min " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}^{max}(l) [GeV]")) {
 	  OUT  << Form("\\vdef{cut:%s:pthi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	  if ( show ) { cout << "pT_max" << endl; }
+	  if ( show ) { cout << "pT_max " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{#mu#mu}^{min}")) {
 	  OUT  << Form("\\vdef{cut:%s:rmmlo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  rmmlo = sVal;
 	  optimizedCut[2] = TString(Form("rmm>%5.4f", sVal));
-	  if ( show ) { cout << "Rmm_min" << endl; }
+	  if ( show ) { cout << "Rmm_min " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{#mu#mu}^{max}")) {
 	  OUT  << Form("\\vdef{cut:%s:rmmhi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  rmmhi = sVal;
 	  optimizedCut[3] = TString(Form("rmm<%5.4f", sVal));
-	  if ( show ) { cout << "Rmm_max" << endl; }
+	  if ( show ) { cout << "Rmm_max " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#eta_{B}^{min}")) {
@@ -3542,30 +3548,30 @@ void anaBmm::dumpCuts() {
 	  etalo = sVal;
 	  optimizedCut[1] = TString(Form("eta>%5.4f", sVal));
 	  optimizedCut[4] = TString(Form("etal0>%5.4f&&etal1<%5.4f", sVal, sVal));
-	  if ( show ) { cout << "eta(B)_min" << endl; }
+	  if ( show ) { cout << "eta(B)_min " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#eta_{B}^{max}")) {
 	  OUT  << Form("\\vdef{cut:%s:etahi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  etahi = sVal;
-	  if ( show ) { cout << "eta(B)_max" << endl; }
+	  if ( show ) { cout << "eta(B)_max " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "TIP(l) [cm]")) {
 	  OUT  << Form("\\vdef{cut:%s:tip}      {\\ensuremath{%5.3f } } ", label, sVal) << endl;
-	  if ( show ) { cout << "TIP" << endl; }
+	  if ( show ) { cout << "TIP " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#chi^2")) {
 	  OUT  << Form("\\vdef{cut:%s:chi2}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  vtxhi = sVal;
 	  optimizedCut[11] = TString(Form("chi2<%5.4f", sVal));
-	  if ( show ) { cout << "chi2" << endl; }
+	  if ( show ) { cout << "chi2 " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{3d} [cm]")) {
 	  OUT  << Form("\\vdef{cut:%s:l3d}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
-	  if ( show ) { cout << "L3D" << endl; }
+	  if ( show ) { cout << "L3D " << sVal << endl; }
 	}
 
 
@@ -3574,7 +3580,7 @@ void anaBmm::dumpCuts() {
 	  coslo = sVal;
 	  optimizedCut[8] = TString(Form("cosa>%5.4f", sVal));
 	  optimizedCut[6] = TString(Form("cosa3>%5.4f", sVal));
-	  if ( show ) { cout << "cos(alpha)" << endl; }
+	  if ( show ) { cout << "cos(alpha) " << sVal << endl; }
 	}
 
 
@@ -3582,86 +3588,86 @@ void anaBmm::dumpCuts() {
 	  OUT  << Form("\\vdef{cut:%s:cosalpha3}    {\\ensuremath{%5.4f } } ", label, sVal) << endl;
 	  cos3lo = sVal;
 // 	  optimizedCut[6] = TString(Form("cosa3>%5.4f", sVal));
-	  if ( show ) { cout << "cos(alpha3)" << endl; }
+	  if ( show ) { cout << "cos(alpha3) " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{xy} [cm]")) {
 	  OUT  << Form("\\vdef{cut:%s:lxy}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
-	  if ( show ) { cout << "LXY" << endl; }
+	  if ( show ) { cout << "LXY " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{3D}/#sigma_{3D}")) {
 	  OUT  << Form("\\vdef{cut:%s:l3d/s3d}    {\\ensuremath{%3.1f } } ", label, sVal) << endl;
 	  l3dlo = sVal;
 	  optimizedCut[7] = TString(Form("l3d/s3d>%5.4f", sVal));
-	  if ( show ) { cout << "L3D/S3D" << endl; }
+	  if ( show ) { cout << "L3D/S3D " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{xy}/#sigma_{xy}")) {
 	  OUT  << Form("\\vdef{cut:%s:lxy/sxy}    {\\ensuremath{%3.1f } } ", label, sVal) << endl;
 	  lxylo = sVal;
 	  optimizedCut[9] = TString(Form("lxy/sxy>%5.4f", sVal));
-	  if ( show ) { cout << "LXY/SXY" << endl; }
+	  if ( show ) { cout << "LXY/SXY " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "I_{veto}")) {
 	  OUT  << Form("\\vdef{cut:%s:isoveto}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	  if ( show ) { cout << "I_veto" << endl; }
+	  if ( show ) { cout << "I_veto " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{I}")) {
 	  OUT  << Form("\\vdef{cut:%s:isocone}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	  if ( show ) { cout << "IsoCone" << endl; }
+	  if ( show ) { cout << "IsoCone " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "I")) {
 	  OUT  << Form("\\vdef{cut:%s:isolation}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
 	  isolo = sVal;
 	  optimizedCut[10] = TString(Form("iso>%5.4f", sVal));
-	  if ( show ) { cout << "Isolation" << endl; }
+	  if ( show ) { cout << "Isolation " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "BMMSEL")) {
 	  OUT  << Form("\\vdef{cut:%s:bmmsel}    {\\ensuremath{%i } } ", label, sVal) << endl;
-	  if ( show ) { cout << "BMMSEL" << endl; }
+	  if ( show ) { cout << "BMMSEL " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "SUBSEL")) {
 	  OUT  << Form("\\vdef{cut:%s:subsel}    {\\ensuremath{%i } } ", label, sVal) << endl;
-	  if ( show ) { cout << "SUBSEL" << endl; }
+	  if ( show ) { cout << "SUBSEL " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "m_{min}^{#mu #mu}")) {
 	  OUT  << Form("\\vdef{cut:%s:masslo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  masslo = sVal;
-	  if ( show ) { cout << "mass_min" << endl; }
+	  if ( show ) { cout << "mass_min " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "m_{max}^{#mu #mu}")) {
 	  OUT  << Form("\\vdef{cut:%s:masshi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
 	  masshi = sVal;
-	  if ( show ) { cout << "mass_max" << endl; }
+	  if ( show ) { cout << "mass_max " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "iso. p_{T}^{min}")) {
 	  OUT  << Form("\\vdef{cut:%s:isoptmin}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	  if ( show ) { cout << "pT_iso" << endl; }
+	  if ( show ) { cout << "pT_iso " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "L1 available")) {
 	  OUT  << Form("\\vdef{cut:%s:setl1}    {\\ensuremath{%i } } ", label, sVal) << endl;
-	  if ( show ) { cout << "L1" << endl; }
+	  if ( show ) { cout << "L1 " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "HLT available")) {
 	  OUT  << Form("\\vdef{cut:%s:sethlt}    {\\ensuremath{%i } } ", label, sVal) << endl;
-	  if ( show ) { cout << "HLT" << endl; }
+	  if ( show ) { cout << "HLT " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#Delta m{#mu #mu}")) {
 	  OUT  << Form("\\vdef{cut:%s:masswi}    {\\ensuremath{%5.0f } } ", label, sVal) << endl;
 	  masswi = 0.001*sVal;
-	  if ( show ) { cout << "deltaMass" << endl; }
+	  if ( show ) { cout << "deltaMass " << sVal << endl; }
 	}
 	//      }
     }
@@ -3777,11 +3783,11 @@ void anaBmm::overlay(const char *var, const char *cuts, double min, double max, 
 
 
 // -----------------------------------------------------------------------------------------------------
-void anaBmm::loopHandOptimization() {
+void anaBmm::loopHandOptimization(int tolerance) {
 
 
   TString extraTS[] = { TString("ptl1>"), TString("etamu"), TString("rmm>"), TString("rmm<"), 
-			TString("pt>"), TString("TMath::Abs(eta)>"), 
+			TString("pt>"), TString("etab"), 
 			TString("cosa3>"),TString("l3d/s3d>"),TString("cosa>"),TString("lxy/sxy>"),
 			TString("iso>"), TString("chi2<") } ;
 
@@ -3789,6 +3795,7 @@ void anaBmm::loopHandOptimization() {
   double mins[] = {  2., 0.5,   0.0,  0.0,     5., 0.5, 0.99, 0., 0.99,  0.,  0.8,  0.}; 
   double maxs[] = {  6., 2.4,  2.0,  2.0,    15., 2.5, 1.00,  40., 1.00,   40., 1.0, 10.};
   int bins[]    = { 20,  10,    20,    20,   20,  10,    20,  40,   20,   40,    20,  20};
+  //int bins[]    = { 2,  2,    2,    2,   2,  2,    2,  2,   2,   2,    2,  2};
 
     
   c0->cd();
@@ -3798,10 +3805,9 @@ void anaBmm::loopHandOptimization() {
   char extra[200];
   for (int i = 0; i < NCUTS; i++ ) {
     
-    if ( i == 1 ) { continue; }
     c0->cd(i+1);
     sprintf(extra, "%s", extraTS[i].Data());
-    runHandOptimization("4.8<mass&&mass<6.0&&goodL1&&goodHLT", extra, bins[i], mins[i], maxs[i], i);
+    runHandOptimization("4.8<mass&&mass<6.0&&goodL1&&goodHLT", extra, bins[i], mins[i], maxs[i], i, tolerance);
 
     optimizedCut[i] = TString(Form("%s %5.4f", extra, optCutValue[i]));
   }
@@ -3815,27 +3821,39 @@ void anaBmm::loopHandOptimization() {
 }
 
 // -----------------------------------------------------------------------------------------------------
-void anaBmm::runHandOptimization(const char *aoCuts, char *extraVar, int nbin, double min, double max, int cut_nr) {
+void anaBmm::runHandOptimization(const char *aoCuts, const char *extraVar, int nbin, double min, 
+				 double max, int cut_nr, int tolerance) {
 
   double cut, maxFom(-99.), maxCut(0.);
   double lowCut(0.) , upCut(0.);
   double lowFom(0.) , upFom(0.);
-  int fbin(0), iseta(0);
+  int fbin(0), iseta(0), isetaB(0);
 
   hopt[cut_nr]    = new TH1D(Form("fom_%s", extraVar),Form("%s", extraVar), nbin, min, max);
   
+  char etaCut[200];
   TString extraVarTS = TString(Form("%s", extraVar));
+  if ( extraVarTS.Contains("etamu"))  {
+    iseta = 1;
+  }
+
+  if ( extraVarTS.Contains("etab"))  {
+    isetaB = 1;
+  }
 
   for (int i = 0; i < nbin; ++i) {
 
     cut = min + i*(max-min)/nbin; 
     
-    if ( extraVarTS.Contains("etamu") || iseta) { 
-      iseta = 1;
-      sprintf(extraVar, "TMath::Abs(etal0)< %5.4f && TMath::Abs(etal1)<", cut);
+    if (iseta) { 
+      sprintf(etaCut, "TMath::Abs(etal0)<%5.4f && TMath::Abs(etal1)<%5.4f", cut, cut);
+      handOptimization(aoCuts, etaCut);
+    } else if (isetaB) { 
+      sprintf(etaCut, "TMath::Abs(eta)<%5.4f", cut);
+      handOptimization(aoCuts, etaCut);
+    } else {
+      handOptimization(aoCuts, Form("%s %5.4f", extraVar, cut));
     }
-
-    handOptimization(aoCuts, Form("%s %5.4f", extraVar, cut));
     
     hopt[cut_nr]->SetBinContent(i+1, fFom);
     
@@ -3847,46 +3865,57 @@ void anaBmm::runHandOptimization(const char *aoCuts, char *extraVar, int nbin, d
     }
   }
 
-  for (int i = fbin; i > -1; --i) {
+  if (tolerance) {
+    for (int i = fbin; i > -1; --i) {
 
-    lowCut = min + i*(max-min)/nbin; 
+      lowCut = min + i*(max-min)/nbin; 
+        
+      if (iseta) { 
+	sprintf(etaCut, "TMath::Abs(etal0)<%5.4f && TMath::Abs(etal1)<%5.4f", lowCut, lowCut);
+	handOptimization(aoCuts, etaCut, 0);
+      } else if (isetaB) { 
+	sprintf(etaCut, "TMath::Abs(eta)<%5.4f", lowCut);
+	handOptimization(aoCuts, etaCut, 0);
+      } else {
+	handOptimization(aoCuts, Form("%s %5.4f", extraVar, lowCut), 0);
+      }
+
+      if ( TMath::Abs(fFom - maxFom) > 0.01*maxFom && i > -1 ) {
+	lowCut = min + (i+1)*(max-min)/nbin; 
+	break;
+      }
+
+      lowFom = fFom;
+    }
+
+    for (int i = fbin; i < nbin; ++i) {
+
+      upCut = min + i*(max-min)/nbin; 
+
+      if (iseta) { 
+	sprintf(etaCut, "TMath::Abs(etal0)<%5.4f && TMath::Abs(etal1)<%5.4f", upCut, upCut);
+	handOptimization(aoCuts, etaCut, 0);
+      } else if (isetaB) { 
+	sprintf(etaCut, "TMath::Abs(eta)<%5.4f", upCut);
+	handOptimization(aoCuts, etaCut, 0);
+      } else {
+	handOptimization(aoCuts, Form("%s %5.4f", extraVar, upCut), 0);
+      }
+
+      if ( TMath::Abs(fFom - maxFom) > 0.01*maxFom && i > -1 ) {
+	upCut = min + (i-1)*(max-min)/nbin; 
+	break;
+      }
+
+      upFom = fFom;
+    }
     
-    if ( extraVarTS.Contains("etamu") || iseta) { 
-      iseta = 1;
-      sprintf(extraVar, "TMath::Abs(etal0)< %5.4f && TMath::Abs(etal1)<", lowCut);
-    }
-
-    handOptimization(aoCuts, Form("%s %5.4f", extraVar, lowCut, 0));
-
-    if ( TMath::Abs(fFom - maxFom) > 0.01*maxFom && i > -1 ) {
-      lowCut = min + (i+1)*(max-min)/nbin; 
-      break;
-    }
-
-    lowFom = fFom;
-  }
-
-  for (int i = fbin; i < nbin; ++i) {
-
-    upCut = min + i*(max-min)/nbin; 
+    cout << "==> maximum fom: " << Form("%4.4e",maxFom) << " at cut " << extraVar << " " << maxCut 
+	 << "  (" << lowCut << " - " << upCut <<" within 1%)" << endl;
+  } else {
     
-    if ( extraVarTS.Contains("etamu") || iseta) { 
-      iseta = 1;
-      sprintf(extraVar, "TMath::Abs(etal0)< %5.4f && TMath::Abs(etal1)<", upCut);
-    }
-
-    handOptimization(aoCuts, Form("%s %5.4f", extraVar, upCut, 0));
-
-    if ( TMath::Abs(fFom - maxFom) > 0.01*maxFom && i > -1 ) {
-      upCut = min + (i-1)*(max-min)/nbin; 
-      break;
-    }
-
-    upFom = fFom;
+    cout << "==> maximum fom: " << Form("%4.4e",maxFom) << " at cut " << extraVar << " " << maxCut << endl;
   }
-
-  cout << "==> maximum fom: " << Form("%4.4e",maxFom) << " at cut " << extraVar << maxCut 
-       << "  (" << lowCut << " - " << upCut <<" within 1%)" << endl;
 
   hopt[cut_nr]->GetYaxis()->SetRangeUser(-0.1, 1.2*hopt[cut_nr]->GetMaximum());
   hopt[cut_nr]->Draw();
@@ -3905,16 +3934,19 @@ void anaBmm::runHandOptimization(const char *aoCuts, char *extraVar, int nbin, d
   //   system(Form("/bin/mv %s old.%s", filename, filename));
   ofstream OUT(filename, ios::app);
 
-  OUT << "==> maximum fom: " << Form("%4.4e",maxFom) << " at cut " << extraVar << maxCut 
-       << "  (" << lowCut << " - " << upCut <<" within 1%)" << endl;
-
+  if ( tolerance ) {
+    OUT << "==> maximum fom: " << Form("%4.4e",maxFom) << " at cut " << extraVar << " " << maxCut 
+	<< "  (" << lowCut << " - " << upCut <<" within 1%)" << endl;
+  }  else {
+    OUT << "==> maximum fom: " << Form("%4.4e",maxFom) << " at cut " << extraVar << " " << maxCut << endl;
+ 
+  }
   OUT.close();
 }
 
 // ----------------------------------------------------------------------
 void anaBmm::handOptimization(const char *aoCuts, const char *extraCuts, int verbose) {
-
-
+  
   // -- Fix lumi normalisation scaling factor
   double SF = fLumiD[0]/fLumiM[bgIndex];
 
@@ -3928,7 +3960,7 @@ void anaBmm::handOptimization(const char *aoCuts, const char *extraCuts, int ver
   s->Draw("mass>>hSG", Form("goodL1&&goodHLT && %s", aoCuts), "goff"); 
   double s1Norm = hSG->GetSumOfWeights();
   s->Draw("mass>>hSG", Form("goodL1&&goodHLT && %s", extraCuts), "goff"); 
-  double s2Norm  =  hSG->GetSumOfWeights();
+  double s2Norm  =  hSG->GetSumOfWeights(); //cout << Form("TEST: goodL1&&goodHLT && %s && %s", aoCuts, extraCuts) << endl;
   s->Draw("mass>>hSG", Form("goodL1&&goodHLT && %s && %s", aoCuts, extraCuts), "goff"); 
   double s12Norm  =  hSG->GetSumOfWeights();
 
@@ -3975,6 +4007,7 @@ void anaBmm::loopOptimizedCuts2D() {
 
     if ( optimizedCut[i].Contains("l3d/s3d") ) { continue; }
     if ( optimizedCut[i].Contains("cosa3") )   { continue; }
+    if ( optimizedCut[i].Contains("eta") )     { continue; }
 
     sprintf(ao, "4.8<mass&&mass<6.0&&goodL1&&goodHLT");
 
@@ -3986,6 +4019,7 @@ void anaBmm::loopOptimizedCuts2D() {
       if ( optimizedCut[j].Contains("cosa3") )   { continue; }
       if ( optimizedCut[j].Contains("iso") )     { continue; }
       if ( optimizedCut[j].Contains("chi2") )    { continue; }
+      if ( optimizedCut[j].Contains("eta") )     { continue; }
 
       sprintf(ao, "%s && %s", ao, optimizedCut[j].Data());
     }
@@ -4043,7 +4077,8 @@ void anaBmm::loopOptimizedCuts3D() {
   for (int i = 0; i < NCUTS; i++ ) {
 
     if ( optimizedCut[i].Contains("lxy/sxy") ) { continue; }
-    if ( optimizedCut[i].Contains("cosa3") )    { continue; }
+    if ( optimizedCut[i].Contains("cosa3") )   { continue; }
+    if ( optimizedCut[i].Contains("eta") )     { continue; }
 
     sprintf(ao, "4.8<mass&&mass<6.0&&goodL1&&goodHLT");
 
@@ -4052,9 +4087,10 @@ void anaBmm::loopOptimizedCuts3D() {
       if ( i == j ) { continue; }
 
       if ( optimizedCut[j].Contains("lxy/sxy") ) { continue; }
-      if ( optimizedCut[j].Contains("cosa3") )    { continue; }
+      if ( optimizedCut[j].Contains("cosa3") )   { continue; }
       if ( optimizedCut[j].Contains("iso") )     { continue; }
       if ( optimizedCut[j].Contains("chi2") )    { continue; }
+      if ( optimizedCut[j].Contains("eta") )     { continue; }
 
       sprintf(ao, "%s && %s", ao, optimizedCut[j].Data());
     }
@@ -4181,24 +4217,17 @@ void anaBmm::loopULOptimization() {
   sprintf(preSel, "lxy/sxy>7");
 
   char aoCuts[200];
-  sprintf(aoCuts, "goodL1 && goodHLT && ptl1>4.0000 && TMath::Abs(etal0)<2.4000 && TMath::Abs(etal1)<2.4000 && rmm>0.1 && rmm<1.2 && pt>6.0000 && TMath::Abs(eta)<2.4000");
-//   int ncuts = 4; int nfact = 2;
-//   TString extraTS[] = { TString("TMath::Abs(etal0)<"), TString("ptl1>"), TString("pt>"), 
-// 			TString("l3d/s3d>"),TString("cosa>"), TString("iso>"), TString("chi2<") };
-			
-//   // arrays for:     etaMu  ptMu  ptB  lxy   cosa    iso chi2
-//   double mins[] = {  0.5,   3.,   6.,  21., 0.998,  0.85,  2.}; 
-//   double maxs[] = {  3.0,   7.,   10., 25., 1.000,  1.00,  6.};
-//   int bins[]    = {  3,     4,    4,    4,     4,     3,   4 };
+  sprintf(aoCuts, "goodL1 && goodHLT && TMath::Abs(etal0)<2.4000 && TMath::Abs(etal1)<2.4000 && rmm>-0.1 && rmm<100. && TMath::Abs(eta)<2.4000");
 
-  int ncuts = 2; int nfact = 2;
-  TString extraTS[] = { TString("lxy/sxy>"), TString("cosa3>"), TString("iso>"), TString("chi2<") };
+  int ncuts = 4; int nfact = 2;
+  TString extraTS[] = { TString("ptl1>"), TString("pt>"), TString("l3d/s3d>"), TString("cosa>"), 
+			TString("iso>"), TString("chi2<") };
 
-  // arrays for:     lxy   cosa    iso chi2
-  double mins[] = {  18., 0.999,  0.85,  1.}; 
-  double maxs[] = {  22., 1.000,  1.00,  7.};
-  int bins[]    = {  4,     4,     3,    6 };  
- 
+  // arrays for:     ptMu  ptB  lxy   cosa    iso chi2
+  double mins[] = {  3.,   6.,  21., 0.998,  0.85,  2.}; 
+  double maxs[] = {  7.,   10., 25., 1.000,  1.00,  6.};
+  int bins[]    = {  4,    4,    4,     4,     3,   4 };
+
   char extra1[200], extra2[200], extra3[200], extra4[200], extra5[200], extra6[200];
 
   char ao[200];
@@ -4219,15 +4248,15 @@ void anaBmm::loopULOptimization() {
 	  cut = mins[i2] + i2bin*(maxs[i2]-mins[i2])/bins[i2]; 
 	  sprintf(extra2, Form("%s %5.4f", extraTS[i2].Data(), cut));
 
-// 	  for (int i3 = i2+1; i3 < ncuts; i3++ ) {
-// 	    for (int i3bin = 0; i3bin < bins[i3]; ++i3bin) {  
-// 	      cut = mins[i3] + i3bin*(maxs[i3]-mins[i3])/bins[i3]; 
-// 	      sprintf(extra3, Form("%s %5.4f", extraTS[i3].Data(), cut));
+	  for (int i3 = i2+1; i3 < ncuts; i3++ ) {
+	    for (int i3bin = 0; i3bin < bins[i3]; ++i3bin) {  
+	      cut = mins[i3] + i3bin*(maxs[i3]-mins[i3])/bins[i3]; 
+	      sprintf(extra3, Form("%s %5.4f", extraTS[i3].Data(), cut));
 
-// 	      for (int i4 = i3+1; i4 < ncuts; i4++ ) {
-// 		for (int i4bin = 0; i4bin < bins[i4]; ++i4bin) {  
-// 		  cut = mins[i4] + i4bin*(maxs[i4]-mins[i4])/bins[i4]; 
-// 		  sprintf(extra4, Form("%s %5.4f", extraTS[i4].Data(), cut));
+	      for (int i4 = i3+1; i4 < ncuts; i4++ ) {
+		for (int i4bin = 0; i4bin < bins[i4]; ++i4bin) {  
+		  cut = mins[i4] + i4bin*(maxs[i4]-mins[i4])/bins[i4]; 
+		  sprintf(extra4, Form("%s %5.4f", extraTS[i4].Data(), cut));
  
 // 		  for (int i5 = i4+1; i5 < ncuts; i5++ ) {
 // 		    for (int i5bin = 0; i5bin < bins[i5]; ++i5bin) {  
@@ -4250,11 +4279,11 @@ void anaBmm::loopULOptimization() {
 				  cut = mins[j2] + j2bin*(maxs[j2]-mins[j2])/bins[j2]; 
 				  sprintf(fact2, Form("%s %5.4f", extraTS[j2].Data(), cut));
 
-				  sprintf(ao, Form("%s && %s && %s", 
-						   aoCuts, extra1, extra2));
-// 						   extra1, extra2, extra3, extra4, extra5, extra6));
+				  sprintf(ao, Form("%s && %s && %s && %s && %s", 
+						   aoCuts, extra1, extra2, extra3, extra4));
+// 						   aoCuts, extra1, extra2, extra3, extra4, extra5, extra6));
 
-				  sprintf(pre, Form("%s", preSel));
+				  sprintf(pre, Form("%s && %s", preSel, extra1));
 // 				  sprintf(pre, Form("%s && %s && %s && %s ", preSel, extra1, extra2, extra3));
 
     
@@ -4273,10 +4302,10 @@ void anaBmm::loopULOptimization() {
 // 		      }
 // 		    }
 // 		  }
-// 		}
-// 	      }
-// 	    }
-// 	  }
+ 		}
+ 	      }
+ 	    }
+ 	  }
 	}
       }
     }
@@ -4414,38 +4443,107 @@ void anaBmm::ulOptimization(const char *aoCuts, const char *preCuts, const char 
 
 // =======================================================================================================
 
-void anaBmm::quickAna(double vptmu, double vetamu, double vrmmlo, double vrmmhi, double vptb, double vetab,
-		   double vcosa, double vcosa3, double vlxysxy, double vl3ds3d, double vchi2, double viso, double vpre){
+void anaBmm::optimizerMassEta() {
+
+  double veta[]  = { 0., 0.5, 1.5, 2.5 }; int neta = 2;
+  double vmass[] = { 0.1, 0.08, 0.06 };   int nmass = 1;
+
+  TString cutsBestUL;
+  double minUL(9999.);
+
+  TH2D *hmeU = new TH2D("hmeU", "",  neta, 0., neta, nmass, 0., nmass); 
+  TH2D *hmeS = new TH2D("hmeS", "",  neta, 0., neta, nmass, 0., nmass); 
+  TH2D *hmeB = new TH2D("hmeB", "",  neta, 0., neta, nmass, 0., nmass); 
+  TH2D *hmeE = new TH2D("hmeE", "",  neta, 0., neta, nmass, 0., nmass); 
+
+  setTitles2(hmeU, "#eta-bin","mass-bin", 0.06, 1.1, 1.1);
+  setTitles2(hmeS, "#eta-bin","mass-bin", 0.06, 1.1, 1.1);
+  setTitles2(hmeB, "#eta-bin","mass-bin", 0.06, 1.1, 1.1);
+  setTitles2(hmeE, "#eta-bin","mass-bin", 0.06, 1.1, 1.1);
+
+  for (int i = 0; i < neta; i++ ) {
+    for (int j = 0; j < nmass; j++ ) {
+
+//       cout << "quickAna(" << ptmulo  << " ," <<  veta[i]  << " ," <<  veta[i+1]  << " ," <<  rmmlo  << " ," <<  rmmhi  << " ," <<  ptbs  << " ," <<  etahi  << " ," <<  coslo  << " , -100. ," <<  lxylo  << " ," <<  l3dlo  << " ," <<  vtxhi  << " ," <<  isolo  << " ," <<  vmass[j] << ");" << endl;
+      
+      quickAna(ptmulo, veta[i], veta[i+1], rmmlo, rmmhi, ptbs, etahi, coslo, -100., lxylo, l3dlo, vtxhi, isolo, vmass[j]);
+
+      hmeU->SetBinContent(i+1, j+1, fUL);
+      hmeS->SetBinContent(i+1, j+1, fNsg);
+      hmeB->SetBinContent(i+1, j+1, fNbg);
+      hmeE->SetBinContent(i+1, j+1, fEsg);
+
+      if (fUL < minUL) {
+	
+	minUL = fUL; 
+	cutsBestUL = TString(Form("%4.1f < |eta| < %4.1f, mass +/- %3.0f MeV", veta[i], veta[i+1], 1000*vmass[j]));
+      } 
+
+    }
+  }
+
+  c0->cd();
+  c0->Clear();
+  c0->Divide(2,2);
+  c0->cd(1); shrinkPad(0.2, 0.2, 0.2, 0.1); gStyle->SetOptStat(0); gPad->SetLogz(1);
+  hmeU->GetZaxis()->SetRangeUser(1.e-9, 1.e-7); 
+  hmeU->Draw("colztext");
+  c0->cd(2); shrinkPad(0.2, 0.2, 0.2, 0.1); gStyle->SetOptStat(0); hmeS->GetZaxis()->SetRangeUser(0., 25.);
+  hmeS->Draw("colztext");
+  c0->cd(3); shrinkPad(0.2, 0.2, 0.2, 0.1); gStyle->SetOptStat(0); hmeB->GetZaxis()->SetRangeUser(0., 15.);
+  hmeB->Draw("colztext");
+  c0->cd(4); shrinkPad(0.2, 0.2, 0.2, 0.1); gStyle->SetOptStat(0);  hmeE->GetZaxis()->SetRangeUser(0., 0.1);
+  hmeE->Draw("colztext");
+ 
+  tl->SetTextColor(kBlack);  
+  tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
+  c0->cd(1);
+  tl->DrawLatex(0.2, 0.93, Form("Best UL = %4.2e", fUL));
+  c0->cd(2);
+  tl->DrawLatex(0.1, 0.93, Form("%s", cutsBestUL.Data()));
+
+  c0->SaveAs("massEtaOptimizer.pdf");
+
+}
+
+
+// =======================================================================================================
+
+void anaBmm::quickAna(double vptmu, double vetamulo, double vetamuhi, double vrmmlo, double vrmmhi, 
+		      double vptb, double vetab, double vcosa, double vcosa3, double vlxysxy, double vl3ds3d, 
+		      double vchi2, double viso, 
+		      double vmass, double vpre) {
 
   char pre[200];
   //  sprintf(pre, "ptl1>%5.4f && rmm>%5.4f && rmm<%5.4f && lxy/sxy>%5.4f", vptmu, vrmmlo, vrmmhi, vpre);
-  sprintf(pre, "ptl1>%5.4f && rmm>%5.4f && rmm<%5.4f && lxy/sxy>%5.4f && TMath::Abs(etal0)<%5.4f && TMath::Abs(etal1)<%5.4f", vptmu, vrmmlo, vrmmhi, vpre, vetamu, vetamu);
+  sprintf(pre, "ptl1>%5.4f && rmm>%5.4f && rmm<%5.4f && lxy/sxy>%5.4f && TMath::Abs(etal0)>%5.4f && TMath::Abs(etal1)>%5.4f && TMath::Abs(etal0)<%5.4f && TMath::Abs(etal1)<%5.4f", vptmu, vrmmlo, vrmmhi, vpre, vetamulo, vetamulo, vetamuhi, vetamuhi);
 
-  char fact1[200];  char f1[200];
+  char fact1[200];  char f1[200]; char tf1[200];
   sprintf(f1,  "chi2<%5.4f", vchi2);
+  sprintf(tf1,  "$\\chi^{2} < %5.1f$", vchi2);
   
-  char fact2[200];  char f2[200];
+  char fact2[200];  char f2[200]; char tf2[200];
   sprintf(f2, "iso>%5.4f", viso);
-  
+  sprintf(tf2,  "$I < %4.3f$", viso);
+
   char cuts[500], fcuts[500];
   const int ncuts = 12; 
   TString cutsTS[] = { TString(Form("ptl1>%5.4f",vptmu)), 
-		       TString(Form("TMath::Abs(etal0)<%5.4f && TMath::Abs(etal1)<%5.4f", vetamu, vetamu)), 
+		       TString(Form("TMath::Abs(etal0)>%5.4f && TMath::Abs(etal1)>%5.4f && TMath::Abs(etal0)<%5.4f && TMath::Abs(etal1)<%5.4f", vetamulo, vetamulo, vetamuhi, vetamuhi)), 
 		       TString(Form("rmm>%5.4f",vrmmlo)), TString(Form("rmm<%5.4f", vrmmhi)), 
 		       TString(Form("pt>%5.4f", vptb)), TString(Form("TMath::Abs(eta)<%5.4f", vetab)), 
 		       TString(Form("cosa>%5.4f", vcosa)), TString(Form("cosa3>%5.4f", vcosa3)), 
-		       TString(Form("lxy/sxy>%5.4f", vlxysxy)), TString(Form("l3d/s3d>%5.4f", vl3ds3d)), 
+		       TString(Form("lxy/sxy>%5.4f", vlxysxy)), TString(Form("l3d/s3d>%5.4f", vl3ds3d)),
 		       TString(Form("chi2<%5.4f", vchi2)), TString(Form("iso>%5.4f", viso))  };
 
   TString tableTS[] = { TString(Form("$p_T > %5.1f$",vptmu)), 
-		       TString(Form("$\\eta_\\mu < %5.1f$ ", vetamu)), 
-		       TString(Form("$\\Delta R > %5.1f$",vrmmlo)), TString(Form("$\\Delta R < %5.1f$", vrmmhi)), 
-		       TString(Form("$p_T(B_{s}) > %5.1f$", vptb)), TString(Form("$\\eta_{B}$ < %5.1f", vetab)), 
-		       TString(Form("$cos \\alpha > %5.4f$", vcosa)), TString(Form("$cos \\alpha_{3D} > %5.4f$", vcosa3)), 
-		       TString(Form("$l_{xy}/s_{xy} > %5.1f$", vlxysxy)), TString(Form("$l_{3D}/s_{3D}>%5.1f$", vl3ds3d)), 
-		       TString(Form("$\\chi^2 < %5.1f$", vchi2)), TString(Form("$I > %5.3f$", viso))  };
-
-  double sEff[ncuts];
+			TString(Form("$%5.1f < |\\eta_\\mu| < %5.1f$ ", vetamulo, vetamuhi)), 
+			TString(Form("$\\Delta R > %5.1f$",vrmmlo)), TString(Form("$\\Delta R < %5.1f$", vrmmhi)), 
+			TString(Form("$p_T(B_{s}) > %5.1f$", vptb)), TString(Form("$\\eta_{B} < %5.1f$", vetab)), 
+			TString(Form("$cos \\alpha > %5.4f$", vcosa)), TString(Form("$cos \\alpha_{3D} > %5.4f$", vcosa3)), 
+			TString(Form("$l_{xy}/s_{xy} > %5.1f$", vlxysxy)), TString(Form("$l_{3D}/s_{3D}>%5.1f$", vl3ds3d)), 
+			TString(Form("$\\chi^2 < %5.1f$", vchi2)), TString(Form("$I > %5.3f$", viso)) };
+  
   double bEff[ncuts];
   double sNevt[ncuts];
   double bNevt[ncuts];
@@ -4476,11 +4574,12 @@ void anaBmm::quickAna(double vptmu, double vetamu, double vrmmlo, double vrmmhi,
   sprintf(filename, "cuts_table.tex"); 
   
   ofstream OUT(filename, ios::app);
+  double sEff[ncuts];
 
-    OUT << " & "
-	<< "  & " <<  " $N_S$" << "  &"  << "$\\varepsilon_S$" 
-	<< "  & " << " $N_B$ " << "  & " << "$\\varepsilon_B$" << " \\\\" << endl;
-
+  OUT << "  & " <<  " $N_S$" << "  &"  << "$\\varepsilon_S$" 
+      << "  & " << " $N_B$ " << "  & " << "$\\varepsilon_B$" << " \\\\" << endl;
+  OUT << "\\hline" << endl;
+  
 
   for (int i = 0; i < ncuts; i++ ) {
 
@@ -4498,7 +4597,7 @@ void anaBmm::quickAna(double vptmu, double vetamu, double vrmmlo, double vrmmhi,
 	 << "     e_S = " << sEff[i] << "     e_B = " << bEff[i]
 	 << "     n_S = " << sNevt[i] << "     n_B = " << bNevt[i] << endl;
 
-    OUT << "&" << tableTS[i].Data() 
+    OUT << tableTS[i].Data() 
 	<< "  & " << sNevt[i] << "  & " << Form("%4.2e",sEff[i])
 	<< "  & " << bNevt[i]  << "  & " << Form("%4.2e",bEff[i]) << " \\\\" << endl;
 
@@ -4508,9 +4607,22 @@ void anaBmm::quickAna(double vptmu, double vetamu, double vrmmlo, double vrmmhi,
     sprintf(fcuts, "%s", cuts);
   }
 
-  quickUL(fcuts, pre, fact1, fact2);
+  OUT << "\\hline" << endl;
 
+  OUT << tf1 
+      << "  &-   & " << Form("%4.2e",sEff1)
+      << "  &-   & " << Form("%4.2e",bEff1) << " \\\\" << endl;
+
+  OUT << tf2 
+      << "  &-   & " << Form("%4.2e",sEff2)
+      << "  &-   & " << Form("%4.2e",bEff2) << " \\\\" << endl;
+
+  OUT << "\\hline" << endl;
+  
   OUT.close();
+
+  quickUL(fcuts, pre, fact1, fact2, vmass);
+
 
 }
 
@@ -4551,7 +4663,7 @@ double anaBmm::getCutEffB(const char *aCuts, const char *preCuts) {
 
 
 // ----------------------------------------------------------------------
-void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *f1Cut, const char *f2Cut) {
+void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *f1Cut, const char *f2Cut, double mCut) {
 
   // -- Fix lumi normalisation scaling factor
   double sSF = fLumiD[0]/fLumiS[sgIndex];
@@ -4563,22 +4675,22 @@ void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *f1Cut, 
   TTree *s = (TTree*)gFile->Get("events");
 
   double sNorm = fNevtS[sgIndex];
-  double massRedSG = 0.;
-  
+
   s->Draw("mass>>uSG", Form("goodKinematics&&goodL1&&goodHLT"), "goff"); 
-  if ( fSgReduction > - 0.5 ) {
+
+  s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s", preCuts), "goff"); 
+  double sNormF    =  uSG->GetSumOfWeights();
+  double massRedSG = 0.;
+    if ( mCut > -0.5 || fSgReduction < 0.) {
+    fSgReduction = massReduction("uSG", "mysg", mCut);
     massRedSG = fSgReduction;
   } else {
-    fSgReduction = massReduction("uSG", "mysg");
     massRedSG = fSgReduction;
   }
 
   s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s", aCuts), "goff"); 
   double sCuts     = uSG->GetSumOfWeights();
   double sEff      = sCuts/sNorm;
-
-  s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s", preCuts), "goff"); 
-  double sNormF    =  uSG->GetSumOfWeights();
 
   s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s && %s", preCuts, f1Cut), "goff"); 
   double s1Norm    = uSG->GetSumOfWeights();
@@ -4604,13 +4716,16 @@ void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *f1Cut, 
   TTree *b = (TTree*)gFile->Get("events");
 
   double bNorm = fNevtM[bgIndex];  
-  double massRedBG = 0.;
 
-  b->Draw("mass>>uBG", Form("goodKinematics&&goodL1&&goodHLT"), "goff"); 
-  if ( fBgReduction > -0.5 ) {
+  b->Draw("mass>>uBG", Form("goodKinematics&&goodL1&&goodHLT"), "goff");
+
+  b->Draw("mass>>uBG", Form("goodL1&&goodHLT && %s", preCuts), "goff"); 
+  double bNormF    =  uBG->GetSumOfWeights(); 
+  double massRedBG = 0.;
+  if ( mCut > -0.5 || fBgReduction < 0.) {
+    fBgReduction = massReduction("uBG", "mymc", mCut);
     massRedBG = fBgReduction;
   } else {
-    fBgReduction = massReduction("uBG", "mymc");
     massRedBG = fBgReduction;
   } 
 
@@ -4618,8 +4733,6 @@ void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *f1Cut, 
   double bCuts     = uBG->GetSumOfWeights();
   double bEff      = bCuts/bNorm;
 
-  b->Draw("mass>>uBG", Form("goodL1&&goodHLT && %s", preCuts), "goff"); 
-  double bNormF    =  uBG->GetSumOfWeights();
 
   b->Draw("mass>>uBG", Form("goodL1&&goodHLT && %s && %s", preCuts, f1Cut), "goff"); 
   double b1Norm    = uBG->GetSumOfWeights();
@@ -4642,15 +4755,44 @@ void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *f1Cut, 
     cout << " ==> Cannot calculate UL for n_S = " << fNsg << " and n_B = " << fNbg << endl;
     fUL = 99999.;
   }
-  
+
+  cout << endl << endl << "mass red.: " << mCut
+	 << "     e_S = " << massRedSG << "     e_B = " << massRedBG << endl;
+
   cout << endl << Form(" *** UL = %4.4e *** ", fUL)
        <<  " for n_S = " << fNsg << " (e_S = " << fEsg 
        <<  "),  n_B = " << fNbg << " (e_B = " << ebg <<  ")" << endl << endl
        << " cuts: \"" << aCuts << "\"  " 
        << " fact1: \"" << f1Cut << "\"  " 
        << " fact2: \"" << f2Cut << "\"  " 
+       << "\" mass +/- " << mCut << "\"  " 
        << endl << endl;
 
+  
+  char filename[200];
+  sprintf(filename, "cuts_table.tex"); 
+  
+  ofstream OUT(filename, ios::app);
+
+  OUT << "\\hline" << endl;
+  OUT << "$m_{\\mu\\mu} \\pm " << mCut
+      << " \\gev$  &-  & " << Form("%4.2e", massRedSG)
+      << "  &-  & " << Form("%4.2e", massRedBG) << " \\\\" << endl;
+
+  OUT << "\\hline" << endl;
+  OUT << "\\hline" << endl;
+  
+  OUT << "in $ " << fLumiD[0] << " \\invfb $"
+      << "  & " << Form("%4.1f",fNsg) << "  & " << Form("%4.2e",fEsg)
+      << "  & " << Form("%4.1f",fNbg)  << "  & " << Form("%4.2e", ebg) << " \\\\" << endl;
+
+  OUT << "\\hline" << endl;
+  OUT << "\\hline" << endl;
+
+  OUT << "  \\multicolumn{5}{|c|}{\\alert{{\\bf" << Form(" %4.2e",fUL) << " (90\\\% C.L.)}}}  \\\\* " << endl;
+
+
+  OUT.close();
 
 }
 

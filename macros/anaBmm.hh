@@ -58,7 +58,7 @@ public:
 
   void effTables();
   void effTable(TFile *f, const char *tag); 
-  double massReduction(const char *s = "c030", const char *tag = "m0");
+  double massReduction(const char *s = "c030", const char *tag = "m0", double window = -1.);
 
   void brecos();
   void jreco(int o = 4); 
@@ -85,18 +85,21 @@ public:
   // -------------------------------
   double getCutEffB(const char *aCuts, const char *preCut = "1");
   double getCutEffS(const char *aCuts, const char *preCut = "1");
-  void quickAna(double vptmu=3.0, double vetamu=100., double vrmmlo=0.3, double vrmmhi=1.2, double vptb=5.0, 
-		double vetab=2.4, double vcosa=0.995, double vcosa3=-1.1, double vlxysxy=18., double vl3ds3d=-1., 
-		double vchi2=1.0, double viso=0.85, double vpre=7.0);
-  void quickUL(const char *aCuts, const char *preCuts, const char *f1Cut, const char *f2Cut);
+  void quickAna(double vptmu=3.0, double vetamulo=0., double vetamuhi=100., double vrmmlo=0.3, double vrmmhi=1.2, 
+		double vptb=5.0, double vetab=2.4, double vcosa=0.995, double vcosa3=-1.1, 
+		double vlxysxy=18., double vl3ds3d=-1., double vchi2=1.0, double viso=0.85, 
+		double vmass=-1.0, double vpre=7.0);
+  void quickUL(const char *aCuts, const char *preCuts, const char *f1Cut, const char *f2Cut, double mCut);
   void loopULOptimization();
-  void loopHandOptimization();
+  void loopHandOptimization(int tolerance = 0);
   void loopOptimizedCuts3D();
   void loopOptimizedCuts2D();
   void loopOptimization(double pt = 4.); 
   void cutEfficiency(const char *aoCuts, const char *extraCuts, int icut = 1);
   void optimizerNumbers(const char *precuts, const char *line, double &eff, double &sg, double &bg);
-  void runHandOptimization(const char *aoCuts, char *extraVar, int nbin, double min, double max, int icut=0);
+  void optimizerMassEta();
+  void runHandOptimization(const char *aoCuts, const char *extraVar, 
+			   int nbin, double min, double max,int icut=0, int tolerance=1);
   void handOptimization(const char *aoCuts, const char *extraCuts, int verbose = 1);
   void ulOptimization(const char *aoCuts, const char *preCuts, const char *f1Cut, const char *f2Cut);
   void overlay(const char *var, const char *cuts, double min, double max, int nbin=40);
