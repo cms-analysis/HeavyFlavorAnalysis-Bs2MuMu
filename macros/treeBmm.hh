@@ -151,6 +151,7 @@ private:
     , LXYSXYLO
     , L3DLO
     , L3DS3DLO
+    , PRESEL
     , MASSLO
     , MASSHI
     , MASSWI

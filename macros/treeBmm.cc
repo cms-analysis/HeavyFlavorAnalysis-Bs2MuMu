@@ -2199,7 +2199,7 @@ void treeBmm::fillAnalysisEff() {
 	  // -- somewhat tightened preselection 
 	  ((TH1D*)gDirectory->Get("LXYSXY_PRE"))->Fill(fLxy/fSxy);
 	  ((TH1D*)gDirectory->Get("L3DS3D_PRE"))->Fill(fL3d/fS3d);
-	  if ( fLxy/fSxy > 7 ) {    // && fCosAngle > 0.9
+	  if ( fLxy/fSxy > PRESEL ) {    // && fCosAngle > 0.9
 	      
 	    fAR1->Fill(220.1); // histogram(20);
 	    fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(220.1), "preselection (fact) (220.1)");
@@ -4734,6 +4734,14 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
       hcuts->GetXaxis()->SetBinLabel(ibin, "#Delta m{#mu #mu}");
       ((TH1D*)gDirectory->Get("MASSWI"))->SetTitle(Form("#Delta m{#mu #mu} < %4.2f", MASSWI));
       ((TH1D*)gDirectory->Get("MASSWI_F"))->SetTitle(Form("#Delta m{#mu #mu} < %4.2f", MASSWI));
+    }
+
+    if (!strcmp(CutName, "PRESEL")) {
+      PRESEL = CutValue; ok = 1;
+      if (dump) cout << "PRESEL(LXY/SXY): " << PRESEL << endl;
+      ibin = 119;
+      hcuts->SetBinContent(ibin, PRESEL);
+      hcuts->GetXaxis()->SetBinLabel(ibin, "presel");
     }
     
     if (!ok) cout << "==> ERROR: Don't know about variable " << CutName << endl;

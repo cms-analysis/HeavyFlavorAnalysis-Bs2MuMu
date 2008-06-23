@@ -90,23 +90,26 @@ public:
 		double vlxysxy=18., double vl3ds3d=-1., double vchi2=1.0, double viso=0.85, 
 		double vmass=-1.0, double vpre=7.0);
   void quickUL(const char *aCuts, const char *preCuts, const char *f1Cut, const char *f2Cut, double mCut);
-  void loopULOptimization();
+  void loopULOptimization(const char *filename="ulOptimization.txt");
   void loopHandOptimization(int tolerance = 0);
   void loopOptimizedCuts3D();
   void loopOptimizedCuts2D();
   void loopOptimization(double pt = 4.); 
   void cutEfficiency(const char *aoCuts, const char *extraCuts, int icut = 1);
   void optimizerNumbers(const char *precuts, const char *line, double &eff, double &sg, double &bg);
+  void massResolutionEta();
+  void massReductionEta();
   void optimizerMassEta();
   void runHandOptimization(const char *aoCuts, const char *extraVar, 
 			   int nbin, double min, double max,int icut=0, int tolerance=1);
   void handOptimization(const char *aoCuts, const char *extraCuts, int verbose = 1);
-  void ulOptimization(const char *aoCuts, const char *preCuts, const char *f1Cut, const char *f2Cut);
+  void ulOptimization(const char *aoCuts, const char *preCuts, const char *f1Cut, const char *f2Cut, 
+		      double mCut, const char *filename);
   void overlay(const char *var, const char *cuts, double min, double max, int nbin=40);
 
   // -- Utilities and helper methods
   // -------------------------------
-  double  expUL(double sig, double bg);
+  double  expUL(double sig, double bg, double bgE);
 
   TH1* sumHistMC(const char *hist, int draw = 0, const char *sel = "c0");
   void sumHistMC_Add(int ch, const char *hist, TH1 *hist1, TH1 *hist2);
@@ -125,6 +128,7 @@ public:
   void setHist(TH1 *h, int color = kBlack, int symbol = 20, double size = 1., double width = 2.);
   void setFilledHist(TH1 *h, int lcol = kBlack, int fcol = kYellow, int fstyle = 1000, int width = 1, int style = 1);
   void emptyBinError(TH1 *h);
+  double getDGError(double a, double ae, double b, double be, double c, double ce, double d, double de);
 
   TH1D* DivideHisto(TH1D *hist1, TH1D *hist2);
   TH2D* DivideHisto2(TH2D *hist1, TH2D *hist2);
