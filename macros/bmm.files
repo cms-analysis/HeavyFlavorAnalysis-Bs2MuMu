@@ -8,14 +8,14 @@
 # ----------------------------------------------------------------------
 #
 # visible x-section [fb]: 38.9657    = 5.522E+01*1.E12*(5000./24.8e6)*3.5e-9 
-type=mysg file=treebmm/csg-003.default.root vxs=86.625E+00 signature=bsmumu
-#type=mysg file=treebmm/csg-003h.default.root vxs=53.900E+00 signature=bsmumu
+#type=mysg file=treebmm/csg-003.default.root vxs=86.625E+00 signature=bsmumu
+type=mysg file=treebmm/csg-003h.default.root vxs=53.900E+00 signature=bsmumu
 #type=mysg file=treebmm/csg-004h.norm.root vxs=2.09091e+06 signature=bpjpsikp
 #
 #type=mymc file=treebmm/cbg-003.default.root vxs=3.2450e+08 signature=BB
-type=mymc file=treebmm/cbg-009.default.root vxs=3.2450e+08 signature=BB
+#type=mymc file=treebmm/cbg-009.default.root vxs=3.2450e+08 signature=BB
 #type=mymc file=treebmm/cbg-009h.default.root vxs=1.3051e+08 signature=BB
-#type=mymc file=treebmm/cbg-003h.default.root vxs=1.3051e+08 signature=BB
+type=mymc file=treebmm/cbg-003h.default.root vxs=1.3051e+08 signature=BB
 #type=mymc file=treebmm/cbg-004h.norm.root vxs=2.0000e+07 signature=NonPrompt
 # ----------------------------------------------------------------------
 # do not leave empty lines at the end of this file

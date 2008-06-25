@@ -5008,17 +5008,17 @@ void anaBmm::optimizerMassEta() {
   gStyle->SetPaintTextFormat("4.2e");
   c0->cd(1);  shrinkPad(0.2, 0.2, 0.2, 0.1); gStyle->SetOptStat(0); gPad->SetLogz(1);
   hmeU->GetZaxis()->SetRangeUser(5.e-9, 5.e-8); hmeU->SetMarkerSize(2);
-  hmeU->DrawCopy("colztext90");
+  hmeU->DrawCopy("colztext");
   c0->cd(2); 
   shrinkPad(0.2, 0.2, 0.2, 0.1); gStyle->SetOptStat(0);  
   hmeE->GetZaxis()->SetRangeUser(0., 0.01); hmeE->SetMarkerSize(2);
-  hmeE->DrawCopy("colztext90");
+  hmeE->DrawCopy("colztext");
   c0->cd(3); shrinkPad(0.2, 0.2, 0.2, 0.1); gStyle->SetOptStat(0); 
   hmeS->GetZaxis()->SetRangeUser(0., 6.); hmeS->SetMarkerSize(2);
-  hmeS->DrawCopy("colztext90");
+  hmeS->DrawCopy("colztext");
   c0->cd(4);  shrinkPad(0.2, 0.2, 0.2, 0.1); gStyle->SetOptStat(0); 
   hmeB->GetZaxis()->SetRangeUser(0., 10.); hmeB->SetMarkerSize(2);
-  hmeB->DrawCopy("colztext90");
+  hmeB->DrawCopy("colztext");
  
   tl->SetTextColor(kBlack);  
   tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
