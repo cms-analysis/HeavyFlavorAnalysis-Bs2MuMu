@@ -706,15 +706,15 @@ void anaBmm::effTables() {
 
 void anaBmm::bgOverlays() {
 
-  bgOverlay("c033", 6); // overlay of different rare background with sg + bg
-  bgOverlay("c030", 6); // overlay of different rare background with sg + bg
-  bgOverlay("c430", 4); // overlay of different rare background with sg + bg
-  bgOverlay("c530", 5); // overlay of different rare background with sg + bg
+  bgOverlay("c033"); // overlay of different rare background with sg + bg
+  bgOverlay("c030"); // overlay of different rare background with sg + bg
+  bgOverlay("c430"); // overlay of different rare background with sg + bg
+  bgOverlay("c530"); // overlay of different rare background with sg + bg
 
-  nbgOverlay("c033", 5); // overlay of sg + bg (norm)
-  nbgOverlay("c030", 5); // overlay of sg + bg (norm)
-  nbgOverlay("c430", 5); // overlay of sg + bg (norm)
-  nbgOverlay("c530", 5); // overlay of sg + bg (norm)
+//   nbgOverlay("c033", 5); // overlay of sg + bg (norm)
+//   nbgOverlay("c030", 5); // overlay of sg + bg (norm)
+//   nbgOverlay("c430", 5); // overlay of sg + bg (norm)
+//   nbgOverlay("c530", 5); // overlay of sg + bg (norm)
 }
 
 // ----------------------------------------------------------------------
@@ -931,17 +931,8 @@ double anaBmm::calculateUpperLimit() {
 // ----------------------------------------------------------------------
 void anaBmm::normalizedUpperLimit() {
 
-  double nBs  = fLumiD[0] * 500.*1.e9 * 0.107 * 2.;
-  double ekin = 1000. / (4.8e6 * (500./55.e3) * 0.107 * 2.); // == 0.107 ?
-
-  // double nBs_kin = 55.e3 * (1000. / 4.8e6) * fLumiD[0];
-
-  // -- BF < N_UL(Nobs) / scaleUL  =  N_UL(Nobs) / (epsilon * N_Bs)
-  double atlasUL = expUL(7, 20, 12);
-  double scaleUL = ekin * nBs * fEsg ; // this is: eff_kin * eff_total * N_Bs 
-
-
   // -- BF <  N_UL(n_sg + n_bg) eff_Bplus f_u / (N_Bplus eff_B0 f_s ) * BR(Bplus)
+  double atlasUL = expUL(7, 20, 12);
   double nUL = expUL(fNsg, fNbg, fNbgE);
 
   double fu    = 0.398;
@@ -2631,15 +2622,17 @@ double anaBmm::massReduction(const char *hist, const char *sel, double window) {
 // -- Overlays
 //===========================================================================================
 
-void anaBmm::bgOverlay(const char *hist, const int npers) {
+void anaBmm::bgOverlay(const char *hist, int note) {
 
   int EColor[]     = {   13,    2,    4,    108,  6,  107,   93,   1, 
+			 13,    2,    4,    108,  6,  107,   93,   1, 
 			 13,    2,    4,    108,  6,  107,   93,   1   }; 
   
   double min(9999.), max(0.), maxSoW(0.);
   double fnorm_Ch, eff1_Ch, eff2_Ch;  
+  const int nhist = nMc;
 
-  // -- signal
+  // -- signal: Scale and get min/max
   TH1D *hs = (TH1D*)fS[sgIndex]->Get(hist)->Clone();
 
   if ( !strcmp(hist,"c530") ) {
@@ -2659,7 +2652,7 @@ void anaBmm::bgOverlay(const char *hist, const int npers) {
   if (hs->GetMaximum()       > max ) { max = hs->GetMaximum();            }
  
  
-  // -- background
+  // -- background: Scale and get min/max
   TH1D *hb = (TH1D*)fM[bgIndex]->Get(hist)->Clone();
 
   if ( !strcmp(hist,"c530") ) {
@@ -2685,110 +2678,119 @@ void anaBmm::bgOverlay(const char *hist, const int npers) {
 
   gPad->SetLogy(1);
 
-  // -- Other backgrounds
-  const int nhist = nMc;
-  const int sets = int(nhist/npers)+1;
-
+  // -- Selected backgrounds: Scale and get min/max
   TH1D *bg[nhist];
 
   for (int i = 0; i < nhist; ++i) {
 
     bg[i] = (TH1D*)fM[i]->Get(hist)->Clone();
     
-    if ( i == bgIndex || !strcmp(fTypeM[i], "nmc") ) { continue; }
-
-    if ( !strcmp(hist,"c530") ) {
-
-      channelEff(fM[i], fnorm_Ch, eff1_Ch, eff2_Ch);
-      bg[i]->Scale((fMisIdM[i]*fLumiD[0]/fLumiM[i])*eff1_Ch*eff2_Ch);
-    
-    } else {
-
-      bg[i]->Scale(fMisIdM[i]*fLumiD[0]/fLumiM[i]);
+    if ( !strcmp(fTypeM[i], "rmc") ) {
+      
+      if ( !strcmp(hist,"c530") ) {
+	
+	channelEff(fM[i], fnorm_Ch, eff1_Ch, eff2_Ch);
+	bg[i]->Scale((fMisIdM[i]*fLumiD[0]/fLumiM[i])*eff1_Ch*eff2_Ch);
+	
+      } else {
+	
+	bg[i]->Scale(fMisIdM[i]*fLumiD[0]/fLumiM[i]);
+      }
+      
+      if (bg[i]->GetSumOfWeights()  > maxSoW )  { maxSoW = bg[i]->GetSumOfWeights();  }
+      if (bg[i]->GetMinimum(1.e-20) < min )     { min = bg[i]->GetMinimum(1.e-20); }
+      if (bg[i]->GetMaximum()       > max )     { max = bg[i]->GetMaximum();       }
     }
-
-    if (bg[i]->GetSumOfWeights()  > maxSoW )  { maxSoW = bg[i]->GetSumOfWeights();  }
-    if (bg[i]->GetMinimum(1.e-20) < min )     { min = bg[i]->GetMinimum(1.e-20); }
-    if (bg[i]->GetMaximum()       > max )     { max = bg[i]->GetMaximum();       }
   }
 
-  // -- Draw & Legends
-  legg = new TLegend(0.49,0.62,0.99,0.99);
+  // -- Draw & Legends for S&B
+  legg = new TLegend(0.49,0.85,0.99,0.99);
   legg->SetFillStyle(1001); legg->SetBorderSize(0); legg->SetTextSize(0.035);  legg->SetFillColor(10); 
-
-  int i(0), cont (0), note(0);
-
-  for (int k = 0; (k < sets) && (i < nhist); k++ ) {
-    
-    if ( note ) {
-
-      legge = legg->AddEntry(hs, Form("%s", fSignLeggS[sgIndex].Data()), "f");
-      legge = legg->AddEntry(hb, Form("%s", fSignLeggM[bgIndex].Data()), "f");
-    
-    } else {
-
-      legge = legg->AddEntry(hs, Form("%s (%4.1f)", fSignLeggS[sgIndex].Data(), hs->GetSumOfWeights()), "f");
-      
-      if ( hb->GetSumOfWeights() > 1000 ) {
-	
-	legge = legg->AddEntry(hb, Form("%s (%4.1e)",fSignLeggM[bgIndex].Data(), hb->GetSumOfWeights()), "f");
-      }
-      else if ( hb->GetSumOfWeights() < 0.1 ) {
-	
-	legge = legg->AddEntry(hb, Form("%s (%4.1e)",fSignLeggM[bgIndex].Data(), hb->GetSumOfWeights()), "f");
-      }
-      else if ( hb->GetSumOfWeights() ) {
-	
-	legge = legg->AddEntry(hb, Form("%s (%4.1f)",fSignLeggM[bgIndex].Data(), hb->GetSumOfWeights()), "f");
-      }
-    }
- 
   
+  if ( note ) {
+    
+    legge = legg->AddEntry(hs, Form("%s", fSignLeggS[sgIndex].Data()), "f");
+    legge = legg->AddEntry(hb, Form("%s", fSignLeggM[bgIndex].Data()), "f");
+    
+  } else {
+    
+    legge = legg->AddEntry(hs, Form("%s (%4.1f)", fSignLeggS[sgIndex].Data(), hs->GetSumOfWeights()), "f");
+    
+    if ( hb->GetSumOfWeights() > 1000 ) {
+      legge = legg->AddEntry(hb, Form("%s (%4.1e)",fSignLeggM[bgIndex].Data(), hb->GetSumOfWeights()), "f");
+    } else if ( hb->GetSumOfWeights() < 0.1 ) {
+      legge = legg->AddEntry(hb, Form("%s (%4.1e)",fSignLeggM[bgIndex].Data(), hb->GetSumOfWeights()), "f");
+    } else if ( hb->GetSumOfWeights() ) {
+      legge = legg->AddEntry(hb, Form("%s (%4.1f)",fSignLeggM[bgIndex].Data(), hb->GetSumOfWeights()), "f");
+    }
+  
+    
     // -- Draw plots
     hs->GetYaxis()->SetRangeUser(0.1*min, 100*max);
- 
+
     hs->DrawCopy("hist"); 
-    hb->DrawCopy("histsame");    
-    
-    cont = 1;
-    for (i = npers*k+0; (cont < npers+1) && (i < nhist); ++i) {
-   
-      if ( i == bgIndex || !strcmp(fTypeM[i], "nmc") ) { continue; }
+    hb->DrawCopy("histsame");
       
-      if ( bg[i]->GetSumOfWeights() > 0 && bg[i]->GetMaximum() > 0 ) {
-	
-	cont++;
+    // -- Draw & Legends
+    TLegend *legg2 = new TLegend(0.49,0.65,0.99,0.85); TLegendEntry *legge2;
+    legg2->SetFillStyle(1001); legg2->SetBorderSize(0); legg2->SetTextSize(0.035);  legg2->SetFillColor(10); 
+    char string[200]; char keep[200];
 
-	setHist(bg[i], EColor[cont]);
+    int tot = 0;
+    for (int i = 0; i < nhist; ++i) {
+      
+      sprintf(keep, "%s", string);
+      if ( fSignM[i].Contains("bs") )  sprintf(string, "bs");
+      if ( fSignM[i].Contains("bd") )  sprintf(string, "bd");
+      if ( fSignM[i].Contains("lb") )  sprintf(string, "lb");
+      if ( fSignM[i].Contains("bc") )  sprintf(string, "bc");
+      if ( fSignM[i].Contains("bu") )  sprintf(string, "bu");
 
-	if ( note ) {
+      if (!strcmp(fTypeM[i], "rmc") ) {
 	  
-	  legge = legg->AddEntry(bg[i], Form("%s", fSignLeggM[i].Data()), "p");
+	if ( ((i > 0) && (tot > 1) && !fSignM[i-1].Contains(string)) 
+	     || i == nMc-1 ) {
 
-	} else {
 
-	  if ( bg[i]->GetSumOfWeights() > 1000 ) {
-	    legge = legg->AddEntry(bg[i], Form("%s (%4.1e)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
-	  }
-	  else if (bg[i]->GetSumOfWeights() < 0.1 ) {
-	    legge = legg->AddEntry(bg[i], Form("%s (%4.1e)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
-	  }
-	  else {
-	    legge = legg->AddEntry(bg[i], Form("%s (%4.1f)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
-	  }
+	  legg->Draw();
+	  legg2->Draw();
+	  c0->SaveAs(Form("%s/bgOverlay-%s-%s.eps", outDir, keep, hist));
+
+	  tot = 0;
+
+	  c0->Clear();
+	  legg2->Clear();
+	  hs->DrawCopy("hist"); 
+	  hb->DrawCopy("histsame");
 	}
 	
-	legge->SetTextColor(kBlack);  legge->SetFillStyle(1001);  legge->SetFillColor(10); 
-		
+	if ( bg[i]->GetSumOfWeights() > 0 && bg[i]->GetMaximum() > 0 ) {
+	  
+	  setHist(bg[i], EColor[tot]);
+	  
+	  if ( note ) {
+	    
+	    legge = legg->AddEntry(bg[i], Form("%s", fSignLeggM[i].Data()), "p");
+	    
+	  } else {
+	    
+	    if ( bg[i]->GetSumOfWeights() > 1000 ) {
+	      legge2 = legg2->AddEntry(bg[i], Form("%s (%4.1e)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
+	    } else if (bg[i]->GetSumOfWeights() < 0.1 ) {
+	      legge2 = legg2->AddEntry(bg[i], Form("%s (%4.1e)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
+	    } else {
+	      legge2 = legg2->AddEntry(bg[i], Form("%s (%4.1f)", fSignLeggM[i].Data(), bg[i]->GetSumOfWeights()), "p"); 
+	    }
+	  }
+	  
+	}
+	
 	bg[i]->DrawCopy("same");
-
+	tot++;
+	
       }
     }
-    
-    legg->Draw();
-    c0->SaveAs(Form("%s/bgOverlay-%i-%s.eps", outDir, k, hist));
-    legg->Clear();
-  }
+   }
 
   gPad->SetLogy(0);
 
@@ -4192,7 +4194,7 @@ void anaBmm::handOptimization(const char *aoCuts, const char *extraCuts, int ver
   s->Draw("mass>>hSG", Form("goodL1&&goodHLT && %s", aoCuts), "goff"); 
   double s1Norm = hSG->GetSumOfWeights();
   s->Draw("mass>>hSG", Form("goodL1&&goodHLT && %s", extraCuts), "goff"); 
-  double s2Norm  =  hSG->GetSumOfWeights(); //cout << Form("TEST: goodL1&&goodHLT && %s && %s", aoCuts, extraCuts) << endl;
+  double s2Norm  =  hSG->GetSumOfWeights(); 
   s->Draw("mass>>hSG", Form("goodL1&&goodHLT && %s && %s", aoCuts, extraCuts), "goff"); 
   double s12Norm  =  hSG->GetSumOfWeights();
 
@@ -5008,17 +5010,17 @@ void anaBmm::optimizerMassEta() {
   gStyle->SetPaintTextFormat("4.2e");
   c0->cd(1);  shrinkPad(0.2, 0.2, 0.2, 0.1); gStyle->SetOptStat(0); gPad->SetLogz(1);
   hmeU->GetZaxis()->SetRangeUser(5.e-9, 5.e-8); hmeU->SetMarkerSize(2);
-  hmeU->DrawCopy("colztext");
+  hmeU->DrawCopy("colztext15");
   c0->cd(2); 
   shrinkPad(0.2, 0.2, 0.2, 0.1); gStyle->SetOptStat(0);  
   hmeE->GetZaxis()->SetRangeUser(0., 0.01); hmeE->SetMarkerSize(2);
-  hmeE->DrawCopy("colztext");
+  hmeE->DrawCopy("colztext15");
   c0->cd(3); shrinkPad(0.2, 0.2, 0.2, 0.1); gStyle->SetOptStat(0); 
   hmeS->GetZaxis()->SetRangeUser(0., 6.); hmeS->SetMarkerSize(2);
-  hmeS->DrawCopy("colztext");
+  hmeS->DrawCopy("colztext15");
   c0->cd(4);  shrinkPad(0.2, 0.2, 0.2, 0.1); gStyle->SetOptStat(0); 
   hmeB->GetZaxis()->SetRangeUser(0., 10.); hmeB->SetMarkerSize(2);
-  hmeB->DrawCopy("colztext");
+  hmeB->DrawCopy("colztext15");
  
   tl->SetTextColor(kBlack);  
   tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
@@ -5136,7 +5138,7 @@ void anaBmm::quickAna(double vptmu, double vetamulo, double vetamuhi, double vrm
     if ( cutsTS[i].Contains("chi2") )  { continue; }
     if ( cutsTS[i].Contains("iso") )    { continue; }
 
-    sprintf(fcuts, "%s", cuts);
+    sprintf(fcuts, "%s && %s", fcuts, cutsTS[i].Data());
   }
 
   OUT << "\\hline" << endl;
@@ -5211,8 +5213,10 @@ void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *mrCuts,
 
   s->Draw("mass>>uSG", Form("goodKinematics&&goodL1&&goodHLT"), "goff"); 
 
-  s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s", mrCuts), "goff"); 
+  s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s", preCuts), "goff"); 
   double sNormF    =  uSG->GetSumOfWeights();
+
+  s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s", mrCuts), "goff"); 
   double massRedSG = 0.;
     if ( mCut > -0.5 || fSgReduction < 0.) {
     fSgReduction = massReduction("uSG", "mysg", mCut);
@@ -5225,13 +5229,19 @@ void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *mrCuts,
   double sCuts     = uSG->GetSumOfWeights();
   double sEff      = sCuts/sNorm;
 
+  //  cout << Form("TEST: goodL1&&goodHLT && %s, eff =", aCuts) << sEff << endl;
+
   s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s && %s", preCuts, f1Cut), "goff"); 
   double s1Norm    = uSG->GetSumOfWeights();
   double sEff1     = s1Norm/sNormF;
+  //  cout << Form("TEST: goodL1&&goodHLT && %s && %s, eff2 =", preCuts, f1Cut) << sEff1 << endl;
 
   s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s && %s", preCuts, f2Cut), "goff"); 
   double s2Norm    = uSG->GetSumOfWeights();
   double sEff2     = s2Norm/sNormF;
+
+  //  cout << Form("TEST: goodL1&&goodHLT && %s && %s, eff2 =", preCuts, f2Cut) << sEff2 << endl;
+  //  cout << Form("TEST: massRed = %4.4f, massRed = %4.4f, ", massRedSG , sSF ) ;
 
   fNsg  =  sCuts * sEff1 * sEff2 * massRedSG * sSF;
   fNsgE = 0.;
@@ -5252,8 +5262,10 @@ void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *mrCuts,
 
   b->Draw("mass>>uBG", Form("goodKinematics&&goodL1&&goodHLT"), "goff");
 
-  b->Draw("mass>>uBG", Form("goodL1&&goodHLT && %s", mrCuts), "goff"); 
+  b->Draw("mass>>uBG", Form("goodL1&&goodHLT && %s", preCuts), "goff"); 
   double bNormF    =  uBG->GetSumOfWeights(); 
+
+  b->Draw("mass>>uBG", Form("goodL1&&goodHLT && %s", mrCuts), "goff"); 
   double massRedBG = 0.;
   if ( mCut > -0.5 || fBgReduction < 0.) {
     fBgReduction = massReduction("uBG", "mymc", mCut);

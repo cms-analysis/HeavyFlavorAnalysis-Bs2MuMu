@@ -1183,7 +1183,7 @@ void treeBmm::L1Selection(int o) {
   int L1 = fpEvt->fL1Decision;
 
   // -- Rare backgrounds
-  if ( fD0 != 13 || fD1 != 13 || SETL1 > 0) { 
+  if ( SETL1 > 0) { 
     
     L1 = 1; 
   }
@@ -1222,7 +1222,7 @@ void treeBmm::HLTSelection(int o) {
   int HLT = fpEvt->fHLTDecision;
 
   // -- Rare backgrounds
-  if ( fD0 != 13 || fD1 != 13 || SETHLT > 0) { 
+  if ( SETHLT > 0) { 
 
     HLT = 1; 
   }

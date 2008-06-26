@@ -67,7 +67,7 @@ public:
   void nreco(int o = 5, const char *hist = "c030");
 
   void bgOverlays();
-  void bgOverlay(const char *s = "c030", const int npers = 6);
+  void bgOverlay(const char *s = "c030", const int note = 0);
   void nbgOverlay(const char *s = "c030", const int npers = 6);
 
   double calculateUpperLimit(); 
