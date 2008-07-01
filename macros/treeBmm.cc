@@ -2100,9 +2100,18 @@ void treeBmm::fillAnalysisEff() {
 
 
   //--------------------------------------------------------------------
+  // -- Set Triggers to true for rare BG (for next part)
+  //--------------------------------------------------------------------
+  int ignoreTrigger = 0;
+  if ( fD0 != 13 || fD1 != 13 ) {
+    if (fDebug & 1) cout << "Ignore L1/HLT decision " << endl;
+    ignoreTrigger = 1;
+  }
+
+  //--------------------------------------------------------------------
   // -- cumulative cut effiencies (offline)
   //--------------------------------------------------------------------
-  if (1 == fGoodKinematics && 1 == fGoodL1  && 1 == fGoodHLT) {
+  if ( (1 == fGoodKinematics && 1 == fGoodL1  && 1 == fGoodHLT) || ignoreTrigger ) {
 
     ((TH1D*)gDirectory->Get("PTLO"))->Fill(fPt);
 
@@ -2977,31 +2986,31 @@ void treeBmm::bookHist() {
   h = new TH1D("m312", "#eta (p != #mu)", 50, -5., 5.);  h->Sumw2();
 
   // -- global muons
-  h = new TH1D("m400", "p_{T} (all #mu, global) [GeV]", 50, 0., 25.);  h->Sumw2();
-  h = new TH1D("m401", "p_{T} (#mu = #mu, global) [GeV]", 50, 0., 25.);  h->Sumw2();
-  h = new TH1D("m402", "p_{T} (#mu != #mu, global) [GeV]", 50, 0., 25.);  h->Sumw2();
+  h = new TH1D("m400", "p_{T} (all #mu, global) [GeV]", 50, 0., 25.);  h->Sumw2(); setTitles(h, "p_{T} [GeV]", "events/bin");
+  h = new TH1D("m401", "p_{T} (#mu = #mu, global) [GeV]", 50, 0., 25.);  h->Sumw2(); setTitles(h, "p_{T} [GeV]", "events/bin");
+  h = new TH1D("m402", "p_{T} (#mu != #mu, global) [GeV]", 50, 0., 25.);  h->Sumw2();setTitles(h, "p_{T} [GeV]", "events/bin");
 
-  h = new TH1D("m410", "#eta (all #mu, global)", 50, -5., 5.);  h->Sumw2();
-  h = new TH1D("m411", "#eta (#mu = #mu, global)", 50, -5., 5.);  h->Sumw2();
-  h = new TH1D("m412", "#eta (#mu != #mu, global)", 50, -5., 5.);  h->Sumw2();
+  h = new TH1D("m410", "#eta (all #mu, global)", 50, -5., 5.);  h->Sumw2();  setTitles(h, "#eta", "events/bin");
+  h = new TH1D("m411", "#eta (#mu = #mu, global)", 50, -5., 5.);  h->Sumw2();  setTitles(h, "#eta", "events/bin");
+  h = new TH1D("m412", "#eta (#mu != #mu, global)", 50, -5., 5.);  h->Sumw2(); setTitles(h, "#eta", "events/bin");
 
   // -- tracker muons
-  h = new TH1D("m500", "p_{T} (all #mu, tracker) [GeV]", 50, 0., 25.);  h->Sumw2();
-  h = new TH1D("m501", "p_{T} (#mu = #mu, tracker) [GeV]", 50, 0., 25.);  h->Sumw2();
-  h = new TH1D("m502", "p_{T} (#mu != #mu, tracker) [GeV]", 50, 0., 25.);  h->Sumw2();
+  h = new TH1D("m500", "p_{T} (all #mu, tracker) [GeV]", 50, 0., 25.);  h->Sumw2(); setTitles(h, "p_{T} [GeV]", "events/bin");
+  h = new TH1D("m501", "p_{T} (#mu = #mu, tracker) [GeV]", 50, 0., 25.);  h->Sumw2(); setTitles(h, "p_{T} [GeV]", "events/bin");
+  h = new TH1D("m502", "p_{T} (#mu != #mu, tracker) [GeV]", 50, 0., 25.);  h->Sumw2(); setTitles(h, "p_{T} [GeV]", "events/bin");
 
-  h = new TH1D("m510", "#eta (all #mu, tracker)", 50, -5., 5.);  h->Sumw2();
-  h = new TH1D("m511", "#eta (#mu = #mu, tracker)", 50, -5., 5.);  h->Sumw2();
-  h = new TH1D("m512", "#eta (#mu != #mu, tracker)", 50, -5., 5.);  h->Sumw2();
+  h = new TH1D("m510", "#eta (all #mu, tracker)", 50, -5., 5.);  h->Sumw2(); setTitles(h, "#eta", "events/bin");
+  h = new TH1D("m511", "#eta (#mu = #mu, tracker)", 50, -5., 5.);  h->Sumw2(); setTitles(h, "#eta", "events/bin");
+  h = new TH1D("m512", "#eta (#mu != #mu, tracker)", 50, -5., 5.);  h->Sumw2(); setTitles(h, "#eta", "events/bin");
 
   // -- l1 muons
-  h = new TH1D("m600", "p_{T} (all #mu, l1) [GeV]", 50, 0., 25.);  h->Sumw2();
-  h = new TH1D("m601", "p_{T} (#mu = #mu, l1) [GeV]", 50, 0., 25.);  h->Sumw2();
-  h = new TH1D("m602", "p_{T} (#mu != #mu, l1) [GeV]", 50, 0., 25.);  h->Sumw2();
+  h = new TH1D("m600", "p_{T} (all #mu, l1) [GeV]", 50, 0., 25.);  h->Sumw2(); setTitles(h, "p_{T} [GeV]", "events/bin");
+  h = new TH1D("m601", "p_{T} (#mu = #mu, l1) [GeV]", 50, 0., 25.);  h->Sumw2(); setTitles(h, "p_{T} [GeV]", "events/bin");
+  h = new TH1D("m602", "p_{T} (#mu != #mu, l1) [GeV]", 50, 0., 25.);  h->Sumw2(); setTitles(h, "p_{T} [GeV]", "events/bin");
 
-  h = new TH1D("m610", "#eta (all #mu, l1)", 50, -5., 5.);  h->Sumw2();
-  h = new TH1D("m611", "#eta (#mu = #mu, l1)", 50, -5., 5.);  h->Sumw2();
-  h = new TH1D("m612", "#eta (#mu != #mu, l1)", 50, -5., 5.);  h->Sumw2();
+  h = new TH1D("m610", "#eta (all #mu, l1)", 50, -5., 5.);  h->Sumw2(); setTitles(h, "#eta", "events/bin");
+  h = new TH1D("m611", "#eta (#mu = #mu, l1)", 50, -5., 5.);  h->Sumw2(); setTitles(h, "#eta", "events/bin");
+  h = new TH1D("m612", "#eta (#mu != #mu, l1)", 50, -5., 5.);  h->Sumw2(); setTitles(h, "#eta", "events/bin");
 
 
   // 2D-histograms

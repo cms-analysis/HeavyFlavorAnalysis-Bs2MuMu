@@ -71,7 +71,7 @@ public:
   void nbgOverlay(const char *s = "c030", const int npers = 6);
 
   double calculateUpperLimit(); 
-  void normalizedUpperLimit();
+  double normalizedUpperLimit();
 
   void fakeMuons(const char *prod = "csa07");
 
@@ -114,7 +114,7 @@ public:
   double  expUL(double sig, double bg, double bgE);
 
   TH1* sumHistMC(const char *hist, int draw = 0, const char *sel = "c0");
-  void sumHistMC_Add(int ch, const char *hist, TH1 *hist1, TH1 *hist2);
+  void sumHistMC_Add(int ch, const char *hist, TH1 *hist1, TH1 *hist2, int hlt = 0);
   void channelEff(TFile *f, double &fnorm_Ch, double &eff1_Ch, double &eff2_Ch);
 
   void writeFitPar(TF1 *f, int o, double mean, double sigma, int npar);
@@ -153,6 +153,7 @@ public:
   TString getSubGroup(TString in);
   int checkIf(int mc, const char *sel);
   double getMisID(TString in);
+  double getEffHLT(int idx);
 
   // -- Files for Signal, Data, Monte Carlo, and Control Samples
   int nSg, nMc, nDa;
@@ -170,7 +171,8 @@ private:
   double fLumiS[10], fLumiD[10], fLumiM[30]; // this is computed in loadFiles()
   double fNevtS[10], fNevtD[10], fNevtM[30]; // this is filled in loadFiles()
   double fNexpS[10], fNexpD[10], fNexpM[30]; // this is filled in loadFiles()
-  double fMisIdM[30];                         // this is filled in muonMisId()
+  double fMisIdM[30];                         // this is filled in dumpFiles()
+  double fEffHltM[30];                        // this is filled in dumpFiles()
   TString fSignS[10], fSignD[10], fSignM[30]; // this is filled in loadFiles()
   TString fTypeS[10], fTypeD[10], fTypeM[30]; // this is filled in loadFiles()
   TString fFileS[10], fFileD[10], fFileM[30]; // this is filled in loadFiles()
@@ -188,6 +190,7 @@ private:
   double fEsg, fEsgE;         // efficiency and error
   double fNsg, fNsgE;         // expected number of signal events 
   double fNbg, fNbgE;         // expected number of background events 
+  double fNbgLE, fNbgUE;    // upper/lower error for background (Pearson chi-squared errors)
   double fNrbg, fNrbgE;       // expected number of rare background events
 
   double fEsg_norm, fEsgE_norm;         // efficiency and error (norm. channel)

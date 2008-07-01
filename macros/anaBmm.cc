@@ -177,6 +177,19 @@ double f_p1ag(double *x, double *par) {
 }
 
 // ----------------------------------------------------------------------
+// pol2 and Gauss
+double f_p2ag(double *x, double *par) {
+  // par[0] -> const
+  // par[1] -> mean
+  // par[2] -> sigma
+  // par[3] = par 0 of pol1
+  // par[4] = par 1 of pol1
+  // par[5] = par 2 of pol1
+
+  return  (par[3] + par[4]*x[0] + par[5]*x[0]*x[0] + f_Gauss(x, &par[0]));
+}
+
+// ----------------------------------------------------------------------
 // exp and Gauss
 double f_eag(double *x, double *par) {
   // par[0] -> const
@@ -192,6 +205,11 @@ double f_eag(double *x, double *par) {
 // ----------------------------------------------------------------------
 double f_expo(double *x, double *par) {
   return par[0]*TMath::Exp(-x[0]*par[1]);
+}
+
+// ----------------------------------------------------------------------
+double f_p2(double *x, double *par) {
+  return par[0] + par[1]*x[0] + par[2]*x[0]*x[0];
 }
 
 //===========================================================================================
@@ -231,10 +249,12 @@ void anaBmm::init(const char *files) {
   f3 = new TF1("f3", f_2g,     4.8,  6.0, 6);
   f4 = new TF1("f4", f_p1ag,   4.8,  6.0, 5);
   f5 = new TF1("f5", f_eag,    4.8,  6.0, 5);
+//   f5 = new TF1("f5", f_p2ag,    4.8,  6.0, 5);
 
   f6 = new TF1("f6", f_p1a2gauss,  4.8,  6.0, 8);
 
   f10= new TF1("f10", f_expo,  4.8,  6.0, 2);
+//   f10= new TF1("f10", f_p2,  4.8,  6.0, 2);
   f11= new TF1("f11", f_Gauss, 4.8,  6.0, 3);
 
   
@@ -377,9 +397,9 @@ void anaBmm::loadFiles(const char *filename) {
 
 
   fMu = 1.;
-  fPi = 0.3E-2;
-  fKa = 0.7E-2;
-  fProt = 0.1E-2;
+  fPi = 0.5E-2;
+  fKa = 1.0E-2;
+  fProt = 0.5E-2;
 
   TString fn(filename);
   fn.ReplaceAll("bmm", "");
@@ -487,7 +507,7 @@ void anaBmm::loadDa(const char *name, double lumi, const char *sign, const char 
 void anaBmm::makeAllPlots() {
    
 
-  validations();
+  //  validations();
   distributions();
 
   processes();
@@ -499,8 +519,13 @@ void anaBmm::makeAllPlots() {
 
   bgOverlays();
 
-  double ul = calculateUpperLimit();
-  normalizedUpperLimit();
+  double ul1 = calculateUpperLimit();
+  double ul2 = normalizedUpperLimit();
+
+  cout << endl << endl << " ===============================================" << endl;
+  cout << "      UL(90% C.L.) = " << Form("%4.2e",ul1) << " w/o norm." << endl;
+  cout << "      UL(90% C.L.) = " << Form("%4.2e",ul2) << " w/  norm." << endl;
+  cout << " ===============================================" << endl << endl;
   
 }
 
@@ -869,26 +894,32 @@ void anaBmm::cuts() {
 
 double anaBmm::calculateUpperLimit() {
 
-  double nBs  = fLumiD[0] * 500.*1.e9 * 0.107 * 2.;
+  double bmmBF  = 3.5e-9;
+  double fs    = 0.104;
 
-  double ekin = 45. / (1.e5 * (500./55.e3) * 0.107 * 2.);
-  double scaleUL = ekin * nBs * 0.015 ; // this is: eff_kin * eff_total * N_Bs 
+  double nBs  = fLumiD[0] * 500.*1.e9 * fs * 2.;
+
+  double ekin_old = 45. / (1.e5 * (500./55.e3) * fs * 2.);
+  double scaleUL  = ekin_old * nBs * 0.015 ; // this is: eff_kin * eff_total * N_Bs 
   cout << " --> scale UL (CSA07) = " << scaleUL << endl;
 
-  ekin = 0.00028 /( (500./55.e3) * 0.107 * 2.);
-  scaleUL = ekin * nBs * 0.017 ;
+  ekin_old = 0.00028 /( (500./55.e3) * fs * 2.);
+  scaleUL = ekin_old * nBs * 0.017 ;
   cout << " --> scale UL (Spring07) = " << scaleUL << endl;
 
-  ekin = 5000. / (24.6e6 * (500./55.e3) * 0.107 * 2.); //same as ekin = 1000. / (4.8e6 * (500./55.e3) * 0.107 * 2.); 
-  scaleUL = ekin * nBs * 0.016 ;
+  ekin_old = 5000. / (24.6e6 * (500./55.e3) * fs * 2.); //same as ekin_old = 1000. / (4.8e6 * (500./55.e3) * fs * 2.); 
+  scaleUL = ekin_old * nBs * 0.016 ;
   cout << " --> scale UL (ORCA - vCE high stat) = " << scaleUL << endl;
 
-  ekin = 1000. / (4.8e6 * (500./55.e3) * 0.107 * 2.); 
-  scaleUL = ekin * nBs * 0.016 ;
+  ekin_old = 1000. / (4.8e6 * (500./55.e3) * fs * 2.); 
+  scaleUL = ekin_old * nBs * 0.016 ;
   cout << " --> scale UL (ORCA - vUL low stat) = " << scaleUL << endl;
 
   // -- scale = eff x Lumi x vis. XS / BR(Bs->mu mu)
-  scaleUL = fEsg * fLumiD[0] * fvXsS[sgIndex] / 3.35e-9;
+  scaleUL = fEsg * fLumiD[0] * fvXsS[sgIndex] / bmmBF;
+
+  double eprod    = fvXsS[sgIndex]/(55.*1.e12*bmmBF);
+  double ekin     = eprod /( (500./55.e3) * fs * 2.);
 
   cout << " --> new scale UL = " << scaleUL << endl;
   
@@ -899,7 +930,7 @@ double anaBmm::calculateUpperLimit() {
   double expectedUL = nUL/scaleUL;
 
 
-  cout << "Nsg: " << fNsg << " +/- " << fNsgE
+  cout << "Nsg: " << fNsg << " +/- " << fNsgE << ", e_sg : " <<  fEsg << endl
        << " Nbg: " << fNbg << " +/- " << fNbgE
        << endl;
 
@@ -915,8 +946,10 @@ double anaBmm::calculateUpperLimit() {
 
   ofstream OUT(fNumbersFileName, ios::app);
   OUT << "% ----------------------------------------------------------------------" << endl;
-  OUT  << Form("\\vdef{nBs}   {\\ensuremath{{%4.1e} } }", nBs) << endl;
-  OUT  << Form("\\vdef{ekin}  {\\ensuremath{{%4.3f} } }", ekin) << endl;
+  OUT  << Form("\\vdef{nBs}   {\\ensuremath{{%s } } }",  (texForm2(nBs)).Data()) << endl;
+  OUT  << Form("\\vdef{ekin}  {\\ensuremath{{%s} } }", (texForm(ekin)).Data()) << endl;
+  OUT  << Form("\\vdef{eprod}  {\\ensuremath{{%s} } }", (texForm(eprod)).Data()) << endl;
+  OUT  << Form("\\vdef{bmmBF}   {\\ensuremath{{%s } } }",  (texForm(bmmBF)).Data()) << endl;
   OUT  << Form("\\vdef{ExpectedNobs}        {\\ensuremath{{%4.1f} } }", fNsg + fNbg) << endl;
   OUT  << Form("\\vdef{ExpectedNul}         {\\ensuremath{{%4.1f} } }", nUL) << endl;
   OUT  << Form("\\vdef{ExpectedUpperLimit}  {\\ensuremath{{%s} } }", (texForm31(expectedUL)).Data()) << endl;
@@ -929,25 +962,35 @@ double anaBmm::calculateUpperLimit() {
 
 
 // ----------------------------------------------------------------------
-void anaBmm::normalizedUpperLimit() {
+double anaBmm::normalizedUpperLimit() {
 
   // -- BF <  N_UL(n_sg + n_bg) eff_Bplus f_u / (N_Bplus eff_B0 f_s ) * BR(Bplus)
-  double atlasUL = expUL(7, 20, 12);
+
   double nUL = expUL(fNsg, fNbg, fNbgE);
+
+  double bmmBF  = 3.5e-9;
+  double bjkBF  = 0.001008;
+  double jmmBF  = 5.93e-2;
 
   double fu    = 0.398;
   double fs    = 0.104;
   double fu_fs = fu/fs;
 
-  double accBu   = 1.;          double accBs = 1.;
+  double eprod    = fvXsS[sgIndex]/(55.*1.e12*bmmBF);
+  double ekin     = eprod /( (500./55.e3) * fs * 2.);
+
+  double eprodN    = fvXsS[normSgIndex]/(55.*1.e12*bjkBF*jmmBF);
+  double ekinN     = eprodN /( (500./55.e3) * fu * 2.);
+
+  double accBu   = ekinN;      double accBs = ekin;
   double trgBu   = 1.;          double trgBs = 1.;
   double anaBu   = fEsg_norm;   double anaBs = fEsg;
 
   double eBu_eBs = (accBu * trgBu * anaBu)/ (accBs * trgBs * anaBs);
 
-  double BR_bjk = 5.98e-5;
+  double bmmkBF = bjkBF*jmmBF;
 
-  double expectedUL = (nUL/fNsg_norm) * fu_fs * eBu_eBs * BR_bjk;
+  double expectedUL = (nUL/fNsg_norm) * fu_fs * eBu_eBs * bmmkBF;
 
 
   cout << "Nsg: " << fNsg << " +/- " << fNsgE
@@ -969,7 +1012,16 @@ void anaBmm::normalizedUpperLimit() {
   OUT << "% ----------------------------------------------------------------------" << endl;
   OUT << "% Upper limit (with normalization)" << endl;
   OUT  << Form("\\vdef{NormalizedUpperLimit}  {\\ensuremath{{%s} } }", (texForm31(expectedUL)).Data()) << endl;
+  OUT  << Form("\\vdef{ekinNorm}  {\\ensuremath{{%s} } }", (texForm(ekinN)).Data()) << endl;
+  OUT  << Form("\\vdef{eprodNorm}  {\\ensuremath{{%s} } }", (texForm(eprodN)).Data()) << endl;
+  OUT  << Form("\\vdef{bjkBF}   {\\ensuremath{{%s } } }",  (texForm(bjkBF)).Data()) << endl;
+  OUT  << Form("\\vdef{jmmBF}   {\\ensuremath{{%s } } }",  (texForm(jmmBF)).Data()) << endl;
+  OUT  << Form("\\vdef{bmmkBF}   {\\ensuremath{{%s } } }",  (texForm(bmmkBF)).Data()) << endl;
+  OUT  << Form("\\vdef{fu}  {\\ensuremath{{%4.3f} } }", fu) << endl;
+  OUT  << Form("\\vdef{fs}  {\\ensuremath{{%4.3f} } }", fs) << endl;
   OUT.close();
+
+  return expectedUL;
 }
   
 
@@ -1194,7 +1246,7 @@ void anaBmm::breco(int o, const char *hist) {
       shrinkPad(0.2, 0.2);
       gPad->SetLogy(1);
 
-      hr->Scale(fMisIdM[i]*fLumiD[0]/fLumiM[i]);
+      hr->Scale(fMisIdM[i]*fEffHltM[i]*fLumiD[0]/fLumiM[i]);
    
       if ( hr->GetSumOfWeights() > 0  && hr->GetMaximum() > 0 ) {
 
@@ -1292,8 +1344,8 @@ void anaBmm::nreco(int o, const char *hist) {
   TH1D *h1;
   TH1D *h2;
   
-  h1 = (TH1D*)(fS[o]->Get(hist))->Clone();
-  h2 = (TH1D*)(fS[o]->Get(hist))->Clone();
+  h1 = (TH1D*)(fS[o]->Get(hist))->Clone(); h1->Rebin();  
+  h2 = (TH1D*)(fS[o]->Get(hist))->Clone(); h2->Rebin(); 
 
   emptyBinError(h1);
   
@@ -1306,8 +1358,11 @@ void anaBmm::nreco(int o, const char *hist) {
   setFilledHist(h1, kBlack, kYellow, 1000);
   setFilledHist(h2, kBlack, kYellow, 1000);
   
-  f5->SetParameters(0.2*h1->GetMaximum(), 5.25, 0.04, 
-		     0.8*h1->GetBinContent(1), 1.);
+  f5->SetParameters(0.4*h1->GetMaximum(), 5.29, 0.035, 
+		    300.*h1->GetBinContent(1), 1.3);
+
+//   f5->SetParameters(0.4*h1->GetMaximum(), 5.29, 0.035, 
+// 		    4.022608e+07, -1.270784e+07, 1.013151e+06);
   
   setTitles(h2, "m_{#mu#mu K} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
   h1->SetMaximum(1.4*h1->GetMaximum());
@@ -1318,6 +1373,7 @@ void anaBmm::nreco(int o, const char *hist) {
   f5->DrawCopy("same");
   
   f10->SetParameters(f5->GetParameter(3), f5->GetParameter(4));
+//   f10->SetParameters(f5->GetParameter(3), f5->GetParameter(4), f5->GetParameter(5));
   f10->SetLineStyle(7);
   f10->SetLineColor(108);
   f10->DrawCopy("same");
@@ -1346,8 +1402,10 @@ void anaBmm::nreco(int o, const char *hist) {
 
   tl->SetTextSize(0.05);
   tl->SetTextColor(108); 
-  tl->DrawLatex(0.60, 0.61, Form("N_{bg} = %4.2e", totalBG)); tl->SetTextColor(2);  
-  tl->DrawLatex(0.60, 0.54, Form("N_{sg} = %4.2e", totalSG)); tl->SetTextColor(1);  
+  //  tl->DrawLatex(0.60, 0.61, Form("N_{bg} = %4.2e", totalBG)); tl->SetTextColor(2);  
+  tl->DrawLatex(0.52, 0.65, Form("N_{sg} = %4.2e", totalSG));
+  tl->DrawLatex(0.65, 0.60, Form("#pm %4.2e", f5->GetParameter(2)*f5->GetParameter(0)));
+  tl->SetTextColor(1);  
   
   tl->SetTextSize(0.06); tl->SetTextColor(kBlue);
   tl->DrawLatex(0.40, 0.72, Form("%s", fSignLeggS[o].Data()));
@@ -1821,7 +1879,7 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   // -- rare/combined backgrounds 
   if (comb) {
 
-    TH1 *sumAR1 = sumHistMC("AR1", 2, tag);
+    TH1 *sumAR1 = sumHistMC("AR1", 3, tag);
     h = (TH1D*)sumAR1;
   }
   
@@ -2048,7 +2106,12 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   OUT << Form("%s", (formatTex(dkin,  "cABlxyE" , tag)).Data()) << endl;
 
   double fnorm = n;
-  double eff = n/norm;
+  double fnormUE =  0.5 + TMath::Sqrt(fnorm+0.25);
+  double fnormLE = -0.5 + TMath::Sqrt(fnorm+0.25);
+
+  double eff   = n/norm;
+  double effE  = dEff(int(n), int(norm));
+
 
   // -- B-candidate: Isolation (pT-sum of track in cone)
   // ----------------------------------------------------
@@ -2111,7 +2174,8 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   // ------------------------------
   n     = h->GetBinContent(h->FindBin(224.1));
 
-  double eff1 = n/pnorm;
+  double eff1  = n/pnorm;
+  double eff1E = dEff(int(n), int(pnorm));
 
   nevt  = SF*n;
   enorm = n/pnorm;
@@ -2130,7 +2194,8 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   // ---------------------------
   n    = h->GetBinContent(h->FindBin(225.1));
 
-  double eff2 = n/pnorm;
+  double eff2  = n/pnorm;
+  double eff2E = dEff(int(n), int(pnorm));
 
   nevt  = SF*n;
   enorm = n/pnorm;
@@ -2151,63 +2216,72 @@ void anaBmm::effTable(TFile *f, const char *tag) {
 
   // -- fact. Isolation
   // -------------------
-  double nfact   = SF*fnorm*eff1;
-  double nfactE  = SF*TMath::Sqrt(fnorm)*eff1;
+  double nfact    = SF*fnorm*eff1;
+  double nfactUE  = SF*fnormUE*eff1;
+  double nfactLE  = SF*fnormLE*eff1;
   double efact   = nfact/nexp;  // = eff*eff1 for single channel
   double efactE  = (fEsgE0/fEsg0)*efact;
 
   if (comb) {
 
     nfact      = h->GetBinContent(h->FindBin(424.1));
-    nfactE     = -9999; 
+    nfactUE    = -9999; 
+    nfactLE    = -9999; 
     efact      = nfact/nexp;
     efactE     = (fEsgE0/fEsg0)*efact;
   }
  
   OUT << Form("%s", (formatTex(nfact,  "nTotEffIso"  , tag)).Data()) << endl;
-  OUT << Form("%s", (formatTex(nfactE, "nTotEffIsoE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nfactUE, "nTotEffIsoUE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nfactLE, "nTotEffIsoLE" , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(efact,  "eTotEffIso"  , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(efactE, "eTotEffIsoE" , tag)).Data()) << endl;
 
 
   // -- fact. Vertex 
   // ---------------- 
-  nfact   = SF*fnorm*eff2;
-  nfactE  = SF*TMath::Sqrt(fnorm)*eff2;
+  nfact    = SF*fnorm*eff2;
+  nfactUE  = SF*fnormUE*eff2;
+  nfactLE  = SF*fnormLE*eff2;
   efact   = nfact/nexp;  // = eff*eff2 for single channel
   efactE  = (fEsgE0/fEsg0)*efact;
 
   if (comb) {
 
     nfact      = h->GetBinContent(h->FindBin(426.1));
-    nfactE     = -9999; 
+    nfactUE    = -9999; 
+    nfactLE    = -9999; 
     efact      = nfact/nexp;
     efactE     = (fEsgE0/fEsg0)*efact;
   }
  
   OUT << Form("%s", (formatTex(nfact,  "nTotEffChi2"  , tag)).Data()) << endl;
-  OUT << Form("%s", (formatTex(nfactE, "nTotEffChi2E" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nfactUE, "nTotEffChi2UE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nfactLE, "nTotEffChi2LE" , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(efact,  "eTotEffChi2"  , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(efactE, "eTotEffChi2E" , tag)).Data()) << endl;
 
 
   // -- all Cuts
   // ------------
-  nfact   = SF*fnorm*eff1*eff2;
-  nfactE  = SF*TMath::Sqrt(fnorm)*eff1*eff2;
+  nfact    = SF*fnorm*eff1*eff2;
+  nfactUE  = SF*fnormUE*eff1*eff2;
+  nfactLE  = SF*fnormLE*eff1*eff2;
   efact   = nfact/nexp;  // = eff*eff2 for single channel
   efactE  = (fEsgE0/fEsg0)*efact;
 
   if (comb) {
 
     nfact      = h->GetBinContent(h->FindBin(428.1));
-    nfactE     = -9999; 
+    nfactLE    = -9999; 
+    nfactUE    = -9999; 
     efact      = nfact/nexp;
     efactE     = (fEsgE0/fEsg0)*efact;
   }
  
   OUT << Form("%s", (formatTex(nfact,  "nAllCutsFact"  , tag)).Data()) << endl;
-  OUT << Form("%s", (formatTex(nfactE, "nAllCutsFactE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nfactUE, "nAllCutsFactUE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nfactLE, "nAllCutsFactLE" , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(efact,  "eAllCutsFact"  , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(efactE, "eAllCutsFactE" , tag)).Data()) << endl;
 
@@ -2234,23 +2308,25 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   // --------------
 
   double nmass   = massRed*nfact;
-  double nmassE  = 1.6*massRed*nfactE;   // XXXX FIXME XXXX
+  double nmassUE  = massRed*nfactUE;
+  double nmassLE  = massRed*nfactLE;
   double emass   = nmass/nexp;
   double emassE  = (fEsgE0/fEsg0)*emass; // XXXX FIXME XXXX
 
-  
   if (comb) {
 
     massRed = massRed5; 
 
     nmass   = massRed*nfact;
-    nmassE  = -9999;                // XXXX FIXME XXXX
+    nmassUE  = -9999;                // XXXX FIXME XXXX
+    nmassLE  = -9999;                // XXXX FIXME XXXX
     emass   = efact*nmass/nfact;
-    emassE  = (fEsgE0/fEsg0)*emass; // XXXX FIXME XXXX
+    emassE  = (fEsgE0/fEsg0)*emass;  // XXXX FIXME XXXX
   }
   
   OUT << Form("%s", (formatTex(nmass,  "nMassAllCutsFact"  , tag)).Data()) << endl;
-  OUT << Form("%s", (formatTex(nmassE, "nMassAllCutsFactE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nmassUE, "nMassAllCutsFactUE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nmassLE, "nMassAllCutsFactLE" , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(emass,  "eMassAllCutsFact"  , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(emassE, "eMassAllCutsFactE" , tag)).Data()) << endl;
 
@@ -2264,31 +2340,33 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   if (!strcmp(tag, "mysg")) {
 
     fNsg  = nmass;
-    fNsgE = nmassE;
+    fNsgE = nmassUE;
   }
 
   if (!strcmp(tag, "mymc")) {
 
     fNbg  = nmass;
-    fNbgE = nmassE;
+    fNbgUE = nmassUE;
+    fNbgLE = nmassLE;
+    fNbgE  = nmassUE;
   }
 
   if (!strcmp(tag, "mynsg")) {
 
     fNsg_norm  = nmass;
-    fNsgE_norm = nmassE;
+    fNsgE_norm = nmassUE;
   }
 
   if (!strcmp(tag, "mynmc")) {
 
     fNbg_norm  = nmass;
-    fNbgE_norm = nmassE;
+    fNbgE_norm = nmassUE;
   }
 
   if (!strcmp(tag, "r0")) {
 
     fNrbg  = nmass;
-    fNrbgE = nmassE;
+    fNrbgE = nmassUE;
   }
 
 
@@ -2971,6 +3049,7 @@ TH1* anaBmm::sumHistMC(const char *hname, int mode, const char *selection) {
   // mode: 0 weighted by xsec
   //       1 weigthed to correspond to Lumi(data)
   //       2 weigthed by xsec incl. Muon-MisId Rate
+  //       3 weigthed by xsec incl. Muon-MisId Rate & L1/HLT-efficiency
 
   cout << endl << endl;
 
@@ -3001,6 +3080,7 @@ TH1* anaBmm::sumHistMC(const char *hname, int mode, const char *selection) {
 	h2 = (TH1D*)fM[i]->Get(hname);  
 	
 	if (mode == 0) {
+
 	  if (TMath::IsNaN(h2->GetSumOfWeights())) {
 	    h2->Reset();
 	    cout << "anaBmm::sumHistMC> ***** Problems with histogram " << hname 
@@ -3029,27 +3109,42 @@ TH1* anaBmm::sumHistMC(const char *hname, int mode, const char *selection) {
 	    //h1->Add(h2,  (fMisIdM[i]*fLumiD[0]/fLumiM[i]));
 	    
 	  }
-	}     
+	}
+
+	if (mode == 3) {
+	  
+	  if (TMath::IsNaN(h2->GetSumOfWeights())) {
+	    h2->Reset();
+	    cout << "anaBmm::sumHistMC> ***** Problems with histogram " << hname 
+		 << " from file " << fM[i]->GetName() << endl;
+	    
+	  } else {
+	    // cout << " summing " << fSignM[i] << " to " << selection << endl;
+	    sumHistMC_Add(i, hname, h1, h2, 1);
+	    
+	  }
+	}   
       }
     } 
   }
-
+  
   cout << endl << endl;
   return h1; 
-
+  
 }
 
 // -----------------------------------------------------
-void anaBmm::sumHistMC_Add(int ch, const char *hist, TH1 *hist1, TH1 *hist2) {
+void anaBmm::sumHistMC_Add(int ch, const char *hist, TH1 *hist1, TH1 *hist2, int hlt) {
   
+  double HLT_Ch =  1;
+  if ( hlt )  {
+    HLT_Ch =  fEffHltM[ch];
+  }
 
-  double SF_Ch(0.);
+  double SF_Ch = HLT_Ch*fMisIdM[ch]*fLumiD[0]/fLumiM[ch];
+  hist1->Add(hist2, SF_Ch);
+
   double fnorm_Ch(0.), eff1_Ch(0.), eff2_Ch(0.);
-
-  SF_Ch = fMisIdM[ch]*fLumiD[0]/fLumiM[ch];
-
-  hist1->Add(hist2, SF_Ch );
-
   if ( !strcmp(hist,"AR1") ) {
     
     channelEff(fM[ch], fnorm_Ch, eff1_Ch, eff2_Ch);
@@ -3109,7 +3204,15 @@ void anaBmm::fakeMuons(const char *prod) {
   
   ofstream OUT(fNumbersFileName, ios::app);
   OUT << "% ----------------------------------------------------------------------" << endl;
-  OUT << "% -- Muon identification "<< endl;
+  OUT << "% -- Muon identification (percent) "<< endl;
+ 
+  OUT << Form("\\vdef{effIdMuons}    {\\ensuremath{ {%2.1f } } }", 100*fMu)   << endl;
+  OUT << Form("\\vdef{misIdPions}    {\\ensuremath{ {%2.1f } } }", 100*fPi)   << endl;
+  OUT << Form("\\vdef{misIdKaons}    {\\ensuremath{ {%2.1f } } }", 100*fKa)   << endl;
+  OUT << Form("\\vdef{misIdProtons}  {\\ensuremath{ {%2.1f } } }", 100*fProt) << endl;
+
+  OUT << "% ----------------------------------------------------------------------" << endl;
+  OUT << "% -- Muon identification (mean) "<< endl;
   
   // --- Mis-ID. histograms for Pions, Kaons, Protons & Muons
  
@@ -3343,7 +3446,7 @@ void anaBmm::fakeMuons(const char *prod) {
   fPiMid = DivideHisto(fakePi_pT, Pi_pT);
   fPiMid->GetYaxis()->SetRangeUser(0,0.021);
   fPiMid->GetYaxis()->SetNdivisions(6, kTRUE);
-  setTitles(fPiMid, "p_{T}", "#varepsilon", 0.06, 1.1, 1.1);
+  setTitles(fPiMid, "p_{T} [GeV]", "#varepsilon_{#pi}", 0.06, 1.1, 1.1);
   fPiMid->Draw();
   c0->SaveAs(Form("%s/muonID/%s/fakerate_pionsPt.eps", outDir, prod));
 
@@ -3360,7 +3463,7 @@ void anaBmm::fakeMuons(const char *prod) {
   fKaMid = DivideHisto(fakeK_pT, K_pT);
   fKaMid->GetYaxis()->SetRangeUser(0,0.021); 
   fKaMid->GetYaxis()->SetNdivisions(6, kTRUE);
-  setTitles(fKaMid, "p_{T}", "#varepsilon", 0.06, 1.1, 1.1);
+  setTitles(fKaMid, "p_{T} [GeV]", "#varepsilon_{K}", 0.06, 1.1, 1.1);
   fKaMid->Draw();
   c0->SaveAs(Form("%s/muonID/%s/fakerate_kaonsPt.eps",  outDir, prod));
 
@@ -3377,7 +3480,7 @@ void anaBmm::fakeMuons(const char *prod) {
   fProtMid = DivideHisto(fakeP_pT, P_pT);
   fProtMid->GetYaxis()->SetRangeUser(0,0.021);
   fProtMid->GetYaxis()->SetNdivisions(6, kTRUE);
-  setTitles(fProtMid, "p_{T}", "#varepsilon", 0.06, 1.1, 1.1);
+  setTitles(fProtMid, "p_{T} [GeV]", "#varepsilon_{P}", 0.06, 1.1, 1.1);
   fProtMid->Draw();
   c0->SaveAs(Form("%s/muonID/%s/fakerate_protonsPt.eps",  outDir, prod));
 
@@ -3393,7 +3496,7 @@ void anaBmm::fakeMuons(const char *prod) {
   // - pT
   fMuEff = DivideHisto(effMu_pT, Mu_pT);
   fMuEff->GetYaxis()->SetRangeUser(0,1.1);
-  setTitles(fMuEff, "p_{T}", "#varepsilon", 0.06, 1.1, 1.1);
+  setTitles(fMuEff, "p_{T} [GeV]", "#varepsilon", 0.06, 1.1, 1.1);
   //  fMuEff->GetYaxis()->SetNdivisions(6, kTRUE);
   fMuEff->Draw();
   c0->SaveAs(Form("%s/muonID/%s/efficiency_muonsPt.eps",  outDir, prod));
@@ -3409,36 +3512,31 @@ void anaBmm::fakeMuons(const char *prod) {
   // -- 2D histograms
 
   fPiMid2 = DivideHisto2(fakePi, Pi);
-  setTitles2(fPiMid2, "p_{T}", "#eta", 0.06, 1.1, 1.1);
+  setTitles2(fPiMid2, "p_{T} [GeV]", "#eta", 0.06, 1.1, 1.1);
   fPiMid2->Draw("colz");
   c0->SaveAs(Form("%s/muonID/%s/fakerate_pionsEtaPt.eps",  outDir, prod));
 
   fKaMid2 = DivideHisto2(fakeK, K);
-  setTitles2(fKaMid2, "p_{T}", "#eta", 0.06, 1.1, 1.1);
+  setTitles2(fKaMid2, "p_{T} [GeV]", "#eta", 0.06, 1.1, 1.1);
   fKaMid2->Draw("colz");
   c0->SaveAs(Form("%s/muonID/%s/fakerate_kaonsEtaPt.eps",  outDir, prod));
 
   fProtMid2 = DivideHisto2(fakeP, P);
-  setTitles2(fProtMid2, "p_{T}", "#eta", 0.06, 1.1, 1.1);
+  setTitles2(fProtMid2, "p_{T} [GeV]", "#eta", 0.06, 1.1, 1.1);
   fProtMid2->Draw("colz");
   c0->SaveAs(Form("%s/muonID/%s/fakerate_protonsEtaPt.eps",  outDir, prod));
 
   fMuEff2 = DivideHisto2(effMu, Mu);
-  setTitles2(fMuEff2, "p_{T}", "#eta", 0.06, 1.1, 1.1); 
+  setTitles2(fMuEff2, "p_{T} [GeV]", "#eta", 0.06, 1.1, 1.1); 
   fMuEff2->GetZaxis()->SetRangeUser(0.,1.);
   fMuEff2->GetZaxis()->SetNdivisions(6, kTRUE);
   fMuEff2->Draw("colz");
   c0->SaveAs(Form("%s/muonID/%s/efficiency_muonsEtaPt.eps",  outDir, prod));
   
-  OUT << Form("\\vdef{effIdMuonsSim}    {\\ensuremath{ {%4.3E } } }", effMuons)   << endl;
-  OUT << Form("\\vdef{misIdPionsSim}    {\\ensuremath{ {%4.3E } } }", frPions)   << endl;
-  OUT << Form("\\vdef{misIdKaonsSim}    {\\ensuremath{ {%4.3E } } }", frKaons)   << endl;
-  OUT << Form("\\vdef{misIdProtonsSim}  {\\ensuremath{ {%4.3E } } }", frProtons) << endl;
- 
-  OUT << Form("\\vdef{effIdMuons}    {\\ensuremath{ {%4.3E } } }", fMu)   << endl;
-  OUT << Form("\\vdef{misIdPions}    {\\ensuremath{ {%4.3E } } }", fPi)   << endl;
-  OUT << Form("\\vdef{misIdKaons}    {\\ensuremath{ {%4.3E } } }", fKa)   << endl;
-  OUT << Form("\\vdef{misIdProtons}  {\\ensuremath{ {%4.3E } } }", fProt) << endl;
+  OUT << Form("\\vdef{effIdMuonsSim}    {\\ensuremath{ {%4.3e } } }", effMuons)   << endl;
+  OUT << Form("\\vdef{misIdPionsSim}    {\\ensuremath{ {%4.3e } } }", frPions)   << endl;
+  OUT << Form("\\vdef{misIdKaonsSim}    {\\ensuremath{ {%4.3e } } }", frKaons)   << endl;
+  OUT << Form("\\vdef{misIdProtonsSim}  {\\ensuremath{ {%4.3e } } }", frProtons) << endl;
 
   OUT.close();
 }
@@ -3487,8 +3585,9 @@ void anaBmm::dumpFiles() {
 
     if (fM[i]) {
 
-      fMisIdM[i] = getMisID(fSignM[i]);
-      fNexpM[i] = fLumiD[0]*fvXsM[i]*fMisIdM[i];
+      fMisIdM[i]  = getMisID(fSignM[i]);
+      fEffHltM[i] = getEffHLT(i);
+      fNexpM[i]   = fLumiD[0]*fvXsM[i]*fMisIdM[i];
 
 
       cout << Form("Background MC[%d] visible cross-section: %3.2e fb, \
@@ -3670,6 +3769,11 @@ void anaBmm::dumpCuts() {
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "SUBSEL")) {
 	  OUT  << Form("\\vdef{cut:%s:subsel}    {\\ensuremath{%i } } ", label, sVal) << endl;
 	  if ( show ) { cout << "SUBSEL " << sVal << endl; }
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "presel")) {
+	  OUT  << Form("\\vdef{cut:%s:presel}    {\\ensuremath{%i } } ", label, sVal) << endl;
+	  if ( show ) { cout << "PRESEL (LXY/SXY) " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "m_{min}^{#mu #mu}")) {
@@ -4462,7 +4566,7 @@ void anaBmm::loopULOptimization(const char *filename) {
   double maxs[] = {  7.,   9.,  25., 1.000,  1.00,  10.};
   int bins[]    = {  1,    1,    1,     4,     1,   8 };
 
-  char extra1[200], extra2[200], extra3[200], extra4[200], extra5[200], extra6[200];
+  char extra1[200], extra2[200], extra3[200], extra4[200]; // extra5[200], extra6[200];
 
   char ao[200];
   char fact1[200];
@@ -4597,9 +4701,8 @@ void anaBmm::ulOptimization(const char *aoCuts, const char *preCuts, const char 
   double s2Norm    = uSG->GetSumOfWeights();
   double sEff2     = s2Norm/sNormF;
 
-  fNsg  =  sCuts * sEff1 * sEff2 * massRedSG * sSF;
-  fNsgE = 0.;
-  //fNsgE = TMath::Sqrt(fNsg);
+  fNsg  = sCuts * sEff1 * sEff2 * massRedSG * sSF;
+  fNsgE = TMath::Sqrt(sCuts)*(fNsg/sCuts);
 
   fEsg  = sEff * sEff1 * sEff2 * massRedSG;
 
@@ -4638,10 +4741,14 @@ void anaBmm::ulOptimization(const char *aoCuts, const char *preCuts, const char 
   double b2Norm    = uBG->GetSumOfWeights();
   double bEff2     = b2Norm/bNormF;
 
+  double ebg  = bEff * bEff1 * bEff2 * massRedSG;
   fNbg  =  bCuts * bEff1 * bEff2 * massRedBG * bSF;
-  fNbgE =  fNbg * 1.6/(1.*TMath::Sqrt(bCuts));
+  fNbgUE =  (0.5 + TMath::Sqrt(bCuts+0.25)) * (fNbg/bCuts);
+  fNbgLE =  (-0.5 + TMath::Sqrt(bCuts+0.25)) * (fNbg/bCuts);
+  fNbgE   =  fNbgUE;
 
-  cout << "Calculate UL for n_S = " << fNsg << " and n_B = " << fNbg << endl;
+  cout << "Calculate UL for n_S = " << fNsg << " (e_S = " << fEsg 
+       <<  "),  n_B = " << fNbg << " (e_B = " << ebg <<  ")" << endl << endl;
   
   if ( (fNsg < 100 && fNbg < 1000) && (fNsg > 1e-20 && fNbg > 1e-20) ) {
     fUL = calculateUpperLimit();
@@ -5244,8 +5351,7 @@ void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *mrCuts,
   //  cout << Form("TEST: massRed = %4.4f, massRed = %4.4f, ", massRedSG , sSF ) ;
 
   fNsg  =  sCuts * sEff1 * sEff2 * massRedSG * sSF;
-  fNsgE = 0.;
-  //fNsgE = TMath::Sqrt(fNsg);
+  fNsgE = TMath::Sqrt(sCuts)*(fNsg/sCuts);
 
   fEsg  = sEff * sEff1 * sEff2 * massRedSG;
 
@@ -5278,7 +5384,6 @@ void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *mrCuts,
   double bCuts     = uBG->GetSumOfWeights();
   double bEff      = bCuts/bNorm;
 
-
   b->Draw("mass>>uBG", Form("goodL1&&goodHLT && %s && %s", preCuts, f1Cut), "goff"); 
   double b1Norm    = uBG->GetSumOfWeights();
   double bEff1     = b1Norm/bNormF;
@@ -5289,9 +5394,12 @@ void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *mrCuts,
 
   double ebg  = bEff * bEff1 * bEff2 * massRedSG;
   fNbg  =  bCuts * bEff1 * bEff2 * massRedBG * bSF;
-  fNbgE =  fNbg * 1.6/(1.*TMath::Sqrt(bCuts));
+  fNbgUE =  (0.5 + TMath::Sqrt(bCuts+0.25)) * (fNbg/bCuts);
+  fNbgLE =  (-0.5 + TMath::Sqrt(bCuts+0.25)) * (fNbg/bCuts);
+  fNbgE   =  fNbgUE;
 
-  cout << "Calculate UL for n_S = " << fNsg << " and n_B = " << fNbg << endl;
+  cout << "Calculate UL for n_S = " << fNsg << " (e_S = " << fEsg 
+       <<  "),  n_B = " << fNbg << " (e_B = " << ebg <<  ")" << endl << endl;
   
   if ( (fNsg < 100 && fNbg < 1000) && (fNsg > 1e-20 && fNbg > 1e-20) ) {
     fUL = calculateUpperLimit();
@@ -6091,6 +6199,20 @@ TString anaBmm::getSubGroup(TString signIn) {
 
  return rtype;
 }
+
+// ----------------------------------------------------------------------
+double anaBmm::getEffHLT(int i) {
+  
+  double hlt(-1.);
+
+  TH1D *hAR1 = (TH1D*)fM[i]->Get("AR1")->Clone();
+
+  hlt = hAR1->GetBinContent(hAR1->FindBin(21.1))/
+              (hAR1->GetBinContent(hAR1->FindBin(0.1)));
+
+  return hlt;
+}
+
 
 // ----------------------------------------------------------------------
 double anaBmm::getMisID(TString signIn) {
