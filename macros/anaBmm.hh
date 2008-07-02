@@ -47,7 +47,7 @@ public:
 
   // -- main methods
   // --------------
-  void makeAllPlots();
+  void makeAllPlots(int newf = 0);
 
   void validations();
   void mcValidation(int offset = 0, int wait = 0); 
@@ -73,6 +73,7 @@ public:
   double calculateUpperLimit(); 
   double normalizedUpperLimit();
 
+  void allFakeMuons();
   void fakeMuons(const char *prod = "csa07");
 
   // -- Special studies
@@ -135,10 +136,12 @@ public:
   TH1D* DivideHisto(TH1D *hist1, TH1D *hist2);
   TH2D* DivideHisto2(TH2D *hist1, TH2D *hist2);
 
+  int getExp(double e);
   TString texForm(double e);
   TString texForm2(double e);
   TString texForm31(double e);
   TString formatTex(double n, const char *name, const char *tag);
+  TString formatTex2(double n, double error, int exp, int expMin, const char *name, const char *tag);
   TString scaleFactor(int exp);
 
   double dBinomial(double n, double N);
@@ -150,6 +153,7 @@ public:
   double barlow(int nobs, double bg = 0., double bgE = 0., double sE = 0.);
   int findIndex(const char *filename);
   void   getSignature(TString in, TString &out, TString &out2);
+  void   getProduction(TString in, TString &out);
   TString getSubGroup(TString in);
   int checkIf(int mc, const char *sel);
   double getMisID(TString in);

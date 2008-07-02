@@ -307,12 +307,9 @@ void anaBmm::loadFiles(const char *filename) {
 
     TString cn(file);
     cn.ReplaceAll("bmmroot", "");
-    cn.ReplaceAll("default2D", "");
-    cn.ReplaceAll("default3D", "");
-    cn.ReplaceAll("default2a", "");
-    cn.ReplaceAll("default2b", "");
-    cn.ReplaceAll("default3", "");
-    cn.ReplaceAll("default4", "");
+    cn.ReplaceAll("sel2", "");
+    cn.ReplaceAll("sel3", "");
+    cn.ReplaceAll("sel1", "");
     cn.ReplaceAll("default", "");
     cn.ReplaceAll("norm", "");
     cn.ReplaceAll("treebmm", "");
@@ -504,14 +501,17 @@ void anaBmm::loadDa(const char *name, double lumi, const char *sign, const char 
 // -- produce plots & number for note
 //===========================================================================================
 
-void anaBmm::makeAllPlots() {
+void anaBmm::makeAllPlots(int newf) {
    
 
-  //  validations();
-  distributions();
+  //  validations();  // -> use this with bmm.validation.files
+  //  fakeMuons();    // -> use this with bmm.fakemuons.files
 
-  processes();
-  fakeMuons();
+  if ( newf ) {
+    
+    distributions();
+    processes();
+  }
 
   brecos();  
 
@@ -639,21 +639,23 @@ void anaBmm::processes() {
 
 void anaBmm::brecos() {
 
-  breco(-1);
 
   char f_n[200];
   int n(0);
 
-  // -- J/Psi-peaks from other samples
-  int njf = 2;
-  TString jfiles[]    = { TString("csg-004") , TString("csg-004m") };
+  // -- B-peaks from rare BGs  (breco)
+  breco(-1);
 
-  // -- B-peaks from signal samples
+  // -- B-peaks from signal samples (breco)
   int nbf = 4;
   TString bfiles[]    = {  TString("csg-003") , TString("csg-003h") 
 			 , TString("csg-004h") , TString("csg-004m") };
 
-  // -- B-peaks from other samples
+  // -- J/Psi-peaks from other samples (jreco)
+  int njf = 3;
+  TString jfiles[]    = { TString("csg-004h") , TString("csg-004j") , TString("csg-004m") };
+
+  // -- B-peaks from other samples (nreco)
   int nnf = 2;
   TString nfiles[]    = { TString("csg-004"), TString("csg-004j") };
 
@@ -1080,7 +1082,9 @@ void anaBmm::breco(int o, const char *hist) {
   TH1D *hs;
   TH1D *hr;
 
-  double mean(0.), sigma(0.);
+  TString production;
+
+  double mean(0.), meanE(0.001), sigma(0.), sigmaE(0.);
 
   if ( o > -1 ) {
 
@@ -1117,6 +1121,17 @@ void anaBmm::breco(int o, const char *hist) {
 			  (f1->GetParameter(0)*f1->GetParameter(0) + f1->GetParameter(3)*f1->GetParameter(3))
 			  );
     
+
+//       meanE  = getDGError(f1->GetParameter(1), f1->GetParError(1), 
+// 				  f1->GetParameter(4), f1->GetParError(4),
+// 				  f1->GetParameter(0), f1->GetParError(0),
+// 				  f1->GetParameter(3), f1->GetParError(3));
+
+      sigmaE = getDGError(f1->GetParameter(2), f1->GetParError(2), 
+			  f1->GetParameter(5), f1->GetParError(5),
+			  f1->GetParameter(0), f1->GetParError(0),
+			  f1->GetParameter(3), f1->GetParError(3));
+
       writeFitPar(f1, o, mean, sigma, 6);
     }
   
@@ -1154,7 +1169,17 @@ void anaBmm::breco(int o, const char *hist) {
 			  /
 			  (f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
 			  );
-    
+
+//       meanE  = getDGError(f6->GetParameter(1), f6->GetParError(1), 
+// 			  f6->GetParameter(4), f6->GetParError(4),
+// 			  f6->GetParameter(0), f6->GetParError(0),
+// 			  f6->GetParameter(3), f6->GetParError(3));
+
+      sigmaE = getDGError(f6->GetParameter(2), f6->GetParError(2), 
+			  f6->GetParameter(5), f6->GetParError(5),
+			  f6->GetParameter(0), f6->GetParError(0),
+			  f6->GetParameter(3), f6->GetParError(3));
+
       writeFitPar(f6, o, mean, sigma, 3);
     }
     
@@ -1162,8 +1187,8 @@ void anaBmm::breco(int o, const char *hist) {
     tl->SetTextColor(kBlack);  
     tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
   
-    tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, 0.001));
-    tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, 0.001));
+    tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, meanE));
+    tl->DrawLatex(0.16, 0.79, Form("#sigma: %4.1f#pm%4.2f MeV", 1000*sigma, 1000*sigmaE));
   
 //     if (h1->GetSumOfWeights()<0.001) {
 //       tl->DrawLatex(0.16, 0.73, Form("N: %4.2e", h1->GetSumOfWeights()));
@@ -1175,27 +1200,13 @@ void anaBmm::breco(int o, const char *hist) {
 //       tl->DrawLatex(0.16, 0.73, Form("N: %4.2e", h1->GetSumOfWeights()));
 //     }
 
+    getProduction(fFileS[o], production);
+  
     tl->SetTextSize(0.06); tl->SetTextColor(kBlue);
     tl->DrawLatex(0.56, 0.65, Form("%s", fSignLeggS[o].Data()));
-  
-//     if ( o == 0 ) {
-//       tl->DrawLatex(0.48, 0.72, "ORCA/OSCAR (priv.)");
-//     } else if ( o == 1 ) {
-//       tl->DrawLatex(0.50, 0.72, "official MC");
-//     } else if ( o == 2 ) {
-//       tl->DrawLatex(0.52, 0.72, "CSA07");
-//     } else if ( o == 3 ) {
-//       tl->DrawLatex(0.52, 0.72, "Spring07");
-//     } else if ( o == 4 ) {
-//       tl->DrawLatex(0.56, 0.72, "perfect align.");
-//     } else if ( o == 5 ) {
-//       tl->DrawLatex(0.52, 0.72, "short-term align.");
-//     } else {  
-//       tl->DrawLatex(0.52, 0.72, Form("MC%i",o));
-//     }
-    
-  
-    c0->SaveAs(Form("%s/breco/s%d-breco-%s.eps", outDir, o, hist));
+    tl->DrawLatex(0.52, 0.72, Form("%s", production.Data()));
+
+    c0->SaveAs(Form("%s/breco/%s-breco-%s.eps", outDir, fFileS[o].Data(), hist));
     delete h1;
   }
 
@@ -1337,6 +1348,8 @@ void anaBmm::nreco(int o, const char *hist) {
   // -- Norm. channel
   // ================
 
+  TString production;
+
   gStyle->SetOptTitle(0);
   gStyle->SetOptStat(0);
   gStyle->SetOptFit(0);
@@ -1407,11 +1420,13 @@ void anaBmm::nreco(int o, const char *hist) {
   tl->DrawLatex(0.65, 0.60, Form("#pm %4.2e", f5->GetParameter(2)*f5->GetParameter(0)));
   tl->SetTextColor(1);  
   
+  getProduction(fFileS[o], production);
+  
   tl->SetTextSize(0.06); tl->SetTextColor(kBlue);
-  tl->DrawLatex(0.40, 0.72, Form("%s", fSignLeggS[o].Data()));
+  tl->DrawLatex(0.17, 0.72, Form("%s: %s", production.Data(), fSignLeggS[o].Data()));
   
   
-  c0->SaveAs(Form("%s/breco/s%d-nreco-%s.eps", outDir, o, hist));
+  c0->SaveAs(Form("%s/breco/%s-nreco-%s.eps", outDir, fFileS[o].Data(), hist));
 
   delete h1;
 }
@@ -1423,6 +1438,8 @@ void anaBmm::jreco(int o) {
 
   // -- J/Psi peak
   // =============
+
+  TString production;
 
   gStyle->SetOptTitle(0);
   gStyle->SetOptStat(0);
@@ -1467,18 +1484,14 @@ void anaBmm::jreco(int o) {
 
   tl->SetTextSize(0.06); tl->SetTextColor(kBlue);
 
-  if ( o == 4 ) {
-    tl->DrawLatex(0.19, 0.74, "perfect align.");
-    tl->DrawLatex(0.2, 0.67, "J/#psi #rightarrow #mu #mu");
-  } else if ( o == 5 ) {
-    tl->DrawLatex(0.19, 0.74, "short-term align.");
-    tl->DrawLatex(0.2, 0.67, "J/#psi #rightarrow #mu #mu");
-  } else {  
-    tl->SetTextSize(0.1);
-    tl->DrawLatex(0.70, 0.82, Form("MC%i",o));
-  }
+  getProduction(fFileS[o], production);
+  
+  tl->SetTextSize(0.06); tl->SetTextColor(kBlue);
+  tl->DrawLatex(0.18, 0.72, Form("%s: %s", production.Data(), fSignLeggS[o].Data()));
+  tl->DrawLatex(0.2, 0.67, "J/#psi #rightarrow #mu #mu");
 
-  c0->SaveAs(Form("%s/breco/s%d-jreco.eps", outDir, o));
+
+  c0->SaveAs(Form("%s/breco/%s-jreco.eps", outDir, fFileS[o].Data()));
 
   delete h1;
 }
@@ -1492,18 +1505,19 @@ void anaBmm::mcVal(const char *hname, int mode, double x, double y) {
   
   gStyle->SetOptTitle(0);
 
-  // -- compare files1 with files2 for signal AND equivalent for background
+  // -- compare files1 with files2 for signal AND equivalent for background (select BMMSEL=2 samples!!!)
   TString sgfiles1[]    = { TString("csg-003") , TString("csg-003") };
   TString sgfiles2[]    = { TString("csg-001") , TString("csg-003h") };
 
-  TString bgfiles1[]    = { TString("cbg-003") , TString("cbg-003") };
-  TString bgfiles2[]    = { TString("cbg-002") , TString("cbg-003h") };
+  TString bgfiles1[]    = { TString("cbg-003") , TString("cbg-003") , TString("cbg-005") };
+  TString bgfiles2[]    = { TString("cbg-002") , TString("cbg-003h"), TString("cbg-005h") };
 
   // -- sample descriptions for sg AND bg
-  TString samples1[] = { TString("CMSSW (CSA07)"), TString("CSA07") }; 
-  TString samples2[] = { TString("ORCA (priv.)"), TString("Spring07") };
+  TString samples1[] = { TString("CMSSW (CSA07)"), TString("CSA07"),    TString("CSA07") }; 
+  TString samples2[] = { TString("ORCA (priv.)"),  TString("Spring07"), TString("Spring07") };
 
-  TString labels[]   = { TString("orca"), TString("spring07") };
+  TString labels[]   = { TString("orca"), TString("spring07") , TString("spring07") };
+  TString bglabs[]   = { TString("bb"),   TString("bb") ,       TString("cc") };
 
   TH1D *h0, *h1;
   int n(0), m(0);
@@ -1512,16 +1526,8 @@ void anaBmm::mcVal(const char *hname, int mode, double x, double y) {
 
   sprintf(hist,"%s", hname);  // ??? Crashes when using hname instead of hist ???
 
-  //  int num = sizeof(sgfiles1) - 1;  // not working
-  int num = 2;
-
-  if ( (sizeof(sgfiles2) != sizeof(sgfiles1)) || (sizeof(labels) != sizeof(sgfiles1)) ||
-       (sizeof(samples1) != sizeof(sgfiles1)) || (sizeof(samples2) != sizeof(sgfiles1))||
-       (sizeof(bgfiles1) != sizeof(sgfiles1)) || (sizeof(bgfiles2) != sizeof(sgfiles1)) ) {
-
-    cout << " ====> Error: Sizes of arrays are not consistent !!!" << endl;
-    return; 
-  }
+  int snum = 2;
+  int bnum = 2;
 
   int logy(0); 
   if (mode > 99) {
@@ -1529,7 +1535,12 @@ void anaBmm::mcVal(const char *hname, int mode, double x, double y) {
     logy = 1;
   }  
   
-  for (int i = 0; i < num; i++ ) {
+  
+  // --------------
+  // -- Signal
+  // --------------
+
+  for (int i = 0; i < snum; i++ ) {
 
     // -- in case of missing histograms in old samples
     if (mode == 10) {
@@ -1540,9 +1551,6 @@ void anaBmm::mcVal(const char *hname, int mode, double x, double y) {
     sprintf(name_n, "%s", samples1[i].Data());
     sprintf(name_m, "%s", samples2[i].Data());
 
-    // --------------
-    // -- Signal
-    // --------------
     sprintf(f_n,"%s",sgfiles1[i].Data());
     sprintf(f_m,"%s",sgfiles2[i].Data());
 
@@ -1600,11 +1608,25 @@ void anaBmm::mcVal(const char *hname, int mode, double x, double y) {
       if ( n < 0 ) cout << " ====> Error: couldn't index of find file " << f_n << endl;
       if ( m < 0 ) cout << " ====> Error: couldn't index of find file " << f_m << endl;
     }  
+  }
+  
 
 
-    // --------------
-    // -- Background
-    // --------------  
+  // --------------
+  // -- Background
+  // -------------- 
+
+  for (int i = 0; i < bnum; i++ ) {
+
+    // -- in case of missing histograms in old samples
+    if (mode == 10) {
+      if ( i == 0 ) { continue; }
+    }
+
+
+    sprintf(name_n, "%s", samples1[i].Data());
+    sprintf(name_m, "%s", samples2[i].Data());
+ 
     sprintf(f_n,"%s",bgfiles1[i].Data());
     sprintf(f_m,"%s",bgfiles2[i].Data());
 
@@ -1653,7 +1675,7 @@ void anaBmm::mcVal(const char *hname, int mode, double x, double y) {
       c0->Draw(); 
       c0->Update();
 
-      c0->SaveAs(Form("%s/mcval/bgval-%s-%s.eps", outDir, labels[i].Data(), hist));
+      c0->SaveAs(Form("%s/mcval/bgval-%s-%s-%s.eps", outDir, bglabs[i].Data(), labels[i].Data(), hist));
 
       delete h0;
       delete h1;
@@ -1677,7 +1699,16 @@ void anaBmm::showDistribution(const char *hname, int mode, double x, double y) {
   c0->Clear();
   shrinkPad(0.15, 0.2);
   
-  //  TH1 *hm = sumHistMC(hname);
+  int logy(0); 
+  if (mode > 99) {
+    mode -= 100;
+    logy = 1;
+  }  
+
+  // -----------------
+  // -- Signal
+  // -----------------
+
   TH1 *hm = (TH1D*)fM[bgIndex]->Get(hname);
   setHist(hm, kBlack, kBlack);
   setTitles(hm, hm->GetXaxis()->GetTitle(), hm->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
@@ -1686,12 +1717,6 @@ void anaBmm::showDistribution(const char *hname, int mode, double x, double y) {
   hs->SetName(Form("SIG:%s", hname)); 
   setFilledHist(hs, kBlue, kBlue, 3004, 2);
   setTitles(hs, hs->GetXaxis()->GetTitle(), hs->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
-
-  int logy(0); 
-  if (mode > 99) {
-    mode -= 100;
-    logy = 1;
-  }  
 
   c0->SetLogy(logy);
   
@@ -1734,6 +1759,68 @@ void anaBmm::showDistribution(const char *hname, int mode, double x, double y) {
   }
  
   c0->SaveAs(Form("%s/dist/dist-%s.eps", outDir, hname));
+
+  c0->SetLogy(0);  
+
+
+
+  // -----------------
+  // -- Normalization
+  // -----------------
+
+  c0->Clear();
+  shrinkPad(0.15, 0.2);
+
+  TH1 *hnm = (TH1D*)fM[normSgIndex]->Get(hname);
+  setHist(hnm, kBlack, kBlack);
+  setTitles(hnm, hnm->GetXaxis()->GetTitle(), hnm->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
+
+  TH1D *hns = new TH1D(*((TH1D*)fS[sgIndex]->Get(hname)));
+  hns->SetName(Form("NORM:%s", hname)); 
+  setFilledHist(hns, kBlue, kBlue, 3004, 2);
+  setTitles(hns, hns->GetXaxis()->GetTitle(), hns->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
+
+  c0->SetLogy(logy);
+  
+  if (mode == 0) {
+    cout << hname << " drawn as is: norm. sg, norm. bg" << endl;
+    hns->Draw("hist");
+    hnm->Draw("samehist");
+  } else if (mode == 1) {
+    cout << hname << " drawn as is: norm. bg, norm. sg" << endl;
+    hnm->Draw("hist");
+    hns->Draw("samehist");
+  } else if (mode == 2) {
+    cout << hname << " scale to unity" << endl;
+    hnm->Scale(1./hnm->GetSumOfWeights()); 
+    hns->Scale(1./hns->GetSumOfWeights()); 
+    hns->SetMaximum(1.1*(hnm->GetMaximum() > hns->GetMaximum()? hnm->GetMaximum(): hns->GetMaximum()));
+    hns->Draw("hist");
+    hnm->Draw("samehist");
+  } else if (mode == 3) {
+    cout << hname << " scale norm. sg to norm. bg" << endl;
+    hns->Scale(hnm->GetSumOfWeights()/hns->GetSumOfWeights()); 
+    hnm->Draw("hist");
+    hns->Draw("samehist");
+  } else if (mode == 4) {
+    cout << hname << " scale to L = " << fLumiD[0] << "/fb" << endl;
+    hns->Scale(fLumiD[0]/fLumiS[sgIndex]); 
+    hnm->Scale(fLumiD[0]/fLumiM[normSgIndex]); 
+    hnm->Draw("hist");
+    hns->Draw("samehist");
+  }
+
+  if (x > 0) {
+    legg = new TLegend(x-0.07, y, x+0.05, y+0.1);
+    legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.04);  legg->SetFillColor(0); 
+    //     legge = legg->AddEntry(hns, Form("S: %5.1f", hns->GetSumOfWeights()), "f"); legge->SetTextColor(kBlack);
+    //     legge = legg->AddEntry(hnm, Form("B: %5.1f", hnm->GetSumOfWeights()), "f"); legge->SetTextColor(kBlack);
+    legge = legg->AddEntry(hns, Form("%s", fSignLeggS[sgIndex].Data()), "f"); legge->SetTextColor(kBlack);
+    legge = legg->AddEntry(hnm, Form("%s", fSignLeggS[normSgIndex].Data()), "f"); legge->SetTextColor(kBlack);
+    legg->Draw();
+  }
+ 
+  c0->SaveAs(Form("%s/dist/norm-dist-%s.eps", outDir, hname));
 
   c0->SetLogy(0);
 
@@ -1840,6 +1927,8 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   // -- Lumi normalisation scaling factor
   double SF(0.), comb(0.);
   char sname[200];
+  int exp;
+  int expM;
 
   if (!strcmp(tag, "mysg")) {
 
@@ -2148,6 +2237,12 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   OUT << Form("%s", (formatTex(ekin,  "cABchi2"  , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(dkin,  "cABchi2E" , tag)).Data()) << endl;
 
+  exp  = getExp(enorm);
+  expM = getExp(dnorm);
+  if ( TMath::Abs(expM) > TMath::Abs(exp) ) expM = exp;
+
+  OUT << Form("%s", (formatTex2(enorm,  dnorm, exp, expM, "eABchi2PM"  , tag)).Data()) << endl;
+
 
   // ===================================================================================
   // -- Signal efficiency (for error estimation)
@@ -2285,6 +2380,12 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   OUT << Form("%s", (formatTex(efact,  "eAllCutsFact"  , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(efactE, "eAllCutsFactE" , tag)).Data()) << endl;
 
+  exp  = getExp(efact);
+  expM = getExp(efactE);
+  if ( TMath::Abs(expM) > TMath::Abs(exp) ) expM = exp;
+
+  OUT << Form("%s", (formatTex2(efact,  efactE, exp, expM, "eAllCutsFactPM"  , tag)).Data()) << endl;
+
 
   // ===================================================================================
   // -- Mass reduction in 100 MeV window
@@ -2301,7 +2402,7 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   // --- FIX ???
   if ( !strcmp(tag, "mysg") || !strcmp(tag, "sg") ) {
 
-//     massRed = massRed5;
+     massRed = massRed5;
   }
 
   // -- mass window
@@ -2329,6 +2430,12 @@ void anaBmm::effTable(TFile *f, const char *tag) {
   OUT << Form("%s", (formatTex(nmassLE, "nMassAllCutsFactLE" , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(emass,  "eMassAllCutsFact"  , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(emassE, "eMassAllCutsFactE" , tag)).Data()) << endl;
+
+  exp  = getExp(emass);
+  expM = getExp(emassE);
+  if ( TMath::Abs(expM) > TMath::Abs(exp) ) expM = exp;
+
+  OUT << Form("%s", (formatTex2(emass,  emassE, exp, expM, "eMassAllCutsFactPM"  , tag)).Data()) << endl;
 
   OUT  << Form("\\vdef{massReduction:%s}  {\\ensuremath{{%3.2f} } }", tag, massRed) << endl;
 
@@ -2555,6 +2662,11 @@ double anaBmm::massReduction(const char *hist, const char *sel, double window) {
 			 (f1->GetParameter(0)*f1->GetParameter(0) + f1->GetParameter(3)*f1->GetParameter(3))
 			 );
 
+//       double  meanE  = getDGError(f1->GetParameter(1), f1->GetParError(1), 
+// 				  f1->GetParameter(4), f1->GetParError(4),
+// 				  f1->GetParameter(0), f1->GetParError(0),
+// 				  f1->GetParameter(3), f1->GetParError(3));
+
     double  sigma = TMath::Sqrt((f1->GetParameter(0)*f1->GetParameter(0)*f1->GetParameter(2)*f1->GetParameter(2)
 			   + f1->GetParameter(3)*f1->GetParameter(3)*f1->GetParameter(5)*f1->GetParameter(5))
 			  /
@@ -2562,11 +2674,16 @@ double anaBmm::massReduction(const char *hist, const char *sel, double window) {
 			  );
 
     
+    double  sigmaE = getDGError(f1->GetParameter(2), f1->GetParError(2), 
+				f1->GetParameter(5), f1->GetParError(5),
+				f1->GetParameter(0), f1->GetParError(0),
+				f1->GetParameter(3), f1->GetParError(3));
+    
     tl->SetTextColor(kBlack);  
     tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
   
     tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, 0.001));
-    tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, 0.001));
+    tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, sigmaE));
   
 //     if (h1->GetSumOfWeights()<0.001) {
 //       tl->DrawLatex(0.16, 0.73, Form("N: %4.2e", h1->GetSumOfWeights()));
@@ -3190,6 +3307,15 @@ void anaBmm::channelEff(TFile *f, double &fnorm_Ch, double &eff1_Ch, double &eff
 // -- Muon mis-identification
 //===========================================================================================
 
+void anaBmm::allFakeMuons() {
+
+  fakeMuons("csa07");
+  fakeMuons("spring07");
+  fakeMuons("orca");
+
+}
+
+
 void anaBmm::fakeMuons(const char *prod) {
 
   tl->SetNDC(kTRUE);
@@ -3203,13 +3329,6 @@ void anaBmm::fakeMuons(const char *prod) {
   double mis(0.), eff(0.), tot(0.);
   
   ofstream OUT(fNumbersFileName, ios::app);
-  OUT << "% ----------------------------------------------------------------------" << endl;
-  OUT << "% -- Muon identification (percent) "<< endl;
- 
-  OUT << Form("\\vdef{effIdMuons}    {\\ensuremath{ {%2.1f } } }", 100*fMu)   << endl;
-  OUT << Form("\\vdef{misIdPions}    {\\ensuremath{ {%2.1f } } }", 100*fPi)   << endl;
-  OUT << Form("\\vdef{misIdKaons}    {\\ensuremath{ {%2.1f } } }", 100*fKa)   << endl;
-  OUT << Form("\\vdef{misIdProtons}  {\\ensuremath{ {%2.1f } } }", 100*fProt) << endl;
 
   OUT << "% ----------------------------------------------------------------------" << endl;
   OUT << "% -- Muon identification (mean) "<< endl;
@@ -3231,7 +3350,7 @@ void anaBmm::fakeMuons(const char *prod) {
   // -- CSA07
   if ( !strcmp(prod,"csa07") ) {
 
-    nsg = 2;
+    nsg = 1;
     sgfiles[0] = TString("csg-003");
     sgfiles[1] = TString("csg-004");
 
@@ -3256,7 +3375,7 @@ void anaBmm::fakeMuons(const char *prod) {
     bgfiles[2] = TString("cbg-005h");
   }
 
-  // -- Spring07
+  // -- ORCA
   else if ( !strcmp(prod,"orca") ) {
 
     nsg = 2;
@@ -3607,7 +3726,16 @@ void anaBmm::dumpFiles() {
       //OUT << Form("\\vdef{vNexp:m%i} {\\ensuremath{ {%s } } }", i, (texForm(fNexpM[i])).Data()) << endl;
     }
   }
-  
+    
+
+  OUT << "% ----------------------------------------------------------------------" << endl;
+  OUT << "% -- Muon identification (percent) "<< endl;
+ 
+  OUT << Form("\\vdef{effIdMuons}    {\\ensuremath{ {%2.1f } } }", 100*fMu)   << endl;
+  OUT << Form("\\vdef{misIdPions}    {\\ensuremath{ {%2.1f } } }", 100*fPi)   << endl;
+  OUT << Form("\\vdef{misIdKaons}    {\\ensuremath{ {%2.1f } } }", 100*fKa)   << endl;
+  OUT << Form("\\vdef{misIdProtons}  {\\ensuremath{ {%2.1f } } }", 100*fProt) << endl;
+
   OUT.close();
 }
 
@@ -5670,6 +5798,17 @@ TString anaBmm::texForm2(double e) {
 }
 
 // ----------------------------------------------------------------------
+int anaBmm::getExp(double e) {
+  int exp(0);
+  TString seff1(Form("%1.8e", e)); 
+  seff1.Replace(0,10,"", 0); 
+  seff1.ReplaceAll("e", ""); 
+
+  exp = seff1.Atoi();
+  return exp;
+}
+
+// ----------------------------------------------------------------------
 TString anaBmm::formatTex(double n, const char *name, const char *tag) {
   
   TString out("-");
@@ -5684,7 +5823,7 @@ TString anaBmm::formatTex(double n, const char *name, const char *tag) {
     out.Form("\\vdef{%s:%s}   {\\ensuremath{{%4.0f } } }", name, tag, n);
   } else if ( n > 1. ) {
     out.Form("\\vdef{%s:%s}   {\\ensuremath{{%4.1f } } }", name, tag, n);
-  } else if ( n > 1.e-2) {
+  } else if ( n > 1.e-1) {
     out.Form("\\vdef{%s:%s}   {\\ensuremath{{%4.2f } } }", name, tag, n);
   } else if ( n > 1.e-3) {
     out.Form("\\vdef{%s:%s}   {\\ensuremath{{%4.3f } } }", name, tag, n);
@@ -5696,6 +5835,31 @@ TString anaBmm::formatTex(double n, const char *name, const char *tag) {
     out.Form("\\vdef{%s:%s}   {\\ensuremath{{0.0 } } }", name, tag);
   }
   
+  return out;
+}
+
+// ----------------------------------------------------------------------
+TString anaBmm::formatTex2(double n, double error, int exp, int expMin, const char *name, const char *tag) {
+  
+  TString seff1(Form("1.e%i", exp));
+  double scale = seff1.Atof();
+   
+  TString out("-");
+
+  if ( isnan(n) ) {
+    out.Form("\\vdef{%s:%s}   {\\ensuremath{{NaN } } }", name, tag);
+  } else if ( expMin < -2) {
+    out.Form("\\vdef{%s:%s}   {\\ensuremath{{(%1.4f \\pm %1.4f) \\times 10^{%i} } } }", name, tag, n/scale, error/scale, exp);
+  } else if ( expMin < 0 ) {
+    out.Form("\\vdef{%s:%s}   {\\ensuremath{{%4.3f \\pm %4.3f  } } }", name, tag, n, error);
+  } else if ( expMin < 2 ) {
+    out.Form("\\vdef{%s:%s}   {\\ensuremath{{%4.1f \\pm %4.1f  } } }", name, tag, n, error);
+  } else if ( expMin < 3 ) {
+    out.Form("\\vdef{%s:%s}   {\\ensuremath{{%4.0f \\pm %4.0f  } } }", name, tag, n, error);
+  } else {
+    out.Form("\\vdef{%s:%s}   {\\ensuremath{{(%4.3f \\pm %4.3f) \\times 10^{%i} } } }", name, tag, n/scale, error/scale, exp);
+  }
+
   return out;
 }
 
@@ -6003,6 +6167,56 @@ int anaBmm::findIndex(const char *filename) {
 
 // -----------------------------------------------------
 
+void anaBmm::getProduction(TString signIn, TString &signOut) {
+
+
+  if ( signIn.Contains("csg-002") ) {
+
+     signOut = TString("ORCA");
+  }
+
+  if ( signIn.Contains("csg-001") ||  
+       signIn.Contains("cbg-002")  ) {
+
+     signOut = TString("ORCA (priv.)");
+  }
+
+  if ( signIn.Contains("csg-003") ||  
+       signIn.Contains("csg-004") ||  
+       signIn.Contains("cbg-003") || 
+       signIn.Contains("cbg-004") || 
+       signIn.Contains("cbg-005") || 
+       signIn.Contains("cbg-006")  ) {
+
+     signOut = TString("CSA07");
+  }
+
+  if ( signIn.Contains("cbg-007")  ) {
+
+     signOut = TString("CSA07 (Stew)");
+  }
+
+  if ( signIn.Contains("csg-003h") ||  
+       signIn.Contains("csg-004h") ||  
+       signIn.Contains("csg-004j") ||  
+       signIn.Contains("cbg-003h") || 
+       signIn.Contains("cbg-004h") || 
+       signIn.Contains("cbg-005h")  ) {
+
+     signOut = TString("Spring07");
+  }
+
+  if ( signIn.Contains("csg-004m") ) {
+
+     signOut = TString("short-term align.");
+  }
+
+
+}
+
+
+// -----------------------------------------------------
+
 void anaBmm::getSignature(TString signIn, TString &signOut, TString &signOut2) {
  
  signOut  = signIn;
@@ -6205,7 +6419,7 @@ double anaBmm::getEffHLT(int i) {
   
   double hlt(-1.);
 
-  TH1D *hAR1 = (TH1D*)fM[i]->Get("AR1")->Clone();
+  TH1D *hAR1 = (TH1D*)fS[sgIndex]->Get("AR1")->Clone();
 
   hlt = hAR1->GetBinContent(hAR1->FindBin(21.1))/
               (hAR1->GetBinContent(hAR1->FindBin(0.1)));

@@ -10,68 +10,71 @@
 # visible x-section [fb]: 38.9657    = 5.522E+01*1.E12*(5000./24.8e6)*3.5e-9 
 type=sg file=treebmm/csg-001.default.root vxs=39.126e+00 signature=bsmumu
 type=sg file=treebmm/csg-002.default.root vxs=39.126e+00 signature=bsmumu
-type=sg file=treebmm/sel2/csg-003.default.root vxs=86.625E+00 signature=bsmumu
+type=sg file=treebmm/csg-003.default.root vxs=86.625E+00 signature=bsmumu
 type=mysg file=treebmm/csg-003h.default.root vxs=53.900e+00 signature=bsmumu
 #
-type=nsg file=treebmm/sel2/csg-004.norm.root vxs=4.0958e+07 signature=NonPrompt
-#type=mynsg file=treebmm/csg-004h.norm.root vxs=2.09091e+06 signature=bpjpsikp
 type=mynsg file=treebmm/csg-004h.norm.root vxs=1.672728e+06 signature=bpjpsikp
 type=nsg file=treebmm/csg-004m.norm.root vxs=10.4545e+05 signature=bpjpsikp
 type=nsg file=treebmm/csg-004j.norm.root vxs=1.3372e+08 signature=NonPrompt
-
+#
+# CSA07 (w/o HLT) 
+#type=nsg file=treebmm/csg-004.norm.root vxs=4.0958e+07 signature=NonPrompt
 #
 type=mc file=treebmm/cbg-002.default.root vxs=1.7286e+07 signature=bbbar
-type=mc file=treebmm/sel2/cbg-003.default.root vxs=3.2450e+08 signature=BB
-#type=mc file=treebmm/cbg-009.default.root vxs=3.2450e+08 signature=BB
+type=mc file=treebmm/cbg-003.default.root vxs=3.2450e+08 signature=BB
+type=mc file=treebmm/cbg-005.default.root vxs=9.2950e+07 signature=CC
 type=mymc file=treebmm/cbg-003h.default.root vxs=1.3200e+08 signature=BB
-#type=mymc file=treebmm/cbg-009h.default.root vxs=1.3200e+08 signature=BB
-type=mc file=treebmm/sel2/cbg-005.default.root vxs=9.2950e+07 signature=CC
 type=mc file=treebmm/cbg-005h.default.root vxs=1.2100e+07 signature=CC
 #
-type=nmc file=treebmm/sel2/cbg-004.norm.root vxs=3.2365e+09 signature=NonPrompt
 type=mynmc file=treebmm/cbg-004h.norm.root vxs=1.3372e+08 signature=NonPrompt
+# type=mc file=treebmm/cbg-006.default.root vxs=5.5000e+09 signature=stew
+# type=mc file=treebmm/cbg-007.default.root vxs=5.5000e+09 signature=ppmux
 #
-# type=mc file=treebmm/cbg-006.default.root vxs=5.5000e+09 signature=ppmu
-# type=mc file=treebmm/cbg-008.default.root vxs=4.4000e+10 signature=ppmu
-# type=mc file=treebmm/cbg-007.default.root vxs=1.3051e+08 signature=qcdmu
+# Combined BGs
+# type=mc file=treebmm/cbg-009.default.root vxs=3.2450e+08 signature=BB
+# type=mc file=treebmm/cbg-009h.default.root vxs=1.3200e+08 signature=BB
+#
+#
+# CSA07 (w/o HLT) 
+# type=nmc file=treebmm/cbg-004.norm.root vxs=3.2365e+09 signature=NonPrompt
 #
 ##
 # Rare BG
-# 7
+# 6
 type=rmc file=treebmm/bskk.default.root vxs=8.8000E+05 signature=rare
-# 8
+# 7
 type=rmc file=treebmm/bs2pi.default.root vxs=2.6180e+04 signature=rare
-# 9
+# 8
 type=rmc file=treebmm/bskpi.default.root vxs=7.7000E+04 signature=rare
-# 10
+# 9
 type=rmc file=treebmm/bskmunu.default.root vxs=1.6170E+06 signature=rare
-# 11
+# 10
 type=rmc file=treebmm/bsmumug.default.root vxs=1.2837E+02 signature=rare
 # 
 #type=rmc file=treebmm/bsmumupi0.default.root vxs=3.080E+02 signature=rare
 #
-# 12
+# 11
 type=rmc file=treebmm/bd2pi.default.root vxs=2.1164e+05 signature=rare
-# 13
+# 12
 type=rmc file=treebmm/bdpik.default.root vxs=7.7000e+05 signature=rare
-# 14
+# 13
 type=rmc file=treebmm/bdpimunu.default.root vxs=5.0820e+06 signature=rare
-# 15
+# 14
 type=rmc file=treebmm/bdmumupi0.default.root vxs=3.3000e+02 signature=rare
 # 
-# 16
+# 15
 type=rmc file=treebmm/lbppi.default.root vxs=9.3500E+03 signature=rare
-# 17
+# 16
 type=rmc file=treebmm/lbpk.default.root vxs=1.9800E+04 signature=rare
 # 
-# 18
+# 17
 type=rmc file=treebmm/bu3munu.default.root vxs=1.0450E+05 signature=rare
 # 
-# 19
+# 18
 type=rmc file=treebmm/bc3munu.default.root vxs=2.4750E+02 signature=rare
-# 20
+# 19
 type=rmc file=treebmm/bcjpmunu.default.root vxs=3.9138E+04 signature=rare
-# 21
+# 20
 type=rmc file=treebmm/bcjpmunu.default.root vxs=3.9138E+04 signature=rare
 #
 # ----------------------------------------------------------------------
