@@ -58,8 +58,10 @@ public:
   void showDistribution(const char *hname, int mode = 0, double x = -9999., double y = -9999.);
 
   void effTables();
-  void effTable(TFile *f, const char *tag); 
-  double massReduction(const char *s = "c030", const char *tag = "m0", double window = -1.);
+  void effTablesBg();
+  void effTablesSg();
+  void effTable(TFile *f, int index, const char *tag); 
+  double massReduction(const char *s = "c030", const char *tag = "m0", int index = -1, double window = -1.);
 
   void brecos();
   void jreco(int o = 4); 
@@ -140,6 +142,7 @@ public:
   TString texForm(double e);
   TString texForm2(double e);
   TString texForm31(double e);
+  TString texFormWithError(double n, double error, int exp, int expMin);
   TString formatTex(double n, const char *name, const char *tag);
   TString formatTex2(double n, double error, int exp, int expMin, const char *name, const char *tag);
   TString scaleFactor(int exp);
