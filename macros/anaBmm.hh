@@ -112,6 +112,9 @@ public:
 		      double mCut, const char *filename);
   void overlay(const char *var, const char *cuts, double min, double max, int nbin=40);
 
+  void nbgen();
+  void nb(int offset, int i, const char *meson = "Bs");
+
   // -- Utilities and helper methods
   // -------------------------------
   double  expUL(double sig, double bg, double bgE);
@@ -170,6 +173,8 @@ public:
   TString fFile; 
   TString fNumbersFileName;
 
+  // Fundamental constants
+  inline Double_t Pi()       { return 3.14159265358979323846; }
 
 private:
 

@@ -2208,7 +2208,9 @@ void treeBmm::fillAnalysisEff() {
 	  // -- somewhat tightened preselection 
 	  ((TH1D*)gDirectory->Get("LXYSXY_PRE"))->Fill(fLxy/fSxy);
 	  ((TH1D*)gDirectory->Get("L3DS3D_PRE"))->Fill(fL3d/fS3d);
-	  if ( fLxy/fSxy > PRESEL ) {    // && fCosAngle > 0.9
+
+	  if ( (L3DS3DLO > 0 && fL3d/fS3d > PRESEL) || 
+	       (LXYSXYLO > 0 && fLxy/fSxy > PRESEL) ) { // && fCosAngle > 0.9  
 	      
 	    fAR1->Fill(220.1); // histogram(20);
 	    fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(220.1), "preselection (fact) (220.1)");
@@ -4747,7 +4749,7 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
 
     if (!strcmp(CutName, "PRESEL")) {
       PRESEL = CutValue; ok = 1;
-      if (dump) cout << "PRESEL(LXY/SXY): " << PRESEL << endl;
+      if (dump) cout << "PRESEL(L/S): " << PRESEL << endl;
       ibin = 119;
       hcuts->SetBinContent(ibin, PRESEL);
       hcuts->GetXaxis()->SetBinLabel(ibin, "presel");
