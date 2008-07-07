@@ -309,6 +309,7 @@ void anaBmm::loadFiles(const char *filename) {
     cn.ReplaceAll("bmmroot", "");
     cn.ReplaceAll("sel2", "");
     cn.ReplaceAll("sel3", "");
+    cn.ReplaceAll("sel4", "");
     cn.ReplaceAll("sel1", "");
     cn.ReplaceAll("default", "");
     cn.ReplaceAll("norm", "");
@@ -561,6 +562,7 @@ void anaBmm::mcValidation(int offset, int wiat) {
   mcVal(Form("c%d27", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
 
   mcVal(Form("c%d30", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  mcVal(Form("c%d33", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
   mcVal(Form("c%d35", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
   mcVal(Form("c%d40", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
   mcVal(Form("c%d41", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
@@ -1170,7 +1172,7 @@ void anaBmm::breco(int o, const char *hist) {
 
   TString production;
 
-  double mean(0.), meanE(0.001), sigma(0.), sigmaE(0.);
+  double mean(0.), meanE(0.), sigma(0.), sigmaE(0.);
 
   if ( o > -1 ) {
 
@@ -1208,10 +1210,10 @@ void anaBmm::breco(int o, const char *hist) {
 			  );
     
 
-//       meanE  = getDGError(f1->GetParameter(1), f1->GetParError(1), 
-// 				  f1->GetParameter(4), f1->GetParError(4),
-// 				  f1->GetParameter(0), f1->GetParError(0),
-// 				  f1->GetParameter(3), f1->GetParError(3));
+      meanE  = getDGError(f1->GetParameter(1), f1->GetParError(1), 
+			  f1->GetParameter(4), f1->GetParError(4),
+			  f1->GetParameter(0), f1->GetParError(0),
+			  f1->GetParameter(3), f1->GetParError(3));
 
       sigmaE = getDGError(f1->GetParameter(2), f1->GetParError(2), 
 			  f1->GetParameter(5), f1->GetParError(5),
@@ -1256,10 +1258,10 @@ void anaBmm::breco(int o, const char *hist) {
 			  (f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
 			  );
 
-//       meanE  = getDGError(f6->GetParameter(1), f6->GetParError(1), 
-// 			  f6->GetParameter(4), f6->GetParError(4),
-// 			  f6->GetParameter(0), f6->GetParError(0),
-// 			  f6->GetParameter(3), f6->GetParError(3));
+      meanE  = getDGError(f6->GetParameter(1), f6->GetParError(1), 
+			  f6->GetParameter(4), f6->GetParError(4),
+ 			  f6->GetParameter(0), f6->GetParError(0),
+ 			  f6->GetParameter(3), f6->GetParError(3));
 
       sigmaE = getDGError(f6->GetParameter(2), f6->GetParError(2), 
 			  f6->GetParameter(5), f6->GetParError(5),
@@ -1385,12 +1387,22 @@ void anaBmm::breco(int o, const char *hist) {
 			      /
 			      (f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
 			      );
+
+      meanE  = getDGError(f6->GetParameter(1), f6->GetParError(1), 
+			  f6->GetParameter(4), f6->GetParError(4),
+ 			  f6->GetParameter(0), f6->GetParError(0),
+ 			  f6->GetParameter(3), f6->GetParError(3));
+
+      sigmaE = getDGError(f6->GetParameter(2), f6->GetParError(2), 
+			  f6->GetParameter(5), f6->GetParError(5),
+			  f6->GetParameter(0), f6->GetParError(0),
+			  f6->GetParameter(3), f6->GetParError(3));
 	  
 	  
 	  tl->SetTextColor(kBlack);  
 	  tl->SetNDC(kTRUE); tl->SetTextSize(0.04);
-	  tl->DrawLatex(0.24, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, 0.001));
-	  tl->DrawLatex(0.24, 0.81, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, 0.001));
+	  tl->DrawLatex(0.24, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, meanE));
+    tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.2f#pm%5.3f MeV", 1000*sigma, 1000*sigmaE));
 // 	  tl->DrawLatex(0.24, 0.77, Form("N: %4.2e", hr->GetSumOfWeights()));
 	
 	} else {
@@ -1502,7 +1514,7 @@ void anaBmm::nreco(int o, const char *hist) {
   tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
   
   tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, meanE));
-  tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, sigmaE));
+  tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.2f#pm%5.3f MeV", 1000*sigma, 1000*sigmaE));
 
   tl->SetTextSize(0.04);
   tl->SetTextColor(108); 
@@ -1628,7 +1640,7 @@ void anaBmm::mcVal(const char *hname, int mode, double x, double y) {
   sprintf(hist,"%s", hname);  // ??? Crashes when using hname instead of hist ???
 
   int snum = 2;
-  int bnum = 2;
+  int bnum = 3;
 
   int logy(0); 
   if (mode > 99) {
@@ -2788,10 +2800,10 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
 			 (f1->GetParameter(0)*f1->GetParameter(0) + f1->GetParameter(3)*f1->GetParameter(3))
 			 );
 
-//       double  meanE  = getDGError(f1->GetParameter(1), f1->GetParError(1), 
-// 				  f1->GetParameter(4), f1->GetParError(4),
-// 				  f1->GetParameter(0), f1->GetParError(0),
-// 				  f1->GetParameter(3), f1->GetParError(3));
+    double  meanE  = getDGError(f1->GetParameter(1), f1->GetParError(1), 
+				f1->GetParameter(4), f1->GetParError(4),
+				f1->GetParameter(0), f1->GetParError(0),
+				f1->GetParameter(3), f1->GetParError(3));
 
     double  sigma = TMath::Sqrt((f1->GetParameter(0)*f1->GetParameter(0)*f1->GetParameter(2)*f1->GetParameter(2)
 			   + f1->GetParameter(3)*f1->GetParameter(3)*f1->GetParameter(5)*f1->GetParameter(5))
@@ -2808,8 +2820,8 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
     tl->SetTextColor(kBlack);  
     tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
   
-    tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, 0.001));
-    tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, sigmaE));
+    tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, meanE));
+    tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.2f#pm%5.3f MeV", 1000*sigma, 1000*sigmaE));
   
 //     if (h1->GetSumOfWeights()<0.001) {
 //       tl->DrawLatex(0.16, 0.73, Form("N: %4.2e", h1->GetSumOfWeights()));
@@ -4084,14 +4096,14 @@ void anaBmm::dumpNormCuts() {
       }
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}(B_{s}) [GeV]")) {
 	  OUT  << Form("\\vdef{cut:%s:ptbs}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	  ptbs = sVal;
+	  nptbs = sVal;
 	  optimizedCut[4] = TString(Form("pt>%5.4f", sVal));
 	  if ( show ) { cout << "pT(Bs) " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "p_{T}^{min}(l) [GeV]")) {
 	  OUT  << Form("\\vdef{cut:%s:ptlo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	  ptmulo = sVal;
+	  nptmulo = sVal;
 	  optimizedCut[0] = TString(Form("ptl1>%5.4f", sVal));
 	  if ( show ) { cout << "pT_min " << sVal << endl; }
 	}
@@ -4103,21 +4115,21 @@ void anaBmm::dumpNormCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{#mu#mu}^{min}")) {
 	  OUT  << Form("\\vdef{cut:%s:rmmlo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	  rmmlo = sVal;
+	  nrmmlo = sVal;
 	  optimizedCut[2] = TString(Form("rmm>%5.4f", sVal));
 	  if ( show ) { cout << "Rmm_min " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "R_{#mu#mu}^{max}")) {
 	  OUT  << Form("\\vdef{cut:%s:rmmhi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	  rmmhi = sVal;
+	  nrmmhi = sVal;
 	  optimizedCut[3] = TString(Form("rmm<%5.4f", sVal));
 	  if ( show ) { cout << "Rmm_max " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#eta_{B}^{min}")) {
 	  OUT  << Form("\\vdef{cut:%s:etalo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	  etalo = sVal;
+	  netalo = sVal;
 	  optimizedCut[1] = TString(Form("eta>%5.4f", sVal));
 	  optimizedCut[4] = TString(Form("etal0>%5.4f&&etal1<%5.4f", sVal, sVal));
 	  if ( show ) { cout << "eta(B)_min " << sVal << endl; }
@@ -4125,7 +4137,7 @@ void anaBmm::dumpNormCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#eta_{B}^{max}")) {
 	  OUT  << Form("\\vdef{cut:%s:etahi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	  etahi = sVal;
+	  netahi = sVal;
 	  if ( show ) { cout << "eta(B)_max " << sVal << endl; }
 	}
 
@@ -4136,7 +4148,7 @@ void anaBmm::dumpNormCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "#chi^2")) {
 	  OUT  << Form("\\vdef{cut:%s:chi2}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	  vtxhi = sVal;
+	  nvtxhi = sVal;
 	  optimizedCut[11] = TString(Form("chi2<%5.4f", sVal));
 	  if ( show ) { cout << "chi2 " << sVal << endl; }
 	}
@@ -4149,7 +4161,7 @@ void anaBmm::dumpNormCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "cos(#alpha)")) {
 	  OUT  << Form("\\vdef{cut:%s:cosalpha}    {\\ensuremath{%5.4f } } ", label, sVal) << endl;
-	  coslo = sVal;
+	  ncoslo = sVal;
 	  optimizedCut[8] = TString(Form("cosa>%5.4f", sVal));
 	  optimizedCut[6] = TString(Form("cosa3>%5.4f", sVal));
 	  if ( show ) { cout << "cos(alpha) " << sVal << endl; }
@@ -4158,7 +4170,7 @@ void anaBmm::dumpNormCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "cos(#alpha3)")) {
 	  OUT  << Form("\\vdef{cut:%s:cosalpha3}    {\\ensuremath{%5.4f } } ", label, sVal) << endl;
-	  cos3lo = sVal;
+	  ncos3lo = sVal;
 // 	  optimizedCut[6] = TString(Form("cosa3>%5.4f", sVal));
 	  if ( show ) { cout << "cos(alpha3) " << sVal << endl; }
 	}
@@ -4170,14 +4182,14 @@ void anaBmm::dumpNormCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{3D}/#sigma_{3D}")) {
 	  OUT  << Form("\\vdef{cut:%s:l3d/s3d}    {\\ensuremath{%3.1f } } ", label, sVal) << endl;
-	  l3dlo = sVal;
+	  nl3dlo = sVal;
 	  optimizedCut[7] = TString(Form("l3d/s3d>%5.4f", sVal));
 	  if ( show ) { cout << "L3D/S3D " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "l_{xy}/#sigma_{xy}")) {
 	  OUT  << Form("\\vdef{cut:%s:lxy/sxy}    {\\ensuremath{%3.1f } } ", label, sVal) << endl;
-	  lxylo = sVal;
+	  nlxylo = sVal;
 	  optimizedCut[9] = TString(Form("lxy/sxy>%5.4f", sVal));
 	  if ( show ) { cout << "LXY/SXY " << sVal << endl; }
 	}
@@ -4194,7 +4206,7 @@ void anaBmm::dumpNormCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "I")) {
 	  OUT  << Form("\\vdef{cut:%s:isolation}    {\\ensuremath{%5.3f } } ", label, sVal) << endl;
-	  isolo = sVal;
+	  nisolo = sVal;
 	  optimizedCut[10] = TString(Form("iso>%5.4f", sVal));
 	  if ( show ) { cout << "Isolation " << sVal << endl; }
 	}
@@ -4211,13 +4223,13 @@ void anaBmm::dumpNormCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "m_{min}^{#mu #mu}")) {
 	  OUT  << Form("\\vdef{cut:%s:masslo}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	  masslo = sVal;
+	  nmasslo = sVal;
 	  if ( show ) { cout << "mass_min " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "m_{max}^{#mu #mu}")) {
 	  OUT  << Form("\\vdef{cut:%s:masshi}    {\\ensuremath{%5.1f } } ", label, sVal) << endl;
-	  masshi = sVal;
+	  nmasshi = sVal;
 	  if ( show ) { cout << "mass_max " << sVal << endl; }
 	}
 
@@ -5035,7 +5047,8 @@ void anaBmm::massResolutionEta() {
 
   char pre[200];
   double etalo(0.), etahi(100.);
-  double veta[]  = { 0., 0.5, 1.0, 1.5, 2.5 }; int neta = 4;
+  double veta[]  = { 0., 0.5, 1.5, 2.5 }; int neta =3;
+//   double veta[]  = { 0., 0.5, 1.0, 1.5, 2.5 }; int neta = 4;
 
   double ptcut(3.);
   double vpt[] = {3., 4., 5.}; const int npt = 3;
@@ -5114,13 +5127,11 @@ void anaBmm::massResolutionEta() {
 				  (f1->GetParameter(0)*f1->GetParameter(0) + f1->GetParameter(3)*f1->GetParameter(3))
 				  );
 
-//       double  meanE  = getDGError(f1->GetParameter(1), f1->GetParError(1), 
-// 				  f1->GetParameter(4), f1->GetParError(4),
-// 				  f1->GetParameter(0), f1->GetParError(0),
-// 				  f1->GetParameter(3), f1->GetParError(3));
+      double  meanE  = getDGError(f1->GetParameter(1), f1->GetParError(1), 
+ 				  f1->GetParameter(4), f1->GetParError(4),
+ 				  f1->GetParameter(0), f1->GetParError(0),
+ 				  f1->GetParameter(3), f1->GetParError(3));
 
-
-      double  meanE  = 0.001;
 
       double  sigmaE = getDGError(f1->GetParameter(2), f1->GetParError(2), 
 				  f1->GetParameter(5), f1->GetParError(5),
@@ -5134,7 +5145,8 @@ void anaBmm::massResolutionEta() {
       tl->SetNDC(kTRUE); tl->SetTextSize(0.06);
     
       tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, meanE));
-      tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.3f#pm%5.3f GeV", sigma, sigmaE));
+      tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.2f#pm%5.3f MeV", 1000*sigma, 1000*sigmaE));
+  
       tl->SetTextSize(0.04);
       tl->SetTextColor(kRed);
       tl->DrawLatex(0.22, 0.60, Form("p_{T} > %1.0f", ptcut));
@@ -5191,7 +5203,9 @@ void anaBmm::massReductionEta(double ptcut) {
 
   char pre[200];
   double etalo(0.), etahi(100.);
-  double veta[]  = { 0., 0.5, 1.0, 1.5, 2.5 }; const int neta = 4;
+  double veta[]  = { 0., 0.5, 1.5, 2.5 }; const int neta = 3;
+//   double veta[]  = { 0., 0.5, 1.0, 1.5, 2.5 }; int neta = 4;
+
   double vres[]  = { 0.06, 0.08, 0.1 , 0.1  }; 
 
 
@@ -5232,7 +5246,7 @@ void anaBmm::massReductionEta(double ptcut) {
     
     mBG2->GetXaxis()->SetRangeUser(4.8, 6.0);
     mBG1->GetXaxis()->SetRangeUser(4.8, 6.0);
-    mBG2->GetYaxis()->SetRangeUser(0., 8.);
+    mBG2->GetYaxis()->SetRangeUser(0., 16.);
     mBG1->Fit("pol1");
     
     TF1 *f1 = (TF1*)mBG1->GetFunction("pol1");
@@ -5845,12 +5859,12 @@ void anaBmm::nb(int o, int decay_i, const char *meson) {
   double goodev_ratio = h1->GetBinContent(h1->FindBin(1))/h1->GetSumOfWeights();
 
   c0->Clear();
-  shrinkPad(0.15, 0.15); gPad->SetLogy(1);
+  shrinkPad(0.15, 0.15); gPad->SetLogy(0);
   setHist(h1, kBlue, 24, 2);
   setHist(h2, kBlack, 20, 2);
   setTitles(h1, "N_{gen}/event", "events/bin", 0.06, 1.1, 1.3);
     
-  h1->SetMaximum(1.5*(h1->GetMaximum() > h2->GetMaximum()? h1->GetMaximum(): h2->GetMaximum()));
+  h1->SetMaximum(1.2*(h1->GetMaximum() > h2->GetMaximum()? h1->GetMaximum(): h2->GetMaximum()));
 
   h1->DrawCopy("hist");
   h2->DrawCopy("same");
@@ -6188,8 +6202,8 @@ double anaBmm::getDGError(double a, double ae, double b, double be, double c, do
 
   double error = TMath::Sqrt(2*(a*c*c)*(a*c*c)*(ae*ae)/((c*c+d*d)*(c*c+d*d)) +
 			       (b*d*d)*(b*d*d)*(be*be)/((c*c+d*d)*(c*c+d*d)) +
-			       (c*a*a*(d*d-c*c))*(c*a*a*(d*d-c*c))*(ce*ce)/((c*c+d*d)*(c*c+d*d)*(c*c+d*d)*(c*c+d*d)) +
-			       (d*b*b*(c*c-d*d))*(d*b*b*(c*c-d*d))*(de*de)/((c*c+d*d)*(c*c+d*d)*(c*c+d*d)*(c*c+d*d)) 
+			       (c*d*d)*(c*d*d)*(a*a-b*b)*(a*a-b*b)*(ce*ce)/((c*c+d*d)*(c*c+d*d)*(c*c+d*d)*(c*c+d*d)) +
+			       (d*c*c)*(d*c*c)*(a*a-b*b)*(a*a-b*b)*(de*de)/((c*c+d*d)*(c*c+d*d)*(c*c+d*d)*(c*c+d*d)) 
 			     );
 
   return error;

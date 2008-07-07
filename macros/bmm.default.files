@@ -41,11 +41,11 @@ type=mynmc file=treebmm/cbg-004h.norm.root vxs=1.3372e+08 signature=NonPrompt
 ##
 # Rare BG
 # 6
-type=rmc file=treebmm/bskk.default.root vxs=8.8000E+05 signature=rare
+type=rmc file=treebmm/bskk.default.root vxs=4.2944E+05 signature=rare
 # 7
-type=rmc file=treebmm/bs2pi.default.root vxs=2.6180e+04 signature=rare
+type=rmc file=treebmm/bs2pi.default.root vxs=7.7000e+03 signature=rare
 # 8
-type=rmc file=treebmm/bskpi.default.root vxs=7.7000E+04 signature=rare
+type=rmc file=treebmm/bskpi.default.root vxs=6.8750E+04 signature=rare
 # 9
 type=rmc file=treebmm/bskmunu.default.root vxs=1.6170E+06 signature=rare
 # 10

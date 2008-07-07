@@ -4768,7 +4768,7 @@ void treeBmm::decayChannel(TString ch, int dump) {
   if (fDebug & 2) { cout << "decayChannel> Start" << endl; }
 
   fD0 = -1;  fD1 = -1;  fD2 = -1;
-  fNorm = 0; fSel = 2; fSubSel = 1;
+  fNorm = 0; fSel = 3; fSubSel = 1;
   fMassB = 5.369;
 
   if ( !strcmp("bd2pi", ch.Data()) ) {

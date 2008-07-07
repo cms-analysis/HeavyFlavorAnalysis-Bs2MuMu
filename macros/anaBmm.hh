@@ -245,6 +245,7 @@ private:
 
   // -- cuts
   double ptbs, ptmulo, rmmlo, rmmhi, etalo, etahi, vtxhi, coslo, cos3lo, lxylo, l3dlo, isolo, masslo, masshi, masswi;
+  double nptbs, nptmulo, nrmmlo, nrmmhi, netalo, netahi, nvtxhi, ncoslo, ncos3lo, nlxylo, nl3dlo, nisolo, nmasslo, nmasshi, nmasswi;
 
   // -- functions
   TF1 *f0, *f1, *f2, *f3, *f4, *f5, *f6; 
