@@ -1302,14 +1302,19 @@ void treeBmm::candidateSelection(int o) {
     }
   }
   
-  if ( !fNorm && fgB > 1 ) {
+  if ( !fNorm && fgBmm > 1 ) {
     if (fDebug & 2)    cout << "cand. selection> more than one Bs0 -> mu mu generated "  << endl;
-    fGoodCand = fgB;
+    fGoodCand = fgBmm;
   }
 
-  if (fChainFileName.Contains("cbg-00") && fgB >= 1 ) {
+  if (fChainFileName.Contains("cbg-00") && fgBmm >= 1 ) {
     if (fDebug & 2)    cout << "cand. selection> this background events contain a signal !!!"  << endl;
     fGoodCand = -99;
+  }
+
+  if (fChainFileName.Contains("csg-004n") && fgBmm < 1 ) {
+    if (fDebug & 2)    cout << "cand. selection> this signal event does not contain a signal !!!"  << endl;
+    fGoodCand = -66;
   }
 
   // -- Primary vertex
@@ -4827,7 +4832,7 @@ void treeBmm::decayChannel(TString ch, int dump) {
 
   } else if ( !strcmp("qcd", ch.Data()) ) {
 
-    fD0 = 321;  fD1 = 211; fSel = 3;
+    fD0 = 321;  fD1 = 211; fSel = 1;
     fChannel = TString("qcd");
     cout << "Selected decay mode: qcd." << endl;
 

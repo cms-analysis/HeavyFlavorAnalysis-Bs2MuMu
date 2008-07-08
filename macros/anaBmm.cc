@@ -748,19 +748,19 @@ void anaBmm::effTables() {
 
   effTablesSg();
   effTablesBg();
-
+  
   effTable(fS[sgIndex], sgIndex, "mysg");
   effTable(fM[bgIndex], bgIndex, "mymc");
   
   effTable(fS[normSgIndex], normSgIndex, "mynsg");
   effTable(fM[normBgIndex], normBgIndex, "mynmc");
-  
+
   effTable(fM[bgIndex], bgIndex, "2mId");
   effTable(fM[bgIndex], bgIndex, "mIdMu+");
   effTable(fM[bgIndex], bgIndex, "2mu+");
-
+  
   effTable(fM[bgIndex], bgIndex, "r0"); // has to be before c0 !!!
-  effTable(fM[bgIndex], bgIndex, "c0");
+  //  effTable(fM[bgIndex], bgIndex, "c0");
 }
 
 // ----------------------------------------------------------------------
@@ -1015,22 +1015,22 @@ double anaBmm::calculateUpperLimit() {
   
   // -- BF < N_UL(Nobs) / scaleUL  =  N_UL(Nobs) / (epsilon * N_Bs)
   double atlasUL = expUL(7, 20, 12);
-  double nUL = expUL(fNsg, fNbg, fNbgE);
+  double nUL = expUL(fNsg, fNbg+fNrbg, fNbgE);
 
   double expectedUL = nUL/scaleUL;
 
 
   cout << "Nsg: " << fNsg << " +/- " << fNsgE << ", e_sg : " <<  fEsg << endl
-       << " Nbg: " << fNbg << " +/- " << fNbgE
+       << " Nbg: " << fNbg+fNrbg << " +/- " << fNbgE
        << endl;
 
-  double Scp = scp(fNsg, fNbg, fNbgE, 0.);
+  double Scp = scp(fNsg, fNbg+fNrbg, fNbgE, 0.);
 
   for (int i = 2; i < 50.; i += 2) {
     // verbose version
 //     cout << "i = " << i << "  "; 
 //     scp(i*fNsg, i*fNbg, i*fNbgE, 0.,1);
-    scp(i*fNsg, i*fNbg, i*fNbgE, 0.);
+    scp(i*fNsg, i*(fNbg+fNrbg), i*fNbgE, 0.);
   }
 
 
@@ -1040,7 +1040,8 @@ double anaBmm::calculateUpperLimit() {
   OUT  << Form("\\vdef{ekin}  {\\ensuremath{{%s} } }", (texForm(ekin)).Data()) << endl;
   OUT  << Form("\\vdef{eprod}  {\\ensuremath{{%s} } }", (texForm(eprod)).Data()) << endl;
   OUT  << Form("\\vdef{bmmBF}   {\\ensuremath{{%s } } }",  (texForm(bmmBF)).Data()) << endl;
-  OUT  << Form("\\vdef{ExpectedNobs}        {\\ensuremath{{%4.1f} } }", fNsg + fNbg) << endl;
+  OUT  << Form("\\vdef{ExpectedNbg}        {\\ensuremath{{%4.1f} } }",  fNbg+fNrbg) << endl;
+  OUT  << Form("\\vdef{ExpectedNobs}        {\\ensuremath{{%4.1f} } }", fNsg+fNbg+fNrbg) << endl;
   OUT  << Form("\\vdef{ExpectedNul}         {\\ensuremath{{%4.1f} } }", nUL) << endl;
   OUT  << Form("\\vdef{ExpectedUpperLimit}  {\\ensuremath{{%s} } }", (texForm31(expectedUL)).Data()) << endl;
   OUT  << Form("\\vdef{Scp}                 {\\ensuremath{{%4.1f} } }", Scp) << endl;
@@ -1056,7 +1057,7 @@ double anaBmm::normalizedUpperLimit() {
 
   // -- BF <  N_UL(n_sg + n_bg) eff_Bplus f_u / (N_Bplus eff_B0 f_s ) * BR(Bplus)
 
-  double nUL = expUL(fNsg, fNbg, fNbgE);
+  double nUL = expUL(fNsg, fNbg+fNrbg, fNbgE);
 
   double bmmBF  = 3.5e-9;
   double bjkBF  = 0.001008;
@@ -1084,17 +1085,17 @@ double anaBmm::normalizedUpperLimit() {
 
 
   cout << "Nsg: " << fNsg << " +/- " << fNsgE
-       << " Nbg: " << fNbg << " +/- " << fNbgE
+       << " Nbg: " << fNbg+fNrbg << " +/- " << fNbgE
        << " Nnm: " << fNsg_norm << " +/- " << fNsgE_norm
        << endl;
 
-  // double Scp = scp(fNsg, fNbg, fNbgE, 0.);
+  // double Scp = scp(fNsg, fNbg+fNrbg, fNbgE, 0.);
 
   for (int i = 2; i < 50.; i += 2) {
     // verbose version
 //     cout << "i = " << i << "  "; 
-//     scp(i*fNsg, i*fNbg, i*fNbgE, 0.,1);
-    scp(i*fNsg, i*fNbg, i*fNbgE, 0.);
+//     scp(i*fNsg, i*(fNbg+fNrbg), i*fNbgE, 0.,1);
+    scp(i*fNsg, i*(fNbg+fNrbg), i*fNbgE, 0.);
   }
 
 
@@ -1402,7 +1403,7 @@ void anaBmm::breco(int o, const char *hist) {
 	  tl->SetTextColor(kBlack);  
 	  tl->SetNDC(kTRUE); tl->SetTextSize(0.04);
 	  tl->DrawLatex(0.24, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, meanE));
-    tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.2f#pm%5.3f MeV", 1000*sigma, 1000*sigmaE));
+	  tl->DrawLatex(0.24, 0.79, Form("#sigma: %5.2f#pm%5.3f MeV", 1000*sigma, 1000*sigmaE));
 // 	  tl->DrawLatex(0.24, 0.77, Form("N: %4.2e", hr->GetSumOfWeights()));
 	
 	} else {
@@ -1503,11 +1504,13 @@ void anaBmm::nreco(int o, const char *hist) {
      
   double totalBG = f10->Integral(h1->GetBinLowEdge(1), h1->GetBinLowEdge(h1->GetNbinsX()))/h1->GetBinWidth(2); 
 
-  double totalSG_100 = (f5->Integral(fMassBs - 0.1, fMassBs + 0.1)/h1->GetBinWidth(2))
-                  - (f10->Integral(fMassBs - 0.1, fMassBs + 0.1)/h1->GetBinWidth(2));
+//   double totalSG_100 = (f5->Integral(fMassBp - 0.1, fMassBp + 0.1)/h1->GetBinWidth(2))
+//                   - (f10->Integral(fMassBp - 0.1, fMassBp + 0.1)/h1->GetBinWidth(2));
+//   double totalSG  = f5->Integral(4.8, 6.0)/h1->GetBinWidth(2) - f10->Integral(4.8, 6.0)/h1->GetBinWidth(2);
 
-  double totalSG  = f5->Integral(4.8, 6.0)/h1->GetBinWidth(2) - f10->Integral(4.8, 6.0)/h1->GetBinWidth(2);
-  double totalSGE = f5->GetParameter(2)*f5->GetParameter(0);
+  double totalSG_100 = f11->Integral(fMassBp - 0.1, fMassBp + 0.1)/h1->GetBinWidth(2);
+  double totalSG     = f11->Integral(4.8, 6.0)/h1->GetBinWidth(2);
+  double totalSGE    = f11->GetParameter(2)*f11->GetParameter(0);
 
   
   tl->SetTextColor(kBlack);  
@@ -2078,6 +2081,7 @@ void anaBmm::effTable(TFile *f, int index, const char *tag) {
   } else {
  
     SF = 1; comb = 1;
+    sprintf(sname, "%s", tag);
   }
 
 
@@ -2097,7 +2101,7 @@ void anaBmm::effTable(TFile *f, int index, const char *tag) {
   }
 
   double n     = h->GetBinContent(h->FindBin(0.1));
-  double norm  = h->GetBinContent(h->FindBin(0.1));  // FIXME: Should be Bin(0.1) but old files have empty Bin(0.1)
+  double norm  = h->GetBinContent(h->FindBin(0.1));
   //  double norm  = h->GetBinContent(h->FindBin(1.1));  // FIXME: Should be Bin(0.1) but old files have empty Bin(0.1)
   double nkin  = h->GetBinContent(h->FindBin(1.1));
   double nexp  = SF*norm;
@@ -2352,23 +2356,29 @@ void anaBmm::effTable(TFile *f, int index, const char *tag) {
   // -- exp. events, from (125.1)
   n  = h->GetBinContent(h->FindBin(125.1));
 
-  nevt  = SF*n;
-  enorm = n/norm;
-  dnorm = dEff(int(n), int(norm));
-  ekin  = n/nkin;
-  dkin  = dEff(int(n), int(nkin));
+  double nevtAna  = SF*n;
+  double nevtAnaUE =  SF*(0.5 + TMath::Sqrt(n+0.25));
+  double nevtAnaLE = SF*(-0.5 + TMath::Sqrt(n+0.25));
 
-  OUT << Form("%s", (formatTex(nevt,  "nABchi2"  , tag)).Data()) << endl;
-  OUT << Form("%s", (formatTex(enorm, "eABchi2"  , tag)).Data()) << endl;
-  OUT << Form("%s", (formatTex(dnorm, "eABchi2E" , tag)).Data()) << endl;
-  OUT << Form("%s", (formatTex(ekin,  "cABchi2"  , tag)).Data()) << endl;
-  OUT << Form("%s", (formatTex(dkin,  "cABchi2E" , tag)).Data()) << endl;
+  double enormAna = n/norm;
+  double dnormAna = dEff(int(n), int(norm));
 
-  exp  = getExp(enorm);
-  expM = getExp(dnorm);
+  double ekinAna  = n/nkin;
+  double dkinAna  = dEff(int(n), int(nkin));
+
+  OUT << Form("%s", (formatTex(nevtAna,  "nABchi2"     , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nevtAnaUE,  "nABchi2UE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nevtAnaLE,  "nABchi2LE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(enormAna, "eABchi2"     , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dnormAna, "eABchi2E"    , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(ekinAna,  "cABchi2"     , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(dkinAna,  "cABchi2E"    , tag)).Data()) << endl;
+
+  exp  = getExp(enormAna);
+  expM = getExp(dnormAna);
   if ( TMath::Abs(exp) > TMath::Abs(expM) ) expM = exp;
 
-  OUT << Form("%s", (formatTex2(enorm,  dnorm, exp, expM, "eABchi2PM"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex2(enormAna,  dnormAna, exp, expM, "eABchi2PM"  , tag)).Data()) << endl;
 
 
   // ===================================================================================
@@ -2518,53 +2528,71 @@ void anaBmm::effTable(TFile *f, int index, const char *tag) {
   // -- Mass reduction in 100 MeV window
   // ===================================================================================
 
-  double massRed0  = massReduction("c030", tag, index);
-  double massRed1  = massReduction("c130", tag, index);
-  double massRed2  = massReduction("c230", tag, index);
+
+  double massRed3  = massReduction("c330", tag, index);
+  double massRed4  = massReduction("c430", tag, index);
   double massRed5  = massReduction("c530", tag, index);
 
-  double massRed   = massReduction("c330", tag, index);
+  double massRed   = massRed5;
 
 
   // --- FIX ???
-  if ( !strcmp(tag, "mysg") || !strcmp(tag, "mynsg") ) {
+  if ( !strcmp(tag, "mymc")  ) {
 
-     massRed = massRed5;
+     massRed = massRed3;
   }
 
   // -- mass window
   // --------------
 
-  double nmass   = massRed*nfact;
-  double nmassUE  = massRed*nfactUE;
-  double nmassLE  = massRed*nfactLE;
-  double emass   = nmass/nexp;
-  double emassE  = (fEsgE0/fEsg0)*emass; // XXXX FIXME XXXX
+  // -- w/o fact
+  double nmass    = massRed4*nevtAna;
+  double nmassUE  = massRed4*nevtAnaUE;
+  double nmassLE  = massRed4*nevtAnaLE;
+  double emass    = massRed4*enormAna;
+  double emassE   = (fEsgE0/fEsg0)*emass; // XXXX FIXME XXXX
+
+  // -- w/ fact
+  double nmassFact    = massRed*nfact;
+  double nmassFactUE  = massRed*nfactUE;
+  double nmassFactLE  = massRed*nfactLE;
+  double emassFact    = nmassFact/nexp;
+  double emassFactE   = (fEsgE0/fEsg0)*emassFact; // XXXX FIXME XXXX
 
   if (comb) {
 
-    massRed = massRed5; 
+    nmassFact   = massRed*nfact;
+    emassFact   = efact*nmassFact/nfact;
+    emassFactE  = (fEsgE0/fEsg0)*emassFact;   // XXXX FIXME XXXX
 
-    nmass   = massRed*nfact;
-    nmassUE  = -9999;                // XXXX FIXME XXXX
-    nmassLE  = -9999;                // XXXX FIXME XXXX
-    emass   = efact*nmass/nfact;
-    emassE  = (fEsgE0/fEsg0)*emass;  // XXXX FIXME XXXX
+    nmassUE  = -9999;                         // XXXX FIXME XXXX
+    nmassLE  = -9999;                         // XXXX FIXME XXXX
+    nmassFactUE  = -9999;                     // XXXX FIXME XXXX
+    nmassFactLE  = -9999;                     // XXXX FIXME XXXX
   }
   
-  OUT << Form("%s", (formatTex(nmass,  "nMassAllCutsFact"  , tag)).Data()) << endl;
-  OUT << Form("%s", (formatTex(nmassUE, "nMassAllCutsFactUE" , tag)).Data()) << endl;
-  OUT << Form("%s", (formatTex(nmassLE, "nMassAllCutsFactLE" , tag)).Data()) << endl;
-  OUT << Form("%s", (formatTex(emass,  "eMassAllCutsFact"  , tag)).Data()) << endl;
-  OUT << Form("%s", (formatTex(emassE, "eMassAllCutsFactE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nmass,  "nMassAllCuts"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nmassUE, "nMassAllCutsUE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nmassLE, "nMassAllCutsLE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(emass,  "eMassAllCuts"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(emassE, "eMassAllCutsE" , tag)).Data()) << endl;
 
-  exp  = getExp(emass);
-  expM = getExp(emassE);
+  OUT << Form("%s", (formatTex(nmassFact,  "nMassAllCutsFact"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nmassFactUE, "nMassAllCutsFactUE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(nmassFactLE, "nMassAllCutsFactLE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(emassFact,  "eMassAllCutsFact"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(emassFactE, "eMassAllCutsFactE" , tag)).Data()) << endl;
+
+  exp  = getExp(emassFact);
+  expM = getExp(emassFactE);
   if ( TMath::Abs(expM) > TMath::Abs(exp) ) expM = exp;
 
-  OUT << Form("%s", (formatTex2(emass,  emassE, exp, expM, "eMassAllCutsFactPM"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex2(emassFact,  emassFactE, exp, expM, "eMassAllCutsFactPM"  , tag)).Data()) << endl;
 
   OUT  << Form("\\vdef{massReduction:%s}  {\\ensuremath{{%3.2f} } }", tag, massRed) << endl;
+  OUT  << Form("\\vdef{massReduction3:%s}  {\\ensuremath{{%3.2f} } }", tag, massRed3) << endl;
+  OUT  << Form("\\vdef{massReduction4:%s}  {\\ensuremath{{%3.2f} } }", tag, massRed4) << endl;
+  OUT  << Form("\\vdef{massReduction5:%s}  {\\ensuremath{{%3.2f} } }", tag, massRed5) << endl;
 
 
   // ===================================================================================
@@ -2573,34 +2601,34 @@ void anaBmm::effTable(TFile *f, int index, const char *tag) {
 
   if (!strcmp(tag, "mysg")) {
 
-    fNsg  = nmass;
-    fNsgE = nmassUE;
+    fNsg  = nmassFact;
+    fNsgE = nmassFactUE;
   }
 
   if (!strcmp(tag, "mymc")) {
 
-    fNbg  = nmass;
-    fNbgUE = nmassUE;
-    fNbgLE = nmassLE;
-    fNbgE  = nmassUE;
+    fNbg  = nmassFact;
+    fNbgUE = nmassFactUE;
+    fNbgLE = nmassFactLE;
+    fNbgE  = nmassFactUE;
   }
 
   if (!strcmp(tag, "mynsg")) {
 
-    fNsg_norm  = nmass;
-    fNsgE_norm = nmassUE;
+    fNsg_norm  = nmassFact;
+    fNsgE_norm = nmassFactUE;
   }
 
   if (!strcmp(tag, "mynmc")) {
 
-    fNbg_norm  = nmass;
-    fNbgE_norm = nmassUE;
+    fNbg_norm  = nmassFact;
+    fNbgE_norm = nmassFactUE;
   }
 
   if (!strcmp(tag, "r0")) {
 
-    fNrbg  = nmass;
-    fNrbgE = nmassUE;
+    fNrbg  = nmassFact;
+    fNrbgE = nmassFactUE;
   }
 
 
@@ -2609,13 +2637,13 @@ void anaBmm::effTable(TFile *f, int index, const char *tag) {
   // ===================================================================================
 
   if (!strcmp(tag, "mysg")) {
-    fEsg  = emass;
-    fEsgE = emassE;
+    fEsg  = emassFact;
+    fEsgE = emassFactE;
   }
 
   if (!strcmp(tag, "mynsg")) {
-    fEsg_norm  = emass;
-    fEsgE_norm = emassE;
+    fEsg_norm  = emassFact;
+    fEsgE_norm = emassFactE;
   }
 
 
@@ -2695,9 +2723,6 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
   TString tagTS = TString(Form("%s", sel));
   if ( tagTS.Contains("Spring") ) prod = TString("(Spring07)");
   if ( tagTS.Contains("CSA") )  prod = TString("(CSA07)");
-
-
-  cout << "---------------------------------------------------------------------------" << endl;
 
   if ( !strcmp(sel, "mymc") || tagTS.Contains("cc") || tagTS.Contains("bb") ) {
 
@@ -2900,13 +2925,14 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
 
   } else {    // ----------- Combined backgrounds ------------------
     
+    double scale(0.);
     double histT(0.), histW(0.), histRed(0.);
     double fnorm_Ch(0.), eff1_Ch(0.), eff2_Ch(0.);
   
     int nhist = nMc;
     TH1D *h1[nhist];
 
-    for (int i = 1; i < nhist; ++i) {
+    for (int i = 1; i < nhist - 1; ++i) {  // FIX ME: last histogram is screwd up -> takes signal instead ???????
 
       int accept = checkIf(i, sel);
       
@@ -2915,15 +2941,21 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
 	h1[i]  = (TH1D*)fM[i]->Get(hist)->Clone();
 	
 	channelEff(fM[i], fnorm_Ch, eff1_Ch, eff2_Ch);
-	h1[i]->Scale((fMisIdM[i]*fLumiD[0]/fLumiM[i])*eff1_Ch*eff2_Ch);
+
+	if ( !strcmp(hist, "c030") ) scale = fMisIdM[i]*fLumiD[0]/fLumiM[i];
+	if ( !strcmp(hist, "c130") ) scale = fMisIdM[i]*fLumiD[0]/fLumiM[i];
+	if ( !strcmp(hist, "c230") ) scale = fMisIdM[i]*fLumiD[0]/fLumiM[i];
+	if ( !strcmp(hist, "c330") ) scale = fMisIdM[i]*fEffHltM[i]*fLumiD[0]/fLumiM[i];
+	if ( !strcmp(hist, "c430") ) scale = fMisIdM[i]*fEffHltM[i]*fLumiD[0]/fLumiM[i];
+	if ( !strcmp(hist, "c530") ) scale = fMisIdM[i]*fEffHltM[i]*eff1_Ch*eff2_Ch*fLumiD[0]/fLumiM[i];
+
+	h1[i]->Scale(scale);
 	histT +=  h1[i]->GetSumOfWeights();
 	histW +=  h1[i]->Integral(h1[i]->FindBin(fMassBs - window), h1[i]->FindBin(fMassBs + window));
       }
     }
 
     if ( histT ) { histRed = histW/histT; }
-
-    cout << " --> Counting events mass reduction factor f = " << histRed << "." << endl;
 
     return histRed;
   }
@@ -3132,7 +3164,7 @@ void anaBmm::nbgOverlay(const char *hist, const int npers) {
   } 
 
   setFilledHist(hs, kBlack, kYellow, 1001, 2);
-  setTitles(hs, "m_{#mu#mu} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
+  setTitles(hs, "m_{#mu#mu K} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
 
   if (hs->GetMinimum(1.e-20) < min ) { min = hs->GetMinimum(1.e-20);      }
   if (hs->GetMaximum()       > max ) { max = hs->GetMaximum();            }
@@ -4301,7 +4333,16 @@ void anaBmm::fillInTheRest(const char *tag) {
 
   ofstream OUT(fNumbersFileName, ios::app);
 
+  OUT << Form("%s", (formatTex(0.,  "nMassAllCutst"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0.,  "nMassAllCutsUE"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0.,  "nMassAllCutsLE"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0., "nMassAllCutsE" , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0.,  "eMassAllCutst"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0., "eMassAllCutsE" , tag)).Data()) << endl;
+
   OUT << Form("%s", (formatTex(0.,  "nMassAllCutsFact"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0.,  "nMassAllCutsFactUE"  , tag)).Data()) << endl;
+  OUT << Form("%s", (formatTex(0.,  "nMassAllCutsFactLE"  , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(0., "nMassAllCutsFactE" , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(0.,  "eMassAllCutsFact"  , tag)).Data()) << endl;
   OUT << Form("%s", (formatTex(0., "eMassAllCutsFactE" , tag)).Data()) << endl;
