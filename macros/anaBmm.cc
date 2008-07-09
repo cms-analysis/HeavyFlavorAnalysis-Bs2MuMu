@@ -273,7 +273,7 @@ void anaBmm::init(const char *files) {
     fM[i] = 0; 
   }
 
-  fLumiD[0] = 10.;
+  fLumiD[0] = 1.;
   cout << "================================" << endl;
   cout << "--> Setting Lumi to " << fLumiD[0] << " /fb <--" << endl;
   cout << "================================" << endl<< endl;
@@ -706,8 +706,8 @@ void anaBmm::brecos() {
     breco(n, "c030");
     breco(n, "c230");
     breco(n, "c330");
-    breco(n, "c430");
     breco(n, "c530");
+    breco(n, "c430");
   }
 
   for (int i = 0; i < nnf; i++ ) {
@@ -749,6 +749,9 @@ void anaBmm::effTables() {
   effTablesSg();
   effTablesBg();
   
+  effTablesNsg();
+  effTablesNbg();
+  
   effTable(fS[sgIndex], sgIndex, "mysg");
   effTable(fM[bgIndex], bgIndex, "mymc");
   
@@ -773,6 +776,57 @@ void anaBmm::effTablesBg() {
 
   TString mcprod[]    = {  TString("bbCSA") , TString("bbSpring") 
 			 , TString("ccCSA") , TString("ccSpring") };
+
+  int n;
+  char f_n[200];
+  for (int i = 0; i < nbf; i++ ) {
+    
+    sprintf(f_n,"%s", bfiles[i].Data());
+    n = findIndex(f_n);
+
+    if ( n < 0 ) {
+      cout << " ====> Error: Index of " << f_n << " not found!" << endl;
+      continue;
+    }
+
+    effTable(fM[n], n, mcprod[i].Data());
+  }
+
+}
+
+// ----------------------------------------------------------------------
+
+void anaBmm::effTablesNsg() {
+
+  int nsf = 2;
+  TString sfiles[]    = {  TString("csg-004h") , TString("csg-004n") };
+
+  TString mcprod[]    = {  TString("bjpsik") , TString("bjpsiSg") };
+
+  int n;
+  char f_n[200];
+  for (int i = 0; i < nsf; i++ ) {
+    
+    sprintf(f_n,"%s", sfiles[i].Data());
+    n = findIndex(f_n);
+
+    if ( n < 0 ) {
+      cout << " ====> Error: Index of " << f_n << " not found!" << endl;
+      continue;
+    }
+
+    effTable(fS[n], n, mcprod[i].Data());
+  }
+
+}
+// ----------------------------------------------------------------------
+
+void anaBmm::effTablesNbg() {
+
+  int nbf = 1;
+  TString bfiles[]    = {  TString("cbg-004h") };
+
+  TString mcprod[]    = {  TString("bjpsiBg")  };
 
   int n;
   char f_n[200];
@@ -1221,7 +1275,7 @@ void anaBmm::breco(int o, const char *hist) {
 			  f1->GetParameter(0), f1->GetParError(0),
 			  f1->GetParameter(3), f1->GetParError(3));
 
-      writeFitPar(f1, o, mean, sigma, 6);
+      if ( !strcmp(hist, "c530") )  writeFitPar(f1, o, mean, sigma, 6);
     }
   
     // --  norm. channel (double gauss + pol1)
@@ -1269,7 +1323,7 @@ void anaBmm::breco(int o, const char *hist) {
 			  f6->GetParameter(0), f6->GetParError(0),
 			  f6->GetParameter(3), f6->GetParError(3));
 
-      writeFitPar(f6, o, mean, sigma, 3);
+      if ( !strcmp(hist, "c530") )   writeFitPar(f6, o, mean, sigma, 6);
     }
     
     
@@ -1521,8 +1575,7 @@ void anaBmm::nreco(int o, const char *hist) {
 
   tl->SetTextSize(0.04);
   tl->SetTextColor(108); 
-  //  tl->DrawLatex(0.60, 0.61, Form("N_{bg} = %4.2e", totalBG)); tl->SetTextColor(2);  
-
+  tl->DrawLatex(0.60, 0.49, Form("N_{bg} = %s", (texForm(totalBG)).Data() ));
 
   tl->SetTextSize(0.032);
   tl->SetTextColor(2); 
@@ -2073,10 +2126,21 @@ void anaBmm::effTable(TFile *f, int index, const char *tag) {
     SF = fLumiD[0]/fLumiS[index];
     sprintf(sname, "%s", tag);
   
-  } else if ( tagTS.Contains("cc") || tagTS.Contains("bb") ) {
+  }  else if ( tagTS.Contains("cc") || tagTS.Contains("bb") ) {
     
     SF = fLumiD[0]/fLumiM[index];
     sprintf(sname, "%s", tag);
+  
+  } else if ( tagTS.Contains("bjpsiBg") ) {
+    
+    SF = fLumiD[0]/fLumiM[index];
+    sprintf(sname, "%s", tag);
+  
+  } else if ( tagTS.Contains("bjpsi") ) {
+    
+    SF = fLumiD[0]/fLumiS[index];
+    sprintf(sname, "%s", tag);
+    cout << "tag = " << sname << endl;
   
   } else {
  
@@ -2718,11 +2782,21 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
     index = sgIndex;
   }
 
+  if ( !strcmp(sel, "mynmc") ) {
+    index = normBgIndex;
+  }
+
+  if ( !strcmp(sel, "mynsg") ) {
+    index = normSgIndex;
+  }
+
 
   TString prod("");
   TString tagTS = TString(Form("%s", sel));
+
   if ( tagTS.Contains("Spring") ) prod = TString("(Spring07)");
   if ( tagTS.Contains("CSA") )  prod = TString("(CSA07)");
+
 
   if ( !strcmp(sel, "mymc") || tagTS.Contains("cc") || tagTS.Contains("bb") ) {
 
@@ -2733,12 +2807,15 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
 
     h2->GetXaxis()->SetRangeUser(4.8, 6.0);  
     h1->GetXaxis()->SetRangeUser(4.8, 6.0);
+
+    // -- Fit with pol1
     h1->Fit("pol1");
 
     TF1 *f1 = (TF1*)h1->GetFunction("pol1");
     
     double total = f1->Integral(h1->GetBinLowEdge(1), h1->GetBinLowEdge(h1->GetNbinsX()))/h1->GetBinWidth(2); 
     double massW = f1->Integral(fMassBs - window, fMassBs + window)/h1->GetBinWidth(2);
+
     double massRed  = massW/total;
     double massRedE = f1->GetParError(1)*massW/total;
     
@@ -2750,8 +2827,10 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
 
     h2->Draw();
     f1->Draw("same");
+
     tl->SetTextSize(0.06); tl->SetTextColor(kBlack);
-    tl->DrawLatex(0.16, 0.85, Form("f_{%3.0f}: %5.3f#pm%5.3f", 1000*window, massRed, massRedE));
+//     tl->DrawLatex(0.16, 0.85, Form("f_{%3.0f}: %5.3f#pm%5.3f", 1000*window, massRed, massRedE));
+    tl->DrawLatex(0.16, 0.85, Form("f_{%3.0f} = %5.3f", 1000*window, massRed));
     tl->SetTextSize(0.06); tl->SetTextColor(kBlue);
     tl->DrawLatex(0.32, 0.75, Form("%s %s", fSignLeggM[index].Data(), prod.Data()));
     c0->SaveAs(Form("%s/massReduction/massReduction-%s-%s.eps", outDir, sel, hist));
@@ -2763,25 +2842,28 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
   
     return massRed;
 
-  } else if ( !strcmp(sel, "mynmc") ) {
+  } else if ( !strcmp(sel, "mynmc")  || tagTS.Contains("bjpsiBg") ) {
 
-    TH1D *h1 = (TH1D*)fM[normBgIndex]->Get(hist)->Clone();
-    TH1D *h2 = (TH1D*)fM[normBgIndex]->Get(hist)->Clone();
+    TH1D *h1 = (TH1D*)fM[index]->Get(hist)->Clone();
+    TH1D *h2 = (TH1D*)fM[index]->Get(hist)->Clone();
 
     emptyBinError(h1);
 
     h2->GetXaxis()->SetRangeUser(4.8, 6.0);
     h1->GetXaxis()->SetRangeUser(4.8, 6.0);
-    h1->Fit("pol1");
 
-    TF1 *f1 = (TF1*)h1->GetFunction("pol1");
+   // -- Fit with exponetial
+    f10->SetParameters( 300.*h1->GetBinContent(1), 1.3);
 
-    h2->Draw();
-    f1->Draw("same");
+    h1->DrawCopy();
+
+    h1->Fit(f10, "0");
+    f10->DrawCopy("same");
+
     c0->SaveAs(Form("%s/massReduction/massReduction-%s-%s.eps", outDir, sel, hist));
 
-    double total = f1->Integral(h1->GetBinLowEdge(1), h1->GetBinLowEdge(h1->GetNbinsX()))/h1->GetBinWidth(2); 
-    double massW = f1->Integral(fMassBp - window, fMassBp + window)/h1->GetBinWidth(2);
+    double total = f10->Integral(h1->GetBinLowEdge(1), h1->GetBinLowEdge(h1->GetNbinsX()))/h1->GetBinWidth(2); 
+    double massW = f10->Integral(fMassBp - window, fMassBp + window)/h1->GetBinWidth(2);
     double massRed = massW/total;
     
     double histT =  h1->GetSumOfWeights();
@@ -2800,7 +2882,7 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
     TH1D *h1 = (TH1D*)fS[index]->Get(hist)->Clone();
     emptyBinError(h1);
 
-    h1->Scale(fLumiD[0]/fLumiS[sgIndex]);
+    h1->Scale(fLumiD[0]/fLumiS[index]);
     
     h1->GetXaxis()->SetRangeUser(4.8, 6.);
 
@@ -2815,6 +2897,7 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
     setTitles(h1, "m_{#mu#mu} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
     h1->SetMaximum(1.4*h1->GetMaximum());
     
+    // -- Fit with double gaussian
     h1->DrawCopy("hist");
     h1->Fit(f1, "0");
     f1->DrawCopy("same");
@@ -2878,14 +2961,15 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
     
     return massRed;
 
-  } else if ( !strcmp(sel, "mynsg") ) {
+  } else if ( !strcmp(sel, "mynsg")  || tagTS.Contains("bjpsi") ) {
 
-    TH1D *h1 = (TH1D*)fS[normSgIndex]->Get(hist)->Clone();
+    TH1D *h1 = (TH1D*)fS[index]->Get(hist)->Clone();
 
     emptyBinError(h1);
 
     h1->GetXaxis()->SetRangeUser(4.8, 6.0);
 
+    // -- Fit with pol1 + double gaussian
     f6->SetParameters(0.8*h1->GetMaximum(), 5.3, 0.01, 
 		      0.8*h1->GetBinContent(1), 1.);
 
@@ -4051,6 +4135,7 @@ void anaBmm::dumpCuts() {
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "presel")) {
 	  OUT  << Form("\\vdef{cut:%s:presel}    {\\ensuremath{%i } } ", label, sVal) << endl;
+	  presello = sVal;
 	  if ( show ) { cout << "PRESEL (LXY/SXY) " << sVal << endl; }
 	}
 
@@ -4251,6 +4336,12 @@ void anaBmm::dumpNormCuts() {
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "SUBSEL")) {
 	  OUT  << Form("\\vdef{cut:%s:subsel}    {\\ensuremath{%i } } ", label, sVal) << endl;
 	  if ( show ) { cout << "SUBSEL " << sVal << endl; }
+	}
+
+	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "presel")) {
+	  OUT  << Form("\\vdef{cut:%s:presel}    {\\ensuremath{%i } } ", label, sVal) << endl;
+	  npresello = sVal;
+	  if ( show ) { cout << "PRESEL (LXY/SXY) " << sVal << endl; }
 	}
 
 	if (!strcmp(hS->GetXaxis()->GetBinLabel(i), "m_{min}^{#mu #mu}")) {
@@ -5454,6 +5545,15 @@ void anaBmm::optimizerMassEta() {
 
 
 // =======================================================================================================
+void anaBmm::showQuickAna() {
+
+  cout << "a.quickAna(" << ptmulo  << " , 0, 2.4, " <<  rmmlo  << " ," <<  rmmhi  << " ," <<  ptbs  
+       << " ," <<  etahi  << " ," <<  coslo  << " , -100. ," <<  lxylo  << " ," <<  l3dlo  << " ," 
+       <<  vtxhi  << " ," <<  isolo  << " ," <<  masswi << " ," <<  presello << ");" << endl;
+}    
+
+
+// =======================================================================================================
 
 void anaBmm::quickAna(double vptmu, double vetamulo, double vetamuhi, double vrmmlo, double vrmmhi, 
 		      double vptb, double vetab, double vcosa, double vcosa3, double vlxysxy, double vl3ds3d, 
@@ -5892,18 +5992,20 @@ void anaBmm::nb(int o, int decay_i, const char *meson) {
   int ng(0); int nd(0);
   for (int i = 0; i < 10; i++ ) {
     
-    ng += int((i+1)*h1->GetBinContent(i)); 
-    nd += int((i+1)*h2->GetBinContent(i)); 
+    ng += int(i*h1->GetBinContent(h1->FindBin(i))); 
+    nd += int(i*h2->GetBinContent(h2->FindBin(i))); 
   }
 
   double decay_ratio = nd/(1.*ng);
-  double goodev_ratio = h1->GetBinContent(h1->FindBin(1))/h1->GetSumOfWeights();
+  double b1_ratio = h1->GetBinContent(h1->FindBin(1))/h1->GetEntries();
+  double b2_ratio = h1->GetBinContent(h1->FindBin(2))/h1->GetEntries();
+  double goodev_ratio = h2->GetBinContent(h2->FindBin(1))/h1->GetEntries();
 
   c0->Clear();
   shrinkPad(0.15, 0.15); gPad->SetLogy(0);
   setHist(h1, kBlue, 24, 2);
   setHist(h2, kBlack, 20, 2);
-  setTitles(h1, "N_{gen}/event", "events/bin", 0.06, 1.1, 1.3);
+  setTitles(h1, Form("N_{%s}/event",meson), "events/bin", 0.06, 1.1, 1.3);
     
   h1->SetMaximum(1.2*(h1->GetMaximum() > h2->GetMaximum()? h1->GetMaximum(): h2->GetMaximum()));
 
@@ -5912,8 +6014,9 @@ void anaBmm::nb(int o, int decay_i, const char *meson) {
  
   tl->SetTextColor(kBlack);  
   tl->SetNDC(kTRUE); tl->SetTextSize(0.05);
-  tl->DrawLatex(0.5, 0.45, Form("#frac{N_{dec}}{N_{gen}} = %3.2f ", decay_ratio));
-  tl->DrawLatex(0.5, 0.3, Form("#frac{N_{1 B_{s} }}{N_{gen}} = %3.2f ", goodev_ratio));
+  tl->DrawLatex(0.35, 0.60, Form("#frac{N_{1 %s}}{N_{gen}} = %3.2f,   #frac{N_{2 %s}}{N_{gen}} = %3.2f", meson, b1_ratio, meson, b2_ratio));
+  tl->DrawLatex(0.50, 0.45, Form("#frac{N_{1 %s}}{N_{gen}} = %3.2f ", fSignLeggS[decay_i].Data(), goodev_ratio));
+  tl->DrawLatex(0.50, 0.28, Form("#frac{N_{%s}}{N_{%s}} = %3.2f ", fSignLeggS[decay_i].Data(), meson, decay_ratio));
 
   legg = new TLegend(0.4, 0.75, 0.4+0.5, 0.75+0.1);
   legg->SetFillStyle(0); legg->SetBorderSize(0); legg->SetTextSize(0.04);  legg->SetFillColor(0); 

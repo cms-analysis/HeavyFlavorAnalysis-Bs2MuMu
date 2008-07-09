@@ -10,12 +10,13 @@
 # visible x-section [fb]: 38.9657    = 5.522E+01*1.E12*(5000./24.8e6)*3.5e-9 
 type=sg file=treebmm/csg-001.default.root vxs=39.126e+00 signature=bsmumu
 type=sg file=treebmm/csg-002.default.root vxs=39.126e+00 signature=bsmumu
-type=mysg file=treebmm/csg-003.default.root vxs=86.625E+00 signature=bsmumu
-type=sg file=treebmm/csg-003h.default.root vxs=53.900e+00 signature=bsmumu
+type=mysg file=treebmm/csg-003.default.root vxs=105.6825E+00 signature=bsmumu
+type=sg file=treebmm/csg-003h.default.root vxs=65.7580e+00 signature=bsmumu
 #
 type=mynsg file=treebmm/csg-004h.norm.root vxs=1.672728e+06 signature=bpjpsikp
 type=nsg file=treebmm/csg-004m.norm.root vxs=10.4545e+05 signature=bpjpsikp
 type=nsg file=treebmm/csg-004j.norm.root vxs=1.3372e+08 signature=NonPrompt
+type=nsg file=treebmm/csg-004n.norm.root vxs=1.3372e+08 signature=bpjpsikp
 #
 # CSA07 (w/o HLT) 
 #type=nsg file=treebmm/csg-004.norm.root vxs=4.0958e+07 signature=NonPrompt

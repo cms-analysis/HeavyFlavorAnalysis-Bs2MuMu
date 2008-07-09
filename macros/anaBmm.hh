@@ -60,6 +60,8 @@ public:
   void effTables();
   void effTablesBg();
   void effTablesSg();
+  void effTablesNbg();
+  void effTablesNsg();
   void effTable(TFile *f, int index, const char *tag); 
   double massReduction(const char *s = "c030", const char *tag = "m0", int index = -1, double window = -1.);
 
@@ -89,6 +91,7 @@ public:
   // -------------------------------
   double getCutEffB(const char *aCuts, const char *preCut = "1");
   double getCutEffS(const char *aCuts, const char *preCut = "1");
+  void showQuickAna();
   void quickAna(double vptmu=3.0, double vetamulo=0., double vetamuhi=100., double vrmmlo=0.3, double vrmmhi=1.2, 
 		double vptb=5.0, double vetab=2.4, double vcosa=0.995, double vcosa3=-1.1, 
 		double vlxysxy=18., double vl3ds3d=-1., double vchi2=1.0, double viso=0.85, 
@@ -244,8 +247,10 @@ private:
   TString optimizedCut[NCUTS];
 
   // -- cuts
-  double ptbs, ptmulo, rmmlo, rmmhi, etalo, etahi, vtxhi, coslo, cos3lo, lxylo, l3dlo, isolo, masslo, masshi, masswi;
-  double nptbs, nptmulo, nrmmlo, nrmmhi, netalo, netahi, nvtxhi, ncoslo, ncos3lo, nlxylo, nl3dlo, nisolo, nmasslo, nmasshi, nmasswi;
+  double ptbs, ptmulo, rmmlo, rmmhi, etalo, etahi, vtxhi, coslo, cos3lo, lxylo, l3dlo, isolo
+    , presello, masslo, masshi, masswi;
+  double nptbs, nptmulo, nrmmlo, nrmmhi, netalo, netahi, nvtxhi, ncoslo, ncos3lo, nlxylo, nl3dlo, nisolo
+    , npresello, nmasslo, nmasshi, nmasswi;
 
   // -- functions
   TF1 *f0, *f1, *f2, *f3, *f4, *f5, *f6; 

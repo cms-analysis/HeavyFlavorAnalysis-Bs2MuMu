@@ -1307,7 +1307,7 @@ void treeBmm::candidateSelection(int o) {
     fGoodCand = fgBmm;
   }
 
-  if (fChainFileName.Contains("cbg-00") && fgBmm >= 1 ) {
+  if (fChainFileName.Contains("cbg-00") && fgBmm > 0 ) {
     if (fDebug & 2)    cout << "cand. selection> this background events contain a signal !!!"  << endl;
     fGoodCand = -99;
   }
