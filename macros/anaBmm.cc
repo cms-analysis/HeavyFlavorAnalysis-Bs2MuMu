@@ -229,6 +229,9 @@ void anaBmm::init(const char *files) {
   fSgReduction = -1.;
   fBgReduction = -1.;
 
+  fNsg = fNsgE =  fNbg = fNbgE = 0;
+  fNbgLE = fNbgUE = 0;
+
   sprintf(inDir, "bmmroot");
   sprintf(outDir, "anabmm");
 
@@ -273,7 +276,7 @@ void anaBmm::init(const char *files) {
     fM[i] = 0; 
   }
 
-  fLumiD[0] = 1.;
+  fLumiD[0] = 10.;
   cout << "================================" << endl;
   cout << "--> Setting Lumi to " << fLumiD[0] << " /fb <--" << endl;
   cout << "================================" << endl<< endl;
@@ -689,8 +692,8 @@ void anaBmm::brecos() {
   TString jfiles[]    = { TString("csg-004h") , TString("csg-004j") , TString("csg-004m") };
 
   // -- B-peaks from other samples (nreco)
-  int nnf = 2;
-  TString nfiles[]    = { TString("csg-004"), TString("csg-004j") };
+  int nnf = 3;
+  TString nfiles[]    = { TString("csg-004"), TString("csg-004j"), TString("cbg-006") };
 
 
   for (int i = 0; i < nbf; i++ ) {
@@ -1527,16 +1530,23 @@ void anaBmm::nreco(int o, const char *hist) {
   f5->SetParameters(0.4*h1->GetMaximum(), 5.29, 0.035, 
 		    300.*h1->GetBinContent(1), 1.3);
 
+   if ( !strcmp(hist, "c030") && fSignS[o].Contains("Stew")  ) {
+     f5->SetParameters(0.4*h1->GetMaximum(), 5.29, 0.040, 
+		    300.*h1->GetBinContent(1), 1.3);
+   }
+
 //   f5->SetParameters(0.4*h1->GetMaximum(), 5.29, 0.035, 
 // 		    4.022608e+07, -1.270784e+07, 1.013151e+06);
   
   setTitles(h2, "m_{#mu#mu K} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
   h1->SetMaximum(1.4*h1->GetMaximum());
   h2->SetMaximum(1.4*h2->GetMaximum());
+  h2->SetMinimum(0.);
   
   h2->DrawCopy();
   h1->Fit(f5, "0");
   f5->DrawCopy("same");
+
   
   f10->SetParameters(f5->GetParameter(3), f5->GetParameter(4));
 //   f10->SetParameters(f5->GetParameter(3), f5->GetParameter(4), f5->GetParameter(5));
@@ -1573,19 +1583,23 @@ void anaBmm::nreco(int o, const char *hist) {
   tl->DrawLatex(0.16, 0.85, Form("#mu: %5.3f#pm%5.3f GeV", mean, meanE));
   tl->DrawLatex(0.16, 0.79, Form("#sigma: %5.2f#pm%5.3f MeV", 1000*sigma, 1000*sigmaE));
 
-  tl->SetTextSize(0.04);
-  tl->SetTextColor(108); 
-  tl->DrawLatex(0.60, 0.49, Form("N_{bg} = %s", (texForm(totalBG)).Data() ));
+  tl->SetTextSize(0.05);
+  //  tl->SetTextColor(108); // green
+  tl->DrawLatex(0.60, 0.55, Form("N_{bg} = %s", (texForm(totalBG)).Data() ));
 
-  tl->SetTextSize(0.032);
-  tl->SetTextColor(2); 
+  //  tl->SetTextColor(2); 
   int exp  = getExp(totalSG);
   int exp2  = getExp(totalSG_100);
-  int expM = getExp(totalSGE);
+  int expM = getExp(totalSGE); // red
   if ( TMath::Abs(exp) > TMath::Abs(expM) ) expM = exp;
 
-  tl->DrawLatex(0.51, 0.63, Form("N_{sg} = %s", (texFormWithError(totalSG,  totalSGE, exp, expM)).Data() ));
-  tl->DrawLatex(0.51, 0.56, Form("N_{sg}^{100 MeV} = %s", (texFormWithError(totalSG_100,  totalSGE, exp2, expM)).Data() ));
+  if ( !strcmp(hist, "c430") ) {
+    //    tl->DrawLatex(0.51, 0.63, Form("N_{sg}^{100 MeV} = %s", (texFormWithError(totalSG_100,  totalSGE, exp2, expM)).Data() ));
+    tl->DrawLatex(0.52, 0.62, Form("N_{sg}^{100 MeV}  = %s", (texForm(totalSG_100)).Data() ));
+  } else {
+    //    tl->DrawLatex(0.51, 0.63, Form("N_{sg} = %s", (texFormWithError(totalSG,  totalSGE, exp, expM)).Data() ));
+    tl->DrawLatex(0.60, 0.62, Form("N_{sg} = %s", (texForm(totalSG)).Data() ));
+  }
 
   tl->SetTextColor(1);  
   
@@ -4936,15 +4950,15 @@ void anaBmm::loopULOptimization(const char *filename) {
   sprintf(aoCuts, "goodL1 && goodHLT && TMath::Abs(etal0)<100. && TMath::Abs(etal1)<100. && rmm>-0.1 && rmm<100. && TMath::Abs(eta)<2.4000");
 
   int ncuts = 4; int nfact = 2;
-  TString extraTS[] = { TString("ptl1>"), TString("pt>"), TString("lxy/sxy>"), TString("cosa>"), 
+  TString extraTS[] = { TString("ptl1>"), TString("pt>"), TString("l3d/s3d>"), TString("cosa>"), 
 			TString("iso>"), TString("chi2<") };
 
   sprintf(preSel, "%s 7", extraTS[2].Data());
 
   // arrays for:     ptMu  ptB  l3D   cosa    iso chi2
-  double mins[] = {  4.,   5.,  0., 0.9985,  0.85,  5.}; 
-  double maxs[] = {  7.,   9.,  30., 1.000,  1.00,  10.};
-  int bins[]    = {  1,    1,   30,     1,     1,   1 };
+  double mins[] = {  3.,   5.,  5., 0.99,  0.85,  1.}; 
+  double maxs[] = {  7.,   12.,  25., 1.000,  1.00,  10.};
+  int bins[]    = {  4,    7,   20,     4,     4,   9 };
   
   int nbins(0); int step(1);
   for (int i = 0; i<6; i++ ) {
@@ -5012,7 +5026,8 @@ void anaBmm::loopULOptimization(const char *filename) {
 // 				  sprintf(pre, Form("%s && %s && %s && %s ", preSel, extra1, extra2, extra3));
 
     
-				  ulOptimization(ao, pre, fact1, fact2, 0.1, filename); 
+// 				  ulOptimization(ao, pre, fact1, fact2, -1, filename); 
+				  sobOptimization(ao, pre, fact1, fact2, -1, filename); 
 
 				  uo->SetBinContent(step, fUL); step++;
 
@@ -5153,6 +5168,118 @@ void anaBmm::ulOptimization(const char *aoCuts, const char *preCuts, const char 
   }
   
   cout << Form("UL = %4.4e", fUL)
+       << " cuts: \"" << aoCuts << "\"  " 
+       << " fact1: \"" << f1Cut << "\"  " 
+       << " fact2: \"" << f2Cut << "\"  " 
+       << " preCuts: \"" << preCuts << "\"  " 
+       << endl;
+  
+  
+  ofstream OUT(filename, ios::app);
+  
+  OUT <<  Form("UL = %4.4e", fUL)  << "   :    n_S = " << fNsg << ", n_B = " << fNbg << endl; 
+  OUT << "  -> cuts: \"" << aoCuts << "\"  " 
+      << " fact1: \"" << f1Cut << "\"  " 
+      << " fact2: \"" << f2Cut << "\"  " 
+      << " preCuts: \"" << preCuts << "\"  " 
+      << endl;
+
+  OUT.close();
+}
+
+
+// ----------------------------------------------------------------------
+void anaBmm::sobOptimization(const char *aoCuts, const char *preCuts, const char *f1Cut, const char *f2Cut, 
+			    double mCut, const char *filename){
+
+
+  // -- Fix lumi normalisation scaling factor
+  double sSF = fLumiD[0]/fLumiS[sgIndex];
+
+  // -- Run on signal MC to determine efficiency 
+  fS[sgIndex]->cd(); 
+  TH1D *uSG = (TH1D*)gROOT->FindObject("uSG"); 
+  if (!uSG) uSG = new TH1D("uSG", "", 120, 4.8, 6.0);
+  TTree *s = (TTree*)gFile->Get("events");
+  
+  double sNorm = fNevtS[sgIndex];
+  double massRedSG = 0.;
+
+  s->Draw("mass>>uSG", Form("goodKinematics&&goodL1&&goodHLT&&goodAnaF"), "goff");
+  if ( mCut > -0.5 || fSgReduction < 0.) {
+    fSgReduction = massReduction("uSG", "mysg", sgIndex, mCut);
+    massRedSG = fSgReduction;
+  } else {
+    massRedSG = fSgReduction;
+  }
+
+  s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s", aoCuts), "goff"); 
+  double sCuts     = uSG->GetSumOfWeights();
+  double sEff      = sCuts/sNorm;
+
+  s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s", preCuts), "goff"); 
+  double sNormF    =  uSG->GetSumOfWeights();
+
+  s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s && %s", preCuts, f1Cut), "goff"); 
+  double s1Norm    = uSG->GetSumOfWeights();
+  double sEff1     = s1Norm/sNormF;
+
+  s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s && %s", preCuts, f2Cut), "goff"); 
+  double s2Norm    = uSG->GetSumOfWeights();
+  double sEff2     = s2Norm/sNormF;
+
+  fNsg  = sCuts * sEff1 * sEff2 * massRedSG * sSF;
+  fNsgE = TMath::Sqrt(sCuts)*(fNsg/sCuts);
+
+  fEsg  = sEff * sEff1 * sEff2 * massRedSG;
+
+  // -- Fix lumi normalisation scaling factor
+  double bSF = fLumiD[0]/fLumiM[bgIndex];
+
+  // -- Run on signal MC to determine efficiency 
+  fM[bgIndex]->cd(); 
+  TH1D *uBG = (TH1D*)gROOT->FindObject("uBG"); 
+  if (!uBG) uBG = new TH1D("uBG", "", 120, 4.8, 6.0);
+  TTree *b = (TTree*)gFile->Get("events");
+  
+  double bNorm = fNevtM[bgIndex];
+  double massRedBG = 0.;
+
+  b->Draw("mass>>uBG", Form("goodKinematics&&goodL1&&goodHLT"), "goff");
+  if ( mCut > -0.5 || fBgReduction < 0.) {
+    fBgReduction = massReduction("uBG", "mymc", bgIndex, mCut);
+    massRedBG = fBgReduction;
+  } else {
+    massRedBG = fBgReduction;
+  }
+
+  b->Draw("mass>>uBG", Form("goodL1&&goodHLT && %s", aoCuts), "goff"); 
+  double bCuts     = uBG->GetSumOfWeights();
+  double bEff      = bCuts/bNorm;
+
+  b->Draw("mass>>uBG", Form("goodL1&&goodHLT && %s", preCuts), "goff"); 
+  double bNormF    =  uBG->GetSumOfWeights();
+
+  b->Draw("mass>>uBG", Form("goodL1&&goodHLT && %s && %s", preCuts, f1Cut), "goff"); 
+  double b1Norm    = uBG->GetSumOfWeights();
+  double bEff1     = b1Norm/bNormF;
+
+  b->Draw("mass>>uBG", Form("goodL1&&goodHLT && %s && %s", preCuts, f2Cut), "goff"); 
+  double b2Norm    = uBG->GetSumOfWeights();
+  double bEff2     = b2Norm/bNormF;
+
+  double ebg  = bEff * bEff1 * bEff2 * massRedSG;
+  fNbg  =  bCuts * bEff1 * bEff2 * massRedBG * bSF;
+  fNbgUE =  (0.5 + TMath::Sqrt(bCuts+0.25)) * (fNbg/bCuts);
+  fNbgLE =  (-0.5 + TMath::Sqrt(bCuts+0.25)) * (fNbg/bCuts);
+  fNbgE   =  fNbgUE;
+
+  cout << "Calculate s/sqrt(s+b) for n_S = " << fNsg << " (e_S = " << fEsg 
+       <<  "),  n_B = " << fNbg << " (e_B = " << ebg <<  ")" << endl << endl;
+  
+  fUL = fNbg/TMath::Sqrt(fNsg+fNbg);
+  
+  cout << Form("S/(S+B)^1/2 = %4.4e", fUL)
        << " cuts: \"" << aoCuts << "\"  " 
        << " fact1: \"" << f1Cut << "\"  " 
        << " fact2: \"" << f2Cut << "\"  " 
@@ -5561,7 +5688,18 @@ void anaBmm::quickAna(double vptmu, double vetamulo, double vetamuhi, double vrm
 		      double vmass, double vpre) {
 
   char pre[200];
-  sprintf(pre, "ptl1>%5.4f && rmm>%5.4f && rmm<%5.4f && l3d/s3d>%5.4f && TMath::Abs(etal0)>%5.4f && TMath::Abs(etal1)>%5.4f && TMath::Abs(etal0)<%5.4f && TMath::Abs(etal1)<%5.4f", vptmu, vrmmlo, vrmmhi, vpre, vetamulo, vetamulo, vetamuhi, vetamuhi);
+  char preSel[200];
+  char preSelT[200];
+
+  if ( vlxysxy > 0. ) {
+    sprintf(preSel, "lxy/sxy");
+    sprintf(preSelT, "$l_{xy}/s_{xy}$");
+  } else {
+    sprintf(preSel, "l3d/s3d");
+    sprintf(preSelT, "$l_{3D}/s_{3D}$");
+  }
+
+    sprintf(pre, "ptl1>%5.4f && rmm>%5.4f && rmm<%5.4f && %s>%5.4f && TMath::Abs(etal0)>%5.4f && TMath::Abs(etal1)>%5.4f && TMath::Abs(etal0)<%5.4f && TMath::Abs(etal1)<%5.4f", vptmu, vrmmlo, vrmmhi, preSel, vpre, vetamulo, vetamulo, vetamuhi, vetamuhi);
 
   char mred[200];
   sprintf(mred, "ptl1>%5.4f && TMath::Abs(etal0)>%5.4f && TMath::Abs(etal1)>%5.4f && TMath::Abs(etal0)<%5.4f && TMath::Abs(etal1)<%5.4f", vptmu, vetamulo, vetamulo, vetamuhi, vetamuhi);
@@ -5572,7 +5710,7 @@ void anaBmm::quickAna(double vptmu, double vetamulo, double vetamuhi, double vrm
   
   char fact2[200];  char f2[200]; char tf2[200];
   sprintf(f2, "iso>%5.4f", viso);
-  sprintf(tf2,  "$I < %4.3f$", viso);
+  sprintf(tf2,  "$I > %4.3f$", viso);
 
   char cuts[500], fcuts[500];
   const int ncuts = 12; 
@@ -5598,6 +5736,7 @@ void anaBmm::quickAna(double vptmu, double vetamulo, double vetamuhi, double vrm
 
   double sNorm(-1.),  bNorm(-1.);
   double sNormF(-1.), bNormF(-1.);
+  double sEffF(-1.), bEffF(-1.);
   			
   sprintf(cuts, "goodL1&&goodHLT");
   sprintf(fcuts, "goodL1&&goodHLT");
@@ -5607,6 +5746,9 @@ void anaBmm::quickAna(double vptmu, double vetamulo, double vetamuhi, double vrm
 
   sNormF = getCutEffS(cuts, pre);
   bNormF = getCutEffB(cuts, pre);
+
+  sEffF = sNormF/(1.*sNorm);
+  bEffF = bNormF/(1.*bNorm);
 
   sprintf(fact1, "%s && %s", f1, cuts);
   double sEff1 =  getCutEffS(fact1, pre)/(1.*sNormF);
@@ -5656,6 +5798,11 @@ void anaBmm::quickAna(double vptmu, double vetamulo, double vetamuhi, double vrm
   }
 
   OUT << "\\hline" << endl;
+
+  OUT << "pre:" << preSelT << " > " << vpre
+      << "  & " << sNormF  << " & " << Form("%4.2e",sEffF)
+      << "  & " << bNormF  << " & " << Form("%4.2e",bEffF) << " \\\\" << endl;
+
 
   OUT << tf1 
       << "  &-   & " << Form("%4.2e",sEff1)
@@ -5714,6 +5861,10 @@ double anaBmm::getCutEffB(const char *aCuts, const char *preCuts) {
 void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *mrCuts, 
 		     const char *f1Cut, const char *f2Cut, double mCut) {
 
+  if ( fFileS[sgIndex].Contains("sg-001") ) { fSgReduction = 1; int goodAnaF = 1; }
+  if ( fFileS[sgIndex].Contains("sg-002") ) { fSgReduction = 1; int goodAnaF = 1; }
+  if ( fFileM[bgIndex].Contains("bg-002") ) { fBgReduction = 0.29; }
+
   // -- Fix lumi normalisation scaling factor
   double sSF = fLumiD[0]/fLumiS[sgIndex];
 
@@ -5729,33 +5880,28 @@ void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *mrCuts,
 
   s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s", preCuts), "goff"); 
   double sNormF    =  uSG->GetSumOfWeights();
-
-  s->Draw("mass>>uSG", Form("goodL1&&goodHLT&&goodAnaF"), "goff"); 
+  
+  s->Draw("mass>>uSG", Form("goodL1&&goodHLT&&goodAnaF"), "goff");
   double massRedSG = 0.;
-    if ( mCut > -0.5 || fSgReduction < 0.) {
+  if ( mCut > -0.5 || fSgReduction < 0.) {
     fSgReduction = massReduction("uSG", "mysg", sgIndex, mCut);
     massRedSG = fSgReduction;
   } else {
     massRedSG = fSgReduction;
   }
+  
 
   s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s", aCuts), "goff"); 
   double sCuts     = uSG->GetSumOfWeights();
   double sEff      = sCuts/sNorm;
 
-  //  cout << Form("TEST: goodL1&&goodHLT && %s, eff =", aCuts) << sEff << endl;
-
   s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s && %s", preCuts, f1Cut), "goff"); 
   double s1Norm    = uSG->GetSumOfWeights();
   double sEff1     = s1Norm/sNormF;
-  //  cout << Form("TEST: goodL1&&goodHLT && %s && %s, eff2 =", preCuts, f1Cut) << sEff1 << endl;
 
   s->Draw("mass>>uSG", Form("goodL1&&goodHLT && %s && %s", preCuts, f2Cut), "goff"); 
   double s2Norm    = uSG->GetSumOfWeights();
   double sEff2     = s2Norm/sNormF;
-
-  //  cout << Form("TEST: goodL1&&goodHLT && %s && %s, eff2 =", preCuts, f2Cut) << sEff2 << endl;
-  //  cout << Form("TEST: massRed = %4.4f, massRed = %4.4f, ", massRedSG , sSF ) ;
 
   fNsg  =  sCuts * sEff1 * sEff2 * massRedSG * sSF;
   fNsgE = TMath::Sqrt(sCuts)*(fNsg/sCuts);
@@ -5787,6 +5933,7 @@ void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *mrCuts,
     massRedBG = fBgReduction;
   } 
 
+
   b->Draw("mass>>uBG", Form("goodL1&&goodHLT && %s", aCuts), "goff"); 
   double bCuts     = uBG->GetSumOfWeights();
   double bEff      = bCuts/bNorm;
@@ -5815,7 +5962,7 @@ void anaBmm::quickUL(const char *aCuts, const char *preCuts, const char *mrCuts,
     fUL = 99999.;
   }
 
-  cout << endl << endl << "mass red.: " << mCut
+  cout << endl << endl << "mass window: " << mCut
 	 << "     e_S = " << massRedSG << "     e_B = " << massRedBG << endl;
 
   cout << endl << Form(" *** UL = %4.4e *** ", fUL)

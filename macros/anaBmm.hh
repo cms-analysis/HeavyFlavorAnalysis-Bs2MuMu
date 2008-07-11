@@ -113,6 +113,8 @@ public:
   void handOptimization(const char *aoCuts, const char *extraCuts, int verbose = 1);
   void ulOptimization(const char *aoCuts, const char *preCuts, const char *f1Cut, const char *f2Cut, 
 		      double mCut, const char *filename);
+  void sobOptimization(const char *aoCuts, const char *preCuts, const char *f1Cut, const char *f2Cut, 
+		      double mCut, const char *filename);
   void overlay(const char *var, const char *cuts, double min, double max, int nbin=40);
 
   void nbgen();

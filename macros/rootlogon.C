@@ -3,8 +3,8 @@
   cout << "Loading libPhysics.so" << endl;
   gSystem->Load("libPhysics.so");
 
-  cout << "Loading libAna00.so" << endl;
-  gSystem->Load("../../../AnalysisDataFormats/HeavyFlavorObjects/lib/libAna00.so");
+//   cout << "Loading libAna00.so" << endl;
+//   gSystem->Load("../../../AnalysisDataFormats/HeavyFlavorObjects/lib/libAna00.so");
 
   cout << "Loading libAnaClasses.so" << endl;
   gSystem->Load("../../../AnalysisDataFormats/HeavyFlavorObjects/lib/libAnaClasses.so");
