@@ -205,6 +205,7 @@ void treeBmm::initVariables() {
     fEta  = fpB->fPlab.Eta();
     fTau  = fL3d*fMass/fP;
     fTxy  = fLxy*fMass/fPt;
+    // fTxy  = fLxy*fCosAngle*fMass/fPt;
 
     // - muon cand.
     fSTI[0] = fpB->fSig1;
@@ -2594,6 +2595,7 @@ void treeBmm::bookHist() {
 
   fTree->Branch("chi2",           &fChi2,           "chi2/D");
   fTree->Branch("ndof",           &fNdof,           "ndof/D");
+  fTree->Branch("prob",           &fProb,           "prob/D");
   fTree->Branch("cosa3",          &fCosAngle3,      "cosa3/D");
   fTree->Branch("cosa",           &fCosAngle,       "cosa/D");
   fTree->Branch("l3d",            &fL3d,            "l3d/D");
@@ -3095,22 +3097,31 @@ void treeBmm::book(int offset) {
 
   h = new TH1D(Form("c%d35", offset), "NTRK",          100, 0., 200.);    h->Sumw2();   setTitles(h, "N_{Track}", "events/bin");
 
-  h = new TH1D(Form("c%d36", offset), "ndof",            50, 0., 5.0);   h->Sumw2();     setTitles(h, "n.d.o.f", "events/bin");
-  h = new TH1D(Form("c%d37", offset), "chi2/n.d.o.f",    50, 0., 5.0);   h->Sumw2();     setTitles(h, "#chi^{2}/n.d.o.f.", "events/bin");
+  h = new TH1D(Form("c%d36", offset), "prob(chi2, ndof)",    50, 0., 1.);   h->Sumw2();     setTitles(h, "P(#chi^{2}, ndof)", "events/bin");
+  h = new TH1D(Form("c%d37", offset), "chi2/ndof",    50, 0., 5.0);   h->Sumw2();     setTitles(h, "#chi^{2}/ndof", "events/bin");
 
   h = new TH1D(Form("c%d40", offset), "cos(angle) 2D",     200,-1.0,1.0);    h->Sumw2();   setTitles(h, "cos #alpha_{xy}", "events/bin");
   h = new TH1D(Form("c%d41", offset), "cos(angle) 2D",     200,0.95,1.0);    h->Sumw2();   setTitles(h, "cos #alpha_{xy}", "events/bin"); 
   h = new TH1D(Form("c%d42", offset), "cos(angle) 2D",      50,0.97,1.0);    h->Sumw2();   setTitles(h, "cos #alpha_{xy}", "events/bin"); 
   h = new TH1D(Form("c%d43", offset), "cos(angle) 2D",     200,0.99,1.0);    h->Sumw2();   setTitles(h, "cos #alpha_{xy}", "events/bin");
 
-  h = new TH1D(Form("c%d50", offset), "flight length", 100,  0.0, 0.1);   h->Sumw2();   setTitles(h, "t_{rec}", "events/bin");
-  h = new TH1D(Form("c%d51", offset), "flight length", 100,  0.0, 0.1);   h->Sumw2();   setTitles(h, "t_{gen}", "events/bin");
-  h = new TH1D(Form("c%d52", offset), "flight length", 100, -0.02, 0.02); h->Sumw2();   setTitles(h, "t_{rec} - t_{gen}", "events/bin");
+  h = new TH1D(Form("c%d50", offset), "flight length (if sim. Vtx exists)", 100,  0.0, 0.1);   h->Sumw2();   setTitles(h, "t_{rec}", "events/bin");
+  h = new TH1D(Form("c%d51", offset), "flight length (if sim. Vtx exists)", 100,  0.0, 0.1);   h->Sumw2();   setTitles(h, "t_{gen}", "events/bin");
+  h = new TH1D(Form("c%d52", offset), "flight length (if sim. Vtx exists)", 100, -0.02, 0.02); h->Sumw2();   setTitles(h, "t_{rec} - t_{gen}", "events/bin");
+
 
   h = new TH1D(Form("c%d60", offset), "cos(angle) 3D",    200,-1.0,1.0);   h->Sumw2();     setTitles(h, "cos #alpha_{3D}", "events/bin");
   h = new TH1D(Form("c%d61", offset), "cos(angle) 3D",    200,0.95,1.0);   h->Sumw2();     setTitles(h, "cos #alpha_{3D}", "events/bin");
   h = new TH1D(Form("c%d62", offset), "cos(angle) 3D",    50,0.97,1.0);   h->Sumw2();     setTitles(h, "cos #alpha_{3D}", "events/bin");
   h = new TH1D(Form("c%d63", offset), "cos(angle) 3D",    200,0.99,1.0);   h->Sumw2();     setTitles(h, "cos #alpha_{3D}", "events/bin");
+
+  h = new TH1D(Form("c%d70", offset), "proper decay length 3D", 100,  0.0, 0.5);   h->Sumw2();   setTitles(h, "ct_{3D}", "events/bin");
+  h = new TH1D(Form("c%d71", offset), "proper decay length 2D", 100,  0.0, 0.5);   h->Sumw2();   setTitles(h, "ct_{xy}", "events/bin");
+  h = new TH1D(Form("c%d72", offset), "proper decay length 2D (cos)", 100,  0.0, 0.5);   h->Sumw2();   setTitles(h, "ct_{xy}", "events/bin");
+
+  h = new TH1D(Form("c%d73", offset), "proper decay length 3D", 200,  0.0, 0.2);   h->Sumw2();   setTitles(h, "ct_{3D}", "events/bin");
+  h = new TH1D(Form("c%d74", offset), "proper decay length 2D", 200,  0.0, 0.2);   h->Sumw2();   setTitles(h, "ct_{xy}", "events/bin");
+  h = new TH1D(Form("c%d75", offset), "proper decay length 2D (cos)", 200,  0.0, 0.2);   h->Sumw2();   setTitles(h, "ct_{xy}", "events/bin");
 
 
   if (fDebug & 2) { cout << "book> End" << endl; }
@@ -3295,7 +3306,7 @@ void treeBmm::histogram(int offset) {
 
   ((TH1D*)gDirectory->Get(Form("c%d35", offset)))->Fill(fpEvt->nRecTracks());
 
-  ((TH1D*)gDirectory->Get(Form("c%d36", offset)))->Fill(fNdof);
+  ((TH1D*)gDirectory->Get(Form("c%d36", offset)))->Fill(fProb);
   ((TH1D*)gDirectory->Get(Form("c%d37", offset)))->Fill(fChi2/fNdof);
 
   ((TH1D*)gDirectory->Get(Form("c%d40", offset)))->Fill(fCosAngle);
@@ -3311,6 +3322,14 @@ void treeBmm::histogram(int offset) {
   ((TH1D*)gDirectory->Get(Form("c%d61", offset)))->Fill(fCosAngle3);
   ((TH1D*)gDirectory->Get(Form("c%d62", offset)))->Fill(fCosAngle3);
   ((TH1D*)gDirectory->Get(Form("c%d63", offset)))->Fill(fCosAngle3);
+
+  ((TH1D*)gDirectory->Get(Form("c%d70", offset)))->Fill(fTau);
+  ((TH1D*)gDirectory->Get(Form("c%d71", offset)))->Fill(fTxy);
+  ((TH1D*)gDirectory->Get(Form("c%d72", offset)))->Fill(fTxy*fCosAngle);
+
+  ((TH1D*)gDirectory->Get(Form("c%d73", offset)))->Fill(fTau);
+  ((TH1D*)gDirectory->Get(Form("c%d74", offset)))->Fill(fTxy);
+  ((TH1D*)gDirectory->Get(Form("c%d75", offset)))->Fill(fTxy*fCosAngle);
 
   ((TH2D*)gDirectory->Get(Form("C%d00", offset)))->Fill(fDptL0, fSxy);
   ((TH2D*)gDirectory->Get(Form("C%d01", offset)))->Fill(fPtL0, fEtaL0);

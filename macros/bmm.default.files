@@ -24,7 +24,7 @@ type=nsg file=treebmm/csg-004n.norm.root vxs=1.3372e+08 signature=bpjpsikp
 #
 type=mc file=treebmm/cbg-002.default.root vxs=1.7286e+07 signature=bbbar
 type=mymc file=treebmm/cbg-003.default.root vxs=3.2450e+08 signature=BB
-type=mc file=treebmm/cbg-005.default.root vxs=9.2950e+07 signature=CC
+type=mc file=treebmm/sel4/cbg-005.default.root vxs=9.2950e+07 signature=CC
 type=mc file=treebmm/cbg-003h.default.root vxs=1.3200e+08 signature=BB
 type=mc file=treebmm/cbg-005h.default.root vxs=1.2100e+07 signature=CC
 #

@@ -4992,7 +4992,7 @@ void anaBmm::loopULOptimization(const char *filename) {
   sprintf(preSel, "%s 7", extraTS[2].Data());
 
   // arrays for:     ptMu  ptB  l3D   cosa    iso chi2
-  double mins[] = {  3.,   5.,  5., 0.99,  0.85,  1.}; 
+  double mins[] = {  3.,   5.,  5., 0.998,  0.85,  1.}; 
   double maxs[] = {  7.,   12.,  25., 1.000,  1.00,  10.};
   int bins[]    = {  4,    7,   20,     4,     4,   9 };
   
