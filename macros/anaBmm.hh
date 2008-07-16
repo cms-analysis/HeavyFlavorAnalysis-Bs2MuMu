@@ -129,6 +129,7 @@ public:
   void channelEff(TFile *f, double &fnorm_Ch, double &eff1_Ch, double &eff2_Ch);
 
   void writeFitPar(TF1 *f, int o, double mean, double sigma, int npar);
+  void writeFitPar2(TF1 *f, int o, double mean, double sigma, int npar);
   void fillInTheRest(const char *tag);
  
 

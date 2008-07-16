@@ -17,7 +17,7 @@ type=mynsg file=treebmm/csg-004h.norm.root vxs=1.672728e+06 signature=bpjpsikp
 type=nsg file=treebmm/csg-004m.norm.root vxs=10.4545e+05 signature=bpjpsikp
 type=nsg file=treebmm/csg-004j.norm.root vxs=1.3372e+08 signature=NonPrompt
 type=nsg file=treebmm/csg-004n.norm.root vxs=1.3372e+08 signature=bpjpsikp
-type=nsg file=treebmm/cbg-006.norm.root vxs=2.53e+09 signature=Stew
+#type=nsg file=treebmm/cbg-006.norm.root vxs=2.53e+09 signature=Stew
 #
 # CSA07 (w/o HLT) 
 #type=nsg file=treebmm/csg-004.norm.root vxs=4.0958e+07 signature=NonPrompt

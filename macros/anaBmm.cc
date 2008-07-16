@@ -1278,7 +1278,8 @@ void anaBmm::breco(int o, const char *hist) {
 			  f1->GetParameter(0), f1->GetParError(0),
 			  f1->GetParameter(3), f1->GetParError(3));
 
-      if ( !strcmp(hist, "c530") )  writeFitPar(f1, o, mean, sigma, 6);
+      if ( !strcmp(hist, "c530") )  writeFitPar2(f1, o, mean, sigma, 6); // -- before fact. cuts
+      if ( !strcmp(hist, "c430") )  writeFitPar(f1, o, mean, sigma, 6);
     }
   
     // --  norm. channel (double gauss + pol1)
@@ -1326,7 +1327,8 @@ void anaBmm::breco(int o, const char *hist) {
 			  f6->GetParameter(0), f6->GetParError(0),
 			  f6->GetParameter(3), f6->GetParError(3));
 
-      if ( !strcmp(hist, "c530") )   writeFitPar(f6, o, mean, sigma, 6);
+      if ( !strcmp(hist, "c530") )  writeFitPar2(f1, o, mean, sigma, 6); // -- before fact. cuts
+      if ( !strcmp(hist, "c430") )   writeFitPar(f6, o, mean, sigma, 6);
     }
     
     
@@ -4398,6 +4400,40 @@ void anaBmm::dumpNormCuts() {
   OUT.close();
 }
 
+// ----------------------------------------------------------------------
+void anaBmm::writeFitPar2(TF1 *f, int o, double mean, double sigma, int npar) {
+
+    ofstream OUT(fNumbersFileName, ios::app);
+
+    OUT << "% ----------------------------------------------------------------------" << endl;
+    OUT << "% -- BRECO mass peak numbers" << endl;
+    OUT << Form("\\vdef{mBgMeanF:s%i} {\\ensuremath {%4.1f } }", o, 1000.*mean) << endl;
+    OUT << Form("\\vdef{mBgSigmaF:s%i}{\\ensuremath {%4.1f } }", o, 1000.*sigma) << endl;
+    
+    OUT << Form("\\vdef{mBg1nF:s%i} {\\ensuremath {%4.2f } }", o, f->GetParameter(0)) << endl;
+    OUT << Form("\\vdef{mBg1nEF:s%i}{\\ensuremath {%4.2f } }", o, f->GetParError(0)) << endl;
+    
+    OUT << Form("\\vdef{mBg1mF:s%i}  {\\ensuremath {%4.1f } }", o, 1000.*f->GetParameter(1)) << endl;
+    OUT << Form("\\vdef{mBg1mEF:s%i} {\\ensuremath {%4.1f } }", o, 1000.*f->GetParError(1)) << endl;
+    
+    OUT << Form("\\vdef{mBg1sF:s%i}  {\\ensuremath {%4.1f } }", o, 1000.*f->GetParameter(2)) << endl;
+    OUT << Form("\\vdef{mBg1sEF:s%i} {\\ensuremath {%4.1f } }", o, 1000.*f->GetParError(2)) << endl;
+    
+
+    if ( npar > 3 ) {
+
+      OUT << Form("\\vdef{mBg2nF:s%i} {\\ensuremath {%4.2f } }", o, f->GetParameter(3)) << endl;
+      OUT << Form("\\vdef{mBg2nEF:s%i}{\\ensuremath {%4.2f } }", o, f->GetParError(3)) << endl;
+      
+      OUT << Form("\\vdef{mBg2mF:s%i}  {\\ensuremath {%4.1f } }", o, 1000.*f->GetParameter(4)) << endl;
+      OUT << Form("\\vdef{mBg2mEF:s%i} {\\ensuremath {%4.1f } }", o, 1000.*f->GetParError(4)) << endl;
+      
+      OUT << Form("\\vdef{mBg2sF:s%i}  {\\ensuremath {%4.1f } }", o, 1000.*f->GetParameter(5)) << endl;
+      OUT << Form("\\vdef{mBg2sEF:s%i} {\\ensuremath {%4.1f } }", o, 1000.*f->GetParError(5)) << endl;
+    }
+
+    OUT.close();
+}
 // ----------------------------------------------------------------------
 void anaBmm::writeFitPar(TF1 *f, int o, double mean, double sigma, int npar) {
 
