@@ -3118,11 +3118,11 @@ void treeBmm::book(int offset) {
 
   h = new TH1D(Form("c%d70", offset), "proper decay length 3D", 100,  0.0, 0.5);   h->Sumw2();   setTitles(h, "ct_{3D}", "events/bin");
   h = new TH1D(Form("c%d71", offset), "proper decay length 2D", 100,  0.0, 0.5);   h->Sumw2();   setTitles(h, "ct_{xy}", "events/bin");
-  h = new TH1D(Form("c%d72", offset), "proper decay length 2D (cos)", 100,  0.0, 0.5);   h->Sumw2();   setTitles(h, "ct_{xy}", "events/bin");
+  h = new TH1D(Form("c%d72", offset), "proper decay length 2D (cos)", 100,  -0.5, 0.5);   h->Sumw2();   setTitles(h, "ct_{xy}", "events/bin");
 
   h = new TH1D(Form("c%d73", offset), "proper decay length 3D", 200,  0.0, 0.2);   h->Sumw2();   setTitles(h, "ct_{3D}", "events/bin");
   h = new TH1D(Form("c%d74", offset), "proper decay length 2D", 200,  0.0, 0.2);   h->Sumw2();   setTitles(h, "ct_{xy}", "events/bin");
-  h = new TH1D(Form("c%d75", offset), "proper decay length 2D (cos)", 200,  0.0, 0.2);   h->Sumw2();   setTitles(h, "ct_{xy}", "events/bin");
+  h = new TH1D(Form("c%d75", offset), "proper decay length 2D (cos)", 200,  -0.2, 0.2);   h->Sumw2();   setTitles(h, "ct_{xy}", "events/bin");
 
 
   if (fDebug & 2) { cout << "book> End" << endl; }
