@@ -13,10 +13,12 @@ type=sg file=treebmm/csg-002.default.root vxs=39.126e+00 signature=bsmumu
 type=mysg file=treebmm/csg-003.default.root vxs=105.6825E+00 signature=bsmumu
 type=sg file=treebmm/csg-003h.default.root vxs=65.7580e+00 signature=bsmumu
 #
-type=mynsg file=treebmm/csg-004h.norm.root vxs=1.672728e+06 signature=bpjpsikp
+type=mynsg file=treebmm/csg-004h.norm.root vxs=2.1041e+06 signature=bpjpsikp
 type=nsg file=treebmm/csg-004m.norm.root vxs=10.4545e+05 signature=bpjpsikp
 type=nsg file=treebmm/csg-004j.norm.root vxs=1.3372e+08 signature=NonPrompt
 type=nsg file=treebmm/csg-004n.norm.root vxs=1.3372e+08 signature=bpjpsikp
+type=nsg file=treebmm/csg-004plus.norm.root vxs=10.4545e+05 signature=bpjpsikp
+type=nsg file=treebmm/csg-004minus.norm.root vxs=10.4545e+05 signature=bpjpsikp
 #type=nsg file=treebmm/cbg-006.norm.root vxs=2.53e+09 signature=Stew
 #
 # CSA07 (w/o HLT) 
@@ -24,12 +26,12 @@ type=nsg file=treebmm/csg-004n.norm.root vxs=1.3372e+08 signature=bpjpsikp
 #
 type=mc file=treebmm/cbg-002.default.root vxs=1.7286e+07 signature=bbbar
 type=mymc file=treebmm/cbg-003.default.root vxs=3.2450e+08 signature=BB
-type=mc file=treebmm/sel4/cbg-005.default.root vxs=9.2950e+07 signature=CC
+type=mc file=treebmm/cbg-005.default.root vxs=9.2950e+07 signature=CC
 type=mc file=treebmm/cbg-003h.default.root vxs=1.3200e+08 signature=BB
 type=mc file=treebmm/cbg-005h.default.root vxs=1.2100e+07 signature=CC
 #
 type=mynmc file=treebmm/cbg-004h.norm.root vxs=1.3372e+08 signature=NonPrompt
-# type=mc file=treebmm/cbg-006.default.root vxs=5.5000e+09 signature=stew
+# type=mc file=treebmm/cbg-006.default.root vxs=2.53e+09 signature=Stew
 # type=mc file=treebmm/cbg-007.default.root vxs=5.5000e+09 signature=ppmux
 #
 # Combined BGs

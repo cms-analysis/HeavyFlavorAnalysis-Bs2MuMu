@@ -263,7 +263,7 @@ void anaBmm::init(const char *files) {
   
   // -- setup all files
   nSg = nMc = nDa = 0;
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 15; ++i) {
     fNevtS[i] = 0.;
     fLumiS[i] = 0.;
     fS[i] = 0; 
@@ -398,9 +398,9 @@ void anaBmm::loadFiles(const char *filename) {
 
 
   fMu = 1.;
-  fPi = 0.5E-2;
-  fKa = 1.0E-2;
-  fProt = 0.5E-2;
+  fPi = 1.0E-2;
+  fKa = 1.5E-2;
+  fProt = 0.25E-2;
 
   TString fn(filename);
   fn.ReplaceAll("bmm", "");
@@ -422,7 +422,7 @@ void anaBmm::loadFiles(const char *filename) {
 // ----------------------------------------------------------------------
 void anaBmm::loadSg(const char *name, double lumi, const char *sign, const char *type, const char *filename) {
 
-  if (nSg > 10) {
+  if (nSg > 15) {
     cout << " **** !!!! Too many open Signal files. Increase nSg. !!!! **** " << endl;
     return;
   }
@@ -618,7 +618,9 @@ void anaBmm::showDistributions(int offset, int wiat) {
   showDistribution(Form("c%d16", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
   showDistribution(Form("c%d24", offset), 2,      0.6, 0.75); if (wiat) if (wait()) goto end;
   showDistribution(Form("c%d25", offset), 2,      0.3, 0.75); if (wiat) if (wait()) goto end;
+
   showDistribution(Form("c%d27", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d36", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
   showDistribution(Form("c%d37", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
 
   showDistribution(Form("c%d30", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
@@ -627,6 +629,14 @@ void anaBmm::showDistributions(int offset, int wiat) {
   showDistribution(Form("c%d41", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
   showDistribution(Form("c%d42", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
   showDistribution(Form("c%d62", offset), logy+2, 0.3, 0.75); if (wiat) if (wait()) goto end;
+
+  showDistribution(Form("c%d70", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d71", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d72", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+
+  showDistribution(Form("c%d73", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d74", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
+  showDistribution(Form("c%d75", offset), logy+2, 0.6, 0.75); if (wiat) if (wait()) goto end;
 
 
  end:;
@@ -801,10 +811,12 @@ void anaBmm::effTablesBg() {
 
 void anaBmm::effTablesNsg() {
 
-  int nsf = 2;
-  TString sfiles[]    = {  TString("csg-004h") , TString("csg-004n") };
+  int nsf = 4;
+  TString sfiles[]    = {  TString("csg-004h") , TString("csg-004n") , 
+			   TString("csg-004plus") , TString("csg-004minus") };
 
-  TString mcprod[]    = {  TString("bjpsik") , TString("bjpsiSg") };
+  TString mcprod[]    = {  TString("bjpsik") , TString("bjpsiSg"),
+			   TString("bplus"),  TString("bminus") };
 
   int n;
   char f_n[200];
@@ -1894,11 +1906,11 @@ void anaBmm::showDistribution(const char *hname, int mode, double x, double y) {
   // -- Signal
   // -----------------
 
-  TH1 *hm = (TH1D*)fM[bgIndex]->Get(hname);
+  TH1D *hm = (TH1D*)fM[bgIndex]->Get(hname)->Clone();
   setHist(hm, kBlack, kBlack);
   setTitles(hm, hm->GetXaxis()->GetTitle(), hm->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
 
-  TH1D *hs = new TH1D(*((TH1D*)fS[sgIndex]->Get(hname)));
+  TH1D *hs = (TH1D*)fS[sgIndex]->Get(hname)->Clone();
   hs->SetName(Form("SIG:%s", hname)); 
   setFilledHist(hs, kBlue, kBlue, 3004, 2);
   setTitles(hs, hs->GetXaxis()->GetTitle(), hs->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
@@ -1907,30 +1919,30 @@ void anaBmm::showDistribution(const char *hname, int mode, double x, double y) {
   
   if (mode == 0) {
     cout << hname << " drawn as is: sg, bg" << endl;
-    hs->Draw("hist");
-    hm->Draw("samehist");
+    hs->DrawCopy("hist");
+    hm->DrawCopy("samehist");
   } else if (mode == 1) {
     cout << hname << " drawn as is: bg, sg" << endl;
-    hm->Draw("hist");
-    hs->Draw("samehist");
+    hm->DrawCopy("hist");
+    hs->DrawCopy("samehist");
   } else if (mode == 2) {
-    cout << hname << " scale to unity" << endl;
+    // cout << hname << " scale to unity" << endl;
     hm->Scale(1./hm->GetSumOfWeights()); 
     hs->Scale(1./hs->GetSumOfWeights()); 
     hs->SetMaximum(1.1*(hm->GetMaximum() > hs->GetMaximum()? hm->GetMaximum(): hs->GetMaximum()));
-    hs->Draw("hist");
-    hm->Draw("samehist");
+    hs->DrawCopy("hist");
+    hm->DrawCopy("samehist");
   } else if (mode == 3) {
     cout << hname << " scale sg to bg" << endl;
     hs->Scale(hm->GetSumOfWeights()/hs->GetSumOfWeights()); 
-    hm->Draw("hist");
-    hs->Draw("samehist");
+    hm->DrawCopy("hist");
+    hs->DrawCopy("samehist");
   } else if (mode == 4) {
     cout << hname << " scale to L = " << fLumiD[0] << "/fb" << endl;
     hs->Scale(fLumiD[0]/fLumiS[sgIndex]); 
     hm->Scale(fLumiD[0]/fLumiM[bgIndex]); 
-    hm->Draw("hist");
-    hs->Draw("samehist");
+    hm->DrawCopy("hist");
+    hs->DrawCopy("samehist");
   }
 
   if (x > 0) {
@@ -1956,11 +1968,11 @@ void anaBmm::showDistribution(const char *hname, int mode, double x, double y) {
   c0->Clear();
   shrinkPad(0.15, 0.2);
 
-  TH1 *hnm = (TH1D*)fM[normSgIndex]->Get(hname);
+  TH1D *hnm = (TH1D*)fS[normSgIndex]->Get(hname)->Clone();
   setHist(hnm, kBlack, kBlack);
   setTitles(hnm, hnm->GetXaxis()->GetTitle(), hnm->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
 
-  TH1D *hns = new TH1D(*((TH1D*)fS[sgIndex]->Get(hname)));
+  TH1D *hns = (TH1D*)fS[sgIndex]->Get(hname)->Clone();
   hns->SetName(Form("NORM:%s", hname)); 
   setFilledHist(hns, kBlue, kBlue, 3004, 2);
   setTitles(hns, hns->GetXaxis()->GetTitle(), hns->GetYaxis()->GetTitle(), 0.06, 1.1, 1.5);
@@ -1969,30 +1981,30 @@ void anaBmm::showDistribution(const char *hname, int mode, double x, double y) {
   
   if (mode == 0) {
     cout << hname << " drawn as is: norm. sg, norm. bg" << endl;
-    hns->Draw("hist");
-    hnm->Draw("samehist");
+    hns->DrawCopy("hist");
+    hnm->DrawCopy("samehist");
   } else if (mode == 1) {
     cout << hname << " drawn as is: norm. bg, norm. sg" << endl;
-    hnm->Draw("hist");
-    hns->Draw("samehist");
+    hnm->DrawCopy("hist");
+    hns->DrawCopy("samehist");
   } else if (mode == 2) {
-    cout << hname << " scale to unity" << endl;
+    // cout << hname << " scale to unity" << endl;
     hnm->Scale(1./hnm->GetSumOfWeights()); 
     hns->Scale(1./hns->GetSumOfWeights()); 
     hns->SetMaximum(1.1*(hnm->GetMaximum() > hns->GetMaximum()? hnm->GetMaximum(): hns->GetMaximum()));
-    hns->Draw("hist");
-    hnm->Draw("samehist");
+    hns->DrawCopy("hist");
+    hnm->DrawCopy("samehist");
   } else if (mode == 3) {
     cout << hname << " scale norm. sg to norm. bg" << endl;
     hns->Scale(hnm->GetSumOfWeights()/hns->GetSumOfWeights()); 
-    hnm->Draw("hist");
-    hns->Draw("samehist");
+    hnm->DrawCopy("hist");
+    hns->DrawCopy("samehist");
   } else if (mode == 4) {
     cout << hname << " scale to L = " << fLumiD[0] << "/fb" << endl;
     hns->Scale(fLumiD[0]/fLumiS[sgIndex]); 
     hnm->Scale(fLumiD[0]/fLumiM[normSgIndex]); 
-    hnm->Draw("hist");
-    hns->Draw("samehist");
+    hnm->DrawCopy("hist");
+    hns->DrawCopy("samehist");
   }
 
   if (x > 0) {
@@ -2008,6 +2020,11 @@ void anaBmm::showDistribution(const char *hname, int mode, double x, double y) {
   c0->SaveAs(Form("%s/dist/norm-dist-%s.eps", outDir, hname));
 
   c0->SetLogy(0);
+
+  delete hs;
+  delete hm;
+  delete hns;
+  delete hnm;
 
 }
   
@@ -2028,19 +2045,30 @@ void anaBmm::showProcesses(int signal) {
   }
 
 
-  const char *cuts = "pt>5 && ptl1>4";
+//   const char *cuts = "pt>5 && ptl1>4";
 
-  plotProcesses(cuts, "pt", "p_{T, B} [GeV]", 10, 0., 50., 1);
+  const char *cuts = "1";
+
+  plotProcesses(cuts, "ptl0", "p_{T, #mu_{1}} [GeV]", 25, 0., 25., 1);
+  c0->SaveAs(Form("%s/proc/%s-ptl0.eps", outDir, label.Data()));
+
+  plotProcesses(cuts, "ptl1", "p_{T, #mu_{2}} [GeV]", 25, 0., 25., 0);
+  c0->SaveAs(Form("%s/proc/%s-ptl1.eps", outDir, label.Data()));
+
+  plotProcesses(cuts, "pt", "p_{T, B} [GeV]", 25, 0., 50., 0);
   c0->SaveAs(Form("%s/proc/%s-pt.eps", outDir, label.Data()));
 
-  plotProcesses(cuts, "iso", "I", 20, 0., 1., 0);
+  plotProcesses(cuts, "iso", "I", 24, 0., 1.2, 0);
   c0->SaveAs(Form("%s/proc/%s-isolation.eps", outDir, label.Data()));
 
-  plotProcesses(cuts, "rmm", "#Delta R(#mu,#mu)", 10, 0., 2., 0);
+  plotProcesses(cuts, "rmm", "#Delta R(#mu,#mu)", 20, 0., 4.0, 0);
   c0->SaveAs(Form("%s/proc/%s-rmm.eps", outDir, label.Data()));
 
   plotProcesses(cuts, "mass", "m_{#mu#mu} [GeV]", 20, 5., 6., 0);
   c0->SaveAs(Form("%s/proc/%s-mass.eps", outDir, label.Data()));
+
+  plotProcesses(cuts, "mass", "m_{#mu#mu} [GeV]", 28, 0., 14., 0);
+  c0->SaveAs(Form("%s/proc/%s-masswide.eps", outDir, label.Data()));
 
 }
 
@@ -2152,7 +2180,7 @@ void anaBmm::effTable(TFile *f, int index, const char *tag) {
     SF = fLumiD[0]/fLumiM[index];
     sprintf(sname, "%s", tag);
   
-  } else if ( tagTS.Contains("bjpsi") ) {
+  } else if ( tagTS.Contains("bjpsi") ||  tagTS.Contains("bplus") ||  tagTS.Contains("bminus") ) {
     
     SF = fLumiD[0]/fLumiS[index];
     sprintf(sname, "%s", tag);
@@ -2896,25 +2924,21 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
   } else if ( !strcmp(sel, "mysg") || tagTS.Contains("bmm") ) {
 
     TH1D *h1 = (TH1D*)fS[index]->Get(hist)->Clone();
-    emptyBinError(h1);
+
+    c0->Clear();
+    shrinkPad(0.15, 0.15);
 
     h1->Scale(fLumiD[0]/fLumiS[index]);
     
-    h1->GetXaxis()->SetRangeUser(4.8, 6.);
 
     f1->SetParameters(h1->GetMaximum()*0.8, h1->GetMean(), 0.5*h1->GetRMS(), 
 		      h1->GetMaximum()*0.2, h1->GetMean(), 3.*h1->GetRMS());
-      
-
-    shrinkPad(0.15, 0.15);
-    gStyle->SetOptStat(0);
-    gStyle->SetOptTitle(0);
-    setFilledHist(h1, kBlack, kYellow, 1000); 
+    
     setTitles(h1, "m_{#mu#mu} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
     h1->SetMaximum(1.4*h1->GetMaximum());
-    
+      
     // -- Fit with double gaussian
-    h1->DrawCopy("hist");
+    h1->DrawCopy();
     h1->Fit(f1, "0");
     f1->DrawCopy("same");
     
@@ -2977,20 +3001,24 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
     
     return massRed;
 
-  } else if ( !strcmp(sel, "mynsg")  || tagTS.Contains("bjpsi") ) {
-
+  } else if ( !strcmp(sel, "mynsg")  || tagTS.Contains("bjpsi") ||
+	      tagTS.Contains("bplus") || tagTS.Contains("bminus") ) {
+   
     TH1D *h1 = (TH1D*)fS[index]->Get(hist)->Clone();
-
-    emptyBinError(h1);
-
-    h1->GetXaxis()->SetRangeUser(4.8, 6.0);
-
+    
+    c0->Clear();
+    shrinkPad(0.15, 0.15); 
+    
     // -- Fit with pol1 + double gaussian
-    f6->SetParameters(0.8*h1->GetMaximum(), 5.3, 0.01, 
+    f6->SetParameters(h1->GetMaximum()*0.8, 5.3, 0.01, 
+		      h1->GetMaximum()*0.2, 5.3, 0.03,
 		      0.8*h1->GetBinContent(1), 1.);
-
+    
+    
+    setTitles(h1, "m_{#mu#mu K} [GeV]", "events/bin", 0.06, 1.1, 1.3); 
+    h1->SetMaximum(1.4*h1->GetMaximum());
+    
     h1->DrawCopy();
-
     h1->Fit(f6, "0");
     f6->DrawCopy("same");
 
@@ -3005,24 +3033,28 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
     double histRed = histW/histT;
     
     double mean = TMath::Sqrt((f6->GetParameter(0)*f6->GetParameter(0)*f6->GetParameter(1)*f6->GetParameter(1)
-			  + f6->GetParameter(3)*f6->GetParameter(3)*f6->GetParameter(4)*f6->GetParameter(4))
-			 /
-			 (f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
-			 );
-
+			       + f6->GetParameter(3)*f6->GetParameter(3)*f6->GetParameter(4)*f6->GetParameter(4))
+			      /
+			      (f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
+			      );
+    
     double  sigma = TMath::Sqrt((f6->GetParameter(0)*f6->GetParameter(0)*f6->GetParameter(2)*f6->GetParameter(2)
-			   + f6->GetParameter(3)*f6->GetParameter(3)*f6->GetParameter(5)*f6->GetParameter(5))
-			  /
-			  (f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
-			  );
-
+				 + f6->GetParameter(3)*f6->GetParameter(3)*f6->GetParameter(5)*f6->GetParameter(5))
+				/
+				(f6->GetParameter(0)*f6->GetParameter(0) + f6->GetParameter(3)*f6->GetParameter(3))
+				);
+    
     cout << " --> Integral mass reduction factor f = " << massRed 
 	 << " (counting events f = " << histRed << ")." << endl;
     
     h1->GetListOfFunctions()->Clear();
     
-    return massRed;
+    if ( tagTS.Contains("bjpsiSg") ) {
+      return histRed;
+    }
 
+    return massRed;
+    
   } else {    // ----------- Combined backgrounds ------------------
     
     double scale(0.);
@@ -3608,7 +3640,6 @@ void anaBmm::fakeMuons(const char *prod) {
     bgfiles[1] = TString("cbg-004");
     bgfiles[2] = TString("cbg-005");
     bgfiles[3] = TString("cbg-006");
-    bgfiles[4] = TString("cbg-007");
   } 
   // -- Spring07
   else if ( !strcmp(prod,"spring07") ) {
@@ -3923,7 +3954,7 @@ void anaBmm::dumpFiles() {
   OUT << "% -- X-sections, NEVT, and lumi" << endl;
   OUT << Form("%s", (formatTex(fLumiD[0], "Lumi" , "d0")).Data()) << endl;
 
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 15; ++i) {
 
     if (fS[i]) {
 
@@ -6424,8 +6455,8 @@ TString anaBmm::texForm31(double e) {
 // ----------------------------------------------------------------------
 TH1D* anaBmm::DivideHisto(TH1D *hn, TH1D *hN) {
  
-  TH1D *hn_new = (TH1D*)hn->Rebin(4,"hn_new"); 
-  TH1D *hN_new = (TH1D*)hN->Rebin(4,"hN_new"); 
+  TH1D *hn_new = (TH1D*)hn->Rebin(2,"hn_new"); 
+  TH1D *hN_new = (TH1D*)hN->Rebin(2,"hN_new"); 
 
   TH1D *h = new TH1D(*hn_new);
   h->Reset(); 
@@ -6458,8 +6489,8 @@ TH1D* anaBmm::DivideHisto(TH1D *hn, TH1D *hN) {
 // ----------------------------------------------------------------------
 TH2D* anaBmm::DivideHisto2(TH2D *hn, TH2D *hN) {
  
-  TH2D *hn_new = (TH2D*)hn->Rebin2D(4, 5,"hn_new"); 
-  TH2D *hN_new = (TH2D*)hN->Rebin2D(4, 5,"hN_new"); 
+  TH2D *hn_new = (TH2D*)hn->Rebin2D(1, 1,"hn_new"); 
+  TH2D *hN_new = (TH2D*)hN->Rebin2D(1, 1,"hN_new"); 
   
   TH2D *h = new TH2D(*hn_new);
   h->Reset(); 
