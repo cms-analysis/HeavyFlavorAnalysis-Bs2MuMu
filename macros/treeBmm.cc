@@ -2101,7 +2101,7 @@ void treeBmm::fillAnalysisEff() {
   if (fLxy/fSxy > LXYSXYLO)                   { fGoodLength   = 1; }
   if (fL3d/fS3d > L3DS3DLO)                   { fGood3DLength = 1; }
   if (fIso > ISOLATION)                       { fGoodIso      = 1; }
-  if (fChi2 < VTXCHI)                         { fGoodVtx      = 1; }
+  if (fChi2/fNdof < VTXCHI)                   { fGoodVtx      = 1; }
   if ( fLxy/fSxy > 7 )                        { fGoodPresel   = 1; }
 
 
@@ -2179,7 +2179,7 @@ void treeBmm::fillAnalysisEff() {
 		  ((TH1D*)gDirectory->Get("ISOLATION"))->Fill(fIso);
 
 		  ((TH1D*)gDirectory->Get("ISOLATION_F"))->Fill(fIso);
-		  ((TH1D*)gDirectory->Get("VTXCHI_F"))->Fill(fChi2);
+		  ((TH1D*)gDirectory->Get("VTXCHI_F"))->Fill(fChi2/fNdof);
 
 
 		  // -- 'factorizing' cuts
@@ -2187,9 +2187,9 @@ void treeBmm::fillAnalysisEff() {
 		    fAR1->Fill(124.1); // histogram(16);
 		    fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(124.1), "Iso (124.1)");
 
-		    ((TH1D*)gDirectory->Get("VTXCHI"))->Fill(fChi2);
+		    ((TH1D*)gDirectory->Get("VTXCHI"))->Fill(fChi2/fNdof);
 
-		    if (fChi2 < VTXCHI) {
+		    if (fChi2/fNdof < VTXCHI) {
 		      fAR1->Fill(125.1);  
 		      fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(125.1), "Vertex (125.1)");
 		      fGoodAna = 1;  // <-------- good ana.
@@ -2222,7 +2222,7 @@ void treeBmm::fillAnalysisEff() {
 	    fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(220.1), "preselection (fact) (220.1)");
 	      
 	    ((TH1D*)gDirectory->Get("ISOLATION_PRE"))->Fill(fIso);
-	    ((TH1D*)gDirectory->Get("VTXCHI_PRE"))->Fill(fChi2);
+	    ((TH1D*)gDirectory->Get("VTXCHI_PRE"))->Fill(fChi2/fNdof);
 
 	    // -- 'factorizing' cuts
 	    if (fIso > ISOLATION) {
@@ -2231,7 +2231,7 @@ void treeBmm::fillAnalysisEff() {
 	      fGoodIsoF = 1;  // <-------- good iso. (factorizing)
 	    }
 	      
-	    if (fChi2 < VTXCHI) {
+	    if (fChi2/fNdof < VTXCHI) {
 	      fAR1->Fill(225.1); // histogram(22);
 	      fAR1->GetXaxis()->SetBinLabel(fAR1->FindBin(225.1), "Vertex (fact) (225.1)");
 	      fGoodVtxF = 1;  // <-------- good vtx. (factorizing)
@@ -2263,7 +2263,7 @@ void treeBmm::offlineEff(int bs_index, int sel) {
   int hist_i = sel -1;
 
   // -- Secondary vertex variables
-  double L3d(-99.), S3d(-99.), Lxy(-99.), Sxy(-99.), Chi2(-99.);
+  double L3d(-99.), S3d(-99.), Lxy(-99.), Sxy(-99.), Chi2(-99.), Ndof(-99.);
 
   // -- Variables for muon tracks / kaon track
   double PtL0(-99.), PtL1(-99.);
@@ -2275,6 +2275,7 @@ void treeBmm::offlineEff(int bs_index, int sel) {
     
   // - B cand.
   Chi2 = B->fVtx.fChi2;
+  Ndof = B->fVtx.fNdof;
   
   L3d  = B->fVtx.fD3d;
   S3d  = B->fVtx.fD3dE;
@@ -2397,7 +2398,7 @@ void treeBmm::offlineEff(int bs_index, int sel) {
 		  if (Iso > ISOLATION) {
 		    fOR1[hist_i]->Fill(124.1);
 		    fOR1[hist_i]->GetXaxis()->SetBinLabel(fOR1[hist_i]->FindBin(124.1), "Iso (124.1)");
-		    if (Chi2 < VTXCHI) {
+		    if (Chi2/Ndof < VTXCHI) {
 		      fOR1[hist_i]->Fill(125.1);
 		      fOR1[hist_i]->GetXaxis()->SetBinLabel(fOR1[hist_i]->FindBin(125.1), "Vertex (125.1)");
 		      if ( TMath::Abs(Mass - fMassB) < MASSWI ) {
@@ -2427,7 +2428,7 @@ void treeBmm::offlineEff(int bs_index, int sel) {
 	      fOR1[hist_i]->GetXaxis()->SetBinLabel(fOR1[hist_i]->FindBin(224.1), "Iso (fact) (224.1)");
 	    }
 	    	  
-	    if (Chi2 < VTXCHI) {
+	    if (Chi2/Ndof < VTXCHI) {
 	      fOR1[hist_i]->Fill(225.1);
 	      fOR1[hist_i]->GetXaxis()->SetBinLabel(fOR1[hist_i]->FindBin(225.1), "Vertex (fact) (225.1)");
 	    }
@@ -2678,17 +2679,17 @@ void treeBmm::bookHist() {
   h = new TH1D("LXYSXY", " ",            50,  0.,    50.); h->Sumw2(); setTitles(h, "l_{xy}/#sigma_{xy}", "events/bin");
   h = new TH1D("L3DS3D", " ",            50,  0.,    50.); h->Sumw2(); setTitles(h, "l_{3D}/#sigma_{3D}", "events/bin");
   h = new TH1D("ISOLATION", " ",         55,  0.,    1.1); h->Sumw2(); setTitles(h,  "I", "events/bin");
-  h = new TH1D("VTXCHI", " ",           200,  0.,    20.); h->Sumw2(); setTitles(h,  "#chi^{2}", "events/bin");
+  h = new TH1D("VTXCHI", " ",           200,  0.,    20.); h->Sumw2(); setTitles(h,  "#chi^{2}/ndof", "events/bin");
   h = new TH1D("MASSWI", " ",           120, 4.8,     6.); h->Sumw2(); setTitles(h,  "m_{#mu#mu} [GeV]", "events/bin");
  
   h = new TH1D("MASSWI_F", " ",          120, 4.8,     6.); h->Sumw2(); setTitles(h,  "m_{#mu#mu} [GeV]", "events/bin");
   h = new TH1D("ISOLATION_F", " ",        55,  0.,    1.1); h->Sumw2(); setTitles(h,  "I", "events/bin");
-  h = new TH1D("VTXCHI_F", " ",          200,  0.,    20.); h->Sumw2(); setTitles(h,  "#chi^{2}", "events/bin");
+  h = new TH1D("VTXCHI_F", " ",          200,  0.,    20.); h->Sumw2(); setTitles(h,  "#chi^{2}/ndof", "events/bin");
 
   h = new TH1D("LXYSXY_PRE", " ",         50,  0.,    50.); h->Sumw2(); setTitles(h,"l_{xy}/#sigma_{xy}", "events/bin");
   h = new TH1D("L3DS3D_PRE", " ",         50,  0.,    50.); h->Sumw2(); setTitles(h,"l_{3D}/#sigma_{3D}", "events/bin");
   h = new TH1D("ISOLATION_PRE", " ",      55,  0.,    1.1); h->Sumw2(); setTitles(h,  "I", "events/bin");
-  h = new TH1D("VTXCHI_PRE", " ",        200,  0.,    20.); h->Sumw2(); setTitles(h,  "#chi^{2}", "events/bin");
+  h = new TH1D("VTXCHI_PRE", " ",        200,  0.,    20.); h->Sumw2(); setTitles(h,  "#chi^{2}/ndof", "events/bin");
 
   // -- data sample check
   fNgen  = new TH1D("ngen", "N_{#mu}^{gen}",   10, 0., 10. );    fNgen->Sumw2();
@@ -4643,9 +4644,9 @@ void treeBmm::readCuts(TString filename, int dump, double ptMin, double etaMax) 
       ibin = 102;
       hcuts->SetBinContent(ibin, VTXCHI);
       hcuts->GetXaxis()->SetBinLabel(ibin, "#chi^2");
-      ((TH1D*)gDirectory->Get("VTXCHI"))->SetTitle(Form("#chi^2 < %4.2f", VTXCHI));
-      ((TH1D*)gDirectory->Get("VTXCHI_F"))->SetTitle(Form("#chi^2 < %4.2f", VTXCHI));
-      ((TH1D*)gDirectory->Get("VTXCHI_PRE"))->SetTitle(Form("#chi^2 < %4.2f", VTXCHI));
+      ((TH1D*)gDirectory->Get("VTXCHI"))->SetTitle(Form("#chi^2/ndof < %4.2f", VTXCHI));
+      ((TH1D*)gDirectory->Get("VTXCHI_F"))->SetTitle(Form("#chi^2/ndof < %4.2f", VTXCHI));
+      ((TH1D*)gDirectory->Get("VTXCHI_PRE"))->SetTitle(Form("#chi^2/ndof < %4.2f", VTXCHI));
     }
 
     if (!strcmp(CutName, "L3DS3DLO")) {
