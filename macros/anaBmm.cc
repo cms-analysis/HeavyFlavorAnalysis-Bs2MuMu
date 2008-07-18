@@ -1959,7 +1959,10 @@ void anaBmm::showDistribution(const char *hname, int mode, double x, double y) {
 
   c0->SetLogy(0);  
 
+  delete hs;
+  delete hm;
 
+  return;
 
   // -----------------
   // -- Normalization
@@ -2021,8 +2024,6 @@ void anaBmm::showDistribution(const char *hname, int mode, double x, double y) {
 
   c0->SetLogy(0);
 
-  delete hs;
-  delete hm;
   delete hns;
   delete hnm;
 
@@ -3602,6 +3603,11 @@ void anaBmm::fakeMuons(const char *prod) {
   tl->SetNDC(kTRUE);
   tl->SetTextSize(0.06);
   tl->SetTextColor(kBlack);
+
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+  gPad->SetLogy(0); 
+  shrinkPad(0.15, 0.15);
   
   int i = -1;
   char f_n[200];
@@ -3622,14 +3628,18 @@ void anaBmm::fakeMuons(const char *prod) {
   TH1D *K_pT, *fakeK_pT, *K_eta, *fakeK_eta;
   TH1D *P_pT, *fakeP_pT, *P_eta, *fakeP_eta;
   TH1D *Mu_pT, *effMu_pT, *Mu_eta, *effMu_eta;
+  TH1D *Mu_trk_pT, *effMu_trk_pT, *Mu_trk_eta, *effMu_trk_eta;
 
-  TH2D *Pi, *fakePi, *K, *fakeK, *P, *fakeP, *Mu, *effMu;
+  TH2D *Pi, *fakePi, *K, *fakeK, *P, *fakeP, *Mu, *effMu, *Mu_trk, *effMu_trk;
 
   // -- How to do this more efficient ???
   int nsg(0), nbg(0);
+  int trkmu(0);
   TString sgfiles[20], bgfiles[20];
   // -- CSA07
   if ( !strcmp(prod,"csa07") ) {
+
+    trkmu = 1;
 
     nsg = 1;
     sgfiles[0] = TString("csg-003");
@@ -3712,7 +3722,55 @@ void anaBmm::fakeMuons(const char *prod) {
   P = (TH2D*)fS[index]->Get("M300");
   fakeP = (TH2D*)fS[index]->Get("M301");
   Mu = (TH2D*)fS[index]->Get("M400");
-  effMu = (TH2D*)fS[index]->Get("M401");  
+  effMu = (TH2D*)fS[index]->Get("M401"); 
+
+  
+  // -- Muons Tracker & Global (signal only) -----------------------------------
+
+  TH1D* MisID = DivideHisto(effMu_pT, Mu_pT);
+
+  if ( trkmu ) {
+
+    Mu_trk_pT = (TH1D*)fS[index]->Get("m500");    
+    effMu_trk_pT = (TH1D*)fS[index]->Get("m501");      
+    Mu_trk_eta = (TH1D*)fS[index]->Get("m510");
+    effMu_trk_eta = (TH1D*)fS[index]->Get("m511");
+    
+    Mu_trk = (TH2D*)fS[index]->Get("M500");
+    effMu_trk = (TH2D*)fS[index]->Get("M501"); 
+    
+    
+    // - pT
+    TH1D* MisID_trk = DivideHisto(effMu_trk_pT, Mu_trk_pT);
+    MisID->GetYaxis()->SetRangeUser(0,1.1);
+    setTitles(MisID, "p_{T} [GeV]", "#varepsilon", 0.06, 1.1, 1.1);
+    setHist(MisID, 2, 25, 1.5, 1);
+    setHist(MisID_trk, 4, 23, 1.5, 2);
+    MisID->Draw("e");
+    MisID_trk->Draw("samee");
+
+    legg = new TLegend(0.38, 0.20, 0.88, 0.35);
+    legg->SetFillStyle(0); legg->SetBorderSize(1); legg->SetTextSize(0.06);  legg->SetFillColor(0); 
+    legge = legg->AddEntry(MisID, Form("global muons"), "p"); legge->SetTextColor(kBlack);
+    legge = legg->AddEntry(MisID_trk, Form("tracker muons"), "p"); legge->SetTextColor(kBlack);
+    legg->Draw();
+    c0->SaveAs(Form("%s/muonID/%s/efficiency_comb_muonsPt.eps",  outDir, prod));
+ 
+    // - eta
+    MisID = DivideHisto(effMu_eta, Mu_eta);
+    MisID_trk = DivideHisto(effMu_trk_eta, Mu_trk_eta);
+    MisID->GetYaxis()->SetRangeUser(0,1.1);
+    setTitles(MisID, "#eta", "#varepsilon", 0.06, 1.1, 1.1);
+    setHist(MisID, 2, 25, 1.5, 1);
+    setHist(MisID_trk, 4, 23, 1.5, 2);
+    MisID->Draw("e");
+    MisID_trk->Draw("samee");
+    legg->Draw();
+    c0->SaveAs(Form("%s/muonID/%s/efficiency_comb_muonsEta.eps",  outDir, prod));
+  
+  }    
+
+  // ---------------------------------------------------------------------------
 
   for ( int j = 1; j < nsg; j++ ) {
 
@@ -3757,6 +3815,17 @@ void anaBmm::fakeMuons(const char *prod) {
     fakeP->Add((TH2D*)fS[i]->Get("M301"));
     Mu->Add((TH2D*)fS[i]->Get("M400"));
     effMu->Add((TH2D*)fS[i]->Get("M401"));
+   
+    if ( trkmu ) {
+      
+      Mu_trk_pT->Add((TH1D*)fS[i]->Get("m500"));    
+      effMu_trk_pT->Add((TH1D*)fS[i]->Get("m501"));      
+      Mu_trk_eta->Add((TH1D*)fS[i]->Get("m510"));
+      effMu_trk_eta->Add((TH1D*)fS[i]->Get("m511"));
+      
+      Mu_trk->Add((TH2D*)fS[i]->Get("M500"));
+      effMu_trk->Add((TH2D*)fS[i]->Get("M501"));
+    }
 
   }
 
@@ -3805,7 +3874,18 @@ void anaBmm::fakeMuons(const char *prod) {
     fakeP->Add((TH2D*)fM[i]->Get("M301"));
     Mu->Add((TH2D*)fM[i]->Get("M400"));
     effMu->Add((TH2D*)fM[i]->Get("M401"));
+   
+    if ( trkmu ) {
       
+      Mu_trk_pT->Add((TH1D*)fM[i]->Get("m500"));    
+      effMu_trk_pT->Add((TH1D*)fM[i]->Get("m501"));      
+      Mu_trk_eta->Add((TH1D*)fM[i]->Get("m510"));
+      effMu_trk_eta->Add((TH1D*)fM[i]->Get("m511"));
+      
+      Mu_trk->Add((TH2D*)fM[i]->Get("M500"));
+      effMu_trk->Add((TH2D*)fM[i]->Get("M501"));
+    }     
+
   }
 
   // ... fake muons from pions
@@ -3850,7 +3930,7 @@ void anaBmm::fakeMuons(const char *prod) {
   c0->SaveAs(Form("%s/muonID/%s/fakerate_pionsPt.eps", outDir, prod));
 
   // - eta
-  TH1D* MisID = DivideHisto(fakePi_eta, Pi_eta);
+  MisID = DivideHisto(fakePi_eta, Pi_eta);
   MisID->GetYaxis()->SetRangeUser(0,0.021);
   setTitles(MisID, "#eta", "#varepsilon", 0.06, 1.1, 1.1);
   MisID->Draw();
@@ -3891,7 +3971,7 @@ void anaBmm::fakeMuons(const char *prod) {
   c0->SaveAs(Form("%s/muonID/%s/fakerate_protonsEta.eps",  outDir, prod));
 
 
-  // -- Muons
+  // -- Muons Global
   // - pT
   fMuEff = DivideHisto(effMu_pT, Mu_pT);
   fMuEff->GetYaxis()->SetRangeUser(0,1.1);
@@ -3906,6 +3986,22 @@ void anaBmm::fakeMuons(const char *prod) {
   setTitles(MisID, "#eta", "#varepsilon", 0.06, 1.1, 1.1);
   MisID->Draw();
   c0->SaveAs(Form("%s/muonID/%s/efficiency_muonsEta.eps",  outDir, prod));
+
+  // -- Muons Tracker
+  // - pT
+  fMuEff_trk = DivideHisto(effMu_trk_pT, Mu_trk_pT);
+  fMuEff_trk->GetYaxis()->SetRangeUser(0,1.1);
+  setTitles(fMuEff_trk, "p_{T} [GeV]", "#varepsilon", 0.06, 1.1, 1.1);
+  //  fMuEff->GetYaxis()->SetNdivisions(6, kTRUE);
+  fMuEff_trk->Draw();
+  c0->SaveAs(Form("%s/muonID/%s/efficiency_trk_muonsPt.eps",  outDir, prod));
+
+  // - eta
+  MisID = DivideHisto(effMu_trk_eta, Mu_trk_eta);
+  MisID->GetYaxis()->SetRangeUser(0,1.1);
+  setTitles(MisID, "#eta", "#varepsilon", 0.06, 1.1, 1.1);
+  MisID->Draw();
+  c0->SaveAs(Form("%s/muonID/%s/efficiency_trk_muonsEta.eps",  outDir, prod));
 
 
   // -- 2D histograms
@@ -3931,6 +4027,13 @@ void anaBmm::fakeMuons(const char *prod) {
   fMuEff2->GetZaxis()->SetNdivisions(6, kTRUE);
   fMuEff2->Draw("colz");
   c0->SaveAs(Form("%s/muonID/%s/efficiency_muonsEtaPt.eps",  outDir, prod));
+
+  fMuEff2_trk = DivideHisto2(effMu_trk, Mu_trk);
+  setTitles2(fMuEff2_trk, "p_{T} [GeV]", "#eta", 0.06, 1.1, 1.1); 
+  fMuEff2_trk->GetZaxis()->SetRangeUser(0.,1.);
+  fMuEff2_trk->GetZaxis()->SetNdivisions(6, kTRUE);
+  fMuEff2_trk->Draw("colz");
+  c0->SaveAs(Form("%s/muonID/%s/efficiency_trk_muonsEtaPt.eps",  outDir, prod));
   
   OUT << Form("\\vdef{effIdMuonsSim}    {\\ensuremath{ {%4.3e } } }", effMuons)   << endl;
   OUT << Form("\\vdef{misIdPionsSim}    {\\ensuremath{ {%4.3e } } }", frPions)   << endl;

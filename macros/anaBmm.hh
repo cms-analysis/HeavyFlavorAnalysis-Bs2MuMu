@@ -227,12 +227,14 @@ private:
     ,fBs_max;
 
   TH1D *fMuEff
+    , *fMuEff_trk
     , *fPiMid
     , *fKaMid
     , *fProtMid
     ;
 
   TH2D *fMuEff2
+    , *fMuEff2_trk
     , *fPiMid2
     , *fKaMid2
     , *fProtMid2
