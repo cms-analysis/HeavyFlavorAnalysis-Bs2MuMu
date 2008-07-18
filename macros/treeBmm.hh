@@ -253,7 +253,13 @@ private:
     , fTruthB
     ;
 
-  double fMuL0
+  double fTkL0
+    , fTkL1
+    , fTkK
+    , fLvL0
+    , fLvL1
+    , fLvK
+    , fMuL0
     , fMuL1
     , fMuK
     ;

@@ -54,7 +54,7 @@ if ( $opt_s || $opt_b ) {
 		    #push(@chain, `ls -1 csg-00{3,4}`);
 		    push(@chain, `ls -1 csg-003`); }
 
-    if ( $opt_b ) { push(@chain, `ls -1 cbg-00{3,4,5}`); push(@chain, `ls -1 cbg-026`); push(@chain, `ls -1 cbg-009`); }
+    if ( $opt_b ) { push(@chain, `ls -1 cbg-00{4,5}`); push(@chain, `ls -1 cbg-026`); push(@chain, `ls -1 cbg-009`); }
 		    #push(@chain, `ls -1 cbg-003`); }
 	            #push(@chain, `ls -1 cbg-003`); }
 

@@ -1797,6 +1797,18 @@ void treeBmm::trackProperties() {
   fMuL1 = fpL2->fMuID;
   if (fNorm) fMuK = fpK->fMuID;
 
+
+  // -- fTkID = 1 if recontructed as tracker muons, 0 else
+  fTkL0 = fpL1->fKaID;
+  fTkL1 = fpL2->fKaID;
+  if (fNorm) fTkK = fpK->fKaID;
+
+
+  // -- fTkID = 1 if recontructed as tracker muons, 0 else
+  fLvL0 = fpL1->fElID;
+  fLvL1 = fpL2->fElID;
+  if (fNorm) fLvK = fpK->fElID;
+
   // -- fMcL0 = particle PDG ID
   fMcL0 = fpL1->fMCID;
   fMcL1 = fpL2->fMCID;
@@ -2104,6 +2116,10 @@ void treeBmm::fillAnalysisEff() {
   if (fChi2/fNdof < VTXCHI)                   { fGoodVtx      = 1; }
   if ( fLxy/fSxy > 7 )                        { fGoodPresel   = 1; }
 
+  // -- High-level trigger in mass window (histo: 30)
+  if (1 == fGoodKinematics && 1 == fGoodL1  && 1 == fGoodHLT && 1 == fGoodMass) {
+    histogram(30);
+  }
 
   //--------------------------------------------------------------------
   // -- Set Triggers to true for rare BG (for next part)
@@ -2458,6 +2474,7 @@ void treeBmm::bookHist() {
   book(1);   // histogram(1) reco level, after kinematic cuts on generator level have been applied
   book(2);   // histogram(2) reco level, after L1 cuts
   book(3);   // histogram(3) reco level, after HLT cuts
+  book(30);   // histogram(30) reco level, after HLT cuts and in mass window
   book(4);   // histogram(4) reco level, after all offline cuts
   book(5); // histogram(15) reco level, after offline cuts without factorizing cuts (Vertex&Isolation)
 
@@ -2465,6 +2482,7 @@ void treeBmm::bookHist() {
   book2(1);   // histogram(1) reco level, after kinematic cuts on generator level have been applied
   book2(2);   // histogram(2) reco level, after L1 cuts
   book2(3);   // histogram(3) reco level, after HLT cuts
+  book2(30);   // histogram(30) reco level, after HLT cuts and in mass window
   book2(4);   // histogram(4) reco level, after all offline cuts
   book2(5);   // histogram(15) reco level, after offline cuts without factorizing cuts (Vertex&Isolation)
 
@@ -2564,6 +2582,14 @@ void treeBmm::bookHist() {
   fTree->Branch("etak",           &fEtaK,           "etak/D");
   fTree->Branch("qk",             &fQK,             "qk/D");
   fTree->Branch("tipk",           &fTipK,           "tipk/D");
+
+  fTree->Branch("lv1l0",          &fLvL0,            "lv1l0/D");
+  fTree->Branch("lv1l1",          &fLvL1,            "lv1l1/D");
+  fTree->Branch("lv1k",           &fLvK,              "lv1k/D");
+
+  fTree->Branch("trkl0",          &fTkL0,            "trkl0/D");
+  fTree->Branch("trkl1",          &fTkL1,            "trkl1/D");
+  fTree->Branch("trkk",           &fTkK,              "trkk/D");
 
   fTree->Branch("glbl0",          &fMuL0,            "glbl0/D");
   fTree->Branch("glbl1",          &fMuL1,            "glbl1/D");
