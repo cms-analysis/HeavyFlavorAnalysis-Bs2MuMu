@@ -14,6 +14,7 @@ type=mysg file=treebmm/csg-003.default.root vxs=105.6825E+00 signature=bsmumu
 type=sg file=treebmm/csg-003h.default.root vxs=65.7580e+00 signature=bsmumu
 #
 type=mynsg file=treebmm/csg-004h.norm.root vxs=2.1041e+06 signature=bpjpsikp
+#type=mynsg file=treebmm/csg-004plus.norm.root vxs=10.4545e+05 signature=bpjpsikp
 type=nsg file=treebmm/csg-004m.norm.root vxs=10.4545e+05 signature=bpjpsikp
 type=nsg file=treebmm/csg-004j.norm.root vxs=1.3372e+08 signature=NonPrompt
 type=nsg file=treebmm/csg-004n.norm.root vxs=1.3372e+08 signature=bpjpsikp

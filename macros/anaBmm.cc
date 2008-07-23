@@ -591,6 +591,7 @@ void anaBmm::distributions() {
 
   showDistributions(2);
   showDistributions(3);
+  showDistributions(30);
 
   showDistributions(4);
   showDistributions(5);
@@ -1267,6 +1268,11 @@ void anaBmm::breco(int o, const char *hist) {
       h1->Fit(f1, "0");
       f1->DrawCopy("same");
     
+      pa->SetLineColor(kRed);
+      pa->SetLineWidth(2.0);
+      pa->DrawArrow(fMassBs-0.1, 0.5*h1->GetMaximum(), fMassBs-0.1, 0., 0.01); 
+      pa->DrawArrow(fMassBs+0.1, 0.5*h1->GetMaximum(), fMassBs+0.1, 0., 0.01); 
+
       mean = TMath::Sqrt((f1->GetParameter(0)*f1->GetParameter(0)*f1->GetParameter(1)*f1->GetParameter(1)
 			  + f1->GetParameter(3)*f1->GetParameter(3)*f1->GetParameter(4)*f1->GetParameter(4))
 			 /
@@ -1316,6 +1322,11 @@ void anaBmm::breco(int o, const char *hist) {
       h1->DrawCopy("hist");
       h1->Fit(f6, "0");
       f6->DrawCopy("same");
+    
+      pa->SetLineColor(kRed);
+      pa->SetLineWidth(2.0);
+      pa->DrawArrow(fMassBp-0.1, 0.5*h1->GetMaximum(), fMassBp-0.1, 0., 0.01); 
+      pa->DrawArrow(fMassBp+0.1, 0.5*h1->GetMaximum(), fMassBp+0.1, 0., 0.01); 
     
       mean = TMath::Sqrt((f6->GetParameter(0)*f6->GetParameter(0)*f6->GetParameter(1)*f6->GetParameter(1)
 			  + f6->GetParameter(3)*f6->GetParameter(3)*f6->GetParameter(4)*f6->GetParameter(4))
@@ -1962,8 +1973,6 @@ void anaBmm::showDistribution(const char *hname, int mode, double x, double y) {
   delete hs;
   delete hm;
 
-  return;
-
   // -----------------
   // -- Normalization
   // -----------------
@@ -2065,10 +2074,10 @@ void anaBmm::showProcesses(int signal) {
   plotProcesses(cuts, "rmm", "#Delta R(#mu,#mu)", 20, 0., 4.0, 0);
   c0->SaveAs(Form("%s/proc/%s-rmm.eps", outDir, label.Data()));
 
-  plotProcesses(cuts, "mass", "m_{#mu#mu} [GeV]", 20, 5., 6., 0);
+  plotProcesses(cuts, "mass", "m_{#mu#mu} [GeV]", 20, 4.8, 6., 0);
   c0->SaveAs(Form("%s/proc/%s-mass.eps", outDir, label.Data()));
 
-  plotProcesses(cuts, "mass", "m_{#mu#mu} [GeV]", 28, 0., 14., 0);
+  plotProcesses(cuts, "mass", "m_{#mu#mu} [GeV]", 28, 0., 14., 1);
   c0->SaveAs(Form("%s/proc/%s-masswide.eps", outDir, label.Data()));
 
 }
@@ -2872,6 +2881,11 @@ double anaBmm::massReduction(const char *hist, const char *sel, int index, doubl
 
     h2->Draw();
     f1->Draw("same");
+
+    pl->SetLineColor(kRed);
+    pl->SetLineWidth(2);
+    pl->DrawLine(fMassBs-0.1, h2->GetMaximum(), fMassBs-0.1,  h2->GetMinimum()); 
+    pl->DrawLine(fMassBs+0.1, h2->GetMaximum(), fMassBs+0.1,  h2->GetMinimum()); 
 
     tl->SetTextSize(0.06); tl->SetTextColor(kBlack);
 //     tl->DrawLatex(0.16, 0.85, Form("f_{%3.0f}: %5.3f#pm%5.3f", 1000*window, massRed, massRedE));
