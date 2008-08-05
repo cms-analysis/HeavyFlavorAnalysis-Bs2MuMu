@@ -15,12 +15,22 @@ void treeBmm::startAnalysis() {
 // ----------------------------------------------------------------------
 void treeBmm::eventProcessing() {
 
-  if (fDebug & 1) cout << "==> Event: " << fEvent << endl;
+
+  fRunNr = fpEvt->fRunNumber;
+  fEvtNr = fpEvt->fEventNumber;
+  if ( fChainFileName.Contains("bg-006") ) {
+    fEvtWeight = fpEvt->fEventWeight;
+  }
+
+  if (fDebug & 1) cout << "==> Event: " << fEvent << " (weight: " <<  fEvtWeight << ")" << endl;
 
   fER1->Fill(0.1); 
 
   fpHistFile->cd();
-  ((TH1D*)fpHistFile->Get("runs"))->Fill(fpEvt->fRunNumber);
+  ((TH1D*)fpHistFile->Get("runs"))->Fill(fRunNr);
+  ((TH1D*)fpHistFile->Get("evts"))->Fill(fEvtNr);
+  ((TH1D*)fpHistFile->Get("weights"))->Fill(fEvtWeight);
+
 
   // -- get candidate and cand./track properties
   initVariables();
@@ -116,6 +126,9 @@ void treeBmm::initVariables() {
   fpHistFile->cd();
 
   // -- Find candidates for signal or norm. channel
+  fRunNr  = fEvtNr  = -1;
+  fEvtWeight        = -1.;
+
   fBCI    = -1;
   fSTI[0] = fSTI[1] = fSTI[2] = -1;
   fPtL0   = fPtL1   = fPtK    = -99.;
@@ -2135,7 +2148,8 @@ void treeBmm::fillAnalysisEff() {
   //--------------------------------------------------------------------
   if ( (1 == fGoodKinematics && 1 == fGoodL1  && 1 == fGoodHLT) || ignoreTrigger ) {
 
-    ((TH1D*)gDirectory->Get("PTLO"))->Fill(fPt);
+    ((TH1D*)gDirectory->Get("PTLO"))->Fill(fPtL0);
+    ((TH1D*)gDirectory->Get("PTLO"))->Fill(fPtL1);
 
     if ((fPtL0 > PTLO) && (fPtL1 > PTLO)) {
       fAR1->Fill(100.1); // histogram(10);
@@ -2515,8 +2529,11 @@ void treeBmm::bookHist() {
 
   fTree = new TTree("events", "events");
 
-  fTree->Branch("run",            &fRun ,            "run/I");
+  fTree->Branch("runNr",            &fRunNr ,            "runNr/I");
+  fTree->Branch("eventNr",          &fEvtNr ,            "eventNr/I");
+  fTree->Branch("eventWeight",      &fEvtWeight ,        "eventWeight/D");
 
+  fTree->Branch("number",         &fEvent ,          "number/I");
   fTree->Branch("process",        &fProcessType ,    "process/I");
 
   fTree->Branch("goodKinematics", &fGoodKinematics , "goodKinematics/I");
@@ -2693,6 +2710,9 @@ void treeBmm::bookHist() {
   //*******************************************************************************
   // -- event
   h = new TH1D("runs", "runs ",         100000, 0., 100000);
+  h = new TH1D("evts", "evts ",         100000, 0., 100000);
+  h = new TH1D("weights", "weights",    100000, 0., 100000);
+
   h = new TH1D("mass", "mass ",             70, 5.,    5.7);
 
   // -- cuts

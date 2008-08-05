@@ -233,7 +233,10 @@ private:
   // -- Event variables
   int fNorm;
 
-  int fRun
+  double fEvtWeight;
+
+  int fRunNr
+    , fEvtNr
     , fD0
     , fD1
     , fD2
