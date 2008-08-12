@@ -15,25 +15,14 @@ void treeBmm::startAnalysis() {
 // ----------------------------------------------------------------------
 void treeBmm::eventProcessing() {
 
-
-  fRunNr = fpEvt->fRunNumber;
-  fEvtNr = fpEvt->fEventNumber;
-  if ( fChainFileName.Contains("bg-006") ) {
-    fEvtWeight = fpEvt->fEventWeight;
-  }
-
-  if (fDebug & 1) cout << "==> Event: " << fEvent << " (weight: " <<  fEvtWeight << ")" << endl;
+  if (fDebug & 1) cout << "==> Event: " << fEvent << endl;
 
   fER1->Fill(0.1); 
 
-  fpHistFile->cd();
-  ((TH1D*)fpHistFile->Get("runs"))->Fill(fRunNr);
-  ((TH1D*)fpHistFile->Get("evts"))->Fill(fEvtNr);
-  ((TH1D*)fpHistFile->Get("weights"))->Fill(fEvtWeight);
-
-
   // -- get candidate and cand./track properties
   initVariables();
+
+  if (fDebug & 1) cout << " --> weight: " <<  fEvtWeight <<  endl;
 
   // -- Generator-level process discrimation
   processDiscrimination();
@@ -167,6 +156,20 @@ void treeBmm::initVariables() {
   fgK     = frK     = 0;
   fnTmMu  = fnTmK   = 0;
   frSigK  = 0;
+
+
+  // -- START ---
+
+  fRunNr = fpEvt->fRunNumber;
+  fEvtNr = fpEvt->fEventNumber;
+  if ( fChainFileName.Contains("bg-006") || fChainFileName.Contains("bg-046")) {
+    fEvtWeight = fpEvt->fEventWeight;
+  }
+
+  fpHistFile->cd();
+  ((TH1D*)fpHistFile->Get("runs"))->Fill(fRunNr);
+  ((TH1D*)fpHistFile->Get("evts"))->Fill(fEvtNr);
+  ((TH1D*)fpHistFile->Get("weights"))->Fill(fEvtWeight);
 
   int bs_cand(-1), bplus_cand(-1);
   int sub_i(-1);
@@ -1321,12 +1324,12 @@ void treeBmm::candidateSelection(int o) {
     fGoodCand = fgBmm;
   }
 
-  if (fChainFileName.Contains("cbg-00") && fgBmm > 0 ) {
+  if (fChainFileName.Contains("cbg-004") && fgBmm > 0 ) { // filter non-prompt jpsi: background only
     if (fDebug & 2)    cout << "cand. selection> this background events contain a signal !!!"  << endl;
     fGoodCand = -99;
   }
 
-  if (fChainFileName.Contains("csg-004n") && fgBmm < 1 ) {
+  if (fChainFileName.Contains("csg-004n") && fgBmm < 1 ) { // filter non-prompt jpsi: signal only
     if (fDebug & 2)    cout << "cand. selection> this signal event does not contain a signal !!!"  << endl;
     fGoodCand = -66;
   }
