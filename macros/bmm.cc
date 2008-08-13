@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 
   TString progName  = argv[0]; 
   TString writeName, fileName;
-  Int_t isMC(0), isVerbose(0), isSignal(0), doCandSel(0);
+  Int_t isMC(0), isStew(0), isVerbose(0), isSignal(0), doCandSel(0);
   Int_t setL1(-1), setHLT(-1);
   Int_t file(0);
   Int_t dirspec(0);
@@ -52,7 +52,8 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-c"))  {fileName   = TString(argv[++i]); file = 0; }     // file with chain definition
     if (!strcmp(argv[i],"-D"))  {dirName    = TString(argv[++i]);  dirspec = 1; } // where to put the output
     if (!strcmp(argv[i],"-f"))  {fileName   = TString(argv[++i]); file = 1; }     // single file instead of chain
-    if (!strcmp(argv[i],"-mc")) {isMC = 1; }                                      // flag to avoid warnings
+    if (!strcmp(argv[i],"-mc")) {isMC   = 1; }                                    // flag to avoid warnings
+    if (!strcmp(argv[i],"-w"))  {isStew = 1; }                                    // stew => use event weights
     if (!strcmp(argv[i],"-n"))  {nevents    = atoi(argv[++i]); }                  // number of events to run 
     if (!strcmp(argv[i],"-r"))  {randomSeed = atoi(argv[++i]); }                  // set seed for random gen.
     if (!strcmp(argv[i],"-s"))  {sameSign   = 1; }                                // same sign
@@ -161,6 +162,7 @@ int main(int argc, char *argv[]) {
   a.candSelEff(doCandSel);
   a.triggerDecisions(setL1, setHLT);
   a.isMC(isMC); 
+  a.isStew(isStew); 
   a.readCuts(cutFile, 1, genPt, genEta);
   a.decayChannel(decaySign, 1);
   a.isSignal(isSignal);

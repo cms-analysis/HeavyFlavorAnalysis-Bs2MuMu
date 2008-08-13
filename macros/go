@@ -83,8 +83,16 @@ if ( $opt_s || $opt_b ) {
 	    }
 
 
+	} elsif ( $file eq "cbg-006" ) {
+	    
+	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -w -v 1 \>\& treebmm/$file\.$cuts\.log\n";
+	    if (!$opt_p) { 
+		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -w -v 1 \>\& treebmm/$file\.$cuts\.log"); 
+	    }
+	    
+	    
 	} else {
-
+	    
 	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log\n";
 	    if (!$opt_p) { 
 		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -v 1 \>\& treebmm/$file\.$cuts\.log"); 
@@ -131,7 +139,14 @@ if ( $opt_n || $opt_m )     {
 	    if (!$opt_p) { 
 		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -t -v 1 \>\& treebmm/$file\.$cuts\.log"); 
 	    }
-
+	    
+	} elsif ( $file eq "cbg-006" ) { 
+	    
+	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -w -v 1 \>\& treebmm/$file\.$cuts\.log\n";
+	    if (!$opt_p) { 
+		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -w -v 1 \>\& treebmm/$file\.$cuts\.log"); 
+	    }
+	    
 	} else {
 	    
 	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -v 1 \>\& treebmm/$file\.$cuts\.log\n";

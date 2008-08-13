@@ -3319,6 +3319,29 @@ void treeBmm::book2(int offset) {
 // ----------------------------------------------------------------------
 void treeBmm::histogram(int offset) {
 
+  if ( fIsStew > 0) {
+
+    if (fEvtWeight > 0. ) { 
+
+      histogram_weighted(offset, fEvtWeight);
+
+    } else {
+
+      cout << " ::::::: Error ::::::   event weight = " << fEvtWeight << "\t ----> Cannot fill histogram !!!" << endl;
+
+    }
+
+  } else {
+
+    histogram_unweighted(offset);
+
+  }
+}
+
+
+// ----------------------------------------------------------------------
+void treeBmm::histogram_unweighted(int offset) {
+
   if (fDebug & 2) { cout << "histogram> Start" << endl; }
 
   ((TH1D*)gDirectory->Get(Form("c%d00", offset)))->Fill(fPt);
@@ -3433,6 +3456,123 @@ void treeBmm::histogram(int offset) {
   if (fDebug & 2) { cout << "histogram> End" << endl; }
 }
 
+
+// ----------------------------------------------------------------------
+void treeBmm::histogram_weighted(int offset, double weight) {
+
+  if (fDebug & 2) { cout << "histogram_weighted> Start" << endl; }
+
+  ((TH1D*)gDirectory->Get(Form("c%d00", offset)))->Fill(fPt, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d01", offset)))->Fill(fEta, weight);
+  
+  ((TH1D*)gDirectory->Get(Form("c%d10", offset)))->Fill(fPtL0, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d11", offset)))->Fill(fEtaL0, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d11", offset)))->Fill(fEtaL1, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d12", offset)))->Fill(fPtL0, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d12", offset)))->Fill(fPtL1, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d13", offset)))->Fill(fTipL0, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d13", offset)))->Fill(fTipL1, weight);
+
+  ((TH1D*)gDirectory->Get(Form("c%d14", offset)))->Fill(fS3d, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d15", offset)))->Fill(fSxy, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d16", offset)))->Fill(fL3d/fS3d, weight);
+
+  ((TH1D*)gDirectory->Get(Form("c%d18", offset)))->Fill(fDphi, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d19", offset)))->Fill(fDeta, weight);
+
+  ((TH1D*)gDirectory->Get(Form("c%d20", offset)))->Fill(fRMM, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d21", offset)))->Fill(fCosAngle, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d22", offset)))->Fill(fLxy/fSxy, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d23", offset)))->Fill(fLxy, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d24", offset)))->Fill(fIsoVeto, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d25", offset)))->Fill(fIso, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d26", offset)))->Fill(fL3d, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d27", offset)))->Fill(fChi2, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d28", offset)))->Fill(fCosAngle3, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d29", offset)))->Fill(fProcessType, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d30", offset)))->Fill(fMass, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d31", offset)))->Fill(fMass, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d32", offset)))->Fill(fMass, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d33", offset)))->Fill(fMass, weight);
+
+  ((TH1D*)gDirectory->Get(Form("c%d35", offset)))->Fill(fpEvt->nRecTracks(), weight);
+
+  ((TH1D*)gDirectory->Get(Form("c%d36", offset)))->Fill(fProb, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d37", offset)))->Fill(fChi2/fNdof, weight);
+
+  ((TH1D*)gDirectory->Get(Form("c%d40", offset)))->Fill(fCosAngle, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d41", offset)))->Fill(fCosAngle, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d42", offset)))->Fill(fCosAngle, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d43", offset)))->Fill(fCosAngle, weight);
+
+  ((TH1D*)gDirectory->Get(Form("c%d50", offset)))->Fill(fFltR, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d51", offset)))->Fill(fFltG, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d52", offset)))->Fill(fFltRes, weight);
+
+  ((TH1D*)gDirectory->Get(Form("c%d60", offset)))->Fill(fCosAngle3, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d61", offset)))->Fill(fCosAngle3, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d62", offset)))->Fill(fCosAngle3, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d63", offset)))->Fill(fCosAngle3, weight);
+
+  ((TH1D*)gDirectory->Get(Form("c%d70", offset)))->Fill(fTau, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d71", offset)))->Fill(fTxy, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d72", offset)))->Fill(fTxy*fCosAngle, weight);
+
+  ((TH1D*)gDirectory->Get(Form("c%d73", offset)))->Fill(fTau, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d74", offset)))->Fill(fTxy, weight);
+  ((TH1D*)gDirectory->Get(Form("c%d75", offset)))->Fill(fTxy*fCosAngle, weight);
+
+  ((TH2D*)gDirectory->Get(Form("C%d00", offset)))->Fill(fDptL0, fSxy, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d01", offset)))->Fill(fPtL0, fEtaL0, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d01", offset)))->Fill(fPtL1, fEtaL1, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d02", offset)))->Fill(fPtL0, fSxy, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d03", offset)))->Fill(fPtL0, fLxy/fSxy, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d04", offset)))->Fill(fPtL0, fTipL0, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d04", offset)))->Fill(fPtL1, fTipL1, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d05", offset)))->Fill(fPtL0, fMass, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d06", offset)))->Fill(fPtL0, fRMM, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d07", offset)))->Fill(fPtL0, fCosAngle, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d08", offset)))->Fill(fPtL0, fIsoVeto, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d09", offset)))->Fill(fPtL0, fChi2, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d10", offset)))->Fill(fPtL0, fPt, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d11", offset)))->Fill(fPtL0, fEta, weight);
+
+  ((TH2D*)gDirectory->Get(Form("C%d12", offset)))->Fill(fEtaL0, fSxy, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d13", offset)))->Fill(fEtaL0, fLxy/fSxy, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d14", offset)))->Fill(fEtaL0, fTipL0, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d15", offset)))->Fill(fEtaL0, fMass, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d16", offset)))->Fill(fEtaL0, fRMM, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d17", offset)))->Fill(fEtaL0, fCosAngle, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d18", offset)))->Fill(fEtaL0, fIsoVeto, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d19", offset)))->Fill(fEtaL0, fChi2, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d20", offset)))->Fill(fEtaL0, fPt, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d21", offset)))->Fill(fEtaL0, fEta, weight);
+
+  ((TH2D*)gDirectory->Get(Form("C%d22", offset)))->Fill(fMass, fSxy, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d23", offset)))->Fill(fMass, fLxy/fSxy, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d24", offset)))->Fill(fMass, fTipL0, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d25", offset)))->Fill(fMass, fRMM, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d26", offset)))->Fill(fMass, fCosAngle, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d27", offset)))->Fill(fMass, fIsoVeto, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d28", offset)))->Fill(fMass, fChi2, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d29", offset)))->Fill(fMass, fPt, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d30", offset)))->Fill(fMass, fEta, weight);
+
+  ((TH2D*)gDirectory->Get(Form("C%d31", offset)))->Fill(fPt, fSxy, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d32", offset)))->Fill(fPt, fLxy/fSxy, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d33", offset)))->Fill(fPt, fTipL0, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d34", offset)))->Fill(fPt, fRMM, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d35", offset)))->Fill(fPt, fCosAngle, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d36", offset)))->Fill(fPt, fIsoVeto, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d37", offset)))->Fill(fPt, fChi2, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d38", offset)))->Fill(fPt, fEta, weight);
+
+  ((TH2D*)gDirectory->Get(Form("C%d40", offset)))->Fill(fDeta, fDphi, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d41", offset)))->Fill(fDphi, fRMM, weight);
+  ((TH2D*)gDirectory->Get(Form("C%d42", offset)))->Fill(fDeta, fRMM, weight);
+
+  if (fDebug & 2) { cout << "histogram> End" << endl; }
+}
 // **************************************************************************************************
 // --------------------------------------------------------------------------------------------------
 void treeBmm::processDiscrimination() {
@@ -4962,6 +5102,14 @@ void treeBmm::decayChannel(TString ch, int dump) {
   } else {
     cout << " ... not doing candidate selection 1 - 4!" << endl;
   }
+  cout << "-----------------------------------------------------" << endl;
+
+  if ( fIsStew ) {
+    cout << " ... this is STEW: using event weights." << endl;
+  } else {
+    cout << " ... not using event weights !" << endl;
+  }
+
   cout << "-----------------------------------------------------" << endl;
 
   if (fDebug & 2) { cout << "decayChannel> End" << endl; }

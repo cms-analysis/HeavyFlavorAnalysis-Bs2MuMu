@@ -54,7 +54,8 @@ public:
   int         getNormCand(int cand = 521, int subcand = 433, int sel = 2, int crit = 1);
   void        eventProcessing();
 
-  void        isMC(int i) {fIsMC = i;}
+  void        isMC(int i)   {fIsMC   = i;}
+  void        isStew(int i) {fIsStew = i;}
   void        debugLevel(int i) {fDebug = i;}
   void        candSelEff(int i) {fOffCand = i;}
   void        triggerDecisions(int i, int j) {SETL1 = i; SETHLT = j;}
@@ -85,6 +86,8 @@ public:
   void        book(int offset);
   void        book2(int offset);
   void        histogram(int offset); 
+  void        histogram_unweighted(int offset); 
+  void        histogram_weighted(int offset, double weight); 
   void        signalPlots(); 
   void        fillEventStats(); 
 
@@ -122,7 +125,7 @@ private:
   std::vector<int>    fKCI;        // Index for all kaon candidte tracks 
 
   int fDebug   // bit encoded: {....} = track (8), B cand (4), Event (2).
-    , fIsMC, fIsSignal, fSameSign;
+    , fIsMC, fIsStew, fIsSignal, fSameSign;
 
   // -- Histogram pointers 
   TTree *fTree;
