@@ -128,8 +128,8 @@ public:
   void sumHistMC_Add(int ch, const char *hist, TH1 *hist1, TH1 *hist2, int hlt = 0);
   void channelEff(TFile *f, double &fnorm_Ch, double &eff1_Ch, double &eff2_Ch);
 
-  void writeFitPar(TF1 *f, int o, double mean, double sigma, int npar);
-  void writeFitPar2(TF1 *f, int o, double mean, double sigma, int npar);
+  void writeFitPar(TF1 *f, int o, double mean, double sigma, double meanE, double sigmaE, int npar);
+  void writeFitPar2(TF1 *f, int o, double mean, double sigma, double meanE, double sigmaE, int npar);
   void fillInTheRest(const char *tag);
  
 
@@ -185,17 +185,17 @@ public:
 private:
 
   // -- for normalization
-  double fvXsS[10],  fvXsD[10],  fvXsM[30];  // this is entered by hand from NSEL/NGEN
-  double fLumiS[10], fLumiD[10], fLumiM[30]; // this is computed in loadFiles()
-  double fNevtS[10], fNevtD[10], fNevtM[30]; // this is filled in loadFiles()
-  double fNexpS[10], fNexpD[10], fNexpM[30]; // this is filled in loadFiles()
+  double fvXsS[15],  fvXsD[10],  fvXsM[30];  // this is entered by hand from NSEL/NGEN
+  double fLumiS[15], fLumiD[10], fLumiM[30]; // this is computed in loadFiles()
+  double fNevtS[15], fNevtD[10], fNevtM[30]; // this is filled in loadFiles()
+  double fNexpS[15], fNexpD[10], fNexpM[30]; // this is filled in loadFiles()
   double fMisIdM[30];                         // this is filled in dumpFiles()
   double fEffHltM[30];                        // this is filled in dumpFiles()
-  TString fSignS[10], fSignD[10], fSignM[30]; // this is filled in loadFiles()
-  TString fTypeS[10], fTypeD[10], fTypeM[30]; // this is filled in loadFiles()
-  TString fFileS[10], fFileD[10], fFileM[30]; // this is filled in loadFiles()
-  TString fSignTexS[10], fSignTexD[10], fSignTexM[30]; // this is filled in loadFiles()
-  TString fSignLeggS[10], fSignLeggD[10], fSignLeggM[30]; // this is filled in loadFiles()
+  TString fSignS[15], fSignD[10], fSignM[30]; // this is filled in loadFiles()
+  TString fTypeS[15], fTypeD[10], fTypeM[30]; // this is filled in loadFiles()
+  TString fFileS[15], fFileD[10], fFileM[30]; // this is filled in loadFiles()
+  TString fSignTexS[15], fSignTexD[10], fSignTexM[30]; // this is filled in loadFiles()
+  TString fSignLeggS[15], fSignLeggD[10], fSignLeggM[30]; // this is filled in loadFiles()
 
   // -- misc
   double fFom, fUL, fMaxUL;

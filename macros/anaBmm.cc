@@ -438,6 +438,7 @@ void anaBmm::loadSg(const char *name, double lumi, const char *sign, const char 
   if ( fFileS[nSg].Contains("sg-001") || fFileS[nSg].Contains("sg-002") || fFileS[nSg].Contains("sg-004m") ) { 
     fNevtS[nSg] = h->GetBinContent(h->FindBin(1.1)); 
   } 
+
   fLumiS[nSg] = fNevtS[nSg]/fvXsS[nSg] ;
   fSignS[nSg] = TString(sign);
   fTypeS[nSg] = TString(type);
@@ -1296,8 +1297,8 @@ void anaBmm::breco(int o, const char *hist) {
 			  f1->GetParameter(0), f1->GetParError(0),
 			  f1->GetParameter(3), f1->GetParError(3));
 
-      if ( !strcmp(hist, "c530") )  writeFitPar2(f1, o, mean, sigma, 6); // -- before fact. cuts
-      if ( !strcmp(hist, "c430") )  writeFitPar(f1, o, mean, sigma, 6);
+      if ( !strcmp(hist, "c530") )  writeFitPar2(f1, o, mean, sigma,  meanE, sigmaE, 6); // -- before fact. cuts
+      if ( !strcmp(hist, "c430") )  writeFitPar(f1, o, mean, sigma, meanE, sigmaE, 6);
     }
   
     // --  norm. channel (double gauss + pol1)
@@ -1350,8 +1351,8 @@ void anaBmm::breco(int o, const char *hist) {
 			  f6->GetParameter(0), f6->GetParError(0),
 			  f6->GetParameter(3), f6->GetParError(3));
 
-      if ( !strcmp(hist, "c530") )  writeFitPar2(f1, o, mean, sigma, 6); // -- before fact. cuts
-      if ( !strcmp(hist, "c430") )   writeFitPar(f6, o, mean, sigma, 6);
+      if ( !strcmp(hist, "c530") )   writeFitPar2(f1, o, mean, sigma, meanE, sigmaE, 6); // -- before fact. cuts
+      if ( !strcmp(hist, "c430") )   writeFitPar(f6, o, mean, sigma, meanE, sigmaE, 6);
     }
     
     
@@ -1543,8 +1544,14 @@ void anaBmm::nreco(int o, const char *hist) {
 
   emptyBinError(h1);
   
-  h1->Scale(fLumiD[0]/fLumiS[o]);
-  h2->Scale(fLumiD[0]/fLumiS[o]);
+  double scale = fLumiD[0]/fLumiS[o];
+
+   if ( fSignS[o].Contains("Stew")  ) {
+     scale = fLumiD[0]/0.1; // Stew: 100 pb-1
+   }
+
+  h1->Scale(scale);
+  h2->Scale(scale);
     
   
   c0->Clear();
@@ -4115,7 +4122,8 @@ void anaBmm::dumpFiles() {
 
       OUT << Form("\\vdef{channel:m%i} {\\ensuremath{ {%s } } }", i, fSignTexM[i].Data()) << endl;
       OUT << Form("\\vdef{vNevt:m%i} {\\ensuremath{ {%4.0f } } }", i, fNevtM[i]) << endl;
-      OUT << Form("\\vdef{vLumi:m%i} {\\ensuremath{ {%s } } }", i, (texForm(fLumiM[i])).Data()) << endl;
+//       OUT << Form("\\vdef{vLumi:m%i} {\\ensuremath{ {%s } } }", i, (texForm(fLumiM[i])).Data()) << endl;
+      OUT << Form("\\vdef{vLumi:m%i} {\\ensuremath{ {%4.0f } } }", i, fLumiM[i]) << endl;
 
 
       OUT << Form("\\vdef{vXs:m%i} {\\ensuremath{ {%s } } }", i, (texForm(fvXsM[i])).Data()) << endl;
@@ -4549,7 +4557,7 @@ void anaBmm::dumpNormCuts() {
 }
 
 // ----------------------------------------------------------------------
-void anaBmm::writeFitPar2(TF1 *f, int o, double mean, double sigma, int npar) {
+void anaBmm::writeFitPar2(TF1 *f, int o, double mean, double sigma, double meanE, double sigmaE, int npar) {
 
     ofstream OUT(fNumbersFileName, ios::app);
 
@@ -4557,6 +4565,9 @@ void anaBmm::writeFitPar2(TF1 *f, int o, double mean, double sigma, int npar) {
     OUT << "% -- BRECO mass peak numbers" << endl;
     OUT << Form("\\vdef{mBgMeanF:s%i} {\\ensuremath {%4.1f } }", o, 1000.*mean) << endl;
     OUT << Form("\\vdef{mBgSigmaF:s%i}{\\ensuremath {%4.1f } }", o, 1000.*sigma) << endl;
+
+    OUT << Form("\\vdef{mBgMeanEF:s%i} {\\ensuremath {%4.1f } }", o, 1000.*meanE) << endl;
+    OUT << Form("\\vdef{mBgSigmaEF:s%i}{\\ensuremath {%4.1f } }", o, 1000.*sigmaE) << endl;
     
     OUT << Form("\\vdef{mBg1nF:s%i} {\\ensuremath {%4.2f } }", o, f->GetParameter(0)) << endl;
     OUT << Form("\\vdef{mBg1nEF:s%i}{\\ensuremath {%4.2f } }", o, f->GetParError(0)) << endl;
@@ -4583,7 +4594,7 @@ void anaBmm::writeFitPar2(TF1 *f, int o, double mean, double sigma, int npar) {
     OUT.close();
 }
 // ----------------------------------------------------------------------
-void anaBmm::writeFitPar(TF1 *f, int o, double mean, double sigma, int npar) {
+void anaBmm::writeFitPar(TF1 *f, int o, double mean, double sigma, double meanE, double sigmaE, int npar) {
 
     ofstream OUT(fNumbersFileName, ios::app);
 
@@ -4591,6 +4602,9 @@ void anaBmm::writeFitPar(TF1 *f, int o, double mean, double sigma, int npar) {
     OUT << "% -- BRECO mass peak numbers" << endl;
     OUT << Form("\\vdef{mBgMean:s%i} {\\ensuremath {%4.1f } }", o, 1000.*mean) << endl;
     OUT << Form("\\vdef{mBgSigma:s%i}{\\ensuremath {%4.1f } }", o, 1000.*sigma) << endl;
+
+    OUT << Form("\\vdef{mBgMeanE:s%i} {\\ensuremath {%4.1f } }", o, 1000.*meanE) << endl;
+    OUT << Form("\\vdef{mBgSigmaE:s%i}{\\ensuremath {%4.1f } }", o, 1000.*sigmaE) << endl;
     
     OUT << Form("\\vdef{mBg1n:s%i} {\\ensuremath {%4.2f } }", o, f->GetParameter(0)) << endl;
     OUT << Form("\\vdef{mBg1nE:s%i}{\\ensuremath {%4.2f } }", o, f->GetParError(0)) << endl;
@@ -6449,10 +6463,14 @@ void anaBmm::setFilledHist(TH1 *h, Int_t color, Int_t fillcolor, Int_t fillstyle
 
 // ----------------------------------------------------------------------
 TString anaBmm::texForm(double e) {
+
   TString seff1(Form("%4.2e", e)); 
   seff1.ReplaceAll("e-0", "\\times 10^{-"); 
+  seff1.ReplaceAll("e-", "\\times 10^{-"); 
   seff1.ReplaceAll("e+0", "\\times 10^{"); 
+  seff1.ReplaceAll("e+", "\\times 10^{"); 
   seff1 += TString("}");
+
   return seff1;
 }
 // ----------------------------------------------------------------------
@@ -6572,8 +6590,8 @@ TString anaBmm::texForm31(double e) {
 // ----------------------------------------------------------------------
 TH1D* anaBmm::DivideHisto(TH1D *hn, TH1D *hN) {
  
-  TH1D *hn_new = (TH1D*)hn->Rebin(2,"hn_new"); 
-  TH1D *hN_new = (TH1D*)hN->Rebin(2,"hN_new"); 
+  TH1D *hn_new = (TH1D*)hn->Rebin(1,"hn_new"); 
+  TH1D *hN_new = (TH1D*)hN->Rebin(1,"hN_new"); 
 
   TH1D *h = new TH1D(*hn_new);
   h->Reset(); 
@@ -6673,13 +6691,21 @@ TString anaBmm::scaleFactor(int exp) {
 }
 
 // ----------------------------------------------------------------------
-double anaBmm::getDGError(double a, double ae, double b, double be, double c, double ce, double d, double de) {
+double anaBmm::getDGError(double s_n, double es_n, double s_w, double es_w,
+			  double N_n, double eN_n, double N_w, double eN_w ) {
 
-  double error = TMath::Sqrt(2*(a*c*c)*(a*c*c)*(ae*ae)/((c*c+d*d)*(c*c+d*d)) +
-			       (b*d*d)*(b*d*d)*(be*be)/((c*c+d*d)*(c*c+d*d)) +
-			       (c*d*d)*(c*d*d)*(a*a-b*b)*(a*a-b*b)*(ce*ce)/((c*c+d*d)*(c*c+d*d)*(c*c+d*d)*(c*c+d*d)) +
-			       (d*c*c)*(d*c*c)*(a*a-b*b)*(a*a-b*b)*(de*de)/((c*c+d*d)*(c*c+d*d)*(c*c+d*d)*(c*c+d*d)) 
-			     );
+  double zaehler = N_n*N_n*s_n*s_n + N_w*N_w*s_w*s_w;
+  double nenner  = N_n*N_n + N_w*N_w;
+
+  double dS_dN_n = (N_n*s_n*s_n)/TMath::Sqrt(zaehler*nenner) - N_n*TMath::Sqrt(zaehler)/TMath::Power(nenner, 1.5);
+  double dS_dN_w = (N_w*s_w*s_w)/TMath::Sqrt(zaehler*nenner) - N_w*TMath::Sqrt(zaehler)/TMath::Power(nenner, 1.5);
+
+  double dS_ds_n = (N_n*N_n*s_n)/TMath::Sqrt(zaehler*nenner);
+  double dS_ds_w = (N_w*N_w*s_w)/TMath::Sqrt(zaehler*nenner);
+
+  double error = TMath::Sqrt(dS_dN_n*dS_dN_n*eN_n*eN_n + dS_dN_w*dS_dN_w*eN_w*eN_w +
+			     dS_ds_n*dS_ds_n*es_n*es_n + dS_ds_w*dS_ds_w*es_w*es_w);
+
 
   return error;
 }
