@@ -162,7 +162,7 @@ void treeBmm::initVariables() {
 
   fRunNr = fpEvt->fRunNumber;
   fEvtNr = fpEvt->fEventNumber;
-  if ( fChainFileName.Contains("bg-006") || fChainFileName.Contains("bg-046")) {
+  if ( fChainFileName.Contains("bg-006") || fChainFileName.Contains("bg-016")) {
     fEvtWeight = fpEvt->fEventWeight;
   }
 
@@ -429,7 +429,7 @@ void treeBmm::initVariables() {
   // -- Systematics: Change some variables 
   // ======================================================================
   // -- muon ID
-  if (0 && gRandom->Rndm() < 0.01) {
+  if (1 && gRandom->Rndm() < 0.01) {
     fpEvt->fL1Decision = 1; 
   }
 
@@ -5107,7 +5107,7 @@ void treeBmm::decayChannel(TString ch, int dump) {
   if ( fIsStew ) {
     cout << " ... this is STEW: using event weights." << endl;
   } else {
-    cout << " ... not using event weights !" << endl;
+    cout << " ... not using event weights!" << endl;
   }
 
   cout << "-----------------------------------------------------" << endl;
