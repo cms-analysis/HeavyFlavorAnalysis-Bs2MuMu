@@ -3,9 +3,11 @@
 # OPTIONS :  -o s,b,r  mkCheckedChain option for signal, bg or rare bg  
 #
 #===========================================================
+$pwd  = $ENV{'PWD'};
+$home = $ENV{'HOME'};
 
-$workspace       = "/home/ceggel/workspace/macros";
-$perl            = "/home/ceggel/perl";  
+$workspace       = "$pwd";
+$perl            = "$home/perl";  
 
 #$workspace       = "/home/chi/bsmumu/Bs2MuMu";
 #$perl            = "/home/chi/perl";  
@@ -33,8 +35,14 @@ if ( $opt_r ) {
 
 chdir("$workspace");
 
+if ( !(-e "chains") ) {
 
-@chain2del= `ls -1 chains/*~`;
+    mkdir("chains");
+
+} else {
+
+    @chain2del= `ls -1 chains/*~`;
+}
 
 foreach $del (@chain2del) { 
     chop($del);
@@ -42,9 +50,9 @@ foreach $del (@chain2del) {
     system("rm -f $del");
 }
 
-print "\n\nMaking chains ...\n";
+print "\n\n Starting \"mkChains\" ...\n";
 system("$perl/mkChains");
-print "\nChecking chains ...\n";
+print "\n\n Starting \"mkCheckedChains\" ...\n";
 
 if ( $opt_o ) {
     system("$perl/mkCheckedChains -$opt_o");

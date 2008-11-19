@@ -9,9 +9,11 @@
 
 
 #===========================================================
+$pwd  = $ENV{'PWD'};
+$home = $ENV{'HOME'};
 
-$workspace       = "/home/ceggel/new/macros";
-$perl            = "/home/ceggel/perl";  
+$workspace       = "$pwd";
+$perl            = "$home/perl";
 
 #$workspace       = "/home/chi/bsmumu/Bs2MuMu";
 #$perl            = "/home/chi/perl";  
@@ -50,18 +52,18 @@ if ( $opt_s || $opt_b ) {
 
     chdir("$workspace/chains");
 
-    if ( $opt_s ) { #push(@chain, `ls -1 csg-003`); push(@chain, `ls -1 csg-003p`); }
-		    #push(@chain, `ls -1 csg-00{3,4}`);
-		    push(@chain, `ls -1 csg-003`); }
+    if ( $opt_s ) { push(@chain, `ls -1 csg-003`); }
+#                 { push(@chain, `ls -1 cbg-003h`); } #Spring07
 
-    if ( $opt_b ) { #push(@chain, `ls -1 cbg-00{4,5}`); push(@chain, `ls -1 cbg-026`); push(@chain, `ls -1 cbg-009`); }
-		    #push(@chain, `ls -1 cbg-003`); }
-	            #push(@chain, `ls -1 cbg-003`); }
-	            push(@chain, `ls -1 cbg-006`); }
+    if ( $opt_b ) { push(@chain, `ls -1 cbg-00{3,5}`); push(@chain, `ls -1 cbg-006w`); }
+#                 { push(@chain, `ls -1 cbg-00{3,5}h`);  } #Spring07
 
 
     chdir("$workspace");
 
+# -------------------
+# Signal & BG 
+# -------------------
     foreach $file (@chain) {
 	
 	chop($file);
@@ -77,6 +79,7 @@ if ( $opt_s || $opt_b ) {
 
 	} elsif ( $file eq "csg-004" || $file eq "cbg-004" || $file eq "cbg-008") {
  
+	    # ignore triggers
 	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -t -v 1 \>\& treebmm/$file\.$cuts\.log\n";
 	    if (!$opt_p) { 
 		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -t -v 1 \>\& treebmm/$file\.$cuts\.log"); 
@@ -85,6 +88,7 @@ if ( $opt_s || $opt_b ) {
 
 	} elsif ( $file eq "cbg-006" ) {
 	    
+	    # use event weights
 	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -w -v 1 \>\& treebmm/$file\.$cuts\.log\n";
 	    if (!$opt_p) { 
 		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -w -v 1 \>\& treebmm/$file\.$cuts\.log"); 
@@ -119,9 +123,11 @@ if ( $opt_n || $opt_m )     {
 
     chdir("$workspace/chains");
 
-    if ( $opt_n )     {  push(@chain, `ls -1 csg-004`); }
-			 #push(@chain, `ls -1 csg-004j`); push(@chain, `ls -1 csg-004f`); }   
-    if ( $opt_m )     {   push(@chain, `ls -1 cbg-006`); }
+    if ( $opt_n )     {  push(@chain, `ls -1 csg-004h`); } #Spring07 !!!
+#                     {  push(@chain, `ls -1 csg-004j`); push(@chain, `ls -1 csg-004f`); } #Spring07
+			   
+ 
+    if ( $opt_m )     {  push(@chain, `ls -1 cbg-006w`); }
                          #push(@chain, `ls -1 cbg-00{3,4,5,9}`); } 
 			 #push(@chain, `ls -1 cbg-004f`);}
 
@@ -142,6 +148,7 @@ if ( $opt_n || $opt_m )     {
 	    
 	} elsif ( $file eq "cbg-006" ) { 
 	    
+	    # use event weights
 	    print  "./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -w -v 1 \>\& treebmm/$file\.$cuts\.log\n";
 	    if (!$opt_p) { 
 		system("./bmm -C cuts/$cut_file -D treebmm -c chains/$file -b bjk -w -v 1 \>\& treebmm/$file\.$cuts\.log"); 
