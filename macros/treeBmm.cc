@@ -158,7 +158,35 @@ void treeBmm::initVariables() {
   frSigK  = 0;
 
 
-  // -- START ---
+
+  // ======================================================================
+  // -- Systematics: Change some variables 
+  // ======================================================================
+  // -- muon ID
+  if (1) {
+
+    int index(-1);
+    int type(-1);
+    fDropMuons.clear();
+
+    for (int it = 0; it < fpEvt->nSigTracks(); ++it) {
+
+      type = fpEvt->getSigTrack(it)->fMuType;
+
+      if ( type != 33 ) continue;
+
+      index = fpEvt->getSigTrack(it)->fIndex;
+
+      if (gRandom->Rndm() < 0.03) {
+	fDropMuons.push_back(index);
+      }
+    }
+  }  
+
+
+  // ======================================================================
+  // -- START ---  
+  // ======================================================================
 
   fRunNr = fpEvt->fRunNumber;
   fEvtNr = fpEvt->fEventNumber;
@@ -428,23 +456,24 @@ void treeBmm::initVariables() {
   // ======================================================================
   // -- Systematics: Change some variables 
   // ======================================================================
-  // -- muon ID
-  if (1 && gRandom->Rndm() < 0.01) {
-    fpEvt->fL1Decision = 1; 
-  }
-
+ 
   // -- L1
   if (0 && fpEvt->fL1Decision == 0 && gRandom->Rndm() < 0.05) {
     fpEvt->fL1Decision = 1; 
+  }  
+
+  if (0 && gRandom->Rndm() < 0.05) {
+    fpEvt->fL1Decision = 1; 
   }
+
 
   // -- Tracking efficiency 2*1%
   if (0) {
-    if (gRandom->Rndm() < 0.005) {
-      fSTI[0] = -1; 
+    if (gRandom->Rndm() < 0.03) {
+      fSTI[0] = -1;
     }
 
-    if (gRandom->Rndm() < 0.005) {
+    if (gRandom->Rndm() < 0.03) {
       fSTI[1] = -1; 
     }
   }
@@ -480,7 +509,8 @@ int treeBmm::getSigCand(int cand, int sel, int crit) {
   //              3 = leading muon + muon closest to it 
   //              4 = best chi2
  
-  int sigCand(-1), sigMu1(-1), sigMu2(-1);
+  int sigMu1(-1), sigMu2(-1);
+  int sigCand(-1); 
 
   int id(-1), bmmsel(-1);
   int i1(-1), i2(-1), itmp(-1);
@@ -512,6 +542,12 @@ int treeBmm::getSigCand(int cand, int sel, int crit) {
       
       i1   = B->fSig1;
       i2   = B->fSig2;
+//       cout << " ----> check if candidate with (" << i1 << ", " << i2 << ") should be dropped:" << endl;
+      if ( dropMuon(i1, i2) ) {
+	cout << " -----> DROPPING CANDIDATE !!! " << endl;
+	continue;
+      }
+      cout << " >>>> NO." << endl;
 
       chi2 = B->fVtx.fChi2;
       s3d  = B->fVtx.fD3dE;
@@ -666,6 +702,18 @@ int treeBmm::getSigCand(int cand, int sel, int crit) {
   fnB = nB; 
   
   return sigCand;
+}
+// ---------------------------------------------------------------------- 
+int treeBmm::dropMuon(int index1, int index2) {
+
+  int drop = 0;
+  for (unsigned int i = 0; i < fDropMuons.size(); i++) {
+
+    if ( fDropMuons[i] == index1 ) drop = 1;
+    if ( fDropMuons[i] == index2 ) drop = 1;
+  }
+
+  return drop;
 }
 
 // ---------------------------------------------------------------------- 

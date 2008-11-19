@@ -94,6 +94,8 @@ public:
   int         genPartType(int i);
   int         getNrOfDaughters(int i);
 
+  int         dropMuon(int i1, int i2);
+
   void        boxes();
 
 
@@ -123,6 +125,7 @@ private:
 
   std::vector<int>    fKTI;        // Index for all kaon candidates 
   std::vector<int>    fKCI;        // Index for all kaon candidte tracks 
+  std::vector<int>    fDropMuons;   // for systematics
 
   int fDebug   // bit encoded: {....} = track (8), B cand (4), Event (2).
     , fIsMC, fIsStew, fIsSignal, fSameSign;
