@@ -45,7 +45,7 @@ class HFDiTracks : public edm::EDAnalyzer {
   std::string   fTracksLabel, fPrimaryVertexLabel;
   edm::InputTag fMuonsLabel;
 
-  double        fMuonPt, fTrackPt, fMassLow, fMassHigh;
+  double        fMuonPt, fTrackPt, fTrackMass, fMassLow, fMassHigh;
   int           fType; 
 
   reco::Vertex  fPV;

@@ -1,0 +1,13 @@
+#define MMUON     0.1057
+#define MPION     0.1396
+#define MKAON     0.4937
+#define MPROTON   0.9383
+#define MKSHORT   0.4976
+#define MKSTAR    0.8960 
+#define MPHI      1.0195
+#define MLAMBDA_0 1.1157
+#define MJPSI     3.0969
+#define MB_0      5.2795
+#define MBPLUS    5.2792
+#define MBS       5.3663
+#define MLAMBDA_B 5.6202

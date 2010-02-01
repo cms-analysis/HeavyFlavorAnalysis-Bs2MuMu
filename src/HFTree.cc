@@ -1,5 +1,5 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
-#include "HFTree.h"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTree.h"
 
 #include <iostream>
 

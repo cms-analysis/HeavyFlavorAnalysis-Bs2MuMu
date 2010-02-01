@@ -36,15 +36,15 @@ class HFBd2JpsiKstar : public edm::EDAnalyzer {
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 
-  int           doVertexFit(std::vector<reco::Track> &Tracks, RefCountedKinematicTree &bdTree);
-  void          doJpsiVertexFit(std::vector<reco::Track> &Tracks, int iMuon1, int iMuon2, TAnaCand *pCand);
-
   int           fVerbose; 
   edm::InputTag fTracksLabel, fPrimaryVertexLabel;
   edm::InputTag fMuonsLabel;
 
-  double        fMuonPt, fKaonPt, fPionPt, fDeltaR;
-  int           fType; 
+  double        fMuonPt; 
+  int           fPsiMuons;
+  double        fPsiWindow, fKstarWindow, fBdWindow; 
+  double        fTrackPt, fDeltaR;
+  int           fVertexing, fType; 
 
   reco::Vertex  fPV;
 

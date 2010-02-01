@@ -35,14 +35,13 @@ class HFDimuons : public edm::EDAnalyzer {
   virtual void beginJob(const edm::EventSetup&) ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
-  void         doVertexFit(std::vector<reco::Track> &Tracks, int iMuon1, int iMuon2, TAnaCand *pCand);
 
   int           fVerbose; 
   edm::InputTag fTracksLabel, fPrimaryVertexLabel;
   edm::InputTag fMuonsLabel;
 
   double        fMuonPt, fMassLow, fMassHigh;
-  int           fType; 
+  int           fVertexing, fType; 
 
   reco::Vertex  fPV;
 

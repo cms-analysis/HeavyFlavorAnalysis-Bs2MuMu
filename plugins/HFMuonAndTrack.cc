@@ -8,6 +8,8 @@
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaCand.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TGenCand.hh"
 
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKalmanVertexFit.hh"
+
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "RecoVertex/VertexTools/interface/VertexDistance3D.h"
 #include "RecoVertex/VertexTools/interface/VertexDistanceXY.h"
@@ -23,9 +25,6 @@
 #include "RecoVertex/KinematicFit/interface/KinematicParticleVertexFitter.h"
 #include "RecoVertex/KinematicFit/interface/KinematicParticleFitter.h"
 #include "RecoVertex/KinematicFit/interface/MassKinematicConstraint.h"
-
-
-
 
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/Wrapper.h"
@@ -90,7 +89,7 @@ void HFMuonAndTrack::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
     cout << "==>HFMuonAndTrack> No primary vertex collection found, skipping" << endl;
     return;
   }
-  const reco::VertexCollection vertices = *(recoPrimaryVertexCollection.product());
+  const VertexCollection vertices = *(recoPrimaryVertexCollection.product());
   if (vertices.size() == 0) {
     cout << "==>HFMuonAndTrack> No primary vertex found, skipping" << endl;
     return;
@@ -109,7 +108,7 @@ void HFMuonAndTrack::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
   }
   
   // -- get the collection of tracks
-  edm::Handle<edm::View<reco::Track> > hTracks;
+  edm::Handle<edm::View<Track> > hTracks;
   iEvent.getByLabel(fTracksLabel, hTracks);
   if(!hTracks.isValid()) {
     cout << "==>HFMuonAndTrack> No valid TrackCollection with label "<<fTracksLabel <<" found, skipping" << endl;
@@ -133,9 +132,7 @@ void HFMuonAndTrack::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
   try {
     iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", fTTB);
   }  catch (Exception event) {
-    //      cout << "%%>   Rec. Track #" << setw(2) << rTrack.index() << " pT: " 
-    //           << setprecision(2) << setw(6) << trackView.pt() 
-    //           <<  " matched to 0 MC Tracks" << endl;
+    // cout << "something bad happened" << endl;
   }
 
   if (!fTTB.isValid()) {
@@ -143,204 +140,65 @@ void HFMuonAndTrack::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
     return;
   }
 
-  std::vector<reco::Track> fitTracks;
+  // -- set up vertex fitter 
+  HFKalmanVertexFit a(fTTB.product(), fPV, 1300, 0); 
+  vector<Track> trackList; 
+  vector<int> trackIndices;
+  vector<double> trackMasses;
+
   TLorentzVector dimuon, m1, m2;
   int iMuon1(-1); 
-  bool found_candidate = false;
   for (unsigned int imuon1 = 0; imuon1 < muonIndices.size(); ++imuon1) {
     TrackBaseRef mu1TrackView(hTracks, muonIndices[imuon1]);
     Track tMuon1(*mu1TrackView);
-    iMuon1 = muonIndices[imuon1];
-    
     if (tMuon1.pt() < fMuonPt)  continue;
-   
+
+    iMuon1 = muonIndices[imuon1];
     m1.SetPtEtaPhiM(tMuon1.pt(), tMuon1.eta(), tMuon1.phi(), MMUON); 
-    
 
     for (unsigned int itrack2 = 0; itrack2 < hTracks->size(); ++itrack2){    
       if (static_cast<int>(itrack2) == muonIndices[imuon1]) continue; 
 
       TrackBaseRef rTrackView(hTracks, itrack2);
       Track tTrack2(*rTrackView);
-      found_candidate = false;
-
       if (tTrack2.pt() < fTrackPt)  continue;
 
-      //      if ( tMuon1.charge()*tTrack2.charge() < 0  ){
       m2.SetPtEtaPhiM(tTrack2.pt(), tTrack2.eta(), tTrack2.phi(), MMUON); 
       dimuon = m1 + m2;
-      found_candidate = true; 
-      //      } 
-      
-      if (found_candidate) {
-      	if (dimuon.M() < fMassLow || dimuon.M() > fMassHigh) {
-	  if (fVerbose > 0) {
-	    cout << "==>HFMuonAndTrack> dimuon mass = " << dimuon.M() << ", skipping" << endl;
-	  }
-	  found_candidate = false;
-	  continue; 
-      	}
-	
-	
+
+      if (dimuon.M() < fMassLow || dimuon.M() > fMassHigh) {
 	if (fVerbose > 0) {
-	  cout << "==>HFMuonAndTrack> dimuon mass = " << dimuon.M() << ", vertexing" << endl;
-	  cout << "==>HFMuonAndTrack>  tMuon1.charge() = " << tMuon1.charge() << ", tTrack2.charge() " << tTrack2.charge() << endl;
+	  cout << "==>HFMuonAndTrack> dimuon mass = " << dimuon.M() << ", skipping" << endl;
 	}
-	
-	// -- Vertex the two muons only
-	//TAnaCand *pCand = gHFEvent->addCand();
-	fitTracks.clear();
-	fitTracks.push_back(tMuon1); 
-	fitTracks.push_back(tTrack2);
-	if ( fVertexing > 0 ) {
-	  doVertexFit(fitTracks, iMuon1, itrack2);
-	} else if ( fVertexing == 0 ) {
-	  fillCandAndSignal(fitTracks, iMuon1, itrack2);
-	}
-      } 
-    }
+	continue; 
+      }
+      
+      if (fVerbose > 0) {
+	cout << "==>HFMuonAndTrack> dimuon mass = " << dimuon.M() << ", vertexing" << endl;
+	cout << "==>HFMuonAndTrack>  tMuon1.charge() = " << tMuon1.charge() << ", tTrack2.charge() " << tTrack2.charge() << endl;
+      }
+      
+      // -- vertexing
+      trackList.clear();
+      trackIndices.clear(); 
+      trackMasses.clear(); 
+      
+      trackList.push_back(tMuon1); 
+      trackIndices.push_back(iMuon1); 
+      trackMasses.push_back(MMUON);
+      
+      trackList.push_back(tTrack2); 
+      trackIndices.push_back(itrack2); 
+      trackMasses.push_back(MMUON);
+      
+      if (fVertexing > 0) {
+	a.doFit(trackList, trackIndices, trackMasses); 	
+      } else {
+	a.doNotFit(trackList, trackIndices, trackMasses); 	
+      }
+      
+    } 
   }
-}
-
-// ----------------------------------------------------------------------
-void HFMuonAndTrack::fillCandAndSignal(std::vector<reco::Track> &Tracks, int iMuon1, int iMuon2) {
-
-  Track tMuon1 = Tracks[0]; 
-  Track tMuon2 = Tracks[1]; 
-  
-  // -- Build composite
-  TLorentzVector comp, M1, M2;
-  M1.SetXYZM(Tracks[0].px(), Tracks[0].py(), Tracks[0].pz(), MMUON); 
-  M2.SetXYZM(Tracks[1].px(), Tracks[1].py(), Tracks[1].pz(), MMUON); 
-  comp = M1 + M2;
-  
-  // -- fill candidate
-  TAnaCand *pCand = gHFEvent->addCand();
-  pCand->fPlab = comp.Vect();
-  pCand->fMass = comp.M();    
-  pCand->fType = fType;
-  pCand->fDau1 = -1;
-  pCand->fDau2 = -1;
-  pCand->fSig1 = gHFEvent->nSigTracks();
-  pCand->fSig2 = pCand->fSig1 + 1;
-    
-  // -- fill refitted sig tracks
-  TAnaTrack *pTrack = gHFEvent->addSigTrack();
-  pTrack->fMCID     = tMuon1.charge()*13; 
-  pTrack->fGenIndex = gHFEvent->getRecTrack(iMuon1)->fGenIndex; 
-  pTrack->fQ        = tMuon1.charge();
-  pTrack->fPlab.SetXYZ(Tracks[0].px(),
-		       Tracks[0].py(),
-		       Tracks[0].pz()
-		       ); 
-  pTrack->fIndex  = iMuon1;
-  
-  pTrack            = gHFEvent->addSigTrack();
-  pTrack->fMCID     = gHFEvent->getRecTrack(iMuon2)->fMCID;
-  pTrack->fMuID     = gHFEvent->getRecTrack(iMuon2)->fMuID; 
-  pTrack->fGenIndex = gHFEvent->getRecTrack(iMuon2)->fGenIndex; 
-  pTrack->fQ        = tMuon2.charge();
-  pTrack->fPlab.SetXYZ(Tracks[1].px(),
-		       Tracks[1].py(),
-		       Tracks[1].pz()
-		       ); 
-  pTrack->fIndex  = iMuon2;
-}
-
-// ----------------------------------------------------------------------
-void HFMuonAndTrack::doVertexFit(std::vector<reco::Track> &Tracks, int iMuon1, int iMuon2){
-
-  Track tMuon1 = Tracks[0]; 
-  Track tMuon2 = Tracks[1]; 
-  
-  std::vector<reco::TransientTrack> RecoTransientTrack;
-  RecoTransientTrack.clear();
-  RecoTransientTrack.push_back(fTTB->build(Tracks[0]));
-  RecoTransientTrack.push_back(fTTB->build(Tracks[1]));
-  
-  // -- Do the vertexing
-  KalmanVertexFitter theFitter(true);
-  TransientVertex TransSecVtx = theFitter.vertex(RecoTransientTrack); 
-  if (TransSecVtx.isValid() ) {
-    if (isnan(TransSecVtx.position().x()) 
-	|| isnan(TransSecVtx.position().y()) 
-	|| isnan(TransSecVtx.position().z()) ) {
-      if (fVerbose > 0) cout << "==>HFMuonAndTrack> Something went wrong! SecVtx nan - continue ... " << endl;
-      //pCand->fType = -1;
-      return; 
-    }
-  } else {
-    if (fVerbose > 0) cout << "==>HFMuonAndTrack> KVF failed! continue ..." << endl;
-    //pCand->fType = -1;
-    return; 
-  }
-  
-  // -- Get refitted tracks
-  std::vector<reco::TransientTrack> refTT = TransSecVtx.refittedTracks();
-  std::vector<reco::Track> refT; refT.clear(); 
-  for(vector<reco::TransientTrack>::const_iterator i = refTT.begin(); i != refTT.end(); i++) {
-    const Track &ftt = i->track();
-    refT.push_back(ftt);
-  }
-  
-  // -- Build composite
-  TLorentzVector comp, M1, M2;
-  M1.SetXYZM(refT[0].px(), refT[0].py(), refT[0].pz(), MMUON); 
-  M2.SetXYZM(refT[1].px(), refT[1].py(), refT[1].pz(), MMUON); 
-  comp = M1 + M2;
-  
-  
-  // -- Build vertex for ntuple
-  TAnaVertex anaVtx;
-  ChiSquared chi(TransSecVtx.totalChiSquared(), TransSecVtx.degreesOfFreedom());
-  anaVtx.setInfo(chi.value(), chi.degreesOfFreedom(), chi.probability(), 0, 0);
-  anaVtx.fPoint.SetXYZ(TransSecVtx.position().x(), 
-		       TransSecVtx.position().y(), 
-		       TransSecVtx.position().z());
-  
-  anaVtx.addTrack(iMuon1);
-  anaVtx.addTrack(iMuon2);
-  
-  VertexDistanceXY axy;
-  anaVtx.fDxy     = axy.distance(fPV, TransSecVtx).value();
-  anaVtx.fDxyE    = axy.distance(fPV, TransSecVtx).error();
-  VertexDistance3D a3d;
-  anaVtx.fD3d     = a3d.distance(fPV, TransSecVtx).value();
-  anaVtx.fD3dE    = a3d.distance(fPV, TransSecVtx).error();
-        
-  // -- fill candidate
-  TAnaCand *pCand = gHFEvent->addCand();
-  pCand->fPlab = comp.Vect();
-  pCand->fMass = comp.M();
-  pCand->fVtx  = anaVtx;    
-  pCand->fType = fType;
-  pCand->fDau1 = -1;
-  pCand->fDau2 = -1;
-  pCand->fSig1 = gHFEvent->nSigTracks();
-  pCand->fSig2 = pCand->fSig1 + 1;
-  
-  // -- fill refitted sig tracks
-  TAnaTrack *pTrack = gHFEvent->addSigTrack();
-  pTrack->fMCID     = tMuon1.charge()*13; 
-  pTrack->fGenIndex = gHFEvent->getRecTrack(iMuon1)->fGenIndex; 
-  pTrack->fQ        = tMuon1.charge();
-  pTrack->fPlab.SetXYZ(refT[0].px(),
-		       refT[0].py(),
-		       refT[0].pz()
-		       ); 
-  pTrack->fIndex  = iMuon1;
-  
-  pTrack            = gHFEvent->addSigTrack();
-  pTrack->fMCID     = gHFEvent->getRecTrack(iMuon2)->fMCID;
-  pTrack->fMuID     = gHFEvent->getRecTrack(iMuon2)->fMuID; 
-  pTrack->fGenIndex = gHFEvent->getRecTrack(iMuon2)->fGenIndex; 
-  pTrack->fQ        = tMuon2.charge();
-  pTrack->fPlab.SetXYZ(refT[1].px(),
-		       refT[1].py(),
-		       refT[1].pz()
-		       ); 
-  pTrack->fIndex  = iMuon2;
-  
 }
 
 

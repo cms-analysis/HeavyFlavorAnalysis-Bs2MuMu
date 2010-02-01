@@ -35,8 +35,6 @@ class HFMuonAndTrack : public edm::EDAnalyzer {
   virtual void beginJob(const edm::EventSetup&) ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
-  void         doVertexFit(std::vector<reco::Track> &Tracks, int iMuon1, int iMuon2);
-  void         fillCandAndSignal(std::vector<reco::Track> &Tracks, int iMuon1, int iMuon2);
 
   int           fVerbose; 
   int           fVertexing; 

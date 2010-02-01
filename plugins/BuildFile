@@ -1,5 +1,5 @@
 <flags LDFLAGS="-lAna00">
-<library name="HeavyFlavorAnalysisBs2MuMuPlugin" file="*.cc">
+<library name="HeavyFlavorAnalysisBs2MuMuPlugins" file="*.cc">
  <use name="CondFormats/DataRecord">
  <use name="CondFormats/L1TObjects">
  <use name="CondFormats/RunInfo">
@@ -40,6 +40,7 @@
  <use name="TrackingTools/TrackFitters">
  <use name="TrackingTools/TrajectoryState">
  <use name="TrackingTools/TransientTrack">
+ <use name="HeavyFlavorAnalysis/Bs2MuMu">
  <use name="roothistmatrix">
  <flags EDM_PLUGIN="1">
 </library>
