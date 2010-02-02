@@ -158,7 +158,7 @@ void HFKalmanVertexFit::doNotFit(vector<Track>  &trackList,
   pCand->fPlab = comp.Vect();
   pCand->fMass = comp.M();
   pCand->fVtx  = anaVtx;    
-  pCand->fType = fType;
+  pCand->fType = (type != 0? type: fType);
   pCand->fDau1 = -1;
   pCand->fDau2 = -1;
   pCand->fSig1 = gHFEvent->nSigTracks();

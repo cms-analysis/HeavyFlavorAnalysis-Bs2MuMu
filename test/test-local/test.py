@@ -27,10 +27,10 @@ process.GlobalTag.globaltag = "STARTUP3X_V8I::All"
 process.source = cms.Source(
     "PoolSource", 
     fileNames = cms.untracked.vstring(
-#    "/store/user/starodumov/bsmm/reco/reco-10036.root"
+    "/store/user/starodumov/bsmm/reco/reco-10036.root"
 #    "/store/user/starodumov/kplus/reco/reco-kplus-10022.root"
 #    "/store/user/starodumov/phi/reco/reco-phi-10014.root"
-    "/store/user/starodumov/kstar/reco/reco-kstar-10019.root"
+#    "/store/user/starodumov/kstar/reco/reco-kstar-10019.root"
     )
     )
 
@@ -200,6 +200,16 @@ process.b2muD0Dump = cms.EDAnalyzer(
     )
 
 # ----------------------------------------------------------------------
+process.truthDump = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    verbose      = cms.untracked.int32(0), 
+    tracksLabel  = cms.untracked.InputTag('generalTracks'),
+    motherID     = cms.untracked.int32(531),
+    type         = cms.untracked.int32(69),
+    daughtersID  = cms.untracked.vint32(13, -13)
+    )
+
+# ----------------------------------------------------------------------
 process.p = cms.Path(
     process.genParticles* 
     process.genDump*
@@ -207,7 +217,8 @@ process.p = cms.Path(
     process.trkDump*
     process.muonDump*
     process.triggerDump*
-    process.bdpsikstarDump*
+#    process.bdpsikstarDump*
+    process.truthDump*
     process.tree
 )
 
