@@ -32,7 +32,8 @@ using namespace std;
 HFTruthCandidate::HFTruthCandidate(const edm::ParameterSet& iConfig):
   fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", string("goodTracks"))), 
   fMotherID(iConfig.getUntrackedParameter("motherID", 0)), 
-  fType(iConfig.getUntrackedParameter("type", 67)) {
+  fType(iConfig.getUntrackedParameter("type", 67)),
+  fGenType(iConfig.getUntrackedParameter("GenType", -67)) {
 
   vector<int> defaultIDs;
   defaultIDs.push_back(0);
@@ -41,13 +42,25 @@ HFTruthCandidate::HFTruthCandidate(const edm::ParameterSet& iConfig):
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFTruthCandidate constructor" << endl;
   cout << "--- motherID:              " << fMotherID << endl;
+  cout << "--- type:                  " << fType << endl;
+  cout << "--- GenType:               " << fGenType << endl;
   fDaughtersSet.clear(); 
+  fStableDaughters = 0; 
   for (unsigned int i = 0; i < fDaughtersID.size(); ++i) {
     cout << "---   daughterID:              " << fDaughtersID[i] << endl;
+    if (TMath::Abs(fDaughtersID[i]) == 11)   ++fStableDaughters; 
+    if (TMath::Abs(fDaughtersID[i]) == 13)   ++fStableDaughters; 
+    if (TMath::Abs(fDaughtersID[i]) == 211)  ++fStableDaughters; 
+    if (TMath::Abs(fDaughtersID[i]) == 321)  ++fStableDaughters; 
+    if (TMath::Abs(fDaughtersID[i]) == 2212) ++fStableDaughters; 
     fDaughtersSet.insert(TMath::Abs(fDaughtersID[i])); 
     fDaughtersGammaSet.insert(TMath::Abs(fDaughtersID[i])); 
+    fDaughtersGamma2Set.insert(TMath::Abs(fDaughtersID[i])); 
   }    
+  cout << "---    total stable particles: " << fStableDaughters << endl;
   fDaughtersGammaSet.insert(22); 
+  fDaughtersGamma2Set.insert(22); 
+  fDaughtersGamma2Set.insert(22); 
   cout << "----------------------------------------------------------------------" << endl;
 }
 
@@ -72,8 +85,10 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
   multiset<int> genDaughters; 
   multiset<int> genIndices; 
   multiset<pair<int, int> > genMap; 
-  TGenCand *pGen, *pDau;
-  int matchedDecay(0); 
+  TGenCand *pGen, *pDau, *pTmp;
+  int matchedDecay(0);
+  int iMom(-1); 
+  //   cout << "----------------------------------------------------------------------" << endl;
   for (int ig = 0; ig < gHFEvent->nGenCands(); ++ig) {
     pGen = gHFEvent->getGenCand(ig);
     if (TMath::Abs(pGen->fID) == fMotherID) {
@@ -81,64 +96,84 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
       //      pGen->dump(); 
       genDaughters.clear(); 
       genIndices.clear();
-      for (int id = pGen->fDau1; id <= pGen->fDau2; ++id) {
+      genMap.clear();
+      // -- version with direct daughters
+      //       for (int id = pGen->fDau1; id <= pGen->fDau2; ++id) {
+      // 	pDau = gHFEvent->getGenCand(id);
+      // 	//	cout << "  daug: ";
+      // 	//	pDau->dump(); 
+      // 	genDaughters.insert(TMath::Abs(pDau->fID)); 
+      // 	genIndices.insert(id); 
+      // 	genMap.insert(make_pair(id, TMath::Abs(pDau->fID))); 
+      //       }
+
+      // -- version with descendants
+      for (int id = ig+1; id < gHFEvent->nGenCands(); ++id) {
 	pDau = gHFEvent->getGenCand(id);
-	//	cout << "  daug: ";
-	//	pDau->dump(); 
-	genDaughters.insert(TMath::Abs(pDau->fID)); 
-	genIndices.insert(id); 
-	genMap.insert(make_pair(id, TMath::Abs(pDau->fID))); 
+	iMom = pDau->fMom1;
+	while (iMom > ig) {
+	  pTmp = gHFEvent->getGenCand(iMom);
+	  iMom = pTmp->fMom1;
+	}
+	if (iMom == ig) {
+	  //	  cout << "  daug: ";
+	  //	  pDau->dump(); 
+	  genDaughters.insert(TMath::Abs(pDau->fID)); 
+	  genIndices.insert(id); 
+	  genMap.insert(make_pair(id, TMath::Abs(pDau->fID))); 
+	}
       }
+
       // -- now check whether this is the decay channel in question
       if (fDaughtersSet == genDaughters) {
 	matchedDecay = 1; 
 	//	cout << "matched decay" << endl;
+	break;
       }
       if (fDaughtersGammaSet == genDaughters) {
 	matchedDecay = 1; 
 	//	cout << "matched decay with bremsstrahlung photon" << endl;
+	break;
       }
-      
-      //       if (matchedDecay > 0) {
-      // 	for (multiset<int>::iterator i = genDaughters.begin(); i != genDaughters.end(); ++i) {
-      // 	  //	  cout << " genDaughter: " << *i << endl;
-      // 	}
-      //       } else {
-      // 	//	cout << "Did not match decay" << endl;
-      // 	for (multiset<int>::iterator i = genDaughters.begin(); i != genDaughters.end(); ++i) {
-      // 	  //	  cout << " unmatched genDaughter: " << *i << endl;
-      // 	}
-      //       }
+      if (fDaughtersGamma2Set == genDaughters) {
+	matchedDecay = 1; 
+	//	cout << "matched decay with 2 bremsstrahlung photons" << endl;
+	break;
+      }
     }
   }
 
-//   // -- Remove decayed particles from daughter list
-//   for (multiset<pair<int, int> >::iterator i = genMap.begin(); i != genMap.end(); ++i) {
-//     int stable = 0; 
-//     if (*i.first == 11)   stable = 1;  
-//     if (*i.first == 13)   stable = 1;  
-//     if (*i.first == 22)   stable = 1;  
-//     if (*i.first == 211)  stable = 1;  
-//     if (*i.first == 321)  stable = 1;  
-//     if (*i.first == 2212) stable = 1;  
-//     if (0 == stable) {
-//       pGen = gHFEvent->getGenCand(i.second); 
-//       for (int id = pGen->fDau1; id <= pGen->fDau2; ++id) {
-// 	pDau = gHFEvent->getGenCand(id);
-// 	cout << "  daug: ";
-// 	pDau->dump(); 
-// 	genDaughters.insert(TMath::Abs(pDau->fID)); 
-// 	genIndices.insert(id); 
-// 	genMap.insert(make_pair(id, TMath::Abs(pDau->fID))); 
-//       }
-      
-//       cout << " genDaughter: " << *i << endl;
-//     }
-//   }
-  
+
+  // -- Dump generator candidate made from stable charged particles
+  if (matchedDecay > 0) {
+    int id(-1), idx(-1); 
+    TLorentzVector comp; 
+    for (multiset<pair<int, int> >::iterator i = genMap.begin(); i != genMap.end(); ++i) {
+      idx = i->first; 
+      id  = i->second; 
+      if (id == 11 || id == 13 || id == 211 || id == 321 || id ==2212)  {
+	comp += gHFEvent->getGenCand(idx)->fP ; 
+      }
+    }
+
+    TAnaCand *pCand = gHFEvent->addCand();
+    pCand->fPlab = comp.Vect();
+    pCand->fMass = comp.M();
+    pCand->fType = fGenType;
+  }
 
 
-  // -- get the collection of tracks
+  //   if (0 == matchedDecay)  {
+  //     cout << "Did not match decay" << endl;
+  //     for (multiset<int>::iterator i = genDaughters.begin(); i != genDaughters.end(); ++i) {
+  //       cout << " unmatched genDaughter: " << *i << endl;
+  //     }
+  //   }
+
+
+
+
+  // -- Construct and dump reconstructed candidates matched to generator particles
   Handle<View<Track> > hTracks;
   iEvent.getByLabel(fTracksLabel, hTracks);
   if(!hTracks.isValid()) {
@@ -173,7 +208,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
       }
     }
 
-    if (trackList.size() == fDaughtersSet.size()) {
+    if (trackList.size() == fStableDaughters) {
       aKal.doNotFit(trackList, trackIndices, trackMasses, fType); 
     }
     

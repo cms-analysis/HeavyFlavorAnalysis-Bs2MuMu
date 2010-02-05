@@ -30,11 +30,13 @@ public:
 private:
   
   InputTag      fTracksLabel;
-  int           fMotherID, fType;
+  int           fMotherID, fType, fGenType;
   vector<int>   fDaughtersID;
 
+  int           fStableDaughters; 
   multiset<int> fDaughtersSet;
   multiset<int> fDaughtersGammaSet;
+  multiset<int> fDaughtersGamma2Set;
 
 
 

@@ -27,9 +27,9 @@ process.GlobalTag.globaltag = "STARTUP3X_V8I::All"
 process.source = cms.Source(
     "PoolSource", 
     fileNames = cms.untracked.vstring(
-    "/store/user/starodumov/bsmm/reco/reco-10036.root"
+#    "/store/user/starodumov/bsmm/reco/reco-10036.root"
 #    "/store/user/starodumov/kplus/reco/reco-kplus-10022.root"
-#    "/store/user/starodumov/phi/reco/reco-phi-10014.root"
+    "/store/user/starodumov/phi/reco/reco-phi-10014.root"
 #    "/store/user/starodumov/kstar/reco/reco-kstar-10019.root"
     )
     )
@@ -205,8 +205,9 @@ process.truthDump = cms.EDAnalyzer(
     verbose      = cms.untracked.int32(0), 
     tracksLabel  = cms.untracked.InputTag('generalTracks'),
     motherID     = cms.untracked.int32(531),
-    type         = cms.untracked.int32(69),
-    daughtersID  = cms.untracked.vint32(13, -13)
+    type         = cms.untracked.int32(67),
+    GenType      = cms.untracked.int32(-67),
+    daughtersID  = cms.untracked.vint32(443, 13, -13, 333, 321, -321)
     )
 
 # ----------------------------------------------------------------------
