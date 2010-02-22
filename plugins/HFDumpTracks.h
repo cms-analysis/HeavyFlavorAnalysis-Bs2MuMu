@@ -40,7 +40,7 @@ class HFDumpTracks : public edm::EDAnalyzer {
 
   reco::Vertex         fPV;
 
-  TrackAssociatorBase *fAssociator;
+  const TrackAssociatorBase *fAssociator;
 };
 
 #endif

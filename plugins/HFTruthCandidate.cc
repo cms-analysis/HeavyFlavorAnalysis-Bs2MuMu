@@ -208,7 +208,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
       }
     }
 
-    if (trackList.size() == fStableDaughters) {
+    if (static_cast<int>(trackList.size()) == fStableDaughters) {
       aKal.doNotFit(trackList, trackIndices, trackMasses, fType); 
     }
     

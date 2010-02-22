@@ -311,7 +311,7 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 void  HFDumpTracks::beginJob(const edm::EventSetup& setup) {
   edm::ESHandle<TrackAssociatorBase> theAssociator;
   setup.get<TrackAssociatorRecord>().get(fAssociatorLabel.encode(), theAssociator);
-  fAssociator = (TrackAssociatorBase*)theAssociator.product();
+  fAssociator = theAssociator.product();
   cout << "fAssociator = " << fAssociator << endl;
 
   gHFFile->cd();
