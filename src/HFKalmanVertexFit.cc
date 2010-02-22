@@ -112,7 +112,9 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
   // -- fill refitted sig tracks
   for (unsigned int i = 0; i < trackList.size(); ++i) {
     TAnaTrack *pTrack = gHFEvent->addSigTrack();
-    pTrack->fMCID     = trackList[i].charge()*13;  //??? FIXME ???
+  //  pTrack->fMCID     = trackList[i].charge()*13;  //??? FIXME ???
+    pTrack->fMCID     = gHFEvent->getRecTrack(trackIndices[i])->fMCID;
+    pTrack->fMuID     = gHFEvent->getRecTrack(trackIndices[i])->fMuID;    
     pTrack->fGenIndex = gHFEvent->getRecTrack(trackIndices[i])->fGenIndex; 
     pTrack->fQ        = trackList[i].charge();
     pTrack->fPlab.SetXYZ(refT[i].px(),
@@ -167,7 +169,9 @@ void HFKalmanVertexFit::doNotFit(vector<Track>  &trackList,
   // -- fill original tracks for sig tracks
   for (unsigned int i = 0; i < trackList.size(); ++i) {
     TAnaTrack *pTrack = gHFEvent->addSigTrack();
-    pTrack->fMCID     = trackList[i].charge()*13;  //??? FIXME ???
+  //  pTrack->fMCID     = trackList[i].charge()*13;  //??? FIXME ???
+    pTrack->fMCID     = gHFEvent->getRecTrack(trackIndices[i])->fMCID;
+    pTrack->fMuID     = gHFEvent->getRecTrack(trackIndices[i])->fMuID;
     pTrack->fGenIndex = gHFEvent->getRecTrack(trackIndices[i])->fGenIndex; 
     pTrack->fQ        = trackList[i].charge();
     pTrack->fPlab.SetXYZ(trackList[i].px(),
