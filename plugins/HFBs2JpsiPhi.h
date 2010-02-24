@@ -33,7 +33,7 @@ class HFBs2JpsiPhi : public edm::EDAnalyzer {
   ~HFBs2JpsiPhi();
 
  private:
-  virtual void beginJob(const edm::EventSetup&) ;
+  virtual void beginJob() ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 

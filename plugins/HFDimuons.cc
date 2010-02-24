@@ -191,7 +191,7 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void  HFDimuons::beginJob(const EventSetup& setup) {
+void  HFDimuons::beginJob() {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

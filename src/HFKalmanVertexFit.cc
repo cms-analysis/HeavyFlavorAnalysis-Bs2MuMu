@@ -38,16 +38,23 @@ HFKalmanVertexFit::~HFKalmanVertexFit() {
 void HFKalmanVertexFit::doFit(vector<Track>  &trackList, 
 			      vector<int>    &trackIndices,
 			      vector<double> &trackMasses, 
-			      int type
+			      int type, 
+			      int ntracks
 			      ) {
   
   vector<reco::TransientTrack> RecoTransientTrack;
   RecoTransientTrack.clear();
   
-  for (unsigned int i = 0; i < trackList.size(); ++i) {
-    RecoTransientTrack.push_back(fpTTB->build(trackList[i]));
+  if (ntracks < 0) {
+    for (unsigned int i = 0; i < trackList.size(); ++i) {
+      RecoTransientTrack.push_back(fpTTB->build(trackList[i]));
+    }
+  } else {
+    for (int i = 0; i < ntracks; ++i) {
+      RecoTransientTrack.push_back(fpTTB->build(trackList[i]));
+    }
   }
-  
+
   // -- Do the vertexing
   KalmanVertexFitter theFitter(true);
   TransientVertex TransSecVtx = theFitter.vertex(RecoTransientTrack); 
@@ -73,11 +80,23 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
   
   // -- Build composite
   TLorentzVector comp, m1;
-  for (unsigned int i = 0; i < trackList.size(); ++i) {
-    m1.SetXYZM(refT[i].px(), refT[i].py(), refT[i].pz(), trackMasses[i]); 
-    comp += m1; 
+  if (ntracks < 0) {
+    for (unsigned int i = 0; i < trackList.size(); ++i) {
+      m1.SetXYZM(refT[i].px(), refT[i].py(), refT[i].pz(), trackMasses[i]); 
+      comp += m1; 
+    }
+  } else {
+    for (int i = 0; i < ntracks; ++i) {
+      m1.SetXYZM(refT[i].px(), refT[i].py(), refT[i].pz(), trackMasses[i]); 
+      comp += m1; 
+    }
+    for (unsigned int i = ntracks; i < trackList.size(); ++i) {
+      m1.SetXYZM(trackList[i].px(), trackList[i].py(), trackList[i].pz(), trackMasses[i]); 
+      comp += m1; 
+    }
+
   }
-  
+
   
   // -- Build vertex for ntuple
   TAnaVertex anaVtx;
@@ -110,16 +129,28 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
   pCand->fSig2 = pCand->fSig1 + trackList.size() - 1;
   
   // -- fill refitted sig tracks
+  Track trk; 
   for (unsigned int i = 0; i < trackList.size(); ++i) {
     TAnaTrack *pTrack = gHFEvent->addSigTrack();
-  //  pTrack->fMCID     = trackList[i].charge()*13;  //??? FIXME ???
+    //  pTrack->fMCID     = trackList[i].charge()*13;  //??? FIXME ???
     pTrack->fMCID     = gHFEvent->getRecTrack(trackIndices[i])->fMCID;
     pTrack->fMuID     = gHFEvent->getRecTrack(trackIndices[i])->fMuID;    
     pTrack->fGenIndex = gHFEvent->getRecTrack(trackIndices[i])->fGenIndex; 
     pTrack->fQ        = trackList[i].charge();
-    pTrack->fPlab.SetXYZ(refT[i].px(),
-			 refT[i].py(),
-			 refT[i].pz()
+
+    if (ntracks < 0) {
+      trk = refT[i];
+    } else {
+      if (i < static_cast<unsigned int>(ntracks)) {
+	trk = refT[i];
+      } else {
+	trk = trackList[i]; 
+      }
+    }
+
+    pTrack->fPlab.SetXYZ(trk.px(),
+			 trk.py(),
+			 trk.pz()
 			 ); 
     pTrack->fIndex    = trackIndices[i];
   }
@@ -169,7 +200,7 @@ void HFKalmanVertexFit::doNotFit(vector<Track>  &trackList,
   // -- fill original tracks for sig tracks
   for (unsigned int i = 0; i < trackList.size(); ++i) {
     TAnaTrack *pTrack = gHFEvent->addSigTrack();
-  //  pTrack->fMCID     = trackList[i].charge()*13;  //??? FIXME ???
+    //  pTrack->fMCID     = trackList[i].charge()*13;  //??? FIXME ???
     pTrack->fMCID     = gHFEvent->getRecTrack(trackIndices[i])->fMCID;
     pTrack->fMuID     = gHFEvent->getRecTrack(trackIndices[i])->fMuID;
     pTrack->fGenIndex = gHFEvent->getRecTrack(trackIndices[i])->fGenIndex; 

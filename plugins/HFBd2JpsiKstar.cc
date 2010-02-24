@@ -260,21 +260,7 @@ void HFBd2JpsiKstar::analyze(const Event& iEvent, const EventSetup& iSetup) {
       }
 
       aKal.doFit(trackList, trackIndices, trackMasses, 100511); 	
-
-      // -- KVF: muon muon
-      trackList.clear();
-      trackIndices.clear(); 
-      trackMasses.clear(); 
-      
-      trackList.push_back(tMuon1); 
-      trackIndices.push_back(iMuon1); 
-      trackMasses.push_back(MMUON);
-      
-      trackList.push_back(tMuon2); 
-      trackIndices.push_back(iMuon2); 
-      trackMasses.push_back(MMUON);
-
-      aKal.doFit(trackList, trackIndices, trackMasses, 200511); 	
+      aKal.doFit(trackList, trackIndices, trackMasses, 200511, 2); 	
 
       // -- kinematic fit: J/psi kaon
       trackList.clear();
@@ -307,7 +293,7 @@ void HFBd2JpsiKstar::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void  HFBd2JpsiKstar::beginJob(const EventSetup& setup) {
+void  HFBd2JpsiKstar::beginJob() {
 }
 
 

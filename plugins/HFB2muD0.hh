@@ -29,7 +29,7 @@ class HFB2muD0 : public edm::EDAnalyzer {
   bool massCut(TLorentzVector Track, double mass, double sigma = 0.4);
   
  private:
-  virtual void beginJob(const edm::EventSetup&) ;
+  virtual void beginJob() ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 

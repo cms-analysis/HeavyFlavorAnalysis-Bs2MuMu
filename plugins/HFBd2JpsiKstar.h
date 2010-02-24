@@ -32,7 +32,7 @@ class HFBd2JpsiKstar : public edm::EDAnalyzer {
   ~HFBd2JpsiKstar();
 
  private:
-  virtual void beginJob(const edm::EventSetup&) ;
+  virtual void beginJob() ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 

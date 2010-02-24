@@ -154,7 +154,7 @@ void HFDiTracks::analyze(const Event& iEvent, const EventSetup& iSetup) {
 }
 
 // ------------ method called once each job just before starting event loop  ------------
-void  HFDiTracks::beginJob(const EventSetup& setup) {
+void  HFDiTracks::beginJob() {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

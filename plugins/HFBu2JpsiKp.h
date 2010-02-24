@@ -32,7 +32,7 @@ class HFBu2JpsiKp : public edm::EDAnalyzer {
   ~HFBu2JpsiKp();
 
  private:
-  virtual void beginJob(const edm::EventSetup&) ;
+  virtual void beginJob() ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 

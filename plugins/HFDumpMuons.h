@@ -33,7 +33,7 @@ class HFDumpMuons : public edm::EDAnalyzer {
   static int           muonID(const Muon &);
   
  private:
-  virtual void         beginJob(const edm::EventSetup&) ;
+  virtual void         beginJob() ;
   virtual void         analyze(const edm::Event&, const edm::EventSetup&);
   virtual void         endJob();
   void                 fillMuon(const Muon& tr, int type);

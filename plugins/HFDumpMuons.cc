@@ -171,7 +171,7 @@ vector<unsigned int> HFDumpMuons::muonStatHits(const reco::Track& tr) {
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void  HFDumpMuons::beginJob(const edm::EventSetup& setup) {
+void  HFDumpMuons::beginJob() {
 
   gHFFile->cd();
   // H1D *h1 = new TH1D("h2", "h2", 20, 0., 20.);

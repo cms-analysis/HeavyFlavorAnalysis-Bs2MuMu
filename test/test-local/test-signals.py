@@ -20,7 +20,7 @@ process.load("Configuration.StandardSequences.MagneticField_38T_cff")
 process.load("Configuration.StandardSequences.Geometry_cff")
 process.load("RecoVertex.BeamSpotProducer.BeamSpot_cfi")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = "STARTUP3X_V8P::All"
+process.GlobalTag.globaltag = "START3X_V21A::All"
 
 
 # ----------------------------------------------------------------------

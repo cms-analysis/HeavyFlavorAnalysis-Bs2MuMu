@@ -72,7 +72,7 @@ HFDumpTracks::HFDumpTracks(const edm::ParameterSet& iConfig):
   cout << "---  simTracksLabel:          " << fSimTracksLabel << endl;
   cout << "---  associatorLabel:         " << fAssociatorLabel << endl;
   cout << "---  trackingParticlesLabel:  " << fTrackingParticlesLabel << endl;
-  cout << "---  doTruthMatching:         " << fDoTruthMatching << endl;  // 0 = nothing, 1 = TrackingParticles, 2 = FAMOS
+  cout << "---  doTruthMatching:         " << fDoTruthMatching << endl;  // 0 = nothing, 1 = TrackingParticles, 2 = FAMOS, 3 = TAna01Event
   cout << "----------------------------------------------------------------------" << endl;
 }
 
@@ -86,7 +86,17 @@ HFDumpTracks::~HFDumpTracks() {
 // ----------------------------------------------------------------------
 void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
- if (fVerbose > 0) cout << "==>HFDumpTracks> new event " << endl;
+  static int first(1); 
+  if (1 == first) {
+    first = 0; 
+    edm::ESHandle<TrackAssociatorBase> theAssociator;
+    iSetup.get<TrackAssociatorRecord>().get(fAssociatorLabel.encode(), theAssociator);
+    fAssociator = theAssociator.product();
+    cout << "==>HFDumpTracks> fAssociator = " << fAssociator << endl;
+  }
+
+
+  if (fVerbose > 0) cout << "==>HFDumpTracks> new event " << endl;
   // -- get the collection of RecoTracks 
   edm::Handle<edm::View<reco::Track> > tracksView;
   iEvent.getByLabel(fTracksLabel, tracksView);
@@ -95,12 +105,12 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   edm::Handle<VertexCollection> recoPrimaryVertexCollection;
   iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
   if(!recoPrimaryVertexCollection.isValid()) {
-    cout << "==>HFMuonAndTrack> No primary vertex collection found, skipping" << endl;
+    cout << "==>HFDumpTracks> No primary vertex collection found, skipping" << endl;
     return;
   }
   const reco::VertexCollection vertices = *(recoPrimaryVertexCollection.product());
   if (vertices.size() == 0) {
-    cout << "==>HFMuonAndTrack> No primary vertex found, skipping" << endl;
+    cout << "==>HFDumpTracks> No primary vertex found, skipping" << endl;
     return;
   }
   fPV = vertices[gHFEvent->fEventTag]; 
@@ -308,12 +318,7 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 }
 
 // ------------ method called once each job just before starting event loop  ------------
-void  HFDumpTracks::beginJob(const edm::EventSetup& setup) {
-  edm::ESHandle<TrackAssociatorBase> theAssociator;
-  setup.get<TrackAssociatorRecord>().get(fAssociatorLabel.encode(), theAssociator);
-  fAssociator = theAssociator.product();
-  cout << "fAssociator = " << fAssociator << endl;
-
+void  HFDumpTracks::beginJob() {
   gHFFile->cd();
   //  TH1D *h1 = new TH1D("h2", "h2", 20, 0., 20.);
 

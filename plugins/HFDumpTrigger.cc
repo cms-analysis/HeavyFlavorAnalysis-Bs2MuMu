@@ -282,7 +282,7 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void  HFDumpTrigger::beginJob(const edm::EventSetup& setup) {
+void  HFDumpTrigger::beginJob() {
 
 }
 

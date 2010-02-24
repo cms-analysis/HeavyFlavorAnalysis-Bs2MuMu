@@ -162,7 +162,7 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 }
 
 // ------------ method called once each job just before starting event loop  ------------
-void  HFDumpStuff::beginJob(const edm::EventSetup& setup) {
+void  HFDumpStuff::beginJob() {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

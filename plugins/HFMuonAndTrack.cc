@@ -203,7 +203,7 @@ void HFMuonAndTrack::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void  HFMuonAndTrack::beginJob(const edm::EventSetup& setup) {
+void  HFMuonAndTrack::beginJob() {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

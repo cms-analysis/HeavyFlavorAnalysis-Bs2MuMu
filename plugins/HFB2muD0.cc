@@ -58,7 +58,7 @@ HFB2muD0::HFB2muD0(const edm::ParameterSet& iConfig) :
   using namespace std;
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- " << __FILE__ << endl;
-  cout << "--- $Revision: 1.10 $" << endl;
+  cout << "--- $Revision: 1.1 $" << endl;
   cout << "--- HFB2muD0 constructor" << endl;
   cout << "---  tracksLabel:              " << fTracksLabel << endl;
   cout << "---  muonsLabel:               " << fMuonsLabel << endl;
@@ -428,7 +428,7 @@ TAnaVertex HFB2muD0::DoVertexFit(std::vector<reco::Track> &Tracks){
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void  HFB2muD0::beginJob(const edm::EventSetup& setup) {
+void  HFB2muD0::beginJob() {
 }
 
 
