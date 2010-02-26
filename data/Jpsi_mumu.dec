@@ -1,0 +1,9 @@
+Alias MyJpsi J/psi
+ChargeConj MyJpsi MyJpsi
+
+Decay MyJpsi
+ 1.0000  mu+        mu-                    PHOTOS VLL ;
+Enddecay
+
+
+End
