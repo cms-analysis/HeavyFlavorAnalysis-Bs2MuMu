@@ -2,7 +2,7 @@
 # using: 
 # Revision: 1.151 
 # Source: /cvs_server/repositories/CMSSW/CMSSW/Configuration/PyReleaseValidation/python/ConfigBuilder.py,v 
-# with command line options: Configuration/GenProduction/python/PYTHIA6_BsToMuMu_7TeV_noPtCut_cff.py -s RAW2DIGI,RECO --filein file:PYTHIA6_BsToMuMu_10TeV_cff_py_GEN_SIM_DIGI_L1_DIGI2RAW_HLT.root --eventcontent RECOSIM --datatier GEN-SIM-RECO --conditions FrontierConditions_GlobalTag,DESIGN_3X_V8B::All -n -1 --no_exec
+# with command line options: Configuration/GenProduction/python/PYTHIA6_BdToMuMu_7TeV_noPtCut_cff.py -s RAW2DIGI,RECO --filein file:PYTHIA6_BdToMuMu_10TeV_cff_py_GEN_SIM_DIGI_L1_DIGI2RAW_HLT.root --eventcontent RECOSIM --datatier GEN-SIM-RECO --conditions FrontierConditions_GlobalTag,DESIGN_3X_V8B::All -n -1 --no_exec
 import FWCore.ParameterSet.Config as cms
 
 process = cms.Process('RECO')
@@ -21,7 +21,7 @@ process.load('Configuration/EventContent/EventContent_cff')
 
 process.configurationMetadata = cms.untracked.PSet(
     version = cms.untracked.string('$Revision: 1.1 $'),
-    annotation = cms.untracked.string('Configuration/GenProduction/python/PYTHIA6_BsToMuMu_7TeV_noPtCut_cff.py nevts:-1'),
+    annotation = cms.untracked.string('Configuration/GenProduction/python/PYTHIA6_BdToMuMu_7TeV_noPtCut_cff.py nevts:-1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
 process.maxEvents = cms.untracked.PSet(
@@ -59,14 +59,14 @@ process.options = cms.untracked.PSet(
 )
 # Input source
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring('file:BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START.root')
+    fileNames = cms.untracked.vstring('file:BdToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START.root')
 )
 
 # Output definition
 process.output = cms.OutputModule("PoolOutputModule",
     splitLevel = cms.untracked.int32(0),
     outputCommands = process.RECOSIMEventContent.outputCommands,
-    fileName = cms.untracked.string('BsToMuMu_7TeV_RAW2DIGI_RECO_START.root'),
+    fileName = cms.untracked.string('BdToMuMu_7TeV_RAW2DIGI_RECO_START.root'),
     dataset = cms.untracked.PSet(
         dataTier = cms.untracked.string('GEN-SIM-RECO'),
         filterName = cms.untracked.string('')

@@ -14,6 +14,10 @@ process.load('Configuration/StandardSequences/Services_cff')
 #              services
 ##########################################################################################################
 
+process.load("FWCore.MessageLogger.MessageLogger_cfi")
+process.MessageLogger.cerr.threshold = 'INFO'
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000
+process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
 process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService",
     moduleSeeds = cms.PSet(
@@ -75,7 +79,7 @@ process.genParticles.abortOnUnknownPDGCode = False
 process.configurationMetadata = cms.untracked.PSet(
     version = cms.untracked.string('$Revision: 1.1 $'),
     annotation = cms.untracked.string('January10: Pythia6+EvtGen generation of Bs->MuMu, 7TeV, D6T tune'),
-    name = cms.untracked.string('$Source: /cvs_server/repositories/CMSSW/CMSSW/Configuration/GenProduction/python/PYTHIA6_BsToMuMu_7TeV_noPtCut_cff.py,v $')
+    name = cms.untracked.string('$Source: /cvs_server/repositories/CMSSW/CMSSW/HeavyFlavorAnalysis/Bs2MuMu/test/Winter10/BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START.py,v $')
 )
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(10000)
