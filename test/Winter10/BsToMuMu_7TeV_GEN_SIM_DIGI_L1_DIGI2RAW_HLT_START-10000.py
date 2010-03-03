@@ -54,7 +54,7 @@ process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService
 from IOMC.RandomEngine.RandomServiceHelper import  RandomNumberServiceHelper
 randHelper =  RandomNumberServiceHelper(process.RandomNumberGeneratorService)
 randHelper.populate()
-process.RandomNumberGeneratorService.saveFileName =  cms.untracked.string("RandomEngineState-10000.log")
+process.RandomNumberGeneratorService.saveFileName =  cms.untracked.string("Bs-RandomEngineState-10000.log")
 #############################################################################
 
 process.load('FWCore/MessageService/MessageLogger_cfi')
@@ -77,7 +77,7 @@ process.load("Configuration.StandardSequences.Generator_cff")
 process.genParticles.abortOnUnknownPDGCode = False
 
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.1 $'),
+    version = cms.untracked.string('$Revision: 1.2 $'),
     annotation = cms.untracked.string('January10: Pythia6+EvtGen generation of Bs->MuMu, 7TeV, D6T tune'),
     name = cms.untracked.string('$Source: /cvs_server/repositories/CMSSW/CMSSW/HeavyFlavorAnalysis/Bs2MuMu/test/Winter10/BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START.py,v $')
 )
@@ -121,7 +121,7 @@ process.source = cms.Source("EmptySource")
 process.output = cms.OutputModule("PoolOutputModule",
     splitLevel = cms.untracked.int32(0),
     outputCommands = process.RAWSIMEventContent.outputCommands,
-    fileName = cms.untracked.string('BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT.root'),
+    fileName = cms.untracked.string('BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT-10000.root'),
     dataset = cms.untracked.PSet(
         dataTier = cms.untracked.string('GEN-SIM-RAW'),
         filterName = cms.untracked.string('')
