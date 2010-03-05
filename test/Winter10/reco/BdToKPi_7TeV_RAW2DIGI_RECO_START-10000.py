@@ -20,7 +20,7 @@ process.load('Configuration/StandardSequences/FrontierConditions_GlobalTag_cff')
 process.load('Configuration/EventContent/EventContent_cff')
 
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.2 $'),
+    version = cms.untracked.string('$Revision: 1.151 $'),
     annotation = cms.untracked.string('Configuration/GenProduction/python/PYTHIA6_BsToMuMu_7TeV_noPtCut_cff.py nevts:-1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
@@ -53,20 +53,18 @@ process.options = cms.untracked.PSet(
         'MismatchedInputFiles', 
         'ProductDoesNotSupportViews', 
         'ProductDoesNotSupportPtr', 
-        'NotFound'
-#    'ProductNotFound'
-    )
+        'NotFound')
 )
 # Input source
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring('file:BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START-10000.root')
+    fileNames = cms.untracked.vstring('file:BdToKPi_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START-10000.root')
 )
 
 # Output definition
 process.output = cms.OutputModule("PoolOutputModule",
     splitLevel = cms.untracked.int32(0),
     outputCommands = process.RECOSIMEventContent.outputCommands,
-    fileName = cms.untracked.string('BsToMuMu_7TeV_RAW2DIGI_RECO_START-10000.root'),
+    fileName = cms.untracked.string('BdToKPi_7TeV_RAW2DIGI_RECO_START-10000.root'),
     dataset = cms.untracked.PSet(
         dataTier = cms.untracked.string('GEN-SIM-RECO'),
         filterName = cms.untracked.string('')

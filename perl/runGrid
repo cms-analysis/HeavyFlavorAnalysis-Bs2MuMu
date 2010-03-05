@@ -1,0 +1,199 @@
+#!/usr/bin/env perl
+
+# Usage:       runGrid [-j grid.jdl] -c grid.csh -t tarfile -m {debug|local|grid|batch} *.py
+# ------
+#              submit to grid all jobs specified in the command line
+#
+# Assumptions: jobs are serialized a la asd_asd-asd-10000.py, the numbering is at the end, separated with -
+# ------------ is run in directory where the py files reside!
+#
+# 2010/03/02   First version that runs locally, in batch, on the grid. 
+# 2010/03/03   Added grid URL duplication into local and common jobs.list files
+# 2010/03/05   STORAGE1 now provided as command line argument
+#              
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urs.langenegger@psi.ch>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+getopts('c:d:j:m:s:t:');
+
+if ($opt_m eq "grid" && !$opt_d) {
+    $opt_d = "ce01.lcg.cscs.ch"; 
+    print " no destination provided, sending to CSCS: $opt_d\n";
+}
+
+if (!$opt_s) {
+    $opt_s = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2\\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/bla";
+}
+
+
+my $host = `hostname`; 
+chop($host); 
+
+# -- split arguments into directory- and file-names
+my $tarFile, $tarDirectory; 
+($tarDirectory, $tarFile) = fileAndDirectory($opt_t); 
+my $cshFile, $cshDirectory; 
+($cshDirectory, $cshFile) = fileAndDirectory($opt_c); 
+
+my $pwd = `pwd`; 
+chop($pwd); 
+
+# -- submit all job files
+foreach $pyfile (@ARGV) {
+    my $pyFile, $pyDirectory; 
+    ($pyDirectory, $pyFile) = fileAndDirectory($pyfile); 
+    if ($pyDirectory =~ /^\//) {
+    } else {
+	$pyDirectory = "../".$pyDirectory;
+    }
+    # -- Cut off trailing extension and possible directories in front
+    ($barefile = $pyfile) =~ s/\.py//g;
+    $rest = substr($barefile, 0, rindex($barefile, '/')+1); 
+    $barefile =~ s/$rest//;
+    $job      = $barefile;
+    # -- Cut off everything except the number
+    $number    = $job;
+    $number = substr($job, rindex($job, '-')+1, length($job)); 
+
+    $ENV{'JOB'}    = $job; 
+
+    # -- create tmp directory for running/submission
+    $tdir = "tmp-$job";
+    system("/bin/rm -rf $tdir"); 
+    mkdir($tdir); 
+    chdir($tdir);
+    &makeJdlFile($job);
+    &makeCshFile($job);
+    system("/bin/cp $pyDirectory/$job.py .");
+    &makeTarLink($job);
+    system("/bin/chmod 755 $job.csh"); 
+
+    # -- get a timestamp
+    ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+    $year += 1900; 
+    $timeStamp = sprintf("%s, %4i/%02i/%02i %02i:%02i:%02i", $host, $year, $mon, $mday, $hour, $min, $sec); 
+
+    if ($opt_m eq "local") {
+	print "local running: $job.csh\n";
+	system("./$job.csh >& local.log");
+    } elsif ($opt_m eq "debug") {
+	print "debug, no running\n";
+    } elsif ($opt_m eq "batch") {
+	print "batch submission: $job\n";
+	system("qsub -q all.q -N `rline` -o $job.sge.log -e $job.sge.err ./$job.csh");
+    } elsif ($opt_m eq "grid") {
+	print "grid running: $job.jdl\n";
+	system("glite-wms-job-submit -o jobs.list -a --config /shome/ursl/grid/glite.conf $job.jdl"); 
+	open(IN, ">>jobs.list") || die "Cannot open jobs.list\n";
+	print IN "\# $timeStamp $pwd/$tdir $job.jdl\n"; 
+	close(IN); 
+	if (!(-e "../jobs.list")) { 
+	    open(TMP, ">../jobs.list"); 
+	    print TMP "###Submitted Job Ids###\n";
+	    close(TMP); 
+	}
+	system("/usr/bin/tail -2 jobs.list >> ../jobs.list");
+    }
+
+    chdir(".."); 
+}
+
+
+# ----------------------------------------------------------------------
+sub makeTarLink {
+    ($ljob) = @_;
+    if ($opt_t =~ /^\//) {
+	#system("/bin/ln -s $opt_t $ljob.tar.gz"); 
+	system("/bin/cp $opt_t $ljob.tar.gz"); 
+    } else {
+	#system("/bin/ln -s ../$tarDirectory/$tarFile $ljob.tar.gz"); 
+	system("/bin/cp ../$tarDirectory/$tarFile $ljob.tar.gz"); 
+    }
+}
+
+# ----------------------------------------------------------------------
+sub copyJdlFile {
+    ($ljob) = @_;
+    open(IN, "$opt_j") || die "Cannot open $opt_j\n";
+    open(OUT, ">$ljob.jdl")  || die "Cannot open $ljob.jdl\n";
+    my $datum = `/bin/date`; chop $datum;
+    print OUT "# created by runGrid at $datum\n";
+    while (<IN>) {
+	s/JOB/$ljob/g;
+	print OUT;
+    }
+    close(OUT); 
+    close(IN); 
+}
+
+# ----------------------------------------------------------------------
+sub makeJdlFile {
+    ($ljob) = @_;
+    open(OUT, ">$ljob.jdl")  || die "Cannot open $ljob.jdl\n";
+    my $datum = `/bin/date`; chop $datum;
+    print OUT "# created by runGrid at $datum\n";
+    print OUT "Executable    = \"$ljob.csh\";\n";
+    print OUT "StdOutput     = \"$ljob.log\";\n";
+    print OUT "StdError      = \"$ljob.err\";\n";
+    print OUT "InputSandbox  ={\"$ljob.csh\", \"$ljob.jdl\", \"$ljob.py\", \"$ljob.tar.gz\"};\n";
+    print OUT "OutputSandbox ={\"$ljob.csh\", \"$ljob.jdl\", \"$ljob.py\", \"$ljob.log\", \"$ljob.err\"};\n";
+    print OUT "VirtualOrganisation = \"cms\";\n";
+    print OUT "PerusalFileEnable = true;\n";
+    print OUT "PerusalTimeInterval = 30;\n";
+    if ($opt_d) {
+	print OUT "Requirements  = ((RegExp(\"$opt_d\", other.GlueCEUniqueId)));\n";
+    }
+
+#    print OUT "Requirements  = ((RegExp(\"ce01.lcg.cscs.ch\", other.GlueCEUniqueId)) 
+#                  && (Member(\"VO-cms-CMSSW_3_5_0\", other.GlueHostApplicationSoftwareRunTimeEnvironment))
+#                 );\n";
+
+    close OUT; 
+}
+
+
+# ----------------------------------------------------------------------
+sub makeCshFile {
+    ($ljob) = @_;
+    if ($cshDirectory =~ /^\//) {
+	open(IN, "$cshDirectory/$cshFile") || die "Cannot open $cshDirectory/$cshFile\n";
+    } else {
+	open(IN, "../$cshDirectory/$cshFile") || die "Cannot open ../$cshDirectory/$cshFile\n";
+    }
+    open(OUT, ">$ljob.csh")  || die "Cannot open $ljob.csh\n";
+    my $datum = `/bin/date`; chop $datum;
+    while (<IN>) {
+	if ($opt_m eq "batch" && /\# BATCH/) {
+	    s/\# BATCH/cd $pwd\/$tdir/;
+	}
+
+	if (/XXXX/) {
+	    s/XXXX/$number/g;
+	} elsif (/setenv JOB/) {
+	    s/setenv JOB/setenv JOB         $ljob/g;
+	} elsif (/setenv STORAGE1/) {
+	    s/setenv STORAGE1/setenv STORAGE1         $opt_s/g;
+	} else {
+	}
+	print OUT;
+    }
+    close OUT; 
+}
+
+	
+# ----------------------------------------------------------------------
+sub fileAndDirectory {
+    ($in) = @_;
+
+    $dir = substr($in, 0, rindex($in, '/')); 
+    if (rindex($in, '/') < 0) { $dir = ""; }
+    $file = substr($in, rindex($in, '/')+1, length($in)); 
+    @result = ($dir, $file); 
+    return @result; 
+}
+
+	

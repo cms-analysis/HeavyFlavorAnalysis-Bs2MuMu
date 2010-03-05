@@ -54,7 +54,7 @@ process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService
 from IOMC.RandomEngine.RandomServiceHelper import  RandomNumberServiceHelper
 randHelper =  RandomNumberServiceHelper(process.RandomNumberGeneratorService)
 randHelper.populate()
-process.RandomNumberGeneratorService.saveFileName =  cms.untracked.string("Bs-RandomEngineState-10000.log")
+process.RandomNumberGeneratorService.saveFileName =  cms.untracked.string("RandomEngineState-10000.log")
 #############################################################################
 
 process.load('FWCore/MessageService/MessageLogger_cfi')
@@ -67,7 +67,6 @@ process.load('Configuration/StandardSequences/Sim_cff')
 process.load('Configuration/StandardSequences/Digi_cff')
 process.load('Configuration/StandardSequences/SimL1Emulator_cff')
 process.load('Configuration/StandardSequences/DigiToRaw_cff')
-#process.load('HLTrigger/Configuration/HLT_1E31_cff')
 process.load('HLTrigger/Configuration/HLT_8E29_cff')
 process.load('Configuration/StandardSequences/EndOfProcess_cff')
 process.load('Configuration/StandardSequences/FrontierConditions_GlobalTag_cff')
@@ -79,10 +78,10 @@ process.genParticles.abortOnUnknownPDGCode = False
 process.configurationMetadata = cms.untracked.PSet(
     version = cms.untracked.string('$Revision: 1.1 $'),
     annotation = cms.untracked.string('January10: Pythia6+EvtGen generation of Bs->MuMu, 7TeV, D6T tune'),
-    name = cms.untracked.string('$Source: /cvs_server/repositories/CMSSW/CMSSW/HeavyFlavorAnalysis/Bs2MuMu/test/Winter10/BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START-10000.py,v $')
+    name = cms.untracked.string('$Source: /cvs_server/repositories/CMSSW/CMSSW/Configuration/GenProduction/python/PYTHIA6_BsToMuMu_7TeV_noPtCut_cff.py,v $')
 )
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10000)
+    input = cms.untracked.int32(500000)
 )
 process.options = cms.untracked.PSet(
     Rethrow = cms.untracked.vstring('OtherCMS', 
@@ -110,18 +109,19 @@ process.options = cms.untracked.PSet(
         'MismatchedInputFiles', 
         'ProductDoesNotSupportViews', 
         'ProductDoesNotSupportPtr', 
-        'NotFound'
-#    'ProductNotFound'
-    )
+        'NotFound')
 )
 # Input source
-process.source = cms.Source("EmptySource")
+process.source = cms.Source("EmptySource",
+     firstLuminosityBlock = cms.untracked.uint32(1),
+     firstRun = cms.untracked.uint32(10000)
+)
 
 # Output definition
 process.output = cms.OutputModule("PoolOutputModule",
     splitLevel = cms.untracked.int32(0),
     outputCommands = process.RAWSIMEventContent.outputCommands,
-    fileName = cms.untracked.string('BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START-10000.root'),
+    fileName = cms.untracked.string('BsToKK_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START-10000.root'),
     dataset = cms.untracked.PSet(
         dataTier = cms.untracked.string('GEN-SIM-RAW'),
         filterName = cms.untracked.string('')
@@ -132,22 +132,33 @@ process.output = cms.OutputModule("PoolOutputModule",
 )
 
 # Additional output definition
+process.output.outputCommands.append('keep *_mergedtruth_*_*')
+process.output.outputCommands.append('keep *_simSiPixelDigis_*_*')
+process.output.outputCommands.append('keep *_simSiStripDigis_*_*')
 
 # Other statements
 process.GlobalTag.globaltag = 'START3X_V21B::All'
-process.MuFromBs = cms.EDFilter("PythiaFilter",
+#process.MuFromBs = cms.EDFilter("PythiaFilter",
+#    MaxEta = cms.untracked.double(2.5),
+#    Status = cms.untracked.int32(1),
+#    MinEta = cms.untracked.double(-2.5),
+#    MotherID = cms.untracked.int32(511),
+#    ParticleID = cms.untracked.int32(211)
+#)
+#process.mumugenfilter = cms.EDFilter("MCParticlePairFilter",
+#    MaxEta = cms.untracked.vdouble(2.5, 2.5),
+#    Status = cms.untracked.vint32(1, 1),
+#    MinEta = cms.untracked.vdouble(-2.5, -2.5),
+#    ParticleID1 = cms.untracked.vint32(-13, 13),
+#    ParticleID2 = cms.untracked.vint32(-13, 13)
+#)
+process.mumugenfilter = cms.EDFilter("PythiaDauFilter",
+    ParticleID = cms.untracked.int32(531),
+    NumberDaughters = cms.untracked.int32(2),
+    DaughterIDs = cms.untracked.vint32(321, -321),
     MaxEta = cms.untracked.double(2.5),
-    Status = cms.untracked.int32(1),
     MinEta = cms.untracked.double(-2.5),
-    MotherID = cms.untracked.int32(531),
-    ParticleID = cms.untracked.int32(13)
-)
-process.mumugenfilter = cms.EDFilter("MCParticlePairFilter",
-    MaxEta = cms.untracked.vdouble(2.5, 2.5),
-    Status = cms.untracked.vint32(1, 1),
-    MinEta = cms.untracked.vdouble(-2.5, -2.5),
-    ParticleID1 = cms.untracked.vint32(-13, 13),
-    ParticleID2 = cms.untracked.vint32(-13, 13)
+    MinPt  = cms.untracked.double(2.5)
 )
 process.generator = cms.EDFilter("Pythia6GeneratorFilter",
     ExternalDecays = cms.PSet(
@@ -156,10 +167,10 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
             decay_table = cms.FileInPath('GeneratorInterface/ExternalDecays/data/DECAY_NOLONGLIFE.DEC'),
             particle_property_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/evt.pdl'),
 #            user_decay_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/Bs_mumu.dec'),
-            user_decay_file = cms.FileInPath('HeavyFlavorAnalysis/Bs2MuMu/data/Bs_mumu.dec'),
+            user_decay_file = cms.FileInPath('HeavyFlavorAnalysis/Bs2MuMu/data/Bs_KK.dec'),
             list_forced_decays = cms.vstring('MyB_s0', 
-#                'Myanti-B_s0'),
-                'anti-MyB_s0'),
+                'Myanti-B_s0'),
+#                'Myanti-B0'),
             operates_on_particles = cms.vint32(0)
         ),
         parameterSets = cms.vstring('EvtGen')
@@ -200,7 +211,8 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
             'bbbarSettings')
     )
 )
-process.ProductionFilterSequence = cms.Sequence(process.generator*process.MuFromBs*process.mumugenfilter)
+#process.ProductionFilterSequence = cms.Sequence(process.generator*process.MuFromBs*process.mumugenfilter)
+process.ProductionFilterSequence = cms.Sequence(process.generator*process.mumugenfilter)
 
 # Path and EndPath definitions
 process.generation_step = cms.Path(process.pgen)
