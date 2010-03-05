@@ -4,12 +4,16 @@
 # ------
 #              submit to grid all jobs specified in the command line
 #
+# Example:     cd Bs2MuMu/test/Winter01/production/Bs2MuMu
+# --------     ../../../../perl/runGrid -c ../../gen.csh -t ~/grid/Winter07/grid-1.tar.gz -m debug BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START-10014.py \
+#              -o 'srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/BsToMuMu_7TeV' 
+#
 # Assumptions: jobs are serialized a la asd_asd-asd-10000.py, the numbering is at the end, separated with -
 # ------------ is run in directory where the py files reside!
 #
 # 2010/03/02   First version that runs locally, in batch, on the grid. 
 # 2010/03/03   Added grid URL duplication into local and common jobs.list files
-# 2010/03/05   STORAGE1 now provided as command line argument
+# 2010/03/05   STORAGE1 and input file location now provided as command line argument
 #              
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -18,15 +22,22 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('c:d:j:m:s:t:');
+getopts('c:d:i:j:m:o:t:');
 
+# -- destination
 if ($opt_m eq "grid" && !$opt_d) {
     $opt_d = "ce01.lcg.cscs.ch"; 
     print " no destination provided, sending to CSCS: $opt_d\n";
 }
 
+# -- grid storage place for output file
 if (!$opt_s) {
-    $opt_s = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2\\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/bla";
+    $opt_s = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/bla";
+}
+
+# -- grid storage place of input file
+if (!$opt_i) {
+    $opt_i = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/bla";
 }
 
 
@@ -176,7 +187,7 @@ sub makeCshFile {
 	} elsif (/setenv JOB/) {
 	    s/setenv JOB/setenv JOB         $ljob/g;
 	} elsif (/setenv STORAGE1/) {
-	    s/setenv STORAGE1/setenv STORAGE1         $opt_s/g;
+	    s/setenv STORAGE1/setenv STORAGE1    $opt_s/g;
 	} else {
 	}
 	print OUT;

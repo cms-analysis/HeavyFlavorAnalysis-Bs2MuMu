@@ -7,7 +7,6 @@ setenv JOB
 setenv SRMCP       "srmcp -2 -globus_tcp_port_range 20000,25000"
 setenv SRMCP       "srmcp -2"
 setenv FILE1       $JOB.root
-#setenv STORAGE1    srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/BdToMuMu_7TeV
 setenv STORAGE1
 
 echo "========================"
