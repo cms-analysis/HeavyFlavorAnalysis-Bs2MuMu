@@ -14,6 +14,7 @@
 # 2010/03/02   First version that runs locally, in batch, on the grid. 
 # 2010/03/03   Added grid URL duplication into local and common jobs.list files
 # 2010/03/05   STORAGE1 and input file location now provided as command line argument
+# 2010/03/06   Changed separation character for -r list to %, added default settings to always be written into csh!
 #              
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -22,7 +23,19 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('c:d:i:j:m:o:t:');
+getopts('c:d:i:j:m:o:r:t:');
+
+# -- Default settings
+my $CMSSW = "CMSSW_3_5_0"; 
+my $SCRAM = "slc5_ia32_gcc434";
+my $SRMCP = "\"srmcp -2\"";          if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 -globus_tcp_port_range 20000,25000\"";}
+
+# -- replacements
+if ($opt_r) {$replace = $opt_r; }
+@replaces = split(/%/, $replace); 
+foreach $repl (@replaces) {
+    print "$repl\n"
+}
 
 # -- destination
 if ($opt_m eq "grid" && !$opt_d) {
@@ -31,8 +44,8 @@ if ($opt_m eq "grid" && !$opt_d) {
 }
 
 # -- grid storage place for output file
-if (!$opt_s) {
-    $opt_s = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/bla";
+if (!$opt_o) {
+    $opt_o = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2\\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/bla";
 }
 
 # -- grid storage place of input file
@@ -178,18 +191,37 @@ sub makeCshFile {
     open(OUT, ">$ljob.csh")  || die "Cannot open $ljob.csh\n";
     my $datum = `/bin/date`; chop $datum;
     while (<IN>) {
-	if ($opt_m eq "batch" && /\# BATCH/) {
-	    s/\# BATCH/cd $pwd\/$tdir/;
+	if (($opt_m eq "batch" || $opt_m eq "local") && /\# BATCH/) {
+	    print OUT "# BATCH\n";
+	    print OUT "mkdir -p /scratch/ursl\n";
+	    print OUT "cd /scratch/ursl\n";
+	    print OUT "mkdir \$JOB\n";
+	    print OUT "cd \$JOB\n";
+	    print OUT "/bin/cp $pwd/$tdir/$ljob.tar.gz .\n";
+	    print OUT "/bin/cp $pwd/$tdir/$ljob.py .\n";
+	}
+	
+	foreach $repl (@replaces) {
+	    ($patt, $value) = split(/ /, $repl); 
+	    # FIXME: HERE ADD PARSING/REPLACING OF XXXX with $number!!!
+            if (/setenv $patt/) {
+                s/$patt/$patt $value/g;
+                last;
+            }
 	}
 
 	if (/XXXX/) {
 	    s/XXXX/$number/g;
+	} elsif (/setenv CMSSW/) {
+	    s/setenv CMSSW/setenv CMSSW       $CMSSW/g;
+	} elsif (/setenv SRMCP/) {
+	    s/setenv SRMCP/setenv SRMCP       $SRMCP/g;
+	} elsif (/setenv SCRAM_ARCH/) {
+	    s/setenv SCRAM_ARCH/setenv SCRAM_ARCH  $SCRAM/g;
 	} elsif (/setenv JOB/) {
-	    s/setenv JOB/setenv JOB         $ljob/g;
-	} elsif (/setenv STORAGE1/) {
-	    s/setenv STORAGE1/setenv STORAGE1    $opt_s/g;
-	} else {
+	    s/setenv JOB/setenv JOB      $ljob/g;
 	}
+
 	print OUT;
     }
     close OUT; 

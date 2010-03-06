@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Usage:       monGrid [-i jobs.list] [-u grid-url]
+# Usage:       monGrid [-i jobs.list] [-u grid-url] [-o]
 # ------
 #              check status of grid jobs
 #              if done, retrieve sandbox and put files into job directory 
@@ -49,8 +49,8 @@ while(<IN>) {
     $line =~ s/\# //;
     ($machine, $date, $time, $dir, $jdl) = split(/ /, $line); 
     $pwd = `pwd`; chop($pwd);
-    $ldir = $dir;
-    $ldir =~ s%$pwd/%%;
+    $mdir = $dir;
+    $mdir =~ s%$pwd/%%;
 
     # -- if a specific URL is given, skip all others
     if ($opt_u && $url ne $opt_u) {
@@ -62,16 +62,16 @@ while(<IN>) {
     parseStatus($gliteResult); 
 
     # -- get output sandbox if successful and not yet already happened and not vetoed
-    if (($jobStatus eq "Done (Success)" || $jobStatus eq "Cleared ")
-	&& $opt_o
-	) {
+    if ($jobStatus =~ /Done/ && $opt_o) {
 	$ok = getOutputSandBox($url, $dir, $jdl, $jobStatus); 
+    	printf("%60s %s %15s; %s\n", $mdir, $url, $jobStatus, $ok);
+    } elsif ($jobStatus =~ /Cleared/ && $opt_o) {
+	$ok = getOutputSandBox($url, $dir, $jdl, $jobStatus); 
+    	printf("%60s %s %15s; %s\n", $mdir, $url, $jobStatus, $ok);
+    } else {
+    	printf("%60s %s %15s: %s\n", $mdir, $url, $jobStatus, $jobStatusReason);
     }
-    
 
-    # -- print something for it:
-    printf("%s/%s %15s/%s %s; %s\n", $ldir, $jdl, $jobStatus, $jobExitCode, $jobStatusReason, $ok);
-    
 }
 
 
@@ -94,9 +94,9 @@ sub parseStatus {
 # ----------------------------------------------------------------------
 sub getOutputSandBox {
     ($lurl, $ldir, $ljdl, $lstatus) = @_;
-    if ($lstatus eq "Cleared "){
+    if ($lstatus =~ /Cleared/){
     } else {
-	system("$gliteOutput --dir $ldir $lurl"); 
+	system("$gliteOutput --dir $ldir $lurl >& /dev/null"); 
     }
     # -- determine logfile from jdl: 
     $logfile = `/bin/grep StdOutput $ldir/$ljdl`;
@@ -105,11 +105,13 @@ sub getOutputSandBox {
     $logfile =~ s/\;//g;
     $logfile =~ s/= //g;
 
-    # -- no search for possible problems in the logfile
+    # -- now search for possible problems in the logfile
+    $foundException = `/bin/grep -i cms::exception  $ldir/$logfile`;
+    if ($foundException) { $return = "cms::exception found"; }
+
     $foundMyEnd     = `/bin/grep -i "runGrid: This is the end, my friend"  $ldir/$logfile`;
     if ($foundMyEnd) { $return = "no problems seen"; }
 
-    $foundException = `/bin/grep -i exception  $ldir/$logfile`;
-    if ($foundException) { $return = "exception found"; }
 
+    return $return;
 }

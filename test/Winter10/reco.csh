@@ -4,9 +4,11 @@ setenv CMSSW
 setenv SCRAM_ARCH  
 setenv SRMCP       
 
-setenv JOB
-setenv FILE1    $JOB.root
+setenv INFILE      BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START-XXXX.root
+setenv JOB         
+setenv OUTFILE     $JOB.root
 setenv STORAGE1
+
 
 echo "========================"
 echo "====> GRID wrapper <===="
@@ -36,7 +38,7 @@ which srmcp
 pwd
 echo "--> End of env testing"
 
-# BATCH
+# BATCH 
 
 # ----------------------------------------------------------------------
 # -- Setup CMSSW
@@ -60,6 +62,14 @@ mv ../../$JOB.py .
 
 
 # ----------------------------------------------------------------------
+# -- Get input file
+# ----------------------------------------------------------------------
+echo "--> Get input file:"
+pwd
+echo $SRMCP "$STORAGE1/$INFILE" file:///`pwd`/$INFILE
+$SRMCP "$STORAGE1/$INFILE" file:///`pwd`/$INFILE
+
+# ----------------------------------------------------------------------
 # -- Run cmsRun
 # ----------------------------------------------------------------------
 echo "--> Run cmsRun"
@@ -74,20 +84,14 @@ cat $JOB.log
 # ----------------------------------------------------------------------
 # -- Save Output to SE
 # ----------------------------------------------------------------------
-echo "--> Save output to SE: $STORAGE1/$FILE1"
+echo "--> Save output to SE: $STORAGE1/$OUTFILE"
 
-echo srmrm     "$STORAGE1/$FILE1"
-srmrm          "$STORAGE1/$FILE1"
-echo $SRMCP    file:///`pwd`/$FILE1 "$STORAGE1/$FILE1"
-$SRMCP         file:///`pwd`/$FILE1 "$STORAGE1/$FILE1"
-echo srmls     "$STORAGE1/$FILE1"
-srmls          "$STORAGE1/$FILE1"
+srmrm     "$STORAGE1/$OUTFILE"
+$SRMCP    file:///`pwd`/$OUTFILE "$STORAGE1/$OUTFILE"
+srmls     "$STORAGE1/$OUTFILE"
 
-echo srmrm  "$STORAGE1/$JOB.log"
-srmrm       "$STORAGE1/$JOB.log"
-echo $SRMCP file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
-$SRMCP      file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
-echo        srmls     "$STORAGE1/$JOB.log"
-srmls       "$STORAGE1/$JOB.log"
+srmrm     "$STORAGE1/$JOB.log"
+$SRMCP    file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
+srmls     "$STORAGE1/$JOB.log"
 
 echo "runGrid: This is the end, my friend"
