@@ -20,8 +20,8 @@ process.load('Configuration/StandardSequences/FrontierConditions_GlobalTag_cff')
 process.load('Configuration/EventContent/EventContent_cff')
 
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.151 $'),
-    annotation = cms.untracked.string('Configuration/GenProduction/python/PYTHIA6_BsToMuMu_7TeV_noPtCut_cff.py nevts:-1'),
+    version = cms.untracked.string('$Revision: 1.1 $'),
+    annotation = cms.untracked.string('Configuration/GenProduction/python/PYTHIA6_BdToPiPi_7TeV_noPtCut_cff.py nevts:-1'),
     name = cms.untracked.string('PyReleaseValidation')
 )
 process.maxEvents = cms.untracked.PSet(

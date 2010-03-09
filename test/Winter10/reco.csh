@@ -4,7 +4,7 @@ setenv CMSSW
 setenv SCRAM_ARCH  
 setenv SRMCP       
 
-setenv INFILE      BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START-XXXX.root
+setenv INFILE      
 setenv JOB         
 setenv OUTFILE     $JOB.root
 setenv STORAGE1

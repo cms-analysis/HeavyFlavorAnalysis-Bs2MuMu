@@ -17,6 +17,7 @@
 # 2010/03/05   STORAGE1 and input file location now provided as command line argument
 # 2010/03/06   Changed separation character for -r list to %, added default settings to always be written into csh!
 # 2010/03/08   Add -C to submit only those which crashed in a previous attempt. Add also batch jobs to jobs.list.
+# 2010/03/09   translate XXXX in replacements into the correct number
 #              
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -217,6 +218,7 @@ sub makeCshFile {
 	foreach $repl (@replaces) {
 	    ($patt, $value) = split(/ /, $repl); 
 	    # FIXME: HERE ADD PARSING/REPLACING OF XXXX with $number!!!
+	    $value =~ s/XXXX/$number/g;
             if (/setenv $patt/) {
                 s/$patt/$patt $value/g;
                 last;
