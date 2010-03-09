@@ -16,6 +16,7 @@
 #include "DataFormats/TrackReco/interface/Track.h"
 
 #include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/MuonReco/interface/CaloMuon.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
 #include "DataFormats/MuonDetId/interface/MuonSubdetId.h"
@@ -46,11 +47,13 @@ using namespace reco;
 // ----------------------------------------------------------------------
 HFDumpMuons::HFDumpMuons(const edm::ParameterSet& iConfig):
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
+  fCaloMuonsLabel(iConfig.getUntrackedParameter<InputTag>("calomuonsLabel")),
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1)) {
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFDumpMuons constructor" << endl;
   cout << "---  fMuonsLabel:             " << fMuonsLabel.encode() << endl;
+  cout << "---  fCaloMuonsLabel:         " << fCaloMuonsLabel.encode() << endl;
   cout << "---  fDoTruthMatching:        " << fDoTruthMatching << endl;  // 0 = nothing, 1 = TrackingParticles, 2 = FAMOS
   cout << "---  fVerbose:                " << fVerbose << endl;
   cout << "----------------------------------------------------------------------" << endl;
@@ -70,12 +73,25 @@ void HFDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   Handle<MuonCollection> hMuons;
   if (fVerbose > 0) cout << "==> HFDumpMuons> " << fMuonsLabel << endl;
   iEvent.getByLabel(fMuonsLabel, hMuons);
+  
+  // -- calo muons
+  Handle<CaloMuonCollection> cMuons;
+  if (fVerbose > 0) cout << "==> HFDumpMuons> " << fCaloMuonsLabel << endl;
+  iEvent.getByLabel(fCaloMuonsLabel, cMuons);
+  
+  
 
   int im(0);
   for (reco::MuonCollection::const_iterator iMuon = hMuons->begin(); iMuon != hMuons->end();  iMuon++) {
     fillMuon(*iMuon, im); 
     ++im;
   }
+
+  for (reco::CaloMuonCollection::const_iterator cMuon = cMuons->begin(); cMuon != cMuons->end();  cMuon++) {
+    fillCaloMuon(*cMuon, im); 
+    ++im;
+  }
+
 
   if (fVerbose > 0) {
     for (int im = 0; im < gHFEvent->nMuons(); ++im) {
@@ -91,8 +107,12 @@ void HFDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
 
   TAnaMuon *pM = gHFEvent->addMuon();    
-  pM->fIndex = im;
-  pM->fMuIndex = im; 
+  if (rm.innerTrack().isNonnull()) {
+    pM->fIndex = rm.innerTrack().index();
+  } else {
+    pM->fIndex = -23;
+  }
+  pM->fMuIndex = im;
   pM->fMuID    = muonID(rm);
 
   pM->fTimeInOut  = rm.time().timeAtIpInOut; 
@@ -128,6 +148,28 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
 
 }
 
+// ----------------------------------------------------------------------
+void HFDumpMuons::fillCaloMuon(const reco::CaloMuon& rm, int im) {
+
+  TAnaMuon *pM = gHFEvent->addMuon();    
+  if (rm.innerTrack().isNonnull()) {
+    pM->fIndex = rm.innerTrack().index();
+  } else {
+    pM->fIndex = -23;
+  }
+  pM->fMuIndex = im; 
+  pM->fMuID   |= 0x1<<15;
+
+  TrackRef iTrack = rm.innerTrack();
+
+  if (iTrack.isNonnull()) {
+    Track trk(*iTrack);
+    pM->fInnerPlab.SetPtEtaPhi(trk.pt(), trk.eta(), trk.phi());
+  }
+
+}
+
+
 
 // ----------------------------------------------------------------------
 int HFDumpMuons::muonID(const Muon &rm) {
@@ -144,10 +186,9 @@ int HFDumpMuons::muonID(const Muon &rm) {
   if (muon::isGoodMuon(rm, muon::TMOneStationLoose))                MuID |= 0x1<<11; 
   if (muon::isGoodMuon(rm, muon::TMOneStationTight))                MuID |= 0x1<<12; 
   if (muon::isGoodMuon(rm, muon::TMLastStationOptimizedLowPtLoose)) MuID |= 0x1<<13; 
-  if (muon::isGoodMuon(rm, muon::TMLastStationOptimizedLowPtTight)) MuID |= 0x1<<14; 
+  if (muon::isGoodMuon(rm, muon::TMLastStationOptimizedLowPtTight)) MuID |= 0x1<<14;
   return MuID; 
 }
-
 
 // ----------------------------------------------------------------------
 vector<unsigned int> HFDumpMuons::muonStatHits(const reco::Track& tr) {

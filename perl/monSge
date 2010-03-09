@@ -1,0 +1,143 @@
+#!/usr/bin/env perl
+
+# Usage:       monSge [-i jobs.list] [-r]
+# ------
+#              check status of SGE jobs
+#
+# 2010/03/09   First version
+#              
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urs.langenegger@psi.ch>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+getopts('i:oru:');
+
+# -- jobs list
+my $jobslist = "jobs.list";
+if ($opt_i) {
+    $jobslist = $opt_i;
+}
+
+my $STORAGE1 = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=";
+
+my $goodJobs = 0; 
+my $badJobs  = 0; 
+my $minGood  = 9999999999; 
+open(IN, $jobslist) || die "Cannot find file $joblist with grid jobs\n";
+while(<IN>) {
+    next if (/\#\#\#/);
+
+    # -- parse one job: one URL/sge and one additional line with information
+    my $url  = $_;   chop($url); 
+    my $line = <IN>; chop($line); 
+
+    # -- fixed screwed jobs.list input
+    while ($line =~ /https/ || $line =~ /sge/) {
+	$url = $line;
+	$line = <IN>; chop($line); 
+    }
+
+    if ($url =~ /https/) {next;}
+
+    $line =~ s/\# //;
+    ($machine, $date, $time, $dir, $jdl) = split(/ /, $line); 
+    my $pwd = `pwd`; chop($pwd);
+    my $mdir = $dir;
+    $mdir =~ s%$pwd/%%;
+
+    (my $logfile = $jdl) =~ s/jdl/sge.log/;
+
+    if (-e "$mdir/$logfile") {
+	$ok = parseOutput("$mdir/$logfile"); 
+	($rsize, $lsize, $srmFile) = rootFileSize("$mdir/$logfile"); 
+    } else {
+	print "$mdir/$logfile not found???\n";
+	next;
+    }
+
+    printf("%60s SGE ; %s/root: %10i, log: %7i\n", $mdir, $ok, $rsize, $lsize);
+    
+    if ($ok =~ /no problems seen/) { 
+	system("/bin/touch $mdir/OK"); 
+	$goodJobs++; 
+	if ($rsize < $minGood) {$minGood = $rsize;}
+    } else { 
+	system("/bin/touch $mdir/NOK"); 
+	$badJobs++; 
+	if ($opt_r) {
+	    print "--> removing $srmFile\n"; 
+	    system("srmrm $srmFile");
+	}
+    }
+}
+
+print "----------------------------------------------------------------------\n";
+print "Successful jobs: $goodJobs\n";
+print "Failed jobs:     $badJobs\n";
+if ($goodJobs > 0) {print "Minimum rootfile size of good jobs: $minGood\n";}
+print "----------------------------------------------------------------------\n";
+
+
+# ----------------------------------------------------------------------
+sub parseOutput {
+    (my $logfile) = @_;
+
+    my $return = "error"; 
+
+    $foundMyEnd     = `/bin/grep -i "runGrid: This is the end, my friend"  $logfile`;
+    if ($foundMyEnd) { $return = "no problems seen"; }
+
+    # -- now search for possible problems in the logfile
+    $foundException = `/bin/grep -i cms::exception  $logfile`;
+    if ($foundException) { $return = "cms::exception found"; }
+
+    $foundGlibc     = `/bin/grep -i "glibc detected" $logfile`;
+    if ($foundGlibc) {$return = "core dump detected"; }
+    return $return;
+}
+
+
+# ----------------------------------------------------------------------
+sub rootFileSize {
+    (my $logfile) = @_; 
+
+    my $result  = 0; 
+    my $logsize = 0; 
+
+    open(LIN, "$logfile") || die "Cannot open $logfile\n";
+    my $lfn = ""; 
+    while(<LIN>) {
+	if (/--> Save output to SE:/) {
+	    ($bla, $lfn) = split(/SFN=/); 
+	    chop($lfn); 
+	    my @tmp = split(/\//, $lfn); $rfn = pop(@tmp); 
+	    #print "lfn: $lfn\n";
+	    #print "rfn: $rfn\n";
+	    ($logn = $lfn) =~ s/root/log/;
+	}
+
+
+	if ($lfn ne "" && /([0-9]*) *$lfn/) {
+	    if ($1 > 0) {
+		$result = $1; 
+		# print "-> $result\n";
+		# last; 
+	    }
+	}
+
+
+	if ($logn ne "" && /([0-9]*) *$logn/) {
+	    if ($1 > 0) {
+		$logsize = $1; 
+		# print "-> $logsize\n";
+		# last; 
+	    }
+	}
+    }
+    close(LIN); 
+
+    return ($result, $logsize, "$STORAGE1$lfn"); 
+}

@@ -33,12 +33,14 @@ class HFDumpMuons : public edm::EDAnalyzer {
   static int           muonID(const Muon &);
   
  private:
-  virtual void         beginJob() ;
+  virtual void         beginJob();
   virtual void         analyze(const edm::Event&, const edm::EventSetup&);
   virtual void         endJob();
   void                 fillMuon(const Muon& tr, int type);
+  void                 fillCaloMuon(const CaloMuon& tr, int type);
   vector<unsigned int> muonStatHits(const Track& tr);
   edm::InputTag        fMuonsLabel;
+  edm::InputTag        fCaloMuonsLabel;
 
   int                  fVerbose, fDoTruthMatching; 
 

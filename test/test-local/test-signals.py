@@ -28,9 +28,10 @@ process.source = cms.Source(
     "PoolSource", 
     fileNames = cms.untracked.vstring(
 #        "/store/user/starodumov/bsmm/reco/reco-10036.root",
-        "/store/user/starodumov/kplus/reco/reco-kplus-10022.root",
-        "/store/user/starodumov/phi/reco/reco-phi-10014.root",
-        "/store/user/starodumov/kstar/reco/reco-kstar-10019.root"
+#        "/store/user/starodumov/kplus/reco/reco-kplus-10022.root",
+#        "/store/user/starodumov/phi/reco/reco-phi-10014.root",
+#        "/store/user/starodumov/kstar/reco/reco-kstar-10019.root"
+    "/store/user/starodumov/bsmm/reco/reco-10000.root"
     )
     )
 
@@ -81,6 +82,7 @@ process.trkDump = cms.EDAnalyzer(
     primaryVertexCollectionLabel   = cms.untracked.InputTag('offlinePrimaryVertices'),
     generatorEventLabel            = cms.untracked.InputTag('generator'),
     muonsLabel                     = cms.untracked.InputTag("muons"),
+    calomuonsLabel                 = cms.untracked.InputTag("calomuons"),
     trackingParticlesLabel         = cms.untracked.InputTag('trackingParticles'),
     associatorLabel                = cms.untracked.InputTag('TrackAssociatorByHits'),
     doTruthMatching                = cms.untracked.int32(3),
@@ -101,6 +103,7 @@ process.muonDump = cms.EDAnalyzer(
     "HFDumpMuons",
     verbose         = cms.untracked.int32(0),
     muonsLabel      = cms.untracked.InputTag("muons"),
+    calomuonsLabel  = cms.untracked.InputTag("calomuons"),
     doTruthMatching = cms.untracked.int32(0),
     )
 

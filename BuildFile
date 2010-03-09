@@ -27,6 +27,7 @@
 <use name=SimTracker/TrackAssociation>
 <use name=Alignment/OfflineValidation>
 <use name=AnalysisDataFormats/HeavyFlavorObjects>
+<use name=pythia6>
 <use name=clhep>
 <use name=boost>
 <use name=root>

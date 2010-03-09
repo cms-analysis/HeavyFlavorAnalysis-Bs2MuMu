@@ -1,12 +1,13 @@
 #!/usr/bin/env perl
 
-# Usage:       runGrid [-j grid.jdl] -c grid.csh -t tarfile -m {debug|local|grid|batch} *.py
+# Usage:       runGrid [-C] [-j grid.jdl] -c grid.csh -t tarfile -m {debug|local|grid|batch} *.py
 # ------
 #              submit to grid all jobs specified in the command line
 #
 # Example:     cd Bs2MuMu/test/Winter01/production/Bs2MuMu
-# --------     ../../../../perl/runGrid -c ../../gen.csh -t ~/grid/Winter07/grid-1.tar.gz -m debug BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START-10014.py \
-#              -o 'srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/BsToMuMu_7TeV' 
+# --------     ../../../../perl/runGrid -c ../../gen.csh -t ~/grid/Winter07/grid-1.tar.gz -m grid
+#              -r 'STORAGE1 srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/BdToKPi' \ 
+#              BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START-10014.py
 #
 # Assumptions: jobs are serialized a la asd_asd-asd-10000.py, the numbering is at the end, separated with -
 # ------------ is run in directory where the py files reside!
@@ -15,6 +16,7 @@
 # 2010/03/03   Added grid URL duplication into local and common jobs.list files
 # 2010/03/05   STORAGE1 and input file location now provided as command line argument
 # 2010/03/06   Changed separation character for -r list to %, added default settings to always be written into csh!
+# 2010/03/08   Add -C to submit only those which crashed in a previous attempt. Add also batch jobs to jobs.list.
 #              
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -23,7 +25,7 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('c:d:i:j:m:o:r:t:');
+getopts('Cc:d:j:m:r:t:');
 
 # -- Default settings
 my $CMSSW = "CMSSW_3_5_0"; 
@@ -33,6 +35,7 @@ my $SRMCP = "\"srmcp -2\"";          if ($opt_m eq "batch") {$SRMCP = "\"srmcp -
 # -- replacements
 if ($opt_r) {$replace = $opt_r; }
 @replaces = split(/%/, $replace); 
+print "Replacement list: \n";
 foreach $repl (@replaces) {
     print "$repl\n"
 }
@@ -42,17 +45,6 @@ if ($opt_m eq "grid" && !$opt_d) {
     $opt_d = "ce01.lcg.cscs.ch"; 
     print " no destination provided, sending to CSCS: $opt_d\n";
 }
-
-# -- grid storage place for output file
-if (!$opt_o) {
-    $opt_o = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2\\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/bla";
-}
-
-# -- grid storage place of input file
-if (!$opt_i) {
-    $opt_i = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/bla";
-}
-
 
 my $host = `hostname`; 
 chop($host); 
@@ -65,6 +57,13 @@ my $cshFile, $cshDirectory;
 
 my $pwd = `pwd`; 
 chop($pwd); 
+
+# -- Make sure that the combined jobs.list exist
+if (!(-e "../jobs.list")) { 
+    open(TMP, ">../jobs.list"); 
+    print TMP "###Submitted Job Ids###\n";
+    close(TMP); 
+}
 
 # -- submit all job files
 foreach $pyfile (@ARGV) {
@@ -85,8 +84,21 @@ foreach $pyfile (@ARGV) {
 
     $ENV{'JOB'}    = $job; 
 
-    # -- create tmp directory for running/submission
     $tdir = "tmp-$job";
+    # -- Check whether the previous submission was successful
+    if ($opt_C) {
+	if (-e "$tdir/NOK") {
+	    print "resubmitting $job\n";
+	    # -- remove old entry in jobs.list
+	    $https = `/bin/grep https $tdir/jobs.list`; chop($https); 	    
+	    &remove("jobs.list", $https); 
+	    &remove("jobs.list", $tdir); # this will also remove the sge lines which contain $tdir
+	} else {
+	    next; 
+	}
+    }
+
+     # -- create tmp directory for running/submission
     system("/bin/rm -rf $tdir"); 
     mkdir($tdir); 
     chdir($tdir);
@@ -108,18 +120,19 @@ foreach $pyfile (@ARGV) {
 	print "debug, no running\n";
     } elsif ($opt_m eq "batch") {
 	print "batch submission: $job\n";
-	system("qsub -q all.q -N `rline` -o $job.sge.log -e $job.sge.err ./$job.csh");
+	system("qsub -q all.q -N `rline` -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh");
+	open(IN, ">>jobs.list") || die "Cannot open jobs.list\n";
+	print IN "###Submitted Job Ids###\n";
+	print IN "sge $tdir\n";
+	print IN "\# $timeStamp $pwd/$tdir $job.jdl\n"; 
+	close(IN); 
+	system("/usr/bin/tail -2 jobs.list >> ../jobs.list");
     } elsif ($opt_m eq "grid") {
 	print "grid running: $job.jdl\n";
 	system("glite-wms-job-submit -o jobs.list -a --config /shome/ursl/grid/glite.conf $job.jdl"); 
 	open(IN, ">>jobs.list") || die "Cannot open jobs.list\n";
 	print IN "\# $timeStamp $pwd/$tdir $job.jdl\n"; 
 	close(IN); 
-	if (!(-e "../jobs.list")) { 
-	    open(TMP, ">../jobs.list"); 
-	    print TMP "###Submitted Job Ids###\n";
-	    close(TMP); 
-	}
 	system("/usr/bin/tail -2 jobs.list >> ../jobs.list");
     }
 
@@ -240,3 +253,15 @@ sub fileAndDirectory {
 }
 
 	
+# ----------------------------------------------------------------------
+sub remove {
+    ($lfile, $lpat) = @_; 
+    rename("$lfile", "$lfile.old"); 
+    open(IN, "$lfile.old"); 
+    open(OUT, ">$lfile"); 
+    while(<IN>) {
+	unless (/$lpat/) { print OUT; }
+    }
+    close(IN); 
+    close(OUT); 
+}
