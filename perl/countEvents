@@ -1,0 +1,49 @@
+#! /usr/bin/env perl
+
+# Usage:  countEvents tmp-*
+# ------
+#
+#
+# 2010/03/10   First version
+#              
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urs.langenegger@psi.ch>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+getopts('Cc:d:j:m:r:t:');
+
+my $totalCnt = 0; 
+my $fileCnt  = 0; 
+my $files    = 0; 
+foreach $dir (@ARGV) {
+    ($bfile = $dir) =~ s/tmp-//g;
+    $file = "$dir/$bfile"; 
+    $file .= ".log"; 
+    if (!-e $file) {
+	$file =~ s/\.log/\.sge\.log/;
+	if (!-e $file) {
+	    print "$file not found, skipping directory\n";
+	    next;
+	}
+    }
+
+    open(IN, "$file") || die "cannot find $file\n";
+    $files++; 
+    while (<IN>) {
+	if (/Begin processing the ([0-9]*)th record/) {
+	    $fileCnt = $1; 
+	}
+    }
+    print "$file with $fileCnt events\n";
+    close(IN); 
+    $totalCnt += $fileCnt; 
+}
+
+print " ----------------------------------------------------------------------\n";
+print " Looked at $files files\n";
+print " Total number of reco'ed events: $totalCnt\n";
+print " ----------------------------------------------------------------------\n";
+
