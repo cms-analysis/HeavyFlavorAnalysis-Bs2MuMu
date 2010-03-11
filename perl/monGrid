@@ -199,7 +199,8 @@ sub rootFileSize {
 	    my @tmp = split(/\//, $lfn); $rfn = pop(@tmp); 
 	    #print "lfn: $lfn\n";
 	    #print "rfn: $rfn\n";
-	    ($logn = $lfn) =~ s/root/log/;
+	    ($logn = $lfn) =~ s/root$/log/;
+	    print "-> $logn\n";
 	}
 
 
