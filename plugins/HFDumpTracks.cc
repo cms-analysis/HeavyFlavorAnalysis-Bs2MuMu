@@ -26,6 +26,7 @@
 
 #include "DataFormats/MuonReco/interface/CaloMuon.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/MuonReco/interface/CaloMuon.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
 
@@ -130,19 +131,18 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     muonCollectionIndices.push_back(muonIndex); 
     ++muonIndex; 
   }
-
+  
   // -- get the collection of calo muons and store their corresponding track indices
   vector<unsigned int> CalomuonIndices, CalomuonCollectionIndices;  
   Handle<CaloMuonCollection> cMuons;
   iEvent.getByLabel(fCaloMuonsLabel, cMuons);
-  int calomuonIndex(0);
   for (CaloMuonCollection::const_iterator cmuon = cMuons->begin(); cmuon != cMuons->end(); ++cmuon) {
     TrackRef track = cmuon->innerTrack();
     CalomuonIndices.push_back(track.index());
-    CalomuonCollectionIndices.push_back(calomuonIndex); 
-    ++calomuonIndex; 
+    CalomuonCollectionIndices.push_back(muonIndex); 
+    ++muonIndex; 
   }
-
+  
   if (fVerbose > 0) cout << "==>HFDumpTracks> nMuons = " << hMuons->size() << endl;
   TH1D *h2 = (TH1D*)gHFFile->Get("h2");
   if (h2) h2->Fill(hMuons->size());
@@ -231,15 +231,25 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       if (i == muonIndices[im]) {
 	if (fVerbose > 3) cout << " ==>HFDumpTracks> Found a muon!!" << endl;
 	const Muon &rMuon  = hMuons->at(muonCollectionIndices[im]);
+
 	pTrack->fMuIndex = muonCollectionIndices[im]; 
 	pTrack->fMuID    = HFDumpMuons::muonID(rMuon);
+      }
+    }
+    
+    for (unsigned int im = 0; im < CalomuonIndices.size(); ++im) {
+      if (i == CalomuonIndices[im]) {
+	if (fVerbose > 3) cout << " ==>HFDumpTracks> Found a calo muon!!" << endl;
+	
+	pTrack->fMuIndex = CalomuonCollectionIndices[im]; 
+	pTrack->fMuID   |= 0x1<<15;
       }
     }
 
     for (unsigned int im = 0; im < CalomuonIndices.size(); ++im) {
       if (i == CalomuonIndices[im]) {
         if (fVerbose > 3) cout << " ==>HFDumpTracks> Found a calo muon!!" << endl;
-        pTrack->fMuIndex = CalomuonCollectionIndices[im]; // FIXME???
+        pTrack->fMuIndex = CalomuonCollectionIndices[im]; 
         pTrack->fMuID   |= 0x1<<15;
       }
     }
