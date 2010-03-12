@@ -1,0 +1,157 @@
+// ======================================================================
+// -- This file contains general setup stuff 
+// ======================================================================
+
+// ----------------------------------------------------------------------
+treeReader01::treeReader01(TChain *chain, TString evtClassName) {
+  cout << "==> treeReader01: constructor..." << endl;
+  if (chain == 0) {
+    cout << "You need to pass a chain!" << endl;
+  }
+  fpChain = chain; 
+  fNentries = chain->GetEntries();
+  init(evtClassName);
+}
+
+// ----------------------------------------------------------------------
+void treeReader01::init(TString evtClassName) {
+  fpEvt = new TAna01Event(0);
+  cout << "==> treeReader01: init ..." << fpEvt << endl;
+  fpChain->SetBranchAddress(evtClassName, &fpEvt);
+}
+
+// ----------------------------------------------------------------------
+treeReader01::~treeReader01() {
+  cout << "==> treeReader01: destructor ..." << endl;
+  if (!fpChain) return;
+  delete fpChain->GetCurrentFile();
+}
+
+// ----------------------------------------------------------------------
+void treeReader01::openHistFile(TString filename) {
+  fpHistFile = new TFile(filename.Data(), "RECREATE");
+  fpHistFile->cd();
+  cout << "==> treeReader01: Opened " << fpHistFile->GetName() << endl;
+}
+
+// ----------------------------------------------------------------------
+void treeReader01::closeHistFile() {
+  cout << "==> treeReader01: Writing " << fpHistFile->GetName() << endl;
+  fpHistFile->cd();
+  fpHistFile->Write();
+  fpHistFile->Close();
+  delete fpHistFile;
+
+}
+
+// --------------------------------------------------------------------------------------------------
+void treeReader01::readCuts(TString filename, int dump) {
+  char  buffer[200];
+  fCutFile = filename;
+  if (dump) cout << "==> treeReader01: Reading " << fCutFile.Data() << " for cut settings" << endl;
+  sprintf(buffer, "%s", fCutFile.Data());
+  ifstream is(buffer);
+  char CutName[100];
+  float CutValue;
+  int ok(0);
+
+  TString fn(fCutFile.Data());
+
+  if (dump) {
+    cout << "====================================" << endl;
+    cout << "==> treeReader01: Cut file  " << fCutFile.Data() << endl;
+    cout << "------------------------------------" << endl;
+  }
+
+  TH1D *hcuts = new TH1D("hcuts", "", 1000, 0., 1000.);
+  hcuts->GetXaxis()->SetBinLabel(1, fn.Data());
+  int ibin; 
+
+  while (is.getline(buffer, 200, '\n')) {
+    ok = 0;
+    if (buffer[0] == '#') {continue;}
+    if (buffer[0] == '/') {continue;}
+    sscanf(buffer, "%s %f", CutName, &CutValue);
+
+    if (!strcmp(CutName, "TYPE")) {
+      TYPE = int(CutValue); ok = 1;
+      if (dump) cout << "TYPE:           " << TYPE << endl;
+    }
+
+    if (!strcmp(CutName, "PTLO")) {
+      PTLO = CutValue; ok = 1;
+      if (dump) cout << "PTLO:           " << PTLO << " GeV" << endl;
+      ibin = 11;
+      hcuts->SetBinContent(ibin, PTLO);
+      hcuts->GetXaxis()->SetBinLabel(ibin, "p_{T}^{min}(l) [GeV]");
+    }
+
+    if (!strcmp(CutName, "ETALO")) {
+      ETALO = CutValue; ok = 1;
+      if (dump) cout << "ETALO:           " << ETALO << endl;
+      ibin = 13;
+      hcuts->SetBinContent(ibin, ETALO);
+      hcuts->GetXaxis()->SetBinLabel(ibin, "#eta_{T}^{min}(l)");
+    }
+
+    if (!strcmp(CutName, "ETAHI")) {
+      ETAHI = CutValue; ok = 1;
+      if (dump) cout << "ETAHI:           " << ETAHI << endl;
+      ibin = 14;
+      hcuts->SetBinContent(ibin, ETAHI);
+      hcuts->GetXaxis()->SetBinLabel(ibin, "#eta_{T}^{max}(l)");
+    }
+
+    if (!ok) cout << "==> treeReader01: ERROR: Don't know about variable " << CutName << endl;
+  }
+
+  if (dump)  cout << "------------------------------------" << endl;
+}
+
+
+// ----------------------------------------------------------------------
+int treeReader01::loop(int nevents, int start) {
+  int nb = 0, maxEvents(0);
+
+  cout << "==> treeReader01: Chain has a total of " << fNentries << " events" << endl;
+ 
+  // -- Setup for restricted running (not yet foolproof, i.e. bugfree)
+  if (nevents < 0) {
+    maxEvents = fNentries;
+  } else {
+    cout << "==> treeReader01: Running over " << nevents << " events" << endl;
+    maxEvents = nevents;
+  }
+  if (start < 0) {
+    start = 0; 
+  } else {
+    cout << "==> treeReader01: Starting at event " << start << endl;
+    if (maxEvents >  fNentries) {
+      cout << "==> treeReader01: Requested to run until event " << maxEvents << ", but will run only to end of chain at ";
+      maxEvents = fNentries;
+      cout << maxEvents << endl;
+    } else {
+      cout << "==> treeReader01: Requested to run until event " << maxEvents << endl;
+    }
+  }
+
+
+  // -- The main loop
+  int step(50000); 
+  if (maxEvents < 1000000) step = 10000; 
+  if (maxEvents < 100000)  step = 5000; 
+  if (maxEvents < 10000)   step = 500; 
+  if (maxEvents < 1000)    step = 100; 
+
+  for (int jEvent = start; jEvent < maxEvents; ++jEvent) {
+    if (jEvent%step == 0) cout << " .. Event " << jEvent << endl;
+
+    fEvent = jEvent; 
+    fpEvt->Clear();                        
+    nb += fpChain->GetEvent(jEvent);          
+
+    eventProcessing(); 
+  }
+  return 0;
+
+}

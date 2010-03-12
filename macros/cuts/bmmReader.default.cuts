@@ -1,0 +1,10 @@
+TYPE        1313
+# -- BS 
+BSPTLO      -1.0
+BSETALO    -99.0
+BSETAHI     99.0
+# -- muon 
+MUPTLO       3.0
+MUPTHI    9999.0
+MUETALO     -2.5
+MUETAHI      2.5

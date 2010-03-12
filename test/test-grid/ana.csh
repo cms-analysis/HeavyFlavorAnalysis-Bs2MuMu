@@ -90,4 +90,5 @@ $SRMCP      file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
 echo        srmls     "$STORAGE1/$JOB.log"
 srmls       "$STORAGE1/$JOB.log"
 
+date
 echo "runGrid: This is the end, my friend"
