@@ -74,13 +74,21 @@ int main(int argc, char *argv[]) {
       barefile.ReplaceAll("chains/", "");
       histfile = barefile + "." + fn + ".root";
       if (dirspec) {
-        histfile = dirBase + "/" + dirName + "/" + histfile;
+	if (dirName[0] == '/') {
+	  histfile = dirName + "/" + histfile;
+	} else {
+	  histfile = dirBase + "/" + dirName + "/" + histfile;
+	}
       }
     } else {
       meta = barefile;
       histfile =  barefile + "." + fn + ".root";
       if (dirspec) {
-        histfile = dirBase + "/" + dirName + "/" + histfile;
+	if (dirName[0] == '/') {
+	  histfile = dirName + "/" + histfile;
+	} else {
+	  histfile = dirBase + "/" + dirName + "/" + histfile;
+	}
       }
     }
     // -- The following lines strip everything from the string up to and including the last '/'
@@ -101,7 +109,11 @@ int main(int argc, char *argv[]) {
     histfile.ReplaceAll(".root", "");
     histfile +=  "." + fn + ".root";
     if (dirspec) {
-      histfile = dirBase + "/" + dirName + "/" + histfile;
+      if (dirName[0] == '/') {
+	histfile = dirName + "/" + histfile;
+      } else {
+	histfile = dirBase + "/" + dirName + "/" + histfile;
+      }
     }
   }
 
