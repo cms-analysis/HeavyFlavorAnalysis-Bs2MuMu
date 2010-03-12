@@ -28,10 +28,9 @@ process.source = cms.Source(
     "PoolSource", 
     fileNames = cms.untracked.vstring(
 #        "/store/user/starodumov/bsmm/reco/reco-10036.root",
-#        "/store/user/starodumov/kplus/reco/reco-kplus-10022.root",
+        "/store/user/starodumov/kplus/reco/reco-kplus-10022.root"
 #        "/store/user/starodumov/phi/reco/reco-phi-10014.root",
 #        "/store/user/starodumov/kstar/reco/reco-kstar-10019.root"
-    "/store/user/starodumov/bsmm/reco/reco-10000.root"
     )
     )
 

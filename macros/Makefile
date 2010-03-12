@@ -55,9 +55,9 @@ $(addprefix obj/,%.o) : %.cc
 
 
 # ======================================================================
-READERCLASSES = treeReader01.o treeReader01Dict.o \
-                bmmReader.o bmmReaderDict.o 
-
+READER_OBJS = treeReader01.o bmmReader.o
+READERDICT_OBJS = ${READER_OBJS:.o=Dict.o}
+READERDICT_SRCS = ${READERDICT_OBJS:.o=.cc}
 
 # ================================================================================
 all: 
@@ -65,21 +65,14 @@ all:
 #	@$(MAKE) readerclasses
 	@$(MAKE) runTreeReaders
 
-
-
 # ================================================================================
-readerclasses: $(addprefix obj/,$(READERCLASSES))
-# -----------------------------------------------
-	$(CXX) $(SOFLAGS) $(addprefix obj/,$(READERCLASSES)) -o lib/libAnaClasses.so
+readerclasses: $(READERDICT_SRCS) $(addprefix obj/,$(READER_OBJS)) $(addprefix obj/,$(READERDICT_OBJS))
+	$(CXX) $(SOFLAGS) $(addprefix obj/,$(READER_OBJS)) $(addprefix obj/,$(READERDICT_OBJS)) -o lib/libAnaClasses.so
 
-bmmReaderDict.cc: bmmReader.hh 
-	$(ROOTSYS)/bin/rootcint -f bmmReaderDict.cc -c bmmReader.hh 
-treeReader01Dict.cc: treeReader01.hh 
-	$(ROOTSYS)/bin/rootcint -f treeReader01Dict.cc -c treeReader01.hh 
 
 # ================================================================================
 runTreeReaders: readerclasses obj/runTreeReaders.o
-	$(LD) $(LDFLAGS) -o bin/runTreeReaders $(GLIBS) obj/runTreeReaders.o obj/bmmReader.o obj/treeReader01.o $(RELLIBPATH)/libAna00.so
+	$(LD) $(LDFLAGS) -o bin/runTreeReaders $(GLIBS) obj/runTreeReaders.o $(addprefix obj/,$(READER_OBJS)) $(RELLIBPATH)/libAna00.so
 
 
 # ================================================================================
@@ -96,3 +89,6 @@ cleanall:
 	rm -f ../../../lib/$(SCRAM_ARCH)/libUtil.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libAnaClasses.so
 
+.SECONDEXPANSION:
+$(READERDICT_SRCS): $$(patsubst %Dict.cc,%.hh,$$@)
+	$(ROOTCINT) -f $@ -c $(patsubst %Dict.cc,%.hh,$@)
