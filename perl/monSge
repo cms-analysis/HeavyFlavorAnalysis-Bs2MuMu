@@ -43,7 +43,7 @@ while(<IN>) {
     if ($url =~ /https/) {next;}
 
     $line =~ s/\# //;
-    ($machine, $date, $time, $dir, $jdl) = split(/ /, $line); 
+    ($machine, $date, $time, $dir, $jdl, $jname) = split(/ /, $line); 
     my $pwd = `pwd`; chop($pwd);
     my $mdir = $dir;
     $mdir =~ s%$pwd/%%;
@@ -58,7 +58,7 @@ while(<IN>) {
 	next;
     }
 
-    printf("%60s SGE ; %s/root: %10i, log: %7i\n", $mdir, $ok, $rsize, $lsize);
+    printf("%30s %60s SGE ; %s/root: %10i, log: %7i\n", $jname, $mdir, $ok, $rsize, $lsize);
     
     if ($ok =~ /no problems seen/) { 
 	system("/bin/touch $mdir/OK"); 

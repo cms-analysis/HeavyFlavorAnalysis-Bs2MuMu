@@ -36,7 +36,7 @@ which srmcp
 pwd
 echo "--> End of env testing"
 
-# BATCH
+# BATCH START
 
 # ----------------------------------------------------------------------
 # -- Setup CMSSW
@@ -91,4 +91,7 @@ echo        srmls     "$STORAGE1/$JOB.log"
 srmls       "$STORAGE1/$JOB.log"
 
 date
+
+# BATCH END
+
 echo "runGrid: This is the end, my friend"

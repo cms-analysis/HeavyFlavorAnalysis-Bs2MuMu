@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Usage:       runGrid [-C] [-j grid.jdl] -c grid.csh -t tarfile -m {debug|local|grid|batch} *.py
+# Usage:       run [-C] -c grid.csh -t tarfile -m {debug|local|grid|batch} *.py
 # ------
 #              submit to grid all jobs specified in the command line
 #
@@ -18,6 +18,7 @@
 # 2010/03/06   Changed separation character for -r list to %, added default settings to always be written into csh!
 # 2010/03/08   Add -C to submit only those which crashed in a previous attempt. Add also batch jobs to jobs.list.
 # 2010/03/09   translate XXXX in replacements into the correct number
+# 2010/03/18   change name, remove all traces of ursl
 #              
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -32,6 +33,13 @@ getopts('Cc:d:j:m:r:t:');
 my $CMSSW = "CMSSW_3_5_0"; 
 my $SCRAM = "slc5_ia32_gcc434";
 my $SRMCP = "\"srmcp -2\"";          if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 -globus_tcp_port_range 20000,25000\"";}
+my $user  = $ENV{'USER'};
+my $glite = "/shome/$user/grid/glite.conf";
+
+if (!-e "$glite") {
+    print "$glite does not exist, using /shome/ursl/grid/glite.conf\n";
+    $glite = "/shome/ursl/grid/glite.conf";    
+}
 
 # -- replacements
 if ($opt_r) {$replace = $opt_r; }
@@ -121,16 +129,19 @@ foreach $pyfile (@ARGV) {
 	print "debug, no running\n";
     } elsif ($opt_m eq "batch") {
 	print "batch submission: $job\n";
-	system("qsub -q all.q -N `rline` -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh");
+	$jobName = "$job.csh";
+	if ($user eq "ursl") { $jobName = `/shome/$user/perl/rline`; chop($jobName); }
+	print "qsub -q all.q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh\n";
+	system("qsub -q all.q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh");
 	open(IN, ">>jobs.list") || die "Cannot open jobs.list\n";
 	print IN "###Submitted Job Ids###\n";
-	print IN "sge $tdir\n";
-	print IN "\# $timeStamp $pwd/$tdir $job.jdl\n"; 
+	print IN "sge $tdir \n";
+	print IN "\# $timeStamp $pwd/$tdir $job.jdl $jobName\n"; 
 	close(IN); 
 	system("/usr/bin/tail -2 jobs.list >> ../jobs.list");
     } elsif ($opt_m eq "grid") {
 	print "grid running: $job.jdl\n";
-	system("glite-wms-job-submit -o jobs.list -a --config /shome/ursl/grid/glite.conf $job.jdl"); 
+	system("glite-wms-job-submit -o jobs.list -a --config $glite $job.jdl"); 
 	open(IN, ">>jobs.list") || die "Cannot open jobs.list\n";
 	print IN "\# $timeStamp $pwd/$tdir $job.jdl\n"; 
 	close(IN); 
@@ -151,21 +162,6 @@ sub makeTarLink {
 	#system("/bin/ln -s ../$tarDirectory/$tarFile $ljob.tar.gz"); 
 	system("/bin/cp ../$tarDirectory/$tarFile $ljob.tar.gz"); 
     }
-}
-
-# ----------------------------------------------------------------------
-sub copyJdlFile {
-    ($ljob) = @_;
-    open(IN, "$opt_j") || die "Cannot open $opt_j\n";
-    open(OUT, ">$ljob.jdl")  || die "Cannot open $ljob.jdl\n";
-    my $datum = `/bin/date`; chop $datum;
-    print OUT "# created by runGrid at $datum\n";
-    while (<IN>) {
-	s/JOB/$ljob/g;
-	print OUT;
-    }
-    close(OUT); 
-    close(IN); 
 }
 
 # ----------------------------------------------------------------------
@@ -205,16 +201,22 @@ sub makeCshFile {
     open(OUT, ">$ljob.csh")  || die "Cannot open $ljob.csh\n";
     my $datum = `/bin/date`; chop $datum;
     while (<IN>) {
-	if (($opt_m eq "batch" || $opt_m eq "local") && /\# BATCH/) {
-	    print OUT "# BATCH\n";
-	    print OUT "mkdir -p /scratch/ursl\n";
-	    print OUT "cd /scratch/ursl\n";
+	if (($opt_m eq "batch" || $opt_m eq "local") && /\# BATCH START/) {
+	    print OUT "# BATCH START\n";
+	    print OUT "mkdir -p /scratch/$user\n";
+	    print OUT "cd /scratch/$user\n";
 	    print OUT "mkdir \$JOB\n";
 	    print OUT "cd \$JOB\n";
 	    print OUT "/bin/cp $pwd/$tdir/$ljob.tar.gz .\n";
 	    print OUT "/bin/cp $pwd/$tdir/$ljob.py .\n";
 	}
 	
+	if (($opt_m eq "batch" || $opt_m eq "local") && /\# BATCH END/) {
+	    print OUT "# BATCH END\n";
+	    print OUT "cd ..\n";
+	    print OUT "rm -rf \$JOB\n";
+	}
+
 	foreach $repl (@replaces) {
 	    ($patt, $value) = split(/ /, $repl); 
 	    # FIXME: HERE ADD PARSING/REPLACING OF XXXX with $number!!!
