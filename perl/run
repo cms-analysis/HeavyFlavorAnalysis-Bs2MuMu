@@ -5,20 +5,20 @@
 #              submit to grid all jobs specified in the command line
 #
 # Example:     cd Bs2MuMu/test/Winter01/production/Bs2MuMu
-# --------     ../../../../perl/runGrid -c ../../gen.csh -t ~/grid/Winter07/grid-1.tar.gz -m grid
+# --------     ../../../../perl/run -c ../../gen.csh -t ~/grid/Winter07/grid-1.tar.gz -m grid
 #              -r 'STORAGE1 srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/BdToKPi' \ 
 #              BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START-10014.py
 #
 # Assumptions: jobs are serialized a la asd_asd-asd-10000.py, the numbering is at the end, separated with -
 # ------------ is run in directory where the py files reside!
 #
-# 2010/03/02   First version that runs locally, in batch, on the grid. 
-# 2010/03/03   Added grid URL duplication into local and common jobs.list files
-# 2010/03/05   STORAGE1 and input file location now provided as command line argument
-# 2010/03/06   Changed separation character for -r list to %, added default settings to always be written into csh!
-# 2010/03/08   Add -C to submit only those which crashed in a previous attempt. Add also batch jobs to jobs.list.
+# 2010/03/18   change name, remove all traces of ursl, add batch job name to jobs.list
 # 2010/03/09   translate XXXX in replacements into the correct number
-# 2010/03/18   change name, remove all traces of ursl
+# 2010/03/08   Add -C to submit only those which crashed in a previous attempt. Add also batch jobs to jobs.list.
+# 2010/03/06   Changed separation character for -r list to %, added default settings to always be written into csh!
+# 2010/03/05   STORAGE1 and input file location now provided as command line argument
+# 2010/03/03   Added grid URL duplication into local and common jobs.list files
+# 2010/03/02   First version that runs locally, in batch, on the grid. 
 #              
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
