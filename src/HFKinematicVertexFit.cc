@@ -138,7 +138,7 @@ void HFKinematicVertexFit::doJpsiFit(vector<Track>  &trackList,
   RefCountedKinematicVertex buVertex = buTree->currentDecayVertex();
   RefCountedKinematicParticle Bu = buTree->currentParticle();
   
-  TVector3 buPlab = (Bu->currentState().globalMomentum().x(), 
+  TVector3 buPlab(Bu->currentState().globalMomentum().x(), 
 		     Bu->currentState().globalMomentum().y(), 
 		     Bu->currentState().globalMomentum().z()
 		     );

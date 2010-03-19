@@ -15,7 +15,7 @@
 #include "TUnixSystem.h"
 
 #include "bmmReader.hh"
-
+#include "massReader.hh"
 
 using namespace std;
 
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
         cout << pName << " -> " << nentries << " entries" << endl; 
         chain->Add(pName, nentries); 
       } else {
-        cout << meta << endl; 
+        cout << meta << endl;
         chain->Add(meta); 
       }
     }
@@ -152,13 +152,18 @@ int main(int argc, char *argv[]) {
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
   treeReader01 *a; 
   if (readerName == "bmmReader") a = new bmmReader(chain, TString(evtClassName));
-  a->openHistFile(histfile); 
-  a->bookHist(); 
-  a->readCuts(cutFile, 1);
-
-  a->startAnalysis(); 
-  a->loop(nevents, start);
-  a->closeHistFile(); 
+  else if (readerName == "massReader") a = new massReader(chain,TString(evtClassName));
+  
+  if(a) {
+    a->openHistFile(histfile); 
+    a->bookHist(); 
+    a->readCuts(cutFile, 1);
+    
+    a->startAnalysis(); 
+    a->loop(nevents, start);
+    a->closeHistFile(); 
+  } else
+    cerr << "Readerclass '" << readerName << "' not found" << endl;
 
   return 0; 
   

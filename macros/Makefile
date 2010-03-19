@@ -55,7 +55,7 @@ $(addprefix obj/,%.o) : %.cc
 
 
 # ======================================================================
-READER_OBJS = treeReader01.o bmmReader.o
+READER_OBJS = treeReader01.o bmmReader.o massReader.o myReader01.o
 READERDICT_OBJS = ${READER_OBJS:.o=Dict.o}
 READERDICT_SRCS = ${READERDICT_OBJS:.o=.cc}
 
@@ -74,6 +74,8 @@ readerclasses: $(READERDICT_SRCS) $(addprefix obj/,$(READER_OBJS)) $(addprefix o
 runTreeReaders: readerclasses obj/runTreeReaders.o
 	$(LD) $(LDFLAGS) -o bin/runTreeReaders $(GLIBS) obj/runTreeReaders.o $(addprefix obj/,$(READER_OBJS)) $(RELLIBPATH)/libAna00.so
 
+runMyReader: readerclasses obj/runMyReader01.o
+	$(LD) $(LDFLAGS) -o bin/runMyReader01 $(GLIBS) obj/runMyReader01.o $(addprefix obj/,$(READER_OBJS)) $(RELLIBPATH)/libAna00.so
 
 # ================================================================================
 clean:

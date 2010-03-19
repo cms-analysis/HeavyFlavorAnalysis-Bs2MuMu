@@ -143,18 +143,18 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
     tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MMUON); 
     if (2 == fPsiMuons) {
       for (unsigned int im = 0; im < muonIndices.size(); ++im) {
-	if (muonIndices[im] == itrack) {
-	  ++isMuon; 
-	  tlist1.push_back(make_pair(itrack, tlv)); 
-	  tlist2.push_back(make_pair(itrack, tlv)); 
-	}
+		  if (muonIndices[im] == itrack) {
+			  ++isMuon; 
+			  tlist1.push_back(make_pair(itrack, tlv)); 
+			  tlist2.push_back(make_pair(itrack, tlv)); 
+		  }
       } 
     } else if (1 == fPsiMuons) {
       for (unsigned int im = 0; im < muonIndices.size(); ++im) {
-	if (muonIndices[im] == itrack) {
-	  ++isMuon;
-	  tlist1.push_back(make_pair(itrack, tlv)); 
-	}
+		  if (muonIndices[im] == itrack) {
+			  ++isMuon;
+			  tlist1.push_back(make_pair(itrack, tlv)); 
+		  }
       }
       tlist2.push_back(make_pair(itrack, tlv)); 
     } else {
@@ -176,7 +176,7 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
   if (fVerbose > 0) cout << "==>HFBu2JpsiKp> J/psi list size: " << psiList.size() << endl;
   
   HFKalmanVertexFit    aKal(fTTB.product(), fPV, 100521, fVerbose); 
-  HFKinematicVertexFit aKin(fTTB.product(), fPV, 200521, fVerbose); 
+  HFKinematicVertexFit aKin(fTTB.product(), fPV, 300521, fVerbose); 
   vector<Track> trackList; 
   vector<int> trackIndices;
   vector<double> trackMasses;
@@ -229,8 +229,8 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
       trackMasses.push_back(MKAON);
       
       if (0 == fVertexing) {
-	aKal.doNotFit(trackList, trackIndices, trackMasses, -100521); 	
-	continue; 
+		  aKal.doNotFit(trackList, trackIndices, trackMasses, -100521); 	
+		  continue; 
       }
 
       aKal.doFit(trackList, trackIndices, trackMasses, 100521); 	
