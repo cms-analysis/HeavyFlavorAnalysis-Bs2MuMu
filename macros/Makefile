@@ -34,7 +34,7 @@ SOFLAGS       = -shared
 CXXFLAGS     += $(ROOTCFLAGS)
 LIBS          = $(ROOTLIBS)
 GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
-RELLIBPATH    = ../../../AnalysisDataFormats/HeavyFlavorObjects/lib
+RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 
 
 # ======================================================================
@@ -55,7 +55,7 @@ $(addprefix obj/,%.o) : %.cc
 
 
 # ======================================================================
-READER_OBJS = treeReader01.o bmmReader.o massReader.o myReader01.o
+READER_OBJS = treeReader01.o bmmReader.o massReader.o dumpReader.o
 READERDICT_OBJS = ${READER_OBJS:.o=Dict.o}
 READERDICT_SRCS = ${READERDICT_OBJS:.o=.cc}
 
@@ -66,13 +66,15 @@ all:
 	@$(MAKE) runTreeReaders
 
 # ================================================================================
-readerclasses: $(READERDICT_SRCS) $(addprefix obj/,$(READER_OBJS)) $(addprefix obj/,$(READERDICT_OBJS))
-	$(CXX) $(SOFLAGS) $(addprefix obj/,$(READER_OBJS)) $(addprefix obj/,$(READERDICT_OBJS)) -o lib/libAnaClasses.so
+readerclasses: $(READERDICT_SRCS) $(addprefix obj/,$(READER_OBJS)) $(addprefix obj/,$(READERDICT_OBJS)) lib/libAna00.so
+	$(CXX) $(SOFLAGS) $(addprefix obj/,$(READER_OBJS)) $(addprefix obj/,$(READERDICT_OBJS)) -o lib/libAnaClasses.so $(GLIBS) lib/libAna00.so
 
+lib/libAna00.so:
+	cd lib && ln -s $(RELLIBPATH)/libAna00.so libAna00.so && cd -
 
 # ================================================================================
-runTreeReaders: readerclasses obj/runTreeReaders.o
-	$(LD) $(LDFLAGS) -o bin/runTreeReaders $(GLIBS) obj/runTreeReaders.o $(addprefix obj/,$(READER_OBJS)) $(RELLIBPATH)/libAna00.so
+runTreeReaders: readerclasses obj/runTreeReaders.o lib/libAna00.so
+	$(LD) $(LDFLAGS) -o bin/runTreeReaders $(GLIBS) obj/runTreeReaders.o $(addprefix obj/,$(READER_OBJS)) lib/libAna00.so
 
 runMyReader: readerclasses obj/runMyReader01.o
 	$(LD) $(LDFLAGS) -o bin/runMyReader01 $(GLIBS) obj/runMyReader01.o $(addprefix obj/,$(READER_OBJS)) $(RELLIBPATH)/libAna00.so

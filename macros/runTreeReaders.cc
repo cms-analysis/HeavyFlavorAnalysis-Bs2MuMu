@@ -16,6 +16,7 @@
 
 #include "bmmReader.hh"
 #include "massReader.hh"
+#include "dumpReader.hh"
 
 using namespace std;
 
@@ -153,6 +154,7 @@ int main(int argc, char *argv[]) {
   treeReader01 *a; 
   if (readerName == "bmmReader") a = new bmmReader(chain, TString(evtClassName));
   else if (readerName == "massReader") a = new massReader(chain,TString(evtClassName));
+  else if (readerName == "dumpReader") a = new dumpReader(chain,TString(evtClassName));
   
   if(a) {
     a->openHistFile(histfile); 
@@ -165,7 +167,8 @@ int main(int argc, char *argv[]) {
   } else
     cerr << "Readerclass '" << readerName << "' not found" << endl;
 
-  return 0; 
+  delete a; // so we can dump some information in the destructor
   
+  return 0;
 }
 
