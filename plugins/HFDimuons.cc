@@ -64,7 +64,6 @@ HFDimuons::HFDimuons(const ParameterSet& iConfig) :
   cout << "---  tracksLabel:              " << fTracksLabel << endl;
   cout << "---  muonsLabel:               " << fMuonsLabel << endl;
   cout << "---  muonPt:                   " << fMuonPt << endl;
-  cout << "---  Type:                     " << fType << endl;
   cout << "---  massLow:                  " << fMassLow << endl;
   cout << "---  massHigh:                 " << fMassHigh << endl;
   cout << "---  type:                     " << fType << endl;
@@ -180,9 +179,9 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
       trackMasses.push_back(MMUON);
       
       if (fVertexing > 0) {
-	a.doFit(trackList, trackIndices, trackMasses); 	
+	a.doFit(trackList, trackIndices, trackMasses, fType); 	
       } else {
-	a.doNotFit(trackList, trackIndices, trackMasses); 	
+	a.doNotFit(trackList, trackIndices, trackMasses, fType); 	
       }
       
     }

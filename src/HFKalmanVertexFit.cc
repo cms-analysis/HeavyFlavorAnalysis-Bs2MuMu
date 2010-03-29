@@ -3,16 +3,20 @@
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKalmanVertexFit.hh"
 
-#include "DataFormats/VertexReco/interface/VertexFwd.h"
-#include "RecoVertex/VertexTools/interface/VertexDistance3D.h"
-#include "RecoVertex/VertexTools/interface/VertexDistanceXY.h"
-#include "RecoVertex/KalmanVertexFit/interface/KalmanVertexFitter.h"
-#include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 #include "CommonTools/Statistics/interface/ChiSquared.h"
 
 #include "DataFormats/TrackReco/interface/TrackExtraFwd.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
+
+#include "RecoVertex/VertexTools/interface/VertexDistance3D.h"
+#include "RecoVertex/VertexTools/interface/VertexDistanceXY.h"
+#include "RecoVertex/KalmanVertexFit/interface/KalmanVertexFitter.h"
+
+#include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
+#include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
+
 
 // -- Yikes!
 extern TAna01Event *gHFEvent;
@@ -97,7 +101,32 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
 
   }
 
-  
+
+  // -- Compute minimal and maximal closest approach for any combination of tracks
+  TwoTrackMinimumDistance md;
+  double dist(99.); 
+  double minDist(99.), mini, minj; 
+  double maxDist(-99.), maxi, maxj; 
+  for (unsigned int i = 0; i < RecoTransientTrack.size(); ++i) {
+    for (unsigned int j = i+1; j < RecoTransientTrack.size(); ++j) {
+      md.calculate(RecoTransientTrack[i].initialFreeState(), RecoTransientTrack[j].initialFreeState());
+      if (md.status()) {
+	dist = md.distance();
+	if (dist < minDist) {
+	  mini = i; 
+	  minj = j;
+	  minDist = dist;
+	}
+
+	if (dist > maxDist) {
+	  maxi = i; 
+	  maxj = j;
+	  maxDist = dist;
+	}
+      }
+    }
+  }
+
   // -- Build vertex for ntuple
   TAnaVertex anaVtx;
   ChiSquared chi(TransSecVtx.totalChiSquared(), TransSecVtx.degreesOfFreedom());
@@ -127,6 +156,9 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
   pCand->fDau2 = -1;
   pCand->fSig1 = gHFEvent->nSigTracks();
   pCand->fSig2 = pCand->fSig1 + trackList.size() - 1;
+
+  pCand->fVar1 = minDist;
+  pCand->fVar2 = maxDist;
   
   // -- fill refitted sig tracks
   Track trk; 
@@ -185,6 +217,44 @@ void HFKalmanVertexFit::doNotFit(vector<Track>  &trackList,
   anaVtx.fDxyE    = -99.;
   anaVtx.fD3d     = -99.;
   anaVtx.fD3dE    = -99.;
+
+  // -- Build transient tracks so that the distance can be calculated
+  double dist(99.); 
+  double minDist(99.), mini, minj; 
+  double maxDist(-99.), maxi, maxj; 
+  if (fpTTB) {
+    vector<reco::TransientTrack> RecoTransientTrack;
+    RecoTransientTrack.clear();
+    
+    for (unsigned int i = 0; i < trackList.size(); ++i) {
+      RecoTransientTrack.push_back(fpTTB->build(trackList[i]));
+    }
+    
+    // -- Compute minimal and maximal closest approach for any combination of tracks
+    TwoTrackMinimumDistance md;
+    for (unsigned int i = 0; i < RecoTransientTrack.size(); ++i) {
+      for (unsigned int j = i+1; j < RecoTransientTrack.size(); ++j) {
+	md.calculate(RecoTransientTrack[i].initialFreeState(), RecoTransientTrack[j].initialFreeState());
+	if (md.status()) {
+	  dist = md.distance();
+	  if (dist < minDist) {
+	    mini = i; 
+	    minj = j;
+	    minDist = dist;
+	  }
+	  
+	  if (dist > maxDist) {
+	    maxi = i; 
+	    maxj = j;
+	    maxDist = dist;
+	  }
+	}
+      }
+    }
+  } else {
+    minDist = 99.;
+    maxDist = 99.;
+  }
         
   // -- fill candidate
   TAnaCand *pCand = gHFEvent->addCand();
@@ -196,6 +266,9 @@ void HFKalmanVertexFit::doNotFit(vector<Track>  &trackList,
   pCand->fDau2 = -1;
   pCand->fSig1 = gHFEvent->nSigTracks();
   pCand->fSig2 = pCand->fSig1 + trackList.size() - 1;
+
+  pCand->fVar1 = minDist;
+  pCand->fVar2 = maxDist;
   
   // -- fill original tracks for sig tracks
   for (unsigned int i = 0; i < trackList.size(); ++i) {

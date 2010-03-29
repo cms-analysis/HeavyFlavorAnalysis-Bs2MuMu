@@ -64,7 +64,6 @@ HFMuonAndTrack::HFMuonAndTrack(const edm::ParameterSet& iConfig) :
   cout << "---  vertexing                 " << fVertexing << endl;
   cout << "---  muonPt:                   " << fMuonPt << endl;
   cout << "---  trackPt:                  " << fTrackPt << endl;
-  cout << "---  Type:                     " << fType << endl;
   cout << "---  massLow:                  " << fMassLow << endl;
   cout << "---  massHigh:                 " << fMassHigh << endl;
   cout << "---  type:                     " << fType << endl;
@@ -192,9 +191,9 @@ void HFMuonAndTrack::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
       trackMasses.push_back(MMUON);
       
       if (fVertexing > 0) {
-	a.doFit(trackList, trackIndices, trackMasses); 	
+	a.doFit(trackList, trackIndices, trackMasses, fType); 	
       } else {
-	a.doNotFit(trackList, trackIndices, trackMasses); 	
+	a.doNotFit(trackList, trackIndices, trackMasses, fType); 	
       }
       
     } 

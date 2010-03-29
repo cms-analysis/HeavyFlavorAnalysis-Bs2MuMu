@@ -41,6 +41,7 @@ HFTruthCandidate::HFTruthCandidate(const edm::ParameterSet& iConfig):
 
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFTruthCandidate constructor" << endl;
+  cout << "--- tracksLabel:           " << fTracksLabel << endl;
   cout << "--- motherID:              " << fMotherID << endl;
   cout << "--- type:                  " << fType << endl;
   cout << "--- GenType:               " << fGenType << endl;
