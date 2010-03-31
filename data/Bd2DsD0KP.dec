@@ -1,0 +1,154 @@
+# Force Decay B0 -> D0 mu and B+ -> D0 mu
+# as well as D0 -> K Pi
+
+Alias		MyB0		B0
+Alias		MyB0bar		anti-B0
+ChargeConj	MyB0		MyB0bar
+
+Alias		MyB+		B+
+Alias		MyB-		B-
+ChargeConj	MyB+		MyB-
+
+Alias		MyD0		D0
+Alias		MyD0bar		anti-D0
+ChargeConj	MyD0		MyD0bar
+
+Alias		MyD*0		D*0
+Alias		MyD*0bar	anti-D*0
+ChargeConj	MyD*0		MyD*0bar
+
+Alias		MyD*+		D*+
+Alias		MyD*-		D*-
+ChargeConj	MyD*+		MyD*-
+
+Alias		MyD_0*0		D_0*0
+Alias		MyD_0*0bar	anti-D_0*0
+ChargeConj	MyD_0*0		MyD_0*0bar
+
+Alias		MyD_10		D_10
+Alias		MyD_10bar	anti-D_10
+ChargeConj	MyD_10		MyD_10bar
+
+Alias		MyD_1+		D_1+
+Alias		MyD_1-		D_1-
+ChargeConj	MyD_1+		MyD_1-
+
+Alias		MyD_0*+		D_0*+
+Alias		MyD_0*-		D_0*-
+ChargeConj	MyD_0*+		MyD_0*-
+
+Alias		MyD_2*0		D_2*0
+Alias		MyD_2*0bar	anti-D_2*0
+ChargeConj	MyD_2*0		MyD_2*0bar
+
+Alias		MyD_2*+		D_2*+
+Alias		MyD_2*-		D_2*-
+ChargeConj	MyD_2*+		MyD_2*-
+
+Alias		MyD'_10		D'_10
+Alias		MyD'_10bar	anti-D'_10
+ChargeConj	MyD'_10		MyD'_10bar
+
+Alias		MyD'_1+		D'_1+
+Alias		MyD'_1-		D'_1-
+ChargeConj	MyD'_1+		MyD'_1-
+
+Decay MyB0
+0.0570	MyD*-		mu+	nu_mu		PHOTOS	HQET 0.77 1.33 0.92;
+# 0.0207	D-	mu+	nu_mu		PHOTOS	ISGW2;
+0.0052	MyD_1-		mu+	nu_mu		PHOTOS	ISGW2;
+#0.0045	MyD_0*-		mu+	nu_mu		PHOTOS	ISGW2;
+0.0083	MyD'_1-		mu+	nu_mu		PHOTOS	ISGW2;
+0.0023	MyD_2*-		mu+	nu_mu		PHOTOS	ISGW2;
+0.0003	MyD*-		pi0	mu+	nu_mu	PHOTOS	GOITY_ROBERTS;
+#0.0007	MyD*0bar	pi-	mu+	nu_mu	PHOTOS	GOITY_ROBERTS;
+# 0.0010	D-	pi0	mu+	nu_mu	PHOTOS  GOITY_ROBERTS;
+#0.0020	MyD0bar		pi-	mu+	nu_mu	PHOTOS	GOITY_ROBERTS;
+Enddecay
+CDecay MyB0bar
+
+Decay MyB+
+#0.0617	MyD*0bar	mu+	nu_mu		PHOTOS	HQET 0.77 1.33 0.92;
+#0.0224	MyD0bar		mu+	nu_mu		PHOTOS	ISGW2;
+0.0056	MyD_10bar	mu+	nu_mu		PHOTOS	ISGW2;
+#0.0049	MyD_0*0bar	mu+	nu_mu		PHOTOS	ISGW2;
+0.009	MyD'_10bar	mu+	nu_mu		PHOTOS	ISGW2;
+0.003	MyD_2*0bar	mu+	nu_mu		PHOTOS	ISGW2;
+0.0006	MyD*-		pi+	mu+	nu_mu	PHOTOS	GOITY_ROBERTS;
+#0.0003	MyD*0bar	pi0	mu+	nu_mu	PHOTOS	GOITY_ROBERTS;
+# 0.0019	D-	pi+	mu+	nu_mu	PHOTOS	GOITY_ROBERTS;
+#0.0010	MyD0bar		pi0	mu+	nu_mu	PHOTOS	GOITY_ROBERTS;
+Enddecay
+CDecay MyB-
+
+Decay MyD0
+ 1.0      K-  pi+                        PHSP;
+Enddecay
+CDecay MyD0bar
+
+Decay MyD*0
+0.6190    MyD0  pi0                        VSS;
+0.3810    MyD0  gamma                      VSP_PWAVE;
+Enddecay
+CDecay MyD*0bar
+
+Decay MyD*+
+0.6830    MyD0  pi+                        VSS;
+# 0.3060    D+  pi0                          VSS;
+# 0.0110    D+  gamma                        VSP_PWAVE;
+Enddecay
+CDecay MyD*-
+
+Decay MyD_0*0
+0.3333   MyD0  pi0                         PHSP;
+# 0.6667   D+  pi-                           PHSP;
+Enddecay
+CDecay MyD_0*0bar
+
+Decay MyD_10
+#0.3333    MyD*0 pi0                        VVS_PWAVE  0.0 0.0 0.0 0.0 1.0 0.0;
+0.6667    MyD*+ pi-                        VVS_PWAVE  0.0 0.0 0.0 0.0 1.0 0.0;
+Enddecay
+CDecay MyD_10bar
+
+Decay MyD_1+
+0.3333    MyD*+ pi0                        VVS_PWAVE  0.0 0.0 0.0 0.0 1.0 0.0;
+#0.6667    MyD*0 pi+                        VVS_PWAVE  0.0 0.0 0.0 0.0 1.0 0.0;
+Enddecay
+CDecay MyD_1-
+
+Decay MyD_0*+
+# 0.3333   D+    pi0                         PHSP;
+0.6667   MyD0  pi+                         PHSP;
+Enddecay
+CDecay MyD_0*-
+
+Decay MyD_2*0
+0.2090    MyD*+ pi-                        TVS_PWAVE  0.0 0.0 1.0 0.0 0.0 0.0;
+#0.1030    MyD*0 pi0                        TVS_PWAVE  0.0 0.0 1.0 0.0 0.0 0.0;
+#0.2290    MyD0  pi0                        TSS;
+# 0.4590    D+    pi-                        TSS;
+Enddecay
+CDecay MyD_2*0bar
+
+Decay MyD_2*+
+0.1030    MyD*+ pi0                        TVS_PWAVE  0.0 0.0 1.0 0.0 0.0 0.0;
+#0.2090    MyD*0 pi+                        TVS_PWAVE  0.0 0.0 1.0 0.0 0.0 0.0;
+# 0.2290    D+    pi0                        TSS;
+#0.4590    MyD0  pi+                        TSS;
+Enddecay
+CDecay MyD_2*-
+
+Decay MyD'_10
+0.6667    MyD*+ pi-                        VVS_PWAVE  1.0 0.0 0.0 0.0 0.0 0.0;
+#0.3333    MyD*0 pi0                        VVS_PWAVE  1.0 0.0 0.0 0.0 0.0 0.0;
+Enddecay
+CDecay MyD'_10bar
+
+Decay MyD'_1+
+0.3333    MyD*+ pi0                        VVS_PWAVE  1.0 0.0 0.0 0.0 0.0 0.0;
+#0.6667    MyD*0 pi+                        VVS_PWAVE  1.0 0.0 0.0 0.0 0.0 0.0;
+Enddecay
+CDecay MyD'_1-
+
+End

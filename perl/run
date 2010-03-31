@@ -12,6 +12,7 @@
 # Assumptions: jobs are serialized a la asd_asd-asd-10000.py, the numbering is at the end, separated with -
 # ------------ is run in directory where the py files reside!
 #
+# 2010/03/29   change default arguments for t3 batch srmcp
 # 2010/03/18   change name, remove all traces of ursl, add batch job name to jobs.list
 # 2010/03/09   translate XXXX in replacements into the correct number
 # 2010/03/08   Add -C to submit only those which crashed in a previous attempt. Add also batch jobs to jobs.list.
@@ -29,12 +30,17 @@
 use Getopt::Std;
 getopts('Cc:d:j:m:r:t:');
 
+# -- User setup
+my $user  = $ENV{'USER'};
+my $glite = "/shome/$user/grid/glite.conf";
+
 # -- Default settings
 my $CMSSW = "CMSSW_3_5_0"; 
 my $SCRAM = "slc5_ia32_gcc434";
-my $SRMCP = "\"srmcp -2\"";          if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 -globus_tcp_port_range 20000,25000\"";}
-my $user  = $ENV{'USER'};
-my $glite = "/shome/$user/grid/glite.conf";
+my $SRMCP = "\"srmcp -2\"";          
+if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 -globus_tcp_port_range 20000,25000\"";}
+if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 --streams_num=1\"";}
+
 
 if (!-e "$glite") {
     print "$glite does not exist, using /shome/ursl/grid/glite.conf\n";
