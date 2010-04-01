@@ -1,7 +1,6 @@
-#include "FWCore/Framework/interface/MakerMacros.h"
-#include "HFB2muD0.hh"
-
 #include <iostream>
+
+#include "HFB2muD0.hh"
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
@@ -58,7 +57,7 @@ HFB2muD0::HFB2muD0(const edm::ParameterSet& iConfig) :
   using namespace std;
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- " << __FILE__ << endl;
-  cout << "--- $Revision: 1.1 $" << endl;
+  cout << "--- $Revision: 1.11 $" << endl;
   cout << "--- HFB2muD0 constructor" << endl;
   cout << "---  tracksLabel:              " << fTracksLabel << endl;
   cout << "---  muonsLabel:               " << fMuonsLabel << endl;
@@ -97,15 +96,18 @@ void HFB2muD0::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) 
     return;
   }
   fPV = vertices[gHFEvent->fEventTag]; 
-  if (fVerbose > 0) {
-    cout << "HFDimuons: Taking vertex " << gHFEvent->fEventTag << " with ntracks = " << fPV.tracksSize() << endl;
+  if (fVerbose > 1) {
+    cout << "==>HFB2muD0> Taking vertex " << gHFEvent->fEventTag
+	 << " with ntracks = " << fPV.tracksSize() << endl;
   }
   
   // -- get the collection of muons
   Handle<MuonCollection> hMuons;
   iEvent.getByLabel(fMuonsLabel, hMuons);
   if (!hMuons.isValid()) {
-    if (fVerbose > 0) cout << "==>HFB2muD0> No valid MuonCollection with label " << fMuonsLabel << " found, skipping" << endl;
+    if (fVerbose > 0)
+      cout << "==>HFB2muD0> No valid MuonCollection with label " << fMuonsLabel
+	   << " found, skipping" << endl;
     return;
   }
   
@@ -113,14 +115,16 @@ void HFB2muD0::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) 
   edm::Handle<edm::View<reco::Track> > hTracks;
   iEvent.getByLabel(fTracksLabel, hTracks);
   if(!hTracks.isValid()) {
-    if (fVerbose > 0) cout << "==>HFB2muD0> No valid TrackCollection with label " << fTracksLabel
-			   << " found, skipping" << endl;
+    if (fVerbose > 0)
+      cout << "==>HFB2muD0> No valid TrackCollection with label " << fTracksLabel
+	   << " found, skipping" << endl;
     return;
   }
 
   if (hTracks->size() > 100) {
-    if (fVerbose > 0) cout << "==>HFB2muD0> TrackCollection with label " << fTracksLabel
-			   << " has " << hTracks->size() << " entries, skipping event!!" << endl;
+    if (fVerbose > 0)
+      cout << "==>HFB2muD0> TrackCollection with label " << fTracksLabel
+	   << " has " << hTracks->size() << " entries, skipping event!!" << endl;
   }
  
   // -- Fill muons into muonTracks
@@ -140,6 +144,9 @@ void HFB2muD0::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) 
   if (muonIndices.size() < 1) return;
 
   // =========================================================================================================
+
+  int nD0, nDs;
+  nD0 = nDs = 0;
 
   // go through muon track list
   TLorentzVector vmuon, vtrack1, vtrack2, vd0, vkaon, vpion;
@@ -190,7 +197,8 @@ void HFB2muD0::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) 
     
     iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", fTTB);
     if (!fTTB.isValid()) {
-      if (fVerbose > 0) cout << " -->HFB2muD0: Error: no TransientTrackBuilder found." << endl;
+      if (fVerbose > 0)
+	cout << " -->HFB2muD0: Error: no TransientTrackBuilder found." << endl;
       return;
     }
     
@@ -230,6 +238,7 @@ void HFB2muD0::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) 
 	  if (TMath::Abs(vd0.M()- MD_0) < fDeltaMD0) {
 	    if (fVerbose > 2)
 	      cout << "==>HFB2muD0> D0 candidate found! Mass: " << vd0.M() << endl;
+	    nD0++;
 
 	    std::vector<reco::Track> fitTracks;
 	    fitTracks.clear();
@@ -257,13 +266,6 @@ void HFB2muD0::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) 
 	    d0_cand->fSig1 = gHFEvent->nSigTracks();
 	    d0_cand->fSig2 = d0_cand->fSig1 + 2;
 
-	    m_track            = gHFEvent->addSigTrack();
-	    m_track->fMCID     = - muon.charge() * 13;
-	    m_track->fGenIndex = -1;
-	    m_track->fQ        = muon.charge();
-	    m_track->fPlab.SetPtEtaPhi(vmuon.Pt(), vmuon.Eta(), vmuon.Phi());
-	    m_track->fIndex    = imuon;
-
 	    k_track            = gHFEvent->addSigTrack();
 	    k_track->fMCID     = kaon.charge() * 321;
 	    k_track->fGenIndex = -1;
@@ -277,6 +279,13 @@ void HFB2muD0::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) 
 	    p_track->fQ        = pion.charge();
 	    p_track->fPlab.SetPtEtaPhi(vpion.Pt(), vpion.Eta(), vpion.Phi());
 	    p_track->fIndex    = ipion;
+
+	    m_track            = gHFEvent->addSigTrack();
+	    m_track->fMCID     = - muon.charge() * 13;
+	    m_track->fGenIndex = -1;
+	    m_track->fQ        = muon.charge();
+	    m_track->fPlab.SetPtEtaPhi(vmuon.Pt(), vmuon.Eta(), vmuon.Phi());
+	    m_track->fIndex    = imuon;
 
 	    // D* reconstruction #############################################################################
 	    vector<unsigned int>::iterator islow;
@@ -293,6 +302,7 @@ void HFB2muD0::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) 
 		if (TMath::Abs(vds.M() - vd0.M() + MD_0 - MD_S) < fDeltaMDs) {
 		  if (fVerbose > 2)
 		    cout << "==>HFB2muD0> D* candidate found! Mass: " << vds.M() << endl;
+		  nDs++;
 		  
 		  // Fill TAnaCand
 		  std::vector<reco::Track> fitTracks;
@@ -323,13 +333,6 @@ void HFB2muD0::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) 
 		  ds_cand->fSig1 = gHFEvent->nSigTracks();
 		  ds_cand->fSig2 = ds_cand->fSig1 + 3;
 
-		  m_track            = gHFEvent->addSigTrack();
-		  m_track->fMCID     = - muon.charge() * 13;
-		  m_track->fGenIndex = -1;
-		  m_track->fQ        = muon.charge();
-		  m_track->fPlab.SetPtEtaPhi(vmuon.Pt(), vmuon.Eta(), vmuon.Phi());
-		  m_track->fIndex    = imuon;
-
 		  k_track            = gHFEvent->addSigTrack();
 		  k_track->fMCID     = kaon.charge() * 321;
 		  k_track->fGenIndex = -1;
@@ -351,6 +354,13 @@ void HFB2muD0::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) 
 		  s_track->fPlab.SetPtEtaPhi(vslow.Pt(), vslow.Eta(), vslow.Phi());
 		  s_track->fIndex    = *islow;
 
+		  m_track            = gHFEvent->addSigTrack();
+		  m_track->fMCID     = - muon.charge() * 13;
+		  m_track->fGenIndex = -1;
+		  m_track->fQ        = muon.charge();
+		  m_track->fPlab.SetPtEtaPhi(vmuon.Pt(), vmuon.Eta(), vmuon.Phi());
+		  m_track->fIndex    = imuon;
+
 		} // mass cut
 	      } // charge cut D*
 	    } // track c
@@ -360,9 +370,10 @@ void HFB2muD0::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) 
     } // track a (D0 reco)
   } // muons
 
-  if (fVerbose > 0) {
-    cout << "==>HFB2muD0> " << gHFEvent->nCands() << " D0/D* candidates found." << endl;
-  }
+  if (fVerbose > 0 && nD0 > 0)
+    cout << "==>HFB2muD0> " << nD0 << " D0 candidates found." << endl;
+  if (fVerbose > 0 && nDs > 0)
+    cout << "==>HFB2muD0> " << nDs << " D* candidates found." << endl;
 
   return;
 }
