@@ -8,7 +8,7 @@ bupsikpDump = cms.EDAnalyzer(
     tracksLabel  = cms.untracked.InputTag('generalTracks'),
     PrimaryVertexLabel       = cms.untracked.InputTag("offlinePrimaryVertices"),
     muonPt       = cms.untracked.double(1.0),
-    psiMuons     = cms.untracked.int32(2),
+    psiMuons     = cms.untracked.int32(1),
     trackPt      = cms.untracked.double(0.5),
     deltaR       = cms.untracked.double(1.5)
     )
@@ -33,7 +33,7 @@ bspsiphiDump = cms.EDAnalyzer(
     tracksLabel  = cms.untracked.InputTag('generalTracks'),
     PrimaryVertexLabel       = cms.untracked.InputTag("offlinePrimaryVertices"),
     muonPt       = cms.untracked.double(1.0),
-    psiMuons     = cms.untracked.int32(2),
+    psiMuons     = cms.untracked.int32(1),
     trackPt      = cms.untracked.double(0.5),
     deltaR       = cms.untracked.double(1.5)
     )

@@ -70,7 +70,11 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
       return; 
     }
   } else {
-    if (fVerbose > 0) cout << "==>doKalmanVertexFit> KVF failed! continue ..." << endl;
+    if (fVerbose > 0) {
+      cout << "==>doKalmanVertexFit> KVF " << type << " failed for tracks:";
+      for (int i = 0; i < trackIndices.size(); ++i) cout << " " << trackIndices[i];
+      cout << ", continue ..." << endl;
+    }
     return; 
   }
   

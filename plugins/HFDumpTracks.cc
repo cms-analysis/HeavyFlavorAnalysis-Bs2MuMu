@@ -18,11 +18,12 @@
 
 #include "DataFormats/TrackerRecHit2D/interface/SiTrackerGSRecHit2D.h" 
 
+#include "DataFormats/TrackReco/interface/DeDxData.h"
 #include "DataFormats/TrackReco/interface/HitPattern.h"
-#include "DataFormats/TrackingRecHit/interface/TrackingRecHit.h"
 #include "DataFormats/TrackReco/interface/TrackExtraFwd.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/TrackingRecHit/interface/TrackingRecHit.h"
 
 #include "DataFormats/MuonReco/interface/CaloMuon.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
@@ -173,6 +174,12 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   }      
 
 
+  // -- dE/dx (from Loic)
+  Handle<ValueMap<DeDxData> > dEdxTrackHandle;
+  try { iEvent.getByLabel("dedxHarmonic2", dEdxTrackHandle); } catch (...) {;}
+  const ValueMap<DeDxData> dEdxTrack = *dEdxTrackHandle.product();
+  
+
   if (fVerbose > 0) cout << "===> Tracks " << tracksView->size() << endl;
   TAnaTrack *pTrack; 
   TH1D *h1 = (TH1D*)gHFFile->Get("h1");
@@ -223,6 +230,11 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     if (trackView.quality(trackQualityConfirmed))      trakQuality = 3;
     if (trackView.quality(trackQualityGoodIterative))  trakQuality = 4;
     pTrack->fTrackQuality = trakQuality; 
+
+    // -- filling dE/dx information (from Loic)
+    pTrack->fDeDx      = dEdxTrack[rTrackView].dEdx();
+    pTrack->fDeDxNmeas = dEdxTrack[rTrackView].numberOfSaturatedMeasurements();
+    pTrack->fDeDxNsat  = dEdxTrack[rTrackView].numberOfMeasurements();
 
     // -- Muon ID
     pTrack->fMuIndex = -1; 

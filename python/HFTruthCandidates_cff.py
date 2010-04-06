@@ -171,14 +171,139 @@ truthBd2JpsiKsDump = cms.EDAnalyzer(
     )
 
 
+
+# ######################################################################
+# Charm
+# ######################################################################
+
+# ----------------------------------------------------------------------
+truthD0ToKPi = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(421),
+    type         = cms.untracked.int32(50),
+    GenType      = cms.untracked.int32(-50),
+    daughtersID  = cms.untracked.vint32(-321, 211)
+    )
+
+# ----------------------------------------------------------------------
+truthDpToKPiPi = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(411),
+    type         = cms.untracked.int32(51),
+    GenType      = cms.untracked.int32(-51),
+    daughtersID  = cms.untracked.vint32(-321, 211, 211)
+    )
+
+# ----------------------------------------------------------------------
+truthDpToKstarPi = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(411),
+    type         = cms.untracked.int32(52),
+    GenType      = cms.untracked.int32(-52),
+    daughtersID  = cms.untracked.vint32(313, 321, -211, 211)
+    )
+
+# ----------------------------------------------------------------------
+truthDsToPhiPi = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(431),
+    type         = cms.untracked.int32(53),
+    GenType      = cms.untracked.int32(-53),
+    daughtersID  = cms.untracked.vint32(333, 321, -321, 211)
+    )
+
+# ----------------------------------------------------------------------
+truthDstarToD0PiToKPiPi = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(413),
+    type         = cms.untracked.int32(54),
+    GenType      = cms.untracked.int32(-54),
+    daughtersID  = cms.untracked.vint32(421, 321, -211, 211)
+    )
+
+
+
+# ######################################################################
+# Charmonium
+# ######################################################################
+
+# ----------------------------------------------------------------------
+truthPsiToMuMu = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(443),
+    type         = cms.untracked.int32(40),
+    GenType      = cms.untracked.int32(-40),
+    daughtersID  = cms.untracked.vint32(13, -13)
+    )
+
+# ----------------------------------------------------------------------
+truthPsi2SToMuMu = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(100443),
+    type         = cms.untracked.int32(41),
+    GenType      = cms.untracked.int32(-41),
+    daughtersID  = cms.untracked.vint32(13, -13)
+    )
+
+
+
+# ######################################################################
+# Bottomium
+# ######################################################################
+
+# ----------------------------------------------------------------------
+truthUps1SToMuMu = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(553),
+    type         = cms.untracked.int32(45),
+    GenType      = cms.untracked.int32(-45),
+    daughtersID  = cms.untracked.vint32(13, -13)
+    )
+
+# ----------------------------------------------------------------------
+truthUps2SToMuMu = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(100553),
+    type         = cms.untracked.int32(46),
+    GenType      = cms.untracked.int32(-46),
+    daughtersID  = cms.untracked.vint32(13, -13)
+    )
+
+# ----------------------------------------------------------------------
+truthUps3SToMuMu = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(200553),
+    type         = cms.untracked.int32(47),
+    GenType      = cms.untracked.int32(-47),
+    daughtersID  = cms.untracked.vint32(13, -13)
+    )
+
+
+
 # ######################################################################
 # Sequences
 # ######################################################################
 
 truthSignalsSequence     = cms.Sequence(truthBsToMuMuDump*truthBdToMuMuDump)
+
 truthRareBsSequence      = cms.Sequence(truthBsToMuMuGaDump*truthBsToKKDump*truthBsToKPiDump*truthBsToPiPiDump)
 truthRareBdSequence      = cms.Sequence(truthBdToPiPiDump)
 truthRareBuSequence      = cms.Sequence(truthBuTo3MuNuDump)
 truthRareLambdaBSequence = cms.Sequence(truthLambdaBToPPiDump*truthLambdaBToPKDump)
+
 truthB2JpsiSequence      = cms.Sequence(truthBsDump*truthBd2JpsiKsDump*truthBd2JpsiKstarDump*truthBuDump)
-truthAllSequence         = cms.Sequence(truthSignalsSequence*truthRareBsSequence*truthRareBdSequence*truthRareBuSequence*truthRareLambdaBSequence*truthB2JpsiSequence)
+
+truthOniaSequence        = cms.Sequence(truthPsiToMuMu*truthPsi2SToMuMu*truthUps1SToMuMu*truthUps2SToMuMu*truthUps3SToMuMu)
+truthCharmSequence       = cms.Sequence(truthD0ToKPi*truthDpToKPiPi*truthDpToKstarPi*truthDsToPhiPi*truthDstarToD0PiToKPiPi)
+
+truthAllSequence         = cms.Sequence(truthSignalsSequence*truthRareBsSequence*truthRareBdSequence*truthRareBuSequence*truthRareLambdaBSequence*truthB2JpsiSequence*truthOniaSequence*truthCharmSequence)

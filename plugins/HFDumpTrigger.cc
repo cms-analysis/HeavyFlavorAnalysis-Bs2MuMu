@@ -126,15 +126,15 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       int t1flag = L1GTRR->technicalTriggerWord()[iTrig]; 
       itrig = iTrig%32;
       if (iTrig < 32) {
-	if (l1flag) gHFEvent->fL1TWords[0]  |= (0x1 << itrig);//note: changin iTrig to itrig = iTrig%32
+	if (l1flag) gHFEvent->fL1TWords[0]  |= (0x1 << itrig);
 	if (t1flag) gHFEvent->fL1TTWords[0] |= (0x1 << itrig);
       } else if (iTrig < 64) {
-	if (l1flag) gHFEvent->fL1TWords[1]  |= (0x1 << itrig);//note: changin iTrig to itrig = iTrig%32
+	if (l1flag) gHFEvent->fL1TWords[1]  |= (0x1 << itrig);
 	if (t1flag) gHFEvent->fL1TTWords[1] |= (0x1 << itrig);
       } else if (iTrig < 96) {
-	if (l1flag) gHFEvent->fL1TWords[2]  |= (0x1 << itrig);//note: changin iTrig to itrig = iTrig%32
+	if (l1flag) gHFEvent->fL1TWords[2]  |= (0x1 << itrig);
       } else if (iTrig < 128 && l1flag) {
-	if (l1flag) gHFEvent->fL1TWords[3]  |= (0x1 << itrig);//note: changin iTrig to itrig = iTrig%32
+	if (l1flag) gHFEvent->fL1TWords[3]  |= (0x1 << itrig);
       }
     }
 
@@ -170,7 +170,10 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // -- HLT bits
   gHFEvent->fHLTDecision = 0; 
   gHFEvent->fHLTWords[0]=0; gHFEvent->fHLTWords[1]=0; gHFEvent->fHLTWords[2]=0; gHFEvent->fHLTWords[3]=0; 
+  gHFEvent->fHLTWords[4]=0; gHFEvent->fHLTWords[5]=0; gHFEvent->fHLTWords[6]=0; gHFEvent->fHLTWords[7]=0; 
+
   gHFEvent->fHLTWasRun[0]=0;gHFEvent->fHLTWasRun[1]=0;gHFEvent->fHLTWasRun[2]=0;gHFEvent->fHLTWasRun[3]=0; 
+  gHFEvent->fHLTWasRun[4]=0;gHFEvent->fHLTWasRun[5]=0;gHFEvent->fHLTWasRun[6]=0;gHFEvent->fHLTWasRun[7]=0; 
 
   Handle<TriggerResults> hHLTresults;
   bool hltF = true;
@@ -190,34 +193,44 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     gHFEvent->fHLTDecision = hHLTresults->accept();
     if (fVerbose > 1) cout << "hHLTresults->size() = " << hHLTresults->size() << " and HLT accept = " << gHFEvent->fHLTDecision << endl;
 
+    int itrig(0); 
     for (unsigned int iTrig = 0; iTrig < hHLTresults->size(); ++iTrig) {
-      int hltflag = hHLTresults->accept(iTrig); 
       int wasrun = hHLTresults->wasrun(iTrig); 
+      int hltacc = hHLTresults->accept(iTrig); 
 
       // This is the HLT name for each path: 
       if (fVerbose > 2) cout << iTrig << " " << trigName.triggerName(iTrig) << endl;
 
       gHFEvent->fHLTNames[iTrig] = TString(trigName.triggerName(iTrig)); 
 
-      if (iTrig < 32 && hltflag) {
-	gHFEvent->fHLTWords[0] |= (0x1 << iTrig);
-      } else if (iTrig < 64 && hltflag) {
-	gHFEvent->fHLTWords[1] |= (0x1 << iTrig);
-      } else if (iTrig < 96 && hltflag) {
-	gHFEvent->fHLTWords[2] |= (0x1 << iTrig);
-      } else if (iTrig < 128 && hltflag) {
-	gHFEvent->fHLTWords[3] |= (0x1 << iTrig);
+      itrig = iTrig%32; 
+      
+      if (iTrig < 32) {
+        if (hltacc) gHFEvent->fHLTWords[0] |= (0x1 << itrig);
+        if (wasrun) gHFEvent->fHLTWasRun[0]|= (0x1 << itrig);
+      } else if (iTrig < 64) {
+        if (hltacc) gHFEvent->fHLTWords[1] |= (0x1 << itrig);
+        if (wasrun) gHFEvent->fHLTWasRun[1]|= (0x1 << itrig);
+      } else if (iTrig < 96) {
+        if (hltacc) gHFEvent->fHLTWords[2] |= (0x1 << itrig);
+        if (wasrun) gHFEvent->fHLTWasRun[2]|= (0x1 << itrig);
+      } else if (iTrig < 128) {
+        if (hltacc) gHFEvent->fHLTWords[3] |= (0x1 << itrig);
+        if (wasrun) gHFEvent->fHLTWasRun[3]|= (0x1 << itrig);
+      } else if (iTrig < 160) {
+        if (hltacc) gHFEvent->fHLTWords[4] |= (0x1 << itrig);
+        if (wasrun) gHFEvent->fHLTWasRun[4]|= (0x1 << itrig);
+      } else if (iTrig < 192) {
+        if (hltacc) gHFEvent->fHLTWords[5] |= (0x1 << itrig);
+        if (wasrun) gHFEvent->fHLTWasRun[5]|= (0x1 << itrig);
+      } else if (iTrig < 224) {
+        if (hltacc) gHFEvent->fHLTWords[6] |= (0x1 << itrig);
+        if (wasrun) gHFEvent->fHLTWasRun[6]|= (0x1 << itrig);
+      } else if (iTrig < 256) {
+        if (hltacc) gHFEvent->fHLTWords[7] |= (0x1 << itrig);
+        if (wasrun) gHFEvent->fHLTWasRun[7]|= (0x1 << itrig);
       }
 
-      if (iTrig < 32 && wasrun) {
-	gHFEvent->fHLTWasRun[0] |= (0x1 << iTrig);
-      } else if (iTrig < 64 && hltflag) {
-	gHFEvent->fHLTWasRun[1] |= (0x1 << iTrig);
-      } else if (iTrig < 96 && hltflag) {
-	gHFEvent->fHLTWasRun[2] |= (0x1 << iTrig);
-      } else if (iTrig < 128 && hltflag) {
-	gHFEvent->fHLTWasRun[3] |= (0x1 << iTrig);
-      }
     }
 
 
@@ -229,7 +242,15 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 			    << std::bitset<32>(gHFEvent->fHLTWords[2]) << endl
 			    << std::bitset<32>(gHFEvent->fHLTWasRun[2]) << endl << endl
 			    << std::bitset<32>(gHFEvent->fHLTWords[3]) << endl
-			    << std::bitset<32>(gHFEvent->fHLTWasRun[3]) << endl;
+			    << std::bitset<32>(gHFEvent->fHLTWasRun[3]) << endl << endl
+			    << std::bitset<32>(gHFEvent->fHLTWords[4]) << endl
+			    << std::bitset<32>(gHFEvent->fHLTWasRun[4]) << endl << endl
+			    << std::bitset<32>(gHFEvent->fHLTWords[5]) << endl
+			    << std::bitset<32>(gHFEvent->fHLTWasRun[5]) << endl << endl
+			    << std::bitset<32>(gHFEvent->fHLTWords[6]) << endl
+			    << std::bitset<32>(gHFEvent->fHLTWasRun[6]) << endl << endl
+			    << std::bitset<32>(gHFEvent->fHLTWords[7]) << endl
+			    << std::bitset<32>(gHFEvent->fHLTWasRun[7]) << endl << endl;
   }   
   
   Handle<trigger::TriggerEvent> trgEvent;

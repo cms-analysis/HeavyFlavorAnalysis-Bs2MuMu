@@ -8,8 +8,8 @@ mtDump = cms.EDAnalyzer(
     tracksLabel   = cms.untracked.InputTag('generalTracks'),
     PrimaryVertexLabel       = cms.untracked.InputTag("offlinePrimaryVertices"),
     muonPt        = cms.untracked.double(1.0),
-    trackPt       = cms.untracked.double(0.5),
+    trackPt       = cms.untracked.double(1.0),
     type          = cms.untracked.int32(1300), 
-    massLow       = cms.untracked.double(0.5), 
+    massLow       = cms.untracked.double(2.5), 
     massHigh      = cms.untracked.double(12.0)
     )

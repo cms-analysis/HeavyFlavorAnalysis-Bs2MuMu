@@ -38,12 +38,14 @@ class HFCharm : public edm::EDAnalyzer {
   virtual void endJob() ;
 
   int           fVerbose; 
+  int           fMaxTracks; 
   edm::InputTag fTracksLabel, fPrimaryVertexLabel;
   edm::InputTag fMuonsLabel;
 
   double        fMuonPt; 
+  int           fUseMuon;
   double        fPhiWindow, fDWindow; 
-  double        fTrackPt, fDeltaR;
+  double        fTrackPt, fKaonPt, fPionPt, fDeltaR;
 
   int           fType; 
 
