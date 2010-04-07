@@ -16,6 +16,7 @@
 
 #include "bmmReader.hh"
 #include "massReader.hh"
+#include "copyReader.hh"
 #include "dumpReader.hh"
 
 using namespace std;
@@ -47,6 +48,7 @@ int main(int argc, char *argv[]) {
   string evtClassName("TAna01Event");
 
   string readerName("bmmReader"); 
+  TString histfile("");
 
   // -- command line arguments
   for (int i = 0; i < argc; i++){
@@ -57,6 +59,7 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-n"))  {nevents    = atoi(argv[++i]); }                 // number of events to run 
     if (!strcmp(argv[i],"-r"))  {readerName = string(argv[++i]); }               // which tree reader class to run
     if (!strcmp(argv[i],"-s"))  {randomSeed = atoi(argv[++i]); }                 // set seed for random gen.
+    if (!strcmp(argv[i],"-o"))  {histfile   = TString(argv[++i]); }              // set output file
   }
 
 
@@ -67,53 +70,54 @@ int main(int argc, char *argv[]) {
   fn.ReplaceAll("tree", "");
 
   // -- Determine filename for output histograms and 'final' small/reduced tree
-  TString  barefile(fileName), chainFile, meta, histfile;
-  if (file == 0) {
-    // -- input from chain
-    if (barefile.Contains("chains/")) {
-      meta = barefile;
-      barefile.ReplaceAll("chains/", "");
-      histfile = barefile + "." + fn + ".root";
-      if (dirspec) {
-	if (dirName[0] == '/') {
-	  histfile = dirName + "/" + histfile;
-	} else {
-	  histfile = dirBase + "/" + dirName + "/" + histfile;
+  TString meta = fileName;
+  if(histfile == "") {
+    TString  barefile(fileName), chainFile, meta;
+    if (file == 0) {
+      // -- input from chain
+      if (barefile.Contains("chains/")) {
+	barefile.ReplaceAll("chains/", "");
+	histfile = barefile + "." + fn + ".root";
+	if (dirspec) {
+	  if (dirName[0] == '/') {
+	    histfile = dirName + "/" + histfile;
+	  } else {
+	    histfile = dirBase + "/" + dirName + "/" + histfile;
+	  }
 	}
-      }
-    } else {
-      meta = barefile;
-      histfile =  barefile + "." + fn + ".root";
-      if (dirspec) {
-	if (dirName[0] == '/') {
-	  histfile = dirName + "/" + histfile;
-	} else {
-	  histfile = dirBase + "/" + dirName + "/" + histfile;
-	}
-      }
-    }
-    // -- The following lines strip everything from the string up to and including the last '/'
-    int fl = barefile.Last('/');
-    TString bla(barefile);
-    bla.Replace(0, fl+1, ' '); bla.Strip(TString::kLeading, ' ');  bla.Remove(0,1);
-    histfile =  bla + "." + fn + ".root";
-    if (dirspec) {
-      histfile = dirBase + "/" + dirName + "/" + histfile;
-    }
-  }  else if (file == 1) {
-    // -- single file input
-    // -- The following lines strip everything from the string up to and including the last '/'
-    int fl = barefile.Last('/');
-    TString bla(barefile);
-    bla.Replace(0, fl+1, ' '); bla.Strip(TString::kLeading, ' ');  bla.Remove(0,1);
-    histfile =  bla;
-    histfile.ReplaceAll(".root", "");
-    histfile +=  "." + fn + ".root";
-    if (dirspec) {
-      if (dirName[0] == '/') {
-	histfile = dirName + "/" + histfile;
       } else {
+	histfile =  barefile + "." + fn + ".root";
+	if (dirspec) {
+	  if (dirName[0] == '/') {
+	    histfile = dirName + "/" + histfile;
+	  } else {
+	    histfile = dirBase + "/" + dirName + "/" + histfile;
+	  }
+	}
+      }
+      // -- The following lines strip everything from the string up to and including the last '/'
+      int fl = barefile.Last('/');
+      TString bla(barefile);
+      bla.Replace(0, fl+1, ' '); bla.Strip(TString::kLeading, ' ');  bla.Remove(0,1);
+      histfile =  bla + "." + fn + ".root";
+      if (dirspec) {
 	histfile = dirBase + "/" + dirName + "/" + histfile;
+      }
+    }  else if (file == 1) {
+      // -- single file input
+      // -- The following lines strip everything from the string up to and including the last '/'
+      int fl = barefile.Last('/');
+      TString bla(barefile);
+      bla.Replace(0, fl+1, ' '); bla.Strip(TString::kLeading, ' ');  bla.Remove(0,1);
+      histfile =  bla;
+      histfile.ReplaceAll(".root", "");
+      histfile +=  "." + fn + ".root";
+      if (dirspec) {
+	if (dirName[0] == '/') {
+	  histfile = dirName + "/" + histfile;
+	} else {
+	  histfile = dirBase + "/" + dirName + "/" + histfile;
+	}
       }
     }
   }
@@ -155,6 +159,7 @@ int main(int argc, char *argv[]) {
   if (readerName == "bmmReader") a = new bmmReader(chain, TString(evtClassName));
   else if (readerName == "massReader") a = new massReader(chain,TString(evtClassName));
   else if (readerName == "dumpReader") a = new dumpReader(chain,TString(evtClassName));
+  else if (readerName == "copyReader") a = new copyReader(chain,TString(evtClassName));
   
   if(a) {
     a->openHistFile(histfile); 
