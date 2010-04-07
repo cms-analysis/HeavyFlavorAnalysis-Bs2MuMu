@@ -35,7 +35,7 @@ my $user  = $ENV{'USER'};
 my $glite = "/shome/$user/grid/glite.conf";
 
 # -- Default settings
-my $CMSSW = "CMSSW_3_5_0"; 
+my $CMSSW = "CMSSW_3_5_6"; 
 my $SCRAM = "slc5_ia32_gcc434";
 my $SRMCP = "\"srmcp -2\"";          
 if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 -globus_tcp_port_range 20000,25000\"";}
