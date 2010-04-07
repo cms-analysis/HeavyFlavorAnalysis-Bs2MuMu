@@ -107,7 +107,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   }
 
   if (hTracks->size() > fMaxTracks) {
-    cout << "==>HFCharm> Too many tracks " << fMaxTracks << ", skipping" << endl;
+    cout << "==>HFCharm> Too many tracks " << hTracks->size() << ", skipping" << endl;
     return;
   }
 
