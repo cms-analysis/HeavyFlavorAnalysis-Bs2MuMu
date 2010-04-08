@@ -103,6 +103,7 @@ void HFKinematicVertexFit::doJpsiFit(vector<Track>  &trackList,
     delete jpsi_c2; 
     return; 
   }
+
   if (jpTree->isEmpty()) {
     if (fVerbose > 0) cout << "==>HFKinematicVertexFitter: empty constrained J/psi Tree!! returning!!!" << endl;
     return; 
@@ -119,13 +120,21 @@ void HFKinematicVertexFit::doJpsiFit(vector<Track>  &trackList,
 
   RefCountedKinematicParticle jpsi_part = jpTree->currentParticle();
   allParticles.push_back(jpsi_part);
-  RefCountedKinematicTree buTree = kpvFitter.fit(allParticles);  
+  RefCountedKinematicTree buTree;
+  try {
+    buTree = kpvFitter.fit(allParticles);  
+  } catch(VertexException &ex) {
+    if (fVerbose > 0) cout << "==>HFKinematicVertexFitter: exception caught from all particle fit" << endl;
+    delete jpsi_c2;
+    return;
+  }
+
   delete jpsi_c2; 
 
   // -- Fill ntuple
   if (buTree->isEmpty()) {
     if (fVerbose > 0) cout << "==>HFKinematicVertexFitter: empty buTree!! returning!!!" << endl;
-    return; 
+    return;
   }
   try {
     buTree->movePointerToTheTop();
