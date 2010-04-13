@@ -4,7 +4,7 @@ import FWCore.ParameterSet.Config as cms
 HFCharmDump = cms.EDAnalyzer(
     "HFCharm",
     verbose            = cms.untracked.int32(0), 
-    maxTracks          = cms.untracked.int32(100), 
+    maxTracks          = cms.untracked.int32(1000), 
     tracksLabel        = cms.untracked.InputTag('generalTracks'),
     PrimaryVertexLabel = cms.untracked.InputTag("offlinePrimaryVertices"),
     muonsLabel         = cms.untracked.InputTag("muons"),
@@ -22,7 +22,7 @@ HFCharmDump = cms.EDAnalyzer(
 HFMuCharmDump = cms.EDAnalyzer(
     "HFCharm",
     verbose            = cms.untracked.int32(0), 
-    maxTracks          = cms.untracked.int32(100), 
+    maxTracks          = cms.untracked.int32(1000), 
     tracksLabel        = cms.untracked.InputTag('generalTracks'),
     PrimaryVertexLabel = cms.untracked.InputTag("offlinePrimaryVertices"),
     muonsLabel         = cms.untracked.InputTag("muons"),

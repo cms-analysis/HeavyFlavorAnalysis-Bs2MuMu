@@ -168,7 +168,7 @@ sub getOutputSandBox {
 # ----------------------------------------------------------------------
 sub parseOutput {
     ($ldir, $logfile) = @_;
-    
+
     $foundMyEnd     = `/bin/grep -i "runGrid: This is the end, my friend"  $ldir/$logfile`;
     if ($foundMyEnd) { $return = "no problems seen"; }
 
