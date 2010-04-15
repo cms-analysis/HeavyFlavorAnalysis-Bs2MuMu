@@ -150,6 +150,8 @@ int treeReader01::loop(int nevents, int start) {
     fpEvt->Clear();                        
     nb += fpChain->GetEvent(jEvent);          
 
+    fRun = fpEvt->fRunNumber;
+
     eventProcessing(); 
   }
   return 0;

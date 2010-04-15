@@ -43,6 +43,7 @@ public:
   virtual void eventProcessing();
   virtual void initVariables(); 
   virtual void fillHist();
+  virtual bool goodRun();
 
 protected:
 
@@ -58,7 +59,7 @@ protected:
   int          fEvent;         // current event number; filled in treeReader01::loop()
 
   // -- Variables changing per event (and initialized in initVariables()
-  int          fRun;           // current run number
+  int          fRun;           // current run number; filled in treeReader01::loop()
 
 
   // -- Histogram pointers 

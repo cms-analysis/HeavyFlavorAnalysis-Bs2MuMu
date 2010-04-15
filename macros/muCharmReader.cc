@@ -34,6 +34,11 @@ void muCharmReader::eventProcessing() {
   // -- initialize all variables
   initVariables(); 
 
+  if (!goodRun()) {
+    //cout << "not a good run: " << fRun << endl;
+    return; 
+  } 
+
   // -- track selection for all candidates
   trackSelection(); 
 
