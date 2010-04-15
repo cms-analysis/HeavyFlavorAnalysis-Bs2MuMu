@@ -1,33 +1,33 @@
-#include "bmmReader.hh"
+#include "muCharmReader.hh"
+#include "../interface/HFMasses.hh"
+
 #include "TRandom.h"
 #include <cmath>
-#define MMUON 0.10566
-#define MKAON 0.49368
 
 // ----------------------------------------------------------------------
-// Run with: ./runTreeReaders -c chains/bg-test -D root -C cuts/bmmReader.default.cuts
+// Run with: ./runTreeReaders -c chains/bg-test -D root -C cuts/muCharmReader.default.cuts
 //           ./runTreeReaders -f test.root 
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------
-bmmReader::bmmReader(TChain *tree, TString evtClassName): treeReader01(tree, evtClassName) {
-  cout << "==> bmmReader: constructor..." << endl;
+muCharmReader::muCharmReader(TChain *tree, TString evtClassName): treeReader01(tree, evtClassName) {
+  cout << "==> muCharmReader: constructor..." << endl;
 }
 
 // ----------------------------------------------------------------------
-bmmReader::~bmmReader() {
-  cout << "==> bmmReader: destructor..." << endl;
+muCharmReader::~muCharmReader() {
+  cout << "==> muCharmReader: destructor..." << endl;
 
 }
 
 // ----------------------------------------------------------------------
-void bmmReader::startAnalysis() {
-  cout << "==> bmmReader: Starting analysis..." << endl;
+void muCharmReader::startAnalysis() {
+  cout << "==> muCharmReader: Starting analysis..." << endl;
 }
 
 
 // ----------------------------------------------------------------------
-void bmmReader::eventProcessing() {
+void muCharmReader::eventProcessing() {
 
   ((TH1D*)fpHistFile->Get("h1"))->Fill(fpEvt->nRecTracks()); 
 
@@ -48,7 +48,8 @@ void bmmReader::eventProcessing() {
 
 
 // ----------------------------------------------------------------------
-void bmmReader::initVariables() {
+void muCharmReader::initVariables() {
+
   
   fGoodMCKinematics = fGoodL1 = fGoodHLT = fGoodEvent = false; 
   fGoodMuonsID = fGoodMuonsPT = false; 
@@ -59,7 +60,7 @@ void bmmReader::initVariables() {
 
 
 // ----------------------------------------------------------------------
-void bmmReader::candidateSelection(int mode) {
+void muCharmReader::candidateSelection(int mode) {
 
   fCandPt = fCandMass = -1.; 
   fpCand = 0; 
@@ -68,7 +69,11 @@ void bmmReader::candidateSelection(int mode) {
   vector<int> lCands;
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
     pCand = fpEvt->getCand(iC);
+    if (50 == pCand->fType) {
+      fillTMCand(pCand, 50);
+    }
     if (TYPE != pCand->fType) continue;
+
     lCands.push_back(iC); 
   }
 
@@ -79,24 +84,16 @@ void bmmReader::candidateSelection(int mode) {
 
   int best(0); 
   if (nc > 1) {
-    double drMin(99.), dr(0.); 
+    double chi2Min(99.), chi2(0.); 
     for (unsigned int iC = 0; iC < lCands.size(); ++iC) {
       pCand = fpEvt->getCand(lCands[iC]); 
 
-      TAnaTrack *pl1 = fpEvt->getSigTrack(pCand->fSig1); 
-      TAnaTrack *pl2 = fpEvt->getSigTrack(pCand->fSig2); 
-
-
-      // -- FIXME: SHOULD THESE CUTS BE APPLIED??
-      // -- Check that candidate tracks passed track selection
-      if (0 == pl1->fInt1 || 0 == pl1->fInt2) continue; 
-      if (0 == pl2->fInt1 || 0 == pl2->fInt2) continue; 
+      chi2 = pCand->fVtx.fChi2; 
 
       if (0 == mode) {
-	dr = pl1->fPlab.DeltaR(pl2->fPlab); 
-	if (dr < drMin) {
+	if (chi2 < chi2Min) {
+	  chi2Min = chi2; 
 	  best = lCands[iC]; 
-	  drMin = dr; 
 	}
       }
     }
@@ -106,29 +103,86 @@ void bmmReader::candidateSelection(int mode) {
   if (best > -1) {
     fpCand = fpEvt->getCand(best); 
     fCandPt   = pCand->fPlab.Perp();
-    fCandMass = pCand->fMass;
+    
+    TAnaTrack *pc1 = fpEvt->getSigTrack(pCand->fSig1); 
+    TAnaTrack *pc2 = fpEvt->getSigTrack(pCand->fSig1+1); 
+    
+    TLorentzVector a1, a2, a0; 
+    a1.SetVectM(pc1->fPlab, MKAON); 
+    a2.SetVectM(pc2->fPlab, MPION); 
+    a0 = a1 + a2; 
+
+    fCandMass = a0.M();
   }
+}
 
+
+// ----------------------------------------------------------------------
+void muCharmReader::fillTMCand(TAnaCand *pCand, int type) {
+  
+  // -- fill simple TM mass
+  ((TH1D*)fpHistFile->Get(Form("h%i", 1000+type)))->Fill(pCand->fMass); 
+
+   // -- now try to find an additional muon
+   TAnaTrack *pc1 = fpEvt->getSigTrack(pCand->fSig1); 
+   TAnaTrack *pc2 = fpEvt->getSigTrack(pCand->fSig1+1); 
+
+   int pgI = pc1->fGenIndex;
+   TGenCand *pB;
+   int foundB(0); 
+   if (pgI < fpEvt->nGenCands()) {
+     TGenCand *pg = fpEvt->getGenCand(pgI); 
+     int momI = pg->fMom1; 
+     TGenCand *pD0 = fpEvt->getGenCand(momI); 
+
+     pB = pD0;
+     int id(999), cnt(0); 
+     while (id > 100) {
+       momI = pB->fMom1;
+       pB = fpEvt->getGenCand(momI); 
+       id  = TMath::Abs(pB->fID%1000);
+       ++cnt;
+       if (id > 499 && id < 599) {
+	 foundB = 1; 
+	 break;
+       }
+     }
+
+     if (1 == foundB) {
+       cout << "========> Found a B" << endl;
+       pB->dump();
+       TGenCand *pG; 
+       for (int ig = pB->fDau1; ig <= pB->fDau2; ++ig) {
+	 pG = fpEvt->getGenCand(ig); 
+	 pG->dump(); 
+	 if (13 == TMath::Abs(pG->fID)) {
+	   cout << "++++++++++++++++++++++++++++ with a MUON" << endl;
+	 }
+       }
+     }
+      
+   }
+
+}
+
+
+// ----------------------------------------------------------------------
+void muCharmReader::MCKinematics() {
 
 }
 
 // ----------------------------------------------------------------------
-void bmmReader::MCKinematics() {
+void muCharmReader::L1TSelection() {
 
 }
 
 // ----------------------------------------------------------------------
-void bmmReader::L1TSelection() {
+void muCharmReader::HLTSelection() {
 
 }
 
 // ----------------------------------------------------------------------
-void bmmReader::HLTSelection() {
-
-}
-
-// ----------------------------------------------------------------------
-void bmmReader::trackSelection() {
+void muCharmReader::trackSelection() {
 
   TAnaCand *pCand;
   TAnaTrack *pt, *ps[2]; 
@@ -163,19 +217,20 @@ void bmmReader::trackSelection() {
 
 
 // ----------------------------------------------------------------------
-void bmmReader::muonSelection() {
+void muCharmReader::muonSelection() {
  
 }
 
 
 // ----------------------------------------------------------------------
-void bmmReader::fillHist() {
+void muCharmReader::fillHist() {
 
   ((TH1D*)fpHistFile->Get("h1"))->Fill(fpEvt->nRecTracks()); 
 
   if (0 != fpCand) {
     ((TH1D*)fpHistFile->Get("h10"))->Fill(fCandPt); 
     ((TH1D*)fpHistFile->Get("h11"))->Fill(fCandMass); 
+    ((TH1D*)fpHistFile->Get("h12"))->Fill(fpCand->fVtx.fChi2); 
 
     fTree->Fill(); 
   }
@@ -183,14 +238,18 @@ void bmmReader::fillHist() {
 }
 
 // ---------------------------------------------------------------------- 
-void bmmReader::bookHist() {
-  cout << "==> bmmReader: bookHist " << endl;
+void muCharmReader::bookHist() {
+  cout << "==> muCharmReader: bookHist " << endl;
   
   TH1D *h; 
   h = new TH1D("h1", "Ntrk", 200, 0., 200.);
   h = new TH1D("h2", "NCand", 20, 0., 20.);
   h = new TH1D("h10", "pT", 40, 0., 20.);
-  h = new TH1D("h11", "mass", 60, 4.5, 6.0);
+  h = new TH1D("h11", "mass", 50, 1.6, 2.1);
+  h = new TH1D("h12", "chi2", 50, 0., 10.);
+
+  h = new TH1D("h1050", "TM D0->Kpi", 50, 1.6, 2.1);
+  h = new TH1D("h2050", "TM mu D0->Kpi", 50, 1.6, 2.1);
 
   // -- Reduced Tree
   fTree = new TTree("events", "events");
@@ -201,10 +260,10 @@ void bmmReader::bookHist() {
 }
 
 // ----------------------------------------------------------------------
-void bmmReader::readCuts(TString filename, int dump) {
+void muCharmReader::readCuts(TString filename, int dump) {
   char  buffer[200];
   fCutFile = filename;
-  if (dump) cout << "==> bmmReader: Reading " << fCutFile.Data() << " for cut settings" << endl;
+  if (dump) cout << "==> muCharmReader: Reading " << fCutFile.Data() << " for cut settings" << endl;
   sprintf(buffer, "%s", fCutFile.Data());
   ifstream is(buffer);
   char CutName[100];
@@ -215,7 +274,7 @@ void bmmReader::readCuts(TString filename, int dump) {
 
   if (dump) {
     cout << "====================================" << endl;
-    cout << "==> bmmReader: Cut file  " << fCutFile.Data() << endl;
+    cout << "==> muCharmReader: Cut file  " << fCutFile.Data() << endl;
     cout << "------------------------------------" << endl;
   }
 
@@ -233,27 +292,27 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "TYPE:           " << TYPE << endl;
     }
 
-    if (!strcmp(CutName, "BSPTLO")) {
-      BSPTLO = CutValue; ok = 1;
-      if (dump) cout << "BSPTLO:           " << BSPTLO << " GeV" << endl;
+    if (!strcmp(CutName, "CHARMPTLO")) {
+      CHARMPTLO = CutValue; ok = 1;
+      if (dump) cout << "CHARMPTLO:           " << CHARMPTLO << " GeV" << endl;
       ibin = 11;
-      hcuts->SetBinContent(ibin, BSPTLO);
+      hcuts->SetBinContent(ibin, CHARMPTLO);
       hcuts->GetXaxis()->SetBinLabel(ibin, "p_{T}^{min}(B_{s}) [GeV]");
     }
 
-    if (!strcmp(CutName, "BSETALO")) {
-      BSETALO = CutValue; ok = 1;
-      if (dump) cout << "BSETALO:           " << BSETALO << endl;
+    if (!strcmp(CutName, "CHARMETALO")) {
+      CHARMETALO = CutValue; ok = 1;
+      if (dump) cout << "CHARMETALO:           " << CHARMETALO << endl;
       ibin = 12;
-      hcuts->SetBinContent(ibin, BSETALO);
+      hcuts->SetBinContent(ibin, CHARMETALO);
       hcuts->GetXaxis()->SetBinLabel(ibin, "#eta^{min}(B_{s})");
     }
 
-    if (!strcmp(CutName, "BSETAHI")) {
-      BSETAHI = CutValue; ok = 1;
-      if (dump) cout << "BSETAHI:           " << BSETAHI << endl;
+    if (!strcmp(CutName, "CHARMETAHI")) {
+      CHARMETAHI = CutValue; ok = 1;
+      if (dump) cout << "CHARMETAHI:           " << CHARMETAHI << endl;
       ibin = 13;
-      hcuts->SetBinContent(ibin, BSETAHI);
+      hcuts->SetBinContent(ibin, CHARMETAHI);
       hcuts->GetXaxis()->SetBinLabel(ibin, "#eta^{max}(B_{s})");
     }
 
@@ -290,7 +349,7 @@ void bmmReader::readCuts(TString filename, int dump) {
     }
 
 
-    if (!ok) cout << "==> bmmReader: ERROR: Don't know about variable " << CutName << endl;
+    if (!ok) cout << "==> muCharmReader: ERROR: Don't know about variable " << CutName << endl;
   }
 
   if (dump)  cout << "------------------------------------" << endl;

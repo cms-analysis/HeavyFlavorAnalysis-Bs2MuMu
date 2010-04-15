@@ -55,7 +55,7 @@ $(addprefix obj/,%.o) : %.cc
 
 
 # ======================================================================
-READER_OBJS = treeReader01.o bmmReader.o massReader.o dumpReader.o copyReader.o
+READER_OBJS = treeReader01.o bmmReader.o massReader.o dumpReader.o copyReader.o muCharmReader.o
 READERDICT_OBJS = ${READER_OBJS:.o=Dict.o}
 READERDICT_SRCS = ${READERDICT_OBJS:.o=.cc}
 

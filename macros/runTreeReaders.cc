@@ -18,6 +18,7 @@
 #include "massReader.hh"
 #include "copyReader.hh"
 #include "dumpReader.hh"
+#include "muCharmReader.hh"
 
 using namespace std;
 
@@ -160,8 +161,9 @@ int main(int argc, char *argv[]) {
   else if (readerName == "massReader") a = new massReader(chain,TString(evtClassName));
   else if (readerName == "dumpReader") a = new dumpReader(chain,TString(evtClassName));
   else if (readerName == "copyReader") a = new copyReader(chain,TString(evtClassName));
+  else if (readerName == "muCharmReader") a = new muCharmReader(chain,TString(evtClassName));
   
-  if(a) {
+  if (a) {
     a->openHistFile(histfile); 
     a->bookHist(); 
     a->readCuts(cutFile, 1);
