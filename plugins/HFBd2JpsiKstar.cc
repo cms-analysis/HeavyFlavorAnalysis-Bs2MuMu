@@ -181,11 +181,11 @@ void HFBd2JpsiKstar::analyze(const Event& iEvent, const EventSetup& iSetup) {
   a.combine(psiList, tlist1, tlist2, 2.8, 3.4, 1); 
   if (fVerbose > 0) cout << "==>HFBs2JpsiKp> J/psi list size: " << psiList.size() << endl;
   vector<pair<int, int> > kstarList; 
-  a.combine(kstarList, klist, pilist, 0.5, 1.2, 0); 
+  a.combine(kstarList, klist, pilist, 0.5, 1.2, 0);
   if (fVerbose > 0) cout << "==>HFBs2JpsiKp> kstar list size: " << kstarList.size() << endl;
   
   HFKalmanVertexFit    aKal(fTTB.product(), fPV, 100511, fVerbose); 
-  HFKinematicVertexFit aKin(fTTB.product(), fPV, 200511, fVerbose); 
+  HFKinematicVertexFit aKin(fTTB.product(), fPV, 300511, fVerbose); 
   vector<Track> trackList; 
   vector<int> trackIndices;
   vector<double> trackMasses;
