@@ -28,6 +28,7 @@ void copyReader::eventProcessing()
   bool doCopy(false); 
   TAnaCand *pCand(0); 
   int TYPE(10020); 
+  int nevt(0); 
   for (int j = 0; j < fpEvt->nCands(); ++j) {
     pCand = fpEvt->getCand(j);
     if ( pCand->fType == TYPE) {
@@ -37,20 +38,14 @@ void copyReader::eventProcessing()
   }
 
   if (doCopy) {
+    nevt++;
     cout << "Found a candidate with type " << TYPE << ", copying, among ncands = " << fpEvt->nCands() << endl;
     *copy_evt = *fpEvt;
     copy_tree->Fill();
   }
 
+  cout << "nevt: " << nevt << endl;
+
+
 } // eventProcessing()
 
- 
-// ----------------------------------------------------------------------
-void copyReader::closeHistFile() {
-  cout << "==> copyReader: Writing " << fpHistFile->GetName() << endl;
-  fpHistFile->cd();
-  copy_tree->Write();
-  fpHistFile->Close();
-  delete fpHistFile;
-
-}

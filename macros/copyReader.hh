@@ -21,7 +21,6 @@ class copyReader : public treeReader01 {
 		
 		void bookHist();
 		void eventProcessing();
-                void closeHistFile();
 	
 	private:
 		TTree *copy_tree;
