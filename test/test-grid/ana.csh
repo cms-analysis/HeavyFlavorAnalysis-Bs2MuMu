@@ -67,9 +67,8 @@ pwd
 date
 which cmsRun
 echo "cmsRun $JOB.py "
-cmsRun $JOB.py >& $JOB.log 
+cmsRun $JOB.py |& tee $JOB.log
 date
-cat $JOB.log 
 
 # ----------------------------------------------------------------------
 # -- Save Output to SE
