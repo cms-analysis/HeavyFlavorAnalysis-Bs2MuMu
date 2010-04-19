@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 use Getopt::Std;
-getopts('');
+getopts('i:');
 
 if ($ARGV[0]) {
     $name = $ARGV[0];
@@ -10,13 +10,19 @@ if ($ARGV[0]) {
 }
 
 $include  = "AnalysisDataFormats/HeavyFlavorObjects HeavyFlavorAnalysis/Bs2MuMu";
+if ($opt_i) {
+    $include .= " $opt_i";
+}
+
 $exclude .= " --exclude AnalysisDataFormats/HeavyFlavorObjects/lib/\\*.so";
 $exclude .= " --exclude AnalysisDataFormats/HeavyFlavorObjects/obj/\\*.o";
 $exclude .= " --exclude AnalysisDataFormats/HeavyFlavorObjects/test";
 $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/obj/\\*.o";
 $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/lib/\\*.so";
-$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/bin/\\*.o";
+$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/bin/\\*";
 $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/test";
+$exclude .= " --exclude \\*.root";
+$exclude .= " --exclude \\*Dict\\*";
 
 system("tar zcvf $name $include $exclude"); 
 print("tar zcvf $name $include $exclude  --wildcards\n"); 

@@ -58,22 +58,18 @@ public:
       CHARMPTLO
     , CHARMETALO
     , CHARMETAHI   
+    , KAPTLO
+    , PIPTLO
+    , VTXCHI2
     , MUPTLO
     , MUPTHI
     , MUETALO
     , MUETAHI   
     ;
-  int TYPE;
+  int TYPE, MCTYPE;
 
   // -- Variables
-  TAnaCand    *fpCand; 
-
-  double      fCandPt, fCandMass;
-
-  bool        fGoodMCKinematics, fGoodL1, fGoodHLT, fGoodEvent;
-  bool        fGoodMuonsID, fGoodMuonsPT;
-  bool        fGoodTracks, fGoodTracksPT;
-  bool        fGoodCandPT;
+  TAnaCand    *fpCand1, *fpCand2; 
 
 };
 

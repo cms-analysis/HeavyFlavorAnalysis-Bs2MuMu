@@ -1,10 +1,16 @@
-TYPE        20010
+TYPE        10010
+MCTYPE         50
 # -- Charm particle 
 CHARMPTLO      -1.0
 CHARMETALO    -99.0
 CHARMETAHI     99.0
+VTXCHI2         4.0
 # -- muon 
 MUPTLO       3.0
 MUPTHI    9999.0
 MUETALO     -2.5
 MUETAHI      2.5
+# -- kaon
+KAPTLO       1.3
+# -- pion
+PIPTLO       1.0

@@ -45,9 +45,9 @@ void muCharmReader::eventProcessing() {
   // -- Select a candidate
   candidateSelection(0); 
 
-  if (0 != fpCand) {
-    fillHist(); 
-  }
+//   if (0 != fpCand) {
+//     fillHist(); 
+//   }
 
 }
 
@@ -56,10 +56,6 @@ void muCharmReader::eventProcessing() {
 void muCharmReader::initVariables() {
 
   
-  fGoodMCKinematics = fGoodL1 = fGoodHLT = fGoodEvent = false; 
-  fGoodMuonsID = fGoodMuonsPT = false; 
-  fGoodTracks = fGoodTracksPT = false; 
-  fGoodCandPT = false; 
 
 }
 
@@ -67,18 +63,25 @@ void muCharmReader::initVariables() {
 // ----------------------------------------------------------------------
 void muCharmReader::candidateSelection(int mode) {
 
-  fCandPt = fCandMass = -1.; 
-  fpCand = 0; 
-  
   TAnaCand *pCand(0);
   vector<int> lCands;
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
     pCand = fpEvt->getCand(iC);
-    if (50 == pCand->fType) {
+    if (MCTYPE == pCand->fType) {
       fillTMCand(pCand, 50);
     }
+
     if (TYPE != pCand->fType) continue;
 
+    // -- check that candidate fulfilled track selection
+    TAnaTrack *pc1 = fpEvt->getSigTrack(pCand->fSig1); 
+    TAnaTrack *pc2 = fpEvt->getSigTrack(pCand->fSig1+1); 
+    if (0 == pc1->fInt1) continue;
+    if (0 == pc2->fInt1) continue;
+
+    if (pCand->fVtx.fChi2 > VTXCHI2) continue; 
+    if (pCand->fPlab.Perp() < CHARMPTLO) continue; 
+    
     lCands.push_back(iC); 
   }
 
@@ -89,35 +92,34 @@ void muCharmReader::candidateSelection(int mode) {
 
   int best(0); 
   if (nc > 1) {
-    double chi2Min(99.), chi2(0.); 
+    double ptMax(-1), pt(0.); 
     for (unsigned int iC = 0; iC < lCands.size(); ++iC) {
       pCand = fpEvt->getCand(lCands[iC]); 
 
-      chi2 = pCand->fVtx.fChi2; 
+      pt = pCand->fPlab.Perp(); 
 
       if (0 == mode) {
-	if (chi2 < chi2Min) {
-	  chi2Min = chi2; 
+	if (pt > ptMax) {
+	  ptMax = pt; 
 	  best = lCands[iC]; 
 	}
       }
     }
   }
 
-
   if (best > -1) {
-    fpCand = fpEvt->getCand(best); 
-    fCandPt   = pCand->fPlab.Perp();
-    
-    TAnaTrack *pc1 = fpEvt->getSigTrack(pCand->fSig1); 
-    TAnaTrack *pc2 = fpEvt->getSigTrack(pCand->fSig1+1); 
-    
-    TLorentzVector a1, a2, a0; 
-    a1.SetVectM(pc1->fPlab, MKAON); 
-    a2.SetVectM(pc2->fPlab, MPION); 
-    a0 = a1 + a2; 
+    fpCand1 = fpEvt->getCand(best); 
 
-    fCandMass = a0.M();
+  //     TAnaTrack *pc1 = fpEvt->getSigTrack(pCand->fSig1); 
+  //     TAnaTrack *pc2 = fpEvt->getSigTrack(pCand->fSig1+1); 
+  
+  //     TLorentzVector a1, a2, a0; 
+  //     a1.SetVectM(pc1->fPlab, MKAON); 
+  //     a2.SetVectM(pc2->fPlab, MPION); 
+  //     a0 = a1 + a2; 
+  
+  //     fCandMass = a0.M();
+
   }
 }
 
@@ -209,11 +211,9 @@ void muCharmReader::trackSelection() {
 
       // -- Use spare variables in the RecTrack as bookmark whether it passed the signal selection
       ps[i]->fInt1 = 1; 
-      ps[i]->fInt2 = 1; 
       
-      //      if (pt->fTrackQuality < 0)     ps[i]->fInt1 = 0; 
-      if (pt->fPlab.Perp() < MUPTLO) ps[i]->fInt2 = 0; 
-
+      if (0 == i && pt->fPlab.Perp() < KAPTLO) ps[i]->fInt1 = 0; 
+      if (1 == i && pt->fPlab.Perp() < PIPTLO) ps[i]->fInt1 = 0; 
     }
 
   }
@@ -232,10 +232,10 @@ void muCharmReader::fillHist() {
 
   ((TH1D*)fpHistFile->Get("h1"))->Fill(fpEvt->nRecTracks()); 
 
-  if (0 != fpCand) {
-    ((TH1D*)fpHistFile->Get("h10"))->Fill(fCandPt); 
-    ((TH1D*)fpHistFile->Get("h11"))->Fill(fCandMass); 
-    ((TH1D*)fpHistFile->Get("h12"))->Fill(fpCand->fVtx.fChi2); 
+  if (0 != fpCand1) {
+    ((TH1D*)fpHistFile->Get("h10"))->Fill(fpCand1->fPlab.Perp()); 
+    ((TH1D*)fpHistFile->Get("h11"))->Fill(fpCand1->fMass); 
+    ((TH1D*)fpHistFile->Get("h12"))->Fill(fpCand1->fVtx.fChi2); 
 
     fTree->Fill(); 
   }
@@ -259,8 +259,6 @@ void muCharmReader::bookHist() {
   // -- Reduced Tree
   fTree = new TTree("events", "events");
   fTree->Branch("run",    &fRun, "run/I");
-  fTree->Branch("pt",     &fCandPt, "pt/D");
-  fTree->Branch("m",      &fCandMass, "pt/D");
 
 }
 
@@ -297,12 +295,25 @@ void muCharmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "TYPE:           " << TYPE << endl;
     }
 
+    if (!strcmp(CutName, "MCTYPE")) {
+      MCTYPE = int(CutValue); ok = 1;
+      if (dump) cout << "MCTYPE:           " << MCTYPE << endl;
+    }
+
     if (!strcmp(CutName, "CHARMPTLO")) {
       CHARMPTLO = CutValue; ok = 1;
       if (dump) cout << "CHARMPTLO:           " << CHARMPTLO << " GeV" << endl;
       ibin = 11;
       hcuts->SetBinContent(ibin, CHARMPTLO);
       hcuts->GetXaxis()->SetBinLabel(ibin, "p_{T}^{min}(B_{s}) [GeV]");
+    }
+
+    if (!strcmp(CutName, "VTXCHI2")) {
+      VTXCHI2 = CutValue; ok = 1;
+      if (dump) cout << "VTXCHI2:           " << VTXCHI2 << " " << endl;
+      ibin = 11;
+      hcuts->SetBinContent(ibin, VTXCHI2);
+      hcuts->GetXaxis()->SetBinLabel(ibin, "#chi^{2}");
     }
 
     if (!strcmp(CutName, "CHARMETALO")) {
@@ -321,6 +332,21 @@ void muCharmReader::readCuts(TString filename, int dump) {
       hcuts->GetXaxis()->SetBinLabel(ibin, "#eta^{max}(B_{s})");
     }
 
+    if (!strcmp(CutName, "KAPTLO")) {
+      KAPTLO = CutValue; ok = 1;
+      if (dump) cout << "KAPTLO:           " << KAPTLO << " GeV" << endl;
+      ibin = 21;
+      hcuts->SetBinContent(ibin, KAPTLO);
+      hcuts->GetXaxis()->SetBinLabel(ibin, "p_{T}^{min}(K)");
+    }
+
+    if (!strcmp(CutName, "PIPTLO")) {
+      PIPTLO = CutValue; ok = 1;
+      if (dump) cout << "PIPTLO:           " << PIPTLO << " GeV" << endl;
+      ibin = 21;
+      hcuts->SetBinContent(ibin, PIPTLO);
+      hcuts->GetXaxis()->SetBinLabel(ibin, "p_{T}^{min}(#pi)");
+    }
     if (!strcmp(CutName, "MUPTLO")) {
       MUPTLO = CutValue; ok = 1;
       if (dump) cout << "MUPTLO:           " << MUPTLO << " GeV" << endl;
