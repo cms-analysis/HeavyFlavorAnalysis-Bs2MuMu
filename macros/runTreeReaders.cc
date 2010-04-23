@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
   if (readerName == "bmmReader") a = new bmmReader(chain, TString(evtClassName));
   else if (readerName == "massReader") a = new massReader(chain,TString(evtClassName));
   else if (readerName == "dumpReader") a = new dumpReader(chain,TString(evtClassName));
-  else if (readerName == "dpReader") a = new dumpReader(chain,TString(evtClassName));
+  else if (readerName == "dpReader") a = new dpReader(chain,TString(evtClassName));
   else if (readerName == "copyReader") a = new copyReader(chain,TString(evtClassName));
   else if (readerName == "muCharmReader") a = new muCharmReader(chain,TString(evtClassName));
   
