@@ -16,6 +16,7 @@
 
 #include "bmmReader.hh"
 #include "dpReader.hh"
+#include "d0Reader.hh"
 #include "massReader.hh"
 #include "copyReader.hh"
 #include "dumpReader.hh"
@@ -162,6 +163,7 @@ int main(int argc, char *argv[]) {
   else if (readerName == "massReader") a = new massReader(chain,TString(evtClassName));
   else if (readerName == "dumpReader") a = new dumpReader(chain,TString(evtClassName));
   else if (readerName == "dpReader") a = new dpReader(chain,TString(evtClassName));
+  else if (readerName == "d0Reader") a = new d0Reader(chain,TString(evtClassName));
   else if (readerName == "copyReader") a = new copyReader(chain,TString(evtClassName));
   else if (readerName == "muCharmReader") a = new muCharmReader(chain,TString(evtClassName));
   
