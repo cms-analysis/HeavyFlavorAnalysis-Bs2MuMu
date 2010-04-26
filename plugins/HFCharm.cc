@@ -33,17 +33,19 @@ using namespace edm;
 // ----------------------------------------------------------------------
 HFCharm::HFCharm(const ParameterSet& iConfig) :
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
-  fMaxTracks(iConfig.getUntrackedParameter<int>("maxTracks", 150)), 
+  fMaxTracks(iConfig.getUntrackedParameter<int>("maxTracks", 1000)), 
   fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("goodTracks"))), 
   fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexLabel", InputTag("offlinePrimaryVertices"))),
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
-  fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 1.0)), 
   fUseMuon(iConfig.getUntrackedParameter<int>("useMuon", 0)), 
   fPhiWindow(iConfig.getUntrackedParameter<double>("phiWindow", 0.3)), 
   fDWindow(iConfig.getUntrackedParameter<double>("DWindow", 0.3)), 
-  fTrackPt(iConfig.getUntrackedParameter<double>("trackPt", 0.4)), 
+  fLcWindow(iConfig.getUntrackedParameter<double>("LcWindow", 0.4)), 
+  fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 1.0)), 
+  fProtonPt(iConfig.getUntrackedParameter<double>("protonPt", 1.0)), 
   fKaonPt(iConfig.getUntrackedParameter<double>("kaonPt", 1.0)), 
   fPionPt(iConfig.getUntrackedParameter<double>("pionPt", 1.0)), 
+  fTrackPt(iConfig.getUntrackedParameter<double>("trackPt", 0.4)), 
   fDeltaR(iConfig.getUntrackedParameter<double>("deltaR", 1.5)),
   fType(iConfig.getUntrackedParameter<int>("type", 1)) {
   using namespace std;
@@ -52,12 +54,14 @@ HFCharm::HFCharm(const ParameterSet& iConfig) :
   cout << "---  tracksLabel:              " << fTracksLabel << endl;
   cout << "---  PrimaryVertexLabel:       " << fPrimaryVertexLabel << endl;
   cout << "---  muonsLabel:               " << fMuonsLabel << endl;
-  cout << "---  muonPt:                   " << fMuonPt << endl;
   cout << "---  useMuon:                  " << fUseMuon << endl;
   cout << "---  phiWindow:                " << fPhiWindow << endl;
   cout << "---  DWindow:                  " << fDWindow << endl;
-  cout << "---  trackPt:                  " << fTrackPt << endl;
+  cout << "---  muonPt:                   " << fMuonPt << endl;
+  cout << "---  protonPt:                 " << fProtonPt << endl;
   cout << "---  kaonPt:                   " << fKaonPt << endl;
+  cout << "---  pionPt:                   " << fPionPt << endl;
+  cout << "---  trackPt:                  " << fTrackPt << endl;
   cout << "---  deltaR:                   " << fDeltaR << endl;
   cout << "---  type:                     " << fType << endl;
   cout << "----------------------------------------------------------------------" << endl;
@@ -107,7 +111,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     return;
   }
 
-  if (hTracks->size() > fMaxTracks) {
+  if (hTracks->size() > static_cast<unsigned int>(fMaxTracks)) {
     cout << "==>HFCharm> Too many tracks " << hTracks->size() << ", skipping" << endl;
     return;
   }
@@ -131,24 +135,34 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   }
 
   // -- Build lists
-  TLorentzVector muon, dzero, dplus, kaon, pion, track, kaon1, kaon2, pion1, pion2;
+  TLorentzVector muon, lambdac, dzero, dplus, kaon, pion, track, kaon1, kaon2, pion1, pion2;
   TLorentzVector tlv; 
-  vector<pair<int, TLorentzVector> > kalist, pilist, mulist; 
+  vector<pair<int, TLorentzVector> > prlist, kalist, pilist, mulist; 
   mulist.reserve(20); 
-  pilist.reserve(200); 
-  kalist.reserve(200); 
+  pilist.reserve(1000); 
+  kalist.reserve(1000); 
+  prlist.reserve(1000); 
 
   int    muMaxIdx(-1), muMaxQ(0); 
   double muMaxPt(-99.), muPt(0.); 
   for (unsigned int itrack = 0; itrack < hTracks->size(); ++itrack){    
     TrackBaseRef rTrackView(hTracks, itrack);
     Track tTrack(*rTrackView);
-    if (tTrack.pt() < fPionPt)  continue;
-    tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MPION); 
-    pilist.push_back(make_pair(itrack, tlv));
-    if (tTrack.pt() < fKaonPt)  continue;
-    tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MKAON); 
-    kalist.push_back(make_pair(itrack, tlv));
+    if (tTrack.pt() > fPionPt)  {
+      tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MPION); 
+      pilist.push_back(make_pair(itrack, tlv));
+    }
+
+    if (tTrack.pt() > fKaonPt) {
+      tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MKAON); 
+      kalist.push_back(make_pair(itrack, tlv));
+    }
+
+    if (tTrack.pt() > fProtonPt) {
+      tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MPROTON); 
+      prlist.push_back(make_pair(itrack, tlv));
+    }
+
     for (unsigned int im = 0; im < muonIndices.size(); ++im) {
       if (muonIndices[im] == itrack) {
 	muPt = tTrack.pt();
@@ -168,11 +182,12 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
   HFTwoParticleCombinatorics a(fVerbose); 
   vector<pair<int, int> > kapiList; 
-  a.combine(kapiList, kalist, pilist, 0.6, 2.1, 0); 
+  a.combine(kapiList, kalist, pilist, 0.5, 2.5, 0); 
 
   HFThreeParticleCombinatorics b(fVerbose);
   vector<triplet> kapipiList;
-  b.combine(kapipiList, kalist, pilist,0.6, 2.1, 0);
+  b.combine(kapipiList, kalist, pilist,0.6, 2.3, 0);
+
 
   if (fVerbose > 0) cout << "==>HFCharm> K-pi list size: " << kapiList.size() << endl;
   if (fVerbose > 0) cout << "==>HFCharm> K-pi-pi list size: " << kapipiList.size() << endl;
@@ -182,9 +197,9 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   vector<int> trackIndices;
   vector<double> trackMasses;
 
-  // -------------------------
-  // -- Build (K pi) (+ stuff)
-  // -------------------------
+  // ----------------------------
+  // -- D0 -> K- Pi+   (with mu-)
+  // ----------------------------
   for (unsigned int i = 0; i < kapiList.size(); ++i) {
     unsigned int iKaon = kapiList[i].first; 
     unsigned int iPion = kapiList[i].second; 
@@ -203,9 +218,6 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
       if (muon.DeltaR(pion) > fDeltaR) continue; 
     }
     
-    // ----------
-    // -- KVF: D0
-    // ----------
     dzero = kaon + pion; 
     if ((TMath::Abs(dzero.M() - MD0) < fDWindow)) {
       trackList.clear();
@@ -225,18 +237,49 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	Track tMuon(*muTrackView);
 	trackList.push_back(tMuon); 
 	trackIndices.push_back(muMaxIdx); 
-	trackMasses.push_back(MMUON);
-        muon.SetPtEtaPhiM(tMuon.pt(), tMuon.eta(), tMuon.phi(), MMUON); 
+	trackMasses.push_back(-MMUON); // Note negative mass: fVar1 contains D0 mass WITHOUT muon 
       }
 
       aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+10, 2); 
     }	
+  }
 
-    // ---------------------------------
-    // -- KVF: D+ (K* mu nu)
-    // ---------------------------------
 
-    if (fUseMuon && (TMath::Abs(dzero.M() - MKSTAR) < fDWindow)) {
+  // ----------------------------------------------
+  // -- LambdaC+ -> proton+ kaon- pion+  (with mu-)
+  // ----------------------------------------------
+  for (unsigned int i = 0; i < kapiList.size(); ++i) {
+    unsigned int iKaon = kapiList[i].first; 
+    unsigned int iPion = kapiList[i].second; 
+    
+    TrackBaseRef kaTrackView(hTracks, iKaon);
+    Track tKaon(*kaTrackView);
+    kaon.SetPtEtaPhiM(tKaon.pt(), tKaon.eta(), tKaon.phi(), MKAON); 
+    
+    TrackBaseRef piTrackView(hTracks, iPion);
+    Track tPion(*piTrackView);
+    pion.SetPtEtaPhiM(tPion.pt(), tPion.eta(), tPion.phi(), MPION); 
+    
+    if (fUseMuon) {
+      if (tKaon.charge()*muMaxQ < 0) continue; 
+      if (muon.DeltaR(kaon) > fDeltaR) continue; 
+      if (muon.DeltaR(pion) > fDeltaR) continue; 
+    }
+    
+    
+    for (unsigned int iTrack = 0; iTrack < hTracks->size(); ++iTrack){    
+      if (iTrack == iKaon) continue; 
+      if (iTrack == iPion) continue; 
+      
+      TrackBaseRef rTrackView(hTracks, iTrack);
+      Track tTrack(*rTrackView);
+      if (tTrack.charge() == tKaon.charge()) continue; 
+      
+      track.SetPtEtaPhiM(tTrack.pt(), tTrack.eta(), tTrack.phi(), MPROTON); 
+      if (fUseMuon) {
+	if (muon.DeltaR(track) > fDeltaR) continue; 
+      }
+
       trackList.clear();
       trackIndices.clear(); 
       trackMasses.clear(); 
@@ -249,30 +292,70 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
       trackIndices.push_back(iPion); 
       trackMasses.push_back(MPION);
       
-      TrackBaseRef muTrackView(hTracks, muMaxIdx);
-      Track tMuon(*muTrackView);
-      trackList.push_back(tMuon); 
-      trackIndices.push_back(muMaxIdx); 
-      trackMasses.push_back(MMUON);
-      muon.SetPtEtaPhiM(tMuon.pt(), tMuon.eta(), tMuon.phi(), MMUON); 
-  
-      dzero = kaon + pion +muon; 
-      if ((TMath::Abs(dzero.M() - MD0) < fDWindow)) {
-        aKal.doFit(trackList, trackIndices, trackMasses, 10000+50, 3); 	
+      trackList.push_back(tTrack); 
+      trackIndices.push_back(iTrack); 
+      trackMasses.push_back(MPROTON);
+
+      lambdac = track + kaon + pion; 
+      if (fUseMuon && (TMath::Abs(lambdac.M() - MLAMBDA_C) < fLcWindow)) {
+	trackList.clear();
+	trackIndices.clear(); 
+	trackMasses.clear(); 
+	
+	trackList.push_back(tKaon); 
+	trackIndices.push_back(iKaon); 
+	trackMasses.push_back(MKAON);
+	
+	trackList.push_back(tPion); 
+	trackIndices.push_back(iPion); 
+	trackMasses.push_back(MPION);
+
+	trackList.push_back(tTrack); 
+	trackIndices.push_back(iTrack); 
+	trackMasses.push_back(MPROTON);
+	
+	TrackBaseRef muTrackView(hTracks, muMaxIdx);
+	Track tMuon(*muTrackView);
+	trackList.push_back(tMuon); 
+	trackIndices.push_back(muMaxIdx); 
+	trackMasses.push_back(-MMUON);
+      }
+
+      if ((TMath::Abs(lambdac.M() - MLAMBDA_C) < fLcWindow)) {
+        aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+50, 3); 	
       }    
-
     }
+  }
 
-    // ---------------
-    // -- KVF: D*
-    // ---------------
+  // -----------------------------------
+  // -- D(*)+ -> K- pi+ pi+   (with mu-)
+  // -----------------------------------
+  for (unsigned int i = 0; i < kapiList.size(); ++i) {
+    unsigned int iKaon = kapiList[i].first; 
+    unsigned int iPion = kapiList[i].second; 
+    
+    TrackBaseRef kaTrackView(hTracks, iKaon);
+    Track tKaon(*kaTrackView);
+    kaon.SetPtEtaPhiM(tKaon.pt(), tKaon.eta(), tKaon.phi(), MKAON); 
+    
+    TrackBaseRef piTrackView(hTracks, iPion);
+    Track tPion(*piTrackView);
+    pion.SetPtEtaPhiM(tPion.pt(), tPion.eta(), tPion.phi(), MPION); 
+    
+    if (fUseMuon) {
+      if (tKaon.charge()*muMaxQ < 0) continue; 
+      if (muon.DeltaR(kaon) > fDeltaR) continue; 
+      if (muon.DeltaR(pion) > fDeltaR) continue; 
+    }
+    
     for (unsigned int iTrack = 0; iTrack < hTracks->size(); ++iTrack){    
       if (iTrack == iKaon) continue; 
       if (iTrack == iPion) continue; 
+
       TrackBaseRef rTrackView(hTracks, iTrack);
       Track tTrack(*rTrackView);
       if (tTrack.charge() == tKaon.charge()) continue; 
-      
+
       track.SetPtEtaPhiM(tTrack.pt(), tTrack.eta(), tTrack.phi(), MPION); 
       if (fUseMuon) {
 	if (muon.DeltaR(track) > fDeltaR) continue; 
@@ -299,22 +382,29 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	Track tMuon(*muTrackView);
 	trackList.push_back(tMuon); 
 	trackIndices.push_back(muMaxIdx); 
-	trackMasses.push_back(MMUON);
+	trackMasses.push_back(-MMUON);
       }
 
       // -- D*, with (K pi) in D0 mass window, fitting only D0
-      if ((TMath::Abs(dzero.M() - MD0) < 0.1)) {
+      dzero = kaon + pion; 
+      if ((TMath::Abs(dzero.M() - MD0) < 0.2)) {
 	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+20, 2); 	
       }
       
-     }
+      // -- D+, with fitting of all three tracks
+      dplus = kaon + pion + track; 
+      if ((TMath::Abs(dplus.M() - MDPLUS) < fDWindow)) {
+	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+60, 3);
+      }
+
+
+    }
   }
 
 
   // -------------------
   // -- KVF: D+ (K pi pi)
   // -------------------
-
   for (vector<triplet>::iterator it=kapipiList.begin(); it!=kapipiList.end(); ++it) {
     
     TrackBaseRef kaTrackView(hTracks, it->ka);
@@ -339,9 +429,12 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     if (tPion1.charge() == tKaon.charge()) continue; 
     if (tPion2.charge() == tKaon.charge()) continue; 
       
+    // ??? This is almost certainly wrong?!
+    /*
     if (fUseMuon) {
 	if (muon.DeltaR(track) > fDeltaR) continue; 
     }
+    */
 
     trackList.clear();
     trackIndices.clear(); 
@@ -364,7 +457,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	Track tMuon(*muTrackView);
 	trackList.push_back(tMuon); 
 	trackIndices.push_back(muMaxIdx); 
-	trackMasses.push_back(MMUON);
+	trackMasses.push_back(-MMUON);
     }
 
     // -- D+, with fitting of all three tracks
@@ -375,12 +468,11 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   }
 
 
-
-  // ---------------------
-  // -- Build (K K) + pion
-  // ---------------------
+  // ----------------------------------
+  // -- D(s)+ -> K+ K- pi+   (with mu-)
+  // ----------------------------------
   vector<pair<int, int> > phiList; 
-  a.combine(phiList, kalist, kalist, 0.9, 1.15, 1); 
+  a.combine(phiList, kalist, kalist, 0.9, 2.0, 1); 
   if (fVerbose > 0) cout << "==>HFCharm> KK list size: " << phiList.size() << endl;
   
   for (unsigned int i = 0; i < phiList.size(); ++i) {
@@ -410,6 +502,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
       track.SetPtEtaPhiM(tTrack.pt(), tTrack.eta(), tTrack.phi(), MPION); 
       if (fUseMuon) {
+	if (tTrack.charge()*muMaxQ > 0) continue; 
 	if (muon.DeltaR(track) > fDeltaR) continue; 
       }
 
@@ -434,11 +527,12 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	Track tMuon(*muTrackView);
 	trackList.push_back(tMuon); 
 	trackIndices.push_back(muMaxIdx); 
-	trackMasses.push_back(MMUON);
+	trackMasses.push_back(-MMUON);
       }
 
       dplus = kaon1 + kaon2 + track; 
 
+      // unified very wide window for both D+ and Ds+
       if (dplus.M() > 1.5 && dplus.M() < 2.5) {
 	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+40, 3);
       }

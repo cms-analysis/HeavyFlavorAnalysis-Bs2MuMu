@@ -87,20 +87,23 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
   }
   
   // -- Build composite
-  TLorentzVector comp, m1;
+  TLorentzVector comp, m1, comp2;
   if (ntracks < 0) {
     for (unsigned int i = 0; i < trackList.size(); ++i) {
-      m1.SetXYZM(refT[i].px(), refT[i].py(), refT[i].pz(), trackMasses[i]); 
+      m1.SetXYZM(refT[i].px(), refT[i].py(), refT[i].pz(), TMath::Abs(trackMasses[i])); 
       comp += m1; 
+      if (trackMasses[i] > 0) comp2 += m1; 
     }
   } else {
     for (int i = 0; i < ntracks; ++i) {
-      m1.SetXYZM(refT[i].px(), refT[i].py(), refT[i].pz(), trackMasses[i]); 
+      m1.SetXYZM(refT[i].px(), refT[i].py(), refT[i].pz(), TMath::Abs(trackMasses[i])); 
       comp += m1; 
+      if (trackMasses[i] > 0) comp2 += m1; 
     }
     for (unsigned int i = ntracks; i < trackList.size(); ++i) {
-      m1.SetXYZM(trackList[i].px(), trackList[i].py(), trackList[i].pz(), trackMasses[i]); 
+      m1.SetXYZM(trackList[i].px(), trackList[i].py(), trackList[i].pz(), TMath::Abs(trackMasses[i])); 
       comp += m1; 
+      if (trackMasses[i] > 0) comp2 += m1; 
     }
 
   }
@@ -152,17 +155,18 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
         
   // -- fill candidate
   TAnaCand *pCand = gHFEvent->addCand();
-  pCand->fPlab = comp.Vect();
-  pCand->fMass = comp.M();
-  pCand->fVtx  = anaVtx;    
-  pCand->fType = (type != 0? type: fType);
-  pCand->fDau1 = -1;
-  pCand->fDau2 = -1;
-  pCand->fSig1 = gHFEvent->nSigTracks();
-  pCand->fSig2 = pCand->fSig1 + trackList.size() - 1;
+  pCand->fPlab    = comp.Vect();
+  pCand->fMass    = comp.M();
+  pCand->fVtx     = anaVtx;    
+  pCand->fType    = (type != 0? type: fType);
+  pCand->fDau1    = -1;
+  pCand->fDau2    = -1;
+  pCand->fSig1    = gHFEvent->nSigTracks();
+  pCand->fSig2    = pCand->fSig1 + trackList.size() - 1;
 
-  pCand->fVar1 = minDist;
-  pCand->fVar2 = maxDist;
+  pCand->fMinDoca = minDist;
+  pCand->fMaxDoca = maxDist;
+  pCand->fVar1    = comp2.M();
   
   // -- fill refitted sig tracks
   Track trk; 
@@ -202,10 +206,11 @@ void HFKalmanVertexFit::doNotFit(vector<Track>  &trackList,
 				 ) {
 
   // -- Build composite
-  TLorentzVector comp, m1;
+  TLorentzVector comp, m1, comp2;
   for (unsigned int i = 0; i < trackList.size(); ++i) {
-    m1.SetXYZM(trackList[i].px(), trackList[i].py(), trackList[i].pz(), trackMasses[i]); 
+    m1.SetXYZM(trackList[i].px(), trackList[i].py(), trackList[i].pz(), TMath::Abs(trackMasses[i])); 
     comp += m1; 
+    if (trackMasses[i] > 0) comp2 += m1; 
   }
     
   // -- Build dummy vertex for ntuple
@@ -262,17 +267,18 @@ void HFKalmanVertexFit::doNotFit(vector<Track>  &trackList,
         
   // -- fill candidate
   TAnaCand *pCand = gHFEvent->addCand();
-  pCand->fPlab = comp.Vect();
-  pCand->fMass = comp.M();
-  pCand->fVtx  = anaVtx;    
-  pCand->fType = (type != 0? type: fType);
-  pCand->fDau1 = -1;
-  pCand->fDau2 = -1;
-  pCand->fSig1 = gHFEvent->nSigTracks();
-  pCand->fSig2 = pCand->fSig1 + trackList.size() - 1;
+  pCand->fPlab    = comp.Vect();
+  pCand->fMass    = comp.M();
+  pCand->fVtx     = anaVtx;    
+  pCand->fType    = (type != 0? type: fType);
+  pCand->fDau1    = -1;
+  pCand->fDau2    = -1;
+  pCand->fSig1    = gHFEvent->nSigTracks();
+  pCand->fSig2    = pCand->fSig1 + trackList.size() - 1;
 
-  pCand->fVar1 = minDist;
-  pCand->fVar2 = maxDist;
+  pCand->fMinDoca = minDist;
+  pCand->fMaxDoca = maxDist;
+  pCand->fVar1    = comp2.M();
   
   // -- fill original tracks for sig tracks
   for (unsigned int i = 0; i < trackList.size(); ++i) {

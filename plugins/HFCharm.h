@@ -42,10 +42,9 @@ class HFCharm : public edm::EDAnalyzer {
   edm::InputTag fTracksLabel, fPrimaryVertexLabel;
   edm::InputTag fMuonsLabel;
 
-  double        fMuonPt; 
   int           fUseMuon;
-  double        fPhiWindow, fDWindow; 
-  double        fTrackPt, fKaonPt, fPionPt, fDeltaR;
+  double        fPhiWindow, fDWindow, fLcWindow; 
+  double        fMuonPt, fProtonPt, fKaonPt, fPionPt, fTrackPt, fDeltaR;
 
   int           fType; 
 

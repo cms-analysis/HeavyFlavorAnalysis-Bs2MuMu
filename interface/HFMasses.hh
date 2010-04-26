@@ -6,11 +6,12 @@
 #define MKSTAR     0.8960 
 #define MPHI       1.0195
 #define MLAMBDA_0  1.1157
-#define MJPSI      3.0969
 #define MD0        1.8645 
 #define MDS        1.9682
 #define MDPLUS     1.8693 
 #define MDSTARPLUS 2.0100     
+#define MLAMBDA_C  2.2865
+#define MJPSI      3.0969
 #define MB_0       5.2795
 #define MBPLUS     5.2792
 #define MBS        5.3663

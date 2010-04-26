@@ -21,7 +21,13 @@ public:
   ~HFKalmanVertexFit();
 
   // -- do a Kalman Vertex Fit
-  void doFit(vector<Track> &trackList, vector<int> &trackIndices, vector<double> &trackMasses, int type = 0, int ntracks = -1);
+  // Note: ntracksToVertex:    how many tracks are used for vertexing
+  //       trackMasses[i] < 0: a second invariant mass is computed without the tracks whose mass < 0
+  void doFit(vector<Track> &trackList, vector<int> &trackIndices, vector<double> &trackMasses, 
+	     int type = 0, int ntracksToVertex = -1);
+
+
+
   // -- Just combine the 4-vectors
   void doNotFit(vector<Track> &trackList, vector<int> &trackIndices, vector<double> &trackMasses, int type = 0);
   
