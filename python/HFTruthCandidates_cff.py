@@ -226,6 +226,25 @@ truthDstarToD0PiToKPiPi = cms.EDAnalyzer(
     daughtersID  = cms.untracked.vint32(421, 321, -211, 211)
     )
 
+# ----------------------------------------------------------------------
+truthDpToKKPi = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(411),
+    type         = cms.untracked.int32(55),
+    GenType      = cms.untracked.int32(-55),
+    daughtersID  = cms.untracked.vint32(321, -321, 211)
+    )
+
+# ----------------------------------------------------------------------
+truthLambdaCToPrKPi = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(4122),
+    type         = cms.untracked.int32(56),
+    GenType      = cms.untracked.int32(-56),
+    daughtersID  = cms.untracked.vint32(2212, -321, 211)
+    )
 
 
 # ######################################################################
@@ -304,6 +323,6 @@ truthRareLambdaBSequence = cms.Sequence(truthLambdaBToPPiDump*truthLambdaBToPKDu
 truthB2JpsiSequence      = cms.Sequence(truthBsDump*truthBd2JpsiKsDump*truthBd2JpsiKstarDump*truthBuDump)
 
 truthOniaSequence        = cms.Sequence(truthPsiToMuMu*truthPsi2SToMuMu*truthUps1SToMuMu*truthUps2SToMuMu*truthUps3SToMuMu)
-truthCharmSequence       = cms.Sequence(truthD0ToKPi*truthDpToKPiPi*truthDpToKstarPi*truthDsToPhiPi*truthDstarToD0PiToKPiPi)
+truthCharmSequence       = cms.Sequence(truthD0ToKPi*truthDpToKPiPi*truthDpToKstarPi*truthDsToPhiPi*truthDstarToD0PiToKPiPi*truthDpToKKPi*truthLambdaCToPrKPi)
 
 truthAllSequence         = cms.Sequence(truthSignalsSequence*truthRareBsSequence*truthRareBdSequence*truthRareBuSequence*truthRareLambdaBSequence*truthB2JpsiSequence*truthOniaSequence*truthCharmSequence)
