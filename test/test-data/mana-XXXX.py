@@ -60,7 +60,7 @@ process.load("HeavyFlavorAnalysis.Bs2MuMu.HFMuonAndTrackCandidates_cff")
 try:
     rootFileName = os.environ["JOB"] + ".root"
 except KeyError:
-    rootFileName = "test.root"
+    rootFileName = "mana-XXXX.root"
 
 process.tree.fileName = rootFileName
 
