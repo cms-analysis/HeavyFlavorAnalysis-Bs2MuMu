@@ -135,7 +135,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   }
 
   // -- Build lists
-  TLorentzVector muon, lambdac, dzero, dplus, kaon, pion, track, kaon1, kaon2, pion1, pion2;
+  TLorentzVector muon, lambdac, dzero, dplus, kaon, pion, track, kaon1, kaon2, pion1, pion2, pion3;
   TLorentzVector tlv; 
   vector<pair<int, TLorentzVector> > prlist, kalist, pilist, mulist; 
   mulist.reserve(20); 
@@ -183,14 +183,8 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   HFTwoParticleCombinatorics a(fVerbose); 
   vector<pair<int, int> > kapiList; 
   a.combine(kapiList, kalist, pilist, 0.5, 2.5, 0); 
-
-  HFThreeParticleCombinatorics b(fVerbose);
-  vector<triplet> kapipiList;
-  b.combine(kapipiList, kalist, pilist,0.6, 2.3, 0);
-
-
+  
   if (fVerbose > 0) cout << "==>HFCharm> K-pi list size: " << kapiList.size() << endl;
-  if (fVerbose > 0) cout << "==>HFCharm> K-pi-pi list size: " << kapipiList.size() << endl;
   
   HFKalmanVertexFit  aKal(fTTB.product(), fPV, 0, fVerbose); 
   vector<Track> trackList; 
@@ -405,51 +399,52 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   // -------------------
   // -- KVF: D+ (K pi pi)
   // -------------------
+
+  vector<triplet> kapipiList;
+
+  HFThreeParticleCombinatorics b(fVerbose);
+  b.combine(kapipiList, kalist, pilist,0.6, 2.3, 0);
+  if (fVerbose > 0) cout << "==>HFCharm> K-pi-pi list size: " << kapipiList.size() << endl;
+
   for (vector<triplet>::iterator it=kapipiList.begin(); it!=kapipiList.end(); ++it) {
     
-    TrackBaseRef kaTrackView(hTracks, it->ka);
+    TrackBaseRef kaTrackView(hTracks, it->ka());
     Track tKaon(*kaTrackView);
     kaon.SetPtEtaPhiM(tKaon.pt(), tKaon.eta(), tKaon.phi(), MKAON); 
 
-    TrackBaseRef pi1TrackView(hTracks, it->pi1);
+    TrackBaseRef pi1TrackView(hTracks, it->pi1());
     Track tPion1(*pi1TrackView);
     pion1.SetPtEtaPhiM(tPion1.pt(), tPion1.eta(), tPion1.phi(), MPION); 
 
-    TrackBaseRef pi2TrackView(hTracks, it->pi2);
+    TrackBaseRef pi2TrackView(hTracks, it->pi2());
     Track tPion2(*pi2TrackView);
     pion2.SetPtEtaPhiM(tPion2.pt(), tPion2.eta(), tPion2.phi(), MPION); 
 
     if (fUseMuon) {
       if (tKaon.charge()*muMaxQ < 0) continue; 
       if (muon.DeltaR(kaon) > fDeltaR) continue; 
-      if (muon.DeltaR(pion) > fDeltaR) continue; 
+      if (muon.DeltaR(pion1) > fDeltaR) continue; 
+      if (muon.DeltaR(pion2) > fDeltaR) continue; 
     }
     
 
     if (tPion1.charge() == tKaon.charge()) continue; 
     if (tPion2.charge() == tKaon.charge()) continue; 
       
-    // ??? This is almost certainly wrong?!
-    /*
-    if (fUseMuon) {
-	if (muon.DeltaR(track) > fDeltaR) continue; 
-    }
-    */
-
     trackList.clear();
     trackIndices.clear(); 
     trackMasses.clear(); 
       
     trackList.push_back(tKaon); 
-    trackIndices.push_back(it->ka); 
+    trackIndices.push_back(it->ka()); 
     trackMasses.push_back(MKAON);
       
     trackList.push_back(tPion1); 
-    trackIndices.push_back(it->pi1); 
+    trackIndices.push_back(it->pi1()); 
     trackMasses.push_back(MPION);
       
     trackList.push_back(tPion2); 
-    trackIndices.push_back(it->pi2); 
+    trackIndices.push_back(it->pi2()); 
     trackMasses.push_back(MPION);
 
     if (fUseMuon) {
@@ -466,6 +461,70 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+30, 3);
     }
   }
+  kapipiList.clear();
+
+
+  // -------------------------------
+  // -- KVF: D+ (Kshort pi --> 3 pi)
+  // -------------------------------
+
+  vector<triplet> KshortpiList; 
+  b.combine(KshortpiList, pilist, MKSHORT-0.25, MKSHORT+0.25, 0); 
+
+  for (vector<triplet>::iterator it=KshortpiList.begin(); it!=KshortpiList.end(); ++it) {
+    
+    TrackBaseRef pi1TrackView(hTracks, it->pi1());
+    Track tPion1(*pi1TrackView);
+    pion1.SetPtEtaPhiM(tPion1.pt(), tPion1.eta(), tPion1.phi(), MPION); 
+
+    TrackBaseRef pi2TrackView(hTracks, it->pi2());
+    Track tPion2(*pi2TrackView);
+    pion2.SetPtEtaPhiM(tPion2.pt(), tPion2.eta(), tPion2.phi(), MPION); 
+
+    TrackBaseRef pi3TrackView(hTracks, it->pi3());
+    Track tPion3(*pi3TrackView);
+    pion3.SetPtEtaPhiM(tPion3.pt(), tPion3.eta(), tPion3.phi(), MPION); 
+
+    if (fUseMuon) {
+      if (tPion3.charge()*muMaxQ < 0) continue;                     // pion coming from D+ vertex
+      //      if (muon.DeltaR(pion1) > fDeltaR) continue; 
+      //      if (muon.DeltaR(pion2) > fDeltaR) continue; 
+      if (muon.DeltaR(pion3) > fDeltaR) continue; 
+    }
+    
+    if (tPion1.charge() == tPion2.charge()) continue; 
+      
+    trackList.clear();
+    trackIndices.clear(); 
+    trackMasses.clear(); 
+      
+    trackList.push_back(tPion1); 
+    trackIndices.push_back(it->pi1()); 
+    trackMasses.push_back(MPION);
+      
+    trackList.push_back(tPion2); 
+    trackIndices.push_back(it->pi2()); 
+    trackMasses.push_back(MPION);
+      
+    trackList.push_back(tPion3); 
+    trackIndices.push_back(it->pi3()); 
+    trackMasses.push_back(MPION);
+
+    if (fUseMuon) {
+	TrackBaseRef muTrackView(hTracks, muMaxIdx);
+	Track tMuon(*muTrackView);
+	trackList.push_back(tMuon); 
+	trackIndices.push_back(muMaxIdx); 
+	trackMasses.push_back(-MMUON);
+    }
+
+    // -- Kshort, with fitting of two tracks only
+    TLorentzVector kshort = pion1 + pion2; 
+    if ((TMath::Abs(kshort.M() - MKSHORT) < fDWindow)) {
+	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+30, 2);
+    }
+  }
+  KshortpiList.clear();
 
 
   // ----------------------------------
