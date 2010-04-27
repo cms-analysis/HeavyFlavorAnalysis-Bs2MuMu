@@ -422,7 +422,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   vector<triplet> kapipiList;
 
   HFThreeParticleCombinatorics b(fVerbose);
-  b.combine(kapipiList, kalist, pilist,0.6, 2.3, 0);
+  b.combine(kapipiList, kalist, pilist,0.6, 2.3);
   if (fVerbose > 0) cout << "==>HFCharm> K-pi-pi list size: " << kapipiList.size() << endl;
 
   for (vector<triplet>::iterator it=kapipiList.begin(); it!=kapipiList.end(); ++it) {
@@ -488,8 +488,12 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   // -------------------------------
 
   vector<triplet> KshortpiList; 
+<<<<<<< HFCharm.cc
+  b.combine(KshortpiList, pilist, 0.6, 2.3, MKSHORT-0.25, MKSHORT+0.25); 
+=======
   b.combine(KshortpiList, pilist, MKSHORT-0.25, MKSHORT+0.25, 0); 
   if (fVerbose > 0) cout << "==>HFCharm> Kshortpi list size: " << KshortpiList.size() << endl;
+>>>>>>> 1.7
 
   for (vector<triplet>::iterator it=KshortpiList.begin(); it!=KshortpiList.end(); ++it) {
     
@@ -541,7 +545,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     // -- Kshort, with fitting of two tracks only
     TLorentzVector kshort = pion1 + pion2; 
     if ((TMath::Abs(kshort.M() - MKSHORT) < fDWindow)) {
-	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+30, 2);
+	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+60, 2);
     }
   }
   KshortpiList.clear();
