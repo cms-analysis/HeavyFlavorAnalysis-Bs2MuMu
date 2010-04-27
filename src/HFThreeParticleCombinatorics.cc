@@ -113,7 +113,6 @@ void HFThreeParticleCombinatorics::combine(vector<triplet> &combList,
     for (j = i+1; j != piList.end(); ++j) {                                  // second pion from Kshort
       mom = i->second +  j->second;                                          // Resonance candidate
       mass = mom.M(); 
-      cout << "pi pi mass: " << i->first << " / " << j->first<< "  = "<<mass<<endl;
       if(hiResMass>0. && (loResMass > mass || mass > hiResMass)) continue;   // ignore if resonance outside mass window
       for(k = piList.begin(); k!=piList.end(); k++) {                        // third pion, from D+
 	if (k==i || k==j) continue;                                          // don't use same track twice

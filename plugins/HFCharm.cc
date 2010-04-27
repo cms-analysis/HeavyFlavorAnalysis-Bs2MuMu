@@ -422,7 +422,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   vector<triplet> kapipiList;
 
   HFThreeParticleCombinatorics b(fVerbose);
-  b.combine(kapipiList, kalist, pilist,0.6, 2.3);
+  b.combine(kapipiList, kalist, pilist,1.0, 2.3);
   if (fVerbose > 0) cout << "==>HFCharm> K-pi-pi list size: " << kapipiList.size() << endl;
 
   for (vector<triplet>::iterator it=kapipiList.begin(); it!=kapipiList.end(); ++it) {
@@ -440,14 +440,14 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     pion2.SetPtEtaPhiM(tPion2.pt(), tPion2.eta(), tPion2.phi(), MPION); 
 
     if (fUseMuon) {
-      if (tKaon.charge()*muMaxQ < 0) continue; 
+      if (tKaon.charge()*muMaxQ < 0) continue;                 // muon has same charge as Kaon
       if (muon.DeltaR(kaon) > fDeltaR) continue; 
       if (muon.DeltaR(pion1) > fDeltaR) continue; 
       if (muon.DeltaR(pion2) > fDeltaR) continue; 
     }
     
 
-    if (tPion1.charge() == tKaon.charge()) continue; 
+    if (tPion1.charge() == tKaon.charge()) continue;          // pions have opposite charge from Kaon
     if (tPion2.charge() == tKaon.charge()) continue; 
       
     trackList.clear();
@@ -488,12 +488,8 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   // -------------------------------
 
   vector<triplet> KshortpiList; 
-<<<<<<< HFCharm.cc
-  b.combine(KshortpiList, pilist, 0.6, 2.3, MKSHORT-0.25, MKSHORT+0.25); 
-=======
-  b.combine(KshortpiList, pilist, MKSHORT-0.25, MKSHORT+0.25, 0); 
+  b.combine(KshortpiList, pilist, 0.8, 2.3, MKSHORT-0.25, MKSHORT+0.25); 
   if (fVerbose > 0) cout << "==>HFCharm> Kshortpi list size: " << KshortpiList.size() << endl;
->>>>>>> 1.7
 
   for (vector<triplet>::iterator it=KshortpiList.begin(); it!=KshortpiList.end(); ++it) {
     
@@ -510,13 +506,13 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     pion3.SetPtEtaPhiM(tPion3.pt(), tPion3.eta(), tPion3.phi(), MPION); 
 
     if (fUseMuon) {
-      if (tPion3.charge()*muMaxQ < 0) continue;                     // pion coming from D+ vertex
+      if (tPion3.charge()*muMaxQ > 0) continue;                     // pion coming from D+ vertex has opposite sign from muon
       //      if (muon.DeltaR(pion1) > fDeltaR) continue; 
       //      if (muon.DeltaR(pion2) > fDeltaR) continue; 
       if (muon.DeltaR(pion3) > fDeltaR) continue; 
     }
     
-    if (tPion1.charge() == tPion2.charge()) continue; 
+    if (tPion1.charge() == tPion2.charge()) continue;               // pions from Kshort must have opposite charge
       
     trackList.clear();
     trackIndices.clear(); 

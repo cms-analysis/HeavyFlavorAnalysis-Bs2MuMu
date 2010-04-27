@@ -34,13 +34,22 @@ public:
   
   HFThreeParticleCombinatorics(int verbose = 0);
   ~HFThreeParticleCombinatorics();
+
+// combining particle from KList with two particles from piList into a combination 
+// with mass between loMass and hiMass
+//
   void combine(vector<triplet > &combList, 
-	       vector<pair<int, TLorentzVector> > &tlist, 
-	       double loMass = 0.2, double hiMass = 0.8, int rmDuplicate = 0);
+	       vector<pair<int, TLorentzVector> > &KList, 
+	       vector<pair<int, TLorentzVector> > &piList, 
+	       double loMass = 0.2, double hiMass = 0.8);
+
+// combine three particles from piList into a combination with mass between loMass and hiMass
+// if loResMass and hiResMass >0, the first two particles form a resonance 
+// with mass between loResMass and hiResMass
+//
   void combine(vector<triplet > &combList, 
-	       vector<pair<int, TLorentzVector> > &tlist1, 
-	       vector<pair<int, TLorentzVector> > &tlist2, 
-	       double loMass = 0.4, double hiMass = 20., int rmDuplicate = 0);
+	       vector<pair<int, TLorentzVector> > &piList, 
+	       double loMass = 0.4, double hiMass = 20., double loResMass = 0., double hiResMass = 0.);
 
   int fVerbose; 
 };
