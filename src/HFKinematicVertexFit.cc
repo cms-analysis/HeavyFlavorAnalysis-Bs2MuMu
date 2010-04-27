@@ -233,7 +233,7 @@ void HFKinematicVertexFit::doJpsiFit(vector<Track>  &trackList,
 				trackList[i].eta(),
 				trackList[i].phi()
 				); 
-      pTrack->fIndex  = trackIndices[2+i];
+      pTrack->fIndex  = trackIndices[i];
     }
 
   }

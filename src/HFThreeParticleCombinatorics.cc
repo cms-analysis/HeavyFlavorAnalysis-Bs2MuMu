@@ -72,7 +72,7 @@ void HFThreeParticleCombinatorics::combine(vector<triplet> &combList,
     }
   }
 
-  if (fVerbose > 0) {
+  if (fVerbose > 1) {
       for (vector<triplet>::iterator it=combList.begin(); it != combList.end(); it++) {
 	cout << "K pi pi List: " << it->ka() << " / " << it->pi1() << " / " << it->pi2()<< endl;
     }

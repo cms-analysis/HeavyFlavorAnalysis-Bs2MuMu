@@ -63,7 +63,7 @@ void HFTwoParticleCombinatorics::combine(vector<pair<int, int> > &combList,
     }
   }
 
-  if (fVerbose > 0) {
+  if (fVerbose > 1) {
     for (unsigned int k = 0; k < combList.size(); ++k) {
       cout << "combList. 1: " << combList[k].first << " 2: " << combList[k].second << endl;
     }

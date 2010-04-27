@@ -2,6 +2,9 @@
 #include "HFCharm.h"
 
 #include <iostream>
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
@@ -78,6 +81,14 @@ HFCharm::~HFCharm() {
 // ----------------------------------------------------------------------
 void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
+  pid_t pid = getpid();
+  char line[100]; 
+  sprintf(line, "ps -F %i", pid); 
+  if (fVerbose > 0) {
+    cout << "==>HFCharm: beginning of analyze():" << endl;
+    system(line); 
+  }
+
   // -- get the primary vertex
   Handle<VertexCollection> recoPrimaryVertexCollection;
   iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
@@ -115,7 +126,10 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     cout << "==>HFCharm> Too many tracks " << hTracks->size() << ", skipping" << endl;
     return;
   }
-
+  if (fVerbose > 0) {
+    cout << "==>HFCharm> ntracks = " << hTracks->size() << endl;
+  }
+  
   // -- Transient tracks for vertexing
   iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", fTTB);
   if (!fTTB.isValid()) {
@@ -138,10 +152,10 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   TLorentzVector muon, lambdac, dzero, dplus, kaon, pion, track, kaon1, kaon2, pion1, pion2, pion3;
   TLorentzVector tlv; 
   vector<pair<int, TLorentzVector> > prlist, kalist, pilist, mulist; 
-  mulist.reserve(20); 
-  pilist.reserve(1000); 
-  kalist.reserve(1000); 
-  prlist.reserve(1000); 
+  mulist.reserve(200); 
+  pilist.reserve(2000); 
+  kalist.reserve(2000); 
+  prlist.reserve(2000); 
 
   int    muMaxIdx(-1), muMaxQ(0); 
   double muMaxPt(-99.), muPt(0.); 
@@ -182,9 +196,14 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
   HFTwoParticleCombinatorics a(fVerbose); 
   vector<pair<int, int> > kapiList; 
+  kapiList.reserve(100000); 
   a.combine(kapiList, kalist, pilist, 0.5, 2.5, 0); 
-  
+
+  vector<pair<int, int> > phiList; 
+  a.combine(phiList, kalist, kalist, 0.9, 2.0, 1); 
+
   if (fVerbose > 0) cout << "==>HFCharm> K-pi list size: " << kapiList.size() << endl;
+  if (fVerbose > 0) cout << "==>HFCharm> KK list size: " << phiList.size() << endl;
   
   HFKalmanVertexFit  aKal(fTTB.product(), fPV, 0, fVerbose); 
   vector<Track> trackList; 
@@ -316,14 +335,14 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
       }
 
       if ((TMath::Abs(lambdac.M() - MLAMBDA_C) < fLcWindow)) {
-        aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+50, 3); 	
+	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+50, 3); 	
       }    
     }
   }
 
-  // -----------------------------------
-  // -- D(*)+ -> K- pi+ pi+   (with mu-)
-  // -----------------------------------
+  // ---------------------------------
+  // -- D*+ -> K- pi+ pi+   (with mu-)
+  // ---------------------------------
   for (unsigned int i = 0; i < kapiList.size(); ++i) {
     unsigned int iKaon = kapiList[i].first; 
     unsigned int iPion = kapiList[i].second; 
@@ -385,11 +404,11 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+20, 2); 	
       }
       
-      // -- D+, with fitting of all three tracks
-      dplus = kaon + pion + track; 
-      if ((TMath::Abs(dplus.M() - MDPLUS) < fDWindow)) {
-	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+60, 3);
-      }
+      //       // -- D+, with fitting of all three tracks: This is done WITHOUT duplicates by Hadi's triplets
+      //       dplus = kaon + pion + track; 
+      //       if ((TMath::Abs(dplus.M() - MDPLUS) < fDWindow)) {
+      // 	//	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+60, 3);
+      //       }
 
 
     }
@@ -458,7 +477,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     // -- D+, with fitting of all three tracks
     dplus = kaon + pion1 + pion2; 
     if ((TMath::Abs(dplus.M() - MDPLUS) < fDWindow)) {
-	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+30, 3);
+      aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+30, 3);
     }
   }
   kapipiList.clear();
@@ -470,6 +489,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
   vector<triplet> KshortpiList; 
   b.combine(KshortpiList, pilist, MKSHORT-0.25, MKSHORT+0.25, 0); 
+  if (fVerbose > 0) cout << "==>HFCharm> Kshortpi list size: " << KshortpiList.size() << endl;
 
   for (vector<triplet>::iterator it=KshortpiList.begin(); it!=KshortpiList.end(); ++it) {
     
@@ -530,10 +550,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   // ----------------------------------
   // -- D(s)+ -> K+ K- pi+   (with mu-)
   // ----------------------------------
-  vector<pair<int, int> > phiList; 
-  a.combine(phiList, kalist, kalist, 0.9, 2.0, 1); 
-  if (fVerbose > 0) cout << "==>HFCharm> KK list size: " << phiList.size() << endl;
-  
+
   for (unsigned int i = 0; i < phiList.size(); ++i) {
     unsigned int iKaon1 = phiList[i].first; 
     unsigned int iKaon2 = phiList[i].second; 
@@ -597,7 +614,19 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
       }
     }
   }
+
+  kapiList.clear();
+  kapipiList.clear(); 
+  phiList.clear();
+
+  trackList.clear();
+  trackIndices.clear();
+  trackMasses.clear();
   
+  if (fVerbose > 0) {
+    cout << "==>HFCharm: end of analyze():" << endl;
+    system(line); 
+  }
 }
 
 
