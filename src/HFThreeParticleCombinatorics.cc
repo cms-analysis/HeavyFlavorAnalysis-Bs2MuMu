@@ -13,14 +13,18 @@ HFThreeParticleCombinatorics::~HFThreeParticleCombinatorics() {
   if (fVerbose > 2) cout << "This is the end" << endl;
 }
 
+
 // ----------------------------------------------------------------------
-// For D+ -> K pi pi
+// Combining particle from kaList with two particles from piList into a combination
+// with mass between loMass and hiMass
+//
+// E.g.: D+ -> K pi pi
 // First is Kaon, second and third are pions with ordered indices
 // ----------------------------------------------------------------------
 void HFThreeParticleCombinatorics::combine(vector<triplet> &combList, 
 					 vector<pair<int, TLorentzVector> > &kaList, 
 					 vector<pair<int, TLorentzVector> > &piList, 
-					 double loMass, double hiMass, int rmDuplicate) {
+					 double loMass, double hiMass) {
 
   if (fVerbose > 2) {
     cout << "kaList: " << kaList.size() << endl;
@@ -53,7 +57,6 @@ void HFThreeParticleCombinatorics::combine(vector<triplet> &combList,
 	 triplet t=triplet(ka->first, pi1->first, pi2->first);          // triplet with three different tracks
          mom = ka->second +  pi1->second + pi2->second;                 // mother is D+ candidate
          mass = mom.M(); 
-         cout << "K pi pi mass: " << ka->first<<" / "<<pi1->first << " / " << pi2->first<< "  = "<<mass<<endl;
          if (loMass < mass && mass < hiMass) {                          // continue only when in mass window
 	   duplicate = 0;                                               // check for duplication 
 	    for (vector<triplet>::iterator it=combList.begin(); it != combList.end(); it++) {
@@ -62,17 +65,13 @@ void HFThreeParticleCombinatorics::combine(vector<triplet> &combList,
 	          break;
 	       }
 	    }
-      	    if (1 == rmDuplicate) {
-	      if (0 == duplicate) combList.push_back(t);                   // add only if not already in the list
-	    } else {
-	      combList.push_back(t);                                       // add anyway 
-	    }
+	    if (0 == duplicate) combList.push_back(t);                   // add only if not already in the list
          } 
       }
     }
   }
 
-  if (fVerbose > 1) {
+  if (fVerbose > 0) {
       for (vector<triplet>::iterator it=combList.begin(); it != combList.end(); it++) {
 	cout << "K pi pi List: " << it->ka() << " / " << it->pi1() << " / " << it->pi2()<< endl;
     }
@@ -84,20 +83,24 @@ void HFThreeParticleCombinatorics::combine(vector<triplet> &combList,
 
 
 // ----------------------------------------------------------------------
-// For Kshort pi --> 3 pi
+// Combine three particles from piList into a combination with mass between loMass and hiMass
+// if hiResMass >0.0, the first two particles form a resonance
+// with mass between loResMass and hiResMass
+//
+// E.g.: Kshort pi --> 3 pi
 // First two pions are from Kshort candidate, third comes from D+ vertex
 // ----------------------------------------------------------------------
 void HFThreeParticleCombinatorics::combine(vector<triplet> &combList, 
-					 vector<pair<int, TLorentzVector> > &tlist, 
-					 double loMass, double hiMass, int rmDuplicate) {
+					 vector<pair<int, TLorentzVector> > &piList, 
+					   double loMass, double hiMass, double loResMass, double hiResMass) {
 
   if (fVerbose > 2) {
-    cout << "tlist: " << tlist.size() << endl;
-    for (unsigned int i = 0; i < tlist.size(); ++i) {
-      cout << "i = " << i << " index = " << tlist[i].first 
-	   << " pT = " << tlist[i].second.Pt() 
-	   << " phi = " << tlist[i].second.Phi() 
-	   << " eta = " << tlist[i].second.Eta() 
+    cout << "piList: " << piList.size() << endl;
+    for (unsigned int i = 0; i < piList.size(); ++i) {
+      cout << "i = " << i << " index = " << piList[i].first 
+	   << " pT = " << piList[i].second.Pt() 
+	   << " phi = " << piList[i].second.Phi() 
+	   << " eta = " << piList[i].second.Eta() 
 	   << endl;
     }
   }
@@ -106,27 +109,26 @@ void HFThreeParticleCombinatorics::combine(vector<triplet> &combList,
   double mass(0.); 
   int duplicate(0); 
   vector<pair<int, TLorentzVector> >::iterator i,j,k;
-  for (i = tlist.begin(); i != tlist.end(); ++i) {                      // first pion from Kshort
-    for (j = i+1; j != tlist.end(); ++j) {                              // second pion from Kshort
-      mom = i->second +  j->second;                                     // Kshort candidate
+  for (i = piList.begin(); i != piList.end(); ++i) {                         // first pion from Kshort
+    for (j = i+1; j != piList.end(); ++j) {                                  // second pion from Kshort
+      mom = i->second +  j->second;                                          // Resonance candidate
       mass = mom.M(); 
       cout << "pi pi mass: " << i->first << " / " << j->first<< "  = "<<mass<<endl;
-      if (loMass > mass || mass > hiMass) continue;                     // continue only if in mass window
-      for(k = tlist.begin(); k!=tlist.end(); k++) {                     // third pion, from D+
-	if (k==i || k==j) continue;                                     // don't use same track twice
-	triplet t=triplet(k->first, i->first, j->first);                // triplet with three different tracks
-	duplicate = 0;                                                  // check for duplication                                      
+      if(hiResMass>0. && (loResMass > mass || mass > hiResMass)) continue;   // ignore if resonance outside mass window
+      for(k = piList.begin(); k!=piList.end(); k++) {                        // third pion, from D+
+	if (k==i || k==j) continue;                                          // don't use same track twice
+	mom = i->second + j->second + k->second;                             // three particle candidate
+        mass = mom.M();
+        if(loMass > mass || mass > hiMass) continue;                        // ignore if outside mass window
+	triplet t=triplet(k->first, i->first, j->first);                     // triplet with three different tracks
+	duplicate = 0;                                                       // check for duplication                 
 	for(vector<triplet>::iterator it=combList.begin(); it != combList.end(); it++) {
 	    if(t==*it){
 	       duplicate = 1; 
 	       break;
 	    }
 	}
-      	if(1 == rmDuplicate) {
-	   if (0 == duplicate) combList.push_back(t);                   // add only if not already in the list
-	} else {
-	   combList.push_back(t);                                       // add anyway 
-	}
+	if (0 == duplicate) combList.push_back(t);                   // add only if not already in the list
       }
     }
   }
