@@ -1,6 +1,9 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTree.h"
 
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <iostream>
 
 #include "DataFormats/Common/interface/Handle.h"
@@ -49,6 +52,7 @@ HFTree::HFTree(const edm::ParameterSet& iConfig) :
   gHFEvent = fEvent;
   gHFFile  = fFile;
 
+  fEventCounter = -1; 
 }
 
 
@@ -66,14 +70,28 @@ HFTree::~HFTree() {
 
 // ----------------------------------------------------------------------
 void HFTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
-    
+
+  ++fEventCounter; 
+  if (fVerbose > 0) {
+    if (fEventCounter%100 == 0) {
+      pid_t pid = getpid();
+      char line[100]; 
+      sprintf(line, "ps -F %i", pid); 
+      cout << "==>HFTree: analyze() in event #" << fEventCounter 
+	   << "  run: " << gHFEvent->fRunNumber 
+	   << " event: "  << gHFEvent->fEventNumber
+	   << endl;
+      system(line); 
+    }
+  }
+
   if (fRequireCand){
     if (gHFEvent->nCands() > 0) {
-      if (fVerbose > 0) {
+      if (fVerbose > 1) {
 	cout << "HFTree> filling tree for run: " << gHFEvent->fRunNumber
 	     << " event: "  << gHFEvent->fEventNumber ;
 
-	if (fVerbose > 1) {
+	if (fVerbose > 2) {
 	  cout << " Cand: ";
 	
 	  for (int i = 0; i < gHFEvent->nCands(); ++i) {
@@ -97,6 +115,13 @@ void  HFTree::beginJob() {
 
 // ------------ method called once each job just after ending the event loop  ------------
 void  HFTree::endJob() {
+
+  pid_t pid = getpid();
+  char line[100]; 
+  sprintf(line, "ps -F %i", pid); 
+  cout << "==>HFTree: endJob():" << endl;
+  system(line); 
+
 }
 
 //define this as a plug-in

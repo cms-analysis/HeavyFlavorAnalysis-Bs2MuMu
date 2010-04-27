@@ -48,6 +48,7 @@ process.tree = cms.EDAnalyzer(
     )
 
 # ----------------------------------------------------------------------
+process.load("HeavyFlavorAnalysis.Bs2MuMu.HFTree_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFMCTruth_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFRecoStuff_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFTruthCandidates_cff")
@@ -55,8 +56,14 @@ process.load("HeavyFlavorAnalysis.Bs2MuMu.HFB2JpsiCandidates_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFCharm_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFMuonAndTrackCandidates_cff")
 
-#process.load("HeavyFlavorAnalysis.Bs2MuMu.HFB2MuCandidates_cff")
-#process.load("HeavyFlavorAnalysis.Bs2MuMu.HFDimuonsCandidates_cff")
+# ----------------------------------------------------------------------
+try:
+    rootFileName = os.environ["JOB"] + ".root"
+except KeyError:
+    rootFileName = "test.root"
+
+process.tree.fileName = rootFileName
+
 
 # ----------------------------------------------------------------------
 process.p = cms.Path(

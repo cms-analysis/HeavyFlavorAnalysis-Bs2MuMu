@@ -9,8 +9,8 @@ except KeyError:
 
 tree = cms.EDAnalyzer(
     "HFTree",
-    verbose      = cms.untracked.int32(0),
-    requireCand  =  cms.untracked.bool(True),
+    verbose      = cms.untracked.int32(1),
+    requireCand  = cms.untracked.bool(True),
     fileName     = cms.untracked.string(rootFileName)
     )
 

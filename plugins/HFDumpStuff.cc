@@ -139,9 +139,9 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   } 
 
   if (bestPV > -1) {
-    gHFEvent->fEventTag = bestPV;
+    gHFEvent->fBestPV = bestPV;
   } else {
-    gHFEvent->fEventTag = 0;
+    gHFEvent->fBestPV = 0;
   }    
   if (fVerbose > 0) cout << "The best pV is at position: " << bestPV  << " and has " << bestN << " tracks" << endl;
 

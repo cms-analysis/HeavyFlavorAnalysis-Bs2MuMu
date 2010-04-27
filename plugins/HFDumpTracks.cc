@@ -118,7 +118,7 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     cout << "==>HFDumpTracks> No primary vertex found, skipping" << endl;
     return;
   }
-  fPV = vertices[gHFEvent->fEventTag]; 
+  fPV = vertices[gHFEvent->fBestPV]; 
 
 
   // -- get the collection of muons and store their corresponding track indices

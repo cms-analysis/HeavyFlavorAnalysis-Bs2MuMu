@@ -35,19 +35,7 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 
 # ----------------------------------------------------------------------
-try:
-    rootFileName = os.environ["JOB"] + ".root"
-except KeyError:
-    rootFileName = "dana-XXXX.root"
-
-process.tree = cms.EDAnalyzer(
-    "HFTree",
-    verbose      = cms.untracked.int32(0),
-    requireCand  =  cms.untracked.bool(True),
-    fileName     = cms.untracked.string(rootFileName)
-    )
-
-# ----------------------------------------------------------------------
+process.load("HeavyFlavorAnalysis.Bs2MuMu.HFTree_cff")
 #process.load("HeavyFlavorAnalysis.Bs2MuMu.HFMCTruth_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFRecoStuff_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFTruthCandidates_cff")
@@ -57,6 +45,16 @@ process.load("HeavyFlavorAnalysis.Bs2MuMu.HFMuonAndTrackCandidates_cff")
 
 #process.load("HeavyFlavorAnalysis.Bs2MuMu.HFB2MuCandidates_cff")
 #process.load("HeavyFlavorAnalysis.Bs2MuMu.HFDimuonsCandidates_cff")
+
+
+# ----------------------------------------------------------------------
+try:
+    rootFileName = os.environ["JOB"] + ".root"
+except KeyError:
+    rootFileName = "test.root"
+
+process.tree.fileName = rootFileName
+
 
 # ----------------------------------------------------------------------
 process.p = cms.Path(

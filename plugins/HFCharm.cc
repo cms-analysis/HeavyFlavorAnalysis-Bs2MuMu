@@ -101,9 +101,9 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     cout << "==>HFCharm> No primary vertex found, skipping" << endl;
     return;
   }
-  fPV = vertices[gHFEvent->fEventTag]; 
+  fPV = vertices[gHFEvent->fBestPV]; 
   if (fVerbose > 0) {
-    cout << "HFDimuons: Taking vertex " << gHFEvent->fEventTag << " with ntracks = " << fPV.tracksSize() << endl;
+    cout << "HFDimuons: Taking vertex " << gHFEvent->fBestPV << " with ntracks = " << fPV.tracksSize() << endl;
   }
   
   // -- get the collection of muons

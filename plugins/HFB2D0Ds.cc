@@ -99,9 +99,9 @@ void HFB2D0Ds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) 
     if (fVerbose > 0) cout << "==>HFB2D0Ds> No primary vertex found, skipping" << endl;
     return;
   }
-  fPV = vertices[gHFEvent->fEventTag]; 
+  fPV = vertices[gHFEvent->fBestPV]; 
   if (fVerbose > 1) {
-    cout << "==>HFB2D0Ds> Taking vertex " << gHFEvent->fEventTag
+    cout << "==>HFB2D0Ds> Taking vertex " << gHFEvent->fBestPV
 	 << " with ntracks = " << fPV.tracksSize() << endl;
   }
   
@@ -200,7 +200,7 @@ void HFB2D0Ds::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) 
 	    continue;
 	  if (D0Vtx.fD3d < fVtxADist)
 	    continue;
-	  if (vd0.Angle(D0Vtx.fPoint - gHFEvent->getPV(gHFEvent->fEventTag)->fPoint) > fVtxAngle)
+	  if (vd0.Angle(D0Vtx.fPoint - gHFEvent->getPV(gHFEvent->fBestPV)->fPoint) > fVtxAngle)
 	    continue;
 
 	  if (fVerbose > 1)
