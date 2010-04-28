@@ -230,6 +230,8 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     pion.SetPtEtaPhiM(tPion.pt(), tPion.eta(), tPion.phi(), MPION); 
 
     if (fUseMuon) {
+      if (muMaxIdx == iKaon) continue; 
+      if (muMaxIdx == iPion) continue; 
       if (tKaon.charge()*muMaxQ < 0) continue; 
       if (muon.DeltaR(kaon) > fDeltaR) continue; 
       if (muon.DeltaR(pion) > fDeltaR) continue; 
@@ -278,6 +280,8 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     pion.SetPtEtaPhiM(tPion.pt(), tPion.eta(), tPion.phi(), MPION); 
     
     if (fUseMuon) {
+      if (muMaxIdx == iKaon) continue; 
+      if (muMaxIdx == iPion) continue; 
       if (tKaon.charge()*muMaxQ < 0) continue; 
       if (muon.DeltaR(kaon) > fDeltaR) continue; 
       if (muon.DeltaR(pion) > fDeltaR) continue; 
@@ -287,7 +291,10 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     for (unsigned int iTrack = 0; iTrack < hTracks->size(); ++iTrack){    
       if (iTrack == iKaon) continue; 
       if (iTrack == iPion) continue; 
-      
+      if (fUseMuon) {
+	if (muMaxIdx == iTrack) continue; 
+      }
+
       TrackBaseRef rTrackView(hTracks, iTrack);
       Track tTrack(*rTrackView);
       if (tTrack.charge() == tKaon.charge()) continue; 
@@ -360,6 +367,8 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     pion.SetPtEtaPhiM(tPion.pt(), tPion.eta(), tPion.phi(), MPION); 
     
     if (fUseMuon) {
+      if (muMaxIdx == iKaon) continue; 
+      if (muMaxIdx == iPion) continue; 
       if (tKaon.charge()*muMaxQ < 0) continue; 
       if (muon.DeltaR(kaon) > fDeltaR) continue; 
       if (muon.DeltaR(pion) > fDeltaR) continue; 
@@ -444,6 +453,9 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     pion2.SetPtEtaPhiM(tPion2.pt(), tPion2.eta(), tPion2.phi(), MPION); 
 
     if (fUseMuon) {
+      if (muMaxIdx == it->ka) continue; 
+      if (muMaxIdx == it->pi1) continue; 
+      if (muMaxIdx == it->pi2) continue; 
       if (tKaon.charge()*muMaxQ < 0) continue;                 // muon has same charge as Kaon
       if (muon.DeltaR(kaon) > fDeltaR) continue; 
       if (muon.DeltaR(pion1) > fDeltaR) continue; 
@@ -568,6 +580,8 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     kaon2.SetPtEtaPhiM(tKaon2.pt(), tKaon2.eta(), tKaon2.phi(), MKAON); 
 
     if (fUseMuon && muMaxIdx > -1) {
+      if (muMaxIdx == iKaon1) continue; 
+      if (muMaxIdx == iKaon2) continue; 
       if (muon.DeltaR(kaon1) > fDeltaR) continue; 
       if (muon.DeltaR(kaon2) > fDeltaR) continue; 
     }
