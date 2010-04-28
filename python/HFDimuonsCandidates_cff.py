@@ -11,5 +11,5 @@ dimuonsDump = cms.EDAnalyzer(
     type               = cms.untracked.int32(1313), 
     vertexing          = cms.untracked.int32(1), 
     massLow            = cms.untracked.double(0.5), 
-    massHigh           = cms.untracked.double(20.0)
+    massHigh           = cms.untracked.double(9999.0)
     )
