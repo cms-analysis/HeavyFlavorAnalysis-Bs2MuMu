@@ -18,6 +18,7 @@ HFCharmDump = cms.EDAnalyzer(
     pionPt             = cms.untracked.double(0.5),
     trackPt            = cms.untracked.double(0.5),
     deltaR             = cms.untracked.double(99.),
+    maxDoca            = cms.untracked.double(2.0),
     type               = cms.untracked.int32(1) 
     )
 
@@ -38,6 +39,7 @@ HFMuCharmDump = cms.EDAnalyzer(
     pionPt             = cms.untracked.double(0.5),
     trackPt            = cms.untracked.double(0.5),
     deltaR             = cms.untracked.double(99.0),
+    maxDoca            = cms.untracked.double(2.0),
     type               = cms.untracked.int32(2) 
     )
 

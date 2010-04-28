@@ -34,4 +34,6 @@ public:
   int                   fType, fVerbose; 
   Vertex                fPV;   
   const TransientTrackBuilder *fpTTB;   
+
+  double                fMaxDoca; 
 };

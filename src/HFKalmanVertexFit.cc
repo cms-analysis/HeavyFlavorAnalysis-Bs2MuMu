@@ -31,6 +31,7 @@ HFKalmanVertexFit::HFKalmanVertexFit(const TransientTrackBuilder *TTB,
   fPV       = PV;
   fType     = type; 
   fVerbose  = verbose;
+  fMaxDoca  = 9999;
 }
 
 // ----------------------------------------------------------------------
@@ -59,6 +60,37 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
     }
   }
 
+
+  // -- Compute minimal and maximal closest approach for any combination of tracks
+  TwoTrackMinimumDistance md;
+  double dist(99.); 
+  double minDist(99.), mini, minj; 
+  double maxDist(-99.), maxi, maxj; 
+  for (unsigned int i = 0; i < RecoTransientTrack.size(); ++i) {
+    for (unsigned int j = i+1; j < RecoTransientTrack.size(); ++j) {
+      md.calculate(RecoTransientTrack[i].initialFreeState(), RecoTransientTrack[j].initialFreeState());
+      if (md.status()) {
+	dist = md.distance();
+	if (dist < minDist) {
+	  mini = i; 
+	  minj = j;
+	  minDist = dist;
+	}
+
+	if (dist > maxDist) {
+	  maxi = i; 
+	  maxj = j;
+	  maxDist = dist;
+	}
+      }
+    }
+  }
+
+  if (maxDist > fMaxDoca) {
+    if (fVerbose > 0) cout << "maxDist = " << maxDist << " > " << fMaxDoca << ", not fitting, return ..." << endl;
+    return;
+  }
+
   // -- Do the vertexing
   KalmanVertexFitter theFitter(true);
   TransientVertex TransSecVtx = theFitter.vertex(RecoTransientTrack); 
@@ -72,7 +104,7 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
   } else {
     if (fVerbose > 0) {
       cout << "==>doKalmanVertexFit> KVF " << type << " failed for tracks:";
-      for (int i = 0; i < trackIndices.size(); ++i) cout << " " << trackIndices[i];
+      for (unsigned int i = 0; i < trackIndices.size(); ++i) cout << " " << trackIndices[i];
       cout << ", continue ..." << endl;
     }
     return; 
@@ -106,32 +138,6 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
       if (trackMasses[i] > 0) comp2 += m1; 
     }
 
-  }
-
-
-  // -- Compute minimal and maximal closest approach for any combination of tracks
-  TwoTrackMinimumDistance md;
-  double dist(99.); 
-  double minDist(99.), mini, minj; 
-  double maxDist(-99.), maxi, maxj; 
-  for (unsigned int i = 0; i < RecoTransientTrack.size(); ++i) {
-    for (unsigned int j = i+1; j < RecoTransientTrack.size(); ++j) {
-      md.calculate(RecoTransientTrack[i].initialFreeState(), RecoTransientTrack[j].initialFreeState());
-      if (md.status()) {
-	dist = md.distance();
-	if (dist < minDist) {
-	  mini = i; 
-	  minj = j;
-	  minDist = dist;
-	}
-
-	if (dist > maxDist) {
-	  maxi = i; 
-	  maxj = j;
-	  maxDist = dist;
-	}
-      }
-    }
   }
 
   // -- Build vertex for ntuple

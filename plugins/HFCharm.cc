@@ -50,10 +50,12 @@ HFCharm::HFCharm(const ParameterSet& iConfig) :
   fPionPt(iConfig.getUntrackedParameter<double>("pionPt", 1.0)), 
   fTrackPt(iConfig.getUntrackedParameter<double>("trackPt", 0.4)), 
   fDeltaR(iConfig.getUntrackedParameter<double>("deltaR", 1.5)),
+  fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 2.0)),
   fType(iConfig.getUntrackedParameter<int>("type", 1)) {
   using namespace std;
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFCharm constructor" << endl;
+  cout << "---  verbose:                  " << fVerbose << endl;
   cout << "---  tracksLabel:              " << fTracksLabel << endl;
   cout << "---  PrimaryVertexLabel:       " << fPrimaryVertexLabel << endl;
   cout << "---  muonsLabel:               " << fMuonsLabel << endl;
@@ -66,6 +68,7 @@ HFCharm::HFCharm(const ParameterSet& iConfig) :
   cout << "---  pionPt:                   " << fPionPt << endl;
   cout << "---  trackPt:                  " << fTrackPt << endl;
   cout << "---  deltaR:                   " << fDeltaR << endl;
+  cout << "---  maxDoca:                  " << fMaxDoca << endl;
   cout << "---  type:                     " << fType << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
@@ -206,6 +209,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   if (fVerbose > 0) cout << "==>HFCharm> KK list size: " << phiList.size() << endl;
   
   HFKalmanVertexFit  aKal(fTTB.product(), fPV, 0, fVerbose); 
+  aKal.fMaxDoca = fMaxDoca; 
   vector<Track> trackList; 
   vector<int> trackIndices;
   vector<double> trackMasses;
