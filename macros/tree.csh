@@ -84,9 +84,9 @@ date
 cd HeavyFlavorAnalysis/Bs2MuMu/macros
 pwd
 
-echo "bin/runTreeReaders -c chains/$JOB -r $TREEREADER -o $FILE1 >& $JOB.log"
-bin/runTreeReaders -c chains/$JOB -r $TREEREADER -o $FILE1 >& $JOB.log
-cat $JOB.log
+
+echo "bin/runTreeReaders -c chains/$JOB -r $TREEREADER -o $FILE1 |& tee $JOB.log"
+bin/runTreeReaders -c chains/$JOB -r $TREEREADER -o $FILE1 |& tee $JOB.log
 date
 
 # ----------------------------------------------------------------------
