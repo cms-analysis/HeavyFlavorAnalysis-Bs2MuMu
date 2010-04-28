@@ -1,20 +1,20 @@
 #! /bin/csh -f
 
 # tree.csh
-#   Created by Christoph Naegeli <naegelic@phys.ethz.ch> on 31.3.10.
+#   Branched by Christoph Naegeli <naegelic@phys.ethz.ch> on 31.3.10.
 #   Usage: Use in conjunction with 'run'.
 #
 #   TREEREADER should be the name of the readerclass to run as
 #   can be found in runTreeReaders.cc and is supposed to be set
 #   using the replacement list of the 'run' command.
-#   JOB is the chain file on which the TreeRunner should operate.
+#   JOB is the chain file on which the TreeReader should operate.
 
 setenv CMSSW
 setenv SCRAM_ARCH
 setenv SRMCP
 
 setenv JOB
-setenv TREEREADER
+setenv EXECUTABLE
 setenv FILE1 $JOB.root
 setenv STORAGE1
 
@@ -84,9 +84,8 @@ date
 cd HeavyFlavorAnalysis/Bs2MuMu/macros
 pwd
 
-
-echo "bin/runTreeReaders -c chains/$JOB -r $TREEREADER -o $FILE1 |& tee $JOB.log"
-bin/runTreeReaders -c chains/$JOB -r $TREEREADER -o $FILE1 |& tee $JOB.log
+echo "$EXECUTABLE -c chains/$JOB  -o $FILE1 |& tee $JOB.log"
+$EXECUTABLE -c chains/$JOB -o $FILE1 |& tee $JOB.log
 date
 
 # ----------------------------------------------------------------------
@@ -110,9 +109,6 @@ srmls       "$STORAGE1/$JOB.log"
 
 date
 
-# go to the right directory such that batch-end will remove the right directory
-cd ../../../../..
-
 # BATCH END
 
-echo "runGrid: This is the end, my friend"
+echo "run: This is the end, my friend"

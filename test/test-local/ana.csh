@@ -94,4 +94,4 @@ date
 
 # BATCH END
 
-echo "runGrid: This is the end, my friend"
+echo "run: This is the end, my friend"

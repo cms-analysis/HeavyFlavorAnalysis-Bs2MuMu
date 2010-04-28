@@ -1,17 +1,25 @@
 #!/usr/bin/env perl
 
-# Usage:       run [-C] -c grid.csh -t tarfile -m {debug|local|grid|batch} *.py
+# Usage:       run [-C] [-D dest] -c grid.csh -t tarfile -m {debug|local|grid|batch} -r {pattern1%pattern2} [-x 'bin/runTreeReaders -r bmmReader -C cuts/bla.cuts'] *
 # ------
 #              submit to grid all jobs specified in the command line
 #
-# Example:     cd Bs2MuMu/test/Winter01/production/Bs2MuMu
-# --------     ../../../../perl/run -c ../../gen.csh -t ~/grid/Winter07/grid-1.tar.gz -m grid
+# Examples:    cd Bs2MuMu/test/Winter01/production/Bs2MuMu
+# ---------    ../../../../perl/run -c ../../gen.csh -t ~/grid/Winter07/grid-1.tar.gz -m grid \
 #              -r 'STORAGE1 srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/BdToKPi' \ 
 #              BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START-10014.py
 #
-# Assumptions: jobs are serialized a la asd_asd-asd-10000.py, the numbering is at the end, separated with -
-# ------------ is run in directory where the py files reside!
+#              cd Bs2MuMu/macros/chains
+#              ../../perl/run -c tree.csh  -t ~/grid/Winter07/grid-1.tar.gz -m batch \
+#              -r 'TREEREADER muCharmReader%STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/trees' \ 
+#              100414.v05.data
 #
+#
+# Assumptions: jobs are serialized a la asd_asd-asd-10000.py, the numbering is at the end, separated with -
+# ------------ is run in directory where the py files reside! ??? IS THIS TRUE ???
+#
+# 2010/04/28   adapted to runTreeReaders usage, fixed wrong remove instructions
+# 2010/04/27   changed '-d destination' to '-D destination'
 # 2010/03/29   change default arguments for t3 batch srmcp
 # 2010/03/18   change name, remove all traces of ursl, add batch job name to jobs.list
 # 2010/03/09   translate XXXX in replacements into the correct number
@@ -28,7 +36,7 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('Cc:d:j:m:r:t:');
+getopts('Cc:dD:j:m:r:t:x:');
 
 # -- User setup
 my $user  = $ENV{'USER'};
@@ -41,7 +49,6 @@ my $SRMCP = "\"srmcp -2\"";
 if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 -globus_tcp_port_range 20000,25000\"";}
 if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 --streams_num=1\"";}
 
-
 if (!-e "$glite") {
     print "$glite does not exist, using /shome/ursl/grid/glite.conf\n";
     $glite = "/shome/ursl/grid/glite.conf";    
@@ -50,15 +57,18 @@ if (!-e "$glite") {
 # -- replacements
 if ($opt_r) {$replace = $opt_r; }
 @replaces = split(/%/, $replace); 
+if ($opt_x) {
+    push(@replaces, "EXECUTABLE \"$opt_x\"");
+}
 print "Replacement list: \n";
 foreach $repl (@replaces) {
     print "$repl\n"
 }
 
 # -- destination
-if ($opt_m eq "grid" && !$opt_d) {
-    $opt_d = "ce01.lcg.cscs.ch"; 
-    print " no destination provided, sending to CSCS: $opt_d\n";
+if ($opt_m eq "grid" && !$opt_D) {
+    $opt_D = "ce01.lcg.cscs.ch"; 
+    print " no destination provided, sending to CSCS: $opt_D\n";
 }
 
 my $host = `hostname`; 
@@ -81,18 +91,21 @@ if (!(-e "../jobs.list")) {
 }
 
 # -- submit all job files
-foreach $pyfile (@ARGV) {
-    my $pyFile, $pyDirectory; 
-    ($pyDirectory, $pyFile) = fileAndDirectory($pyfile); 
-    if ($pyDirectory =~ /^\//) {
+my $jobDirectory, $jobFile; 
+foreach $jobfile (@ARGV) {
+    ($jobDirectory, $jobFile) = fileAndDirectory($jobfile); 
+    if ($jobDirectory =~ /^\//) {
+    } elsif ($jobDirectory eq "") {
+ 	$jobDirectory = "..";
     } else {
-	$pyDirectory = "../".$pyDirectory;
+	$jobDirectory = "../".$jobDirectory;
     }
-    # -- Cut off trailing extension and possible directories in front
-    ($barefile = $pyfile) =~ s/\.py//g;
-    $rest = substr($barefile, 0, rindex($barefile, '/')+1); 
-    $barefile =~ s/$rest//;
-    $job      = $barefile;
+
+    # -- Cut off trailing py extension 
+    #    $rest = substr($jobFile, 0, rindex($jobFile, '/')+1); 
+    #    $jobFile =~ s/$rest//;
+    ($job = $jobFile) =~ s/\.py//g;
+
     # -- Cut off everything except the number
     $number    = $job;
     $number = substr($job, rindex($job, '-')+1, length($job)); 
@@ -117,9 +130,15 @@ foreach $pyfile (@ARGV) {
     system("/bin/rm -rf $tdir"); 
     mkdir($tdir); 
     chdir($tdir);
-    &makeJdlFile($job);
-    &makeCshFile($job);
-    system("/bin/cp $pyDirectory/$job.py .");
+
+    # -- create necessary scripts
+    &makeCshFile($job, $jobFile);
+    if ($opt_m eq "grid") {
+	&makeJdlFile($job);
+    }
+
+    print " --> /bin/cp $jobDirectory/$jobFile .\n";
+    system("/bin/cp $jobDirectory/$jobFile .");
     &makeTarLink($job);
     system("/bin/chmod 755 $job.csh"); 
 
@@ -130,28 +149,38 @@ foreach $pyfile (@ARGV) {
 
     if ($opt_m eq "local") {
 	print "local running: $job.csh\n";
-	system("./$job.csh >& local.log");
-    } elsif ($opt_m eq "debug") {
-	print "debug, no running\n";
+	if ($opt_d) {
+	    print("./$job.csh >& local.log\n");
+	} else {
+	    system("./$job.csh >& local.log");
+	}	    
     } elsif ($opt_m eq "batch") {
 	print "batch submission: $job\n";
 	$jobName = "$job.csh";
 	if ($user eq "ursl") { $jobName = `/shome/$user/perl/rline`; chop($jobName); }
-	print "qsub -q all.q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh\n";
-	system("qsub -q all.q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh");
-	open(IN, ">>jobs.list") || die "Cannot open jobs.list\n";
-	print IN "###Submitted Job Ids###\n";
-	print IN "sge $tdir \n";
-	print IN "\# $timeStamp $pwd/$tdir $job.jdl $jobName\n"; 
-	close(IN); 
-	system("/usr/bin/tail -2 jobs.list >> ../jobs.list");
+	if ($opt_d) {
+	    print "qsub -q all.q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh\n";
+	} else {
+	    print "qsub -q all.q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh\n";
+	    system("qsub -q all.q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh");
+	    open(IN, ">>jobs.list") || die "Cannot open jobs.list\n";
+	    print IN "###Submitted Job Ids###\n";
+	    print IN "sge $tdir \n";
+	    print IN "\# $timeStamp $pwd/$tdir $jobName\n"; 
+	    close(IN); 
+	    system("/usr/bin/tail -2 jobs.list >> ../jobs.list");
+	}
     } elsif ($opt_m eq "grid") {
-	print "grid running: $job.jdl\n";
-	system("glite-wms-job-submit -o jobs.list -a --config $glite $job.jdl"); 
-	open(IN, ">>jobs.list") || die "Cannot open jobs.list\n";
-	print IN "\# $timeStamp $pwd/$tdir $job.jdl\n"; 
-	close(IN); 
-	system("/usr/bin/tail -2 jobs.list >> ../jobs.list");
+	if ($opt_d) {
+	    print "grid running: $job.jdl\n";
+	    print("glite-wms-job-submit -o jobs.list -a --config $glite $job.jdl\n"); 
+	} else {
+	    system("glite-wms-job-submit -o jobs.list -a --config $glite $job.jdl"); 
+	    open(IN, ">>jobs.list") || die "Cannot open jobs.list\n";
+	    print IN "\# $timeStamp $pwd/$tdir $job.jdl\n"; 
+	    close(IN); 
+	    system("/usr/bin/tail -2 jobs.list >> ../jobs.list");
+	}
     }
 
     chdir(".."); 
@@ -173,19 +202,22 @@ sub makeTarLink {
 # ----------------------------------------------------------------------
 sub makeJdlFile {
     ($ljob) = @_;
+    $lpyfile = $ljob.".py";
     open(OUT, ">$ljob.jdl")  || die "Cannot open $ljob.jdl\n";
     my $datum = `/bin/date`; chop $datum;
     print OUT "# created by runGrid at $datum\n";
     print OUT "Executable    = \"$ljob.csh\";\n";
     print OUT "StdOutput     = \"$ljob.log\";\n";
     print OUT "StdError      = \"$ljob.err\";\n";
-    print OUT "InputSandbox  ={\"$ljob.csh\", \"$ljob.jdl\", \"$ljob.py\", \"$ljob.tar.gz\"};\n";
-    print OUT "OutputSandbox ={\"$ljob.csh\", \"$ljob.jdl\", \"$ljob.py\", \"$ljob.log\", \"$ljob.err\"};\n";
+    #py print OUT "InputSandbox  ={\"$ljob.csh\", \"$ljob.jdl\", \"$ljob.py\", \"$ljob.tar.gz\"};\n";
+    #py print OUT "OutputSandbox ={\"$ljob.csh\", \"$ljob.jdl\", \"$ljob.py\", \"$ljob.log\", \"$ljob.err\"};\n";
+    print OUT "InputSandbox  ={\"$ljob.csh\", \"$ljob.jdl\", \"$lpyfile\", \"$ljob.tar.gz\"};\n";
+    print OUT "OutputSandbox ={\"$ljob.csh\", \"$ljob.jdl\", \"$lpyfile\", \"$ljob.log\", \"$ljob.err\"};\n";
     print OUT "VirtualOrganisation = \"cms\";\n";
     print OUT "PerusalFileEnable = true;\n";
     print OUT "PerusalTimeInterval = 30;\n";
-    if ($opt_d) {
-	print OUT "Requirements  = ((RegExp(\"$opt_d\", other.GlueCEUniqueId)));\n";
+    if ($opt_D) {
+	print OUT "Requirements  = ((RegExp(\"$opt_D\", other.GlueCEUniqueId)));\n";
     }
 
 #    print OUT "Requirements  = ((RegExp(\"ce01.lcg.cscs.ch\", other.GlueCEUniqueId)) 
@@ -198,7 +230,7 @@ sub makeJdlFile {
 
 # ----------------------------------------------------------------------
 sub makeCshFile {
-    ($ljob) = @_;
+    ($ljob, $ljobfile) = @_;
     if ($cshDirectory =~ /^\//) {
 	open(IN, "$cshDirectory/$cshFile") || die "Cannot open $cshDirectory/$cshFile\n";
     } else {
@@ -214,17 +246,23 @@ sub makeCshFile {
 	    print OUT "mkdir \$JOB\n";
 	    print OUT "cd \$JOB\n";
 	    print OUT "/bin/cp $pwd/$tdir/$ljob.tar.gz .\n";
-	    print OUT "/bin/cp $pwd/$tdir/$ljob.py .\n";
+	    #py print OUT "/bin/cp $pwd/$tdir/$ljob.py .\n";
+	    print OUT "/bin/cp $pwd/$tdir/$ljobfile .\n";
 	}
 	
 	if (($opt_m eq "batch" || $opt_m eq "local") && /\# BATCH END/) {
 	    print OUT "# BATCH END\n";
-	    print OUT "cd ..\n";
+	    print OUT "echo \"coming to an end\" \n";
+	    print OUT "pwd \n";
+	    print OUT "ls -l \n";
+	    print OUT "cd /scratch/$user\n";
 	    print OUT "rm -rf \$JOB\n";
+	    print OUT "pwd \n";
+	    print OUT "ls -l \n";
 	}
 
 	foreach $repl (@replaces) {
-	    ($patt, $value) = split(/ /, $repl); 
+	    ($patt, $value) = split(/ /, $repl, 2); 
 	    # FIXME: HERE ADD PARSING/REPLACING OF XXXX with $number!!!
 	    $value =~ s/XXXX/$number/g;
             if (/setenv $patt/) {

@@ -33,7 +33,7 @@ foreach $dir (@ARGV) {
     open(IN, "$file") || die "cannot find $file\n";
     $files++; 
     while (<IN>) {
-	if (/Begin processing the ([0-9]*)th record/) {
+	if (/Begin processing the ([0-9]*)[a-z]{2} record/) {
 	    $fileCnt = $1; 
 	}
     }
