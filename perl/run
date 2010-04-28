@@ -5,13 +5,14 @@
 #              submit to grid all jobs specified in the command line
 #
 # Examples:    cd Bs2MuMu/test/Winter01/production/Bs2MuMu
-# ---------    ../../../../perl/run -c ../../gen.csh -t ~/grid/Winter07/grid-1.tar.gz -m grid \
+# ---------    run -c ../../gen.csh -t ~/grid/Winter07/grid-1.tar.gz -m grid \
 #              -r 'STORAGE1 srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat/store/user/ursl/production/Winter10/BdToKPi' \ 
 #              BsToMuMu_7TeV_GEN_SIM_DIGI_L1_DIGI2RAW_HLT_START-10014.py
 #
 #              cd Bs2MuMu/macros/chains
-#              ../../perl/run -c tree.csh  -t ~/grid/Winter07/grid-1.tar.gz -m batch \
-#              -r 'TREEREADER muCharmReader%STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/trees' \ 
+#              run -c ../tree.csh  -t ~/grid/Winter07/grid-1.tar.gz -m batch \
+#              -x 'bin/runTreeReaders -n 900 -r muCharmReader -C cuts/muCharm.default.cuts' \
+#              -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/trees' \ 
 #              100414.v05.data
 #
 #
