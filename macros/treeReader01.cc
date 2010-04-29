@@ -22,6 +22,19 @@ bool treeReader01::goodRun() {
   
   if (fRun < 132440) return true; // assume this is MC
 
+  if (fRun == 132661) return true; 
+  if (fRun == 132660) return true; 
+  if (fRun == 132659) return true; 
+  if (fRun == 132658) return true; 
+  if (fRun == 132656) return true; 
+  if (fRun == 132654) return true; 
+  if (fRun == 132653) return true; 
+  if (fRun == 132650) return true; 
+  if (fRun == 132651) return true; 
+  if (fRun == 132648) return true; 
+  if (fRun == 132647) return true; 
+  if (fRun == 132646) return true; 
+  if (fRun == 132645) return true; 
   if (fRun == 132606) return true; 
   if (fRun == 132605) return true; 
   if (fRun == 132602) return true; 
