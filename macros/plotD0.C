@@ -46,8 +46,8 @@ TF1 *f1 = new TF1("f1", f_p1,     1.7,  2.0, 2);
 TF1 *f2 = new TF1("f2", f_p1ag,   1.7,  2.0, 5);
 
 // ----------------------------------------------------------------------
-void show(const char *dfile = "/shome/starodumov/CMSSW_3_5_6/src/HeavyFlavorAnalysis/Bs2MuMu/macros/D0/100414.v05.data.bmmReader.default.root", 
-	  const char *mfile = "/shome/starodumov/CMSSW_3_5_6/src/HeavyFlavorAnalysis/Bs2MuMu/macros/D0/100414.v05.mc.bmmReader.default.root", 
+void show(const char *dfile = "/shome/ursl/root/combined.root", 
+	  const char *mfile = "/shome/ursl/root/100414.v05.mc.bmmReader.default.root", 
 	  const char *hname = "h14") {
 
 
@@ -100,11 +100,11 @@ void show(const char *dfile = "/shome/starodumov/CMSSW_3_5_6/src/HeavyFlavorAnal
 
   fitHist(hm, ""); 
   f0->SetParameters(f2->GetParameter(0), f2->GetParameter(1),  f2->GetParameter(2));
-  double yield = f0->Integral(1.7, 2.0)/hm->GetBinWidth(2); 
+  double yield = f0->Integral(f2->GetParameter(1)-2.*f2->GetParameter(2), f2->GetParameter(1)+2.*f2->GetParameter(2))/hm->GetBinWidth(2); 
   double yieldE = yield*f2->GetParError(0)/f2->GetParameter(0); 
   f1->SetParameters(f2->GetParameter(3), f2->GetParameter(4));
   double bg =  f1->Integral(f2->GetParameter(1)-2.*f2->GetParameter(2), f2->GetParameter(1)+2.*f2->GetParameter(2))/hm->GetBinWidth(2); 
-  cout << yield << "  " << bg << endl;
+  cout << "MC yield: " << yield << "  " << bg << endl;
 
   tl->SetTextFont(62);   tl->SetTextSize(0.04); tl->DrawLatex(xcms, ycms, "MC"); 
   tl->SetTextFont(42);  tl->SetTextSize(0.04); 
@@ -116,10 +116,10 @@ void show(const char *dfile = "/shome/starodumov/CMSSW_3_5_6/src/HeavyFlavorAnal
 
   fitHist(hd, "e"); 
   f0->SetParameters(f2->GetParameter(0), f2->GetParameter(1),  f2->GetParameter(2));
-  yield = f0->Integral(1.7, 2.0)/hd->GetBinWidth(2); 
+  yield = f0->Integral(f2->GetParameter(1)-2.*f2->GetParameter(2), f2->GetParameter(1)+2.*f2->GetParameter(2))/hd->GetBinWidth(2); 
   yieldE = yield*f2->GetParError(0)/f2->GetParameter(0); 
   bg =  f1->Integral(f2->GetParameter(1)-2.*f2->GetParameter(2), f2->GetParameter(1)+2.*f2->GetParameter(2))/hd->GetBinWidth(2); 
-  cout << yield << "  " << bg << endl;
+  cout << "data yield: " << yield << "  " << bg << endl;
   tl->SetTextFont(62);   tl->SetTextSize(0.04); tl->DrawLatex(xcms, ycms, "CMS preliminary"); 
   tl->SetTextFont(42);  tl->SetTextSize(0.04); 
   tl->DrawLatex(xcms, 0.32, Form("#mu: %5.3f #pm %5.3f GeV", f2->GetParameter(1), f2->GetParError(1))); 
