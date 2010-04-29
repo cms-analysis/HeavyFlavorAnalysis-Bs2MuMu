@@ -73,7 +73,7 @@ void HFTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   ++fEventCounter; 
   if (fVerbose > 0) {
-    if (fEventCounter%100 == 0) {
+    if (fEventCounter%1000 == 0) {
       pid_t pid = getpid();
       char line[100]; 
       sprintf(line, "ps -F %i", pid); 
