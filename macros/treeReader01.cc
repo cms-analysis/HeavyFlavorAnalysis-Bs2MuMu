@@ -19,22 +19,43 @@ void treeReader01::startAnalysis() {
 
 // ----------------------------------------------------------------------
 bool treeReader01::goodRun() {
-  
+
   if (fRun < 132440) return true; // assume this is MC
 
+  if (fRun > 133511) return true; // assume not yet validated
+
+  if (fRun == 133511) return true; 
+  if (fRun == 133510) return true; 
+  if (fRun == 133509) return true; 
+  if (fRun == 133483) return true; 
+  if (fRun == 133474) return true; 
+  if (fRun == 133450) return true; 
+  if (fRun == 133448) return true; 
+  if (fRun == 133446) return true; 
+  if (fRun == 133321) return true; 
+  if (fRun == 133320) return true; 
+  if (fRun == 133239) return true; 
+  if (fRun == 133158) return true; 
+  if (fRun == 133082) return true; 
+  if (fRun == 133046) return true; 
+  if (fRun == 133038) return true; 
+  if (fRun == 133036) return true; 
+  if (fRun == 133035) return true; 
+  if (fRun == 133034) return true; 
+  if (fRun == 133031) return true; 
+  if (fRun == 133030) return true; 
+  if (fRun == 133029) return true; 
+  if (fRun == 132968) return true; 
+  if (fRun == 132965) return true; 
+  if (fRun == 132961) return true; 
+  if (fRun == 132960) return true; 
+  if (fRun == 132959) return true; 
+  if (fRun == 132716) return true; 
+  if (fRun == 132662) return true; 
   if (fRun == 132661) return true; 
-  if (fRun == 132660) return true; 
   if (fRun == 132659) return true; 
   if (fRun == 132658) return true; 
   if (fRun == 132656) return true; 
-  if (fRun == 132654) return true; 
-  if (fRun == 132653) return true; 
-  if (fRun == 132650) return true; 
-  if (fRun == 132651) return true; 
-  if (fRun == 132648) return true; 
-  if (fRun == 132647) return true; 
-  if (fRun == 132646) return true; 
-  if (fRun == 132645) return true; 
   if (fRun == 132606) return true; 
   if (fRun == 132605) return true; 
   if (fRun == 132602) return true; 
@@ -48,11 +69,13 @@ bool treeReader01::goodRun() {
   if (fRun == 132478) return true; 
   if (fRun == 132477) return true; 
   if (fRun == 132476) return true; 
+  if (fRun == 132474) return true; 
   if (fRun == 132473) return true; 
   if (fRun == 132471) return true; 
   if (fRun == 132442) return true; 
   if (fRun == 132440) return true; 
-  
+
+
   return false; 
 }
 
