@@ -258,13 +258,33 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
       
       aKin.doJpsiFit(trackList, trackIndices, trackMasses, 300521); 	
       
-      // create a sequential fit!!
+      // Now, do with the HFSequentialFit class.
+
+      // First, like the 100XXX candidate
       HFDecayTree theTree;
       theTree.addTrack(iMuon1,MMUON);
       theTree.addTrack(iMuon2,MMUON);
       theTree.addTrack(iTrack,MKAON);
 
       aSeq.doFit(&theTree,400521);
+
+      // Second, do by stepwise reconstruction
+      theTree.clear();
+      theTree.addTrack(iTrack,MKAON);
+      HFDecayTreeIterator iterator = theTree.addDecayTree();
+      iterator->addTrack(iMuon1,MMUON);
+      iterator->addTrack(iMuon2,MMUON);
+
+      aSeq.doFit(&theTree,500521);
+
+      // Then, like the 300XXX candidate
+      theTree.clear();
+      theTree.addTrack(iTrack,MKAON);
+      iterator = theTree.addDecayTree(MJPSI);
+      iterator->addTrack(iMuon1,MMUON);
+      iterator->addTrack(iMuon2,MMUON);
+
+      aSeq.doFit(&theTree,600521);
     }
     
   }

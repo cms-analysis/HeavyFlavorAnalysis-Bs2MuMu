@@ -12,6 +12,12 @@
 
 using namespace std;
 
+HFDecayTree::HFDecayTree(double constraint, double constraintSigma) : massConstraint(constraint), massConstraintSigma(constraintSigma)
+{
+  if(massConstraintSigma <= 0.0 && massConstraint > 0.0)
+    massConstraintSigma = 0.0001 * massConstraint;
+} // HFDecayTree()
+
 void HFDecayTree::addTrack(int trackIx, double trackMass)
 {
 	if (trackMass <= 0)
@@ -23,13 +29,19 @@ void HFDecayTree::addTrack(int trackIx, double trackMass)
 
 void HFDecayTree::appendDecayTree(HFDecayTree subTree)
 {
-	subVertices.push_back(subTree);
+  subVertices.push_back(subTree);
 } // appendDecayTree()
 
-HFDecayTreeIterator HFDecayTree::addDecayTree()
+HFDecayTreeIterator HFDecayTree::addDecayTree(double mass, double mass_sigma)
 {
-	return subVertices.insert(subVertices.end(),HFDecayTree());
+  return subVertices.insert(subVertices.end(),HFDecayTree(mass,mass_sigma));
 } // addDecayTree()
+
+void HFDecayTree::clear()
+{
+  trackIndices.clear();
+  subVertices.clear();
+} // clear()
 
 HFDecayTreeTrackIterator HFDecayTree::getTrackBeginIterator()
 {
@@ -72,7 +84,7 @@ std::vector<int> HFDecayTree::getAllTracks()
 // FIXME: this has to be completed for the new variables introduced.
 void HFDecayTree::dump(unsigned indent)
 {
-	set<pair<int,double> >::const_iterator it;
+        HFDecayTreeTrackIterator it;
 	HFDecayTreeIterator ptr;
 	unsigned j;
 	

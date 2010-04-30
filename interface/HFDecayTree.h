@@ -9,33 +9,27 @@
 #define HFDECAYTREE_H
 
 // STL
+#include <map>
 #include <vector>
-#include <set>
 #include <utility>
-
-struct lt_track
-{
-	bool operator()(const std::pair<int,double> a, const std::pair<int,double> b) const {
-		return a.first < b.first;
-	}
-};
 
 class HFDecayTree;
 typedef std::vector<HFDecayTree>::iterator HFDecayTreeIterator;
-typedef std::set<std::pair<int,double>,lt_track>::iterator HFDecayTreeTrackIterator;
+typedef std::map<int,double>::iterator HFDecayTreeTrackIterator;
 
 class HFDecayTree
 {
 	public:
-                HFDecayTree() : massConstraint(-1), massConstraintSigma(-1) {}
-		HFDecayTree(double constraint, double constraintSigma) : massConstraint(constraint),massConstraintSigma(constraintSigma) {}
+		HFDecayTree(double constraint = -1.0, double constraintSigma = -1.0);
 		virtual ~HFDecayTree() {}
 		
 		// Constructing the tree structure
 		void addTrack(int trackIx, double trackMass); // add a track with a given mass to this node. NOTE: does not maintain the order of insertion!!
 		void appendDecayTree(HFDecayTree subTree); // to append an already constructed decay tree
-		HFDecayTreeIterator addDecayTree(); // to get a reference to a new tree to be constructed
+		HFDecayTreeIterator addDecayTree(double mass = -1.0, double mass_sigma = -1.0); // to get a reference to a new tree to be constructed
 		
+		void clear();
+
 		// Accessing the track data
 		HFDecayTreeTrackIterator getTrackBeginIterator();
 		HFDecayTreeTrackIterator getTrackEndIterator();
@@ -51,7 +45,7 @@ class HFDecayTree
 		double massConstraint; // if < 0, then no massconstraint at this vertex
 		double massConstraintSigma;
 	private:
-		std::set<std::pair<int,double>,lt_track> trackIndices;
+		std::map<int,double> trackIndices;
 		std::vector<HFDecayTree> subVertices;
 };
 

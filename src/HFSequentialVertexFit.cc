@@ -39,6 +39,7 @@ RefCountedKinematicTree HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 	KinematicParticleFactoryFromTransientTrack pFactory;
 	KinematicParticleVertexFitter kpvFitter;
 	RefCountedKinematicTree kinTree;
+	RefCountedKinematicTree subTree;
 	vector<RefCountedKinematicParticle> kinParticles;
 	HFDecayTreeTrackIterator it;
 	HFDecayTreeIterator treeIt;
@@ -50,19 +51,18 @@ RefCountedKinematicTree HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 		kinParticles.push_back(pFactory.particle(fpTTB->build(*baseRef),(*it).second, 0.0f, 0.0f, sigma)); // FIXME: das sigma noch besser anpassen (!!)
 	}
 	
-	// add the particles from the sub_tree
+	// add the particles from the sub_tree.
 	for (treeIt = tree->getVerticesBeginIterator(); treeIt != tree->getVerticesEndIterator(); treeIt++) {
-		RefCountedKinematicTree subParticleTree = fitTree(&(*treeIt));
-		if (subParticleTree->isEmpty())
-			throw EmptyTreeError();
-		
-		subParticleTree->movePointerToTheTop();
-		kinParticles.push_back(subParticleTree->currentParticle());
+	  subTree = fitTree(&(*treeIt));
+	  if (subTree->isEmpty()) throw EmptyTreeError();
+
+	  subTree->movePointerToTheTop();
+	  kinParticles.push_back(subTree->currentParticle());
 	}
 
 	kinTree = kpvFitter.fit(kinParticles);
 	
-	// apply the kinematic constaint.
+	// apply the kinematic constraint.
 	if (!kinTree->isEmpty() && tree->massConstraint >= 0) {
 		KinematicParticleFitter csFitter;
 		auto_ptr<KinematicConstraint> con(new MassKinematicConstraint(tree->massConstraint,tree->massConstraintSigma));
@@ -74,89 +74,88 @@ RefCountedKinematicTree HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 
 void HFSequentialVertexFit::doFit(HFDecayTree *tree, int type)
 {
-	RefCountedKinematicTree kinTree;
-	RefCountedKinematicVertex kinVertex;
-	RefCountedKinematicParticle kinParticle;
-	TVector3 plab;
-	double mass;
+  RefCountedKinematicTree kinTree;
+  RefCountedKinematicVertex kinVertex;
+  RefCountedKinematicParticle kinParticle;
+  TVector3 plab;
+  double mass;
+  
+  try {
+    kinTree = fitTree(tree);		
+    
+    if (!kinTree->isEmpty() && kinTree->currentDecayVertex()->vertexIsValid()) {
+      
+      // Fill the n-tuple
+      TAnaVertex anaVt;
+      TAnaCand *pCand;
+      TAnaTrack *pTrack;
+      VertexDistanceXY axy;
+      VertexDistance3D a3d;
+      vector<int> allTracks = tree->getAllTracks();
+      unsigned j;
+      
+      kinTree->movePointerToTheTop();
+      
+      kinParticle = kinTree->currentParticle();
+      kinVertex = kinTree->currentDecayVertex();
+      plab = TVector3(kinParticle->currentState().globalMomentum().x(),
+		      kinParticle->currentState().globalMomentum().y(),
+		      kinParticle->currentState().globalMomentum().z());
+      mass = kinParticle->currentState().mass();
+      
+      ChiSquared chi(kinParticle->chiSquared(),kinParticle->degreesOfFreedom());
+      
+      // dump some information if in verbose mode.
+      if (fVerbose > 0) {
+	cout << "-----------------------------------------" << endl;
+	cout << "==> HFSequentialVertexFit: Filling candidate with mass = " << mass << endl;
+	cout << "-----------------------------------------" << endl;
+      }
+      
+      anaVt.setInfo(kinParticle->chiSquared(), kinParticle->degreesOfFreedom(), chi.probability(), 0, 0);
+      anaVt.fPoint.SetXYZ(kinVertex->position().x(),kinVertex->position().y(),kinVertex->position().z());
+      
+      // -- Distance to primary vertex
+      anaVt.fDxy = axy.distance(fPV, kinVertex->vertexState()).value();
+      anaVt.fDxyE = axy.distance(fPV, kinVertex->vertexState()).error();
+      
+      anaVt.fD3d = a3d.distance(fPV, kinVertex->vertexState()).value();
+      anaVt.fD3dE = a3d.distance(fPV, kinVertex->vertexState()).error();
+      
+      // -- fill candidate
+      pCand = gHFEvent->addCand();
+      pCand->fPlab = plab;
+      pCand->fMass = mass;
+      pCand->fVtx = anaVt;
+      pCand->fType = (type != 0) ? type : fType;
+      pCand->fDau1 = -1; // FIXME: This could be set if the iterative fit would add candidates, too!
+      pCand->fDau2 = -1;
+      
+      pCand->fSig1 = gHFEvent->nSigTracks();
+      pCand->fSig2 = pCand->fSig1 + allTracks.size() - 1;
+      
+      // FIXME: there are still some variable missing in TAnaCand!!!
+      
+      // -- fill sig tracks. FIXME: fill refitted sig tracks
+      // FIXME: anderen parameter?
+      for (j = 0; j < allTracks.size(); j++) {
+	TAnaTrack *recTrack = gHFEvent->getRecTrack(allTracks[j]);
 	
-	try {
-		kinTree = fitTree(tree);		
-	} catch (cms::Exception &ex) {
-		if (fVerbose > 0) cout << "==> HFSequentialVertexFit: cms exception caught: " << ex.what() << endl;
-	} catch (VertexException &ex) {
-		if (fVerbose > 0) cout << "==> HFSequentialVertexFit: vertex exception caught: " << ex.what() << endl;
-	} catch (EmptyTreeError& ex) {
-		if (fVerbose > 0) cout << "==> HFSequentialVertexFit: empty tree." << endl;
-	}
-	
-	// FIXME: Check that this is really empty in case fitTree did raise an exception!!
-	if (!kinTree->isEmpty() && kinTree->currentDecayVertex()->vertexIsValid()) {
-		
-		// Fill the n-tuple
-		TAnaVertex anaVt;
-		TAnaCand *pCand;
-		TAnaTrack *pTrack;
-		VertexDistanceXY axy;
-		VertexDistance3D a3d;
-		vector<int> allTracks = tree->getAllTracks();
-		unsigned j;
-		
-		kinTree->movePointerToTheTop();
-		
-		kinParticle = kinTree->currentParticle();
-		kinVertex = kinTree->currentDecayVertex();
-		plab = TVector3(kinParticle->currentState().globalMomentum().x(),
-						kinParticle->currentState().globalMomentum().y(),
-						kinParticle->currentState().globalMomentum().z());
-		mass = kinParticle->currentState().mass();
-				
-		ChiSquared chi(kinParticle->chiSquared(),kinParticle->degreesOfFreedom());
-		
-		// dump some information if in verbose mode.
-		if (fVerbose > 0) {
-			cout << "-----------------------------------------" << endl;
-			cout << "==> HFSequentialVertexFit: Filling candidate with mass = " << mass << endl;
-			cout << "-----------------------------------------" << endl;
-		}
-		
-		anaVt.setInfo(kinParticle->chiSquared(), kinParticle->degreesOfFreedom(), chi.probability(), 0, 0);
-		anaVt.fPoint.SetXYZ(kinVertex->position().x(),kinVertex->position().y(),kinVertex->position().z());
-		
-		// -- Distance to primary vertex
-		anaVt.fDxy = axy.distance(fPV, kinVertex->vertexState()).value();
-		anaVt.fDxyE = axy.distance(fPV, kinVertex->vertexState()).error();
-		
-		anaVt.fD3d = a3d.distance(fPV, kinVertex->vertexState()).value();
-		anaVt.fD3dE = a3d.distance(fPV, kinVertex->vertexState()).error();
-		
-		// -- fill candidate
-		pCand = gHFEvent->addCand();
-		pCand->fPlab = plab;
-		pCand->fMass = mass;
-		pCand->fVtx = anaVt;
-		pCand->fType = (type != 0) ? type : fType;
-		pCand->fDau1 = -1; // FIXME: This could be set if the iterative fit would add candidates, too!
-		pCand->fDau2 = -1;
-		
-		pCand->fSig1 = gHFEvent->nSigTracks();
-		pCand->fSig2 = pCand->fSig1 + allTracks.size() - 1;
-		
-		// FIXME: there are still some variable missing in TAnaCand!!!
-		
-		// -- fill sig tracks. FIXME: fill refitted sig tracks
-		// FIXME: anderen parameter?
-		for (j = 0; j < allTracks.size(); j++) {
-			TAnaTrack *recTrack = gHFEvent->getRecTrack(allTracks[j]);
-			
-			pTrack = gHFEvent->addSigTrack();
-			pTrack->fMCID = recTrack->fMCID;
-			pTrack->fGenIndex = recTrack->fGenIndex;
-			pTrack->fQ = recTrack->fQ;
-			pTrack->fPlab = recTrack->fPlab;
-			pTrack->fIndex = allTracks[j];
-		}
-		
-	} else if (fVerbose > 0) cout << "==> HFSequentialVertexFit: empty tree or invalid vertex." << endl;
-	
+	pTrack = gHFEvent->addSigTrack();
+	pTrack->fMCID = recTrack->fMCID;
+	pTrack->fGenIndex = recTrack->fGenIndex;
+	pTrack->fQ = recTrack->fQ;
+	pTrack->fPlab = recTrack->fPlab;
+	pTrack->fIndex = allTracks[j];
+      }
+      
+    } else if (fVerbose > 0) cout << "==> HFSequentialVertexFit: empty tree or invalid vertex." << endl;
+    
+  } catch (cms::Exception &ex) {
+    if (fVerbose > 0) cout << "==> HFSequentialVertexFit: cms exception caught: " << ex.what() << endl;
+  } catch (VertexException &ex) {
+    if (fVerbose > 0) cout << "==> HFSequentialVertexFit: vertex exception caught: " << ex.what() << endl;
+  } catch (EmptyTreeError& ex) {
+    if (fVerbose > 0) cout << "==> HFSequentialVertexFit: empty tree." << endl;
+  }
 } // doFit()
