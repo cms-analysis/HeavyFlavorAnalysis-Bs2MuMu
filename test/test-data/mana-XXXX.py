@@ -35,19 +35,6 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 
 # ----------------------------------------------------------------------
-try:
-    rootFileName = os.environ["JOB"] + ".root"
-except KeyError:
-    rootFileName = "mana-XXXX.root"
-
-process.tree = cms.EDAnalyzer(
-    "HFTree",
-    verbose      = cms.untracked.int32(0),
-    requireCand  =  cms.untracked.bool(True),
-    fileName     = cms.untracked.string(rootFileName)
-    )
-
-# ----------------------------------------------------------------------
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFTree_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFMCTruth_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFRecoStuff_cff")

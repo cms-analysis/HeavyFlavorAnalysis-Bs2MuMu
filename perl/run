@@ -16,9 +16,14 @@
 #              100414.v05.data
 #
 #
+# Destination examples: ce01.lcg.cscs.ch  rl.ac.uk
+#
+#
+#
 # Assumptions: jobs are serialized a la asd_asd-asd-10000.py, the numbering is at the end, separated with -
 # ------------ is run in directory where the py files reside! ??? IS THIS TRUE ???
 #
+# 2010/04/30   add V0-cms-$CMSSW to requirements and allow non-destination specific submission
 # 2010/04/28   adapted to runTreeReaders usage, fixed wrong remove instructions
 # 2010/04/27   changed '-d destination' to '-D destination'
 # 2010/03/29   change default arguments for t3 batch srmcp
@@ -210,15 +215,18 @@ sub makeJdlFile {
     print OUT "Executable    = \"$ljob.csh\";\n";
     print OUT "StdOutput     = \"$ljob.log\";\n";
     print OUT "StdError      = \"$ljob.err\";\n";
-    #py print OUT "InputSandbox  ={\"$ljob.csh\", \"$ljob.jdl\", \"$ljob.py\", \"$ljob.tar.gz\"};\n";
-    #py print OUT "OutputSandbox ={\"$ljob.csh\", \"$ljob.jdl\", \"$ljob.py\", \"$ljob.log\", \"$ljob.err\"};\n";
     print OUT "InputSandbox  ={\"$ljob.csh\", \"$ljob.jdl\", \"$lpyfile\", \"$ljob.tar.gz\"};\n";
     print OUT "OutputSandbox ={\"$ljob.csh\", \"$ljob.jdl\", \"$lpyfile\", \"$ljob.log\", \"$ljob.err\"};\n";
     print OUT "VirtualOrganisation = \"cms\";\n";
     print OUT "PerusalFileEnable = true;\n";
     print OUT "PerusalTimeInterval = 30;\n";
     if ($opt_D) {
-	print OUT "Requirements  = ((RegExp(\"$opt_D\", other.GlueCEUniqueId)));\n";
+	if ($opt_D eq "any") {
+	    print OUT "Requirements  = ((Member(\"VO-cms-$CMSSW\", other.GlueHostApplicationSoftwareRunTimeEnvironment)));\n";
+	} else {
+	    print OUT "Requirements  = ((RegExp(\"$opt_D\", other.GlueCEUniqueId))\n";
+	    print OUT "                 && (Member(\"VO-cms-$CMSSW\", other.GlueHostApplicationSoftwareRunTimeEnvironment)));\n";
+	}
     }
 
 #    print OUT "Requirements  = ((RegExp(\"ce01.lcg.cscs.ch\", other.GlueCEUniqueId)) 
@@ -247,7 +255,6 @@ sub makeCshFile {
 	    print OUT "mkdir \$JOB\n";
 	    print OUT "cd \$JOB\n";
 	    print OUT "/bin/cp $pwd/$tdir/$ljob.tar.gz .\n";
-	    #py print OUT "/bin/cp $pwd/$tdir/$ljob.py .\n";
 	    print OUT "/bin/cp $pwd/$tdir/$ljobfile .\n";
 	}
 	
