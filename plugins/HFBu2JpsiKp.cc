@@ -11,8 +11,10 @@
 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKalmanVertexFit.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKinematicVertexFit.hh"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFSequentialVertexFit.h"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTwoParticleCombinatorics.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFMasses.hh"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFDecayTree.h"
 
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/Wrapper.h"
@@ -176,7 +178,8 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
   if (fVerbose > 0) cout << "==>HFBu2JpsiKp> J/psi list size: " << psiList.size() << endl;
   
   HFKalmanVertexFit    aKal(fTTB.product(), fPV, 100521, fVerbose); 
-  HFKinematicVertexFit aKin(fTTB.product(), fPV, 300521, fVerbose); 
+  HFKinematicVertexFit aKin(fTTB.product(), fPV, 300521, fVerbose);
+  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), fPV, 400521, fVerbose);
   vector<Track> trackList; 
   vector<int> trackIndices;
   vector<double> trackMasses;
@@ -255,6 +258,13 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
       
       aKin.doJpsiFit(trackList, trackIndices, trackMasses, 300521); 	
       
+      // create a sequential fit!!
+      HFDecayTree theTree;
+      theTree.addTrack(iMuon1,MMUON);
+      theTree.addTrack(iMuon2,MMUON);
+      theTree.addTrack(iTrack,MKAON);
+
+      aSeq.doFit(&theTree,400521);
     }
     
   }
