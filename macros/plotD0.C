@@ -54,7 +54,8 @@ void show(const char *dfile = "/shome/ursl/root/combined.root",
   TFile *fm = TFile::Open(mfile); 
   TFile *fd = TFile::Open(dfile); 
 
-  tdrStyle->cd();
+
+  //  tdrStyle->cd();
 
   gStyle->SetOptStat(0); 
   gStyle->SetOptFit(0); 
@@ -84,9 +85,9 @@ void show(const char *dfile = "/shome/ursl/root/combined.root",
   legge = legg->AddEntry(hd, "Data", "p"); legge->SetTextColor(kBlack);
   legge = legg->AddEntry(hm, "MC", "f"); legge->SetTextColor(kBlack);
 
-  double xcms(0.22), ycms(0.78); 
+  double xcms(0.22), ycms(0.85); 
 
-  gPad->SetLeftMargin(0.2);
+  gPad->SetLeftMargin(0.2);  
   showHist(hm, ""); 
   showHist(hd, "esame"); 
   legg->Draw();
@@ -121,6 +122,7 @@ void show(const char *dfile = "/shome/ursl/root/combined.root",
   bg =  f1->Integral(f2->GetParameter(1)-2.*f2->GetParameter(2), f2->GetParameter(1)+2.*f2->GetParameter(2))/hd->GetBinWidth(2); 
   cout << "data yield: " << yield << "  " << bg << endl;
   tl->SetTextFont(62);   tl->SetTextSize(0.04); tl->DrawLatex(xcms, ycms, "CMS preliminary"); 
+  tl->SetTextFont(42);   tl->SetTextSize(0.04); tl->DrawLatex(xcms+0.05, ycms-0.05, "#sqrt{s} = 7 TeV"); 
   tl->SetTextFont(42);  tl->SetTextSize(0.04); 
   tl->DrawLatex(xcms, 0.32, Form("#mu: %5.3f #pm %5.3f GeV", f2->GetParameter(1), f2->GetParError(1))); 
   tl->DrawLatex(xcms, 0.28, Form("#sigma: %5.3f #pm %5.3f GeV", f2->GetParameter(2), f2->GetParError(2))); 
@@ -152,7 +154,7 @@ void fitHist(TH1D *h, const char *opt = "") {
   h->SetXTitle("m_{K #pi} [GeV]");
   h->SetYTitle("Candidates/0.1GeV");
 
-  f2->SetLineWidth(2); 
+  f2->SetLineWidth(4); 
   f2->SetParameters(h->GetMaximum(), 1.86, 0.015, 
 		    h->GetBinContent(h->FindBin(1.7)), 
 		    h->GetBinContent(h->FindBin(2.0)) - h->GetBinContent(h->FindBin(1.7))

@@ -6,8 +6,9 @@
 #              if done, retrieve sandbox and put files into job directory 
 #              if sandbox retrieved, check for successful job completion
 #
-# 2010/03/03   First version
+# 2010/05/03   reworked some bugs
 # 2010/03/09   remove capability of checking SGE jobs,use monSge instead
+# 2010/03/03   First version
 #              
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -19,6 +20,9 @@ use Getopt::Std;
 getopts('i:oru:');
 
 my $STORAGE1 = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=";
+my $user  = $ENV{'USER'};
+
+my $minRootFileSize = 13362; 
 
 # -- jobs list
 my $jobslist = "jobs.list";
@@ -78,22 +82,30 @@ while(<IN>) {
     $gliteResult = `$gliteStatus $url`; 
     parseStatus($gliteResult); 
 
+    # -- subdirectory where output sandbox is placed
+    $string = substr($url, rindex($url, '/')+1, length($url)); 
+    $sdir = $dir."/".$user."_".$string;
+    
     # -- get output sandbox if successful and not yet already happened and not vetoed
     if ($jobStatus =~ /Done/ && $opt_o) {
 	$logfile = getOutputSandBox($url, $dir, $jdl, $jobStatus); 
-	$ok = parseOutput($dir, $logfile); 
-	($rsize, $lsize, $srmFile) = rootFileSize("$dir/$logfile"); 
+	$ok = parseOutput($sdir, $logfile); 
+	($rsize, $lsize, $srmFile) = rootFileSize("$sdir/$logfile"); 
     	printf("%60s %s %15s; %s/root: %10i, log: %7i\n", $mdir, $url, $jobStatus, $ok, $rsize, $lsize);
 	if ($ok =~ /no problems seen/) { 
 	    system("/bin/touch $mdir/OK"); 
 	    $goodJobs++; 
 	    if ($rsize < $minGood) {$minGood = $rsize;}
+	    if ($opt_r && ($rsize < $minRootFileSize)) {
+		print "--> removing $srmFile\n"; 
+		#system("srmrm $srmFile");
+	    }
 	} else { 
 	    system("/bin/touch $mdir/NOK"); 
 	    $badJobs++; 
 	    if ($opt_r) {
 		print "--> removing $srmFile\n"; 
-		system("srmrm $srmFile");
+		#system("srmrm $srmFile");
 	    }
 	}
     } elsif ($jobStatus =~ /Aborted/ && $opt_o) {
@@ -102,13 +114,17 @@ while(<IN>) {
 	$badJobs++; 
     } elsif ($jobStatus =~ /Cleared/ && $opt_o) {
 	$logfile = getOutputSandBox($url, $dir, $jdl, $jobStatus); 
-	$ok = parseOutput($dir, $logfile); 
-	($rsize, $lsize, $srmFile) = rootFileSize("$dir/$logfile"); 
+	$ok = parseOutput($sdir, $logfile); 
+	($rsize, $lsize, $srmFile) = rootFileSize("$sdir/$logfile"); 
     	printf("%60s %s %15s; %s/root: %10i, log: %7i\n", $mdir, $url, $jobStatus, $ok, $rsize, $lsize);
 	if ($ok =~ /no problems seen/) { 
 	    system("/bin/touch $mdir/OK"); 
 	    $goodJobs++; 
 	    if ($rsize < $minGood) {$minGood = $rsize;}
+	    if ($opt_r && ($rsize < $minRootFileSize)) {
+		print "--> removing $srmFile\n"; 
+		system("srmrm $srmFile");
+	    }
 	} else { 
 	    system("/bin/touch $mdir/NOK"); 
 	    $badJobs++; 
@@ -169,7 +185,7 @@ sub getOutputSandBox {
 sub parseOutput {
     ($ldir, $logfile) = @_;
 
-    $foundMyEnd     = `/bin/grep -i "runGrid: This is the end, my friend"  $ldir/$logfile`;
+    $foundMyEnd     = `/bin/grep -i "run: This is the end, my friend"  $ldir/$logfile`;
     if ($foundMyEnd) { $return = "no problems seen"; }
 
     # -- now search for possible problems in the logfile
@@ -195,12 +211,13 @@ sub rootFileSize {
     while(<LIN>) {
 	if (/--> Save output to SE:/) {
 	    ($bla, $lfn) = split(/SFN=/); 
+	    ($bla, $pfn) = split(/SE: /); 
 	    chop($lfn); 
 	    my @tmp = split(/\//, $lfn); $rfn = pop(@tmp); 
 	    #print "lfn: $lfn\n";
 	    #print "rfn: $rfn\n";
 	    ($logn = $lfn) =~ s/root$/log/;
-	    print "-> $logn\n";
+	    #print "-> $logn\n";
 	}
 
 
@@ -222,5 +239,5 @@ sub rootFileSize {
 	}
     }
     close(LIN); 
-    return ($result, $logsize, "$STORAGE1$lfn"); 
+    return ($result, $logsize, $pfn); 
 }
