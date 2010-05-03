@@ -1,5 +1,6 @@
 #include "d0Reader.hh"
 #include <cstdlib>
+#include <cmath>
 
 #define require_true(COND,LABEL) if( !(COND) ) goto LABEL
 #define MMUON 0.10566
