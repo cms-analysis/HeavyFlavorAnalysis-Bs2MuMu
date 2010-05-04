@@ -31,6 +31,17 @@ void muCharmReader::eventProcessing() {
 
   ((TH1D*)fpHistFile->Get("h1"))->Fill(fpEvt->nRecTracks()); 
 
+  TAnaCand *pCand; 
+  cout << "Event " << fEvent << endl;
+  for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
+    pCand = fpEvt->getCand(iC);
+    if (pCand->fType < 100) {
+      cout << Form("%6i %i", iC, pCand->fType) << endl;
+    }
+  }
+
+  return;
+
   // -- initialize all variables
   initVariables(); 
 
