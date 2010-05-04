@@ -50,7 +50,12 @@ HFCharm::HFCharm(const ParameterSet& iConfig) :
   fPionPt(iConfig.getUntrackedParameter<double>("pionPt", 1.0)), 
   fTrackPt(iConfig.getUntrackedParameter<double>("trackPt", 0.4)), 
   fDeltaR(iConfig.getUntrackedParameter<double>("deltaR", 1.5)),
-  fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 2.0)),
+  fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 9999.0)),
+  fMaxVtxChi2(iConfig.getUntrackedParameter<double>("maxVtxChi2", 9999.0)),
+  fMinVtxSigXY(iConfig.getUntrackedParameter<double>("minVtxSigXY", -1.)),
+  fMinVtxSig3d(iConfig.getUntrackedParameter<double>("minVtxSig3d", -1.)),
+  fMinCosAngle(iConfig.getUntrackedParameter<double>("minCosAngle", -1.)),
+  fMinPtCand(iConfig.getUntrackedParameter<double>("minPtCand", -99.)),
   fType(iConfig.getUntrackedParameter<int>("type", 1)) {
   using namespace std;
   cout << "----------------------------------------------------------------------" << endl;
@@ -68,7 +73,14 @@ HFCharm::HFCharm(const ParameterSet& iConfig) :
   cout << "---  pionPt:                   " << fPionPt << endl;
   cout << "---  trackPt:                  " << fTrackPt << endl;
   cout << "---  deltaR:                   " << fDeltaR << endl;
+
   cout << "---  maxDoca:                  " << fMaxDoca << endl;
+  cout << "---  maxVtxChi2:               " << fMaxVtxChi2 << endl;
+  cout << "---  minVtxSigXY:              " << fMinVtxSigXY << endl;
+  cout << "---  minVtxSig3d:              " << fMinVtxSig3d << endl;
+  cout << "---  minCosAngle:              " << fMinCosAngle << endl;
+  cout << "---  minPtCand:                " << fMinPtCand << endl;
+
   cout << "---  type:                     " << fType << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
@@ -209,7 +221,6 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   if (fVerbose > 0) cout << "==>HFCharm> KK list size: " << phiList.size() << endl;
   
   HFKalmanVertexFit  aKal(fTTB.product(), fPV, 0, fVerbose); 
-  aKal.fMaxDoca = fMaxDoca; 
   vector<Track> trackList; 
   vector<int> trackIndices;
   vector<double> trackMasses;
@@ -217,6 +228,14 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   // ----------------------------
   // -- D0 -> K- Pi+   (with mu-)
   // ----------------------------
+  aKal.setNoCuts();
+  aKal.fMaxDoca     = fMaxDoca; 
+  aKal.fVtxChi2     = fMaxVtxChi2; 
+  aKal.fVtxSigXY    = fMinVtxSigXY; 
+  aKal.fVtxSig3d    = fMinVtxSig3d; 
+  aKal.fCosAngle    = fMinCosAngle;
+  aKal.fPtCand      = fMinPtCand;
+
   for (unsigned int i = 0; i < kapiList.size(); ++i) {
     unsigned int iKaon = kapiList[i].first; 
     unsigned int iPion = kapiList[i].second; 
@@ -267,6 +286,13 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   // ----------------------------------------------
   // -- LambdaC+ -> proton+ kaon- pion+  (with mu-)
   // ----------------------------------------------
+  aKal.setNoCuts();
+  aKal.fMaxDoca     = fMaxDoca; 
+  aKal.fVtxChi2     = fMaxVtxChi2; 
+  aKal.fVtxSigXY    = fMinVtxSigXY; 
+  aKal.fVtxSig3d    = fMinVtxSig3d; 
+  aKal.fCosAngle    = fMinCosAngle;
+  aKal.fPtCand      = fMinPtCand;
   for (unsigned int i = 0; i < kapiList.size(); ++i) {
     unsigned int iKaon = kapiList[i].first; 
     unsigned int iPion = kapiList[i].second; 
@@ -354,6 +380,13 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   // ---------------------------------
   // -- D*+ -> K- pi+ pi+   (with mu-)
   // ---------------------------------
+  aKal.setNoCuts();
+  aKal.fMaxDoca     = fMaxDoca; 
+  aKal.fVtxChi2     = fMaxVtxChi2; 
+  aKal.fVtxSigXY    = fMinVtxSigXY; 
+  aKal.fVtxSig3d    = fMinVtxSig3d; 
+  aKal.fCosAngle    = fMinCosAngle;
+  aKal.fPtCand      = fMinPtCand;
   for (unsigned int i = 0; i < kapiList.size(); ++i) {
     unsigned int iKaon = kapiList[i].first; 
     unsigned int iPion = kapiList[i].second; 
@@ -438,6 +471,13 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   b.combine(kapipiList, kalist, pilist,1.0, 2.3);
   if (fVerbose > 0) cout << "==>HFCharm> K-pi-pi list size: " << kapipiList.size() << endl;
 
+  aKal.setNoCuts();
+  aKal.fMaxDoca     = fMaxDoca; 
+  aKal.fVtxChi2     = fMaxVtxChi2; 
+  aKal.fVtxSigXY    = fMinVtxSigXY; 
+  aKal.fVtxSig3d    = fMinVtxSig3d; 
+  aKal.fCosAngle    = fMinCosAngle;
+  aKal.fPtCand      = fMinPtCand;
   for (vector<triplet>::iterator it=kapipiList.begin(); it!=kapipiList.end(); ++it) {
     
     TrackBaseRef kaTrackView(hTracks, it->ka());
@@ -506,6 +546,13 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   vector<triplet> KshortpiList; 
   b.combine(KshortpiList, pilist, 0.8, 2.3, MKSHORT-0.25, MKSHORT+0.25); 
   if (fVerbose > 0) cout << "==>HFCharm> Kshortpi list size: " << KshortpiList.size() << endl;
+  aKal.setNoCuts();
+  aKal.fMaxDoca     = fMaxDoca; 
+  aKal.fVtxChi2     = fMaxVtxChi2; 
+  aKal.fVtxSigXY    = fMinVtxSigXY; 
+  aKal.fVtxSig3d    = fMinVtxSig3d; 
+  aKal.fCosAngle    = fMinCosAngle;
+  aKal.fPtCand      = fMinPtCand;
 
   for (vector<triplet>::iterator it=KshortpiList.begin(); it!=KshortpiList.end(); ++it) {
     
@@ -566,6 +613,13 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   // ----------------------------------
   // -- D(s)+ -> K+ K- pi+   (with mu-)
   // ----------------------------------
+  aKal.setNoCuts();
+  aKal.fMaxDoca     = fMaxDoca; 
+  aKal.fVtxChi2     = fMaxVtxChi2; 
+  aKal.fVtxSigXY    = fMinVtxSigXY; 
+  aKal.fVtxSig3d    = fMinVtxSig3d; 
+  aKal.fCosAngle    = fMinCosAngle;
+  aKal.fPtCand      = fMinPtCand;
 
   for (unsigned int i = 0; i < phiList.size(); ++i) {
     unsigned int iKaon1 = phiList[i].first; 

@@ -18,7 +18,11 @@ HFCharmDump = cms.EDAnalyzer(
     pionPt             = cms.untracked.double(0.7),
     trackPt            = cms.untracked.double(0.7),
     deltaR             = cms.untracked.double(99.),
-    maxDoca            = cms.untracked.double(0.5),
+    maxDoca            = cms.untracked.double(0.2),
+    maxVtxChi2         = cms.untracked.double(10.),
+    minVtxSigXY        = cms.untracked.double(2.),
+    minVtxSig3d        = cms.untracked.double(-1.),
+    minCosAngle        = cms.untracked.double(0.),
     type               = cms.untracked.int32(1) 
     )
 
@@ -40,6 +44,10 @@ HFMuCharmDump = cms.EDAnalyzer(
     trackPt            = cms.untracked.double(0.5),
     deltaR             = cms.untracked.double(99.0),
     maxDoca            = cms.untracked.double(0.5),
+    maxVtxChi2         = cms.untracked.double(100.),
+    minVtxSigXY        = cms.untracked.double(-1.),
+    minVtxSig3d        = cms.untracked.double(-1.),
+    minCosAngle        = cms.untracked.double(-9.),
     type               = cms.untracked.int32(2) 
     )
 

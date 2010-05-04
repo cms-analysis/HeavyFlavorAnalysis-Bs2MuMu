@@ -33,14 +33,16 @@ HFTruthCandidate::HFTruthCandidate(const edm::ParameterSet& iConfig):
   fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", string("goodTracks"))), 
   fMotherID(iConfig.getUntrackedParameter("motherID", 0)), 
   fType(iConfig.getUntrackedParameter("type", 67)),
-  fGenType(iConfig.getUntrackedParameter("GenType", -67)) {
+  fGenType(iConfig.getUntrackedParameter("GenType", -67)),
+  fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)) {
 
   vector<int> defaultIDs;
   defaultIDs.push_back(0);
   fDaughtersID = iConfig.getUntrackedParameter<vector<int> >("daughtersID", defaultIDs);
-
+  
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFTruthCandidate constructor" << endl;
+  cout << "--- verbose:               " << fVerbose << endl;
   cout << "--- tracksLabel:           " << fTracksLabel << endl;
   cout << "--- motherID:              " << fMotherID << endl;
   cout << "--- type:                  " << fType << endl;
@@ -93,8 +95,10 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
   for (int ig = 0; ig < gHFEvent->nGenCands(); ++ig) {
     pGen = gHFEvent->getGenCand(ig);
     if (TMath::Abs(pGen->fID) == fMotherID) {
-      //      cout << "mother ";
-      //      pGen->dump(); 
+      if (fVerbose > 0) {
+	cout << "mother ";
+	pGen->dump(); 
+      }
       genDaughters.clear(); 
       genIndices.clear();
       genMap.clear();
@@ -117,8 +121,10 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	  iMom = pTmp->fMom1;
 	}
 	if (iMom == ig) {
-	  //	  cout << "  daug: ";
-	  //	  pDau->dump(); 
+	  if (fVerbose > 0) {
+	    cout << "  daug: ";
+	    pDau->dump(); 
+	  }
 	  genDaughters.insert(TMath::Abs(pDau->fID)); 
 	  genIndices.insert(id); 
 	  genMap.insert(make_pair(id, TMath::Abs(pDau->fID))); 
@@ -128,17 +134,17 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
       // -- now check whether this is the decay channel in question
       if (fDaughtersSet == genDaughters) {
 	matchedDecay = 1; 
-	//	cout << "matched decay" << endl;
+	if (fVerbose > 0) cout << "matched decay" << endl;
 	break;
       }
       if (fDaughtersGammaSet == genDaughters) {
 	matchedDecay = 1; 
-	//	cout << "matched decay with bremsstrahlung photon" << endl;
+	if (fVerbose > 0) cout << "matched decay with bremsstrahlung photon" << endl;
 	break;
       }
       if (fDaughtersGamma2Set == genDaughters) {
 	matchedDecay = 1; 
-	//	cout << "matched decay with 2 bremsstrahlung photons" << endl;
+	if (fVerbose > 0) cout << "matched decay with 2 bremsstrahlung photons" << endl;
 	break;
       }
     }
@@ -164,12 +170,12 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
   }
 
 
-  //   if (0 == matchedDecay)  {
-  //     cout << "Did not match decay" << endl;
-  //     for (multiset<int>::iterator i = genDaughters.begin(); i != genDaughters.end(); ++i) {
-  //       cout << " unmatched genDaughter: " << *i << endl;
-  //     }
-  //   }
+  if (fVerbose > 2 && 0 == matchedDecay)  {
+    cout << "Did not match decay" << endl;
+    for (multiset<int>::iterator i = genDaughters.begin(); i != genDaughters.end(); ++i) {
+      cout << " unmatched genDaughter: " << *i << endl;
+    }
+  }
 
 
 

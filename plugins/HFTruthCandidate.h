@@ -38,7 +38,7 @@ private:
   multiset<int> fDaughtersGammaSet;
   multiset<int> fDaughtersGamma2Set;
 
-
+  int           fVerbose; 
 
 
 };

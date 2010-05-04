@@ -27,17 +27,29 @@ HFKalmanVertexFit::HFKalmanVertexFit(const TransientTrackBuilder *TTB,
 				     int type,
 				     int verbose) {
   
-  fpTTB     = TTB;
-  fPV       = PV;
-  fType     = type; 
-  fVerbose  = verbose;
-  fMaxDoca  = 9999;
+  fpTTB                 = TTB;
+  fPV                   = PV;
+  fType                 = type; 
+  fVerbose              = verbose;
+  
+  setNoCuts();
 }
+
 
 // ----------------------------------------------------------------------
 HFKalmanVertexFit::~HFKalmanVertexFit() {
 }
 
+
+// ----------------------------------------------------------------------
+void HFKalmanVertexFit::setNoCuts() {
+  fMaxDoca  = 9999.;
+  fVtxChi2  = 9999.;
+  fVtxSigXY = -99.;
+  fVtxSig3d = -99.;
+  fCosAngle = -99.;
+  fPtCand   = -99.;
+}
 
 // ----------------------------------------------------------------------
 void HFKalmanVertexFit::doFit(vector<Track>  &trackList, 
@@ -87,7 +99,7 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
   }
 
   if (maxDist > fMaxDoca) {
-    if (fVerbose > 0) cout << "maxDist = " << maxDist << " > " << fMaxDoca << ", not fitting, return ..." << endl;
+    if (fVerbose > 1) cout << "maxDist = " << maxDist << " > " << fMaxDoca << ", not fitting, return ..." << endl;
     return;
   }
 
@@ -140,7 +152,7 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
 
   }
 
-  // -- Build vertex for ntuple
+  // -- Build "rootio" vertex 
   TAnaVertex anaVtx;
   ChiSquared chi(TransSecVtx.totalChiSquared(), TransSecVtx.degreesOfFreedom());
   anaVtx.setInfo(chi.value(), chi.degreesOfFreedom(), chi.probability(), 0, 0);
@@ -151,14 +163,50 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
   for (unsigned int i = 0; i < trackList.size(); ++i) {
     anaVtx.addTrack(trackIndices[i]);
   }
-  
+
   VertexDistanceXY axy;
   anaVtx.fDxy     = axy.distance(fPV, TransSecVtx).value();
   anaVtx.fDxyE    = axy.distance(fPV, TransSecVtx).error();
+
   VertexDistance3D a3d;
   anaVtx.fD3d     = a3d.distance(fPV, TransSecVtx).value();
   anaVtx.fD3dE    = a3d.distance(fPV, TransSecVtx).error();
-        
+
+
+  // -- Apply cuts
+  if (comp.Vect().Perp() < fPtCand) {
+    if (fVerbose > 1) cout << "pT(Cand) = " << comp.Vect().Perp() << " < " << fPtCand << ", not filling, return ..." << endl;
+    return;
+  }
+
+  if (anaVtx.fDxy/anaVtx.fDxyE < fVtxSigXY) {
+    if (fVerbose > 1) cout << "axyV/axyE = " << anaVtx.fDxy/anaVtx.fDxyE  << " < " << fVtxSigXY << ", not filling, return ..." << endl;
+    return;
+  }
+
+  if (anaVtx.fD3d/anaVtx.fD3dE < fVtxSig3d) {
+    if (fVerbose > 1) cout << "a3dV/a3dE = " << anaVtx.fD3d/anaVtx.fD3dE  << " < " << fVtxSig3d << ", not filling, return ..." << endl;
+    return;
+  }
+
+  if (anaVtx.fChi2 > fVtxChi2) {
+    if (fVerbose > 1) cout << "vertexChi2 = " << anaVtx.fChi2  << " < " << fVtxChi2 << ", not filling, return ..." << endl;
+    return;
+  }
+
+  // -- Compute 2d (??) pointing angle
+  TVector2 tPV = TVector2(fPV.position().x(), fPV.position().y());
+  TVector2 tSV = TVector2(anaVtx.fPoint.X(), anaVtx.fPoint.Y());
+  TVector2 tl  = tSV - tPV;
+  TVector2 tB  = comp.Vect().XYvector();
+  double CosAngle = TMath::Cos(tB.DeltaPhi(tl));
+
+  if (CosAngle < fCosAngle) {
+    if (fVerbose > 1) cout << "CosAngle = " << CosAngle  << " < " << fCosAngle << ", not filling, return ..." << endl;
+    return;
+  }
+
+ 
   // -- fill candidate
   TAnaCand *pCand = gHFEvent->addCand();
   pCand->fPlab    = comp.Vect();
@@ -169,6 +217,9 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
   pCand->fDau2    = -1;
   pCand->fSig1    = gHFEvent->nSigTracks();
   pCand->fSig2    = pCand->fSig1 + trackList.size() - 1;
+
+  anaVtx.fDxy     = axy.distance(fPV, TransSecVtx).value();
+  anaVtx.fDxyE    = axy.distance(fPV, TransSecVtx).error();
 
   pCand->fMinDoca = minDist;
   pCand->fMaxDoca = maxDist;

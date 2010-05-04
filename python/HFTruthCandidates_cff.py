@@ -137,7 +137,7 @@ truthBsDump = cms.EDAnalyzer(
     motherID     = cms.untracked.int32(531),
     type         = cms.untracked.int32(67),
     GenType      = cms.untracked.int32(-67),
-    daughtersID  = cms.untracked.vint32(443, 13, -13, 333, 321, -321)
+    daughtersID  = cms.untracked.vint32(443, 333, 13, -13, 321, -321)
     )
 
 # ----------------------------------------------------------------------

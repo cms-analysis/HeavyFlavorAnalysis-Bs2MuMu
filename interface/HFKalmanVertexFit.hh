@@ -26,8 +26,8 @@ public:
   void doFit(vector<Track> &trackList, vector<int> &trackIndices, vector<double> &trackMasses, 
 	     int type = 0, int ntracksToVertex = -1);
 
-
-
+  void setNoCuts();
+  
   // -- Just combine the 4-vectors
   void doNotFit(vector<Track> &trackList, vector<int> &trackIndices, vector<double> &trackMasses, int type = 0);
   
@@ -36,4 +36,9 @@ public:
   const TransientTrackBuilder *fpTTB;   
 
   double                fMaxDoca; 
+  double                fVtxChi2;
+  double                fVtxSigXY;
+  double                fVtxSig3d;
+  double                fCosAngle;
+  double                fPtCand;
 };

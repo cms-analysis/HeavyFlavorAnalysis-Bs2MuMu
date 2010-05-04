@@ -44,7 +44,8 @@ class HFCharm : public edm::EDAnalyzer {
 
   int           fUseMuon;
   double        fPhiWindow, fDWindow, fLcWindow; 
-  double        fMuonPt, fProtonPt, fKaonPt, fPionPt, fTrackPt, fDeltaR, fMaxDoca;
+  double        fMuonPt, fProtonPt, fKaonPt, fPionPt, fTrackPt, fDeltaR;
+  double        fMaxDoca, fMaxVtxChi2, fMinVtxSigXY, fMinVtxSig3d, fMinCosAngle, fMinPtCand; 
 
   int           fType; 
 
