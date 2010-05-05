@@ -21,16 +21,17 @@ class HFSequentialVertexFit
 {
  public:
   
-  HFSequentialVertexFit(edm::Handle<edm::View<reco::Track> > hTracks, const TransientTrackBuilder *TTB, reco::Vertex &PV, int type = 0, int verbose = 0);
+  HFSequentialVertexFit(edm::Handle<edm::View<reco::Track> > hTracks, const TransientTrackBuilder *TTB, reco::Vertex &PV, int verbose = 0);
   virtual ~HFSequentialVertexFit();
   
-  void doFit(HFDecayTree *tree, int type = 0);
+  void doFit(HFDecayTree *tree);
   
-  int                   fType, fVerbose;
-  reco::Vertex                fPV;
-  const TransientTrackBuilder *fpTTB;
-  edm::Handle<edm::View<reco::Track> > fhTracks;
+  int									fVerbose;
+  reco::Vertex							fPV;
+  const TransientTrackBuilder*			fpTTB;
+  edm::Handle<edm::View<reco::Track> >	fhTracks;
   
  private:
   RefCountedKinematicTree fitTree(HFDecayTree *tree);
+  double getParticleMass(int particleID);
 };

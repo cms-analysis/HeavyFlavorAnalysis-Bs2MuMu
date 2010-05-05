@@ -179,7 +179,7 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
   
   HFKalmanVertexFit    aKal(fTTB.product(), fPV, 100521, fVerbose); 
   HFKinematicVertexFit aKin(fTTB.product(), fPV, 300521, fVerbose);
-  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), fPV, 400521, fVerbose);
+  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), fPV, fVerbose);
   vector<Track> trackList; 
   vector<int> trackIndices;
   vector<double> trackMasses;
@@ -261,34 +261,35 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
       // Now, do with the HFSequentialFit class.
 
       // First, like the 100XXX candidate
-      HFDecayTree theTree;
-      theTree.addTrack(iMuon1,MMUON);
-      theTree.addTrack(iMuon2,MMUON);
-      theTree.addTrack(iTrack,MKAON);
+      HFDecayTree theTree(400521);
+      theTree.addTrack(iMuon1,13);
+      theTree.addTrack(iMuon2,13);
+      theTree.addTrack(iTrack,321);
 
-      aSeq.doFit(&theTree,400521);
+      aSeq.doFit(&theTree);
 
       // Second, do by stepwise reconstruction
       theTree.clear();
-      theTree.addTrack(iTrack,MKAON);
+      theTree.particleID = 500521;    
+      theTree.addTrack(iTrack,321);
+    
       HFDecayTreeIterator iterator = theTree.addDecayTree();
-      iterator->addTrack(iMuon1,MMUON);
-      iterator->addTrack(iMuon2,MMUON);
+      iterator->addTrack(iMuon1,13);
+      iterator->addTrack(iMuon2,13);
 
-      aSeq.doFit(&theTree,500521);
+      aSeq.doFit(&theTree);
 
       // Then, like the 300XXX candidate
       theTree.clear();
-      theTree.addTrack(iTrack,MKAON);
-      iterator = theTree.addDecayTree(MJPSI);
-      iterator->addTrack(iMuon1,MMUON);
-      iterator->addTrack(iMuon2,MMUON);
+      theTree.particleID = 600521;
+      theTree.addTrack(iTrack,321);
+      iterator = theTree.addDecayTree(443,MJPSI);
+      iterator->addTrack(iMuon1,13);
+      iterator->addTrack(iMuon2,13);
 
-      aSeq.doFit(&theTree,600521);
+      aSeq.doFit(&theTree);
     }
-    
   }
-  
 }
 
 

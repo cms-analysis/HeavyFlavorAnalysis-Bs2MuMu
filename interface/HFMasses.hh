@@ -1,3 +1,4 @@
+#define MELECTRON  0.0005
 #define MMUON      0.1057
 #define MPION      0.1396
 #define MKAON      0.4937
