@@ -3,7 +3,6 @@
  *  HFDecayTree
  *
  *  Created by Christoph on 28.4.10.
- *  Copyright 2010 __MyCompanyName__. All rights reserved.
  *
  */
 #include <iostream>
@@ -12,7 +11,13 @@
 
 using namespace std;
 
-HFDecayTree::HFDecayTree(double constraint, double constraintSigma) : massConstraint(constraint), massConstraintSigma(constraintSigma)
+// constants used to decide which particle depending on mass.
+const static double PROTON_BOUND	=	0.750;
+const static double KAON_BOUND		=	0.250;
+const static double PION_BOUND		=	0.120;
+const static double MUON_BOUND		=	0.050;
+
+HFDecayTree::HFDecayTree(int pID, double constraint, double constraintSigma) : particleID(pID), massConstraint(constraint), massConstraintSigma(constraintSigma)
 {
   if(massConstraintSigma <= 0.0 && massConstraint > 0.0)
     massConstraintSigma = 0.0001 * massConstraint;
@@ -20,11 +25,22 @@ HFDecayTree::HFDecayTree(double constraint, double constraintSigma) : massConstr
 
 void HFDecayTree::addTrack(int trackIx, double trackMass)
 {
-	if (trackMass <= 0)
-		cerr << "HFDecayTree: Adding Track with non-positive mass!!!" << endl;
+	int type;
 	
-	if(!trackIndices.insert(make_pair(trackIx, trackMass)).second)
-		cerr << "HFDecayTree: Adding the same Trackindex again. Ignoring!!!" << endl;
+	// try to figure out the particle ID by it's mass.
+	// NOTE: cannot distinguish between particle and antiparticle (=> deprecated)
+	if		(trackMass >= PROTON_BOUND)	type = 2212;	// p+
+	else if	(trackMass >= KAON_BOUND)	type = 321;		// K+
+	else if (trackMass >= PION_BOUND)	type = 211;		// Pi+
+	else if (trackMass >= MUON_BOUND)	type = 13;		// mu-
+	else								type = 11;		// e-
+	
+	addTrack(trackIx, type);
+} // addTrack()
+
+void HFDecayTree::addTrack(int trackIx, int trackID)
+{
+	trackIndices[trackIx] = trackID;
 } // addTrack()
 
 void HFDecayTree::appendDecayTree(HFDecayTree subTree)
@@ -32,13 +48,18 @@ void HFDecayTree::appendDecayTree(HFDecayTree subTree)
   subVertices.push_back(subTree);
 } // appendDecayTree()
 
-HFDecayTreeIterator HFDecayTree::addDecayTree(double mass, double mass_sigma)
+HFDecayTreeIterator HFDecayTree::addDecayTree(int pID, double mass, double mass_sigma)
 {
-  return subVertices.insert(subVertices.end(),HFDecayTree(mass,mass_sigma));
+  return subVertices.insert(subVertices.end(),HFDecayTree(pID,mass,mass_sigma));
 } // addDecayTree()
 
 void HFDecayTree::clear()
 {
+  particleID = -1.0;
+  massConstraint = -1.0;
+  massConstraintSigma = -1.0;
+  
+  // clear the containers
   trackIndices.clear();
   subVertices.clear();
 } // clear()
@@ -63,43 +84,48 @@ HFDecayTreeIterator HFDecayTree::getVerticesEndIterator()
 	return subVertices.end();
 } // getVerticesEndIterator()
 
-
-std::vector<int> HFDecayTree::getAllTracks()
+void HFDecayTree::getAllTracks(std::vector<int> *out_vector)
 {
-	vector<int> tracks;
 	HFDecayTreeTrackIterator trackIt;
 	HFDecayTreeIterator treeIt;
 	
 	for (trackIt = trackIndices.begin(); trackIt!=trackIndices.end(); ++trackIt)
-		tracks.push_back(trackIt->first);
+		out_vector->push_back(trackIt->first);
 	
-	for (treeIt = subVertices.begin(); treeIt!=subVertices.end(); ++treeIt) {
-		vector<int> tmp = treeIt->getAllTracks();
-		tracks.insert(tracks.end(),tmp.begin(),tmp.end());
-	}
-	
+	for (treeIt = subVertices.begin(); treeIt!=subVertices.end(); ++treeIt)
+		treeIt->getAllTracks(out_vector);
+} // getAllTracks()
+
+std::vector<int> HFDecayTree::getAllTracks()
+{
+	vector<int> tracks;
+	getAllTracks(&tracks);
 	return tracks;
 } // getAllTracks()
 
-// FIXME: this has to be completed for the new variables introduced.
 void HFDecayTree::dump(unsigned indent)
 {
-        HFDecayTreeTrackIterator it;
-	HFDecayTreeIterator ptr;
-	unsigned j;
+	HFDecayTreeIterator treeIt;
+	HFDecayTreeTrackIterator trackIt;
 	
-	for (j = 0; j < indent; j++) cout << '\t';
-	cout << "Dumping HFDecayTree (" << massConstraint << ") {" << endl;
+	dumpTabs(indent);
+	cout << "HFDecayTree (particleID = " << particleID << ", mass = "
+		<< massConstraint << ", massSigma = " << massConstraintSigma << ") {" << endl;
 	
-	// one more then above!!
-	for (j = 0; j <= indent; j++) cout << '\t';
-	for (it = trackIndices.begin(); it != trackIndices.end(); ++it)
-		cout << '(' << it->first << ',' << it->second << ")\t";
+	dumpTabs(indent+1);
+	for (trackIt = trackIndices.begin(); trackIt!=trackIndices.end(); ++trackIt)
+		cout << '(' << "trackIx = " << trackIt->first << ", trackParticleID = " << trackIt->second << ")\t";
 	cout << endl;
 	
-	for (ptr = subVertices.begin(); ptr!=subVertices.end(); ++ptr)
-		ptr->dump(indent + 1);
+	for (treeIt = subVertices.begin(); treeIt != subVertices.end(); ++treeIt)
+		treeIt->dump(indent+1);
 	
-	for (j = 0; j < indent; j++) cout << '\t';
+	dump(indent);
 	cout << '}' << endl;
 } // dump()
+
+
+void HFDecayTree::dumpTabs(unsigned indent)
+{
+	for (unsigned j = 0; j < indent; j++) cout << '\t';
+} // dumpTabs()
