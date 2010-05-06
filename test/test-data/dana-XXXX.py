@@ -36,15 +36,12 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 # ----------------------------------------------------------------------
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFTree_cff")
-#process.load("HeavyFlavorAnalysis.Bs2MuMu.HFMCTruth_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFRecoStuff_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFTruthCandidates_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFB2JpsiCandidates_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFCharm_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFMuonAndTrackCandidates_cff")
-
-#process.load("HeavyFlavorAnalysis.Bs2MuMu.HFB2MuCandidates_cff")
-#process.load("HeavyFlavorAnalysis.Bs2MuMu.HFDimuonsCandidates_cff")
+process.load("HeavyFlavorAnalysis.Bs2MuMu.HFPhysicsDeclared_cff")
 
 
 # ----------------------------------------------------------------------
@@ -58,6 +55,7 @@ process.tree.fileName = rootFileName
 
 # ----------------------------------------------------------------------
 process.p = cms.Path(
+    process.seqPhysDeclBitSelection*
 #    process.MCTruthSequence*
     process.recoStuffSequence*
 #    process.bmmDump*

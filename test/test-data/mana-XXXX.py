@@ -42,6 +42,7 @@ process.load("HeavyFlavorAnalysis.Bs2MuMu.HFTruthCandidates_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFB2JpsiCandidates_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFCharm_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFMuonAndTrackCandidates_cff")
+process.load("HeavyFlavorAnalysis.Bs2MuMu.HFPhysicsDeclared_cff")
 
 # ----------------------------------------------------------------------
 try:
@@ -54,6 +55,7 @@ process.tree.fileName = rootFileName
 
 # ----------------------------------------------------------------------
 process.p = cms.Path(
+    process.seqPhysDeclBitSelection*
     process.MCTruthSequence*
     process.recoStuffSequence*
 #    process.bmmDump*

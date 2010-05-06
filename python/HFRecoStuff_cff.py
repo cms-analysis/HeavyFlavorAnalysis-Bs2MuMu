@@ -41,6 +41,7 @@ muonDump = cms.EDAnalyzer(
 triggerDump = cms.EDAnalyzer(
     "HFDumpTrigger",
     verbose                 = cms.untracked.int32(0),
+    HLTProcessName          = cms.untracked.string('HLT'), 
     L1GTReadoutRecordLabel  = cms.untracked.InputTag("gtDigis"), 
     hltL1GtObjectMap        = cms.untracked.InputTag("hltL1GtObjectMap"), 
     L1MuonsLabel            = cms.untracked.InputTag("hltL1extraParticles"), 
@@ -49,8 +50,23 @@ triggerDump = cms.EDAnalyzer(
     hltLabel                = cms.untracked.InputTag("TriggerResults::HLT"), 
     )
 
+
+# ----------------------------------------------------------------------
+hltrep = cms.EDAnalyzer(
+    "HLTrigReport",
+    HLTriggerResults = cms.InputTag("TriggerResults","","HLT")
+    )
+
+
+l1trep = cms.EDAnalyzer(
+    "L1GtTrigReport",
+    UseL1GlobalTriggerRecord = cms.bool( False ),
+    L1GtRecordInputTag = cms.InputTag( "gtDigis" )
+    )
+
+
 # ######################################################################
 # Sequences
 # ######################################################################
-recoStuffSequence     = cms.Sequence(stuffDump*trkDump*muonDump*triggerDump)
+recoStuffSequence     = cms.Sequence(stuffDump*trkDump*muonDump*triggerDump*hltrep*l1trep)
 

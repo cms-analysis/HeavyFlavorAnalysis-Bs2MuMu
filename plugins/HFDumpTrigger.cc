@@ -22,6 +22,7 @@
 #include "DataFormats/HLTReco/interface/TriggerEvent.h"
 
 #include "HLTrigger/HLTcore/interface/HLTConfigProvider.h"
+#include "L1Trigger/GlobalTriggerAnalyzer/interface/L1GtUtils.h"
 
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
@@ -35,7 +36,6 @@
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaMuon.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TTrgObj.hh"
 
-///////My includes ////
 #include "CondFormats/DataRecord/interface/L1GtTriggerMenuRcd.h"
 #include "CondFormats/L1TObjects/interface/L1GtTriggerMenu.h"
 #include "CondFormats/L1TObjects/interface/L1GtTriggerMenuFwd.h"
@@ -53,6 +53,7 @@ using namespace trigger;
 // ----------------------------------------------------------------------
 HFDumpTrigger::HFDumpTrigger(const edm::ParameterSet& iConfig):
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
+  fHLTProcessName(iConfig.getUntrackedParameter<string>("HLTProcessName")),
   fL1GTReadoutRecordLabel(iConfig.getUntrackedParameter<InputTag>("L1GTReadoutRecordLabel", edm::InputTag("gtDigis"))),
   fL1GTmapLabel(iConfig.getUntrackedParameter<InputTag>("hltL1GtObjectMap")),
   fL1MuonsLabel(iConfig.getUntrackedParameter<InputTag>("L1MuonsLabel")),
@@ -63,6 +64,7 @@ HFDumpTrigger::HFDumpTrigger(const edm::ParameterSet& iConfig):
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFDumpTrigger constructor" << endl;
   cout << "--- Verbose                     : " << fVerbose << endl;
+  cout << "--- HLT process name            : " << fHLTProcessName << endl;
   cout << "--- L1 GT Readout Record Label  : " << fL1GTReadoutRecordLabel << endl;
   cout << "--- L1 GT Object Map Label      : " << fL1GTmapLabel << endl;
   cout << "--- L1 Muons Label              : " << fL1MuonsLabel << endl;
@@ -85,7 +87,9 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
   fNevt++;
 
-  // -- L1 trigger bits
+  // ----------------------------------------------------------------------
+  // -- L1 results: physics and technical triggers
+  // ----------------------------------------------------------------------
   gHFEvent->fL1Decision = 0; 
   gHFEvent->fL1TWords[0]=0; gHFEvent->fL1TWords[1]=0; gHFEvent->fL1TWords[2]=0; gHFEvent->fL1TWords[3]=0; 
   gHFEvent->fL1TWasRun[0]=0;gHFEvent->fL1TWasRun[1]=0;gHFEvent->fL1TWasRun[2]=0;gHFEvent->fL1TWasRun[3]=0; 
@@ -96,78 +100,62 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   Handle<L1GlobalTriggerObjectMapRecord> hL1GTmap; 
   iEvent.getByLabel("hltL1GtObjectMap", hL1GTmap);
 
+  L1GtUtils l1GtUtils;
+  l1GtUtils.retrieveL1EventSetup(iSetup);
+  // cout << "L1 trigger menu: ";
+  // cout << l1GtUtils.l1TriggerMenu() << endl;
+
   edm::ESHandle<L1GtTriggerMenu> hL1GtMenu;
   iSetup.get<L1GtTriggerMenuRcd>().get(hL1GtMenu);
   const L1GtTriggerMenu* l1GtMenu = hL1GtMenu.product();
 
+  edm::ESHandle<L1GtTriggerMenu> menuRcd;
+  iSetup.get<L1GtTriggerMenuRcd>().get(menuRcd) ;
+  const L1GtTriggerMenu* menu = menuRcd.product();
 
-  if (L1GTRR.isValid()) {
-    gHFEvent->fL1Decision = (L1GTRR->decision()? 1: 0);
+  string algoname; 
+  int    algobit(-1); 
+  bool   result(false); 
+  int    prescale(0); 
+  int    mask(0); 
+  int    itrig(-1), iword(-1), iErrorCode; 
 
-    const AlgorithmMap& algorithmMap = l1GtMenu->gtAlgorithmMap();
-    for (CItAlgo itAlgo = algorithmMap.begin(); itAlgo != algorithmMap.end(); itAlgo++) {
-      std::string aName = itAlgo->first;
-      int algBitNumber = (itAlgo->second).algoBitNumber();
-      if (fVerbose > 2) cout << "i = " << algBitNumber << " -> " << aName << endl;
-      gHFEvent->fL1TNames[algBitNumber] = TString(aName);
-    }
+  for (CItAlgo algo = menu->gtAlgorithmMap().begin(); algo!=menu->gtAlgorithmMap().end(); ++algo) {
+    algoname = (algo->second).algoName();
+    algobit  = (algo->second).algoBitNumber();
+    result   = l1GtUtils.decisionAfterMask(iEvent, algoname, iErrorCode);
+    mask     = l1GtUtils.triggerMask(iEvent, algoname, iErrorCode);
+    prescale = l1GtUtils.prescaleFactor(iEvent, algoname, iErrorCode);
 
-    const AlgorithmMap& algorithmTTMap = l1GtMenu->gtTechnicalTriggerMap();
-    for (CItAlgo itAlgo = algorithmTTMap.begin(); itAlgo != algorithmTTMap.end(); itAlgo++) {
-      std::string aName = itAlgo->first;
-      int algBitNumber = (itAlgo->second).algoBitNumber();
-      if (fVerbose > 2) cout << "i = " << algBitNumber << " -> " << aName << endl;
-      gHFEvent->fL1TTNames[algBitNumber] = TString(aName);
-    }
-
-    int itrig(0);
-    for (unsigned int iTrig = 0; iTrig < L1GTRR->decisionWord().size(); ++iTrig) {
-      int l1flag = L1GTRR->decisionWord()[iTrig]; 
-      int t1flag = L1GTRR->technicalTriggerWord()[iTrig]; 
-      itrig = iTrig%32;
-      if (iTrig < 32) {
-	if (l1flag) gHFEvent->fL1TWords[0]  |= (0x1 << itrig);
-	if (t1flag) gHFEvent->fL1TTWords[0] |= (0x1 << itrig);
-      } else if (iTrig < 64) {
-	if (l1flag) gHFEvent->fL1TWords[1]  |= (0x1 << itrig);
-	if (t1flag) gHFEvent->fL1TTWords[1] |= (0x1 << itrig);
-      } else if (iTrig < 96) {
-	if (l1flag) gHFEvent->fL1TWords[2]  |= (0x1 << itrig);
-      } else if (iTrig < 128 && l1flag) {
-	if (l1flag) gHFEvent->fL1TWords[3]  |= (0x1 << itrig);
-      }
-    }
-
-  } 
-
-  if (fVerbose > 1) {
-    cout << "L1 trigger: " << endl
-	 << std::bitset<32>(gHFEvent->fL1TWords[0]) << endl
-	 << std::bitset<32>(gHFEvent->fL1TWords[1]) << endl
-	 << std::bitset<32>(gHFEvent->fL1TWords[2]) << endl
-	 << std::bitset<32>(gHFEvent->fL1TWords[3]) << endl;
-    cout << "L1 technical trigger: " << endl
-	 << std::bitset<32>(gHFEvent->fL1TTWords[0]) << endl
-	 << std::bitset<32>(gHFEvent->fL1TTWords[1]) << endl;
+    iword = algobit/32;
+    itrig = algobit%32;
+    
+    gHFEvent->fL1TNames[algobit] = TString(algoname);
+    if (result)    gHFEvent->fL1TWords[iword]  |= (0x1 << itrig);
+    if (0 == mask) gHFEvent->fL1TWasRun[iword] |= (0x1 << itrig);
+    gHFEvent->fL1TPrescale[algobit] = prescale;
   }
 
-  // -- L1 muons
-  Handle<l1extra::L1MuonParticleCollection> hL1Muons;
-  try {
-    iEvent.getByLabel(fL1MuonsLabel, hL1Muons);
-    l1extra::L1MuonParticleCollection::const_iterator l1muon;
-    for (l1muon = hL1Muons->begin(); l1muon != hL1Muons->end(); ++l1muon ) {
-      TLorentzVector a(0.0,0.0,0.0,0.0);
-      a.SetPxPyPzE(l1muon->px(),l1muon->py(),l1muon->pz(),l1muon->energy());
-      if (fVerbose > 3) cout << "L1 muon: pT = " << a.Pt() << " phi = " << a.Phi() << " eta = " << a.Eta() << " q = " << l1muon->charge() << endl;
-    }
-  } catch (cms::Exception &ex) {
-    //    cout << ex.explainSelf() << endl;
-    if (fVerbose > 0) cout << "==>HFDumpTrigger>  l1extra::L1MuonParticleCollection " << fL1MuonsLabel.encode() << " not found " << endl;
+  for (CItAlgo algo = menu->gtTechnicalTriggerMap().begin(); algo != menu->gtTechnicalTriggerMap().end(); ++algo) {
+    algoname = (algo->second).algoName();
+    algobit  = (algo->second).algoBitNumber();
+    result   = l1GtUtils.decisionAfterMask(iEvent, algoname, iErrorCode);
+    mask     = l1GtUtils.triggerMask(iEvent, algoname, iErrorCode);
+    prescale = l1GtUtils.prescaleFactor(iEvent, algoname, iErrorCode);
+    
+    iword = algobit/32;
+    itrig = algobit%32;
+    
+    gHFEvent->fL1TTNames[algobit] = TString(algoname);
+    if (result)    gHFEvent->fL1TTWords[iword]  |= (0x1 << itrig);
+    if (0 == mask) gHFEvent->fL1TTWasRun[iword] |= (0x1 << itrig);
+    gHFEvent->fL1TTPrescale[algobit] = prescale;
+
   }
 
-
-  // -- HLT bits
+  // ----------------------------------------------------------------------
+  // -- HLT results
+  // ----------------------------------------------------------------------
   gHFEvent->fHLTDecision = 0; 
   gHFEvent->fHLTWords[0]=0; gHFEvent->fHLTWords[1]=0; gHFEvent->fHLTWords[2]=0; gHFEvent->fHLTWords[3]=0; 
   gHFEvent->fHLTWords[4]=0; gHFEvent->fHLTWords[5]=0; gHFEvent->fHLTWords[6]=0; gHFEvent->fHLTWords[7]=0; 
@@ -175,84 +163,55 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   gHFEvent->fHLTWasRun[0]=0;gHFEvent->fHLTWasRun[1]=0;gHFEvent->fHLTWasRun[2]=0;gHFEvent->fHLTWasRun[3]=0; 
   gHFEvent->fHLTWasRun[4]=0;gHFEvent->fHLTWasRun[5]=0;gHFEvent->fHLTWasRun[6]=0;gHFEvent->fHLTWasRun[7]=0; 
 
+
+  // -- Read HLT configuration and names
+  HLTConfigProvider hltConfig;
+  bool hltConfigInitSuccess = hltConfig.init(fHLTProcessName);
+
+  vector<string> validTriggerNames;
+  if (hltConfigInitSuccess) validTriggerNames = hltConfig.triggerNames();
+
+  if (validTriggerNames.size() < 1) {
+    cout << "==>HFDumpTrigger: NO valid trigger names returned by HLT config provided!!??" << endl;
+    return;
+  }
+
   Handle<TriggerResults> hHLTresults;
   bool hltF = true;
   try {
     iEvent.getByLabel(fHLTResultsLabel, hHLTresults);
   } catch (cms::Exception &ex) {
-    //    cout << ex.explainSelf() << endl;
     if (fVerbose > 0) cout << "==>HFDumpTrigger> Triggerresults  " << fHLTResultsLabel.encode() << " not found " << endl;
     hltF = false;
   }
-
+  
   if (hltF) {
     TriggerNames trigName;
     trigName.init(*hHLTresults);
-    //    HLTGlobal_wasrun=HLTR->wasrun();
-    //    HLTGlobal_error=HLTR->error();
     gHFEvent->fHLTDecision = hHLTresults->accept();
     if (fVerbose > 1) cout << "hHLTresults->size() = " << hHLTresults->size() << " and HLT accept = " << gHFEvent->fHLTDecision << endl;
 
-    int itrig(0); 
-    for (unsigned int iTrig = 0; iTrig < hHLTresults->size(); ++iTrig) {
-      int wasrun = hHLTresults->wasrun(iTrig); 
-      int hltacc = hHLTresults->accept(iTrig); 
+    unsigned int index(999); 
+    int wasrun(0), result(0), error(0);
+    for (unsigned int it = 0; it < validTriggerNames.size(); ++it) {
+      index = trigName.triggerIndex(validTriggerNames[it]); 
+      result = (index < validTriggerNames.size() && hHLTresults->accept(index)) ? 1 : 0;
+      wasrun = (index < validTriggerNames.size() && hHLTresults->wasrun(index)) ? 1 : 0;
 
-      // This is the HLT name for each path: 
-      if (fVerbose > 2) cout << iTrig << " " << trigName.triggerName(iTrig) << endl;
+      iword = it/32;
+      itrig = it%32;
 
-      gHFEvent->fHLTNames[iTrig] = TString(trigName.triggerName(iTrig)); 
-
-      itrig = iTrig%32; 
-      
-      if (iTrig < 32) {
-        if (hltacc) gHFEvent->fHLTWords[0] |= (0x1 << itrig);
-        if (wasrun) gHFEvent->fHLTWasRun[0]|= (0x1 << itrig);
-      } else if (iTrig < 64) {
-        if (hltacc) gHFEvent->fHLTWords[1] |= (0x1 << itrig);
-        if (wasrun) gHFEvent->fHLTWasRun[1]|= (0x1 << itrig);
-      } else if (iTrig < 96) {
-        if (hltacc) gHFEvent->fHLTWords[2] |= (0x1 << itrig);
-        if (wasrun) gHFEvent->fHLTWasRun[2]|= (0x1 << itrig);
-      } else if (iTrig < 128) {
-        if (hltacc) gHFEvent->fHLTWords[3] |= (0x1 << itrig);
-        if (wasrun) gHFEvent->fHLTWasRun[3]|= (0x1 << itrig);
-      } else if (iTrig < 160) {
-        if (hltacc) gHFEvent->fHLTWords[4] |= (0x1 << itrig);
-        if (wasrun) gHFEvent->fHLTWasRun[4]|= (0x1 << itrig);
-      } else if (iTrig < 192) {
-        if (hltacc) gHFEvent->fHLTWords[5] |= (0x1 << itrig);
-        if (wasrun) gHFEvent->fHLTWasRun[5]|= (0x1 << itrig);
-      } else if (iTrig < 224) {
-        if (hltacc) gHFEvent->fHLTWords[6] |= (0x1 << itrig);
-        if (wasrun) gHFEvent->fHLTWasRun[6]|= (0x1 << itrig);
-      } else if (iTrig < 256) {
-        if (hltacc) gHFEvent->fHLTWords[7] |= (0x1 << itrig);
-        if (wasrun) gHFEvent->fHLTWasRun[7]|= (0x1 << itrig);
-      }
-
+      gHFEvent->fHLTNames[it] = TString(validTriggerNames[it]); 
+      if (result) gHFEvent->fHLTWords[iword] |= (0x1 << itrig);
+      if (wasrun) gHFEvent->fHLTWasRun[iword]|= (0x1 << itrig);
     }
-
-
-    if (fVerbose > 1)  cout << "HLT trigger accept/run: " << endl
-			    << std::bitset<32>(gHFEvent->fHLTWords[0]) << endl
-			    << std::bitset<32>(gHFEvent->fHLTWasRun[0]) << endl << endl
-			    << std::bitset<32>(gHFEvent->fHLTWords[1]) << endl
-			    << std::bitset<32>(gHFEvent->fHLTWasRun[1]) << endl<< endl
-			    << std::bitset<32>(gHFEvent->fHLTWords[2]) << endl
-			    << std::bitset<32>(gHFEvent->fHLTWasRun[2]) << endl << endl
-			    << std::bitset<32>(gHFEvent->fHLTWords[3]) << endl
-			    << std::bitset<32>(gHFEvent->fHLTWasRun[3]) << endl << endl
-			    << std::bitset<32>(gHFEvent->fHLTWords[4]) << endl
-			    << std::bitset<32>(gHFEvent->fHLTWasRun[4]) << endl << endl
-			    << std::bitset<32>(gHFEvent->fHLTWords[5]) << endl
-			    << std::bitset<32>(gHFEvent->fHLTWasRun[5]) << endl << endl
-			    << std::bitset<32>(gHFEvent->fHLTWords[6]) << endl
-			    << std::bitset<32>(gHFEvent->fHLTWasRun[6]) << endl << endl
-			    << std::bitset<32>(gHFEvent->fHLTWords[7]) << endl
-			    << std::bitset<32>(gHFEvent->fHLTWasRun[7]) << endl << endl;
-  }   
+  }
   
+
+  // ----------------------------------------------------------------------
+  // -- Get trigger objects
+  // ----------------------------------------------------------------------
+
   Handle<trigger::TriggerEvent> trgEvent;
   hltF = true;
   try {
@@ -299,6 +258,12 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       }
     }
   }  
+}
+
+
+// ------------ method called once each job just before starting event loop  ------------
+void  HFDumpTrigger::beginRun(const Run &run, const EventSetup &iSetup) {
+
 }
 
 

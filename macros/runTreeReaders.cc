@@ -21,6 +21,7 @@
 #include "copyReader.hh"
 #include "dumpReader.hh"
 #include "muCharmReader.hh"
+#include "triggerValidation.hh"
 
 using namespace std;
 
@@ -166,7 +167,12 @@ int main(int argc, char *argv[]) {
   else if (readerName == "d0Reader") a = new d0Reader(chain,TString(evtClassName));
   else if (readerName == "copyReader") a = new copyReader(chain,TString(evtClassName));
   else if (readerName == "muCharmReader") a = new muCharmReader(chain,TString(evtClassName));
-  
+  else if (readerName == "triggerValidation") a = new triggerValidation(chain,TString(evtClassName));
+  else {
+    cout << "please provide a class name to instantiate" << endl;
+  }
+
+
   if (a) {
     a->openHistFile(histfile); 
     a->bookHist(); 
