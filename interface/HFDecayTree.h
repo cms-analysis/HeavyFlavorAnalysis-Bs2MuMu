@@ -8,6 +8,10 @@
 #ifndef HFDECAYTREE_H
 #define HFDECAYTREE_H
 
+// CMSSW
+#include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaCand.hh"
+#include "RecoVertex/KinematicFitPrimitives/interface/RefCountedKinematicTree.h"
+
 // STL
 #include <map>
 #include <vector>
@@ -21,7 +25,7 @@ class HFDecayTree
 {
 	public:
 		HFDecayTree(int pID = -1.0, double constraint = -1.0, double constraintSigma = -1.0);
-		virtual ~HFDecayTree() {}
+		virtual ~HFDecayTree() { delete kinTree; }
 		
 		// Constructing the tree structure
 		void addTrack(int trackIx, double trackMass) __attribute__((deprecated)); // DEPRECATED, use addTrack(trackIx,trackID) instead!
@@ -39,9 +43,16 @@ class HFDecayTree
 		HFDecayTreeIterator getVerticesBeginIterator();
 		HFDecayTreeIterator getVerticesEndIterator();
 		
-		void getAllTracks(std::vector<int> *out_vector);
-		std::vector<int> getAllTracks();
+		void getAllTracks(std::vector<std::pair<int,int> > *out_vector);
+		std::vector<std::pair<int,int> > getAllTracks();
 		
+		RefCountedKinematicTree *getKinematicTree();
+		void setKinematicTree(RefCountedKinematicTree newTree);
+		void resetKinematicTree(int recursive = 0);
+
+		TAnaCand *getAnaCand();
+		void setAnaCand(TAnaCand *cand);
+
 		// Debugging!
 		void dump(unsigned indent = 0);
 		
@@ -53,6 +64,8 @@ class HFDecayTree
 		
 		std::map<int,int> trackIndices;
 		std::vector<HFDecayTree> subVertices;
+		RefCountedKinematicTree *kinTree;
+		TAnaCand *anaCand;
 };
 
 #endif

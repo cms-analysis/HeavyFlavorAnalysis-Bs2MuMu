@@ -38,8 +38,23 @@ bspsiphiDump = cms.EDAnalyzer(
     deltaR       = cms.untracked.double(1.5)
     )
 
+bdpsiksDump = cms.EDAnalyzer(
+    "HFBd2JpsiKs",
+    verbose = cms.untracked.int32(0),
+    tracksLabel = cms.untracked.InputTag("generalTracks"),
+    muonsLabel = cms.untracked.InputTag("muons"),
+    PrimaryVertexLabel = cms.untracked.InputTag("offlinePrimaryVertices"),
+    muonPt = cms.untracked.double(1.0),
+    pionPt = cms.untracked.double(0.4),
+    psiMuons = cms.untracked.int32(1),
+    psiWindow = cms.untracked.double(0.3),
+    ksWindow = cms.untracked.double(0.3),
+    bdWindow = cms.untracked.double(0.8),
+    fDelta = cms.untracked.double(99.0),
+    vertexing = cms.untracked.int32(1)
+)
 
 # ######################################################################
 # Sequences
 # ######################################################################
-B2JPsiSequence     = cms.Sequence(bupsikpDump*bdpsikstarDump*bspsiphiDump)
+B2JPsiSequence     = cms.Sequence(bupsikpDump*bdpsikstarDump*bspsiphiDump*bdpsiksDump)

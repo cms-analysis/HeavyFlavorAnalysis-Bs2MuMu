@@ -26,12 +26,21 @@ class HFSequentialVertexFit
   
   void doFit(HFDecayTree *tree);
   
-  int									fVerbose;
-  reco::Vertex							fPV;
-  const TransientTrackBuilder*			fpTTB;
-  edm::Handle<edm::View<reco::Track> >	fhTracks;
+  int fVerbose;
+  reco::Vertex fPV;
+  const TransientTrackBuilder* fpTTB;
+  edm::Handle<edm::View<reco::Track> > fhTracks;
   
  private:
-  RefCountedKinematicTree fitTree(HFDecayTree *tree);
+  void fitTree(HFDecayTree *tree);
+  void saveTree(HFDecayTree *tree);
+
+  // wrapper for the template routine bellow
+  inline TAnaCand *addCandidate(HFDecayTree *tree, VertexState &wrtVertexState) {return addCand<VertexState>(tree,wrtVertexState);}
+  inline TAnaCand *addCandidate(HFDecayTree *tree, reco::Vertex &wrtVertex) {return addCand<reco::Vertex>(tree,wrtVertex);}
+
+  template<class T>
+  TAnaCand *addCand(HFDecayTree *tree, T &toVertex);
+
   double getParticleMass(int particleID);
 };

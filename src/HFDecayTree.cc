@@ -17,7 +17,7 @@ const static double KAON_BOUND		=	0.250;
 const static double PION_BOUND		=	0.120;
 const static double MUON_BOUND		=	0.050;
 
-HFDecayTree::HFDecayTree(int pID, double constraint, double constraintSigma) : particleID(pID), massConstraint(constraint), massConstraintSigma(constraintSigma)
+HFDecayTree::HFDecayTree(int pID, double constraint, double constraintSigma) : particleID(pID), massConstraint(constraint), massConstraintSigma(constraintSigma), kinTree(0)
 {
   if(massConstraintSigma <= 0.0 && massConstraint > 0.0)
     massConstraintSigma = 0.0001 * massConstraint;
@@ -62,6 +62,12 @@ void HFDecayTree::clear()
   // clear the containers
   trackIndices.clear();
   subVertices.clear();
+
+  // clear the kinematic tree
+  delete kinTree;
+  kinTree = NULL;
+
+  anaCand = NULL;
 } // clear()
 
 HFDecayTreeTrackIterator HFDecayTree::getTrackBeginIterator()
@@ -84,24 +90,60 @@ HFDecayTreeIterator HFDecayTree::getVerticesEndIterator()
 	return subVertices.end();
 } // getVerticesEndIterator()
 
-void HFDecayTree::getAllTracks(std::vector<int> *out_vector)
+void HFDecayTree::getAllTracks(vector<pair<int,int> > *out_vector)
 {
 	HFDecayTreeTrackIterator trackIt;
 	HFDecayTreeIterator treeIt;
 	
 	for (trackIt = trackIndices.begin(); trackIt!=trackIndices.end(); ++trackIt)
-		out_vector->push_back(trackIt->first);
+		out_vector->push_back(*trackIt);
 	
 	for (treeIt = subVertices.begin(); treeIt!=subVertices.end(); ++treeIt)
 		treeIt->getAllTracks(out_vector);
 } // getAllTracks()
 
-std::vector<int> HFDecayTree::getAllTracks()
+vector<pair<int,int> > HFDecayTree::getAllTracks()
 {
-	vector<int> tracks;
-	getAllTracks(&tracks);
-	return tracks;
+  vector<pair<int,int> > tracks;
+  getAllTracks(&tracks);
+  return tracks;
 } // getAllTracks()
+
+RefCountedKinematicTree* HFDecayTree::getKinematicTree()
+{
+  return kinTree;
+} // getKinematicTree()
+
+void HFDecayTree::setKinematicTree(RefCountedKinematicTree newTree)
+{
+  if(!kinTree) kinTree = new RefCountedKinematicTree;
+  
+  *kinTree = newTree; // make a copy from the reference counting pointer
+} // setKinematicTree()
+
+void HFDecayTree::resetKinematicTree(int recursive)
+{
+  HFDecayTreeIterator treeIt;
+
+  if(recursive) {
+    for(treeIt = getVerticesBeginIterator(); treeIt!=getVerticesEndIterator(); ++treeIt)
+      treeIt->resetKinematicTree(recursive);
+  }
+
+  delete kinTree;
+  kinTree = NULL;
+  anaCand = NULL;
+} // resetKinematicTree()
+
+TAnaCand *HFDecayTree::getAnaCand()
+{
+  return anaCand;
+} // getAnaCand()
+
+void HFDecayTree::setAnaCand(TAnaCand *cand)
+{
+  anaCand = cand;
+} // setAnaCand()
 
 void HFDecayTree::dump(unsigned indent)
 {
