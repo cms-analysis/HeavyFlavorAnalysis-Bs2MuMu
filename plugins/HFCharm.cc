@@ -41,8 +41,9 @@ HFCharm::HFCharm(const ParameterSet& iConfig) :
   fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexLabel", InputTag("offlinePrimaryVertices"))),
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
   fUseMuon(iConfig.getUntrackedParameter<int>("useMuon", 0)), 
+  fCorrectCharge(iConfig.getUntrackedParameter<bool>("correctCharge", true)), 
   fPhiWindow(iConfig.getUntrackedParameter<double>("phiWindow", 0.3)), 
-  fDWindow(iConfig.getUntrackedParameter<double>("DWindow", 0.3)), 
+  fDWindow(iConfig.getUntrackedParameter<double>("DWindow", 0.2)), 
   fLcWindow(iConfig.getUntrackedParameter<double>("LcWindow", 0.4)), 
   fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 1.0)), 
   fProtonPt(iConfig.getUntrackedParameter<double>("protonPt", 1.0)), 
@@ -65,6 +66,7 @@ HFCharm::HFCharm(const ParameterSet& iConfig) :
   cout << "---  PrimaryVertexLabel:       " << fPrimaryVertexLabel << endl;
   cout << "---  muonsLabel:               " << fMuonsLabel << endl;
   cout << "---  useMuon:                  " << fUseMuon << endl;
+  cout << "---  correctCharge:            " << (fCorrectCharge?1:0) << endl;
   cout << "---  phiWindow:                " << fPhiWindow << endl;
   cout << "---  DWindow:                  " << fDWindow << endl;
   cout << "---  muonPt:                   " << fMuonPt << endl;
@@ -73,7 +75,6 @@ HFCharm::HFCharm(const ParameterSet& iConfig) :
   cout << "---  pionPt:                   " << fPionPt << endl;
   cout << "---  trackPt:                  " << fTrackPt << endl;
   cout << "---  deltaR:                   " << fDeltaR << endl;
-
   cout << "---  maxDoca:                  " << fMaxDoca << endl;
   cout << "---  maxVtxChi2:               " << fMaxVtxChi2 << endl;
   cout << "---  minVtxSigXY:              " << fMinVtxSigXY << endl;
@@ -248,6 +249,8 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     Track tPion(*piTrackView);
     pion.SetPtEtaPhiM(tPion.pt(), tPion.eta(), tPion.phi(), MPION); 
 
+    if (fCorrectCharge && (tKaon.charge()*tPion.charge() > 0)) continue;
+
     if (fUseMuon) {
       if (static_cast<unsigned int>(muMaxIdx) == iKaon) continue; 
       if (static_cast<unsigned int>(muMaxIdx) == iPion) continue; 
@@ -278,7 +281,8 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	trackMasses.push_back(-MMUON); // Note negative mass: fVar1 contains D0 mass WITHOUT muon 
       }
 
-      aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+10, 2); 
+      if (gHFEvent->nCands() < 199000 && gHFEvent->nSigTracks() < 499000) 
+	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+10, 2); 
     }	
   }
 
@@ -304,6 +308,8 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     TrackBaseRef piTrackView(hTracks, iPion);
     Track tPion(*piTrackView);
     pion.SetPtEtaPhiM(tPion.pt(), tPion.eta(), tPion.phi(), MPION); 
+
+    if (fCorrectCharge && (tKaon.charge()*tPion.charge() > 0)) continue;
     
     if (fUseMuon) {
       if (static_cast<unsigned int>(muMaxIdx) == iKaon) continue; 
@@ -312,7 +318,6 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
       if (muon.DeltaR(kaon) > fDeltaR) continue; 
       if (muon.DeltaR(pion) > fDeltaR) continue; 
     }
-    
     
     for (unsigned int iTrack = 0; iTrack < hTracks->size(); ++iTrack){    
       if (iTrack == iKaon) continue; 
@@ -372,7 +377,8 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
       }
 
       if ((TMath::Abs(lambdac.M() - MLAMBDA_C) < fLcWindow)) {
-	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+50, 3); 	
+	if (gHFEvent->nCands() < 199000 && gHFEvent->nSigTracks() < 499000) 
+	  aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+50, 3); 	
       }    
     }
   }
@@ -398,6 +404,8 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     TrackBaseRef piTrackView(hTracks, iPion);
     Track tPion(*piTrackView);
     pion.SetPtEtaPhiM(tPion.pt(), tPion.eta(), tPion.phi(), MPION); 
+
+    if (fCorrectCharge && (tKaon.charge()*tPion.charge() > 0)) continue;
     
     if (fUseMuon) {
       if (static_cast<unsigned int>(muMaxIdx) == iKaon) continue; 
@@ -447,7 +455,8 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
       // -- D*, with (K pi) in D0 mass window, fitting only D0
       dzero = kaon + pion; 
       if ((TMath::Abs(dzero.M() - MD0) < 0.2)) {
-	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+20, 2); 	
+	if (gHFEvent->nCands() < 199000 && gHFEvent->nSigTracks() < 499000) 
+	  aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+20, 2); 	
       }
       
       //       // -- D+, with fitting of all three tracks: This is done WITHOUT duplicates by Hadi's triplets
@@ -462,7 +471,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
 
   // -------------------
-  // -- KVF: D+ (K pi pi)
+  // -- KVF: D+ (K- pi+ pi+)
   // -------------------
 
   vector<triplet> kapipiList;
@@ -502,10 +511,12 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
       if (muon.DeltaR(pion2) > fDeltaR) continue; 
     }
     
+    
+    if (fCorrectCharge) {
+      if (tPion1.charge() == tKaon.charge()) continue;          // pions have opposite charge from Kaon
+      if (tPion2.charge() == tKaon.charge()) continue; 
+    }
 
-    if (tPion1.charge() == tKaon.charge()) continue;          // pions have opposite charge from Kaon
-    if (tPion2.charge() == tKaon.charge()) continue; 
-      
     trackList.clear();
     trackIndices.clear(); 
     trackMasses.clear(); 
@@ -533,7 +544,8 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     // -- D+, with fitting of all three tracks
     dplus = kaon + pion1 + pion2; 
     if ((TMath::Abs(dplus.M() - MDPLUS) < fDWindow)) {
-      aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+30, 3);
+      if (gHFEvent->nCands() < 199000 && gHFEvent->nSigTracks() < 499000) 
+	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+30, 3);
     }
   }
   kapipiList.clear();
@@ -604,6 +616,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     // -- Kshort, with fitting of two tracks only
     TLorentzVector kshort = pion1 + pion2; 
     if ((TMath::Abs(kshort.M() - MKSHORT) < fDWindow)) {
+      if (gHFEvent->nCands() < 199000 && gHFEvent->nSigTracks() < 499000) 
 	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+60, 2);
     }
   }
@@ -632,6 +645,9 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
     TrackBaseRef ka2TrackView(hTracks, iKaon2);
     Track tKaon2(*ka2TrackView);
     kaon2.SetPtEtaPhiM(tKaon2.pt(), tKaon2.eta(), tKaon2.phi(), MKAON); 
+
+
+    if (fCorrectCharge && (tKaon1.charge()*tKaon2.charge() > 0)) continue;
 
     if (fUseMuon) {
       if (static_cast<unsigned int>(muMaxIdx) == iKaon1) continue; 
@@ -681,8 +697,9 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
       dplus = kaon1 + kaon2 + track; 
 
       // unified very wide window for both D+ and Ds+
-      if (dplus.M() > 1.5 && dplus.M() < 2.5) {
-	aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+40, 3);
+      if (dplus.M() > 1.7 && dplus.M() < 2.2) {
+	if (gHFEvent->nCands() < 199000 && gHFEvent->nSigTracks() < 499000) 
+	  aKal.doFit(trackList, trackIndices, trackMasses, fType*10000+40, 3);
       }
     }
   }

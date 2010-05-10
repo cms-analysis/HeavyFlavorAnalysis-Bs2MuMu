@@ -43,6 +43,7 @@ class HFCharm : public edm::EDAnalyzer {
   edm::InputTag fMuonsLabel;
 
   int           fUseMuon;
+  bool          fCorrectCharge;
   double        fPhiWindow, fDWindow, fLcWindow; 
   double        fMuonPt, fProtonPt, fKaonPt, fPionPt, fTrackPt, fDeltaR;
   double        fMaxDoca, fMaxVtxChi2, fMinVtxSigXY, fMinVtxSig3d, fMinCosAngle, fMinPtCand; 

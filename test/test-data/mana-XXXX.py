@@ -58,10 +58,9 @@ process.p = cms.Path(
     process.seqPhysDeclBitSelection*
     process.MCTruthSequence*
     process.recoStuffSequence*
-#    process.bmmDump*
     process.truthAllSequence*
     process.mtDump*
-    process.HFCharmSequence*
     process.B2JPsiSequence*
+    process.HFCharmSequence*
     process.tree
 )

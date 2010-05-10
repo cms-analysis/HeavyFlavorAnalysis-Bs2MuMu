@@ -61,8 +61,8 @@ process.p = cms.Path(
 #    process.bmmDump*
 #    process.truthAllSequence*
     process.mtDump*
-    process.HFCharmSequence*
     process.B2JPsiSequence*
+    process.HFCharmSequence*
     process.tree
 )
 

@@ -43,7 +43,8 @@ void triggerValidation::eventProcessing() {
   lttValidation();
   l1tValidation();
   hltValidation();
-  
+
+  triggerObjects();
 }
 
 
@@ -53,26 +54,48 @@ void triggerValidation::initVariables() {
 }
 
 // ----------------------------------------------------------------------
+void triggerValidation::triggerObjects() {
+
+  TTrgObj* pO; 
+  cout << "---------------------------------------------------------------------- " << endl;
+  cout << "Found a total of " << fpEvt->nTrgObj() << " trigger objects, the trigger muons are: " << endl;
+  for (int i = 0; i < fpEvt->nTrgObj(); ++i) {
+    pO =  fpEvt->getTrgObj(i);
+    if (pO->fLabel.Contains("Mu") && !(pO->fLabel.Contains("Jet"))) {
+      pO->dump(); 
+    }
+  }
+
+  cout << "----------" << endl;
+  TAnaMuon *pM; 
+  for (int i = 0; i < fpEvt->nMuons(); ++i) {
+    pM = fpEvt->getMuon(i); 
+    if ((pM->fMuID & 2) ||  (pM->fMuID & 1) || (pM->fMuID & 4)){
+      pM->dump(); 
+    }
+  }
+}
+
+
+// ----------------------------------------------------------------------
 void triggerValidation::lttValidation() {
 
-  int wasrun(0), result(0), word(0), bit(0);
+  bool mask(false), result(false);
   // cout << "----------------------------------------------------------------------" << endl;
-  for (int i = 0; i < 32*NL1TT; ++i) {
-    bit  = i%32;
-    word = i/32; 
-    wasrun = (fpEvt->fL1TTWasRun[word] & 0x1<<bit)?1:0;
-    result = (fpEvt->fL1TTWords[word] & 0x1<<bit)?1:0;
+  for (int i = 0; i < NLTT; ++i) {
+    mask = fpEvt->fLTTMask[i];
+    result = fpEvt->fLTTResult[i];
 
-    if (fLTTNames[i] != fpEvt->fL1TTNames[i]) {
-      cout << "TT: Filling at i = " << i << " the new name " << fpEvt->fL1TTNames[i] << endl;
-      fLTTNames[i] = fpEvt->fL1TTNames[i];
+    if (fLTTNames[i] != fpEvt->fLTTNames[i]) {
+      cout << "TT: Filling at i = " << i << " the new name " << fpEvt->fLTTNames[i] << endl;
+      fLTTNames[i] = fpEvt->fLTTNames[i];
     } else {
-      fLTTNames[i] = fpEvt->fL1TTNames[i];
+      fLTTNames[i] = fpEvt->fLTTNames[i];
     }
-
-    if (wasrun) fLTTWasRun[i] += 1; 
+    
+    if (mask) fLTTWasRun[i] += 1; 
     if (result) fLTTResult[i] += 1; 
-    if (wasrun && result) fLTTWasRunResult[i] += 1; 
+    if (!mask && result) fLTTWasRunResult[i] += 1; 
 
     // cout << Form("%3i %50s %4i %4i", i, fpEvt->fHLTNames[i].Data(), wasrun, result) << endl;
   }
@@ -84,24 +107,22 @@ void triggerValidation::lttValidation() {
 // ----------------------------------------------------------------------
 void triggerValidation::l1tValidation() {
 
-  int wasrun(0), result(0), word(0), bit(0);
+  bool mask(false), result(false);
   // cout << "----------------------------------------------------------------------" << endl;
-  for (int i = 0; i < 32*NL1T; ++i) {
-    bit  = i%32;
-    word = i/32; 
-    wasrun = (fpEvt->fL1TWasRun[word] & 0x1<<bit)?1:0;
-    result = (fpEvt->fL1TWords[word] & 0x1<<bit)?1:0;
-
+  for (int i = 0; i < NL1T; ++i) {
+    mask = fpEvt->fL1TMask[i];
+    result = fpEvt->fL1TResult[i];
+    
     if (fL1TNames[i] != fpEvt->fL1TNames[i]) {
       cout << "L1: Filling at i = " << i << " the new name " << fpEvt->fL1TNames[i] << endl;
       fL1TNames[i] = fpEvt->fL1TNames[i];
     } else {
       fL1TNames[i] = fpEvt->fL1TNames[i];
     }
-
-    if (wasrun) fL1TWasRun[i] += 1; 
+    
+    if (mask) fL1TWasRun[i] += 1; 
     if (result) fL1TResult[i] += 1; 
-    if (wasrun && result) fL1TWasRunResult[i] += 1; 
+    if (!mask && result) fL1TWasRunResult[i] += 1; 
 
     // cout << Form("%3i %50s %4i %4i", i, fpEvt->fHLTNames[i].Data(), wasrun, result) << endl;
   }
@@ -113,19 +134,14 @@ void triggerValidation::l1tValidation() {
 // ----------------------------------------------------------------------
 void triggerValidation::hltValidation() {
 
-  int wasrun(0), result(0), word(0), bit(0);
+  bool wasrun(false), result(false);
   // cout << "----------------------------------------------------------------------" << endl;
-  for (int i = 0; i < 32*NHLT; ++i) {
+  for (int i = 0; i < NHLT; ++i) {
     if (!strcmp(fpEvt->fHLTNames[i].Data(), "")) break;
 
-    bit  = i%32;
-    word = i/32; 
-
-    // cout << bit << " " << word << endl;
-
-    wasrun = (fpEvt->fHLTWasRun[word] & 0x1<<bit)?1:0;
-    result = (fpEvt->fHLTWords[word] & 0x1<<bit)?1:0;
-
+    wasrun = fpEvt->fHLTWasRun[i];
+    result = fpEvt->fHLTResult[i];
+    
     if (fHLTNames[i] != fpEvt->fHLTNames[i]) {
       cout << "HL: Filling at i = " << i << " the new name " << fpEvt->fHLTNames[i] << endl;
       fHLTNames[i] = fpEvt->fHLTNames[i];
@@ -137,7 +153,6 @@ void triggerValidation::hltValidation() {
     if (result) fHLTResult[i] += 1; 
     if (wasrun && result) fHLTWasRunResult[i] += 1; 
 
-    // cout << Form("%3i %50s %4i %4i", i, fpEvt->fHLTNames[i].Data(), wasrun, result) << endl;
   }
 		 
 }

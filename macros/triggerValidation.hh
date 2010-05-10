@@ -49,6 +49,7 @@ public:
   void         l1tValidation();
   void         lttValidation();
   void         hltValidation();
+  void         triggerObjects();
 
   int          fHLTWasRun[256], fHLTResult[256], fHLTWasRunResult[256];
   TString      fHLTNames[256];

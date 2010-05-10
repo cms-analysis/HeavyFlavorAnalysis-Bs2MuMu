@@ -90,11 +90,18 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // ----------------------------------------------------------------------
   // -- L1 results: physics and technical triggers
   // ----------------------------------------------------------------------
-  gHFEvent->fL1Decision = 0; 
-  gHFEvent->fL1TWords[0]=0; gHFEvent->fL1TWords[1]=0; gHFEvent->fL1TWords[2]=0; gHFEvent->fL1TWords[3]=0; 
-  gHFEvent->fL1TWasRun[0]=0;gHFEvent->fL1TWasRun[1]=0;gHFEvent->fL1TWasRun[2]=0;gHFEvent->fL1TWasRun[3]=0; 
-  gHFEvent->fL1TTWords[0]=0;gHFEvent->fL1TTWords[1]=0;
+  for (int i = 0; i < NL1T; ++i) {
+    gHFEvent->fL1TPrescale[i] = gHFEvent->fL1TResult[i] = gHFEvent->fL1TMask[i] = gHFEvent->fL1TError[i] = 0; 
+  }
 
+  for (int i = 0; i < NLTT; ++i) {
+    gHFEvent->fLTTPrescale[i] = gHFEvent->fLTTResult[i] = gHFEvent->fLTTMask[i] = gHFEvent->fLTTError[i] = 0; 
+  }
+
+  for (int i = 0; i < NHLT; ++i) {
+    gHFEvent->fHLTPrescale[i] = gHFEvent->fHLTResult[i] = gHFEvent->fHLTWasRun[i] = gHFEvent->fHLTError[i] = 0; 
+  }
+    
   Handle<L1GlobalTriggerReadoutRecord> L1GTRR;
   iEvent.getByLabel(fL1GTReadoutRecordLabel,L1GTRR);
   Handle<L1GlobalTriggerObjectMapRecord> hL1GTmap; 
@@ -105,10 +112,6 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // cout << "L1 trigger menu: ";
   // cout << l1GtUtils.l1TriggerMenu() << endl;
 
-  edm::ESHandle<L1GtTriggerMenu> hL1GtMenu;
-  iSetup.get<L1GtTriggerMenuRcd>().get(hL1GtMenu);
-  const L1GtTriggerMenu* l1GtMenu = hL1GtMenu.product();
-
   edm::ESHandle<L1GtTriggerMenu> menuRcd;
   iSetup.get<L1GtTriggerMenuRcd>().get(menuRcd) ;
   const L1GtTriggerMenu* menu = menuRcd.product();
@@ -118,7 +121,7 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   bool   result(false); 
   int    prescale(0); 
   int    mask(0); 
-  int    itrig(-1), iword(-1), iErrorCode; 
+  int    iErrorCode(0); 
 
   for (CItAlgo algo = menu->gtAlgorithmMap().begin(); algo!=menu->gtAlgorithmMap().end(); ++algo) {
     algoname = (algo->second).algoName();
@@ -127,12 +130,10 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     mask     = l1GtUtils.triggerMask(iEvent, algoname, iErrorCode);
     prescale = l1GtUtils.prescaleFactor(iEvent, algoname, iErrorCode);
 
-    iword = algobit/32;
-    itrig = algobit%32;
-    
-    gHFEvent->fL1TNames[algobit] = TString(algoname);
-    if (result)    gHFEvent->fL1TWords[iword]  |= (0x1 << itrig);
-    if (0 == mask) gHFEvent->fL1TWasRun[iword] |= (0x1 << itrig);
+    gHFEvent->fL1TNames[algobit]    = TString(algoname);
+    gHFEvent->fL1TResult[algobit]   = result;
+    gHFEvent->fL1TMask[algobit]     = mask;
+    gHFEvent->fL1TError[algobit]    = iErrorCode;
     gHFEvent->fL1TPrescale[algobit] = prescale;
   }
 
@@ -143,26 +144,16 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     mask     = l1GtUtils.triggerMask(iEvent, algoname, iErrorCode);
     prescale = l1GtUtils.prescaleFactor(iEvent, algoname, iErrorCode);
     
-    iword = algobit/32;
-    itrig = algobit%32;
-    
-    gHFEvent->fL1TTNames[algobit] = TString(algoname);
-    if (result)    gHFEvent->fL1TTWords[iword]  |= (0x1 << itrig);
-    if (0 == mask) gHFEvent->fL1TTWasRun[iword] |= (0x1 << itrig);
-    gHFEvent->fL1TTPrescale[algobit] = prescale;
-
+    gHFEvent->fLTTNames[algobit]    = TString(algoname);
+    gHFEvent->fLTTResult[algobit]   = result;
+    gHFEvent->fLTTMask[algobit]     = mask;
+    gHFEvent->fLTTError[algobit]    = iErrorCode;
+    gHFEvent->fLTTPrescale[algobit] = prescale;
   }
 
   // ----------------------------------------------------------------------
   // -- HLT results
   // ----------------------------------------------------------------------
-  gHFEvent->fHLTDecision = 0; 
-  gHFEvent->fHLTWords[0]=0; gHFEvent->fHLTWords[1]=0; gHFEvent->fHLTWords[2]=0; gHFEvent->fHLTWords[3]=0; 
-  gHFEvent->fHLTWords[4]=0; gHFEvent->fHLTWords[5]=0; gHFEvent->fHLTWords[6]=0; gHFEvent->fHLTWords[7]=0; 
-
-  gHFEvent->fHLTWasRun[0]=0;gHFEvent->fHLTWasRun[1]=0;gHFEvent->fHLTWasRun[2]=0;gHFEvent->fHLTWasRun[3]=0; 
-  gHFEvent->fHLTWasRun[4]=0;gHFEvent->fHLTWasRun[5]=0;gHFEvent->fHLTWasRun[6]=0;gHFEvent->fHLTWasRun[7]=0; 
-
 
   // -- Read HLT configuration and names
   HLTConfigProvider hltConfig;
@@ -170,6 +161,7 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
   vector<string> validTriggerNames;
   if (hltConfigInitSuccess) validTriggerNames = hltConfig.triggerNames();
+  //can assert?!  hltConfig.dump("PrescaleTable");
 
   if (validTriggerNames.size() < 1) {
     cout << "==>HFDumpTrigger: NO valid trigger names returned by HLT config provided!!??" << endl;
@@ -192,18 +184,26 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     if (fVerbose > 1) cout << "hHLTresults->size() = " << hHLTresults->size() << " and HLT accept = " << gHFEvent->fHLTDecision << endl;
 
     unsigned int index(999); 
-    int wasrun(0), result(0), error(0);
+    bool wasrun(false), result(false), error(false);
+    int prescale(1); 
+    int psSet = -1; //hltConfig.prescaleSet(iEvent, iSetup);
     for (unsigned int it = 0; it < validTriggerNames.size(); ++it) {
-      index = trigName.triggerIndex(validTriggerNames[it]); 
-      result = (index < validTriggerNames.size() && hHLTresults->accept(index)) ? 1 : 0;
-      wasrun = (index < validTriggerNames.size() && hHLTresults->wasrun(index)) ? 1 : 0;
+      index    = trigName.triggerIndex(validTriggerNames[it]); 
+      result   = (index < validTriggerNames.size() && hHLTresults->accept(index));
+      wasrun   = (index < validTriggerNames.size() && hHLTresults->wasrun(index));
+      error    = (index < validTriggerNames.size() && hHLTresults->error(index));
+      if (psSet > -1) {
+	prescale = hltConfig.prescaleValue(psSet, validTriggerNames[it]);
+      } else {
+	//	cout << "==>HFDumpTrigger> error in prescale set!?" << endl;
+	prescale = 0;
+      }
 
-      iword = it/32;
-      itrig = it%32;
-
-      gHFEvent->fHLTNames[it] = TString(validTriggerNames[it]); 
-      if (result) gHFEvent->fHLTWords[iword] |= (0x1 << itrig);
-      if (wasrun) gHFEvent->fHLTWasRun[iword]|= (0x1 << itrig);
+      gHFEvent->fHLTNames[index]    = TString(validTriggerNames[it]);
+      gHFEvent->fHLTResult[index]   = result;
+      gHFEvent->fHLTWasRun[index]   = wasrun;
+      gHFEvent->fHLTError[index]    = error;
+      gHFEvent->fHLTPrescale[index] = prescale;
     }
   }
   

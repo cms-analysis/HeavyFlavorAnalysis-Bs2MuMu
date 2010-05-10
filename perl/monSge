@@ -4,6 +4,7 @@
 # ------
 #              check status of SGE jobs
 #
+# 2010/05/10   working again after some (previous) changes to jobs.list
 # 2010/03/09   First version
 #              
 # ----------------------------------------------------------------------
@@ -43,12 +44,12 @@ while(<IN>) {
     if ($url =~ /https/) {next;}
 
     $line =~ s/\# //;
-    ($machine, $date, $time, $dir, $jdl, $jname) = split(/ /, $line); 
+    ($machine, $date, $time, $dir, $jname) = split(/ /, $line); 
     my $pwd = `pwd`; chop($pwd);
     my $mdir = $dir;
     $mdir =~ s%$pwd/%%;
-
-    (my $logfile = $jdl) =~ s/jdl/sge.log/;
+    (my $logfile = $mdir) =~ s/tmp-//;  
+    $logfile .= ".sge.log";
 
     if (-e "$mdir/$logfile") {
 	$ok = parseOutput("$mdir/$logfile"); 
@@ -83,18 +84,18 @@ print "----------------------------------------------------------------------\n"
 
 # ----------------------------------------------------------------------
 sub parseOutput {
-    (my $logfile) = @_;
+    (my $llogfile) = @_;
 
     my $return = "error"; 
 
-    $foundMyEnd     = `/bin/grep -i "runGrid: This is the end, my friend"  $logfile`;
+    $foundMyEnd     = `/bin/grep -i "run: This is the end, my friend"  $llogfile`;
     if ($foundMyEnd) { $return = "no problems seen"; }
 
     # -- now search for possible problems in the logfile
-    $foundException = `/bin/grep -i cms::exception  $logfile`;
+    $foundException = `/bin/grep -i cms::exception  $llogfile`;
     if ($foundException) { $return = "cms::exception found"; }
 
-    $foundGlibc     = `/bin/grep -i "glibc detected" $logfile`;
+    $foundGlibc     = `/bin/grep -i "glibc detected" $llogfile`;
     if ($foundGlibc) {$return = "core dump detected"; }
     return $return;
 }
@@ -102,20 +103,21 @@ sub parseOutput {
 
 # ----------------------------------------------------------------------
 sub rootFileSize {
-    (my $logfile) = @_; 
+    (my $llogfile) = @_; 
 
     my $result  = 0; 
     my $logsize = 0; 
 
-    open(LIN, "$logfile") || die "Cannot open $logfile\n";
+    open(LIN, "$llogfile") || die "Cannot open $llogfile\n";
     my $lfn = ""; 
+    # print "logfile: $llogfile\n";
     while(<LIN>) {
 	if (/--> Save output to SE:/) {
 	    ($bla, $lfn) = split(/SFN=/); 
 	    chop($lfn); 
 	    my @tmp = split(/\//, $lfn); $rfn = pop(@tmp); 
-	    #print "lfn: $lfn\n";
-	    #print "rfn: $rfn\n";
+	    # print "lfn: $lfn\n";
+	    # print "rfn: $rfn\n";
 	    ($logn = $lfn) =~ s/root$/log/;
 	}
 
