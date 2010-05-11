@@ -36,63 +36,50 @@ LIBS          = $(ROOTLIBS)
 GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 
+#########
+# FILES #
+#########
 
-# ======================================================================
-# -- Default rules
-#$(addprefix obj/,%.o) : $(addprefix rootio/,%.cc )
-#	$(CXX) $(CXXFLAGS) -c $< -o $@
+READER_HEADERS = bmmReader.hh d0Reader.hh dumpReader.hh muCharmReader.hh copyReader.hh dpReader.hh massReader.hh treeReader01.hh triggerValidation.hh
+READER = treeReader01.o bmmReader.o massReader.o dumpReader.o copyReader.o muCharmReader.o dpReader.o d0Reader.o triggerValidation.o
+READERDICT = ${READER:.o=Dict.o}
 
-$(addprefix obj/,%.o) : %.cc
+#################
+# PATTERN RULES #
+#################
+
+obj/%.o : %.cc $(READER_HEADERS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-#$(addprefix obj/,%Dict.o) : %Dict.cc
-#	echo "bla"
+%Dict.cc : %.hh %LinkDef.h
+	$(ROOTCINT) -f $@ -c $^
 
-#%Dict.cc : $subst(Dict.cc,.hh,$1)
-#	echo "$1"
+%Dict.cc : %.hh
+	$(ROOTCINT) -f $@ -c $<
 
-# ======================================================================
+###########
+# TARGETS #
+###########
 
-
-# ======================================================================
-READER_OBJS = treeReader01.o bmmReader.o massReader.o dumpReader.o copyReader.o muCharmReader.o dpReader.o d0Reader.o triggerValidation.o
-READERDICT_OBJS = ${READER_OBJS:.o=Dict.o}
-READERDICT_SRCS = ${READERDICT_OBJS:.o=.cc}
-
-# ================================================================================
 all: 
-# --
-#	@$(MAKE) readerclasses
-	@$(MAKE) runTreeReaders
+	@$(MAKE) bin/runTreeReaders
 
-# ================================================================================
-readerclasses: $(READERDICT_SRCS) $(addprefix obj/,$(READER_OBJS)) $(addprefix obj/,$(READERDICT_OBJS)) lib/libAna00.so
-	$(CXX) $(SOFLAGS) $(addprefix obj/,$(READER_OBJS)) $(addprefix obj/,$(READERDICT_OBJS)) -o lib/libAnaClasses.so $(GLIBS) lib/libAna00.so
+lib/libAnaClasses.so: $(addprefix obj/,$(READER) $(READERDICT)) lib/libAna00.so
+	$(CXX) $(SOFLAGS) $(addprefix obj/,$(READER) $(READERDICT)) -o lib/libAnaClasses.so $(GLIBS) lib/libAna00.so
 
 lib/libAna00.so:
 	cd lib && ln -s $(RELLIBPATH)/libAna00.so libAna00.so && cd -
 
-# ================================================================================
-runTreeReaders: readerclasses obj/runTreeReaders.o lib/libAna00.so
-	$(LD) $(LDFLAGS) -o bin/runTreeReaders $(GLIBS) obj/runTreeReaders.o $(addprefix obj/,$(READER_OBJS)) lib/libAna00.so
+bin/runTreeReaders: lib/libAnaClasses.so obj/runTreeReaders.o lib/libAna00.so
+	$(LD) $(LDFLAGS) -o bin/runTreeReaders $(GLIBS) obj/runTreeReaders.o lib/libAnaClasses.so lib/libAna00.so
 
-runMyReader: readerclasses obj/runMyReader01.o
-	$(LD) $(LDFLAGS) -o bin/runMyReader01 $(GLIBS) obj/runMyReader01.o $(addprefix obj/,$(READER_OBJS)) $(RELLIBPATH)/libAna00.so
-
-# ================================================================================
 clean:
-	rm -f obj/*.o *Dict.* *Dict.* lib/libAna00.so
+	rm -f obj/*.o *Dict.* lib/libAna00.so
 
-# --------------------------------------------------------------------------------
-cleanall:
-	@$(MAKE) clean
+cleanall: clean
 	rm -f bin/runTreeReaders
 	rm -f bin/writeA01Event bin/readA01Event
 	rm -f lib/lib*.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libAna00.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libUtil.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libAnaClasses.so
-
-.SECONDEXPANSION:
-$(READERDICT_SRCS): $$(patsubst %Dict.cc,%.hh,$$@)
-	$(ROOTCINT) -f $@ -c $(patsubst %Dict.cc,%.hh,$@)
