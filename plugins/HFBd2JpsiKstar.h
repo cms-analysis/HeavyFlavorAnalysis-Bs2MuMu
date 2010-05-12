@@ -43,7 +43,7 @@ class HFBd2JpsiKstar : public edm::EDAnalyzer {
   double        fMuonPt; 
   int           fPsiMuons;
   double        fPsiWindow, fKstarWindow, fBdWindow; 
-  double        fTrackPt, fDeltaR;
+  double        fTrackPt, fDeltaR, fMaxDoca, fMaxD0, fMaxDz;
   int           fVertexing, fType; 
 
   reco::Vertex  fPV;

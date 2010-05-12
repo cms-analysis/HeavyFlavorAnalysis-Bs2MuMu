@@ -46,7 +46,7 @@ class HFCharm : public edm::EDAnalyzer {
   bool          fCorrectCharge;
   double        fPhiWindow, fDWindow, fLcWindow; 
   double        fMuonPt, fProtonPt, fKaonPt, fPionPt, fTrackPt, fDeltaR;
-  double        fMaxDoca, fMaxVtxChi2, fMinVtxSigXY, fMinVtxSig3d, fMinCosAngle, fMinPtCand; 
+  double        fMaxDoca, fMaxD0, fMaxDz, fMaxVtxChi2, fMinVtxSigXY, fMinVtxSig3d, fMinCosAngle, fMinPtCand; 
 
   int           fType; 
 

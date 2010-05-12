@@ -45,11 +45,15 @@ HFBu2JpsiKp::HFBu2JpsiKp(const ParameterSet& iConfig) :
   fBuWindow(iConfig.getUntrackedParameter<double>("BuWindow", 0.8)), 
   fTrackPt(iConfig.getUntrackedParameter<double>("trackPt", 0.4)), 
   fDeltaR(iConfig.getUntrackedParameter<double>("deltaR", 1.5)), 
+  fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.2)), 
+  fMaxD0(iConfig.getUntrackedParameter<double>("maxD0", 999.)),
+  fMaxDz(iConfig.getUntrackedParameter<double>("maxDz", 999.)),
   fVertexing(iConfig.getUntrackedParameter<int>("vertexing", 1)),
   fType(iConfig.getUntrackedParameter<int>("type", 521))  {
   using namespace std;
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFBu2JpsiKp constructor" << endl;
+  cout << "---  verbose:                  " << fVerbose << endl;
   cout << "---  tracksLabel:              " << fTracksLabel << endl;
   cout << "---  PrimaryVertexLabel:       " << fPrimaryVertexLabel << endl;
   cout << "---  muonsLabel:               " << fMuonsLabel << endl;
@@ -59,6 +63,9 @@ HFBu2JpsiKp::HFBu2JpsiKp(const ParameterSet& iConfig) :
   cout << "---  BuWindow:                 " << fBuWindow << endl;
   cout << "---  trackPt:                  " << fTrackPt << endl;
   cout << "---  deltaR:                   " << fDeltaR << endl;
+  cout << "---  maxDoca:                  " << fMaxDoca << endl;
+  cout << "---  maxD0:                    " << fMaxD0 << endl;
+  cout << "---  maxDz:                    " << fMaxDz << endl;
   cout << "---  vertexing:                " << fVertexing << endl;
   cout << "---  type:                     " << fType << endl;
   cout << "----------------------------------------------------------------------" << endl;
@@ -142,6 +149,8 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
   for (unsigned int itrack = 0; itrack < hTracks->size(); ++itrack){    
     TrackBaseRef rTrackView(hTracks, itrack);
     Track tTrack(*rTrackView);
+    if (tTrack.d0() > fMaxD0) continue;
+    if (tTrack.dz() > fMaxDz) continue;
     tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MMUON); 
     if (2 == fPsiMuons) {
       for (unsigned int im = 0; im < muonIndices.size(); ++im) {
@@ -177,9 +186,9 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
   a.combine(psiList, tlist1, tlist2, 2.8, 3.4, 1); 
   if (fVerbose > 0) cout << "==>HFBu2JpsiKp> J/psi list size: " << psiList.size() << endl;
   
-  HFKalmanVertexFit    aKal(fTTB.product(), fPV, 100521, fVerbose); 
-  HFKinematicVertexFit aKin(fTTB.product(), fPV, 300521, fVerbose);
-  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), fPV, fVerbose);
+  HFKalmanVertexFit     aKal(fTTB.product(), fPV, 100521, fVerbose);  aKal.fMaxDoca     = fMaxDoca; 
+  HFKinematicVertexFit  aKin(fTTB.product(), fPV, 300521, fVerbose);  
+  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), fPV, 0 /*fVerbose*/);
   vector<Track> trackList; 
   vector<int> trackIndices;
   vector<double> trackMasses;
@@ -199,7 +208,7 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
     Track tMuon2(*mu2TrackView);
     if (tMuon2.pt() < fMuonPt)  continue;
     m2.SetPtEtaPhiM(tMuon2.pt(), tMuon2.eta(), tMuon2.phi(), MMUON); 
-    
+
     psi = m1 + m2; 
     if ((TMath::Abs(psi.M() - MJPSI) > fPsiWindow)) continue;
     
@@ -207,6 +216,8 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
       if (iTrack == iMuon1 || iTrack == iMuon2) continue; 
       TrackBaseRef rTrackView(hTracks, iTrack);
       Track tKaon(*rTrackView);
+      if (tKaon.d0() > fMaxD0) continue;
+      if (tKaon.dz() > fMaxDz) continue;
       if (tKaon.pt() < fTrackPt) continue;
       ka.SetXYZM(tKaon.px(), tKaon.py(), tKaon.pz(), MKAON); 
       if (psi.DeltaR(ka) > fDeltaR) continue; 
@@ -236,6 +247,9 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
 		  continue; 
       }
 
+      if (fVerbose > 1) {
+	cout << "psiList/track: " << i << "/" << iTrack << endl;
+      }
       aKal.doFit(trackList, trackIndices, trackMasses, 100521); 	
       aKal.doFit(trackList, trackIndices, trackMasses, 200521, 2); 	
 

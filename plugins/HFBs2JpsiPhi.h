@@ -44,7 +44,7 @@ class HFBs2JpsiPhi : public edm::EDAnalyzer {
   double        fMuonPt; 
   int           fPsiMuons;
   double        fPsiWindow, fPhiWindow, fBsWindow; 
-  double        fTrackPt, fDeltaR;
+  double        fTrackPt, fDeltaR, fMaxDoca, fMaxD0, fMaxDz;
   int           fVertexing, fType; 
 
   reco::Vertex  fPV;

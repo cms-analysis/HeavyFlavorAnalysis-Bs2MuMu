@@ -30,6 +30,7 @@ void muCharmReader::startAnalysis() {
 void muCharmReader::eventProcessing() {
 
   ((TH1D*)fpHistFile->Get("h1"))->Fill(fpEvt->nRecTracks()); 
+  return;
 
   TAnaCand *pCand; 
   cout << "Event " << fEvent << endl;
@@ -40,7 +41,6 @@ void muCharmReader::eventProcessing() {
     }
   }
 
-  return;
 
   // -- initialize all variables
   initVariables(); 
@@ -258,7 +258,7 @@ void muCharmReader::bookHist() {
   cout << "==> muCharmReader: bookHist " << endl;
   
   TH1D *h; 
-  h = new TH1D("h1", "Ntrk", 200, 0., 200.);
+  h = new TH1D("h1", "Ntrk", 500, 0., 1000.);
   h = new TH1D("h2", "NCand", 20, 0., 20.);
   h = new TH1D("h10", "pT", 40, 0., 20.);
   h = new TH1D("h11", "mass", 50, 1.6, 2.1);

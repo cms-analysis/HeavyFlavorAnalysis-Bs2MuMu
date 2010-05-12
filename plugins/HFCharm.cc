@@ -52,6 +52,8 @@ HFCharm::HFCharm(const ParameterSet& iConfig) :
   fTrackPt(iConfig.getUntrackedParameter<double>("trackPt", 0.4)), 
   fDeltaR(iConfig.getUntrackedParameter<double>("deltaR", 1.5)),
   fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 9999.0)),
+  fMaxD0(iConfig.getUntrackedParameter<double>("maxD0", 999.)),
+  fMaxDz(iConfig.getUntrackedParameter<double>("maxDz", 999.)),
   fMaxVtxChi2(iConfig.getUntrackedParameter<double>("maxVtxChi2", 9999.0)),
   fMinVtxSigXY(iConfig.getUntrackedParameter<double>("minVtxSigXY", -1.)),
   fMinVtxSig3d(iConfig.getUntrackedParameter<double>("minVtxSig3d", -1.)),
@@ -76,12 +78,13 @@ HFCharm::HFCharm(const ParameterSet& iConfig) :
   cout << "---  trackPt:                  " << fTrackPt << endl;
   cout << "---  deltaR:                   " << fDeltaR << endl;
   cout << "---  maxDoca:                  " << fMaxDoca << endl;
+  cout << "---  maxD0:                    " << fMaxD0 << endl;
+  cout << "---  maxDz:                    " << fMaxDz << endl;
   cout << "---  maxVtxChi2:               " << fMaxVtxChi2 << endl;
   cout << "---  minVtxSigXY:              " << fMinVtxSigXY << endl;
   cout << "---  minVtxSig3d:              " << fMinVtxSig3d << endl;
   cout << "---  minCosAngle:              " << fMinCosAngle << endl;
   cout << "---  minPtCand:                " << fMinPtCand << endl;
-
   cout << "---  type:                     " << fType << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
@@ -178,6 +181,8 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   for (unsigned int itrack = 0; itrack < hTracks->size(); ++itrack){    
     TrackBaseRef rTrackView(hTracks, itrack);
     Track tTrack(*rTrackView);
+    if (tTrack.d0() > fMaxD0) continue;
+    if (tTrack.dz() > fMaxDz) continue;
     if (tTrack.pt() > fPionPt)  {
       tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MPION); 
       pilist.push_back(make_pair(itrack, tlv));

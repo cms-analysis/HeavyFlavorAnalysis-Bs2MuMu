@@ -156,8 +156,9 @@ TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
 		  kinParticle->currentState().globalMomentum().z());
   mass = kinParticle->currentState().mass();
   
+  if (kinParticle->chiSquared() < 0) return pCand; 
   ChiSquared chi(kinParticle->chiSquared(),kinParticle->degreesOfFreedom());
-  
+
   // dump some information if in verbose mode...
   if (fVerbose > 0) {
     cout << "-----------------------------------------" << endl;

@@ -42,11 +42,15 @@ HFBd2JpsiKstar::HFBd2JpsiKstar(const ParameterSet& iConfig) :
   fBdWindow(iConfig.getUntrackedParameter<double>("BsWindow", 0.8)), 
   fTrackPt(iConfig.getUntrackedParameter<double>("trackPt", 0.4)), 
   fDeltaR(iConfig.getUntrackedParameter<double>("deltaR", 99.)),
+  fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.2)),
+  fMaxD0(iConfig.getUntrackedParameter<double>("maxD0", 999.)),
+  fMaxDz(iConfig.getUntrackedParameter<double>("maxDz", 999.)),
   fVertexing(iConfig.getUntrackedParameter<int>("vertexing", 1)),
   fType(iConfig.getUntrackedParameter<int>("type", 511))  {
   using namespace std;
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFBd2JpsiKstar constructor" << endl;
+  cout << "---  verbose:                  " << fVerbose << endl;
   cout << "---  tracksLabel:              " << fTracksLabel << endl;
   cout << "---  muonsLabel:               " << fMuonsLabel << endl;
   cout << "---  muonPt :                  " << fMuonPt << endl;
@@ -56,6 +60,9 @@ HFBd2JpsiKstar::HFBd2JpsiKstar(const ParameterSet& iConfig) :
   cout << "---  BdWindow:                 " << fBdWindow << endl;
   cout << "---  trackPt:                  " << fTrackPt << endl;
   cout << "---  deltaR:                   " << fDeltaR << endl;
+  cout << "---  maxDoca:                  " << fMaxDoca << endl;
+  cout << "---  maxD0:                    " << fMaxD0 << endl;
+  cout << "---  maxDz:                    " << fMaxDz << endl;
   cout << "---  vertexing:                " << fVertexing << endl;
   cout << "---  type:                     " << fType << endl;
   cout << "----------------------------------------------------------------------" << endl;
@@ -141,6 +148,9 @@ void HFBd2JpsiKstar::analyze(const Event& iEvent, const EventSetup& iSetup) {
   for (unsigned int itrack = 0; itrack < hTracks->size(); ++itrack){    
     TrackBaseRef rTrackView(hTracks, itrack);
     Track tTrack(*rTrackView);
+    if (tTrack.pt() < fTrackPt) continue;
+    if (tTrack.d0() > fMaxD0) continue;
+    if (tTrack.dz() > fMaxDz) continue;
     tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MKAON); 
     klist.push_back(make_pair(itrack, tlv));
     tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MPION); 
@@ -184,7 +194,7 @@ void HFBd2JpsiKstar::analyze(const Event& iEvent, const EventSetup& iSetup) {
   a.combine(kstarList, klist, pilist, 0.5, 1.2, 0);
   if (fVerbose > 0) cout << "==>HFBs2JpsiKp> kstar list size: " << kstarList.size() << endl;
   
-  HFKalmanVertexFit    aKal(fTTB.product(), fPV, 100511, fVerbose); 
+  HFKalmanVertexFit    aKal(fTTB.product(), fPV, 100511, fVerbose);   aKal.fMaxDoca     = fMaxDoca; 
   HFKinematicVertexFit aKin(fTTB.product(), fPV, 300511, fVerbose); 
   vector<Track> trackList; 
   vector<int> trackIndices;

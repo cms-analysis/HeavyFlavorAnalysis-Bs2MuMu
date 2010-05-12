@@ -10,7 +10,10 @@ bupsikpDump = cms.EDAnalyzer(
     muonPt       = cms.untracked.double(1.0),
     psiMuons     = cms.untracked.int32(1),
     trackPt      = cms.untracked.double(0.5),
-    deltaR       = cms.untracked.double(1.5)
+    deltaR       = cms.untracked.double(99.0),
+    maxDoca      = cms.untracked.double(0.5),
+    maxD0        = cms.untracked.double(5.0),
+    maxDz        = cms.untracked.double(25.0)
     )
 
 # ----------------------------------------------------------------------
@@ -22,7 +25,11 @@ bdpsikstarDump = cms.EDAnalyzer(
     PrimaryVertexLabel       = cms.untracked.InputTag("offlinePrimaryVertices"),
     muonPt       = cms.untracked.double(1.0),
     psiMuons     = cms.untracked.int32(2),
-    trackPt       = cms.untracked.double(0.5)
+    trackPt       = cms.untracked.double(0.5),
+    deltaR       = cms.untracked.double(99.0),
+    maxDoca      = cms.untracked.double(0.5),
+    maxD0        = cms.untracked.double(5.0),
+    maxDz        = cms.untracked.double(25.0)
     )
 
 # ----------------------------------------------------------------------
@@ -35,7 +42,10 @@ bspsiphiDump = cms.EDAnalyzer(
     muonPt       = cms.untracked.double(1.0),
     psiMuons     = cms.untracked.int32(1),
     trackPt      = cms.untracked.double(0.5),
-    deltaR       = cms.untracked.double(1.5)
+    deltaR       = cms.untracked.double(99.0),
+    maxDoca      = cms.untracked.double(0.5),
+    maxD0        = cms.untracked.double(5.0),
+    maxDz        = cms.untracked.double(25.0)
     )
 
 bdpsiksDump = cms.EDAnalyzer(

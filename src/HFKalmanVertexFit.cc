@@ -121,6 +121,8 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
     }
     return; 
   }
+
+  if (TransSecVtx.totalChiSquared() < 0) return; 
   
   // -- Get refitted tracks
   vector<TransientTrack> refTT = TransSecVtx.refittedTracks();

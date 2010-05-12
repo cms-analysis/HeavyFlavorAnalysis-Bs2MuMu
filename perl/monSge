@@ -55,16 +55,25 @@ while(<IN>) {
 	$ok = parseOutput("$mdir/$logfile"); 
 	($rsize, $lsize, $srmFile) = rootFileSize("$mdir/$logfile"); 
     } else {
-	print "$mdir/$logfile not found???\n";
-	next;
+	if (-e "$mdir/jobs.list") {
+	    $ok = "waiting";
+	} else {
+	    print "$mdir/$logfile not found???\n";
+	    next;
+	}
     }
 
-    printf("%30s %60s SGE ; %s/root: %10i, log: %7i\n", $jname, $mdir, $ok, $rsize, $lsize);
-    
+    if ($ok eq "running" || $ok eq "waiting") {
+	printf("%30s %60s SGE ; %s\n", $jname, $mdir, $ok);
+    } else {
+	printf("%30s %60s SGE ; %s/root: %10i, log: %7i\n", $jname, $mdir, $ok, $rsize, $lsize);
+    }
+
     if ($ok =~ /no problems seen/) { 
 	system("/bin/touch $mdir/OK"); 
 	$goodJobs++; 
 	if ($rsize < $minGood) {$minGood = $rsize;}
+    } elsif ($ok eq "running" || $ok eq "waiting") {
     } else { 
 	system("/bin/touch $mdir/NOK"); 
 	$badJobs++; 
@@ -86,7 +95,7 @@ print "----------------------------------------------------------------------\n"
 sub parseOutput {
     (my $llogfile) = @_;
 
-    my $return = "error"; 
+    my $return = "running"; 
 
     $foundMyEnd     = `/bin/grep -i "run: This is the end, my friend"  $llogfile`;
     if ($foundMyEnd) { $return = "no problems seen"; }
