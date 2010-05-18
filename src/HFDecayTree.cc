@@ -162,7 +162,7 @@ void HFDecayTree::dump(unsigned indent)
 	for (treeIt = subVertices.begin(); treeIt != subVertices.end(); ++treeIt)
 		treeIt->dump(indent+1);
 	
-	dump(indent);
+	dumpTabs(indent);
 	cout << '}' << endl;
 } // dump()
 
