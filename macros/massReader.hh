@@ -3,28 +3,38 @@
 
 #include "treeReader01.hh"
 
-using namespace std;
-
 class massReader : public treeReader01 {
 	
-public:
-	massReader(TChain *tree, TString evtClassName);
-	~massReader();
+	public:
+		massReader(TChain *tree, TString evtClassName);
+		~massReader();
 
-	void bookHist();
-	void eventProcessing();
+		virtual void bookHist();
+		virtual void eventProcessing();
 
-private:
-	// Private variables
-	TTree *reduced_tree;
-	int fCandidate;
-	TVector3 fMomentum;
-	TVector3 *fMomentumPtr;
-	double fMass;
-	int fTruth;
-	
-	// Private functions
-	int checkTruth(TAnaCand *cand, int truth_type);
+	protected:
+		// For subclasses
+		TTree *reduced_tree;
+		
+		virtual int loadCandidateVariables(TAnaCand *pCand);
+
+	private:
+		// Private variables
+		int fCandidate;
+		TVector3 fMomentum;
+		TVector3 *fMomentumPtr;
+		double fMass;
+		int fTruth;		// is this background or a true candidate?
+		int fTwoMuon; // are both muons fromthe muon list?
+		double fDxy;	// distance to originating vertex
+		double fDxyE;	// error
+		double fAlpha; // angle between momentum and dist(vertex, motherVertex)
+		double fChi2; // chi2 of the vertex
+		double fNdof; // number of degrees of freedom of vertex
+				
+		// Private functions
+		int checkTruth(TAnaCand *cand, int truth_type);
+		int checkMuons(TAnaCand *cand);
 };
 
 #endif

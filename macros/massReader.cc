@@ -3,6 +3,8 @@
 
 #define require_true(COND,LABEL) if( !(COND) ) goto LABEL
 
+using namespace std;
+
 // test a <= x < b
 static inline int in_interval(int x, int a, int b)
 {
@@ -20,24 +22,40 @@ massReader::~massReader()
 void massReader::eventProcessing()
 {
 	int j,nc;
-	TAnaCand *pCand;
 	
-	// Fill a reduced tree with the following types
-	//	- momentum
-	//	- mass
-	//	- type
+	// Fill a reduced tree
 	nc = fpEvt->nCands();
-	for (j=0; j<nc; j++) {
-		pCand = fpEvt->getCand(j);
+	for (j = 0; j<nc; j++) {
 		
-		// Save in the tree
-		fCandidate = pCand->fType;
-		fMomentum = pCand->fPlab;
-		fMass = pCand->fMass;
-		fTruth = checkTruth(pCand, abs(pCand->fType) % 1000);
-		reduced_tree->Fill();
+		if(loadCandidateVariables(fpEvt->getCand(j)))
+			reduced_tree->Fill();
 	}
 } // massReader::eventProcessing()
+
+int massReader::loadCandidateVariables(TAnaCand *pCand)
+{
+	TAnaCand *momCand;
+	
+	// Save in the tree
+	fCandidate = pCand->fType;
+	fMomentum = pCand->fPlab;
+
+	fMass = pCand->fMass;
+	fTruth = checkTruth(pCand, abs(pCand->fType) % 1000);
+	fTwoMuon = checkMuons(pCand);
+	fDxy = pCand->fVtx.fDxy;
+	fDxyE = pCand->fVtx.fDxyE;
+	fChi2 = pCand->fVtx.fChi2;
+	fNdof = pCand->fVtx.fNdof;
+	
+	if (pCand->fMom >= 0) {
+		momCand = fpEvt->getCand(pCand->fMom);
+		fAlpha = pCand->fPlab.Angle(pCand->fVtx.fPoint - momCand->fVtx.fPoint);
+	} else
+		fAlpha = pCand->fPlab.Angle(pCand->fVtx.fPoint - fpEvt->bestPV()->fPoint);
+	
+	return 1;
+} // loadCandidateVariables()
 
 void massReader::bookHist()
 {
@@ -49,6 +67,12 @@ void massReader::bookHist()
 	reduced_tree->Branch("p","TVector3",&fMomentumPtr);
 	reduced_tree->Branch("mass",&fMass,"mass/D");
 	reduced_tree->Branch("truth",&fTruth,"truth/I");
+	reduced_tree->Branch("two_muon",&fTwoMuon,"two_muon/I");
+	reduced_tree->Branch("dxy",&fDxy,"dxy/D");
+	reduced_tree->Branch("dxye",&fDxyE,"dxye/D");
+	reduced_tree->Branch("alpha",&fAlpha,"alpha/D");
+	reduced_tree->Branch("chi2",&fChi2,"chi2/D");
+	reduced_tree->Branch("Ndof",&fNdof,"Ndof/D");
 } // massReader::bookHist()
 
 int massReader::checkTruth(TAnaCand *cand, int truth_type)
@@ -97,7 +121,7 @@ int massReader::checkTruth(TAnaCand *cand, int truth_type)
 			trackParticle = fpEvt->getGenCand(trackParticle->fMom1);
 		
 		// check the particle
-		require_true(trackParticle->fNumber==truthParticle->fNumber,bail);
+		require_true(trackParticle->fNumber == truthParticle->fNumber,bail);
 	}
 	
 	// still here? then every track originated from the right particle
@@ -106,3 +130,30 @@ int massReader::checkTruth(TAnaCand *cand, int truth_type)
 bail:
 	return succes;
 } // massReader::checkTruth()
+
+int massReader::checkMuons(TAnaCand *cand)
+{
+	TAnaTrack *track;
+	unsigned nbrMu = 0, totalMu = 0;
+	int j;
+	
+	// return true if all muons come from the muon list
+	
+	// check for invalid candidates
+	if (cand->fSig1 < 0)
+		return 0;
+	
+	for (j = cand->fSig1; j <= cand->fSig2; j++) {
+		
+		track = fpEvt->getSigTrack(j); // signal track
+		// check if this is supposed to be a muon!
+		if (abs(track->fMCID) == 13) {
+			totalMu++; // muon
+			track = fpEvt->getRecTrack(track->fIndex); // rec track
+			if (track->fMuID > 0)
+				nbrMu++;
+		}
+	}
+	
+	return (nbrMu == totalMu);
+} // checkMuons()
