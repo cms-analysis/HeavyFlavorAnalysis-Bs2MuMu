@@ -40,8 +40,8 @@ RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 # FILES #
 #########
 
-READER_HEADERS = bmmReader.hh d0Reader.hh dumpReader.hh muCharmReader.hh copyReader.hh dpReader.hh massReader.hh treeReader01.hh triggerValidation.hh
-READER = treeReader01.o bmmReader.o massReader.o dumpReader.o copyReader.o muCharmReader.o dpReader.o d0Reader.o triggerValidation.o
+READER_HEADERS = bmmReader.hh d0Reader.hh dumpReader.hh muCharmReader.hh copyReader.hh dpReader.hh massReader.hh treeReader01.hh triggerValidation.hh ksReader.hh
+READER = treeReader01.o bmmReader.o massReader.o dumpReader.o copyReader.o muCharmReader.o dpReader.o d0Reader.o triggerValidation.o ksReader.o
 READERDICT = ${READER:.o=Dict.o}
 
 #################
