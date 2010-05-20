@@ -227,7 +227,7 @@ void HFBd2JpsiKs::analyze(const Event& iEvent, const EventSetup& iSetup)
 			theTree.addTrack(iMuon1,13);
 			theTree.addTrack(iMuon2,13);
 			
-			HFDecayTreeIterator iterator = theTree.addDecayTree(310);
+			HFDecayTreeIterator iterator = theTree.addDecayTree(600310);
 			iterator->addTrack(iPion1,211);
 			iterator->addTrack(iPion2,211);
 			
@@ -237,10 +237,10 @@ void HFBd2JpsiKs::analyze(const Event& iEvent, const EventSetup& iSetup)
 			theTree.clear();
 			theTree.particleID = 700511;
 			
-			iterator = theTree.addDecayTree(443,MJPSI);
+			iterator = theTree.addDecayTree(700443,MJPSI);
 			iterator->addTrack(iMuon1,13);
 			iterator->addTrack(iMuon2,13);
-			iterator = theTree.addDecayTree(310);
+			iterator = theTree.addDecayTree(700310);
 			iterator->addTrack(iPion1,211);
 			iterator->addTrack(iPion2,211);
 			
