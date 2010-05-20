@@ -272,32 +272,22 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
       
       aKin.doJpsiFit(trackList, trackIndices, trackMasses, 300521); 	
       
-      // Now, do with the HFSequentialFit class.
-
-      // First, like the 100XXX candidate
-      HFDecayTree theTree(400521);
-      theTree.addTrack(iMuon1,13);
-      theTree.addTrack(iMuon2,13);
-      theTree.addTrack(iTrack,321);
-
-      aSeq.doFit(&theTree);
-
-      // Second, do by stepwise reconstruction
-      theTree.clear();
+      // Sequentialfit without mass constraint
+      HFDecayTree theTree(600521);
       theTree.particleID = 500521;    
       theTree.addTrack(iTrack,321);
     
-      HFDecayTreeIterator iterator = theTree.addDecayTree();
+      HFDecayTreeIterator iterator = theTree.addDecayTree(600443);
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
 
       aSeq.doFit(&theTree);
 
-      // Then, like the 300XXX candidate
+      // Sequentialfit with mass constraint
       theTree.clear();
-      theTree.particleID = 600521;
-      theTree.addTrack(iTrack,321);
-      iterator = theTree.addDecayTree(443,MJPSI);
+      theTree.particleID = 700521;
+      theTree.addTrack(iTrack,700321);
+      iterator = theTree.addDecayTree(700443,MJPSI);
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
 
