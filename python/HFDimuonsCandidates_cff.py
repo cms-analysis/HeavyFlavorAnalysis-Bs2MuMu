@@ -10,6 +10,6 @@ dimuonsDump = cms.EDAnalyzer(
     muonPt             = cms.untracked.double(1.0),
     type               = cms.untracked.int32(1313), 
     vertexing          = cms.untracked.int32(1), 
-    massLow            = cms.untracked.double(0.5), 
+    massLow            = cms.untracked.double(0.), 
     massHigh           = cms.untracked.double(9999.0)
     )

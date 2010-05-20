@@ -53,6 +53,11 @@ public:
   virtual void candidateSelection(int mode = 0);  // 0 = closest in r-phi
   virtual void fillTMCand(TAnaCand *pCand, int type);
 
+  virtual void doBplus(TAnaCand *pCand);
+  virtual void doDzero(TAnaCand *pCand);
+  virtual void doJpsi(TAnaCand *pCand);
+
+
   // -- Cut values
   double 
       CHARMPTLO
@@ -70,6 +75,12 @@ public:
 
   // -- Variables
   TAnaCand    *fpCand1, *fpCand2; 
+
+  // -- Candidate variables
+  double fMass, fPt, fChi2, fDocaMax; 
+  double fm1pt, fm2pt; 
+  int    fm1m, fm2m; 
+  
 
 };
 

@@ -7,6 +7,8 @@ process = cms.Process("HFA")
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.threshold = 'INFO'
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
+process.MessageLogger.categories.append('HLTrigReport')
+process.MessageLogger.categories.append('L1GtTrigReport')
 process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
 
 
@@ -41,6 +43,7 @@ process.load("HeavyFlavorAnalysis.Bs2MuMu.HFTruthCandidates_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFB2JpsiCandidates_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFCharm_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFMuonAndTrackCandidates_cff")
+process.load("HeavyFlavorAnalysis.Bs2MuMu.HFDimuonsCandidates_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFPhysicsDeclared_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFSkipEvents_cff")
 
@@ -60,14 +63,12 @@ process.p = cms.Path(
     process.skipEvents*
 #    process.MCTruthSequence*
     process.recoStuffSequence*
-#    process.bmmDump*
 #    process.truthAllSequence*
     process.mtDump*
+    process.dimuonsDump* 
     process.B2JPsiSequence*
-    process.HFCharmSequence*
+#    process.HFCharmSequence*
+    process.HFMuCharmDump*
     process.tree
 )
-
-
-
 

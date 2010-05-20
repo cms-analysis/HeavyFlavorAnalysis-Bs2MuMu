@@ -124,14 +124,13 @@ void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup) {
   vector<unsigned int> muonIndices;
   for (MuonCollection::const_iterator muon = hMuons->begin(); muon != hMuons->end(); ++muon) {
     int im = muon->track().index(); 
-    if (im > 0) muonIndices.push_back(im);
+    if (im >= 0) muonIndices.push_back(im);
   }
   if (fVerbose > 0) {
     cout << "==>HFBs2JpsiPhi> nMuons = " << hMuons->size() << endl;
     cout << "==>HFBs2JpsiPhi> nMuonIndices = " << muonIndices.size() << endl;
   }
-  if (muonIndices.size() < 2) return;
-  if ((2 == fPsiMuons) && (muonIndices.size() < 2)) return;
+  if (muonIndices.size() < fPsiMuons) return;
 
 
   // -- Build muon lists

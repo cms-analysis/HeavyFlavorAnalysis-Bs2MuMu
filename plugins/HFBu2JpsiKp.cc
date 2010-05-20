@@ -126,13 +126,13 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
   vector<unsigned int> muonIndices;
   for (MuonCollection::const_iterator muon = hMuons->begin(); muon != hMuons->end(); ++muon) {
     int im = muon->track().index(); 
-    if (im > 0) muonIndices.push_back(im);
+    if (im >= 0) muonIndices.push_back(im);
   }
   if (fVerbose > 0) {
     cout << "==>HFBu2JpsiKp> nMuons = " << hMuons->size() << endl;
     cout << "==>HFBu2JpsiKp> nMuonIndices = " << muonIndices.size() << endl;
   }
-  if ((2 == fPsiMuons) && (muonIndices.size() < 2)) return;
+  if (muonIndices.size() < fPsiMuons) return;
 
 
   // -- Build muon lists

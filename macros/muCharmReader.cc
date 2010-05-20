@@ -30,17 +30,36 @@ void muCharmReader::startAnalysis() {
 void muCharmReader::eventProcessing() {
 
   ((TH1D*)fpHistFile->Get("h1"))->Fill(fpEvt->nRecTracks()); 
-  return;
+  ((TH1D*)fpHistFile->Get("h2"))->Fill(fpEvt->nCands()); 
 
   TAnaCand *pCand; 
-  cout << "Event " << fEvent << endl;
+  TH1D *h; 
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
     pCand = fpEvt->getCand(iC);
+    ((TH1D*)fpHistFile->Get("h3"))->Fill(pCand->fType); 
     if (pCand->fType < 100) {
       cout << Form("%6i %i", iC, pCand->fType) << endl;
     }
+
+    if (h = (TH1D*)fpHistFile->Get(Form("m%d", pCand->fType))) {
+      if (pCand->fType > 20000 && pCand->fType < 21000) {
+	h->Fill(pCand->fVar1); 
+      } else {
+	h->Fill(pCand->fMass); 
+      }
+    } else {
+      //      cout << "Unknown candidate " << pCand->fType << endl;
+    }
+
+    if (100521 == pCand->fType) doBplus(pCand); 
+    if (20010 == pCand->fType) doDzero(pCand); 
+    if (1300 == pCand->fType) doJpsi(pCand); 
+
+
   }
 
+
+  return;
 
   // -- initialize all variables
   initVariables(); 
@@ -70,6 +89,77 @@ void muCharmReader::initVariables() {
 
 }
 
+
+
+// ----------------------------------------------------------------------
+void muCharmReader::doBplus(TAnaCand *pCand ) {
+  
+  ((TH1D*)fpHistFile->Get("m100521h0"))->Fill(pCand->fMass);
+
+  if (pCand->fVtx.fChi2 > 5.) return;
+  ((TH1D*)fpHistFile->Get("m100521h1"))->Fill(pCand->fMass);
+
+  ((TH1D*)fpHistFile->Get("m100521h10"))->Fill(pCand->fPlab.Perp());
+  
+  if (pCand->fPlab.Perp() < 3.) return;
+  ((TH1D*)fpHistFile->Get("m100521h2"))->Fill(pCand->fMass);
+
+  if (pCand->fVtx.fDxy/pCand->fVtx.fDxyE < 1) return; 
+  ((TH1D*)fpHistFile->Get("m100521h3"))->Fill(pCand->fMass);
+
+
+}
+
+
+// ----------------------------------------------------------------------
+void muCharmReader::doDzero(TAnaCand *pCand ) {
+
+  TAnaTrack *pt1, *pt2, *pt3; 
+  //  cout << pCand->fSig1 << " .. " << pCand->fSig2 << endl;
+  pt1 = fpEvt->getSigTrack(pCand->fSig1); 
+  pt2 = fpEvt->getSigTrack(pCand->fSig1+1); 
+  pt3 = fpEvt->getSigTrack(pCand->fSig2); 
+  
+  ((TH1D*)fpHistFile->Get("m20010h0"))->Fill(pCand->fVar1);
+  if (pCand->fMaxDoca > 0.01) return;
+  ((TH1D*)fpHistFile->Get("m20010h1"))->Fill(pCand->fVar1);
+
+  if (pCand->fPlab.Perp() < 4) return;
+  ((TH1D*)fpHistFile->Get("m20010h2"))->Fill(pCand->fVar1);
+}
+
+
+// ----------------------------------------------------------------------
+void muCharmReader::doJpsi(TAnaCand *pCand ) {
+
+  TAnaTrack *pt1, *pt2; 
+  //  cout << pCand->fSig1 << " .. " << pCand->fSig2 << endl;
+  pt1 = fpEvt->getSigTrack(pCand->fSig1); 
+  pt2 = fpEvt->getSigTrack(pCand->fSig2); 
+
+  fMass    = pCand->fMass;
+  fDocaMax = pCand->fMaxDoca;
+  fPt      = pCand->fPlab.Perp();
+  fChi2    = pCand->fVtx.fChi2;
+  
+  fm1pt    = pt1->fPlab.Perp(); 
+  fm2pt    = pt2->fPlab.Perp(); 
+
+  if (pt1->fMuID == -1) fm1m = 0; else  fm1m     = pt1->fMuID;
+  if (pt2->fMuID == -1) fm2m = 0; else  fm2m     = pt2->fMuID;
+
+  fTree->Fill();
+  
+  ((TH1D*)fpHistFile->Get("m1300h0"))->Fill(pCand->fMass);
+
+  if (fDocaMax > 0.01) return;
+  ((TH1D*)fpHistFile->Get("m1300h1"))->Fill(pCand->fMass);
+
+  if (pt2->fMuID & 4 == 0) return;
+  ((TH1D*)fpHistFile->Get("m1300h2"))->Fill(pCand->fMass);
+  
+
+}
 
 // ----------------------------------------------------------------------
 void muCharmReader::candidateSelection(int mode) {
@@ -260,6 +350,7 @@ void muCharmReader::bookHist() {
   TH1D *h; 
   h = new TH1D("h1", "Ntrk", 500, 0., 1000.);
   h = new TH1D("h2", "NCand", 20, 0., 20.);
+  h = new TH1D("h3", "cand ID", 1000100, -100., 1000000.);
   h = new TH1D("h10", "pT", 40, 0., 20.);
   h = new TH1D("h11", "mass", 50, 1.6, 2.1);
   h = new TH1D("h12", "chi2", 50, 0., 10.);
@@ -267,9 +358,52 @@ void muCharmReader::bookHist() {
   h = new TH1D("h1050", "TM D0->Kpi", 50, 1.6, 2.1);
   h = new TH1D("h2050", "TM mu D0->Kpi", 50, 1.6, 2.1);
 
+  h = new TH1D("m1300", "mass 1300", 40, 2.7, 3.5);
+  h = new TH1D("m1313", "mass 1313", 40, 2.7, 3.5);
+  h = new TH1D("m20010", "mass 20010", 70, 1.7, 2.4);
+  h = new TH1D("m20020", "mass 20020", 70, 1.7, 2.4);
+  h = new TH1D("m20030", "mass 20030", 70, 1.7, 2.4);
+  h = new TH1D("m20040", "mass 20040", 70, 1.7, 2.4);
+  h = new TH1D("m20050", "mass 20050", 70, 1.7, 2.4);
+  h = new TH1D("m20060", "mass 20060", 70, 1.7, 2.4);
+
+  h = new TH1D("m443", "mass 443", 40, 2.7, 3.5);
+
+  h = new TH1D("m100521", "mass 100521", 60, 5.0, 5.6);
+  h = new TH1D("m100511", "mass 100511", 60, 5.0, 5.6);
+  h = new TH1D("m100531", "mass 100531", 60, 5.0, 5.6);
+
+  h = new TH1D("m100521h0",  "mass 100521", 50, 5.0, 5.5);
+  h = new TH1D("m100521h1",  "mass 100521", 60, 5.0, 5.6);
+  h = new TH1D("m100521h2",  "mass 100521", 60, 5.0, 5.6);
+  h = new TH1D("m100521h3",  "mass 100521", 60, 5.0, 5.6);
+
+  h = new TH1D("m100521h10",  "pT 100521", 40, 0., 10.);
+
+  h = new TH1D("m20010h0",  "mass 100521", 60, 1.7, 2.0);
+  h = new TH1D("m20010h1",  "mass 100521", 60, 1.7, 2.0);
+  h = new TH1D("m20010h2",  "mass 100521", 60, 1.7, 2.0);
+  h = new TH1D("m20010h3",  "mass 100521", 60, 1.7, 2.0);
+
+  h = new TH1D("m1300h0", "mass 1300", 40, 2.7, 3.5);
+  h = new TH1D("m1300h1", "mass 1300", 40, 2.7, 3.5);
+  h = new TH1D("m1300h2", "mass 1300", 40, 2.7, 3.5);
+  h = new TH1D("m1300h3", "mass 1300", 40, 2.7, 3.5);
+  h = new TH1D("m1300h4", "mass 1300", 40, 2.7, 3.5);
+  h = new TH1D("m1300h5", "mass 1300", 40, 2.7, 3.5);
+
+
   // -- Reduced Tree
   fTree = new TTree("events", "events");
-  fTree->Branch("run",    &fRun, "run/I");
+  fTree->Branch("run",     &fRun,     "run/I");
+  fTree->Branch("m",       &fMass,    "m/D");
+  fTree->Branch("pt",      &fPt,      "pt/D");
+  fTree->Branch("docamax", &fDocaMax, "docamax/D");
+  fTree->Branch("chi2",    &fChi2,    "chi2/D");
+  fTree->Branch("m1m",     &fm1m,     "m1m/I");
+  fTree->Branch("m1pt",    &fm1pt,    "m1pt/D");
+  fTree->Branch("m2m",     &fm2m,     "m2m/I");
+  fTree->Branch("m2pt",    &fm2pt,    "m2pt/D");
 
 }
 

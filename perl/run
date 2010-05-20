@@ -16,7 +16,7 @@
 #              100414.v05.data
 #
 #
-# Destination examples: any ce01.lcg.cscs.ch  rl.ac.uk
+# Destination examples: any  cscs.ch  rl.ac.uk  ic.ac.uk  in2p3.fr  oeaw.ac.at  ciemat.es
 #
 #
 #
@@ -150,7 +150,7 @@ foreach $jobfile (@ARGV) {
 	&makeJdlFile($job);
     }
 
-    print " --> /bin/cp $jobDirectory/$jobFile .\n";
+    #print " --> /bin/cp $jobDirectory/$jobFile .\n";
     system("/bin/cp $jobDirectory/$jobFile .");
     &makeTarLink($job);
     system("/bin/chmod 755 $job.csh"); 

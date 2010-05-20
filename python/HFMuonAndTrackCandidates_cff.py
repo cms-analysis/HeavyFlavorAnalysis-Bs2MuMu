@@ -10,6 +10,6 @@ mtDump = cms.EDAnalyzer(
     muonPt        = cms.untracked.double(1.0),
     trackPt       = cms.untracked.double(1.0),
     type          = cms.untracked.int32(1300), 
-    massLow       = cms.untracked.double(2.0), 
+    massLow       = cms.untracked.double(2.5), 
     massHigh      = cms.untracked.double(9999.0)
     )
