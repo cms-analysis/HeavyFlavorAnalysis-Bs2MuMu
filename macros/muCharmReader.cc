@@ -34,11 +34,12 @@ void muCharmReader::eventProcessing() {
 
   TAnaCand *pCand; 
   TH1D *h; 
+  int n1313(0), n1300(0); 
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
     pCand = fpEvt->getCand(iC);
     ((TH1D*)fpHistFile->Get("h3"))->Fill(pCand->fType); 
     if (pCand->fType < 100) {
-      cout << Form("%6i %i", iC, pCand->fType) << endl;
+      //      cout << Form("%6i %i", iC, pCand->fType) << endl;
     }
 
     if (h = (TH1D*)fpHistFile->Get(Form("m%d", pCand->fType))) {
@@ -53,11 +54,17 @@ void muCharmReader::eventProcessing() {
 
     if (100521 == pCand->fType) doBplus(pCand); 
     if (20010 == pCand->fType) doDzero(pCand); 
-    if (1300 == pCand->fType) doJpsi(pCand); 
-
-
+    if (1300 == pCand->fType) {
+      ++n1300;
+    }
+    if (1313 == pCand->fType) {
+      ++n1313;
+      doJpsi(pCand); 
+    }
   }
-
+  
+  ((TH1D*)fpHistFile->Get("h100"))->Fill(n1313); 
+  ((TH1D*)fpHistFile->Get("h101"))->Fill(n1300); 
 
   return;
 
@@ -155,7 +162,7 @@ void muCharmReader::doJpsi(TAnaCand *pCand ) {
   if (fDocaMax > 0.01) return;
   ((TH1D*)fpHistFile->Get("m1300h1"))->Fill(pCand->fMass);
 
-  if (pt2->fMuID & 4 == 0) return;
+  if ((pt2->fMuID & 4) == 0) return;
   ((TH1D*)fpHistFile->Get("m1300h2"))->Fill(pCand->fMass);
   
 
@@ -351,6 +358,8 @@ void muCharmReader::bookHist() {
   h = new TH1D("h1", "Ntrk", 500, 0., 1000.);
   h = new TH1D("h2", "NCand", 20, 0., 20.);
   h = new TH1D("h3", "cand ID", 1000100, -100., 1000000.);
+  h = new TH1D("h100", "1313 multiplicity", 20, 0., 20.);
+  h = new TH1D("h101", "1300 multiplicity", 100, 0., 100.);
   h = new TH1D("h10", "pT", 40, 0., 20.);
   h = new TH1D("h11", "mass", 50, 1.6, 2.1);
   h = new TH1D("h12", "chi2", 50, 0., 10.);

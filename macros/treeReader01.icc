@@ -139,7 +139,7 @@ int treeReader01::loop(int nevents, int start) {
   // -- The main loop
   int step(50000); 
   if (maxEvents < 1000000) step = 10000; 
-  if (maxEvents < 100000)  step = 5000; 
+  if (maxEvents < 100000)  step = 1000; 
   if (maxEvents < 10000)   step = 500; 
   if (maxEvents < 1000)    step = 100; 
 

@@ -57,7 +57,7 @@ HFB2muD0::HFB2muD0(const edm::ParameterSet& iConfig) :
   using namespace std;
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- " << __FILE__ << endl;
-  cout << "--- $Revision: 1.3 $" << endl;
+  cout << "--- $Revision: 1.4 $" << endl;
   cout << "--- HFB2muD0 constructor" << endl;
   cout << "---  tracksLabel:              " << fTracksLabel << endl;
   cout << "---  muonsLabel:               " << fMuonsLabel << endl;
@@ -136,7 +136,7 @@ void HFB2muD0::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) 
   vector<int> muonIndices;
   for (MuonCollection::const_iterator muon = hMuons->begin(); muon != hMuons->end(); ++muon) {
     int im = muon->track().index();
-    if (im > 0) muonIndices.push_back(im);
+    if (im >= 0) muonIndices.push_back(im);
   }
   if (fVerbose > 1)
     cout << "==>HFB2muD0> nMuonIndices = " << muonIndices.size() << endl;

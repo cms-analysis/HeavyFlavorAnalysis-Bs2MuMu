@@ -41,16 +41,28 @@ void copyReader::eventProcessing() {
     pCand = fpEvt->getCand(j);
     for (unsigned int ic = 0; ic < fTypeList.size(); ++ic) {
       if (pCand->fType == fTypeList[ic]) {
-	doCopy = true; 
-	type = pCand->fType;
-	break;
+	if (FILTERONMASS) {
+	  if (pCand->fMass < MASSHI && pCand->fMass > MASSLO) {
+	    doCopy = true; 
+	    type = pCand->fType;
+	    break;
+	  } else {
+	    doCopy = false; 
+	  }
+	} else {
+	  doCopy = true; 
+	  type = pCand->fType;
+	}
       }
     }
   }
 
   if (doCopy) {
     ++fCopied;
-    cout << "Found a candidate with type " << type << ", copying, among ncands = " << fpEvt->nCands() << endl;
+    cout << "Found a candidate with type " << type 
+	 << Form(", copying, among ncands = %6i", fpEvt->nCands())
+	 << " in run/evt: " << fpEvt->fRunNumber << "/" << fpEvt->fEventNumber
+	 << endl;
     *copy_evt = *fpEvt;
     copy_tree->Fill();
   }
@@ -87,6 +99,21 @@ void copyReader::readCuts(TString filename, int dump) {
       TYPE = int(CutValue); ok = 1;
       fTypeList.push_back(CutValue); 
       if (dump) cout << " added TYPE:      " << TYPE << endl;
+    }
+
+    if (!strcmp(CutName, "FILTERONMASS")) {
+      FILTERONMASS = int(CutValue); ok = 1;
+      if (dump) cout << " FILTERONMASS:      " << FILTERONMASS << endl;
+    }
+
+    if (!strcmp(CutName, "MASSHI")) {
+      MASSHI = double(CutValue); ok = 1;
+      if (dump) cout << " MASSHI:      " << MASSHI << endl;
+    }
+
+    if (!strcmp(CutName, "MASSLO")) {
+      MASSLO = double(CutValue); ok = 1;
+      if (dump) cout << " MASSLO:      " << MASSLO << endl;
     }
   }
 

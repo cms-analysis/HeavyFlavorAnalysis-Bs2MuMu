@@ -238,7 +238,7 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
     // -- Muon ID
     pTrack->fMuIndex = -1; 
-    pTrack->fMuID    = -1;
+    pTrack->fMuID    = 0;
     for (unsigned int im = 0; im < muonIndices.size(); ++im) {
       if (i == muonIndices[im]) {
 	if (fVerbose > 3) cout << " ==>HFDumpTracks> Found a muon!!" << endl;
@@ -255,14 +255,6 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	
 	pTrack->fMuIndex = CalomuonCollectionIndices[im]; 
 	pTrack->fMuID   |= 0x1<<15;
-      }
-    }
-
-    for (unsigned int im = 0; im < CalomuonIndices.size(); ++im) {
-      if (i == CalomuonIndices[im]) {
-        if (fVerbose > 3) cout << " ==>HFDumpTracks> Found a calo muon!!" << endl;
-        pTrack->fMuIndex = CalomuonCollectionIndices[im]; 
-        pTrack->fMuID   |= 0x1<<15;
       }
     }
 

@@ -35,7 +35,7 @@ if ($opt_c) {
     $cntEvents = 0;
     open(IN, "$opt_c") || die "cannot open $opt_c\n";
     while(<IN>){
-	($bla, $cnt) = split(/\.root  /);
+	($bla, $cnt) = split(/\.root */);
 	$cntEvents += $cnt; 
     }
     close IN; 

@@ -160,7 +160,7 @@ void HFCharm::analyze(const Event& iEvent, const EventSetup& iSetup) {
   vector<unsigned int> muonIndices;
   for (MuonCollection::const_iterator muon = hMuons->begin(); muon != hMuons->end(); ++muon) {
     int im = muon->track().index(); 
-    if (im > 0) muonIndices.push_back(im);
+    if (im >= 0) muonIndices.push_back(im);
   }
   if (fVerbose > 0) {
     cout << "==>HFCharm> nMuons = " << hMuons->size() << endl;

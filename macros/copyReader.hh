@@ -31,6 +31,9 @@ private:
   vector<int> fTypeList; 
 
   int fCopied; 
+
+  int FILTERONMASS;
+  double MASSLO, MASSHI; 
 };
 
 #endif
