@@ -3,6 +3,8 @@
 
 #include "massReader.hh"
 
+#include <set>
+
 class ksReader : public massReader {
 	
 	public:
@@ -10,9 +12,11 @@ class ksReader : public massReader {
 		~ksReader();
 		
 		virtual void bookHist();
+		virtual void eventProcessing();
 
 	protected:
 		virtual int loadCandidateVariables(TAnaCand *pCand);
+		virtual int checkTruth(TAnaCand *cand, int truth_type);
 	
 	private:
 		double fMassKs;
@@ -32,6 +36,15 @@ class ksReader : public massReader {
 		TVector3 *fPlabMu2Ptr;
 		TVector3 *fPlabPi1Ptr;
 		TVector3 *fPlabPi2Ptr;
+		
+		multiset<int> trueDecay;
+	
+	private:
+		unsigned unrecoverableDecays;
+		unsigned recoverableCounter;
+	private:
+		unsigned buildDecay(int genIx, multiset<int> *particles, unsigned *nbrMuons = NULL);
+		int getGenIndex(TAnaCand *pCand);
 };
 
 #endif
