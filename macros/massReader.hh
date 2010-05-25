@@ -17,6 +17,10 @@ class massReader : public treeReader01 {
 		TTree *reduced_tree;
 		
 		virtual int loadCandidateVariables(TAnaCand *pCand);
+		
+		// loading variables
+		virtual int checkTruth(TAnaCand *cand, int truth_type);
+		virtual int checkMuons(TAnaCand *cand);
 
 	private:
 		// Private variables
@@ -31,10 +35,6 @@ class massReader : public treeReader01 {
 		double fAlpha; // angle between momentum and dist(vertex, motherVertex)
 		double fChi2; // chi2 of the vertex
 		double fNdof; // number of degrees of freedom of vertex
-				
-		// Private functions
-		int checkTruth(TAnaCand *cand, int truth_type);
-		int checkMuons(TAnaCand *cand);
 };
 
 #endif

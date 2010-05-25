@@ -81,7 +81,7 @@ int massReader::checkTruth(TAnaCand *cand, int truth_type)
 	TAnaTrack *recTrack;
 	TGenCand *truthParticle;
 	TGenCand *trackParticle;
-	int j,succes = 0;
+	int j,success = 0;
 	int nSigs,nRecs,nGens;
 	
 	
@@ -125,10 +125,10 @@ int massReader::checkTruth(TAnaCand *cand, int truth_type)
 	}
 	
 	// still here? then every track originated from the right particle
-	succes = 1;
+	success = 1;
 	
 bail:
-	return succes;
+	return success;
 } // massReader::checkTruth()
 
 int massReader::checkMuons(TAnaCand *cand)
@@ -150,7 +150,7 @@ int massReader::checkMuons(TAnaCand *cand)
 		if (abs(track->fMCID) == 13) {
 			totalMu++; // muon
 			track = fpEvt->getRecTrack(track->fIndex); // rec track
-			if (track->fMuID > 0)
+			if (track->fMuID > 0 && (track->fMuID & 6))
 				nbrMu++;
 		}
 	}
