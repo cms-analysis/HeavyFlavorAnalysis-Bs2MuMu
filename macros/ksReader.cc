@@ -18,6 +18,8 @@ ksReader::ksReader(TChain *tree, TString evtClassName) :
 	trueDecay.insert(310);
 	trueDecay.insert(443);
 	trueDecay.insert(511);
+	
+	cout << "ksReader instantiated..." << endl;
 } // ksReader()
 
 ksReader::~ksReader() {
@@ -197,7 +199,8 @@ unsigned ksReader::buildDecay(int genIx, multiset<int> *particles, unsigned *nbr
 
 void ksReader::eventProcessing()
 {
-	unsigned j,k,nc;
+	unsigned j,nc;
+	int k;
 	unsigned nbrMuons,nbrTracks;
 	TGenCand *pGen;
 	TAnaCand *pCand;
@@ -241,7 +244,7 @@ void ksReader::eventProcessing()
 		if (pCand->fType != 600511)
 			continue;
 		
-		k = getGenIndex(pCand);
+		k = getGenIndex(pCand,511);
 		recoverableGens.erase(k);
 	}
 	
@@ -250,24 +253,23 @@ void ksReader::eventProcessing()
 		unrecoverableDecays++;
 } // eventProcessing()
 
-int ksReader::getGenIndex(TAnaCand *pCand)
+int ksReader::getGenIndex(TAnaCand *pCand, int candID)
 {
 	TAnaTrack *pTrack;
-	TGenCand *momCand,*pGen;
+	TGenCand *momCand,*pGen;;
 	int j;
-	
-	// get the mom from the first candidate!!
+
+	// set the momCand out of the first signal track...
 	pTrack = fpEvt->getSigTrack(pCand->fSig1);
 	pTrack = fpEvt->getRecTrack(pTrack->fIndex);
-	
 	if (pTrack->fGenIndex < 0) return -1;
 	momCand = fpEvt->getGenCand(pTrack->fGenIndex);
-	
-	while (abs(momCand->fID) != abs(pCand->fType) && momCand->fMom1 >= 0)
+
+	while (abs(momCand->fID) != candID && momCand->fMom1 >= 0)
 		momCand = fpEvt->getGenCand(momCand->fMom1);
-	
-	if (abs(momCand->fID) != abs(pCand->fType)) return -1;
-	
+		
+	if (abs(momCand->fID) != candID) return -1;
+
 	for (j = pCand->fSig1+1; j <= pCand->fSig2; j++) {
 		
 		pTrack = fpEvt->getSigTrack(j);
@@ -276,11 +278,11 @@ int ksReader::getGenIndex(TAnaCand *pCand)
 		if (pTrack->fGenIndex < 0) return -1;
 		pGen = fpEvt->getGenCand(pTrack->fGenIndex);
 		
-		while (abs(pGen->fID) != abs(pCand->fType) && pGen->fMom1 >= 0)
+		while(abs(pGen->fID) != candID && pGen->fMom1 >= 0)
 			pGen = fpEvt->getGenCand(pGen->fMom1);
-		
-		if (abs(pGen->fID) != abs(pCand->fType) || (pGen->fNumber != momCand->fNumber)) return -1;
+			
+		if((abs(pGen->fID)!=candID) || (pGen->fNumber != momCand->fNumber)) return -1;
 	}
-	
+
 	return momCand->fNumber;
 } // getGenIndex()

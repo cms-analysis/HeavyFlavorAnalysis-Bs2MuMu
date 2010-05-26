@@ -44,7 +44,7 @@ class ksReader : public massReader {
 		unsigned recoverableCounter;
 	private:
 		unsigned buildDecay(int genIx, multiset<int> *particles, unsigned *nbrMuons = NULL);
-		int getGenIndex(TAnaCand *pCand);
+		int getGenIndex(TAnaCand *pCand, int candID);
 };
 
 #endif
