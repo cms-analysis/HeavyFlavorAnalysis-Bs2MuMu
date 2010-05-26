@@ -96,8 +96,7 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 		fDxyKs = ksCand->fVtx.fDxy;
 		fDxyeKs = ksCand->fVtx.fDxyE;
 		fChi2Ks = ksCand->fVtx.fChi2;
-	} else
-		result = 0;
+	}
 	
 	// jpsi subvariables
 	ksCand = NULL;
@@ -111,8 +110,7 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 	}
 	if (ksCand) {
 		fMassJPsi = ksCand->fMass;
-	} else
-		result = 0;
+	}
 	
 bail:
 	counter++;
