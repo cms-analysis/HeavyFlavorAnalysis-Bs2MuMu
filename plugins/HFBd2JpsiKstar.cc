@@ -129,7 +129,7 @@ void HFBd2JpsiKstar::analyze(const Event& iEvent, const EventSetup& iSetup) {
     cout << "==>HFBd2JpsiKstar> nMuons = " << hMuons->size() << endl;
     cout << "==>HFBd2JpsiKstar> nMuonIndices = " << muonIndices.size() << endl;
   }
-  if (muonIndices.size() < fPsiMuons) return;
+  if (muonIndices.size() < static_cast<unsigned int>(fPsiMuons)) return;
 
   // -- Build muon lists
   TLorentzVector tlv; 

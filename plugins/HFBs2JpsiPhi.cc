@@ -130,7 +130,7 @@ void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup) {
     cout << "==>HFBs2JpsiPhi> nMuons = " << hMuons->size() << endl;
     cout << "==>HFBs2JpsiPhi> nMuonIndices = " << muonIndices.size() << endl;
   }
-  if (muonIndices.size() < fPsiMuons) return;
+  if (muonIndices.size() < static_cast<unsigned int>(fPsiMuons)) return;
 
 
   // -- Build muon lists

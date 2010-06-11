@@ -210,6 +210,7 @@ TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
 
 void HFSequentialVertexFit::doFit(HFDecayTree *tree)
 {
+  if (fVerbose > 5) cout << "==>HFSequentialVertexFit> doFit()" << endl;
   RefCountedKinematicTree kinTree;
   RefCountedKinematicVertex kinVertex;
   RefCountedKinematicParticle kinParticle;

@@ -132,7 +132,7 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
     cout << "==>HFBu2JpsiKp> nMuons = " << hMuons->size() << endl;
     cout << "==>HFBu2JpsiKp> nMuonIndices = " << muonIndices.size() << endl;
   }
-  if (muonIndices.size() < fPsiMuons) return;
+  if (muonIndices.size() < static_cast<unsigned int>(fPsiMuons)) return;
 
 
   // -- Build muon lists
@@ -273,15 +273,19 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
       aKin.doJpsiFit(trackList, trackIndices, trackMasses, 300521); 	
       
       // Sequentialfit without mass constraint
+      if (fVerbose > 5) cout << "==>HFBu2JpsiKp> going to sequential fit" << endl;
       HFDecayTree theTree(600521);
       theTree.particleID = 500521;    
       theTree.addTrack(iTrack,321);
     
+      if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit 1" << endl;
       HFDecayTreeIterator iterator = theTree.addDecayTree(600443);
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
 
+      if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit 2" << endl;
       aSeq.doFit(&theTree);
+      if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit 3" << endl;
 
       // Sequentialfit with mass constraint
       theTree.clear();
@@ -290,8 +294,10 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
       iterator = theTree.addDecayTree(700443,MJPSI);
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
+      if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit" << endl;
 
       aSeq.doFit(&theTree);
+      if (fVerbose > 5) cout << "==>HFBu2JpsiKp> done with fitting for track " << iTrack << endl;
     }
   }
 }

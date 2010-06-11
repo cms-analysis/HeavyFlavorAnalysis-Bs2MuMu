@@ -5,7 +5,7 @@
 #include <bitset>
 
 #include "FWCore/Framework/interface/ESHandle.h"
-#include "FWCore/Framework/interface/TriggerNames.h"
+#include "FWCore/Common/interface/TriggerNames.h"
 
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/TriggerResults.h"
@@ -178,8 +178,7 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   }
   
   if (hltF) {
-    TriggerNames trigName;
-    trigName.init(*hHLTresults);
+    const TriggerNames &trigName = iEvent.triggerNames(*hHLTresults);
     gHFEvent->fHLTDecision = hHLTresults->accept();
     if (fVerbose > 1) cout << "hHLTresults->size() = " << hHLTresults->size() << " and HLT accept = " << gHFEvent->fHLTDecision << endl;
 

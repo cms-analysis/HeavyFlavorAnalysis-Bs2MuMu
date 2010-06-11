@@ -59,6 +59,8 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
 			      int ntracks
 			      ) {
   
+  if (fVerbose > 5) cout << "==>HFKalmanVertexFit> doFit()" << endl;
+
   vector<reco::TransientTrack> RecoTransientTrack;
   RecoTransientTrack.clear();
   

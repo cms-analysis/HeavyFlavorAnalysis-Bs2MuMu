@@ -51,6 +51,9 @@ void HFKinematicVertexFit::doJpsiFit(vector<Track> &trackList,
 				     vector<int> &trackIndices,
 				     vector<double> &trackMasses,
 				     int type) {
+
+  if (fVerbose > 5) cout << "==>HFKinematicVertexFit> doJpsiFit()" << endl;
+
   KinematicParticleFactoryFromTransientTrack pFactory;
   KinematicParticleVertexFitter kpvFitter;
   KinematicParticleFitter csFitter;
@@ -203,6 +206,8 @@ void HFKinematicVertexFit::doJpsiFit(vector<Track> &trackList,
 	
  bail:
   // clean up!!
+  if (fVerbose > 5) cout << "==>HFKinematicVertexFit>    trying to clean up" << endl;
   if (jpsi_cons)
     delete jpsi_cons;
+  if (fVerbose > 5) cout << "==>HFKinematicVertexFit>    returning" << endl;
 }
