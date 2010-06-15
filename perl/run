@@ -23,6 +23,7 @@
 # Assumptions: jobs are serialized a la asd_asd-asd-10000.py, the numbering is at the end, separated with -
 # ------------ is run in directory where the py files reside! ??? IS THIS TRUE ???
 #
+# 2010/06/15   added 'rm -rf $JOB' to start of batch job (in case the previously running job had been killed)
 # 2010/05/10   added debug option to resubmission
 # 2010/04/30   add V0-cms-$CMSSW to requirements and allow non-destination specific submission
 # 2010/04/28   adapted to runTreeReaders usage, fixed wrong remove instructions
@@ -175,11 +176,21 @@ foreach $jobfile (@ARGV) {
 	    print "qsub -q all.q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh\n";
 	} else {
 	    print "qsub -q all.q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh\n";
-	    system("qsub -q all.q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh");
+	    $result = `qsub -q all.q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh`;
+	    chop($result); 
+	    $result =~ s/Your job //g;
+	    $result =~ s/ has been submitted//g;
+	    ($sgeNumber, $sgeName) = split(/\(/, $result, 2); 
+	    $sgeName =~ s/\)//g;
+	    $sgeName =~ s/\"//g;
+	    $sgeNumber =~ s/\ //g;
+	    $sgeName =~ s/\ //g;
+	    print "Submitted ->$sgeNumber<- with name ->$sgeName<-\n";
+
 	    open(IN, ">>jobs.list") || die "Cannot open jobs.list\n";
 	    print IN "###Submitted Job Ids###\n";
 	    print IN "sge $tdir \n";
-	    print IN "\# $timeStamp $pwd/$tdir $jobName\n"; 
+	    print IN "\# $timeStamp $pwd/$tdir $sgeName $sgeNumber\n"; 
 	    close(IN); 
 	    system("/usr/bin/tail -2 jobs.list >> ../jobs.list");
 	}
@@ -259,6 +270,7 @@ sub makeCshFile {
 	    print OUT "# BATCH START\n";
 	    print OUT "mkdir -p /scratch/$user\n";
 	    print OUT "cd /scratch/$user\n";
+	    print OUT "rm -rf \$JOB\n";
 	    print OUT "mkdir \$JOB\n";
 	    print OUT "cd \$JOB\n";
 	    print OUT "/bin/cp $pwd/$tdir/$ljob.tar.gz .\n";

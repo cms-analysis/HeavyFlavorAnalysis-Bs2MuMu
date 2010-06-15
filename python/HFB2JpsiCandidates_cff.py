@@ -67,5 +67,4 @@ bdpsiksDump = cms.EDAnalyzer(
 # ######################################################################
 # Sequences
 # ######################################################################
-#B2JPsiSequence     = cms.Sequence(bupsikpDump*bdpsikstarDump*bspsiphiDump*bdpsiksDump)
-B2JPsiSequence     = cms.Sequence(bdpsikstarDump*bspsiphiDump*bdpsiksDump)
+B2JPsiSequence     = cms.Sequence(bupsikpDump*bdpsikstarDump*bspsiphiDump*bdpsiksDump)

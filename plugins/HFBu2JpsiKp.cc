@@ -296,7 +296,7 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
       iterator->addTrack(iMuon2,13);
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit" << endl;
 
-      aSeq.doFit(&theTree);
+      //      aSeq.doFit(&theTree);
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> done with fitting for track " << iTrack << endl;
     }
   }

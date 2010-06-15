@@ -4,6 +4,7 @@
 # ------
 #              check status of SGE jobs
 #
+# 2010/06/15   allow killing running jobs
 # 2010/05/10   working again after some (previous) changes to jobs.list
 # 2010/03/09   First version
 #              
@@ -14,7 +15,7 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('i:oru:');
+getopts('i:koru:');
 
 # -- jobs list
 my $jobslist = "jobs.list";
@@ -44,7 +45,7 @@ while(<IN>) {
     if ($url =~ /https/) {next;}
 
     $line =~ s/\# //;
-    ($machine, $date, $time, $dir, $jname) = split(/ /, $line); 
+    ($machine, $date, $time, $dir, $jname, $sgeNumber) = split(/ /, $line); 
     my $pwd = `pwd`; chop($pwd);
     my $mdir = $dir;
     $mdir =~ s%$pwd/%%;
@@ -64,9 +65,9 @@ while(<IN>) {
     }
 
     if ($ok eq "running" || $ok eq "waiting") {
-	printf("%30s %60s SGE ; %s\n", $jname, $mdir, $ok);
+	printf("%7i %10s %30s; %s\n", $sgeNumber, $jname, $mdir, $ok);
     } else {
-	printf("%30s %60s SGE ; %s/root: %10i, log: %7i\n", $jname, $mdir, $ok, $rsize, $lsize);
+	printf("%7i %10s %30s; %s/root: %10i, log: %7i\n", $sgeNumber, $jname, $mdir, $ok, $rsize, $lsize);
     }
 
     if ($ok =~ /no problems seen/) { 
@@ -74,6 +75,11 @@ while(<IN>) {
 	$goodJobs++; 
 	if ($rsize < $minGood) {$minGood = $rsize;}
     } elsif ($ok eq "running" || $ok eq "waiting") {
+	if ($opt_k) {
+	    # print "Killing job $jname $sgeNumber\n";
+	    $bla = `qdel $sgeNumber`;
+	    print $bla;
+	}
     } else { 
 	system("/bin/touch $mdir/NOK"); 
 	$badJobs++; 
