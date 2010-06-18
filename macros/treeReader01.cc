@@ -16,6 +16,11 @@ void treeReader01::startAnalysis() {
   cout << "treeReader01: startAnalysis: ..." << endl;
 }
 
+// ----------------------------------------------------------------------
+void treeReader01::endAnalysis() {
+  cout << "treeReader01: endAnalysis: ..." << endl;
+}
+
 
 // ----------------------------------------------------------------------
 bool treeReader01::goodRun() {

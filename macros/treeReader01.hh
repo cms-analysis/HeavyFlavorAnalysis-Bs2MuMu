@@ -39,6 +39,7 @@ public:
   virtual void readCuts(TString filename, int dump = 1);
 
   virtual void startAnalysis();
+  virtual void endAnalysis();
   virtual int  loop(int nevents = 1, int start = -1);
   virtual void eventProcessing();
   virtual void initVariables(); 

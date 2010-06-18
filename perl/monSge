@@ -112,6 +112,10 @@ sub parseOutput {
 
     $foundGlibc     = `/bin/grep -i "glibc detected" $llogfile`;
     if ($foundGlibc) {$return = "core dump detected"; }
+
+    $foundBadAlloc   = `/bin/grep -i "std::bad_alloc" $llogfile`;
+    if ($foundBadAlloc) {$return = "std::bad_alloc detected"; }
+
     return $return;
 }
 

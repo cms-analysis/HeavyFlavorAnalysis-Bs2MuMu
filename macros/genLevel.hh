@@ -41,11 +41,15 @@ public:
   void         bookHist();
   void         startAnalysis();
   void         eventProcessing();
+  void         endAnalysis();
   void         fillHist();
   void         readCuts(TString filename, int dump = 1);
   void         initVariables();
   int          muonType(TGenCand *pCand);
- 
+  void         bbbarCrossSection();
+
+  int          NTOTAL; 
+  double       XSECTION;
 
 };
 

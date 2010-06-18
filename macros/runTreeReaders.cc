@@ -184,6 +184,7 @@ int main(int argc, char *argv[]) {
     
     a->startAnalysis(); 
     a->loop(nevents, start);
+    a->endAnalysis();
     a->closeHistFile(); 
   } else
     cerr << "Readerclass '" << readerName << "' not found" << endl;

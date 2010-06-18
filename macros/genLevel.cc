@@ -17,7 +17,6 @@ genLevel::genLevel(TChain *tree, TString evtClassName): treeReader01(tree, evtCl
 // ----------------------------------------------------------------------
 genLevel::~genLevel() {
   cout << "==> genLevel: destructor..." << endl;
-
 }
 
 // ----------------------------------------------------------------------
@@ -29,40 +28,82 @@ void genLevel::startAnalysis() {
 // ----------------------------------------------------------------------
 void genLevel::eventProcessing() {
 
+  bbbarCrossSection();
+  // -- initialize all variables
+  initVariables(); 
+
+}
+
+
+
+// ----------------------------------------------------------------------
+void genLevel::endAnalysis() {
+
+  double ftilde(0.11); 
+  double f = 2.*ftilde*(1-ftilde) + ftilde*ftilde; 
+  double n0 = ((TH1D*)fpHistFile->Get("e111"))->GetSumOfWeights(); 
+  double n1 = ((TH1D*)fpHistFile->Get("e112"))->GetSumOfWeights();
+  double c0 = ((TH1D*)fpHistFile->Get("h110"))->GetSumOfWeights(); 
+  double c1 = ((TH1D*)fpHistFile->Get("h112"))->GetSumOfWeights();
+
+  cout << "XSECTION:            " << XSECTION << endl;
+  cout << "NTOTAL:              " << NTOTAL << endl;
+  cout << "b->mu events:        " << n0 << endl;
+  cout << "b->mu decays:        " << c0 << endl;
+  cout << "b->mu events in acc: " << n1 << endl;
+  cout << "b->mu decays in acc: " << c1 << endl;
+
+  cout << "bbbar xsection:       " << n0/(f*NTOTAL)*XSECTION << endl;
+  cout << "bbbar xsection:       " << c0/(2.*ftilde*NTOTAL)*XSECTION << endl;
+  cout << "b-mu  xsection:       " << n0/(NTOTAL)*XSECTION << endl;
+  cout << "b-mu in acc xsection: " << n1/(NTOTAL)*XSECTION << endl;
+}
+
+
+// ----------------------------------------------------------------------
+void genLevel::bbbarCrossSection() {
+
   TGenCand *pCand; 
   TH1D *h; 
-  int muType; 
+  int muType(0), evtType(0), nevt(0), bevt(0), bacc(0); 
+  bool acc(false);
   double pt(0.), eta(0.); 
   for (int iC = 0; iC < fpEvt->nGenCands(); ++iC) {
     pCand = fpEvt->getGenCand(iC);
 
     if (TMath::Abs(pCand->fID) == 13) {
+      //      cout << "muon at " << iC << endl;
       muType = muonType(pCand); 
       pt = pCand->fP.Perp();
       eta= pCand->fP.Eta();
+
+      evtType |= muType; 
+
+      if (pt > 5 && eta < 2.1 && eta > -2.1) {
+	acc = true; 
+      } else {
+	acc = false;
+      }
+
       ((TH1D*)fpHistFile->Get("h1"))->Fill(muType); 
-
       if (muType > 0) ((TH1D*)fpHistFile->Get("h100"))->Fill(pt); 
-      if (muType & 1) ((TH1D*)fpHistFile->Get("h101"))->Fill(pt); 
-      if (muType & 2) ((TH1D*)fpHistFile->Get("h102"))->Fill(pt); 
-      if (muType & 4) ((TH1D*)fpHistFile->Get("h104"))->Fill(pt); 
-      if (muType & 8) ((TH1D*)fpHistFile->Get("h108"))->Fill(pt); 
-	
+      if (muType ==1) ((TH1D*)fpHistFile->Get("h110"))->Fill(pt); 
+      if (muType ==1 && acc) ((TH1D*)fpHistFile->Get("h112"))->Fill(pt); 
 
-      //      cout << muType << ": "; pCand->dump();
-      //       if (muType >= 4) {
-      // 	cout << "----------------------------------------------------------------------" << endl;
-      // 	fpEvt->dumpGenBlock();
-      // 	cout << "----------------------------------------------------------------------" << endl;
-      //       }
+      if (muType > 0)         ++nevt;
+      if (muType == 1)        ++bevt;
+      if (muType == 1 && acc) ++bacc;
+      
     }
 
   }
 
-
-  // -- initialize all variables
-  initVariables(); 
-
+  ((TH1D*)fpHistFile->Get("e1"))->Fill(evtType); 
+  if (evtType > 0) ((TH1D*)fpHistFile->Get("e100"))->Fill(pt); 
+  if (evtType ==1) ((TH1D*)fpHistFile->Get("e110"))->Fill(pt); 
+  if (bevt    > 0) ((TH1D*)fpHistFile->Get("e111"))->Fill(pt); 
+  if (bacc    > 0) ((TH1D*)fpHistFile->Get("e112"))->Fill(pt); 
+  
 }
 
 
@@ -76,24 +117,26 @@ int genLevel::muonType(TGenCand *pCand) {
 
   int result(1024); 
 
+  string str("");
+  str += Form(" %i", pCand->fID); 
+  
   while (momI > 1 && momI < fpEvt->nGenCands()) {
     pMom = fpEvt->getGenCand(momI); 
     momI = pMom->fMom1;
 
     id  = TMath::Abs(pMom->fID);
+    str += Form(" %i", pMom->fID);
 
     rest =  id%1000;
     ganz =  id/1000;
     
     // -- hit a string
     if (rest == 92) {
-      cout << "?????????????????????????????????????????????????????????????????????????" << endl;
       break;
     }
 
     // -- hit a quark
-    if (rest == 5) {
-      cout << "?????????????????????????????????????????????????????????????????????????" << endl;
+    if (rest < 6) {
       break;
     }
 
@@ -101,7 +144,7 @@ int genLevel::muonType(TGenCand *pCand) {
       foundB = 1; 
       break;
     }
-
+ 
     if (ganz == 4) {
       foundC = 1; 
       break;
@@ -124,13 +167,18 @@ int genLevel::muonType(TGenCand *pCand) {
       break;
     }
   }
-  
+
   result = 0; 
 
   if (foundB) result += 1; 
   if (foundC) result += 2; 
   if (foundT) result += 4; 
   if (light)  result += 8; 
+
+//   if (result > -1) {
+//     cout << fEvent << " " << str << " --> " << result << endl;
+//   }
+
   return result; 
 }
 
@@ -153,13 +201,16 @@ void genLevel::bookHist() {
   cout << "==> genLevel: bookHist " << endl;
   
   TH1D *h; 
-  h = new TH1D("h1", "mu type", 10, 0., 10.);
+  h = new TH1D("h1",   "mu type", 20, 0., 20.);
+  h = new TH1D("h100", "mu pt 0", 100, 0., 20.);
+  h = new TH1D("h110", "mu pt ==1", 100, 0., 20.);
+  h = new TH1D("h112", "mu pt ==1", 100, 0., 20.);
 
-  h = new TH1D("h100", "mu pt 1", 100, 0., 20.);
-  h = new TH1D("h101", "mu pt 1", 100, 0., 20.);
-  h = new TH1D("h102", "mu pt 2", 100, 0., 20.);
-  h = new TH1D("h104", "mu pt 4", 100, 0., 20.);
-  h = new TH1D("h108", "mu pt 8", 100, 0., 20.);
+  h = new TH1D("e1",  "evt type", 20, 0., 20.);
+  h = new TH1D("e100", "evt pt 0", 100, 0., 20.);
+  h = new TH1D("e110", "evt pt ==1", 100, 0., 20.);
+  h = new TH1D("e111", "evt pt ==1", 100, 0., 20.);
+  h = new TH1D("e112", "evt acc ==1", 100, 0., 20.);
 
   // -- Reduced Tree
   fTree = new TTree("events", "events");
@@ -195,9 +246,14 @@ void genLevel::readCuts(TString filename, int dump) {
     if (buffer[0] == '/') {continue;}
     sscanf(buffer, "%s %f", CutName, &CutValue);
 
-    if (!strcmp(CutName, "TYPE")) {
-      TYPE = int(CutValue); ok = 1;
-      if (dump) cout << "TYPE:           " << TYPE << endl;
+    if (!strcmp(CutName, "NTOTAL")) {
+      NTOTAL = int(CutValue); ok = 1;
+      if (dump) cout << "NTOTAL:           " << NTOTAL << endl;
+    }
+
+    if (!strcmp(CutName, "XSECTION")) {
+      XSECTION = double(CutValue); ok = 1;
+      if (dump) cout << "XSECTION:           " << XSECTION << endl;
     }
 
     if (!ok) cout << "==> genLevel: ERROR: Don't know about variable " << CutName << endl;
