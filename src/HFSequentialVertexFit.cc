@@ -16,6 +16,8 @@
 #include "RecoVertex/VertexTools/interface/VertexDistanceXY.h"
 #include "RecoVertex/VertexTools/interface/VertexDistance3D.h"
 
+#include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
+
 #include "CommonTools/Statistics/interface/ChiSquared.h"
 
 extern TAna01Event *gHFEvent;
@@ -38,43 +40,76 @@ HFSequentialVertexFit::HFSequentialVertexFit(Handle<View<Track> > hTracks, const
 HFSequentialVertexFit::~HFSequentialVertexFit()
 {} // ~HFSequentialVertexFit()
 
-void HFSequentialVertexFit::fitTree(HFDecayTree *tree)
+// if this node does not survive the nodeCut, then it returns false and the fitting sequence stops
+bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 {
-  KinematicParticleFactoryFromTransientTrack pFactory;
-  KinematicParticleVertexFitter kpvFitter;
-  vector<RefCountedKinematicParticle> kinParticles;
-  RefCountedKinematicTree kinTree;
-  HFDecayTreeTrackIterator trackIt;
-  HFDecayTreeIterator treeIt;
-  double mass;
+	KinematicParticleFactoryFromTransientTrack pFactory;
+	KinematicParticleVertexFitter kpvFitter;
+	vector<RefCountedKinematicParticle> kinParticles;
+	RefCountedKinematicTree kinTree;
+	HFDecayTreeTrackIterator trackIt;
+	HFDecayTreeIterator treeIt;
+	RefCountedHFNodeCut nodeCut;
+	double mass;
 
-  // add the particles from the tracks
-  for (trackIt = tree->getTrackBeginIterator(); trackIt != tree->getTrackEndIterator(); trackIt++) {
-    mass = getParticleMass(trackIt->second);     
-    float sigma = 0.00001*mass;
-    TrackBaseRef baseRef(fhTracks,(*trackIt).first);
-    kinParticles.push_back(pFactory.particle(fpTTB->build(*baseRef), mass, 0.0f, 0.0f, sigma)); // FIXME: das sigma noch besser anpassen (!!)
-  }
+	// add the particles from the tracks
+	for (trackIt = tree->getTrackBeginIterator(); trackIt != tree->getTrackEndIterator(); trackIt++) {
+		mass = getParticleMass(trackIt->second);     
+		float sigma = 0.00001*mass;
+		TrackBaseRef baseRef(fhTracks,(*trackIt).first);
+		kinParticles.push_back(pFactory.particle(fpTTB->build(*baseRef), mass, 0.0f, 0.0f, sigma)); // FIXME: das sigma noch besser anpassen (!!)
+	}
 
-  // add the particles from the sub tree
-  for (treeIt = tree->getVerticesBeginIterator(); treeIt != tree->getVerticesEndIterator(); treeIt++) {
-    fitTree(&(*treeIt));
-    kinTree = *(treeIt->getKinematicTree());
-    if (kinTree->isEmpty()) throw EmptyTreeError();
-    
-    kinTree->movePointerToTheTop();
-    kinParticles.push_back(kinTree->currentParticle());
-  }
-
-  // do the actual fit
-  kinTree = kpvFitter.fit(kinParticles);
-  if(!kinTree->isEmpty() && tree->massConstraint >= 0) {
-    KinematicParticleFitter csFitter;
-    auto_ptr<KinematicConstraint> con(new MassKinematicConstraint(tree->massConstraint,tree->massConstraintSigma));
-    kinTree = csFitter.fit(&(*con),kinTree);
-  }
-
-  tree->setKinematicTree(kinTree);
+	// add the particles from the sub tree
+	for (treeIt = tree->getVerticesBeginIterator(); treeIt != tree->getVerticesEndIterator(); treeIt++) {
+		if(!fitTree(&(*treeIt))) return false; // abort if there was some problem
+		
+		kinTree = *(treeIt->getKinematicTree());
+		if (kinTree->isEmpty()) throw EmptyTreeError();
+		
+		kinTree->movePointerToTheTop();
+		kinParticles.push_back(kinTree->currentParticle());
+	}
+	
+	// do the actual fit
+	kinTree = kpvFitter.fit(kinParticles);
+	if(!kinTree->isEmpty() && tree->massConstraint >= 0) {
+		KinematicParticleFitter csFitter;
+		auto_ptr<KinematicConstraint> con(new MassKinematicConstraint(tree->massConstraint,tree->massConstraintSigma));
+		kinTree = csFitter.fit(&(*con),kinTree);
+	}
+	
+	tree->setKinematicTree(kinTree);
+	
+	// set the node cut variables
+	nodeCut = tree->getNodeCut();
+	
+	/* initialize the node variables */
+	{
+		double maxDoca;
+		double vtxChi2;
+		TVector3 vtxPos;
+		TVector3 ptCand;
+		
+		RefCountedKinematicVertex kinVertex;
+		RefCountedKinematicParticle kinPart;
+		
+		kinTree->movePointerToTheTop();
+		kinPart = kinTree->currentParticle();
+		kinVertex = kinTree->currentDecayVertex();
+		kinParticles = kinTree->daughterParticles();
+		
+		maxDoca = getMaxDoca(kinParticles);
+		vtxChi2 = kinPart->chiSquared();
+		vtxPos.SetXYZ(kinVertex->position().x(),kinVertex->position().y(),kinVertex->position().z());
+		ptCand.SetXYZ(kinPart->currentState().globalMomentum().x(),
+					  kinPart->currentState().globalMomentum().y(),
+					  kinPart->currentState().globalMomentum().z());
+		
+		nodeCut->setFields(maxDoca, vtxChi2, vtxPos,ptCand);
+	}
+	
+	return (*nodeCut)();
 } // fitTree()
 
 void HFSequentialVertexFit::saveTree(HFDecayTree *tree)
@@ -138,6 +173,7 @@ TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
   RefCountedKinematicTree kinTree = *(tree->getKinematicTree());
   RefCountedKinematicParticle kinParticle;
   RefCountedKinematicVertex kinVertex;
+  vector<RefCountedKinematicParticle> daughterParticles;
   TVector3 plab;
   double mass;
   unsigned j;
@@ -148,6 +184,7 @@ TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
   kinTree->movePointerToTheTop();
   kinParticle = kinTree->currentParticle();
   kinVertex = kinTree->currentDecayVertex();
+  daughterParticles = kinTree->daughterParticles();
 
   if (!kinVertex->vertexIsValid()) return pCand;
   
@@ -191,7 +228,9 @@ TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
   pCand->fSig1 = gHFEvent->nSigTracks();
   pCand->fSig2 = pCand->fSig1 + allTracks.size() - 1;
 
-  // FIXME: calculate doca's
+  pCand->fMaxDoca = getMaxDoca(daughterParticles);
+  pCand->fMinDoca = getMinDoca(daughterParticles);
+
   // FIXME: take refitted tracks!!
   
   for (j = 0; j < allTracks.size(); j++) {
@@ -218,9 +257,8 @@ void HFSequentialVertexFit::doFit(HFDecayTree *tree)
   
   try {
     tree->resetKinematicTree(1);
-    fitTree(tree);
-    saveTree(tree);
-
+	if(fitTree(tree))
+		saveTree(tree);
   } catch (cms::Exception &ex) {
     if (fVerbose > 0) cout << "==> HFSequentialVertexFit: cms exception caught: " << ex.what() << endl;
   } catch (VertexException &ex) {
@@ -258,3 +296,38 @@ double HFSequentialVertexFit::getParticleMass(int particleID)
 
   return mass;
 } // getParticleMass()
+
+double HFSequentialVertexFit::getMaxDoca(vector<RefCountedKinematicParticle> &kinParticles)
+{
+	double maxDoca = -1.0;
+	TwoTrackMinimumDistance md;
+	vector<RefCountedKinematicParticle>::iterator in_it, out_it;
+	
+	for (out_it = kinParticles.begin(); out_it != kinParticles.end(); ++out_it) {
+		for (in_it = out_it + 1; in_it != kinParticles.end(); ++in_it) {
+			md.calculate((*out_it)->currentState().freeTrajectoryState(),(*in_it)->currentState().freeTrajectoryState());
+			if (md.distance() > maxDoca)
+				maxDoca = md.distance();
+		}
+	}
+	
+	return maxDoca;
+} // getMaxDoca()
+
+double HFSequentialVertexFit::getMinDoca(vector<RefCountedKinematicParticle> &kinParticles)
+{
+  double minDoca = 99999.9;
+  TwoTrackMinimumDistance md;
+  unsigned j,k,n;
+
+  n = kinParticles.size();
+  for (j = 0; j < n; j++) {
+    for (k = j+1; k < n; k++) {
+      md.calculate(kinParticles[j]->currentState().freeTrajectoryState(),kinParticles[k]->currentState().freeTrajectoryState());
+      if (md.distance() < minDoca)
+	minDoca = md.distance();
+    }
+  }
+
+  return minDoca;
+} // getMinDoca()

@@ -32,8 +32,11 @@ class HFSequentialVertexFit
   edm::Handle<edm::View<reco::Track> > fhTracks;
   
  private:
-  void fitTree(HFDecayTree *tree);
+  bool fitTree(HFDecayTree *tree);
   void saveTree(HFDecayTree *tree);
+  
+  double getMaxDoca(vector<RefCountedKinematicParticle> &kinParticles);
+  double getMinDoca(vector<RefCountedKinematicParticle> &kinParticles);
 
   // wrapper for the template routine bellow
   inline TAnaCand *addCandidate(HFDecayTree *tree, VertexState &wrtVertexState) {return addCand<VertexState>(tree,wrtVertexState);}
