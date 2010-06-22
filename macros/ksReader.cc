@@ -9,6 +9,8 @@ ksReader::ksReader(TChain *tree, TString evtClassName) :
 	fPlabMu2Ptr = &fPlabMu2;
 	fPlabPi1Ptr = &fPlabPi1;
 	fPlabPi2Ptr = &fPlabPi2;
+	fPlabKsPtr = &fPlabKs;
+	fPlabKsTruePtr = &fPlabKsTrue;
 	
 	// build the true decay
 	trueDecay.insert(13);
@@ -31,6 +33,7 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 {
 	TAnaCand *ksCand = NULL;
 	TAnaTrack *track;
+	TGenCand *ksTrue,*bdTrue;
 	int real_type;
 	int algo_type;
 	int result;
@@ -39,9 +42,6 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 	int firstPi = 1;
 	int type;
 	
-	// debugging
-	static int counter = 0;
-	
 	// default initialization
 	fMassJPsi = -1.0;
 	fMassKs = -1.0;
@@ -49,11 +49,15 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 	fDxyKs = -1.0;
 	fDxyeKs = -1.0;
 	fChi2Ks = -1.0;
+	fDeltaKs = -1.0;
+	fDeltaKsTrue = -1.0;
 
 	fPlabMu1 = TVector3();
 	fPlabMu2 = TVector3();
 	fPlabPi1 = TVector3();
 	fPlabPi2 = TVector3();
+	fPlabKs = TVector3();
+	fPlabKsTrue = TVector3();
 	
 	real_type = pCand->fType % 1000;
 	algo_type = pCand->fType / 1000;
@@ -98,6 +102,26 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 		fDxyKs = ksCand->fVtx.fDxy;
 		fDxyeKs = ksCand->fVtx.fDxyE;
 		fChi2Ks = ksCand->fVtx.fChi2;
+		fPlabKs = ksCand->fPlab;
+		
+		// check the truth distance...
+		ksTrue = bdTrue = NULL;
+		j = getGenIndex(ksCand, 310);
+		if (j >= 0) ksTrue = fpEvt->getGenCand(j);
+		j = getGenIndex(pCand, 511);
+		if (j >= 0) bdTrue = fpEvt->getGenCand(j);
+		
+		// do the difference...
+		if (ksTrue && bdTrue) {
+			
+			TVector3 diff = ksCand->fVtx.fPoint - pCand->fVtx.fPoint;
+			fDeltaKs = diff.Mag();
+			
+			diff = ksTrue->fV - bdTrue->fV;
+			fDeltaKsTrue = diff.Mag();
+			
+			fPlabKsTrue = ksTrue->fP.Vect();
+		}
 	}
 	
 	// jpsi subvariables
@@ -115,7 +139,6 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 	}
 	
 bail:
-	counter++;
 	return result;
 } // ksReader()
 
@@ -132,6 +155,10 @@ void ksReader::bookHist()
 	reduced_tree->Branch("plab_mu2","TVector3",&fPlabMu2Ptr);
 	reduced_tree->Branch("plab_pi1","TVector3",&fPlabPi1Ptr);
 	reduced_tree->Branch("plab_pi2","TVector3",&fPlabPi2Ptr);
+	reduced_tree->Branch("delta_ks",&fDeltaKs,"delta_ks/D");
+	reduced_tree->Branch("delta_ks_true",&fDeltaKsTrue,"delta_ks_true/D");
+	reduced_tree->Branch("plab_ks","TVector3",&fPlabKsPtr);
+	reduced_tree->Branch("plab_ks_true","TVector3",&fPlabKsTruePtr);
 } // bookHist()
 
 // a more sophisticated truth matching for the B0 particles
