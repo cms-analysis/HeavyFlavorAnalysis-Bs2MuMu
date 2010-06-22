@@ -61,8 +61,10 @@ bdpsiksDump = cms.EDAnalyzer(
     ksWindow = cms.untracked.double(0.3),
     bdWindow = cms.untracked.double(0.8),
     fDelta = cms.untracked.double(99.0),
-    vertexing = cms.untracked.int32(1)
-)
+    vertexing = cms.untracked.int32(1),
+    maxDoca = cms.untracked.double(0.1),
+    pAngleKs = cms.untracked.double(0.2)
+    )
 
 # ######################################################################
 # Sequences
