@@ -28,6 +28,9 @@ class HFBd2JpsiKs : public edm::EDAnalyzer {
 		double fDeltaR;
 		int fVertexing;
 		
+		double fMaxDoca;
+		double fPAngleKs;
+		
 		reco::Vertex	fPV;
 		edm::ESHandle<TransientTrackBuilder> fTTB;
 };

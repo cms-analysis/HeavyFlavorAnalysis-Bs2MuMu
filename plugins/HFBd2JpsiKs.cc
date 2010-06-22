@@ -20,6 +20,35 @@ using namespace std;
 using namespace edm;
 using namespace reco;
 
+class HFKshortCut : public HFMaxDocaCut {
+	public:
+		HFKshortCut(double maxPAngle = 3.2, HFNodeCut *ksCut = NULL, double docaCut = 1E7) :
+		  HFMaxDocaCut(docaCut), fKsCut(ksCut), fMaxPAngle(maxPAngle) {}
+		virtual bool operator()();
+		
+		void setKshorCut(HFKshortCut* newKsCut) {fKsCut = newKsCut;}
+		void setMaxPAngle(double newAngle) {fMaxPAngle = newAngle;}
+	protected:
+		HFNodeCut *fKsCut; // cross reference for pointing angle calculation!
+		double fMaxPAngle; // max pointing angle (in radians)
+};
+
+bool HFKshortCut::operator()()
+{
+  bool result = HFMaxDocaCut::operator()();
+  double pAngle;
+  TVector3 v;
+  
+  if(result && fKsCut) {
+    
+    // check the pointing angle
+    pAngle = fKsCut->fPtCand.Angle(fKsCut->fVtxPos - this->fVtxPos);
+    result = pAngle < fMaxPAngle;
+  }
+  
+  return result;
+}
+
 HFBd2JpsiKs::HFBd2JpsiKs(const ParameterSet& iConfig) :
 	fVerbose(iConfig.getUntrackedParameter<int>("verbose",0)),
 	fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("goodTracks"))),
@@ -32,7 +61,9 @@ HFBd2JpsiKs::HFBd2JpsiKs(const ParameterSet& iConfig) :
 	fKsWindow(iConfig.getUntrackedParameter<double>("ksWindow",0.3)),
 	fBdWindow(iConfig.getUntrackedParameter<double>("bdWindow",0.8)),
 	fDeltaR(iConfig.getUntrackedParameter<double>("deltaR",99.0)),
-	fVertexing(iConfig.getUntrackedParameter<int>("vertexing",1))
+	fVertexing(iConfig.getUntrackedParameter<int>("vertexing",1)),
+	fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.2)),
+        fPAngleKs(iConfig.getUntrackedParameter<double>("pAngleKs",0.1))
 {
 	using namespace std;
 	cout << "----------------------------------------------------------------------" << endl;
@@ -49,6 +80,8 @@ HFBd2JpsiKs::HFBd2JpsiKs(const ParameterSet& iConfig) :
 	cout << "---  bdWindow:                                 " << fBdWindow << endl;
 	cout << "---  deltaR:                                   " << fDeltaR << endl;
 	cout << "---  vertexing:                                " << fVertexing << endl;
+	cout << "---  maxDoca:			       		" << fMaxDoca << endl;
+	cout << "---  pAngleKs:                                 " << fPAngleKs << endl;
 
 } // HFBd2JpsiKs()
 
@@ -231,18 +264,43 @@ void HFBd2JpsiKs::analyze(const Event& iEvent, const EventSetup& iSetup)
 			iterator->addTrack(iPion1,211);
 			iterator->addTrack(iPion2,211);
 			
+			// the cuts
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+			theTree.setNodeCut(RefCountedHFNodeCut(new HFKshortCut(fPAngleKs, &(*iterator->getNodeCut()),fMaxDoca)));
+			
 			aSeq.doFit(&theTree);
-
-			 // with J/Psi mass constraint
+			
+			// without J/Psi mass constaint but reconstructed J/Psi
 			theTree.clear();
 			theTree.particleID = 700511;
 			
-			iterator = theTree.addDecayTree(700443,MJPSI);
+			iterator = theTree.addDecayTree(700443);
 			iterator->addTrack(iMuon1,13);
 			iterator->addTrack(iMuon2,13);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+			
 			iterator = theTree.addDecayTree(700310);
 			iterator->addTrack(iPion1,211);
 			iterator->addTrack(iPion2,211);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+			theTree.setNodeCut(RefCountedHFNodeCut(new HFKshortCut(fPAngleKs,&(*iterator->getNodeCut()),fMaxDoca)));
+			
+			aSeq.doFit(&theTree);
+			
+			// with J/Psi mass constraint                                                                                                    
+			theTree.clear();
+			theTree.particleID = 800511;
+			
+			iterator = theTree.addDecayTree(800443,MJPSI);
+			iterator->addTrack(iMuon1,13);
+			iterator->addTrack(iMuon2,13);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+			
+			iterator = theTree.addDecayTree(800310);
+			iterator->addTrack(iPion1,211);
+			iterator->addTrack(iPion2,211);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+			theTree.setNodeCut(RefCountedHFNodeCut(new HFKshortCut(fPAngleKs,&(*iterator->getNodeCut()),fMaxDoca)));
 			
 			aSeq.doFit(&theTree);
 		}
