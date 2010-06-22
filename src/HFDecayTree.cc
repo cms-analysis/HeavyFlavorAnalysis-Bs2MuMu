@@ -17,10 +17,25 @@ const static double KAON_BOUND		=	0.250;
 const static double PION_BOUND		=	0.120;
 const static double MUON_BOUND		=	0.050;
 
+HFNodeCut::HFNodeCut() : fMaxDoca(0.0), fVtxChi2(0.0), fVtxPos(), fPtCand()
+{} // HFNodeCut()
+
+void HFNodeCut::setFields(double maxDoca, double vtxChi2, TVector3 vtxPos, TVector3 ptCand)
+{
+	fMaxDoca = maxDoca;
+	fVtxChi2 = vtxChi2;
+	fVtxPos = vtxPos;
+	fPtCand = ptCand;
+} // setFields()
+
+bool HFNodeCut::operator()() {return true;}
+
 HFDecayTree::HFDecayTree(int pID, double constraint, double constraintSigma) : particleID(pID), massConstraint(constraint), massConstraintSigma(constraintSigma), kinTree(0)
 {
   if(massConstraintSigma <= 0.0 && massConstraint > 0.0)
     massConstraintSigma = 0.0001 * massConstraint;
+
+  nodeCut = RefCountedHFNodeCut(new HFNodeCut);
 } // HFDecayTree()
 
 void HFDecayTree::addTrack(int trackIx, double trackMass)
@@ -68,6 +83,8 @@ void HFDecayTree::clear()
   kinTree = NULL;
 
   anaCand = NULL;
+
+  nodeCut = RefCountedHFNodeCut(new HFNodeCut);
 } // clear()
 
 HFDecayTreeTrackIterator HFDecayTree::getTrackBeginIterator()
@@ -144,6 +161,12 @@ void HFDecayTree::setAnaCand(TAnaCand *cand)
 {
   anaCand = cand;
 } // setAnaCand()
+
+RefCountedHFNodeCut HFDecayTree::getNodeCut()
+{ return nodeCut; }
+
+void HFDecayTree::setNodeCut(RefCountedHFNodeCut newNodeCut)
+{ nodeCut = newNodeCut; }
 
 void HFDecayTree::dump(unsigned indent)
 {

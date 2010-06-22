@@ -11,11 +11,41 @@
 // CMSSW
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaCand.hh"
 #include "RecoVertex/KinematicFitPrimitives/interface/RefCountedKinematicTree.h"
+#include "DataFormats/GeometrySurface/interface/ReferenceCounted.h"
 
 // STL
 #include <map>
 #include <vector>
 #include <utility>
+
+// ROOT
+#include <TVector3.h>
+
+/* The Functor Cut Object base class */
+class HFNodeCut : public ReferenceCounted {
+	public:
+		HFNodeCut();
+		
+		void setFields(double maxDoca, double vtxChi2, TVector3 vtxPos, TVector3 ptCand);
+		
+		/* This function has to be overwritten. True if the particle passes the test */
+		virtual bool operator()();
+		
+        public:
+		double fMaxDoca;
+		double fVtxChi2;
+		TVector3 fVtxPos;
+		TVector3 fPtCand;
+};
+typedef ReferenceCountingPointer<HFNodeCut> RefCountedHFNodeCut;
+
+class HFMaxDocaCut : public HFNodeCut {
+	public:
+		HFMaxDocaCut(double docaCut) : fDocaCut(docaCut) {}
+		virtual bool operator()() { return (fMaxDoca < fDocaCut);}
+	protected:
+		double fDocaCut;
+};
 
 class HFDecayTree;
 typedef std::vector<HFDecayTree>::iterator HFDecayTreeIterator;
@@ -49,9 +79,13 @@ class HFDecayTree
 		RefCountedKinematicTree *getKinematicTree();
 		void setKinematicTree(RefCountedKinematicTree newTree);
 		void resetKinematicTree(int recursive = 0);
-
+		
+		// Reconstruction
 		TAnaCand *getAnaCand();
 		void setAnaCand(TAnaCand *cand);
+		
+		RefCountedHFNodeCut getNodeCut();
+		void setNodeCut(RefCountedHFNodeCut newNodeCut);
 
 		// Debugging!
 		void dump(unsigned indent = 0);
@@ -66,6 +100,7 @@ class HFDecayTree
 		std::vector<HFDecayTree> subVertices;
 		RefCountedKinematicTree *kinTree;
 		TAnaCand *anaCand;
+		RefCountedHFNodeCut nodeCut; // this one is owned by the decaytree!
 };
 
 #endif
