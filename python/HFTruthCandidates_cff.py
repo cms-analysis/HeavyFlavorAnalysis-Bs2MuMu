@@ -325,7 +325,7 @@ truthUps3SToMuMu = cms.EDAnalyzer(
 truthSignalsSequence     = cms.Sequence(truthBsToMuMuDump*truthBdToMuMuDump)
 
 truthRareBsSequence      = cms.Sequence(truthBsToMuMuGaDump*truthBsToKKDump*truthBsToKPiDump*truthBsToPiPiDump)
-truthRareBdSequence      = cms.Sequence(truthBdToPiPiDump)
+truthRareBdSequence      = cms.Sequence(truthBdToPiPiDump*truthBdToKPiDump)
 truthRareBuSequence      = cms.Sequence(truthBuTo3MuNuDump)
 truthRareLambdaBSequence = cms.Sequence(truthLambdaBToPPiDump*truthLambdaBToPKDump)
 
