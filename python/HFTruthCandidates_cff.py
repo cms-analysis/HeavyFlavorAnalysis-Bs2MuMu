@@ -82,6 +82,15 @@ truthBdToPiPiDump = cms.EDAnalyzer(
     daughtersID  = cms.untracked.vint32(211, -211)
     )
 
+# ----------------------------------------------------------------------
+truthBdToKPiDump = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(511),
+    type         = cms.untracked.int32(92),
+    GenType      = cms.untracked.int32(-92),
+    daughtersID  = cms.untracked.vint32(321, -211)
+    )
 
 
 # ######################################################################
