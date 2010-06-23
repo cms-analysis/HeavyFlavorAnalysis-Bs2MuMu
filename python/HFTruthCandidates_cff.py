@@ -92,6 +92,15 @@ truthBdToKPiDump = cms.EDAnalyzer(
     daughtersID  = cms.untracked.vint32(321, -211)
     )
 
+truthBdToMuMuPi0Dump = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(511),
+    type         = cms.untracked.int32(93),
+    GenType      = cms.untracked.int32(-93),
+    daughtersID  = cms.untracked.vint32(13, -13, 111)
+    )
+
 
 # ######################################################################
 # Bu modes
@@ -325,7 +334,7 @@ truthUps3SToMuMu = cms.EDAnalyzer(
 truthSignalsSequence     = cms.Sequence(truthBsToMuMuDump*truthBdToMuMuDump)
 
 truthRareBsSequence      = cms.Sequence(truthBsToMuMuGaDump*truthBsToKKDump*truthBsToKPiDump*truthBsToPiPiDump)
-truthRareBdSequence      = cms.Sequence(truthBdToPiPiDump*truthBdToKPiDump)
+truthRareBdSequence      = cms.Sequence(truthBdToPiPiDump*truthBdToKPiDump*truthBdToMuMuDump*truthBdToMuMuPi0Dump)
 truthRareBuSequence      = cms.Sequence(truthBuTo3MuNuDump)
 truthRareLambdaBSequence = cms.Sequence(truthLambdaBToPPiDump*truthLambdaBToPKDump)
 
