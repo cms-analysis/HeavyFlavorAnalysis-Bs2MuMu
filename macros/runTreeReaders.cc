@@ -17,7 +17,8 @@
 #include "bmmReader.hh"
 #include "dpReader.hh"
 #include "d0Reader.hh"
-#include "massReader.hh"
+#include "kpReader.hh"
+#include "phiReader.hh"
 #include "ksReader.hh"
 #include "copyReader.hh"
 #include "dumpReader.hh"
@@ -161,10 +162,11 @@ int main(int argc, char *argv[]) {
   }
 
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
-  treeReader01 *a; 
+  treeReader01 *a = NULL;
   if (readerName == "bmmReader") a = new bmmReader(chain, TString(evtClassName));
-  else if (readerName == "massReader") a = new massReader(chain,TString(evtClassName));
+  else if (readerName == "kpReader") a = new kpReader(chain,TString(evtClassName));
   else if (readerName == "ksReader") a = new ksReader(chain,TString(evtClassName));
+  else if (readerName == "phiReader") a = new phiReader(chain,TString(evtClassName));
   else if (readerName == "dumpReader") a = new dumpReader(chain,TString(evtClassName));
   else if (readerName == "dpReader") a = new dpReader(chain,TString(evtClassName));
   else if (readerName == "d0Reader") a = new d0Reader(chain,TString(evtClassName));
