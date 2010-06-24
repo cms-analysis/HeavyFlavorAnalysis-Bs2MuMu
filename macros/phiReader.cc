@@ -91,7 +91,7 @@ int phiReader::checkTruth(TAnaCand *pCand)
 	
 	// check if the decay conincides
 	track = fpEvt->getSigTrack(pCand->fSig1);
-	track = fpEvt->getRecTrack(pCand->fSig2);
+	track = fpEvt->getRecTrack(track->fIndex);
 	
 	gen = fpEvt->getGenCand(track->fGenIndex);
 	while (abs(gen->fID) != 531)
