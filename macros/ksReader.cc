@@ -2,8 +2,7 @@
 
 using namespace std;
 
-ksReader::ksReader(TChain *tree, TString evtClassName) :
-	massReader(tree,evtClassName),unrecoverableDecays(0),recoverableCounter(0)
+ksReader::ksReader(TChain *tree, TString evtClassName) : massReader(tree,evtClassName)
 {
 	fPlabMu1Ptr = &fPlabMu1;
 	fPlabMu2Ptr = &fPlabMu2;
@@ -23,11 +22,6 @@ ksReader::ksReader(TChain *tree, TString evtClassName) :
 	
 	cout << "ksReader instantiated..." << endl;
 } // ksReader()
-
-ksReader::~ksReader() {
-	cout << "Possible recoverable decays: " << recoverableCounter << endl;
-	cout << "Unrecovered Decays: " << unrecoverableDecays << endl;
-}
 
 int ksReader::loadCandidateVariables(TAnaCand *pCand)
 {
@@ -61,10 +55,11 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 	
 	real_type = pCand->fType % 1000;
 	algo_type = pCand->fType / 1000;
+
+	// we handle only the Bd decays.
+	if (real_type != 511) return 0;
 	
 	result = massReader::loadCandidateVariables(pCand);
-		
-	if(real_type != 511) goto bail;
 	
 	// tracks
 	for (j = pCand->fSig1; j <= pCand->fSig2; j++) {
@@ -138,7 +133,6 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 		fMassJPsi = ksCand->fMass;
 	}
 	
-bail:
 	return result;
 } // ksReader()
 
@@ -162,123 +156,32 @@ void ksReader::bookHist()
 } // bookHist()
 
 // a more sophisticated truth matching for the B0 particles
-int ksReader::checkTruth(TAnaCand *cand, int truth_type)
+int ksReader::checkTruth(TAnaCand *cand)
 {
-	int result = massReader::checkTruth(cand, truth_type);
+	int result;
 	multiset<int> particles;
 	TAnaTrack *track;
 	TGenCand *gen;
 	
-	truth_type = abs(truth_type);
+	result = massReader::checkTruth(cand);
+	if (!result) goto bail;
 	
-	// check more deeply the B0 candidates
-	if (result && truth_type == 511) {
-		
-		// check they come from the right decay channel!
-		track = fpEvt->getSigTrack(cand->fSig1);
-		track = fpEvt->getRecTrack(track->fIndex);
-		
-		// get the index of the B0 GenCandidate
-		gen = fpEvt->getGenCand(track->fGenIndex);
-		while (abs(gen->fID) != truth_type) // this works as result == 1!
-			gen = fpEvt->getGenCand(gen->fMom1);
-		
-		buildDecay(gen->fNumber,&particles);
-		particles.erase(22); // remove Bremsstahlung
-		
-		result = (particles == trueDecay);
-	}
+	// check they come from the right decay channel!
+	track = fpEvt->getSigTrack(cand->fSig1);
+	track = fpEvt->getRecTrack(track->fIndex);
 	
+	gen = fpEvt->getGenCand(track->fGenIndex);
+	while (abs(gen->fID) != 511)
+		gen = fpEvt->getGenCand(gen->fMom1); // this works because else, massReader::checkTruth would return 0
+	
+	buildDecay(gen,&particles);
+	particles.erase(22); // remove Bremsstahlung
+	
+	result = (particles == trueDecay);
+
+bail:
 	return result;
 } // checkTruth()
-
-// return the number of tracks and identified muons
-unsigned ksReader::buildDecay(int genIx, multiset<int> *particles, unsigned *nbrMuons)
-{
-	TGenCand *pGen;
-	TAnaTrack *pTrack;
-	unsigned result = 0;
-	int j,nc;
-	
-	pGen = fpEvt->getGenCand(genIx);
-	particles->insert(abs(pGen->fID));
-	
-	for (j = pGen->fDau1; j <= pGen->fDau2 && j>=0; j++)
-		result += buildDecay(j,particles,nbrMuons);
-	
-	// count the tracks!!!
-	nc = fpEvt->nRecTracks();
-	for (j = 0; j < nc; j++) {
-		pTrack = fpEvt->getRecTrack(j);
-		if (genIx == pTrack->fGenIndex) {
-			result++;
-			
-			if (abs(pGen->fID) == 13 && pTrack->fMuID > 0 && (pTrack->fMuID & 6) && nbrMuons)
-				(*nbrMuons)++;
-			
-			// we want at most one track added per trace
-			break;
-		}
-	}
-	
-	return result;
-} // ksReader::buildDecay()
-
-void ksReader::eventProcessing()
-{
-	unsigned j,nc;
-	int k;
-	unsigned nbrMuons,nbrTracks;
-	TGenCand *pGen;
-	TAnaCand *pCand;
-	multiset<int> particles;
-	set<int> recoverableGens;
-	set<int>::const_iterator it;
-	
-	massReader::eventProcessing(); // call the super routine to save reduced tree!
-	
-	// create a list of all true candidates!!
-	nc = fpEvt->nGenCands();
-	for (j = 0; j < nc; j++) {
-		pGen = fpEvt->getGenCand(j);
-		
-		if (abs(pGen->fID) == 511) {
-			
-			// this is a B0 decay
-			particles.clear();
-			nbrMuons = 0;
-			
-			nbrTracks = buildDecay(j,&particles,&nbrMuons);
-			
-			// remove Bremsstrahlung
-			particles.erase(22);
-			if (particles == trueDecay && nbrTracks == 4) {
-				
-				if (nbrMuons > 0) {
-					recoverableCounter++;
-					recoverableGens.insert(j);
-				}
-			}
-		}
-	}
-	
-	// remove all the generators we actually have recovered!
-	// we only check the 600XXX candidates!
-	nc = fpEvt->nCands();
-	for (j = 0; j < nc; j++) {
-		pCand = fpEvt->getCand(j);
-		
-		if (pCand->fType != 600511)
-			continue;
-		
-		k = getGenIndex(pCand,511);
-		recoverableGens.erase(k);
-	}
-	
-	// dump the stuff
-	for (it = recoverableGens.begin(); it != recoverableGens.end(); ++it)
-		unrecoverableDecays++;
-} // eventProcessing()
 
 int ksReader::getGenIndex(TAnaCand *pCand, int candID)
 {
