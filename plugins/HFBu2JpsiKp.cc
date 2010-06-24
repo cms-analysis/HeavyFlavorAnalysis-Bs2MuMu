@@ -290,13 +290,14 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
       // Sequentialfit with mass constraint
       theTree.clear();
       theTree.particleID = 700521;
-      theTree.addTrack(iTrack,700321);
+      theTree.addTrack(iTrack,321);
       iterator = theTree.addDecayTree(700443,MJPSI);
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit" << endl;
 
-      //      aSeq.doFit(&theTree);
+      aSeq.doFit(&theTree);
+
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> done with fitting for track " << iTrack << endl;
     }
   }
