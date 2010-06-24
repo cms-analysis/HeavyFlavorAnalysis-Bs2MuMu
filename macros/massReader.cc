@@ -41,8 +41,10 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fMomentum = pCand->fPlab;
 
 	fMass = pCand->fMass;
-	fTruth = checkTruth(pCand, abs(pCand->fType) % 1000);
-	fTwoMuon = checkMuons(pCand);
+	fTruth = checkTruth(pCand);
+	fNbrMuons = countMuons(pCand);
+	fD3 = pCand->fVtx.fD3d;
+	fD3E = pCand->fVtx.fD3dE;
 	fDxy = pCand->fVtx.fDxy;
 	fDxyE = pCand->fVtx.fDxyE;
 	fChi2 = pCand->fVtx.fChi2;
@@ -67,7 +69,9 @@ void massReader::bookHist()
 	reduced_tree->Branch("p","TVector3",&fMomentumPtr);
 	reduced_tree->Branch("mass",&fMass,"mass/D");
 	reduced_tree->Branch("truth",&fTruth,"truth/I");
-	reduced_tree->Branch("two_muon",&fTwoMuon,"two_muon/I");
+	reduced_tree->Branch("ident_muons",&fNbrMuons,"ident_muons/I");
+	reduced_tree->Branch("d3",&fD3,"d3/D");
+	reduced_tree->Branch("d3e",&fD3E,"d3e/D");
 	reduced_tree->Branch("dxy",&fDxy,"dxy/D");
 	reduced_tree->Branch("dxye",&fDxyE,"dxye/D");
 	reduced_tree->Branch("alpha",&fAlpha,"alpha/D");
@@ -75,69 +79,53 @@ void massReader::bookHist()
 	reduced_tree->Branch("Ndof",&fNdof,"Ndof/D");
 } // massReader::bookHist()
 
-int massReader::checkTruth(TAnaCand *cand, int truth_type)
+int massReader::checkTruth(TAnaCand *cand)
 {
-	TAnaTrack *sgTrack;
-	TAnaTrack *recTrack;
+	int result = 0;
+	TAnaTrack *pTrack;
 	TGenCand *truthParticle;
 	TGenCand *trackParticle;
-	int j,success = 0;
-	int nSigs,nRecs,nGens;
+	int nGens, truth_type, j;
 	
-	
-	nSigs = fpEvt->nSigTracks();
-	nRecs = fpEvt->nRecTracks();
+	truth_type = cand->fType % 1000;
 	nGens = fpEvt->nGenCands();
 	
-	// get the first track and get the originating particle of type 'truth_type' => truthParticle
-	require_true(in_interval(cand->fSig1, 0, nSigs),bail);
-	sgTrack = fpEvt->getSigTrack(cand->fSig1);
+	pTrack = fpEvt->getSigTrack(cand->fSig1);
+	pTrack = fpEvt->getRecTrack(pTrack->fIndex);
 	
-	require_true(in_interval(sgTrack->fIndex, 0, nRecs),bail);
-	recTrack = fpEvt->getRecTrack(sgTrack->fIndex);
+	if (pTrack->fGenIndex < 0 || pTrack->fGenIndex >= nGens) goto bail;
+	truthParticle = fpEvt->getGenCand(pTrack->fGenIndex);
 	
-	require_true(in_interval(recTrack->fGenIndex, 0, nGens),bail);
-	truthParticle = fpEvt->getGenCand(recTrack->fGenIndex);
-	
-	while (abs(truthParticle->fID) != truth_type && in_interval(truthParticle->fMom1, 0, nGens))
+	while (abs(truthParticle->fID) != truth_type) {
+		if (truthParticle->fMom1 < 0 || truthParticle->fMom1 >= nGens) goto bail;
 		truthParticle = fpEvt->getGenCand(truthParticle->fMom1);
-
-	// check if our original is a valid.
-	require_true(abs(truthParticle->fID) == truth_type,bail);
-	
-	// reconstruct the other tracks
-	for (j = cand->fSig1+1; j <=cand->fSig2; j++) {
-		
-		require_true(in_interval(j, 0, nSigs),bail);
-		sgTrack = fpEvt->getSigTrack(j);
-		
-		require_true(in_interval(sgTrack->fIndex, 0, nRecs),bail);
-		recTrack = fpEvt->getRecTrack(sgTrack->fIndex);
-		
-		require_true(in_interval(recTrack->fGenIndex, 0, nGens),bail);
-		trackParticle = fpEvt->getGenCand(recTrack->fGenIndex);
-		
-		while (abs(trackParticle->fID)!=truth_type && in_interval(trackParticle->fMom1, 0, nGens))
-			trackParticle = fpEvt->getGenCand(trackParticle->fMom1);
-		
-		// check the particle
-		require_true(trackParticle->fNumber == truthParticle->fNumber,bail);
 	}
 	
-	// still here? then every track originated from the right particle
-	success = 1;
+	// check to see if the other tracks originate from the same track...
+	for (j = cand->fSig1+1; j <= cand->fSig2; j++) {
+		
+		pTrack = fpEvt->getSigTrack(j);
+		pTrack = fpEvt->getRecTrack(pTrack->fIndex);
+		if (pTrack->fGenIndex < 0 || pTrack->fGenIndex >= nGens) goto bail;
+		
+		trackParticle = fpEvt->getGenCand(pTrack->fGenIndex);
+		while (trackParticle->fNumber != truthParticle->fNumber) {
+			if (trackParticle->fMom1 < 0 || trackParticle->fMom1 >= nGens) goto bail;
+			trackParticle = fpEvt->getGenCand(trackParticle->fMom1);
+		}
+	}
 	
+	result = 1;
 bail:
-	return success;
-} // massReader::checkTruth()
+	return result;
+} // checkTruth()
 
-int massReader::checkMuons(TAnaCand *cand)
+// count the number of identified muons in the candidate 'cand'
+int massReader::countMuons(TAnaCand *cand)
 {
 	TAnaTrack *track;
-	unsigned nbrMu = 0, totalMu = 0;
+	unsigned nbrMu = 0;
 	int j;
-	
-	// return true if all muons come from the muon list
 	
 	// check for invalid candidates
 	if (cand->fSig1 < 0)
@@ -148,12 +136,18 @@ int massReader::checkMuons(TAnaCand *cand)
 		track = fpEvt->getSigTrack(j); // signal track
 		// check if this is supposed to be a muon!
 		if (abs(track->fMCID) == 13) {
-			totalMu++; // muon
 			track = fpEvt->getRecTrack(track->fIndex); // rec track
 			if (track->fMuID > 0 && (track->fMuID & 6))
 				nbrMu++;
 		}
 	}
 	
-	return (nbrMu == totalMu);
-} // checkMuons()
+	return nbrMu;
+} // countMuons()
+
+void massReader::buildDecay(TGenCand *gen, multiset<int> *particles)
+{
+	particles->insert(abs(gen->fID));
+	for (int j = gen->fDau1; j <= gen->fDau2 && j>= 0; j++)
+		buildDecay(fpEvt->getGenCand(j),particles);
+} // buildDecay()
