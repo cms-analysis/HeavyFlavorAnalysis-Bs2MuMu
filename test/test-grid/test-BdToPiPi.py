@@ -136,7 +136,7 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 try:
     rootFileName = os.environ["JOB"] + ".root"
 except KeyError:
-    rootFileName = "test-BdToJPsiKs.root"
+    rootFileName = "test-BdToPiPi.root"
 
 process.tree = cms.EDAnalyzer(
     "HFTree",
