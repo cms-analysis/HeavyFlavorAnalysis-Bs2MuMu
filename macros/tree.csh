@@ -91,15 +91,22 @@ date
 # ----------------------------------------------------------------------
 # -- Save Output to SE
 # ----------------------------------------------------------------------
+
+# several files possible if tree grows to big. copy them all
 echo "--> Save output to SE: $STORAGE1/$FILE1"
 
-echo srmrm     "$STORAGE1/$FILE1"
-srmrm          "$STORAGE1/$FILE1"
-echo $SRMCP    file:///`pwd`/$FILE1 "$STORAGE1/$FILE1"
-$SRMCP         file:///`pwd`/$FILE1 "$STORAGE1/$FILE1"
-echo srmls     "$STORAGE1/$FILE1"
-srmls          "$STORAGE1/$FILE1"
+set FILES=`ls $JOB*.root`
+echo "Found the following output root files: $FILES"
+foreach f ($FILES)
+    echo srmrm "$STORAGE1/$f"
+    srmrm      "$STORAGE1/$f"
+    echo $SRMCP    file:///`pwd`/$f "$STORAGE1/$f"
+    $SRMCP         file:///`pwd`/$f "$STORAGE1/$f"
+    echo srmls     "$STORAGE1/$f"
+    srmls          "$STORAGE1/$f"
+end
 
+# copy the log file.
 echo srmrm  "$STORAGE1/$JOB.log"
 srmrm       "$STORAGE1/$JOB.log"
 echo $SRMCP file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
