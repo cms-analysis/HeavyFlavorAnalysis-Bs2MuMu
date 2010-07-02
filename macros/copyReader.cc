@@ -55,6 +55,7 @@ void copyReader::eventProcessing() {
 	}
       }
     }
+    if (doCopy) break;
   }
 
   if (doCopy) {
