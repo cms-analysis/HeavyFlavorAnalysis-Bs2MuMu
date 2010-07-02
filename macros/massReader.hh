@@ -26,22 +26,25 @@ class massReader : public treeReader01 {
 
 		// creates the decay of the TGenCand
 		void buildDecay(TGenCand *gen, multiset<int> *particles);
-
+	
+	protected:
+		const char *fTreeName;
+		
 	private:
 		// Private variables
 		int fCandidate;
 		TVector3 fMomentum;
 		TVector3 *fMomentumPtr;
-		double fMass;
+		float fMass;
 		int fTruth;		// is this background or a true candidate?
-		int fNbrMuons;  // number of muons in the muon list.
-		double fD3;
-		double fD3E;
-		double fDxy;	// distance to originating vertex (2d)
-		double fDxyE;	// error (2d)
-		double fAlpha; // angle between momentum and dist(vertex, motherVertex)
-		double fChi2; // chi2 of the vertex
-		double fNdof; // number of degrees of freedom of vertex
+		float fNbrMuons;  // number of muons in the muon list.
+		float fD3;
+		float fD3E;
+		float fDxy;	// distance to originating vertex (2d)
+		float fDxyE;	// error (2d)
+		float fAlpha; // angle between momentum and dist(vertex, motherVertex)
+		float fChi2; // chi2 of the vertex
+		float fNdof; // number of degrees of freedom of vertex
 };
 
 #endif

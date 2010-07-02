@@ -13,7 +13,8 @@ static inline int in_interval(int x, int a, int b)
 
 massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName),reduced_tree(NULL)
 {
-  fMomentumPtr = &fMomentum;
+	fMomentumPtr = &fMomentum;
+	fTreeName = "massReader reduced tree";
 } // massReader()
 
 massReader::~massReader()
@@ -62,21 +63,21 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 void massReader::bookHist()
 {
 	// create the tree
-	reduced_tree = new TTree("T","Candidate Mass / Eta / Charge");
+	reduced_tree = new TTree("T",fTreeName);
 	
 	// and add the branches
 	reduced_tree->Branch("candidate",&fCandidate,"candidate/I");
 	reduced_tree->Branch("p","TVector3",&fMomentumPtr);
-	reduced_tree->Branch("mass",&fMass,"mass/D");
+	reduced_tree->Branch("mass",&fMass,"mass/F");
 	reduced_tree->Branch("truth",&fTruth,"truth/I");
-	reduced_tree->Branch("ident_muons",&fNbrMuons,"ident_muons/I");
-	reduced_tree->Branch("d3",&fD3,"d3/D");
-	reduced_tree->Branch("d3e",&fD3E,"d3e/D");
-	reduced_tree->Branch("dxy",&fDxy,"dxy/D");
-	reduced_tree->Branch("dxye",&fDxyE,"dxye/D");
-	reduced_tree->Branch("alpha",&fAlpha,"alpha/D");
-	reduced_tree->Branch("chi2",&fChi2,"chi2/D");
-	reduced_tree->Branch("Ndof",&fNdof,"Ndof/D");
+	reduced_tree->Branch("ident_muons",&fNbrMuons,"ident_muons/F");
+	reduced_tree->Branch("d3",&fD3,"d3/F");
+	reduced_tree->Branch("d3e",&fD3E,"d3e/F");
+	reduced_tree->Branch("dxy",&fDxy,"dxy/F");
+	reduced_tree->Branch("dxye",&fDxyE,"dxye/F");
+	reduced_tree->Branch("alpha",&fAlpha,"alpha/F");
+	reduced_tree->Branch("chi2",&fChi2,"chi2/F");
+	reduced_tree->Branch("Ndof",&fNdof,"Ndof/F");
 } // massReader::bookHist()
 
 int massReader::checkTruth(TAnaCand *cand)
