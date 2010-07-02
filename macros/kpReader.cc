@@ -1,13 +1,17 @@
 #include "kpReader.hh"
 
+#include <utility>
+
 using namespace std;
 
-kpReader::kpReader(TChain *tree, TString evtClassName) : massReader(tree,evtClassName)
+kpReader::kpReader(TChain *tree, TString evtClassName) : massReader(tree,evtClassName),total_counter(0),reco_counter(0)
 {
 	// set the pointers to save in the tree
 	fPlabMu1Ptr = &fPlabMu1;
 	fPlabMu2Ptr = &fPlabMu2;
 	fPlabKpPtr = &fPlabKp;
+	
+	fTreeName = "kpReader reduced tree";
 	
 	// the true decay for truth matching...
 	trueDecay.insert(13);	// mu
@@ -18,6 +22,42 @@ kpReader::kpReader(TChain *tree, TString evtClassName) : massReader(tree,evtClas
 	
 	cout << "kpReader instantiated..." << endl;
 } // kpReader()
+
+kpReader::~kpReader()
+{
+	// just dump some stuff.
+	cout << "~kpReader:" << endl;
+	cout << "\treco counter: " << reco_counter << endl;
+	cout << "\ttotal counter: " << total_counter << endl;
+} // ~kpReader()
+
+void kpReader::eventProcessing()
+{
+	unsigned j,nc;
+	TGenCand *pGen;
+	multiset<int> current_decay;
+	
+	decay_indices.clear();
+	
+	// count the number of real decay using the generator block
+	nc = fpEvt->nGenCands();
+	for (j = 0; j < nc; j++) {
+		pGen = fpEvt->getGenCand(j);
+		if (abs(pGen->fID) == 521) {
+			current_decay.clear();
+			buildDecay(pGen,&current_decay);
+			current_decay.erase(22); // remove Bremsstrahlung
+			if (trueDecay == current_decay)
+				total_counter++;
+		}
+	}
+	
+	// do the normal stuff
+	massReader::eventProcessing(); // here the decay indices are modified in loadCandidateVariables()
+	
+	reco_counter += decay_indices.size();
+	
+} // eventProcessing()
 
 int kpReader::loadCandidateVariables(TAnaCand *pCand)
 {
@@ -51,6 +91,10 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 			fPlabKp = track->fPlab;
 	}
 	
+	// muon1 ist usually that one with the bigger pt
+	if (fPlabMu1.Perp() < fPlabMu2.Perp())
+		swap(fPlabMu1,fPlabMu2);
+	
 	// set the jpsi mass
 	for (j = pCand->fDau1; j <= pCand->fDau2 && j >= 0; j++) {
 		
@@ -67,7 +111,7 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 void kpReader::bookHist()
 {
 	massReader::bookHist();
-	reduced_tree->Branch("mass_jpsi",&fMassJPsi,"mass_jpsi/D");
+	reduced_tree->Branch("mass_jpsi",&fMassJPsi,"mass_jpsi/F");
 	reduced_tree->Branch("plab_mu1","TVector3",&fPlabMu1Ptr);
 	reduced_tree->Branch("plab_mu2","TVector3",&fPlabMu2Ptr);
 	reduced_tree->Branch("plab_kp","TVector3",&fPlabKpPtr);
@@ -96,6 +140,8 @@ int kpReader::checkTruth(TAnaCand *pCand)
 	
 	result = (particles == trueDecay);
 	
+	if (result) // save the decay
+		decay_indices.insert(gen->fNumber);
 bail:
 	return result;
 } // checkTruth()
