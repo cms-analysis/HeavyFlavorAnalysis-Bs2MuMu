@@ -7,8 +7,10 @@ class ksReader : public massReader {
 	
 	public:
 		ksReader(TChain *tree, TString evtClassName);
+		~ksReader();
 		
 		virtual void bookHist();
+		virtual void eventProcessing();
 
 	protected:
 		virtual int loadCandidateVariables(TAnaCand *pCand);
@@ -23,6 +25,8 @@ class ksReader : public massReader {
 		
 		float fDeltaKs;
 		float fDeltaKsTrue;
+		
+		float fMaxDocaKs;
 		
 		float fMassJPsi;
 		
@@ -41,6 +45,11 @@ class ksReader : public massReader {
 		TVector3 *fPlabKsTruePtr;
 	private:
 		int getGenIndex(TAnaCand *pCand, int candID);
+	
+	private:
+		set<int> decay_indices;
+		unsigned long long total_counter;
+		unsigned long long reco_counter;
 };
 
 #endif

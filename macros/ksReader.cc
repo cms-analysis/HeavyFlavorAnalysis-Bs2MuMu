@@ -4,7 +4,7 @@
 
 using namespace std;
 
-ksReader::ksReader(TChain *tree, TString evtClassName) : massReader(tree,evtClassName)
+ksReader::ksReader(TChain *tree, TString evtClassName) : massReader(tree,evtClassName),total_counter(0),reco_counter(0)
 {
 	fPlabMu1Ptr = &fPlabMu1;
 	fPlabMu2Ptr = &fPlabMu2;
@@ -27,6 +27,40 @@ ksReader::ksReader(TChain *tree, TString evtClassName) : massReader(tree,evtClas
 	cout << "ksReader instantiated..." << endl;
 } // ksReader()
 
+ksReader::~ksReader()
+{
+	cout << "~ksReader:" << endl;
+	cout << "\treco counter: " << reco_counter << endl;
+	cout << "\ttotal counter: " << total_counter << endl;
+} // ~ksReader()
+
+void ksReader::eventProcessing()
+{
+	unsigned j,nc;
+	TGenCand *pGen;
+	multiset<int> current_decay;
+	
+	decay_indices.clear();
+	
+	// count the number of real decay using the generator block
+	nc = fpEvt->nGenCands();
+	for (j = 0; j < nc; j++) {
+		pGen = fpEvt->getGenCand(j);
+		if (abs(pGen->fID) == 511) {
+			current_decay.clear();
+			buildDecay(pGen,&current_decay);
+			current_decay.erase(22); // remove Bremsstrahlung
+			if (current_decay == trueDecay)
+				total_counter++;
+		}
+	}
+	
+	// do the normal stuff
+	massReader::eventProcessing(); // here, the decay indices are modified in loadCandidateVariables
+	
+	reco_counter += decay_indices.size();
+} // eventProcessing()
+
 int ksReader::loadCandidateVariables(TAnaCand *pCand)
 {
 	TAnaCand *subCand = NULL;
@@ -47,6 +81,7 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 	fChi2Ks = -1.0;
 	fDeltaKs = -1.0;
 	fDeltaKsTrue = -1.0;
+	fMaxDocaKs = -1.0;
 
 	fPlabMu1 = TVector3();
 	fPlabMu2 = TVector3();
@@ -101,6 +136,7 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 		fDxyeKs = subCand->fVtx.fDxyE;
 		fChi2Ks = subCand->fVtx.fChi2;
 		fPlabKs = subCand->fPlab;
+		fMaxDocaKs = subCand->fMaxDoca;
 		
 		// check the truth distance...
 		ksTrue = bdTrue = NULL;
@@ -148,6 +184,7 @@ void ksReader::bookHist()
 	reduced_tree->Branch("dxy_ks",&fDxyKs,"dxy_ks/F");
 	reduced_tree->Branch("dxye_ks",&fDxyeKs,"dxye_ks/F");
 	reduced_tree->Branch("chi2_ks",&fChi2Ks,"chi2_ks/F");
+	reduced_tree->Branch("max_doca_ks",&fMaxDocaKs,"max_doca_ks/F");
 	reduced_tree->Branch("plab_mu1","TVector3",&fPlabMu1Ptr);
 	reduced_tree->Branch("plab_mu2","TVector3",&fPlabMu2Ptr);
 	reduced_tree->Branch("plab_pi1","TVector3",&fPlabPi1Ptr);
@@ -181,6 +218,9 @@ int ksReader::checkTruth(TAnaCand *cand)
 	particles.erase(22); // remove Bremsstahlung
 	
 	result = (particles == trueDecay);
+	
+	if (result)
+		decay_indices.insert(gen->fNumber);
 
 bail:
 	return result;
