@@ -1,5 +1,7 @@
 #include "ksReader.hh"
 
+#include <utility>
+
 using namespace std;
 
 ksReader::ksReader(TChain *tree, TString evtClassName) : massReader(tree,evtClassName)
@@ -10,6 +12,8 @@ ksReader::ksReader(TChain *tree, TString evtClassName) : massReader(tree,evtClas
 	fPlabPi2Ptr = &fPlabPi2;
 	fPlabKsPtr = &fPlabKs;
 	fPlabKsTruePtr = &fPlabKsTrue;
+	
+	fTreeName = "ksReader reduced tree";
 	
 	// build the true decay
 	trueDecay.insert(13);
@@ -25,11 +29,9 @@ ksReader::ksReader(TChain *tree, TString evtClassName) : massReader(tree,evtClas
 
 int ksReader::loadCandidateVariables(TAnaCand *pCand)
 {
-	TAnaCand *ksCand = NULL;
+	TAnaCand *subCand = NULL;
 	TAnaTrack *track;
 	TGenCand *ksTrue,*bdTrue;
-	int real_type;
-	int algo_type;
 	int result;
 	int j;
 	int firstMu = 1;
@@ -52,12 +54,9 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 	fPlabPi2 = TVector3();
 	fPlabKs = TVector3();
 	fPlabKsTrue = TVector3();
-	
-	real_type = pCand->fType % 1000;
-	algo_type = pCand->fType / 1000;
 
 	// we handle only the Bd decays.
-	if (real_type != 511) return 0;
+	if (pCand->fType % 1000 != 511) return 0;
 	
 	result = massReader::loadCandidateVariables(pCand);
 	
@@ -80,28 +79,32 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 			firstPi = 0;
 		}
 	}
-	
+	// mu1 has higher pt, p1 has higher pt
+	if (fPlabMu1.Perp() < fPlabMu2.Perp())
+		swap(fPlabMu1,fPlabMu2);
+	if (fPlabPi1.Perp() < fPlabPi2.Perp())
+		swap(fPlabPi1,fPlabPi2);
 	
 	// Ks subvariables
 	for (j = pCand->fDau1; j <= pCand->fDau2 && j>= 0; j++) {
 		
 		TAnaCand *tmpCand = fpEvt->getCand(j);
 		if(tmpCand->fType % 1000 == 310) { // ks
-			ksCand = tmpCand;
+			subCand = tmpCand;
 			break;
 		}
 	}
-	if (ksCand) {
-		fMassKs = ksCand->fMass;
-		fAlphaKs = ksCand->fPlab.Angle(ksCand->fVtx.fPoint - pCand->fVtx.fPoint);
-		fDxyKs = ksCand->fVtx.fDxy;
-		fDxyeKs = ksCand->fVtx.fDxyE;
-		fChi2Ks = ksCand->fVtx.fChi2;
-		fPlabKs = ksCand->fPlab;
+	if (subCand) {
+		fMassKs = subCand->fMass;
+		fAlphaKs = subCand->fPlab.Angle(subCand->fVtx.fPoint - pCand->fVtx.fPoint);
+		fDxyKs = subCand->fVtx.fDxy;
+		fDxyeKs = subCand->fVtx.fDxyE;
+		fChi2Ks = subCand->fVtx.fChi2;
+		fPlabKs = subCand->fPlab;
 		
 		// check the truth distance...
 		ksTrue = bdTrue = NULL;
-		j = getGenIndex(ksCand, 310);
+		j = getGenIndex(subCand, 310);
 		if (j >= 0) ksTrue = fpEvt->getGenCand(j);
 		j = getGenIndex(pCand, 511);
 		if (j >= 0) bdTrue = fpEvt->getGenCand(j);
@@ -109,7 +112,7 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 		// do the difference...
 		if (ksTrue && bdTrue) {
 			
-			TVector3 diff = ksCand->fVtx.fPoint - pCand->fVtx.fPoint;
+			TVector3 diff = subCand->fVtx.fPoint - pCand->fVtx.fPoint;
 			fDeltaKs = diff.Mag();
 			
 			diff = ksTrue->fV - bdTrue->fV;
@@ -120,17 +123,17 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 	}
 	
 	// jpsi subvariables
-	ksCand = NULL;
+	subCand = NULL;
 	for (j = pCand->fDau1; j <= pCand->fDau2; j++) {
 		
 		TAnaCand *tmpCand = fpEvt->getCand(j);
 		if (tmpCand->fType % 1000 == 443) { // J/Psi
-			ksCand = tmpCand;
+			subCand = tmpCand;
 			break;
 		}
 	}
-	if (ksCand) {
-		fMassJPsi = ksCand->fMass;
+	if (subCand) {
+		fMassJPsi = subCand->fMass;
 	}
 	
 	return result;
@@ -139,18 +142,18 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 void ksReader::bookHist()
 {
 	massReader::bookHist();
-	reduced_tree->Branch("mass_jpsi",&fMassJPsi,"mass_jpsi/D");
-	reduced_tree->Branch("alpha_ks",&fAlphaKs,"alpha_ks/D");
-	reduced_tree->Branch("mass_ks",&fMassKs,"mass_ks/D");
-	reduced_tree->Branch("dxy_ks",&fDxyKs,"dxy_ks/D");
-	reduced_tree->Branch("dxye_ks",&fDxyeKs,"dxye_ks/D");
-	reduced_tree->Branch("chi2_ks",&fChi2Ks,"chi2_ks/D");
+	reduced_tree->Branch("mass_jpsi",&fMassJPsi,"mass_jpsi/F");
+	reduced_tree->Branch("alpha_ks",&fAlphaKs,"alpha_ks/F");
+	reduced_tree->Branch("mass_ks",&fMassKs,"mass_ks/F");
+	reduced_tree->Branch("dxy_ks",&fDxyKs,"dxy_ks/F");
+	reduced_tree->Branch("dxye_ks",&fDxyeKs,"dxye_ks/F");
+	reduced_tree->Branch("chi2_ks",&fChi2Ks,"chi2_ks/F");
 	reduced_tree->Branch("plab_mu1","TVector3",&fPlabMu1Ptr);
 	reduced_tree->Branch("plab_mu2","TVector3",&fPlabMu2Ptr);
 	reduced_tree->Branch("plab_pi1","TVector3",&fPlabPi1Ptr);
 	reduced_tree->Branch("plab_pi2","TVector3",&fPlabPi2Ptr);
-	reduced_tree->Branch("delta_ks",&fDeltaKs,"delta_ks/D");
-	reduced_tree->Branch("delta_ks_true",&fDeltaKsTrue,"delta_ks_true/D");
+	reduced_tree->Branch("delta_ks",&fDeltaKs,"delta_ks/F");
+	reduced_tree->Branch("delta_ks_true",&fDeltaKsTrue,"delta_ks_true/F");
 	reduced_tree->Branch("plab_ks","TVector3",&fPlabKsPtr);
 	reduced_tree->Branch("plab_ks_true","TVector3",&fPlabKsTruePtr);
 } // bookHist()

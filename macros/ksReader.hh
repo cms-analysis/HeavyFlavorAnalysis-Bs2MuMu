@@ -15,16 +15,16 @@ class ksReader : public massReader {
 		virtual int checkTruth(TAnaCand *cand);
 	
 	private:
-		double fMassKs;
-		double fAlphaKs;
-		double fDxyKs;
-		double fDxyeKs;
-		double fChi2Ks;
+		float fMassKs;
+		float fAlphaKs;
+		float fDxyKs;
+		float fDxyeKs;
+		float fChi2Ks;
 		
-		double fDeltaKs;
-		double fDeltaKsTrue;
+		float fDeltaKs;
+		float fDeltaKsTrue;
 		
-		double fMassJPsi;
+		float fMassJPsi;
 		
 		TVector3 fPlabMu1;
 		TVector3 fPlabMu2;
