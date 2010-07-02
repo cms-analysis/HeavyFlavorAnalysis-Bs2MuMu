@@ -1,5 +1,7 @@
 #include "phiReader.hh"
 
+#include <utility>
+
 using namespace std;
 
 phiReader::phiReader(TChain *tree, TString evtClassName) : massReader(tree,evtClassName)
@@ -8,6 +10,8 @@ phiReader::phiReader(TChain *tree, TString evtClassName) : massReader(tree,evtCl
 	fPlabMu2Ptr = &fPlabMu2;
 	fPlabKp1Ptr = &fPlabKp1;
 	fPlabKp2Ptr = &fPlabKp2;
+	
+	fTreeName = "phiReader reduced tree.";
 	
 	trueDecay.insert(13); // mu
 	trueDecay.insert(13); // mu
@@ -54,6 +58,10 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 			else			fPlabKp2 = track->fPlab;
 		}
 	}
+	if (fPlabMu1.Perp() < fPlabMu2.Perp())
+		swap(fPlabMu1,fPlabMu2);
+	if (fPlabKp1.Perp() < fPlabKp2.Perp())
+		swap(fPlabKp1,fPlabKp2);
 	
 	// set the masses
 	for (j = pCand->fDau1; j <= pCand->fDau2 && j>=0; j++) {
@@ -71,8 +79,8 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 void phiReader::bookHist()
 {
 	massReader::bookHist();
-	reduced_tree->Branch("mass_jpsi",&fMassJPsi,"mass_jpsi/D");
-	reduced_tree->Branch("mass_phi",&fMassPhi,"mass_phi/D");
+	reduced_tree->Branch("mass_jpsi",&fMassJPsi,"mass_jpsi/F");
+	reduced_tree->Branch("mass_phi",&fMassPhi,"mass_phi/F");
 	reduced_tree->Branch("plab_mu1","TVector3",&fPlabMu1Ptr);
 	reduced_tree->Branch("plab_mu2","TVector3",&fPlabMu2Ptr);
 	reduced_tree->Branch("plab_kp1","TVector3",&fPlabKp1Ptr);

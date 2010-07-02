@@ -15,8 +15,8 @@ class phiReader : public massReader {
 		virtual int checkTruth(TAnaCand *cand);
 	
 	private:
-		double fMassJPsi;
-		double fMassPhi;
+		float fMassJPsi;
+		float fMassPhi;
 		
 		TVector3 fPlabMu1;
 		TVector3 fPlabMu2;
