@@ -45,6 +45,7 @@ class massReader : public treeReader01 {
 		float fAlpha; // angle between momentum and dist(vertex, motherVertex)
 		float fChi2; // chi2 of the vertex
 		float fNdof; // number of degrees of freedom of vertex
+		float fMaxDoca; // max doca
 };
 
 #endif

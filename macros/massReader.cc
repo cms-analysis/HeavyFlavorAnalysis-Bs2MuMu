@@ -1,15 +1,7 @@
 #include "massReader.hh"
 #include <cstdlib>
 
-#define require_true(COND,LABEL) if( !(COND) ) goto LABEL
-
 using namespace std;
-
-// test a <= x < b
-static inline int in_interval(int x, int a, int b)
-{
-	return (a <= x) && (x < b);
-} // in_interval()
 
 massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName),reduced_tree(NULL)
 {
@@ -50,6 +42,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fDxyE = pCand->fVtx.fDxyE;
 	fChi2 = pCand->fVtx.fChi2;
 	fNdof = pCand->fVtx.fNdof;
+	fMaxDoca = pCand->fMaxDoca;
 	
 	if (pCand->fMom >= 0) {
 		momCand = fpEvt->getCand(pCand->fMom);
@@ -78,6 +71,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("alpha",&fAlpha,"alpha/F");
 	reduced_tree->Branch("chi2",&fChi2,"chi2/F");
 	reduced_tree->Branch("Ndof",&fNdof,"Ndof/F");
+	reduced_tree->Branch("max_doca",&fMaxDoca,"max_doca/F");
 } // massReader::bookHist()
 
 int massReader::checkTruth(TAnaCand *cand)
