@@ -34,6 +34,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fCandidate = pCand->fType;
 	fMomentum = pCand->fPlab;
 
+	fPt = pCand->fPlab.Perp();
 	fMass = pCand->fMass;
 	fTruth = checkTruth(pCand);
 	fNbrMuons = countMuons(pCand);
@@ -71,6 +72,7 @@ void massReader::bookHist()
 	// and add the branches
 	reduced_tree->Branch("candidate",&fCandidate,"candidate/I");
 	reduced_tree->Branch("p","TVector3",&fMomentumPtr);
+	reduced_tree->Branch("pt",&fPt,"pt/F");
 	reduced_tree->Branch("mass",&fMass,"mass/F");
 	reduced_tree->Branch("truth",&fTruth,"truth/I");
 	reduced_tree->Branch("ident_muons",&fNbrMuons,"ident_muons/F");

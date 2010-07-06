@@ -37,6 +37,7 @@ class massReader : public treeReader01 {
 		TVector3 *fMomentumPtr;
 		float fMass;
 		int fTruth;		// is this background or a true candidate?
+                float fPt; // pt of the top particle
 		float fNbrMuons;  // number of muons in the muon list.
 		float fD3;
 		float fD3E;
