@@ -68,6 +68,7 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	
 	// default initialization
 	fMassJPsi = -1.0;
+	fDeltaR = -1.0;
 	fPlabMu1 = TVector3();
 	fPlabMu2 = TVector3();
 	fPlabKp = TVector3();
@@ -104,7 +105,15 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 			break;
 		}
 	}
+
+	// set the deltaR of the J/Psi w.r.t. Kp
+	if (fPlabKp.Perp() > 0 && (fPlabMu1 + fPlabMu2).Perp() > 0)
+	  fDeltaR = (float)fPlabKp.DeltaR(fPlabMu1 + fPlabMu2);
 	
+	fPtMu1 = fPlabMu1.Perp();
+	fPtMu2 = fPlabMu2.Perp();
+	fPtKp = fPlabKp.Perp();
+
 	return result;
 } // loadCandidateVariables()
 
@@ -112,9 +121,13 @@ void kpReader::bookHist()
 {
 	massReader::bookHist();
 	reduced_tree->Branch("mass_jpsi",&fMassJPsi,"mass_jpsi/F");
+	reduced_tree->Branch("deltaR",&fDeltaR,"deltaR/F");
 	reduced_tree->Branch("plab_mu1","TVector3",&fPlabMu1Ptr);
 	reduced_tree->Branch("plab_mu2","TVector3",&fPlabMu2Ptr);
 	reduced_tree->Branch("plab_kp","TVector3",&fPlabKpPtr);
+	reduced_tree->Branch("pt_mu1",&fPtMu1,"pt_mu1/F");
+	reduced_tree->Branch("pt_mu2",&fPtMu2,"pt_mu2/F");
+	reduced_tree->Branch("pt_kp",&fPtKp,"pt_kp/F");
 } // bookHist()
 
 int kpReader::checkTruth(TAnaCand *pCand)

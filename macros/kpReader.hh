@@ -18,7 +18,12 @@ class kpReader : public massReader {
 	
 	private: // reduced Tree variables
 		float fMassJPsi;
-		
+                float fDeltaR; // deltaR of J/Psi and Kp
+
+                float fPtMu1;
+                float fPtMu2;
+                float fPtKp;
+
 		TVector3 fPlabMu1;
 		TVector3 fPlabMu2;
 		TVector3 fPlabKp;
