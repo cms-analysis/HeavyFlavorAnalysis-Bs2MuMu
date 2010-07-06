@@ -219,7 +219,7 @@ int ksReader::checkTruth(TAnaCand *cand)
 	
 	result = (particles == trueDecay);
 	
-	if (result)
+	if (result && fCandidate == 700511)
 		decay_indices.insert(gen->fNumber);
 
 bail:
