@@ -36,7 +36,6 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 
 	fPt = pCand->fPlab.Perp();
 	fMass = pCand->fMass;
-	fTruth = checkTruth(pCand);
 	fNbrMuons = countMuons(pCand);
 	fD3 = pCand->fVtx.fD3d;
 	fD3E = pCand->fVtx.fD3dE;
@@ -60,6 +59,10 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	v1.SetZ(0);
 	v2.SetZ(0);
 	fAlphaXY = v1.Angle(v2);
+	
+	// do this at the end so the checkTruth algorithm can use
+	// all variables of this candidate.
+	fTruth = checkTruth(pCand);
 	
 	return 1;
 } // loadCandidateVariables()

@@ -30,8 +30,7 @@ class massReader : public treeReader01 {
 	protected:
 		const char *fTreeName;
 		
-	private:
-		// Private variables
+	protected:
 		int fCandidate;
 		TVector3 fMomentum;
 		TVector3 *fMomentumPtr;
