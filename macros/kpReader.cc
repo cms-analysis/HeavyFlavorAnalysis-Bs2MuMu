@@ -28,6 +28,8 @@ kpReader::~kpReader()
 	// just dump some stuff.
 	cout << "~kpReader:" << endl;
 	cout << "\treco counter: " << reco_counter << endl;
+	cout << "\t\treco single: " << reco_single << endl;
+	cout << "\t\treco double: " << reco_double << endl;
 	cout << "\ttotal counter: " << total_counter << endl;
 } // ~kpReader()
 
@@ -36,6 +38,7 @@ void kpReader::eventProcessing()
 	unsigned j,nc;
 	TGenCand *pGen;
 	multiset<int> current_decay;
+	map<int,int>::const_iterator it;
 	
 	decay_indices.clear();
 	
@@ -57,6 +60,14 @@ void kpReader::eventProcessing()
 	
 	reco_counter += decay_indices.size();
 	
+	for (it = decay_indices.begin(); it != decay_indices.end(); ++it) {
+		
+		if(it->second == 1) reco_single++;
+		else if(it->second == 2) reco_double++;
+		else
+			cout << "Reconstructed candidate with " << it->second << " muons?" << endl;
+
+	}
 } // eventProcessing()
 
 int kpReader::loadCandidateVariables(TAnaCand *pCand)
@@ -153,8 +164,8 @@ int kpReader::checkTruth(TAnaCand *pCand)
 	
 	result = (particles == trueDecay);
 	
-	if (result) // save the decay
-		decay_indices.insert(gen->fNumber);
+	if (result && fCandidate == 500521) // save the decay
+		decay_indices[gen->fNumber] = max((int)fNbrMuons, decay_indices[gen->fNumber]);
 bail:
 	return result;
 } // checkTruth()

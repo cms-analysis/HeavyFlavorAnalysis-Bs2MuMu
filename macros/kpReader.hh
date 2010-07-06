@@ -18,11 +18,11 @@ class kpReader : public massReader {
 	
 	private: // reduced Tree variables
 		float fMassJPsi;
-                float fDeltaR; // deltaR of J/Psi and Kp
+		float fDeltaR; // deltaR of J/Psi and Kp
 
-                float fPtMu1;
-                float fPtMu2;
-                float fPtKp;
+		float fPtMu1;
+		float fPtMu2;
+		float fPtKp;
 
 		TVector3 fPlabMu1;
 		TVector3 fPlabMu2;
@@ -33,9 +33,11 @@ class kpReader : public massReader {
 		TVector3 *fPlabKpPtr;
 	
 	private:
-		set<int> decay_indices;
+		map<int,int> decay_indices; // (genIx, ident_muons)
 		unsigned long long total_counter;
 		unsigned long long reco_counter;
+		unsigned long long reco_single;
+		unsigned long long reco_double;
 };
 
 #endif
