@@ -28,6 +28,7 @@ void massReader::eventProcessing()
 int massReader::loadCandidateVariables(TAnaCand *pCand)
 {
 	TAnaCand *momCand;
+	TVector3 v1,v2;
 	
 	// Save in the tree
 	fCandidate = pCand->fType;
@@ -46,9 +47,18 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	
 	if (pCand->fMom >= 0) {
 		momCand = fpEvt->getCand(pCand->fMom);
-		fAlpha = pCand->fPlab.Angle(pCand->fVtx.fPoint - momCand->fVtx.fPoint);
-	} else
-		fAlpha = pCand->fPlab.Angle(pCand->fVtx.fPoint - fpEvt->bestPV()->fPoint);
+		v1 = pCand->fPlab;
+		v2 = pCand->fVtx.fPoint - momCand->fVtx.fPoint;
+	} else {
+		v1 = pCand->fPlab;
+		v2 = pCand->fVtx.fPoint - fpEvt->bestPV()->fPoint;
+	}
+	
+	fAlpha = v1.Angle(v2);
+	// project to xy plane
+	v1.SetZ(0);
+	v2.SetZ(0);
+	fAlphaXY = v1.Angle(v2);
 	
 	return 1;
 } // loadCandidateVariables()
@@ -69,6 +79,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("dxy",&fDxy,"dxy/F");
 	reduced_tree->Branch("dxye",&fDxyE,"dxye/F");
 	reduced_tree->Branch("alpha",&fAlpha,"alpha/F");
+	reduced_tree->Branch("alpha_xy",&fAlphaXY,"alpha_xy/F");
 	reduced_tree->Branch("chi2",&fChi2,"chi2/F");
 	reduced_tree->Branch("Ndof",&fNdof,"Ndof/F");
 	reduced_tree->Branch("max_doca",&fMaxDoca,"max_doca/F");
