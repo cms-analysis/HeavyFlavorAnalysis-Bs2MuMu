@@ -1,5 +1,5 @@
-#ifndef _HFCHARM_h_
-#define _HFCHARM_h_
+#ifndef GUARD_HFLAMDAS_H
+#define GUARD_HFLAMDAS_H
 
 #include <memory>
 
@@ -32,6 +32,11 @@ class HFLambdas : public edm::EDAnalyzer {
   explicit HFLambdas(const edm::ParameterSet&);
   ~HFLambdas();
 
+    typedef unsigned int count_t;
+    typedef unsigned int index_t;
+    typedef std::pair<int,int> duplet_t;
+    typedef std::vector<std::pair<int, TLorentzVector> > trackList_t;
+
  private:
   virtual void beginJob() ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
@@ -43,7 +48,7 @@ class HFLambdas : public edm::EDAnalyzer {
   edm::InputTag fMuonsLabel;
 
   int           fUseMuon;
-  double        fPhiWindow, fL0Window; 
+  double        fPhiWindow, fJPsiWindow, fL0Window; 
   double        fMuonPt, fProtonPt, fPionPt, fTrackPt, fDeltaR;
   double        fMaxDoca, fMaxVtxChi2, fMinVtxSigXY, fMinVtxSig3d, fMinCosAngle, fMinPtCand; 
 
