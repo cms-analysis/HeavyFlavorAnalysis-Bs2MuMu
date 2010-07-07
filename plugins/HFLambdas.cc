@@ -98,7 +98,7 @@ void HFLambdas::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         std::cout << "-------------------------------------------------------------" << std::endl;
         std::cout << "==>HFLambdas: beginning of analyze():" << std::endl;
         std::string line("ps -F " + getpid());
-        system(line.c_str());
+        //system(line.c_str());
     }
 
     // get the primary vertex
@@ -134,7 +134,7 @@ void HFLambdas::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         return;
     }
 
-    if (hTracks->size() > static_cast<unsigned int>(fMaxTracks)) {
+    if (hTracks->size() > static_cast<size_t>(fMaxTracks)) {
         std::cout << "==>HFLambdas> Too many tracks " << hTracks->size() << ", skipping" << std::endl;
         return;
     }
@@ -150,9 +150,9 @@ void HFLambdas::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
 
     // get the collection of muons and store their corresponding track indices
-    std::vector<unsigned int> muonIndices;
+    std::vector<index_t> muonIndices;
     for (reco::MuonCollection::const_iterator muonIt = hMuons->begin(); muonIt != hMuons->end(); ++muonIt) {
-        const int im = muonIt->track().index();
+        const int im = muonIt->track().index(); // tried to change this to const index_t (=unsigned int) but leads to segviol
 	if (fVerbose > 0) std::cout << "==>HFLambdas> Muon index: " << im << " Ptr: " << muonIt->track().get() << std::endl;
         if (im >= 0) muonIndices.push_back(im);
     }
@@ -167,7 +167,7 @@ void HFLambdas::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     piList.reserve(2000);
     prList.reserve(2000);
 
-    for (unsigned int itrack = 0; itrack < hTracks->size(); ++itrack) {
+    for (index_t itrack = 0; itrack < hTracks->size(); ++itrack) {
 	reco::TrackBaseRef rTrackView(hTracks, itrack);
 	reco::Track tTrack(*rTrackView);
 	//if (fVerbose > 0) std::cout << "==>HFLambdas> Track Ptr: " << rTrackView.get() << std::endl;
@@ -200,7 +200,7 @@ void HFLambdas::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     // For each muon from the muon chambers combine with all tracks in trackMuonList
     // trackMuonList contain some of the muonsystem-muons as well
     std::vector<duplet_t> jpsiList;
-    for(std::vector<unsigned int>::const_iterator itm=muonIndices.begin(); itm!=muonIndices.end(); itm++) {
+    for(std::vector<index_t>::const_iterator itm=muonIndices.begin(); itm!=muonIndices.end(); itm++) {
 	for(trackList_t::const_iterator ittrm=trackMuonList.begin(); ittrm!=trackMuonList.end(); ittrm++) {
 	    if( (*itm) != ittrm->first ) { // then we have two distinct tracks
 		jpsiList.push_back(std::make_pair( (*itm), ittrm->first));

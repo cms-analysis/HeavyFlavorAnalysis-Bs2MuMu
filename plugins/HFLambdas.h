@@ -34,8 +34,8 @@ class HFLambdas : public edm::EDAnalyzer {
 
     typedef unsigned int count_t;
     typedef unsigned int index_t;
-    typedef std::pair<int,int> duplet_t;
-    typedef std::vector<std::pair<int, TLorentzVector> > trackList_t;
+    typedef std::pair<index_t,index_t> duplet_t;
+    typedef std::vector<std::pair<index_t, TLorentzVector> > trackList_t;
 
  private:
   virtual void beginJob() ;
