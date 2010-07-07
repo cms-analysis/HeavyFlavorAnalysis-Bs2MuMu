@@ -1,9 +1,10 @@
+#ifndef GUARD_HFTHREEPARTICLECOMBINATORICS_H
+#define GUARD_HFTHREEPARTICLECOMBINATORICS_H
+
 #include <vector>
 #include <utility>
 
 #include <TLorentzVector.h>
-
-using namespace std;
 
 class triplet{
 
@@ -38,18 +39,21 @@ public:
 // combining particle from KList with two particles from piList into a combination 
 // with mass between loMass and hiMass
 //
-  void combine(vector<triplet > &combList, 
-	       vector<pair<int, TLorentzVector> > &KList, 
-	       vector<pair<int, TLorentzVector> > &piList, 
+  void combine(std::vector<triplet > &combList, 
+	       std::vector<std::pair<int, TLorentzVector> > &KList, 
+	       std::vector<std::pair<int, TLorentzVector> > &piList, 
 	       double loMass = 0.2, double hiMass = 0.8);
 
 // combine three particles from piList into a combination with mass between loMass and hiMass
 // if loResMass and hiResMass >0, the first two particles form a resonance 
 // with mass between loResMass and hiResMass
 //
-  void combine(vector<triplet > &combList, 
-	       vector<pair<int, TLorentzVector> > &piList, 
+  void combine(std::vector<triplet > &combList, 
+	       std::vector<std::pair<int, TLorentzVector> > &piList, 
 	       double loMass = 0.4, double hiMass = 20., double loResMass = 0., double hiResMass = 0.);
 
   int fVerbose; 
 };
+
+#endif
+

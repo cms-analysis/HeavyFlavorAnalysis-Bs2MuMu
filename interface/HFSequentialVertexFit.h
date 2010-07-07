@@ -5,6 +5,9 @@
  *
  */
 
+#ifndef GUARD_HFSEQUENTIALVERTEXFIT_H
+#define GUARD_HFSEQUENTIALVERTEXFIT_H
+
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/View.h"
 
@@ -47,3 +50,6 @@ class HFSequentialVertexFit
 
   double getParticleMass(int particleID);
 };
+
+#endif
+
