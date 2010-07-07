@@ -17,6 +17,8 @@
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 #include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
 
+using reco::Vertex;
+using reco::Track;
 
 // -- Yikes!
 extern TAna01Event *gHFEvent;
@@ -127,9 +129,9 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
   if (TransSecVtx.totalChiSquared() < 0) return; 
   
   // -- Get refitted tracks
-  vector<TransientTrack> refTT = TransSecVtx.refittedTracks();
+  vector<reco::TransientTrack> refTT = TransSecVtx.refittedTracks();
   vector<Track> refT; refT.clear(); 
-  for(vector<TransientTrack>::const_iterator i = refTT.begin(); i != refTT.end(); i++) {
+  for(vector<reco::TransientTrack>::const_iterator i = refTT.begin(); i != refTT.end(); i++) {
     const Track &ftt = i->track();
     refT.push_back(ftt);
   }
@@ -212,6 +214,7 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
 
  
   // -- fill candidate
+  if (fVerbose > 1) cout << "Filling this one" << std::endl;
   TAnaCand *pCand = gHFEvent->addCand();
   pCand->fPlab    = comp.Vect();
   pCand->fMass    = comp.M();

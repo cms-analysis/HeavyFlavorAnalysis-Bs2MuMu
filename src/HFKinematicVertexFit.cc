@@ -24,6 +24,9 @@
 #include "RecoVertex/KinematicFit/interface/KinematicParticleFitter.h"
 #include "RecoVertex/KinematicFit/interface/MassKinematicConstraint.h"
 
+using reco::Vertex;
+using reco::Track;
+using reco::TransientTrack;
 
 // -- Yikes!
 extern TAna01Event *gHFEvent;

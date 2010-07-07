@@ -35,12 +35,12 @@ extern TAna01Event *gHFEvent;
 //using namespace edm;
 
 // ----------------------------------------------------------------------
-HFLambdas::HFLambdas(const ParameterSet& iConfig) :
+HFLambdas::HFLambdas(const edm::ParameterSet& iConfig) :
     fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
     fMaxTracks(iConfig.getUntrackedParameter<int>("maxTracks", 1000)),
-    fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("goodTracks"))),
-    fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexLabel", InputTag("offlinePrimaryVertices"))),
-    fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
+    fTracksLabel(iConfig.getUntrackedParameter<edm::InputTag>("tracksLabel", edm::InputTag("goodTracks"))),
+    fPrimaryVertexLabel(iConfig.getUntrackedParameter<edm::InputTag>("PrimaryVertexLabel", edm::InputTag("offlinePrimaryVertices"))),
+    fMuonsLabel(iConfig.getUntrackedParameter<edm::InputTag>("muonsLabel")),
     fUseMuon(iConfig.getUntrackedParameter<int>("useMuon", 0)),
     fJPsiWindow(iConfig.getUntrackedParameter<double>("JPsiWindow", 0.4)),
     fL0Window(iConfig.getUntrackedParameter<double>("L0Window", 0.4)),
@@ -92,7 +92,7 @@ HFLambdas::~HFLambdas() {
 
 
 // ----------------------------------------------------------------------
-void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup) {
+void HFLambdas::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
     if (fVerbose > 0) {
         std::cout << "-------------------------------------------------------------" << std::endl;
@@ -102,13 +102,13 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup) {
     }
 
     // get the primary vertex
-    Handle<VertexCollection> recoPrimaryVertexCollection;
+    edm::Handle<reco::VertexCollection> recoPrimaryVertexCollection;
     iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
     if(!recoPrimaryVertexCollection.isValid()) {
         std::cout << "==>HFLambdas> No primary vertex collection found, skipping" << std::endl;
         return;
     }
-    const VertexCollection vertices = *(recoPrimaryVertexCollection.product());
+    const reco::VertexCollection vertices = *(recoPrimaryVertexCollection.product());
     if (vertices.size() == 0) {
         std::cout << "==>HFLambdas> No primary vertex found, skipping" << std::endl;
         return;
@@ -119,7 +119,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup) {
     }
 
     // get the collection of muons
-    Handle<MuonCollection> hMuons;
+    edm::Handle<reco::MuonCollection> hMuons;
     iEvent.getByLabel(fMuonsLabel, hMuons);
     if (!hMuons.isValid()) {
         std::cout << "==>HFLambdas> No valid MuonCollection with label "<< fMuonsLabel <<" found, skipping" << std::endl;
@@ -127,7 +127,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup) {
     }
 
     // get the collection of tracks
-    Handle<View<Track> > hTracks;
+    edm::Handle<edm::View<reco::Track> > hTracks;
     iEvent.getByLabel(fTracksLabel, hTracks);
     if(!hTracks.isValid()) {
         std::cout << "==>HFLambdas> No valid TrackCollection with label " << fTracksLabel << " found, skipping" << std::endl;
@@ -151,7 +151,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
     // get the collection of muons and store their corresponding track indices
     std::vector<unsigned int> muonIndices;
-    for (MuonCollection::const_iterator muonIt = hMuons->begin(); muonIt != hMuons->end(); ++muonIt) {
+    for (reco::MuonCollection::const_iterator muonIt = hMuons->begin(); muonIt != hMuons->end(); ++muonIt) {
         const int im = muonIt->track().index();
 	if (fVerbose > 0) std::cout << "==>HFLambdas> Muon index: " << im << " Ptr: " << muonIt->track().get() << std::endl;
         if (im >= 0) muonIndices.push_back(im);
@@ -168,8 +168,8 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup) {
     prList.reserve(2000);
 
     for (unsigned int itrack = 0; itrack < hTracks->size(); ++itrack) {
-        TrackBaseRef rTrackView(hTracks, itrack);
-        Track tTrack(*rTrackView);
+	reco::TrackBaseRef rTrackView(hTracks, itrack);
+	reco::Track tTrack(*rTrackView);
 	//if (fVerbose > 0) std::cout << "==>HFLambdas> Track Ptr: " << rTrackView.get() << std::endl;
 
 	// fill pion list
@@ -211,7 +211,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup) {
     if (fVerbose > 0) std::cout << "==>HFLambdas> jpsiList size: " << jpsiList.size() << std::endl;
 
     HFKalmanVertexFit  hkvfitter(fTTB.product(), fPV, 0, fVerbose+10);
-    std::vector<Track> trackList;
+    std::vector<reco::Track> trackList;
     std::vector<int> trackIndices;
     std::vector<double> trackMasses;
 
@@ -225,13 +225,13 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
     for (std::vector<duplet_t>::iterator it=jpsiList.begin(); it!=jpsiList.end(); ++it) {
 
-        TrackBaseRef mu1TrackView(hTracks, it->first);
-        Track tMu1(*mu1TrackView);
+	reco::TrackBaseRef mu1TrackView(hTracks, it->first);
+	reco::Track tMu1(*mu1TrackView);
         TLorentzVector tlvMu1;
 	tlvMu1.SetPtEtaPhiM(tMu1.pt(), tMu1.eta(), tMu1.phi(), MMUON);
 
-        TrackBaseRef mu2TrackView(hTracks, it->second);
-        Track tMu2(*mu2TrackView);
+	reco::TrackBaseRef mu2TrackView(hTracks, it->second);
+	reco::Track tMu2(*mu2TrackView);
 	TLorentzVector tlvMu2;
         tlvMu2.SetPtEtaPhiM(tMu2.pt(), tMu2.eta(), tMu2.phi(), MMUON);
 

@@ -14,6 +14,8 @@
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTwoParticleCombinatorics.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFSequentialVertexFit.h"
 
+#include<vector>
+
 extern TAna01Event *gHFEvent;
 
 using namespace std;

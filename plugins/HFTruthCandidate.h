@@ -13,32 +13,29 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-using namespace edm;
-using namespace std;
-
-class HFTruthCandidate : public EDAnalyzer {
+class HFTruthCandidate : public edm::EDAnalyzer {
 
 public:
 
-  explicit HFTruthCandidate(const ParameterSet&);
+  explicit HFTruthCandidate(const edm::ParameterSet&);
   ~HFTruthCandidate();
   
   virtual void beginJob() ;
-  virtual void analyze(const Event&, const EventSetup&);
+  virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 
 private:
   
-  InputTag      fTracksLabel;
-  int           fMotherID, fType, fGenType;
-  vector<int>   fDaughtersID;
+  edm::InputTag      fTracksLabel;
+  int                fMotherID, fType, fGenType;
+  std::vector<int>   fDaughtersID;
 
-  int           fStableDaughters; 
-  multiset<int> fDaughtersSet;
-  multiset<int> fDaughtersGammaSet;
-  multiset<int> fDaughtersGamma2Set;
+  int                fStableDaughters; 
+  std::multiset<int> fDaughtersSet;
+  std::multiset<int> fDaughtersGammaSet;
+  std::multiset<int> fDaughtersGamma2Set;
 
-  int           fVerbose; 
+  int                fVerbose; 
 
 
 };

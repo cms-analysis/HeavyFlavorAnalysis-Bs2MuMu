@@ -2,6 +2,11 @@
 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTwoParticleCombinatorics.hh"
 
+using std::cout;
+using std::endl;
+using std::vector;
+using std::pair;
+using std::make_pair;
 
 // ----------------------------------------------------------------------
 HFTwoParticleCombinatorics::HFTwoParticleCombinatorics(int verbose) {  

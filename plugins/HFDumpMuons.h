@@ -21,28 +21,25 @@ class TFile;
 class TTree;
 class TAna01Event;
 
-using namespace std;
-using namespace reco;
-
 // ----------------------------------------------------------------------
 class HFDumpMuons : public edm::EDAnalyzer {
  public:
   explicit HFDumpMuons(const edm::ParameterSet&);
   ~HFDumpMuons();
 
-  static int           muonID(const Muon &);
+  static int                muonID(const reco::Muon &);
   
  private:
-  virtual void         beginJob();
-  virtual void         analyze(const edm::Event&, const edm::EventSetup&);
-  virtual void         endJob();
-  void                 fillMuon(const Muon& tr, int type);
-  void                 fillCaloMuon(const CaloMuon& tr, int type);
-  vector<unsigned int> muonStatHits(const Track& tr);
-  edm::InputTag        fMuonsLabel;
-  edm::InputTag        fCaloMuonsLabel;
+  virtual void              beginJob();
+  virtual void              analyze(const edm::Event&, const edm::EventSetup&);
+  virtual void              endJob();
+  void                      fillMuon(const reco::Muon& tr, int type);
+  void                      fillCaloMuon(const reco::CaloMuon& tr, int type);
+  std::vector<unsigned int> muonStatHits(const reco::Track& tr);
+  edm::InputTag             fMuonsLabel;
+  edm::InputTag             fCaloMuonsLabel;
 
-  int                  fVerbose, fDoTruthMatching; 
+  int                       fVerbose, fDoTruthMatching; 
 
 };
 

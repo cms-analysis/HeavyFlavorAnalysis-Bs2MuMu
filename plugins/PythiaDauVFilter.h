@@ -15,7 +15,7 @@
 //
 // Original Author:  Daniele Pedrini
 //         Created:  Apr 29 2008
-// $Id: PythiaDauVFilter.h,v 1.1 2008/04/29 14:42:28 pedrini Exp $
+// $Id: PythiaDauVFilter.h,v 1.1 2010/03/09 12:45:07 ursl Exp $
 //
 //
 
@@ -33,9 +33,6 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
 
-using namespace edm;
-using namespace std;
-
 //
 // class decleration
 //
@@ -46,7 +43,7 @@ class PythiaDauVFilter : public edm::EDFilter {
       ~PythiaDauVFilter();
 
 
-      virtual bool filter(Event&, const EventSetup&);
+      virtual bool filter(edm::Event&, const edm::EventSetup&);
    private:
       // ----------memeber function----------------------
 

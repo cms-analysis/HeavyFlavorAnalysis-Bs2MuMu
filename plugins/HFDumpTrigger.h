@@ -1,3 +1,6 @@
+#ifndef GUARD_HFDUMPTRIGGER_H
+#define GUARD_HFDUMPTRIGGER_H
+
 // system include files
 #include <memory>
 
@@ -38,3 +41,4 @@ class HFDumpTrigger : public edm::EDAnalyzer {
   edm::InputTag fHLTResultsLabel;
 };
 
+#endif

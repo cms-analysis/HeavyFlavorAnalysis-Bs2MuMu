@@ -2,6 +2,11 @@
 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFThreeParticleCombinatorics.hh"
 
+using std::cout;
+using std::endl;
+using std::vector;
+using std::pair;
+
 
 // ----------------------------------------------------------------------
 HFThreeParticleCombinatorics::HFThreeParticleCombinatorics(int verbose) {  

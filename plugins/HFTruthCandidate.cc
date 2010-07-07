@@ -21,6 +21,10 @@
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
 
+using reco::Track;
+using reco::Vertex;
+using reco::TrackBaseRef;
+
 // -- Yikes!
 extern TAna01Event *gHFEvent;
 extern TFile       *gHFFile;
