@@ -33,7 +33,7 @@ class kpReader : public massReader {
 		TVector3 *fPlabKpPtr;
 	
 	private:
-		map<int,int> decay_indices; // (genIx, ident_muons)
+		std::map<int,int> decay_indices; // (genIx, ident_muons)
 		unsigned long long total_counter;
 		unsigned long long reco_counter;
 		unsigned long long reco_single;

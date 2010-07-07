@@ -4,6 +4,9 @@
 #include "TRandom.h"
 #include <cmath>
 
+using std::cout;
+using std::endl;
+
 // ----------------------------------------------------------------------
 // Run with: ./runTreeReaders -c chains/bg-test -D root -C cuts/triggerValidation.default.cuts
 //           ./runTreeReaders -f test.root 

@@ -9,6 +9,8 @@
 
 #include "copyReader.hh"
 
+using std::cout;
+using std::endl;
 
 // ----------------------------------------------------------------------
 copyReader::copyReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName), copy_tree(NULL), fCopied(0) { 

@@ -16,7 +16,7 @@ class massReader : public treeReader01 {
 	protected:
 		// For subclasses
 		TTree *reduced_tree;
-		multiset<int> trueDecay;
+		std::multiset<int> trueDecay;
 		
 		virtual int loadCandidateVariables(TAnaCand *pCand);
 		
@@ -25,7 +25,7 @@ class massReader : public treeReader01 {
 		virtual int countMuons(TAnaCand *cand); // count the number of identified muons
 
 		// creates the decay of the TGenCand
-		void buildDecay(TGenCand *gen, multiset<int> *particles);
+		void buildDecay(TGenCand *gen, std::multiset<int> *particles);
 	
 	protected:
 		const char *fTreeName;

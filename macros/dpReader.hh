@@ -3,8 +3,6 @@
 
 #include "treeReader01.hh"
 
-using namespace std;
-
 class dpReader : public treeReader01 {
 	
 public:

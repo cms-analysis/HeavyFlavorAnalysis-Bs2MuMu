@@ -4,6 +4,10 @@
 #include "TRandom.h"
 #include <cmath>
 
+using std::cout;
+using std::endl;
+using std::vector;
+
 // ----------------------------------------------------------------------
 // Run with: ./runTreeReaders -c chains/bg-test -D root -C cuts/muCharmReader.default.cuts
 //           ./runTreeReaders -f test.root 

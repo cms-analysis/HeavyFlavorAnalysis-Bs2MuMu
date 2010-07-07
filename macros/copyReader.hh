@@ -12,8 +12,6 @@
 
 #include "treeReader01.hh"
 
-using namespace std;
-
 class copyReader : public treeReader01 {
   
 public:
@@ -28,7 +26,7 @@ public:
 private:
   TTree *copy_tree;
   TAna01Event *copy_evt;
-  vector<int> fTypeList; 
+  std::vector<int> fTypeList; 
 
   int fCopied; 
 

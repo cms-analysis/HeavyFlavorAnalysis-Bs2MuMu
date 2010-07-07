@@ -3,6 +3,9 @@
 #include <set>
 #include <stack>
 
+using std::cout;
+using std::endl;
+
 static void dumpTabs(unsigned nbr)
 {
 	for (unsigned j = 0; j < nbr; j++) cout << '\t';
@@ -24,7 +27,7 @@ dumpReader::dumpReader(TChain *tree, TString evtClassName) : treeReader01(tree, 
 
 dumpReader::~dumpReader()
 {
-	map<int,int>::const_iterator it;
+        std::map<int,int>::const_iterator it;
 	cout << "=====================" << endl;
 	cout << "dumpReader destructor" << endl;
 	
@@ -48,9 +51,9 @@ void dumpReader::eventProcessing()
 	unsigned j,k,nc;
 	TGenCand *pGen;
 	unsigned nbrTrack,nbrMuons;
-	multiset<int> particles;
-	set<int> recoverableGens;
-	set<int>::iterator it;
+	std::multiset<int> particles;
+	std::set<int> recoverableGens;
+	std::set<int>::iterator it;
 	TAnaCand *pCand;
 	static unsigned evt_counter = 0;
 	bool muCut = true;
@@ -104,9 +107,9 @@ void dumpReader::eventProcessing()
 	// remove all the candidates from the muon pt cut (< 1.0 GeV => out)
 	if (muCut) {
 		
-		set<int> muonOut;
-		set<int> tracks;
-		set<int>::const_iterator trackIt;
+	        std::set<int> muonOut;
+		std::set<int> tracks;
+		std::set<int>::const_iterator trackIt;
 		TAnaTrack *pTrack;
 		
 		for (it = recoverableGens.begin(); it != recoverableGens.end(); ++it) {
@@ -130,9 +133,9 @@ void dumpReader::eventProcessing()
 	// remove all the candidates from the pion pt cut (< 0.4 GeV => out)
 	if (piCut) {
 		
-		set<int> pionOut;
-		set<int> tracks;
-		set<int>::const_iterator trackIt;
+		std::set<int> pionOut;
+		std::set<int> tracks;
+		std::set<int>::const_iterator trackIt;
 		TAnaTrack *pTrack;
 	
 		for (it = recoverableGens.begin(); it != recoverableGens.end(); ++it) {
@@ -219,7 +222,7 @@ void dumpReader::dumpCandidate(TAnaCand *pCand, unsigned indent)
 	cout << '}' << endl;
 } // dumpCandidate()
 
-int dumpReader::checkReconstruction(int genIx, multiset<int> *particles, unsigned *nbrMuons)
+int dumpReader::checkReconstruction(int genIx, std::multiset<int> *particles, unsigned *nbrMuons)
 {
 	TAnaTrack *pTrack;
 	TGenCand *pGen;
@@ -255,8 +258,8 @@ int dumpReader::checkReconstruction(int genIx, multiset<int> *particles, unsigne
 
 void dumpReader::dumpGenerator(TGenCand *pGen)
 {
-	set<int> trackIndices;
-	set<int>::const_iterator it;
+        std::set<int> trackIndices;
+	std::set<int>::const_iterator it;
 	
 	// get all the track indices...
 	buildTracks(pGen->fNumber,&trackIndices);
@@ -269,7 +272,7 @@ void dumpReader::dumpGenerator(TGenCand *pGen)
 	
 } // dumpGenerator()
 
-void dumpReader::buildTracks(int genIx, set<int> *trackIndices, int ID)
+void dumpReader::buildTracks(int genIx, std::set<int> *trackIndices, int ID)
 {
 	TGenCand *pGen = fpEvt->getGenCand(genIx);
 	TAnaTrack *pTrack;
@@ -291,7 +294,7 @@ void dumpReader::buildTracks(int genIx, set<int> *trackIndices, int ID)
 
 void dumpReader::dumpUnrecovered(TGenCand *pGen)
 {
-	stack<int> indices;
+        std::stack<int> indices;
 	int j,ix,nc;
 	TAnaTrack *pTrack;
 	

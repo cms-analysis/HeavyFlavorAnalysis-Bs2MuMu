@@ -47,7 +47,7 @@ class ksReader : public massReader {
 		int getGenIndex(TAnaCand *pCand, int candID);
 	
 	private:
-		set<int> decay_indices;
+		std::set<int> decay_indices;
 		unsigned long long total_counter;
 		unsigned long long reco_counter;
 };

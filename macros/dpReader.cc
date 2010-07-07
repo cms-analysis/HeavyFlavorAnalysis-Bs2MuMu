@@ -10,6 +10,10 @@
 #define MB_0 5.27953
 #define PI 3.141592654
 
+using std::cout;
+using std::endl;
+using std::vector;
+
 // test a <= x < b
 static inline int in_interval(int x, int a, int b)
 {
