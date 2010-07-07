@@ -17,6 +17,8 @@
 #include "bmmReader.hh"
 #include "dpReader.hh"
 #include "d0Reader.hh"
+#include "lambdaReader.hh"
+#include "massReader.hh"
 #include "kpReader.hh"
 #include "phiReader.hh"
 #include "ksReader.hh"
@@ -170,6 +172,7 @@ int main(int argc, char *argv[]) {
   else if (readerName == "dumpReader") a = new dumpReader(chain,TString(evtClassName));
   else if (readerName == "dpReader") a = new dpReader(chain,TString(evtClassName));
   else if (readerName == "d0Reader") a = new d0Reader(chain,TString(evtClassName));
+  else if (readerName == "lambdaReader") a = new lambdaReader(chain,TString(evtClassName));
   else if (readerName == "copyReader") a = new copyReader(chain,TString(evtClassName));
   else if (readerName == "muCharmReader") a = new muCharmReader(chain,TString(evtClassName));
   else if (readerName == "triggerValidation") a = new triggerValidation(chain,TString(evtClassName));
