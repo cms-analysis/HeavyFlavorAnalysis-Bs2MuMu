@@ -23,6 +23,7 @@ class massReader : public treeReader01 {
 		// loading variables
 		virtual int checkTruth(TAnaCand *cand); // check if all are originating from the same particle
 		virtual int countMuons(TAnaCand *cand); // count the number of identified muons
+		float calculateIsolation(TAnaCand *pCand, double openingAngle); // calculate the isolation of the candidate
 
 		// creates the decay of the TGenCand
 		void buildDecay(TGenCand *gen, std::multiset<int> *particles);
@@ -36,7 +37,7 @@ class massReader : public treeReader01 {
 		TVector3 *fMomentumPtr;
 		float fMass;
 		int fTruth;		// is this background or a true candidate?
-                float fPt; // pt of the top particle
+		float fPt; // pt of the top particle
 		float fNbrMuons;  // number of muons in the muon list.
 		float fD3;
 		float fD3E;
@@ -47,6 +48,7 @@ class massReader : public treeReader01 {
 		float fChi2; // chi2 of the vertex
 		float fNdof; // number of degrees of freedom of vertex
 		float fMaxDoca; // max doca
+		float fIso; // isolation
 };
 
 #endif

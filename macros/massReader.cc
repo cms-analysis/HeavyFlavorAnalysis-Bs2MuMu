@@ -44,6 +44,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fChi2 = pCand->fVtx.fChi2;
 	fNdof = pCand->fVtx.fNdof;
 	fMaxDoca = pCand->fMaxDoca;
+	fIso = calculateIsolation(pCand,1.0);
 	
 	if (pCand->fMom >= 0) {
 		momCand = fpEvt->getCand(pCand->fMom);
@@ -88,6 +89,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("chi2",&fChi2,"chi2/F");
 	reduced_tree->Branch("Ndof",&fNdof,"Ndof/F");
 	reduced_tree->Branch("max_doca",&fMaxDoca,"max_doca/F");
+	reduced_tree->Branch("iso",&fIso,"iso/F");
 } // massReader::bookHist()
 
 int massReader::checkTruth(TAnaCand *cand)
@@ -162,3 +164,28 @@ void massReader::buildDecay(TGenCand *gen, multiset<int> *particles)
 	for (int j = gen->fDau1; j <= gen->fDau2 && j>= 0; j++)
 		buildDecay(fpEvt->getGenCand(j),particles);
 } // buildDecay()
+
+float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle)
+{
+	double iso; // calculate in double precision and return single
+	TVector3 plabB;
+	unsigned j,ntracks;
+	TAnaTrack *pTrack;
+	double r;
+	
+	plabB = pCand->fPlab;
+	
+	iso = 0.0;
+	ntracks = fpEvt->nRecTracks();
+	for (j = 0; j < ntracks; j++) {
+		
+		pTrack = fpEvt->getRecTrack(j);
+		r = plabB.DeltaR(pTrack->fPlab);
+		if (r < openingAngle)
+			iso += pTrack->fPlab.Perp();
+	}
+	
+	iso = plabB.Perp() / (plabB.Perp() + iso);
+	
+	return (float)iso;
+} // calculateIsolation()
