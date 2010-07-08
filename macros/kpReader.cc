@@ -4,7 +4,7 @@
 
 using namespace std;
 
-kpReader::kpReader(TChain *tree, TString evtClassName) : massReader(tree,evtClassName),total_counter(0),reco_counter(0)
+kpReader::kpReader(TChain *tree, TString evtClassName) : massReader(tree,evtClassName),total_counter(0),reco_counter(0),reco_single(0),reco_double(0)
 {
 	// set the pointers to save in the tree
 	fPlabMu1Ptr = &fPlabMu1;
