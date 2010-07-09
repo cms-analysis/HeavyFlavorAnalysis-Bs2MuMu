@@ -34,7 +34,11 @@ class massReader : public treeReader01 {
 	protected:
 		int fCandidate;
 		TVector3 fMomentum;
+		TVector3 fPVPosition;
+		TVector3 fCandVertex;
 		TVector3 *fMomentumPtr;
+		TVector3 *fPVPositionPtr;
+		TVector3 *fCandVertexPtr;
 		float fMass;
 		int fTruth;		// is this background or a true candidate?
 		float fPt; // pt of the top particle

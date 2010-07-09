@@ -6,6 +6,9 @@ using namespace std;
 massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName),reduced_tree(NULL)
 {
 	fMomentumPtr = &fMomentum;
+	fPVPositionPtr = &fPVPosition;
+	fCandVertexPtr = &fCandVertex;
+	
 	fTreeName = "massReader reduced tree";
 } // massReader()
 
@@ -33,7 +36,8 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	// Save in the tree
 	fCandidate = pCand->fType;
 	fMomentum = pCand->fPlab;
-
+	fPVPosition = fpEvt->bestPV()->fPoint;
+	fCandVertex = pCand->fVtx.fPoint;
 	fPt = pCand->fPlab.Perp();
 	fMass = pCand->fMass;
 	fNbrMuons = countMuons(pCand);
@@ -169,15 +173,24 @@ float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle)
 {
 	double iso; // calculate in double precision and return single
 	TVector3 plabB;
-	unsigned j,ntracks;
+	int j,ntracks;
 	TAnaTrack *pTrack;
 	double r;
+	set<int> usedTracks;
 	
 	plabB = pCand->fPlab;
+	
+	// build list of tracks in the plabB
+	for (j = pCand->fSig1; j <= pCand->fSig2; j++) {
+		pTrack = fpEvt->getSigTrack(j);
+		usedTracks.insert(pTrack->fIndex);
+	}
 	
 	iso = 0.0;
 	ntracks = fpEvt->nRecTracks();
 	for (j = 0; j < ntracks; j++) {
+		
+		if (usedTracks.find(j) != usedTracks.end()) continue; // this tracks belongs to the candidate
 		
 		pTrack = fpEvt->getRecTrack(j);
 		r = plabB.DeltaR(pTrack->fPlab);
