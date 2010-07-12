@@ -80,6 +80,8 @@ void massReader::bookHist()
 	// and add the branches
 	reduced_tree->Branch("candidate",&fCandidate,"candidate/I");
 	reduced_tree->Branch("p","TVector3",&fMomentumPtr);
+	reduced_tree->Branch("pv_position","TVector3",&fPVPositionPtr);
+	reduced_tree->Branch("vertex_position","TVector3",&fCandVertexPtr);
 	reduced_tree->Branch("pt",&fPt,"pt/F");
 	reduced_tree->Branch("mass",&fMass,"mass/F");
 	reduced_tree->Branch("truth",&fTruth,"truth/I");
