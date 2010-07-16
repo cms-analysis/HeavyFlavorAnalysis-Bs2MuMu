@@ -61,6 +61,19 @@ int main(int argc, char *argv[]) {
 
   // -- command line arguments
   for (int i = 0; i < argc; i++){
+    if (!strcmp(argv[i],"-h")) {
+	std::cout << "List of arguments:" << std::endl;
+	std::cout << "-c filename   chain definition file" << std::endl;
+	std::cout << "-C filename   file with cuts" << std::endl;
+	std::cout << "-D path       where to put the output" << std::endl;
+	std::cout << "-f filename   single file instead of chain" << std::endl;
+	std::cout << "-n integer    number of events to run on" << std::endl;
+	std::cout << "-r class name which tree reader class to run" << std::endl;
+	std::cout << "-s number     seed for random number generator" << std::endl;
+	std::cout << "-o filename   set output file" << std::endl;
+	std::cout << "-h            prints this message and exits" << std::endl;
+	return 0;
+    }
     if (!strcmp(argv[i],"-c"))  {fileName   = string(argv[++i]); file = 0; }     // file with chain definition
     if (!strcmp(argv[i],"-C"))  {cutFile    = string(argv[++i]);           }     // file with cuts
     if (!strcmp(argv[i],"-D"))  {dirName    = string(argv[++i]);  dirspec = 1; } // where to put the output
