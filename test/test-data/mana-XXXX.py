@@ -24,14 +24,7 @@ process.GlobalTag.globaltag = "GR10_P_V4::All"
 
 
 # ----------------------------------------------------------------------
-process.source = cms.Source(
-    "PoolSource", 
-    fileNames = cms.untracked.vstring(
-    REPLACEFILES
-    )
-    )
-
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+# POOLSOURCE
 
 
 # ----------------------------------------------------------------------
