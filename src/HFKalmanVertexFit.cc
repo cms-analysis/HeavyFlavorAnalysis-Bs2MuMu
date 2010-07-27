@@ -179,6 +179,20 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
   anaVtx.fD3dE    = a3d.distance(fPV, TransSecVtx).error();
 
 
+  // -- Get covariance matrix
+  
+  double cov[9];
+  cov[0] = TransSecVtx.positionError().cxx();
+  cov[1] = TransSecVtx.positionError().cyx();
+  cov[2] = TransSecVtx.positionError().czx();
+  cov[3] = TransSecVtx.positionError().cyx();
+  cov[4] = TransSecVtx.positionError().cyy();
+  cov[5] = TransSecVtx.positionError().czy();
+  cov[6] = TransSecVtx.positionError().czx();
+  cov[7] = TransSecVtx.positionError().czy();
+  cov[8] = TransSecVtx.positionError().czz();
+  anaVtx.setCovXX(cov);
+
   // -- Apply cuts
   if (comp.Vect().Perp() < fPtCand) {
     if (fVerbose > 1) cout << "pT(Cand) = " << comp.Vect().Perp() << " < " << fPtCand << ", not filling, return ..." << endl;

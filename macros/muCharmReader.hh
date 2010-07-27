@@ -54,6 +54,7 @@ public:
   virtual void doBplus(TAnaCand *pCand);
   virtual void doDzero(TAnaCand *pCand);
   virtual void doJpsi(TAnaCand *pCand);
+  virtual void doUpsilon(TAnaCand *pCand);
 
 
   // -- Cut values

@@ -64,6 +64,7 @@ void muCharmReader::eventProcessing() {
     if (1313 == pCand->fType) {
       ++n1313;
       doJpsi(pCand); 
+      doUpsilon(pCand); 
     }
   }
   
@@ -169,6 +170,39 @@ void muCharmReader::doJpsi(TAnaCand *pCand ) {
   if ((pt2->fMuID & 4) == 0) return;
   ((TH1D*)fpHistFile->Get("m1300h2"))->Fill(pCand->fMass);
   
+
+}
+
+
+// ----------------------------------------------------------------------
+void muCharmReader::doUpsilon(TAnaCand *pCand ) {
+
+  TAnaTrack *pt1, *pt2; 
+  //  cout << pCand->fSig1 << " .. " << pCand->fSig2 << endl;
+  pt1 = fpEvt->getSigTrack(pCand->fSig1); 
+  pt2 = fpEvt->getSigTrack(pCand->fSig2); 
+
+  fMass    = pCand->fMass;
+  fDocaMax = pCand->fMaxDoca;
+  fPt      = pCand->fPlab.Perp();
+  fChi2    = pCand->fVtx.fChi2;
+  
+  fm1pt    = pt1->fPlab.Perp(); 
+  fm2pt    = pt2->fPlab.Perp(); 
+
+  if (pt1->fMuID == -1) fm1m = 0; else  fm1m     = pt1->fMuID;
+  if (pt2->fMuID == -1) fm2m = 0; else  fm2m     = pt2->fMuID;
+
+  fTree->Fill();
+  
+  ((TH1D*)fpHistFile->Get("ups1313h0"))->Fill(pCand->fMass);
+
+  if (fm1m & 6 == 6) {
+    ((TH1D*)fpHistFile->Get("ups1313h1"))->Fill(pCand->fMass);
+    if (fm2m & 6 == 6) {
+      ((TH1D*)fpHistFile->Get("ups1313h2"))->Fill(pCand->fMass);
+    }
+  }; 
 
 }
 
@@ -379,6 +413,11 @@ void muCharmReader::bookHist() {
   h = new TH1D("m20040", "mass 20040", 70, 1.7, 2.4);
   h = new TH1D("m20050", "mass 20050", 70, 1.7, 2.4);
   h = new TH1D("m20060", "mass 20060", 70, 1.7, 2.4);
+
+  h = new TH1D("ups1313h0", "mass 1313", 40, 9.0, 11.0);
+  h = new TH1D("ups1313h1", "mass 1313", 40, 9.0, 11.0);
+  h = new TH1D("ups1313h2", "mass 1313", 40, 9.0, 11.0);
+
 
   h = new TH1D("m443", "mass 443", 40, 2.7, 3.5);
 
