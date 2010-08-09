@@ -1,4 +1,4 @@
-#include <set>
+#include <algorithm>
 
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "HFTruthCandidate.h"
@@ -35,6 +35,7 @@ using namespace std;
 // ----------------------------------------------------------------------
 HFTruthCandidate::HFTruthCandidate(const edm::ParameterSet& iConfig):
   fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", string("goodTracks"))), 
+  fPartialDecayMatching(iConfig.getUntrackedParameter<bool>("partialDecayMatching", true)), 
   fMotherID(iConfig.getUntrackedParameter("motherID", 0)), 
   fType(iConfig.getUntrackedParameter("type", 67)),
   fGenType(iConfig.getUntrackedParameter("GenType", -67)),
@@ -95,6 +96,10 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
   TGenCand *pGen, *pDau, *pTmp;
   int matchedDecay(0);
   int iMom(-1); 
+
+  vector<int> bla(100); 
+  vector<int>::iterator blaIt; 
+  
   //   cout << "----------------------------------------------------------------------" << endl;
   for (int ig = 0; ig < gHFEvent->nGenCands(); ++ig) {
     pGen = gHFEvent->getGenCand(ig);
@@ -132,6 +137,17 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	  genDaughters.insert(TMath::Abs(pDau->fID)); 
 	  genIndices.insert(id); 
 	  genMap.insert(make_pair(id, TMath::Abs(pDau->fID))); 
+	}
+      }
+
+      // -- now check whether this is PARTIALLY the decay channel in question
+      if (fPartialDecayMatching) {
+	blaIt = set_intersection(genDaughters.begin(), genDaughters.end(), fDaughtersSet.begin(), fDaughtersSet.end(), bla.begin()); 
+	if (static_cast<unsigned int>(blaIt - bla.begin()) == genDaughters.size()) {
+	  matchedDecay = 1; 
+	  if (fVerbose > 0) cout << "matched partial decay: " << endl;
+	  
+	  break;
 	}
       }
 

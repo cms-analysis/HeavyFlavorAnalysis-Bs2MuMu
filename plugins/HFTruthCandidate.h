@@ -27,6 +27,7 @@ public:
 private:
   
   edm::InputTag      fTracksLabel;
+  bool               fPartialDecayMatching;
   int                fMotherID, fType, fGenType;
   std::vector<int>   fDaughtersID;
 
@@ -34,6 +35,7 @@ private:
   std::multiset<int> fDaughtersSet;
   std::multiset<int> fDaughtersGammaSet;
   std::multiset<int> fDaughtersGamma2Set;
+
 
   int                fVerbose; 
 
