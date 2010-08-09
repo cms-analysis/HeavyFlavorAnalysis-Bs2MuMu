@@ -104,7 +104,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
   for (int ig = 0; ig < gHFEvent->nGenCands(); ++ig) {
     pGen = gHFEvent->getGenCand(ig);
     if (TMath::Abs(pGen->fID) == fMotherID) {
-      if (fVerbose > 0) {
+      if (fVerbose > 1) {
 	cout << "mother ";
 	pGen->dump(); 
       }
@@ -130,7 +130,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	  iMom = pTmp->fMom1;
 	}
 	if (iMom == ig) {
-	  if (fVerbose > 0) {
+	  if (fVerbose > 1) {
 	    cout << "  daug: ";
 	    pDau->dump(); 
 	  }
@@ -143,10 +143,13 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
       // -- now check whether this is PARTIALLY the decay channel in question
       if (fPartialDecayMatching) {
 	blaIt = set_intersection(genDaughters.begin(), genDaughters.end(), fDaughtersSet.begin(), fDaughtersSet.end(), bla.begin()); 
-	if (static_cast<unsigned int>(blaIt - bla.begin()) == genDaughters.size()) {
+	if (static_cast<unsigned int>(blaIt - bla.begin()) == fDaughtersSet.size()) {
 	  matchedDecay = 1; 
-	  if (fVerbose > 0) cout << "matched partial decay: " << endl;
-	  
+	  if (fVerbose > 0) {
+	    cout << "matched partial decay: ";
+	    for (vector<int>::iterator it = bla.begin(); it != blaIt; ++it) cout << *it << " "; 
+	    cout << endl;
+	  }
 	  break;
 	}
       }
