@@ -62,7 +62,7 @@ process.truthBuDump = cms.EDAnalyzer(
     "HFTruthCandidate",
     tracksLabel          = cms.untracked.InputTag(trackList),
     verbose              = cms.untracked.int32(3),
-    partialDecayMatching = cms.untracked.bool(False),
+    partialDecayMatching = cms.untracked.bool(True),
     motherID             = cms.untracked.int32(521),
     type                 = cms.untracked.int32(68),
     GenType              = cms.untracked.int32(-68),

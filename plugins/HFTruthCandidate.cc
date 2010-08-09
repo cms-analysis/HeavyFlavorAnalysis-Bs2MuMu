@@ -35,7 +35,7 @@ using namespace std;
 // ----------------------------------------------------------------------
 HFTruthCandidate::HFTruthCandidate(const edm::ParameterSet& iConfig):
   fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", string("goodTracks"))), 
-  fPartialDecayMatching(iConfig.getUntrackedParameter<bool>("partialDecayMatching", true)), 
+  fPartialDecayMatching(iConfig.getUntrackedParameter<bool>("partialDecayMatching", false)), 
   fMotherID(iConfig.getUntrackedParameter("motherID", 0)), 
   fType(iConfig.getUntrackedParameter("type", 67)),
   fGenType(iConfig.getUntrackedParameter("GenType", -67)),
@@ -190,6 +190,15 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
     pCand->fPlab = comp.Vect();
     pCand->fMass = comp.M();
     pCand->fType = fGenType;
+    if (fVerbose > 1) {
+      char line[200];
+      sprintf(line, "p=%8.3f(%+9.3f,%+9.3f,%+9.3f), mass = %f", 
+	      pCand->fPlab.Mag(), 
+	      pCand->fPlab.X(), pCand->fPlab.Y(), pCand->fPlab.Z(), 
+	      pCand->fMass);
+      cout << line << endl;
+    }
+
   }
 
 
