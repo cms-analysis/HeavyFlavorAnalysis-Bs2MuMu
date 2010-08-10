@@ -30,7 +30,8 @@ void HFNodeCut::setFields(double maxDoca, double vtxChi2, TVector3 vtxPos, TVect
 
 bool HFNodeCut::operator()() {return true;}
 
-HFDecayTree::HFDecayTree(int pID, double constraint, double constraintSigma) : particleID(pID), massConstraint(constraint), massConstraintSigma(constraintSigma), kinTree(0)
+HFDecayTree::HFDecayTree(int pID, int doVertexing, double constraint, double constraintSigma) :
+  vertexing(doVertexing),particleID(pID),massConstraint(constraint),massConstraintSigma(constraintSigma),kinTree(0)
 {
   if(massConstraintSigma <= 0.0 && massConstraint > 0.0)
     massConstraintSigma = 0.0001 * massConstraint;
@@ -63,13 +64,14 @@ void HFDecayTree::appendDecayTree(HFDecayTree subTree)
   subVertices.push_back(subTree);
 } // appendDecayTree()
 
-HFDecayTreeIterator HFDecayTree::addDecayTree(int pID, double mass, double mass_sigma)
+HFDecayTreeIterator HFDecayTree::addDecayTree(int pID, int doVertexing, double mass, double mass_sigma)
 {
-  return subVertices.insert(subVertices.end(),HFDecayTree(pID,mass,mass_sigma));
+  return subVertices.insert(subVertices.end(),HFDecayTree(pID,doVertexing,mass,mass_sigma));
 } // addDecayTree()
 
 void HFDecayTree::clear()
 {
+  vertexing = 1;
   particleID = -1.0;
   massConstraint = -1.0;
   massConstraintSigma = -1.0;
@@ -107,7 +109,7 @@ HFDecayTreeIterator HFDecayTree::getVerticesEndIterator()
 	return subVertices.end();
 } // getVerticesEndIterator()
 
-void HFDecayTree::getAllTracks(vector<pair<int,int> > *out_vector)
+void HFDecayTree::getAllTracks(vector<pair<int,int> > *out_vector, int onlyThisVertex)
 {
 	HFDecayTreeTrackIterator trackIt;
 	HFDecayTreeIterator treeIt;
@@ -115,14 +117,16 @@ void HFDecayTree::getAllTracks(vector<pair<int,int> > *out_vector)
 	for (trackIt = trackIndices.begin(); trackIt!=trackIndices.end(); ++trackIt)
 		out_vector->push_back(*trackIt);
 	
-	for (treeIt = subVertices.begin(); treeIt!=subVertices.end(); ++treeIt)
-		treeIt->getAllTracks(out_vector);
+	for (treeIt = subVertices.begin(); treeIt!=subVertices.end(); ++treeIt) {
+		if (!treeIt->vertexing || !onlyThisVertex)
+			treeIt->getAllTracks(out_vector,onlyThisVertex);
+	}
 } // getAllTracks()
 
-vector<pair<int,int> > HFDecayTree::getAllTracks()
+vector<pair<int,int> > HFDecayTree::getAllTracks(int onlyThisVertex)
 {
   vector<pair<int,int> > tracks;
-  getAllTracks(&tracks);
+  getAllTracks(&tracks,onlyThisVertex);
   return tracks;
 } // getAllTracks()
 
@@ -146,7 +150,7 @@ void HFDecayTree::resetKinematicTree(int recursive)
     for(treeIt = getVerticesBeginIterator(); treeIt!=getVerticesEndIterator(); ++treeIt)
       treeIt->resetKinematicTree(recursive);
   }
-
+  
   delete kinTree;
   kinTree = NULL;
   anaCand = NULL;
@@ -174,8 +178,8 @@ void HFDecayTree::dump(unsigned indent)
 	HFDecayTreeTrackIterator trackIt;
 	
 	dumpTabs(indent);
-	cout << "HFDecayTree (particleID = " << particleID << ", mass = "
-		<< massConstraint << ", massSigma = " << massConstraintSigma << ") {" << endl;
+	cout << "HFDecayTree (particleID = " << particleID << ", vertexing = " << vertexing
+		<< ", mass = " << massConstraint << ", massSigma = " << massConstraintSigma << ") {" << endl;
 	
 	dumpTabs(indent+1);
 	for (trackIt = trackIndices.begin(); trackIt!=trackIndices.end(); ++trackIt)
