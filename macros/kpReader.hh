@@ -31,7 +31,18 @@ class kpReader : public massReader {
 		TVector3 *fPlabMu1Ptr;
 		TVector3 *fPlabMu2Ptr;
 		TVector3 *fPlabKpPtr;
-	
+		
+		int fTrackQual_mu1;
+		int fTrackQual_mu2;
+		int fTrackQual_kp;
+		
+		int fQ_mu1;
+		int fQ_mu2;
+		int fQ_kp;
+		
+		float fD3_BpJpsi;
+		float fD3e_BpJpsi;
+		
 	private:
 		std::map<int,int> decay_indices; // (genIx, ident_muons)
 		unsigned long long total_counter;

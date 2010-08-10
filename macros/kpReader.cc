@@ -96,11 +96,21 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 		track = fpEvt->getRecTrack(track->fIndex);
 		if (type == 13) {
 			// muon
-			if (first_mu)	fPlabMu1 = track->fPlab;
-			else			fPlabMu2 = track->fPlab;
+			if (first_mu) {
+				fPlabMu1 = track->fPlab;
+				fTrackQual_mu1 = track->fTrackQuality;
+				fQ_mu1 = track->fQ;
+			} else {
+				fPlabMu2 = track->fPlab;
+				fTrackQual_mu2 = track->fTrackQuality;
+				fQ_mu2 = track->fQ;
+			}
 			first_mu = 0;
-		} else if (type == 321)
+		} else if (type == 321) {
 			fPlabKp = track->fPlab;
+			fQ_kp = track->fQ;
+			fTrackQual_kp = track->fTrackQuality;
+		}
 	}
 	
 	// muon1 ist usually that one with the bigger pt
@@ -113,6 +123,8 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 		jpsiCand = fpEvt->getCand(j);
 		if (jpsiCand->fType % 1000 == 443) {
 			fMassJPsi = jpsiCand->fMass;
+			fD3_BpJpsi = jpsiCand->fVtx.fD3d;
+			fD3e_BpJpsi = jpsiCand->fVtx.fD3dE;
 			break;
 		}
 	}
@@ -139,6 +151,14 @@ void kpReader::bookHist()
 	reduced_tree->Branch("pt_mu1",&fPtMu1,"pt_mu1/F");
 	reduced_tree->Branch("pt_mu2",&fPtMu2,"pt_mu2/F");
 	reduced_tree->Branch("pt_kp",&fPtKp,"pt_kp/F");
+	reduced_tree->Branch("track_qual_mu1",&fTrackQual_mu1,"track_qual_mu1/I");
+	reduced_tree->Branch("track_qual_mu2",&fTrackQual_mu2,"track_qual_mu2/I");
+	reduced_tree->Branch("track_qual_kp",&fTrackQual_kp,"track_qual_kp/I");
+	reduced_tree->Branch("q_mu1",&fQ_mu1,"q_mu1/I");
+	reduced_tree->Branch("q_mu2",&fQ_mu2,"q_mu2/I");
+	reduced_tree->Branch("q_kp",&fQ_kp,"q_kp/I");
+	reduced_tree->Branch("d3_bp_to_jpsi",&fD3_BpJpsi,"d3_bp_to_jpsi/F");
+	reduced_tree->Branch("d3_bp_to_jpsi_e",&fD3e_BpJpsi,"d3_bp_to_jpsi_e/F");
 } // bookHist()
 
 int kpReader::checkTruth(TAnaCand *pCand)
