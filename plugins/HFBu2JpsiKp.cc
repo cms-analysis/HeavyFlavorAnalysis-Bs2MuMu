@@ -187,7 +187,6 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
   if (fVerbose > 0) cout << "==>HFBu2JpsiKp> J/psi list size: " << psiList.size() << endl;
   
   HFKalmanVertexFit     aKal(fTTB.product(), fPV, 100521, fVerbose);  aKal.fMaxDoca     = fMaxDoca; 
-  HFKinematicVertexFit  aKin(fTTB.product(), fPV, 300521, fVerbose);  
   HFSequentialVertexFit aSeq(hTracks, fTTB.product(), fPV, 0 /*fVerbose*/);
   vector<Track> trackList; 
   vector<int> trackIndices;
@@ -248,50 +247,38 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup) {
       }
 
       if (fVerbose > 1) {
-	cout << "psiList/track: " << i << "/" << iTrack << endl;
+    	cout << "psiList/track: " << i << "/" << iTrack << endl;
       }
       aKal.doFit(trackList, trackIndices, trackMasses, 100521); 	
-      aKal.doFit(trackList, trackIndices, trackMasses, 200521, 2); 	
-
-      // -- kinematic fit: J/psi kaon
-      trackList.clear();
-      trackIndices.clear(); 
-      trackMasses.clear(); 
-      
-      trackList.push_back(tMuon1); 
-      trackIndices.push_back(iMuon1); 
-      trackMasses.push_back(MMUON);
-      
-      trackList.push_back(tMuon2); 
-      trackIndices.push_back(iMuon2); 
-      trackMasses.push_back(MMUON);
-      
-      trackList.push_back(tKaon); 
-      trackIndices.push_back(iTrack); 
-      trackMasses.push_back(MKAON);
-      
-      aKin.doJpsiFit(trackList, trackIndices, trackMasses, 300521); 	
-      
-      // Sequentialfit without mass constraint
+      aKal.doFit(trackList, trackIndices, trackMasses, 200521, 2);
+	  
+      // -- sequential fit: J/Psi kaon
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> going to sequential fit" << endl;
-      HFDecayTree theTree(500521);
-      theTree.addTrack(iTrack,321);
+      HFDecayTree theTree(300521);
     
-      HFDecayTreeIterator iterator = theTree.addDecayTree(500443);
+      HFDecayTreeIterator iterator = theTree.addDecayTree(300443,0);
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
+	  iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+	  
+	  theTree.addTrack(iTrack,321);
+	  theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit without mass constraint" << endl;
       aSeq.doFit(&theTree);
-
-      // Sequentialfit with mass constraint
+	  
+	  // -- sequential fit: J/Psi kaon
       theTree.clear();
-      theTree.particleID = 700521;
-      theTree.addTrack(iTrack,321);
-      iterator = theTree.addDecayTree(700443,MJPSI);
+      theTree.particleID = 400521;
+	  
+      iterator = theTree.addDecayTree(400443,1,MJPSI);
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
+	  iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit with mass constraint" << endl;
+
+	  theTree.addTrack(iTrack,321);
+	  theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 
       aSeq.doFit(&theTree);
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> done with fitting for track " << iTrack << endl;

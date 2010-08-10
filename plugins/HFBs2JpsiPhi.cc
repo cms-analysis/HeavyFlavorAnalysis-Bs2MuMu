@@ -9,9 +9,11 @@
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TGenCand.hh"
 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKalmanVertexFit.hh"
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKinematicVertexFit.hh"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFSequentialVertexFit.h"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTwoParticleCombinatorics.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFMasses.hh"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFDecayTree.h"
+
 
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/Wrapper.h"
@@ -192,7 +194,7 @@ void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup) {
   if (fVerbose > 0) cout << "==>HFBs2JpsiKp> phi list size: " << phiList.size() << endl;
   
   HFKalmanVertexFit    aKal(fTTB.product(), fPV, 100521, fVerbose);   aKal.fMaxDoca     = fMaxDoca; 
-  HFKinematicVertexFit aKin(fTTB.product(), fPV, 200521, fVerbose); 
+  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), fPV, fVerbose);
   vector<Track> trackList; 
   vector<int> trackIndices;
   vector<double> trackMasses;
@@ -262,40 +264,43 @@ void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup) {
       trackMasses.push_back(MKAON);
       
       if (0 == fVertexing) {
-	aKal.doNotFit(trackList, trackIndices, trackMasses, -100531); 	
-	continue; 
+		aKal.doNotFit(trackList, trackIndices, trackMasses, -100531); 	
+		continue; 
       }
 
       aKal.doFit(trackList, trackIndices, trackMasses, 100531); 	
       aKal.doFit(trackList, trackIndices, trackMasses, 200531, 2); 	
 
-      // -- kinematic fit: J/psi kaon
-      trackList.clear();
-      trackIndices.clear(); 
-      trackMasses.clear(); 
+      // -- sequential fit: J/Psi kaons
+      HFDecayTree theTree(300531);
       
-      trackList.push_back(tMuon1); 
-      trackIndices.push_back(iMuon1); 
-      trackMasses.push_back(MMUON);
+      HFDecayTreeIterator iterator = theTree.addDecayTree(300443,0); // Don't use kinematic particle for the J/Psi
+      iterator->addTrack(iMuon1,13);
+      iterator->addTrack(iMuon2,13);
+      iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
       
-      trackList.push_back(tMuon2); 
-      trackIndices.push_back(iMuon2); 
-      trackMasses.push_back(MMUON);
+      theTree.addTrack(iKaon1,321);
+      theTree.addTrack(iKaon2,321);
+      theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
       
-      trackList.push_back(tKaon1); 
-      trackIndices.push_back(iKaon1); 
-      trackMasses.push_back(MKAON);
-
-      trackList.push_back(tKaon2); 
-      trackIndices.push_back(iKaon2); 
-      trackMasses.push_back(MKAON);
+      aSeq.doFit(&theTree);
       
-      aKin.doJpsiFit(trackList, trackIndices, trackMasses, 300531); 	
+      // -- sequential fit: J/Psi (constraint) kaons
+      theTree.clear();
+      theTree.particleID = 400531;
       
+      iterator = theTree.addDecayTree(400443,1,MJPSI);
+      iterator->addTrack(iMuon1,13);
+      iterator->addTrack(iMuon2,13);
+      iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+      
+      theTree.addTrack(iKaon1,321);
+      theTree.addTrack(iKaon2,321);
+      theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+      
+      aSeq.doFit(&theTree);
     }
-    
   }
-  
 }
 
 
