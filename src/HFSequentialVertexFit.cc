@@ -61,7 +61,7 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 		kinTree = *(treeIt->getKinematicTree());
 		if (kinTree->isEmpty()) throw EmptyTreeError();
 		
-		if (tree->vertexing) {
+		if (treeIt->vertexing) {
 			kinTree->movePointerToTheTop();
 			kinParticles.push_back(kinTree->currentParticle());
 		}
