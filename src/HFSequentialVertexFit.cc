@@ -101,7 +101,6 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 		kinTree->movePointerToTheTop();
 		kinPart = kinTree->currentParticle();
 		kinVertex = kinTree->currentDecayVertex();
-		kinParticles = kinTree->daughterParticles();
 		
 		maxDoca = getMaxDoca(kinParticles);
 		vtxChi2 = kinPart->chiSquared();
