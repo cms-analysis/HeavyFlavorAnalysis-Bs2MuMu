@@ -222,7 +222,7 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     reco::TrackBase::TrackQuality trackQualityConfirmed     =  reco::TrackBase::qualityByName("confirmed");
     reco::TrackBase::TrackQuality trackQualityGoodIterative =  reco::TrackBase::qualityByName("goodIterative");
     
-    int trakQuality  = -1;
+    int trakQuality  = 0;
     if (trackView.quality(trackQualityUndef))          trakQuality |= 0x1<<5;
     if (trackView.quality(trackQualityLoose))          trakQuality |= 0x1<<0;
     if (trackView.quality(trackQualityTight))          trakQuality |= 0x1<<1;
