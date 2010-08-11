@@ -223,12 +223,12 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     reco::TrackBase::TrackQuality trackQualityGoodIterative =  reco::TrackBase::qualityByName("goodIterative");
     
     int trakQuality  = -1;
-    if (trackView.quality(trackQualityUndef))          trakQuality = 5;
-    if (trackView.quality(trackQualityLoose))          trakQuality = 0;
-    if (trackView.quality(trackQualityTight))          trakQuality = 1;
-    if (trackView.quality(trackQualityhighPur))        trakQuality = 2;
-    if (trackView.quality(trackQualityConfirmed))      trakQuality = 3;
-    if (trackView.quality(trackQualityGoodIterative))  trakQuality = 4;
+    if (trackView.quality(trackQualityUndef))          trakQuality |= 0x1<<5;
+    if (trackView.quality(trackQualityLoose))          trakQuality |= 0x1<<0;
+    if (trackView.quality(trackQualityTight))          trakQuality |= 0x1<<1;
+    if (trackView.quality(trackQualityhighPur))        trakQuality |= 0x1<<2;
+    if (trackView.quality(trackQualityConfirmed))      trakQuality |= 0x1<<3;
+    if (trackView.quality(trackQualityGoodIterative))  trakQuality |= 0x1<<4;
     pTrack->fTrackQuality = trakQuality; 
 
     // -- filling dE/dx information (from Loic)
