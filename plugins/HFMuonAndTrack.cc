@@ -54,7 +54,8 @@ HFMuonAndTrack::HFMuonAndTrack(const edm::ParameterSet& iConfig) :
   fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 3.0)), 
   fTrackPt(iConfig.getUntrackedParameter<double>("trackPt", 1.0)), 
   fMassLow(iConfig.getUntrackedParameter<double>("massLow", 8.7)), 
-  fMassHigh(iConfig.getUntrackedParameter<double>("massHigh", 10.2)), 
+  fMassHigh(iConfig.getUntrackedParameter<double>("massHigh", 11.2)),
+  fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.05)),
   fType(iConfig.getUntrackedParameter<int>("type", 1300)) {
 
   cout << "----------------------------------------------------------------------" << endl;
@@ -67,6 +68,7 @@ HFMuonAndTrack::HFMuonAndTrack(const edm::ParameterSet& iConfig) :
   cout << "---  massLow:                  " << fMassLow << endl;
   cout << "---  massHigh:                 " << fMassHigh << endl;
   cout << "---  type:                     " << fType << endl;
+  cout << "---  maxDoca                   " << fMaxDoca << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
 }
@@ -141,6 +143,8 @@ void HFMuonAndTrack::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 
   // -- set up vertex fitter 
   HFKalmanVertexFit a(fTTB.product(), fPV, 1300, 0); 
+  a.setNoCuts();
+  a.fMaxDoca = fMaxDoca;
   vector<Track> trackList; 
   vector<int> trackIndices;
   vector<double> trackMasses;

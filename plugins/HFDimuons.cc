@@ -54,9 +54,10 @@ HFDimuons::HFDimuons(const ParameterSet& iConfig) :
   fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexLabel", InputTag("offlinePrimaryVertices"))),
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
   fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 1.0)), 
-  fMassLow(iConfig.getUntrackedParameter<double>("massLow", 0.0)), 
-  fMassHigh(iConfig.getUntrackedParameter<double>("massHigh", 14000.)), 
+  fMassLow(iConfig.getUntrackedParameter<double>("massLow", 8.7)), 
+  fMassHigh(iConfig.getUntrackedParameter<double>("massHigh", 11.2)), 
   fVertexing(iConfig.getUntrackedParameter<int>("vertexing", 1)),
+  fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.05)),
   fType(iConfig.getUntrackedParameter<int>("type", 1313)) {
   using namespace std;
   cout << "----------------------------------------------------------------------" << endl;
@@ -68,6 +69,7 @@ HFDimuons::HFDimuons(const ParameterSet& iConfig) :
   cout << "---  massHigh:                 " << fMassHigh << endl;
   cout << "---  type:                     " << fType << endl;
   cout << "---  vertexing:                " << fVertexing << endl;
+  cout << "---  maxDoca                   " << fMaxDoca << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
 }
@@ -81,7 +83,7 @@ HFDimuons::~HFDimuons() {
 
 // ----------------------------------------------------------------------
 void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
-
+ 
   // -- get the primary vertex
   Handle<VertexCollection> recoPrimaryVertexCollection;
   iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
@@ -98,7 +100,7 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
   if (fVerbose > 0) {
     cout << "HFDimuons: Taking vertex " << gHFEvent->fBestPV << " with ntracks = " << fPV.tracksSize() << endl;
   }
-
+  
   // -- get the collection of muons
   Handle<MuonCollection> hMuons;
   iEvent.getByLabel(fMuonsLabel, hMuons);
@@ -114,6 +116,7 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
     cout << "==>HFDimuons> No valid TrackCollection with label "<<fTracksLabel <<" found, skipping" << endl;
     return;
   }
+
 
   // -- get the collection of muons and store their corresponding track indices
   vector<unsigned int> muonIndices;
@@ -136,6 +139,8 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
   // -- set up vertex fitter 
   HFKalmanVertexFit a(fTTB.product(), fPV, 1313, 0); 
+  a.setNoCuts();
+  a.fMaxDoca = fMaxDoca;
   vector<Track> trackList; 
   vector<int> trackIndices;
   vector<double> trackMasses;
@@ -148,7 +153,6 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
     iMuon1 = muonIndices[imuon1]; 
     m1.SetPtEtaPhiM(tMuon1.pt(), tMuon1.eta(), tMuon1.phi(), MMUON); 
     if (tMuon1.pt() < fMuonPt)  continue;
-
     for (unsigned int imuon2 = imuon1 + 1; imuon2 < muonIndices.size(); ++imuon2) {
       TrackBaseRef mu2TrackView(hTracks, muonIndices[imuon2]);
       Track tMuon2(*mu2TrackView);
@@ -164,7 +168,7 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	}
 	continue; 
       }
-
+      
       // -- Vertexing, new style
       trackList.clear();
       trackIndices.clear(); 
@@ -177,13 +181,11 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
       trackList.push_back(tMuon2); 
       trackIndices.push_back(iMuon2); 
       trackMasses.push_back(MMUON);
-      
       if (fVertexing > 0) {
-	a.doFit(trackList, trackIndices, trackMasses, fType); 	
+	a.doFit(trackList, trackIndices, trackMasses, fType); 
       } else {
 	a.doNotFit(trackList, trackIndices, trackMasses, fType); 	
       }
-      
     }
   }
 }
