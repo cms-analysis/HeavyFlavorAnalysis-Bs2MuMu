@@ -95,7 +95,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
   multiset<pair<int, int> > genMap; 
   TGenCand *pGen, *pDau, *pTmp;
   int matchedDecay(0);
-  int iMom(-1); 
+  int iMom(-1), motherIndex(-1); 
 
   vector<int> bla(100); 
   vector<int>::iterator blaIt; 
@@ -104,6 +104,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
   for (int ig = 0; ig < gHFEvent->nGenCands(); ++ig) {
     pGen = gHFEvent->getGenCand(ig);
     if (TMath::Abs(pGen->fID) == fMotherID) {
+      motherIndex = ig; 
       if (fVerbose > 1) {
 	cout << "mother ";
 	pGen->dump(); 
@@ -190,6 +191,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
     pCand->fPlab = comp.Vect();
     pCand->fMass = comp.M();
     pCand->fType = fGenType;
+    pCand->fIndex= motherIndex;
     if (fVerbose > 1) {
       char line[200];
       sprintf(line, "p=%8.3f(%+9.3f,%+9.3f,%+9.3f), mass = %f", 
