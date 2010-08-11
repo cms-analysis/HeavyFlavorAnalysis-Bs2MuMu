@@ -41,7 +41,7 @@ class HFMuonAndTrack : public edm::EDAnalyzer {
   edm::InputTag fTracksLabel, fPrimaryVertexLabel;
   edm::InputTag fMuonsLabel;
 
-  double        fMuonPt, fTrackPt, fMassLow, fMassHigh;
+  double        fMuonPt, fTrackPt, fMassLow, fMassHigh, fMaxDoca;
   int           fType; 
 
   reco::Vertex  fPV;
