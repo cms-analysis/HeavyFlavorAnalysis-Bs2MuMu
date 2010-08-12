@@ -39,6 +39,7 @@ void decayCounter::eventProcessing()
 		gen = fpEvt->getGenCand(j);
 		
 		if (abs(gen->fID) == 521) { // B+
+			genDecay.clear();
 			buildDecay(gen,&genDecay);
 			if (trueDecay == genDecay) {
 				counter++;
