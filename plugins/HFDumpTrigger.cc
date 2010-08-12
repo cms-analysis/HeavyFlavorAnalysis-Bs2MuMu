@@ -213,15 +213,15 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       //   << endl;
       
       if ( hltConfig.moduleType(moduleLabels[moduleIndex]) == "HLTPrescaler" ){
-	cout << " HLTPrescaler  " << endl;
-	int tmp = gHFEvent->fHLTError[index];
-	gHFEvent->fHLTError[index] = (tmp<<2);
-	gHFEvent->fHLTError[index] |= 1;
+		if (fVerbose > 1) cout << " HLTPrescaler  " << endl;
+		int tmp = gHFEvent->fHLTError[index];
+		gHFEvent->fHLTError[index] = (tmp<<2);
+		gHFEvent->fHLTError[index] |= 1;
       }
       
       // cout << "gHFEvent->fHLTError[index] = " << gHFEvent->fHLTError[index] << endl;
       
-      if ( gHFEvent->fHLTError[index] & 1   )
+      if ( (gHFEvent->fHLTError[index] & 1)  && (fVerbose > 1) )
 	cout << " Last active module type =  " << hltConfig.moduleType(moduleLabels[moduleIndex]) << endl;
       
       
