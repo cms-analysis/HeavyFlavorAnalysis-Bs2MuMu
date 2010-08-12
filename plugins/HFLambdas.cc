@@ -27,6 +27,8 @@
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 
+#include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
+
 // Yikes!
 extern TAna01Event *gHFEvent;
 
@@ -37,7 +39,8 @@ extern TAna01Event *gHFEvent;
 // ----------------------------------------------------------------------
 HFLambdas::HFLambdas(const edm::ParameterSet& iConfig) :
     fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
-    fMaxTracks(iConfig.getUntrackedParameter<int>("maxTracks", 1000)),
+    fMaxTracks(iConfig.getUntrackedParameter<int>("maxTracks", 300)),
+    fMinTracks(iConfig.getUntrackedParameter<int>("minTracks", 4)),
     fTracksLabel(iConfig.getUntrackedParameter<edm::InputTag>("tracksLabel", edm::InputTag("goodTracks"))),
     fPrimaryVertexLabel(iConfig.getUntrackedParameter<edm::InputTag>("PrimaryVertexLabel", edm::InputTag("offlinePrimaryVertices"))),
     fMuonsLabel(iConfig.getUntrackedParameter<edm::InputTag>("muonsLabel")),
@@ -59,6 +62,8 @@ HFLambdas::HFLambdas(const edm::ParameterSet& iConfig) :
     std::cout << "----------------------------------------------------------------------" << endl;
     std::cout << "--- HFLambdas constructor" << std::endl;
     std::cout << "---  verbose:                  " << fVerbose << std::endl;
+    std::cout << "---  maxTracks:                " << fMaxTracks << std::endl;
+    std::cout << "---  minTracks:                " << fMinTracks << std::endl;
     std::cout << "---  tracksLabel:              " << fTracksLabel << std::endl;
     std::cout << "---  PrimaryVertexLabel:       " << fPrimaryVertexLabel << std::endl;
     std::cout << "---  muonsLabel:               " << fMuonsLabel << std::endl;
@@ -138,6 +143,11 @@ void HFLambdas::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         std::cout << "==>HFLambdas> Too many tracks " << hTracks->size() << ", skipping" << std::endl;
         return;
     }
+    if (hTracks->size() < static_cast<size_t>(fMinTracks)) {
+	std::cout << "==>HFLambdas> Not enough tracks " << hTracks->size() << ", skipping" << std::endl;
+	return;
+    }
+
     if (fVerbose > 0) {
         std::cout << "==>HFLambdas> ntracks = " << hTracks->size() << std::endl;
     }
@@ -163,9 +173,9 @@ void HFLambdas::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     // Build lists
     trackList_t prList, piList, trackMuonList;
-    trackMuonList.reserve(200);
-    piList.reserve(2000);
-    prList.reserve(2000);
+    trackMuonList.reserve(fMaxTracks);
+    piList.reserve(fMaxTracks);
+    prList.reserve(fMaxTracks);
 
     for (index_t itrack = 0; itrack < hTracks->size(); ++itrack) {
 	reco::TrackBaseRef rTrackView(hTracks, itrack);
@@ -193,68 +203,71 @@ void HFLambdas::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
             tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MMUON);
             trackMuonList.push_back(std::make_pair(itrack, tlv));
         }
-
     }
 
-    // Now create the combinatorics for the J/psi
-    // For each muon from the muon chambers combine with all tracks in trackMuonList
-    // trackMuonList contain some of the muonsystem-muons as well
-    std::vector<duplet_t> jpsiList;
-    for(std::vector<index_t>::const_iterator itm=muonIndices.begin(); itm!=muonIndices.end(); itm++) {
-	for(trackList_t::const_iterator ittrm=trackMuonList.begin(); ittrm!=trackMuonList.end(); ittrm++) {
-	    if( (*itm) != ittrm->first ) { // then we have two distinct tracks
-		jpsiList.push_back(std::make_pair( (*itm), ittrm->first));
+    // now do the combinatorics
+    for(std::vector<index_t>::const_iterator itm1=muonIndices.begin(); itm1!=muonIndices.end(); itm1++) {
+	if (fVerbose > 10) std::cout << "==>HFLambdas>This is muon " << (*itm1) << std::endl;
+	for(trackList_t::const_iterator itm2=trackMuonList.begin(); itm2!=trackMuonList.end(); itm2++) {
+	    if( (*itm1)!=itm2->first ) { // then we have two distinct muons
+	    if (fVerbose > 10) std::cout << "==>HFLambdas>This is track muon " << itm2->first << std::endl;
+		for(trackList_t::const_iterator itpr=prList.begin(); itpr!=prList.end(); itpr++) {
+		    if( (*itm1)!=itpr->first && itm2->first!=itpr->first ) { // prevent from using the same track for two different particles
+		    if (fVerbose > 10) std::cout << "==>HFLambdas>This is proton " << itpr->first << std::endl;
+			for(trackList_t::const_iterator itpi=piList.begin(); itpi!=piList.end(); itpi++) {
+			    if( (*itm1)!=itpi->first && itm2->first!=itpi->first && itpr->first!=itpi->first ) { // and check again
+				if (fVerbose > 10) std::cout << "==>HFLambdas>This is pion " << itpi->first << std::endl;
+				// now we create a J/Psi
+
+				// find points of closest approach
+				TwoTrackMinimumDistance ttmdJpsi = calculatePoca(hTracks, (*itm1), itm2->first);
+				TwoTrackMinimumDistance ttmdL0 = calculatePoca(hTracks, itpr->first, itpi->first);
+				if (!(ttmdJpsi.status() && ttmdL0.status() )) { 
+				    std::cout << "ttmd status invalid" << std::endl; continue;
+				} // if something went wrong, discard this pair
+
+				if (fVerbose > 10) {
+				    std::cout << "status(): true"
+					      << "  distance JPsi: " << ttmdJpsi.distance()
+					      << "  distance L0: " << ttmdL0.distance()
+					      << std::endl;
+				}
+				if (ttmdJpsi.distance() > fMaxDoca) continue;
+				if (ttmdL0.distance() > fMaxDoca) continue;
+
+				reco::TrackBaseRef tbrMu1(hTracks, (*itm1));
+				reco::Track tMu1(*tbrMu1);
+				TLorentzVector tlvMu1;
+				tlvMu1.SetPtEtaPhiM(tMu1.pt(), tMu1.eta(), tMu1.phi(), MMUON);
+				const TLorentzVector tlvJPsi = tlvMu1 + itm2->second;
+				// and a Lambda_0
+				const TLorentzVector tlvLambda = itpr->second + itpi->second;
+				// and now we can make a Lambda_b
+				const TLorentzVector tlvLambdaB = tlvJPsi + tlvLambda;
+				// check mass windows
+				if ( inMassWindow(tlvJPsi.M(), MJPSI, fJPsiWindow)
+				     && inMassWindow(tlvLambda.M(), MLAMBDA_0, fL0Window)) {
+				    // add candidates
+				    const int indxCandJpsi=fillCand(tlvJPsi, ttmdJpsi, (*itm1), itm2->first, 10443);
+				    const int indxCandL0=fillCand(tlvLambda, ttmdL0, itpr->first, itpi->first, 13122);
+				    const int indxCandLb=fillCand(tlvLambdaB, indxCandJpsi, indxCandL0, 15122);
+				    // some output
+				    if (fVerbose > 20) {
+					std::cout << "==>HFLambdas>" 
+					          << "Masses: JPsi: " << tlvJPsi.M()
+						  << " Lamdba0: " << tlvLambda.M()
+					          << " LambdaB: " << tlvLambdaB.M()
+					          << std::endl; 
+				    }
+				}
+			    }
+			}
+		    }
+		}
 	    }
 	}
     }
 
-    if (fVerbose > 0) std::cout << "==>HFLambdas> jpsiList size: " << jpsiList.size() << std::endl;
-
-    HFKalmanVertexFit  hkvfitter(fTTB.product(), fPV, 0, fVerbose+10);
-    std::vector<reco::Track> trackList;
-    std::vector<int> trackIndices;
-    std::vector<double> trackMasses;
-
-    hkvfitter.setNoCuts();
-    hkvfitter.fMaxDoca     = fMaxDoca;
-    hkvfitter.fVtxChi2     = fMaxVtxChi2;
-    hkvfitter.fVtxSigXY    = fMinVtxSigXY;
-    hkvfitter.fVtxSig3d    = fMinVtxSig3d;
-    hkvfitter.fCosAngle    = fMinCosAngle;
-    hkvfitter.fPtCand      = fMinPtCand;
-
-    for (std::vector<duplet_t>::iterator it=jpsiList.begin(); it!=jpsiList.end(); ++it) {
-
-	reco::TrackBaseRef mu1TrackView(hTracks, it->first);
-	reco::Track tMu1(*mu1TrackView);
-        TLorentzVector tlvMu1;
-	tlvMu1.SetPtEtaPhiM(tMu1.pt(), tMu1.eta(), tMu1.phi(), MMUON);
-
-	reco::TrackBaseRef mu2TrackView(hTracks, it->second);
-	reco::Track tMu2(*mu2TrackView);
-	TLorentzVector tlvMu2;
-        tlvMu2.SetPtEtaPhiM(tMu2.pt(), tMu2.eta(), tMu2.phi(), MMUON);
-
-        if (tMu2.charge() == tMu1.charge()) continue;          // muons must have opposite charge to be from a J/Psi
-
-        trackList.clear();
-        trackIndices.clear();
-        trackMasses.clear();
-
-        trackList.push_back(tMu1);
-        trackIndices.push_back(it->first);
-        trackMasses.push_back(MMUON);
-
-        trackList.push_back(tMu2);
-        trackIndices.push_back(it->second);
-        trackMasses.push_back(MMUON);
-
-        TLorentzVector tlvJPsi = tlvMu1 + tlvMu2;
-        if ((TMath::Abs(tlvJPsi.M() - MJPSI) < fJPsiWindow )) {
-	    if (fVerbose > 0) std::cout << "==>HFLambdas> added to tlvJPsi with mass " << tlvJPsi.M() << std::endl;
-            hkvfitter.doFit(trackList, trackIndices, trackMasses, fType*10000+443, 2);
-        }
-    }
 }
 
 
@@ -267,6 +280,56 @@ void  HFLambdas::beginJob() {
 void  HFLambdas::endJob() {
 }
 
+bool HFLambdas::inMassWindow(const value_t& v, const value_t& m, const value_t& dm)
+{
+    const value_t t = fabs(v-m);
+    return (t<dm) ? true : false;
+}
+
+int HFLambdas::fillCand(const TLorentzVector& tlvCand, const int& trk1, const int& trk2, const int& type)
+{
+    TAnaCand *cand = gHFEvent->addCand();
+    cand->fPlab = tlvCand.Vect();
+    cand->fMass = tlvCand.M();
+    cand->fType = type;
+    cand->fDau1 = -1;
+    cand->fDau2 = -1;
+    cand->fSig1 = trk1;
+    cand->fSig2 = trk2;
+    return gHFEvent->nCands()-1;
+}
+
+int HFLambdas::fillCand(const TLorentzVector& tlvCand, const TwoTrackMinimumDistance& ttmd, const int& trk1, const int& trk2, const int& type)
+{
+    TAnaCand *cand = gHFEvent->addCand();
+    cand->fPlab = tlvCand.Vect();
+    cand->fMass = tlvCand.M();
+    cand->fType = type;
+    cand->fDau1 = -1;
+    cand->fDau2 = -1;
+    cand->fSig1 = trk1;
+    cand->fSig2 = trk2;
+    cand->fMinDoca = ttmd.distance();
+    cand->fPoca = TVector3(ttmd.crossingPoint().x(), ttmd.crossingPoint().y(), ttmd.crossingPoint().z());
+    return gHFEvent->nCands()-1;
+}
+
+TwoTrackMinimumDistance HFLambdas::calculatePoca(const edm::Handle<edm::View<reco::Track> >& tracks, int track1, int track2)
+{
+    reco::TrackBaseRef tbr1(tracks, track1);
+    reco::Track t1(*tbr1);
+    reco::TransientTrack tt1(fTTB->build(t1));
+
+    reco::TrackBaseRef tbr2(tracks, track2);
+    reco::Track t2(*tbr2);
+    reco::TransientTrack tt2(fTTB->build(t2));
+
+    TwoTrackMinimumDistance ttmd;
+    ttmd.calculate(tt1.initialFreeState(),tt2.initialFreeState());
+
+    return ttmd;
+    //return std::make_pair(ttmd.crossingPoint(), ttmd.distance());
+}
 
 //define this as a plug-in
 DEFINE_FWK_MODULE(HFLambdas);
