@@ -27,6 +27,7 @@
 #include "muCharmReader.hh"
 #include "triggerValidation.hh"
 #include "genLevel.hh"
+#include "decayCounter.hh"
 
 using namespace std;
 
@@ -190,6 +191,7 @@ int main(int argc, char *argv[]) {
   else if (readerName == "muCharmReader") a = new muCharmReader(chain,TString(evtClassName));
   else if (readerName == "triggerValidation") a = new triggerValidation(chain,TString(evtClassName));
   else if (readerName == "genLevel") a = new genLevel(chain,TString(evtClassName));
+  else if (readerName == "decayCounter") a = new decayCounter(chain,TString(evtClassName));
   else {
     cout << "please provide a class name to instantiate" << endl;
   }
