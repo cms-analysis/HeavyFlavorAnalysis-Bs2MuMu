@@ -39,8 +39,9 @@ void decayCounter::eventProcessing()
 		gen = fpEvt->getGenCand(j);
 		
 		if (abs(gen->fID) == 521) { // B+
-			genDecay.clear();
+			genDecay.clear(); // clear the current decay
 			buildDecay(gen,&genDecay);
+			genDecay.erase(22); // remove Bremsstrahlung
 			if (trueDecay == genDecay) {
 				counter++;
 				break;
