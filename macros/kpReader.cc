@@ -56,7 +56,7 @@ void kpReader::eventProcessing()
 	}
 	
 	// do the normal stuff
-	massReader::eventProcessing(); // here the decay indices are modified in loadCandidateVariables()
+	massReader::eventProcessing(); // here the decay_indices are modified in loadCandidateVariables()
 	
 	reco_counter += decay_indices.size();
 	
@@ -114,8 +114,11 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	}
 	
 	// muon1 ist usually that one with the bigger pt
-	if (fPlabMu1.Perp() < fPlabMu2.Perp())
+	if (fPlabMu1.Perp() < fPlabMu2.Perp()) {
 		swap(fPlabMu1,fPlabMu2);
+		swap(fTrackQual_mu1,fTrackQual_mu2);
+		swap(fQ_mu1,fQ_mu2);
+	}
 	
 	// set the jpsi mass
 	for (j = pCand->fDau1; j <= pCand->fDau2 && j >= 0; j++) {
@@ -184,7 +187,7 @@ int kpReader::checkTruth(TAnaCand *pCand)
 	
 	result = (particles == trueDecay);
 	
-	if (result && fCandidate == 500521) // save the decay
+	if (result && fCandidate == 300521) // save the decay
 		decay_indices[gen->fNumber] = max((int)fNbrMuons, decay_indices[gen->fNumber]);
 bail:
 	return result;
