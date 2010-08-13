@@ -58,6 +58,8 @@ HFLambdas::HFLambdas(const edm::ParameterSet& iConfig) :
     fMinVtxSig3d(iConfig.getUntrackedParameter<double>("minVtxSig3d", -1.)),
     fMinCosAngle(iConfig.getUntrackedParameter<double>("minCosAngle", -1.)),
     fMinPtCand(iConfig.getUntrackedParameter<double>("minPtCand", -99.)),
+    fMinPocaJpsi(iConfig.getUntrackedParameter<double>("minPocaJpsi", 0.)),
+    fMinPocaL0(iConfig.getUntrackedParameter<double>("minPocaL0", 0.)),
     fType(iConfig.getUntrackedParameter<int>("type", 1)) {
     std::cout << "----------------------------------------------------------------------" << endl;
     std::cout << "--- HFLambdas constructor" << std::endl;
@@ -210,13 +212,22 @@ void HFLambdas::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	if (fVerbose > 10) std::cout << "==>HFLambdas>This is muon " << (*itm1) << std::endl;
 	for(trackList_t::const_iterator itm2=trackMuonList.begin(); itm2!=trackMuonList.end(); itm2++) {
 	    if( (*itm1)!=itm2->first ) { // then we have two distinct muons
-	    if (fVerbose > 10) std::cout << "==>HFLambdas>This is track muon " << itm2->first << std::endl;
+		reco::TrackBaseRef tbrMu1(hTracks, (*itm1));
+		reco::TrackBaseRef tbrMu2(hTracks, itm2->first);
+		reco::Track tMu1(*tbrMu1);
+		reco::Track tMu2(*tbrMu2);
+		if (tMu1.charge()==tMu2.charge()) continue; // charges must be opposite
+		if (fVerbose > 10) std::cout << "==>HFLambdas>This is track muon " << itm2->first << std::endl;
 		for(trackList_t::const_iterator itpr=prList.begin(); itpr!=prList.end(); itpr++) {
 		    if( (*itm1)!=itpr->first && itm2->first!=itpr->first ) { // prevent from using the same track for two different particles
-		    if (fVerbose > 10) std::cout << "==>HFLambdas>This is proton " << itpr->first << std::endl;
+			if (fVerbose > 10) std::cout << "==>HFLambdas>This is proton " << itpr->first << std::endl;
 			for(trackList_t::const_iterator itpi=piList.begin(); itpi!=piList.end(); itpi++) {
 			    if( (*itm1)!=itpi->first && itm2->first!=itpi->first && itpr->first!=itpi->first ) { // and check again
-				if (fVerbose > 10) std::cout << "==>HFLambdas>This is pion " << itpi->first << std::endl;
+				reco::TrackBaseRef tbrPi(hTracks, itpi->first);
+				reco::TrackBaseRef tbrPr(hTracks, itpr->first);
+				reco::Track tPi(*tbrPi);
+				reco::Track tPr(*tbrPr);
+				if (tPr.charge()==tPi.charge()) continue; // charges must be opposite
 				// now we create a J/Psi
 
 				// find points of closest approach
@@ -235,8 +246,15 @@ void HFLambdas::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				if (ttmdJpsi.distance() > fMaxDoca) continue;
 				if (ttmdL0.distance() > fMaxDoca) continue;
 
-				reco::TrackBaseRef tbrMu1(hTracks, (*itm1));
-				reco::Track tMu1(*tbrMu1);
+				//std::cout << "mag " << ttmdJpsi.crossingPoint().mag() << " " << ttmdJpsi.crossingPoint().perp() << std::endl;
+				const double pocaToVtxJPsi=calculateDistToPV(ttmdJpsi.crossingPoint(), fPV);
+				const double pocaToVtxL0  =calculateDistToPV(ttmdL0.crossingPoint(), fPV);
+				if (pocaToVtxL0<pocaToVtxJPsi) continue; // L0 vtx should be more far away than Jpsi vtx
+				if (pocaToVtxJPsi<fMinPocaJpsi) continue;
+				if (pocaToVtxL0<fMinPocaL0) continue;
+
+				//reco::TrackBaseRef tbrMu1(hTracks, (*itm1));
+				//reco::Track tMu1(*tbrMu1);
 				TLorentzVector tlvMu1;
 				tlvMu1.SetPtEtaPhiM(tMu1.pt(), tMu1.eta(), tMu1.phi(), MMUON);
 				const TLorentzVector tlvJPsi = tlvMu1 + itm2->second;
@@ -329,6 +347,14 @@ TwoTrackMinimumDistance HFLambdas::calculatePoca(const edm::Handle<edm::View<rec
 
     return ttmd;
     //return std::make_pair(ttmd.crossingPoint(), ttmd.distance());
+}
+
+double HFLambdas::calculateDistToPV(const GlobalPoint& pt, const reco::Vertex& vtx)
+{
+    const TVector3 tv3pt(pt.x(), pt.y(), pt.z());
+    const TVector3 tv3vtx(vtx.position().x(), vtx.position().y(), vtx.position().z());
+    const TVector3 tv3diff=tv3pt-tv3vtx;
+    return tv3diff.Mag();
 }
 
 //define this as a plug-in

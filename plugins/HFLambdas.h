@@ -50,8 +50,8 @@ class HFLambdas : public edm::EDAnalyzer {
   int fillCand(const TLorentzVector& tlvCand, const int& trk1, const int& trk2, const int& type);
   int fillCand(const TLorentzVector& tlvCand, const TwoTrackMinimumDistance& ttmd, const int& trk1, const int& trk2, const int& type);
 
-  //poca_t calculatePoca(const edm::Handle<edm::View<reco::Track> >& tracks, int track1, int track2);
   TwoTrackMinimumDistance calculatePoca(const edm::Handle<edm::View<reco::Track> >& tracks, int track1, int track2);
+  double calculateDistToPV(const GlobalPoint& pt, const reco::Vertex& vtx);
 
   int           fVerbose; 
   int           fMaxTracks, fMinTracks; 
@@ -62,6 +62,7 @@ class HFLambdas : public edm::EDAnalyzer {
   double        fPhiWindow, fJPsiWindow, fL0Window; 
   double        fMuonPt, fProtonPt, fPionPt, fTrackPt, fDeltaR;
   double        fMaxDoca, fMaxVtxChi2, fMinVtxSigXY, fMinVtxSig3d, fMinCosAngle, fMinPtCand; 
+  double	fMinPocaJpsi, fMinPocaL0;
 
   int           fType; 
 
