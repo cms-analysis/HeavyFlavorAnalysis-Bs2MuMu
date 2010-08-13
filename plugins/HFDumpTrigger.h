@@ -13,6 +13,8 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
+#include "HLTrigger/HLTcore/interface/HLTConfigProvider.h"
+
 class TFile;
 class TTree;
 class TAna01Event;
@@ -29,6 +31,7 @@ class HFDumpTrigger : public edm::EDAnalyzer {
   virtual void beginRun(const edm::Run &, const edm::EventSetup &);
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
+  virtual void endRun(edm::Run const&, edm::EventSetup const&);
 
   int           fVerbose;
   int           fNevt;
@@ -39,6 +42,9 @@ class HFDumpTrigger : public edm::EDAnalyzer {
   edm::InputTag fL1MuonsLabel;
   edm::InputTag fTriggerEventLabel;
   edm::InputTag fHLTResultsLabel;
+  
+  HLTConfigProvider hltConfig;
+  bool validHLTConfig;
 };
 
 #endif

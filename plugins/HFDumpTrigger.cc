@@ -21,7 +21,6 @@
 #include "DataFormats/HLTReco/interface/TriggerTypeDefs.h"
 #include "DataFormats/HLTReco/interface/TriggerEvent.h"
 
-#include "HLTrigger/HLTcore/interface/HLTConfigProvider.h"
 #include "L1Trigger/GlobalTriggerAnalyzer/interface/L1GtUtils.h"
 
 #include "DataFormats/MuonReco/interface/Muon.h"
@@ -155,12 +154,9 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // -- HLT results
   // ----------------------------------------------------------------------
 
-  // -- Read HLT configuration and names
-  HLTConfigProvider hltConfig;
-  bool hltConfigInitSuccess = hltConfig.init(fHLTProcessName);
-
   vector<string> validTriggerNames;
-  if (hltConfigInitSuccess) validTriggerNames = hltConfig.triggerNames();
+  if (validHLTConfig) validTriggerNames = hltConfig.triggerNames();
+  else cerr << "==> HFDumpTrigger: No valid Trigger configuration!!!" << endl;
   //can assert?!  hltConfig.dump("PrescaleTable");
 
   if (validTriggerNames.size() < 1) {
@@ -241,7 +237,6 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // ----------------------------------------------------------------------
   // -- Get trigger objects
   // ----------------------------------------------------------------------
-
   Handle<trigger::TriggerEvent> trgEvent;
   hltF = true;
   try {
@@ -292,10 +287,16 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void  HFDumpTrigger::beginRun(const Run &run, const EventSetup &iSetup) {
-
+void  HFDumpTrigger::beginRun(const Run &run, const EventSetup &iSetup)
+{
+  bool hasChanged;
+  validHLTConfig = hltConfig.init(run,iSetup,fHLTProcessName,hasChanged);
 }
 
+void HFDumpTrigger::endRun(Run const&, EventSetup const&)
+{
+	validHLTConfig = false;
+} // HFDumpTrigger::endRun()
 
 // ------------ method called once each job just before starting event loop  ------------
 void  HFDumpTrigger::beginJob() {
