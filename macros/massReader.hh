@@ -12,6 +12,7 @@ class massReader : public treeReader01 {
 
 		virtual void bookHist();
 		virtual void eventProcessing();
+		virtual void closeHistFile();
 
 	protected:
 		// For subclasses

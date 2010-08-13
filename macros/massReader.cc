@@ -98,6 +98,12 @@ void massReader::bookHist()
 	reduced_tree->Branch("iso",&fIso,"iso/F");
 } // massReader::bookHist()
 
+void massReader::closeHistFile()
+{
+	fpHistFile = reduced_tree->GetCurrentFile();
+	treeReader01::closeHistFile();
+} // massReader::closeHistFile()
+
 int massReader::checkTruth(TAnaCand *cand)
 {
 	int result = 0;
