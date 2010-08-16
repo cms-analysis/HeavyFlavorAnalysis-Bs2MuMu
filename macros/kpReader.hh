@@ -7,7 +7,7 @@ class kpReader : public massReader {
 	
 	public:
 		kpReader(TChain *tree, TString evtClassName);
-		~kpReader();
+		virtual ~kpReader();
 		
 		virtual void bookHist();
 		virtual void eventProcessing();
