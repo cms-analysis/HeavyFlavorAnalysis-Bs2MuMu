@@ -4,6 +4,10 @@
 #include "treeReader01.hh"
 #include <set>
 
+const static double MMUON = 0.1057;
+const static double MPION = 0.1396;
+const static double MKAON = 0.4937;
+
 class massReader : public treeReader01 {
 	
 	public:
