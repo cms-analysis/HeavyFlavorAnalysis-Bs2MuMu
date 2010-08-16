@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
   int randomSeed(processID);
 
   // Change the MaxTreeSize to 100 GB (default since root v5.26)
-  TTree::SetMaxTreeSize(100000000000); // 100 GB
+  TTree::SetMaxTreeSize(100000000000ll); // 100 GB
 
   // -- Some defaults
   string dirBase("./");               // this could point to "/home/ursl/data/root/."
