@@ -1,7 +1,7 @@
 /*
  *  HFSequentialVertexFit.cc
  *
- *  Created by Christoph NŠgeli on 29.4.10.
+ *  Created by Christoph NŠgeli <christoph.naegeli@psi.ch> on 29.4.10.
  */
 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFSequentialVertexFit.h"
@@ -51,7 +51,11 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 	RefCountedKinematicTree kinTree;
 	HFDecayTreeIterator treeIt;
 	RefCountedHFNodeCut nodeCut;
+	map<int,int> *kinParticleMap;
 	double mass;
+	
+	// set up the kinParticleMap for 'tree'
+	kinParticleMap = tree->getKinParticleMap();
 	
 	// add the particles from the sub-tree's with vertexing...
 	for (treeIt = tree->getVerticesBeginIterator(); treeIt != tree->getVerticesEndIterator(); ++treeIt) {
@@ -73,6 +77,7 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 		mass = getParticleMass(trackIt->second);
 		float sigma = 0.00001*mass;
 		TrackBaseRef baseRef(fhTracks,trackIt->first);
+		(*kinParticleMap)[trackIt->first] = kinParticles.size();
 		kinParticles.push_back(pFactory.particle(fpTTB->build(*baseRef),mass,0.0f,0.0f,sigma)); // FIXME: das sigma noch besser anpassen
 	}
 	
@@ -171,10 +176,11 @@ TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
 {
   TAnaCand *pCand = NULL;
   TAnaVertex anaVtx;
-  TAnaTrack *pTrack,*recTrack;
+  TAnaTrack *pTrack;
   VertexDistanceXY axy;
   VertexDistance3D a3d;
-  vector<pair<int,int> > allTracks = tree->getAllTracks();
+  vector<pair<int,int> > allTreeTracks = tree->getAllTracks(1);
+  map<int,int> *kinParticleMap;
   RefCountedKinematicTree kinTree = *(tree->getKinematicTree());
   RefCountedKinematicParticle kinParticle;
   RefCountedKinematicVertex kinVertex;
@@ -190,6 +196,8 @@ TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
   kinParticle = kinTree->currentParticle();
   kinVertex = kinTree->currentDecayVertex();
   daughterParticles = kinTree->daughterParticles();
+
+  kinParticleMap = tree->getKinParticleMap();
 
   if (!kinVertex->vertexIsValid()) return pCand;
   
@@ -232,21 +240,24 @@ TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
   pCand->fDau2 = -1;
   
   pCand->fSig1 = gHFEvent->nSigTracks();
-  pCand->fSig2 = pCand->fSig1 + allTracks.size() - 1;
+  pCand->fSig2 = pCand->fSig1 + allTreeTracks.size() - 1;
 
+  // FIXME: max / min Doca calculation should NOT use the refitted tracks!!
   pCand->fMaxDoca = getMaxDoca(daughterParticles);
   pCand->fMinDoca = getMinDoca(daughterParticles);
   
-  // FIXME: use refitted tracks!!
-  for (j = 0; j < allTracks.size(); j++) {
-    recTrack = gHFEvent->getRecTrack(allTracks[j].first);
+  for (j = 0; j < allTreeTracks.size(); j++) {
+    
+    TransientTrack fitTrack = daughterParticles[(*kinParticleMap)[allTreeTracks[j].first]]->refittedTransientTrack();
     
     pTrack = gHFEvent->addSigTrack();
-    pTrack->fMCID = allTracks[j].second;
-    pTrack->fGenIndex = recTrack->fGenIndex;
-    pTrack->fQ = recTrack->fQ;
-    pTrack->fPlab = recTrack->fPlab;
-    pTrack->fIndex = allTracks[j].first;
+    pTrack->fIndex = allTreeTracks[j].first;
+    pTrack->fMCID = allTreeTracks[j].second;
+    pTrack->fPlab = TVector3(fitTrack.track().px(),fitTrack.track().py(),fitTrack.track().pz());
+    pTrack->fDof = fitTrack.ndof();
+    pTrack->fValidHits = fitTrack.numberOfValidHits();
+    pTrack->fChi2 = fitTrack.chi2();
+    pTrack->fQ = fitTrack.charge();
   }
   
   return pCand;
