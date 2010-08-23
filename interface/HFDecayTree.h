@@ -77,6 +77,9 @@ class HFDecayTree
 		void getAllTracks(std::vector<std::pair<int,int> > *out_vector, int onlyThisVertex = 0);
 		std::vector<std::pair<int,int> > getAllTracks(int onlyThisVertex = 0);
 		
+		// Kinematic Tree associated stuff
+		std::map<int,int> *getKinParticleMap();
+		void setKinParticleMap(std::map<int,int> newMap);
 		RefCountedKinematicTree *getKinematicTree();
 		void setKinematicTree(RefCountedKinematicTree newTree);
 		void resetKinematicTree(int recursive = 0);
@@ -101,6 +104,7 @@ class HFDecayTree
 		void dumpTabs(unsigned indent); // used by dump()
 		
 		std::map<int,int> trackIndices; // map: trackIx -> particleTyp
+		std::map<int,int> kinParticleMap; // map: trackIx -> entry in the daughter kinematic particles...
 		std::vector<HFDecayTree> subVertices;
 		RefCountedKinematicTree *kinTree;
 		TAnaCand *anaCand;

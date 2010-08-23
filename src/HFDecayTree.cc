@@ -78,6 +78,7 @@ void HFDecayTree::clear()
   
   // clear the containers
   trackIndices.clear();
+  kinParticleMap.clear();
   subVertices.clear();
 
   // clear the kinematic tree
@@ -130,6 +131,16 @@ vector<pair<int,int> > HFDecayTree::getAllTracks(int onlyThisVertex)
   return tracks;
 } // getAllTracks()
 
+map<int,int> *HFDecayTree::getKinParticleMap()
+{
+	return &kinParticleMap;
+} // getKinParticleMap()
+
+void HFDecayTree::setKinParticleMap(map<int,int> newMap)
+{
+	kinParticleMap = newMap;
+} // setKinParticleMap()
+
 RefCountedKinematicTree* HFDecayTree::getKinematicTree()
 {
   return kinTree;
@@ -151,6 +162,7 @@ void HFDecayTree::resetKinematicTree(int recursive)
       treeIt->resetKinematicTree(recursive);
   }
   
+  kinParticleMap.clear();
   delete kinTree;
   kinTree = NULL;
   anaCand = NULL;
