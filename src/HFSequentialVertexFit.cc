@@ -186,6 +186,7 @@ TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
   RefCountedKinematicVertex kinVertex;
   vector<RefCountedKinematicParticle> daughterParticles;
   TVector3 plab;
+  double cov[9];
   double mass;
   unsigned j;
 
@@ -227,6 +228,18 @@ TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
   
   anaVtx.fD3d = a3d.distance(toVertex, kinVertex->vertexState()).value();
   anaVtx.fD3dE = a3d.distance(toVertex, kinVertex->vertexState()).error();
+  
+  // -- set covariance matrix
+  cov[0] = kinVertex->error().cxx();
+  cov[1] = kinVertex->error().cyx();
+  cov[2] = kinVertex->error().czx();
+  cov[3] = kinVertex->error().cyx();
+  cov[4] = kinVertex->error().cyy();
+  cov[5] = kinVertex->error().czy();
+  cov[6] = kinVertex->error().czx();
+  cov[7] = kinVertex->error().czy();
+  cov[8] = kinVertex->error().czz();
+  anaVtx.setCovXX(cov);
   
   // -- fill candidate
   pCand = gHFEvent->addCand();
