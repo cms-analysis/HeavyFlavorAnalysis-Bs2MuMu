@@ -74,7 +74,7 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 {
 	int result,type,j;
 	int firstMu = 1, firstKp = 1;
-	TAnaTrack *track;
+	TAnaTrack *sigTrack,*recTrack;
 	TAnaCand *dau;
 	
 	// default initialization
@@ -95,31 +95,31 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 	result = massReader::loadCandidateVariables(pCand);
 	
 	// set the momenta
-	for (j = pCand->fSig1; j < pCand->fSig2; j++) {
+	for (j = pCand->fSig1; j <= pCand->fSig2; j++) {
 		
-		track = fpEvt->getSigTrack(j);
-		type = abs(track->fMCID);
-		track = fpEvt->getRecTrack(track->fIndex);
+		sigTrack = fpEvt->getSigTrack(j);
+		type = abs(sigTrack->fMCID);
+		recTrack = fpEvt->getRecTrack(sigTrack->fIndex);
 		if (type == 13) {
 			if (firstMu) {
-				fPlabMu1 = track->fPlab;
-				fTrackQual_mu1 = track->fTrackQuality;
-				fQ_mu1 = track->fQ;
+				fPlabMu1 = sigTrack->fPlab;
+				fTrackQual_mu1 = recTrack->fTrackQuality;
+				fQ_mu1 = recTrack->fQ;
 			} else {
-				fPlabMu2 = track->fPlab;
-				fTrackQual_mu2 = track->fTrackQuality;
-				fQ_mu2 = track->fQ;
+				fPlabMu2 = sigTrack->fPlab;
+				fTrackQual_mu2 = recTrack->fTrackQuality;
+				fQ_mu2 = recTrack->fQ;
 			}
 			firstMu = 0;
 		} else if (type == 321) {
 			if (firstKp) {
-				fPlabKp1 = track->fPlab;
-				fTrackQual_kp1 = track->fTrackQuality;
-				fQ_kp1 = track->fQ;
+				fPlabKp1 = sigTrack->fPlab;
+				fTrackQual_kp1 = recTrack->fTrackQuality;
+				fQ_kp1 = recTrack->fQ;
 			} else {
-				fPlabKp2 = track->fPlab;
-				fTrackQual_kp2 = track->fTrackQuality;
-				fQ_kp2 = track->fQ;
+				fPlabKp2 = sigTrack->fPlab;
+				fTrackQual_kp2 = recTrack->fTrackQuality;
+				fQ_kp2 = recTrack->fQ;
 			}
 			firstKp = 0;
 		}

@@ -73,7 +73,7 @@ void kpReader::eventProcessing()
 int kpReader::loadCandidateVariables(TAnaCand *pCand)
 {
 	int type, first_mu = 1;
-	TAnaTrack *track;
+	TAnaTrack *sigTrack,*recTrack;
 	TAnaCand *jpsiCand;
 	int result,j;
 	
@@ -91,25 +91,25 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	// set the momenta
 	for (j = pCand->fSig1; j <= pCand->fSig2 && j >= 0; j++) {
 		
-		track = fpEvt->getSigTrack(j);
-		type = abs(track->fMCID);
-		track = fpEvt->getRecTrack(track->fIndex);
+		sigTrack = fpEvt->getSigTrack(j);
+		type = abs(sigTrack->fMCID);
+		recTrack = fpEvt->getRecTrack(sigTrack->fIndex);
 		if (type == 13) {
 			// muon
 			if (first_mu) {
-				fPlabMu1 = track->fPlab;
-				fTrackQual_mu1 = track->fTrackQuality;
-				fQ_mu1 = track->fQ;
+				fPlabMu1 = sigTrack->fPlab;
+				fTrackQual_mu1 = recTrack->fTrackQuality;
+				fQ_mu1 = recTrack->fQ;
 			} else {
-				fPlabMu2 = track->fPlab;
-				fTrackQual_mu2 = track->fTrackQuality;
-				fQ_mu2 = track->fQ;
+				fPlabMu2 = sigTrack->fPlab;
+				fTrackQual_mu2 = recTrack->fTrackQuality;
+				fQ_mu2 = recTrack->fQ;
 			}
 			first_mu = 0;
 		} else if (type == 321) {
-			fPlabKp = track->fPlab;
-			fQ_kp = track->fQ;
-			fTrackQual_kp = track->fTrackQuality;
+			fPlabKp = sigTrack->fPlab;
+			fQ_kp = recTrack->fQ;
+			fTrackQual_kp = recTrack->fTrackQuality;
 		}
 	}
 	
