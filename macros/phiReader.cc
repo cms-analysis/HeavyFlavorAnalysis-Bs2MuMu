@@ -78,7 +78,7 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 	TAnaCand *dau;
 	
 	// default initialization
-	fMassJPsi = fMassPhi = fDeltaR = -1.0f;
+	fMassJPsi = fMassPhi = fDeltaR = fDeltaR_Kaons = -1.0f;
 	fPtMu1 = fPtMu2 = fPtKp1 = fPtKp2 = 0.0f;
 	
 	fPlabMu1 = TVector3();
@@ -173,6 +173,10 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 	if ( (fPlabMu1 + fPlabMu2).Perp() > 0 && (fPlabKp1 + fPlabKp2).Perp() > 0 )
 		fDeltaR = (float)(fPlabMu1 + fPlabMu2).DeltaR(fPlabKp1 + fPlabKp2);
 	
+	// set the deltaR of the Kaons
+	if ( fPlabKp1.Perp() > 0 && fPlabKp2.Perp() > 0 )
+		fDeltaR = (float)fPlabKp1.DeltaR(fPlabKp2);
+	
 	// set the transveral momenta
 	fPtMu1 = fPlabMu1.Perp();
 	fPtMu2 = fPlabMu2.Perp();
@@ -188,6 +192,7 @@ void phiReader::bookHist()
 	reduced_tree->Branch("mass_jpsi",&fMassJPsi,"mass_jpsi/F");
 	reduced_tree->Branch("mass_phi",&fMassPhi,"mass_phi/F");
 	reduced_tree->Branch("deltaR",&fDeltaR,"deltaR/F");
+	reduced_tree->Branch("deltaR_kaons",&fDeltaR_Kaons,"deltaR_kaons/F");
 	reduced_tree->Branch("plab_mu1","TVector3",&fPlabMu1Ptr);
 	reduced_tree->Branch("plab_mu2","TVector3",&fPlabMu2Ptr);
 	reduced_tree->Branch("plab_kp1","TVector3",&fPlabKp1Ptr);

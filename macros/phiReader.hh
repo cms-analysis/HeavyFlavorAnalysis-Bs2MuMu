@@ -21,6 +21,7 @@ class phiReader : public massReader {
 		float fMassJPsi;
 		float fMassPhi;
 		float fDeltaR; // deltaR of J/Psi Phi
+		float fDeltaR_Kaons; // delta R of the two Kaons
 		
 		float fPtMu1;
 		float fPtMu2;
