@@ -63,6 +63,7 @@ obj/%.o : %.cc $(READER_HEADERS)
 
 all: 
 	@$(MAKE) bin/runTreeReaders
+	@$(MAKE) bin/runMergeTrees
 
 lib/libAnaClasses.so: $(addprefix obj/,$(READER) $(READERDICT)) lib/libAna00.so
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(READER) $(READERDICT)) -o lib/libAnaClasses.so $(GLIBS) lib/libAna00.so
@@ -72,6 +73,9 @@ lib/libAna00.so:
 
 bin/runTreeReaders: lib/libAnaClasses.so obj/runTreeReaders.o lib/libAna00.so
 	$(LD) $(LDFLAGS) -o bin/runTreeReaders $(GLIBS) obj/runTreeReaders.o lib/libAnaClasses.so lib/libAna00.so
+
+bin/runMergeTrees: lib/libAnaClasses.so obj/runMergeTrees.o lib/libAna00.so
+	$(LD) $(LDFLAGS) -o bin/runMergeTrees $(GLIBS) obj/runMergeTrees.o lib/libAnaClasses.so lib/libAna00.so
 
 clean:
 	rm -f obj/*.o *Dict.* lib/libAna00.so
