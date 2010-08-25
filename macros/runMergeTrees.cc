@@ -8,6 +8,7 @@
 // C++ headers
 #include <cstring>
 #include <cstdio>
+#include <cstdlib>
 #include <iostream>
 
 // ROOT headers
@@ -24,12 +25,12 @@ using std::cout;
 using std::endl;
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-// %% Usage: ./runMergeTrees -c <chain_file> -o <outputfile>
+// %% Usage: ./runMergeTrees -c <chain_file> -o <outputfile> [-s <maxfilesize[GB]>]
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 static void dump_help_message()
 {
-	std::cerr << "usage: runMergeTrees -c <chain_file> -o <outputfile>" << endl;
+	std::cerr << "usage: runMergeTrees -c <chain_file> -o <outputfile> [-s <maxfilesize[MB]>]" << endl;
 } // dump_help_message()
 
 int main(int argc, const char *argv [])
@@ -45,17 +46,16 @@ int main(int argc, const char *argv [])
 	char buffer[1024];
 	TString line;
 	int j;
+	long long maxTreeSize = 4000000000ll;
 	
 	cout << "Running under process ID  " << processID << endl;
-	
-	// split the tree into 4 GB chunks
-	TTree::SetMaxTreeSize(4000000000ll); // 4 GB
 	
 	// parse the command line
 	for (j = 1; j < argc; j++) {
 		
 		if (!strcmp(argv[j],"-c")) chainfile = argv[++j];
 		else if (!strcmp(argv[j],"-o")) outputfile = argv[++j];
+		else if (!strcmp(argv[j],"-s")) maxTreeSize = 1000000ll * (long long)atoi(argv[++j]);
 		else if (!strcmp(argv[j],"-h")) {
 			dump_help_message();
 			goto bail;
@@ -72,8 +72,13 @@ int main(int argc, const char *argv [])
 		goto bail;
 	}
 	
-	cout << "chain file " << chainfile << endl;
-	cout << "output file " << outputfile << endl;
+	cout << "chain file: " << chainfile << endl;
+	cout << "output file: " << outputfile << endl;
+	cout << "max tree size: " << maxTreeSize << endl;
+	
+	// set the max tree size
+	TTree::SetMaxTreeSize(maxTreeSize);
+	
 	cout << "Setup the chain..." << endl;
 	chain = new TChain("T1");
 	fchain = fopen(chainfile,"r");
@@ -99,10 +104,8 @@ int main(int argc, const char *argv [])
 	
 	// copy the tree
 	tree = chain->CloneTree();
+	root_out = tree->GetCurrentFile();
 	root_out->Write();
-	
-	cout << "Copied " << tree->GetEntries() << " number of entries" << endl;
-	
 bail:
 	if (fchain) fclose(fchain);
 	delete chain;
