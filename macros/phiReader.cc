@@ -175,7 +175,7 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 	
 	// set the deltaR of the Kaons
 	if ( fPlabKp1.Perp() > 0 && fPlabKp2.Perp() > 0 )
-		fDeltaR = (float)fPlabKp1.DeltaR(fPlabKp2);
+		fDeltaR_Kaons = (float)fPlabKp1.DeltaR(fPlabKp2);
 	
 	// set the transveral momenta
 	fPtMu1 = fPlabMu1.Perp();
