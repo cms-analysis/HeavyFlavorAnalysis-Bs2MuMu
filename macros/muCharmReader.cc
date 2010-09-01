@@ -16,6 +16,7 @@ using std::vector;
 // ----------------------------------------------------------------------
 muCharmReader::muCharmReader(TChain *tree, TString evtClassName): treeReader01(tree, evtClassName) {
   cout << "==> muCharmReader: constructor..." << endl;
+  fpJSON = new JSON("/shome/ursl/json/1.json"); 
 }
 
 // ----------------------------------------------------------------------
@@ -33,7 +34,7 @@ void muCharmReader::startAnalysis() {
 // ----------------------------------------------------------------------
 void muCharmReader::eventProcessing() {
 
-  cout << fRun << " " << fLS << endl;
+  cout << fRun << " " << fLS << ": " << fpJSON->good(fRun, fLS) << endl;
 
   ((TH1D*)fpHistFile->Get("h1"))->Fill(fpEvt->nRecTracks()); 
   ((TH1D*)fpHistFile->Get("h2"))->Fill(fpEvt->nCands()); 

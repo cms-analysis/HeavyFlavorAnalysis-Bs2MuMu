@@ -70,15 +70,16 @@ lib/libAnaClasses.so: $(addprefix obj/,$(READER) $(READERDICT)) lib/libAna00.so
 
 lib/libAna00.so:
 	cd lib && ln -s $(RELLIBPATH)/libAna00.so libAna00.so && cd -
+	cd lib && ln -s $(RELLIBPATH)/libUtil.so libUtil.so && cd -
 
 bin/runTreeReaders: lib/libAnaClasses.so obj/runTreeReaders.o lib/libAna00.so
-	$(LD) $(LDFLAGS) -o bin/runTreeReaders $(GLIBS) obj/runTreeReaders.o lib/libAnaClasses.so lib/libAna00.so
+	$(LD) $(LDFLAGS) -o bin/runTreeReaders $(GLIBS) obj/runTreeReaders.o lib/libAnaClasses.so lib/libAna00.so lib/libUtil.so
 
 bin/runMergeTrees: lib/libAnaClasses.so obj/runMergeTrees.o lib/libAna00.so
-	$(LD) $(LDFLAGS) -o bin/runMergeTrees $(GLIBS) obj/runMergeTrees.o lib/libAnaClasses.so lib/libAna00.so
+	$(LD) $(LDFLAGS) -o bin/runMergeTrees $(GLIBS) obj/runMergeTrees.o lib/libAnaClasses.so lib/libAna00.so lib/libUtil.so
 
 clean:
-	rm -f obj/*.o *Dict.* lib/libAna00.so
+	rm -f obj/*.o *Dict.* lib/libAna00.so lib/libUtil.so
 
 cleanall: clean
 	rm -f bin/runTreeReaders

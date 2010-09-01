@@ -21,6 +21,7 @@
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaJet.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
+#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/JSON.hh"
 
 #include "treeReader01.hh"
 
@@ -80,7 +81,7 @@ public:
   double fm1pt, fm2pt; 
   int    fm1m, fm2m; 
   
-
+  JSON   *fpJSON; 
 };
 
 #endif
