@@ -33,8 +33,16 @@ void muCharmReader::startAnalysis() {
 // ----------------------------------------------------------------------
 void muCharmReader::eventProcessing() {
 
+  cout << fRun << " " << fLS << endl;
+
   ((TH1D*)fpHistFile->Get("h1"))->Fill(fpEvt->nRecTracks()); 
   ((TH1D*)fpHistFile->Get("h2"))->Fill(fpEvt->nCands()); 
+
+  //   for (int i = 0; i < 100; ++i) {
+  //     cout << fpEvt->fHLTNames[i] << endl;
+  //   }
+  //   return;
+
 
   TAnaCand *pCand; 
   TH1D *h; 

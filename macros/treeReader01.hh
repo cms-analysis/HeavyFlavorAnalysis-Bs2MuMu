@@ -59,6 +59,7 @@ protected:
 
   // -- Variables changing per event (and initialized in initVariables()
   int          fRun;           // current run number; filled in treeReader01::loop()
+  int          fLS;            // current lumi section; filled in treeReader01::loop()
 
 
   // -- Histogram pointers 
