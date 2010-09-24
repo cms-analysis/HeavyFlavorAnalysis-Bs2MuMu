@@ -1,8 +1,8 @@
 #include "bmmReader.hh"
 #include "TRandom.h"
 #include <cmath>
-#define MMUON 0.10566
-#define MKAON 0.49368
+
+#include "../interface/HFMasses.hh"
 
 using std::cout;
 using std::endl;
@@ -39,6 +39,9 @@ void bmmReader::eventProcessing() {
   initVariables(); 
 
   // -- track selection for all candidates
+  pvStudy(); 
+
+  // -- track selection for all candidates
   trackSelection(); 
 
   // -- Select a candidate
@@ -58,6 +61,24 @@ void bmmReader::initVariables() {
   fGoodMuonsID = fGoodMuonsPT = false; 
   fGoodTracks = fGoodTracksPT = false; 
   fGoodCandPT = false; 
+
+}
+
+
+// ----------------------------------------------------------------------
+void bmmReader::pvStudy() {
+
+  TAnaVertex *pV; 
+  cout << "Found " << fpEvt->nPV() << " PVs, best PV at "  << fpEvt->fBestPV
+       << endl;
+  for (int i = 0; i < fpEvt->nPV(); ++i) {
+    pV = fpEvt->getPV(i); 
+    cout << "  " << i << " -> with " << pV->getNtracks() << " tracks: ";
+    for (int p = 0; p < pV->getNtracks(); ++p) {
+      cout << pV->getTrack(p) << " "; 
+    }
+    cout << endl;
+  }
 
 }
 

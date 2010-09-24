@@ -25,10 +25,6 @@
 #include "treeReader01.hh"
 
 #define DR      57.29577951
-#define PIPMASS 0.13957
-#define ELMASS  0.000511
-#define MUMASS  0.10567
-
 
 class bmmReader : public treeReader01 {
 
@@ -46,6 +42,9 @@ public:
   virtual void MCKinematics();  
   virtual void L1TSelection();  
   virtual void HLTSelection();  
+
+  virtual void pvStudy();  
+
   virtual void trackSelection();  
   virtual void muonSelection();  
   virtual void candidateSelection(int mode = 0);  // 0 = closest in r-phi

@@ -343,4 +343,7 @@ truthB2JpsiSequence      = cms.Sequence(truthBsDump*truthBd2JpsiKsDump*truthBd2J
 truthOniaSequence        = cms.Sequence(truthPsiToMuMu*truthPsi2SToMuMu*truthUps1SToMuMu*truthUps2SToMuMu*truthUps3SToMuMu)
 truthCharmSequence       = cms.Sequence(truthD0ToKPi*truthDpToKPiPi*truthDpToKstarPi*truthDsToPhiPi*truthDstarToD0PiToKPiPi*truthDpToKKPi*truthLambdaCToPrKPi)
 
+truthBmmSequence         = cms.Sequence(truthSignalsSequence*truthBsDump*truthBuDump)
+
+
 truthAllSequence         = cms.Sequence(truthSignalsSequence*truthRareBsSequence*truthRareBdSequence*truthRareBuSequence*truthRareLambdaBSequence*truthB2JpsiSequence*truthOniaSequence*truthCharmSequence)

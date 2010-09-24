@@ -28,6 +28,7 @@ extern TAna01Event *gHFEvent;
 
 using namespace std;
 using namespace edm;
+using namespace reco;
 
 
 // ----------------------------------------------------------------------
@@ -76,16 +77,16 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   int bestPV(-1), bestN(-1), cnt(0); 
   try {
     // -- get the collection of RecoTracks 
-    edm::Handle<edm::View<reco::Track> > tracksView;
+    edm::Handle<edm::View<Track> > tracksView;
     iEvent.getByLabel(fPrimaryVertexTracksLabel, tracksView);
 
-    edm::Handle<reco::VertexCollection> recoPrimaryVertexCollection;
+    edm::Handle<VertexCollection> recoPrimaryVertexCollection;
     iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
-    //    const reco::VertexCollection vertices = *(recoPrimaryVertexCollection.product());
+    //    const VertexCollection vertices = *(recoPrimaryVertexCollection.product());
 
     int isFake(-1); 
     double cov[9]; 
-    for (reco::VertexCollection::const_iterator iv = recoPrimaryVertexCollection->begin(); iv != recoPrimaryVertexCollection->end(); ++iv) {
+    for (VertexCollection::const_iterator iv = recoPrimaryVertexCollection->begin(); iv != recoPrimaryVertexCollection->end(); ++iv) {
       TAnaVertex *pVtx = gHFEvent->addPV();
       ChiSquared chi2(iv->chi2(), iv->ndof());
       if (iv->isFake()) {
@@ -117,20 +118,21 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       }
       pVtx->setCovXX(cov);
 
-      //       Vertex::trackRef_iterator v1TrackIter;
-      //       Vertex::trackRef_iterator v1TrackBegin = iv->tracks_begin();
-      //       Vertex::trackRef_iterator v1TrackEnd   = iv->tracks_end();
-      //       for (v1TrackIter = v1TrackBegin; v1TrackIter != v1TrackEnd; v1TrackIter++) {
-      
-      // 	for (unsigned int i = 0; i < tracksView->size(); ++i){    
-      // 	  TrackBaseRef rTrackView(tracksView,i);
-      // 	  if (rTrackView == v1TrackIter) {
-      // 	    cout << "Found a track from PV" << endl;
-      // 	    // 	    int it = v1TrackIter.index();
-      // 	    // 	    pVtx->addTrack(it); 
-      // 	  }
-      // 	}
-      //       }
+      Vertex::trackRef_iterator v1TrackIter;
+      Vertex::trackRef_iterator v1TrackBegin = iv->tracks_begin();
+      Vertex::trackRef_iterator v1TrackEnd   = iv->tracks_end();
+      for (v1TrackIter = v1TrackBegin; v1TrackIter != v1TrackEnd; v1TrackIter++) {
+	if (fVerbose > 10) {
+	  cout << "vtx trk: " << " " << v1TrackIter->key()
+	       << "  " << (**v1TrackIter).pt() 
+	       << "  " << (**v1TrackIter).phi() 
+	       << endl;
+	}
+	TrackBaseRef rTrackView(tracksView, v1TrackIter->key());
+	Track track(*rTrackView);
+	if (fVerbose > 10) {cout << " -> track " << "  " << track.pt() << "  " << track.phi() << endl;}
+	pVtx->addTrack(v1TrackIter->key()); 
+      }
       ++cnt; 
     }
   } catch (cms::Exception &ex) {

@@ -89,6 +89,7 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // ----------------------------------------------------------------------
   // -- L1 results: physics and technical triggers
   // ----------------------------------------------------------------------
+  if (fVerbose > 5) cout << "Resetting all trigger arrays" << endl;
   for (int i = 0; i < NL1T; ++i) {
     gHFEvent->fL1TPrescale[i] = gHFEvent->fL1TResult[i] = gHFEvent->fL1TMask[i] = gHFEvent->fL1TError[i] = 0; 
   }
@@ -101,16 +102,19 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     gHFEvent->fHLTPrescale[i] = gHFEvent->fHLTResult[i] = gHFEvent->fHLTWasRun[i] = gHFEvent->fHLTError[i] = 0; 
   }
     
+  if (fVerbose > 5) cout << "Retrieving trigger records" << endl;
   Handle<L1GlobalTriggerReadoutRecord> L1GTRR;
   iEvent.getByLabel(fL1GTReadoutRecordLabel,L1GTRR);
   Handle<L1GlobalTriggerObjectMapRecord> hL1GTmap; 
   iEvent.getByLabel("hltL1GtObjectMap", hL1GTmap);
 
+  if (fVerbose > 5) cout << "Retrieving L1GtUtils" << endl;
   L1GtUtils l1GtUtils;
   l1GtUtils.retrieveL1EventSetup(iSetup);
   // cout << "L1 trigger menu: ";
   // cout << l1GtUtils.l1TriggerMenu() << endl;
 
+  if (fVerbose > 5) cout << "Get L1GtTriggerMenu" << endl;
   edm::ESHandle<L1GtTriggerMenu> menuRcd;
   iSetup.get<L1GtTriggerMenuRcd>().get(menuRcd) ;
   const L1GtTriggerMenu* menu = menuRcd.product();
