@@ -31,7 +31,7 @@ void HFNodeCut::setFields(double maxDoca, double vtxChi2, TVector3 vtxPos, TVect
 bool HFNodeCut::operator()() {return true;}
 
 HFDecayTree::HFDecayTree(int pID, int doVertexing, double constraint, double constraintSigma) :
-  vertexing(doVertexing),particleID(pID),massConstraint(constraint),massConstraintSigma(constraintSigma),kinTree(0)
+  vertexing(doVertexing),particleID(pID),massConstraint(constraint),massConstraintSigma(constraintSigma),maxDoca(0),minDoca(0),kinTree(0)
 {
   if(massConstraintSigma <= 0.0 && massConstraint > 0.0)
     massConstraintSigma = 0.0001 * massConstraint;
@@ -75,6 +75,8 @@ void HFDecayTree::clear()
   particleID = -1.0;
   massConstraint = -1.0;
   massConstraintSigma = -1.0;
+  maxDoca = -1.0;
+  minDoca = -1.0;
   
   // clear the containers
   trackIndices.clear();

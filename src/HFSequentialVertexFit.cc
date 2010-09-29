@@ -107,7 +107,8 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 		kinPart = kinTree->currentParticle();
 		kinVertex = kinTree->currentDecayVertex();
 		
-		maxDoca = getMaxDoca(kinParticles);
+		maxDoca = tree->maxDoca = getMaxDoca(kinParticles);
+		tree->minDoca = getMinDoca(kinParticles);
 		vtxChi2 = kinPart->chiSquared();
 		vtxPos.SetXYZ(kinVertex->position().x(),kinVertex->position().y(),kinVertex->position().z());
 		ptCand.SetXYZ(kinPart->currentState().globalMomentum().x(),
@@ -254,10 +255,9 @@ TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
   
   pCand->fSig1 = gHFEvent->nSigTracks();
   pCand->fSig2 = pCand->fSig1 + allTreeTracks.size() - 1;
-
-  // FIXME: max / min Doca calculation should NOT use the refitted tracks!!
-  pCand->fMaxDoca = getMaxDoca(daughterParticles);
-  pCand->fMinDoca = getMinDoca(daughterParticles);
+  
+  pCand->fMaxDoca = tree->maxDoca;
+  pCand->fMinDoca = tree->minDoca;
   
   for (j = 0; j < allTreeTracks.size(); j++) {
     
