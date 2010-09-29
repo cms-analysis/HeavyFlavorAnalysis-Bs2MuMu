@@ -290,6 +290,8 @@ void HFBd2JpsiKs::analyze(const Event& iEvent, const EventSetup& iSetup)
 			
 			theTree.setNodeCut(RefCountedHFNodeCut(new HFKshortCut(fPAngleKs, &(*iterator->getNodeCut()), fMaxDoca)));
 			
+			aSeq.doFit(&theTree);
+			
 			// with J/Psi mass constraint                                                                                                    
 			theTree.clear();
 			theTree.particleID = 800511;
