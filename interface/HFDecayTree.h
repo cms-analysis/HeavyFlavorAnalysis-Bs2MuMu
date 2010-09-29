@@ -100,6 +100,8 @@ class HFDecayTree
 		double particleID; // if == 0, then no TAnaCandidate should be created.
 		double massConstraint; // if <= 0, then no massconstraint at this vertex
 		double massConstraintSigma;
+		double maxDoca;
+		double minDoca;
 	private:
 		void dumpTabs(unsigned indent); // used by dump()
 		
