@@ -4,6 +4,8 @@
 
 using namespace std;
 
+const static float kMassBplus = 5.2792;
+
 kpReader::kpReader(TChain *tree, TString evtClassName) : massReader(tree,evtClassName),total_counter(0),reco_counter(0),reco_single(0),reco_double(0)
 {
 	// set the pointers to save in the tree
@@ -83,10 +85,13 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	fPlabMu1 = TVector3();
 	fPlabMu2 = TVector3();
 	fPlabKp = TVector3();
+	fCtau = 0.0;
 	
 	if (pCand->fType % 1000 != 521) return 0;
 	
 	result = massReader::loadCandidateVariables(pCand);
+	
+	fCtau = kMassBplus / fMomentum.Mag() * fD3;
 	
 	// set the momenta
 	for (j = pCand->fSig1; j <= pCand->fSig2 && j >= 0; j++) {

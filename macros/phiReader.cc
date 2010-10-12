@@ -5,6 +5,8 @@
 
 using namespace std;
 
+const static float kMassBs = 5.3663;
+
 phiReader::phiReader(TChain *tree, TString evtClassName) : massReader(tree,evtClassName), total_counter(0), reco_single(0), reco_double(0)
 {
 	cout << "Instantiating phiReader..." << endl;
@@ -89,10 +91,13 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 	fTrackQual_mu1 = fTrackQual_mu2 = fTrackQual_kp1 = fTrackQual_kp2 = 0;
 	fQ_mu1 = fQ_mu2 = fQ_kp1 = fQ_kp2 = 0;
 	fD3_BsJpsi = fD3e_BsJpsi = -1.0f;
+	fCtau = 0.0;
 	
 	if (pCand->fType % 1000 != 531) return 0;
 	
 	result = massReader::loadCandidateVariables(pCand);
+	
+	fCtau = kMassBs / fMomentum.Mag() * fD3; // estimate the proper time!
 	
 	// set the momenta
 	for (j = pCand->fSig1; j <= pCand->fSig2; j++) {
