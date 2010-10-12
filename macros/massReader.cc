@@ -49,6 +49,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fNdof = pCand->fVtx.fNdof;
 	fMaxDoca = pCand->fMaxDoca;
 	fIso = calculateIsolation(pCand,1.0);
+	fCtau = 0.0;
 	
 	if (pCand->fMom >= 0) {
 		momCand = fpEvt->getCand(pCand->fMom);
@@ -60,14 +61,21 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	}
 	
 	fAlpha = v1.Angle(v2);
+	fD3_Para = v1.Dot(v2) / v1.Mag(); // projection of v2 to v1
+	fD3_Perp = (v2 - (fD3_Para / v1.Mag() * v1) ).Mag(); // perpendicular part of v2 w.r.t v1
+	
 	// project to xy plane
 	v1.SetZ(0);
 	v2.SetZ(0);
 	fAlphaXY = v1.Angle(v2);
 	
+	fDxy_Para = v1.Dot(v2) / v1.Mag(); // projection of v2 to v1
+	fDxy_Para = (v2 - (fD3_Para / v1.Mag() * v1) ).Mag(); // perpendicular part of v2 w.r.t v1
+	
 	// do this at the end so the checkTruth algorithm can use
 	// all variables of this candidate.
 	fTruth = checkTruth(pCand);
+	fTriggers = loadTrigger();	
 	
 	return 1;
 } // loadCandidateVariables()
@@ -96,6 +104,12 @@ void massReader::bookHist()
 	reduced_tree->Branch("Ndof",&fNdof,"Ndof/F");
 	reduced_tree->Branch("max_doca",&fMaxDoca,"max_doca/F");
 	reduced_tree->Branch("iso",&fIso,"iso/F");
+	reduced_tree->Branch("triggers",&fTriggers,"triggers/I");
+	reduced_tree->Branch("ctau",&fCtau,"ctau/F");
+	reduced_tree->Branch("d3_perp",&fD3_Perp,"d3_perp/F");
+	reduced_tree->Branch("d3_para",&fD3_Para,"d3_para/F");
+	reduced_tree->Branch("dxy_perp",&fDxy_Perp,"dxy_perp/F");
+	reduced_tree->Branch("dxy_para",&fDxy_Para,"dxy_para/F");
 } // massReader::bookHist()
 
 void massReader::closeHistFile()
@@ -162,7 +176,7 @@ int massReader::countMuons(TAnaCand *cand)
 		// check if this is supposed to be a muon!
 		if (abs(track->fMCID) == 13) {
 			track = fpEvt->getRecTrack(track->fIndex); // rec track
-			if (track->fMuID > 0 && (track->fMuID & 6))
+			if (track->fMuID > 0 && (track->fMuID & 6)) // needs to be a tracker or global muon
 				nbrMu++;
 		}
 	}
@@ -210,3 +224,43 @@ float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle)
 	
 	return (float)iso;
 } // calculateIsolation()
+
+int massReader::loadTrigger()
+{
+	unsigned j;
+	int triggers = 0;
+	TString string;
+	int triggers_found = 0; // store the trigger we found!!
+	
+	for (j = 0; j < NHLT; j++) {
+		if (fpEvt->fHLTNames[j] == "HLT_DoubleMu3") {
+			triggers_found |= kHLT_DoubleMu3_Bit;
+			
+			if (fpEvt->fHLTError[j]) {
+				cerr << "massReader: HLTError in " << fpEvt->fHLTNames[j] << endl;
+				continue;
+			}
+			
+			if(fpEvt->fHLTResult[j])
+				triggers |= kHLT_DoubleMu3_Bit;
+		} else if (fpEvt->fHLTNames[j] == "HLT_DoubleMu0") {
+			triggers_found |= kHLT_DoubleMu0_Bit;
+			
+			if (fpEvt->fHLTError[j]) {
+				cerr << "massReader: HLTError in " << fpEvt->fHLTNames[j] << endl;
+				continue;
+			}
+			
+			if(fpEvt->fHLTResult[j])
+				triggers |= kHLT_DoubleMu0_Bit;
+		}
+	}
+	
+	// dump if the triggers couldn't be found
+	if (triggers_found & kHLT_DoubleMu3_Bit == 0)
+		cerr << "No HLT_DoubleMu3 trigger found in run " << fpEvt->fRunNumber << endl;
+	if (triggers_found & kHLT_DoubleMu0_Bit == 0)
+		cerr << "NO HLT_DoubleMu0 trigger found in run " << fpEvt->fRunNumber << endl;
+	
+	return triggers;
+} // loadTrigger()

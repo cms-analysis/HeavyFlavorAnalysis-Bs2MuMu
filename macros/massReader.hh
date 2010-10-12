@@ -8,6 +8,14 @@ const static double MMUON = 0.1057;
 const static double MPION = 0.1396;
 const static double MKAON = 0.4937;
 
+// The trigger information stored.
+// When adding one, be sure to update the code in massReader::loadTrigger()
+enum trigger_bits
+{
+	kHLT_DoubleMu3_Bit = 1 << 0,
+	kHLT_DoubleMu0_Bit = 1 << 1
+};
+
 class massReader : public treeReader01 {
 	
 	public:
@@ -29,6 +37,7 @@ class massReader : public treeReader01 {
 		virtual int checkTruth(TAnaCand *cand); // check if all are originating from the same particle
 		virtual int countMuons(TAnaCand *cand); // count the number of identified muons
 		float calculateIsolation(TAnaCand *pCand, double openingAngle); // calculate the isolation of the candidate
+		int loadTrigger();
 
 		// creates the decay of the TGenCand
 		void buildDecay(TGenCand *gen, std::multiset<int> *particles);
@@ -58,6 +67,12 @@ class massReader : public treeReader01 {
 		float fNdof; // number of degrees of freedom of vertex
 		float fMaxDoca; // max doca
 		float fIso; // isolation
+		int fTriggers; // store some trigger information
+		float fCtau; // proper time (note can be filled only in subclasses as requires knowledge of m)
+		float fD3_Perp;	// Perpendicular part of distance d3 w.r.t. momentum of candidate
+		float fD3_Para; // Parallel part of distance d3 w.r.t. momentum of candidate
+		float fDxy_Perp; // Perpendicular part of distance dxy w.r.t. momentum of candidate
+		float fDxy_Para; // Parallel part of distance dxy w.r.t. momentum of candidate
 };
 
 #endif
