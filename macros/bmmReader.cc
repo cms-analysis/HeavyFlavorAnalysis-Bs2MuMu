@@ -39,7 +39,7 @@ void bmmReader::eventProcessing() {
   initVariables(); 
 
   // -- track selection for all candidates
-  pvStudy(); 
+  //  pvStudy(); 
 
   // -- track selection for all candidates
   trackSelection(); 
@@ -93,6 +93,8 @@ void bmmReader::candidateSelection(int mode) {
   vector<int> lCands;
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
     pCand = fpEvt->getCand(iC);
+    if (200521 == pCand->fType) cout << "cand type: " << pCand->fType << endl;
+    if (1313 == pCand->fType) cout << "cand type: " << pCand->fType << endl;
     if (TYPE != pCand->fType) continue;
     lCands.push_back(iC); 
   }
