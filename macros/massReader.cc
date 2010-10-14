@@ -257,9 +257,9 @@ int massReader::loadTrigger()
 	}
 	
 	// dump if the triggers couldn't be found
-	if (triggers_found & kHLT_DoubleMu3_Bit == 0)
+	if ((triggers_found & kHLT_DoubleMu3_Bit) == 0)
 		cerr << "No HLT_DoubleMu3 trigger found in run " << fpEvt->fRunNumber << endl;
-	if (triggers_found & kHLT_DoubleMu0_Bit == 0)
+	if ((triggers_found & kHLT_DoubleMu0_Bit) == 0)
 		cerr << "NO HLT_DoubleMu0 trigger found in run " << fpEvt->fRunNumber << endl;
 	
 	return triggers;
