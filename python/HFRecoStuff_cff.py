@@ -47,7 +47,6 @@ triggerDump = cms.EDAnalyzer(
     L1MuonsLabel            = cms.untracked.InputTag("hltL1extraParticles"), 
     HLTResultsLabel         = cms.untracked.InputTag("TriggerResults::HLT"), 
     TriggerEventLabel       = cms.untracked.InputTag("hltTriggerSummaryAOD::HLT"), 
-    hltLabel                = cms.untracked.InputTag("TriggerResults::HLT"), 
     )
 
 
