@@ -56,8 +56,8 @@ HFDimuons::HFDimuons(const ParameterSet& iConfig) :
   fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 1.0)), 
   fMassLow(iConfig.getUntrackedParameter<double>("massLow", 8.7)), 
   fMassHigh(iConfig.getUntrackedParameter<double>("massHigh", 11.2)), 
-  fVertexing(iConfig.getUntrackedParameter<int>("vertexing", 1)),
   fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.05)),
+  fVertexing(iConfig.getUntrackedParameter<int>("vertexing", 1)),
   fType(iConfig.getUntrackedParameter<int>("type", 1313)) {
   using namespace std;
   cout << "----------------------------------------------------------------------" << endl;
