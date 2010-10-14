@@ -47,7 +47,7 @@ HFTree::HFTree(const edm::ParameterSet& iConfig) :
   fEvent = new TAna01Event(0);
   fTree->Branch("TAna01Event", "TAna01Event", &fEvent, 256000/8, 1);
 
-  TH1D *h1 = new TH1D("h1", "h1", 20, 0., 20.);
+  new TH1D("h1", "h1", 20, 0., 20.);
 
   gHFEvent = fEvent;
   gHFFile  = fFile;
