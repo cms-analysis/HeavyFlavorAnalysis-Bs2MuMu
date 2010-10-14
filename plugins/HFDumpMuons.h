@@ -40,6 +40,7 @@ class HFDumpMuons : public edm::EDAnalyzer {
   edm::InputTag             fCaloMuonsLabel;
 
   int                       fVerbose, fDoTruthMatching; 
+  bool                      fRunOnAOD;
 
 };
 

@@ -49,13 +49,16 @@ HFDumpMuons::HFDumpMuons(const edm::ParameterSet& iConfig):
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
   fCaloMuonsLabel(iConfig.getUntrackedParameter<InputTag>("calomuonsLabel")),
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
-  fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1)) {
+  fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1)),
+  fRunOnAOD(iConfig.getUntrackedParameter<bool>("runOnAOD",false))
+{
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFDumpMuons constructor" << endl;
   cout << "---  fMuonsLabel:             " << fMuonsLabel.encode() << endl;
   cout << "---  fCaloMuonsLabel:         " << fCaloMuonsLabel.encode() << endl;
   cout << "---  fDoTruthMatching:        " << fDoTruthMatching << endl;  // 0 = nothing, 1 = TrackingParticles, 2 = FAMOS
   cout << "---  fVerbose:                " << fVerbose << endl;
+  cout << "---  fRunOnAOD:               " << fRunOnAOD << endl;
   cout << "----------------------------------------------------------------------" << endl;
 }
 
@@ -74,22 +77,22 @@ void HFDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   if (fVerbose > 0) cout << "==> HFDumpMuons> " << fMuonsLabel << endl;
   iEvent.getByLabel(fMuonsLabel, hMuons);
   
-  // -- calo muons
-  Handle<CaloMuonCollection> cMuons;
-  if (fVerbose > 0) cout << "==> HFDumpMuons> " << fCaloMuonsLabel << endl;
-  iEvent.getByLabel(fCaloMuonsLabel, cMuons);
-  
-  
-
   int im(0);
   for (reco::MuonCollection::const_iterator iMuon = hMuons->begin(); iMuon != hMuons->end();  iMuon++) {
     fillMuon(*iMuon, im); 
     ++im;
   }
 
-  for (reco::CaloMuonCollection::const_iterator cMuon = cMuons->begin(); cMuon != cMuons->end();  cMuon++) {
-    fillCaloMuon(*cMuon, im); 
-    ++im;
+  // -- calo muons
+  if(!fRunOnAOD) {
+    Handle<CaloMuonCollection> cMuons;
+    if (fVerbose > 0) cout << "==> HFDumpMuons> " << fCaloMuonsLabel << endl;
+    iEvent.getByLabel(fCaloMuonsLabel, cMuons);
+    
+    for (reco::CaloMuonCollection::const_iterator cMuon = cMuons->begin(); cMuon != cMuons->end();  cMuon++) {
+      fillCaloMuon(*cMuon, im); 
+      ++im;
+    }
   }
 
 
@@ -98,9 +101,7 @@ void HFDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       gHFEvent->getMuon(im)->dump();
     }
   }
-
 }
-
 
 
 // ----------------------------------------------------------------------
@@ -130,11 +131,16 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
     Track trk(*gTrack);
     pM->fGlobalPlab.SetPtEtaPhi(trk.pt(), trk.eta(), trk.phi());
 
-    vector<unsigned int> hits = muonStatHits(trk);
-    pM->fNhitsDT  = hits.at(0); 
-    pM->fNhitsCSC = hits.at(1); 
-    pM->fNhitsRPC = hits.at(2); 
-
+    if (!fRunOnAOD) {
+      vector<unsigned int> hits = muonStatHits(trk);
+      pM->fNhitsDT  = hits.at(0); 
+      pM->fNhitsCSC = hits.at(1); 
+      pM->fNhitsRPC = hits.at(2); 
+    } else {
+      pM->fNhitsDT  = -1;
+      pM->fNhitsCSC = -1;
+      pM->fNhitsRPC = -1;
+    }
   }
 
   if (iTrack.isNonnull()) {
