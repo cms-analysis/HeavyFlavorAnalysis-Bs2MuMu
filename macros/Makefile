@@ -84,7 +84,8 @@ clean:
 	rm -f obj/*.o *Dict.* lib/libAna00.so lib/libUtil.so
 
 cleanall: clean
-	rm -f bin/*
+	rm -f bin/runTreeReaders bin/runMergeTrees
+	rm -f bin/writeA01Event bin/readA01Event
 	rm -f lib/lib*.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libAna00.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libUtil.so
