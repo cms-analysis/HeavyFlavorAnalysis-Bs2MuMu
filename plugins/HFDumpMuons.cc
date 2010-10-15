@@ -159,24 +159,31 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
 void HFDumpMuons::fillCaloMuon(const reco::CaloMuon& rm, int im) {
 
   TAnaMuon *pM = gHFEvent->addMuon();    
+  pM->fMuID    = 0;  // this assumes that fillCaloMuon is independent from the main muons d.k.
+
   if (rm.innerTrack().isNonnull()) {
     pM->fIndex = rm.innerTrack().index();
+    pM->fQ        = rm.charge();
   } else {
     pM->fIndex = -23;
+    pM->fQ     = 0;
   }
   pM->fMuIndex = im; 
   pM->fMuID   |= 0x1<<15;
+
+  pM->fNhitsDT  = 0; 
+  pM->fNhitsCSC = 0; 
+  pM->fNhitsRPC = 0; 
+  
 
   TrackRef iTrack = rm.innerTrack();
 
   if (iTrack.isNonnull()) {
     Track trk(*iTrack);
     pM->fInnerPlab.SetPtEtaPhi(trk.pt(), trk.eta(), trk.phi());
-  }
+  } 
 
 }
-
-
 
 // ----------------------------------------------------------------------
 int HFDumpMuons::muonID(const Muon &rm) {
