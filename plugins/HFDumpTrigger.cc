@@ -68,6 +68,7 @@ HFDumpTrigger::HFDumpTrigger(const edm::ParameterSet& iConfig):
   cout << "--- L1 GT Object Map Label      : " << fL1GTmapLabel << endl;
   cout << "--- L1 Muons Label              : " << fL1MuonsLabel << endl;
   cout << "--- HLTResultsLabel             : " << fHLTResultsLabel << endl;
+  cout << "--- Trigger Event Label         : " << fTriggerEventLabel << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
   fNevt = 0; 
@@ -187,54 +188,54 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     int prescale(1); 
     int psSet = -1; 
     psSet = hltConfig.prescaleSet(iEvent, iSetup);
-    for (unsigned int it = 0; it < validTriggerNames.size(); ++it) {
-      index    = trigName.triggerIndex(validTriggerNames[it]); 
-      result   = (index < validTriggerNames.size() && hHLTresults->accept(index));
-      wasrun   = (index < validTriggerNames.size() && hHLTresults->wasrun(index));
-      error    = (index < validTriggerNames.size() && hHLTresults->error(index));
-      if (psSet > -1) {
-	prescale = hltConfig.prescaleValue(psSet, validTriggerNames[it]);
-      } else {
-	//	cout << "==>HFDumpTrigger> error in prescale set!?" << endl;
-	prescale = 0;
-      }
+	for (unsigned int it = 0; it < validTriggerNames.size(); ++it) {
+		index    = trigName.triggerIndex(validTriggerNames[it]); 
+		if (index >= hHLTresults->size())
+			continue;
+		
+		result   = hHLTresults->accept(index);
+		wasrun   = hHLTresults->wasrun(index);
+		error    = hHLTresults->error(index);
+		if (psSet > -1) {
+			prescale = hltConfig.prescaleValue(psSet, validTriggerNames[it]);
+		} else {
+			//	cout << "==>HFDumpTrigger> error in prescale set!?" << endl;
+			prescale = 0;
+		}
 
-      gHFEvent->fHLTNames[index]    = TString(validTriggerNames[it]);
-      gHFEvent->fHLTResult[index]   = result;
-      gHFEvent->fHLTWasRun[index]   = wasrun;
-      gHFEvent->fHLTError[index]    = error;
-      gHFEvent->fHLTPrescale[index] = prescale;
-      
-      const vector<string>& moduleLabels(hltConfig.moduleLabels(index));
-      const unsigned int moduleIndex(hHLTresults->index(index));
-      
-      //  cout << " Last active module - label/type: "
-      //   << moduleLabels[moduleIndex] << "/" << hltConfig.moduleType(moduleLabels[moduleIndex])
-      //   << endl;
-      
-      if ( hltConfig.moduleType(moduleLabels[moduleIndex]) == "HLTPrescaler" ){
-		if (fVerbose > 1) cout << " HLTPrescaler  " << endl;
-		int tmp = gHFEvent->fHLTError[index];
-		gHFEvent->fHLTError[index] = (tmp<<2);
-		gHFEvent->fHLTError[index] |= 1;
-      }
-      
-      // cout << "gHFEvent->fHLTError[index] = " << gHFEvent->fHLTError[index] << endl;
-      
-      if ( (gHFEvent->fHLTError[index] & 1)  && (fVerbose > 1) )
-	cout << " Last active module type =  " << hltConfig.moduleType(moduleLabels[moduleIndex]) << endl;
-      
-      
-      if (fVerbose > 1) 
-	cout << " HLTName = " << gHFEvent->fHLTNames[index]
-	     << " Index = " << index
-	     << " Result = " <<  gHFEvent->fHLTResult[index]
-	     << " WasRun = " <<  gHFEvent->fHLTWasRun[index]
-	     << " Error = " <<  gHFEvent->fHLTError[index]
-	     << " Presacle = " <<  gHFEvent->fHLTPrescale[index] 
-	     << endl;
-      
-    }
+		gHFEvent->fHLTNames[index]    = TString(validTriggerNames[it]);
+		gHFEvent->fHLTResult[index]   = result;
+		gHFEvent->fHLTWasRun[index]   = wasrun;
+		gHFEvent->fHLTError[index]    = error;
+		gHFEvent->fHLTPrescale[index] = prescale;
+
+		const vector<string>& moduleLabels(hltConfig.moduleLabels(index));
+		const unsigned int moduleIndex(hHLTresults->index(index));
+
+		//  cout << " Last active module - label/type: "
+		//   << moduleLabels[moduleIndex] << "/" << hltConfig.moduleType(moduleLabels[moduleIndex])
+		//   << endl;
+		if ( moduleIndex < moduleLabels.size() && hltConfig.moduleType(moduleLabels[moduleIndex]) == "HLTPrescaler" ){
+			if (fVerbose > 1) cout << " HLTPrescaler  " << endl;
+			int tmp = gHFEvent->fHLTError[index];
+			gHFEvent->fHLTError[index] = (tmp<<2);
+			gHFEvent->fHLTError[index] |= 1;
+		}
+
+		// cout << "gHFEvent->fHLTError[index] = " << gHFEvent->fHLTError[index] << endl;
+		if ( (gHFEvent->fHLTError[index] & 1)  && (fVerbose > 1) )
+			cout << " Last active module type =  " << hltConfig.moduleType(moduleLabels[moduleIndex]) << endl;
+
+
+		if (fVerbose > 1) 
+			cout << " HLTName = " << gHFEvent->fHLTNames[index]
+			<< " Index = " << index
+			<< " Result = " <<  gHFEvent->fHLTResult[index]
+			<< " WasRun = " <<  gHFEvent->fHLTWasRun[index]
+			<< " Error = " <<  gHFEvent->fHLTError[index]
+			<< " Presacle = " <<  gHFEvent->fHLTPrescale[index] 
+			<< endl;
+	}
   }
   
 
