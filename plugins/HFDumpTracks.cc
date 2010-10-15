@@ -66,7 +66,9 @@ HFDumpTracks::HFDumpTracks(const edm::ParameterSet& iConfig):
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
   fCaloMuonsLabel(iConfig.getUntrackedParameter<InputTag>("calomuonsLabel")),
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
-  fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1)) {
+  fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1)),
+  fLoadCalomuons(iConfig.getUntrackedParameter<bool>("loadCalomuons",true))
+    {
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFDumpTracks constructor  " << endl;
   cout << "---  tracksLabel:             " << fTracksLabel << endl;
@@ -78,6 +80,7 @@ HFDumpTracks::HFDumpTracks(const edm::ParameterSet& iConfig):
   cout << "---  associatorLabel:         " << fAssociatorLabel << endl;
   cout << "---  trackingParticlesLabel:  " << fTrackingParticlesLabel << endl;
   cout << "---  doTruthMatching:         " << fDoTruthMatching << endl;  // 0 = nothing, 1 = TrackingParticles, 2 = FAMOS, 3 = TAna01Event
+  cout << "---  loadCalomuons:           " << fLoadCalomuons << endl;
   cout << "----------------------------------------------------------------------" << endl;
 }
 
@@ -135,13 +138,15 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   
   // -- get the collection of calo muons and store their corresponding track indices
   vector<unsigned int> CalomuonIndices, CalomuonCollectionIndices;  
-  Handle<CaloMuonCollection> cMuons;
-  iEvent.getByLabel(fCaloMuonsLabel, cMuons);
-  for (CaloMuonCollection::const_iterator cmuon = cMuons->begin(); cmuon != cMuons->end(); ++cmuon) {
-    TrackRef track = cmuon->innerTrack();
-    CalomuonIndices.push_back(track.index());
-    CalomuonCollectionIndices.push_back(muonIndex); 
-    ++muonIndex; 
+  if (fLoadCalomuons) {
+	  Handle<CaloMuonCollection> cMuons;
+	  iEvent.getByLabel(fCaloMuonsLabel, cMuons);
+	  for (CaloMuonCollection::const_iterator cmuon = cMuons->begin(); cmuon != cMuons->end(); ++cmuon) {
+		TrackRef track = cmuon->innerTrack();
+		CalomuonIndices.push_back(track.index());
+		CalomuonCollectionIndices.push_back(muonIndex); 
+		++muonIndex; 
+	  }
   }
   
   if (fVerbose > 0) cout << "==>HFDumpTracks> nMuons = " << hMuons->size() << endl;
@@ -241,20 +246,21 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     pTrack->fMuID    = 0;
     for (unsigned int im = 0; im < muonIndices.size(); ++im) {
       if (i == muonIndices[im]) {
-	if (fVerbose > 3) cout << " ==>HFDumpTracks> Found a muon!!" << endl;
-	const Muon &rMuon  = hMuons->at(muonCollectionIndices[im]);
+		if (fVerbose > 3) cout << " ==>HFDumpTracks> Found a muon!!" << endl;
+		const Muon &rMuon  = hMuons->at(muonCollectionIndices[im]);
 
-	pTrack->fMuIndex = muonCollectionIndices[im]; 
-	pTrack->fMuID    = HFDumpMuons::muonID(rMuon);
+		pTrack->fMuIndex = muonCollectionIndices[im]; 
+		pTrack->fMuID    = HFDumpMuons::muonID(rMuon);
       }
     }
     
     for (unsigned int im = 0; im < CalomuonIndices.size(); ++im) {
       if (i == CalomuonIndices[im]) {
-	if (fVerbose > 3) cout << " ==>HFDumpTracks> Found a calo muon!!" << endl;
-	
-	pTrack->fMuIndex = CalomuonCollectionIndices[im]; 
-	pTrack->fMuID   |= 0x1<<15;
+		if (fVerbose > 3) cout << " ==>HFDumpTracks> Found a calo muon!!" << endl;
+		
+		if (pTrack->fMuIndex < 0)
+			pTrack->fMuIndex = CalomuonCollectionIndices[im];
+		pTrack->fMuID   |= 0x1<<15;
       }
     }
 

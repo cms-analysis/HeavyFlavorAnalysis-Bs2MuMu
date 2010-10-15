@@ -36,7 +36,8 @@ class HFDumpTracks : public edm::EDAnalyzer {
                        fAssociatorLabel, fTrackingParticlesLabel;
   edm::InputTag        fMuonsLabel, fCaloMuonsLabel;
 
-  int                  fVerbose, fDoTruthMatching; 
+  int                  fVerbose, fDoTruthMatching;
+  bool				   fLoadCalomuons;
 
   reco::Vertex         fPV;
 
