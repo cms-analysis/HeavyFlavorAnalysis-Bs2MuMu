@@ -158,6 +158,18 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
 
   }
 
+
+//   // -- Build a kinematic particle to determine the best PV (?)
+//   float sigma = 0.00001*mass;
+//   kinParticles.push_back(pFactory.particle(refT[0],trackMasses[0],0.0f,0.0f,sigma)); 
+//   kinParticles.push_back(pFactory.particle(refT[1],trackMasses[1],0.0f,0.0f,sigma)); 
+		
+//   md.calculate(RecoTransientTrack[i].initialFreeState(), RecoTransientTrack[j].initialFreeState());
+//   if (md.status()) {
+//     dist = md.distance();
+//   }
+
+
   // -- Build "rootio" vertex 
   TAnaVertex anaVtx;
   ChiSquared chi(TransSecVtx.totalChiSquared(), TransSecVtx.degreesOfFreedom());
@@ -238,9 +250,6 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
   pCand->fDau2    = -1;
   pCand->fSig1    = gHFEvent->nSigTracks();
   pCand->fSig2    = pCand->fSig1 + trackList.size() - 1;
-
-  anaVtx.fDxy     = axy.distance(fPV, TransSecVtx).value();
-  anaVtx.fDxyE    = axy.distance(fPV, TransSecVtx).error();
 
   pCand->fMinDoca = minDist;
   pCand->fMaxDoca = maxDist;

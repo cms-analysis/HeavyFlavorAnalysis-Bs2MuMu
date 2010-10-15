@@ -82,6 +82,7 @@ HFDumpTracks::HFDumpTracks(const edm::ParameterSet& iConfig):
   cout << "---  doTruthMatching:         " << fDoTruthMatching << endl;  // 0 = nothing, 1 = TrackingParticles, 2 = FAMOS, 3 = TAna01Event
   cout << "---  loadCalomuons:           " << fLoadCalomuons << endl;
   cout << "----------------------------------------------------------------------" << endl;
+
 }
 
 
@@ -121,7 +122,6 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     cout << "==>HFDumpTracks> No primary vertex found, skipping" << endl;
     return;
   }
-  fPV = vertices[gHFEvent->fBestPV]; 
 
 
   // -- get the collection of muons and store their corresponding track indices
@@ -190,13 +190,29 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   TH1D *h1 = (TH1D*)gHFFile->Get("h1");
   if (h1) h1->Fill(tracksView->size());
 
-  
-  math::XYZPoint refPt = fPV.position();
+  // -- fill association map between tracks and primary vertices
+  tracksAndPv(iEvent); 
+  if (fVerbose > 20) {
+    for (unsigned int i = 0; i < tracksView->size(); ++i) {
+      TrackBaseRef rTrackView(tracksView,i);
+      Track trackView(*rTrackView);
+      cout << Form("%4d: %d", i, fTrack2Pv[i]) << " pt = " << trackView.pt() <<endl; 
+    }
+  }
   
   for (unsigned int i = 0; i < tracksView->size(); ++i){    
 
     TrackBaseRef rTrackView(tracksView,i);
     Track trackView(*rTrackView);
+
+    if (fTrack2Pv[i] > -1) {
+      fPV = vertices[fTrack2Pv[i]]; 
+    } else {
+      fPV = vertices[0]; 
+    }
+
+    math::XYZPoint refPt = fPV.position();
+
 
     pTrack = gHFEvent->addRecTrack();
     pTrack->fIndex = i;
@@ -204,8 +220,9 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 			      trackView.eta(),
 			      trackView.phi()
 			      );
-    pTrack->fTip = trackView.dxy(refPt);
-    pTrack->fLip = trackView.dz(refPt); 
+    pTrack->fTip   = trackView.dxy(refPt);
+    pTrack->fLip   = trackView.dz(refPt); 
+    pTrack->fPvIdx = fTrack2Pv[i];
 
     pTrack->fd0  = trackView.d0();
     pTrack->fd0E = trackView.d0Error();
@@ -370,6 +387,44 @@ void  HFDumpTracks::beginJob() {
 // ------------ method called once each job just after ending the event loop  ------------
 void  HFDumpTracks::endJob() {
 }
+
+
+// ----------------------------------------------------------------------
+void HFDumpTracks::tracksAndPv(const edm::Event& iEvent) {
+
+  for (int i = 0; i < HFMAXTRACK; ++i) {
+    fTrack2Pv[i] = -1; 
+  }
+
+  edm::Handle<edm::View<Track> > tracksView;
+  iEvent.getByLabel(fTracksLabel, tracksView);
+  
+  edm::Handle<VertexCollection> recoPrimaryVertexCollection;
+  iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
+  
+  int cnt(0); 
+  for (VertexCollection::const_iterator iv = recoPrimaryVertexCollection->begin(); iv != recoPrimaryVertexCollection->end(); ++iv) {
+    Vertex::trackRef_iterator v1TrackIter;
+    Vertex::trackRef_iterator v1TrackBegin = iv->tracks_begin();
+    Vertex::trackRef_iterator v1TrackEnd   = iv->tracks_end();
+    for (v1TrackIter = v1TrackBegin; v1TrackIter != v1TrackEnd; v1TrackIter++) {
+      if (fVerbose > 100) {
+	cout << "vtx " << cnt << " with trk: " << " " << v1TrackIter->key()
+	     << "  " << (**v1TrackIter).pt() 
+	     << "  " << (**v1TrackIter).phi();
+
+	TrackBaseRef rTrackView(tracksView, v1TrackIter->key());
+	Track track(*rTrackView);
+	cout << " -> track " << "  " << track.pt() << "  " << track.phi();
+	cout << endl;
+      }
+      if (v1TrackIter->key() < HFMAXTRACK) fTrack2Pv[v1TrackIter->key()] = cnt;
+    }
+    ++cnt;
+  }
+
+}
+
 
 //define this as a plug-in
 DEFINE_FWK_MODULE(HFDumpTracks);
