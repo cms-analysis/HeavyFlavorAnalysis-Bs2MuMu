@@ -52,7 +52,6 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 	HFDecayTreeIterator treeIt;
 	RefCountedHFNodeCut nodeCut;
 	map<int,int> *kinParticleMap;
-	double mass;
 	
 	// set up the kinParticleMap for 'tree'
 	kinParticleMap = tree->getKinParticleMap();
@@ -74,11 +73,11 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 	// add the particles from the tracks
 	allTreeTracks = tree->getAllTracks(1);
 	for (trackIt = allTreeTracks.begin(); trackIt != allTreeTracks.end(); ++trackIt) {
-		mass = getParticleMass(trackIt->second);
-		float sigma = 0.00001*mass;
+		float sigma;
+		float mass = getParticleMass(trackIt->second,&sigma);
 		TrackBaseRef baseRef(fhTracks,trackIt->first);
 		(*kinParticleMap)[trackIt->first] = kinParticles.size();
-		kinParticles.push_back(pFactory.particle(fpTTB->build(*baseRef),mass,0.0f,0.0f,sigma)); // FIXME: das sigma noch besser anpassen
+		kinParticles.push_back(pFactory.particle(fpTTB->build(*baseRef),mass,0.0f,0.0f,sigma));
 	}
 	
 	// do the actual fit of this vertex
@@ -293,32 +292,41 @@ void HFSequentialVertexFit::doFit(HFDecayTree *tree)
   }
 } // doFit()
 
-double HFSequentialVertexFit::getParticleMass(int particleID)
+float HFSequentialVertexFit::getParticleMass(int particleID, float *mass_sigma)
 {
-  double mass;
+  float mass;
+  float sigma = 0.0;
   particleID = abs(particleID);
-
+  
+  // sigma corresponds to standard uncertainty as can be found in the PDG
   switch(particleID) {
   case 11: // electron
     mass = MELECTRON;
+	sigma = 0.013E-9f;
     break;
   case 13: // muon
     mass = MMUON;
+	sigma = 4E-9f;
     break;
   case 211: // pion
     mass = MPION;
+	sigma = 3.5E-7f;
     break;
   case 321: // kaon
     mass = MKAON;
+	sigma = 1.6E-5f;
     break;
   case 2212: // proton
     mass = MPROTON;
+	sigma = 8E-8f;
     break;
   default:
     throw MassNotFoundException();
     break;
   }
-
+  
+  if (mass_sigma) *mass_sigma = sigma;
+  
   return mass;
 } // getParticleMass()
 

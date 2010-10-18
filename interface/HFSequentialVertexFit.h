@@ -47,8 +47,8 @@ class HFSequentialVertexFit
 
   template<class T>
   TAnaCand *addCand(HFDecayTree *tree, T &toVertex);
-
-  double getParticleMass(int particleID);
+  
+  float getParticleMass(int particleID, float *mass_sigma);
 };
 
 #endif
