@@ -4,11 +4,12 @@ import FWCore.ParameterSet.Config as cms
 HFLambdasDump = cms.EDAnalyzer(
     "HFLambdas",
     verbose            = cms.untracked.int32(0), 
-    maxTracks          = cms.untracked.int32(1000), 
+    maxTracks          = cms.untracked.int32(-1), 
     tracksLabel        = cms.untracked.InputTag('generalTracks'),
     PrimaryVertexLabel = cms.untracked.InputTag("offlinePrimaryVertices"),
     muonsLabel         = cms.untracked.InputTag("muons"),
     useMuon            = cms.untracked.int32(0),
+    psiMuons	       = cms.untracked.int32(2),
     phiWindow          = cms.untracked.double(99.0),
     L0Window           = cms.untracked.double(0.4),
     muonPt             = cms.untracked.double(1.0),
@@ -16,11 +17,13 @@ HFLambdasDump = cms.EDAnalyzer(
     pionPt             = cms.untracked.double(0.7),
     trackPt            = cms.untracked.double(0.7),
     deltaR             = cms.untracked.double(99.),
-    maxDoca            = cms.untracked.double(0.2),
+    maxDoca            = cms.untracked.double(0.1),
     maxVtxChi2         = cms.untracked.double(10.),
     minVtxSigXY        = cms.untracked.double(2.),
     minVtxSig3d        = cms.untracked.double(-1.),
     minCosAngle        = cms.untracked.double(0.),
+    minPocaJpsi        = cms.untracked.double(.1),
+    minPocaL0          = cms.untracked.double(1),
     type               = cms.untracked.int32(1) 
     )
 
