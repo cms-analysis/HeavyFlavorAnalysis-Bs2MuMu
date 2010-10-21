@@ -1,361 +1,336 @@
-#include "FWCore/Framework/interface/MakerMacros.h"
 #include "HFLambdas.h"
+#include "FWCore/Framework/interface/MakerMacros.h"
 
-#include <iostream>
-#include <sys/types.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string>
-
-#include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
-#include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
-#include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaCand.hh"
-#include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TGenCand.hh"
-
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKalmanVertexFit.hh"
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKinematicVertexFit.hh"
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTwoParticleCombinatorics.hh"
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFThreeParticleCombinatorics.hh"
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFMasses.hh"
-
-#include "DataFormats/Common/interface/Handle.h"
-#include "DataFormats/Common/interface/Wrapper.h"
-#include "DataFormats/Candidate/interface/Candidate.h"
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
-#include "DataFormats/TrackReco/interface/TrackExtraFwd.h"
-#include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 
-#include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
+#include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
 
-// Yikes!
+#include "TrackingTools/Records/interface/TransientTrackRecord.h"
+
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFMasses.hh"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTwoParticleCombinatorics.hh"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFSequentialVertexFit.h"
+
+#include<vector>
+
 extern TAna01Event *gHFEvent;
 
-//using namespace std;   // strange enough these namespaces are declared elsewhere....
-//using namespace reco;
-//using namespace edm;
+using namespace std;
+using namespace edm;
+using namespace reco;
 
-// ----------------------------------------------------------------------
-HFLambdas::HFLambdas(const edm::ParameterSet& iConfig) :
-    fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
-    fMaxTracks(iConfig.getUntrackedParameter<int>("maxTracks", 300)),
-    fMinTracks(iConfig.getUntrackedParameter<int>("minTracks", 4)),
-    fTracksLabel(iConfig.getUntrackedParameter<edm::InputTag>("tracksLabel", edm::InputTag("goodTracks"))),
-    fPrimaryVertexLabel(iConfig.getUntrackedParameter<edm::InputTag>("PrimaryVertexLabel", edm::InputTag("offlinePrimaryVertices"))),
-    fMuonsLabel(iConfig.getUntrackedParameter<edm::InputTag>("muonsLabel")),
-    fUseMuon(iConfig.getUntrackedParameter<int>("useMuon", 0)),
-    fJPsiWindow(iConfig.getUntrackedParameter<double>("JPsiWindow", 0.4)),
-    fL0Window(iConfig.getUntrackedParameter<double>("L0Window", 0.4)),
-    fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 1.0)),
-    fProtonPt(iConfig.getUntrackedParameter<double>("protonPt", 1.0)),
-    fPionPt(iConfig.getUntrackedParameter<double>("pionPt", 1.0)),
-    fTrackPt(iConfig.getUntrackedParameter<double>("trackPt", 0.4)),
-    fDeltaR(iConfig.getUntrackedParameter<double>("deltaR", 1.5)),
-    fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 9999.0)),
-    fMaxVtxChi2(iConfig.getUntrackedParameter<double>("maxVtxChi2", 9999.0)),
-    fMinVtxSigXY(iConfig.getUntrackedParameter<double>("minVtxSigXY", -1.)),
-    fMinVtxSig3d(iConfig.getUntrackedParameter<double>("minVtxSig3d", -1.)),
-    fMinCosAngle(iConfig.getUntrackedParameter<double>("minCosAngle", -1.)),
-    fMinPtCand(iConfig.getUntrackedParameter<double>("minPtCand", -99.)),
-    fMinPocaJpsi(iConfig.getUntrackedParameter<double>("minPocaJpsi", 0.)),
-    fMinPocaL0(iConfig.getUntrackedParameter<double>("minPocaL0", 0.)),
-    fType(iConfig.getUntrackedParameter<int>("type", 1)) {
-    std::cout << "----------------------------------------------------------------------" << endl;
-    std::cout << "--- HFLambdas constructor" << std::endl;
-    std::cout << "---  verbose:                  " << fVerbose << std::endl;
-    std::cout << "---  maxTracks:                " << fMaxTracks << std::endl;
-    std::cout << "---  minTracks:                " << fMinTracks << std::endl;
-    std::cout << "---  tracksLabel:              " << fTracksLabel << std::endl;
-    std::cout << "---  PrimaryVertexLabel:       " << fPrimaryVertexLabel << std::endl;
-    std::cout << "---  muonsLabel:               " << fMuonsLabel << std::endl;
-    std::cout << "---  useMuon:                  " << fUseMuon << std::endl;
-    std::cout << "---  phiWindow:                " << fPhiWindow << std::endl;
-    std::cout << "---  JPsiWindow:               " << fJPsiWindow << std::endl;
-    std::cout << "---  L0Window:                 " << fL0Window << std::endl;
-    std::cout << "---  muonPt:                   " << fMuonPt << std::endl;
-    std::cout << "---  protonPt:                 " << fProtonPt << std::endl;
-    std::cout << "---  pionPt:                   " << fPionPt << std::endl;
-    std::cout << "---  trackPt:                  " << fTrackPt << std::endl;
-    std::cout << "---  deltaR:                   " << fDeltaR << std::endl;
+class HFLambdaCut : public HFMaxDocaCut {
+	public:
+		HFLambdaCut(double maxPAngle = 3.2, HFNodeCut *ksCut = NULL, double docaCut = 1E7) :
+		  HFMaxDocaCut(docaCut), fKsCut(ksCut), fMaxPAngle(maxPAngle) {}
+		virtual bool operator()();
+		
+		void setKshorCut(HFLambdaCut* newKsCut) {fKsCut = newKsCut;}
+		void setMaxPAngle(double newAngle) {fMaxPAngle = newAngle;}
+	protected:
+		HFNodeCut *fKsCut; // cross reference for pointing angle calculation!
+		double fMaxPAngle; // max pointing angle (in radians)
+};
 
-    std::cout << "---  maxDoca:                  " << fMaxDoca << std::endl;
-    std::cout << "---  maxVtxChi2:               " << fMaxVtxChi2 << std::endl;
-    std::cout << "---  minVtxSigXY:              " << fMinVtxSigXY << std::endl;
-    std::cout << "---  minVtxSig3d:              " << fMinVtxSig3d << std::endl;
-    std::cout << "---  minCosAngle:              " << fMinCosAngle << std::endl;
-    std::cout << "---  minPtCand:                " << fMinPtCand << std::endl;
-
-    std::cout << "---  type:                     " << fType << std::endl;
-    std::cout << "----------------------------------------------------------------------" << std::endl;
-
+bool HFLambdaCut::operator()()
+{
+  bool result = HFMaxDocaCut::operator()();
+  double pAngle;
+  TVector3 v;
+  
+  if(result && fKsCut) {
+    
+    // check the pointing angle  
+    pAngle = fKsCut->fPtCand.Angle(fKsCut->fVtxPos - this->fVtxPos);
+    result = pAngle < fMaxPAngle;
+  }
+  
+  return result;
 }
 
+HFLambdas::HFLambdas(const ParameterSet& iConfig) :
+	fVerbose(iConfig.getUntrackedParameter<int>("verbose",0)),
+	fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("goodTracks"))),
+	fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexLabel", InputTag("offlinePrimaryVertices"))),
+	fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
+	fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 1.0)),
+	fPionPt(iConfig.getUntrackedParameter<double>("pionPt", 0.4)),
+	fPsiMuons(iConfig.getUntrackedParameter<int>("psiMuons", 1)),
+	fPsiWindow(iConfig.getUntrackedParameter<double>("psiWindow",0.3)),
+	fL0Window(iConfig.getUntrackedParameter<double>("ksWindow",0.3)),
+	fLbWindow(iConfig.getUntrackedParameter<double>("bdWindow",0.8)),
+	fDeltaR(iConfig.getUntrackedParameter<double>("deltaR",99.0)),
+	fVertexing(iConfig.getUntrackedParameter<int>("vertexing",1)),
+	fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.2)),
+	fPAngleL0(iConfig.getUntrackedParameter<double>("pAngleKs",0.1))
+{
+	using namespace std;
+	cout << "----------------------------------------------------------------------" << endl;
+	cout << "--- HFLambdas constructor" << endl;
+	cout << "---  verbose:					" << fVerbose << endl;
+	cout << "---  tracksLabel:                              " << fTracksLabel << endl;
+	cout << "---  PrimaryVertexLabel:                       " << fPrimaryVertexLabel << endl;
+	cout << "---  muonsLabel:				" << fMuonsLabel << endl;
+	cout << "---  muonPt:                                   " << fMuonPt << endl;
+	cout << "---  pionPt:                                   " << fPionPt << endl;
+	cout << "---  psiMuons:					" << fPsiMuons << endl;
+	cout << "---  psiWindow:                                " << fPsiWindow << endl;
+	cout << "---  fL0Window:                                " << fL0Window << endl;
+	cout << "---  bdWindow:                                 " << fLbWindow << endl;
+	cout << "---  deltaR:                                   " << fDeltaR << endl;
+	cout << "---  vertexing:                                " << fVertexing << endl;
+	cout << "---  maxDoca:			       		" << fMaxDoca << endl;
+	cout << "---  pAngleKs:                                 " << fPAngleL0 << endl;
 
-// ----------------------------------------------------------------------
-HFLambdas::~HFLambdas() {
+} // HFLambdas()
 
-}
+HFLambdas::~HFLambdas()
+{}
 
+void HFLambdas::beginJob() {} // beginJob()
+void HFLambdas::endJob() {} // endJob()
 
-// ----------------------------------------------------------------------
-void HFLambdas::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
-
-    if (fVerbose > 0) {
-        std::cout << "-------------------------------------------------------------" << std::endl;
-        std::cout << "==>HFLambdas: beginning of analyze():" << std::endl;
-        std::string line("ps -F " + getpid());
-        //system(line.c_str());
-    }
-
-    // get the primary vertex
-    edm::Handle<reco::VertexCollection> recoPrimaryVertexCollection;
-    iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
-    if(!recoPrimaryVertexCollection.isValid()) {
-        std::cout << "==>HFLambdas> No primary vertex collection found, skipping" << std::endl;
-        return;
-    }
-    const reco::VertexCollection vertices = *(recoPrimaryVertexCollection.product());
-    if (vertices.size() == 0) {
-        std::cout << "==>HFLambdas> No primary vertex found, skipping" << std::endl;
-        return;
-    }
-    fPV = vertices[gHFEvent->fBestPV];
-    if (fVerbose > 0) {
-        std::cout << "HFDimuons: Taking vertex " << gHFEvent->fBestPV << " with ntracks = " << fPV.tracksSize() << std::endl;
-    }
-
-    // get the collection of muons
-    edm::Handle<reco::MuonCollection> hMuons;
-    iEvent.getByLabel(fMuonsLabel, hMuons);
-    if (!hMuons.isValid()) {
-        std::cout << "==>HFLambdas> No valid MuonCollection with label "<< fMuonsLabel <<" found, skipping" << std::endl;
-        return;
-    }
-
-    // get the collection of tracks
-    edm::Handle<edm::View<reco::Track> > hTracks;
-    iEvent.getByLabel(fTracksLabel, hTracks);
-    if(!hTracks.isValid()) {
-        std::cout << "==>HFLambdas> No valid TrackCollection with label " << fTracksLabel << " found, skipping" << std::endl;
-        return;
-    }
-
-    if (hTracks->size() > static_cast<size_t>(fMaxTracks)) {
-        std::cout << "==>HFLambdas> Too many tracks " << hTracks->size() << ", skipping" << std::endl;
-        return;
-    }
-    if (hTracks->size() < static_cast<size_t>(fMinTracks)) {
-	std::cout << "==>HFLambdas> Not enough tracks " << hTracks->size() << ", skipping" << std::endl;
-	return;
-    }
-
-    if (fVerbose > 0) {
-        std::cout << "==>HFLambdas> ntracks = " << hTracks->size() << std::endl;
-    }
-
-    // Transient tracks for vertexing
-    iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", fTTB);
-    if (!fTTB.isValid()) {
-        std::cout << " -->HFLambdas: Error: no TransientTrackBuilder found."<<std::endl;
-        return;
-    }
-
-    // get the collection of muons and store their corresponding track indices
-    std::vector<index_t> muonIndices;
-    for (reco::MuonCollection::const_iterator muonIt = hMuons->begin(); muonIt != hMuons->end(); ++muonIt) {
-        const int im = muonIt->track().index(); // tried to change this to const index_t (=unsigned int) but leads to segviol
-	if (fVerbose > 0) std::cout << "==>HFLambdas> Muon index: " << im << " Ptr: " << muonIt->track().get() << std::endl;
-        if (im >= 0) muonIndices.push_back(im);
-    }
-    if (fVerbose > 0) {
-        std::cout << "==>HFLambdas> nMuons = " << hMuons->size() << std::endl;
-        std::cout << "==>HFLambdas> nMuonIndices = " << muonIndices.size() << std::endl;
-    }
-
-    // Build lists
-    trackList_t prList, piList, trackMuonList;
-    trackMuonList.reserve(fMaxTracks);
-    piList.reserve(fMaxTracks);
-    prList.reserve(fMaxTracks);
-
-    for (index_t itrack = 0; itrack < hTracks->size(); ++itrack) {
-	reco::TrackBaseRef rTrackView(hTracks, itrack);
-	reco::Track tTrack(*rTrackView);
-	//if (fVerbose > 0) std::cout << "==>HFLambdas> Track Ptr: " << rTrackView.get() << std::endl;
-
-	// fill pion list
-        if (tTrack.pt() > fPionPt)  {
-	    TLorentzVector tlv;
-            tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MPION);
-            piList.push_back(std::make_pair(itrack, tlv));
-        }
-
-	// fill proton list
-        if (tTrack.pt() > fProtonPt) {
-	    TLorentzVector tlv;
-            tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MPROTON);
-            prList.push_back(std::make_pair(itrack, tlv));
-        }
-
-	// fill trackMuonList
-        if (tTrack.pt() > fMuonPt) {
-	    //if (fVerbose > 0) std::cout << "==>HFLambdas> added " << rTrackView.get() << " to trackMuonList" << std::std::endl;
-	    TLorentzVector tlv;
-            tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MMUON);
-            trackMuonList.push_back(std::make_pair(itrack, tlv));
-        }
-    }
-
-    // now do the combinatorics
-    for(std::vector<index_t>::const_iterator itm1=muonIndices.begin(); itm1!=muonIndices.end(); itm1++) {
-	if (fVerbose > 10) std::cout << "==>HFLambdas>This is muon " << (*itm1) << std::endl;
-	for(trackList_t::const_iterator itm2=trackMuonList.begin(); itm2!=trackMuonList.end(); itm2++) {
-	    if( (*itm1)!=itm2->first ) { // then we have two distinct muons
-		reco::TrackBaseRef tbrMu1(hTracks, (*itm1));
-		reco::TrackBaseRef tbrMu2(hTracks, itm2->first);
-		reco::Track tMu1(*tbrMu1);
-		reco::Track tMu2(*tbrMu2);
-		if (tMu1.charge()==tMu2.charge()) continue; // charges must be opposite
-		if (fVerbose > 10) std::cout << "==>HFLambdas>This is track muon " << itm2->first << std::endl;
-		for(trackList_t::const_iterator itpr=prList.begin(); itpr!=prList.end(); itpr++) {
-		    if( (*itm1)!=itpr->first && itm2->first!=itpr->first ) { // prevent from using the same track for two different particles
-			if (fVerbose > 10) std::cout << "==>HFLambdas>This is proton " << itpr->first << std::endl;
-			for(trackList_t::const_iterator itpi=piList.begin(); itpi!=piList.end(); itpi++) {
-			    if( (*itm1)!=itpi->first && itm2->first!=itpi->first && itpr->first!=itpi->first ) { // and check again
-				reco::TrackBaseRef tbrPi(hTracks, itpi->first);
-				reco::TrackBaseRef tbrPr(hTracks, itpr->first);
-				reco::Track tPi(*tbrPi);
-				reco::Track tPr(*tbrPr);
-				if (tPr.charge()==tPi.charge()) continue; // charges must be opposite
-				// now we create a J/Psi
-
-				// find points of closest approach
-				TwoTrackMinimumDistance ttmdJpsi = calculatePoca(hTracks, (*itm1), itm2->first);
-				TwoTrackMinimumDistance ttmdL0 = calculatePoca(hTracks, itpr->first, itpi->first);
-				if (!(ttmdJpsi.status() && ttmdL0.status() )) { 
-				    std::cout << "ttmd status invalid" << std::endl; continue;
-				} // if something went wrong, discard this pair
-
-				if (fVerbose > 10) {
-				    std::cout << "status(): true"
-					      << "  distance JPsi: " << ttmdJpsi.distance()
-					      << "  distance L0: " << ttmdL0.distance()
-					      << std::endl;
-				}
-				if (ttmdJpsi.distance() > fMaxDoca) continue;
-				if (ttmdL0.distance() > fMaxDoca) continue;
-
-				//std::cout << "mag " << ttmdJpsi.crossingPoint().mag() << " " << ttmdJpsi.crossingPoint().perp() << std::endl;
-				const double pocaToVtxJPsi=calculateDistToPV(ttmdJpsi.crossingPoint(), fPV);
-				const double pocaToVtxL0  =calculateDistToPV(ttmdL0.crossingPoint(), fPV);
-				if (pocaToVtxL0<pocaToVtxJPsi) continue; // L0 vtx should be more far away than Jpsi vtx
-				if (pocaToVtxJPsi<fMinPocaJpsi) continue;
-				if (pocaToVtxL0<fMinPocaL0) continue;
-
-				//reco::TrackBaseRef tbrMu1(hTracks, (*itm1));
-				//reco::Track tMu1(*tbrMu1);
-				TLorentzVector tlvMu1;
-				tlvMu1.SetPtEtaPhiM(tMu1.pt(), tMu1.eta(), tMu1.phi(), MMUON);
-				const TLorentzVector tlvJPsi = tlvMu1 + itm2->second;
-				// and a Lambda_0
-				const TLorentzVector tlvLambda = itpr->second + itpi->second;
-				// and now we can make a Lambda_b
-				const TLorentzVector tlvLambdaB = tlvJPsi + tlvLambda;
-				// check mass windows
-				if ( inMassWindow(tlvJPsi.M(), MJPSI, fJPsiWindow)
-				     && inMassWindow(tlvLambda.M(), MLAMBDA_0, fL0Window)) {
-				    // add candidates
-				    const int indxCandJpsi=fillCand(tlvJPsi, ttmdJpsi, (*itm1), itm2->first, 10443);
-				    const int indxCandL0=fillCand(tlvLambda, ttmdL0, itpr->first, itpi->first, 13122);
-				    const int indxCandLb=fillCand(tlvLambdaB, indxCandJpsi, indxCandL0, 15122);
-				    // some output
-				    if (fVerbose > 20) {
-					std::cout << "==>HFLambdas>" 
-					          << "Masses: JPsi: " << tlvJPsi.M()
-						  << " Lamdba0: " << tlvLambda.M()
-					          << " LambdaB: " << tlvLambdaB.M()
-					          << std::endl; 
-				    }
-				}
-			    }
-			}
-		    }
-		}
-	    }
+void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
+{
+	// -- get the primary vertex
+        Handle<VertexCollection> recoPrimaryVertexCollection;
+	iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
+	if(!recoPrimaryVertexCollection.isValid()) {
+		cout << "==>HFLambdas> No primary vertex collection found, skipping" << endl;
+		return;
 	}
-    }
+	
+	const VertexCollection vertices = *(recoPrimaryVertexCollection.product());
+	if (vertices.size() == 0) {
+		cout << "==>HFLambdas> No primary vertex found, skipping" << endl;
+		return;
+	}
+	
+	fPV = vertices[gHFEvent->fBestPV];
+	if(fVerbose > 0)
+		cout << "==>HFLambdas: Taking vertex " << gHFEvent->fBestPV << " with ntracks = " << fPV.tracksSize() << endl;
+	
+	// -- get the collection of muons
+	Handle<MuonCollection> hMuons;
+	iEvent.getByLabel(fMuonsLabel, hMuons);
+	if(!hMuons.isValid()) {
+		cout << "==>HFLambdas> No valid MuonCollection with label "<< fMuonsLabel << " found, skipping" << endl;
+		return;
+	}
+	
+	// -- get the collection of tracks
+	Handle<View<Track> > hTracks;
+	iEvent.getByLabel(fTracksLabel, hTracks);
+	if(!hTracks.isValid()) {
+		cout << "==>HFLambdas> No valid TrackCollection with label "<< fTracksLabel << " found, skipping" << endl;
+		return;
+	}
+	
+	// -- Transient tracks for vertexing
+	iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", fTTB);
+	if(!fTTB.isValid()) {
+		cout << "==>HFLambdas: Error: no TransientTrackBuilder found."<<endl;
+		return;
+	}
+	
+	// -- get the collection of muons and store their corresponding track indices
+	vector<unsigned int> muonIndices;
+	for (MuonCollection::const_iterator muon = hMuons->begin(); muon != hMuons->end(); ++muon) {
+		int im = muon->track().index();
+		if(im >= 0) muonIndices.push_back(im);
+	}
+	
+	if (fVerbose > 0) {
+		cout << "==>HFLambdas> nMuons = " << hMuons->size() << endl;
+		cout << "==>HFLambdas> nMuonIndices = " << muonIndices.size() << endl;
+	}
+	
+	if(muonIndices.size() < (unsigned)fPsiMuons) return;
+	
+	// -- Build muon list
+	TLorentzVector tlv;
+	vector<pair<int,TLorentzVector> > pilist,plist,tlist1,tlist2;
+	int isMuon(0);
+	if(2 == fPsiMuons) {
+		tlist1.reserve(10);
+		tlist2.reserve(10);
+	} else {
+		tlist1.reserve(100);
+		tlist2.reserve(100);
+	}
+	pilist.reserve(100);
+	plist.reserve(100);
+	
+	for(unsigned int itrack = 0; itrack < hTracks->size(); ++itrack) {
+		TrackBaseRef rTrackView(hTracks,itrack);
+		Track tTrack(*rTrackView);
 
-}
+		tlv.SetXYZM(tTrack.px(),tTrack.py(),tTrack.pz(),MPION);
+		pilist.push_back(make_pair(itrack,tlv));
 
+		tlv.SetXYZM(tTrack.px(),tTrack.py(),tTrack.pz(),MPROTON);
+		plist.push_back(make_pair(itrack,tlv));
+		
+		tlv.SetXYZM(tTrack.px(),tTrack.py(),tTrack.pz(),MMUON);
+		if(2 == fPsiMuons) {
+			for (unsigned int im = 0; im < muonIndices.size(); ++im) {
+				if(muonIndices[im] == itrack) {
+					++isMuon;
+					tlist1.push_back(make_pair(itrack,tlv));
+					tlist2.push_back(make_pair(itrack,tlv));
+				}
+			}
+		} else if (1 == fPsiMuons) {
+			for (unsigned int im = 0; im < muonIndices.size(); ++im) {
+				if (muonIndices[im] == itrack) {
+					++isMuon;
+					tlist1.push_back(make_pair(itrack,tlv));
+				}
+			}
+			tlist2.push_back(make_pair(itrack,tlv));
+		} else {
+			tlist1.push_back(make_pair(itrack,tlv));
+			tlist2.push_back(make_pair(itrack,tlv));
+		}
+	}
+	
+	if (isMuon < fPsiMuons) {
+		if(fVerbose > 0) cout << "==>HFLambdas> Not enough muons found for J/Psi candidates combinatorics: isMuon = "
+			<< isMuon << ", required are " << fPsiMuons << endl;
+		return;
+	}
+	
+	HFTwoParticleCombinatorics a(fVerbose);
+	vector<pair<int, int> > psiList;
+	a.combine(psiList, tlist1, tlist2, 2.8, 3.4, 1);
+	if(fVerbose > 0) cout << "==>HFLambdas> J/Psi list size: " << psiList.size() << endl;
+	vector<pair<int, int> > l0List;
+	a.combine(l0List, pilist, plist, 0.2, 1.4, 0);
+	if (fVerbose > 0) cout << "==>HFLambdas> Lambda_0 list size: " << l0List.size() << endl;
+	
+	// do the vertex fitting...
+	HFSequentialVertexFit aSeq(hTracks, fTTB.product(), fPV, fVerbose);
+	TLorentzVector tlvPsi, tlvMu1, tlvMu2, tlvPion, tlvProton, tlvLamdba0, tlvLambdaB;
 
-// ------------ method called once each job just before starting event loop  ------------
-void  HFLambdas::beginJob() {
-}
+	for (unsigned int i = 0; i < psiList.size(); i++) {
+		unsigned int iMuon1 = psiList[i].first;
+		unsigned int iMuon2 = psiList[i].second;
+		
+		TrackBaseRef mu1TrackView(hTracks, iMuon1);
+		Track tMuon1(*mu1TrackView);
+		if (tMuon1.pt() < fMuonPt) continue;
+		tlvMu1.SetPtEtaPhiM(tMuon1.pt(), tMuon1.eta(), tMuon1.phi(), MMUON);
+		
+		TrackBaseRef mu2TrackView(hTracks, iMuon2);
+		Track tMuon2(*mu2TrackView);
+		if (tMuon2.pt() < fMuonPt) continue;
+		tlvMu2.SetPtEtaPhiM(tMuon2.pt(),tMuon2.eta(),tMuon2.phi(), MMUON);
+		
+		tlvPsi = tlvMu1 + tlvMu2;
+		if( (TMath::Abs(tlvPsi.M() - MJPSI) > fPsiWindow) ) continue;
+		
+		for(unsigned int j = 0; j < l0List.size(); j++) {
+			
+			unsigned int iPion = l0List[j].first;
+			unsigned int iProton = l0List[j].second;
+			
+			if (iPion == iMuon1 || iPion == iMuon2) continue;
+			if (iProton == iMuon1 || iProton == iMuon2) continue;
+			
+			// get lorentz vector of first pion
+			TrackBaseRef pionTrackView(hTracks,iPion);
+			Track tPion(*pionTrackView);
+			if(tPion.pt() < fPionPt) continue;
+			tlvPion.SetXYZM(tPion.px(),tPion.py(),tPion.pz(),MPION);
+			if(tlvPsi.DeltaR(tlvPion) > fDeltaR) continue;
+			
+			// get lorentz vector of second pion
+			TrackBaseRef protonTrackView(hTracks,iProton);
+			Track tProton(*protonTrackView);
+			if(tProton.pt() < fPionPt) continue;
+			tlvProton.SetXYZM(tProton.px(),tProton.py(),tProton.pz(),MPROTON);
+			if(tlvPsi.DeltaR(tlvProton) > fDeltaR) continue;
+			
+			tlvLamdba0 = tlvPion + tlvProton;
+			if (TMath::Abs(tlvLamdba0.M() - MLAMBDA_0) > fL0Window) continue;
+			
+			tlvLambdaB = tlvPsi + tlvLamdba0;
+			if (TMath::Abs(tlvLambdaB.M() - MLAMBDA_B) > fLbWindow) continue;
 
+			// without J/Psi mass constraint
+			HFDecayTree theTree(605122);
+			
+			HFDecayTreeIterator iterator = theTree.addDecayTree(600443,0); // no vertexing & no mass constraint
+			iterator->addTrack(iMuon1,13);
+			iterator->addTrack(iMuon2,13);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+			
+			iterator = theTree.addDecayTree(603122,1); // no mass constraint, with own vertex of Lamda0
+			iterator->addTrack(iPion,211);
+			iterator->addTrack(iProton,2212);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+			
+			theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngleL0, &(*iterator->getNodeCut()),fMaxDoca)));
+			
+			aSeq.doFit(&theTree);
+			
+			// without J/Psi mass constraint, but with an own J/Psi vertex
+			theTree.clear();
+			theTree.particleID = 705122;
+			
+			iterator = theTree.addDecayTree(700443,1); // vertexing but no mass constraint...
+			iterator->addTrack(iMuon1,13);
+			iterator->addTrack(iMuon2,13);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+			
+			iterator = theTree.addDecayTree(703122,1); // Lambda0 with vertexing
+			iterator->addTrack(iPion,211);
+			iterator->addTrack(iProton,2212);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+			
+			theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngleL0, &(*iterator->getNodeCut()), fMaxDoca)));
+			
+			aSeq.doFit(&theTree);
 
-// ------------ method called once each job just after ending the event loop  ------------
-void  HFLambdas::endJob() {
-}
+			// with J/Psi mass constraint                                                                                                    
+			theTree.clear();
+			theTree.particleID = 805122;
+			
+			iterator = theTree.addDecayTree(800443,1,MJPSI); // J/Psi needs an own vertex!!
+			iterator->addTrack(iMuon1,13);
+			iterator->addTrack(iMuon2,13);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+			
+			iterator = theTree.addDecayTree(803122);
+			iterator->addTrack(iPion,211);
+			iterator->addTrack(iProton,2212);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+			theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngleL0,&(*iterator->getNodeCut()),fMaxDoca)));
+			
+			aSeq.doFit(&theTree);
 
-bool HFLambdas::inMassWindow(const value_t& v, const value_t& m, const value_t& dm)
-{
-    const value_t t = fabs(v-m);
-    return (t<dm) ? true : false;
-}
+			// with mass constraint for J/Psi and Lambda0
+			theTree.clear();
+			theTree.particleID = 905122;
+			
+			iterator = theTree.addDecayTree(900443,1,MJPSI); 
+			iterator->addTrack(iMuon1,13);
+			iterator->addTrack(iMuon2,13);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+			
+			iterator = theTree.addDecayTree(903122,1,MLAMBDA_0);
+			iterator->addTrack(iPion,211);
+			iterator->addTrack(iProton,2212);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+			theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngleL0,&(*iterator->getNodeCut()),fMaxDoca)));
+			
+			aSeq.doFit(&theTree);
+		}
+	}
+} // analyze()
 
-int HFLambdas::fillCand(const TLorentzVector& tlvCand, const int& trk1, const int& trk2, const int& type)
-{
-    TAnaCand *cand = gHFEvent->addCand();
-    cand->fPlab = tlvCand.Vect();
-    cand->fMass = tlvCand.M();
-    cand->fType = type;
-    cand->fDau1 = -1;
-    cand->fDau2 = -1;
-    cand->fSig1 = trk1;
-    cand->fSig2 = trk2;
-    return gHFEvent->nCands()-1;
-}
-
-int HFLambdas::fillCand(const TLorentzVector& tlvCand, const TwoTrackMinimumDistance& ttmd, const int& trk1, const int& trk2, const int& type)
-{
-    TAnaCand *cand = gHFEvent->addCand();
-    cand->fPlab = tlvCand.Vect();
-    cand->fMass = tlvCand.M();
-    cand->fType = type;
-    cand->fDau1 = -1;
-    cand->fDau2 = -1;
-    cand->fSig1 = trk1;
-    cand->fSig2 = trk2;
-    cand->fMinDoca = ttmd.distance();
-    cand->fPoca = TVector3(ttmd.crossingPoint().x(), ttmd.crossingPoint().y(), ttmd.crossingPoint().z());
-    return gHFEvent->nCands()-1;
-}
-
-TwoTrackMinimumDistance HFLambdas::calculatePoca(const edm::Handle<edm::View<reco::Track> >& tracks, int track1, int track2)
-{
-    reco::TrackBaseRef tbr1(tracks, track1);
-    reco::Track t1(*tbr1);
-    reco::TransientTrack tt1(fTTB->build(t1));
-
-    reco::TrackBaseRef tbr2(tracks, track2);
-    reco::Track t2(*tbr2);
-    reco::TransientTrack tt2(fTTB->build(t2));
-
-    TwoTrackMinimumDistance ttmd;
-    ttmd.calculate(tt1.initialFreeState(),tt2.initialFreeState());
-
-    return ttmd;
-    //return std::make_pair(ttmd.crossingPoint(), ttmd.distance());
-}
-
-double HFLambdas::calculateDistToPV(const GlobalPoint& pt, const reco::Vertex& vtx)
-{
-    const TVector3 tv3pt(pt.x(), pt.y(), pt.z());
-    const TVector3 tv3vtx(vtx.position().x(), vtx.position().y(), vtx.position().z());
-    const TVector3 tv3diff=tv3pt-tv3vtx;
-    return tv3diff.Mag();
-}
-
-//define this as a plug-in
+// define this as a plug-in
 DEFINE_FWK_MODULE(HFLambdas);
