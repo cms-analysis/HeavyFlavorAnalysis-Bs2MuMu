@@ -1,0 +1,13 @@
+# Which cand to select as lb
+cutLbCandidate   605122 
+# Mu id
+cutMuId1        6
+cutMuId2        6
+# Cuts on Jpsi
+cutMjpMin	3.0
+cutMjpMax	3.2
+# Cuts on Lambda0
+cutAlphal0Max   0.002
+cutMl0Max	1.15   
+cutD3dl0Min	10.0
+cutPtl0Min	3.0
