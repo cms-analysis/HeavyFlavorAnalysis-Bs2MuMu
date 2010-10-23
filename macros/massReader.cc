@@ -203,7 +203,7 @@ void massReader::findAllRecTrackIndices(TAnaCand* pCand, set<int> *indices)
 	int j;
 	
 	// iterate through all the daughter candidates and add the tracks
-	for (j = pCand->fDau1; j <= pCand->fDau2; j++)
+	for (j = pCand->fDau1; j <= pCand->fDau2 && j >= 0; j++)
 		findAllRecTrackIndices(fpEvt->getCand(j),indices);
 	
 	// iterate through all own tracks
