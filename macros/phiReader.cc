@@ -97,7 +97,7 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 	
 	result = massReader::loadCandidateVariables(pCand);
 	
-	fCtau = kMassBs / fMomentum.Mag() * fD3; // estimate the proper time!
+	fCtau = kMassBs / pCand->fPlab.Mag() * fD3; // estimate the proper time!
 	
 	// set the momenta
 	for (j = pCand->fSig1; j <= pCand->fSig2; j++) {

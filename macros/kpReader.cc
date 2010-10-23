@@ -91,7 +91,7 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	
 	result = massReader::loadCandidateVariables(pCand);
 	
-	fCtau = kMassBplus / fMomentum.Mag() * fD3;
+	fCtau = kMassBplus / pCand->fPlab.Mag() * fD3;
 	
 	// set the momenta
 	for (j = pCand->fSig1; j <= pCand->fSig2 && j >= 0; j++) {
