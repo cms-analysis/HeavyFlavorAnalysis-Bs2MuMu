@@ -36,20 +36,17 @@ class massReader : public treeReader01 {
 		// loading variables
 		virtual int checkTruth(TAnaCand *cand); // check if all are originating from the same particle
 		virtual int countMuons(TAnaCand *cand); // count the number of identified muons
-		float calculateIsolation(TAnaCand *pCand, double openingAngle); // calculate the isolation of the candidate
-		int loadTrigger();
+		float calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt);
+		int loadTrigger(int *errTriggerOut = NULL);
 
-		// creates the decay of the TGenCand
+		// other utility routines
 		void buildDecay(TGenCand *gen, std::multiset<int> *particles);
-	
+		void findAllRecTrackIndices(TAnaCand* pCand, std::set<int> *indices);
 	protected:
 		const char *fTreeName;
 		
 	protected:
 		int fCandidate;
-		TVector3 fMomentum;
-		TVector3 fPVPosition;
-		TVector3 fCandVertex;
 		TVector3 *fMomentumPtr;
 		TVector3 *fPVPositionPtr;
 		TVector3 *fCandVertexPtr;
@@ -66,9 +63,20 @@ class massReader : public treeReader01 {
 		float fChi2; // chi2 of the vertex
 		float fNdof; // number of degrees of freedom of vertex
 		float fMaxDoca; // max doca
-		float fIso; // isolation
+		// isolation variables. fIsoX_ptY means opening angle deltaR < X/10 and only sum over
+		// tracks with pt > Y/10 GeV
+		float fIso7_pt0;
+		float fIso7_pt5;
+		float fIso7_pt7;
+		float fIso7_pt10;
+		float fIso10_pt0;
+		float fIso10_pt5;
+		float fIso10_pt7;
+		float fIso10_pt10;
 		int fTriggers; // store some trigger information
+		int fTriggersError; // error information of trigger
 		float fCtau; // proper time (note can be filled only in subclasses as requires knowledge of m)
+		float fEta; // eta of the candidate
 		float fD3_Perp;	// Perpendicular part of distance d3 w.r.t. momentum of candidate
 		float fD3_Para; // Parallel part of distance d3 w.r.t. momentum of candidate
 		float fDxy_Perp; // Perpendicular part of distance dxy w.r.t. momentum of candidate

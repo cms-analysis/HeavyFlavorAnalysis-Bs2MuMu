@@ -4,11 +4,7 @@
 using namespace std;
 
 massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName),reduced_tree(NULL)
-{
-	fMomentumPtr = &fMomentum;
-	fPVPositionPtr = &fPVPosition;
-	fCandVertexPtr = &fCandVertex;
-	
+{	
 	fTreeName = "massReader reduced tree";
 } // massReader()
 
@@ -35,9 +31,6 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	
 	// Save in the tree
 	fCandidate = pCand->fType;
-	fMomentum = pCand->fPlab;
-	fPVPosition = fpEvt->bestPV()->fPoint;
-	fCandVertex = pCand->fVtx.fPoint;
 	fPt = pCand->fPlab.Perp();
 	fMass = pCand->fMass;
 	fNbrMuons = countMuons(pCand);
@@ -48,8 +41,16 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fChi2 = pCand->fVtx.fChi2;
 	fNdof = pCand->fVtx.fNdof;
 	fMaxDoca = pCand->fMaxDoca;
-	fIso = calculateIsolation(pCand,1.0);
-	fCtau = 0.0;
+	fIso7_pt0 = calculateIsolation(pCand, 0.7, 0.0);
+	fIso7_pt5 = calculateIsolation(pCand, 0.7, 0.5);
+	fIso7_pt7 = calculateIsolation(pCand, 0.7, 0.7);
+	fIso7_pt10 = calculateIsolation(pCand, 0.7, 1.0);
+	fIso10_pt0 = calculateIsolation(pCand, 1.0, 0.0);
+	fIso10_pt5 = calculateIsolation(pCand, 1.0, 0.5);
+	fIso10_pt7 = calculateIsolation(pCand, 1.0, 0.7);
+	fIso10_pt10 = calculateIsolation(pCand, 1.0, 1.0);
+	fCtau = 0.0; // we can compute this only in a subclass, so initialize to zero
+	fEta = pCand->fPlab.Eta();
 	
 	if (pCand->fMom >= 0) {
 		momCand = fpEvt->getCand(pCand->fMom);
@@ -75,7 +76,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	// do this at the end so the checkTruth algorithm can use
 	// all variables of this candidate.
 	fTruth = checkTruth(pCand);
-	fTriggers = loadTrigger();	
+	fTriggers = loadTrigger(&fTriggersError);
 	
 	return 1;
 } // loadCandidateVariables()
@@ -87,9 +88,6 @@ void massReader::bookHist()
 	
 	// and add the branches
 	reduced_tree->Branch("candidate",&fCandidate,"candidate/I");
-	reduced_tree->Branch("p","TVector3",&fMomentumPtr);
-	reduced_tree->Branch("pv_position","TVector3",&fPVPositionPtr);
-	reduced_tree->Branch("vertex_position","TVector3",&fCandVertexPtr);
 	reduced_tree->Branch("pt",&fPt,"pt/F");
 	reduced_tree->Branch("mass",&fMass,"mass/F");
 	reduced_tree->Branch("truth",&fTruth,"truth/I");
@@ -103,9 +101,18 @@ void massReader::bookHist()
 	reduced_tree->Branch("chi2",&fChi2,"chi2/F");
 	reduced_tree->Branch("Ndof",&fNdof,"Ndof/F");
 	reduced_tree->Branch("max_doca",&fMaxDoca,"max_doca/F");
-	reduced_tree->Branch("iso",&fIso,"iso/F");
+	reduced_tree->Branch("iso7_pt0",&fIso7_pt0,"iso7_pt0/F");
+	reduced_tree->Branch("iso7_pt5",&fIso7_pt5,"iso7_pt5/F");
+	reduced_tree->Branch("iso7_pt7",&fIso7_pt7,"iso7_pt7/F");
+	reduced_tree->Branch("iso7_pt10",&fIso7_pt10,"iso7_pt10/F");
+	reduced_tree->Branch("iso10_pt0",&fIso10_pt0,"iso10_pt0/F");
+	reduced_tree->Branch("iso10_pt5",&fIso10_pt5,"iso10_pt5/F");
+	reduced_tree->Branch("iso10_pt7",&fIso10_pt7,"iso10_pt7/F");
+	reduced_tree->Branch("iso10_pt10",&fIso10_pt10,"iso10_pt10/F");
 	reduced_tree->Branch("triggers",&fTriggers,"triggers/I");
+	reduced_tree->Branch("triggers_error",&fTriggersError,"triggers_error/I");
 	reduced_tree->Branch("ctau",&fCtau,"ctau/F");
+	reduced_tree->Branch("eta",&fEta,"eta/F");
 	reduced_tree->Branch("d3_perp",&fD3_Perp,"d3_perp/F");
 	reduced_tree->Branch("d3_para",&fD3_Para,"d3_para/F");
 	reduced_tree->Branch("dxy_perp",&fDxy_Perp,"dxy_perp/F");
@@ -191,7 +198,20 @@ void massReader::buildDecay(TGenCand *gen, multiset<int> *particles)
 		buildDecay(fpEvt->getGenCand(j),particles);
 } // buildDecay()
 
-float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle)
+void massReader::findAllRecTrackIndices(TAnaCand* pCand, set<int> *indices)
+{
+	int j;
+	
+	// iterate through all the daughter candidates and add the tracks
+	for (j = pCand->fDau1; j <= pCand->fDau2; j++)
+		findAllRecTrackIndices(fpEvt->getCand(j),indices);
+	
+	// iterate through all own tracks
+	for (j = pCand->fSig1; j <= pCand->fSig2; j++)
+		indices->insert(fpEvt->getSigTrack(j)->fIndex);
+} // findAllRecTrackIndices()
+
+float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt)
 {
 	double iso; // calculate in double precision and return single
 	TVector3 plabB;
@@ -201,20 +221,17 @@ float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle)
 	set<int> usedTracks;
 	
 	plabB = pCand->fPlab;
-	
-	// build list of tracks in the plabB
-	for (j = pCand->fSig1; j <= pCand->fSig2; j++) {
-		pTrack = fpEvt->getSigTrack(j);
-		usedTracks.insert(pTrack->fIndex);
-	}
+	findAllRecTrackIndices(pCand,&usedTracks);
 	
 	iso = 0.0;
 	ntracks = fpEvt->nRecTracks();
 	for (j = 0; j < ntracks; j++) {
 		
-		if (usedTracks.find(j) != usedTracks.end()) continue; // this tracks belongs to the candidate
+		if (usedTracks.find(j) != usedTracks.end()) continue; // this track belongs to the candidate
 		
 		pTrack = fpEvt->getRecTrack(j);
+		if (pTrack->fPlab.Perp() <= minPt) continue;
+		
 		r = plabB.DeltaR(pTrack->fPlab);
 		if (r < openingAngle)
 			iso += pTrack->fPlab.Perp();
@@ -225,19 +242,20 @@ float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle)
 	return (float)iso;
 } // calculateIsolation()
 
-int massReader::loadTrigger()
+int massReader::loadTrigger(int *errTriggerOut)
 {
 	unsigned j;
 	int triggers = 0;
 	TString string;
 	int triggers_found = 0; // store the trigger we found!!
+	int triggers_err;
 	
 	for (j = 0; j < NHLT; j++) {
 		if (fpEvt->fHLTNames[j] == "HLT_DoubleMu3") {
 			triggers_found |= kHLT_DoubleMu3_Bit;
 			
 			if (fpEvt->fHLTError[j]) {
-				cerr << "massReader: HLTError in " << fpEvt->fHLTNames[j] << endl;
+				triggers_err |= kHLT_DoubleMu3_Bit;
 				continue;
 			}
 			
@@ -247,7 +265,7 @@ int massReader::loadTrigger()
 			triggers_found |= kHLT_DoubleMu0_Bit;
 			
 			if (fpEvt->fHLTError[j]) {
-				cerr << "massReader: HLTError in " << fpEvt->fHLTNames[j] << endl;
+				triggers_err |= kHLT_DoubleMu0_Bit;
 				continue;
 			}
 			
@@ -256,11 +274,8 @@ int massReader::loadTrigger()
 		}
 	}
 	
-	// dump if the triggers couldn't be found
-	if ((triggers_found & kHLT_DoubleMu3_Bit) == 0)
-		cerr << "No HLT_DoubleMu3 trigger found in run " << fpEvt->fRunNumber << endl;
-	if ((triggers_found & kHLT_DoubleMu0_Bit) == 0)
-		cerr << "NO HLT_DoubleMu0 trigger found in run " << fpEvt->fRunNumber << endl;
+	if (errTriggerOut)
+		*errTriggerOut = triggers_err;
 	
 	return triggers;
 } // loadTrigger()
