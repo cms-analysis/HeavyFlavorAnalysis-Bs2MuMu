@@ -14,6 +14,8 @@
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFMasses.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFDecayTree.h"
 
+#include "MagneticField/Engine/interface/MagneticField.h"
+#include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/Wrapper.h"
@@ -80,8 +82,13 @@ HFBs2JpsiPhi::~HFBs2JpsiPhi() {
 
 
 // ----------------------------------------------------------------------
-void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup) {
-
+void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup)
+{
+  // -- get the magnetic field
+  ESHandle<MagneticField> magfield;
+  iSetup.get<IdealMagneticFieldRecord>().get(magfield);
+  const MagneticField *field = magfield.product();
+  
   // -- get the primary vertex
   Handle<VertexCollection> recoPrimaryVertexCollection;
   iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
@@ -194,7 +201,7 @@ void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup) {
   if (fVerbose > 0) cout << "==>HFBs2JpsiKp> phi list size: " << phiList.size() << endl;
   
   HFKalmanVertexFit    aKal(fTTB.product(), fPV, 100521, fVerbose);   aKal.fMaxDoca     = fMaxDoca; 
-  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), fPV, fVerbose);
+  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
   vector<Track> trackList; 
   vector<int> trackIndices;
   vector<double> trackMasses;

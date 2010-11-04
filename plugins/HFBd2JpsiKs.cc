@@ -5,6 +5,8 @@
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/TrackReco/interface/Track.h"
+#include "MagneticField/Engine/interface/MagneticField.h"
+#include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
 
@@ -95,8 +97,13 @@ void HFBd2JpsiKs::endJob() {} // endJob()
 
 void HFBd2JpsiKs::analyze(const Event& iEvent, const EventSetup& iSetup)
 {
+	// -- get the magnetic field
+	ESHandle<MagneticField> magfield;
+	iSetup.get<IdealMagneticFieldRecord>().get(magfield);
+	const MagneticField *field = magfield.product();
+	
 	// -- get the primary vertex
-        Handle<VertexCollection> recoPrimaryVertexCollection;
+	Handle<VertexCollection> recoPrimaryVertexCollection;
 	iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
 	if(!recoPrimaryVertexCollection.isValid()) {
 		cout << "==>HFBd2JpsiKs> No primary vertex collection found, skipping" << endl;
@@ -209,7 +216,7 @@ void HFBd2JpsiKs::analyze(const Event& iEvent, const EventSetup& iSetup)
 	if (fVerbose > 0) cout << "==>HFBd2JpsiKs> Ks list size: " << ksList.size() << endl;
 	
 	// do the vertex fitting...
-	HFSequentialVertexFit aSeq(hTracks, fTTB.product(), fPV, fVerbose);
+	HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
 	TLorentzVector psi,m1,m2,pi1,pi2,ks,bd;
 
 	for (unsigned int i = 0; i < psiList.size(); i++) {

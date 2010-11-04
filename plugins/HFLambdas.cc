@@ -6,6 +6,9 @@
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 
+#include "MagneticField/Engine/interface/MagneticField.h"
+#include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
+
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
 
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
@@ -95,6 +98,11 @@ void HFLambdas::endJob() {} // endJob()
 
 void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
 {
+	// -- get the magnetic field
+	ESHandle<MagneticField> magfield;
+	iSetup.get<IdealMagneticFieldRecord>().get(magfield);
+	const MagneticField *field = magfield.product();
+	
 	// -- get the primary vertex
         Handle<VertexCollection> recoPrimaryVertexCollection;
 	iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
@@ -212,7 +220,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
 	if (fVerbose > 0) cout << "==>HFLambdas> Lambda_0 list size: " << l0List.size() << endl;
 	
 	// do the vertex fitting...
-	HFSequentialVertexFit aSeq(hTracks, fTTB.product(), fPV, fVerbose);
+	HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
 	TLorentzVector tlvPsi, tlvMu1, tlvMu2, tlvPion, tlvProton, tlvLamdba0, tlvLambdaB;
 
 	for (unsigned int i = 0; i < psiList.size(); i++) {

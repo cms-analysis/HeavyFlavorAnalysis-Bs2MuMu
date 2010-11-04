@@ -24,6 +24,9 @@
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 
+#include "MagneticField/Engine/interface/MagneticField.h"
+#include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
+
 // -- Yikes!
 extern TAna01Event *gHFEvent;
 
@@ -79,8 +82,13 @@ HFBd2JpsiKstar::~HFBd2JpsiKstar() {
 
 
 // ----------------------------------------------------------------------
-void HFBd2JpsiKstar::analyze(const Event& iEvent, const EventSetup& iSetup) {
-
+void HFBd2JpsiKstar::analyze(const Event& iEvent, const EventSetup& iSetup)
+{
+  // -- get the magnetic field
+  ESHandle<MagneticField> magfield;
+  iSetup.get<IdealMagneticFieldRecord>().get(magfield);
+  const MagneticField *field = magfield.product();
+  
   // -- get the primary vertex
   Handle<VertexCollection> recoPrimaryVertexCollection;
   iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
@@ -196,7 +204,7 @@ void HFBd2JpsiKstar::analyze(const Event& iEvent, const EventSetup& iSetup) {
   if (fVerbose > 0) cout << "==>HFBs2JpsiKp> kstar list size: " << kstarList.size() << endl;
   
   HFKalmanVertexFit    aKal(fTTB.product(), fPV, 100511, fVerbose);   aKal.fMaxDoca     = fMaxDoca; 
-  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), fPV, fVerbose);
+  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
   vector<Track> trackList; 
   vector<int> trackIndices;
   vector<double> trackMasses;
