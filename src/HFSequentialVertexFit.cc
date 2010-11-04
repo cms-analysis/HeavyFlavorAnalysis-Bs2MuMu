@@ -17,6 +17,10 @@
 #include "RecoVertex/VertexTools/interface/VertexDistance3D.h"
 
 #include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
+#include "TrackingTools/PatternTools/interface/TransverseImpactPointExtrapolator.h"
+#include "TrackingTools/IPTools/interface/IPTools.h"
+
+#include "DataFormats/GeometryCommonDetAlgo/interface/Measurement1D.h"
 
 #include "CommonTools/Statistics/interface/ChiSquared.h"
 
@@ -29,13 +33,27 @@ struct MassNotFoundException {
   MassNotFoundException() {}
 };
 
+struct ImpactParameters {
+	ImpactParameters() {
+		lip = Measurement1D();
+		tip = Measurement1D();
+	}
+	Measurement1D lip;
+	Measurement1D tip;
+};
+
 using namespace std;
 using namespace edm;
 using namespace reco;
 
-HFSequentialVertexFit::HFSequentialVertexFit(Handle<View<Track> > hTracks, const TransientTrackBuilder *TTB, Vertex &PV, int verbose) :
-  fVerbose(verbose),fPV(PV),fpTTB(TTB),fhTracks(hTracks)
-{ } // HFSequentialVertexFit()
+HFSequentialVertexFit::HFSequentialVertexFit(Handle<View<Track> > hTracks, const TransientTrackBuilder *TTB, Handle<VertexCollection> pvCollection, const MagneticField *field, int verbose) :
+
+	fVerbose(verbose),
+	fpTTB(TTB),
+	fhTracks(hTracks),
+	fPVCollection(pvCollection),
+	magneticField(field)
+{} // HFSequentialVertexFit()
 
 HFSequentialVertexFit::~HFSequentialVertexFit()
 {} // ~HFSequentialVertexFit()
@@ -130,7 +148,7 @@ void HFSequentialVertexFit::saveTree(HFDecayTree *tree)
 
   // create the Ana Candidate of the node if requested and not yet existing
   if(tree->particleID && !tree->getAnaCand())
-    tree->setAnaCand(addCandidate(tree,fPV)); // top candidate w.r.t. primary vertex
+    tree->setAnaCand(addCandidate(tree)); // top candidate w.r.t. primary vertex
 
   // get the current vertex state
   subTree = *(tree->getKinematicTree());
@@ -140,7 +158,7 @@ void HFSequentialVertexFit::saveTree(HFDecayTree *tree)
   // create all the requested candidates of the daughters
   for (treeIt = tree->getVerticesBeginIterator(); treeIt != tree->getVerticesEndIterator(); ++treeIt) {
 	  if (treeIt->particleID && !treeIt->getAnaCand())
-		  treeIt->setAnaCand(addCandidate(&(*treeIt),vState));
+		  treeIt->setAnaCand(addCandidate(&(*treeIt),&vState));
   }
   
   // link the candidates
@@ -171,8 +189,8 @@ void HFSequentialVertexFit::saveTree(HFDecayTree *tree)
 
 } // saveTree()
 
-template<class T>
-TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
+
+TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wrtVertexState)
 {
   TAnaCand *pCand = NULL;
   TAnaVertex anaVtx;
@@ -189,6 +207,8 @@ TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
   double cov[9];
   double mass;
   unsigned j;
+  int pvIx = -1; // PV index of this candidate
+  ImpactParameters pvImpParams;
 
   if (tree->particleID == 0) return pCand; // i.e. null
   if (kinTree->isEmpty()) return pCand;
@@ -222,12 +242,72 @@ TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
   anaVtx.setInfo(kinParticle->chiSquared(),kinParticle->degreesOfFreedom(),chi.probability(),0,0);
   anaVtx.fPoint.SetXYZ(kinVertex->position().x(),kinVertex->position().y(),kinVertex->position().z());
 
-  // -- Distance to mother vertex (or primary vertex)
-  anaVtx.fDxy = axy.distance(toVertex, kinVertex->vertexState()).value();
-  anaVtx.fDxyE = axy.distance(toVertex, kinVertex->vertexState()).error();
+  if (!wrtVertexState) {
+	  
+	  // iterate through all PVs and estimate the impact parameters of this particle
+	  VertexCollection::const_iterator vertexIt;
+	  TransverseImpactPointExtrapolator impactCalc(magneticField);
+	  TrajectoryStateOnSurface stateOnSurf;
+	  int j = 0;
+	  
+	  // calculate the impact parameters for all primary vertices
+	  if (fVerbose > 0)
+		  cout << "==> HFSequentialVertexFit: Number of PV vertices to compare is " << fPVCollection->size() << endl;
+	  
+	  for (vertexIt = fPVCollection->begin(); vertexIt != fPVCollection->end(); ++vertexIt,++j) {
+		  
+		  TVector3 vertexPos,thePCA;
+		  std::pair<bool,Measurement1D> currentIp;
+		  GlobalVector dir;
+		  
+		  // extrapolate to PCA
+		  stateOnSurf = impactCalc.extrapolate(kinParticle->currentState().freeTrajectoryState(),GlobalPoint(vertexIt->x(),vertexIt->y(),vertexIt->z()));
+		  
+		  thePCA = TVector3(stateOnSurf.globalPosition().x(),stateOnSurf.globalPosition().y(),stateOnSurf.globalPosition().z());
+		  vertexPos = TVector3(vertexIt->x(),vertexIt->y(),vertexIt->z());
+		  
+		  // compute the difference
+		  thePCA = thePCA - vertexPos;
+		  
+		  // compute with iptools
+		  dir = GlobalVector(0,0,1);
+		  currentIp = IPTools::signedDecayLength3D(stateOnSurf,dir,*vertexIt);
+		  if (!currentIp.first) {
+			  if (fVerbose > 0) cout << "==>HFSequentialVertexFit: Unable to compute lip to vertex at index " << j << endl;
+			  continue;
+		  }
+		  
+		  // store?
+		  if (pvIx >= 0 && fabs(currentIp.second.value()) >= fabs(pvImpParams.lip.value())) continue;
+		  
+		  pvIx = j;
+		  pvImpParams.lip = currentIp.second;
+		  
+		  dir = GlobalVector(thePCA.X(),thePCA.Y(),0); // perp direction
+		  currentIp = IPTools::signedDecayLength3D(stateOnSurf,dir,*vertexIt);
+		  
+		  pvImpParams.tip = currentIp.second;
+	  }
+  }
   
-  anaVtx.fD3d = a3d.distance(toVertex, kinVertex->vertexState()).value();
-  anaVtx.fD3dE = a3d.distance(toVertex, kinVertex->vertexState()).error();
+  if (wrtVertexState) {
+	  // -- Distance to mother vertex
+	  anaVtx.fDxy = axy.distance(*wrtVertexState, kinVertex->vertexState()).value();
+	  anaVtx.fDxyE = axy.distance(*wrtVertexState, kinVertex->vertexState()).error();
+	  
+	  anaVtx.fD3d = a3d.distance(*wrtVertexState, kinVertex->vertexState()).value();
+	  anaVtx.fD3dE = a3d.distance(*wrtVertexState, kinVertex->vertexState()).error();
+  } else if (pvIx >= 0) {
+	  // -- Distance w.r.t primary vertex
+	  Vertex currentPV = (*fPVCollection)[pvIx];
+	  anaVtx.fDxy = axy.distance(currentPV,kinVertex->vertexState()).value();
+	  anaVtx.fDxyE = axy.distance(currentPV,kinVertex->vertexState()).error();
+	  
+	  anaVtx.fD3d = a3d.distance(currentPV,kinVertex->vertexState()).value();
+	  anaVtx.fD3dE = a3d.distance(currentPV,kinVertex->vertexState()).error();
+	  
+  } else if (fVerbose > 0)
+	  cout << "==> HFSequentialVertexFit: No idea what distance to compute in TAnaVertex.fDxy and TAnaVertex.fD3d" << endl;
   
   // -- set covariance matrix
   cov[0] = kinVertex->error().cxx();
@@ -257,6 +337,12 @@ TAnaCand *HFSequentialVertexFit::addCand(HFDecayTree *tree, T &toVertex)
   
   pCand->fMaxDoca = tree->maxDoca;
   pCand->fMinDoca = tree->minDoca;
+  
+  pCand->fPvIdx = pvIx;
+  pCand->fPvLip = pvImpParams.lip.value();
+  pCand->fPvLipE = pvImpParams.lip.error();
+  pCand->fPvTip = pvImpParams.tip.value();
+  pCand->fPvTipE = pvImpParams.tip.error();
   
   for (j = 0; j < allTreeTracks.size(); j++) {
     
