@@ -160,7 +160,7 @@ int ksReader::loadCandidateVariables(TAnaCand *pCand)
 	
 	// jpsi subvariables
 	subCand = NULL;
-	for (j = pCand->fDau1; j <= pCand->fDau2; j++) {
+	for (j = pCand->fDau1; j >= 0 && j <= pCand->fDau2; j++) {
 		
 		TAnaCand *tmpCand = fpEvt->getCand(j);
 		if (tmpCand->fType % 1000 == 443) { // J/Psi
