@@ -38,7 +38,7 @@ class massReader : public treeReader01 {
 		virtual int checkTruth(TAnaCand *cand); // check if all are originating from the same particle
 		virtual int countMuons(TAnaCand *cand); // count the number of identified muons
 		float calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt);
-		int loadTrigger(int *errTriggerOut = NULL);
+		int loadTrigger(int *errTriggerOut = NULL, int *triggersFoundOut = NULL);
 
 		// other utility routines
 		void buildDecay(TGenCand *gen, std::multiset<int> *particles);
@@ -76,6 +76,7 @@ class massReader : public treeReader01 {
 		float fIso10_pt10;
 		int fTriggers; // store some trigger information
 		int fTriggersError; // error information of trigger
+		int fTriggersFound; // what triggers were available
 		float fCtau; // proper time (note can be filled only in subclasses as requires knowledge of m)
 		float fEta; // eta of the candidate
 		float fD3_Perp;	// Perpendicular part of distance d3 w.r.t. momentum of candidate

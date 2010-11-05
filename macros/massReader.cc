@@ -76,7 +76,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	// do this at the end so the checkTruth algorithm can use
 	// all variables of this candidate.
 	fTruth = checkTruth(pCand);
-	fTriggers = loadTrigger(&fTriggersError);
+	fTriggers = loadTrigger(&fTriggersError,&fTriggersFound);
 	
 	return 1;
 } // loadCandidateVariables()
@@ -111,6 +111,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("iso10_pt10",&fIso10_pt10,"iso10_pt10/F");
 	reduced_tree->Branch("triggers",&fTriggers,"triggers/I");
 	reduced_tree->Branch("triggers_error",&fTriggersError,"triggers_error/I");
+	reduced_tree->Branch("triggers_found",&fTriggersFound,"triggers_found/I");
 	reduced_tree->Branch("ctau",&fCtau,"ctau/F");
 	reduced_tree->Branch("eta",&fEta,"eta/F");
 	reduced_tree->Branch("d3_perp",&fD3_Perp,"d3_perp/F");
@@ -242,7 +243,7 @@ float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle, doubl
 	return (float)iso;
 } // calculateIsolation()
 
-int massReader::loadTrigger(int *errTriggerOut)
+int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 {
 	unsigned j;
 	int triggers = 0;
@@ -286,6 +287,9 @@ int massReader::loadTrigger(int *errTriggerOut)
 	
 	if (errTriggerOut)
 		*errTriggerOut = triggers_err;
+
+	if (triggersFoundOut)
+		*triggersFoundOut = triggers_found;
 	
 	return triggers;
 } // loadTrigger()
