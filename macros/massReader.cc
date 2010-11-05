@@ -248,7 +248,7 @@ int massReader::loadTrigger(int *errTriggerOut)
 	int triggers = 0;
 	TString string;
 	int triggers_found = 0; // store the trigger we found!!
-	int triggers_err;
+	int triggers_err = 0;
 	
 	for (j = 0; j < NHLT; j++) {
 		if (fpEvt->fHLTNames[j] == "HLT_DoubleMu3") {
@@ -271,6 +271,16 @@ int massReader::loadTrigger(int *errTriggerOut)
 			
 			if(fpEvt->fHLTResult[j])
 				triggers |= kHLT_DoubleMu0_Bit;
+		} else if (fpEvt->fHLTNames[j] == "HLT_DoubleMu0_Quarkonium_v1") {
+			triggers_found |= kHLT_DoubleMu0_Quarkonium_v1_Bit;
+			
+			if (fpEvt->fHLTError[j]) {
+				triggers_err |= kHLT_DoubleMu0_Quarkonium_v1_Bit;
+				continue;
+			}
+			
+			if (fpEvt->fHLTResult[j])
+				triggers |= kHLT_DoubleMu0_Quarkonium_v1_Bit;
 		}
 	}
 	

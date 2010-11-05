@@ -13,7 +13,8 @@ const static double MKAON = 0.4937;
 enum trigger_bits
 {
 	kHLT_DoubleMu3_Bit = 1 << 0,
-	kHLT_DoubleMu0_Bit = 1 << 1
+	kHLT_DoubleMu0_Bit = 1 << 1,
+	kHLT_DoubleMu0_Quarkonium_v1_Bit = 1 << 2
 };
 
 class massReader : public treeReader01 {
