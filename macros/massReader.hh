@@ -26,6 +26,7 @@ class massReader : public treeReader01 {
 		virtual void bookHist();
 		virtual void eventProcessing();
 		virtual void closeHistFile();
+		virtual void readCuts(TString filename, int dump = 1);
 
 	protected:
 		// For subclasses
@@ -33,6 +34,8 @@ class massReader : public treeReader01 {
 		std::multiset<int> trueDecay;
 		
 		virtual int loadCandidateVariables(TAnaCand *pCand);
+		virtual bool parseCut(char *cutName, float cutValue, int dump = 1);
+		virtual bool applyCut();
 		
 		// loading variables
 		virtual int checkTruth(TAnaCand *cand); // check if all are originating from the same particle
@@ -83,6 +86,11 @@ class massReader : public treeReader01 {
 		float fD3_Para; // Parallel part of distance d3 w.r.t. momentum of candidate
 		float fDxy_Perp; // Perpendicular part of distance dxy w.r.t. momentum of candidate
 		float fDxy_Para; // Parallel part of distance dxy w.r.t. momentum of candidate
+	
+	// Cut variables
+	protected:
+		bool fCutFileParsed;
+		int fCutCand; // the candidate to extract
 };
 
 #endif

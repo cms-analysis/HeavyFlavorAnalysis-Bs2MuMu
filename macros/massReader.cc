@@ -3,7 +3,7 @@
 
 using namespace std;
 
-massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName),reduced_tree(NULL)
+massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName),reduced_tree(NULL),fCutFileParsed(false),fCutCand(0)
 {	
 	fTreeName = "massReader reduced tree";
 } // massReader()
@@ -19,7 +19,7 @@ void massReader::eventProcessing()
 	nc = fpEvt->nCands();
 	for (j = 0; j<nc; j++) {
 		
-		if(loadCandidateVariables(fpEvt->getCand(j)))
+		if(loadCandidateVariables(fpEvt->getCand(j)) && (!fCutFileParsed || applyCut()))
 			reduced_tree->Fill();
 	}
 } // massReader::eventProcessing()
@@ -293,3 +293,74 @@ int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 	
 	return triggers;
 } // loadTrigger()
+
+void massReader::readCuts(TString filename, int dump)
+{
+	// parse the files...
+	char buffer[256];
+	char cutName[128];
+	float cutValue;
+	int ok;
+	
+	FILE *cutFile = fopen(filename.Data(),"r");
+	if(!cutFile) goto bail;
+	
+	if (dump) {
+		cout << "===================================================" << endl;
+		cout << "==> massReader: Cut file " << filename.Data() << endl;
+		cout << "---------------------------------------------------" << endl;
+	}
+	
+	fCutFileParsed = true;
+	
+	while (fgets(buffer,sizeof(buffer),cutFile)) {
+		
+		ok = 0;
+		if(buffer[strlen(buffer)-1] != '\n') {
+			cout << "==> massReader: Cut file line is too long, skipping..." << endl;
+			continue;
+		}
+		
+		// skip comment line
+		if (buffer[0] == '#') continue;
+		
+		if(sscanf(buffer, "%s %f", cutName, &cutValue) < 2) {
+			cout << "==> massReader: Cut not parse input line:" << endl;
+			cout << buffer << endl;
+			cout << "==> massReader: Skipping this line..." << endl;
+		}
+		
+		if(!parseCut(cutName, cutValue))
+			cout << "==> massReader: Error parsing variable " << cutName << ". Ignoring this cut..." << endl;
+	}
+	
+	if (dump) cout << "---------------------------------------------------" << endl;
+	
+	// close the cut file...
+bail:
+	if (cutFile) fclose(cutFile);
+} // readCuts()
+
+bool massReader::parseCut(char *cutName, float cutValue, int dump)
+{
+	bool parsed;
+	// parse the options...
+	parsed = (strcmp(cutName,"CAND") == 0);
+	if (parsed) {
+		fCutCand = (int)cutValue;
+		if (dump) cout << "CAND: " << fCutCand << endl;
+	}
+	
+	return parsed;
+} // parseCut()
+
+bool massReader::applyCut()
+{
+	bool pass = true;
+	
+	// check the candidate
+	if (fCutCand != 0) // cut on candidate requested
+		pass = fCandidate == fCutCand;
+	
+	return pass;
+} // applyCut()
