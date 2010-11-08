@@ -7,7 +7,17 @@ using namespace std;
 
 const static float kMassBs = 5.3663;
 
-phiReader::phiReader(TChain *tree, TString evtClassName) : massReader(tree,evtClassName), total_counter(0), reco_single(0), reco_double(0)
+phiReader::phiReader(TChain *tree, TString evtClassName) :
+	massReader(tree,evtClassName),
+	fCutTrackQual_mu1(0),
+	fCutTrackQual_mu2(0),
+	fCutTrackQual_kp1(0),
+	fCutTrackQual_kp2(0),
+	fCutOppSign_mu(false),
+	fCutOppSign_kp(false),
+	total_counter(0),
+	reco_single(0),
+	reco_double(0)
 {
 	cout << "Instantiating phiReader..." << endl;
 	fPlabMu1Ptr = &fPlabMu1;
@@ -246,3 +256,106 @@ int phiReader::checkTruth(TAnaCand *pCand)
 bail:
 	return result;
 } // checkTruth()
+
+bool phiReader::parseCut(char *cutName, float cutValue, int dump)
+{
+	bool parsed;
+	
+	// parse the options...
+	parsed = (strcmp(cutName,"TRACK_QUAL_MU1") == 0);
+	if (parsed) {
+		fCutTrackQual_mu1 = (int)cutValue;
+		if (dump) cout << "TRACK_QUAL_MU1: " << fCutTrackQual_mu1 << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"TRACK_QUAL_MU2") == 0);
+	if (parsed) {
+		fCutTrackQual_mu2 = (int)cutValue;
+		if (dump) cout << "TRACK_QUAL_MU2: " << fCutTrackQual_mu2 << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"TRACK_QUAL_KP1") == 0);
+	if (parsed) {
+		fCutTrackQual_kp1 = (int)cutValue;
+		if (dump) cout << "TRACK_QUAL_KP1: " << fCutTrackQual_kp1 << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"TRACK_QUAL_KP2") == 0);
+	if (parsed) {
+		fCutTrackQual_kp2 = (int)cutValue;
+		if (dump) cout << "TRACK_QUAL_KP2: " << fCutTrackQual_kp2 << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"OPPOSITE_SIGN_MU") == 0);
+	if (parsed) {
+		fCutOppSign_mu = (cutValue != 0.0f);
+		if (dump) cout << "OPPOSITE_SIGN_MU: " << fCutOppSign_mu << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"OPPOSITE_SIGN_KP") == 0);
+	if (parsed) {
+		fCutOppSign_kp = (cutValue != 0.0f);
+		if (dump) cout << "OPPOSITE_SIGN_KP: " << fCutOppSign_kp << endl;
+		goto bail;
+	}
+	
+	// ask superclass if nothing parsed yet
+	parsed = massReader::parseCut(cutName, cutValue, dump);
+	
+bail:
+	return parsed;
+} // parseCut()
+
+
+bool phiReader::applyCut()
+{
+	bool pass = true;
+	
+	// check track quality of mu1
+	if (fCutTrackQual_mu1) {
+		pass = (fTrackQual_mu1 & fCutTrackQual_mu1) != 0;
+		if (!pass) goto bail;
+	}
+	
+	// check track quality of mu2
+	if (fCutTrackQual_mu2) {
+		pass = (fTrackQual_mu2 & fCutTrackQual_mu2) != 0;
+		if (!pass) goto bail;
+	}
+	
+	// check track quality of kp1
+	if (fCutTrackQual_kp1) {
+		pass = (fTrackQual_kp1 & fCutTrackQual_kp1) != 0;
+		if (!pass) goto bail;
+	}
+	
+	// check track quality of kp2
+	if (fCutTrackQual_kp2) {
+		pass = (fTrackQual_kp2 & fCutTrackQual_kp2) != 0;
+		if (!pass) goto bail;
+	}
+	
+	// check opposite sign of muons
+	if (fCutOppSign_mu) {
+		pass = fQ_mu1 != fQ_mu2;
+		if (!pass) goto bail;
+	}
+	
+	// check opposite sign of kaons
+	if (fCutOppSign_kp) {
+		pass = fQ_kp1 != fQ_kp2;
+		if (!pass) goto bail;
+	}
+	
+	// check superclass cuts
+	pass = massReader::applyCut();
+	
+bail:
+	// return result
+	return pass;
+} // applyCut()

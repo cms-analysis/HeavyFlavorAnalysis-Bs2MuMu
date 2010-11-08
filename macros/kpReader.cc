@@ -6,7 +6,16 @@ using namespace std;
 
 const static float kMassBplus = 5.2792;
 
-kpReader::kpReader(TChain *tree, TString evtClassName) : massReader(tree,evtClassName),total_counter(0),reco_counter(0),reco_single(0),reco_double(0)
+kpReader::kpReader(TChain *tree, TString evtClassName) :
+	massReader(tree,evtClassName),
+	fCutTrackQual_mu1(0),
+	fCutTrackQual_mu2(0),
+	fCutTrackQual_kp(0),
+	fCutOppSign_mu(false),
+	total_counter(0),
+	reco_counter(0),
+	reco_single(0),
+	reco_double(0)
 {
 	// set the pointers to save in the tree
 	fPlabMu1Ptr = &fPlabMu1;
@@ -197,3 +206,79 @@ int kpReader::checkTruth(TAnaCand *pCand)
 bail:
 	return result;
 } // checkTruth()
+
+bool kpReader::parseCut(char *cutName, float cutValue, int dump)
+{
+	bool parsed;
+	
+	// parse the options..
+	parsed = (strcmp(cutName,"TRACK_QUAL_MU1") == 0);
+	if (parsed) {
+		fCutTrackQual_mu1 = (int)cutValue;
+		if (dump) cout << "TRACK_QUAL_MU1: " << fCutTrackQual_mu1 << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"TRACK_QUAL_MU2") == 0);
+	if (parsed) {
+		fCutTrackQual_mu2 = (int)cutValue;
+		if (dump) cout << "TRACK_QUAL_MU2: " << fCutTrackQual_mu2 << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"TRACK_QUAL_KP") == 0);
+	if (parsed) {
+		fCutTrackQual_kp = (int)cutValue;
+		if (dump) cout << "TRACK_QUAL_KP: " << fCutTrackQual_kp << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"OPPOSITE_SIGN_MU") == 0);
+	if (parsed) {
+		fCutOppSign_mu = (cutValue != 0.0);
+		if (dump) cout << "OPPOSITE_SIGN_MU: " << fCutOppSign_mu << endl;
+		goto bail;
+	}
+	
+	// nothing parsed, then maybe massReader knows about it.
+	parsed = massReader::parseCut(cutName, cutValue, dump);
+	
+bail:
+	return parsed;
+} // parseCut()
+
+bool kpReader::applyCut()
+{
+	bool pass = true;
+	
+	// check track quality of mu1
+	if (fCutTrackQual_mu1) {
+		pass = (fTrackQual_mu1 & fCutTrackQual_mu1) != 0;
+		if (!pass) goto bail;
+	}
+	
+	// check track quality of mu2
+	if (fCutTrackQual_mu2) {
+		pass = (fTrackQual_mu2 & fCutTrackQual_mu2) != 0;
+		if (!pass) goto bail;
+	}
+	
+	// check track quality of kp
+	if (fCutTrackQual_kp) {
+		pass = (fTrackQual_kp & fCutTrackQual_kp) != 0;
+		if (!pass) goto bail;
+	}
+	
+	// check opposite sign of muons
+	if (fCutOppSign_mu) {
+		pass = fQ_mu1 != fQ_mu2;
+		if (!pass) goto bail;
+	}
+	
+	// check superclass cuts
+	pass = massReader::applyCut();
+	
+bail:
+	// return result
+	return pass;
+} // applyCut()

@@ -15,6 +15,9 @@ class kpReader : public massReader {
 	protected:
 		virtual int loadCandidateVariables(TAnaCand *pCand);
 		virtual int checkTruth(TAnaCand *cand);
+		
+		virtual bool parseCut(char *cutName, float cutValue, int dump = 1);
+		virtual bool applyCut();
 	
 	private: // reduced Tree variables
 		float fMassJPsi;
@@ -42,7 +45,14 @@ class kpReader : public massReader {
 		
 		float fD3_BpJpsi;
 		float fD3e_BpJpsi;
-		
+	
+	private:
+		// Additional cut variables
+		int fCutTrackQual_mu1;
+		int fCutTrackQual_mu2;
+		int fCutTrackQual_kp;
+		bool fCutOppSign_mu;
+	
 	private:
 		std::map<int,int> decay_indices; // (genIx, ident_muons)
 		unsigned long long total_counter;
