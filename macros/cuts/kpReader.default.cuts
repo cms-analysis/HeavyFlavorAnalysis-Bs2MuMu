@@ -1,0 +1,7 @@
+# massReader cuts
+CAND 300521
+# kpReader cuts
+TRACK_QUAL_MU1 4
+TRACK_QUAL_MU2 4
+TRACK_QUAL_KP 4
+OPPOSITE_SIGN_MU 1
