@@ -14,6 +14,8 @@
 #include "TUnixSystem.h"
 
 #include "bmmReader.hh"
+#include "bmmSignalReader.hh"
+#include "bmmNormalizationReader.hh"
 #include "dpReader.hh"
 #include "d0Reader.hh"
 #include "lambdaReader.hh"
@@ -50,6 +52,8 @@ int main(int argc, char *argv[]) {
   int dirspec(0);
   int nevents(-1), start(-1);
   int randomSeed(processID);
+  int verbose(-1); 
+  int blind(1); 
 
   // Change the MaxTreeSize to 100 GB (default since root v5.26)
   TTree::SetMaxTreeSize(100000000000ll); // 100 GB
@@ -69,6 +73,7 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i],"-h")) {
 	std::cout << "List of arguments:" << std::endl;
+	cout << "-b {0,1}      run blind?" << endl; 
 	std::cout << "-c filename   chain definition file" << std::endl;
 	std::cout << "-C filename   file with cuts" << std::endl;
 	std::cout << "-D path       where to put the output" << std::endl;
@@ -77,9 +82,11 @@ int main(int argc, char *argv[]) {
 	std::cout << "-r class name which tree reader class to run" << std::endl;
 	std::cout << "-s number     seed for random number generator" << std::endl;
 	std::cout << "-o filename   set output file" << std::endl;
+	cout << "-v level      set verbosity level" << endl;
 	std::cout << "-h            prints this message and exits" << std::endl;
 	return 0;
     }
+    if (!strcmp(argv[i],"-b"))  {blind      = atoi(argv[++i]); }                 // run blind?
     if (!strcmp(argv[i],"-c"))  {fileName   = string(argv[++i]); file = 0; }     // file with chain definition
     if (!strcmp(argv[i],"-C"))  {cutFile    = string(argv[++i]);           }     // file with cuts
     if (!strcmp(argv[i],"-D"))  {dirName    = string(argv[++i]);  dirspec = 1; } // where to put the output
@@ -88,6 +95,7 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-r"))  {readerName = string(argv[++i]); }               // which tree reader class to run
     if (!strcmp(argv[i],"-s"))  {randomSeed = atoi(argv[++i]); }                 // set seed for random gen.
     if (!strcmp(argv[i],"-o"))  {histfile   = TString(argv[++i]); }              // set output file
+    if (!strcmp(argv[i],"-v"))  {verbose    = atoi(argv[++i]); }                 // set verbosity level
   }
 
 
@@ -185,6 +193,8 @@ int main(int argc, char *argv[]) {
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
   treeReader01 *a = NULL;
   if (readerName == "bmmReader") a = new bmmReader(chain, TString(evtClassName));
+  else if (readerName == "bmmSignalReader") a = new bmmSignalReader(chain,TString(evtClassName));
+  else if (readerName == "bmmNormalizationReader") a = new bmmNormalizationReader(chain,TString(evtClassName));
   else if (readerName == "kpReader") a = new kpReader(chain,TString(evtClassName));
   else if (readerName == "ksReader") a = new ksReader(chain,TString(evtClassName));
   else if (readerName == "phiReader") a = new phiReader(chain,TString(evtClassName));
@@ -206,10 +216,12 @@ int main(int argc, char *argv[]) {
 
 
   if (a) {
+    if (verbose > -1) a->setVerbosity(verbose); 
     a->openHistFile(histfile); 
     a->bookHist(); 
     a->readCuts(cutFile, 1);
-    
+    if (blind) a->runBlind();
+      
     a->startAnalysis(); 
     a->loop(nevents, start);
     a->endAnalysis();

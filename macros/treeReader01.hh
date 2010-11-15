@@ -43,6 +43,8 @@ public:
   virtual void initVariables(); 
   virtual void fillHist();
   virtual bool goodRun();
+  virtual void setVerbosity(int f) {fVerbose = f;}
+  virtual void runBlind() {BLIND = 1;}
 
 protected:
 
@@ -74,7 +76,9 @@ protected:
     , ETAHI   
     ;
   int TYPE;
-  
+  int BLIND; 
+
+  int fVerbose;
 
 };
 

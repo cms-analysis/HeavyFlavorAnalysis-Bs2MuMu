@@ -1,8 +1,8 @@
-TYPE        1300
-# -- BS 
-BSPTLO      -1.0
-BSETALO    -99.0
-BSETAHI     99.0
+TYPE        1313
+# -- Candidate
+CANDPTLO      -1.0
+CANDETALO    -99.0
+CANDETAHI     99.0
 # -- muon 
 MUPTLO       3.0
 MUPTHI    9999.0

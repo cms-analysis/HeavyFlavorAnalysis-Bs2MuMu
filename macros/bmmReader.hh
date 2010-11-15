@@ -32,45 +32,61 @@ public:
   bmmReader(TChain *tree, TString evtClassName);
   ~bmmReader();
 
-  void         bookHist();
-  void         startAnalysis();
-  void         eventProcessing();
-  void         fillHist();
-  void         readCuts(TString filename, int dump = 1);
-  void         initVariables();
+  virtual void bookHist();
+  virtual void startAnalysis();
+  virtual void eventProcessing();
+  virtual void fillHist();
+  virtual void readCuts(TString filename, int dump = 1);
+  virtual void initVariables();
+  virtual void insertCand(TAnaCand* pCand);
+
+  virtual void pvStudy();  
 
   virtual void MCKinematics();  
   virtual void L1TSelection();  
   virtual void HLTSelection();  
-
-  virtual void pvStudy();  
-
   virtual void trackSelection();  
   virtual void muonSelection();  
   virtual void candidateSelection(int mode = 0);  // 0 = closest in r-phi
+  virtual void fillCandidateVariables(); 
+
 
   // -- Cut values
   double 
-      BSPTLO
-    , BSETALO
-    , BSETAHI   
+      CANDPTLO
+    , CANDETALO
+    , CANDETAHI   
+    , TRACKPTLO
+    , TRACKPTHI
+    , TRACKTIP
+    , TRACKLIP
     , MUPTLO
     , MUPTHI
     , MUETALO
     , MUETAHI   
     ;
-  int TYPE;
+  int TYPE, MUID, TRACKQUALITY;
 
   // -- Variables
-  TAnaCand    *fpCand; 
+  bool                    fGoodMCKinematics;
+  bool                    fGoodL1, fGoodHLT;
 
-  double      fCandPt, fCandMass;
+  // -- vectors with the candidates of the specified type
+  std::vector<TAnaCand *> fCands;  
+  TAnaCand               *fpCand;       // the 'best' candidate
 
-  bool        fGoodMCKinematics, fGoodL1, fGoodHLT, fGoodEvent;
-  bool        fGoodMuonsID, fGoodMuonsPT;
-  bool        fGoodTracks, fGoodTracksPT;
-  bool        fGoodCandPT;
+  std::vector<bool>       fGoodMuonsID, fGoodMuonsPT;
+  std::vector<bool>       fGoodTracks, fGoodTracksPT;
+  std::vector<bool>       fGoodCandPT;
 
+  bool                    fGoodEvent;
+
+  // -- variables for reduced tree, they are from fpCand
+  double                  fCandPt, fCandM; 
+
+  double       SIGBOXMIN, SIGBOXMAX; 
+  double       BGLBOXMIN, BGLBOXMAX; 
+  double       BGHBOXMIN, BGHBOXMAX; 
 };
 
 #endif
