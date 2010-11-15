@@ -17,7 +17,7 @@ class phiReader : public massReader {
 		virtual int loadCandidateVariables(TAnaCand *pCand);
 		virtual int checkTruth(TAnaCand *cand);
 		
-		virtual bool parseCut(char *cutName, float cutValue, int dump = 1);
+		virtual bool parseCut(char *cutName, float cutLow, float cutHigh, int dump = 1);
 		virtual bool applyCut();
 	
 	private: // additional tree variables
@@ -62,6 +62,11 @@ class phiReader : public massReader {
 		int fCutTrackQual_kp2;
 		bool fCutOppSign_mu;
 		bool fCutOppSign_kp;
+		double fCutMass_JPsiLow;
+		double fCutMass_JPsiHigh;
+		double fCutMass_PhiLow;
+		double fCutMass_PhiHigh;
+		double fCutPt_Kp2;
 	
 	private:
 		std::map<int,int> decay_indices; // (genIx, ident_muons)

@@ -15,6 +15,11 @@ phiReader::phiReader(TChain *tree, TString evtClassName) :
 	fCutTrackQual_kp2(0),
 	fCutOppSign_mu(false),
 	fCutOppSign_kp(false),
+	fCutMass_JPsiLow(0.0),
+	fCutMass_JPsiHigh(0.0),
+	fCutMass_PhiLow(0.0),
+	fCutMass_PhiHigh(0.0),
+	fCutPt_Kp2(0.0),
 	total_counter(0),
 	reco_single(0),
 	reco_double(0)
@@ -257,56 +262,78 @@ bail:
 	return result;
 } // checkTruth()
 
-bool phiReader::parseCut(char *cutName, float cutValue, int dump)
+bool phiReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 {
 	bool parsed;
 	
 	// parse the options...
 	parsed = (strcmp(cutName,"TRACK_QUAL_MU1") == 0);
 	if (parsed) {
-		fCutTrackQual_mu1 = (int)cutValue;
+		fCutTrackQual_mu1 = (int)cutLow;
 		if (dump) cout << "TRACK_QUAL_MU1: " << fCutTrackQual_mu1 << endl;
 		goto bail;
 	}
 	
 	parsed = (strcmp(cutName,"TRACK_QUAL_MU2") == 0);
 	if (parsed) {
-		fCutTrackQual_mu2 = (int)cutValue;
+		fCutTrackQual_mu2 = (int)cutLow;
 		if (dump) cout << "TRACK_QUAL_MU2: " << fCutTrackQual_mu2 << endl;
 		goto bail;
 	}
 	
 	parsed = (strcmp(cutName,"TRACK_QUAL_KP1") == 0);
 	if (parsed) {
-		fCutTrackQual_kp1 = (int)cutValue;
+		fCutTrackQual_kp1 = (int)cutLow;
 		if (dump) cout << "TRACK_QUAL_KP1: " << fCutTrackQual_kp1 << endl;
 		goto bail;
 	}
 	
 	parsed = (strcmp(cutName,"TRACK_QUAL_KP2") == 0);
 	if (parsed) {
-		fCutTrackQual_kp2 = (int)cutValue;
+		fCutTrackQual_kp2 = (int)cutLow;
 		if (dump) cout << "TRACK_QUAL_KP2: " << fCutTrackQual_kp2 << endl;
 		goto bail;
 	}
 	
 	parsed = (strcmp(cutName,"OPPOSITE_SIGN_MU") == 0);
 	if (parsed) {
-		fCutOppSign_mu = (cutValue != 0.0f);
+		fCutOppSign_mu = (cutLow != 0.0f);
 		if (dump) cout << "OPPOSITE_SIGN_MU: " << fCutOppSign_mu << endl;
 		goto bail;
 	}
 	
 	parsed = (strcmp(cutName,"OPPOSITE_SIGN_KP") == 0);
 	if (parsed) {
-		fCutOppSign_kp = (cutValue != 0.0f);
+		fCutOppSign_kp = (cutLow != 0.0f);
 		if (dump) cout << "OPPOSITE_SIGN_KP: " << fCutOppSign_kp << endl;
 		goto bail;
 	}
 	
-	// ask superclass if nothing parsed yet
-	parsed = massReader::parseCut(cutName, cutValue, dump);
+	parsed = (strcmp(cutName,"MASS_JPSI") == 0);
+	if (parsed) {
+		fCutMass_JPsiLow = cutLow;
+		fCutMass_JPsiHigh = cutHigh;
+		if (dump) cout << "MASS_JPSI: (" << fCutMass_JPsiLow << ", " << fCutMass_JPsiHigh << ")" << endl;
+		goto bail;
+	}
 	
+	parsed = (strcmp(cutName,"MASS_PHI") == 0);
+	if (parsed) {
+		fCutMass_PhiLow = cutLow;
+		fCutMass_PhiHigh = cutHigh;
+		if (dump) cout << "MASS_PHI: (" << fCutMass_PhiLow << ", " << fCutMass_PhiHigh << ")" << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"PT_KAON2") == 0);
+	if (parsed) {
+		fCutPt_Kp2 = cutLow;
+		if (dump) cout << "PT_KAON2: " << fCutPt_Kp2 << endl;
+		goto bail;
+	}
+	
+	// ask superclass if nothing parsed yet
+	parsed = massReader::parseCut(cutName, cutLow, cutHigh, dump);
 bail:
 	return parsed;
 } // parseCut()
@@ -349,6 +376,31 @@ bool phiReader::applyCut()
 	// check opposite sign of kaons
 	if (fCutOppSign_kp) {
 		pass = fQ_kp1 != fQ_kp2;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutMass_JPsiLow > 0.0) {
+		pass = fMassJPsi > fCutMass_JPsiLow;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutMass_JPsiHigh > 0.0) {
+		pass = fMassJPsi < fCutMass_JPsiHigh;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutMass_PhiLow > 0.0) {
+		pass = fMassPhi > fCutMass_PhiLow;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutMass_PhiHigh > 0.0) {
+		pass = fMassPhi < fCutMass_PhiHigh;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutPt_Kp2 > 0.0) {
+		pass = fPtKp2 > fCutPt_Kp2;
 		if (!pass) goto bail;
 	}
 	
