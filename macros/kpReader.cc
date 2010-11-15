@@ -12,6 +12,9 @@ kpReader::kpReader(TChain *tree, TString evtClassName) :
 	fCutTrackQual_mu2(0),
 	fCutTrackQual_kp(0),
 	fCutOppSign_mu(false),
+	fCutMass_JPsiLow(0.0),
+	fCutMass_JPsiHigh(0.0),
+	fCutPt_Kaon(0.0),
 	total_counter(0),
 	reco_counter(0),
 	reco_single(0),
@@ -207,41 +210,56 @@ bail:
 	return result;
 } // checkTruth()
 
-bool kpReader::parseCut(char *cutName, float cutValue, int dump)
+bool kpReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 {
 	bool parsed;
 	
 	// parse the options..
 	parsed = (strcmp(cutName,"TRACK_QUAL_MU1") == 0);
 	if (parsed) {
-		fCutTrackQual_mu1 = (int)cutValue;
+		fCutTrackQual_mu1 = (int)cutLow;
 		if (dump) cout << "TRACK_QUAL_MU1: " << fCutTrackQual_mu1 << endl;
 		goto bail;
 	}
 	
 	parsed = (strcmp(cutName,"TRACK_QUAL_MU2") == 0);
 	if (parsed) {
-		fCutTrackQual_mu2 = (int)cutValue;
+		fCutTrackQual_mu2 = (int)cutLow;
 		if (dump) cout << "TRACK_QUAL_MU2: " << fCutTrackQual_mu2 << endl;
 		goto bail;
 	}
 	
 	parsed = (strcmp(cutName,"TRACK_QUAL_KP") == 0);
 	if (parsed) {
-		fCutTrackQual_kp = (int)cutValue;
+		fCutTrackQual_kp = (int)cutLow;
 		if (dump) cout << "TRACK_QUAL_KP: " << fCutTrackQual_kp << endl;
 		goto bail;
 	}
 	
 	parsed = (strcmp(cutName,"OPPOSITE_SIGN_MU") == 0);
 	if (parsed) {
-		fCutOppSign_mu = (cutValue != 0.0);
+		fCutOppSign_mu = (cutLow != 0.0);
 		if (dump) cout << "OPPOSITE_SIGN_MU: " << fCutOppSign_mu << endl;
 		goto bail;
 	}
 	
+	parsed = (strcmp(cutName,"MASS_JPSI") == 0);
+	if (parsed) {
+		fCutMass_JPsiLow = cutLow;
+		fCutMass_JPsiHigh = cutHigh;
+		if (dump) cout << "MASS_JPSI: (" << fCutMass_JPsiLow << ", " << fCutMass_JPsiHigh << ")" << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"PT_KAON") == 0);
+	if (parsed) {
+		fCutPt_Kaon = cutLow;
+		if (dump) cout << "PT_KAON: " << fCutPt_Kaon << endl;
+		goto bail;
+	}
+	
 	// nothing parsed, then maybe massReader knows about it.
-	parsed = massReader::parseCut(cutName, cutValue, dump);
+	parsed = massReader::parseCut(cutName, cutLow, cutHigh, dump);
 	
 bail:
 	return parsed;
@@ -272,6 +290,21 @@ bool kpReader::applyCut()
 	// check opposite sign of muons
 	if (fCutOppSign_mu) {
 		pass = fQ_mu1 != fQ_mu2;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutMass_JPsiLow > 0.0) {
+		pass = fMassJPsi > fCutMass_JPsiLow;
+		if(!pass) goto bail;
+	}
+	
+	if (fCutMass_JPsiHigh > 0.0) {
+		pass = fMassJPsi < fCutMass_JPsiHigh;
+		if(!pass) goto bail;
+	}
+	
+	if (fCutPt_Kaon > 0.0) {
+		pass = fPtKp > fCutPt_Kaon;
 		if (!pass) goto bail;
 	}
 	

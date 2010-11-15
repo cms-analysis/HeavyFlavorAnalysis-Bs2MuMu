@@ -16,7 +16,7 @@ class kpReader : public massReader {
 		virtual int loadCandidateVariables(TAnaCand *pCand);
 		virtual int checkTruth(TAnaCand *cand);
 		
-		virtual bool parseCut(char *cutName, float cutValue, int dump = 1);
+		virtual bool parseCut(char *cutName, float cutLow, float cutHigh, int dump = 1);
 		virtual bool applyCut();
 	
 	private: // reduced Tree variables
@@ -52,6 +52,9 @@ class kpReader : public massReader {
 		int fCutTrackQual_mu2;
 		int fCutTrackQual_kp;
 		bool fCutOppSign_mu;
+		double fCutMass_JPsiLow;
+		double fCutMass_JPsiHigh;
+		double fCutPt_Kaon;
 	
 	private:
 		std::map<int,int> decay_indices; // (genIx, ident_muons)
