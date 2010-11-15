@@ -16,6 +16,7 @@
 #include "RecoVertex/VertexTools/interface/VertexDistanceXY.h"
 #include "RecoVertex/VertexTools/interface/VertexDistance3D.h"
 
+#include "TrackingTools/GeomPropagators/interface/AnalyticalImpactPointExtrapolator.h"
 #include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
 #include "TrackingTools/PatternTools/interface/TransverseImpactPointExtrapolator.h"
 #include "TrackingTools/IPTools/interface/IPTools.h"
@@ -23,6 +24,8 @@
 #include "DataFormats/GeometryCommonDetAlgo/interface/Measurement1D.h"
 
 #include "CommonTools/Statistics/interface/ChiSquared.h"
+
+const static unsigned kNBR_CLOSED_TRACKS = 20;
 
 extern TAna01Event *gHFEvent;
 
@@ -189,6 +192,10 @@ void HFSequentialVertexFit::saveTree(HFDecayTree *tree)
 
 } // saveTree()
 
+// Utility routine to sort the mindoca array of the candidate...
+static bool doca_less(pair<int,pair<double,double> > x,pair<int,pair<double,double> > y)
+{ return x.second.first < y.second.first; } // doca_less()
+
 
 TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wrtVertexState)
 {
@@ -198,6 +205,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   VertexDistanceXY axy;
   VertexDistance3D a3d;
   vector<pair<int,int> > allTreeTracks = tree->getAllTracks(1);
+  set<int> allUsedTrackIndices = tree->getAllTracksIndices();
   map<int,int> *kinParticleMap;
   RefCountedKinematicTree kinTree = *(tree->getKinematicTree());
   RefCountedKinematicParticle kinParticle;
@@ -209,6 +217,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   unsigned j;
   int pvIx = -1; // PV index of this candidate
   ImpactParameters pvImpParams;
+  AnalyticalImpactPointExtrapolator extrapolator(magneticField);
 
   if (tree->particleID == 0) return pCand; // i.e. null
   if (kinTree->isEmpty()) return pCand;
@@ -245,6 +254,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   if (!wrtVertexState) {
 	  
 	  // iterate through all PVs and estimate the impact parameters of this particle
+	  // FIXME: Auf 3D wechseln...
 	  VertexCollection::const_iterator vertexIt;
 	  TransverseImpactPointExtrapolator impactCalc(magneticField);
 	  TrajectoryStateOnSurface stateOnSurf;
@@ -288,6 +298,8 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 		  
 		  pvImpParams.tip = currentIp.second;
 	  }
+	  
+	  // try with the AnalyticPropagator, too. Then compare to the one above...
   }
   
   if (wrtVertexState) {
@@ -356,6 +368,29 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
     pTrack->fValidHits = fitTrack.numberOfValidHits();
     pTrack->fChi2 = fitTrack.chi2();
     pTrack->fQ = fitTrack.charge();
+  }
+  
+  // fill the closest approaching tracks -- only if this is supposed to be a SV
+  if (!wrtVertexState) {
+	  for (j = 0; j < fhTracks->size(); j++) {
+		  
+		  if (allUsedTrackIndices.count(j)>0) continue; // this tracks belongs to the candidate
+		  
+		  TrackBaseRef baseRef(fhTracks,j);
+		  TransientTrack transTrack = fpTTB->build(*baseRef);
+		  TrajectoryStateOnSurface tsos = extrapolator.extrapolate(transTrack.initialFreeState(),kinVertex->position());
+		  
+		  // measure the distance...
+		  Measurement1D doca = a3d.distance(VertexState(tsos.globalPosition(),tsos.cartesianError().position()),kinVertex->vertexState());
+		  
+		  // add it to the candidate...
+		  pCand->fNstTracks.push_back(make_pair(j,make_pair(doca.value(),doca.error())));
+	  }
+	  
+	  // sort the vector & keep only the first ten
+	  sort(pCand->fNstTracks.begin(),pCand->fNstTracks.end(),doca_less);
+	  if (pCand->fNstTracks.size() > kNBR_CLOSED_TRACKS) // erase the elements if bigger than kNBR_CLOSED_TRACKS
+		  pCand->fNstTracks.erase(pCand->fNstTracks.begin() + kNBR_CLOSED_TRACKS,pCand->fNstTracks.end());
   }
   
   return pCand;
