@@ -15,6 +15,7 @@
 #include "RecoVertex/KinematicFitPrimitives/interface/KinematicParticleFactoryFromTransientTrack.h"
 #include "RecoVertex/VertexTools/interface/VertexDistanceXY.h"
 #include "RecoVertex/VertexTools/interface/VertexDistance3D.h"
+#include "RecoVertex/VertexPrimitives/interface/ConvertToFromReco.h"
 
 #include "TrackingTools/GeomPropagators/interface/AnalyticalImpactPointExtrapolator.h"
 #include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
@@ -218,6 +219,8 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   int pvIx = -1; // PV index of this candidate
   ImpactParameters pvImpParams;
   AnalyticalImpactPointExtrapolator extrapolator(magneticField);
+  TransverseImpactPointExtrapolator transverseExtrapolator(magneticField);
+  TrajectoryStateOnSurface tsos;
 
   if (tree->particleID == 0) return pCand; // i.e. null
   if (kinTree->isEmpty()) return pCand;
@@ -253,35 +256,21 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 
   if (!wrtVertexState) {
 	  
-	  // iterate through all PVs and estimate the impact parameters of this particle
-	  // FIXME: Auf 3D wechseln...
 	  VertexCollection::const_iterator vertexIt;
-	  TransverseImpactPointExtrapolator impactCalc(magneticField);
-	  TrajectoryStateOnSurface stateOnSurf;
-	  int j = 0;
-	  
 	  // calculate the impact parameters for all primary vertices
 	  if (fVerbose > 0)
 		  cout << "==> HFSequentialVertexFit: Number of PV vertices to compare is " << fPVCollection->size() << endl;
 	  
-	  for (vertexIt = fPVCollection->begin(); vertexIt != fPVCollection->end(); ++vertexIt,++j) {
+	  // iterate through all PVs and estimate the impact parameters of this particle
+	  for (vertexIt = fPVCollection->begin(), j = 0; vertexIt != fPVCollection->end(); ++vertexIt,++j) {
 		  
-		  TVector3 vertexPos,thePCA;
 		  std::pair<bool,Measurement1D> currentIp;
-		  GlobalVector dir;
 		  
 		  // extrapolate to PCA
-		  stateOnSurf = impactCalc.extrapolate(kinParticle->currentState().freeTrajectoryState(),GlobalPoint(vertexIt->x(),vertexIt->y(),vertexIt->z()));
-		  
-		  thePCA = TVector3(stateOnSurf.globalPosition().x(),stateOnSurf.globalPosition().y(),stateOnSurf.globalPosition().z());
-		  vertexPos = TVector3(vertexIt->x(),vertexIt->y(),vertexIt->z());
-		  
-		  // compute the difference
-		  thePCA = thePCA - vertexPos;
+		  tsos = extrapolator.extrapolate(kinParticle->currentState().freeTrajectoryState(),RecoVertex::convertPos(vertexIt->position()));
 		  
 		  // compute with iptools
-		  dir = GlobalVector(0,0,1);
-		  currentIp = IPTools::signedDecayLength3D(stateOnSurf,dir,*vertexIt);
+		  currentIp = IPTools::signedDecayLength3D(tsos,GlobalVector(0,0,1),*vertexIt);
 		  if (!currentIp.first) {
 			  if (fVerbose > 0) cout << "==>HFSequentialVertexFit: Unable to compute lip to vertex at index " << j << endl;
 			  continue;
@@ -292,14 +281,11 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 		  
 		  pvIx = j;
 		  pvImpParams.lip = currentIp.second;
-		  
-		  dir = GlobalVector(thePCA.X(),thePCA.Y(),0); // perp direction
-		  currentIp = IPTools::signedDecayLength3D(stateOnSurf,dir,*vertexIt);
-		  
-		  pvImpParams.tip = currentIp.second;
 	  }
 	  
-	  // try with the AnalyticPropagator, too. Then compare to the one above...
+	  // now, compute the tip w.r.t. PV
+	  tsos = transverseExtrapolator.extrapolate(kinParticle->currentState().freeTrajectoryState(),RecoVertex::convertPos((*fPVCollection)[pvIx].position()));
+	  pvImpParams.tip = axy.distance(VertexState(tsos.globalPosition(),tsos.cartesianError().position()),VertexState(RecoVertex::convertPos((*fPVCollection)[pvIx].position()),RecoVertex::convertError((*fPVCollection)[pvIx].error())));
   }
   
   if (wrtVertexState) {
@@ -378,7 +364,8 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 		  
 		  TrackBaseRef baseRef(fhTracks,j);
 		  TransientTrack transTrack = fpTTB->build(*baseRef);
-		  TrajectoryStateOnSurface tsos = extrapolator.extrapolate(transTrack.initialFreeState(),kinVertex->position());
+		  
+		  tsos = extrapolator.extrapolate(transTrack.initialFreeState(),kinVertex->position());
 		  
 		  // measure the distance...
 		  Measurement1D doca = a3d.distance(VertexState(tsos.globalPosition(),tsos.cartesianError().position()),kinVertex->vertexState());
