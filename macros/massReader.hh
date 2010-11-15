@@ -34,7 +34,7 @@ class massReader : public treeReader01 {
 		std::multiset<int> trueDecay;
 		
 		virtual int loadCandidateVariables(TAnaCand *pCand);
-		virtual bool parseCut(char *cutName, float cutValue, int dump = 1);
+		virtual bool parseCut(char *cutName, float cutLow, float cutHigh, int dump = 1);
 		virtual bool applyCut();
 		
 		// loading variables
@@ -91,6 +91,11 @@ class massReader : public treeReader01 {
 	protected:
 		bool fCutFileParsed;
 		int fCutCand; // the candidate to extract
+		double fCutFlight3dSign;
+		double fCutChi2;
+		double fCutPt;
+		double fCutAlpha;
+		int fCutTruth; // truth matching
 };
 
 #endif

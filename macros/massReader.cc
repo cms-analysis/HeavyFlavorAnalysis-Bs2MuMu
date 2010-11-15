@@ -3,7 +3,15 @@
 
 using namespace std;
 
-massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName),reduced_tree(NULL),fCutFileParsed(false),fCutCand(0)
+massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName),
+	reduced_tree(NULL),
+	fCutFileParsed(false),
+	fCutCand(0),
+	fCutFlight3dSign(0.0),
+	fCutChi2(0.0),
+	fCutPt(0.0),
+	fCutAlpha(0.0),
+	fCutTruth(0)
 {	
 	fTreeName = "massReader reduced tree";
 } // massReader()
@@ -299,7 +307,7 @@ void massReader::readCuts(TString filename, int dump)
 	// parse the files...
 	char buffer[256];
 	char cutName[128];
-	float cutValue;
+	float cutLow,cutHigh;
 	int ok;
 	
 	FILE *cutFile = fopen(filename.Data(),"r");
@@ -315,7 +323,6 @@ void massReader::readCuts(TString filename, int dump)
 	
 	while (fgets(buffer,sizeof(buffer),cutFile)) {
 		
-		ok = 0;
 		if(buffer[strlen(buffer)-1] != '\n') {
 			cout << "==> massReader: Cut file line is too long, skipping..." << endl;
 			continue;
@@ -324,13 +331,17 @@ void massReader::readCuts(TString filename, int dump)
 		// skip comment line
 		if (buffer[0] == '#') continue;
 		
-		if(sscanf(buffer, "%s %f", cutName, &cutValue) < 2) {
+		ok = sscanf(buffer, "%s %f %f", cutName, &cutLow, &cutHigh);
+		if(ok < 2) {
 			cout << "==> massReader: Cut not parse input line:" << endl;
 			cout << buffer << endl;
 			cout << "==> massReader: Skipping this line..." << endl;
+			continue;
 		}
+		else if(ok == 2) // no upper cut read...
+			cutHigh = 0.0f;
 		
-		if(!parseCut(cutName, cutValue))
+		if(!parseCut(cutName, cutLow, cutHigh))
 			cout << "==> massReader: Error parsing variable " << cutName << ". Ignoring this cut..." << endl;
 	}
 	
@@ -341,16 +352,53 @@ bail:
 	if (cutFile) fclose(cutFile);
 } // readCuts()
 
-bool massReader::parseCut(char *cutName, float cutValue, int dump)
+bool massReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 {
 	bool parsed;
 	// parse the options...
 	parsed = (strcmp(cutName,"CAND") == 0);
 	if (parsed) {
-		fCutCand = (int)cutValue;
+		fCutCand = (int)cutLow;
 		if (dump) cout << "CAND: " << fCutCand << endl;
+		goto bail;
 	}
 	
+	parsed = (strcmp(cutName,"D3SIGN") == 0);
+	if (parsed) {
+		fCutFlight3dSign = cutLow;
+		if (dump) cout << "D3SIGN: " << fCutFlight3dSign << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"CHI2") == 0);
+	if (parsed) {
+		fCutChi2 = cutLow;
+		if (dump) cout << "CHI2: " << fCutChi2 << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"PT") == 0);
+	if (parsed) {
+		fCutPt = cutLow;
+		if (dump) cout << "PT: " << fCutPt << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"ALPHA") == 0);
+	if (parsed) {
+		fCutAlpha = cutLow;
+		if (dump) cout << "ALPHA: " << fCutAlpha << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"TRUTH") == 0);
+	if (parsed) {
+		fCutTruth = (int)cutLow;
+		if (dump) cout << "TRUTH: " << fCutTruth << endl;
+		goto bail;
+	}
+	
+bail:
 	return parsed;
 } // parseCut()
 
@@ -359,8 +407,36 @@ bool massReader::applyCut()
 	bool pass = true;
 	
 	// check the candidate
-	if (fCutCand != 0) // cut on candidate requested
+	if (fCutCand != 0) { // cut on candidate requested
 		pass = fCandidate == fCutCand;
+		if (!pass) goto bail;
+	}
 	
+	if (fCutFlight3dSign > 0.0) {
+		pass = fD3 / fD3E > fCutFlight3dSign;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutChi2 > 0.0) {
+		pass = fChi2 < fCutChi2;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutPt > 0.0) {
+		pass = fPt > fCutPt;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutAlpha > 0.0) {
+		pass = fAlpha < fCutAlpha;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutTruth != 0) {
+		pass = (fTruth == fCutTruth); // can be used to deselect all truth matched ones
+		if (!pass) goto bail;
+	}
+	
+bail:
 	return pass;
 } // applyCut()
