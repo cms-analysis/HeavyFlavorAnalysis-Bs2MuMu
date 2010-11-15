@@ -9,6 +9,7 @@
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TGenCand.hh"
 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKalmanVertexFit.hh"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFSequentialVertexFit.h"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFMasses.hh"
 
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
@@ -82,7 +83,12 @@ HFDimuons::~HFDimuons() {
 
 
 // ----------------------------------------------------------------------
-void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
+void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup)
+{
+  // -- get the magnetic field
+  ESHandle<MagneticField> magfield;
+  iSetup.get<IdealMagneticFieldRecord>().get(magfield);
+  const MagneticField *field = magfield.product();
  
   // -- get the primary vertex
   Handle<VertexCollection> recoPrimaryVertexCollection;
@@ -138,9 +144,11 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
   }
 
   // -- set up vertex fitter 
-  HFKalmanVertexFit a(fTTB.product(), fPV, 1313, 0); 
+  HFKalmanVertexFit a(fTTB.product(), fPV, 1313, 0);
   a.setNoCuts();
   a.fMaxDoca = fMaxDoca;
+  HFSequentialVertexFit aSeq(hTracks,fTTB.product(),recoPrimaryVertexCollection, field, fVerbose);
+
   vector<Track> trackList; 
   vector<int> trackIndices;
   vector<double> trackMasses;
@@ -186,6 +194,14 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
       } else {
 	a.doNotFit(trackList, trackIndices, trackMasses, fType); 	
       }
+
+      // -- Vertexing, with Kinematic Particles
+      HFDecayTree theTree(301313);
+      theTree.addTrack(iMuon1,13);
+      theTree.addTrack(iMuon2,13);
+      theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+      
+      aSeq.doFit(&theTree);
     }
   }
 }
