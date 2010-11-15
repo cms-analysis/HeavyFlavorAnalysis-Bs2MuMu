@@ -133,6 +133,18 @@ vector<pair<int,int> > HFDecayTree::getAllTracks(int onlyThisVertex)
   return tracks;
 } // getAllTracks()
 
+set<int> HFDecayTree::getAllTracksIndices(int onlyThisVertex)
+{
+	vector<pair<int,int> > tracks;
+	set<int> result;
+	getAllTracks(&tracks,onlyThisVertex);
+	
+	for(vector<pair<int,int> >::const_iterator it = tracks.begin(); it != tracks.end();++it)
+		result.insert(it->first);
+	
+	return result;
+} // getAllTracksIndices()
+
 map<int,int> *HFDecayTree::getKinParticleMap()
 {
 	return &kinParticleMap;

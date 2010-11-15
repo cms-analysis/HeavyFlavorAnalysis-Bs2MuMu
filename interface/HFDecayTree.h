@@ -76,6 +76,7 @@ class HFDecayTree
 		
 		void getAllTracks(std::vector<std::pair<int,int> > *out_vector, int onlyThisVertex = 0);
 		std::vector<std::pair<int,int> > getAllTracks(int onlyThisVertex = 0);
+		std::set<int> getAllTracksIndices(int onlyThisVertex = 0);
 		
 		// Kinematic Tree associated stuff
 		std::map<int,int> *getKinParticleMap();
