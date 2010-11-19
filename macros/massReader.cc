@@ -207,18 +207,18 @@ void massReader::buildDecay(TGenCand *gen, multiset<int> *particles)
 		buildDecay(fpEvt->getGenCand(j),particles);
 } // buildDecay()
 
-void massReader::findAllRecTrackIndices(TAnaCand* pCand, set<int> *indices)
+void massReader::findAllTrackIndices(TAnaCand* pCand, map<int,int> *indices)
 {
 	int j;
 	
-	// iterate through all the daughter candidates and add the tracks
-	for (j = pCand->fDau1; j <= pCand->fDau2 && j >= 0; j++)
-		findAllRecTrackIndices(fpEvt->getCand(j),indices);
+	// iterate through all own tracks. has to be done first, so the duplicate signal tracks
+	// won't be added in the daughter anymore
+	for (j = pCand->fSig1; j <= pCand->fSig2 && j>=0; j++)
+		indices->insert(make_pair(fpEvt->getSigTrack(j)->fIndex,j));
 	
-	// iterate through all own tracks
-	for (j = pCand->fSig1; j <= pCand->fSig2; j++)
-		indices->insert(fpEvt->getSigTrack(j)->fIndex);
-} // findAllRecTrackIndices()
+	for (j = pCand->fDau1; j <= pCand->fDau2 && j>=0; j++)
+		findAllTrackIndices(fpEvt->getCand(j),indices);
+} // findAllTrackIndices()
 
 float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt)
 {
@@ -227,16 +227,16 @@ float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle, doubl
 	int j,ntracks;
 	TAnaTrack *pTrack;
 	double r;
-	set<int> usedTracks;
+	map<int,int> usedTracks;
 	
 	plabB = pCand->fPlab;
-	findAllRecTrackIndices(pCand,&usedTracks);
+	findAllTrackIndices(pCand,&usedTracks);
 	
 	iso = 0.0;
 	ntracks = fpEvt->nRecTracks();
 	for (j = 0; j < ntracks; j++) {
 		
-		if (usedTracks.find(j) != usedTracks.end()) continue; // this track belongs to the candidate
+		if (usedTracks.count(j) > 0) continue; // this track belongs to the candidate
 		
 		pTrack = fpEvt->getRecTrack(j);
 		if (pTrack->fPlab.Perp() <= minPt) continue;

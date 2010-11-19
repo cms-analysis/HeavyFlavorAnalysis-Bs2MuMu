@@ -3,6 +3,7 @@
 
 #include "treeReader01.hh"
 #include <set>
+#include <map>
 
 const static double MMUON = 0.1057;
 const static double MPION = 0.1396;
@@ -45,7 +46,7 @@ class massReader : public treeReader01 {
 
 		// other utility routines
 		void buildDecay(TGenCand *gen, std::multiset<int> *particles);
-		void findAllRecTrackIndices(TAnaCand* pCand, std::set<int> *indices);
+		void findAllTrackIndices(TAnaCand* pCand, std::map<int,int> *indices); // map(recTrackIx,sigTrackIndex)
 	protected:
 		const char *fTreeName;
 		
