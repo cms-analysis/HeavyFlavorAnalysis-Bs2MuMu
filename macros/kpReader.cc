@@ -1,5 +1,6 @@
 #include "kpReader.hh"
 
+#include <TLorentzVector.h>
 #include <utility>
 
 using namespace std;
@@ -20,11 +21,6 @@ kpReader::kpReader(TChain *tree, TString evtClassName) :
 	reco_single(0),
 	reco_double(0)
 {
-	// set the pointers to save in the tree
-	fPlabMu1Ptr = &fPlabMu1;
-	fPlabMu2Ptr = &fPlabMu2;
-	fPlabKpPtr = &fPlabKp;
-	
 	fTreeName = "kpReader reduced tree";
 	
 	// the true decay for truth matching...
@@ -89,15 +85,20 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	int type, first_mu = 1;
 	TAnaTrack *sigTrack,*recTrack;
 	TAnaCand *jpsiCand;
+	TVector3 plabMu1;
+	TVector3 plabMu2;
+	TVector3 plabKp;
 	int result,j;
+	map<int,int> cand_tracks;
+	
+	TLorentzVector mu1;
+	TLorentzVector mu2;
 	
 	// default initialization
-	fMassJPsi = -1.0;
-	fDeltaR = -1.0;
-	fPlabMu1 = TVector3();
-	fPlabMu2 = TVector3();
-	fPlabKp = TVector3();
-	fCtau = 0.0;
+	fMassJPsi = -1.0f;
+	fMassJPsiRec = -1.0f;
+	fDeltaR = -1.0f;
+	fCtau = 0.0f;
 	
 	if (pCand->fType % 1000 != 521) return 0;
 	
@@ -105,34 +106,38 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	
 	fCtau = kMassBplus / pCand->fPlab.Mag() * fD3;
 	
-	// set the momenta
-	for (j = pCand->fSig1; j <= pCand->fSig2 && j >= 0; j++) {
+	// set the momenta, iterate
+	findAllTrackIndices(pCand,&cand_tracks);
+	for (map<int,int>::const_iterator it = cand_tracks.begin(); it!=cand_tracks.end(); ++it) {
 		
-		sigTrack = fpEvt->getSigTrack(j);
+		sigTrack = fpEvt->getSigTrack(it->second);
 		type = abs(sigTrack->fMCID);
 		recTrack = fpEvt->getRecTrack(sigTrack->fIndex);
 		if (type == 13) {
 			// muon
 			if (first_mu) {
-				fPlabMu1 = sigTrack->fPlab;
+				plabMu1 = sigTrack->fPlab;
 				fTrackQual_mu1 = recTrack->fTrackQuality;
 				fQ_mu1 = recTrack->fQ;
+				mu1.SetXYZM(recTrack->fPlab.X(),recTrack->fPlab.Y(),recTrack->fPlab.Z(),MUMASS);
+				
 			} else {
-				fPlabMu2 = sigTrack->fPlab;
+				plabMu2 = sigTrack->fPlab;
 				fTrackQual_mu2 = recTrack->fTrackQuality;
 				fQ_mu2 = recTrack->fQ;
+				mu2.SetXYZM(recTrack->fPlab.X(),recTrack->fPlab.Y(),recTrack->fPlab.Z(),MUMASS);
 			}
 			first_mu = 0;
 		} else if (type == 321) {
-			fPlabKp = sigTrack->fPlab;
+			plabKp = sigTrack->fPlab;
 			fQ_kp = recTrack->fQ;
 			fTrackQual_kp = recTrack->fTrackQuality;
 		}
 	}
 	
 	// muon1 ist usually that one with the bigger pt
-	if (fPlabMu1.Perp() < fPlabMu2.Perp()) {
-		swap(fPlabMu1,fPlabMu2);
+	if (plabMu1.Perp() < plabMu2.Perp()) {
+		swap(plabMu1,plabMu2);
 		swap(fTrackQual_mu1,fTrackQual_mu2);
 		swap(fQ_mu1,fQ_mu2);
 	}
@@ -148,14 +153,16 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 			break;
 		}
 	}
+	
+	fMassJPsiRec = (mu1 + mu2).M();
 
 	// set the deltaR of the J/Psi w.r.t. Kp
-	if (fPlabKp.Perp() > 0 && (fPlabMu1 + fPlabMu2).Perp() > 0)
-	  fDeltaR = (float)fPlabKp.DeltaR(fPlabMu1 + fPlabMu2);
+	if (plabKp.Perp() > 0 && (plabMu1 + plabMu2).Perp() > 0)
+	  fDeltaR = (float)plabKp.DeltaR(plabMu1 + plabMu2);
 	
-	fPtMu1 = fPlabMu1.Perp();
-	fPtMu2 = fPlabMu2.Perp();
-	fPtKp = fPlabKp.Perp();
+	fPtMu1 = plabMu1.Perp();
+	fPtMu2 = plabMu2.Perp();
+	fPtKp = plabKp.Perp();
 
 	return result;
 } // loadCandidateVariables()
@@ -164,10 +171,8 @@ void kpReader::bookHist()
 {
 	massReader::bookHist();
 	reduced_tree->Branch("mass_jpsi",&fMassJPsi,"mass_jpsi/F");
+	reduced_tree->Branch("mass_jpsi_rec",&fMassJPsiRec,"mass_jpsi_rec/F");
 	reduced_tree->Branch("deltaR",&fDeltaR,"deltaR/F");
-	reduced_tree->Branch("plab_mu1","TVector3",&fPlabMu1Ptr);
-	reduced_tree->Branch("plab_mu2","TVector3",&fPlabMu2Ptr);
-	reduced_tree->Branch("plab_kp","TVector3",&fPlabKpPtr);
 	reduced_tree->Branch("pt_mu1",&fPtMu1,"pt_mu1/F");
 	reduced_tree->Branch("pt_mu2",&fPtMu2,"pt_mu2/F");
 	reduced_tree->Branch("pt_kp",&fPtKp,"pt_kp/F");

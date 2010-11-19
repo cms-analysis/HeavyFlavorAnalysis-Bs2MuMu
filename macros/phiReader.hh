@@ -22,6 +22,7 @@ class phiReader : public massReader {
 	
 	private: // additional tree variables
 		float fMassJPsi;
+		float fMassJPsiRec;
 		float fMassPhi;
 		float fDeltaR; // deltaR of J/Psi Phi
 		float fDeltaR_Kaons; // delta R of the two Kaons
@@ -30,17 +31,7 @@ class phiReader : public massReader {
 		float fPtMu2;
 		float fPtKp1;
 		float fPtKp2;
-		
-		TVector3 fPlabMu1;
-		TVector3 fPlabMu2;
-		TVector3 fPlabKp1;
-		TVector3 fPlabKp2;
-		
-		TVector3 *fPlabMu1Ptr;
-		TVector3 *fPlabMu2Ptr;
-		TVector3 *fPlabKp1Ptr;
-		TVector3 *fPlabKp2Ptr;
-		
+				
 		int fTrackQual_mu1;
 		int fTrackQual_mu2;
 		int fTrackQual_kp1;
