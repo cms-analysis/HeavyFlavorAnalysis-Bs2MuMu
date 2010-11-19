@@ -20,6 +20,7 @@ phiReader::phiReader(TChain *tree, TString evtClassName) :
 	fCutMass_PhiLow(0.0),
 	fCutMass_PhiHigh(0.0),
 	fCutPt_Kp2(0.0),
+	fCutDeltaR_Kaons(0.0),
 	total_counter(0),
 	reco_single(0),
 	reco_double(0)
@@ -331,6 +332,13 @@ bool phiReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 		goto bail;
 	}
 	
+	parsed = (strcmp(cutName,"DELTAR_KAONS") == 0);
+	if (parsed) {
+		fCutDeltaR_Kaons = cutLow;
+		if (dump) cout << "DELTAR_KAONS: " << fCutDeltaR_Kaons << endl;
+		goto bail;
+	}
+	
 	// ask superclass if nothing parsed yet
 	parsed = massReader::parseCut(cutName, cutLow, cutHigh, dump);
 bail:
@@ -400,6 +408,11 @@ bool phiReader::applyCut()
 	
 	if (fCutPt_Kp2 > 0.0) {
 		pass = fPtKp2 > fCutPt_Kp2;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutDeltaR_Kaons > 0.0) {
+		pass = fDeltaR_Kaons < fCutDeltaR_Kaons;
 		if (!pass) goto bail;
 	}
 	

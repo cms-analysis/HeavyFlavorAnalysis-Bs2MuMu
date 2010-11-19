@@ -58,6 +58,7 @@ class phiReader : public massReader {
 		double fCutMass_PhiLow;
 		double fCutMass_PhiHigh;
 		double fCutPt_Kp2;
+		double fCutDeltaR_Kaons;
 	
 	private:
 		std::map<int,int> decay_indices; // (genIx, ident_muons)
