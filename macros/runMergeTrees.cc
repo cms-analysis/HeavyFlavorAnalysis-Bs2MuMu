@@ -30,7 +30,7 @@ using std::endl;
 
 static void dump_help_message()
 {
-	std::cerr << "usage: runMergeTrees -c <chain_file> -o <outputfile> [-s <maxfilesize[MB]>]" << endl;
+	std::cerr << "usage: runMergeTrees -c <chain_file> -o <outputfile> [-s <maxfilesize[MB]> -t <treename>]" << endl;
 } // dump_help_message()
 
 int main(int argc, const char *argv [])
@@ -39,6 +39,7 @@ int main(int argc, const char *argv [])
 	int processID = gSystem->GetPid();
 	const char *chainfile = NULL;
 	const char *outputfile = NULL;
+	const char *treename = "T1";
 	TChain *chain = NULL;
 	TTree *tree = NULL;
 	TFile* root_out = NULL;
@@ -56,11 +57,11 @@ int main(int argc, const char *argv [])
 		if (!strcmp(argv[j],"-c")) chainfile = argv[++j];
 		else if (!strcmp(argv[j],"-o")) outputfile = argv[++j];
 		else if (!strcmp(argv[j],"-s")) maxTreeSize = 1000000ll * (long long)atoi(argv[++j]);
+		else if (!strcmp(argv[j],"-t")) treename = argv[++j];
 		else if (!strcmp(argv[j],"-h")) {
 			dump_help_message();
 			goto bail;
-		}
-		else {
+		} else {
 			std::cerr << "Unknown argument '" << argv[j] << "'" << endl;
 			dump_help_message();
 			goto bail;
@@ -80,7 +81,7 @@ int main(int argc, const char *argv [])
 	TTree::SetMaxTreeSize(maxTreeSize);
 	
 	cout << "Setup the chain..." << endl;
-	chain = new TChain("T1");
+	chain = new TChain(treename);
 	fchain = fopen(chainfile,"r");
 	while (fgets(buffer,sizeof(buffer),fchain)) {
 		line.Append(buffer);
