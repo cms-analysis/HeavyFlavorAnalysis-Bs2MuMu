@@ -3,6 +3,8 @@
 
 #include "kpReader.hh"
 
+#define NBR_TRACKS_STORE 20
+
 class kpIsolationReader : public kpReader {
 	
 	public:
@@ -15,10 +17,9 @@ class kpIsolationReader : public kpReader {
 		virtual int loadCandidateVariables(TAnaCand *pCand);
 	
 	protected:
-		TH2D *pt_ix;
-		TH2D *ip_ix;
-		TH2D *pt_ip;
-		TH2D *ptrel_ip;
+		float fTracksIP[NBR_TRACKS_STORE];
+		float fTracksPT[NBR_TRACKS_STORE];
+		float fTracksPTRel[NBR_TRACKS_STORE];
 };
 
 #endif
