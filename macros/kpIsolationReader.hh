@@ -17,6 +17,7 @@ class kpIsolationReader : public kpReader {
 		virtual int loadCandidateVariables(TAnaCand *pCand);
 	
 	protected:
+		int fTracksIx[NBR_TRACKS_STORE];
 		float fTracksIP[NBR_TRACKS_STORE];
 		float fTracksPT[NBR_TRACKS_STORE];
 		float fTracksPTRel[NBR_TRACKS_STORE];

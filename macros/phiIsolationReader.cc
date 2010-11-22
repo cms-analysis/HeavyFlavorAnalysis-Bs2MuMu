@@ -8,7 +8,8 @@ phiIsolationReader::~phiIsolationReader() {}
 void phiIsolationReader::bookHist()
 {
 	phiReader::bookHist();
-		
+	
+	reduced_tree->Branch("tracks_ix",fTracksIx,Form("tracks_ix[%d]/I",NBR_TRACKS_STORE));
 	reduced_tree->Branch("tracks_ip",fTracksIP,Form("tracks_ip[%d]/F",NBR_TRACKS_STORE));
 	reduced_tree->Branch("tracks_pt",fTracksPT,Form("tracks_pt[%d]/F",NBR_TRACKS_STORE));
 	reduced_tree->Branch("tracks_ptrel",fTracksPTRel,Form("tracks_ptrel[%d]/F",NBR_TRACKS_STORE));
@@ -23,6 +24,7 @@ int phiIsolationReader::loadCandidateVariables(TAnaCand *pCand)
 	if(!result) goto bail;
 	
 	// clean entries
+	for (unsigned j = 0; j < NBR_TRACKS_STORE; j++) fTracksIx[j] = -1;
 	memset(fTracksIP,0,sizeof(fTracksIP));
 	memset(fTracksPT,0,sizeof(fTracksPT));
 	memset(fTracksPTRel,0,sizeof(fTracksPTRel));
@@ -44,6 +46,7 @@ int phiIsolationReader::loadCandidateVariables(TAnaCand *pCand)
 		ptrel = (pTrack->fPlab - (pTrack->fPlab * uVector) * uVector).Mag();
 		
 		if (j < NBR_TRACKS_STORE) {
+			fTracksIx[j] = pCand->fNstTracks[j].first;
 			fTracksIP[j] = ip;
 			fTracksPT[j] = pt;
 			fTracksPTRel[j] = ptrel;
