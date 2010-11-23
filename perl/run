@@ -52,7 +52,7 @@ my $user  = $ENV{'USER'};
 my $glite = "/shome/$user/grid/glite.conf";
 
 # -- Default settings
-my $CMSSW = "CMSSW_3_5_6"; 
+my $CMSSW = "CMSSW_3_8_6"; 
 if ($opt_v) {
     $CMSSW = $opt_v;
 }

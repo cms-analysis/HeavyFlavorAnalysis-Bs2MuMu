@@ -44,7 +44,8 @@ public:
   virtual void fillHist();
   virtual bool goodRun();
   virtual void setVerbosity(int f) {fVerbose = f;}
-  virtual void runBlind() {BLIND = 1;}
+  virtual void setMC(int f) {std::cout << "setMC(1)" << std::endl; fIsMC = f;}
+  virtual void runBlind() {std::cout << "runBlind()" << std::endl; BLIND = 1;}
 
 protected:
 
@@ -57,9 +58,8 @@ protected:
 
   // -- Pre-filled variables
   int          fNentries;      // number of events in chain; filled in treeReader01::treeReader01()
-  int          fEvent;         // current event number; filled in treeReader01::loop()
-
-  // -- Variables changing per event (and initialized in initVariables()
+  int          fEvent;         // current sequential event number in chain; filled in treeReader01::loop()
+  int          fEvt;           // current event number; filled in treeReader01::loop()
   int          fRun;           // current run number; filled in treeReader01::loop()
   int          fLS;            // current lumi section; filled in treeReader01::loop()
 
@@ -79,7 +79,7 @@ protected:
   int BLIND; 
 
   int fVerbose;
-
+  int fIsMC;
 };
 
 // ----------------------------------------------------------------------

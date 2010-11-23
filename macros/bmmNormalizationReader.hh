@@ -36,7 +36,9 @@ public:
   void         fillHist();
   void         readCuts(TString filename, int dump = 1);
   void         initVariables();
+  void         MCKinematics();
   void         candidateSelection(int mode = 0); 
+  int          tmCand(TAnaCand *pC);
 
 
 };

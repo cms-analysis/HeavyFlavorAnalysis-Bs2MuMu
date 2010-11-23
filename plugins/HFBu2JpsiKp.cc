@@ -250,8 +250,8 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup)
       trackMasses.push_back(MKAON);
       
       if (0 == fVertexing) {
-		  aKal.doNotFit(trackList, trackIndices, trackMasses, -100521); 	
-		  continue; 
+	aKal.doNotFit(trackList, trackIndices, trackMasses, -100521); 	
+	continue; 
       }
 
       if (fVerbose > 1) {
@@ -267,27 +267,27 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup)
       HFDecayTreeIterator iterator = theTree.addDecayTree(300443,0);
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
-	  iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-	  
-	  theTree.addTrack(iTrack,321);
-	  theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-
+      iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+      
+      theTree.addTrack(iTrack,321);
+      theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+      
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit without mass constraint" << endl;
       aSeq.doFit(&theTree);
-	  
-	  // -- sequential fit: J/Psi kaon
+      
+      // -- sequential fit: J/Psi kaon
       theTree.clear();
       theTree.particleID = 400521;
-	  
+      
       iterator = theTree.addDecayTree(400443,1,MJPSI);
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
-	  iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+      iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit with mass constraint" << endl;
-
-	  theTree.addTrack(iTrack,321);
-	  theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-
+      
+      theTree.addTrack(iTrack,321);
+      theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+      
       aSeq.doFit(&theTree);
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> done with fitting for track " << iTrack << endl;
     }

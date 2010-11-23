@@ -54,6 +54,7 @@ int main(int argc, char *argv[]) {
   int randomSeed(processID);
   int verbose(-1); 
   int blind(1); 
+  int isMC(0);
 
   // Change the MaxTreeSize to 100 GB (default since root v5.26)
   TTree::SetMaxTreeSize(100000000000ll); // 100 GB
@@ -78,6 +79,7 @@ int main(int argc, char *argv[]) {
 	std::cout << "-C filename   file with cuts" << std::endl;
 	std::cout << "-D path       where to put the output" << std::endl;
 	std::cout << "-f filename   single file instead of chain" << std::endl;
+	cout << "-m            use MC information" << endl;
 	std::cout << "-n integer    number of events to run on" << std::endl;
 	std::cout << "-r class name which tree reader class to run" << std::endl;
 	std::cout << "-s number     seed for random number generator" << std::endl;
@@ -91,6 +93,7 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-C"))  {cutFile    = string(argv[++i]);           }     // file with cuts
     if (!strcmp(argv[i],"-D"))  {dirName    = string(argv[++i]);  dirspec = 1; } // where to put the output
     if (!strcmp(argv[i],"-f"))  {fileName   = string(argv[++i]); file = 1; }     // single file instead of chain
+    if (!strcmp(argv[i],"-m"))  {isMC       = 1; }                               // use MC information?
     if (!strcmp(argv[i],"-n"))  {nevents    = atoi(argv[++i]); }                 // number of events to run 
     if (!strcmp(argv[i],"-r"))  {readerName = string(argv[++i]); }               // which tree reader class to run
     if (!strcmp(argv[i],"-s"))  {randomSeed = atoi(argv[++i]); }                 // set seed for random gen.
@@ -220,8 +223,14 @@ int main(int argc, char *argv[]) {
     a->openHistFile(histfile); 
     a->bookHist(); 
     a->readCuts(cutFile, 1);
+    if (isMC) {
+      blind = 0; 
+      a->setMC(1);
+    } else {
+      a->setMC(0); 
+    }
     if (blind) a->runBlind();
-      
+
     a->startAnalysis(); 
     a->loop(nevents, start);
     a->endAnalysis();

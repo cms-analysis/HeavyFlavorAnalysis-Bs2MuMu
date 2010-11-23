@@ -150,6 +150,7 @@ int treeReader01::loop(int nevents, int start) {
     fpEvt->Clear();                        
     nb += fpChain->GetEvent(jEvent);          
 
+    fEvt = fpEvt->fEventNumber;   
     fRun = fpEvt->fRunNumber;
     fLS  = fpEvt->fLumiSection;
 

@@ -2,8 +2,9 @@
 #define BMMREADER_H
 
 #include <iostream>
-#include <vector>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include <TROOT.h>
 #include <TString.h>
@@ -32,23 +33,24 @@ public:
   bmmReader(TChain *tree, TString evtClassName);
   ~bmmReader();
 
-  virtual void bookHist();
-  virtual void startAnalysis();
-  virtual void eventProcessing();
-  virtual void fillHist();
-  virtual void readCuts(TString filename, int dump = 1);
-  virtual void initVariables();
-  virtual void insertCand(TAnaCand* pCand);
+  virtual void   startAnalysis();
+  virtual void   eventProcessing();
+  virtual void   MCKinematics();  
+  virtual void   L1TSelection();  
+  virtual void   HLTSelection();  
+  virtual void   trackSelection();  
+  virtual void   muonSelection();  
+  virtual void   bookHist();
+  virtual void   fillHist();
+  virtual void   readCuts(TString filename, int dump = 1);
+  virtual void   initVariables();
 
-  virtual void pvStudy();  
-
-  virtual void MCKinematics();  
-  virtual void L1TSelection();  
-  virtual void HLTSelection();  
-  virtual void trackSelection();  
-  virtual void muonSelection();  
-  virtual void candidateSelection(int mode = 0);  // 0 = closest in r-phi
-  virtual void fillCandidateVariables(); 
+  virtual void   candidateSelection(int mode = 0);  // 0 = closest in r-phi
+  virtual void   fillCandidateVariables(); 
+  virtual void   insertCand(TAnaCand*);
+  virtual int    tmCand(TAnaCand*);
+  virtual double isoClassic(TAnaCand*); 
+  virtual int    checkCut(const char *, TH1D *); 
 
 
   // -- Cut values
@@ -56,8 +58,15 @@ public:
       CANDPTLO
     , CANDETALO
     , CANDETAHI   
+    , CANDCOSALPHA
+    , CANDFLS3D
+    , CANDFLSXY
+    , CANDVTXCHI2
+    , CANDISOLATION
     , TRACKPTLO
     , TRACKPTHI
+    , TRACKETALO
+    , TRACKETAHI
     , TRACKTIP
     , TRACKLIP
     , MUPTLO
@@ -65,11 +74,12 @@ public:
     , MUETALO
     , MUETAHI   
     ;
-  int TYPE, MUID, TRACKQUALITY;
+  int TYPE, SELMODE, MUID, TRACKQUALITY;
+  std::vector<std::string> HLTPath, L1TPath; 
 
   // -- Variables
   bool                    fGoodMCKinematics;
-  bool                    fGoodL1, fGoodHLT;
+  bool                    fGoodL1T, fGoodHLT;
 
   // -- vectors with the candidates of the specified type
   std::vector<TAnaCand *> fCands;  
@@ -82,7 +92,9 @@ public:
   bool                    fGoodEvent;
 
   // -- variables for reduced tree, they are from fpCand
-  double                  fCandPt, fCandM; 
+  int                     fCandTM; 
+  double                  fCandPt, fCandEta, fCandPhi, fCandM; 
+  double                  fCandCosA, fCandIso, fCandChi2, fCandFLS3d, fCandFLSxy; 
 
   double       SIGBOXMIN, SIGBOXMAX; 
   double       BGLBOXMIN, BGLBOXMAX; 

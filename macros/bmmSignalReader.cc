@@ -23,7 +23,7 @@ bmmSignalReader::~bmmSignalReader() {
 
 // ----------------------------------------------------------------------
 void bmmSignalReader::startAnalysis() {
-  cout << "==> bmmSignalReader: Starting analysis..." << endl;
+  cout << "==> bmmSignalReader: Starting analysis ... " << (BLIND? "blinded": "NOT blinded") << endl;
 }
 
 
@@ -41,21 +41,73 @@ void bmmSignalReader::initVariables() {
 
 
 // ----------------------------------------------------------------------
+void bmmSignalReader::MCKinematics() {
+  TGenCand *pC, *pM1, *pM2, *pB; 
+  int nphotons(0); 
+  bool goodMatch(false); 
+  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
+    pC = fpEvt->getGenCand(i); 
+    if (531 == TMath::Abs(pC->fID)) {
+      pB = pC;
+      for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
+	pC = fpEvt->getGenCand(id); 
+	if (13 == TMath::Abs(pC->fID)) {
+	  if (0 == pM1) {
+	    pM1 = fpEvt->getGenCand(id); 
+	  } else {
+	    pM2 = fpEvt->getGenCand(id); 
+	  }
+	}
+      }
+      if (0 != pM1 && 0 != pM2) {
+	goodMatch = true; 
+	nphotons = pB->fDau2 - pB->fDau1 - 1; 
+	break;
+      }
+    }
+  }
+  
+  if (fVerbose > 4) {
+    cout << "----------------------------------------------------------------------" << endl;
+    if (goodMatch) {
+      pB->dump(); 
+      pM1->dump(); 
+      pM2->dump();
+    } else {
+      cout << "no tm decay found" << endl;
+    }
+  }
+
+  if (!goodMatch) {
+    fGoodMCKinematics = false; 
+    if (fVerbose > 2) cout << "No matched signal decay found" << endl;
+    return;
+  }
+
+  // -- hard coded ?! FIXME
+  if (pM1->fP.Perp() < 2.5) fGoodMCKinematics = false;  
+  if (pM2->fP.Perp() < 2.5) fGoodMCKinematics = false;  
+  if (TMath::Abs(pM1->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
+  if (TMath::Abs(pM2->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
+
+}
+
+
+// ----------------------------------------------------------------------
 void bmmSignalReader::candidateSelection(int mode) {
   int nc0(fCands.size()), nc1(0);
 
+  fpCand = 0; 
   ((TH1D*)fpHistFile->Get("bnc0"))->Fill(nc0); 
+
   if (0 == nc0) {
-    cout << "no candidate " << TYPE << " found" << endl;
+    nc1 = 0; 
+    ((TH1D*)fpHistFile->Get("bnc1"))->Fill(nc1); 
+    if (fVerbose > 0) cout << "bmmSignalReader> no candidate " << TYPE << " found" << endl;
     return; 
   }
   
-  fpCand = 0; 
   TAnaCand *pCand; 
-
-  if (0 == nc0) {
-    fpCand = fCands[0]; 
-  }
 
   // -- Create list with candidates that fullfil basic cuts on their final state particles
   vector<int> clist; 
@@ -73,30 +125,45 @@ void bmmSignalReader::candidateSelection(int mode) {
 
       if (false == fGoodMuonsID[iC])  continue; 
       if (false == fGoodMuonsPT[iC])  continue; 
-
+      ++nc1; 
       clist.push_back(iC);
     }
   } 
 
   // -- Select best candidate
-  if (clist.size() > 1) {
+  if (1 == clist.size()) {
+    fpCand = fCands[clist[0]];
+    nc1 = 1; 
+    if (fVerbose > 0) cout << "bmmSignalReader> found exactly one candidate " << TYPE 
+			   << " passing the constituents selection" 
+			   << " with sigTracks " << fpCand->fSig1 << " .. " << fpCand->fSig2
+			   << endl;
+  } else if (clist.size() > 1) {
     double drMin(99.), dr(0.); 
     for (unsigned int i = 0; i < clist.size(); ++i) {
       pCand = fCands[clist[i]]; 
       TAnaTrack *pl1 = fpEvt->getSigTrack(pCand->fSig1); 
       TAnaTrack *pl2 = fpEvt->getSigTrack(pCand->fSig1+1); 
-
+      
       // -- closest in rphi
       if (0 == mode) {
 	dr = pl1->fPlab.DeltaR(pl2->fPlab); 
 	if (dr < drMin) {
 	  fpCand = pCand; 
 	  drMin = dr; 
+	  if (fVerbose > 0) cout << "bmmSignalReader> found another better candidate " << TYPE 
+				 << " with sigTracks " << fpCand->fSig1 << " .. " << fpCand->fSig2
+				 << " with dr = " << dr 
+				 << endl;
 	}
       }
     }
   } else {
     fpCand = fCands[0];
+    nc1 = 1; 
+    if (fVerbose > 0) cout << "bmmSignalReader> found no candidate " << TYPE 
+			   << " passing the constituents selection" 
+			   << endl;
   }
 
   ((TH1D*)fpHistFile->Get("bnc1"))->Fill(nc1); 
@@ -104,6 +171,48 @@ void bmmSignalReader::candidateSelection(int mode) {
   if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX) fpCand = 0; 
   if (fpCand) fillCandidateVariables();
 }
+
+
+// ----------------------------------------------------------------------
+int bmmSignalReader::tmCand(TAnaCand *pC) {
+  
+  int truth(0); 
+  TAnaTrack *pT; 
+  vector<TGenCand*> gCand; 
+  for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
+    pT = fpEvt->getRecTrack(fpEvt->getSigTrack(i)->fIndex); 
+    if (pT->fGenIndex < 0) return 0; 
+    gCand.push_back(fpEvt->getGenCand(pT->fGenIndex)); 
+  }
+
+  TGenCand *pG, *pM; 
+  int matched(0), genDaughters(0); 
+  for (unsigned int i = 0; i < gCand.size(); ++i) {
+    pG = gCand[i]; 
+    if (pG->fMom1 > -1) {
+      pM = fpEvt->getGenCand(pG->fMom1); 
+    } else {
+      return 0; 
+    }
+    if (531 != TMath::Abs(pM->fID)) {
+      return 0;  
+    } else {
+      ++matched; 
+    }
+  }
+  if (matched == 2) {
+    genDaughters = pM->fDau2 - pM->fDau1 +1; 
+  }
+  
+  if (genDaughters == matched) {
+    return 1; 
+  } else {
+    return 2;
+  }
+
+}
+
+
 
 // ----------------------------------------------------------------------
 void bmmSignalReader::fillHist() {
@@ -152,8 +261,9 @@ void bmmSignalReader::readCuts(TString filename, int dump) {
     if (buffer[0] == '#') {continue;}
     if (buffer[0] == '/') {continue;}
     sscanf(buffer, "%s %f", CutName, &CutValue);
-
-    if (!ok) cout << "==> bmmSignalReader: nothing done with  " << CutName << endl;
+    
+    ok = checkCut(CutName, hcuts); 
+    if (!ok) cout << "==> bmmSignalReader: error? nothing done with " << CutName << "!!" << endl;
   }
 
   if (dump)  cout << "------------------------------------" << endl;
