@@ -24,7 +24,8 @@ trkDump = cms.EDAnalyzer(
     trackingParticlesLabel         = cms.untracked.InputTag('trackingParticles'),
     associatorLabel                = cms.untracked.InputTag('TrackAssociatorByHits'),
     doTruthMatching                = cms.untracked.int32(3),
-    simTracksLabel                 = cms.untracked.InputTag('allLayer1TrackCands')
+    simTracksLabel                 = cms.untracked.InputTag('allLayer1TrackCands'),
+    loadCalomuons                  = cms.untracked.bool(False)
     )
 
 # ----------------------------------------------------------------------
@@ -34,6 +35,7 @@ muonDump = cms.EDAnalyzer(
     muonsLabel      = cms.untracked.InputTag("muons"),
     calomuonsLabel  = cms.untracked.InputTag("calomuons"),
     doTruthMatching = cms.untracked.int32(0),
+    runOnAOD        = cms.untracked.bool(True)
     )
 
 
