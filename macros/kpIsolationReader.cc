@@ -2,7 +2,7 @@
 
 #include <TH2D.h>
 
-kpIsolationReader::kpIsolationReader(TChain *tree, TString evtClassName) : kpReader(tree,evtClassName)
+kpIsolationReader::kpIsolationReader(TChain *tree, TString evtClassName) : kpReader(tree,evtClassName),fCutNearestTrackPt(0.0)
 {
 	std::cout << "kpIsolationReader instantiated..." << std::endl;
 }
@@ -24,6 +24,7 @@ int kpIsolationReader::loadCandidateVariables(TAnaCand *pCand)
 	double ip,pt,ptrel;
 	TAnaTrack *pTrack;
 	TVector3 uVector;
+	unsigned j,k;
 	int result = kpReader::loadCandidateVariables(pCand); // load all the variables...
 	if(!result) goto bail;
 	
@@ -40,22 +41,43 @@ int kpIsolationReader::loadCandidateVariables(TAnaCand *pCand)
 	}
 	
 	// fill the histogramms...
-	for (unsigned j = 0; j < pCand->fNstTracks.size(); j++) {
+	for (j = 0, k = 0; j < pCand->fNstTracks.size(); j++) {
 		
 		pTrack = fpEvt->getRecTrack(pCand->fNstTracks[j].first);
 		uVector = pCand->fPlab.Unit();
 		pt = pTrack->fPlab.Perp();
 		ip = pCand->fNstTracks[j].second.first;
 		ptrel = (pTrack->fPlab - (pTrack->fPlab * uVector) * uVector).Mag();
-
-		if (j < NBR_TRACKS_STORE) {
-			fTracksIx[j] = pCand->fNstTracks[j].first;
-			fTracksIP[j] = ip;
-			fTracksPT[j] = pt;
-			fTracksPTRel[j] = ptrel;
+		
+		if (pt > fCutNearestTrackPt && k < NBR_TRACKS_STORE) {
+			fTracksIx[k] = pCand->fNstTracks[j].first;
+			fTracksIP[k] = ip;
+			fTracksPT[k] = pt;
+			fTracksPTRel[k] = ptrel;
+			k++;
 		}
 	}
 	
 bail:
 	return result;
 } // loadCandidateVariables()
+
+bool kpIsolationReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
+{
+	using std::cout;
+	using std::endl;
+	bool parsed;
+	
+	parsed = (strcmp(cutName,"NEAR_PT") == 0);
+	if (parsed) {
+		fCutNearestTrackPt = cutLow;
+		if (dump) cout << "NEAR_PT: " << fCutNearestTrackPt << endl;
+		goto bail;
+	}
+	
+	// call the super routine
+	parsed = kpReader::parseCut(cutName, cutLow, cutHigh, dump);
+	
+bail:
+	return parsed;
+} // parseCut()

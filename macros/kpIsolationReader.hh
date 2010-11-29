@@ -15,12 +15,17 @@ class kpIsolationReader : public kpReader {
 	
 	protected:
 		virtual int loadCandidateVariables(TAnaCand *pCand);
+		virtual bool parseCut(char *cutName, float cutLow, float cutHigh, int dump = 1);
 	
 	protected:
 		int fTracksIx[NBR_TRACKS_STORE];
 		float fTracksIP[NBR_TRACKS_STORE];
 		float fTracksPT[NBR_TRACKS_STORE];
 		float fTracksPTRel[NBR_TRACKS_STORE];
+	
+	private:
+		// Additional cut variables
+		float fCutNearestTrackPt;
 };
 
 #endif
