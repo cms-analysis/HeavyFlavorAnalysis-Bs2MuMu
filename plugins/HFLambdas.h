@@ -22,14 +22,14 @@ class HFLambdas : public edm::EDAnalyzer {
 		edm::InputTag	fTracksLabel,fPrimaryVertexLabel;
 		edm::InputTag	fMuonsLabel;
 
-		double fMuonPt,fPionPt;
+		double fMuonPt,fPionPt,fProtonPt;
 		int fPsiMuons;
-		double fPsiWindow,fL0Window,fLbWindow;
+		double fPsiWindow,fksWindow,fL0Window,fLbWindow;
 		double fDeltaR;
-		int fVertexing;
+		//int fVertexing;
 		
 		double fMaxDoca;
-		double fPAngleL0;
+		double fPAngle;
 		
 		reco::Vertex	fPV;
 		edm::ESHandle<TransientTrackBuilder> fTTB;
