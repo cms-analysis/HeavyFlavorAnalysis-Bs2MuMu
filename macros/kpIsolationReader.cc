@@ -15,13 +15,14 @@ void kpIsolationReader::bookHist()
 	
 	reduced_tree->Branch("tracks_ix",fTracksIx,Form("tracks_ix[%d]/I",NBR_TRACKS_STORE));
 	reduced_tree->Branch("tracks_ip",fTracksIP,Form("tracks_ip[%d]/F",NBR_TRACKS_STORE));
+	reduced_tree->Branch("tracks_ipe",fTracksIPE,Form("tracks_ipe[%d]/F",NBR_TRACKS_STORE));
 	reduced_tree->Branch("tracks_pt",fTracksPT,Form("tracks_pt[%d]/F",NBR_TRACKS_STORE));
 	reduced_tree->Branch("tracks_ptrel",fTracksPTRel,Form("tracks_ptrel[%d]/F",NBR_TRACKS_STORE));
 } // bookHist()
 
 int kpIsolationReader::loadCandidateVariables(TAnaCand *pCand)
 {
-	double ip,pt,ptrel;
+	float ip,ipE,pt,ptrel;
 	TAnaTrack *pTrack;
 	TVector3 uVector;
 	unsigned j,k;
@@ -31,6 +32,7 @@ int kpIsolationReader::loadCandidateVariables(TAnaCand *pCand)
 	// clean entries
 	for (unsigned j = 0; j < NBR_TRACKS_STORE; j++) fTracksIx[j] = -1;
 	memset(fTracksIP,0,sizeof(fTracksIP));
+	memset(fTracksIPE,0,sizeof(fTracksIPE));
 	memset(fTracksPT,0,sizeof(fTracksPT));
 	memset(fTracksPTRel,0,sizeof(fTracksPTRel));
 	
@@ -47,11 +49,13 @@ int kpIsolationReader::loadCandidateVariables(TAnaCand *pCand)
 		uVector = pCand->fPlab.Unit();
 		pt = pTrack->fPlab.Perp();
 		ip = pCand->fNstTracks[j].second.first;
+		ipE = pCand->fNstTracks[j].second.second;
 		ptrel = (pTrack->fPlab - (pTrack->fPlab * uVector) * uVector).Mag();
 		
 		if (pt > fCutNearestTrackPt && k < NBR_TRACKS_STORE) {
 			fTracksIx[k] = pCand->fNstTracks[j].first;
 			fTracksIP[k] = ip;
+			fTracksIPE[k] = ipE;
 			fTracksPT[k] = pt;
 			fTracksPTRel[k] = ptrel;
 			k++;
