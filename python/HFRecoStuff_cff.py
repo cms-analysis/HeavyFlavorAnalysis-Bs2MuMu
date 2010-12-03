@@ -69,5 +69,6 @@ l1trep = cms.EDAnalyzer(
 # ######################################################################
 # Sequences
 # ######################################################################
-recoStuffSequence     = cms.Sequence(stuffDump*trkDump*muonDump*triggerDump*hltrep*l1trep)
+#recoStuffSequence     = cms.Sequence(stuffDump*trkDump*muonDump*triggerDump*hltrep*l1trep)
+recoStuffSequence     = cms.Sequence(stuffDump*trkDump*muonDump*triggerDump)
 
