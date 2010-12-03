@@ -88,7 +88,7 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	TVector3 plabMu1;
 	TVector3 plabMu2;
 	TVector3 plabKp;
-	int result,j;
+	int result,j,k;
 	map<int,int> cand_tracks;
 	
 	TLorentzVector mu1;
@@ -99,6 +99,8 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	fMassJPsiRec = -1.0f;
 	fDeltaR = -1.0f;
 	fCtau = 0.0f;
+	fChi2Jpsi = -1.0f;
+	fMassJpsiKp = -1.0f;
 	
 	if (pCand->fType % 1000 != 521) return 0;
 	
@@ -147,9 +149,41 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 		
 		jpsiCand = fpEvt->getCand(j);
 		if (jpsiCand->fType % 1000 == 443) {
+			TLorentzVector *m1 = NULL,*m2 = NULL,*kp = NULL;
+			
 			fMassJPsi = jpsiCand->fMass;
+			fChi2Jpsi = jpsiCand->fVtx.fChi2;
 			fD3_BpJpsi = jpsiCand->fVtx.fD3d;
 			fD3e_BpJpsi = jpsiCand->fVtx.fD3dE;
+			
+			// calculate the mass of the k+ by computing from j/psi sig tracks + kaon rectrack
+			for (k = jpsiCand->fSig1; 0 <= k && k <= jpsiCand->fSig2; k++) {
+				
+				sigTrack = fpEvt->getSigTrack(k);
+				if (abs(sigTrack->fMCID) == 13) {
+					if (!m1) {
+						m1 = new TLorentzVector;
+						m1->SetXYZM(sigTrack->fPlab.X(),sigTrack->fPlab.Y(),sigTrack->fPlab.Z(),MMUON);
+					} else if (!m2) {
+						m2 = new TLorentzVector;
+						m2->SetXYZM(sigTrack->fPlab.X(),sigTrack->fPlab.Y(),sigTrack->fPlab.Z(),MMUON);
+					}
+				}
+			}
+			
+			for (k = pCand->fSig1; 0 <= k && k <= pCand->fSig2; k++) {
+				sigTrack = fpEvt->getSigTrack(k);
+				if (abs(sigTrack->fMCID) == 321 && !kp) {
+					kp = new TLorentzVector;
+					kp->SetXYZM(sigTrack->fPlab.X(),sigTrack->fPlab.Y(),sigTrack->fPlab.Z(),MKAON);
+				}
+			}
+			
+			fMassJpsiKp = ((*m1) + (*m2) + (*kp)).M();
+			
+			delete m1;
+			delete m2;
+			delete kp;
 			break;
 		}
 	}
