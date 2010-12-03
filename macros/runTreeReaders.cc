@@ -30,8 +30,6 @@
 #include "genLevel.hh"
 #include "decayCounter.hh"
 #include "impactReader.hh"
-#include "kpIsolationReader.hh"
-#include "phiIsolationReader.hh"
 
 using namespace std;
 
@@ -211,8 +209,6 @@ int main(int argc, char *argv[]) {
   else if (readerName == "genLevel") a = new genLevel(chain,TString(evtClassName));
   else if (readerName == "decayCounter") a = new decayCounter(chain,TString(evtClassName));
   else if (readerName == "impactReader") a = new impactReader(chain,TString(evtClassName));
-  else if (readerName == "kpIsolationReader") a = new kpIsolationReader(chain,TString(evtClassName));
-  else if (readerName == "phiIsolationReader") a = new phiIsolationReader(chain,TString(evtClassName));
   else {
     cout << "please provide a class name to instantiate" << endl;
   }
