@@ -11,10 +11,11 @@ AnalysisCuts::AnalysisCuts() {
   for (int i = 0; i < MAXCUTS; ++i) {
     fCutName[i]     = TString("unused"); 
     fDescription[i] = TString("nothing said"); 
-    fCutValue[i]    = 0;
-    fAocValue[i]    = 0;
-    fCumValue[i]    = 0;
-  }
+    fCutValue[i]    = false;
+    fAocValue[i]    = false;
+    fCumValue[i]    = false;
+    fNm1Value[i]    = false;
+ }
   fNcuts = 0; 
   fUpdated = 0; 
 }
@@ -27,22 +28,42 @@ AnalysisCuts::~AnalysisCuts() {
   }
 }
 
+// // ----------------------------------------------------------------------
+// void AnalysisCuts::addCut(const char *name, int &location) {
+//   addCut(name, "no description", location); 
+// }
+
+
+// // ----------------------------------------------------------------------
+// void AnalysisCuts::addCut(const char *name, const char *description, int &location) {
+//   fCutName[fNcuts]     = TString(name); 
+//   fDescription[fNcuts] = TString(description); 
+//   fCutLocation[fNcuts] = &location; 
+//   fAocValue[fNcuts]    = -1; 
+//   fCumValue[fNcuts]    = -1; 
+//   cout << "--> Added cut " << name << "  " << description << endl;
+//   fNcuts++; 
+// }
+
+
 // ----------------------------------------------------------------------
-void AnalysisCuts::addCut(const char *name, int &location) {
+void AnalysisCuts::addCut(const char *name, bool &location) {
   addCut(name, "no description", location); 
 }
 
 
 // ----------------------------------------------------------------------
-void AnalysisCuts::addCut(const char *name, const char *description, int &location) {
+void AnalysisCuts::addCut(const char *name, const char *description, bool &location) {
   fCutName[fNcuts]     = TString(name); 
   fDescription[fNcuts] = TString(description); 
   fCutLocation[fNcuts] = &location; 
-  fAocValue[fNcuts]    = -1; 
-  fCumValue[fNcuts]    = -1; 
+  fAocValue[fNcuts]    = false; 
+  fCumValue[fNcuts]    = false; 
+  fNm1Value[fNcuts]    = false;
   cout << "--> Added cut " << name << "  " << description << endl;
   fNcuts++; 
 }
+
 
 // ----------------------------------------------------------------------
 int AnalysisCuts::getIndex(const char *name) {
@@ -79,19 +100,28 @@ void AnalysisCuts::update() {
 
   // -- Cache derived information 
   for (int i = 0; i < fNcuts; ++i) {
-    fCumValue[i] = 1; 
-    for (int j = 0; j <= i; ++j) {
-      if (singleCutTrue(j) == 0) {
-	fCumValue[i] = 0; 
+    fNm1Value[i] = true; 
+    for (int j = 0; j < i; ++j) {
+      if (singleCutTrue(j) == false) {
+	fNm1Value[i] = false; 
 	break;
       }
     }
 
-    fAocValue[i] = 1; 
+
+    fCumValue[i] = true; 
+    for (int j = 0; j <= i; ++j) {
+      if (singleCutTrue(j) == false) {
+	fCumValue[i] = false; 
+	break;
+      }
+    }
+
+    fAocValue[i] = true; 
     for (int j = 0; j < fNcuts; ++j) {
       if (j == i) continue; 
-      if (singleCutTrue(j) == 0) {
-	fAocValue[i] = 0; 
+      if (singleCutTrue(j) == false) {
+	fAocValue[i] = false; 
 	break;
       }
     }
@@ -101,47 +131,66 @@ void AnalysisCuts::update() {
 }
 
 // ----------------------------------------------------------------------
-int AnalysisCuts::singleCutTrue(int icut) {
+bool AnalysisCuts::singleCutTrue(int icut) {
   return fCutValue[icut];
 }
 
 // ----------------------------------------------------------------------
-int AnalysisCuts::cumulativeCutTrue(int icut) {
+bool AnalysisCuts::cumulativeCutTrue(int icut) {
   return fCumValue[icut];
 }
 
 // ----------------------------------------------------------------------
-int AnalysisCuts::allOtherCutsTrue(int icut) {
+bool AnalysisCuts::nMinus1CutsTrue(int icut) {
+  return fNm1Value[icut];
+}
+
+// ----------------------------------------------------------------------
+bool AnalysisCuts::allOtherCutsTrue(int icut) {
   return fAocValue[icut];
 }
 
 
 // ----------------------------------------------------------------------
-int AnalysisCuts::singleCutTrue(const char *name) {
+bool AnalysisCuts::singleCutTrue(const char *name) {
   int icut = getIndex(name);
   if ((icut >= 0) && (icut < fNcuts)) {
     return singleCutTrue(icut);
   } else {
     cout << "xx> AnalysisCuts: Unknown cut " << name << endl;
+    return false;
   }    
 }
 
 // ----------------------------------------------------------------------
-int AnalysisCuts::cumulativeCutTrue(const char *name) {
+bool AnalysisCuts::cumulativeCutTrue(const char *name) {
   int icut = getIndex(name);
   if ((icut >= 0) && (icut < fNcuts)) {
     return cumulativeCutTrue(icut);
   } else {
     cout << "xx> AnalysisCuts: Unknown cut " << name << endl;
+    return false;
   }    
 }
 
 // ----------------------------------------------------------------------
-int AnalysisCuts::allOtherCutsTrue(const char *name) {
+bool AnalysisCuts::nMinus1CutsTrue(const char *name) {
+  int icut = getIndex(name);
+  if ((icut >= 0) && (icut < fNcuts)) {
+    return nMinus1CutsTrue(icut);
+  } else {
+    cout << "xx> AnalysisCuts: Unknown cut " << name << endl;
+    return false;
+  }    
+}
+
+// ----------------------------------------------------------------------
+bool AnalysisCuts::allOtherCutsTrue(const char *name) {
   int icut = getIndex(name);
   if ((icut >= 0) && (icut < fNcuts)) {
     return allOtherCutsTrue(icut);
   } else {
     cout << "xx> AnalysisCuts: Unknown cut " << name << endl;
+    return false;
   }    
 }

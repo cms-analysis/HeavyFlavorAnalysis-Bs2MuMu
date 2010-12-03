@@ -39,9 +39,9 @@ RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 #########
 # FILES #
 #########
+READER_HEADERS = bmmReader.hh bmmSignalReader.hh bmmNormalizationReader.hh d0Reader.hh dumpReader.hh muCharmReader.hh copyReader.hh dpReader.hh massReader.hh treeReader01.hh triggerValidation.hh ksReader.hh lambdaReader.hh genLevel.hh kpReader.hh phiReader.hh decayCounter.hh impactReader.hh AnalysisCuts.hh AnalysisDistribution.hh anaBmm.hh
+READER = treeReader01.o bmmReader.o bmmSignalReader.o bmmNormalizationReader.o massReader.o dumpReader.o copyReader.o muCharmReader.o dpReader.o d0Reader.o triggerValidation.o ksReader.o lambdaReader.o genLevel.o kpReader.o phiReader.o decayCounter.o impactReader.o AnalysisCuts.o AnalysisDistribution.o anaBmm.o 
 
-READER_HEADERS = bmmReader.hh bmmSignalReader.hh bmmNormalizationReader.hh d0Reader.hh dumpReader.hh muCharmReader.hh copyReader.hh dpReader.hh massReader.hh treeReader01.hh triggerValidation.hh ksReader.hh lambdaReader.hh genLevel.hh kpReader.hh phiReader.hh decayCounter.hh impactReader.hh
-READER = treeReader01.o bmmReader.o bmmSignalReader.o bmmNormalizationReader.o massReader.o dumpReader.o copyReader.o muCharmReader.o dpReader.o d0Reader.o triggerValidation.o ksReader.o lambdaReader.o genLevel.o kpReader.o phiReader.o decayCounter.o impactReader.o
 READERDICT = ${READER:.o=Dict.o}
 
 #################

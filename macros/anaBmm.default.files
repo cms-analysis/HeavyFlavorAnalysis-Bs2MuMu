@@ -1,0 +1,16 @@
+# ----------------------------------------------------------------------
+# signal data and MC
+type=sg,default dset=data lumi=39.4 file=/scratch/ursl/signalData.root
+type=sg,default dset=mc lumi=10000 file=/scratch/ursl/signalMc.root
+type=sg,default dset=mc lumi=10000 file=cBsToMuMu_2MuPtFilter_7TeV-pythia6-evtgen-Fall10.bmmSignalReader.default.root
+# ----------------------------------------------------------------------
+# normalization data and MC
+type=no,default dset=mc lumi=10000 file=/scratch/ursl/normMC.root
+type=no,default dset=mc lumi=10000 file=/scratch/ursl/normMC.root
+#
+# ---------------------------------------------------------------------- SE 
+#SE type=sg,default dset=mc lumi=10000 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/bmm/bmmSignalReader/signalMC.root
+#SE type=sg,default dset=data lumi=39.4 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/bmm/bmmSignalReader/signalData.root
+#SE type=no,default dset=mc lumi=39.4 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/bmm/bmmNormalizationReader/normMc.root
+#SE type=no,default dset=data lumi=39.4 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/bmm/bmmNormalizationReader/normData.root
+# ----------------------------------------------------------------------

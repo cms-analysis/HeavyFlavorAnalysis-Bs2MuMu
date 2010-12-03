@@ -41,6 +41,7 @@ void bmmNormalizationReader::eventProcessing() {
 
 // ----------------------------------------------------------------------
 void bmmNormalizationReader::MCKinematics() {
+  fGoodMCKinematics = true; 
   TGenCand *pC(0), *pM1(0), *pM2(0), *pK(0), *pB(0), *pPsi(0); 
   int nphotons(0), npsi(0), nb(0); 
   bool goodMatch(false); 
@@ -104,6 +105,7 @@ void bmmNormalizationReader::MCKinematics() {
 
 }
 
+
 // ----------------------------------------------------------------------
 void bmmNormalizationReader::candidateSelection(int mode) {
   int nc0(fCands.size()), nc1(0);
@@ -113,6 +115,7 @@ void bmmNormalizationReader::candidateSelection(int mode) {
   
   if (0 == nc0) {
     nc1 = 0; 
+    fCandIdx = -1; 
     ((TH1D*)fpHistFile->Get("bnc1"))->Fill(nc1); 
     if (fVerbose > 0) cout << "bmmNormalizationReader> no candidate " << TYPE << " found" << endl;
     return;
@@ -131,11 +134,13 @@ void bmmNormalizationReader::candidateSelection(int mode) {
 
       if (pl1->fQ*pl2->fQ > 0) continue;
 
-      if (false == fGoodTracks[iC])   continue; 
-      if (false == fGoodTracksPT[iC]) continue; 
+      if (false == fvGoodTracks[iC])   continue; 
+      if (false == fvGoodTracksPt[iC]) continue; 
+      if (false == fvGoodTracksEta[iC]) continue; 
 
-      if (false == fGoodMuonsID[iC])  continue; 
-      if (false == fGoodMuonsPT[iC])  continue; 
+      if (false == fvGoodMuonsID[iC])  continue; 
+      if (false == fvGoodMuonsPt[iC])  continue; 
+      if (false == fvGoodMuonsEta[iC])  continue; 
       ++nc1; 
       clist.push_back(iC);
     }
@@ -144,6 +149,7 @@ void bmmNormalizationReader::candidateSelection(int mode) {
   // -- Select best candidate
   if (1 == clist.size()) {
     fpCand = fCands[clist[0]];
+    fCandIdx = clist[0]; 
     nc1 = 1; 
     if (fVerbose > 0) cout << "bmmNormalizationReader> found exactly one candidate " << TYPE << " passing the constituents selection" << endl;
   } else if (clist.size() > 1) {
@@ -158,6 +164,7 @@ void bmmNormalizationReader::candidateSelection(int mode) {
 	dr = pl1->fPlab.DeltaR(pl2->fPlab); 
 	if (dr < drMin) {
 	  fpCand = pCand; 
+	  fCandIdx = clist[i]; 
 	  drMin = dr; 
 	  if (fVerbose > 0) cout << "bmmNormalizationReader> found another better candidate " << TYPE << " with dr = " << dr << endl;
 	}
@@ -167,6 +174,7 @@ void bmmNormalizationReader::candidateSelection(int mode) {
 	dr = pCand->fPlab.Perp(); 
 	if (dr > drMin) {
 	  fpCand = pCand; 
+	  fCandIdx = clist[i]; 
 	  drMin = dr; 
 	  if (fVerbose > 0) cout << "bmmNormalizationReader> found another better candidate " << TYPE << " with pT = " << dr << endl;
 	}
@@ -174,6 +182,7 @@ void bmmNormalizationReader::candidateSelection(int mode) {
     }
   } else {
     fpCand = fCands[0];
+    fCandIdx = 0; 
     nc1 = 1; 
     if (fVerbose > 0) cout << "bmmNormalizationReader> found no candidate " << TYPE << " passing the constituents selection" << endl;
   }
@@ -183,6 +192,17 @@ void bmmNormalizationReader::candidateSelection(int mode) {
   if (fpCand) fillCandidateVariables();
 }
 
+
+// ----------------------------------------------------------------------
+void bmmNormalizationReader::fillCandidateVariables() {
+  bmmReader::fillCandidateVariables();
+
+  TAnaTrack *p1 = fpEvt->getSigTrack(fpCand->fSig2); 
+
+  fKaonPt  = p1->fPlab.Perp(); 
+  fKaonEta = p1->fPlab.Eta();  
+  fKaonPhi = p1->fPlab.Phi(); 
+}
 
 // ----------------------------------------------------------------------
 int bmmNormalizationReader::tmCand(TAnaCand *pC) {
@@ -218,6 +238,7 @@ int bmmNormalizationReader::tmCand(TAnaCand *pC) {
   if (TMath::Abs(pPsi->fID) != 443) return 0;
   
   // -- check that the kaon has the same mother like the J/psi
+  // FIXME: ancestor instead of mother!
   if (pK->fMom1 != pPsi->fMom1) return 0; 
   pB = fpEvt->getGenCand(pK->fMom1); 
 
@@ -257,6 +278,14 @@ int bmmNormalizationReader::tmCand(TAnaCand *pC) {
 // ----------------------------------------------------------------------
 void bmmNormalizationReader::fillHist() {
   bmmReader::fillHist(); 
+
+  fpTracksPt->fill(fMu1Pt, fCandM);
+  fpTracksPt->fill(fMu2Pt, fCandM);
+  fpMuonsPt->fill(fMu1Pt, fCandM);
+  fpMuonsPt->fill(fMu2Pt, fCandM);
+  fpMuonsEta->fill(fMu1Eta, fCandM);
+  fpMuonsEta->fill(fMu2Eta, fCandM);
+
 }
 
 

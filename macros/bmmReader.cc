@@ -18,6 +18,25 @@ using std::vector;
 // ----------------------------------------------------------------------
 bmmReader::bmmReader(TChain *tree, TString evtClassName): treeReader01(tree, evtClassName) {
   cout << "==> bmmReader: constructor..." << endl;
+  cout << "==> Defining analysis cuts" << endl;
+  fAnaCuts.addCut("fWideMass", "m(B candidate) [GeV]", fWideMass); 
+  fAnaCuts.addCut("fGoodL1T", "L1T", fGoodL1T); 
+  fAnaCuts.addCut("fGoodHLT", "HLT", fGoodHLT); 
+  fAnaCuts.addCut("fGoodTracks", "good tracks", fGoodTracks); 
+  fAnaCuts.addCut("fGoodTracksPt", "p_{T,trk} [GeV]", fGoodTracksPt); 
+  fAnaCuts.addCut("fGoodTracksEta", "#eta_{trk} ", fGoodTracksEta); 
+  fAnaCuts.addCut("fGoodMuonsID", "lepton ID", fGoodMuonsID); 
+  fAnaCuts.addCut("fGoodMuonsPt", "p_{T,#mu} [GeV]", fGoodMuonsPt); 
+  fAnaCuts.addCut("fGoodMuonsEta", "#eta_{#mu}", fGoodMuonsPt); 
+  fAnaCuts.addCut("fGoodPt", "p_{T,B}", fGoodPt); 
+  fAnaCuts.addCut("fGoodEta", "#eta_{B}", fGoodEta); 
+  fAnaCuts.addCut("fGoodCosA", "cos(#alpha)", fGoodCosA); 
+  fAnaCuts.addCut("fGoodIso", "I_{trk}", fGoodIso); 
+  fAnaCuts.addCut("fGoodChi2", "#chi^{2}", fGoodChi2); 
+  fAnaCuts.addCut("fGoodFLS", "l/#sigma(l)", fGoodFLS); 
+  fAnaCuts.addCut("fGoodDocaTrk", "d_{ca}(trk)", fGoodDocaTrk); 
+  fAnaCuts.addCut("fGoodIP", "sin#beta*l_{3d}/IP", fGoodIP); 
+
 }
 
 // ----------------------------------------------------------------------
@@ -46,6 +65,8 @@ void bmmReader::eventProcessing() {
   trackSelection(); 
   muonSelection();
   candidateSelection(SELMODE); 
+
+  studyL1T();
   
   fillHist();
 
@@ -60,12 +81,14 @@ void bmmReader::initVariables() {
   fGoodMCKinematics = true; 
   fGoodL1T = fGoodHLT = true; 
 
-  fGoodMuonsID.clear();
-  fGoodMuonsPT.clear();
-  fGoodTracks.clear();
-  fGoodTracksPT.clear();
+  fvGoodMuonsID.clear();
+  fvGoodMuonsPt.clear();
+  fvGoodMuonsEta.clear();
+  fvGoodTracks.clear();
+  fvGoodTracksPt.clear();
+  fvGoodTracksEta.clear();
 
-  fGoodCandPT.clear();
+  fvGoodCandPt.clear();
 
   fGoodEvent = true;
   
@@ -89,11 +112,14 @@ void bmmReader::initVariables() {
 // ----------------------------------------------------------------------
 void bmmReader::insertCand(TAnaCand* pCand) {
     fCands.push_back(pCand); 
-    fGoodMuonsID.push_back(true); 
-    fGoodMuonsPT.push_back(true);
-    fGoodTracks.push_back(true);
-    fGoodTracksPT.push_back(true);
-    fGoodCandPT.push_back(true);
+    // -- this is just to initialize the vector variables
+    fvGoodMuonsID.push_back(true); 
+    fvGoodMuonsPt.push_back(true);
+    fvGoodMuonsEta.push_back(true);
+    fvGoodTracks.push_back(true);
+    fvGoodTracksPt.push_back(true);
+    fvGoodTracksEta.push_back(true);
+    fvGoodCandPt.push_back(true);
 }
 
 
@@ -106,18 +132,23 @@ void bmmReader::MCKinematics() {
 // ----------------------------------------------------------------------
 void bmmReader::L1TSelection() {
   fGoodL1T = false; 
+  fL1TMu0 = fL1TMu3 = false; 
   TString a; 
   int ps(0); 
   bool result(false), error(false); 
+  if (0) cout << " ----------------------------------------------------------------------" << endl;
   for (int i = 0; i < NL1T; ++i) {
     result = error = false;
     a = fpEvt->fL1TNames[i]; 
     ps = fpEvt->fL1TPrescale[i]; 
     result = fpEvt->fL1TResult[i]; 
     error  = fpEvt->fL1TError[i]; 
+    if (0 && a.Contains("Mu")) { cout << a << endl; }
     for (unsigned int j = 0; j < L1TPath.size(); ++j) {
       if (a.Contains(L1TPath[j].c_str())) {
 	if (result) {
+	  if (!a.CompareTo("L1_DoubleMuOpen")) fL1TMu0 = true; 
+	  if (!a.CompareTo("L1_DoubleMu3")) fL1TMu3 = true; 
 	  fGoodL1T = true; 
 	}
       }
@@ -128,9 +159,175 @@ void bmmReader::L1TSelection() {
   
 }
 
+
+// ----------------------------------------------------------------------
+void bmmReader::studyL1T() {
+  TTrgObj *p; 
+
+  ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(1); 
+
+  if (fL1TMu0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(10); 
+  if (fL1TMu3) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(11); 
+
+  if (fGoodTracks && fGoodTracksEta && fGoodMuonsID && fGoodMuonsEta) {
+    ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(20); 
+    if (fL1TMu0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(21); 
+    if (fL1TMu3) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(22); 
+  }
+
+  if (fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID &&  fGoodMuonsPt &&  fGoodMuonsEta) {
+    ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(30); 
+    if (fL1TMu0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(31); 
+    if (fL1TMu3) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(32); 
+  }
+
+  if (fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID &&  fGoodMuonsPt && fGoodMuonsEta &&fGoodPt ) {
+    ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(40); 
+    if (fL1TMu0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(41); 
+    if (fL1TMu3) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(42); 
+  }
+
+
+
+  TTrgObj *pM1(0), *pM2(0), *pM(0); 
+
+  for (int i = 0; i < fpEvt->nTrgObj(); ++i) {
+    p = fpEvt->getTrgObj(i); 
+    //    cout << "= " << p->fLabel << endl;
+    if (!p->fLabel.CompareTo("hltL1sL1DoubleMuOpen:HLT::")) {
+      if (0 == pM1) {
+	pM1 = p; 
+      } else {
+	pM2 = p; 
+      }
+      if (0) cout << p->fLabel << " pT = " << p->fP.Perp() << " eta = " << p->fP.Eta() << " phi = " << p->fP.Phi() <<  endl;
+    }
+
+    if (0 && !p->fLabel.CompareTo("hltSingleMu3L3Filtered3:HLT::")) {
+      cout << p->fLabel << " pT = " << p->fP.Perp() << " eta = " << p->fP.Eta() << " phi = " << p->fP.Phi() <<  endl;
+    }
+
+    if (0 && !p->fLabel.CompareTo("hltMu0L2Mu0L3Filtered0:HLT::")) {
+      cout << p->fLabel << " pT = " << p->fP.Perp() << " eta = " << p->fP.Eta() << " phi = " << p->fP.Phi() <<  endl;
+    }
+  }
+
+  if (0 == pM1 || 0 == pM2) return;
+  if (pM1->fP.Perp() < pM2->fP.Perp()) {
+    pM = pM1; 
+    pM1 = pM2; 
+    pM2 = pM; 
+  }
+
+  
+  if (0) cout << "===> " << pM1->fLabel << " pT = " << pM1->fP.Perp() << " eta = " << pM1->fP.Eta() << " phi = " << pM1->fP.Phi() <<  endl;
+  if (0) cout << "===> " << pM2->fLabel << " pT = " << pM2->fP.Perp() << " eta = " << pM2->fP.Eta() << " phi = " << pM2->fP.Phi() <<  endl;
+
+  bool mmEta0(false), mmEta1(false);
+  bool mmL1Eta0(false), mmL1Eta1(false);
+  // -- L1T muons
+  if ((TMath::Abs(pM1->fP.Eta()) < 2.4) && (TMath::Abs(pM2->fP.Eta()) < 2.4)) mmL1Eta0 = true; 
+  if ((TMath::Abs(pM1->fP.Eta()) < 2.0) && (TMath::Abs(pM2->fP.Eta()) < 2.0)) mmL1Eta1 = true; 
+  // -- candidate muons
+  if ((TMath::Abs(fMu1Eta) < 2.4) && (TMath::Abs(fMu2Eta) < 2.4)) mmEta0 = true; 
+  if ((TMath::Abs(fMu1Eta) < 2.0) && (TMath::Abs(fMu2Eta) < 2.0)) mmEta1 = true; 
+
+  ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(50); 
+  if (fL1TMu0 && mmL1Eta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(51); 
+  if (fL1TMu0 && mmL1Eta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(52); 
+  if (fL1TMu3 && mmL1Eta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(53); 
+  if (fL1TMu3 && mmL1Eta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(54); 
+
+  if (fHLTMu0 && mmEta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(55); 
+  if (fHLTMu0 && mmEta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(56); 
+  if (fHLTMu3 && mmEta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(57); 
+  if (fHLTMu3 && mmEta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(58); 
+  
+
+  if (fGoodTracks && fGoodTracksEta && fGoodMuonsID && fGoodMuonsEta) {
+    ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(60); 
+    if (fL1TMu0 && mmL1Eta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(61); 
+    if (fL1TMu0 && mmL1Eta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(62); 
+    if (fL1TMu3 && mmL1Eta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(63); 
+    if (fL1TMu3 && mmL1Eta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(64); 
+
+    if (fHLTMu0 && mmEta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(65); 
+    if (fHLTMu0 && mmEta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(66); 
+    if (fHLTMu3 && mmEta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(67); 
+    if (fHLTMu3 && mmEta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(68); 
+    
+  }
+
+  if (fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID &&  fGoodMuonsPt &&  fGoodMuonsEta) {
+    ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(70); 
+    if (fL1TMu0 && mmL1Eta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(71); 
+    if (fL1TMu0 && mmL1Eta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(72); 
+    if (fL1TMu3 && mmL1Eta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(73); 
+    if (fL1TMu3 && mmL1Eta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(74); 
+
+    if (fHLTMu0 && mmEta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(75); 
+    if (fHLTMu0 && mmEta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(76); 
+    if (fHLTMu3 && mmEta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(77); 
+    if (fHLTMu3 && mmEta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(78); 
+
+  }
+
+  if (fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID &&  fGoodMuonsPt && fGoodMuonsEta &&fGoodPt ) {
+    ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(80); 
+    if (fL1TMu0 && mmL1Eta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(81); 
+    if (fL1TMu0 && mmL1Eta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(82); 
+    if (fL1TMu3 && mmL1Eta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(83); 
+    if (fL1TMu3 && mmL1Eta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(84); 
+
+    if (fHLTMu0 && mmEta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(85); 
+    if (fHLTMu0 && mmEta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(86); 
+    if (fHLTMu3 && mmEta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(87); 
+    if (fHLTMu3 && mmEta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(88); 
+  }
+
+  if (fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID &&  fGoodMuonsPt && fGoodMuonsEta 
+      && (fCandFLS3d > 3) && (fCandCosA > 0.95) 
+      ) {
+
+    ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(90); 
+    if (fL1TMu0 && mmL1Eta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(91); 
+    if (fL1TMu0 && mmL1Eta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(92); 
+    if (fL1TMu3 && mmL1Eta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(93); 
+    if (fL1TMu3 && mmL1Eta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(94); 
+
+    if (fHLTMu0 && mmEta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(95); 
+    if (fHLTMu0 && mmEta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(96); 
+    if (fHLTMu3 && mmEta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(97); 
+    if (fHLTMu3 && mmEta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(98); 
+    
+  }
+
+
+  if (fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID &&  fGoodMuonsPt && fGoodMuonsEta 
+      && (fCandFLS3d > 3) && (fCandCosA > 0.95) 
+      && fGoodPt ) {
+
+    ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(100); 
+    if (fL1TMu0 && mmL1Eta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(101); 
+    if (fL1TMu0 && mmL1Eta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(102); 
+    if (fL1TMu3 && mmL1Eta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(103); 
+    if (fL1TMu3 && mmL1Eta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(104); 
+
+    if (fHLTMu0 && mmEta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(105); 
+    if (fHLTMu0 && mmEta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(106); 
+    if (fHLTMu3 && mmEta0) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(107); 
+    if (fHLTMu3 && mmEta1) ((TH1D*)fpHistFile->Get("l1tStudy"))->Fill(108); 
+    
+  }
+
+
+}
+
+
 // ----------------------------------------------------------------------
 void bmmReader::HLTSelection() {
   fGoodHLT = false; 
+  fHLTMu0 = fHLTMu3 = false; 
   TString a; 
   int ps(0); 
   bool result(false), wasRun(false), error(false); 
@@ -141,12 +338,17 @@ void bmmReader::HLTSelection() {
     wasRun = fpEvt->fHLTWasRun[i]; 
     result = fpEvt->fHLTResult[i]; 
     error  = fpEvt->fHLTError[i]; 
+    //    if (result) cout << a << ": wasRun = " << wasRun << " result: " << result << " error: " << error << endl;
     for (unsigned int j = 0; j < HLTPath.size(); ++j) {
       if (a.Contains(HLTPath[j].c_str())) {
 	if (wasRun && result) {
+	  if (!a.CompareTo("HLT_DoubleMu0")) fHLTMu0 = true; 
+	  if (!a.CompareTo("HLT_DoubleMu0_Quarkonium_v1")) fHLTMu0 = true; 
+	  if (!a.CompareTo("HLT_DoubleMu3")) fHLTMu3 = true; 
+	  if (0) cout << "HLT fired " << a << endl;
 	  fGoodHLT = true; 
 	}
-	//	cout << a << ": wasRun = " << wasRun << " result: " << result << " error: " << error << endl;
+	//cout << a << ": wasRun = " << wasRun << " result: " << result << " error: " << error << endl;
       }
     }
 
@@ -162,34 +364,42 @@ void bmmReader::trackSelection() {
   for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
     for (int it = fCands[iC]->fSig1; it <= fCands[iC]->fSig2; ++it) {
       ps = fpEvt->getSigTrack(it); 
-      ps->fInt1 = 1; 
-      ps->fInt2 = 1; 
       pt = fpEvt->getRecTrack(ps->fIndex); 
 
       // FIXME: replace (pt->fTrackQuality < 0) with something meaningful!
       if (TRACKQUALITY > 0 && (pt->fTrackQuality < 0)) {
 	if (fVerbose > 5) cout << "track " << ps->fIndex << " failed track quality: " << pt->fTrackQuality << endl;
-	fGoodTracks[iC] = false; 
+	fvGoodTracks[iC] = false; 
       }
 
       if (TMath::Abs(pt->fTip) > TRACKTIP) {
 	if (fVerbose > 5) cout << "track " << ps->fIndex << " failed tip: " << pt->fTip << endl;
-	fGoodTracks[iC] = false; 
+	fvGoodTracks[iC] = false; 
       }
       
       if (TMath::Abs(pt->fLip) > TRACKLIP) { 
 	if (fVerbose > 5) cout << "track " << ps->fIndex << " failed lip: " << pt->fLip << endl;          
-	fGoodTracks[iC] = false; 
+	fvGoodTracks[iC] = false; 
+      }
+
+      if (pt->fPlab.Eta() < TRACKETALO) {
+	if (fVerbose > 5) cout << "track " << ps->fIndex << " failed eta: " << pt->fPlab.Eta() << endl;          
+	fvGoodTracksEta[iC] = false; 
+      }
+
+      if (pt->fPlab.Eta() > TRACKETAHI) {
+	if (fVerbose > 5) cout << "track " << ps->fIndex << " failed eta: " << pt->fPlab.Eta() << endl;          
+	fvGoodTracksEta[iC] = false; 
       }
 
       if (pt->fPlab.Perp() < TRACKPTLO) {
 	if (fVerbose > 5) cout << "track " << ps->fIndex << " failed pt: " << pt->fPlab.Perp() << endl;          
-	fGoodTracksPT[iC] = false; 
+	fvGoodTracksPt[iC] = false; 
       }
       
       if (pt->fPlab.Perp() > TRACKPTHI) {
 	if (fVerbose > 5) cout << "track " << ps->fIndex << " failed pt: " << pt->fPlab.Perp() << endl;          
-	fGoodTracksPT[iC] = false; 
+	fvGoodTracksPt[iC] = false; 
       }
     }
   }
@@ -205,22 +415,32 @@ void bmmReader::muonSelection() {
   for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
     for (int it = fCands[iC]->fSig1; it <= fCands[iC]->fSig2; ++it) {
       ps = fpEvt->getSigTrack(it); 
+      if (TMath::Abs(ps->fMCID) != 13) continue;
       pt = fpEvt->getRecTrack(ps->fIndex); 
       if (0 == (pt->fMuID & MUID)) {
 	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUID: " << pt->fMuID << endl;          
-	fGoodMuonsID[iC] = false; 
+	fvGoodMuonsID[iC] = false; 
       }
       if (pt->fPlab.Perp() < MUPTLO) {
 	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUPTLO: " << pt->fPlab.Perp() << endl;          
-	fGoodMuonsPT[iC] = false; 
+	fvGoodMuonsPt[iC] = false; 
       }
       if (pt->fPlab.Perp() > MUPTHI) {
 	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUPTHI: " << pt->fPlab.Perp() << endl;          
-	fGoodMuonsPT[iC] = false; 
+	fvGoodMuonsPt[iC] = false; 
+      }
+      if (pt->fPlab.Eta() < MUETALO) {
+	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUETALO: " << pt->fPlab.Eta() << endl;          
+	fvGoodMuonsEta[iC] = false; 
+      }
+      if (pt->fPlab.Eta() > MUETAHI) {
+	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUETAHI: " << pt->fPlab.Eta() << endl;          
+	fvGoodMuonsEta[iC] = false; 
       }
     }
   }                                     
 }
+
 
 // ----------------------------------------------------------------------
 void bmmReader::candidateSelection(int mode) {
@@ -235,6 +455,22 @@ void bmmReader::fillCandidateVariables() {
   fCandEta   = fpCand->fPlab.Eta();
   fCandPhi   = fpCand->fPlab.Phi();
   fCandM     = fpCand->fMass;
+
+  TAnaTrack *p0; 
+  TAnaTrack *p1 = fpEvt->getSigTrack(fpCand->fSig1); 
+  TAnaTrack *p2 = fpEvt->getSigTrack(fpCand->fSig1+1); 
+  if (p1->fPlab.Perp() < p2->fPlab.Perp()) {
+    p0 = p1; 
+    p1 = p2; 
+    p2 = p0; 
+  }
+
+  fMu1Pt     = p1->fPlab.Perp(); 
+  fMu1Eta    = p1->fPlab.Eta(); 
+  fMu1Phi    = p1->fPlab.Phi(); 
+  fMu2Pt     = p2->fPlab.Perp(); 
+  fMu2Eta    = p2->fPlab.Eta(); 
+  fMu2Phi    = p2->fPlab.Phi(); 
   
   int pvidx = (fpCand->fPvIdx > -1? fpCand->fPvIdx : 0); 
   TVector3 svpv(fpCand->fVtx.fPoint - fpEvt->getPV(pvidx)->fPoint); 
@@ -244,8 +480,42 @@ void bmmReader::fillCandidateVariables() {
   double iso = isoClassic(fpCand); 
   fCandIso   = iso; 
   fCandChi2  = fpCand->fVtx.fChi2;
+  fCandDof   = fpCand->fVtx.fNdof;
+  fCandProb  = fpCand->fVtx.fProb;
   fCandFLS3d = fpCand->fVtx.fD3d/fpCand->fVtx.fD3dE; 
   fCandFLSxy = fpCand->fVtx.fDxy/fpCand->fVtx.fDxyE; 
+
+  fCandDocaTrk = fpCand->fNstTracks[0].second.first;
+
+  // ??
+  TAnaTrack *t1 = fpEvt->getRecTrack(p1->fIndex); 
+  TAnaTrack *t2 = fpEvt->getRecTrack(p2->fIndex); 
+  double bmu1   = TMath::Sin(fpCand->fPlab.Angle(t1->fPlab));
+  double bmu2   = TMath::Sin(fpCand->fPlab.Angle(t2->fPlab));
+  fMu1IP        = fpCand->fVtx.fD3d*bmu1/t1->fTip;
+  fMu2IP        = fpCand->fVtx.fD3d*bmu2/t2->fTip;
+
+  // -- fill cut variables
+  fWideMass = ((fpCand->fMass > 4.8) && (fpCand->fMass < 6.0)); 
+  
+  fGoodTracks = fvGoodTracks[fCandIdx];
+  fGoodTracksPt = fvGoodTracksPt[fCandIdx];
+  fGoodTracksEta = fvGoodTracksEta[fCandIdx];
+  fGoodMuonsID  = fvGoodMuonsID[fCandIdx];
+  fGoodMuonsPt  = fvGoodMuonsPt[fCandIdx]; 
+  fGoodMuonsEta  = fvGoodMuonsEta[fCandIdx]; 
+
+  fGoodPt = (fCandPt > CANDPTLO);
+  fGoodEta = ((fCandEta > CANDETALO) && (fCandEta < CANDETAHI)); 
+  fGoodCosA = (fCandCosA > CANDCOSALPHA); 
+  fGoodIso = (fCandIso > CANDISOLATION); 
+  fGoodChi2 = (fCandChi2 < CANDVTXCHI2);
+  fGoodFLS =  ((fCandFLS3d > CANDFLS3D) && (fCandFLSxy > CANDFLSXY)); 
+
+  fGoodDocaTrk = (fCandDocaTrk > CANDDOCATRK);
+  fGoodIP = true; 
+
+  fAnaCuts.update(); 
   
 }
 
@@ -291,6 +561,28 @@ void bmmReader::fillHist() {
   // -- only candidate histograms below
   if (0 == fpCand) return;
 
+  for (int i = 0; i < fAnaCuts.ncuts(); ++i) {
+    if (fAnaCuts.singleCutTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dSi", i)))->Fill(fCandM);
+    if (fAnaCuts.cumulativeCutTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dCu", i)))->Fill(fCandM);
+    if (fAnaCuts.allOtherCutsTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dAo", i)))->Fill(fCandM);
+    if (fAnaCuts.nMinus1CutsTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dAo", i)))->Fill(fCandM);
+  }
+
+  // -- Fill distributions
+  fpPt->fill(fCandPt, fCandM); 
+  fpEta->fill(fCandEta, fCandM); 
+  fpCosA->fill(fCandCosA, fCandM);
+  fpCosA0->fill(fCandCosA, fCandM);
+  fpIso->fill(fCandIso, fCandM);
+  fpChi2->fill(fCandChi2, fCandM);
+  fpChi2Dof->fill(fCandChi2/fCandDof, fCandM); 
+  fpProb->fill(fCandProb, fCandM);   
+  fpFLS3d->fill(fCandFLS3d, fCandM); 
+  fpFLSxy->fill(fCandFLSxy, fCandM); 
+  fpDocaTrk->fill(fCandDocaTrk, fCandM); 
+  fpIP1->fill(fMu1IP, fCandM); 
+  fpIP2->fill(fMu2IP, fCandM); 
+
   fTree->Fill(); 
 
 }
@@ -298,8 +590,40 @@ void bmmReader::fillHist() {
 // ---------------------------------------------------------------------- 
 void bmmReader::bookHist() {
   cout << "==> bmmReader: bookHist " << endl;
-  
+
   TH1D *h; 
+
+  h = new TH1D("l1tStudy", "l1t study", 120, 0., 120.); 
+  h = new TH1D("genStudy", "gen study", 100, 0., 100.); 
+
+ 
+  // -- mass histograms for efficiencies
+  for (int i = 0; i < fAnaCuts.ncuts(); ++i) {
+    h = new TH1D(Form("c%dSi", i), fAnaCuts.getName(i), 30, 4.8, 6.0); 
+    h = new TH1D(Form("c%dAo", i), fAnaCuts.getName(i), 30, 4.8, 6.0); 
+    h = new TH1D(Form("c%dCu", i), fAnaCuts.getName(i), 30, 4.8, 6.0); 
+    h = new TH1D(Form("c%dNm", i), fAnaCuts.getName(i), 30, 4.8, 6.0); 
+  }
+
+  h = new TH1D("analysisDistributions", "analysisDistributions", 100, 0., 100.); 
+  fpTracksPt = bookDistribution("trackspt", "p_{T} [GeV]", "fGoodTracksPt", 50, 0., 25.);           
+  fpMuonsPt  = bookDistribution("muonspt", "p_{T, #mu} [GeV]", "fGoodMuonsPt", 50, 0., 25.); 
+  fpMuonsEta = bookDistribution("muonseta", "#eta_{#mu}", "fGoodMuonsEta", 50, -2.5, 2.5); 
+  fpPt       = bookDistribution("pt", "p_{T, B} [GeV]", "fGoodPt", 50, 0., 25.); 
+  fpEta      = bookDistribution("eta", "#eta_{B}", "fGoodEta", 50, -2.5, 2.5); 
+  fpCosA     = bookDistribution("cosa", "cos(#alpha)", "fGoodCosA", 60, 0.97, 1.); 
+  fpCosA0    = bookDistribution("cosa0", "cos(#alpha)", "fGoodCosA", 101, -1.01, 1.01); 
+  fpIso      = bookDistribution("iso",  "I", "fGoodIso", 101, 0., 1.01); 
+  fpChi2     = bookDistribution("chi2",  "#chi^{2}", "fGoodChi2", 100, 0., 50.);              
+  fpChi2Dof  = bookDistribution("chi2dof",  "#chi^{2}/dof", "fGoodChi2", 100, 0., 50.);       
+  fpProb     = bookDistribution("pchi2dof",  "P(#chi^{2},dof)", "fGoodChi2", 100, 0., 1.);    
+  fpFLS3d    = bookDistribution("fls3d", "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 100, 0., 50.);  
+  fpFLSxy    = bookDistribution("flsxy", "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 100, 0., 50.);  
+  fpDocaTrk  = bookDistribution("docatrk", "d_{ca}(track))", "fGoodDocaTrk", 100, 0., 0.1);   
+  fpIP1      = bookDistribution("ip1", "IP_{1}/lsin(#beta)", "fGoodIP", 100, -1., 3.);        
+  fpIP2      = bookDistribution("ip2", "IP_{1}/lsin(#beta)", "fGoodIP", 100, -1., 3.);        
+
+  
   h = new TH1D("b1", "Ntrk", 200, 0., 200.);
   h = new TH1D("bnc0", "NCand before selection", 20, 0., 20.);
   h = new TH1D("bnc1", "NCand after selection", 20, 0., 20.);
@@ -321,7 +645,37 @@ void bmmReader::bookHist() {
   fTree->Branch("chi2",   &fCandChi2,          "chi2/D");
   fTree->Branch("fls3d",  &fCandFLS3d,         "fls3d/D");
   fTree->Branch("flsxy",  &fCandFLSxy,         "flsxy/D");
+  fTree->Branch("docatrk",&fCandDocaTrk,       "docatrk/D");
+  fTree->Branch("m1pt",   &fMu1Pt,             "m1pt/D");
+  fTree->Branch("m1eta",  &fMu1Eta,            "m1eta/D");
+  fTree->Branch("m1phi",  &fMu1Phi,            "m1phi/D");
+  fTree->Branch("m2pt",   &fMu2Pt,             "m2pt/D");
+  fTree->Branch("m2eta",  &fMu2Eta,            "m2eta/D");
+  fTree->Branch("m2phi",  &fMu2Phi,            "m2phi/D");
+  fTree->Branch("m1ip",   &fMu1IP,             "m1ip/D");
+  fTree->Branch("m2ip",   &fMu2IP,            "m2ip/D");
 }
+
+
+// ---------------------------------------------------------------------- 
+AnalysisDistribution* bmmReader::bookDistribution(const char *hn, const char *ht, const char *hc, int nbins, double lo, double hi) {
+  AnalysisDistribution *p = new AnalysisDistribution(hn, ht, nbins, lo, hi); 
+  p->setSigWindow(SIGBOXMIN, SIGBOXMAX); 
+  p->setBg1Window(BGLBOXMIN, BGLBOXMAX); 
+  p->setBg2Window(BGHBOXMIN, BGHBOXMAX); 
+  p->setAnalysisCuts(&fAnaCuts, hc); 
+
+  TH1 *h = (TH1D*)gFile->Get("analysisDistributions"); 
+  for (int i = 1; i < h->GetNbinsX(); ++i) {
+    if (!strcmp(h->GetXaxis()->GetBinLabel(i), "")) {
+      // cout << "adding at bin " << i << " the label " << hn << endl;
+      h->GetXaxis()->SetBinLabel(i, hn);
+      break;
+    }
+  }
+  return p; 
+}
+
 
 // ----------------------------------------------------------------------
 void bmmReader::readCuts(TString filename, int dump) {
@@ -478,6 +832,13 @@ void bmmReader::readCuts(TString filename, int dump) {
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: I_{trk}", CutName));
     }
 
+    if (!strcmp(CutName, "CANDDOCATRK")) {
+      CANDISOLATION = CutValue; ok = 1;
+      if (dump) cout << "CANDDOCATRK:           " << CANDDOCATRK << endl;
+      ibin = 19;
+      hcuts->SetBinContent(ibin, CANDDOCATRK);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: doca_{trk}", CutName));
+    }
 
 
 
@@ -628,6 +989,14 @@ void bmmReader::readCuts(TString filename, int dump) {
       ibin = 204;
       hcuts->SetBinContent(ibin, MUETAHI);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta^{max}(#mu)", CutName));
+    }
+
+    if (!strcmp(CutName, "MUIP")) {
+      MUIP = CutValue; ok = 1;
+      if (dump) cout << "MUIP:           " << MUIP << endl;
+      ibin = 205;
+      hcuts->SetBinContent(ibin, MUIP);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: IP(#mu)", CutName));
     }
 
 

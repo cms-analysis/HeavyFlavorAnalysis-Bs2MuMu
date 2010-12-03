@@ -217,8 +217,8 @@ int main(int argc, char *argv[]) {
   if (a) {
     if (verbose > -1) a->setVerbosity(verbose); 
     a->openHistFile(histfile); 
-    a->bookHist(); 
     a->readCuts(cutFile, 1);
+    a->bookHist(); 
     if (isMC) {
       blind = 0; 
       a->setMC(1);

@@ -38,8 +38,10 @@ public:
   void         initVariables();
   void         MCKinematics();
   void         candidateSelection(int mode = 0); 
+  void         fillCandidateVariables(); 
   int          tmCand(TAnaCand *pC);
 
+  double       fKaonPt, fKaonEta, fKaonPhi;
 
 };
 

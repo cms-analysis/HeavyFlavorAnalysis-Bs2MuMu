@@ -42,31 +42,39 @@ public:
   const char* getName(int i); 
   const char* getDescription(int i); 
 
-  void addCut(const char *name, int &location); 
-  void addCut(const char *name, const char *description, int &location); 
+  //   void addCut(const char *name, int &location); 
+  //   void addCut(const char *name, const char *description, int &location); 
 
-  int singleCutTrue(int i); 
-  int singleCutTrue(const char *name); 
+  void addCut(const char *name, bool &location); 
+  void addCut(const char *name, const char *description, bool &location); 
 
-  int cumulativeCutTrue(int i); 
-  int cumulativeCutTrue(const char *name); 
+  bool singleCutTrue(int i); 
+  bool singleCutTrue(const char *name); 
+
+  bool cumulativeCutTrue(int i); 
+  bool cumulativeCutTrue(const char *name); 
+
+  bool nMinus1CutsTrue(int i); 
+  bool nMinus1CutsTrue(const char *name); 
   
-  int allOtherCutsTrue(int i); 
-  int allOtherCutsTrue(const char *name); 
+  bool allOtherCutsTrue(int i); 
+  bool allOtherCutsTrue(const char *name); 
 
   void update(); 
-  
+  int  ncuts() {return fNcuts;}
+
 private: 
   
   int fNcuts; 
   int fUpdated; 
   TString fCutName[MAXCUTS]; 
   TString fDescription[MAXCUTS]; 
-  int     fCutValue[MAXCUTS]; 
-  int     fAocValue[MAXCUTS]; 
-  int     fCumValue[MAXCUTS]; 
+  bool    fCutValue[MAXCUTS]; 
+  bool    fAocValue[MAXCUTS]; 
+  bool    fCumValue[MAXCUTS]; 
+  bool    fNm1Value[MAXCUTS]; 
   
-  int     *fCutLocation[MAXCUTS]; 
+  bool    *fCutLocation[MAXCUTS]; 
 
   ClassDef(AnalysisCuts,1) //Testing AnalysisCuts
 

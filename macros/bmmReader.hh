@@ -24,6 +24,8 @@
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
 
 #include "treeReader01.hh"
+#include "AnalysisCuts.hh"
+#include "AnalysisDistribution.hh"
 
 #define DR      57.29577951
 
@@ -45,12 +47,15 @@ public:
   virtual void   readCuts(TString filename, int dump = 1);
   virtual void   initVariables();
 
-  virtual void   candidateSelection(int mode = 0);  // 0 = closest in r-phi
-  virtual void   fillCandidateVariables(); 
-  virtual void   insertCand(TAnaCand*);
-  virtual int    tmCand(TAnaCand*);
-  virtual double isoClassic(TAnaCand*); 
-  virtual int    checkCut(const char *, TH1D *); 
+  virtual void   studyL1T(); 
+
+  virtual AnalysisDistribution* bookDistribution(const char *hn, const char *ht, const char *hc, int nbins, double lo, double hi);
+  virtual void                  candidateSelection(int mode = 0);  // 0 = closest in r-phi
+  virtual void                  fillCandidateVariables(); 
+  virtual void                  insertCand(TAnaCand*);
+  virtual int                   tmCand(TAnaCand*);
+  virtual double                isoClassic(TAnaCand*); 
+  virtual int                   checkCut(const char *, TH1D *); 
 
 
   // -- Cut values
@@ -63,6 +68,7 @@ public:
     , CANDFLSXY
     , CANDVTXCHI2
     , CANDISOLATION
+    , CANDDOCATRK
     , TRACKPTLO
     , TRACKPTHI
     , TRACKETALO
@@ -73,32 +79,58 @@ public:
     , MUPTHI
     , MUETALO
     , MUETAHI   
+    , MUIP
     ;
   int TYPE, SELMODE, MUID, TRACKQUALITY;
   std::vector<std::string> HLTPath, L1TPath; 
 
-  // -- Variables
-  bool                    fGoodMCKinematics;
-  bool                    fGoodL1T, fGoodHLT;
+  bool fL1TMu0, fL1TMu3;
+  bool fHLTMu0, fHLTMu3;
+  
 
   // -- vectors with the candidates of the specified type
   std::vector<TAnaCand *> fCands;  
   TAnaCand               *fpCand;       // the 'best' candidate
+  int                     fCandIdx; 
 
-  std::vector<bool>       fGoodMuonsID, fGoodMuonsPT;
-  std::vector<bool>       fGoodTracks, fGoodTracksPT;
-  std::vector<bool>       fGoodCandPT;
+  std::vector<bool>       fvGoodTracks, fvGoodTracksPt, fvGoodTracksEta;
+  std::vector<bool>       fvGoodMuonsID, fvGoodMuonsPt, fvGoodMuonsEta;
+  std::vector<bool>       fvGoodCandPt;
 
   bool                    fGoodEvent;
 
   // -- variables for reduced tree, they are from fpCand
   int                     fCandTM; 
+  double                  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
   double                  fCandPt, fCandEta, fCandPhi, fCandM; 
-  double                  fCandCosA, fCandIso, fCandChi2, fCandFLS3d, fCandFLSxy; 
+  double                  fCandCosA, fCandIso, fCandChi2, fCandDof, fCandProb, fCandFLS3d, fCandFLSxy; 
+  double                  fCandDocaTrk, fMu1IP, fMu2IP; 
 
   double       SIGBOXMIN, SIGBOXMAX; 
   double       BGLBOXMIN, BGLBOXMAX; 
   double       BGHBOXMIN, BGHBOXMAX; 
+
+  // -- Cut Variables
+  bool                    fWideMass; 
+  bool                    fGoodMCKinematics;
+  bool                    fGoodL1T, fGoodHLT;
+  bool                    fGoodTracks, fGoodTracksPt, fGoodTracksEta, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta; 
+  bool                    fGoodPt, fGoodEta, fGoodCosA, fGoodIso, fGoodChi2, fGoodFLS; 
+  bool                    fGoodDocaTrk, fGoodIP; 
+
+  AnalysisCuts fAnaCuts; 
+
+  // -- Analysis distributions
+  AnalysisDistribution   *fpTracksPt, 
+    *fpMuonsPt, *fpMuonsEta, 
+    *fpPt, *fpEta, 
+    *fpCosA, *fpCosA0, 
+    *fpIso, 
+    *fpDoca, *fpIP,
+    *fpChi2, *fpChi2Dof, *fpProb, 
+    *fpFLS3d, *fpFLSxy, 
+    *fpDocaTrk, *fpIP1, *fpIP2;   
+
 };
 
 #endif

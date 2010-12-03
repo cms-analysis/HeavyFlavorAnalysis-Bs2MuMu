@@ -42,6 +42,8 @@ void bmmSignalReader::initVariables() {
 
 // ----------------------------------------------------------------------
 void bmmSignalReader::MCKinematics() {
+  ((TH1D*)fpHistFile->Get("genStudy"))->Fill(1); 
+  fGoodMCKinematics = true; 
   TGenCand *pC, *pM1, *pM2, *pB; 
   int nphotons(0); 
   bool goodMatch(false); 
@@ -80,8 +82,71 @@ void bmmSignalReader::MCKinematics() {
 
   if (!goodMatch) {
     fGoodMCKinematics = false; 
-    if (fVerbose > 2) cout << "No matched signal decay found" << endl;
+    if (fVerbose > -1 ) cout << "--------------------> No matched signal decay found" << endl;
     return;
+  }
+
+  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)) {
+    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(10); 
+  }
+
+  if ((pM1->fP.Perp() > 3.) && (pM2->fP.Perp() > 3.)) {
+    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(11); 
+  }
+
+  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
+      && (TMath::Abs(pM1->fP.Eta()) < 2.4) && (TMath::Abs(pM2->fP.Eta()) < 2.4)) {
+    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(12); 
+  }
+
+  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
+      && (TMath::Abs(pM1->fP.Eta()) < 2.3) && (TMath::Abs(pM2->fP.Eta()) < 2.3)) {
+    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(13); 
+  }
+
+  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
+      && (TMath::Abs(pM1->fP.Eta()) < 2.2) && (TMath::Abs(pM2->fP.Eta()) < 2.2)) {
+    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(14); 
+  }
+
+  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
+      && (TMath::Abs(pM1->fP.Eta()) < 2.1) && (TMath::Abs(pM2->fP.Eta()) < 2.1)) {
+    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(15); 
+  }
+
+  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
+      && (TMath::Abs(pM1->fP.Eta()) < 2.0) && (TMath::Abs(pM2->fP.Eta()) < 2.0)) {
+    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(16); 
+  }
+
+  if (fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID &&  fGoodMuonsEta 
+      && (fCandFLS3d > 3) && (fCandCosA > 0.95) 
+      ) {
+    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(20); 
+    if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
+	&& (TMath::Abs(pM1->fP.Eta()) < 2.0) && (TMath::Abs(pM2->fP.Eta()) < 2.0)) {
+      ((TH1D*)fpHistFile->Get("genStudy"))->Fill(21); 
+    }
+  }
+
+  if (fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID &&  fGoodMuonsPt && fGoodMuonsEta 
+      && (fCandFLS3d > 3) && (fCandCosA > 0.95) 
+       ) {
+    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(22); 
+    if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
+	&& (TMath::Abs(pM1->fP.Eta()) < 2.0) && (TMath::Abs(pM2->fP.Eta()) < 2.0)) {
+      ((TH1D*)fpHistFile->Get("genStudy"))->Fill(23); 
+    }
+  }
+
+  if (fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID &&  fGoodMuonsPt && fGoodMuonsEta 
+      && (fCandFLS3d > 3) && (fCandCosA > 0.95) 
+      && fGoodPt ) {
+    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(24); 
+    if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
+	&& (TMath::Abs(pM1->fP.Eta()) < 2.0) && (TMath::Abs(pM2->fP.Eta()) < 2.0)) {
+      ((TH1D*)fpHistFile->Get("genStudy"))->Fill(25); 
+    }
   }
 
   // -- hard coded ?! FIXME
@@ -98,6 +163,7 @@ void bmmSignalReader::candidateSelection(int mode) {
   int nc0(fCands.size()), nc1(0);
 
   fpCand = 0; 
+  fCandIdx = -1; 
   ((TH1D*)fpHistFile->Get("bnc0"))->Fill(nc0); 
 
   if (0 == nc0) {
@@ -120,11 +186,13 @@ void bmmSignalReader::candidateSelection(int mode) {
 
       if (pl1->fQ*pl2->fQ > 0) continue;
 
-      if (false == fGoodTracks[iC])   continue; 
-      if (false == fGoodTracksPT[iC]) continue; 
+      if (false == fvGoodTracks[iC])   continue; 
+      if (false == fvGoodTracksPt[iC]) continue; 
+      if (false == fvGoodTracksEta[iC]) continue; 
 
-      if (false == fGoodMuonsID[iC])  continue; 
-      if (false == fGoodMuonsPT[iC])  continue; 
+      if (false == fvGoodMuonsID[iC])  continue; 
+      if (false == fvGoodMuonsPt[iC])  continue; 
+      if (false == fvGoodMuonsEta[iC])  continue; 
       ++nc1; 
       clist.push_back(iC);
     }
@@ -133,6 +201,7 @@ void bmmSignalReader::candidateSelection(int mode) {
   // -- Select best candidate
   if (1 == clist.size()) {
     fpCand = fCands[clist[0]];
+    fCandIdx = clist[0]; 
     nc1 = 1; 
     if (fVerbose > 0) cout << "bmmSignalReader> found exactly one candidate " << TYPE 
 			   << " passing the constituents selection" 
@@ -150,6 +219,7 @@ void bmmSignalReader::candidateSelection(int mode) {
 	dr = pl1->fPlab.DeltaR(pl2->fPlab); 
 	if (dr < drMin) {
 	  fpCand = pCand; 
+	  fCandIdx = clist[i];
 	  drMin = dr; 
 	  if (fVerbose > 0) cout << "bmmSignalReader> found another better candidate " << TYPE 
 				 << " with sigTracks " << fpCand->fSig1 << " .. " << fpCand->fSig2
@@ -160,6 +230,7 @@ void bmmSignalReader::candidateSelection(int mode) {
     }
   } else {
     fpCand = fCands[0];
+    fCandIdx = 0; 
     nc1 = 1; 
     if (fVerbose > 0) cout << "bmmSignalReader> found no candidate " << TYPE 
 			   << " passing the constituents selection" 
@@ -217,12 +288,20 @@ int bmmSignalReader::tmCand(TAnaCand *pC) {
 // ----------------------------------------------------------------------
 void bmmSignalReader::fillHist() {
   bmmReader::fillHist(); 
+
+  fpTracksPt->fill(fMu1Pt, fCandM);
+  fpTracksPt->fill(fMu2Pt, fCandM);
+  fpMuonsPt->fill(fMu1Pt, fCandM);
+  fpMuonsPt->fill(fMu2Pt, fCandM);
+  fpMuonsEta->fill(fMu1Eta, fCandM);
+  fpMuonsEta->fill(fMu2Eta, fCandM);
+
 }
 
 // ---------------------------------------------------------------------- 
 void bmmSignalReader::bookHist() {
   bmmReader::bookHist();
-  cout << "==> bmmReader: bookHist " << endl;
+  cout << "==> bmmSignalReader: bookHist " << endl;
   TH1D *h1; 
   h1 = new TH1D("h100", "", 100, 0., 100.);
   fTree->Branch("m2",      &fCandM,  "m2/D");

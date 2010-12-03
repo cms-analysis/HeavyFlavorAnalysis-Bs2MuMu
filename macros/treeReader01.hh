@@ -44,7 +44,7 @@ public:
   virtual void fillHist();
   virtual bool goodRun();
   virtual void setVerbosity(int f) {fVerbose = f;}
-  virtual void setMC(int f) {std::cout << "setMC(1)" << std::endl; fIsMC = f;}
+  virtual void setMC(int f) {std::cout << Form("setMC(%d)", f) << std::endl; fIsMC = f;}
   virtual void runBlind() {std::cout << "runBlind()" << std::endl; BLIND = 1;}
 
 protected:

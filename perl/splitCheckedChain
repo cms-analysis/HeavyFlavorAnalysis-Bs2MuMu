@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Usage: splitChain [-c] [-n 100000] chain1 chain2 chain3 ...
+# Usage: splitCheckedChain [-c] [-n 100000] chain1 chain2 chain3 ...
 # ------
 #            -n specifies how many events should go into one split chain
 #            -c counts how many events were put into a chain (for verification)
