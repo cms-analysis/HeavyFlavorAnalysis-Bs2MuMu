@@ -18,6 +18,11 @@ enum trigger_bits
 	kHLT_DoubleMu0_Quarkonium_v1_Bit = 1 << 2
 };
 
+enum truth_bits
+{
+	kTruthSameB_Bit = 1 << 0
+};
+
 class massReader : public treeReader01 {
 	
 	public:
@@ -40,6 +45,7 @@ class massReader : public treeReader01 {
 		
 		// loading variables
 		virtual int checkTruth(TAnaCand *cand); // check if all are originating from the same particle
+		virtual int loadTruthFlags(TAnaCand *cand); // set truth flags
 		virtual int countMuons(TAnaCand *cand); // count the number of identified muons
 		float calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt);
 		int loadTrigger(int *errTriggerOut = NULL, int *triggersFoundOut = NULL);
@@ -57,6 +63,7 @@ class massReader : public treeReader01 {
 		TVector3 *fCandVertexPtr;
 		float fMass;
 		int fTruth;		// is this background or a true candidate?
+		int fTruthFlags; // several partial truth flags
 		float fPt; // pt of the top particle
 		float fNbrMuons;  // number of muons in the muon list.
 		float fD3;

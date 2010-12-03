@@ -84,6 +84,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	// do this at the end so the checkTruth algorithm can use
 	// all variables of this candidate.
 	fTruth = checkTruth(pCand);
+	fTruthFlags = loadTruthFlags(pCand);
 	fTriggers = loadTrigger(&fTriggersError,&fTriggersFound);
 	
 	return 1;
@@ -99,6 +100,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("pt",&fPt,"pt/F");
 	reduced_tree->Branch("mass",&fMass,"mass/F");
 	reduced_tree->Branch("truth",&fTruth,"truth/I");
+	reduced_tree->Branch("truth_flags",&fTruthFlags,"truth_flags/I");
 	reduced_tree->Branch("ident_muons",&fNbrMuons,"ident_muons/F");
 	reduced_tree->Branch("d3",&fD3,"d3/F");
 	reduced_tree->Branch("d3e",&fD3E,"d3e/F");
@@ -174,6 +176,54 @@ int massReader::checkTruth(TAnaCand *cand)
 bail:
 	return result;
 } // checkTruth()
+
+int massReader::loadTruthFlags(TAnaCand *cand)
+{
+	TAnaTrack *pTrack;
+	TGenCand *truthParticle = NULL;
+	TGenCand *pGen;
+	int nGens;
+	int result = 0;
+	set<int> bhadrons;
+	
+	map<int,int> tracks_indices; // map(recTrackIx,sigTrackIndex)
+	map<int,int>::iterator it;
+	
+	// build the number of b hadrons
+	bhadrons.insert(511); // B0
+	bhadrons.insert(521); // B+
+	bhadrons.insert(531); // Bs
+	bhadrons.insert(5122); // Lambda_b
+	
+	// get the list of tracks of the candidate
+	findAllTrackIndices(cand,&tracks_indices);
+	
+	// iterate through all tracks and see if they have the same origin
+	nGens = fpEvt->nGenCands();
+	for (it = tracks_indices.begin(); it!=tracks_indices.end(); ++it) {
+		pTrack = fpEvt->getRecTrack(it->first);
+		if (pTrack->fGenIndex < 0 || pTrack->fGenIndex >= nGens) // no generator info available
+			goto bail;
+		
+		// get the originating b-hadron (if available)
+		pGen = fpEvt->getGenCand(pTrack->fGenIndex);
+		while (bhadrons.count(abs(pGen->fID)) == 0) {
+			if (0 <= pGen->fMom1 && pGen->fMom1 < nGens)
+				pGen = fpEvt->getGenCand(pGen->fMom1);
+			else
+				goto bail; // not found
+		}
+		
+		// found an originating b-hadron
+		if (!truthParticle) truthParticle = pGen;
+		else if (truthParticle->fNumber != pGen->fNumber) goto bail;
+	}
+	// still here?
+	result |= kTruthSameB_Bit;
+	
+bail:
+	return result;
+} // loadTruthFlags()
 
 // count the number of identified muons in the candidate 'cand'
 int massReader::countMuons(TAnaCand *cand)
