@@ -5,6 +5,9 @@
 #include <set>
 #include <map>
 
+// we store the first four tracks  
+#define NBR_TRACKS_STORE 4
+
 const static double MMUON = 0.1057;
 const static double MPION = 0.1396;
 const static double MKAON = 0.4937;
@@ -94,6 +97,11 @@ class massReader : public treeReader01 {
 		float fD3_Para; // Parallel part of distance d3 w.r.t. momentum of candidate
 		float fDxy_Perp; // Perpendicular part of distance dxy w.r.t. momentum of candidate
 		float fDxy_Para; // Parallel part of distance dxy w.r.t. momentum of candidate
+		int fTracksIx[NBR_TRACKS_STORE];
+		float fTracksIP[NBR_TRACKS_STORE];
+		float fTracksIPE[NBR_TRACKS_STORE];
+		float fTracksPT[NBR_TRACKS_STORE];
+		float fTracksPTRel[NBR_TRACKS_STORE];
 	
 	// Cut variables
 	protected:
