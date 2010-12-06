@@ -101,6 +101,10 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	fCtau = 0.0f;
 	fChi2Jpsi = -1.0f;
 	fMassJpsiKp = -1.0f;
+	fMuID1 = 0;
+	fMuID2 = 0;
+	fEtaMu1 = 0.0f;
+	fEtaMu2 = 0.0f;
 	
 	if (pCand->fType % 1000 != 521) return 0;
 	
@@ -122,12 +126,16 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 				fTrackQual_mu1 = recTrack->fTrackQuality;
 				fQ_mu1 = recTrack->fQ;
 				mu1.SetXYZM(recTrack->fPlab.X(),recTrack->fPlab.Y(),recTrack->fPlab.Z(),MUMASS);
+				fMuID1 = recTrack->fMuID;
+				fEtaMu1 = sigTrack->fPlab.Eta();
 				
 			} else {
 				plabMu2 = sigTrack->fPlab;
 				fTrackQual_mu2 = recTrack->fTrackQuality;
 				fQ_mu2 = recTrack->fQ;
 				mu2.SetXYZM(recTrack->fPlab.X(),recTrack->fPlab.Y(),recTrack->fPlab.Z(),MUMASS);
+				fMuID2 = recTrack->fMuID;
+				fEtaMu2 = sigTrack->fPlab.Eta();
 			}
 			first_mu = 0;
 		} else if (type == 321) {
@@ -142,6 +150,8 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 		swap(plabMu1,plabMu2);
 		swap(fTrackQual_mu1,fTrackQual_mu2);
 		swap(fQ_mu1,fQ_mu2);
+		swap(fMuID1,fMuID2);
+		swap(fEtaMu1,fEtaMu2);
 	}
 	
 	// set the jpsi mass
@@ -210,6 +220,10 @@ void kpReader::bookHist()
 	reduced_tree->Branch("pt_mu1",&fPtMu1,"pt_mu1/F");
 	reduced_tree->Branch("pt_mu2",&fPtMu2,"pt_mu2/F");
 	reduced_tree->Branch("pt_kp",&fPtKp,"pt_kp/F");
+	reduced_tree->Branch("id_mu1",&fMuID1,"id_mu1/I");
+	reduced_tree->Branch("id_mu2",&fMuID2,"id_mu2/I");
+	reduced_tree->Branch("eta_mu1",&fEtaMu1,"eta_mu1/F");
+	reduced_tree->Branch("eta_mu2",&fEtaMu2,"eta_mu2/F");
 	reduced_tree->Branch("track_qual_mu1",&fTrackQual_mu1,"track_qual_mu1/I");
 	reduced_tree->Branch("track_qual_mu2",&fTrackQual_mu2,"track_qual_mu2/I");
 	reduced_tree->Branch("track_qual_kp",&fTrackQual_kp,"track_qual_kp/I");
