@@ -23,6 +23,7 @@ bmmSignalReader::~bmmSignalReader() {
 
 // ----------------------------------------------------------------------
 void bmmSignalReader::startAnalysis() {
+  bmmReader::startAnalysis();
   cout << "==> bmmSignalReader: Starting analysis ... " << (BLIND? "blinded": "NOT blinded") << endl;
 }
 
@@ -44,7 +45,7 @@ void bmmSignalReader::initVariables() {
 void bmmSignalReader::MCKinematics() {
   ((TH1D*)fpHistFile->Get("genStudy"))->Fill(1); 
   fGoodMCKinematics = true; 
-  TGenCand *pC, *pM1, *pM2, *pB; 
+  TGenCand *pC(0), *pM1(0), *pM2(0), *pB(0); 
   int nphotons(0); 
   bool goodMatch(false); 
   for (int i = 0; i < fpEvt->nGenCands(); ++i) {
@@ -68,6 +69,7 @@ void bmmSignalReader::MCKinematics() {
       }
     }
   }
+
   
   if (fVerbose > 4) {
     cout << "----------------------------------------------------------------------" << endl;
@@ -158,6 +160,7 @@ void bmmSignalReader::MCKinematics() {
 }
 
 
+
 // ----------------------------------------------------------------------
 void bmmSignalReader::candidateSelection(int mode) {
   int nc0(fCands.size()), nc1(0);
@@ -165,14 +168,15 @@ void bmmSignalReader::candidateSelection(int mode) {
   fpCand = 0; 
   fCandIdx = -1; 
   ((TH1D*)fpHistFile->Get("bnc0"))->Fill(nc0); 
-
+  
   if (0 == nc0) {
     nc1 = 0; 
+    fCandIdx = -1; 
     ((TH1D*)fpHistFile->Get("bnc1"))->Fill(nc1); 
     if (fVerbose > 0) cout << "bmmSignalReader> no candidate " << TYPE << " found" << endl;
-    return; 
+    return;
   }
-  
+
   TAnaCand *pCand; 
 
   // -- Create list with candidates that fullfil basic cuts on their final state particles
@@ -193,54 +197,79 @@ void bmmSignalReader::candidateSelection(int mode) {
       if (false == fvGoodMuonsID[iC])  continue; 
       if (false == fvGoodMuonsPt[iC])  continue; 
       if (false == fvGoodMuonsEta[iC])  continue; 
+      fvGoodCand[iC] = true; 
       ++nc1; 
       clist.push_back(iC);
     }
   } 
 
-  // -- Select best candidate
+  // -- 'best' candidate selection
   if (1 == clist.size()) {
+    // -- ONE candidate fulfilled the basic requirements. Take it.
     fpCand = fCands[clist[0]];
     fCandIdx = clist[0]; 
     nc1 = 1; 
     if (fVerbose > 0) cout << "bmmSignalReader> found exactly one candidate " << TYPE 
-			   << " passing the constituents selection" 
-			   << " with sigTracks " << fpCand->fSig1 << " .. " << fpCand->fSig2
+			   << " passing the constituents selection at "  << clist[0]
 			   << endl;
   } else if (clist.size() > 1) {
+    // -- SEVERAL candidate fulfilled the basic requirements. Choose one. 
     double drMin(99.), dr(0.); 
     for (unsigned int i = 0; i < clist.size(); ++i) {
       pCand = fCands[clist[i]]; 
+      if (BLIND && pCand->fMass > SIGBOXMIN && pCand->fMass < SIGBOXMAX) {
+	fvGoodCand[clist[i]] = false; 
+	continue; 
+      }
       TAnaTrack *pl1 = fpEvt->getSigTrack(pCand->fSig1); 
       TAnaTrack *pl2 = fpEvt->getSigTrack(pCand->fSig1+1); 
       
+      // -- if all candidates are taken, then fpCand at this point is pointing to a random cand
+      if (mode < 0) {
+	if (fVerbose > 0) cout << "bmmSignalReader> changing to candidate at " << clist[i] << endl;
+	fpCand = pCand; 
+	fCandIdx = clist[i]; 
+      }
       // -- closest in rphi
       if (0 == mode) {
 	dr = pl1->fPlab.DeltaR(pl2->fPlab); 
 	if (dr < drMin) {
 	  fpCand = pCand; 
-	  fCandIdx = clist[i];
+	  fCandIdx = clist[i]; 
+	  fvGoodCand[clist[i]] = true; 
 	  drMin = dr; 
 	  if (fVerbose > 0) cout << "bmmSignalReader> found another better candidate " << TYPE 
-				 << " with sigTracks " << fpCand->fSig1 << " .. " << fpCand->fSig2
-				 << " with dr = " << dr 
+				 << " with dr = " << dr << " at " << clist[i]
 				 << endl;
 	}
       }
+      // -- higher pT
+      if (1 == mode) {
+	dr = pCand->fPlab.Perp(); 
+	if (dr > drMin) {
+	  fpCand = pCand; 
+	  fCandIdx = clist[i]; 
+	  fvGoodCand[fCandIdx] = true; 
+	  drMin = dr; 
+	  if (fVerbose > 0) cout << "bmmSignalReader> found another better candidate " << TYPE << " with pT = " << dr << endl;
+	}
+      } 
     }
   } else {
+    // -- NO candidate fulfilled the basic requirements. Then take the first one. 
     fpCand = fCands[0];
     fCandIdx = 0; 
+    fvGoodCand[0] = true; 
     nc1 = 1; 
     if (fVerbose > 0) cout << "bmmSignalReader> found no candidate " << TYPE 
-			   << " passing the constituents selection" 
+			   << " passing the constituents selection, filling 0"
+			   << " with signal tracks " << fpCand->fSig1 << ".." << fpCand->fSig2
 			   << endl;
   }
 
   ((TH1D*)fpHistFile->Get("bnc1"))->Fill(nc1); 
 
-  if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX) fpCand = 0; 
-  if (fpCand) fillCandidateVariables();
+  //  if (fpCand) fillCandidateVariables();
 }
 
 
@@ -288,13 +317,6 @@ int bmmSignalReader::tmCand(TAnaCand *pC) {
 // ----------------------------------------------------------------------
 void bmmSignalReader::fillHist() {
   bmmReader::fillHist(); 
-
-  fpTracksPt->fill(fMu1Pt, fCandM);
-  fpTracksPt->fill(fMu2Pt, fCandM);
-  fpMuonsPt->fill(fMu1Pt, fCandM);
-  fpMuonsPt->fill(fMu2Pt, fCandM);
-  fpMuonsEta->fill(fMu1Eta, fCandM);
-  fpMuonsEta->fill(fMu2Eta, fCandM);
 
 }
 

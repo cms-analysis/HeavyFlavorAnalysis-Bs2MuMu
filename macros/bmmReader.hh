@@ -52,6 +52,7 @@ public:
   virtual AnalysisDistribution* bookDistribution(const char *hn, const char *ht, const char *hc, int nbins, double lo, double hi);
   virtual void                  candidateSelection(int mode = 0);  // 0 = closest in r-phi
   virtual void                  fillCandidateVariables(); 
+  virtual void                  fillCandidateHistograms();
   virtual void                  insertCand(TAnaCand*);
   virtual int                   tmCand(TAnaCand*);
   virtual double                isoClassic(TAnaCand*); 
@@ -95,13 +96,14 @@ public:
 
   std::vector<bool>       fvGoodTracks, fvGoodTracksPt, fvGoodTracksEta;
   std::vector<bool>       fvGoodMuonsID, fvGoodMuonsPt, fvGoodMuonsEta;
-  std::vector<bool>       fvGoodCandPt;
+  std::vector<bool>       fvGoodCand, fvGoodCandPt;
 
   bool                    fGoodEvent;
 
   // -- variables for reduced tree, they are from fpCand
   int                     fCandTM; 
   double                  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
+  double                  fPvX, fPvY, fPvZ; 
   double                  fCandPt, fCandEta, fCandPhi, fCandM; 
   double                  fCandCosA, fCandIso, fCandChi2, fCandDof, fCandProb, fCandFLS3d, fCandFLSxy; 
   double                  fCandDocaTrk, fMu1IP, fMu2IP; 
@@ -121,8 +123,8 @@ public:
   AnalysisCuts fAnaCuts; 
 
   // -- Analysis distributions
-  AnalysisDistribution   *fpTracksPt, 
-    *fpMuonsPt, *fpMuonsEta, 
+  AnalysisDistribution   *fpAllEvents, *fpHLT, *fpPvZ, *fpTracksPt, 
+    *fpMuonsID, *fpMuonsPt, *fpMuonsEta, 
     *fpPt, *fpEta, 
     *fpCosA, *fpCosA0, 
     *fpIso, 

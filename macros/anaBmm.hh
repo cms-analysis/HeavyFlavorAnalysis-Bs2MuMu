@@ -39,12 +39,14 @@ public:
   // -- main methods
   // --------------
   void makeAll(int channels = 3);
+  void dumpCutNames();
   void effTable(std::string mode);
 
 
   // -- Utilities and helper methods
   // -------------------------------
   std::string formatTex(double n, std::string name, std::string tag);
+  void replaceAll(std::string &s, std::string a, std::string b);
   int  wait();
   void makeCanvas(int i = 3);
 

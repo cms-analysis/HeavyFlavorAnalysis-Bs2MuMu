@@ -36,6 +36,8 @@ public:
   string fCutName; 
   int fCutIdx, fHLTIdx; 
 
+  double fMassLo, fMassHi;
+
   double fSigLo, fSigHi; 
   double fBg1Lo, fBg1Hi; 
   double fBg2Lo, fBg2Hi; 
@@ -45,6 +47,9 @@ public:
   TH1D *hSi[3], *hAo[3], *hCu[3], *hNm[3], *hHLT[3]; 
 
   TH1D *hMassSi, *hMassAo, *hMassCu, *hMassNm, *hMassHLT; 
+
+  TF1 *fF0, *fF1; 
+  TF1 *fP1, *fPG1, *fEG1, *fEG2, *fEPG; 
 
   ClassDef(AnalysisDistribution,1) //Testing AnalysisDistribution
 }; 

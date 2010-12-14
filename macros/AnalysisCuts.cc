@@ -127,7 +127,9 @@ void AnalysisCuts::update() {
     }
   }    
 
+  if (0 == fUpdated)  cout << "Updating AnalysisCuts for the first time" << endl;
   fUpdated = 1; 
+
 }
 
 // ----------------------------------------------------------------------

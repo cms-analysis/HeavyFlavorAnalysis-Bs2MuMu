@@ -27,13 +27,13 @@ bmmReader::bmmReader(TChain *tree, TString evtClassName): treeReader01(tree, evt
   fAnaCuts.addCut("fGoodTracksEta", "#eta_{trk} ", fGoodTracksEta); 
   fAnaCuts.addCut("fGoodMuonsID", "lepton ID", fGoodMuonsID); 
   fAnaCuts.addCut("fGoodMuonsPt", "p_{T,#mu} [GeV]", fGoodMuonsPt); 
-  fAnaCuts.addCut("fGoodMuonsEta", "#eta_{#mu}", fGoodMuonsPt); 
+  fAnaCuts.addCut("fGoodMuonsEta", "#eta_{#mu}", fGoodMuonsEta); 
   fAnaCuts.addCut("fGoodPt", "p_{T,B}", fGoodPt); 
   fAnaCuts.addCut("fGoodEta", "#eta_{B}", fGoodEta); 
   fAnaCuts.addCut("fGoodCosA", "cos(#alpha)", fGoodCosA); 
-  fAnaCuts.addCut("fGoodIso", "I_{trk}", fGoodIso); 
-  fAnaCuts.addCut("fGoodChi2", "#chi^{2}", fGoodChi2); 
   fAnaCuts.addCut("fGoodFLS", "l/#sigma(l)", fGoodFLS); 
+  fAnaCuts.addCut("fGoodChi2", "#chi^{2}", fGoodChi2); 
+  fAnaCuts.addCut("fGoodIso", "I_{trk}", fGoodIso); 
   fAnaCuts.addCut("fGoodDocaTrk", "d_{ca}(trk)", fGoodDocaTrk); 
   fAnaCuts.addCut("fGoodIP", "sin#beta*l_{3d}/IP", fGoodIP); 
 
@@ -48,6 +48,7 @@ bmmReader::~bmmReader() {
 // ----------------------------------------------------------------------
 void bmmReader::startAnalysis() {
   cout << "==> bmmReader: Starting analysis..." << endl;
+
 }
 
 
@@ -64,7 +65,27 @@ void bmmReader::eventProcessing() {
   HLTSelection();
   trackSelection(); 
   muonSelection();
+
   candidateSelection(SELMODE); 
+
+  if (SELMODE < 0) {
+    // -- Fill ALL candidates
+    for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
+      if (fvGoodCand[iC]) {
+	fpCand = fCands[iC];
+	if (fVerbose > 4) cout << "Filling candidate " << iC 
+			       << " with sig tracks " << fpCand->fSig1 << ".." << fpCand->fSig2
+			       << endl;
+	fillCandidateVariables();
+	fillCandidateHistograms();
+      }
+    }
+  } else {
+    // -- Fill only 'best' candidate
+    if (fVerbose > 4) cout << "Filling candidate " << fCandIdx << endl;
+    fillCandidateVariables();
+    fillCandidateHistograms();
+  }
 
   studyL1T();
   
@@ -88,6 +109,7 @@ void bmmReader::initVariables() {
   fvGoodTracksPt.clear();
   fvGoodTracksEta.clear();
 
+  fvGoodCand.clear(); 
   fvGoodCandPt.clear();
 
   fGoodEvent = true;
@@ -95,8 +117,11 @@ void bmmReader::initVariables() {
   TAnaCand *pCand(0);
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
     pCand = fpEvt->getCand(iC);
-    if (TYPE != pCand->fType) continue;
-    if (fVerbose > 2) cout << "Adding candidate " << iC << " which is of type " << TYPE 
+    if (TYPE != pCand->fType) {
+      if (fVerbose > 19) cout << "Skipping candidate at " << iC << " which is of type " << pCand->fType << endl;
+      continue;
+    }
+    if (fVerbose > 2) cout << "Adding candidate at " << iC << " which is of type " << TYPE 
 			   << " with sig tracks: " << pCand->fSig1 << " .. " << pCand->fSig2
 			   << endl;
     insertCand(pCand);
@@ -120,6 +145,8 @@ void bmmReader::insertCand(TAnaCand* pCand) {
     fvGoodTracksPt.push_back(true);
     fvGoodTracksEta.push_back(true);
     fvGoodCandPt.push_back(true);
+
+    fvGoodCand.push_back(false); 
 }
 
 
@@ -449,7 +476,19 @@ void bmmReader::candidateSelection(int mode) {
 
 // ----------------------------------------------------------------------
 void bmmReader::fillCandidateVariables() {
-  
+  if (0 == fpCand) return;
+
+  if (fpCand->fPvIdx > -1) {
+    TAnaVertex *pv = fpEvt->getPV(fpCand->fPvIdx); 
+    fPvX = pv->fPoint.X(); 
+    fPvY = pv->fPoint.Y(); 
+    fPvZ = pv->fPoint.Z(); 
+  } else {
+    fPvX = -99.;
+    fPvY = -99.;
+    fPvZ = -99.;
+  }
+
   fCandTM    = tmCand(fpCand); 
   fCandPt    = fpCand->fPlab.Perp();
   fCandEta   = fpCand->fPlab.Eta();
@@ -485,8 +524,12 @@ void bmmReader::fillCandidateVariables() {
   fCandFLS3d = fpCand->fVtx.fD3d/fpCand->fVtx.fD3dE; 
   fCandFLSxy = fpCand->fVtx.fDxy/fpCand->fVtx.fDxyE; 
 
-  fCandDocaTrk = fpCand->fNstTracks[0].second.first;
-
+  if (fpCand->fNstTracks.size() == 0) {
+    cout << "HHHHEEEELLLLPPPP" << endl;
+    fCandDocaTrk = 99.;
+  } else {
+    fCandDocaTrk = fpCand->fNstTracks[0].second.first;
+  }
   // ??
   TAnaTrack *t1 = fpEvt->getRecTrack(p1->fIndex); 
   TAnaTrack *t2 = fpEvt->getRecTrack(p2->fIndex); 
@@ -557,10 +600,15 @@ double bmmReader::isoClassic(TAnaCand *pC) {
 void bmmReader::fillHist() {
 
   ((TH1D*)fpHistFile->Get("b1"))->Fill(fpEvt->nRecTracks()); 
+}
+
+
+// ----------------------------------------------------------------------
+void bmmReader::fillCandidateHistograms() {
 
   // -- only candidate histograms below
   if (0 == fpCand) return;
-
+  
   for (int i = 0; i < fAnaCuts.ncuts(); ++i) {
     if (fAnaCuts.singleCutTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dSi", i)))->Fill(fCandM);
     if (fAnaCuts.cumulativeCutTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dCu", i)))->Fill(fCandM);
@@ -569,6 +617,19 @@ void bmmReader::fillHist() {
   }
 
   // -- Fill distributions
+  fpTracksPt->fill(fMu1Pt, fCandM);
+  fpTracksPt->fill(fMu2Pt, fCandM);
+
+  fpMuonsID->fill(1, fCandM);
+  fpMuonsID->fill(1, fCandM);
+  fpMuonsPt->fill(fMu1Pt, fCandM);
+  fpMuonsPt->fill(fMu2Pt, fCandM);
+  fpMuonsEta->fill(fMu1Eta, fCandM);
+  fpMuonsEta->fill(fMu2Eta, fCandM);
+
+  fpAllEvents->fill(1, fCandM); 
+  fpHLT->fill(1, fCandM); 
+  fpPvZ->fill(fPvZ, fCandM); 
   fpPt->fill(fCandPt, fCandM); 
   fpEta->fill(fCandEta, fCandM); 
   fpCosA->fill(fCandCosA, fCandM);
@@ -585,7 +646,10 @@ void bmmReader::fillHist() {
 
   fTree->Fill(); 
 
+
 }
+
+
 
 // ---------------------------------------------------------------------- 
 void bmmReader::bookHist() {
@@ -606,7 +670,11 @@ void bmmReader::bookHist() {
   }
 
   h = new TH1D("analysisDistributions", "analysisDistributions", 100, 0., 100.); 
+  fpAllEvents= bookDistribution("allevents", "allevents", "fWideMass", 10, 0., 10.);           
+  fpHLT      = bookDistribution("hlt", "hlt", "fGoodHLT", 10, 0., 10.);           
+  fpPvZ      = bookDistribution("pvz", "z_{PV} [cm]", "fGoodHLT", 50, -10., 10.);           
   fpTracksPt = bookDistribution("trackspt", "p_{T} [GeV]", "fGoodTracksPt", 50, 0., 25.);           
+  fpMuonsID  = bookDistribution("muonsid", "muon id", "fGoodMuonsID", 10, 0., 10.); 
   fpMuonsPt  = bookDistribution("muonspt", "p_{T, #mu} [GeV]", "fGoodMuonsPt", 50, 0., 25.); 
   fpMuonsEta = bookDistribution("muonseta", "#eta_{#mu}", "fGoodMuonsEta", 50, -2.5, 2.5); 
   fpPt       = bookDistribution("pt", "p_{T, B} [GeV]", "fGoodPt", 50, 0., 25.); 
@@ -698,7 +766,7 @@ void bmmReader::readCuts(TString filename, int dump) {
   TH1D *hcuts = new TH1D("hcuts", "", 1000, 0., 1000.);
   hcuts->GetXaxis()->SetBinLabel(1, fn.Data());
   int ibin; 
-  string cstring; 
+  string cstring = "B cand"; 
   while (is.getline(buffer, 200, '\n')) {
     ok = 0;
     if (buffer[0] == '#') {continue;}
@@ -709,7 +777,9 @@ void bmmReader::readCuts(TString filename, int dump) {
       TYPE = int(CutValue); ok = 1;
       if (dump) cout << "TYPE:           " << TYPE << endl;
       if (1313 == TYPE) cstring = "#mu^{+}#mu^{-}";
+      if (301313 == TYPE) cstring = "#mu^{+}#mu^{-}";
       if (200521 == TYPE) cstring = "#mu^{+}#mu^{-}K^{+}";
+      if (300521 == TYPE) cstring = "#mu^{+}#mu^{-}K^{+}";
       ibin = 1;
       hcuts->SetBinContent(ibin, TYPE);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: Candidate type", CutName));
@@ -720,7 +790,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "SELMODE:           " << SELMODE << endl;
       ibin = 2;
       hcuts->SetBinContent(ibin, SELMODE);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: Selection Mode", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: Selection Mode :: %i", CutName, SELMODE));
     }
 
     if (!strcmp(CutName, "TRIGGER")) {
@@ -773,7 +843,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "CANDPTLO:           " << CANDPTLO << " GeV" << endl;
       ibin = 11;
       hcuts->SetBinContent(ibin, CANDPTLO);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: p_{T}^{min}(%s) [GeV]", CutName, cstring.c_str()));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: p_{T}^{min}(%s) :: %3.1f", CutName, cstring.c_str(), CANDPTLO));
     }
 
     if (!strcmp(CutName, "CANDETALO")) {
@@ -781,7 +851,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "CANDETALO:           " << CANDETALO << endl;
       ibin = 12;
       hcuts->SetBinContent(ibin, CANDETALO);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta^{min}(%s)", CutName, cstring.c_str()));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta^{min}(%s) :: %3.1f", CutName, cstring.c_str(), CANDETALO));
     }
 
     if (!strcmp(CutName, "CANDETAHI")) {
@@ -789,7 +859,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "CANDETAHI:           " << CANDETAHI << endl;
       ibin = 13;
       hcuts->SetBinContent(ibin, CANDETAHI);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta^{max}(%s)", CutName, cstring.c_str()));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta^{max}(%s) :: %3.1f", CutName, cstring.c_str(), CANDETAHI));
     }
 
     if (!strcmp(CutName, "CANDCOSALPHA")) {
@@ -797,7 +867,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "CANDCOSALPHA:           " << CANDCOSALPHA << endl;
       ibin = 14;
       hcuts->SetBinContent(ibin, CANDCOSALPHA);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: cos#alpha", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: cos#alpha :: %5.4f", CutName, CANDCOSALPHA));
     }
 
     if (!strcmp(CutName, "CANDFLS3D")) {
@@ -805,7 +875,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "CANDFLS3D:           " << CANDFLS3D << endl;
       ibin = 15;
       hcuts->SetBinContent(ibin, CANDFLS3D);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{3d}/#sigma(l_{3d})", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{3d}/#sigma(l_{3d}) :: %3.1f", CutName, CANDFLS3D));
     }
 
     if (!strcmp(CutName, "CANDFLSXY")) {
@@ -813,7 +883,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "CANDFLSXY:           " << CANDFLSXY << endl;
       ibin = 16;
       hcuts->SetBinContent(ibin, CANDFLSXY);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{xy}/#sigma(l_{xy})", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{xy}/#sigma(l_{xy}) :: %3.1f", CutName, CANDFLSXY));
     }
 
     if (!strcmp(CutName, "CANDVTXCHI2")) {
@@ -821,7 +891,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "CANDVTXCHI2:           " << CANDVTXCHI2 << endl;
       ibin = 17;
       hcuts->SetBinContent(ibin, CANDVTXCHI2);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #chi^{2}", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #chi^{2} :: %3.1f", CutName, CANDVTXCHI2));
     }
 
     if (!strcmp(CutName, "CANDISOLATION")) {
@@ -829,7 +899,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "CANDISOLATION:           " << CANDISOLATION << endl;
       ibin = 18;
       hcuts->SetBinContent(ibin, CANDISOLATION);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: I_{trk}", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: I_{trk} :: %4.2f", CutName, CANDISOLATION));
     }
 
     if (!strcmp(CutName, "CANDDOCATRK")) {
@@ -837,7 +907,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "CANDDOCATRK:           " << CANDDOCATRK << endl;
       ibin = 19;
       hcuts->SetBinContent(ibin, CANDDOCATRK);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: doca_{trk}", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: doca_{trk} :: %4.3f", CutName, CANDDOCATRK));
     }
 
 
@@ -847,7 +917,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "SIGBOXMIN:           " << SIGBOXMIN << endl;
       ibin = 90;
       hcuts->SetBinContent(ibin, SIGBOXMIN);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: SIGBOXMIN", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: SIGBOXMIN :: %6.3f", CutName, SIGBOXMIN));
     }
 
     if (!strcmp(CutName, "SIGBOXMAX")) {
@@ -855,7 +925,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "SIGBOXMAX:           " << SIGBOXMAX << endl;
       ibin = 91;
       hcuts->SetBinContent(ibin, SIGBOXMAX);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: SIGBOXMAX", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: SIGBOXMAX :: %6.3f", CutName, SIGBOXMAX));
     }
 
     if (!strcmp(CutName, "BGLBOXMIN")) {
@@ -863,7 +933,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "BGLBOXMIN:           " << BGLBOXMIN << endl;
       ibin = 92;
       hcuts->SetBinContent(ibin, BGLBOXMIN);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: BGLBOXMIN", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: BGLBOXMIN :: %6.3f", CutName, BGLBOXMIN));
     }
 
     if (!strcmp(CutName, "BGLBOXMAX")) {
@@ -871,7 +941,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "BGLBOXMAX:           " << BGLBOXMAX << endl;
       ibin = 93;
       hcuts->SetBinContent(ibin, BGLBOXMAX);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: BGLBOXMAX", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: BGLBOXMAX :: %6.3f", CutName, BGLBOXMAX));
     }
 
     if (!strcmp(CutName, "BGHBOXMIN")) {
@@ -879,7 +949,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "BGHBOXMIN:           " << BGHBOXMIN << endl;
       ibin = 94;
       hcuts->SetBinContent(ibin, BGHBOXMIN);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: BGHBOXMIN", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: BGHBOXMIN :: %6.3f", CutName, BGHBOXMIN));
     }
 
     if (!strcmp(CutName, "BGHBOXMAX")) {
@@ -887,7 +957,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "BGHBOXMAX:           " << BGHBOXMAX << endl;
       ibin = 95;
       hcuts->SetBinContent(ibin, BGHBOXMAX);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: BGHBOXMAX", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: BGHBOXMAX :: %6.3f", CutName, BGHBOXMAX));
     }
 
     // -- Tracks
@@ -896,7 +966,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "TRACKQUALITY:           " << TRACKQUALITY << " " << endl;
       ibin = 100;
       hcuts->SetBinContent(ibin, TRACKQUALITY);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: track quality", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: track quality :: %d", CutName, TRACKQUALITY));
     }
 
     if (!strcmp(CutName, "TRACKPTLO")) {
@@ -904,7 +974,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "TRACKPTLO:           " << TRACKPTLO << " GeV" << endl;
       ibin = 101;
       hcuts->SetBinContent(ibin, TRACKPTLO);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: p_{T}^{min}(track)", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: p_{T}^{min}(track) :: %3.1f", CutName, TRACKPTLO));
     }
 
     if (!strcmp(CutName, "TRACKPTHI")) {
@@ -912,7 +982,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "TRACKPTHI:           " << TRACKPTHI << " GeV" << endl;
       ibin = 102;
       hcuts->SetBinContent(ibin, TRACKPTHI);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: p_{T}^{max}(track)", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: p_{T}^{max}(track) :: %3.1f", CutName, TRACKPTHI));
     }
 
     if (!strcmp(CutName, "TRACKTIP")) {
@@ -920,7 +990,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "TRACKTIP:           " << TRACKTIP << " cm" << endl;
       ibin = 103;
       hcuts->SetBinContent(ibin, TRACKTIP);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: doca_{xy}(track)", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: doca_{xy}(track) :: %3.1f", CutName, TRACKTIP));
     }
 
     if (!strcmp(CutName, "TRACKLIP")) {
@@ -928,7 +998,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "TRACKLIP:           " << TRACKLIP << " cm" << endl;
       ibin = 104;
       hcuts->SetBinContent(ibin, TRACKLIP);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: doca_{z}(track)", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: doca_{z}(track) :: %3.1f", CutName, TRACKLIP));
     }
 
     if (!strcmp(CutName, "TRACKETALO")) {
@@ -936,7 +1006,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "TRACKETALO:           " << TRACKETALO << " " << endl;
       ibin = 105;
       hcuts->SetBinContent(ibin, TRACKETALO);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta_{min}(track)", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta_{min}(track) :: %3.1f", CutName, TRACKETALO));
     }
 
     if (!strcmp(CutName, "TRACKETAHI")) {
@@ -944,7 +1014,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "TRACKETAHI:           " << TRACKETAHI << " " << endl;
       ibin = 106;
       hcuts->SetBinContent(ibin, TRACKETAHI);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta_{max}(track)", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta_{max}(track) :: %3.1f", CutName, TRACKETAHI));
     }
 
 
@@ -956,7 +1026,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "MUID:           " << MUID << endl;
       ibin = 200;
       hcuts->SetBinContent(ibin, MUID);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: MuID", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: MuID :: %d", CutName, MUID));
     }
 
     if (!strcmp(CutName, "MUPTLO")) {
@@ -964,7 +1034,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "MUPTLO:           " << MUPTLO << " GeV" << endl;
       ibin = 201;
       hcuts->SetBinContent(ibin, MUPTLO);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: p_{T}^{min}(#mu)", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: p_{T}^{min}(#mu) :: %3.1f", CutName, MUPTLO));
     }
 
     if (!strcmp(CutName, "MUPTHI")) {
@@ -972,7 +1042,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "MUPTHI:           " << MUPTHI << " GeV" << endl;
       ibin = 202;
       hcuts->SetBinContent(ibin, MUPTHI);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: p_{T}^{max}(#mu)", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: p_{T}^{max}(#mu) :: %3.1f", CutName, MUPTHI));
     }
 
     if (!strcmp(CutName, "MUETALO")) {
@@ -980,7 +1050,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "MUETALO:           " << MUETALO << endl;
       ibin = 203;
       hcuts->SetBinContent(ibin, MUETALO);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta^{min}(#mu)", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta^{min}(#mu) :: %3.1f", CutName, MUETALO));
     }
 
     if (!strcmp(CutName, "MUETAHI")) {
@@ -988,7 +1058,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "MUETAHI:           " << MUETAHI << endl;
       ibin = 204;
       hcuts->SetBinContent(ibin, MUETAHI);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta^{max}(#mu)", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta^{max}(#mu) :: %3.1f", CutName, MUETAHI));
     }
 
     if (!strcmp(CutName, "MUIP")) {
@@ -996,7 +1066,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "MUIP:           " << MUIP << endl;
       ibin = 205;
       hcuts->SetBinContent(ibin, MUIP);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: IP(#mu)", CutName));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: IP(#mu) :: %3.1f", CutName, MUIP));
     }
 
 

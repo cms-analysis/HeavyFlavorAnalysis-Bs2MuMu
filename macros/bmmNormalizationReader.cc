@@ -23,6 +23,7 @@ bmmNormalizationReader::~bmmNormalizationReader() {
 
 // ----------------------------------------------------------------------
 void bmmNormalizationReader::startAnalysis() {
+  bmmReader::startAnalysis();
   cout << "==> bmmNormalizationReader: Starting analysis..." << endl;
 }
 
@@ -141,24 +142,31 @@ void bmmNormalizationReader::candidateSelection(int mode) {
       if (false == fvGoodMuonsID[iC])  continue; 
       if (false == fvGoodMuonsPt[iC])  continue; 
       if (false == fvGoodMuonsEta[iC])  continue; 
+      fvGoodCand[iC] = true; 
       ++nc1; 
       clist.push_back(iC);
     }
   } 
 
-  // -- Select best candidate
+  // -- 'best' candidate selection
   if (1 == clist.size()) {
+    // -- ONE candidate fulfilled the basic requirements. Take it.
     fpCand = fCands[clist[0]];
     fCandIdx = clist[0]; 
     nc1 = 1; 
     if (fVerbose > 0) cout << "bmmNormalizationReader> found exactly one candidate " << TYPE << " passing the constituents selection" << endl;
   } else if (clist.size() > 1) {
+    // -- SEVERAL candidate fulfilled the basic requirements. Choose one. 
     double drMin(99.), dr(0.); 
     for (unsigned int i = 0; i < clist.size(); ++i) {
       pCand = fCands[clist[i]]; 
+      if (BLIND && pCand->fMass > SIGBOXMIN && pCand->fMass < SIGBOXMAX) continue; 
       TAnaTrack *pl1 = fpEvt->getSigTrack(pCand->fSig1); 
       TAnaTrack *pl2 = fpEvt->getSigTrack(pCand->fSig1+1); 
       
+      // -- if all candidates are taken, then fpCand at this point is pointing to a random cand
+      fpCand = pCand; 
+      fCandIdx = clist[i]; 
       // -- closest in rphi
       if (0 == mode) {
 	dr = pl1->fPlab.DeltaR(pl2->fPlab); 
@@ -181,20 +189,23 @@ void bmmNormalizationReader::candidateSelection(int mode) {
       }
     }
   } else {
+    // -- NO candidate fulfilled the basic requirements. Then take the first one. 
     fpCand = fCands[0];
     fCandIdx = 0; 
+    fvGoodCand[0] = true; 
     nc1 = 1; 
     if (fVerbose > 0) cout << "bmmNormalizationReader> found no candidate " << TYPE << " passing the constituents selection" << endl;
   }
 
   ((TH1D*)fpHistFile->Get("bnc1"))->Fill(nc1); 
 
-  if (fpCand) fillCandidateVariables();
+  //  if (fpCand) fillCandidateVariables();
 }
 
 
 // ----------------------------------------------------------------------
 void bmmNormalizationReader::fillCandidateVariables() {
+  if (0 == fpCand) return;
   bmmReader::fillCandidateVariables();
 
   TAnaTrack *p1 = fpEvt->getSigTrack(fpCand->fSig2); 
@@ -278,13 +289,6 @@ int bmmNormalizationReader::tmCand(TAnaCand *pC) {
 // ----------------------------------------------------------------------
 void bmmNormalizationReader::fillHist() {
   bmmReader::fillHist(); 
-
-  fpTracksPt->fill(fMu1Pt, fCandM);
-  fpTracksPt->fill(fMu2Pt, fCandM);
-  fpMuonsPt->fill(fMu1Pt, fCandM);
-  fpMuonsPt->fill(fMu2Pt, fCandM);
-  fpMuonsEta->fill(fMu1Eta, fCandM);
-  fpMuonsEta->fill(fMu2Eta, fCandM);
 
 }
 
