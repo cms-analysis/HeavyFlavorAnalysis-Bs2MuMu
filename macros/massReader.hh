@@ -87,6 +87,7 @@ class massReader : public treeReader01 {
 		float fIso10_pt0;
 		float fIso10_pt5;
 		float fIso10_pt7;
+                float fIso10_pt9; // default isolation of Analysis node
 		float fIso10_pt10;
 		int fTriggers; // store some trigger information
 		int fTriggersError; // error information of trigger

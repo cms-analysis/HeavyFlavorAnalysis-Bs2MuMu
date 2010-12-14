@@ -58,6 +58,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fIso10_pt0 = calculateIsolation(pCand, 1.0, 0.0);
 	fIso10_pt5 = calculateIsolation(pCand, 1.0, 0.5);
 	fIso10_pt7 = calculateIsolation(pCand, 1.0, 0.7);
+	fIso10_pt9 = calculateIsolation(pCand, 1.0, 0.9);
 	fIso10_pt10 = calculateIsolation(pCand, 1.0, 1.0);
 	fCtau = 0.0; // we can compute this only in a subclass, so initialize to zero
 	fEta = pCand->fPlab.Eta();
@@ -143,6 +144,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("iso10_pt0",&fIso10_pt0,"iso10_pt0/F");
 	reduced_tree->Branch("iso10_pt5",&fIso10_pt5,"iso10_pt5/F");
 	reduced_tree->Branch("iso10_pt7",&fIso10_pt7,"iso10_pt7/F");
+	reduced_tree->Branch("iso10_pt9",&fIso10_pt9,"iso10_pt9/F");
 	reduced_tree->Branch("iso10_pt10",&fIso10_pt10,"iso10_pt10/F");
 	reduced_tree->Branch("triggers",&fTriggers,"triggers/I");
 	reduced_tree->Branch("triggers_error",&fTriggersError,"triggers_error/I");
