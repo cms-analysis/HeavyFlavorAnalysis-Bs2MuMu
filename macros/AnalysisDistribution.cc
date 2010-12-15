@@ -30,6 +30,19 @@ double f_epaG(double *x, double *par) {
   return  (f_p1(x, &par[5]) + f_expo(x, &par[3]) + f_Gauss(x, &par[0]));
 }
 
+// ----------------------------------------------------------------------
+// expo and double Gauss 
+double f_ea2G(double *x, double *par) {
+  //   par[0] = area of gaussian
+  //   par[1] = mean of gaussian
+  //   par[2] = sigma of gaussian
+  //   par[3] = area of gaussian 2
+  //   par[4] = mean of gaussian 2
+  //   par[5] = sigma of gaussian 2
+  //   par[6] = par 0 of expo
+  //   par[7] = par 1 of expo
+  return  (f_expo(x, &par[6]) + f_2G(x, &par[0]));
+}
 
 // ----------------------------------------------------------------------
 AnalysisDistribution::AnalysisDistribution(const char *name, const char *title, int nbins, double lo, double hi) {

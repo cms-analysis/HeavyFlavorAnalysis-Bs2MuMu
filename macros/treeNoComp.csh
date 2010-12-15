@@ -122,8 +122,6 @@ date
 
 
 # -- cleanup
-/bin/rm -rf /scratch/ursl/dana*
-/bin/rm -rf /scratch/ursl/dimuon*
-/bin/rm -rf /scratch/ursl/test*
+#/bin/rm -rf /scratch/ursl/dana*
 
 echo "run: This is the end, my friend"
