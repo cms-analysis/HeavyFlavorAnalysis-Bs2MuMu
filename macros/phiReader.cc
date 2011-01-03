@@ -112,6 +112,12 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 	
 	fCtau = kMassBs / pCand->fPlab.Mag() * fD3; // estimate the proper time!
 	
+	// set the constraint mass value
+	findCandStructure(pCand,&cand_tracks);
+	dau = findCandidate(400531,&cand_tracks);
+	if (dau) fMassConstraint = dau->fMass;
+	cand_tracks.clear();
+	
 	// set the momenta
 	findAllTrackIndices(pCand,&cand_tracks);
 	for (map<int,int>::const_iterator it = cand_tracks.begin(); it!=cand_tracks.end(); ++it) {

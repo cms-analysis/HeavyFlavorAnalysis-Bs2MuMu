@@ -54,7 +54,9 @@ class massReader : public treeReader01 {
 		int loadTrigger(int *errTriggerOut = NULL, int *triggersFoundOut = NULL);
 
 		// other utility routines
+		TAnaCand *findCandidate(int candID, std::map<int,int> *particles); // particles = map(recTrackIx,particleID)
 		void buildDecay(TGenCand *gen, std::multiset<int> *particles);
+		void findCandStructure(TAnaCand* pCand, std::map<int,int> *particles); // map(recTrackIx,particleID)
 		void findAllTrackIndices(TAnaCand* pCand, std::map<int,int> *indices); // map(recTrackIx,sigTrackIndex)
 	protected:
 		const char *fTreeName;
@@ -65,6 +67,7 @@ class massReader : public treeReader01 {
 		TVector3 *fPVPositionPtr;
 		TVector3 *fCandVertexPtr;
 		float fMass;
+		float fMassConstraint; // mass of the constraint candidate...
 		int fTruth;		// is this background or a true candidate?
 		int fTruthFlags; // several partial truth flags
 		float fPt; // pt of the top particle

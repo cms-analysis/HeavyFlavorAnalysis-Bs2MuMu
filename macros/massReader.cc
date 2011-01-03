@@ -43,6 +43,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fCandidate = pCand->fType;
 	fPt = pCand->fPlab.Perp();
 	fMass = pCand->fMass;
+	fMassConstraint = -1.0f;
 	fNbrMuons = countMuons(pCand);
 	fD3 = pCand->fVtx.fD3d;
 	fD3E = pCand->fVtx.fD3dE;
@@ -60,7 +61,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fIso10_pt7 = calculateIsolation(pCand, 1.0, 0.7);
 	fIso10_pt9 = calculateIsolation(pCand, 1.0, 0.9);
 	fIso10_pt10 = calculateIsolation(pCand, 1.0, 1.0);
-	fCtau = 0.0; // we can compute this only in a subclass, so initialize to zero
+	fCtau = 0.0f; // we can compute this only in a subclass, so initialize to zero
 	fEta = pCand->fPlab.Eta();
 	
 	// Clean entries of nearest tracks
@@ -125,6 +126,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("candidate",&fCandidate,"candidate/I");
 	reduced_tree->Branch("pt",&fPt,"pt/F");
 	reduced_tree->Branch("mass",&fMass,"mass/F");
+	reduced_tree->Branch("mass_c",&fMassConstraint,"mass_c/F");
 	reduced_tree->Branch("truth",&fTruth,"truth/I");
 	reduced_tree->Branch("truth_flags",&fTruthFlags,"truth_flags/I");
 	reduced_tree->Branch("ident_muons",&fNbrMuons,"ident_muons/F");
@@ -288,6 +290,47 @@ void massReader::buildDecay(TGenCand *gen, multiset<int> *particles)
 	for (int j = gen->fDau1; j <= gen->fDau2 && j>= 0; j++)
 		buildDecay(fpEvt->getGenCand(j),particles);
 } // buildDecay()
+
+TAnaCand* massReader::findCandidate(int candID, map<int,int> *particles)
+{
+	TAnaCand *result = NULL;
+	TAnaCand *pCand;
+	map<int,int> candParticles;
+	map<int,int>::iterator it;
+	int j;
+	
+	for (j = 0; j < fpEvt->nCands(); j++) {
+		pCand = fpEvt->getCand(j);
+		
+		if (pCand->fType != candID) continue;
+		
+		// check if the tracks are compatible...
+		candParticles.clear();
+		findCandStructure(pCand,&candParticles);
+		
+		// now, compare the particles
+		if (candParticles == (*particles)) {
+			result = pCand;
+			break;
+		}
+	}
+	
+	return result;
+} // findCandidate()
+
+void massReader::findCandStructure(TAnaCand* pCand, map<int,int> *particles)
+{
+	map<int,int>::iterator it;
+	TAnaTrack *sigTrack;
+	
+	particles->clear();
+	findAllTrackIndices(pCand,particles);
+	
+	for (it = particles->begin(); it != particles->end(); ++it) {
+		sigTrack = fpEvt->getSigTrack(it->second);
+		it->second = sigTrack->fMCID;
+	}
+} // findCandStructure()
 
 void massReader::findAllTrackIndices(TAnaCand* pCand, map<int,int> *indices)
 {

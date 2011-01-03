@@ -112,6 +112,12 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	
 	fCtau = kMassBplus / pCand->fPlab.Mag() * fD3;
 	
+	// set the constraint mass value
+	findCandStructure(pCand,&cand_tracks);
+	jpsiCand = findCandidate(400521,&cand_tracks);
+	if (jpsiCand) fMassConstraint = jpsiCand->fMass;
+	cand_tracks.clear();
+	
 	// set the momenta, iterate
 	findAllTrackIndices(pCand,&cand_tracks);
 	for (map<int,int>::const_iterator it = cand_tracks.begin(); it!=cand_tracks.end(); ++it) {
