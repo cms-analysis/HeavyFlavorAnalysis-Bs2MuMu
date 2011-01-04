@@ -13,6 +13,8 @@ phiReader::phiReader(TChain *tree, TString evtClassName) :
 	fCutTrackQual_mu2(0),
 	fCutTrackQual_kp1(0),
 	fCutTrackQual_kp2(0),
+	fCutMuID_mask(0),
+	fCutMuID_reqall(false),
 	fCutOppSign_mu(false),
 	fCutOppSign_kp(false),
 	fCutMass_JPsiLow(0.0),
@@ -109,7 +111,6 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 	fMuID2 = 0;
 	fEtaMu1 = 0.0f;
 	fEtaMu2 = 0.0f;
-
 	
 	if (pCand->fType % 1000 != 531) return 0;
 	
@@ -360,6 +361,14 @@ bool phiReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 		goto bail;
 	}
 	
+	parsed = (strcmp(cutName,"MUID") == 0);
+	if (parsed) {
+		fCutMuID_mask = (int)cutLow;
+		fCutMuID_reqall = (cutHigh != 0.0);
+		if (dump) cout << "MUID: mask " << fCutMuID_mask << " and require all " << fCutMuID_reqall << endl;
+		goto bail;
+	}
+	
 	// ask superclass if nothing parsed yet
 	parsed = massReader::parseCut(cutName, cutLow, cutHigh, dump);
 bail:
@@ -434,6 +443,16 @@ bool phiReader::applyCut()
 	
 	if (fCutDeltaR_Kaons > 0.0) {
 		pass = fDeltaR_Kaons < fCutDeltaR_Kaons;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutMuID_mask != 0) {
+		
+		if (fCutMuID_reqall)
+			pass = ((fMuID1 & fCutMuID_mask) == fCutMuID_mask) && ((fMuID2 & fCutMuID_mask) == fCutMuID_mask);
+		else
+			pass = ((fMuID1 & fCutMuID_mask) != 0) && ((fMuID2 & fCutMuID_mask) != 0);
+		
 		if (!pass) goto bail;
 	}
 	

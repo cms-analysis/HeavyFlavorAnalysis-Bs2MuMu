@@ -54,6 +54,8 @@ class phiReader : public massReader {
 		int fCutTrackQual_mu2;
 		int fCutTrackQual_kp1;
 		int fCutTrackQual_kp2;
+		int fCutMuID_mask;
+		bool fCutMuID_reqall;
 		bool fCutOppSign_mu;
 		bool fCutOppSign_kp;
 		double fCutMass_JPsiLow;

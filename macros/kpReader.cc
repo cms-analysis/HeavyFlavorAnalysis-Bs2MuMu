@@ -12,6 +12,8 @@ kpReader::kpReader(TChain *tree, TString evtClassName) :
 	fCutTrackQual_mu1(0),
 	fCutTrackQual_mu2(0),
 	fCutTrackQual_kp(0),
+	fCutMuID_mask(0),
+	fCutMuID_reqall(false),
 	fCutOppSign_mu(false),
 	fCutMass_JPsiLow(0.0),
 	fCutMass_JPsiHigh(0.0),
@@ -317,6 +319,14 @@ bool kpReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 		goto bail;
 	}
 	
+	parsed = (strcmp(cutName,"MUID") == 0);
+	if (parsed) {
+		fCutMuID_mask = (int)cutLow;
+		fCutMuID_reqall = (cutHigh != 0.0);
+		if (dump) cout << "MUID: mask " << fCutMuID_mask << " and require all " << fCutMuID_reqall << endl;
+		goto bail;
+	}
+	
 	// nothing parsed, then maybe massReader knows about it.
 	parsed = massReader::parseCut(cutName, cutLow, cutHigh, dump);
 	
@@ -364,6 +374,16 @@ bool kpReader::applyCut()
 	
 	if (fCutPt_Kaon > 0.0) {
 		pass = fPtKp > fCutPt_Kaon;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutMuID_mask != 0) {
+		
+		if (fCutMuID_reqall)
+			pass = ((fMuID1 & fCutMuID_mask) == fCutMuID_mask) && ((fMuID2 & fCutMuID_mask) == fCutMuID_mask);
+		else
+			pass = ((fMuID1 & fCutMuID_mask) != 0) && ((fMuID2 & fCutMuID_mask) != 0);
+		
 		if (!pass) goto bail;
 	}
 	

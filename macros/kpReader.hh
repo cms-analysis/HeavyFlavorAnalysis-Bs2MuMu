@@ -50,6 +50,8 @@ class kpReader : public massReader {
 		int fCutTrackQual_mu1;
 		int fCutTrackQual_mu2;
 		int fCutTrackQual_kp;
+		int fCutMuID_mask;
+		bool fCutMuID_reqall;
 		bool fCutOppSign_mu;
 		double fCutMass_JPsiLow;
 		double fCutMass_JPsiHigh;

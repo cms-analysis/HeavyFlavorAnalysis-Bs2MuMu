@@ -5,3 +5,5 @@ TRACK_QUAL_MU1 4
 TRACK_QUAL_MU2 4
 TRACK_QUAL_KP 4
 OPPOSITE_SIGN_MU 1
+# first argument bitmask second argument boolean, true, require all bits set
+MUID	6	1
