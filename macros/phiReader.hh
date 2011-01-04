@@ -31,7 +31,10 @@ class phiReader : public massReader {
 		float fPtMu2;
 		float fPtKp1;
 		float fPtKp2;
-				
+		
+		int fMuID1,fMuID2;
+		float fEtaMu1,fEtaMu2;
+		
 		int fTrackQual_mu1;
 		int fTrackQual_mu2;
 		int fTrackQual_kp1;

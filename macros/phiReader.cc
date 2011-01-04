@@ -105,6 +105,11 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 	fQ_mu1 = fQ_mu2 = fQ_kp1 = fQ_kp2 = 0;
 	fD3_BsJpsi = fD3e_BsJpsi = -1.0f;
 	fCtau = 0.0;
+	fMuID1 = 0;
+	fMuID2 = 0;
+	fEtaMu1 = 0.0f;
+	fEtaMu2 = 0.0f;
+
 	
 	if (pCand->fType % 1000 != 531) return 0;
 	
@@ -131,11 +136,15 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 				fTrackQual_mu1 = recTrack->fTrackQuality;
 				fQ_mu1 = recTrack->fQ;
 				mu1.SetXYZM(recTrack->fPlab.X(),recTrack->fPlab.Y(),recTrack->fPlab.Z(),MUMASS);
+				fMuID1 = recTrack->fMuID;
+				fEtaMu1 = sigTrack->fPlab.Eta();
 			} else {
 				plabMu2 = sigTrack->fPlab;
 				fTrackQual_mu2 = recTrack->fTrackQuality;
 				fQ_mu2 = recTrack->fQ;
 				mu2.SetXYZM(recTrack->fPlab.X(),recTrack->fPlab.Y(),recTrack->fPlab.Z(),MUMASS);
+				fMuID2 = recTrack->fMuID;
+				fEtaMu2 = sigTrack->fPlab.Eta();
 			}
 			firstMu = 0;
 		} else if (type == 321) {
@@ -157,6 +166,8 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 		swap(plabMu1,plabMu2);
 		swap(fTrackQual_mu1,fTrackQual_mu2);
 		swap(fQ_mu1,fQ_mu2);
+		swap(fMuID1,fMuID2);
+		swap(fEtaMu1,fEtaMu2);
 	}
 	
 	// kp1 is with higher pt
@@ -227,6 +238,10 @@ void phiReader::bookHist()
 	reduced_tree->Branch("pt_mu2",&fPtMu2,"pt_mu2/F");
 	reduced_tree->Branch("pt_kp1",&fPtKp1,"pt_kp1/F");
 	reduced_tree->Branch("pt_kp2",&fPtKp2,"pt_kp2/F");
+	reduced_tree->Branch("id_mu1",&fMuID1,"id_mu1/I");
+	reduced_tree->Branch("id_mu2",&fMuID2,"id_mu2/I");
+	reduced_tree->Branch("eta_mu1",&fEtaMu1,"eta_mu1/F");
+	reduced_tree->Branch("eta_mu2",&fEtaMu2,"eta_mu2/F");
 	reduced_tree->Branch("track_qual_mu1",&fTrackQual_mu1,"track_qual_mu1/I");
 	reduced_tree->Branch("track_qual_mu2",&fTrackQual_mu2,"track_qual_mu2/I");
 	reduced_tree->Branch("track_qual_kp1",&fTrackQual_kp1,"track_qual_kp1/I");
