@@ -209,6 +209,8 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
 		return;
 	}
 	
+	if(fVerbose > 5) cout << "-------------------------------- Run: " << iEvent.id().run()
+			      << " Event: " << iEvent.id().event() << " LS: " << iEvent.luminosityBlock() << endl;
 	HFTwoParticleCombinatorics a(fVerbose);
 	vector<pair<int, int> > psiList;
 	a.combine(psiList, mulist1, mulist2, MJPSI-fPsiWindow, MJPSI+fPsiWindow, 1);
@@ -251,7 +253,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
 			if (iPion == iMuon1 || iPion == iMuon2) continue;
 			if (iProton == iMuon1 || iProton == iMuon2) continue;
 			
-			// get lorentz vector of first pion
+			// get lorentz vector of first track
 			TrackBaseRef pionTrackView(hTracks,iPion);
 			Track tPion(*pionTrackView);
 			if(tPion.pt() < fPionPt) continue;
@@ -259,7 +261,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
 			tlvPion.SetXYZM(tPion.px(),tPion.py(),tPion.pz(),MPION);
 			if(tlvPsi.DeltaR(tlvPion) > fDeltaR) continue;
 			
-			// get lorentz vector of second pion
+			// get lorentz vector of second track
 			TrackBaseRef protonTrackView(hTracks,iProton);
 			Track tProton(*protonTrackView);
 			if(tProton.pt() < fProtonPt) continue;
@@ -271,6 +273,9 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
 			
 			const TLorentzVector tlvLambdaB = tlvPsi + tlvLamdba0;
 			if (TMath::Abs(tlvLambdaB.M() - MLAMBDA_B) > fLbWindow) continue;
+
+			if(fVerbose > 5) cout << "Making HFDecayTree's with tracks (mu:mu:pr:pi): "
+					      << iMuon1 << ":" << iMuon2 << ":" << iPion << ":" << iProton << endl;
 
 			// without J/Psi mass constraint
 			HFDecayTree theTree(605122);

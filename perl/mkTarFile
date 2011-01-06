@@ -22,6 +22,7 @@ $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/lib/\\*.so";
 $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/bin/\\*";
 $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/chains/\\*";
 $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/test";
+$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/batchruns";
 $exclude .= " --exclude \\*.root";
 $exclude .= " --exclude \\*Dict\\*";
 
