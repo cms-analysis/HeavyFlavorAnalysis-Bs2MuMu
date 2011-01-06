@@ -1,6 +1,6 @@
 # -- muons 
 MUIDMASK            6
-MUIDRESULT          0
+MUIDRESULT          6
 MUPTLO            2.0
 MUPTHI         9999.0
 MUETALO          -2.4

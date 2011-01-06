@@ -30,8 +30,12 @@ bmmReader::~bmmReader() {
 
 // ----------------------------------------------------------------------
 void bmmReader::startAnalysis() {
-  //   cout << "==> bmmReader: Summary of analysis cuts:" << endl;
-  //   fAnaCuts.dumpAll(); 
+  cout << "==>bmmReader: setup PidTables" << endl;
+
+  // -- Note that the return value is -99 for ranges not covered by the PidTables!
+  fpMuonID = new PidTable("pidtables/jpsi/data/muid0.both.dat"); 
+  fpMuonTr = new PidTable("pidtables/jpsi/data/mutrig0.both.dat"); 
+
   cout << "==> bmmReader: Starting analysis..." << endl;
 }
 
@@ -517,17 +521,33 @@ void bmmReader::fillCandidateVariables() {
   fMu1Pt     = p1->fPlab.Perp(); 
   fMu1Eta    = p1->fPlab.Eta(); 
   fMu1Phi    = p1->fPlab.Phi(); 
+  fMu1W8Mu   = fpMuonID->effD(fMu1Pt, fMu1Eta, fMu1Phi);
+  fMu1W8Tr   = fpMuonTr->effD(fMu1Pt, fMu1Eta, fMu1Phi);
+  
   fMu2Pt     = p2->fPlab.Perp(); 
   fMu2Eta    = p2->fPlab.Eta(); 
   fMu2Phi    = p2->fPlab.Phi(); 
-  
+  fMu2W8Mu   = fpMuonID->effD(fMu2Pt, fMu2Eta, fMu2Phi);
+  fMu2W8Tr   = fpMuonTr->effD(fMu2Pt, fMu2Eta, fMu2Phi);
+
+  fCandW8Mu  = fMu1W8Mu*fMu2W8Mu;
+  fCandW8Tr  = fMu1W8Tr*fMu2W8Tr;
+
+//   if (fMu1Pt > 3. && fMu2Pt > 3.) {
+//     cout << "muon1: " << fMu1W8Mu << " " << fMu1W8Tr << endl;
+//     cout << "muon2: " << fMu2W8Mu << " " << fMu2W8Tr << endl;
+//     cout << "--> eff(2mu) = " << fCandW8Mu << " eff(trig) = " << fCandW8Tr << endl;
+//   }
+
   int pvidx = (fpCand->fPvIdx > -1? fpCand->fPvIdx : 0); 
   TVector3 svpv(fpCand->fVtx.fPoint - fpEvt->getPV(pvidx)->fPoint); 
   double alpha = svpv.Angle(fpCand->fPlab);
   fCandCosA  = TMath::Cos(alpha);
 
   double iso = isoClassic(fpCand); 
+  double iso1= isoClassicOnePv(fpCand); 
   fCandIso   = iso; 
+  fCandIso1  = iso1; 
   fCandChi2  = fpCand->fVtx.fChi2;
   fCandDof   = fpCand->fVtx.fNdof;
   fCandProb  = fpCand->fVtx.fProb;
@@ -569,11 +589,6 @@ void bmmReader::fillCandidateVariables() {
   fGoodIP = true; 
 
   fAnaCuts.update(); 
-  
-  //   cout << "bmmReader::fillCandidateVariables() dumpAll()" << endl;
-  //   fAnaCuts.dumpAll(); 
-  
-  
 }
 
 
@@ -599,6 +614,44 @@ double bmmReader::isoClassic(TAnaCand *pC) {
   for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
     if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  continue;
     pT = fpEvt->getRecTrack(i); 
+    pt = pT->fPlab.Perp(); 
+    if (pt < 0.9) continue;
+    if (pT->fPlab.DeltaR(pC->fPlab) < 1.0) sumPt += pt; 
+  }
+
+  iso = candPt/(candPt + sumPt); 
+
+  return iso; 
+}
+
+
+// ----------------------------------------------------------------------
+double bmmReader::isoClassicOnePv(TAnaCand *pC) {
+  double iso(-1.), pt(0.), sumPt(0.), candPt(0.); 
+  TAnaTrack *pT; 
+  vector<int> cIdx; 
+  int pvIdx = pC->fPvIdx;
+  //  int tIdx(-1); 
+  for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
+    pT = fpEvt->getSigTrack(i); 
+    cIdx.push_back(pT->fIndex); 
+    candPt += pT->fPlab.Perp(); 
+    //     tIdx = fpEvt->getRecTrack(pT->fIndex)->fPvIdx;
+    //     if (pvIdx != tIdx) {
+    //       cout << "Signal track pointing to PV " << tIdx << " instead of " << pvIdx << endl;
+    //     }
+  }
+  
+  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+    if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  continue;
+    pT = fpEvt->getRecTrack(i); 
+    if (pvIdx != pT->fPvIdx) {
+      //       cout << "   skip track " << i 
+      // 	   << " with pT = " << pT->fPlab.Perp()
+      // 	   << " eta = " << pT->fPlab.Eta()
+      // 	   << " pointing at " << pT->fPvIdx << endl;
+      continue;
+    }
     pt = pT->fPlab.Perp(); 
     if (pt < 0.9) continue;
     if (pT->fPlab.DeltaR(pC->fPlab) < 1.0) sumPt += pt; 
@@ -654,6 +707,7 @@ void bmmReader::fillCandidateHistograms() {
   fpCosA->fill(fCandCosA, fCandM);
   fpCosA0->fill(fCandCosA, fCandM);
   fpIso->fill(fCandIso, fCandM);
+  fpIso1->fill(fCandIso1, fCandM);
   fpChi2->fill(fCandChi2, fCandM);
   fpChi2Dof->fill(fCandChi2/fCandDof, fCandM); 
   fpProb->fill(fCandProb, fCandM);   
@@ -702,6 +756,7 @@ void bmmReader::bookHist() {
   fpCosA     = bookDistribution("cosa", "cos(#alpha)", "fGoodCosA", 60, 0.97, 1.); 
   fpCosA0    = bookDistribution("cosa0", "cos(#alpha)", "fGoodCosA", 101, -1.01, 1.01); 
   fpIso      = bookDistribution("iso",  "I", "fGoodIso", 101, 0., 1.01); 
+  fpIso1     = bookDistribution("iso1", "I", "fGoodIso", 101, 0., 1.01); 
   fpChi2     = bookDistribution("chi2",  "#chi^{2}", "fGoodChi2", 100, 0., 50.);              
   fpChi2Dof  = bookDistribution("chi2dof",  "#chi^{2}/dof", "fGoodChi2", 100, 0., 50.);       
   fpProb     = bookDistribution("pchi2dof",  "P(#chi^{2},dof)", "fGoodChi2", 100, 0., 1.);    
@@ -730,6 +785,7 @@ void bmmReader::bookHist() {
   fTree->Branch("m",      &fCandM,             "m/D");
   fTree->Branch("cosa",   &fCandCosA,          "cosa/D");
   fTree->Branch("iso",    &fCandIso,           "iso/D");
+  fTree->Branch("iso1",   &fCandIso1,          "iso1/D");
   fTree->Branch("chi2",   &fCandChi2,          "chi2/D");
   fTree->Branch("fls3d",  &fCandFLS3d,         "fls3d/D");
   fTree->Branch("flsxy",  &fCandFLSxy,         "flsxy/D");

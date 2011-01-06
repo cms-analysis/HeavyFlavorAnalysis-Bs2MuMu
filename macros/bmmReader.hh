@@ -23,6 +23,8 @@
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaJet.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
 
+#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
+
 #include "treeReader01.hh"
 #include "AnalysisCuts.hh"
 #include "AnalysisDistribution.hh"
@@ -62,6 +64,7 @@ public:
   virtual void                  insertCand(TAnaCand*);
   virtual int                   tmCand(TAnaCand*);
   virtual double                isoClassic(TAnaCand*); 
+  virtual double                isoClassicOnePv(TAnaCand*); 
   virtual int                   checkCut(const char *, TH1D *); 
 
 
@@ -109,9 +112,10 @@ public:
   // -- variables for reduced tree, they are from fpCand
   int                     fCandTM; 
   double                  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
+  double                  fMu1W8Mu, fMu1W8Tr, fMu2W8Mu, fMu2W8Tr; 
   double                  fPvX, fPvY, fPvZ; 
-  double                  fCandPt, fCandEta, fCandPhi, fCandM; 
-  double                  fCandCosA, fCandIso, fCandChi2, fCandDof, fCandProb, fCandFLS3d, fCandFLSxy; 
+  double                  fCandPt, fCandEta, fCandPhi, fCandM, fCandW8Tr, fCandW8Mu; 
+  double                  fCandCosA, fCandIso, fCandIso1, fCandChi2, fCandDof, fCandProb, fCandFLS3d, fCandFLSxy; 
   double                  fCandDocaTrk, fMu1IP, fMu2IP; 
 
   double       SIGBOXMIN, SIGBOXMAX; 
@@ -133,11 +137,15 @@ public:
     *fpMuonsID, *fpMuonsPt, *fpMuonsEta, 
     *fpPt, *fpEta, 
     *fpCosA, *fpCosA0, 
-    *fpIso, 
+    *fpIso, *fpIso1, 
     *fpDoca, *fpIP,
     *fpChi2, *fpChi2Dof, *fpProb, 
     *fpFLS3d, *fpFLSxy, 
     *fpDocaTrk, *fpIP1, *fpIP2;   
+
+  // -- PidTables
+  PidTable *fpMuonID;
+  PidTable *fpMuonTr;
 
 };
 
