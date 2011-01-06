@@ -1,5 +1,6 @@
 # massReader cuts
 CAND 300531
+TRIGGERED 1
 # phiReader cuts
 TRACK_QUAL_MU1 4
 TRACK_QUAL_MU2 4
