@@ -46,6 +46,16 @@ AnalysisCuts::~AnalysisCuts() {
 // }
 
 
+
+// ----------------------------------------------------------------------
+void AnalysisCuts::dumpAll() {
+  for (int i = 0; i < fNcuts; ++i) {
+    cout << Form("Cut %2d: %s (%s) at %d", i, fCutName[i].Data(), fDescription[i].Data(), fCutLocation[i]) 
+	 << Form(" nm=%i si=%i cu=%i", (fNm1Value[i]?1:0),  (fCutValue[i]?1:0),  (fCumValue[i]?1:0))
+	 << endl; 
+  }
+}
+
 // ----------------------------------------------------------------------
 void AnalysisCuts::addCut(const char *name, bool &location) {
   addCut(name, "no description", location); 

@@ -51,6 +51,8 @@ public:
   TF1 *fF0, *fF1; 
   TF1 *fP1, *fPG1, *fEG1, *fEG2, *fEPG; 
 
+  int fVerbose;
+
   ClassDef(AnalysisDistribution,1) //Testing AnalysisDistribution
 }; 
 

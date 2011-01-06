@@ -23,6 +23,7 @@
 # Assumptions: jobs are serialized a la asd_asd-asd-10000.py, the numbering is at the end, separated with -
 # ------------ is run in directory where the py files reside! ??? IS THIS TRUE ???
 #
+# 2010/12/10   bug fix: remove $https from jobs.list only for grid jobs
 # 2010/06/18   added new option to control the CMSSW version
 # 2010/06/15   added 'rm -rf $JOB' to start of batch job (in case the previously running job had been killed)
 # 2010/05/10   added debug option to resubmission
@@ -132,11 +133,11 @@ foreach $jobfile (@ARGV) {
 	    # -- remove old entry in jobs.list
 	    $https = `/bin/grep https $tdir/jobs.list`; chop($https); 	    
 	    if ($opt_d) {
-		print "would remove from jobs.list: $https \n";
+		if ($opt_m eq "grid") {print "would remove from jobs.list: $https \n";}
 		print "would remove from jobs.list: $tdir \n";
 		next;
 	    } else {
-		&remove("jobs.list", $https); 
+		if ($opt_m eq "grid") {&remove("jobs.list", $https); }
 		&remove("jobs.list", $tdir); # this will also remove the sge lines which contain $tdir
 	    }
 	} else {

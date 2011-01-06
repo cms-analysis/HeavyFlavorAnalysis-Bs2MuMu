@@ -97,6 +97,8 @@ date
 # several files possible if tree grows to big. copy them all
 echo "--> Save output to SE: $STORAGE1/$FILE1"
 
+# dccp -d 10 dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/testing/test100  /tmp/myfile
+
 set FILES=`ls $JOB*.root`
 echo "Found the following output root files: $FILES"
 foreach f ($FILES)

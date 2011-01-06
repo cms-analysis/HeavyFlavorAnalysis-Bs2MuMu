@@ -1,4 +1,4 @@
-#include "bmmSignalReader.hh"
+#include "bmmBs2JpsiPhiReader.hh"
 #include "TRandom.h"
 #include <cmath>
 #include <string>
@@ -11,42 +11,63 @@ using std::endl;
 using std::vector;
 
 // ----------------------------------------------------------------------
-bmmSignalReader::bmmSignalReader(TChain *tree, TString evtClassName): bmmReader(tree, evtClassName) {
-  cout << "==> bmmSignalReader: constructor..." << endl;
+bmmBs2JpsiPhiReader::bmmBs2JpsiPhiReader(TChain *tree, TString evtClassName): bmmReader(tree, evtClassName) {
+  cout << "==> bmmBs2JpsiPhiReader: constructor..." << endl;
 }
 
+
 // ----------------------------------------------------------------------
-bmmSignalReader::~bmmSignalReader() {
-  cout << "==> bmmSignalReader: destructor..." << endl;
+bmmBs2JpsiPhiReader::~bmmBs2JpsiPhiReader() {
+  cout << "==> bmmBs2JpsiPhiReader: destructor..." << endl;
 
 }
 
+
 // ----------------------------------------------------------------------
-void bmmSignalReader::startAnalysis() {
+void bmmBs2JpsiPhiReader::moreBasicCuts() {
+  cout << "   bmmBs2JpsiPhiReader: more basic cuts" << endl;
+  fAnaCuts.addCut("fGoodDeltaR", "Delta R(KK)", fGoodDeltaR); 
+  fAnaCuts.addCut("fGoodMKK", "m(KK) [GeV]", fGoodMKK); 
+
+
+}
+
+
+// ----------------------------------------------------------------------
+void bmmBs2JpsiPhiReader::startAnalysis() {
   bmmReader::startAnalysis();
-  cout << "==> bmmSignalReader: Starting analysis ... " << (BLIND? "blinded": "NOT blinded") << endl;
+  cout << "==> bmmBs2JpsiPhiReader: Summary of analysis cuts:" << endl;
+  fAnaCuts.dumpAll(); 
 }
 
 
 // ----------------------------------------------------------------------
-void bmmSignalReader::eventProcessing() {
+void bmmBs2JpsiPhiReader::eventProcessing() {
   bmmReader::eventProcessing();
 }
 
 
 // ----------------------------------------------------------------------
-void bmmSignalReader::initVariables() {
+void bmmBs2JpsiPhiReader::initVariables() {
   bmmReader::initVariables();
- 
+  fDeltaR = fMKK = 99.;
+  fGoodDeltaR = fGoodMKK = false;
 }
 
 
 // ----------------------------------------------------------------------
-void bmmSignalReader::MCKinematics() {
+void bmmBs2JpsiPhiReader::insertCand(TAnaCand* pCand) {
+  //  cout << "bmmBs2JpsiPhiReader::insertCand" << endl;
+  bmmReader::insertCand(pCand);
+}
+
+
+// ----------------------------------------------------------------------
+void bmmBs2JpsiPhiReader::MCKinematics() {
   ((TH1D*)fpHistFile->Get("genStudy"))->Fill(1); 
   fGoodMCKinematics = true; 
-  TGenCand *pC(0), *pM1(0), *pM2(0), *pB(0); 
-  int nphotons(0); 
+  TGenCand *pC(0), *pB(0), *pPsi(0), *pPhi(0), *pM1(0), *pM2(0), *pK1(0), *pK2(0); 
+  int npsi(0), nphi(0); 
   bool goodMatch(false); 
   for (int i = 0; i < fpEvt->nGenCands(); ++i) {
     pC = fpEvt->getGenCand(i); 
@@ -54,17 +75,36 @@ void bmmSignalReader::MCKinematics() {
       pB = pC;
       for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
 	pC = fpEvt->getGenCand(id); 
-	if (13 == TMath::Abs(pC->fID)) {
-	  if (0 == pM1) {
-	    pM1 = fpEvt->getGenCand(id); 
-	  } else {
-	    pM2 = fpEvt->getGenCand(id); 
+	if (443 == TMath::Abs(pC->fID)) {
+	  pPsi = pC; 
+	  npsi = pPsi->fDau2 - pPsi->fDau1 + 1; 
+	  for (int idd = pPsi->fDau1; idd <= pPsi->fDau2; ++idd) {
+	    pC = fpEvt->getGenCand(idd); 
+	    if (13 == TMath::Abs(pC->fID)) {
+	      if (0 == pM1) {
+		pM1 = fpEvt->getGenCand(idd); 
+	      } else {
+		pM2 = fpEvt->getGenCand(idd); 
+	      }
+	    }
+	  }
+	} else if (333 == TMath::Abs(pC->fID)) {
+	  pPhi = fpEvt->getGenCand(id); 
+	  nphi = pPhi->fDau2 - pPhi->fDau1 + 1; 
+	  for (int idd = pPhi->fDau1; idd <= pPhi->fDau2; ++idd) {
+	    pC = fpEvt->getGenCand(idd); 
+	    if (321 == TMath::Abs(pC->fID)) {
+	      if (0 == pK1) {
+		pK1 = fpEvt->getGenCand(idd); 
+	      } else {
+		pK2 = fpEvt->getGenCand(idd); 
+	      }
+	    }
 	  }
 	}
       }
-      if (0 != pM1 && 0 != pM2) {
+      if (0 != pM1 && 0 != pM2 && 0 != pK1 && 0 != pK2) {
 	goodMatch = true; 
-	nphotons = pB->fDau2 - pB->fDau1 - 1; 
 	break;
       }
     }
@@ -77,6 +117,8 @@ void bmmSignalReader::MCKinematics() {
       pB->dump(); 
       pM1->dump(); 
       pM2->dump();
+      pK1->dump();
+      pK2->dump();
     } else {
       cout << "no tm decay found" << endl;
     }
@@ -84,69 +126,30 @@ void bmmSignalReader::MCKinematics() {
 
   if (!goodMatch) {
     fGoodMCKinematics = false; 
-    if (fVerbose > -1 ) cout << "--------------------> No matched signal decay found" << endl;
+    if (fVerbose > 2 ) cout << "--------------------> No matched signal decay found" << endl;
+    //    fpEvt->dumpGenBlock(); 
     return;
+  } else {
+    if (fVerbose > 2 ) cout << "--------------------> Did find a matched signal decay" << endl;
+    //    fpEvt->dumpGenBlock(); 
   }
-
-  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)) {
-    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(10); 
-  }
-
-  if ((pM1->fP.Perp() > 3.) && (pM2->fP.Perp() > 3.)) {
-    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(11); 
-  }
-
-  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
-      && (TMath::Abs(pM1->fP.Eta()) < 2.4) && (TMath::Abs(pM2->fP.Eta()) < 2.4)) {
-    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(12); 
-  }
-
-  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
-      && (TMath::Abs(pM1->fP.Eta()) < 2.3) && (TMath::Abs(pM2->fP.Eta()) < 2.3)) {
-    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(13); 
-  }
-
-  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
-      && (TMath::Abs(pM1->fP.Eta()) < 2.2) && (TMath::Abs(pM2->fP.Eta()) < 2.2)) {
-    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(14); 
-  }
-
-  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
-      && (TMath::Abs(pM1->fP.Eta()) < 2.1) && (TMath::Abs(pM2->fP.Eta()) < 2.1)) {
-    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(15); 
-  }
-
-  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
-      && (TMath::Abs(pM1->fP.Eta()) < 2.0) && (TMath::Abs(pM2->fP.Eta()) < 2.0)) {
-    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(16); 
-  }
-
-
-  // -- acceptance numbers
-  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)) {
-    ((TH1D*)fpHistFile->Get("acceptance"))->Fill(1); 
-  }
-  if ((pM1->fP.Perp() > 1.) && (pM2->fP.Perp() > 1.)) {
-    ((TH1D*)fpHistFile->Get("acceptance"))->Fill(2); 
-  }
-  if ((pM1->fP.Perp() > 1.) && (pM2->fP.Perp() > 1.)
-      && (TMath::Abs(pM1->fP.Eta()) < 2.4) && (TMath::Abs(pM2->fP.Eta()) < 2.4)) {
-    ((TH1D*)fpHistFile->Get("acceptance"))->Fill(3); 
-  }
-
 
   // -- hard coded ?! FIXME
-  if (pM1->fP.Perp() < 2.5) fGoodMCKinematics = false;  
-  if (pM2->fP.Perp() < 2.5) fGoodMCKinematics = false;  
+  if (pM1->fP.Perp() < 2.0) fGoodMCKinematics = false;  
+  if (pM2->fP.Perp() < 2.0) fGoodMCKinematics = false;  
+  if (pK1->fP.Perp() < 0.5) fGoodMCKinematics = false;  
+  if (pK2->fP.Perp() < 0.5) fGoodMCKinematics = false;  
   if (TMath::Abs(pM1->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
   if (TMath::Abs(pM2->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
+  if (TMath::Abs(pK1->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
+  if (TMath::Abs(pK2->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
 
 }
 
 
 
 // ----------------------------------------------------------------------
-void bmmSignalReader::candidateSelection(int mode) {
+void bmmBs2JpsiPhiReader::candidateSelection(int mode) {
   int nc0(fCands.size()), nc1(0);
 
   fpCand = 0; 
@@ -157,7 +160,7 @@ void bmmSignalReader::candidateSelection(int mode) {
     nc1 = 0; 
     fCandIdx = -1; 
     ((TH1D*)fpHistFile->Get("bnc1"))->Fill(nc1); 
-    if (fVerbose > 0) cout << "bmmSignalReader> no candidate " << TYPE << " found" << endl;
+    if (fVerbose > 0) cout << "bmmBs2JpsiPhiReader> no candidate " << TYPE << " found" << endl;
     return;
   }
 
@@ -199,7 +202,7 @@ void bmmSignalReader::candidateSelection(int mode) {
       fpCand = fCands[clist[0]];
       fCandIdx = clist[0]; 
       nc1 = 1; 
-      if (fVerbose > 0) cout << "bmmSignalReader> found exactly one candidate " << TYPE 
+      if (fVerbose > 0) cout << "bmmBs2JpsiPhiReader> found exactly one candidate " << TYPE 
 			     << " passing the constituents selection at "  << clist[0]
 			     << endl;
     }
@@ -217,11 +220,11 @@ void bmmSignalReader::candidateSelection(int mode) {
       
       // -- if all candidates are taken, then fpCand at this point is pointing to a random cand
       if (mode < 0) {
-	if (fVerbose > 0) cout << "bmmSignalReader> changing to candidate at " << clist[i] << endl;
+	if (fVerbose > 0) cout << "bmmBs2JpsiPhiReader> changing to candidate at " << clist[i] << endl;
 	fpCand = pCand; 
 	fCandIdx = clist[i]; 
       }
-      // -- closest in rphi
+      // -- closest in rphi. This is pointless for this mode ...
       if (0 == mode) {
 	dr = pl1->fPlab.DeltaR(pl2->fPlab); 
 	if (dr < drMin) {
@@ -229,7 +232,7 @@ void bmmSignalReader::candidateSelection(int mode) {
 	  fCandIdx = clist[i]; 
 	  fvGoodCand[clist[i]] = true; 
 	  drMin = dr; 
-	  if (fVerbose > 0) cout << "bmmSignalReader> found another better candidate " << TYPE 
+	  if (fVerbose > 0) cout << "bmmBs2JpsiPhiReader> found another better candidate " << TYPE 
 				 << " with dr = " << dr << " at " << clist[i]
 				 << endl;
 	}
@@ -242,7 +245,7 @@ void bmmSignalReader::candidateSelection(int mode) {
 	  fCandIdx = clist[i]; 
 	  fvGoodCand[fCandIdx] = true; 
 	  drMin = dr; 
-	  if (fVerbose > 0) cout << "bmmSignalReader> found another better candidate " << TYPE << " with pT = " << dr << endl;
+	  if (fVerbose > 0) cout << "bmmBs2JpsiPhiReader> found another better candidate " << TYPE << " with pT = " << dr << endl;
 	}
       } 
     }
@@ -258,7 +261,7 @@ void bmmSignalReader::candidateSelection(int mode) {
       fCandIdx = 0; 
       fvGoodCand[0] = true; 
       nc1 = 1; 
-      if (fVerbose > 0) cout << "bmmSignalReader> found no candidate " << TYPE 
+      if (fVerbose > 0) cout << "bmmBs2JpsiPhiReader> found no candidate " << TYPE 
 			     << " passing the constituents selection, filling 0"
 			     << " with signal tracks " << fpCand->fSig1 << ".." << fpCand->fSig2
 			     << endl;
@@ -271,7 +274,52 @@ void bmmSignalReader::candidateSelection(int mode) {
 
 
 // ----------------------------------------------------------------------
-int bmmSignalReader::tmCand(TAnaCand *pC) {
+void bmmBs2JpsiPhiReader::fillCandidateVariables() {
+
+  if (0 == fpCand) return;
+
+  // -- Get Kaons
+  TAnaTrack *p0; 
+  TAnaTrack *p1 = 0;
+  TAnaTrack *p2 = 0; fpEvt->getSigTrack(fpCand->fSig1+1); 
+  
+  for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
+    p0 = fpEvt->getSigTrack(it);     
+    if (TMath::Abs(p0->fMCID) != 321) continue;
+    if (0 == p1) {
+      p1 = p0; 
+    } else {
+      p2 = p0; 
+    }
+  }
+
+  fKa1Pt  = p1->fPlab.Perp(); 
+  fKa1Eta = p1->fPlab.Eta(); 
+  fKa1Phi = p1->fPlab.Phi(); 
+
+  fKa2Pt  = p2->fPlab.Perp(); 
+  fKa2Eta = p2->fPlab.Eta(); 
+  fKa2Phi = p2->fPlab.Phi(); 
+
+  fDeltaR  = p1->fPlab.DeltaR(p2->fPlab); 
+
+  TLorentzVector ka1, ka2; 
+  ka1.SetPtEtaPhiM(fKa1Pt, fKa1Eta, fKa1Phi, MKAON); 
+  ka2.SetPtEtaPhiM(fKa2Pt, fKa2Eta, fKa2Phi, MKAON); 
+
+  TLorentzVector phiCand = ka1 + ka2; 
+  fMKK     = phiCand.M();
+
+  fGoodDeltaR = (fDeltaR < DELTAR);
+  fGoodMKK    = (fMKK < MKKHI); 
+  
+  bmmReader::fillCandidateVariables();
+
+
+}
+
+// ----------------------------------------------------------------------
+int bmmBs2JpsiPhiReader::tmCand(TAnaCand *pC) {
   
   int truth(0); 
   TAnaTrack *pT; 
@@ -310,17 +358,27 @@ int bmmSignalReader::tmCand(TAnaCand *pC) {
 }
 
 
-
 // ----------------------------------------------------------------------
-void bmmSignalReader::fillHist() {
-  bmmReader::fillHist(); 
+void bmmBs2JpsiPhiReader::fillCandidateHistograms() {
+  //  cout << "bmmBs2JpsiPhiReader::fillCandidateHistograms()" << endl;
+  //   fAnaCuts.update(); 
+  //   fAnaCuts.dumpAll(); 
 
+  fpDeltaR->fill(fDeltaR, fCandM); 
+  fpMKK->fill(fMKK, fCandM); 
+
+  bmmReader::fillCandidateHistograms(); 
 }
 
+
 // ---------------------------------------------------------------------- 
-void bmmSignalReader::bookHist() {
+void bmmBs2JpsiPhiReader::bookHist() {
   bmmReader::bookHist();
-  cout << "==> bmmSignalReader: bookHist " << endl;
+  cout << "==> bmmBs2JpsiPhiReader: bookHist " << endl;
+
+  fpDeltaR = bookDistribution("deltar", "#Delta R", "fGoodDeltaR", 50, 0., 1.);           
+  fpMKK    = bookDistribution("mkk", "m(KK) [GeV]", "fGoodMKK", 50, 0.95, 1.15);           
+
   TH1D *h1; 
   h1 = new TH1D("h100", "", 100, 0., 100.);
   fTree->Branch("m2",      &fCandM,  "m2/D");
@@ -328,11 +386,11 @@ void bmmSignalReader::bookHist() {
 
 
 // ----------------------------------------------------------------------
-void bmmSignalReader::readCuts(TString filename, int dump) {
+void bmmBs2JpsiPhiReader::readCuts(TString filename, int dump) {
   bmmReader::readCuts(filename, dump); 
 
   fCutFile = filename;
-  if (dump) cout << "==> bmmSignalReader: Reading " << fCutFile.Data() << " for cut settings" << endl;
+  if (dump) cout << "==> bmmBs2JpsiPhiReader: Reading " << fCutFile.Data() << " for cut settings" << endl;
   vector<string> cutLines; 
   readFile(string(fCutFile.Data()), cutLines);
 
@@ -357,8 +415,24 @@ void bmmSignalReader::readCuts(TString filename, int dump) {
     if (buffer[0] == '/') {continue;}
     sscanf(buffer, "%s %f", CutName, &CutValue);
     
+    if (!strcmp(CutName, "MKKHI")) {
+      MKKHI = CutValue; ok = 1;
+      if (dump) cout << "MKKHI:           " << MKKHI << endl;
+      ibin = 300;
+      hcuts->SetBinContent(ibin, MKKHI);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: m^{max}(KK) :: %3.1f", CutName, MKKHI));
+    }
+
+    if (!strcmp(CutName, "DELTAR")) {
+      DELTAR = CutValue; ok = 1;
+      if (dump) cout << "DELTAR:           " << DELTAR << endl;
+      ibin = 301;
+      hcuts->SetBinContent(ibin, DELTAR);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #Delta R(KK) :: %3.1f", CutName, DELTAR));
+    }
+    
     ok = checkCut(CutName, hcuts); 
-    if (!ok) cout << "==> bmmSignalReader: error? nothing done with " << CutName << "!!" << endl;
+    if (!ok) cout << "==> bmmBs2JpsiPhiReader: error? nothing done with " << CutName << "!!" << endl;
   }
 
   if (dump)  cout << "------------------------------------" << endl;

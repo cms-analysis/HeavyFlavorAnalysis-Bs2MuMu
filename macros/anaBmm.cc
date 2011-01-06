@@ -125,21 +125,7 @@ void anaBmm::makeAll(int channel) {
   fpMc[fSgMc]->cd();
   dumpCutNames();
 
-//   fpData[fNoData]->cd(); 
-//   effTable("NoData");
-//   return; 
-
-  // -- BMM
-  fpMc[fSgMc]->cd(); 
-  effTable("SgMc");
-  fpData[fSgData]->cd(); 
-  effTable("SgData");
-
-  // -- B+
-  fpData[fNoData]->cd(); 
-  effTable("NoData");
-  fpMc[fNoMc]->cd(); 
-  effTable("NoMc");
+  allEffTables();
 
 }
 
@@ -171,6 +157,21 @@ void anaBmm::dumpCutNames() {
   }
 }
 
+
+// ----------------------------------------------------------------------
+void anaBmm::allEffTables() {
+  // -- BMM
+  fpMc[fSgMc]->cd(); 
+  effTable("SgMc");
+  fpData[fSgData]->cd(); 
+  effTable("SgData");
+
+  // -- B+
+  fpData[fNoData]->cd(); 
+  effTable("NoData");
+  fpMc[fNoMc]->cd(); 
+  effTable("NoMc");
+}
 
 // ----------------------------------------------------------------------
 void anaBmm::effTable(string smode) {
@@ -217,7 +218,7 @@ void anaBmm::effTable(string smode) {
     cout << "AD for " << cut << " results in " << pdfname << endl;
     AnalysisDistribution a(cut.c_str());
     a.fMassLo = 5.0; 
-    a.fMassHi = 5.5; 
+    a.fMassHi = 5.6; 
     a.hMassCu->SetMinimum(0.);
     n = a.fitMass(a.hMassCu, nE, mode); 
     
@@ -240,8 +241,8 @@ void anaBmm::effTable(string smode) {
     cumEffE= dEff(n, nE, norm, normE);
     
     cout << cut << " n = " << n << "+/-" << nE 
-	 << "rel eff = " << relEff << "+/-" << relEffE
-	 << "cum eff = " << cumEff << "+/-" << cumEffE
+	 << " rel eff = " << relEff << "+/-" << relEffE
+	 << " cum eff = " << cumEff << "+/-" << cumEffE
 	 << endl;
     pdfname = Form("%s/%s_%s_%s_hMassCu.pdf", fDirectory.c_str(), fSuffix.c_str(), smode.c_str(), cut.c_str());
     c0->SaveAs(pdfname.c_str(), "Portrait");

@@ -1,7 +1,8 @@
 #!/usr/bin/env perl
 
+# -s slim
 use Getopt::Std;
-getopts('i:');
+getopts('i:s');
 
 if ($ARGV[0]) {
     $name = $ARGV[0];
@@ -14,16 +15,18 @@ if ($opt_i) {
     $include .= " $opt_i";
 }
 
-$exclude .= " --exclude AnalysisDataFormats/HeavyFlavorObjects/lib/\\*.so";
+if ($opt_s) {$exclude .= " --exclude AnalysisDataFormats/HeavyFlavorObjects/lib/\\*.so";}
 $exclude .= " --exclude AnalysisDataFormats/HeavyFlavorObjects/obj/\\*.o";
 $exclude .= " --exclude AnalysisDataFormats/HeavyFlavorObjects/test";
 $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/obj/\\*.o";
-$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/lib/\\*.so";
-$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/bin/\\*";
+if ($opt_s) {$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/lib/\\*.so";}
+if ($opt_s) {$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/bin/\\*";}
 $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/chains/\\*";
 $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/test";
+$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/crab";
 $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/batchruns";
 $exclude .= " --exclude \\*.root";
+$exclude .= " --exclude \\*.pdf";
 $exclude .= " --exclude \\*Dict\\*";
 
 system("tar zcvf $name $include $exclude"); 

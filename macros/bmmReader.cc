@@ -19,25 +19,8 @@ using std::vector;
 bmmReader::bmmReader(TChain *tree, TString evtClassName): treeReader01(tree, evtClassName) {
   cout << "==> bmmReader: constructor..." << endl;
   cout << "==> Defining analysis cuts" << endl;
-  fAnaCuts.addCut("fWideMass", "m(B candidate) [GeV]", fWideMass); 
-  fAnaCuts.addCut("fGoodL1T", "L1T", fGoodL1T); 
-  fAnaCuts.addCut("fGoodHLT", "HLT", fGoodHLT); 
-  fAnaCuts.addCut("fGoodTracks", "good tracks", fGoodTracks); 
-  fAnaCuts.addCut("fGoodTracksPt", "p_{T,trk} [GeV]", fGoodTracksPt); 
-  fAnaCuts.addCut("fGoodTracksEta", "#eta_{trk} ", fGoodTracksEta); 
-  fAnaCuts.addCut("fGoodMuonsID", "lepton ID", fGoodMuonsID); 
-  fAnaCuts.addCut("fGoodMuonsPt", "p_{T,#mu} [GeV]", fGoodMuonsPt); 
-  fAnaCuts.addCut("fGoodMuonsEta", "#eta_{#mu}", fGoodMuonsEta); 
-  fAnaCuts.addCut("fGoodPt", "p_{T,B}", fGoodPt); 
-  fAnaCuts.addCut("fGoodEta", "#eta_{B}", fGoodEta); 
-  fAnaCuts.addCut("fGoodCosA", "cos(#alpha)", fGoodCosA); 
-  fAnaCuts.addCut("fGoodFLS", "l/#sigma(l)", fGoodFLS); 
-  fAnaCuts.addCut("fGoodChi2", "#chi^{2}", fGoodChi2); 
-  fAnaCuts.addCut("fGoodIso", "I_{trk}", fGoodIso); 
-  fAnaCuts.addCut("fGoodDocaTrk", "d_{ca}(trk)", fGoodDocaTrk); 
-  fAnaCuts.addCut("fGoodIP", "sin#beta*l_{3d}/IP", fGoodIP); 
-
 }
+
 
 // ----------------------------------------------------------------------
 bmmReader::~bmmReader() {
@@ -47,8 +30,9 @@ bmmReader::~bmmReader() {
 
 // ----------------------------------------------------------------------
 void bmmReader::startAnalysis() {
+  //   cout << "==> bmmReader: Summary of analysis cuts:" << endl;
+  //   fAnaCuts.dumpAll(); 
   cout << "==> bmmReader: Starting analysis..." << endl;
-
 }
 
 
@@ -136,17 +120,18 @@ void bmmReader::initVariables() {
 
 // ----------------------------------------------------------------------
 void bmmReader::insertCand(TAnaCand* pCand) {
-    fCands.push_back(pCand); 
-    // -- this is just to initialize the vector variables
-    fvGoodMuonsID.push_back(true); 
-    fvGoodMuonsPt.push_back(true);
-    fvGoodMuonsEta.push_back(true);
-    fvGoodTracks.push_back(true);
-    fvGoodTracksPt.push_back(true);
-    fvGoodTracksEta.push_back(true);
-    fvGoodCandPt.push_back(true);
-
-    fvGoodCand.push_back(false); 
+  //  cout << "bmmReader::insertCand" << endl;
+   fCands.push_back(pCand); 
+  // -- this is just to initialize the vector variables
+  fvGoodMuonsID.push_back(true); 
+  fvGoodMuonsPt.push_back(true);
+  fvGoodMuonsEta.push_back(true);
+  fvGoodTracks.push_back(true);
+  fvGoodTracksPt.push_back(true);
+  fvGoodTracksEta.push_back(true);
+  fvGoodCandPt.push_back(true);
+  
+  fvGoodCand.push_back(false); 
 }
 
 
@@ -438,15 +423,29 @@ void bmmReader::trackSelection() {
 void bmmReader::muonSelection() {
 
   TAnaTrack *pt, *ps; 
-  
+  int result(0); 
   for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
     for (int it = fCands[iC]->fSig1; it <= fCands[iC]->fSig2; ++it) {
       ps = fpEvt->getSigTrack(it); 
       if (TMath::Abs(ps->fMCID) != 13) continue;
       pt = fpEvt->getRecTrack(ps->fIndex); 
-      if (0 == (pt->fMuID & MUID)) {
-	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUID: " << pt->fMuID << endl;          
-	fvGoodMuonsID[iC] = false; 
+      result = pt->fMuID & MUIDMASK;
+      if (fVerbose > 4)
+	cout << "muon " << ps->fIndex
+	     << hex << " with muid = " << pt->fMuID << " MUIDMASK = " << MUIDMASK << " MUIDRESULT = " << MUIDRESULT
+	     << " ===>  result = " << result << dec << endl;
+      if (0 == MUIDRESULT ) {
+	// -- result must be larger than zero for successful muon ID, i.e., the OR of the bits
+	if (0 == result){
+	  if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUID: " << hex << pt->fMuID << dec << endl;          
+	  fvGoodMuonsID[iC] = false; 
+	}
+      } else {
+	// -- result must be equal to the mask for successful muon ID, i.e., the AND of the bits
+	if (MUIDRESULT != result){
+	  if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUID: " << hex << pt->fMuID << dec << endl;          
+	  fvGoodMuonsID[iC] = false; 
+	}
       }
       if (pt->fPlab.Perp() < MUPTLO) {
 	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUPTLO: " << pt->fPlab.Perp() << endl;          
@@ -496,8 +495,19 @@ void bmmReader::fillCandidateVariables() {
   fCandM     = fpCand->fMass;
 
   TAnaTrack *p0; 
-  TAnaTrack *p1 = fpEvt->getSigTrack(fpCand->fSig1); 
-  TAnaTrack *p2 = fpEvt->getSigTrack(fpCand->fSig1+1); 
+  TAnaTrack *p1 = 0;
+  TAnaTrack *p2 = 0; fpEvt->getSigTrack(fpCand->fSig1+1); 
+  
+  for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
+    p0 = fpEvt->getSigTrack(it);     
+    if (TMath::Abs(p0->fMCID) != 13) continue;
+    if (0 == p1) {
+      p1 = p0; 
+    } else {
+      p2 = p0; 
+    }
+  }
+  
   if (p1->fPlab.Perp() < p2->fPlab.Perp()) {
     p0 = p1; 
     p1 = p2; 
@@ -560,6 +570,10 @@ void bmmReader::fillCandidateVariables() {
 
   fAnaCuts.update(); 
   
+  //   cout << "bmmReader::fillCandidateVariables() dumpAll()" << endl;
+  //   fAnaCuts.dumpAll(); 
+  
+  
 }
 
 
@@ -605,10 +619,15 @@ void bmmReader::fillHist() {
 
 // ----------------------------------------------------------------------
 void bmmReader::fillCandidateHistograms() {
+  //  cout << "bmmReader::fillCandidateHistograms() " << endl;
+
+  //   fAnaCuts.update(); 
+  //   fAnaCuts.dumpAll(); 
 
   // -- only candidate histograms below
   if (0 == fpCand) return;
   
+  // -- historic remnant?!
   for (int i = 0; i < fAnaCuts.ncuts(); ++i) {
     if (fAnaCuts.singleCutTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dSi", i)))->Fill(fCandM);
     if (fAnaCuts.cumulativeCutTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dCu", i)))->Fill(fCandM);
@@ -659,6 +678,7 @@ void bmmReader::bookHist() {
 
   h = new TH1D("l1tStudy", "l1t study", 120, 0., 120.); 
   h = new TH1D("genStudy", "gen study", 100, 0., 100.); 
+  h = new TH1D("acceptance", "acceptance", 100, 0., 100.); 
 
  
   // -- mass histograms for efficiencies
@@ -673,7 +693,7 @@ void bmmReader::bookHist() {
   fpAllEvents= bookDistribution("allevents", "allevents", "fWideMass", 10, 0., 10.);           
   fpHLT      = bookDistribution("hlt", "hlt", "fGoodHLT", 10, 0., 10.);           
   fpPvZ      = bookDistribution("pvz", "z_{PV} [cm]", "fGoodHLT", 50, -10., 10.);           
-  fpTracksPt = bookDistribution("trackspt", "p_{T} [GeV]", "fGoodTracksPt", 50, 0., 25.);           
+  fpTracksPt = bookDistribution("trackspt", "p_{T} [GeV]", "fGoodTracksPt", 50, 0., 25.);
   fpMuonsID  = bookDistribution("muonsid", "muon id", "fGoodMuonsID", 10, 0., 10.); 
   fpMuonsPt  = bookDistribution("muonspt", "p_{T, #mu} [GeV]", "fGoodMuonsPt", 50, 0., 25.); 
   fpMuonsEta = bookDistribution("muonseta", "#eta_{#mu}", "fGoodMuonsEta", 50, -2.5, 2.5); 
@@ -746,28 +766,76 @@ AnalysisDistribution* bmmReader::bookDistribution(const char *hn, const char *ht
 
 
 // ----------------------------------------------------------------------
+void bmmReader::basicCuts() {
+  cout << "    bmmReader basic cuts" << endl;
+  fAnaCuts.addCut("fWideMass", "m(B candidate) [GeV]", fWideMass); 
+  //  fAnaCuts.addCut("fGoodL1T", "L1T", fGoodL1T); 
+  fAnaCuts.addCut("fGoodHLT", "HLT", fGoodHLT); 
+  fAnaCuts.addCut("fGoodTracks", "good tracks", fGoodTracks); 
+  fAnaCuts.addCut("fGoodTracksPt", "p_{T,trk} [GeV]", fGoodTracksPt); 
+  fAnaCuts.addCut("fGoodTracksEta", "#eta_{trk} ", fGoodTracksEta); 
+  fAnaCuts.addCut("fGoodMuonsID", "lepton ID", fGoodMuonsID); 
+  fAnaCuts.addCut("fGoodMuonsPt", "p_{T,#mu} [GeV]", fGoodMuonsPt); 
+  fAnaCuts.addCut("fGoodMuonsEta", "#eta_{#mu}", fGoodMuonsEta); 
+}
+
+
+// ----------------------------------------------------------------------
+void bmmReader::moreBasicCuts() {
+  cout << "    bmmReader more basic cuts?" << endl;
+
+}
+
+
+// ----------------------------------------------------------------------
+void bmmReader::candidateCuts() {
+  cout << "    bmmReader candidate cuts" << endl;
+  fAnaCuts.addCut("fGoodPt", "p_{T,B}", fGoodPt); 
+  fAnaCuts.addCut("fGoodEta", "#eta_{B}", fGoodEta); 
+  fAnaCuts.addCut("fGoodCosA", "cos(#alpha)", fGoodCosA); 
+  fAnaCuts.addCut("fGoodFLS", "l/#sigma(l)", fGoodFLS); 
+  fAnaCuts.addCut("fGoodChi2", "#chi^{2}", fGoodChi2); 
+  fAnaCuts.addCut("fGoodIso", "I_{trk}", fGoodIso); 
+  fAnaCuts.addCut("fGoodDocaTrk", "d_{ca}(trk)", fGoodDocaTrk); 
+  fAnaCuts.addCut("fGoodIP", "sin#beta*l_{3d}/IP", fGoodIP); 
+}
+
+
+// ----------------------------------------------------------------------
+void bmmReader::moreCandidateCuts() {
+  cout << "    bmmReader more candidate cuts?" << endl;
+
+}
+
+
+// ----------------------------------------------------------------------
 void bmmReader::readCuts(TString filename, int dump) {
-  char  buffer[200];
+
+  // -- set up cut sequence for analysis
+  basicCuts(); 
+  moreBasicCuts(); 
+  candidateCuts(); 
+  moreCandidateCuts(); 
+
+  
   fCutFile = filename;
-  sprintf(buffer, "%s", fCutFile.Data());
-  ifstream is(buffer);
+  if (dump) cout << "==> bmmReader: Reading " << fCutFile.Data() << " for cut settings" << endl;
+  vector<string> cutLines; 
+  readFile(string(fCutFile.Data()), cutLines);
+
   char CutName[100];
   float CutValue;
   int ok(0);
 
-  TString fn(fCutFile.Data());
-
-  if (dump) {
-    cout << "====================================" << endl;
-    cout << "==> bmmReader: Cut file  " << fCutFile.Data() << endl;
-    cout << "------------------------------------" << endl;
-  }
-
+  char  buffer[200];
   TH1D *hcuts = new TH1D("hcuts", "", 1000, 0., 1000.);
-  hcuts->GetXaxis()->SetBinLabel(1, fn.Data());
+  hcuts->GetXaxis()->SetBinLabel(1, fCutFile.Data());
   int ibin; 
   string cstring = "B cand"; 
-  while (is.getline(buffer, 200, '\n')) {
+
+  for (unsigned int i = 0; i < cutLines.size(); ++i) {
+    sprintf(buffer, "%s", cutLines[i].c_str()); 
+    
     ok = 0;
     if (buffer[0] == '#') {continue;}
     if (buffer[0] == '/') {continue;}
@@ -903,7 +971,7 @@ void bmmReader::readCuts(TString filename, int dump) {
     }
 
     if (!strcmp(CutName, "CANDDOCATRK")) {
-      CANDISOLATION = CutValue; ok = 1;
+      CANDDOCATRK = CutValue; ok = 1;
       if (dump) cout << "CANDDOCATRK:           " << CANDDOCATRK << endl;
       ibin = 19;
       hcuts->SetBinContent(ibin, CANDDOCATRK);
@@ -1017,22 +1085,29 @@ void bmmReader::readCuts(TString filename, int dump) {
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta_{max}(track) :: %3.1f", CutName, TRACKETAHI));
     }
 
-
-
-    
     // -- Muons
-    if (!strcmp(CutName, "MUID")) {
-      MUID = int(CutValue); ok = 1;
-      if (dump) cout << "MUID:           " << MUID << endl;
+    if (!strcmp(CutName, "MUIDMASK")) {
+      MUIDMASK = int(CutValue); ok = 1;
+      if (dump) cout << "MUIDMASK:           " << MUIDMASK << endl;
       ibin = 200;
-      hcuts->SetBinContent(ibin, MUID);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: MuID :: %d", CutName, MUID));
+      hcuts->SetBinContent(ibin, MUIDMASK);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: MuIDMask :: %d", CutName, MUIDMASK));
+    }
+
+    if (!strcmp(CutName, "MUIDRESULT")) {
+      // MUIDRESULT == 0: compare result of & with ">=0"
+      // MUIDRESULT != 0: compare result of & with "==MUIDRESULT"
+      MUIDRESULT = int(CutValue); ok = 1;
+      if (dump) cout << "MUIDRESULT:           " << MUIDRESULT << endl;
+      ibin = 201;
+      hcuts->SetBinContent(ibin, MUIDRESULT);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: MuIDResult :: %d", CutName, MUIDRESULT));
     }
 
     if (!strcmp(CutName, "MUPTLO")) {
       MUPTLO = CutValue; ok = 1;
       if (dump) cout << "MUPTLO:           " << MUPTLO << " GeV" << endl;
-      ibin = 201;
+      ibin = 202;
       hcuts->SetBinContent(ibin, MUPTLO);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: p_{T}^{min}(#mu) :: %3.1f", CutName, MUPTLO));
     }
@@ -1040,7 +1115,7 @@ void bmmReader::readCuts(TString filename, int dump) {
     if (!strcmp(CutName, "MUPTHI")) {
       MUPTHI = CutValue; ok = 1;
       if (dump) cout << "MUPTHI:           " << MUPTHI << " GeV" << endl;
-      ibin = 202;
+      ibin = 203;
       hcuts->SetBinContent(ibin, MUPTHI);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: p_{T}^{max}(#mu) :: %3.1f", CutName, MUPTHI));
     }
@@ -1048,7 +1123,7 @@ void bmmReader::readCuts(TString filename, int dump) {
     if (!strcmp(CutName, "MUETALO")) {
       MUETALO = CutValue; ok = 1;
       if (dump) cout << "MUETALO:           " << MUETALO << endl;
-      ibin = 203;
+      ibin = 204;
       hcuts->SetBinContent(ibin, MUETALO);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta^{min}(#mu) :: %3.1f", CutName, MUETALO));
     }
@@ -1056,7 +1131,7 @@ void bmmReader::readCuts(TString filename, int dump) {
     if (!strcmp(CutName, "MUETAHI")) {
       MUETAHI = CutValue; ok = 1;
       if (dump) cout << "MUETAHI:           " << MUETAHI << endl;
-      ibin = 204;
+      ibin = 205;
       hcuts->SetBinContent(ibin, MUETAHI);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #eta^{max}(#mu) :: %3.1f", CutName, MUETAHI));
     }
@@ -1064,18 +1139,36 @@ void bmmReader::readCuts(TString filename, int dump) {
     if (!strcmp(CutName, "MUIP")) {
       MUIP = CutValue; ok = 1;
       if (dump) cout << "MUIP:           " << MUIP << endl;
-      ibin = 205;
+      ibin = 206;
       hcuts->SetBinContent(ibin, MUIP);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: IP(#mu) :: %3.1f", CutName, MUIP));
     }
 
 
-    if (!ok) cout << "==> bmmReader: error? nothing done with " << CutName << "!!" << endl;
+    //    if (!ok) cout << "==> bmmReader: error? nothing done with " << CutName << "!!" << endl;
   }
 
   if (dump)  cout << "------------------------------------" << endl;
 
 }
+
+// ----------------------------------------------------------------------
+void bmmReader::readFile(string filename, vector<string> &lines) {
+  cout << "readFile " << filename << endl;
+  char  buffer[200];
+  ifstream is(filename.c_str());
+  char input[1000]; 
+  while (is.getline(buffer, 200, '\n')) {
+    if (buffer[0] != '+') {
+      lines.push_back(string(buffer));
+    } else {
+      sscanf(buffer, "+input %s", input);
+      readFile(input, lines); 
+    }
+  }
+
+}
+
 
 // ----------------------------------------------------------------------
 int bmmReader::checkCut(const char *s, TH1D *hcuts) {

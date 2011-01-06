@@ -16,6 +16,7 @@
 #include "bmmReader.hh"
 #include "bmmSignalReader.hh"
 #include "bmmNormalizationReader.hh"
+#include "bmmBs2JpsiPhiReader.hh"
 #include "dpReader.hh"
 #include "d0Reader.hh"
 #include "lambdaReader.hh"
@@ -196,6 +197,7 @@ int main(int argc, char *argv[]) {
   if (readerName == "bmmReader") a = new bmmReader(chain, TString(evtClassName));
   else if (readerName == "bmmSignalReader") a = new bmmSignalReader(chain,TString(evtClassName));
   else if (readerName == "bmmNormalizationReader") a = new bmmNormalizationReader(chain,TString(evtClassName));
+  else if (readerName == "bmmBs2JpsiPhiReader") a = new bmmBs2JpsiPhiReader(chain,TString(evtClassName));
   else if (readerName == "kpReader") a = new kpReader(chain,TString(evtClassName));
   else if (readerName == "ksReader") a = new ksReader(chain,TString(evtClassName));
   else if (readerName == "phiReader") a = new phiReader(chain,TString(evtClassName));

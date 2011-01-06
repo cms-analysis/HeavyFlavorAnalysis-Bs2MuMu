@@ -97,9 +97,9 @@ void bmmNormalizationReader::MCKinematics() {
   }
 
   // -- hard coded ?! FIXME
-  if (pM1->fP.Perp() < 2.5) fGoodMCKinematics = false;  
-  if (pM2->fP.Perp() < 2.5) fGoodMCKinematics = false;  
-  if (pM2->fP.Perp() < 0.5) fGoodMCKinematics = false;  
+  if (pM1->fP.Perp() < 2.0) fGoodMCKinematics = false;  
+  if (pM2->fP.Perp() < 2.0) fGoodMCKinematics = false;  
+  if (pK->fP.Perp()  < 0.5) fGoodMCKinematics = false;  
   if (TMath::Abs(pM1->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
   if (TMath::Abs(pM2->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
   if (TMath::Abs(pK->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
@@ -167,7 +167,7 @@ void bmmNormalizationReader::candidateSelection(int mode) {
       // -- if all candidates are taken, then fpCand at this point is pointing to a random cand
       fpCand = pCand; 
       fCandIdx = clist[i]; 
-      // -- closest in rphi
+      // -- closest in rphi. This is pointless for this mode ...
       if (0 == mode) {
 	dr = pl1->fPlab.DeltaR(pl2->fPlab); 
 	if (dr < drMin) {
@@ -303,30 +303,27 @@ void bmmNormalizationReader::bookHist() {
 void bmmNormalizationReader::readCuts(TString filename, int dump) {
   bmmReader::readCuts(filename, dump); 
 
-  char  buffer[200];
   fCutFile = filename;
-  sprintf(buffer, "%s", fCutFile.Data());
-  ifstream is(buffer);
+  if (dump) cout << "==> bmmNormalizationReader: Reading " << fCutFile.Data() << " for cut settings" << endl;
+  vector<string> cutLines; 
+  readFile(string(fCutFile.Data()), cutLines);
+
+  char  buffer[200];
   char CutName[100];
   float CutValue;
   int ok(0);
 
-  TString fn(fCutFile.Data());
-
-  if (dump) {
-    cout << "======================================================================" << endl;
-    cout << "==> bmmNormalizationReader: Cut file  " << fCutFile.Data() << endl;
-    cout << "----------------------------------------------------------------------" << endl;
-  }
-
   TH1D *hcuts = (TH1D*)gFile->Get("hcuts"); 
   if (0 == hcuts) {
     new TH1D("hcuts", "", 1000, 0., 1000.);
-    hcuts->GetXaxis()->SetBinLabel(1, fn.Data());
+    hcuts->GetXaxis()->SetBinLabel(1, fCutFile.Data());
   }
   int ibin; 
-  string cstring; 
-  while (is.getline(buffer, 200, '\n')) {
+  string cstring = "B cand"; 
+
+  for (unsigned int i = 0; i < cutLines.size(); ++i) {
+    sprintf(buffer, "%s", cutLines[i].c_str()); 
+
     ok = 0;
     if (buffer[0] == '#') {continue;}
     if (buffer[0] == '/') {continue;}
@@ -336,7 +333,6 @@ void bmmNormalizationReader::readCuts(TString filename, int dump) {
     if (!ok) cout << "==> bmmNormalizationReader: error? nothing done with " << CutName << "!!" << endl;
   }
 
-  if (dump)  cout << "----------------------------------------------------------------------" << endl;
+  if (dump)  cout << "------------------------------------" << endl;
 
 }
-

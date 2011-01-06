@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Usage: cd chains/subdir; runAll -t tarfile [-h] [-m] [-n] [-s] [-d]
+# Usage: cd chains/subdir; runAll -t tarfile [-h] [-m] [-n] [-r] [-a] [-d]
 # ------
 #            -d            printout only, don't do anything
 #            -h            hadd the output rootfiles
@@ -8,10 +8,12 @@
 #            -m            run MC jobs
 #            -n            run normalization jobs
 #            -s            run signal jobs
+#            -a            run Bs2JpsiPhi jobs
 #            -r rootdir    place where to put output
 #
 # 2010/11/23 first shot
 # 2010/11/25 remove inclusion of old merged file in dataset-* list ...
+# 2010/12/14 bug fix to allow really n wildcards (in addition to the trailing -*)
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
@@ -19,17 +21,25 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('cdhmnsr:t:');
+getopts('aCcdhj:mnsr:t:');
 
+my $job = "default";
+if ($opt_j) {
+    $job = $opt_j; 
+}
 
 my %jobs = ("signal MC" 
-	    => "-m,bmmSignalReader,bmmSignalReader.default.cuts,cBsToMuMu_2MuPtFilter_7TeV-pythia6-evtgen-Fall10,signalMC.root"
+	    => "-m,bmmSignalReader,bmmSignalReader.$job.cuts,cBsToMuMu_2MuPtFilter_7TeV-pythia6-evtgen-Fall10,signalMC.root"
 	    , "signal data" 
-	    => "-b 1,bmmSignalReader,bmmSignalReader.default.cuts,cMuOnia-Run2010*-Nov4ReReco_v1-*,signalData.root"
+	    => "-b 1,bmmSignalReader,bmmSignalReader.$job.cuts,cMu*-Run2010*-Nov4ReReco_v1-*,signalData.root"
 	    , "norm MC" 
-	    => "-m,bmmNormalizationReader,bmmNormalizationReader.default.cuts,cBpToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,normMC.root"
+	    => "-m,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cBpToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,normMC.root"
 	    , "norm data" 
-	    => "-b 0,bmmNormalizationReader,bmmNormalizationReader.default.cuts,cMuOnia-Run2010*-Nov4ReReco_v1-*,normData.root"
+	    => "-b 0,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cMu*-Run2010*-Nov4ReReco_v1-*,normData.root"
+	    , "Bs2JpsiPhi MC" 
+	    => "-m,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cBsToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,Bs2JpsiPhiMC.root"
+	    , "Bs2JpsiPhi data" 
+	    => "-b 0,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cMu*-Run2010*-Nov4ReReco_v1-*,Bs2JpsiPhiData.root"
     );
 
 my $user  = $ENV{'USER'};
@@ -44,31 +54,36 @@ if ($opt_t) {
     }
 }
 
-my $rootdir = "root/bmm"; 
+my $crash = ""; 
+if ($opt_C) {$crash = "-C";}
+
+my $rootdir = "bmm"; 
 if ($opt_r) {
     $rootdir = $opt_r; 
 }
 my $storage = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/$rootdir";
 my $srmcmd = "srmcp -2 --streams_num=1";
 my $dcap = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
-my $scratch = "/scratch/$user"; 
+#my $scratch = "/scratch/$user"; 
+my $scratch = "/shome/$user/scratch"; 
 
-my $runCommand = "run -c ../../tree.csh -t $tarfile -m batch";
+my $runCommand = "run $crash -c ../../treeNoComp.csh -t $tarfile -m batch";
 
 
 # ----------------------------------------------------------------------
 # -- run hadd instead of submitting
 if ($opt_h) {
     foreach $j (keys %jobs) {
-	if ($opt_c && $j =~ /MC/) {next; }
-	if ($opt_s && $j =~ /norm/) {next; }
-	if ($opt_n && $j =~ /signal/) {next; }
-	if ($opt_m && $j =~ /data/) {next; }
+	if ($opt_c && !($j =~ /data/)) {next; }
+	if ($opt_n && !($j =~ /norm/)) {next; }
+	if ($opt_s && !($j =~ /signal/)) {next; }
+	if ($opt_a && !($j =~ /Bs2JpsiPhi/)) {next; }
+	if ($opt_m && !($j =~ /MC/)) {next; }
 	($options, $class, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
 	@lines = `srmls $storage/$class | grep root`;
 	
 	$dataset =~ s/-\*//;
-	$dataset =~ s/\*/.\*/;
+	$dataset =~ s/\*/.\*/g;
 	print "dataset = $dataset\n";
 	print "file = $output\n";
 #	@rootfiles = grep(/$dataset-[0-9]{1,3}/, @lines); 
@@ -99,10 +114,11 @@ if ($opt_h) {
 foreach $j (keys %jobs) {
     ($options, $class, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
     $command = "$runCommand -x 'bin/runTreeReaders -r $class $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ../$dataset"; 
-    if ($opt_c && $j =~ /MC/) {next; }
-    if ($opt_s && $j =~ /norm/) {next; }
-    if ($opt_n && $j =~ /signal/) {next; }
-    if ($opt_m && $j =~ /data/) {next; }
+    if ($opt_c && !($j =~ /data/)) {next; }
+    if ($opt_n && !($j =~ /norm/)) {next; }
+    if ($opt_s && !($j =~ /signal/)) {next; }
+    if ($opt_a && !($j =~ /Bs2JpsiPhi/)) {next; }
+    if ($opt_m && !($j =~ /MC/)) {next; }
 
     if ($opt_d) {
 	print "$j \n$command\n";

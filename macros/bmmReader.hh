@@ -36,6 +36,11 @@ public:
   ~bmmReader();
 
   virtual void   startAnalysis();
+  virtual void   basicCuts();
+  virtual void   moreBasicCuts();
+  virtual void   candidateCuts();
+  virtual void   moreCandidateCuts();
+
   virtual void   eventProcessing();
   virtual void   MCKinematics();  
   virtual void   L1TSelection();  
@@ -45,6 +50,7 @@ public:
   virtual void   bookHist();
   virtual void   fillHist();
   virtual void   readCuts(TString filename, int dump = 1);
+  virtual void   readFile(std::string filename, std::vector<std::string> &lines);
   virtual void   initVariables();
 
   virtual void   studyL1T(); 
@@ -82,7 +88,7 @@ public:
     , MUETAHI   
     , MUIP
     ;
-  int TYPE, SELMODE, MUID, TRACKQUALITY;
+  int TYPE, SELMODE, MUIDMASK, MUIDRESULT, TRACKQUALITY;
   std::vector<std::string> HLTPath, L1TPath; 
 
   bool fL1TMu0, fL1TMu3;

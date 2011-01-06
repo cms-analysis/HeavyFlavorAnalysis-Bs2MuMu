@@ -7,6 +7,6 @@ L1TRIGGER   L1_DoubleMuOpen
 # -- tracks
 +input cuts/tracks.cuts
 # -- muons
-+input cuts/muons.cuts
++input cuts/muons.old.cuts
 # -- candidate
-+input cuts/candidate.cuts
++input cuts/candidate.old.cuts

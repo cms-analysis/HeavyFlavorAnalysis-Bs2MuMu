@@ -37,6 +37,7 @@ public:
 
   AnalysisCuts(); 
   ~AnalysisCuts(); 
+  void dumpAll(); 
 
   int getIndex(const char *name); 
   const char* getName(int i); 

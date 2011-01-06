@@ -1,0 +1,8 @@
+# -- muon 
+MUIDMASK            6
+MUIDRESULT          6
+MUPTLO            2.0
+MUPTHI         9999.0
+MUETALO          -2.4
+MUETAHI           2.4
+MUIP             99.0

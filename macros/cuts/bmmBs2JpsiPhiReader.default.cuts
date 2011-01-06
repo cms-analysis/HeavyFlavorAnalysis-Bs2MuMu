@@ -1,4 +1,4 @@
-TYPE           300521
+TYPE           300531 
 SELMODE            -1
 TRIGGER     HLT_DoubleMu0,HLT_DoubleMu0_Quarkonium_v1
 L1TRIGGER   L1_DoubleMuOpen
@@ -10,3 +10,7 @@ L1TRIGGER   L1_DoubleMuOpen
 +input cuts/muons.cuts
 # -- candidate
 +input cuts/candidate.cuts
+# -- specifics
+DELTAR 0.25
+MKKHI  1.04
+BLA    1.0

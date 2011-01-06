@@ -2,35 +2,11 @@ TYPE           301313
 SELMODE            -1
 TRIGGER     HLT_DoubleMu0,HLT_DoubleMu0_Quarkonium_v1
 L1TRIGGER   L1_DoubleMuOpen
-# -- Candidate
-CANDPTLO          5.0
-CANDETALO        -2.4
-CANDETAHI         2.4
-CANDCOSALPHA      0.99
-CANDFLS3D        10.0
-CANDFLSXY       -99.0
-CANDVTXCHI2      10.0
-CANDISOLATION     0.60
-CANDDOCATRK       0.015
-# boxes ...
-SIGBOXMIN         5.2
-SIGBOXMAX         5.4
-BGLBOXMIN         5.1
-BGLBOXMAX         5.2
-BGHBOXMIN         5.5
-BGHBOXMAX         5.7
+# -- boxes
++input cuts/boxes.cuts
 # -- tracks
-TRACKQUALITY      1
-TRACKPTLO         0.5
-TRACKPTHI      9999.0
-TRACKTIP          1.0
-TRACKLIP         15.0
-TRACKETALO       -2.4
-TRACKETAHI        2.4
-# -- muon 
-MUID              4
-MUPTLO            1.0
-MUPTHI         9999.0
-MUETALO          -2.4
-MUETAHI           2.4
-MUIP             99.0
++input cuts/tracks.cuts
+# -- muons
++input cuts/muons.cuts
+# -- candidate
++input cuts/candidate.cuts

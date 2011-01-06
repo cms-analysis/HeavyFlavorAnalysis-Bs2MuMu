@@ -81,6 +81,7 @@ while(<IN>) {
 	    print $bla;
 	}
     } else { 
+	system("/bin/rm -f  $mdir/OK"); 
 	system("/bin/touch $mdir/NOK"); 
 	$badJobs++; 
 	if ($opt_r) {
@@ -115,6 +116,12 @@ sub parseOutput {
 
     $foundBadAlloc   = `/bin/grep -i "std::bad_alloc" $llogfile`;
     if ($foundBadAlloc) {$return = "std::bad_alloc detected"; }
+
+    $foundSEGV   = `/bin/grep -i "segmentation violation" $llogfile`;
+    if ($foundSEGV) {$return = "segmentation violation detected"; }
+
+    $foundJavaProblem   = `/bin/grep -i "java.lang.Error" $llogfile`;
+    if ($foundJavaProblem) {$return = "java.lang.Error detected"; }
 
     return $return;
 }

@@ -40,6 +40,7 @@ public:
   // --------------
   void makeAll(int channels = 3);
   void dumpCutNames();
+  void allEffTables();
   void effTable(std::string mode);
 
 
