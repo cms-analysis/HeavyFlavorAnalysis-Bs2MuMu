@@ -23,6 +23,7 @@ phiReader::phiReader(TChain *tree, TString evtClassName) :
 	fCutMass_PhiHigh(0.0),
 	fCutPt_Kp2(0.0),
 	fCutDeltaR_Kaons(0.0),
+	fCutPt_Mu2(0.0),
 	total_counter(0),
 	reco_single(0),
 	reco_double(0)
@@ -111,6 +112,8 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 	fMuID2 = 0;
 	fEtaMu1 = 0.0f;
 	fEtaMu2 = 0.0f;
+	fMuID_Kp1 = 0;
+	fMuID_Kp2 = 0;
 	
 	if (pCand->fType % 1000 != 531) return 0;
 	
@@ -138,6 +141,7 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 				fQ_mu1 = recTrack->fQ;
 				mu1.SetXYZM(recTrack->fPlab.X(),recTrack->fPlab.Y(),recTrack->fPlab.Z(),MUMASS);
 				fMuID1 = recTrack->fMuID;
+				if (fMuID1 < 0) fMuID1 = 0;
 				fEtaMu1 = sigTrack->fPlab.Eta();
 			} else {
 				plabMu2 = sigTrack->fPlab;
@@ -145,6 +149,7 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 				fQ_mu2 = recTrack->fQ;
 				mu2.SetXYZM(recTrack->fPlab.X(),recTrack->fPlab.Y(),recTrack->fPlab.Z(),MUMASS);
 				fMuID2 = recTrack->fMuID;
+				if (fMuID2 < 0) fMuID2 = 0;
 				fEtaMu2 = sigTrack->fPlab.Eta();
 			}
 			firstMu = 0;
@@ -153,10 +158,14 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 				plabKp1 = sigTrack->fPlab;
 				fTrackQual_kp1 = recTrack->fTrackQuality;
 				fQ_kp1 = recTrack->fQ;
+				fMuID_Kp1 = recTrack->fMuID;
+				if (fMuID_Kp1 < 0) fMuID_Kp1 = 0;
 			} else {
 				plabKp2 = sigTrack->fPlab;
 				fTrackQual_kp2 = recTrack->fTrackQuality;
 				fQ_kp2 = recTrack->fQ;
+				fMuID_Kp2 = recTrack->fMuID;
+				if (fMuID_Kp2 < 0) fMuID_Kp2 = 0;
 			}
 			firstKp = 0;
 		}
@@ -176,6 +185,7 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 		swap(plabKp1,plabKp2);
 		swap(fTrackQual_kp1,fTrackQual_kp2);
 		swap(fQ_kp1,fQ_kp2);
+		swap(fMuID_Kp1,fMuID_Kp2);
 	}
 	
 	// set the j/psi mass
@@ -243,6 +253,8 @@ void phiReader::bookHist()
 	reduced_tree->Branch("id_mu2",&fMuID2,"id_mu2/I");
 	reduced_tree->Branch("eta_mu1",&fEtaMu1,"eta_mu1/F");
 	reduced_tree->Branch("eta_mu2",&fEtaMu2,"eta_mu2/F");
+	reduced_tree->Branch("id_kp1",&fMuID_Kp1,"id_kp1/I");
+	reduced_tree->Branch("id_kp2",&fMuID_Kp2,"id_kp2/I");
 	reduced_tree->Branch("track_qual_mu1",&fTrackQual_mu1,"track_qual_mu1/I");
 	reduced_tree->Branch("track_qual_mu2",&fTrackQual_mu2,"track_qual_mu2/I");
 	reduced_tree->Branch("track_qual_kp1",&fTrackQual_kp1,"track_qual_kp1/I");
@@ -354,6 +366,13 @@ bool phiReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 		goto bail;
 	}
 	
+	parsed = (strcmp(cutName,"PT_MU2") == 0);
+	if (parsed) {
+		fCutPt_Mu2 = cutLow;
+		if (dump) cout << "PT_MU2: " << fCutPt_Mu2 << endl;
+		goto bail;
+	}
+	
 	parsed = (strcmp(cutName,"DELTAR_KAONS") == 0);
 	if (parsed) {
 		fCutDeltaR_Kaons = cutLow;
@@ -433,6 +452,11 @@ bool phiReader::applyCut()
 	
 	if (fCutMass_PhiHigh > 0.0) {
 		pass = fMassPhi < fCutMass_PhiHigh;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutPt_Mu2 > 0.0) {
+		pass = fPtMu2 > fCutPt_Mu2;
 		if (!pass) goto bail;
 	}
 	

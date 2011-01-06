@@ -34,6 +34,7 @@ class phiReader : public massReader {
 		
 		int fMuID1,fMuID2;
 		float fEtaMu1,fEtaMu2;
+		int fMuID_Kp1, fMuID_Kp2;
 		
 		int fTrackQual_mu1;
 		int fTrackQual_mu2;
@@ -64,6 +65,7 @@ class phiReader : public massReader {
 		double fCutMass_PhiHigh;
 		double fCutPt_Kp2;
 		double fCutDeltaR_Kaons;
+		double fCutPt_Mu2;
 	
 	private:
 		std::map<int,int> decay_indices; // (genIx, ident_muons)

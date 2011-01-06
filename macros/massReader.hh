@@ -110,11 +110,13 @@ class massReader : public treeReader01 {
 	// Cut variables
 	protected:
 		bool fCutFileParsed;
+		bool fCutTriggered;
 		int fCutCand; // the candidate to extract
 		double fCutFlight3dSign;
 		double fCutChi2;
 		double fCutPt;
 		double fCutAlpha;
+		double fCutChi2ByNdof;
 		int fCutTruth; // truth matching
 };
 

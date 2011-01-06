@@ -6,11 +6,13 @@ using namespace std;
 massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName),
 	reduced_tree(NULL),
 	fCutFileParsed(false),
+	fCutTriggered(false),
 	fCutCand(0),
 	fCutFlight3dSign(0.0),
 	fCutChi2(0.0),
 	fCutPt(0.0),
 	fCutAlpha(0.0),
+	fCutChi2ByNdof(0.0),
 	fCutTruth(0)
 {	
 	fTreeName = "massReader reduced tree";
@@ -430,7 +432,7 @@ int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 void massReader::readCuts(TString filename, int dump)
 {
 	// parse the files...
-	char buffer[256];
+	char buffer[1024];
 	char cutName[128];
 	float cutLow,cutHigh;
 	int ok;
@@ -448,10 +450,8 @@ void massReader::readCuts(TString filename, int dump)
 	
 	while (fgets(buffer,sizeof(buffer),cutFile)) {
 		
-		if(buffer[strlen(buffer)-1] != '\n') {
-			cout << "==> massReader: Cut file line is too long, skipping..." << endl;
-			continue;
-		}
+		if (buffer[strlen(buffer)-1] == '\n')
+			buffer[strlen(buffer)-1] = '\0';
 		
 		// skip comment line
 		if (buffer[0] == '#') continue;
@@ -460,14 +460,17 @@ void massReader::readCuts(TString filename, int dump)
 		if(ok < 2) {
 			cout << "==> massReader: Cut not parse input line:" << endl;
 			cout << buffer << endl;
-			cout << "==> massReader: Skipping this line..." << endl;
+			cout << "==> massReader: abort..." << endl;
+			abort();
 			continue;
 		}
 		else if(ok == 2) // no upper cut read...
 			cutHigh = 0.0f;
 		
-		if(!parseCut(cutName, cutLow, cutHigh))
-			cout << "==> massReader: Error parsing variable " << cutName << ". Ignoring this cut..." << endl;
+		if(!parseCut(cutName, cutLow, cutHigh)) {
+			cout << "==> massReader: Error parsing variable " << cutName << ". abort..." << endl;
+			abort();
+		}
 	}
 	
 	if (dump) cout << "---------------------------------------------------" << endl;
@@ -523,6 +526,20 @@ bool massReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 		goto bail;
 	}
 	
+	parsed = (strcmp(cutName,"TRIGGERED") == 0);
+	if (parsed) {
+		fCutTriggered = (cutLow != 0.0f);
+		if (dump) cout << "TRIGGERED: " << fCutTriggered << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"CHI2BYNDOF") == 0);
+	if (parsed) {
+		fCutChi2ByNdof = cutLow;
+		if (dump) cout << "CHI2BYNDOF: " << fCutChi2ByNdof << endl;
+		goto bail;
+	}
+	
 bail:
 	return parsed;
 } // parseCut()
@@ -559,6 +576,16 @@ bool massReader::applyCut()
 	
 	if (fCutTruth != 0) {
 		pass = (fTruth == fCutTruth); // can be used to deselect all truth matched ones
+		if (!pass) goto bail;
+	}
+	
+	if (fCutChi2ByNdof > 0.0) {
+		pass = fChi2 / fNdof < fCutChi2ByNdof;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutTriggered) {
+		pass = ( (fTriggersFound & kHLT_DoubleMu0_Quarkonium_v1_Bit) && (fTriggers & kHLT_DoubleMu0_Quarkonium_v1_Bit) ) || ( ((fTriggersFound & kHLT_DoubleMu0_Quarkonium_v1_Bit) == 0) && (fTriggers & kHLT_DoubleMu0_Bit) );
 		if (!pass) goto bail;
 	}
 	
