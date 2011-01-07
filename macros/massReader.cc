@@ -54,15 +54,24 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fChi2 = pCand->fVtx.fChi2;
 	fNdof = pCand->fVtx.fNdof;
 	fMaxDoca = pCand->fMaxDoca;
-	fIso7_pt0 = calculateIsolation(pCand, 0.7, 0.0);
-	fIso7_pt5 = calculateIsolation(pCand, 0.7, 0.5);
-	fIso7_pt7 = calculateIsolation(pCand, 0.7, 0.7);
-	fIso7_pt10 = calculateIsolation(pCand, 0.7, 1.0);
-	fIso10_pt0 = calculateIsolation(pCand, 1.0, 0.0);
-	fIso10_pt5 = calculateIsolation(pCand, 1.0, 0.5);
-	fIso10_pt7 = calculateIsolation(pCand, 1.0, 0.7);
-	fIso10_pt9 = calculateIsolation(pCand, 1.0, 0.9);
-	fIso10_pt10 = calculateIsolation(pCand, 1.0, 1.0);
+	fIso7_pt0 = calculateIsolation(pCand, 0.7, 0.0, false);
+	fIso7_pt5 = calculateIsolation(pCand, 0.7, 0.5, false);
+	fIso7_pt7 = calculateIsolation(pCand, 0.7, 0.7, false);
+	fIso7_pt10 = calculateIsolation(pCand, 0.7, 1.0, false);
+	fIso10_pt0 = calculateIsolation(pCand, 1.0, 0.0, false);
+	fIso10_pt5 = calculateIsolation(pCand, 1.0, 0.5, false);
+	fIso10_pt7 = calculateIsolation(pCand, 1.0, 0.7, false);
+	fIso10_pt9 = calculateIsolation(pCand, 1.0, 0.9, false);
+	fIso10_pt10 = calculateIsolation(pCand, 1.0, 1.0, false);
+	fIso7_pt0_pv = calculateIsolation(pCand, 0.7, 0.0, true);
+	fIso7_pt5_pv = calculateIsolation(pCand, 0.7, 0.5, true);
+	fIso7_pt7_pv = calculateIsolation(pCand, 0.7, 0.7, true);
+	fIso7_pt10_pv = calculateIsolation(pCand, 0.7, 1.0, true);
+	fIso10_pt0_pv = calculateIsolation(pCand, 1.0, 0.0, true);
+	fIso10_pt5_pv = calculateIsolation(pCand, 1.0, 0.5, true);
+	fIso10_pt7_pv = calculateIsolation(pCand, 1.0, 0.7, true);
+	fIso10_pt9_pv = calculateIsolation(pCand, 1.0, 0.9, true);
+	fIso10_pt10_pv = calculateIsolation(pCand, 1.0, 1.0, true);
 	fCtau = 0.0f; // we can compute this only in a subclass, so initialize to zero
 	fEta = pCand->fPlab.Eta();
 	
@@ -150,6 +159,15 @@ void massReader::bookHist()
 	reduced_tree->Branch("iso10_pt7",&fIso10_pt7,"iso10_pt7/F");
 	reduced_tree->Branch("iso10_pt9",&fIso10_pt9,"iso10_pt9/F");
 	reduced_tree->Branch("iso10_pt10",&fIso10_pt10,"iso10_pt10/F");
+	reduced_tree->Branch("iso7_pt0_pv",&fIso7_pt0_pv,"iso7_pt0_pv/F");
+	reduced_tree->Branch("iso7_pt5_pv",&fIso7_pt5_pv,"iso7_pt5_pv/F");
+	reduced_tree->Branch("iso7_pt7_pv",&fIso7_pt7_pv,"iso7_pt7_pv/F");
+	reduced_tree->Branch("iso7_pt10_pv",&fIso7_pt10_pv,"iso7_pt10_pv/F");
+	reduced_tree->Branch("iso10_pt0_pv",&fIso10_pt0_pv,"iso10_pt0_pv/F");
+	reduced_tree->Branch("iso10_pt5_pv",&fIso10_pt5_pv,"iso10_pt5_pv/F");
+	reduced_tree->Branch("iso10_pt7_pv",&fIso10_pt7_pv,"iso10_pt7_pv/F");
+	reduced_tree->Branch("iso10_pt9_pv",&fIso10_pt9_pv,"iso10_pt9_pv/F");
+	reduced_tree->Branch("iso10_pt10_pv",&fIso10_pt10_pv,"iso10_pt10_pv/F");
 	reduced_tree->Branch("triggers",&fTriggers,"triggers/I");
 	reduced_tree->Branch("triggers_error",&fTriggersError,"triggers_error/I");
 	reduced_tree->Branch("triggers_found",&fTriggersFound,"triggers_found/I");
@@ -347,7 +365,7 @@ void massReader::findAllTrackIndices(TAnaCand* pCand, map<int,int> *indices)
 		findAllTrackIndices(fpEvt->getCand(j),indices);
 } // findAllTrackIndices()
 
-float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt)
+float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt, bool sameVertex)
 {
 	double iso; // calculate in double precision and return single
 	TVector3 plabB;
@@ -366,8 +384,14 @@ float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle, doubl
 		if (usedTracks.count(j) > 0) continue; // this track belongs to the candidate
 		
 		pTrack = fpEvt->getRecTrack(j);
+		
+		// if samevertex, veto tracks not from the same PV
+		if (sameVertex && (pTrack->fPvIdx != pCand->fPvIdx)) continue;
+		
+		// pt veto
 		if (pTrack->fPlab.Perp() <= minPt) continue;
 		
+		// opening angle
 		r = plabB.DeltaR(pTrack->fPlab);
 		if (r < openingAngle)
 			iso += pTrack->fPlab.Perp();
