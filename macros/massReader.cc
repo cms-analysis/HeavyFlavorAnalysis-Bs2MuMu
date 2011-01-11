@@ -5,6 +5,7 @@ using namespace std;
 
 massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName),
 	reduced_tree(NULL),
+	fTruthType(0),
 	fCutFileParsed(false),
 	fCutTriggered(false),
 	fCutCand(0),
@@ -104,7 +105,10 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		v2 = pCand->fVtx.fPoint - momCand->fVtx.fPoint;
 	} else {
 		v1 = pCand->fPlab;
-		v2 = pCand->fVtx.fPoint - fpEvt->bestPV()->fPoint;
+		if (0 <= pCand->fPvIdx && pCand->fPvIdx < fpEvt->nPV())
+			v2 = pCand->fVtx.fPoint - fpEvt->getPV(pCand->fPvIdx)->fPoint;
+		else
+			v2 = pCand->fVtx.fPoint - fpEvt->bestPV()->fPoint;
 	}
 	
 	fAlpha = v1.Angle(v2);
@@ -196,9 +200,11 @@ int massReader::checkTruth(TAnaCand *cand)
 	TAnaTrack *pTrack;
 	TGenCand *truthParticle;
 	TGenCand *trackParticle;
-	int nGens, truth_type, j;
+	int nGens, j;
 	
-	truth_type = cand->fType % 1000;
+	if (!fTruthType)
+		fTruthType = cand->fType % 10000;
+	
 	nGens = fpEvt->nGenCands();
 	
 	pTrack = fpEvt->getSigTrack(cand->fSig1);
@@ -207,12 +213,12 @@ int massReader::checkTruth(TAnaCand *cand)
 	if (pTrack->fGenIndex < 0 || pTrack->fGenIndex >= nGens) goto bail;
 	truthParticle = fpEvt->getGenCand(pTrack->fGenIndex);
 	
-	while (abs(truthParticle->fID) != truth_type) {
+	while (abs(truthParticle->fID) != fTruthType) {
 		if (truthParticle->fMom1 < 0 || truthParticle->fMom1 >= nGens) goto bail;
 		truthParticle = fpEvt->getGenCand(truthParticle->fMom1);
 	}
 	
-	// check to see if the other tracks originate from the same track...
+	// check to see if the other tracks originate from the same particle...
 	for (j = cand->fSig1+1; j <= cand->fSig2; j++) {
 		
 		pTrack = fpEvt->getSigTrack(j);

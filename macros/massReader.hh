@@ -41,6 +41,7 @@ class massReader : public treeReader01 {
 		// For subclasses
 		TTree *reduced_tree;
 		std::multiset<int> trueDecay;
+		int fTruthType;
 		
 		virtual int loadCandidateVariables(TAnaCand *pCand);
 		virtual bool parseCut(char *cutName, float cutLow, float cutHigh, int dump = 1);
