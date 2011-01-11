@@ -3,6 +3,10 @@
 type=sg,default dset=data lumi=39.4 file=/scratch/ursl/default/signalData.root
 type=sg,default dset=mc lumi=10000 file=/scratch/ursl/default/signalMC.root
 # ----------------------------------------------------------------------
+# control sample data and MC
+type=cs,default dset=data lumi=39.4 file=/scratch/ursl/default/Bs2JpsiPhiData.root
+type=cs,default dset=mc lumi=10000 file=/scratch/ursl/default/Bs2JpsiPhiMC.root
+# ----------------------------------------------------------------------
 # normalization data and MC
 type=no,default dset=data lumi=39.4 file=/scratch/ursl/default/normData.root
 type=no,default dset=mc lumi=10000 file=/scratch/ursl/default/normMC.root

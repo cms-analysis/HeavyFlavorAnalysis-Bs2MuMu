@@ -31,7 +31,8 @@ anaBmm::anaBmm(const char *files, const char *dir, int mode) {
 void anaBmm::init(const char *files, const char *dir, int mode) {
 
   fNData = fNMc = 0; 
-  fSgData = fSgMc = fNoData = fNoMc = 0; 
+  fSgData = fSgMc = fNoData = fNoMc = -1; 
+  fCsData = fCsMc = -1; 
 
   fFont = 42; 
   fMode = mode;  
@@ -99,12 +100,14 @@ void anaBmm::loadFiles(const char *files) {
     if (string::npos != sdset.find("data")) {
       if (string::npos != stype.find("default") && string::npos != stype.find("sg")) fSgData = fNData;
       if (string::npos != stype.find("default") && string::npos != stype.find("no")) fNoData = fNData;
+      if (string::npos != stype.find("default") && string::npos != stype.find("cs")) fCsData = fNData;
       fpData[fNData] = loadFile(sfile, stype); 
       cout << "open data " << sfile << " as " << stype << endl;
       ++fNData;
     } else {
       if (string::npos != stype.find("default") && string::npos != stype.find("sg")) fSgMc = fNMc;
       if (string::npos != stype.find("default") && string::npos != stype.find("no")) fNoMc = fNMc;
+      if (string::npos != stype.find("default") && string::npos != stype.find("cs")) fCsMc = fNMc;
       fpMc[fNMc] = loadFile(sfile, stype); 
       cout << "open MC " << sfile << " as " << stype << endl;
       ++fNMc;
@@ -194,7 +197,7 @@ void anaBmm::effTable(string smode) {
     mode = 1; 
   }
   
-  if (string::npos != smode.find("No")) {
+  if (string::npos != smode.find("No") || string::npos != smode.find("Cs")) {
     if (0 == fMode) {
       cout << "==> This is normalization, fitting mode = 11 = expo+Gaus" << endl;
       mode = 11; 

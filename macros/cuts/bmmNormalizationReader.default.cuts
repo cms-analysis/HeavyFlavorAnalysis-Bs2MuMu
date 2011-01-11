@@ -10,3 +10,5 @@ L1TRIGGER   L1_DoubleMuOpen
 +input cuts/muons.cuts
 # -- candidate
 +input cuts/candidate.cuts
+# -- J/psi cuts
++input cuts/jpsi.cuts

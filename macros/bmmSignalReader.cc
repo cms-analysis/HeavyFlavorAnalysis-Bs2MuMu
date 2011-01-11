@@ -24,7 +24,8 @@ bmmSignalReader::~bmmSignalReader() {
 // ----------------------------------------------------------------------
 void bmmSignalReader::startAnalysis() {
   bmmReader::startAnalysis();
-  cout << "==> bmmSignalReader: Starting analysis ... " << (BLIND? "blinded": "NOT blinded") << endl;
+  cout << "==> bmmSignalReader: Summary of analysis cuts:" << endl;
+  fAnaCuts.dumpAll(); 
 }
 
 
@@ -88,39 +89,50 @@ void bmmSignalReader::MCKinematics() {
     return;
   }
 
-  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)) {
-    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(10); 
-  }
 
-  if ((pM1->fP.Perp() > 3.) && (pM2->fP.Perp() > 3.)) {
-    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(11); 
+  // -- Now check for tracks matched to truth that are NOT muons
+  TAnaTrack *pT; 
+  ((TH1D*)fpHistFile->Get("presel"))->Fill(1); 
+  ((TH1D*)fpHistFile->Get("presel"))->Fill(10); 
+  ((TH1D*)fpHistFile->Get("presel"))->Fill(10); 
+  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+    pT = fpEvt->getRecTrack(i); 
+    if ((pT->fGenIndex == pM1->fNumber) || (pT->fGenIndex == pM2->fNumber)) {
+      ((TH1D*)fpHistFile->Get("presel"))->Fill(11); 
+      if (pT->fMuID > 0) {
+	((TH1D*)fpHistFile->Get("presel"))->Fill(12); 
+      }
+    }
   }
+  // -- Cross-check this with the number of tracks NOT part of a cand
+  TAnaCand *pCand;
+  TAnaTrack *pS; 
+  for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
+    pCand = fCands[iC]; 
+    if (0 == tmCand(pCand)) {
+      ((TH1D*)fpHistFile->Get("presel"))->Fill(19); 
+      continue; 
+    }
 
-  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
-      && (TMath::Abs(pM1->fP.Eta()) < 2.4) && (TMath::Abs(pM2->fP.Eta()) < 2.4)) {
-    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(12); 
+    ((TH1D*)fpHistFile->Get("presel"))->Fill(20); 
+    pS = fpEvt->getSigTrack(pCand->fSig1); 
+    pT = fpEvt->getRecTrack(pS->fIndex);
+    if ((pT->fGenIndex == pM1->fNumber) || (pT->fGenIndex == pM2->fNumber)) {
+      ((TH1D*)fpHistFile->Get("presel"))->Fill(21); 
+      if (pT->fMuID > 0) {
+	((TH1D*)fpHistFile->Get("presel"))->Fill(22); 
+      }
+    }
+
+    pS = fpEvt->getSigTrack(pCand->fSig2); 
+    pT = fpEvt->getRecTrack(pS->fIndex);
+    if ((pT->fGenIndex == pM1->fNumber) || (pT->fGenIndex == pM2->fNumber)) {
+      ((TH1D*)fpHistFile->Get("presel"))->Fill(21); 
+      if (pT->fMuID > 0) {
+	((TH1D*)fpHistFile->Get("presel"))->Fill(22); 
+      }
+    }
   }
-
-  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
-      && (TMath::Abs(pM1->fP.Eta()) < 2.3) && (TMath::Abs(pM2->fP.Eta()) < 2.3)) {
-    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(13); 
-  }
-
-  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
-      && (TMath::Abs(pM1->fP.Eta()) < 2.2) && (TMath::Abs(pM2->fP.Eta()) < 2.2)) {
-    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(14); 
-  }
-
-  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
-      && (TMath::Abs(pM1->fP.Eta()) < 2.1) && (TMath::Abs(pM2->fP.Eta()) < 2.1)) {
-    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(15); 
-  }
-
-  if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)
-      && (TMath::Abs(pM1->fP.Eta()) < 2.0) && (TMath::Abs(pM2->fP.Eta()) < 2.0)) {
-    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(16); 
-  }
-
 
   // -- acceptance numbers
   if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)) {
@@ -273,7 +285,6 @@ void bmmSignalReader::candidateSelection(int mode) {
 // ----------------------------------------------------------------------
 int bmmSignalReader::tmCand(TAnaCand *pC) {
   
-  int truth(0); 
   TAnaTrack *pT; 
   vector<TGenCand*> gCand; 
   for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
@@ -346,7 +357,6 @@ void bmmSignalReader::readCuts(TString filename, int dump) {
     new TH1D("hcuts", "", 1000, 0., 1000.);
     hcuts->GetXaxis()->SetBinLabel(1, fCutFile.Data());
   }
-  int ibin; 
   string cstring = "B cand"; 
 
   for (unsigned int i = 0; i < cutLines.size(); ++i) {

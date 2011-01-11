@@ -90,8 +90,10 @@ public:
     , MUETALO
     , MUETAHI   
     , MUIP
+    , JPSIMASSLO
+    , JPSIMASSHI
     ;
-  int TYPE, SELMODE, MUIDMASK, MUIDRESULT, TRACKQUALITY;
+  int TYPE, SELMODE, MUIDMASK, MUIDRESULT, TRACKQUALITY, JPSITYPE;
   std::vector<std::string> HLTPath, L1TPath; 
 
   bool fL1TMu0, fL1TMu3;
@@ -111,9 +113,11 @@ public:
 
   // -- variables for reduced tree, they are from fpCand
   int                     fCandTM; 
+  int                     fMu1TkQuality, fMu2TkQuality;
   double                  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
   double                  fMu1W8Mu, fMu1W8Tr, fMu2W8Mu, fMu2W8Tr; 
   double                  fPvX, fPvY, fPvZ; 
+  double                  fJpsiMass;
   double                  fCandPt, fCandEta, fCandPhi, fCandM, fCandW8Tr, fCandW8Mu; 
   double                  fCandCosA, fCandIso, fCandIso1, fCandChi2, fCandDof, fCandProb, fCandFLS3d, fCandFLSxy; 
   double                  fCandDocaTrk, fMu1IP, fMu2IP; 
@@ -127,14 +131,17 @@ public:
   bool                    fGoodMCKinematics;
   bool                    fGoodL1T, fGoodHLT;
   bool                    fGoodTracks, fGoodTracksPt, fGoodTracksEta, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta; 
+  bool                    fGoodJpsiMass;
   bool                    fGoodPt, fGoodEta, fGoodCosA, fGoodIso, fGoodChi2, fGoodFLS; 
   bool                    fGoodDocaTrk, fGoodIP; 
 
   AnalysisCuts fAnaCuts; 
 
   // -- Analysis distributions
-  AnalysisDistribution   *fpAllEvents, *fpHLT, *fpPvZ, *fpTracksPt, 
+  AnalysisDistribution   *fpAllEvents, *fpHLT, *fpPvZ,  
+    *fpTracksQual, *fpTracksPt,  *fpTracksEta, 
     *fpMuonsID, *fpMuonsPt, *fpMuonsEta, 
+    *fpMpsi,
     *fpPt, *fpEta, 
     *fpCosA, *fpCosA0, 
     *fpIso, *fpIso1, 

@@ -22,9 +22,16 @@ bmmNormalizationReader::~bmmNormalizationReader() {
 }
 
 // ----------------------------------------------------------------------
+void bmmNormalizationReader::moreBasicCuts() {
+  cout << "   bmmNormalizationReader: more basic cuts" << endl;
+  fAnaCuts.addCut("fGoodJpsiMass", "m(J/psi)", fGoodJpsiMass); 
+}
+
+// ----------------------------------------------------------------------
 void bmmNormalizationReader::startAnalysis() {
   bmmReader::startAnalysis();
-  cout << "==> bmmNormalizationReader: Starting analysis..." << endl;
+  cout << "==> bmmNormalizationReader: Summary of analysis cuts:" << endl;
+  fAnaCuts.dumpAll(); 
 }
 
 
@@ -206,19 +213,35 @@ void bmmNormalizationReader::candidateSelection(int mode) {
 // ----------------------------------------------------------------------
 void bmmNormalizationReader::fillCandidateVariables() {
   if (0 == fpCand) return;
-  bmmReader::fillCandidateVariables();
 
   TAnaTrack *p1 = fpEvt->getSigTrack(fpCand->fSig2); 
 
   fKaonPt  = p1->fPlab.Perp(); 
   fKaonEta = p1->fPlab.Eta();  
   fKaonPhi = p1->fPlab.Phi(); 
+
+  // -- Check for J/psi mass
+  TAnaCand *pD = 0; 
+  fGoodJpsiMass = false; 
+  for (int i = fpCand->fDau1; i <= fpCand->fDau2; ++i) {
+    if (i < 0) break;
+    pD = fpEvt->getCand(i); 
+    if (pD->fType == JPSITYPE) {
+      if ((JPSIMASSLO < pD->fMass) && (pD->fMass < JPSIMASSHI)) fGoodJpsiMass = true;
+      break;
+      //       cout << "type = " << pD->fType 
+      // 	   << " with mass = " << pD->fMass 
+      // 	   << " fGoodJpsiMass = " << fGoodJpsiMass 
+      // 	   << endl;
+    }
+  }
+  
+  bmmReader::fillCandidateVariables();
 }
 
 // ----------------------------------------------------------------------
 int bmmNormalizationReader::tmCand(TAnaCand *pC) {
   
-  int truth(0); 
   TAnaTrack *pT; 
   vector<TGenCand*> gCand; 
   for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
@@ -228,7 +251,6 @@ int bmmNormalizationReader::tmCand(TAnaCand *pC) {
   }
 
   TGenCand *pG(0), *pM1(0), *pM2(0), *pPsi(0), *pK(0), *pB; 
-  int matched(0), genDaughters(0); 
   for (unsigned int i = 0; i < gCand.size(); ++i) {
     pG = gCand[i]; 
     if (0 == pM1 && 13 == TMath::Abs(pG->fID)) {
@@ -287,15 +309,21 @@ int bmmNormalizationReader::tmCand(TAnaCand *pC) {
 
 
 // ----------------------------------------------------------------------
-void bmmNormalizationReader::fillHist() {
-  bmmReader::fillHist(); 
+void bmmNormalizationReader::fillCandidateHistograms() {
+
+  fpMpsi->fill(fJpsiMass, fCandM); 
+  fpTracksPt->fill(fKaonPt, fCandM);
+  fpTracksEta->fill(fKaonEta, fCandM);
+
+  bmmReader::fillCandidateHistograms(); 
 
 }
-
 
 // ---------------------------------------------------------------------- 
 void bmmNormalizationReader::bookHist() {
   bmmReader::bookHist();
+  fpMpsi   = bookDistribution("mpsi", "m(J/#psi) [GeV]", "fGoodJpsiMass", 40, 2.8, 3.4);           
+
 }
 
 
@@ -318,7 +346,6 @@ void bmmNormalizationReader::readCuts(TString filename, int dump) {
     new TH1D("hcuts", "", 1000, 0., 1000.);
     hcuts->GetXaxis()->SetBinLabel(1, fCutFile.Data());
   }
-  int ibin; 
   string cstring = "B cand"; 
 
   for (unsigned int i = 0; i < cutLines.size(); ++i) {

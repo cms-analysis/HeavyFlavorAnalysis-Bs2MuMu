@@ -30,7 +30,7 @@ public:
   bmmBs2JpsiPhiReader(TChain *tree, TString evtClassName);
   ~bmmBs2JpsiPhiReader();
 
-  virtual void  moreBasicCuts(); 
+  void    moreBasicCuts(); 
   void    bookHist();
   void    startAnalysis();
   void    eventProcessing();

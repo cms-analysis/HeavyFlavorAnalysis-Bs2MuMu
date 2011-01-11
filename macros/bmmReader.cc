@@ -518,20 +518,22 @@ void bmmReader::fillCandidateVariables() {
     p2 = p0; 
   }
 
-  fMu1Pt     = p1->fPlab.Perp(); 
-  fMu1Eta    = p1->fPlab.Eta(); 
-  fMu1Phi    = p1->fPlab.Phi(); 
-  fMu1W8Mu   = fpMuonID->effD(fMu1Pt, fMu1Eta, fMu1Phi);
-  fMu1W8Tr   = fpMuonTr->effD(fMu1Pt, fMu1Eta, fMu1Phi);
+  fMu1Pt        = p1->fPlab.Perp(); 
+  fMu1Eta       = p1->fPlab.Eta(); 
+  fMu1Phi       = p1->fPlab.Phi(); 
+  fMu1TkQuality = p1->fTrackQuality;
+  fMu1W8Mu      = fpMuonID->effD(fMu1Pt, fMu1Eta, fMu1Phi);
+  fMu1W8Tr      = fpMuonTr->effD(fMu1Pt, fMu1Eta, fMu1Phi);
   
-  fMu2Pt     = p2->fPlab.Perp(); 
-  fMu2Eta    = p2->fPlab.Eta(); 
-  fMu2Phi    = p2->fPlab.Phi(); 
-  fMu2W8Mu   = fpMuonID->effD(fMu2Pt, fMu2Eta, fMu2Phi);
-  fMu2W8Tr   = fpMuonTr->effD(fMu2Pt, fMu2Eta, fMu2Phi);
+  fMu2Pt        = p2->fPlab.Perp(); 
+  fMu2Eta       = p2->fPlab.Eta(); 
+  fMu2Phi       = p2->fPlab.Phi(); 
+  fMu2TkQuality = p2->fTrackQuality;
+  fMu2W8Mu      = fpMuonID->effD(fMu2Pt, fMu2Eta, fMu2Phi);
+  fMu2W8Tr      = fpMuonTr->effD(fMu2Pt, fMu2Eta, fMu2Phi);
 
-  fCandW8Mu  = fMu1W8Mu*fMu2W8Mu;
-  fCandW8Tr  = fMu1W8Tr*fMu2W8Tr;
+  fCandW8Mu     = fMu1W8Mu*fMu2W8Mu;
+  fCandW8Tr     = fMu1W8Tr*fMu2W8Tr;
 
 //   if (fMu1Pt > 3. && fMu2Pt > 3.) {
 //     cout << "muon1: " << fMu1W8Mu << " " << fMu1W8Tr << endl;
@@ -691,6 +693,10 @@ void bmmReader::fillCandidateHistograms() {
   // -- Fill distributions
   fpTracksPt->fill(fMu1Pt, fCandM);
   fpTracksPt->fill(fMu2Pt, fCandM);
+  fpTracksEta->fill(fMu1Pt, fCandM);
+  fpTracksEta->fill(fMu2Pt, fCandM);
+  fpTracksQual->fill(fMu1TkQuality, fCandM);
+  fpTracksQual->fill(fMu2TkQuality, fCandM);
 
   fpMuonsID->fill(1, fCandM);
   fpMuonsID->fill(1, fCandM);
@@ -733,6 +739,7 @@ void bmmReader::bookHist() {
   h = new TH1D("l1tStudy", "l1t study", 120, 0., 120.); 
   h = new TH1D("genStudy", "gen study", 100, 0., 100.); 
   h = new TH1D("acceptance", "acceptance", 100, 0., 100.); 
+  h = new TH1D("presel", "presel", 100, 0., 100.); 
 
  
   // -- mass histograms for efficiencies
@@ -747,7 +754,9 @@ void bmmReader::bookHist() {
   fpAllEvents= bookDistribution("allevents", "allevents", "fWideMass", 10, 0., 10.);           
   fpHLT      = bookDistribution("hlt", "hlt", "fGoodHLT", 10, 0., 10.);           
   fpPvZ      = bookDistribution("pvz", "z_{PV} [cm]", "fGoodHLT", 50, -10., 10.);           
+  fpTracksQual= bookDistribution("tracksqual", "Qual(tracks)", "fGoodTracks", 20, -10., 10.);
   fpTracksPt = bookDistribution("trackspt", "p_{T} [GeV]", "fGoodTracksPt", 50, 0., 25.);
+  fpTracksEta= bookDistribution("trackseta", "#eta_{T}", "fGoodTracksEta", 50, 0., 25.);
   fpMuonsID  = bookDistribution("muonsid", "muon id", "fGoodMuonsID", 10, 0., 10.); 
   fpMuonsPt  = bookDistribution("muonspt", "p_{T, #mu} [GeV]", "fGoodMuonsPt", 50, 0., 25.); 
   fpMuonsEta = bookDistribution("muonseta", "#eta_{#mu}", "fGoodMuonsEta", 50, -2.5, 2.5); 
@@ -827,12 +836,12 @@ void bmmReader::basicCuts() {
   fAnaCuts.addCut("fWideMass", "m(B candidate) [GeV]", fWideMass); 
   //  fAnaCuts.addCut("fGoodL1T", "L1T", fGoodL1T); 
   fAnaCuts.addCut("fGoodHLT", "HLT", fGoodHLT); 
-  fAnaCuts.addCut("fGoodTracks", "good tracks", fGoodTracks); 
-  fAnaCuts.addCut("fGoodTracksPt", "p_{T,trk} [GeV]", fGoodTracksPt); 
-  fAnaCuts.addCut("fGoodTracksEta", "#eta_{trk} ", fGoodTracksEta); 
   fAnaCuts.addCut("fGoodMuonsID", "lepton ID", fGoodMuonsID); 
   fAnaCuts.addCut("fGoodMuonsPt", "p_{T,#mu} [GeV]", fGoodMuonsPt); 
   fAnaCuts.addCut("fGoodMuonsEta", "#eta_{#mu}", fGoodMuonsEta); 
+  fAnaCuts.addCut("fGoodTracks", "good tracks", fGoodTracks); 
+  fAnaCuts.addCut("fGoodTracksPt", "p_{T,trk} [GeV]", fGoodTracksPt); 
+  fAnaCuts.addCut("fGoodTracksEta", "#eta_{trk} ", fGoodTracksEta); 
 }
 
 
@@ -1198,6 +1207,30 @@ void bmmReader::readCuts(TString filename, int dump) {
       ibin = 206;
       hcuts->SetBinContent(ibin, MUIP);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: IP(#mu) :: %3.1f", CutName, MUIP));
+    }
+
+    if (!strcmp(CutName, "JPSITYPE")) {
+      JPSITYPE = CutValue; ok = 1;
+      if (dump) cout << "JPSITYPE:      " << JPSITYPE << endl;
+      ibin = 210;
+      hcuts->SetBinContent(ibin, JPSITYPE);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: J/#psi ID :: %3.1f", CutName, JPSITYPE));
+    }
+
+    if (!strcmp(CutName, "JPSIMASSLO")) {
+      JPSIMASSLO = CutValue; ok = 1;
+      if (dump) cout << "JPSIMASSLO:      " << JPSIMASSLO << endl;
+      ibin = 211;
+      hcuts->SetBinContent(ibin, JPSIMASSLO);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: m(J/#psi) :: %3.1f", CutName, JPSIMASSLO));
+    }
+
+    if (!strcmp(CutName, "JPSIMASSHI")) {
+      JPSIMASSHI = CutValue; ok = 1;
+      if (dump) cout << "JPSIMASSLO:      " << JPSIMASSHI << endl;
+      ibin = 212;
+      hcuts->SetBinContent(ibin, JPSIMASSHI);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: m(J/#psi) :: %3.1f", CutName, JPSIMASSHI));
     }
 
 

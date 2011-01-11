@@ -26,10 +26,9 @@ bmmBs2JpsiPhiReader::~bmmBs2JpsiPhiReader() {
 // ----------------------------------------------------------------------
 void bmmBs2JpsiPhiReader::moreBasicCuts() {
   cout << "   bmmBs2JpsiPhiReader: more basic cuts" << endl;
+  fAnaCuts.addCut("fGoodJpsiMass", "m(J/psi)", fGoodJpsiMass); 
   fAnaCuts.addCut("fGoodDeltaR", "Delta R(KK)", fGoodDeltaR); 
   fAnaCuts.addCut("fGoodMKK", "m(KK) [GeV]", fGoodMKK); 
-
-
 }
 
 
@@ -278,6 +277,23 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
 
   if (0 == fpCand) return;
 
+  // -- Check for J/psi mass
+  TAnaCand *pD = 0; 
+  fGoodJpsiMass = false; 
+  for (int i = fpCand->fDau1; i <= fpCand->fDau2; ++i) {
+    if (i < 0) break;
+    pD = fpEvt->getCand(i); 
+    cout << "i = " << i << " pD = " << pD << endl;
+    if (pD->fType == JPSITYPE) {
+      if ((JPSIMASSLO < pD->fMass) && (pD->fMass < JPSIMASSHI)) fGoodJpsiMass = true;
+      break;
+      //       cout << "type = " << pD->fType 
+      //        	   << " with mass = " << pD->fMass 
+      // 	   << " fGoodJpsiMass = " << fGoodJpsiMass 
+      // 	   << endl;
+    }
+  }
+
   // -- Get Kaons
   TAnaTrack *p0; 
   TAnaTrack *p1 = 0;
@@ -367,6 +383,12 @@ void bmmBs2JpsiPhiReader::fillCandidateHistograms() {
   fpDeltaR->fill(fDeltaR, fCandM); 
   fpMKK->fill(fMKK, fCandM); 
 
+  fpMpsi->fill(fJpsiMass, fCandM); 
+  fpTracksPt->fill(fKa1Pt, fCandM);
+  fpTracksPt->fill(fKa2Pt, fCandM);
+  fpTracksEta->fill(fKa1Eta, fCandM);
+  fpTracksEta->fill(fKa2Eta, fCandM);
+
   bmmReader::fillCandidateHistograms(); 
 }
 
@@ -376,8 +398,9 @@ void bmmBs2JpsiPhiReader::bookHist() {
   bmmReader::bookHist();
   cout << "==> bmmBs2JpsiPhiReader: bookHist " << endl;
 
-  fpDeltaR = bookDistribution("deltar", "#Delta R", "fGoodDeltaR", 50, 0., 1.);           
-  fpMKK    = bookDistribution("mkk", "m(KK) [GeV]", "fGoodMKK", 50, 0.95, 1.15);           
+  fpMpsi     = bookDistribution("mpsi", "m(J/#psi) [GeV]", "fGoodJpsiMass", 40, 2.8, 3.4);           
+  fpDeltaR   = bookDistribution("deltar", "#Delta R", "fGoodDeltaR", 50, 0., 1.);           
+  fpMKK      = bookDistribution("mkk", "m(KK) [GeV]", "fGoodMKK", 50, 0.95, 1.15);           
 
   TH1D *h1; 
   h1 = new TH1D("h100", "", 100, 0., 100.);

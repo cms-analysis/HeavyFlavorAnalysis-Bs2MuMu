@@ -30,10 +30,11 @@ public:
   bmmNormalizationReader(TChain *tree, TString evtClassName);
   ~bmmNormalizationReader();
 
+  void         moreBasicCuts();
   void         bookHist();
   void         startAnalysis();
   void         eventProcessing();
-  void         fillHist();
+  void         fillCandidateHistograms();
   void         readCuts(TString filename, int dump = 1);
   void         initVariables();
   void         MCKinematics();
@@ -42,7 +43,6 @@ public:
   int          tmCand(TAnaCand *pC);
 
   double       fKaonPt, fKaonEta, fKaonPhi;
-
 };
 
 #endif

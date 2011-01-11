@@ -57,6 +57,7 @@ public:
   int fNData, fNMc;
   std::string fDataString[MAXFILES], fMcString[MAXFILES];
   int fSgData, fSgMc, fNoData, fNoMc;  // the indices for the default files
+  int fCsData, fCsMc; // control sample Bs -> J/psi phi
 
   int fShow; 
   TString fFile; 

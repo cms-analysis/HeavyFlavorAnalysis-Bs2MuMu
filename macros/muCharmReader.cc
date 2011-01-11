@@ -55,7 +55,7 @@ void muCharmReader::eventProcessing() {
       //      cout << Form("%6i %i", iC, pCand->fType) << endl;
     }
 
-    if (h = (TH1D*)fpHistFile->Get(Form("m%d", pCand->fType))) {
+    if ((h = (TH1D*)fpHistFile->Get(Form("m%d", pCand->fType)))) {
       if (pCand->fType > 20000 && pCand->fType < 21000) {
 	h->Fill(pCand->fVar1); 
       } else {
@@ -206,9 +206,9 @@ void muCharmReader::doUpsilon(TAnaCand *pCand ) {
   
   ((TH1D*)fpHistFile->Get("ups1313h0"))->Fill(pCand->fMass);
 
-  if (fm1m & 6 == 6) {
+  if ((fm1m & 6) == 6) {
     ((TH1D*)fpHistFile->Get("ups1313h1"))->Fill(pCand->fMass);
-    if (fm2m & 6 == 6) {
+    if ((fm2m & 6) == 6) {
       ((TH1D*)fpHistFile->Get("ups1313h2"))->Fill(pCand->fMass);
     }
   }; 
@@ -287,7 +287,6 @@ void muCharmReader::fillTMCand(TAnaCand *pCand, int type) {
 
    // -- now try to find an additional muon
    TAnaTrack *pc1 = fpEvt->getSigTrack(pCand->fSig1); 
-   TAnaTrack *pc2 = fpEvt->getSigTrack(pCand->fSig1+1); 
 
    int pgI = pc1->fGenIndex;
    TGenCand *pB;
