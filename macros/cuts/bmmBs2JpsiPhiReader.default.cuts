@@ -14,4 +14,5 @@ L1TRIGGER   L1_DoubleMuOpen
 +input cuts/jpsi.cuts
 # -- specifics
 DELTAR 0.25
-MKKHI  1.04
+MKKLO  0.995
+MKKHI  1.045

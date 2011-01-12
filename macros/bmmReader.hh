@@ -54,6 +54,7 @@ public:
   virtual void   readCuts(TString filename, int dump = 1);
   virtual void   readFile(std::string filename, std::vector<std::string> &lines);
   virtual void   initVariables();
+  virtual bool   muonID(TAnaTrack *pT);
 
   virtual void   studyL1T(); 
 

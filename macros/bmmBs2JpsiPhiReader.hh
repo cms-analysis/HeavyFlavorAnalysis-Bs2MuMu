@@ -47,7 +47,7 @@ public:
   double       fKa2Pt, fKa2Eta, fKa2Phi;
 
   // -- Additional variables and cuts for Bs -> J/psi phi
-  double            MKKHI, DELTAR;
+  double            MKKLO, MKKHI, DELTAR;
   double            fDeltaR, fMKK;
   bool              fGoodDeltaR, fGoodMKK;
 

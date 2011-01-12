@@ -433,24 +433,12 @@ void bmmReader::muonSelection() {
       ps = fpEvt->getSigTrack(it); 
       if (TMath::Abs(ps->fMCID) != 13) continue;
       pt = fpEvt->getRecTrack(ps->fIndex); 
-      result = pt->fMuID & MUIDMASK;
+      if (false == muonID(pt)) fvGoodMuonsID[iC] = false; 
       if (fVerbose > 4)
 	cout << "muon " << ps->fIndex
 	     << hex << " with muid = " << pt->fMuID << " MUIDMASK = " << MUIDMASK << " MUIDRESULT = " << MUIDRESULT
-	     << " ===>  result = " << result << dec << endl;
-      if (0 == MUIDRESULT ) {
-	// -- result must be larger than zero for successful muon ID, i.e., the OR of the bits
-	if (0 == result){
-	  if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUID: " << hex << pt->fMuID << dec << endl;          
-	  fvGoodMuonsID[iC] = false; 
-	}
-      } else {
-	// -- result must be equal to the mask for successful muon ID, i.e., the AND of the bits
-	if (MUIDRESULT != result){
-	  if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUID: " << hex << pt->fMuID << dec << endl;          
-	  fvGoodMuonsID[iC] = false; 
-	}
-      }
+	     << " ===>  muonID(track) = " << muonID(pt) << dec << endl;
+
       if (pt->fPlab.Perp() < MUPTLO) {
 	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUPTLO: " << pt->fPlab.Perp() << endl;          
 	fvGoodMuonsPt[iC] = false; 
@@ -1271,4 +1259,27 @@ int bmmReader::checkCut(const char *s, TH1D *hcuts) {
     }
   }  
   return ok; 
+}
+
+
+// ----------------------------------------------------------------------
+bool bmmReader::muonID(TAnaTrack *pT) {
+  int result = pT->fMuID & MUIDMASK;
+  if (0 == MUIDRESULT ) {
+    // -- result must be larger than zero for successful muon ID, i.e., the OR of the bits
+    if (0 == result){
+      if (fVerbose > 4) cout << "muon " << pT->fIndex << " failed MUID: " << hex << pT->fMuID << dec << endl;          
+      return false; 
+    } else {
+      return true; 
+    }
+  } else {
+    // -- result must be equal to the mask for successful muon ID, i.e., the AND of the bits
+    if (MUIDRESULT != result){
+      if (fVerbose > 4) cout << "muon " << pT->fIndex << " failed MUID: " << hex << pT->fMuID << dec << endl;          
+      return false; 
+    } else {
+      return true;
+    }
+  }
 }

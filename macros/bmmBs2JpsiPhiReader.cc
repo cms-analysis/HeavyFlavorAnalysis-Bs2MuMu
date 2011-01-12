@@ -133,9 +133,116 @@ void bmmBs2JpsiPhiReader::MCKinematics() {
     //    fpEvt->dumpGenBlock(); 
   }
 
+
+  // ----------------------------------------------------------------------
+  // -- Acceptance: 
+  TAnaTrack *pT, *prM1, *prM2; 
+  int m1Matched(0), m2Matched(0), k1Matched(0), k2Matched(0);
+  int m1Acc(0), m2Acc(0), k1Acc(0), k2Acc(0);
+  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+    pT = fpEvt->getRecTrack(i); 
+    if (pT->fGenIndex == pM1->fNumber) {
+      ((TH1D*)fpHistFile->Get("acceptance"))->Fill(11); 
+      prM1 = pT; 
+      m1Matched = 1; 
+      if ((pT->fPlab.Perp() > 1.) && (TMath::Abs(pT->fPlab.Eta()) < 2.4)) {
+	m1Acc = 1; 
+	((TH1D*)fpHistFile->Get("acceptance"))->Fill(21); 
+      }
+    }
+    if (pT->fGenIndex == pM2->fNumber) {
+      ((TH1D*)fpHistFile->Get("acceptance"))->Fill(12); 
+      prM2 = pT; 
+      m2Matched = 1; 
+      if ((pT->fPlab.Perp() > 1.) && (TMath::Abs(pT->fPlab.Eta()) < 2.4)) {
+	m2Acc = 1; 
+	((TH1D*)fpHistFile->Get("acceptance"))->Fill(22); 
+      }
+    }
+    if (pT->fGenIndex == pK1->fNumber) {
+      ((TH1D*)fpHistFile->Get("acceptance"))->Fill(13); 
+      k1Matched = 1; 
+      if ((pT->fPlab.Perp() > 0.5) && (TMath::Abs(pT->fPlab.Eta()) < 2.4)) {
+	k1Acc = 1; 
+	((TH1D*)fpHistFile->Get("acceptance"))->Fill(23); 
+      }
+    }
+    if (pT->fGenIndex == pK2->fNumber) {
+      ((TH1D*)fpHistFile->Get("acceptance"))->Fill(14); 
+      k2Matched = 1; 
+      if ((pT->fPlab.Perp() > 0.5) && (TMath::Abs(pT->fPlab.Eta()) < 2.4)) {
+	k2Acc = 1; 
+	((TH1D*)fpHistFile->Get("acceptance"))->Fill(24); 
+      }
+    }
+  }
+
+  ((TH1D*)fpHistFile->Get("acceptance"))->Fill(30); 
+  ((TH1D*)fpHistFile->Get("acceptance"))->Fill(1); // denominator
+  if (m1Matched && m1Acc && m2Matched && m2Acc) {
+    ((TH1D*)fpHistFile->Get("acceptance"))->Fill(31); 
+    if (k1Matched && k1Acc && k2Matched && k2Acc) {
+      ((TH1D*)fpHistFile->Get("acceptance"))->Fill(32); 
+      ((TH1D*)fpHistFile->Get("acceptance"))->Fill(2);  // numerator
+    }
+  }
+
+
+
+  // ----------------------------------------------------------------------
+  // -- preselection efficiency
+  TAnaCand *pCand; 
+  ((TH1D*)fpHistFile->Get("presel"))->Fill(10); 
+  if (m1Matched && m1Acc && m2Matched && m2Acc && k1Matched && k1Acc && k2Matched && k2Acc) {
+    ((TH1D*)fpHistFile->Get("presel"))->Fill(11); 
+    if (muonID(prM1) && muonID(prM2)) {
+      ((TH1D*)fpHistFile->Get("presel"))->Fill(12); 
+      ((TH1D*)fpHistFile->Get("presel"))->Fill(1);  // denominator
+    }
+
+    int tm(0);
+    for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
+      pCand = fCands[iC]; 
+
+      tm = 0; 
+      for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
+	pT = fpEvt->getRecTrack(fpEvt->getSigTrack(i)->fIndex); 
+	if (pT->fGenIndex == pM1->fNumber) {
+	  prM1 = pT; 
+	  ++tm;
+	}
+	if (pT->fGenIndex == pM2->fNumber) {
+	  prM2 = pT; 
+	  ++tm;
+	}
+	if (pT->fGenIndex == pK1->fNumber) {
+	  ++tm;
+	}
+	if (pT->fGenIndex == pK2->fNumber) {
+	  ++tm;
+	}
+      }
+
+      // -- all signal tracks must be matched
+      if (tm != (pCand->fSig2-pCand->fSig1+1)) {
+	//	cout << "Did not find matched candidate " << pCand->fType << " at " << iC << endl;
+	continue;
+      }
+      //      cout << "Found matched candidate "  << pCand->fType << " at " << iC << endl;
+      ((TH1D*)fpHistFile->Get("presel"))->Fill(20); 
+      if (muonID(prM1) && muonID(prM2)) {
+	((TH1D*)fpHistFile->Get("presel"))->Fill(21); 
+	((TH1D*)fpHistFile->Get("presel"))->Fill(2);  // numerator
+      }
+      break;
+    }
+  }
+
+
+
   // -- hard coded ?! FIXME
-  if (pM1->fP.Perp() < 2.0) fGoodMCKinematics = false;  
-  if (pM2->fP.Perp() < 2.0) fGoodMCKinematics = false;  
+  if (pM1->fP.Perp() < 1.0) fGoodMCKinematics = false;  
+  if (pM2->fP.Perp() < 1.0) fGoodMCKinematics = false;  
   if (pK1->fP.Perp() < 0.5) fGoodMCKinematics = false;  
   if (pK2->fP.Perp() < 0.5) fGoodMCKinematics = false;  
   if (TMath::Abs(pM1->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
@@ -283,7 +390,7 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
   for (int i = fpCand->fDau1; i <= fpCand->fDau2; ++i) {
     if (i < 0) break;
     pD = fpEvt->getCand(i); 
-    cout << "i = " << i << " pD = " << pD << endl;
+    //    cout << "i = " << i << " pD = " << pD << endl;
     if (pD->fType == JPSITYPE) {
       if ((JPSIMASSLO < pD->fMass) && (pD->fMass < JPSIMASSHI)) fGoodJpsiMass = true;
       break;
@@ -327,7 +434,7 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
   fMKK     = phiCand.M();
 
   fGoodDeltaR = (fDeltaR < DELTAR);
-  fGoodMKK    = (fMKK < MKKHI); 
+  fGoodMKK    = ((MKKLO < fMKK ) && (fMKK < MKKHI)); 
   
   bmmReader::fillCandidateVariables();
 
@@ -438,6 +545,14 @@ void bmmBs2JpsiPhiReader::readCuts(TString filename, int dump) {
     if (buffer[0] == '/') {continue;}
     sscanf(buffer, "%s %f", CutName, &CutValue);
     
+    if (!strcmp(CutName, "MKKLO")) {
+      MKKLO = CutValue; ok = 1;
+      if (dump) cout << "MKKLO:           " << MKKLO << endl;
+      ibin = 300;
+      hcuts->SetBinContent(ibin, MKKLO);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: m^{min}(KK) :: %3.1f", CutName, MKKLO));
+    }
+
     if (!strcmp(CutName, "MKKHI")) {
       MKKHI = CutValue; ok = 1;
       if (dump) cout << "MKKHI:           " << MKKHI << endl;

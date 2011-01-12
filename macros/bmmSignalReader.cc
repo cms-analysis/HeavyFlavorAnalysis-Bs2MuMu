@@ -90,66 +90,99 @@ void bmmSignalReader::MCKinematics() {
   }
 
 
-  // -- Now check for tracks matched to truth that are NOT muons
-  TAnaTrack *pT; 
-  ((TH1D*)fpHistFile->Get("presel"))->Fill(1); 
-  ((TH1D*)fpHistFile->Get("presel"))->Fill(10); 
-  ((TH1D*)fpHistFile->Get("presel"))->Fill(10); 
-  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
-    pT = fpEvt->getRecTrack(i); 
-    if ((pT->fGenIndex == pM1->fNumber) || (pT->fGenIndex == pM2->fNumber)) {
-      ((TH1D*)fpHistFile->Get("presel"))->Fill(11); 
-      if (pT->fMuID > 0) {
-	((TH1D*)fpHistFile->Get("presel"))->Fill(12); 
-      }
-    }
-  }
-  // -- Cross-check this with the number of tracks NOT part of a cand
-  TAnaCand *pCand;
-  TAnaTrack *pS; 
-  for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
-    pCand = fCands[iC]; 
-    if (0 == tmCand(pCand)) {
-      ((TH1D*)fpHistFile->Get("presel"))->Fill(19); 
-      continue; 
-    }
 
-    ((TH1D*)fpHistFile->Get("presel"))->Fill(20); 
-    pS = fpEvt->getSigTrack(pCand->fSig1); 
-    pT = fpEvt->getRecTrack(pS->fIndex);
-    if ((pT->fGenIndex == pM1->fNumber) || (pT->fGenIndex == pM2->fNumber)) {
-      ((TH1D*)fpHistFile->Get("presel"))->Fill(21); 
-      if (pT->fMuID > 0) {
-	((TH1D*)fpHistFile->Get("presel"))->Fill(22); 
-      }
-    }
-
-    pS = fpEvt->getSigTrack(pCand->fSig2); 
-    pT = fpEvt->getRecTrack(pS->fIndex);
-    if ((pT->fGenIndex == pM1->fNumber) || (pT->fGenIndex == pM2->fNumber)) {
-      ((TH1D*)fpHistFile->Get("presel"))->Fill(21); 
-      if (pT->fMuID > 0) {
-	((TH1D*)fpHistFile->Get("presel"))->Fill(22); 
-      }
-    }
-  }
-
-  // -- acceptance numbers
+  // ----------------------------------------------------------------------
+  // -- generator-level acceptance numbers
   if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)) {
-    ((TH1D*)fpHistFile->Get("acceptance"))->Fill(1); 
+    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(1); 
   }
   if ((pM1->fP.Perp() > 1.) && (pM2->fP.Perp() > 1.)) {
-    ((TH1D*)fpHistFile->Get("acceptance"))->Fill(2); 
+    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(2); 
   }
   if ((pM1->fP.Perp() > 1.) && (pM2->fP.Perp() > 1.)
       && (TMath::Abs(pM1->fP.Eta()) < 2.4) && (TMath::Abs(pM2->fP.Eta()) < 2.4)) {
-    ((TH1D*)fpHistFile->Get("acceptance"))->Fill(3); 
+    ((TH1D*)fpHistFile->Get("genStudy"))->Fill(3); 
+  }
+
+
+  // ----------------------------------------------------------------------
+  // -- Acceptance: 
+  TAnaTrack *pT, *prM1, *prM2; 
+  int m1Matched(0), m2Matched(0);
+  int m1Acc(0), m2Acc(0);
+  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+    pT = fpEvt->getRecTrack(i); 
+    if (pT->fGenIndex == pM1->fNumber) {
+      ((TH1D*)fpHistFile->Get("acceptance"))->Fill(11); 
+      prM1 = pT; 
+      m1Matched = 1; 
+      if ((pT->fPlab.Perp() > 1.) && (TMath::Abs(pT->fPlab.Eta()) < 2.4)) {
+	m1Acc = 1; 
+	((TH1D*)fpHistFile->Get("acceptance"))->Fill(21); 
+      }
+    }
+    if (pT->fGenIndex == pM2->fNumber) {
+      ((TH1D*)fpHistFile->Get("acceptance"))->Fill(12); 
+      prM2 = pT; 
+      m2Matched = 1; 
+      if ((pT->fPlab.Perp() > 1.) && (TMath::Abs(pT->fPlab.Eta()) < 2.4)) {
+	m2Acc = 1; 
+	((TH1D*)fpHistFile->Get("acceptance"))->Fill(22); 
+      }
+    }
+  }
+
+  ((TH1D*)fpHistFile->Get("acceptance"))->Fill(30); 
+  if (m1Matched && m1Acc && m2Matched && m2Acc) {
+    ((TH1D*)fpHistFile->Get("acceptance"))->Fill(31); 
+  }
+  
+
+  // ----------------------------------------------------------------------
+  // -- preselection efficiency
+  TAnaCand *pCand; 
+  ((TH1D*)fpHistFile->Get("presel"))->Fill(10); 
+  if (m1Matched && m1Acc && m2Matched && m2Acc) {
+    ((TH1D*)fpHistFile->Get("presel"))->Fill(11); 
+    if (muonID(prM1) && muonID(prM2)) {
+      ((TH1D*)fpHistFile->Get("presel"))->Fill(12); 
+    }
+
+    int tm(0);
+    for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
+      pCand = fCands[iC]; 
+
+      tm = 0; 
+      for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
+	pT = fpEvt->getRecTrack(fpEvt->getSigTrack(i)->fIndex); 
+	if (pT->fGenIndex == pM1->fNumber) {
+	  prM1 = pT; 
+	  ++tm;
+	}
+	if (pT->fGenIndex == pM2->fNumber) {
+	  prM2 = pT; 
+	  ++tm;
+	}
+      }
+
+      // -- all signal tracks must be matched
+      if (tm != (pCand->fSig2-pCand->fSig1+1)) {
+	//	cout << "Did not find matched candidate " << pCand->fType << " at " << iC << endl;
+	continue;
+      }
+      //      cout << "Found matched candidate "  << pCand->fType << " at " << iC << endl;
+      ((TH1D*)fpHistFile->Get("presel"))->Fill(20); 
+      if (muonID(prM1) && muonID(prM2)) {
+	((TH1D*)fpHistFile->Get("presel"))->Fill(21); 
+      }
+      break;
+    }
   }
 
 
   // -- hard coded ?! FIXME
-  if (pM1->fP.Perp() < 2.5) fGoodMCKinematics = false;  
-  if (pM2->fP.Perp() < 2.5) fGoodMCKinematics = false;  
+  if (pM1->fP.Perp() < 1.0) fGoodMCKinematics = false;  
+  if (pM2->fP.Perp() < 1.0) fGoodMCKinematics = false;  
   if (TMath::Abs(pM1->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
   if (TMath::Abs(pM2->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
 
