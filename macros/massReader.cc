@@ -207,6 +207,7 @@ int massReader::checkTruth(TAnaCand *cand)
 	
 	nGens = fpEvt->nGenCands();
 	
+	if (cand->fSig1 < 0) goto bail;
 	pTrack = fpEvt->getSigTrack(cand->fSig1);
 	pTrack = fpEvt->getRecTrack(pTrack->fIndex);
 	
