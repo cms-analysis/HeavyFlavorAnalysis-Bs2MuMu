@@ -65,7 +65,6 @@ int mumuReader::loadCandidateVariables(TAnaCand *pCand)
 	fQ_mu1 = fQ_mu2 = 0;
 	fCtau = 0.0f;
 	
-	if (pCand->fType % 10000 != 1313) return 0;
 	if (BLIND && 5.1 < pCand->fMass && pCand->fMass < 5.5) return 0;
 	
 	result = massReader::loadCandidateVariables(pCand);
