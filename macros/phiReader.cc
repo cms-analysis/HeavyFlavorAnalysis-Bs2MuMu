@@ -276,6 +276,10 @@ int phiReader::checkTruth(TAnaCand *pCand)
 	if(!result) goto bail;
 	
 	// check if the decay conincides
+	if (pCand->fSig1 < 0 || pCand->fSig1 >= fpEvt->nSigTracks()) {
+		result = 0;
+		goto bail;
+	}
 	track = fpEvt->getSigTrack(pCand->fSig1);
 	track = fpEvt->getRecTrack(track->fIndex);
 	
