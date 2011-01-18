@@ -283,6 +283,11 @@ int phiReader::checkTruth(TAnaCand *pCand)
 	track = fpEvt->getSigTrack(pCand->fSig1);
 	track = fpEvt->getRecTrack(track->fIndex);
 	
+	if (track->fGenIndex < 0 || track->fGenIndex >= fpEvt->nGenCands()) {
+	  result = 0;
+	  goto bail;
+	}
+
 	gen = fpEvt->getGenCand(track->fGenIndex);
 	while (abs(gen->fID) != 531)
 		gen = fpEvt->getGenCand(gen->fMom1);
