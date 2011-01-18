@@ -115,8 +115,6 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 	fMuID_Kp1 = 0;
 	fMuID_Kp2 = 0;
 	
-	if (pCand->fType % 1000 != 531) return 0;
-	
 	result = massReader::loadCandidateVariables(pCand);
 	
 	fCtau = kMassBs / pCand->fPlab.Mag() * fD3; // estimate the proper time!
