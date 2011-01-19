@@ -200,10 +200,11 @@ int massReader::checkTruth(TAnaCand *cand)
 	TAnaTrack *pTrack;
 	TGenCand *truthParticle;
 	TGenCand *trackParticle;
+	int theTruthType;
 	int nGens, j;
 	
-	if (!fTruthType)
-		fTruthType = cand->fType % 10000;
+	if (fTruthType) theTruthType = fTruthType;
+	else theTruthType = cand->fType % 10000;
 	
 	nGens = fpEvt->nGenCands();
 	
@@ -214,7 +215,7 @@ int massReader::checkTruth(TAnaCand *cand)
 	if (pTrack->fGenIndex < 0 || pTrack->fGenIndex >= nGens) goto bail;
 	truthParticle = fpEvt->getGenCand(pTrack->fGenIndex);
 	
-	while (abs(truthParticle->fID) != fTruthType) {
+	while (abs(truthParticle->fID) != theTruthType) {
 		if (truthParticle->fMom1 < 0 || truthParticle->fMom1 >= nGens) goto bail;
 		truthParticle = fpEvt->getGenCand(truthParticle->fMom1);
 	}

@@ -39,6 +39,8 @@ phiReader::phiReader(TChain *tree, TString evtClassName) :
 	trueDecay.insert(333); // phi
 	trueDecay.insert(531); // Bs
 	
+	fTruthType = 531; // Bs is our real type
+
 	cout << "phiReader instantiated..." << endl;
 } // phiReader()
 

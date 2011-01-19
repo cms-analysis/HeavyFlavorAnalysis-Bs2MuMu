@@ -24,6 +24,7 @@ kpReader::kpReader(TChain *tree, TString evtClassName) :
 	reco_double(0)
 {
 	fTreeName = "kpReader reduced tree";
+	fTruthType = 521; // searching B+
 	
 	// the true decay for truth matching...
 	trueDecay.insert(13);	// mu
