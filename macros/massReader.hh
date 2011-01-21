@@ -107,10 +107,6 @@ class massReader : public treeReader01 {
 		int fTriggersFound; // what triggers were available
 		float fCtau; // proper time (note can be filled only in subclasses as requires knowledge of m)
 		float fEta; // eta of the candidate
-		float fD3_Perp;	// Perpendicular part of distance d3 w.r.t. momentum of candidate
-		float fD3_Para; // Parallel part of distance d3 w.r.t. momentum of candidate
-		float fDxy_Perp; // Perpendicular part of distance dxy w.r.t. momentum of candidate
-		float fDxy_Para; // Parallel part of distance dxy w.r.t. momentum of candidate
 		int fTracksIx[NBR_TRACKS_STORE];
 		float fTracksIP[NBR_TRACKS_STORE];
 		float fTracksIPE[NBR_TRACKS_STORE];

@@ -112,16 +112,11 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	}
 	
 	fAlpha = v1.Angle(v2);
-	fD3_Para = v1.Dot(v2) / v1.Mag(); // projection of v2 to v1
-	fD3_Perp = (v2 - (fD3_Para / v1.Mag() * v1) ).Mag(); // perpendicular part of v2 w.r.t v1
 	
 	// project to xy plane
 	v1.SetZ(0);
 	v2.SetZ(0);
 	fAlphaXY = v1.Angle(v2);
-	
-	fDxy_Para = v1.Dot(v2) / v1.Mag(); // projection of v2 to v1
-	fDxy_Para = (v2 - (fD3_Para / v1.Mag() * v1) ).Mag(); // perpendicular part of v2 w.r.t v1
 	
 	// do this at the end so the checkTruth algorithm can use
 	// all variables of this candidate.
@@ -138,6 +133,8 @@ void massReader::bookHist()
 	reduced_tree = new TTree("T",fTreeName);
 	
 	// and add the branches
+	reduced_tree->Branch("run",&fRun,"run/I");
+	reduced_tree->Branch("event",&fEvt,"event/I");
 	reduced_tree->Branch("candidate",&fCandidate,"candidate/I");
 	reduced_tree->Branch("pt",&fPt,"pt/F");
 	reduced_tree->Branch("mass",&fMass,"mass/F");
@@ -177,10 +174,6 @@ void massReader::bookHist()
 	reduced_tree->Branch("triggers_found",&fTriggersFound,"triggers_found/I");
 	reduced_tree->Branch("ctau",&fCtau,"ctau/F");
 	reduced_tree->Branch("eta",&fEta,"eta/F");
-	reduced_tree->Branch("d3_perp",&fD3_Perp,"d3_perp/F");
-	reduced_tree->Branch("d3_para",&fD3_Para,"d3_para/F");
-	reduced_tree->Branch("dxy_perp",&fDxy_Perp,"dxy_perp/F");
-	reduced_tree->Branch("dxy_para",&fDxy_Para,"dxy_para/F");
 	reduced_tree->Branch("tracks_ix",fTracksIx,Form("tracks_ix[%d]/I",NBR_TRACKS_STORE));
 	reduced_tree->Branch("tracks_ip",fTracksIP,Form("tracks_ip[%d]/F",NBR_TRACKS_STORE));
 	reduced_tree->Branch("tracks_ipe",fTracksIPE,Form("tracks_ipe[%d]/F",NBR_TRACKS_STORE));
@@ -208,7 +201,7 @@ int massReader::checkTruth(TAnaCand *cand)
 	
 	nGens = fpEvt->nGenCands();
 	
-	if (cand->fSig1 < 0) goto bail;
+	if (cand->fSig1 < 0 || cand->fSig2 < cand->fSig1) goto bail;
 	pTrack = fpEvt->getSigTrack(cand->fSig1);
 	pTrack = fpEvt->getRecTrack(pTrack->fIndex);
 	
