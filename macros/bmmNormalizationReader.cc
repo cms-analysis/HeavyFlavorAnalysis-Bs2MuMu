@@ -106,7 +106,7 @@ void bmmNormalizationReader::MCKinematics() {
 
   // ----------------------------------------------------------------------
   // -- Acceptance: 
-  TAnaTrack *pT, *prM1, *prM2; 
+  TAnaTrack *pT(0), *prM1(0), *prM2(0); 
   int m1Matched(0), m2Matched(0), KMatched(0);
   int m1Acc(0), m2Acc(0), KAcc(0);
   for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
@@ -140,10 +140,12 @@ void bmmNormalizationReader::MCKinematics() {
   }
 
   ((TH1D*)fpHistFile->Get("acceptance"))->Fill(30); 
+  ((TH1D*)fpHistFile->Get("acceptance"))->Fill(1); // denominator
   if (m1Matched && m1Acc && m2Matched && m2Acc) {
     ((TH1D*)fpHistFile->Get("acceptance"))->Fill(31); 
     if (KMatched && KAcc) {
       ((TH1D*)fpHistFile->Get("acceptance"))->Fill(32); 
+      ((TH1D*)fpHistFile->Get("acceptance"))->Fill(2);  // numerator
     }
   }
 
@@ -155,6 +157,7 @@ void bmmNormalizationReader::MCKinematics() {
     ((TH1D*)fpHistFile->Get("presel"))->Fill(11); 
     if (muonID(prM1) && muonID(prM2)) {
       ((TH1D*)fpHistFile->Get("presel"))->Fill(12); 
+      ((TH1D*)fpHistFile->Get("presel"))->Fill(1);  // denominator
     }
 
     int tm(0);
@@ -165,10 +168,12 @@ void bmmNormalizationReader::MCKinematics() {
       for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
 	pT = fpEvt->getRecTrack(fpEvt->getSigTrack(i)->fIndex); 
 	if (pT->fGenIndex == pM1->fNumber) {
+	  cout << "prM1 = " << prM1 << " pT = " << pT << endl;
 	  prM1 = pT; 
 	  ++tm;
 	}
 	if (pT->fGenIndex == pM2->fNumber) {
+	  cout << "prM2 = " << prM2 << " pT = " << pT << endl;
 	  prM2 = pT; 
 	  ++tm;
 	}
@@ -186,6 +191,7 @@ void bmmNormalizationReader::MCKinematics() {
       ((TH1D*)fpHistFile->Get("presel"))->Fill(20); 
       if (muonID(prM1) && muonID(prM2)) {
 	((TH1D*)fpHistFile->Get("presel"))->Fill(21); 
+	((TH1D*)fpHistFile->Get("presel"))->Fill(2);  // numerator
       }
       break;
     }
@@ -320,6 +326,7 @@ void bmmNormalizationReader::fillCandidateVariables() {
     pD = fpEvt->getCand(i); 
     if (pD->fType == JPSITYPE) {
       if ((JPSIMASSLO < pD->fMass) && (pD->fMass < JPSIMASSHI)) fGoodJpsiMass = true;
+      fJpsiMass = pD->fMass;
       break;
       //       cout << "type = " << pD->fType 
       // 	   << " with mass = " << pD->fMass 
@@ -414,7 +421,15 @@ void bmmNormalizationReader::fillCandidateHistograms() {
 // ---------------------------------------------------------------------- 
 void bmmNormalizationReader::bookHist() {
   bmmReader::bookHist();
+
+  // -- Additional analysis distributions
   fpMpsi   = bookDistribution("mpsi", "m(J/#psi) [GeV]", "fGoodJpsiMass", 40, 2.8, 3.4);           
+
+  // -- Additional reduced tree variables
+  fTree->Branch("mpsi", &fJpsiMass, "mpsi/D");
+  fTree->Branch("kpt",  &fKaonPt,   "kpt/D");
+  fTree->Branch("keta", &fKaonEta,  "keta/D");
+  fTree->Branch("kphi", &fKaonPhi,  "kphi/D");
 
 }
 

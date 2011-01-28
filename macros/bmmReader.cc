@@ -19,6 +19,8 @@ using std::vector;
 bmmReader::bmmReader(TChain *tree, TString evtClassName): treeReader01(tree, evtClassName) {
   cout << "==> bmmReader: constructor..." << endl;
   cout << "==> Defining analysis cuts" << endl;
+  MASSMIN = 4.5;
+  MASSMAX = 6.5; 
 }
 
 
@@ -347,6 +349,7 @@ void bmmReader::HLTSelection() {
   TString a; 
   int ps(0); 
   bool result(false), wasRun(false), error(false); 
+  //  cout << " ----------------------------------------------------------------------" << endl;
   for (int i = 0; i < NHLT; ++i) {
     result = wasRun = error = false;
     a = fpEvt->fHLTNames[i]; 
@@ -358,11 +361,19 @@ void bmmReader::HLTSelection() {
     for (unsigned int j = 0; j < HLTPath.size(); ++j) {
       if (a.Contains(HLTPath[j].c_str())) {
 	if (wasRun && result) {
-	  if (!a.CompareTo("HLT_DoubleMu0")) fHLTMu0 = true; 
-	  if (!a.CompareTo("HLT_DoubleMu0_Quarkonium_v1")) fHLTMu0 = true; 
-	  if (!a.CompareTo("HLT_DoubleMu3")) fHLTMu3 = true; 
-	  if (0) cout << "HLT fired " << a << endl;
-	  fGoodHLT = true; 
+	  if (!a.CompareTo(HLTPath[j].c_str())) {
+	    fGoodHLT = true; 
+	  }
+	  if (!a.CompareTo("HLT_DoubleMu0")) {
+	    fHLTMu0 = true; 
+	  }
+	  if (!a.CompareTo("HLT_DoubleMu0_Quarkonium_v1")) {
+	    fHLTMu0 = true; 
+	  }
+	  if (!a.CompareTo("HLT_DoubleMu3")) {
+	    fHLTMu3 = true; 
+	  }
+	  //	  if (fGoodHLT) cout << "HLT fired " << a << " required: " << HLTPath[j].c_str() << endl;
 	}
 	//cout << a << ": wasRun = " << wasRun << " result: " << result << " error: " << error << endl;
       }
@@ -382,8 +393,7 @@ void bmmReader::trackSelection() {
       ps = fpEvt->getSigTrack(it); 
       pt = fpEvt->getRecTrack(ps->fIndex); 
 
-      // FIXME: replace (pt->fTrackQuality < 0) with something meaningful!
-      if (TRACKQUALITY > 0 && (pt->fTrackQuality < 0)) {
+      if (TRACKQUALITY > 0 && (0 == (pt->fTrackQuality & TRACKQUALITY))) {
 	if (fVerbose > 5) cout << "track " << ps->fIndex << " failed track quality: " << pt->fTrackQuality << endl;
 	fvGoodTracks[iC] = false; 
       }
@@ -427,7 +437,6 @@ void bmmReader::trackSelection() {
 void bmmReader::muonSelection() {
 
   TAnaTrack *pt, *ps; 
-  int result(0); 
   for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
     for (int it = fCands[iC]->fSig1; it <= fCands[iC]->fSig2; ++it) {
       ps = fpEvt->getSigTrack(it); 
@@ -439,19 +448,19 @@ void bmmReader::muonSelection() {
 	     << hex << " with muid = " << pt->fMuID << " MUIDMASK = " << MUIDMASK << " MUIDRESULT = " << MUIDRESULT
 	     << " ===>  muonID(track) = " << muonID(pt) << dec << endl;
 
-      if (pt->fPlab.Perp() < MUPTLO) {
+      if (ps->fPlab.Perp() < MUPTLO) {
 	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUPTLO: " << pt->fPlab.Perp() << endl;          
 	fvGoodMuonsPt[iC] = false; 
       }
-      if (pt->fPlab.Perp() > MUPTHI) {
+      if (ps->fPlab.Perp() > MUPTHI) {
 	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUPTHI: " << pt->fPlab.Perp() << endl;          
 	fvGoodMuonsPt[iC] = false; 
       }
-      if (pt->fPlab.Eta() < MUETALO) {
+      if (ps->fPlab.Eta() < MUETALO) {
 	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUETALO: " << pt->fPlab.Eta() << endl;          
 	fvGoodMuonsEta[iC] = false; 
       }
-      if (pt->fPlab.Eta() > MUETAHI) {
+      if (ps->fPlab.Eta() > MUETAHI) {
 	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUETAHI: " << pt->fPlab.Eta() << endl;          
 	fvGoodMuonsEta[iC] = false; 
       }
@@ -488,10 +497,13 @@ void bmmReader::fillCandidateVariables() {
 
   TAnaTrack *p0; 
   TAnaTrack *p1 = 0;
-  TAnaTrack *p2 = 0; fpEvt->getSigTrack(fpCand->fSig1+1); 
-  
+  TAnaTrack *p2 = 0; //??fpEvt->getSigTrack(fpCand->fSig1+1); 
+
+  fCandQ    = 0;
+
   for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
     p0 = fpEvt->getSigTrack(it);     
+    fCandQ += fpEvt->getRecTrack(p0->fIndex)->fQ;
     if (TMath::Abs(p0->fMCID) != 13) continue;
     if (0 == p1) {
       p1 = p0; 
@@ -506,28 +518,83 @@ void bmmReader::fillCandidateVariables() {
     p2 = p0; 
   }
 
+  fMu1Id        = muonID(fpEvt->getRecTrack(p1->fIndex)); 
   fMu1Pt        = p1->fPlab.Perp(); 
   fMu1Eta       = p1->fPlab.Eta(); 
   fMu1Phi       = p1->fPlab.Phi(); 
   fMu1TkQuality = p1->fTrackQuality;
   fMu1W8Mu      = fpMuonID->effD(fMu1Pt, fMu1Eta, fMu1Phi);
   fMu1W8Tr      = fpMuonTr->effD(fMu1Pt, fMu1Eta, fMu1Phi);
+  fMu1Q         = fpEvt->getRecTrack(p1->fIndex)->fQ;
   
+  fMu2Id        = muonID(fpEvt->getRecTrack(p2->fIndex)); 
   fMu2Pt        = p2->fPlab.Perp(); 
   fMu2Eta       = p2->fPlab.Eta(); 
   fMu2Phi       = p2->fPlab.Phi(); 
   fMu2TkQuality = p2->fTrackQuality;
   fMu2W8Mu      = fpMuonID->effD(fMu2Pt, fMu2Eta, fMu2Phi);
   fMu2W8Tr      = fpMuonTr->effD(fMu2Pt, fMu2Eta, fMu2Phi);
+  fMu2Q         = fpEvt->getRecTrack(p2->fIndex)->fQ;
 
   fCandW8Mu     = fMu1W8Mu*fMu2W8Mu;
+  if (TMath::Abs(fCandW8Mu) > 1.) fCandW8Mu = 0.2; // FIXME correction for missing entries at low pT
   fCandW8Tr     = fMu1W8Tr*fMu2W8Tr;
+  if (TMath::Abs(fCandW8Tr) > 1.) fCandW8Tr = 0.2; // FIXME correction for missing entries at low pT 
 
-//   if (fMu1Pt > 3. && fMu2Pt > 3.) {
-//     cout << "muon1: " << fMu1W8Mu << " " << fMu1W8Tr << endl;
-//     cout << "muon2: " << fMu2W8Mu << " " << fMu2W8Tr << endl;
-//     cout << "--> eff(2mu) = " << fCandW8Mu << " eff(trig) = " << fCandW8Tr << endl;
-//   }
+
+  // -- Add HLT muons
+  TTrgObj *p(0), *h1(0), *h2(0); 
+  for (int i = 0; i < fpEvt->nTrgObj(); ++i) {
+    p = fpEvt->getTrgObj(i); 
+    if (fHLTMu0 && (!p->fLabel.CompareTo("hltDiMuonL3PreFiltered0:HLT::") || !p->fLabel.CompareTo("hltDiMuonL3PreFiltered0:HLT::"))) {
+      if (0 == h1) {
+	h1 = p; 
+      } else {
+	h2 = p; 
+      }
+    }
+  }
+
+  if (h1 && h2 && h2->fP.Perp() > h1->fP.Perp()) {
+    p = h1; 
+    h1 = h2; 
+    h2 = p;
+  }
+  
+  fHltMu1Pt  = -99.;
+  fHltMu1Eta = -99.;
+  fHltMu1Phi = -99.;
+    
+  fHltMu2Pt  = -99.;
+  fHltMu2Eta = -99.;
+  fHltMu2Phi = -99.;
+
+  if (fHLTMu0) {
+    //     cout << "m1 " << p1->fPlab.Perp() << " " << p1->fPlab.Phi() << " " << p1->fPlab.Eta()  << endl;
+    //     cout << "h1 " << h1->fP.Perp() << " " << h1->fP.Phi() << " " << h1->fP.Eta() << endl;
+    //     cout << "m2 " << p2->fPlab.Perp() << " " << p2->fPlab.Phi() << " " << p2->fPlab.Eta()  << endl;
+    //     cout << "h2 " << h2->fP.Perp() << " " << h2->fP.Phi() << " " << h2->fP.Eta() << endl;
+
+    fHltMu1Pt  = h1->fP.Perp(); 
+    fHltMu1Eta = h1->fP.Eta(); 
+    fHltMu1Phi =  h1->fP.Phi(); 
+
+    fHltMu2Pt  = h1->fP.Perp();  
+    fHltMu2Eta = h1->fP.Eta(); 
+    fHltMu2Phi = h1->fP.Phi(); 
+
+    TLorentzVector lh1, lh2; 
+    lh1.SetPtEtaPhiM(fHltMu1Pt, fHltMu1Eta, fHltMu1Phi, MMUON);
+    lh2.SetPtEtaPhiM(fHltMu2Pt, fHltMu2Eta, fHltMu2Phi, MMUON);
+    double mReco(fpCand->fMass), mHLT((lh1+lh2).M());
+
+    ((TH1D*)fpHistFile->Get("hltMass"))->Fill((mReco - mHLT)/mReco); 
+
+    ((TH1D*)fpHistFile->Get("hltPt"))->Fill((p1->fPlab.Perp() - h1->fP.Perp())/p1->fPlab.Perp()); 
+    ((TH1D*)fpHistFile->Get("hltPt"))->Fill((p2->fPlab.Perp() - h2->fP.Perp())/p2->fPlab.Perp()); 
+    ((TH1D*)fpHistFile->Get("hltEta"))->Fill((p1->fPlab.Eta() - h1->fP.Eta())/TMath::Abs(p1->fPlab.Eta())); 
+    ((TH1D*)fpHistFile->Get("hltEta"))->Fill((p2->fPlab.Eta() - h2->fP.Eta())/TMath::Abs(p2->fPlab.Eta())); 
+  }
 
   int pvidx = (fpCand->fPvIdx > -1? fpCand->fPvIdx : 0); 
   TVector3 svpv(fpCand->fVtx.fPoint - fpEvt->getPV(pvidx)->fPoint); 
@@ -559,7 +626,7 @@ void bmmReader::fillCandidateVariables() {
   fMu2IP        = fpCand->fVtx.fD3d*bmu2/t2->fTip;
 
   // -- fill cut variables
-  fWideMass = ((fpCand->fMass > 4.8) && (fpCand->fMass < 6.0)); 
+  fWideMass = ((fpCand->fMass > MASSMIN) && (fpCand->fMass < MASSMAX)); 
   
   fGoodTracks = fvGoodTracks[fCandIdx];
   fGoodTracksPt = fvGoodTracksPt[fCandIdx];
@@ -568,6 +635,7 @@ void bmmReader::fillCandidateVariables() {
   fGoodMuonsPt  = fvGoodMuonsPt[fCandIdx]; 
   fGoodMuonsEta  = fvGoodMuonsEta[fCandIdx]; 
 
+  fGoodQ = (fMu1Q*fMu2Q < 0); 
   fGoodPt = (fCandPt > CANDPTLO);
   fGoodEta = ((fCandEta > CANDETALO) && (fCandEta < CANDETAHI)); 
   fGoodCosA = (fCandCosA > CANDCOSALPHA); 
@@ -617,38 +685,60 @@ double bmmReader::isoClassic(TAnaCand *pC) {
 
 // ----------------------------------------------------------------------
 double bmmReader::isoClassicOnePv(TAnaCand *pC) {
-  double iso(-1.), pt(0.), sumPt(0.), candPt(0.); 
+  double iso(-1.), pt(0.), sumPt(0.), candPt(0.), candPtScalar(0.); 
   TAnaTrack *pT; 
   vector<int> cIdx; 
   int pvIdx = pC->fPvIdx;
-  //  int tIdx(-1); 
+
+  //   int verbose(0); 
+  //   if (fRun == 148862 &&  fEvt == 1219569139) { verbose = 1; }
+  //   if (fRun == 147284 &&  fEvt == 186315253) { verbose = 1; }
+
   for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
     pT = fpEvt->getSigTrack(i); 
     cIdx.push_back(pT->fIndex); 
-    candPt += pT->fPlab.Perp(); 
-    //     tIdx = fpEvt->getRecTrack(pT->fIndex)->fPvIdx;
-    //     if (pvIdx != tIdx) {
-    //       cout << "Signal track pointing to PV " << tIdx << " instead of " << pvIdx << endl;
+    candPtScalar += pT->fPlab.Perp(); 
+    //     if (verbose) {
+    //       int tIdx = fpEvt->getRecTrack(pT->fIndex)->fPvIdx;
+    //       if (pvIdx != tIdx) {
+    // 	cout << "Signal track pointing to PV " << tIdx << " instead of " << pvIdx << endl;
+    //       }
     //     }
   }
+
+  candPt = pC->fPlab.Perp(); 
   
   for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
     if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  continue;
     pT = fpEvt->getRecTrack(i); 
+    //     if (verbose) {
+    //       cout << "   track " << i 
+    //  	   << " with pT = " << pT->fPlab.Perp()
+    //  	   << " eta = " << pT->fPlab.Eta()
+    //  	   << " pointing at PV " << pT->fPvIdx;
+    //     }
     if (pvIdx != pT->fPvIdx) {
-      //       cout << "   skip track " << i 
-      // 	   << " with pT = " << pT->fPlab.Perp()
-      // 	   << " eta = " << pT->fPlab.Eta()
-      // 	   << " pointing at " << pT->fPvIdx << endl;
+      //      if (verbose) cout << " skipped because of PV index mismatch" << endl;
       continue;
     }
     pt = pT->fPlab.Perp(); 
-    if (pt < 0.9) continue;
-    if (pT->fPlab.DeltaR(pC->fPlab) < 1.0) sumPt += pt; 
+    if (pt < 0.9) {
+      //      if (verbose) cout << " skipped because of pt = " << pt << endl;
+      continue;
+    }
+    if (pT->fPlab.DeltaR(pC->fPlab) < 1.0) {
+      sumPt += pt; 
+      //      if (verbose) cout << endl;
+    } 
+    //    else {
+      //      if (verbose) cout << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+    //    }
   }
 
   iso = candPt/(candPt + sumPt); 
 
+  //   if (verbose) cout << "--> iso = " << candPt << " .. " << sumPt << " = " << iso << endl;
+  //   if (verbose) cout << "--> iso = " << pC->fPlab.Perp() << " .. " << sumPt << " = " << pC->fPlab.Perp()/(pC->fPlab.Perp() + sumPt) << endl;
   return iso; 
 }
 
@@ -696,6 +786,7 @@ void bmmReader::fillCandidateHistograms() {
   fpAllEvents->fill(1, fCandM); 
   fpHLT->fill(1, fCandM); 
   fpPvZ->fill(fPvZ, fCandM); 
+  fpQ->fill(fCandQ, fCandM); 
   fpPt->fill(fCandPt, fCandM); 
   fpEta->fill(fCandEta, fCandM); 
   fpCosA->fill(fCandCosA, fCandM);
@@ -729,13 +820,17 @@ void bmmReader::bookHist() {
   h = new TH1D("acceptance", "acceptance", 100, 0., 100.); 
   h = new TH1D("presel", "presel", 100, 0., 100.); 
 
+  h = new TH1D("hltMass", "hlt mass resolution", 100, -0.1, 0.1); 
+  h = new TH1D("hltPt", "hlt pt resolution", 100, -0.1, 0.1); 
+  h = new TH1D("hltEta", "hlt eta resolution", 100, -0.1, 0.1); 
+
  
   // -- mass histograms for efficiencies
   for (int i = 0; i < fAnaCuts.ncuts(); ++i) {
-    h = new TH1D(Form("c%dSi", i), fAnaCuts.getName(i), 30, 4.8, 6.0); 
-    h = new TH1D(Form("c%dAo", i), fAnaCuts.getName(i), 30, 4.8, 6.0); 
-    h = new TH1D(Form("c%dCu", i), fAnaCuts.getName(i), 30, 4.8, 6.0); 
-    h = new TH1D(Form("c%dNm", i), fAnaCuts.getName(i), 30, 4.8, 6.0); 
+    h = new TH1D(Form("c%dSi", i), fAnaCuts.getName(i), 40, MASSMIN, MASSMAX); 
+    h = new TH1D(Form("c%dAo", i), fAnaCuts.getName(i), 40, MASSMIN, MASSMAX); 
+    h = new TH1D(Form("c%dCu", i), fAnaCuts.getName(i), 40, MASSMIN, MASSMAX); 
+    h = new TH1D(Form("c%dNm", i), fAnaCuts.getName(i), 40, MASSMIN, MASSMAX); 
   }
 
   h = new TH1D("analysisDistributions", "analysisDistributions", 100, 0., 100.); 
@@ -748,6 +843,7 @@ void bmmReader::bookHist() {
   fpMuonsID  = bookDistribution("muonsid", "muon id", "fGoodMuonsID", 10, 0., 10.); 
   fpMuonsPt  = bookDistribution("muonspt", "p_{T, #mu} [GeV]", "fGoodMuonsPt", 50, 0., 25.); 
   fpMuonsEta = bookDistribution("muonseta", "#eta_{#mu}", "fGoodMuonsEta", 50, -2.5, 2.5); 
+  fpQ        = bookDistribution("q", "q_{1} q_{2}", "fGoodQ", 3, -1., 2.); 
   fpPt       = bookDistribution("pt", "p_{T, B} [GeV]", "fGoodPt", 50, 0., 25.); 
   fpEta      = bookDistribution("eta", "#eta_{B}", "fGoodEta", 50, -2.5, 2.5); 
   fpCosA     = bookDistribution("cosa", "cos(#alpha)", "fGoodCosA", 60, 0.97, 1.); 
@@ -772,10 +868,21 @@ void bmmReader::bookHist() {
   fTree = new TTree("events", "events");
   fTree->Branch("run",    &fRun,               "run/I");
   fTree->Branch("evt",    &fEvt,               "evt/I");
-  fTree->Branch("hlt",    &fGoodHLT,           "hlt/O");
-  fTree->Branch("l1t",    &fGoodL1T,           "l1t/O");
   fTree->Branch("mck",    &fGoodMCKinematics,  "mck/O");
   fTree->Branch("tm",     &fCandTM,            "tm/I");
+  fTree->Branch("hlt",    &fGoodHLT,           "hlt/O");
+  fTree->Branch("l1t",    &fGoodL1T,           "l1t/O");
+  // -- global cuts and weights
+  fTree->Branch("gmuid",  &fGoodMuonsID,       "gmuid/O");
+  fTree->Branch("gmupt",  &fGoodMuonsPt,       "gmupt/O");
+  fTree->Branch("gmueta", &fGoodMuonsEta,      "gmueta/O");
+  fTree->Branch("gtqual", &fGoodTracks,        "gtqual/O");
+  fTree->Branch("gtpt",   &fGoodTracksPt,      "gtpt/O");
+  fTree->Branch("gteta",  &fGoodTracksEta,     "gteta/O");
+  fTree->Branch("w8mu",   &fCandW8Mu,          "w8mu/D");
+  fTree->Branch("w8tr",   &fCandW8Tr,          "w8tr/D");
+  // -- cand
+  fTree->Branch("q",      &fCandQ,             "q/I");
   fTree->Branch("pt",     &fCandPt,            "pt/D");
   fTree->Branch("eta",    &fCandEta,           "eta/D");
   fTree->Branch("phi",    &fCandPhi,           "phi/D");
@@ -787,14 +894,27 @@ void bmmReader::bookHist() {
   fTree->Branch("fls3d",  &fCandFLS3d,         "fls3d/D");
   fTree->Branch("flsxy",  &fCandFLSxy,         "flsxy/D");
   fTree->Branch("docatrk",&fCandDocaTrk,       "docatrk/D");
+  // -- muons
+  fTree->Branch("m1q",    &fMu1Q,              "m1q/I");
+  fTree->Branch("m1id",   &fMu1Id,             "m1ip/O");
   fTree->Branch("m1pt",   &fMu1Pt,             "m1pt/D");
   fTree->Branch("m1eta",  &fMu1Eta,            "m1eta/D");
   fTree->Branch("m1phi",  &fMu1Phi,            "m1phi/D");
+  fTree->Branch("m1ip",   &fMu1IP,             "m1ip/D");
+  fTree->Branch("m2q",    &fMu2Q,              "m2q/I");
+  fTree->Branch("m2id",   &fMu2Id,             "m2ip/O");
   fTree->Branch("m2pt",   &fMu2Pt,             "m2pt/D");
   fTree->Branch("m2eta",  &fMu2Eta,            "m2eta/D");
   fTree->Branch("m2phi",  &fMu2Phi,            "m2phi/D");
-  fTree->Branch("m1ip",   &fMu1IP,             "m1ip/D");
-  fTree->Branch("m2ip",   &fMu2IP,            "m2ip/D");
+  fTree->Branch("m2ip",   &fMu2IP,             "m2ip/D");
+
+  fTree->Branch("fHltMu1Pt",  &fHltMu1Pt,  "hm1pt/D");    
+  fTree->Branch("fHltMu1Eta", &fHltMu1Eta, "hm1eta/D");  
+  fTree->Branch("fHltMu1Phi", &fHltMu1Phi, "hm1phi/D");  
+  fTree->Branch("fHltMu2Pt",  &fHltMu2Pt,  "hm2pt/D");    
+  fTree->Branch("fHltMu2Eta", &fHltMu2Eta, "hm2eta/D");  
+  fTree->Branch("fHltMu2Phi", &fHltMu2Phi, "hm2phi/D");  
+
 }
 
 
@@ -843,6 +963,7 @@ void bmmReader::moreBasicCuts() {
 // ----------------------------------------------------------------------
 void bmmReader::candidateCuts() {
   cout << "    bmmReader candidate cuts" << endl;
+  fAnaCuts.addCut("fGoodQ", "q_{1} 1_{2}", fGoodQ); 
   fAnaCuts.addCut("fGoodPt", "p_{T,B}", fGoodPt); 
   fAnaCuts.addCut("fGoodEta", "#eta_{B}", fGoodEta); 
   fAnaCuts.addCut("fGoodCosA", "cos(#alpha)", fGoodCosA); 

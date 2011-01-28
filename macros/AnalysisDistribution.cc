@@ -46,9 +46,10 @@ double f_ea2G(double *x, double *par) {
 
 // ----------------------------------------------------------------------
 AnalysisDistribution::AnalysisDistribution(const char *name, const char *title, int nbins, double lo, double hi) {
+  int NBINS(60);
   fSigLo = fSigHi = fBg1Lo = fBg1Hi = fBg2Lo = fBg2Hi = 0.0;
-  fMassLo = 4.8;
-  fMassHi = 6.0;
+  fMassLo = 4.5;
+  fMassHi = 6.5;
   fVerbose = 0; 
 
   string massbin[3]; 
@@ -76,21 +77,20 @@ AnalysisDistribution::AnalysisDistribution(const char *name, const char *title, 
     hHLT[i]->SetXTitle(title); 
   }
 
-  int NBINS(30); 
   hMassSi = new TH1D(Form("%sMassSi", name), Form("%sMassSi", name), NBINS, fMassLo, fMassHi); 
   hMassAo = new TH1D(Form("%sMassAo", name), Form("%sMassAo", name), NBINS, fMassLo, fMassHi); 
   hMassNm = new TH1D(Form("%sMassNm", name), Form("%sMassNm", name), NBINS, fMassLo, fMassHi); 
   hMassCu = new TH1D(Form("%sMassCu", name), Form("%sMassCu", name), NBINS, fMassLo, fMassHi); 
   hMassHLT= new TH1D(Form("%sMassHLT", name), Form("%sMassHLT", name), NBINS, fMassLo, fMassHi); 
 
-  fF0 = new TF1("ADf0", f_p1, 0., 6., 2);         fF0->SetParNames("Offset", "Slope"); 			   
-  fF1 = new TF1("ADf1", f_expo, 0., 6., 2);       fF1->SetParNames("Norm", "Exp"); 			   
+  fF0 = new TF1("ADf0", f_p1, 0., 7., 2);         fF0->SetParNames("Offset", "Slope"); 			   
+  fF1 = new TF1("ADf1", f_expo, 0., 7., 2);       fF1->SetParNames("Norm", "Exp"); 			   
 
-  fP1  = new TF1("ADp1", f_p1, 0., 6., 2);        fP1->SetParNames("Offset", "Slope"); 			   
-  fPG1 = new TF1("ADpg1", f_p1aG, 0., 6., 5);     fPG1->SetParNames("Area", "Peak", "Sigma", "Offset", "Slope"); 
-  fEG1 = new TF1("ADeg1", f_eaG, 0., 6., 5);      fEG1->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp"); 
-  fEG2 = new TF1("ADeg2", f_ea2G, 0., 6., 8);     fEG2->SetParNames("Area", "Peak", "Sigma", "Fraction2", "Peak2", "Sigma2", "Norm", "Exp"); 
-  fEPG = new TF1("ADepg", f_epaG, 0., 6., 7);     fEPG->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp", "Offset", "Slope");             
+  fP1  = new TF1("ADp1", f_p1, 0., 7., 2);        fP1->SetParNames("Offset", "Slope"); 			   
+  fPG1 = new TF1("ADpg1", f_p1aG, 0., 7., 5);     fPG1->SetParNames("Area", "Peak", "Sigma", "Offset", "Slope"); 
+  fEG1 = new TF1("ADeg1", f_eaG, 0., 7., 5);      fEG1->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp"); 
+  fEG2 = new TF1("ADeg2", f_ea2G, 0., 7., 8);     fEG2->SetParNames("Area", "Peak", "Sigma", "Fraction2", "Peak2", "Sigma2", "Norm", "Exp"); 
+  fEPG = new TF1("ADepg", f_epaG, 0., 7., 7);     fEPG->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp", "Offset", "Slope");             
   
 }
 
@@ -99,8 +99,8 @@ AnalysisDistribution::AnalysisDistribution(const char *name, const char *title, 
 // ----------------------------------------------------------------------
 AnalysisDistribution::AnalysisDistribution(const char *name, double SigLo, double SigHi, double Bg1Lo, double Bg1Hi, double Bg2Lo, double Bg2Hi) {
 
-  fMassLo = 4.8;
-  fMassHi = 6.0;
+  fMassLo = 4.5;
+  fMassHi = 6.5;
 
   hMassSi = (TH1D*)gDirectory->Get(Form("%sMassSi", name)); 
   hMassAo = (TH1D*)gDirectory->Get(Form("%sMassAo", name)); 
@@ -123,14 +123,14 @@ AnalysisDistribution::AnalysisDistribution(const char *name, double SigLo, doubl
   fBg2Lo = Bg2Lo;
   fBg2Hi = Bg2Hi;
 
-  fF0 = new TF1("ADf0", f_p1, 0., 6., 2);         fF0->SetParNames("Offset", "Slope"); 			   
-  fF1 = new TF1("ADf1", f_expo, 0., 6., 2);  	  fF1->SetParNames("Norm", "Exp"); 			   
+  fF0 = new TF1("ADf0", f_p1, 0., 7., 2);         fF0->SetParNames("Offset", "Slope"); 			   
+  fF1 = new TF1("ADf1", f_expo, 0., 7., 2);  	  fF1->SetParNames("Norm", "Exp"); 			   
 
-  fP1  = new TF1("ADp1", f_p1, 0., 6., 2);        fP1->SetParNames("Offset", "Slope"); 			   				    
-  fPG1 = new TF1("ADpg1", f_p1aG, 0., 6., 5);     fPG1->SetParNames("Area", "Peak", "Sigma", "Offset", "Slope"); 			    
-  fEG1 = new TF1("ADeg1", f_eaG, 0., 6., 5);      fEG1->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp"); 				    
-  fEG2 = new TF1("ADeg2", f_ea2G, 0., 6., 8);     fEG2->SetParNames("Area", "Peak", "Sigma", "Fraction2", "Peak2", "Sigma2", "Norm", "Exp");
-  fEPG = new TF1("ADepg", f_epaG, 0., 6., 7);     fEPG->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp", "Offset", "Slope");             
+  fP1  = new TF1("ADp1", f_p1, 0., 7., 2);        fP1->SetParNames("Offset", "Slope"); 			   				    
+  fPG1 = new TF1("ADpg1", f_p1aG, 0., 7., 5);     fPG1->SetParNames("Area", "Peak", "Sigma", "Offset", "Slope"); 			    
+  fEG1 = new TF1("ADeg1", f_eaG, 0., 7., 5);      fEG1->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp"); 				    
+  fEG2 = new TF1("ADeg2", f_ea2G, 0., 7., 8);     fEG2->SetParNames("Area", "Peak", "Sigma", "Fraction2", "Peak2", "Sigma2", "Norm", "Exp");
+  fEPG = new TF1("ADepg", f_epaG, 0., 7., 7);     fEPG->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp", "Offset", "Slope");             
   
 }
 

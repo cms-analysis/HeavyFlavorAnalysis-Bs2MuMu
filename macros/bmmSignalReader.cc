@@ -85,7 +85,7 @@ void bmmSignalReader::MCKinematics() {
 
   if (!goodMatch) {
     fGoodMCKinematics = false; 
-    if (fVerbose > -1 ) cout << "--------------------> No matched signal decay found" << endl;
+    if (fVerbose > 2 ) cout << "--------------------> No matched signal decay found" << endl;
     return;
   }
 
@@ -107,7 +107,7 @@ void bmmSignalReader::MCKinematics() {
 
   // ----------------------------------------------------------------------
   // -- Acceptance: 
-  TAnaTrack *pT, *prM1, *prM2; 
+  TAnaTrack *pT(0), *prM1(0), *prM2(0); 
   int m1Matched(0), m2Matched(0);
   int m1Acc(0), m2Acc(0);
   for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
@@ -133,8 +133,10 @@ void bmmSignalReader::MCKinematics() {
   }
 
   ((TH1D*)fpHistFile->Get("acceptance"))->Fill(30); 
+  ((TH1D*)fpHistFile->Get("acceptance"))->Fill(1); // denominator
   if (m1Matched && m1Acc && m2Matched && m2Acc) {
     ((TH1D*)fpHistFile->Get("acceptance"))->Fill(31); 
+    ((TH1D*)fpHistFile->Get("acceptance"))->Fill(2);  // numerator
   }
   
 
@@ -146,6 +148,7 @@ void bmmSignalReader::MCKinematics() {
     ((TH1D*)fpHistFile->Get("presel"))->Fill(11); 
     if (muonID(prM1) && muonID(prM2)) {
       ((TH1D*)fpHistFile->Get("presel"))->Fill(12); 
+      ((TH1D*)fpHistFile->Get("presel"))->Fill(1);  // denominator
     }
 
     int tm(0);
@@ -174,6 +177,7 @@ void bmmSignalReader::MCKinematics() {
       ((TH1D*)fpHistFile->Get("presel"))->Fill(20); 
       if (muonID(prM1) && muonID(prM2)) {
 	((TH1D*)fpHistFile->Get("presel"))->Fill(21); 
+	((TH1D*)fpHistFile->Get("presel"))->Fill(2);  // numerator
       }
       break;
     }

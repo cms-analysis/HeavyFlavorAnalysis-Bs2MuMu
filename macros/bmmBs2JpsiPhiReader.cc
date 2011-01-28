@@ -136,7 +136,7 @@ void bmmBs2JpsiPhiReader::MCKinematics() {
 
   // ----------------------------------------------------------------------
   // -- Acceptance: 
-  TAnaTrack *pT, *prM1, *prM2; 
+  TAnaTrack *pT(0), *prM1(0), *prM2(0); 
   int m1Matched(0), m2Matched(0), k1Matched(0), k2Matched(0);
   int m1Acc(0), m2Acc(0), k1Acc(0), k2Acc(0);
   for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
@@ -237,8 +237,6 @@ void bmmBs2JpsiPhiReader::MCKinematics() {
       break;
     }
   }
-
-
 
   // -- hard coded ?! FIXME
   if (pM1->fP.Perp() < 1.0) fGoodMCKinematics = false;  
@@ -393,7 +391,7 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
     //    cout << "i = " << i << " pD = " << pD << endl;
     if (pD->fType == JPSITYPE) {
       if ((JPSIMASSLO < pD->fMass) && (pD->fMass < JPSIMASSHI)) fGoodJpsiMass = true;
-      break;
+      fJpsiMass = pD->fMass;
       //       cout << "type = " << pD->fType 
       //        	   << " with mass = " << pD->fMass 
       // 	   << " fGoodJpsiMass = " << fGoodJpsiMass 
@@ -444,7 +442,6 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
 // ----------------------------------------------------------------------
 int bmmBs2JpsiPhiReader::tmCand(TAnaCand *pC) {
   
-  int truth(0); 
   TAnaTrack *pT; 
   vector<TGenCand*> gCand; 
   for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
@@ -505,13 +502,22 @@ void bmmBs2JpsiPhiReader::bookHist() {
   bmmReader::bookHist();
   cout << "==> bmmBs2JpsiPhiReader: bookHist " << endl;
 
+  // -- Additional analysis distributions
   fpMpsi     = bookDistribution("mpsi", "m(J/#psi) [GeV]", "fGoodJpsiMass", 40, 2.8, 3.4);           
   fpDeltaR   = bookDistribution("deltar", "#Delta R", "fGoodDeltaR", 50, 0., 1.);           
   fpMKK      = bookDistribution("mkk", "m(KK) [GeV]", "fGoodMKK", 50, 0.95, 1.15);           
 
-  TH1D *h1; 
-  h1 = new TH1D("h100", "", 100, 0., 100.);
-  fTree->Branch("m2",      &fCandM,  "m2/D");
+  // -- Additional reduced tree variables
+  fTree->Branch("mpsi",  &fJpsiMass, "mpsi/D");
+  fTree->Branch("mkk",   &fMKK,      "mkk/D");
+  fTree->Branch("dr",    &fDeltaR,   "dr/D");
+
+  fTree->Branch("k1pt",  &fKa1Pt,    "k1pt/D");
+  fTree->Branch("k1eta", &fKa1Eta,   "k1eta/D");
+  fTree->Branch("k1phi", &fKa1Phi,   "k1phi/D");
+  fTree->Branch("k2pt",  &fKa2Pt,    "k2pt/D");
+  fTree->Branch("k2eta", &fKa2Eta,   "k2eta/D");
+  fTree->Branch("k2phi", &fKa2Phi,   "k2phi/D");
 }
 
 

@@ -39,10 +39,12 @@ RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 #########
 # FILES #
 #########
-READER_HEADERS = treeReader01.hh bmmReader.hh bmmSignalReader.hh bmmNormalizationReader.hh bmmBs2JpsiPhiReader.hh d0Reader.hh dumpReader.hh muCharmReader.hh copyReader.hh dpReader.hh massReader.hh triggerValidation.hh ksReader.hh lambdaReader.hh genLevel.hh kpReader.hh phiReader.hh decayCounter.hh impactReader.hh AnalysisCuts.hh AnalysisDistribution.hh anaBmm.hh otherDecays.hh mumuReader.hh
-READER = treeReader01.o bmmReader.o bmmSignalReader.o bmmNormalizationReader.o bmmBs2JpsiPhiReader.o massReader.o dumpReader.o copyReader.o muCharmReader.o dpReader.o d0Reader.o triggerValidation.o ksReader.o lambdaReader.o genLevel.o kpReader.o phiReader.o decayCounter.o impactReader.o AnalysisCuts.o AnalysisDistribution.o anaBmm.o otherDecays.o mumuReader.o
+READER_HEADERS = treeReader01.hh bmmReader.hh bmmSignalReader.hh bmmNormalizationReader.hh bmmBs2JpsiPhiReader.hh d0Reader.hh dumpReader.hh muCharmReader.hh copyReader.hh dpReader.hh massReader.hh triggerValidation.hh ksReader.hh lambdaReader.hh genLevel.hh kpReader.hh phiReader.hh decayCounter.hh impactReader.hh AnalysisCuts.hh AnalysisDistribution.hh anaBmm.hh otherDecays.hh mumuReader.hh initFunc.hh mclimit_csm.hh 
+READER = treeReader01.o bmmReader.o bmmSignalReader.o bmmNormalizationReader.o bmmBs2JpsiPhiReader.o massReader.o dumpReader.o copyReader.o muCharmReader.o dpReader.o d0Reader.o triggerValidation.o ksReader.o lambdaReader.o genLevel.o kpReader.o phiReader.o decayCounter.o impactReader.o AnalysisCuts.o AnalysisDistribution.o anaBmm.o otherDecays.o mumuReader.o initFunc.o mclimit_csm.o 
 
 READERDICT = ${READER:.o=Dict.o}
+
+CSTUFF = bayesianlimit.o
 
 #################
 # PATTERN RULES #
@@ -57,6 +59,10 @@ obj/%.o : %.cc $(READER_HEADERS)
 %Dict.cc : %.hh
 	$(ROOTCINT) -f $@ -c $<
 
+
+obj/%.o : %.c $(CSTUFF)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 ###########
 # TARGETS #
 ###########
@@ -65,8 +71,8 @@ all:
 	@$(MAKE) bin/runTreeReaders
 	@$(MAKE) bin/runMergeTrees
 
-lib/libAnaClasses.so: $(addprefix obj/,$(READER) $(READERDICT)) lib/libAna00.so lib/libUtil.so
-	$(CXX) $(SOFLAGS) $(addprefix obj/,$(READER) $(READERDICT)) -o lib/libAnaClasses.so $(GLIBS) lib/libAna00.so lib/libUtil.so
+lib/libAnaClasses.so: $(addprefix obj/,$(CSTUFF) $(READER) $(READERDICT)) lib/libAna00.so lib/libUtil.so 
+	$(CXX) $(SOFLAGS) $(addprefix obj/,$(CSTUFF) $(READER) $(READERDICT)) -o lib/libAnaClasses.so $(GLIBS) -lMinuit lib/libAna00.so lib/libUtil.so
 
 lib/libAna00.so:
 	cd lib && ln -s $(RELLIBPATH)/libAna00.so libAna00.so && cd -

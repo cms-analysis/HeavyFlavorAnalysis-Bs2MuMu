@@ -18,11 +18,14 @@
 #include "TCanvas.h"
 #include "TStyle.h"
 #include "TROOT.h"
+#include "TRolke.h"
 #include "TVirtualPad.h"  // access to gPad
 
 #include <iostream>
 #include <fstream>
 #include <vector>
+
+#include "initFunc.hh"
 
 class anaBmm: public TObject {
 
@@ -41,11 +44,27 @@ public:
   void makeAll(int channels = 3);
   void dumpCutNames();
   void allEffTables();
+  void computeNormUL();
   void effTable(std::string mode);
+  void breco(TH1D *h); 
+  void acceptanceAndPreselection(int mode);
+  TH1* loopTree(int mode);
+
+  void plotVar(const char *plotstring, const char *cuts, const char *options = "");
+  void testUL(const char *cuts);
+  void optimizeCut(const char *cut, double lo, double hi, const char *otherCuts); 
+  void optimizeUL(int nruns = 10); 
+  void normYield(TH1 *h, int mode, double lo = 5.15, double hi=5.5);
+  void bgBlind(TH1 *h, int mode = 2, double lo = 4.5, double hi = 6.5); 
+  void barlow(int nobs, double bg = 0., double bgE = 0., double sE = 0.);
+  void rolkeM3();
+  void rolkeM3(int x, double bm, double em, double sde, double sdb);
+
 
 
   // -- Utilities and helper methods
   // -------------------------------
+  void setErrors(TH1D *h);
   std::string formatTex(double n, std::string name, std::string tag);
   void replaceAll(std::string &s, std::string a, std::string b);
   int  wait();
@@ -54,6 +73,7 @@ public:
   // -- Files for Signal and Normalization modes in data and MC
 #define MAXFILES 20
   TFile *fpData[MAXFILES], *fpMc[MAXFILES];
+  double fDataLumi[MAXFILES], fMcLumi[MAXFILES];
   int fNData, fNMc;
   std::string fDataString[MAXFILES], fMcString[MAXFILES];
   int fSgData, fSgMc, fNoData, fNoMc;  // the indices for the default files
@@ -85,6 +105,45 @@ public:
   std::string fNumbersFileName;
   std::string fSample; 
   std::string fSuffix; 
+
+
+  initFunc  *fpFunc;
+  TRolke    *fpRolke;
+
+  // -- cuts
+  double M2PT, ISO1, CHI2, FLS3D, ALPHA;
+  
+  // -- analysis numbers
+  double fSigLo, fSigHi;
+  double fBgLo, fBgHi;
+  double fPeak, fWidth;
+  double fNormLo, fNormHi;
+
+  double fNul, fUL;
+  int    fNobs, fNobsExp;
+  double fBgExp, fBgExpE; 
+  double fBgHist, fBgHistE; 
+  double fAcc, fAccE;
+  double fEff, fEffE;
+  double fEffAna, fEffAnaE;
+  double fEffPresel, fEffPreselE;
+  double fEffMuID, fEffMuIDE;
+  double fEffTrig, fEffTrigE;
+
+  double fEffGenFilter, fEffGenFilterE; 
+
+  // -- normalization numbers
+  double fNormSig, fNormSigE;
+  double fNormAcc, fNormAccE;
+  double fNormEff, fNormEffE;
+  double fNormEffAna, fNormEffAnaE;
+  double fNormEffPresel, fNormEffPreselE;
+  double fNormEffMuID, fNormEffMuIDE;
+  double fNormEffTrig, fNormEffTrigE;
+
+
+  double fBF, fu, fs;
+  double fMassLo, fMassHi;
 
   ClassDef(anaBmm,1) //Testing anaBmm
 };

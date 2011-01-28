@@ -144,7 +144,7 @@ int treeReader01::loop(int nevents, int start) {
   if (maxEvents < 1000)    step = 100; 
 
   for (int jEvent = start; jEvent < maxEvents; ++jEvent) {
-    if (jEvent%step == 0) cout << " .. Event " << jEvent << endl;
+    if (jEvent%step == 0) cout << " .. Event " << jEvent;
 
     fEvent = jEvent; 
     fpEvt->Clear();                        
@@ -153,6 +153,8 @@ int treeReader01::loop(int nevents, int start) {
     fEvt = fpEvt->fEventNumber;   
     fRun = fpEvt->fRunNumber;
     fLS  = fpEvt->fLumiSection;
+
+    if (jEvent%step == 0) cout  << " (run: " << fRun << ", event: " << fEvt << ")" << endl;
 
     eventProcessing(); 
   }

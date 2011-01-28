@@ -114,7 +114,9 @@ public:
 
   // -- variables for reduced tree, they are from fpCand
   int                     fCandTM; 
-  int                     fMu1TkQuality, fMu2TkQuality;
+  int                     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fCandQ;
+  bool                    fMu1Id, fMu2Id;
+  double                  fHltMu1Pt, fHltMu1Eta, fHltMu1Phi, fHltMu2Pt, fHltMu2Eta, fHltMu2Phi;
   double                  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
   double                  fMu1W8Mu, fMu1W8Tr, fMu2W8Mu, fMu2W8Tr; 
   double                  fPvX, fPvY, fPvZ; 
@@ -123,6 +125,7 @@ public:
   double                  fCandCosA, fCandIso, fCandIso1, fCandChi2, fCandDof, fCandProb, fCandFLS3d, fCandFLSxy; 
   double                  fCandDocaTrk, fMu1IP, fMu2IP; 
 
+  double       MASSMIN,   MASSMAX; 
   double       SIGBOXMIN, SIGBOXMAX; 
   double       BGLBOXMIN, BGLBOXMAX; 
   double       BGHBOXMIN, BGHBOXMAX; 
@@ -133,7 +136,7 @@ public:
   bool                    fGoodL1T, fGoodHLT;
   bool                    fGoodTracks, fGoodTracksPt, fGoodTracksEta, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta; 
   bool                    fGoodJpsiMass;
-  bool                    fGoodPt, fGoodEta, fGoodCosA, fGoodIso, fGoodChi2, fGoodFLS; 
+  bool                    fGoodQ, fGoodPt, fGoodEta, fGoodCosA, fGoodIso, fGoodChi2, fGoodFLS; 
   bool                    fGoodDocaTrk, fGoodIP; 
 
   AnalysisCuts fAnaCuts; 
@@ -143,7 +146,7 @@ public:
     *fpTracksQual, *fpTracksPt,  *fpTracksEta, 
     *fpMuonsID, *fpMuonsPt, *fpMuonsEta, 
     *fpMpsi,
-    *fpPt, *fpEta, 
+    *fpQ, *fpPt, *fpEta, 
     *fpCosA, *fpCosA0, 
     *fpIso, *fpIso1, 
     *fpDoca, *fpIP,
