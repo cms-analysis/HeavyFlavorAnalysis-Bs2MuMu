@@ -223,6 +223,11 @@ void lambdaReader::eventProcessing()
     doL1stuff();
     doHLTstuff();
 
+    // init something
+    frpt1m = freta1m = frphi1m = 0;
+    frpt2m = freta2m = frphi2m = 0;
+    fHLTmatch = false;
+
     // main loop
     if (CUTLbCandidateFit == 0 || CUTLbCandidateFit == CUTLbCandidate)
     {
@@ -238,6 +243,7 @@ void lambdaReader::eventProcessing()
                 CheckedLbCand curCand = getCheckedLbCand(pCand);
                 if (curCand.isOk)
                 {
+		    doTriggerMatching();
                     if (doCandStuff(curCand) && doCandFitStuff(curCand)) fTree->Fill();
                     candcounter++;
                 }
@@ -278,7 +284,11 @@ void lambdaReader::eventProcessing()
         for(std::vector<std::pair<CheckedLbCand,CheckedLbCand> >::iterator it = candPairVec.begin();
                 it != candPairVec.end(); it++)
         {
-            if (doCandStuff((*it).first) && doCandFitStuff((*it).second)) fTree->Fill();
+            if (doCandStuff((*it).first) && doCandFitStuff((*it).second))
+	    {
+		doTriggerMatching();
+		fTree->Fill();
+	    }
         }
     }
 
@@ -432,8 +442,12 @@ bool lambdaReader::doCandStuff(const CheckedLbCand &clc)
     const TAnaTrack *tatRecMu2 = fpEvt->getRecTrack(tatSigMu2->fIndex);
 
     // require the muons to be of at least some quality
+    fillMuHist((TH1D*)fpHistFile->Get("h20"), tatRecMu1->fMuID);
+    fillMuHist((TH1D*)fpHistFile->Get("h21"), tatRecMu2->fMuID);
     if(tatRecMu1->fMuID==-1||(tatRecMu1->fMuID & CUTMuId1)!=CUTMuId1) return false;
     if(tatRecMu2->fMuID==-1||(tatRecMu2->fMuID & CUTMuId2)!=CUTMuId2) return false;
+    fillMuHist((TH1D*)fpHistFile->Get("h22"), tatRecMu1->fMuID);
+    fillMuHist((TH1D*)fpHistFile->Get("h23"), tatRecMu2->fMuID);
 
     // get the lambda daughters
     const TAnaTrack *tatSigPi = fpEvt->getSigTrack(clc.pi);
@@ -464,9 +478,12 @@ bool lambdaReader::doCandStuff(const CheckedLbCand &clc)
     // now we do some calculations
 
     // K_s hypothesis
+    // sigtracks
     TLorentzVector tlvPrAsPiHypo;
-    tlvPrAsPiHypo.SetVectM(tatRecPr->fPlab, MPION);
-    const TLorentzVector tlvKsHypoth = tlvRecPi+tlvPrAsPiHypo;
+    //tlvPrAsPiHypo.SetVectM(tatRecPr->fPlab, MPION);
+    tlvPrAsPiHypo.SetVectM(tatSigPr->fPlab, MPION);
+    //const TLorentzVector tlvKsHypoth = tlvRecPi+tlvPrAsPiHypo;
+    const TLorentzVector tlvKsHypoth = tlvSigPi+tlvPrAsPiHypo;
 
     fghasCand = 1; // obviously we have a candidate, so we want to mark this
 
@@ -619,13 +636,16 @@ bool lambdaReader::doCandFitStuff(const CheckedLbCand &clc)
     fplb=tacCur->fPlab.Mag();
     fetalb=tlvLambdaB.Eta();
     fphilb=tlvLambdaB.Phi();
+    fylb=tlvLambdaB.Rapidity();
 
     // refitted tracks, "signal" tracks
     fSpt1m=tlvSigMu1.Perp();
+    fSp1m=tlvSigMu1.P();
     fSeta1m=tlvSigMu1.Eta();
     fSphi1m=tlvSigMu1.Phi();
 
     fSpt2m=tlvSigMu2.Perp();
+    fSp2m=tlvSigMu2.P();
     fSeta2m=tlvSigMu2.Eta();
     fSphi2m=tlvSigMu2.Phi();
 
@@ -689,21 +709,37 @@ bool lambdaReader::doCandFitStuff(const CheckedLbCand &clc)
     fdRl0jp=tlvLambda0.DeltaR(tlvLambdaB);
     fanglbl0=tlvLambda0.Angle(tlvLambdaB.Vect());
 
+    // ratio of impact parameter with track angle (exp.val. approx. 1)
+    fipr1m = fd3lb*sin(tlvRecMu1.Angle(vecPVLb))/sqrt(tatRecMu1->fLip*tatRecMu1->fLip+tatRecMu1->fTip*tatRecMu1->fTip);
+    fipr2m = fd3lb*sin(tlvRecMu2.Angle(vecPVLb))/sqrt(tatRecMu2->fLip*tatRecMu2->fLip+tatRecMu2->fTip*tatRecMu2->fTip);
+    fiprpr = fd3l0*sin(tlvRecPr.Angle(vecJpsiL0))/sqrt(tatRecPr->fLip*tatRecPr->fLip+tatRecPr->fTip*tatRecPr->fTip);
+    fiprpi = fd3l0*sin(tlvRecPi.Angle(vecJpsiL0))/sqrt(tatRecPi->fLip*tatRecPi->fLip+tatRecPi->fTip*tatRecPi->fTip);
+
+    // Armenteros variables
+    {
+	const TVector3 p1 = tatRecPr->fQ > 0 ? tatRecPr->fPlab : tatRecPi->fPlab;
+	const TVector3 p2 = tatRecPr->fQ > 0 ? tatRecPi->fPlab : tatRecPr->fPlab;
+	const TVector3 p = p1+p2;
+	farmQt = (p1.Cross(p2)).Mag()/p.Mag();
+	farmAl = (p1.Mag2()-p2.Mag2())/p.Mag2();
+    }
+
     // Do truth matching
     if (fIsMC)
     {
 	// get the muons
 	const TAnaTrack *tatSigMu1 = fpEvt->getSigTrack(clc.mu1);
 	const TAnaTrack *tatSigMu2 = fpEvt->getSigTrack(clc.mu2);
-	const TAnaTrack *tatRecMu1 = fpEvt->getRecTrack(tatSigMu1->fIndex);
-	const TAnaTrack *tatRecMu2 = fpEvt->getRecTrack(tatSigMu2->fIndex);
+	//const TAnaTrack *tatRecMu1 = fpEvt->getRecTrack(tatSigMu1->fIndex);
+	//const TAnaTrack *tatRecMu2 = fpEvt->getRecTrack(tatSigMu2->fIndex);
 	// get the lambda daughters
 	const TAnaTrack *tatSigPi = fpEvt->getSigTrack(clc.pi);
 	const TAnaTrack *tatSigPr = fpEvt->getSigTrack(clc.pr);
-	const TAnaTrack *tatRecPi = fpEvt->getRecTrack(tatSigPi->fIndex);
-	const TAnaTrack *tatRecPr = fpEvt->getRecTrack(tatSigPr->fIndex);
+	//const TAnaTrack *tatRecPi = fpEvt->getRecTrack(tatSigPi->fIndex);
+	//const TAnaTrack *tatRecPr = fpEvt->getRecTrack(tatSigPr->fIndex);
 
-	fIsMCmatch = doTruthMatchingLb(tatRecMu1, tatRecMu2, tatRecPi, tatRecPr, tacLambda0->fVtx.fPoint);
+	//fIsMCmatch = doTruthMatchingLb(tatRecMu1, tatRecMu2, tatRecPi, tatRecPr, tacLambda0->fVtx.fPoint);
+	fIsMCmatch = doTruthMatchingLb(tatSigMu1, tatSigMu2, tatSigPi, tatSigPr, tacLambda0->fVtx.fPoint);
     }
 
     return true;
@@ -721,8 +757,8 @@ bool lambdaReader::doTruthMatchingLb(const TAnaTrack *Mu1, const TAnaTrack *Mu2,
 
     const int giMu1(fpEvt->getGenIndexWithDeltaR(tlvMu1,Mu1->fQ));
     const int giMu2(fpEvt->getGenIndexWithDeltaR(tlvMu2,Mu2->fQ));
-    const int giPi(fpEvt->getGenIndexWithDeltaR(tlvPi,vtx,Pi->fQ));
-    const int giPr(fpEvt->getGenIndexWithDeltaR(tlvPr,vtx,Pr->fQ));
+    const int giPi(fpEvt->getGenIndexWithDeltaR(tlvPi,vtx,Pi->fQ,0.2,1.3));
+    const int giPr(fpEvt->getGenIndexWithDeltaR(tlvPr,vtx,Pr->fQ,0.1,1.3));
     const int nGenCands(fpEvt->nGenCands());
     if( giMu1 < nGenCands && giMu2 < nGenCands && giPi < nGenCands && giPr < nGenCands &&
             giMu1 > -1 && giMu2 > -1 && giPi > -1 && giPr > -1 )
@@ -887,6 +923,9 @@ void lambdaReader::doGenLevelStuff()
                             // make a Lb
                             tlvGenLambdaB = tlvGenLambda0+tlvGenJp;
                             fgmlb = tlvGenLambdaB.M();
+			    fgptlb = tlvGenLambdaB.Pt();
+			    fgetalb = tlvGenLambdaB.Eta();
+			    fgylb = tlvGenLambdaB.Rapidity();
                             const TLorentzVector tlvGenLambdaBSwapped = tlvGenLambdaSwapped+tlvGenJp;
                             fgmlbsw = tlvGenLambdaBSwapped.M();
 
@@ -937,10 +976,13 @@ void lambdaReader::doL1stuff()
 void lambdaReader::doHLTstuff()
 {
     fHLTqrk = fHLTqrkLS = false;
-    fHLTDMuOp = fHLTDMu0 = fHLTDMu3 = fHLTDMu5 = false;
-    fHLTMu3t3jp = fHLTMu3t5jp = fHLTMu5t0jp = false;
+    fHLTDMuOp = fHLTDMu0 = fHLTDMu3 = fHLTDMu5 = fHLTMu5TkMu0jp = false;
+    fHLTMu0TkMu0jp = fHLTMu0TkMu0jpNC = fHLTMu3TkMu0jp = fHLTMu3TkMu0jpNC = false;
+    fHLTMu3t3jp = fHLTMu3t3jp2 = fHLTMu3t3jp3 = fHLTMu3t5jp = fHLTMu5t0jp = false;
     fHLTMu0jp = fHLTMu0jpT = fHLTMu3jp = fHLTMu3jpT = fHLTMu5jp = fHLTMu5jpT = false;
+    fHLTMu0jpT1 = fHLTMu0jpT2 = fHLTMu0jpT3 = false;
     fHLTL1DMu0 = fHLTL2DMu0 = fHLTL2Mu0 = false;
+    fHLTok = false;
     for(int i=0; i!=NHLT; i++)
     {
 	const std::string name = fpEvt->fHLTNames[i].Data();
@@ -961,9 +1003,14 @@ void lambdaReader::doHLTstuff()
 	    if ("HLT_DoubleMu3_v2"       == name) fHLTDMu3 = true;
 	    if ("HLT_DoubleMu5_v1"       == name) fHLTDMu5 = true;
 	    // Jpsi triggers
+	    if ("HLT_Mu0_TkMu0_Jpsi"     == name) fHLTMu0TkMu0jp = true;
+	    if ("HLT_Mu0_TkMu0_Jpsi_NoCharge" == name) fHLTMu0TkMu0jpNC = true;
+	    if ("HLT_Mu3_TkMu0_Jpsi"     == name) fHLTMu3TkMu0jp = true;
+	    if ("HLT_Mu3_TkMu0_Jpsi_NoCharge" == name) fHLTMu3TkMu0jpNC = true;
+	    if ("HLT_Mu5_TkMu0_Jpsi"     == name) fHLTMu5TkMu0jp = true;
 	    if ("HLT_Mu3_Track3_Jpsi"    == name) fHLTMu3t3jp = true;
-	    if ("HLT_Mu3_Track3_Jpsi_v2" == name) fHLTMu3t3jp = true;
-	    if ("HLT_Mu3_Track3_Jpsi_v3" == name) fHLTMu3t3jp = true;
+	    if ("HLT_Mu3_Track3_Jpsi_v2" == name) fHLTMu3t3jp2 = true;
+	    if ("HLT_Mu3_Track3_Jpsi_v3" == name) fHLTMu3t3jp3 = true;
 	    if ("HLT_Mu3_Track5_Jpsi_v1" == name) fHLTMu3t5jp = true;
 	    if ("HLT_Mu3_Track5_Jpsi_v2" == name) fHLTMu3t5jp = true;
 	    if ("HLT_Mu3_Track5_Jpsi_v3" == name) fHLTMu3t5jp = true;
@@ -971,9 +1018,10 @@ void lambdaReader::doHLTstuff()
 	    if ("HLT_Mu5_Track0_Jpsi_v2" == name) fHLTMu5t0jp = true;
 	    // Jpsi with OST
 	    if ("HLT_Mu0_TkMu0_OST_Jpsi" == name) fHLTMu0jp = true;
-	    if ("HLT_Mu0_TkMu0_OST_Jpsi_Tight_v1" == name) fHLTMu0jpT = true;
-	    if ("HLT_Mu0_TkMu0_OST_Jpsi_Tight_v2" == name) fHLTMu0jpT = true;
-	    if ("HLT_Mu0_TkMu0_OST_Jpsi_Tight_v3" == name) fHLTMu0jpT = true;
+	    if ("HLT_Mu0_TkMu0_OST_Jpsi_Tight_v1" == name) fHLTMu0jpT1 = true;
+	    if ("HLT_Mu0_TkMu0_OST_Jpsi_Tight_v2" == name) fHLTMu0jpT2 = true;
+	    if ("HLT_Mu0_TkMu0_OST_Jpsi_Tight_v3" == name) fHLTMu0jpT3 = true;
+	    fHLTMu0jpT = (fHLTMu0jpT1 || fHLTMu0jpT2 || fHLTMu0jpT3); // compatibility with older version
 	    if ("HLT_Mu3_TkMu0_OST_Jpsi" == name) fHLTMu3jp = true;
 	    if ("HLT_Mu3_TkMu0_OST_Jpsi_Tight_v2" == name) fHLTMu3jpT = true;
 	    if ("HLT_Mu3_TkMu0_OST_Jpsi_Tight_v3" == name) fHLTMu3jpT = true;
@@ -984,8 +1032,62 @@ void lambdaReader::doHLTstuff()
 	    if ("HLT_L1DoubleMuOpen"     == name) fHLTL1DMu0 = true;
 	    if ("HLT_L2DoubleMu0"        == name) fHLTL2DMu0 = true;
 	    if ("HLT_Mu5_L2Mu0"          == name) fHLTL2Mu0 = true;
+	    // a run number dependent summary result -- final decision
+	    if (fRun >= 140058 && fRun <= 144114) fHLTok = fHLTMu0TkMu0jp; // Run2010A
+	    else if (fRun >= 146428 && fRun <= 147116) fHLTok = fHLTMu0jp; // Run2010B
+	    else if (fRun >= 147196 && fRun <= 148058) fHLTok = fHLTMu0jp;
+	    else if (fRun >= 148819 && fRun <= 149182) fHLTok = fHLTMu0jpT2;
+	    else if (fRun >= 149291 && fRun <= 149294) fHLTok = fHLTMu0jpT3;
 	}
     }
+}
+
+// ----------------------------------------------------------------------
+// a simple trigger matcher based on deltaR
+void lambdaReader::doTriggerMatching()
+{
+    const double deltaRthrsh(0.5); // threshold indpired by MuonAnalysis/MuonAssociators/python/patMuonsWithTrigger_cff.py
+    int mu1match(-1), mu2match(-1);
+    double deltaRminMu1(100), deltaRminMu2(100);
+    TTrgObj *tto;
+    TLorentzVector tlvMu1, tlvMu2;
+    tlvMu1.SetPtEtaPhiM(frpt1m,freta1m,frphi1m,MMUON);
+    tlvMu2.SetPtEtaPhiM(frpt2m,freta2m,frphi2m,MMUON);
+    cout << "fVerbose: " << fVerbose << endl;
+    if (fVerbose > 5)
+    {
+	cout << "dump trigger objects ----------------------" << endl;
+	cout << "mu1: pt,eta,phi: " << frpt1m << " " << freta1m << " " << frphi1m << " q: " << frq1m << endl;
+	cout << "mu2: pt,eta,phi: " << frpt2m << " " << freta2m << " " << frphi2m << " q: " << frq2m << endl;
+	cout << "HLT: fHLTMu0TkMu0jp: " << fHLTMu0TkMu0jp << " fHLTMu0jp: " << fHLTMu0jp
+	     << " fHLTMu0jpT2: " << fHLTMu0jpT2 << " fHLTMu0jpT3: " << fHLTMu0jpT3 << endl;
+    }
+
+    for(int i=0; i!=fpEvt->nTrgObj(); i++)
+    {
+	tto = fpEvt->getTrgObj(i);
+	if (fVerbose > 5) cout << "i: " << i << " ";
+	if (fVerbose > 5) tto->dump();
+	if (tto->fLabel == "hltMu0TkMuJpsiTrackMassFiltered:HLT::")
+	{
+	    const double deltaR1 = tto->fP.DeltaR(tlvMu1);
+	    const double deltaR2 = tto->fP.DeltaR(tlvMu2);
+	    if (deltaR1<deltaRthrsh && deltaR1<deltaRminMu1)
+	    {
+		deltaRminMu1 = deltaR1;
+		mu1match = i;
+	    }
+	    if (deltaR2<deltaRthrsh && deltaR2<deltaRminMu2)
+	    {
+		deltaRminMu2 = deltaR2;
+		mu2match = i;
+	    }
+	}
+    }
+    fHLTmatch = (mu1match>=0 && mu2match >=0);
+    if (fVerbose > 5) cout << "trigger matched: " << fHLTmatch
+	<< " - result Mu1: " << mu1match << " dR: " << deltaRminMu1
+	<< " Mu2: " << mu2match << " dR: " << deltaRminMu2 << endl;
 }
 
 // ----------------------------------------------------------------------
@@ -1013,6 +1115,17 @@ void lambdaReader::fillHist()
 }
 
 // ----------------------------------------------------------------------
+void lambdaReader::fillMuHist(TH1D* h, const int muId)
+{
+    for(int i = 0; i!=15; i++)
+    {
+	const int bit = 0x1<<i;
+	if((muId&bit)==bit) h->Fill(i);
+    }
+}
+
+
+// ----------------------------------------------------------------------
 void lambdaReader::bookHist()
 {
     cout << "==> lambdaReader: bookHist " << endl;
@@ -1030,9 +1143,37 @@ void lambdaReader::bookHist()
     h = new TH1D("h11", "mass", 50, 1.6, 2.1);
     h = new TH1D("h12", "chi2", 50, 0., 10.);
 
+    h = new TH1D("h20", "muID1before", 15, 0., 15.);
+    labelMuHisto(h);
+    h = new TH1D("h21", "muID2before", 15, 0., 15.);
+    labelMuHisto(h);
+    h = new TH1D("h22", "muID1after", 15, 0., 15.);
+    labelMuHisto(h);
+    h = new TH1D("h23", "muID2after", 15, 0., 15.);
+    labelMuHisto(h);
+
     return;
 }
 
+void lambdaReader::labelMuHisto(TH1D* h)
+{
+    // bin 1 corresponds to entry 0
+    h->GetXaxis()->SetBinLabel(1,"standalone");
+    h->GetXaxis()->SetBinLabel(2,"global");
+    h->GetXaxis()->SetBinLabel(3,"tracker");
+    h->GetXaxis()->SetBinLabel(4,"?");
+    h->GetXaxis()->SetBinLabel(5,"tr arb");
+    h->GetXaxis()->SetBinLabel(6,"?");
+    h->GetXaxis()->SetBinLabel(7,"gl prmpt tight");
+    h->GetXaxis()->SetBinLabel(8,"TM last loose");
+    h->GetXaxis()->SetBinLabel(9,"TM last tight");
+    h->GetXaxis()->SetBinLabel(10,"TM2D loose");
+    h->GetXaxis()->SetBinLabel(11,"TM2D tight");
+    h->GetXaxis()->SetBinLabel(12,"TMone loose");
+    h->GetXaxis()->SetBinLabel(13,"TMone tight");
+    h->GetXaxis()->SetBinLabel(14,"TMlastLowPtLoose");
+    h->GetXaxis()->SetBinLabel(15,"TMlastLowPtTight");
+}
 
 // ----------------------------------------------------------------------
 void lambdaReader::bookReducedTree()
@@ -1063,6 +1204,7 @@ void lambdaReader::bookReducedTree()
     fTree->Branch("philb",   &fphilb,   "philb/D");
     fTree->Branch("phil0",   &fphil0,   "phil0/D");
     fTree->Branch("phijp",   &fphijp,   "phijp/D");
+    fTree->Branch("ylb",     &fylb,     "ylb/D");
 
     // signal tracks
     fTree->Branch("rpt1m",   &frpt1m,   "rpt1m/D");
@@ -1099,6 +1241,15 @@ void lambdaReader::bookReducedTree()
     fTree->Branch("qual2m",  &fqual2m,  "qual2m/I");
     fTree->Branch("qualpr",  &fqualpr,  "qualpr/I");
     fTree->Branch("qualpi",  &fqualpi,  "qualpi/I");
+
+    // impact parameter ratios
+    fTree->Branch("ipr1m",   &fipr1m,   "ipr1m/D");
+    fTree->Branch("ipr2m",   &fipr2m,   "ipr2m/D");
+    fTree->Branch("iprpr",   &fiprpr,   "iprpr/D");
+    fTree->Branch("iprpi",   &fiprpi,   "iprpi/D");
+    // Armenteros variables
+    fTree->Branch("armQt",   &farmQt,   "armQt/D");
+    fTree->Branch("armAl",   &farmAl,   "armAl/D");
 
     fTree->Branch("Kshypo",  &fKshypo,  "Kshypo/D");
     fTree->Branch("alphalb", &falphalb, "alphalb/D");
@@ -1163,9 +1314,11 @@ void lambdaReader::bookReducedTree()
 
     // sigtrack info
     fTree->Branch("Spt1m",   &fSpt1m,   "Spt1m/D");
+    fTree->Branch("Sp1m",    &fSp1m,    "Sp1m/D");
     fTree->Branch("Seta1m",  &fSeta1m,  "Seta1m/D");
     fTree->Branch("Sphi1m",  &fSphi1m,  "Sphi1m/D");
     fTree->Branch("Spt2m",   &fSpt2m,   "Spt2m/D");
+    fTree->Branch("Sp2m",    &fSp2m,    "Sp2m/D");
     fTree->Branch("Seta2m",  &fSeta2m,  "Seta2m/D");
     fTree->Branch("Sphi2m",  &fSphi2m,  "Sphi2m/D");
     fTree->Branch("Sptpr",   &fSptpr,   "Sptpr/D");
@@ -1193,9 +1346,19 @@ void lambdaReader::bookReducedTree()
     fTree->Branch("HLTDMu0", &fHLTDMu0, "HLTDMu0/O");
     fTree->Branch("HLTDMu3", &fHLTDMu3, "HLTDMu3/O");
     fTree->Branch("HLTDMu5", &fHLTDMu5, "HLTDMu5/O");
+    fTree->Branch("HLTMu0TkMu0jp",   &fHLTMu0TkMu0jp,   "HLTMu0TkMu0jp/O");
+    fTree->Branch("HLTMu0TkMu0jpNC", &fHLTMu0TkMu0jpNC, "HLTMu0TkMu0jpNC/O");
+    fTree->Branch("HLTMu3TkMu0jp",   &fHLTMu3TkMu0jp,   "HLTMu3TkMu0jp/O");
+    fTree->Branch("HLTMu3TkMu0jpNC", &fHLTMu3TkMu0jpNC, "HLTMu3TkMu0jpNC/O");
+    fTree->Branch("HLTMu5TkMu0jp",   &fHLTMu5TkMu0jp,   "HLTMu5TkMu0jp/O");
     fTree->Branch("HLTMu3t3jp", &fHLTMu3t3jp, "HLTMu3t3jp/O");
+    fTree->Branch("HLTMu3t3jp2", &fHLTMu3t3jp2, "HLTMu3t3jp2/O");
+    fTree->Branch("HLTMu3t3jp3", &fHLTMu3t3jp3, "HLTMu3t3jp3/O");
     fTree->Branch("HLTMu3t5jp", &fHLTMu3t5jp, "HLTMu3t5jp/O");
     fTree->Branch("HLTMu5t0jp", &fHLTMu5t0jp, "HLTMu5t0jp/O");
+    fTree->Branch("HLTMu0jpT1", &fHLTMu0jpT1, "HLTMu0jpT1/O");
+    fTree->Branch("HLTMu0jpT2", &fHLTMu0jpT2, "HLTMu0jpT2/O");
+    fTree->Branch("HLTMu0jpT3", &fHLTMu0jpT3, "HLTMu0jpT3/O");
     fTree->Branch("HLTMu0jp", &fHLTMu0jp, "HLTMu0jp/O");
     fTree->Branch("HLTMu0jpT", &fHLTMu0jpT, "HLTMu0jpT/O");
     fTree->Branch("HLTMu3jp", &fHLTMu3jp, "HLTMu3jp/O");
@@ -1205,6 +1368,8 @@ void lambdaReader::bookReducedTree()
     fTree->Branch("HLTL1DMu0", &fHLTL1DMu0, "HLTL1DMu0/O");
     fTree->Branch("HLTL2DMu0", &fHLTL2DMu0, "HLTL2DMu0/O");
     fTree->Branch("HLTL2Mu0", &fHLTL2Mu0, "HLTL2Mu0/O");
+    fTree->Branch("HLTok", &fHLTok, "HLTok/O");
+    fTree->Branch("HLTmatch", &fHLTmatch, "HLTmatch/O");
 
     // Generator tree ==========================================
     fGenTree = new TTree("genevents", "genevents");
@@ -1231,6 +1396,10 @@ void lambdaReader::bookReducedTree()
     fGenTree->Branch("vzlb",    &fgvzlb,   "vzlb/D");
     fGenTree->Branch("vrlb",    &fgvrlb,   "vrlb/D");
     fGenTree->Branch("ctlb",    &fgctlb,   "ctlb/D");
+
+    fGenTree->Branch("ptlb",    &fgptlb,   "ptlb/D");
+    fGenTree->Branch("etalb",   &fgetalb,  "etalb/D");
+    fGenTree->Branch("ylb",     &fgylb,    "ylb/D");
 
     fGenTree->Branch("vxl0",    &fgvxl0,   "vxl0/D");
     fGenTree->Branch("vyl0",    &fgvyl0,   "vyl0/D");

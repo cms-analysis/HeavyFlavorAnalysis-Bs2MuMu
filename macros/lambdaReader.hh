@@ -77,6 +77,8 @@ public:
     void endAnalysis();
     void eventProcessing();
     void fillHist();
+    void fillMuHist(TH1D* h, const int muId);
+    void labelMuHisto(TH1D* h);
     void readCuts(TString filename, int dump = 1);
     void initVariables();
     void doGenLevelStuff();
@@ -85,6 +87,7 @@ public:
     bool doTruthMatchingLb(const TAnaTrack *Mu1, const TAnaTrack *Mu2, const TAnaTrack *Pi, const TAnaTrack *Pr, const TVector3 &vtx);
     void doL1stuff();
     void doHLTstuff();
+    void doTriggerMatching();
     bool compareCands(const CheckedLbCand clc1, const CheckedLbCand clc2);
     int  getSigId(const TAnaCand *tac, const int id, int pos);
     int  getCandId(const TAnaCand *tac, const int id, int pos);
@@ -122,6 +125,7 @@ public:
     double fplb, fpl0, fpjp; // p
     double fetalb, fetal0, fetajp; // eta
     double fphilb, fphil0, fphijp; // phi
+    double fylb; // rapidity
 
     double frpt1m, frpt2m, frptpr, frptpi; // kinematic variables of granddaughters
     double freta1m, freta2m, fretapr, fretapi;
@@ -131,6 +135,7 @@ public:
 
     // -- sig track variables, S is capitalized intentionally for better distinction to the reco-variants
     double fSpt1m,  fSpt2m,  fSptpr, fSptpi;
+    double fSp1m,  fSp2m;
     double fSeta1m, fSeta2m, fSetapr, fSetapi;
     double fSphi1m, fSphi2m, fSphipr, fSphipi;
 
@@ -159,6 +164,9 @@ public:
     int    fndof1m, fndof2m, fndofpr, fndofpi;
     int    fqual1m, fqual2m, fqualpr, fqualpi;
 
+    double fipr1m, fipr2m, fiprpr, fiprpi; // ratio of ip and track angle
+    double farmQt, farmAl; // Armenteros variables
+
     double fdRprpi, fdRmumu, fdRl0jp; // deltaR of pairs for convenience
 
     double fanglbl0; // angle between lb and l0 (from cands, not alpha)
@@ -178,6 +186,7 @@ public:
     double fgpmu1, fgpmu2, fgppr, fgppi, fgpl0;
     double fgvxl0, fgvyl0, fgvzl0, fgvrl0, fgctl0;
     double fgvxlb, fgvylb, fgvzlb, fgvrlb, fgctlb;
+    double fgptlb, fgetalb, fgylb;
     double fgdRprpi, fgdRmumu, fgdRl0lb;
     double fganprpi, fganmumu, fganl0lb, fganl0jp;
     double fganl0mumin, fganl0muPt;
@@ -194,9 +203,14 @@ public:
 
     bool fHLTqrk, fHLTqrkLS;
     bool fHLTDMuOp, fHLTDMu0, fHLTDMu3, fHLTDMu5;
-    bool fHLTMu3t3jp, fHLTMu3t5jp, fHLTMu5t0jp;
+    bool fHLTMu0TkMu0jp, fHLTMu0TkMu0jpNC, fHLTMu3TkMu0jp, fHLTMu3TkMu0jpNC, fHLTMu5TkMu0jp;
+    bool fHLTMu3t3jp, fHLTMu3t3jp2, fHLTMu3t3jp3, fHLTMu3t5jp, fHLTMu5t0jp;
     bool fHLTMu0jp, fHLTMu0jpT, fHLTMu3jp, fHLTMu3jpT, fHLTMu5jp, fHLTMu5jpT;
+    bool fHLTMu0jpT1, fHLTMu0jpT2, fHLTMu0jpT3;
     bool fHLTL1DMu0, fHLTL2DMu0, fHLTL2Mu0;
+    bool fHLTok;
+
+    bool fHLTmatch;
 };
 
 #endif
