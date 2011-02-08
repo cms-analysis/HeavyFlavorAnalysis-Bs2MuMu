@@ -66,12 +66,14 @@ void bmmBs2JpsiPhiReader::MCKinematics() {
   ((TH1D*)fpHistFile->Get("genStudy"))->Fill(1); 
   fGoodMCKinematics = true; 
   TGenCand *pC(0), *pB(0), *pPsi(0), *pPhi(0), *pM1(0), *pM2(0), *pK1(0), *pK2(0); 
-  int npsi(0), nphi(0); 
+  int npsi(0), nphi(0), nb(0); 
   bool goodMatch(false); 
   for (int i = 0; i < fpEvt->nGenCands(); ++i) {
     pC = fpEvt->getGenCand(i); 
     if (531 == TMath::Abs(pC->fID)) {
       pB = pC;
+      nb = pB->fDau2 - pB->fDau1 + 1; 
+      if (nb > 2) continue; // skip B decays where more than J/psi and phi came from B
       for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
 	pC = fpEvt->getGenCand(id); 
 	if (443 == TMath::Abs(pC->fID)) {

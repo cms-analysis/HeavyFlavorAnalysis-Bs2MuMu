@@ -57,7 +57,9 @@ void bmmNormalizationReader::MCKinematics() {
     pC = fpEvt->getGenCand(i); 
     if (521 == TMath::Abs(pC->fID)) {
       pB = pC;
-      nb = pB->fDau2 - pB->fDau1; 
+      nb = pB->fDau2 - pB->fDau1 + 1; 
+      if (nb > 2) continue; // skip B decays where more than J/psi and kaon came from B
+
       for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
 	pC = fpEvt->getGenCand(id); 
 	if (443 == TMath::Abs(pC->fID)) {
@@ -86,7 +88,6 @@ void bmmNormalizationReader::MCKinematics() {
   }
   
   if (fVerbose > 4) {
-    cout << "----------------------------------------------------------------------" << endl;
     if (goodMatch) {
       pB->dump(); 
       pM1->dump(); 
@@ -106,7 +107,7 @@ void bmmNormalizationReader::MCKinematics() {
 
   // ----------------------------------------------------------------------
   // -- Acceptance: 
-  TAnaTrack *pT(0), *prM1(0), *prM2(0); 
+  TAnaTrack *pT(0), *prM1(0), *prM2(0), *prK(0); 
   int m1Matched(0), m2Matched(0), KMatched(0);
   int m1Acc(0), m2Acc(0), KAcc(0);
   for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
@@ -131,6 +132,7 @@ void bmmNormalizationReader::MCKinematics() {
     }
     if (pT->fGenIndex == pK->fNumber) {
       ((TH1D*)fpHistFile->Get("acceptance"))->Fill(13); 
+      prK = pT; 
       KMatched = 1; 
       if ((pT->fPlab.Perp() > 0.5) && (TMath::Abs(pT->fPlab.Eta()) < 2.4)) {
 	KAcc = 1; 
@@ -163,17 +165,14 @@ void bmmNormalizationReader::MCKinematics() {
     int tm(0);
     for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
       pCand = fCands[iC]; 
-
       tm = 0; 
       for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
 	pT = fpEvt->getRecTrack(fpEvt->getSigTrack(i)->fIndex); 
 	if (pT->fGenIndex == pM1->fNumber) {
-	  cout << "prM1 = " << prM1 << " pT = " << pT << endl;
 	  prM1 = pT; 
 	  ++tm;
 	}
 	if (pT->fGenIndex == pM2->fNumber) {
-	  cout << "prM2 = " << prM2 << " pT = " << pT << endl;
 	  prM2 = pT; 
 	  ++tm;
 	}
@@ -187,7 +186,6 @@ void bmmNormalizationReader::MCKinematics() {
 	//	cout << "Did not find matched candidate " << pCand->fType << " at " << iC << endl;
 	continue;
       }
-      //      cout << "Found matched candidate "  << pCand->fType << " at " << iC << endl;
       ((TH1D*)fpHistFile->Get("presel"))->Fill(20); 
       if (muonID(prM1) && muonID(prM2)) {
 	((TH1D*)fpHistFile->Get("presel"))->Fill(21); 
@@ -207,7 +205,9 @@ void bmmNormalizationReader::MCKinematics() {
   if (TMath::Abs(pK->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
 
 
-
+  if (fEvt == 1382086) {
+    fpEvt->dumpGenBlock();
+  }
 
 }
 

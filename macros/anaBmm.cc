@@ -45,7 +45,7 @@ anaBmm::anaBmm(const char *files, const char *dir, int mode) {
   double bsig = 0.2;
 
   double ulmean =  blimit(beta, nobs, e0, esig, b0, bsig, alpha);
-  cout << "Bayesian limit: " << ulmean << endl;
+  cout << "Bayesian blimit: " << ulmean << endl;
 
   init(files, dir, mode);
 }
@@ -58,10 +58,13 @@ void anaBmm::init(const char *files, const char *dir, int mode) {
   fBF = 0.0593*1.014e-3;
   fu  = 0.402;
   fs  = 0.105;
-  fEffGenFilter  = 0.63; 
-  fEffGenFilterE = 0.03;
+  fSigGenFilter  = 0.63; 
+  fSigGenFilterE = 0.03;
 
+  fNormGenFilter  = 0.24; // 0.186; 
+  fNormGenFilterE = 0.013; // 0.03;
 
+  
   // -- Christoph's cuts
   M2PT  = 3.;
   ISO1  = 0.55;
@@ -187,7 +190,7 @@ void anaBmm::makeAll(int channel) {
   allEffTables();
 
 
-  computeNormUL();
+  //  computeNormUL();
 }
 
 
@@ -232,6 +235,12 @@ void anaBmm::allEffTables() {
   effTable("NoData");
   fpMc[fNoMc]->cd(); 
   effTable("NoMc");
+
+  // -- Bs2JpsiPhi
+  fpData[fCsData]->cd(); 
+  effTable("CsData");
+  fpMc[fCsMc]->cd(); 
+  effTable("CsMc");
 }
 
 // ----------------------------------------------------------------------
@@ -240,6 +249,17 @@ void anaBmm::effTable(string smode) {
   if (0 == h) {
     cout << "no histogram analysisDistributions found, returning" << endl;
     return;
+  }
+
+  double massLo(5.1), massHi(5.6);
+  if (string::npos != smode.find("No")) {
+    massLo = 5.0; 
+    massHi = 5.5;
+  }
+
+  if (string::npos != smode.find("Cs")) {
+    massLo = 5.15; 
+    massHi = 5.6;
   }
   
   ofstream OUT(fNumbersFileName.c_str(), ios::app);
@@ -257,66 +277,90 @@ void anaBmm::effTable(string smode) {
   
   if (string::npos != smode.find("No") || string::npos != smode.find("Cs")) {
     if (0 == fMode) {
-      cout << "==> This is normalization, fitting mode = 11 = expo+Gaus" << endl;
+      cout << "==> This is normalization/control sample, fitting mode = 11 = expo+Gaus" << endl;
       mode = 11; 
     } else {
-      cout << "==> This is normalization, fitting mode = " << fMode << endl;
+      cout << "==> This is normalization/control sample, fitting mode = " << fMode << endl;
       mode = fMode; 
     }
   }
-  
+
   string cut, pdfname;
-  double n(0.), nE(0.), nprev(0.), nprevE(0.); 
-  double norm(0.),  normE(0.), relEff(0.), relEffE(0.), cumEff(0.), cumEffE(0.);
+  //  double nprev(0.), nprevE(0.), relEff(0.), relEffE(0.), cumEff(0.), cumEffE(0.); 
+  double n(0.), nE(0.); 
+  double norm(0.),  normE(0.), eff(0.), effE(0.);
+
+  // -- normalization
+  AnalysisDistribution *an = new AnalysisDistribution("docatrk");
+  an->fMassLo = massLo; 
+  an->fMassHi = massHi; 
+  an->hMassCu->SetMinimum(0.);
+  norm = an->fitMass(an->hMassCu, normE, mode); 
+  OUT << Form("%s", (formatTex(norm, fSuffix+":"+cut+"Norm", smode)).c_str()) << endl;
+  OUT << Form("%s", (formatTex(normE, fSuffix+":"+cut+"NormE", smode)).c_str()) << endl;
+  delete an;
+  
   for (int i = 1; i < h->GetNbinsX(); ++i) {
     cut = string(h->GetXaxis()->GetBinLabel(i)); 
     
     if (cut == string("")) {
       cout << "empty string found, break ..." << endl;
+      OUT.close();
       break;
     }
     pdfname = Form("%s/%s_%s.pdf", fDirectory.c_str(), smode.c_str(), cut.c_str());
     cout << "AD for " << cut << " results in " << pdfname << endl;
-    AnalysisDistribution a(cut.c_str());
-    a.fMassLo = 5.0; 
-    a.fMassHi = 5.6; 
-    a.hMassCu->SetMinimum(0.);
-    n = a.fitMass(a.hMassCu, nE, mode); 
-    
+    AnalysisDistribution *a = new AnalysisDistribution(cut.c_str());
+    a->fMassLo = massLo; 
+    a->fMassHi = massHi; 
+    //    a.hMassCu->SetMinimum(0.);
+    //    n = a.fitMass(a.hMassCu, nE, mode); 
+    a->hMassAo->SetMinimum(0.);
+    n = a->fitMass(a->hMassAo, nE, mode); 
+    delete a; 
+
     if ((string::npos != cut.find("tracks")) || (string::npos != cut.find("muons"))) {
       n *=0.5; 
       nE *=0.5; 
     }
 
-    if ("hlt" == cut) {
-      cout << "initialize normalization numbers" << endl;
-      norm  = n; 
-      normE = nE; 
-      nprev = norm; 
-      nprevE= normE; 
-    }
+    //     if ("hlt" == cut) {
+    //       cout << "initialize normalization numbers" << endl;
+    //       norm  = n; 
+    //       normE = nE; 
+    //       nprev = norm; 
+    //       nprevE= normE; 
+    //     }
 
-    relEff = n/nprev;
-    relEffE= dEff(n, nE, nprev, nprevE);
-    cumEff = n/norm;
-    cumEffE= dEff(n, nE, norm, normE);
+    if (nE < normE) nE = normE;
+    eff    = norm/n;
+    effE   = dEff(norm, normE, n, nE); 
+
+    //     relEff = n/nprev;
+    //     relEffE= dEff(n, nE, nprev, nprevE);
+    //     cumEff = n/norm;
+    //     cumEffE= dEff(n, nE, norm, normE);
     
     cout << cut << " n = " << n << "+/-" << nE 
-	 << " rel eff = " << relEff << "+/-" << relEffE
-	 << " cum eff = " << cumEff << "+/-" << cumEffE
+	 << " eff = " << eff << "+/-" << effE
+      // 	 << " rel eff = " << relEff << "+/-" << relEffE
+      // 	 << " cum eff = " << cumEff << "+/-" << cumEffE
 	 << endl;
-    pdfname = Form("%s/%s_%s_%s_hMassCu.pdf", fDirectory.c_str(), fSuffix.c_str(), smode.c_str(), cut.c_str());
+    //    pdfname = Form("%s/%s_%s_%s_hMassCu.pdf", fDirectory.c_str(), fSuffix.c_str(), smode.c_str(), cut.c_str());
+    pdfname = Form("%s/%s_%s_%s_hMassAo.pdf", fDirectory.c_str(), fSuffix.c_str(), smode.c_str(), cut.c_str());
     c0->SaveAs(pdfname.c_str(), "Portrait");
 
     OUT << Form("%s", (formatTex(n, fSuffix+":"+cut+"N", smode)).c_str()) << endl;
     OUT << Form("%s", (formatTex(nE, fSuffix+":"+cut+"NE", smode)).c_str()) << endl;
-    OUT << Form("%s", (formatTex(relEff, fSuffix+":"+cut+"eRel", smode)).c_str()) << endl;
-    OUT << Form("%s", (formatTex(relEffE, fSuffix+":"+cut+"eRelE", smode)).c_str()) << endl;
-    OUT << Form("%s", (formatTex(cumEff, fSuffix+":"+cut+"eCum", smode)).c_str()) << endl;
-    OUT << Form("%s", (formatTex(cumEffE, fSuffix+":"+cut+"eCumE", smode)).c_str()) << endl;
+    OUT << Form("%s", (formatTex(eff, fSuffix+":"+cut+"eff", smode)).c_str()) << endl;
+    OUT << Form("%s", (formatTex(effE, fSuffix+":"+cut+"effE", smode)).c_str()) << endl;
+    //     OUT << Form("%s", (formatTex(relEff, fSuffix+":"+cut+"eRel", smode)).c_str()) << endl;
+    //     OUT << Form("%s", (formatTex(relEffE, fSuffix+":"+cut+"eRelE", smode)).c_str()) << endl;
+    //     OUT << Form("%s", (formatTex(cumEff, fSuffix+":"+cut+"eCum", smode)).c_str()) << endl;
+    //     OUT << Form("%s", (formatTex(cumEffE, fSuffix+":"+cut+"eCumE", smode)).c_str()) << endl;
 
-    nprev = n; 
-    nprevE= nE; 
+    //     nprev = n; 
+    //     nprevE= nE; 
   }
 }
 
@@ -433,7 +477,8 @@ void anaBmm::computeNormUL() {
 
   fUL = (fNul/fNormSig)
     *(fu/fs)
-    *(fNormAcc/fAcc)                 // needs correction!
+    *(fNormGenFilter/fSigGenFilter)
+    *(fNormAcc/fAcc)                 // needs correction!? WHY?
     *(fNormEffPresel/fEffPresel)     // why is norm value so low?
     *(fNormEffMuID/fEffMuID)
     *(fNormEffTrig/fEffTrig)
@@ -453,11 +498,25 @@ TH1* anaBmm::loopTree(int mode) {
   // 10 Bp2JpsiKp MC
   // 11 Bp2JpsiKp data
 
-  if (0 == mode)  fpMc[fSgMc]->cd(); 
-  if (1 == mode)  fpData[fSgData]->cd(); 
+  int dof(0); 
+  if (0 == mode) {
+    fpMc[fSgMc]->cd(); 
+    dof = 1;
+  }
+  if (1 == mode) {
+    fpData[fSgData]->cd(); 
+    dof = 1; 
+  }
 
-  if (10 == mode) fpMc[fNoMc]->cd(); 
-  if (11 == mode) fpData[fNoData]->cd(); 
+  if (10 == mode) {
+    fpMc[fNoMc]->cd(); 
+    dof = 2; 
+  }
+
+  if (11 == mode) {
+    fpData[fNoData]->cd(); 
+    dof = 2; 
+  }
 
   int NBINS = (fMassHi - fMassLo)/0.025+1;
 
@@ -488,6 +547,7 @@ TH1* anaBmm::loopTree(int mode) {
   t->SetBranchAddress("cosa",&bcosa);
   t->SetBranchAddress("iso1",&biso1);
   t->SetBranchAddress("chi2",&bchi2);
+  //  t->SetBranchAddress("dof",&bdof);
   t->SetBranchAddress("fls3d",&bfls3d);
   t->SetBranchAddress("m1pt",&bm1pt);
   t->SetBranchAddress("m2pt",&bm2pt);
@@ -520,7 +580,7 @@ TH1* anaBmm::loopTree(int mode) {
     if (false == bgtqual) continue;
     if (bm2pt < M2PT) continue; 
     if (biso1 < ISO1) continue; 
-    if (bchi2 > CHI2) continue;
+    if (bchi2/dof > CHI2) continue;
     if (TMath::IsNaN(bfls3d)) continue;
     if (bfls3d < FLS3D) continue;
     if (TMath::ACos(bcosa) > ALPHA) continue;
@@ -660,10 +720,10 @@ void anaBmm::testUL(const char *cuts) {
   double nbs = 2.0e9;
   rolkeM3();
   double NulRolke = fNul;
-  double UlRolke = fNul/(fEff*fAcc*fEffGenFilter*nbs);
+  double UlRolke = fNul/(fEff*fAcc*fSigGenFilter*nbs);
   if (fNobs > 10) return; 
   barlow(fNobs, fBgExp, fBgExpE, fEffE/fEff);
-  fUL = fNul/(fEff*fAcc*fEffGenFilter*nbs);
+  fUL = fNul/(fEff*fAcc*fSigGenFilter*nbs);
   cout << Form("Barlow Nul = %3.2f, UL = %4.2e", fNul, fUL);
   cout << Form("  Rolke Nul  = %3.2f, UL = %4.2e", NulRolke, UlRolke) << endl;
   OUT << "==> " << fUL 

@@ -4,6 +4,7 @@
 # ------
 #              check status of SGE jobs
 #
+# 2011/01/20   parse for worker node that had failed job, dump into file problems.txt
 # 2010/06/15   allow killing running jobs
 # 2010/05/10   working again after some (previous) changes to jobs.list
 # 2010/03/09   First version
@@ -26,9 +27,20 @@ if ($opt_i) {
 my $STORAGE1 = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=";
 
 my $goodJobs = 0; 
+my $runningJobs = 0; 
 my $badJobs  = 0; 
 my $minGood  = 9999999999; 
+my $workerNode; 
+
 open(IN, $jobslist) || die "Cannot find file $joblist with grid jobs\n";
+
+my $user  = $ENV{'USER'};
+if ($user eq "ursl") {
+    open(OUT, ">>/shome/ursl/problems.txt") || die "Cannot open problems.txt\n";
+} else {
+    open(OUT, ">>problems.txt") || die "Cannot open problems.txt\n";
+}
+
 while(<IN>) {
     next if (/\#\#\#/);
 
@@ -67,7 +79,7 @@ while(<IN>) {
     if ($ok eq "running" || $ok eq "waiting") {
 	printf("%7i %10s %30s; %s\n", $sgeNumber, $jname, $mdir, $ok);
     } else {
-	printf("%7i %10s %30s; %s/root: %10i, log: %7i\n", $sgeNumber, $jname, $mdir, $ok, $rsize, $lsize);
+	printf("%7i %10s; %s/root: %10i, log: %7i. %30s (%s)\n", $sgeNumber, $jname, $ok, $rsize, $lsize, $mdir, $workerNode);
     }
 
     if ($ok =~ /no problems seen/) { 
@@ -75,12 +87,14 @@ while(<IN>) {
 	$goodJobs++; 
 	if ($rsize < $minGood) {$minGood = $rsize;}
     } elsif ($ok eq "running" || $ok eq "waiting") {
+	$runningJobs++; 
 	if ($opt_k) {
 	    # print "Killing job $jname $sgeNumber\n";
 	    $bla = `qdel $sgeNumber`;
 	    print $bla;
 	}
     } else { 
+	print OUT "$workerNode: $sgeNumber ($jname) $mdir\n";
 	system("/bin/rm -f  $mdir/OK"); 
 	system("/bin/touch $mdir/NOK"); 
 	$badJobs++; 
@@ -93,6 +107,7 @@ while(<IN>) {
 
 print "----------------------------------------------------------------------\n";
 print "Successful jobs: $goodJobs\n";
+print "Running jobs: $runningJobs\n";
 print "Failed jobs:     $badJobs\n";
 if ($goodJobs > 0) {print "Minimum rootfile size of good jobs: $minGood\n";}
 print "----------------------------------------------------------------------\n";
@@ -103,6 +118,9 @@ sub parseOutput {
     (my $llogfile) = @_;
 
     my $return = "running"; 
+
+    $workerNode     = `/bin/grep Linux $llogfile | awk '{print \$2}'`;
+    chop($workerNode);
 
     $foundMyEnd     = `/bin/grep -i "run: This is the end, my friend"  $llogfile`;
     if ($foundMyEnd) { $return = "no problems seen"; }

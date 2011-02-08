@@ -1,7 +1,7 @@
 # -- muons 
-MUIDMASK            4
-MUIDRESULT          4
-MUPTLO            3.0
+MUIDMASK            6
+MUIDRESULT          6
+MUPTLO             3.0
 MUPTHI         9999.0
 MUETALO          -2.4
 MUETAHI           2.4

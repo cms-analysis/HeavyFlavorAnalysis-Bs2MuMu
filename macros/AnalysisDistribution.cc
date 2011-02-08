@@ -138,11 +138,11 @@ AnalysisDistribution::AnalysisDistribution(const char *name, double SigLo, doubl
 
 // ----------------------------------------------------------------------
 AnalysisDistribution::~AnalysisDistribution() {
-  delete fF0; 
-  delete fF1; 
-  delete fP1; 
-  delete fPG1; 
-  delete fEG1; 
+  if (fF0) delete fF0; 
+  if (fF1) delete fF1; 
+  if (fP1) delete fP1; 
+  if (fPG1) delete fPG1; 
+  if (fEG1) delete fEG1; 
 }
 
 // ----------------------------------------------------------------------

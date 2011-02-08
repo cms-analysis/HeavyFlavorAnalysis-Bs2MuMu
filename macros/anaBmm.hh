@@ -130,7 +130,8 @@ public:
   double fEffMuID, fEffMuIDE;
   double fEffTrig, fEffTrigE;
 
-  double fEffGenFilter, fEffGenFilterE; 
+  double fSigGenFilter, fSigGenFilterE; 
+  double fNormGenFilter, fNormGenFilterE; 
 
   // -- normalization numbers
   double fNormSig, fNormSigE;

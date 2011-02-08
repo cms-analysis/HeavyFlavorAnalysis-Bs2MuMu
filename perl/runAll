@@ -4,6 +4,7 @@
 # ------
 #            -d            printout only, don't do anything
 #            -h            hadd the output rootfiles
+#            -C            run crashed jobs
 #            -c            run data ("CMS") jobs
 #            -m            run MC jobs
 #            -n            run normalization jobs
@@ -30,6 +31,8 @@ if ($opt_j) {
 
 my %jobs = ("signal MC" 
 	    => "-m,bmmSignalReader,bmmSignalReader.$job.cuts,cBsToMuMu_2MuPtFilter_7TeV-pythia6-evtgen-Fall10,signalMC.root"
+	    , "signal MC 2" # backgrounds
+	    => "-m,bmmSignalReader,bmmSignalReader.$job.cuts,cB*ToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,signal-bgMC.root"
 	    , "signal data" 
 	    => "-b 1,bmmSignalReader,bmmSignalReader.$job.cuts,cMu*-Run2010*-Nov4ReReco_v1-*,signalData.root"
 	    , "norm MC" 

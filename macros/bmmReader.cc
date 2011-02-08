@@ -478,7 +478,9 @@ void bmmReader::candidateSelection(int mode) {
 void bmmReader::fillCandidateVariables() {
   if (0 == fpCand) return;
 
-  if (fpCand->fPvIdx > -1) {
+  int goodSV(0); 
+  if (fpCand->fPvIdx > -1 && fpCand->fPvIdx < fpEvt->nPV()) {
+    goodSV = 1; 
     TAnaVertex *pv = fpEvt->getPV(fpCand->fPvIdx); 
     fPvX = pv->fPoint.X(); 
     fPvY = pv->fPoint.Y(); 
@@ -544,32 +546,26 @@ void bmmReader::fillCandidateVariables() {
 
   // -- Add HLT muons
   TTrgObj *p(0), *h1(0), *h2(0); 
-  for (int i = 0; i < fpEvt->nTrgObj(); ++i) {
-    p = fpEvt->getTrgObj(i); 
-    if (fHLTMu0 && (!p->fLabel.CompareTo("hltDiMuonL3PreFiltered0:HLT::") || !p->fLabel.CompareTo("hltDiMuonL3PreFiltered0:HLT::"))) {
-      if (0 == h1) {
-	h1 = p; 
-      } else {
-	h2 = p; 
+  if (fHLTMu0) {
+    for (int i = 0; i < fpEvt->nTrgObj(); ++i) {
+      p = fpEvt->getTrgObj(i); 
+      if (fHLTMu0 && (!p->fLabel.CompareTo("hltDiMuonL3PreFiltered0:HLT::") || !p->fLabel.CompareTo("hltDiMuonL3PreFiltered0:HLT::"))) {
+	if (0 == h1) {
+	  h1 = p; 
+	} else {
+	  h2 = p; 
+	}
       }
+    }
+
+    if (0 != h1 && 0 != h2 && h2->fP.Perp() > h1->fP.Perp()) {
+      p = h1; 
+      h1 = h2; 
+      h2 = p;
     }
   }
 
-  if (h1 && h2 && h2->fP.Perp() > h1->fP.Perp()) {
-    p = h1; 
-    h1 = h2; 
-    h2 = p;
-  }
-  
-  fHltMu1Pt  = -99.;
-  fHltMu1Eta = -99.;
-  fHltMu1Phi = -99.;
-    
-  fHltMu2Pt  = -99.;
-  fHltMu2Eta = -99.;
-  fHltMu2Phi = -99.;
-
-  if (fHLTMu0) {
+  if (fHLTMu0 && 0 != h1 && 0 != h2) {
     //     cout << "m1 " << p1->fPlab.Perp() << " " << p1->fPlab.Phi() << " " << p1->fPlab.Eta()  << endl;
     //     cout << "h1 " << h1->fP.Perp() << " " << h1->fP.Phi() << " " << h1->fP.Eta() << endl;
     //     cout << "m2 " << p2->fPlab.Perp() << " " << p2->fPlab.Phi() << " " << p2->fPlab.Eta()  << endl;
@@ -594,6 +590,14 @@ void bmmReader::fillCandidateVariables() {
     ((TH1D*)fpHistFile->Get("hltPt"))->Fill((p2->fPlab.Perp() - h2->fP.Perp())/p2->fPlab.Perp()); 
     ((TH1D*)fpHistFile->Get("hltEta"))->Fill((p1->fPlab.Eta() - h1->fP.Eta())/TMath::Abs(p1->fPlab.Eta())); 
     ((TH1D*)fpHistFile->Get("hltEta"))->Fill((p2->fPlab.Eta() - h2->fP.Eta())/TMath::Abs(p2->fPlab.Eta())); 
+  } else {
+    fHltMu1Pt  = -99.;
+    fHltMu1Eta = -99.;
+    fHltMu1Phi = -99.;
+    
+    fHltMu2Pt  = -99.;
+    fHltMu2Eta = -99.;
+    fHltMu2Phi = -99.;
   }
 
   int pvidx = (fpCand->fPvIdx > -1? fpCand->fPvIdx : 0); 
@@ -640,7 +644,7 @@ void bmmReader::fillCandidateVariables() {
   fGoodEta = ((fCandEta > CANDETALO) && (fCandEta < CANDETAHI)); 
   fGoodCosA = (fCandCosA > CANDCOSALPHA); 
   fGoodIso = (fCandIso > CANDISOLATION); 
-  fGoodChi2 = (fCandChi2 < CANDVTXCHI2);
+  fGoodChi2 = (fCandChi2/fCandDof < CANDVTXCHI2);
   fGoodFLS =  ((fCandFLS3d > CANDFLS3D) && (fCandFLSxy > CANDFLSXY)); 
 
   fGoodDocaTrk = (fCandDocaTrk > CANDDOCATRK);
@@ -891,6 +895,7 @@ void bmmReader::bookHist() {
   fTree->Branch("iso",    &fCandIso,           "iso/D");
   fTree->Branch("iso1",   &fCandIso1,          "iso1/D");
   fTree->Branch("chi2",   &fCandChi2,          "chi2/D");
+  fTree->Branch("dof",    &fCandDof,           "dof/D");
   fTree->Branch("fls3d",  &fCandFLS3d,         "fls3d/D");
   fTree->Branch("flsxy",  &fCandFLSxy,         "flsxy/D");
   fTree->Branch("docatrk",&fCandDocaTrk,       "docatrk/D");
