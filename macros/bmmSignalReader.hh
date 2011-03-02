@@ -37,8 +37,14 @@ public:
   void    readCuts(TString filename, int dump = 1);
   void    initVariables();
   void    MCKinematics();
+  void    efficiencyCalculation();
   void    candidateSelection(int mode = 0); 
   int     tmCand(TAnaCand *pC);
+  int     tmCand2(TAnaCand *pC);
+
+  void    genMatch();
+  void    recoMatch();
+  void    candMatch();
 
 };
 

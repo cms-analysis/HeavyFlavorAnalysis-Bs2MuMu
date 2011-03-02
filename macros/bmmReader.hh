@@ -45,6 +45,7 @@ public:
 
   virtual void   eventProcessing();
   virtual void   MCKinematics();  
+  virtual void   efficiencyCalculation();
   virtual void   L1TSelection();  
   virtual void   HLTSelection();  
   virtual void   trackSelection();  
@@ -56,6 +57,11 @@ public:
   virtual void   initVariables();
   virtual bool   muonID(TAnaTrack *pT);
 
+  virtual void   genMatch();
+  virtual void   recoMatch();
+  virtual void   candMatch();
+
+
   virtual void   studyL1T(); 
 
   virtual AnalysisDistribution* bookDistribution(const char *hn, const char *ht, const char *hc, int nbins, double lo, double hi);
@@ -64,6 +70,7 @@ public:
   virtual void                  fillCandidateHistograms();
   virtual void                  insertCand(TAnaCand*);
   virtual int                   tmCand(TAnaCand*);
+  virtual int                   tmCand2(TAnaCand*);
   virtual double                isoClassic(TAnaCand*); 
   virtual double                isoClassicOnePv(TAnaCand*); 
   virtual int                   checkCut(const char *, TH1D *); 
@@ -99,7 +106,8 @@ public:
 
   bool fL1TMu0, fL1TMu3;
   bool fHLTMu0, fHLTMu3;
-  
+
+  bool fGoodEffCand;
 
   // -- vectors with the candidates of the specified type
   std::vector<TAnaCand *> fCands;  
@@ -112,12 +120,19 @@ public:
 
   bool                    fGoodEvent;
 
+  // -- TM
+  int                     fGenM1Tmi, fGenM2Tmi, fNGenPhotons; 
+  int                     fRecM1Tmi, fRecM2Tmi; 
+  int                     fCandTmi; 
+ 
   // -- variables for reduced tree, they are from fpCand
-  int                     fCandTM; 
+  int                     fCandTM, fCandType; 
   int                     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fCandQ;
   bool                    fMu1Id, fMu2Id;
   double                  fHltMu1Pt, fHltMu1Eta, fHltMu1Phi, fHltMu2Pt, fHltMu2Eta, fHltMu2Phi;
   double                  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
+  double                  fMu1PtGen, fMu2PtGen, fMu1EtaGen, fMu2EtaGen;
+  double                  fMu1PtNrf, fMu2PtNrf, fMu1EtaNrf, fMu2EtaNrf; // "now refitted"
   double                  fMu1W8Mu, fMu1W8Tr, fMu2W8Mu, fMu2W8Tr; 
   double                  fPvX, fPvY, fPvZ; 
   double                  fJpsiMass;

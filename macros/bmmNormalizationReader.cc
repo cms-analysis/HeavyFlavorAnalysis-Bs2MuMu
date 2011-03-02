@@ -212,6 +212,289 @@ void bmmNormalizationReader::MCKinematics() {
 }
 
 
+
+// ----------------------------------------------------------------------
+void bmmNormalizationReader::efficiencyCalculation() {
+  fGoodEffCand = false;
+
+  ((TH1D*)fpHistFile->Get("efficiency"))->Fill(0); 
+  ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(1, "all events"); 
+
+
+  // -- gen level 
+  TGenCand *pM1(0), *pM2(0), *pK(0); 
+  if (-1 == fGenM1Tmi || -1 == fGenM2Tmi || -1 == fGenK1Tmi) {
+    if (fVerbose > 2 ) cout << "--------------------> No matched signal decay found" << endl;
+    return;
+  }
+
+  pM1 = fpEvt->getGenCand(fGenM1Tmi); 
+  pM2 = fpEvt->getGenCand(fGenM2Tmi); 
+  pK  = fpEvt->getGenCand(fGenK1Tmi); 
+
+  ((TH1D*)fpHistFile->Get("efficiency"))->Fill(1); 
+  ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(2, "gen signal decays"); 
+
+
+  // -- reco level
+  TAnaTrack *prM1(0), *prM2(0), *prK(0); 
+  int m1Matched(0), m2Matched(0), kMatched(0), m1ID(0), m2ID(0), m1GT(0), m2GT(0), kGT(0);
+  if (fRecM1Tmi > -1) {
+    m1Matched = 1; 
+    prM1 = fpEvt->getRecTrack(fRecM1Tmi); 
+    if (muonID(prM1)) m1ID = 1; 
+    if (TRACKQUALITY > 0 && (0 == (prM1->fTrackQuality & TRACKQUALITY))) {
+      m1GT = 0; 
+    } else {
+      m1GT = 1;
+    }
+  }
+
+  if (fRecM2Tmi > -1) {
+    m2Matched = 1; 
+    prM2 = fpEvt->getRecTrack(fRecM2Tmi); 
+    if (muonID(prM2)) m2ID = 1; 
+    if (TRACKQUALITY > 0 && (0 == (prM2->fTrackQuality & TRACKQUALITY))) {
+      m2GT = 0; 
+    } else {
+      m2GT = 1;
+    }
+  } 
+
+  if (fRecK1Tmi > -1) {
+    kMatched = 1; 
+    prK = fpEvt->getRecTrack(fRecK1Tmi); 
+    if (TRACKQUALITY > 0 && (0 == (prK->fTrackQuality & TRACKQUALITY))) {
+      kGT = 0; 
+    } else {
+      kGT = 1;
+    }
+  } 
+
+  // -- cand level 
+  TAnaCand *pCand(0);
+  if (fCandTmi > -1) {
+    pCand = fCands[fCandTmi];
+  }
+    
+  // -- results...
+  if ((pM1->fP.Perp() > 3.) && (pM2->fP.Perp() > 3.) && (pK->fP.Perp() > 0.5)
+      && (TMath::Abs(pM1->fP.Eta()) < 2.4) && (TMath::Abs(pM2->fP.Eta()) < 2.4) && (TMath::Abs(pK->fP.Eta()) < 2.4)
+      ) {
+    ((TH1D*)fpHistFile->Get("efficiency"))->Fill(2); 
+    ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(3, "gen signal decays in acc"); 
+
+    if (m1Matched && m2Matched && kMatched
+	&& (prM1->fPlab.Perp() > 3.0) && (prM2->fPlab.Perp() > 3.0) && (prK->fPlab.Perp() > 0.5)
+	&& (TMath::Abs(prM1->fPlab.Eta()) < 2.4) && (TMath::Abs(prM2->fPlab.Eta()) < 2.4) && (TMath::Abs(prK->fPlab.Eta()) < 2.4)
+	&& (prM1->fQ*prM2->fQ < 0)
+	&& m1GT && m2GT && kGT
+	) {
+      ((TH1D*)fpHistFile->Get("efficiency"))->Fill(3); 
+      ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(4, "+ reco tracks"); 
+      
+      if (m1ID && m2ID) {
+	((TH1D*)fpHistFile->Get("efficiency"))->Fill(4); 
+	((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(5, "+ muon ID"); 
+      
+	if (fGoodHLT) {
+	  ((TH1D*)fpHistFile->Get("efficiency"))->Fill(5); 
+	  ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(6, "+ trigger"); 
+
+	  if (pCand) {
+	    ((TH1D*)fpHistFile->Get("efficiency"))->Fill(6); 
+	    ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(7, "+ candidate"); 
+	    fGoodEffCand = true;
+	    ((TH1D*)fpHistFile->Get("effMass"))->Fill(pCand->fMass);
+	  }
+	}
+
+      }
+    }
+  }
+
+}
+
+
+// ----------------------------------------------------------------------
+void bmmNormalizationReader::genMatch() {
+
+  fGenM1Tmi = fGenM2Tmi = fGenK1Tmi = -1; 
+  fNGenPhotons = 0; 
+
+  TGenCand *pC(0), *pM1(0), *pM2(0), *pK(0), *pB(0), *pPsi(0); 
+  int nb(0), npsi(0), nphotons(0); 
+  bool goodMatch(false); 
+  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
+    pC = fpEvt->getGenCand(i); 
+    if (521 == TMath::Abs(pC->fID)) {
+      pB = pC;
+      nb = pB->fDau2 - pB->fDau1 + 1; 
+      if (nb > 2) continue; // skip B decays where more than J/psi and kaon came from B
+      for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
+	pC = fpEvt->getGenCand(id); 
+	if (22 == TMath::Abs(pC->fID)) ++nphotons;
+	if (443 == TMath::Abs(pC->fID)) {
+	  pPsi = pC; 
+	  npsi = pPsi->fDau2 - pPsi->fDau1 + 1; 
+	  pM1 = pM2 = 0; 
+	  for (int idd = pPsi->fDau1; idd <= pPsi->fDau2; ++idd) {
+	    pC = fpEvt->getGenCand(idd); 
+	    if (22 == TMath::Abs(pC->fID)) ++nphotons;
+	    if (13 == TMath::Abs(pC->fID)) {
+	      if (0 == pM1) {
+		pM1 = fpEvt->getGenCand(idd); 
+	      } else {
+		pM2 = fpEvt->getGenCand(idd); 
+	      }
+	    }
+	  }
+	} else if (321 == TMath::Abs(pC->fID)) {
+	  pK = fpEvt->getGenCand(id); 
+	}
+      }
+      if (0 != pM1 && 0 != pM2 && 0 != pK && (pPsi->fMom1 == pK->fMom1)) {
+	goodMatch = true; 
+	fNGenPhotons = nphotons;
+	break;
+      }
+    }
+  }
+
+  if (goodMatch) {
+    if (pM1->fP.Perp() > pM2->fP.Perp()) {
+      fGenM1Tmi = pM1->fNumber; 
+      fGenM2Tmi = pM2->fNumber; 
+    } else {
+      fGenM1Tmi = pM2->fNumber; 
+      fGenM2Tmi = pM1->fNumber; 
+    }
+    fGenK1Tmi = pK->fNumber; 
+  } else {
+    fGenM1Tmi = -1; 
+    fGenM2Tmi = -1; 
+    fGenK1Tmi = -1;  
+  }
+  
+  if (fVerbose > 10) {
+    cout << "fGenM1Tmi = " << fGenM1Tmi << endl;
+    cout << "fGenM2Tmi = " << fGenM2Tmi << endl;
+    cout << "fGenK1Tmi = " << fGenK1Tmi << endl;
+  }
+
+//   if (fGenM1Tmi > -1) {
+//     cout << "----------------------------------------------------------------------" << endl;
+//     cout << "fGenM1Tmi = " << fGenM1Tmi << endl;
+//     cout << "fGenM2Tmi = " << fGenM2Tmi << endl;
+//     cout << "fGenK1Tmi = " << fGenK1Tmi << endl;
+//   }
+}
+
+// ----------------------------------------------------------------------
+void bmmNormalizationReader::recoMatch() {
+
+  fRecM1Tmi = fRecM2Tmi = fRecK1Tmi = -1; 
+  TAnaTrack *pT(0);
+  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+    pT = fpEvt->getRecTrack(i); 
+    if (pT->fGenIndex < 0) continue;
+    // -- muon 1
+    if (fGenM1Tmi > -1 && pT->fGenIndex == fGenM1Tmi) {
+      fRecM1Tmi = i; 
+    }
+
+    // -- muon 2
+    if (fGenM2Tmi > -1 && pT->fGenIndex == fGenM2Tmi) {
+      fRecM2Tmi = i; 
+    }
+
+    // -- kaon
+    if (fGenK1Tmi > -1 && pT->fGenIndex == fGenK1Tmi) {
+      fRecK1Tmi = i; 
+    }
+
+    // -- skip rest if all matches found
+    if (fRecM1Tmi > -1 && fRecM2Tmi > -1 && fRecK1Tmi > -1) break;
+  }
+
+
+  if (fVerbose > 10) {
+    cout << "fRecM1Tmi = " << fRecM1Tmi << " matched to fGenM1Tmi = " << fGenM1Tmi << endl;
+    cout << "fRecM2Tmi = " << fRecM2Tmi << " matched to fGenM2Tmi = " << fGenM2Tmi << endl;
+    cout << "fRecK1Tmi = " << fRecK1Tmi << " matched to fGenK1Tmi = " << fGenK1Tmi << endl;
+  }
+
+//   if (fRecM1Tmi > -1) {
+//     cout << "fRecM1Tmi = " << fRecM1Tmi << " matched to fGenM1Tmi = " << fGenM1Tmi << endl;
+//     cout << "fRecM2Tmi = " << fRecM2Tmi << " matched to fGenM2Tmi = " << fGenM2Tmi << endl;
+//     cout << "fRecK1Tmi = " << fRecK1Tmi << " matched to fGenK1Tmi = " << fGenK1Tmi << endl;
+//   }
+  
+}
+
+// ----------------------------------------------------------------------
+void bmmNormalizationReader::candMatch() {
+  fCandTmi = -1;   
+  int idx(-1), type(-1); 
+  int d1Matched(0), d2Matched(0), d3Matched(0); 
+  TAnaCand *pCand(0);
+  TAnaTrack *pT(0); 
+  for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
+    pCand = fCands[iC]; 
+    
+    d1Matched = d2Matched = d3Matched = 0; 
+    for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
+      idx = fpEvt->getSigTrack(i)->fIndex; 
+      type = TMath::Abs(fpEvt->getSigTrack(i)->fMCID);
+      if (fVerbose > 10) {
+	cout << idx << " " << fRecM1Tmi << " " << fRecM2Tmi << " " << fRecK1Tmi << endl;
+      }
+      if (fRecM1Tmi > -1 && type == 13 && idx == fRecM1Tmi) {
+	d1Matched = 1; 
+      }
+      if (fRecM2Tmi > -1 && type == 13 && idx == fRecM2Tmi) {
+	d2Matched = 1; 
+      }
+      if (fRecK1Tmi > -1 && type == 321 && idx == fRecK1Tmi) {
+	d3Matched = 1; 
+      }
+    }
+    
+    if (d1Matched && d2Matched && d3Matched) {
+      fCandTmi = iC;
+      break;
+    }
+  }
+  if (fVerbose > 10) {
+    cout << "fCandTmi = " << fCandTmi << " matched to rec tracks " << fRecM1Tmi << " " << fRecM2Tmi << " " << fRecK1Tmi << endl;
+  }
+
+//   if (fGenM1Tmi > -1) cout << "fCandTmi = " << fCandTmi << " matched to rec tracks " << fRecM1Tmi << " " << fRecM2Tmi << " " << fRecK1Tmi << endl;
+
+}
+
+
+// ----------------------------------------------------------------------
+int bmmNormalizationReader::tmCand(TAnaCand *pC) {
+  TAnaCand *pCand(0);
+  for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
+    pCand = fCands[iC]; 
+    if (pCand == pC) {
+      if (iC == fCandTmi) {
+	if (fNGenPhotons) {
+	  return 2; 
+	} else {
+	  return 1;
+	}
+      } else {
+	return 0; 
+      }
+    }
+  }
+  return 0;
+}
+
+
 // ----------------------------------------------------------------------
 void bmmNormalizationReader::candidateSelection(int mode) {
   int nc0(fCands.size()), nc1(0);
@@ -235,9 +518,17 @@ void bmmNormalizationReader::candidateSelection(int mode) {
     for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
       pCand = fCands[iC]; 
       
-      TAnaTrack *pl1 = fpEvt->getSigTrack(pCand->fSig1); 
-      TAnaTrack *pl2 = fpEvt->getSigTrack(pCand->fSig1+1); 
-
+      TAnaTrack *ps(0), *pl1(0), *pl2(0);
+      for (int it = pCand->fSig1; it <= pCand->fSig2; ++it) {
+	ps = fpEvt->getSigTrack(it); 
+	if (TMath::Abs(ps->fMCID) != 13) continue;
+	if (0 == pl1) {
+	  pl1 = ps;
+	} else {
+	  pl2 = ps;
+	}
+      }
+      
       if (pl1->fQ*pl2->fQ > 0) continue;
 
       if (false == fvGoodTracks[iC])   continue; 
@@ -312,11 +603,32 @@ void bmmNormalizationReader::candidateSelection(int mode) {
 void bmmNormalizationReader::fillCandidateVariables() {
   if (0 == fpCand) return;
 
-  TAnaTrack *p1 = fpEvt->getSigTrack(fpCand->fSig2); 
+  TAnaTrack *p0, *pk(0), *pks(0); 
+  for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
+    p0 = fpEvt->getSigTrack(it);     
+    if (321 == TMath::Abs(p0->fMCID)) {
+      pks = p0; 
+    }
+  }
 
-  fKaonPt  = p1->fPlab.Perp(); 
-  fKaonEta = p1->fPlab.Eta();  
-  fKaonPhi = p1->fPlab.Phi(); 
+  pk = fpEvt->getRecTrack(pks->fIndex);
+
+  fKaonPt        = pk->fPlab.Perp(); 
+  fKaonEta       = pk->fPlab.Eta();  
+  fKaonPhi       = pk->fPlab.Phi(); 
+  fKaonTkQuality = pk->fTrackQuality & TRACKQUALITY;
+  fKaonPtNrf     = pks->fPlab.Perp();
+  fKaonEtaNrf    = pks->fPlab.Eta();
+
+  if (tmCand(fpCand)) {
+    TGenCand *pg1 = fpEvt->getGenCand(fpEvt->getRecTrack(pk->fIndex)->fGenIndex);
+    fKPtGen     = pg1->fP.Perp();
+    fKEtaGen    = pg1->fP.Eta();
+  } else {
+    fKPtGen     = -99.;
+    fKEtaGen    = -99.;
+  }
+  
 
   // -- Check for J/psi mass
   TAnaCand *pD = 0; 
@@ -339,7 +651,7 @@ void bmmNormalizationReader::fillCandidateVariables() {
 }
 
 // ----------------------------------------------------------------------
-int bmmNormalizationReader::tmCand(TAnaCand *pC) {
+int bmmNormalizationReader::tmCand2(TAnaCand *pC) {
   
   TAnaTrack *pT; 
   vector<TGenCand*> gCand; 
@@ -349,7 +661,7 @@ int bmmNormalizationReader::tmCand(TAnaCand *pC) {
     gCand.push_back(fpEvt->getGenCand(pT->fGenIndex)); 
   }
 
-  TGenCand *pG(0), *pM1(0), *pM2(0), *pPsi(0), *pK(0), *pB; 
+  TGenCand *pG(0), *pM1(0), *pM2(0), *pPsi(0), *pK(0), *pB(0); 
   for (unsigned int i = 0; i < gCand.size(); ++i) {
     pG = gCand[i]; 
     if (0 == pM1 && 13 == TMath::Abs(pG->fID)) {
@@ -370,7 +682,6 @@ int bmmNormalizationReader::tmCand(TAnaCand *pC) {
   if (TMath::Abs(pPsi->fID) != 443) return 0;
   
   // -- check that the kaon has the same mother like the J/psi
-  // FIXME: ancestor instead of mother!
   if (pK->fMom1 != pPsi->fMom1) return 0; 
   pB = fpEvt->getGenCand(pK->fMom1); 
 
@@ -393,14 +704,11 @@ int bmmNormalizationReader::tmCand(TAnaCand *pC) {
     ++ngendaughters;
   }
 
-
-  if (ngendaughters == 3) {
-    return 1;
-  } else {
+  if (3 == ngendaughters) {
     if (nphotons > 0) {
-      return 3;
+      return 2;
     } else {
-      return 2; 
+      return 1;
     }
   }
 
@@ -426,10 +734,15 @@ void bmmNormalizationReader::bookHist() {
   fpMpsi   = bookDistribution("mpsi", "m(J/#psi) [GeV]", "fGoodJpsiMass", 40, 2.8, 3.4);           
 
   // -- Additional reduced tree variables
-  fTree->Branch("mpsi", &fJpsiMass, "mpsi/D");
-  fTree->Branch("kpt",  &fKaonPt,   "kpt/D");
-  fTree->Branch("keta", &fKaonEta,  "keta/D");
-  fTree->Branch("kphi", &fKaonPhi,  "kphi/D");
+  fTree->Branch("mpsi", &fJpsiMass,  "mpsi/D");
+  fTree->Branch("kpt",  &fKaonPt,    "kpt/D");
+  fTree->Branch("keta", &fKaonEta,   "keta/D");
+  fTree->Branch("kphi", &fKaonPhi,   "kphi/D");
+  fTree->Branch("kgt",  &fKaonTkQuality,"kgt/I");
+  fTree->Branch("t3pt", &fKaonPtNrf, "t3pt/D");
+  fTree->Branch("t3eta",&fKaonEtaNrf,"t3eta/D");
+  fTree->Branch("g3pt", &fKPtGen,    "g3pt/D");
+  fTree->Branch("g3eta",&fKEtaGen,   "g3eta/D");
 
 }
 

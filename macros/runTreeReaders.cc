@@ -85,6 +85,7 @@ int main(int argc, char *argv[]) {
 	std::cout << "-n integer    number of events to run on" << std::endl;
 	std::cout << "-r class name which tree reader class to run" << std::endl;
 	std::cout << "-s number     seed for random number generator" << std::endl;
+	cout << "-S start     starting event number" << endl;
 	std::cout << "-o filename   set output file" << std::endl;
 	cout << "-v level      set verbosity level" << endl;
 	std::cout << "-h            prints this message and exits" << std::endl;
@@ -99,6 +100,7 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-n"))  {nevents    = atoi(argv[++i]); }                 // number of events to run 
     if (!strcmp(argv[i],"-r"))  {readerName = string(argv[++i]); }               // which tree reader class to run
     if (!strcmp(argv[i],"-s"))  {randomSeed = atoi(argv[++i]); }                 // set seed for random gen.
+    if (!strcmp(argv[i],"-S"))  {start = atoi(argv[++i]); }                      // set start event number
     if (!strcmp(argv[i],"-o"))  {histfile   = TString(argv[++i]); }              // set output file
     if (!strcmp(argv[i],"-v"))  {verbose    = atoi(argv[++i]); }                 // set verbosity level
   }

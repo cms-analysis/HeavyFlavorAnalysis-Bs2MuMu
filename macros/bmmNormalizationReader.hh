@@ -30,19 +30,33 @@ public:
   bmmNormalizationReader(TChain *tree, TString evtClassName);
   ~bmmNormalizationReader();
 
-  void         moreBasicCuts();
-  void         bookHist();
-  void         startAnalysis();
-  void         eventProcessing();
-  void         fillCandidateHistograms();
-  void         readCuts(TString filename, int dump = 1);
-  void         initVariables();
-  void         MCKinematics();
-  void         candidateSelection(int mode = 0); 
-  void         fillCandidateVariables(); 
-  int          tmCand(TAnaCand *pC);
+  void    moreBasicCuts();
+  void    bookHist();
+  void    startAnalysis();
+  void    eventProcessing();
+  void    fillCandidateHistograms();
+  void    readCuts(TString filename, int dump = 1);
+  void    initVariables();
+  void    MCKinematics();
+  void    efficiencyCalculation();
+  void    candidateSelection(int mode = 0); 
+  void    fillCandidateVariables(); 
+  int     tmCand(TAnaCand *pC);
+  int     tmCand2(TAnaCand *pC);
+
+  void    genMatch();
+  void    recoMatch();
+  void    candMatch();
 
   double       fKaonPt, fKaonEta, fKaonPhi;
+  double       fKPtGen, fKEtaGen;
+  double       fKaonPtNrf, fKaonEtaNrf;
+  int          fKaonTkQuality;
+
+  // -- TM
+  int          fGenK1Tmi; 
+  int          fRecK1Tmi; 
+
 };
 
 #endif

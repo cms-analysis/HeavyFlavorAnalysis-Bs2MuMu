@@ -1,0 +1,18 @@
+TYPE           300531 
+SELMODE            -1
+TRIGGER     HLT_DoubleMu0,HLT_DoubleMu0_Quarkonium_v1
+L1TRIGGER   L1_DoubleMuOpen
+# -- boxes
++input cuts/boxes.cuts
+# -- tracks
++input cuts/tracks.cuts
+# -- muons
++input cuts/muons.tm.cuts
+# -- candidate
++input cuts/candidate.cuts
+# -- J/psi cuts
++input cuts/jpsi.cuts
+# -- specifics
+DELTAR 0.25
+MKKLO  0.995
+MKKHI  1.045

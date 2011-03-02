@@ -1,0 +1,13 @@
+TYPE           301313
+SELMODE            -1
+TRIGGER     HLT_DoubleMu0,HLT_DoubleMu0_Quarkonium_v1
+#TRIGGER     HLT_L1DoubleMuOpen
+L1TRIGGER   L1_DoubleMuOpen
+# -- boxes
++input cuts/boxes.cuts
+# -- tracks
++input cuts/tracks.cuts
+# -- muons
++input cuts/muons.tm.cuts
+# -- candidate
++input cuts/candidate.cuts

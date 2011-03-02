@@ -46,9 +46,27 @@ void bmmReader::startAnalysis() {
 void bmmReader::eventProcessing() {
 
   if (fVerbose > 1) cout << "event: " << fEvent << endl;
+  
+//   if (218505 == fEvt) {
+//     fVerbose = 100; 
+//   } else {
+//     fVerbose = 0; 
+//   }
+  //  fVerbose = 100; 
+  
+  //   cout << "------------------------" 
+  //        << fRun << " " << fEvt
+  //        << endl;
+  //  if (fRun == 1 && fEvt == 218505) fpEvt->dump();
 
   // -- initialize all variables
   initVariables(); 
+
+  if (fIsMC) {
+    genMatch(); 
+    recoMatch(); 
+    candMatch(); 
+  }
 
   if (fIsMC) MCKinematics();
   L1TSelection();
@@ -56,26 +74,40 @@ void bmmReader::eventProcessing() {
   trackSelection(); 
   muonSelection();
 
-  candidateSelection(SELMODE); 
+  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(0); 
+  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(1, fpEvt->nCands()); 
+  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(2, fCands.size()); 
+
+  if (!fIsMC && !fGoodHLT) {
+    return;
+  }
+    
+  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(3, fpEvt->nCands()); 
+  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(4, fCands.size()); 
+
+  ((TH1D*)fpHistFile->Get("monAllCands"))->Fill(fpEvt->nCands()); 
+  ((TH1D*)fpHistFile->Get("monTypeCands"))->Fill(fCands.size()); 
 
   if (SELMODE < 0) {
     // -- Fill ALL candidates
     for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
-      if (fvGoodCand[iC]) {
-	fpCand = fCands[iC];
-	if (fVerbose > 4) cout << "Filling candidate " << iC 
-			       << " with sig tracks " << fpCand->fSig1 << ".." << fpCand->fSig2
-			       << endl;
-	fillCandidateVariables();
-	fillCandidateHistograms();
-      }
+      fpCand = fCands[iC];
+      fCandIdx = iC; 
+      if (fVerbose > 4) cout << "Filling candidate " << iC 
+			     << " with sig tracks " << fpCand->fSig1 << ".." << fpCand->fSig2
+			     << endl;
+      fillCandidateVariables();
+      fillCandidateHistograms();
     }
   } else {
+    candidateSelection(SELMODE); 
     // -- Fill only 'best' candidate
     if (fVerbose > 4) cout << "Filling candidate " << fCandIdx << endl;
     fillCandidateVariables();
     fillCandidateHistograms();
   }
+
+  if (fIsMC) efficiencyCalculation();
 
   studyL1T();
   
@@ -126,8 +158,11 @@ void bmmReader::initVariables() {
 
 // ----------------------------------------------------------------------
 void bmmReader::insertCand(TAnaCand* pCand) {
+  if (BLIND && pCand->fMass > SIGBOXMIN && pCand->fMass < SIGBOXMAX) return;
+
   //  cout << "bmmReader::insertCand" << endl;
    fCands.push_back(pCand); 
+
   // -- this is just to initialize the vector variables
   fvGoodMuonsID.push_back(true); 
   fvGoodMuonsPt.push_back(true);
@@ -448,19 +483,19 @@ void bmmReader::muonSelection() {
 	     << hex << " with muid = " << pt->fMuID << " MUIDMASK = " << MUIDMASK << " MUIDRESULT = " << MUIDRESULT
 	     << " ===>  muonID(track) = " << muonID(pt) << dec << endl;
 
-      if (ps->fPlab.Perp() < MUPTLO) {
-	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUPTLO: " << pt->fPlab.Perp() << endl;          
+      if (pt->fPlab.Perp() < MUPTLO) {
+	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUPTLO: " << pt->fPlab.Perp() << " (" << ps->fPlab.Perp() << ")" << endl;
 	fvGoodMuonsPt[iC] = false; 
       }
-      if (ps->fPlab.Perp() > MUPTHI) {
+      if (pt->fPlab.Perp() > MUPTHI) {
 	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUPTHI: " << pt->fPlab.Perp() << endl;          
 	fvGoodMuonsPt[iC] = false; 
       }
-      if (ps->fPlab.Eta() < MUETALO) {
+      if (pt->fPlab.Eta() < MUETALO) {
 	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUETALO: " << pt->fPlab.Eta() << endl;          
 	fvGoodMuonsEta[iC] = false; 
       }
-      if (ps->fPlab.Eta() > MUETAHI) {
+      if (pt->fPlab.Eta() > MUETAHI) {
 	if (fVerbose > 4) cout << "muon " << ps->fIndex << " failed MUETAHI: " << pt->fPlab.Eta() << endl;          
 	fvGoodMuonsEta[iC] = false; 
       }
@@ -477,6 +512,7 @@ void bmmReader::candidateSelection(int mode) {
 // ----------------------------------------------------------------------
 void bmmReader::fillCandidateVariables() {
   if (0 == fpCand) return;
+  if (-1 == fCandIdx) return;
 
   int goodSV(0); 
   if (fpCand->fPvIdx > -1 && fpCand->fPvIdx < fpEvt->nPV()) {
@@ -492,14 +528,23 @@ void bmmReader::fillCandidateVariables() {
   }
 
   fCandTM    = tmCand(fpCand); 
+  //   int a = tmCand(fpCand); 
+  //   if (a != fCandTM) {
+  //     cout << "fEvent: " << fEvent << endl;
+  //     cout << "cand " << fCandIdx << " tmCand (original) = " << tmCand2(fpCand) << " and new = " << tmCand(fpCand) << endl;
+  //     cout << " with sigtracks: " << fpCand->fSig1 << ".." << fpCand->fSig2 << endl;
+  //     fpEvt->dump(); 
+  //   }
+  
+  fCandType  = fpCand->fType;
   fCandPt    = fpCand->fPlab.Perp();
   fCandEta   = fpCand->fPlab.Eta();
   fCandPhi   = fpCand->fPlab.Phi();
   fCandM     = fpCand->fMass;
 
   TAnaTrack *p0; 
-  TAnaTrack *p1 = 0;
-  TAnaTrack *p2 = 0; //??fpEvt->getSigTrack(fpCand->fSig1+1); 
+  TAnaTrack *p1(0), *ps1(0);
+  TAnaTrack *p2(0), *ps2(0); 
 
   fCandQ    = 0;
 
@@ -513,36 +558,73 @@ void bmmReader::fillCandidateVariables() {
       p2 = p0; 
     }
   }
+
+  // -- switch to RecTracks!
+  ps1= p1; 
+  p1 = fpEvt->getRecTrack(ps1->fIndex);
+  ps2= p2; 
+  p2 = fpEvt->getRecTrack(ps2->fIndex);
   
   if (p1->fPlab.Perp() < p2->fPlab.Perp()) {
     p0 = p1; 
     p1 = p2; 
     p2 = p0; 
+
+    p0 = ps1; 
+    ps1 = ps2; 
+    ps2 = p0;
   }
 
-  fMu1Id        = muonID(fpEvt->getRecTrack(p1->fIndex)); 
+  fMu1Id        = muonID(p1); 
   fMu1Pt        = p1->fPlab.Perp(); 
   fMu1Eta       = p1->fPlab.Eta(); 
   fMu1Phi       = p1->fPlab.Phi(); 
-  fMu1TkQuality = p1->fTrackQuality;
+  fMu1PtNrf     = ps1->fPlab.Perp();
+  fMu1EtaNrf    = ps1->fPlab.Eta();
+  fMu1TkQuality = p1->fTrackQuality & TRACKQUALITY;
   fMu1W8Mu      = fpMuonID->effD(fMu1Pt, fMu1Eta, fMu1Phi);
   fMu1W8Tr      = fpMuonTr->effD(fMu1Pt, fMu1Eta, fMu1Phi);
-  fMu1Q         = fpEvt->getRecTrack(p1->fIndex)->fQ;
+  fMu1Q         = p1->fQ;
+
+  if (fCandTM && fGenM1Tmi < 0) fpEvt->dump();
+
+  //  cout << "  " << p1->fGenIndex << "  " << fCandTM << " fCandTmi: " << fCandTmi << " gen m " << fGenM1Tmi << " " << fGenM2Tmi << endl;
+
+  if (fCandTM) {
+    TGenCand *pg1 = fpEvt->getGenCand(p1->fGenIndex);
+    fMu1PtGen     = pg1->fP.Perp();
+    fMu1EtaGen    = pg1->fP.Eta();
+    //cout << "bmmReader: m = " << fCandM << " from cand " << fpCand << endl;
+  } else {
+    fMu1PtGen     = -99.;
+    fMu1EtaGen    = -99.;
+  }
   
-  fMu2Id        = muonID(fpEvt->getRecTrack(p2->fIndex)); 
+  fMu2Id        = muonID(p2); 
   fMu2Pt        = p2->fPlab.Perp(); 
   fMu2Eta       = p2->fPlab.Eta(); 
   fMu2Phi       = p2->fPlab.Phi(); 
-  fMu2TkQuality = p2->fTrackQuality;
+  fMu2PtNrf     = ps2->fPlab.Perp();
+  fMu2EtaNrf    = ps2->fPlab.Eta();
+  fMu2TkQuality = p2->fTrackQuality & TRACKQUALITY;
   fMu2W8Mu      = fpMuonID->effD(fMu2Pt, fMu2Eta, fMu2Phi);
   fMu2W8Tr      = fpMuonTr->effD(fMu2Pt, fMu2Eta, fMu2Phi);
-  fMu2Q         = fpEvt->getRecTrack(p2->fIndex)->fQ;
+  fMu2Q         = p2->fQ;
+
+  if (fCandTM) {
+    TGenCand *pg2 = fpEvt->getGenCand(p2->fGenIndex);
+    fMu2PtGen     = pg2->fP.Perp();
+    fMu2EtaGen    = pg2->fP.Eta();
+  } else {
+    fMu2PtGen     = -99.;
+    fMu2EtaGen    = -99.;
+  }
+
 
   fCandW8Mu     = fMu1W8Mu*fMu2W8Mu;
   if (TMath::Abs(fCandW8Mu) > 1.) fCandW8Mu = 0.2; // FIXME correction for missing entries at low pT
   fCandW8Tr     = fMu1W8Tr*fMu2W8Tr;
   if (TMath::Abs(fCandW8Tr) > 1.) fCandW8Tr = 0.2; // FIXME correction for missing entries at low pT 
-
 
   // -- Add HLT muons
   TTrgObj *p(0), *h1(0), *h2(0); 
@@ -600,6 +682,7 @@ void bmmReader::fillCandidateVariables() {
     fHltMu2Phi = -99.;
   }
 
+
   int pvidx = (fpCand->fPvIdx > -1? fpCand->fPvIdx : 0); 
   TVector3 svpv(fpCand->fVtx.fPoint - fpEvt->getPV(pvidx)->fPoint); 
   double alpha = svpv.Angle(fpCand->fPlab);
@@ -622,8 +705,8 @@ void bmmReader::fillCandidateVariables() {
     fCandDocaTrk = fpCand->fNstTracks[0].second.first;
   }
   // ??
-  TAnaTrack *t1 = fpEvt->getRecTrack(p1->fIndex); 
-  TAnaTrack *t2 = fpEvt->getRecTrack(p2->fIndex); 
+  TAnaTrack *t1 = p1; 
+  TAnaTrack *t2 = p2; 
   double bmu1   = TMath::Sin(fpCand->fPlab.Angle(t1->fPlab));
   double bmu2   = TMath::Sin(fpCand->fPlab.Angle(t2->fPlab));
   fMu1IP        = fpCand->fVtx.fD3d*bmu1/t1->fTip;
@@ -651,6 +734,29 @@ void bmmReader::fillCandidateVariables() {
   fGoodIP = true; 
 
   fAnaCuts.update(); 
+}
+
+
+// ----------------------------------------------------------------------
+void bmmReader::genMatch() {
+  cout << "wrong function" << endl;
+}
+
+// ----------------------------------------------------------------------
+void bmmReader::recoMatch() {
+  cout << "wrong function" << endl;
+}
+
+// ----------------------------------------------------------------------
+void bmmReader::candMatch() {
+  cout << "wrong function" << endl;
+}
+
+
+// ----------------------------------------------------------------------
+int bmmReader::tmCand2(TAnaCand *pC) {
+  cout << "wrong function" << endl;
+  return 0; 
 }
 
 
@@ -823,6 +929,12 @@ void bmmReader::bookHist() {
   h = new TH1D("genStudy", "gen study", 100, 0., 100.); 
   h = new TH1D("acceptance", "acceptance", 100, 0., 100.); 
   h = new TH1D("presel", "presel", 100, 0., 100.); 
+  h = new TH1D("efficiency", "efficiency", 100, 0., 100.); 
+  h = new TH1D("effMass", "", 100, 4., 6.0); 
+  h = new TH1D("effMass1", "", 100, 0., 20.0); 
+  h = new TH1D("effMass2", "", 100, 0., 20.0); 
+  h = new TH1D("effMass3", "", 100, 0., 20.0); 
+  h = new TH1D("effMass4", "", 100, 0., 20.0); 
 
   h = new TH1D("hltMass", "hlt mass resolution", 100, -0.1, 0.1); 
   h = new TH1D("hltPt", "hlt pt resolution", 100, -0.1, 0.1); 
@@ -867,6 +979,9 @@ void bmmReader::bookHist() {
   h = new TH1D("b1", "Ntrk", 200, 0., 200.);
   h = new TH1D("bnc0", "NCand before selection", 20, 0., 20.);
   h = new TH1D("bnc1", "NCand after selection", 20, 0., 20.);
+  h = new TH1D("monEvents", "monEvents", 10, 0., 10.);
+  h = new TH1D("monAllCands", "monAllCands", 1000, 0., 1000.);
+  h = new TH1D("monTypeCands", "monTypeCands", 1000, 0., 1000.);
 
   // -- Reduced Tree
   fTree = new TTree("events", "events");
@@ -887,6 +1002,7 @@ void bmmReader::bookHist() {
   fTree->Branch("w8tr",   &fCandW8Tr,          "w8tr/D");
   // -- cand
   fTree->Branch("q",      &fCandQ,             "q/I");
+  fTree->Branch("type",   &fCandType,          "type/I");
   fTree->Branch("pt",     &fCandPt,            "pt/D");
   fTree->Branch("eta",    &fCandEta,           "eta/D");
   fTree->Branch("phi",    &fCandPhi,           "phi/D");
@@ -906,12 +1022,24 @@ void bmmReader::bookHist() {
   fTree->Branch("m1eta",  &fMu1Eta,            "m1eta/D");
   fTree->Branch("m1phi",  &fMu1Phi,            "m1phi/D");
   fTree->Branch("m1ip",   &fMu1IP,             "m1ip/D");
+  fTree->Branch("m1gt",   &fMu1TkQuality,      "m1gt/I");
   fTree->Branch("m2q",    &fMu2Q,              "m2q/I");
   fTree->Branch("m2id",   &fMu2Id,             "m2ip/O");
   fTree->Branch("m2pt",   &fMu2Pt,             "m2pt/D");
   fTree->Branch("m2eta",  &fMu2Eta,            "m2eta/D");
   fTree->Branch("m2phi",  &fMu2Phi,            "m2phi/D");
   fTree->Branch("m2ip",   &fMu2IP,             "m2ip/D");
+  fTree->Branch("m2gt",   &fMu2TkQuality,      "m2gt/I");
+
+  fTree->Branch("g1pt",   &fMu1PtGen,          "g1pt/D");
+  fTree->Branch("g2pt",   &fMu2PtGen,          "g2pt/D");
+  fTree->Branch("g1eta",  &fMu1EtaGen,         "g1eta/D");
+  fTree->Branch("g2eta",  &fMu2EtaGen,         "g2eta/D");
+
+  fTree->Branch("t1pt",   &fMu1PtNrf,          "t1pt/D");
+  fTree->Branch("t1eta",  &fMu1EtaNrf,         "t1eta/D");
+  fTree->Branch("t2pt",   &fMu2PtNrf,          "t2pt/D");
+  fTree->Branch("t2eta",  &fMu2EtaNrf,         "t2eta/D");
 
   fTree->Branch("fHltMu1Pt",  &fHltMu1Pt,  "hm1pt/D");    
   fTree->Branch("fHltMu1Eta", &fHltMu1Eta, "hm1eta/D");  
@@ -940,6 +1068,12 @@ AnalysisDistribution* bmmReader::bookDistribution(const char *hn, const char *ht
     }
   }
   return p; 
+}
+
+
+// ----------------------------------------------------------------------
+void bmmReader::efficiencyCalculation() {
+  cout << "bmmReader::efficiencyCalculation() missing implementation" << endl;
 }
 
 

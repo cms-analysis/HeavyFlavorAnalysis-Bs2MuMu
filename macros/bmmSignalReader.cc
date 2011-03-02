@@ -90,7 +90,6 @@ void bmmSignalReader::MCKinematics() {
   }
 
 
-
   // ----------------------------------------------------------------------
   // -- generator-level acceptance numbers
   if ((pM1->fP.Perp() > 0.) && (pM2->fP.Perp() > 0.)) {
@@ -104,12 +103,12 @@ void bmmSignalReader::MCKinematics() {
     ((TH1D*)fpHistFile->Get("genStudy"))->Fill(3); 
   }
 
-
   // ----------------------------------------------------------------------
   // -- Acceptance: 
   TAnaTrack *pT(0), *prM1(0), *prM2(0); 
   int m1Matched(0), m2Matched(0);
   int m1Acc(0), m2Acc(0);
+  int m1ID(0), m2ID(0);
   for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
     pT = fpEvt->getRecTrack(i); 
     if (pT->fGenIndex == pM1->fNumber) {
@@ -119,6 +118,9 @@ void bmmSignalReader::MCKinematics() {
       if ((pT->fPlab.Perp() > 1.) && (TMath::Abs(pT->fPlab.Eta()) < 2.4)) {
 	m1Acc = 1; 
 	((TH1D*)fpHistFile->Get("acceptance"))->Fill(21); 
+	if (muonID(prM1)) {
+	  m1ID = 1; 
+	}
       }
     }
     if (pT->fGenIndex == pM2->fNumber) {
@@ -128,6 +130,9 @@ void bmmSignalReader::MCKinematics() {
       if ((pT->fPlab.Perp() > 1.) && (TMath::Abs(pT->fPlab.Eta()) < 2.4)) {
 	m2Acc = 1; 
 	((TH1D*)fpHistFile->Get("acceptance"))->Fill(22); 
+	if (muonID(prM2)) {
+	  m2ID = 1; 
+	}
       }
     }
   }
@@ -137,7 +142,17 @@ void bmmSignalReader::MCKinematics() {
   if (m1Matched && m1Acc && m2Matched && m2Acc) {
     ((TH1D*)fpHistFile->Get("acceptance"))->Fill(31); 
     ((TH1D*)fpHistFile->Get("acceptance"))->Fill(2);  // numerator
+    if (m1ID && m2ID) {
+      ((TH1D*)fpHistFile->Get("acceptance"))->Fill(3); 
+    }
+    if (prM2->fPlab.Perp() > 3 && prM1->fPlab.Perp() > 3) {
+      ((TH1D*)fpHistFile->Get("acceptance"))->Fill(5); 
+      if (m1ID && m2ID) {
+	((TH1D*)fpHistFile->Get("acceptance"))->Fill(6); 
+      }
+    }
   }
+  
   
 
   // ----------------------------------------------------------------------
@@ -183,13 +198,106 @@ void bmmSignalReader::MCKinematics() {
     }
   }
 
-
   // -- hard coded ?! FIXME
   if (pM1->fP.Perp() < 1.0) fGoodMCKinematics = false;  
   if (pM2->fP.Perp() < 1.0) fGoodMCKinematics = false;  
   if (TMath::Abs(pM1->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
   if (TMath::Abs(pM2->fP.Eta()) > 2.4) fGoodMCKinematics = false;  
 
+}
+
+
+// ----------------------------------------------------------------------
+// it agrees to 0.24%: 
+// root [3] cout << 6620./6636. << endl;
+// 0.997589
+// the saga continues
+void bmmSignalReader::efficiencyCalculation() {
+  fGoodEffCand = false;
+
+  ((TH1D*)fpHistFile->Get("efficiency"))->Fill(0); 
+  ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(1, "all events"); 
+
+  // -- gen level 
+  TGenCand *pM1(0), *pM2(0); 
+  if (-1 == fGenM1Tmi || -1 == fGenM2Tmi) {
+    if (fVerbose > 2 ) cout << "--------------------> No matched signal decay found" << endl;
+    return;
+  }
+
+  pM1 = fpEvt->getGenCand(fGenM1Tmi); 
+  pM2 = fpEvt->getGenCand(fGenM2Tmi); 
+
+  ((TH1D*)fpHistFile->Get("efficiency"))->Fill(1); 
+  ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(2, "gen signal decays"); 
+
+
+  // -- reco level
+  TAnaTrack *prM1(0), *prM2(0); 
+  int m1Matched(0), m2Matched(0), m1ID(0), m2ID(0), m1GT(0), m2GT(0);
+  if (fRecM1Tmi > -1) {
+    m1Matched = 1; 
+    prM1 = fpEvt->getRecTrack(fRecM1Tmi); 
+    if (muonID(prM1)) m1ID = 1; 
+    if (TRACKQUALITY > 0 && (0 == (prM1->fTrackQuality & TRACKQUALITY))) {
+      m1GT = 0; 
+    } else {
+      m1GT = 1;
+    }
+  }
+
+  if (fRecM2Tmi > -1) {
+    m2Matched = 1; 
+    prM2 = fpEvt->getRecTrack(fRecM2Tmi); 
+    if (muonID(prM2)) m2ID = 1; 
+    if (TRACKQUALITY > 0 && (0 == (prM2->fTrackQuality & TRACKQUALITY))) {
+      m2GT = 0; 
+    } else {
+      m2GT = 1;
+    }
+  } 
+
+  // -- cand level 
+  TAnaCand *pCand(0);
+  if (fCandTmi > -1) {
+    pCand = fCands[fCandTmi];
+  }
+    
+
+  // -- results...
+  if ((pM1->fP.Perp() > 3.) && (pM2->fP.Perp() > 3.)
+      && (TMath::Abs(pM1->fP.Eta()) < 2.4) && (TMath::Abs(pM2->fP.Eta()) < 2.4)
+      ) {
+    ((TH1D*)fpHistFile->Get("efficiency"))->Fill(2); 
+    ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(3, "gen signal decays in acc"); 
+
+    if (m1Matched && m2Matched
+	&& (prM1->fPlab.Perp() > 3.0) && (prM2->fPlab.Perp() > 3.0)
+	&& (TMath::Abs(prM1->fPlab.Eta()) < 2.4) && (TMath::Abs(prM2->fPlab.Eta()) < 2.4)
+	&& (prM1->fQ*prM2->fQ < 0)
+	&& m1GT && m2GT
+	) {
+      ((TH1D*)fpHistFile->Get("efficiency"))->Fill(3); 
+      ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(4, "+ reco tracks"); 
+      
+      if (m1ID && m2ID) {
+	((TH1D*)fpHistFile->Get("efficiency"))->Fill(4); 
+	((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(5, "+ muon ID"); 
+      
+	if (fGoodHLT) {
+	  ((TH1D*)fpHistFile->Get("efficiency"))->Fill(5); 
+	  ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(6, "+ trigger"); 
+
+	  if (pCand) {
+	    ((TH1D*)fpHistFile->Get("efficiency"))->Fill(6); 
+	    ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(7, "+ candidate"); 
+	    fGoodEffCand = true;
+	    ((TH1D*)fpHistFile->Get("effMass"))->Fill(pCand->fMass);
+	  }
+	}
+      }
+    }
+  } 
 }
 
 
@@ -299,6 +407,10 @@ void bmmSignalReader::candidateSelection(int mode) {
     // -- NO candidate fulfilled the basic requirements. Then take the first one
     pCand = fCands[0]; 
     if (BLIND && pCand->fMass > SIGBOXMIN && pCand->fMass < SIGBOXMAX) {
+      if (fVerbose > 0) cout << "bmmSignalReader> found one candidate " << TYPE 
+			     << " passing none of the constituents selection, filling none"
+			     << " with mass  " << pCand->fMass 
+			     << endl;
       fvGoodCand[0] = false; 
       fpCand = 0;
       fCandIdx = -1; 
@@ -315,13 +427,153 @@ void bmmSignalReader::candidateSelection(int mode) {
   }
   ((TH1D*)fpHistFile->Get("bnc1"))->Fill(nc1); 
 
-  //  if (fpCand) fillCandidateVariables();
+}
+
+
+// ----------------------------------------------------------------------
+void bmmSignalReader::genMatch() {
+
+  fGenM1Tmi = fGenM2Tmi = -1; 
+  fNGenPhotons = 0; 
+
+  TGenCand *pC(0), *pM1(0), *pM2(0), *pB(0); 
+  bool goodMatch(false); 
+  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
+    pC = fpEvt->getGenCand(i); 
+    if (531 == TMath::Abs(pC->fID)) {
+      pM1 = pM2 = 0; 
+      pB = pC;
+      for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
+	pC = fpEvt->getGenCand(id); 
+	if (13 == TMath::Abs(pC->fID)) {
+	  if (0 == pM1) {
+	    pM1 = fpEvt->getGenCand(id); 
+	  } else {
+	    pM2 = fpEvt->getGenCand(id); 
+	  }
+	}
+      }
+      if (0 != pM1 && 0 != pM2) {
+	goodMatch = true; 
+	fNGenPhotons = pB->fDau2 - pB->fDau1 - 1; 
+	if (fVerbose > 10) {
+	  cout << "found gen match for B gen idx = " << pB->fNumber << endl;
+	}
+	break;
+      }
+    }
+  }
+
+  
+  if (goodMatch) {
+    if (pM1->fP.Perp() > pM2->fP.Perp()) {
+      fGenM1Tmi = pM1->fNumber; 
+      fGenM2Tmi = pM2->fNumber; 
+    } else {
+      fGenM1Tmi = pM2->fNumber; 
+      fGenM2Tmi = pM1->fNumber; 
+    }
+  } else {
+    fGenM1Tmi = -1; 
+    fGenM2Tmi = -1; 
+  }
+  
+  if (fVerbose > 10) {
+    cout << "fGenM1Tmi = " << fGenM1Tmi << endl;
+    cout << "fGenM2Tmi = " << fGenM2Tmi << endl;
+  }
+}
+
+
+// ----------------------------------------------------------------------
+void bmmSignalReader::recoMatch() {
+
+  fRecM1Tmi = fRecM2Tmi = -1; 
+  TAnaTrack *pT(0);
+  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+    pT = fpEvt->getRecTrack(i); 
+    if (pT->fGenIndex < 0) continue;
+
+    // -- muon 1
+    if (pT->fGenIndex == fGenM1Tmi) {
+      fRecM1Tmi = i; 
+    }
+
+    // -- muon 2
+    if (pT->fGenIndex == fGenM2Tmi) {
+      fRecM2Tmi = i; 
+    }
+
+    // -- skip rest if both matches found
+    if (fRecM1Tmi > -1 && fRecM2Tmi > -1) break;
+  }
+
+
+  if (fVerbose > 10) {
+    cout << "fRecM1Tmi = " << fRecM1Tmi << " matched to fGenM1Tmi = " << fGenM1Tmi << endl;
+    cout << "fRecM2Tmi = " << fRecM2Tmi << " matched to fGenM2Tmi = " << fGenM2Tmi << endl;
+  }
+}
+
+
+// ----------------------------------------------------------------------
+void bmmSignalReader::candMatch() {
+  fCandTmi = -1;   
+  int idx(-1); 
+  int d1Matched(0), d2Matched(0); 
+  TAnaCand *pCand(0);
+  TAnaTrack *pT(0); 
+  for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
+    pCand = fCands[iC]; 
+    
+    d1Matched = d2Matched = 0; 
+    for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
+      idx = fpEvt->getSigTrack(i)->fIndex; 
+      if (fVerbose > 10) {
+	cout << idx << " " << fRecM1Tmi << " " << fRecM2Tmi << endl;
+      }
+      if (idx == fRecM1Tmi) {
+	d1Matched = 1; 
+      }
+      if (idx == fRecM2Tmi) {
+	d2Matched = 1; 
+      }
+    }
+    
+    if (d1Matched && d2Matched) {
+      fCandTmi = iC;
+      break;
+    }
+  }
+  if (fVerbose > 10) {
+    cout << "fCandTmi = " << fCandTmi << endl;
+  }
 }
 
 
 // ----------------------------------------------------------------------
 int bmmSignalReader::tmCand(TAnaCand *pC) {
-  
+  TAnaCand *pCand(0);
+  for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
+    pCand = fCands[iC]; 
+    if (pCand == pC) {
+      if (iC == fCandTmi) {
+	if (fNGenPhotons) {
+	  return 2; 
+	} else {
+	  return 1;
+	}
+      } else {
+	return 0; 
+      }
+    }
+  }
+  return 0;
+}
+
+// ----------------------------------------------------------------------
+int bmmSignalReader::tmCand2(TAnaCand *pC) {
+  // this is just not the correct way how to truth math!!
   TAnaTrack *pT; 
   vector<TGenCand*> gCand; 
   for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
@@ -330,18 +582,21 @@ int bmmSignalReader::tmCand(TAnaCand *pC) {
     gCand.push_back(fpEvt->getGenCand(pT->fGenIndex)); 
   }
 
-  TGenCand *pG, *pM; 
+  TGenCand *pG, *pM, *pB(0); 
   int matched(0), genDaughters(0); 
   for (unsigned int i = 0; i < gCand.size(); ++i) {
     pG = gCand[i]; 
+    if (fVerbose > 10) cout << pG->fID << endl;
     if (pG->fMom1 > -1) {
       pM = fpEvt->getGenCand(pG->fMom1); 
+      cout << pG->fNumber << "  " << pG->fID << "     " << pM->fNumber << "  " << pM->fID << endl;
     } else {
       return 0; 
     }
-    if (531 != TMath::Abs(pM->fID)) {
+    if (531 != TMath::Abs(pM->fID) ) {
       return 0;  
     } else {
+      cout << "    with mother 531 at " << pM->fNumber << endl;
       ++matched; 
     }
   }

@@ -37,14 +37,31 @@ public:
   void    readCuts(TString filename, int dump = 1);
   void    initVariables();
   void    MCKinematics();
+  void    efficiencyCalculation();
   void    candidateSelection(int mode = 0); 
   void    fillCandidateVariables();
   void    fillCandidateHistograms(); 
   int     tmCand(TAnaCand *pC);
+  int     tmCand2(TAnaCand *pC);
   void    insertCand(TAnaCand* pCand);
+
+  void    genMatch();
+  void    recoMatch();
+  void    candMatch();
   
   double       fKa1Pt, fKa1Eta, fKa1Phi;
   double       fKa2Pt, fKa2Eta, fKa2Phi;
+
+  double       fKa1PtNrf, fKa1EtaNrf;
+  double       fKa2PtNrf, fKa2EtaNrf;
+
+  double       fKa1PtGen, fKa1EtaGen, fKa2PtGen, fKa2EtaGen;
+  int          fKa1TkQuality, fKa2TkQuality;
+
+  // -- TM 
+  int                     fGenK1Tmi, fGenK2Tmi; 
+  int                     fRecK1Tmi, fRecK2Tmi; 
+  
 
   // -- Additional variables and cuts for Bs -> J/psi phi
   double            MKKLO, MKKHI, DELTAR;

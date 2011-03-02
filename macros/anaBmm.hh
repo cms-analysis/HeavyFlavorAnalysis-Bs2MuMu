@@ -45,6 +45,7 @@ public:
   void dumpCutNames();
   void allEffTables();
   void computeNormUL();
+  void computeCsBF();
   void effTable(std::string mode);
   void breco(TH1D *h); 
   void acceptanceAndPreselection(int mode);
@@ -55,6 +56,7 @@ public:
   void optimizeCut(const char *cut, double lo, double hi, const char *otherCuts); 
   void optimizeUL(int nruns = 10); 
   void normYield(TH1 *h, int mode, double lo = 5.15, double hi=5.5);
+  void csYield(TH1 *h, int mode, double lo = 5.25, double hi=5.6);
   void bgBlind(TH1 *h, int mode = 2, double lo = 4.5, double hi = 6.5); 
   void barlow(int nobs, double bg = 0., double bgE = 0., double sE = 0.);
   void rolkeM3();
@@ -118,29 +120,43 @@ public:
   double fBgLo, fBgHi;
   double fPeak, fWidth;
   double fNormLo, fNormHi;
+  double fCsLo, fCsHi; 
 
   double fNul, fUL;
   int    fNobs, fNobsExp;
   double fBgExp, fBgExpE; 
   double fBgHist, fBgHistE; 
-  double fAcc, fAccE;
+  double fAcc, fAccE, fAccNum;
   double fEff, fEffE;
   double fEffAna, fEffAnaE;
   double fEffPresel, fEffPreselE;
   double fEffMuID, fEffMuIDE;
   double fEffTrig, fEffTrigE;
+  double fEffTot, fEffTotE;
 
   double fSigGenFilter, fSigGenFilterE; 
   double fNormGenFilter, fNormGenFilterE; 
+  double fCsGenFilter, fCsGenFilterE; 
 
   // -- normalization numbers
   double fNormSig, fNormSigE;
-  double fNormAcc, fNormAccE;
+  double fNormAcc, fNormAccE, fNormAccNum;
   double fNormEff, fNormEffE;
   double fNormEffAna, fNormEffAnaE;
   double fNormEffPresel, fNormEffPreselE;
   double fNormEffMuID, fNormEffMuIDE;
   double fNormEffTrig, fNormEffTrigE;
+  double fNormEffTot, fNormEffTotE;
+
+  // -- control sample numbers
+  double fCsSig, fCsSigE;
+  double fCsAcc, fCsAccE, fCsAccNum;
+  double fCsEff, fCsEffE;
+  double fCsEffAna, fCsEffAnaE;
+  double fCsEffPresel, fCsEffPreselE;
+  double fCsEffMuID, fCsEffMuIDE;
+  double fCsEffTrig, fCsEffTrigE;
+  double fCsEffTot, fCsEffTotE;
 
 
   double fBF, fu, fs;
