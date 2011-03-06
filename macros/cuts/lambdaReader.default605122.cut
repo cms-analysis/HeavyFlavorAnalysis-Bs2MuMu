@@ -17,3 +17,6 @@ CUTReadDecayMaps   1 # 1:true, 0: false
 CUTPrintDecayMaps  0 # 1:true, 0: false
 CUTDecayMap1 decamap1sorted.out
 CUTDecayMap2 decamap2sorted.out
+# select HLT path used for trigger selection and efficiency calculations
+CUTuseHLTDoubleMu0 1
+CUTuseHLTMu0TkMu0 0

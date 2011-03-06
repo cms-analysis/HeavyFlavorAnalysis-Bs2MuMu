@@ -99,6 +99,10 @@ public:
 
     bool fL0matched; // true if there exists a valid MC match
 
+    // truth matching parameters
+    double truthmatchPrDeltaR, truthmatchPiDeltaR;
+    double truthmatchVtxRatio, truthmatchVtxInvRatio;
+
     // vertex of L0
     double fgenL0vtxR, fgenL0vtxZ;
 

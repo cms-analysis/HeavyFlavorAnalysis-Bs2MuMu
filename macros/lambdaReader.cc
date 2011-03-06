@@ -190,6 +190,24 @@ void lambdaReader::startAnalysis()
     }
     // book reduced trees
     bookReducedTree();
+    // PidTables
+    std::string path = "pidtables/LambdaB/";
+    pidLambda0 = new PidTable((path+"pid_lambda0.dat").c_str());
+    pidCuts = new PidTable((path+"pid_cuts.dat").c_str());
+    if(!fIsMC)
+    {
+	pidMuId = new PidTable((path+"pid_muId.dat").c_str());
+	pidMuTrk = new PidTable((path+"pid_muTrk.dat").c_str());
+	pidMuTrg = new PidTable((path+"pid_muTrg_HLT2mu0_Run2010A.dat").c_str());
+	pidMuTrg2 = new PidTable((path+"pid_muTrg_HLT2mu0_Run2010B.dat").c_str());
+    }
+    else
+    {
+	pidMuId = new PidTable((path+"pid_muIdMC.dat").c_str());
+	pidMuTrk = new PidTable((path+"pid_muTrgMC.dat").c_str());
+	pidMuTrg = new PidTable((path+"pid_muTrkMC.dat").c_str());
+    }
+
 }
 
 // ----------------------------------------------------------------------
@@ -207,6 +225,7 @@ void lambdaReader::endAnalysis()
 // ----------------------------------------------------------------------
 void lambdaReader::eventProcessing()
 {
+    initVariables(); // still very crude...
 
     ((TH1D*)fpHistFile->Get("h1"))->Fill(fpEvt->nRecTracks());
     ((TH1D*)fpHistFile->Get("h2"))->Fill(fpEvt->nCands());
@@ -244,6 +263,7 @@ void lambdaReader::eventProcessing()
                 if (curCand.isOk)
                 {
 		    doTriggerMatching();
+		    doEfficiencies();
                     if (doCandStuff(curCand) && doCandFitStuff(curCand)) fTree->Fill();
                     candcounter++;
                 }
@@ -287,6 +307,7 @@ void lambdaReader::eventProcessing()
             if (doCandStuff((*it).first) && doCandFitStuff((*it).second))
 	    {
 		doTriggerMatching();
+		doEfficiencies();
 		fTree->Fill();
 	    }
         }
@@ -492,12 +513,14 @@ bool lambdaReader::doCandStuff(const CheckedLbCand &clc)
 
     // candidate data from fit
     fml0=tacLambda0->fMass;
+    fml0tlv=(tlvSigPr+tlvSigPi).M();
     fptl0=tacLambda0->fPlab.Perp();
     fpl0=tacLambda0->fPlab.Mag();
     fetal0=tlvLambda0.Eta();
     fphil0=tlvLambda0.Phi();
 
     fmjp=tacJpsi->fMass;
+    fmjptlv=(tlvSigMu1+tlvSigMu2).M();
     fptjp=tacJpsi->fPlab.Perp();
     fpjp=tacJpsi->fPlab.Mag();
     fetajp=tlvJpsi.Eta();
@@ -620,6 +643,8 @@ bool lambdaReader::doCandFitStuff(const CheckedLbCand &clc)
     const TVector3 vecPVLb = tacJpsi->fVtx.fPoint - vecPV;
     const double alphal0 = vecJpsiL0.Angle(tacLambda0->fPlab);
     const double alphalb = vecPVLb.Angle(tacCur->fPlab);
+    const double ptgangDRl0 = vecJpsiL0.DeltaR(tacLambda0->fPlab);
+    const double ptgangDRlb = vecPVLb.DeltaR(tacCur->fPlab);
 
     // calculate beta factor as 3d vector
     const TVector3 vecBetaL0 = vecJpsiL0 * (1. / tlvLambda0.E());
@@ -704,6 +729,8 @@ bool lambdaReader::doCandFitStuff(const CheckedLbCand &clc)
     // pointing angles
     falphalb=alphalb;
     falphal0=alphal0;
+    fptgangDRl0 = ptgangDRl0;
+    fptgangDRlb = ptgangDRlb;
 
     // dR and angles
     fdRl0jp=tlvLambda0.DeltaR(tlvLambdaB);
@@ -807,6 +834,13 @@ void lambdaReader::doGenLevelStuff()
         }
         if(5122==abs(gc5122->fID))
         {
+	    // some kinematic variables for comparison with reco
+	    fptgenlb = gc5122->fP.Pt();
+	    fmgenlb = gc5122->fMass;
+	    fphigenlb = gc5122->fP.Phi();
+	    fetagenlb = gc5122->fP.Eta();
+	    fygenlb = gc5122->fP.Rapidity();
+
             // reset tree variables
             fgmlb = fgmlbsw = fgml0 = fgml0sw = 9999;
             fgptpr = fgptpi = fgptmu1 = fgptmu2 = 9999;
@@ -1033,11 +1067,31 @@ void lambdaReader::doHLTstuff()
 	    if ("HLT_L2DoubleMu0"        == name) fHLTL2DMu0 = true;
 	    if ("HLT_Mu5_L2Mu0"          == name) fHLTL2Mu0 = true;
 	    // a run number dependent summary result -- final decision
-	    if (fRun >= 140058 && fRun <= 144114) fHLTok = fHLTMu0TkMu0jp; // Run2010A
-	    else if (fRun >= 146428 && fRun <= 147116) fHLTok = fHLTMu0jp; // Run2010B
-	    else if (fRun >= 147196 && fRun <= 148058) fHLTok = fHLTMu0jp;
-	    else if (fRun >= 148819 && fRun <= 149182) fHLTok = fHLTMu0jpT2;
-	    else if (fRun >= 149291 && fRun <= 149294) fHLTok = fHLTMu0jpT3;
+	    if (!fIsMC)
+	    {
+		if(CUTuseHLTDoubleMu0)
+		{
+		    // First run range covers Run2010A plus the part of Run2010B where the triggers
+		    // were like during A.
+		    if (fRun >= 140058 && fRun < 147196) fHLTok = fHLTDMu0;
+		    // The second range covers Run2010B with the new set of triggers, esp. when
+		    // HLT_DoubleMu0 was prescaled and replaced by HLT_DoubleMu0_Quarkonium_v1
+		    if (fRun >= 147196 && fRun <= 149294) fHLTok = fHLTqrk;
+		}
+		if(CUTuseHLTMu0TkMu0)
+		{
+		    if (fRun >= 140058 && fRun <= 144114) fHLTok = fHLTMu0TkMu0jp; // Run2010A
+		    else if (fRun >= 146428 && fRun <= 147116) fHLTok = fHLTMu0jp; // Run2010B
+		    else if (fRun >= 147196 && fRun <= 148058) fHLTok = fHLTMu0jp;
+		    else if (fRun >= 148819 && fRun <= 149182) fHLTok = fHLTMu0jpT2;
+		    else if (fRun >= 149291 && fRun <= 149294) fHLTok = fHLTMu0jpT3;
+		}
+	    }
+	    else
+	    {
+		if(CUTuseHLTMu0TkMu0) fHLTok = fHLTMu0jp; // to be adjusted depending on the version of CMSSW used for MC
+		if(CUTuseHLTDoubleMu0) fHLTok = fHLTDMu0; // fHLTDMu0 for older, fHLTqrk for newer MC;
+	    }
 	}
     }
 }
@@ -1053,7 +1107,6 @@ void lambdaReader::doTriggerMatching()
     TLorentzVector tlvMu1, tlvMu2;
     tlvMu1.SetPtEtaPhiM(frpt1m,freta1m,frphi1m,MMUON);
     tlvMu2.SetPtEtaPhiM(frpt2m,freta2m,frphi2m,MMUON);
-    cout << "fVerbose: " << fVerbose << endl;
     if (fVerbose > 5)
     {
 	cout << "dump trigger objects ----------------------" << endl;
@@ -1091,9 +1144,89 @@ void lambdaReader::doTriggerMatching()
 }
 
 // ----------------------------------------------------------------------
+void lambdaReader::doEfficiencies()
+{
+    bool effOk = true;
+    fEffMuId1 = fEffMuId2 = fEffMuTrk1 = fEffMuTrk2 = fEffMuTrg1 = fEffMuTrg2 = -99;
+    fEffMu = fEffL0 = fEffCuts = fEfficiency = -99;
+    double effErrSq(0);
+    // get muon efficiencies
+    fEffMuId1 = pidMuId->effD(fSpt1m,TMath::Abs(fSeta1m),fSphi1m);
+    effErrSq += square(pidMuId->errD(fSpt1m,TMath::Abs(fSeta1m),fSphi1m));
+    fEffMuId2 = pidMuId->effD(fSpt2m,TMath::Abs(fSeta2m),fSphi2m);
+    effErrSq += square(pidMuId->errD(fSpt2m,TMath::Abs(fSeta2m),fSphi2m));
+    fEffMuTrk1 = pidMuTrk->effD(fSpt1m,TMath::Abs(fSeta1m),fSphi1m);
+    effErrSq += square(pidMuTrk->errD(fSpt1m,TMath::Abs(fSeta1m),fSphi1m));
+    fEffMuTrk2 = pidMuTrk->effD(fSpt2m,TMath::Abs(fSeta2m),fSphi2m);
+    effErrSq += square(pidMuTrk->errD(fSpt2m,TMath::Abs(fSeta2m),fSphi2m));
+    if (CUTuseHLTMu0TkMu0)
+    {
+	fEffMuTrg1 = pidMuTrg->effD(fSpt1m,TMath::Abs(fSeta1m),fSphi1m);
+	effErrSq += square(pidMuTrg->errD(fSpt1m,TMath::Abs(fSeta1m),fSphi1m));
+	fEffMuTrg2 = pidMuTrg->effD(fSpt2m,TMath::Abs(fSeta2m),fSphi2m);
+	effErrSq += square(pidMuTrg->errD(fSpt2m,TMath::Abs(fSeta2m),fSphi2m));
+    }
+    if (CUTuseHLTDoubleMu0)
+    {
+	if (!fIsMC)
+	{
+	    if (fRun >= 140058 && fRun < 147196) // use efficiencies for HLT_DoubleMu0 (Run2010A + part of B)
+	    {
+		fEffMuTrg1 = pidMuTrg->effD(fSpt1m,TMath::Abs(fSeta1m),fSphi1m);
+		effErrSq += square(pidMuTrg->errD(fSpt1m,TMath::Abs(fSeta1m),fSphi1m));
+	        fEffMuTrg2 = pidMuTrg->effD(fSpt2m,TMath::Abs(fSeta2m),fSphi2m);
+		effErrSq += square(pidMuTrg->errD(fSpt2m,TMath::Abs(fSeta2m),fSphi2m));
+	    }
+	    if (fRun >= 147196 && fRun <= 149294) // use efficiencies for HLT_DoubleMu0_Quarkonium_v1 (Run2010B, most of)
+	    {
+		fEffMuTrg1 = pidMuTrg2->effD(fSpt1m,TMath::Abs(fSeta1m),fSphi1m);
+		effErrSq += square(pidMuTrg2->errD(fSpt1m,TMath::Abs(fSeta1m),fSphi1m));
+		fEffMuTrg2 = pidMuTrg2->effD(fSpt2m,TMath::Abs(fSeta2m),fSphi2m);
+		effErrSq += square(pidMuTrg2->errD(fSpt2m,TMath::Abs(fSeta2m),fSphi2m));
+	    }
+	}
+	else
+	{   // be cautious! this must match the trigger. use pidMuTrg for older, pidMuTrg2 for newer MC
+	    fEffMuTrg1 = pidMuTrg->effD(fSpt1m,TMath::Abs(fSeta1m),fSphi1m);
+	    effErrSq += square(pidMuTrg->errD(fSpt1m,TMath::Abs(fSeta1m),fSphi1m));
+	    fEffMuTrg2 = pidMuTrg->effD(fSpt2m,TMath::Abs(fSeta2m),fSphi2m);
+	    effErrSq += square(pidMuTrg->errD(fSpt2m,TMath::Abs(fSeta2m),fSphi2m));
+	}
+    }
+    //if (fIsMCmatch && fIsSig)
+    //{
+	//cout << "fRun: " << fRun << " fLS: " << fLS << " fEvt: " << fEvt << endl;
+	//cout << "  fEffMuId1: " << fEffMuId1 << " fEffMuTrk1: " << fEffMuTrk1 << " fEffMuTrg1: " << fEffMuTrg1 << " (" << fSpt1m << "," << TMath::Abs(fSeta1m) << "," << fSphi1m << ")" << endl;
+	//cout << "  fEffMuId2: " << fEffMuId2 << " fEffMuTrk2: " << fEffMuTrk2 << " fEffMuTrg2: " << fEffMuTrg2 << " (" << fSpt2m << "," << TMath::Abs(fSeta2m) << "," << fSphi2m << ")" << endl;
+    //}
+    fEffMu = fEffMuId1 * fEffMuId2 * fEffMuTrk1 * fEffMuTrk2 * fEffMuTrg1 * fEffMuTrg2;
+    effOk = effOk && (fEffMuId1  >= 0) && (fEffMuId2  >= 0);
+    effOk = effOk && (fEffMuTrk1 >= 0) && (fEffMuTrk2 >= 0);
+    effOk = effOk && (fEffMuTrg1 >= 0) && (fEffMuTrg2 >= 0);
+    // get lambda reco efficiency
+    fEffL0 = pidLambda0->effD(fptl0,TMath::Abs(fetal0),fphil0);
+    effOk = effOk && (fEffL0 >= 0);
+    // get cuts efficiency
+    fEffCuts = pidCuts->effD(fptlb,TMath::Abs(fetalb),fphilb);
+    effOk = effOk && (fEffCuts >= 0);
+    // calculate final efficiency
+    if (effOk)
+    {
+	fEfficiency = fEffMu * fEffL0 * fEffCuts;
+	fEffErr = TMath::Sqrt(effErrSq);
+    }
+    else
+    {
+	fEfficiency = -99;
+	fEffErr = -99;
+    }
+}
+
+// ----------------------------------------------------------------------
 void lambdaReader::initVariables()
 {
-
+    fIsSig = false;
+    fIsMCmatch = false;
 }
 
 // ----------------------------------------------------------------------
@@ -1191,7 +1324,9 @@ void lambdaReader::bookReducedTree()
     // candidates
     fTree->Branch("mlb",     &fmlb,     "mlb/D");
     fTree->Branch("ml0",     &fml0,     "ml0/D");
+    fTree->Branch("ml0tlv",  &fml0tlv,  "ml0tlv/D");
     fTree->Branch("mjp",     &fmjp,     "mjp/D");
+    fTree->Branch("mjptlv",  &fmjptlv,  "mjptlv/D");
     fTree->Branch("ptlb",    &fptlb,    "ptlb/D");
     fTree->Branch("ptl0",    &fptl0,    "ptl0/D");
     fTree->Branch("pjp",     &fpjp,     "pjp/D");
@@ -1205,6 +1340,13 @@ void lambdaReader::bookReducedTree()
     fTree->Branch("phil0",   &fphil0,   "phil0/D");
     fTree->Branch("phijp",   &fphijp,   "phijp/D");
     fTree->Branch("ylb",     &fylb,     "ylb/D");
+
+    // gen matched variables for resolution estimation
+    fTree->Branch("ptgenlb", &fptgenlb, "ptgenlb/D");
+    fTree->Branch("mgenlb",  &fmgenlb,  "mgenlb/D");
+    fTree->Branch("phigenlb",&fphigenlb,"phigenlb/D");
+    fTree->Branch("etagenlb",&fetagenlb,"etagenlb/D");
+    fTree->Branch("ygenlb",  &fygenlb,  "ygenlb/D");
 
     // signal tracks
     fTree->Branch("rpt1m",   &frpt1m,   "rpt1m/D");
@@ -1254,6 +1396,8 @@ void lambdaReader::bookReducedTree()
     fTree->Branch("Kshypo",  &fKshypo,  "Kshypo/D");
     fTree->Branch("alphalb", &falphalb, "alphalb/D");
     fTree->Branch("alphal0", &falphal0, "alphal0/D");
+    fTree->Branch("ptgangDRlb", &fptgangDRlb, "ptgangDRlb/D");
+    fTree->Branch("ptgangDRl0", &fptgangDRl0, "ptgangDRl0/D");
     fTree->Branch("maxdocalb",&fmaxdocalb,    "maxdocalb/D");
     fTree->Branch("maxdocal0",&fmaxdocal0,    "maxdocal0/D");
     fTree->Branch("maxdocajp",&fmaxdocajp,    "maxdocajp/D");
@@ -1370,6 +1514,19 @@ void lambdaReader::bookReducedTree()
     fTree->Branch("HLTL2Mu0", &fHLTL2Mu0, "HLTL2Mu0/O");
     fTree->Branch("HLTok", &fHLTok, "HLTok/O");
     fTree->Branch("HLTmatch", &fHLTmatch, "HLTmatch/O");
+
+    // efficiencies
+    fTree->Branch("EffL0",     &fEffL0,      "EffL0/D");
+    fTree->Branch("EffMu",     &fEffMu,      "EffMu/D");
+    fTree->Branch("EffMuId1",  &fEffMuId1,   "EffMuId1/D");
+    fTree->Branch("EffMuTrk1", &fEffMuTrk1,  "EffMuTrk1/D");
+    fTree->Branch("EffMuTrg1", &fEffMuTrg1,  "EffMuTrg1/D");
+    fTree->Branch("EffMuId2",  &fEffMuId2,   "EffMuId2/D");
+    fTree->Branch("EffMuTrk2", &fEffMuTrk2,  "EffMuTrk2/D");
+    fTree->Branch("EffMuTrg2", &fEffMuTrg2,  "EffMuTrg2/D");
+    fTree->Branch("EffCuts",   &fEffCuts,    "EffCuts/D");
+    fTree->Branch("Eff",       &fEfficiency, "Eff/D");
+    fTree->Branch("EffErr",    &fEffErr,     "EffErr/D");
 
     // Generator tree ==========================================
     fGenTree = new TTree("genevents", "genevents");
@@ -1554,6 +1711,18 @@ void lambdaReader::readCuts(TString filename, int dump)
                 setCut(CUTDecayMap2, value);
                 continue;
             }
+	    if("CUTuseHLTDoubleMu0" == key)
+	    {
+		setCut(CUTuseHLTDoubleMu0, value);
+		if(CUTuseHLTMu0TkMu0 && CUTuseHLTDoubleMu0) throw std::invalid_argument("CUT error: You can either use CUTuseHLTDoubleMu0 or CUTuseHLTMu0TkMu0, not both at the same time");
+		continue;
+	    }
+	    if("CUTuseHLTMu0TkMu0" == key)
+	    {
+		setCut(CUTuseHLTMu0TkMu0, value);
+		if(CUTuseHLTMu0TkMu0 && CUTuseHLTDoubleMu0) throw std::invalid_argument("CUT error: You can either use CUTuseHLTDoubleMu0 or CUTuseHLTMu0TkMu0, not both at the same time");
+		continue;
+	    }
 
             cout << "==> lambdaReader: ERROR in cutfile: Don't know what to do with " << key << "=" << value << endl;
         }

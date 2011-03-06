@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
+#include <iomanip>
 
 using std::cout;
 using std::endl;
@@ -49,6 +50,19 @@ void lambdaEffReader::startAnalysis()
     cout << "==> lambdaEffReader: Starting analysis..." << endl;
     // book reduced trees
     bookReducedTree();
+
+    truthmatchPrDeltaR = 0.1;
+    truthmatchPiDeltaR = 0.2;
+    truthmatchVtxRatio = 1.3;
+    truthmatchVtxInvRatio = 1./truthmatchVtxRatio;
+
+    const int precision(2);
+    cout << "---- BEGIN vdef block for automated transfer to LaTeX ----" << endl;
+    cout << "\\vdef{cuts:lambdaeff:truthmatchPrDeltaR}{\\ensuremath{<" << std::setprecision(precision) << truthmatchPrDeltaR << "}}" << endl;
+    cout << "\\vdef{cuts:lambdaeff:truthmatchPiDeltaR}{\\ensuremath{<" << std::setprecision(precision) << truthmatchPiDeltaR << "}}" << endl;
+    cout << "\\vdef{cuts:lambdaeff:truthmatchVtxRatio}{\\ensuremath{<" << std::setprecision(precision) << truthmatchVtxRatio << "}}" << endl;
+    cout << "\\vdef{cuts:lambdaeff:truthmatchVtxInvRatio}{\\ensuremath{>" << std::setprecision(precision) << truthmatchVtxInvRatio << "}}" << endl;
+    cout << "---- END vdef block for automated transfer to LaTeX ----" << endl;
 }
 
 // ----------------------------------------------------------------------
@@ -150,7 +164,8 @@ void lambdaEffReader::eventProcessing()
 
 			    //if(recVtx.DeltaR(genVtx) < .3 && tlvSigPr.DeltaR(tlvGenPr) < .1 && tlvSigPi.DeltaR(tlvGenPi) < .2)
 			    const double rRatio = recVtx.Mag() /  genVtx.Mag();
-			    if(tlvSigPr.DeltaR(tlvGenPr) < .1 && tlvSigPi.DeltaR(tlvGenPi) < .2 && rRatio > 0.77 && rRatio < 1.3)
+			    if(tlvSigPr.DeltaR(tlvGenPr) < truthmatchPrDeltaR && tlvSigPi.DeltaR(tlvGenPi) < truthmatchPiDeltaR
+				    && rRatio > truthmatchVtxInvRatio && rRatio < truthmatchVtxRatio)
 			    {
 				// set tree variables
 				fL0matched = true;

@@ -23,6 +23,8 @@
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaJet.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
 
+#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
+
 #include "treeReader01.hh"
 
 
@@ -88,10 +90,12 @@ public:
     void doL1stuff();
     void doHLTstuff();
     void doTriggerMatching();
+    void doEfficiencies();
     bool compareCands(const CheckedLbCand clc1, const CheckedLbCand clc2);
     int  getSigId(const TAnaCand *tac, const int id, int pos);
     int  getCandId(const TAnaCand *tac, const int id, int pos);
     CheckedLbCand getCheckedLbCand(const TAnaCand *tac);
+    double square(double v) { return v*v; };
 
     template <typename T> void setCut(T &var, std::string value)
     {
@@ -115,17 +119,20 @@ public:
     bool CUTReadDecayMaps, CUTPrintDecayMaps;
     bool CUTgenTreeCandsOnly;
     std::string CUTDecayMap1, CUTDecayMap2;
+    bool CUTuseHLTDoubleMu0, CUTuseHLTMu0TkMu0;
 
     // -- Variables
     TAnaCand    *fpCand1, *fpCand2;
 
     // -- Candidate variables
     double fmlb, fml0, fmjp; // m
+    double fml0tlv, fmjptlv;
     double fptlb, fptl0, fptjp; // pt
     double fplb, fpl0, fpjp; // p
     double fetalb, fetal0, fetajp; // eta
     double fphilb, fphil0, fphijp; // phi
     double fylb; // rapidity
+    double fptgenlb, fmgenlb, fphigenlb, fetagenlb, fygenlb;
 
     double frpt1m, frpt2m, frptpr, frptpi; // kinematic variables of granddaughters
     double freta1m, freta2m, fretapr, fretapi;
@@ -142,6 +149,7 @@ public:
     double fKshypo; // mass of proton as Ks
 
     double falphalb, falphal0; // alpha
+    double fptgangDRlb, fptgangDRl0; // ptgangDR
     double fmaxdocalb, fmaxdocal0, fmaxdocajp; // maxdoca
 
     double fd3lb, fd3l0, fd3jp;    // 3d distance
@@ -211,6 +219,17 @@ public:
     bool fHLTok;
 
     bool fHLTmatch;
+
+    // PidTables
+    PidTable *pidLambda0;
+    PidTable *pidMuId, *pidMuTrk, *pidMuTrg, *pidMuTrg2;
+    PidTable *pidCuts;
+
+    // Efficiencies
+    double fEfficiency, fEffErr;
+    double fEffL0, fEffMu;
+    double fEffMuId1, fEffMuTrk1, fEffMuTrg1, fEffMuId2, fEffMuTrk2, fEffMuTrg2;
+    double fEffCuts;
 };
 
 #endif
