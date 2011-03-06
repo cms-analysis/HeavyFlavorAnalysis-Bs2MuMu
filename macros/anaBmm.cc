@@ -640,7 +640,7 @@ TH1* anaBmm::loopTree(int mode) {
 
   int brun, bevt, btm, bq1, bq2; 
   double bg1pt, bg2pt, bg1eta, bg2eta;
-  double bm, bcosa, biso1, bchi2, bdof, bdocatrk, bfls3d, bm1pt, bm2pt;
+  double bm, bcosa, biso1, bchi2, bdof, bdocatrk, bfls3d, bm1pt, bm2pt, bm1eta, bm2eta;
   double bmkk, bdr;
   double bw8mu, bw8tr;
   bool bhlt, bgmuid, bgtqual;
