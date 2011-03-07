@@ -46,6 +46,9 @@ public:
   virtual void setVerbosity(int f) {fVerbose = f;}
   virtual void setMC(int f) {std::cout << Form("setMC(%d)", f) << std::endl; fIsMC = f;}
   virtual void runBlind() {std::cout << "running blinded" << std::endl; BLIND = 1;}
+  virtual int  numberOfBPixLayers(TAnaTrack *t);
+  virtual int  numberOfPixLayers(TAnaTrack *t);
+  virtual int  numberOfBPixLayer1Hits(TAnaTrack *t);
 
 protected:
 

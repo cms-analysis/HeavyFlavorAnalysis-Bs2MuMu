@@ -152,5 +152,66 @@ void treeReader01::initVariables() {
 
   fRun = -1; 
 
+}
+int  treeReader01::numberOfBPixLayers(TAnaTrack *pTrack) {
+  bool layer1 = false, layer2 = false, layer3 = false;
+  int hits = pTrack->fValidHits;
+  //cout<<" muon1 "<<algo1<<" "<<qual1<<" "<<hits1<<hex<<" ";
+  if(hits>20) hits=20; // pattern has only 20 locations
+  for(int i =0; i<hits; ++i){
+    uint32_t pat = pTrack->fHitPattern[i];
+    //cout<<pat<<" ";
+    if( pat == 0x488 ) layer1 = true;
+    else if( pat == 0x490 ) layer2 = true;
+    else if( pat == 0x498 ) layer3 = true;
+  }
+  //cout<<dec<<endl;
+  
+  int pixHits=0;
+  if(layer1) {pixHits++;}
+  if(layer2) {pixHits++;}
+  if(layer3) {pixHits++;}
 
+  return pixHits;
+}
+int  treeReader01::numberOfPixLayers(TAnaTrack *pTrack) {
+  bool layer1 = false, layer2 = false, layer3 = false, disk1=false, disk2=false;
+  int hits = pTrack->fValidHits;
+  //cout<<" muon1 "<<algo1<<" "<<qual1<<" "<<hits1<<hex<<" ";
+  if(hits>20) hits=20; // pattern has only 20 locations
+  for(int i =0; i<hits; ++i){
+    uint32_t pat = pTrack->fHitPattern[i];
+    //cout<<pat<<" ";
+    if( pat == 0x488 ) layer1 = true;
+    else if( pat == 0x490 ) layer2 = true;
+    else if( pat == 0x498 ) layer3 = true;
+    else if( pat == 0x508 ) disk1 = true;
+    else if( pat == 0x510 ) disk2 = true;
+  }
+  //cout<<dec<<endl;
+  
+  int pixHits=0;
+  if(layer1) {pixHits++;}
+  if(layer2) {pixHits++;}
+  if(layer3) {pixHits++;}
+  if(disk1) {pixHits++;}
+  if(disk2) {pixHits++;}
+
+  return pixHits;
+}
+int  treeReader01::numberOfBPixLayer1Hits(TAnaTrack *pTrack) {
+  int pixHits=0;
+  int hits = pTrack->fValidHits;
+  //cout<<" muon1 "<<algo1<<" "<<qual1<<" "<<hits1<<hex<<" ";
+  if(hits>20) hits=20; // pattern has only 20 locations
+  for(int i =0; i<hits; ++i){
+    uint32_t pat = pTrack->fHitPattern[i];
+    //cout<<pat<<" ";
+    if( pat == 0x488 ) pixHits++;
+    //else if( pat == 0x490 ) layer2 = true;
+    //else if( pat == 0x498 ) layer3 = true;
+  }
+  //cout<<dec<<endl;
+
+  return pixHits;
 }
