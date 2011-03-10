@@ -14,6 +14,7 @@ class phiReader : public massReader {
 		virtual void eventProcessing();
 		
 	protected:
+		virtual void clearVariables();
 		virtual int loadCandidateVariables(TAnaCand *pCand);
 		virtual int checkTruth(TAnaCand *cand);
 		

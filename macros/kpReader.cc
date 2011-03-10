@@ -83,6 +83,36 @@ void kpReader::eventProcessing()
 	}
 } // eventProcessing()
 
+void kpReader::clearVariables()
+{
+	massReader::clearVariables();
+	
+	fMassJPsi = 0.0;
+	fMassJPsiRec = 0.0;
+	fDeltaR = 0.0;
+	
+	fChi2Jpsi = 0.0;
+	fMassJpsiKp = 0.0;
+	
+	fPtMu1 = 0.0;
+	fPtMu2 = 0.0;
+	fPtKp = 0.0;
+	
+	fMuID1 = 0; fMuID2 = 0;
+	fEtaMu1 = 0.0; fEtaMu2 = 0.0;
+	
+	fTrackQual_mu1 = 0;
+	fTrackQual_mu2 = 0;
+	fTrackQual_kp = 0;
+	
+	fQ_mu1;
+	fQ_mu2;
+	fQ_kp;
+	
+	fD3_BpJpsi = 0.0;
+	fD3e_BpJpsi = 0.0;
+} // clearVariables()
+
 int kpReader::loadCandidateVariables(TAnaCand *pCand)
 {
 	int type, first_mu = 1;
@@ -108,9 +138,7 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	fMuID2 = 0;
 	fEtaMu1 = 0.0f;
 	fEtaMu2 = 0.0f;
-	
-	if (pCand->fType % 1000 != 521) return 0;
-	
+		
 	result = massReader::loadCandidateVariables(pCand);
 	
 	fCtau = kMassBplus / pCand->fPlab.Mag() * fD3;

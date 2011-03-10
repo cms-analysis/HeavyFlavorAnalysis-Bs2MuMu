@@ -87,6 +87,38 @@ void phiReader::eventProcessing()
 	}
 } // eventProcessing()
 
+void phiReader::clearVariables()
+{
+	massReader::clearVariables();
+	
+	fMassJPsi = 0.0;
+	fMassJPsiRec = 0.0;
+	fMassPhi = 0.0;
+	fDeltaR = 0.0;
+	fDeltaR_Kaons = 0.0;
+	
+	fPtMu1 = 0.0;
+	fPtMu2 = 0.0;
+	fPtKp1 = 0.0;
+	fPtKp2 = 0.0;
+	
+	fMuID1 = 0; fMuID2 = 0;
+	fEtaMu1 = 0.0; fEtaMu2 = 0.0;
+	fMuID_Kp1 = 0; fMuID_Kp2 = 0;
+	
+	fTrackQual_mu1 = 0;
+	fTrackQual_mu2 = 0;
+	fTrackQual_kp1 = 0;
+	fTrackQual_kp2 = 0;
+	
+	fQ_mu1 = 0;
+	fQ_mu2 = 0;
+	fQ_kp1 = 0;
+	fQ_kp2 = 0;
+	
+	fD3_BsJpsi = 0.0;
+	fD3e_BsJpsi = 0.0;
+} // clearVariables()
 
 int phiReader::loadCandidateVariables(TAnaCand *pCand)
 {

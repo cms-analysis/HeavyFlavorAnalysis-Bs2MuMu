@@ -1,5 +1,6 @@
 #include "massReader.hh"
 #include <cstdlib>
+#include <cmath>
 
 using namespace std;
 
@@ -26,6 +27,13 @@ void massReader::eventProcessing()
 {
 	int j,nc;
 	
+	// Fill Generator Block candidates (for efficiency determination)
+	nc = fpEvt->nGenCands();
+	for (j = 0; j < nc; j++) {
+		if (loadGeneratorVariables(fpEvt->getGenCand(j)))
+			reduced_tree->Fill();
+	}
+	
 	// Fill a reduced tree
 	nc = fpEvt->nCands();
 	for (j = 0; j<nc; j++) {
@@ -35,12 +43,94 @@ void massReader::eventProcessing()
 	}
 } // massReader::eventProcessing()
 
+void massReader::clearVariables()
+{
+	fCandidate = 0;
+	fMass = 0.0;
+	fMassConstraint = 0.0;
+	fTruth = 0;
+	fTruthFlags = 0;
+	fEffFlags = 0;
+	fPt = 0.0;
+	fNbrMuons = 0;
+	fD3 = 0.0;
+	fD3E = 0.0;
+	fDxy = 0.0;
+	fDxyE = 0.0;
+	fAlpha = 0.0;
+	fAlphaXY = 0.0;
+	fChi2 = 0.0;
+	fNdof = 0.0;
+	fMaxDoca = 0.0;
+	fIso7_pt0 = 0.0;
+	fIso7_pt5 = 0.0;
+	fIso7_pt7 = 0.0;
+	fIso7_pt10 = 0.0;
+	fIso10_pt0 = 0.0;
+	fIso10_pt5 = 0.0;
+	fIso10_pt7 = 0.0;
+	fIso10_pt9 = 0.0;
+	fIso10_pt10 = 0.0;
+	fIso7_pt0_pv = 0.0;
+	fIso7_pt5_pv = 0.0;
+	fIso7_pt7_pv = 0.0;
+	fIso7_pt10_pv = 0.0;
+	fIso10_pt0_pv = 0.0;
+	fIso10_pt5_pv = 0.0;
+	fIso10_pt7_pv = 0.0;
+	fIso10_pt9_pv = 0.0;
+	fIso10_pt10_pv = 0.0;
+	fTriggers = 0.0;
+	fTriggersError = 0.0;
+	fTriggersFound = 0.0;
+	fCtau = 0.0;
+	fEta = 0.0;
+	memset(fTracksIx,0,sizeof(fTracksIx));
+	memset(fTracksIP,0,sizeof(fTracksIP));
+	memset(fTracksIPE,0,sizeof(fTracksIPE));
+	memset(fTracksPT,0,sizeof(fTracksPT));
+	memset(fTracksPTRel,0,sizeof(fTracksPTRel));
+} // clearVariables()
+
+int massReader::loadGeneratorVariables(TGenCand *pGen)
+{
+	int save = 0;
+	multiset<int> particles;
+	
+	if (trueDecay.size() == 0)
+		goto bail;
+	
+	
+	buildDecay(pGen,&particles);
+	particles.erase(22); // remove Bremsstrahlung
+	if (particles != trueDecay)
+		goto bail;
+	
+	// reset variables
+	clearVariables();
+	
+	// this is the right decay...
+	fCandidate = 0; // use 0 as special case...
+	fMass = pGen->fMass;
+	fEffFlags = loadEfficiencyFlags(pGen);
+	fPt = pGen->fP.Perp();
+	fEta = pGen->fP.Eta();
+	fTriggers = loadTrigger(&fTriggersError,&fTriggersFound);
+	
+	// save the candidate...
+	save = 1;
+bail:
+	return save;
+} // loadGeneratorVariables()
+
 int massReader::loadCandidateVariables(TAnaCand *pCand)
 {
 	TAnaTrack *pTrack;
 	TAnaCand *momCand;
 	TVector3 v1,v2,uVector;
 	unsigned j,k;
+	
+	clearVariables();
 	
 	// Save in the tree
 	fCandidate = pCand->fType;
@@ -123,6 +213,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fTruth = checkTruth(pCand);
 	fTruthFlags = loadTruthFlags(pCand);
 	fTriggers = loadTrigger(&fTriggersError,&fTriggersFound);
+	fEffFlags = 0;
 	
 	return 1;
 } // loadCandidateVariables()
@@ -141,6 +232,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("mass_c",&fMassConstraint,"mass_c/F");
 	reduced_tree->Branch("truth",&fTruth,"truth/I");
 	reduced_tree->Branch("truth_flags",&fTruthFlags,"truth_flags/I");
+	reduced_tree->Branch("eff_flags",&fEffFlags,"eff_flags/I");
 	reduced_tree->Branch("ident_muons",&fNbrMuons,"ident_muons/F");
 	reduced_tree->Branch("d3",&fD3,"d3/F");
 	reduced_tree->Branch("d3e",&fD3E,"d3e/F");
@@ -353,6 +445,23 @@ void massReader::findCandStructure(TAnaCand* pCand, map<int,int> *particles)
 	}
 } // findCandStructure()
 
+void massReader::findGenStructure(TGenCand *pGen, map<int,int> *particles)
+{
+	map<int,int>::const_iterator it;
+	int j;
+	
+	// insert this
+	for (j = 0; j < fpEvt->nRecTracks(); j++) {
+		if (fpEvt->getRecTrack(j)->fGenIndex == pGen->fNumber)
+			break;
+	}
+	particles->insert(make_pair<int,int>(pGen->fNumber, j < fpEvt->nRecTracks() ? j : -1));
+	
+	
+	for (j = pGen->fDau1; j <= pGen->fDau2; j++)
+		findGenStructure(fpEvt->getGenCand(j),particles);
+} // findGenStructure()
+
 void massReader::findAllTrackIndices(TAnaCand* pCand, map<int,int> *indices)
 {
 	int j;
@@ -453,6 +562,62 @@ int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 	
 	return triggers;
 } // loadTrigger()
+
+int massReader::loadEfficiencyFlags(TGenCand *gen)
+{
+	int effFlags = kGeneratorCand; // the fact we're here already implies we're a generator cand.
+	TGenCand *dau;
+	TAnaTrack *track;
+	map<int,int> genStruct; // (genIx,recTrackIx)
+	map<int,int>::const_iterator it;
+	
+	findGenStructure(gen,&genStruct);
+	
+	/* Check acceptance
+	 *	both muons have high purity track with pt_gen > 3 && |eta_gen| < 2.4
+	 */
+	for (it = genStruct.begin(); it != genStruct.end(); ++it) {
+		
+		dau = fpEvt->getGenCand(it->first);
+		if (abs(dau->fID) != 13) // no muon
+			continue;
+		
+		// pt
+		if (dau->fP.Perp() <= 3) // not in pt acceptance
+			goto bail;
+		
+		// eta
+		if (fabs(dau->fP.Eta()) >= 2.4) // not in eta acceptance
+			goto bail;
+		
+		if (it->second < 0) // no associated track
+			goto bail;
+		
+		track = fpEvt->getRecTrack(it->second);
+		if ((track->fTrackQuality & 0x1<<2) == 0) // no high purity track
+			goto bail;
+	}
+	effFlags |= kAcceptance; // candidate was in acceptance.
+	
+	/* Check muon efficiency
+	 *	both muons are global && tracker muon
+	 */
+	for (it = genStruct.begin(); it != genStruct.end(); ++it) {
+		
+		dau = fpEvt->getGenCand(it->first);
+		if (abs(dau->fID) != 13)
+			continue;
+		
+		// check muon id
+		track = fpEvt->getRecTrack(it->second);
+		if (track->fMuIndex < 0 || (track->fMuID & 6) != 6)
+			goto bail;
+	}
+	effFlags |= kEffMuon;
+	
+bail:
+	return effFlags;
+} // loadEfficiencyFlags()
 
 void massReader::readCuts(TString filename, int dump)
 {

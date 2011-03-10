@@ -20,6 +20,7 @@ class mumuReader : public massReader {
 		virtual void bookHist();
 	
 	protected:
+		virtual void clearVariables();
 		virtual int loadCandidateVariables(TAnaCand *pCand);
 		virtual int checkTruth(TAnaCand *pCand);
 

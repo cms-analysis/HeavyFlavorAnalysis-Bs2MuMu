@@ -48,6 +48,20 @@ void mumuReader::bookHist()
 	reduced_tree->Branch("q_mu2",&fQ_mu2,"q_mu2/I");
 } // bookHist()
 
+void mumuReader::clearVariables()
+{
+	massReader::clearVariables();
+	
+	fPtMu1 = 0.0; fPtMu2 = 0.0;
+	fMuID1 = 0; fMuID2 = 0;
+	fDeltaR = 0.0;
+	fEtaMu1 = 0.0; fEtaMu2 = 0.0;
+	fTrackQual_mu1 = 0;
+	fTrackQual_mu2 = 0;
+	fQ_mu1 = 0;
+	fQ_mu2 = 0;
+} // clearVariables()
+
 int mumuReader::loadCandidateVariables(TAnaCand *pCand)
 {
 	int result,type;

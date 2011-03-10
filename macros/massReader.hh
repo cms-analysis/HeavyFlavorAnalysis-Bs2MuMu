@@ -21,9 +21,21 @@ enum trigger_bits
 	kHLT_DoubleMu0_Quarkonium_v1_Bit = 1 << 2
 };
 
+// Truth Flags Bits
 enum truth_bits
 {
 	kTruthSameB_Bit = 1 << 0
+};
+
+// Efficiency Flags
+enum
+{
+	kGeneratorCand	= 1 << 0,
+	kAcceptance		= 1 << 1,
+	kEffMuon		= 1 << 2,
+//	kEffTrig is not needed
+//	kEffCand is not needed
+//	kEffAna is not needed
 };
 
 class massReader : public treeReader01 {
@@ -43,6 +55,8 @@ class massReader : public treeReader01 {
 		std::multiset<int> trueDecay;
 		int fTruthType;
 		
+		virtual void clearVariables();
+		virtual int loadGeneratorVariables(TGenCand *pGen);
 		virtual int loadCandidateVariables(TAnaCand *pCand);
 		virtual bool parseCut(char *cutName, float cutLow, float cutHigh, int dump = 1);
 		virtual bool applyCut();
@@ -53,24 +67,24 @@ class massReader : public treeReader01 {
 		virtual int countMuons(TAnaCand *cand); // count the number of identified muons
 		float calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt, bool sameVertex);
 		int loadTrigger(int *errTriggerOut = NULL, int *triggersFoundOut = NULL);
+		virtual int loadEfficiencyFlags(TGenCand *gen);
 
 		// other utility routines
 		TAnaCand *findCandidate(int candID, std::map<int,int> *particles); // particles = map(recTrackIx,particleID)
 		void buildDecay(TGenCand *gen, std::multiset<int> *particles);
 		void findCandStructure(TAnaCand* pCand, std::map<int,int> *particles); // map(recTrackIx,particleID)
+		void findGenStructure(TGenCand *pGen, std::map<int,int> *particles); // map(genIx,recTrackIx)
 		void findAllTrackIndices(TAnaCand* pCand, std::map<int,int> *indices); // map(recTrackIx,sigTrackIndex)
 	protected:
 		const char *fTreeName;
 		
 	protected:
 		int fCandidate;
-		TVector3 *fMomentumPtr;
-		TVector3 *fPVPositionPtr;
-		TVector3 *fCandVertexPtr;
 		float fMass;
 		float fMassConstraint; // mass of the constraint candidate...
 		int fTruth;		// is this background or a true candidate?
 		int fTruthFlags; // several partial truth flags
+		int fEffFlags; // flags to calculate the efficiencies...
 		float fPt; // pt of the top particle
 		float fNbrMuons;  // number of muons in the muon list.
 		float fD3;
