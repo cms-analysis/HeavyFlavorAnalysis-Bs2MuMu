@@ -739,7 +739,7 @@ bool massReader::applyCut()
 	bool pass = true;
 	
 	// check the candidate
-	if (fCutCand != 0) { // cut on candidate requested
+	if (fCutCand != 0 && fCandidate != 0) { // cut on candidate requested
 		pass = fCandidate == fCutCand;
 		if (!pass) goto bail;
 	}
