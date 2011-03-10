@@ -111,7 +111,7 @@ int massReader::loadGeneratorVariables(TGenCand *pGen)
 	
 	// this is the right decay...
 	fCandidate = 0; // use 0 as special case...
-	fMass = pGen->fMass;
+	fMass = pGen->fP.M();
 	fEffFlags = loadEfficiencyFlags(pGen);
 	fPt = pGen->fP.Perp();
 	fEta = pGen->fP.Eta();
