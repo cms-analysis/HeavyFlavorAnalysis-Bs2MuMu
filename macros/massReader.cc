@@ -18,6 +18,11 @@ massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, 
 	fCutTruth(0)
 {	
 	fTreeName = "massReader reduced tree";
+	
+	// add only the ones we actually need.
+	// feel free to enlarge this set.
+	stableParticles.insert(13); // muon
+	stableParticles.insert(321); // kaon
 } // massReader()
 
 massReader::~massReader()
@@ -85,6 +90,8 @@ void massReader::clearVariables()
 	fTriggersFound = 0.0;
 	fCtau = 0.0;
 	fEta = 0.0;
+	fPtMu1_Gen = 0.0;
+	fPtMu2_Gen = 0.0;
 	memset(fTracksIx,0,sizeof(fTracksIx));
 	memset(fTracksIP,0,sizeof(fTracksIP));
 	memset(fTracksIPE,0,sizeof(fTracksIPE));
@@ -127,8 +134,11 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 {
 	TAnaTrack *pTrack;
 	TAnaCand *momCand;
+	TGenCand *muGen;
 	TVector3 v1,v2,uVector;
 	unsigned j,k;
+	bool firstMu = true;
+	map<int,int> aTracks;
 	
 	clearVariables();
 	
@@ -215,6 +225,24 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fTriggers = loadTrigger(&fTriggersError,&fTriggersFound);
 	fEffFlags = 0;
 	
+	// generator pt of muons...
+	findAllTrackIndices(pCand,&aTracks);
+	for (map<int,int>::const_iterator it = aTracks.begin(); it != aTracks.end(); ++it) {
+		pTrack = fpEvt->getRecTrack(it->first);
+		if (pTrack->fGenIndex < 0 || pTrack->fGenIndex >= fpEvt->nGenCands())
+			continue;
+		
+		muGen = fpEvt->getGenCand(pTrack->fGenIndex);
+		if (abs(muGen->fID) == 13) {
+			if (firstMu)	fPtMu1_Gen = muGen->fP.Perp();
+			else			fPtMu2_Gen = muGen->fP.Perp();
+			firstMu = false;
+			
+		}
+	}
+	if (fPtMu1_Gen < fPtMu2_Gen)
+		swap(fPtMu1_Gen,fPtMu2_Gen);
+	
 	return 1;
 } // loadCandidateVariables()
 
@@ -243,6 +271,8 @@ void massReader::bookHist()
 	reduced_tree->Branch("chi2",&fChi2,"chi2/F");
 	reduced_tree->Branch("Ndof",&fNdof,"Ndof/F");
 	reduced_tree->Branch("max_doca",&fMaxDoca,"max_doca/F");
+	reduced_tree->Branch("pt_mu1_gen",&fPtMu1_Gen,"pt_mu1_gen/F");
+	reduced_tree->Branch("pt_mu2_gen",&fPtMu2_Gen,"pt_mu2_gen/F");
 	reduced_tree->Branch("iso7_pt0",&fIso7_pt0,"iso7_pt0/F");
 	reduced_tree->Branch("iso7_pt5",&fIso7_pt5,"iso7_pt5/F");
 	reduced_tree->Branch("iso7_pt7",&fIso7_pt7,"iso7_pt7/F");
@@ -570,20 +600,24 @@ int massReader::loadEfficiencyFlags(TGenCand *gen)
 	TAnaTrack *track;
 	map<int,int> genStruct; // (genIx,recTrackIx)
 	map<int,int>::const_iterator it;
+	bool muon;
 	
 	findGenStructure(gen,&genStruct);
 	
 	/* Check acceptance
 	 *	both muons have high purity track with pt_gen > 3 && |eta_gen| < 2.4
+	 *	all kaons have high purity track with pt_gen > .5 && |eta_gen| < 2.4
 	 */
 	for (it = genStruct.begin(); it != genStruct.end(); ++it) {
 		
 		dau = fpEvt->getGenCand(it->first);
-		if (abs(dau->fID) != 13) // no muon
+		if (stableParticles.count(abs(dau->fID)) == 0) // only check stable particles
 			continue;
 		
-		// pt
-		if (dau->fP.Perp() <= 3) // not in pt acceptance
+		muon = (abs(dau->fID) == 13);
+		
+		// pt (muon > 3 && kaon > 0.5)
+		if (dau->fP.Perp() <= (muon ? 3. : 0.5)) // not in pt acceptance
 			goto bail;
 		
 		// eta

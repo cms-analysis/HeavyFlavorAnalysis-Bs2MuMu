@@ -53,6 +53,7 @@ class massReader : public treeReader01 {
 		// For subclasses
 		TTree *reduced_tree;
 		std::multiset<int> trueDecay;
+		std::set<int> stableParticles; // the particles in here are considered stable
 		int fTruthType;
 		
 		virtual void clearVariables();
@@ -96,6 +97,8 @@ class massReader : public treeReader01 {
 		float fChi2; // chi2 of the vertex
 		float fNdof; // number of degrees of freedom of vertex
 		float fMaxDoca; // max doca
+		float fPtMu1_Gen; // pt of generator muon
+		float fPtMu2_Gen; // pt of generator muon
 		// isolation variables. fIsoX_ptY means opening angle deltaR < X/10 and only sum over
 		// tracks with pt > Y/10 GeV
 		float fIso7_pt0;
