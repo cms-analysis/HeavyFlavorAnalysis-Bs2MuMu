@@ -541,6 +541,10 @@ void bmmReader::fillCandidateVariables() {
   fCandEta   = fpCand->fPlab.Eta();
   fCandPhi   = fpCand->fPlab.Phi();
   fCandM     = fpCand->fMass;
+  fCandPvTip = fpCand->fPvTip;
+  fCandPvTipE= fpCand->fPvTipE;
+  fCandPvLip = fpCand->fPvLip;
+  fCandPvLipE= fpCand->fPvLipE;
 
   TAnaTrack *p0; 
   TAnaTrack *p1(0), *ps1(0);
@@ -585,6 +589,9 @@ void bmmReader::fillCandidateVariables() {
   fMu1W8Mu      = fpMuonID->effD(fMu1Pt, fMu1Eta, fMu1Phi);
   fMu1W8Tr      = fpMuonTr->effD(fMu1Pt, fMu1Eta, fMu1Phi);
   fMu1Q         = p1->fQ;
+  fMu1Pix       = numberOfPixLayers(p1);
+  fMu1BPix      = numberOfBPixLayers(p1);
+  fMu1BPixL1    = numberOfBPixLayer1Hits(p1);
 
   if (fCandTM && fGenM1Tmi < 0) fpEvt->dump();
 
@@ -610,6 +617,9 @@ void bmmReader::fillCandidateVariables() {
   fMu2W8Mu      = fpMuonID->effD(fMu2Pt, fMu2Eta, fMu2Phi);
   fMu2W8Tr      = fpMuonTr->effD(fMu2Pt, fMu2Eta, fMu2Phi);
   fMu2Q         = p2->fQ;
+  fMu2Pix       = numberOfPixLayers(p2);
+  fMu2BPix      = numberOfBPixLayers(p2);
+  fMu2BPixL1    = numberOfBPixLayer1Hits(p2);
 
   if (fCandTM) {
     TGenCand *pg2 = fpEvt->getGenCand(p2->fGenIndex);
@@ -729,6 +739,7 @@ void bmmReader::fillCandidateVariables() {
   fGoodIso = (fCandIso > CANDISOLATION); 
   fGoodChi2 = (fCandChi2/fCandDof < CANDVTXCHI2);
   fGoodFLS =  ((fCandFLS3d > CANDFLS3D) && (fCandFLSxy > CANDFLSXY)); 
+  if (TMath::IsNaN(fCandFLS3d)) fGoodFLS = false;
 
   fGoodDocaTrk = (fCandDocaTrk > CANDDOCATRK);
   fGoodIP = true; 
@@ -1015,31 +1026,41 @@ void bmmReader::bookHist() {
   fTree->Branch("fls3d",  &fCandFLS3d,         "fls3d/D");
   fTree->Branch("flsxy",  &fCandFLSxy,         "flsxy/D");
   fTree->Branch("docatrk",&fCandDocaTrk,       "docatrk/D");
+  fTree->Branch("lip",    &fCandPvLip,         "lip/D");
+  fTree->Branch("lipE",   &fCandPvLipE,        "lipE/D");
+  fTree->Branch("tip",    &fCandPvTip,         "tip/D");
+  fTree->Branch("tipE",   &fCandPvTipE,        "tipE/D");
   // -- muons
-  fTree->Branch("m1q",    &fMu1Q,              "m1q/I");
-  fTree->Branch("m1id",   &fMu1Id,             "m1ip/O");
-  fTree->Branch("m1pt",   &fMu1Pt,             "m1pt/D");
-  fTree->Branch("m1eta",  &fMu1Eta,            "m1eta/D");
-  fTree->Branch("m1phi",  &fMu1Phi,            "m1phi/D");
-  fTree->Branch("m1ip",   &fMu1IP,             "m1ip/D");
-  fTree->Branch("m1gt",   &fMu1TkQuality,      "m1gt/I");
-  fTree->Branch("m2q",    &fMu2Q,              "m2q/I");
-  fTree->Branch("m2id",   &fMu2Id,             "m2ip/O");
-  fTree->Branch("m2pt",   &fMu2Pt,             "m2pt/D");
-  fTree->Branch("m2eta",  &fMu2Eta,            "m2eta/D");
-  fTree->Branch("m2phi",  &fMu2Phi,            "m2phi/D");
-  fTree->Branch("m2ip",   &fMu2IP,             "m2ip/D");
-  fTree->Branch("m2gt",   &fMu2TkQuality,      "m2gt/I");
+  fTree->Branch("m1q",     &fMu1Q,              "m1q/I");
+  fTree->Branch("m1id",    &fMu1Id,             "m1id/O");
+  fTree->Branch("m1pt",    &fMu1Pt,             "m1pt/D");
+  fTree->Branch("m1eta",   &fMu1Eta,            "m1eta/D");
+  fTree->Branch("m1phi",   &fMu1Phi,            "m1phi/D");
+  fTree->Branch("m1ip",    &fMu1IP,             "m1ip/D");
+  fTree->Branch("m1gt",    &fMu1TkQuality,      "m1gt/I");
+  fTree->Branch("m1pix",   &fMu1Pix,            "m1pix/I");
+  fTree->Branch("m1bpix",  &fMu1BPix,           "m1bpix/I");
+  fTree->Branch("m1bpixl1",&fMu1BPixL1,         "m1bpixl1/I");
+  fTree->Branch("m2q",     &fMu2Q,              "m2q/I");
+  fTree->Branch("m2id",    &fMu2Id,             "m2id/O");
+  fTree->Branch("m2pt",    &fMu2Pt,             "m2pt/D");
+  fTree->Branch("m2eta",   &fMu2Eta,            "m2eta/D");
+  fTree->Branch("m2phi",   &fMu2Phi,            "m2phi/D");
+  fTree->Branch("m2ip",    &fMu2IP,             "m2ip/D");
+  fTree->Branch("m2gt",    &fMu2TkQuality,      "m2gt/I");
+  fTree->Branch("m2pix",   &fMu2Pix,            "m2pix/I");
+  fTree->Branch("m2bpix",  &fMu2BPix,           "m2bpix/I");
+  fTree->Branch("m2bpixl1",&fMu2BPixL1,         "m2bpixl1/I");
 
-  fTree->Branch("g1pt",   &fMu1PtGen,          "g1pt/D");
-  fTree->Branch("g2pt",   &fMu2PtGen,          "g2pt/D");
-  fTree->Branch("g1eta",  &fMu1EtaGen,         "g1eta/D");
-  fTree->Branch("g2eta",  &fMu2EtaGen,         "g2eta/D");
+  fTree->Branch("g1pt",    &fMu1PtGen,          "g1pt/D");
+  fTree->Branch("g2pt",    &fMu2PtGen,          "g2pt/D");
+  fTree->Branch("g1eta",   &fMu1EtaGen,         "g1eta/D");
+  fTree->Branch("g2eta",   &fMu2EtaGen,         "g2eta/D");
 
-  fTree->Branch("t1pt",   &fMu1PtNrf,          "t1pt/D");
-  fTree->Branch("t1eta",  &fMu1EtaNrf,         "t1eta/D");
-  fTree->Branch("t2pt",   &fMu2PtNrf,          "t2pt/D");
-  fTree->Branch("t2eta",  &fMu2EtaNrf,         "t2eta/D");
+  fTree->Branch("t1pt",    &fMu1PtNrf,          "t1pt/D");
+  fTree->Branch("t1eta",   &fMu1EtaNrf,         "t1eta/D");
+  fTree->Branch("t2pt",    &fMu2PtNrf,          "t2pt/D");
+  fTree->Branch("t2eta",   &fMu2EtaNrf,         "t2eta/D");
 
   fTree->Branch("fHltMu1Pt",  &fHltMu1Pt,  "hm1pt/D");    
   fTree->Branch("fHltMu1Eta", &fHltMu1Eta, "hm1eta/D");  
@@ -1048,6 +1069,30 @@ void bmmReader::bookHist() {
   fTree->Branch("fHltMu2Eta", &fHltMu2Eta, "hm2eta/D");  
   fTree->Branch("fHltMu2Phi", &fHltMu2Phi, "hm2phi/D");  
 
+
+  // -- Efficiency/Acceptance Tree
+  fEffTree = new TTree("effTree", "effTree");
+  fEffTree->Branch("run",    &fRun,               "run/I");
+  fEffTree->Branch("evt",    &fEvt,               "evt/I");
+  fEffTree->Branch("hlt",    &fGoodHLT,           "hlt/O");
+
+  fEffTree->Branch("m1pt",   &fETm1pt,            "m1pt/F");
+  fEffTree->Branch("g1pt",   &fETg1pt,            "g1pt/F");
+  fEffTree->Branch("m1eta",  &fETm1eta,           "m1eta/F");
+  fEffTree->Branch("g1eta",  &fETg1eta,           "g1eta/F");
+  fEffTree->Branch("m1q",    &fETm1q,             "m1q/I");
+  fEffTree->Branch("m1gt",   &fETm1gt,            "m1gt/O");
+  fEffTree->Branch("m1id",   &fETm1id,            "m1id/O");
+
+  fEffTree->Branch("m2pt",   &fETm2pt,            "m2pt/F");
+  fEffTree->Branch("g2pt",   &fETg2pt,            "g2pt/F");
+  fEffTree->Branch("m2eta",  &fETm2eta,           "m2eta/F");
+  fEffTree->Branch("g2eta",  &fETg2eta,           "g2eta/F");
+  fEffTree->Branch("m2q",    &fETm2q,             "m2q/I");
+  fEffTree->Branch("m2gt",   &fETm2gt,            "m2gt/O");
+  fEffTree->Branch("m2id",   &fETm2id,            "m2id/O");
+
+  fEffTree->Branch("m",      &fETcandMass,        "m/F");
 }
 
 

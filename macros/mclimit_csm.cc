@@ -65,14 +65,29 @@
 //     8 May 2008 Fix bugs in the nuisance parameter constraint equations.
 //    15 May 2008 2D cross section fit bugfix -- wrong low bound chosen.
 //    18 Jun 2008 Add a printout of all bins' s, b, d
-//    18 Sep 2008 Add some accessors to get a hold of normalization factors applied to the Bayesian posteriors.
+//    18 Sep 2009 Add some accessors to get a hold of normalization factors applied to the Bayesian posteriors.
 //                Useful when parallelizing a big computation in order to add up many posteriors
-//    14 Jan 2009 Protect against a segfault in gclsaux
+//    26 Feb 2009 setdclscn in bh_xsfit
+//    20 May 2009 break up cross section fit into pieces so that we can do many sytematic samples with many
+//                channels without running out of memory
+//    18 Sep 2009 re-order systematic samples and integration to reduce memory usage in the Bayesian integrators --
+//                add in fast TH1's from Nils
+//     2 Dec 2009 Nils had put the C-style routines into the .h file but that makes people building shared objects
+//                get into trouble.  Put them back in this source file
+//     6 Apr 2010 Include native adaptive Markov Chain code in this code
+//    27 Apr 2010 Adjust signal proposal function and also Wade's asymmetric nuisance parameter handling
+//    28 Apr 2010 Adjust signal proposal function again
+//     7 May 2010 Add a lookup map to systematic tables so we don't have to go digging through the name list
+//                in nuisance_response
+//    11 May 2010 do a find in the map instead of [] to keep from adding null vectors for parameters not
+//                on the list
+//    18 Nov 2010 Small off-by-one bugfix in clsbaux and clbaux -- thanks to Pasha Murat
 
-#define MCLIMIT_CSM_VERSION_NUMBER 3.47
-#define MCLIMIT_CSM_VERSION_DATE "Jan 14, 2009"
+#define MCLIMIT_CSM_VERSION_NUMBER 4.16
+#define MCLIMIT_CSM_VERSION_DATE "Nov 18, 2010"
 
 // Author:  Tom Junk, Fermilab.  trj@fnal.gov
+// Contributions from Joel Heinrich, Nils Krumnack, Tom Wright, and Kevin Lannon
 
 #include <math.h>
 #include <float.h>
@@ -90,6 +105,7 @@
 #include "TMath.h"
 #include "mclimit_csm.hh"
 #include "TString.h"
+#include "TFile.h"
 
 using namespace std;
 
@@ -108,27 +124,27 @@ static vector<Int_t> constrainedfitparam;
 static vector<char*> npfitname;
 
 void csm_minuit_fcn(Int_t &npar, double *gin, double &f,
-                        double *par, Int_t iflag);
+		    double *par, Int_t iflag);
 
 double csint0(double xlo,double logscale,
-		     int nchan,const int nobs[],const EB chan[],
-		     int ngl,const double xgl[],const double lwgl[],
-		     PRIOR prior);
+	      int nchan,const int nobs[],const EB chan[],
+	      int ngl,const double xgl[],const double lwgl[],
+	      PRIOR prior);
 
 void csint02cut(double xlo1,double xlo2,double xhi,double logscale,
-	          int nchan,const int nobs[],const EB chan[],
-		  int ngl,const double xgl[],const double lwgl[],PRIOR prior,
-	          double* int1,double* int2);
+		int nchan,const int nobs[],const EB chan[],
+		int ngl,const double xgl[],const double lwgl[],PRIOR prior,
+		double* int1,double* int2);
 
 void gameansigma(double *mean,double *sigma,
-			int nchan,int nens,const int nobs[],const EB* ens);
+		 int nchan,int nens,const int nobs[],const EB* ens);
 double arcfreq(double y);
 #define freq(x) (0.5*erfc(-0.707106781186547524*(x)))
 
 void csint02(double xlo1,double xlo2,double logscale,
-		    int nchan,const int nobs[],const EB chan[],
-		    int ngl,const double xgl[],const double lwgl[],PRIOR prior,
-		    double* int1,double* int2);
+	     int nchan,const int nobs[],const EB chan[],
+	     int ngl,const double xgl[],const double lwgl[],PRIOR prior,
+	     double* int1,double* int2);
 
 // some globals which really should be put into classes, but the Bayesian routines are
 // written in C and not C++
@@ -136,6 +152,7 @@ void csint02(double xlo1,double xlo2,double logscale,
 double dlcsn=0;
 double dlcsn2d=0;
 double bhnorm=0;
+
 
 /*----------------------------------------------------------------------------*/
 
@@ -311,20 +328,20 @@ void mclimit_csm::set_datahist(TH1 *h, char *cname)
       if (jfound == -1)
 	{
           dhname.push_back(s);
-          datahist.push_back((TH1*) h->Clone());
+          datahist.push_back(copy_TH1<TH1> (*h).release());
 	}
       else
 	{
 	  nhi = dhname.begin() + jfound;
 	  dhname.insert(nhi,s);
 	  dhi = datahist.begin() + jfound;
-	  datahist.insert(dhi,(TH1*) h->Clone());
+	  datahist.insert(dhi, copy_TH1<TH1> (*h).release());
 	}
     }
   else
     {
       delete datahist[ifound];
-      datahist[ifound] = (TH1*) h->Clone();
+      datahist[ifound] = copy_TH1<TH1> (*h).release();
     }
 }
 
@@ -632,8 +649,9 @@ Double_t mclimit_csm::clsbaux(Double_t tsaux)
     {
       if (tss[itss[i]] < tsaux)
 	{ 
-	  clsbloc = ((Double_t) i)/((Double_t) nmc);
+	  clsbloc = ((Double_t) (i+1))/((Double_t) nmc);
 	}
+      else break;
     }
   return(1-clsbloc);
 }
@@ -679,8 +697,9 @@ Double_t mclimit_csm::clbaux(Double_t tsaux)
     {
       if (tsb[itsb[i]] < tsaux)
 	{ 
-	  clbloc = ((Double_t) i)/((Double_t) nmc);
+	  clbloc = ((Double_t) (i+1))/((Double_t) nmc);
 	}
+      else break;
     }
   return(1-clbloc);
 }
@@ -705,8 +724,9 @@ Double_t mclimit_csm::omclbaux(Double_t tsaux)
     {
       if (tsb[itsb[i]] <= tsaux)
 	{ 
-	  omclbloc = ((Double_t) i)/((Double_t) nmc);
+	  omclbloc = ((Double_t) (i+1))/((Double_t) nmc);
 	}
+      else break;
     }
   return(omclbloc);
 }
@@ -834,7 +854,7 @@ Double_t mclimit_csm::gclsexpbp1()  { return(gclsaux(MCLIMIT_CSM_MCLM1S)); }
 Double_t mclimit_csm::gclsexpbp2()  { return(gclsaux(MCLIMIT_CSM_MCLM2S)); }
 
 Double_t mclimit_csm::gclsaux(Double_t thresh)
- {
+{
 
   vector<Double_t> clslist;
   if (nmc == 0)
@@ -859,7 +879,7 @@ Double_t mclimit_csm::gclsaux(Double_t thresh)
   std::sort(clslist.begin(),clslist.end());
   int i =  (int) nearbyint( ((Double_t) nmc)*thresh);
   return(clslist[i]);
- }
+}
 
 /*----------------------------------------------------------------------------*/
 
@@ -1427,79 +1447,79 @@ Double_t mclimit_csm::s95aux(Int_t itype)
   foundit = 0;
 
   for (j=0;j<32;j++)
-  {
-    //cout << "in s95aux seek " << j << " scale: " << sf << endl;
-    if (foundit == 0)
-      {
-	csm_model* scaledsignal = testhypsave->scalesignal(sf);
-        csm_model* scaledsignalpe = testhyppesave->scalesignal(sf);
-        test_hypothesis = scaledsignal;
-        test_hypothesis_pe = scaledsignalpe;
-	run_pseudoexperiments();
-        recalctsflag = 1;
-        if (itype == MCLIMIT_CSM_CLS)
-	  {
-          cltest = cls(); 
-	  }
-        else if (itype == MCLIMIT_CSM_CLSM2)
-	  {
-	    cltest = gclsexpbm2();
-	  }
-        else if (itype == MCLIMIT_CSM_CLSM1)
-	  {
-	    cltest = gclsexpbm1();
-	  }
-        else if (itype == MCLIMIT_CSM_CLSMED)
-	  {
-	    cltest = gclsexpbmed();
-	  }
-        else if (itype == MCLIMIT_CSM_CLSP1)
-	  {
-	    cltest = gclsexpbp1();
-	  }
-        else if (itype == MCLIMIT_CSM_CLSP2)
-	  {
-	    cltest = gclsexpbp2();
-	  }
-        delete scaledsignal;
-        delete scaledsignalpe;
-	if (j==0)
-	  {
-	    cla = cltest;
-	  }
-	if (cltest<0.05)
-	  {
-	    if (cla>0.05)
-	      {
-		sfh = sf;
-		clh = cltest;
-		sfl = sf/2.0;
-		cll = cla;
-		foundit = 1;
-	      }
-	    sf /= 2.0;
-	  }
-	else if (cltest>0.05)
-	  {
-	    if (cla<0.05)
-	      {
-		sfl = sf;
-		cll = cltest;
-		sfh = sf*2.0;
-		clh = cla;
-		foundit = 1;
-	      }
-	    sf *= 2.0;
-	  }
-	else
-	  {
-	    test_hypothesis = testhypsave;
-	    test_hypothesis_pe = testhyppesave;
-	    return(sf);
-	  }
-	cla = cltest;
-      }
-  } // end of loop over 32 powers of 2 in search of a signal scale factor which brackets
+    {
+      //cout << "in s95aux seek " << j << " scale: " << sf << endl;
+      if (foundit == 0)
+	{
+	  csm_model* scaledsignal = testhypsave->scalesignal(sf);
+	  csm_model* scaledsignalpe = testhyppesave->scalesignal(sf);
+	  test_hypothesis = scaledsignal;
+	  test_hypothesis_pe = scaledsignalpe;
+	  run_pseudoexperiments();
+	  recalctsflag = 1;
+	  if (itype == MCLIMIT_CSM_CLS)
+	    {
+	      cltest = cls(); 
+	    }
+	  else if (itype == MCLIMIT_CSM_CLSM2)
+	    {
+	      cltest = gclsexpbm2();
+	    }
+	  else if (itype == MCLIMIT_CSM_CLSM1)
+	    {
+	      cltest = gclsexpbm1();
+	    }
+	  else if (itype == MCLIMIT_CSM_CLSMED)
+	    {
+	      cltest = gclsexpbmed();
+	    }
+	  else if (itype == MCLIMIT_CSM_CLSP1)
+	    {
+	      cltest = gclsexpbp1();
+	    }
+	  else if (itype == MCLIMIT_CSM_CLSP2)
+	    {
+	      cltest = gclsexpbp2();
+	    }
+	  delete scaledsignal;
+	  delete scaledsignalpe;
+	  if (j==0)
+	    {
+	      cla = cltest;
+	    }
+	  if (cltest<0.05)
+	    {
+	      if (cla>0.05)
+		{
+		  sfh = sf;
+		  clh = cltest;
+		  sfl = sf/2.0;
+		  cll = cla;
+		  foundit = 1;
+		}
+	      sf /= 2.0;
+	    }
+	  else if (cltest>0.05)
+	    {
+	      if (cla<0.05)
+		{
+		  sfl = sf;
+		  cll = cltest;
+		  sfh = sf*2.0;
+		  clh = cla;
+		  foundit = 1;
+		}
+	      sf *= 2.0;
+	    }
+	  else
+	    {
+	      test_hypothesis = testhypsave;
+	      test_hypothesis_pe = testhyppesave;
+	      return(sf);
+	    }
+	  cla = cltest;
+	}
+    } // end of loop over 32 powers of 2 in search of a signal scale factor which brackets
   // 95% CL exclusion
 
   //cout << "done with seek loop " << sf << endl;
@@ -1580,8 +1600,8 @@ Double_t mclimit_csm::s95aux(Int_t itype)
 	  delete scaledsignalpe;
 
 	  // double dcltest=sqrt(cltest*(1-cltest)/nmc);
-// 	  double dcltest = cltest*sqrt((1-clbtest)/clbtest/nmc +
-// 				       (1-clsbtest)/clsbtest/nmc);
+	  // 	  double dcltest = cltest*sqrt((1-clbtest)/clbtest/nmc +
+	  // 				       (1-clsbtest)/clsbtest/nmc);
 	  double dcltest=sqrt(clsbtest*(1-clsbtest)/nmc)/clbtest;
 
           //  printf("%f %f %f %f %f\n",sf,clbtest,clsbtest,cltest,dcltest);
@@ -1818,8 +1838,8 @@ Double_t mclimit_csm::lumipaux(Int_t itype)
 	  delete scalednullpe;
 
 	  // double dcltest=sqrt(cltest*(1-cltest)/nmc);
-// 	  double dcltest = cltest*sqrt((1-clbtest)/clbtest/nmc +
-// 				       (1-clsbtest)/clsbtest/nmc);
+	  // 	  double dcltest = cltest*sqrt((1-clbtest)/clbtest/nmc +
+	  // 				       (1-clsbtest)/clsbtest/nmc);
 	  double dcltest=sqrt(cltest*(1-cltest)/nmc)/cltest;
 
           //  printf("%f %f %f %f %f\n",sf,clbtest,clsbtest,cltest,dcltest);
@@ -2016,7 +2036,7 @@ void mclimit_csm::run_pseudoexperiments()
       pdname = new char[strlen(null_hypothesis_pe->channame[i])+strlen(" pseudodata ")];
       strcpy(pdname,null_hypothesis_pe->channame[i]);
       strcat(pdname," pseudodata");
-      pdarray[i] = (TH1*) null_hypothesis_pe->chanmodel[i]->histotemplate[0]->Clone(pdname);
+      pdarray[i] = copy_TH1<TH1> (*null_hypothesis_pe->chanmodel[i]->histotemplate[0], pdname).release();
       delete[] pdname;
     }
 
@@ -2096,11 +2116,11 @@ void csm_model::nuisance_response(Int_t nparams,
   Double_t *cinput;
 
   /*
-  cout << "in model nuisance response: " << endl;
-  for (i=0;i < (Int_t) nparams; i++)
-  {
+    cout << "in model nuisance response: " << endl;
+    for (i=0;i < (Int_t) nparams; i++)
+    {
     cout << "param: " << i << " name: " << paramname[i] << endl;
-  }
+    }
   */
 
   // compute the nuisance parameters which are functions of the others
@@ -2136,8 +2156,8 @@ void csm_model::nuisance_response(Int_t nparams,
 	          if (ifound == 0)
 		    {
 		      cout << "Didn't find parameter name: " << 
-                          npcm[icons].pnameinput[j] << 
-                          " in the list of nuisance parameters" << endl;
+			npcm[icons].pnameinput[j] << 
+			" in the list of nuisance parameters" << endl;
 		      exit(0);
 		    }
 	        }
@@ -2188,60 +2208,99 @@ void csm_channel_model::nuisance_response(Int_t nparams,
                                           char *paramname[],
                                           Double_t paramvalue[])
 {
-  Int_t i,j,itpl,nsys,ntemplates;
+  Int_t i,j,itpl,ntemplates;
 
   /*
-  cout << "in channel nuisance response: " << endl;
-  for (i=0;i < (Int_t) syserr.size(); i++)
-  {
+    cout << "in channel nuisance response: " << endl;
+    for (i=0;i < (Int_t) syserr.size(); i++)
+    {
     cout << "error source: " << i << " name: " << syserr[i].sysname << endl;
-  }
-  for (i=0;i < (Int_t) nparams; i++)
-  {
+    }
+    for (i=0;i < (Int_t) nparams; i++)
+    {
     cout << "param: " << i << " name: " << paramname[i] << endl;
-  }
+    }
   */
 
   undo_nuisance_response();
   ntemplates = (Int_t) histotemplate.size();
 
-  TH1* hcl = 0;
+  // add the rate contributions linearly as Wade does.  I like to multiply them
+  // but we go for consistency
 
-  nsys = (Int_t) syserr.size();
-  for (i=0;i < nsys; i++)
+  double rsum[ntemplates];
+  for (itpl=0;itpl<ntemplates;itpl++) rsum[itpl] = 0.0;
+
+  // NK: check performance
+  std::auto_ptr<TH1Type>& hcl = hcl_nuisance_response;
+
+  std::vector<int> *vpt;
+  std::map<char*, std::vector<int>, csm_ltstr>::iterator vpi;
+
+  for (j=0; j<nparams; j++)
     {
-      for (j=0; j<nparams; j++)
+      vpi = semap.find(paramname[j]);
+      if (vpi != semap.end())
 	{
-	  if (strcmp(syserr[i].sysname,paramname[j]) == 0)
+          vpt = &(vpi->second);
+	  int nsloc = vpt->size();
+	  for (int k1=0;k1<nsloc;k1++)
 	    {
+	      i = (*vpt)[k1];
 	      itpl = syserr[i].itemplate;
-	      sft_varied[itpl] *= max(1E-8,( 
-                  (syserr[i].sysfrach+syserr[i].sysfracl)*paramvalue[j]*paramvalue[j]/2.0 +
-                  (syserr[i].sysfrach-syserr[i].sysfracl)*paramvalue[j]/2.0 + 1.0));
+
+	      // use Wade's notation here -- we keep around the minus sign on the negative
+	      // variations.
+
+	      double sigmaN = -syserr[i].sysfracl;
+	      double sigmaP = syserr[i].sysfrach;
+	      double r = paramvalue[j];
+	      double sig = sigmaN;
+	      if (r>0) sig = sigmaP;
+	      double quadMatch = r*(sigmaP+sigmaN)/2.0 + r*r*(sigmaP-sigmaN)/2.0;
+
+	      // Tom's old notation
+	      //double quadMatch = 
+	      //	(syserr[i].sysfrach+syserr[i].sysfracl)*paramvalue[j]*paramvalue[j]/2.0 +
+	      //	(syserr[i].sysfrach-syserr[i].sysfracl)*paramvalue[j]/2.0 + 1.0;
+
+	      double rf = 1.0/(1.0+3.0*fabs(r));
+	      double bridge = r*sig*(1.0-rf) + rf*quadMatch;
+	      //    double lnB = exp(bridge); // cannot go below 0 by constuction
+	      double lnB = 0;
+	      if (bridge<0)
+		{ lnB = exp(bridge); } // cannot go below 0 by constuction
+	      else
+		{ lnB = bridge + 1.0; } // regulate large excursions -- prevent large variation
+
+	      // the additive version as Wade does it
+	      rsum[itpl] += lnB - 1.0;
+	      // multiplicative version
+	      // sft_varied[itpl] *= lnB;
+
 	      if (paramvalue[j]>0)
 		{
 		  if (syserr[i].highshape != 0)
 		    {
-		      if (hcl == 0)
+		      if (hcl.get() == 0)
 			{
-                           hcl = (TH1*) histotemplate[itpl]->Clone();
+			  hcl = copy_TH1<TH1Type> (*histotemplate[itpl]);
 			}
 		      else
 			{
-			  hcl->Reset();
-			  hcl->Add(histotemplate_varied[itpl],1.0);
+			  copy_TH1_content (*hcl, *histotemplate_varied[itpl]);
 			}
 		      if (poissflag[itpl] == CSM_GAUSSIAN_BINERR)
 			{
 		          csm_interpolate_histogram2(histotemplate[itpl],0.0,
-                                                 syserr[i].highshape,syserr[i].xsighigh,
-                                                 hcl,histotemplate_varied[itpl],paramvalue[j],chan_istyle);
+						     syserr[i].highshape,syserr[i].xsighigh,
+						     hcl.get(),histotemplate_varied[itpl],paramvalue[j],chan_istyle);
 			}
 		      else
 			{
 		          csm_interpolate_histogram2_noerr(histotemplate[itpl],0.0,
-                                                 syserr[i].highshape,syserr[i].xsighigh,
-                                                 hcl,histotemplate_varied[itpl],paramvalue[j],chan_istyle);
+							   syserr[i].highshape,syserr[i].xsighigh,
+							   hcl.get(),histotemplate_varied[itpl],paramvalue[j],chan_istyle);
 			}
 
 		      //cout << "did a +interpolation " << i << " " << j << " param: " << paramvalue[j] << endl;
@@ -2251,26 +2310,25 @@ void csm_channel_model::nuisance_response(Int_t nparams,
 		{
 		  if (syserr[i].lowshape != 0)
 		    {
-		      if (hcl == 0)
+		      if (hcl.get() == 0)
 			{
-                           hcl = (TH1*) histotemplate[itpl]->Clone();
+			  hcl = copy_TH1<TH1Type> (*histotemplate[itpl]);
 			}
 		      else
 			{
-			  hcl->Reset();
-			  hcl->Add(histotemplate_varied[itpl],1.0);
+			  copy_TH1_content (*hcl, *histotemplate_varied[itpl]);
 			}
 		      if (poissflag[itpl] == CSM_GAUSSIAN_BINERR)
 			{
 		          csm_interpolate_histogram2(histotemplate[itpl],0.0,
-                                                syserr[i].lowshape, -syserr[i].xsiglow,
-                                                hcl,histotemplate_varied[itpl],-paramvalue[j],chan_istyle);
+						     syserr[i].lowshape, -syserr[i].xsiglow,
+						     hcl.get(),histotemplate_varied[itpl],-paramvalue[j],chan_istyle);
 			}
 		      else
 			{
 		          csm_interpolate_histogram2_noerr(histotemplate[itpl],0.0,
-                                                syserr[i].lowshape, -syserr[i].xsiglow,
-                                                hcl,histotemplate_varied[itpl],-paramvalue[j],chan_istyle);
+							   syserr[i].lowshape, -syserr[i].xsiglow,
+							   hcl.get(),histotemplate_varied[itpl],-paramvalue[j],chan_istyle);
 			}
 		      //cout << "did a -interpolation " << i << " " << j << " param: " << paramvalue[j] <<  endl;
 		    }
@@ -2278,10 +2336,8 @@ void csm_channel_model::nuisance_response(Int_t nparams,
 	    }
 	}
     }
-  if (hcl != 0)
-    {
-      delete hcl;
-    }
+  for (itpl=0;itpl<ntemplates;itpl++) sft_varied[itpl] *= max(1E-8,rsum[itpl]+1.0);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2338,7 +2394,8 @@ void csm_model::list_nparams(vector<char *> *npn, vector<Double_t> *nplb, vector
 {
   Int_t i,j,k,ifound;
   csm_channel_model* cm;
-  Double_t nplb_tmp,nphb_tmp,a,b,c,disc,xp,xm,xht,xlt;
+  Double_t nplb_tmp,nphb_tmp;
+  //Double_t a,b,c,disc,xp,xm,xht,xlt;
   npn->clear();
   nplb->clear();
   nphb->clear();
@@ -2380,43 +2437,45 @@ void csm_model::list_nparams(vector<char *> *npn, vector<Double_t> *nplb, vector
           // be sensible -- this is the equivalent (using the asymmetric errors supplied) of the
           // truncated Gaussian
 
-	  a = (cm->syserr[j].sysfrach + cm->syserr[j].sysfracl)/2.0;
-	  b = (cm->syserr[j].sysfrach - cm->syserr[j].sysfracl)/2.0;
-          c = 1;
-	  if (a == 0)
-	    {
-	      if (b > 0)
-		{ nplb_tmp = max(nplb_tmp,-1.0/b); }
-	      if (b < 0)
-		{ nphb_tmp = min(nphb_tmp,-1.0/b); }
-	    }
-	  else
-	    {
-	      disc = b*b - 4.0*a*c;
-	      if (disc > 0)
-		{ 
-		  xp = (-b + sqrt(disc))/(2.0*a);
-		  xm = (-b - sqrt(disc))/(2.0*a);
-		  xht = max(xp,xm);
-		  xlt = min(xp,xm); 
-		  // we know that a nuisance parameter value of 0 has a non-negative prediction,
-                  // but the choice of which of these two solutions to a quadratic to take depends
-		  // on which side of zero they are on.
-		  if (xht < 0)
-		    {
-		      nplb_tmp = max(nplb_tmp,xht);
-		    }
-		  else if (xlt > 0) 
-		    {
-		      nphb_tmp = min(nphb_tmp,xlt);
-		    }
-		  else
-		    {
-		      nphb_tmp = min(nphb_tmp,xht);
-		      nplb_tmp = max(nplb_tmp,xlt);
-		    }
-		}
-	    }
+	  // December 7, 2009 -- with Wade's new lognormal priors we don't need this any more
+
+	  //a = (cm->syserr[j].sysfrach + cm->syserr[j].sysfracl)/2.0;
+	  //b = (cm->syserr[j].sysfrach - cm->syserr[j].sysfracl)/2.0;
+          //c = 1;
+	  //if (a == 0)
+	  //  {
+	  //    if (b > 0)
+	  //	{ nplb_tmp = max(nplb_tmp,-1.0/b); }
+	  //    if (b < 0)
+	  //	{ nphb_tmp = min(nphb_tmp,-1.0/b); }
+	  //  }
+	  //else
+	  //  {
+	  //    disc = b*b - 4.0*a*c;
+	  //    if (disc > 0)
+	  //	{ 
+	  //	  xp = (-b + sqrt(disc))/(2.0*a);
+	  //	  xm = (-b - sqrt(disc))/(2.0*a);
+	  //	  xht = max(xp,xm);
+	  //	  xlt = min(xp,xm); 
+	  //	  // we know that a nuisance parameter value of 0 has a non-negative prediction,
+	  //       // but the choice of which of these two solutions to a quadratic to take depends
+	  //	  // on which side of zero they are on.
+	  //	  if (xht < 0)
+	  //	    {
+	  //	      nplb_tmp = max(nplb_tmp,xht);
+	  //	    }
+	  //	  else if (xlt > 0) 
+	  //	    {
+	  //	      nphb_tmp = min(nphb_tmp,xlt);
+	  //	    }
+	  //	  else
+	  //	    {
+	  //	      nphb_tmp = min(nphb_tmp,xht);
+	  //	      nplb_tmp = max(nplb_tmp,xlt);
+	  //	    }
+	  //	}
+	  // }
 
 	  ifound = -1;
 	  for (k=0;k<(Int_t) npn->size();k++)
@@ -2468,7 +2527,7 @@ void csm_model::varysyst()
   Int_t i;
   Double_t xval;
 
- // systematically fluctuate our model
+  // systematically fluctuate our model
 
   list_nparams(&npnp, &nplb, &nphb);   // this clears and fills the vectors of name pointers and bounds
   //cout << " in pe: npn.size " << npn.size() << endl;
@@ -2512,7 +2571,7 @@ void csm_model::single_pseudoexperiment(TH1 *pseudodata[])
   Int_t ichan,itpl,ibinx,ibiny,nbinsx,nbinsy,nchans,ntemplates;
   csm_channel_model* cm;
   Double_t bintot;
-  TH1* ht;
+  TH1Type* ht;
   Double_t r;
 
   // call nuisance_response with random nuisance parameters
@@ -2613,12 +2672,12 @@ Double_t mclimit_csm::weightratio(csm_model *nmodel, csm_model *dmodel, TH1 *his
 		  if (nbinsy == 1)
 		    {
 		      pn += ncm->histotemplate_varied[ic]->GetBinContent(ibin+1)*
-                              ncm->sft_varied[ic];
+			ncm->sft_varied[ic];
 		    }
 		  else
 		    {
 		      pn += ncm->histotemplate_varied[ic]->GetBinContent(ibin+1,jbin+1)*
-                              ncm->sft_varied[ic];
+			ncm->sft_varied[ic];
 		    }
 		}
 	      pd = 0; // prediction for denominator model
@@ -2627,12 +2686,12 @@ Double_t mclimit_csm::weightratio(csm_model *nmodel, csm_model *dmodel, TH1 *his
 		  if (nbinsy == 1)
 		    {
 		      pd += dcm->histotemplate_varied[ic]->GetBinContent(ibin+1)*
-                              dcm->sft_varied[ic];
+			dcm->sft_varied[ic];
 		    }
 		  else
 		    {
 		      pd += dcm->histotemplate_varied[ic]->GetBinContent(ibin+1,jbin+1)*
-                              dcm->sft_varied[ic];
+			dcm->sft_varied[ic];
 		    }
 		}
 	      if (pd > 0)
@@ -2861,23 +2920,23 @@ csm_model::~csm_model()
 /*----------------------------------------------------------------------------*/
 
 void csm_model::add_template(TH1 *template_hist, //Poisson or non-Poisson histogram
-                                Double_t sf,        //scale factor to multiply template by to compare w/ data 
-                                                    //(e.g., (data_lum/MC_lum) for a MC Poisson histogram
-                                Int_t nnp,          // number of nuisance parameters (Gaussian of unit width)
-                                char* npname[],     // nuisance parameter names 
-                                Double_t *nps_low,  // fractional uncertainty on sf due to each nuisance parameter -- low side
-                                Double_t *nps_high, // fractional uncertainty on sf due to each nuisance parameter -- high side
-		                                    // typically nps_low and nps_high are input with opposite signs -- if opposite
-                                                    // variations of the nuisance parameter create opposite changes in sf.  The sign
-                                                    // is retained in the calculation in case both variations of a nuisance parameter
-                                                    // shift the normalization in the same way (either both + or both -)
-                                TH1 *lowshape[],    // array of low hisogram shapes, one for each nuisance param (null if no shape error)
-                                Double_t *lowsigma, // number of sigma low for each nuisance parameter shape variation
-                                TH1 *highshape[],   // array of high histogram shapes, one for each nuisance param (null if no shape error)
-	                        Double_t *highsigma, // number of sigma high for each shape variation
-                                Int_t pflag,         // Poisson flag -- 1 if Poisson, 0 of not.  2 if Gaussian error from the histo contents
-                                Int_t sflag,         // scale flag -- 1 if signal, 0 if background (for use with s95 calculator)
-                                char *cname)
+			     Double_t sf,        //scale factor to multiply template by to compare w/ data 
+			     //(e.g., (data_lum/MC_lum) for a MC Poisson histogram
+			     Int_t nnp,          // number of nuisance parameters (Gaussian of unit width)
+			     char* npname[],     // nuisance parameter names 
+			     Double_t *nps_low,  // fractional uncertainty on sf due to each nuisance parameter -- low side
+			     Double_t *nps_high, // fractional uncertainty on sf due to each nuisance parameter -- high side
+			     // typically nps_low and nps_high are input with opposite signs -- if opposite
+			     // variations of the nuisance parameter create opposite changes in sf.  The sign
+			     // is retained in the calculation in case both variations of a nuisance parameter
+			     // shift the normalization in the same way (either both + or both -)
+			     TH1 *lowshape[],    // array of low hisogram shapes, one for each nuisance param (null if no shape error)
+			     Double_t *lowsigma, // number of sigma low for each nuisance parameter shape variation
+			     TH1 *highshape[],   // array of high histogram shapes, one for each nuisance param (null if no shape error)
+			     Double_t *highsigma, // number of sigma high for each shape variation
+			     Int_t pflag,         // Poisson flag -- 1 if Poisson, 0 of not.  2 if Gaussian error from the histo contents
+			     Int_t sflag,         // scale flag -- 1 if signal, 0 if background (for use with s95 calculator)
+			     char *cname)
 {
   Int_t i;
   i = lookup_add_channame(cname);
@@ -2998,6 +3057,46 @@ csm_model* csm_model::add(csm_model &a)
       mclone->add_npbounds(npbname[i],npblow[i],npbhigh[i]);
     }
   return(mclone);
+}
+
+/*----------------------------------------------------------------------------*/
+
+// returns a new model, interpolated frac of the way from a to b.  frac=0: makes a clone of a (= this model),
+// frac=1, makes a clone of b.  No real checking here that a and b are commensurate -- they should
+// have an identical list of channels. nuisance parameter
+// bounds and nuisance parameter constraints are gotten from this model.
+
+csm_model* csm_model::interpolate(csm_model *b, double frac)
+{
+  int i,j,nchans;
+  csm_channel_model *bc;
+  csm_model *imodel = new csm_model();
+
+  nchans = channame.size();
+  for (i=0;i<nchans;i++)
+    {
+      for (j=0;j<nchans;j++)
+	{
+	  if (strcmp(channame[i],b->channame[j])==0)
+	    {
+	      bc = chanmodel[i]->interpolate(b->chanmodel[j],frac);
+	      imodel->add_chanmodel(bc,channame[i]);
+	      delete bc;
+	    }
+	}
+    }
+
+  for (i=0;i < (int) npcm.size(); i++)
+    {
+      imodel->add_npcons(npcm[i].ninput,npcm[i].pnameinput,npcm[i].pnameoutput,npcm[i].f);
+    }
+
+  for (i=0;i < (Int_t) npbname.size(); i++)
+    {
+      imodel->add_npbounds(npbname[i],npblow[i],npbhigh[i]);
+    }
+
+  return(imodel);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3319,7 +3418,7 @@ void csm_channel_model::print()
 		{
 		  hsi = syserr[j].highshape->Integral();
 		  cout << "  Up shape error provided sigma: " << syserr[j].xsighigh << 
-                          " integral: " << hsi << endl;
+		    " integral: " << hsi << endl;
 		  fracerr = (hsi-central_integral)/central_integral;
 		  cout << "    Fractional error due to the shape: " << fracerr << endl;
 		  uperrloc += fracerr;
@@ -3330,7 +3429,7 @@ void csm_channel_model::print()
 		{
 		  hsl = syserr[j].lowshape->Integral();
 		  cout << "  Down shape error provided sigma: " << syserr[j].xsiglow << 
-                          " integral: " << hsl << endl;
+		    " integral: " << hsl << endl;
 
 		  fracerr = (hsl-central_integral)/central_integral;
 		  cout << "    Fractional error due to the shape: " << fracerr << endl;
@@ -3360,23 +3459,23 @@ void csm_channel_model::print()
 /*----------------------------------------------------------------------------*/
 
 void csm_channel_model::add_template
-                               (TH1 *template_hist, //Poisson or non-Poisson histogram
-                                Double_t sf,        //scale factor to multiply template by to compare w/ data 
-                                                    //(e.g., (data_lum/MC_lum) for a MC Poisson histogram
-                                Int_t nnp,          // number of nuisance parameters (Gaussian of unit width)
-                                char* npname[],     // nuisance parameter names 
-                                Double_t *nps_low,  // fractional uncertainty on sf due to each nuisance parameter -- low side
-                                Double_t *nps_high, // fractional uncertainty on sf due to each nuisance parameter -- high side
-		                                    // typically nps_low and nps_high are input with opposite signs -- if opposite
-                                                    // variations of the nuisance parameter create opposite changes in sf.  The sign
-                                                    // is retained in the calculation in case both variations of a nuisance parameter
-                                                    // shift the normalization in the same way (either both + or both -)
-                                TH1 *lowshape[],   // array of low hisogram shapes, one for each nuisance param (null if no shape error)
-                                Double_t *lowsigma,  // number of sigma low for each nuisance parameter shape variation
-                                TH1 *highshape[],   // array of high histogram shapes, one for each nuisance param (null if no shape error)
-	                        Double_t *highsigma, // number of sigma high for each shape variation
-                                Int_t pflag,         // Poisson flag -- 1 if Poisson, 0 of not.  2 if Gaussian error from the histo contents
-                                Int_t sflag)        // scale flag -- 1 if signal, 0 if background (for use with s95 calculator)
+(const TH1Input& template_hist, //Poisson or non-Poisson histogram
+ Double_t sf,        //scale factor to multiply template by to compare w/ data 
+ //(e.g., (data_lum/MC_lum) for a MC Poisson histogram
+ Int_t nnp,          // number of nuisance parameters (Gaussian of unit width)
+ char* npname[],     // nuisance parameter names 
+ Double_t *nps_low,  // fractional uncertainty on sf due to each nuisance parameter -- low side
+ Double_t *nps_high, // fractional uncertainty on sf due to each nuisance parameter -- high side
+ // typically nps_low and nps_high are input with opposite signs -- if opposite
+ // variations of the nuisance parameter create opposite changes in sf.  The sign
+ // is retained in the calculation in case both variations of a nuisance parameter
+ // shift the normalization in the same way (either both + or both -)
+ const TH1InputList& lowshape,   // array of low hisogram shapes, one for each nuisance param (null if no shape error)
+ Double_t *lowsigma,  // number of sigma low for each nuisance parameter shape variation
+ const TH1InputList& highshape,   // array of high histogram shapes, one for each nuisance param (null if no shape error)
+ Double_t *highsigma, // number of sigma high for each shape variation
+ Int_t pflag,         // Poisson flag -- 1 if Poisson, 0 of not.  2 if Gaussian error from the histo contents
+ Int_t sflag)        // scale flag -- 1 if signal, 0 if background (for use with s95 calculator)
 {
   int i;
   svstruct ses;
@@ -3386,55 +3485,57 @@ void csm_channel_model::add_template
   sft_varied.push_back(sf);
   poissflag.push_back(pflag);
   scaleflag.push_back(sflag);
+  TH1Type *template_hist_arg;
+  histotemplate.push_back(template_hist_arg = template_hist.copy_TH1<TH1Type>().release());
+  histotemplate_varied.push_back(template_hist.copy_TH1<TH1Type>().release());
   for (i=0;i<nnp;i++)
     {
-       s = new char[strlen(npname[i])+1];
-       strcpy(s,npname[i]);
-       ses.sysname = s;
-       ses.itemplate = histotemplate.size();
-       ses.sysfracl = nps_low[i];
-       ses.sysfrach = nps_high[i];
-       if (lowshape[i] !=0)
-	 {
-           ses.lowshape = (TH1*) lowshape[i]->Clone();
- 	 }
-       else
-	 {
-	   ses.lowshape = 0;
-	 }
-       if (highshape[i] !=0)
-	 {
-           ses.highshape = (TH1*) highshape[i]->Clone();
-	 }
-       else
-	 {
-	   ses.highshape = 0;
-	 }
-       ses.xsiglow = lowsigma[i];
-       ses.xsighigh = highsigma[i];
-       syserr.push_back(ses);
+      s = new char[strlen(npname[i])+1];
+      strcpy(s,npname[i]);
+      ses.sysname = s;
+      ses.itemplate = histotemplate.size()-1;
+      ses.sysfracl = nps_low[i];
+      ses.sysfrach = nps_high[i];
+      if (lowshape.has(i))
+	{
+	  ses.lowshape = lowshape.copy_TH1<TH1Type> (i).release();
+	}
+      else
+	{
+	  ses.lowshape = 0;
+	}
+      if (highshape.has(i))
+	{
+	  ses.highshape = highshape.copy_TH1<TH1Type> (i).release();
+	}
+      else
+	{
+	  ses.highshape = 0;
+	}
+      ses.xsiglow = lowsigma[i];
+      ses.xsighigh = highsigma[i];
+      semap[ses.sysname].push_back(syserr.size());
+      syserr.push_back(ses);
 
-       if (ses.highshape != 0)
-	 {
-          if (ses.highshape->GetNbinsX() != template_hist->GetNbinsX())
+      if (ses.highshape != 0)
+	{
+          if (ses.highshape->GetNbinsX() != template_hist_arg->GetNbinsX())
             {
               cout << "Chisquared minmization:  histo template and high shape have different bin counts." << endl;
-              cout << template_hist->GetNbinsX() << " != " << ses.highshape->GetNbinsX() << endl;
+              cout << template_hist_arg->GetNbinsX() << " != " << ses.highshape->GetNbinsX() << endl;
               exit(0);
 	    }
         }
       if (ses.lowshape != 0)
 	{
-          if (ses.lowshape->GetNbinsX() != template_hist->GetNbinsX())
+          if (ses.lowshape->GetNbinsX() != template_hist_arg->GetNbinsX())
             {
               cout << "Chisquared minmization:  histo template and low shape have different bin counts." << endl;
-              cout <<  template_hist->GetNbinsX() << " != " << ses.lowshape->GetNbinsX() << endl;
+              cout <<  template_hist_arg->GetNbinsX() << " != " << ses.lowshape->GetNbinsX() << endl;
               exit(0);
 	    }
 	}
     }
-  histotemplate.push_back((TH1*) template_hist->Clone());
-  histotemplate_varied.push_back((TH1*) template_hist->Clone());
   //cout << "model::add_template: " << histotemplate.size() << endl;
   //gDirectory->ls();
 }
@@ -3452,8 +3553,8 @@ csm_channel_model* csm_channel_model::Clone()
   Double_t *nps_high = new Double_t[syserr.size()];
   Double_t *lowsigma = new Double_t[syserr.size()];
   Double_t *highsigma = new Double_t[syserr.size()];
-  TH1 **lowshape = new TH1 *[syserr.size()];
-  TH1 **highshape = new TH1 *[syserr.size()];
+  TH1Type **lowshape = new TH1Type *[syserr.size()];
+  TH1Type **highshape = new TH1Type *[syserr.size()];
   char **ename = new char *[syserr.size()];
 
   csm_channel_model* mclone = new csm_channel_model;
@@ -3496,6 +3597,120 @@ csm_channel_model* csm_channel_model::Clone()
 
 /*----------------------------------------------------------------------------*/
 
+// interpolates channel models template by template.  Also interpolate systematic error
+// rates and shapes.   Assumes exact congruence between systematic error lists and orderings
+// of the two channel models to be interpolated.  Returns an interpolated result frac of the way from this
+// channel model to the one pointed to by b.  Put in frac=0, get this channel model back, put in
+// frac=1, get *b back.  This routine assumes that the high and low shape errors correspond to the same
+// number of sigma.
+
+csm_channel_model* csm_channel_model::interpolate(csm_channel_model *b, double frac)
+{
+  Int_t i,j,nnp,ntemplates,nsys;
+  Double_t *nps_low = new Double_t[syserr.size()];
+  Double_t *nps_high = new Double_t[syserr.size()];
+  Double_t *lowsigma = new Double_t[syserr.size()];
+  Double_t *highsigma = new Double_t[syserr.size()];
+  TH1Type **lowshape = new TH1Type *[syserr.size()];
+  TH1Type **highshape = new TH1Type *[syserr.size()];
+  char **ename = new char *[syserr.size()];
+
+  csm_channel_model* mint = new csm_channel_model;
+
+  ntemplates = (Int_t) histotemplate.size();
+  nsys = (Int_t) syserr.size();
+  for (i=0;i < ntemplates;i++)
+    {
+      nnp = 0;
+      for (j=0;j < nsys;j++)
+	{
+	  if (syserr[j].itemplate == i)
+	    {
+	      nps_low[nnp] = syserr[j].sysfracl + frac*(b->syserr[j].sysfracl-syserr[j].sysfracl);
+	      nps_high[nnp] = syserr[j].sysfrach + frac*(b->syserr[j].sysfrach-syserr[j].sysfrach);
+	      if (syserr[j].lowshape != 0 && b->syserr[j].lowshape != 0)
+		{
+		  std::auto_ptr<TH1Type> htj;
+		  htj = copy_TH1<TH1Type> (*syserr[j].lowshape);
+		  if (poissflag[i] == CSM_GAUSSIAN_BINERR)
+		    {
+		      csm_interpolate_histogram(syserr[j].lowshape,0.0,
+						b->syserr[j].lowshape,1.0,
+						htj.get(),frac,chan_istyle);
+		    }
+                  else
+                    {
+		      csm_interpolate_histogram_noerr(syserr[j].lowshape,0.0,
+						      b->syserr[j].lowshape,1.0,
+						      htj.get(),frac,chan_istyle);
+	            }
+		}
+	      else
+		{
+		  lowshape[nnp] = 0;
+		}
+
+	      if (syserr[j].highshape != 0 && b->syserr[j].highshape != 0)
+		{
+		  std::auto_ptr<TH1Type> htj;
+		  htj = copy_TH1<TH1Type> (*syserr[j].highshape);
+		  if (poissflag[i] == CSM_GAUSSIAN_BINERR)
+		    {
+		      csm_interpolate_histogram(syserr[j].highshape,0.0,
+						b->syserr[j].highshape,1.0,
+						htj.get(),frac,chan_istyle);
+		    }
+                  else
+                    {
+		      csm_interpolate_histogram_noerr(syserr[j].highshape,0.0,
+						      b->syserr[j].highshape,1.0,
+						      htj.get(),frac,chan_istyle);
+	            }
+		}
+	      else
+		{
+		  highshape[nnp] = 0;
+		}
+
+	      lowsigma[nnp] = syserr[j].xsiglow;
+	      highsigma[nnp] = syserr[j].xsighigh;
+	      ename[nnp] = syserr[j].sysname;
+	      nnp++;
+	    }
+	}
+      //cout << "channel model interpolation adding template " << i << endl;
+      std::auto_ptr<TH1Type> hti;
+      hti = copy_TH1<TH1Type> (*histotemplate[i]);
+      if (poissflag[i] == CSM_GAUSSIAN_BINERR)
+	{
+	  csm_interpolate_histogram(histotemplate[i],0.0,
+				    b->histotemplate[i],1.0,
+				    hti.get(),frac,chan_istyle);
+	}
+      else
+	{
+	  csm_interpolate_histogram_noerr(histotemplate[i],0.0,
+					  b->histotemplate[i],1.0,
+					  hti.get(),frac,chan_istyle);
+	}
+      mint->add_template(hti.get(),sft[i],nnp,ename,
+			 nps_low,nps_high,lowshape,lowsigma,
+			 highshape,highsigma,poissflag[i],scaleflag[i]);
+    }
+
+  mint->chan_istyle = chan_istyle;
+  delete[] ename;
+  delete[] lowshape;
+  delete[] highshape;
+  delete[] lowsigma;
+  delete[] highsigma;
+  delete[] nps_low;
+  delete[] nps_high;
+  return(mint);
+}
+
+/*----------------------------------------------------------------------------*/
+
 // addition of two models makes a new model with the sum of the templates
 
 csm_channel_model* csm_channel_model::add(csm_channel_model &a)
@@ -3505,8 +3720,8 @@ csm_channel_model* csm_channel_model::add(csm_channel_model &a)
   Double_t *nps_high = new Double_t[syserr.size()];
   Double_t *lowsigma = new Double_t[syserr.size()];
   Double_t *highsigma = new Double_t[syserr.size()];
-  TH1 **lowshape = new TH1*[syserr.size()];
-  TH1 **highshape = new TH1*[syserr.size()];
+  TH1Type **lowshape = new TH1Type*[syserr.size()];
+  TH1Type **highshape = new TH1Type*[syserr.size()];
   char **ename = new char*[syserr.size()];
 
   csm_channel_model* mclone = a.Clone();
@@ -3556,8 +3771,8 @@ csm_channel_model* csm_channel_model::scale(Double_t coefficient)
   Double_t *nps_high = new Double_t[syserr.size()];
   Double_t *lowsigma = new Double_t[syserr.size()];
   Double_t *highsigma = new Double_t[syserr.size()];
-  TH1 **lowshape = new TH1*[syserr.size()];
-  TH1 **highshape = new TH1*[syserr.size()];
+  TH1Type **lowshape = new TH1Type*[syserr.size()];
+  TH1Type **highshape = new TH1Type*[syserr.size()];
   char **ename = new char*[syserr.size()];
 
   csm_channel_model* smodel = new csm_channel_model;
@@ -3609,8 +3824,8 @@ csm_channel_model* csm_channel_model::scale_err(Double_t coefficient)
   Double_t *nps_high = new Double_t[syserr.size()];
   Double_t *lowsigma = new Double_t[syserr.size()];
   Double_t *highsigma = new Double_t[syserr.size()];
-  TH1 **lowshape = new TH1*[syserr.size()];
-  TH1 **highshape = new TH1*[syserr.size()];
+  TH1Type **lowshape = new TH1Type*[syserr.size()];
+  TH1Type **highshape = new TH1Type*[syserr.size()];
   char **ename = new char*[syserr.size()];
 
   csm_channel_model* smodel = new csm_channel_model;
@@ -3662,8 +3877,8 @@ csm_channel_model* csm_channel_model::scalesignal(Double_t coefficient)
   Double_t *nps_high = new Double_t[syserr.size()];
   Double_t *lowsigma = new Double_t[syserr.size()];
   Double_t *highsigma = new Double_t[syserr.size()];
-  TH1 **lowshape = new TH1*[syserr.size()];
-  TH1 **highshape = new TH1*[syserr.size()];
+  TH1Type **lowshape = new TH1Type*[syserr.size()];
+  TH1Type **highshape = new TH1Type*[syserr.size()];
   char **ename = new char*[syserr.size()];
   Double_t sc1;
 
@@ -4015,18 +4230,20 @@ void csm_channel_model::plotwithdata(TH1* dh)
 
   for (i=0;i<ntemplates;i++)
     {
-      TH1* htl = (TH1*) histotemplate_varied[i]->Clone();
+      std::auto_ptr<TH1> htl = copy_TH1<TH1> (*histotemplate_varied[i]);
       htl->Scale(sft_varied[i]);
       htl->SetFillColor(i+40);
       htl->SetFillStyle(1001);
-      hs->Add(htl);
+      htl->SetLineColor(kBlack);
+      htl->SetLineWidth(1);
+      hs->Add(htl.release());
     }
 
   TList *hlist = hs->GetHists();
   TObjLink *lnk = hlist->LastLink();          
   while (lnk)
     {  slegend->AddEntry(lnk->GetObject(),lnk->GetObject()->GetName(),"F");
-       lnk = lnk->Prev();                       
+    lnk = lnk->Prev();                       
     }     
   // make sure the plot is big enough to fit the data, the model stack,
   // and the data error bars with a little room to spare
@@ -4043,6 +4260,7 @@ void csm_channel_model::plotwithdata(TH1* dh)
     {
       hs->Draw("HIST");
       dh->SetMarkerStyle(20);
+      dh->SetLineColor(kBlack);
       dh->SetMarkerColor(kBlack);
       dh->DrawCopy("E0SAME");
     }
@@ -4050,6 +4268,7 @@ void csm_channel_model::plotwithdata(TH1* dh)
     {
       hs->Draw();
       dh->SetMarkerStyle(20);
+      dh->SetLineColor(kBlack);
       dh->SetMarkerColor(kBlack);
       dh->DrawCopy("LEGO,SAME");
     }
@@ -4138,6 +4357,11 @@ void csm_channel_model::candcheck(TH1 *dh)
 	    {
 	      if (dc > 0)
 		{
+		  if (hcs[ibinx][ibiny]<=0 && hcb[ibinx][ibiny]<=0)
+		    {
+		      cout << "Null background with observed candidate(s): (" << ibinx+1 << "," << ibiny+1 
+			   << ") Cands: " << dc << " Signal: " << hcs[ibinx][ibiny] << endl;
+		    }
 		  Double_t sbratio = hcs[ibinx][ibiny]/hcb[ibinx][ibiny];
 		  sumsb += dc*sbratio;
 		  if (sbratio>0.3)
@@ -4161,7 +4385,7 @@ double csm_channel_model::kstest(TH1* dh)
   ntemplates = (Int_t) histotemplate.size();
   double tout;
 
-  TH1* hsum = (TH1*) histotemplate_varied[0]->Clone();
+  std::auto_ptr<TH1> hsum = copy_TH1<TH1> (*histotemplate_varied[0]);
   hsum->Sumw2();
   hsum->Reset();
 
@@ -4173,7 +4397,6 @@ double csm_channel_model::kstest(TH1* dh)
     }
 
   tout = hsum->KolmogorovTest(dh);
-  delete hsum;
   return(tout);
 }
 
@@ -4183,7 +4406,7 @@ double csm_channel_model::kstest_px(TH1* dh)
   ntemplates = (Int_t) histotemplate.size();
   double tout;
 
-  TH1* hsum = (TH1*) histotemplate_varied[0]->Clone();
+  std::auto_ptr<TH1> hsum = copy_TH1<TH1> (*histotemplate_varied[0]);
   hsum->Sumw2();
   hsum->Reset();
 
@@ -4195,7 +4418,6 @@ double csm_channel_model::kstest_px(TH1* dh)
     }
 
   tout = hsum->KolmogorovTest(dh,"X");
-  delete hsum;
   return(tout);
 }
 
@@ -4290,9 +4512,9 @@ double csm_model::kstest_px(char* cname, TH1* dh)
    parameters.
 
 
-            input: TH1 *dh -- data histogram to compare the channel's model against
+   input: TH1 *dh -- data histogram to compare the channel's model against
             
-            output:  chi squared, the function value.
+   output:  chi squared, the function value.
 
    Update 5 July 2006 -- Reading Barlow and Beeston about bins with zero MC prediction in one
    or more source.  Take the one with the strongest contribution (here taken from the normalization
@@ -4427,7 +4649,7 @@ Double_t csm_channel_model::chisquared1(TH1 *dh)
 	    }
 	  if (haszero != 0 && im1 > -1)
 	    {
-	       zlist[im1] = 0;
+	      zlist[im1] = 0;
 	    }
 
           for (iter=0;iter<CSM_MAXITER;iter++)
@@ -4436,11 +4658,11 @@ Double_t csm_channel_model::chisquared1(TH1 *dh)
                 { 
 		  if (lpoissflag[ic] == CSM_POISSON_BINERR)
 		    {
-                       rho1[ic] = rho2[ic];
-		       if (zlist[ic] == 1)
-		         { 
-		           rho1[ic] = 0;
-		         }
+		      rho1[ic] = rho2[ic];
+		      if (zlist[ic] == 1)
+			{ 
+			  rho1[ic] = 0;
+			}
 		    }
                 }
 
@@ -4497,25 +4719,25 @@ Double_t csm_channel_model::chisquared1(TH1 *dh)
   	    }  /* end loop over iterations to compute the rho's.  rho2 is the computed array */
 
 	  /*
-	  if (CSM_DEBUGPRINT >0 && iprec ==1)
+	    if (CSM_DEBUGPRINT >0 && iprec ==1)
 	    {
-	      // cout << "csm_chisquared1: iterations failed to converge " << endl;
-	      cout << "In chi2calc: " << ibinx << " " << ibiny << " " << dtb << endl;
-	      for (ic=0;ic<nc;ic++)
-		{
-		  if (nbinsy == 1)
-		    { gbc = histotemplate_varied[ic]->GetBinContent(ibinx+1); }
-		  else
-		    { gbc = histotemplate_varied[ic]->GetBinContent(ibinx+1,ibiny+1); }
-		  if (lpoissflag[ic] == CSM_POISSON_BINERR)
-		    {
-		      cout << "Poisson contrib " << ic << " " << gbc << " " << sft_varied[ic] << endl;
-		    }
-		  else
-		    {
-		      cout << "Non-poisson contrib " << ic << " " << gbc << " " << sft_varied[ic] << endl;
-		    }
-		}
+	    // cout << "csm_chisquared1: iterations failed to converge " << endl;
+	    cout << "In chi2calc: " << ibinx << " " << ibiny << " " << dtb << endl;
+	    for (ic=0;ic<nc;ic++)
+	    {
+	    if (nbinsy == 1)
+	    { gbc = histotemplate_varied[ic]->GetBinContent(ibinx+1); }
+	    else
+	    { gbc = histotemplate_varied[ic]->GetBinContent(ibinx+1,ibiny+1); }
+	    if (lpoissflag[ic] == CSM_POISSON_BINERR)
+	    {
+	    cout << "Poisson contrib " << ic << " " << gbc << " " << sft_varied[ic] << endl;
+	    }
+	    else
+	    {
+	    cout << "Non-poisson contrib " << ic << " " << gbc << " " << sft_varied[ic] << endl;
+	    }
+	    }
 	    }
 	  */
 
@@ -4558,18 +4780,18 @@ Double_t csm_channel_model::chisquared1(TH1 *dh)
 		  if (nsubs > 0 && rho2[ic] > 0)
 		    c2cont -= ((Double_t) nsubs)*log(rho2[ic]*sfgp[ic]/(sft_varied[ic]*((Double_t) nsubs)));
 		  if (c2cont > 0.0)
-		  //  if (ibinx == 9 && ibiny == 4)
+		    //  if (ibinx == 9 && ibiny == 4)
 		    {
-		    cout << "in chi2calc: " << ibinx << " " << ibiny << " " << ic << " " << 
-		      rho2[ic] << " " << sft_varied[ic] << " " << nsubs << " " << c2cont;
-		    if (c2cont>0.01) 
-		      {
-			cout << "*" << endl;
-		      }
-		    else
-		      {
-			cout << endl;
-		      }
+		      cout << "in chi2calc: " << ibinx << " " << ibiny << " " << ic << " " << 
+			rho2[ic] << " " << sft_varied[ic] << " " << nsubs << " " << c2cont;
+		      if (c2cont>0.01) 
+			{
+			  cout << "*" << endl;
+			}
+		      else
+			{
+			  cout << endl;
+			}
 		    }
 #endif
 		  chi2a += (rho2[ic]*sfgp[ic]/sft_varied[ic] - nsubs);
@@ -4677,470 +4899,12 @@ void csm_channel_model::set_interpolation_style(INTERPSTYLE istyle)
 
 /*------------------------------------------------------------------------*/
 
-// interpolate 1D histograms and 2D histograms
-// histo a corresponds to parameter xa, histo b corresponds to xb.
-// xc is input, and histogram c is the interpolated output
-
-// new version -- rely on the more general interpolator with three inputs, but reduce the argument
-// count for backward compatibility
-
-// csm_interpolate_histogram interpolates the bin contents and errors
-
-void csm_interpolate_histogram(TH1* a, Double_t xa, 
-                               TH1* b, Double_t xb,
-                               TH1* c, Double_t xc,
-                               INTERPSTYLE istyle)
-{
-  csm_interpolate_histogram2(a,xa,b,xb,a,c,xc,istyle);
-}
-
-// csm_interpolate_histogram_noerr interpolates just the bin contents but not the errors
-
-void csm_interpolate_histogram_noerr(TH1* a, Double_t xa, 
-                               TH1* b, Double_t xb,
-                               TH1* c, Double_t xc,
-                               INTERPSTYLE istyle)
-{
-  csm_interpolate_histogram2_noerr(a,xa,b,xb,a,c,xc,istyle);
-}
-
-// interpolate 1D histograms and 2D histograms
-// histo a corresponds to parameter xa, histo b corresponds to xb.
-// xc is input, and histogram c is the interpolated output
-// d is the histogram to apply the shift given by a and b to, for compounded interpolations.
-
-// approximate attempt to interpolate the uncertainties too.  Problem is, an interpolated
-// histogram is a long sum of pieces interpolated from the same central value histogram,
-// and thus the errors are correlated in interesting ways.
-// A subterfuge -- jut linearly interpolate the errors in the same way that the
-// bin contents are linearly interpolated.  It's not a full error propagation.  Halfway interpolations
-// really are averages of statistically uncertain histograms, and thus the error on the average should
-// be a bit better than the error on either one.  But itnterpolate again, and correlations have to be
-// taken into account to do it right.
-// we've also lost at this point whether the errors need to be interpolated, but let's
-// do them for all histograms.
-// speedup 9 Dec 2007 -- avoid cloning TH1's as this is slow
-
-void csm_interpolate_histogram2(TH1* a, Double_t xa, 
-                                TH1* b, Double_t xb,
-				TH1* d,
-                                TH1* c, Double_t xc,
-                                INTERPSTYLE istyle)
-{
-  Int_t i,j;
-  Double_t xtmp;
-  Int_t nbinsa = a->GetNbinsX();
-  Int_t nbinsb = b->GetNbinsX();
-  Int_t nbinsc = c->GetNbinsX();
-  Int_t nbinsd = d->GetNbinsX();
-  Int_t nbinsya = a->GetNbinsY();
-  Int_t nbinsyb = b->GetNbinsY();
-  Int_t nbinsyc = c->GetNbinsY();
-  Int_t nbinsyd = d->GetNbinsY();
-
-  if (nbinsa != nbinsb)
-    {
-      cout << "nbins mismatch1 in csm_interpolate_histogram2: " << nbinsa << " " << nbinsb << endl;
-    }
-  if (nbinsb != nbinsc)
-    {
-      cout << "nbins mismatch2 in csm_interpolate_histogram2: " << nbinsb << " " << nbinsc << endl;
-    }
-  if (nbinsc != nbinsd)
-    {
-      cout << "nbins mismatch3 in csm_interpolate_histogram2: " << nbinsc << " " << nbinsd << endl;
-    }
-  if (nbinsya != nbinsyb)
-    {
-      cout << "nbinsy mismatch1 in csm_interpolate_histogram2: " << nbinsya << " " << nbinsyb << endl;
-    }
-  if (nbinsyb != nbinsyc)
-    {
-      cout << "nbinsy mismatch2 in csm_interpolate_histogram2 " << nbinsyb << " " << nbinsyc << endl;
-    }
-  if (nbinsyc != nbinsyd)
-    {
-      cout << "nbinsy mismatch3 in csm_interpolate_histogram2: " << nbinsyc << " " << nbinsyd << endl;
-    }
-
-  if (xb == xa)
-    {
-      cout << "xb == xa in csm_interpolate_histogram2 " << xa << endl;
-      cout << "fatal error -- exiting." << endl;
-      exit(0);
-    }
-
-  // interpolate contents
-
-  csm_interpolate_histogram3(a,xa,b,xb,d,c,xc,istyle);
-
-  // swap errors and contents and interpolate again  (approximate method for evaluating
-  // errors on interpolated histograms)
-  // be careful to swap only once, even if some pointers are repeated.
-
-  if (nbinsya == 1)
-    {
-      for (i=1;i<=nbinsa;i++)
-	{
-	  xtmp = a->GetBinContent(i);
-	  a->SetBinContent(i,a->GetBinError(i));
-	  a->SetBinError(i,xtmp);
-	  if (a != b)
-	    {
-	      xtmp = b->GetBinContent(i);
-	      b->SetBinContent(i,b->GetBinError(i));
-	      b->SetBinError(i,xtmp);
-	    }
-	  // c is the output histogram -- hopefully it is not the same as one of the input histograms
-          xtmp = c->GetBinContent(i);
-          // c->SetBinContent(i,c->GetBinError(i));
-	  c->SetBinError(i,xtmp);
-
-	  if (a != d && b != d)
-	    {
-	      xtmp = d->GetBinContent(i);
-	      d->SetBinContent(i,d->GetBinError(i));
-	      d->SetBinError(i,xtmp);
-	    }
-	}
-    }
-  else
-    {
-      for (i=1;i<=nbinsa;i++)
-	{
-	  for (j=1;j<=nbinsya;j++)
-	    {
-	       xtmp = a->GetBinContent(i,j);
-	       a->SetBinContent(i,j,a->GetBinError(i,j));
-	       a->SetBinError(i,j,xtmp);
-	       if (a != b)
-		 {
-	           xtmp = b->GetBinContent(i,j);
-	           b->SetBinContent(i,j,b->GetBinError(i,j));
-	           b->SetBinError(i,j,xtmp);
-		 }
-	       xtmp = c->GetBinContent(i,j);
-	       //c->SetBinContent(i,j,c->GetBinError(i,j));
-	       c->SetBinError(i,j,xtmp);
-	       if (a != d && b != d)
-		 {
-	           xtmp = d->GetBinContent(i,j);
-	           d->SetBinContent(i,j,d->GetBinError(i,j));
-	           d->SetBinError(i,j,xtmp);
-		 }
-	    }
-	}
-    }
-
-  // interpolate the errors now and swap them back -- put the
-  // original histograms back together again too
-
-  csm_interpolate_histogram3(a,xa,b,xb,d,c,xc,istyle);
-
-  if (nbinsya == 1)
-    {
-      for (i=1;i<=nbinsa;i++)
-	{
-	  xtmp = a->GetBinContent(i);
-	  a->SetBinContent(i,a->GetBinError(i));
-	  a->SetBinError(i,xtmp);
-	  if (a != b)
-	    {
-	      xtmp = b->GetBinContent(i);
-	      b->SetBinContent(i,b->GetBinError(i));
-	      b->SetBinError(i,xtmp);
-	    }
-	  xtmp = c->GetBinContent(i);
-	  c->SetBinContent(i,c->GetBinError(i));
-	  c->SetBinError(i,xtmp);
-	  if (a != d && b != d)
-	    {
-	      xtmp = d->GetBinContent(i);
-	      d->SetBinContent(i,d->GetBinError(i));
-	      d->SetBinError(i,xtmp);
-	    }
-	}
-    }
-  else
-    {
-      for (i=1;i<=nbinsa;i++)
-	{
-	  for (j=1;j<=nbinsya;j++)
-	    {
-	       xtmp = a->GetBinContent(i,j);
-	       a->SetBinContent(i,j,a->GetBinError(i,j));
-	       a->SetBinError(i,j,xtmp);
-	       if (a != b)
-		 {
-	           xtmp = b->GetBinContent(i,j);
-	           b->SetBinContent(i,j,b->GetBinError(i,j));
-	           b->SetBinError(i,j,xtmp);
-		 }
-	       xtmp = c->GetBinContent(i,j);
-	       c->SetBinContent(i,j,c->GetBinError(i,j));
-	       c->SetBinError(i,j,xtmp);
-	       if (a != d && b != d)
-		 {
-	           xtmp = d->GetBinContent(i,j);
-	           d->SetBinContent(i,j,d->GetBinError(i,j));
-	           d->SetBinError(i,j,xtmp);
-		 }
-	    }
-	}
-    }
-}
-
-void csm_interpolate_histogram2_noerr(TH1* a, Double_t xa, 
-                                      TH1* b, Double_t xb,
-				      TH1* d,
-                                      TH1* c, Double_t xc,
-                                      INTERPSTYLE istyle)
-{
-  Int_t nbinsa = a->GetNbinsX();
-  Int_t nbinsb = b->GetNbinsX();
-  Int_t nbinsc = c->GetNbinsX();
-  Int_t nbinsd = d->GetNbinsX();
-  Int_t nbinsya = a->GetNbinsY();
-  Int_t nbinsyb = b->GetNbinsY();
-  Int_t nbinsyc = c->GetNbinsY();
-  Int_t nbinsyd = d->GetNbinsY();
-
-  if (nbinsa != nbinsb)
-    {
-      cout << "nbins mismatch1 in csm_interpolate_histogram2_noerr: " << nbinsa << " " << nbinsb << endl;
-    }
-  if (nbinsb != nbinsc)
-    {
-      cout << "nbins mismatch2 in csm_interpolate_histogram2_noerr: " << nbinsb << " " << nbinsc << endl;
-    }
-  if (nbinsc != nbinsd)
-    {
-      cout << "nbins mismatch3 in csm_interpolate_histogram2_noerr: " << nbinsc << " " << nbinsd << endl;
-    }
-  if (nbinsya != nbinsyb)
-    {
-      cout << "nbinsy mismatch1 in csm_interpolate_histogram2_noerr: " << nbinsya << " " << nbinsyb << endl;
-    }
-  if (nbinsyb != nbinsyc)
-    {
-      cout << "nbinsy mismatch2 in csm_interpolate_histogram2_noerr " << nbinsyb << " " << nbinsyc << endl;
-    }
-  if (nbinsyc != nbinsyd)
-    {
-      cout << "nbinsy mismatch3 in csm_interpolate_histogram2_noerr: " << nbinsyc << " " << nbinsyd << endl;
-    }
-
-  if (xb == xa)
-    {
-      cout << "xb == xa in csm_interpolate_histogram2_noerr " << xa << endl;
-      cout << "fatal error -- exiting." << endl;
-      exit(0);
-    }
-
-  // interpolate just the bin contents
-
-  csm_interpolate_histogram3(a,xa,b,xb,d,c,xc,istyle);
-
-}
-
-
-void csm_interpolate_histogram3(TH1* a, Double_t xa, 
-                                TH1* b, Double_t xb,
-				TH1* d,
-                                TH1* c, Double_t xc,
-                                INTERPSTYLE istyle)
-{
-  Double_t hnorma,hnormb,hnormc,hnormd,hnormci;
-  Int_t i,j;
-  Double_t gbc;
-
-  Int_t nbinsa = a->GetNbinsX();
-  Int_t nbinsb = b->GetNbinsX();
-  Int_t nbinsc = c->GetNbinsX();
-  Int_t nbinsd = d->GetNbinsX();
-  Int_t nbinsya = a->GetNbinsY();
-  Int_t nbinsyb = b->GetNbinsY();
-  Int_t nbinsyc = c->GetNbinsY();
-  Int_t nbinsyd = d->GetNbinsY();
-
-  if (a->Integral()<=0 || b->Integral()<=0)
-    { 
-      for (i=1;i<=nbinsc;i++)
-	{
-	   for (j=1;j<=nbinsyc;j++)
-	     { c->SetBinContent(i,j,0);
-	     }
-	} 
-      //c->Reset();
-      return;
-    }
-    
-  if (nbinsya == 1)
-    {
-      Double_t *dista = new Double_t[nbinsa];
-      Double_t *distb = new Double_t[nbinsb];
-      Double_t *distc = new Double_t[nbinsc];
-      Double_t *distd = new Double_t[nbinsd];
-
-      hnorma = 0;
-      hnormb = 0;
-      hnormd = 0;
-      for (i=0;i<nbinsa;i++)
-        { dista[i] = a->GetBinContent(i+1); hnorma += dista[i]; }
-      for (i=0;i<nbinsb;i++)
-        { distb[i] = b->GetBinContent(i+1); hnormb += distb[i]; }
-      for (i=0;i<nbinsd;i++)
-        { distd[i] = d->GetBinContent(i+1); hnormd += distd[i]; }
-
-      hnormc = hnorma + (xc-xa)*(hnormb-hnorma)/(xb-xa);
-      // linearly interpolate the normalization between the central value and
-      // the varied template.
-      hnormc = hnormd*(hnormc/hnorma); // scale the normalization with the new template
-
-      if (istyle == CSM_INTERP_HORIZONTAL || istyle == CSM_INTERP_HORIZONTAL_EXTRAP)
-	{
-           csm_pvmc(nbinsa,dista,distb,distd,distc,xa,xb,xc);
-           hnormci = 0;
-           for (i=0;i<nbinsc;i++) { hnormci += distc[i]; }
-
-           for (i=0;i<nbinsc;i++)
-           {
-             c->SetBinContent(i+1,distc[i]*hnormc/hnormci);
-           }
-	}
-      else if (istyle == CSM_INTERP_VERTICAL || istyle == CSM_INTERP_VERTICAL_EXTRAP)
-	{
-	  for (i=0;i<nbinsa;i++)
-	    {
-	      gbc = distd[i] + ((xc-xa)/(xb-xa))*(distb[i]-dista[i]);
-	      if (gbc < 0) 
-		{
-		  gbc = 0;
-		}
-
-	      c->SetBinContent(i+1,gbc);
-	    }
-	}
-      else
-	{
-	  cout << "csm_interpolate_histogram: unknown interpolation style " << istyle << endl;
-	  exit(0);
-	}
-
-      //cout << xa << " " << xb << " " << xc << endl;
-
-      delete[] dista;
-      delete[] distb;
-      delete[] distc;
-      delete[] distd;
-    }
-  else         // 2d case
-    {
-      Double_t *distxya = new Double_t[nbinsa*nbinsya];
-      Double_t *distxyb = new Double_t[nbinsb*nbinsyb];
-      Double_t *distxyc = new Double_t[nbinsc*nbinsyc];
-      Double_t *distxyd = new Double_t[nbinsd*nbinsyd];
-
-      hnorma = 0;
-      for (j=0;j<nbinsya;j++)
-	{
-	  for (i=0;i<nbinsa;i++)
-	    {
-	      gbc = a->GetBinContent(i+1,j+1);
-	      distxya[i+nbinsa*j] = gbc;
-	      hnorma += gbc;
-	    }
-	}
-
-      hnormb = 0;
-      for (j=0;j<nbinsyb;j++)
-	{
-	  for (i=0;i<nbinsb;i++)
-	    {
-	      gbc = b->GetBinContent(i+1,j+1);
-	      distxyb[i+nbinsb*j] = gbc;
-	      hnormb += gbc;
-	    }
-	}
-
-      hnormd = 0;
-      for (j=0;j<nbinsyd;j++)
-	{
-	  for (i=0;i<nbinsd;i++)
-	    {
-	      gbc = d->GetBinContent(i+1,j+1);
-	      distxyd[i+nbinsb*j] = gbc;
-	      hnormd += gbc;
-	    }
-	}
-
-      hnormc = hnorma + (xc-xa)*(hnormb-hnorma)/(xb-xa);
-      // linearly interpolate the normalization between the central value and
-      // the varied template.
-      hnormc = hnormd*(hnormc/hnorma); // scale the normalization with the new template
-
-      if (istyle == CSM_INTERP_HORIZONTAL || istyle == CSM_INTERP_HORIZONTAL_EXTRAP)
-	{
-          csm_pvmc2d(nbinsa,nbinsya,
-                     distxya,
-                     distxyb,
-                     distxyd,
-		     distxyc,
-                     xa, xb, xc);
-
-          hnormci = 0;
-          for (j=0;j<nbinsyc;j++)
-	    {
-              for (i=0;i<nbinsc;i++)
-	        {
-	          hnormci += distxyc[i+nbinsc*j];
-	        }
-	    }
-          for (j=0;j<nbinsyc;j++)
-	    {
-              for (i=0;i<nbinsc;i++)
-	        {
-	          c->SetBinContent(i+1,j+1,distxyc[i+nbinsc*j]*hnormc/hnormci);
-	        }
-	    }
-	}
-      else if (istyle == CSM_INTERP_VERTICAL || istyle == CSM_INTERP_VERTICAL_EXTRAP)
-	{
-          for (j=0;j<nbinsyc;j++)
-	    {
-              for (i=0;i<nbinsc;i++)
-	        {
-		  gbc = distxyd[i+nbinsc*j] + ((xc-xa)/(xb-xa))*(distxyb[i+nbinsc*j]-distxya[i+nbinsc*j]);
-		  if (gbc < 0)
-		    {
-		      gbc = 0;
-		    }
-	          c->SetBinContent(i+1,j+1,gbc);
-	        }
-	    }
-	}
-      else
-	{
-	  cout << "csm_interpolate_histogram: unknown interpolation style " << istyle << endl;
-	  exit(0);
-	}
-
-      delete[] distxya;
-      delete[] distxyb;
-      delete[] distxyc;
-      delete[] distxyd;
-    }
-
-}
-
-/*------------------------------------------------------------------------*/
-
 /* compounded interpolation -- dist1 = central value shape, dist2 = syst. varied shape,
-  dist3 = shape to distort (may be the result of previous distortions for compounded shape
-  variations), distn = resultant shape.  par1 = value of parameter for dist1.  par2 = value of
-  parameter (like # of sigma) for dist2.  parn = value of parameter for the output histogram
-  Built on the idea of d_pvmorph, but generalized a bit.  Returns a null histogram if any of
-  the three input histograms has zero or negative total sum.
+   dist3 = shape to distort (may be the result of previous distortions for compounded shape
+   variations), distn = resultant shape.  par1 = value of parameter for dist1.  par2 = value of
+   parameter (like # of sigma) for dist2.  parn = value of parameter for the output histogram
+   Built on the idea of d_pvmorph, but generalized a bit.  Returns a null histogram if any of
+   the three input histograms has zero or negative total sum.
 */
 
 //#define DEBUGPVMC
@@ -5342,21 +5106,21 @@ void csm_pvmc(Int_t nb, Double_t *dist1, Double_t *dist2, Double_t *dist3, Doubl
 
   for (i=0;i<3;i++)
     {
-       if ( id[idx[i]] == 1 )
-         {
-           x1 = xd[idx[i]];
-           y1 = yd[idx[i]]; // should be zero
-         }
+      if ( id[idx[i]] == 1 )
+	{
+	  x1 = xd[idx[i]];
+	  y1 = yd[idx[i]]; // should be zero
+	}
       else if ( id[idx[i]] == 2 )
-         {
-           x2 = xd[idx[i]];
-           y2 = yd[idx[i]];  // should be zero
-         }
+	{
+	  x2 = xd[idx[i]];
+	  y2 = yd[idx[i]];  // should be zero
+	}
       else if ( id[idx[i]] == 3 )
-         {
-           x3 = xd[idx[i]];
-           y3 = yd[idx[i]];  // should be zero
-         }
+	{
+	  x3 = xd[idx[i]];
+	  y3 = yd[idx[i]];  // should be zero
+	}
     }
   // don't have the other ends of the line segments yet -- find them as we go along.
 
@@ -5580,14 +5344,14 @@ void csm_pvmc(Int_t nb, Double_t *dist1, Double_t *dist2, Double_t *dist3, Doubl
 		}
 	      else
 		{
-	           ydi[k2] = ydis[i-1] + ( (Double_t) k2  - xdis[i-1] )*
-                                         (ydis[i]-ydis[i-1])/(xdis[i]-xdis[i-1]);
+		  ydi[k2] = ydis[i-1] + ( (Double_t) k2  - xdis[i-1] )*
+		    (ydis[i]-ydis[i-1])/(xdis[i]-xdis[i-1]);
 #ifdef DEBUGPVMC
-		   cout << "filling bins: " << i << " " << k1 << " " << k2 << " " << ydi[k2] << endl; 
+		  cout << "filling bins: " << i << " " << k1 << " " << k2 << " " << ydi[k2] << endl; 
 #endif
 
 		}
-	       k2last = k2;
+	      k2last = k2;
 	    } 
 	  if ( (Double_t) k2 > xdis[i] ) break;
 	}
@@ -5613,38 +5377,38 @@ void csm_pvmc(Int_t nb, Double_t *dist1, Double_t *dist2, Double_t *dist3, Doubl
 
 
 /*  
- Re-coded version of d_pvmorph_2d from Alex Read.  C version from Tom Junk
- Added feature of compounding shape variations as systematic errors.
- February 2007
+    Re-coded version of d_pvmorph_2d from Alex Read.  C version from Tom Junk
+    Added feature of compounding shape variations as systematic errors.
+    February 2007
 
-......Do a linear interpolation between three two-dimensional
-      probability distributions (scatterplots) as a function
-      of the characteristic parameter of the distribution, for use
-      in both interpolation and in application of systematic uncertainties.
-      xydist1 is the "central value" histogram
-      xydist2 is the "systematically varied" histogram
-      xydist3 is the histogram to apply the variation to
-      xydistn is the output histogram.  See csm_pvmc
-        for compounded systematic variation applicaiton in 1D
-        (used repeatedly in here).
+    ......Do a linear interpolation between three two-dimensional
+    probability distributions (scatterplots) as a function
+    of the characteristic parameter of the distribution, for use
+    in both interpolation and in application of systematic uncertainties.
+    xydist1 is the "central value" histogram
+    xydist2 is the "systematically varied" histogram
+    xydist3 is the histogram to apply the variation to
+    xydistn is the output histogram.  See csm_pvmc
+    for compounded systematic variation applicaiton in 1D
+    (used repeatedly in here).
 
-      This is a generalization of csm_pvmc. The 2d distribution
-      can be move around and be stretched or squeezed in two
-      dimenions but finite rotations (changes in the correlation)
-      are poorly approximated.
+    This is a generalization of csm_pvmc. The 2d distribution
+    can be move around and be stretched or squeezed in two
+    dimenions but finite rotations (changes in the correlation)
+    are poorly approximated.
 
- nx        : Number of x-bins in the input and output distributions.
- ny        : Number of y-bins in the input and output distributions.
- xydist1,xydist2,xydist3,xydistn
-           : Bin contents of scatterplots. The arrays should be
-             packed with the index running fastest over the x
-             dimension.
-             Contents are in xydist[ix+nx*iy]
- par1,par2,parn     : Values of the linear parameters that characterise the
-                      histograms (e.g. the Higgs mass).
+    nx        : Number of x-bins in the input and output distributions.
+    ny        : Number of y-bins in the input and output distributions.
+    xydist1,xydist2,xydist3,xydistn
+    : Bin contents of scatterplots. The arrays should be
+    packed with the index running fastest over the x
+    dimension.
+    Contents are in xydist[ix+nx*iy]
+    par1,par2,parn     : Values of the linear parameters that characterise the
+    histograms (e.g. the Higgs mass).
 
- Output: xydistn.  Same binning as xydist1,xydist2,xydist3.
-                   Its memory must be allocated outside of the routine
+    Output: xydistn.  Same binning as xydist1,xydist2,xydist3.
+    Its memory must be allocated outside of the routine
 
 */
 
@@ -5707,18 +5471,18 @@ void csm_pvmc2d(Int_t nx, Int_t ny, Double_t *xydist1,
 }
 
 /*
- Re-coded version of d_ypvscat from Alex Read.  C version from Tom Junk
- Project a scatterplot onto the y-axis.The
- projection is normalized so that the sum of the bin contents is 1.0.
+  Re-coded version of d_ypvscat from Alex Read.  C version from Tom Junk
+  Project a scatterplot onto the y-axis.The
+  projection is normalized so that the sum of the bin contents is 1.0.
 
- nx,ny    : Number of bins in the scatterplot for the x and y coordindates.
-            The projection is done onto <ny> bins.
- xydist   : The 2-dimensional array of the probabilities
- ydist    : The 1-dimensional array of the 2d probabilities projected onto
-            the y-axis.
+  nx,ny    : Number of bins in the scatterplot for the x and y coordindates.
+  The projection is done onto <ny> bins.
+  xydist   : The 2-dimensional array of the probabilities
+  ydist    : The 1-dimensional array of the 2d probabilities projected onto
+  the y-axis.
 
- Inputs : nx,ny,xydist
- Outputs: ydist (ny is unchanged from input to output)
+  Inputs : nx,ny,xydist
+  Outputs: ydist (ny is unchanged from input to output)
 */
 
 void csm_yproj(Int_t nx, Int_t ny, Double_t *xydist, Double_t *ydist)
@@ -5745,26 +5509,26 @@ void csm_yproj(Int_t nx, Int_t ny, Double_t *xydist, Double_t *ydist)
 }
 
 /*
-Recoded d_getycont -- original by Alex Read, recoded by Tom Junk
-February 2007
+  Recoded d_getycont -- original by Alex Read, recoded by Tom Junk
+  February 2007
 
-<ydist1> and <ydist2> and <ydist3>
-are the projections on the y-axis of three
-scatterplots which are going to be interpolated. <ydistn> is
-the interpolated 1d distribution which represent the projection
-of the interpolated scatterplot on the y-axis. This routine determines
-which bins of <ydist1> and <ydist2> and <ydist3>
-contribute and by what amount to
-each bin of <ydistn>. This information is used in csm_pvmc2d to 
-determine the input distributions in the x-direction of each
-y-bin: these are then interpolated and accumulated in the interpolated
-2d distribution.
+  <ydist1> and <ydist2> and <ydist3>
+  are the projections on the y-axis of three
+  scatterplots which are going to be interpolated. <ydistn> is
+  the interpolated 1d distribution which represent the projection
+  of the interpolated scatterplot on the y-axis. This routine determines
+  which bins of <ydist1> and <ydist2> and <ydist3>
+  contribute and by what amount to
+  each bin of <ydistn>. This information is used in csm_pvmc2d to 
+  determine the input distributions in the x-direction of each
+  y-bin: these are then interpolated and accumulated in the interpolated
+  2d distribution.
 
-Inputs : ny,ydist1,ydist2,ydist3,ydistn
-Outputs: alpha1,alpha2,alpha3
+  Inputs : ny,ydist1,ydist2,ydist3,ydistn
+  Outputs: alpha1,alpha2,alpha3
 
-alpha1[iyc+ny*iy] encodes the contribution of bin iyc in ydist1
-to to bin iy in ydistn
+  alpha1[iyc+ny*iy] encodes the contribution of bin iyc in ydist1
+  to to bin iy in ydistn
 
 */
 
@@ -5798,7 +5562,7 @@ void csm_ycont(Int_t ny, Double_t *ydist1, Double_t *ydist2,
     {
       for (j=0;j<ny;j++)
 	{
-	   cout << i << " " << j << " " << alpha1[i+ny*j] << endl;
+	  cout << i << " " << j << " " << alpha1[i+ny*j] << endl;
 	}
     }
   
@@ -5900,14 +5664,14 @@ void csm_acnvec2(Double_t *vec, Int_t n)
 /*    pseudoexperiments to compute expected limits however.                */
 /*-------------------------------------------------------------------------*/
 /* arguments:  beta: credibility level:L  0.95 for 95% CL limits
-               sflimit:  the observed limit
-               unc:      MC statistical unc. on observed limit
-               npx:      Number of pseudoexperiments to run to compute expected limits
-               sm2:      -2 sigma expected limit      *put in null pointers for all
-               sm1:      -1 sigma expected limit      *five of these to skip the
-               smed:     median expected limit        *calculation and speed it up.
-               sp1:      +1 sigma expected limit
-               sp2:      +2 sigma expected limit
+   sflimit:  the observed limit
+   unc:      MC statistical unc. on observed limit
+   npx:      Number of pseudoexperiments to run to compute expected limits
+   sm2:      -2 sigma expected limit      *put in null pointers for all
+   sm1:      -1 sigma expected limit      *five of these to skip the
+   smed:     median expected limit        *calculation and speed it up.
+   sp1:      +1 sigma expected limit
+   sp2:      +2 sigma expected limit
 */
 
 void mclimit_csm::bayes_heinrich_withexpect(Double_t beta,
@@ -5924,7 +5688,7 @@ void mclimit_csm::bayes_heinrich_withexpect(Double_t beta,
   Int_t i,j,k,ibin,nbinsx,nbinsy,ipx,nens,iens;
   Int_t nchans,ntemplates,itpl;
   csm_channel_model* cm;
-  TH1* ht;
+  TH1Type* ht;
   Double_t r;
   int ngl;
   const PRIOR prior=corr;
@@ -6045,7 +5809,7 @@ void mclimit_csm::bayes_heinrich_withexpect(Double_t beta,
   *sflimit = 0;
   if (bayesintegralmethod == CSM_BAYESINTEGRAL_JOEL)
     {
-       *sflimit = (Double_t) cslimit(beta,nbinstot,nens,nobs,ens,&ngl,xgl,lwgl,prior,unc);
+      *sflimit = (Double_t) cslimit(beta,nbinstot,nens,nobs,ens,&ngl,xgl,lwgl,prior,unc);
     }
   else
     {
@@ -6080,7 +5844,7 @@ void mclimit_csm::bayes_heinrich_withexpect(Double_t beta,
 	    }
 	  if (bayesintegralmethod == CSM_BAYESINTEGRAL_QUICK)
 	    {
-	       *sflimit = quickbint(beta);
+	      *sflimit = quickbint(beta);
 	    }
 	}
     }
@@ -6101,8 +5865,8 @@ void mclimit_csm::bayes_heinrich_withexpect(Double_t beta,
       pdname = new char[strlen(test_hypothesis_pe->channame[i])+strlen(" pseudodata ")];
       strcpy(pdname,null_hypothesis_pe->channame[i]);
       strcat(pdname," pseudodata");
-      pdarray[i] = (TH1*) null_hypothesis_pe->chanmodel[i]->histotemplate[0]->Clone(pdname);
-      delete pdname;
+      pdarray[i] = copy_TH1<TH1> (*null_hypothesis_pe->chanmodel[i]->histotemplate[0], pdname).release();
+      delete[] pdname;
     }
   for (ipx=0;ipx<npx;ipx++)
     {
@@ -6149,14 +5913,14 @@ void mclimit_csm::bayes_heinrich_withexpect(Double_t beta,
 	    { if (nobstotlist[nobsindex[ipx]] != nobstotlist[nobsindex[ipx-1]])
 	      { 
 	        ngl = 0;
-	       }
+	      }
 	    }
 	  p = cslimit(beta,nbinstot,nens,&(nobslist[nbinstot*nobsindex[ipx]]),ens,&ngl,xgl,lwgl,prior,unc);
 	}
       else
 	{
 
-      setdlcsn(nbinstot,nens,&(nobslist[nbinstot*nobsindex[ipx]]),ens);
+	  setdlcsn(nbinstot,nens,&(nobslist[nbinstot*nobsindex[ipx]]),ens);
 
 	  // make a vector of the posterior likelihood function
 	  if (bayes_interval_step > 0)
@@ -6269,7 +6033,7 @@ void mclimit_csm::bayes_heinrich(Double_t beta,
   Int_t i,j,k,ibin,nbinsx,nbinsy,ipx,nens,iens;
   Int_t nchans,ntemplates,itpl;
   csm_channel_model* cm;
-  TH1* ht;
+  TH1Type* ht;
   Double_t r;
   int ngl;
   const PRIOR prior=corr;
@@ -6380,7 +6144,7 @@ void mclimit_csm::bayes_heinrich(Double_t beta,
   *sflimit = 0;
   if (bayesintegralmethod == CSM_BAYESINTEGRAL_JOEL)
     {
-       *sflimit = (Double_t) cslimit(beta,nbinstot,nens,nobs,ens,&ngl,xgl,lwgl,prior,unc);
+      *sflimit = (Double_t) cslimit(beta,nbinstot,nens,nobs,ens,&ngl,xgl,lwgl,prior,unc);
     }
   else
     {
@@ -6413,10 +6177,10 @@ void mclimit_csm::bayes_heinrich(Double_t beta,
 	      bhnorm = scaleb;
 	      for (ic=0;ic<jsiz;ic++) bayes_posterior[ic] *= scaleb;
 	    }
-      if (bayesintegralmethod == CSM_BAYESINTEGRAL_QUICK)
-	{
-	  *sflimit = quickbint(beta);
-	}
+	  if (bayesintegralmethod == CSM_BAYESINTEGRAL_QUICK)
+	    {
+	      *sflimit = quickbint(beta);
+	    }
 	}
     }
 
@@ -6426,9 +6190,836 @@ void mclimit_csm::bayes_heinrich(Double_t beta,
   delete[] lwgl;
 }
 
+// expected limits with the Markov Chain MC limit calculator
+// run pseudoexperiments based on null_hypothesis_pe and call
+// bayeslimit_mcmc1 for each one
+
+void mclimit_csm::bayeslimit_mcmc1_expect(double beta, PRIOR prior, int npx, 
+					  double *sm2, double *sm1, double *smed, 
+					  double *sp1, double *sp2)
+{
+  vector<double> clist;
+  int nchans = null_hypothesis_pe->channame.size();
+  TH1** pdarray = new TH1*[nchans];     // data and pseudodata stay as TH1's
+  TH1** dhsavearray = new TH1*[nchans];
+  char *pdname;
+
+  for (int i=0;i<nchans; i++)
+    {
+      pdname = new char[strlen(null_hypothesis_pe->channame[i])+strlen(" pseudodata ")];
+      strcpy(pdname,null_hypothesis_pe->channame[i]);
+      strcat(pdname," pseudodata");
+      pdarray[i] = (TH1*) datahist[i]->Clone(pdname);
+      delete[] pdname;
+      dhsavearray[i] = datahist[i];
+      datahist[i] = pdarray[i];
+    }
+
+  // caclculate a limit for each pseudoexperiment
+
+  for (int ipx=0; ipx<npx; ipx++)
+    {
+      null_hypothesis_pe->single_pseudoexperiment(pdarray);
+      double slimit = bayeslimit_mcmc1(beta, prior);
+      if (pxprintflag) cout << "bayespx: " << slimit << endl; 
+      clist.push_back(slimit);
+    }
+
+  std::sort(clist.begin(),clist.end());
+  int i =  (int) nearbyint(npx*MCLIMIT_CSM_MCLM2S);
+  if (i<0) 
+    { i=0; }
+  if (i>npx-1)
+    { i=npx-1; }
+  *sm2 = clist[i];
+
+  i =  (int) nearbyint(npx*MCLIMIT_CSM_MCLM1S);
+  if (i<0) 
+    { i=0; }
+  if (i>npx-1)
+    { i=npx-1; }
+  *sm1 = clist[i];
+
+  i =  (int) nearbyint(npx*MCLIMIT_CSM_MCLMED);
+  if (i<0) 
+    { i=0; }
+  if (i>npx-1)
+    { i=npx-1; }
+  *smed = clist[i];
+
+  i =  (int) nearbyint(npx*MCLIMIT_CSM_MCLP1S);
+  if (i<0) 
+    { i=0; }
+  if (i>npx-1)
+    { i=npx-1; }
+  *sp1 = clist[i];
+
+  i =  (int) nearbyint(npx*MCLIMIT_CSM_MCLP2S);
+  if (i<0) 
+    { i=0; }
+  if (i>npx-1)
+    { i=npx-1; }
+  *sp2 = clist[i];
+
+  for (int i=0;i<nchans; i++)
+    {
+      delete pdarray[i];
+    }
+  delete[] pdarray;
+  for (int i=0;i<nchans; i++)
+    {
+      datahist[i] = dhsavearray[i];
+    }
+  delete[] dhsavearray;
+
+}
+
+//-------------------------------------------------------------------------
+//  Adaptive Markov Chain limits
+//  Uses testhyp_pe as the model to test
+//-------------------------------------------------------------------------
+// all arguments are optional
+// Beta is the credibility level desired for the limits -- the default is 0.95.
+
+double mclimit_csm::bayeslimit_mcmc1(double beta, PRIOR prior, TString histoutfile)
+{
+  csm_channel_model* cm;
+
+  // count up all the nuisance parameters -- add in the bin-by-bin errors (Poisson flag = 1 or 2)
+  // take sqrt(contents) for poisson flag = 1 and the error supplied for poisson flag = 2
+
+  vector<char*> npnames;
+  vector<double> nplb;
+  vector<double> nphb;
+
+  Bool_t addStatus = TH1::AddDirectoryStatus();
+  TH1::AddDirectory(kFALSE); // cloned histograms go in memory, and aren't deleted when files are closed.
+                             // be sure to restore this state when we're out of the routine.
+
+  test_hypothesis_pe->list_nparams(&npnames, &nplb, &nphb);   // this clears and fills the vectors of name pointers and bounds
+
+  int nbinstot = 0;
+  int nperrtot = 0;
+
+  // count up channels, bins, and independent Poisson uncertainties
+
+  int nchans = test_hypothesis_pe->channame.size();
+  for (int i=0;i<nchans;i++)
+    {
+      cm = test_hypothesis_pe->chanmodel[i];
+      int nbtmp = cm->histotemplate[0]->GetNbinsX() * cm->histotemplate[0]->GetNbinsY();
+      nbinstot += nbtmp;
+      int ntemplates = cm->histotemplate.size();
+      for (int itpl = 0; itpl < ntemplates; itpl++)
+	{
+          if (cm->poissflag[itpl] != 0) nperrtot += nbtmp;
+	}
+    }
+
+  // allocate storage for nuisance parameter values and set initial values to zero
+
+  // rate and shape errors
+  int nnptot = npnames.size();
+  double npvalues[nnptot];
+  double proposed_npvalues[nnptot];
+  double npresolutions[nnptot];
+  double npf1[nnptot];
+
+  // bin by bin errors (Poisson)
+  double pnpvalues[nperrtot];
+  double proposed_pnpvalues[nperrtot];
+  double pnpresolutions[nperrtot];
+  double pnpf1[nperrtot];
+
+  double proposed_ssf=1.0;
+  for (int i=0;i<nnptot;i++) npvalues[i] = 0;
+  for (int i=0;i<nperrtot;i++) pnpvalues[i] = 0;
+  double ssf = 1.0;
+  double slog = 0.0;
+  int phistflag = 0;
+  TFile *histfile = 0;
+  vector<TH1*> nphist;
+  vector<double> ssflist;
+  TH1D *totcount = 0;
+  const int nburnin = 500; // tuning parameter -- do not like...
+  double stotdim = sqrt(nnptot + nperrtot + 1.0)/2.0;
+  double stotdims = stotdim/2.0;       // see code below -- this gets overwritten.
+
+  const int accept_interval = 5000;    // every 5000 samples re-evalulate the acceptance rate.
+  const double accept_low = 0.3;       // desire an acceptance ratio between low and high values.
+  const double accept_high = 0.5;
+  const double dimscale = 1.2;         // scale the step by this up or down if we don't have the right acceptance rate.
+
+  // set up posterior histograms if requested
+  if (histoutfile != "")
+    {
+      phistflag = 1;
+      for (int i=0;i<nnptot;i++)
+	{
+	  TH1 *h = new TH1F(npnames[i],npnames[i],100,-5,5);
+	  nphist.push_back(h);
+	}
+      for (int i=0;i<nperrtot;i++)
+	{
+	  char pnpntmp[15];
+	  sprintf(pnpntmp,"Poiss_%d",i);
+	  TH1 *h = new TH1F(pnpntmp,pnpntmp,100,-5,5);
+	  nphist.push_back(h);
+	}
+      totcount = new TH1D("totcount","totcount",3,-0.5,2.5);
+    }
+
+  double llf = 0;
+
+  // first-time through initialization
+  // first time through use default nuisance parameter values, and a signal scale factor of 1.0
+
+  test_hypothesis_pe->undo_nuisance_response();  // since bayesmcmcllf no longer calls nuisance_response
+  // for the non-Poisson nuisance parameters.
+  llf = bayesmcmcllf(test_hypothesis_pe,nnptot,npvalues,
+		     nperrtot,pnpvalues,ssf,prior);
+  slog = llf;
+
+  // at the default values of the nuisance parameters, explore along the signal scale factor axis
+  // so we can set the signal scale appropriately.
+  // do a scan over six orders of magnitude, in 80 steps.  
+
+  const double sfbase = 1.1885;   // the 40th root of 1000
+
+  double lmx = 0;
+  int imx = -40;
+  double llflist[81];
+  for (int isf=-40;isf<41;isf++)
+    {
+      double esf = pow(sfbase,(double) isf);
+      double llftest = bayesmcmcllf(test_hypothesis_pe,nnptot,npvalues,
+				    nperrtot,pnpvalues,esf,prior);
+      if (isf == -40 || llftest > lmx) 
+	{
+	  imx = isf;
+	  lmx = llftest;
+	}
+      llflist[isf+40] = llftest;
+    }
+
+  // start out the signal scale factor at the peak value
+  ssf = pow(sfbase, (double) imx);
+  // figure out how far we have to go in order to drop by a factor of two
+
+  const double g2 = 0.693147181;  // log(2)
+  int isfl = imx;
+  int isfh = imx;
+  for (int i=1;i<81;i++)
+    {
+      if (imx-i >= -40)
+	{
+	  if ( (lmx - llflist[imx-i+40]) < g2 ) isfl = imx-i;
+	}
+      if (imx+i <= 40)
+	{
+	  if ( (lmx - llflist[imx+i+40]) < g2 ) isfh = imx+i;
+	}
+    }
+  double siz = pow(sfbase, (double) isfh) - pow(sfbase, (double) isfl);
+  if (siz>0.0)
+    {
+      stotdims = 1.0/siz;
+    }
+  else
+    {
+      stotdims = stotdim/2.0;
+    }
+
+  // explore the space of nuisance parameters along the axes and see which ones are constrained 
+
+  for (int i=0;i<nnptot;i++)
+    {
+      double llft[3],slf[3];
+      int k=0;
+      for (double v=-4.0; v<4.1; v += 0.5)  // vary over +- 4 sigma in steps of one sigma and find the
+	// three highest points
+	{
+	  if (v>nplb[i] && v<nphb[i])
+	    {
+	      npvalues[i] = v;
+	      test_hypothesis_pe->nuisance_response(nnptot,&(npnames[0]),npvalues);
+	      double llft1 = bayesmcmcllf(test_hypothesis_pe,nnptot,npvalues,
+					  nperrtot,pnpvalues,ssf,prior) - slog;
+	      npvalues[i] = 0;  // udno this so we explore along the axes
+	      if (k<3)
+		{
+		  llft[k] = llft1;
+		  slf[k] = v;
+		  k++;
+		}
+	      else
+		{
+		  int imin=0;  // find the smallest and drop it off the list if we found a bigger one
+		  for (int k1=0;k1<3;k1++)
+		    {
+		      if (llft[k1]<llft[imin]) imin=k1;
+		    }
+		  if (llft1>llft[imin]) 
+		    {
+		      llft[imin] = llft1;
+		      slf[imin] = v;
+		    }
+		}
+	    }
+	}
+      // draw a parabola through the top three points -- find the maximum, require it to be in the
+      // parameter rage, and find the width, called the resolution.
+
+      //cout << "llft: " << llft[0] << " " << llft[1] << " " << llft[2] << endl;
+      //cout << "slf : " << slf[0] << " " << slf[1] << " " << slf[2] << endl;
+
+      double x1 = slf[0];
+      double x2 = slf[1];
+      double x3 = slf[2];
+      double xi[3][3];
+      double det = x1*x1*x2 - x1*x1*x3 -x2*x2*x1 + x3*x3*x1 + x2*x2*x3 - x2*x3*x3;
+
+      if (det != 0)
+	{
+	  xi[0][0] = (x2-x3)/det;
+	  xi[0][1] = (x3-x1)/det;
+	  xi[0][2] = (x1-x2)/det;
+	  xi[1][0] = (x3*x3-x2*x2)/det;
+	  xi[1][1] = (x1*x1-x3*x3)/det;
+	  xi[1][2] = (x2*x2-x1*x1)/det;
+	  xi[2][0] = (x2*x2*x3-x2*x3*x3)/det;
+	  xi[2][1] = (x1*x3*x3-x1*x1*x3)/det;
+	  xi[2][2] = (x1*x1*x2-x1*x2*x2)/det;
+	  double a=0;
+	  double b=0;
+	  double c=0;
+	  for (int j=0;j<3;j++)
+	    {
+	      a += xi[0][j]*llft[j];
+	      b += xi[1][j]*llft[j];
+	      c += xi[2][j]*llft[j];
+	    }
+          //cout << "abc: " << a << " " << b << " " << c << endl;
+	  //cout << a*x1*x1 + b*x1 + c - llft[0] << endl;
+	  //cout << a*x2*x2 + b*x2 + c - llft[1] << endl;
+	  //cout << a*x3*x3 + b*x3 + c - llft[2] << endl;
+
+	  if (a == 0)  // flat parabola
+	    {
+	      npf1[i] = 0;
+	      npresolutions[i] = 1.0;
+	    }
+	  else
+	    {
+	      npf1[i] = -b/(2.0*a);
+	      npresolutions[i] = -0.5/a;
+	    }
+	}
+      else // case of zero determinant
+	{
+	  npf1[i] = 0;
+	  npresolutions[i] = 1.0;
+	}
+      //cout << "resolution: " << npresolutions[i] << " " << i << endl;
+      npf1[i] = min(nphb[i],max(nphb[i],npf1[i]));  // bound it in the min, max range
+      npresolutions[i] = max(0.1,min(1.0,npresolutions[i]));  // bound the resolutions too
+    }
+
+  // for now let's set the resolutions of all bin by bin parameters to 1.0
+  for (int i=0;i<nperrtot;i++)
+    {
+      pnpf1[i] = 0.0;
+      pnpresolutions[i] = 1.0;
+    }
+
+  int iadcount=0;
+  int iaccept_count=0;
+
+  for (int isample=0; isample<nmc_req; isample++)
+    {
+      // the Metropolis-Hastings proposal function -- Gaussians for the nuisance parameters,
+      // uniform for the signal scale factor.
+
+      int itest=0;
+      if (totcount) totcount->Fill(0);
+      for (int i=0;i<nnptot;i++)
+	{
+	  do 
+	    {
+	      proposed_npvalues[i] = npvalues[i] + gRandom->Gaus(0,1)*npresolutions[i]/stotdim;
+	      //cout << "proposed npvalue: " << proposed_npvalues[i] << endl;
+	    }
+	  while (proposed_npvalues[i] > nphb[i] || proposed_npvalues[i] < nplb[i]); // never go out of bounds
+	}
+
+      test_hypothesis_pe->nuisance_response(nnptot,&(npnames[0]),proposed_npvalues);
+
+      // all the work below is to determine if a bin's content would go negative if we throw
+      // the Poisson nuisance parameter -- rethrow it if it does go negative.  This depends on
+      // the systematically varied bin contents from varying the other nuisance parameters so we
+      // have to apply nuisance_response here in the proposal function
+      // don't apply sft_varied as they scale both the contents and the errors.  Do it in the likelihood function though
+      // also compute the llf asymmetry factor for the bin by bin errors as they are trucated to keep the
+      // predictions from going negative
+
+      int inp = 0;
+      double proposed_bbcorr = 0;
+      for (int i=0;i<nchans;i++)
+	{
+	  cm = test_hypothesis_pe->chanmodel[i];
+	  int nbinsx = cm->histotemplate[0]->GetNbinsX();
+	  int nbinsy = cm->histotemplate[0]->GetNbinsY();
+	  for (int j=0;j<nbinsx;j++)
+	    {
+	      for (int k=0;k<nbinsy;k++)
+		{
+		  int ntemplates = cm->histotemplate.size();
+		  for (int itpl = 0; itpl < ntemplates; itpl++)
+		    { 
+                      if (cm->poissflag[itpl] != 0) 
+			{
+			  double rtmp = 0;
+			  double dr=0;
+			  if (nbinsy == 1) 
+			    {
+			      rtmp = cm->histotemplate_varied[itpl]->GetBinContent(j+1);
+			    }
+			  else
+			    {
+			      rtmp = cm->histotemplate_varied[itpl]->GetBinContent(j+1,k+1);
+			    }
+			  if (cm->poissflag[itpl] == CSM_POISSON_BINERR) 
+			    {
+			      if (nbinsy == 1) 
+				{
+				  dr = cm->histotemplate_varied[itpl]->GetBinContent(j+1);
+				}
+			      else
+				{
+				  dr = cm->histotemplate_varied[itpl]->GetBinContent(j+1,k+1);
+				}
+			      if (dr>0) dr = sqrt(dr);
+			    }
+			  if (cm->poissflag[itpl] == CSM_GAUSSIAN_BINERR) 
+			    {
+			      if (nbinsy == 1) 
+				{
+				  dr = cm->histotemplate_varied[itpl]->GetBinError(j+1);
+				}
+			      else
+				{
+				  dr = cm->histotemplate_varied[itpl]->GetBinError(j+1,k+1);
+				}
+			    }
+			  double rte=rtmp;
+			  do 
+			    {
+			      proposed_pnpvalues[inp] = pnpvalues[inp] + gRandom->Gaus(0,1)/stotdim;
+			      rte = rtmp + dr*proposed_pnpvalues[inp];
+			    }
+			  while (rte<0);
+			  if (dr>0)
+			    {
+			      proposed_bbcorr -= log( 0.5*(1.0 + erf(rtmp/(dr*sqrt(2.0)))));  
+			    }
+
+			  inp++;
+			}
+		    }
+		}
+	    }
+	}
+      do
+	{
+	  double ur=0;
+	  do 
+	    {
+	      ur = gRandom->Uniform(1.0);
+	    }
+	  while (ur==1.0); // rethrow if we get exactly 1.0 to make it completely symmetric
+	  proposed_ssf = ssf + (ur - 0.5)/stotdims;
+	}
+      while (proposed_ssf < 0);
+
+      double proposed_llf = bayesmcmcllf(test_hypothesis_pe,nnptot,proposed_npvalues,
+					 nperrtot,proposed_pnpvalues,proposed_ssf,prior);
+
+      // since the parameter space is truncated, put in a factor for the asymmetry in the
+      // step from here to another place and back again.  
+
+      for (int i=0;i<nnptot;i++)
+	{
+	  proposed_llf -= log( 0.5*( erf((nphb[i]-proposed_npvalues[i])/(sqrt(2.0)/(stotdim/npresolutions[i]))) - 
+	  		             erf((nplb[i]-proposed_npvalues[i])/(sqrt(2.0)/(stotdim/npresolutions[i]))) ) );
+	}
+      if (proposed_ssf < 0.5/stotdims)
+	{
+	  proposed_llf -= log(0.5 + proposed_ssf*stotdims);
+	}
+      proposed_llf += proposed_bbcorr;
+
+      double dllf = proposed_llf - llf;
+      double pratio = 0;
+      if (dllf>-150 && dllf < 150)
+	{
+	  pratio = exp(dllf);
+	}
+      double ur = gRandom->Uniform(1.0);
+      if (ur < pratio) 
+	{
+	  itest = 1;
+	  ssf = proposed_ssf;
+	  for (int i=0;i<nnptot;i++) npvalues[i] = proposed_npvalues[i];
+	  for (int i=0;i<nperrtot;i++) pnpvalues[i] = proposed_pnpvalues[i];
+	  llf = proposed_llf;
+	}
+      if (isample>=nburnin)
+	{
+          if (totcount) 
+	    { 
+	      totcount->Fill(1);
+	      if (itest==1) totcount->Fill(2);
+	    }
+
+	  ssflist.push_back(ssf);
+	  if (phistflag)
+	    {
+	      int k=0;
+              for (int i=0;i<nnptot;i++)
+		{
+		  nphist[k]->Fill(npvalues[i]);
+		  k++;
+		}
+              for (int i=0;i<nperrtot;i++)
+		{
+		  nphist[k]->Fill(pnpvalues[i]);
+	          k++;
+		}
+	    }
+	  // adapt the acceptance ratio
+
+	  iadcount++;
+	  if (itest==1) iaccept_count++;
+	  if (iadcount >= accept_interval)
+	    {
+	      double acceptrate = ((double) iaccept_count)/((double) iadcount);
+	      if (acceptrate>accept_high) 
+		{
+		  stotdim /= dimscale;
+		  stotdims /= dimscale;
+		}
+	      if (acceptrate<accept_low)
+		{
+		  stotdim *= dimscale;
+		  stotdims *= dimscale;
+		}
+	      iadcount = 0;
+	      iaccept_count = 0;
+	    }
+
+	}
+    }
+
+  std::sort(ssflist.begin(),ssflist.end());
+
+  if (phistflag) 
+    {
+      histfile = new TFile(histoutfile,"RECREATE");
+      if (histfile==0)
+	{
+	  cout << "Markov Chain output histogram file open failed " << histoutfile << endl;
+	  exit(0);
+	}
+      if (histfile->IsZombie())
+	{ 
+	  cout << "Markov Chain output histogram file open failed " << histoutfile << endl;
+	  exit(0);
+	}
+
+      histfile->cd();
+      TH1F ssfhist("mcmcssf","Signal Scale Factor",100,0,ssflist.back());
+      int nssflist = ssflist.size();
+      for (int i=0; i<nssflist; i++) ssfhist.Fill(ssflist[i]);
+
+      int nnphist=nphist.size();
+      for (int i=0;i<nnphist; i++)
+	{
+	  nphist[i]->Write();
+	}
+      ssfhist.Write();
+      totcount->Write();
+      histfile->Close();
+    }
+
+  // free up memory used by allocated histograms
+  int nnphist=nphist.size();
+  for (int i=0; i<nnphist; i++)
+    {
+      delete nphist[i];
+    }
+
+  TH1::AddDirectory(addStatus);
+
+  // find the beta quantile of ssflist (already sorted)
+
+  int idx = (int) nearbyint(beta*ssflist.size());
+  idx = min(ssflist.size()-1,max(0,idx));
+  return(ssflist[idx]);
+
+}
+
+// logarithm of the product of probabilities to observe the data and the Gaussian constraints
+// on the nuisance parameters -- still need the nuisance parameter values to compute the Gaussian constraints
+// assumes nuisance_response has already been called for *model
+
+double mclimit_csm::bayesmcmcllf(csm_model *model, int nnptot, double *npvalues, 
+                                 int nperrtot, double *pnpvalues, double ssf, PRIOR prior)
+{
+  csm_channel_model *cm;
+
+  double llf = 0;
+  double stot = 0;
+
+  // put in constraint for nuisance parameters.  Treat bin by bin errors as Gaussian
+
+  for (int i=0;i<nnptot;i++)
+    {
+      llf -= npvalues[i]*npvalues[i]/2.0;
+    }
+  for (int i=0;i<nperrtot;i++)
+    {
+      llf -= pnpvalues[i]*pnpvalues[i]/2.0;
+    }
+
+  int nchans = model->channame.size();
+  int inp = 0;
+  for (int i=0;i<nchans;i++)
+    {
+      cm = model->chanmodel[i];
+      int nbinsx = cm->histotemplate[0]->GetNbinsX();
+      int nbinsy = cm->histotemplate[0]->GetNbinsY();
+      for (int j=0;j<nbinsx;j++)
+	{
+	  for (int k=0;k<nbinsy;k++)
+	    {
+              double r = 0;
+	      int ntemplates = cm->histotemplate.size();
+              for (int itpl = 0; itpl < ntemplates; itpl++)
+	        { 
+		  double rtmp = 0;
+	          double dr=0;
+		  if (nbinsy==1) 
+		    {
+		      rtmp = cm->histotemplate_varied[itpl]->GetBinContent(j+1)*cm->sft_varied[itpl];
+		    }
+		  else
+		    {
+		      rtmp = cm->histotemplate_varied[itpl]->GetBinContent(j+1,k+1)*cm->sft_varied[itpl];
+		    }
+                  if (cm->poissflag[itpl] == CSM_POISSON_BINERR) 
+	            {
+		      if (nbinsy==1) 
+		        {
+			  dr = cm->histotemplate_varied[itpl]->GetBinContent(j+1);
+		        }
+		      else
+		        {
+			  dr = cm->histotemplate_varied[itpl]->GetBinContent(j+1,k+1);
+		        }
+		      if (dr>0) dr = sqrt(dr)*cm->sft_varied[itpl];
+		    }
+                  if (cm->poissflag[itpl] == CSM_GAUSSIAN_BINERR) 
+	            {
+		      if (nbinsy==1) 
+		        {
+			  dr = cm->histotemplate_varied[itpl]->GetBinError(j+1)*cm->sft_varied[itpl];
+		        }
+		      else
+		        {
+			  dr = cm->histotemplate_varied[itpl]->GetBinError(j+1,k+1)*cm->sft_varied[itpl];
+		        }
+		    }
+		  double rte = rtmp;
+		  if (cm->poissflag[itpl] != 0) 
+                    { 
+		      rte += dr*pnpvalues[inp];
+		      inp ++;
+		    }
+		  if (rte < 0) 
+		    { 
+		      rte = 0; // truncate bin by bin errors by template at zero
+		      cout << "calling routine of bayesmcmcllf gives a poisson parameter resulting in a negative prediction" << endl;
+		      exit(0); // should never happen.
+		    }
+		  if (cm->scaleflag[itpl] != 0) 
+                    { 
+		      stot += rte;  // accumulate the unscaled signal and use that for the correlated prior
+		      rte*=ssf;
+		    }
+		  r += rte;
+	        } // end loop on template
+	      int nobs = 0;
+	      if (nbinsy==1)
+		{ nobs = (int) nearbyint(datahist[i]->GetBinContent(j+1));}
+	      else
+		{ nobs = (int) nearbyint(datahist[i]->GetBinContent(j+1,k+1)); }
+
+	      if (r<1E-10) r=1e-10; // protect against zero expectation
+
+	      llf += nobs*log(r) - r - lgamma(nobs+1);
+
+	    } // end loop on ybins
+	} // end loop on xbins
+    } // end loop on channels
+  assert(prior==flat || prior==corr);
+  if (prior == corr)
+    {
+      if (stot > 0.0) 
+        { llf += log(stot); }
+      else
+	{ llf = -1.0E40; } // to exponentiate to zero.
+    }
+  return(llf);
+}
+
+
+// Make channel error band plots.   This routine will create the histograms and fill in pointers to them.
+
+void mclimit_csm::systsumplot(char *channame, int nsamples, TH1 **ehm2, TH1 **ehm1, TH1 **ehmed, TH1 **ehp1, TH1 **ehp2)
+{
+  int isample,i,j;
+  int ichan=0;
+  int nchans = test_hypothesis_pe->channame.size();
+  int nbinsx = 0;
+  int nbinsy = 0;
+  int nbinstot = 0;
+  csm_channel_model *cm;
+  TH1Type* ht;
+  double r;
+  // Nils likes std_auto_ptrs but we'll have to clone them at the end
+  // in order for the histograms to persist after the function ends.
+  std::auto_ptr<TH1> ahm2;
+
+  for (i=0;i<nchans;i++)
+    {
+      if (strcmp(channame,test_hypothesis_pe->channame[i])==0) 
+        { 
+	  ichan=i;
+          cm = test_hypothesis_pe->chanmodel[ichan];
+          nbinsx = cm->histotemplate[0]->GetNbinsX();
+          nbinsy = cm->histotemplate[0]->GetNbinsY();
+          nbinstot = nbinsx*nbinsy;
+          ahm2  = copy_TH1<TH1> (*cm->histotemplate[0]);
+	}
+    }
+
+  // persistent versions of these histograms.
+
+  TH1 *hm2 = (TH1*) ahm2->Clone("ehm2");
+  TH1 *hm1 = (TH1*) ahm2->Clone("ehm1");
+  TH1 *hmed = (TH1*) ahm2->Clone("ehmed");
+  TH1 *hp1 = (TH1*) ahm2->Clone("ehp1");
+  TH1 *hp2 = (TH1*) ahm2->Clone("ehp2");
+
+  *ehm2 = hm2;
+  *ehm1 = hm1;
+  *ehmed = hmed;
+  *ehp1 = hp1;
+  *ehp2 = hp2;
+
+  hm2->Reset();
+  hm1->Reset();
+  hmed->Reset();
+  hp1->Reset();
+  hp2->Reset();
+
+  double bv[nbinstot*nsamples];
+  int idx = 0;
+
+  // fill up an array of fluctuated total yields for each bin for each systematic variation
+
+  for (isample=0;isample<nsamples;isample++)
+    {
+      test_hypothesis_pe->varysyst();
+      cm = test_hypothesis_pe->chanmodel[ichan];
+      int ntemplates = cm->histotemplate.size();
+      for (i=0;i<nbinsx;i++)
+	{
+	  for (j=0;j<nbinsy;j++)
+	    {
+	      bv[idx] = 0;
+	      for (int itpl=0;itpl<ntemplates;itpl++)
+		{
+		  ht = cm->histotemplate_varied[itpl];
+		  if (nbinsy==1) 
+		    { r = ht->GetBinContent(i+1); }
+		  else
+		    { r = ht->GetBinContent(i+1,j+1); }
+		      if (cm->poissflag[itpl] == CSM_POISSON_BINERR)
+			{ r = gRandom->Poisson(r); }
+		      else if (cm->poissflag[itpl] == CSM_GAUSSIAN_BINERR)
+			{ 
+			  double histerr,edraw;
+			  if (nbinsy==1)
+			    { histerr = ht->GetBinError(i+1);}
+			  else
+			    { histerr = ht->GetBinError(i+1,j+1);}
+			  do
+			    { edraw = gRandom->Gaus(0,histerr); }
+			  while (edraw+r<r*1E-6); // don't let it hit zero or go negative.
+			  r += edraw;
+			}
+		      r *= cm->sft_varied[itpl];
+		      bv[idx] += r;
+		}
+	      idx++;
+	    }
+	}
+    }
+
+  // find the quantiles of each bin's distributions
+
+  int im2s = (int) nearbyint(nsamples*MCLIMIT_CSM_MCLM2S);
+  int im1s = (int) nearbyint(nsamples*MCLIMIT_CSM_MCLM1S);
+  int imed = (int) nearbyint(nsamples*MCLIMIT_CSM_MCLMED);
+  int ip1s = (int) nearbyint(nsamples*MCLIMIT_CSM_MCLP1S);
+  int ip2s = (int) nearbyint(nsamples*MCLIMIT_CSM_MCLP2S);
+
+  for (i=0;i<nbinsx;i++)
+    {
+      for (j=0;j<nbinsy;j++)
+	{
+	  vector<double> bd;
+	  for (isample=0;isample<nsamples;isample++)
+	    {
+	      bd.push_back(bv[isample*nbinstot + i*nbinsy + j]);
+	    }
+	  std::sort(bd.begin(),bd.end());
+	  if (nbinsy == 1)
+	    {
+  	      hm2->SetBinContent(i+1,bd[im2s]);
+  	      hm1->SetBinContent(i+1,bd[im1s]);
+  	      hmed->SetBinContent(i+1,bd[imed]);
+  	      hp1->SetBinContent(i+1,bd[ip1s]);
+  	      hp2->SetBinContent(i+1,bd[ip2s]);
+	    }
+	  else
+	    {
+  	      hm2->SetBinContent(i+1,j+1,bd[im2s]);
+  	      hm1->SetBinContent(i+1,j+1,bd[im1s]);
+  	      hmed->SetBinContent(i+1,j+1,bd[imed]);
+  	      hp1->SetBinContent(i+1,j+1,bd[ip1s]);
+  	      hp2->SetBinContent(i+1,j+1,bd[ip2s]);
+	    }
+	}
+    }
+
+}
 
 // Fit a cross section using Joel Heinrich's marginalized posterior
 // use testhyp_pe for this fit (has all nuisance parameters defined)
+
+// reverse order of summation -- do only one systematic sample at a time; saves memory
 
 void mclimit_csm::bh_xsfit(Double_t *xsfit, Double_t *downerr, Double_t *uperr)
 {
@@ -6436,16 +7027,25 @@ void mclimit_csm::bh_xsfit(Double_t *xsfit, Double_t *downerr, Double_t *uperr)
   Int_t i,j,k,ibin,nbinsx,nbinsy,ipx,nens,iens;
   Int_t nchans,ntemplates,itpl;
   csm_channel_model* cm;
-  TH1* ht;
+  TH1Type* ht;
   Double_t r;
-  int ngl;
   const PRIOR prior=flat;
   Int_t nobstot;
+
 
   *xsfit = 0.0;
   *downerr = 0.0;
   *uperr = 0.0;
-  
+
+  if (bayes_interval_step < 0 || (bayes_interval_end-bayes_interval_begin)<0 )
+    {
+      cout << "bh_xsfit: invalid integration region or step." << endl;
+      cout << "bh_xsfit:  begin: " << bayes_interval_begin << " end: " << bayes_interval_end 
+           << " step: " << bayes_interval_step << endl;
+      cout << "Not doing cross section fit." << endl;
+    }
+
+
   nbinstot = 0;
 
   // figure out the total number of bins in all of our histograms
@@ -6458,7 +7058,7 @@ void mclimit_csm::bh_xsfit(Double_t *xsfit, Double_t *downerr, Double_t *uperr)
     }
 
   int* nobs = new int[nbinstot];
-  EB* ens = new EB[nbinstot*nmc_req];
+  EB* ens = new EB[nbinstot];
 
   // copy the observed candidates from histograms into nobs -- be sure to have
   // the same association of bins and the flat array as for the model histogram sums
@@ -6485,9 +7085,11 @@ void mclimit_csm::bh_xsfit(Double_t *xsfit, Double_t *downerr, Double_t *uperr)
 
   // The prior ensemble is constructed in the same way mclimit_csm does pseudoexperiments
 
-  iens = 0;
+  // do one systematic sample at a time and accumulate the posterior
+
   for (ipx=0;ipx<nmc_req;ipx++)
     {
+      iens = 0;
       test_hypothesis_pe->varysyst();
       for (i=0;i<nchans;i++)
 	{
@@ -6533,89 +7135,95 @@ void mclimit_csm::bh_xsfit(Double_t *xsfit, Double_t *downerr, Double_t *uperr)
 		}
 	    }
 	}
-    }
-
-  nens = nmc_req;
-  ngl = 0;
-
-  //cout << "ngl: " << ngl << " " << nobstot << endl;
-
-
-  // make a vector of the posterior likelihood function
-  if (bayes_interval_step > 0)
-    {
-      if ( (bayes_interval_end-bayes_interval_begin)>0 )
+    
+      nens = 1;
+      if (ipx == 0)
 	{
-          double lmax = 0;
-          int imax=0;
+	  setdlcsn(nbinstot,nens,nobs,ens);
 	  bayes_posterior.clear();
 	  bayes_posterior_points.clear();
-	  Double_t b,p;
-	  int k=0;
-	  for (b=bayes_interval_begin;b<=bayes_interval_end;b += bayes_interval_step)
-	    {
-	      p = cspdf(b,1.0,nbinstot,nens,nobs,ens,prior);
-	      bayes_posterior.push_back(p);
+	  for (double b=bayes_interval_begin;b<=bayes_interval_end;b += bayes_interval_step)
+            {
+              bayes_posterior.push_back(0);
 	      bayes_posterior_points.push_back(b);
-	      if (p>lmax)
-		{ 
-		  lmax=p; 
-		  imax = k;
-		  *xsfit = b;
-		}
-	      k++;
-	    }
-
-	  // normalize to unit area, using the trapezoidal rule
-
-	  int jsiz = bayes_posterior.size();
-	  int ic;
-	  Double_t bptot = 0;
-	  for (ic=0;ic<jsiz;ic++) bptot += bayes_posterior[ic];
-	  bptot -= 0.5*bayes_posterior[0];
-	  bptot -= 0.5*bayes_posterior.back();
-	  if (bptot>0)
-	    {
-    	      Double_t scaleb = 1.0/(bptot);
-	      bhnorm = scaleb;
-	      for (ic=0;ic<jsiz;ic++) bayes_posterior[ic] *= scaleb;
-	    }
-
-	  // start at the maximum, and integrate left and right until we get 68%
-
-	  int ilow=imax;
-	  int ihigh=imax;
-	  double psum = bayes_posterior[imax];
-	  double psumtrap = 0.0;
-	  do 
-	    {
-	      int ibest = ilow;
-	      double bpbest = 0.0;
-	      if (ilow>0)
-		{
-		  ibest = ilow-1;
-		  bpbest = bayes_posterior[ibest];
-		}
-	      if (ihigh<jsiz-1)
-		{
-		  if (bayes_posterior[ihigh+1] > bpbest)
-		    {
-  	   	      ibest = ihigh+1;
-		      bpbest = bayes_posterior[ibest];
-		    }
-		}
-	      psum += bpbest;
-	      if (ibest == ilow-1) 
-		{ ilow --; }
-	      else
-		{ ihigh ++; }
-      	      psumtrap = psum - 0.5*bayes_posterior[ilow] - 0.5*bayes_posterior[ihigh];
-	    }
-	  while (psumtrap < 0.68);
-	  *downerr = *xsfit-bayes_posterior_points[ilow];
-	  *uperr = bayes_posterior_points[ihigh] - *xsfit;
+            }
+	}
+      int itmp = 0;
+      for (double b=bayes_interval_begin;b<=bayes_interval_end;b += bayes_interval_step)
+	{
+	  double p = cspdf(b,1.0,nbinstot,nens,nobs,ens,prior);
+	  bayes_posterior[itmp] += p;
+	  itmp++;
 	}
     }
+
+
+  // find the fit cross section and errors
+
+  double lmax = 0;
+  int imax=0;
+  int itmp=0;
+
+  for (double b=bayes_interval_begin;b<=bayes_interval_end;b += bayes_interval_step)
+    {
+      double p = bayes_posterior[itmp];
+      if (p>lmax)
+	{ 
+	  lmax=p; 
+	  imax = itmp;
+	  *xsfit = b;
+	}
+      itmp++;
+    }
+
+  // normalize to unit area, using the trapezoidal rule
+
+  int jsiz = bayes_posterior.size();
+  int ic;
+  Double_t bptot = 0;
+  for (ic=0;ic<jsiz;ic++) bptot += bayes_posterior[ic];
+  bptot -= 0.5*bayes_posterior[0];
+  bptot -= 0.5*bayes_posterior.back();
+  if (bptot>0)
+    {
+      Double_t scaleb = 1.0/(bptot);
+      bhnorm = scaleb;
+      for (ic=0;ic<jsiz;ic++) bayes_posterior[ic] *= scaleb;
+    }
+
+  // start at the maximum, and integrate left and right until we get 68%
+
+  int ilow=imax;
+  int ihigh=imax;
+  double psum = bayes_posterior[imax];
+  double psumtrap = 0.0;
+  do 
+    {
+      int ibest = ilow;
+      double bpbest = 0.0;
+      if (ilow>0)
+	{
+	  ibest = ilow-1;
+	  bpbest = bayes_posterior[ibest];
+	}
+      if (ihigh<jsiz-1)
+	{
+	  if (bayes_posterior[ihigh+1] > bpbest)
+	    {
+	      ibest = ihigh+1;
+	      bpbest = bayes_posterior[ibest];
+	    }
+	}
+      psum += bpbest;
+      if (ibest == ilow-1) 
+	{ ilow --; }
+      else
+	{ ihigh ++; }
+      psumtrap = psum - 0.5*bayes_posterior[ilow] - 0.5*bayes_posterior[ihigh];
+    }
+  while (psumtrap < 0.68);
+  *downerr = *xsfit-bayes_posterior_points[ilow];
+  *uperr = bayes_posterior_points[ihigh] - *xsfit;
 
   delete[] nobs;
   delete[] ens;
@@ -6655,221 +7263,43 @@ Double_t mclimit_csm::quickbint(Double_t beta)
 }
 
 // expected fitted cross section distribuitons -- run pseudoexperiments from the test hypothesis
-// and give distributions of fitted values.
+// and give distributions of fitted values.   Use bh_xsfit above to get the cross section in each one
+// in order to save memory and make the code more maintainable.
 
 void mclimit_csm::bh_xsfit_expect(Int_t npx, Double_t *xsfitavg, Double_t *m2s, 
 				  Double_t *m1s, Double_t *med, Double_t *p1s, Double_t *p2s)
 {
-  Int_t nbinstot;
-  Int_t i,j,k,ibin,nbinsx,nbinsy,ipx,nens,iens;
-  Int_t nchans,ntemplates,itpl;
-  csm_channel_model* cm;
-  TH1* ht;
-  Double_t r;
-  const PRIOR prior=flat;
-  vector<Double_t> xslist;
+  int i,ipx,nchans;
+  vector<double> xslist;
   double xsfit=0;
   double downerr=0;
   double uperr=0;
 
-  nbinstot = 0;
-
-  // figure out the total number of bins in all of our histograms
-  nchans = (Int_t) test_hypothesis_pe->channame.size();
-  for (i=0;i<nchans;i++)
-    {
-      nbinsx = test_hypothesis_pe->chanmodel[i]->histotemplate[0]->GetNbinsX();
-      nbinsy = test_hypothesis_pe->chanmodel[i]->histotemplate[0]->GetNbinsY();
-      nbinstot += nbinsx*nbinsy;
-    }
-
-  int* nobs = new int[nbinstot];
-  EB* ens = new EB[nbinstot*nmc_req];
-
-  // The prior ensemble is constructed in the same way mclimit_csm does pseudoexperiments
-
-  iens = 0;
-  for (ipx=0;ipx<nmc_req;ipx++)
-    {
-      test_hypothesis_pe->varysyst();
-      for (i=0;i<nchans;i++)
-	{
-	  cm = test_hypothesis_pe->chanmodel[i];
-	  ntemplates = (Int_t) cm->histotemplate.size();
-	  nbinsx = cm->histotemplate[0]->GetNbinsX();
-	  nbinsy = cm->histotemplate[0]->GetNbinsY();
-	  for (j=0;j<nbinsx;j++)
-	    {
-	      for (k=0;k<nbinsy;k++)
-		{
-                  ens[iens].e = 0;
-                  ens[iens].b = 0;
-		  for(itpl=0;itpl<ntemplates;itpl++)
-		    {
-		      ht = cm->histotemplate_varied[itpl];
-		      if (nbinsy==1)
-			{ r = ht->GetBinContent(j+1); }
-		      else
-			{r = ht->GetBinContent(j+1,k+1); }
-		      if (cm->poissflag[itpl] == CSM_POISSON_BINERR)
-			{ r = gRandom->Poisson(r); }
-		      else if (cm->poissflag[itpl] == CSM_GAUSSIAN_BINERR)
-			{ 
-			  double histerr,edraw;
-			  if (nbinsy==1)
-			    { histerr = ht->GetBinError(j+1);}
-			  else
-			    { histerr = ht->GetBinError(j+1,k+1);}
-			  do
-			    { edraw = gRandom->Gaus(0,histerr); }
-			  while (edraw+r<r*1E-6); // don't let it hit zero or go negative.
-                                                  // if r is already zero this won't get stuck in a loop
-			  r += edraw;
-			}
-		      r *= cm->sft_varied[itpl];
-		      if (cm->scaleflag[itpl] != 0)
-			{ ens[iens].e += r; }
-		      else
-			{ ens[iens].b += r; }
-		    }
-                  if (ens[iens].b<=0) {ens[iens].b = 1E-9;}
-		  //cout << iens << " " << ens[iens].b << " " << ens[iens].e << endl;
-		  iens++;
-		}
-	    }
-	}
-    }
-
-  nens = nmc_req;
-
   // run pseudoexperiments and fit the cross section for each one. -- Use test_hypothesis
   // to generate the pseudoexperiments.
 
+  nchans = test_hypothesis->channame.size();
   xslist.clear();
-  TH1** pdarray = new TH1*[nchans];
+  TH1** pdarray = new TH1*[nchans];     // data and pseudodata stay as TH1's
+  TH1** dhsavearray = new TH1*[nchans];
   char *pdname;
 
-  int* nobslist = new int[nbinstot*npx];
-  Int_t* nobstotlist = new Int_t[npx];
-  Int_t* nobsindex = new Int_t[npx];
-
-  for (i=0;i<(Int_t) test_hypothesis->channame.size(); i++)
+  for (i=0;i<nchans; i++)
     {
       pdname = new char[strlen(test_hypothesis->channame[i])+strlen(" pseudodata ")];
       strcpy(pdname,test_hypothesis->channame[i]);
       strcat(pdname," pseudodata");
-      pdarray[i] = (TH1*) test_hypothesis->chanmodel[i]->histotemplate[0]->Clone(pdname);
-      delete pdname;
+      pdarray[i] = (TH1*) datahist[i]->Clone(pdname);
+      delete[] pdname;
+      dhsavearray[i] = datahist[i];
+      datahist[i] = pdarray[i];
     }
-
-  // don't really need to store and sort all of these, but code is take from bayes_heinrich_withexpect
-  // which needed that for optimization
 
   for (ipx=0;ipx<npx;ipx++)
     {
       test_hypothesis->single_pseudoexperiment(pdarray);
+      bh_xsfit(&xsfit,&downerr,&uperr);
 
-      nobstotlist[ipx] = 0;
-      ibin = 0;
-      for (i=0;i<nchans;i++)
-        {
-          nbinsx = pdarray[i]->GetNbinsX();
-          nbinsy = pdarray[i]->GetNbinsY();
-          for (j=0;j<nbinsx;j++)
-            {
-              for (k=0;k<nbinsy;k++)
-                {
-		  if (nbinsy==1)
-		    { nobslist[ibin+ipx*nbinstot] = (Int_t) nearbyint(pdarray[i]->GetBinContent(j+1)); }
-		  else
-		    { nobslist[ibin+ipx*nbinstot] = (Int_t) nearbyint(pdarray[i]->GetBinContent(j+1,k+1)); }
-		  nobstotlist[ipx] += nobslist[ibin+ipx*nbinstot];
-		  ibin++;
-                }
-            }
-        } 
-    }
-  TMath::Sort(npx,nobstotlist,nobsindex,kTRUE);
-
-  for (ipx=0;ipx<npx;ipx++)
-    {
-      // make a vector of the posterior likelihood function
-      if (bayes_interval_step > 0)
-	{
-	  if ( (bayes_interval_end-bayes_interval_begin)>0 )
-	    {
-	      double lmax = 0;
-	      int imax=0;
-	      bayes_posterior.clear();
-	      bayes_posterior_points.clear();
-	      Double_t b,p;
-	      int k=0;
-	      for (b=bayes_interval_begin;b<=bayes_interval_end;b += bayes_interval_step)
-		{
-		  p = cspdf(b,1.0,nbinstot,nens,&(nobslist[nbinstot*nobsindex[ipx]]),ens,prior);
-		  bayes_posterior.push_back(p);
-		  bayes_posterior_points.push_back(b);
-		  if (p>lmax)
-		    { 
-		      lmax=p; 
-		      imax = k;
-		      xsfit = b;
-		    }
-		  k++;
-		}
-
-	      // normalize to unit area, using the trapezoidal rule
-
-	      int jsiz = bayes_posterior.size();
-	      int ic;
-	      Double_t bptot = 0;
-	      for (ic=0;ic<jsiz;ic++) bptot += bayes_posterior[ic];
-	      bptot -= 0.5*bayes_posterior[0];
-	      bptot -= 0.5*bayes_posterior.back();
-	      if (bptot>0)
-		{
-		  Double_t scaleb = 1.0/(bptot);
-                  bhnorm = scaleb;
-		  for (ic=0;ic<jsiz;ic++) bayes_posterior[ic] *= scaleb;
-		}
-
-	      // start at the maximum, and integrate left and right until we get 68%
-
-	      int ilow=imax;
-	      int ihigh=imax;
-  	      double psum = bayes_posterior[imax];
-	      double psumtrap = 0.0;
-	      do 
-		{
-		  int ibest = ilow;
-		  double bpbest = 0.0;
-		  if (ilow>0)
-		    {
-		      ibest = ilow-1;
-		      bpbest = bayes_posterior[ibest];
-		    }
-		  if (ihigh<jsiz-1)
-		    {
-		      if (bayes_posterior[ihigh+1] > bpbest)
-			{
-  	   	          ibest = ihigh+1;
-		          bpbest = bayes_posterior[ibest];
-			}
-		    }
-		  psum += bpbest;
-		  if (ibest == ilow-1) 
-		    { ilow --; }
-		  else
-		    { ihigh ++; }
-		  psumtrap = psum - 0.5*bayes_posterior[ilow] - 0.5*bayes_posterior[ihigh];
-		}
-	      while (psumtrap < 0.68);
-	      downerr = xsfit-bayes_posterior_points[ilow];
-	      uperr = bayes_posterior_points[ihigh] - xsfit;
-	    }
-	}
-
-      //Double_t p = cslimit(beta,nbinstot,nens,&(nobslist[nbinstot*nobsindex[ipx]]),ens,&ngl,xgl,lwgl,prior,unc);
       if (pxprintflag)
 	{
 	  cout << "Marginalized fit px: " << xsfit << " + " << uperr << " - " << downerr << endl;
@@ -6879,7 +7309,7 @@ void mclimit_csm::bh_xsfit_expect(Int_t npx, Double_t *xsfitavg, Double_t *m2s,
     }
   if (xslist.size()>0) 
     {
-       *xsfitavg /= xslist.size();
+      *xsfitavg /= xslist.size();
     }
 
   std::sort(xslist.begin(),xslist.end());
@@ -6918,16 +7348,17 @@ void mclimit_csm::bh_xsfit_expect(Int_t npx, Double_t *xsfitavg, Double_t *m2s,
     { i=npx-1; }
   *p2s = xslist[i];
 
-  for (i=0;i<(Int_t) null_hypothesis_pe->channame.size(); i++)
+  for (i=0;i<nchans; i++)
     {
       delete pdarray[i];
     }
   delete[] pdarray;
-  delete[] nobslist;
-  delete[] nobsindex;
-  delete[] nobstotlist;
-  delete[] nobs;
-  delete[] ens;
+  for (i=0;i<nchans; i++)
+    {
+      datahist[i] = dhsavearray[i];
+    }
+  delete[] dhsavearray;
+
 }
 
 // scan over two signals -- always assume they are in the same order in all channels.  Assume
@@ -6935,19 +7366,34 @@ void mclimit_csm::bh_xsfit_expect(Int_t npx, Double_t *xsfitavg, Double_t *m2s,
 // If more than two signals are present, the first one in  each channel is called signal 1,
 // and the sum of all others is called signal 2
 
+// update March 20, 2009 -- do one systematic sample at a time.
 
 void mclimit_csm::bh_2d_scan(Double_t s1low, Double_t s1high, Double_t ds1,
-                   Double_t s2low, Double_t s2high, Double_t ds2)
+			     Double_t s2low, Double_t s2high, Double_t ds2,
+			     // arguments from here are given defaults in mclimit_csm.h 
+                             // for backwards compatibility
+			     Double_t *s1fit, Double_t *s2fit,
+                             Int_t pflag2d, Double_t *s1test, Double_t *s2test,
+                             Int_t *in68, Int_t *in95)
 {
   Int_t nbinstot;
   Int_t i,j,k,ibin,nbinsx,nbinsy,ipx,nens,iens;
   Int_t nchans,ntemplates,itpl;
   csm_channel_model* cm;
-  TH1* ht;
+  TH1Type* ht;
   Double_t r;
-  int ngl;
   Int_t nobstot;
   const PRIOR prior=flat;
+
+  double xsig1,xsig2;
+  vector <double> xsig1v;
+  vector <double> xsig2v;
+  vector <double> postv;
+  vector <double> postint;
+
+  int ibest = -1;
+  double rtest;
+  double rbest = 0;
 
   nbinstot = 0;
 
@@ -6961,7 +7407,7 @@ void mclimit_csm::bh_2d_scan(Double_t s1low, Double_t s1high, Double_t ds1,
     }
 
   int* nobs = new int[nbinstot];
-  EB2D* ens = new EB2D[nbinstot*nmc_req];
+  EB2D* ens = new EB2D[nbinstot];
 
   // copy the observed candidates from histograms into nobs -- be sure to have
   // the same association of bins and the flat array as for the model histogram sums
@@ -6989,9 +7435,9 @@ void mclimit_csm::bh_2d_scan(Double_t s1low, Double_t s1high, Double_t ds1,
   // The prior ensemble is constructed in the same way mclimit_csm does pseudoexperiments
   // but split up the first and subsequent signals.
 
-  iens = 0;
   for (ipx=0;ipx<nmc_req;ipx++)
     {
+      iens = 0;
       test_hypothesis_pe->varysyst();
       for (i=0;i<nchans;i++)
 	{
@@ -7049,70 +7495,102 @@ void mclimit_csm::bh_2d_scan(Double_t s1low, Double_t s1high, Double_t ds1,
 		}
 	    }
 	}
+
+      nens = 1;
+      if (ipx == 0)
+	{
+	  setdlcsn2d(nbinstot,nens,nobs,ens);
+	  for (xsig1=s1low;xsig1<=s1high;xsig1+=ds1)
+	    {
+	      for (xsig2=s2low;xsig2<=s2high;xsig2+=ds2)
+		{
+		  xsig1v.push_back(xsig1);
+		  xsig2v.push_back(xsig2);
+		  postv.push_back(0);
+		  postint.push_back(0);
+
+		  // identify which entry in the posterior grid is closest to the
+		  // (s1test,s2test) point.  This will be used to determine if
+		  // (s1test,s2test) is inside 68 or 95% CL.
+
+		  if (s1test != 0 && s2test != 0)
+		    {
+                      rtest = sqrt((xsig1 - *s1test)*(xsig1 - *s1test) + (xsig2 - *s2test)*(xsig2 - *s2test));
+		      if (ibest == -1 || (rtest < rbest))
+			{
+			  ibest = xsig1v.size() - 1;
+			  rbest = rtest;
+			}
+		    }
+		}
+	    }
+	}
+      int itmp = 0;
+      for (xsig1=s1low;xsig1<=s1high;xsig1+=ds1)
+	{
+	  for (xsig2=s2low;xsig2<=s2high;xsig2+=ds2)
+	    {
+	      postv[itmp] += cspdf2d(xsig1,xsig2,1.0,nbinstot,nens,nobs,ens,prior);
+	      itmp ++;
+	    }
+	}
     }
 
-  nens = nmc_req;
-  ngl = 0;
-
-  //cout << "ngl: " << ngl << " " << nobstot << endl;
+  // to prevent a segfault in case s1test and s2test weren't given but in68 and in95 was given.
+  if (ibest<0) ibest = 0;
 
   // for now just print out the posterior (normalized to unit sum over the interval chosen)
 
-  // protect against crazy likelihoods underflowing or overflowing us.
-  setdlcsn2d(nbinstot,nens,nobs,ens);
-
-  double xsig1,xsig2;
-  vector <double> xsig1v;
-  vector <double> xsig2v;
-  vector <double> postv;
-  vector <double> postint;
   double psum = 0;
-  int itot;
-
-  for (xsig1=s1low;xsig1<=s1high;xsig1+=ds1)
+  int itot = postv.size();
+ 
+  for (i=0;i<itot;i++) psum += postv[i];
+  if (psum > 0)
     {
-      for (xsig2=s2low;xsig2<=s2high;xsig2+=ds2)
-         {
-	   xsig1v.push_back(xsig1);
-	   xsig2v.push_back(xsig2);
-	   postv.push_back(cspdf2d(xsig1,xsig2,1.0,nbinstot,nens,nobs,ens,prior));
-	   psum += postv.back();
-	   postint.push_back(0);
-	 }
-    }
-  itot=xsig1v.size();
-  if (psum>0)
-    {
-      for (i=0;i<itot;i++)
-        {
-	  postv[i] = postv[i]/psum;
-        }
+      for (i=0;i<itot;i++) postv[i] = postv[i]/psum;
     }
   else
     {
-      cout << "bh_2d_scan -- normalization failed." << endl;
+      if (pflag2d) cout << "bh_2d_scan -- normalization failed.  Not printing posterior" << endl;
     }
 
-  // find the best fit, and the 68% and 95% regions -- but only if it's normalized.
+  // find the best fit, and the integrals needed to compute the
+  // 68% and 95% regions -- but only if it's normalized.
+
+  if (in68) *in68 = 0;
+  if (in95) *in95 = 0;
 
   if (psum>0)
     {
       int *idx = new int[itot];
       TMath::Sort(itot,&(postv[0]),idx,kTRUE);
-      cout << "Two-Dimensional Maximum Posterior: " << xsig1v[idx[0]] << " " << xsig2v[idx[0]] << endl;
+      if (pflag2d) cout << "Two-Dimensional Maximum Posterior: " << xsig1v[idx[0]] << " " << xsig2v[idx[0]] << endl;
+      if (s1fit) *s1fit = xsig1v[idx[0]];
+      if (s2fit) *s2fit = xsig2v[idx[0]];
       double ps2 = 0;
       for (i=0;i<itot;i++)
 	{
 	  ps2 += postv[idx[i]];
-          postint[idx[i]] = ps2;
+	  postint[idx[i]] = ps2;
+	}
+      if (in68)
+	{
+	  if (postint[ibest]<=0.68) *in68=1;
+	}
+      if (in95)
+	{
+	  if (postint[ibest]<=0.95) *in95=1;
 	}
       delete[] idx;
     }
 
-  for (i=0;i<itot;i++)
-    {	   
-      cout << "bh_2d_scan: " << xsig1v[i] << " " << xsig2v[i] << " " 
-	   << postv[i] << " " << postint[i] << endl;
+  if (pflag2d)
+    {
+       for (i=0;i<itot;i++)
+         {	   
+            cout << "bh_2d_scan: " << xsig1v[i] << " " << xsig2v[i] << " " 
+	      << postv[i] << " " << postint[i] << endl;
+         }
     }
 
   delete[] nobs;
@@ -7133,255 +7611,71 @@ void mclimit_csm::bh_2d_scan(Double_t s1low, Double_t s1high, Double_t ds1,
 // will compute 68% and 95% coverage fractions based on the nearest grid point.  Verbose printout is
 // supplied.
 
+// Modified April 2, 2009 -- call the bh_2d_scan routine instead, after a memory optimization.  Same
+// functionality as before.
+
 void mclimit_csm::bh_2d_scan_expect(Int_t npx, Double_t s1true, Double_t s2true, 
                                     Double_t s1low, Double_t s1high, Double_t ds1,
 				    Double_t s2low, Double_t s2high, Double_t ds2)
 {
-  Int_t nbinstot;
-  Int_t i,j,k,ibin,nbinsx,nbinsy,ipx,nens,iens;
-  Int_t nchans,ntemplates,itpl;
-  csm_channel_model* cm;
-  TH1* ht;
-  Double_t r;
-  const PRIOR prior=flat;
-
-  nbinstot = 0;
-
-  // figure out the total number of bins in all of our histograms
-  nchans = (Int_t) test_hypothesis_pe->channame.size();
-  for (i=0;i<nchans;i++)
-    {
-      nbinsx = test_hypothesis_pe->chanmodel[i]->histotemplate[0]->GetNbinsX();
-      nbinsy = test_hypothesis_pe->chanmodel[i]->histotemplate[0]->GetNbinsY();
-      nbinstot += nbinsx*nbinsy;
-    }
-
-  int* nobs = new int[nbinstot];
-  EB2D* ens = new EB2D[nbinstot*nmc_req];
-
-  // The prior ensemble is constructed in the same way mclimit_csm does pseudoexperiments
-  // but split up the first and subsequent signals.
-
-  iens = 0;
-  for (ipx=0;ipx<nmc_req;ipx++)
-    {
-      test_hypothesis_pe->varysyst();
-      for (i=0;i<nchans;i++)
-	{
-	  cm = test_hypothesis_pe->chanmodel[i];
-	  ntemplates = (Int_t) cm->histotemplate.size();
-	  nbinsx = cm->histotemplate[0]->GetNbinsX();
-	  nbinsy = cm->histotemplate[0]->GetNbinsY();
-	  for (j=0;j<nbinsx;j++)
-	    {
-	      for (k=0;k<nbinsy;k++)
-		{
-                  ens[iens].e1 = 0;
-                  ens[iens].e2 = 0;
-                  ens[iens].b = 0;
-		  int isc = 0;
-		  for(itpl=0;itpl<ntemplates;itpl++)
-		    {
-		      ht = cm->histotemplate_varied[itpl];
-		      if (nbinsy==1)
-			{ r = ht->GetBinContent(j+1); }
-		      else
-			{r = ht->GetBinContent(j+1,k+1); }
-		      if (cm->poissflag[itpl] == CSM_POISSON_BINERR)
-			{ r = gRandom->Poisson(r); }
-		      else if (cm->poissflag[itpl] == CSM_GAUSSIAN_BINERR)
-			{ 
-			  double histerr,edraw;
-			  if (nbinsy==1)
-			    { histerr = ht->GetBinError(j+1);}
-			  else
-			    { histerr = ht->GetBinError(j+1,k+1);}
-			  do
-			    { edraw = gRandom->Gaus(0,histerr); }
-			  while (edraw+r<r*1E-6); // don't let it hit zero or go negative.
-			  r += edraw;
-			}
-		      r *= cm->sft_varied[itpl];
-		      if (cm->scaleflag[itpl] != 0)
-			{ 
-			  if (isc == 0)
-			    { 
-			      ens[iens].e1 += r;
-			      isc++;
-			    }
-			  else
-			    {
-			      ens[iens].e2 += r;
-			    }
-			}
-		      else
-			{ ens[iens].b += r; }
-		    }
-                  if (ens[iens].b<=0) {ens[iens].b = 1E-9;}
-		  iens++;
-		}
-	    }
-	}
-    }
-
-  nens = nmc_req;
+  int i,ipx,nchans;
 
   // run pseudoexperiments and fit the cross section for each one. -- Use test_hypothesis
   // to generate the pseudoexperiments.
 
+  nchans = test_hypothesis->channame.size();
   TH1** pdarray = new TH1*[nchans];
+  TH1** dhsavearray = new TH1*[nchans];
   char *pdname;
 
-  int* nobslist = new int[nbinstot*npx];
-  Int_t* nobstotlist = new Int_t[npx];
-  Int_t* nobsindex = new Int_t[npx];
-
-  for (i=0;i<(Int_t) test_hypothesis->channame.size(); i++)
+  for (i=0;i<nchans; i++)
     {
       pdname = new char[strlen(test_hypothesis->channame[i])+strlen(" pseudodata ")];
       strcpy(pdname,test_hypothesis->channame[i]);
       strcat(pdname," pseudodata");
-      pdarray[i] = (TH1*) test_hypothesis->chanmodel[i]->histotemplate[0]->Clone(pdname);
-      delete pdname;
+      pdarray[i] = (TH1*) datahist[i]->Clone(pdname);
+      delete[] pdname;
+      dhsavearray[i] = datahist[i];      // save data pointers (if any) so we don't clobber them with our pseudodata
+      datahist[i] = pdarray[i];          // wire up new pointers to pseudodata
     }
 
-  // don't really need to store and sort all of these, but code is take from bayes_heinrich_withexpect
-  // which needed that for optimization
+  int n68 = 0;
+  int n95 = 0;
 
   for (ipx=0;ipx<npx;ipx++)
     {
       test_hypothesis->single_pseudoexperiment(pdarray);
-
-      nobstotlist[ipx] = 0;
-      ibin = 0;
-      for (i=0;i<nchans;i++)
-        {
-          nbinsx = pdarray[i]->GetNbinsX();
-          nbinsy = pdarray[i]->GetNbinsY();
-          for (j=0;j<nbinsx;j++)
-            {
-              for (k=0;k<nbinsy;k++)
-                {
-		  if (nbinsy==1)
-		    { nobslist[ibin+ipx*nbinstot] = (Int_t) nearbyint(pdarray[i]->GetBinContent(j+1)); }
-		  else
-		    { nobslist[ibin+ipx*nbinstot] = (Int_t) nearbyint(pdarray[i]->GetBinContent(j+1,k+1)); }
-		  nobstotlist[ipx] += nobslist[ibin+ipx*nbinstot];
-		  ibin++;
-                }
-            }
-        } 
-    }
-  TMath::Sort(npx,nobstotlist,nobsindex,kTRUE);
-
-  int n68 = 0;
-  int n95 = 0;
-  int ncov = 0;
-
-  for (ipx=0;ipx<npx;ipx++)
-    {
-
-      // protect against crazy likelihoods underflowing or overflowing us.
-
-      setdlcsn2d(nbinstot,nens,&(nobslist[nbinstot*nobsindex[ipx]]),ens);
-
-      double xsig1,xsig2;
-      vector <double> xsig1v;
-      vector <double> xsig2v;
-      vector <double> postv;
-      vector <double> postint;
-      double psum = 0;
-      int itot;
-      int ibest = -1;
-      double rtest;
-      double rbest = 0;
-
-      for (xsig1=s1low;xsig1<=s1high;xsig1+=ds1)
-	{
-	  for (xsig2=s2low;xsig2<=s2high;xsig2+=ds2)
-	    {
-	      xsig1v.push_back(xsig1);
-	      xsig2v.push_back(xsig2);
-	      postv.push_back(cspdf2d(xsig1,xsig2,1.0,nbinstot,nens,&(nobslist[nbinstot*nobsindex[ipx]]),ens,prior));
-	      psum += postv.back();
-	      postint.push_back(0);
-
-	      rtest = sqrt((xsig1-s1true)*(xsig1-s1true) + (xsig2-s2true)*(xsig2-s2true));
-	      if (ibest == -1 || (rtest < rbest) )
-		{
-		  ibest = xsig1v.size() -1;
-		  rbest = rtest;
-		}
-		  
-	    }
-	}
-      itot=xsig1v.size();
-      if (psum>0)
-	{
-	  for (i=0;i<itot;i++)
-	    {
-	      postv[i] = postv[i]/psum;
-	    }
-	}
-      else
-	{
-	  cout << "bh_2d_scan_expect -- normalization failed." << endl;
-	}
-
-      if (psum>0)
-	{
-	  int *idx = new int[itot];
-	  TMath::Sort(itot,&(postv[0]),idx,kTRUE);
-	  cout << "Two-Dimensional Maximum Posterior px: " << xsig1v[idx[0]] << " " << xsig2v[idx[0]] << endl;
-	  double ps2 = 0;
-	  for (i=0;i<itot;i++)
-	    {
-	      ps2 += postv[idx[i]];
-	      postint[idx[i]] = ps2;
-	    }
-
-	  ncov++;
-	  if (postint[ibest]<0.68)
-	    {
-	      cout << "bh_2d_scan_expect true signal falls within 68 percent region" << endl;
-	      n68++;
-	    }
-	  else
-	    {
-	      cout << "bh_2d_scan_expect true signal falls outside 68 percent region" << endl;
-	    }
-	  if (postint[ibest]<0.95)
-	    {
-	      cout << "bh_2d_scan_expect true signal falls within 95 percent region" << endl;
-	      n95++;
-	    }
-	  else
-	    {
-	      cout << "bh_2d_scan_expect true signal falls outside 95 percent region" << endl;
-	    }
-	  
-	  delete[] idx;
-	}
-
-      for (i=0;i<itot;i++)
-	{	   
-	  //cout << "bh_2d_scan_expect px: " << xsig1v[i] << " " << xsig2v[i] << " " 
-	  //     << postv[i] << " " << postint[i] << endl;
-	}
+      Double_t s1fit,s2fit;
+      Int_t in68,in95;
+      bh_2d_scan(s1low,s1high,ds1,s2low,s2high,ds2,&s1fit,&s2fit,0,&s1true,&s2true,&in68,&in95);
+      cout << "Two-Dimensional Maximum Posterior px: " << s1fit << " " << s2fit << endl;
+      if (in68) {
+        cout << "bh_2d_scan_expect true signal falls within 68 percent region" << endl;
+	n68++;
+      }
+      if (in95) {
+        cout << "bh_2d_scan_expect true signal falls within 95 percent region" << endl;
+	n95++;
+      }
+      if (in68==0 && in95==0) {
+	cout << "bh_2d_scan_expect true signal falls outside 95 percent region" << endl;
+      }
     }
 
-  cout << "bh_2d_scan_expect: n68, ncov, Fraction of time true signal lies within 68 percent region: " <<
-    n68 << " " << ncov << " " << ((double) n68)/((double) ncov) << endl;
-  cout << "bh_2d_scan_expect: n95, ncov, Fraction of time true signal lies within 95 percent region: " <<
-    n95 << " " << ncov << " " << ((double) n95)/((double) ncov) << endl;
+  cout << "bh_2d_scan_expect: n68, npx, Fraction of time true signal lies within 68 percent region: " <<
+    n68 << " " << npx << " " << ((double) n68)/((double) npx) << endl;
+  cout << "bh_2d_scan_expect: n95, npx, Fraction of time true signal lies within 95 percent region: " <<
+    n95 << " " << npx << " " << ((double) n95)/((double) npx) << endl;
 
   delete[] pdarray;
-  delete[] nobslist;
-  delete[] nobsindex;
-  delete[] nobstotlist;
-  delete[] nobs;
-  delete[] ens;
+  for (i=0;i<nchans; i++)
+    {
+      datahist[i] = dhsavearray[i];
+    }
+  delete[] dhsavearray;
 }
+
+
 
 /*-------------------------------------------------------------------------*/
 /* Coverage checker for Joel's Bayesian limit calc.  Based on              */
@@ -7395,15 +7689,15 @@ void mclimit_csm::bh_2d_scan_expect(Int_t npx, Double_t s1true, Double_t s2true,
 /* is computed.                                                            */
 /*-------------------------------------------------------------------------*/
 /* arguments:  beta: credibility level:L  0.95 for 95% CL limits
-               sflimit:  INPUT -- desired multiplier on the signal in the testhyp_pe hypothesis
-                         for which we'd like to check the coverage.
-               npx:      Number of pseudoexperiments to run to compute fales exclusion rate
-	       falsex:   false exclusion rate:  Should be no more than 1-beta.
+   sfscale:  INPUT -- desired multiplier on the signal in the testhyp_pe hypothesis
+   for which we'd like to check the coverage.
+   npx:      Number of pseudoexperiments to run to compute fales exclusion rate
+   falsex:   false exclusion rate:  Should be no more than 1-beta.
 
 */
 
 void mclimit_csm::bayes_heinrich_coverage_check(Double_t beta,
-                                                Double_t sflimit,
+                                                Double_t sfscale,
 					        Int_t npx,
                                                 Double_t* falsex)
 {
@@ -7411,7 +7705,7 @@ void mclimit_csm::bayes_heinrich_coverage_check(Double_t beta,
   Int_t i,j,k,ibin,nbinsx,nbinsy,ipx,nens,iens;
   Int_t nchans,ntemplates,itpl;
   csm_channel_model* cm;
-  TH1* ht;
+  TH1Type* ht;
   Double_t r;
   int ngl;
   const PRIOR prior=corr;
@@ -7528,9 +7822,9 @@ void mclimit_csm::bayes_heinrich_coverage_check(Double_t beta,
   // Run signal+background pseudoexperiments at the observed limit, and see what
   // the distribution of limits we get out is.  Limits are computed using the
   // same Bayesian ensemble with the unscaled test_hypothesis_pe and so the
-  // limits that are more restrictive than *sflimit are false exclusions.
+  // limits that are more restrictive than *sfscale are false exclusions.
 
-  csm_model* testhyppescale = test_hypothesis_pe->scalesignal(sflimit);
+  csm_model* testhyppescale = test_hypothesis_pe->scalesignal(sfscale);
 
   cslist.clear();
   TH1** pdarray = new TH1*[nchans];
@@ -7545,8 +7839,8 @@ void mclimit_csm::bayes_heinrich_coverage_check(Double_t beta,
       pdname = new char[strlen(testhyppescale->channame[i])+strlen(" pseudodata ")];
       strcpy(pdname,testhyppescale->channame[i]);
       strcat(pdname," pseudodata");
-      pdarray[i] = (TH1*) testhyppescale->chanmodel[i]->histotemplate[0]->Clone(pdname);
-      delete pdname;
+      pdarray[i] = copy_TH1<TH1> (*testhyppescale->chanmodel[i]->histotemplate[0], pdname).release();
+      delete[] pdname;
     }
   for (ipx=0;ipx<npx;ipx++)
     {
@@ -7562,12 +7856,12 @@ void mclimit_csm::bayes_heinrich_coverage_check(Double_t beta,
             {
               for (k=0;k<nbinsy;k++)
                 {
-                   if (nbinsy==1)
-	             { nobslist[ibin+ipx*nbinstot] = (Int_t) nearbyint(pdarray[i]->GetBinContent(j+1)); }
-	           else
-	             { nobslist[ibin+ipx*nbinstot] = (Int_t) nearbyint(pdarray[i]->GetBinContent(j+1,k+1)); }
-		   nobstotlist[ipx] += nobslist[ibin+ipx*nbinstot];
-	           ibin++;
+		  if (nbinsy==1)
+		    { nobslist[ibin+ipx*nbinstot] = (Int_t) nearbyint(pdarray[i]->GetBinContent(j+1)); }
+		  else
+		    { nobslist[ibin+ipx*nbinstot] = (Int_t) nearbyint(pdarray[i]->GetBinContent(j+1,k+1)); }
+		  nobstotlist[ipx] += nobslist[ibin+ipx*nbinstot];
+		  ibin++;
                 }
             }
         } 
@@ -7576,11 +7870,11 @@ void mclimit_csm::bayes_heinrich_coverage_check(Double_t beta,
 
   if (nglmax < nobstotlist[nobsindex[0]]/2 + 1)
     {
-       nglmax = nobstotlist[nobsindex[0]]/2 + 1; 
-       delete[] xgl;
-       delete[] lwgl;
-       xgl = new double[nglmax];
-       lwgl = new double[nglmax];
+      nglmax = nobstotlist[nobsindex[0]]/2 + 1; 
+      delete[] xgl;
+      delete[] lwgl;
+      xgl = new double[nglmax];
+      lwgl = new double[nglmax];
     }
 
   ngl = 0;
@@ -7604,7 +7898,7 @@ void mclimit_csm::bayes_heinrich_coverage_check(Double_t beta,
   Int_t nfalse = 0;
   for (i = 0; i<npx; i++)
     {
-      if (cslist[i] <= sflimit)
+      if (cslist[i] <= sfscale)
 	{
 	  nfalse++;
 	}
@@ -7671,12 +7965,12 @@ void setdlcsn(int nchan, int nens, int nobs[], const EB* ens)
       t += ( (n>0) ? n*log(mu) : 0 ) - mu;
       ++p;
     }
-   if (!set)
+    if (!set)
       { tmax = t; tmin = t; set = 1;}
     else
       { tmax=max(tmax,t); tmin = min(tmin,t); }
     dlcsn = -tmax;
- }
+  }
 }
 
 
@@ -7705,12 +7999,12 @@ void setdlcsn2d(int nchan, int nens, int nobs[], const EB2D* ens)
       t += ( (n>0) ? n*log(mu) : 0 ) - mu;
       ++p;
     }
-   if (!set)
+    if (!set)
       { tmax = t; tmin = t; set = 1;}
     else
       { tmax=max(tmax,t); tmin = min(tmin,t); }
     dlcsn2d = -tmax;
- }
+  }
 }
 
 double cspdf(double s,double norm,
@@ -7744,7 +8038,7 @@ double cspdf(double s,double norm,
 // Tom Junk 21 April 2008 -- generalize to two signals
 
 double cspdf2d(double s1, double s2, double norm,
-	     int nchan,int nens,const int nobs[],const EB2D* ens,PRIOR prior) {
+	       int nchan,int nens,const int nobs[],const EB2D* ens,PRIOR prior) {
   int i,k;
   double sum = 0, lgp = 0;
   const EB2D* p = ens;
@@ -7816,9 +8110,9 @@ double csint(double xlo,int nchan,int nens,const int nobs[],const EB* ens,
 }
 
 double csint0(double xlo,double logscale,
-		     int nchan,const int nobs[],const EB chan[],
-		     int ngl,const double xgl[],const double lwgl[],
-		     PRIOR prior) {
+	      int nchan,const int nobs[],const EB chan[],
+	      int ngl,const double xgl[],const double lwgl[],
+	      PRIOR prior) {
   int i,k;
   double sum=0, esum=0, bsum=0, resum;
 
@@ -7854,12 +8148,12 @@ double csint0(double xlo,double logscale,
 
 /*      Joel Heinrich  8 April 2005
 
-    returns:
-      *int1 = integral from xlo1 to xhi
-      *int2 = integral from xlo2 to xhi
-      *v11  = variance of *int1
-      *v12  = covariance between *int1 and *int2
-      *v22  = variance of *int2
+returns:
+*int1 = integral from xlo1 to xhi
+*int2 = integral from xlo2 to xhi
+*v11  = variance of *int1
+*v12  = covariance between *int1 and *int2
+*v22  = variance of *int2
 
 See CDF note 7587 for details:
 http://www-cdf.fnal.gov/publications/cdf7587_genlimit.pdf
@@ -7923,9 +8217,9 @@ void csint2cut(double xlo1,double xlo2,double xhi,
 }
 
 void csint02cut(double xlo1,double xlo2,double xhi,double logscale,
-		    int nchan,const int nobs[],const EB chan[],
-		    int ngl,const double xgl[],const double lwgl[],PRIOR prior,
-		    double* int1,double* int2) {
+		int nchan,const int nobs[],const EB chan[],
+		int ngl,const double xgl[],const double lwgl[],PRIOR prior,
+		double* int1,double* int2) {
   int i,k;
   double sum1=0, sum2=0, sum3=0, esum=0, bsum1=0, bsum2=0, bsum3=0, resum;
 
@@ -8007,16 +8301,16 @@ double cslimit(double beta,int nchan,int nens,const int nobs[],const EB* ens,
 
   
   /*
-  cout << "nchan: " << nchan << endl;
-  cout << " nens: " << nens << endl;
-  cout << " prior: " << prior << endl;
-  int i;
-  for (i=0;i<nchan;i++)
+    cout << "nchan: " << nchan << endl;
+    cout << " nens: " << nens << endl;
+    cout << " prior: " << prior << endl;
+    int i;
+    for (i=0;i<nchan;i++)
     {
-      if (nobs[i]>0)
-	{  cout << "i, n, b, s: " << i << " " << nobs[i] << " " << ens[i].b << " " << ens[i].e << endl;
-	//cout << "nobs(" << i << ") = " << nobs[i] << endl;
-	}
+    if (nobs[i]>0)
+    {  cout << "i, n, b, s: " << i << " " << nobs[i] << " " << ens[i].b << " " << ens[i].e << endl;
+    //cout << "nobs(" << i << ") = " << nobs[i] << endl;
+    }
     }
   */
 
@@ -8126,8 +8420,8 @@ double cscutlimit(double beta,double smax,
 
 /*         Joel Heinrich  24 March 2005
 
-   returns crude Gaussian approximation to upper limit.
-   For use as a starting point.
+returns crude Gaussian approximation to upper limit.
+For use as a starting point.
 */
 
 double galim(double beta,int nchan,int nens,const int nobs[],const EB* ens) {
@@ -8185,19 +8479,19 @@ double arcfreq(double y) {
 
 /*
 
-   Joel Heinrich
-   February 10 2005
+Joel Heinrich
+February 10 2005
 
 Returns Gauss-Laguerre quadrature abscissas and log(weights) which can
 be used to approximate
 
-      integral u=0 to infinity pow(u,alpha)*exp(-u)*f(u) du
+integral u=0 to infinity pow(u,alpha)*exp(-u)*f(u) du
 as
-      sum k=0 to n-1  exp(lw[k])*f(x[k])
+sum k=0 to n-1  exp(lw[k])*f(x[k])
 
 or equivalently
 
-      sum k=0 to n-1  exp(lw[k]+log(f(x[k])))
+sum k=0 to n-1  exp(lw[k]+log(f(x[k])))
 
 The quadrature is exact for polynomial f of degree 2n-1 or less.
 
@@ -8267,12 +8561,12 @@ void gausslaguerre(double x[],double lw[],int n,double alpha){
 
 /*    Joel Heinrich  8 April 2005
 
-   returns:
-      *int1 = integral from xlo1 to infinity
-      *int2 = integral from xlo2 to infinity
-      *v11  = variance of *int1
-      *v12  = covariance between *int1 and *int2
-      *v22  = variance of *int2
+returns:
+*int1 = integral from xlo1 to infinity
+*int2 = integral from xlo2 to infinity
+*v11  = variance of *int1
+*v12  = covariance between *int1 and *int2
+*v22  = variance of *int2
 
 
 See CDF note 7587 for details:
@@ -8337,9 +8631,9 @@ void csint2(double xlo1,double xlo2,
 }
 
 void csint02(double xlo1,double xlo2,double logscale,
-		    int nchan,const int nobs[],const EB chan[],
-		    int ngl,const double xgl[],const double lwgl[],PRIOR prior,
-		    double* int1,double* int2) {
+	     int nchan,const int nobs[],const EB chan[],
+	     int ngl,const double xgl[],const double lwgl[],PRIOR prior,
+	     double* int1,double* int2) {
   int i,k;
   double sum1=0, sum2=0, esum=0, bsum1=0, bsum2=0, resum;
 
@@ -8386,3 +8680,140 @@ void csint02(double xlo1,double xlo2,double logscale,
 double mclimit_csm::getdlcsn() { return dlcsn; }
 double mclimit_csm::getdlcsn2d() { return dlcsn2d; }
 double mclimit_csm::getbhnorm() { return bhnorm; }
+
+
+//          Copyright Nils Krumnack 2008.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
+// Please feel free to contact me (nils@fnal.gov) for bug reports,
+// feature suggestions, praise and complaints.
+
+//
+// includes
+//
+
+//#include "FastTH1.hh"
+
+#include <TAxis.h>
+#include <TH2.h>
+#include <TH3.h>
+
+//
+// method implementations
+//
+
+FastTH1 ::
+FastTH1 (const TH1& that)
+  : name_ (that.GetName()), title_ (that.GetTitle()),
+    dimension_ (that.GetDimension())
+{
+  assert (unsigned (that.GetDimension()) <= max_dim && "requirement failed"); //spec
+
+  for (unsigned dim = 0; dim != max_dim; ++ dim)
+  {
+    nbins_[dim] = 1;
+    mult_[dim] = 0;
+  };
+
+  for (unsigned dim = 0; dim != dimension_; ++ dim)
+  {
+    TAxis *axis = NULL;
+    switch (dim)
+    {
+    case 0:
+      axis = that.GetXaxis();
+      break;
+    case 1:
+      axis = that.GetYaxis();
+      break;
+    case 2:
+      axis = that.GetZaxis();
+      break;
+    };
+    nbins_[dim] = axis->GetNbins();
+    low_[dim] = axis->GetBinLowEdge (1);
+    high_[dim] = axis->GetBinUpEdge (nbins_[dim]);
+
+    mult_[dim] = 1;
+    for (unsigned dim2 = 0; dim2 != dim; ++ dim2)
+      mult_[dim2] *= nbins_[dim];
+  };
+
+  bin_contents_.reserve (nbins_[0] * nbins_[1] * nbins_[2]);
+  bin_errors_.reserve (nbins_[0] * nbins_[1] * nbins_[2]);
+  for (unsigned binx = 0; binx != nbins_[0]; ++ binx)
+  {
+    for (unsigned biny = 0; biny != nbins_[1]; ++ biny)
+    {
+      for (unsigned binz = 0; binz != nbins_[2]; ++ binz)
+      {
+	bin_contents_
+	  .push_back (that.GetBinContent (1 + binx, 1 + biny, 1 + binz));
+	const float error = that.GetBinError (1 + binx, 1 + biny, 1 + binz);
+	assert (error >= 0 && "internal consistency error"); //spec
+	bin_errors_.push_back (error);
+      };
+    };
+  };
+
+  test_invariant ();
+};
+
+
+
+std::auto_ptr<TH1> FastTH1 ::
+make_TH1 (std::string name) const
+{
+  test_invariant ();
+
+  std::auto_ptr<TH1> result;
+
+  if (name.empty())
+    name = name_;
+  switch (dimension_)
+  {
+  case 1:
+    result.reset (new TH1F (name.c_str(), title_.c_str(),
+			    nbins_[0], low_[0], high_[0]));
+    break;
+  case 2:
+    result.reset (new TH2F (name.c_str(), title_.c_str(),
+			    nbins_[0], low_[0], high_[0],
+			    nbins_[1], low_[1], high_[1]));
+    break;
+  case 3:
+    result.reset (new TH3F (name.c_str(), title_.c_str(),
+			    nbins_[0], low_[0], high_[0],
+			    nbins_[1], low_[1], high_[1],
+			    nbins_[2], low_[2], high_[2]));
+    break;
+  };
+
+  assert (result.get() != NULL && "internal consistency error"); //spec
+
+  FastTH1::bin_contents_iter content; content = bin_contents_.begin();
+  bin_errors_iter error = bin_errors_.begin();
+  for (unsigned binx = 0; binx != nbins_[0]; ++ binx)
+  {
+    for (unsigned biny = 0; biny != nbins_[1]; ++ biny)
+    {
+      for (unsigned binz = 0; binz != nbins_[2]; ++ binz)
+      {
+	result->SetBinContent (1 + binx, 1 + biny, 1 + binz, *content);
+	result->SetBinError (1 + binx, 1 + biny, 1 + binz, *error);
+	++ content;
+	++ error;
+      };
+    };
+  };
+
+  assert (content == bin_contents_.end() && "internal consistency error"); //spec
+  assert (error == bin_errors_.end() && "internal consistency error"); //spec
+
+  assert (result.get() != NULL && "postcondition failed"); //spec
+  return result;
+};
+
+

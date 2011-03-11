@@ -1,21 +1,918 @@
+#ifndef CSM_H
+#define CSM_H
 
 
 // mclimit_csm -- use a chisquared minimized over nuisance parameters
-// to compute cls.
+// to compute cls -- pseudoexperiment loops, Bayesian limits and cross sections
+// in 1D and 2D, and Markov Chain Bayesian calculations included
 
 // Class to run the TMinuit minimization of T. Devlin's chisquared
 // defined in CDF 3126, minimized over the nuisance parameters.
 
-// version dated January 14, 2009
+// version dated Nov 18, 2010
 // Author:  Tom Junk, Fermilab.  trj@fnal.gov
+// Contributions from Joel Heinrich, Nils Krumnack, Tom Wright, and Kevin Lannon
 
-#ifndef CSM_H
-#define CSM_H
-
-#include "TH1.h"
+#include <iostream>
 #include <vector>
+#include <map>
+#include <TH1.h>
+#include <assert.h>
+#include <memory>
 
-using std::vector;
+//#include "FastTH1.hh"
+//For convenience (so we only have one header file and one source file, put all the FastTH1 stuff in here)
+
+#ifndef NK_MCLIMIT_FAST_TH1_HH
+#define NK_MCLIMIT_FAST_TH1_HH
+
+//          Copyright Nils Krumnack 2008.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
+// Please feel free to contact me (nils@fnal.gov) for bug reports,
+// feature suggestions, praise and complaints.
+
+// This class provides a fast implementation of a histogram based on
+// the std::vector class, providing the functions mclimit needs.
+
+
+// to switch between using fast TH1's and slow TH1's in mclimit,
+// set the typedef of TH1Type later.
+
+// uncomment the following to turn on extra debugging checks for this
+// class
+//#define NK_MCLIMIT_FAST_TH1_DEBUG
+
+// the class defined in this module
+class FastTH1;
+
+// effects: make a copy/clone of the given histogram
+// returns: the newly created object
+// guarantee: strong
+// throws: std::bad_alloc
+// postcondition: result.get() != NULL
+// rationale: this template function allows to interface quickly and
+//   easily between fast and regular TH1 objects (if the interface
+//   involves a copy operation).
+template <class Hist> std::auto_ptr<Hist>
+copy_TH1 (const TH1& that, const std::string& name = "");
+template <class Hist> std::auto_ptr<Hist>
+copy_TH1 (const FastTH1& that, const std::string& name = "");
+
+
+// effects: copy the contents from histogram b to histogram a
+// guarantee: no-throw
+template<class Hist> void
+copy_TH1_content (Hist& a, const Hist& b);
+
+class TH1Input
+{
+  // this class is meant to be used for passing lists of histograms
+  // that are either TH1 or FastTH1
+
+  //
+  // public interface
+  //
+
+  // effects: test the invariant of the class
+  // guarantee: no-throw
+public:
+  void test_invariant () const;
+
+
+  // effects: create an input list with traditional TH1 objects
+  // guarantee: no-throw
+public:
+  TH1Input (TH1 *list);
+
+
+  // effects: create an input list with fast TH1 objects
+  // guarantee: no-throw
+public:
+  TH1Input (FastTH1 *list);
+
+
+  // effects: makes a copy of the histogram with the given type
+  // guarantee: strong
+  // throws: std::bad_alloc
+public:
+  template<class Hist> std::auto_ptr<Hist> copy_TH1 () const;
+
+
+
+  //
+  // private interface
+  //
+
+  // description: the slow histogram (if used)
+private:
+  TH1 *slow_;
+
+
+  // description: the fast histogram (if used)
+private:
+  FastTH1 *fast_;
+};
+
+
+
+
+
+class TH1InputList
+{
+  // this class is meant to be used for passing lists of histograms
+  // that are either TH1 or FastTH1
+
+  //
+  // public interface
+  //
+
+  // effects: test the invariant of the class
+  // guarantee: no-throw
+public:
+  void test_invariant () const;
+
+
+  // effects: create an input list with traditional TH1 objects
+  // guarantee: no-throw
+public:
+  TH1InputList (TH1 **list);
+
+
+  // effects: create an input list with fast TH1 objects
+  // guarantee: no-throw
+public:
+  TH1InputList (FastTH1 **list);
+
+
+  // returns: whether the histogram at the given index exists
+  // guarantee: no-throw
+public:
+  bool has (unsigned index) const;
+
+
+  // effects: makes a copy of the histogram at the given index with
+  //   the given type
+  // guarantee: strong
+  // throws: std::bad_alloc
+public:
+  template<class Hist> std::auto_ptr<Hist> copy_TH1 (unsigned index) const;
+
+
+
+  //
+  // private interface
+  //
+
+  // description: the slow histogram (if used)
+private:
+  TH1 **slow_;
+
+
+  // description: the fast histogram (if used)
+private:
+  FastTH1 **fast_;
+};
+
+
+
+
+
+class FastTH1
+{
+  //
+  // public interface
+  //
+
+  // description: the type I use for storing values
+public:
+  typedef float value_type;
+
+
+  // description: the maximum number of dimensions supported
+public:
+  static const unsigned max_dim = 3;
+
+
+  // effects: test the invariant of the class
+  // guarantee: no-throw
+public:
+  void test_invariant () const;
+
+
+  // effects: create a copy of the given histogram
+  // guarantee: strong
+  // throws: std::bad_alloc
+  // requires: unsigned (that.GetDimension()) <= max_dim
+public:
+  explicit FastTH1 (const TH1& that);
+
+
+  // returns: a TH1 with the same parameters.  if !name.empty(), the
+  //   histogram will be given the passed in name
+  // guarantee: strong
+  // throws: std::bad_alloc
+public:
+  std::auto_ptr<TH1> make_TH1 (std::string name = "") const;
+
+
+  // effects: set the content of this histogram to the contents of
+  //   that histogram
+  // guarantee: no-throw
+  // requires: GetNbinsX() == that.GetNbinsX()
+  // requires: GetNbinsY() == that.GetNbinsY()
+  // requires: GetNbinsZ() == that.GetNbinsZ()
+public:
+  void set_content (const FastTH1& that);
+
+
+
+  //
+  // public TH1 interface
+  //
+
+  // returns: the name of the histogram
+  // guarantee: no-throw
+  // postcondition: result != NULL
+public:
+  const char *GetName () const;
+
+
+  // effects: sets the property returned by GetName()
+  // guarantee: strong
+  // throws: std::bad_alloc
+  // requires: name != NULL
+  // postcondition: std::string (name) == this->GetName()
+public:
+  void SetName (const char *name);
+
+
+
+  // returns: the title of the histogram
+  // guarantee: no-throw
+  // postcondition: result != NULL
+public:
+  const char *GetTitle () const;
+
+
+  // effects: sets the property returned by GetTitle()
+  // guarantee: strong
+  // throws: std::bad_alloc
+  // requires: title != NULL
+  // postcondition: std::string (title) == this->GetTitle()
+public:
+  void SetTitle (const char *title);
+
+
+  // returns: the number of dimension
+  // guarantee: no-throw
+public:
+  unsigned GetDimension () const;
+
+
+  // returns: the number of bins in x or 1 if GetDimension() < 1
+  // guarantee: no-throw
+public:
+  unsigned GetNbinsX () const;
+
+
+  // returns: the number of bins in y or 1 if GetDimension() < 2
+  // guarantee: no-throw
+public:
+  unsigned GetNbinsY () const;
+
+
+  // returns: the number of bins in z or 1 if GetDimension() < 3
+  // guarantee: no-throw
+public:
+  unsigned GetNbinsZ () const;
+
+
+  // returns: the content of bin binx
+  // guarantee: no-throw
+  // requires: GetDimension() == 1
+  // requires: binx >= 1 && binx <= GetNbinsX()
+public:
+  value_type GetBinContent (unsigned binx) const;
+
+
+  // returns: the error of bin binx
+  // guarantee: no-throw
+  // requires: GetDimension() == 1
+  // requires: binx >= 1 && binx <= GetNbinsX()
+public:
+  value_type GetBinError (unsigned binx) const;
+
+
+  // returns: the content of bin (binx,biny)
+  // guarantee: no-throw
+  // requires: GetDimension() <= 2
+  // requires: binx >= 1 && binx <= GetNbinsX()
+  // requires: biny >= 1 && biny <= GetNbinsY()
+public:
+  value_type GetBinContent (unsigned binx, unsigned biny) const;
+
+
+  // returns: the error of bin (binx,biny)
+  // guarantee: no-throw
+  // requires: GetDimension() <= 2
+  // requires: binx >= 1 && binx <= GetNbinsX()
+  // requires: biny >= 1 && biny <= GetNbinsY()
+public:
+  value_type GetBinError (unsigned binx, unsigned biny) const;
+
+
+  // returns: the content of bin binx
+  // guarantee: no-throw
+  // requires: GetDimension() == 1
+  // requires: binx >= 1 && binx <= GetNbinsX()
+public:
+  void SetBinContent (unsigned binx, value_type content);
+
+
+  // returns: the error of bin binx
+  // guarantee: no-throw
+  // requires: GetDimension() == 1
+  // requires: binx >= 1 && binx <= GetNbinsX()
+  // requires: error >= 0
+public:
+  void SetBinError (unsigned binx, value_type error);
+
+
+  // returns: the content of bin (binx,biny)
+  // guarantee: no-throw
+  // requires: GetDimension() <= 2
+  // requires: binx >= 1 && binx <= GetNbinsX()
+  // requires: biny >= 1 && biny <= GetNbinsY()
+public:
+  void SetBinContent (unsigned binx, unsigned biny, value_type content);
+
+
+  // returns: the error of bin (binx,biny)
+  // guarantee: no-throw
+  // requires: GetDimension() <= 2
+  // requires: binx >= 1 && binx <= GetNbinsX()
+  // requires: biny >= 1 && biny <= GetNbinsY()
+  // requires: error >= 0
+public:
+  void SetBinError (unsigned binx, unsigned biny, value_type error);
+
+
+  // returns: the sum of all bins
+  // guarantee: no-throw
+public:
+  float Integral () const;
+
+
+
+  //
+  // private interface
+  //
+
+  // description: the name and title of the histogram
+private:
+  std::string name_, title_;
+
+
+  // description: the dimension of the histogram
+private:
+  unsigned dimension_;
+
+
+  // description: the binning used
+private:
+  unsigned nbins_[max_dim];
+  float low_[max_dim];
+  float high_[max_dim];
+
+
+  // description: a multiplication factor to apply for bins in the
+  //   given dimension
+private:
+  unsigned mult_[max_dim];
+
+
+  // description: the vector containing the bin contents
+private:
+  typedef std::vector<value_type>::const_iterator bin_contents_iter;
+  typedef std::vector<value_type>::iterator bin_contents_miter;
+  std::vector<value_type> bin_contents_;
+
+
+  // description: the vector containing the bin errors
+private:
+  typedef std::vector<value_type>::const_iterator bin_errors_iter;
+  typedef std::vector<value_type>::iterator bin_errors_miter;
+  std::vector<value_type> bin_errors_;
+};
+
+
+
+
+
+//
+// inline methods
+//
+
+template<> inline std::auto_ptr<TH1>
+copy_TH1 (const TH1& that, const std::string& name)
+{
+  std::auto_ptr<TH1> result;
+
+  result.reset (dynamic_cast<TH1*>(that.Clone (name.c_str())));
+
+  assert (result.get() != NULL && "postcondition failed"); //spec
+  return result;
+};
+
+
+
+template<> inline std::auto_ptr<FastTH1>
+copy_TH1 (const TH1& that, const std::string& name)
+{
+  std::auto_ptr<FastTH1> result;
+
+  result.reset (new FastTH1 (that));
+  if (!name.empty())
+    result->SetName (name.c_str());
+
+  assert (result.get() != NULL && "postcondition failed"); //spec
+  return result;
+};
+
+
+
+template<> inline std::auto_ptr<TH1>
+copy_TH1 (const FastTH1& that, const std::string& name)
+{
+  std::auto_ptr<TH1> result;
+
+  result = that.make_TH1 (name);
+
+  assert (result.get() != NULL && "postcondition failed"); //spec
+  return result;
+};
+
+
+
+template<> inline std::auto_ptr<FastTH1>
+copy_TH1 (const FastTH1& that, const std::string& name)
+{
+  std::auto_ptr<FastTH1> result;
+
+  result.reset (new FastTH1 (that));
+  if (!name.empty())
+    result->SetName (name.c_str());
+
+  assert (result.get() != NULL && "postcondition failed"); //spec
+  return result;
+};
+
+
+
+template<> inline void
+copy_TH1_content (TH1& a, const TH1& b)
+{
+  a.Reset ();
+  a.Add (&b, 1);
+};
+
+
+
+template<> inline void
+copy_TH1_content (FastTH1& a, const FastTH1& b)
+{
+  a.set_content (b);
+};
+
+
+
+inline void TH1Input ::
+test_invariant () const
+{
+#ifndef NDEBUG
+  assert (!(slow_ && fast_) && "invariant violated"); //spec
+#endif
+};
+
+
+
+inline TH1Input ::
+TH1Input (TH1 *list)
+  : slow_ (list), fast_ (NULL)
+{
+  test_invariant ();
+};
+
+
+
+inline TH1Input ::
+TH1Input (FastTH1 *list)
+  : slow_ (NULL), fast_ (list)
+{
+  test_invariant ();
+};
+
+
+
+template<class Hist> inline std::auto_ptr<Hist> TH1Input ::
+copy_TH1 () const
+{
+  test_invariant ();
+
+  std::auto_ptr<Hist> result;
+
+  if (slow_)
+    result = ::copy_TH1<Hist> (*slow_);
+  if (fast_)
+    result = ::copy_TH1<Hist> (*fast_);
+
+  return result;
+};
+
+
+
+inline void TH1InputList ::
+test_invariant () const
+{
+#ifndef NDEBUG
+  assert (!(slow_ && fast_) && "invariant violated"); //spec
+#endif
+};
+
+
+
+inline TH1InputList ::
+TH1InputList (TH1 **list)
+  : slow_ (list), fast_ (NULL)
+{
+  test_invariant ();
+};
+
+
+
+inline TH1InputList ::
+TH1InputList (FastTH1 **list)
+  : slow_ (NULL), fast_ (list)
+{
+  test_invariant ();
+};
+
+
+
+inline bool TH1InputList ::
+has (unsigned index) const
+{
+  test_invariant ();
+
+  bool result = false;
+  if (slow_)
+    result = slow_[index];
+  if (fast_)
+    result = fast_[index];
+  return result;
+};
+
+
+
+template<class Hist> inline std::auto_ptr<Hist> TH1InputList ::
+copy_TH1 (unsigned index) const
+{
+  test_invariant ();
+
+  std::auto_ptr<Hist> result;
+  if (slow_ && slow_[index])
+    result = ::copy_TH1<Hist> (*slow_[index]);
+  if (fast_ && fast_[index])
+    result = ::copy_TH1<Hist> (*fast_[index]);
+  return result;
+};
+
+
+
+inline void FastTH1 ::
+test_invariant () const
+{
+#ifndef NDEBUG
+  // this is required to make a TH1
+  assert (dimension_ >= 1 && dimension_ <= 3 && "invariant violated"); //spec
+  // this is required to store the binning
+  assert (dimension_ < max_dim && "invariant violated"); //spec
+  unsigned nbin = 1;
+  for (unsigned dim = dimension_; dim != max_dim; ++ dim)
+    assert (nbins_[dim] == 1 && "invariant violated"); //spec
+  for (unsigned dim = 0; dim != dimension_; ++ dim)
+  {
+    assert (nbins_[dim] > 0 && "invariant violated"); //spec
+    assert (low_[dim] < high_[dim] && "invariant violated"); //spec
+    nbin *= nbins_[dim];
+  };
+  assert (nbin == bin_contents_.size() && "invariant violated"); //spec
+  assert (nbin == bin_errors_.size() && "invariant violated"); //spec
+  for (bin_errors_iter error = bin_errors_.begin();
+       error != bin_errors_.end(); ++ error)
+  {
+    assert (*error >= 0 && "invariant violated"); //spec
+  };
+#endif
+};
+
+
+
+inline void FastTH1 ::
+set_content (const FastTH1& that)
+{
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+  assert (GetNbinsX() == that.GetNbinsX() && "requirement failed"); //spec
+  assert (GetNbinsY() == that.GetNbinsY() && "requirement failed"); //spec
+  assert (GetNbinsZ() == that.GetNbinsZ() && "requirement failed"); //spec
+#endif
+
+  bin_contents_ = that.bin_contents_;
+  bin_errors_ = that.bin_errors_;
+
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+#endif
+};
+
+
+
+inline const char *FastTH1 ::
+GetName () const
+{
+  test_invariant ();
+
+  const char *result = name_.c_str();
+
+  assert (result != NULL && "postcondition failed");
+  return result;
+};
+
+
+
+inline void FastTH1 ::
+SetName (const char *name)
+{
+  test_invariant ();
+  assert (name != NULL && "requirement failed"); //spec
+
+  name_ = name;
+
+  test_invariant ();
+  assert (std::string (name) == this->GetName() && "postcondition failed"); //spec
+};
+
+
+
+inline const char *FastTH1 ::
+GetTitle () const
+{
+  test_invariant ();
+
+  const char *result = title_.c_str();
+
+  assert (result != NULL && "postcondition failed");
+  return result;
+};
+
+
+
+inline void FastTH1 ::
+SetTitle (const char *title)
+{
+  test_invariant ();
+  assert (title != NULL && "requirement failed"); //spec
+
+  title_ = title;
+
+  test_invariant ();
+  assert (std::string (title) == this->GetTitle() && "postcondition failed"); //spec
+};
+
+
+
+inline unsigned FastTH1 ::
+GetDimension () const
+{
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+#endif
+
+  return dimension_;
+};
+
+
+
+inline unsigned FastTH1 ::
+GetNbinsX () const
+{
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+#endif
+
+  return nbins_[0];
+};
+
+
+
+inline unsigned FastTH1 ::
+GetNbinsY () const
+{
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+#endif
+
+  return nbins_[1];
+};
+
+
+
+inline unsigned FastTH1 ::
+GetNbinsZ () const
+{
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+#endif
+
+  return nbins_[2];
+};
+
+
+
+inline FastTH1::value_type FastTH1 ::
+GetBinContent (unsigned binx) const
+{
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+  assert (GetDimension() == 1 && "requirement failed"); //spec
+  assert (binx >= 1 && binx <= GetNbinsX() && "requirement failed"); //spec
+#endif
+
+  return bin_contents_[binx-1];
+};
+
+
+
+inline FastTH1::value_type FastTH1 ::
+GetBinError (unsigned binx) const
+{
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+  assert (GetDimension() == 1 && "requirement failed"); //spec
+  assert (binx >= 1 && binx <= GetNbinsX() && "requirement failed"); //spec
+#endif
+
+  return bin_errors_[binx-1];
+};
+
+
+
+inline FastTH1::value_type FastTH1 ::
+GetBinContent (unsigned binx, unsigned biny) const
+{
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+  assert (GetDimension() <= 2 && "requirement failed"); //spec
+  assert (binx >= 1 && binx <= GetNbinsX() && "requirement failed"); //spec
+  assert (biny >= 1 && biny <= GetNbinsY() && "requirement failed"); //spec
+#endif
+
+  return bin_contents_[(binx-1) * mult_[0] + (biny-1) * mult_[1]];
+};
+
+
+
+inline FastTH1::value_type FastTH1 ::
+GetBinError (unsigned binx, unsigned biny) const
+{
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+  assert (GetDimension() == 2 && "requirement failed"); //spec
+  assert (binx >= 1 && binx <= GetNbinsX() && "requirement failed"); //spec
+  assert (biny >= 1 && biny <= GetNbinsY() && "requirement failed"); //spec
+#endif
+
+  return bin_errors_[(binx-1) * mult_[0] + (biny-1) * mult_[1]];
+};
+
+
+
+inline void FastTH1 ::
+SetBinContent (unsigned binx, value_type content)
+{
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+  assert (GetDimension() == 1 && "requirement failed"); //spec
+  assert (binx >= 1 && binx <= GetNbinsX() && "requirement failed"); //spec
+#endif
+
+  bin_contents_[binx-1] = content;
+
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+#endif
+};
+
+
+
+inline void FastTH1 ::
+SetBinError (unsigned binx, value_type error)
+{
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+  assert (GetDimension() == 1 && "requirement failed"); //spec
+  assert (binx >= 1 && binx <= GetNbinsX() && "requirement failed"); //spec
+  assert (error >= 0 && "requirement failed"); //spec
+#endif
+
+  bin_errors_[binx-1] = error;
+
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+#endif
+};
+
+
+
+inline void FastTH1 ::
+SetBinContent (unsigned binx, unsigned biny, value_type content)
+{
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+  assert (GetDimension() == 2 && "requirement failed"); //spec
+  assert (binx >= 1 && binx <= GetNbinsX() && "requirement failed"); //spec
+  assert (biny >= 1 && biny <= GetNbinsY() && "requirement failed"); //spec
+#endif
+
+  bin_contents_[(binx-1) * mult_[0] + (biny-1) * mult_[1]] = content;
+
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+#endif
+};
+
+
+
+inline void FastTH1 ::
+SetBinError (unsigned binx, unsigned biny, value_type error)
+{
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+  assert (GetDimension() == 2 && "requirement failed"); //spec
+  assert (binx >= 1 && binx <= GetNbinsX() && "requirement failed"); //spec
+  assert (biny >= 1 && biny <= GetNbinsY() && "requirement failed"); //spec
+  assert (error >= 0 && "requirement failed"); //spec
+#endif
+
+  bin_errors_[(binx-1) * mult_[0] + (biny-1) * mult_[1]] = error;
+
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+#endif
+};
+
+
+
+inline float FastTH1 ::
+Integral () const
+{
+#ifdef NK_MCLIMIT_FAST_TH1_DEBUG
+  test_invariant ();
+#endif
+
+  float result = 0;
+  for (bin_contents_iter content = bin_contents_.begin();
+       content != bin_contents_.end(); ++ content)
+    result += *content;
+  return result;
+};
+
+#endif
+
+//typedef TH1 TH1Type;
+typedef FastTH1 TH1Type;
+
+namespace NK { namespace McLimit { class ExpMcLimit; }; };
+
+// for the map below -- from the SGI example for a map
+
+struct csm_ltstr
+{
+  bool operator()(char* s1, char* s2) const
+  {
+    return strcmp(s1, s2) < 0;
+  }
+};
+
+
+typedef enum {
+  flat=10,
+  corr=20
+} PRIOR;
 
 struct svstruct_s
 {
@@ -25,8 +922,8 @@ struct svstruct_s
   Double_t sysfrach;
   // if there is no shape uncertainty associated with this dependence of a particular
   // template on a nuisance parameter, then these pointers should be set to zero.
-  TH1 *lowshape;     // for shape uncertainty -- low histogram shape histo id
-  TH1 *highshape;    // for shape uncertainty -- high histogram shape
+  TH1Type *lowshape;     // for shape uncertainty -- low histogram shape histo id
+  TH1Type *highshape;    // for shape uncertainty -- high histogram shape
   Double_t xsiglow;  // how many sigma low lowshape corresponds to (should be a negative number)
   Double_t xsighigh; // how many sigma high highshape corresponds to. (should be a positive number)
 };
@@ -120,15 +1017,15 @@ class csm_channel_model
  public:
    csm_channel_model();
    ~csm_channel_model();
-   void add_template( TH1 *,      //template histogram
+   void add_template( const TH1Input&,      //template histogram
 	   	      Double_t,   //scale factor to multiply template by to compare w/ data
                       Int_t,      // number of nuisance parameters (Gaussian of unit width)
                       char *[],   // nuisance parameter names 
                       Double_t *, // fractional uncertainty on sf due to each nuisance parameter -- low side
                       Double_t *, // fractional uncertainty on sf due to each nuisance parameter -- high side
-                      TH1 *[],    // array of low histogram shapes, one for each nuisance param
+                      const TH1InputList&,    // array of low histogram shapes, one for each nuisance param
                       Double_t *, // number of sigma low for each nuisance parameter shape variation
-                      TH1 *[],    // array of high histogram shapes, one for each nuisance param
+                      const TH1InputList&,    // array of high histogram shapes, one for each nuisance param
 		      Double_t *, // number of sigma high for each shape variation
                       Int_t,      // MC statistical error steering (inupt).    Values and meaning:
                                   //    2:  Pay attention to error bars in each bin
@@ -172,6 +1069,10 @@ class csm_channel_model
    csm_channel_model* scale_err(Double_t);  // scales rates up with scale factor, and scales
                                             // systematic errors down with scale factor.  n.b. --
                                             // MC statistical errors on model histos cannot be scaled
+   csm_channel_model* interpolate(csm_channel_model *b, double frac); // interpolates frac of the way between this channel model
+                                                      // and the channel model pointed to by b.  Returns a pointer to a newly
+                                                      // created channel model which is the interpolation.
+
    Double_t chisquared1(TH1 *);  // Inputs a pointer to data histogram -- computes the chisquared of this model
                                  // compared to the supplied data histogram, without minimizing over nuisance
                                  // parameters, a la Tom Devlin's note
@@ -185,14 +1086,27 @@ class csm_channel_model
    friend class mclimit_csm;
 
  private:
-  vector<TH1*> histotemplate;
-  vector<TH1*> histotemplate_varied;
-  vector<Double_t> sft;
-  vector<Double_t> sft_varied;
-  vector<Int_t> poissflag;
-  vector<Int_t> scaleflag;
-  vector<svstruct> syserr;
+  std::vector<TH1Type*> histotemplate;
+  std::vector<TH1Type*> histotemplate_varied;
+  std::vector<Double_t> sft;
+  std::vector<Double_t> sft_varied;
+  std::vector<Int_t> poissflag;
+  std::vector<Int_t> scaleflag; // 1 if signal, 0 if background
+  std::vector<svstruct> syserr;
+  std::map<char*, std::vector<int>, csm_ltstr> semap;  // a list of entries in the syserr vector indexed by name
+
   INTERPSTYLE chan_istyle;
+
+
+  // description: this is a temporary object only to be used by
+  //   nuisance_response
+  // rationale: I hope this speeds up nuisance_response
+private:
+  std::auto_ptr<TH1Type> hcl_nuisance_response;
+
+  // rationale: I made my wrapper a friend to avoid figuring out
+  //   accessors
+  friend class NK::McLimit::ExpMcLimit;
 };
 
 class csm_model
@@ -210,14 +1124,9 @@ class csm_model
                       Double_t *, // number of sigma low for each nuisance parameter shape variation (should be negative!)
                       TH1 *[],    // array of high histogram shapes, one for each nuisance param
 		      Double_t *, // number of sigma high for each shape variation (should be positive!)
-                      Int_t,      // MC statistical error steering (inupt).    Values and meaning:
-                                  //    2:  Pay attention to error bars in each bin
-                                  //    1:  Poisson errors with unit-weight entries (see below)
-                                  //    0:  No bin-by-bin errors.
-                                  //  Notes on Poisson (value=1):  There is a split between the
-                                  // Poisson handling when the model is an ensemble model (for pseudoexperiment
-                                  // generation) and when it is a test model (for fitting to data and pseudodata).
-                                  //  In an ensemble model, the bin contents are treated
+                      Int_t,      // Poisson flag -- 1 if Poisson, 0 of not.  There is a split between the
+                                  // interpretation of this flag when the model is an ensemble model and when
+                                  // it is a test model.  In an ensemble model, the bin contents are treated
                                   // as Poisson means and the values are fluctuated according to Poisson statistics.
                                   // These random components are then used with their scale factors as components
                                   // of another Poisson mean for generating pseudodata. 
@@ -265,6 +1174,9 @@ class csm_model
    csm_model* scale_err(Double_t);  // scales rates up with scale factor, and scales
                                             // systematic errors down with scale factor.  n.b. --
                                             // MC statistical errors on model histos cannot be scaled
+   csm_model* interpolate(csm_model *b, double frac); // interpolates frac of the way between this model
+                                                      // and the model pointed to by b.  Returns a pointer to a newly
+                                                      // created model which is the interpolation.
    void nuisance_response(Int_t, char *[], Double_t []); // updates the fluctuated version of the histogram templates
                                  // and scale factors inside the channel model
                                  // according to the nuisance parameters provided.  Inputs: number of nuisance
@@ -274,7 +1186,7 @@ class csm_model
    void varysyst();   // randomly choose nuisance parameter values and call nuisance_response
    void print_nuisance_params();  // after calling varysyst, can print out the randomly chosen parameters and names
    void single_pseudoexperiment(TH1 *[]); // generate pseudodata for all the channels in this model.
-   void list_nparams(vector<char *> *, vector<Double_t> *, vector<Double_t> *); // get a list of
+   void list_nparams(std::vector<char *> *, std::vector<Double_t> *, std::vector<Double_t> *); // get a list of
       // unique nuisance parameter names for all the channels in this model and their most
       // restrictive lower and upper bounds.
    Double_t chisquared1(TH1**); // calls the chisquared routine for each channel model.
@@ -283,17 +1195,21 @@ class csm_model
    friend class csm;
 
  private:
-  vector<char*> channame;
-  vector<csm_channel_model*> chanmodel;
-  Int_t lookup_add_channame(char *);  // look up the channel name in the channame vector.  If it's
+  std::vector<char*> channame;
+  std::vector<csm_channel_model*> chanmodel;
+  Int_t lookup_add_channame(char *);  // look up the channel name in the channame std::vector.  If it's
                                        // not there, add it.
-  vector<npcstruct> npcm;  // constraint equations between nuisance parameters
+  std::vector<npcstruct> npcm;  // constraint equations between nuisance parameters
 
-  vector<char*> npbname;   // upper and lower bounds
-  vector<Double_t> npbhigh;
-  vector<Double_t> npblow;
-  vector<Double_t> npvalp; // handles to stored lists of nuisance parameter names and values for
-  vector<char*> npnp;
+  std::vector<char*> npbname;   // upper and lower bounds
+  std::vector<Double_t> npbhigh;
+  std::vector<Double_t> npblow;
+  std::vector<Double_t> npvalp; // handles to stored lists of nuisance parameter names and values for
+  std::vector<char*> npnp;
+
+  // rationale: I made my wrapper a friend to avoid figuring out
+  //   accessors
+  friend class NK::McLimit::ExpMcLimit;
 };
 
 
@@ -332,9 +1248,9 @@ class csm
 	bool getprintflag();
 
  private:
-        vector<Double_t> fitparam;   // parameters of the fit
-	vector<Double_t> fiterror;   // errors on fit parameters
-        vector<char*> fitparamname; //  names of fit parameters
+        std::vector<Double_t> fitparam;   // parameters of the fit
+	std::vector<Double_t> fiterror;   // errors on fit parameters
+        std::vector<char*> fitparamname; //  names of fit parameters
 	Double_t *fitcov;           //  pointer to covariance matrix
 	Int_t nfitcov;              //  size of covariance matrix
         Int_t minuitmaxcalls;       //  how many calls to the function Minuit is allowed to make
@@ -348,9 +1264,9 @@ class csm
 // csm_interpolate_histogram interpolates the errors too, while csm_interpolate_histogram_noerr
 // is a speedup which interpolates only the bin contents and not the errors
 
-void csm_interpolate_histogram(TH1*,Double_t,TH1*,Double_t,TH1*,Double_t,INTERPSTYLE);
+template<class Hist> void csm_interpolate_histogram(Hist*,Double_t,Hist*,Double_t,Hist*,Double_t,INTERPSTYLE);
 
-void csm_interpolate_histogram_noerr(TH1*,Double_t,TH1*,Double_t,TH1*,Double_t,INTERPSTYLE);
+template<class Hist> void csm_interpolate_histogram_noerr(Hist*,Double_t,Hist*,Double_t,Hist*,Double_t,INTERPSTYLE);
 
 // version to be used with cascading shape errors -- needs a central shape, a varied shape,
 // and a shape to apply the variations to (which may not be either of the above, but the result
@@ -359,31 +1275,34 @@ void csm_interpolate_histogram_noerr(TH1*,Double_t,TH1*,Double_t,TH1*,Double_t,I
 // csm_interpolate histogram2 calls csm_interpolate_histogram3 twice, once for the
 // bin contents, once for the errors.
 
-void csm_interpolate_histogram2(TH1* central, Double_t paramcentral,
-                                TH1* varied, Double_t paramvaried,
-                                TH1* startshape, 
-                                TH1* outshape,
+template<class Hist> void
+csm_interpolate_histogram2(Hist* central, Double_t paramcentral,
+                                Hist* varied, Double_t paramvaried,
+                                Hist* startshape, 
+                                Hist* outshape,
                                 Double_t param,
                                 INTERPSTYLE istyle);
 
 // here's a version that just interpolates the bin contents but not the errors
 //  (twice as fast)
 
-void csm_interpolate_histogram2_noerr(TH1* central, Double_t paramcentral,
-                                TH1* varied, Double_t paramvaried,
-                                TH1* startshape, 
-                                TH1* outshape,
+template<class Hist> void
+csm_interpolate_histogram2_noerr(Hist* central, Double_t paramcentral,
+                                Hist* varied, Double_t paramvaried,
+                                Hist* startshape, 
+                                Hist* outshape,
                                 Double_t param,
                                 INTERPSTYLE istyle);
 
 // this routine just interpolates the histogram contents
 
-void csm_interpolate_histogram3(TH1* central, Double_t paramcentral,
-                                TH1* varied, Double_t paramvaried,
-                                TH1* startshape, 
-                                TH1* outshape,
-                                Double_t param,
-                                INTERPSTYLE istyle);
+template<class Hist> void
+csm_interpolate_histogram3(Hist* central, Double_t paramcentral,
+			   Hist* varied, Double_t paramvaried,
+			   Hist* startshape, 
+			   Hist* outshape,
+			   Double_t param,
+			   INTERPSTYLE istyle);
 
 void csm_pvmc(Int_t nb, Double_t *dist1, Double_t *dist2, Double_t *dist3, Double_t *distn,
 	      Double_t par1, Double_t par2, Double_t parn);
@@ -670,8 +1589,8 @@ class mclimit_csm
    // and bayes_heinrich or bayes_heinrich_withexpect is called.  Plot the
    // contents of the first vector versus the values of the second vector.
 
-   vector<Double_t> bayes_posterior;
-   vector<Double_t> bayes_posterior_points;
+   std::vector<Double_t> bayes_posterior;
+   std::vector<Double_t> bayes_posterior_points;
 
    // Default method is Joel's (CDF 7587), which is option 0 (CSM_BAYESINTEGRAL_JOEL)
    // Option 1 (CSM_BAYESINTEGRAL_QUICK) uses the interval above and performs a quick and
@@ -685,11 +1604,10 @@ class mclimit_csm
    // (it is reset on entry into bayes_heinrich_withexpect and filled in) -- the pointer is
    // initially null, and no filling occurs unless this pointer is set.
 
-
    TH1F *bayes_pseudoexperiment_limits;
 
    void bayes_heinrich_coverage_check(Double_t beta,
-                                      Double_t sflimit,
+                                      Double_t sfscale,
 				      Int_t npx,
                                       Double_t* falsex);  // checks the false exclusion rate (coverage)
 
@@ -707,6 +1625,25 @@ class mclimit_csm
 
     double getbhnorm();
 
+// Markov chain limit calculator -- all arguments are optional
+// Beta is the credibility level desired for the limits -- the default is 0.95.
+// prior is flat or correlated -- See Joel's CDF 7587, sec. 6
+
+    double bayeslimit_mcmc1(double beta=0.95, PRIOR prior=corr, TString histoutfile="");
+
+    void bayeslimit_mcmc1_expect(double beta, PRIOR prior, int npx, 
+					      double *sm2, double *sm1, double *smed, 
+					      double *sp1, double *sp2);
+
+
+// log likelihood function with Gauss constraints on nuisance parameters with the optional
+// correlated signal prior
+// note -- for efficiency reasons, this function will not call nuisance_response, assuming it has
+// already been called for the model.  So only the bin-by-bin Poisson uncertainties and the signal
+// scale factor are used to adjust predictions.
+
+    double bayesmcmcllf(csm_model *model, int nnptot, double *npvalues, 
+                        int nperrtot, double *pnpvalues, double ssf, PRIOR prior);
 
    //---------------------------------------------------------------
 
@@ -730,9 +1667,14 @@ class mclimit_csm
    // always assume the two signals are declared in the same order in all channels.
    // If more than two signals are present, the first one in  each channel is called signal 1,
    // and the sum of all others is called signal 2
+   // Additional optional default arguments -- these are so bh_2d_scan_expect can use bh_2d_scan.
 
    void bh_2d_scan(Double_t s1low, Double_t s1high, Double_t ds1,
-                   Double_t s2low, Double_t s2high, Double_t ds2);
+                   Double_t s2low, Double_t s2high, Double_t ds2,
+		   // optional arguments -- can be omitted when just calling bh_2d_scan
+		   Double_t *s1fit=0, Double_t *s2fit=0,
+		   Int_t pflag2d=1, Double_t *s1test=0, Double_t *s2test=0,
+		   Int_t *in68 = 0, Int_t *in95=0);
 
 // This routine below runs pseudoexperiments to get the expected distributions.  It does all the
 // calculations that bh_2d_scan does for the real data, but for the pseudoexperiments instead, and prints
@@ -750,6 +1692,8 @@ class mclimit_csm
    TH1* get_datahist(Int_t);
 
    void printsbd();              // dump all signal, background, candidates
+
+   void systsumplot(char *channame, int nsamples, TH1 **ehm2, TH1 **ehm1, TH1 **ehmed, TH1 **ehp1, TH1 **ehp2);
 
  private:
    csm_model *null_hypothesis;
@@ -773,8 +1717,8 @@ class mclimit_csm
    Int_t *itsb; // sort order for tsb
    Int_t *itss; // sort order for tss
    Double_t tsd;                     // test statistic for data
-   vector<TH1*> datahist;
-   vector<char*> dhname;            // channel names for each data histogram -- must match
+   std::vector<TH1*> datahist;
+   std::vector<char*> dhname;            // channel names for each data histogram -- must match
                                     // the channel names used in the models.
 
    Double_t s95aux(Int_t); // s95 calculator using a function you pass in.
@@ -804,6 +1748,13 @@ class mclimit_csm
 
    int bayesintegralmethod;
    Double_t quickbint(Double_t); // quick and dirty integrator
+
+   double bayesmcmcllf(csm_model *model, int nnptot, std::vector<char*> npnames,
+			double *npvalues, int nperrtot, double *pnpvalues, double ssf, PRIOR prior);
+
+  // rationale: I made my wrapper a friend to avoid figuring out
+  //   accessors
+  friend class NK::McLimit::ExpMcLimit;
 };
 
 #endif
@@ -817,11 +1768,6 @@ typedef struct {
 typedef struct {
   float e1,e2,b;
 }EB2D;
-
-typedef enum {
-  flat=10,
-  corr=20
-} PRIOR;
 
 double cspdf(double s,double norm,
              int nchan,int nens,const int nobs[],const EB* ens,PRIOR prior);
@@ -863,5 +1809,472 @@ double galim(double beta,int nchan,int nens,const int nobs[],const EB* ens);
 void gausslaguerre(double x[],double lw[],int n,double alpha);
 
 #define GENLIMIT 1
+
+/*------------------------------------------------------------------------*/
+
+// interpolate 1D histograms and 2D histograms
+// histo a corresponds to parameter xa, histo b corresponds to xb.
+// xc is input, and histogram c is the interpolated output
+
+// new version -- rely on the more general interpolator with three inputs, but reduce the argument
+// count for backward compatibility
+
+// csm_interpolate_histogram interpolates the bin contents and errors
+
+template<class Hist> inline void
+csm_interpolate_histogram(Hist* a, Double_t xa, 
+			  Hist* b, Double_t xb,
+			  Hist* c, Double_t xc,
+			  INTERPSTYLE istyle)
+{
+  csm_interpolate_histogram2(a,xa,b,xb,a,c,xc,istyle);
+}
+
+// csm_interpolate_histogram_noerr interpolates just the bin contents but not the errors
+
+template<class Hist> void
+csm_interpolate_histogram_noerr(Hist* a, Double_t xa, 
+				Hist* b, Double_t xb,
+				Hist* c, Double_t xc,
+				INTERPSTYLE istyle)
+{
+  csm_interpolate_histogram2_noerr(a,xa,b,xb,a,c,xc,istyle);
+}
+
+// interpolate 1D histograms and 2D histograms 
+// histo a corresponds to parameter xa, histo b corresponds to xb.
+// xc is input, and histogram c is the interpolated output
+// d is the histogram to apply the shift given by a and b to, for compounded interpolations.
+
+// approximate attempt to interpolate the uncertainties too.  Problem is, an interpolated
+// histogram is a long sum of pieces interpolated from the same central value histogram,
+// and thus the errors are correlated in interesting ways.
+// A subterfuge -- jut linearly interpolate the errors in the same way that the
+// bin contents are linearly interpolated.  It's not a full error propagation.  Halfway interpolations
+// really are averages of statistically uncertain histograms, and thus the error on the average should
+// be a bit better than the error on either one.  But itnterpolate again, and correlations have to be
+// taken into account to do it right.
+// we've also lost at this point whether the errors need to be interpolated, but let's
+// do them for all histograms.
+// speedup 9 Dec 2007 -- avoid cloning TH1's as this is slow
+
+template<class Hist> inline void
+csm_interpolate_histogram2(Hist* a, Double_t xa, 
+			   Hist* b, Double_t xb,
+			   Hist* d,
+			   Hist* c, Double_t xc,
+			   INTERPSTYLE istyle)
+{
+  Int_t i,j;
+  Double_t xtmp;
+  Int_t nbinsa = a->GetNbinsX();
+  Int_t nbinsb = b->GetNbinsX();
+  Int_t nbinsc = c->GetNbinsX();
+  Int_t nbinsd = d->GetNbinsX();
+  Int_t nbinsya = a->GetNbinsY();
+  Int_t nbinsyb = b->GetNbinsY();
+  Int_t nbinsyc = c->GetNbinsY();
+  Int_t nbinsyd = d->GetNbinsY();
+
+  if (nbinsa != nbinsb)
+    {
+      std::cout << "nbins mismatch1 in csm_interpolate_histogram2: " << nbinsa << " " << nbinsb << std::endl;
+    }
+  if (nbinsb != nbinsc)
+    {
+      std::cout << "nbins mismatch2 in csm_interpolate_histogram2: " << nbinsb << " " << nbinsc << std::endl;
+    }
+  if (nbinsc != nbinsd)
+    {
+      std::cout << "nbins mismatch3 in csm_interpolate_histogram2: " << nbinsc << " " << nbinsd << std::endl;
+    }
+  if (nbinsya != nbinsyb)
+    {
+      std::cout << "nbinsy mismatch1 in csm_interpolate_histogram2: " << nbinsya << " " << nbinsyb << std::endl;
+    }
+  if (nbinsyb != nbinsyc)
+    {
+      std::cout << "nbinsy mismatch2 in csm_interpolate_histogram2 " << nbinsyb << " " << nbinsyc << std::endl;
+    }
+  if (nbinsyc != nbinsyd)
+    {
+      std::cout << "nbinsy mismatch3 in csm_interpolate_histogram2: " << nbinsyc << " " << nbinsyd << std::endl;
+    }
+
+  if (xb == xa)
+    {
+      std::cout << "xb == xa in csm_interpolate_histogram2 " << xa << std::endl;
+      std::cout << "fatal error -- exiting." << std::endl;
+      throw("nla");
+      //      exit(0);
+    }
+
+  // interpolate contents
+
+  csm_interpolate_histogram3(a,xa,b,xb,d,c,xc,istyle);
+
+  // swap errors and contents and interpolate again  (approximate method for evaluating
+  // errors on interpolated histograms)
+  // be careful to swap only once, even if some pointers are repeated.
+
+  if (nbinsya == 1)
+    {
+      for (i=1;i<=nbinsa;i++)
+	{
+	  xtmp = a->GetBinContent(i);
+	  a->SetBinContent(i,a->GetBinError(i));
+	  a->SetBinError(i,xtmp);
+	  if (a != b)
+	    {
+	      xtmp = b->GetBinContent(i);
+	      b->SetBinContent(i,b->GetBinError(i));
+	      b->SetBinError(i,xtmp);
+	    }
+	  // c is the output histogram -- hopefully it is not the same as one of the input histograms
+          xtmp = c->GetBinContent(i);
+          // c->SetBinContent(i,c->GetBinError(i));
+	  c->SetBinError(i,xtmp);
+
+	  if (a != d && b != d)
+	    {
+	      xtmp = d->GetBinContent(i);
+	      d->SetBinContent(i,d->GetBinError(i));
+	      d->SetBinError(i,xtmp);
+	    }
+	}
+    }
+  else
+    {
+      for (i=1;i<=nbinsa;i++)
+	{
+	  for (j=1;j<=nbinsya;j++)
+	    {
+	       xtmp = a->GetBinContent(i,j);
+	       a->SetBinContent(i,j,a->GetBinError(i,j));
+	       a->SetBinError(i,j,xtmp);
+	       if (a != b)
+		 {
+	           xtmp = b->GetBinContent(i,j);
+	           b->SetBinContent(i,j,b->GetBinError(i,j));
+	           b->SetBinError(i,j,xtmp);
+		 }
+	       xtmp = c->GetBinContent(i,j);
+	       //c->SetBinContent(i,j,c->GetBinError(i,j));
+	       c->SetBinError(i,j,xtmp);
+	       if (a != d && b != d)
+		 {
+	           xtmp = d->GetBinContent(i,j);
+	           d->SetBinContent(i,j,d->GetBinError(i,j));
+	           d->SetBinError(i,j,xtmp);
+		 }
+	    }
+	}
+    }
+
+  // interpolate the errors now and swap them back -- put the
+  // original histograms back together again too
+
+  csm_interpolate_histogram3(a,xa,b,xb,d,c,xc,istyle);
+
+  if (nbinsya == 1)
+    {
+      for (i=1;i<=nbinsa;i++)
+	{
+	  xtmp = a->GetBinContent(i);
+	  a->SetBinContent(i,a->GetBinError(i));
+	  a->SetBinError(i,xtmp);
+	  if (a != b)
+	    {
+	      xtmp = b->GetBinContent(i);
+	      b->SetBinContent(i,b->GetBinError(i));
+	      b->SetBinError(i,xtmp);
+	    }
+	  xtmp = c->GetBinContent(i);
+	  c->SetBinContent(i,c->GetBinError(i));
+	  c->SetBinError(i,xtmp);
+	  if (a != d && b != d)
+	    {
+	      xtmp = d->GetBinContent(i);
+	      d->SetBinContent(i,d->GetBinError(i));
+	      d->SetBinError(i,xtmp);
+	    }
+	}
+    }
+  else
+    {
+      for (i=1;i<=nbinsa;i++)
+	{
+	  for (j=1;j<=nbinsya;j++)
+	    {
+	       xtmp = a->GetBinContent(i,j);
+	       a->SetBinContent(i,j,a->GetBinError(i,j));
+	       a->SetBinError(i,j,xtmp);
+	       if (a != b)
+		 {
+	           xtmp = b->GetBinContent(i,j);
+	           b->SetBinContent(i,j,b->GetBinError(i,j));
+	           b->SetBinError(i,j,xtmp);
+		 }
+	       xtmp = c->GetBinContent(i,j);
+	       c->SetBinContent(i,j,c->GetBinError(i,j));
+	       c->SetBinError(i,j,xtmp);
+	       if (a != d && b != d)
+		 {
+	           xtmp = d->GetBinContent(i,j);
+	           d->SetBinContent(i,j,d->GetBinError(i,j));
+	           d->SetBinError(i,j,xtmp);
+		 }
+	    }
+	}
+    }
+}
+
+template<class Hist> void
+csm_interpolate_histogram2_noerr(Hist* a, Double_t xa, 
+				 Hist* b, Double_t xb,
+				 Hist* d,
+				 Hist* c, Double_t xc,
+				 INTERPSTYLE istyle)
+{
+  Int_t nbinsa = a->GetNbinsX();
+  Int_t nbinsb = b->GetNbinsX();
+  Int_t nbinsc = c->GetNbinsX();
+  Int_t nbinsd = d->GetNbinsX();
+  Int_t nbinsya = a->GetNbinsY();
+  Int_t nbinsyb = b->GetNbinsY();
+  Int_t nbinsyc = c->GetNbinsY();
+  Int_t nbinsyd = d->GetNbinsY();
+
+  if (nbinsa != nbinsb)
+    {
+      std::cout << "nbins mismatch1 in csm_interpolate_histogram2_noerr: " << nbinsa << " " << nbinsb << std::endl;
+    }
+  if (nbinsb != nbinsc)
+    {
+      std::cout << "nbins mismatch2 in csm_interpolate_histogram2_noerr: " << nbinsb << " " << nbinsc << std::endl;
+    }
+  if (nbinsc != nbinsd)
+    {
+      std::cout << "nbins mismatch3 in csm_interpolate_histogram2_noerr: " << nbinsc << " " << nbinsd << std::endl;
+    }
+  if (nbinsya != nbinsyb)
+    {
+      std::cout << "nbinsy mismatch1 in csm_interpolate_histogram2_noerr: " << nbinsya << " " << nbinsyb << std::endl;
+    }
+  if (nbinsyb != nbinsyc)
+    {
+      std::cout << "nbinsy mismatch2 in csm_interpolate_histogram2_noerr " << nbinsyb << " " << nbinsyc << std::endl;
+    }
+  if (nbinsyc != nbinsyd)
+    {
+      std::cout << "nbinsy mismatch3 in csm_interpolate_histogram2_noerr: " << nbinsyc << " " << nbinsyd << std::endl;
+    }
+
+  if (xb == xa)
+    {
+      std::cout << "xb == xa in csm_interpolate_histogram2_noerr " << xa << std::endl;
+      std::cout << "fatal error -- exiting." << std::endl;
+      //      exit(0);
+      throw("nla");
+    }
+
+  // interpolate just the bin contents
+
+  csm_interpolate_histogram3(a,xa,b,xb,d,c,xc,istyle);
+
+}
+
+
+template<class Hist> inline void
+csm_interpolate_histogram3(Hist* a, Double_t xa, 
+			   Hist* b, Double_t xb,
+			   Hist* d,
+			   Hist* c, Double_t xc,
+			   INTERPSTYLE istyle)
+{
+  Double_t hnorma,hnormb,hnormc,hnormd,hnormci;
+  Int_t i,j;
+  Double_t gbc;
+
+  Int_t nbinsa = a->GetNbinsX();
+  Int_t nbinsb = b->GetNbinsX();
+  Int_t nbinsc = c->GetNbinsX();
+  Int_t nbinsd = d->GetNbinsX();
+  Int_t nbinsya = a->GetNbinsY();
+  Int_t nbinsyb = b->GetNbinsY();
+  Int_t nbinsyc = c->GetNbinsY();
+  Int_t nbinsyd = d->GetNbinsY();
+
+  if (a->Integral()<=0 || b->Integral()<=0)
+    { 
+      for (i=1;i<=nbinsc;i++)
+	{
+	   for (j=1;j<=nbinsyc;j++)
+	     { c->SetBinContent(i,j,0);
+	     }
+	} 
+      //c->Reset();
+      return;
+    }
+    
+  if (nbinsya == 1)
+    {
+      Double_t *dista = new Double_t[nbinsa];
+      Double_t *distb = new Double_t[nbinsb];
+      Double_t *distc = new Double_t[nbinsc];
+      Double_t *distd = new Double_t[nbinsd];
+
+      hnorma = 0;
+      hnormb = 0;
+      hnormd = 0;
+      for (i=0;i<nbinsa;i++)
+        { dista[i] = a->GetBinContent(i+1); hnorma += dista[i]; }
+      for (i=0;i<nbinsb;i++)
+        { distb[i] = b->GetBinContent(i+1); hnormb += distb[i]; }
+      for (i=0;i<nbinsd;i++)
+        { distd[i] = d->GetBinContent(i+1); hnormd += distd[i]; }
+
+      hnormc = hnorma + (xc-xa)*(hnormb-hnorma)/(xb-xa);
+      // linearly interpolate the normalization between the central value and
+      // the varied template.
+      hnormc = hnormd*(hnormc/hnorma); // scale the normalization with the new template
+
+      if (istyle == CSM_INTERP_HORIZONTAL || istyle == CSM_INTERP_HORIZONTAL_EXTRAP)
+	{
+           csm_pvmc(nbinsa,dista,distb,distd,distc,xa,xb,xc);
+           hnormci = 0;
+           for (i=0;i<nbinsc;i++) { hnormci += distc[i]; }
+
+           for (i=0;i<nbinsc;i++)
+           {
+             c->SetBinContent(i+1,distc[i]*hnormc/hnormci);
+           }
+	}
+      else if (istyle == CSM_INTERP_VERTICAL || istyle == CSM_INTERP_VERTICAL_EXTRAP)
+	{
+	  for (i=0;i<nbinsa;i++)
+	    {
+	      gbc = distd[i] + ((xc-xa)/(xb-xa))*(distb[i]-dista[i]);
+	      if (gbc < 0) 
+		{
+		  gbc = 0;
+		}
+
+	      c->SetBinContent(i+1,gbc);
+	    }
+	}
+      else
+	{
+	  std::cout << "csm_interpolate_histogram: unknown interpolation style " << istyle << std::endl;
+	  throw("nla");
+	  //	  exit(0);
+	}
+
+      //std::cout << xa << " " << xb << " " << xc << std::endl;
+
+      delete[] dista;
+      delete[] distb;
+      delete[] distc;
+      delete[] distd;
+    }
+  else         // 2d case
+    {
+      Double_t *distxya = new Double_t[nbinsa*nbinsya];
+      Double_t *distxyb = new Double_t[nbinsb*nbinsyb];
+      Double_t *distxyc = new Double_t[nbinsc*nbinsyc];
+      Double_t *distxyd = new Double_t[nbinsd*nbinsyd];
+
+      hnorma = 0;
+      for (j=0;j<nbinsya;j++)
+	{
+	  for (i=0;i<nbinsa;i++)
+	    {
+	      gbc = a->GetBinContent(i+1,j+1);
+	      distxya[i+nbinsa*j] = gbc;
+	      hnorma += gbc;
+	    }
+	}
+
+      hnormb = 0;
+      for (j=0;j<nbinsyb;j++)
+	{
+	  for (i=0;i<nbinsb;i++)
+	    {
+	      gbc = b->GetBinContent(i+1,j+1);
+	      distxyb[i+nbinsb*j] = gbc;
+	      hnormb += gbc;
+	    }
+	}
+
+      hnormd = 0;
+      for (j=0;j<nbinsyd;j++)
+	{
+	  for (i=0;i<nbinsd;i++)
+	    {
+	      gbc = d->GetBinContent(i+1,j+1);
+	      distxyd[i+nbinsb*j] = gbc;
+	      hnormd += gbc;
+	    }
+	}
+
+      hnormc = hnorma + (xc-xa)*(hnormb-hnorma)/(xb-xa);
+      // linearly interpolate the normalization between the central value and
+      // the varied template.
+      hnormc = hnormd*(hnormc/hnorma); // scale the normalization with the new template
+
+      if (istyle == CSM_INTERP_HORIZONTAL || istyle == CSM_INTERP_HORIZONTAL_EXTRAP)
+	{
+          csm_pvmc2d(nbinsa,nbinsya,
+                     distxya,
+                     distxyb,
+                     distxyd,
+		     distxyc,
+                     xa, xb, xc);
+
+          hnormci = 0;
+          for (j=0;j<nbinsyc;j++)
+	    {
+              for (i=0;i<nbinsc;i++)
+	        {
+	          hnormci += distxyc[i+nbinsc*j];
+	        }
+	    }
+          for (j=0;j<nbinsyc;j++)
+	    {
+              for (i=0;i<nbinsc;i++)
+	        {
+	          c->SetBinContent(i+1,j+1,distxyc[i+nbinsc*j]*hnormc/hnormci);
+	        }
+	    }
+	}
+      else if (istyle == CSM_INTERP_VERTICAL || istyle == CSM_INTERP_VERTICAL_EXTRAP)
+	{
+          for (j=0;j<nbinsyc;j++)
+	    {
+              for (i=0;i<nbinsc;i++)
+	        {
+		  gbc = distxyd[i+nbinsc*j] + ((xc-xa)/(xb-xa))*(distxyb[i+nbinsc*j]-distxya[i+nbinsc*j]);
+		  if (gbc < 0)
+		    {
+		      gbc = 0;
+		    }
+	          c->SetBinContent(i+1,j+1,gbc);
+	        }
+	    }
+	}
+      else
+	{
+	  std::cout << "csm_interpolate_histogram: unknown interpolation style " << istyle << std::endl;
+	  throw("nla");
+	  //	  exit(0);
+	}
+
+      delete[] distxya;
+      delete[] distxyb;
+      delete[] distxyc;
+      delete[] distxyd;
+    }
+
+}
 
 #endif

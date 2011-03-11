@@ -62,6 +62,11 @@ public:
   int                     fGenK1Tmi, fGenK2Tmi; 
   int                     fRecK1Tmi, fRecK2Tmi; 
   
+  // -- effTree
+  float fETk1pt, fETk1eta, fETg3pt, fETg3eta;
+  float fETk2pt, fETk2eta, fETg4pt, fETg4eta;
+  int   fETk1q,  fETk2q; 
+  bool  fETk1gt, fETk2gt;
 
   // -- Additional variables and cuts for Bs -> J/psi phi
   double            MKKLO, MKKHI, DELTAR;

@@ -51,25 +51,25 @@ anaBmm::anaBmm(const char *files, const char *dir, int mode) {
 }
 
 // ----------------------------------------------------------------------
+anaBmm::~anaBmm() {
+  fHistFile->Write();
+  fHistFile->Close();
+}
+
+
+// ----------------------------------------------------------------------
 void anaBmm::init(const char *files, const char *dir, int mode) {
 
   double confLevel = 0.9;
   
   fBF = 0.0593*1.014e-3;
+  // PDG 2010:
   fu  = 0.402;
   fs  = 0.105;
+  // LHCb:
+  //   fu = 0.404; 
+  //   fs = 0.109;
 
-  fSigGenFilter  = 0.63; 
-  fSigGenFilterE = 0.03;
-
-  fNormGenFilter  = 0.24; // 0.186; 
-  fNormGenFilterE = 0.013; // 0.03;
-
-  // ???
-  fCsGenFilter  = 0.22; 
-  fCsGenFilterE = 0.015;
-
-  
   // -- Christoph's cuts
   M2PT  = 3.;
   ISO1  = 0.55;
@@ -98,6 +98,32 @@ void anaBmm::init(const char *files, const char *dir, int mode) {
   fNData = fNMc = 0; 
   fSgData = fSgMc = fNoData = fNoMc = -1; 
   fCsData = fCsMc = -1; 
+
+  // -- initialize "numbers"
+  numbers a;
+  a.name = "";
+  a.effGenFilter = a.effGenFilterE = 0.;
+  a.fitYield = a.fitYieldE = 0.;
+  a.genFileYield = a.genYield = a.recoYield = a.muidYield = a.trigYield = a.candYield = a.ana0Yield = a.anaYield = a.anaNmcYield = 0; 
+  a.acc = a.accE = 0; 
+  a.effMuidMC =  a.effMuidMCE = a.effTrigMC = a.effTrigMCE = 0; 
+  a.effMuidPid = a.effMuidPidE = a.effTrigPid = a.effTrigPidE = 0; 
+  a.effCand = a.effCandE = 0; 
+  a.effAna = a.effAnaE = 0; 
+  
+  fNumbersSig = fNumbersNorm = fNumbersCS = a;
+
+  fNumbersSig.name  = "signal"; 
+  fNumbersSig.effGenFilter  = 0.63;
+  fNumbersSig.effGenFilterE = 0.03;
+
+  fNumbersNorm.name = "normalization"; 
+  fNumbersNorm.effGenFilter  = 0.24;
+  fNumbersNorm.effGenFilterE = 0.013;
+
+  fNumbersCS.name   = "control sample"; 
+  fNumbersCS.effGenFilter  = 0.22;
+  fNumbersCS.effGenFilterE = 0.015;
 
   fFont = 42; 
   fMode = mode;  
@@ -136,7 +162,8 @@ void anaBmm::init(const char *files, const char *dir, int mode) {
   fNumbersFileName = fDirectory + "/anaBmm." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   loadFiles(files);
-
+  string hfname  = fDirectory + "/anaBmm." + fSuffix + ".root";
+  fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
 }
 
 
@@ -434,102 +461,111 @@ void anaBmm::optimizeUL(int nruns) {
   }
 }
 
-
 // ----------------------------------------------------------------------
-void anaBmm::acceptanceAndPreselection(int mode) {
-  // -- mode definition
-  // 0  Bs2MuMu MC
-  // 10 Bp2JpsiKp MC
-  // 20 Bp2JpsiKp MC
+void anaBmm::acceptanceAndPreselection(numbers &a) {
 
-  // -- Acceptance
-  TH1D *hacc  = (TH1D*)(gFile->Get("acceptance"));
-  double aNum = hacc->GetBinContent(3);
-  double aDen = hacc->GetBinContent(2);
-  if (0 == mode) {
-    fAcc        = aNum/aDen;
-    fAccNum     = aNum; 
-    fAccE       = dEff(static_cast<int>(aNum), static_cast<int>(aDen));
-  } else if (10 == mode) {
-    fNormAcc    = aNum/aDen;
-    fNormAccNum = aNum;
-    fNormAccE   = dEff(static_cast<int>(aNum), static_cast<int>(aDen));
-  } else if (20 == mode) {
-    fCsAcc    = aNum/aDen;
-    fCsAccNum = aNum;
-    fCsAccE   = dEff(static_cast<int>(aNum), static_cast<int>(aDen));
+  // -- Acceptance and MC efficiency numbers based on prefilled histogram
+  //    (could be changed to use effTree!)
+  TH1D *hacc  = (TH1D*)(gFile->Get("efficiency"));
+  if (!hacc) return;
+  a.genFileYield  = hacc->GetBinContent(2);
+  a.genYield  = a.genFileYield/a.effGenFilter;
+  a.recoYield = hacc->GetBinContent(5);
+  a.muidYield = hacc->GetBinContent(6);
+  a.trigYield = hacc->GetBinContent(7);
+  a.candYield = hacc->GetBinContent(8);
+  
+  if (a.genYield > 0) {
+    a.acc = a.recoYield/a.genYield;
+    a.accE = dEff(static_cast<int>(a.recoYield), static_cast<int>(a.genYield));
   }
 
-  // -- Preselection efficiency 
-  TH1D *hpresel = (TH1D*)(gFile->Get("presel"));
-  double pNum   = hpresel->GetBinContent(3);
-  double pDen   = hpresel->GetBinContent(2);
-  if (0 == mode) {
-    fEffPresel    = pNum/pDen;
-    fEffPreselE   = dEff(static_cast<int>(pNum), static_cast<int>(pDen));
-  } else if (10 == mode) {
-    fNormEffPresel    = pNum/pDen;
-    fNormEffPreselE   = dEff(static_cast<int>(pNum), static_cast<int>(pDen));
-  } else if (20 == mode) {
-    fCsEffPresel    = pNum/pDen;
-    fCsEffPreselE   = dEff(static_cast<int>(pNum), static_cast<int>(pDen));
-  }
+  if (a.recoYield > 0) {
+    a.effMuidMC = a.muidYield/a.recoYield;
+    a.effMuidMCE = dEff(static_cast<int>(a.muidYield), static_cast<int>(a.recoYield));
+  } 
+
+  if (a.muidYield > 0) {
+    a.effTrigMC = a.trigYield/a.muidYield;
+    a.effTrigMCE = dEff(static_cast<int>(a.trigYield), static_cast<int>(a.muidYield));
+  } 
+
+  if (a.trigYield > 0) {
+    a.effCand = a.candYield/a.trigYield;
+    a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.trigYield));
+  } 
 
 }
 
 
 // ----------------------------------------------------------------------
 void anaBmm::computeNormUL() {
+  cout << "--> loopTree: signal MC" << endl;
   loopTree(0);  // signal eff
   c0->Modified(); c0->Update();
+  cout << "--> loopTree: signal data" << endl;
   loopTree(1);  // data signal
   c0->Modified(); c0->Update();
+  cout << "--> loopTree: norm MC" << endl;
   loopTree(10); // normalization eff
   c0->Modified(); c0->Update();
+  cout << "--> loopTree: norm data" << endl;
   loopTree(11); // data normalization 
   c0->Modified(); c0->Update();
 
   fNobs = static_cast<int>(fBgExp + 0.5);
   
-  barlow(fNobs, fBgExp, fBgExpE, 0.2);
+  double ulbarlow = barlow(fNobs, fBgExp, fBgExpE, 0.2);
   double alpha = 1.; 
 
   if (fBgExp < 0.001) fBgExp = 0.1;
   double ulBayes90 =  blimit(0.9, fNobs, 1.0, 0.2, fBgExp, fBgExpE, alpha);
   double ulBayes95 =  blimit(0.95, fNobs, 1.0, 0.2, fBgExp, fBgExpE, alpha);
   
-  cout << "Bayes: " << ulBayes90 << "(95%CL: " << ulBayes95  << ") vs barlow: " << fNul << endl;
+  cout << "Bayes: " << ulBayes90 << "(95%CL: " << ulBayes95  << ") vs barlow: " << ulbarlow << endl;
+
+  fNul = ulBayes90;
 
   fUL = (fNul/fNormSig)
     *(fu/fs)
-    *(fNormGenFilter/fSigGenFilter)
-    *(fNormAcc/fAcc)                 // needs correction!? WHY?
-    *(fNormEffPresel/fEffPresel)     // why is norm value so low?
-    *(fNormEffMuID/fEffMuID)
-    *(fNormEffTrig/fEffTrig)
-    *(fNormEffAna/fEffAna)
+    *(fNumbersNorm.acc/fNumbersSig.acc)
+    *(fNumbersNorm.effCand/fNumbersSig.effCand)     
+    *(fNumbersNorm.effMuidMC/fNumbersSig.effMuidMC)
+    *(fNumbersNorm.effTrigMC/fNumbersSig.effTrigMC)
+    *(fNumbersNorm.effAna/fNumbersSig.effAna)
     * fBF;
 
-  cout << "fact expected UL: " << fUL << endl;
+  cout << "prod(eff) expected UL: " << fUL << endl;
 
   fUL = (fNul/fNormSig)
     *(fu/fs)
-    *(fNormEffTot/fEffTot)
+    *(fNumbersNorm.effTot/fNumbersSig.effTot)
     * fBF;
 
-  cout << "expected UL: " << fUL << endl;
+  cout << "effTot expected UL:    " << fUL << endl;
+
+  TH1D *hn = (TH1D*)fHistFile->Get(Form("numbers: %s", fNumbersSig.name.c_str()));
+  int bin = 50; 
+  hn->GetXaxis()->SetBinLabel(bin, "fNul"); hn->SetBinContent(bin, fNul); 
+
+  bin = 51; 
+  hn->GetXaxis()->SetBinLabel(bin, "fNormSig"); hn->SetBinContent(bin, fNormSig);   hn->SetBinError(bin, fNormSigE);  
 
 }
 
 
 // ----------------------------------------------------------------------
 void anaBmm::computeCsBF() {
+  cout << "--> loopTree: CS MC" << endl;
   loopTree(20);  // CS signal eff
   c0->Modified(); c0->Update();
+  cout << "--> loopTree: signal data" << endl;
   loopTree(21);  // control sample data 
   c0->Modified(); c0->Update();
+  cout << "--> loopTree: norm MC" << endl;
   loopTree(10); // normalization eff
   c0->Modified(); c0->Update();
+  cout << "--> loopTree: norm data" << endl;
   loopTree(11); // data normalization 
   c0->Modified(); c0->Update();
 
@@ -537,25 +573,28 @@ void anaBmm::computeCsBF() {
   
   double result = (fCsSig/fNormSig)
     *(fu/fs)
-    *(fNormGenFilter/fCsGenFilter)
-    *(fNormAcc/fCsAcc)                 // needs correction!? WHY?
-    *(fNormEffPresel/fCsEffPresel)     // why is norm value so low?
-    *(fNormEffMuID/fCsEffMuID)
-    *(fNormEffTrig/fCsEffTrig)
-    *(fNormEffAna/fCsEffAna)
+    *(fNumbersNorm.acc/fNumbersCS.acc)
+    *(fNumbersNorm.effCand/fNumbersCS.effCand)     
+    *(fNumbersNorm.effMuidMC/fNumbersCS.effMuidMC)
+    *(fNumbersNorm.effTrigMC/fNumbersCS.effTrigMC)
+    *(fNumbersNorm.effAna/fNumbersCS.effAna)
     * fBF;
 
   cout << "fact branching fraction: " << result << endl;
 
   result = (fCsSig/fNormSig)
     *(fu/fs)
-    *(fNormEffTot/fCsEffTot)
+    *(fNumbersNorm.effTot/fNumbersCS.effTot)
     * fBF;
 
   cout << "branching fraction: " << result << endl;
 
 }
 
+// ----------------------------------------------------------------------
+void anaBmm::effTree(int mode) {
+
+}
 
 // ----------------------------------------------------------------------
 TH1* anaBmm::loopTree(int mode) {
@@ -567,11 +606,13 @@ TH1* anaBmm::loopTree(int mode) {
   // 20 Bs2JpsiPhi MC
   // 21 Bs2JpsiPhi data
 
-  bool bs2jpsiphi(false), isMC(false); 
+  bool bp2jpsikp(false), bs2jpsiphi(false), isMC(false); 
 
+  numbers *aa(0);
   if (0 == mode) {
     isMC = true; 
     fpMc[fSgMc]->cd(); 
+    aa = &fNumbersSig;
   }
   if (1 == mode) {
     fpData[fSgData]->cd(); 
@@ -579,7 +620,9 @@ TH1* anaBmm::loopTree(int mode) {
 
   if (10 == mode) {
     isMC = true; 
+    bp2jpsikp = true; 
     fpMc[fNoMc]->cd(); 
+    aa = &fNumbersNorm;
   }
 
   if (11 == mode) {
@@ -590,6 +633,7 @@ TH1* anaBmm::loopTree(int mode) {
     isMC = true; 
     bs2jpsiphi = true; 
     fpMc[fCsMc]->cd(); 
+    aa = &fNumbersCS;
   }
 
   if (21 == mode) {
@@ -597,37 +641,40 @@ TH1* anaBmm::loopTree(int mode) {
     fpData[fCsData]->cd(); 
   }
 
+  // -- set up histograms
   int NBINS = (fMassHi - fMassLo)/0.025+1;
-
-  TH1D *hMass = (TH1D*)gFile->Get("hMass");  
-  if (0 == hMass) {
-    hMass = new TH1D("hMass", "", NBINS, fMassLo, fMassHi);
-    hMass->SetLineColor(kBlue); 
+  TH1D *hMassWithMassCuts = (TH1D*)gFile->Get("hMassWithMassCuts");  
+  if (0 == hMassWithMassCuts) {
+    hMassWithMassCuts = new TH1D("hMassWithMassCuts", "", NBINS, fMassLo, fMassHi);
+    hMassWithMassCuts->SetLineColor(kBlue); 
   } else {
-    hMass->Reset(); 
+    hMassWithMassCuts->Reset(); 
   }
- 
+  TH1D *hMassWithCuts = (TH1D*)gFile->Get("hMassWithCuts");  
+  if (0 == hMassWithCuts) {
+    hMassWithCuts = new TH1D("hMassWithCuts", "", NBINS, fMassLo, fMassHi);
+    hMassWithCuts->SetLineColor(kBlue); 
+  } else {
+    hMassWithCuts->Reset(); 
+  }
   TH1D *hMassNoCuts = (TH1D*)gFile->Get("hMassNoCuts");  
   if (0 == hMassNoCuts) {
     hMassNoCuts = new TH1D("hMassNoCuts", "", NBINS, fMassLo, fMassHi);
   } else {
     hMassNoCuts->Reset();
   }
-
   TH1D *hMassAbsNoCuts = (TH1D*)gFile->Get("hMassAbsNoCuts");  
   if (0 == hMassAbsNoCuts) {
     hMassAbsNoCuts = new TH1D("hMassAbsNoCuts", "", 100, 0, 10);
   } else {
     hMassAbsNoCuts->Reset();
   }
-
   TH1D *hMuId = (TH1D*)gFile->Get("hMuId");  
   if (0 == hMuId) {
     hMuId = new TH1D("hMuId", "", 100, 0., 1.);
   } else {
     hMuId->Reset();
   }
-  
   TH1D *hMuTr = (TH1D*)gFile->Get("hMuTr");  
   if (0 == hMuTr) {
     hMuTr = new TH1D("hMuTr", "", 100, 0., 1.);
@@ -635,17 +682,23 @@ TH1* anaBmm::loopTree(int mode) {
     hMuTr->Reset();
   }
 
+  // -- set up tree
   TTree *t;
   t = (TTree*)gFile->Get("events");
-
   int brun, bevt, btm, bq1, bq2; 
   double bg1pt, bg2pt, bg1eta, bg2eta;
-  double bm, bcosa, biso1, bchi2, bdof, bdocatrk, bfls3d, bm1pt, bm2pt, bm1eta, bm2eta;
+  double bm, bcosa, biso1, bchi2, bdof, bdocatrk, bfls3d, bm1pt, bm1eta, bm2pt, bm2eta;
+  double bg3pt, bg3eta, bg4pt, bg4eta; 
   double bmkk, bdr;
   double bw8mu, bw8tr;
   bool bhlt, bgmuid, bgtqual;
   t->SetBranchAddress("run",&brun);
   t->SetBranchAddress("evt",&bevt);
+  t->SetBranchAddress("hlt",&bhlt);
+  t->SetBranchAddress("gmuid",&bgmuid);
+  t->SetBranchAddress("gtqual",&bgtqual);
+  t->SetBranchAddress("w8mu",&bw8mu);
+  t->SetBranchAddress("w8tr",&bw8tr);
   t->SetBranchAddress("tm",&btm);
   t->SetBranchAddress("m",&bm);
   t->SetBranchAddress("cosa",&bcosa);
@@ -655,26 +708,27 @@ TH1* anaBmm::loopTree(int mode) {
   t->SetBranchAddress("fls3d",&bfls3d);
   t->SetBranchAddress("m1pt",&bm1pt);
   t->SetBranchAddress("m1eta",&bm1eta);
+  t->SetBranchAddress("m1q",&bq1);
+  t->SetBranchAddress("m2pt",&bm2pt);
   t->SetBranchAddress("m2eta",&bm2eta);
+  t->SetBranchAddress("m2q",&bq2);
   t->SetBranchAddress("docatrk",&bdocatrk);
-
 
   t->SetBranchAddress("g1pt",&bg1pt);
   t->SetBranchAddress("g2pt",&bg2pt);
   t->SetBranchAddress("g1eta",&bg1eta);
   t->SetBranchAddress("g2eta",&bg2eta);
+  if (bp2jpsikp) {
+    t->SetBranchAddress("g3pt",&bg3pt);
+    t->SetBranchAddress("g3eta",&bg3eta);
+  }
 
-  t->SetBranchAddress("m1q",&bq1);
-  t->SetBranchAddress("m2q",&bq2);
-
-  t->SetBranchAddress("hlt",&bhlt);
-  t->SetBranchAddress("gmuid",&bgmuid);
-  t->SetBranchAddress("gtqual",&bgtqual);
-
-  t->SetBranchAddress("w8mu",&bw8mu);
-  t->SetBranchAddress("w8tr",&bw8tr);
 
   if (bs2jpsiphi) {
+    t->SetBranchAddress("g3pt",&bg3pt);
+    t->SetBranchAddress("g3eta",&bg3eta);
+    t->SetBranchAddress("g4pt",&bg4pt);
+    t->SetBranchAddress("g4eta",&bg4eta);
     t->SetBranchAddress("mkk",&bmkk);
     t->SetBranchAddress("dr",&bdr);
   } else {
@@ -689,35 +743,72 @@ TH1* anaBmm::loopTree(int mode) {
     nb = t->GetEntry(jentry);
     // -- require truth matching when on MC
     if (0 == mode && 0 == btm) continue;
-    if (10 == mode && 1 != btm) continue;
-    if (20 == mode && 1 != btm) continue;
+    if (10 == mode && 0 == btm) continue;
+    if (20 == mode && 0 == btm) continue;
 
     hMassAbsNoCuts->Fill(bm);
+    // -- require wide mass window
     if (bm < fMassLo) continue;
     if (fMassHi < bm) continue;
+
+    // -- gen-level cuts
+    if (isMC) {
+      if (TMath::Abs(bg1eta) > 2.4) continue;
+      if (TMath::Abs(bg2eta) > 2.4) continue;
+      if (TMath::Abs(bg1pt) < 3.0) continue;
+      if (TMath::Abs(bg2pt) < 3.0) continue;
+      if (bp2jpsikp) {
+	if (TMath::Abs(bg3eta) > 2.4) continue;
+	if (TMath::Abs(bg3pt) < 0.5) continue;
+      }
+      
+      if (bs2jpsiphi) {
+	if (TMath::Abs(bg3eta) > 2.4) continue;
+	if (TMath::Abs(bg3pt) < 0.5) continue;
+	if (TMath::Abs(bg4eta) > 2.4) continue;
+	if (TMath::Abs(bg4pt) < 0.5) continue;
+      }
+    }
+
+    // -- require basic muon and trackQual cuts
+    if (TMath::Abs(bm1eta) > 2.4) continue;
+    if (TMath::Abs(bm2eta) > 2.4) continue;
+    if (false == bgtqual) continue;
+    if (bq1*bq2 > 0) continue;
+    if (bm2pt < M2PT) continue; 
+    
+    // -- must fill this BEFORE the trigger requirement!
+    if (bw8mu > 0.) hMuId->Fill(bw8mu, 1./bw8mu); 
+    
+    // -- now check for muon ID and trigger
     if (false == bhlt) continue;
     if (false == bgmuid) continue;
 
     hMassNoCuts->Fill(bm);
-    if (false == bgtqual) continue;
-    if (bm2pt < M2PT) continue; 
+
+    // -- weights for trigger
+    if (bw8tr > 0.) hMuTr->Fill(bw8tr, 1./bw8tr); 
+
+    // -- apply analysis cand selection 
     if (biso1 < ISO1) continue; 
     if (bchi2/bdof > CHI2) continue;
     if (TMath::IsNaN(bfls3d)) continue;
     if (bfls3d < FLS3D) continue;
     if (TMath::ACos(bcosa) > ALPHA) continue;
-    if (bq1*bq2 > 0) continue;
 
     if (bs2jpsiphi && bdr >0.3) continue;
     if (bs2jpsiphi && bmkk < 0.995) continue;
     if (bs2jpsiphi && bmkk > 1.045) continue;
 
-    
-    hMass->Fill(bm); 
+    hMassWithCuts->Fill(bm); 
 
-    // -- weights for muon ID and trigger
-    if (bw8mu > 0.) hMuId->Fill(bw8mu, 1./bw8mu); 
-    if (bw8tr > 0.) hMuTr->Fill(bw8tr, 1./bw8tr); 
+    if (0 == mode && bm < fSigLo) continue;
+    if (0 == mode && bm > fSigHi) continue;
+    if (10 == mode && bm < fNormLo) continue;
+    if (10 == mode && bm > fNormHi) continue;
+    if (20 == mode && bm < fCsLo) continue;
+    if (20 == mode && bm > fCsHi) continue;
+    hMassWithMassCuts->Fill(bm);
 
     if (1 == mode && bm > 4.8 && bm < 6.0) {
       cout << "m = " << bm << " run = " << brun << " event = " << bevt 
@@ -728,187 +819,153 @@ TH1* anaBmm::loopTree(int mode) {
     
   }
 
-  // -- Fill the numbers
-  acceptanceAndPreselection(mode);
-  if (0 == mode) {
-    // -- efficiency filling
+  // -- Efficiency and acceptance
+  if (aa) {
+    acceptanceAndPreselection(*aa);
     double a = hMassNoCuts->GetSumOfWeights(); 
-    double b = hMass->Integral(hMass->FindBin(fSigLo), hMass->FindBin(fSigHi)); 
-    double c = hMassAbsNoCuts->GetSumOfWeights();
-    fEffAna   = b/a;
-    fEffAnaE  = dEff(static_cast<int>(b), static_cast<int>(a));
-    fEffMuID  = hMuId->GetMean();
-    fEffMuIDE = hMuId->GetMeanError();
-    fEffTrig  = hMuTr->GetMean();
-    fEffTrigE = hMuTr->GetMeanError();
-    fEffTot   = b/(fAccNum/fSigGenFilter);
+    double b = hMassWithMassCuts->GetSumOfWeights();
+    aa->anaNmcYield = hMassWithCuts->GetSumOfWeights(); // "no mass cut"
+    aa->ana0Yield   = a;
+    aa->anaYield    = b; 
+    aa->effAna      = b/a;
+    aa->effAnaE     = dEff(static_cast<int>(b), static_cast<int>(a));
+    aa->effMuidPid  = hMuId->GetMean();
+    aa->effMuidPidE = hMuId->GetMeanError();
+    aa->effTrigPid  = hMuTr->GetMean();
+    aa->effTrigPidE = hMuTr->GetMeanError();
+    aa->effTot      = b/(aa->genYield);
+    aa->effTotE     = dEff(static_cast<int>(b), static_cast<int>(aa->genYield));
+  }
+
+  if (0 == mode) {
     cout << "----------------------------------------------------------------------" << endl;
     cout << "==> MC SIGNAL" << endl;
-    cout << "fAcc: " << fAcc << "+/-" << fAccE << " fEffPresel: " << fEffPresel << "+/-" << fEffPreselE << endl;
-    cout << "before any cuts: " << c << " before cuts: " << a << " after cuts: " << b << endl
-	 << " EffAna = " << fEffAna << "+/-" << fEffAnaE << " eff(total) = " << fEffTot << endl;
-    cout << "muid: " << fEffMuID << "+/-" << fEffMuIDE << " trig: " << fEffTrig << "+/-" << fEffTrigE << endl;
+    printNumbers(*aa); 
     hMassNoCuts->Draw();
-    hMass->Draw("same");
-    c0->SaveAs("sig-mc.pdf");
+    hMassWithCuts->Draw("same");
+    c0->SaveAs(Form("%s/sig-mc.pdf", fDirectory.c_str()));
   } else if (1 == mode) {
     cout << "----------------------------------------------------------------------" << endl;
     cout << "==> Data SIGNAL" << endl;
-    bgBlind(hMass, 1, 4.7, 6.0);
+    bgBlind(hMassWithCuts, 1, 4.7, 6.0);
     cout << "fBgExp = " << fBgExp << "+/-" << fBgExpE << endl;
-    hMass->Draw();
-    c0->SaveAs("sig-data.pdf");
+    hMassWithCuts->Draw();
+    c0->SaveAs(Form("%s/sig-data.pdf", fDirectory.c_str()));
   } else if (10 == mode) {
     // -- efficiency filling
-    double a = hMassNoCuts->GetSumOfWeights(); 
-    double b = hMass->Integral(hMass->FindBin(fNormLo), hMass->FindBin(fNormHi)); 
-    double c = hMassAbsNoCuts->GetSumOfWeights();
-    fNormEffAna = b/a;
-    fNormEffAnaE = dEff(static_cast<int>(b), static_cast<int>(a));
-    fNormEffMuID  = hMuId->GetMean();
-    fNormEffMuIDE = hMuId->GetMeanError();
-    fNormEffTrig  = hMuTr->GetMean();
-    fNormEffTrigE = hMuTr->GetMeanError();
-    fNormEffTot   = b/(fNormAccNum/fNormGenFilter);
     cout << "----------------------------------------------------------------------" << endl;
     cout << "==> MC NORMALIZATION" << endl;
-    cout << "fNormAcc: " << fNormAcc << "+/-" << fNormAccE << " fNormEffPresel: " << fNormEffPresel << "+/-" << fNormEffPreselE << endl;
-    cout << "before any cuts: " << c << " before cuts: " << a << " after cuts: " << b  << endl
-	 << " NormEffAna = " << fNormEffAna << "+/-" << fNormEffAnaE << " eff(total) = " << fNormEffTot << endl;
-    cout << "muid: " << fNormEffMuID << "+/-" << fNormEffMuIDE << " trig: " << fNormEffTrig << "+/-" << fNormEffTrigE << endl;
+    printNumbers(*aa); 
     hMassNoCuts->Draw();
-    hMass->Draw("same");
-    c0->SaveAs("norm-mc.pdf");
+    hMassWithCuts->Draw("same");
+    c0->SaveAs(Form("%s/norm-mc.pdf", fDirectory.c_str()));
   } else if (11 == mode) {
     cout << "----------------------------------------------------------------------" << endl;
     cout << "==> Data NORMALIZATION" << endl;
-    normYield(hMass, mode, 5.0, 5.5);
-    hMass->Draw();
-    c0->SaveAs("norm-data.pdf");
+    normYield(hMassWithCuts, mode, 5.0, 5.5);
+    hMassWithCuts->Draw();
+    c0->SaveAs(Form("%s/norm-data.pdf", fDirectory.c_str()));
   } else if (20 == mode) {
-    // -- efficiency filling
-    double a = hMassNoCuts->GetSumOfWeights();
-    double b = hMass->Integral(hMass->FindBin(fCsLo), hMass->FindBin(fCsHi)); 
-    double c = hMassAbsNoCuts->GetSumOfWeights();
-    fCsEffAna = b/a;
-    fCsEffAnaE = dEff(static_cast<int>(b), static_cast<int>(a));
-    fCsEffMuID  = hMuId->GetMean();
-    fCsEffMuIDE = hMuId->GetMeanError();
-    fCsEffTrig  = hMuTr->GetMean();
-    fCsEffTrigE = hMuTr->GetMeanError();
-    fCsEffTot   = b/(fCsAccNum/fCsGenFilter);
     cout << "----------------------------------------------------------------------" << endl;
     cout << "==> MC control sample" << endl;
-    cout << "fCsAcc: " << fCsAcc << "+/-" << fCsAccE << " fCsEffPresel: " << fCsEffPresel << "+/-" << fCsEffPreselE << endl;
-    cout << "before any cuts: " << c << " before cuts: " << a << " after cuts: " << b  << endl
-	 << " EffAna = " << fCsEffAna << "+/-" << fCsEffAnaE << " eff(total) = " << fCsEffTot << endl;
-    cout << "muid: " << fCsEffMuID << "+/-" << fCsEffMuIDE << " trig: " << fCsEffTrig << "+/-" << fCsEffTrigE << endl;
+    printNumbers(*aa); 
     hMassNoCuts->Draw();
-    hMass->Draw("same");
-    c0->SaveAs("cs-mc.pdf");
+    hMassWithCuts->Draw("same");
+    c0->SaveAs(Form("%s/cs-mc.pdf", fDirectory.c_str()));
   } else if (21 == mode) {
     cout << "----------------------------------------------------------------------" << endl;
     cout << "==> Data control sample" << endl;
-    csYield(hMass, mode, 5.0, 5.6);
-    hMass->Draw();
-    c0->SaveAs("cs-data.pdf");
+    csYield(hMassWithCuts, mode, 5.0, 5.6);
+    hMassWithCuts->Draw();
+    c0->SaveAs(Form("%s/cs-data.pdf", fDirectory.c_str()));
   } 
-  
-  return hMass;
+
+  fHistFile->cd();
+  hMassWithMassCuts->SetName(Form("hMassWithMassCuts_%d", mode)); hMassWithMassCuts->Write();
+  hMassWithCuts->SetName(Form("hMassWithCuts_%d", mode)); hMassWithCuts->Write();
+  hMassNoCuts->SetName(Form("hMassNoCuts_%d", mode)); hMassNoCuts->Write();
+  hMassAbsNoCuts->SetName(Form("hMassAbsNoCuts_%d", mode)); hMassAbsNoCuts->Write();
+  hMuTr->SetName(Form("hMuTr_%d", mode)); hMuTr->Write();
+  hMuId->SetName(Form("hMuId_%d", mode)); hMuId->Write();
+
+  return hMassWithCuts;
 }
 
 
 // ----------------------------------------------------------------------
 void anaBmm::testUL(const char *cuts) {
   ofstream OUT("testUL.txt", ios::app);
-  
+
+  fpMc[fSgMc]->cd();
+  acceptanceAndPreselection(fNumbersSig); 
+
   TH1D *h = (TH1D*)gFile->Get("uSG");  
-  if (0 == h) h = new TH1D("uSG", "", 40, fMassLo, fMassHi);
+  if (0 == h) {
+    h = new TH1D("uSG", "", 40, fMassLo, fMassHi);
+  } else{
+    h->Reset();
+  }
 
-  // -- Signal: Acceptance and preselection efficiency 
-  TH1D *hacc  = (TH1D*)(fpMc[fSgMc]->Get("acceptance"));
-  double aNum = hacc->GetBinContent(3);
-  double aDen = hacc->GetBinContent(2);
-  fAcc        = aNum/aDen;
-  fAccE       = dEff(static_cast<int>(aNum), static_cast<int>(aDen));
-
-  TH1D *hpresel = (TH1D*)(fpMc[fSgMc]->Get("presel"));
-  double pNum   = hpresel->GetBinContent(3);
-  double pDen   = hpresel->GetBinContent(2);
-  fEffPresel    = pNum/pDen;
-  fEffPreselE   = dEff(static_cast<int>(pNum), static_cast<int>(pDen));
-  //   cout << "--> acceptance:   " << aNum << "/" << aDen << " = " << fAcc << "+/-" << fAccE << endl;
-  //   cout << "--> preselection: " << pNum << "/" << pDen << " = " << fEffPresel << "+/-" << fEffPreselE << endl;
-
-  const char *defCuts = "hlt&&gmuid"; 
+  const char *defCuts = "hlt&&gmuid&&gtqual&&m1q*m2q<0"; 
 
   // -- Signal: event counts *including* muon and trigger cuts!
   TTree *ts = (TTree*)(fpMc[fSgMc]->Get("events"));
-  // -- no cuts
-  ts->Draw("m>>uSG", "", "goff");
-  double beforeCuts  = h->GetSumOfWeights();
-  double candEff = beforeCuts/aNum;
   // -- all cuts
-  ts->Draw("m>>uSG", Form("%s&&%s", defCuts, cuts), "goff");
+  string cutString = Form("%s&&%s&&m>%f&&m<%f", defCuts, cuts, fSigLo, fSigHi);
+  cout << cutString << endl;
+  ts->Draw("m>>uSG", cutString.c_str(), "goff");
   double afterCuts = h->GetSumOfWeights();
-  fEff = candEff*afterCuts/beforeCuts;
-  //  fEffE = dEff(static_cast<int>(afterCuts),static_cast<int>(beforeCuts));
-  fEffE = dEff(static_cast<int>(afterCuts),static_cast<int>(aDen));
 
+  fNumbersSig.effTot  = afterCuts/(fNumbersSig.genYield);
+  fNumbersSig.effTotE = dEff(static_cast<int>(afterCuts), static_cast<int>(fNumbersSig.genYield));
 
   // -- Background expectation
   TTree *td = (TTree*)(fpData[fSgData]->Get("events"));
   td->Draw("m>>uSG", Form("%s&&%s", defCuts, cuts), "goff");
   bgBlind(h, 1, 4.7, 6.0);
-  //  bgBlind(h, 2);
-
+  
   fNobs = static_cast<int>(fBgExp + 0.5);
-
-//   if (fBgExp < 0.2) {
-//     fNobs = 0; 
-//   } else if (fBgExp < 1.0) {
-//     fNobs = 1;
-//   } else {
-//     fNobs = fBgExp;
-//   }
+  
+  fBgExp += 0.01; // to protect against blimit assert
 
   if (fBgExp < 0) {
     fBgExp = fBgHist; 
     fBgExpE = fBgHistE; 
   }
     
-  cout << "eff:   " << afterCuts << "/" << beforeCuts << " = " << fEff << "+/-" << fEffE << endl;
+  cout << "eff:   " << afterCuts << "/" << fNumbersSig.genYield << " = " << fNumbersSig.effTot << "+/-" << fNumbersSig.effTotE << endl;
   cout << "BG:    " << fBgExp << "+/-" << fBgExpE << " histogram counts: " 
        << fBgHist << "+/-" << fBgHistE
        << endl;
   cout << "Nobs : " << fNobs << endl;
-
-  double nbs = 2.0e9;
-  //  rolkeM3();
-  //  double NulRolke = fNul;
-  //  double UlRolke = fNul/(fEff*fAcc*fSigGenFilter*nbs);
   if (fNobs > 10) return; 
-  barlow(fNobs, fBgExp, fBgExpE, fEffE/fEff);
-  fUL = fNul/(fEff*fAcc*fSigGenFilter*nbs);
-  cout << Form("Barlow Nul = %3.2f, UL = %4.2e", fNul, fUL);
+
+  double nbs = 2.0e9*(1.0-0.12);
+  
+  double nulbarlow = barlow(fNobs, fBgExp, fBgExpE, 0.2);
+  double nulbayes  = blimit(0.9, fNobs, 1.0, 0.2, fBgExp, fBgExpE, 1);
+
+  double ulbarlow = nulbarlow/(fNumbersSig.effTot*nbs);
+  double ulbayes  = nulbayes/(fNumbersSig.effTot*nbs);
+  cout << Form("Nul: barlow = %3.2f, bayes = %4.2e", nulbarlow, nulbayes) << endl;
   OUT << "==> " << fUL 
       << ". obs = " << fNobs << " bg = " << fBgExp << "+/-" << fBgExpE << "(fBgHist = " << fBgHist << ")" << endl
-      << " eff = " << afterCuts << "/" << aNum << " = " << fEff << " default cuts: " << defCuts  << endl 
-      << " w/ cuts: " << cuts << endl;
+      << " eff = " << afterCuts << "/" << fNumbersSig.genYield << " = " << fNumbersSig.effTot << endl 
+      << endl;
 
-  cout << "UL: " <<  fUL << " eff: " << afterCuts/103000. << " BG: " << fBgExp << " hist: " << h->GetSumOfWeights() << endl;
+  cout << "UL: barlow = " << ulbarlow << " ulbayes " << ulbayes << " BG: " << fBgExp << " hist: " << h->GetSumOfWeights() << endl;
   h->Draw();
 
 }
 
 
 // ----------------------------------------------------------------------
-void  anaBmm::barlow(int nobs, double bg, double bgE, double sE) {
+double anaBmm::barlow(int nobs, double bg, double bgE, double sE) {
   double ul(-99.); 
 
   if (nobs > 10)  {
     cout << "barlow: dunno" << endl;
-    fNul = -99; 
+    return -99;
   }
 
   // -- "unified confidence limits" from PDG as intervals to probe 
@@ -974,7 +1031,7 @@ void  anaBmm::barlow(int nobs, double bg, double bgE, double sE) {
     }
   }
 
-  fNul = ul; 
+  return ul; 
 }
 
 // ----------------------------------------------------------------------
@@ -1207,4 +1264,92 @@ void anaBmm::setErrors(TH1D *h) {
       h->SetBinError(i, 1.); 
     }
   }
+}
+
+// ----------------------------------------------------------------------
+void anaBmm::printNumbers(numbers &a) {
+  cout << "numbers for \"" << a.name.c_str() << "\"" << endl;
+  cout << "fitYield     = " << a.fitYield << "+/-" << a.fitYieldE << endl;
+  cout << "genFileYield = " << a.genFileYield << endl;
+  cout << "genYield     = " << a.genYield << endl;
+  cout << "recoYield    = " << a.recoYield << endl;
+  cout << "muidYield    = " << a.muidYield << endl;
+  cout << "trigYield    = " << a.trigYield << endl;
+  cout << "candYield    = " << a.candYield << endl;
+  cout << "ana0Yield    = " << a.ana0Yield << endl;
+  cout << "anaNmcYield  = " << a.anaNmcYield << endl;
+  cout << "anaYield     = " << a.anaYield << endl;
+  cout << "gen filter   = " << a.effGenFilter << endl;
+  cout << "acceptance   = " << a.acc << "+/-" << a.accE << endl;
+  cout << "effMuidMC    = " << a.effMuidMC << "+/-" << a.effMuidMCE << endl;
+  cout << "effTrigMC    = " << a.effTrigMC << "+/-" << a.effTrigMCE << endl;
+  cout << "effMuidPid   = " << a.effMuidPid << "+/-" << a.effMuidPidE << endl;
+  cout << "effTrigPid   = " << a.effTrigPid << "+/-" << a.effTrigPidE << endl;
+  cout << "effCand      = " << a.effCand << "+/-" << a.effCandE << endl;
+  cout << "effAna       = " << a.effAna << "+/-" << a.effAnaE << endl; 
+  cout << "prod(eff)    = " << a.acc*a.effMuidMC*a.effTrigMC*a.effCand*a.effAna << endl;
+  cout << "prod(eff')   = " << a.acc*a.effMuidPid*a.effTrigPid*a.effCand*a.effAna << endl;
+  cout << "effTot       = " << a.effTot << "+/-" << a.effTotE << endl; 
+
+
+  // -- dump into fHistFile
+  int bin(0); 
+  fHistFile->cd();
+  TH1D *hn = new TH1D(Form("numbers: %s", a.name.c_str()), Form("numbers: %s", a.name.c_str()), 100, 0., 100.); hn->Sumw2();
+  bin = 1; 
+  hn->GetXaxis()->SetBinLabel(bin, "fitYield"); hn->SetBinContent(bin, a.fitYield);  hn->SetBinError(bin, a.fitYieldE); 
+
+  bin = 2; 
+  hn->GetXaxis()->SetBinLabel(bin, "genFileYield"); hn->SetBinContent(bin, a.genFileYield);  
+
+  bin = 3; 
+  hn->GetXaxis()->SetBinLabel(bin, "genYield"); hn->SetBinContent(bin, a.genYield);  
+
+  bin = 4; 
+  hn->GetXaxis()->SetBinLabel(bin, "recoYield"); hn->SetBinContent(bin, a.recoYield);  
+
+  bin = 5; 
+  hn->GetXaxis()->SetBinLabel(bin, "muidYield"); hn->SetBinContent(bin, a.muidYield);  
+
+  bin = 6; 
+  hn->GetXaxis()->SetBinLabel(bin, "trigYield"); hn->SetBinContent(bin, a.trigYield);  
+
+  bin = 7; 
+  hn->GetXaxis()->SetBinLabel(bin, "candYield"); hn->SetBinContent(bin, a.candYield);  
+
+  bin = 8; 
+  hn->GetXaxis()->SetBinLabel(bin, "ana0Yield"); hn->SetBinContent(bin, a.ana0Yield);  
+
+  bin = 9; 
+  hn->GetXaxis()->SetBinLabel(bin, "anaNmcYield"); hn->SetBinContent(bin, a.anaNmcYield);  
+
+  bin = 10; 
+  hn->GetXaxis()->SetBinLabel(bin, "anaYield"); hn->SetBinContent(bin, a.anaYield);  
+
+  bin = 11; 
+  hn->GetXaxis()->SetBinLabel(bin, "effGenFilter"); hn->SetBinContent(bin, a.effGenFilter);  
+
+  bin = 12; 
+  hn->GetXaxis()->SetBinLabel(bin, "acc"); hn->SetBinContent(bin, a.acc);  
+
+  bin = 13; 
+  hn->GetXaxis()->SetBinLabel(bin, "effMuidMC"); hn->SetBinContent(bin, a.effMuidMC);  
+
+  bin = 14; 
+  hn->GetXaxis()->SetBinLabel(bin, "effTrigMC"); hn->SetBinContent(bin, a.effTrigMC);  
+
+  bin = 15; 
+  hn->GetXaxis()->SetBinLabel(bin, "effMuidPid"); hn->SetBinContent(bin, a.effMuidPid);  
+
+  bin = 16; 
+  hn->GetXaxis()->SetBinLabel(bin, "effTrigPid"); hn->SetBinContent(bin, a.effTrigPid);  
+
+  bin = 17; 
+  hn->GetXaxis()->SetBinLabel(bin, "effCand"); hn->SetBinContent(bin, a.effCand);  
+
+  bin = 18; 
+  hn->GetXaxis()->SetBinLabel(bin, "effAna"); hn->SetBinContent(bin, a.effAna);  
+
+  bin = 19; 
+  hn->GetXaxis()->SetBinLabel(bin, "effTot"); hn->SetBinContent(bin, a.effTot);  
 }

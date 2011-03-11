@@ -133,12 +133,13 @@ public:
   double                  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
   double                  fMu1PtGen, fMu2PtGen, fMu1EtaGen, fMu2EtaGen;
   double                  fMu1PtNrf, fMu2PtNrf, fMu1EtaNrf, fMu2EtaNrf; // "now refitted"
+  int                     fMu1Pix, fMu1BPix, fMu1BPixL1, fMu2Pix, fMu2BPix, fMu2BPixL1;
   double                  fMu1W8Mu, fMu1W8Tr, fMu2W8Mu, fMu2W8Tr; 
   double                  fPvX, fPvY, fPvZ; 
   double                  fJpsiMass;
   double                  fCandPt, fCandEta, fCandPhi, fCandM, fCandW8Tr, fCandW8Mu; 
   double                  fCandCosA, fCandIso, fCandIso1, fCandChi2, fCandDof, fCandProb, fCandFLS3d, fCandFLSxy; 
-  double                  fCandDocaTrk, fMu1IP, fMu2IP; 
+  double                  fCandDocaTrk, fMu1IP, fMu2IP, fCandPvTip, fCandPvTipE, fCandPvLip, fCandPvLipE; 
 
   double       MASSMIN,   MASSMAX; 
   double       SIGBOXMIN, SIGBOXMAX; 
@@ -168,6 +169,14 @@ public:
     *fpChi2, *fpChi2Dof, *fpProb, 
     *fpFLS3d, *fpFLSxy, 
     *fpDocaTrk, *fpIP1, *fpIP2;   
+
+  // -- another reduced tree
+  TTree       *fEffTree;
+  bool fETm1gt, fETm2gt, fETm1id, fETm2id;
+  int fETm1q, fETm2q; 
+  float fETcandMass;
+  float fETm1pt, fETm1eta, fETg1pt, fETg1eta;
+  float fETm2pt, fETm2eta, fETg2pt, fETg2eta;
 
   // -- PidTables
   PidTable *fpMuonID;

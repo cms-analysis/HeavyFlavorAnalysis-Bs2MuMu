@@ -57,6 +57,11 @@ public:
   int          fGenK1Tmi; 
   int          fRecK1Tmi; 
 
+  // -- effTree
+  float fETk1pt, fETk1eta, fETg3pt, fETg3eta;
+  int   fETk1q; 
+  bool  fETk1gt;
+
 };
 
 #endif

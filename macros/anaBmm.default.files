@@ -2,6 +2,8 @@
 # signal data and MC
 type=sg,default dset=data lumi=39.4 file=/scratch/ursl/default/signalData.root
 type=sg,default dset=mc lumi=550000 file=/scratch/ursl/default/signalMC.root
+#type=sg         dset=mc lumi=10000 file=/scratch/ursl/default/signal-qcd2mu.root
+#type=sg         dset=mc lumi=10000 file=/scratch/ursl/default/signal-ppMuX.root
 #type=sg,default dset=mc lumi=550000 file=cBsToMuMu_2MuPtFilter_7TeV-pythia6-evtgen-Fall10.bmmSignalReader.default.root
 # ----------------------------------------------------------------------
 # control sample data and MC

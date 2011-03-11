@@ -140,40 +140,115 @@ void bmmBs2JpsiPhiReader::efficiencyCalculation() {
     pCand = fCands[fCandTmi];
   }
 
+
+  // -- EffTree filling for all events with a signal decay
+  fETg1pt  = pM1->fP.Perp(); 
+  fETg1eta = pM1->fP.Eta(); 
+  fETg2pt  = pM2->fP.Perp(); 
+  fETg2eta = pM2->fP.Eta(); 
+  fETg3pt  = pK1->fP.Perp(); 
+  fETg3eta = pK1->fP.Eta(); 
+  fETg4pt  = pK2->fP.Perp(); 
+  fETg4eta = pK2->fP.Eta(); 
+  if (m1Matched) {
+    fETm1pt  = prM1->fPlab.Perp(); 
+    fETm1eta = prM1->fPlab.Eta(); 
+    fETm1q   = prM1->fQ;
+    fETm1gt  = (m1GT>0?true:false); 
+    fETm1id  = (m1ID>0?true:false);
+  } else {
+    fETm1pt  = -99.; 
+    fETm1eta = -99.; 
+    fETm1q   = -99;
+    fETm1gt  = false; 
+    fETm1id  = false;
+  }
+  if (m2Matched) {
+    fETm2pt  = prM2->fPlab.Perp(); 
+    fETm2eta = prM2->fPlab.Eta(); 
+    fETm2q   = prM2->fQ;
+    fETm2gt  = (m2GT>0?true:false); 
+    fETm2id  = (m2ID>0?true:false);
+  } else {
+    fETm2pt  = -99.; 
+    fETm2eta = -99.; 
+    fETm2q   = -99;
+    fETm2gt  = false; 
+    fETm2id  = false;
+  }
+  if (k1Matched) {
+    fETk1pt  = prK1->fPlab.Perp(); 
+    fETk1eta = prK1->fPlab.Eta(); 
+    fETk1q   = prK1->fQ;
+    fETk1gt  = (k1GT>0?true:false); 
+  } else {
+    fETk1pt  = -99.; 
+    fETk1eta = -99.; 
+    fETk1q   = -99;
+    fETk1gt  = false; 
+  }
+  if (k2Matched) {
+    fETk2pt  = prK2->fPlab.Perp(); 
+    fETk2eta = prK2->fPlab.Eta(); 
+    fETk2q   = prK2->fQ;
+    fETk2gt  = (k2GT>0?true:false); 
+  } else {
+    fETk2pt  = -99.; 
+    fETk2eta = -99.; 
+    fETk2q   = -99;
+    fETk2gt  = false; 
+  }
+  if (pCand) {
+    fETcandMass = pCand->fMass; 
+  } else {
+    fETcandMass = -99.;
+  }
+  fEffTree->Fill(); 
+
+
   // -- results...
-  if ((pM1->fP.Perp() > 3.0) && (TMath::Abs(pM1->fP.Eta()) < 2.4)
-      && (pM2->fP.Perp() > 3.0) && (TMath::Abs(pM2->fP.Eta()) < 2.4) 
-      && (pK1->fP.Perp() > 0.5) && (TMath::Abs(pK1->fP.Eta()) < 2.4)
-      && (pK2->fP.Perp() > 0.5) && (TMath::Abs(pK2->fP.Eta()) < 2.4)
+  if ((TMath::Abs(pM1->fP.Eta()) < 2.4)
+      && (TMath::Abs(pM2->fP.Eta()) < 2.4) 
+      && (TMath::Abs(pK1->fP.Eta()) < 2.4)
+      && (TMath::Abs(pK2->fP.Eta()) < 2.4)
       ) {
     ((TH1D*)fpHistFile->Get("efficiency"))->Fill(2); 
-    ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(3, "gen signal decays in acc"); 
-
-    if (m1Matched && m2Matched && k1Matched && k2Matched
-	&& (prM1->fPlab.Perp() > 3.0) && (TMath::Abs(prM1->fPlab.Eta()) < 2.4)
-	&& (prM2->fPlab.Perp() > 3.0) && (TMath::Abs(prM2->fPlab.Eta()) < 2.4)
-	&& (prK1->fPlab.Perp() > 0.5) && (TMath::Abs(prK1->fPlab.Eta()) < 2.4)
-	&& (prK2->fPlab.Perp() > 0.5) && (TMath::Abs(prK2->fPlab.Eta()) < 2.4)
-	&& (prM1->fQ*prM2->fQ < 0)
-	&& m1GT && m2GT && k1GT && k2GT
+    ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(3, "+ eta cuts"); 
+    
+    if ((pM1->fP.Perp() > 3.0)  
+	&& (pM2->fP.Perp() > 3.0)
+	&& (pK1->fP.Perp() > 0.5)
+	&& (pK2->fP.Perp() > 0.5)
 	) {
       ((TH1D*)fpHistFile->Get("efficiency"))->Fill(3); 
-      ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(4, "+ reco tracks"); 
-      
-      if (m1ID && m2ID) {
-	((TH1D*)fpHistFile->Get("efficiency"))->Fill(4); 
-	((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(5, "+ muon ID"); 
-      
-	if (fGoodHLT) {
-	  ((TH1D*)fpHistFile->Get("efficiency"))->Fill(5); 
-	  ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(6, "+ trigger"); 
+      ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(4, "+ pT cuts"); 
 
-	  if (pCand) {
+      if (m1Matched && m2Matched && k1Matched && k2Matched
+	  && (prM1->fPlab.Perp() > 3.0) && (TMath::Abs(prM1->fPlab.Eta()) < 2.4)
+	  && (prM2->fPlab.Perp() > 3.0) && (TMath::Abs(prM2->fPlab.Eta()) < 2.4)
+	  && (prK1->fPlab.Perp() > 0.5) && (TMath::Abs(prK1->fPlab.Eta()) < 2.4)
+	  && (prK2->fPlab.Perp() > 0.5) && (TMath::Abs(prK2->fPlab.Eta()) < 2.4)
+	  && (prM1->fQ*prM2->fQ < 0)
+	  && m1GT && m2GT && k1GT && k2GT
+	  ) {
+	((TH1D*)fpHistFile->Get("efficiency"))->Fill(4); 
+	((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(5, "+ reco tracks/cuts"); 
+	
+	if (m1ID && m2ID) {
+	  ((TH1D*)fpHistFile->Get("efficiency"))->Fill(5); 
+	  ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(6, "+ muon ID"); 
+	  
+	  if (fGoodHLT) {
 	    ((TH1D*)fpHistFile->Get("efficiency"))->Fill(6); 
-	    ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(7, "+ candidate"); 
-	    fGoodEffCand = true;
-	    ((TH1D*)fpHistFile->Get("effMass"))->Fill(pCand->fMass);
-	  } 
+	    ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(7, "+ trigger"); 
+	    
+	    if (pCand) {
+	      ((TH1D*)fpHistFile->Get("efficiency"))->Fill(7); 
+	      ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(8, "+ candidate"); 
+	      fGoodEffCand = true;
+	      ((TH1D*)fpHistFile->Get("effMass"))->Fill(pCand->fMass);
+	    } 
+	  }
 	} 
       } 
     } 
@@ -973,6 +1048,21 @@ void bmmBs2JpsiPhiReader::bookHist() {
   fTree->Branch("g3eta",&fKa1EtaGen, "g3eta/D");
   fTree->Branch("g4pt", &fKa2PtGen,  "g4pt/D");
   fTree->Branch("g4eta",&fKa2EtaGen, "g4eta/D");
+
+  // -- Additional effTree variables
+  fEffTree->Branch("k1pt",   &fETk1pt,            "k1pt/F");
+  fEffTree->Branch("g3pt",   &fETg3pt,            "g3pt/F");
+  fEffTree->Branch("k1eta",  &fETk1eta,           "k1eta/F");
+  fEffTree->Branch("g3eta",  &fETg3eta,           "g3eta/F");
+  fEffTree->Branch("k1q",    &fETk1q,             "k1q/I");
+  fEffTree->Branch("k1gt",   &fETk1gt,            "k1gt/O");
+
+  fEffTree->Branch("k2pt",   &fETk2pt,            "k2pt/F");
+  fEffTree->Branch("g4pt",   &fETg4pt,            "g4pt/F");
+  fEffTree->Branch("k2eta",  &fETk2eta,           "k2eta/F");
+  fEffTree->Branch("g4eta",  &fETg4eta,           "g4eta/F");
+  fEffTree->Branch("k2q",    &fETk2q,             "k2q/I");
+  fEffTree->Branch("k2gt",   &fETk2gt,            "k2gt/O");
 
 }
 

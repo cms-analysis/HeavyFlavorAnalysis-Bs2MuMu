@@ -27,11 +27,27 @@
 
 #include "initFunc.hh"
 
+struct numbers {
+  std::string name;
+  double effGenFilter, effGenFilterE; 
+  double fitYield, fitYieldE;
+  double genFileYield, genYield, recoYield, muidYield, trigYield, candYield, ana0Yield, anaNmcYield, anaYield;
+  double acc, accE;
+  double effMuidMC, effMuidMCE, effTrigMC, effTrigMCE;
+  double effMuidPid, effMuidPidE, effTrigPid, effTrigPidE;
+  double effCand, effCandE; 
+  double effAna, effAnaE; 
+  double effTot, effTotE; 
+};
+
+
+
 class anaBmm: public TObject {
 
 public:
 
   anaBmm(const char *files, const char *dir = ".", int mode = 0);
+  ~anaBmm();
 
   // -- initialization and setup
   // ---------------------------
@@ -48,7 +64,8 @@ public:
   void computeCsBF();
   void effTable(std::string mode);
   void breco(TH1D *h); 
-  void acceptanceAndPreselection(int mode);
+  void acceptanceAndPreselection(numbers &a);
+  void effTree(int mode);
   TH1* loopTree(int mode);
 
   void plotVar(const char *plotstring, const char *cuts, const char *options = "");
@@ -58,10 +75,10 @@ public:
   void normYield(TH1 *h, int mode, double lo = 5.15, double hi=5.5);
   void csYield(TH1 *h, int mode, double lo = 5.25, double hi=5.6);
   void bgBlind(TH1 *h, int mode = 2, double lo = 4.5, double hi = 6.5); 
-  void barlow(int nobs, double bg = 0., double bgE = 0., double sE = 0.);
+  double barlow(int nobs, double bg = 0., double bgE = 0., double sE = 0.);
   void rolkeM3();
   void rolkeM3(int x, double bm, double em, double sde, double sdb);
-
+  void printNumbers(numbers &a);
 
 
   // -- Utilities and helper methods
@@ -84,6 +101,8 @@ public:
   int fShow; 
   TString fFile; 
 
+  // -- output histograms
+  TFile *fHistFile; 
 
   // -- functions
   TF1 *f0, *f1, *f2, *f3, *f4, *f5, *f6, *f7, *f8, *f9; 
@@ -158,6 +177,8 @@ public:
   double fCsEffTrig, fCsEffTrigE;
   double fCsEffTot, fCsEffTotE;
 
+
+  numbers fNumbersSig, fNumbersNorm, fNumbersCS; 
 
   double fBF, fu, fs;
   double fMassLo, fMassHi;

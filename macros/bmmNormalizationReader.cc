@@ -277,38 +277,92 @@ void bmmNormalizationReader::efficiencyCalculation() {
     pCand = fCands[fCandTmi];
   }
     
+  // -- EffTree filling for all events with a signal decay
+  fETg1pt  = pM1->fP.Perp(); 
+  fETg1eta = pM1->fP.Eta(); 
+  fETg2pt  = pM2->fP.Perp(); 
+  fETg2eta = pM2->fP.Eta(); 
+  fETg3pt  = pK->fP.Perp(); 
+  fETg3eta = pK->fP.Eta(); 
+  if (m1Matched) {
+    fETm1pt  = prM1->fPlab.Perp(); 
+    fETm1eta = prM1->fPlab.Eta(); 
+    fETm1q   = prM1->fQ;
+    fETm1gt  = (m1GT>0?true:false); 
+    fETm1id  = (m1ID>0?true:false);
+  } else {
+    fETm1pt  = -99.; 
+    fETm1eta = -99.; 
+    fETm1q   = -99;
+    fETm1gt  = false; 
+    fETm1id  = false;
+  }
+  if (m2Matched) {
+    fETm2pt  = prM2->fPlab.Perp(); 
+    fETm2eta = prM2->fPlab.Eta(); 
+    fETm2q   = prM2->fQ;
+    fETm2gt  = (m2GT>0?true:false); 
+    fETm2id  = (m2ID>0?true:false);
+  } else {
+    fETm2pt  = -99.; 
+    fETm2eta = -99.; 
+    fETm2q   = -99;
+    fETm2gt  = false; 
+    fETm2id  = false;
+  }
+  if (kMatched) {
+    fETk1pt  = prK->fPlab.Perp(); 
+    fETk1eta = prK->fPlab.Eta(); 
+    fETk1q   = prK->fQ;
+    fETk1gt  = (kGT>0?true:false); 
+  } else {
+    fETk1pt  = -99.; 
+    fETk1eta = -99.; 
+    fETk1q   = -99;
+    fETk1gt  = false; 
+  }
+  if (pCand) {
+    fETcandMass = pCand->fMass; 
+  } else {
+    fETcandMass = -99.;
+  }
+  fEffTree->Fill(); 
+
+
   // -- results...
-  if ((pM1->fP.Perp() > 3.) && (pM2->fP.Perp() > 3.) && (pK->fP.Perp() > 0.5)
-      && (TMath::Abs(pM1->fP.Eta()) < 2.4) && (TMath::Abs(pM2->fP.Eta()) < 2.4) && (TMath::Abs(pK->fP.Eta()) < 2.4)
-      ) {
+  if ((TMath::Abs(pM1->fP.Eta()) < 2.4) && (TMath::Abs(pM2->fP.Eta()) < 2.4) && (TMath::Abs(pK->fP.Eta()) < 2.4)) {
     ((TH1D*)fpHistFile->Get("efficiency"))->Fill(2); 
-    ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(3, "gen signal decays in acc"); 
-
-    if (m1Matched && m2Matched && kMatched
-	&& (prM1->fPlab.Perp() > 3.0) && (prM2->fPlab.Perp() > 3.0) && (prK->fPlab.Perp() > 0.5)
-	&& (TMath::Abs(prM1->fPlab.Eta()) < 2.4) && (TMath::Abs(prM2->fPlab.Eta()) < 2.4) && (TMath::Abs(prK->fPlab.Eta()) < 2.4)
-	&& (prM1->fQ*prM2->fQ < 0)
-	&& m1GT && m2GT && kGT
-	) {
+    ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(3, "+ eta cuts"); 
+    
+    if ((pM1->fP.Perp() > 3.) && (pM2->fP.Perp() > 3.) && (pK->fP.Perp() > 0.5)) {
       ((TH1D*)fpHistFile->Get("efficiency"))->Fill(3); 
-      ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(4, "+ reco tracks"); 
+      ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(4, "+ pT cuts"); 
       
-      if (m1ID && m2ID) {
+      if (m1Matched && m2Matched && kMatched
+	  && (prM1->fPlab.Perp() > 3.0) && (prM2->fPlab.Perp() > 3.0) && (prK->fPlab.Perp() > 0.5)
+	  && (TMath::Abs(prM1->fPlab.Eta()) < 2.4) && (TMath::Abs(prM2->fPlab.Eta()) < 2.4) && (TMath::Abs(prK->fPlab.Eta()) < 2.4)
+	  && (prM1->fQ*prM2->fQ < 0)
+	  && m1GT && m2GT && kGT
+	  ) {
 	((TH1D*)fpHistFile->Get("efficiency"))->Fill(4); 
-	((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(5, "+ muon ID"); 
-      
-	if (fGoodHLT) {
+	((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(5, "+ reco tracks/cuts"); 
+	
+	if (m1ID && m2ID) {
 	  ((TH1D*)fpHistFile->Get("efficiency"))->Fill(5); 
-	  ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(6, "+ trigger"); 
-
-	  if (pCand) {
+	  ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(6, "+ muon ID"); 
+	  
+	  if (fGoodHLT) {
 	    ((TH1D*)fpHistFile->Get("efficiency"))->Fill(6); 
-	    ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(7, "+ candidate"); 
-	    fGoodEffCand = true;
-	    ((TH1D*)fpHistFile->Get("effMass"))->Fill(pCand->fMass);
-	  }
-	}
+	    ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(7, "+ trigger"); 
 
+	    if (pCand) {
+	      ((TH1D*)fpHistFile->Get("efficiency"))->Fill(7); 
+	      ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(8, "+ candidate"); 
+	      fGoodEffCand = true;
+	      ((TH1D*)fpHistFile->Get("effMass"))->Fill(pCand->fMass);
+	    }
+	  }
+	} 
       }
     }
   }
@@ -744,6 +798,13 @@ void bmmNormalizationReader::bookHist() {
   fTree->Branch("g3pt", &fKPtGen,    "g3pt/D");
   fTree->Branch("g3eta",&fKEtaGen,   "g3eta/D");
 
+  // -- Additional effTree variables
+  fEffTree->Branch("k1pt",   &fETk1pt,            "k1pt/F");
+  fEffTree->Branch("g3pt",   &fETg3pt,            "g3pt/F");
+  fEffTree->Branch("k1eta",  &fETk1eta,           "k1eta/F");
+  fEffTree->Branch("g3eta",  &fETg3eta,           "g3eta/F");
+  fEffTree->Branch("k1q",    &fETk1q,             "k1q/I");
+  fEffTree->Branch("k1gt",   &fETk1gt,            "k1gt/O");
 }
 
 
