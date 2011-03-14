@@ -99,6 +99,8 @@ class massReader : public treeReader01 {
 		float fMaxDoca; // max doca
 		float fPtMu1_Gen; // pt of generator muon
 		float fPtMu2_Gen; // pt of generator muon
+		float fEtaMu1_Gen; // eta of gen muon 1
+		float fEtaMu2_Gen; // eta of gen muon 2
 		// isolation variables. fIsoX_ptY means opening angle deltaR < X/10 and only sum over
 		// tracks with pt > Y/10 GeV
 		float fIso7_pt0;

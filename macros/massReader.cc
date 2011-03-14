@@ -92,6 +92,9 @@ void massReader::clearVariables()
 	fEta = 0.0;
 	fPtMu1_Gen = 0.0;
 	fPtMu2_Gen = 0.0;
+	fEtaMu1_Gen = 0.0; // eta of gen muon 1
+	fEtaMu2_Gen = 0.0; // eta of gen muon 2
+	
 	memset(fTracksIx,0,sizeof(fTracksIx));
 	memset(fTracksIP,0,sizeof(fTracksIP));
 	memset(fTracksIPE,0,sizeof(fTracksIPE));
@@ -234,14 +237,22 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		
 		muGen = fpEvt->getGenCand(pTrack->fGenIndex);
 		if (abs(muGen->fID) == 13) {
-			if (firstMu)	fPtMu1_Gen = muGen->fP.Perp();
-			else			fPtMu2_Gen = muGen->fP.Perp();
+			if (firstMu) {
+				fPtMu1_Gen = muGen->fP.Perp();
+				fEtaMu1_Gen = muGen->fP.Eta();
+			}
+			else {
+				fPtMu2_Gen = muGen->fP.Perp();
+				fEtaMu2_Gen = muGen->fP.Eta();
+			}
 			firstMu = false;
-			
 		}
 	}
-	if (fPtMu1_Gen < fPtMu2_Gen)
+	
+	if (fPtMu1_Gen < fPtMu2_Gen) {
 		swap(fPtMu1_Gen,fPtMu2_Gen);
+		swap(fEtaMu1_Gen,fEtaMu2_Gen);
+	}
 	
 	return 1;
 } // loadCandidateVariables()
@@ -273,6 +284,8 @@ void massReader::bookHist()
 	reduced_tree->Branch("max_doca",&fMaxDoca,"max_doca/F");
 	reduced_tree->Branch("pt_mu1_gen",&fPtMu1_Gen,"pt_mu1_gen/F");
 	reduced_tree->Branch("pt_mu2_gen",&fPtMu2_Gen,"pt_mu2_gen/F");
+	reduced_tree->Branch("eta_mu1_gen",&fEtaMu1_Gen,"eta_mu1_gen/F");
+	reduced_tree->Branch("eta_mu2_gen",&fEtaMu2_Gen,"eta_mu2_gen/F");
 	reduced_tree->Branch("iso7_pt0",&fIso7_pt0,"iso7_pt0/F");
 	reduced_tree->Branch("iso7_pt5",&fIso7_pt5,"iso7_pt5/F");
 	reduced_tree->Branch("iso7_pt7",&fIso7_pt7,"iso7_pt7/F");
