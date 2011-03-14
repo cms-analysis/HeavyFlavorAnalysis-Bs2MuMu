@@ -101,13 +101,16 @@ void kpReader::clearVariables()
 	fMuID1 = 0; fMuID2 = 0;
 	fEtaMu1 = 0.0; fEtaMu2 = 0.0;
 	
+	fPtKp_Gen = 0.0;
+	fEtaKp_Gen = 0.0;
+	
 	fTrackQual_mu1 = 0;
 	fTrackQual_mu2 = 0;
 	fTrackQual_kp = 0;
 	
-	fQ_mu1;
-	fQ_mu2;
-	fQ_kp;
+	fQ_mu1 = 0.0;
+	fQ_mu2 = 0.0;
+	fQ_kp = 0.0;
 	
 	fD3_BpJpsi = 0.0;
 	fD3e_BpJpsi = 0.0;
@@ -118,6 +121,7 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	int type, first_mu = 1;
 	TAnaTrack *sigTrack,*recTrack;
 	TAnaCand *jpsiCand;
+	TGenCand *kaonGen;
 	TVector3 plabMu1;
 	TVector3 plabMu2;
 	TVector3 plabKp;
@@ -244,6 +248,21 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	fPtMu1 = plabMu1.Perp();
 	fPtMu2 = plabMu2.Perp();
 	fPtKp = plabKp.Perp();
+	
+	// set the generator variables
+	cand_tracks.clear();
+	findAllTrackIndices(pCand,&cand_tracks);
+	for (map<int,int>::const_iterator it = cand_tracks.begin(); it != cand_tracks.end(); ++it) {
+		recTrack = fpEvt->getRecTrack(it->first);
+		if (recTrack->fGenIndex < 0 || recTrack->fGenIndex >= fpEvt->nGenCands())
+			continue;
+		
+		kaonGen = fpEvt->getGenCand(recTrack->fGenIndex);
+		if (abs(kaonGen->fID) == 321) {
+			fPtKp_Gen = kaonGen->fP.Perp();
+			fEtaKp_Gen = kaonGen->fP.Eta();
+		}
+	}	
 
 	return result;
 } // loadCandidateVariables()
@@ -261,6 +280,8 @@ void kpReader::bookHist()
 	reduced_tree->Branch("id_mu2",&fMuID2,"id_mu2/I");
 	reduced_tree->Branch("eta_mu1",&fEtaMu1,"eta_mu1/F");
 	reduced_tree->Branch("eta_mu2",&fEtaMu2,"eta_mu2/F");
+	reduced_tree->Branch("pt_kp_gen",&fPtKp_Gen,"pt_kp_gen/F");
+	reduced_tree->Branch("eta_kp_gen",&fEtaKp_Gen,"eta_kp_gen/F");
 	reduced_tree->Branch("track_qual_mu1",&fTrackQual_mu1,"track_qual_mu1/I");
 	reduced_tree->Branch("track_qual_mu2",&fTrackQual_mu2,"track_qual_mu2/I");
 	reduced_tree->Branch("track_qual_kp",&fTrackQual_kp,"track_qual_kp/I");

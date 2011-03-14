@@ -32,6 +32,9 @@ class kpReader : public massReader {
 		float fPtMu2;
 		float fPtKp;
 		
+		float fPtKp_Gen; // pt of generator kaon
+		float fEtaKp_Gen; // eta of generator kaon
+		
 		int fMuID1,fMuID2;
 		float fEtaMu1,fEtaMu2;
 		
