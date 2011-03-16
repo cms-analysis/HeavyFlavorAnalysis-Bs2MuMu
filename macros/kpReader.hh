@@ -37,6 +37,7 @@ class kpReader : public massReader {
 		
 		int fMuID1,fMuID2;
 		float fEtaMu1,fEtaMu2;
+		float fEtaKp;
 		
 		int fTrackQual_mu1;
 		int fTrackQual_mu2;

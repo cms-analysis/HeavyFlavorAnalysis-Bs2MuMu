@@ -100,6 +100,7 @@ void kpReader::clearVariables()
 	
 	fMuID1 = 0; fMuID2 = 0;
 	fEtaMu1 = 0.0; fEtaMu2 = 0.0;
+	fEtaKp = 0.0;
 	
 	fPtKp_Gen = 0.0;
 	fEtaKp_Gen = 0.0;
@@ -181,6 +182,7 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 			first_mu = 0;
 		} else if (type == 321) {
 			plabKp = sigTrack->fPlab;
+			fEtaKp = sigTrack->fPlab.Eta();
 			fQ_kp = recTrack->fQ;
 			fTrackQual_kp = recTrack->fTrackQuality;
 		}
@@ -280,6 +282,7 @@ void kpReader::bookHist()
 	reduced_tree->Branch("id_mu2",&fMuID2,"id_mu2/I");
 	reduced_tree->Branch("eta_mu1",&fEtaMu1,"eta_mu1/F");
 	reduced_tree->Branch("eta_mu2",&fEtaMu2,"eta_mu2/F");
+	reduced_tree->Branch("eta_kp",&fEtaKp,"eta_kp/F");
 	reduced_tree->Branch("pt_kp_gen",&fPtKp_Gen,"pt_kp_gen/F");
 	reduced_tree->Branch("eta_kp_gen",&fEtaKp_Gen,"eta_kp_gen/F");
 	reduced_tree->Branch("track_qual_mu1",&fTrackQual_mu1,"track_qual_mu1/I");
