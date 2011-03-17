@@ -26,7 +26,6 @@ class kpReader : public massReader {
 		float fDeltaR; // deltaR of J/Psi and Kp
 		
 		float fChi2Jpsi; // chi^2 of the j/psi daughter
-		float fMassJpsiKp; // invariant mass of J/psi signal tracks and kaon rec track
 
 		float fPtMu1;
 		float fPtMu2;
