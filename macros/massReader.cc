@@ -618,8 +618,8 @@ int massReader::loadEfficiencyFlags(TGenCand *gen)
 	findGenStructure(gen,&genStruct);
 	
 	/* Check acceptance
-	 *	both muons have high purity track with pt_gen > 3 && |eta_gen| < 2.4
-	 *	all kaons have high purity track with pt_gen > .5 && |eta_gen| < 2.4
+	 *	both muons have high purity track with pt_gen > 1 && |eta_gen| < 2.5 (pt > 3.0, |eta < 2.4| on reco)
+	 *	all kaons have high purity track with pt_gen > .4 && |eta_gen| < 2.5 (pt > 0.5, |eta < 2.4| on reco)
 	 */
 	for (it = genStruct.begin(); it != genStruct.end(); ++it) {
 		
@@ -630,11 +630,11 @@ int massReader::loadEfficiencyFlags(TGenCand *gen)
 		muon = (abs(dau->fID) == 13);
 		
 		// pt (muon > 3 && kaon > 0.5)
-		if (dau->fP.Perp() <= (muon ? 3. : 0.5)) // not in pt acceptance
+		if (dau->fP.Perp() <= (muon ? 1. : 0.4)) // not in pt acceptance
 			goto bail;
 		
 		// eta
-		if (fabs(dau->fP.Eta()) >= 2.4) // not in eta acceptance
+		if (fabs(dau->fP.Eta()) >= 2.5) // not in eta acceptance
 			goto bail;
 		
 		if (it->second < 0) // no associated track
@@ -642,6 +642,12 @@ int massReader::loadEfficiencyFlags(TGenCand *gen)
 		
 		track = fpEvt->getRecTrack(it->second);
 		if ((track->fTrackQuality & 0x1<<2) == 0) // no high purity track
+			goto bail;
+		
+		// momentum and eta of reco tracks
+		if (track->fPlab.Perp() <= (muon ? 3 : 0.5))
+			goto bail;
+		if (fabs(track->fPlab.Eta()) >= 2.4)
 			goto bail;
 	}
 	effFlags |= kAcceptance; // candidate was in acceptance.
