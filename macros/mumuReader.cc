@@ -27,7 +27,7 @@ mumuReader::mumuReader(TChain *tree, TString evtClassName) :
 	
 	trueDecay.insert(13); // mu
 	trueDecay.insert(13); // mu
-	trueDecay.insert(531); // Bs
+	trueDecay.insert(fTruthType); // Bs
 	
 	cout << " ok" << endl;
 } // mumuReader()

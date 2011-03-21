@@ -2,8 +2,8 @@
  *  mumuReader.h
  *  macros
  *
- *  Created by Christoph on 09.01.11.
- *  Copyright 2011 PSI. All rights reserved.
+ *  Created by Christoph Nägeli <christoph.naegeli@psi.ch> on 09.01.11.
+ *  Copyright 2011 Christoph Nägeli. All rights reserved.
  *
  */
 
