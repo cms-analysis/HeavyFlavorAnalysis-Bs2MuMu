@@ -207,18 +207,18 @@ void bmmBs2JpsiPhiReader::efficiencyCalculation() {
 
 
   // -- results...
-  if ((TMath::Abs(pM1->fP.Eta()) < 2.4)
-      && (TMath::Abs(pM2->fP.Eta()) < 2.4) 
-      && (TMath::Abs(pK1->fP.Eta()) < 2.4)
-      && (TMath::Abs(pK2->fP.Eta()) < 2.4)
+  if ((TMath::Abs(pM1->fP.Eta()) < 2.5)
+      && (TMath::Abs(pM2->fP.Eta()) < 2.5) 
+      && (TMath::Abs(pK1->fP.Eta()) < 2.5)
+      && (TMath::Abs(pK2->fP.Eta()) < 2.5)
       ) {
     ((TH1D*)fpHistFile->Get("efficiency"))->Fill(2); 
     ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(3, "+ eta cuts"); 
     
-    if ((pM1->fP.Perp() > 3.0)  
-	&& (pM2->fP.Perp() > 3.0)
-	&& (pK1->fP.Perp() > 0.5)
-	&& (pK2->fP.Perp() > 0.5)
+    if ((pM1->fP.Perp() > 1.0)  
+	&& (pM2->fP.Perp() > 1.0)
+	&& (pK1->fP.Perp() > 0.4)
+	&& (pK2->fP.Perp() > 0.4)
 	) {
       ((TH1D*)fpHistFile->Get("efficiency"))->Fill(3); 
       ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(4, "+ pT cuts"); 

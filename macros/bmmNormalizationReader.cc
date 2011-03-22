@@ -330,11 +330,11 @@ void bmmNormalizationReader::efficiencyCalculation() {
 
 
   // -- results...
-  if ((TMath::Abs(pM1->fP.Eta()) < 2.4) && (TMath::Abs(pM2->fP.Eta()) < 2.4) && (TMath::Abs(pK->fP.Eta()) < 2.4)) {
+  if ((TMath::Abs(pM1->fP.Eta()) < 2.5) && (TMath::Abs(pM2->fP.Eta()) < 2.5) && (TMath::Abs(pK->fP.Eta()) < 2.5)) {
     ((TH1D*)fpHistFile->Get("efficiency"))->Fill(2); 
     ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(3, "+ eta cuts"); 
     
-    if ((pM1->fP.Perp() > 3.) && (pM2->fP.Perp() > 3.) && (pK->fP.Perp() > 0.5)) {
+    if ((pM1->fP.Perp() > 1.) && (pM2->fP.Perp() > 1.) && (pK->fP.Perp() > 0.4)) {
       ((TH1D*)fpHistFile->Get("efficiency"))->Fill(3); 
       ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(4, "+ pT cuts"); 
       
@@ -383,12 +383,11 @@ void bmmNormalizationReader::genMatch() {
     pC = fpEvt->getGenCand(i); 
     if (521 == TMath::Abs(pC->fID)) {
       pB = pC;
-      nb = pB->fDau2 - pB->fDau1 + 1; 
-      if (nb > 2) continue; // skip B decays where more than J/psi and kaon came from B
+      nb = 0; 
       for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
 	pC = fpEvt->getGenCand(id); 
-	if (22 == TMath::Abs(pC->fID)) ++nphotons;
 	if (443 == TMath::Abs(pC->fID)) {
+	  ++nb;
 	  pPsi = pC; 
 	  npsi = pPsi->fDau2 - pPsi->fDau1 + 1; 
 	  pM1 = pM2 = 0; 
@@ -404,8 +403,17 @@ void bmmNormalizationReader::genMatch() {
 	    }
 	  }
 	} else if (321 == TMath::Abs(pC->fID)) {
+	  ++nb;
 	  pK = fpEvt->getGenCand(id); 
+	} else 	if (22 == TMath::Abs(pC->fID)) {
+	  ++nphotons;
+	} else {
+	  ++nb;
 	}
+      }
+      if (nb > 2) {
+	pM1 = pM2 = pK = pPsi = 0; 
+	continue; // skip B decays where more than J/psi and kaon came from B
       }
       if (0 != pM1 && 0 != pM2 && 0 != pK && (pPsi->fMom1 == pK->fMom1)) {
 	goodMatch = true; 
@@ -435,6 +443,11 @@ void bmmNormalizationReader::genMatch() {
     cout << "fGenM2Tmi = " << fGenM2Tmi << endl;
     cout << "fGenK1Tmi = " << fGenK1Tmi << endl;
   }
+
+  if (!goodMatch && evtFoundInCN(fEvt)) {
+    cout << "-> Event: " << fEvt << endl;
+  }
+
 
 //   if (fGenM1Tmi > -1) {
 //     cout << "----------------------------------------------------------------------" << endl;

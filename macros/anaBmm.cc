@@ -163,6 +163,7 @@ void anaBmm::init(const char *files, const char *dir, int mode) {
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   loadFiles(files);
   string hfname  = fDirectory + "/anaBmm." + fSuffix + ".root";
+  cout << "fHistFile: " << hfname << endl;
   fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
 }
 
@@ -753,20 +754,20 @@ TH1* anaBmm::loopTree(int mode) {
 
     // -- gen-level cuts
     if (isMC) {
-      if (TMath::Abs(bg1eta) > 2.4) continue;
-      if (TMath::Abs(bg2eta) > 2.4) continue;
-      if (TMath::Abs(bg1pt) < 3.0) continue;
-      if (TMath::Abs(bg2pt) < 3.0) continue;
+      if (TMath::Abs(bg1eta) > 2.5) continue;
+      if (TMath::Abs(bg2eta) > 2.5) continue;
+      if (TMath::Abs(bg1pt) < 1.0) continue;
+      if (TMath::Abs(bg2pt) < 1.0) continue;
       if (bp2jpsikp) {
-	if (TMath::Abs(bg3eta) > 2.4) continue;
-	if (TMath::Abs(bg3pt) < 0.5) continue;
+	if (TMath::Abs(bg3eta) > 2.5) continue;
+	if (TMath::Abs(bg3pt) < 0.4) continue;
       }
       
       if (bs2jpsiphi) {
-	if (TMath::Abs(bg3eta) > 2.4) continue;
-	if (TMath::Abs(bg3pt) < 0.5) continue;
-	if (TMath::Abs(bg4eta) > 2.4) continue;
-	if (TMath::Abs(bg4pt) < 0.5) continue;
+	if (TMath::Abs(bg3eta) > 2.5) continue;
+	if (TMath::Abs(bg3pt) < 0.4) continue;
+	if (TMath::Abs(bg4eta) > 2.5) continue;
+	if (TMath::Abs(bg4pt) < 0.4) continue;
       }
     }
 

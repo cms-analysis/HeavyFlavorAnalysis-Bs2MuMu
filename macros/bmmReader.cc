@@ -21,13 +21,39 @@ bmmReader::bmmReader(TChain *tree, TString evtClassName): treeReader01(tree, evt
   cout << "==> Defining analysis cuts" << endl;
   MASSMIN = 4.5;
   MASSMAX = 6.5; 
+
+   cout << "reading events from  " << "evts" << endl;
+   char  buffer[200];
+   ifstream is("evts");
+   char input[1000]; 
+   int event(0); 
+   while (is.getline(buffer, 200, '\n')) {
+     event = atoi(buffer); 
+     cout << event << endl;
+     fEventVector.push_back(event);
+   }
+   is.close();
+  
 }
 
 
 // ----------------------------------------------------------------------
 bmmReader::~bmmReader() {
   cout << "==> bmmReader: destructor..." << endl;
+}
 
+// ----------------------------------------------------------------------
+bool bmmReader::evtFoundInCN(int evt) {
+  bool result(false);
+
+  for (int i = 0; i < fEventVector.size(); ++i) {
+    if (fEventVector[i] == evt) {
+      return true;
+    } 
+  }
+  return false; 
+
+  
 }
 
 // ----------------------------------------------------------------------
@@ -39,6 +65,7 @@ void bmmReader::startAnalysis() {
   fpMuonTr = new PidTable("pidtables/jpsi/data/mutrig0.both.dat"); 
 
   cout << "==> bmmReader: Starting analysis..." << endl;
+
 }
 
 

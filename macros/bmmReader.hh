@@ -60,6 +60,7 @@ public:
   virtual void   genMatch();
   virtual void   recoMatch();
   virtual void   candMatch();
+  virtual bool   evtFoundInCN(int evt);
 
 
   virtual void   studyL1T(); 
@@ -181,6 +182,8 @@ public:
   // -- PidTables
   PidTable *fpMuonID;
   PidTable *fpMuonTr;
+
+  std::vector<int> fEventVector;
 
 };
 

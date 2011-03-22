@@ -3,7 +3,7 @@ SELMODE            -1
 TRIGGER     HLT_DoubleMu0,HLT_DoubleMu0_Quarkonium_v1
 L1TRIGGER   L1_DoubleMuOpen
 # -- boxes
-+input cuts/boxes.cuts
++input cuts/boxes.Bs2JpsiPhi.cuts
 # -- tracks
 +input cuts/tracks.cuts
 # -- muons

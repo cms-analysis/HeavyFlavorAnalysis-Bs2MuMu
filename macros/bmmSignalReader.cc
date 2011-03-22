@@ -208,10 +208,6 @@ void bmmSignalReader::MCKinematics() {
 
 
 // ----------------------------------------------------------------------
-// it agrees to 0.24%: 
-// root [3] cout << 6620./6636. << endl;
-// 0.997589
-// the saga continues
 void bmmSignalReader::efficiencyCalculation() {
   fGoodEffCand = false;
 
@@ -302,11 +298,11 @@ void bmmSignalReader::efficiencyCalculation() {
   fEffTree->Fill(); 
 
   // -- results...
-  if ((TMath::Abs(pM1->fP.Eta()) < 2.4) && (TMath::Abs(pM2->fP.Eta()) < 2.4)) {
+  if ((TMath::Abs(pM1->fP.Eta()) < 2.5) && (TMath::Abs(pM2->fP.Eta()) < 2.5)) {
     ((TH1D*)fpHistFile->Get("efficiency"))->Fill(2); 
     ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(3, "+ eta cuts"); 
     
-    if ((pM1->fP.Perp() > 3.) && (pM2->fP.Perp() > 3.)) {
+    if ((pM1->fP.Perp() > 1.) && (pM2->fP.Perp() > 1.)) {
       ((TH1D*)fpHistFile->Get("efficiency"))->Fill(3); 
       ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(4, "+ pT cuts"); 
       
