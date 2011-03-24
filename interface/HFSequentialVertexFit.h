@@ -34,8 +34,8 @@ class HFSequentialVertexFit
   bool fitTree(HFDecayTree *tree);
   void saveTree(HFDecayTree *tree);
   
-  double getMaxDoca(vector<RefCountedKinematicParticle> &kinParticles);
-  double getMinDoca(vector<RefCountedKinematicParticle> &kinParticles);
+  double getMaxDoca(std::vector<RefCountedKinematicParticle> &kinParticles);
+  double getMinDoca(std::vector<RefCountedKinematicParticle> &kinParticles);
 
   // wrapper for the template routine bellow
   TAnaCand *addCandidate(HFDecayTree *tree, VertexState *wrtVertexState = NULL);

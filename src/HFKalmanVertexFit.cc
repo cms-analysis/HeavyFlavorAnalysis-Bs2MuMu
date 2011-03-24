@@ -19,6 +19,9 @@
 
 using reco::Vertex;
 using reco::Track;
+using std::vector;
+using std::cout;
+using std::endl;
 
 // -- Yikes!
 extern TAna01Event *gHFEvent;

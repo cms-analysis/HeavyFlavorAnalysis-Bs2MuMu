@@ -28,6 +28,9 @@ extern TAna01Event *gHFEvent;
 
 using std::cout;
 using std::endl;
+using std::vector;
+using std::pair;
+using std::make_pair;
 using namespace edm;
 using namespace reco;
 

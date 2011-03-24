@@ -86,7 +86,7 @@ void HFDumpGenerator::analyze(const Event& iEvent, const EventSetup& iSetup) {
     cands.push_back( & * p );
   }
 
-  if (fVerbose > 1) cout << Form("Number of genParticles = %i", genParticlesH->size()) << endl;
+  if (fVerbose > 1) cout << Form("Number of genParticles = %i", (int)genParticlesH->size()) << endl;
 
   int i(-1); 
   for(GenParticleCollection::const_iterator p  = genParticlesH->begin(); p != genParticlesH->end();  p++) {
