@@ -32,9 +32,11 @@ HFLambdasDumpV0 = cms.EDAnalyzer(
     protonPt           = cms.untracked.double(0.2),
     psiMuons	       = cms.untracked.int32(2),
     psiWindow	       = cms.untracked.double(0.3),
+    L0Window           = cms.untracked.double(0.3),
     ksWindow	       = cms.untracked.double(0.3),
     LbWindow           = cms.untracked.double(0.8),
     deltaR             = cms.untracked.double(99.),
+    maxDoca            = cms.untracked.double(0.5),
     pAngle	       = cms.untracked.double(0.1),
     useV0              = cms.untracked.bool(True)
 )

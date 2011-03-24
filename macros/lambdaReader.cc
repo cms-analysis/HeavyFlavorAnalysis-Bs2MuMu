@@ -204,8 +204,8 @@ void lambdaReader::startAnalysis()
     else
     {
 	pidMuId = new PidTable((path+"pid_muIdMC.dat").c_str());
-	pidMuTrk = new PidTable((path+"pid_muTrgMC.dat").c_str());
-	pidMuTrg = new PidTable((path+"pid_muTrkMC.dat").c_str());
+	pidMuTrk = new PidTable((path+"pid_muTrkMC.dat").c_str());
+	pidMuTrg = new PidTable((path+"pid_muTrgMC.dat").c_str());
     }
 
 }
@@ -705,7 +705,9 @@ bool lambdaReader::doCandFitStuff(const CheckedLbCand &clc)
     // ctau - written as dist/p*m as this is numerically more stable than using
     // the TLorentzVector::Gamma() functions to write beta*gamma
     fctlb = tacCur->fVtx.fD3d / tacCur->fPlab.Mag() * MLAMBDA_B;
+    fctlbE = tacCur->fVtx.fD3dE / tacCur->fPlab.Mag() * MLAMBDA_B; // Ok, error not yet final. Will need error of |p|
     fctl0 = tacLambda0->fVtx.fD3d / tacLambda0->fPlab.Mag() * MLAMBDA_0;
+    fctl0E = tacLambda0->fVtx.fD3dE / tacLambda0->fPlab.Mag() * MLAMBDA_0;
 
     // vertex positions
     fvxlb = tacCur->fVtx.fPoint.x();
@@ -1415,7 +1417,9 @@ void lambdaReader::bookReducedTree()
     fTree->Branch("dxyEjp",  &fdxyEjp,  "dxyEjp/D");
 
     fTree->Branch("ctlb",    &fctlb,    "ctlb/D");
+    fTree->Branch("ctlbE",   &fctlbE,   "ctlbE/D");
     fTree->Branch("ctl0",    &fctl0,    "ctl0/D");
+    fTree->Branch("ctl0E",   &fctl0E,   "ctl0E/D");
 
     fTree->Branch("btlbx",   &fbtlbx,   "btlbx/D");
     fTree->Branch("btlby",   &fbtlby,   "btlby/D");

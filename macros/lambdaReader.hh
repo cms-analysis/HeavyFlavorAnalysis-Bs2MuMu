@@ -154,7 +154,7 @@ public:
 
     double fd3lb, fd3l0, fd3jp;    // 3d distance
     double fd3Elb, fd3El0, fd3Ejp;
-    double fctlb, fctl0; // ctau
+    double fctlb, fctlbE, fctl0, fctl0E; // ctau
     double fbtlbx, fbtlby, fbtlbz; // beta vector
     double fbtl0x, fbtl0y, fbtl0z;
     double fvxl0, fvyl0, fvzl0, fvrl0;
