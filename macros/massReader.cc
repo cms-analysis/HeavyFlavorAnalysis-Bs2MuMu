@@ -564,7 +564,10 @@ int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 	int triggers_err = 0;
 	
 	for (j = 0; j < NHLT; j++) {
-		if (fpEvt->fHLTNames[j] == "HLT_DoubleMu3") {
+		
+		std::string trgName(fpEvt->fHLTNames[j].Data());
+		
+		if (trgName == "HLT_DoubleMu3") {
 			triggers_found |= kHLT_DoubleMu3_Bit;
 			
 			if (fpEvt->fHLTError[j]) {
@@ -574,7 +577,7 @@ int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 			
 			if(fpEvt->fHLTResult[j])
 				triggers |= kHLT_DoubleMu3_Bit;
-		} else if (fpEvt->fHLTNames[j] == "HLT_DoubleMu0") {
+		} else if (trgName == "HLT_DoubleMu0") {
 			triggers_found |= kHLT_DoubleMu0_Bit;
 			
 			if (fpEvt->fHLTError[j]) {
@@ -584,7 +587,7 @@ int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 			
 			if(fpEvt->fHLTResult[j])
 				triggers |= kHLT_DoubleMu0_Bit;
-		} else if (fpEvt->fHLTNames[j] == "HLT_DoubleMu0_Quarkonium_v1") {
+		} else if (trgName == "HLT_DoubleMu0_Quarkonium_v1") {
 			triggers_found |= kHLT_DoubleMu0_Quarkonium_v1_Bit;
 			
 			if (fpEvt->fHLTError[j]) {
@@ -594,6 +597,36 @@ int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 			
 			if (fpEvt->fHLTResult[j])
 				triggers |= kHLT_DoubleMu0_Quarkonium_v1_Bit;
+		} else if (trgName.find("HLT_DoubleMu3_Jpsi") <= trgName.size()) {
+			triggers_found |= kHLT_DoubleMu3_Jpsi_Bit;
+			
+			if (fpEvt->fHLTError[j]) {
+				triggers_err |= kHLT_DoubleMu3_Jpsi_Bit;
+				continue;
+			}
+			
+			if (fpEvt->fHLTResult[j])
+				triggers |= kHLT_DoubleMu3_Jpsi_Bit;
+		} else if (trgName.find("HLT_DoubleMu3_Bs") <= trgName.size()) {
+			triggers_found |= kHLT_DoubleMu3_Bs_Bit;
+			
+			if (fpEvt->fHLTError[j]) {
+				triggers_err |= kHLT_DoubleMu3_Bs_Bit;
+				continue;
+			}
+			
+			if (fpEvt->fHLTResult[j])
+				triggers |= kHLT_DoubleMu3_Bs_Bit;
+		} else if (trgName.find("HLT_DoubleMu2_Bs") <= trgName.size()) {
+			triggers_found |= kHLT_DoubleMu2_Bs_Bit;
+			
+			if (fpEvt->fHLTError[j]) {
+				triggers_err |= kHLT_DoubleMu2_Bs_Bit;
+				continue;
+			}
+			
+			if (fpEvt->fHLTResult[j])
+				triggers |= kHLT_DoubleMu2_Bs_Bit;
 		}
 	}
 	
@@ -828,7 +861,12 @@ bool massReader::applyCut()
 	}
 	
 	if (fCutTriggered) {
+		// 2010 Trigger
 		pass = ( (fTriggersFound & kHLT_DoubleMu0_Quarkonium_v1_Bit) && (fTriggers & kHLT_DoubleMu0_Quarkonium_v1_Bit) ) || ( ((fTriggersFound & kHLT_DoubleMu0_Quarkonium_v1_Bit) == 0) && (fTriggers & kHLT_DoubleMu0_Bit) );
+		
+		// 2011 Trigger
+		pass = pass || ( (fTriggers & kHLT_DoubleMu3_Jpsi_Bit) || (fTriggers & kHLT_DoubleMu3_Bs_Bit) || (fTriggers & kHLT_DoubleMu2_Bs_Bit) );
+		
 		if (!pass) goto bail;
 	}
 	

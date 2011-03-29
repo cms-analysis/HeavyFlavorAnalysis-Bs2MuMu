@@ -16,9 +16,12 @@ const static double MKAON = 0.4937;
 // When adding one, be sure to update the code in massReader::loadTrigger()
 enum trigger_bits
 {
-	kHLT_DoubleMu3_Bit = 1 << 0,
-	kHLT_DoubleMu0_Bit = 1 << 1,
-	kHLT_DoubleMu0_Quarkonium_v1_Bit = 1 << 2
+	kHLT_DoubleMu3_Bit					= 1 << 0,
+	kHLT_DoubleMu0_Bit					= 1 << 1,
+	kHLT_DoubleMu0_Quarkonium_v1_Bit	= 1 << 2,
+	kHLT_DoubleMu3_Jpsi_Bit				= 1 << 3,
+	kHLT_DoubleMu3_Bs_Bit				= 1 << 4,
+	kHLT_DoubleMu2_Bs_Bit				= 1 << 5
 };
 
 // Truth Flags Bits
