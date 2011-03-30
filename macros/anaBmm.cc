@@ -923,6 +923,10 @@ void anaBmm::testUL(const char *cuts) {
   // -- Background expectation
   TTree *td = (TTree*)(fpData[fSgData]->Get("events"));
   td->Draw("m>>uSG", Form("%s&&%s", defCuts, cuts), "goff");
+  h->Draw();
+  c0->Modified();
+  c0->Update();
+
   bgBlind(h, 1, 4.7, 6.0);
   
   fNobs = static_cast<int>(fBgExp + 0.5);
@@ -1099,7 +1103,7 @@ void anaBmm::bgBlind(TH1 *h, int mode, double lo, double hi) {
 
   double histCount = h->Integral(h->FindBin(fBgLo), h->FindBin(fBgHi)-1); 
   cout << "bgBlind: histCount = " << histCount << " starting at " << h->FindBin(fBgLo) << " to " << h->FindBin(fBgHi)-1 << endl;
-  fBgHist  = histCount*(fSigHi-fSigLo)/(fBgHi-fBgLo-0.4);
+  fBgHist  = histCount*(fSigHi-fSigLo)/(fBgHi-fBgLo-0.25); // FIXME fixed limits
   if (histCount > 0) {
     fBgHistE = TMath::Sqrt(histCount)/histCount*fBgHist;
   } else {

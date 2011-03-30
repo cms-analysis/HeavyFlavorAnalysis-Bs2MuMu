@@ -75,7 +75,7 @@ double f_pol2(double *x, double *par) {
 // ----------------------------------------------------------------------
 double f_pol0_BsBlind(double *x, double *par) {
   // FIXME fixed limits!!!
-  if (x[0] >= 5.1 && x[0] <= 5.5) { 
+  if (x[0] >= 5.2 && x[0] <= 5.45) { 
     TF1::RejectPoint();
     return 0;
   }
@@ -86,7 +86,7 @@ double f_pol0_BsBlind(double *x, double *par) {
 // ----------------------------------------------------------------------
 double f_pol1_BsBlind(double *x, double *par) {
   // FIXME fixed limits!!!
-  if (x[0] >= 5.1 && x[0] <= 5.5) {
+  if (x[0] >= 5.2 && x[0] <= 5.45) {
     TF1::RejectPoint();
     return 0;
   }
