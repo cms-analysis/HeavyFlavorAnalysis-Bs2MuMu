@@ -68,7 +68,6 @@ void genLevel::endAnalysis() {
 void genLevel::bbbarCrossSection() {
 
   TGenCand *pCand; 
-  TH1D *h; 
   int muType(0), evtType(0), nevt(0), bevt(0), bacc(0); 
   bool acc(false);
   double pt(0.), eta(0.); 
@@ -113,7 +112,7 @@ void genLevel::bbbarCrossSection() {
 
 // ----------------------------------------------------------------------
 int genLevel::muonType(TGenCand *pCand) {
-  int id(999), cnt(0); 
+  int id(999); 
   int rest(0), ganz(0); 
   int momI = pCand->fMom1;
   TGenCand *pMom;
@@ -243,7 +242,6 @@ void genLevel::readCuts(TString filename, int dump) {
 
   TH1D *hcuts = new TH1D("hcuts", "", 1000, 0., 1000.);
   hcuts->GetXaxis()->SetBinLabel(1, fn.Data());
-  int ibin; 
   while (is.getline(buffer, 200, '\n')) {
     ok = 0;
     if (buffer[0] == '#') {continue;}

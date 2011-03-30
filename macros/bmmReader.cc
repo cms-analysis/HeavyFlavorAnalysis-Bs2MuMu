@@ -21,11 +21,11 @@ bmmReader::bmmReader(TChain *tree, TString evtClassName): treeReader01(tree, evt
   cout << "==> Defining analysis cuts" << endl;
   MASSMIN = 4.5;
   MASSMAX = 6.5; 
+  fVerbose = 0; 
 
    cout << "reading events from  " << "evts" << endl;
    char  buffer[200];
    ifstream is("evts");
-   char input[1000]; 
    int event(0); 
    while (is.getline(buffer, 200, '\n')) {
      event = atoi(buffer); 
@@ -44,16 +44,12 @@ bmmReader::~bmmReader() {
 
 // ----------------------------------------------------------------------
 bool bmmReader::evtFoundInCN(int evt) {
-  bool result(false);
-
-  for (int i = 0; i < fEventVector.size(); ++i) {
+  for (unsigned int i = 0; i < fEventVector.size(); ++i) {
     if (fEventVector[i] == evt) {
       return true;
     } 
   }
   return false; 
-
-  
 }
 
 // ----------------------------------------------------------------------
@@ -136,7 +132,7 @@ void bmmReader::eventProcessing() {
 
   if (fIsMC) efficiencyCalculation();
 
-  studyL1T();
+  //  studyL1T();
   
   fillHist();
 
@@ -1534,7 +1530,7 @@ void bmmReader::readCuts(TString filename, int dump) {
       if (dump) cout << "JPSITYPE:      " << JPSITYPE << endl;
       ibin = 210;
       hcuts->SetBinContent(ibin, JPSITYPE);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: J/#psi ID :: %3.1f", CutName, JPSITYPE));
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: J/#psi ID :: %d", CutName, JPSITYPE));
     }
 
     if (!strcmp(CutName, "JPSIMASSLO")) {

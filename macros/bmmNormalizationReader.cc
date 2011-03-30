@@ -505,7 +505,6 @@ void bmmNormalizationReader::candMatch() {
   int idx(-1), type(-1); 
   int d1Matched(0), d2Matched(0), d3Matched(0); 
   TAnaCand *pCand(0);
-  TAnaTrack *pT(0); 
   for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
     pCand = fCands[iC]; 
     
@@ -544,7 +543,7 @@ void bmmNormalizationReader::candMatch() {
 // ----------------------------------------------------------------------
 int bmmNormalizationReader::tmCand(TAnaCand *pC) {
   TAnaCand *pCand(0);
-  for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
+  for (int iC = 0; iC < static_cast<int>(fCands.size()); ++iC) {
     pCand = fCands[iC]; 
     if (pCand == pC) {
       if (iC == fCandTmi) {
@@ -779,6 +778,7 @@ int bmmNormalizationReader::tmCand2(TAnaCand *pC) {
     }
   }
 
+  return -1; 
 }
 
 

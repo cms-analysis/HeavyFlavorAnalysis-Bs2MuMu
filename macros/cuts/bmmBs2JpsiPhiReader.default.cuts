@@ -1,6 +1,7 @@
 TYPE           300531 
 SELMODE            -1
-TRIGGER     HLT_DoubleMu0,HLT_DoubleMu0_Quarkonium_v1
+TRIGGER        HLT_DoubleMu3_Jpsi_v1,HLT_DoubleMu3_Jpsi_v2
+#2010 TRIGGER     HLT_DoubleMu0,HLT_DoubleMu0_Quarkonium_v1
 L1TRIGGER   L1_DoubleMuOpen
 # -- boxes
 +input cuts/boxes.Bs2JpsiPhi.cuts
