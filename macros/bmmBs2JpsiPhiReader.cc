@@ -868,8 +868,7 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
   fGoodMKK    = ((MKKLO < fMKK ) && (fMKK < MKKHI)); 
   
   bmmReader::fillCandidateVariables();
-
-
+  fPreselection = fPreselection && fGoodJpsiMass && fGoodMKK && fGoodDeltaR; 
 }
 
 // ----------------------------------------------------------------------

@@ -76,12 +76,17 @@ AnalysisDistribution::AnalysisDistribution(const char *name, const char *title, 
     hHLT[i] = new TH1D(Form("%sHLT%d", name, i), Form("%s, after HLT, %s", name, massbin[i].c_str()), nbins, lo, hi);
     hHLT[i]->SetXTitle(title); 
   }
+  for (int i = 0; i < 3; ++i) {
+    hPresel[i] = new TH1D(Form("%sPresel%d", name, i), Form("%s, after Presel, %s", name, massbin[i].c_str()), nbins, lo, hi);
+    hPresel[i]->SetXTitle(title); 
+  }
 
-  hMassSi = new TH1D(Form("%sMassSi", name), Form("%sMassSi", name), NBINS, fMassLo, fMassHi); 
-  hMassAo = new TH1D(Form("%sMassAo", name), Form("%sMassAo", name), NBINS, fMassLo, fMassHi); 
-  hMassNm = new TH1D(Form("%sMassNm", name), Form("%sMassNm", name), NBINS, fMassLo, fMassHi); 
-  hMassCu = new TH1D(Form("%sMassCu", name), Form("%sMassCu", name), NBINS, fMassLo, fMassHi); 
-  hMassHLT= new TH1D(Form("%sMassHLT", name), Form("%sMassHLT", name), NBINS, fMassLo, fMassHi); 
+  hMassSi    = new TH1D(Form("%sMassSi", name), Form("%sMassSi", name), NBINS, fMassLo, fMassHi); 
+  hMassAo    = new TH1D(Form("%sMassAo", name), Form("%sMassAo", name), NBINS, fMassLo, fMassHi); 
+  hMassNm    = new TH1D(Form("%sMassNm", name), Form("%sMassNm", name), NBINS, fMassLo, fMassHi); 
+  hMassCu    = new TH1D(Form("%sMassCu", name), Form("%sMassCu", name), NBINS, fMassLo, fMassHi); 
+  hMassHLT   = new TH1D(Form("%sMassHLT", name), Form("%sMassHLT", name), NBINS, fMassLo, fMassHi); 
+  hMassPresel= new TH1D(Form("%sMassPresel", name), Form("%sMassPresel", name), NBINS, fMassLo, fMassHi); 
 
   fF0 = new TF1("ADf0", f_p1, 0., 7., 2);         fF0->SetParNames("Offset", "Slope"); 			   
   fF1 = new TF1("ADf1", f_expo, 0., 7., 2);       fF1->SetParNames("Norm", "Exp"); 			   
@@ -102,18 +107,20 @@ AnalysisDistribution::AnalysisDistribution(const char *name, double SigLo, doubl
   fMassLo = 4.5;
   fMassHi = 6.5;
 
-  hMassSi = (TH1D*)gDirectory->Get(Form("%sMassSi", name)); 
-  hMassAo = (TH1D*)gDirectory->Get(Form("%sMassAo", name)); 
-  hMassNm = (TH1D*)gDirectory->Get(Form("%sMassNm", name)); 
-  hMassCu = (TH1D*)gDirectory->Get(Form("%sMassCu", name)); 
-  hMassHLT= (TH1D*)gDirectory->Get(Form("%sMassHLT", name)); 
+  hMassSi    = (TH1D*)gDirectory->Get(Form("%sMassSi", name)); 
+  hMassAo    = (TH1D*)gDirectory->Get(Form("%sMassAo", name)); 
+  hMassNm    = (TH1D*)gDirectory->Get(Form("%sMassNm", name)); 
+  hMassCu    = (TH1D*)gDirectory->Get(Form("%sMassCu", name)); 
+  hMassHLT   = (TH1D*)gDirectory->Get(Form("%sMassHLT", name)); 
+  hMassPresel= (TH1D*)gDirectory->Get(Form("%sMassPresel", name)); 
 
   for (int i = 0; i < 3; ++i) {
-    hSi[i] = (TH1D*)gDirectory->Get(Form("%sSi%d", name, i)); 
-    hAo[i] = (TH1D*)gDirectory->Get(Form("%sAo%d", name, i)); 
-    hNm[i] = (TH1D*)gDirectory->Get(Form("%sNm%d", name, i)); 
-    hCu[i] = (TH1D*)gDirectory->Get(Form("%sCu%d", name, i)); 
-    hHLT[i]= (TH1D*)gDirectory->Get(Form("%sHLT%d", name, i)); 
+    hSi[i]    = (TH1D*)gDirectory->Get(Form("%sSi%d", name, i)); 
+    hAo[i]    = (TH1D*)gDirectory->Get(Form("%sAo%d", name, i)); 
+    hNm[i]    = (TH1D*)gDirectory->Get(Form("%sNm%d", name, i)); 
+    hCu[i]    = (TH1D*)gDirectory->Get(Form("%sCu%d", name, i)); 
+    hHLT[i]   = (TH1D*)gDirectory->Get(Form("%sHLT%d", name, i)); 
+    hPresel[i]= (TH1D*)gDirectory->Get(Form("%sPresel%d", name, i)); 
   }
 
   fSigLo = SigLo; 
@@ -376,6 +383,12 @@ void AnalysisDistribution::fill(double value, double mass) {
     hHLT[2]->Fill(value); 
     hMassHLT->Fill(mass);
   }
+
+  if (true == *fpPreselCutTrue) {
+    if (mBin > -1) hPresel[mBin]->Fill(value); 
+    hPresel[2]->Fill(value); 
+    hMassPresel->Fill(mass);
+  } 
 
 }
 

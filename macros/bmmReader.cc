@@ -23,16 +23,16 @@ bmmReader::bmmReader(TChain *tree, TString evtClassName): treeReader01(tree, evt
   MASSMAX = 6.5; 
   fVerbose = 0; 
 
-   cout << "reading events from  " << "evts" << endl;
-   char  buffer[200];
-   ifstream is("evts");
-   int event(0); 
-   while (is.getline(buffer, 200, '\n')) {
-     event = atoi(buffer); 
-     cout << event << endl;
-     fEventVector.push_back(event);
-   }
-   is.close();
+  cout << "reading events from  " << "evts" << endl;
+  char  buffer[200];
+  ifstream is("evts");
+  int event(0); 
+  while (is.getline(buffer, 200, '\n')) {
+    event = atoi(buffer); 
+    cout << event << endl;
+    fEventVector.push_back(event);
+  }
+  is.close();
   
 }
 
@@ -60,6 +60,7 @@ void bmmReader::startAnalysis() {
   fpMuonID = new PidTable("pidtables/jpsi/data/muid0.both.dat"); 
   fpMuonTr = new PidTable("pidtables/jpsi/data/mutrig0.both.dat"); 
 
+  fpJSON = new JSON(JSONFILE.c_str()); 
   cout << "==> bmmReader: Starting analysis..." << endl;
 
 }
@@ -102,6 +103,9 @@ void bmmReader::eventProcessing() {
   ((TH1D*)fpHistFile->Get("monEvents"))->Fill(2, fCands.size()); 
 
   if (!fIsMC && !fGoodHLT) {
+    if (fVerbose > 5) {
+      cout << "no HLT trigger!" << endl;
+    }
     return;
   }
     
@@ -158,6 +162,7 @@ void bmmReader::initVariables() {
   fvGoodCandPt.clear();
 
   fGoodEvent = true;
+  fPreselection = false; 
   
   TAnaCand *pCand(0);
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
@@ -431,7 +436,7 @@ void bmmReader::HLTSelection() {
 	  if (!a.CompareTo("HLT_DoubleMu3")) {
 	    fHLTMu3 = true; 
 	  }
-	  //	  if (fGoodHLT) cout << "HLT fired " << a << " required: " << HLTPath[j].c_str() << endl;
+	  if (fVerbose > 0 && fGoodHLT) cout << "HLT fired " << a << " required: " << HLTPath[j].c_str() << endl;
 	}
 	//cout << a << ": wasRun = " << wasRun << " result: " << result << " error: " << error << endl;
       }
@@ -548,6 +553,13 @@ void bmmReader::fillCandidateVariables() {
     fPvX = -99.;
     fPvY = -99.;
     fPvZ = -99.;
+  }
+
+  fJSON = 0; 
+  if (fIsMC) {
+    fJSON = 1; 
+  } else {
+    fJSON = fpJSON->good(fRun, fLS); 
   }
 
   fCandTM    = tmCand(fpCand); 
@@ -747,7 +759,7 @@ void bmmReader::fillCandidateVariables() {
 
   // -- fill cut variables
   fWideMass = ((fpCand->fMass > MASSMIN) && (fpCand->fMass < MASSMAX)); 
-  
+
   fGoodTracks = fvGoodTracks[fCandIdx];
   fGoodTracksPt = fvGoodTracksPt[fCandIdx];
   fGoodTracksEta = fvGoodTracksEta[fCandIdx];
@@ -768,6 +780,9 @@ void bmmReader::fillCandidateVariables() {
   fGoodIP = true; 
 
   fAnaCuts.update(); 
+
+  fPreselection = fWideMass && fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID && fGoodMuonsPt && fGoodMuonsEta; 
+  fPreselection = fPreselection && fGoodQ && (fCandPt > 4) && (fCandCosA > 0.9) && (fCandFLS3d > 2) && (fCandChi2/fCandDof < 10); 
 }
 
 
@@ -1020,7 +1035,9 @@ void bmmReader::bookHist() {
   // -- Reduced Tree
   fTree = new TTree("events", "events");
   fTree->Branch("run",    &fRun,               "run/I");
+  fTree->Branch("json",   &fJSON,              "json/I");
   fTree->Branch("evt",    &fEvt,               "evt/I");
+  fTree->Branch("ls",     &fLS,                "ls/I");
   fTree->Branch("mck",    &fGoodMCKinematics,  "mck/O");
   fTree->Branch("tm",     &fCandTM,            "tm/I");
   fTree->Branch("hlt",    &fGoodHLT,           "hlt/O");
@@ -1126,6 +1143,7 @@ AnalysisDistribution* bmmReader::bookDistribution(const char *hn, const char *ht
   p->setBg1Window(BGLBOXMIN, BGLBOXMAX); 
   p->setBg2Window(BGHBOXMIN, BGHBOXMAX); 
   p->setAnalysisCuts(&fAnaCuts, hc); 
+  p->setPreselCut(&fPreselection); 
 
   TH1 *h = (TH1D*)gFile->Get("analysisDistributions"); 
   for (int i = 1; i < h->GetNbinsX(); ++i) {
@@ -1242,6 +1260,15 @@ void bmmReader::readCuts(TString filename, int dump) {
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: Selection Mode :: %i", CutName, SELMODE));
     }
 
+    if (!strcmp(CutName, "JSON")) {
+      char json[1000]; ok = 1; 
+      sscanf(buffer, "%s %s", CutName, json);
+      JSONFILE = string(json); ok = 1; 
+      if (dump) cout << "JSON FILE:           " << JSONFILE << endl;
+      ibin = 3;
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: JSON File :: %s", CutName, JSONFILE.c_str()));
+    }
+
     if (!strcmp(CutName, "TRIGGER")) {
       char triggerlist[1000]; ok = 1; 
       sscanf(buffer, "%s %s", CutName, triggerlist);
@@ -1259,7 +1286,7 @@ void bmmReader::readCuts(TString filename, int dump) {
 	cout << "TRIGGER:          "; 
 	for (unsigned int i = 0; i < HLTPath.size(); ++i) cout << HLTPath[i] << " "; cout << endl;
       }
-      ibin = 3; 
+      ibin = 4; 
       hcuts->SetBinContent(ibin, 1);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: %s", CutName, triggerlist));
     }
@@ -1281,7 +1308,7 @@ void bmmReader::readCuts(TString filename, int dump) {
 	cout << "L1TRIGGER:          "; 
 	for (unsigned int i = 0; i < L1TPath.size(); ++i) cout << L1TPath[i] << " "; cout << endl;
       }
-      ibin = 3; 
+      ibin = 5; 
       hcuts->SetBinContent(ibin, 1);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: %s", CutName, triggerlist));
     }

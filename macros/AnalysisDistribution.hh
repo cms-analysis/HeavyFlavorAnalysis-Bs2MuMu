@@ -33,6 +33,8 @@ public:
   double fitMass(TH1 *h, double &error, int mode = 0); 
   void   setFunctionParameters(TF1 *f1, TH1 *h, int mode); 
 
+  void   setPreselCut(bool *p) {fpPreselCutTrue = p;} 
+
   string fCutName; 
   int fCutIdx, fHLTIdx; 
 
@@ -44,9 +46,11 @@ public:
  
   AnalysisCuts *fpAnaCuts; 
 
-  TH1D *hSi[3], *hAo[3], *hCu[3], *hNm[3], *hHLT[3]; 
+  bool *fpPreselCutTrue; 
+  
+  TH1D *hSi[3], *hAo[3], *hCu[3], *hNm[3], *hHLT[3], *hPresel[3]; 
 
-  TH1D *hMassSi, *hMassAo, *hMassCu, *hMassNm, *hMassHLT; 
+  TH1D *hMassSi, *hMassAo, *hMassCu, *hMassNm, *hMassHLT, *hMassPresel; 
 
   TF1 *fF0, *fF1; 
   TF1 *fP1, *fPG1, *fEG1, *fEG2, *fEPG; 

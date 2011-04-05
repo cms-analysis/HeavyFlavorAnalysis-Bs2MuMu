@@ -38,15 +38,15 @@ my %jobs = ("signal MC"
 #	    , "signal MC 4" # backgrounds
 #	    => "-m,bmmSignalReader,bmmSignalReader.$job.cuts,cQCD_2MuPEtaFilter_7TeV-pythia6-Fall10-*,signal-qcd2mu.root"
 	    , "signal data" 
-	    => "-b 1,bmmSignalReader,bmmSignalReader.$job.cuts,cMu*-Run2011*PromptReco-v1-*,signalData.root"
+	    => "-b 1,bmmSignalReader,bmmSignalReader.$job.cuts,cMu*-Run2010*-Nov4ReReco_v1-*,signalData.root"
 	    , "norm MC" 
 	    => "-m,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cBpToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,normMC.root"
 	    , "norm data" 
-	    => "-b 0,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cMu*-Run2011*PromptReco-v1-*,normData.root"
+	    => "-b 0,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cMu*-Run2010*-Nov4ReReco_v1-*,normData.root"
 	    , "Bs2JpsiPhi MC" 
 	    => "-m,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cBsToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,Bs2JpsiPhiMC.root"
 	    , "Bs2JpsiPhi data" 
-	    => "-b 0,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cMu*-Run2011*PromptReco-v1-*,Bs2JpsiPhiData.root"
+	    => "-b 0,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cMu*-Run2010*-Nov4ReReco_v1-*,Bs2JpsiPhiData.root"
     );
 
 my $user  = $ENV{'USER'};

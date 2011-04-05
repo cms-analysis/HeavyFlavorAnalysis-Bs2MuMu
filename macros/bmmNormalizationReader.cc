@@ -714,6 +714,8 @@ void bmmNormalizationReader::fillCandidateVariables() {
   }
   
   bmmReader::fillCandidateVariables();
+
+  fPreselection = fPreselection && fGoodJpsiMass;
 }
 
 // ----------------------------------------------------------------------

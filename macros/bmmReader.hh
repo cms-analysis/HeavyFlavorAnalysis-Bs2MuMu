@@ -24,6 +24,7 @@
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
 
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
+#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/JSON.hh"
 
 #include "treeReader01.hh"
 #include "AnalysisCuts.hh"
@@ -104,6 +105,7 @@ public:
     ;
   int TYPE, SELMODE, MUIDMASK, MUIDRESULT, TRACKQUALITY, JPSITYPE;
   std::vector<std::string> HLTPath, L1TPath; 
+  std::string JSONFILE;
 
   bool fL1TMu0, fL1TMu3;
   bool fHLTMu0, fHLTMu3;
@@ -127,6 +129,7 @@ public:
   int                     fCandTmi; 
  
   // -- variables for reduced tree, they are from fpCand
+  int                     fJSON;
   int                     fCandTM, fCandType; 
   int                     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fCandQ;
   bool                    fMu1Id, fMu2Id;
@@ -156,6 +159,8 @@ public:
   bool                    fGoodQ, fGoodPt, fGoodEta, fGoodCosA, fGoodIso, fGoodChi2, fGoodFLS; 
   bool                    fGoodDocaTrk, fGoodIP; 
 
+  bool                    fPreselection; 
+
   AnalysisCuts fAnaCuts; 
 
   // -- Analysis distributions
@@ -182,6 +187,8 @@ public:
   // -- PidTables
   PidTable *fpMuonID;
   PidTable *fpMuonTr;
+
+  JSON *fpJSON; 
 
   std::vector<int> fEventVector;
 
