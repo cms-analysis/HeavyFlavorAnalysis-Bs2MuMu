@@ -348,7 +348,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
     
     pTrack = gHFEvent->addSigTrack();
     pTrack->fIndex = allTreeTracks[j].first;
-    pTrack->fMCID = allTreeTracks[j].second;
+    pTrack->fMCID = allTreeTracks[j].second; // Here, we use the MCID of the sigTrack to store the assumed particle ID for the mass hypothesis
     pTrack->fPlab = TVector3(fitTrack.track().px(),fitTrack.track().py(),fitTrack.track().pz());
     pTrack->fDof = fitTrack.ndof();
     pTrack->fValidHits = fitTrack.numberOfValidHits();
