@@ -34,7 +34,6 @@ using namespace reco;
 // ----------------------------------------------------------------------
 HFDumpStuff::HFDumpStuff(const edm::ParameterSet& iConfig):
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 1)),
-  fGenEventScaleLabel(iConfig.getUntrackedParameter<string>("GenEventScaleLabel", string("genEventScale"))),
   fCandidates1Label(iConfig.getUntrackedParameter<string>("Candidates1Label", string("JPsiToMuMu"))),
   fCandidates2Label(iConfig.getUntrackedParameter<string>("Candidates2Label", string("JPsiToMuMu"))),
   fCandidates3Label(iConfig.getUntrackedParameter<string>("Candidates3Label", string("JPsiToMuMu"))),
@@ -46,7 +45,6 @@ HFDumpStuff::HFDumpStuff(const edm::ParameterSet& iConfig):
   cout << "---  verbose:                    " << fVerbose << endl;
   cout << "---  PrimaryVertexLabel:         " << fPrimaryVertexLabel << endl;
   cout << "---  PrimaryVertexTracksLabel:   " << fPrimaryVertexTracksLabel << endl;
-  cout << "---  GenEventScaleLabel:         " << fGenEventScaleLabel.c_str() << endl;
   cout << "----------------------------------------------------------------------" << endl;
 }
 
@@ -148,17 +146,15 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   if (fVerbose > 0) cout << "The best pV is at position: " << bestPV  << " and has " << bestN << " tracks" << endl;
 
 
-  // -- pthat 
-  gHFEvent->fPtHat = -1.; 
-  try {
-    edm::Handle<double> genEventScaleHandle;
-    iEvent.getByLabel(fGenEventScaleLabel.c_str(), genEventScaleHandle);
-    gHFEvent->fPtHat = *genEventScaleHandle;
-  } catch (cms::Exception &ex) {
-    //    cout << ex.explainSelf() << endl;
-    if (fVerbose > 0) cout << "genEventScale " << fGenEventScaleLabel.c_str() << " not found " << endl;
-  }
-
+	// -- pthat 
+	gHFEvent->fPtHat = -1.; 
+	try { 
+		edm::Handle<GenEventInfoProduct> evt_info; 
+		iEvent.getByType(evt_info); 
+		gHFEvent->fPtHat     = evt_info->qScale(); 
+	} catch (cms::Exception &ex) { 
+		if (fVerbose > 0) cout << "GenEventInfoProduct not found." << endl; 
+	} 
 
 
 }
