@@ -54,18 +54,21 @@ typedef std::map<int,int>::iterator HFDecayTreeTrackIterator;
 class HFDecayTree
 {
 	public:
-		HFDecayTree(int pID = 0.0, int doVertexing = 1, double constraint = -1.0, double constraintSigma = -1.0);
-		virtual ~HFDecayTree() { delete kinTree; }
+		HFDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma = -1.0);
+		//HFDecayTree(int pID = 0, int doVertexing = 1, double constraint = -1.0, double constraintSigma = -1.0); // just for the record how the default values looked like before
+		HFDecayTree(int pID, int doVertexing, double constraint, double constraintSigma = -1.0) __attribute__((deprecated)); // DEPRECATED use new constructor instead
+		virtual ~HFDecayTree() { delete kinTree_; }
 		
 		// Constructing the tree structure
-		void addTrack(int trackIx, double trackMass) __attribute__((deprecated)); // DEPRECATED, use addTrack(trackIx,trackID) instead!
 		void addTrack(int trackIx, int trackID); // Add a track with a given type.
 		
-		
 		void appendDecayTree(HFDecayTree subTree); // to append an already constructed decay tree
-		HFDecayTreeIterator addDecayTree(int pID = 0, int doVertexing = 1, double mass = -1.0, double mass_sigma = -1.0); // to get a reference to the subvertex
+		HFDecayTreeIterator addDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma = -1.0); // to get a reference to the subvertex
+		//HFDecayTreeIterator addDecayTree(int pID = 0, int doVertexing = 1, double mass = -1.0, double mass_sigma = -1.0) __attribute__ ((deprecated)); // to get a reference to the subvertex
+		HFDecayTreeIterator addDecayTree(int pID, int doVertexing, double mass, double mass_sigma = -1.0) __attribute__ ((deprecated)); // to get a reference to the subvertex
 		
 		void clear();
+		void clear(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma = -1.0); // variant to clear and initialize the tree with same signature as constructor
 		
 		// Accessing the track data
 		HFDecayTreeTrackIterator getTrackBeginIterator();
@@ -94,24 +97,42 @@ class HFDecayTree
 
 		// Debugging!
 		void dump(unsigned indent = 0);
+
+		// Accessors to previously public data members
+		bool vertexing() { return vertexing_; };
+		double particleID() { return particleID_; };
+		bool massConstraint() { return massConstraint_; };
+		double mass() { return mass_; };
+		double massSigma() { return massSigma_; };
+		double maxDoca() { return maxDoca_; };
+		double minDoca() { return minDoca_; };
 		
-	public:
-		// Tree Variables...
-		int vertexing; // do a vertexing at this node
-		double particleID; // if == 0, then no TAnaCandidate should be created.
-		double massConstraint; // if <= 0, then no massconstraint at this vertex
-		double massConstraintSigma;
-		double maxDoca;
-		double minDoca;
+		void set_vertexing(bool vertexing) { vertexing_ = vertexing; };
+		void set_particleID(double particleID) { particleID_ = particleID; };
+		void set_massConstraint(bool massConstraint) { massConstraint_ = massConstraint; };
+		void set_mass(double mass) { mass_ = mass; };
+		void set_massSigma(double massSigma) { massSigma_ = massSigma; };
+		void set_maxDoca(double maxDoca) { maxDoca_ = maxDoca; };
+		void set_minDoca(double minDoca) { minDoca_ = minDoca; };
+
 	private:
+		// Tree Variables...
+		double particleID_; // if == 0, then no TAnaCandidate should be created.
+		bool vertexing_; // do a vertexing at this node
+		double mass_;
+		bool massConstraint_; // false: no massconstraint at this vertex
+		double massSigma_;
+		double maxDoca_;
+		double minDoca_;
+
 		void dumpTabs(unsigned indent); // used by dump()
 		
-		std::map<int,int> trackIndices; // map: trackIx -> particleTyp
-		std::map<int,int> kinParticleMap; // map: trackIx -> entry in the daughter kinematic particles...
-		std::vector<HFDecayTree> subVertices;
-		RefCountedKinematicTree *kinTree;
-		TAnaCand *anaCand;
-		RefCountedHFNodeCut nodeCut;
+		std::map<int,int> trackIndices_; // map: trackIx -> particleTyp
+		std::map<int,int> kinParticleMap_; // map: trackIx -> entry in the daughter kinematic particles...
+		std::vector<HFDecayTree> subVertices_;
+		RefCountedKinematicTree *kinTree_;
+		TAnaCand *anaCand_;
+		RefCountedHFNodeCut nodeCut_;
 };
 
 #endif

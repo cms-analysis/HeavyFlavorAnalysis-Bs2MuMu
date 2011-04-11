@@ -152,9 +152,12 @@ public:
     double fptgangDRlb, fptgangDRl0; // ptgangDR
     double fmaxdocalb, fmaxdocal0, fmaxdocajp; // maxdoca
 
+    double fPvLip, fPvLipE, fPvLip2, fPvLipE2; // longitudianl I.P. for best and 2nd best vertex
+
     double fd3lb, fd3l0, fd3jp;    // 3d distance
     double fd3Elb, fd3El0, fd3Ejp;
-    double fctlb, fctlbE, fctl0, fctl0E; // ctau
+    double fct3dlb, fct3dlbE, fct3dl0, fct3dl0E; // ct3dau
+    double fctxylb, fctxylbE, fctxyl0, fctxyl0E; // ctxyau
     double fbtlbx, fbtlby, fbtlbz; // beta vector
     double fbtl0x, fbtl0y, fbtl0z;
     double fvxl0, fvyl0, fvzl0, fvrl0;
@@ -212,7 +215,7 @@ public:
     bool fHLTqrk, fHLTqrkLS;
     bool fHLTDMuOp, fHLTDMu0, fHLTDMu3, fHLTDMu5;
     bool fHLTMu0TkMu0jp, fHLTMu0TkMu0jpNC, fHLTMu3TkMu0jp, fHLTMu3TkMu0jpNC, fHLTMu5TkMu0jp;
-    bool fHLTMu3t3jp, fHLTMu3t3jp2, fHLTMu3t3jp3, fHLTMu3t5jp, fHLTMu5t0jp;
+    bool fHLTMu3t3jp, fHLTMu3t3jp2, fHLTMu3t3jp3, fHLTMu3t5jp, fHLTMu5t0jp, fHLTDMu3jp;
     bool fHLTMu0jp, fHLTMu0jpT, fHLTMu3jp, fHLTMu3jpT, fHLTMu5jp, fHLTMu5jpT;
     bool fHLTMu0jpT1, fHLTMu0jpT2, fHLTMu0jpT3;
     bool fHLTL1DMu0, fHLTL2DMu0, fHLTL2Mu0;

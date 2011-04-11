@@ -265,14 +265,14 @@ void HFBd2JpsiKs::analyze(const Event& iEvent, const EventSetup& iSetup)
 			if (TMath::Abs(bd.M() - MB_0) > fBdWindow) continue;
 
 			// without J/Psi mass constraint
-			HFDecayTree theTree(600511);
+			HFDecayTree theTree(600511, true, 0, false); // TODO adjust mass to meaningful value
 			
-			HFDecayTreeIterator iterator = theTree.addDecayTree(600443,0); // no vertexing & no mass constraint
+			HFDecayTreeIterator iterator = theTree.addDecayTree(600443, false, MJPSI, false); // no vertexing & no mass constraint
 			iterator->addTrack(iMuon1,13);
 			iterator->addTrack(iMuon2,13);
 			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 			
-			iterator = theTree.addDecayTree(600310,1); // no mass constraint, with own vertex of Ks
+			iterator = theTree.addDecayTree(600310, true, MKSHORT, false); // no mass constraint, with own vertex of Ks
 			iterator->addTrack(iPion1,211);
 			iterator->addTrack(iPion2,211);
 			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
@@ -283,14 +283,14 @@ void HFBd2JpsiKs::analyze(const Event& iEvent, const EventSetup& iSetup)
 			
 			// without J/Psi mass constraint, but with an own J/Psi vertex
 			theTree.clear();
-			theTree.particleID = 700511;
+			theTree.set_particleID(700511);
 			
-			iterator = theTree.addDecayTree(700443,1); // vertexing but no mass constraint...
+			iterator = theTree.addDecayTree(700443, true, MJPSI, false); // vertexing but no mass constraint...
 			iterator->addTrack(iMuon1,13);
 			iterator->addTrack(iMuon2,13);
 			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 			
-			iterator = theTree.addDecayTree(700310,1); // Ks with vertexing
+			iterator = theTree.addDecayTree(700310, true, MKSHORT, false); // Ks with vertexing
 			iterator->addTrack(iPion1,211);
 			iterator->addTrack(iPion2,211);
 			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
@@ -301,14 +301,14 @@ void HFBd2JpsiKs::analyze(const Event& iEvent, const EventSetup& iSetup)
 			
 			// with J/Psi mass constraint                                                                                                    
 			theTree.clear();
-			theTree.particleID = 800511;
+			theTree.set_particleID(800511);
 			
-			iterator = theTree.addDecayTree(800443,1,MJPSI); // J/Psi needs an own vertex!!
+			iterator = theTree.addDecayTree(800443, true, MJPSI, true); // J/Psi needs an own vertex!!
 			iterator->addTrack(iMuon1,13);
 			iterator->addTrack(iMuon2,13);
 			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 			
-			iterator = theTree.addDecayTree(800310);
+			iterator = theTree.addDecayTree(800310, true, MKSHORT, false);
 			iterator->addTrack(iPion1,211);
 			iterator->addTrack(iPion2,211);
 			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));

@@ -282,9 +282,9 @@ void HFBd2JpsiKstar::analyze(const Event& iEvent, const EventSetup& iSetup)
       aKal.doFit(trackList, trackIndices, trackMasses, 200511, 2); 	
 
       // -- sequential fit: J/psi kaon pion
-      HFDecayTree theTree(300511);
+      HFDecayTree theTree(300511, true, 0, false); // TODO adjust mass to meaningful value
 	  
-      HFDecayTreeIterator iterator = theTree.addDecayTree(300443,0); // Don't use kinematic particle for the J/Psi
+      HFDecayTreeIterator iterator = theTree.addDecayTree(300443, false, MJPSI, false); // Don't use kinematic particle for the J/Psi
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
       iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
@@ -297,9 +297,9 @@ void HFBd2JpsiKstar::analyze(const Event& iEvent, const EventSetup& iSetup)
       
       // --sequential fit: J/Psi (constraint) kaon pion
       theTree.clear();
-      theTree.particleID = 400511;
+      theTree.set_particleID(400511);
       
-      iterator = theTree.addDecayTree(400443,1,MJPSI);
+      iterator = theTree.addDecayTree(400443,true,MJPSI,true);
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
       iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));

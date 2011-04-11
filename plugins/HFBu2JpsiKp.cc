@@ -262,9 +262,9 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup)
 	  
       // -- sequential fit: J/Psi kaon
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> going to sequential fit" << endl;
-      HFDecayTree theTree(300521);
+      HFDecayTree theTree(300521, true, 0, false); // TODO adjust mass to meaningful value
     
-      HFDecayTreeIterator iterator = theTree.addDecayTree(300443,0);
+      HFDecayTreeIterator iterator = theTree.addDecayTree(300443, false, MJPSI, false);
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
       iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
@@ -277,9 +277,9 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup)
       
       // -- sequential fit: J/Psi kaon
       theTree.clear();
-      theTree.particleID = 400521;
+      theTree.set_particleID(400521);
       
-      iterator = theTree.addDecayTree(400443,1,MJPSI);
+      iterator = theTree.addDecayTree(400443, true, MJPSI, true);
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
       iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));

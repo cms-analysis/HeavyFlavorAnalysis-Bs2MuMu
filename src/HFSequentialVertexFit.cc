@@ -42,6 +42,10 @@ struct ImpactParameters {
 		lip = Measurement1D();
 		tip = Measurement1D();
 	}
+	ImpactParameters(Measurement1D plip, Measurement1D ptip) {
+	    lip = plip;
+	    tip = ptip;
+	}
 	Measurement1D lip;
 	Measurement1D tip;
 };
@@ -86,7 +90,7 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 		kinTree = *(treeIt->getKinematicTree());
 		if (kinTree->isEmpty()) throw EmptyTreeError();
 		
-		if (treeIt->vertexing) {
+		if (treeIt->vertexing()) {
 			kinTree->movePointerToTheTop();
 			kinParticles.push_back(kinTree->currentParticle());
 		}
@@ -104,9 +108,9 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 	
 	// do the actual fit of this vertex
 	kinTree = kpvFitter.fit(kinParticles);
-	if (!kinTree->isEmpty() && tree->massConstraint >= 0) {
+	if (!kinTree->isEmpty() && tree->massConstraint()) {
 		KinematicParticleFitter csFitter;
-		auto_ptr<KinematicConstraint> con(new MassKinematicConstraint(tree->massConstraint,tree->massConstraintSigma));
+		auto_ptr<KinematicConstraint> con(new MassKinematicConstraint(tree->mass(),tree->massSigma()));
 		kinTree = csFitter.fit(&(*con),kinTree);
 	}
 	
@@ -128,8 +132,9 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 		kinPart = kinTree->currentParticle();
 		kinVertex = kinTree->currentDecayVertex();
 		
-		maxDoca = tree->maxDoca = getMaxDoca(kinParticles);
-		tree->minDoca = getMinDoca(kinParticles);
+		maxDoca = getMaxDoca(kinParticles);
+		tree->set_maxDoca(maxDoca);
+		tree->set_minDoca(getMinDoca(kinParticles));
 		vtxChi2 = kinPart->chiSquared();
 		vtxPos.SetXYZ(kinVertex->position().x(),kinVertex->position().y(),kinVertex->position().z());
 		ptCand.SetXYZ(kinPart->currentState().globalMomentum().x(),
@@ -151,7 +156,7 @@ void HFSequentialVertexFit::saveTree(HFDecayTree *tree)
   VertexState vState; // vertex state of 'tree'
 
   // create the Ana Candidate of the node if requested and not yet existing
-  if(tree->particleID && !tree->getAnaCand())
+  if(tree->particleID() && !tree->getAnaCand())
     tree->setAnaCand(addCandidate(tree)); // top candidate w.r.t. primary vertex
 
   // get the current vertex state
@@ -161,7 +166,7 @@ void HFSequentialVertexFit::saveTree(HFDecayTree *tree)
   
   // create all the requested candidates of the daughters
   for (treeIt = tree->getVerticesBeginIterator(); treeIt != tree->getVerticesEndIterator(); ++treeIt) {
-	  if (treeIt->particleID && !treeIt->getAnaCand())
+	  if (treeIt->particleID() && !treeIt->getAnaCand())
 		  treeIt->setAnaCand(addCandidate(&(*treeIt),&vState));
   }
   
@@ -215,14 +220,15 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   TVector3 plab;
   double cov[9];
   double mass;
-  unsigned j;
+  unsigned int j;
   int pvIx = -1; // PV index of this candidate
   ImpactParameters pvImpParams;
+  ImpactParameters pvImpParams2nd(Measurement1D(9999.,9999.),Measurement1D(9999.,9999.)); // stores just tip of second best PV to detect pile-up problems
   AnalyticalImpactPointExtrapolator extrapolator(magneticField);
   TransverseImpactPointExtrapolator transverseExtrapolator(magneticField);
   TrajectoryStateOnSurface tsos;
 
-  if (tree->particleID == 0) return pCand; // i.e. null
+  if (tree->particleID() == 0) return pCand; // i.e. null
   if (kinTree->isEmpty()) return pCand;
   
   kinTree->movePointerToTheTop();
@@ -262,7 +268,8 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 		  cout << "==> HFSequentialVertexFit: Number of PV vertices to compare is " << fPVCollection->size() << endl;
 	  
 	  // iterate through all PVs and estimate the impact parameters of this particle
-	  for (vertexIt = fPVCollection->begin(), j = 0; vertexIt != fPVCollection->end(); ++vertexIt,++j) {
+	  unsigned int nGoodVtx;
+	  for (vertexIt = fPVCollection->begin(), j = 0, nGoodVtx = 0; vertexIt != fPVCollection->end(); ++vertexIt,++j) {
 		  
 		  std::pair<bool,Measurement1D> currentIp;
 		  
@@ -277,10 +284,37 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 		  }
 		  
 		  // store?
-		  if (pvIx >= 0 && fabs(currentIp.second.value()) >= fabs(pvImpParams.lip.value())) continue;
-		  
-		  pvIx = j;
-		  pvImpParams.lip = currentIp.second;
+		  if (nGoodVtx == 0 ) // the first PV, this is currently the best one ;)
+		  {
+		      pvIx = j;
+		      pvImpParams.lip = currentIp.second;
+		  }
+		  else if (nGoodVtx == 1) // now the second PV
+		  {
+		      if (fabs(currentIp.second.value()) >= fabs(pvImpParams.lip.value())) // not the best but the second best
+			  pvImpParams2nd.lip = currentIp.second;
+		      else // the best, the previous one is the current 2nd best
+		      {
+			  pvIx = j;
+			  pvImpParams2nd.lip = pvImpParams.lip;
+			  pvImpParams.lip = currentIp.second;
+		      }
+		  }
+		  else // we have more than 2 PV
+		  {
+		      if (fabs(currentIp.second.value()) >= fabs(pvImpParams.lip.value())) // not the best
+		      {
+			  if (fabs(currentIp.second.value()) < fabs(pvImpParams2nd.lip.value())) // but the second best
+			      pvImpParams2nd.lip = currentIp.second;
+		      }
+		      else // this is currently the best one, keep it and put the old best one to 2nd best
+		      {
+			  pvIx = j;
+			  pvImpParams2nd.lip = pvImpParams.lip;
+			  pvImpParams.lip = currentIp.second;
+		      }
+		  }
+		  nGoodVtx++; // Count the no. of good vertices
 	  }
 	  
 	  // now, compute the tip w.r.t. PV
@@ -288,6 +322,9 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  pvImpParams.tip = axy.distance(VertexState(tsos.globalPosition(),tsos.cartesianError().position()),VertexState(RecoVertex::convertPos((*fPVCollection)[pvIx].position()),RecoVertex::convertError((*fPVCollection)[pvIx].error())));
   }
   
+  double vtxDistanceSign(0); // will be used later while calculating the lifetime but easier to determine here.
+  cov99_t vtxDistanceCov;
+  jac9_t vtxDistanceJac3d, vtxDistanceJac2d;
   if (wrtVertexState) {
 	  // -- Distance to mother vertex
 	  anaVtx.fDxy = axy.distance(*wrtVertexState, kinVertex->vertexState()).value();
@@ -295,6 +332,14 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  
 	  anaVtx.fD3d = a3d.distance(*wrtVertexState, kinVertex->vertexState()).value();
 	  anaVtx.fD3dE = a3d.distance(*wrtVertexState, kinVertex->vertexState()).error();
+	  // -- get covariance matrix for error propagation in lifetime calculation
+	  vtxDistanceCov = makeCovarianceMatrix(GlobalError2SMatrix_33(wrtVertexState->error()),
+		  kinParticle->currentState().kinematicParametersError().matrix());
+	  vtxDistanceJac3d = makeJacobianVector3d(wrtVertexState->position(), kinVertex->vertexState().position(), plab);
+	  vtxDistanceJac2d = makeJacobianVector2d(wrtVertexState->position(), kinVertex->vertexState().position(), plab);
+          // -- get sign of distance
+	  const GlobalVector diff = kinVertex->vertexState().position() - wrtVertexState->position() ;
+	  vtxDistanceSign = plab.Dot(TVector3(diff.x(),diff.y(),diff.z())) >= 0 ? 1 : -1;;
   } else if (pvIx >= 0) {
 	  // -- Distance w.r.t primary vertex
 	  Vertex currentPV = (*fPVCollection)[pvIx];
@@ -303,10 +348,19 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  
 	  anaVtx.fD3d = a3d.distance(currentPV,kinVertex->vertexState()).value();
 	  anaVtx.fD3dE = a3d.distance(currentPV,kinVertex->vertexState()).error();
+	  // -- get covariance matrix for error propagation in lifetime calculation
+	  vtxDistanceCov = makeCovarianceMatrix(GlobalError2SMatrix_33(currentPV.error()),
+		  kinParticle->currentState().kinematicParametersError().matrix());
+	  vtxDistanceJac3d = makeJacobianVector3d(currentPV.position(), kinVertex->vertexState().position(), plab);
+	  vtxDistanceJac2d = makeJacobianVector2d(currentPV.position(), kinVertex->vertexState().position(), plab);
+          // -- get sign of distance
+	  const TVector3 p1(currentPV.position().x(), currentPV.position().y(), currentPV.position().z());
+	  const TVector3 p2(kinVertex->vertexState().position().x(), kinVertex->vertexState().position().y(), kinVertex->vertexState().position().z());
+	  vtxDistanceSign = plab.Dot(p2-p1) >= 0 ? 1 : -1;
 	  
   } else if (fVerbose > 0)
 	  cout << "==> HFSequentialVertexFit: No idea what distance to compute in TAnaVertex.fDxy and TAnaVertex.fD3d" << endl;
-  
+
   // -- set covariance matrix
   cov[0] = kinVertex->error().cxx();
   cov[1] = kinVertex->error().cyx();
@@ -324,7 +378,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   pCand->fPlab = plab;
   pCand->fMass = mass;
   pCand->fVtx = anaVtx;
-  pCand->fType = tree->particleID;
+  pCand->fType = tree->particleID();
 
   pCand->fMom = -1; // Mom gets linked later.
   pCand->fDau1 = -1; // Daughters get linked later
@@ -333,15 +387,45 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   pCand->fSig1 = gHFEvent->nSigTracks();
   pCand->fSig2 = pCand->fSig1 + allTreeTracks.size() - 1;
   
-  pCand->fMaxDoca = tree->maxDoca;
-  pCand->fMinDoca = tree->minDoca;
+  pCand->fMaxDoca = tree->maxDoca();
+  pCand->fMinDoca = tree->minDoca();
   
   pCand->fPvIdx = pvIx;
   pCand->fPvLip = pvImpParams.lip.value();
   pCand->fPvLipE = pvImpParams.lip.error();
   pCand->fPvTip = pvImpParams.tip.value();
   pCand->fPvTipE = pvImpParams.tip.error();
+  pCand->fPvLip2 = pvImpParams2nd.lip.value();
+  pCand->fPvLipE2 = pvImpParams2nd.lip.error();
   
+  // -- calculate lifetime
+  {
+    // TMath::Ccgs() is to convert from cm to s (speed of light in cgs system, CMS uses cm)
+    if (pCand->fPlab.Mag() > 0)
+    {
+	const double massOverC = tree->mass() / TMath::Ccgs();
+	// from 3d vertexing
+	pCand->fTau3d = anaVtx.fD3d / pCand->fPlab.Mag() * vtxDistanceSign * massOverC;
+	pCand->fTau3dE = TMath::Sqrt(ROOT::Math::Similarity(vtxDistanceCov, vtxDistanceJac3d)) * massOverC;
+	// from 2d vertexing
+	const double sinTheta = TMath::Sin(pCand->fPlab.Theta());
+	const double flightlength2d = sinTheta != 0 ? anaVtx.fDxy / sinTheta : 0;
+	pCand->fTauxy = flightlength2d / pCand->fPlab.Mag() * vtxDistanceSign * massOverC;
+	pCand->fTauxyE = TMath::Sqrt(ROOT::Math::Similarity(vtxDistanceCov, vtxDistanceJac2d)) * massOverC;
+    }
+    else
+    {
+	pCand->fTau3d = pCand->fTauxy = -99.;
+    }
+    // just for convenience extract the error from cov into const variables (will be optimized away by the compiler)
+    // covariance matrix has order (x,y,z,p_x,p_y,p_z,m)
+    // see RecoVertex/KinematicFitPrimitives/interface/KinematicParametersError.h
+    const double pxE = kinParticle->currentState().kinematicParametersError().matrix()(3,3);
+    const double pyE = kinParticle->currentState().kinematicParametersError().matrix()(4,4);
+    const double pzE = kinParticle->currentState().kinematicParametersError().matrix()(5,5);
+    pCand->fTau3dE = TMath::Sqrt(anaVtx.fD3dE*anaVtx.fD3dE + pxE*pxE + pyE*pyE + pzE*pzE ) / TMath::Ccgs();
+  }
+
   for (j = 0; j < allTreeTracks.size(); j++) {
     
     TransientTrack fitTrack = daughterParticles[(*kinParticleMap)[allTreeTracks[j].first]]->refittedTransientTrack();
@@ -472,3 +556,90 @@ double HFSequentialVertexFit::getMinDoca(vector<RefCountedKinematicParticle> &ki
 
   return minDoca;
 } // getMinDoca()
+
+// -------------------------------------------------------------
+HFSequentialVertexFit::cov33_t HFSequentialVertexFit::GlobalError2SMatrix_33(GlobalError m_in)
+{
+    cov33_t m_out;
+    for(int i=0; i!=3; i++)
+	for(int j=i; j!=3; j++)
+	{
+	    m_out(i,j) = m_in.matrix()(i+1,j+1);
+	}
+    return m_out;
+}
+
+HFSequentialVertexFit::cov99_t
+    HFSequentialVertexFit::makeCovarianceMatrix(const HFSequentialVertexFit::cov33_t cov_vtx1,
+						const HFSequentialVertexFit::cov77_t cov_vtx2)
+{
+    cov99_t cov;
+    cov.Place_at(cov_vtx1,0,0);
+    cov.Place_at(cov_vtx2.Sub<cov66_t>(0,0),3,3);
+    return cov;
+}
+
+// -------------------------------------------------------------
+HFSequentialVertexFit::jac9_t HFSequentialVertexFit::makeJacobianVector3d(const AlgebraicVector3 &vtx1, const AlgebraicVector3 &vtx2, const AlgebraicVector3 &momentum)
+{
+    HFSequentialVertexFit::jac9_t jac;
+    const double momentumMag = ROOT::Math::Mag(momentum);
+    const AlgebraicVector3 dist = vtx2 - vtx1;
+    const double distMag = ROOT::Math::Mag(dist);
+    const double factorPositionComponent = 1./(distMag*momentumMag);
+    const double factorMomentumComponent = 1./pow(momentumMag,3);
+    jac.Place_at(-dist*factorPositionComponent,0);
+    jac.Place_at( dist*factorPositionComponent,3);
+    jac.Place_at( momentum*factorMomentumComponent,6);
+    return jac;
+}
+
+HFSequentialVertexFit::jac9_t HFSequentialVertexFit::makeJacobianVector3d(const GlobalPoint &vtx1, const GlobalPoint &vtx2, const TVector3 &tv3momentum)
+{
+    return makeJacobianVector3d(AlgebraicVector3(vtx1.x(),vtx1.y(),vtx1.z()),
+			      AlgebraicVector3(vtx2.x(),vtx2.y(),vtx2.z()),
+			      AlgebraicVector3(tv3momentum.x(),tv3momentum.y(),tv3momentum.z()));
+}
+
+HFSequentialVertexFit::jac9_t HFSequentialVertexFit::makeJacobianVector3d(const ROOT::Math::PositionVector3D<ROOT::Math::Cartesian3D<double>, ROOT::Math::DefaultCoordinateSystemTag> &vtx1,
+	const GlobalPoint &vtx2, const TVector3 &tv3momentum)
+{
+    return makeJacobianVector3d(AlgebraicVector3(vtx1.X(),vtx1.Y(),vtx1.Z()),
+			      AlgebraicVector3(vtx2.x(),vtx2.y(),vtx2.z()),
+			      AlgebraicVector3(tv3momentum.x(),tv3momentum.y(),tv3momentum.z()));
+}
+
+// -------------------------------------------------------------
+HFSequentialVertexFit::jac9_t HFSequentialVertexFit::makeJacobianVector2d(const GlobalPoint &vtx1, const GlobalPoint &vtx2, const TVector3 &tv3momentum)
+{
+    return makeJacobianVector2d(AlgebraicVector3(vtx1.x(),vtx1.y(),vtx1.z()),
+			      AlgebraicVector3(vtx2.x(),vtx2.y(),vtx2.z()),
+			      AlgebraicVector3(tv3momentum.x(),tv3momentum.y(),tv3momentum.z()));
+}
+
+HFSequentialVertexFit::jac9_t HFSequentialVertexFit::makeJacobianVector2d(const ROOT::Math::PositionVector3D<ROOT::Math::Cartesian3D<double>, ROOT::Math::DefaultCoordinateSystemTag> &vtx1,
+	const GlobalPoint &vtx2, const TVector3 &tv3momentum)
+{
+    return makeJacobianVector2d(AlgebraicVector3(vtx1.X(),vtx1.Y(),vtx1.Z()),
+			      AlgebraicVector3(vtx2.x(),vtx2.y(),vtx2.z()),
+			      AlgebraicVector3(tv3momentum.x(),tv3momentum.y(),tv3momentum.z()));
+}
+
+
+HFSequentialVertexFit::jac9_t HFSequentialVertexFit::makeJacobianVector2d(const AlgebraicVector3 &vtx1, const AlgebraicVector3 &vtx2, const AlgebraicVector3 &momentum)
+{
+    HFSequentialVertexFit::jac9_t jac;
+    const double momentumMag = ROOT::Math::Mag(momentum);
+    const AlgebraicVector3 dist = vtx2 - vtx1;
+    const double distMag = ROOT::Math::Mag(dist);
+    const double factorPositionComponent = 1./(distMag*momentumMag);
+    const double factorMomentumComponent = 1./pow(momentumMag,3);
+    jac(0)=-dist(0)*factorPositionComponent;
+    jac(1)=-dist(1)*factorPositionComponent;
+    jac(3)= dist(0)*factorPositionComponent;
+    jac(4)= dist(1)*factorPositionComponent;
+    jac(6)= momentum(0)*factorMomentumComponent;
+    jac(7)= momentum(1)*factorMomentumComponent;
+    return jac;
+}
+

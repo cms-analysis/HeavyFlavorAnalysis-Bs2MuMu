@@ -704,10 +704,17 @@ bool lambdaReader::doCandFitStuff(const CheckedLbCand &clc)
 
     // ctau - written as dist/p*m as this is numerically more stable than using
     // the TLorentzVector::Gamma() functions to write beta*gamma
-    fctlb = tacCur->fVtx.fD3d / tacCur->fPlab.Mag() * MLAMBDA_B;
-    fctlbE = tacCur->fVtx.fD3dE / tacCur->fPlab.Mag() * MLAMBDA_B; // Ok, error not yet final. Will need error of |p|
-    fctl0 = tacLambda0->fVtx.fD3d / tacLambda0->fPlab.Mag() * MLAMBDA_0;
-    fctl0E = tacLambda0->fVtx.fD3dE / tacLambda0->fPlab.Mag() * MLAMBDA_0;
+    fct3dlb = tacCur->fTau3d; // tacCur->fVtx.fD3d / tacCur->fPlab.Mag() * MLAMBDA_B;
+    fct3dlbE = tacCur->fTau3dE; // tacCur->fVtx.fD3dE / tacCur->fPlab.Mag() * MLAMBDA_B; // Ok, error not yet final. Will need error of |p|
+    fct3dl0 = tacLambda0->fTau3d; // tacLambda0->fVtx.fD3d / tacLambda0->fPlab.Mag() * MLAMBDA_0;
+    fct3dl0E = tacLambda0->fTau3dE; // tacLambda0->fVtx.fD3dE / tacLambda0->fPlab.Mag() * MLAMBDA_0;
+    fctxylb = tacCur->fTauxy;
+    fctxylbE = tacCur->fTauxyE;
+    fctxyl0 = tacLambda0->fTauxy;
+    fctxyl0E = tacLambda0->fTauxyE;
+    //cout << "fctlb: " << fctlb << " calc: " << tacCur->fVtx.fD3d / tacCur->fPlab.Mag() * MLAMBDA_B
+    // << " fctl0: " << fctl0 << " cald: " << tacLambda0->fVtx.fD3d / tacLambda0->fPlab.Mag() * MLAMBDA_0 << endl;
+    // cout << "2d: lb: " << tacCur->fTauxy << " " << tacCur->fTauxy/fctlb << " l0: " << tacLambda0->fTauxy << " " << tacLambda0->fTauxy/fctl0<< endl;
 
     // vertex positions
     fvxlb = tacCur->fVtx.fPoint.x();
@@ -718,6 +725,12 @@ bool lambdaReader::doCandFitStuff(const CheckedLbCand &clc)
     fvyl0 = tacLambda0->fVtx.fPoint.y();
     fvzl0 = tacLambda0->fVtx.fPoint.z();
     fvrl0 = tacLambda0->fVtx.fPoint.XYvector().Mod();
+
+    // longitudinal I.P. w.r.t best and 2nd best PV
+    fPvLip = tacCur->fPvLip;
+    fPvLipE = tacCur->fPvLipE;
+    fPvLip2 = tacCur->fPvLip2;
+    fPvLipE2 = tacCur->fPvLipE2;
 
     // beta vector components
     fbtlbx=vecBetaL0.x();
@@ -1012,7 +1025,7 @@ void lambdaReader::doL1stuff()
 void lambdaReader::doHLTstuff()
 {
     fHLTqrk = fHLTqrkLS = false;
-    fHLTDMuOp = fHLTDMu0 = fHLTDMu3 = fHLTDMu5 = fHLTMu5TkMu0jp = false;
+    fHLTDMuOp = fHLTDMu0 = fHLTDMu3 = fHLTDMu5 = fHLTDMu3jp = fHLTMu5TkMu0jp = false;
     fHLTMu0TkMu0jp = fHLTMu0TkMu0jpNC = fHLTMu3TkMu0jp = fHLTMu3TkMu0jpNC = false;
     fHLTMu3t3jp = fHLTMu3t3jp2 = fHLTMu3t3jp3 = fHLTMu3t5jp = fHLTMu5t0jp = false;
     fHLTMu0jp = fHLTMu0jpT = fHLTMu3jp = fHLTMu3jpT = fHLTMu5jp = fHLTMu5jpT = false;
@@ -1033,6 +1046,8 @@ void lambdaReader::doHLTstuff()
 	    // Quarkonium triggers
 	    if ("HLT_DoubleMu0_Quarkonium_v1" == name)    fHLTqrk = true;
 	    if ("HLT_DoubleMu0_Quarkonium_LS_v1" == name) fHLTqrkLS = true;
+	    if ("HLT_DoubleMu3_Quarkonium_v1" == name) fHLTqrk = true;
+	    if ("HLT_DoubleMu3_Quarkonium_v2" == name) fHLTqrk = true;
 	    // DoubleMu triggers (usually prescaled)
 	    if ("HLT_DoubleMuOpen"       == name) fHLTDMuOp = true;
 	    if ("HLT_DoubleMu0"          == name) fHLTDMu0 = true;
@@ -1052,6 +1067,8 @@ void lambdaReader::doHLTstuff()
 	    if ("HLT_Mu3_Track5_Jpsi_v3" == name) fHLTMu3t5jp = true;
 	    if ("HLT_Mu5_Track0_Jpsi"    == name) fHLTMu5t0jp = true;
 	    if ("HLT_Mu5_Track0_Jpsi_v2" == name) fHLTMu5t0jp = true;
+	    if ("HLT_DoubleMu3_Jpsi_v1" == name) fHLTDMu3jp = true;
+	    if ("HLT_DoubleMu3_Jpsi_v2" == name) fHLTDMu3jp = true;
 	    // Jpsi with OST
 	    if ("HLT_Mu0_TkMu0_OST_Jpsi" == name) fHLTMu0jp = true;
 	    if ("HLT_Mu0_TkMu0_OST_Jpsi_Tight_v1" == name) fHLTMu0jpT1 = true;
@@ -1079,6 +1096,8 @@ void lambdaReader::doHLTstuff()
 		    // The second range covers Run2010B with the new set of triggers, esp. when
 		    // HLT_DoubleMu0 was prescaled and replaced by HLT_DoubleMu0_Quarkonium_v1
 		    if (fRun >= 147196 && fRun <= 149294) fHLTok = fHLTqrk;
+		    // This covers Run2011A, running at time of coding
+		    if (fRun >= 160405 ) fHLTok = fHLTqrk;
 		}
 		if(CUTuseHLTMu0TkMu0)
 		{
@@ -1087,6 +1106,7 @@ void lambdaReader::doHLTstuff()
 		    else if (fRun >= 147196 && fRun <= 148058) fHLTok = fHLTMu0jp;
 		    else if (fRun >= 148819 && fRun <= 149182) fHLTok = fHLTMu0jpT2;
 		    else if (fRun >= 149291 && fRun <= 149294) fHLTok = fHLTMu0jpT3;
+		    else if (fRun >= 160405) fHLTok = fHLTDMu3jp;
 		}
 	    }
 	    else
@@ -1123,7 +1143,9 @@ void lambdaReader::doTriggerMatching()
 	tto = fpEvt->getTrgObj(i);
 	if (fVerbose > 5) cout << "i: " << i << " ";
 	if (fVerbose > 5) tto->dump();
-	if (tto->fLabel == "hltMu0TkMuJpsiTrackMassFiltered:HLT::")
+	//cout << tto->fLabel << tto->fP.DeltaR(tlvMu1) << ":" << tto->fP.DeltaR(tlvMu2) << endl;
+	if ( (fRun <  160405 && tto->fLabel == "hltMu0TkMuJpsiTrackMassFiltered:HLT::")
+	  || (fRun >= 160405 && tto->fLabel == "hltDoubleMu3QuarkoniumL3Filtered:HLT::"))
 	{
 	    const double deltaR1 = tto->fP.DeltaR(tlvMu1);
 	    const double deltaR2 = tto->fP.DeltaR(tlvMu2);
@@ -1416,10 +1438,19 @@ void lambdaReader::bookReducedTree()
     fTree->Branch("dxyEl0",  &fdxyEl0,  "dxyEl0/D");
     fTree->Branch("dxyEjp",  &fdxyEjp,  "dxyEjp/D");
 
-    fTree->Branch("ctlb",    &fctlb,    "ctlb/D");
-    fTree->Branch("ctlbE",   &fctlbE,   "ctlbE/D");
-    fTree->Branch("ctl0",    &fctl0,    "ctl0/D");
-    fTree->Branch("ctl0E",   &fctl0E,   "ctl0E/D");
+    fTree->Branch("ct3dlb",    &fct3dlb,    "ct3dlb/D");
+    fTree->Branch("ct3dlbE",   &fct3dlbE,   "ct3dlbE/D");
+    fTree->Branch("ct3dl0",    &fct3dl0,    "ct3dl0/D");
+    fTree->Branch("ct3dl0E",   &fct3dl0E,   "ct3dl0E/D");
+    fTree->Branch("ctxylb",    &fctxylb,    "ctxylb/D");
+    fTree->Branch("ctxylbE",   &fctxylbE,   "ctxylbE/D");
+    fTree->Branch("ctxyl0",    &fctxyl0,    "ctxyl0/D");
+    fTree->Branch("ctxyl0E",   &fctxyl0E,   "ctxyl0E/D");
+
+    fTree->Branch("PvLip",   &fPvLip,   "PvLip/D");
+    fTree->Branch("PvLipE",  &fPvLipE,  "PvLipE/D");
+    fTree->Branch("PvLip2",  &fPvLip2,  "PvLip2/D");
+    fTree->Branch("PvLipE2", &fPvLipE2, "PvLipE2/D");
 
     fTree->Branch("btlbx",   &fbtlbx,   "btlbx/D");
     fTree->Branch("btlby",   &fbtlby,   "btlby/D");
@@ -1494,6 +1525,7 @@ void lambdaReader::bookReducedTree()
     fTree->Branch("HLTDMu0", &fHLTDMu0, "HLTDMu0/O");
     fTree->Branch("HLTDMu3", &fHLTDMu3, "HLTDMu3/O");
     fTree->Branch("HLTDMu5", &fHLTDMu5, "HLTDMu5/O");
+    fTree->Branch("HLTDMu3jp", &fHLTDMu3jp, "HLTDMu3jp/O");
     fTree->Branch("HLTMu0TkMu0jp",   &fHLTMu0TkMu0jp,   "HLTMu0TkMu0jp/O");
     fTree->Branch("HLTMu0TkMu0jpNC", &fHLTMu0TkMu0jpNC, "HLTMu0TkMu0jpNC/O");
     fTree->Branch("HLTMu3TkMu0jp",   &fHLTMu3TkMu0jp,   "HLTMu3TkMu0jp/O");

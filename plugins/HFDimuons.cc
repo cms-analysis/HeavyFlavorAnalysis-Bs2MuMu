@@ -196,7 +196,7 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup)
       }
 
       // -- Vertexing, with Kinematic Particles
-      HFDecayTree theTree(301313);
+      HFDecayTree theTree(301313, true, 0, false); // TODO adjust mass to meaningful value
       theTree.addTrack(iMuon1,13);
       theTree.addTrack(iMuon2,13);
       theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
