@@ -17,7 +17,7 @@ HFLambdasDump = cms.EDAnalyzer(
     LbWindow           = cms.untracked.double(0.8),
     deltaR             = cms.untracked.double(99.),
     maxDoca            = cms.untracked.double(0.5),
-    pAngle	       = cms.untracked.double(0.1),
+    pAngle	       = cms.untracked.double(0.02),
     useV0              = cms.untracked.bool(False)
 )
 
@@ -37,7 +37,7 @@ HFLambdasDumpV0 = cms.EDAnalyzer(
     LbWindow           = cms.untracked.double(0.8),
     deltaR             = cms.untracked.double(99.),
     maxDoca            = cms.untracked.double(0.5),
-    pAngle	       = cms.untracked.double(0.1),
+    pAngle	       = cms.untracked.double(0.02),
     useV0              = cms.untracked.bool(True)
 )
 
