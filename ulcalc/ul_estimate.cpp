@@ -46,8 +46,8 @@ RooWorkspace *build_model_nchannel(map<bmm_param,double> *bsmm, map<bmm_param,do
 	add_channels(bdmm,&channels);
 	
 	// make sure we cover the entire physical range
-	wspace->factory("mu_s[0,0,50]");
-	wspace->factory("mu_d[0,0,1000]");
+	wspace->factory("mu_s[1,0,1000]");	// initialize to standard model
+	wspace->factory("mu_d[1,0,1000]");	// initialize to standard model
 	
 	// Create channel specific variables
 	for (chan = channels.begin(); chan != channels.end(); ++chan) {
@@ -137,28 +137,6 @@ RooWorkspace *build_model_nchannel(map<bmm_param,double> *bsmm, map<bmm_param,do
 	return wspace;
 } // build_model_nchannel()
 
-RooDataSet *build_data_nchannel(RooWorkspace *wspace, std::map<bmm_param,double> *bsmm, std::map<bmm_param,double> *bdmm)
-{
-	RooArgSet vars;
-	RooDataSet *data;
-	set<int> channels;
-	
-	add_channels(bsmm, &channels);
-	add_channels(bdmm, &channels);
-	vars.addClone(*wspace->set("obs"));
-	
-	for (set<int>::const_iterator it = channels.begin(); it != channels.end(); ++it) {
-		((RooRealVar&)vars[Form("NbObs_%d",*it)]).setVal((*bsmm)[make_pair(kObsBkg_bmm, *it)]);
-		((RooRealVar&)vars[Form("NsObs_%d",*it)]).setVal((*bsmm)[make_pair(kObsB_bmm, *it)]);
-		((RooRealVar&)vars[Form("NdObs_%d",*it)]).setVal((*bdmm)[make_pair(kObsB_bmm, *it)]);
-	}
-	
-	data = new RooDataSet("data","",vars);
-	data->add(vars);
-	
-	return data;
-} // build_data_nchannel()
-
 RooDataSet *build_data(RooWorkspace *wspace, double nsObs, double ndObs, double nbObs)
 {
 	RooRealVar *ns = wspace->var("NsObs");
@@ -201,7 +179,7 @@ RooDataSet *build_data_split(RooWorkspace *wspace, double nsObsB, double nsObsE,
  *	( Pss	Psd ) (mu_s NuS) + nu_b	(TauS) = (NsObs)
  *	( Pds	Pdd ) (mu_d NuD)		(TauD) = (NdObs)
  */
-void estimate_start_values(RooWorkspace *wspace, RooDataSet *data, set<int> channels)
+void estimate_start_values(RooWorkspace *wspace, RooDataSet *data, set<int> *channels)
 {
 	double p[2][2];
 	double tau[2];
@@ -212,7 +190,7 @@ void estimate_start_values(RooWorkspace *wspace, RooDataSet *data, set<int> chan
 	RooStats::ModelConfig *splusbConfig = dynamic_cast<RooStats::ModelConfig*> (wspace->obj("splusbConfig"));
 	RooStats::ModelConfig *bConfig = dynamic_cast<RooStats::ModelConfig*> (wspace->obj("bConfig"));
 	
-	for (set<int>::const_iterator ch = channels.begin(); ch != channels.end(); ++ch) {
+	for (set<int>::const_iterator ch = channels->begin(); ch != channels->end(); ++ch) {
 		
 		// set the constants
 		p[0][0] = wspace->var(Form("Pss_%d",*ch))->getVal();
@@ -284,7 +262,7 @@ RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, double
 	return psInterval;
 } // est_ul()
 
-RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, set<int> channels, double cLevel, double *ulLimit, double *cpuUsed)
+RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, double *ulLimit, double *cpuUsed)
 {
 	using namespace RooStats;
 	BayesianCalculator bc(*data,*(dynamic_cast<ModelConfig*>(wspace->obj("splusbConfig"))));
