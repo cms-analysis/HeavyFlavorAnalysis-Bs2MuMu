@@ -166,10 +166,10 @@ public:
   // -- Analysis distributions
   AnalysisDistribution   *fpAllEvents, *fpHLT, *fpPvZ,  
     *fpTracksQual, *fpTracksPt,  *fpTracksEta, 
-    *fpMuonsID, *fpMuonsPt, *fpMuonsEta, 
+    *fpMuonsID, *fpMuonsPt, *fpMuonsEta, *fpMuon1Pt, *fpMuon2Pt, *fpMuon1Eta, *fpMuon2Eta,
     *fpMpsi,
     *fpQ, *fpPt, *fpEta, 
-    *fpCosA, *fpCosA0, 
+    *fpCosA, *fpCosA0, *fpAlpha,
     *fpIso, *fpIso1, 
     *fpDoca, *fpIP,
     *fpChi2, *fpChi2Dof, *fpProb, 

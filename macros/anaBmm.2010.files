@@ -1,7 +1,6 @@
 # ----------------------------------------------------------------------
 # signal data and MC
 type=sg,default dset=data lumi=39.4 file=/scratch/ursl/default/signalData2010.root
-type=sg,2011    dset=data lumi=20.0 file=/scratch/ursl/default/signalData2011.root
 type=sg,default dset=mc lumi=550000 file=/scratch/ursl/default/signalMC2010.root
 #type=sg         dset=mc lumi=10000 file=/scratch/ursl/default/signal-qcd2mu.root
 #type=sg         dset=mc lumi=10000 file=/scratch/ursl/default/signal-ppMuX.root
@@ -9,11 +8,9 @@ type=sg,default dset=mc lumi=550000 file=/scratch/ursl/default/signalMC2010.root
 # ----------------------------------------------------------------------
 # control sample data and MC
 type=cs,default dset=data lumi=39.4 file=/scratch/ursl/default/Bs2JpsiPhiData2010.root
-type=cs,2011    dset=data lumi=20.0 file=/scratch/ursl/default/Bs2JpsiPhiData2011.root
 type=cs,default dset=mc lumi=10000 file=/scratch/ursl/default/Bs2JpsiPhiMC2010.root
 # ----------------------------------------------------------------------
 # normalization data and MC
 type=no,default dset=data lumi=39.4 file=/scratch/ursl/default/normData2010.root
-type=no,2011    dset=data lumi=20.0 file=/scratch/ursl/default/normData2011.root
 type=no,default dset=mc lumi=10000 file=/scratch/ursl/default/normMC2010.root
 # ----------------------------------------------------------------------

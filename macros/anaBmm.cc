@@ -157,7 +157,7 @@ void anaBmm::init(const char *files, const char *dir, int mode) {
 
   fDirectory = dir; 
   fSuffix    = dir; 
-  if (fMode > 0)  fSuffix += Form("%d", fMode); 
+  if (fMode > 0)  fSuffix += Form("-%d", fMode); 
   cout << "--> Dumping output into " << fDirectory << endl;
   fNumbersFileName = fDirectory + "/anaBmm." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
@@ -191,20 +191,58 @@ void anaBmm::loadFiles(const char *files) {
     string sfile = sbuffer.substr(m2+5); 
     
     if (string::npos != sdset.find("data")) {
-      if (string::npos != stype.find("default") && string::npos != stype.find("sg")) fSgData = fNData;
-      if (string::npos != stype.find("default") && string::npos != stype.find("no")) fNoData = fNData;
-      if (string::npos != stype.find("default") && string::npos != stype.find("cs")) fCsData = fNData;
       fpData[fNData] = loadFile(sfile, stype); 
       fDataLumi[fNData] = atof(slumi.c_str()); 
       cout << "open data " << sfile << " as " << stype << " with lumi = " << fDataLumi[fNData] << endl;
+      if (string::npos != stype.find("default") && string::npos != stype.find("sg")) {
+	fSgData = fNData;
+	fF.insert(make_pair("SgData", fpData[fNData])); 
+	fName.insert(make_pair("SgData", "#mu^{+}#mu^{-} (2010)")); 
+      }
+      if (string::npos != stype.find("2011") && string::npos != stype.find("sg")) {
+	fF.insert(make_pair("SgData2011", fpData[fNData])); 
+	fName.insert(make_pair("SgData2011", "#mu^{+}#mu^{-} (2011)")); 
+      }
+
+      if (string::npos != stype.find("default") && string::npos != stype.find("no")) {
+	fNoData = fNData;
+	fF.insert(make_pair("NoData", fpData[fNData])); 
+	fName.insert(make_pair("NoData", "#mu^{+}#mu^{-}K^{+} (2010)")); 
+      }
+      if (string::npos != stype.find("2011") && string::npos != stype.find("no")) {
+	fF.insert(make_pair("NoData2011", fpData[fNData])); 
+	fName.insert(make_pair("NoData2011", "#mu^{+}#mu^{-}K^{+} (2011)")); 
+      }
+
+      if (string::npos != stype.find("default") && string::npos != stype.find("cs")) {
+	fCsData = fNData;
+	fF.insert(make_pair("CsData", fpData[fCsData])); 
+	fName.insert(make_pair("CsData", "#mu^{+}#mu^{-}K^{+}K^{-} (2010)")); 
+      }
+      if (string::npos != stype.find("2011") && string::npos != stype.find("cs")) {
+	fF.insert(make_pair("CsData2011", fpData[fNData])); 
+	fName.insert(make_pair("CsData2011", "#mu^{+}#mu^{-}K^{+}K^{-} (2011)")); 
+      }
       ++fNData;
     } else {
-      if (string::npos != stype.find("default") && string::npos != stype.find("sg")) fSgMc = fNMc;
-      if (string::npos != stype.find("default") && string::npos != stype.find("no")) fNoMc = fNMc;
-      if (string::npos != stype.find("default") && string::npos != stype.find("cs")) fCsMc = fNMc;
       fpMc[fNMc] = loadFile(sfile, stype); 
       fMcLumi[fNMc] = atof(slumi.c_str()); 
       cout << "open MC " << sfile << " as " << stype << " with lumi = " << fMcLumi[fNMc] << endl;
+      if (string::npos != stype.find("default") && string::npos != stype.find("sg")) {
+	fSgMc = fNMc;
+	fF.insert(make_pair("SgMc", fpMc[fSgMc])); 
+	fName.insert(make_pair("SgMc", "#mu^{+}#mu^{-} (MC)")); 
+      }
+      if (string::npos != stype.find("default") && string::npos != stype.find("no")) {
+	fNoMc = fNMc;
+	fF.insert(make_pair("NoMc", fpMc[fNoMc])); 
+	fName.insert(make_pair("NoMc", "#mu^{+}#mu^{-}K^{+} (MC)")); 
+      }
+      if (string::npos != stype.find("default") && string::npos != stype.find("cs")) {
+	fCsMc = fNMc;
+	fF.insert(make_pair("CsMc", fpMc[fCsMc])); 
+	fName.insert(make_pair("CsMc", "#mu^{+}#mu^{-}K^{+}K^{-} (MC)")); 
+      }	
       ++fNMc;
     }
   }
@@ -220,7 +258,18 @@ TFile* anaBmm::loadFile(string file, string type) {
 
 // ----------------------------------------------------------------------
 void anaBmm::makeAll(int channel) {
-  fpMc[fSgMc]->cd();
+
+  
+  sbsDistributionOverlay("NoData", "NoMc", "Ao");
+  sbsDistributionOverlay("NoData", "NoData2011", "Ao");
+  
+  sbsDistributionOverlay("CsData", "CsMc", "Ao");
+  //??  sbsDistributionOverlay("CsData", "CsData2011", "Ao");
+  
+  sbsDistributionOverlay("NoData", "CsData", "Ao");
+  sbsDistributionOverlay("NoMc",   "CsMc", "Ao");
+
+  fF["SgMc"]->cd();
   dumpCutNames();
 
   allEffTables();
@@ -261,41 +310,61 @@ void anaBmm::dumpCutNames() {
 // ----------------------------------------------------------------------
 void anaBmm::allEffTables() {
   // -- BMM
-  fpMc[fSgMc]->cd(); 
   effTable("SgMc");
-  fpData[fSgData]->cd(); 
   effTable("SgData");
 
   // -- B+
-  fpData[fNoData]->cd(); 
   effTable("NoData");
-  fpMc[fNoMc]->cd(); 
+  effTable("NoData2011");
   effTable("NoMc");
 
   // -- Bs2JpsiPhi
-  fpData[fCsData]->cd(); 
   effTable("CsData");
-  fpMc[fCsMc]->cd(); 
+  effTable("CsData2011");
   effTable("CsMc");
 }
 
+
+// ----------------------------------------------------------------------
+void anaBmm::testEff(const char *additionalCuts, const char *basicCuts) {
+  
+  //  TH1D *h1 = new TH1D("h1", "h1", 40, 4.8, 6.0); 
+
+  TTree *td = (TTree*)(fpMc[fSgMc]->Get("events"));
+  double n2 = td->Draw("m", Form("%s", basicCuts));
+  double n1 = td->Draw("m", Form("%s&&%s", basicCuts, additionalCuts));
+  
+  cout << additionalCuts << endl;
+  cout << n1 << "/" << n2 << " = " << n1/n2 << endl;
+
+}
+
+
 // ----------------------------------------------------------------------
 void anaBmm::effTable(string smode) {
+  gStyle->SetOptTitle(1); 
+  gStyle->SetOptFit(1112); 
+  tl->SetTextSize(0.05); 
+  fF[smode]->cd();
   TH1D *h = (TH1D*)gFile->Get("analysisDistributions"); 
   if (0 == h) {
     cout << "no histogram analysisDistributions found, returning" << endl;
     return;
   }
 
-  double massLo(5.1), massHi(5.6);
+  double massLo(5.1), massHi(5.6), massPeak(-1.), massSigma(-1.);
   if (string::npos != smode.find("No")) {
     massLo = 5.0; 
     massHi = 5.5;
+    massPeak = 5.28;
+    massSigma = 0.030;
   }
 
   if (string::npos != smode.find("Cs")) {
     massLo = 5.15; 
     massHi = 5.6;
+    massPeak = 5.37;
+    massSigma = 0.030;
   }
   
   ofstream OUT(fNumbersFileName.c_str(), ios::app);
@@ -322,18 +391,25 @@ void anaBmm::effTable(string smode) {
   }
 
   string cut, pdfname;
-  //  double nprev(0.), nprevE(0.), relEff(0.), relEffE(0.), cumEff(0.), cumEffE(0.); 
   double n(0.), nE(0.); 
   double norm(0.),  normE(0.), eff(0.), effE(0.);
 
   // -- normalization
   AnalysisDistribution *an = new AnalysisDistribution("docatrk");
-  an->fMassLo = massLo; 
-  an->fMassHi = massHi; 
+  an->fMassLo    = massLo; 
+  an->fMassHi    = massHi; 
+  an->fMassPeak  = massPeak; 
+  an->fMassSigma = massSigma; 
   an->hMassCu->SetMinimum(0.);
   norm = an->fitMass(an->hMassCu, normE, mode); 
   OUT << Form("%s", (formatTex(norm, fSuffix+":"+cut+"Norm", smode)).c_str()) << endl;
   OUT << Form("%s", (formatTex(normE, fSuffix+":"+cut+"NormE", smode)).c_str()) << endl;
+  
+  tl->DrawLatex(0.22, 0.75, Form("%4.2f+/-%4.2f", norm, normE)); 
+  pdfname = Form("%s/%s_%s_hMassNorm.pdf", fDirectory.c_str(), fSuffix.c_str(), smode.c_str());
+  cout << "AD for " << cut << " results in " << pdfname << endl;
+  c0->SaveAs(pdfname.c_str(), "Portrait");
+
   delete an;
   
   for (int i = 1; i < h->GetNbinsX(); ++i) {
@@ -345,14 +421,19 @@ void anaBmm::effTable(string smode) {
       break;
     }
     pdfname = Form("%s/%s_%s.pdf", fDirectory.c_str(), smode.c_str(), cut.c_str());
-    cout << "AD for " << cut << " results in " << pdfname << endl;
     AnalysisDistribution *a = new AnalysisDistribution(cut.c_str());
-    a->fMassLo = massLo; 
-    a->fMassHi = massHi; 
-    //    a.hMassCu->SetMinimum(0.);
-    //    n = a.fitMass(a.hMassCu, nE, mode); 
+    a->fMassLo    = massLo; 
+    a->fMassHi    = massHi; 
+    a->fMassPeak  = massPeak; 
+    a->fMassSigma = massSigma; 
     a->hMassAo->SetMinimum(0.);
-    n = a->fitMass(a->hMassAo, nE, mode); 
+
+    n    = a->fitMass(a->hMassAo, nE, mode); 
+    tl->DrawLatex(0.22, 0.75, Form("%4.2f+/-%4.2f", n, nE)); 
+    pdfname = Form("%s/%s_%s_%s_hMassAo.pdf", fDirectory.c_str(), fSuffix.c_str(), smode.c_str(), cut.c_str());
+    cout << "AD for " << cut << " results in " << pdfname << endl;
+    c0->SaveAs(pdfname.c_str(), "Portrait");
+
     delete a; 
 
     if ((string::npos != cut.find("tracks")) || (string::npos != cut.find("muons"))) {
@@ -360,16 +441,9 @@ void anaBmm::effTable(string smode) {
       nE *=0.5; 
     }
 
-    //     if ("hlt" == cut) {
-    //       cout << "initialize normalization numbers" << endl;
-    //       norm  = n; 
-    //       normE = nE; 
-    //       nprev = norm; 
-    //       nprevE= normE; 
-    //     }
-
     if (nE < normE) nE = normE;
     eff    = norm/n;
+    if (eff > 1.0) eff = 1.0; 
     effE   = dEff(norm, normE, n, nE); 
 
     //     relEff = n/nprev;
@@ -382,9 +456,6 @@ void anaBmm::effTable(string smode) {
       // 	 << " rel eff = " << relEff << "+/-" << relEffE
       // 	 << " cum eff = " << cumEff << "+/-" << cumEffE
 	 << endl;
-    //    pdfname = Form("%s/%s_%s_%s_hMassCu.pdf", fDirectory.c_str(), fSuffix.c_str(), smode.c_str(), cut.c_str());
-    pdfname = Form("%s/%s_%s_%s_hMassAo.pdf", fDirectory.c_str(), fSuffix.c_str(), smode.c_str(), cut.c_str());
-    c0->SaveAs(pdfname.c_str(), "Portrait");
 
     OUT << Form("%s", (formatTex(n, fSuffix+":"+cut+"N", smode)).c_str()) << endl;
     OUT << Form("%s", (formatTex(nE, fSuffix+":"+cut+"NE", smode)).c_str()) << endl;
@@ -399,6 +470,156 @@ void anaBmm::effTable(string smode) {
     //     nprevE= nE; 
   }
 }
+
+
+// ----------------------------------------------------------------------
+void anaBmm::sbsDistributionOverlay(std::string file1, std::string file2, const char *selection) {
+
+  gStyle->SetOptTitle(0); 
+  gStyle->SetOptStat(0); 
+  gStyle->SetOptFit(0); 
+
+  char option1[100], option2[100],  loption1[100], loption2[100]; 
+  int color1(1), fill1(1000), color2(1), fill2(1000), marker1(20), marker2(25); 
+
+  if (string::npos != file1.find("No")) {
+    color1 = kBlue; 
+    fill1  = 3004; 
+  }
+  if (string::npos != file2.find("No")) {
+    color2 = kBlue; 
+    fill2  = 3004; 
+  }
+  if (string::npos != file1.find("Cs")) {
+    color1 = kRed; 
+    fill1  = 3005; 
+  }
+  if (string::npos != file2.find("Cs")) {
+    color2 = kRed; 
+    fill2  = 3005; 
+  }
+
+  // -- now fix overlays of two data files
+  sprintf(option1, "e");
+  sprintf(loption1, "p");
+
+  sprintf(option2,  "hist");
+  sprintf(loption2, "f");
+
+  if (string::npos != file2.find("Data")) {
+    sprintf(option1, "hist"); 
+    sprintf(loption1, "f");
+    sprintf(option2, "e"); 
+    sprintf(loption2, "p");
+    fill2   = 0; 
+    color2  = kBlack; 
+    marker2 = 21; 
+  }
+
+  if (string::npos != file1.find("Mc")) {
+    sprintf(option1, "hist"); 
+    sprintf(loption1, "f");
+    sprintf(loption2, "p");
+    fill2   = 0; 
+    color2  = kBlack; 
+    marker2 = 25; 
+  }
+
+ 
+  ofstream OUT("testUL.txt", ios::app);
+
+  fF[file1]->cd(); 
+  TH1D *h = (TH1D*)gFile->Get("analysisDistributions"); 
+  if (0 == h) {
+    cout << "no histogram analysisDistributions found, returning" << endl;
+    return;
+  }
+
+  TH1D *h1, *h2;
+  AnalysisDistribution a("allevents"); 
+
+  vector<string> skipList; 
+  skipList.push_back("mpsi"); 
+  skipList.push_back("q"); 
+  skipList.push_back("allevents"); 
+  skipList.push_back("muonsid"); 
+  skipList.push_back("tracksqual"); 
+  skipList.push_back("hlt"); 
+  skipList.push_back("allevents"); 
+
+
+  vector<string> nolegendList; 
+  nolegendList.push_back("muonseta"); 
+  nolegendList.push_back("muon1eta"); 
+  nolegendList.push_back("muon2eta"); 
+  nolegendList.push_back("trackseta"); 
+  nolegendList.push_back("zpv"); 
+  nolegendList.push_back("eta"); 
+  nolegendList.push_back("ip1"); 
+  nolegendList.push_back("ip2"); 
+
+  vector<string> leftList; 
+  leftList.push_back("iso"); 
+  leftList.push_back("iso1"); 
+  leftList.push_back("cosa"); 
+  leftList.push_back("cosa0"); 
+
+  TCanvas *c1;
+  string cut, pdfname; 
+  for (int i = 1; i < h->GetNbinsX(); ++i) {
+    cut = string(h->GetXaxis()->GetBinLabel(i)); 
+    
+    if (skipList.end() != find(skipList.begin(), skipList.end(), cut)) continue;
+    
+    if (cut == string("")) {
+      cout << "empty string found, break ..." << endl;
+      OUT.close();
+      break;
+    }
+    pdfname = Form("%s/%s_%s-%s_sbs_%s_%s.pdf", fDirectory.c_str(), fSuffix.c_str(),
+		   file1.c_str(), file2.c_str(), cut.c_str(), selection);
+  
+    fF[file1]->cd(); 
+    h1 = a.sbsDistribution(cut.c_str(), selection);
+    c1 = (TCanvas*)gROOT->FindObject("c1"); 
+    if (c1) c1->SaveAs(Form("%s/tmp/%s_sbs_%s_%s.pdf", fDirectory.c_str(), file1.c_str(), cut.c_str(), selection));
+    
+    fF[file2]->cd(); 
+    h2 = a.sbsDistribution(cut.c_str(), selection) ;
+    c1 = (TCanvas*)gROOT->FindObject("c1"); 
+    if (c1) c1->SaveAs(Form("%s/tmp/%s_sbs_%s_%s.pdf", fDirectory.c_str(), file2.c_str(), cut.c_str(), selection));
+
+    if (h2->GetSumOfWeights() > 0) h2->Scale(h1->GetSumOfWeights()/h2->GetSumOfWeights());
+
+    c0->cd(); 
+    c0->Clear(); 
+    h1->SetMinimum(0);
+    double dmax = (h1->GetMaximum() > h2->GetMaximum()? 1.1*h1->GetMaximum(): 1.1*h2->GetMaximum()); 
+    h1->SetMaximum(dmax); 
+    setHist(h1, color1, marker1, 1.5); 
+    setFilledHist(h1, color1, color1, fill1); 
+    h1->SetTitle("");
+    h1->Draw(option1);
+
+    setHist(h2, color2, marker2, 1.5); 
+    setFilledHist(h2, color2, color2, fill2); 
+    h2->Draw(Form("same%s", option2));
+
+    if (nolegendList.end() != find(nolegendList.begin(), nolegendList.end(), cut)) {
+      cout << "++++++++++++++++++++++" << endl;
+    } else {
+      if (leftList.end() != find(leftList.begin(), leftList.end(), cut)) {
+	newLegend(0.25, 0.7, 0.50, 0.85); 
+      } else {
+	newLegend(0.55, 0.7, 0.80, 0.85); 
+      }
+      legg->AddEntry(h1, fName[file1].c_str(), loption1); 
+      legg->AddEntry(h2, fName[file2].c_str(), loption2); 
+      legg->Draw(); 
+    }
+    c0->SaveAs(pdfname.c_str()); 
+  }
+} 
 
 
 // ----------------------------------------------------------------------
@@ -1357,4 +1578,15 @@ void anaBmm::printNumbers(numbers &a) {
 
   bin = 19; 
   hn->GetXaxis()->SetBinLabel(bin, "effTot"); hn->SetBinContent(bin, a.effTot);  
+}
+
+
+// ----------------------------------------------------------------------
+void anaBmm::newLegend(double x1, double y1, double x2, double y2) {
+  legg = new TLegend(x1, y1, x2, y2);
+  legg->SetFillStyle(0); 
+  legg->SetBorderSize(0); 
+  legg->SetTextSize(0.04);  
+  legg->SetFillColor(0); 
+  legg->SetTextFont(42); 
 }

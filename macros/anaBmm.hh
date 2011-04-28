@@ -24,6 +24,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <map>
 
 #include "initFunc.hh"
 
@@ -46,7 +47,7 @@ class anaBmm: public TObject {
 
 public:
 
-  anaBmm(const char *files, const char *dir = ".", int mode = 0);
+  anaBmm(const char *files="anaBmm.default.files", const char *dir = "default", int mode = 11);
   ~anaBmm();
 
   // -- initialization and setup
@@ -58,36 +59,46 @@ public:
   // -- main methods
   // --------------
   void makeAll(int channels = 3);
-  void dumpCutNames();
-  void allEffTables();
+
+  void acceptanceAndPreselection(numbers &a);
+
   void computeNormUL();
   void computeCsBF();
+
+  void allEffTables();
   void effTable(std::string mode);
+
+  void sbsDistributionOverlay(std::string file1, std::string file2, const char *selection="Ao"); 
+
   void breco(TH1D *h); 
-  void acceptanceAndPreselection(numbers &a);
   void effTree(int mode);
   TH1* loopTree(int mode);
 
   void plotVar(const char *plotstring, const char *cuts, const char *options = "");
   void testUL(const char *cuts);
+  void testEff(const char *additionalCuts, 
+	       const char *basicCuts="gmuid&&hlt&&gtqual&&m1pt>3&&m2pt>2.&&acos(cosa)<0.04&&iso1>0.7&&fls3d>13&&chi2<1.5&&pt>4");
   void optimizeCut(const char *cut, double lo, double hi, const char *otherCuts); 
   void optimizeUL(int nruns = 10); 
+
   void normYield(TH1 *h, int mode, double lo = 5.15, double hi=5.5);
   void csYield(TH1 *h, int mode, double lo = 5.25, double hi=5.6);
   void bgBlind(TH1 *h, int mode = 2, double lo = 4.5, double hi = 6.5); 
-  double barlow(int nobs, double bg = 0., double bgE = 0., double sE = 0.);
-  void rolkeM3();
-  void rolkeM3(int x, double bm, double em, double sde, double sdb);
-  void printNumbers(numbers &a);
-
 
   // -- Utilities and helper methods
   // -------------------------------
+  void dumpCutNames();
   void setErrors(TH1D *h);
   std::string formatTex(double n, std::string name, std::string tag);
   void replaceAll(std::string &s, std::string a, std::string b);
   int  wait();
   void makeCanvas(int i = 3);
+  void newLegend(double x1, double y1, double x2, double y2);
+
+  double barlow(int nobs, double bg = 0., double bgE = 0., double sE = 0.);
+  void rolkeM3();
+  void rolkeM3(int x, double bm, double em, double sde, double sdb);
+  void printNumbers(numbers &a);
 
   // -- Files for Signal and Normalization modes in data and MC
 #define MAXFILES 20
@@ -127,6 +138,8 @@ public:
   std::string fSample; 
   std::string fSuffix; 
 
+  std::map<std::string, TFile*> fF; 
+  std::map<std::string, std::string> fName; 
 
   initFunc  *fpFunc;
   TRolke    *fpRolke;

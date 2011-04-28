@@ -1,7 +1,7 @@
 # boxes ...
+BGLBOXMIN         5.10
+BGLBOXMAX         5.20
 SIGBOXMIN         5.27
 SIGBOXMAX         5.47
-BGLBOXMIN         4.80
-BGLBOXMAX         5.20
 BGHBOXMIN         5.50
-BGHBOXMAX         6.00
+BGHBOXMAX         5.60

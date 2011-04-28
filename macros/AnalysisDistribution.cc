@@ -6,9 +6,14 @@
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/util.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/functions.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
+#include "initFunc.hh"
 
 #include "TMath.h"
 #include "TDirectory.h"
+#include "TStyle.h"
+#include "TCanvas.h"
+#include "TFitResultPtr.h"
+#include "TFitResult.h"
 
 ClassImp(AnalysisDistribution)
 
@@ -33,24 +38,29 @@ double f_epaG(double *x, double *par) {
 // ----------------------------------------------------------------------
 // expo and double Gauss 
 double f_ea2G(double *x, double *par) {
-  //   par[0] = area of gaussian
-  //   par[1] = mean of gaussian
-  //   par[2] = sigma of gaussian
-  //   par[3] = area of gaussian 2
-  //   par[4] = mean of gaussian 2
-  //   par[5] = sigma of gaussian 2
-  //   par[6] = par 0 of expo
-  //   par[7] = par 1 of expo
+  // par[0] -> area
+  // par[1] -> mean
+  // par[2] -> sigma
+  // par[3] -> fraction in second gaussian
+  // par[4] -> mean
+  // par[5] -> sigma
+  // par[6] = par 0 of expo
+  // par[7] = par 1 of expo
   return  (f_expo(x, &par[6]) + f_2G(x, &par[0]));
 }
 
 // ----------------------------------------------------------------------
 AnalysisDistribution::AnalysisDistribution(const char *name, const char *title, int nbins, double lo, double hi) {
-  int NBINS(60);
+  int NBINS(120);
   fSigLo = fSigHi = fBg1Lo = fBg1Hi = fBg2Lo = fBg2Hi = 0.0;
-  fMassLo = 4.5;
-  fMassHi = 6.5;
+  fMassLo = 4.8;
+  fMassHi = 6.0;
+  fMassPeak = -1.; 
+  fMassSigma = -1.; 
+
   fVerbose = 0; 
+
+  fpIF = new initFunc(); 
 
   string massbin[3]; 
   massbin[0] = "signal";
@@ -88,6 +98,12 @@ AnalysisDistribution::AnalysisDistribution(const char *name, const char *title, 
   hMassHLT   = new TH1D(Form("%sMassHLT", name), Form("%sMassHLT", name), NBINS, fMassLo, fMassHi); 
   hMassPresel= new TH1D(Form("%sMassPresel", name), Form("%sMassPresel", name), NBINS, fMassLo, fMassHi); 
 
+  hMassAll   = new TH1D(Form("%sMassAll", name), Form("%sMassALL", name), NBINS, fMassLo, fMassHi); 
+  hMassBGL   = new TH1D(Form("%sMassBGL", name), Form("%sMassBGL", name), NBINS, fMassLo, fMassHi); 
+  hMassSG    = new TH1D(Form("%sMassSG", name), Form("%sMassSG", name), NBINS, fMassLo, fMassHi);  
+  hMassBGH   = new TH1D(Form("%sMassBGH", name), Form("%sMassGBH", name), NBINS, fMassLo, fMassHi); 
+
+
   fF0 = new TF1("ADf0", f_p1, 0., 7., 2);         fF0->SetParNames("Offset", "Slope"); 			   
   fF1 = new TF1("ADf1", f_expo, 0., 7., 2);       fF1->SetParNames("Norm", "Exp"); 			   
 
@@ -104,8 +120,9 @@ AnalysisDistribution::AnalysisDistribution(const char *name, const char *title, 
 // ----------------------------------------------------------------------
 AnalysisDistribution::AnalysisDistribution(const char *name, double SigLo, double SigHi, double Bg1Lo, double Bg1Hi, double Bg2Lo, double Bg2Hi) {
 
-  fMassLo = 4.5;
-  fMassHi = 6.5;
+  fMassLo = 4.8;
+  fMassHi = 6.0;
+  fpIF = new initFunc(); 
 
   hMassSi    = (TH1D*)gDirectory->Get(Form("%sMassSi", name)); 
   hMassAo    = (TH1D*)gDirectory->Get(Form("%sMassAo", name)); 
@@ -113,6 +130,11 @@ AnalysisDistribution::AnalysisDistribution(const char *name, double SigLo, doubl
   hMassCu    = (TH1D*)gDirectory->Get(Form("%sMassCu", name)); 
   hMassHLT   = (TH1D*)gDirectory->Get(Form("%sMassHLT", name)); 
   hMassPresel= (TH1D*)gDirectory->Get(Form("%sMassPresel", name)); 
+
+
+  hMassBGL    = (TH1D*)gDirectory->Get(Form("%sMassBGL", name)); 
+  hMassBGH    = (TH1D*)gDirectory->Get(Form("%sMassBGH", name)); 
+  hMassSG     = (TH1D*)gDirectory->Get(Form("%sMassSG", name)); 
 
   for (int i = 0; i < 3; ++i) {
     hSi[i]    = (TH1D*)gDirectory->Get(Form("%sSi%d", name, i)); 
@@ -223,25 +245,47 @@ double AnalysisDistribution::fitMass(TH1 *h1, double &error, int mode) {
     error = f1->GetParError(0)/h1->GetBinWidth(1); 
     return f1->GetParameter(0)/h1->GetBinWidth(1); 
   } else if (11 == mode) {
+    // -- Double Gaussian with pol1
+    fpIF->fLo = fMassLo; 
+    fpIF->fHi = fMassHi;
+    double peak = (fMassPeak>0.?fMassPeak:5.3);
+    double sigma = (fMassSigma>0.?fMassSigma:0.04);
+    f1 = fpIF->pol1gauss2c(h1, peak, sigma);
+    TFitResultPtr r;
+    r = h1->Fit(f1, "ls", "", fMassLo, fMassHi); 
+    double hlimit(0.), llimit(0.); 
+    f1->GetParLimits(3, llimit, hlimit);
+    double relError = f1->GetParError(3)/f1->GetParameter(3); 
+    double limit = TMath::Abs(f1->GetParameter(3) - llimit); 
+    if (TMath::Abs(f1->GetParameter(3) - hlimit) < limit) limit = TMath::Abs(f1->GetParameter(3) - hlimit); 
+    if (limit < relError || relError > 0.1) {
+      cout << "%%%%% REFITTING %%%%% " << endl;
+      f1->SetParameters(f1->GetParameters()); 
+      f1->SetParameter(0, h1->GetMaximum()); 
+      f1->FixParameter(3, 0.);
+      f1->FixParameter(4, 0.);
+      r = h1->Fit(f1, "ls", "", fMassLo, fMassHi); 
+    }
+    f1->SetParameter(5, 0.); 
+    f1->SetParameter(6, 0.); 
+    peak   = f1->GetParameter(1); 
+    sigma  = TMath::Sqrt(f1->CentralMoment(2, fMassLo, fMassHi)); 
+    double yield  = f1->Integral(peak-3.*sigma, peak+3.*sigma)/h1->GetBinWidth(1); 
+    cout << "integral:       " << yield << endl;
+    double ierror = f1->IntegralError(peak-3.*sigma, peak+3.*sigma, r->GetParams(), r->GetCovarianceMatrix().GetMatrixArray())/h1->GetBinWidth(1); 
+    cout << "integral error: " << ierror << endl;
+    double yieldE = f1->GetParError(0)/f1->GetParameter(0);
+    error = yieldE*yield; 
+    cout << "yield error: " << error << endl;
+    error = ierror; 
+    return yield; 
+  } else if (12 == mode) {
     // -- One Gaussian plus expo
     f1 = fEG1;
     setFunctionParameters(f1, h1, mode); 
     h1->Fit(f1, "", "", fMassLo, fMassHi); 
     error = f1->GetParError(0)/h1->GetBinWidth(1); 
     return f1->GetParameter(0)/h1->GetBinWidth(1); 
-  } else if (12 == mode) {
-    // -- Two Gaussian plus expo
-    f1 = fEG2;
-    setFunctionParameters(f1, h1, mode); 
-    h1->Fit(f1, "", "", fMassLo, fMassHi); 
-    // FIXME: Wrong yield/error for DOUBLE gaussian!
-    f1->SetParameter(6, 0.); 
-    f1->SetParameter(7, 0.); 
-    double yield  = f1->Integral(fMassLo, fMassHi); 
-    double yieldE = (f1->GetParError(0)/f1->GetParameter(0))*(f1->GetParError(0)/f1->GetParameter(0));
-    yieldE += (f1->GetParError(3)/f1->GetParameter(3))*(f1->GetParError(3)/f1->GetParameter(3));
-    error = TMath::Sqrt(yieldE)*yield; 
-    return yield; 
   } else if (13 == mode) {
     // -- one Gaussian plus expo plus pol1
     f1 = fEPG;
@@ -337,7 +381,114 @@ void AnalysisDistribution::setFunctionParameters(TF1 *f1, TH1 *h, int mode) {
   }
 }
 
+
+// ----------------------------------------------------------------------  
+TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cut) {
+
+  TCanvas *c0;
+  int DISPLAY(1); 
+  if (DISPLAY) {
+    gStyle->SetOptTitle(1);
+    c0 = (TCanvas*)gROOT->FindObject("c1"); 
+    if (c0) {
+      delete c0; 
+    }
+    c0 = new TCanvas("c1"); 
+    c0->Clear(); 
+    c0->Divide(2,3);
+  }
+
+  // -- this is not really necessary, could use the class members instead
+  TH1D *hm = (TH1D*)gDirectory->Get(Form("%sMass%s", variable, cut));
+  TH1D *h0 = (TH1D*)gDirectory->Get(Form("%s%s0", variable, cut));
+  TH1D *h1 = (TH1D*)gDirectory->Get(Form("%s%s1", variable, cut));
+
+  if (DISPLAY) {
+    c0->cd(1);
+    h0->Draw();
+    c0->cd(2);
+    h1->Draw();
+    c0->cd(3); 
+    hMassBGL->SetMinimum(0.);
+    hMassBGL->SetMaximum(1.);
+    hMassBGL->Draw();
+    hMassBGH->Draw("same");
+    hMassSG->Draw("same");
+    
+    c0->cd(4); 
+  }
+
+  double l0   = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
+  double l1   = hMassBGL->GetBinLowEdge(hMassBGL->FindLastBinAbove(1.)+1);
+  double s0   = hMassSG->GetBinLowEdge(hMassSG->FindFirstBinAbove(1.));
+  double s1   = hMassSG->GetBinLowEdge(hMassSG->FindLastBinAbove(1.)+1);
+  double u0   = hMassBGH->GetBinLowEdge(hMassBGH->FindFirstBinAbove(1.));
+  double u1   = hMassBGH->GetBinLowEdge(hMassBGH->FindLastBinAbove(1.)+1);
+
+  // -- fit mass distribution 
+  fMassPeak = 0.5*(s0+s1);
+  fMassSigma= 0.2*(s1-s0);
+  fMassLo   = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
+  fMassHi   = hMassBGH->GetBinLowEdge(hMassBGH->FindLastBinAbove(1.)+1);
+  fpIF->fLo = fMassLo;
+  fpIF->fHi = fMassHi;
+
+  cout << "fMass: " << fMassLo << " .. " << fMassHi << ", fMassPeak = " << fMassPeak << ", fMassSigma = " << fMassSigma << endl;
+
+  double peak  = (fMassPeak>0.?fMassPeak:5.3);
+  double sigma = (fMassSigma>0.?fMassSigma:0.04);
+  TF1 *f1 = fpIF->pol1gauss2c(hm, peak, sigma);
+  hm->SetMinimum(0.);
+
+  TFitResultPtr r;
+  r = hm->Fit(f1, "ls", "", fMassLo, fMassHi); 
+  double hlimit(0.), llimit(0.); 
+  f1->GetParLimits(3, llimit, hlimit);
+  double relError = f1->GetParError(3)/f1->GetParameter(3); 
+  double limit = TMath::Abs(f1->GetParameter(3) - llimit); 
+  if (TMath::Abs(f1->GetParameter(3) - hlimit) < limit) limit = TMath::Abs(f1->GetParameter(3) - hlimit); 
+  if (limit < relError || relError > 0.1) {
+    cout << "%%%%% REFITTING %%%%% " << endl;
+    f1->SetParameters(f1->GetParameters()); 
+    f1->SetParameter(0, hm->GetMaximum()); 
+    f1->FixParameter(3, 0.);
+    f1->FixParameter(4, 0.);
+    r = hm->Fit(f1, "ls", "", fMassLo, fMassHi); 
+  }
+  hm->DrawCopy();
+
+  //   hm->Fit(f1, "l", "", fMassLo, fMassHi); 
+  //   hm->DrawCopy(); 
+
+  // -- compute integrals
+  TF1 *fpol1 = (TF1*)gROOT->FindObject("fpol1"); 
+  if (fpol1) delete fpol1; 
+  fpol1 = new TF1("fpol1", f_p1, fMassLo, fMassHi, 2);
+  fpol1->SetParameters(f1->GetParameter(5), f1->GetParameter(6)); 
+  if (DISPLAY) {
+    c0->cd(5); 
+    fpol1->Draw();
+  }
+
+  double bgl = fpol1->Integral(l0, l1); 
+  double sg  = fpol1->Integral(s0, s1); 
+  double bgh = fpol1->Integral(u0, u1); 
+
+  cout << "bgl (" << l0 << " .. " << l1 << ") = " << bgl << endl;
+  cout << "sg  (" << s0 << " .. " << s1 << ") = " << sg << endl;
+  cout << "bgh (" << u0 << " .. " << u1 << ") = " << bgh << endl;
   
+  TH1D *h = (TH1D*)h0->Clone(Form("sbs_%s%s", variable, cut)); 
+  h->Sumw2(); 
+  h->Add(h0, h1, 1., -sg/(bgl+bgh)); 
+
+  if (DISPLAY) {
+    c0->cd(6); 
+    h->Draw();
+  }
+
+  return h; 
+}
  
 
 
@@ -345,9 +496,21 @@ void AnalysisDistribution::setFunctionParameters(TF1 *f1, TH1 *h, int mode) {
 // ----------------------------------------------------------------------
 void AnalysisDistribution::fill(double value, double mass) {
   int mBin(-1); 
-  if ((fSigLo < mass) && (mass < fSigHi)) mBin = 0; 
-  if ((fBg1Lo < mass) && (mass < fBg1Hi)) mBin = 1; 
-  if ((fBg2Lo < mass) && (mass < fBg2Hi)) mBin = 1; 
+
+  // -- these histograms are just to KNOW afterwards what the mass windows were exactly
+  hMassAll->Fill(mass); 
+  if ((fSigLo < mass) && (mass < fSigHi)) {
+    hMassSG->Fill(mass); 
+    mBin = 0; 
+  }
+  if ((fBg1Lo < mass) && (mass < fBg1Hi)) {
+    hMassBGL->Fill(mass); 
+    mBin = 1; 
+  }
+  if ((fBg2Lo < mass) && (mass < fBg2Hi)) {
+    hMassBGH->Fill(mass); 
+    mBin = 1; 
+  }
 
   if (fVerbose > 0) {
     cout << "value: " << value 

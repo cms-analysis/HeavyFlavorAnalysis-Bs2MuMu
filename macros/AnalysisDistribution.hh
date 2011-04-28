@@ -11,8 +11,7 @@
 #include <string>
 
 #include "AnalysisCuts.hh"
-
-using namespace::std;
+#include "initFunc.hh"
 
 class AnalysisDistribution: public TObject {
 
@@ -31,14 +30,15 @@ public:
   void fill(double value, double m);
 
   double fitMass(TH1 *h, double &error, int mode = 0); 
+  TH1D*  sbsDistribution(const char *variable, const char *cut); 
   void   setFunctionParameters(TF1 *f1, TH1 *h, int mode); 
 
   void   setPreselCut(bool *p) {fpPreselCutTrue = p;} 
 
-  string fCutName; 
+  std::string fCutName; 
   int fCutIdx, fHLTIdx; 
 
-  double fMassLo, fMassHi;
+  double fMassLo, fMassHi, fMassPeak, fMassSigma;
 
   double fSigLo, fSigHi; 
   double fBg1Lo, fBg1Hi; 
@@ -52,10 +52,14 @@ public:
 
   TH1D *hMassSi, *hMassAo, *hMassCu, *hMassNm, *hMassHLT, *hMassPresel; 
 
+  TH1D *hMassAll, *hMassBGL, *hMassSG, *hMassBGH; 
+
   TF1 *fF0, *fF1; 
   TF1 *fP1, *fPG1, *fEG1, *fEG2, *fEPG; 
 
   int fVerbose;
+  
+  initFunc *fpIF; 
 
   ClassDef(AnalysisDistribution,1) //Testing AnalysisDistribution
 }; 

@@ -30,7 +30,7 @@ if ($opt_j) {
 }
 
 my %jobs = ("signal MC" 
-	    => "-m,bmmSignalReader,bmmSignalReader.$job.cuts,cBsToMuMu_2MuPtFilter_7TeV-pythia6-evtgen-Fall10,signalMC.root"
+	    => "-m,bmmSignalReader,bmmSignalReader.$job.cuts,cBsToMuMu_2MuPtFilter_7TeV-pythia6-evtgen-Fall10,signalMC2010.root"
 #	    , "signal MC 2" # backgrounds
 #	    => "-m,bmmSignalReader,bmmSignalReader.$job.cuts,cB*ToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,signal-bgMC.root"
 #	    , "signal MC 3" # backgrounds
@@ -38,15 +38,15 @@ my %jobs = ("signal MC"
 #	    , "signal MC 4" # backgrounds
 #	    => "-m,bmmSignalReader,bmmSignalReader.$job.cuts,cQCD_2MuPEtaFilter_7TeV-pythia6-Fall10-*,signal-qcd2mu.root"
 	    , "signal data" 
-	    => "-b 1,bmmSignalReader,bmmSignalReader.$job.cuts,cMu*-Run2010*-Nov4ReReco_v1-*,signalData.root"
+	    => "-b 1,bmmSignalReader,bmmSignalReader.$job.cuts,cMu*-Run2010*-Nov4ReReco_v1-*,signalData2010.root"
 	    , "norm MC" 
-	    => "-m,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cBpToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,normMC.root"
+	    => "-m,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cBpToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,normMC2010.root"
 	    , "norm data" 
-	    => "-b 0,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cMu*-Run2010*-Nov4ReReco_v1-*,normData.root"
+	    => "-b 0,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cMu*-Run2010*-Nov4ReReco_v1-*,normData2010.root"
 	    , "Bs2JpsiPhi MC" 
-	    => "-m,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cBsToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,Bs2JpsiPhiMC.root"
+	    => "-m,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cBsToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,Bs2JpsiPhiMC2010.root"
 	    , "Bs2JpsiPhi data" 
-	    => "-b 0,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cMu*-Run2010*-Nov4ReReco_v1-*,Bs2JpsiPhiData.root"
+	    => "-b 0,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cMu*-Run2010*-Nov4ReReco_v1-*,Bs2JpsiPhiData2010.root"
     );
 
 my $user  = $ENV{'USER'};

@@ -771,7 +771,7 @@ void bmmReader::fillCandidateVariables() {
   fGoodPt = (fCandPt > CANDPTLO);
   fGoodEta = ((fCandEta > CANDETALO) && (fCandEta < CANDETAHI)); 
   fGoodCosA = (fCandCosA > CANDCOSALPHA); 
-  fGoodIso = (fCandIso > CANDISOLATION); 
+  fGoodIso = (fCandIso1 > CANDISOLATION); 
   fGoodChi2 = (fCandChi2/fCandDof < CANDVTXCHI2);
   fGoodFLS =  ((fCandFLS3d > CANDFLS3D) && (fCandFLSxy > CANDFLSXY)); 
   if (TMath::IsNaN(fCandFLS3d)) fGoodFLS = false;
@@ -920,18 +920,18 @@ void bmmReader::fillCandidateHistograms() {
   if (0 == fpCand) return;
   
   // -- historic remnant?!
-  for (int i = 0; i < fAnaCuts.ncuts(); ++i) {
-    if (fAnaCuts.singleCutTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dSi", i)))->Fill(fCandM);
-    if (fAnaCuts.cumulativeCutTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dCu", i)))->Fill(fCandM);
-    if (fAnaCuts.allOtherCutsTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dAo", i)))->Fill(fCandM);
-    if (fAnaCuts.nMinus1CutsTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dAo", i)))->Fill(fCandM);
-  }
+  //   for (int i = 0; i < fAnaCuts.ncuts(); ++i) {
+  //     if (fAnaCuts.singleCutTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dSi", i)))->Fill(fCandM);
+  //     if (fAnaCuts.cumulativeCutTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dCu", i)))->Fill(fCandM);
+  //     if (fAnaCuts.allOtherCutsTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dAo", i)))->Fill(fCandM);
+  //     if (fAnaCuts.nMinus1CutsTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dAo", i)))->Fill(fCandM);
+  //   }
 
   // -- Fill distributions
   fpTracksPt->fill(fMu1Pt, fCandM);
   fpTracksPt->fill(fMu2Pt, fCandM);
-  fpTracksEta->fill(fMu1Pt, fCandM);
-  fpTracksEta->fill(fMu2Pt, fCandM);
+  fpTracksEta->fill(fMu1Eta, fCandM);
+  fpTracksEta->fill(fMu2Eta, fCandM);
   fpTracksQual->fill(fMu1TkQuality, fCandM);
   fpTracksQual->fill(fMu2TkQuality, fCandM);
 
@@ -941,6 +941,12 @@ void bmmReader::fillCandidateHistograms() {
   fpMuonsPt->fill(fMu2Pt, fCandM);
   fpMuonsEta->fill(fMu1Eta, fCandM);
   fpMuonsEta->fill(fMu2Eta, fCandM);
+  fpMuon1Eta->fill(fMu2Eta, fCandM);
+  fpMuon2Eta->fill(fMu2Eta, fCandM);
+  fpMuon1Pt->fill(fMu1Pt, fCandM);
+  fpMuon2Pt->fill(fMu2Pt, fCandM);
+  fpMuon1Eta->fill(fMu1Eta, fCandM);
+  fpMuon2Eta->fill(fMu2Eta, fCandM);
 
   fpAllEvents->fill(1, fCandM); 
   fpHLT->fill(1, fCandM); 
@@ -948,6 +954,7 @@ void bmmReader::fillCandidateHistograms() {
   fpQ->fill(fCandQ, fCandM); 
   fpPt->fill(fCandPt, fCandM); 
   fpEta->fill(fCandEta, fCandM); 
+  fpAlpha->fill(TMath::ACos(fCandCosA), fCandM);
   fpCosA->fill(fCandCosA, fCandM);
   fpCosA0->fill(fCandCosA, fCandM);
   fpIso->fill(fCandIso, fCandM);
@@ -991,38 +998,43 @@ void bmmReader::bookHist() {
 
  
   // -- mass histograms for efficiencies
-  for (int i = 0; i < fAnaCuts.ncuts(); ++i) {
-    h = new TH1D(Form("c%dSi", i), fAnaCuts.getName(i), 40, MASSMIN, MASSMAX); 
-    h = new TH1D(Form("c%dAo", i), fAnaCuts.getName(i), 40, MASSMIN, MASSMAX); 
-    h = new TH1D(Form("c%dCu", i), fAnaCuts.getName(i), 40, MASSMIN, MASSMAX); 
-    h = new TH1D(Form("c%dNm", i), fAnaCuts.getName(i), 40, MASSMIN, MASSMAX); 
-  }
+  //   for (int i = 0; i < fAnaCuts.ncuts(); ++i) {
+  //     h = new TH1D(Form("c%dSi", i), fAnaCuts.getName(i), 40, MASSMIN, MASSMAX); 
+  //     h = new TH1D(Form("c%dAo", i), fAnaCuts.getName(i), 40, MASSMIN, MASSMAX); 
+  //     h = new TH1D(Form("c%dCu", i), fAnaCuts.getName(i), 40, MASSMIN, MASSMAX); 
+  //     h = new TH1D(Form("c%dNm", i), fAnaCuts.getName(i), 40, MASSMIN, MASSMAX); 
+  //   }
 
   h = new TH1D("analysisDistributions", "analysisDistributions", 100, 0., 100.); 
   fpAllEvents= bookDistribution("allevents", "allevents", "fWideMass", 10, 0., 10.);           
   fpHLT      = bookDistribution("hlt", "hlt", "fGoodHLT", 10, 0., 10.);           
-  fpPvZ      = bookDistribution("pvz", "z_{PV} [cm]", "fGoodHLT", 50, -10., 10.);           
+  fpPvZ      = bookDistribution("pvz", "z_{PV} [cm]", "fGoodHLT", 50, -25., 25.);           
   fpTracksQual= bookDistribution("tracksqual", "Qual(tracks)", "fGoodTracks", 20, -10., 10.);
-  fpTracksPt = bookDistribution("trackspt", "p_{T} [GeV]", "fGoodTracksPt", 50, 0., 25.);
-  fpTracksEta= bookDistribution("trackseta", "#eta_{T}", "fGoodTracksEta", 50, 0., 25.);
+  fpTracksPt = bookDistribution("trackspt", "p_{T} [GeV]", "fGoodTracksPt", 25, 0., 25.);
+  fpTracksEta= bookDistribution("trackseta", "#eta_{T}", "fGoodTracksEta", 25, -2.5, 2.5);
   fpMuonsID  = bookDistribution("muonsid", "muon id", "fGoodMuonsID", 10, 0., 10.); 
-  fpMuonsPt  = bookDistribution("muonspt", "p_{T, #mu} [GeV]", "fGoodMuonsPt", 50, 0., 25.); 
-  fpMuonsEta = bookDistribution("muonseta", "#eta_{#mu}", "fGoodMuonsEta", 50, -2.5, 2.5); 
+  fpMuonsPt  = bookDistribution("muonspt", "p_{T, #mu} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+  fpMuon1Pt  = bookDistribution("muon1pt", "p_{T, #mu} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+  fpMuon2Pt  = bookDistribution("muon2pt", "p_{T, #mu} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+  fpMuonsEta = bookDistribution("muonseta", "#eta_{#mu}", "fGoodMuonsEta", 20, -2.5, 2.5); 
+  fpMuon1Eta = bookDistribution("muon1eta", "#eta_{#mu}", "fGoodMuonsEta", 20, -2.5, 2.5); 
+  fpMuon2Eta = bookDistribution("muon2eta", "#eta_{#mu}", "fGoodMuonsEta", 20, -2.5, 2.5); 
   fpQ        = bookDistribution("q", "q_{1} q_{2}", "fGoodQ", 3, -1., 2.); 
-  fpPt       = bookDistribution("pt", "p_{T, B} [GeV]", "fGoodPt", 50, 0., 25.); 
-  fpEta      = bookDistribution("eta", "#eta_{B}", "fGoodEta", 50, -2.5, 2.5); 
-  fpCosA     = bookDistribution("cosa", "cos(#alpha)", "fGoodCosA", 60, 0.97, 1.); 
-  fpCosA0    = bookDistribution("cosa0", "cos(#alpha)", "fGoodCosA", 101, -1.01, 1.01); 
-  fpIso      = bookDistribution("iso",  "I", "fGoodIso", 101, 0., 1.01); 
-  fpIso1     = bookDistribution("iso1", "I", "fGoodIso", 101, 0., 1.01); 
-  fpChi2     = bookDistribution("chi2",  "#chi^{2}", "fGoodChi2", 100, 0., 50.);              
-  fpChi2Dof  = bookDistribution("chi2dof",  "#chi^{2}/dof", "fGoodChi2", 100, 0., 50.);       
-  fpProb     = bookDistribution("pchi2dof",  "P(#chi^{2},dof)", "fGoodChi2", 100, 0., 1.);    
-  fpFLS3d    = bookDistribution("fls3d", "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 100, 0., 50.);  
-  fpFLSxy    = bookDistribution("flsxy", "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 100, 0., 50.);  
-  fpDocaTrk  = bookDistribution("docatrk", "d_{ca}(track))", "fGoodDocaTrk", 100, 0., 0.1);   
-  fpIP1      = bookDistribution("ip1", "IP_{1}/lsin(#beta)", "fGoodIP", 100, -1., 3.);        
-  fpIP2      = bookDistribution("ip2", "IP_{1}/lsin(#beta)", "fGoodIP", 100, -1., 3.);        
+  fpPt       = bookDistribution("pt", "p_{T, B} [GeV]", "fGoodPt", 20, 0., 40.); 
+  fpEta      = bookDistribution("eta", "#eta_{B}", "fGoodEta", 20, -2.5, 2.5); 
+  fpCosA     = bookDistribution("cosa", "cos(#alpha)", "fGoodCosA", 30, 0.97, 1.); 
+  fpCosA0    = bookDistribution("cosa0", "cos(#alpha)", "fGoodCosA", 44, -1.1, 1.1); 
+  fpAlpha    = bookDistribution("alpha", "#alpha", "fGoodCosA", 20, 0., 0.2); 
+  fpIso      = bookDistribution("iso",  "I", "fGoodIso", 22, 0., 1.1); 
+  fpIso1     = bookDistribution("iso1", "I", "fGoodIso", 22, 0., 1.1); 
+  fpChi2     = bookDistribution("chi2",  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
+  fpChi2Dof  = bookDistribution("chi2dof",  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
+  fpProb     = bookDistribution("pchi2dof",  "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
+  fpFLS3d    = bookDistribution("fls3d", "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
+  fpFLSxy    = bookDistribution("flsxy", "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
+  fpDocaTrk  = bookDistribution("docatrk", "d_{ca}(track))", "fGoodDocaTrk", 35, 0., 0.14);   
+  fpIP1      = bookDistribution("ip1", "IP_{1}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
+  fpIP2      = bookDistribution("ip2", "IP_{2}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
 
   
   h = new TH1D("b1", "Ntrk", 200, 0., 200.);
