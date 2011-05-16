@@ -389,7 +389,7 @@ lambdaReader::CheckedLbCand lambdaReader::getCheckedLbCand(const TAnaCand *tac)
     // check if daughters point to something
     if (tac->fDau1 < 0 || tac->fDau2 < 0)
     {
-        cout << "Problem: tac->fDau1: " << tac->fDau1 << " tac->fDau2: " << tac->fDau2
+        if (fVerbose)  cout << "Problem: tac->fDau1: " << tac->fDau1 << " tac->fDau2: " << tac->fDau2
              << " Run: " << fRun << " Event: " << fEvent << " LS: " << fLS << " -- skipping " << endl;
         return ret;
     }
@@ -1031,6 +1031,8 @@ void lambdaReader::doHLTstuff()
     fHLTMu0jp = fHLTMu0jpT = fHLTMu3jp = fHLTMu3jpT = fHLTMu5jp = fHLTMu5jpT = false;
     fHLTMu0jpT1 = fHLTMu0jpT2 = fHLTMu0jpT3 = false;
     fHLTL1DMu0 = fHLTL2DMu0 = fHLTL2Mu0 = false;
+    fHLTDMu6p5BarJp = fHLTDMu6p5JpDis = fHLTDMu6p5Jp = fHLTMu5L2Mu2Jpsi = fHLTMu5Tr2Jpsi = fHLTMu5Tr7Jpsi = false;
+    fHLTpreDMu6p5BarJp = fHLTpreDMu6p5JpDis = fHLTpreDMu6p5Jp = fHLTpreMu5L2Mu2Jpsi = fHLTpreMu5Tr2Jpsi = fHLTpreMu5Tr7Jpsi = 0;
     fHLTok = false;
     for(int i=0; i!=NHLT; i++)
     {
@@ -1085,6 +1087,13 @@ void lambdaReader::doHLTstuff()
 	    if ("HLT_L1DoubleMuOpen"     == name) fHLTL1DMu0 = true;
 	    if ("HLT_L2DoubleMu0"        == name) fHLTL2DMu0 = true;
 	    if ("HLT_Mu5_L2Mu0"          == name) fHLTL2Mu0 = true;
+	    // triggers from Run2011A v2 on
+	    if ("HLT_Dimuon6p5_Barrel_Jpsi_v1" == name) { fHLTDMu6p5BarJp = true; fHLTpreDMu6p5BarJp = prescale; }
+	    if ("HLT_Dimuon6p5_Jpsi_Displaced_v1" == name)  { fHLTDMu6p5JpDis = true; fHLTpreDMu6p5JpDis = prescale; }
+	    if ("HLT_Dimuon6p5_Jpsi_v1" == name)  { fHLTDMu6p5Jp = true; fHLTpreDMu6p5Jp = prescale; }
+	    if ("HLT_Mu5_L2Mu2_Jpsi_v3" == name)  { fHLTMu5L2Mu2Jpsi = true; fHLTpreMu5L2Mu2Jpsi = prescale; }
+	    if ("HLT_Mu5_Track2_Jpsi_v2" == name)  { fHLTMu5Tr2Jpsi = true; fHLTpreMu5Tr2Jpsi = prescale; }
+	    if ("HLT_Mu7_Track7_Jpsi_v3" == name)  { fHLTMu5Tr7Jpsi = true; fHLTpreMu5Tr7Jpsi = prescale; }
 	    // a run number dependent summary result -- final decision
 	    if (!fIsMC)
 	    {
@@ -1145,7 +1154,8 @@ void lambdaReader::doTriggerMatching()
 	if (fVerbose > 5) tto->dump();
 	//cout << tto->fLabel << tto->fP.DeltaR(tlvMu1) << ":" << tto->fP.DeltaR(tlvMu2) << endl;
 	if ( (fRun <  160405 && tto->fLabel == "hltMu0TkMuJpsiTrackMassFiltered:HLT::")
-	  || (fRun >= 160405 && tto->fLabel == "hltDoubleMu3QuarkoniumL3Filtered:HLT::"))
+	  || (fRun >= 160405 && fRun < 163270 && tto->fLabel == "hltDoubleMu3QuarkoniumL3Filtered:HLT::")
+	  || (fRun >= 163270 && (tto->fLabel == "hltDimuon6p5JpsiDisplacedL3Filtered:HLT::" || tto->fLabel == "hltDimuon6p5JpsiL3Filtered:HLT::" || tto->fLabel == "hltDimuon6p5BarrelJpsiL3Filtered:HLT::")))
 	{
 	    const double deltaR1 = tto->fP.DeltaR(tlvMu1);
 	    const double deltaR2 = tto->fP.DeltaR(tlvMu2);
@@ -1548,6 +1558,21 @@ void lambdaReader::bookReducedTree()
     fTree->Branch("HLTL1DMu0", &fHLTL1DMu0, "HLTL1DMu0/O");
     fTree->Branch("HLTL2DMu0", &fHLTL2DMu0, "HLTL2DMu0/O");
     fTree->Branch("HLTL2Mu0", &fHLTL2Mu0, "HLTL2Mu0/O");
+
+    fTree->Branch("HLTDMu6p5BarJp", &fHLTDMu6p5BarJp, "HLTDMu6p5BarJp/O"); // Dimuon6p5_Barrel_Jpsi_v1
+    fTree->Branch("HLTDMu6p5JpDis", &fHLTDMu6p5JpDis, "HLTDMu6p5JpDis/O"); // Dimuon6p5_Jpsi_Displaced_v1
+    fTree->Branch("HLTDMu6p5Jp", &fHLTDMu6p5Jp, "HLTDMu6p5Jp/O"); // Dimuon6p5_Jpsi_v1
+    fTree->Branch("HLTMu5L2Mu2Jpsi", &fHLTMu5L2Mu2Jpsi, "HLTMu5L2Mu2Jpsi/O"); // Mu5_L2Mu2_Jpsi_v3
+    fTree->Branch("HLTMu5Tr2Jpsi", &fHLTMu5Tr2Jpsi, "HLTMu5Tr2Jpsi/O"); // Mu5_Track2_Jpsi_v2
+    fTree->Branch("HLTMu5Tr7Jpsi", &fHLTMu5Tr7Jpsi, "HLTMu5Tr7Jpsi/O"); // Mu7_Track7_Jpsi_v3
+
+    fTree->Branch("HLTpreDMu6p5BarJp", &fHLTpreDMu6p5BarJp, "HLTpreDMu6p5BarJp/I"); // Dimuon6p5_Barrel_Jpsi_v1
+    fTree->Branch("HLTpreDMu6p5JpDis", &fHLTpreDMu6p5JpDis, "HLTpreDMu6p5JpDis/I"); // Dimuon6p5_Jpsi_Displaced_v1
+    fTree->Branch("HLTpreDMu6p5Jp", &fHLTpreDMu6p5Jp, "HLTpreDMu6p5Jp/I"); // Dimuon6p5_Jpsi_v1
+    fTree->Branch("HLTpreMu5L2Mu2Jpsi", &fHLTpreMu5L2Mu2Jpsi, "HLTpreMu5L2Mu2Jpsi/I"); // Mu5_L2Mu2_Jpsi_v3
+    fTree->Branch("HLTpreMu5Tr2Jpsi", &fHLTpreMu5Tr2Jpsi, "HLTpreMu5Tr2Jpsi/I"); // Mu5_Track2_Jpsi_v2
+    fTree->Branch("HLTpreMu5Tr7Jpsi", &fHLTpreMu5Tr7Jpsi, "HLTpreMu5Tr7Jpsi/I"); // Mu7_Track7_Jpsi_v3
+
     fTree->Branch("HLTok", &fHLTok, "HLTok/O");
     fTree->Branch("HLTmatch", &fHLTmatch, "HLTmatch/O");
 

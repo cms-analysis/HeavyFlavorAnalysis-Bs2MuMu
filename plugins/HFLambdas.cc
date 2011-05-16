@@ -24,6 +24,8 @@
 
 #include<vector>
 
+#define HFL_FIXMEMPROBLEM // this is a nasty fix for memory leak problems by restricting to just candidates 705122 and 905122
+
 extern TAna01Event *gHFEvent;
 
 using std::cout;
@@ -397,8 +399,9 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
                                       << iMuon1 << ":" << iMuon2 << ":" << iPion << ":" << iProton << endl;
 
             // without J/Psi mass constraint
-            HFDecayTree theTree(605122+V0Cand, true, MLAMBDA_B, false);
             HFDecayTreeIterator iterator;
+#ifndef HFL_FIXMEMPROBLEM
+            HFDecayTree theTree(605122+V0Cand, true, MLAMBDA_B, false);
             iterator = theTree.addDecayTree(600443+V0Cand, false, MJPSI, false); // no vertexing & no mass constraint
             iterator->addTrack(iMuon1,13);
             iterator->addTrack(iMuon2,13);
@@ -415,6 +418,9 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
 
             // without J/Psi mass constraint, but with an own J/Psi vertex
             theTree.clear(705122+V0Cand, true, MLAMBDA_B, false);
+#else
+	    HFDecayTree theTree(705122+V0Cand, true, MLAMBDA_B, false);
+#endif
 
             iterator = theTree.addDecayTree(700443+V0Cand, true, MJPSI, false); // vertexing but no mass constraint...
             iterator->addTrack(iMuon1,13);
@@ -431,6 +437,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
             aSeq.doFit(&theTree);
 
             // with J/Psi mass constraint
+#ifndef HFL_FIXMEMPROBLEM
             theTree.clear(805122+V0Cand, true, MLAMBDA_B, false);
 
             iterator = theTree.addDecayTree(800443+V0Cand, true, MJPSI, true); // J/Psi needs an own vertex!!
@@ -445,6 +452,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
             theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle,&(*iterator->getNodeCut()),fMaxDoca)));
 
             aSeq.doFit(&theTree);
+#endif
 
             // with mass constraint for J/Psi and Lambda0
             theTree.clear(905122+V0Cand, true, MLAMBDA_B, false);
