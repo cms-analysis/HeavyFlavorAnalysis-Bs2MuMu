@@ -78,6 +78,15 @@ void treeReader01::readCuts(TString filename, int dump) {
       if (dump) cout << "TYPE:           " << TYPE << endl;
     }
 
+    if (!strcmp(CutName, "JSON")) {
+      char json[1000]; ok = 1; 
+      sscanf(buffer, "%s %s", CutName, json);
+      JSONFILE = string(json); ok = 1; 
+      if (dump) cout << "JSON FILE:           " << JSONFILE << endl;
+      ibin = 3;
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: JSON File :: %s", CutName, JSONFILE.c_str()));
+    }
+
     if (!strcmp(CutName, "PTLO")) {
       PTLO = CutValue; ok = 1;
       if (dump) cout << "PTLO:           " << PTLO << " GeV" << endl;
@@ -93,6 +102,7 @@ void treeReader01::readCuts(TString filename, int dump) {
       hcuts->SetBinContent(ibin, ETALO);
       hcuts->GetXaxis()->SetBinLabel(ibin, "#eta_{T}^{min}(l)");
     }
+
 
     if (!strcmp(CutName, "ETAHI")) {
       ETAHI = CutValue; ok = 1;
@@ -155,6 +165,12 @@ int treeReader01::loop(int nevents, int start) {
     fLS  = fpEvt->fLumiSection;
 
     if (jEvent%step == 0) cout  << " (run: " << fRun << ", event: " << fEvt << ")" << endl;
+
+    if (fForceJson && !fpJSON->good(fRun, fLS)) {
+       cout << "Skipping event from run = " << fRun << " LS = " << fLS << endl;
+       continue;
+    }   
+
 
     eventProcessing(); 
   }

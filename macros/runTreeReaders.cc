@@ -50,8 +50,8 @@ int main(int argc, char *argv[]) {
   cout << "Running under process ID  " << processID << endl;
 
   string progName  = argv[0]; 
-  string writeName, fileName;
-  int file(0);
+  string writeName, fileName, jsonName;
+  int file(0), json(0);
   int dirspec(0);
   int nevents(-1), start(-1);
   int randomSeed(processID);
@@ -97,6 +97,7 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-C"))  {cutFile    = string(argv[++i]);           }     // file with cuts
     if (!strcmp(argv[i],"-D"))  {dirName    = string(argv[++i]);  dirspec = 1; } // where to put the output
     if (!strcmp(argv[i],"-f"))  {fileName   = string(argv[++i]); file = 1; }     // single file instead of chain
+    if (!strcmp(argv[i],"-j"))  {jsonName   = string(argv[++i]); json = 1; }     // single file instead of chain
     if (!strcmp(argv[i],"-m"))  {isMC       = 1; }                               // use MC information?
     if (!strcmp(argv[i],"-n"))  {nevents    = atoi(argv[++i]); }                 // number of events to run 
     if (!strcmp(argv[i],"-r"))  {readerName = string(argv[++i]); }               // which tree reader class to run
@@ -231,6 +232,11 @@ int main(int argc, char *argv[]) {
     a->openHistFile(histfile); 
     a->readCuts(cutFile, 1);
     a->bookHist();
+    if (json) {
+      a->setJSONFile(jsonName.c_str()); 
+      a->forceJSON();
+    }
+
     if (isMC) {
       blind = 0; 
       a->setMC(1);
@@ -238,7 +244,7 @@ int main(int argc, char *argv[]) {
       a->setMC(0); 
     }
     if (blind) a->runBlind();
-
+    
     a->startAnalysis(); 
     a->loop(nevents, start);
     a->endAnalysis();

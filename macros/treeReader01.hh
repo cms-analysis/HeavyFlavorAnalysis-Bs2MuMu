@@ -2,6 +2,7 @@
 #define TREEREADER01_H
 
 #include <iostream>
+#include <string>
 
 #include <TROOT.h>
 #include <TString.h>
@@ -18,6 +19,7 @@
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaCand.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
+#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/JSON.hh"
 
 #define DR      57.29577951
 #define PIPMASS 0.13957
@@ -49,6 +51,8 @@ public:
   virtual int  numberOfBPixLayers(TAnaTrack *t);
   virtual int  numberOfPixLayers(TAnaTrack *t);
   virtual int  numberOfBPixLayer1Hits(TAnaTrack *t);
+  virtual void setJSONFile(const char *name) {JSONFILE = name;}
+  virtual void forceJSON() {fForceJson = true;}
 
 protected:
 
@@ -70,6 +74,8 @@ protected:
   // -- Histogram pointers 
   TTree       *fTree;
 
+  // -- Pointer to JSON class
+  JSON *fpJSON; 
 
   // -- Cut values
   double 
@@ -80,6 +86,8 @@ protected:
     ;
   int TYPE;
   int BLIND; 
+  std::string JSONFILE;
+  bool fForceJson;
 
   int fVerbose;
   int fIsMC;
