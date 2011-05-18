@@ -735,8 +735,14 @@ void bmmReader::fillCandidateVariables() {
 
   double iso = isoClassic(fpCand); 
   double iso1= isoClassicOnePv(fpCand); 
+  double iso2= isoClassicWithDOCA(fpCand, 0.03); // 300um DOCA cut
+  double iso3= isoClassicWithDOCA(fpCand, 0.04); // 400um DOCA cut
+  double iso4= isoClassicWithDOCA(fpCand, 0.05); // 500um DOCA cut
   fCandIso   = iso; 
   fCandIso1  = iso1; 
+  fCandIso2  = iso2; 
+  fCandIso3  = iso3; 
+  fCandIso4  = iso4; 
   fCandChi2  = fpCand->fVtx.fChi2;
   fCandDof   = fpCand->fVtx.fNdof;
   fCandProb  = fpCand->fVtx.fProb;
@@ -901,6 +907,106 @@ double bmmReader::isoClassicOnePv(TAnaCand *pC) {
   return iso; 
 }
 
+// ----------------------------------------------------------------------
+double bmmReader::isoClassicWithDOCA(TAnaCand *pC, float docaCut) {
+  const double ptCut = 0.9, coneSize=1.0;
+  const bool verbose=false;
+
+  double iso(-1.), pt(0.), sumPt(0.), candPt(0.), candPtScalar(0.); 
+  TAnaTrack *pT; 
+  vector<int> cIdx; 
+  int pvIdx = pC->fPvIdx;
+
+ 
+  //   if (fRun == 148862 &&  fEvt == 1219569139) { verbose = 1; }
+  //   if (fRun == 147284 &&  fEvt == 186315253) { verbose = 1; }
+
+  for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
+    pT = fpEvt->getSigTrack(i); 
+    cIdx.push_back(pT->fIndex); 
+    candPtScalar += pT->fPlab.Perp(); 
+        if (verbose) {
+          int tIdx = fpEvt->getRecTrack(pT->fIndex)->fPvIdx;
+          if (pvIdx != tIdx) {
+    	cout << "Signal track pointing to PV " << tIdx << " instead of " << pvIdx << endl;
+          }
+        }
+  }
+
+  candPt = pC->fPlab.Perp(); 
+  
+  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+    if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  continue;
+    pT = fpEvt->getRecTrack(i); 
+        if (verbose) {
+          cout << "   track " << i 
+     	   << " with pT = " << pT->fPlab.Perp()
+     	   << " eta = " << pT->fPlab.Eta()
+     	   << " pointing at PV " << pT->fPvIdx;
+        }
+    if (pvIdx != pT->fPvIdx) {
+      if (verbose) cout << " skipped because of PV index mismatch" << endl;
+      continue;
+    }
+    pt = pT->fPlab.Perp(); 
+    if (pt < ptCut) {
+      if (verbose) cout << " skipped because of pt = " << pt << endl;
+      continue;
+    }
+    if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
+      sumPt += pt; 
+      if (verbose) cout << endl;
+    } 
+    else {
+      if (verbose) cout << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+    }
+  }
+
+
+
+  // Now consider the DOCA tracks, but only those which have PV=-1
+  // DOCA of close tracks
+  int nsize = pC->fNstTracks.size(); 
+  if(nsize>0) {
+    for(int i = 0; i<nsize;++i) {
+      int trkId = pC->fNstTracks[i].first;
+      double doca = pC->fNstTracks[i].second.first;
+      double docaE = pC->fNstTracks[i].second.second;
+
+      if(doca > docaCut) continue; // check the doca cut
+      
+      pT = fpEvt->getRecTrack(trkId);
+      // Consider only tracks from an undefined PV
+      if (pT->fPvIdx >= 0) { 
+	if (verbose) cout << " doca track skipped because it has a defined  PV " << pT->fPvIdx <<endl;
+	continue;
+      }
+
+      pt = pT->fPlab.Perp();  // cut on track pt
+      if (pt < ptCut) {
+	if (verbose) cout << " doca skipped because of pt = " << pt << endl;
+	continue;
+      }
+
+      if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
+	sumPt += pt; 
+	if (verbose) cout << " doaa track included "<<doca<<" "<<pt<<endl;
+      } 
+      else {
+	if (verbose) cout << " doca track skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+      }
+
+    } // for loop over tracks
+  } // end if 
+
+  iso = candPt/(candPt + sumPt); 
+
+  //   if (verbose) cout << "--> iso = " << candPt << " .. " << sumPt << " = " << iso << endl;
+  //   if (verbose) cout << "--> iso = " << pC->fPlab.Perp() << " .. " << sumPt << " = " << pC->fPlab.Perp()/(pC->fPlab.Perp() + sumPt) << endl;
+
+  return iso; 
+}
+
 
 // ----------------------------------------------------------------------
 void bmmReader::fillHist() {
@@ -959,6 +1065,9 @@ void bmmReader::fillCandidateHistograms() {
   fpCosA0->fill(fCandCosA, fCandM);
   fpIso->fill(fCandIso, fCandM);
   fpIso1->fill(fCandIso1, fCandM);
+  //fpIso2->fill(fCandIso2, fCandM);
+  //fpIso3->fill(fCandIso3, fCandM);
+  //fpIso4->fill(fCandIso4, fCandM);
   fpChi2->fill(fCandChi2, fCandM);
   fpChi2Dof->fill(fCandChi2/fCandDof, fCandM); 
   fpProb->fill(fCandProb, fCandM);   
@@ -1073,6 +1182,9 @@ void bmmReader::bookHist() {
   fTree->Branch("cosa",   &fCandCosA,          "cosa/D");
   fTree->Branch("iso",    &fCandIso,           "iso/D");
   fTree->Branch("iso1",   &fCandIso1,          "iso1/D");
+  fTree->Branch("iso2",   &fCandIso2,          "iso2/D");
+  fTree->Branch("iso3",   &fCandIso3,          "iso3/D");
+  fTree->Branch("iso4",   &fCandIso4,          "iso4/D");
   fTree->Branch("chi2",   &fCandChi2,          "chi2/D");
   fTree->Branch("dof",    &fCandDof,           "dof/D");
   fTree->Branch("fls3d",  &fCandFLS3d,         "fls3d/D");

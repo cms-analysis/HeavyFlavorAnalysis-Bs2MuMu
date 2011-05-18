@@ -75,6 +75,7 @@ public:
   virtual int                   tmCand2(TAnaCand*);
   virtual double                isoClassic(TAnaCand*); 
   virtual double                isoClassicOnePv(TAnaCand*); 
+  virtual double                isoClassicWithDOCA(TAnaCand*, float); 
   virtual int                   checkCut(const char *, TH1D *); 
 
 
@@ -142,7 +143,8 @@ public:
   double                  fPvX, fPvY, fPvZ; 
   double                  fJpsiMass;
   double                  fCandPt, fCandEta, fCandPhi, fCandM, fCandW8Tr, fCandW8Mu; 
-  double                  fCandCosA, fCandIso, fCandIso1, fCandChi2, fCandDof, fCandProb, fCandFLS3d, fCandFLSxy; 
+  double                  fCandCosA, fCandChi2, fCandDof, fCandProb, fCandFLS3d, fCandFLSxy; 
+  double                  fCandIso, fCandIso1, fCandIso2, fCandIso3, fCandIso4 ; 
   double                  fCandDocaTrk, fMu1IP, fMu2IP, fCandPvTip, fCandPvTipE, fCandPvLip, fCandPvLipE; 
 
   double       MASSMIN,   MASSMAX; 
