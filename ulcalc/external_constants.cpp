@@ -19,10 +19,20 @@ const char *bmmBaseCut = "TMath::Abs(eta_mu1) < 2.4 && TMath::Abs(eta_mu2) < 2.4
 const char *bmmAnaBarrelCut = "alpha < 0.05  && chi2/Ndof < 2.4 && d3/d3e > 9 &&  iso10_pt9_pv > 0.55 && pt_mu2 > 2.8 && pt > 4.4";
 const char *bmmAnaEndcapCut = "alpha < 0.035 && chi2/Ndof < 1.8 && d3/d3e > 10 && iso10_pt9_pv > 0.65 && pt_mu2 > 2.2 && pt > 6.2";
 
+///////////////////////////
+// Theoretical constants //
+///////////////////////////
+static const measurement_t f_s(0.113,0.013);
+static const measurement_t f_u(0.401,0.013);
+static const measurement_t bf_sm_bstomumu(3.86e-9,0.15e-9);
+static const measurement_t bf_sm_bdtomumu(1.06e-10,0.04e-10);
+static const measurement_t bf_bptojpsik(1.014e-3,0.034e-3);
+static const measurement_t bf_jpsitomumu(0.0593,0.0006);
+
 using std::map;
 
 // utility routine
-static double compute_bkg_width(map<bmm_param,double> *bsmm, map<bmm_param,double> *bdmm, int channel)
+static double compute_bkg_width(map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, int channel)
 {
 	using std::make_pair;
 	std::vector<std::pair<double,bool> > v(4); // we need 4 entries
@@ -30,10 +40,10 @@ static double compute_bkg_width(map<bmm_param,double> *bsmm, map<bmm_param,doubl
 	size_t j,interior;
 	double entered;
 	
-	v[0] = make_pair((*bsmm)[make_pair(kLow_signal_window_bmm, channel)], true);
-	v[1] = make_pair((*bdmm)[make_pair(kLow_signal_window_bmm, channel)], true);
-	v[2] = make_pair((*bsmm)[make_pair(kHigh_signal_window_bmm, channel)], false);
-	v[3] = make_pair((*bdmm)[make_pair(kHigh_signal_window_bmm, channel)], false);
+	v[0] = make_pair( ((*bsmm)[make_pair(kLow_signal_window_bmm, channel)]).getVal(), true);
+	v[1] = make_pair( ((*bdmm)[make_pair(kLow_signal_window_bmm, channel)]).getVal(), true);
+	v[2] = make_pair( ((*bsmm)[make_pair(kHigh_signal_window_bmm, channel)]).getVal(), false);
+	v[3] = make_pair( ((*bdmm)[make_pair(kHigh_signal_window_bmm, channel)]).getVal(), false);
 	std::sort(v.begin(), v.end()); // sort the vector
 
 	entered = low_histo_bound;
@@ -54,11 +64,11 @@ static double compute_bkg_width(map<bmm_param,double> *bsmm, map<bmm_param,doubl
 	return bkg_width;
 } // compute_bkg_width()
 
-double compute_tau(std::map<bmm_param,double> *bsmm, std::map<bmm_param,double> *bdmm, int channel, bool tau_s)
+double compute_tau(map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, int channel, bool tau_s)
 {
-	std::map<bmm_param,double> *bmm = tau_s ? bsmm : bdmm;
+	std::map<bmm_param,measurement_t> *bmm = tau_s ? bsmm : bdmm;
 	
-	return ( (*bmm)[std::make_pair(kHigh_signal_window_bmm,channel)] - (*bmm)[std::make_pair(kLow_signal_window_bmm, channel)] ) / compute_bkg_width(bsmm, bdmm, channel);
+	return ( (*bmm)[std::make_pair(kHigh_signal_window_bmm,channel)].getVal() - (*bmm)[std::make_pair(kLow_signal_window_bmm, channel)].getVal() ) / compute_bkg_width(bsmm, bdmm, channel);
 } // compute_tau()
 
 std::string find_bmm_name(bmm_param_tag p)
@@ -214,3 +224,28 @@ bmm_param_tag find_bmm_param_by_name(std::string name, bool *bsparam)
 	
 	return result;
 } // find_bmm_param_by_name()
+
+const measurement_t c_s_theory()
+{
+	measurement_t c_s;
+	
+	c_s = (f_s * bf_sm_bstomumu) / (f_u * bf_bptojpsik * bf_jpsitomumu);
+	
+	return c_s;
+} // c_s_theory()
+
+const measurement_t c_d_theory()
+{
+	measurement_t c_d = bf_sm_bdtomumu / (bf_bptojpsik * bf_jpsitomumu);
+	return c_d;
+} // c_d_theory()
+
+double bstomumu()
+{
+	return bf_sm_bstomumu.getVal();
+} // bstomumu()
+
+double bdtomumu()
+{
+	return bf_sm_bdtomumu.getVal();
+} // bdtomumu()

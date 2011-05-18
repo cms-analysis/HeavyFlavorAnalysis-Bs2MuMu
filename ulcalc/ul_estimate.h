@@ -17,24 +17,16 @@
 #include <RooDataSet.h>
 #include <RooStats/ConfInterval.h>
 
-void add_channels(std::map<bmm_param,double> *bmm, std::set<int> *channels);
-
-RooWorkspace *build_model_light(std::map<bmm_param_tag,double> *bsmmVars, bool silent);
-RooWorkspace *build_model(std::map<bmm_param_tag,double> *bsmmVars, std::map<bmm_param_tag,double> *bdmmVars, bool silent);
-RooWorkspace *build_model_split(std::map<bmm_param_tag,double> *bsmmBar, std::map<bmm_param_tag,double> *bsmmEnd, std::map<bmm_param_tag,double> *bdmmBar, std::map<bmm_param_tag,double> *bdmmEnd, bool silent);
-RooWorkspace *build_model_nchannel(std::map<bmm_param,double> *bsmm, std::map<bmm_param,double> *bdmm, bool silent);
-
-RooDataSet *build_data(RooWorkspace *wspace, double nsObs, double ndObs, double nbObs);
-RooDataSet *build_data_split(RooWorkspace *wspace,double nsObsB, double nsObsE, double ndObsB, double ndObsE, double nbObsB, double nbObsE);
+void add_channels(std::map<bmm_param,measurement_t> *bmm, std::set<int> *channels);
+RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std::map<bmm_param,measurement_t> *bdmm, bool no_errors, bool silent);
 void estimate_start_values(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels);
 
-RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, double cLevel, double *ulLimit = NULL, bool splitModel = true, double *cpuUsed = NULL);
+RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, uint32_t nbins = 20, std::pair<double,double> *rg = NULL, double err = 0.0, double *ulLimit = NULL, double *cpuUsed = NULL);
 RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, double *ulLimit = NULL, double *cpuUsed = NULL);
-RooStats::ConfInterval *est_ul_mc(RooWorkspace *wspace, RooDataSet *data, double cLevel, double *ulLimit = NULL, bool splitModel = true, double *cpuUsed = NULL);
 RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, double cLevel, double *ulLimit = NULL, bool splitModel = true, double *cpuUsed = NULL);
 
-void compute_vars(std::map<bmm_param,double> *bmm, bool bstomumu);
-double compute_efftot_bplus(std::map<bmm_param,double> *bmm, int channel);
-double compute_efftot_bmm(std::map<bmm_param,double> *bmm, int channel);
+void compute_vars(std::map<bmm_param,measurement_t> *bmm, bool bstomumu);
+measurement_t compute_efftot_bplus(std::map<bmm_param,measurement_t> *bmm, int channel);
+measurement_t compute_efftot_bmm(std::map<bmm_param,measurement_t> *bmm, int channel);
 
 #endif

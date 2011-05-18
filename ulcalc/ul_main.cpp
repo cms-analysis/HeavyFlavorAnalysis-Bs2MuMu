@@ -23,10 +23,20 @@
 
 using namespace std;
 
+enum algo_t {
+	kAlgo_Bayesian = 1,
+	kAlgo_FeldmanCousins
+};
+
 static const char *workspace_path = NULL;
 static const char *configfile_path = NULL;
 static double gCLLevel = 0.9;
 static uint32_t gDefaultPoissonLimit = 4;
+static pair<double,double> gMuSRange(-1,-1);
+static uint32_t gFCSteps = 20;
+static double gFCErr = 0.0; // additional error in acceptance region
+static algo_t gAlgorithm = kAlgo_Bayesian;
+static bool gDisableErrors = false;
 
 #ifdef __linux__
 /* Linux does not have that nice function fgetln
@@ -44,7 +54,28 @@ static char *fgetln(FILE *f, size_t *len)
 } // fgetln()
 #endif
 
-static bool validate_bmm(map<bmm_param,double> *bmm, int ch)
+static const char *algo_name(algo_t a)
+{
+	const char *result;
+	
+	switch (a) {
+		case kAlgo_Bayesian:
+			result = "Bayesian";
+			break;
+		case kAlgo_FeldmanCousins:
+			result = "Feldman-Cousins";
+			break;
+		default:
+			cerr << "Unknown algorithm selected: " << a << endl;
+			result = NULL;
+			abort();
+			break;
+	}
+	
+	return result;
+} // algo_name()
+
+static bool validate_bmm(map<bmm_param,measurement_t> *bmm, int ch)
 {
 	bool valid;
 	
@@ -70,7 +101,7 @@ bail:
 	return valid;
 } // validate_bmm()
 
-static bool process_line(string name, vector<double> *values, map<bmm_param,double> *bsmm, map<bmm_param,double> *bdmm)
+static bool process_line(string name, vector<double> *values, map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm)
 {
 	bmm_param p;
 	bool bsparam;
@@ -82,17 +113,25 @@ static bool process_line(string name, vector<double> *values, map<bmm_param,doub
 	p.first = find_bmm_param_by_name(name, &bsparam);
 	if (p.first == kUnknownParam) goto bail;
 	
-	p.second = (int)(*values)[0]; // channel index
+	// Channel Index
+	p.second = (int)((*values)[0]);
 	
-	if (bsparam)	(*bsmm)[p] = (*values)[1];
-	else			(*bdmm)[p] = (*values)[1];
+	// Value
+	if (bsparam)	(*bsmm)[p].setVal((*values)[1]);
+	else			(*bdmm)[p].setVal((*values)[1]);
+	
+	// Error of the variable
+	if (values->size() >= 3) {
+		if (bsparam)	(*bsmm)[p].setErr((*values)[2]);
+		else			(*bdmm)[p].setErr((*values)[2]);
+	}
 	
 	success = true;
 bail:
 	return success;
 } // process_line()
 
-static void parse_input(const char *path, map<bmm_param,double> *bsmm, map<bmm_param,double> *bdmm)
+static void parse_input(const char *path, map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm)
 {
 	FILE *file = fopen(path, "r");
 	char* input_line;
@@ -145,13 +184,15 @@ static void parse_input(const char *path, map<bmm_param,double> *bsmm, map<bmm_p
 
 static void usage()
 {
-	cerr << "ulcalc [-l cl] [-w workspace_outfile.root] [-p <n>] <configfile>" << endl;
+	cerr << "ulcalc [--disable-errors][[-n <FC steps>] -r x,y ] [-e fc_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\">] <configfile>" << endl;
 } // usage()
 
 static bool parse_arguments(const char **first, const char **last)
 {
 	bool ok = true;
 	const char *arg;
+	string s;
+	string::iterator col;
 	
 	while (first != last) {
 		
@@ -174,7 +215,50 @@ static bool parse_arguments(const char **first, const char **last)
 					usage();
 					abort();
 				}
-				gDefaultPoissonLimit = atoi(*first++);
+				gDefaultPoissonLimit = (uint32_t)atoi(*first++);
+			} else if (strcmp(arg, "-n") == 0) {
+				if (first == last) {
+					usage();
+					abort();
+				}
+				gFCSteps = (uint32_t)atoi(*first++);
+			} else if (strcmp(arg, "-r") == 0) {
+				if (first == last) {
+					usage();
+					abort();
+				}
+				s = *first++;
+				if ( (col = find(s.begin(), s.end(), ',')) == s.end() ) {
+					usage();
+					abort();
+				}
+				gMuSRange.first = atof(string("").append(s.begin(),col).c_str());
+				gMuSRange.second = atof(string("").append(col+1,s.end()).c_str());
+			} else if (strcmp(arg, "-a") == 0) {
+				if (first == last) {
+					usage();
+					abort();
+				}
+				s = *first++;
+				if (s.compare("bayes") == 0)	gAlgorithm = kAlgo_Bayesian;
+				else if (s.compare("fc") == 0)	gAlgorithm = kAlgo_FeldmanCousins;
+				else {
+					usage();
+					abort();
+				}
+			} else if (strcmp(arg, "--disable-errors") == 0) {
+				gDisableErrors = true;
+			} else if (strcmp(arg, "-e") == 0) {
+				if (first == last) {
+					usage();
+					abort();
+				}
+				gFCErr = atof(*first++);
+			}
+			else {
+				cerr << "Unknown option '" << arg << "'." << endl;
+				usage();
+				abort();
 			}
 		} else
 			configfile_path = arg;
@@ -190,17 +274,27 @@ static bool parse_arguments(const char **first, const char **last)
 	cout << "Confidence Level: " << gCLLevel << endl;
 	if (workspace_path)
 		cout << "Output Workspace into: " << workspace_path << endl;
+	if (gAlgorithm == kAlgo_FeldmanCousins) {
+		cout << "mu_s range: (" << gMuSRange.first << ", " << gMuSRange.second << ")." << endl;
+		cout << "Number of Steps " << gFCSteps << endl;
+		cout << "Additional error in acceptance region " << gFCErr << endl;
+	}
+	cout << "Algorithm is " << algo_name(gAlgorithm) << endl;
+	cout << "Errors on Variables are " << (gDisableErrors ? "disabled" : "enabled") << endl;
 	
 bail:
 	return ok;
 } // parse_arguments()
 
-static void dump_params(pair<bmm_param,double> p)
+static void dump_params(pair<bmm_param,measurement_t> p)
 {
-	cout << '\t' << find_bmm_name(p.first.first) << '[' << p.first.second << "]: " << p.second << endl;
+	cout << '\t' << find_bmm_name(p.first.first) << '[' << p.first.second << "]: " << p.second.getVal();
+	if (p.second.getErr() > 0)
+		cout << " +/- " << p.second.getErr();
+	cout << endl;
 } // dump_params()
 
-static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *channels, set<int>::iterator a,set<int>::iterator b, map<bmm_param,double> *bsmm, map<bmm_param,double> *bdmm, double *avgUL, double *avgWeight)
+static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *channels, set<int>::iterator a,set<int>::iterator b, map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, double *avgUL, double *avgWeight)
 {
 	RooDataSet *data = NULL;
 	RooStats::ConfInterval *inter = NULL;
@@ -233,7 +327,19 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 		data = new RooDataSet("data","",*obs);
 		data->add(*obs);
 		data->Print("v");
-		inter = est_ul_bc(wspace, data, channels, gCLLevel, &ul, NULL);
+		
+		switch (gAlgorithm) {
+			case kAlgo_Bayesian:
+				inter = est_ul_bc(wspace, data, channels, gCLLevel, &ul, NULL);
+				break;
+			case kAlgo_FeldmanCousins:
+				inter = est_ul_fc(wspace, data, channels, gCLLevel, gFCSteps, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), gFCErr, &ul, NULL);
+				break;
+			default:
+				cerr << "Unknown algorithm selected to determine the upper limit..." << endl;
+				abort();
+				break;
+		}
 		
 		*avgWeight = *avgWeight + weight;
 		*avgUL = *avgUL + ul * weight;
@@ -247,18 +353,18 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 	ch = *a++;
 	
 	// Set current value and do recursive...
-	bkg = (*bsmm)[make_pair(kObsBkg_bmm, ch)];
+	bkg = ((*bsmm)[make_pair(kObsBkg_bmm, ch)]).getVal();
 	((RooRealVar&)((*obs)[Form("NbObs_%d",ch)])).setVal(bkg);
 	
 	if (bsmm->count(make_pair(kObsB_bmm, ch)) > 0) {
-		obsBsMin = obsBsMax = (uint32_t)(*bsmm)[make_pair(kObsB_bmm, ch)];
+		obsBsMin = obsBsMax = (uint32_t)((*bsmm)[make_pair(kObsB_bmm, ch)]).getVal();
 	} else {
 		obsBsMin = 0;
 		obsBsMax = gDefaultPoissonLimit;
 	}
 	
 	if (bdmm->count(make_pair(kObsB_bmm, ch)) > 0) {
-		obsBdMin = obsBdMax = (uint32_t)(*bdmm)[make_pair(kObsB_bmm, ch)];
+		obsBdMin = obsBdMax = (uint32_t)((*bdmm)[make_pair(kObsB_bmm, ch)]).getVal();
 	} else {
 		obsBdMin = 0;
 		obsBdMax = gDefaultPoissonLimit;
@@ -266,12 +372,9 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 	
 	// iterate through these variables
 	for (obsBs = obsBsMin; obsBs <= obsBsMax; obsBs++) {
-		
 		((RooRealVar&)((*obs)[Form("NsObs_%d",ch)])).setVal(obsBs);
 		for (obsBd = obsBdMin; obsBd <= obsBdMax; obsBd++) {
-			
 			((RooRealVar&)((*obs)[Form("NdObs_%d",ch)])).setVal(obsBd);
-			
 			recursive_calc(wspace,obs,channels,a,b,bsmm,bdmm,avgUL,avgWeight);
 		}
 	}
@@ -283,7 +386,7 @@ int main(int argc, const char *argv [])
 {
 	RooWorkspace *wspace = NULL;
 	RooArgSet observables;
-	map<bmm_param,double> bsmm,bdmm;
+	map<bmm_param,measurement_t> bsmm,bdmm;
 	set<int> channels;
 	double avgUL = 0;
 	double avgWeight = 0;
@@ -334,7 +437,7 @@ int main(int argc, const char *argv [])
 	
 	compute_vars(&bsmm,true);
 	compute_vars(&bdmm,false);
-	wspace = build_model_nchannel(&bsmm,&bdmm,false);
+	wspace = build_model_nchannel(&bsmm,&bdmm,gDisableErrors,false);
 	
 	// set the measured candidates...
 	observables.addClone(*wspace->set("obs"));
@@ -342,7 +445,7 @@ int main(int argc, const char *argv [])
 	
 	// reweight the UL.
 	avgUL /= avgWeight;
-	cout << "Expected Bayesian Upper limit for config file: " << avgUL*BFSM << endl;
+	cout << "Upper limit for config file using algorithm " << algo_name(gAlgorithm) << ": " << avgUL*bstomumu() << endl;
 	
 	if (workspace_path) wspace->writeToFile(workspace_path,kTRUE);
 	delete wspace;

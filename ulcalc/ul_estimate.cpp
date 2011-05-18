@@ -23,15 +23,17 @@
 #include <RooStats/MCMCCalculator.h>
 #include <RooStats/HybridCalculator.h>
 
+
+
 /* Add all the channels present in bmm to channels */
-void add_channels(map<bmm_param,double> *bmm, set<int> *channels)
+void add_channels(map<bmm_param,measurement_t> *bmm, set<int> *channels)
 {
-	map<bmm_param,double>::const_iterator it;
+	map<bmm_param,measurement_t>::const_iterator it;
 	for (it = bmm->begin(); it != bmm->end(); ++it)
 		channels->insert(it->first.second);
 } // add_channels()
 
-RooWorkspace *build_model_nchannel(map<bmm_param,double> *bsmm, map<bmm_param,double> *bdmm, bool silent)
+RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, bool no_errors, bool silent)
 {
 	RooStats::ModelConfig *splusbModel = NULL;
 	RooStats::ModelConfig *bModel = NULL;
@@ -66,13 +68,84 @@ RooWorkspace *build_model_nchannel(map<bmm_param,double> *bsmm, map<bmm_param,do
 		// build the constants
 		wspace->factory(Form("TauS_%d[%f]",*chan,compute_tau(bsmm, bdmm, *chan, true)));
 		wspace->factory(Form("TauD_%d[%f]",*chan,compute_tau(bdmm, bdmm, *chan, false)));
-		wspace->factory(Form("NuS_%d[%f]", *chan, (*bsmm)[make_pair(kExp_bmm, *chan)]));
-		wspace->factory(Form("NuD_%d[%f]", *chan, (*bdmm)[make_pair(kExp_bmm, *chan)]));
 		
-		wspace->factory(Form("Pss_%d[%f]", *chan, (*bsmm)[make_pair(kProb_swind_bmm, *chan)]));
-		wspace->factory(Form("Psd_%d[%f]", *chan, (*bdmm)[make_pair(kProb_swind_bmm, *chan)]));
-		wspace->factory(Form("Pds_%d[%f]", *chan, (*bsmm)[make_pair(kProb_dwind_bmm, *chan)]));
-		wspace->factory(Form("Pdd_%d[%f]", *chan, (*bdmm)[make_pair(kProb_dwind_bmm, *chan)]));
+		/////////////////////////
+		// Construction of NuS //
+		/////////////////////////
+		if ( ((*bsmm)[make_pair(kExp_bmm, *chan)]).getErr() > 0 && !no_errors ) {
+			measurement_t m = (*bsmm)[make_pair(kExp_bmm, *chan)];
+			wspace->factory(Form("NuS0_%d[%f]", *chan, m.getVal())); // fixed mean variable
+			wspace->factory(Form("NuSErr_%d[%f]", *chan, m.getErr())); // fixed error variable
+			wspace->factory(Form("NuS_%d[%f,%f,%f]", *chan, m.getVal(), 0.0, m.getVal() + 100*m.getErr()));
+			wspace->factory(Form("Gaussian::NuS_Gauss_%d(NuS_%d,NuS0_%d,NuSErr_%d)",*chan,*chan,*chan,*chan)); // error gaussian.
+		} else {
+			// no error associated to this variable. just create the default one
+			wspace->factory(Form("NuS_%d[%f]", *chan, ((*bsmm)[make_pair(kExp_bmm, *chan)]).getVal()));
+		}
+		
+		/////////////////////////
+		// Construction of NuD //
+		/////////////////////////
+		if ( ((*bdmm)[make_pair(kExp_bmm, *chan)]).getErr() > 0 && !no_errors ) {
+			measurement_t m = (*bdmm)[make_pair(kExp_bmm, *chan)];
+			wspace->factory(Form("NuD0_%d[%f]", *chan, m.getVal())); // fixed mean variable
+			wspace->factory(Form("NuDErr_%d[%f]", *chan, m.getErr())); // fixed error variable
+			wspace->factory(Form("NuD_%d[%f,%f,%f]", *chan, m.getVal(), 0.0, m.getVal() + 100*m.getErr()));
+			wspace->factory(Form("Gaussian::NuD_Gauss_%d(NuD_%d,NuD0_%d,NuDErr_%d)",*chan,*chan,*chan,*chan)); // error gaussian
+		} else {
+			// no error assigned, just make a constant
+			wspace->factory(Form("NuD_%d[%f]", *chan, ((*bdmm)[make_pair(kExp_bmm, *chan)]).getVal()));
+		}
+		
+		/////////////////////////
+		// Construction of Pss //
+		/////////////////////////
+		if ( ((*bsmm)[make_pair(kProb_swind_bmm, *chan)]).getErr() > 0 && !no_errors ) {
+			measurement_t m = (*bsmm)[make_pair(kProb_swind_bmm, *chan)];
+			wspace->factory(Form("Pss0_%d[%f]", *chan, m.getVal()));
+			wspace->factory(Form("PssErr_%d[%f]", *chan, m.getErr()));
+			wspace->factory(Form("Pss_%d[%f,%f,%f]", *chan, m.getVal(), 0.0, 1.0));
+			wspace->factory(Form("Gaussian::Pss_Gauss_%d(Pss_%d,Pss0_%d,PssErr_%d)",*chan,*chan,*chan,*chan));
+		} else {
+			// no error assigned, just make a constant.
+			wspace->factory(Form("Pss_%d[%f]", *chan, ((*bsmm)[make_pair(kProb_swind_bmm, *chan)]).getVal()));
+		}
+		
+		/////////////////////////
+		// Construction of Psd //
+		/////////////////////////
+		if ( ((*bdmm)[make_pair(kProb_swind_bmm, *chan)]).getErr() > 0 && !no_errors ) {
+			measurement_t m = (*bdmm)[make_pair(kProb_swind_bmm, *chan)];
+			wspace->factory(Form("Psd0_%d[%f]",*chan,m.getVal()));
+			wspace->factory(Form("PsdErr_%d[%f]",*chan,m.getErr()));
+			wspace->factory(Form("Psd_%d[%f,%f,%f]", *chan, m.getVal(), 0.0, 1.0));
+			wspace->factory(Form("Gaussian::Psd_Gauss_%d(Psd_%d,Psd0_%d,PsdErr_%d)",*chan,*chan,*chan,*chan));
+		} else {
+			// no error assigned, just make a constant.
+			wspace->factory(Form("Psd_%d[%f]", *chan, ((*bdmm)[make_pair(kProb_swind_bmm, *chan)]).getVal()));
+		}
+		
+		
+		if ( ((*bsmm)[make_pair(kProb_dwind_bmm, *chan)]).getErr() > 0 && !no_errors ) {
+			measurement_t m = (*bsmm)[make_pair(kProb_dwind_bmm, *chan)];
+			wspace->factory(Form("Pds0_%d[%f]",*chan,m.getVal()));
+			wspace->factory(Form("PdsErr_%d[%f]",*chan,m.getErr()));
+			wspace->factory(Form("Pds_%d[%f,%f,%f]",*chan,m.getVal(),0.0,1.0));
+			wspace->factory(Form("Gaussian::Pds_Gauss_%d(Pds_%d,Pds0_%d,PdsErr_%d)",*chan,*chan,*chan,*chan));
+		} else {
+			// no error assigned, just make a constant.
+			wspace->factory(Form("Pds_%d[%f]", *chan, ((*bsmm)[make_pair(kProb_dwind_bmm, *chan)]).getVal()));
+		}
+							
+		if ( ((*bdmm)[make_pair(kProb_dwind_bmm, *chan)]).getErr() > 0 && !no_errors ) {
+			measurement_t m = (*bdmm)[make_pair(kProb_dwind_bmm, *chan)];
+			wspace->factory(Form("Pdd0_%d[%f]",*chan,m.getVal()));
+			wspace->factory(Form("PddErr_%d[%f]",*chan,m.getErr()));
+			wspace->factory(Form("Pdd_%d[%f,%f,%f]",*chan,m.getVal(),0.0,1.0));
+			wspace->factory(Form("Gaussian::Pdd_Gauss_%d(Pdd_%d,Pdd0_%d,PddErr_%d)",*chan,*chan,*chan,*chan));
+		} else {
+			wspace->factory(Form("Pdd_%d[%f]", *chan, ((*bdmm)[make_pair(kProb_dwind_bmm, *chan)]).getVal()));
+		}
 		
 		wspace->factory(Form("Poisson::bkg_window_%d(NbObs_%d,nu_b_%d)",*chan,*chan,*chan));
 		wspace->factory(Form("Poisson::bs_window_%d(NsObs_%d,FormulaVar::bs_mean_%d(\"TauS_%d*nu_b_%d + Pss_%d*NuS_%d*mu_s + Psd_%d*NuD_%d*mu_d\",{TauS_%d,nu_b_%d,Pss_%d,NuS_%d,mu_s,Psd_%d,NuD_%d,mu_d}))",*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan));
@@ -89,9 +162,9 @@ RooWorkspace *build_model_nchannel(map<bmm_param,double> *bsmm, map<bmm_param,do
 	// define the sets
 	wspace->defineSet("obs", observables);
 	wspace->defineSet("poi", "mu_s"); // Parameter of interest (at the moment, just mu_s)
-	nuisanceParams = wspace->allVars();
-	nuisanceParams.remove(*wspace->set("obs"));
-	nuisanceParams.remove(*wspace->set("poi"));
+	nuisanceParams.addClone(wspace->allVars());
+	nuisanceParams.remove(*wspace->set("obs"), kTRUE, kTRUE);
+	nuisanceParams.remove(*wspace->set("poi"), kTRUE, kTRUE);
 	RooStats::RemoveConstantParameters(&nuisanceParams);
 	wspace->defineSet("nui", nuisanceParams);
 	
@@ -136,43 +209,6 @@ RooWorkspace *build_model_nchannel(map<bmm_param,double> *bsmm, map<bmm_param,do
 	
 	return wspace;
 } // build_model_nchannel()
-
-RooDataSet *build_data(RooWorkspace *wspace, double nsObs, double ndObs, double nbObs)
-{
-	RooRealVar *ns = wspace->var("NsObs");
-	RooRealVar *nd = wspace->var("NdObs");
-	RooRealVar *nb = wspace->var("NbObs");
-	RooArgSet vars(*ns,*nd,*nb);
-	RooDataSet *data = new RooDataSet("data","",vars);
-	
-	// set the values...
-	ns->setVal(nsObs);
-	nd->setVal(ndObs);
-	nb->setVal(nbObs);
-	
-	// add to dataset
-	data->add(vars);
-		
-	return data;
-} // build_data()
-
-RooDataSet *build_data_split(RooWorkspace *wspace, double nsObsB, double nsObsE, double ndObsB, double ndObsE, double nbObsB, double nbObsE)
-{
-	RooDataSet *data = new RooDataSet("data","",*wspace->set("obs"));
-	RooArgSet vars;
-	
-	vars.addClone(*wspace->set("obs"));
-	((RooRealVar&)vars["NbObs_B"]).setVal(nbObsB);
-	((RooRealVar&)vars["NbObs_E"]).setVal(nbObsE);
-	((RooRealVar&)vars["NsObs_B"]).setVal(nsObsB);
-	((RooRealVar&)vars["NsObs_E"]).setVal(nsObsE);
-	((RooRealVar&)vars["NdObs_B"]).setVal(ndObsB);
-	((RooRealVar&)vars["NdObs_E"]).setVal(ndObsE);
-	
-	data->add(vars);
-	
-	return data;
-} // build_data_split()
 
 /* Start values are set the following way:
  *	nu_b = NbObs
@@ -233,25 +269,64 @@ void estimate_start_values(RooWorkspace *wspace, RooDataSet *data, set<int> *cha
 	bConfig->SetSnapshot(*wspace->set("poi"));
 } // estimate_start_values()
 
-// FIXME: Feldman-Cousins broken
-RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, double cLevel, double *ulLimit, double *cpuUsed)
+RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, uint32_t nbins, pair<double,double> *rg, double err, double *ulLimit, double *cpuUsed)
 {
 	using namespace RooStats;
 	FeldmanCousins fc(*data,*(dynamic_cast<ModelConfig*>(wspace->obj("splusbConfig"))));
 	PointSetInterval *psInterval = NULL;
+	ConfidenceBelt *belt;
 	TStopwatch swatch;
+	RooDataSet *custom_points;
+	RooDataSet *pointsInInterval;
+	RooAbsData *paramPts;
+	Double_t v;
+	Int_t j;
 	
 	swatch.Start(kTRUE);
 	
 	// configure Feldman Cousins
+	fc.CreateConfBelt(true);
 	fc.SetTestSize(1.-cLevel);
 	fc.UseAdaptiveSampling(true); // adaptive sampling (disable later on)
 	fc.AdditionalNToysFactor(5.0);
-	fc.SetNBins(25);
+	fc.SetNBins(nbins);
 	fc.FluctuateNumDataEntries(false);
+	if (rg) {
+		RooArgSet poi;
+		poi.addClone(*wspace->set("poi"));
+		custom_points = new RooDataSet("","",poi);
+		
+		for (j = 0; j < (Int_t)nbins; j++) {
+			v = rg->first + (rg->second - rg->first) * j / (nbins - 1);
+			((RooRealVar*)poi.first())->setVal(v); // Currenlty only one parameter of interest supported
+			custom_points->add(poi);
+		}
+		fc.SetPOIPointsToTest(*custom_points); // note, this is owned by Feldman-Cousins.
+	}
 	
-	// estimate_start_values(wspace,data);
+	estimate_start_values(wspace, data, channels);
 	psInterval = fc.GetInterval();
+	
+	// if 'err' specified, correct for numerical inaccurancies...
+	if (err > 0) {
+		// construct our own PointSetInterval
+		pointsInInterval = new RooDataSet("pointsInInterval","points in interval", *(fc.GetPointsToScan()->get(0)));
+		delete psInterval; // delete the old one (we are replacing it!)
+		
+		belt = fc.GetConfidenceBelt();
+		paramPts = fc.GetPointsToScan();
+		for (j = 0; j < paramPts->numEntries(); j++) {
+			RooArgSet params;
+			params.add(*paramPts->get(j));
+			v = fc.GetTestStatSampler()->EvaluateTestStatistic(*data, params);
+			if (v - err < belt->GetAcceptanceRegionMax(params))
+				pointsInInterval->add(params);
+		}
+		
+		// FIXME: Leakage of pointsInInterval. However I think problem within RooStats...
+		psInterval = new PointSetInterval("ClassicalConfidenceInterval",*pointsInInterval);
+		psInterval->SetConfidenceLevel(cLevel);
+	}
 	
 	if (ulLimit)
 		*ulLimit = psInterval->UpperLimit(*wspace->var("mu_s"));
@@ -275,6 +350,17 @@ RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, set<in
 	bc.SetConfidenceLevel(cLevel);
 	bc.SetLeftSideTailFraction(0.0); // compute upper limit
 	
+	// FIXME: Multidimensional Integration funktioniert nicht mehr!
+	//	bc.SetIntegrationType("PLAIN");
+	
+	/*
+	 std::transform(typeName.begin(), typeName.end(), typeName.begin(), (int(*)(int)) toupper );  
+	 if (typeName == "ADAPTIVE") return IntegrationMultiDim::kADAPTIVE;  
+	 if (typeName == "VEGAS") return IntegrationMultiDim::kVEGAS;  
+	 if (typeName == "MISER") return IntegrationMultiDim::kMISER;  
+	 if (typeName == "PLAIN") return IntegrationMultiDim::kPLAIN;  
+	 */	 
+	
 	estimate_start_values(wspace, data, channels);
 	simpleInt = bc.GetInterval();
 	
@@ -286,35 +372,6 @@ RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, set<in
 	
 	return simpleInt;
 } // est_ul_bc()
-
-// FIXME: Markov Chain MC Broken
-RooStats::ConfInterval *est_ul_mc(RooWorkspace *wspace, RooDataSet *data, double cLevel, double *ulLimit, bool splitModel, double *cpuUsed)
-{
-	using namespace RooStats;
-	MCMCCalculator mc(*data,*(dynamic_cast<ModelConfig*> (wspace->obj("splusbConfig"))));
-	MCMCInterval *mcInt = NULL;
-	TStopwatch swatch;
-	
-	swatch.Start(kTRUE);
-	
-	// configure MCMCCalculator
-	mc.SetNumBins(1000);
-	mc.SetNumIters(100000);
-	mc.SetNumBurnInSteps(10);
-	mc.SetConfidenceLevel(cLevel);
-	mc.SetLeftSideTailFraction(0.0); // compute upper limit
-	
-//	estimate_start_values(wspace, data);
-	mcInt = mc.GetInterval();
-
-	if (ulLimit)
-		*ulLimit = mcInt->UpperLimit(*wspace->var("mu_s"));
-	
-	swatch.Stop();
-	if (cpuUsed) *cpuUsed = swatch.CpuTime();
-	
-	return mcInt;
-} // est_ul_mc()
 
 // FIXME: CLs not yet implemented
 RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, double cLevel, double *ulLimit, bool splitModel, double *cpuUsed)
@@ -333,12 +390,12 @@ RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, doubl
 	return NULL;
 } // est_ul_cls()
 
-void compute_vars(map<bmm_param,double> *bmm, bool bstomumu)
+void compute_vars(map<bmm_param,measurement_t> *bmm, bool bstomumu)
 {
-	double tot_bplus,nu;
 	set<int> channels;
 	set<int>::const_iterator it;
-	double c = bstomumu ? c_s_theory : c_d_theory;
+	measurement_t tot_bplus,nu;
+	measurement_t c = bstomumu ? c_s_theory() : c_d_theory();
 	
 	add_channels(bmm, &channels);
 	
@@ -347,7 +404,7 @@ void compute_vars(map<bmm_param,double> *bmm, bool bstomumu)
 		if (bmm->count(make_pair(kTot_bplus, *it)) > 0)
 			tot_bplus = (*bmm)[make_pair(kTot_bplus, *it)];
 		else
-			tot_bplus = ((*bmm)[make_pair(kObs_bplus, *it)]) / compute_efftot_bplus(bmm,*it);
+			tot_bplus = (*bmm)[make_pair(kObs_bplus, *it)] / compute_efftot_bplus(bmm,*it);
 		
 		nu = c * compute_efftot_bmm(bmm,*it) * tot_bplus;
 		
@@ -355,14 +412,16 @@ void compute_vars(map<bmm_param,double> *bmm, bool bstomumu)
 	}
 } // compute_vars()
 
-double compute_efftot_bplus(map<bmm_param,double> *bmm, int channel)
+measurement_t compute_efftot_bplus(map<bmm_param,measurement_t> *bmm, int channel)
 {
-	return (*bmm)[make_pair(kAcc_bplus,channel)] * (*bmm)[make_pair(kEff_mu_bplus,channel)] * (*bmm)[make_pair(kEff_trig_bplus,channel)] * (*bmm)[make_pair(kEff_cand_bplus,channel)] * (*bmm)[make_pair(kEff_ana_bplus,channel)];
+	measurement_t eff = (*bmm)[make_pair(kAcc_bplus,channel)] * (*bmm)[make_pair(kEff_mu_bplus,channel)] * (*bmm)[make_pair(kEff_trig_bplus,channel)] * (*bmm)[make_pair(kEff_cand_bplus,channel)] * (*bmm)[make_pair(kEff_ana_bplus,channel)];
+	
+	return eff;
 } // compute_efftot_bplus()
 
-double compute_efftot_bmm(map<bmm_param,double> *bmm, int channel)
+measurement_t compute_efftot_bmm(map<bmm_param,measurement_t> *bmm, int channel)
 {
-	double eff;
+	measurement_t eff;
 	
 	if(bmm->count(make_pair(kEff_total_bmm, channel)) > 0)
 		eff = (*bmm)[make_pair(kEff_total_bmm, channel)];
