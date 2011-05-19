@@ -568,6 +568,9 @@ void bmmReader::fillCandidateVariables() {
     fJSON = 1; 
   } else {
     fJSON = fpJSON->good(fRun, fLS); 
+    if (fVerbose > 1 && !fJSON) {
+      cout << "JSON = 0 for run = " << fRun << " and LS = " << fLS << endl;
+    }
   }
 
   fCandTM    = tmCand(fpCand); 
@@ -1313,7 +1316,7 @@ void bmmReader::bookHist() {
   // -- Reduced Tree
   fTree = new TTree("events", "events");
   fTree->Branch("run",    &fRun,               "run/I");
-  fTree->Branch("json",   &fJSON,              "json/I");
+  fTree->Branch("json",   &fJSON,              "json/O");
   fTree->Branch("evt",    &fEvt,               "evt/I");
   fTree->Branch("ls",     &fLS,                "ls/I");
   fTree->Branch("mck",    &fGoodMCKinematics,  "mck/O");

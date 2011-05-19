@@ -3,7 +3,7 @@ SELMODE            -1
 #2011TRIGGER        HLT_DoubleMu3_Jpsi_v1,HLT_DoubleMu3_Jpsi_v2
 TRIGGER     HLT_DoubleMu0,HLT_DoubleMu0_Quarkonium_v1
 L1TRIGGER   L1_DoubleMuOpen
-JSON     /shome/ursl/dana/CMSSW_4_1_2/src/HeavyFlavorAnalysis/Bs2MuMu/macros/cuts/Cert_136033-149442_7TeV_Nov4ReReco_Collisions10_JSON_MuonPhys.txt
+JSON        cuts/Cert_136033-149442_7TeV_Nov4ReReco_Collisions10_JSON_MuonPhys.txt
 # -- boxes
 +input cuts/boxes.Bs2JpsiPhi.cuts
 # -- tracks
