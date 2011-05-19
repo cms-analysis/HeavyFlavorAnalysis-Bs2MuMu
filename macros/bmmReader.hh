@@ -24,7 +24,6 @@
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
 
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/JSON.hh"
 
 #include "treeReader01.hh"
 #include "AnalysisCuts.hh"
@@ -58,6 +57,7 @@ public:
   virtual void   initVariables();
   virtual bool   muonID(TAnaTrack *pT);
 
+  virtual void   processType();
   virtual void   genMatch();
   virtual void   recoMatch();
   virtual void   candMatch();
@@ -104,9 +104,8 @@ public:
     , JPSIMASSLO
     , JPSIMASSHI
     ;
-  int TYPE, SELMODE, MUIDMASK, MUIDRESULT, TRACKQUALITY, JPSITYPE;
+  int TYPE, SELMODE, MUIDMASK, MUIDRESULT, TRACKQUALITY, JPSITYPE, TRUTHCAND;
   std::vector<std::string> HLTPath, L1TPath; 
-  std::string JSONFILE;
 
   bool fL1TMu0, fL1TMu3;
   bool fHLTMu0, fHLTMu3;
@@ -125,9 +124,12 @@ public:
   bool                    fGoodEvent;
 
   // -- TM
+  int                     fGenBTmi; 
   int                     fGenM1Tmi, fGenM2Tmi, fNGenPhotons; 
   int                     fRecM1Tmi, fRecM2Tmi; 
   int                     fCandTmi; 
+
+  int                     fProcessType;
  
   // -- variables for reduced tree, they are from fpCand
   int                     fJSON;
@@ -141,6 +143,7 @@ public:
   int                     fMu1Pix, fMu1BPix, fMu1BPixL1, fMu2Pix, fMu2BPix, fMu2BPixL1;
   double                  fMu1W8Mu, fMu1W8Tr, fMu2W8Mu, fMu2W8Tr; 
   double                  fPvX, fPvY, fPvZ; 
+  int                     fPvN;
   double                  fJpsiMass;
   double                  fCandPt, fCandEta, fCandPhi, fCandM, fCandW8Tr, fCandW8Mu; 
   double                  fCandCosA, fCandChi2, fCandDof, fCandProb, fCandFLS3d, fCandFLSxy; 
@@ -166,7 +169,7 @@ public:
   AnalysisCuts fAnaCuts; 
 
   // -- Analysis distributions
-  AnalysisDistribution   *fpAllEvents, *fpHLT, *fpPvZ,  
+  AnalysisDistribution   *fpAllEvents, *fpHLT, *fpPvZ, *fpPvN,  
     *fpTracksQual, *fpTracksPt,  *fpTracksEta, 
     *fpMuonsID, *fpMuonsPt, *fpMuonsEta, *fpMuon1Pt, *fpMuon2Pt, *fpMuon1Eta, *fpMuon2Eta,
     *fpMpsi,
@@ -182,6 +185,7 @@ public:
   TTree       *fEffTree;
   bool fETm1gt, fETm2gt, fETm1id, fETm2id;
   int fETm1q, fETm2q; 
+  float fETgpt, fETgeta; 
   float fETcandMass;
   float fETm1pt, fETm1eta, fETg1pt, fETg1eta;
   float fETm2pt, fETm2eta, fETg2pt, fETg2eta;
@@ -189,8 +193,6 @@ public:
   // -- PidTables
   PidTable *fpMuonID;
   PidTable *fpMuonTr;
-
-  JSON *fpJSON; 
 
   std::vector<int> fEventVector;
 

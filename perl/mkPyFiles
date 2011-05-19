@@ -8,6 +8,7 @@
 #
 # History   
 # -------   
+#           11/05/04  Bug fix to avoid including previous last file in new run
 #           10/07/26  Migration to skipEvents
 #           10/03/29  Bug fix: works now also for (data_replica.py compliant) file lists
 #           09/12/23  Add runnumber also to output rootfilename, incremental file counting different for -r and default
@@ -103,152 +104,19 @@ $blockFiles = 0;
 
 # -- this hash (indexed by runnumber) contains records with $RUNNUMBER, $NEVENTS, @FILELIST
 #    and is filled in createRunList
-my %runList;
-&createRunList();
 
-# -- produce python files per run
 if ($opt_r) {
+    my %runList;
+    &createRunList();
+    print "runList contains something\n";
     &createPyFilesPerRun();
+    die "\n";
 } else {
+    my @fileList;
+    &createFileList();
     &createPyFilesPerBlock();
+    die "\n";
 }
-
-die "\n";
-
-
-if ($opt_e) {
-    if ($withEvents <= 0) {
-	die "need event numbers in dbs txt file when using -e $opt_e\n";
-    }
-
-    for ($i = 0; $i <= $#files; $i++) {
-	# -- skip lines that do not contain filenames
-	if (!($files[$i] =~ /.*\.root/)) {next;}
-	# -- change format for parsing
-	$files[$i] =~ s/\t/:/g;
-	$files[$i] =~ s/\s{1,99}/:/g;
-	
-	if ($withEvents == 1) {
-	    ($num, $filename) = split(/:/, $files[$i]); 
-	} elsif ($withEvents == 2) {
-	    ($filename, $num) = split(/:/, $files[$i]); 
-	}
-	if ($num == 0) {next;}
-	
-	# -- get runnumber
-	@bblocks =  split(/\//, $filename); 
-	$run = $bblocks[$#bblocks-2]*1000 + $bblocks[$#bblocks-1];
-	#print "-> $run\n";
-	
-	$totEvents += $num; 
-	$bevt += $num; 
-	
-	if ($bevt > $opt_e) {
-	    $startNewBlock = 1; 
-	}
-	
-	if ($opt_r && $run != $oldRun) {
-	    $startNewBlock = 1; 
-	    $oldRun = $run; 
-	    $blockFiles = 0;
-	}
-	
-	if ($opt_v) {print "$num..$bevt..$ib..$run..$filename\n";}
-	
-	# do not insert empty files into filelist block
-	if ($num < 1) {next;} 
-	
-	if ($startNewBlock > 0) {
-	    $ib++; 
-	    $block[$ib] = " \"$filename\"";
-	    if ($opt_r) {
-		$blockName[$ib]   = sprintf("-%d-%04d", $run, $blockFiles);
-		$blockFiles++;
-	    } else {
-		$blockName[$ib] = "";
-	    }		    
-	    $startNewBlock = 0; 
-	    $bevt = $num; 
-	    $blockEvents[$ib] = $bevt; 
-	} else {
-	    $blockEvents[$ib] = $bevt; 
-	    $block[$ib] = $block[$ib] . ",\n " . "\"$filename\"";
-	}
-    }
-}
-
-
-if ($opt_v) {
-    for ($i = 0; $i <= $#block; $i++) {
-	print "==> $i:\n$block[$i]\n\n";
-    }
-}
-
-# -- calculate the number of files to be produced
-if ($opt_e) {
-    $nfiles = $#block; 
-} elsif ($opt_n) {
-    $nfiles = int($#files/$opt_n); 
-}
-
-my $bLine = 0; 
-for ($i = 0; $i <= $nfiles; $i++) {
-    if ($opt_r) {
-	# do nothing
-    } else {
-	$blockName[$i] = sprintf("-%04d", $i);
-    }
-
-    ($fileName = $opt_t) =~ s/XXXX/$opt_s$blockName[$i]/g;
-    
-    $tmp = $fileName; @tmp = split(/\//, $fileName); $fileName = pop(@tmp); # strip path
-    $fileName = $opt_d . "/" . $fileName; 
-    printf("producing file: %s\n", $fileName); 
-    open(OUT, ">$fileName") || die "Cannot open $fileName for output\n";
-    print OUT "# ######################################################################\n";
-    print OUT "# $hostname\n";
-    print OUT "# $directory\n";
-    print OUT "# mkPyFiles @args\n";
-    print OUT "# $fileName with $blockEvents[$i] events\n";
-    print OUT "# ######################################################################\n";
-
-    
-    for ($l = 0; $l <= $#in; $l++) {
-	# -- increment numbering
-	if ($in[$l] =~ /XXXX/) {
-	    ($tmp = $in[$l]) =~ s/XXXX/$opt_s$blockName[$i]/g; 
-	    print OUT $tmp, "\n";
-	}
-	# -- substitute files
-	elsif ($in[$l] =~ /REPLACEFILES/) {
-	    if ($opt_n) {
-		$startline = $i*$opt_n; 
-		$endline = ($i+1)*$opt_n; 
-		for ($j = $startline; $j < $endline; $j++) {
-		    if (length($files[$j+1]) > 1) {
-			if ($j < $endline-1) {
-			    print OUT "   \"$files[$j]\", \n"; 
-			} else {
-			    print OUT "   \"$files[$j]\" \n"; 
-			}
-		    } else {
-			print OUT "   \"$files[$j]\"\n"; 
-			last;
-		    }	    
-		}
-	    } elsif ($opt_e) {
-		print OUT @block[$bLine];
-		print OUT "\n";
-		$bLine++;
-	    }
-	} else {
-	    print OUT $in[$l], "\n"; 
-	}
-    }
-
-    close(OUT); 
-}
-
 
 
 # ----------------------------------------------------------------------
@@ -273,10 +141,14 @@ sub createRunList() {
 	if ($num == 0) {next;}
 
         # -- get runnumber
-	@bblocks =  split(/\//, $filename); 
-	$run = $bblocks[$#bblocks-2]*1000 + $bblocks[$#bblocks-1];
+	if ($opt_r) {
+	    @bblocks =  split(/\//, $filename); 
+	    $run = $bblocks[$#bblocks-2]*1000 + $bblocks[$#bblocks-1];
+	} else {
+	    $run = 1; 
+	}
 
-	push(@fileList, $filename); 
+	push(@fList, $filename); 
 	$runEventNumber += $num; 
 	if ($run != $oldrun) {
 	    if ($oldrun == 0) {
@@ -284,24 +156,25 @@ sub createRunList() {
 		next; 
 	    }
 
-	    pop(@fileList);
+	    pop(@fList);
 	    $runEventNumber -= $num; 
 
-	    createRunRecord($oldrun, $runEventNumber, @fileList); 
+	    createRunRecord($oldrun, $runEventNumber, @fList); 
 
 	    # -- set up new run 
 	    $oldrun = $run;
-	    @fileList = (); 
-	    push(@fileList, $filename); 
+	    @fList = (); 
+	    push(@fList, $filename); 
 	    $runEventNumber = $num; 
 
 	}
     }
     
     # -- push out final line/run as well
-    createRunRecord($oldrun, $runEventNumber, @fileList); 
+    if ($oldrun != 0) {
+	createRunRecord($oldrun, $runEventNumber, @fList); 
+    }
 }
-
 
 
 # ----------------------------------------------------------------------
@@ -323,12 +196,57 @@ sub createRunRecord() {
 }
 
 
+
+# ----------------------------------------------------------------------
+sub createFileList() {
+
+    for ($i = 0; $i <= $#files; $i++) {
+	# -- skip lines that do not contain filenames
+	if (!($files[$i] =~ /.*\.root/)) {next;}
+	# -- change format for parsing
+	$files[$i] =~ s/\t/:/g;
+	$files[$i] =~ s/\s{1,99}/:/g;
+
+	if ($withEvents == 1) {
+	    ($num, $filename) = split(/:/, $files[$i]); 
+	} elsif ($withEvents == 2) {
+	    ($filename, $num) = split(/:/, $files[$i]); 
+	}
+	if ($num == 0) {next;}
+
+	createFileRecord($num, $filename); 
+	
+    }
+    
+
+}
+
+# ----------------------------------------------------------------------
+sub createFileRecord() {
+    
+    local($nevts, $filename) = @_; 
+
+    print "insert $runEventNumber events for file $filename\n";
+    
+    $fileInfo = {
+	NEVENTS  => $nevts,
+	FILELIST => $filename,
+    };
+    
+    push(@fileList, $fileInfo); 
+}
+
+
 # ----------------------------------------------------------------------
 sub createPyFilesPerRun() {
     
     foreach $run (sort keys %runList) {
-
-	$njobs = $runList{$run}->{NEVENTS}/$opt_e;
+	
+	if ($opt_e) {
+	    $njobs = $runList{$run}->{NEVENTS}/$opt_e;
+	} else {
+	    $njobs = 1; 
+	}
 	for ($iJob = 0; $iJob < $njobs; $iJob++) {
 
 	    if ($opt_s) {
@@ -438,28 +356,29 @@ sub createPyFilesPerRun() {
 
 # ----------------------------------------------------------------------
 sub createPyFilesPerBlock() {
+
+    my $fEvt = 0; 
+    my $jobID = -1; 
     
-    foreach $run (sort keys %runList) {
+    for ($iFile = 0; $iFile <= $#fileList; $iFile++) {
 
-	$njobs = $runList{$run}->{NEVENTS}/$opt_e;
-	for ($iJob = 0; $iJob < $njobs; $iJob++) {
+	$blockName = sprintf("-%s", $opt_s);
 
-	    if ($opt_s) {
-		$blockName = sprintf("-%s", $opt_s);
-	    }
+	push(@fList, $fileList[$iFile]->{FILELIST}); 
+	
+	$fEvt += $fileList[$iFile]->{NEVENTS};
 
-	    if ($opt_r) {
-		$blockName .= sprintf("-%07i", $run);
-	    }
+        # print "file $iFile:  $fileList[$iFile]->{FILELIST} -> $fileList[$iFile]->{NEVENTS} .. $fEvt \n";
+	
+	if ($fEvt > $opt_e) {
+	    $jobID++; 
 
-
-	    $blockName .= sprintf("-%04i", $iJob);
-	    $skipevents = $iJob*$opt_e; 
+	    $blockName .= sprintf("-%04i", $jobID);
 	    ($fileName = $opt_t) =~ s/XXXX/$blockName/g;
 	    $fileName  =~ s/--/-/g; # -- remove spurious double hyphens ...
 	    $tmp = $fileName; @tmp = split(/\//, $fileName); $fileName = pop(@tmp); # strip path
 	    $fileName = $opt_d . "/" . $fileName; 
-
+	    
 	    printf("producing file: %s\n", $fileName); 
 	    open(OUT, ">$fileName") || die "Cannot open $fileName for output\n";
 	    print OUT "# ######################################################################\n";
@@ -467,7 +386,7 @@ sub createPyFilesPerBlock() {
 	    print OUT "# $directory\n";
 	    print OUT "# file list contains $runList{$run}->{NEVENTS} events\n";
 	    print OUT "# mkPyFiles @args\n";
-	    print OUT "# $fileName with $opt_e events, skipEvents = $skipevents\n";
+	    print OUT "# $fileName with $fEvt events\n";
 	    print OUT "# ######################################################################\n";
 
 		
@@ -483,62 +402,27 @@ sub createPyFilesPerBlock() {
 		    print OUT "process.source = cms.Source(\n";
 		    print OUT " \"PoolSource\",\n";
 		    print OUT "  fileNames = cms.untracked.vstring(\n";
-		    @bla = @{$runList{$run}->{FILELIST}}; 
-		    for ($ij = 0; $ij <= $#bla; $ij++) {
-			if ($ij < $#bla) {
-			    print OUT "         \"$bla[$ij]\",\n";
+		    for ($ij = 0; $ij <= $#fList; $ij++) {
+			if ($ij < $#fList) {
+			    print OUT "         \"$fList[$ij]\",\n";
 			} else {
-			    print OUT "         \"$bla[$ij]\"\n";
+			    print OUT "         \"$fList[$ij]\"\n";
 			}
 		    }
 		    
-		    if ($skipevents > 0) {
-			print OUT " ),\n";
-			print OUT " skipEvents = cms.untracked.uint32(";
-			print OUT $skipevents;
-			print OUT ")\n";
-		    } else {
-			print OUT " )\n";
-		    }
+		    print OUT " )\n";
 		    
 		    print OUT ")\n";
-		    if ($runList{$run}->{NEVENTS} < $opt_e) {
-			print OUT "process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )\n";
-		    } else {
-			print OUT "process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32($opt_e) )\n";
-		    }
+		    print OUT "process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )\n";
 		}
-		
-		
-		# -- substitute files
-		elsif ($in[$l] =~ /REPLACEFILES/) {
-		    if ($opt_n) {
-			$startline = $i*$opt_n; 
-			$endline = ($i+1)*$opt_n; 
-			for ($j = $startline; $j < $endline; $j++) {
-			    if (length($files[$j+1]) > 1) {
-				if ($j < $endline-1) {
-				    print OUT "   \"$files[$j]\", \n"; 
-				} else {
-				    print OUT "   \"$files[$j]\" \n"; 
-				}
-			    } else {
-				print OUT "   \"$files[$j]\"\n"; 
-				last;
-			    }	    
-			}
-		    } elsif ($opt_e) {
-			print OUT @block[$bLine];
-			print OUT "\n";
-			$bLine++;
-		    }
-		} else {
+		else {
 		    print OUT $in[$l], "\n"; 
-		}
-	    }
-	    
+		}		
+	    }	    
 	    close(OUT); 
-	    
+
+	    @fList = (); 
+	    $fEvt = 0; 
 	}
 	
 	

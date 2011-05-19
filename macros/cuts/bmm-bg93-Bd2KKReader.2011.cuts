@@ -1,16 +1,12 @@
-TYPE           300521
+TYPE           1000093
 SELMODE            -1
-TRIGGER        HLT_DoubleMu3_Jpsi_v1,HLT_DoubleMu3_Jpsi_v2
-#2010 TRIGGER     HLT_DoubleMu0,HLT_DoubleMu0_Quarkonium_v1
-L1TRIGGER   L1_DoubleMuOpen
+TRIGGER      NOTRIGGER
 JSON         /shome/ursl/dana/CMSSW_4_1_2/src/HeavyFlavorAnalysis/Bs2MuMu/macros/cuts/Cert_160404-161216_7TeV_PromptReco_Collisions11_JSON.txt
 # -- boxes
-+input cuts/boxes.Bp2JpsiKp.cuts
++input cuts/boxes.cuts
 # -- tracks
 +input cuts/tracks.cuts
 # -- muons
 +input cuts/muons.cuts
 # -- candidate
 +input cuts/candidate.cuts
-# -- J/psi cuts
-+input cuts/jpsi.cuts

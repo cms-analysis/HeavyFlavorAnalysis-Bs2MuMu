@@ -15,6 +15,7 @@
 # 2010/11/23 first shot
 # 2010/11/25 remove inclusion of old merged file in dataset-* list ...
 # 2010/12/14 bug fix to allow really n wildcards (in addition to the trailing -*)
+# 2011/05/17 added rare backgrounds
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
@@ -22,31 +23,44 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('aCcdhj:mnsr:t:');
+getopts('aCcdhj:mnq:r:s:t:');
 
-my $job = "default";
+my $job = "2011";
 if ($opt_j) {
     $job = $opt_j; 
 }
 
-my %jobs = ("signal MC" 
-	    => "-m,bmmSignalReader,bmmSignalReader.$job.cuts,cBsToMuMu_2MuPtFilter_7TeV-pythia6-evtgen-Fall10,signalMC2011.root"
-#	    , "signal MC 2" # backgrounds
-#	    => "-m,bmmSignalReader,bmmSignalReader.$job.cuts,cB*ToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,signal-bgMC.root"
-#	    , "signal MC 3" # backgrounds
-#	    => "-m,bmmSignalReader,bmmSignalReader.$job.cuts,cppMuX-Summer10-*,signal-ppMuX.root"
-#	    , "signal MC 4" # backgrounds
-#	    => "-m,bmmSignalReader,bmmSignalReader.$job.cuts,cQCD_2MuPEtaFilter_7TeV-pythia6-Fall10-*,signal-qcd2mu.root"
+my $rootdir = "bmm/$job"; 
+if ($opt_r) {
+    $rootdir = $opt_r; 
+}
+
+
+my %jobs = ("signal Bs2MuMu MC"  
+	    => "-m,bmmSignalReader,bmmSignalReader.$job.cuts,cv00-Bs2MuMu-*,signalMC2011.root"
+	    , "signal Bd2MuMu MC"  
+	    => "-m,bmmSignalReader,bmmBd2MuMuReader.$job.cuts,cv00-Bd2MuMu-*,Bd2MuMu2011.root"
+# -- signal bg mc
+	    , "signal bg MC 60" => "-m,bmmSignalReader,bmm-bg60-LambdaB2PPiReader.$job.cuts,cv00-bg60-LambdaB2PPi,bg60.root"
+	    , "signal bg MC 61" => "-m,bmmSignalReader,bmm-bg61-LambdaB2PKReader.$job.cuts,cv00-bg61-LambdaB2PK,bg61.root"
+	    , "signal bg MC 82" => "-m,bmmSignalReader,bmm-bg82-Bs2KKReader.$job.cuts,cv00-bg82-Bs2KK,bg82.root"
+	    , "signal bg MC 83" => "-m,bmmSignalReader,bmm-bg83-Bs2KPiReader.$job.cuts,cv00-bg83-Bs2KPi,bg83.root"
+	    , "signal bg MC 84" => "-m,bmmSignalReader,bmm-bg84-Bs2PiPiReader.$job.cuts,cv00-bg84-Bs2PiPi,bg84.root"
+	    , "signal bg MC 93" => "-m,bmmSignalReader,bmm-bg93-Bd2KKReader.$job.cuts,cv00-bg93-Bd2KK,bg93.root"
+	    , "signal bg MC 92" => "-m,bmmSignalReader,bmm-bg92-Bd2KPiReader.$job.cuts,cv00-bg92-Bd2KPi,bg92.root"
+	    , "signal bg MC 91" => "-m,bmmSignalReader,bmm-bg91-Bd2PiPiReader.$job.cuts,cv00-bg91-Bd2PiPi,bg91.root"
+# -- signal data
 	    , "signal data" 
-	    => "-b 1,bmmSignalReader,bmmSignalReader.$job.cuts,cMu*-Run2011*PromptReco-v1-*,signalData2011.root"
+	    => "-b 1,bmmSignalReader,bmmSignalReader.$job.cuts,cv00-MuOnia-Run2011*v*-*,signalData2011.root"
+# -- the rest
 	    , "norm MC" 
-	    => "-m,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cBpToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,normMC2011.root"
+	    => "-m,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cv00-Bu2JpsiK-*,normMC2011.root"
 	    , "norm data" 
-	    => "-b 0,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cMu*-Run2011*PromptReco-v1-*,normData2011.root"
+	    => "-b 0,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cv00-MuOnia-Run2011*v*-*,normData2011.root"
 	    , "Bs2JpsiPhi MC" 
-	    => "-m,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cBsToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,Bs2JpsiPhiMC2011.root"
+	    => "-m,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cv00-Bs2JpsiPhi,Bs2JpsiPhiMC2011.root"
 	    , "Bs2JpsiPhi data" 
-	    => "-b 0,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cMu*-Run2011*PromptReco-v1-*,Bs2JpsiPhiData2011.root"
+	    => "-b 0,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cv00-MuOnia-Run2011*v*-*,Bs2JpsiPhiData2011.root"
     );
 
 my $user  = $ENV{'USER'};
@@ -64,39 +78,43 @@ if ($opt_t) {
 my $crash = ""; 
 if ($opt_C) {$crash = "-C";}
 
-my $rootdir = "bmm"; 
-if ($opt_r) {
-    $rootdir = $opt_r; 
+my $queue = ""; 
+if (!$opt_q && !opt_h) {
+    print "-q not set\n";
+    $queue = "-q all.q";
+} else {
+    $queue = "-q $opt_q";
 }
-my $storage = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/$rootdir";
+
+my $storage = "/shome/ursl/scratch/$rootdir";
 my $srmcmd = "srmcp -2 --streams_num=1";
 my $dcap = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
 #my $scratch = "/scratch/$user"; 
 my $scratch = "/shome/$user/scratch"; 
 
-my $runCommand = "run $crash -c ../../treeNoComp.csh -t $tarfile -m batch";
+my $runCommand = "run $queue $crash -c ../../treeNoCompNoSE.csh -t $tarfile -m batch";
 
 
 # ----------------------------------------------------------------------
 # -- run hadd instead of submitting
 if ($opt_h) {
     foreach $j (keys %jobs) {
-	if ($opt_c && !($j =~ /data/)) {next; }
-	if ($opt_n && !($j =~ /norm/)) {next; }
-	if ($opt_s && !($j =~ /signal/)) {next; }
-	if ($opt_a && !($j =~ /Bs2JpsiPhi/)) {next; }
-	if ($opt_m && !($j =~ /MC/)) {next; }
+	if ($opt_s =~ /signal/ && !($j =~ /signal/)) {next; }
+	if ($opt_s =~ /cs/     && !($j =~ /Bs2JpsiPhi/)) {next; }
+	if ($opt_s =~ /norm/   && !($j =~ /norm/)) {next; }
+	if ($opt_s =~ /data/   && !($j =~ /data/)) {next; }
+	if ($opt_s =~ /mc/     && !($j =~ /MC/)) {next; }
 	($options, $class, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
-	@lines = `srmls $storage/$class | grep root`;
-	
+	#@lines = `srmls $storage/$class | grep root`;
+	@lines = `ls $storage/$class/* | grep root`;
+
 	$dataset =~ s/-\*//;
 	$dataset =~ s/\*/.\*/g;
 	print "dataset = $dataset\n";
 	print "file = $output\n";
-#	@rootfiles = grep(/$dataset-[0-9]{1,3}/, @lines); 
 	@rootfiles = grep(/$dataset/, @lines); 
 	@rootfiles = grep(/\.root/, @rootfiles); 
-	@rootfiles = grep(s/.*\/trivcat/$dcap/, @rootfiles); 
+	#@rootfiles = grep(s/.*\/trivcat/$dcap/, @rootfiles); 
 	@rootfiles = grep(s/\n//, @rootfiles); 
 	if ($#rootfiles > -1) {
 	    if ($opt_d) {
@@ -106,8 +124,8 @@ if ($opt_h) {
 		print "hadd $scratch/$output @rootfiles\n";
 		if (-e "$scratch/$output") {unlink("/scratch/$user/$output"); }
 		system("hadd $scratch/$output @rootfiles");
-		system("srmrm $storage/$class/$output");
-		system("$srmcmd file:///$scratch/$output $storage/$class/$output");
+		#system("srmrm $storage/$class/$output");
+		#system("$srmcmd file:///$scratch/$output $storage/$class/$output");
 	    }
 	}
     }
@@ -121,11 +139,11 @@ if ($opt_h) {
 foreach $j (keys %jobs) {
     ($options, $class, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
     $command = "$runCommand -x 'bin/runTreeReaders -r $class $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ../$dataset"; 
-    if ($opt_c && !($j =~ /data/)) {next; }
-    if ($opt_n && !($j =~ /norm/)) {next; }
-    if ($opt_s && !($j =~ /signal/)) {next; }
-    if ($opt_a && !($j =~ /Bs2JpsiPhi/)) {next; }
-    if ($opt_m && !($j =~ /MC/)) {next; }
+    if ($opt_s =~ /data/   && !($j =~ /data/)) {next; }
+    if ($opt_s =~ /norm/   && !($j =~ /norm/)) {next; }
+    if ($opt_s =~ /signal/ && !($j =~ /signal/)) {next; }
+    if ($opt_s =~ /cs/     && !($j =~ /Bs2JpsiPhi/)) {next; }
+    if ($opt_s =~ /mc/     && !($j =~ /MC/)) {next; }
 
     if ($opt_d) {
 	print "$j \n$command\n";

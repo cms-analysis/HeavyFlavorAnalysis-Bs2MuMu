@@ -51,7 +51,7 @@ void bmmSignalReader::MCKinematics() {
   bool goodMatch(false); 
   for (int i = 0; i < fpEvt->nGenCands(); ++i) {
     pC = fpEvt->getGenCand(i); 
-    if (531 == TMath::Abs(pC->fID)) {
+    if (TRUTHCAND == TMath::Abs(pC->fID)) {
       pB = pC;
       for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
 	pC = fpEvt->getGenCand(id); 
@@ -215,12 +215,12 @@ void bmmSignalReader::efficiencyCalculation() {
   ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(1, "all events"); 
 
   // -- gen level 
-  TGenCand *pM1(0), *pM2(0); 
+  TGenCand *pB(0), *pM1(0), *pM2(0); 
   if (-1 == fGenM1Tmi || -1 == fGenM2Tmi) {
     if (fVerbose > 2 ) cout << "--------------------> No matched signal decay found" << endl;
     return;
   }
-
+  pB  = fpEvt->getGenCand(fGenBTmi); 
   pM1 = fpEvt->getGenCand(fGenM1Tmi); 
   pM2 = fpEvt->getGenCand(fGenM2Tmi); 
 
@@ -260,6 +260,8 @@ void bmmSignalReader::efficiencyCalculation() {
   }
 
   // -- EffTree filling for all events with a signal decay
+  fETgpt   = pB->fP.Perp(); 
+  fETgeta  = pB->fP.Eta(); 
   fETg1pt  = pM1->fP.Perp(); 
   fETg1eta = pM1->fP.Eta(); 
   fETg2pt  = pM2->fP.Perp(); 
@@ -475,7 +477,7 @@ void bmmSignalReader::genMatch() {
   bool goodMatch(false); 
   for (int i = 0; i < fpEvt->nGenCands(); ++i) {
     pC = fpEvt->getGenCand(i); 
-    if (531 == TMath::Abs(pC->fID)) {
+    if (TRUTHCAND == TMath::Abs(pC->fID)) {
       pM1 = pM2 = 0; 
       pB = pC;
       for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
@@ -501,6 +503,7 @@ void bmmSignalReader::genMatch() {
 
   
   if (goodMatch) {
+    fGenBTmi = pB->fNumber; 
     if (pM1->fP.Perp() > pM2->fP.Perp()) {
       fGenM1Tmi = pM1->fNumber; 
       fGenM2Tmi = pM2->fNumber; 
@@ -627,10 +630,10 @@ int bmmSignalReader::tmCand2(TAnaCand *pC) {
     } else {
       return 0; 
     }
-    if (531 != TMath::Abs(pM->fID) ) {
+    if (TRUTHCAND != TMath::Abs(pM->fID) ) {
       return 0;  
     } else {
-      cout << "    with mother 531 at " << pM->fNumber << endl;
+      cout << "    with mother " << TRUTHCAND << " at " << pM->fNumber << endl;
       ++matched; 
     }
   }

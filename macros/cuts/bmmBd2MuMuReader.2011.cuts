@@ -1,4 +1,5 @@
 TYPE           301313
+TRUTHCAND         511
 SELMODE            -1
 TRIGGER      HLT_DoubleMu3_Bs_v1,HLT_DoubleMu2_Bs_v1
 #TRIGGER     HLT_L1DoubleMuOpen

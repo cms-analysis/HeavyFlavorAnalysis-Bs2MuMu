@@ -1,6 +1,6 @@
 TYPE           300531 
 SELMODE            -1
-TRIGGER        HLT_DoubleMu3_Jpsi_v1,HLT_DoubleMu3_Jpsi_v2
+TRIGGER        HLT_DoubleMu3_Jpsi_v1,HLT_DoubleMu3_Jpsi_v2,HLT_Dimuon6p5_Jpsi_Displaced_v1
 #2010 TRIGGER     HLT_DoubleMu0,HLT_DoubleMu0_Quarkonium_v1
 L1TRIGGER   L1_DoubleMuOpen
 JSON         /shome/ursl/dana/CMSSW_4_1_2/src/HeavyFlavorAnalysis/Bs2MuMu/macros/cuts/Cert_160404-161216_7TeV_PromptReco_Collisions11_JSON.txt

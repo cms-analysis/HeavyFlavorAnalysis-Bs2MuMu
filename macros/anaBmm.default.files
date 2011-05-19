@@ -1,19 +1,30 @@
 # ----------------------------------------------------------------------
 # signal data and MC
-type=sg,default dset=data lumi=39.4 file=/scratch/ursl/default/signalData2010.root
-type=sg,2011    dset=data lumi=20.0 file=/scratch/ursl/default/signalData2011.root
-type=sg,default dset=mc lumi=550000 file=/scratch/ursl/default/signalMC2010.root
-#type=sg         dset=mc lumi=10000 file=/scratch/ursl/default/signal-qcd2mu.root
-#type=sg         dset=mc lumi=10000 file=/scratch/ursl/default/signal-ppMuX.root
-#type=sg,default dset=mc lumi=550000 file=cBsToMuMu_2MuPtFilter_7TeV-pythia6-evtgen-Fall10.bmmSignalReader.default.root
+type=sg,default       dset=data lumi=221 file=/scratch/ursl/default/signalData2011.root
+type=sg,default       dset=mc lumi=550000 file=/scratch/ursl/default/signalMC2010.root
+type=sg,2010          dset=mc lumi=550000 file=/scratch/ursl/default/signalMC2010.root
+type=sg,2011          dset=mc lumi=550000 file=/scratch/ursl/default/signalMC2011.root
+type=bd,2010          dset=mc lumi=550000 file=/scratch/ursl/default/Bd2MuMu2010.root
+type=bd,2011          dset=mc lumi=550000 file=/scratch/ursl/default/Bd2MuMu2011.root
 # ----------------------------------------------------------------------
-# control sample data and MC
-type=cs,default dset=data lumi=39.4 file=/scratch/ursl/default/Bs2JpsiPhiData2010.root
-type=cs,2011    dset=data lumi=20.0 file=/scratch/ursl/default/Bs2JpsiPhiData2011.root
-type=cs,default dset=mc lumi=10000 file=/scratch/ursl/default/Bs2JpsiPhiMC2010.root
+# control sample  data and MC
+type=cs,default       dset=data lumi=39.4 file=/scratch/ursl/default/Bs2JpsiPhiData2010.root
+type=cs,2010          dset=data lumi=20.0 file=/scratch/ursl/default/Bs2JpsiPhiData2010.root
+type=cs,2011          dset=data lumi=20.0 file=/scratch/ursl/default/Bs2JpsiPhiData2011.root
+#type=cs,default       dset=mc lumi=10000 file=/scratch/ursl/default/Bs2JpsiPhiMC2010.root
 # ----------------------------------------------------------------------
 # normalization data and MC
-type=no,default dset=data lumi=39.4 file=/scratch/ursl/default/normData2010.root
-type=no,2011    dset=data lumi=20.0 file=/scratch/ursl/default/normData2011.root
-type=no,default dset=mc lumi=10000 file=/scratch/ursl/default/normMC2010.root
+type=no,default       dset=data lumi=39.4 file=/scratch/ursl/default/normData2010.root
+type=no,2010          dset=data lumi=20.0 file=/scratch/ursl/default/normData2010.root
+type=no,2011          dset=data lumi=20.0 file=/scratch/ursl/default/normData2011.root
+#type=no,default       dset=mc lumi=10000 file=/scratch/ursl/default/normMC2010.root
 # ----------------------------------------------------------------------
+# rare background MC
+type=bg,82            dset=mc lumi=15   file=/scratch/ursl/default/bg82.root
+type=bg,83            dset=mc lumi=82   file=/scratch/ursl/default/bg83.root
+type=bg,84            dset=mc lumi=340  file=/scratch/ursl/default/bg84.root
+type=bg,91            dset=mc lumi=79   file=/scratch/ursl/default/bg91.root
+type=bg,92            dset=mc lumi=22   file=/scratch/ursl/default/bg92.root
+type=bg,93            dset=mc lumi=2700 file=/scratch/ursl/default/bg93.root
+type=bg,60            dset=mc lumi=73   file=/scratch/ursl/default/bg60.root
+type=bg,61            dset=mc lumi=120  file=/scratch/ursl/default/bg61.root

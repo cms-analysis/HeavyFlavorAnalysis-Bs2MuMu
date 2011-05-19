@@ -177,7 +177,7 @@ double f_pol1_gauss2c(double *x, double *par) {
 
 // ----------------------------------------------------------------------
 initFunc::initFunc() {
-  cout << "ctor initFunc" << endl;
+  //  cout << "ctor initFunc" << endl;
   fLo = 99.; 
   fHi = -99.;
 }
@@ -185,7 +185,7 @@ initFunc::initFunc() {
 
 // ----------------------------------------------------------------------
 initFunc::~initFunc() {
-  cout << "dtor initFunc" << endl;
+  //  cout << "dtor initFunc" << endl;
 }
 
 

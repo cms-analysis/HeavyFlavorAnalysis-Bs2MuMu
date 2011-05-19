@@ -1,6 +1,7 @@
 TYPE           301313
-TRUTHCAND         531
+TRUTHCAND         511
 SELMODE            -1
+#2011 TRIGGER   HLT_DoubleMu2_Bs_v1
 TRIGGER     HLT_DoubleMu0,HLT_DoubleMu0_Quarkonium_v1
 L1TRIGGER   L1_DoubleMuOpen
 JSON     /shome/ursl/dana/CMSSW_4_1_2/src/HeavyFlavorAnalysis/Bs2MuMu/macros/cuts/Cert_136033-149442_7TeV_Nov4ReReco_Collisions10_JSON_MuonPhys.txt

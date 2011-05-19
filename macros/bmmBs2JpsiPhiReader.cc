@@ -74,12 +74,12 @@ void bmmBs2JpsiPhiReader::efficiencyCalculation() {
 
 
   // -- gen level 
-  TGenCand *pM1(0), *pM2(0), *pK1(0), *pK2(0); 
+  TGenCand *pB(0), *pM1(0), *pM2(0), *pK1(0), *pK2(0); 
   if (-1 == fGenM1Tmi || -1 == fGenM2Tmi || -1 == fGenK1Tmi || -1 == fGenK2Tmi) {
     if (fVerbose > 2 ) cout << "--------------------> No matched signal decay found" << endl;
     return;
   }
-
+  pB  = fpEvt->getGenCand(fGenBTmi); 
   pM1 = fpEvt->getGenCand(fGenM1Tmi); 
   pM2 = fpEvt->getGenCand(fGenM2Tmi); 
   pK1 = fpEvt->getGenCand(fGenK1Tmi); 
@@ -142,6 +142,8 @@ void bmmBs2JpsiPhiReader::efficiencyCalculation() {
 
 
   // -- EffTree filling for all events with a signal decay
+  fETgpt   = pB->fP.Perp(); 
+  fETgeta  = pB->fP.Eta(); 
   fETg1pt  = pM1->fP.Perp(); 
   fETg1eta = pM1->fP.Eta(); 
   fETg2pt  = pM2->fP.Perp(); 
@@ -326,6 +328,7 @@ void bmmBs2JpsiPhiReader::genMatch() {
   }
 
   if (goodMatch) {
+    fGenBTmi = pB->fNumber; 
     if (pM1->fP.Perp() > pM2->fP.Perp()) {
       fGenM1Tmi = pM1->fNumber; 
       fGenM2Tmi = pM2->fNumber; 

@@ -1,0 +1,34 @@
+# -- channel 0
+index   0
+mBdLo   5.200
+mBdHi   5.350
+mBsLo   5.300
+mBsHi   5.450
+etaMin  1.4
+etaMax  2.4
+pt      6.0
+m1pt    2.2
+m2pt    2.2
+m1eta   2.4
+m2eta   2.4
+iso1    0.6
+chi2dof 1.7
+alpha   0.04
+fls3d   10
+# -- channel 1
+index   1
+mBdLo   5.240
+mBdHi   5.320
+mBsLo   5.330
+mBsHi   5.410
+etaMin  0.0
+etaMax  1.4
+pt      4.0
+m1pt    3.0
+m2pt    3.0
+m1eta   2.4
+m2eta   2.4
+iso1    0.6
+chi2dof 1.7
+alpha   0.04
+fls3d   10

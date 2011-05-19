@@ -87,6 +87,7 @@ void bmmReader::eventProcessing() {
   initVariables(); 
 
   if (fIsMC) {
+    processType();
     genMatch(); 
     recoMatch(); 
     candMatch(); 
@@ -413,6 +414,12 @@ void bmmReader::HLTSelection() {
   int ps(0); 
   bool result(false), wasRun(false), error(false); 
   //  cout << " ----------------------------------------------------------------------" << endl;
+  if (HLTPath.end() != find(HLTPath.begin(), HLTPath.end(), "NOTRIGGER"))  {
+    //    cout << "NOTRIGGER requested... " << endl;
+    fGoodHLT = true; 
+    return;
+  }
+
   for (int i = 0; i < NHLT; ++i) {
     result = wasRun = error = false;
     a = fpEvt->fHLTNames[i]; 
@@ -543,6 +550,7 @@ void bmmReader::fillCandidateVariables() {
   if (-1 == fCandIdx) return;
 
   int goodSV(0); 
+  fPvN = fpEvt->nPV();
   if (fpCand->fPvIdx > -1 && fpCand->fPvIdx < fpEvt->nPV()) {
     goodSV = 1; 
     TAnaVertex *pv = fpEvt->getPV(fpCand->fPvIdx); 
@@ -596,6 +604,12 @@ void bmmReader::fillCandidateVariables() {
     } else {
       p2 = p0; 
     }
+  }
+
+  // -- for rare backgrounds there are no "true" muons
+  if (fpCand->fType > 1000000) {
+    p1 = fpEvt->getSigTrack(fpCand->fSig1); 
+    p2 = fpEvt->getSigTrack(fpCand->fSig2); 
   }
 
   // -- switch to RecTracks!
@@ -789,6 +803,147 @@ void bmmReader::fillCandidateVariables() {
 
   fPreselection = fWideMass && fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID && fGoodMuonsPt && fGoodMuonsEta; 
   fPreselection = fPreselection && fGoodQ && (fCandPt > 4) && (fCandCosA > 0.9) && (fCandFLS3d > 2) && (fCandChi2/fCandDof < 10); 
+}
+
+
+// ----------------------------------------------------------------------
+void bmmReader::processType() {
+
+  TGenCand *pG;
+
+  // documentation line partons (entries { d, u, s, c, b, t } )
+  double docPartCnt[6];
+  double docAntiCnt[6];
+
+  // partons
+  double parPartCnt[6];
+  double parAntiCnt[6];    
+    
+  for (int i = 0; i < 6; i++) {
+    docPartCnt[i] = 0; 
+    docAntiCnt[i] = 0; 
+    parPartCnt[i] = 0; 
+    parAntiCnt[i] = 0; 
+  }
+
+  int aid(0);
+  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
+
+    pG = fpEvt->getGenCand(i);
+
+    aid = TMath::Abs(pG->fID); 
+    if ( aid == 1 || aid == 2 ||
+         aid == 3 || aid == 4 || 
+         aid == 5 || aid == 6 || 
+         aid == 21) {
+      if ( pG->fStatus == 3 ) {
+        //      cout << "quark/gluon from documentation #" << i << "(ID: " << pG->fID << ")" << endl;
+      }
+      if ( pG->fStatus == 2 &&  TMath::Abs(pG->fID) != 21) {
+        //      cout << "decayed quark/gluon #" << i << " (ID: " << pG->fID << ")" << endl;
+      }
+      if ( pG->fStatus == 1 ) {
+        //      cout << "undecayed (?) quark/gluon #" << i << " (ID: " << pG->fID  << ")" << endl;
+      }
+    }
+
+    for (int j = 0; j < 6; j++) {
+
+      if ( pG->fStatus == 3 ) {
+        if ( pG->fID == j+1 ) {  
+          docPartCnt[j]++;
+        }
+        if ( pG->fID == -(j+1) ) {  
+          docAntiCnt[j]++;
+        }
+      }
+
+      if ( pG->fStatus == 2 ) {
+        if ( pG->fID == j+1 ) {  
+          parPartCnt[j]++;
+        }
+        if ( pG->fID == -(j+1) ) {  
+          parAntiCnt[j]++;
+        }
+      }
+    }
+  }
+
+  fProcessType = -99;
+  // -- top 
+  if (docPartCnt[5] >= 1 && docAntiCnt[5] >= 1) {
+    fProcessType = 50; 
+    //    printf("====> t: GGF (%i)\n", fProcessType);
+    return;
+  }
+  
+  if ((docPartCnt[5] >= 1 && docAntiCnt[5] == 0) || (docPartCnt[5] == 0 && docAntiCnt[5] >= 1) ) {
+    fProcessType = 51; 
+    //    printf("====> t: FEX (%i)\n", fProcessType);
+    return;
+  }
+
+  if (docPartCnt[5] == 0 && docAntiCnt[5] == 0 && (parPartCnt[5] >= 1 || parAntiCnt[5] >= 1)) {
+    fProcessType = 52;
+    //    printf("====> t: GSP (%i)\n", fProcessType); 
+    return;
+  }
+  
+  // -- beauty
+  if (docPartCnt[4] >= 1 && docAntiCnt[4] >= 1) {
+    fProcessType = 40; 
+   //    printf("====> b: GGF (%i)\n", fProcessType);
+    return;
+  } 
+  
+  if ((docPartCnt[4] >= 1 && docAntiCnt[4] == 0) || (docPartCnt[4] == 0 && docAntiCnt[4] >= 1) ) {
+    fProcessType = 41; 
+    //    printf("====> b: FEX (%i)\n", fProcessType);
+    return;
+  }
+
+  if (docPartCnt[4] == 0 && docAntiCnt[4] == 0 && (parPartCnt[4] >= 1 || parAntiCnt[4] >= 1)) {
+    fProcessType = 42; 
+    //    printf("====> b: GSP (%i)\n", fProcessType);
+
+    return;
+  }
+
+  if (docPartCnt[3] >= 1 && docAntiCnt[3] >= 1) {
+    fProcessType = 30; 
+    //    printf("====> c: GGF (%i)\n", fProcessType);
+    return;
+  }
+  
+ 
+  if ((docPartCnt[3] >= 1 && docAntiCnt[3] == 0) || (docPartCnt[3] == 0 && docAntiCnt[3] >= 1) ) {
+    fProcessType = 31; 
+    //    printf("====> c: FEX (%i)\n", fProcessType);
+    return;
+  }
+  
+  if (docPartCnt[3] == 0 && docAntiCnt[3] == 0 && (parPartCnt[3] >= 1 || parAntiCnt[3] >= 1)) {
+    fProcessType = 32; 
+    //    printf("====> c: GSP (%i)\n", fProcessType);
+    return;
+  }
+  
+  // light flavors
+  if ((docPartCnt[5] == 0 && docAntiCnt[5] == 0) && (parPartCnt[5] == 0 && parAntiCnt[5] == 0)
+      && (docPartCnt[4] == 0 && docAntiCnt[4] == 0) && (parPartCnt[4] == 0 && parAntiCnt[4] == 0)
+      && (docPartCnt[3] == 0 && docAntiCnt[3] == 0) && (parPartCnt[3] == 0 && parAntiCnt[3] == 0)
+      ) {
+    fProcessType = 1; 
+    //    printf("====> UDS: light flavors (%i)\n", fProcessType);
+    return;
+  }
+
+  // if no process type was determined
+  //  printf("====> Could not determine process type !!!\n");
+
+  fpEvt->dumpGenBlock();     
+
+
 }
 
 
@@ -1057,6 +1212,7 @@ void bmmReader::fillCandidateHistograms() {
   fpAllEvents->fill(1, fCandM); 
   fpHLT->fill(1, fCandM); 
   fpPvZ->fill(fPvZ, fCandM); 
+  fpPvN->fill(fPvN, fCandM); 
   fpQ->fill(fCandQ, fCandM); 
   fpPt->fill(fCandPt, fCandM); 
   fpEta->fill(fCandEta, fCandM); 
@@ -1118,30 +1274,31 @@ void bmmReader::bookHist() {
   fpAllEvents= bookDistribution("allevents", "allevents", "fWideMass", 10, 0., 10.);           
   fpHLT      = bookDistribution("hlt", "hlt", "fGoodHLT", 10, 0., 10.);           
   fpPvZ      = bookDistribution("pvz", "z_{PV} [cm]", "fGoodHLT", 50, -25., 25.);           
+  fpPvN      = bookDistribution("pvn", "N(PV) ", "fGoodHLT", 20, 0., 20.);           
   fpTracksQual= bookDistribution("tracksqual", "Qual(tracks)", "fGoodTracks", 20, -10., 10.);
   fpTracksPt = bookDistribution("trackspt", "p_{T} [GeV]", "fGoodTracksPt", 25, 0., 25.);
   fpTracksEta= bookDistribution("trackseta", "#eta_{T}", "fGoodTracksEta", 25, -2.5, 2.5);
   fpMuonsID  = bookDistribution("muonsid", "muon id", "fGoodMuonsID", 10, 0., 10.); 
   fpMuonsPt  = bookDistribution("muonspt", "p_{T, #mu} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
-  fpMuon1Pt  = bookDistribution("muon1pt", "p_{T, #mu} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
-  fpMuon2Pt  = bookDistribution("muon2pt", "p_{T, #mu} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+  fpMuon1Pt  = bookDistribution("muon1pt", "p_{T, #mu1} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+  fpMuon2Pt  = bookDistribution("muon2pt", "p_{T, #mu2} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
   fpMuonsEta = bookDistribution("muonseta", "#eta_{#mu}", "fGoodMuonsEta", 20, -2.5, 2.5); 
-  fpMuon1Eta = bookDistribution("muon1eta", "#eta_{#mu}", "fGoodMuonsEta", 20, -2.5, 2.5); 
-  fpMuon2Eta = bookDistribution("muon2eta", "#eta_{#mu}", "fGoodMuonsEta", 20, -2.5, 2.5); 
+  fpMuon1Eta = bookDistribution("muon1eta", "#eta_{#mu1}", "fGoodMuonsEta", 20, -2.5, 2.5); 
+  fpMuon2Eta = bookDistribution("muon2eta", "#eta_{#mu2}", "fGoodMuonsEta", 20, -2.5, 2.5); 
   fpQ        = bookDistribution("q", "q_{1} q_{2}", "fGoodQ", 3, -1., 2.); 
   fpPt       = bookDistribution("pt", "p_{T, B} [GeV]", "fGoodPt", 20, 0., 40.); 
   fpEta      = bookDistribution("eta", "#eta_{B}", "fGoodEta", 20, -2.5, 2.5); 
   fpCosA     = bookDistribution("cosa", "cos(#alpha)", "fGoodCosA", 30, 0.97, 1.); 
   fpCosA0    = bookDistribution("cosa0", "cos(#alpha)", "fGoodCosA", 44, -1.1, 1.1); 
   fpAlpha    = bookDistribution("alpha", "#alpha", "fGoodCosA", 20, 0., 0.2); 
-  fpIso      = bookDistribution("iso",  "I", "fGoodIso", 22, 0., 1.1); 
+  fpIso      = bookDistribution("iso",  "I (old)", "fGoodIso", 22, 0., 1.1); 
   fpIso1     = bookDistribution("iso1", "I", "fGoodIso", 22, 0., 1.1); 
   fpChi2     = bookDistribution("chi2",  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
   fpChi2Dof  = bookDistribution("chi2dof",  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
   fpProb     = bookDistribution("pchi2dof",  "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
   fpFLS3d    = bookDistribution("fls3d", "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
-  fpFLSxy    = bookDistribution("flsxy", "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
-  fpDocaTrk  = bookDistribution("docatrk", "d_{ca}(track))", "fGoodDocaTrk", 35, 0., 0.14);   
+  fpFLSxy    = bookDistribution("flsxy", "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
+  fpDocaTrk  = bookDistribution("docatrk", "d_{ca}(track)", "fGoodDocaTrk", 35, 0., 0.14);   
   fpIP1      = bookDistribution("ip1", "IP_{1}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
   fpIP2      = bookDistribution("ip2", "IP_{2}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
 
@@ -1161,6 +1318,7 @@ void bmmReader::bookHist() {
   fTree->Branch("ls",     &fLS,                "ls/I");
   fTree->Branch("mck",    &fGoodMCKinematics,  "mck/O");
   fTree->Branch("tm",     &fCandTM,            "tm/I");
+  fTree->Branch("procid", &fProcessType,       "procid/I");
   fTree->Branch("hlt",    &fGoodHLT,           "hlt/O");
   fTree->Branch("l1t",    &fGoodL1T,           "l1t/O");
   // -- global cuts and weights
@@ -1239,6 +1397,10 @@ void bmmReader::bookHist() {
   fEffTree->Branch("run",    &fRun,               "run/I");
   fEffTree->Branch("evt",    &fEvt,               "evt/I");
   fEffTree->Branch("hlt",    &fGoodHLT,           "hlt/O");
+  fEffTree->Branch("procid", &fProcessType,       "procid/I");
+
+  fEffTree->Branch("gpt",    &fETgpt,             "gpt/F");
+  fEffTree->Branch("geta",   &fETgeta,            "geta/F");
 
   fEffTree->Branch("m1pt",   &fETm1pt,            "m1pt/F");
   fEffTree->Branch("g1pt",   &fETg1pt,            "g1pt/F");
@@ -1437,6 +1599,13 @@ void bmmReader::readCuts(TString filename, int dump) {
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: %s", CutName, triggerlist));
     }
 
+    if (!strcmp(CutName, "TRUTHCAND")) {
+      TRUTHCAND = int(CutValue); ok = 1;
+      if (dump) cout << "TRUTHCAND:           " << TRUTHCAND << endl;
+      ibin = 6;
+      hcuts->SetBinContent(ibin, TYPE);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: Candidate type", CutName));
+    }
 
     if (!strcmp(CutName, "CANDPTLO")) {
       CANDPTLO = CutValue; ok = 1;
@@ -1744,6 +1913,10 @@ int bmmReader::checkCut(const char *s, TH1D *hcuts) {
 // ----------------------------------------------------------------------
 bool bmmReader::muonID(TAnaTrack *pT) {
   int result = pT->fMuID & MUIDMASK;
+  if (HLTPath.end() != find(HLTPath.begin(), HLTPath.end(), "NOTRIGGER"))  {
+    return true; 
+  }
+
   if (0 == MUIDRESULT ) {
     // -- result must be larger than zero for successful muon ID, i.e., the OR of the bits
     if (0 == result){

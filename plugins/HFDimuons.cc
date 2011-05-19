@@ -28,9 +28,6 @@
 #include "RecoVertex/KinematicFit/interface/KinematicParticleFitter.h"
 #include "RecoVertex/KinematicFit/interface/MassKinematicConstraint.h"
 
-
-
-
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/Wrapper.h"
 #include "DataFormats/Candidate/interface/Candidate.h"

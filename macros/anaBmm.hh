@@ -30,15 +30,35 @@
 
 struct numbers {
   std::string name;
+  int index;
   double effGenFilter, effGenFilterE; 
   double fitYield, fitYieldE;
-  double genFileYield, genYield, recoYield, muidYield, trigYield, candYield, ana0Yield, anaNmcYield, anaYield;
-  double acc, accE;
+  double genFileYield, genYield, genChanYield, recoYield, chanYield, muidYield, trigYield, candYield, ana0Yield, anaNmcYield, anaYield;
+  double acc, accE, accChan, accChanE;
+  double effChan, effChanE; 
   double effMuidMC, effMuidMCE, effTrigMC, effTrigMCE;
   double effMuidPid, effMuidPidE, effTrigPid, effTrigPidE;
   double effCand, effCandE; 
   double effAna, effAnaE; 
   double effTot, effTotE; 
+  double effTotChan, effTotChanE; 
+  double prodGenYield, combGenYield, chanGenYield; // eps*A corrected
+  // -- signal stuff
+  double bgObs, bgExp, bgExpE; 
+  double bsObs, bdObs; 
+  double bsRare, bdRare; 
+  double pss, pdd;
+  double psd, pds;
+  double mBdLo, mBdHi, mBsLo, mBsHi;
+};
+
+
+struct cuts {
+  int index; 
+  double mBdLo, mBdHi, mBsLo, mBsHi;
+  double etaMin, etaMax, pt; 
+  double m1pt, m2pt, m1eta, m2eta;
+  double iso1, chi2dof, alpha, fls3d; 
 };
 
 
@@ -60,7 +80,8 @@ public:
   // --------------
   void makeAll(int channels = 3);
 
-  void acceptanceAndPreselection(numbers &a);
+  void histAcceptanceAndPreselection(numbers &a);
+  void accEffFromEffTree(numbers &a, cuts &b);
 
   void computeNormUL();
   void computeCsBF();
@@ -85,8 +106,18 @@ public:
   void csYield(TH1 *h, int mode, double lo = 5.25, double hi=5.6);
   void bgBlind(TH1 *h, int mode = 2, double lo = 4.5, double hi = 6.5); 
 
+  void rareBg(); 
+
   // -- Utilities and helper methods
   // -------------------------------
+  void readCuts(const char *filename); 
+  void printCuts(); 
+  void initNumbers(numbers *a); 
+  void printNumbers(numbers &a);
+  void printUlcalcNumbers();
+  int  detChan(double m1eta, double m2eta);
+
+  void dumpSamples();
   void dumpCutNames();
   void setErrors(TH1D *h);
   std::string formatTex(double n, std::string name, std::string tag);
@@ -98,7 +129,6 @@ public:
   double barlow(int nobs, double bg = 0., double bgE = 0., double sE = 0.);
   void rolkeM3();
   void rolkeM3(int x, double bm, double em, double sde, double sdb);
-  void printNumbers(numbers &a);
 
   // -- Files for Signal and Normalization modes in data and MC
 #define MAXFILES 20
@@ -106,7 +136,7 @@ public:
   double fDataLumi[MAXFILES], fMcLumi[MAXFILES];
   int fNData, fNMc;
   std::string fDataString[MAXFILES], fMcString[MAXFILES];
-  int fSgData, fSgMc, fNoData, fNoMc;  // the indices for the default files
+  int fSgData, fSgMc, fBdMc, fNoData, fNoMc;  // the indices for the default files
   int fCsData, fCsMc; // control sample Bs -> J/psi phi
 
   int fShow; 
@@ -135,18 +165,33 @@ public:
 
   std::string fDirectory;
   std::string fNumbersFileName;
+  std::string fUlcalcFileName;
   std::string fSample; 
   std::string fSuffix; 
 
   std::map<std::string, TFile*> fF; 
+  std::map<std::string, double> fLumi; 
   std::map<std::string, std::string> fName; 
+
+  std::vector<cuts*> fCuts; 
+  std::vector<TH1D*> fhMassAcc;
+  std::vector<TH1D*> fhMassChan;
+  std::vector<TH1D*> fhMassAbsNoCuts;
+  std::vector<TH1D*> fhMassNoCuts;
+  std::vector<TH1D*> fhMassWithCuts;
+  std::vector<TH1D*> fhMassWithMassCuts;
+  std::vector<TH1D*> fhMassWithCutsManyBins; 
+  std::vector<TH1D*> fhMassWithMassCutsManyBins; 
+  std::vector<TH1D*> fhMuId;
+  std::vector<TH1D*> fhMuTr;
+
+
+  unsigned int fNchan;
+  int fChan, fComb, fOver; 
 
   initFunc  *fpFunc;
   TRolke    *fpRolke;
 
-  // -- cuts
-  double M2PT, ISO1, CHI2, FLS3D, ALPHA;
-  
   // -- analysis numbers
   double fSigLo, fSigHi;
   double fBgLo, fBgHi;
@@ -158,6 +203,7 @@ public:
   int    fNobs, fNobsExp;
   double fBgExp, fBgExpE; 
   double fBgHist, fBgHistE; 
+  double fBgHistExp, fBgHistExpE; 
   double fAcc, fAccE, fAccNum;
   double fEff, fEffE;
   double fEffAna, fEffAnaE;
@@ -191,7 +237,8 @@ public:
   double fCsEffTot, fCsEffTotE;
 
 
-  numbers fNumbersSig, fNumbersNorm, fNumbersCS; 
+  //  numbers fNumbersSig, fNumbersNorm, fNumbersCS; 
+  std::vector<numbers*> fNumbersBs, fNumbersBd, fNumbersNorm, fNumbersCS; 
 
   double fBF, fu, fs;
   double fMassLo, fMassHi;
