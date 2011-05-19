@@ -123,6 +123,7 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   string algoname; 
   int    algobit(-1); 
   bool   result(false); 
+  bool   resultBeforeMask(false); // not really used, needed by interface which is by ref
   int    prescale(0); 
   int    mask(0); 
   int    iErrorCode(0); 
@@ -130,9 +131,11 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   for (CItAlgo algo = menu->gtAlgorithmMap().begin(); algo!=menu->gtAlgorithmMap().end(); ++algo) {
     algoname = (algo->second).algoName();
     algobit  = (algo->second).algoBitNumber();
-    result   = l1GtUtils.decisionAfterMask(iEvent, algoname, iErrorCode);
-    mask     = l1GtUtils.triggerMask(iEvent, algoname, iErrorCode);
-    prescale = l1GtUtils.prescaleFactor(iEvent, algoname, iErrorCode);
+    //result   = l1GtUtils.decisionAfterMask(iEvent, algoname, iErrorCode);
+    //mask     = l1GtUtils.triggerMask(iEvent, algoname, iErrorCode);
+    //prescale = l1GtUtils.prescaleFactor(iEvent, algoname, iErrorCode);
+    // this does the same in one go, moreover the three calls above use this - three times of course...
+    iErrorCode = l1GtUtils.l1Results(iEvent, algoname, resultBeforeMask, result, prescale, mask);
 
     gHFEvent->fL1TNames[algobit]    = TString(algoname);
     gHFEvent->fL1TResult[algobit]   = result;
