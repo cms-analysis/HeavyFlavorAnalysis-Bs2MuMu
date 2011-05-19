@@ -1,17 +1,44 @@
-#include <algorithm>
-
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "HFTruthCandidate.h"
+
+#include <algorithm>
 
 #include "DataFormats/Common/interface/Handle.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 
-#include "DataFormats/VertexReco/interface/VertexFwd.h"
-#include "DataFormats/TrackReco/interface/TrackFwd.h"
-#include "DataFormats/TrackReco/interface/Track.h"
+#include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
+#include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
+#include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaCand.hh"
+#include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TGenCand.hh"
 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKalmanVertexFit.hh"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFSequentialVertexFit.h"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFMasses.hh"
+
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
+#include "RecoVertex/VertexTools/interface/VertexDistance3D.h"
+#include "RecoVertex/VertexTools/interface/VertexDistanceXY.h"
+#include "RecoVertex/KalmanVertexFit/interface/KalmanVertexFitter.h"
+#include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
+#include "CommonTools/Statistics/interface/ChiSquared.h"
+
+#include "RecoVertex/KinematicFitPrimitives/interface/ParticleMass.h"
+#include "RecoVertex/KinematicFitPrimitives/interface/MultiTrackKinematicConstraint.h"
+#include <RecoVertex/KinematicFitPrimitives/interface/KinematicParticleFactoryFromTransientTrack.h>
+#include "RecoVertex/KinematicFit/interface/KinematicConstrainedVertexFitter.h"
+#include "RecoVertex/KinematicFit/interface/TwoTrackMassKinematicConstraint.h"
+#include "RecoVertex/KinematicFit/interface/KinematicParticleVertexFitter.h"
+#include "RecoVertex/KinematicFit/interface/KinematicParticleFitter.h"
+#include "RecoVertex/KinematicFit/interface/MassKinematicConstraint.h"
+
+#include "DataFormats/Common/interface/Handle.h"
+#include "DataFormats/Common/interface/Wrapper.h"
+#include "DataFormats/Candidate/interface/Candidate.h"
+#include "DataFormats/MuonReco/interface/MuonFwd.h"
+#include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/TrackReco/interface/TrackExtraFwd.h"
+#include "DataFormats/TrackReco/interface/TrackFwd.h"
+#include "DataFormats/TrackReco/interface/Track.h"
 
 #include <TROOT.h>
 #include <TFile.h>
@@ -31,14 +58,17 @@ extern TFile       *gHFFile;
 
 using namespace edm;
 using namespace std;
+using namespace reco;
 
 // ----------------------------------------------------------------------
 HFTruthCandidate::HFTruthCandidate(const edm::ParameterSet& iConfig):
   fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", string("goodTracks"))), 
+  fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexLabel", InputTag("offlinePrimaryVertices"))),
   fPartialDecayMatching(iConfig.getUntrackedParameter<bool>("partialDecayMatching", false)), 
   fMotherID(iConfig.getUntrackedParameter("motherID", 0)), 
   fType(iConfig.getUntrackedParameter("type", 67)),
   fGenType(iConfig.getUntrackedParameter("GenType", -67)),
+  fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.05)),
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)) {
 
   vector<int> defaultIDs;
@@ -218,7 +248,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
   Handle<View<Track> > hTracks;
   iEvent.getByLabel(fTracksLabel, hTracks);
   if(!hTracks.isValid()) {
-    cout << "==>HFBu2JpsiKp> No valid TrackCollection with label "<<fTracksLabel <<" found, skipping" << endl;
+    cout << "==>HFTruthCandidate> No valid TrackCollection with label "<<fTracksLabel <<" found, skipping" << endl;
     return;
   }
 
@@ -233,13 +263,17 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
     for (int it = 0; it < gHFEvent->nRecTracks(); ++it) {
       pTrack = gHFEvent->getRecTrack(it); 
       if (genIndices.find(pTrack->fGenIndex) != genIndices.end()) {
-	//	cout << "Found rec track: " << it; 
-	//	pTrack->dump(); 
-	
+	if (fVerbose > 2) {
+	  cout << "Found rec track: " << it; 
+	  pTrack->dump(); 
+	}
+
 	TrackBaseRef TrackView(hTracks, it);
 	Track track(*TrackView);
 	trackList.push_back(track); 
 	trackIndices.push_back(it); 
+	if (fVerbose > 2) cout << "-> adding to trackList: " << it << " with ID = " << pTrack->fMCID << endl; 
+    
 	double mass = MMUON; 
 	if (321  == TMath::Abs(pTrack->fMCID)) mass = MKAON;
 	if (211  == TMath::Abs(pTrack->fMCID)) mass = MPION;
@@ -250,7 +284,57 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
     }
 
     if (static_cast<int>(trackList.size()) == fStableDaughters) {
+
       aKal.doNotFit(trackList, trackIndices, trackMasses, fType); 
+
+      // -- Vertexing, with Kinematic Particles!
+      ESHandle<MagneticField> magfield;
+      iSetup.get<IdealMagneticFieldRecord>().get(magfield);
+      const MagneticField *field = magfield.product();
+
+      iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", fTTB);
+      if (!fTTB.isValid()) {
+	cout << " -->HFTruthCandidate: Error: no TransientTrackBuilder found."<<endl;
+	return;
+      }
+
+      Handle<VertexCollection> recoPrimaryVertexCollection;
+      iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
+      if(!recoPrimaryVertexCollection.isValid()) {
+	cout << "==>HFTruthCandidate> No primary vertex collection found, skipping" << endl;
+	return;
+      }
+      const VertexCollection vertices = *(recoPrimaryVertexCollection.product());
+      if (vertices.size() == 0) {
+	cout << "==>HFTruthCandidate> No primary vertex found, skipping" << endl;
+	return;
+      }
+            
+      HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
+      // -- setup with (relevant) muon hypothesis
+      HFDecayTree theTree(1000000+fType, true, 0, false); 
+      int ID(0), IDX(0); 
+      for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
+	IDX = trackIndices[ii];
+	ID  = 13;
+	if (fVerbose > 2) cout << "-> adding track " << IDX << " with ID = " << ID << " to the tree" << endl; 
+	theTree.addTrack(IDX, ID);
+      }
+      theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+      aSeq.doFit(&theTree);
+
+
+      // -- setup with (correct) truth hypothesis
+      HFDecayTree theTree2(2000000+fType, true, 0, false);
+      for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
+	IDX = trackIndices[ii];
+	ID  = gHFEvent->getRecTrack(IDX)->fMCID;
+	if (fVerbose > 2) cout << "-> adding track " << IDX << " with ID = " << ID << " to the tree" << endl; 
+	theTree2.addTrack(IDX, ID);
+      }
+      theTree2.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+      aSeq.doFit(&theTree2);
+
     }
     
   }

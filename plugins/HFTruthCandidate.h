@@ -11,6 +11,10 @@
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 
+#include "DataFormats/VertexReco/interface/Vertex.h"
+#include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
+#include "TrackingTools/Records/interface/TransientTrackRecord.h"
+
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
 class HFTruthCandidate : public edm::EDAnalyzer {
@@ -26,7 +30,8 @@ public:
 
 private:
   
-  edm::InputTag      fTracksLabel;
+  edm::InputTag      fTracksLabel, fPrimaryVertexLabel;
+
   bool               fPartialDecayMatching;
   int                fMotherID, fType, fGenType;
   std::vector<int>   fDaughtersID;
@@ -37,8 +42,10 @@ private:
   std::multiset<int> fDaughtersGamma2Set;
 
 
+  double             fMaxDoca;
   int                fVerbose; 
 
+  edm::ESHandle<TransientTrackBuilder> fTTB;
 
 };
 
