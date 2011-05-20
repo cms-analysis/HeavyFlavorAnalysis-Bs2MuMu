@@ -141,7 +141,6 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 	fTrackQual_mu1 = fTrackQual_mu2 = fTrackQual_kp1 = fTrackQual_kp2 = 0;
 	fQ_mu1 = fQ_mu2 = fQ_kp1 = fQ_kp2 = 0;
 	fD3_BsJpsi = fD3e_BsJpsi = -1.0f;
-	fCtau = 0.0;
 	fMuID1 = 0;
 	fMuID2 = 0;
 	fEtaMu1 = 0.0f;
@@ -150,8 +149,6 @@ int phiReader::loadCandidateVariables(TAnaCand *pCand)
 	fMuID_Kp2 = 0;
 	
 	result = massReader::loadCandidateVariables(pCand);
-	
-	fCtau = kMassBs / pCand->fPlab.Mag() * fD3; // estimate the proper time!
 	
 	// set the constraint mass value
 	findCandStructure(pCand,&cand_tracks);

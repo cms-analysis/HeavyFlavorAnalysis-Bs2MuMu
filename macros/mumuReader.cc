@@ -77,12 +77,10 @@ int mumuReader::loadCandidateVariables(TAnaCand *pCand)
 	fEtaMu1 = fEtaMu2 = 0.0f;
 	fTrackQual_mu1 = fTrackQual_mu2 = 0;
 	fQ_mu1 = fQ_mu2 = 0;
-	fCtau = 0.0f;
 	
 	if (BLIND && 5.1 < pCand->fMass && pCand->fMass < 5.5) return 0;
 	
 	result = massReader::loadCandidateVariables(pCand);
-	fCtau = kMassBs / pCand->fPlab.Mag() * fD3; // estimate the proper time!
 	
 	// set the momenta
 	findAllTrackIndices(pCand,&cand_tracks);

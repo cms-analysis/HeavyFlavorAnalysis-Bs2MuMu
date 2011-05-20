@@ -135,7 +135,6 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	fMassJPsi = -1.0f;
 	fMassJPsiRec = -1.0f;
 	fDeltaR = -1.0f;
-	fCtau = 0.0f;
 	fChi2Jpsi = -1.0f;
 	fMuID1 = 0;
 	fMuID2 = 0;
@@ -143,8 +142,6 @@ int kpReader::loadCandidateVariables(TAnaCand *pCand)
 	fEtaMu2 = 0.0f;
 		
 	result = massReader::loadCandidateVariables(pCand);
-	
-	fCtau = kMassBplus / pCand->fPlab.Mag() * fD3;
 	
 	// set the constraint mass value
 	findCandStructure(pCand,&cand_tracks);
