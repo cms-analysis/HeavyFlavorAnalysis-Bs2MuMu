@@ -67,28 +67,16 @@ void massReader::clearVariables()
 	fChi2 = 0.0;
 	fNdof = 0.0;
 	fMaxDoca = 0.0;
-	fIso7_pt0 = 0.0;
-	fIso7_pt5 = 0.0;
-	fIso7_pt7 = 0.0;
-	fIso7_pt10 = 0.0;
-	fIso10_pt0 = 0.0;
-	fIso10_pt5 = 0.0;
-	fIso10_pt7 = 0.0;
 	fIso10_pt9 = 0.0;
-	fIso10_pt10 = 0.0;
-	fIso7_pt0_pv = 0.0;
-	fIso7_pt5_pv = 0.0;
-	fIso7_pt7_pv = 0.0;
-	fIso7_pt10_pv = 0.0;
-	fIso10_pt0_pv = 0.0;
-	fIso10_pt5_pv = 0.0;
-	fIso10_pt7_pv = 0.0;
 	fIso10_pt9_pv = 0.0;
-	fIso10_pt10_pv = 0.0;
+	fIso10_pt9_sv3u = 0.0;
+	fIso10_pt9_sv4u = 0.0;
+	fIso10_pt9_sv5u = 0.0;
 	fTriggers = 0.0;
 	fTriggersError = 0.0;
 	fTriggersFound = 0.0;
 	fCtau = 0.0;
+	fCtauE = 0.0;
 	fEta = 0.0;
 	fPtMu1_Gen = 0.0;
 	fPtMu2_Gen = 0.0;
@@ -158,25 +146,15 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fChi2 = pCand->fVtx.fChi2;
 	fNdof = pCand->fVtx.fNdof;
 	fMaxDoca = pCand->fMaxDoca;
-	fIso7_pt0 = calculateIsolation(pCand, 0.7, 0.0, false);
-	fIso7_pt5 = calculateIsolation(pCand, 0.7, 0.5, false);
-	fIso7_pt7 = calculateIsolation(pCand, 0.7, 0.7, false);
-	fIso7_pt10 = calculateIsolation(pCand, 0.7, 1.0, false);
-	fIso10_pt0 = calculateIsolation(pCand, 1.0, 0.0, false);
-	fIso10_pt5 = calculateIsolation(pCand, 1.0, 0.5, false);
-	fIso10_pt7 = calculateIsolation(pCand, 1.0, 0.7, false);
-	fIso10_pt9 = calculateIsolation(pCand, 1.0, 0.9, false);
-	fIso10_pt10 = calculateIsolation(pCand, 1.0, 1.0, false);
-	fIso7_pt0_pv = calculateIsolation(pCand, 0.7, 0.0, true);
-	fIso7_pt5_pv = calculateIsolation(pCand, 0.7, 0.5, true);
-	fIso7_pt7_pv = calculateIsolation(pCand, 0.7, 0.7, true);
-	fIso7_pt10_pv = calculateIsolation(pCand, 0.7, 1.0, true);
-	fIso10_pt0_pv = calculateIsolation(pCand, 1.0, 0.0, true);
-	fIso10_pt5_pv = calculateIsolation(pCand, 1.0, 0.5, true);
-	fIso10_pt7_pv = calculateIsolation(pCand, 1.0, 0.7, true);
-	fIso10_pt9_pv = calculateIsolation(pCand, 1.0, 0.9, true);
-	fIso10_pt10_pv = calculateIsolation(pCand, 1.0, 1.0, true);
-	fCtau = 0.0f; // we can compute this only in a subclass, so initialize to zero
+	
+	fIso10_pt9 = calculateIsolation(pCand, 1.0, 0.9, false, 0.0);
+	fIso10_pt9_pv = calculateIsolation(pCand, 1.0, 0.9, true, 0.0);
+	fIso10_pt9_sv3u = calculateIsolation(pCand, 1.0, 0.9, true, 0.03); // 300u near SV nevertheless included
+	fIso10_pt9_sv4u = calculateIsolation(pCand, 1.0, 0.9, true, 0.04); // 400u
+	fIso10_pt9_sv5u = calculateIsolation(pCand, 1.0, 0.9, true, 0.05); // 500u
+	
+	fCtau = pCand->fTau3d;
+	fCtauE = pCand->fTau3dE;
 	fEta = pCand->fPlab.Eta();
 	
 	// Clean entries of nearest tracks
@@ -286,28 +264,16 @@ void massReader::bookHist()
 	reduced_tree->Branch("pt_mu2_gen",&fPtMu2_Gen,"pt_mu2_gen/F");
 	reduced_tree->Branch("eta_mu1_gen",&fEtaMu1_Gen,"eta_mu1_gen/F");
 	reduced_tree->Branch("eta_mu2_gen",&fEtaMu2_Gen,"eta_mu2_gen/F");
-	reduced_tree->Branch("iso7_pt0",&fIso7_pt0,"iso7_pt0/F");
-	reduced_tree->Branch("iso7_pt5",&fIso7_pt5,"iso7_pt5/F");
-	reduced_tree->Branch("iso7_pt7",&fIso7_pt7,"iso7_pt7/F");
-	reduced_tree->Branch("iso7_pt10",&fIso7_pt10,"iso7_pt10/F");
-	reduced_tree->Branch("iso10_pt0",&fIso10_pt0,"iso10_pt0/F");
-	reduced_tree->Branch("iso10_pt5",&fIso10_pt5,"iso10_pt5/F");
-	reduced_tree->Branch("iso10_pt7",&fIso10_pt7,"iso10_pt7/F");
 	reduced_tree->Branch("iso10_pt9",&fIso10_pt9,"iso10_pt9/F");
-	reduced_tree->Branch("iso10_pt10",&fIso10_pt10,"iso10_pt10/F");
-	reduced_tree->Branch("iso7_pt0_pv",&fIso7_pt0_pv,"iso7_pt0_pv/F");
-	reduced_tree->Branch("iso7_pt5_pv",&fIso7_pt5_pv,"iso7_pt5_pv/F");
-	reduced_tree->Branch("iso7_pt7_pv",&fIso7_pt7_pv,"iso7_pt7_pv/F");
-	reduced_tree->Branch("iso7_pt10_pv",&fIso7_pt10_pv,"iso7_pt10_pv/F");
-	reduced_tree->Branch("iso10_pt0_pv",&fIso10_pt0_pv,"iso10_pt0_pv/F");
-	reduced_tree->Branch("iso10_pt5_pv",&fIso10_pt5_pv,"iso10_pt5_pv/F");
-	reduced_tree->Branch("iso10_pt7_pv",&fIso10_pt7_pv,"iso10_pt7_pv/F");
 	reduced_tree->Branch("iso10_pt9_pv",&fIso10_pt9_pv,"iso10_pt9_pv/F");
-	reduced_tree->Branch("iso10_pt10_pv",&fIso10_pt10_pv,"iso10_pt10_pv/F");
+	reduced_tree->Branch("iso10_pt9_sv3u",&fIso10_pt9_sv3u,"iso10_pt9_sv3u/F");
+	reduced_tree->Branch("iso10_pt9_sv4u",&fIso10_pt9_sv4u,"iso10_pt9_sv4u/F");
+	reduced_tree->Branch("iso10_pt9_sv5u",&fIso10_pt9_sv5u,"iso10_pt9_sv5u/F");
 	reduced_tree->Branch("triggers",&fTriggers,"triggers/I");
 	reduced_tree->Branch("triggers_error",&fTriggersError,"triggers_error/I");
 	reduced_tree->Branch("triggers_found",&fTriggersFound,"triggers_found/I");
 	reduced_tree->Branch("ctau",&fCtau,"ctau/F");
+	reduced_tree->Branch("ctaue",&fCtauE,"ctaue/F");
 	reduced_tree->Branch("eta",&fEta,"eta/F");
 	reduced_tree->Branch("tracks_ix",fTracksIx,Form("tracks_ix[%d]/I",NBR_TRACKS_STORE));
 	reduced_tree->Branch("tracks_ip",fTracksIP,Form("tracks_ip[%d]/F",NBR_TRACKS_STORE));
@@ -518,7 +484,7 @@ void massReader::findAllTrackIndices(TAnaCand* pCand, map<int,int> *indices)
 		findAllTrackIndices(fpEvt->getCand(j),indices);
 } // findAllTrackIndices()
 
-float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt, bool sameVertex)
+float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt, bool sameVertex, double maxDocaSV)
 {
 	double iso; // calculate in double precision and return single
 	TVector3 plabB;
@@ -526,9 +492,16 @@ float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle, doubl
 	TAnaTrack *pTrack;
 	double r;
 	map<int,int> usedTracks;
+	set<int> nearSV;
 	
 	plabB = pCand->fPlab;
 	findAllTrackIndices(pCand,&usedTracks);
+	
+	ntracks = pCand->fNstTracks.size();
+	for (j = 0; j < ntracks; j++) {
+		if(pCand->fNstTracks[j].second.first < maxDocaSV)
+			nearSV.insert(pCand->fNstTracks[j].first);
+	}
 	
 	iso = 0.0;
 	ntracks = fpEvt->nRecTracks();
@@ -539,7 +512,7 @@ float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle, doubl
 		pTrack = fpEvt->getRecTrack(j);
 		
 		// if samevertex, veto tracks not from the same PV
-		if (sameVertex && (pTrack->fPvIdx != pCand->fPvIdx)) continue;
+		if ( sameVertex && (pTrack->fPvIdx != pCand->fPvIdx) && (nearSV.count(j) == 0) ) continue;
 		
 		// pt veto
 		if (pTrack->fPlab.Perp() <= minPt) continue;

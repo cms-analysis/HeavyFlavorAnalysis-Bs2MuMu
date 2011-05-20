@@ -69,7 +69,7 @@ class massReader : public treeReader01 {
 		virtual int checkTruth(TAnaCand *cand); // check if all are originating from the same particle
 		virtual int loadTruthFlags(TAnaCand *cand); // set truth flags
 		virtual int countMuons(TAnaCand *cand); // count the number of identified muons
-		float calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt, bool sameVertex);
+		float calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt, bool sameVertex, double maxDocaSV);
 		int loadTrigger(int *errTriggerOut = NULL, int *triggersFoundOut = NULL);
 		virtual int loadEfficiencyFlags(TGenCand *gen);
 
@@ -106,28 +106,16 @@ class massReader : public treeReader01 {
 		float fEtaMu2_Gen; // eta of gen muon 2
 		// isolation variables. fIsoX_ptY means opening angle deltaR < X/10 and only sum over
 		// tracks with pt > Y/10 GeV
-		float fIso7_pt0;
-		float fIso7_pt5;
-		float fIso7_pt7;
-		float fIso7_pt10;
-		float fIso10_pt0;
-		float fIso10_pt5;
-		float fIso10_pt7;
-		float fIso10_pt9; // default isolation of Analysis node
-		float fIso10_pt10;
-		float fIso7_pt0_pv;
-		float fIso7_pt5_pv;
-		float fIso7_pt7_pv;
-		float fIso7_pt10_pv;
-		float fIso10_pt0_pv;
-		float fIso10_pt5_pv;
-		float fIso10_pt7_pv;
+		float fIso10_pt9;
 		float fIso10_pt9_pv;
-		float fIso10_pt10_pv;
-		int fTriggers; // store some trigger information
+		float fIso10_pt9_sv3u;
+		float fIso10_pt9_sv4u;
+		float fIso10_pt9_sv5u;
+		int	fTriggers; // store some trigger information
 		int fTriggersError; // error information of trigger
 		int fTriggersFound; // what triggers were available
-		float fCtau; // proper time (note can be filled only in subclasses as requires knowledge of m)
+		float fCtau;
+		float fCtauE;
 		float fEta; // eta of the candidate
 		int fTracksIx[NBR_TRACKS_STORE];
 		float fTracksIP[NBR_TRACKS_STORE];
