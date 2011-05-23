@@ -262,12 +262,7 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
 	if (fVerbose > 1) cout << trgEvent->filterTag(i) << endl; 
 
-	TString label = TString(trgEvent->filterTag(i).label())
-	  + TString(":") 
-	  + TString(trgEvent->filterTag(i).process())
-	  + TString(":") 
-	  + TString(trgEvent->filterTag(i).instance())
-	  + TString(":");
+	TString label = TString(trgEvent->filterTag(i).label() +":" + trgEvent->filterTag(i).process() +":"+ trgEvent->filterTag(i).instance() +":");
 
 	for (unsigned int j=0; j<keys.size(); j++){
 	  TTrgObj *pTO = gHFEvent->addTrgObj();
