@@ -624,7 +624,7 @@ int massReader::loadEfficiencyFlags(TGenCand *gen)
 	findGenStructure(gen,&genStruct);
 	
 	/* Check acceptance
-	 *	both muons have high purity track with pt_gen > 1 && |eta_gen| < 2.5 (pt > 3.0, |eta < 2.4| on reco)
+	 *	both muons have high purity track with pt_gen > 1 && |eta_gen| < 2.5 (pt > 2.0, |eta < 2.4| on reco)
 	 *	all kaons have high purity track with pt_gen > .4 && |eta_gen| < 2.5 (pt > 0.5, |eta < 2.4| on reco)
 	 */
 	for (it = genStruct.begin(); it != genStruct.end(); ++it) {
@@ -651,7 +651,7 @@ int massReader::loadEfficiencyFlags(TGenCand *gen)
 			goto bail;
 		
 		// momentum and eta of reco tracks
-		if (track->fPlab.Perp() <= (muon ? 3 : 0.5))
+		if (track->fPlab.Perp() <= (muon ? 2.0 : 0.5))
 			goto bail;
 		if (fabs(track->fPlab.Eta()) >= 2.4)
 			goto bail;
