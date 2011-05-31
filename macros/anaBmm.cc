@@ -86,7 +86,7 @@ void anaBmm::init(const char *files, const char *dir, int mode) {
   fCsLo = 5.27;
   fCsHi = 5.47;
 
-  fBgLo = 4.7;
+  fBgLo = 4.8;
   fBgHi = 6.0;
 
   fNData = fNMc = 0; 
@@ -97,7 +97,7 @@ void anaBmm::init(const char *files, const char *dir, int mode) {
   cout << "Reading cuts from " << Form("anaBmm.%s.cuts", dir) << endl;
   readCuts(Form("anaBmm.%s.cuts", dir)); 
 
-  printCuts(); 
+  printCuts(cout); 
 
   numbers *a(0); 
   fNchan = fCuts.size(); 
@@ -146,19 +146,19 @@ void anaBmm::init(const char *files, const char *dir, int mode) {
     fNumbersCS.push_back(a); 
 
     h = new TH1D(Form("hMassWithMassCuts%d", i), Form("hMassWithMassCuts%d", i), NBINS, fMassLo, fMassHi);
-    h->SetLineColor(kBlue); 
+    //    h->SetLineColor(kBlue); 
     fhMassWithMassCuts.push_back(h); 
 
     h = new TH1D(Form("fhMassWithMassCutsManyBins%d", i), Form("fhMassWithMassCutsManyBins%d", i), (fMassHi-fMassLo)*1000, fMassLo, fMassHi);
-    h->SetLineColor(kBlue); 
+    //    h->SetLineColor(kBlue); 
     fhMassWithMassCutsManyBins.push_back(h); 
   
     h = new TH1D(Form("hMassWithCuts%d", i), Form("hMassWithCuts%d", i), NBINS, fMassLo, fMassHi);
-    h->SetLineColor(kBlue); 
+    //    h->SetLineColor(kBlue); 
     fhMassWithCuts.push_back(h); 
 
     h = new TH1D(Form("hMassWithCutsManyBins%d", i), Form("hMassWithCutsManyBins%d", i), (fMassHi-fMassLo)*1000, fMassLo, fMassHi);
-    h->SetLineColor(kBlue); 
+    //    h->SetLineColor(kBlue); 
     fhMassWithCutsManyBins.push_back(h); 
 
     h = new TH1D(Form("hMassNoCuts%d", i), Form("hMassNoCuts%d", i), NBINS, fMassLo, fMassHi);
@@ -218,8 +218,15 @@ void anaBmm::init(const char *files, const char *dir, int mode) {
   fSuffix    = dir; 
   if (fMode > 0)  fSuffix += Form("-%d", fMode); 
   cout << "--> Dumping output into " << fDirectory << endl;
+  fNumbersFileName = fDirectory + "/anaBmm." + fSuffix + ".txt";
+  system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
+  fOUT.open(fNumbersFileName.c_str(), ios::app);
+
   fNumbersFileName = fDirectory + "/anaBmm." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
+  fTEX.open(fNumbersFileName.c_str(), ios::app);
+  
+
   fUlcalcFileName  = fDirectory + "/anaBmm." + fSuffix + ".ulc";
   system(Form("/bin/rm -f %s", fUlcalcFileName.c_str()));
 
@@ -227,6 +234,8 @@ void anaBmm::init(const char *files, const char *dir, int mode) {
   string hfname  = fDirectory + "/anaBmm." + fSuffix + ".root";
   cout << "fHistFile: " << hfname << endl;
   fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
+
+  printCuts(fOUT); 
 }
 
 
@@ -261,16 +270,16 @@ void anaBmm::loadFiles(const char *files) {
 	sname = "SgData"; 
 	fF.insert(make_pair(sname, fpData[fNData])); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "#mu^{+}#mu^{-} (2010)")); 
+	fName.insert(make_pair(sname, "#mu^{+}#mu^{-}")); 
       }
       if (string::npos != stype.find("2010") && string::npos != stype.find("sg")) {
-	sname = "SgData2010";
+	sname = "SgData10";
 	fF.insert(make_pair(sname, fpData[fNData])); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#mu^{+}#mu^{-} (2010)")); 
       }
       if (string::npos != stype.find("2011") && string::npos != stype.find("sg")) {
-	sname = "SgData2011";
+	sname = "SgData11";
 	fF.insert(make_pair(sname, fpData[fNData])); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#mu^{+}#mu^{-} (2011)")); 
@@ -281,16 +290,16 @@ void anaBmm::loadFiles(const char *files) {
 	sname = "NoData";
 	fF.insert(make_pair(sname, fpData[fNData])); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "#mu^{+}#mu^{-}K^{+} (2010)")); 
+	fName.insert(make_pair(sname, "#mu^{+}#mu^{-}K^{+} (2011)")); 
       }
       if (string::npos != stype.find("2010") && string::npos != stype.find("no")) {
-	sname = "NoData2010"; 
+	sname = "NoData10"; 
 	fF.insert(make_pair(sname, fpData[fNData])); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#mu^{+}#mu^{-}K^{+} (2010)")); 
       }
       if (string::npos != stype.find("2011") && string::npos != stype.find("no")) {
-	sname = "NoData2011"; 
+	sname = "NoData11"; 
 	fF.insert(make_pair(sname, fpData[fNData])); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#mu^{+}#mu^{-}K^{+} (2011)")); 
@@ -299,18 +308,18 @@ void anaBmm::loadFiles(const char *files) {
       if (string::npos != stype.find("default") && string::npos != stype.find("cs")) {
 	fCsData = fNData;
 	sname = "CsData"; 
-	fF.insert(make_pair(sname, fpData[fCsData])); 
+	fF.insert(make_pair(sname, fpData[fNData])); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "#mu^{+}#mu^{-}K^{+}K^{-} (2010)")); 
+	fName.insert(make_pair(sname, "#mu^{+}#mu^{-}K^{+}K^{-} (2011)")); 
       }
       if (string::npos != stype.find("2010") && string::npos != stype.find("cs")) {
-	sname = "CsData2010"; 
+	sname = "CsData10"; 
 	fF.insert(make_pair(sname, fpData[fNData])); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#mu^{+}#mu^{-}K^{+}K^{-} (2010)")); 
       }
       if (string::npos != stype.find("2011") && string::npos != stype.find("cs")) {
-	sname = "CsData2011"; 
+	sname = "CsData11"; 
 	fF.insert(make_pair(sname, fpData[fNData])); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#mu^{+}#mu^{-}K^{+}K^{-} (2011)")); 
@@ -339,33 +348,62 @@ void anaBmm::loadFiles(const char *files) {
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (Fall10)")); 
       }
-      if (string::npos != stype.find("bd,2011")) {
+      if (string::npos != stype.find("default") && string::npos != stype.find("bd")) {
 	fBdMc = fNMc;
+	sname = "BdMc"; 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fF.insert(make_pair(sname, fpMc[fNMc])); 
+	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (Spring11)")); 
+      }
+      if (string::npos != stype.find("bd,2011")) {
 	sname = "BdMc11"; 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fF.insert(make_pair(sname, fpMc[fBdMc])); 
-	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (Fall11)")); 
+	fF.insert(make_pair(sname, fpMc[fNMc])); 
+	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (Spring11)")); 
       }
       if (string::npos != stype.find("bd,2010")) {
-	fBdMc = fNMc;
 	sname = "BdMc10"; 
-	fF.insert(make_pair(sname, fpMc[fBdMc])); 
+	fF.insert(make_pair(sname, fpMc[fNMc])); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (Fall10)")); 
       }
       if (string::npos != stype.find("default") && string::npos != stype.find("no")) {
 	fNoMc = fNMc;
 	sname = "NoMc"; 
-	fF.insert(make_pair(sname, fpMc[fNoMc])); 
+	fF.insert(make_pair(sname, fpMc[fNMc])); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{+} #rightarrow #mu^{+}#mu^{-}K^{+} (MC)")); 
+      }
+      if (string::npos != stype.find("2010") && string::npos != stype.find("no")) {
+	sname = "NoMc10"; 
+	fF.insert(make_pair(sname, fpMc[fNMc])); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{+} #rightarrow #mu^{+}#mu^{-}K^{+} (Fall10)")); 
+      }
+      if (string::npos != stype.find("2011") && string::npos != stype.find("no")) {
+	sname = "NoMc11"; 
+	fF.insert(make_pair(sname, fpMc[fNMc])); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{+} #rightarrow #mu^{+}#mu^{-}K^{+} (Spring11)")); 
       }
       if (string::npos != stype.find("default") && string::npos != stype.find("cs")) {
 	fCsMc = fNMc;
 	sname = "CsMc"; 
-	fF.insert(make_pair(sname, fpMc[fCsMc])); 
+	fF.insert(make_pair(sname, fpMc[fNMc])); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-}K^{+}K^{-} (MC)")); 
+      }	
+      if (string::npos != stype.find("2010") && string::npos != stype.find("cs")) {
+	sname = "CsMc10"; 
+	fF.insert(make_pair(sname, fpMc[fNMc])); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-}K^{+}K^{-} (Fall10)")); 
+      }	
+      if (string::npos != stype.find("2011") && string::npos != stype.find("cs")) {
+	sname = "CsMc11"; 
+	fF.insert(make_pair(sname, fpMc[fNMc])); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-}K^{+}K^{-} (Spring11)")); 
       }	
       if (string::npos != stype.find("bg,82")) {
 	sname = "bg82"; 
@@ -446,40 +484,60 @@ void anaBmm::makeAll(int channel) {
   fF["SgMc"]->cd();
   dumpCutNames();
 
-  if (0) {
+  // -- 1
+  if ((0x1<<0) & channel) {
     cout << "1: " << endl;
     fF["SgMc"]->cd();
     histAcceptanceAndPreselection(*fNumbersBs[0]);
-    printNumbers(*fNumbersBs[0]); 
+    printNumbers(*fNumbersBs[0], cout); 
+    printNumbers(*fNumbersBs[0], fOUT); 
     cout << "2: " << endl;
     fF["SgMc"]->cd();
     accEffFromEffTree(*fNumbersBs[0], *fCuts[0]);
-    printNumbers(*fNumbersBs[0]); 
+    printNumbers(*fNumbersBs[0], cout); 
+    printNumbers(*fNumbersBs[0], fOUT); 
     cout << "3: " << endl;
     fF["BdMc10"]->cd();
     accEffFromEffTree(*fNumbersBd[0], *fCuts[0]);
-    printNumbers(*fNumbersBs[0]); 
+    printNumbers(*fNumbersBs[0], cout); 
+    printNumbers(*fNumbersBs[0], fOUT); 
   }
 
-  if (0) {
+  // -- 2
+  if ((0x1<<1) & channel) {
     sbsDistributionOverlay("SgData", "SgMc", "Ao");
     sbsDistributionOverlay("NoData", "NoMc", "Ao");
-    sbsDistributionOverlay("NoData", "NoData2011", "Ao");
-    
     sbsDistributionOverlay("CsData", "CsMc", "Ao");
+
+    sbsDistributionOverlay("NoData", "NoMc", "Presel");
+    sbsDistributionOverlay("CsData", "CsMc", "Presel");
+
+    sbsDistributionOverlay("NoData", "NoMc", "Nm");
+    sbsDistributionOverlay("CsData", "CsMc", "Nm");
+
+    //     sbsDistributionOverlay("NoData", "NoMc", "HLT");
+    //     sbsDistributionOverlay("CsData", "CsMc", "HLT");
+
+    //??  sbsDistributionOverlay("NoData", "NoData11", "Ao");
     //??  sbsDistributionOverlay("CsData", "CsData2011", "Ao");
-    
     sbsDistributionOverlay("NoData", "CsData", "Ao");
     sbsDistributionOverlay("NoMc",   "CsMc", "Ao");
   }
-  
-  if (1) {
+
+  // -- 4
+  if ((0x1<<2) & channel) {
     allEffTables();
   }
 
-  if (1) {
+  // -- 8
+  if ((0x1<<3) & channel) {
     rareBg();
+  }
+
+  // -- 16 
+  if ((0x1<<4) & channel) {
     computeNormUL();
+    computeCsBF();
   }
 
 }
@@ -487,18 +545,60 @@ void anaBmm::makeAll(int channel) {
 
 // ----------------------------------------------------------------------
 void anaBmm::dumpSamples() {
+
+  std::map<string, double> ngen;
+  ngen.insert(make_pair("bg60", 20.e6)); 
+  ngen.insert(make_pair("bg61", 20.e6)); 
+
+  ngen.insert(make_pair("bg84", 20.e6)); 
+  ngen.insert(make_pair("bg83", 20.e6)); 
+  ngen.insert(make_pair("bg82", 20.e6)); 
+
+  ngen.insert(make_pair("bg91", 20.e6)); 
+  ngen.insert(make_pair("bg92", 20.e6)); 
+  ngen.insert(make_pair("bg93", 20.e6)); 
+
+  ngen.insert(make_pair("SgMc10", -1)); 
+  ngen.insert(make_pair("SgMc11", 100.e6)); 
+
+  ngen.insert(make_pair("BdMc11", 40.e6)); 
+  ngen.insert(make_pair("BdMc10", -1)); 
+
+  ngen.insert(make_pair("NoMc11", 160.e6)); 
+  ngen.insert(make_pair("CsMc11", 40.e6)); 
   
-  ofstream OUT(fNumbersFileName.c_str(), ios::app);
+  //  ofstream OUT(fNumbersFileName.c_str(), ios::app);
 
-  OUT << "% ----------------------------------------------------------------------" << endl;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
   string name; 
+  double lumi, n, f; 
   for (map<string, string>::iterator imap = fName.begin(); imap != fName.end(); ++imap) {  
+    cout << "===> " << imap->first << " -> " << imap->second << endl;
     name = imap->second; 
+    lumi = fLumi[imap->first];
+    n = ngen[imap->first];
+    f = ((TH1D*)fF[imap->first]->Get("monEvents"))->GetBinContent(1);
     replaceAll(name, "#", "\\"); 
-    cout <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
-    OUT <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
+    //    cout <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
+    fTEX <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
+    //    cout <<  Form("\\vdef{%s:lumi:%s}   {\\ensuremath{{%4.1f } } }", fSuffix.c_str(), imap->first.c_str(), lumi) << endl;
+    fTEX <<  Form("\\vdef{%s:lumi:%s}   {\\ensuremath{{%4.1f } } }", fSuffix.c_str(), imap->first.c_str(), lumi) << endl;
+    if (n>0) {
+      //      cout <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{%4.0f } } }", fSuffix.c_str(), imap->first.c_str(), n) << endl;
+      fTEX <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{%4.0f} } }", fSuffix.c_str(), imap->first.c_str(), n) << endl;
+    } else {
+      //      cout <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{n/a } } }", fSuffix.c_str(), imap->first.c_str() ) << endl;
+      fTEX <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{n/a } } }", fSuffix.c_str(), imap->first.c_str()) << endl;
+    }
+    if (f>0) {
+      //      cout <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{%4.0f } } }", fSuffix.c_str(), imap->first.c_str(), n) << endl;
+      fTEX <<  Form("\\vdef{%s:nfilt:%s}   {\\ensuremath{{%4.0f} } }", fSuffix.c_str(), imap->first.c_str(), f) << endl;
+    } else {
+      //      cout <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{n/a } } }", fSuffix.c_str(), imap->first.c_str() ) << endl;
+      fTEX <<  Form("\\vdef{%s:nfilt:%s}   {\\ensuremath{{n/a } } }", fSuffix.c_str(), imap->first.c_str()) << endl;
+    }
   }
-
+  fTEX.flush();
 
 }
 
@@ -507,8 +607,8 @@ void anaBmm::dumpSamples() {
 // ----------------------------------------------------------------------
 void anaBmm::dumpCutNames() {
 
-  ofstream OUT(fNumbersFileName.c_str(), ios::app);
-  OUT << "% ----------------------------------------------------------------------" << endl;
+  //  ofstream OUT(fNumbersFileName.c_str(), ios::app);
+  fTEX << "% ----------------------------------------------------------------------" << endl;
   
   TH1D *h = (TH1D*)gFile->Get("hcuts"); 
   string cut, empty(""), cutstring, cutline, cutvalue; 
@@ -526,9 +626,10 @@ void anaBmm::dumpCutNames() {
     cutvalue  = cut.substr(n2+2, cut.size()-n2);
 
     //    cout << cut << " cutstring==>" << cutstring << "<== cutvalue==>" << cutvalue << " cutline==>" << cutline << "<==" << endl;
-    OUT <<  Form("\\vdef{%s:%s:cutLine}   {\\ensuremath{{%s } } }", fSuffix.c_str(), cutstring.c_str(), cutline.c_str()) << endl;
-    OUT <<  Form("\\vdef{%s:%s:cutValue}  {\\ensuremath{{%s } } }", fSuffix.c_str(), cutstring.c_str(), cutvalue.c_str()) << endl;
+    fTEX <<  Form("\\vdef{%s:%s:cutLine}   {\\ensuremath{{%s } } }", fSuffix.c_str(), cutstring.c_str(), cutline.c_str()) << endl;
+    fTEX <<  Form("\\vdef{%s:%s:cutValue}  {\\ensuremath{{%s } } }", fSuffix.c_str(), cutstring.c_str(), cutvalue.c_str()) << endl;
   }
+  fTEX.flush();
 }
 
 
@@ -540,13 +641,82 @@ void anaBmm::allEffTables() {
 
   // -- B+
   effTable("NoData");
-  effTable("NoData2011");
+  effTable("NoData10");
   effTable("NoMc");
 
   // -- Bs2JpsiPhi
   effTable("CsData");
-  effTable("CsData2011");
+  effTable("CsData10");
   effTable("CsMc");
+
+  fTEX.flush();
+  // -- Compute difference
+  double deltaIso     = computeDelta(Form("{%s:iso1eff:NoData}", fSuffix.c_str()), Form("{%s:iso1eff:NoMc}", fSuffix.c_str()));
+  double deltaAlpha   = computeDelta(Form("{%s:alphaeff:NoData}", fSuffix.c_str()), Form("{%s:alphaeff:NoMc}", fSuffix.c_str()));
+  double deltaFls     = computeDelta(Form("{%s:fls3deff:NoData}", fSuffix.c_str()), Form("{%s:fls3deff:NoMc}", fSuffix.c_str()));
+  double deltaChi2dof = computeDelta(Form("{%s:chi2dofeff:NoData}", fSuffix.c_str()), Form("{%s:chi2dofeff:NoMc}", fSuffix.c_str()));
+  double deltaTot     = TMath::Sqrt(deltaIso*deltaIso + deltaAlpha*deltaAlpha + deltaFls*deltaFls + deltaChi2dof*deltaChi2dof); 
+  double deltaTotNoIso= TMath::Sqrt(deltaAlpha*deltaAlpha + deltaFls*deltaFls + deltaChi2dof*deltaChi2dof); 
+
+  fTEX << Form("%s", (formatTex(deltaIso, fSuffix+":deltaIso", "No")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(deltaAlpha, fSuffix+":deltaAlpha", "No")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(deltaFls, fSuffix+":deltaFls", "No")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(deltaChi2dof, fSuffix+":deltaChi2dof", "No")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(100*deltaTot, fSuffix+":deltaTot", "No")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(100*deltaTotNoIso, fSuffix+":deltaTotNoIso", "No")).c_str()) << endl;
+
+
+  deltaIso     = computeDelta(Form("{%s:iso1eff:CsData}", fSuffix.c_str()), Form("{%s:iso1eff:CsMc}", fSuffix.c_str()));
+  deltaAlpha   = computeDelta(Form("{%s:alphaeff:CsData}", fSuffix.c_str()), Form("{%s:alphaeff:CsMc}", fSuffix.c_str()));
+  deltaFls     = computeDelta(Form("{%s:fls3deff:CsData}", fSuffix.c_str()), Form("{%s:fls3deff:CsMc}", fSuffix.c_str()));
+  deltaChi2dof = computeDelta(Form("{%s:chi2dofeff:CsData}", fSuffix.c_str()), Form("{%s:chi2dofeff:CsMc}", fSuffix.c_str()));
+  deltaTot     = TMath::Sqrt(deltaIso*deltaIso + deltaAlpha*deltaAlpha + deltaFls*deltaFls + deltaChi2dof*deltaChi2dof); 
+  deltaTotNoIso= TMath::Sqrt(deltaAlpha*deltaAlpha + deltaFls*deltaFls + deltaChi2dof*deltaChi2dof); 
+  
+  fTEX << Form("%s", (formatTex(deltaIso, fSuffix+":deltaIso", "Cs")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(deltaAlpha, fSuffix+":deltaAlpha", "Cs")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(deltaFls, fSuffix+":deltaFls", "Cs")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(deltaChi2dof, fSuffix+":deltaChi2dof", "Cs")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(100*deltaTot, fSuffix+":deltaTot", "Cs")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(100*deltaTotNoIso, fSuffix+":deltaTotNoIso", "Cs")).c_str()) << endl;
+  
+  fTEX.flush();
+}
+
+
+// ----------------------------------------------------------------------
+double anaBmm::computeDelta(const char *s1, const char *s2, int relative) {
+
+  char  buffer[200];
+  string line;
+  ifstream is(fNumbersFileName.c_str());
+
+  float f1(-1.), f2(-1.);
+  while (is.getline(buffer, 200, '\n')) {
+    line = buffer; 
+    if (string::npos != line.find(s1)) {
+      string::size_type m1 = line.find("ensuremath{{"); 
+      string number = line.substr(m1+12, 6); 
+      f1 = atof(number.c_str());
+      cout << line << " --> " << number << " => " << f1 << endl;
+    }
+    if (string::npos != line.find(s2)) {
+      string::size_type m1 = line.find("ensuremath{{"); 
+      string number = line.substr(m1+12, 6); 
+      f2 = atof(number.c_str());
+      cout << line << " --> " << number << " => " << f2 << endl;
+    }
+  }
+
+  double delta = TMath::Abs(f1 - f2);
+  is.close();
+
+  if (relative) {
+    delta = 2.*delta/(f1+f2);
+  }
+		
+  return delta;
+  
 }
 
 
@@ -592,9 +762,9 @@ void anaBmm::effTable(string smode) {
     massSigma = 0.030;
   }
   
-  ofstream OUT(fNumbersFileName.c_str(), ios::app);
-  OUT << "% ----------------------------------------------------------------------" << endl;
-  OUT << " % --- " << smode << endl;
+  //  ofstream OUT(fNumbersFileName.c_str(), ios::app);
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << " % --- " << smode << endl;
   int mode(0); 
   if (string::npos != smode.find("SgMc")) {
     cout << "==> This is signal MC, counting events in histogram" << endl;
@@ -627,8 +797,8 @@ void anaBmm::effTable(string smode) {
   an->fMassSigma = massSigma; 
   an->hMassCu->SetMinimum(0.);
   norm = an->fitMass(an->hMassCu, normE, mode); 
-  OUT << Form("%s", (formatTex(norm, fSuffix+":"+cut+"Norm", smode)).c_str()) << endl;
-  OUT << Form("%s", (formatTex(normE, fSuffix+":"+cut+"NormE", smode)).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(norm, fSuffix+":"+cut+"Norm", smode)).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(normE, fSuffix+":"+cut+"NormE", smode)).c_str()) << endl;
   
   tl->DrawLatex(0.22, 0.75, Form("%4.2f+/-%4.2f", norm, normE)); 
   pdfname = Form("%s/%s_%s_hMassNorm.pdf", fDirectory.c_str(), fSuffix.c_str(), smode.c_str());
@@ -642,7 +812,7 @@ void anaBmm::effTable(string smode) {
     
     if (cut == string("")) {
       cout << "empty string found, break ..." << endl;
-      OUT.close();
+      //OUT.close();
       break;
     }
     pdfname = Form("%s/%s_%s.pdf", fDirectory.c_str(), smode.c_str(), cut.c_str());
@@ -682,10 +852,10 @@ void anaBmm::effTable(string smode) {
       // 	 << " cum eff = " << cumEff << "+/-" << cumEffE
 	 << endl;
 
-    OUT << Form("%s", (formatTex(n, fSuffix+":"+cut+"N", smode)).c_str()) << endl;
-    OUT << Form("%s", (formatTex(nE, fSuffix+":"+cut+"NE", smode)).c_str()) << endl;
-    OUT << Form("%s", (formatTex(eff, fSuffix+":"+cut+"eff", smode)).c_str()) << endl;
-    OUT << Form("%s", (formatTex(effE, fSuffix+":"+cut+"effE", smode)).c_str()) << endl;
+    fTEX << Form("%s", (formatTex(n, fSuffix+":"+cut+"N", smode)).c_str()) << endl;
+    fTEX << Form("%s", (formatTex(nE, fSuffix+":"+cut+"NE", smode)).c_str()) << endl;
+    fTEX << Form("%s", (formatTex(eff, fSuffix+":"+cut+"eff", smode)).c_str()) << endl;
+    fTEX << Form("%s", (formatTex(effE, fSuffix+":"+cut+"effE", smode)).c_str()) << endl;
     //     OUT << Form("%s", (formatTex(relEff, fSuffix+":"+cut+"eRel", smode)).c_str()) << endl;
     //     OUT << Form("%s", (formatTex(relEffE, fSuffix+":"+cut+"eRelE", smode)).c_str()) << endl;
     //     OUT << Form("%s", (formatTex(cumEff, fSuffix+":"+cut+"eCum", smode)).c_str()) << endl;
@@ -694,6 +864,228 @@ void anaBmm::effTable(string smode) {
     //     nprev = n; 
     //     nprevE= nE; 
   }
+  fTEX.flush();
+}
+
+
+// ----------------------------------------------------------------------
+void anaBmm::isoMean(const char *var, const char *cuts, int maxPvN) {
+
+  cout << "normalize to " << fDataLumi[fSgData] << endl;
+
+  gROOT->cd();
+
+  double eps(0.1); 
+  TH1D *h1 = (TH1D*)gFile->Get("isoMeanSgMc");  
+  if (0 == h1) {h1 = new TH1D("isoMeanSgMc", "", maxPvN+1, 0., maxPvN+1); h1->Sumw2();} else  h1->Reset();
+
+  TH1D *h2 = (TH1D*)gFile->Get("isoMeanSgDa");  
+  if (0 == h2) {h2 = new TH1D("isoMeanSgDa", "", maxPvN+1, 0.+eps, maxPvN+1+eps); h2->Sumw2();} else  h2->Reset();
+
+  TH1D *h3 = (TH1D*)gFile->Get("isoMeanNoMc");  
+  if (0 == h3) {h3 = new TH1D("isoMeanNoMc", "", maxPvN+1, 0.+eps*2, maxPvN+1+eps*2); h3->Sumw2();} else  h3->Reset();
+
+  TH1D *h4 = (TH1D*)gFile->Get("isoMeanNoDa");  
+  if (0 == h4) {h4 = new TH1D("isoMeanNoDa", "", maxPvN+1, 0.+eps*3, maxPvN+1+eps*3); h4->Sumw2();} else  h4->Reset();
+  
+
+  TTree *t; 
+
+  // -- signal MC
+  fpMc[fSgMc]->cd(); 
+  TH1D *h = (TH1D*)gFile->Get("isoMeanDist");  
+  if (0 == h) {
+    h = new TH1D("isoMeanDist", "", 101, 0., 1.01);
+  } else{
+    h->Reset();
+  }
+
+  t = (TTree*)gFile->Get("events"); 
+  for (int i = 1; i <= maxPvN; ++i) {
+    h->Reset();
+    cout << gFile->GetName() << " npv = " << i << " cuts: " << Form("%s&&pvn==%d", cuts, i) << endl;
+    t->Draw(Form("%s>>isoMeanDist", var), Form("%s&&pvn==%d", cuts, i));
+    h->Draw();
+    cout << "mean: "  << h->GetMean() << endl;
+    c0->Modified();
+    c0->Update();
+    if (h->GetSumOfWeights() > 20) {
+      h1->SetBinContent(i, h->GetMean()); 
+      h1->SetBinError(i, h->GetRMS()); 
+    } else {
+      //      break;
+    }
+  } 
+
+
+  // -- signal Data
+  fpData[fSgData]->cd(); 
+  h = (TH1D*)gFile->Get("isoMeanDist");  
+  if (0 == h) {
+    h = new TH1D("isoMeanDist", "", 101, 0., 1.01);
+  } else{
+    h->Reset();
+  }
+
+  t = (TTree*)gFile->Get("events"); 
+  for (int i = 1; i <= maxPvN; ++i) {
+    h->Reset();
+    cout << gFile->GetName() << " npv = " << i << " cuts: " << Form("%s&&pvn==%d", cuts, i) << endl;
+    t->Draw(Form("%s>>isoMeanDist", var), Form("%s&&pvn==%d", cuts, i));
+    h->Draw();
+    cout << "mean: "  << h->GetMean() << endl;
+    c0->Modified();
+    c0->Update();
+    if (h->GetSumOfWeights() > 20) {
+      h2->SetBinContent(i, h->GetMean()); 
+      h2->SetBinError(i, h->GetRMS()); 
+    } else {
+      //      break;
+    }
+  }
+
+
+//   // -- norm MC
+//   fpMc[fNoMc]->cd(); 
+//   h = (TH1D*)gFile->Get("isoMeanDist");  
+//   if (0 == h) {
+//     h = new TH1D("isoMeanDist", "", 101, 0., 1.01);
+//   } else{
+//     h->Reset();
+//   }
+
+//   t = (TTree*)gFile->Get("events"); 
+//   for (int i = 1; i <= maxPvN; ++i) {
+//     h->Reset();
+//     cout << gFile->GetName() << " npv = " << i << " cuts: " << Form("%s&&pvn==%d", cuts, i) << endl;
+//     t->Draw(Form("%s>>isoMeanDist", var), Form("%s&&pvn==%d", cuts, i));
+//     h->Draw();
+//     cout << "mean: "  << h->GetMean() << endl;
+//     c0->Modified();
+//     c0->Update();
+//     if (h->GetSumOfWeights() > 20) {
+//       h3->SetBinContent(i, h->GetMean()); 
+//       h3->SetBinError(i, h->GetRMS()); 
+//     } else {
+//       //      break;
+//     }
+//   } 
+
+
+//   // -- norm Data
+//   fpData[fNoData]->cd(); 
+//   h = (TH1D*)gFile->Get("isoMeanDist");  
+//   if (0 == h) {
+//     h = new TH1D("isoMeanDist", "", 101, 0., 1.01);
+//   } else{
+//     h->Reset();
+//   }
+
+//   t = (TTree*)gFile->Get("events"); 
+//   for (int i = 1; i <= maxPvN; ++i) {
+//     h->Reset();
+//     cout << gFile->GetName() << " npv = " << i << " cuts: " << Form("%s&&m>5.2&&m<5.35&&pvn==%d", cuts, i) << endl;
+//     t->Draw(Form("%s>>isoMeanDist", var), Form("%s&&m>5.2&&m<5.35&&pvn==%d", cuts, i));
+//     h->Draw();
+//     cout << "mean: "  << h->GetMean() << endl;
+//     c0->Modified();
+//     c0->Update();
+
+//     if (h->GetSumOfWeights() > 20) {
+//       h4->SetBinContent(i, h->GetMean()); 
+//       h4->SetBinError(i, h->GetRMS()); 
+//     } else {
+//       //      break;
+//     } 
+//   }
+
+  setTitles(h1, "N_{PV}", "<I>");
+  setHist(h1, kBlue, 24); h1->Draw();
+  setHist(h2, kBlue, 20); h2->Draw("same");
+
+  newLegend(0.65, 0.2, 0.80, 0.35); 
+  legg->AddEntry(h1, "Signal MC", "p"); 
+  legg->AddEntry(h2, "Signal Data", "p"); 
+  legg->Draw();
+
+  c0->SaveAs(Form("%s-npv.pdf", var)); 
+
+//   setHist(h3, kRed, 25); h3->Draw("same");
+//   setHist(h4, kRed, 21); h4->Draw("same");
+}
+
+
+// ----------------------------------------------------------------------
+void anaBmm::isoProcess(const char *var, const char *cuts) {
+
+  // -- signal MC
+  fpMc[fSgMc]->cd(); 
+  TH1D *h40 = (TH1D*)gFile->Get("iso40");  
+  if (0 == h40) {h40 = new TH1D("iso40", "", 40, 0., 1.01); } else  h40->Reset();
+
+  TH1D *h41 = (TH1D*)gFile->Get("iso41");  
+  if (0 == h41) {h41 = new TH1D("iso41", "", 40, 0., 1.01); } else  h41->Reset();
+
+  TH1D *h42 = (TH1D*)gFile->Get("iso42");  
+  if (0 == h42) {h42 = new TH1D("iso42", "", 40, 0., 1.01); } else  h42->Reset();
+
+
+  TTree *t; 
+  t = (TTree*)gFile->Get("events"); 
+  cout << "*********************" << endl;
+  cout << gFile->GetName() << " -> t = " << t << endl;
+  t->Draw(Form("%s>>iso40", var), Form("%s&&procid==%d", cuts, 40));
+  cout << "2" << endl;
+  t->Draw(Form("%s>>iso41", var), Form("%s&&procid==%d", cuts, 41));
+  t->Draw(Form("%s>>iso42", var), Form("%s&&procid==%d", cuts, 42));
+  
+  h41->Scale(h40->GetSumOfWeights()/h41->GetSumOfWeights()); 
+  h42->Scale(h40->GetSumOfWeights()/h42->GetSumOfWeights()); 
+
+  setTitles(h40, "I", "a.u.", 0.06, 0.9, 1.3);
+  setHist(h40, kBlue);  
+  setHist(h41, kRed);     //h41->SetLineStyle(kDashed); 
+  setHist(h42, kBlack);   //h42->SetLineStyle(kDotted); 
+
+  shrinkPad(0.1, 0.15); 
+  double maxi = h40->GetMaximum(); 
+  if (h41->GetMaximum() > maxi) maxi = h41->GetMaximum(); 
+  if (h42->GetMaximum() > maxi) maxi = h42->GetMaximum(); 
+  h40->SetMaximum(1.1*maxi); 
+  h40->Draw();
+  h41->Draw("same");
+  h42->Draw("same");
+
+
+  newLegend(0.25, 0.6, 0.4, 0.75); 
+  legg->AddEntry(h40, Form("GGF, mean = %4.3f", h40->GetMean()), "l"); 
+  legg->AddEntry(h41, Form("FEX, mean = %4.3f", h41->GetMean()), "l"); 
+  legg->AddEntry(h42, Form("GSP, mean = %4.3f", h42->GetMean()), "l"); 
+  legg->Draw();
+
+
+  string pdfname = Form("%s/%s_isoProcess.pdf", fDirectory.c_str(), fSuffix.c_str());
+  if (c0) c0->SaveAs(pdfname.c_str());
+
+  loopTree(0, 40); 
+  double ggf0 = fNumbersBs[0]->effAna; 
+  double ggf1 = fNumbersBs[1]->effAna;
+  loopTree(0, 41); 
+  double fex0 = fNumbersBs[0]->effAna;
+  double fex1 = fNumbersBs[1]->effAna;
+  loopTree(0, 42); 
+  double gsp0 = fNumbersBs[0]->effAna;
+  double gsp1 = fNumbersBs[1]->effAna;
+
+  loopTree(0); 
+  double all0 = fNumbersBs[0]->effAna;
+  double all1 = fNumbersBs[1]->effAna;
+
+  cout << "GGF: " << ggf0  << " " << ggf1 << endl;
+  cout << "FEX: " << fex0  << " " << fex1 << endl;
+  cout << "GSP: " << gsp0  << " " << gsp1 << endl;
+  cout << "ALL: " << all0  << " " << all1 << endl;
+  
 }
 
 
@@ -710,8 +1102,8 @@ void anaBmm::rareBg() {
 
   std::map<string, int> colors, hatches;
   std::map<string, double> mscale;  // pions: 0.002, kaons: 0.005, protons: 0.001
-  double epsPi = 0.002; 
-  double epsKa = 0.005; 
+  double epsPi = 0.003; 
+  double epsKa = 0.004; 
   double epsPr = 0.001;
   colors.insert(make_pair("bg60", 46)); hatches.insert(make_pair("bg60", 3004)); mscale.insert(make_pair("bg60", epsPi*epsPr)); 
   colors.insert(make_pair("bg61", 49)); hatches.insert(make_pair("bg61", 3005)); mscale.insert(make_pair("bg61", epsKa*epsPr)); 
@@ -732,6 +1124,10 @@ void anaBmm::rareBg() {
     if (string::npos == imap->first.find("bg")) {
       continue;
     }
+
+    //     if (string::npos == imap->first.find("bg82")) {
+    //       continue;
+    //     }
 
     if (0 == fF[imap->first]) {
       continue; 
@@ -761,6 +1157,12 @@ void anaBmm::rareBg() {
 
     bdRare0 += bd0*lscale*misid; 
     bdRare1 += bd1*lscale*misid; 
+
+    cout << imap->first << ": bsRare0 increment by " << bs0*lscale*misid << "  " << bs0 << endl;
+    cout << imap->first << ": bsRare1 increment by " << bs1*lscale*misid << "  " << bs1 << endl;
+    cout << imap->first << ": bdRare0 increment by " << bd0*lscale*misid << "  " << bd0 << endl;
+    cout << imap->first << ": bdRare1 increment by " << bd1*lscale*misid << "  " << bd1 << endl;
+
     
     h1Rare0->SetFillColor(colors[imap->first]);
     h1Rare1->SetFillColor(colors[imap->first]);
@@ -785,7 +1187,7 @@ void anaBmm::rareBg() {
   shrinkPad(0.12, 0.18); 
   hRareBg0->Draw();
   TH1D *hhRareBg0 = (TH1D*)hRareBg0->GetHistogram(); 
-  setTitles(hhRareBg0, "m_{h h} [GeV]", "Cands/bin", 0.06, 1.2, 1.5);
+  setTitles(hhRareBg0, "m_{h h} [GeV]", "Cands/bin", 0.06, 0.9, 1.5);
   legg->Draw(); 
   hhRareBg0->Draw("same");
   string pdfname = Form("%s/%s_rare0.pdf", fDirectory.c_str(), fSuffix.c_str());
@@ -793,7 +1195,7 @@ void anaBmm::rareBg() {
   
   hRareBg1->Draw();
   TH1D *hhRareBg1 = (TH1D*)hRareBg1->GetHistogram(); 
-  setTitles(hhRareBg1, "m_{h h} [GeV]", "Cands/bin", 0.06, 1.2, 1.5);
+  setTitles(hhRareBg1, "m_{h h} [GeV]", "Cands/bin", 0.06, 0.9, 1.5);
   legg->Draw(); 
   hhRareBg1->Draw("same");
   pdfname = Form("%s/%s_rare1.pdf", fDirectory.c_str(), fSuffix.c_str());
@@ -814,6 +1216,13 @@ void anaBmm::rareBg() {
   aa = fNumbersBs[1]; 
   aa->bsRare = bsRare1; 
   aa->bdRare = bdRare1; 
+
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << " % --- rare Background numbers" << endl;  
+  fTEX <<  Form("\\vdef{%s:bsRare0}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), bsRare0) << endl;
+  fTEX <<  Form("\\vdef{%s:bsRare1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), bsRare1) << endl;
+  fTEX <<  Form("\\vdef{%s:bdRare0}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), bdRare0) << endl;
+  fTEX <<  Form("\\vdef{%s:bdRare1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), bdRare1) << endl;
 
 }
 
@@ -887,9 +1296,10 @@ void anaBmm::sbsDistributionOverlay(std::string file1, std::string file2, const 
     }
   }
  
-  ofstream OUT("testUL.txt", ios::app);
+  //  ofstream OUT("testUL.txt", ios::app);
 
   fF[file1]->cd(); 
+  cout << "==> File1: "; gFile->pwd(); 
   TH1D *h = (TH1D*)gFile->Get("analysisDistributions"); 
   if (0 == h) {
     cout << "no histogram analysisDistributions found, returning" << endl;
@@ -923,6 +1333,9 @@ void anaBmm::sbsDistributionOverlay(std::string file1, std::string file2, const 
   vector<string> leftList; 
   leftList.push_back("iso"); 
   leftList.push_back("iso1"); 
+  leftList.push_back("iso2"); 
+  leftList.push_back("iso3"); 
+  leftList.push_back("iso4"); 
   leftList.push_back("cosa"); 
   leftList.push_back("cosa0"); 
 
@@ -935,19 +1348,20 @@ void anaBmm::sbsDistributionOverlay(std::string file1, std::string file2, const 
     
     if (cut == string("")) {
       cout << "empty string found, break ..." << endl;
-      OUT.close();
+      //      OUT.close();
       break;
     }
     pdfname = Form("%s/%s_%s-%s_sbs_%s_%s.pdf", fDirectory.c_str(), fSuffix.c_str(),
 		   file1.c_str(), file2.c_str(), cut.c_str(), selection);
   
     fF[file1]->cd(); 
+    cout << "==> File1: "; gFile->pwd(); 
     if (mm) {
       // -- normal
       h1 = (TH1D*)gDirectory->Get(Form("%s%s1", cut.c_str(), selection));
       // -- validation of signal MC!
-      cout << "WARNING MC VALIDATION" << endl;
-      h1 = (TH1D*)gDirectory->Get(Form("%s%s2", cut.c_str(), selection));
+      //       cout << "WARNING MC VALIDATION" << endl;
+      //       h1 = (TH1D*)gDirectory->Get(Form("%s%s2", cut.c_str(), selection));
     } else {
       h1 = a.sbsDistribution(cut.c_str(), selection);
     }
@@ -956,12 +1370,13 @@ void anaBmm::sbsDistributionOverlay(std::string file1, std::string file2, const 
     if (c1) c1->SaveAs(Form("%s/tmp/%s_sbs_%s_%s.pdf", fDirectory.c_str(), file1.c_str(), cut.c_str(), selection));
     
     fF[file2]->cd(); 
+    cout << "==> File2: "; gFile->pwd(); 
     if (mm) {
       // -- normal
       h2 = (TH1D*)gDirectory->Get(Form("%s%s0", cut.c_str(), selection));
       // -- validation of signal MC!
-      cout << "WARNING MC VALIDATION" << endl;
-      h2 = (TH1D*)gDirectory->Get(Form("%s%s2", cut.c_str(), selection));
+      //       cout << "WARNING MC VALIDATION" << endl;
+      //       h2 = (TH1D*)gDirectory->Get(Form("%s%s2", cut.c_str(), selection));
     } else {
       h2 = a.sbsDistribution(cut.c_str(), selection) ;
     }
@@ -1021,7 +1436,7 @@ void anaBmm::optimizeCut(const char *cut, double lo, double hi, const char *othe
     string cutline(""); 
     cutline += Form("%s %5.4f && %s", cut, cutVal, otherCuts); 
     cout << Form("%3d %s", j, cutline.c_str()) << endl;
-    testUL(cutline.c_str()); 
+    testSimpleUL(cutline.c_str()); 
     c0->Modified(); 
     c0->Update();
   }
@@ -1040,7 +1455,7 @@ void anaBmm::plotVar(const char* plotstring, const char *cuts, const char *optio
 
 
 // ----------------------------------------------------------------------
-void anaBmm::optimizeUL(int nruns) {
+void anaBmm::playUL(int nruns) {
 
   int NCUTS(6);
  
@@ -1058,7 +1473,7 @@ void anaBmm::optimizeUL(int nruns) {
     }
 
     cout << cutline << endl;
-    testUL(cutline.c_str()); 
+    testSimpleUL(cutline.c_str()); 
   }
 }
 
@@ -1188,7 +1603,6 @@ void anaBmm::accEffFromEffTree(numbers &a, cuts &b) {
     if (sg) {
       chan = detChan(bg1eta, bg2eta); 
       if (chan == a.index) {
-	//	cout << "chan " << chan << " " << TMath::Abs(bg1eta) << " " << TMath::Abs(bg2eta) << endl;
 	++nchangen;
 	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5) {
 	  if (bg1pt > 1. && bg2pt > 1.) {
@@ -1217,23 +1631,28 @@ void anaBmm::accEffFromEffTree(numbers &a, cuts &b) {
 	}
       }
     } else if (no) {
-      if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5) {
-	if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4) {
-	  if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.4
-	      && TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4
-	      && bm1gt && bm2gt && bk1gt
-	      ) {
-	    ++nreco;
-	    if (bm1pt > b.m1pt && bm2pt > b.m2pt
-		&& chan == a.index
+      chan = detChan(bg1eta, bg2eta); 
+      if (chan == a.index) {
+	++nchangen;
+	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5) {
+	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4) {
+	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.4
+		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4
+		&& bm1gt && bm2gt && bk1gt
 		) {
-	      ++nchan; 
-	      if (bm1id && bm2id) {
-		++nmuid;
-		if (bhlt) {
-		  ++nhlt;
-		  if (bm > 0) {
-		    ++ncand;
+	      ++nreco;
+	      chan = detChan(bm1eta, bm2eta); 
+	      if (bm1pt > b.m1pt && bm2pt > b.m2pt
+		  && chan == a.index
+		  ) {
+		++nchan; 
+		if (bm1id && bm2id) {
+		  ++nmuid;
+		  if (bhlt) {
+		    ++nhlt;
+		    if (bm > 0) {
+		      ++ncand;
+		    }
 		  }
 		}
 	      }
@@ -1242,23 +1661,27 @@ void anaBmm::accEffFromEffTree(numbers &a, cuts &b) {
 	}
       }
     } else if (cs) {
-      if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5) {
-	if (bg1pt > 1. && bg2pt > 1. && bg3pt > 1. && bg4pt > 1.) {
-	  if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.4 && bk2pt > 0.4
-	      && TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4 && TMath::Abs(bk2eta) < 2.4
-	      && bm1gt && bm2gt && bk1gt && bk2gt
-	      ) {
-	    ++nreco;
-	    if (bm1pt > b.m1pt && bm2pt > b.m2pt
-		&& chan == a.index
+      chan = detChan(bg1eta, bg2eta); 
+      if (chan == a.index) {
+	++nchangen;
+	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5) {
+	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 1. && bg4pt > 1.) {
+	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.4 && bk2pt > 0.4
+		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4 && TMath::Abs(bk2eta) < 2.4
+		&& bm1gt && bm2gt && bk1gt && bk2gt
 		) {
-	      ++nchan; 
-	      if (bm1id && bm2id) {
-		++nmuid;
-		if (bhlt) {
-		  ++nhlt;
-		  if (bm > 0) {
-		    ++ncand;
+	      ++nreco;
+	      if (bm1pt > b.m1pt && bm2pt > b.m2pt
+		  && chan == a.index
+		  ) {
+		++nchan; 
+		if (bm1id && bm2id) {
+		  ++nmuid;
+		  if (bhlt) {
+		    ++nhlt;
+		    if (bm > 0) {
+		      ++ncand;
+		    }
 		  }
 		}
 	      }
@@ -1312,6 +1735,9 @@ void anaBmm::accEffFromEffTree(numbers &a, cuts &b) {
 
 // ----------------------------------------------------------------------
 void anaBmm::computeNormUL() {
+  cout << "--> rareBg" << endl;
+  rareBg();
+
   cout << "--> loopTree: signal MC" << endl;
   loopTree(0);  // signal eff
   c0->Modified(); c0->Update();
@@ -1343,13 +1769,16 @@ void anaBmm::computeNormUL() {
   fNul = ulBayes90;
 
   cout << "printing fNumbersBs[0]" << endl;
-  printNumbers(*fNumbersBs[0]); 
+  printNumbers(*fNumbersBs[0], cout); 
+  printNumbers(*fNumbersBs[0], fOUT); 
 
   cout << "printing fNumbersBd[0]" << endl;
-  printNumbers(*fNumbersBd[0]); 
+  printNumbers(*fNumbersBd[0], cout); 
+  printNumbers(*fNumbersBd[0], fOUT); 
 
   cout << "printing fNumbersNorm[0]" << endl;
-  printNumbers(*fNumbersNorm[0]); 
+  printNumbers(*fNumbersNorm[0], cout); 
+  printNumbers(*fNumbersNorm[0], fOUT); 
 
   fUL = (fNul/fNormSig)
     *(fu/fs)
@@ -1369,12 +1798,7 @@ void anaBmm::computeNormUL() {
 
   cout << "effTot expected UL:    " << fUL << endl;
 
-  TH1D *hn = (TH1D*)fHistFile->Get(Form("numbers: %s", fNumbersBs[0]->name.c_str()));
-  int bin = 50; 
-  hn->GetXaxis()->SetBinLabel(bin, "fNul"); hn->SetBinContent(bin, fNul); 
-
-  bin = 51; 
-  hn->GetXaxis()->SetBinLabel(bin, "fNormSig"); hn->SetBinContent(bin, fNormSig);   hn->SetBinError(bin, fNormSigE);  
+  system(Form("../ulcalc/bin/ulcalc %s", fUlcalcFileName.c_str())); 
 
 }
 
@@ -1422,7 +1846,7 @@ void anaBmm::effTree(int mode) {
 }
 
 // ----------------------------------------------------------------------
-TH1* anaBmm::loopTree(int mode) {
+TH1* anaBmm::loopTree(int mode, int proc) {
   // -- mode definition
   // 0  Bs2MuMu MC
   // 1  Bd2MuMu MC
@@ -1482,7 +1906,7 @@ TH1* anaBmm::loopTree(int mode) {
   // -- set up tree
   TTree *t;
   t = (TTree*)gFile->Get("events");
-  int brun, bevt, btm, bq1, bq2; 
+  int brun, bevt, btm, bq1, bq2, bprocid; 
   double bg1pt, bg2pt, bg1eta, bg2eta;
   double bm, bpt, beta, bcosa, biso1, bchi2, bdof, bdocatrk, bfls3d, bm1pt, bm1eta, bm2pt, bm2eta;
   double bg3pt, bg3eta, bg4pt, bg4eta; 
@@ -1497,6 +1921,7 @@ TH1* anaBmm::loopTree(int mode) {
   t->SetBranchAddress("w8mu",&bw8mu);
   t->SetBranchAddress("w8tr",&bw8tr);
   t->SetBranchAddress("tm",&btm);
+  t->SetBranchAddress("procid",&bprocid);
   t->SetBranchAddress("m",&bm);
   t->SetBranchAddress("pt",&bpt);
   t->SetBranchAddress("eta",&beta);
@@ -1567,6 +1992,7 @@ TH1* anaBmm::loopTree(int mode) {
 
     // -- gen-level acceptance cuts
     if (isMC) {
+      if (proc > 0 && bprocid != proc) continue;
       if (TMath::Abs(bg1eta) > 2.5) continue;
       if (TMath::Abs(bg2eta) > 2.5) continue;
       if (TMath::Abs(bg1pt) < 1.0) continue;
@@ -1629,7 +2055,6 @@ TH1* anaBmm::loopTree(int mode) {
     if (bs2jpsiphi && bmkk > 1.045) continue;
 
     fhMassWithCuts[fChan]->Fill(bm); 
-
     fhMassWithCutsManyBins[fChan]->Fill(bm); 
     
     if (0 == mode && bm < pCuts->mBsLo) continue;
@@ -1640,8 +2065,8 @@ TH1* anaBmm::loopTree(int mode) {
     if (10 == mode && bm > fNormHi) continue;
     if (20 == mode && bm < fCsLo) continue;
     if (20 == mode && bm > fCsHi) continue;
-    fhMassWithMassCuts[fChan]->Fill(bm);
 
+    fhMassWithMassCuts[fChan]->Fill(bm);
     fhMassWithMassCutsManyBins[fChan]->Fill(bm); 
 
     if (5 == mode && bm > 4.8 && bm < 6.0) {
@@ -1664,10 +2089,18 @@ TH1* anaBmm::loopTree(int mode) {
     aa = 0; 
     if (0 == mode || 5 == mode) {
       aa = fNumbersBs[i];
+      aa->mBdHi = pCuts->mBdHi;
+      aa->mBdLo = pCuts->mBdLo;
+      aa->mBsHi = pCuts->mBsHi;
+      aa->mBsLo = pCuts->mBsLo;
     }
     // -- Bd2MuMu only for the MC numbers!
     if (1 == mode) {
       aa = fNumbersBd[i];
+      aa->mBdHi = pCuts->mBdHi;
+      aa->mBdLo = pCuts->mBdLo;
+      aa->mBsHi = pCuts->mBsHi;
+      aa->mBsLo = pCuts->mBsLo;
     }
 
     if (10 == mode || 11 == mode) {
@@ -1690,10 +2123,10 @@ TH1* anaBmm::loopTree(int mode) {
 
     // -- signal cross feed 
     double tot   = fhMassWithCutsManyBins[i]->GetSumOfWeights();
-    double bd    = fhMassWithCutsManyBins[i]->Integral(fhMassWithCutsManyBins[i]->FindBin(pCuts->mBdLo)+1, 
-						       fhMassWithCutsManyBins[i]->FindBin(pCuts->mBdHi)-1);
-    double bs    = fhMassWithCutsManyBins[i]->Integral(fhMassWithCutsManyBins[i]->FindBin(pCuts->mBsLo)+1, 
-						       fhMassWithCutsManyBins[i]->FindBin(pCuts->mBsHi)-1);
+    double bd    = fhMassWithCutsManyBins[i]->Integral(fhMassWithCutsManyBins[i]->FindBin(pCuts->mBdLo), 
+						       fhMassWithCutsManyBins[i]->FindBin(pCuts->mBdHi));
+    double bs    = fhMassWithCutsManyBins[i]->Integral(fhMassWithCutsManyBins[i]->FindBin(pCuts->mBsLo), 
+						       fhMassWithCutsManyBins[i]->FindBin(pCuts->mBsHi));
     
     fhMuId[i]->Draw();
     c0->SaveAs(Form("%s/muid-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
@@ -1711,10 +2144,10 @@ TH1* anaBmm::loopTree(int mode) {
     if (isMC) {
       accEffFromEffTree(*aa, *fCuts[i]);
       double a = fhMassNoCuts[i]->GetSumOfWeights(); 
-      double b = fhMassWithMassCuts[i]->GetSumOfWeights();
-      aa->anaNmcYield = fhMassWithCuts[i]->GetSumOfWeights(); // "no mass cut"
+      double b = fhMassWithCuts[i]->GetSumOfWeights();
       aa->ana0Yield   = a;
       aa->anaYield    = b; 
+      aa->anaWmcYield = fhMassWithMassCuts[i]->GetSumOfWeights(); // "with mass cut"
       aa->effAna      = b/a;
       aa->effAnaE     = dEff(static_cast<int>(b), static_cast<int>(a));
       aa->effMuidPid  = fhMuId[i]->GetMean();
@@ -1729,6 +2162,12 @@ TH1* anaBmm::loopTree(int mode) {
       aa->prodGenYield= b/(aa->acc * aa->effChan * aa->effMuidMC * aa->effTrigMC * aa->effCand * aa->effAna); 
       aa->chanGenYield= b/(aa->accChan * aa->effChan * aa->effMuidMC * aa->effTrigMC * aa->effCand * aa->effAna); 
     }
+
+
+    cout << "bs:  " << bs << endl;
+    cout << "bd:  " << bd << endl;
+    cout << "tot: " << tot << endl;
+    cout << "wmc: " << aa->anaWmcYield << endl;
 
     // -- compute PSD, PDS, etc
     if (0 == mode) {
@@ -1787,7 +2226,8 @@ TH1* anaBmm::loopTree(int mode) {
       c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), i));
     } 
 
-    printNumbers(*aa); 
+    printNumbers(*aa, cout); 
+    printNumbers(*aa, fOUT); 
     
     // -- Cache the pwd...
     TDirectory *pD = gFile; 
@@ -1810,8 +2250,143 @@ TH1* anaBmm::loopTree(int mode) {
 
 
 // ----------------------------------------------------------------------
-void anaBmm::testUL(const char *cuts) {
-  ofstream OUT("testUL.txt", ios::app);
+void anaBmm::testUL(int ichan) {
+  static int version(0); 
+  ++version; 
+  readCuts("anaBmm.opt.cuts"); 
+  ofstream OUT(Form("testUL-v%d", version)); 
+  printCuts(OUT); 
+
+  cout << "--> loopTree: signal MC" << endl;
+  loopTree(0);  // signal eff
+  c0->Modified(); c0->Update();
+  loopTree(1);  // Bd2MuMu eff
+  c0->Modified(); c0->Update();
+  cout << "--> loopTree: signal data" << endl;
+  loopTree(5);  // data signal
+  c0->Modified(); c0->Update();
+
+  fhMassWithCuts[ichan]->Draw();
+
+  // -- single channel version
+  double scale = fDataLumi[fSgData]/39.4;
+  double nbs = 2.0e9*(1.0-0.12)*scale;
+  double siglo = fNumbersBs[ichan]->mBsLo; 
+  double sighi = fNumbersBs[ichan]->mBsHi; 
+  double mFactor = (sighi-siglo)/(fBgHi-fBgLo-(5.45-5.20)); 
+  fBgHistExp  = fNumbersBs[ichan]->bgObs*mFactor;
+  
+  fBgExp = fBgHistExp;
+  fBgExpE = 0.2*fBgExp;
+  fNobs = static_cast<int>(fBgExp + 0.5);
+  double nulbayes  = blimit(0.9, fNobs, 1.0, 0.2, fBgExp, fBgExpE, 1);
+  double effTot = fNumbersBs[ichan]->effTot*fNumbersBs[0]->pss;
+  double ulbayes  = nulbayes/(effTot*nbs);
+  cout << "==> Chan:      " << ichan << endl;
+  cout << "==> effTot:    " << effTot << endl;
+  cout << "==> nObs:      " << fNumbersBs[ichan]->bgObs << endl;
+  cout << "==> nExp:      " << fBgHistExp << endl;
+  cout << "==> ul(Bayes): " << ulbayes << endl;
+
+  OUT << "==> chan   = " << ichan << endl;
+  OUT << "==> effTot = " << effTot << endl;
+  OUT << "==> nObs   = " << fNumbersBs[ichan]->bgObs << endl;
+  OUT << "==> nExp   = " << fBgHistExp << endl;
+  OUT << "==> UL     = " << ulbayes << endl;
+
+
+//   fUlcalcFileName = Form("testUL-v%d.ulc", version);
+//   system(Form("/bin/rm -f %s", fUlcalcFileName.c_str()));
+//   printUlcalcNumbers();
+//   system("/bin/rm -f bla");
+//   system(Form("../ulcalc/bin/ulcalc %s > bla", fUlcalcFileName.c_str())); 
+//   system(Form("tail -1 bla >> %s", Form("testUL-v%d", version)));
+
+}
+
+
+// ----------------------------------------------------------------------
+void anaBmm::optimizeULs(int nruns, int seed) {
+  int version(-1); 
+  ofstream OUT(Form("optimizeUL-%d.txt", seed)); 
+
+  int NCUTS(7);
+//string cuts[]   = {"m2pt", "m1pt","pt", "alpha", "chi2", "fls3d", "mwindow"}; 
+  double loCuts[] = {2.5,    3.0,   4,    0.02,    1.,     8,        0.020 };
+  double hiCuts[] = {3.5,    7.0,   10,   0.06,    3.,     20,       0.100};
+
+  if (seed > 0) {
+    cout << "Setting random number seed " << seed << endl;
+    OUT  << "Setting random number seed " << seed << endl;
+    gRandom->SetSeed(seed);
+  }
+
+  
+  string cutline; 
+  double cut; 
+  for (int j = 0; j < nruns; ++j) {
+    ++version; 
+    for (int i = 0; i < NCUTS; ++i) {
+      cut = gRandom->Rndm()*(hiCuts[i]-loCuts[i]) + loCuts[i];
+      for (int ic = 0; ic < 2; ++ic) {
+	fCuts[ic]->iso1 = 0.75;
+	if (0 == i) fCuts[ic]->m2pt = cut; 
+	if (1 == i) fCuts[ic]->m1pt = cut; 
+	if (2 == i) fCuts[ic]->pt = cut; 
+	if (3 == i) fCuts[ic]->alpha = cut; 
+	if (4 == i) fCuts[ic]->chi2dof = cut; 
+	if (5 == i) fCuts[ic]->fls3d = cut; 
+	if (6 == i) fCuts[ic]->mBsLo = 5.370 - cut; 
+	if (6 == i) fCuts[ic]->mBsHi = 5.370 + cut; 
+      }
+    }
+    printCuts(OUT); 
+
+    cout << "--> loopTree: signal MC" << endl;
+    loopTree(0);  // signal eff
+    c0->Modified(); c0->Update();
+    loopTree(1);  // Bd2MuMu eff
+    c0->Modified(); c0->Update();
+    cout << "--> loopTree: signal data" << endl;
+    loopTree(5);  // data signal
+    c0->Modified(); c0->Update();
+    
+    
+    // -- simple blimits in two channels
+    for (int ichan = 0; ichan < 2; ++ichan) {
+	fhMassWithCuts[ichan]->Draw();
+	double scale = fDataLumi[fSgData]/39.4;
+	double nbs = 2.0e9*(1.0-0.12)*scale;
+	double siglo = fNumbersBs[ichan]->mBsLo; 
+	double sighi = fNumbersBs[ichan]->mBsHi; 
+	double mFactor = (sighi-siglo)/(fBgHi-fBgLo-(5.45-5.20)); 
+	fBgHistExp  = fNumbersBs[ichan]->bgObs*mFactor;
+	
+	fBgExp = fBgHistExp;
+	fBgExpE = 0.2*fBgExp;
+	fNobs = static_cast<int>(fBgExp + 0.5);
+	double nulbayes  = blimit(0.9, fNobs, 1.0, 0.2, fBgExp, fBgExpE, 1);
+	double effTot = fNumbersBs[ichan]->effTot*fNumbersBs[0]->pss;
+	double ulbayes  = nulbayes/(effTot*nbs);
+	cout << "==> effTot:    " << effTot << " chan=" << ichan << " version=" << version << endl;
+	cout << "==> nObs:      " << fNumbersBs[ichan]->bgObs << " chan=" << ichan << " version=" << version  << endl;
+	cout << "==> nExp:      " << fBgHistExp << " chan=" << ichan << " version=" << version << endl;
+	cout << "==> ul(Bayes): " << ulbayes << " chan=" << ichan << " version=" << version << endl;
+	
+	OUT << "==> effTot = " << effTot << " chan=" << ichan << " version=" << version << endl;
+	OUT << "==> nObs   = " << fNumbersBs[ichan]->bgObs << " chan=" << ichan << " version=" << version << endl;
+	OUT << "==> nExp   = " << fBgHistExp << " chan=" << ichan << " version=" << version << endl;
+	OUT << "==> UL     = " << ulbayes << " chan=" << ichan << " version=" << version << endl;
+      }
+  }
+
+}
+
+
+
+// ----------------------------------------------------------------------
+void anaBmm::testSimpleUL(const char *cuts) {
+  //  ofstream OUT("testUL.txt", ios::app);
 
   fpMc[fSgMc]->cd();
   histAcceptanceAndPreselection(*fNumbersBs[0]); 
@@ -1869,14 +2444,14 @@ void anaBmm::testUL(const char *cuts) {
   double ulbarlow = nulbarlow/(fNumbersBs[0]->effTot*nbs);
   double ulbayes  = nulbayes/(fNumbersBs[0]->effTot*nbs);
   cout << Form("Nul: barlow = %3.2f, bayes = %4.2e", nulbarlow, nulbayes) << endl;
-  OUT << "==> " << fUL 
+  fOUT << "==> " << fUL 
       << ". obs = " << fNobs << " bg = " << fBgExp << "+/-" << fBgExpE << "(fBgHistExp = " << fBgHistExp << ")" << endl
       << " eff = " << afterCuts << "/" << fNumbersBs[0]->genYield << " = " << fNumbersBs[0]->effTot << endl 
       << endl;
 
   cout << "UL: barlow = " << ulbarlow << " ulbayes " << ulbayes << " BG: " << fBgExp << " hist: " << h->GetSumOfWeights() << endl;
   h->Draw();
-
+  fOUT.flush();
 }
 
 
@@ -2200,14 +2775,23 @@ void anaBmm::printUlcalcNumbers() {
   ofstream OUT(fUlcalcFileName.c_str());
 
   OUT << "######################################################################" << endl;
-  for (unsigned int i = 0; i < fNchan; ++i) {
-    OUT << "# -- NORMALIZATION " << i << endl;
-    OUT << "ACC_BPLUS\t" << i << "\t" << fNumbersNorm[i]->acc << endl;
-    OUT << "EFF_MU_PLUS\t" << i << "\t" << fNumbersNorm[i]->effMuidPid << endl;
-    OUT << "EFF_TRIG_PLUS\t" << i << "\t" << fNumbersNorm[i]->effTrigPid << endl;
-    OUT << "EFF_CAND_PLUS\t" << i << "\t" << fNumbersNorm[i]->effCand << endl;
-    OUT << "EFF_ANA_PLUS\t" << i << "\t" << fNumbersNorm[i]->effAna << endl;
-    OUT << "OBS_BPLUS\t" << i << "\t" << fNumbersNorm[i]->fitYield << endl;
+  if (fNumbersNorm[0]->fitYield > 0) {
+    for (unsigned int i = 0; i < fNchan; ++i) {
+      OUT << "# -- NORMALIZATION " << i << endl;
+      OUT << "#EFF_TOT_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effTot << endl;
+      OUT << "ACC_BPLUS\t" << i << "\t" << fNumbersNorm[i]->acc << endl;
+      //    OUT << "EFF_MU_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effMuidPid << endl;
+      OUT << "EFF_MU_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effMuidMC << endl;
+      //    OUT << "EFF_TRIG_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effTrigPid << endl;
+      OUT << "EFF_TRIG_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effTrigMC << endl;
+      OUT << "EFF_CAND_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effCand << endl;
+      //    OUT << "EFF_ANA_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effAna << endl;
+      OUT << "EFF_ANA_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effAna*fNumbersNorm[i]->effChan << endl;
+      OUT << "OBS_BPLUS\t" << i << "\t" << fNumbersNorm[i]->fitYield << endl;
+    } 
+  } else {
+    OUT << "TOT_BPLUS\t" << "0\t" << (fDataLumi[fSgData]/39.4)*440000 << endl;
+    OUT << "TOT_BPLUS\t" << "1\t" << (fDataLumi[fSgData]/39.4)*383000 << endl;
   }
 
   OUT << "######################################################################" << endl;
@@ -2224,65 +2808,80 @@ void anaBmm::printUlcalcNumbers() {
     OUT << "PDS\t" << i << "\t" << fNumbersBs[i]->pds << endl;
     OUT << "PDD\t" << i << "\t" << fNumbersBd[i]->pdd << endl;
 
+    OUT << "#EFF_TOT_BSMM\t" << i << "\t" << fNumbersBs[i]->effTot << endl;
     OUT << "ACC_BSMM\t" << i << "\t" << fNumbersBs[i]->acc << endl;
-    OUT << "EFF_MU_BSMM\t" << i << "\t" << fNumbersBs[i]->effMuidPid << endl;
-    OUT << "EFF_TRIG_BSMM\t" << i << "\t" << fNumbersBs[i]->effTrigPid << endl;
+    //    OUT << "EFF_MU_BSMM\t" << i << "\t" << fNumbersBs[i]->effMuidPid << endl;
+    OUT << "EFF_MU_BSMM\t" << i << "\t" << fNumbersBs[i]->effMuidMC << endl;
+    //    OUT << "EFF_TRIG_BSMM\t" << i << "\t" << fNumbersBs[i]->effTrigPid << endl;
+    OUT << "EFF_TRIG_BSMM\t" << i << "\t" << fNumbersBs[i]->effTrigMC << endl;
     OUT << "EFF_CAND_BSMM\t" << i << "\t" << fNumbersBs[i]->effCand << endl;
-    OUT << "EFF_ANA_BSMM\t" << i << "\t" << fNumbersBs[i]->effAna << endl;
-    OUT << "OBS_BSMM\t" << i << "\t" << fNumbersBs[i]->bsObs << endl;
+    OUT << "EFF_ANA_BSMM\t" << i << "\t" << fNumbersBs[i]->effAna*fNumbersBs[i]->effChan << endl;
 
+    OUT << "#EFF_TOT_BDMM\t" << i << "\t" << fNumbersBd[i]->effTot << endl;
     OUT << "ACC_BDMM\t" << i << "\t" << fNumbersBd[i]->acc << endl;
-    OUT << "EFF_MU_BDMM\t" << i << "\t" << fNumbersBd[i]->effMuidPid << endl;
-    OUT << "EFF_TRIG_BDMM\t" << i << "\t" << fNumbersBd[i]->effTrigPid << endl;
+    //    OUT << "EFF_MU_BDMM\t" << i << "\t" << fNumbersBd[i]->effMuidPid << endl;
+    OUT << "EFF_MU_BDMM\t" << i << "\t" << fNumbersBd[i]->effMuidMC << endl;
+    //    OUT << "EFF_TRIG_BDMM\t" << i << "\t" << fNumbersBd[i]->effTrigPid << endl;
+    OUT << "EFF_TRIG_BDMM\t" << i << "\t" << fNumbersBd[i]->effTrigMC << endl;
     OUT << "EFF_CAND_BDMM\t" << i << "\t" << fNumbersBd[i]->effCand << endl;
-    OUT << "EFF_ANA_BDMM\t" << i << "\t" << fNumbersBd[i]->effAna << endl;
+    OUT << "EFF_ANA_BDMM\t" << i << "\t" << fNumbersBd[i]->effAna*fNumbersBd[i]->effChan << endl;
+
+    OUT << "# Observed in signal boxes" << endl;
+    OUT << "OBS_BSMM\t" << i << "\t" << fNumbersBs[i]->bsObs << endl;
     OUT << "OBS_BDMM\t" << i << "\t" << fNumbersBs[i]->bdObs << endl;
     
   }
+
+  OUT.close();
 
 }
 
 
 
 // ----------------------------------------------------------------------
-void anaBmm::printNumbers(numbers &a) {
-  cout << "numbers for \"" << a.name.c_str() << "\"" << endl;
-  cout << "fitYield     = " << a.fitYield << "+/-" << a.fitYieldE << endl;
-  cout << "genFileYield = " << a.genFileYield << endl;
-  cout << "genYield     = " << a.genYield << endl;
-  cout << "genChanYield = " << a.genChanYield << endl;
-  cout << "recoYield    = " << a.recoYield << endl;
-  cout << "chanYield    = " << a.chanYield << endl;
-  cout << "muidYield    = " << a.muidYield << endl;
-  cout << "trigYield    = " << a.trigYield << endl;
-  cout << "candYield    = " << a.candYield << endl;
-  cout << "ana0Yield    = " << a.ana0Yield << endl;
-  cout << "anaNmcYield  = " << a.anaNmcYield << endl;
-  cout << "anaYield     = " << a.anaYield << endl;
-  cout << "PSS          = " << a.pss << endl;
-  cout << "PDS          = " << a.pds << endl;
-  cout << "PSD          = " << a.psd << endl;
-  cout << "PDD          = " << a.pdd << endl;
-  cout << "bsRare       = " << a.bsRare << endl;
-  cout << "bdRare       = " << a.bdRare << endl;
-  cout << "gen filter   = " << a.effGenFilter << endl;
-  cout << "acceptance   = " << a.acc << "+/-" << a.accE << endl;
-  cout << "accChan      = " << a.accChan << "+/-" << a.accChanE << endl; 
-  cout << "effChan      = " << a.effChan << "+/-" << a.effChanE << endl; 
-  cout << "effMuidMC    = " << a.effMuidMC << "+/-" << a.effMuidMCE << endl;
-  cout << "effMuidPid   = " << a.effMuidPid << "+/-" << a.effMuidPidE << endl;
-  cout << "effTrigMC    = " << a.effTrigMC << "+/-" << a.effTrigMCE << endl;
-  cout << "effTrigPid   = " << a.effTrigPid << "+/-" << a.effTrigPidE << endl;
-  cout << "effCand      = " << a.effCand << "+/-" << a.effCandE << endl;
-  cout << "effAna       = " << a.effAna << "+/-" << a.effAnaE << endl; 
-  cout << "prod(eff)    = " << a.acc*a.effChan*a.effMuidMC*a.effTrigMC*a.effCand*a.effAna << endl;
-  cout << "prod(effPid) = " << a.acc*a.effChan*a.effMuidPid*a.effTrigPid*a.effCand*a.effAna << endl;
-  cout << "effTot       = " << a.effTot << "+/-" << a.effTotE << endl; 
-  cout << "effTotChan   = " << a.effTotChan << "+/-" << a.effTotChanE << endl; 
-  cout << "combGenYield = " << a.combGenYield << endl; 
-  cout << "prodGenYield         = " << a.prodGenYield << endl; 
-  cout << "chanGenYield(prod)   = " << a.chanGenYield << endl; 
-
+void anaBmm::printNumbers(numbers &a, ostream &OUT) {
+  OUT << "======================================================================" << endl;
+  OUT << "numbers for \"" << a.name.c_str() << "\"" << endl;
+  OUT << "fitYield     = " << a.fitYield << "+/-" << a.fitYieldE << endl;
+  OUT << "genFileYield = " << a.genFileYield << endl;
+  OUT << "genYield     = " << a.genYield << endl;
+  OUT << "genChanYield = " << a.genChanYield << endl;
+  OUT << "recoYield    = " << a.recoYield << endl;
+  OUT << "chanYield    = " << a.chanYield << endl;
+  OUT << "muidYield    = " << a.muidYield << endl;
+  OUT << "trigYield    = " << a.trigYield << endl;
+  OUT << "candYield    = " << a.candYield << endl;
+  OUT << "ana0Yield    = " << a.ana0Yield << endl;
+  OUT << "anaWmcYield  = " << a.anaWmcYield << endl;
+  OUT << "anaYield     = " << a.anaYield << endl;
+  OUT << "mBsLo        = " << a.mBsLo << endl;
+  OUT << "mBsHi        = " << a.mBsHi << endl;
+  OUT << "mBdLo        = " << a.mBdLo << endl;
+  OUT << "mBdHi        = " << a.mBdHi << endl;
+  OUT << "PSS          = " << a.pss << endl;
+  OUT << "PDS          = " << a.pds << endl;
+  OUT << "PSD          = " << a.psd << endl;
+  OUT << "PDD          = " << a.pdd << endl;
+  OUT << "bsRare       = " << a.bsRare << endl;
+  OUT << "bdRare       = " << a.bdRare << endl;
+  OUT << "gen filter   = " << a.effGenFilter << endl;
+  OUT << "acceptance   = " << a.acc << "+/-" << a.accE << endl;
+  OUT << "accChan      = " << a.accChan << "+/-" << a.accChanE << endl; 
+  OUT << "effChan      = " << a.effChan << "+/-" << a.effChanE << endl; 
+  OUT << "effMuidMC    = " << a.effMuidMC << "+/-" << a.effMuidMCE << endl;
+  OUT << "effMuidPid   = " << a.effMuidPid << "+/-" << a.effMuidPidE << endl;
+  OUT << "effTrigMC    = " << a.effTrigMC << "+/-" << a.effTrigMCE << endl;
+  OUT << "effTrigPid   = " << a.effTrigPid << "+/-" << a.effTrigPidE << endl;
+  OUT << "effCand      = " << a.effCand << "+/-" << a.effCandE << endl;
+  OUT << "effAna       = " << a.effAna << "+/-" << a.effAnaE << endl; 
+  OUT << "prod(eff)    = " << a.acc*a.effChan*a.effMuidMC*a.effTrigMC*a.effCand*a.effAna << endl;
+  OUT << "prod(effPid) = " << a.acc*a.effChan*a.effMuidPid*a.effTrigPid*a.effCand*a.effAna << endl;
+  OUT << "effTot       = " << a.effTot << "+/-" << a.effTotE << endl; 
+  OUT << "effTotChan   = " << a.effTotChan << "+/-" << a.effTotChanE << endl; 
+  OUT << "combGenYield = " << a.combGenYield << endl; 
+  OUT << "prodGenYield         = " << a.prodGenYield << endl; 
+  OUT << "chanGenYield(prod)   = " << a.chanGenYield << endl; 
+  OUT.flush();
 
   // -- dump into fHistFile
   int bin(0); 
@@ -2315,7 +2914,7 @@ void anaBmm::printNumbers(numbers &a) {
   hn->GetXaxis()->SetBinLabel(bin, "ana0Yield"); hn->SetBinContent(bin, a.ana0Yield);  
 
   bin = 9; 
-  hn->GetXaxis()->SetBinLabel(bin, "anaNmcYield"); hn->SetBinContent(bin, a.anaNmcYield);  
+  hn->GetXaxis()->SetBinLabel(bin, "anaWmcYield"); hn->SetBinContent(bin, a.anaWmcYield);  
 
   bin = 10; 
   hn->GetXaxis()->SetBinLabel(bin, "anaYield"); hn->SetBinContent(bin, a.anaYield);  
@@ -2391,6 +2990,8 @@ void anaBmm::readCuts(const char *filename) {
   int dump(0), ok(0);
 
   cuts *a = 0;
+  
+  fCuts.clear();
 
   for (unsigned int i = 0; i < cutLines.size(); ++i) {
     sprintf(buffer, "%s", cutLines[i].c_str()); 
@@ -2494,33 +3095,52 @@ void anaBmm::readCuts(const char *filename) {
 
 
 // ----------------------------------------------------------------------
-void anaBmm::printCuts() {
+void anaBmm::printCuts(ostream &OUT) {
 
+  OUT << "----------------------------------------------------------------------" << endl;
   for (unsigned int i = 0; i < fCuts.size(); ++i) {
     cuts *a = fCuts[i]; 
-    cout << "# -- channel " << a->index << endl;
-    cout << "index   " << a->index << endl;
+    OUT << "# -- channel " << a->index << endl;
+    OUT << "index   " << a->index << endl;
+    fTEX << "% ----------------------------------------------------------------------" << endl;
+    fTEX << "% -- Cuts for channel " << a->index << endl;
 
-    cout << "mBdLo   " << Form("%4.3f", a->mBdLo) << endl;
-    cout << "mBdHi   " << Form("%4.3f", a->mBdHi) << endl;
+    OUT << "mBdLo   " << Form("%4.3f", a->mBdLo) << endl;
+    OUT << "mBdHi   " << Form("%4.3f", a->mBdHi) << endl;
+    fTEX <<  Form("\\vdef{%s:mBdLo:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->mBdLo) << endl;
+    fTEX <<  Form("\\vdef{%s:mBdHi:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->mBdHi) << endl;
 
-    cout << "mBsLo   " << Form("%4.3f", a->mBsLo) << endl;
-    cout << "mBsHi   " << Form("%4.3f", a->mBsHi) << endl;
+    OUT << "mBsLo   " << Form("%4.3f", a->mBsLo) << endl;
+    OUT << "mBsHi   " << Form("%4.3f", a->mBsHi) << endl;
+    fTEX <<  Form("\\vdef{%s:mBsLo:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->mBsLo) << endl;
+    fTEX <<  Form("\\vdef{%s:mBsHi:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->mBsHi) << endl;
 
-    cout << "etaMin  " << Form("%3.1f", a->etaMin) << endl;
-    cout << "etaMax  " << Form("%3.1f", a->etaMax) << endl;
+    OUT << "etaMin  " << Form("%3.1f", a->etaMin) << endl;
+    OUT << "etaMax  " << Form("%3.1f", a->etaMax) << endl;
+    fTEX <<  Form("\\vdef{%s:etaMin:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->etaMin) << endl;
+    fTEX <<  Form("\\vdef{%s:etaMax:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->etaMax) << endl;
 
-    cout << "pt      " << Form("%3.1f", a->pt) << endl;
-    cout << "m1pt    " << a->m1pt << endl;
-    cout << "m2pt    " << a->m2pt << endl;
-    cout << "m1eta   " << a->m1eta << endl;
-    cout << "m2eta   " << a->m2eta << endl;
+    OUT << "pt      " << Form("%3.1f", a->pt) << endl;
+    fTEX <<  Form("\\vdef{%s:pt:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->pt) << endl;
+    OUT << "m1pt    " << a->m1pt << endl;
+    fTEX <<  Form("\\vdef{%s:m1pt:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->m1pt) << endl;
+    OUT << "m2pt    " << a->m2pt << endl;
+    fTEX <<  Form("\\vdef{%s:m2pt:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->m2pt) << endl;
+    OUT << "m1eta   " << a->m1eta << endl;
+    fTEX <<  Form("\\vdef{%s:m1eta:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->m1eta) << endl;
+    OUT << "m2eta   " << a->m2eta << endl;
+    fTEX <<  Form("\\vdef{%s:m2eta:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->m2eta) << endl;
 
-    cout << "iso1    " << a->iso1 << endl;
-    cout << "chi2dof " << a->chi2dof << endl;
-    cout << "alpha   " << a->alpha << endl;
-    cout << "fls3d   " << a->fls3d << endl;
+    OUT << "iso1    " << a->iso1 << endl;
+    fTEX <<  Form("\\vdef{%s:iso1:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->iso1) << endl;
+    OUT << "chi2dof " << a->chi2dof << endl;
+    fTEX <<  Form("\\vdef{%s:chi2dof:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->chi2dof) << endl;
+    OUT << "alpha   " << a->alpha << endl;
+    fTEX <<  Form("\\vdef{%s:alpha:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->alpha) << endl;
+    OUT << "fls3d   " << a->fls3d << endl;
+    fTEX <<  Form("\\vdef{%s:fls3d:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->fls3d) << endl;
   }
+  OUT.flush();
 }
 
 
@@ -2530,7 +3150,7 @@ void anaBmm::initNumbers(numbers *a) {
   a->name = "";
   a->effGenFilter = a->effGenFilterE = 1.;
   a->fitYield = a->fitYieldE = 0.;
-  a->genFileYield = a->genYield = a->recoYield = a->muidYield = a->trigYield = a->candYield = a->ana0Yield = a->anaYield = a->anaNmcYield = 0; 
+  a->genFileYield = a->genYield = a->recoYield = a->muidYield = a->trigYield = a->candYield = a->ana0Yield = a->anaYield = a->anaWmcYield = 0; 
   a->acc = a->accE = 0; 
   a->effMuidMC =  a->effMuidMCE = a->effTrigMC = a->effTrigMCE = 0; 
   a->effMuidPid = a->effMuidPidE = a->effTrigPid = a->effTrigPidE = 0; 

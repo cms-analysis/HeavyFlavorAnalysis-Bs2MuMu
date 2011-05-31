@@ -104,7 +104,7 @@ public:
     , JPSIMASSLO
     , JPSIMASSHI
     ;
-  int TYPE, SELMODE, MUIDMASK, MUIDRESULT, TRACKQUALITY, JPSITYPE, TRUTHCAND;
+  int TYPE, SELMODE, MUIDMASK, MUIDRESULT, TRACKQUALITY, JPSITYPE, TRUTHCAND, IGNORETRIGGER;
   std::vector<std::string> HLTPath, L1TPath; 
 
   bool fL1TMu0, fL1TMu3;
@@ -175,7 +175,10 @@ public:
     *fpMpsi,
     *fpQ, *fpPt, *fpEta, 
     *fpCosA, *fpCosA0, *fpAlpha,
-    *fpIso, *fpIso1, 
+    *fpIso, *fpIso1, *fpIso2, *fpIso3, *fpIso4, 
+    *fpIsoPv1, *fpIsoPv2, *fpIsoPv3, *fpIsoPv4, *fpIsoPv5, *fpIsoPv6,  
+    *fpIso1Pv1, *fpIso1Pv2, *fpIso1Pv3, *fpIso1Pv4, *fpIso1Pv5, *fpIso1Pv6,  
+    *fpIso4Pv1, *fpIso4Pv2, *fpIso4Pv3, *fpIso4Pv4, *fpIso4Pv5, *fpIso4Pv6,  
     *fpDoca, *fpIP,
     *fpChi2, *fpChi2Dof, *fpProb, 
     *fpFLS3d, *fpFLSxy, 

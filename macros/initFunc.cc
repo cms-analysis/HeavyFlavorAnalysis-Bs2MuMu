@@ -386,7 +386,7 @@ TF1* initFunc::pol1gauss2c(TH1 *h, double peak, double sigma) {
   if (f) delete f; 
   f = new TF1("f1_pol1_gauss2c", f_pol1_gauss2c, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 7);
   f->SetParNames("norm", "peak", "sigma", "fraction", "sigma2", "constant", "slope"); 			   
-  f->SetLineColor(kBlue); 
+  //  f->SetLineColor(kBlue); 
   f->SetLineWidth(2); 
 
   int lbin(1), hbin(h->GetNbinsX()); 

@@ -33,7 +33,7 @@ struct numbers {
   int index;
   double effGenFilter, effGenFilterE; 
   double fitYield, fitYieldE;
-  double genFileYield, genYield, genChanYield, recoYield, chanYield, muidYield, trigYield, candYield, ana0Yield, anaNmcYield, anaYield;
+  double genFileYield, genYield, genChanYield, recoYield, chanYield, muidYield, trigYield, candYield, ana0Yield, anaWmcYield, anaYield;
   double acc, accE, accChan, accChanE;
   double effChan, effChanE; 
   double effMuidMC, effMuidMCE, effTrigMC, effTrigMCE;
@@ -88,32 +88,37 @@ public:
 
   void allEffTables();
   void effTable(std::string mode);
+  double computeDelta(const char *s1, const char *s2, int relative = 1);
 
   void sbsDistributionOverlay(std::string file1, std::string file2, const char *selection="Ao"); 
 
   void breco(TH1D *h); 
   void effTree(int mode);
-  TH1* loopTree(int mode);
+  TH1* loopTree(int mode, int proc = -1);
 
   void plotVar(const char *plotstring, const char *cuts, const char *options = "");
-  void testUL(const char *cuts);
+  void testSimpleUL(const char *cuts);
+  void testUL(int ichan = 0);
+  void optimizeULs(int nruns, int seed = -1);
   void testEff(const char *additionalCuts, 
 	       const char *basicCuts="gmuid&&hlt&&gtqual&&m1pt>3&&m2pt>2.&&acos(cosa)<0.04&&iso1>0.7&&fls3d>13&&chi2<1.5&&pt>4");
   void optimizeCut(const char *cut, double lo, double hi, const char *otherCuts); 
-  void optimizeUL(int nruns = 10); 
+  void playUL(int nruns = 10); 
 
   void normYield(TH1 *h, int mode, double lo = 5.15, double hi=5.5);
   void csYield(TH1 *h, int mode, double lo = 5.25, double hi=5.6);
   void bgBlind(TH1 *h, int mode = 2, double lo = 4.5, double hi = 6.5); 
 
   void rareBg(); 
+  void isoMean(const char *var = "iso1", const char *cuts="gmuid&&hlt&&acos(cosa)<0.05&&chi2/dof<2&&fls3d>10", int maxPvN = 15);
+  void isoProcess(const char *var, const char *cuts);
 
   // -- Utilities and helper methods
   // -------------------------------
   void readCuts(const char *filename); 
-  void printCuts(); 
+  void printCuts(ostream &OUT); 
   void initNumbers(numbers *a); 
-  void printNumbers(numbers &a);
+  void printNumbers(numbers &a, ostream &OUT);
   void printUlcalcNumbers();
   int  detChan(double m1eta, double m2eta);
 
@@ -144,6 +149,7 @@ public:
 
   // -- output histograms
   TFile *fHistFile; 
+  ofstream fOUT, fTEX; 
 
   // -- functions
   TF1 *f0, *f1, *f2, *f3, *f4, *f5, *f6, *f7, *f8, *f9; 

@@ -103,13 +103,15 @@ void bmmReader::eventProcessing() {
   ((TH1D*)fpHistFile->Get("monEvents"))->Fill(1, fpEvt->nCands()); 
   ((TH1D*)fpHistFile->Get("monEvents"))->Fill(2, fCands.size()); 
 
-  if (!fIsMC && !fGoodHLT) {
-    if (fVerbose > 5) {
-      cout << "no HLT trigger!" << endl;
+  if (0 == IGNORETRIGGER) {
+    if (!fIsMC && !fGoodHLT) {
+      if (fVerbose > 5) {
+	cout << "no HLT trigger!" << endl;
+      }
+      return;
     }
-    return;
   }
-    
+
   ((TH1D*)fpHistFile->Get("monEvents"))->Fill(3, fpEvt->nCands()); 
   ((TH1D*)fpHistFile->Get("monEvents"))->Fill(4, fCands.size()); 
 
@@ -174,6 +176,10 @@ void bmmReader::initVariables() {
     }
     if (fVerbose > 2) cout << "Adding candidate at " << iC << " which is of type " << TYPE 
 			   << " with sig tracks: " << pCand->fSig1 << " .. " << pCand->fSig2
+			   << " and rec tracks: " 
+			   << fpEvt->getSigTrack(pCand->fSig1)->fIndex
+			   << " .. " 
+			   << fpEvt->getSigTrack(pCand->fSig2)->fIndex
 			   << endl;
     insertCand(pCand);
   }
@@ -427,7 +433,8 @@ void bmmReader::HLTSelection() {
     wasRun = fpEvt->fHLTWasRun[i]; 
     result = fpEvt->fHLTResult[i]; 
     error  = fpEvt->fHLTError[i]; 
-    //    if (result) cout << a << ": wasRun = " << wasRun << " result: " << result << " error: " << error << endl;
+    //     if (result && a.Contains("Mu")) //&& a.Contains("Bs")
+    //       cout << a << ": wasRun = " << wasRun << " result: " << result << " prescale: " << ps << " error: " << error << endl;
     for (unsigned int j = 0; j < HLTPath.size(); ++j) {
       if (a.Contains(HLTPath[j].c_str())) {
 	if (wasRun && result) {
@@ -550,7 +557,18 @@ void bmmReader::fillCandidateVariables() {
   if (-1 == fCandIdx) return;
 
   int goodSV(0); 
-  fPvN = fpEvt->nPV();
+  TAnaVertex *pVtx; 
+  fPvN = 0; 
+  for (int i = 0; i < fpEvt->nPV(); ++i) {
+    pVtx = fpEvt->getPV(i); 
+    if (0 == pVtx->fStatus) {
+      ++fPvN;
+    } else {
+      //      cout << "skipping  fake vertex" << endl;
+    }
+  }
+  //  cout << "fPvN = " << fPvN << endl;
+
   if (fpCand->fPvIdx > -1 && fpCand->fPvIdx < fpEvt->nPV()) {
     goodSV = 1; 
     TAnaVertex *pv = fpEvt->getPV(fpCand->fPvIdx); 
@@ -572,15 +590,12 @@ void bmmReader::fillCandidateVariables() {
       cout << "JSON = 0 for run = " << fRun << " and LS = " << fLS << endl;
     }
   }
-
-  fCandTM    = tmCand(fpCand); 
-  //   int a = tmCand(fpCand); 
-  //   if (a != fCandTM) {
-  //     cout << "fEvent: " << fEvent << endl;
-  //     cout << "cand " << fCandIdx << " tmCand (original) = " << tmCand2(fpCand) << " and new = " << tmCand(fpCand) << endl;
-  //     cout << " with sigtracks: " << fpCand->fSig1 << ".." << fpCand->fSig2 << endl;
-  //     fpEvt->dump(); 
-  //   }
+  
+  if (fIsMC) {
+    fCandTM    = tmCand(fpCand); 
+  } else {
+    fCandTM = 0; 
+  }
   
   fCandType  = fpCand->fType;
   fCandPt    = fpCand->fPlab.Perp();
@@ -620,15 +635,19 @@ void bmmReader::fillCandidateVariables() {
   p1 = fpEvt->getRecTrack(ps1->fIndex);
   ps2= p2; 
   p2 = fpEvt->getRecTrack(ps2->fIndex);
-  
-  if (p1->fPlab.Perp() < p2->fPlab.Perp()) {
-    p0 = p1; 
-    p1 = p2; 
-    p2 = p0; 
 
-    p0 = ps1; 
-    ps1 = ps2; 
-    ps2 = p0;
+  if (1301 == fpCand->fType ||1302 == fpCand->fType || 1313 == fpCand->fType) {
+    // do nothing, these types are for efficiency/TNP studies
+  } else {
+    if (p1->fPlab.Perp() < p2->fPlab.Perp()) {
+      p0 = p1; 
+      p1 = p2; 
+      p2 = p0; 
+      
+      p0 = ps1; 
+      ps1 = ps2; 
+      ps2 = p0;
+    }
   }
 
   fMu1Id        = muonID(p1); 
@@ -767,7 +786,7 @@ void bmmReader::fillCandidateVariables() {
   fCandFLSxy = fpCand->fVtx.fDxy/fpCand->fVtx.fDxyE; 
 
   if (fpCand->fNstTracks.size() == 0) {
-    cout << "HHHHEEEELLLLPPPP" << endl;
+    //    cout << "HHHHEEEELLLLPPPP" << endl;
     fCandDocaTrk = 99.;
   } else {
     fCandDocaTrk = fpCand->fNstTracks[0].second.first;
@@ -1224,9 +1243,37 @@ void bmmReader::fillCandidateHistograms() {
   fpCosA0->fill(fCandCosA, fCandM);
   fpIso->fill(fCandIso, fCandM);
   fpIso1->fill(fCandIso1, fCandM);
-  //fpIso2->fill(fCandIso2, fCandM);
-  //fpIso3->fill(fCandIso3, fCandM);
-  //fpIso4->fill(fCandIso4, fCandM);
+  fpIso2->fill(fCandIso2, fCandM);
+  fpIso3->fill(fCandIso3, fCandM);
+  fpIso4->fill(fCandIso4, fCandM);
+
+  // -- N(PV) dependent
+  if (fPvN > 0 && fPvN <= 2) {
+    fpIsoPv1->fill(fCandIso, fCandM);
+    fpIso1Pv1->fill(fCandIso1, fCandM);
+    fpIso4Pv1->fill(fCandIso4, fCandM);
+  } else if (fPvN > 2 && fPvN <= 4) {
+    fpIsoPv2->fill(fCandIso, fCandM);
+    fpIso1Pv2->fill(fCandIso1, fCandM);
+    fpIso4Pv2->fill(fCandIso4, fCandM);
+  } else if (fPvN > 4 && fPvN <= 6) {
+    fpIsoPv3->fill(fCandIso, fCandM);
+    fpIso1Pv3->fill(fCandIso1, fCandM);
+    fpIso4Pv3->fill(fCandIso4, fCandM);
+  } else if  (fPvN > 6 && fPvN <= 8) {
+    fpIsoPv4->fill(fCandIso, fCandM);
+    fpIso1Pv4->fill(fCandIso1, fCandM);
+    fpIso4Pv4->fill(fCandIso4, fCandM);
+  } else if  (fPvN > 8 && fPvN <= 10) {
+    fpIsoPv5->fill(fCandIso, fCandM);
+    fpIso1Pv5->fill(fCandIso1, fCandM);
+    fpIso4Pv5->fill(fCandIso4, fCandM);
+  } else if  (fPvN > 10 ) {
+    fpIsoPv6->fill(fCandIso, fCandM);
+    fpIso1Pv6->fill(fCandIso1, fCandM);
+    fpIso4Pv6->fill(fCandIso4, fCandM);
+  }
+
   fpChi2->fill(fCandChi2, fCandM);
   fpChi2Dof->fill(fCandChi2/fCandDof, fCandM); 
   fpProb->fill(fCandProb, fCandM);   
@@ -1296,6 +1343,29 @@ void bmmReader::bookHist() {
   fpAlpha    = bookDistribution("alpha", "#alpha", "fGoodCosA", 20, 0., 0.2); 
   fpIso      = bookDistribution("iso",  "I (old)", "fGoodIso", 22, 0., 1.1); 
   fpIso1     = bookDistribution("iso1", "I", "fGoodIso", 22, 0., 1.1); 
+  fpIso2     = bookDistribution("iso2", "I2", "fGoodIso", 22, 0., 1.1); 
+  fpIso3     = bookDistribution("iso3", "I3", "fGoodIso", 22, 0., 1.1); 
+  fpIso4     = bookDistribution("iso4", "I4", "fGoodIso", 22, 0., 1.1); 
+
+  fpIsoPv1   = bookDistribution("isopv1",  "I (old)", "fGoodIso", 22, 0., 1.1); 
+  fpIsoPv2   = bookDistribution("isopv2",  "I (old)", "fGoodIso", 22, 0., 1.1); 
+  fpIsoPv3   = bookDistribution("isopv3",  "I (old)", "fGoodIso", 22, 0., 1.1); 
+  fpIsoPv4   = bookDistribution("isopv4",  "I (old)", "fGoodIso", 22, 0., 1.1); 
+  fpIsoPv5   = bookDistribution("isopv5",  "I (old)", "fGoodIso", 22, 0., 1.1); 
+  fpIsoPv6   = bookDistribution("isopv6",  "I (old)", "fGoodIso", 22, 0., 1.1); 
+  fpIso1Pv1   = bookDistribution("iso1pv1",  "I", "fGoodIso", 22, 0., 1.1); 
+  fpIso1Pv2   = bookDistribution("iso1pv2",  "I", "fGoodIso", 22, 0., 1.1); 
+  fpIso1Pv3   = bookDistribution("iso1pv3",  "I", "fGoodIso", 22, 0., 1.1); 
+  fpIso1Pv4   = bookDistribution("iso1pv4",  "I", "fGoodIso", 22, 0., 1.1); 
+  fpIso1Pv5   = bookDistribution("iso1pv5",  "I", "fGoodIso", 22, 0., 1.1); 
+  fpIso1Pv6   = bookDistribution("iso1pv6",  "I", "fGoodIso", 22, 0., 1.1); 
+  fpIso4Pv1   = bookDistribution("iso4pv1",  "I4", "fGoodIso", 22, 0., 1.1); 
+  fpIso4Pv2   = bookDistribution("iso4pv2",  "I4", "fGoodIso", 22, 0., 1.1); 
+  fpIso4Pv3   = bookDistribution("iso4pv3",  "I4", "fGoodIso", 22, 0., 1.1); 
+  fpIso4Pv4   = bookDistribution("iso4pv4",  "I4", "fGoodIso", 22, 0., 1.1); 
+  fpIso4Pv5   = bookDistribution("iso4pv5",  "I4", "fGoodIso", 22, 0., 1.1); 
+  fpIso4Pv6   = bookDistribution("iso4pv6",  "I4", "fGoodIso", 22, 0., 1.1); 
+
   fpChi2     = bookDistribution("chi2",  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
   fpChi2Dof  = bookDistribution("chi2dof",  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
   fpProb     = bookDistribution("pchi2dof",  "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
@@ -1324,6 +1394,8 @@ void bmmReader::bookHist() {
   fTree->Branch("procid", &fProcessType,       "procid/I");
   fTree->Branch("hlt",    &fGoodHLT,           "hlt/O");
   fTree->Branch("l1t",    &fGoodL1T,           "l1t/O");
+  fTree->Branch("pvn",    &fPvN,               "pvn/I");
+
   // -- global cuts and weights
   fTree->Branch("gmuid",  &fGoodMuonsID,       "gmuid/O");
   fTree->Branch("gmupt",  &fGoodMuonsPt,       "gmupt/O");
@@ -1608,6 +1680,14 @@ void bmmReader::readCuts(TString filename, int dump) {
       ibin = 6;
       hcuts->SetBinContent(ibin, TYPE);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: Candidate type", CutName));
+    }
+
+    if (!strcmp(CutName, "IGNORETRIGGER")) {
+      IGNORETRIGGER = int(CutValue); ok = 1;
+      if (dump) cout << "IGNORETRIGGER      " << IGNORETRIGGER << endl;
+      ibin = 7;
+      hcuts->SetBinContent(ibin, IGNORETRIGGER);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: Ignore trigger :: %i", CutName, IGNORETRIGGER));
     }
 
     if (!strcmp(CutName, "CANDPTLO")) {

@@ -1,6 +1,8 @@
 # -- muons 
-MUIDMASK           16
-MUIDRESULT         16
+# root [4] mask |= 0x1<<12;  muon::TMOneStationTight
+# root [5] mask |= 0x1<<4;   muon::TrackerMuonArbitrated
+MUIDMASK         4112
+MUIDRESULT       4112
 MUPTLO            3.0
 MUPTHI         9999.0
 MUETALO          -2.4
