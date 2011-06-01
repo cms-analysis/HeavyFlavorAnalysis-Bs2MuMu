@@ -33,11 +33,10 @@ void add_channels(map<bmm_param,measurement_t> *bmm, set<int> *channels)
 		channels->insert(it->first.second);
 } // add_channels()
 
-RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, bool no_errors, bool silent)
-{
+RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, bool no_errors, int verbosity) {
 	RooStats::ModelConfig *splusbModel = NULL;
 	RooStats::ModelConfig *bModel = NULL;
-	RooWorkspace *wspace = new RooWorkspace;
+	RooWorkspace *wspace = new RooWorkspace("wspace");
 	RooProdPdf *totalPdf = NULL;
 	RooArgSet observables;
 	RooArgSet nuisanceParams;
@@ -125,7 +124,9 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 			wspace->factory(Form("Psd_%d[%f]", *chan, ((*bdmm)[make_pair(kProb_swind_bmm, *chan)]).getVal()));
 		}
 		
-		
+		/////////////////////////
+		// Construction of Pds //
+		/////////////////////////
 		if ( ((*bsmm)[make_pair(kProb_dwind_bmm, *chan)]).getErr() > 0 && !no_errors ) {
 			measurement_t m = (*bsmm)[make_pair(kProb_dwind_bmm, *chan)];
 			wspace->factory(Form("Pds0_%d[%f]",*chan,m.getVal()));
@@ -136,7 +137,10 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 			// no error assigned, just make a constant.
 			wspace->factory(Form("Pds_%d[%f]", *chan, ((*bsmm)[make_pair(kProb_dwind_bmm, *chan)]).getVal()));
 		}
-							
+		
+		/////////////////////////
+		// Construction of Pdd //
+		/////////////////////////
 		if ( ((*bdmm)[make_pair(kProb_dwind_bmm, *chan)]).getErr() > 0 && !no_errors ) {
 			measurement_t m = (*bdmm)[make_pair(kProb_dwind_bmm, *chan)];
 			wspace->factory(Form("Pdd0_%d[%f]",*chan,m.getVal()));
@@ -154,7 +158,7 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 	
 	// build the product
 	totalPdf = new RooProdPdf("total_pdf","Total Model PDF",RooArgList(wspace->allPdfs()));
-	wspace->import(*totalPdf);
+	wspace->import(*totalPdf, ((verbosity > 0) ? RooCmdArg::none() : RooFit::Silence(kTRUE)) );
 	
 	// uniform prior in case of bayesian code
 	wspace->factory("Uniform::prior_mus(mu_s)");
@@ -187,7 +191,7 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 	bModel->SetPriorPdf(*wspace->pdf("prior_mus"));
 	wspace->import(*bModel);
 	
-	if (!silent) {
+	if (verbosity > 0) {
 		cout << "-------------------------------------" << endl;
 		cout << "Workspace Configuration:" << endl;
 		wspace->Print();
@@ -215,7 +219,7 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
  *	( Pss	Psd ) (mu_s NuS) + nu_b	(TauS) = (NsObs)
  *	( Pds	Pdd ) (mu_d NuD)		(TauD) = (NdObs)
  */
-void estimate_start_values(RooWorkspace *wspace, RooDataSet *data, set<int> *channels)
+void estimate_start_values(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, int verbosity)
 {
 	double p[2][2];
 	double tau[2];
@@ -256,20 +260,20 @@ void estimate_start_values(RooWorkspace *wspace, RooDataSet *data, set<int> *cha
 	}
 	
 	// do a likelihood fit to the data to get the real values...
-	wspace->pdf("total_pdf")->fitTo(*data);
+	wspace->pdf("total_pdf")->fitTo(*data, ((verbosity > 0) ? RooCmdArg::none() : RooFit::PrintLevel(-1)));
 	splusbConfig->SetSnapshot(*wspace->set("poi"));
 	
 	wspace->var("mu_s")->setVal(0.0);
 	wspace->var("mu_d")->setVal(0.0);
 	wspace->var("mu_s")->setConstant(kTRUE);
 	wspace->var("mu_d")->setConstant(kTRUE);
-	wspace->pdf("total_pdf")->fitTo(*data);
+	wspace->pdf("total_pdf")->fitTo(*data, ((verbosity > 0) ? RooCmdArg::none() : RooFit::PrintLevel(-1)));
 	wspace->var("mu_s")->setConstant(kFALSE);
 	wspace->var("mu_d")->setConstant(kFALSE);
 	bConfig->SetSnapshot(*wspace->set("poi"));
 } // estimate_start_values()
 
-RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, uint32_t nbins, pair<double,double> *rg, double err, double *ulLimit, double *cpuUsed)
+RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, uint32_t nbins, pair<double,double> *rg, double err, double *ulLimit, double *cpuUsed)
 {
 	using namespace RooStats;
 	FeldmanCousins fc(*data,*(dynamic_cast<ModelConfig*>(wspace->obj("splusbConfig"))));
@@ -287,8 +291,8 @@ RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, set<in
 	// configure Feldman Cousins
 	fc.CreateConfBelt(true);
 	fc.SetTestSize(1.-cLevel);
-	fc.UseAdaptiveSampling(true); // adaptive sampling (disable later on)
-	fc.AdditionalNToysFactor(5.0);
+//	fc.UseAdaptiveSampling(true); // adaptive sampling (disable later on)
+	fc.AdditionalNToysFactor(6.0);
 	fc.SetNBins(nbins);
 	fc.FluctuateNumDataEntries(false);
 	if (rg) {
@@ -304,7 +308,7 @@ RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, set<in
 		fc.SetPOIPointsToTest(*custom_points); // note, this is owned by Feldman-Cousins.
 	}
 	
-	estimate_start_values(wspace, data, channels);
+	estimate_start_values(wspace, data, channels, verbosity);
 	psInterval = fc.GetInterval();
 	
 	// if 'err' specified, correct for numerical inaccurancies...
@@ -323,7 +327,6 @@ RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, set<in
 				pointsInInterval->add(params);
 		}
 		
-		// FIXME: Leakage of pointsInInterval. However I think problem within RooStats...
 		psInterval = new PointSetInterval("ClassicalConfidenceInterval",*pointsInInterval);
 		psInterval->SetConfidenceLevel(cLevel);
 	}
@@ -337,7 +340,7 @@ RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, set<in
 	return psInterval;
 } // est_ul()
 
-RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, double *ulLimit, double *cpuUsed)
+RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, int verbosity, double *ulLimit, double *cpuUsed)
 {
 	using namespace RooStats;
 	BayesianCalculator bc(*data,*(dynamic_cast<ModelConfig*>(wspace->obj("splusbConfig"))));
@@ -350,18 +353,11 @@ RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, set<in
 	bc.SetConfidenceLevel(cLevel);
 	bc.SetLeftSideTailFraction(0.0); // compute upper limit
 	
+	//bc.SetIntegrationType("TOYMC");
 	// FIXME: Multidimensional Integration funktioniert nicht mehr!
 	//	bc.SetIntegrationType("PLAIN");
 	
-	/*
-	 std::transform(typeName.begin(), typeName.end(), typeName.begin(), (int(*)(int)) toupper );  
-	 if (typeName == "ADAPTIVE") return IntegrationMultiDim::kADAPTIVE;  
-	 if (typeName == "VEGAS") return IntegrationMultiDim::kVEGAS;  
-	 if (typeName == "MISER") return IntegrationMultiDim::kMISER;  
-	 if (typeName == "PLAIN") return IntegrationMultiDim::kPLAIN;  
-	 */	 
-	
-	estimate_start_values(wspace, data, channels);
+	estimate_start_values(wspace, data, channels, verbosity);
 	simpleInt = bc.GetInterval();
 	
 	if (ulLimit)

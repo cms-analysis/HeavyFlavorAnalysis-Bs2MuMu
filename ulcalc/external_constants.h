@@ -10,10 +10,14 @@
 #ifndef EXTERNAL_CONSTANTS_H
 #define EXTERNAL_CONSTANTS_H
 
+// Standard headers
 #include <cmath>
 #include <map>
 #include <string>
 #include <utility>
+
+// ROOT headers
+#include <TCut.h>
 
 // measurement class
 class measurement_t {
@@ -108,5 +112,13 @@ double compute_tau(std::map<bmm_param,measurement_t> *bsmm, std::map<bmm_param,m
 /* conversion routines */
 std::string find_bmm_name(bmm_param_tag p);
 bmm_param_tag find_bmm_param_by_name(std::string name, bool *bsparam);
+
+/* Utility routines */
+double std_dev_binomail(double lambda,double n);
+void parse_cuts(const char *filename, std::map<double,TCut> *cuts_read);
+
+#ifdef __linux__
+char *fgetln(FILE *f, size_t *len);
+#endif
 
 #endif

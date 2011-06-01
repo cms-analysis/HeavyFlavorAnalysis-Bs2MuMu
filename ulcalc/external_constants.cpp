@@ -15,17 +15,15 @@
 #include <utility>
 
 const char *bmmGeneratorCuts = "pt_mu2_gen > 1 && TMath::Abs(eta_mu1_gen) < 2.5 && TMath::Abs(eta_mu2_gen) < 2.5";
-const char *bmmBaseCut = "TMath::Abs(eta_mu1) < 2.4 && TMath::Abs(eta_mu2) < 2.4";
-const char *bmmAnaBarrelCut = "alpha < 0.05  && chi2/Ndof < 2.4 && d3/d3e > 9 &&  iso10_pt9_pv > 0.55 && pt_mu2 > 2.8 && pt > 4.4";
-const char *bmmAnaEndcapCut = "alpha < 0.035 && chi2/Ndof < 1.8 && d3/d3e > 10 && iso10_pt9_pv > 0.65 && pt_mu2 > 2.2 && pt > 6.2";
+const char *bmmBaseCut = "TMath::Abs(eta_mu1) < 2.4 && TMath::Abs(eta_mu2) < 2.4 && pt_mu2 > 2";
 
-///////////////////////////
-// Theoretical constants //
-///////////////////////////
+////////////////////////
+// External constants //
+////////////////////////
 static const measurement_t f_s(0.113,0.013);
 static const measurement_t f_u(0.401,0.013);
-static const measurement_t bf_sm_bstomumu(3.86e-9,0.15e-9);
-static const measurement_t bf_sm_bdtomumu(1.06e-10,0.04e-10);
+static const measurement_t bf_sm_bstomumu(3.2e-9,0.2e-9);
+static const measurement_t bf_sm_bdtomumu(1.0e-10,0.1e-10);
 static const measurement_t bf_bptojpsik(1.014e-3,0.034e-3);
 static const measurement_t bf_jpsitomumu(0.0593,0.0006);
 
@@ -249,3 +247,76 @@ double bdtomumu()
 {
 	return bf_sm_bdtomumu.getVal();
 } // bdtomumu()
+
+double std_dev_binomail(double lambda,double n)
+{
+	return sqrt(lambda*(1-lambda)/ n);
+} // std_dev_binomail()
+
+#ifdef __linux__
+/* Linux does not have that nice function fgetln
+ * Use a very simple approach in that case */
+char *fgetln(FILE *f, size_t *len)
+{
+	static char buffer[2048];
+	char *result;
+	
+	result = fgets(buffer,sizeof(buffer),f);
+	if (result) *len = strlen(buffer);
+	else *len = 0;
+	
+	return result;
+} // fgetln()
+#endif
+
+void parse_cuts(const char *filename, std::map<double,TCut> *cuts_read)
+{
+	using namespace std;
+	FILE *file = fopen(filename, "r");
+	char *input_line;
+	size_t line_len;
+	string line;
+	string delim(" \t");
+	string::iterator it;
+	string::iterator it_e;
+	double eta;
+	TCut cut;
+	
+	while ( (input_line = fgetln(file, &line_len)) ) {
+		
+		if (input_line[0] == '#') // comment line
+			continue;
+		
+		// remove endline at the end of line (if any)
+		if (input_line[line_len-1] == '\n' || input_line[line_len-1] == '\r')
+			line_len--;
+		
+		if (line_len == 0)
+			continue;
+		
+		// create a c++ string out of input line
+		line = string(input_line,line_len);
+		
+		// find first newline or tab
+		it = find_first_of(line.begin(), line.end(), delim.begin(), delim.end());
+		if (it == line.end()) { // no space, invalid line
+			cerr << "Invalid line in cuts file: " << line << endl;
+			continue;
+		}
+		
+		eta = atof(string(line,0,it-line.begin()).c_str());
+		if (eta == 0) {
+			cerr << "eta in cuts file has to be > 0. Ignoring line: " << line << endl;
+			continue;
+		}
+		
+		it = find(it, line.end(), '"');
+		it += 1;
+		it_e = find(it, line.end(), '"');
+		
+		// save the cuts
+		(*cuts_read)[eta] = TCut(string(line, it-line.begin(), it_e-it).c_str());
+	}
+	
+	fclose(file);
+} // parse_cuts()

@@ -37,22 +37,8 @@ static uint32_t gFCSteps = 20;
 static double gFCErr = 0.0; // additional error in acceptance region
 static algo_t gAlgorithm = kAlgo_Bayesian;
 static bool gDisableErrors = false;
-
-#ifdef __linux__
-/* Linux does not have that nice function fgetln
- * Use a very simple approach in that case */
-static char *fgetln(FILE *f, size_t *len)
-{
-  static char buffer[2048];
-  char *result;
-
-  result = fgets(buffer,sizeof(buffer),f);
-  if (result) *len = strlen(buffer);
-  else *len = 0;
-
-  return result;
-} // fgetln()
-#endif
+static int gVerbosity = 1; // 0 = quite, 1 = standard, 2 = verbose
+static const char *output_path = NULL;
 
 static const char *algo_name(algo_t a)
 {
@@ -184,7 +170,7 @@ static void parse_input(const char *path, map<bmm_param,measurement_t> *bsmm, ma
 
 static void usage()
 {
-	cerr << "ulcalc [--disable-errors][[-n <FC steps>] -r x,y ] [-e fc_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\">] <configfile>" << endl;
+	cerr << "ulcalc [--disable-errors] [[-n <FC steps>] -r x,y ] [-e fc_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
 } // usage()
 
 static bool parse_arguments(const char **first, const char **last)
@@ -254,8 +240,17 @@ static bool parse_arguments(const char **first, const char **last)
 					abort();
 				}
 				gFCErr = atof(*first++);
-			}
-			else {
+			} else if (strcmp(arg, "-v") == 0) {
+				gVerbosity = 2; // verbose
+			} else if (strcmp(arg, "-q") == 0) {
+				gVerbosity = 0; // quite mode
+			} else if (strcmp(arg, "-o") == 0) {
+				if (first == last) {
+					usage();
+					abort();
+				}
+				output_path = *first++;
+			} else {
 				cerr << "Unknown option '" << arg << "'." << endl;
 				usage();
 				abort();
@@ -272,6 +267,8 @@ static bool parse_arguments(const char **first, const char **last)
 	// Output current configuration
 	cout << "Reading configuration file: " << configfile_path << endl;
 	cout << "Confidence Level: " << gCLLevel << endl;
+	if (output_path)
+		cout << "Output File: " << output_path << endl;
 	if (workspace_path)
 		cout << "Output Workspace into: " << workspace_path << endl;
 	if (gAlgorithm == kAlgo_FeldmanCousins) {
@@ -281,6 +278,8 @@ static bool parse_arguments(const char **first, const char **last)
 	}
 	cout << "Algorithm is " << algo_name(gAlgorithm) << endl;
 	cout << "Errors on Variables are " << (gDisableErrors ? "disabled" : "enabled") << endl;
+	cout << "Verbosity level " << gVerbosity << endl;
+	cout << "-------------------------------------" << endl;
 	
 bail:
 	return ok;
@@ -326,14 +325,15 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 		
 		data = new RooDataSet("data","",*obs);
 		data->add(*obs);
-		data->Print("v");
+		if (gVerbosity > 0)
+			data->Print("v");
 		
 		switch (gAlgorithm) {
 			case kAlgo_Bayesian:
-				inter = est_ul_bc(wspace, data, channels, gCLLevel, &ul, NULL);
+				inter = est_ul_bc(wspace, data, channels, gCLLevel, gVerbosity, &ul, NULL);
 				break;
 			case kAlgo_FeldmanCousins:
-				inter = est_ul_fc(wspace, data, channels, gCLLevel, gFCSteps, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), gFCErr, &ul, NULL);
+				inter = est_ul_fc(wspace, data, channels, gCLLevel, gVerbosity, gFCSteps, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), gFCErr, &ul, NULL);
 				break;
 			default:
 				cerr << "Unknown algorithm selected to determine the upper limit..." << endl;
@@ -427,17 +427,19 @@ int main(int argc, const char *argv [])
 	}
 	
 	// show the input parsed
-	cout << "---------------------------" << endl;
-	cout << "Bs -> mumu parameters read:" << endl;
-	for_each(bsmm.begin(), bsmm.end(), dump_params);
-	cout << "---------------------------" << endl;
-	cout << "Bd -> mumu parameters read:" << endl;
-	for_each(bdmm.begin(), bdmm.end(), dump_params);
-	cout << "---------------------------" << endl;
+	if (gVerbosity > 0) {
+		cout << "---------------------------" << endl;
+		cout << "Bs -> mumu parameters read:" << endl;
+		for_each(bsmm.begin(), bsmm.end(), dump_params);
+		cout << "---------------------------" << endl;
+		cout << "Bd -> mumu parameters read:" << endl;
+		for_each(bdmm.begin(), bdmm.end(), dump_params);
+		cout << "---------------------------" << endl;
+	}
 	
 	compute_vars(&bsmm,true);
 	compute_vars(&bdmm,false);
-	wspace = build_model_nchannel(&bsmm,&bdmm,gDisableErrors,false);
+	wspace = build_model_nchannel(&bsmm,&bdmm,gDisableErrors,gVerbosity);
 	
 	// set the measured candidates...
 	observables.addClone(*wspace->set("obs"));
@@ -445,9 +447,14 @@ int main(int argc, const char *argv [])
 	
 	// reweight the UL.
 	avgUL /= avgWeight;
-	cout << "Upper limit for config file using algorithm " << algo_name(gAlgorithm) << ": " << avgUL*bstomumu() << endl;
+	cout << "Upper limit for config file using algorithm " << algo_name(gAlgorithm) << ": " << avgUL*bstomumu() << "\t(" << avgUL << ")" << endl;
 	
 	if (workspace_path) wspace->writeToFile(workspace_path,kTRUE);
+	if (output_path) {
+		FILE *outFile = fopen(output_path, "w");
+		fprintf(outFile, "Algorithm %s: %.3e (%.1f)\n", algo_name(gAlgorithm), avgUL*bstomumu(), avgUL);
+		fclose(outFile);
+	}
 	delete wspace;
 	
 	return 0;
