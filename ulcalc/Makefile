@@ -19,9 +19,9 @@ LD			= $(CXX)
 # FILES #
 #########
 
-ULCALC_HEADERS = external_constants.h ul_estimate.h
+HEADERS = external_constants.h ul_estimate.h bplus_estimator.h
 ULCALC_OBJS = ul_main.o ul_estimate.o external_constants.o
-#GRID_SEARCH_HEADERS = external_constants.h ul_estimate.h bmm_estimator.h bplus_estimator.h
+BPLUS_OBJS = bplus_main.o bplus_estimator.o external_constants.o
 GRID_SEARCH_OBJS = grid_search.o external_constants.o ul_estimate.o bmm_estimator.o bplus_estimator.o
 
 
@@ -29,7 +29,7 @@ GRID_SEARCH_OBJS = grid_search.o external_constants.o ul_estimate.o bmm_estimato
 # PATTERN RULES #
 #################
 
-obj/%.o : %.cpp $(ULCALC_HEADERS)
+obj/%.o : %.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) $(ROOTCFLAGS) -c $< -o $@
 
 
@@ -37,8 +37,14 @@ obj/%.o : %.cpp $(ULCALC_HEADERS)
 # TARGETS #
 ###########
 
-# Currently we only build the grid search application.
-all: bin/ulcalc
+# Currently we only build the upper limit application
+ulcalc: bin/ulcalc
+	@true
+
+all: ulcalc bplus_est
+	@true
+
+bplus_est: bin/bplus_est
 	@true
 
 bin/ulcalc: $(addprefix obj/,$(ULCALC_OBJS))
@@ -46,6 +52,9 @@ bin/ulcalc: $(addprefix obj/,$(ULCALC_OBJS))
 
 bin/grid_search: $(addprefix obj/,$(GRID_SEARCH_OBJS))
 	$(LD) -o $@ $(addprefix obj/,$(GRID_SEARCH_OBJS)) $(ROOTLIBS) $(LDFLAGS)
+
+bin/bplus_est: $(addprefix obj/,$(BPLUS_OBJS))
+	$(LD) -o $@ $(addprefix obj/,$(BPLUS_OBJS)) $(ROOTLIBS) $(LDFLAGS) ../rootutils/lib/libNCRootUtils.so
 
 clean:
 	rm -rf obj/*
