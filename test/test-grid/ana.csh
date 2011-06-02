@@ -5,7 +5,6 @@ setenv SCRAM_ARCH
 setenv SRMCP       
 
 setenv JOB
-setenv FILE1    $JOB.root
 setenv STORAGE1
 
 echo "========================"
@@ -69,18 +68,20 @@ which cmsRun
 echo "cmsRun $JOB.py "
 cmsRun $JOB.py |& tee $JOB.log
 date
+ls -rtl 
+date
 
 # ----------------------------------------------------------------------
 # -- Save Output to SE
 # ----------------------------------------------------------------------
-echo "--> Save output to SE: $STORAGE1/$FILE1"
+echo "--> Save output to SE: $STORAGE1/$JOB.root"
 
-echo srmrm     "$STORAGE1/$FILE1"
-srmrm          "$STORAGE1/$FILE1"
-echo $SRMCP    file:///`pwd`/$FILE1 "$STORAGE1/$FILE1"
-$SRMCP         file:///`pwd`/$FILE1 "$STORAGE1/$FILE1"
-echo srmls     "$STORAGE1/$FILE1"
-srmls          "$STORAGE1/$FILE1"
+echo srmrm  "$STORAGE1/$JOB.root"
+srmrm       "$STORAGE1/$JOB.root"
+echo $SRMCP file:///`pwd`/$JOB.root "$STORAGE1/$JOB.root"
+$SRMCP      file:///`pwd`/$JOB.root "$STORAGE1/$JOB.root"
+echo srmls  "$STORAGE1/$JOB.root"
+srmls       "$STORAGE1/$JOB.root"
 
 echo srmrm  "$STORAGE1/$JOB.log"
 srmrm       "$STORAGE1/$JOB.log"

@@ -3,6 +3,8 @@
 #include "DataFormats/TrackReco/interface/Track.h"
 #include <DataFormats/VertexReco/interface/VertexFwd.h>
 #include <DataFormats/VertexReco/interface/Vertex.h>
+#include "DataFormats/MuonReco/interface/MuonFwd.h"
+#include "DataFormats/MuonReco/interface/Muon.h"
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDFilter.h"
@@ -39,7 +41,10 @@ private:
   int          filterOnTracks; 
   InputTag     fTrackCollectionLabel;
 
-  int fNpv, fNtk; 
+  int          filterOnMuons; 
+  InputTag     fMuonCollectionLabel;
+
+  int fNpv, fNtk, fNmu; 
   int fNfailed, fNpassed; 
   int fEvent; 
 
@@ -51,7 +56,9 @@ HFSkipEvents::HFSkipEvents(const edm::ParameterSet& iConfig):
   filterOnPrimaryVertex(iConfig.getUntrackedParameter<int>("filterOnPrimaryVertex", 1)),
   fPrimaryVertexCollectionLabel(iConfig.getUntrackedParameter<InputTag>("primaryVertexCollectionLabel", edm::InputTag("offlinePrimaryVertices"))),
   filterOnTracks(iConfig.getUntrackedParameter<int>("filterOnTrackMaximum", 1)),
-  fTrackCollectionLabel(iConfig.getUntrackedParameter<InputTag>("TrackCollectionLabel", edm::InputTag("generalTracks")))
+  fTrackCollectionLabel(iConfig.getUntrackedParameter<InputTag>("TrackCollectionLabel", edm::InputTag("generalTracks"))),
+  filterOnMuons(iConfig.getUntrackedParameter<int>("filterOnMuonMinimum", 1)),
+  fMuonCollectionLabel(iConfig.getUntrackedParameter<InputTag>("MuonCollectionLabel", edm::InputTag("muons")))
 {
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFSkipEvents constructor" << endl;
@@ -59,10 +66,11 @@ HFSkipEvents::HFSkipEvents(const edm::ParameterSet& iConfig):
   cout << "---  filterOnPrimaryVertex:           " << filterOnPrimaryVertex << endl;
   cout << "---  primaryVertexCollectionLabel:    " << fPrimaryVertexCollectionLabel << endl;
   cout << "---  filterOnTrackMaximum:            " << filterOnTracks << endl;
+  cout << "---  filterOnMuonMinimum:             " << filterOnMuons << endl;
   cout << "---  TrackCollectionLabel:            " << fTrackCollectionLabel << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
-  fNpv = fNtk = 0; 
+  fNpv = fNtk = fNmu = 0; 
   fEvent = fNfailed = fNpassed = 0; 
   
 }
@@ -77,7 +85,7 @@ HFSkipEvents::~HFSkipEvents() {
 
 // ----------------------------------------------------------------------
 bool HFSkipEvents::filter(edm::Event& iEvent, const edm::EventSetup& iSetup) {    
-  bool result(false);
+  bool result(true);
   ++fEvent; 
 
   edm::Handle<reco::VertexCollection> hVertices;
@@ -96,6 +104,25 @@ bool HFSkipEvents::filter(edm::Event& iEvent, const edm::EventSetup& iSetup) {
     if (fVerbose > 1) cout << "No Vertex collection with label " << fPrimaryVertexCollectionLabel << endl;
   }
 
+  edm::Handle<MuonCollection> hMuons;
+  int goodMuons(-1);
+  try{ 
+    iEvent.getByLabel(fMuonCollectionLabel, hMuons);
+    goodMuons = (*(hMuons.product())).size();
+  } catch (cms::Exception &ex)  {
+    if (fVerbose > 1) cout << "No Muon collection with label " << fMuonCollectionLabel << endl;
+  }
+  bool goodMu = (goodMuons >= filterOnMuons);
+  if (filterOnMuons > 0) {
+    if (goodMu) {
+      //      result = true;
+      ++fNmu;
+    } else {
+      result = false;
+    }
+  }
+
+
   edm::Handle<reco::TrackCollection> hTracks;
   int goodTracks(-1);
   try{ 
@@ -109,7 +136,7 @@ bool HFSkipEvents::filter(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   bool goodPv = (goodVertices >= filterOnPrimaryVertex);
   if (filterOnPrimaryVertex > 0)  {
     if (goodPv) {
-      result = true;
+      //      result = true;
       ++fNpv;
     } else {
       result = false; 
@@ -119,12 +146,13 @@ bool HFSkipEvents::filter(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   bool goodTk = (goodTracks < filterOnTracks);
   if (filterOnTracks > 0) {
     if (goodTk) {
-      result = true;
+      //      result = true;
       ++fNtk;
     } else {
       result = false;
     }
   }
+
 
   if (fVerbose > 0) {
     char line[20]; 
@@ -133,6 +161,7 @@ bool HFSkipEvents::filter(edm::Event& iEvent, const edm::EventSetup& iSetup) {
 	 << " result: " << (result? "true ":"false")
 	 << " PV: " << (goodPv?1:0) << "(" << goodVertices << ")"
 	 << " Tk: " << (goodTk?1:0) << "(" << goodTracks << ")"
+	 << " Mu: " << (goodMu?1:0) << "(" << goodMuons << ")"
 	 << endl;
   }
 

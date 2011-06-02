@@ -191,6 +191,7 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     int prescale(1); 
     int psSet = -1; 
     psSet = hltConfig.prescaleSet(iEvent, iSetup);
+    //    cout << "validTriggerNames.size() = " << validTriggerNames.size() << endl;
 	for (unsigned int it = 0; it < validTriggerNames.size(); ++it) {
 		index    = trigName.triggerIndex(validTriggerNames[it]); 
 		if (index >= hHLTresults->size())

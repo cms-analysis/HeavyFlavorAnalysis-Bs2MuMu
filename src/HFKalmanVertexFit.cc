@@ -2,6 +2,7 @@
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKalmanVertexFit.hh"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFMasses.hh"
 
 #include "CommonTools/Statistics/interface/ChiSquared.h"
 
@@ -263,7 +264,12 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
   for (unsigned int i = 0; i < trackList.size(); ++i) {
     TAnaTrack *pTrack = gHFEvent->addSigTrack();
     //  pTrack->fMCID     = trackList[i].charge()*13;  //??? FIXME ???
-    pTrack->fMCID     = gHFEvent->getRecTrack(trackIndices[i])->fMCID;
+    //    pTrack->fMCID     = gHFEvent->getRecTrack(trackIndices[i])->fMCID;
+    if (fabs(fabs(trackMasses[i]) - MMUON) < 0.01) pTrack->fMCID = 13; 
+    if (fabs(fabs(trackMasses[i]) - MPION) < 0.01) pTrack->fMCID = 211; 
+    if (fabs(fabs(trackMasses[i]) - MKAON) < 0.01) pTrack->fMCID = 321; 
+    if (fabs(fabs(trackMasses[i]) - MPROTON) < 0.01) pTrack->fMCID = 2212; 
+
     pTrack->fMuID     = gHFEvent->getRecTrack(trackIndices[i])->fMuID;    
     pTrack->fGenIndex = gHFEvent->getRecTrack(trackIndices[i])->fGenIndex; 
     pTrack->fQ        = trackList[i].charge();

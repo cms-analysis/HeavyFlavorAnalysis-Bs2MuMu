@@ -120,6 +120,15 @@ void HFMuonAndTrack::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
   vector<int> muonIndices;
   for (MuonCollection::const_iterator muon = hMuons->begin(); muon != hMuons->end(); ++muon) {
     int im = muon->track().index();
+
+    TrackRef gTrack = muon->globalTrack();
+    if (gTrack.isNonnull()) {
+      //      cout << "global muon " << im << endl;
+    } else {
+      //      cout << "not a global muon, skipping" << endl;
+      continue;
+    }
+
     if (fVerbose > 2) cout << "muon->track().index() = "<< muon->track().index()<< endl; 
     if (im >= 0) muonIndices.push_back(im);
   }
