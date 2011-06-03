@@ -4,7 +4,7 @@ SELMODE            -1
 IGNORETRIGGER       1
 TRIGGER      HLT_DoubleMu3_Bs_v1,HLT_DoubleMu2_Bs_v1,HLT_DoubleMu2_Bs_v2,HLT_DoubleMu2_Bs_v3
 L1TRIGGER   L1_DoubleMuOpen
-JSON        cuts/Cert_160404-163869_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
+JSON        cuts/Cert_160404-165542_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
 # -- boxes
 +input cuts/boxes.cuts
 # -- tracks

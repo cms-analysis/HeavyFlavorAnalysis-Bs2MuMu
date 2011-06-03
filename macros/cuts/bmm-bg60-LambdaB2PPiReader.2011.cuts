@@ -1,7 +1,7 @@
 TYPE           1000060
 SELMODE            -1
 TRIGGER      NOTRIGGER
-JSON         /shome/ursl/dana/CMSSW_4_1_2/src/HeavyFlavorAnalysis/Bs2MuMu/macros/cuts/Cert_160404-161216_7TeV_PromptReco_Collisions11_JSON.txt
+JSON         cuts/Cert_160404-165542_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
 # -- boxes
 +input cuts/boxes.cuts
 # -- tracks
