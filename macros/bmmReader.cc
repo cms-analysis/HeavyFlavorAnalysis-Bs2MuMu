@@ -768,6 +768,7 @@ void bmmReader::fillCandidateVariables() {
   TVector3 svpv(fpCand->fVtx.fPoint - fpEvt->getPV(pvidx)->fPoint); 
   double alpha = svpv.Angle(fpCand->fPlab);
   fCandCosA  = TMath::Cos(alpha);
+  fCandA     = alpha; 
 
   double iso = isoClassic(fpCand); 
   double iso1= isoClassicOnePv(fpCand); 
@@ -782,6 +783,8 @@ void bmmReader::fillCandidateVariables() {
   fCandChi2  = fpCand->fVtx.fChi2;
   fCandDof   = fpCand->fVtx.fNdof;
   fCandProb  = fpCand->fVtx.fProb;
+  fCandFL3d  =fpCand->fVtx.fD3d;
+  fCandFL3dE =fpCand->fVtx.fD3dE;
   fCandFLS3d = fpCand->fVtx.fD3d/fpCand->fVtx.fD3dE; 
   fCandFLSxy = fpCand->fVtx.fDxy/fpCand->fVtx.fDxyE; 
 
@@ -1238,7 +1241,7 @@ void bmmReader::fillCandidateHistograms() {
   fpQ->fill(fCandQ, fCandM); 
   fpPt->fill(fCandPt, fCandM); 
   fpEta->fill(fCandEta, fCandM); 
-  fpAlpha->fill(TMath::ACos(fCandCosA), fCandM);
+  fpAlpha->fill(fCandA, fCandM);
   fpCosA->fill(fCandCosA, fCandM);
   fpCosA0->fill(fCandCosA, fCandM);
   fpIso->fill(fCandIso, fCandM);
@@ -1278,6 +1281,8 @@ void bmmReader::fillCandidateHistograms() {
   fpChi2Dof->fill(fCandChi2/fCandDof, fCandM); 
   fpProb->fill(fCandProb, fCandM);   
   fpFLS3d->fill(fCandFLS3d, fCandM); 
+  fpFL3d->fill(fCandFL3d, fCandM); 
+  fpFL3dE->fill(fCandFL3dE, fCandM); 
   fpFLSxy->fill(fCandFLSxy, fCandM); 
   fpDocaTrk->fill(fCandDocaTrk, fCandM); 
   fpIP1->fill(fMu1IP, fCandM); 
@@ -1370,6 +1375,8 @@ void bmmReader::bookHist() {
   fpChi2Dof  = bookDistribution("chi2dof",  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
   fpProb     = bookDistribution("pchi2dof",  "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
   fpFLS3d    = bookDistribution("fls3d", "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
+  fpFL3d     = bookDistribution("fl3d",  "l_{3d}", "fGoodFLS", 25, 0., 5.);  
+  fpFL3dE    = bookDistribution("fl3dE", "#sigma(l_{3d})", "fGoodFLS", 25, 0., 0.5);  
   fpFLSxy    = bookDistribution("flsxy", "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
   fpDocaTrk  = bookDistribution("docatrk", "d_{ca}(track)", "fGoodDocaTrk", 35, 0., 0.14);   
   fpIP1      = bookDistribution("ip1", "IP_{1}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
@@ -1413,6 +1420,7 @@ void bmmReader::bookHist() {
   fTree->Branch("phi",    &fCandPhi,           "phi/D");
   fTree->Branch("m",      &fCandM,             "m/D");
   fTree->Branch("cosa",   &fCandCosA,          "cosa/D");
+  fTree->Branch("alpha",  &fCandA,             "alpha/D");
   fTree->Branch("iso",    &fCandIso,           "iso/D");
   fTree->Branch("iso1",   &fCandIso1,          "iso1/D");
   fTree->Branch("iso2",   &fCandIso2,          "iso2/D");
@@ -1421,6 +1429,8 @@ void bmmReader::bookHist() {
   fTree->Branch("chi2",   &fCandChi2,          "chi2/D");
   fTree->Branch("dof",    &fCandDof,           "dof/D");
   fTree->Branch("fls3d",  &fCandFLS3d,         "fls3d/D");
+  fTree->Branch("fl3d",   &fCandFL3d,          "fl3d/D");
+  fTree->Branch("fl3dE",  &fCandFL3dE,         "fl3dE/D");
   fTree->Branch("flsxy",  &fCandFLSxy,         "flsxy/D");
   fTree->Branch("docatrk",&fCandDocaTrk,       "docatrk/D");
   fTree->Branch("lip",    &fCandPvLip,         "lip/D");

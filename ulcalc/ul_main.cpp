@@ -456,6 +456,6 @@ int main(int argc, const char *argv [])
 		fclose(outFile);
 	}
 	delete wspace;
-	
+
 	return 0;
 } // main()

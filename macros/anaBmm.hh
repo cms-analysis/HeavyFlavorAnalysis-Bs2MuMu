@@ -112,6 +112,8 @@ public:
   void rareBg(); 
   void isoMean(const char *var = "iso1", const char *cuts="gmuid&&hlt&&acos(cosa)<0.05&&chi2/dof<2&&fls3d>10", int maxPvN = 15);
   void isoProcess(const char *var, const char *cuts);
+  void plotWithCut(const char *var, const char *cuts, double cut, const char *title, double hmin, double hmax); 
+  void isoEff(const char *var, double cut, const char* file, const char *selection="Ao"); 
 
   // -- Utilities and helper methods
   // -------------------------------
@@ -125,6 +127,7 @@ public:
   void dumpSamples();
   void dumpCutNames();
   void setErrors(TH1D *h);
+  std::string formatTex(double n, std::string name, int digits);
   std::string formatTex(double n, std::string name, std::string tag);
   void replaceAll(std::string &s, std::string a, std::string b);
   int  wait();

@@ -8,6 +8,9 @@
 #
 # History   
 # -------   
+#           11/05/24  Will this odyssee ever end? bug fix when searching for /store in @files instead of @afiles
+#           11/05/17  Added -l to split a file with input lines only (and no event numbers)
+#           11/05/09  Bug fix to properly fill withEvents also whent the dbs header was removed (e.g., by a diff)
 #           11/05/04  Bug fix to avoid including previous last file in new run
 #           10/07/26  Migration to skipEvents
 #           10/03/29  Bug fix: works now also for (data_replica.py compliant) file lists
@@ -30,7 +33,7 @@ $directory = `pwd`;     chop($directory);
 
 @args = @ARGV; 
 use Getopt::Std;
-getopts('c:e:d:t:f:n:rs:v');
+getopts('c:e:d:f:ln:rs:t:v');
 
 # -- this is just for convenience in here
 if ($opt_c) {
@@ -77,15 +80,10 @@ if ($opt_f) {
 
 # -- Remove stuff from dbs txt file
 my $withEvents = 0; 
-for ($i = 0; $i < $#afiles; $i++) {
-    if ($afiles[$i] =~ /file.numevents\s*file/) {
-	$withEvents = 1; 
-	last;
-    } 
-    if ($afiles[$i] =~ /file\s*file.numevents/) {
-	$withEvents = 2; 
-	last;
-    }
+if ($files[0] =~ /^\/store/) {
+    $withEvents = 2; 
+} else {
+    $withEvents = 1; 
 }
 
 grep(s/\n//, @files); 
@@ -111,6 +109,11 @@ if ($opt_r) {
     print "runList contains something\n";
     &createPyFilesPerRun();
     die "\n";
+} elsif ($opt_l) {
+    my @fileList;
+    $withEvents = 0; 
+    &createFileList();
+    &createPyFilesWithoutEvents();
 } else {
     my @fileList;
     &createFileList();
@@ -127,6 +130,8 @@ sub createRunList() {
     $num = 0; 
 
     for ($i = 0; $i <= $#files; $i++) {
+	print "$files[$i]\n";
+
 	# -- skip lines that do not contain filenames
 	if (!($files[$i] =~ /.*\.root/)) {next;}
 	# -- change format for parsing
@@ -147,6 +152,8 @@ sub createRunList() {
 	} else {
 	    $run = 1; 
 	}
+
+	print "$run $num\n";
 
 	push(@fList, $filename); 
 	$runEventNumber += $num; 
@@ -199,7 +206,6 @@ sub createRunRecord() {
 
 # ----------------------------------------------------------------------
 sub createFileList() {
-
     for ($i = 0; $i <= $#files; $i++) {
 	# -- skip lines that do not contain filenames
 	if (!($files[$i] =~ /.*\.root/)) {next;}
@@ -209,13 +215,14 @@ sub createFileList() {
 
 	if ($withEvents == 1) {
 	    ($num, $filename) = split(/:/, $files[$i]); 
+	    if ($num > 0) {createFileRecord($num, $filename); }
 	} elsif ($withEvents == 2) {
 	    ($filename, $num) = split(/:/, $files[$i]); 
+	    if ($num > 0) {createFileRecord($num, $filename); }
+	} else {
+	    print "-> $files[$i]\n";
+	    createFileRecord(-1, $files[$i]); 
 	}
-	if ($num == 0) {next;}
-
-	createFileRecord($num, $filename); 
-	
     }
     
 
@@ -241,7 +248,6 @@ sub createFileRecord() {
 sub createPyFilesPerRun() {
     
     foreach $run (sort keys %runList) {
-	
 	if ($opt_e) {
 	    $njobs = $runList{$run}->{NEVENTS}/$opt_e;
 	} else {
@@ -256,7 +262,7 @@ sub createPyFilesPerRun() {
 	    if ($opt_r) {
 		$blockName .= sprintf("-%07i", $run);
 	    }
-
+	    
 
 	    $blockName .= sprintf("-%04i", $iJob);
 	    $skipevents = $iJob*$opt_e; 
@@ -360,6 +366,8 @@ sub createPyFilesPerBlock() {
     my $fEvt = 0; 
     my $jobID = -1; 
     
+    print "#fileList = $#fileList\n";
+    
     for ($iFile = 0; $iFile <= $#fileList; $iFile++) {
 
 	$blockName = sprintf("-%s", $opt_s);
@@ -368,7 +376,7 @@ sub createPyFilesPerBlock() {
 	
 	$fEvt += $fileList[$iFile]->{NEVENTS};
 
-        # print "file $iFile:  $fileList[$iFile]->{FILELIST} -> $fileList[$iFile]->{NEVENTS} .. $fEvt \n";
+        print "file $iFile:  $fileList[$iFile]->{FILELIST} -> $fileList[$iFile]->{NEVENTS} .. $fEvt \n";
 	
 	if ($fEvt > $opt_e) {
 	    $jobID++; 
@@ -428,6 +436,78 @@ sub createPyFilesPerBlock() {
 	
     }
     
+}
 
 
+# ----------------------------------------------------------------------
+sub createPyFilesWithoutEvents() {
+    
+    my $n = 0; 
+    my $jobID = -1; 
+    
+    for ($iFile = 0; $iFile <= $#fileList; $iFile++) {
+	print "$fileList[$iFile]->{FILELIST}\n";
+
+	$blockName = sprintf("-%s", $opt_s);
+	push(@fList, $fileList[$iFile]->{FILELIST}); 
+	$n++; 
+	
+	if ($n == $opt_n || $iFile == $#fileList) {
+	    $jobID++; 
+
+	    $blockName .= sprintf("-%04i", $jobID);
+	    ($fileName = $opt_t) =~ s/XXXX/$blockName/g;
+	    $fileName  =~ s/--/-/g; # -- remove spurious double hyphens ...
+	    $tmp = $fileName; @tmp = split(/\//, $fileName); $fileName = pop(@tmp); # strip path
+	    $fileName = $opt_d . "/" . $fileName; 
+	    
+	    printf("producing file: %s\n", $fileName); 
+	    open(OUT, ">$fileName") || die "Cannot open $fileName for output\n";
+	    print OUT "# ######################################################################\n";
+            print OUT "# $hostname\n";
+	    print OUT "# $directory\n";
+	    print OUT "# file list contains $runList{$run}->{NEVENTS} events\n";
+	    print OUT "# mkPyFiles @args\n";
+	    print OUT "# $fileName with $fEvt events\n";
+	    print OUT "# ######################################################################\n";
+
+		
+            for ($l = 0; $l <= $#in; $l++) {
+		# -- increment numbering
+		if ($in[$l] =~ /XXXX/) {
+		    ($tmp = $in[$l]) =~ s/XXXX/$blockName/g; 
+		    $tmp  =~ s/--/-/g; # -- remove spurious double hyphens ...
+		    print OUT $tmp, "\n";
+		}
+		# -- substitute files and skipevents and nevents
+		elsif ($in[$l] =~ /POOLSOURCE/) {
+		    print OUT "process.source = cms.Source(\n";
+		    print OUT " \"PoolSource\",\n";
+		    print OUT "  fileNames = cms.untracked.vstring(\n";
+		    for ($ij = 0; $ij <= $#fList; $ij++) {
+			if ($ij < $#fList) {
+			    print OUT "         \"$fList[$ij]\",\n";
+			} else {
+			    print OUT "         \"$fList[$ij]\"\n";
+			}
+		    }
+		    
+		    print OUT " )\n";
+		    
+		    print OUT ")\n";
+		    print OUT "process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )\n";
+		}
+		else {
+		    print OUT $in[$l], "\n"; 
+		}		
+	    }	    
+	    close(OUT); 
+
+	    @fList = (); 
+	    $n = 0; 
+	}
+	
+	
+    }
+    
 }

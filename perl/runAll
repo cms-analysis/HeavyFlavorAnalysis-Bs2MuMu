@@ -16,12 +16,12 @@
 # 2010/11/25 remove inclusion of old merged file in dataset-* list ...
 # 2010/12/14 bug fix to allow really n wildcards (in addition to the trailing -*)
 # 2011/05/17 added rare backgrounds
+# 2011/05/26 realized that same dataset name will lead to problems on identical WN!
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
 # Author    Urs Langenegger <urs.langenegger@psi.ch>
 # ----------------------------------------------------------------------
-
 use Getopt::Std;
 getopts('aCcdhj:mnq:r:s:t:');
 
@@ -37,30 +37,30 @@ if ($opt_r) {
 
 
 my %jobs = ("signal Bs2MuMu MC"  
-	    => "-m,bmmSignalReader,bmmSignalReader.$job.cuts,cv00-Bs2MuMu-*,signalMC2011.root"
+	    => "-m,bmmSignalReader,bmmSignalReader.2010.cuts,cv00-signal-Bs2MuMu-*,signalMC2011.root"
 	    , "signal Bd2MuMu MC"  
-	    => "-m,bmmSignalReader,bmmBd2MuMuReader.$job.cuts,cv00-Bd2MuMu-*,Bd2MuMu2011.root"
+	    => "-m,bmmSignalReader,bmmBd2MuMuReader.2010.cuts,cv00-signal-Bd2MuMu-*,Bd2MuMu2011.root"
 # -- signal bg mc
-	    , "signal bg MC 60" => "-m,bmmSignalReader,bmm-bg60-LambdaB2PPiReader.$job.cuts,cv00-bg60-LambdaB2PPi,bg60.root"
-	    , "signal bg MC 61" => "-m,bmmSignalReader,bmm-bg61-LambdaB2PKReader.$job.cuts,cv00-bg61-LambdaB2PK,bg61.root"
-	    , "signal bg MC 82" => "-m,bmmSignalReader,bmm-bg82-Bs2KKReader.$job.cuts,cv00-bg82-Bs2KK,bg82.root"
-	    , "signal bg MC 83" => "-m,bmmSignalReader,bmm-bg83-Bs2KPiReader.$job.cuts,cv00-bg83-Bs2KPi,bg83.root"
-	    , "signal bg MC 84" => "-m,bmmSignalReader,bmm-bg84-Bs2PiPiReader.$job.cuts,cv00-bg84-Bs2PiPi,bg84.root"
-	    , "signal bg MC 93" => "-m,bmmSignalReader,bmm-bg93-Bd2KKReader.$job.cuts,cv00-bg93-Bd2KK,bg93.root"
-	    , "signal bg MC 92" => "-m,bmmSignalReader,bmm-bg92-Bd2KPiReader.$job.cuts,cv00-bg92-Bd2KPi,bg92.root"
-	    , "signal bg MC 91" => "-m,bmmSignalReader,bmm-bg91-Bd2PiPiReader.$job.cuts,cv00-bg91-Bd2PiPi,bg91.root"
+	    , "signal bg MC 60" => "-m,bmmSignalReader,bmm-bg60-LambdaB2PPiReader.$job.cuts,cv00-signal-bg60-LambdaB2PPi,bg60.root"
+	    , "signal bg MC 61" => "-m,bmmSignalReader,bmm-bg61-LambdaB2PKReader.$job.cuts,cv00-signal-bg61-LambdaB2PK,bg61.root"
+	    , "signal bg MC 82" => "-m,bmmSignalReader,bmm-bg82-Bs2KKReader.$job.cuts,cv00-signal-bg82-Bs2KK,bg82.root"
+	    , "signal bg MC 83" => "-m,bmmSignalReader,bmm-bg83-Bs2KPiReader.$job.cuts,cv00-signal-bg83-Bs2KPi,bg83.root"
+	    , "signal bg MC 84" => "-m,bmmSignalReader,bmm-bg84-Bs2PiPiReader.$job.cuts,cv00-signal-bg84-Bs2PiPi,bg84.root"
+	    , "signal bg MC 93" => "-m,bmmSignalReader,bmm-bg93-Bd2KKReader.$job.cuts,cv00-signal-bg93-Bd2KK,bg93.root"
+	    , "signal bg MC 92" => "-m,bmmSignalReader,bmm-bg92-Bd2KPiReader.$job.cuts,cv00-signal-bg92-Bd2KPi,bg92.root"
+	    , "signal bg MC 91" => "-m,bmmSignalReader,bmm-bg91-Bd2PiPiReader.$job.cuts,cv00-signal-bg91-Bd2PiPi,bg91.root"
 # -- signal data
 	    , "signal data" 
-	    => "-b 1,bmmSignalReader,bmmSignalReader.$job.cuts,cv00-MuOnia-Run2011*v*-*,signalData2011.root"
+	    => "-b 1,bmmSignalReader,bmmSignalReader.$job.cuts,cv00-signal-MuOnia-Run2011*v*-*,signalData2011.root"
 # -- the rest
 	    , "norm MC" 
-	    => "-m,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cv00-Bu2JpsiK-*,normMC2011.root"
+	    => "-m,bmmNormalizationReader,bmmNormalizationReader.2010.cuts,cv00-norm-Bu2JpsiK-*,normMC2011.root"
 	    , "norm data" 
-	    => "-b 0,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cv00-MuOnia-Run2011*v*-*,normData2011.root"
+	    => "-b 0,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cv00-norm-MuOnia-Run2011*v*-*,normData2011.root"
 	    , "Bs2JpsiPhi MC" 
-	    => "-m,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cv00-Bs2JpsiPhi,Bs2JpsiPhiMC2011.root"
+	    => "-m,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.2010.cuts,cv00-cs-Bs2JpsiPhi,Bs2JpsiPhiMC2011.root"
 	    , "Bs2JpsiPhi data" 
-	    => "-b 0,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cv00-MuOnia-Run2011*v*-*,Bs2JpsiPhiData2011.root"
+	    => "-b 0,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cv00-cs-MuOnia-Run2011*v*-*,Bs2JpsiPhiData2011.root"
     );
 
 my $user  = $ENV{'USER'};
@@ -138,7 +138,7 @@ if ($opt_h) {
 # -- submit the jobs
 foreach $j (keys %jobs) {
     ($options, $class, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
-    $command = "$runCommand -x 'bin/runTreeReaders -r $class $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ../$dataset"; 
+    $command = "$runCommand -x 'bin/runTreeReaders -r $class $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
     if ($opt_s =~ /data/   && !($j =~ /data/)) {next; }
     if ($opt_s =~ /norm/   && !($j =~ /norm/)) {next; }
     if ($opt_s =~ /signal/ && !($j =~ /signal/)) {next; }

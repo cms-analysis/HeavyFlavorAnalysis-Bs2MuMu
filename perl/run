@@ -46,7 +46,7 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('Cc:dD:j:m:r:t:v:x:');
+getopts('Cc:dD:j:m:q:r:t:v:x:');
 
 # -- User setup
 my $user  = $ENV{'USER'};
@@ -84,6 +84,11 @@ foreach $repl (@replaces) {
 if ($opt_m eq "grid" && !$opt_D) {
     $opt_D = "ce01.lcg.cscs.ch"; 
     print " no destination provided, sending to CSCS: $opt_D\n";
+}
+
+# -- queues at PSI: all.q short.q
+if (!$opt_q) {
+    $opt_q = "all.q";
 }
 
 my $host = `hostname`; 
@@ -180,10 +185,10 @@ foreach $jobfile (@ARGV) {
 	$jobName = "$job.csh";
 	if ($user eq "ursl") { $jobName = `/shome/$user/perl/rline`; chop($jobName); }
 	if ($opt_d) {
-	    print "qsub -q all.q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh\n";
+	    print "qsub -q $opt_q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh\n";
 	} else {
-	    print "qsub -q all.q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh\n";
-	    $result = `qsub -q all.q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh`;
+	    print "qsub -q $opt_q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh\n";
+	    $result = `qsub -q $opt_q -N $jobName -o $pwd/$tdir/$job.sge.log -e $pwd/$tdir/$job.sge.err ./$job.csh`;
 	    chop($result); 
 	    $result =~ s/Your job //g;
 	    $result =~ s/ has been submitted//g;

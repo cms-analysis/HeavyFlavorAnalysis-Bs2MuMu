@@ -16,6 +16,7 @@
 # 2010/11/25 remove inclusion of old merged file in dataset-* list ...
 # 2010/12/14 bug fix to allow really n wildcards (in addition to the trailing -*)
 # 2011/05/17 added rare backgrounds
+# 2011/05/26 realized that same dataset name will lead to problems on identical WN!
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
@@ -40,15 +41,15 @@ my %jobs = ("signal MC"
 	    , "signal Bd2MuMu MC" 
 	    => "-m,bmmSignalReader,bmmBd2MuMuReader.$job.cuts,cBdToMuMu_2MuPtFilter_7TeV-pythia6-evtgen-Fall10,Bd2MuMu2010.root"
 	    , "signal data" 
-	    => "-b 1,bmmSignalReader,bmmSignalReader.$job.cuts,cv00-MuOnia-Run2010*_v1-*,signalData2010.root"
+	    => "-b 1,bmmSignalReader,bmmSignalReader.$job.cuts,cv00-signal-MuOnia-Run2010*_v1-*,signalData2010.root"
 	    , "norm MC" 
 	    => "-m,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cBpToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,normMC2010.root"
 	    , "norm data" 
-	    => "-b 0,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cv00-MuOnia-Run2010*_v1-*,normData2010.root"
+	    => "-b 0,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cv00-norm-MuOnia-Run2010*_v1-*,normData2010.root"
 	    , "Bs2JpsiPhi MC" 
 	    => "-m,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cBsToJPsiMuMu_2MuPEtaFilter_7TeV-pythia6-evtgen-Fall10-*,Bs2JpsiPhiMC2010.root"
 	    , "Bs2JpsiPhi data" 
-	    => "-b 0,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cv00-MuOnia-Run2010*_v1-*,Bs2JpsiPhiData2010.root"
+	    => "-b 0,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cv00-cs-MuOnia-Run2010*_v1-*,Bs2JpsiPhiData2010.root"
     );
 
 my $user  = $ENV{'USER'};
@@ -126,7 +127,7 @@ if ($opt_h) {
 # -- submit the jobs
 foreach $j (keys %jobs) {
     ($options, $class, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
-    $command = "$runCommand -x 'bin/runTreeReaders -r $class $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ../$dataset"; 
+    $command = "$runCommand -x 'bin/runTreeReaders -r $class $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
     if ($opt_s =~ /data/   && !($j =~ /data/)) {next; }
     if ($opt_s =~ /norm/   && !($j =~ /norm/)) {next; }
     if ($opt_s =~ /signal/ && !($j =~ /signal/)) {next; }

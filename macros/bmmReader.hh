@@ -146,7 +146,7 @@ public:
   int                     fPvN;
   double                  fJpsiMass;
   double                  fCandPt, fCandEta, fCandPhi, fCandM, fCandW8Tr, fCandW8Mu; 
-  double                  fCandCosA, fCandChi2, fCandDof, fCandProb, fCandFLS3d, fCandFLSxy; 
+  double                  fCandCosA, fCandA, fCandChi2, fCandDof, fCandProb, fCandFL3d, fCandFL3dE, fCandFLS3d, fCandFLSxy; 
   double                  fCandIso, fCandIso1, fCandIso2, fCandIso3, fCandIso4 ; 
   double                  fCandDocaTrk, fMu1IP, fMu2IP, fCandPvTip, fCandPvTipE, fCandPvLip, fCandPvLipE; 
 
@@ -182,6 +182,7 @@ public:
     *fpDoca, *fpIP,
     *fpChi2, *fpChi2Dof, *fpProb, 
     *fpFLS3d, *fpFLSxy, 
+    *fpFL3d, *fpFL3dE, 
     *fpDocaTrk, *fpIP1, *fpIP2;   
 
   // -- another reduced tree
