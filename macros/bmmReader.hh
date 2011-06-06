@@ -57,6 +57,7 @@ public:
   virtual void   initVariables();
   virtual bool   muonID(TAnaTrack *pT);
 
+  virtual int    partialReco(TAnaCand *pCand);
   virtual void   processType();
   virtual void   genMatch();
   virtual void   recoMatch();
@@ -128,7 +129,7 @@ public:
   int                     fGenM1Tmi, fGenM2Tmi, fNGenPhotons; 
   int                     fRecM1Tmi, fRecM2Tmi; 
   int                     fCandTmi; 
-
+  int                     fGenBpartial; 
   int                     fProcessType;
  
   // -- variables for reduced tree, they are from fpCand
@@ -179,6 +180,9 @@ public:
     *fpIsoPv1, *fpIsoPv2, *fpIsoPv3, *fpIsoPv4, *fpIsoPv5, *fpIsoPv6,  
     *fpIso1Pv1, *fpIso1Pv2, *fpIso1Pv3, *fpIso1Pv4, *fpIso1Pv5, *fpIso1Pv6,  
     *fpIso4Pv1, *fpIso4Pv2, *fpIso4Pv3, *fpIso4Pv4, *fpIso4Pv5, *fpIso4Pv6,  
+    *fpFLS3dPv1, *fpFLS3dPv2, *fpFLS3dPv3, *fpFLS3dPv4, *fpFLS3dPv5, *fpFLS3dPv6,  
+    *fpFLSxyPv1, *fpFLSxyPv2, *fpFLSxyPv3, *fpFLSxyPv4, *fpFLSxyPv5, *fpFLSxyPv6,  
+    *fpAlphaPv1, *fpAlphaPv2, *fpAlphaPv3, *fpAlphaPv4, *fpAlphaPv5, *fpAlphaPv6,  
     *fpDoca, *fpIP,
     *fpChi2, *fpChi2Dof, *fpProb, 
     *fpFLS3d, *fpFLSxy, 

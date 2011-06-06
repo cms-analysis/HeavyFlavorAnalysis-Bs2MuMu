@@ -43,6 +43,8 @@ public:
   void    fillCandidateVariables(); 
   int     tmCand(TAnaCand *pC);
   int     tmCand2(TAnaCand *pC);
+  int     partialReco(TAnaCand *pCand);
+  int     fromB(TGenCand *pCand);
 
   void    genMatch();
   void    recoMatch();

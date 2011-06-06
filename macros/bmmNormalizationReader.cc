@@ -371,6 +371,89 @@ void bmmNormalizationReader::efficiencyCalculation() {
 
 }
 
+// ----------------------------------------------------------------------
+int bmmNormalizationReader::partialReco(TAnaCand *pCand) {
+  int idx(0), type(0), bIdx(0), bId(0), nsame(0), nother(0), pr(0); 
+  int nbz(0), nbp(0), nb(0); 
+  TAnaTrack *pT(0); 
+  TGenCand *pG(0); 
+  for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
+    idx = fpEvt->getSigTrack(i)->fIndex; 
+    type = TMath::Abs(fpEvt->getSigTrack(i)->fMCID);
+    pT = fpEvt->getRecTrack(idx);
+    if (pT->fGenIndex <0) continue;
+    pG = fpEvt->getGenCand(pT->fGenIndex);
+    bIdx = fromB(pG); 
+    bId = 0; 
+    if (bIdx > -1) bId =  TMath::Abs(fpEvt->getGenCand(bIdx)->fID);
+    ++nb;
+    if (bId == 511) ++nbz;
+    if (bId == 521) ++nbp;
+    if ((bIdx > -1)) {
+      if (0 == pr) {
+	pr = bIdx;
+	++nsame; 
+      } else {
+	if (bIdx == pr) {
+	  ++nsame;
+	} else {
+	  ++nother;
+	}
+      }
+    }
+  }
+
+  if (nsame == pCand->fSig2 - pCand->fSig1 + 1) {
+    //     cout << "cand with sig tracks " << pCand->fSig2 - pCand->fSig1 + 1 << endl;
+    //       for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
+    // 	pT = fpEvt->getRecTrack(fpEvt->getSigTrack(i)->fIndex);
+    // 	pG = fpEvt->getGenCand(pT->fGenIndex);
+    // 	cout << pT << " " << pG << endl;
+    // 	if (pG) {
+    // 	  cout << "    " << i << " -> rec track: " << pT->fIndex << " matched to gen track " << pG->fNumber << endl;
+    // 	} else {
+    // 	  cout << "    " << i << " -> rec track: " << pT->fIndex << " not matched to gen track"  << endl; 
+    // 	}
+    //       }
+    //     cout << "matched to B gen cand at " << pr << endl;
+    //     fpEvt->dumpGenBlock(); 
+    return 1; 
+  } 
+
+  return 0; 
+}
+
+
+// ----------------------------------------------------------------------
+int bmmNormalizationReader::fromB(TGenCand *pCand) {
+  TGenCand *pMom(0);
+  int idx = -1; 
+  
+  //  cout << pCand << endl;
+  if (pCand && pCand->fMom1 > -1) {
+    //    cout << "fromB: " << pCand->fMom1 << endl;
+    pMom = fpEvt->getGenCand(pCand->fMom1);
+  } else {
+    return -1;
+  } 
+
+  while (pMom) {
+    idx = pMom->fNumber; 
+    if (521  == TMath::Abs(pMom->fID)) break;
+    if (511  == TMath::Abs(pMom->fID)) break;
+    if (531  == TMath::Abs(pMom->fID)) break;
+    if (5122 == TMath::Abs(pMom->fID)) break;
+    if (pMom->fMom1 > -1) {
+      pMom = fpEvt->getGenCand(pMom->fMom1);
+    }
+    if (pMom->fNumber < 10) {
+      idx = -1; 
+      break;
+    }
+  }
+
+  return idx; 
+}
 
 // ----------------------------------------------------------------------
 void bmmNormalizationReader::genMatch() {
@@ -688,6 +771,11 @@ void bmmNormalizationReader::fillCandidateVariables() {
   fKaonTkQuality = pk->fTrackQuality & TRACKQUALITY;
   fKaonPtNrf     = pks->fPlab.Perp();
   fKaonEtaNrf    = pks->fPlab.Eta();
+
+  
+  if (fIsMC) {
+    fGenBpartial = partialReco(fpCand); 
+  }
 
   if (tmCand(fpCand)) {
     TGenCand *pg1 = fpEvt->getGenCand(fpEvt->getRecTrack(pk->fIndex)->fGenIndex);

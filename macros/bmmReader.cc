@@ -187,7 +187,7 @@ void bmmReader::initVariables() {
 
   // -- clear reduced tree variables
   fCandPt = fCandM = -1.;
-
+  fGenBpartial = 0; 
 }
 
 
@@ -971,6 +971,12 @@ void bmmReader::processType() {
 
 }
 
+// ----------------------------------------------------------------------
+int bmmReader::partialReco(TAnaCand *pCand) {
+  cout << "wrong function" << endl;
+  return -1;
+}
+
 
 // ----------------------------------------------------------------------
 void bmmReader::genMatch() {
@@ -1255,26 +1261,44 @@ void bmmReader::fillCandidateHistograms() {
     fpIsoPv1->fill(fCandIso, fCandM);
     fpIso1Pv1->fill(fCandIso1, fCandM);
     fpIso4Pv1->fill(fCandIso4, fCandM);
+    fpFLS3dPv1->fill(fCandFLS3d, fCandM); 
+    fpFLSxyPv1->fill(fCandFLSxy, fCandM); 
+    fpAlphaPv1->fill(fCandA, fCandM); 
   } else if (fPvN > 2 && fPvN <= 4) {
     fpIsoPv2->fill(fCandIso, fCandM);
     fpIso1Pv2->fill(fCandIso1, fCandM);
     fpIso4Pv2->fill(fCandIso4, fCandM);
+    fpFLS3dPv2->fill(fCandFLS3d, fCandM); 
+    fpFLSxyPv2->fill(fCandFLSxy, fCandM); 
+    fpAlphaPv2->fill(fCandA, fCandM); 
   } else if (fPvN > 4 && fPvN <= 6) {
     fpIsoPv3->fill(fCandIso, fCandM);
     fpIso1Pv3->fill(fCandIso1, fCandM);
     fpIso4Pv3->fill(fCandIso4, fCandM);
+    fpFLS3dPv3->fill(fCandFLS3d, fCandM); 
+    fpFLSxyPv3->fill(fCandFLSxy, fCandM); 
+    fpAlphaPv3->fill(fCandA, fCandM); 
   } else if  (fPvN > 6 && fPvN <= 8) {
     fpIsoPv4->fill(fCandIso, fCandM);
     fpIso1Pv4->fill(fCandIso1, fCandM);
     fpIso4Pv4->fill(fCandIso4, fCandM);
+    fpFLS3dPv4->fill(fCandFLS3d, fCandM); 
+    fpFLSxyPv4->fill(fCandFLSxy, fCandM); 
+    fpAlphaPv4->fill(fCandA, fCandM); 
   } else if  (fPvN > 8 && fPvN <= 10) {
     fpIsoPv5->fill(fCandIso, fCandM);
     fpIso1Pv5->fill(fCandIso1, fCandM);
     fpIso4Pv5->fill(fCandIso4, fCandM);
+    fpFLS3dPv5->fill(fCandFLS3d, fCandM); 
+    fpFLSxyPv5->fill(fCandFLSxy, fCandM); 
+    fpAlphaPv5->fill(fCandA, fCandM); 
   } else if  (fPvN > 10 ) {
     fpIsoPv6->fill(fCandIso, fCandM);
     fpIso1Pv6->fill(fCandIso1, fCandM);
     fpIso4Pv6->fill(fCandIso4, fCandM);
+    fpFLS3dPv6->fill(fCandFLS3d, fCandM); 
+    fpFLSxyPv6->fill(fCandFLSxy, fCandM); 
+    fpAlphaPv6->fill(fCandA, fCandM); 
   }
 
   fpChi2->fill(fCandChi2, fCandM);
@@ -1352,6 +1376,13 @@ void bmmReader::bookHist() {
   fpIso3     = bookDistribution("iso3", "I3", "fGoodIso", 22, 0., 1.1); 
   fpIso4     = bookDistribution("iso4", "I4", "fGoodIso", 22, 0., 1.1); 
 
+  fpAlphaPv1 = bookDistribution("alpha1",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+  fpAlphaPv2 = bookDistribution("alpha2",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+  fpAlphaPv3 = bookDistribution("alpha3",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+  fpAlphaPv4 = bookDistribution("alpha4",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+  fpAlphaPv5 = bookDistribution("alpha5",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+  fpAlphaPv6 = bookDistribution("alpha6",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+
   fpIsoPv1   = bookDistribution("isopv1",  "I (old)", "fGoodIso", 22, 0., 1.1); 
   fpIsoPv2   = bookDistribution("isopv2",  "I (old)", "fGoodIso", 22, 0., 1.1); 
   fpIsoPv3   = bookDistribution("isopv3",  "I (old)", "fGoodIso", 22, 0., 1.1); 
@@ -1382,6 +1413,19 @@ void bmmReader::bookHist() {
   fpIP1      = bookDistribution("ip1", "IP_{1}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
   fpIP2      = bookDistribution("ip2", "IP_{2}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
 
+  fpFLS3dPv1  = bookDistribution("fls3dpv1",  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
+  fpFLS3dPv2  = bookDistribution("fls3dpv2",  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
+  fpFLS3dPv3  = bookDistribution("fls3dpv3",  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
+  fpFLS3dPv4  = bookDistribution("fls3dpv4",  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
+  fpFLS3dPv5  = bookDistribution("fls3dpv5",  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
+  fpFLS3dPv6  = bookDistribution("fls3dpv6",  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
+
+  fpFLSxyPv1  = bookDistribution("flsxypv1",  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
+  fpFLSxyPv2  = bookDistribution("flsxypv2",  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
+  fpFLSxyPv3  = bookDistribution("flsxypv3",  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
+  fpFLSxyPv4  = bookDistribution("flsxypv4",  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
+  fpFLSxyPv5  = bookDistribution("flsxypv5",  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
+  fpFLSxyPv6  = bookDistribution("flsxypv6",  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
   
   h = new TH1D("b1", "Ntrk", 200, 0., 200.);
   h = new TH1D("bnc0", "NCand before selection", 20, 0., 20.);
@@ -1398,6 +1442,7 @@ void bmmReader::bookHist() {
   fTree->Branch("ls",     &fLS,                "ls/I");
   fTree->Branch("mck",    &fGoodMCKinematics,  "mck/O");
   fTree->Branch("tm",     &fCandTM,            "tm/I");
+  fTree->Branch("pr",     &fGenBpartial,       "pr/I"); 
   fTree->Branch("procid", &fProcessType,       "procid/I");
   fTree->Branch("hlt",    &fGoodHLT,           "hlt/O");
   fTree->Branch("l1t",    &fGoodL1T,           "l1t/O");
