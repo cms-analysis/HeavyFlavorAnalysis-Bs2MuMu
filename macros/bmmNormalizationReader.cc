@@ -373,8 +373,17 @@ void bmmNormalizationReader::efficiencyCalculation() {
 
 // ----------------------------------------------------------------------
 int bmmNormalizationReader::partialReco(TAnaCand *pCand) {
+  struct bcounter{
+    int mcid;
+    int index;
+    int matches;
+  };  
+
+  //  cout << "evt: " << fEvt << " event: " << fEvent << endl;
+
+  bcounter bco[] = {{511, -1, 0}, {511, -1, 0}, {521, -1, 0}, {521, -1, 0}, {531, -1, 0}, {531, -1, 0}, {5122, -1, 0}, {5122, -1, 0}};
+
   int idx(0), type(0), bIdx(0), bId(0), nsame(0), nother(0), pr(0); 
-  int nbz(0), nbp(0), nb(0); 
   TAnaTrack *pT(0); 
   TGenCand *pG(0); 
   for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
@@ -385,40 +394,53 @@ int bmmNormalizationReader::partialReco(TAnaCand *pCand) {
     pG = fpEvt->getGenCand(pT->fGenIndex);
     bIdx = fromB(pG); 
     bId = 0; 
-    if (bIdx > -1) bId =  TMath::Abs(fpEvt->getGenCand(bIdx)->fID);
-    ++nb;
-    if (bId == 511) ++nbz;
-    if (bId == 521) ++nbp;
-    if ((bIdx > -1)) {
-      if (0 == pr) {
-	pr = bIdx;
-	++nsame; 
+    if (bIdx > -1) {
+      bId =  TMath::Abs(fpEvt->getGenCand(bIdx)->fID);
+    } else {
+      continue;
+    }
+
+    for (int ib = 0 ; ib < 8; ++ib) {
+      if (bco[ib].mcid != bId) continue; 
+      if (bco[ib].index == bIdx) {
+	//cout << "adding old to bco[" << ib << "]: "  << bId << " at " << bIdx << " for track " << i << endl;
+	bco[ib].matches++;
+	break;
       } else {
-	if (bIdx == pr) {
-	  ++nsame;
-	} else {
-	  ++nother;
-	}
+	//cout << "not adding to bco[" << ib << "].index = " << bco[ib].index << " bId = " << bId << " at " << bIdx << " for track " << i << endl;
+      }
+
+      if (bco[ib].index < 0) {
+	//cout << "adding new to bco[" << ib << "]: " << bId << " at " << bIdx << " for track " << i << endl;
+	bco[ib].index = bIdx; 
+	bco[ib].matches++;
+	break;
       }
     }
   }
 
-  if (nsame == pCand->fSig2 - pCand->fSig1 + 1) {
-    //     cout << "cand with sig tracks " << pCand->fSig2 - pCand->fSig1 + 1 << endl;
-    //       for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
-    // 	pT = fpEvt->getRecTrack(fpEvt->getSigTrack(i)->fIndex);
-    // 	pG = fpEvt->getGenCand(pT->fGenIndex);
-    // 	cout << pT << " " << pG << endl;
-    // 	if (pG) {
-    // 	  cout << "    " << i << " -> rec track: " << pT->fIndex << " matched to gen track " << pG->fNumber << endl;
-    // 	} else {
-    // 	  cout << "    " << i << " -> rec track: " << pT->fIndex << " not matched to gen track"  << endl; 
-    // 	}
-    //       }
-    //     cout << "matched to B gen cand at " << pr << endl;
-    //     fpEvt->dumpGenBlock(); 
-    return 1; 
-  } 
+  for (int i = 0 ; i < 8; ++i) {
+    if (bco[i].mcid == 511 && bco[i].matches == pCand->fSig2 - pCand->fSig1 + 1) {
+      //cout << "-> matched " << bco[i].matches << " tracks to a Bz at " << bco[i].index << endl;
+      return 511;
+    }
+
+    if (bco[i].mcid == 521 && bco[i].matches == pCand->fSig2 - pCand->fSig1 + 1) {
+      //cout << "-> matched " << bco[i].matches << " tracks to a B+ at " << bco[i].index << endl;
+      return 521;
+    }
+
+    if (bco[i].mcid == 531 && bco[i].matches == pCand->fSig2 - pCand->fSig1 + 1) {
+      //cout << "-> matched " << bco[i].matches << " tracks to a Bs at " << bco[i].index << endl;
+      return 531;
+    }
+
+    if (bco[i].mcid == 5122 && bco[i].matches == pCand->fSig2 - pCand->fSig1 + 1) {
+      //cout << "-> matched " << bco[i].matches << " tracks to a LambdaB at " << bco[i].index << endl;
+      return 5122;
+    }
+    
+  }
 
   return 0; 
 }
@@ -775,6 +797,7 @@ void bmmNormalizationReader::fillCandidateVariables() {
   
   if (fIsMC) {
     fGenBpartial = partialReco(fpCand); 
+    if (fpCand->fMass > 5.5 && fGenBpartial == 511) fpEvt->dumpGenBlock();
   }
 
   if (tmCand(fpCand)) {
