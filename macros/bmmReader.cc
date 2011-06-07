@@ -606,6 +606,48 @@ void bmmReader::fillCandidateVariables() {
   fCandPvTipE= fpCand->fPvTipE;
   fCandPvLip = fpCand->fPvLip;
   fCandPvLipE= fpCand->fPvLipE;
+  
+  // -- find mass-constrained candidate with the same rectracks as this one
+  fCandM2 = -1.;
+  vector<int> rectracks;
+  int bla;
+  for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
+    bla = fpEvt->getSigTrack(it)->fIndex; 
+    rectracks.push_back(bla);
+  } 
+
+  TAnaCand *pC(0), *pDau(0), *pMcCand(0); 
+  int mctype = TYPE + 100000; 
+  int nmatch(0), mcIdx(-1); 
+  for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
+    pC = fpEvt->getCand(iC);
+    if (pC->fType != mctype) continue;
+    nmatch = 0; 
+    for (int it = pC->fSig1; it <= pC->fSig2; ++it) {
+      bla = fpEvt->getSigTrack(it)->fIndex; 
+      if (rectracks.end() != find(rectracks.begin(), rectracks.end(), bla)) {
+	++nmatch; 
+      }
+    }
+    if (pC->fDau1 > 0) {
+      pDau = fpEvt->getCand(pC->fDau1); 
+      for (int it = pDau->fSig1; it <= pDau->fSig2; ++it) {
+	bla = fpEvt->getSigTrack(it)->fIndex; 
+	if (rectracks.end() != find(rectracks.begin(), rectracks.end(), bla)) {
+	  ++nmatch; 
+	}
+      }
+    }
+    if (nmatch == rectracks.size()) {
+      pMcCand = pC; 
+      break;
+    }
+  }
+  if (pMcCand) {
+    fCandM2 = pMcCand->fMass;
+  } else {
+    fCandM2 = -2.;
+  }
 
   TAnaTrack *p0; 
   TAnaTrack *p1(0), *ps1(0);
@@ -765,7 +807,27 @@ void bmmReader::fillCandidateVariables() {
 
 
   int pvidx = (fpCand->fPvIdx > -1? fpCand->fPvIdx : 0); 
-  TVector3 svpv(fpCand->fVtx.fPoint - fpEvt->getPV(pvidx)->fPoint); 
+  // -- this is from the full candidate
+  TAnaVertex sv = fpCand->fVtx;
+  // -- this is from the dimuon vertex
+  TAnaCand *pD; 
+  //  cout << "looking at daughters " << fpCand->fDau1  << " .. " << fpCand->fDau2 << endl;
+  for (int id = fpCand->fDau1; id <= fpCand->fDau2; ++id) {
+    if (id < 0) break;
+    pD = fpEvt->getCand(id); 
+    //    cout << "looking at daughter " <<  id << " with type = " << pD->fType << endl;
+    if (300443 == pD->fType) {
+      sv = pD->fVtx;
+      //      cout << "  Found J/psi vertex" << endl;
+      break;
+    }
+  }
+
+  // -- go back to original!
+  sv = fpCand->fVtx;
+
+
+  TVector3 svpv(sv.fPoint - fpEvt->getPV(pvidx)->fPoint); 
   double alpha = svpv.Angle(fpCand->fPlab);
   fCandCosA  = TMath::Cos(alpha);
   fCandA     = alpha; 
@@ -780,13 +842,13 @@ void bmmReader::fillCandidateVariables() {
   fCandIso2  = iso2; 
   fCandIso3  = iso3; 
   fCandIso4  = iso4; 
-  fCandChi2  = fpCand->fVtx.fChi2;
-  fCandDof   = fpCand->fVtx.fNdof;
-  fCandProb  = fpCand->fVtx.fProb;
-  fCandFL3d  =fpCand->fVtx.fD3d;
-  fCandFL3dE =fpCand->fVtx.fD3dE;
-  fCandFLS3d = fpCand->fVtx.fD3d/fpCand->fVtx.fD3dE; 
-  fCandFLSxy = fpCand->fVtx.fDxy/fpCand->fVtx.fDxyE; 
+  fCandChi2  = sv.fChi2;
+  fCandDof   = sv.fNdof;
+  fCandProb  = sv.fProb;
+  fCandFL3d  = sv.fD3d;
+  fCandFL3dE = sv.fD3dE;
+  fCandFLS3d = sv.fD3d/sv.fD3dE; 
+  fCandFLSxy = sv.fDxy/sv.fDxyE; 
 
   if (fpCand->fNstTracks.size() == 0) {
     //    cout << "HHHHEEEELLLLPPPP" << endl;
@@ -799,8 +861,8 @@ void bmmReader::fillCandidateVariables() {
   TAnaTrack *t2 = p2; 
   double bmu1   = TMath::Sin(fpCand->fPlab.Angle(t1->fPlab));
   double bmu2   = TMath::Sin(fpCand->fPlab.Angle(t2->fPlab));
-  fMu1IP        = fpCand->fVtx.fD3d*bmu1/t1->fTip;
-  fMu2IP        = fpCand->fVtx.fD3d*bmu2/t2->fTip;
+  fMu1IP        = sv.fD3d*bmu1/t1->fTip;
+  fMu2IP        = sv.fD3d*bmu2/t2->fTip;
 
   // -- fill cut variables
   fWideMass = ((fpCand->fMass > MASSMIN) && (fpCand->fMass < MASSMAX)); 
@@ -1376,12 +1438,12 @@ void bmmReader::bookHist() {
   fpIso3     = bookDistribution("iso3", "I3", "fGoodIso", 22, 0., 1.1); 
   fpIso4     = bookDistribution("iso4", "I4", "fGoodIso", 22, 0., 1.1); 
 
-  fpAlphaPv1 = bookDistribution("alpha1",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
-  fpAlphaPv2 = bookDistribution("alpha2",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
-  fpAlphaPv3 = bookDistribution("alpha3",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
-  fpAlphaPv4 = bookDistribution("alpha4",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
-  fpAlphaPv5 = bookDistribution("alpha5",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
-  fpAlphaPv6 = bookDistribution("alpha6",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+  fpAlphaPv1 = bookDistribution("alphapv1",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+  fpAlphaPv2 = bookDistribution("alphapv2",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+  fpAlphaPv3 = bookDistribution("alphapv3",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+  fpAlphaPv4 = bookDistribution("alphapv4",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+  fpAlphaPv5 = bookDistribution("alphapv5",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+  fpAlphaPv6 = bookDistribution("alphapv6",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
 
   fpIsoPv1   = bookDistribution("isopv1",  "I (old)", "fGoodIso", 22, 0., 1.1); 
   fpIsoPv2   = bookDistribution("isopv2",  "I (old)", "fGoodIso", 22, 0., 1.1); 
@@ -1464,6 +1526,7 @@ void bmmReader::bookHist() {
   fTree->Branch("eta",    &fCandEta,           "eta/D");
   fTree->Branch("phi",    &fCandPhi,           "phi/D");
   fTree->Branch("m",      &fCandM,             "m/D");
+  fTree->Branch("cm",     &fCandM2,            "cm/D");
   fTree->Branch("cosa",   &fCandCosA,          "cosa/D");
   fTree->Branch("alpha",  &fCandA,             "alpha/D");
   fTree->Branch("iso",    &fCandIso,           "iso/D");

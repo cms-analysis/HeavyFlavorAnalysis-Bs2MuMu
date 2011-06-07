@@ -146,7 +146,7 @@ public:
   double                  fPvX, fPvY, fPvZ; 
   int                     fPvN;
   double                  fJpsiMass;
-  double                  fCandPt, fCandEta, fCandPhi, fCandM, fCandW8Tr, fCandW8Mu; 
+  double                  fCandPt, fCandEta, fCandPhi, fCandM, fCandM2, fCandW8Tr, fCandW8Mu; 
   double                  fCandCosA, fCandA, fCandChi2, fCandDof, fCandProb, fCandFL3d, fCandFL3dE, fCandFLS3d, fCandFLSxy; 
   double                  fCandIso, fCandIso1, fCandIso2, fCandIso3, fCandIso4 ; 
   double                  fCandDocaTrk, fMu1IP, fMu2IP, fCandPvTip, fCandPvTipE, fCandPvLip, fCandPvLipE; 

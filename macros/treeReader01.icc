@@ -145,6 +145,7 @@ int treeReader01::loop(int nevents, int start) {
     }
   }
 
+  TTimeStamp ts; 
 
   // -- The main loop
   int step(50000); 
@@ -165,7 +166,7 @@ int treeReader01::loop(int nevents, int start) {
     fLS  = fpEvt->fLumiSection;
 
     if (jEvent%step == 0) {
-      cout  << " (run: " << fRun << ", event: " << fEvt << ")" << endl;	
+      cout  << " (run: " << fRun << ", event: " << fEvt << ", " << ts.AsString("lc") << ")" << endl;	
     }
 
     if (fForceJson && !fpJSON->good(fRun, fLS)) {

@@ -113,7 +113,7 @@ public:
   void isoMean(const char *var = "iso1", const char *cuts="gmuid&&hlt&&acos(cosa)<0.05&&chi2/dof<2&&fls3d>10", int maxPvN = 15);
   void isoProcess(const char *var, const char *cuts);
   void plotWithCut(const char *var, const char *cuts, double cut, const char *title, double hmin, double hmax); 
-  void isoEff(const char *var, double cut, const char* file, const char *selection="Ao"); 
+  void puEff(const char *var, double cut=0.75, const char *ylabel="#epsilon(I>0.75)", const char* file="NoData", const char *selection="Ao"); 
 
   // -- Utilities and helper methods
   // -------------------------------
@@ -122,6 +122,7 @@ public:
   void initNumbers(numbers *a); 
   void printNumbers(numbers &a, ostream &OUT);
   void printUlcalcNumbers();
+  void texUlcalcNumbers(const char *filename, const char *output); 
   int  detChan(double m1eta, double m2eta);
 
   void dumpSamples();
