@@ -1,0 +1,44 @@
+#ifndef _HFBD2JPSIKS_H_
+#define _HFBD2JPSIKS_H_
+
+#include "FWCore/Framework/interface/EDAnalyzer.h"
+#include "FWCore/Framework/interface/Event.h"
+#include "FWCore/Framework/interface/ESHandle.h"
+
+#include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
+#include "DataFormats/VertexReco/interface/Vertex.h"
+
+class HFLambdas : public edm::EDAnalyzer
+{
+public:
+    explicit HFLambdas(const edm::ParameterSet&);
+    ~HFLambdas();
+
+private:
+    virtual void beginJob();
+    virtual void analyze(const edm::Event&, const edm::EventSetup&);
+    virtual void endJob();
+
+    int fVerbose;
+    edm::InputTag	fTracksLabel,fPrimaryVertexLabel;
+    edm::InputTag	fMuonsLabel;
+
+    double fMuonPt,fPionPt,fProtonPt;
+    double fTrackNormChi2;
+    int fPsiMuons;
+    double fPsiWindow,fksWindow,fL0Window,fLbWindow; // mass windows for event selection
+    double fPsiEffWindow,fL0EffWindow; // windows for efficiencies of J/Psi and Lambda0
+    double fEffMaxChi2, fEffMin3d, fEffMaxDoca; // cuts for efficiencies of J/Psi and Lambda0
+    double fDeltaR;
+    //int fVertexing;
+
+    double fMaxDoca;
+    double fPAngle;
+    bool fUseV0producer;
+    bool fDoVcands;
+
+    reco::Vertex	fPV;
+    edm::ESHandle<TransientTrackBuilder> fTTB;
+};
+
+#endif
