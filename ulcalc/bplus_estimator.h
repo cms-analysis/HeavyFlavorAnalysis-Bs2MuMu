@@ -25,7 +25,7 @@ enum
 {
 	kGeneratorCand	= 1 << 0,
 	kAcceptance		= 1 << 1,
-	kEffMuon		= 1 << 2,
+	kEffMuon		= 1 << 2
 	//	kEffTrig is not needed
 	//	kEffCand is not needed
 	//	kEffAna is not needed

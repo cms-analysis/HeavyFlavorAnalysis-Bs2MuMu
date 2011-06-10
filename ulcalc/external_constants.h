@@ -52,10 +52,7 @@ class measurement_t {
 		double err;
 };
 
-
-/* Different filter efficiencies */
-const double eff_filter_bplus = 0.24;
-const double eff_filter_bmm = 0.63;
+/* external constants */
 const measurement_t c_s_theory();
 const measurement_t c_d_theory();
 double bstomumu();
@@ -70,8 +67,6 @@ const double eta_barrel = 1.4;
 /* cut to be applied for analysis */
 extern const char *bmmGeneratorCuts;
 extern const char *bmmBaseCut;
-extern const char *bmmAnaBarrelCut;
-extern const char *bmmAnaEndcapCut;
 
 /* Parameters estimated, saved in map */
 enum bmm_param_tag {
@@ -103,10 +98,10 @@ enum bmm_param_tag {
 typedef std::pair<bmm_param_tag,int> bmm_param;
 
 /* Model constants:
- *	Total histogram region [4.7,6.2]
+ *	Total histogram region [4.8,6.0]
  */
-const double low_histo_bound = 4.7;
-const double high_histo_bound = 6.2;
+const double low_histo_bound = 4.8;
+const double high_histo_bound = 6.0;
 double compute_tau(std::map<bmm_param,measurement_t> *bsmm, std::map<bmm_param,measurement_t> *bdmm, int channel, bool tau_s);
 
 /* conversion routines */

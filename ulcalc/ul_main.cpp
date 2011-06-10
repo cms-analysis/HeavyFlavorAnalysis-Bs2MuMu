@@ -39,6 +39,8 @@ static algo_t gAlgorithm = kAlgo_Bayesian;
 static bool gDisableErrors = false;
 static int gVerbosity = 1; // 0 = quite, 1 = standard, 2 = verbose
 static const char *output_path = NULL;
+static bool gLightModel = false;
+static bool gBdToMuMu = false;
 
 static const char *algo_name(algo_t a)
 {
@@ -78,6 +80,12 @@ static bool validate_bmm(map<bmm_param,measurement_t> *bmm, int ch)
 	valid = bmm->count(make_pair(kObsBkg_bmm, ch)) > 0;
 	if (!valid) {
 		cerr << "Insufficient information in config file. Please specify 'OBS_BKG' for channel " << ch << endl;
+		goto bail;
+	}
+	
+	valid = !(gBdToMuMu && gLightModel);
+	if (!valid) {
+		cerr << "Light model only supported for Bs -> mumu" << endl;
 		goto bail;
 	}
 	
@@ -170,7 +178,7 @@ static void parse_input(const char *path, map<bmm_param,measurement_t> *bsmm, ma
 
 static void usage()
 {
-	cerr << "ulcalc [--disable-errors] [[-n <FC steps>] -r x,y ] [-e fc_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
+	cerr << "ulcalc [--bdtomumu] [--light] [--disable-errors] [[-n <FC steps>] -r x,y ] [-e fc_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
 } // usage()
 
 static bool parse_arguments(const char **first, const char **last)
@@ -250,6 +258,10 @@ static bool parse_arguments(const char **first, const char **last)
 					abort();
 				}
 				output_path = *first++;
+			} else if (strcmp(arg, "--light") == 0) {
+				gLightModel = true;
+			} else if (strcmp(arg, "--bdtomumu") == 0) {
+				gBdToMuMu = true;
 			} else {
 				cerr << "Unknown option '" << arg << "'." << endl;
 				usage();
@@ -279,6 +291,8 @@ static bool parse_arguments(const char **first, const char **last)
 	cout << "Algorithm is " << algo_name(gAlgorithm) << endl;
 	cout << "Errors on Variables are " << (gDisableErrors ? "disabled" : "enabled") << endl;
 	cout << "Verbosity level " << gVerbosity << endl;
+	cout << (gLightModel ? "Light model Selected" : "Computing using Full Model") << endl;
+	cout << "Computing Upper limit for decay " << (gBdToMuMu ? "Bd -> mumu" : "Bs -> mumu") << endl;
 	cout << "-------------------------------------" << endl;
 	
 bail:
@@ -299,7 +313,7 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 	RooStats::ConfInterval *inter = NULL;
 	double bkg,weight,ul;
 	uint32_t obsBsMin,obsBsMax;
-	uint32_t obsBdMin,obsBdMax;
+	uint32_t obsBdMin = 0,obsBdMax = 0;
 	uint32_t obsBs,obsBd;
 	set<int>::const_iterator it;
 	RooAbsReal *bs_mean;
@@ -314,13 +328,15 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 		weight = 1;
 		for (it = channels->begin(); it != channels->end(); ++it) {
 			
-			// Bs window weight
-			bs_mean = wspace->function(Form("bs_mean_%d",*it));
-			weight *= TMath::Poisson(((RooRealVar&)(*obs)[Form("NsObs_%d",*it)]).getVal(),bs_mean->getVal());
-			
-			// Bd window weight
-			bd_mean = wspace->function(Form("bd_mean_%d",*it));
-			weight *= TMath::Poisson(((RooRealVar&)(*obs)[Form("NdObs_%d",*it)]).getVal(),bd_mean->getVal());
+			if (gLightModel) {
+				bs_mean = wspace->function("bs_mean");
+				weight *= TMath::Poisson(((RooRealVar&)(*obs)["NsObs"]).getVal(),bs_mean->getVal());
+			} else {
+				bs_mean = wspace->function(Form("bs_mean_%d",*it));
+				bd_mean = wspace->function(Form("bd_mean_%d",*it));
+				weight *= TMath::Poisson(((RooRealVar&)(*obs)[Form("NsObs_%d",*it)]).getVal(),bs_mean->getVal());
+				weight *= TMath::Poisson(((RooRealVar&)(*obs)[Form("NdObs_%d",*it)]).getVal(),bd_mean->getVal());
+			}
 		}
 		
 		data = new RooDataSet("data","",*obs);
@@ -330,7 +346,10 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 		
 		switch (gAlgorithm) {
 			case kAlgo_Bayesian:
-				inter = est_ul_bc(wspace, data, channels, gCLLevel, gVerbosity, &ul, NULL);
+				if (gLightModel)
+					inter = est_ul_bc_light(wspace, data, gCLLevel, gVerbosity, &ul, NULL);
+				else
+					inter = est_ul_bc(wspace, data, channels, gCLLevel, gVerbosity, &ul, NULL);
 				break;
 			case kAlgo_FeldmanCousins:
 				inter = est_ul_fc(wspace, data, channels, gCLLevel, gVerbosity, gFCSteps, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), gFCErr, &ul, NULL);
@@ -354,7 +373,10 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 	
 	// Set current value and do recursive...
 	bkg = ((*bsmm)[make_pair(kObsBkg_bmm, ch)]).getVal();
-	((RooRealVar&)((*obs)[Form("NbObs_%d",ch)])).setVal(bkg);
+	if (gLightModel)
+		((RooRealVar&)((*obs)["NbObs"])).setVal(bkg);
+	else
+		((RooRealVar&)((*obs)[Form("NbObs_%d",ch)])).setVal(bkg);
 	
 	if (bsmm->count(make_pair(kObsB_bmm, ch)) > 0) {
 		obsBsMin = obsBsMax = (uint32_t)((*bsmm)[make_pair(kObsB_bmm, ch)]).getVal();
@@ -363,19 +385,27 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 		obsBsMax = gDefaultPoissonLimit;
 	}
 	
-	if (bdmm->count(make_pair(kObsB_bmm, ch)) > 0) {
-		obsBdMin = obsBdMax = (uint32_t)((*bdmm)[make_pair(kObsB_bmm, ch)]).getVal();
-	} else {
-		obsBdMin = 0;
-		obsBdMax = gDefaultPoissonLimit;
+	if (!gLightModel) {
+		if (bdmm->count(make_pair(kObsB_bmm, ch)) > 0) {
+			obsBdMin = obsBdMax = (uint32_t)((*bdmm)[make_pair(kObsB_bmm, ch)]).getVal();
+		} else {
+			obsBdMin = 0;
+			obsBdMax = gDefaultPoissonLimit;
+		}
 	}
 	
 	// iterate through these variables
 	for (obsBs = obsBsMin; obsBs <= obsBsMax; obsBs++) {
-		((RooRealVar&)((*obs)[Form("NsObs_%d",ch)])).setVal(obsBs);
-		for (obsBd = obsBdMin; obsBd <= obsBdMax; obsBd++) {
-			((RooRealVar&)((*obs)[Form("NdObs_%d",ch)])).setVal(obsBd);
+		if (gLightModel) {
+			((RooRealVar&)((*obs)["NsObs"])).setVal(obsBs);
 			recursive_calc(wspace,obs,channels,a,b,bsmm,bdmm,avgUL,avgWeight);
+		} else {
+			((RooRealVar&)((*obs)[Form("NsObs_%d",ch)])).setVal(obsBs);
+			
+			for (obsBd = obsBdMin; obsBd <= obsBdMax; obsBd++) {
+				((RooRealVar&)((*obs)[Form("NdObs_%d",ch)])).setVal(obsBd);
+				recursive_calc(wspace,obs,channels,a,b,bsmm,bdmm,avgUL,avgWeight);
+			}
 		}
 	}
 bail:
@@ -439,7 +469,10 @@ int main(int argc, const char *argv [])
 	
 	compute_vars(&bsmm,true);
 	compute_vars(&bdmm,false);
-	wspace = build_model_nchannel(&bsmm,&bdmm,gDisableErrors,gVerbosity);
+	if (gLightModel)
+		wspace = build_model_light(&bsmm, gVerbosity);
+	else
+		wspace = build_model_nchannel(&bsmm, &bdmm, gDisableErrors, gVerbosity, gBdToMuMu);
 	
 	// set the measured candidates...
 	observables.addClone(*wspace->set("obs"));
@@ -447,12 +480,12 @@ int main(int argc, const char *argv [])
 	
 	// reweight the UL.
 	avgUL /= avgWeight;
-	cout << "Upper limit for config file using algorithm " << algo_name(gAlgorithm) << ": " << avgUL*bstomumu() << "\t(" << avgUL << ")" << endl;
+	cout << (gBdToMuMu ? "Bd -> mumu" : "Bs -> mumu") << " upper limit for config file using algorithm " << algo_name(gAlgorithm) << ": " << avgUL*(gBdToMuMu ? bdtomumu() : bstomumu()) << "\t(" << avgUL << ")" << endl;
 	
 	if (workspace_path) wspace->writeToFile(workspace_path,kTRUE);
 	if (output_path) {
 		FILE *outFile = fopen(output_path, "w");
-		fprintf(outFile, "Algorithm %s: %.3e (%.1f)\n", algo_name(gAlgorithm), avgUL*bstomumu(), avgUL);
+		fprintf(outFile, "%s with algorithm %s: %.3e (%.1f)\n", (gBdToMuMu ? "Bd->mumu" : "Bs->mumu"), algo_name(gAlgorithm), avgUL*(gBdToMuMu ? bdtomumu() : bstomumu()), avgUL);
 		fclose(outFile);
 	}
 	delete wspace;

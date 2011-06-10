@@ -19,10 +19,11 @@ LD			= $(CXX)
 # FILES #
 #########
 
-HEADERS = external_constants.h ul_estimate.h bplus_estimator.h
+HEADERS = external_constants.h ul_estimate.h bplus_estimator.h bmm_estimator.h
 ULCALC_OBJS = ul_main.o ul_estimate.o external_constants.o
 BPLUS_OBJS = bplus_main.o bplus_estimator.o external_constants.o
-GRID_SEARCH_OBJS = grid_search.o external_constants.o ul_estimate.o bmm_estimator.o bplus_estimator.o
+BMM_OBJS = bmm_main.o bmm_estimator.o external_constants.o
+GRID_SEARCH_OBJS = grid_search.o external_constants.o ul_estimate.o bmm_estimator.o
 
 
 #################
@@ -41,10 +42,16 @@ obj/%.o : %.cpp $(HEADERS)
 ulcalc: bin/ulcalc
 	@true
 
-all: ulcalc bplus_est
+all: ulcalc bplus_est bmm_est grid_search
 	@true
 
 bplus_est: bin/bplus_est
+	@true
+
+bmm_est: bin/bmm_est
+	@true
+
+grid_search: bin/grid_search
 	@true
 
 bin/ulcalc: $(addprefix obj/,$(ULCALC_OBJS))
@@ -55,6 +62,9 @@ bin/grid_search: $(addprefix obj/,$(GRID_SEARCH_OBJS))
 
 bin/bplus_est: $(addprefix obj/,$(BPLUS_OBJS))
 	$(LD) -o $@ $(addprefix obj/,$(BPLUS_OBJS)) $(ROOTLIBS) $(LDFLAGS) ../rootutils/lib/libNCRootUtils.so
+
+bin/bmm_est: $(addprefix obj/,$(BMM_OBJS))
+	$(LD) -o $@ $(addprefix obj/,$(BMM_OBJS)) $(ROOTLIBS) $(LDFLAGS)
 
 clean:
 	rm -rf obj/*

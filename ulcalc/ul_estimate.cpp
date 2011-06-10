@@ -33,7 +33,8 @@ void add_channels(map<bmm_param,measurement_t> *bmm, set<int> *channels)
 		channels->insert(it->first.second);
 } // add_channels()
 
-RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, bool no_errors, int verbosity) {
+RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, bool no_errors, int verbosity, bool compute_bd_ul)
+{
 	RooStats::ModelConfig *splusbModel = NULL;
 	RooStats::ModelConfig *bModel = NULL;
 	RooWorkspace *wspace = new RooWorkspace("wspace");
@@ -161,11 +162,12 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 	wspace->import(*totalPdf, ((verbosity > 0) ? RooCmdArg::none() : RooFit::Silence(kTRUE)) );
 	
 	// uniform prior in case of bayesian code
-	wspace->factory("Uniform::prior_mus(mu_s)");
+	wspace->factory(Form("Uniform::prior_mu(mu_%c)",(compute_bd_ul ? 'd' : 's')));
 	
 	// define the sets
 	wspace->defineSet("obs", observables);
-	wspace->defineSet("poi", "mu_s"); // Parameter of interest (at the moment, just mu_s)
+	if (compute_bd_ul)	wspace->defineSet("poi", "mu_d");
+	else				wspace->defineSet("poi", "mu_s");
 	nuisanceParams.addClone(wspace->allVars());
 	nuisanceParams.remove(*wspace->set("obs"), kTRUE, kTRUE);
 	nuisanceParams.remove(*wspace->set("poi"), kTRUE, kTRUE);
@@ -179,7 +181,7 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 	splusbModel->SetParametersOfInterest(*wspace->set("poi"));
 	splusbModel->SetObservables(*wspace->set("obs"));
 	splusbModel->SetNuisanceParameters(*wspace->set("nui"));
-	splusbModel->SetPriorPdf(*wspace->pdf("prior_mus"));
+	splusbModel->SetPriorPdf(*wspace->pdf("prior_mu"));
 	wspace->import(*splusbModel);
 	
 	bModel = new RooStats::ModelConfig("bConfig");
@@ -188,7 +190,7 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 	bModel->SetParametersOfInterest(*wspace->set("poi"));
 	bModel->SetObservables(*wspace->set("obs"));
 	bModel->SetNuisanceParameters(*wspace->set("nui"));
-	bModel->SetPriorPdf(*wspace->pdf("prior_mus"));
+	bModel->SetPriorPdf(*wspace->pdf("prior_mu"));
 	wspace->import(*bModel);
 	
 	if (verbosity > 0) {
@@ -213,6 +215,77 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 	
 	return wspace;
 } // build_model_nchannel()
+
+// FIXME: introduce gamma prior for the background, too!
+// FIXME: Merge with the above one.
+RooWorkspace *build_model_light(map<bmm_param,measurement_t> *bsmm, int verbosity)
+{
+	RooStats::ModelConfig *splusbModel = NULL;
+	RooWorkspace *wspace = new RooWorkspace("wspace");
+	RooProdPdf *totalPdf = NULL;
+	RooArgSet observables;
+	RooArgSet nuisanceParams;
+	
+	// make sure we cover the entire physical range
+	wspace->factory("mu_s[1,0,1000]");	// initialize to standard model
+	wspace->factory("mu_d[1,0,1000]");	// initialize to standard model
+	
+	// Observables
+	wspace->factory("NbObs[0,1000]"); // Observed Background
+	wspace->factory("NsObs[0,1000]"); // Observed Evts in Bs window
+	observables.add(*wspace->var("NbObs"));
+	observables.add(*wspace->var("NsObs"));
+
+	// nuisance parameter
+	wspace->factory("nu_b[0,0,1000]"); // background strength
+	
+	// build the constants
+	wspace->factory(Form("TauS[%f]",compute_tau(bsmm, bsmm, 0, true)));
+	wspace->factory(Form("NuS[%f]", ((*bsmm)[make_pair(kExp_bmm, 0)]).getVal()));
+	wspace->factory(Form("Pss[%f]", ((*bsmm)[make_pair(kProb_swind_bmm, 0)]).getVal()));
+	
+	// pdfs
+	wspace->factory("Poisson::bkg_window(NbObs,nu_b)");
+	wspace->factory("Poisson::bs_window(NsObs,FormulaVar::bs_mean(\"TauS*nu_b + Pss*NuS*mu_s\",{TauS,nu_b,Pss,NuS,mu_s}))");
+	totalPdf = new RooProdPdf("total_pdf","Total Model PDF",RooArgList(wspace->allPdfs()));
+	wspace->import(*totalPdf, ((verbosity > 0) ? RooCmdArg::none() : RooFit::Silence(kTRUE)) );
+	wspace->factory("Uniform::prior_mu(mu_s)");
+	
+	wspace->defineSet("obs", observables);
+	wspace->defineSet("poi", "mu_s"); // Parameter of interest (at the moment, just mu_s)
+	nuisanceParams.addClone(wspace->allVars());
+	nuisanceParams.remove(*wspace->set("obs"), kTRUE, kTRUE);
+	nuisanceParams.remove(*wspace->set("poi"), kTRUE, kTRUE);
+	RooStats::RemoveConstantParameters(&nuisanceParams);
+	wspace->defineSet("nui", nuisanceParams);
+	
+	splusbModel = new RooStats::ModelConfig("splusbConfig");
+	splusbModel->SetWorkspace(*wspace); // set the workspace
+	splusbModel->SetPdf(*wspace->pdf("total_pdf"));
+	splusbModel->SetParametersOfInterest(*wspace->set("poi"));
+	splusbModel->SetObservables(*wspace->set("obs"));
+	splusbModel->SetNuisanceParameters(*wspace->set("nui"));
+	splusbModel->SetPriorPdf(*wspace->pdf("prior_mu"));
+	wspace->import(*splusbModel);
+	
+	if (verbosity > 0) {
+		cout << "-------------------------------------" << endl;
+		cout << "Workspace Configuration:" << endl;
+		wspace->Print();
+		cout << "-------------------------------------" << endl;
+		cout << "S+B ModelConfig configuration:" << endl;
+		splusbModel->Print();
+		cout << "-------------------------------------" << endl;
+		cout << "Variables:" << endl;
+		wspace->allVars().Print("v");
+		cout << "-------------------------------------" << endl;
+	}
+	
+	delete splusbModel;
+	delete totalPdf;
+	
+	return wspace;
+} // build_model_light()
 
 /* Start values are set the following way:
  *	nu_b = NbObs
@@ -368,6 +441,42 @@ RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, set<in
 	
 	return simpleInt;
 } // est_ul_bc()
+
+// FIXME: Incorporate this one to the 'standard' bayesian estimate
+RooStats::ConfInterval *est_ul_bc_light(RooWorkspace *wspace, RooDataSet *data, double cLevel, int verbosity, double *upperLimit, double *cpuUsed)
+{
+	using namespace RooStats;
+	ModelConfig *splusbConfig = dynamic_cast<ModelConfig*>(wspace->obj("splusbConfig"));
+	BayesianCalculator bc(*data,*splusbConfig);
+	SimpleInterval *simpleInt = NULL;
+	TStopwatch swatch;
+	double nu_b,mu_s;
+	
+	swatch.Start(kTRUE);
+	
+	// configure
+	bc.SetConfidenceLevel(cLevel);
+	bc.SetLeftSideTailFraction(0.0); // compute upper limit
+	
+	// set variables...
+	nu_b = ((RooRealVar&)(*data->get(0))["NbObs"]).getVal();
+	mu_s = (((RooRealVar&)(*data->get(0))["NsObs"]).getVal() - wspace->var("TauS")->getVal()* nu_b) / (wspace->var("NuS")->getVal() * wspace->var("Pss")->getVal());
+	
+	wspace->var("nu_b")->setVal(nu_b);
+	wspace->var("mu_s")->setVal(mu_s);
+	
+	wspace->pdf("total_pdf")->fitTo(*data, ((verbosity > 0) ? RooCmdArg::none() : RooFit::PrintLevel(-1)));
+	splusbConfig->SetSnapshot(*wspace->set("poi"));
+	
+	// get interval...
+	simpleInt = bc.GetInterval();
+	if (upperLimit) *upperLimit = simpleInt->UpperLimit();
+	
+	swatch.Stop();
+	if (cpuUsed) *cpuUsed = swatch.CpuTime();
+	
+	return simpleInt;
+} // est_ul_bc_light()
 
 // FIXME: CLs not yet implemented
 RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, double cLevel, double *ulLimit, bool splitModel, double *cpuUsed)

@@ -15,7 +15,7 @@
 #include <utility>
 
 const char *bmmGeneratorCuts = "pt_mu2_gen > 1 && TMath::Abs(eta_mu1_gen) < 2.5 && TMath::Abs(eta_mu2_gen) < 2.5";
-const char *bmmBaseCut = "TMath::Abs(eta_mu1) < 2.4 && TMath::Abs(eta_mu2) < 2.4 && pt_mu2 > 2";
+const char *bmmBaseCut = "TMath::Abs(eta_mu1) < 2.4 && TMath::Abs(eta_mu2) < 2.4 && pt_mu2 > 2 && d3 < 2.";
 
 ////////////////////////
 // External constants //

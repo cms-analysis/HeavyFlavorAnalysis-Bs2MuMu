@@ -74,7 +74,7 @@ void estimate_bplus(map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree 
 	
 	// acceptance
 	lambda = nbr_acc / nbr_gens;
-	(*bplus)[make_pair(kAcc_bplus, channelIx)] = measurement_t(lambda, std_dev_binomail(lambda, nbr_gens/eff_filter_bplus));
+	(*bplus)[make_pair(kAcc_bplus, channelIx)] = measurement_t(lambda, std_dev_binomail(lambda, nbr_gens));
 	
 	// muon efficiency
 	lambda = nbr_mu / nbr_acc;

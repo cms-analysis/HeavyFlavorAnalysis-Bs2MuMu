@@ -142,5 +142,8 @@ int main(int argc, const char *argv [])
 	if (outputFile)
 		fclose(outputFile);
 	
+	delete mcFile;
+	delete dataFile;
+	
 	return 0;
 } // main()
