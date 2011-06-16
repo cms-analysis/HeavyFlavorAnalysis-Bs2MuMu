@@ -25,8 +25,8 @@ void HFNodeCut::setFields(double maxDoca, double vtxChi2, TVector3 vtxPos, TVect
 
 bool HFNodeCut::operator()() {return true;}
 
-HFDecayTree::HFDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma) :
-  particleID_(pID), vertexing_(doVertexing), mass_(mass), massConstraint_(massConstraint), massSigma_(massSigma), maxDoca_(0), minDoca_(0), kinTree_(0)
+HFDecayTree::HFDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma, bool daughtersToPV) :
+  particleID_(pID), vertexing_(doVertexing), mass_(mass), massConstraint_(massConstraint), massSigma_(massSigma), maxDoca_(0), minDoca_(0), daughtersToPV_(daughtersToPV), kinTree_(0)
 {
   if(massConstraint && massSigma <= 0.0) massSigma_ = 0.0001 * mass;
 
@@ -55,9 +55,9 @@ void HFDecayTree::appendDecayTree(HFDecayTree subTree)
   subVertices_.push_back(subTree);
 } // appendDecayTree()
 
-HFDecayTreeIterator HFDecayTree::addDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma)
+HFDecayTreeIterator HFDecayTree::addDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma, bool daughtersToPV)
 {
-  return subVertices_.insert(subVertices_.end(), HFDecayTree(pID, doVertexing, mass, massConstraint, massSigma));
+  return subVertices_.insert(subVertices_.end(), HFDecayTree(pID, doVertexing, mass, massConstraint, massSigma, daughtersToPV));
 } // addDecayTree()
 
 // this version is DEPRECATED
@@ -76,7 +76,7 @@ void HFDecayTree::clear()
   // massSigma_ = -1.0;
 }
 
-void HFDecayTree::clear(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma)
+void HFDecayTree::clear(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma, bool daughtersToPV)
 {
   particleID_ = pID;
   vertexing_ = doVertexing;
@@ -85,6 +85,7 @@ void HFDecayTree::clear(int pID, bool doVertexing, double mass, bool massConstra
   massSigma_ = massSigma;
   maxDoca_ = -1.0;
   minDoca_ = -1.0;
+  daughtersToPV_ = daughtersToPV;
 
   
   // clear the containers

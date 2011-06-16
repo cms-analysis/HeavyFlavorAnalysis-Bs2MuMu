@@ -54,8 +54,7 @@ typedef std::map<int,int>::iterator HFDecayTreeTrackIterator;
 class HFDecayTree
 {
 	public:
-		HFDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma = -1.0);
-		//HFDecayTree(int pID = 0, int doVertexing = 1, double constraint = -1.0, double constraintSigma = -1.0); // just for the record how the default values looked like before
+		HFDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma = -1.0, bool daughtersToPV = false);
 		HFDecayTree(int pID, int doVertexing, double constraint, double constraintSigma = -1.0) __attribute__((deprecated)); // DEPRECATED use new constructor instead
 		virtual ~HFDecayTree() { delete kinTree_; }
 		
@@ -63,12 +62,12 @@ class HFDecayTree
 		void addTrack(int trackIx, int trackID); // Add a track with a given type.
 		
 		void appendDecayTree(HFDecayTree subTree); // to append an already constructed decay tree
-		HFDecayTreeIterator addDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma = -1.0); // to get a reference to the subvertex
+		HFDecayTreeIterator addDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma = -1.0, bool daughtersToPV = false); // to get a reference to the subvertex
 		//HFDecayTreeIterator addDecayTree(int pID = 0, int doVertexing = 1, double mass = -1.0, double mass_sigma = -1.0) __attribute__ ((deprecated)); // to get a reference to the subvertex
 		HFDecayTreeIterator addDecayTree(int pID, int doVertexing, double mass, double mass_sigma = -1.0) __attribute__ ((deprecated)); // to get a reference to the subvertex
 		
 		void clear();
-		void clear(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma = -1.0); // variant to clear and initialize the tree with same signature as constructor
+		void clear(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma = -1.0, bool daughtersToPV = false); // variant to clear and initialize the tree with same signature as constructor
 		
 		// Accessing the track data
 		HFDecayTreeTrackIterator getTrackBeginIterator();
@@ -106,6 +105,7 @@ class HFDecayTree
 		double massSigma() { return massSigma_; };
 		double maxDoca() { return maxDoca_; };
 		double minDoca() { return minDoca_; };
+		bool daughtersToPV() { return daughtersToPV_; }
 		
 		void set_vertexing(bool vertexing) { vertexing_ = vertexing; };
 		void set_particleID(double particleID) { particleID_ = particleID; };
@@ -114,6 +114,7 @@ class HFDecayTree
 		void set_massSigma(double massSigma) { massSigma_ = massSigma; };
 		void set_maxDoca(double maxDoca) { maxDoca_ = maxDoca; };
 		void set_minDoca(double minDoca) { minDoca_ = minDoca; };
+		void set_daughtersToPV(bool daughtersToPV) { daughtersToPV_ = daughtersToPV; }
 
 	private:
 		// Tree Variables...
@@ -124,6 +125,7 @@ class HFDecayTree
 		double massSigma_;
 		double maxDoca_;
 		double minDoca_;
+		bool daughtersToPV_;
 
 		void dumpTabs(unsigned indent); // used by dump()
 		
