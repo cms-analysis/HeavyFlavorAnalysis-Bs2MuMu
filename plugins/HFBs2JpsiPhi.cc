@@ -279,30 +279,35 @@ void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup)
       aKal.doFit(trackList, trackIndices, trackMasses, 200531, 2); 	
 
       // -- sequential fit: J/Psi kaons
-      HFDecayTree theTree(300531, true, 0, false); // TODO adjust mass to meaningful value
+      HFDecayTree theTree(300531, true, MBS, false, -1.0, true);
       
-      HFDecayTreeIterator iterator = theTree.addDecayTree(300443, false, MJPSI, false); // Don't use kinematic particle for the J/Psi
+      HFDecayTreeIterator iterator = theTree.addDecayTree(300443, false, MJPSI, false); // Don't use kinematic particle for the Psi
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
       iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
       
-      theTree.addTrack(iKaon1,321);
-      theTree.addTrack(iKaon2,321);
+	  iterator = theTree.addDecayTree(300333, false, MPHI, false);
+      iterator->addTrack(iKaon1,321);
+      iterator->addTrack(iKaon2,321);
+	  iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+	  
       theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
       
       aSeq.doFit(&theTree);
       
-      // -- sequential fit: J/Psi (constraint) kaons
-      theTree.clear();
-      theTree.set_particleID(400531);
+      // -- sequential fit: J/Psi (constraint) phi (unconstraint)
+      theTree.clear(400531, true, MBS, false, -1.0, true);
       
       iterator = theTree.addDecayTree(400443, true, MJPSI, true);
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
       iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
       
-      theTree.addTrack(iKaon1,321);
-      theTree.addTrack(iKaon2,321);
+	  iterator = theTree.addDecayTree(400333, false, MPHI, false);
+      iterator->addTrack(iKaon1,321);
+      iterator->addTrack(iKaon2,321);
+	  iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+	  
       theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
       
       aSeq.doFit(&theTree);
