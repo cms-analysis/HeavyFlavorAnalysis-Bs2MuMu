@@ -145,8 +145,6 @@ int treeReader01::loop(int nevents, int start) {
     }
   }
 
-  TTimeStamp ts; 
-
   // -- The main loop
   int step(50000); 
   if (maxEvents < 1000000) step = 10000; 
@@ -166,6 +164,7 @@ int treeReader01::loop(int nevents, int start) {
     fLS  = fpEvt->fLumiSection;
 
     if (jEvent%step == 0) {
+      TTimeStamp ts; 
       cout  << " (run: " << fRun << ", event: " << fEvt << ", " << ts.AsString("lc") << ")" << endl;	
     }
 

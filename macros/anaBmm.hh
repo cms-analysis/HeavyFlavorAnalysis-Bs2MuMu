@@ -34,6 +34,7 @@ struct numbers {
   double effGenFilter, effGenFilterE; 
   double fitYield, fitYieldE;
   double genFileYield, genYield, genChanYield, recoYield, chanYield, muidYield, trigYield, candYield, ana0Yield, anaWmcYield, anaYield;
+  double genFileYieldE, genYieldE, genChanYieldE, recoYieldE, chanYieldE, muidYieldE, trigYieldE, candYieldE, ana0YieldE, anaWmcYieldE, anaYieldE;
   double acc, accE, accChan, accChanE;
   double effChan, effChanE; 
   double effMuidMC, effMuidMCE, effTrigMC, effTrigMCE;
@@ -44,11 +45,11 @@ struct numbers {
   double effTotChan, effTotChanE; 
   double prodGenYield, combGenYield, chanGenYield; // eps*A corrected
   // -- signal stuff
-  double bgObs, bgExp, bgExpE; 
+  double bgObs, bgBsExp, bgBsExpE, bgBdExp, bgBdExpE; 
   double bsObs, bdObs; 
-  double bsRare, bdRare; 
-  double pss, pdd;
-  double psd, pds;
+  double bsRare, bsRareE, bdRare, bdRareE; 
+  double pss, pssE, pdd, pddE;
+  double psd, psdE, pds, pdsE;
   double mBdLo, mBdHi, mBsLo, mBsHi;
 };
 
@@ -58,7 +59,7 @@ struct cuts {
   double mBdLo, mBdHi, mBsLo, mBsHi;
   double etaMin, etaMax, pt; 
   double m1pt, m2pt, m1eta, m2eta;
-  double iso1, chi2dof, alpha, fls3d; 
+  double iso1, chi2dof, alpha, fls3d, docatrk; 
 };
 
 
@@ -81,7 +82,7 @@ public:
   void makeAll(int channels = 3);
 
   void histAcceptanceAndPreselection(numbers &a);
-  void accEffFromEffTree(numbers &a, cuts &b);
+  void accEffFromEffTree(numbers &a, cuts &b, int proc = -1);
 
   void computeNormUL();
   void computeCsBF();
@@ -100,10 +101,14 @@ public:
   void testSimpleUL(const char *cuts);
   void testUL(int ichan = 0);
   void optimizeULs(int nruns, int seed = -1);
+  void bestUL(const char *fname, int chan = 0, int nselections = 10); 
   void testEff(const char *additionalCuts, 
 	       const char *basicCuts="gmuid&&hlt&&gtqual&&m1pt>3&&m2pt>2.&&acos(cosa)<0.04&&iso1>0.7&&fls3d>13&&chi2<1.5&&pt>4");
   void optimizeCut(const char *cut, double lo, double hi, const char *otherCuts); 
   void playUL(int nruns = 10); 
+
+  void triggerSignal(const char *cuts = "iso1>0.6&&fls3d>4"); 
+  void triggerNorm(const char *cuts = "iso1>0.6&&fls3d>4&&chi2/dof<2"); 
 
   void normYield(TH1 *h, int mode, double lo = 5.15, double hi=5.5);
   void csYield(TH1 *h, int mode, double lo = 5.25, double hi=5.6);
@@ -122,6 +127,7 @@ public:
   void initNumbers(numbers *a); 
   void printNumbers(numbers &a, ostream &OUT);
   void printUlcalcNumbers();
+  void printCsBFNumbers();
   void texUlcalcNumbers(const char *filename, const char *output); 
   int  detChan(double m1eta, double m2eta);
 
@@ -194,6 +200,8 @@ public:
   std::vector<TH1D*> fhMassWithMassCutsManyBins; 
   std::vector<TH1D*> fhMuId;
   std::vector<TH1D*> fhMuTr;
+  std::vector<TH1D*> fh0PidTrigger, fh1PidTrigger, fh0PidMuID, fh1PidMuID;
+  std::vector<TH1D*> fh0MCTrigger, fh1MCTrigger, fh0MCMuID, fh1MCMuID;
 
 
   unsigned int fNchan;

@@ -1,5 +1,7 @@
+#include <vector>
+
 int chan, file, run; 
-float mlo, mhi, pt, m1pt, m2pt, iso1, chi2dof, alpha, fls3d; 
+float mlo, mhi, pt, m1pt, m2pt, iso1, chi2dof, alpha, fls3d, docatrk; 
 float ul, nobs, nexp, eff; 
 
 // ----------------------------------------------------------------------
@@ -25,9 +27,10 @@ void readOptimize(int nfiles = 50) {
   t->Branch("chi2dof", &chi2dof, "chi2dof/F");
   t->Branch("alpha", &alpha, "alpha/F");
   t->Branch("fls3d", &fls3d, "fls3d/F");
+  t->Branch("docatrk", &docatrk, "docatrk/F");
   
   for (int i = 0; i < nfiles; ++i) {
-    file = i; readfile(Form("optimizeUL-%d.txt", i), t);
+    file = i; readFile(Form("optimizeUL-%d.txt", i), t);
   }
 
   t->Write(); 
@@ -35,8 +38,9 @@ void readOptimize(int nfiles = 50) {
 
 }
 
+
 // ----------------------------------------------------------------------
-void readfile(const char *fname, TTree *t) {
+void readFile(const char *fname, TTree *t) {
 
   char  buffer[200];
   ifstream is(fname);
@@ -57,6 +61,7 @@ void readfile(const char *fname, TTree *t) {
     if (string::npos != line.find("chi2dof")) sscanf(buffer, "chi2dof %f", &chi2dof); 
     if (string::npos != line.find("alpha")) sscanf(buffer, "alpha %f", &alpha); 
     if (string::npos != line.find("fls3d")) sscanf(buffer, "fls3d %f", &fls3d); 
+    if (string::npos != line.find("docatrk")) sscanf(buffer, "docatrk %f", &docatrk); 
 
     if (string::npos != line.find("chan=0")) {
       sscanf(buffer, "==> effTot = %f chan=0 version=%d", &eff, &run); 
@@ -87,3 +92,6 @@ void readfile(const char *fname, TTree *t) {
   is.close();
 
 }
+
+
+

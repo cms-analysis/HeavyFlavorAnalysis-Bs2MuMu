@@ -1,6 +1,7 @@
 #include "anaBmm.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/util.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/functions.hh"
+#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
 #include "AnalysisDistribution.hh"
 #include "initFunc.hh"
 #include "mclimit_csm.hh"
@@ -20,6 +21,7 @@
 
 #include <iomanip>
 #include <string>
+#include <list>
 
 // Usage: root[0] anaBmm(
 
@@ -98,6 +100,9 @@ void anaBmm::init(const char *files, const char *dir, int mode) {
   readCuts(Form("anaBmm.%s.cuts", dir)); 
 
   printCuts(cout); 
+
+  int HBINS(15); 
+  double HLO(0.), HHI(45.); 
 
   numbers *a(0); 
   fNchan = fCuts.size(); 
@@ -178,6 +183,24 @@ void anaBmm::init(const char *files, const char *dir, int mode) {
 
     h = new TH1D(Form("hMuTr%d", i), Form("hMuTr%d", i), 100, 0., 1.);
     fhMuTr.push_back(h); 
+
+    h = new TH1D(Form("h0PidTrigger%d", i), Form("hPidTrigger%d", i), HBINS, HLO, HHI); h->Sumw2();
+    fh0PidTrigger.push_back(h); 
+    h = new TH1D(Form("h1PidTrigger%d", i), Form("hPidTrigger%d", i), HBINS, HLO, HHI);  h->Sumw2();
+    fh1PidTrigger.push_back(h); 
+    h = new TH1D(Form("h0PidMuID%d", i), Form("hPidMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
+    fh0PidMuID.push_back(h); 
+    h = new TH1D(Form("h1PidMuID%d", i), Form("hPidMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
+    fh1PidMuID.push_back(h); 
+
+    h = new TH1D(Form("h0MCTrigger%d", i), Form("hMCTrigger%d", i), HBINS, HLO, HHI); h->Sumw2();
+    fh0MCTrigger.push_back(h); 
+    h = new TH1D(Form("h1MCTrigger%d", i), Form("hMCTrigger%d", i), HBINS, HLO, HHI);  h->Sumw2();
+    fh1MCTrigger.push_back(h); 
+    h = new TH1D(Form("h0MCMuID%d", i), Form("hMCMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
+    fh0MCMuID.push_back(h); 
+    h = new TH1D(Form("h1MCMuID%d", i), Form("hMCMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
+    fh1MCMuID.push_back(h); 
   }
 
   cout << "----------------------------" << endl;
@@ -390,6 +413,12 @@ void anaBmm::loadFiles(const char *files) {
 	fF.insert(make_pair(sname, fpMc[fNMc])); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{+} #rightarrow #mu^{+}#mu^{-}K^{+} (Spring11)")); 
+      }
+      if (string::npos != stype.find("PU") && string::npos != stype.find("no")) {
+	sname = "NoPU"; 
+	fF.insert(make_pair(sname, fpMc[fNMc])); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{+} #rightarrow #mu^{+}#mu^{-}K^{+} (Summer11)")); 
       }
       if (string::npos != stype.find("default") && string::npos != stype.find("cs")) {
 	fCsMc = fNMc;
@@ -646,7 +675,7 @@ void anaBmm::dumpCutNames() {
     fTEX <<  Form("\\vdef{%s:%s:cutLine}   {\\ensuremath{{%s } } }", fSuffix.c_str(), cutstring.c_str(), cutline.c_str()) << endl;
     fTEX <<  Form("\\vdef{%s:%s:cutValue}  {\\ensuremath{{%s } } }", fSuffix.c_str(), cutstring.c_str(), cutvalue.c_str()) << endl;
     if (string::npos != cutstring.find("CANDCOSALPHA")) {
-      fTEX <<  Form("\\vdef{%s:CANDALPHA:cutLine}   {\\ensuremath{{\\alpha } } }", fSuffix.c_str(), cutstring.c_str()) << endl;
+      fTEX <<  Form("\\vdef{%s:CANDALPHA:cutLine}   {\\ensuremath{{\\alpha } } }", fSuffix.c_str()) << endl;
       fTEX <<  Form("\\vdef{%s:CANDALPHA:cutValue}  {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), TMath::ACos(value)) << endl;
     }
 
@@ -858,6 +887,7 @@ void anaBmm::effTable(string smode) {
       nE *=0.5; 
     }
 
+    if (nE > n) nE = 0.02*n;
     if (nE < normE) nE = normE;
     eff    = norm/n;
     if (eff > 1.0) eff = 1.0; 
@@ -1089,24 +1119,45 @@ void anaBmm::isoProcess(const char *var, const char *cuts) {
   string pdfname = Form("%s/%s_isoProcess.pdf", fDirectory.c_str(), fSuffix.c_str());
   if (c0) c0->SaveAs(pdfname.c_str());
 
-  loopTree(0, 40); 
-  double ggf0 = fNumbersBs[0]->effAna; 
-  double ggf1 = fNumbersBs[1]->effAna;
-  loopTree(0, 41); 
-  double fex0 = fNumbersBs[0]->effAna;
-  double fex1 = fNumbersBs[1]->effAna;
-  loopTree(0, 42); 
-  double gsp0 = fNumbersBs[0]->effAna;
-  double gsp1 = fNumbersBs[1]->effAna;
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << "% --- procid numbers" << endl;  
+  for (int i = 40; i <= 42; ++i) {
 
-  loopTree(0); 
-  double all0 = fNumbersBs[0]->effAna;
-  double all1 = fNumbersBs[1]->effAna;
+    loopTree(0, i); 
+    loopTree(10, i); 
 
-  cout << "GGF: " << ggf0  << " " << ggf1 << endl;
-  cout << "FEX: " << fex0  << " " << fex1 << endl;
-  cout << "GSP: " << gsp0  << " " << gsp1 << endl;
-  cout << "ALL: " << all0  << " " << all1 << endl;
+    for (int ichan = 0; ichan < 2; ++ichan) {
+      fTEX <<  Form("\\vdef{%s:procid%iChan%i:effTotSg}   {\\ensuremath{{%6.5f } } }", 
+		    fSuffix.c_str(), i, ichan, fNumbersBs[ichan]->effTot)
+	   << endl;
+      fTEX <<  Form("\\vdef{%s:procid%iChan%i:effTotNo}   {\\ensuremath{{%6.5f } } }", 
+		    fSuffix.c_str(), i, ichan, fNumbersNorm[ichan]->effTot)
+	   << endl;
+      fTEX <<  Form("\\vdef{%s:procid%iChan%i:effTotRatio}   {\\ensuremath{{%4.3f } } }", 
+		    fSuffix.c_str(), i, ichan, fNumbersBs[ichan]->effTot/fNumbersNorm[ichan]->effTot)
+	   << endl;
+
+      fTEX <<  Form("\\vdef{%s:procid%iChan%i:effAnaSg}   {\\ensuremath{{%6.5f } } }", 
+		    fSuffix.c_str(), i, ichan, fNumbersBs[ichan]->effAna)
+	   << endl;
+      fTEX <<  Form("\\vdef{%s:procid%iChan%i:effAnaNo}   {\\ensuremath{{%6.5f } } }", 
+		    fSuffix.c_str(), i, ichan, fNumbersNorm[ichan]->effAna)
+	   << endl;
+      fTEX <<  Form("\\vdef{%s:procid%iChan%i:effAnaRatio}   {\\ensuremath{{%4.3f } } }", 
+		    fSuffix.c_str(), i, ichan, fNumbersBs[ichan]->effAna/fNumbersNorm[ichan]->effAna)
+	   << endl;
+
+      fTEX <<  Form("\\vdef{%s:procid%iChan%i:accSg}   {\\ensuremath{{%6.5f } } }", 
+		    fSuffix.c_str(), i, ichan, fNumbersBs[ichan]->acc)
+	   << endl;
+      fTEX <<  Form("\\vdef{%s:procid%iChan%i:accNo}   {\\ensuremath{{%6.5f } } }", 
+		    fSuffix.c_str(), i, ichan, fNumbersNorm[ichan]->acc)
+	   << endl;
+      fTEX <<  Form("\\vdef{%s:procid%iChan%i:accRatio}   {\\ensuremath{{%4.3f } } }", 
+		    fSuffix.c_str(), i, ichan, fNumbersBs[ichan]->acc/fNumbersNorm[ichan]->acc)
+	   << endl;
+    }
+  }
   
 }
 
@@ -1124,19 +1175,28 @@ void anaBmm::rareBg() {
 
   std::map<string, int> colors, hatches;
   std::map<string, double> mscale;  // pions: 0.002, kaons: 0.005, protons: 0.001
+  std::map<string, double> err;  
   double epsPi = 0.003; 
-  double epsKa = 0.004; 
-  double epsPr = 0.001;
+  double epsKa = 0.003; 
+  double epsPr = 0.0005;
   colors.insert(make_pair("bg60", 46)); hatches.insert(make_pair("bg60", 3004)); mscale.insert(make_pair("bg60", epsPi*epsPr)); 
+  err.insert(make_pair("bg60", 0.3)); 
   colors.insert(make_pair("bg61", 49)); hatches.insert(make_pair("bg61", 3005)); mscale.insert(make_pair("bg61", epsKa*epsPr)); 
+  err.insert(make_pair("bg61", 0.31)); 
 
   colors.insert(make_pair("bg82", 30)); hatches.insert(make_pair("bg82", 3004)); mscale.insert(make_pair("bg82", epsKa*epsKa)); 
+  err.insert(make_pair("bg82", 0.15)); 
   colors.insert(make_pair("bg83", 32)); hatches.insert(make_pair("bg83", 3005)); mscale.insert(make_pair("bg83", epsPi*epsKa)); 
+  err.insert(make_pair("bg83", 0.22)); 
   colors.insert(make_pair("bg84", 33)); hatches.insert(make_pair("bg84", 3007)); mscale.insert(make_pair("bg84", epsPi*epsPi)); 
+  err.insert(make_pair("bg84", 1.0)); 
 
   colors.insert(make_pair("bg93", 40)); hatches.insert(make_pair("bg93", 3004)); mscale.insert(make_pair("bg93", epsKa*epsKa)); 
+  err.insert(make_pair("bg93", 0.73)); 
   colors.insert(make_pair("bg92", 41)); hatches.insert(make_pair("bg92", 3005)); mscale.insert(make_pair("bg92", epsKa*epsPi)); 
+  err.insert(make_pair("bg92", 0.05)); 
   colors.insert(make_pair("bg91", 42)); hatches.insert(make_pair("bg91", 3007)); mscale.insert(make_pair("bg91", epsPi*epsPi)); 
+  err.insert(make_pair("bg91", 0.04)); 
 
   newLegend(0.65, 0.4, 0.80, 0.85); 
 
@@ -1583,7 +1643,7 @@ void anaBmm::histAcceptanceAndPreselection(numbers &a) {
 
 
 // ----------------------------------------------------------------------
-void anaBmm::accEffFromEffTree(numbers &a, cuts &b) {
+void anaBmm::accEffFromEffTree(numbers &a, cuts &b, int proc) {
 
   TTree *t  = (TTree*)(gFile->Get("effTree"));
   if (!t) {
@@ -1594,6 +1654,7 @@ void anaBmm::accEffFromEffTree(numbers &a, cuts &b) {
 
   bool sg(false), no(false), cs(false); 
 
+  int   bprocid; 
   bool  bhlt;
   float bg1pt, bg2pt, bg1eta, bg2eta;
   float bm1pt, bm1eta, bm2pt, bm2eta;
@@ -1606,6 +1667,7 @@ void anaBmm::accEffFromEffTree(numbers &a, cuts &b) {
   bool  bk1gt, bk2gt; 
 
   t->SetBranchAddress("hlt",&bhlt);
+  t->SetBranchAddress("procid",&bprocid);
 
   t->SetBranchAddress("g1pt",&bg1pt);
   t->SetBranchAddress("g2pt",&bg2pt);
@@ -1665,7 +1727,9 @@ void anaBmm::accEffFromEffTree(numbers &a, cuts &b) {
   for (int jentry = 0; jentry < nentries; jentry++) {
     nb = t->GetEntry(jentry);
     ++ngen;
+    if (proc > 0 && bprocid != proc) continue;
     if (sg) {
+      // -- Signal
       chan = detChan(bg1eta, bg2eta); 
       if (chan == a.index) {
 	++nchangen;
@@ -1696,6 +1760,7 @@ void anaBmm::accEffFromEffTree(numbers &a, cuts &b) {
 	}
       }
     } else if (no) {
+      // -- Normalization
       chan = detChan(bg1eta, bg2eta); 
       if (chan == a.index) {
 	++nchangen;
@@ -1726,11 +1791,12 @@ void anaBmm::accEffFromEffTree(numbers &a, cuts &b) {
 	}
       }
     } else if (cs) {
+      // -- Control sample
       chan = detChan(bg1eta, bg2eta); 
       if (chan == a.index) {
 	++nchangen;
-	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5) {
-	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 1. && bg4pt > 1.) {
+	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5 && TMath::Abs(bg4eta) < 2.5) {
+	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4 && bg4pt > 0.4) {
 	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.4 && bk2pt > 0.4
 		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4 && TMath::Abs(bk2eta) < 2.4
 		&& bm1gt && bm2gt && bk1gt && bk2gt
@@ -1863,7 +1929,7 @@ void anaBmm::computeNormUL() {
 
   cout << "effTot expected UL:    " << fUL << endl;
 
-  system(Form("../ulcalc/bin/ulcalc %s", fUlcalcFileName.c_str())); 
+  //  system(Form("../ulcalc/bin/ulcalc %s", fUlcalcFileName.c_str())); 
 
 }
 
@@ -1884,25 +1950,49 @@ void anaBmm::computeCsBF() {
   c0->Modified(); c0->Update();
 
   fNobs = static_cast<int>(fBgExp + 0.5);
+
+  fTEX << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;    
+  fTEX << "% -- Control sample branching fraction" << endl;
+  fTEX << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;    
   
-  double result = (fCsSig/fNormSig)
-    *(fu/fs)
-    *(fNumbersNorm[0]->acc/fNumbersCS[0]->acc)
-    *(fNumbersNorm[0]->effCand/fNumbersCS[0]->effCand)     
-    *(fNumbersNorm[0]->effMuidMC/fNumbersCS[0]->effMuidMC)
-    *(fNumbersNorm[0]->effTrigMC/fNumbersCS[0]->effTrigMC)
-    *(fNumbersNorm[0]->effAna/fNumbersCS[0]->effAna)
-    * fBF;
+  double result, resultE; 
+  for (int i = 0; i < 2; ++i) {
+    result = (fNumbersCS[i]->fitYield/fNumbersNorm[i]->fitYield)
+      *(fu/fs)
+      *(fNumbersNorm[i]->acc/fNumbersCS[i]->acc)
+      *(fNumbersNorm[i]->effCand/fNumbersCS[i]->effCand)     
+      *(fNumbersNorm[i]->effMuidMC/fNumbersCS[i]->effMuidMC)
+      *(fNumbersNorm[i]->effTrigMC/fNumbersCS[i]->effTrigMC)
+      *(fNumbersNorm[i]->effAna/fNumbersCS[i]->effAna)
+      *(fNumbersNorm[i]->effChan/fNumbersCS[i]->effChan)
+      * fBF;
 
-  cout << "fact branching fraction: " << result << endl;
+    
+    resultE = dRatio(fNumbersCS[i]->fitYield, fNumbersCS[i]->fitYieldE, fNumbersNorm[i]->fitYield, fNumbersNorm[i]->fitYieldE)
+      *(fu/fs)
+      *(fNumbersNorm[i]->acc/fNumbersCS[i]->acc)
+      *(fNumbersNorm[i]->effCand/fNumbersCS[i]->effCand)     
+      *(fNumbersNorm[i]->effMuidMC/fNumbersCS[i]->effMuidMC)
+      *(fNumbersNorm[i]->effTrigMC/fNumbersCS[i]->effTrigMC)
+      *(fNumbersNorm[i]->effAna/fNumbersCS[i]->effAna)
+      *(fNumbersNorm[i]->effChan/fNumbersCS[i]->effChan)
+      * fBF;
 
-  result = (fCsSig/fNormSig)
-    *(fu/fs)
-    *(fNumbersNorm[0]->effTot/fNumbersCS[0]->effTot)
-    * fBF;
+    cout << "chan " << i << ": fact branching fraction: " << result << "+/-" << resultE << endl;
+    
+    result = (fNumbersCS[i]->fitYield/fNumbersNorm[i]->fitYield)
+      *(fu/fs)
+      *(fNumbersNorm[i]->effTot/fNumbersCS[i]->effTot)
+      * fBF;
 
-  cout << "branching fraction: " << result << endl;
+    cout << "chan " << i << ": branching fraction: " << result << "+/-" << resultE << endl;
 
+    fTEX << formatTex(result, Form("%s:N-CSBF-BS%i:val", fSuffix.c_str(), i), 6) << endl;
+    fTEX << formatTex(resultE, Form("%s:N-CSBF-BS%i:err", fSuffix.c_str(), i), 6) << endl;
+
+  }
+
+  printCsBFNumbers();
 }
 
 // ----------------------------------------------------------------------
@@ -2016,6 +2106,7 @@ void anaBmm::plotWithCut(const char *var, const char *cuts, double cut, const ch
 
 // ----------------------------------------------------------------------
 TH1* anaBmm::loopTree(int mode, int proc) {
+  // the loopTree
   // -- mode definition
   // 0  Bs2MuMu MC
   // 1  Bd2MuMu MC
@@ -2025,9 +2116,12 @@ TH1* anaBmm::loopTree(int mode, int proc) {
   // 20 Bs2JpsiPhi MC
   // 21 Bs2JpsiPhi data
 
+  PidTable *ptT1 = new PidTable("pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
+  PidTable *ptT2 = new PidTable("pidtables/110606/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
+
   bool bp2jpsikp(false), bs2jpsiphi(false), isMC(false); 
 
-  cout << "--> loopTree with mode " << mode << endl;
+  cout << "--> loopTree with mode " << mode << " proc = " << proc << endl;
 
   numbers *aa(0);
   if (0 == mode) {
@@ -2074,18 +2168,22 @@ TH1* anaBmm::loopTree(int mode, int proc) {
   }
 
   // -- set up tree
+  double mass(0.); 
   TTree *t;
   t = (TTree*)gFile->Get("events");
-  int brun, bevt, btm, bq1, bq2, bprocid; 
+  int brun, bevt, bls, btm, bq1, bq2, bprocid; 
   double bg1pt, bg2pt, bg1eta, bg2eta;
-  double bm, bpt, beta, bcosa, biso1, bchi2, bdof, bdocatrk, bfls3d, bfl3dE, bfl3d, bm1pt, bm1eta, bm2pt, bm2eta;
+  double bm, bcm, bpt, beta, bcosa, biso1, biso4, bchi2, bdof, bdocatrk, bfls3d, bfl3dE, bfl3d, bm1pt, bm1eta, bm2pt, bm2eta;
   double bg3pt, bg3eta, bg4pt, bg4eta; 
   double bmkk, bdr;
   double bw8mu, bw8tr;
-  bool bhlt, bgmuid, bgtqual;
+  bool bhlt, bgmuid, bgtqual, bjson;
+  double tr1w8(0.), tr2w8(0.), trw8(0.);
   t->SetBranchAddress("run",&brun);
   t->SetBranchAddress("evt",&bevt);
   t->SetBranchAddress("hlt",&bhlt);
+  t->SetBranchAddress("ls",&bls);
+  t->SetBranchAddress("json",&bjson);
   t->SetBranchAddress("gmuid",&bgmuid);
   t->SetBranchAddress("gtqual",&bgtqual);
   t->SetBranchAddress("w8mu",&bw8mu);
@@ -2093,10 +2191,12 @@ TH1* anaBmm::loopTree(int mode, int proc) {
   t->SetBranchAddress("tm",&btm);
   t->SetBranchAddress("procid",&bprocid);
   t->SetBranchAddress("m",&bm);
+  t->SetBranchAddress("cm",&bcm);
   t->SetBranchAddress("pt",&bpt);
   t->SetBranchAddress("eta",&beta);
   t->SetBranchAddress("cosa",&bcosa);
   t->SetBranchAddress("iso1",&biso1);
+  t->SetBranchAddress("iso4",&biso4);
   t->SetBranchAddress("chi2",&bchi2);
   t->SetBranchAddress("dof",&bdof);
   t->SetBranchAddress("fls3d",&bfls3d);
@@ -2143,6 +2243,11 @@ TH1* anaBmm::loopTree(int mode, int proc) {
     if (10 == mode && 0 == btm) continue;
     if (20 == mode && 0 == btm) continue;
 
+    if (isMC && proc > 0) {
+      if (bprocid != proc) continue;
+    }
+
+
     // -- channel index
     fChan = -1; 
     pCuts = 0; 
@@ -2157,14 +2262,21 @@ TH1* anaBmm::loopTree(int mode, int proc) {
       continue;
     }
 
-    fhMassAbsNoCuts[fChan]->Fill(bm);
+    mass = bm; 
+    if (10 == mode || 11 == mode) {
+      mass = bcm; 
+    } else if (20 == mode || 21 == mode) {
+      mass = bcm; 
+    }
+    
+
+    fhMassAbsNoCuts[fChan]->Fill(mass);
     // -- require wide mass window
-    if (bm < fMassLo) continue;
-    if (fMassHi < bm) continue;
+    if (mass < fMassLo) continue;
+    if (fMassHi < mass) continue;
 
     // -- gen-level acceptance cuts
     if (isMC) {
-      if (proc > 0 && bprocid != proc) continue;
       if (TMath::Abs(bg1eta) > 2.5) continue;
       if (TMath::Abs(bg2eta) > 2.5) continue;
       if (TMath::Abs(bg1pt) < 1.0) continue;
@@ -2180,9 +2292,14 @@ TH1* anaBmm::loopTree(int mode, int proc) {
 	if (TMath::Abs(bg4eta) > 2.5) continue;
 	if (TMath::Abs(bg4pt) < 0.4) continue;
       }
+    } else {
+      if (!bjson) {
+	//	if (5 == mode) cout << "skipping run: " << brun << " LS: " << bls << endl;
+	continue;
+      }
     }
 
-    fhMassAcc[fChan]->Fill(bm);
+    fhMassAcc[fChan]->Fill(mass);
 
     // -- immutable cuts: require basic muon and trackQual cuts
     if (TMath::Abs(bm1eta) > 2.4) continue;
@@ -2196,19 +2313,24 @@ TH1* anaBmm::loopTree(int mode, int proc) {
     if (bfl3d > 2) continue;
 
     // -- Channel 
-    fhMassChan[fChan]->Fill(bm);
+    fhMassChan[fChan]->Fill(mass);
 
     
     // -- must fill this BEFORE the trigger requirement!
     if (bw8mu > 0.) {
       fhMuId[fChan]->Fill(bw8mu, 1./bw8mu); 
     }
+
+    fh0PidMuID[fChan]->Fill(bpt, bw8tr); 
+    fh1PidMuID[fChan]->Fill(bpt); 
+
+
     
     // -- now check for muon ID and trigger
-    if (false == bhlt) continue;
+    if (!isMC && false == bhlt) continue;
     if (false == bgmuid) continue;
 
-    fhMassNoCuts[fChan]->Fill(bm);
+    fhMassNoCuts[fChan]->Fill(mass);
 
     // -- weights for trigger
     if (bw8tr > 0.) {
@@ -2217,33 +2339,54 @@ TH1* anaBmm::loopTree(int mode, int proc) {
 
     // -- apply analysis cand selection 
     if (bpt < pCuts->pt) continue; 
-    if (biso1 < pCuts->iso1) continue; 
+    if (biso4 < pCuts->iso1) continue; 
     if (bchi2/bdof > pCuts->chi2dof) continue;
     if (TMath::IsNaN(bfls3d)) continue;
     if (bfls3d < pCuts->fls3d) continue;
     if (TMath::ACos(bcosa) > pCuts->alpha) continue;
+    if (bdocatrk < pCuts->docatrk) continue;
 
     if (bs2jpsiphi && bdr >0.3) continue;
     if (bs2jpsiphi && bmkk < 0.995) continue;
     if (bs2jpsiphi && bmkk > 1.045) continue;
 
-    fhMassWithCuts[fChan]->Fill(bm); 
-    fhMassWithCutsManyBins[fChan]->Fill(bm); 
+    tr1w8 = ptT1->effD(bm1pt, TMath::Abs(bm1eta), 0.)*ptT2->effD(bm1pt,TMath::Abs( bm1eta), 0.);
+    tr2w8 = ptT1->effD(bm2pt, TMath::Abs(bm2eta), 0.)*ptT2->effD(bm2pt, TMath::Abs(bm2eta), 0.);
+    trw8  = tr1w8*tr2w8; 
+
+    fh0PidTrigger[fChan]->Fill(bpt, trw8); 
+    fh1PidTrigger[fChan]->Fill(bpt); 
+
+    if (bhlt) {
+      fh0MCTrigger[fChan]->Fill(bpt); 
+    }
+    fh1MCTrigger[fChan]->Fill(bpt); 
+
+    fhMassWithCuts[fChan]->Fill(mass); 
+    fhMassWithCutsManyBins[fChan]->Fill(mass); 
     
-    if (0 == mode && bm < pCuts->mBsLo) continue;
-    if (0 == mode && bm > pCuts->mBsHi) continue;
-    if (1 == mode && bm < pCuts->mBdLo) continue;
-    if (1 == mode && bm > pCuts->mBdHi) continue;
-    if (10 == mode && bm < fNormLo) continue;
-    if (10 == mode && bm > fNormHi) continue;
-    if (20 == mode && bm < fCsLo) continue;
-    if (20 == mode && bm > fCsHi) continue;
+    if (0 == mode && mass < pCuts->mBsLo) continue;
+    if (0 == mode && mass > pCuts->mBsHi) continue;
+    if (1 == mode && mass < pCuts->mBdLo) continue;
+    if (1 == mode && mass > pCuts->mBdHi) continue;
+    if (10 == mode && mass < fNormLo) continue;
+    if (10 == mode && mass > fNormHi) continue;
+    if (20 == mode && mass < fCsLo) continue;
+    if (20 == mode && mass > fCsHi) continue;
 
-    fhMassWithMassCuts[fChan]->Fill(bm);
-    fhMassWithMassCutsManyBins[fChan]->Fill(bm); 
+    fhMassWithMassCuts[fChan]->Fill(mass);
+    fhMassWithMassCutsManyBins[fChan]->Fill(mass); 
 
-    if (5 == mode && bm > 4.8 && bm < 6.0) {
-      cout << Form("m = %4.3f pT = %4.3f eta = %4.3f", bm, bpt, beta)
+    if (5 == mode && mass > 4.8 && mass < 6.0) {
+      cout << Form("m = %4.3f pT = %4.3f eta = %4.3f", mass, bpt, beta)
+	//	   <<	" run = " << brun << " event = " << bevt
+	   << " chan = " << fChan 
+	   << Form(" mpt = %4.3f,%4.3f", bm1pt, bm2pt)
+	   << Form(" meta = %4.3f,%4.3f", TMath::Abs(bm1eta), TMath::Abs(bm2eta))
+	   << Form(" a = %4.3f iso = %4.3f chi2 = %4.3f fls3d = %4.3f, fl/E=%4.3f/%4.3f", 
+		   TMath::ACos(bcosa), biso1, bchi2/bdof, bfls3d, bfl3d, bfl3dE)
+	   << endl;
+      fOUT << Form("m = %4.3f pT = %4.3f eta = %4.3f", mass, bpt, beta)
 	//	   <<	" run = " << brun << " event = " << bevt
 	   << " chan = " << fChan 
 	   << Form(" mpt = %4.3f,%4.3f", bm1pt, bm2pt)
@@ -2316,12 +2459,15 @@ TH1* anaBmm::loopTree(int mode, int proc) {
 
     // -- Efficiency and acceptance
     if (isMC) {
-      accEffFromEffTree(*aa, *fCuts[i]);
+      accEffFromEffTree(*aa, *fCuts[i], proc);
       double a = fhMassNoCuts[i]->GetSumOfWeights(); 
       double b = fhMassWithCuts[i]->GetSumOfWeights();
       aa->ana0Yield   = a;
+      aa->ana0YieldE  = TMath::Sqrt(a);
       aa->anaYield    = b; 
+      aa->anaYieldE   = TMath::Sqrt(b); 
       aa->anaWmcYield = fhMassWithMassCuts[i]->GetSumOfWeights(); // "with mass cut"
+      aa->anaWmcYieldE= TMath::Sqrt(fhMassWithMassCuts[i]->GetSumOfWeights()); // "with mass cut"
       aa->effAna      = b/a;
       aa->effAnaE     = dEff(static_cast<int>(b), static_cast<int>(a));
       aa->effMuidPid  = fhMuId[i]->GetMean();
@@ -2346,12 +2492,16 @@ TH1* anaBmm::loopTree(int mode, int proc) {
     // -- compute PSD, PDS, etc
     if (0 == mode) {
       aa->pss = bs/tot;
+      aa->pssE = dEff(static_cast<int>(bs), static_cast<int>(tot)); 
       aa->pds = bd/tot;
+      aa->pdsE = dEff(static_cast<int>(bd), static_cast<int>(tot)); 
     } 
     
     if (1 == mode) {
       aa->pdd = bd/tot;
+      aa->pddE = dEff(static_cast<int>(bd), static_cast<int>(tot)); 
       aa->psd = bs/tot;
+      aa->psdE = dEff(static_cast<int>(bs), static_cast<int>(tot)); 
     } 
 
     if (0 == mode) {
@@ -2364,11 +2514,23 @@ TH1* anaBmm::loopTree(int mode, int proc) {
     } else if (5 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
       cout << "==> loopTree: DATA SIGNAL, channel " << i  << endl;
-      bgBlind(fhMassWithCuts[i], 1, 4.7, 6.0);
+      bgBlind(fhMassWithCuts[i], 1, fBgLo, fBgHi);
       cout << "fBgExp = " << fBgExp << "+/-" << fBgExpE << endl;
       cout << "fBgHist = " << fBgHist << "+/-" << fBgHistE << endl;
       aa->bgObs = fBgHist;
-      fhMassWithCuts[i]->Draw();
+      double scaleBs = (aa->mBsHi-aa->mBsLo)/(fBgHi-fBgLo);
+      double scaleBd = (aa->mBdHi-aa->mBdLo)/(fBgHi-fBgLo);
+      aa->bgBsExp  = scaleBs*aa->bgObs;
+      aa->bgBsExpE = scaleBs*TMath::Sqrt(aa->bgObs);
+      aa->bgBdExp  = scaleBd*aa->bgObs;
+      aa->bgBdExpE = scaleBd*TMath::Sqrt(aa->bgObs);
+      TH1D *h = fhMassWithCuts[i]; 
+      setHist(h, kBlack, 20, 1.); 
+      setTitles(h, "m_{#mu#mu} [GeV]", "Candidates/Bin", 0.05, 1.2, 1.3); 
+      h->SetMinimum(0.01); 
+      gStyle->SetOptStat(0); 
+      gStyle->SetOptTitle(0); 
+      h->Draw();
       c0->SaveAs(Form("%s/sig-data-chan%d.pdf", fDirectory.c_str(), i));
     } else if (10 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
@@ -2379,10 +2541,17 @@ TH1* anaBmm::loopTree(int mode, int proc) {
     } else if (11 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
       cout << "==> loopTree: DATA NORMALIZATION, channel " << i  << endl;
-      normYield(fhMassWithCuts[i], mode, 5.0, 5.5);
+      //      TH1D *h = fhMassWithCutsManyBins[i]; 
+      TH1D *h = fhMassWithCuts[i]; 
+      normYield(h, mode, 5.18, 5.55);
       aa->fitYield  = fNormSig; 
       aa->fitYieldE = fNormSigE; 
-      fhMassWithCuts[i]->Draw();
+      setHist(h, kBlack, 20, 1.); 
+      setTitles(h, "m_{#mu#muK} [GeV]", "Candidates/Bin", 0.05, 1.2, 1.6); 
+      h->SetMinimum(0.01); 
+      gStyle->SetOptStat(0); 
+      gStyle->SetOptTitle(0); 
+      h->Draw();
       c0->SaveAs(Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), i));
     } else if (20 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
@@ -2393,10 +2562,16 @@ TH1* anaBmm::loopTree(int mode, int proc) {
     } else if (21 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
       cout << "==> loopTree: DATA CONTROL SAMPLE, channel " << i  << endl;
-      csYield(fhMassWithCuts[i], mode, 5.0, 5.6);
+      TH1D *h = fhMassWithCuts[i]; 
+      csYield(h, mode, 5.25, 5.6);
       aa->fitYield  = fCsSig; 
       aa->fitYieldE = fCsSigE; 
-      fhMassWithCuts[i]->Draw();
+      setHist(h, kBlack, 20, 1.); 
+      setTitles(h, "m_{#mu#muKK} [GeV]", "Candidates/Bin", 0.05, 1.2, 1.6); 
+      h->SetMinimum(0.01); 
+      gStyle->SetOptStat(0); 
+      gStyle->SetOptTitle(0); 
+      h->Draw();
       c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), i));
     } 
 
@@ -2420,6 +2595,232 @@ TH1* anaBmm::loopTree(int mode, int proc) {
   }
 
   return fhMassWithCuts[0];
+}
+
+
+// ----------------------------------------------------------------------
+void anaBmm::triggerSignal(const char *cuts) {
+
+  static int version(0); 
+
+  string defaultCuts = "4.8<m&&m<6&&gmuid&&gtqual&&m1pt>3&&m2pt>3&&m1q*m2q<0&&abs(eta)<2.4&&abs(m2eta)<2.4&&pt>5&&abs(m1ip)<2&&abs(m2ip)<2";
+
+  string allCuts = defaultCuts + "&&" + cuts;
+  string hltCuts = defaultCuts + "&&" + cuts + "&&hlt";
+
+  int NBINS(15); 
+  double HLO(0.), HHI(45.); 
+  TH1D *M0 = new TH1D("M0", "", 40, 4.8, 6.0); 
+  TH1D *H0 = new TH1D("H0", "", NBINS, HLO, HHI); 
+  TH1D *H1 = new TH1D("H1", "", NBINS, HLO, HHI); 
+  TH1D *EF = new TH1D("EF", "", NBINS, HLO, HHI); EF->Sumw2(); 
+  
+  const int NFILE(6);
+  TFile *f1[NFILE]; 
+  f1[0] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-1313-bmt-ht.root"); 
+  f1[1] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-1313-bmt-photon.root"); 
+  f1[2] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-1313-bmt-jet.root"); 
+  f1[3] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-1313-bmt-multiJet.root"); 
+  f1[4] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-1313-bmt-singleElectron.root"); 
+  f1[5] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-1313-bmt-doubleElectron.root"); 
+
+  TTree *t; 
+
+
+  loopTree(0); 
+
+  c0->Clear(); 
+  c0->Divide(2,3); 
+  //  c0->Divide(2,2); 
+  gStyle->SetOptStat(0); 
+
+  double vEff[NFILE], vEffE[NFILE]; 
+  
+  for (int i = 0; i < NFILE; ++i) {
+    f1[i]->cd();
+    TH1D *m0 = new TH1D("m0", "", 40, 4.8, 6.0); 
+    TH1D *h0 = new TH1D("h0", "", NBINS, HLO, HHI); 
+    TH1D *h1 = new TH1D("h1", "", NBINS, HLO, HHI); 
+    t = (TTree*)f1[i]->Get("events"); 
+    
+    t->Draw("m>>m0", allCuts.c_str(), "goff");
+    double n0   = t->Draw("pt>>h0", allCuts.c_str(), "goff");
+    double n1   = t->Draw("pt>>h1", hltCuts.c_str(), "goff");
+    double eff  = n1/n0; 
+    double deff = dEff(static_cast<int>(n1), static_cast<int>(n0)); 
+
+    M0->Add(m0); 
+    H0->Add(h0); 
+    H1->Add(h1); 
+    
+    vEff[i]  = eff;
+    vEffE[i] = deff;
+
+    c0->cd(i+1); 
+    setFilledHist(h0, kBlack, kRed, 3004); 
+    h0->Draw();
+
+    setFilledHist(h1, kBlack, kBlue, 3005); 
+    h1->Draw("same");
+
+    tl->SetTextSize(0.03); tl->DrawLatex(0.2, 0.92, gFile->GetName()); 
+    tl->SetTextSize(0.04); tl->DrawLatex(0.5, 0.8, Form("eff = %3.0f/%3.0f", n1, n0)); 
+    tl->SetTextSize(0.04); tl->DrawLatex(0.55,0.72, Form("= %4.3f #pm %4.3f", eff, deff)); 
+    
+  }
+
+  double ave(0.), aveE(0.); 
+  average(ave, aveE, 3, vEff, vEffE); 
+
+  c0->SaveAs(Form("triggerSignal-pt-%d.pdf", version));     
+
+  c0->cd(NFILE+1); 
+  EF->Divide(H1, H0, 1., 1., "b"); 
+  EF->SetMinimum(0.); EF->SetMaximum(1.2);
+  EF->Draw(); 
+  tl->SetTextSize(0.03);  tl->DrawLatex(0.2, 0.92, cuts); 
+  tl->SetTextSize(0.04); tl->DrawLatex(0.5,0.85, Form("<#epsilon> = %4.3f #pm %4.3f", ave, aveE)); 
+
+
+  TH1D *h1 = (TH1D*)fh0PidTrigger[0]->Clone();
+  h1->SetName("heff"); 
+  h1->Divide(fh0PidTrigger[0], fh1PidTrigger[0], 1., 1., "b");
+  setHist(h1, kRed, 25, 1.); 
+  h1->Draw("samee");
+
+  TH1D *h2 = (TH1D*)fh0MCTrigger[0]->Clone();
+  h2->SetName("mceff"); 
+  h2->Divide(fh0MCTrigger[0], fh1MCTrigger[0], 1., 1., "b");
+  setHist(h2, kRed, 25, 1.); 
+  h2->Draw("samehist");
+
+  cout << Form("version: %3d eff = %4.3f+/-%4.3f", version, ave, aveE) << endl;
+
+
+  c0->Clear();
+  c0->Divide(1); 
+  EF->Draw();
+  h1->Draw("samee");
+  h2->Draw("samehist");
+  c0->SaveAs(Form("triggerSignal-eff-pt-%d.pdf", version));     
+ 
+  ++version;
+
+}
+
+
+// ----------------------------------------------------------------------
+void anaBmm::triggerNorm(const char *cuts) {
+
+  static int version(0); 
+
+  string defaultCuts = "4.8<m&&m<6&&gmuid&&gtqual&&m1pt>3&&m2pt>3&&m1q*m2q<0&&abs(eta)<2.4&&abs(m2eta)<2.4&&pt>5&&abs(m1ip)<2&&abs(m2ip)<2";
+
+  string allCuts = defaultCuts + "&&" + cuts;
+  string hltCuts = defaultCuts + "&&" + cuts + "&&hlt";
+
+  int NBINS(15); 
+  double HLO(0.), HHI(45.); 
+  TH1D *M0 = new TH1D("M0", "", 40, 4.8, 6.0); 
+  TH1D *H0 = new TH1D("H0", "", NBINS, HLO, HHI); 
+  TH1D *H1 = new TH1D("H1", "", NBINS, HLO, HHI); 
+  TH1D *EF = new TH1D("EF", "", NBINS, HLO, HHI); EF->Sumw2(); 
+  
+  const int NFILE(6); 
+  TFile *f1[NFILE]; 
+  f1[0] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-300521-bmt-ht.root"); 
+  f1[1] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-300521-bmt-photon.root"); 
+  f1[2] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-300521-bmt-jet.root"); 
+  f1[3] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-300521-bmt-multiJet.root"); 
+  f1[4] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-300521-bmt-singleElectron.root"); 
+  f1[5] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-300521-bmt-doubleElectron.root"); 
+
+  TTree *t; 
+
+  loopTree(0); 
+
+  c0->Clear(); 
+  c0->Divide(2,3); 
+  gStyle->SetOptStat(0); 
+
+  double vEff[NFILE], vEffE[NFILE]; 
+  
+  for (int i = 0; i < NFILE; ++i) {
+    f1[i]->cd();
+    TH1D *m0 = new TH1D("m0", "", 40, 4.8, 6.0); 
+    TH1D *h0 = new TH1D("h0", "", NBINS, HLO, HHI); 
+    TH1D *h1 = new TH1D("h1", "", NBINS, HLO, HHI); 
+    t = (TTree*)f1[i]->Get("events"); 
+    
+    t->Draw("m>>m0", allCuts.c_str(), "goff");
+    double n0   = t->Draw("pt>>h0", allCuts.c_str(), "goff");
+    double n1   = t->Draw("pt>>h1", hltCuts.c_str(), "goff");
+    double eff  = n1/n0; 
+    double deff = dEff(static_cast<int>(n1), static_cast<int>(n0)); 
+
+    M0->Add(m0); 
+    H0->Add(h0); 
+    H1->Add(h1); 
+    
+    vEff[i]  = eff;
+    vEffE[i] = deff;
+
+    c0->cd(i+1); 
+    setFilledHist(h0, kBlack, kRed, 3004); 
+    h0->Draw();
+
+    setFilledHist(h1, kBlack, kBlue, 3005); 
+    h1->Draw("same");
+
+    tl->SetTextSize(0.03); tl->DrawLatex(0.2, 0.92, gFile->GetName()); 
+    tl->SetTextSize(0.04); tl->DrawLatex(0.5, 0.8, Form("eff = %3.0f/%3.0f", n1, n0)); 
+    tl->SetTextSize(0.04); tl->DrawLatex(0.55,0.72, Form("= %4.3f #pm %4.3f", eff, deff)); 
+    
+  }
+
+  double ave(0.), aveE(0.); 
+  average(ave, aveE, NFILE, vEff, vEffE); 
+
+
+  c0->SaveAs(Form("triggerNorm-pt-%d.pdf", version));     
+
+  c0->cd(NFILE+1);
+  M0->Draw();  
+
+  c0->cd(NFILE+2); 
+  EF->Divide(H1, H0, 1., 1., "b"); 
+  EF->SetMinimum(0.); EF->SetMaximum(1.2);
+  EF->Draw(); 
+  tl->SetTextSize(0.03);  tl->DrawLatex(0.2, 0.92, cuts); 
+  tl->SetTextSize(0.04); tl->DrawLatex(0.5,0.85, Form("<#epsilon> = %4.3f #pm %4.3f", ave, aveE)); 
+
+  cout << Form("version: %3d eff = %4.3f+/-%4.3f", version, ave, aveE) << endl;
+
+
+  TH1D *h1 = (TH1D*)fh0PidTrigger[0]->Clone();
+  h1->SetName("heff"); 
+  h1->Divide(fh0PidTrigger[0], fh1PidTrigger[0], 1., 1., "b");
+  setHist(h1, kRed, 25, 1.); 
+  h1->Draw("samee");
+
+
+  TH1D *h2 = (TH1D*)fh0MCTrigger[0]->Clone();
+  h2->SetName("mceff"); 
+  h2->Divide(fh0MCTrigger[0], fh1MCTrigger[0], 1., 1., "b");
+  setHist(h2, kRed, 25, 1.); 
+  h2->Draw("samehist");
+
+
+
+  c0->Clear();
+  c0->Divide(1); 
+  EF->Draw();
+  h1->Draw("samee");
+  h2->Draw("samehist");
+  c0->SaveAs(Form("triggerNorm-eff-pt-%d.pdf", version));     
+
+  ++version;
+
 }
 
 
@@ -2484,10 +2885,10 @@ void anaBmm::optimizeULs(int nruns, int seed) {
   int version(-1); 
   ofstream OUT(Form("optimizeUL-%d.txt", seed)); 
 
-  int NCUTS(7);
-//string cuts[]   = {"m2pt", "m1pt","pt", "alpha", "chi2", "fls3d", "mwindow"}; 
-  double loCuts[] = {2.5,    3.0,   4,    0.02,    1.,     8,        0.020 };
-  double hiCuts[] = {3.5,    7.0,   10,   0.06,    3.,     20,       0.100};
+  int NCUTS(9);
+  //string cuts[] = {"m2pt", "m1pt","pt", "alpha", "chi2", "fls3d", "docatrk", "iso", "mwindow"}; 
+  double loCuts[] = {3.0,    3.0,   4.0,  0.02,    0.8,     8,       0.0,       0.7,  0.020 };
+  double hiCuts[] = {4.0,    7.0,   10.,  0.07,    2.2,     20,      0.1,       0.9,  0.100};
 
   if (seed > 0) {
     cout << "Setting random number seed " << seed << endl;
@@ -2503,15 +2904,16 @@ void anaBmm::optimizeULs(int nruns, int seed) {
     for (int i = 0; i < NCUTS; ++i) {
       cut = gRandom->Rndm()*(hiCuts[i]-loCuts[i]) + loCuts[i];
       for (int ic = 0; ic < 2; ++ic) {
-	fCuts[ic]->iso1 = 0.75;
 	if (0 == i) fCuts[ic]->m2pt = cut; 
 	if (1 == i) fCuts[ic]->m1pt = cut; 
 	if (2 == i) fCuts[ic]->pt = cut; 
 	if (3 == i) fCuts[ic]->alpha = cut; 
 	if (4 == i) fCuts[ic]->chi2dof = cut; 
 	if (5 == i) fCuts[ic]->fls3d = cut; 
-	if (6 == i) fCuts[ic]->mBsLo = 5.370 - cut; 
-	if (6 == i) fCuts[ic]->mBsHi = 5.370 + cut; 
+	if (6 == i) fCuts[ic]->docatrk = cut; 
+	if (7 == i) fCuts[ic]->iso1 = cut;
+	if (8 == i) fCuts[ic]->mBsLo = 5.370 - cut; 
+	if (8 == i) fCuts[ic]->mBsHi = 5.370 + cut; 
       }
     }
     printCuts(OUT); 
@@ -2553,6 +2955,114 @@ void anaBmm::optimizeULs(int nruns, int seed) {
 	OUT << "==> UL     = " << ulbayes << " chan=" << ichan << " version=" << version << endl;
       }
   }
+
+}
+
+
+struct bla{
+  double ul, nobs, nexp, eff; 
+  double mlo, mhi; 
+  double m1pt, m2pt, pt; 
+  double chi2dof, iso1, alpha, fls3d, docatrk; 
+};
+
+// ----------------------------------------------------------------------
+void anaBmm::bestUL(const char *fname, int ichan, int nsettings) {
+
+  TFile *f = TFile::Open(fname); 
+  
+  TTree *t = (TTree*)f->Get("t");
+
+  int chan, file, run; 
+  float mlo, mhi, pt, m1pt, m2pt, iso1, chi2dof, alpha, fls3d, docatrk; 
+  float ul, nobs, nexp, eff; 
+
+  t->SetBranchAddress("chan", &chan);
+  t->SetBranchAddress("file", &file);
+  t->SetBranchAddress("run", &run);
+  t->SetBranchAddress("ul", &ul);
+  t->SetBranchAddress("nobs", &nobs);
+  t->SetBranchAddress("nexp", &nexp);
+  t->SetBranchAddress("eff", &eff);
+
+  t->SetBranchAddress("mlo", &mlo);
+  t->SetBranchAddress("mhi", &mhi);
+  t->SetBranchAddress("pt", &pt);
+  t->SetBranchAddress("m1pt", &m1pt);
+  t->SetBranchAddress("m2pt", &m2pt);
+  t->SetBranchAddress("iso1", &iso1);
+  t->SetBranchAddress("chi2dof", &chi2dof);
+  t->SetBranchAddress("alpha", &alpha);
+  t->SetBranchAddress("fls3d", &fls3d);
+  t->SetBranchAddress("docatrk", &docatrk);
+
+  bla ini = {1., 0., 0., 0., 
+	     0., 0.,
+	     0., 0., 0., 
+	     0., 0., 0., 0., 0.};
+
+  list<bla> bestList(1, ini) ;
+
+  vector<bla> bestVector;
+  for (int i = 0 ; i < nsettings; ++i) {
+    bestVector.push_back(ini); 
+  }
+
+  bestVector.reserve(200000); 
+
+  int nb(0); 
+  int nentries = Int_t(t->GetEntries());
+  for (int jentry = 0; jentry < nentries; jentry++) {
+    nb = t->GetEntry(jentry);
+    if (chan != ichan) continue;
+    ini.ul = ul; 
+    ini.nobs = nobs; 
+    ini.nexp = nexp;
+    ini.eff = eff; 
+    ini.mlo = mlo; 
+    ini.mhi = mhi; 
+    ini.pt = pt; 
+    ini.m1pt = m1pt; 
+    ini.m2pt = m2pt; 
+    ini.iso1 = iso1; 
+    ini.chi2dof = chi2dof; 
+    ini.alpha = alpha; 
+    ini.fls3d = fls3d; 
+    ini.docatrk = docatrk; 
+    for (list<bla>::iterator i = bestList.begin(); i != bestList.end(); ++i) {
+      if (ini.ul < i->ul) { 
+	bestList.insert(i, ini); 
+	break;
+      }
+    }
+
+//     for (int i = 0; i < bestVector.size(); ++i) {
+//       if (ini.ul < bestVector[i].ul) { 
+// 	bestVector.insert(bestVector.begin() + i, 1, ini); 
+// 	break;
+//       }
+//     }
+  }
+
+  int icnt(0); 
+  for (list<bla>::iterator i = bestList.begin(); i != bestList.end(); ++i) {
+    ++icnt;
+    if (icnt > nsettings) break;
+    ini = *i;
+    cout << Form("ul=%2.1e nobs=%2.0f nexp=%4.3f e=%5.4f ", ini.ul,   ini.nobs,  ini.nexp, ini.eff)
+	 << Form("%4.3f<m<%4.3f pT=%3.2f ",  ini.mlo,  ini.mhi,  ini.pt)
+	 << Form("pt1=%3.2f pt2=%3.2f I=%3.2f c/d=%3.2f a=%4.3f f=%4.3f d=%4.3f", 
+		 ini.m1pt, ini.m2pt, ini.iso1, ini.chi2dof, ini.alpha, ini.fls3d, ini.docatrk)
+	 << endl;
+  }
+
+//   for (int i = 0; i < nsettings; ++i) {
+//     ini = bestVector[i];
+//     cout << Form("ul=%3.2e nobs=%2.0f nexp=%4.3f ", ini.ul,   ini.nobs,  ini.nexp)
+// 	 << Form("mlo=%4.3f mhi=%4.3f pT=%4.3f ",  ini.mlo,  ini.mhi,  ini.pt)
+// 	 << Form("m1pt=%4.3f m2pt=%4.3f iso=%4.3f c/d=%4.3f a=%4.3f fls3d=%4.3f", ini.m1pt, ini.m2pt, ini.iso1, ini.chi2dof, ini.alpha, ini.fls3d)
+// 	 << endl;
+//   }
 
 }
 
@@ -2845,7 +3355,7 @@ void anaBmm::csYield(TH1 *h, int mode, double lo, double hi) {
   double cE = h->GetFunction("f1")->GetParError(0); 
 
   fCsSig = c/h->GetBinWidth(1);
-  fCsSigE = cE/c*fNormSig;
+  fCsSigE = cE/c*fCsSig;
 
   cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
   
@@ -2871,7 +3381,9 @@ string anaBmm::formatTex(double n, std::string name, int digits) {
   } else if (4 == digits ) {
     sprintf(line, "\\vdef{%s}   {\\ensuremath{{%5.4f } } }", name.c_str(), n);
   } else if (5 == digits ) {
-    sprintf(line, "\\vdef{%s}   {\\ensuremath{{%5.5f } } }", name.c_str(), n);
+    sprintf(line, "\\vdef{%s}   {\\ensuremath{{%6.5f } } }", name.c_str(), n);
+  } else if (6 == digits ) {
+    sprintf(line, "\\vdef{%s}   {\\ensuremath{{%7.6f } } }", name.c_str(), n);
   } else {
     sprintf(line, "\\vdef{%s}   {\\ensuremath{{%f } } }", name.c_str(), n);
   }
@@ -3011,6 +3523,41 @@ void anaBmm::texUlcalcNumbers(const char *filename, const char *output) {
 
 
 // ----------------------------------------------------------------------
+void anaBmm::printCsBFNumbers() {
+
+  fTEX << " %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;
+  for (unsigned int i = 0; i < fNchan; ++i) {
+    fTEX << "% -- CONTROL SAMPLE " << i << endl;
+    fTEX << formatTex(fNumbersCS[i]->effTot, Form("%s:N-EFF-TOT-BS%i:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersCS[i]->effTotE, Form("%s:N-EFF-TOT-BS%i:err", fSuffix.c_str(), i), 4) << endl;
+
+    fTEX << formatTex(fNumbersCS[i]->acc, Form("%s:N-ACC-BS%i:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersCS[i]->accE, Form("%s:N-ACC-BS%i:err", fSuffix.c_str(), i), 4) << endl;
+
+    fTEX << formatTex(fNumbersCS[i]->effMuidPid, Form("%s:N-EFF-MU-PID-BS%i:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersCS[i]->effMuidPidE, Form("%s:N-EFF-MU-PID-BS%i:err", fSuffix.c_str(), i), 4) << endl;
+
+    fTEX << formatTex(fNumbersCS[i]->effMuidMC, Form("%s:N-EFF-MU-MC-BS%i:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersCS[i]->effMuidMCE, Form("%s:N-EFF-MU-MC-BS%i:err", fSuffix.c_str(), i), 4) << endl;
+
+    fTEX << formatTex(fNumbersCS[i]->effTrigPid, Form("%s:N-EFF-TRIG-PID-BS%i:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersCS[i]->effTrigPidE, Form("%s:N-EFF-TRIG-PID-BS%i:err", fSuffix.c_str(), i), 4) << endl;
+
+    fTEX << formatTex(fNumbersCS[i]->effTrigMC, Form("%s:N-EFF-TRIG-MC-BS%i:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersCS[i]->effTrigMCE, Form("%s:N-EFF-TRIG-MC-BS%i:err", fSuffix.c_str(), i), 4) << endl;
+
+    fTEX << formatTex(fNumbersCS[i]->effCand, Form("%s:N-EFF-CAND-BS%i:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersCS[i]->effCandE, Form("%s:N-EFF-CAND-BS%i:err", fSuffix.c_str(), i), 4) << endl;
+
+    fTEX << formatTex(fNumbersCS[i]->effAna*fNumbersCS[i]->effChan, Form("%s:N-EFF-ANA-BS%i:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersCS[i]->effAnaE*fNumbersCS[i]->effChan, Form("%s:N-EFF-ANA-BS%i:err", fSuffix.c_str(), i), 4) << endl;
+
+    fTEX << formatTex(fNumbersCS[i]->fitYield, Form("%s:N-OBS-BS%i:val", fSuffix.c_str(), i), 0) << endl;
+    fTEX << formatTex(fNumbersCS[i]->fitYieldE, Form("%s:N-OBS-BS%i:err", fSuffix.c_str(), i), 0) << endl;
+  }
+}
+
+// ----------------------------------------------------------------------
 void anaBmm::printUlcalcNumbers() {
   ofstream OUT(fUlcalcFileName.c_str());
 
@@ -3024,31 +3571,40 @@ void anaBmm::printUlcalcNumbers() {
 
       OUT << "#EFF_TOT_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effTot << endl;
       fTEX << formatTex(fNumbersNorm[i]->effTot, Form("%s:N-EFF-TOT-BPLUS%i:val", fSuffix.c_str(), i), 4) << endl;
+      fTEX << formatTex(fNumbersNorm[i]->effTotE, Form("%s:N-EFF-TOT-BPLUS%i:err", fSuffix.c_str(), i), 4) << endl;
 
       OUT << "ACC_BPLUS\t" << i << "\t" << fNumbersNorm[i]->acc << endl;
-      fTEX << formatTex(fNumbersNorm[i]->acc, Form("%s:N-ACC-BPLUS:val", fSuffix.c_str()), 4) << endl;
+      fTEX << formatTex(fNumbersNorm[i]->acc, Form("%s:N-ACC-BPLUS%i:val", fSuffix.c_str(), i), 4) << endl;
+      fTEX << formatTex(fNumbersNorm[i]->accE, Form("%s:N-ACC-BPLUS%i:err", fSuffix.c_str(), i), 4) << endl;
 
       //    OUT << "EFF_MU_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effMuidPid << endl;
       fTEX << formatTex(fNumbersNorm[i]->effMuidPid, Form("%s:N-EFF-MU-PID-BPLUS%i:val", fSuffix.c_str(), i), 4) << endl;
+      fTEX << formatTex(fNumbersNorm[i]->effMuidPidE, Form("%s:N-EFF-MU-PID-BPLUS%i:err", fSuffix.c_str(), i), 4) << endl;
 
       OUT << "EFF_MU_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effMuidMC << endl;
       fTEX << formatTex(fNumbersNorm[i]->effMuidMC, Form("%s:N-EFF-MU-MC-BPLUS%i:val", fSuffix.c_str(), i), 4) << endl;
+      fTEX << formatTex(fNumbersNorm[i]->effMuidMCE, Form("%s:N-EFF-MU-MC-BPLUS%i:err", fSuffix.c_str(), i), 4) << endl;
 
       //    OUT << "EFF_TRIG_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effTrigPid << endl;
       fTEX << formatTex(fNumbersNorm[i]->effTrigPid, Form("%s:N-EFF-TRIG-PID-BPLUS%i:val", fSuffix.c_str(), i), 4) << endl;
+      fTEX << formatTex(fNumbersNorm[i]->effTrigPidE, Form("%s:N-EFF-TRIG-PID-BPLUS%i:err", fSuffix.c_str(), i), 4) << endl;
 
       OUT << "EFF_TRIG_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effTrigMC << endl;
       fTEX << formatTex(fNumbersNorm[i]->effTrigMC, Form("%s:N-EFF-TRIG-MC-BPLUS%i:val", fSuffix.c_str(), i), 4) << endl;
+      fTEX << formatTex(fNumbersNorm[i]->effTrigMCE, Form("%s:N-EFF-TRIG-MC-BPLUS%i:err", fSuffix.c_str(), i), 4) << endl;
 
       OUT << "EFF_CAND_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effCand << endl;
       fTEX << formatTex(fNumbersNorm[i]->effCand, Form("%s:N-EFF-CAND-BPLUS%i:val", fSuffix.c_str(), i), 4) << endl;
+      fTEX << formatTex(fNumbersNorm[i]->effCandE, Form("%s:N-EFF-CAND-BPLUS%i:err", fSuffix.c_str(), i), 4) << endl;
 
       //    OUT << "EFF_ANA_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effAna << endl;
       OUT << "EFF_ANA_BPLUS\t" << i << "\t" << fNumbersNorm[i]->effAna*fNumbersNorm[i]->effChan << endl;
       fTEX << formatTex(fNumbersNorm[i]->effAna*fNumbersNorm[i]->effChan, Form("%s:N-EFF-ANA-BPLUS%i:val", fSuffix.c_str(), i), 4) << endl;
+      fTEX << formatTex(fNumbersNorm[i]->effAnaE*fNumbersNorm[i]->effChan, Form("%s:N-EFF-ANA-BPLUS%i:err", fSuffix.c_str(), i), 4) << endl;
 
       OUT << "OBS_BPLUS\t" << i << "\t" << fNumbersNorm[i]->fitYield << endl;
       fTEX << formatTex(fNumbersNorm[i]->fitYield, Form("%s:N-OBS-BPLUS%i:val", fSuffix.c_str(), i), 0) << endl;
+      fTEX << formatTex(fNumbersNorm[i]->fitYieldE, Form("%s:N-OBS-BPLUS%i:err", fSuffix.c_str(), i), 0) << endl;
     } 
   } else {
     OUT << "TOT_BPLUS\t" << "0\t" << (fDataLumi[fSgData]/39.4)*440000 << endl;
@@ -3063,6 +3619,10 @@ void anaBmm::printUlcalcNumbers() {
 
     OUT << "OBS_BKG\t" << i << "\t" << fNumbersBs[i]->bgObs << endl;
     fTEX << formatTex(fNumbersBs[i]->bgObs, Form("%s:N-OBS-BKG%d:val", fSuffix.c_str(), i), 0) << endl;
+    fTEX << formatTex(fNumbersBs[i]->bgBsExp, Form("%s:N-EXP-BSMM%d:val", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBs[i]->bgBsExpE, Form("%s:N-EXP-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBs[i]->bgBdExp, Form("%s:N-EXP-BDMM%d:val", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBs[i]->bgBdExpE, Form("%s:N-EXP-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
 
     OUT << "LOW_BD\t" << i << "\t" << fNumbersBs[i]->mBdLo << endl;
     fTEX << formatTex(fNumbersBs[i]->mBdLo, Form("%s:N-LOW-BD%d:val", fSuffix.c_str(), i), 3) << endl;
@@ -3078,63 +3638,83 @@ void anaBmm::printUlcalcNumbers() {
 
     OUT << "PSS\t" << i << "\t" << fNumbersBs[i]->pss << endl;
     fTEX << formatTex(fNumbersBs[i]->pss, Form("%s:N-PSS%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->pssE, Form("%s:N-PSS%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "PSD\t" << i << "\t" << fNumbersBd[i]->psd << endl;
     fTEX << formatTex(fNumbersBs[i]->psd, Form("%s:N-PSD%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->psdE, Form("%s:N-PSD%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "PDS\t" << i << "\t" << fNumbersBs[i]->pds << endl;
     fTEX << formatTex(fNumbersBs[i]->pds, Form("%s:N-PDS%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->pdsE, Form("%s:N-PDS%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "PDD\t" << i << "\t" << fNumbersBd[i]->pdd << endl;
     fTEX << formatTex(fNumbersBs[i]->pdd, Form("%s:N-PDD%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->pddE, Form("%s:N-PDD%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "#EFF_TOT_BSMM\t" << i << "\t" << fNumbersBs[i]->effTot << endl;
     fTEX << formatTex(fNumbersBs[i]->effTot, Form("%s:N-EFF-TOT-BSMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effTotE, Form("%s:N-EFF-TOT-BSMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "ACC_BSMM\t" << i << "\t" << fNumbersBs[i]->acc << endl;
     fTEX << formatTex(fNumbersBs[i]->acc, Form("%s:N-ACC-BSMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->accE, Form("%s:N-ACC-BSMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     //    OUT << "EFF_MU_BSMM\t" << i << "\t" << fNumbersBs[i]->effMuidPid << endl;
     fTEX << formatTex(fNumbersBs[i]->effMuidPid, Form("%s:N-EFF-MU-PID-BSMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effMuidPidE, Form("%s:N-EFF-MU-PID-BSMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "EFF_MU_BSMM\t" << i << "\t" << fNumbersBs[i]->effMuidMC << endl;
     fTEX << formatTex(fNumbersBs[i]->effMuidMC, Form("%s:N-EFF-MU-MC-BSMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effMuidMCE, Form("%s:N-EFF-MU-MC-BSMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     //    OUT << "EFF_TRIG_BSMM\t" << i << "\t" << fNumbersBs[i]->effTrigPid << endl;
     fTEX << formatTex(fNumbersBs[i]->effTrigPid, Form("%s:N-EFF-TRIG-PID-BSMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effTrigPidE, Form("%s:N-EFF-TRIG-PID-BSMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "EFF_TRIG_BSMM\t" << i << "\t" << fNumbersBs[i]->effTrigMC << endl;
     fTEX << formatTex(fNumbersBs[i]->effTrigMC, Form("%s:N-EFF-TRIG-MC-BSMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effTrigMCE, Form("%s:N-EFF-TRIG-MC-BSMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "EFF_CAND_BSMM\t" << i << "\t" << fNumbersBs[i]->effCand << endl;
     fTEX << formatTex(fNumbersBs[i]->effCand, Form("%s:N-EFF-CAND-BSMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effCandE, Form("%s:N-EFF-CAND-BSMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "EFF_ANA_BSMM\t" << i << "\t" << fNumbersBs[i]->effAna*fNumbersBs[i]->effChan << endl;
     fTEX << formatTex(fNumbersBs[i]->effAna*fNumbersBs[i]->effChan, Form("%s:N-EFF-ANA-BSMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effAnaE*fNumbersBs[i]->effChan, Form("%s:N-EFF-ANA-BSMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "#EFF_TOT_BDMM\t" << i << "\t" << fNumbersBd[i]->effTot << endl;
-    fTEX << formatTex(fNumbersBd[i]->effCand, Form("%s:N-EFF-TOT-BDMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effTot, Form("%s:N-EFF-TOT-BDMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effTotE, Form("%s:N-EFF-TOT-BDMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "ACC_BDMM\t" << i << "\t" << fNumbersBd[i]->acc << endl;
     fTEX << formatTex(fNumbersBd[i]->acc, Form("%s:N-ACC-BDMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBd[i]->accE, Form("%s:N-ACC-BDMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     //    OUT << "EFF_MU_BDMM\t" << i << "\t" << fNumbersBd[i]->effMuidPid << endl;
     fTEX << formatTex(fNumbersBd[i]->effMuidPid, Form("%s:N-EFF-MU-PID-BDMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effMuidPidE, Form("%s:N-EFF-MU-PID-BDMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "EFF_MU_BDMM\t" << i << "\t" << fNumbersBd[i]->effMuidMC << endl;
     fTEX << formatTex(fNumbersBd[i]->effMuidMC, Form("%s:N-EFF-MU-MC-BDMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effMuidMCE, Form("%s:N-EFF-MU-MC-BDMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     //    OUT << "EFF_TRIG_BDMM\t" << i << "\t" << fNumbersBd[i]->effTrigPid << endl;
     fTEX << formatTex(fNumbersBd[i]->effTrigPid, Form("%s:N-EFF-TRIG-PID-BDMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effTrigPidE, Form("%s:N-EFF-TRIG-PID-BDMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "EFF_TRIG_BDMM\t" << i << "\t" << fNumbersBd[i]->effTrigMC << endl;
     fTEX << formatTex(fNumbersBd[i]->effTrigMC, Form("%s:N-EFF-TRIG-MC-BDMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effTrigMCE, Form("%s:N-EFF-TRIG-MC-BDMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "EFF_CAND_BDMM\t" << i << "\t" << fNumbersBd[i]->effCand << endl;
     fTEX << formatTex(fNumbersBd[i]->effCand, Form("%s:N-EFF-CAND-BDMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effCandE, Form("%s:N-EFF-CAND-BDMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "EFF_ANA_BDMM\t" << i << "\t" << fNumbersBd[i]->effAna*fNumbersBd[i]->effChan << endl;
     fTEX << formatTex(fNumbersBd[i]->effAna*fNumbersBd[i]->effChan, Form("%s:N-EFF-ANA-BDMM%d:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effAnaE*fNumbersBd[i]->effChan, Form("%s:N-EFF-ANA-BDMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
     OUT << "# Observed in signal boxes" << endl;
     OUT << "OBS_BSMM\t" << i << "\t" << fNumbersBs[i]->bsObs << endl;
@@ -3395,6 +3975,11 @@ void anaBmm::readCuts(const char *filename) {
       if (dump) cout << "fls3d:                 " << CutValue << endl;
     }
 
+    if (!strcmp(CutName, "docatrk")) {
+      a->docatrk = CutValue; ok = 1;
+      if (dump) cout << "docatrk:               " << CutValue << endl;
+    }
+
   }
 
   if (a) fCuts.push_back(a); 
@@ -3450,6 +4035,8 @@ void anaBmm::printCuts(ostream &OUT) {
     fTEX <<  Form("\\vdef{%s:alpha:%d}   {\\ensuremath{{%3.2f } } }", fSuffix.c_str(), a->index, a->alpha) << endl;
     OUT << "fls3d   " << a->fls3d << endl;
     fTEX <<  Form("\\vdef{%s:fls3d:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->fls3d) << endl;
+    OUT << "docatrk   " << a->docatrk << endl;
+    fTEX <<  Form("\\vdef{%s:docatrk:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->docatrk) << endl;
   }
   OUT.flush();
 }
@@ -3470,7 +4057,7 @@ void anaBmm::initNumbers(numbers *a) {
   // -- this is only relevant for the signal(s)
   a->pss   = a->pdd = 1.;
   a->psd   = a->pds = 1.;
-  a->bgObs = a->bgExp = a->bgExpE = 0; 
+  a->bgObs = a->bgBsExp = a->bgBsExpE = a->bgBdExp = a->bgBdExpE =0; 
   a->bsObs = a->bdObs = 0; 
   a->mBdLo = a->mBdHi = a->mBsLo = a->mBsHi = 0.;
 }

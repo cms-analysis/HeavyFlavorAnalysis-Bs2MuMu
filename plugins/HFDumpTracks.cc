@@ -235,6 +235,8 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     pTrack->fValidHits = trackView.numberOfValidHits();  
     pTrack->fAlgorithm = trackView.algo(); 
 
+    // -- see https://indico.cern.ch/getFile.py/access?contribId=2&resId=1&materialId=slides&confId=123067
+    pTrack->fDouble1 = trackView.validFraction(); 
 
     // -- from: RecoBTag/TrackProbability/src/TrackClassFilter.cc
     reco::TrackBase::TrackQuality trackQualityUndef         =  reco::TrackBase::qualityByName("undefQuality");

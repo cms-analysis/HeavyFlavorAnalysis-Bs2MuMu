@@ -117,6 +117,8 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   pM->fMuID    = muonID(rm);
   pM->fQ       = rm.charge();
 
+  pM->fMuonChi2   = rm.combinedQuality().trkKink;
+
   pM->fTimeInOut  = rm.time().timeAtIpInOut; 
   pM->fTimeInOutE = rm.time().timeAtIpInOutErr; 
   pM->fTimeOutIn  = rm.time().timeAtIpOutIn; 
