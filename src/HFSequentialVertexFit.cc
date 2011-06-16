@@ -1,7 +1,7 @@
 /*
  *  HFSequentialVertexFit.cc
  *
- *  Created by Christoph NŠgeli <christoph.naegeli@psi.ch> on 29.4.10.
+ *  Created by Christoph Nï¿½geli <christoph.naegeli@psi.ch> on 29.4.10.
  */
 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFSequentialVertexFit.h"
@@ -192,11 +192,44 @@ void HFSequentialVertexFit::saveTree(HFDecayTree *tree)
     pMomCand->fDau2 = dau2;
   }
 
+  // override the dxy of the daughters if requested
+  if (tree->daughtersToPV()) computeDaughterDistance(tree);
+
   // recursively continue
   for (treeIt = tree->getVerticesBeginIterator(); treeIt != tree->getVerticesEndIterator(); ++treeIt)
     saveTree(&(*treeIt));
 
 } // saveTree()
+
+void HFSequentialVertexFit::computeDaughterDistance(HFDecayTree *tree)
+{
+  TAnaCand *mom, *dau;
+  HFDecayTreeIterator it;
+  VertexDistanceXY axy;
+  VertexDistance3D a3d;
+  RefCountedKinematicTree dauTree;
+  RefCountedKinematicVertex dauVertex;
+
+  // Load the Primary Vertex Collection
+
+  mom = tree->getAnaCand();
+  for(it = tree->getVerticesBeginIterator(); it != tree->getVerticesEndIterator(); ++it) {
+    dau = it->getAnaCand();
+    if (!dau) continue;
+
+    dauTree = *(it->getKinematicTree());
+    dauTree->movePointerToTheTop();
+    dauVertex = dauTree->currentDecayVertex();
+
+    // Vertex Distanz neu berechnen zum PV: xy
+    dau->fVtx.fDxy  = axy.distance( (*fPVCollection)[mom->fPvIdx], dauVertex->vertexState() ).value();
+    dau->fVtx.fDxyE = axy.distance( (*fPVCollection)[mom->fPvIdx], dauVertex->vertexState() ).error();
+
+    // Vertex Distanz neu berechnen zum PV: 3d
+    dau->fVtx.fD3d  = a3d.distance( (*fPVCollection)[mom->fPvIdx], dauVertex->vertexState() ).value();
+    dau->fVtx.fD3dE = a3d.distance( (*fPVCollection)[mom->fPvIdx], dauVertex->vertexState() ).error();
+  }
+}
 
 // Utility routine to sort the mindoca array of the candidate...
 static bool doca_less(pair<int,pair<double,double> > x,pair<int,pair<double,double> > y)

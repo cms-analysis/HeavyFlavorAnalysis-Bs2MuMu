@@ -41,6 +41,7 @@ class HFSequentialVertexFit
   // wrapper for the template routine bellow
   TAnaCand *addCandidate(HFDecayTree *tree, VertexState *wrtVertexState = NULL);
   float getParticleMass(int particleID, float *mass_sigma);
+  void computeDaughterDistance(HFDecayTree *tree);
 
   // to create a covariance matrix for error propagation
   typedef ROOT::Math::SMatrix<double,3,3,ROOT::Math::MatRepSym<double,3> > cov33_t;
