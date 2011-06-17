@@ -11,7 +11,6 @@ class phiReader : public massReader {
 		virtual ~phiReader();
 		
 		virtual void bookHist();
-		virtual void eventProcessing();
 		
 	protected:
 		virtual void clearVariables();
@@ -25,25 +24,14 @@ class phiReader : public massReader {
 		float fMassJPsi;
 		float fMassJPsiRec;
 		float fMassPhi;
-		float fDeltaR; // deltaR of J/Psi Phi
 		float fDeltaR_Kaons; // delta R of the two Kaons
 		
-		float fPtMu1;
-		float fPtMu2;
 		float fPtKp1;
 		float fPtKp2;
 		
-		int fMuID1,fMuID2;
-		float fEtaMu1,fEtaMu2;
-		int fMuID_Kp1, fMuID_Kp2;
-		
-		int fTrackQual_mu1;
-		int fTrackQual_mu2;
 		int fTrackQual_kp1;
 		int fTrackQual_kp2;
 		
-		int fQ_mu1;
-		int fQ_mu2;
 		int fQ_kp1;
 		int fQ_kp2;
 		
@@ -52,13 +40,8 @@ class phiReader : public massReader {
 	
 	private:
 		// Additional cut variables
-		int fCutTrackQual_mu1;
-		int fCutTrackQual_mu2;
 		int fCutTrackQual_kp1;
 		int fCutTrackQual_kp2;
-		int fCutMuID_mask;
-		bool fCutMuID_reqall;
-		bool fCutOppSign_mu;
 		bool fCutOppSign_kp;
 		double fCutMass_JPsiLow;
 		double fCutMass_JPsiHigh;
@@ -66,13 +49,6 @@ class phiReader : public massReader {
 		double fCutMass_PhiHigh;
 		double fCutPt_Kp2;
 		double fCutDeltaR_Kaons;
-		double fCutPt_Mu2;
-	
-	private:
-		std::map<int,int> decay_indices; // (genIx, ident_muons)
-		unsigned long long total_counter;
-		unsigned long long reco_single;
-		unsigned long long reco_double;
 };
 
 #endif
