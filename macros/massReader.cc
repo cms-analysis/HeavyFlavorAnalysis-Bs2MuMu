@@ -94,6 +94,7 @@ void massReader::clearVariables()
 	fQ_mu1 = fQ_mu2 = 0;
 	fDeltaR = 0.0f; // deltaR
 	fNbrPV = 0;
+	fDeltaPhiMu = 0;
 	
 	memset(fTracksIx,0,sizeof(fTracksIx));
 	memset(fTracksIP,0,sizeof(fTracksIP));
@@ -217,6 +218,8 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		swap(fQ_mu1,fQ_mu2);
 	}
 	
+	fDeltaPhiMu = plabMu1.DeltaPhi(plabMu2);
+	
 	// Clean entries of nearest tracks
 	for (j = 0; j < NBR_TRACKS_STORE; j++) fTracksIx[j] = -1;
 	memset(fTracksIP,0,sizeof(fTracksIP));
@@ -324,6 +327,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("track_qual_mu2",&fTrackQual_mu2,"track_qual_mu2/I");
 	reduced_tree->Branch("q_mu1",&fQ_mu1,"q_mu1/I");
 	reduced_tree->Branch("q_mu2",&fQ_mu2,"q_mu2/I");
+	reduced_tree->Branch("delta_phi",&fDeltaPhiMu,"delta_phi/F");
 	reduced_tree->Branch("deltaR",&fDeltaR,"deltaR/F");
 	reduced_tree->Branch("d3",&fD3,"d3/F");
 	reduced_tree->Branch("d3e",&fD3E,"d3e/F");
@@ -675,6 +679,26 @@ int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 			
 			if (fpEvt->fHLTResult[j])
 				triggers |= kHLT_DoubleMu2_Bs_Bit;
+		} else if (trgName.find("HLT_Dimuon6p5_Jpsi_Displaced") <= trgName.size()) {
+			triggers_found |= kHLT_Dimuon6p5_Jpsi_Displaced_Bit;
+			
+			if (fpEvt->fHLTError[j]) {
+				triggers_err |= kHLT_Dimuon6p5_Jpsi_Displaced_Bit;
+				continue;
+			}
+			
+			if (fpEvt->fHLTResult[j])
+				triggers |= kHLT_Dimuon6p5_Jpsi_Displaced_Bit;
+		} else if (trgName.find("HLT_Dimuon7_Jpsi_Displaced") <= trgName.size()) {
+			triggers_found |= kHLT_Dimuon7_Jpsi_Displaced_Bit;
+			
+			if (fpEvt->fHLTError[j]) {
+				triggers_err |= kHLT_Dimuon7_Jpsi_Displaced_Bit;
+				continue;
+			}
+			
+			if (fpEvt->fHLTResult[j])
+				triggers |= kHLT_Dimuon7_Jpsi_Displaced_Bit;
 		}
 	}
 	
@@ -942,7 +966,7 @@ bool massReader::applyCut()
 		pass = ( (fTriggersFound & kHLT_DoubleMu0_Quarkonium_v1_Bit) && (fTriggers & kHLT_DoubleMu0_Quarkonium_v1_Bit) ) || ( ((fTriggersFound & kHLT_DoubleMu0_Quarkonium_v1_Bit) == 0) && (fTriggers & kHLT_DoubleMu0_Bit) );
 		
 		// 2011 Trigger
-		pass = pass || ( (fTriggers & kHLT_DoubleMu3_Jpsi_Bit) || (fTriggers & kHLT_DoubleMu3_Bs_Bit) || (fTriggers & kHLT_DoubleMu2_Bs_Bit) );
+		pass = pass || ( (fTriggers & kHLT_DoubleMu3_Jpsi_Bit) || (fTriggers & kHLT_DoubleMu3_Bs_Bit) || (fTriggers & kHLT_DoubleMu2_Bs_Bit) || (fTriggers & kHLT_Dimuon6p5_Jpsi_Displaced_Bit) || (fTriggers & kHLT_Dimuon7_Jpsi_Displaced_Bit) );
 		
 		if (!pass) goto bail;
 	}

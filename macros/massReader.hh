@@ -21,7 +21,9 @@ enum trigger_bits
 	kHLT_DoubleMu0_Quarkonium_v1_Bit	= 1 << 2,
 	kHLT_DoubleMu3_Jpsi_Bit				= 1 << 3,
 	kHLT_DoubleMu3_Bs_Bit				= 1 << 4,
-	kHLT_DoubleMu2_Bs_Bit				= 1 << 5
+	kHLT_DoubleMu2_Bs_Bit				= 1 << 5,
+	kHLT_Dimuon6p5_Jpsi_Displaced_Bit	= 1 << 6,
+	kHLT_Dimuon7_Jpsi_Displaced_Bit		= 1 << 7
 };
 
 // Truth Flags Bits
@@ -108,6 +110,7 @@ class massReader : public treeReader01 {
 		int fTrackQual_mu2; // track quality of muon 2
 		int fQ_mu1; // charge of muon 1
 		int fQ_mu2;	// charge of muon 2
+		float fDeltaPhiMu; // mu1.Phi(mu2)
 		// isolation variables. fIsoX_ptY means opening angle deltaR < X/10 and only sum over
 		// tracks with pt > Y/10 GeV
 		float fIso10_pt9;
