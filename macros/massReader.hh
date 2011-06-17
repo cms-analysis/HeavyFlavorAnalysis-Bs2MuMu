@@ -104,6 +104,10 @@ class massReader : public treeReader01 {
 		float fPtMu2_Gen; // pt of generator muon
 		float fEtaMu1_Gen; // eta of gen muon 1
 		float fEtaMu2_Gen; // eta of gen muon 2
+		int fTrackQual_mu1; // track quality of muon 1
+		int fTrackQual_mu2; // track quality of muon 2
+		int fQ_mu1; // charge of muon 1
+		int fQ_mu2;	// charge of muon 2
 		// isolation variables. fIsoX_ptY means opening angle deltaR < X/10 and only sum over
 		// tracks with pt > Y/10 GeV
 		float fIso10_pt9;
@@ -111,6 +115,12 @@ class massReader : public treeReader01 {
 		float fIso10_pt9_sv3u;
 		float fIso10_pt9_sv4u;
 		float fIso10_pt9_sv5u;
+		// muon properties
+		float fPtMu1,fPtMu2;
+		int fMuID1,fMuID2;
+		float fEtaMu1,fEtaMu2;
+		float fDeltaR; // deltaR of the muons
+		// triggers
 		int	fTriggers; // store some trigger information
 		int fTriggersError; // error information of trigger
 		int fTriggersFound; // what triggers were available
@@ -135,6 +145,11 @@ class massReader : public treeReader01 {
 		double fCutAlpha;
 		double fCutChi2ByNdof;
 		int fCutTruth; // truth matching
+		int fCutTrackQual_mu1;
+		int fCutTrackQual_mu2;
+		int fCutMuID_mask;
+		bool fCutMuID_reqall;
+		bool fCutOppSign_mu;
 };
 
 #endif

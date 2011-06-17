@@ -15,7 +15,12 @@ massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, 
 	fCutPt(0.0),
 	fCutAlpha(0.0),
 	fCutChi2ByNdof(0.0),
-	fCutTruth(0)
+	fCutTruth(0),
+	fCutTrackQual_mu1(0),
+	fCutTrackQual_mu2(0),
+	fCutMuID_mask(0),
+	fCutMuID_reqall(false),
+	fCutOppSign_mu(false)
 {	
 	fTreeName = "massReader reduced tree";
 	
@@ -82,6 +87,12 @@ void massReader::clearVariables()
 	fPtMu2_Gen = 0.0;
 	fEtaMu1_Gen = 0.0; // eta of gen muon 1
 	fEtaMu2_Gen = 0.0; // eta of gen muon 2
+	fPtMu1 = fPtMu2 = 0.0f;
+	fMuID1 = fMuID2 = 0;
+	fEtaMu1 = fEtaMu2 = 0.0f;
+	fTrackQual_mu1 = fTrackQual_mu2 = 0;
+	fQ_mu1 = fQ_mu2 = 0;
+	fDeltaR = 0.0f; // deltaR
 	fNbrPV = 0;
 	
 	memset(fTracksIx,0,sizeof(fTracksIx));
@@ -126,12 +137,17 @@ bail:
 int massReader::loadCandidateVariables(TAnaCand *pCand)
 {
 	TAnaTrack *pTrack;
+	TAnaTrack *sigTrack;
+	TAnaTrack *recTrack;
 	TAnaCand *momCand;
 	TGenCand *muGen;
 	TVector3 v1,v2,uVector;
 	unsigned j,k;
 	bool firstMu = true;
 	map<int,int> aTracks;
+	map<int,int> cand_tracks;
+	TVector3 plabMu1,plabMu2;
+	// FIXME: merge resources!
 	
 	clearVariables();
 	
@@ -159,6 +175,47 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fCtau = pCand->fTau3d;
 	fCtauE = pCand->fTau3dE;
 	fEta = pCand->fPlab.Eta();
+	
+	// Load muon variables
+	findAllTrackIndices(pCand,&cand_tracks);
+	for (map<int,int>::const_iterator it = cand_tracks.begin(); it!=cand_tracks.end(); ++it) {
+		
+		sigTrack = fpEvt->getSigTrack(it->second);
+		recTrack = fpEvt->getRecTrack(sigTrack->fIndex);
+		
+		switch (abs(sigTrack->fMCID)) {
+			case 13: // muon
+				if (firstMu) {
+					plabMu1 = sigTrack->fPlab;
+					fPtMu1 = sigTrack->fPlab.Perp();
+					fMuID1 = recTrack->fMuID > 0 ? recTrack->fMuID : 0;
+					fEtaMu1 = sigTrack->fPlab.Eta();
+					fTrackQual_mu1 = recTrack->fTrackQuality;
+					fQ_mu1 = recTrack->fQ;
+				} else {
+					plabMu2 = sigTrack->fPlab;
+					fPtMu2 = sigTrack->fPlab.Perp();
+					fMuID2 = recTrack->fMuID > 0 ? recTrack->fMuID : 0;
+					fEtaMu2 = sigTrack->fPlab.Eta();
+					fTrackQual_mu2 = recTrack->fTrackQuality;
+					fQ_mu2 = recTrack->fQ;
+				}
+				firstMu = false;
+				break;
+			default:
+				break;
+		}
+	}
+	
+	// make sure mu1 is leading and mu2 subleading
+	if (fPtMu1 < fPtMu2) {
+		swap(plabMu1,plabMu2);
+		swap(fPtMu1,fPtMu2);
+		swap(fMuID1,fMuID2);
+		swap(fEtaMu1,fEtaMu2);
+		swap(fTrackQual_mu1,fTrackQual_mu2);
+		swap(fQ_mu1,fQ_mu2);
+	}
 	
 	// Clean entries of nearest tracks
 	for (j = 0; j < NBR_TRACKS_STORE; j++) fTracksIx[j] = -1;
@@ -235,6 +292,9 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		swap(fEtaMu1_Gen,fEtaMu2_Gen);
 	}
 	
+	if (plabMu2.Perp() > 0)
+		fDeltaR = plabMu1.DeltaR(plabMu2);
+	
 	return 1;
 } // loadCandidateVariables()
 
@@ -254,6 +314,17 @@ void massReader::bookHist()
 	reduced_tree->Branch("truth_flags",&fTruthFlags,"truth_flags/I");
 	reduced_tree->Branch("eff_flags",&fEffFlags,"eff_flags/I");
 	reduced_tree->Branch("ident_muons",&fNbrMuons,"ident_muons/F");
+	reduced_tree->Branch("pt_mu1",&fPtMu1,"pt_mu1/F");
+	reduced_tree->Branch("pt_mu2",&fPtMu2,"pt_mu2/F");
+	reduced_tree->Branch("id_mu1",&fMuID1,"id_mu1/I");
+	reduced_tree->Branch("id_mu2",&fMuID2,"id_mu2/I");
+	reduced_tree->Branch("eta_mu1",&fEtaMu1,"eta_mu1/F");
+	reduced_tree->Branch("eta_mu2",&fEtaMu2,"eta_mu2/F");
+	reduced_tree->Branch("track_qual_mu1",&fTrackQual_mu1,"track_qual_mu1/I");
+	reduced_tree->Branch("track_qual_mu2",&fTrackQual_mu2,"track_qual_mu2/I");
+	reduced_tree->Branch("q_mu1",&fQ_mu1,"q_mu1/I");
+	reduced_tree->Branch("q_mu2",&fQ_mu2,"q_mu2/I");
+	reduced_tree->Branch("deltaR",&fDeltaR,"deltaR/F");
 	reduced_tree->Branch("d3",&fD3,"d3/F");
 	reduced_tree->Branch("d3e",&fD3E,"d3e/F");
 	reduced_tree->Branch("dxy",&fDxy,"dxy/F");
@@ -793,6 +864,35 @@ bool massReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 		goto bail;
 	}
 	
+	parsed = (strcmp(cutName,"TRACK_QUAL_MU1") == 0);
+	if (parsed) {
+		fCutTrackQual_mu1 = (int)cutLow;
+		if (dump) cout << "TRACK_QUAL_MU1: " << fCutTrackQual_mu1 << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"TRACK_QUAL_MU2") == 0);
+	if (parsed) {
+		fCutTrackQual_mu2 = (int)cutLow;
+		if (dump) cout << "TRACK_QUAL_MU2: " << fCutTrackQual_mu2 << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"OPPOSITE_SIGN_MU") == 0);
+	if (parsed) {
+		fCutOppSign_mu = (cutLow != 0.0f);
+		if (dump) cout << "OPPOSITE_SIGN_MU: " << fCutOppSign_mu << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"MUID") == 0);
+	if (parsed) {
+		fCutMuID_mask = (int)cutLow;
+		fCutMuID_reqall = (cutHigh != 0.0);
+		if (dump) cout << "MUID: mask " << fCutMuID_mask << " and require all " << fCutMuID_reqall << endl;
+		goto bail;
+	}
+	
 bail:
 	return parsed;
 } // parseCut()
@@ -846,6 +946,34 @@ bool massReader::applyCut()
 		
 		if (!pass) goto bail;
 	}
+	
+	// check track quality of mu1
+	if (fCutTrackQual_mu1) {
+		pass = (fTrackQual_mu1 & fCutTrackQual_mu1) != 0;
+		if (!pass) goto bail;
+	}
+	
+	// check track quality of mu2
+	if (fCutTrackQual_mu2) {
+		pass = (fTrackQual_mu2 & fCutTrackQual_mu2) != 0;
+		if (!pass) goto bail;
+	}
+	
+	// check the Muon ID
+	if (fCutMuID_mask != 0) {
+		if (fCutMuID_reqall)
+			pass = ((fMuID1 & fCutMuID_mask) == fCutMuID_mask) && ((fMuID2 & fCutMuID_mask) == fCutMuID_mask);
+		else
+			pass = ((fMuID1 & fCutMuID_mask) != 0) && ((fMuID2 & fCutMuID_mask) != 0);
+		
+		if (!pass) goto bail;
+	}
+	
+	// check opposite sign of muons
+	if (fCutOppSign_mu) {
+		pass = fQ_mu1 != fQ_mu2;
+		if (!pass) goto bail;
+	}	
 	
 bail:
 	return pass;
