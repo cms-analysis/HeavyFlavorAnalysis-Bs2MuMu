@@ -82,6 +82,7 @@ void massReader::clearVariables()
 	fPtMu2_Gen = 0.0;
 	fEtaMu1_Gen = 0.0; // eta of gen muon 1
 	fEtaMu2_Gen = 0.0; // eta of gen muon 2
+	fNbrPV = 0;
 	
 	memset(fTracksIx,0,sizeof(fTracksIx));
 	memset(fTracksIP,0,sizeof(fTracksIP));
@@ -114,6 +115,7 @@ int massReader::loadGeneratorVariables(TGenCand *pGen)
 	fPt = pGen->fP.Perp();
 	fEta = pGen->fP.Eta();
 	fTriggers = loadTrigger(&fTriggersError,&fTriggersFound);
+	fNbrPV = fpEvt->nPV();
 	
 	// save the candidate...
 	save = 1;
@@ -146,6 +148,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fChi2 = pCand->fVtx.fChi2;
 	fNdof = pCand->fVtx.fNdof;
 	fMaxDoca = pCand->fMaxDoca;
+	fNbrPV = fpEvt->nPV();
 	
 	fIso10_pt9 = calculateIsolation(pCand, 1.0, 0.9, false, 0.0);
 	fIso10_pt9_pv = calculateIsolation(pCand, 1.0, 0.9, true, 0.0);
@@ -275,6 +278,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("ctau",&fCtau,"ctau/F");
 	reduced_tree->Branch("ctaue",&fCtauE,"ctaue/F");
 	reduced_tree->Branch("eta",&fEta,"eta/F");
+	reduced_tree->Branch("nbr_pv",&fNbrPV,"nbr_pv/I");
 	reduced_tree->Branch("tracks_ix",fTracksIx,Form("tracks_ix[%d]/I",NBR_TRACKS_STORE));
 	reduced_tree->Branch("tracks_ip",fTracksIP,Form("tracks_ip[%d]/F",NBR_TRACKS_STORE));
 	reduced_tree->Branch("tracks_ipe",fTracksIPE,Form("tracks_ipe[%d]/F",NBR_TRACKS_STORE));
