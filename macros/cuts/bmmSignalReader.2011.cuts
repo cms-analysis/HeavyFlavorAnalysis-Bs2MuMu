@@ -2,6 +2,10 @@ TYPE           301313
 TRUTHCAND         531
 SELMODE            -1
 TRIGGER      HLT_DoubleMu3_Bs_v1,HLT_DoubleMu2_Bs_v1,HLT_DoubleMu2_Bs_v2,HLT_DoubleMu2_Bs_v3
+TRIGRANGE    HLT_DoubleMu3_Bs_v1(160329:161176)
+TRIGRANGE    HLT_DoubleMu2_Bs_v1(161216:163261)
+TRIGRANGE    HLT_DoubleMu2_Bs_v2(163269:163869)
+TRIGRANGE    HLT_DoubleMu2_Bs_v3(165088:999999)
 L1TRIGGER   L1_DoubleMuOpen
 JSON        cuts/Cert_160404-166861_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
 # -- boxes

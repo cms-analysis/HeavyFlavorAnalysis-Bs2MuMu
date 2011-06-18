@@ -440,6 +440,7 @@ void bmmBs2JpsiPhiReader::candMatch() {
 
 // ----------------------------------------------------------------------
 int bmmBs2JpsiPhiReader::tmCand(TAnaCand *pC) {
+  if (!fIsMC) return 0; 
   TAnaCand *pCand(0);
   for (int iC = 0; iC < static_cast<int>(fCands.size()); ++iC) {
     pCand = fCands[iC]; 
@@ -801,6 +802,8 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
     if (pD->fType == JPSITYPE) {
       if ((JPSIMASSLO < pD->fMass) && (pD->fMass < JPSIMASSHI)) fGoodJpsiMass = true;
       fJpsiMass = pD->fMass;
+      fJpsiPt   = pD->fPlab.Perp();
+      fJpsiEta  = pD->fPlab.Eta();
       //       cout << "type = " << pD->fType 
       //        	   << " with mass = " << pD->fMass 
       // 	   << " fGoodJpsiMass = " << fGoodJpsiMass 
@@ -866,6 +869,8 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
 
   TLorentzVector phiCand = ka1 + ka2; 
   fMKK     = phiCand.M();
+  fPhiPt   = phiCand.Pt();
+  fPhiEta  = phiCand.Eta();
 
   fGoodDeltaR = (fDeltaR < DELTAR);
   fGoodMKK    = ((MKKLO < fMKK ) && (fMKK < MKKHI)); 
@@ -997,21 +1002,33 @@ int bmmBs2JpsiPhiReader::tmCand2(TAnaCand *pC) {
 
 
 // ----------------------------------------------------------------------
-void bmmBs2JpsiPhiReader::fillCandidateHistograms() {
+void bmmBs2JpsiPhiReader::fillCandidateHistograms(int offset) {
   //  cout << "bmmBs2JpsiPhiReader::fillCandidateHistograms()" << endl;
   //   fAnaCuts.update(); 
   //   fAnaCuts.dumpAll(); 
 
-  fpDeltaR->fill(fDeltaR, fCandM); 
-  fpMKK->fill(fMKK, fCandM); 
+  //cout << "bmmBs2JpsiPhiReader::fillCandidateHistograms(" << offset << ") " << endl;
 
-  fpMpsi->fill(fJpsiMass, fCandM); 
-  fpTracksPt->fill(fKa1Pt, fCandM);
-  fpTracksPt->fill(fKa2Pt, fCandM);
-  fpTracksEta->fill(fKa1Eta, fCandM);
-  fpTracksEta->fill(fKa2Eta, fCandM);
+  fpDeltaR[offset]->fill(fDeltaR, fCandM); 
+  fpMKK[offset]->fill(fMKK, fCandM); 
 
-  bmmReader::fillCandidateHistograms(); 
+  fpMpsi[offset]->fill(fJpsiMass, fCandM); 
+  fpTracksPt[offset]->fill(fKa1Pt, fCandM);
+  fpTracksPt[offset]->fill(fKa2Pt, fCandM);
+  fpTracksEta[offset]->fill(fKa1Eta, fCandM);
+  fpTracksEta[offset]->fill(fKa2Eta, fCandM);
+
+  fpKaonsPt[offset]->fill(fKa1Pt, fCandM);
+  fpKaonsPt[offset]->fill(fKa2Pt, fCandM);
+  fpKaonsEta[offset]->fill(fKa1Eta, fCandM);
+  fpKaonsEta[offset]->fill(fKa2Eta, fCandM);
+
+  fpPsiPt[offset]->fill(fJpsiPt, fCandM); 
+  fpPsiEta[offset]->fill(fJpsiEta, fCandM); 
+  fpPhiPt[offset]->fill(fPhiPt, fCandM); 
+  fpPhiEta[offset]->fill(fPhiEta, fCandM); 
+
+  bmmReader::fillCandidateHistograms(offset); 
 }
 
 
@@ -1021,9 +1038,35 @@ void bmmBs2JpsiPhiReader::bookHist() {
   cout << "==> bmmBs2JpsiPhiReader: bookHist " << endl;
 
   // -- Additional analysis distributions
-  fpMpsi     = bookDistribution("mpsi", "m(J/#psi) [GeV]", "fGoodJpsiMass", 40, 2.8, 3.4);           
-  fpDeltaR   = bookDistribution("deltar", "#Delta R", "fGoodDeltaR", 50, 0., 1.);           
-  fpMKK      = bookDistribution("mkk", "m(KK) [GeV]", "fGoodMKK", 50, 0.95, 1.15);           
+//   vector<string> prefix;
+//   prefix.push_back(""); 
+//   prefix.push_back("B"); 
+//   prefix.push_back("E"); 
+//   prefix.push_back("PV0"); 
+//   prefix.push_back("PV1"); 
+//   prefix.push_back("BPV0"); 
+//   prefix.push_back("BPV1"); 
+//   prefix.push_back("EPV0"); 
+//   prefix.push_back("EPV1"); 
+//   for (int i = 0; i < NAD; ++i) {
+  string name; 
+  int i(0); 
+  for (map<string, int>::iterator imap = fRegion.begin(); imap != fRegion.end(); ++imap) {  
+    i    = imap->second;
+    name = imap->first + "_";
+
+    cout << "booking with offset = " << i << Form("   %smpsi", name.c_str()) << endl;
+    fpMpsi[i]    = bookDistribution(Form("%smpsi", name.c_str()), "m(J/#psi) [GeV]", "fGoodJpsiMass", 40, 2.8, 3.4);           
+    fpDeltaR[i]  = bookDistribution(Form("%sdeltar", name.c_str()), "#Delta R", "fGoodDeltaR", 50, 0., 1.);           
+    fpMKK[i]     = bookDistribution(Form("%smkk", name.c_str()), "m(KK) [GeV]", "fGoodMKK", 50, 0.95, 1.15);           
+    
+    fpKaonsPt[i] = bookDistribution(Form("%skaonspt", name.c_str()), "p_{T, K} [GeV]", "fGoodTracksPt", 25, 0., 25.);           
+    fpKaonsEta[i]= bookDistribution(Form("%skaonseta", name.c_str()), "#eta_{K}", "fGoodTracksEta", 25, -2.5, 2.5);
+    fpPsiPt[i]   = bookDistribution(Form("%spsipt", name.c_str()), "p_{T, J/#psi} [GeV]", "fGoodTracksPt", 25, 0., 25.);           
+    fpPsiEta[i]  = bookDistribution(Form("%spsieta", name.c_str()), "#eta_{J/#psi}", "fGoodTracksEta", 25, -2.5, 2.5);  
+    fpPhiPt[i]   = bookDistribution(Form("%sphipt", name.c_str()), "p_{T, #phi} [GeV]", "fGoodTracksPt", 25, 0., 25.);
+    fpPhiEta[i]  = bookDistribution(Form("%sphieta", name.c_str()), "#eta_{#phi}", "fGoodTracksEta", 25, -2.5, 2.5);  
+  }
 
   // -- Additional reduced tree variables
   fTree->Branch("mpsi",  &fJpsiMass, "mpsi/D");

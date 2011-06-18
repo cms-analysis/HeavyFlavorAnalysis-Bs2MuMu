@@ -590,6 +590,7 @@ void bmmSignalReader::candMatch() {
 
 // ----------------------------------------------------------------------
 int bmmSignalReader::tmCand(TAnaCand *pC) {
+  if (!fIsMC) return 0; 
   TAnaCand *pCand(0);
   for (int iC = 0; iC < static_cast<int>(fCands.size()); ++iC) {
     pCand = fCands[iC]; 

@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <map>
 
 #include <TROOT.h>
 #include <TString.h>
@@ -70,14 +71,16 @@ public:
   virtual AnalysisDistribution* bookDistribution(const char *hn, const char *ht, const char *hc, int nbins, double lo, double hi);
   virtual void                  candidateSelection(int mode = 0);  // 0 = closest in r-phi
   virtual void                  fillCandidateVariables(); 
-  virtual void                  fillCandidateHistograms();
+  virtual void                  fillCandidateHistograms(int offset);
   virtual void                  insertCand(TAnaCand*);
   virtual int                   tmCand(TAnaCand*);
   virtual int                   tmCand2(TAnaCand*);
   virtual double                isoClassic(TAnaCand*); 
-  virtual double                isoClassicOnePv(TAnaCand*); 
-  virtual double                isoClassicWithDOCA(TAnaCand*, float); 
+  virtual double                isoClassicOnePv(TAnaCand*, double r = 1.0, double ptmin = 0.9); 
+  virtual double                isoClassicWithDOCA(TAnaCand*, float dca, double r = 1.0, double ptmin = 0.9); 
+  virtual double                isoWithDOCA(TAnaCand*, float dca, double r = 1.0, double ptmin = 0.9); 
   virtual int                   checkCut(const char *, TH1D *); 
+  virtual std::string           splitTrigRange(string hlt, int &r1, int &r2);
 
 
   // -- Cut values
@@ -107,6 +110,8 @@ public:
     ;
   int TYPE, SELMODE, MUIDMASK, MUIDRESULT, TRACKQUALITY, JPSITYPE, TRUTHCAND, IGNORETRIGGER;
   std::vector<std::string> HLTPath, L1TPath; 
+  std::map<std::string, int> HLTRangeMin;
+  std::map<std::string, int> HLTRangeMax;
 
   bool fL1TMu0, fL1TMu3;
   bool fHLTMu0, fHLTMu3;
@@ -143,12 +148,16 @@ public:
   double                  fMu1PtNrf, fMu2PtNrf, fMu1EtaNrf, fMu2EtaNrf; // "now refitted"
   int                     fMu1Pix, fMu1BPix, fMu1BPixL1, fMu2Pix, fMu2BPix, fMu2BPixL1;
   double                  fMu1W8Mu, fMu1W8Tr, fMu2W8Mu, fMu2W8Tr; 
-  double                  fPvX, fPvY, fPvZ; 
+  double                  fPvX, fPvY, fPvZ, fPvNtrk; 
   int                     fPvN;
   double                  fJpsiMass;
   double                  fCandPt, fCandEta, fCandPhi, fCandM, fCandM2, fCandW8Tr, fCandW8Mu; 
   double                  fCandCosA, fCandA, fCandChi2, fCandDof, fCandProb, fCandFL3d, fCandFL3dE, fCandFLS3d, fCandFLSxy; 
-  double                  fCandIso, fCandIso1, fCandIso2, fCandIso3, fCandIso4 ; 
+  double                  fCandIso, fCandIso1, fCandIso2, fCandIso3, fCandIso4, fCandIso5;
+  double                  fIsoR05Pt03, fIsoR05Pt05, fIsoR05Pt07, fIsoR05Pt09, fIsoR05Pt11;
+  double                  fIsoR07Pt03, fIsoR07Pt05, fIsoR07Pt07, fIsoR07Pt09, fIsoR07Pt11;
+  double                  fIsoR10Pt03, fIsoR10Pt05, fIsoR10Pt07, fIsoR10Pt09, fIsoR10Pt11;
+  int                     fCandItrk, fCandI0trk, fCandI4trk; 
   double                  fCandDocaTrk, fMu1IP, fMu2IP, fCandPvTip, fCandPvTipE, fCandPvLip, fCandPvLipE; 
 
   double       MASSMIN,   MASSMAX; 
@@ -167,27 +176,32 @@ public:
 
   bool                    fPreselection; 
 
+  bool fBarrel; 
   AnalysisCuts fAnaCuts; 
 
   // -- Analysis distributions
-  AnalysisDistribution   *fpAllEvents, *fpHLT, *fpPvZ, *fpPvN,  
-    *fpTracksQual, *fpTracksPt,  *fpTracksEta, 
-    *fpMuonsID, *fpMuonsPt, *fpMuonsEta, *fpMuon1Pt, *fpMuon2Pt, *fpMuon1Eta, *fpMuon2Eta,
-    *fpMpsi,
-    *fpQ, *fpPt, *fpEta, 
-    *fpCosA, *fpCosA0, *fpAlpha,
-    *fpIso, *fpIso1, *fpIso2, *fpIso3, *fpIso4, 
-    *fpIsoPv1, *fpIsoPv2, *fpIsoPv3, *fpIsoPv4, *fpIsoPv5, *fpIsoPv6,  
-    *fpIso1Pv1, *fpIso1Pv2, *fpIso1Pv3, *fpIso1Pv4, *fpIso1Pv5, *fpIso1Pv6,  
-    *fpIso4Pv1, *fpIso4Pv2, *fpIso4Pv3, *fpIso4Pv4, *fpIso4Pv5, *fpIso4Pv6,  
-    *fpFLS3dPv1, *fpFLS3dPv2, *fpFLS3dPv3, *fpFLS3dPv4, *fpFLS3dPv5, *fpFLS3dPv6,  
-    *fpFLSxyPv1, *fpFLSxyPv2, *fpFLSxyPv3, *fpFLSxyPv4, *fpFLSxyPv5, *fpFLSxyPv6,  
-    *fpAlphaPv1, *fpAlphaPv2, *fpAlphaPv3, *fpAlphaPv4, *fpAlphaPv5, *fpAlphaPv6,  
-    *fpDoca, *fpIP,
-    *fpChi2, *fpChi2Dof, *fpProb, 
-    *fpFLS3d, *fpFLSxy, 
-    *fpFL3d, *fpFL3dE, 
-    *fpDocaTrk, *fpIP1, *fpIP2;   
+#define NAD 9
+
+  std::map<string, int> fRegion;
+
+  AnalysisDistribution   *fpAllEvents[NAD], *fpHLT[NAD], *fpPvZ[NAD], *fpPvN[NAD], *fpPvNtrk[NAD],  
+    *fpTracksQual[NAD], *fpTracksPt[NAD],  *fpTracksEta[NAD], 
+    *fpMuonsID[NAD], *fpMuonsPt[NAD], *fpMuonsEta[NAD], *fpMuon1Pt[NAD], *fpMuon2Pt[NAD], *fpMuon1Eta[NAD], *fpMuon2Eta[NAD],
+    *fpQ[NAD], *fpPt[NAD], *fpEta[NAD], 
+    *fpCosA[NAD], *fpCosA0[NAD], *fpAlpha[NAD],
+    *fpIso[NAD], *fpIso1[NAD], *fpIso2[NAD], *fpIso3[NAD], *fpIso4[NAD], *fpIso5[NAD], *fpI0trk[NAD], *fpI4trk[NAD], 
+    *fpIsoPv1[NAD], *fpIsoPv2[NAD], *fpIsoPv3[NAD], *fpIsoPv4[NAD], *fpIsoPv5[NAD], *fpIsoPv6[NAD],  
+    *fpIso1Pv1[NAD], *fpIso1Pv2[NAD], *fpIso1Pv3[NAD], *fpIso1Pv4[NAD], *fpIso1Pv5[NAD], *fpIso1Pv6[NAD],  
+    *fpIso4Pv1[NAD], *fpIso4Pv2[NAD], *fpIso4Pv3[NAD], *fpIso4Pv4[NAD], *fpIso4Pv5[NAD], *fpIso4Pv6[NAD],  
+    *fpIso5Pv1[NAD], *fpIso5Pv2[NAD], *fpIso5Pv3[NAD], *fpIso5Pv4[NAD], *fpIso5Pv5[NAD], *fpIso5Pv6[NAD],  
+    *fpFLS3dPv1[NAD], *fpFLS3dPv2[NAD], *fpFLS3dPv3[NAD], *fpFLS3dPv4[NAD], *fpFLS3dPv5[NAD], *fpFLS3dPv6[NAD],  
+    *fpFLSxyPv1[NAD], *fpFLSxyPv2[NAD], *fpFLSxyPv3[NAD], *fpFLSxyPv4[NAD], *fpFLSxyPv5[NAD], *fpFLSxyPv6[NAD],  
+    *fpAlphaPv1[NAD], *fpAlphaPv2[NAD], *fpAlphaPv3[NAD], *fpAlphaPv4[NAD], *fpAlphaPv5[NAD], *fpAlphaPv6[NAD],  
+    *fpDoca[NAD], *fpIP[NAD],
+    *fpChi2[NAD], *fpChi2Dof[NAD], *fpProb[NAD], 
+    *fpFLS3d[NAD], *fpFLSxy[NAD], 
+    *fpFL3d[NAD], *fpFL3dE[NAD], 
+    *fpDocaTrk[NAD], *fpIP1[NAD], *fpIP2[NAD];   
 
   // -- another reduced tree
   TTree       *fEffTree;
@@ -200,7 +214,7 @@ public:
 
   // -- PidTables
   PidTable *fpMuonID;
-  PidTable *fpMuonTr;
+  PidTable *fpMuonTr, *fpMuonTr1, *fpMuonTr2;
 
   std::vector<int> fEventVector;
 

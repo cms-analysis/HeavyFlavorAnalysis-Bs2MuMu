@@ -383,7 +383,7 @@ int bmmNormalizationReader::partialReco(TAnaCand *pCand) {
 
   bcounter bco[] = {{511, -1, 0}, {511, -1, 0}, {521, -1, 0}, {521, -1, 0}, {531, -1, 0}, {531, -1, 0}, {5122, -1, 0}, {5122, -1, 0}};
 
-  int idx(0), type(0), bIdx(0), bId(0), nsame(0), nother(0), pr(0); 
+  int idx(0), type(0), bIdx(0), bId(0);
   TAnaTrack *pT(0); 
   TGenCand *pG(0); 
   for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
@@ -650,6 +650,7 @@ void bmmNormalizationReader::candMatch() {
 
 // ----------------------------------------------------------------------
 int bmmNormalizationReader::tmCand(TAnaCand *pC) {
+  if (!fIsMC) return 0; 
   TAnaCand *pCand(0);
   for (int iC = 0; iC < static_cast<int>(fCands.size()); ++iC) {
     pCand = fCands[iC]; 
@@ -819,6 +820,8 @@ void bmmNormalizationReader::fillCandidateVariables() {
     if (pD->fType == JPSITYPE) {
       if ((JPSIMASSLO < pD->fMass) && (pD->fMass < JPSIMASSHI)) fGoodJpsiMass = true;
       fJpsiMass = pD->fMass;
+      fJpsiPt   = pD->fPlab.Perp(); 
+      fJpsiEta   = pD->fPlab.Eta(); 
       break;
       //       cout << "type = " << pD->fType 
       // 	   << " with mass = " << pD->fMass 
@@ -899,13 +902,21 @@ int bmmNormalizationReader::tmCand2(TAnaCand *pC) {
 
 
 // ----------------------------------------------------------------------
-void bmmNormalizationReader::fillCandidateHistograms() {
+void bmmNormalizationReader::fillCandidateHistograms(int offset) {
 
-  fpMpsi->fill(fJpsiMass, fCandM); 
-  fpTracksPt->fill(fKaonPt, fCandM);
-  fpTracksEta->fill(fKaonEta, fCandM);
+  //cout << "bmmNormalizationReader::fillCandidateHistograms(" << offset << ") " << endl;
 
-  bmmReader::fillCandidateHistograms(); 
+  fpMpsi[offset]->fill(fJpsiMass, fCandM); 
+  fpTracksPt[offset]->fill(fKaonPt, fCandM);
+  fpTracksEta[offset]->fill(fKaonEta, fCandM);
+
+  fpKaonPt[offset]->fill(fKaonPt, fCandM);
+  fpKaonEta[offset]->fill(fKaonEta, fCandM);
+
+  fpPsiPt[offset]->fill(fJpsiPt, fCandM); 
+  fpPsiEta[offset]->fill(fJpsiEta, fCandM); 
+
+  bmmReader::fillCandidateHistograms(offset); 
 
 }
 
@@ -914,7 +925,30 @@ void bmmNormalizationReader::bookHist() {
   bmmReader::bookHist();
 
   // -- Additional analysis distributions
-  fpMpsi   = bookDistribution("mpsi", "m(J/#psi) [GeV]", "fGoodJpsiMass", 40, 2.8, 3.4);           
+//   vector<string> prefix;
+//   prefix.push_back(""); 
+//   prefix.push_back("B"); 
+//   prefix.push_back("E"); 
+//   prefix.push_back("PV0"); 
+//   prefix.push_back("PV1"); 
+//   prefix.push_back("BPV0"); 
+//   prefix.push_back("BPV1"); 
+//   prefix.push_back("EPV0"); 
+//   prefix.push_back("EPV1"); 
+//   for (int i = 0; i < NAD; ++i) {
+
+  string name; 
+  int i(0); 
+  for (map<string, int>::iterator imap = fRegion.begin(); imap != fRegion.end(); ++imap) {  
+    i    = imap->second; 
+    name = imap->first + "_";
+    cout << "booking with offset = " << i << Form("   %smpsi", name.c_str()) << endl;
+    fpMpsi[i]     = bookDistribution(Form("%smpsi", name.c_str()), "m(J/#psi) [GeV]", "fGoodJpsiMass", 40, 2.8, 3.4);           
+    fpKaonPt[i]   = bookDistribution(Form("%skaonpt", name.c_str()), "p_{T, K} [GeV]", "fGoodTracksPt", 25, 0., 25.);           
+    fpKaonEta[i]  = bookDistribution(Form("%skaoneta", name.c_str()), "#eta_{K}", "fGoodTracksEta", 25, -2.5, 2.5);
+    fpPsiPt[i]    = bookDistribution(Form("%spsipt", name.c_str()), "p_{T, J/#psi} [GeV]", "fGoodTracksPt", 25, 0., 25.);           
+    fpPsiEta[i]   = bookDistribution(Form("%spsieta", name.c_str()), "#eta_{J/#psi}", "fGoodTracksEta", 25, -2.5, 2.5);  
+  }
 
   // -- Additional reduced tree variables
   fTree->Branch("mpsi", &fJpsiMass,  "mpsi/D");

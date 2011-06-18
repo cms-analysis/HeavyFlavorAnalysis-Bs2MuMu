@@ -34,7 +34,7 @@ public:
   void    bookHist();
   void    startAnalysis();
   void    eventProcessing();
-  void    fillCandidateHistograms();
+  void    fillCandidateHistograms(int offset = 0);
   void    readCuts(TString filename, int dump = 1);
   void    initVariables();
   void    MCKinematics();
@@ -54,6 +54,7 @@ public:
   double       fKPtGen, fKEtaGen;
   double       fKaonPtNrf, fKaonEtaNrf;
   int          fKaonTkQuality;
+  double       fJpsiPt, fJpsiEta;
 
   // -- TM
   int          fGenK1Tmi; 
@@ -63,6 +64,8 @@ public:
   float fETk1pt, fETk1eta, fETg3pt, fETg3eta;
   int   fETk1q; 
   bool  fETk1gt;
+
+  AnalysisDistribution *fpKaonPt[NAD], *fpKaonEta[NAD], *fpMpsi[NAD], *fpPsiPt[NAD], *fpPsiEta[NAD];
 
 };
 

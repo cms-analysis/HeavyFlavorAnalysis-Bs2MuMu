@@ -40,7 +40,7 @@ public:
   void    efficiencyCalculation();
   void    candidateSelection(int mode = 0); 
   void    fillCandidateVariables();
-  void    fillCandidateHistograms(); 
+  void    fillCandidateHistograms(int offset = 0); 
   int     tmCand(TAnaCand *pC);
   int     tmCand2(TAnaCand *pC);
   void    insertCand(TAnaCand* pCand);
@@ -51,6 +51,7 @@ public:
   
   double       fKa1Pt, fKa1Eta, fKa1Phi;
   double       fKa2Pt, fKa2Eta, fKa2Phi;
+  double       fJpsiPt, fJpsiEta, fPhiPt, fPhiEta; 
 
   double       fKa1PtNrf, fKa1EtaNrf;
   double       fKa2PtNrf, fKa2EtaNrf;
@@ -73,7 +74,10 @@ public:
   double            fDeltaR, fMKK;
   bool              fGoodDeltaR, fGoodMKK;
 
-  AnalysisDistribution   *fpMKK, *fpDeltaR; 
+  AnalysisDistribution *fpMpsi[NAD], *fpMKK[NAD], *fpDeltaR[NAD], 
+    *fpKaonsPt[NAD], *fpKaonsEta[NAD], 
+    *fpPsiPt[NAD], *fpPsiEta[NAD],  
+    *fpPhiPt[NAD], *fpPhiEta[NAD];
 
 };
 

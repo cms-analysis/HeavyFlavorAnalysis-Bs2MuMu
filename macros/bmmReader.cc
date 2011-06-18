@@ -23,6 +23,28 @@ bmmReader::bmmReader(TChain *tree, TString evtClassName): treeReader01(tree, evt
   MASSMAX = 6.5; 
   fVerbose = 0; 
 
+  cout << "==> Defining regions for histogramming" << endl;
+  fRegion.insert(make_pair("A", 0)); 
+  fRegion.insert(make_pair("APV0", 1)); 
+  fRegion.insert(make_pair("APV1", 2)); 
+  fRegion.insert(make_pair("B", 3)); 
+  fRegion.insert(make_pair("BPV0", 4)); 
+  fRegion.insert(make_pair("BPV1", 5)); 
+  fRegion.insert(make_pair("E", 6)); 
+  fRegion.insert(make_pair("EPV0", 7)); 
+  fRegion.insert(make_pair("EPV1", 8)); 
+
+  cout << "fRegion[\"A\"]:    " << fRegion["A"] << endl;
+  cout << "fRegion[\"APV0\"]: " << fRegion["APV0"] << endl;
+  cout << "fRegion[\"APV1\"]: " << fRegion["APV1"] << endl;
+  cout << "fRegion[\"B\"]:    " << fRegion["B"] << endl;
+  cout << "fRegion[\"BPV0\"]: " << fRegion["BPV0"] << endl;
+  cout << "fRegion[\"BPV1\"]: " << fRegion["BPV1"] << endl;
+  cout << "fRegion[\"E\"]:    " << fRegion["E"] << endl;
+  cout << "fRegion[\"EPV0\"]: " << fRegion["EPV0"] << endl;
+  cout << "fRegion[\"EPV1\"]: " << fRegion["EPV1"] << endl;
+
+
   cout << "reading events from  " << "evts" << endl;
   char  buffer[200];
   ifstream is("evts");
@@ -57,8 +79,13 @@ void bmmReader::startAnalysis() {
   cout << "==>bmmReader: setup PidTables" << endl;
 
   // -- Note that the return value is -99 for ranges not covered by the PidTables!
-  fpMuonID = new PidTable("pidtables/jpsi/data/muid0.both.dat"); 
-  fpMuonTr = new PidTable("pidtables/jpsi/data/mutrig0.both.dat"); 
+  //   fpMuonID = new PidTable("pidtables/jpsi/data/muid0.both.dat"); 
+  //   fpMuonTr = new PidTable("pidtables/jpsi/data/mutrig0.both.dat"); 
+  //   fpMuonTr = new PidTable("pidtables/jpsi/data/mutrig0.both.dat"); 
+
+  fpMuonID = new PidTable("pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
+  fpMuonTr1 = new PidTable("pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
+  fpMuonTr2 = new PidTable("pidtables/110606/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
 
   fpJSON = new JSON(JSONFILE.c_str()); 
   cout << "==> bmmReader: Starting analysis..." << endl;
@@ -126,17 +153,69 @@ void bmmReader::eventProcessing() {
       if (fVerbose > 4) cout << "Filling candidate " << iC 
 			     << " with sig tracks " << fpCand->fSig1 << ".." << fpCand->fSig2
 			     << endl;
+      
       fillCandidateVariables();
-      fillCandidateHistograms();
+      //      fillCandidateHistograms();
+      fillCandidateHistograms(fRegion["A"]);
+      if (fBarrel) {
+	//cout << "barrel: " << fRegion["B"] << endl;
+	fillCandidateHistograms(fRegion["B"]); 
+	if (fPvN < 4) {
+	  //cout << "barrel loPU " << fRegion["BPV0"] << endl;
+	  fillCandidateHistograms(fRegion["APV0"]); 
+	  fillCandidateHistograms(fRegion["BPV0"]); 
+	} else {
+	  //cout << "barrel HIPU " << fRegion["BPV1"] << endl;
+	  fillCandidateHistograms(fRegion["APV1"]); 
+	  fillCandidateHistograms(fRegion["BPV1"]); 
+	}
+      } else {
+	//cout << "endcap: " << fRegion["E"] << endl;
+	fillCandidateHistograms(fRegion["E"]); 
+	if (fPvN < 4) {
+	  //cout << "endcap loPU " << fRegion["EPV0"] << endl;
+	  fillCandidateHistograms(fRegion["APV0"]); 
+	  fillCandidateHistograms(fRegion["EPV0"]); 
+	} else {
+	  //cout << "endcap hiPU " << fRegion["EPV1"] << endl;
+	  fillCandidateHistograms(fRegion["APV1"]); 
+	  fillCandidateHistograms(fRegion["EPV1"]); 
+	}
+      }
+      fTree->Fill(); 
+      
     }
   } else {
     candidateSelection(SELMODE); 
     // -- Fill only 'best' candidate
     if (fVerbose > 4) cout << "Filling candidate " << fCandIdx << endl;
     fillCandidateVariables();
-    fillCandidateHistograms();
+    
+    //    fillCandidateHistograms();
+    fillCandidateHistograms(fRegion["A"]);
+    if (fBarrel) {
+      fillCandidateHistograms(fRegion["B"]); 
+      if (fPvN < 4) {
+	fillCandidateHistograms(fRegion["APV0"]); 
+	fillCandidateHistograms(fRegion["BPV0"]); 
+      } else {
+	fillCandidateHistograms(fRegion["APV1"]); 
+	fillCandidateHistograms(fRegion["BPV1"]); 
+      }
+    } else {
+      fillCandidateHistograms(fRegion["E"]); 
+      if (fPvN < 4) {
+	fillCandidateHistograms(fRegion["APV0"]); 
+	fillCandidateHistograms(fRegion["EPV0"]); 
+      } else {
+	fillCandidateHistograms(fRegion["APV1"]); 
+	fillCandidateHistograms(fRegion["EPV1"]); 
+      }
+    }
+    fTree->Fill(); 
+    
   }
-
+  
   if (fIsMC) efficiencyCalculation();
 
   //  studyL1T();
@@ -433,30 +512,45 @@ void bmmReader::HLTSelection() {
     wasRun = fpEvt->fHLTWasRun[i]; 
     result = fpEvt->fHLTResult[i]; 
     error  = fpEvt->fHLTError[i]; 
-    //     if (result && a.Contains("Mu")) //&& a.Contains("Bs")
-    //       cout << a << ": wasRun = " << wasRun << " result: " << result << " prescale: " << ps << " error: " << error << endl;
-    for (unsigned int j = 0; j < HLTPath.size(); ++j) {
-      if (a.Contains(HLTPath[j].c_str())) {
-	if (wasRun && result) {
-	  if (!a.CompareTo(HLTPath[j].c_str())) {
-	    fGoodHLT = true; 
-	  }
-	  if (!a.CompareTo("HLT_DoubleMu0")) {
-	    fHLTMu0 = true; 
-	  }
-	  if (!a.CompareTo("HLT_DoubleMu0_Quarkonium_v1")) {
-	    fHLTMu0 = true; 
-	  }
-	  if (!a.CompareTo("HLT_DoubleMu3")) {
-	    fHLTMu3 = true; 
-	  }
-	  if (fVerbose > 0 && fGoodHLT) cout << "HLT fired " << a << " required: " << HLTPath[j].c_str() << endl;
-	}
-	//cout << a << ": wasRun = " << wasRun << " result: " << result << " error: " << error << endl;
-      }
-    }
 
+    if (wasRun && result) {
+      for (map<string, int>::iterator imap = HLTRangeMin.begin(); imap != HLTRangeMin.end(); ++imap) {  
+	if (a.Contains(imap->first.c_str()) && (imap->second <= fRun) && (fRun <= HLTRangeMax[imap->first])) {
+	  if (fVerbose > 2) cout << "close match: " << imap->first.c_str() << " HLT: " << a 
+				 << " result: " << result 
+				 << " in run " << fRun 
+				 << endl;
+	  fGoodHLT = true; 
+	  // 	  if (!a.CompareTo(imap->first.c_str())) {
+	  // 	    cout << "exact match: " << imap->first.c_str() << " HLT: " << a << " result: " << result << endl;
+	  // 	  }
+	}
+      }
+    }      
   }
+
+// -- old setup without run ranges for specific triggers
+//     for (unsigned int j = 0; j < HLTPath.size(); ++j) {
+//       if (a.Contains(HLTPath[j].c_str())) {
+// 	if (wasRun && result) {
+// 	  if (!a.CompareTo(HLTPath[j].c_str())) {
+// 	    fGoodHLT = true; 
+// 	  }
+// 	  if (!a.CompareTo("HLT_DoubleMu0")) {
+// 	    fHLTMu0 = true; 
+// 	  }
+// 	  if (!a.CompareTo("HLT_DoubleMu0_Quarkonium_v1")) {
+// 	    fHLTMu0 = true; 
+// 	  }
+// 	  if (!a.CompareTo("HLT_DoubleMu3")) {
+// 	    fHLTMu3 = true; 
+// 	  }
+// 	  if (fVerbose > 0 && fGoodHLT) cout << "HLT fired " << a << " required: " << HLTPath[j].c_str() << endl;
+// 	}
+// 	cout << a << ": wasRun = " << wasRun << " result: " << result << " error: " << error << endl;
+//       }
+//     }
+//  }
 
 }
 
@@ -575,10 +669,12 @@ void bmmReader::fillCandidateVariables() {
     fPvX = pv->fPoint.X(); 
     fPvY = pv->fPoint.Y(); 
     fPvZ = pv->fPoint.Z(); 
+    fPvNtrk = pv->getNtracks();
   } else {
     fPvX = -99.;
     fPvY = -99.;
     fPvZ = -99.;
+    fPvNtrk = -99;
   }
 
   fJSON = 0; 
@@ -618,7 +714,7 @@ void bmmReader::fillCandidateVariables() {
 
   TAnaCand *pC(0), *pDau(0), *pMcCand(0); 
   int mctype = TYPE + 100000; 
-  int nmatch(0), mcIdx(-1); 
+  unsigned int nmatch(0); 
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
     pC = fpEvt->getCand(iC);
     if (pC->fType != mctype) continue;
@@ -700,11 +796,19 @@ void bmmReader::fillCandidateVariables() {
   fMu1EtaNrf    = ps1->fPlab.Eta();
   fMu1TkQuality = p1->fTrackQuality & TRACKQUALITY;
   fMu1W8Mu      = fpMuonID->effD(fMu1Pt, fMu1Eta, fMu1Phi);
-  fMu1W8Tr      = fpMuonTr->effD(fMu1Pt, fMu1Eta, fMu1Phi);
+  //  fMu1W8Tr      = fpMuonTr->effD(fMu1Pt, fMu1Eta, fMu1Phi);
+  fMu1W8Tr      = fpMuonTr1->effD(fMu1Pt, fMu1Eta, fMu1Phi)*fpMuonTr2->effD(fMu1Pt, fMu1Eta, fMu1Phi);
   fMu1Q         = p1->fQ;
   fMu1Pix       = numberOfPixLayers(p1);
   fMu1BPix      = numberOfBPixLayers(p1);
   fMu1BPixL1    = numberOfBPixLayer1Hits(p1);
+
+  if ((TMath::Abs(fMu1Eta) < 1.4) && (TMath::Abs(fMu2Eta) < 1.4)) {
+    fBarrel = true; 
+  } else {
+    fBarrel = false; 
+  }    
+
 
   if (fCandTM && fGenM1Tmi < 0) fpEvt->dump();
 
@@ -728,7 +832,8 @@ void bmmReader::fillCandidateVariables() {
   fMu2EtaNrf    = ps2->fPlab.Eta();
   fMu2TkQuality = p2->fTrackQuality & TRACKQUALITY;
   fMu2W8Mu      = fpMuonID->effD(fMu2Pt, fMu2Eta, fMu2Phi);
-  fMu2W8Tr      = fpMuonTr->effD(fMu2Pt, fMu2Eta, fMu2Phi);
+  //  fMu2W8Tr      = fpMuonTr->effD(fMu2Pt, fMu2Eta, fMu2Phi);
+  fMu2W8Tr      = fpMuonTr1->effD(fMu2Pt, fMu2Eta, fMu2Phi)*fpMuonTr2->effD(fMu2Pt, fMu2Eta, fMu2Phi);
   fMu2Q         = p2->fQ;
   fMu2Pix       = numberOfPixLayers(p2);
   fMu2BPix      = numberOfBPixLayers(p2);
@@ -833,15 +938,41 @@ void bmmReader::fillCandidateVariables() {
   fCandA     = alpha; 
 
   double iso = isoClassic(fpCand); 
+  fCandI0trk = fCandItrk;
   double iso1= isoClassicOnePv(fpCand); 
   double iso2= isoClassicWithDOCA(fpCand, 0.03); // 300um DOCA cut
   double iso3= isoClassicWithDOCA(fpCand, 0.04); // 400um DOCA cut
   double iso4= isoClassicWithDOCA(fpCand, 0.05); // 500um DOCA cut
+  fCandI4trk = fCandItrk;
+
+  double iso5= isoWithDOCA(fpCand, 0.05); // 500um DOCA cut
+
   fCandIso   = iso; 
   fCandIso1  = iso1; 
   fCandIso2  = iso2; 
   fCandIso3  = iso3; 
   fCandIso4  = iso4; 
+  fCandIso5  = iso5; 
+
+  // -- the matrix
+  fIsoR05Pt03 = isoClassicWithDOCA(fpCand, 0.05, 0.5, 0.3);
+  fIsoR05Pt05 = isoClassicWithDOCA(fpCand, 0.05, 0.5, 0.5);
+  fIsoR05Pt07 = isoClassicWithDOCA(fpCand, 0.05, 0.5, 0.7);
+  fIsoR05Pt09 = isoClassicWithDOCA(fpCand, 0.05, 0.5, 0.9);
+  fIsoR05Pt11 = isoClassicWithDOCA(fpCand, 0.05, 0.5, 1.1);
+
+  fIsoR07Pt03 = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.3);
+  fIsoR07Pt05 = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.5);
+  fIsoR07Pt07 = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.7);
+  fIsoR07Pt09 = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.9);
+  fIsoR07Pt11 = isoClassicWithDOCA(fpCand, 0.05, 0.7, 1.1);
+
+  fIsoR10Pt03 = isoClassicWithDOCA(fpCand, 0.05, 1.0, 0.3);
+  fIsoR10Pt05 = isoClassicWithDOCA(fpCand, 0.05, 1.0, 0.5);
+  fIsoR10Pt07 = isoClassicWithDOCA(fpCand, 0.05, 1.0, 0.7);
+  fIsoR10Pt09 = isoClassicWithDOCA(fpCand, 0.05, 1.0, 0.9);
+  fIsoR10Pt11 = isoClassicWithDOCA(fpCand, 0.05, 1.0, 1.1);
+
   fCandChi2  = sv.fChi2;
   fCandDof   = sv.fNdof;
   fCandProb  = sv.fProb;
@@ -878,7 +1009,7 @@ void bmmReader::fillCandidateVariables() {
   fGoodPt = (fCandPt > CANDPTLO);
   fGoodEta = ((fCandEta > CANDETALO) && (fCandEta < CANDETAHI)); 
   fGoodCosA = (fCandCosA > CANDCOSALPHA); 
-  fGoodIso = (fCandIso1 > CANDISOLATION); 
+  fGoodIso = (fCandIso4 > CANDISOLATION); 
   fGoodChi2 = (fCandChi2/fCandDof < CANDVTXCHI2);
   fGoodFLS =  ((fCandFLS3d > CANDFLS3D) && (fCandFLSxy > CANDFLSXY)); 
   if (TMath::IsNaN(fCandFLS3d)) fGoodFLS = false;
@@ -1097,26 +1228,16 @@ double bmmReader::isoClassic(TAnaCand *pC) {
 
 
 // ----------------------------------------------------------------------
-double bmmReader::isoClassicOnePv(TAnaCand *pC) {
+double bmmReader::isoClassicOnePv(TAnaCand *pC, double r, double ptmin) {
   double iso(-1.), pt(0.), sumPt(0.), candPt(0.), candPtScalar(0.); 
   TAnaTrack *pT; 
   vector<int> cIdx; 
   int pvIdx = pC->fPvIdx;
 
-  //   int verbose(0); 
-  //   if (fRun == 148862 &&  fEvt == 1219569139) { verbose = 1; }
-  //   if (fRun == 147284 &&  fEvt == 186315253) { verbose = 1; }
-
   for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
     pT = fpEvt->getSigTrack(i); 
     cIdx.push_back(pT->fIndex); 
     candPtScalar += pT->fPlab.Perp(); 
-    //     if (verbose) {
-    //       int tIdx = fpEvt->getRecTrack(pT->fIndex)->fPvIdx;
-    //       if (pvIdx != tIdx) {
-    // 	cout << "Signal track pointing to PV " << tIdx << " instead of " << pvIdx << endl;
-    //       }
-    //     }
   }
 
   candPt = pC->fPlab.Perp(); 
@@ -1124,40 +1245,26 @@ double bmmReader::isoClassicOnePv(TAnaCand *pC) {
   for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
     if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  continue;
     pT = fpEvt->getRecTrack(i); 
-    //     if (verbose) {
-    //       cout << "   track " << i 
-    //  	   << " with pT = " << pT->fPlab.Perp()
-    //  	   << " eta = " << pT->fPlab.Eta()
-    //  	   << " pointing at PV " << pT->fPvIdx;
-    //     }
     if (pvIdx != pT->fPvIdx) {
-      //      if (verbose) cout << " skipped because of PV index mismatch" << endl;
       continue;
     }
     pt = pT->fPlab.Perp(); 
-    if (pt < 0.9) {
-      //      if (verbose) cout << " skipped because of pt = " << pt << endl;
+    if (pt < ptmin) {
       continue;
     }
-    if (pT->fPlab.DeltaR(pC->fPlab) < 1.0) {
+    if (pT->fPlab.DeltaR(pC->fPlab) < r) {
       sumPt += pt; 
-      //      if (verbose) cout << endl;
     } 
-    //    else {
-      //      if (verbose) cout << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
-    //    }
   }
 
   iso = candPt/(candPt + sumPt); 
 
-  //   if (verbose) cout << "--> iso = " << candPt << " .. " << sumPt << " = " << iso << endl;
-  //   if (verbose) cout << "--> iso = " << pC->fPlab.Perp() << " .. " << sumPt << " = " << pC->fPlab.Perp()/(pC->fPlab.Perp() + sumPt) << endl;
   return iso; 
 }
 
 // ----------------------------------------------------------------------
-double bmmReader::isoClassicWithDOCA(TAnaCand *pC, float docaCut) {
-  const double ptCut = 0.9, coneSize=1.0;
+double bmmReader::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, double ptmin) {
+  const double ptCut=ptmin, coneSize=r;
   const bool verbose=false;
 
   double iso(-1.), pt(0.), sumPt(0.), candPt(0.), candPtScalar(0.); 
@@ -1165,10 +1272,8 @@ double bmmReader::isoClassicWithDOCA(TAnaCand *pC, float docaCut) {
   vector<int> cIdx; 
   int pvIdx = pC->fPvIdx;
 
+  fCandItrk = 0; 
  
-  //   if (fRun == 148862 &&  fEvt == 1219569139) { verbose = 1; }
-  //   if (fRun == 147284 &&  fEvt == 186315253) { verbose = 1; }
-
   for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
     pT = fpEvt->getSigTrack(i); 
     cIdx.push_back(pT->fIndex); 
@@ -1202,6 +1307,7 @@ double bmmReader::isoClassicWithDOCA(TAnaCand *pC, float docaCut) {
       continue;
     }
     if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
+      ++fCandItrk;
       sumPt += pt; 
       if (verbose) cout << endl;
     } 
@@ -1219,7 +1325,7 @@ double bmmReader::isoClassicWithDOCA(TAnaCand *pC, float docaCut) {
     for(int i = 0; i<nsize;++i) {
       int trkId = pC->fNstTracks[i].first;
       double doca = pC->fNstTracks[i].second.first;
-      double docaE = pC->fNstTracks[i].second.second;
+      //      double docaE = pC->fNstTracks[i].second.second;
 
       if(doca > docaCut) continue; // check the doca cut
       
@@ -1237,6 +1343,7 @@ double bmmReader::isoClassicWithDOCA(TAnaCand *pC, float docaCut) {
       }
 
       if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
+	++fCandItrk;
 	sumPt += pt; 
 	if (verbose) cout << " doaa track included "<<doca<<" "<<pt<<endl;
       } 
@@ -1256,6 +1363,99 @@ double bmmReader::isoClassicWithDOCA(TAnaCand *pC, float docaCut) {
 }
 
 
+
+// ----------------------------------------------------------------------
+double bmmReader::isoWithDOCA(TAnaCand *pC, float docaCut, double r, double ptmin) {
+  const double ptCut=ptmin, coneSize=r;
+  const bool verbose=false;
+  
+  double iso(-1.), pt(0.), sumPt(0.), candPt(0.), candPtScalar(0.); 
+  TAnaTrack *pT; 
+  vector<int> cIdx; 
+  int pvIdx = pC->fPvIdx;
+  
+  fCandItrk = 0; 
+  
+  for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
+    pT = fpEvt->getSigTrack(i); 
+    cIdx.push_back(pT->fIndex); 
+    candPtScalar += pT->fPlab.Perp(); 
+    if (verbose) {
+      int tIdx = fpEvt->getRecTrack(pT->fIndex)->fPvIdx;
+      if (pvIdx != tIdx) {
+	cout << "Signal track pointing to PV " << tIdx << " instead of " << pvIdx << endl;
+      }
+    }
+  }
+  
+  candPt = pC->fPlab.Perp(); 
+  
+  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+    if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  continue;
+    pT = fpEvt->getRecTrack(i); 
+    if (verbose) {
+      cout << "   track " << i 
+     	   << " with pT = " << pT->fPlab.Perp()
+     	   << " eta = " << pT->fPlab.Eta()
+     	   << " pointing at PV " << pT->fPvIdx;
+    }
+    if (pvIdx != pT->fPvIdx) {
+      if (verbose) cout << " skipped because of PV index mismatch" << endl;
+      continue;
+    }
+    pt = pT->fPlab.Perp(); 
+    if (pt < ptCut) {
+      if (verbose) cout << " skipped because of pt = " << pt << endl;
+      continue;
+    }
+    if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
+      ++fCandItrk;
+      sumPt += pt; 
+      if (verbose) cout << endl;
+    } 
+    else {
+      if (verbose) cout << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+    }
+  }
+  
+  
+  
+  // Now consider ALL the DOCA tracks
+  int nsize = pC->fNstTracks.size(); 
+  if (nsize>0) {
+    for(int i = 0; i<nsize;++i) {
+      int trkId = pC->fNstTracks[i].first;
+      double doca = pC->fNstTracks[i].second.first;
+      //      double docaE = pC->fNstTracks[i].second.second;
+      
+      if(doca > docaCut) continue; // check the doca cut
+      
+      pT = fpEvt->getRecTrack(trkId);
+
+      pt = pT->fPlab.Perp();  // cut on track pt
+      if (pt < ptCut) {
+	if (verbose) cout << " doca skipped because of pt = " << pt << endl;
+	continue;
+      }
+
+      if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
+	++fCandItrk;
+	sumPt += pt; 
+	if (verbose) cout << " doaa track included "<<doca<<" "<<pt<<endl;
+      } 
+      else {
+	if (verbose) cout << " doca track skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+      }
+
+    } // for loop over tracks
+  } // end if 
+
+  iso = candPt/(candPt + sumPt); 
+
+  return iso; 
+}
+
+
 // ----------------------------------------------------------------------
 void bmmReader::fillHist() {
 
@@ -1264,117 +1464,117 @@ void bmmReader::fillHist() {
 
 
 // ----------------------------------------------------------------------
-void bmmReader::fillCandidateHistograms() {
-  //  cout << "bmmReader::fillCandidateHistograms() " << endl;
-
-  //   fAnaCuts.update(); 
-  //   fAnaCuts.dumpAll(); 
+void bmmReader::fillCandidateHistograms(int offset) {
 
   // -- only candidate histograms below
   if (0 == fpCand) return;
   
-  // -- historic remnant?!
-  //   for (int i = 0; i < fAnaCuts.ncuts(); ++i) {
-  //     if (fAnaCuts.singleCutTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dSi", i)))->Fill(fCandM);
-  //     if (fAnaCuts.cumulativeCutTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dCu", i)))->Fill(fCandM);
-  //     if (fAnaCuts.allOtherCutsTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dAo", i)))->Fill(fCandM);
-  //     if (fAnaCuts.nMinus1CutsTrue(i)) ((TH1D*)fpHistFile->Get(Form("c%dAo", i)))->Fill(fCandM);
-  //   }
+  //cout << "bmmReader::fillCandidateHistograms(" << offset << ") " << endl;
 
   // -- Fill distributions
-  fpTracksPt->fill(fMu1Pt, fCandM);
-  fpTracksPt->fill(fMu2Pt, fCandM);
-  fpTracksEta->fill(fMu1Eta, fCandM);
-  fpTracksEta->fill(fMu2Eta, fCandM);
-  fpTracksQual->fill(fMu1TkQuality, fCandM);
-  fpTracksQual->fill(fMu2TkQuality, fCandM);
+  fpTracksPt[offset]->fill(fMu1Pt, fCandM);
+  fpTracksPt[offset]->fill(fMu2Pt, fCandM);
+  fpTracksEta[offset]->fill(fMu1Eta, fCandM);
+  fpTracksEta[offset]->fill(fMu2Eta, fCandM);
+  fpTracksQual[offset]->fill(fMu1TkQuality, fCandM);
+  fpTracksQual[offset]->fill(fMu2TkQuality, fCandM);
 
-  fpMuonsID->fill(1, fCandM);
-  fpMuonsID->fill(1, fCandM);
-  fpMuonsPt->fill(fMu1Pt, fCandM);
-  fpMuonsPt->fill(fMu2Pt, fCandM);
-  fpMuonsEta->fill(fMu1Eta, fCandM);
-  fpMuonsEta->fill(fMu2Eta, fCandM);
-  fpMuon1Eta->fill(fMu2Eta, fCandM);
-  fpMuon2Eta->fill(fMu2Eta, fCandM);
-  fpMuon1Pt->fill(fMu1Pt, fCandM);
-  fpMuon2Pt->fill(fMu2Pt, fCandM);
-  fpMuon1Eta->fill(fMu1Eta, fCandM);
-  fpMuon2Eta->fill(fMu2Eta, fCandM);
+  fpMuonsID[offset]->fill(1, fCandM);
+  fpMuonsID[offset]->fill(1, fCandM);
+  fpMuonsPt[offset]->fill(fMu1Pt, fCandM);
+  fpMuonsPt[offset]->fill(fMu2Pt, fCandM);
+  fpMuonsEta[offset]->fill(fMu1Eta, fCandM);
+  fpMuonsEta[offset]->fill(fMu2Eta, fCandM);
+  fpMuon1Eta[offset]->fill(fMu2Eta, fCandM);
+  fpMuon2Eta[offset]->fill(fMu2Eta, fCandM);
+  fpMuon1Pt[offset]->fill(fMu1Pt, fCandM);
+  fpMuon2Pt[offset]->fill(fMu2Pt, fCandM);
+  fpMuon1Eta[offset]->fill(fMu1Eta, fCandM);
+  fpMuon2Eta[offset]->fill(fMu2Eta, fCandM);
 
-  fpAllEvents->fill(1, fCandM); 
-  fpHLT->fill(1, fCandM); 
-  fpPvZ->fill(fPvZ, fCandM); 
-  fpPvN->fill(fPvN, fCandM); 
-  fpQ->fill(fCandQ, fCandM); 
-  fpPt->fill(fCandPt, fCandM); 
-  fpEta->fill(fCandEta, fCandM); 
-  fpAlpha->fill(fCandA, fCandM);
-  fpCosA->fill(fCandCosA, fCandM);
-  fpCosA0->fill(fCandCosA, fCandM);
-  fpIso->fill(fCandIso, fCandM);
-  fpIso1->fill(fCandIso1, fCandM);
-  fpIso2->fill(fCandIso2, fCandM);
-  fpIso3->fill(fCandIso3, fCandM);
-  fpIso4->fill(fCandIso4, fCandM);
+  fpAllEvents[offset]->fill(1, fCandM); 
+  fpHLT[offset]->fill(1, fCandM); 
+  fpPvZ[offset]->fill(fPvZ, fCandM); 
+  fpPvN[offset]->fill(fPvN, fCandM); 
+  fpPvNtrk[offset]->fill(fPvNtrk, fCandM); 
+  fpQ[offset]->fill(fCandQ, fCandM); 
+  fpPt[offset]->fill(fCandPt, fCandM); 
+  fpEta[offset]->fill(fCandEta, fCandM); 
+  fpAlpha[offset]->fill(fCandA, fCandM);
+  fpCosA[offset]->fill(fCandCosA, fCandM);
+  fpCosA0[offset]->fill(fCandCosA, fCandM);
+  fpI0trk[offset]->fill(fCandI0trk, fCandM);
+  fpI4trk[offset]->fill(fCandI4trk, fCandM);
+  fpIso[offset]->fill(fCandIso, fCandM);
+  fpIso1[offset]->fill(fCandIso1, fCandM);
+  fpIso2[offset]->fill(fCandIso2, fCandM);
+  fpIso3[offset]->fill(fCandIso3, fCandM);
+  fpIso4[offset]->fill(fCandIso4, fCandM);
+  fpIso5[offset]->fill(fCandIso5, fCandM);
 
-  // -- N(PV) dependent
+  // -- N[offset](PV) dependent
   if (fPvN > 0 && fPvN <= 2) {
-    fpIsoPv1->fill(fCandIso, fCandM);
-    fpIso1Pv1->fill(fCandIso1, fCandM);
-    fpIso4Pv1->fill(fCandIso4, fCandM);
-    fpFLS3dPv1->fill(fCandFLS3d, fCandM); 
-    fpFLSxyPv1->fill(fCandFLSxy, fCandM); 
-    fpAlphaPv1->fill(fCandA, fCandM); 
+    fpIsoPv1[offset]->fill(fCandIso, fCandM);
+    fpIso1Pv1[offset]->fill(fCandIso1, fCandM);
+    fpIso4Pv1[offset]->fill(fCandIso4, fCandM);
+    fpIso5Pv1[offset]->fill(fCandIso5, fCandM);
+    fpFLS3dPv1[offset]->fill(fCandFLS3d, fCandM); 
+    fpFLSxyPv1[offset]->fill(fCandFLSxy, fCandM); 
+    fpAlphaPv1[offset]->fill(fCandA, fCandM); 
   } else if (fPvN > 2 && fPvN <= 4) {
-    fpIsoPv2->fill(fCandIso, fCandM);
-    fpIso1Pv2->fill(fCandIso1, fCandM);
-    fpIso4Pv2->fill(fCandIso4, fCandM);
-    fpFLS3dPv2->fill(fCandFLS3d, fCandM); 
-    fpFLSxyPv2->fill(fCandFLSxy, fCandM); 
-    fpAlphaPv2->fill(fCandA, fCandM); 
+    fpIsoPv2[offset]->fill(fCandIso, fCandM);
+    fpIso1Pv2[offset]->fill(fCandIso1, fCandM);
+    fpIso4Pv2[offset]->fill(fCandIso4, fCandM);
+    fpIso5Pv2[offset]->fill(fCandIso5, fCandM);
+    fpFLS3dPv2[offset]->fill(fCandFLS3d, fCandM); 
+    fpFLSxyPv2[offset]->fill(fCandFLSxy, fCandM); 
+    fpAlphaPv2[offset]->fill(fCandA, fCandM); 
   } else if (fPvN > 4 && fPvN <= 6) {
-    fpIsoPv3->fill(fCandIso, fCandM);
-    fpIso1Pv3->fill(fCandIso1, fCandM);
-    fpIso4Pv3->fill(fCandIso4, fCandM);
-    fpFLS3dPv3->fill(fCandFLS3d, fCandM); 
-    fpFLSxyPv3->fill(fCandFLSxy, fCandM); 
-    fpAlphaPv3->fill(fCandA, fCandM); 
+    fpIsoPv3[offset]->fill(fCandIso, fCandM);
+    fpIso1Pv3[offset]->fill(fCandIso1, fCandM);
+    fpIso4Pv3[offset]->fill(fCandIso4, fCandM);
+    fpIso5Pv3[offset]->fill(fCandIso5, fCandM);
+    fpFLS3dPv3[offset]->fill(fCandFLS3d, fCandM); 
+    fpFLSxyPv3[offset]->fill(fCandFLSxy, fCandM); 
+    fpAlphaPv3[offset]->fill(fCandA, fCandM); 
   } else if  (fPvN > 6 && fPvN <= 8) {
-    fpIsoPv4->fill(fCandIso, fCandM);
-    fpIso1Pv4->fill(fCandIso1, fCandM);
-    fpIso4Pv4->fill(fCandIso4, fCandM);
-    fpFLS3dPv4->fill(fCandFLS3d, fCandM); 
-    fpFLSxyPv4->fill(fCandFLSxy, fCandM); 
-    fpAlphaPv4->fill(fCandA, fCandM); 
+    fpIsoPv4[offset]->fill(fCandIso, fCandM);
+    fpIso1Pv4[offset]->fill(fCandIso1, fCandM);
+    fpIso4Pv4[offset]->fill(fCandIso4, fCandM);
+    fpIso5Pv4[offset]->fill(fCandIso5, fCandM);
+    fpFLS3dPv4[offset]->fill(fCandFLS3d, fCandM); 
+    fpFLSxyPv4[offset]->fill(fCandFLSxy, fCandM); 
+    fpAlphaPv4[offset]->fill(fCandA, fCandM); 
   } else if  (fPvN > 8 && fPvN <= 10) {
-    fpIsoPv5->fill(fCandIso, fCandM);
-    fpIso1Pv5->fill(fCandIso1, fCandM);
-    fpIso4Pv5->fill(fCandIso4, fCandM);
-    fpFLS3dPv5->fill(fCandFLS3d, fCandM); 
-    fpFLSxyPv5->fill(fCandFLSxy, fCandM); 
-    fpAlphaPv5->fill(fCandA, fCandM); 
+    fpIsoPv5[offset]->fill(fCandIso, fCandM);
+    fpIso1Pv5[offset]->fill(fCandIso1, fCandM);
+    fpIso4Pv5[offset]->fill(fCandIso4, fCandM);
+    fpIso5Pv5[offset]->fill(fCandIso5, fCandM);
+    fpFLS3dPv5[offset]->fill(fCandFLS3d, fCandM); 
+    fpFLSxyPv5[offset]->fill(fCandFLSxy, fCandM); 
+    fpAlphaPv5[offset]->fill(fCandA, fCandM); 
   } else if  (fPvN > 10 ) {
-    fpIsoPv6->fill(fCandIso, fCandM);
-    fpIso1Pv6->fill(fCandIso1, fCandM);
-    fpIso4Pv6->fill(fCandIso4, fCandM);
-    fpFLS3dPv6->fill(fCandFLS3d, fCandM); 
-    fpFLSxyPv6->fill(fCandFLSxy, fCandM); 
-    fpAlphaPv6->fill(fCandA, fCandM); 
+    fpIsoPv6[offset]->fill(fCandIso, fCandM);
+    fpIso1Pv6[offset]->fill(fCandIso1, fCandM);
+    fpIso4Pv6[offset]->fill(fCandIso4, fCandM);
+    fpIso5Pv6[offset]->fill(fCandIso5, fCandM);
+    fpFLS3dPv6[offset]->fill(fCandFLS3d, fCandM); 
+    fpFLSxyPv6[offset]->fill(fCandFLSxy, fCandM); 
+    fpAlphaPv6[offset]->fill(fCandA, fCandM); 
   }
 
-  fpChi2->fill(fCandChi2, fCandM);
-  fpChi2Dof->fill(fCandChi2/fCandDof, fCandM); 
-  fpProb->fill(fCandProb, fCandM);   
-  fpFLS3d->fill(fCandFLS3d, fCandM); 
-  fpFL3d->fill(fCandFL3d, fCandM); 
-  fpFL3dE->fill(fCandFL3dE, fCandM); 
-  fpFLSxy->fill(fCandFLSxy, fCandM); 
-  fpDocaTrk->fill(fCandDocaTrk, fCandM); 
-  fpIP1->fill(fMu1IP, fCandM); 
-  fpIP2->fill(fMu2IP, fCandM); 
+  fpChi2[offset]->fill(fCandChi2, fCandM);
+  fpChi2Dof[offset]->fill(fCandChi2/fCandDof, fCandM); 
+  fpProb[offset]->fill(fCandProb, fCandM);   
+  fpFLS3d[offset]->fill(fCandFLS3d, fCandM); 
+  fpFL3d[offset]->fill(fCandFL3d, fCandM); 
+  fpFL3dE[offset]->fill(fCandFL3dE, fCandM); 
+  fpFLSxy[offset]->fill(fCandFLSxy, fCandM); 
+  fpDocaTrk[offset]->fill(fCandDocaTrk, fCandM); 
+  fpIP1[offset]->fill(fMu1IP, fCandM); 
+  fpIP2[offset]->fill(fMu2IP, fCandM); 
 
-  fTree->Fill(); 
+  //  fTree->Fill(); 
 
 
 }
@@ -1411,83 +1611,114 @@ void bmmReader::bookHist() {
   //     h = new TH1D(Form("c%dNm", i), fAnaCuts.getName(i), 40, MASSMIN, MASSMAX); 
   //   }
 
-  h = new TH1D("analysisDistributions", "analysisDistributions", 100, 0., 100.); 
-  fpAllEvents= bookDistribution("allevents", "allevents", "fWideMass", 10, 0., 10.);           
-  fpHLT      = bookDistribution("hlt", "hlt", "fGoodHLT", 10, 0., 10.);           
-  fpPvZ      = bookDistribution("pvz", "z_{PV} [cm]", "fGoodHLT", 50, -25., 25.);           
-  fpPvN      = bookDistribution("pvn", "N(PV) ", "fGoodHLT", 20, 0., 20.);           
-  fpTracksQual= bookDistribution("tracksqual", "Qual(tracks)", "fGoodTracks", 20, -10., 10.);
-  fpTracksPt = bookDistribution("trackspt", "p_{T} [GeV]", "fGoodTracksPt", 25, 0., 25.);
-  fpTracksEta= bookDistribution("trackseta", "#eta_{T}", "fGoodTracksEta", 25, -2.5, 2.5);
-  fpMuonsID  = bookDistribution("muonsid", "muon id", "fGoodMuonsID", 10, 0., 10.); 
-  fpMuonsPt  = bookDistribution("muonspt", "p_{T, #mu} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
-  fpMuon1Pt  = bookDistribution("muon1pt", "p_{T, #mu1} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
-  fpMuon2Pt  = bookDistribution("muon2pt", "p_{T, #mu2} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
-  fpMuonsEta = bookDistribution("muonseta", "#eta_{#mu}", "fGoodMuonsEta", 20, -2.5, 2.5); 
-  fpMuon1Eta = bookDistribution("muon1eta", "#eta_{#mu1}", "fGoodMuonsEta", 20, -2.5, 2.5); 
-  fpMuon2Eta = bookDistribution("muon2eta", "#eta_{#mu2}", "fGoodMuonsEta", 20, -2.5, 2.5); 
-  fpQ        = bookDistribution("q", "q_{1} q_{2}", "fGoodQ", 3, -1., 2.); 
-  fpPt       = bookDistribution("pt", "p_{T, B} [GeV]", "fGoodPt", 20, 0., 40.); 
-  fpEta      = bookDistribution("eta", "#eta_{B}", "fGoodEta", 20, -2.5, 2.5); 
-  fpCosA     = bookDistribution("cosa", "cos(#alpha)", "fGoodCosA", 30, 0.97, 1.); 
-  fpCosA0    = bookDistribution("cosa0", "cos(#alpha)", "fGoodCosA", 44, -1.1, 1.1); 
-  fpAlpha    = bookDistribution("alpha", "#alpha", "fGoodCosA", 20, 0., 0.2); 
-  fpIso      = bookDistribution("iso",  "I (old)", "fGoodIso", 22, 0., 1.1); 
-  fpIso1     = bookDistribution("iso1", "I", "fGoodIso", 22, 0., 1.1); 
-  fpIso2     = bookDistribution("iso2", "I2", "fGoodIso", 22, 0., 1.1); 
-  fpIso3     = bookDistribution("iso3", "I3", "fGoodIso", 22, 0., 1.1); 
-  fpIso4     = bookDistribution("iso4", "I4", "fGoodIso", 22, 0., 1.1); 
+  h = new TH1D("analysisDistributions", "analysisDistributions", 1000, 0., 1000.); 
 
-  fpAlphaPv1 = bookDistribution("alphapv1",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
-  fpAlphaPv2 = bookDistribution("alphapv2",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
-  fpAlphaPv3 = bookDistribution("alphapv3",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
-  fpAlphaPv4 = bookDistribution("alphapv4",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
-  fpAlphaPv5 = bookDistribution("alphapv5",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
-  fpAlphaPv6 = bookDistribution("alphapv6",  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+//   vector<string> prefix;
+//   prefix.push_back(""); 
+//   prefix.push_back("B"); 
+//   prefix.push_back("BPV0"); 
+//   prefix.push_back("BPV1"); 
+//   prefix.push_back("E"); 
+//   prefix.push_back("EPV0"); 
+//   prefix.push_back("EPV1"); 
+//   prefix.push_back("PV0"); 
+//   prefix.push_back("PV1"); 
+  string name; 
+  int i(0); 
+  for (map<string, int>::iterator imap = fRegion.begin(); imap != fRegion.end(); ++imap) {  
+    i    = imap->second; 
+    name = imap->first + "_";
+    cout << "booking with offset = " << i << Form("   %sallevents", name.c_str()) << endl;
+    fpAllEvents[i] = bookDistribution(Form("%sallevents", name.c_str()), "allevents", "fWideMass", 10, 0., 10.);           
+    fpHLT[i]       = bookDistribution(Form("%shlt", name.c_str()), "hlt", "fGoodHLT", 10, 0., 10.);           
+    fpPvZ[i]       = bookDistribution(Form("%spvz", name.c_str()), "z_{PV} [cm]", "fGoodHLT", 50, -25., 25.);           
+    fpPvN[i]       = bookDistribution(Form("%spvn", name.c_str()), "N(PV) ", "fGoodHLT", 20, 0., 20.);           
+    fpPvNtrk[i]    = bookDistribution(Form("%spvntrk", name.c_str()), "N_{trk}^{PV} ", "fGoodHLT", 20, 0., 200.);           
+    fpTracksQual[i]= bookDistribution(Form("%stracksqual", name.c_str()), "Qual(tracks)", "fGoodTracks", 20, -10., 10.);
+    fpTracksPt[i]  = bookDistribution(Form("%strackspt", name.c_str()), "p_{T} [GeV]", "fGoodTracksPt", 25, 0., 25.);
+    fpTracksEta[i] = bookDistribution(Form("%strackseta", name.c_str()), "#eta_{T}", "fGoodTracksEta", 25, -2.5, 2.5);
+    fpMuonsID[i]   = bookDistribution(Form("%smuonsid", name.c_str()), "muon id", "fGoodMuonsID", 10, 0., 10.); 
+    fpMuonsPt[i]   = bookDistribution(Form("%smuonspt", name.c_str()), "p_{T, #mu} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+    fpMuon1Pt[i]   = bookDistribution(Form("%smuon1pt", name.c_str()), "p_{T, #mu1} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+    fpMuon2Pt[i]   = bookDistribution(Form("%smuon2pt", name.c_str()), "p_{T, #mu2} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+    fpMuonsEta[i]  = bookDistribution(Form("%smuonseta", name.c_str()), "#eta_{#mu}", "fGoodMuonsEta", 20, -2.5, 2.5); 
+    fpMuon1Eta[i]  = bookDistribution(Form("%smuon1eta", name.c_str()), "#eta_{#mu1}", "fGoodMuonsEta", 20, -2.5, 2.5); 
+    fpMuon2Eta[i]  = bookDistribution(Form("%smuon2eta", name.c_str()), "#eta_{#mu2}", "fGoodMuonsEta", 20, -2.5, 2.5); 
+    fpQ[i]         = bookDistribution(Form("%sq", name.c_str()), "q_{1} q_{2}", "fGoodQ", 3, -1., 2.); 
+    fpPt[i]        = bookDistribution(Form("%spt", name.c_str()), "p_{T, B} [GeV]", "fGoodPt", 20, 0., 50.); 
+    fpEta[i]       = bookDistribution(Form("%seta", name.c_str()), "#eta_{B}", "fGoodEta", 20, -2.5, 2.5); 
+    fpCosA[i]      = bookDistribution(Form("%scosa", name.c_str()), "cos(#alpha)", "fGoodCosA", 30, 0.97, 1.); 
+    fpCosA0[i]     = bookDistribution(Form("%scosa0", name.c_str()), "cos(#alpha)", "fGoodCosA", 44, -1.1, 1.1); 
+    fpAlpha[i]     = bookDistribution(Form("%salpha", name.c_str()), "#alpha", "fGoodCosA", 20, 0., 0.2); 
+    fpIso[i]       = bookDistribution(Form("%siso", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso1[i]      = bookDistribution(Form("%siso1", name.c_str()), "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso2[i]      = bookDistribution(Form("%siso2", name.c_str()), "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso3[i]      = bookDistribution(Form("%siso3", name.c_str()), "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso4[i]      = bookDistribution(Form("%siso4", name.c_str()), "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso5[i]      = bookDistribution(Form("%siso5", name.c_str()), "I", "fGoodIso", 22, 0., 1.1); 
+    fpI0trk[i]     = bookDistribution(Form("%si0trk", name.c_str()), "N_{trk}^{I}", "fGoodIso", 20, 0., 20); 
+    fpI4trk[i]     = bookDistribution(Form("%si4trk", name.c_str()), "N_{trk}^{I}", "fGoodIso", 20, 0., 20); 
 
-  fpIsoPv1   = bookDistribution("isopv1",  "I (old)", "fGoodIso", 22, 0., 1.1); 
-  fpIsoPv2   = bookDistribution("isopv2",  "I (old)", "fGoodIso", 22, 0., 1.1); 
-  fpIsoPv3   = bookDistribution("isopv3",  "I (old)", "fGoodIso", 22, 0., 1.1); 
-  fpIsoPv4   = bookDistribution("isopv4",  "I (old)", "fGoodIso", 22, 0., 1.1); 
-  fpIsoPv5   = bookDistribution("isopv5",  "I (old)", "fGoodIso", 22, 0., 1.1); 
-  fpIsoPv6   = bookDistribution("isopv6",  "I (old)", "fGoodIso", 22, 0., 1.1); 
-  fpIso1Pv1   = bookDistribution("iso1pv1",  "I", "fGoodIso", 22, 0., 1.1); 
-  fpIso1Pv2   = bookDistribution("iso1pv2",  "I", "fGoodIso", 22, 0., 1.1); 
-  fpIso1Pv3   = bookDistribution("iso1pv3",  "I", "fGoodIso", 22, 0., 1.1); 
-  fpIso1Pv4   = bookDistribution("iso1pv4",  "I", "fGoodIso", 22, 0., 1.1); 
-  fpIso1Pv5   = bookDistribution("iso1pv5",  "I", "fGoodIso", 22, 0., 1.1); 
-  fpIso1Pv6   = bookDistribution("iso1pv6",  "I", "fGoodIso", 22, 0., 1.1); 
-  fpIso4Pv1   = bookDistribution("iso4pv1",  "I4", "fGoodIso", 22, 0., 1.1); 
-  fpIso4Pv2   = bookDistribution("iso4pv2",  "I4", "fGoodIso", 22, 0., 1.1); 
-  fpIso4Pv3   = bookDistribution("iso4pv3",  "I4", "fGoodIso", 22, 0., 1.1); 
-  fpIso4Pv4   = bookDistribution("iso4pv4",  "I4", "fGoodIso", 22, 0., 1.1); 
-  fpIso4Pv5   = bookDistribution("iso4pv5",  "I4", "fGoodIso", 22, 0., 1.1); 
-  fpIso4Pv6   = bookDistribution("iso4pv6",  "I4", "fGoodIso", 22, 0., 1.1); 
+    fpChi2[i]      = bookDistribution(Form("%schi2", name.c_str()),  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
+    fpChi2Dof[i]   = bookDistribution(Form("%schi2dof", name.c_str()),  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
+    fpProb[i]      = bookDistribution(Form("%spchi2dof", name.c_str()),  "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
+    fpFLS3d[i]     = bookDistribution(Form("%sfls3d", name.c_str()), "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
+    fpFL3d[i]      = bookDistribution(Form("%sfl3d", name.c_str()),  "l_{3d}", "fGoodFLS", 25, 0., 5.);  
+    fpFL3dE[i]     = bookDistribution(Form("%sfl3dE", name.c_str()), "#sigma(l_{3d})", "fGoodFLS", 25, 0., 0.5);  
+    fpFLSxy[i]     = bookDistribution(Form("%sflsxy", name.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
+    fpDocaTrk[i]   = bookDistribution(Form("%sdocatrk", name.c_str()), "d_{ca}(track)", "fGoodDocaTrk", 35, 0., 0.14);   
+    fpIP1[i]       = bookDistribution(Form("%sip1", name.c_str()), "IP_{1}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
+    fpIP2[i]       = bookDistribution(Form("%sip2", name.c_str()), "IP_{2}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
 
-  fpChi2     = bookDistribution("chi2",  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
-  fpChi2Dof  = bookDistribution("chi2dof",  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
-  fpProb     = bookDistribution("pchi2dof",  "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
-  fpFLS3d    = bookDistribution("fls3d", "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
-  fpFL3d     = bookDistribution("fl3d",  "l_{3d}", "fGoodFLS", 25, 0., 5.);  
-  fpFL3dE    = bookDistribution("fl3dE", "#sigma(l_{3d})", "fGoodFLS", 25, 0., 0.5);  
-  fpFLSxy    = bookDistribution("flsxy", "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
-  fpDocaTrk  = bookDistribution("docatrk", "d_{ca}(track)", "fGoodDocaTrk", 35, 0., 0.14);   
-  fpIP1      = bookDistribution("ip1", "IP_{1}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
-  fpIP2      = bookDistribution("ip2", "IP_{2}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
+    fpAlphaPv1[i]  = bookDistribution(Form("%salphapv1", name.c_str()),  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+    fpAlphaPv2[i]  = bookDistribution(Form("%salphapv2", name.c_str()),  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+    fpAlphaPv3[i]  = bookDistribution(Form("%salphapv3", name.c_str()),  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+    fpAlphaPv4[i]  = bookDistribution(Form("%salphapv4", name.c_str()),  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+    fpAlphaPv5[i]  = bookDistribution(Form("%salphapv5", name.c_str()),  "#alpha", "fGoodCosA", 20, 0., 0.2); 
+    fpAlphaPv6[i]  = bookDistribution(Form("%salphapv6", name.c_str()),  "#alpha", "fGoodCosA", 20, 0., 0.2); 
 
-  fpFLS3dPv1  = bookDistribution("fls3dpv1",  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
-  fpFLS3dPv2  = bookDistribution("fls3dpv2",  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
-  fpFLS3dPv3  = bookDistribution("fls3dpv3",  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
-  fpFLS3dPv4  = bookDistribution("fls3dpv4",  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
-  fpFLS3dPv5  = bookDistribution("fls3dpv5",  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
-  fpFLS3dPv6  = bookDistribution("fls3dpv6",  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
+    fpIsoPv1[i]    = bookDistribution(Form("%sisopv1", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoPv2[i]    = bookDistribution(Form("%sisopv2", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoPv3[i]    = bookDistribution(Form("%sisopv3", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoPv4[i]    = bookDistribution(Form("%sisopv4", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoPv5[i]    = bookDistribution(Form("%sisopv5", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoPv6[i]    = bookDistribution(Form("%sisopv6", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
 
-  fpFLSxyPv1  = bookDistribution("flsxypv1",  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
-  fpFLSxyPv2  = bookDistribution("flsxypv2",  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
-  fpFLSxyPv3  = bookDistribution("flsxypv3",  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
-  fpFLSxyPv4  = bookDistribution("flsxypv4",  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
-  fpFLSxyPv5  = bookDistribution("flsxypv5",  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
-  fpFLSxyPv6  = bookDistribution("flsxypv6",  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
+    fpIso1Pv1[i]   = bookDistribution(Form("%siso1pv1", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso1Pv2[i]   = bookDistribution(Form("%siso1pv2", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso1Pv3[i]   = bookDistribution(Form("%siso1pv3", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso1Pv4[i]   = bookDistribution(Form("%siso1pv4", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso1Pv5[i]   = bookDistribution(Form("%siso1pv5", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso1Pv6[i]   = bookDistribution(Form("%siso1pv6", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+
+    fpIso4Pv1[i]   = bookDistribution(Form("%siso4pv1", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso4Pv2[i]   = bookDistribution(Form("%siso4pv2", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso4Pv3[i]   = bookDistribution(Form("%siso4pv3", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso4Pv4[i]   = bookDistribution(Form("%siso4pv4", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso4Pv5[i]   = bookDistribution(Form("%siso4pv5", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso4Pv6[i]   = bookDistribution(Form("%siso4pv6", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+
+    fpIso5Pv1[i]   = bookDistribution(Form("%siso5pv1", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso5Pv2[i]   = bookDistribution(Form("%siso5pv2", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso5Pv3[i]   = bookDistribution(Form("%siso5pv3", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso5Pv4[i]   = bookDistribution(Form("%siso5pv4", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso5Pv5[i]   = bookDistribution(Form("%siso5pv5", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIso5Pv6[i]   = bookDistribution(Form("%siso5pv6", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+
+    fpFLS3dPv1[i]  = bookDistribution(Form("%sfls3dpv1", name.c_str()),  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
+    fpFLS3dPv2[i]  = bookDistribution(Form("%sfls3dpv2", name.c_str()),  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
+    fpFLS3dPv3[i]  = bookDistribution(Form("%sfls3dpv3", name.c_str()),  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
+    fpFLS3dPv4[i]  = bookDistribution(Form("%sfls3dpv4", name.c_str()),  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
+    fpFLS3dPv5[i]  = bookDistribution(Form("%sfls3dpv5", name.c_str()),  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
+    fpFLS3dPv6[i]  = bookDistribution(Form("%sfls3dpv6", name.c_str()),  "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.); 
+
+    fpFLSxyPv1[i]  = bookDistribution(Form("%sflsxypv1", name.c_str()),  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
+    fpFLSxyPv2[i]  = bookDistribution(Form("%sflsxypv2", name.c_str()),  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
+    fpFLSxyPv3[i]  = bookDistribution(Form("%sflsxypv3", name.c_str()),  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
+    fpFLSxyPv4[i]  = bookDistribution(Form("%sflsxypv4", name.c_str()),  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
+    fpFLSxyPv5[i]  = bookDistribution(Form("%sflsxypv5", name.c_str()),  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
+    fpFLSxyPv6[i]  = bookDistribution(Form("%sflsxypv6", name.c_str()),  "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.); 
+  }
   
   h = new TH1D("b1", "Ntrk", 200, 0., 200.);
   h = new TH1D("bnc0", "NCand before selection", 20, 0., 20.);
@@ -1534,6 +1765,7 @@ void bmmReader::bookHist() {
   fTree->Branch("iso2",   &fCandIso2,          "iso2/D");
   fTree->Branch("iso3",   &fCandIso3,          "iso3/D");
   fTree->Branch("iso4",   &fCandIso4,          "iso4/D");
+  fTree->Branch("iso5",   &fCandIso5,          "iso5/D");
   fTree->Branch("chi2",   &fCandChi2,          "chi2/D");
   fTree->Branch("dof",    &fCandDof,           "dof/D");
   fTree->Branch("fls3d",  &fCandFLS3d,         "fls3d/D");
@@ -1577,13 +1809,29 @@ void bmmReader::bookHist() {
   fTree->Branch("t2pt",    &fMu2PtNrf,          "t2pt/D");
   fTree->Branch("t2eta",   &fMu2EtaNrf,         "t2eta/D");
 
-  fTree->Branch("fHltMu1Pt",  &fHltMu1Pt,  "hm1pt/D");    
-  fTree->Branch("fHltMu1Eta", &fHltMu1Eta, "hm1eta/D");  
-  fTree->Branch("fHltMu1Phi", &fHltMu1Phi, "hm1phi/D");  
-  fTree->Branch("fHltMu2Pt",  &fHltMu2Pt,  "hm2pt/D");    
-  fTree->Branch("fHltMu2Eta", &fHltMu2Eta, "hm2eta/D");  
-  fTree->Branch("fHltMu2Phi", &fHltMu2Phi, "hm2phi/D");  
+  fTree->Branch("hm1pt",  &fHltMu1Pt,  "hm1pt/D");    
+  fTree->Branch("hm1eta", &fHltMu1Eta, "hm1eta/D");  
+  fTree->Branch("hm1phi", &fHltMu1Phi, "hm1phi/D");  
+  fTree->Branch("hm2pt",  &fHltMu2Pt,  "hm2pt/D");    
+  fTree->Branch("hm2eta", &fHltMu2Eta, "hm2eta/D");  
+  fTree->Branch("hm2phi", &fHltMu2Phi, "hm2phi/D");  
 
+
+  fTree->Branch("isoR05Pt03", &fIsoR05Pt03, "isoR05Pt03/D");
+  fTree->Branch("isoR05Pt05", &fIsoR05Pt05, "isoR05Pt05/D");
+  fTree->Branch("isoR05Pt07", &fIsoR05Pt07, "isoR05Pt07/D");
+  fTree->Branch("isoR05Pt09", &fIsoR05Pt09, "isoR05Pt09/D");
+  fTree->Branch("isoR05Pt11", &fIsoR05Pt11, "isoR05Pt11/D");
+  fTree->Branch("isoR07Pt03", &fIsoR07Pt03, "isoR07Pt03/D");
+  fTree->Branch("isoR07Pt05", &fIsoR07Pt05, "isoR07Pt05/D");
+  fTree->Branch("isoR07Pt07", &fIsoR07Pt07, "isoR07Pt07/D");
+  fTree->Branch("isoR07Pt09", &fIsoR07Pt09, "isoR07Pt09/D");
+  fTree->Branch("isoR07Pt11", &fIsoR07Pt11, "isoR07Pt11/D");
+  fTree->Branch("isoR10Pt03", &fIsoR10Pt03, "isoR10Pt03/D");
+  fTree->Branch("isoR10Pt05", &fIsoR10Pt05, "isoR10Pt05/D");
+  fTree->Branch("isoR10Pt07", &fIsoR10Pt07, "isoR10Pt07/D");
+  fTree->Branch("isoR10Pt09", &fIsoR10Pt09, "isoR10Pt09/D");
+  fTree->Branch("isoR10Pt11", &fIsoR10Pt11, "isoR10Pt11/D");
 
   // -- Efficiency/Acceptance Tree
   fEffTree = new TTree("effTree", "effTree");
@@ -1770,6 +2018,24 @@ void bmmReader::readCuts(TString filename, int dump) {
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: %s", CutName, triggerlist));
     }
 
+
+    if (!strcmp(CutName, "TRIGRANGE")) {
+      char triggerlist[1000]; ok = 1; 
+      sscanf(buffer, "%s %s", CutName, triggerlist);
+      string tl(triggerlist); 
+      //      string::size_type idx = tl.find_first_of(","); 
+      int r1(0), r2(0); 
+      string hlt = splitTrigRange(tl, r1, r2); 
+      HLTRangeMin.insert(make_pair(hlt, r1)); 
+      HLTRangeMax.insert(make_pair(hlt, r2)); 
+      if (dump) {
+	cout << "TRIGRANGE:       " << hlt << " from " << r1 << " to " << r2 << endl; 
+      }
+      ibin = 5; 
+      hcuts->SetBinContent(ibin, 1);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: %s", CutName, triggerlist));
+    }
+
     if (!strcmp(CutName, "L1TRIGGER")) {
       char triggerlist[1000]; ok = 1; 
       sscanf(buffer, "%s %s", CutName, triggerlist);
@@ -1787,7 +2053,7 @@ void bmmReader::readCuts(TString filename, int dump) {
 	cout << "L1TRIGGER:          "; 
 	for (unsigned int i = 0; i < L1TPath.size(); ++i) cout << L1TPath[i] << " "; cout << endl;
       }
-      ibin = 5; 
+      ibin = 6; 
       hcuts->SetBinContent(ibin, 1);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: %s", CutName, triggerlist));
     }
@@ -1795,7 +2061,7 @@ void bmmReader::readCuts(TString filename, int dump) {
     if (!strcmp(CutName, "TRUTHCAND")) {
       TRUTHCAND = int(CutValue); ok = 1;
       if (dump) cout << "TRUTHCAND:           " << TRUTHCAND << endl;
-      ibin = 6;
+      ibin = 7;
       hcuts->SetBinContent(ibin, TYPE);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: Candidate type", CutName));
     }
@@ -1803,7 +2069,7 @@ void bmmReader::readCuts(TString filename, int dump) {
     if (!strcmp(CutName, "IGNORETRIGGER")) {
       IGNORETRIGGER = int(CutValue); ok = 1;
       if (dump) cout << "IGNORETRIGGER      " << IGNORETRIGGER << endl;
-      ibin = 7;
+      ibin = 8;
       hcuts->SetBinContent(ibin, IGNORETRIGGER);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: Ignore trigger :: %i", CutName, IGNORETRIGGER));
     }
@@ -2135,4 +2401,25 @@ bool bmmReader::muonID(TAnaTrack *pT) {
       return true;
     }
   }
+}
+
+// ----------------------------------------------------------------------
+string bmmReader::splitTrigRange(string tl, int &r1, int &r2) {
+
+  string::size_type id1 = tl.find_first_of("("); 
+  string::size_type id2 = tl.find_first_of(":"); 
+  string::size_type id3 = tl.find_first_of(")"); 
+
+  //cout << "tl: " << tl << endl;
+  string hlt = tl.substr(0, id1);
+  //cout << "hlt: " << hlt << endl;
+  string a   = tl.substr(id1+1, id2-id1-1);
+  r1 = atoi(a.c_str());
+  //cout << "1st a: " << a << " -> r1 = " << r1 << endl;
+  a  = tl.substr(id2+1, id3-id2-1); 
+  r2 = atoi(a.c_str());
+  //cout << "2nd a: " << a << " -> r2 = " << r2 << endl;
+
+  return hlt; 
+
 }

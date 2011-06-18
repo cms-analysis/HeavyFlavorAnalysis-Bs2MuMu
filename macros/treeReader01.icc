@@ -153,7 +153,7 @@ int treeReader01::loop(int nevents, int start) {
   if (maxEvents < 1000)    step = 100; 
 
   for (int jEvent = start; jEvent < maxEvents; ++jEvent) {
-    if (jEvent%step == 0) cout << " .. Event " << jEvent;
+    if (jEvent%step == 0) cout << Form(" .. Event %8d", jEvent);
 
     fEvent = jEvent; 
     fpEvt->Clear();                        
@@ -165,7 +165,7 @@ int treeReader01::loop(int nevents, int start) {
 
     if (jEvent%step == 0) {
       TTimeStamp ts; 
-      cout  << " (run: " << fRun << ", event: " << fEvt << ", " << ts.AsString("lc") << ")" << endl;	
+      cout  << " (run: " << Form("%8d", fRun) << ", event: " << Form("%10d", fEvt) << ", " << ts.AsString("lc") << ")" << endl;	
     }
 
     if (fForceJson && !fpJSON->good(fRun, fLS)) {

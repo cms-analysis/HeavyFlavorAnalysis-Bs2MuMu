@@ -81,17 +81,16 @@ public:
   // --------------
   void makeAll(int channels = 3);
 
-  void histAcceptanceAndPreselection(numbers &a);
   void accEffFromEffTree(numbers &a, cuts &b, int proc = -1);
 
   void computeNormUL();
   void computeCsBF();
 
   void allEffTables();
-  void effTable(std::string mode);
+  void effTable(std::string mode, const char *region = "");
   double computeDelta(const char *s1, const char *s2, int relative = 1);
 
-  void sbsDistributionOverlay(std::string file1, std::string file2, const char *selection="Ao"); 
+  void sbsDistributionOverlay(std::string file1, std::string file2, const char *selection="Ao", const char *region = ""); 
 
   void breco(TH1D *h); 
   void effTree(int mode);
@@ -260,6 +259,8 @@ public:
 
   double fBF, fu, fs;
   double fMassLo, fMassHi;
+
+  bool fDoPrint;
 
   ClassDef(anaBmm,1) //Testing anaBmm
 };
