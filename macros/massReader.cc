@@ -270,6 +270,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fEffFlags = 0;
 	
 	// generator pt of muons...
+	firstMu = true;
 	findAllTrackIndices(pCand,&aTracks);
 	for (map<int,int>::const_iterator it = aTracks.begin(); it != aTracks.end(); ++it) {
 		pTrack = fpEvt->getRecTrack(it->first);
