@@ -107,6 +107,9 @@ int massReader::loadGeneratorVariables(TGenCand *pGen)
 {
 	int save = 0;
 	multiset<int> particles;
+	map<int,int> genStructure;
+	TGenCand *dau;
+	bool firstMu;
 	
 	if (trueDecay.size() == 0)
 		goto bail;
@@ -129,6 +132,31 @@ int massReader::loadGeneratorVariables(TGenCand *pGen)
 	fTriggers = loadTrigger(&fTriggersError,&fTriggersFound);
 	fNbrPV = fpEvt->nPV();
 	
+	// save the muon pt
+	firstMu = true;
+	findGenStructure(pGen,&genStructure);
+	for (map<int,int>::const_iterator it = genStructure.begin(); it != genStructure.end(); ++it) {
+		dau = fpEvt->getGenCand(it->first);
+		switch (abs(dau->fID)) {
+			case 13: // muon
+				if (firstMu) {
+					fPtMu1_Gen = dau->fP.Perp();
+					if (it->second >= 0) fPtMu1 = fpEvt->getRecTrack(it->second)->fPlab.Perp();
+				} else {
+					fPtMu2_Gen = dau->fP.Perp();
+					if (it->second >= 0) fPtMu2 = fpEvt->getRecTrack(it->second)->fPlab.Perp();
+				}
+				firstMu = false;
+				break;
+			default:
+				break;
+		}
+	}
+	if (fPtMu2_Gen > fPtMu1_Gen) {
+		swap(fPtMu1,fPtMu2);
+		swap(fPtMu1_Gen,fPtMu2_Gen);
+	}
+	
 	// save the candidate...
 	save = 1;
 bail:
@@ -148,7 +176,6 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	map<int,int> aTracks;
 	map<int,int> cand_tracks;
 	TVector3 plabMu1,plabMu2;
-	// FIXME: merge resources!
 	
 	clearVariables();
 	
