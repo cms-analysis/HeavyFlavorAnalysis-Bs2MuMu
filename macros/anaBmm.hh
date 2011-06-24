@@ -33,18 +33,22 @@ struct numbers {
   int index;
   double effGenFilter, effGenFilterE; 
   double fitYield, fitYieldE;
-  double genFileYield, genYield, genChanYield, recoYield, chanYield, muidYield, trigYield, candYield, ana0Yield, anaWmcYield, anaYield;
-  double genFileYieldE, genYieldE, genChanYieldE, recoYieldE, chanYieldE, muidYieldE, trigYieldE, candYieldE, ana0YieldE, anaWmcYieldE, anaYieldE;
-  double acc, accE, accChan, accChanE;
+  double genFileYield, genYield, genChanYield, recoYield, chanYield, muidYield, trigYield, candYield;
+  double genFileYieldE, genYieldE, genChanYieldE, recoYieldE, chanYieldE, muidYieldE, trigYieldE, candYieldE;
+  double ana0Yield,  anaYield,  anaMuonYield,  anaTriggerYield,  anaWmcYield;
+  double ana0YieldE, anaYieldE, anaMuonYieldE, anaTriggerYieldE, anaWmcYieldE;
+  double cFrac, cFracE, acc, accE, accChan, accChanE;
   double effChan, effChanE; 
+  double accMuidMC, accMuidMCE, accTrigMC, accTrigMCE;
   double effMuidMC, effMuidMCE, effTrigMC, effTrigMCE;
   double effMuidPid, effMuidPidE, effTrigPid, effTrigPidE;
   double effCand, effCandE; 
   double effAna, effAnaE; 
-  double effTot, effTotE; 
+  double effTot, effTotE, aEffProdMC, aEffProdMCE, effProdMC, effProdMCE, effProdPid, effProdPidE; 
   double effTotChan, effTotChanE; 
   double prodGenYield, combGenYield, chanGenYield; // eps*A corrected
   // -- signal stuff
+  double expSignal;
   double bgObs, bgBsExp, bgBsExpE, bgBdExp, bgBdExpE; 
   double bsObs, bdObs; 
   double bsRare, bsRareE, bdRare, bdRareE; 
@@ -68,12 +72,12 @@ class anaBmm: public TObject {
 
 public:
 
-  anaBmm(const char *files="anaBmm.default.files", const char *dir = "default", int mode = 11);
+  anaBmm(const char *files="anaBmm.default.files", const char *cuts = "default", const char *dir = "default", int mode = 11);
   ~anaBmm();
 
   // -- initialization and setup
   // ---------------------------
-  void init(const char *files, const char *dir, int mode);
+  void init(const char *files, const char *cuts, const char *dir, int mode);
   void loadFiles(const char *files);
   TFile* loadFile(std::string file, std::string type);
 
@@ -81,16 +85,19 @@ public:
   // --------------
   void makeAll(int channels = 3);
 
-  void accEffFromEffTree(numbers &a, cuts &b, int proc = -1);
+  void accEffFromEffTree(std::string fname, numbers &a, cuts &b, int proc = -1);
+  void filterEff(int mode);
 
   void computeNormUL();
   void computeCsBF();
 
   void allEffTables();
-  void effTable(std::string mode, const char *region = "");
+  void effTable(std::string mode, const char *region = "A");
   double computeDelta(const char *s1, const char *s2, int relative = 1);
 
   void sbsDistributionOverlay(std::string file1, std::string file2, const char *selection="Ao", const char *region = ""); 
+  void sbsDistributionOverlaySameFile(std::string file1, std::string r1 = "B_iso5", 
+				      std::string r2 = "E_iso5", std::string sel = "Ao", std::string L1="barrel", std::string L2="endcap"); 
 
   void breco(TH1D *h); 
   void effTree(int mode);
@@ -115,7 +122,7 @@ public:
 
   void rareBg(); 
   void isoMean(const char *var = "iso1", const char *cuts="gmuid&&hlt&&acos(cosa)<0.05&&chi2/dof<2&&fls3d>10", int maxPvN = 15);
-  void isoProcess(const char *var, const char *cuts);
+  void isoProcess(const char *var, const char *cuts, int loop = 1);
   void plotWithCut(const char *var, const char *cuts, double cut, const char *title, double hmin, double hmax); 
   void puEff(const char *var, double cut=0.75, const char *ylabel="#epsilon(I>0.75)", const char* file="NoData", const char *selection="Ao"); 
 
@@ -145,7 +152,7 @@ public:
   void rolkeM3(int x, double bm, double em, double sde, double sdb);
 
   // -- Files for Signal and Normalization modes in data and MC
-#define MAXFILES 20
+#define MAXFILES 30
   TFile *fpData[MAXFILES], *fpMc[MAXFILES];
   double fDataLumi[MAXFILES], fMcLumi[MAXFILES];
   int fNData, fNMc;
@@ -185,7 +192,7 @@ public:
   std::string fSuffix; 
 
   std::map<std::string, TFile*> fF; 
-  std::map<std::string, double> fLumi; 
+  std::map<std::string, double> fLumi, fFilterEff; 
   std::map<std::string, std::string> fName; 
 
   std::vector<cuts*> fCuts; 
@@ -193,9 +200,15 @@ public:
   std::vector<TH1D*> fhMassChan;
   std::vector<TH1D*> fhMassAbsNoCuts;
   std::vector<TH1D*> fhMassNoCuts;
-  std::vector<TH1D*> fhMassWithCuts;
+  std::vector<TH1D*> fhMassWithAnaCuts;
+  std::vector<TH1D*> fhMassWithMuonCuts; 
+  std::vector<TH1D*> fhMassWithTriggerCuts; 
+  std::vector<TH1D*> fhMassWithAllCuts;
   std::vector<TH1D*> fhMassWithMassCuts;
-  std::vector<TH1D*> fhMassWithCutsManyBins; 
+  std::vector<TH1D*> fhMassWithAnaCutsManyBins;
+  std::vector<TH1D*> fhMassWithMuonCutsManyBins; 
+  std::vector<TH1D*> fhMassWithTriggerCutsManyBins; 
+  std::vector<TH1D*> fhMassWithAllCutsManyBins; 
   std::vector<TH1D*> fhMassWithMassCutsManyBins; 
   std::vector<TH1D*> fhMuId;
   std::vector<TH1D*> fhMuTr;

@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
   int dirspec(0);
   int nevents(-1), start(-1);
   int randomSeed(processID);
-  int verbose(-1); 
+  int verbose(-99); 
   int blind(1); 
   int isMC(0);
 
@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
 
 
   if (a) {
-    if (verbose > -1) a->setVerbosity(verbose); 
+    if (verbose > -99) a->setVerbosity(verbose); 
     a->openHistFile(histfile); 
     a->readCuts(cutFile, 1);
     a->bookHist();

@@ -83,13 +83,6 @@ $SRMCP      file:///`pwd`/$JOB.root "$STORAGE1/$JOB.root"
 echo srmls  "$STORAGE1/$JOB.root"
 srmls       "$STORAGE1/$JOB.root"
 
-echo srmrm  "$STORAGE1/$JOB.log"
-srmrm       "$STORAGE1/$JOB.log"
-echo $SRMCP file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
-$SRMCP      file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
-echo        srmls     "$STORAGE1/$JOB.log"
-srmls       "$STORAGE1/$JOB.log"
-
 date
 
 # BATCH END

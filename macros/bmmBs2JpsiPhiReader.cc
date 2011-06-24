@@ -327,6 +327,7 @@ void bmmBs2JpsiPhiReader::genMatch() {
     return;
   }
 
+  fGenBTmi = -1; 
   if (goodMatch) {
     fGenBTmi = pB->fNumber; 
     if (pM1->fP.Perp() > pM2->fP.Perp()) {
@@ -792,13 +793,13 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
 
   if (0 == fpCand) return;
 
-  // -- Check for J/psi mass
+  // -- Check for J/psi mass (but see below for truth candidates)
   TAnaCand *pD = 0; 
   fGoodJpsiMass = false; 
   for (int i = fpCand->fDau1; i <= fpCand->fDau2; ++i) {
     if (i < 0) break;
     pD = fpEvt->getCand(i); 
-    //    cout << "i = " << i << " pD = " << pD << endl;
+    cout << "i = " << i << " pD = " << pD << endl;
     if (pD->fType == JPSITYPE) {
       if ((JPSIMASSLO < pD->fMass) && (pD->fMass < JPSIMASSHI)) fGoodJpsiMass = true;
       fJpsiMass = pD->fMass;
@@ -810,6 +811,42 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
       // 	   << endl;
     }
   }
+
+  // -- special case for truth candidates (which have no daughter cands)
+  if (fpCand->fType > 999999) {
+    TAnaTrack *p0; 
+    TAnaTrack *p1(0), *ps1(0);
+    TAnaTrack *p2(0), *ps2(0); 
+    
+    for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
+      p0 = fpEvt->getSigTrack(it);     
+      if (TMath::Abs(p0->fMCID) != 13) continue;
+      if (0 == p1) {
+	p1 = p0; 
+      } else {
+	p2 = p0; 
+      }
+    }
+    
+    if (0 == p1) {
+      cout << "bmmBs2JpsiPhiReader::fillCandidateVariables:  no muon 1 found " << endl;
+      return; 
+    }
+    if (0 == p2) {
+      cout << "bmmBs2JpsiPhiReader::fillCandidateVariables:  no muon 2 found " << endl;
+      return; 
+    }
+
+    TLorentzVector mu1, mu2; 
+    mu1.SetPtEtaPhiM(p1->fPlab.Perp(), p1->fPlab.Eta(), p1->fPlab.Phi(), MMUON); 
+    mu2.SetPtEtaPhiM(p2->fPlab.Perp(), p2->fPlab.Eta(), p2->fPlab.Phi(), MMUON); 
+    
+    TLorentzVector psi = mu1 + mu2; 
+    if ((JPSIMASSLO < psi.M()) && (psi.M() < JPSIMASSHI)) fGoodJpsiMass = true;
+    fJpsiMass = psi.M();
+    fJpsiPt   = psi.Pt();
+    fJpsiEta  = psi.Eta();
+  }    
 
   // -- Get Kaons
   TAnaTrack *p0; 
@@ -824,6 +861,15 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
     } else {
       p2 = p0; 
     }
+  }
+
+  if (0 == p1) {
+    cout << "bmmBs2JpsiPhiReader::fillCandidateVariables:  no kaon 1 found " << endl;
+    return; 
+  }
+  if (0 == p2) {
+    cout << "bmmBs2JpsiPhiReader::fillCandidateVariables:  no kaon 2 found " << endl;
+    return; 
   }
  
   // -- switch to RecTracks!

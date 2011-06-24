@@ -123,7 +123,7 @@ AnalysisDistribution::AnalysisDistribution(const char *name, double SigLo, doubl
   fMassLo = 4.8;
   fMassHi = 6.0;
   fpIF = new initFunc(); 
-
+  
   hMassSi    = (TH1D*)gDirectory->Get(Form("%sMassSi", name)); 
   hMassAo    = (TH1D*)gDirectory->Get(Form("%sMassAo", name)); 
   hMassNm    = (TH1D*)gDirectory->Get(Form("%sMassNm", name)); 
@@ -131,10 +131,12 @@ AnalysisDistribution::AnalysisDistribution(const char *name, double SigLo, doubl
   hMassHLT   = (TH1D*)gDirectory->Get(Form("%sMassHLT", name)); 
   hMassPresel= (TH1D*)gDirectory->Get(Form("%sMassPresel", name)); 
 
-
   hMassBGL    = (TH1D*)gDirectory->Get(Form("%sMassBGL", name)); 
   hMassBGH    = (TH1D*)gDirectory->Get(Form("%sMassBGH", name)); 
   hMassSG     = (TH1D*)gDirectory->Get(Form("%sMassSG", name)); 
+  if (0 == hMassBGL) {
+    cout << "%% Did NOT find " << Form("%sMassBGL", name) << " at " << hMassBGL << endl;
+  }
 
   for (int i = 0; i < 3; ++i) {
     hSi[i]    = (TH1D*)gDirectory->Get(Form("%sSi%d", name, i)); 
@@ -172,6 +174,8 @@ AnalysisDistribution::~AnalysisDistribution() {
   if (fP1) delete fP1; 
   if (fPG1) delete fPG1; 
   if (fEG1) delete fEG1; 
+  if (fEG2) delete fEG2; 
+  if (fpIF) delete fpIF; 
 }
 
 // ----------------------------------------------------------------------
@@ -386,7 +390,7 @@ void AnalysisDistribution::setFunctionParameters(TF1 *f1, TH1 *h, int mode) {
 TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cut) {
 
   TCanvas *c0;
-  int DISPLAY(1); 
+  int DISPLAY(0); 
   if (DISPLAY) {
     gStyle->SetOptTitle(1);
     c0 = (TCanvas*)gROOT->FindObject("c1"); 
@@ -409,12 +413,15 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
     c0->cd(2);
     h1->Draw();
     c0->cd(3); 
-    hMassBGL->SetMinimum(0.);
-    hMassBGL->SetMaximum(1.);
-    hMassBGL->Draw();
-    hMassBGH->Draw("same");
-    hMassSG->Draw("same");
-    
+    if (hMassBGL) {
+      hMassBGL->SetMinimum(0.);
+      hMassBGL->SetMaximum(1.);
+      hMassBGL->Draw();
+      hMassBGH->Draw("same");
+      hMassSG->Draw("same");
+    } else {
+      cout << "%%%% > Did not find hMassBGL for " << variable << endl;
+    }
     c0->cd(4); 
   }
 

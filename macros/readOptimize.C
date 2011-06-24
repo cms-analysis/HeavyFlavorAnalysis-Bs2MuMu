@@ -2,7 +2,7 @@
 
 int chan, file, run; 
 float mlo, mhi, pt, m1pt, m2pt, iso1, chi2dof, alpha, fls3d, docatrk; 
-float ul, nobs, nexp, eff; 
+float ul, nobs, nexp, eff, sig, ssb; 
 
 // ----------------------------------------------------------------------
 void readOptimize(int nfiles = 50) {
@@ -17,6 +17,8 @@ void readOptimize(int nfiles = 50) {
   t->Branch("ul", &ul, "ul/F");
   t->Branch("nobs", &nobs, "nobs/F");
   t->Branch("nexp", &nexp, "nexp/F");
+  t->Branch("sig", &sig, "sig/F");
+  t->Branch("ssb", &ssb, "ssb/F");
   t->Branch("eff", &eff, "eff/F");
   t->Branch("mlo", &mlo, "mlo/F");
   t->Branch("mhi", &mhi, "mhi/F");
@@ -68,6 +70,8 @@ void readFile(const char *fname, TTree *t) {
       sscanf(buffer, "==> nObs   = %f chan=0 version=%d", &nobs, &run); 
       sscanf(buffer, "==> nExp   = %f chan=0 version=%d", &nexp, &run); 
       sscanf(buffer, "==> UL     = %f chan=0 version=%d", &ul, &run); 
+      sscanf(buffer, "==> Signal = %f chan=0 version=%d", &sig, &run); 
+      sscanf(buffer, "==> SSB    = %f chan=0 version=%d", &ssb, &run); 
       if (ul > 0) {
 	chan = 0; 
 	cout << "eff: " << eff << " ul = " << ul << " version = " << run << endl;
@@ -81,6 +85,8 @@ void readFile(const char *fname, TTree *t) {
       sscanf(buffer, "==> nObs   = %f chan=1 version=%d", &nobs, &run); 
       sscanf(buffer, "==> nExp   = %f chan=1 version=%d", &nexp, &run); 
       sscanf(buffer, "==> UL     = %f chan=1 version=%d", &ul, &run); 
+      sscanf(buffer, "==> Signal = %f chan=0 version=%d", &sig, &run); 
+      sscanf(buffer, "==> SSB    = %f chan=0 version=%d", &ssb, &run); 
       if (ul > 0) {
 	chan = 1; 
 	cout << "eff: " << eff << " ul = " << ul << " version = " << run << endl;

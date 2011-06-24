@@ -1,0 +1,21 @@
+TYPE           300531 
+TYPE          2000067 
+SELMODE            -1
+TRIGGER       HLT_DoubleMu0,HLT_DoubleMu0_Quarkonium_v1
+TRIGRANGE     HLT_DoubleMu0_Quarkonium_v1(0:100000)
+L1TRIGGER     L1_DoubleMuOpen
+JSON          cuts/Cert_136033-149442_7TeV_Nov4ReReco_Collisions10_JSON_MuonPhys.txt
+# -- boxes
++input cuts/boxes.Bs2JpsiPhi.cuts
+# -- tracks
++input cuts/tracks.cuts
+# -- muons
++input cuts/muons.cuts
+# -- candidate
++input cuts/candidate.cuts
+# -- J/psi cuts
++input cuts/jpsi.cuts
+# -- specifics
+DELTAR 0.25
+MKKLO  0.995
+MKKHI  1.045

@@ -502,6 +502,7 @@ void bmmSignalReader::genMatch() {
   }
 
   
+  fGenBTmi = -1; 
   if (goodMatch) {
     fGenBTmi = pB->fNumber; 
     if (pM1->fP.Perp() > pM2->fP.Perp()) {

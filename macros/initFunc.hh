@@ -19,16 +19,22 @@ public:
   TF1* pol0(TH1 *h); 
   TF1* pol1(TH1 *h); 
 
-  TF1* pol1gauss(TH1 *h); 
-  TF1* pol1Gauss(TH1 *h); 
+  TF1* expo(TH1 *h); 
+
+  TF1* pol1gauss(TH1 *h, double peak = 5.3, double sigma = 0.04); 
+  TF1* pol1Gauss(TH1 *h, double peak = 5.3, double sigma = 0.04); 
 
   TF1* pol1gauss2c(TH1 *h, double peak = 5.3, double sigma = 0.04); 
+
+  TF1* expoErrGauss(TH1 *h, double peak = 5.3, double sigma = 0.04); 
 
   TF1* pol0BsBlind(TH1 *h); 
   TF1* pol1BsBlind(TH1 *h); 
 
 
+
   void initPol1(double &p0, double &p1, TH1 *h);
+  void initExpo(double &p0, double &p1, TH1 *h);
 
   double fLo, fHi;
 

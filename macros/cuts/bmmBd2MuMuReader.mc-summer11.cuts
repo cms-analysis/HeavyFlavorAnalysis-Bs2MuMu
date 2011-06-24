@@ -1,0 +1,17 @@
+#TYPE           301313
+TYPE           1000090
+TRUTHCAND         511
+SELMODE            -1
+TRIGGER      HLT_DoubleMu3_Bs_v1,HLT_DoubleMu2_Bs_v1,HLT_DoubleMu2_Bs_v2,HLT_DoubleMu2_Bs_v3
+TRIGRANGE    HLT_DoubleMu2_Bs_v1(0:100000)
+#TRIGGER     HLT_L1DoubleMuOpen
+L1TRIGGER   L1_DoubleMuOpen
+JSON         cuts/Cert_160404-166861_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
+# -- boxes
++input cuts/boxes.cuts
+# -- tracks
++input cuts/tracks.cuts
+# -- muons
++input cuts/muons.cuts
+# -- candidate
++input cuts/candidate.cuts

@@ -33,17 +33,19 @@ bmmReader::bmmReader(TChain *tree, TString evtClassName): treeReader01(tree, evt
   fRegion.insert(make_pair("E", 6)); 
   fRegion.insert(make_pair("EPV0", 7)); 
   fRegion.insert(make_pair("EPV1", 8)); 
+  fRegion.insert(make_pair("AR0", 9)); 
+  fRegion.insert(make_pair("AR1", 10)); 
+  fRegion.insert(make_pair("AR2", 11)); 
+  fRegion.insert(make_pair("AR3", 12)); 
+  fRegion.insert(make_pair("AR4", 13)); 
+  fRegion.insert(make_pair("AR5", 14)); 
+  fRegion.insert(make_pair("AR6", 15)); 
 
-  cout << "fRegion[\"A\"]:    " << fRegion["A"] << endl;
-  cout << "fRegion[\"APV0\"]: " << fRegion["APV0"] << endl;
-  cout << "fRegion[\"APV1\"]: " << fRegion["APV1"] << endl;
-  cout << "fRegion[\"B\"]:    " << fRegion["B"] << endl;
-  cout << "fRegion[\"BPV0\"]: " << fRegion["BPV0"] << endl;
-  cout << "fRegion[\"BPV1\"]: " << fRegion["BPV1"] << endl;
-  cout << "fRegion[\"E\"]:    " << fRegion["E"] << endl;
-  cout << "fRegion[\"EPV0\"]: " << fRegion["EPV0"] << endl;
-  cout << "fRegion[\"EPV1\"]: " << fRegion["EPV1"] << endl;
-
+  for (map<string, int>::iterator imap = fRegion.begin(); imap != fRegion.end(); ++imap) {  
+    int i       = imap->second; 
+    string name = imap->first;
+    cout << "booking with offset = " << i << " for fRegion[\"" << name << "\"]" << endl;
+  }
 
   cout << "reading events from  " << "evts" << endl;
   char  buffer[200];
@@ -155,29 +157,38 @@ void bmmReader::eventProcessing() {
 			     << endl;
       
       fillCandidateVariables();
-      //      fillCandidateHistograms();
+      if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX && fCandIso5 > 0.7) continue;
+
+      if (fRun < 150000) {
+	fillCandidateHistograms(fRegion["AR1"]);
+      } else if (fRun >= 160329 && fRun < 161176) {
+	fillCandidateHistograms(fRegion["AR2"]);
+      } else if (fRun >= 161216 && fRun < 163261) {
+	fillCandidateHistograms(fRegion["AR3"]);
+      } else if (fRun >= 163269 && fRun <= 163869) {
+	fillCandidateHistograms(fRegion["AR4"]);
+      } else if (fRun >= 165088) {
+	fillCandidateHistograms(fRegion["AR5"]);
+      } else {
+	fillCandidateHistograms(fRegion["AR0"]);
+      }
+
       fillCandidateHistograms(fRegion["A"]);
       if (fBarrel) {
-	//cout << "barrel: " << fRegion["B"] << endl;
 	fillCandidateHistograms(fRegion["B"]); 
 	if (fPvN < 4) {
-	  //cout << "barrel loPU " << fRegion["BPV0"] << endl;
 	  fillCandidateHistograms(fRegion["APV0"]); 
 	  fillCandidateHistograms(fRegion["BPV0"]); 
 	} else {
-	  //cout << "barrel HIPU " << fRegion["BPV1"] << endl;
 	  fillCandidateHistograms(fRegion["APV1"]); 
 	  fillCandidateHistograms(fRegion["BPV1"]); 
 	}
       } else {
-	//cout << "endcap: " << fRegion["E"] << endl;
 	fillCandidateHistograms(fRegion["E"]); 
 	if (fPvN < 4) {
-	  //cout << "endcap loPU " << fRegion["EPV0"] << endl;
 	  fillCandidateHistograms(fRegion["APV0"]); 
 	  fillCandidateHistograms(fRegion["EPV0"]); 
 	} else {
-	  //cout << "endcap hiPU " << fRegion["EPV1"] << endl;
 	  fillCandidateHistograms(fRegion["APV1"]); 
 	  fillCandidateHistograms(fRegion["EPV1"]); 
 	}
@@ -190,29 +201,45 @@ void bmmReader::eventProcessing() {
     // -- Fill only 'best' candidate
     if (fVerbose > 4) cout << "Filling candidate " << fCandIdx << endl;
     fillCandidateVariables();
-    
-    //    fillCandidateHistograms();
-    fillCandidateHistograms(fRegion["A"]);
-    if (fBarrel) {
-      fillCandidateHistograms(fRegion["B"]); 
-      if (fPvN < 4) {
-	fillCandidateHistograms(fRegion["APV0"]); 
-	fillCandidateHistograms(fRegion["BPV0"]); 
-      } else {
-	fillCandidateHistograms(fRegion["APV1"]); 
-	fillCandidateHistograms(fRegion["BPV1"]); 
-      }
+    if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX && fCandIso5 > 0.7) {
+      // do nothing
     } else {
-      fillCandidateHistograms(fRegion["E"]); 
-      if (fPvN < 4) {
-	fillCandidateHistograms(fRegion["APV0"]); 
-	fillCandidateHistograms(fRegion["EPV0"]); 
+      if (fRun < 150000) {
+	fillCandidateHistograms(fRegion["AR1"]);
+      } else if (fRun >= 160329 && fRun < 161176) {
+	fillCandidateHistograms(fRegion["AR2"]);
+      } else if (fRun >= 161216 && fRun < 163261) {
+	fillCandidateHistograms(fRegion["AR3"]);
+      } else if (fRun >= 163269 && fRun <= 163869) {
+	fillCandidateHistograms(fRegion["AR4"]);
+      } else if (fRun >= 165088) {
+	fillCandidateHistograms(fRegion["AR5"]);
       } else {
-	fillCandidateHistograms(fRegion["APV1"]); 
-	fillCandidateHistograms(fRegion["EPV1"]); 
+	fillCandidateHistograms(fRegion["AR0"]);
       }
+
+      fillCandidateHistograms(fRegion["A"]);
+      if (fBarrel) {
+	fillCandidateHistograms(fRegion["B"]); 
+	if (fPvN < 4) {
+	  fillCandidateHistograms(fRegion["APV0"]); 
+	  fillCandidateHistograms(fRegion["BPV0"]); 
+	} else {
+	  fillCandidateHistograms(fRegion["APV1"]); 
+	  fillCandidateHistograms(fRegion["BPV1"]); 
+	}
+      } else {
+	fillCandidateHistograms(fRegion["E"]); 
+	if (fPvN < 4) {
+	  fillCandidateHistograms(fRegion["APV0"]); 
+	  fillCandidateHistograms(fRegion["EPV0"]); 
+	} else {
+	  fillCandidateHistograms(fRegion["APV1"]); 
+	  fillCandidateHistograms(fRegion["EPV1"]); 
+	}
+      }
+      fTree->Fill(); 
     }
-    fTree->Fill(); 
     
   }
   
@@ -272,7 +299,6 @@ void bmmReader::initVariables() {
 
 // ----------------------------------------------------------------------
 void bmmReader::insertCand(TAnaCand* pCand) {
-  if (BLIND && pCand->fMass > SIGBOXMIN && pCand->fMass < SIGBOXMAX) return;
 
   //  cout << "bmmReader::insertCand" << endl;
    fCands.push_back(pCand); 
@@ -514,12 +540,13 @@ void bmmReader::HLTSelection() {
     error  = fpEvt->fHLTError[i]; 
 
     if (wasRun && result) {
+      if (-32 == fVerbose) cout << a << endl;
       for (map<string, int>::iterator imap = HLTRangeMin.begin(); imap != HLTRangeMin.end(); ++imap) {  
 	if (a.Contains(imap->first.c_str()) && (imap->second <= fRun) && (fRun <= HLTRangeMax[imap->first])) {
-	  if (fVerbose > 2) cout << "close match: " << imap->first.c_str() << " HLT: " << a 
-				 << " result: " << result 
-				 << " in run " << fRun 
-				 << endl;
+	  if (-32 == fVerbose) cout << "close match: " << imap->first.c_str() << " HLT: " << a 
+				    << " result: " << result 
+				    << " in run " << fRun 
+				    << endl;
 	  fGoodHLT = true; 
 	  // 	  if (!a.CompareTo(imap->first.c_str())) {
 	  // 	    cout << "exact match: " << imap->first.c_str() << " HLT: " << a << " result: " << result << endl;
@@ -797,18 +824,11 @@ void bmmReader::fillCandidateVariables() {
   fMu1TkQuality = p1->fTrackQuality & TRACKQUALITY;
   fMu1W8Mu      = fpMuonID->effD(fMu1Pt, fMu1Eta, fMu1Phi);
   //  fMu1W8Tr      = fpMuonTr->effD(fMu1Pt, fMu1Eta, fMu1Phi);
-  fMu1W8Tr      = fpMuonTr1->effD(fMu1Pt, fMu1Eta, fMu1Phi)*fpMuonTr2->effD(fMu1Pt, fMu1Eta, fMu1Phi);
+  fMu1W8Tr      = fpMuonTr1->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi)*fpMuonTr2->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi);
   fMu1Q         = p1->fQ;
   fMu1Pix       = numberOfPixLayers(p1);
   fMu1BPix      = numberOfBPixLayers(p1);
   fMu1BPixL1    = numberOfBPixLayer1Hits(p1);
-
-  if ((TMath::Abs(fMu1Eta) < 1.4) && (TMath::Abs(fMu2Eta) < 1.4)) {
-    fBarrel = true; 
-  } else {
-    fBarrel = false; 
-  }    
-
 
   if (fCandTM && fGenM1Tmi < 0) fpEvt->dump();
 
@@ -838,6 +858,12 @@ void bmmReader::fillCandidateVariables() {
   fMu2Pix       = numberOfPixLayers(p2);
   fMu2BPix      = numberOfBPixLayers(p2);
   fMu2BPixL1    = numberOfBPixLayer1Hits(p2);
+
+  if ((TMath::Abs(fMu1Eta) < 1.4) && (TMath::Abs(fMu2Eta) < 1.4)) {
+    fBarrel = true; 
+  } else {
+    fBarrel = false; 
+  }    
 
   if (fCandTM) {
     TGenCand *pg2 = fpEvt->getGenCand(p2->fGenIndex);
@@ -1471,6 +1497,9 @@ void bmmReader::fillCandidateHistograms(int offset) {
   
   //cout << "bmmReader::fillCandidateHistograms(" << offset << ") " << endl;
 
+
+  //  cout << "offset " << offset << " m1eta = " << fMu1Eta << " m2eta = " << fMu2Eta << endl;
+
   // -- Fill distributions
   fpTracksPt[offset]->fill(fMu1Pt, fCandM);
   fpTracksPt[offset]->fill(fMu2Pt, fCandM);
@@ -1485,12 +1514,10 @@ void bmmReader::fillCandidateHistograms(int offset) {
   fpMuonsPt[offset]->fill(fMu2Pt, fCandM);
   fpMuonsEta[offset]->fill(fMu1Eta, fCandM);
   fpMuonsEta[offset]->fill(fMu2Eta, fCandM);
-  fpMuon1Eta[offset]->fill(fMu2Eta, fCandM);
+  fpMuon1Eta[offset]->fill(fMu1Eta, fCandM);
   fpMuon2Eta[offset]->fill(fMu2Eta, fCandM);
   fpMuon1Pt[offset]->fill(fMu1Pt, fCandM);
   fpMuon2Pt[offset]->fill(fMu2Pt, fCandM);
-  fpMuon1Eta[offset]->fill(fMu1Eta, fCandM);
-  fpMuon2Eta[offset]->fill(fMu2Eta, fCandM);
 
   fpAllEvents[offset]->fill(1, fCandM); 
   fpHLT[offset]->fill(1, fCandM); 
@@ -1666,7 +1693,7 @@ void bmmReader::bookHist() {
     fpFL3d[i]      = bookDistribution(Form("%sfl3d", name.c_str()),  "l_{3d}", "fGoodFLS", 25, 0., 5.);  
     fpFL3dE[i]     = bookDistribution(Form("%sfl3dE", name.c_str()), "#sigma(l_{3d})", "fGoodFLS", 25, 0., 0.5);  
     fpFLSxy[i]     = bookDistribution(Form("%sflsxy", name.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
-    fpDocaTrk[i]   = bookDistribution(Form("%sdocatrk", name.c_str()), "d_{ca}(track)", "fGoodDocaTrk", 35, 0., 0.14);   
+    fpDocaTrk[i]   = bookDistribution(Form("%sdocatrk", name.c_str()), "d_{ca}^{0}", "fGoodDocaTrk", 35, 0., 0.14);   
     fpIP1[i]       = bookDistribution(Form("%sip1", name.c_str()), "IP_{1}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
     fpIP2[i]       = bookDistribution(Form("%sip2", name.c_str()), "IP_{2}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
 
@@ -1768,6 +1795,7 @@ void bmmReader::bookHist() {
   fTree->Branch("iso5",   &fCandIso5,          "iso5/D");
   fTree->Branch("chi2",   &fCandChi2,          "chi2/D");
   fTree->Branch("dof",    &fCandDof,           "dof/D");
+  fTree->Branch("prob",   &fCandProb,          "prob/D");
   fTree->Branch("fls3d",  &fCandFLS3d,         "fls3d/D");
   fTree->Branch("fl3d",   &fCandFL3d,          "fl3d/D");
   fTree->Branch("fl3dE",  &fCandFL3dE,         "fl3dE/D");
@@ -1839,6 +1867,7 @@ void bmmReader::bookHist() {
   fEffTree->Branch("evt",    &fEvt,               "evt/I");
   fEffTree->Branch("hlt",    &fGoodHLT,           "hlt/O");
   fEffTree->Branch("procid", &fProcessType,       "procid/I");
+  fEffTree->Branch("bidx",   &fGenBTmi,           "bidx/I");
 
   fEffTree->Branch("gpt",    &fETgpt,             "gpt/F");
   fEffTree->Branch("geta",   &fETgeta,            "geta/F");
