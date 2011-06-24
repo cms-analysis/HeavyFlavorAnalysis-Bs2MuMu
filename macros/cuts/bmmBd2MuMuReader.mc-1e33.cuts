@@ -3,7 +3,7 @@ TYPE           1000090
 TRUTHCAND         511
 SELMODE            -1
 TRIGGER      HLT_DoubleMu3_Bs_v1,HLT_DoubleMu2_Bs_v1,HLT_DoubleMu2_Bs_v2,HLT_DoubleMu2_Bs_v3
-TRIGRANGE    HLT_DoubleMu0_Quarkonium_v1(0:100000)
+TRIGRANGE    HLT_DoubleMu2_Bs_v3(0:100000)
 #TRIGGER     HLT_L1DoubleMuOpen
 L1TRIGGER   L1_DoubleMuOpen
 JSON         cuts/Cert_160404-167151_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
