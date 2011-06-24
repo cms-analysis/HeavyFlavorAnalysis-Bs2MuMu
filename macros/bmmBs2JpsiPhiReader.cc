@@ -805,6 +805,7 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
       fJpsiMass = pD->fMass;
       fJpsiPt   = pD->fPlab.Perp();
       fJpsiEta  = pD->fPlab.Eta();
+      fJpsiPhi  = pD->fPlab.Phi(); 
       //       cout << "type = " << pD->fType 
       //        	   << " with mass = " << pD->fMass 
       // 	   << " fGoodJpsiMass = " << fGoodJpsiMass 
@@ -846,6 +847,7 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
     fJpsiMass = psi.M();
     fJpsiPt   = psi.Pt();
     fJpsiEta  = psi.Eta();
+    fJpsiPhi  = psi.Phi(); 
   }    
 
   // -- Get Kaons
@@ -917,6 +919,7 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
   fMKK     = phiCand.M();
   fPhiPt   = phiCand.Pt();
   fPhiEta  = phiCand.Eta();
+  fPhiPhi  = phiCand.Phi();
 
   fGoodDeltaR = (fDeltaR < DELTAR);
   fGoodMKK    = ((MKKLO < fMKK ) && (fMKK < MKKHI)); 
@@ -1116,7 +1119,13 @@ void bmmBs2JpsiPhiReader::bookHist() {
 
   // -- Additional reduced tree variables
   fTree->Branch("mpsi",  &fJpsiMass, "mpsi/D");
+  fTree->Branch("psipt", &fJpsiPt,   "psipt/D");
+  fTree->Branch("psieta",&fJpsiEta,  "psieta/D");
+  fTree->Branch("psiphi",&fJpsiPhi,  "psiphi/D");
   fTree->Branch("mkk",   &fMKK,      "mkk/D");
+  fTree->Branch("phipt", &fPhiPt,    "phipt/D");
+  fTree->Branch("phieta",&fPhiEta,   "phieta/D");
+  fTree->Branch("phiphi",&fPhiPhi,   "phiphi/D");
   fTree->Branch("dr",    &fDeltaR,   "dr/D");
 
   fTree->Branch("k1pt",  &fKa1Pt,    "k1pt/D");

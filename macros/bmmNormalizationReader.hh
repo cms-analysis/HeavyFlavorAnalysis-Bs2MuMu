@@ -54,7 +54,7 @@ public:
   double       fKPtGen, fKEtaGen;
   double       fKaonPtNrf, fKaonEtaNrf;
   int          fKaonTkQuality;
-  double       fJpsiPt, fJpsiEta;
+  double       fJpsiPt, fJpsiEta, fJpsiPhi;
 
   // -- TM
   int          fGenK1Tmi; 

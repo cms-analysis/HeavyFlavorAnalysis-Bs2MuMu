@@ -827,7 +827,8 @@ void bmmNormalizationReader::fillCandidateVariables() {
       if ((JPSIMASSLO < pD->fMass) && (pD->fMass < JPSIMASSHI)) fGoodJpsiMass = true;
       fJpsiMass = pD->fMass;
       fJpsiPt   = pD->fPlab.Perp(); 
-      fJpsiEta   = pD->fPlab.Eta(); 
+      fJpsiEta  = pD->fPlab.Eta(); 
+      fJpsiPhi  = pD->fPlab.Phi(); 
       break;
       //       cout << "type = " << pD->fType 
       // 	   << " with mass = " << pD->fMass 
@@ -870,6 +871,7 @@ void bmmNormalizationReader::fillCandidateVariables() {
     fJpsiMass = psi.M();
     fJpsiPt   = psi.Pt();
     fJpsiEta  = psi.Eta();
+    fJpsiPhi  = psi.Phi();
   }    
 
 

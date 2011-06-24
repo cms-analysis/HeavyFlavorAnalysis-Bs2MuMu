@@ -193,7 +193,13 @@ void bmmReader::eventProcessing() {
 	  fillCandidateHistograms(fRegion["EPV1"]); 
 	}
       }
-      fTree->Fill(); 
+      if (fIsMC) {
+	fTree->Fill(); 
+      } else {
+	if (fPreselection) {
+	  fTree->Fill(); 
+	}	  
+      }
       
     }
   } else {
@@ -238,9 +244,14 @@ void bmmReader::eventProcessing() {
 	  fillCandidateHistograms(fRegion["EPV1"]); 
 	}
       }
-      fTree->Fill(); 
+      if (fIsMC) {
+	fTree->Fill(); 
+      } else {
+	if (fPreselection) {
+	  fTree->Fill(); 
+	}	  
+      }
     }
-    
   }
   
   if (fIsMC) efficiencyCalculation();

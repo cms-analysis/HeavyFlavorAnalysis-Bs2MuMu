@@ -2392,6 +2392,7 @@ TH1* anaBmm::loopTree(int mode, int proc) {
     fAcc = "NoMcAcc";
   } else if (11 == mode) {
     isMC = false;     
+    bp2jpsikp = true; 
     fpData[fNoData]->cd(); 
   } else if (20 == mode) {
     isMC = true; 
@@ -2496,18 +2497,22 @@ TH1* anaBmm::loopTree(int mode, int proc) {
   t->SetBranchAddress("g1eta",&bg1eta);
   t->SetBranchAddress("g2eta",&bg2eta);
   if (bp2jpsikp) {
-    t->SetBranchAddress("g3pt",&bg3pt);
-    t->SetBranchAddress("g3eta",&bg3eta);
+    if (isMC) {
+      t->SetBranchAddress("g3pt",&bg3pt);
+      t->SetBranchAddress("g3eta",&bg3eta);
+    }
     t->SetBranchAddress("kpt",&bk1pt);
     t->SetBranchAddress("keta",&bk1eta);
     t->SetBranchAddress("mpsi",&bmpsi);
   }
 
   if (bs2jpsiphi) {
-    t->SetBranchAddress("g3pt",&bg3pt);
-    t->SetBranchAddress("g3eta",&bg3eta);
-    t->SetBranchAddress("g4pt",&bg4pt);
-    t->SetBranchAddress("g4eta",&bg4eta);
+    if (isMC) {
+      t->SetBranchAddress("g3pt",&bg3pt);
+      t->SetBranchAddress("g3eta",&bg3eta);
+      t->SetBranchAddress("g4pt",&bg4pt);
+      t->SetBranchAddress("g4eta",&bg4eta);
+    }
     t->SetBranchAddress("mpsi",&bmpsi);
     t->SetBranchAddress("mkk",&bmkk);
     t->SetBranchAddress("dr",&bdr);
@@ -2594,18 +2599,18 @@ TH1* anaBmm::loopTree(int mode, int proc) {
     if (TMath::Abs(bm1eta) > 2.4) continue;
     if (TMath::Abs(bm2eta) > 2.4) continue;
 
-    if (TMath::Abs(bm1pt) < 1.0) continue;
-    if (TMath::Abs(bm2pt) < 1.0) continue;
+    if (bm1pt < 1.0) continue;
+    if (bm2pt < 1.0) continue;
 
     if (bp2jpsikp) {
       if (TMath::Abs(bk1eta) > 2.4) continue;
-      if (TMath::Abs(bk1pt) < 0.5) continue;
+      if (bk1pt < 0.5) continue;
     }
     if (bs2jpsiphi) {
       if (TMath::Abs(bk1eta) > 2.4) continue;
-      if (TMath::Abs(bk1pt) < 0.5) continue;
       if (TMath::Abs(bk2eta) > 2.4) continue;
-      if (TMath::Abs(bk2pt) < 0.5) continue;
+      if (bk1pt < 0.5) continue;
+      if (bk2pt < 0.5) continue;
     }
 
     // -- this is the base, after the raw acceptance cuts
@@ -2640,8 +2645,14 @@ TH1* anaBmm::loopTree(int mode, int proc) {
       dphi = vm1.DeltaPhi(vm2); 
       cowboy = bq1*dphi > 0; 
       // -- cowboy veto 
-      if (cowboy) continue;
-      if (vpsi.Perp() < 7) continue;
+      if (cowboy) {
+	// 	cout << vpsi.Perp() << " and " << bq1*dphi << " killed by cowboy veto" << endl;
+ 	continue;
+      }
+      if (vpsi.Perp() < 7) {
+	//	cout << vpsi.Perp() << " and " << bq1*dphi << " killed by psi pT cut" << endl;
+	continue;
+      }
     }
 
     //     if (bs2jpsiphi && cowboy) {
