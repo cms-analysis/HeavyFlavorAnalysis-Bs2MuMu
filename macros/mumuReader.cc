@@ -29,9 +29,10 @@ mumuReader::mumuReader(TChain *tree, TString evtClassName) :
 
 int mumuReader::loadCandidateVariables(TAnaCand *pCand)
 {
-	if (BLIND && 5.2 < pCand->fMass && pCand->fMass < 5.45) return 0;
-	
-	return massReader::loadCandidateVariables(pCand);
+  int result = massReader::loadCandidateVariables(pCand);
+  result = result && !((BLIND && 5.2 < pCand->fMass && pCand->fMass < 5.45) && (fIso10_pt9_sv5u > 0.7));
+
+  return result;
 } // loadCandidateVariables()
 
 int mumuReader::checkTruth(TAnaCand *pCand)
