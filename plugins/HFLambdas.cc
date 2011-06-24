@@ -546,7 +546,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
                 iterator->addTrack(iMuon2,13);
                 iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 
-                iterator = theTree.addDecayTree(900310, true, MB_0, true);
+                iterator = theTree.addDecayTree(900310, true, MKSHORT, true);
                 iterator->addTrack(iPion1,211);
                 iterator->addTrack(iPion2,211);
                 iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
