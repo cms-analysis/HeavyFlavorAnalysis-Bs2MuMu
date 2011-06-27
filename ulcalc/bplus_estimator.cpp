@@ -23,7 +23,7 @@
 
 using namespace std;
 
-void estimate_bplus(map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut)
+void estimate_bplus(map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, double eff_filter)
 {
 	double nbr_gens;
 	double nbr_acc;
@@ -60,7 +60,7 @@ void estimate_bplus(map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree 
 	cut = cut && Form("(eff_flags & %d)", kEffMuon);
 	nbr_mu = (double)mcTree->Draw("",cut);
 	
-	cut = cut && "(triggers & 2)";
+	cut = cut && "(triggers & (1 << 7))";
 	nbr_trig = (double)mcTree->Draw("",cut);
 	
 	cut = TCut(Form("%s && %s && candidate == 300521 && truth == 1 && pt_kp_gen > 0.4 && TMath::Abs(eta_kp_gen) < 2.5 && TMath::Abs(eta_kp) < 2.4 && pt_kp > 0.5",bmmGeneratorCuts,bmmBaseCut));
@@ -73,7 +73,7 @@ void estimate_bplus(map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree 
 	// The error is of statistical nature only.
 	
 	// acceptance
-	lambda = nbr_acc / nbr_gens;
+	lambda = nbr_acc / (nbr_gens / eff_filter);
 	(*bplus)[make_pair(kAcc_bplus, channelIx)] = measurement_t(lambda, std_dev_binomail(lambda, nbr_gens));
 	
 	// muon efficiency

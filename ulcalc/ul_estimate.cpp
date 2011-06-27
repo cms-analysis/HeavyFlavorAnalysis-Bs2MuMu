@@ -20,9 +20,11 @@
 #include <RooStats/ModelConfig.h>
 #include <RooStats/FeldmanCousins.h>
 #include <RooStats/BayesianCalculator.h>
-#include <RooStats/MCMCCalculator.h>
-#include <RooStats/HybridCalculator.h>
-
+#include <RooStats/RooStatsUtils.h>
+#include <RooStats/FrequentistCalculator.h>
+#include <RooStats/HypoTestInverter.h>
+#include <RooStats/ProfileLikelihoodTestStat.h>
+#include <RooStats/RatioOfProfiledLikelihoodsTestStat.h>
 
 
 /* Add all the channels present in bmm to channels */
@@ -48,8 +50,8 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 	add_channels(bdmm,&channels);
 	
 	// make sure we cover the entire physical range
-	wspace->factory("mu_s[1,0,1000]");	// initialize to standard model
-	wspace->factory("mu_d[1,0,1000]");	// initialize to standard model
+	wspace->factory("mu_s[1,0,200]");	// initialize to standard model
+	wspace->factory("mu_d[1,0,400]");	// initialize to standard model
 	
 	// Create channel specific variables
 	for (chan = channels.begin(); chan != channels.end(); ++chan) {
@@ -152,9 +154,44 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 			wspace->factory(Form("Pdd_%d[%f]", *chan, ((*bdmm)[make_pair(kProb_dwind_bmm, *chan)]).getVal()));
 		}
 		
-		wspace->factory(Form("Poisson::bkg_window_%d(NbObs_%d,nu_b_%d)",*chan,*chan,*chan));
-		wspace->factory(Form("Poisson::bs_window_%d(NsObs_%d,FormulaVar::bs_mean_%d(\"TauS_%d*nu_b_%d + Pss_%d*NuS_%d*mu_s + Psd_%d*NuD_%d*mu_d\",{TauS_%d,nu_b_%d,Pss_%d,NuS_%d,mu_s,Psd_%d,NuD_%d,mu_d}))",*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan));
-		wspace->factory(Form("Poisson::bd_window_%d(NdObs_%d,FormulaVar::bd_mean_%d(\"TauD_%d*nu_b_%d + Pds_%d*NuS_%d*mu_s + Pdd_%d*NuD_%d*mu_d\",{TauD_%d,nu_b_%d,Pds_%d,NuS_%d,mu_s,Pdd_%d,NuD_%d,mu_d}))",*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan));
+		//////////////////////////////////////
+		// Construction of rare backgrounds //
+		//////////////////////////////////////
+		if ( ((*bsmm)[make_pair(kPeakBkgOff_bmm, *chan)]).getErr() > 0 && !no_errors ) {
+			measurement_t m = (*bsmm)[make_pair(kPeakBkgOff_bmm, *chan)];
+			wspace->factory(Form("PeakBkgSB0_%d[%f]",*chan,m.getVal()));
+			wspace->factory(Form("PeakBkgSBErr_%d[%f]",*chan,m.getErr()));
+			wspace->factory(Form("PeakBkgSB_%d[%f,%f,%f]",*chan,m.getVal(),0.0,m.getVal() + 10*m.getErr()));
+			wspace->factory(Form("Gaussian::PeakBkgSB_Gauss_%d(PeakBkgSB_%d,PeakBkgSB0_%d,PeakBkgSBErr_%d)",*chan,*chan,*chan,*chan));
+		} else {
+			wspace->factory(Form("PeakBkgSB_%d[%f]", *chan, ((*bsmm)[make_pair(kPeakBkgOff_bmm, *chan)]).getVal()));
+		}
+		
+		if ( ((*bsmm)[make_pair(kPeakBkgOn_bmm, *chan)]).getErr() > 0 && !no_errors ) {
+			measurement_t m = (*bsmm)[make_pair(kPeakBkgOn_bmm, *chan)];
+			wspace->factory(Form("PeakBkgBs0_%d[%f]",*chan,m.getVal()));
+			wspace->factory(Form("PeakBkgBsErr_%d[%f]",*chan,m.getErr()));
+			wspace->factory(Form("PeakBkgBs_%d[%f,%f,%f]",*chan,m.getVal(),0.0,m.getVal() + 10*m.getErr()));
+			wspace->factory(Form("Gaussian::PeakBkgBs_Gauss_%d(PeakBkgBs_%d,PeakBkgBs0_%d,PeakBkgBsErr_%d)",*chan,*chan,*chan,*chan));
+		} else {
+			wspace->factory(Form("PeakBkgBs_%d[%f]",*chan,((*bsmm)[make_pair(kPeakBkgOn_bmm, *chan)]).getVal()));
+		}
+		
+		if ( ((*bdmm)[make_pair(kPeakBkgOn_bmm, *chan)]).getErr() > 0 && !no_errors ) {
+			measurement_t m = (*bdmm)[make_pair(kPeakBkgOn_bmm, *chan)];
+			wspace->factory(Form("PeakBkgBd0_%d[%f]",*chan,m.getVal()));
+			wspace->factory(Form("PeakBkgBdErr_%d[%f]",*chan,m.getErr()));
+			wspace->factory(Form("PeakBkgBd_%d[%f,%f,%f]",*chan, m.getVal(), 0.0 ,m.getVal() + 10*m.getErr()));
+			wspace->factory(Form("Gaussian::PeakBkgBd_Gauss_%d(PeakBkgBd_%d,PeakBkgBd0_%d,PeakBkgBdErr_%d)",*chan,*chan,*chan,*chan));
+		} else {
+			wspace->factory(Form("PeakBkgBd_%d[%f]",*chan,((*bdmm)[make_pair(kPeakBkgOn_bmm, *chan)]).getVal()));
+		}
+		
+		wspace->factory(Form("Poisson::bkg_window_%d(NbObs_%d,FormulaVar::bkg_mean_%d(\"nu_b_%d + PeakBkgSB_%d\",{nu_b_%d,PeakBkgSB_%d}))",*chan,*chan,*chan,*chan,*chan,*chan,*chan));
+		
+		wspace->factory(Form("Poisson::bs_window_%d(NsObs_%d,FormulaVar::bs_mean_%d(\"TauS_%d*nu_b_%d + PeakBkgBs_%d + Pss_%d*NuS_%d*mu_s + Psd_%d*NuD_%d*mu_d\",{TauS_%d,nu_b_%d,PeakBkgBs_%d,Pss_%d,NuS_%d,mu_s,Psd_%d,NuD_%d,mu_d}))",*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan));
+		
+		wspace->factory(Form("Poisson::bd_window_%d(NdObs_%d,FormulaVar::bd_mean_%d(\"TauD_%d*nu_b_%d + PeakBkgBd_%d + Pds_%d*NuS_%d*mu_s + Pdd_%d*NuD_%d*mu_d\",{TauD_%d,nu_b_%d,PeakBkgBd_%d,Pds_%d,NuS_%d,mu_s,Pdd_%d,NuD_%d,mu_d}))",*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan));
 	}
 	
 	// build the product
@@ -292,7 +329,7 @@ RooWorkspace *build_model_light(map<bmm_param,measurement_t> *bsmm, int verbosit
  *	( Pss	Psd ) (mu_s NuS) + nu_b	(TauS) = (NsObs)
  *	( Pds	Pdd ) (mu_d NuD)		(TauD) = (NdObs)
  */
-void estimate_start_values(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, int verbosity)
+void measure_params(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, int verbosity)
 {
 	double p[2][2];
 	double tau[2];
@@ -344,12 +381,13 @@ void estimate_start_values(RooWorkspace *wspace, RooDataSet *data, set<int> *cha
 	wspace->var("mu_s")->setConstant(kFALSE);
 	wspace->var("mu_d")->setConstant(kFALSE);
 	bConfig->SetSnapshot(*wspace->set("poi"));
-} // estimate_start_values()
+} // measure_params()
 
 RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, uint32_t nbins, pair<double,double> *rg, double err, double *ulLimit, double *cpuUsed)
 {
 	using namespace RooStats;
-	FeldmanCousins fc(*data,*(dynamic_cast<ModelConfig*>(wspace->obj("splusbConfig"))));
+	ModelConfig *splusbConfig = dynamic_cast<ModelConfig*>(wspace->obj("splusbConfig"));
+	FeldmanCousins fc(*data,*splusbConfig);
 	PointSetInterval *psInterval = NULL;
 	ConfidenceBelt *belt;
 	TStopwatch swatch;
@@ -365,7 +403,7 @@ RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::s
 	fc.CreateConfBelt(true);
 	fc.SetTestSize(1.-cLevel);
 //	fc.UseAdaptiveSampling(true); // adaptive sampling (disable later on)
-	fc.AdditionalNToysFactor(6.0);
+	fc.AdditionalNToysFactor(10.0);
 	fc.SetNBins(nbins);
 	fc.FluctuateNumDataEntries(false);
 	if (rg) {
@@ -381,7 +419,8 @@ RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::s
 		fc.SetPOIPointsToTest(*custom_points); // note, this is owned by Feldman-Cousins.
 	}
 	
-	estimate_start_values(wspace, data, channels, verbosity);
+	measure_params(wspace, data, channels, verbosity);
+	splusbConfig->LoadSnapshot();
 	psInterval = fc.GetInterval();
 	
 	// if 'err' specified, correct for numerical inaccurancies...
@@ -405,7 +444,7 @@ RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::s
 	}
 	
 	if (ulLimit)
-		*ulLimit = psInterval->UpperLimit(*wspace->var("mu_s"));
+		*ulLimit = psInterval->UpperLimit((RooRealVar&)*wspace->set("poi")->first());
 	
 	swatch.Stop();
 	if (cpuUsed) *cpuUsed = swatch.CpuTime();
@@ -417,6 +456,7 @@ RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, set<in
 {
 	using namespace RooStats;
 	BayesianCalculator bc(*data,*(dynamic_cast<ModelConfig*>(wspace->obj("splusbConfig"))));
+	RooStats::ModelConfig *splusbConfig;
 	SimpleInterval *simpleInt = NULL;
 	TStopwatch swatch;
 	
@@ -426,11 +466,11 @@ RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, set<in
 	bc.SetConfidenceLevel(cLevel);
 	bc.SetLeftSideTailFraction(0.0); // compute upper limit
 	
-	//bc.SetIntegrationType("TOYMC");
-	// FIXME: Multidimensional Integration funktioniert nicht mehr!
-	//	bc.SetIntegrationType("PLAIN");
+	measure_params(wspace, data, channels, verbosity);
 	
-	estimate_start_values(wspace, data, channels, verbosity);
+	// Load the Snapshot of the s+b configuration
+	splusbConfig = dynamic_cast<RooStats::ModelConfig*> (wspace->obj("splusbConfig"));
+	splusbConfig->LoadSnapshot();
 	simpleInt = bc.GetInterval();
 	
 	if (ulLimit)
@@ -478,22 +518,62 @@ RooStats::ConfInterval *est_ul_bc_light(RooWorkspace *wspace, RooDataSet *data, 
 	return simpleInt;
 } // est_ul_bc_light()
 
-// FIXME: CLs not yet implemented
-RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, double cLevel, double *ulLimit, bool splitModel, double *cpuUsed)
+RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, int verbosity, double err, double *ulLimit, double *cpuUsed)
 {
 	using namespace RooStats;
 	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));
 	ModelConfig *sbModel = dynamic_cast<ModelConfig*> (wspace->obj("splusbConfig"));
-	HybridCalculator hc(*data,*sbModel,*bModel);
-	ToyMCSampler *sampler = (ToyMCSampler*)hc.GetTestStatSampler();
+	ProfileLikelihoodTestStat testStat(*wspace->pdf("total_pdf"));
+	ToyMCSampler *mcSampler = new ToyMCSampler(testStat,1000);
+	FrequentistCalculator frequCalc(*data,*bModel,*sbModel,mcSampler); // Note null = sb, alt = b
+	HypoTestInverter hypoInv(frequCalc, (RooRealVar*)sbModel->GetParametersOfInterest()->first(), 1.0 - cLevel);
+	double limitErr = 0.1; // FIXME: Understand this parameter
+	TStopwatch swatch;
+	bool ok;
 	
+	swatch.Start(kTRUE);
 	
-	sampler->SetNEventsPerToy(1); // number counting
-	hc.SetToys(1000, 1000);
+	mcSampler->SetNEventsPerToy(1);
+	hypoInv.SetAutoScan();
+	hypoInv.UseCLs();
+	hypoInv.SetTestSize(1.0 - cLevel);
+	hypoInv.SetVerbose(verbosity);
+	hypoInv.SetNumErr(err);
+		
+	measure_params(wspace, data, channels, verbosity);
+	sbModel->LoadSnapshot();
+	ok = hypoInv.RunLimit(*ulLimit,limitErr);
 	
+	swatch.Stop();
+	if (cpuUsed) *cpuUsed = swatch.CpuTime();
 	
+	delete mcSampler;
 	return NULL;
 } // est_ul_cls()
+
+void est_ul_clb(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double err, double *pvalue)
+{
+	using namespace RooStats;
+	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));
+	ModelConfig *sbModel = dynamic_cast<ModelConfig*> (wspace->obj("splusbConfig"));
+	ProfileLikelihoodTestStat testStat(*wspace->pdf("total_pdf"));
+	ToyMCSampler *mcSampler = new ToyMCSampler(testStat,1000);
+	FrequentistCalculator frequCalc(*data,*sbModel,*bModel,mcSampler); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
+	HypoTestResult *result;
+	
+	// congigure
+	mcSampler->SetNEventsPerToy(1);
+	measure_params(wspace, data, channels, verbosity);
+	
+	result = frequCalc.GetHypoTest();
+	result->SetBackgroundAsAlt(kTRUE);
+	result->SetTestStatisticData(result->GetTestStatisticData()-err);
+	*pvalue = 1 - result->CLsplusb(); // for profile likelihood, it seems flipped
+	
+	
+	delete mcSampler;
+	delete result;
+} // est_ul_clb()
 
 void compute_vars(map<bmm_param,measurement_t> *bmm, bool bstomumu)
 {
@@ -516,22 +596,3 @@ void compute_vars(map<bmm_param,measurement_t> *bmm, bool bstomumu)
 		(*bmm)[make_pair(kExp_bmm, *it)] = nu;
 	}
 } // compute_vars()
-
-measurement_t compute_efftot_bplus(map<bmm_param,measurement_t> *bmm, int channel)
-{
-	measurement_t eff = (*bmm)[make_pair(kAcc_bplus,channel)] * (*bmm)[make_pair(kEff_mu_bplus,channel)] * (*bmm)[make_pair(kEff_trig_bplus,channel)] * (*bmm)[make_pair(kEff_cand_bplus,channel)] * (*bmm)[make_pair(kEff_ana_bplus,channel)];
-	
-	return eff;
-} // compute_efftot_bplus()
-
-measurement_t compute_efftot_bmm(map<bmm_param,measurement_t> *bmm, int channel)
-{
-	measurement_t eff;
-	
-	if(bmm->count(make_pair(kEff_total_bmm, channel)) > 0)
-		eff = (*bmm)[make_pair(kEff_total_bmm, channel)];
-	else
-		eff = (*bmm)[make_pair(kAcc_bmm,channel)] * (*bmm)[make_pair(kEff_mu_bmm,channel)] * (*bmm)[make_pair(kEff_trig_bmm,channel)] * (*bmm)[make_pair(kEff_cand_bmm,channel)] * (*bmm)[make_pair(kEff_ana_bmm,channel)];
-	
-	return eff;
-} // compute_efftot_bmm()

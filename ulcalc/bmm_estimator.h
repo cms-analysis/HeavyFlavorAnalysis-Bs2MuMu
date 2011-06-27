@@ -22,6 +22,6 @@
 #include <TTree.h>
 
 // routines for B->mumu
-void estimate_bmm(std::map<bmm_param,measurement_t> *bmm, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, std::pair<double,double> bd_window, std::pair<double,double> bs_window);
+void estimate_bmm(std::map<bmm_param,measurement_t> *bmm, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, std::pair<double,double> bd_window, std::pair<double,double> bs_window, bool is_bstomumu);
 
 #endif

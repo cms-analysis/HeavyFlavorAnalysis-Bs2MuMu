@@ -12,6 +12,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <algorithm>
 #include <utility>
 
 const char *bmmGeneratorCuts = "pt_mu2_gen > 1 && TMath::Abs(eta_mu1_gen) < 2.5 && TMath::Abs(eta_mu2_gen) < 2.5";
@@ -133,6 +134,12 @@ std::string find_bmm_name(bmm_param_tag p)
 		case kObsB_bmm:
 			result = "OBS_BMM";
 			break;
+		case kPeakBkgOn_bmm:
+			result = "PEAK_BKG_ON";
+			break;
+		case kPeakBkgOff_bmm:
+			result = "PEAK_BKG_OFF";
+			break;
 		default:
 			std::cerr << "Unknown bmm_param: " << p << std::endl;
 			abort();
@@ -217,6 +224,13 @@ bmm_param_tag find_bmm_param_by_name(std::string name, bool *bsparam)
 		*bsparam = false;
 	} else if (name.compare("EFF_ANA_BDMM") == 0) {
 		result = kEff_ana_bmm;
+		*bsparam = false;
+	} else if (name.compare("PEAK_BKG_OFF") == 0) {
+		result = kPeakBkgOff_bmm;
+	} else if (name.compare("PEAK_BKG_BS") == 0) {
+		result = kPeakBkgOn_bmm;
+	} else if (name.compare("PEAK_BKG_BD") == 0) {
+		result = kPeakBkgOn_bmm;
 		*bsparam = false;
 	}
 	
@@ -320,3 +334,24 @@ void parse_cuts(const char *filename, std::map<double,TCut> *cuts_read)
 	
 	fclose(file);
 } // parse_cuts()
+
+measurement_t compute_efftot_bplus(map<bmm_param,measurement_t> *bmm, int channel)
+{
+	using std::make_pair;
+	measurement_t eff = (*bmm)[make_pair(kAcc_bplus,channel)] * (*bmm)[make_pair(kEff_mu_bplus,channel)] * (*bmm)[make_pair(kEff_trig_bplus,channel)] * (*bmm)[make_pair(kEff_cand_bplus,channel)] * (*bmm)[make_pair(kEff_ana_bplus,channel)];
+	
+	return eff;
+} // compute_efftot_bplus()
+
+measurement_t compute_efftot_bmm(map<bmm_param,measurement_t> *bmm, int channel)
+{
+	using std::make_pair;
+	measurement_t eff;
+	
+	if(bmm->count(make_pair(kEff_total_bmm, channel)) > 0)
+		eff = (*bmm)[make_pair(kEff_total_bmm, channel)];
+	else
+		eff = (*bmm)[make_pair(kAcc_bmm,channel)] * (*bmm)[make_pair(kEff_mu_bmm,channel)] * (*bmm)[make_pair(kEff_trig_bmm,channel)] * (*bmm)[make_pair(kEff_cand_bmm,channel)] * (*bmm)[make_pair(kEff_ana_bmm,channel)];
+	
+	return eff;
+} // compute_efftot_bmm()

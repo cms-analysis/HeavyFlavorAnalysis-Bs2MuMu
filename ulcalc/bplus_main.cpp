@@ -12,10 +12,11 @@
 #include "bplus_estimator.h"
 
 // Standard headers
+#include <float.h>
+#include <stdlib.h>
 #include <cmath>
 #include <iostream>
 #include <map>
-#include <float.h>
 
 // ROOT headers
 #include <TFile.h>
@@ -28,10 +29,11 @@ static const char *g_mc_file;
 static const char *g_data_file;
 static const char *g_outputfile;
 static bool g_append = false;
+static double g_filter_efficiency = 1.0;
 
 static void usage()
 {
-	cout << "bplus [-a] -c <cutsfile> -m <mcfile> -d <datafile> <outputfile>" << endl;
+	cout << "bplus [-a] [-f <eff_filter>] -c <cutsfile> -m <mcfile> -d <datafile> <outputfile>" << endl;
 	abort();
 } // usage()
 
@@ -60,7 +62,11 @@ static void parse_arguments(const char **first, const char **last)
 				g_data_file = *first++;
 			} else if (strcmp(arg, "-a") == 0) {
 				g_append = true;
+			} else if (strcmp(arg, "-f") == 0) {
+				if (first == last) usage();
+				g_filter_efficiency = atof(*first++);
 			}
+
 		} else {
 			g_outputfile = arg;
 		}
@@ -76,6 +82,7 @@ static void parse_arguments(const char **first, const char **last)
 	cout << "Channels: " << endl;
 	for (map<double,TCut>::const_iterator it = g_eta_cuts.begin(); it != g_eta_cuts.end(); ++it)
 		cout << '\t' << it->first << ": " << it->second.GetTitle() << endl;
+	cout << "Filter efficiency: " << g_filter_efficiency << endl;
 } // parse_arguments()
 
 int main(int argc, const char *argv [])
@@ -104,7 +111,7 @@ int main(int argc, const char *argv [])
 	for (it = g_eta_cuts.begin(); it != g_eta_cuts.end(); ++it) {
 		
 		bplus.clear();
-		estimate_bplus(&bplus, dataTree, mcTree, last_eta, it->first, channelIx, it->second);
+		estimate_bplus(&bplus, dataTree, mcTree, last_eta, it->first, channelIx, it->second, g_filter_efficiency);
 		last_eta = it->first;
 		
 		// add the numbers to the file
@@ -134,6 +141,12 @@ int main(int argc, const char *argv [])
 			// observed bpluses
 			m = bplus[make_pair(kObs_bplus, channelIx)];
 			fprintf(outputFile, "OBS_BPLUS\t%u\t%f\t%f\n",channelIx,m.getVal(),m.getErr());
+			
+			// for convenience, compute eff_tot and tot_bplus in comment line...
+			m = compute_efftot_bplus(&bplus, channelIx);
+			fprintf(outputFile, "# EFF_TOT_BPLUS\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+			m = bplus[make_pair(kObs_bplus, channelIx)] / m;
+			fprintf(outputFile, "# TOT_BPLUS\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
 		}
 		
 		channelIx++;

@@ -58,12 +58,6 @@ const measurement_t c_d_theory();
 double bstomumu();
 double bdtomumu();
 
-/* Eta value for split analysis:
- *	Barrel is < eta_barrel
- *	while we consider endcap to be >= eta_barrel
- */
-const double eta_barrel = 1.4;
-
 /* cut to be applied for analysis */
 extern const char *bmmGeneratorCuts;
 extern const char *bmmBaseCut;
@@ -92,6 +86,8 @@ enum bmm_param_tag {
 	kHigh_signal_window_bmm,
 	kObsBkg_bmm,
 	kObsB_bmm,
+	kPeakBkgOn_bmm,
+	kPeakBkgOff_bmm,
 	/* Unknown param */
 	kUnknownParam
 };
@@ -111,6 +107,8 @@ bmm_param_tag find_bmm_param_by_name(std::string name, bool *bsparam);
 /* Utility routines */
 double std_dev_binomail(double lambda,double n);
 void parse_cuts(const char *filename, std::map<double,TCut> *cuts_read);
+measurement_t compute_efftot_bplus(std::map<bmm_param,measurement_t> *bmm, int channel);
+measurement_t compute_efftot_bmm(std::map<bmm_param,measurement_t> *bmm, int channel);
 
 #ifdef __linux__
 char *fgetln(FILE *f, size_t *len);

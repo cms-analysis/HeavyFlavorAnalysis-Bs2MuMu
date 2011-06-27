@@ -16,10 +16,12 @@
 
 using namespace std;
 
-void estimate_bmm(map<bmm_param,measurement_t> *bmm, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, pair<double,double> bd_window, pair<double,double> bs_window)
+void estimate_bmm(map<bmm_param,measurement_t> *bmm, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, pair<double,double> bd_window, pair<double,double> bs_window, bool is_bstomumu)
 {
 	TCut cut;
 	TCut histo_cut(Form("%f < mass && mass < %f",low_histo_bound,high_histo_bound));
+	TCut bd_mass_cut(Form("%f < mass && mass < %f",bd_window.first,bd_window.second));
+	TCut bs_mass_cut(Form("%f < mass && mass < %f",bs_window.first,bs_window.second));
 	double eff,tot;
 	double nbr_gens,nbr_acc,nbr_trig,nbr_cand,nbr_ana,nbr_mu;
 	
@@ -85,7 +87,10 @@ void estimate_bmm(map<bmm_param,measurement_t> *bmm, TTree *dataTree, TTree *mcT
 	(*bmm)[make_pair(kEff_ana_bmm, channelIx)] = measurement_t(eff, std_dev_binomail(eff, nbr_cand));
 	
 	/* Observations */
-	(*bmm)[make_pair(kObsBkg_bmm, channelIx)] = measurement_t((double)dataTree->Draw("", anaCut && histo_cut));
-	(*bmm)[make_pair(kObsB_bmm, channelIx)] = measurement_t(0,0);
+	(*bmm)[make_pair(kObsBkg_bmm, channelIx)] = measurement_t((double)dataTree->Draw("", anaCut && histo_cut && !bd_mass_cut && !bs_mass_cut));
+	
+	if (!is_bstomumu)
+		bs_mass_cut = bd_mass_cut;
+	(*bmm)[make_pair(kObsB_bmm, channelIx)] = measurement_t((double)dataTree->Draw("", anaCut && bs_mass_cut));
 	
 } // estimate_bmm()

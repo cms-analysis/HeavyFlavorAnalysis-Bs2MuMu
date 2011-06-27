@@ -11,6 +11,7 @@
 #include "bmm_estimator.h"
 
 // Standard headers
+#include <stdlib.h>
 #include <iostream>
 #include <map>
 
@@ -111,10 +112,10 @@ int main(int argc, const char *argv [])
 	for (it = g_eta_cuts.begin(); it != g_eta_cuts.end(); ++it) {
 		
 		bsmm.clear();
-		estimate_bmm(&bsmm, dataTree, bsTree, last_eta, it->first, channelIx, it->second, bdWindow, bsWindow);
+		estimate_bmm(&bsmm, dataTree, bsTree, last_eta, it->first, channelIx, it->second, bdWindow, bsWindow, true);
 		
 		bdmm.clear();
-		estimate_bmm(&bdmm, dataTree, bdTree, last_eta, it->first, channelIx, it->second, bdWindow, bsWindow);
+		estimate_bmm(&bdmm, dataTree, bdTree, last_eta, it->first, channelIx, it->second, bdWindow, bsWindow, false);
 		
 		// add the numbers to the file
 		fprintf(outputFile, "#######################################\n");
@@ -151,6 +152,9 @@ int main(int argc, const char *argv [])
 		// ana effeciency
 		m = bsmm[make_pair(kEff_ana_bmm, channelIx)];
 		fprintf(outputFile, "EFF_ANA_BSMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		// total efficiency for convenience
+		m = compute_efftot_bmm(&bsmm, channelIx);
+		fprintf(outputFile, "# EFF_TOT_BSMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
 		
 		// Bd -> mumu efficiencies
 		// acceptance
@@ -168,6 +172,9 @@ int main(int argc, const char *argv [])
 		// ana efficiency
 		m = bdmm[make_pair(kEff_ana_bmm, channelIx)];
 		fprintf(outputFile, "EFF_ANA_BDMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		// total efficiency for convenience
+		m = compute_efftot_bmm(&bdmm, channelIx);
+		fprintf(outputFile, "# EFF_TOT_BDMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
 		
 		// Observations
 		fprintf(outputFile, "OBS_BKG\t%u\t%f\n", channelIx, bsmm[make_pair(kObsBkg_bmm, channelIx)].getVal());

@@ -141,7 +141,7 @@ static double process_cut(RooWorkspace *wspace, TTree *dataTree, TTree *bsmcTree
 	pair<int,int> key;
 	
 	// get the efficiencies for this cut (fast version w/o bplus estimate...)
-	estimate_bmm(&bsmm, dataTree, bsmcTree, -1.0, 100.0, 0, anaCut, make_pair(5.15,5.32), make_pair(5.32,5.45));
+	estimate_bmm(&bsmm, dataTree, bsmcTree, -1.0, 100.0, 0, anaCut, make_pair(5.15,5.32), make_pair(5.32,5.45), true);
 	bsmm[make_pair(kLow_signal_window_bmm, 0)] = measurement_t(5.32,0);
 	bsmm[make_pair(kHigh_signal_window_bmm, 0)] = measurement_t(5.45,0);
 	bsmm[make_pair(kTot_bplus, 0)] = measurement_t(TOTAL_BPLUS);
@@ -153,7 +153,7 @@ static double process_cut(RooWorkspace *wspace, TTree *dataTree, TTree *bsmcTree
 	j = 0;
 	while (abs(j) < 10 && avg_weight < 0.95) {
 		
-		n_s = (int64_t)round(mean_bs) + j;
+		n_s = round(mean_bs) + j;
 		if (n_s >= 0) {
 			weight_ns = TMath::PoissonI(n_s, mean_bs);
 			
@@ -244,6 +244,7 @@ int main(int argc, const char *argv[])
 	for (j = 0; j < branches->GetEntries(); j++) {
 		string name;
 		string by("by");
+		string zzz("_zzz");
 		string::iterator pos;
 		
 		br = dynamic_cast<TBranch*>((*branches)[j]);
@@ -255,6 +256,14 @@ int main(int argc, const char *argv[])
 			*pos++ = '/';
 			pos = copy(pos + by.size()-1, name.end(), pos);
 			name.erase(pos, name.end());
+		}
+		
+		// replace '_zzz' with '[0]'
+		if ( (pos = search(name.begin(), name.end(), zzz.begin(), zzz.end())) != name.end()) {
+			*pos++ = '[';
+			*pos++ = '0';
+			*pos++ = ']';
+			name.erase(pos,name.end());
 		}
 		
 		p = new pair<string,float_t>(name,0.0);
@@ -275,7 +284,7 @@ int main(int argc, const char *argv[])
 	bsmm[make_pair(kTot_bplus, 0)] = measurement_t(TOTAL_BPLUS);
 	bsmm[make_pair(kLow_signal_window_bmm, 0)] = measurement_t(5.32,0);
 	bsmm[make_pair(kHigh_signal_window_bmm, 0)] = measurement_t(5.45,0);
-	estimate_bmm(&bsmm, dataTree, bsmcTree, -1.0, 100.0, 0, anaCut, make_pair(5.15, 5.32), make_pair(5.32, 5.45));
+	estimate_bmm(&bsmm, dataTree, bsmcTree, -1.0, 100.0, 0, anaCut, make_pair(5.15, 5.32), make_pair(5.32, 5.45), true);
 	compute_vars(&bsmm, true);
 	wspace = build_model_light(&bsmm, 1);
 	Pss0 = bsmm[make_pair(kProb_swind_bmm, 0)].getVal();
