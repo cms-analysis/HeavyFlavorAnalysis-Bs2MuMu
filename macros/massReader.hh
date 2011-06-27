@@ -102,6 +102,8 @@ class massReader : public treeReader01 {
 		float fChi2; // chi2 of the vertex
 		float fNdof; // number of degrees of freedom of vertex
 		float fMaxDoca; // max doca
+		float fPMu1_Gen; // p of generator muon 1
+		float fPMu2_Gen; // p of generator muon 2
 		float fPtMu1_Gen; // pt of generator muon
 		float fPtMu2_Gen; // pt of generator muon
 		float fEtaMu1_Gen; // eta of gen muon 1
