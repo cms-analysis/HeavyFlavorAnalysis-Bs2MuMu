@@ -141,10 +141,18 @@ int massReader::loadGeneratorVariables(TGenCand *pGen)
 			case 13: // muon
 				if (firstMu) {
 					fPtMu1_Gen = dau->fP.Perp();
-					if (it->second >= 0) fPtMu1 = fpEvt->getRecTrack(it->second)->fPlab.Perp();
+					fEtaMu1_Gen = dau->fP.Eta();
+					if (it->second >= 0) {
+						fPtMu1 = fpEvt->getRecTrack(it->second)->fPlab.Perp();
+						fEtaMu1 = fpEvt->getRecTrack(it->second)->fPlab.Eta();
+					}
 				} else {
 					fPtMu2_Gen = dau->fP.Perp();
-					if (it->second >= 0) fPtMu2 = fpEvt->getRecTrack(it->second)->fPlab.Perp();
+					fEtaMu2_Gen = dau->fP.Eta();
+					if (it->second >= 0) {
+						fPtMu2 = fpEvt->getRecTrack(it->second)->fPlab.Perp();
+						fEtaMu2 = fpEvt->getRecTrack(it->second)->fPlab.Eta();
+					}
 				}
 				firstMu = false;
 				break;
@@ -155,6 +163,8 @@ int massReader::loadGeneratorVariables(TGenCand *pGen)
 	if (fPtMu2_Gen > fPtMu1_Gen) {
 		swap(fPtMu1,fPtMu2);
 		swap(fPtMu1_Gen,fPtMu2_Gen);
+		swap(fEtaMu1,fEtaMu2);
+		swap(fEtaMu1_Gen,fEtaMu2_Gen);
 	}
 	
 	// save the candidate...
