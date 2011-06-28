@@ -2,8 +2,11 @@
 #define MASS_READER_H
 
 #include "treeReader01.hh"
+#include <cmath>
 #include <set>
 #include <map>
+#include <stdlib.h>
+#include <stdint.h>
 
 // we store the first four tracks  
 #define NBR_TRACKS_STORE 4
@@ -18,13 +21,19 @@ enum trigger_bits
 {
 	kHLT_DoubleMu3_Bit					= 1 << 0,
 	kHLT_DoubleMu0_Bit					= 1 << 1,
-	kHLT_DoubleMu0_Quarkonium_v1_Bit	= 1 << 2,
+	kHLT_DoubleMu0_Quarkonium_Bit		= 1 << 2,
 	kHLT_DoubleMu3_Jpsi_Bit				= 1 << 3,
 	kHLT_DoubleMu3_Bs_Bit				= 1 << 4,
 	kHLT_DoubleMu2_Bs_Bit				= 1 << 5,
 	kHLT_Dimuon6p5_Jpsi_Displaced_Bit	= 1 << 6,
 	kHLT_Dimuon7_Jpsi_Displaced_Bit		= 1 << 7
 };
+
+struct trigger_table_t {
+	trigger_bits t_bit;
+	std::string trigger_name;
+	std::pair<int64_t,int64_t> run_range;
+}; // trigger_table_t
 
 // Truth Flags Bits
 enum truth_bits
@@ -73,6 +82,9 @@ class massReader : public treeReader01 {
 		virtual int countMuons(TAnaCand *cand); // count the number of identified muons
 		float calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt, bool sameVertex, double maxDocaSV);
 		int loadTrigger(int *errTriggerOut = NULL, int *triggersFoundOut = NULL);
+		int hasTriggeredJPsi(int triggers);
+		int hasTriggeredBs(int triggers);
+		int hasTriggered(int triggers,int avail_triggers);
 		virtual int loadEfficiencyFlags(TGenCand *gen);
 
 		// other utility routines
@@ -129,6 +141,8 @@ class massReader : public treeReader01 {
 		int	fTriggers; // store some trigger information
 		int fTriggersError; // error information of trigger
 		int fTriggersFound; // what triggers were available
+		int fTriggeredJPsi;
+		int fTriggeredBs;
 		float fCtau;
 		float fCtauE;
 		float fEta; // eta of the candidate

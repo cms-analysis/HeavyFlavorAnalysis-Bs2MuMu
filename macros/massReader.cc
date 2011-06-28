@@ -4,6 +4,17 @@
 
 using namespace std;
 
+trigger_table_t g_trigger_table [] = {
+	{kHLT_DoubleMu3_Bit,				"HLT_DoubleMu3",std::pair<int64_t,int64_t>(0ll,0ll)},
+	{kHLT_DoubleMu0_Bit,				"HLT_DoubleMu0",std::pair<int64_t,int64_t>(132440ll,147116ll)},
+	{kHLT_DoubleMu0_Quarkonium_Bit,		"HLT_DoubleMu0_Quarkonium",std::pair<int64_t,int64_t>(147195ll,149294ll)},
+	{kHLT_DoubleMu3_Jpsi_Bit,			"HLT_DoubleMu3_Jpsi",std::pair<int64_t,int64_t>(160329ll,163261ll)},
+	{kHLT_DoubleMu3_Bs_Bit,				"HLT_DoubleMu3_Bs",std::pair<int64_t,int64_t>(160329ll,161176ll)},
+	{kHLT_DoubleMu2_Bs_Bit,				"HLT_DoubleMu2_Bs",std::pair<int64_t,int64_t>(161216ll,INT64_MAX)},
+	{kHLT_Dimuon6p5_Jpsi_Displaced_Bit,	"HLT_Dimuon6p5_Jpsi_Displaced",std::pair<int64_t,int64_t>(163269ll,163869ll)},
+	{kHLT_Dimuon7_Jpsi_Displaced_Bit,	"HLT_Dimuon7_Jpsi_Displaced",std::pair<int64_t,int64_t>(165088ll,INT64_MAX)}
+};
+
 massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName),
 	reduced_tree(NULL),
 	fTruthType(0),
@@ -77,9 +88,11 @@ void massReader::clearVariables()
 	fIso10_pt9_sv3u = 0.0;
 	fIso10_pt9_sv4u = 0.0;
 	fIso10_pt9_sv5u = 0.0;
-	fTriggers = 0.0;
-	fTriggersError = 0.0;
-	fTriggersFound = 0.0;
+	fTriggers = 0;
+	fTriggersError = 0;
+	fTriggersFound = 0;
+	fTriggeredJPsi = 0;
+	fTriggeredBs = 0;
 	fCtau = 0.0;
 	fCtauE = 0.0;
 	fEta = 0.0;
@@ -113,9 +126,11 @@ int massReader::loadGeneratorVariables(TGenCand *pGen)
 	TGenCand *dau;
 	bool firstMu;
 	
-	if (trueDecay.size() == 0)
+	if (abs(pGen->fID) != fTruthType)
 		goto bail;
 	
+	if (trueDecay.size() == 0)
+		goto bail;
 	
 	buildDecay(pGen,&particles);
 	particles.erase(22); // remove Bremsstrahlung
@@ -132,6 +147,8 @@ int massReader::loadGeneratorVariables(TGenCand *pGen)
 	fPt = pGen->fP.Perp();
 	fEta = pGen->fP.Eta();
 	fTriggers = loadTrigger(&fTriggersError,&fTriggersFound);
+	fTriggeredJPsi = hasTriggeredJPsi(fTriggers);
+	fTriggeredBs = hasTriggeredBs(fTriggers);
 	fNbrPV = fpEvt->nPV();
 	
 	// save the muon pt
@@ -309,6 +326,8 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fTruth = checkTruth(pCand);
 	fTruthFlags = loadTruthFlags(pCand);
 	fTriggers = loadTrigger(&fTriggersError,&fTriggersFound);
+	fTriggeredJPsi = hasTriggeredJPsi(fTriggers);
+	fTriggeredBs = hasTriggeredBs(fTriggers);
 	fEffFlags = 0;
 	
 	// generator pt of muons...
@@ -398,6 +417,8 @@ void massReader::bookHist()
 	reduced_tree->Branch("triggers",&fTriggers,"triggers/I");
 	reduced_tree->Branch("triggers_error",&fTriggersError,"triggers_error/I");
 	reduced_tree->Branch("triggers_found",&fTriggersFound,"triggers_found/I");
+	reduced_tree->Branch("triggered_jpsi",&fTriggeredJPsi,"triggered_jpsi/I");
+	reduced_tree->Branch("triggered_bs",&fTriggeredBs,"triggered_bs/I");
 	reduced_tree->Branch("ctau",&fCtau,"ctau/F");
 	reduced_tree->Branch("ctaue",&fCtauE,"ctaue/F");
 	reduced_tree->Branch("eta",&fEta,"eta/F");
@@ -657,107 +678,70 @@ float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle, doubl
 
 int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 {
-	unsigned j;
+	unsigned j,k;
+	trigger_table_t trg;
 	int triggers = 0;
-	TString string;
-	int triggers_found = 0; // store the trigger we found!!
+	int triggers_found = 0;
 	int triggers_err = 0;
 	
 	for (j = 0; j < NHLT; j++) {
 		
-		std::string trgName(fpEvt->fHLTNames[j].Data());
+		std::string name(fpEvt->fHLTNames[j].Data());
 		
-		if (trgName == "HLT_DoubleMu3") {
-			triggers_found |= kHLT_DoubleMu3_Bit;
+		// check the name...
+		for (k = 0; k < sizeof(g_trigger_table)/sizeof(trigger_table_t); k++) {
 			
-			if (fpEvt->fHLTError[j]) {
-				triggers_err |= kHLT_DoubleMu3_Bit;
-				continue;
+			trg = g_trigger_table[k];
+			if (name.find(trg.trigger_name.c_str()) <= name.size()) {
+				triggers_found |= trg.t_bit;
+				if (fpEvt->fHLTError[j]) {
+					triggers_err |= trg.t_bit;
+					continue;
+				}
+				if (fpEvt->fHLTResult[j])
+					triggers |= trg.t_bit;
 			}
-			
-			if(fpEvt->fHLTResult[j])
-				triggers |= kHLT_DoubleMu3_Bit;
-		} else if (trgName == "HLT_DoubleMu0") {
-			triggers_found |= kHLT_DoubleMu0_Bit;
-			
-			if (fpEvt->fHLTError[j]) {
-				triggers_err |= kHLT_DoubleMu0_Bit;
-				continue;
-			}
-			
-			if(fpEvt->fHLTResult[j])
-				triggers |= kHLT_DoubleMu0_Bit;
-		} else if (trgName == "HLT_DoubleMu0_Quarkonium_v1") {
-			triggers_found |= kHLT_DoubleMu0_Quarkonium_v1_Bit;
-			
-			if (fpEvt->fHLTError[j]) {
-				triggers_err |= kHLT_DoubleMu0_Quarkonium_v1_Bit;
-				continue;
-			}
-			
-			if (fpEvt->fHLTResult[j])
-				triggers |= kHLT_DoubleMu0_Quarkonium_v1_Bit;
-		} else if (trgName.find("HLT_DoubleMu3_Jpsi") <= trgName.size()) {
-			triggers_found |= kHLT_DoubleMu3_Jpsi_Bit;
-			
-			if (fpEvt->fHLTError[j]) {
-				triggers_err |= kHLT_DoubleMu3_Jpsi_Bit;
-				continue;
-			}
-			
-			if (fpEvt->fHLTResult[j])
-				triggers |= kHLT_DoubleMu3_Jpsi_Bit;
-		} else if (trgName.find("HLT_DoubleMu3_Bs") <= trgName.size()) {
-			triggers_found |= kHLT_DoubleMu3_Bs_Bit;
-			
-			if (fpEvt->fHLTError[j]) {
-				triggers_err |= kHLT_DoubleMu3_Bs_Bit;
-				continue;
-			}
-			
-			if (fpEvt->fHLTResult[j])
-				triggers |= kHLT_DoubleMu3_Bs_Bit;
-		} else if (trgName.find("HLT_DoubleMu2_Bs") <= trgName.size()) {
-			triggers_found |= kHLT_DoubleMu2_Bs_Bit;
-			
-			if (fpEvt->fHLTError[j]) {
-				triggers_err |= kHLT_DoubleMu2_Bs_Bit;
-				continue;
-			}
-			
-			if (fpEvt->fHLTResult[j])
-				triggers |= kHLT_DoubleMu2_Bs_Bit;
-		} else if (trgName.find("HLT_Dimuon6p5_Jpsi_Displaced") <= trgName.size()) {
-			triggers_found |= kHLT_Dimuon6p5_Jpsi_Displaced_Bit;
-			
-			if (fpEvt->fHLTError[j]) {
-				triggers_err |= kHLT_Dimuon6p5_Jpsi_Displaced_Bit;
-				continue;
-			}
-			
-			if (fpEvt->fHLTResult[j])
-				triggers |= kHLT_Dimuon6p5_Jpsi_Displaced_Bit;
-		} else if (trgName.find("HLT_Dimuon7_Jpsi_Displaced") <= trgName.size()) {
-			triggers_found |= kHLT_Dimuon7_Jpsi_Displaced_Bit;
-			
-			if (fpEvt->fHLTError[j]) {
-				triggers_err |= kHLT_Dimuon7_Jpsi_Displaced_Bit;
-				continue;
-			}
-			
-			if (fpEvt->fHLTResult[j])
-				triggers |= kHLT_Dimuon7_Jpsi_Displaced_Bit;
 		}
 	}
 	
-	if (errTriggerOut)
-		*errTriggerOut = triggers_err;
-
-	if (triggersFoundOut)
-		*triggersFoundOut = triggers_found;
+	if (errTriggerOut) *errTriggerOut = triggers_err;
+	if (triggersFoundOut) *triggersFoundOut = triggers_found;
 	
 	return triggers;
 } // loadTrigger()
+
+int massReader::hasTriggeredJPsi(int triggers)
+{
+	int psitriggers = (kHLT_DoubleMu0_Bit | kHLT_DoubleMu0_Quarkonium_Bit | kHLT_DoubleMu3_Jpsi_Bit | kHLT_Dimuon6p5_Jpsi_Displaced_Bit | kHLT_Dimuon7_Jpsi_Displaced_Bit);
+	
+	return hasTriggered(triggers,psitriggers);
+} // hasTriggeredJPsi()
+
+int massReader::hasTriggeredBs(int triggers)
+{
+	int bstriggers = (kHLT_DoubleMu0_Bit | kHLT_DoubleMu0_Quarkonium_Bit | kHLT_DoubleMu3_Bs_Bit | kHLT_DoubleMu2_Bs_Bit);
+	return hasTriggered(triggers,bstriggers);
+} // hasTriggeredBs()
+
+int massReader::hasTriggered(int triggers,int avail_triggers)
+{
+	unsigned j;
+	int result = 0;
+	
+	for (j = 0; !result && j < sizeof(g_trigger_table)/sizeof(trigger_table_t); j++) {
+		
+		if ((g_trigger_table[j].t_bit & avail_triggers) == 0)
+			continue; // this trigger is not important to us
+		
+		if ((g_trigger_table[j].t_bit & triggers) != 0) { // we triggered this one
+			// hence check the run range or mc always passes
+			result = (g_trigger_table[j].run_range.first <= fRun) && (fRun <= g_trigger_table[j].run_range.second)
+				|| fIsMC;
+		}
+	}
+	
+	return result;
+} // hasTriggered()
 
 int massReader::loadEfficiencyFlags(TGenCand *gen)
 {
@@ -1010,12 +994,7 @@ bool massReader::applyCut()
 	}
 	
 	if (fCutTriggered) {
-		// 2010 Trigger
-		pass = ( (fTriggersFound & kHLT_DoubleMu0_Quarkonium_v1_Bit) && (fTriggers & kHLT_DoubleMu0_Quarkonium_v1_Bit) ) || ( ((fTriggersFound & kHLT_DoubleMu0_Quarkonium_v1_Bit) == 0) && (fTriggers & kHLT_DoubleMu0_Bit) );
-		
-		// 2011 Trigger
-		pass = pass || ( (fTriggers & kHLT_DoubleMu3_Jpsi_Bit) || (fTriggers & kHLT_DoubleMu3_Bs_Bit) || (fTriggers & kHLT_DoubleMu2_Bs_Bit) || (fTriggers & kHLT_Dimuon6p5_Jpsi_Displaced_Bit) || (fTriggers & kHLT_Dimuon7_Jpsi_Displaced_Bit) );
-		
+		pass = fTriggeredJPsi || fTriggeredBs;
 		if (!pass) goto bail;
 	}
 	
