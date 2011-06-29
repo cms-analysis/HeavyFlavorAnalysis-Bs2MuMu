@@ -10,9 +10,9 @@ trigger_table_t g_trigger_table [] = {
 	{kHLT_DoubleMu0_Quarkonium_Bit,		"HLT_DoubleMu0_Quarkonium",std::pair<int64_t,int64_t>(147195ll,149294ll)},
 	{kHLT_DoubleMu3_Jpsi_Bit,			"HLT_DoubleMu3_Jpsi",std::pair<int64_t,int64_t>(160329ll,163261ll)},
 	{kHLT_DoubleMu3_Bs_Bit,				"HLT_DoubleMu3_Bs",std::pair<int64_t,int64_t>(160329ll,161176ll)},
-	{kHLT_DoubleMu2_Bs_Bit,				"HLT_DoubleMu2_Bs",std::pair<int64_t,int64_t>(161216ll,INT64_MAX)},
+	{kHLT_DoubleMu2_Bs_Bit,				"HLT_DoubleMu2_Bs",std::pair<int64_t,int64_t>(161216ll,190000ll)},
 	{kHLT_Dimuon6p5_Jpsi_Displaced_Bit,	"HLT_Dimuon6p5_Jpsi_Displaced",std::pair<int64_t,int64_t>(163269ll,163869ll)},
-	{kHLT_Dimuon7_Jpsi_Displaced_Bit,	"HLT_Dimuon7_Jpsi_Displaced",std::pair<int64_t,int64_t>(165088ll,INT64_MAX)}
+	{kHLT_Dimuon7_Jpsi_Displaced_Bit,	"HLT_Dimuon7_Jpsi_Displaced",std::pair<int64_t,int64_t>(165088ll,190000ll)}
 };
 
 massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName),
@@ -735,8 +735,8 @@ int massReader::hasTriggered(int triggers,int avail_triggers)
 		
 		if ((g_trigger_table[j].t_bit & triggers) != 0) { // we triggered this one
 			// hence check the run range or mc always passes
-			result = (g_trigger_table[j].run_range.first <= fRun) && (fRun <= g_trigger_table[j].run_range.second)
-				|| fIsMC;
+		  result = ((g_trigger_table[j].run_range.first <= fRun) && (fRun <= g_trigger_table[j].run_range.second))
+			    || (fIsMC);
 		}
 	}
 	
