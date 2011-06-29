@@ -608,7 +608,6 @@ void anaBmm::makeAll(int channel) {
     todo.push_back("fls3d");
     todo.push_back("chi2dof");
     todo.push_back("alpha");
-    todo.push_back("muonseta");
     
     for (unsigned int i = 0; i < todo.size(); ++i) {
       sbsDistributionOverlaySameFile("NoData", Form("B_%s", todo[i].c_str()), Form("E_%s", todo[i].c_str()), "Ao", "Barrel", "Endcap");
@@ -642,6 +641,8 @@ void anaBmm::makeAll(int channel) {
       sbsDistributionOverlay("CsData", "CsMc", "Ao", regions[i].c_str());
       //       sbsDistributionOverlay("NoData", "CsData", "Ao", regions[i].c_str());
     }
+
+    //    sbsDistributionOverlay("NoData", "NoMc1e33", "Ao", regions[i].c_str());
   }
 
   // -- 4
@@ -1161,39 +1162,44 @@ void anaBmm::isoMean(const char *var, const char *cuts, int maxPvN) {
 
 
 // ----------------------------------------------------------------------
-void anaBmm::isoProcess(const char *var, const char *cuts, int loop) {
+void anaBmm::varProcess(const char *var, const char *cuts, double lo, double hi, const char *at, int loop) {
 
   // -- signal MC
   fpMc[fSgMc]->cd(); 
   TH1D *h40 = (TH1D*)gFile->Get("iso40");  
-  if (0 == h40) {h40 = new TH1D("iso40", "", 40, 0., 1.01); } else  h40->Reset();
-
+  if (h40)  delete h40;   
+  h40 = new TH1D("iso40", "", 40, lo, hi);
   TH1D *h41 = (TH1D*)gFile->Get("iso41");  
-  if (0 == h41) {h41 = new TH1D("iso41", "", 40, 0., 1.01); } else  h41->Reset();
-
+  if (h41)  delete h41;   
+  h41 = new TH1D("iso41", "", 40, lo, hi);
   TH1D *h42 = (TH1D*)gFile->Get("iso42");  
-  if (0 == h42) {h42 = new TH1D("iso42", "", 40, 0., 1.01); } else  h42->Reset();
+  if (h42)  delete h42;   
+  h42 = new TH1D("iso42", "", 40, lo, hi);
 
-
+  double ncnt;
   TTree *t; 
   t = (TTree*)gFile->Get("events"); 
+  t = (TTree*)gFile->Get("effTree"); 
   cout << "*********************" << endl;
   cout << gFile->GetName() << " -> t = " << t << endl;
-  t->Draw(Form("%s>>iso40", var), Form("%s&&procid==%d", cuts, 40));
-  cout << "2" << endl;
-  t->Draw(Form("%s>>iso41", var), Form("%s&&procid==%d", cuts, 41));
-  t->Draw(Form("%s>>iso42", var), Form("%s&&procid==%d", cuts, 42));
+  ncnt = t->Draw(Form("%s>>iso40", var), Form("%s&&procid==%d", cuts, 40));
+  cout << "40: " << ncnt << endl;
+  ncnt = t->Draw(Form("%s>>iso41", var), Form("%s&&procid==%d", cuts, 41));
+  cout << "41: " << ncnt << endl;
+  ncnt = t->Draw(Form("%s>>iso42", var), Form("%s&&procid==%d", cuts, 42));
+  cout << "42: " << ncnt << endl;
   
   h41->Scale(h40->GetSumOfWeights()/h41->GetSumOfWeights()); 
   h42->Scale(h40->GetSumOfWeights()/h42->GetSumOfWeights()); 
 
-  setTitles(h40, "I", "a.u.", 0.06, 0.9, 1.3);
+  setTitles(h40, at, "a.u.", 0.06, 0.9, 1.3);
   setHist(h40, kBlue);  
   setHist(h41, kRed);     //h41->SetLineStyle(kDashed); 
   setHist(h42, kBlack);   //h42->SetLineStyle(kDotted); 
 
-  shrinkPad(0.1, 0.15); 
-  double maxi = h40->GetMaximum(); 
+  shrinkPad(0.12, 0.15); 
+  double maxi(0.); 
+  maxi = h40->GetMaximum(); 
   if (h41->GetMaximum() > maxi) maxi = h41->GetMaximum(); 
   if (h42->GetMaximum() > maxi) maxi = h42->GetMaximum(); 
   h40->SetMaximum(1.1*maxi); 
@@ -1202,10 +1208,10 @@ void anaBmm::isoProcess(const char *var, const char *cuts, int loop) {
   h42->Draw("same");
 
 
-  newLegend(0.25, 0.6, 0.4, 0.75); 
-  legg->AddEntry(h40, Form("GGF, mean = %4.3f", h40->GetMean()), "l"); 
-  legg->AddEntry(h41, Form("FEX, mean = %4.3f", h41->GetMean()), "l"); 
-  legg->AddEntry(h42, Form("GSP, mean = %4.3f", h42->GetMean()), "l"); 
+  newLegend(0.55, 0.7, 0.8, 0.85); 
+  legg->AddEntry(h40, Form("<GGF> = %4.3f", h40->GetMean()), "l"); 
+  legg->AddEntry(h41, Form("<FEX> = %4.3f", h41->GetMean()), "l"); 
+  legg->AddEntry(h42, Form("<GSP> = %4.3f", h42->GetMean()), "l"); 
   legg->Draw();
 
 
@@ -1849,6 +1855,10 @@ void anaBmm::filterEff(int mode) {
 void anaBmm::accEffFromEffTree(string fname, numbers &a, cuts &b, int proc) {
 
   TFile *f = fF[fname];
+  if (0 == f) {
+    cout << "anaBmm::accEffFromEffTree(" << a.name << "): no file " << fname << " found " << endl;
+    return;
+  }
   TTree *t  = (TTree*)(f->Get("effTree"));
   double effFilter(1.); 
   if (!t) {
@@ -2351,6 +2361,59 @@ void anaBmm::plotWithCut(const char *var, const char *cuts, double cut, const ch
 
 
 // ----------------------------------------------------------------------
+void anaBmm::compareTrigger(double m1pt, double m2pt) {
+  
+  for (unsigned int i = 0; i < fNchan; ++i) {
+    fCuts[i]->m1pt = m1pt; 
+    fCuts[i]->m2pt = m2pt; 
+  }
+  
+  loopTree(0); 
+  loopTree(10); 
+
+  cout << Form("pT > %3.1f muid: ", m2pt) 
+       << Form("%3.2f %3.2f %3.2f %3.2f", 
+	       fNumbersBs[0]->effMuidMC, fNumbersBs[0]->effMuidPid, 
+	       fNumbersBs[1]->effMuidMC, fNumbersBs[1]->effMuidPid)
+       << " " 
+       << Form("%3.2f %3.2f %3.2f %3.2f", 
+	       fNumbersNorm[0]->effMuidMC, fNumbersNorm[0]->effMuidPid, 
+	       fNumbersNorm[1]->effMuidMC, fNumbersNorm[1]->effMuidPid)
+       << " -> " 
+       << Form(" rho_B = %3.2f rho_E = %3.2f", 
+	       fNumbersNorm[0]->effMuidMC/fNumbersNorm[0]->effMuidPid, 
+	       fNumbersNorm[1]->effMuidMC/fNumbersNorm[1]->effMuidPid)
+       << Form(" r_MC = %3.2f %3.2f r_Pid = %3.2f %3.2f", 
+	       fNumbersBs[0]->effMuidMC/fNumbersNorm[0]->effMuidMC, 
+	       fNumbersBs[1]->effMuidMC/fNumbersNorm[1]->effMuidMC, 
+	       fNumbersBs[0]->effMuidPid/fNumbersNorm[0]->effMuidPid,
+	       fNumbersBs[1]->effMuidPid/fNumbersNorm[1]->effMuidPid
+	       )
+       << endl;
+
+  cout << Form("pT > %3.1f trig: ", m2pt) 
+       << Form("%3.2f %3.2f %3.2f %3.2f", 
+	       fNumbersBs[0]->effTrigMC, fNumbersBs[0]->effTrigPid, 
+	       fNumbersBs[1]->effTrigMC, fNumbersBs[1]->effTrigPid)
+       << " " 
+       << Form("%3.2f %3.2f %3.2f %3.2f", 
+	       fNumbersNorm[0]->effTrigMC, fNumbersNorm[0]->effTrigPid, 
+	       fNumbersNorm[1]->effTrigMC, fNumbersNorm[1]->effTrigPid)
+       << " -> " 
+       << Form(" rho_B = %3.2f rho_E = %3.2f", 
+	       fNumbersNorm[0]->effTrigMC/fNumbersNorm[0]->effTrigPid, 
+	       fNumbersNorm[1]->effTrigMC/fNumbersNorm[1]->effTrigPid)
+       << Form(" r_MC = %3.2f %3.2f r_Pid = %3.2f %3.2f", 
+	       fNumbersBs[0]->effTrigMC/fNumbersNorm[0]->effTrigMC, 
+	       fNumbersBs[1]->effTrigMC/fNumbersNorm[1]->effTrigMC, 
+	       fNumbersBs[0]->effTrigPid/fNumbersNorm[0]->effTrigPid,
+	       fNumbersBs[1]->effTrigPid/fNumbersNorm[1]->effTrigPid
+	       )
+       << endl;
+}
+
+
+// ----------------------------------------------------------------------
 TH1* anaBmm::loopTree(int mode, int proc) {
   // the loopTree
   // -- mode definition
@@ -2362,10 +2425,9 @@ TH1* anaBmm::loopTree(int mode, int proc) {
   // 20 Bs2JpsiPhi MC
   // 21 Bs2JpsiPhi data
 
-  PidTable *ptT1 = new PidTable("pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
-  PidTable *ptT2 = new PidTable("pidtables/110606/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
-
-  PidTable *ptM = new PidTable("pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
+  PidTable *ptT1;
+  PidTable *ptT2;
+  PidTable *ptM; 
   
   bool bp2jpsikp(false), bs2jpsiphi(false), isMC(false); 
 
@@ -2405,6 +2467,19 @@ TH1* anaBmm::loopTree(int mode, int proc) {
     fpData[fCsData]->cd(); 
   } else {
     cout << "mode 99" << endl;
+  }
+
+  if (isMC) {
+    ptT1 = new PidTable("pidtables/110625/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
+    ptT2 = new PidTable("pidtables/110625/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
+    ptM  = new PidTable("pidtables/110625/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 
+//     ptT1 = new PidTable("pidtables/110625/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.dat"); 	
+//     ptT2 = new PidTable("pidtables/110625/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.dat"); 	
+//     ptM  = new PidTable("pidtables/110625/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.dat"); 
+  } else {
+    ptT1 = new PidTable("pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 	
+    ptT2 = new PidTable("pidtables/110606/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 	
+    ptM  = new PidTable("pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
   }
 
   gFile->pwd();
@@ -2574,18 +2649,18 @@ TH1* anaBmm::loopTree(int mode, int proc) {
     if (isMC) {
       if (TMath::Abs(bg1eta) > 2.5) continue;
       if (TMath::Abs(bg2eta) > 2.5) continue;
-      if (TMath::Abs(bg1pt) < 1.0) continue;
-      if (TMath::Abs(bg2pt) < 1.0) continue;
+      if (bg1pt < 1.0) continue;
+      if (bg2pt < 1.0) continue;
       if (bp2jpsikp) {
 	if (TMath::Abs(bg3eta) > 2.5) continue;
-	if (TMath::Abs(bg3pt) < 0.4) continue;
+	if (bg3pt < 0.4) continue;
       }
       
       if (bs2jpsiphi) {
 	if (TMath::Abs(bg3eta) > 2.5) continue;
-	if (TMath::Abs(bg3pt) < 0.4) continue;
 	if (TMath::Abs(bg4eta) > 2.5) continue;
-	if (TMath::Abs(bg4pt) < 0.4) continue;
+	if (bg3pt < 0.4) continue;
+	if (bg4pt < 0.4) continue;
       }
     } else {
       if (!bjson) {
@@ -2615,7 +2690,7 @@ TH1* anaBmm::loopTree(int mode, int proc) {
 
     // -- this is the base, after the raw acceptance cuts
     fhMassNoCuts[fChan]->Fill(mass);
-
+    
     // -- analysis cuts
     if (bq1*bq2 > 0) continue;
     if (bm1pt < pCuts->m1pt) continue; 
@@ -2646,11 +2721,11 @@ TH1* anaBmm::loopTree(int mode, int proc) {
       cowboy = bq1*dphi > 0; 
       // -- cowboy veto 
       if (cowboy) {
-	// 	cout << vpsi.Perp() << " and " << bq1*dphi << " killed by cowboy veto" << endl;
+	//cout << vpsi.Perp() << " and " << bq1*dphi << " killed by cowboy veto" << endl;
  	continue;
       }
       if (vpsi.Perp() < 7) {
-	//	cout << vpsi.Perp() << " and " << bq1*dphi << " killed by psi pT cut" << endl;
+	//cout << vpsi.Perp() << " and " << bq1*dphi << " killed by psi pT cut" << endl;
 	continue;
       }
     }
@@ -2669,6 +2744,9 @@ TH1* anaBmm::loopTree(int mode, int proc) {
     m2w8 = ptM->effD(bm2pt, TMath::Abs(bm2eta), 0.);
     mw8  = m1w8*m2w8; 
     
+    //    cout << "mw8 = " << mw8 << ": " << m1w8 << "*" << m2w8 
+    //         << " for muons = " << bm1pt << " " << bm1eta << " " << bm2pt << " " << bm2eta << endl;
+
     if (mw8 > 0.) {
       fhMuId[fChan]->Fill(mw8, 1./mw8); 
     } else {
@@ -2691,10 +2769,6 @@ TH1* anaBmm::loopTree(int mode, int proc) {
     tr1w8 = ptT1->effD(bm1pt, TMath::Abs(bm1eta), 0.)*ptT2->effD(bm1pt, TMath::Abs(bm1eta), 0.);
     tr2w8 = ptT1->effD(bm2pt, TMath::Abs(bm2eta), 0.)*ptT2->effD(bm2pt, TMath::Abs(bm2eta), 0.);
     trw8  = tr1w8*tr2w8; 
-    // had two missing TMath::Abs(eta) ...
-    //     if (bw8tr > 0.) {
-    //       fhMuTr[fChan]->Fill(bw8tr, 1./bw8tr); 
-    //     }
     if (trw8 > 0.) {
       fhMuTr[fChan]->Fill(trw8, 1./trw8); 
     }
@@ -3003,16 +3077,15 @@ void anaBmm::triggerSignal(const char *cuts) {
   TH1D *H1 = new TH1D("H1", "", NBINS, HLO, HHI); 
   TH1D *EF = new TH1D("EF", "", NBINS, HLO, HHI); EF->Sumw2(); 
   
-  const int NFILE(4);
+  const int NFILE(3);
   string names[4]; 
   TFile *f1[NFILE]; 
-  f1[0] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-1313-bmt-ht.root");       names[0] = "HT";
-  f1[1] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-1313-bmt-photon.root");   names[1] = "Photon";
-  f1[2] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-1313-bmt-jet.root");      names[2] = "Jet"; 
-  f1[3] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-1313-bmt-multiJet.root"); names[3] = "MultiJet"; 
+  f1[0] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv02-1313-bmt-ht.root");       names[0] = "HT";
+  f1[1] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv02-1313-bmt-photon.root");   names[1] = "Photon";
+  f1[2] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv02-1313-bmt-jet.root");      names[2] = "Jet"; 
+  //  f1[3] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv02-1313-bmt-multiJet.root"); names[3] = "MultiJet"; 
 
   TTree *t; 
-
 
   loopTree(0); 
 
@@ -3132,11 +3205,11 @@ void anaBmm::triggerNorm(const char *cuts) {
   f1[0] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-300521-bmt-ht.root");       names[0] = "HT";	   
   f1[1] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-300521-bmt-photon.root");   names[1] = "Photon";   
   f1[2] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-300521-bmt-jet.root");      names[2] = "Jet"; 	   
-  f1[3] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-300521-bmt-multiJet.root"); names[3] = "MultiJet"; 
+  //  f1[3] = TFile::Open("/shome/ursl/scratch/bmm/stuff/cv01-300521-bmt-multiJet.root"); names[3] = "MultiJet"; 
 
   TTree *t; 
 
-  loopTree(0); 
+  loopTree(10); 
 
   c0->Clear(); 
   c0->Divide(2,2); 

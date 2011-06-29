@@ -147,6 +147,7 @@ void bmmReader::eventProcessing() {
   ((TH1D*)fpHistFile->Get("monAllCands"))->Fill(fpEvt->nCands()); 
   ((TH1D*)fpHistFile->Get("monTypeCands"))->Fill(fCands.size()); 
 
+  bool foundRun(false); 
   if (SELMODE < 0) {
     // -- Fill ALL candidates
     for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
@@ -158,21 +159,32 @@ void bmmReader::eventProcessing() {
       
       fillCandidateVariables();
       if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX && fCandIso5 > 0.7) continue;
-
-      if (fRun < 150000) {
+      
+      foundRun = false; 
+      if ((fRun < 150000) || fIsMC) {
+	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR1"]);
-      } else if (fRun >= 160329 && fRun < 161176) {
+      } 
+      if ((fRun >= 160329 && fRun < 161176) || fIsMC) {
+	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR2"]);
-      } else if (fRun >= 161216 && fRun < 163261) {
+      } 
+      if ((fRun >= 161216 && fRun < 163261) || fIsMC) {
+	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR3"]);
-      } else if (fRun >= 163269 && fRun <= 163869) {
+      } 
+      if ((fRun >= 163269 && fRun <= 163869) || fIsMC) {
+	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR4"]);
-      } else if (fRun >= 165088) {
+      } 
+      if ((fRun >= 165088) || fIsMC) {
+	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR5"]);
-      } else {
+      } 
+      if (!foundRun) {
 	fillCandidateHistograms(fRegion["AR0"]);
       }
-
+      
       fillCandidateHistograms(fRegion["A"]);
       if (fBarrel) {
 	fillCandidateHistograms(fRegion["B"]); 
@@ -200,8 +212,7 @@ void bmmReader::eventProcessing() {
 	  fTree->Fill(); 
 	}	  
       }
-      
-    }
+    }    
   } else {
     candidateSelection(SELMODE); 
     // -- Fill only 'best' candidate
@@ -210,20 +221,31 @@ void bmmReader::eventProcessing() {
     if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX && fCandIso5 > 0.7) {
       // do nothing
     } else {
-      if (fRun < 150000) {
+      foundRun = false; 
+      if ((fRun < 150000) || fIsMC) {
+	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR1"]);
-      } else if (fRun >= 160329 && fRun < 161176) {
+      } 
+      if ((fRun >= 160329 && fRun < 161176) || fIsMC) {
+	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR2"]);
-      } else if (fRun >= 161216 && fRun < 163261) {
+      } 
+      if ((fRun >= 161216 && fRun < 163261) || fIsMC) {
+	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR3"]);
-      } else if (fRun >= 163269 && fRun <= 163869) {
+      } 
+      if ((fRun >= 163269 && fRun <= 163869) || fIsMC) {
+	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR4"]);
-      } else if (fRun >= 165088) {
+      } 
+      if ((fRun >= 165088) || fIsMC) {
+	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR5"]);
-      } else {
+      } 
+      if (!foundRun) {
 	fillCandidateHistograms(fRegion["AR0"]);
       }
-
+      
       fillCandidateHistograms(fRegion["A"]);
       if (fBarrel) {
 	fillCandidateHistograms(fRegion["B"]); 
@@ -801,7 +823,7 @@ void bmmReader::fillCandidateVariables() {
   }
 
   // -- for rare backgrounds there are no "true" muons
-  if (fpCand->fType > 1000000) {
+  if (fpCand->fType > 1000000 && fpCand->fType < 2000000) {
     p1 = fpEvt->getSigTrack(fpCand->fSig1); 
     p2 = fpEvt->getSigTrack(fpCand->fSig2); 
   }
@@ -849,7 +871,6 @@ void bmmReader::fillCandidateVariables() {
     TGenCand *pg1 = fpEvt->getGenCand(p1->fGenIndex);
     fMu1PtGen     = pg1->fP.Perp();
     fMu1EtaGen    = pg1->fP.Eta();
-    //cout << "bmmReader: m = " << fCandM << " from cand " << fpCand << endl;
   } else {
     fMu1PtGen     = -99.;
     fMu1EtaGen    = -99.;
@@ -885,7 +906,11 @@ void bmmReader::fillCandidateVariables() {
     fMu2EtaGen    = -99.;
   }
 
-
+  //   cout << "bmmReader: m = " << fCandM << " from cand " << fpCand 
+  //        << " mu gen: " << fGenM1Tmi << " " << fGenM2Tmi 
+  //        << " mu gen: " << fMu1PtGen << " " << fMu2PtGen 
+  //        << endl;
+  
   fCandW8Mu     = fMu1W8Mu*fMu2W8Mu;
   if (TMath::Abs(fCandW8Mu) > 1.) fCandW8Mu = 0.2; // FIXME correction for missing entries at low pT
   fCandW8Tr     = fMu1W8Tr*fMu2W8Tr;

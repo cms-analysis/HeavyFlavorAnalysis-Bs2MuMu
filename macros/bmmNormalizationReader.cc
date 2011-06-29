@@ -328,6 +328,12 @@ void bmmNormalizationReader::efficiencyCalculation() {
   } else {
     fETcandMass = -99.;
   }
+
+  //   cout << Form("%4d", fEvent) << " bmmNormalizationReader: m = " << fETcandMass << " from cand " << pCand 
+  //        << " mu gen: " << fGenM1Tmi << " " << fGenM2Tmi 
+  //        << " mu gen: " << fETg1pt << " " << fETg2pt 
+  //        << endl;
+
   fEffTree->Fill(); 
 
 

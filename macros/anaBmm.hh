@@ -102,7 +102,8 @@ public:
   void breco(TH1D *h); 
   void effTree(int mode);
   TH1* loopTree(int mode, int proc = -1);
-
+  void compareTrigger(double m1pt = 3.0, double m2pt = 3.0); 
+  
   void plotVar(const char *plotstring, const char *cuts, const char *options = "");
   void testSimpleUL(const char *cuts);
   void testUL(int ichan = 0);
@@ -122,7 +123,7 @@ public:
 
   void rareBg(); 
   void isoMean(const char *var = "iso1", const char *cuts="gmuid&&hlt&&acos(cosa)<0.05&&chi2/dof<2&&fls3d>10", int maxPvN = 15);
-  void isoProcess(const char *var, const char *cuts, int loop = 1);
+  void varProcess(const char *var, const char *cuts, double lo, double hi, const char *at, int loop=1);
   void plotWithCut(const char *var, const char *cuts, double cut, const char *title, double hmin, double hmax); 
   void puEff(const char *var, double cut=0.75, const char *ylabel="#epsilon(I>0.75)", const char* file="NoData", const char *selection="Ao"); 
 

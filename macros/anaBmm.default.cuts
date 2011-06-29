@@ -1,3 +1,4 @@
+# UL's optimal cuts for 924/pb
 # -- channel 0: barrel 
 index   0
 #mBdLo   5.240
@@ -7,34 +8,34 @@ index   0
 mBdLo   5.200
 mBdHi   5.320
 mBsLo   5.320
-mBsHi   5.450
+mBsHi   5.420
 etaMin  0.0
 etaMax  1.4
 pt      6.0
-m1pt    4.0
-m2pt    3.0
+m1pt    4.5
+m2pt    4.0
 m1eta   1.4
 m2eta   1.4
 iso1    0.75
 chi2dof 1.6
-alpha   0.04
-fls3d   10
-docatrk -1.
+alpha   0.05
+fls3d   15
+docatrk 0.005
 # -- channel 1: endcap
 index   1
 mBdLo   5.200
 mBdHi   5.320
 mBsLo   5.320
-mBsHi   5.450
+mBsHi   5.420
 etaMin  1.4
 etaMax  2.4
 pt      6.0
-m1pt    5.0
-m2pt    4.5
+m1pt    4.5
+m2pt    4.0
 m1eta   2.4
 m2eta   2.4
 iso1    0.75
-chi2dof 1.6
-alpha   0.04
-fls3d   14
-docatrk -1.
+chi2dof 1.4
+alpha   0.023
+fls3d   20
+docatrk 0.016
