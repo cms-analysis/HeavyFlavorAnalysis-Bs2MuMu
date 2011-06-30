@@ -40,6 +40,7 @@ bmmReader::bmmReader(TChain *tree, TString evtClassName): treeReader01(tree, evt
   fRegion.insert(make_pair("AR4", 13)); 
   fRegion.insert(make_pair("AR5", 14)); 
   fRegion.insert(make_pair("AR6", 15)); 
+  fRegion.insert(make_pair("AR7", 17)); 
 
   for (map<string, int>::iterator imap = fRegion.begin(); imap != fRegion.end(); ++imap) {  
     int i       = imap->second; 
@@ -97,6 +98,7 @@ void bmmReader::startAnalysis() {
 
 // ----------------------------------------------------------------------
 void bmmReader::eventProcessing() {
+  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(0); 
 
   if (fVerbose > 1) cout << "event: " << fEvent << endl;
   
@@ -128,9 +130,7 @@ void bmmReader::eventProcessing() {
   trackSelection(); 
   muonSelection();
 
-  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(0); 
-  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(1, fpEvt->nCands()); 
-  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(2, fCands.size()); 
+  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(1); 
 
   if (0 == IGNORETRIGGER) {
     if (!fIsMC && !fGoodHLT) {
@@ -141,11 +141,7 @@ void bmmReader::eventProcessing() {
     }
   }
 
-  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(3, fpEvt->nCands()); 
-  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(4, fCands.size()); 
-
-  ((TH1D*)fpHistFile->Get("monAllCands"))->Fill(fpEvt->nCands()); 
-  ((TH1D*)fpHistFile->Get("monTypeCands"))->Fill(fCands.size()); 
+  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(2); 
 
   bool foundRun(false); 
   if (SELMODE < 0) {
@@ -165,21 +161,25 @@ void bmmReader::eventProcessing() {
 	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR1"]);
       } 
-      if ((fRun >= 160329 && fRun < 161176) || fIsMC) {
+      if ((fRun >= 160328 && fRun < 161177) || fIsMC) {
 	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR2"]);
       } 
-      if ((fRun >= 161216 && fRun < 163261) || fIsMC) {
+      if ((fRun >= 161215 && fRun < 163262) || fIsMC) {
 	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR3"]);
       } 
-      if ((fRun >= 163269 && fRun <= 163869) || fIsMC) {
+      if ((fRun >= 163268 && fRun <= 163870) || fIsMC) {
 	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR4"]);
       } 
-      if ((fRun >= 165088) || fIsMC) {
+      if ((fRun >= 165087 && fRun <= 165634) || fIsMC) {
 	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR5"]);
+      } 
+      if ((fRun >= 165969) || fIsMC) {
+	foundRun = true; 
+	fillCandidateHistograms(fRegion["AR6"]);
       } 
       if (!foundRun) {
 	fillCandidateHistograms(fRegion["AR0"]);
@@ -206,9 +206,11 @@ void bmmReader::eventProcessing() {
 	}
       }
       if (fIsMC) {
+	((TH1D*)fpHistFile->Get("monEvents"))->Fill(3); 
 	fTree->Fill(); 
       } else {
 	if (fPreselection) {
+	  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(3); 
 	  fTree->Fill(); 
 	}	  
       }
@@ -221,26 +223,29 @@ void bmmReader::eventProcessing() {
     if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX && fCandIso5 > 0.7) {
       // do nothing
     } else {
-      foundRun = false; 
       if ((fRun < 150000) || fIsMC) {
 	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR1"]);
       } 
-      if ((fRun >= 160329 && fRun < 161176) || fIsMC) {
+      if ((fRun >= 160328 && fRun < 161177) || fIsMC) {
 	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR2"]);
       } 
-      if ((fRun >= 161216 && fRun < 163261) || fIsMC) {
+      if ((fRun >= 161215 && fRun < 163262) || fIsMC) {
 	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR3"]);
       } 
-      if ((fRun >= 163269 && fRun <= 163869) || fIsMC) {
+      if ((fRun >= 163268 && fRun <= 163870) || fIsMC) {
 	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR4"]);
       } 
-      if ((fRun >= 165088) || fIsMC) {
+      if ((fRun >= 165087 && fRun <= 165634) || fIsMC) {
 	foundRun = true; 
 	fillCandidateHistograms(fRegion["AR5"]);
+      } 
+      if ((fRun >= 165969) || fIsMC) {
+	foundRun = true; 
+	fillCandidateHistograms(fRegion["AR6"]);
       } 
       if (!foundRun) {
 	fillCandidateHistograms(fRegion["AR0"]);
@@ -267,9 +272,11 @@ void bmmReader::eventProcessing() {
 	}
       }
       if (fIsMC) {
+	((TH1D*)fpHistFile->Get("monEvents"))->Fill(3); 
 	fTree->Fill(); 
       } else {
 	if (fPreselection) {
+	  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(3); 
 	  fTree->Fill(); 
 	}	  
       }
@@ -281,6 +288,7 @@ void bmmReader::eventProcessing() {
   //  studyL1T();
   
   fillHist();
+  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(4); 
 
 }
 
