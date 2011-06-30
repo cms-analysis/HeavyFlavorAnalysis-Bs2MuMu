@@ -229,7 +229,7 @@ double AnalysisDistribution::fitMass(TH1 *h1, double &error, int mode) {
     // -- blinded signal box 
     f1 = fP1; 
     setFunctionParameters(f1, h1, mode); 
-    h1->Fit(f1, "", "", fMassLo, fMassHi); 
+    h1->Fit(f1, "q", "", fMassLo, fMassHi); 
     double p0  = f1->GetParameter(0); 
     double p0E2= f1->GetParError(0)*f1->GetParError(0); 
     double p1  = f1->GetParameter(1); 
@@ -245,7 +245,7 @@ double AnalysisDistribution::fitMass(TH1 *h1, double &error, int mode) {
     // -- One Gaussian plus pol1
     f1 = fPG1;
     setFunctionParameters(f1, h1, mode); 
-    h1->Fit(f1, "", "", fMassLo, fMassHi); 
+    h1->Fit(f1, "q", "", fMassLo, fMassHi); 
     error = f1->GetParError(0)/h1->GetBinWidth(1); 
     return f1->GetParameter(0)/h1->GetBinWidth(1); 
   } else if (11 == mode) {
@@ -256,7 +256,7 @@ double AnalysisDistribution::fitMass(TH1 *h1, double &error, int mode) {
     double sigma = (fMassSigma>0.?fMassSigma:0.04);
     f1 = fpIF->pol1gauss2c(h1, peak, sigma);
     TFitResultPtr r;
-    r = h1->Fit(f1, "ls", "", fMassLo, fMassHi); 
+    r = h1->Fit(f1, "lsq", "", fMassLo, fMassHi); 
     double hlimit(0.), llimit(0.); 
     f1->GetParLimits(3, llimit, hlimit);
     double relError = f1->GetParError(3)/f1->GetParameter(3); 
@@ -268,7 +268,7 @@ double AnalysisDistribution::fitMass(TH1 *h1, double &error, int mode) {
       f1->SetParameter(0, h1->GetMaximum()); 
       f1->FixParameter(3, 0.);
       f1->FixParameter(4, 0.);
-      r = h1->Fit(f1, "ls", "", fMassLo, fMassHi); 
+      r = h1->Fit(f1, "lsq", "", fMassLo, fMassHi); 
     }
     f1->SetParameter(5, 0.); 
     f1->SetParameter(6, 0.); 
@@ -287,14 +287,14 @@ double AnalysisDistribution::fitMass(TH1 *h1, double &error, int mode) {
     // -- One Gaussian plus expo
     f1 = fEG1;
     setFunctionParameters(f1, h1, mode); 
-    h1->Fit(f1, "", "", fMassLo, fMassHi); 
+    h1->Fit(f1, "q", "", fMassLo, fMassHi); 
     error = f1->GetParError(0)/h1->GetBinWidth(1); 
     return f1->GetParameter(0)/h1->GetBinWidth(1); 
   } else if (13 == mode) {
     // -- one Gaussian plus expo plus pol1
     f1 = fEPG;
     setFunctionParameters(f1, h1, mode); 
-    h1->Fit(f1, "", "", fMassLo, fMassHi); 
+    h1->Fit(f1, "q", "", fMassLo, fMassHi); 
     error = f1->GetParError(0)/h1->GetBinWidth(1); 
     return f1->GetParameter(0)/h1->GetBinWidth(1); 
   } else {
@@ -448,7 +448,7 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
   hm->SetMinimum(0.);
 
   TFitResultPtr r;
-  r = hm->Fit(f1, "ls", "", fMassLo, fMassHi); 
+  r = hm->Fit(f1, "lsq", "", fMassLo, fMassHi); 
   double hlimit(0.), llimit(0.); 
   f1->GetParLimits(3, llimit, hlimit);
   double relError = f1->GetParError(3)/f1->GetParameter(3); 
@@ -460,7 +460,7 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
     f1->SetParameter(0, hm->GetMaximum()); 
     f1->FixParameter(3, 0.);
     f1->FixParameter(4, 0.);
-    r = hm->Fit(f1, "ls", "", fMassLo, fMassHi); 
+    r = hm->Fit(f1, "lsq", "", fMassLo, fMassHi); 
   }
   hm->DrawCopy();
 

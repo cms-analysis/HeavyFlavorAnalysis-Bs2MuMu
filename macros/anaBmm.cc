@@ -399,6 +399,13 @@ void anaBmm::loadFiles(const char *files) {
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (MC 1e33)")); 
       }
+      if (string::npos != stype.find("5e32") && string::npos != stype.find("sg")) {
+	sname = "SgMc5e32"; 
+	fF.insert(make_pair(sname, fpMc[fNMc])); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (MC 5e32)")); 
+      }
 
       if (string::npos != stype.find("default") && string::npos != stype.find("bd")) {
 	fBdMc = fNMc;
@@ -429,6 +436,13 @@ void anaBmm::loadFiles(const char *files) {
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (MC 1e33)")); 
       }
+      if (string::npos != stype.find("5e32") && string::npos != stype.find("bd")) {
+	sname = "BdMc5e32"; 
+	fF.insert(make_pair(sname, fpMc[fNMc])); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (MC 5e32)")); 
+      }
 
       if (string::npos != stype.find("default") && string::npos != stype.find("no")) {
 	fNoMc = fNMc;
@@ -444,6 +458,13 @@ void anaBmm::loadFiles(const char *files) {
 	fFilterEff.insert(make_pair(sname, effFilter)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{+} #rightarrow #mu^{+}#mu^{-}K^{+} (MC 1e33)")); 
+      }
+      if (string::npos != stype.find("5e32") && string::npos != stype.find("no")) {
+	sname = "NoMc5e32"; 
+	fF.insert(make_pair(sname, fpMc[fNMc])); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{+} #rightarrow #mu^{+}#mu^{-}K^{+} (MC 5e32)")); 
       }
       if (string::npos != stype.find("Summer11") && string::npos != stype.find("no")) {
 	sname = "NoMcSummer11"; 
@@ -474,6 +495,13 @@ void anaBmm::loadFiles(const char *files) {
 	fFilterEff.insert(make_pair(sname, effFilter)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-}K^{+}K^{-} (MC 1e33)")); 
+      }	
+      if (string::npos != stype.find("5e32") && string::npos != stype.find("cs")) {
+	sname = "CsMc5e32"; 
+	fF.insert(make_pair(sname, fpMc[fNMc])); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-}K^{+}K^{-} (MC 5e32)")); 
       }	
       if (string::npos != stype.find("Summer11") && string::npos != stype.find("cs")) {
 	sname = "CsMcSummer11"; 
@@ -569,6 +597,8 @@ void anaBmm::makeAll(int channel) {
 
   // -- some special plots
   if ((0x1<<0) & channel) {
+    allInvertedIso();
+
     triggerSignal();    
     triggerNorm();    
 
@@ -957,7 +987,7 @@ void anaBmm::effTable(string smode, const char *region) {
     cut = string(h->GetXaxis()->GetBinLabel(i)); 
 
     if (string::npos == cut.find(Form("%s_", region))) {
-      cout << "region " << region << " not part of name, skipping" << endl;
+      //      cout << "region " << region << " not part of name, skipping" << endl;
       continue;
     }
 
@@ -1262,6 +1292,221 @@ void anaBmm::varProcess(const char *var, const char *cuts, double lo, double hi,
 	   << endl;
     }
   }
+  
+}
+
+
+// ----------------------------------------------------------------------
+void anaBmm::procAcc(int mode, int chan) {
+
+  string cuts; 
+
+  if (0 == mode) {
+    if (0 == chan) {
+      cuts = "g1pt>1&&g2pt>1&&abs(g1eta)<1.4&&abs(g2eta)<1.4&&m1pt>1&&m2pt>1&&abs(m1eta)<1.4&&abs(m2eta)<1.4&&m1gt&&m2gt";
+    } else {
+      cuts = "g1pt>1&&g2pt>1&&(abs(g1eta)>1.4||abs(g2eta)>1.4)&&m1pt>1&&m2pt>1&&(abs(m1eta)>1.4||abs(m2eta)>1.4)&&m1gt&&m2gt";
+    }
+  } else if (10 == mode) {
+    if (0 == chan) {
+      cuts = "g1pt>1&&g2pt>1&&g3pt>0.4&&abs(g1eta)<1.4&&abs(g2eta)<1.4&&abs(g3eta)<2.5&&m1pt>1&&m2pt>1&&k1pt>0.5&&abs(m1eta)<1.4&&abs(m2eta)<1.4&&abs(k1eta)<2.4&&m1gt&&m2gt&&k1gt";
+    } else {
+      cuts = "g1pt>1&&g2pt>1&&g3pt>0.4&&(abs(g1eta)>1.4||abs(g2eta)>1.4)&&abs(g1eta)<2.5&&abs(g2eta)<2.5&&abs(g3eta)<2.5&&m1pt>1&&m2pt>1&&k1pt>0.5&&(abs(m1eta)>1.4||abs(m2eta)>1.4)&&abs(m1eta)<2.4&&abs(m2eta)<2.4&&abs(k1eta)<2.4&&m1gt&&m2gt&&k1gt";
+    }
+  }
+
+  TTree *t; 
+  t = (TTree*)gFile->Get("effTree"); 
+  double c40 = t->Draw("g1pt", Form("%s&&procid==40", cuts.c_str()));
+  double n40 = t->Draw("g1pt", "procid==40");
+  
+  double c41 = t->Draw("g1pt", Form("%s&&procid==41", cuts.c_str()));
+  double n41 = t->Draw("g1pt", "procid==41");
+  
+  double c42 = t->Draw("g1pt", Form("%s&&procid==42", cuts.c_str()));
+  double n42 = t->Draw("g1pt", "procid==42");
+  
+  cout << Form("GGF: %4.3f +/- %4.3f", c40/n40, dEff(static_cast<int>(c40), static_cast<int>(n40))) << endl;
+  cout << Form("FEX: %4.3f +/- %4.3f", c41/n41, dEff(static_cast<int>(c41), static_cast<int>(n41))) << endl;
+  cout << Form("GSP: %4.3f +/- %4.3f", c42/n42, dEff(static_cast<int>(c42), static_cast<int>(n42))) << endl;
+
+}
+
+// ----------------------------------------------------------------------
+void anaBmm::allInvertedIso() {
+  histInvertedIso("fls3d>", 10, 10., 20.); 
+  histInvertedIso("chi2/dof<", 10, 1., 2.); 
+  histInvertedIso("alpha<", 10, 0.01, 0.06); 
+  histInvertedIso("m1pt>", 10, 3., 5.0); 
+  histInvertedIso("m2pt>", 10, 3., 5.0); 
+  histInvertedIso("pt>", 10, 4.0, 8.0); 
+  histInvertedIso("docatrk>", 10, 0.00, 0.02); 
+}
+
+
+// ----------------------------------------------------------------------  
+void anaBmm::histInvertedIso(const char *var, int n, double lo, double hi) {
+
+  gStyle->SetOptStat(0);
+  
+  vector<string> cuts;
+  vector<double> cutv;
+  vector<string> cutt;
+  vector<string> cutf;
+  string filename; 
+
+  TH1D *BE = new TH1D("BE", "", n, lo, hi); BE->Sumw2(); 
+  TH1D *BO = new TH1D("BO", "", n, lo, hi); BO->Sumw2(); 
+  TH1D *EE = new TH1D("EE", "", n, lo, hi); EE->Sumw2(); 
+  TH1D *EO = new TH1D("EO", "", n, lo, hi); EO->Sumw2(); 
+
+  for (int ichan = 0; ichan < 2; ++ichan) {
+    cuts.clear(); 
+    cutv.clear(); 
+    
+    cuts.push_back("fls3d>");    cutv.push_back(fCuts[ichan]->fls3d);   
+    cutt.push_back("l_{3d}/#sigma(l_{3d}) >");
+    cutf.push_back("fls3d");
+
+    cuts.push_back("chi2/dof<"); cutv.push_back(fCuts[ichan]->chi2dof);
+    cutt.push_back("#chi^{2}/dof < ");
+    cutf.push_back("chi2dof");
+
+    cuts.push_back("alpha<");    cutv.push_back(fCuts[ichan]->alpha);
+    cutt.push_back("#alpha < ");
+    cutf.push_back("alpha");
+
+    cuts.push_back("m1pt>");     cutv.push_back(fCuts[ichan]->m1pt);
+    cutt.push_back("p_{T,#mu1} > ");
+    cutf.push_back("m1pt");
+
+    cuts.push_back("m2pt>");     cutv.push_back(fCuts[ichan]->m2pt);
+    cutt.push_back("p_{T,#mu2} > ");
+    cutf.push_back("m2pt");
+
+    cuts.push_back("docatrk>");  cutv.push_back(fCuts[ichan]->docatrk);
+    cutt.push_back("d^{0}_{trk} > ");
+    cutf.push_back("docatrk");
+
+    cuts.push_back("pt>");  cutv.push_back(fCuts[ichan]->pt);
+    cutt.push_back("p_{T,B} > ");
+    cutf.push_back("pt");
+    
+    string ocuts, tcuts, rcuts;
+    for (unsigned int i = 0; i < cuts.size(); ++i) {
+      if (!strcmp(cuts[i].c_str(), var)) {
+	setTitles(BE, cutt[i].c_str(), "Candidates", 0.08, 1., 0.9, 0.07); 
+	setTitles(EE, cutt[i].c_str(), "Candidates", 0.08, 1., 0.9, 0.07); 
+	filename = cutf[i];
+	continue;
+      }
+      tcuts += Form("%s %f && ", cuts[i].c_str(), cutv[i]);
+    }
+    
+    string::size_type n1 = tcuts.find_last_of("&&"); 
+    ocuts = tcuts.substr(0, n1-1); 
+    
+    double steps = (hi-lo)/n;
+    double cut; 
+    for (int i = 0; i < n; ++i) {
+      cut = lo + i*steps; 
+      rcuts = ocuts + Form(" && %s %f", var, cut); 
+      //      cout << "-->" << rcuts << endl;
+      
+      invertedIso(ichan, rcuts.c_str()); 
+      if (0 == ichan) {
+	BE->SetBinContent(i+1, fBlExp); BE->SetBinError(i+1, fBlExpE); 
+	BO->SetBinContent(i+1, fBlObs); BO->SetBinError(i+1, fBlObsE); 
+      } else {
+	EE->SetBinContent(i+1, fBlExp); EE->SetBinError(i+1, fBlExpE); 
+	EO->SetBinContent(i+1, fBlObs); EO->SetBinError(i+1, fBlObsE); 
+      }	
+    }
+  }
+  
+  c0->Clear();
+  c0->Divide(1,2);
+  
+  c0->cd(1);
+  shrinkPad(0.2, 0.15); 
+  double maxi = BE->GetMaximum(); 
+  if (BO->GetMaximum() > maxi) {
+    maxi = 1.2*BO->GetMaximum();
+  } else {
+    maxi = 1.2*BE->GetMaximum();
+  }
+  setFilledHist(BE);
+  BE->SetMaximum(maxi); 
+  BE->SetMinimum(0.); 
+  BE->Draw("hist");
+  BO->Draw("esame");
+  tl->DrawLatex(0.15, 0.92, "Barrel");
+
+  maxi = EE->GetMaximum(); 
+  if (EO->GetMaximum() > maxi) {
+    maxi = 1.2*EO->GetMaximum();  
+  } else {
+    maxi = 1.2*EE->GetMaximum();  
+  }
+  c0->cd(2);
+  shrinkPad(0.2, 0.15); 
+  setFilledHist(EE);
+  EE->SetMaximum(maxi); 
+  EE->SetMinimum(0.); 
+  EE->Draw("hist");
+  EO->Draw("esame");
+  tl->DrawLatex(0.15, 0.92, "Endcap");
+
+  c0->SaveAs(Form("invertedIso-%s.pdf", filename.c_str())); 
+
+}
+
+
+
+// ----------------------------------------------------------------------
+void anaBmm::invertedIso(int chan, const char *cuts) {
+  string baseCuts = "gmuid&&hlt&&gmupt&&gmueta&&iso5<0.7";
+  string chanCut; 
+  if (0 == chan) {
+    chanCut = "(abs(m1eta)<1.4&&abs(m2eta)<1.4)";
+  } else {
+    chanCut = "(abs(m1eta)>1.4||abs(m2eta)>1.4)";
+  }
+  
+  string allCuts  = baseCuts + "&&" + chanCut + "&&" + cuts; 
+  cout << allCuts << endl;
+  
+  fF["SgData"]->cd();
+  TH1D *h1(0); 
+  if (h1) delete h1; 
+  h1 = new TH1D("h1", "", 1200, 4.8, 6.0); 
+  TTree *t = (TTree*)gFile->Get("events"); 
+  t->Draw("m>>h1", allCuts.c_str(), "goff");
+  h1->Draw();
+
+  int blo = h1->FindBin(5.2); 
+  int bhi = h1->FindBin(5.45); 
+  //  cout << "blo: " << blo << " bhi: " << bhi << endl;
+
+  double lo = h1->Integral(1, blo);
+  double bl = h1->Integral(blo, bhi);
+  double blE= TMath::Sqrt(bl); 
+  double hi = h1->Integral(bhi, h1->GetNbinsX());
+  double ex = (lo+hi)*0.25/(1.2-0.25);
+  double exE= TMath::Sqrt(ex); 
+  double df = bl - ex; 
+  double dfE=TMath::Sqrt(blE*blE + exE*exE);
+  
+  //  cout << "bl: " << bl << " lo: " << lo << " hi: " << hi << endl;
+  cout << Form("seen: %4.0f+/-%3.1f", bl, blE) 
+       << Form(" expected: %4.1f+/-%3.1f", ex, exE) 
+       << Form(" difference: %4.1f+/-%3.1f", df, dfE) 
+       << endl;
+
+  fBlExp  = ex; 
+  fBlExpE = exE; 
+  fBlObs  = (bl>0.?bl:0.01);
+  fBlObsE = (bl>0.5?blE:1.);
   
 }
 
@@ -1637,10 +1882,10 @@ void anaBmm::sbsDistributionOverlay(std::string file1, std::string file2, const 
     cut = string(h->GetXaxis()->GetBinLabel(i)); 
     skipcut = cut.substr(cut.find("_")+1); 
     skip = false;
-    cout << "skipcut: " << skipcut << endl;
+    //    cout << "skipcut: " << skipcut << endl;
     for (unsigned int j = 0; j < skipList.size(); ++j) {
-      if (string::npos != skipList[j].find(skipcut)) {
-	cout << "found " << skipcut << " in skiplist" << endl;
+      if (string::npos != skipcut.find(skipList[j])) {
+	//	cout << "found " << skipcut << " in skiplist" << endl;
 	skip = true; 
 	break;
       }
@@ -1648,12 +1893,12 @@ void anaBmm::sbsDistributionOverlay(std::string file1, std::string file2, const 
     if (skip) continue;
     // -- skip  if a specific region is requested
     if (strcmp(region, "") && string::npos == cut.find(region)) {
-      cout << "region " << region << " not part of name, skipping" << endl;
+      //      cout << "region " << region << " not part of name, skipping" << endl;
       continue;
     }
 
     if (cut == string("")) {
-      cout << "empty string found, break ..." << endl;
+      //      cout << "empty string found, break ..." << endl;
       //      OUT.close();
       break;
     }
@@ -4114,7 +4359,7 @@ void anaBmm::printUlcalcNumbers() {
     fTEX << formatTex(scaledSig, Form("%s:N-EXP-SIG-BSMM%d:val", fSuffix.c_str(), i), 4) << endl;
     fTEX << formatTex(scaledSigE, Form("%s:N-EXP-SIG-BSMM%d:err", fSuffix.c_str(), i), 4) << endl;
 
-    scaledSig  = fNumbersBd[i]->anaWmcYield*fDataLumi[fSgData]/fLumi["SgMc"];
+    scaledSig  = fNumbersBd[i]->anaWmcYield*fDataLumi[fSgData]/fLumi["BdMc"];
     scaledSigE = scaledSig*TMath::Sqrt(fNumbersBd[i]->anaWmcYield)/fNumbersBd[i]->anaWmcYield;
     fTEX << formatTex(scaledSig, Form("%s:N-EXP-SIG-BDMM%d:val", fSuffix.c_str(), i), 4) << endl;
     fTEX << formatTex(scaledSigE, Form("%s:N-EXP-SIG-BDMM%d:err", fSuffix.c_str(), i), 4) << endl;

@@ -126,6 +126,10 @@ public:
   void varProcess(const char *var, const char *cuts, double lo, double hi, const char *at, int loop=1);
   void plotWithCut(const char *var, const char *cuts, double cut, const char *title, double hmin, double hmax); 
   void puEff(const char *var, double cut=0.75, const char *ylabel="#epsilon(I>0.75)", const char* file="NoData", const char *selection="Ao"); 
+  void procAcc(int mode, int chan); 
+  void allInvertedIso(); 
+  void histInvertedIso(const char *var, int n, double lo, double hi); 
+  void invertedIso(int chan, const char *cuts = "fls3d>10"); 
 
   // -- Utilities and helper methods
   // -------------------------------
@@ -231,6 +235,7 @@ public:
   double fCsLo, fCsHi; 
 
   double fNul, fUL;
+  double fBlExp, fBlExpE, fBlObs, fBlObsE; // invertedIso studies
   int    fNobs, fNobsExp;
   double fBgExp, fBgExpE; 
   double fBgHist, fBgHistE; 

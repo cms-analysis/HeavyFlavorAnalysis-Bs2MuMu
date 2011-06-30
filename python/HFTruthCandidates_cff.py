@@ -54,7 +54,7 @@ truthBsToPiPiDump = cms.EDAnalyzer(
     motherID     = cms.untracked.int32(531),
     type         = cms.untracked.int32(84),
     GenType      = cms.untracked.int32(-84),
-    daughtersID  = cms.untracked.vint32(321, -211)
+    daughtersID  = cms.untracked.vint32(211, -211)
     )
 
 
