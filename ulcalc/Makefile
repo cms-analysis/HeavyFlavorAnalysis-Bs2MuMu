@@ -24,6 +24,7 @@ ULCALC_OBJS = ul_main.o ul_estimate.o external_constants.o
 BPLUS_OBJS = bplus_main.o bplus_estimator.o external_constants.o
 BMM_OBJS = bmm_main.o bmm_estimator.o external_constants.o
 GRID_SEARCH_OBJS = grid_search.o external_constants.o ul_estimate.o bmm_estimator.o
+GEN_OBJS = tree_gen.o
 
 
 #################
@@ -42,7 +43,7 @@ obj/%.o : %.cpp $(HEADERS)
 ulcalc: bin/ulcalc
 	@true
 
-all: ulcalc bplus_est bmm_est grid_search
+all: ulcalc bplus_est bmm_est grid_search tree_gen
 	@true
 
 bplus_est: bin/bplus_est
@@ -52,6 +53,9 @@ bmm_est: bin/bmm_est
 	@true
 
 grid_search: bin/grid_search
+	@true
+
+tree_gen: bin/tree_gen
 	@true
 
 bin/ulcalc: $(addprefix obj/,$(ULCALC_OBJS))
@@ -65,6 +69,9 @@ bin/bplus_est: $(addprefix obj/,$(BPLUS_OBJS))
 
 bin/bmm_est: $(addprefix obj/,$(BMM_OBJS))
 	$(LD) -o $@ $(addprefix obj/,$(BMM_OBJS)) $(ROOTLIBS) $(LDFLAGS)
+
+bin/tree_gen: $(addprefix obj/,$(GEN_OBJS))
+	$(LD) -o $@ $(addprefix obj/,$(GEN_OBJS)) $(ROOTLIBS) $(LDFLAGS) ../rootutils/lib/libNCRootUtils.so
 
 clean:
 	rm -rf obj/*

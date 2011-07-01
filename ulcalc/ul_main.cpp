@@ -195,6 +195,8 @@ static bool parse_arguments(const char **first, const char **last)
 	const char *arg;
 	string s;
 	string::iterator col;
+	double def_err_algo = 0.0;
+	bool force_error = false;
 	
 	while (first != last) {
 		
@@ -243,10 +245,16 @@ static bool parse_arguments(const char **first, const char **last)
 				}
 				s = *first++;
 				if (s.compare("bayes") == 0)	gAlgorithm = kAlgo_Bayesian;
-				else if (s.compare("fc") == 0)	gAlgorithm = kAlgo_FeldmanCousins;
-				else if (s.compare("cls") == 0)	gAlgorithm = kAlgo_CLs;
-				else if (s.compare("clb") == 0)	gAlgorithm = kAlgo_CLb;
-				else {
+				else if (s.compare("fc") == 0) {
+					gAlgorithm = kAlgo_FeldmanCousins;
+					def_err_algo = 1e-5;
+				} else if (s.compare("cls") == 0) {
+					gAlgorithm = kAlgo_CLs;
+					def_err_algo = 1e-9;
+				} else if (s.compare("clb") == 0) {
+					gAlgorithm = kAlgo_CLb;
+					def_err_algo = 1e-9;
+				} else {
 					usage();
 					abort();
 				}
@@ -257,6 +265,7 @@ static bool parse_arguments(const char **first, const char **last)
 					usage();
 					abort();
 				}
+				force_error =true;
 				gNumErr = atof(*first++);
 			} else if (strcmp(arg, "-v") == 0) {
 				gVerbosity = 2; // verbose
@@ -280,6 +289,9 @@ static bool parse_arguments(const char **first, const char **last)
 		} else
 			configfile_path = arg;
 	}
+	
+	if (!force_error && def_err_algo != 0.0)
+		gNumErr = def_err_algo;
 	
 	if (!configfile_path) {
 		ok = false;

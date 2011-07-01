@@ -50,8 +50,8 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 	add_channels(bdmm,&channels);
 	
 	// make sure we cover the entire physical range
-	wspace->factory("mu_s[1,0,200]");	// initialize to standard model
-	wspace->factory("mu_d[1,0,400]");	// initialize to standard model
+	wspace->factory("mu_s[1,0,20]");	// initialize to standard model
+	wspace->factory("mu_d[1,0,200]");	// initialize to standard model
 	
 	// Create channel specific variables
 	for (chan = channels.begin(); chan != channels.end(); ++chan) {
@@ -67,9 +67,32 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 		// nuisance parameter
 		wspace->factory(Form("nu_b_%d[0,0,1000]",*chan)); // background strength
 		
-		// build the constants
-		wspace->factory(Form("TauS_%d[%f]",*chan,compute_tau(bsmm, bdmm, *chan, true)));
-		wspace->factory(Form("TauD_%d[%f]",*chan,compute_tau(bdmm, bdmm, *chan, false)));
+		///////////////////////////////////
+		// build the background ratio Bs //
+		///////////////////////////////////
+		if ( ((*bsmm)[make_pair(kTau_bmm, *chan)]).getErr() > 0 && !no_errors ) {
+			measurement_t m = (*bsmm)[make_pair(kTau_bmm, *chan)];
+			wspace->factory(Form("TauS0_%d[%f]",*chan,m.getVal()));
+			wspace->factory(Form("TauSErr_%d[%f]",*chan,m.getErr()));
+			wspace->factory(Form("TauS_%d[%f]",*chan,m.getVal()));
+			wspace->factory(Form("Gaussian::TauS_Gauss_%d(TauS_%d,TauS0_%d,TauSErr_%d)",*chan,*chan,*chan,*chan));
+		}
+		else {
+			wspace->factory(Form("TauS_%d[%f]",*chan, ((*bsmm)[make_pair(kTau_bmm, *chan)]).getVal()));
+		}
+		
+		////////////////////////////////////
+		// build the background ration Bd //
+		////////////////////////////////////
+		if ( ((*bdmm)[make_pair(kTau_bmm, *chan)]).getErr() > 0 && !no_errors ) {
+			measurement_t m = (*bdmm)[make_pair(kTau_bmm, *chan)];
+			wspace->factory(Form("TauD0_%d[%f]",*chan,m.getVal()));
+			wspace->factory(Form("TauDErr_%d[%f]",*chan,m.getErr()));
+			wspace->factory(Form("TauD_%d[%f]",*chan,m.getVal()));
+			wspace->factory(Form("Gaussian::TauD_Gauss_%d(TauD_%d,TauD0_%d,TauDErr_%d)",*chan,*chan,*chan,*chan));
+		} else {
+			wspace->factory(Form("TauD_%d[%f]",*chan,((*bdmm)[make_pair(kTau_bmm, *chan)]).getVal()));
+		}
 		
 		/////////////////////////
 		// Construction of NuS //

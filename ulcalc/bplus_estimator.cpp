@@ -45,8 +45,8 @@ void estimate_bplus(map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree 
 	gStyle->SetOptFit(111);
 	
 	anaCut = anaCut && TCut(bmmBaseCut) && TCut("TMath::Abs(eta_kp) < 2.4");
-	anaCut = anaCut && TCut(Form("TMath::Abs(eta_mu1) < %f && TMath::Abs(eta_mu2) < %f && TMath::Abs(eta_kp) < %f",maxEta,maxEta,maxEta));
-	anaCut = anaCut && TCut(Form("!(TMath::Abs(eta_mu1) < %f && TMath::Abs(eta_mu2) < %f && TMath::Abs(eta_kp) < %f)",minEta,minEta,minEta));
+	anaCut = anaCut && TCut(Form("TMath::Abs(eta_mu1) < %f && TMath::Abs(eta_mu2) < %f",maxEta,maxEta));
+	anaCut = anaCut && TCut(Form("!(TMath::Abs(eta_mu1) < %f && TMath::Abs(eta_mu2) < %f)",minEta,minEta));
 	
 	// compute the efficiencies
 	

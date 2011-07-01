@@ -88,6 +88,7 @@ enum bmm_param_tag {
 	kObsB_bmm,
 	kPeakBkgOn_bmm,
 	kPeakBkgOff_bmm,
+	kTau_bmm,
 	/* Unknown param */
 	kUnknownParam
 };

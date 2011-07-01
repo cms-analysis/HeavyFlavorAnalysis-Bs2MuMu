@@ -140,6 +140,9 @@ std::string find_bmm_name(bmm_param_tag p)
 		case kPeakBkgOff_bmm:
 			result = "PEAK_BKG_OFF";
 			break;
+		case kTau_bmm:
+			result = "TAU";
+			break;
 		default:
 			std::cerr << "Unknown bmm_param: " << p << std::endl;
 			abort();
@@ -231,6 +234,11 @@ bmm_param_tag find_bmm_param_by_name(std::string name, bool *bsparam)
 		result = kPeakBkgOn_bmm;
 	} else if (name.compare("PEAK_BKG_BD") == 0) {
 		result = kPeakBkgOn_bmm;
+		*bsparam = false;
+	} else if (name.compare("TAU_BS") == 0) {
+		result = kTau_bmm;
+	} else if (name.compare("TAU_BD") == 0) {
+		result = kTau_bmm;
 		*bsparam = false;
 	}
 	

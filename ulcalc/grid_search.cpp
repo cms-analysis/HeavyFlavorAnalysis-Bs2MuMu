@@ -26,7 +26,7 @@
 #include <RooRealVar.h>
 
 // FIXME: Change this!!!
-#define TOTAL_BPLUS 425000
+#define TOTAL_BPLUS 800000
 
 #ifdef __linux__
 #define INT64_MAX 0x7fffffffffffffffLL

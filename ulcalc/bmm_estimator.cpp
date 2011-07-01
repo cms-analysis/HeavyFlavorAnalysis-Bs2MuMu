@@ -16,7 +16,7 @@
 
 using namespace std;
 
-void estimate_bmm(map<bmm_param,measurement_t> *bmm, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, pair<double,double> bd_window, pair<double,double> bs_window, bool is_bstomumu)
+void estimate_bmm(map<bmm_param,measurement_t> *bmm, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, pair<double,double> bd_window, pair<double,double> bs_window, bool is_bstomumu, double eff_filter)
 {
 	TCut cut;
 	TCut histo_cut(Form("%f < mass && mass < %f",low_histo_bound,high_histo_bound));
@@ -54,7 +54,7 @@ void estimate_bmm(map<bmm_param,measurement_t> *bmm, TTree *dataTree, TTree *mcT
 	cut = cut && TCut(Form("eff_flags & %d",kEffMuon));
 	nbr_mu = (double)mcTree->Draw("",cut);
 	
-	cut = cut && TCut("triggers & 2");
+	cut = cut && TCut("triggers & (1 << 5)");
 	nbr_trig = (double)mcTree->Draw("",cut);
 	
 	cut = TCut(Form("%s && %s && candidate == 301313 && truth == 1",bmmGeneratorCuts,bmmBaseCut));
@@ -67,7 +67,7 @@ void estimate_bmm(map<bmm_param,measurement_t> *bmm, TTree *dataTree, TTree *mcT
 	// the error is of statistical nature only
 	
 	// acceptance
-	eff = nbr_acc / nbr_gens;
+	eff = nbr_acc / (nbr_gens / eff_filter);
 	(*bmm)[make_pair(kAcc_bmm, channelIx)] = measurement_t(eff, std_dev_binomail(eff, nbr_gens));
 	
 	// muon eff

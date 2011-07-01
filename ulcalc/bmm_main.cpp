@@ -22,14 +22,17 @@ using namespace std;
 
 /* Space for global configuration variables */
 static map<double,TCut> g_eta_cuts;
-static const char *g_bs_file;
-static const char *g_bd_file;
-static const char *g_data_file;
-static const char *g_outputfile;
+static const char *g_bs_file = NULL;
+static const char *g_bd_file = NULL;
+static const char *g_data_file = NULL;
+static const char *g_outputfile = NULL;
+
+static double g_eff_filter_bs = 1;
+static double g_eff_filter_bd = 1;
 
 static void usage()
 {
-	cout << "bmm_est -c <cutsfile> -s <bs_mcfile> -0 <b0_mcfile> -d <datafile> <complement_file>" << endl;
+	cout << "bmm_est [--eff_filter_bd <eff>] [--eff_filter_bs <eff>] -c <cutsfile> -s <bs_mcfile> -0 <b0_mcfile> -d <datafile> <complement_file>" << endl;
 	abort();
 } // usage()
 
@@ -58,6 +61,12 @@ static void parse_arguments(const char **first, const char **last)
 			} else if (strcmp(arg, "-d") == 0) {
 				if (first == last) usage();
 				g_data_file = *first++;
+			} else if (strcmp(arg, "--eff_filter_bd") == 0) {
+				if (first == last) usage();
+				g_eff_filter_bd = atof(*first++);
+			} else if (strcmp(arg, "--eff_filter_bs") == 0) {
+				if (first == last) usage();
+				g_eff_filter_bs = atof(*first++);
 			} else {
 				cerr << "Unknown option: " << arg << endl;
 				usage();
@@ -78,6 +87,8 @@ static void parse_arguments(const char **first, const char **last)
 	cout << "Channels: " << endl;
 	for (map<double,TCut>::const_iterator it = g_eta_cuts.begin(); it != g_eta_cuts.end(); ++it)
 		cout << '\t' << it->first << ": " << it->second.GetTitle() << endl;
+	cout << "Filter efficiency Bs: " << g_eff_filter_bs << endl;
+	cout << "Filter efficiency Bd: " << g_eff_filter_bd << endl;
 } // parse_arguments()
 
 int main(int argc, const char *argv [])
@@ -112,10 +123,10 @@ int main(int argc, const char *argv [])
 	for (it = g_eta_cuts.begin(); it != g_eta_cuts.end(); ++it) {
 		
 		bsmm.clear();
-		estimate_bmm(&bsmm, dataTree, bsTree, last_eta, it->first, channelIx, it->second, bdWindow, bsWindow, true);
+		estimate_bmm(&bsmm, dataTree, bsTree, last_eta, it->first, channelIx, it->second, bdWindow, bsWindow, true, g_eff_filter_bs);
 		
 		bdmm.clear();
-		estimate_bmm(&bdmm, dataTree, bdTree, last_eta, it->first, channelIx, it->second, bdWindow, bsWindow, false);
+		estimate_bmm(&bdmm, dataTree, bdTree, last_eta, it->first, channelIx, it->second, bdWindow, bsWindow, false, g_eff_filter_bd);
 		
 		// add the numbers to the file
 		fprintf(outputFile, "#######################################\n");
@@ -180,6 +191,11 @@ int main(int argc, const char *argv [])
 		fprintf(outputFile, "OBS_BKG\t%u\t%f\n", channelIx, bsmm[make_pair(kObsBkg_bmm, channelIx)].getVal());
 		fprintf(outputFile, "OBS_BSMM\t%u\t%f\n", channelIx, bsmm[make_pair(kObsB_bmm, channelIx)].getVal());
 		fprintf(outputFile, "OBS_BDMM\t%u\t%f\n", channelIx, bdmm[make_pair(kObsB_bmm, channelIx)].getVal());
+		
+		// Peaking Background
+		fprintf(outputFile, "PEAK_BKG_OFF\t%u\t%f\n",channelIx,0.0);
+		fprintf(outputFile, "PEAK_BKG_BS\t%u\t%f\n",channelIx,0.0);
+		fprintf(outputFile, "PEAK_BKG_BD\t%u\t%f\n",channelIx,0.0);
 		
 		last_eta = it->first;
 		channelIx++;

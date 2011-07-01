@@ -50,6 +50,8 @@ OBS_BDMM	0	0
 PEAK_BKG_OFF	0	0.0
 PEAK_BKG_BS	0	0.0
 PEAK_BKG_BD	0	0.0
+TAU_BS	0	.137
+TAU_BD	0	.126
 #########################
 # B -> mumu (endcap = 1) #
 #########################
@@ -79,3 +81,5 @@ OBS_BDMM	1	0
 PEAK_BKG_OFF	1	0.0
 PEAK_BKG_BS	1	0.0
 PEAK_BKG_BD	1	0.0
+TAU_BS	0	.137
+TAU_BD	0	.126
