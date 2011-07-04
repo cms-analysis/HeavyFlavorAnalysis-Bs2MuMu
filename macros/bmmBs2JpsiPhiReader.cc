@@ -804,7 +804,7 @@ void bmmBs2JpsiPhiReader::fillCandidateVariables() {
   for (int i = fpCand->fDau1; i <= fpCand->fDau2; ++i) {
     if (i < 0) break;
     pD = fpEvt->getCand(i); 
-    cout << "i = " << i << " pD = " << pD << endl;
+    //    cout << "i = " << i << " pD = " << pD << endl;
     if (pD->fType == JPSITYPE) {
       if ((JPSIMASSLO < pD->fMass) && (pD->fMass < JPSIMASSHI)) fGoodJpsiMass = true;
       fJpsiMass = pD->fMass;

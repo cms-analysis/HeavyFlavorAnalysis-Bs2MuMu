@@ -26,8 +26,6 @@
 #include <string>
 #include <list>
 
-// Usage: root[0] anaBmm(
-
 using namespace std; 
 using std::string; 
 
@@ -599,17 +597,31 @@ void anaBmm::makeAll(int channel) {
   if ((0x1<<0) & channel) {
     allInvertedIso();
 
-    triggerSignal();    
-    triggerNorm();    
+//     triggerSignal();    
+//     triggerNorm();    
+    
+    fF["SgMc"]->cd(); procAcc(0, 0); 
+    fF["SgMc"]->cd(); procAcc(0, 1); 
+
+    fF["NoMc"]->cd(); procAcc(10, 0); 
+    fF["NoMc"]->cd(); procAcc(10, 1); 
+
+    tnpVsMC(3.0, 3.0);
+    tnpVsMC(3.5, 3.5);
+    tnpVsMC(4.0, 4.0);
+    tnpVsMC(4.5, 4.5);
+    tnpVsMC(5.0, 5.0);
+    tnpVsMC(5.5, 5.5);
+    tnpVsMC(6.0, 6.0);
+    tnpVsMC(6.5, 6.5);
 
     plotWithCut("fl3d", "", 2.0, "l_{3d} [cm]", 0., 5);
     plotWithCut("fl3dE", "", -1.0, "#sigma(l_{3d}) [cm]", 0., 0.5);
     
     // -- barrel
-    puEff("B_iso4", 0.75, "#epsilon(I>0.75)", "NoData", "Ao");
-    puEff("B_iso4", 0.75, "#epsilon(I>0.75)", "CsData", "Ao");
     puEff("B_iso5", 0.75, "#epsilon(I>0.75)", "NoData", "Ao");
     puEff("B_iso5", 0.75, "#epsilon(I>0.75)", "CsData", "Ao");
+    puEff("B_iso", 0.75, "#epsilon(I>0.75)", "NoData", "Ao");
     puEff("B_iso", 0.75, "#epsilon(I>0.75)", "CsData", "Ao");
 
     puEff("B_fls3d", 10, "#epsilon(l_{3d}/#sigma(l_{3d})) > 10)", "NoData", "Ao");
@@ -619,8 +631,6 @@ void anaBmm::makeAll(int channel) {
     puEff("B_flsxy", 10, "#epsilon(l_{xy}/#sigma(l_{xy})) > 10)", "CsData", "Ao");
 
     // -- endcap
-    puEff("E_iso4", 0.75, "#epsilon(I>0.75)", "NoData", "Ao");
-    puEff("E_iso4", 0.75, "#epsilon(I>0.75)", "CsData", "Ao");
     puEff("E_iso5", 0.75, "#epsilon(I>0.75)", "NoData", "Ao");
     puEff("E_iso5", 0.75, "#epsilon(I>0.75)", "CsData", "Ao");
     puEff("E_iso", 0.75, "#epsilon(I>0.75)", "NoData", "Ao");
@@ -646,23 +656,30 @@ void anaBmm::makeAll(int channel) {
       sbsDistributionOverlaySameFile("CsData", Form("B_%s", todo[i].c_str()), Form("E_%s", todo[i].c_str()), "Ao", "Barrel", "Endcap");
       sbsDistributionOverlaySameFile("CsMc", Form("B_%s", todo[i].c_str()), Form("E_%s", todo[i].c_str()), "Ao", "Barrel", "Endcap");
     }
+
+
+    sbsDistributionOverlaySameFile("NoData", "APV0_iso5", "APV1_iso5", "Ao", "low pileup", "high pileup");
+    sbsDistributionOverlaySameFile("NoMcSummer11", "APV0_iso5", "APV1_iso5", "Ao", "low pileup", "high pileup");
+    
+    sbsDistributionOverlaySameFile("CsData", "APV0_iso5", "APV1_iso5", "Ao", "low pileup", "high pileup");
+    sbsDistributionOverlaySameFile("CsMcSummer11", "APV0_iso5", "APV1_iso5", "Ao", "low pileup", "high pileup");
+    
   }
 
   
-  sbsDistributionOverlaySameFile("NoData", "APV0_iso", "APV1_iso", "Ao", "low pileup", "high pileup");
-  sbsDistributionOverlaySameFile("NoMcSummer11", "APV0_iso", "APV1_iso", "Ao", "low pileup", "high pileup");
-
-  sbsDistributionOverlaySameFile("CsData", "APV0_iso", "APV1_iso", "Ao", "low pileup", "high pileup");
-  sbsDistributionOverlaySameFile("CsMcSummer11", "APV0_iso", "APV1_iso", "Ao", "low pileup", "high pileup");
-
-
-
   // -- 2
   if ((0x1<<1) & channel) {
+
     vector<string> regions;
+    regions.push_back("AR3");
+    regions.push_back("AR4");
+    regions.push_back("AR5");
+    regions.push_back("AR6");
     regions.push_back("A");
     regions.push_back("B");
     regions.push_back("E");
+    regions.push_back("APV0");
+    regions.push_back("APV1");
     for (unsigned int i = 0; i < regions.size(); ++i) {
       sbsDistributionOverlay("SgData", "SgMc", "Ao", regions[i].c_str());
       sbsDistributionOverlay("NoData", "NoMcSummer11", "Ao", regions[i].c_str());
@@ -798,6 +815,7 @@ void anaBmm::dumpCutNames() {
 
 // ----------------------------------------------------------------------
 void anaBmm::allEffTables() {
+  // -- all of it
   effTable("SgMc", "A");
   effTable("SgData", "A");
   effTable("NoData", "A");
@@ -805,10 +823,19 @@ void anaBmm::allEffTables() {
   effTable("CsData", "A");
   effTable("CsMc", "A");
 
+  // -- correct trigger menu
+  effTable("SgMc", "AR5");
+  effTable("SgData", "AR5");
+  effTable("NoData", "AR5");
+  effTable("NoMc", "AR5");
+  effTable("CsData", "AR5");
+  effTable("CsMc", "AR5");
+
+  // -- pileup (in)dependence
   effTable("BdMcSummer11", "APV0");
   effTable("BdMcSummer11", "APV1");
 
-  effTable("NoData", "APV0");
+  effTable("NoData", "APV0"); 
   effTable("NoData", "APV1");
 
   effTable("NoMcSummer11", "APV0");
@@ -822,34 +849,38 @@ void anaBmm::allEffTables() {
 
   fTEX.flush();
   // -- Compute difference
-  double deltaIso     = computeDelta(Form("{%s:A_iso5eff:NoData}", fSuffix.c_str()), Form("{%s:A_iso5eff:NoMc}", fSuffix.c_str()));
-  double deltaAlpha   = computeDelta(Form("{%s:A_alphaeff:NoData}", fSuffix.c_str()), Form("{%s:A_alphaeff:NoMc}", fSuffix.c_str()));
-  double deltaFls     = computeDelta(Form("{%s:A_fls3deff:NoData}", fSuffix.c_str()), Form("{%s:A_fls3deff:NoMc}", fSuffix.c_str()));
-  double deltaChi2dof = computeDelta(Form("{%s:A_chi2dofeff:NoData}", fSuffix.c_str()), Form("{%s:A_chi2dofeff:NoMc}", fSuffix.c_str()));
+  double deltaIso     = computeDelta(Form("{%s:AR5_iso5eff:NoData}", fSuffix.c_str()), Form("{%s:AR5_iso5eff:NoMc}", fSuffix.c_str()));
+  double deltaAlpha   = computeDelta(Form("{%s:AR5_alphaeff:NoData}", fSuffix.c_str()), Form("{%s:AR5_alphaeff:NoMc}", fSuffix.c_str()));
+  double deltaFls     = computeDelta(Form("{%s:AR5_fls3deff:NoData}", fSuffix.c_str()), Form("{%s:AR5_fls3deff:NoMc}", fSuffix.c_str()));
+  double deltaChi2dof = computeDelta(Form("{%s:AR5_chi2dofeff:NoData}", fSuffix.c_str()), Form("{%s:AR5_chi2dofeff:NoMc}", fSuffix.c_str()));
   double deltaTot     = TMath::Sqrt(deltaIso*deltaIso + deltaAlpha*deltaAlpha + deltaFls*deltaFls + deltaChi2dof*deltaChi2dof); 
   double deltaTotNoIso= TMath::Sqrt(deltaAlpha*deltaAlpha + deltaFls*deltaFls + deltaChi2dof*deltaChi2dof); 
 
-  fTEX << Form("%s", (formatTex(deltaIso, fSuffix+":A_deltaIso", "No")).c_str()) << endl;
-  fTEX << Form("%s", (formatTex(deltaAlpha, fSuffix+":A_deltaAlpha", "No")).c_str()) << endl;
-  fTEX << Form("%s", (formatTex(deltaFls, fSuffix+":A_deltaFls", "No")).c_str()) << endl;
-  fTEX << Form("%s", (formatTex(deltaChi2dof, fSuffix+":A_deltaChi2dof", "No")).c_str()) << endl;
-  fTEX << Form("%s", (formatTex(100*deltaTot, fSuffix+":A_deltaTot", "No")).c_str()) << endl;
-  fTEX << Form("%s", (formatTex(100*deltaTotNoIso, fSuffix+":A_deltaTotNoIso", "No")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(deltaIso, fSuffix+":AR5_deltaIso", "No")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(deltaAlpha, fSuffix+":AR5_deltaAlpha", "No")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(deltaFls, fSuffix+":AR5_deltaFls", "No")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(deltaChi2dof, fSuffix+":AR5_deltaChi2dof", "No")).c_str()) << endl;
+  //  fTEX << Form("%s", (formatTex(100*deltaTot, fSuffix+":AR5_deltaTot", "No")).c_str()) << endl;
+  fTEX << formatTex(100*deltaTot, Form("%s:AR5_deltaTot:No", fSuffix.c_str()), 1) << endl;
+  //  fTEX << Form("%s", (formatTex(100*deltaTotNoIso, fSuffix+":AR5_deltaTotNoIso", "No")).c_str()) << endl;
+  fTEX << formatTex(100*deltaTotNoIso, Form("%s:AR5_deltaTotNoIso:No", fSuffix.c_str()), 1) << endl;
 
 
-  deltaIso     = computeDelta(Form("{%s:A_iso5eff:CsData}", fSuffix.c_str()), Form("{%s:A_iso5eff:CsMc}", fSuffix.c_str()));
-  deltaAlpha   = computeDelta(Form("{%s:A_alphaeff:CsData}", fSuffix.c_str()), Form("{%s:A_alphaeff:CsMc}", fSuffix.c_str()));
-  deltaFls     = computeDelta(Form("{%s:A_fls3deff:CsData}", fSuffix.c_str()), Form("{%s:A_fls3deff:CsMc}", fSuffix.c_str()));
-  deltaChi2dof = computeDelta(Form("{%s:A_chi2dofeff:CsData}", fSuffix.c_str()), Form("{%s:A_chi2dofeff:CsMc}", fSuffix.c_str()));
+  deltaIso     = computeDelta(Form("{%s:AR5_iso5eff:CsData}", fSuffix.c_str()), Form("{%s:AR5_iso5eff:CsMc}", fSuffix.c_str()));
+  deltaAlpha   = computeDelta(Form("{%s:AR5_alphaeff:CsData}", fSuffix.c_str()), Form("{%s:AR5_alphaeff:CsMc}", fSuffix.c_str()));
+  deltaFls     = computeDelta(Form("{%s:AR5_fls3deff:CsData}", fSuffix.c_str()), Form("{%s:AR5_fls3deff:CsMc}", fSuffix.c_str()));
+  deltaChi2dof = computeDelta(Form("{%s:AR5_chi2dofeff:CsData}", fSuffix.c_str()), Form("{%s:AR5_chi2dofeff:CsMc}", fSuffix.c_str()));
   deltaTot     = TMath::Sqrt(deltaIso*deltaIso + deltaAlpha*deltaAlpha + deltaFls*deltaFls + deltaChi2dof*deltaChi2dof); 
   deltaTotNoIso= TMath::Sqrt(deltaAlpha*deltaAlpha + deltaFls*deltaFls + deltaChi2dof*deltaChi2dof); 
   
-  fTEX << Form("%s", (formatTex(deltaIso, fSuffix+":A_deltaIso", "Cs")).c_str()) << endl;
-  fTEX << Form("%s", (formatTex(deltaAlpha, fSuffix+":A_deltaAlpha", "Cs")).c_str()) << endl;
-  fTEX << Form("%s", (formatTex(deltaFls, fSuffix+":A_deltaFls", "Cs")).c_str()) << endl;
-  fTEX << Form("%s", (formatTex(deltaChi2dof, fSuffix+":A_deltaChi2dof", "Cs")).c_str()) << endl;
-  fTEX << Form("%s", (formatTex(100*deltaTot, fSuffix+":A_deltaTot", "Cs")).c_str()) << endl;
-  fTEX << Form("%s", (formatTex(100*deltaTotNoIso, fSuffix+":A_deltaTotNoIso", "Cs")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(deltaIso, fSuffix+":AR5_deltaIso", "Cs")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(deltaAlpha, fSuffix+":AR5_deltaAlpha", "Cs")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(deltaFls, fSuffix+":AR5_deltaFls", "Cs")).c_str()) << endl;
+  fTEX << Form("%s", (formatTex(deltaChi2dof, fSuffix+":AR5_deltaChi2dof", "Cs")).c_str()) << endl;
+  //  fTEX << Form("%s", (formatTex(100*deltaTot, fSuffix+":AR5_deltaTot", "Cs")).c_str()) << endl;
+  fTEX << formatTex(100*deltaTot, Form("%s:AR5_deltaTot:Cs", fSuffix.c_str()), 1) << endl;
+  //  fTEX << Form("%s", (formatTex(100*deltaTotNoIso, fSuffix+":AR5_deltaTotNoIso", "Cs")).c_str()) << endl;
+  fTEX << formatTex(100*deltaTotNoIso, Form("%s:AR5_deltaTotNoIso:Cs", fSuffix.c_str()), 1) << endl;
   
   fTEX.flush();
 }
@@ -882,8 +913,10 @@ double anaBmm::computeDelta(const char *s1, const char *s2, int relative) {
   double delta = TMath::Abs(f1 - f2);
   is.close();
 
+  cout << line << " --> abs: " << delta << endl;
   if (relative) {
     delta = 2.*delta/(f1+f2);
+    cout << line << " --> rel: " << delta << endl;
   }
 		
   return delta;
@@ -933,6 +966,21 @@ void anaBmm::effTable(string smode, const char *region) {
     massPeak = 5.37;
     massSigma = 0.035;
   }
+
+  vector<string> doList;
+  doList.push_back("hlt");
+  doList.push_back("tracksqual");
+  doList.push_back("muonsid");
+  doList.push_back("muonspt");
+  doList.push_back("pt");
+  doList.push_back("fls3d");
+  doList.push_back("chi2dof");
+  doList.push_back("cosa");
+  doList.push_back("alpha");
+  doList.push_back("iso1");
+  doList.push_back("iso4");
+  doList.push_back("iso5");
+  doList.push_back("docatrk");
   
   //  ofstream OUT(fNumbersFileName.c_str(), ios::app);
   fTEX << "% ----------------------------------------------------------------------" << endl;
@@ -961,6 +1009,18 @@ void anaBmm::effTable(string smode, const char *region) {
     }
   }
 
+  if (string::npos != smode.find("CsMc")) {
+    cout << "==> This is control sample MC, counting events in histogram" << endl;
+    mode = 0; 
+  }
+
+  if (string::npos != smode.find("NoMc")) {
+    cout << "==> This is normalization sample MC, counting events in histogram" << endl;
+    mode = 0; 
+  }
+
+
+
   string cut, pdfname;
   double n(0.), nE(0.); 
   double norm(0.),  normE(0.), eff(0.), effE(0.);
@@ -983,19 +1043,9 @@ void anaBmm::effTable(string smode, const char *region) {
 
   delete an;
   
-  for (int i = 1; i < h->GetNbinsX(); ++i) {
-    cut = string(h->GetXaxis()->GetBinLabel(i)); 
+  for (unsigned int i = 0; i < doList.size(); ++i) {
+    cut = Form("%s_%s", region, doList[i].c_str());
 
-    if (string::npos == cut.find(Form("%s_", region))) {
-      //      cout << "region " << region << " not part of name, skipping" << endl;
-      continue;
-    }
-
-    if (cut == string("")) {
-      cout << "empty string found, break ..." << endl;
-      //OUT.close();
-      break;
-    }
     pdfname = Form("%s/%s_%s.pdf", fDirectory.c_str(), smode.c_str(), cut.c_str());
     AnalysisDistribution *a = new AnalysisDistribution(cut.c_str());
     a->fMassLo    = massLo; 
@@ -1299,6 +1349,8 @@ void anaBmm::varProcess(const char *var, const char *cuts, double lo, double hi,
 // ----------------------------------------------------------------------
 void anaBmm::procAcc(int mode, int chan) {
 
+  fTEX << "% -- procAcc: " << mode << " " << chan << endl;
+
   string cuts; 
 
   if (0 == mode) {
@@ -1329,6 +1381,23 @@ void anaBmm::procAcc(int mode, int chan) {
   cout << Form("GGF: %4.3f +/- %4.3f", c40/n40, dEff(static_cast<int>(c40), static_cast<int>(n40))) << endl;
   cout << Form("FEX: %4.3f +/- %4.3f", c41/n41, dEff(static_cast<int>(c41), static_cast<int>(n41))) << endl;
   cout << Form("GSP: %4.3f +/- %4.3f", c42/n42, dEff(static_cast<int>(c42), static_cast<int>(n42))) << endl;
+
+  double r = c40/n40; 
+  double rE = dEff(static_cast<int>(c40), static_cast<int>(n40));
+  fTEX << formatTex(r, Form("%s:ggf%i-%i:val", fSuffix.c_str(), mode, chan), 3) << endl;
+  fTEX << formatTex(rE, Form("%s:ggf%i-%i:err", fSuffix.c_str(), mode, chan), 3) << endl;
+
+  r = c41/n41; 
+  rE = dEff(static_cast<int>(c41), static_cast<int>(n41));
+  fTEX << formatTex(r, Form("%s:fex%i-%i:val", fSuffix.c_str(), mode, chan), 3) << endl;
+  fTEX << formatTex(rE, Form("%s:fex%i-%i:err", fSuffix.c_str(), mode, chan), 3) << endl;
+
+  r = c42/n42; 
+  rE = dEff(static_cast<int>(c42), static_cast<int>(n42));
+  fTEX << formatTex(r, Form("%s:gsp%i-%i:val", fSuffix.c_str(), mode, chan), 3) << endl;
+  fTEX << formatTex(rE, Form("%s:gsp%i-%i:err", fSuffix.c_str(), mode, chan), 3) << endl;
+
+
 
 }
 
@@ -1457,7 +1526,7 @@ void anaBmm::histInvertedIso(const char *var, int n, double lo, double hi) {
   EO->Draw("esame");
   tl->DrawLatex(0.15, 0.92, "Endcap");
 
-  c0->SaveAs(Form("invertedIso-%s.pdf", filename.c_str())); 
+  c0->SaveAs(Form("%s/invertedIso-%s.pdf", fDirectory.c_str(), filename.c_str())); 
 
 }
 
@@ -1518,6 +1587,10 @@ void anaBmm::rareBg() {
 
   c0->Clear();
   gStyle->SetOptStat(0);
+
+  TH1D *eRare = (TH1D*)(fhMassWithAllCuts[0]->Clone("eRare"));  eRare->SetLineColor(kBlack); 
+  TH1D *bRare = (TH1D*)(fhMassWithAllCuts[0]->Clone("bRare"));  bRare->SetLineColor(kBlack); 
+
   
   THStack *hRareBg0 = new THStack("hRareBg0","");
   THStack *hRareBg1 = new THStack("hRareBg1","");
@@ -1525,27 +1598,27 @@ void anaBmm::rareBg() {
   std::map<string, int> colors, hatches;
   std::map<string, double> mscale;  // pions: 0.002, kaons: 0.005, protons: 0.001
   std::map<string, double> err;  
-  double epsPi = 0.003; 
-  double epsKa = 0.003; 
-  double epsPr = 0.0005;
+  double epsPi(0.003), errPi2(0.04*0.04); // relative errors on misid rates from MUO-10-002
+  double epsKa(0.003), errKa2(0.13*0.13); 
+  double epsPr(0.0005), errPr2(0.15*0.15);
   colors.insert(make_pair("bg60", 46)); hatches.insert(make_pair("bg60", 3004)); mscale.insert(make_pair("bg60", epsPi*epsPr)); 
-  err.insert(make_pair("bg60", 0.3)); 
+  err.insert(make_pair("bg60", TMath::Sqrt(0.3*0.3 + errPi2 + errPr2))); 
   colors.insert(make_pair("bg61", 49)); hatches.insert(make_pair("bg61", 3005)); mscale.insert(make_pair("bg61", epsKa*epsPr)); 
-  err.insert(make_pair("bg61", 0.31)); 
+  err.insert(make_pair("bg61", TMath::Sqrt(0.31*0.31 + errKa2 + errPr2))); 
 
   colors.insert(make_pair("bg82", 30)); hatches.insert(make_pair("bg82", 3004)); mscale.insert(make_pair("bg82", epsKa*epsKa)); 
-  err.insert(make_pair("bg82", 0.15)); 
+  err.insert(make_pair("bg82", TMath::Sqrt(0.15*0.15 + errKa2 + errKa2))); 
   colors.insert(make_pair("bg83", 32)); hatches.insert(make_pair("bg83", 3005)); mscale.insert(make_pair("bg83", epsPi*epsKa)); 
-  err.insert(make_pair("bg83", 0.22)); 
+  err.insert(make_pair("bg83", TMath::Sqrt(0.22*0.22 + errPi2 + errKa2))); 
   colors.insert(make_pair("bg84", 33)); hatches.insert(make_pair("bg84", 3007)); mscale.insert(make_pair("bg84", epsPi*epsPi)); 
-  err.insert(make_pair("bg84", 1.0)); 
+  err.insert(make_pair("bg84", TMath::Sqrt(1.0*1.0 + errPi2 + errPi2))); 
 
   colors.insert(make_pair("bg93", 40)); hatches.insert(make_pair("bg93", 3004)); mscale.insert(make_pair("bg93", epsKa*epsKa)); 
-  err.insert(make_pair("bg93", 0.73)); 
+  err.insert(make_pair("bg93", TMath::Sqrt(0.73*0.73 + errKa2 + errKa2))); 
   colors.insert(make_pair("bg92", 41)); hatches.insert(make_pair("bg92", 3005)); mscale.insert(make_pair("bg92", epsKa*epsPi)); 
-  err.insert(make_pair("bg92", 0.05)); 
+  err.insert(make_pair("bg92", TMath::Sqrt(0.05*0.05 + errKa2 + errPi2))); 
   colors.insert(make_pair("bg91", 42)); hatches.insert(make_pair("bg91", 3007)); mscale.insert(make_pair("bg91", epsPi*epsPi)); 
-  err.insert(make_pair("bg91", 0.04)); 
+  err.insert(make_pair("bg91", TMath::Sqrt(0.04*0.04 + errPi2 + errPi2))); 
 
   newLegend(0.65, 0.4, 0.80, 0.85); 
 
@@ -1584,6 +1657,8 @@ void anaBmm::rareBg() {
     double bs1    = fhMassWithAllCutsManyBins[1]->Integral(fhMassWithAllCutsManyBins[1]->FindBin(fCuts[1]->mBsLo)+1, 
 							fhMassWithAllCutsManyBins[1]->FindBin(fCuts[1]->mBsHi)-1);
 
+    double error = TMath::Sqrt(0.15*0.15 + err[imap->first]*err[imap->first]);
+
     bsRare0 += bs0*lscale*misid*teff0; 
     bsRare1 += bs1*lscale*misid*teff1; 
 
@@ -1603,6 +1678,9 @@ void anaBmm::rareBg() {
     
     h1Rare0->Scale(lscale*misid);
     h1Rare1->Scale(lscale*misid);
+
+    bRare->Add(h1Rare0); 
+    eRare->Add(h1Rare1); 
 
     legg->AddEntry(h1Rare0, fName[imap->first].c_str(), "f"); 
     h1Rare0->Draw();
@@ -1660,6 +1738,13 @@ void anaBmm::rareBg() {
   fTEX <<  Form("\\vdef{%s:bdRare0}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), bdRare0) << endl;
   fTEX <<  Form("\\vdef{%s:bdRare1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), bdRare1) << endl;
 
+  TDirectory *pD = gFile; 
+  fHistFile->cd();
+  bRare->SetDirectory(gDirectory);
+  bRare->Write(); 
+  eRare->SetDirectory(gDirectory);
+  eRare->Write(); 
+  pD->cd();
 }
 
 
@@ -1839,32 +1924,46 @@ void anaBmm::sbsDistributionOverlay(std::string file1, std::string file2, const 
   TH1D *h1, *h2;
   AnalysisDistribution a("A_allevents"); 
 
-  vector<string> skipList; 
-  skipList.push_back("mpsi"); 
-  skipList.push_back("q"); 
-  skipList.push_back("allevents"); 
-  skipList.push_back("muonsid"); 
-  skipList.push_back("tracksqual"); 
-  skipList.push_back("hlt"); 
-  skipList.push_back("allevents"); 
 
-  skipList.push_back("pv1"); 
-  skipList.push_back("pv2"); 
-  skipList.push_back("pv3"); 
-  skipList.push_back("pv4"); 
-  skipList.push_back("pv5"); 
-  skipList.push_back("pv6"); 
+  vector<string> doList; 
+  doList.push_back("pvz");
+  doList.push_back("pvn");
+  doList.push_back("pvntrk");
+  doList.push_back("muon1pt");
+  doList.push_back("muon2pt");
+  doList.push_back("muonseta");
+  doList.push_back("pt");
+  doList.push_back("eta");
 
-  vector<string> nolegendList; 
-  nolegendList.push_back("muonseta"); 
-  nolegendList.push_back("muon1eta"); 
-  nolegendList.push_back("muon2eta"); 
-  nolegendList.push_back("trackseta"); 
-  nolegendList.push_back("pvz"); 
-  nolegendList.push_back("eta"); 
-  nolegendList.push_back("ip1"); 
-  nolegendList.push_back("ip2"); 
-  nolegendList.push_back("pvz"); 
+  doList.push_back("fls3d");
+  doList.push_back("flsxy");
+  doList.push_back("chi2dof");
+  doList.push_back("pchi2dof");
+  doList.push_back("alpha");
+  doList.push_back("fls3d");
+  doList.push_back("iso");
+  doList.push_back("iso1");
+  doList.push_back("iso2");
+  doList.push_back("iso3");
+  doList.push_back("iso4");
+  doList.push_back("iso5");
+  doList.push_back("i0trk");
+  doList.push_back("i4trk");
+  doList.push_back("docatrk");
+
+  if (string::npos != file1.find("No")) {
+    doList.push_back("kaonpt");
+    doList.push_back("psipt");
+  } 
+
+  if (string::npos != file1.find("Cs")) {
+    doList.push_back("kaonspt");
+    doList.push_back("psipt");
+    doList.push_back("phipt");
+    doList.push_back("deltar");
+    doList.push_back("mkk");
+  }
+
 
   vector<string> leftList; 
   leftList.push_back("iso"); 
@@ -1873,38 +1972,19 @@ void anaBmm::sbsDistributionOverlay(std::string file1, std::string file2, const 
   leftList.push_back("iso3"); 
   leftList.push_back("iso4"); 
   leftList.push_back("cosa"); 
-  leftList.push_back("cosa0"); 
 
   TCanvas *c1;
-  string skipcut, cut, pdfname; 
+  string skipregion, skipcut, cut, pdfname; 
   bool skip; 
-  for (int i = 1; i < h->GetNbinsX(); ++i) {
-    cut = string(h->GetXaxis()->GetBinLabel(i)); 
-    skipcut = cut.substr(cut.find("_")+1); 
-    skip = false;
-    //    cout << "skipcut: " << skipcut << endl;
-    for (unsigned int j = 0; j < skipList.size(); ++j) {
-      if (string::npos != skipcut.find(skipList[j])) {
-	//	cout << "found " << skipcut << " in skiplist" << endl;
-	skip = true; 
-	break;
-      }
-    }
-    if (skip) continue;
-    // -- skip  if a specific region is requested
-    if (strcmp(region, "") && string::npos == cut.find(region)) {
-      //      cout << "region " << region << " not part of name, skipping" << endl;
-      continue;
-    }
+  for (unsigned int i = 0; i < doList.size(); ++i) {
+    cut = Form("%s_%s", region, doList[i].c_str()); 
+    skipregion =  cut.substr(0, cut.find_first_of("_")); 
 
-    if (cut == string("")) {
-      //      cout << "empty string found, break ..." << endl;
-      //      OUT.close();
-      break;
-    }
     pdfname = Form("%s/%s_%s-%s_sbs_%s_%s.pdf", fDirectory.c_str(), fSuffix.c_str(),
 		   file1.c_str(), file2.c_str(), cut.c_str(), selection);
-  
+    
+    cout << pdfname << endl;
+    
     fF[file1]->cd(); 
     cout << "==> File1: "; gFile->pwd(); 
     cout << "==> pdf: " << pdfname << endl;
@@ -1955,18 +2035,15 @@ void anaBmm::sbsDistributionOverlay(std::string file1, std::string file2, const 
     setFilledHist(h2, color2, color2, fill2); 
     h2->Draw(Form("same%s", option2));
 
-    if (nolegendList.end() != find(nolegendList.begin(), nolegendList.end(), cut)) {
-      cout << "++++++++++++++++++++++" << endl;
+    if (leftList.end() != find(leftList.begin(), leftList.end(), cut)) {
+      newLegend(0.25, 0.7, 0.50, 0.85); 
     } else {
-      if (leftList.end() != find(leftList.begin(), leftList.end(), cut)) {
-	newLegend(0.25, 0.7, 0.50, 0.85); 
-      } else {
-	newLegend(0.45, 0.7, 0.70, 0.85); 
-      }
-      legg->AddEntry(h1, fName[file1].c_str(), loption1); 
-      legg->AddEntry(h2, fName[file2].c_str(), loption2); 
-      legg->Draw(); 
+      newLegend(0.45, 0.7, 0.70, 0.85); 
     }
+    legg->AddEntry(h1, fName[file1].c_str(), loption1); 
+    legg->AddEntry(h2, fName[file2].c_str(), loption2); 
+    legg->Draw(); 
+
     if (fDoPrint) c0->SaveAs(pdfname.c_str()); 
   }
 } 
@@ -2606,7 +2683,7 @@ void anaBmm::plotWithCut(const char *var, const char *cuts, double cut, const ch
 
 
 // ----------------------------------------------------------------------
-void anaBmm::compareTrigger(double m1pt, double m2pt) {
+void anaBmm::tnpVsMC(double m1pt, double m2pt) {
   
   for (unsigned int i = 0; i < fNchan; ++i) {
     fCuts[i]->m1pt = m1pt; 
@@ -2615,6 +2692,49 @@ void anaBmm::compareTrigger(double m1pt, double m2pt) {
   
   loopTree(0); 
   loopTree(10); 
+
+  fTEX << "% -- tnpVsMC for pt = " << m1pt << " and " << m2pt << endl;
+
+  double r(0.); 
+  for (int i = 0; i < 2; ++i) {
+    r = fNumbersBs[i]->effMuidMC/fNumbersBs[i]->effMuidPid;
+    fTEX << formatTex(r, Form("%s:rhoMuidSg%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersNorm[i]->effMuidMC/fNumbersNorm[i]->effMuidPid;
+    fTEX << formatTex(r, Form("%s:rhoMuidNo%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersBs[i]->effMuidMC/fNumbersNorm[i]->effMuidMC;
+    fTEX << formatTex(r, Form("%s:rMcMuid%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = dRatio(fNumbersBs[i]->effMuidMC, fNumbersBs[i]->effMuidMCE, fNumbersNorm[i]->effMuidMC, fNumbersNorm[i]->effMuidMCE); 
+    fTEX << formatTex(r, Form("%s:rMcMuid%i-pT%2.0fpT%2.0f:err", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersBs[i]->effMuidPid/fNumbersNorm[i]->effMuidPid;
+    fTEX << formatTex(r, Form("%s:rPidMuid%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = dRatio(fNumbersBs[i]->effMuidPid, fNumbersBs[i]->effMuidPidE, fNumbersNorm[i]->effMuidPid, fNumbersNorm[i]->effMuidPidE); 
+    fTEX << formatTex(r, Form("%s:rPidMuid%i-pT%2.0fpT%2.0f:err", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+
+    r = fNumbersBs[i]->effTrigMC/fNumbersBs[i]->effTrigPid;
+    fTEX << formatTex(r, Form("%s:rhoTrigSg%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersNorm[i]->effTrigMC/fNumbersNorm[i]->effTrigPid;
+    fTEX << formatTex(r, Form("%s:rhoTrigNo%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersBs[i]->effTrigMC/fNumbersNorm[i]->effTrigMC;
+    fTEX << formatTex(r, Form("%s:rMcTrig%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = dRatio(fNumbersBs[i]->effTrigMC, fNumbersBs[i]->effTrigMCE, fNumbersNorm[i]->effTrigMC, fNumbersNorm[i]->effTrigMCE); 
+    fTEX << formatTex(r, Form("%s:rMcTrig%i-pT%2.0fpT%2.0f:err", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersBs[i]->effTrigPid/fNumbersNorm[i]->effTrigPid;
+    fTEX << formatTex(r, Form("%s:rPidTrig%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = dRatio(fNumbersBs[i]->effTrigPid, fNumbersBs[i]->effTrigPidE, fNumbersNorm[i]->effTrigPid, fNumbersNorm[i]->effTrigPidE); 
+    fTEX << formatTex(r, Form("%s:rPidTrig%i-pT%2.0fpT%2.0f:err", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+  }
+
 
   cout << Form("pT > %3.1f muid: ", m2pt) 
        << Form("%3.2f %3.2f %3.2f %3.2f", 
@@ -2676,8 +2796,6 @@ TH1* anaBmm::loopTree(int mode, int proc) {
   
   bool bp2jpsikp(false), bs2jpsiphi(false), isMC(false); 
 
-  cout << "--> loopTree with mode " << mode << " proc = " << proc << endl;
-
   string fAcc;
 
   numbers *aa(0);
@@ -2718,6 +2836,7 @@ TH1* anaBmm::loopTree(int mode, int proc) {
     ptT1 = new PidTable("pidtables/110625/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
     ptT2 = new PidTable("pidtables/110625/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
     ptM  = new PidTable("pidtables/110625/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 
+    //    ptM  = new PidTable("pidtables/110701/H2D_TagPt_MuonIDEfficiency_GlbTM_TagHighPt_mc.dat"); 
 //     ptT1 = new PidTable("pidtables/110625/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.dat"); 	
 //     ptT2 = new PidTable("pidtables/110625/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.dat"); 	
 //     ptM  = new PidTable("pidtables/110625/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.dat"); 
@@ -2727,6 +2846,7 @@ TH1* anaBmm::loopTree(int mode, int proc) {
     ptM  = new PidTable("pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
   }
 
+  cout << "--> loopTree with mode " << mode << " proc = " << proc << " on file ";
   gFile->pwd();
 
   // -- reset all histograms

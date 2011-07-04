@@ -49,9 +49,11 @@ my %jobs = (
     , "signal bg MC 82" => "-m,bmmSignalReader,bmm-bg82-Bs2KKReader.$job.cuts,cv02-signal-bg82-Bs2KK-5e32,bg82.root"
     , "signal bg MC 83" => "-m,bmmSignalReader,bmm-bg83-Bs2KPiReader.$job.cuts,cv02-signal-bg83-Bs2KPi-5e32,bg83.root"
     , "signal bg MC 84" => "-m,bmmSignalReader,bmm-bg84-Bs2PiPiReader.$job.cuts,cv02-signal-bg84-Bs2PiPi-5e32,bg84.root"
+    , "signal bg MC 86" => "-m,bmmSignalReader,bmm-bg86-Bs2KMuNuReader.$job.cuts,cv02-signal-bg86-Bs2KMuNu-5e32,bg86.root"
     , "signal bg MC 93" => "-m,bmmSignalReader,bmm-bg93-Bd2KKReader.$job.cuts,cv02-signal-bg93-Bd2KK-5e32,bg93.root"
     , "signal bg MC 92" => "-m,bmmSignalReader,bmm-bg92-Bd2KPiReader.$job.cuts,cv02-signal-bg92-Bd2KPi-5e32,bg92.root"
     , "signal bg MC 91" => "-m,bmmSignalReader,bmm-bg91-Bd2PiPiReader.$job.cuts,cv02-signal-bg91-Bd2PiPi-5e32,bg91.root"
+    , "signal bg MC 95" => "-m,bmmSignalReader,bmm-bg95-Bd2PiMuNuReader.$job.cuts,cv02-signal-bg95-Bd2PiMuNu-5e32,bg95.root"
 # -- signal data
     , "signal data" 
     => "-b 1,bmmSignalReader,bmmSignalReader.$job.cuts,cv02-signal-MuOnia-Run2011A*,signalData2011.root"
@@ -72,7 +74,20 @@ my %jobs = (
     , "cs MC Summer11" 
     => "-m,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.mc-summer11.cuts,cn-00-BsToPsiMuMu-Summer11-*,Bs2JpsiPhiMC-Summer11.root"
     , "cs data" 
-    => "-b 0,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cv02-cs-MuOnia-Run2011A*,Bs2JpsiPhiData2011.root"
+    => "-b 0,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cv02-cs-MuOnia-Run2011A*,Bs2JpsiPhiData2011.root",
+# -- BMT
+    , "bmt ht 30521" 
+    => "-m,bmmNormalizationReader,bmt300521Reader.$job.cuts,cv02-bmt-HT-Run2011A-*,cv02-300521-bmt-ht.root"
+    , "bmt photon 30521" 
+    => "-m,bmmNormalizationReader,bmt300521Reader.$job.cuts,cv02-bmt-Photon-Run2011A-*,cv02-300521-bmt-photon.root"
+    , "bmt jet 30521" 
+    => "-m,bmmNormalizationReader,bmt300521Reader.$job.cuts,cv02-bmt-Jet-Run2011A-*,cv02-300521-bmt-jet.root"
+    , "bmt ht 1313" 
+    => "-m,bmmSignalReader,bmt1313Reader.$job.cuts,cv02-bmt-HT-Run2011A-*,cv02-1313-bmt-ht.root"
+    , "bmt photon 1313" 
+    => "-m,bmmSignalReader,bmt1313Reader.$job.cuts,cv02-bmt-Photon-Run2011A-*,cv02-1313-bmt-photon.root"
+    , "bmt jet 1313" 
+    => "-m,bmmSignalReader,bmt1313Reader.$job.cuts,cv02-bmt-Jet-Run2011A-*,cv02-1313-bmt-jet.root"
     );
 
 my $user  = $ENV{'USER'};

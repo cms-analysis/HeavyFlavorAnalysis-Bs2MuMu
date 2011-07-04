@@ -143,10 +143,11 @@ void bmmReader::eventProcessing() {
 
   ((TH1D*)fpHistFile->Get("monEvents"))->Fill(2); 
 
-  bool foundRun(false); 
+  int foundRun(0); 
   if (SELMODE < 0) {
     // -- Fill ALL candidates
     for (unsigned int iC = 0; iC < fCands.size(); ++iC) {
+      ((TH1D*)fpHistFile->Get("monEvents"))->Fill(3); 
       fpCand = fCands[iC];
       fCandIdx = iC; 
       if (fVerbose > 4) cout << "Filling candidate " << iC 
@@ -156,98 +157,102 @@ void bmmReader::eventProcessing() {
       fillCandidateVariables();
       if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX && fCandIso5 > 0.7) continue;
       
-      foundRun = false; 
+      foundRun = 0; 
       if ((fRun < 150000) || fIsMC) {
-	foundRun = true; 
+	foundRun = 1; 
 	fillCandidateHistograms(fRegion["AR1"]);
       } 
       if ((fRun >= 160328 && fRun < 161177) || fIsMC) {
-	foundRun = true; 
+	foundRun = 2; 
 	fillCandidateHistograms(fRegion["AR2"]);
       } 
       if ((fRun >= 161215 && fRun < 163262) || fIsMC) {
-	foundRun = true; 
+	foundRun = 3; 
 	fillCandidateHistograms(fRegion["AR3"]);
       } 
       if ((fRun >= 163268 && fRun <= 163870) || fIsMC) {
-	foundRun = true; 
+	foundRun = 4; 
 	fillCandidateHistograms(fRegion["AR4"]);
       } 
       if ((fRun >= 165087 && fRun <= 165634) || fIsMC) {
-	foundRun = true; 
+	foundRun = 5; 
 	fillCandidateHistograms(fRegion["AR5"]);
       } 
       if ((fRun >= 165969) || fIsMC) {
-	foundRun = true; 
+	foundRun = 6; 
 	fillCandidateHistograms(fRegion["AR6"]);
       } 
-      if (!foundRun) {
+      if (0 == foundRun) {
 	fillCandidateHistograms(fRegion["AR0"]);
       }
       
-      fillCandidateHistograms(fRegion["A"]);
-      if (fBarrel) {
-	fillCandidateHistograms(fRegion["B"]); 
-	if (fPvN < 4) {
-	  fillCandidateHistograms(fRegion["APV0"]); 
-	  fillCandidateHistograms(fRegion["BPV0"]); 
+      if (5 == foundRun || fIsMC) {
+	fillCandidateHistograms(fRegion["A"]);
+	if (fBarrel) {
+	  fillCandidateHistograms(fRegion["B"]); 
+	  if (fPvN < 4) {
+	    fillCandidateHistograms(fRegion["APV0"]); 
+	    fillCandidateHistograms(fRegion["BPV0"]); 
+	  } else {
+	    fillCandidateHistograms(fRegion["APV1"]); 
+	    fillCandidateHistograms(fRegion["BPV1"]); 
+	  }
 	} else {
-	  fillCandidateHistograms(fRegion["APV1"]); 
-	  fillCandidateHistograms(fRegion["BPV1"]); 
-	}
-      } else {
-	fillCandidateHistograms(fRegion["E"]); 
-	if (fPvN < 4) {
-	  fillCandidateHistograms(fRegion["APV0"]); 
-	  fillCandidateHistograms(fRegion["EPV0"]); 
-	} else {
-	  fillCandidateHistograms(fRegion["APV1"]); 
-	  fillCandidateHistograms(fRegion["EPV1"]); 
+	  fillCandidateHistograms(fRegion["E"]); 
+	  if (fPvN < 4) {
+	    fillCandidateHistograms(fRegion["APV0"]); 
+	    fillCandidateHistograms(fRegion["EPV0"]); 
+	  } else {
+	    fillCandidateHistograms(fRegion["APV1"]); 
+	    fillCandidateHistograms(fRegion["EPV1"]); 
+	  }
 	}
       }
       if (fIsMC) {
-	((TH1D*)fpHistFile->Get("monEvents"))->Fill(3); 
+	((TH1D*)fpHistFile->Get("monEvents"))->Fill(4); 
 	fTree->Fill(); 
       } else {
 	if (fPreselection) {
-	  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(3); 
+	  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(4); 
 	  fTree->Fill(); 
 	}	  
       }
     }    
   } else {
+    ((TH1D*)fpHistFile->Get("monEvents"))->Fill(3); 
     candidateSelection(SELMODE); 
     // -- Fill only 'best' candidate
     if (fVerbose > 4) cout << "Filling candidate " << fCandIdx << endl;
     fillCandidateVariables();
+    foundRun = 0; 
     if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX && fCandIso5 > 0.7) {
       // do nothing
     } else {
       if ((fRun < 150000) || fIsMC) {
-	foundRun = true; 
+	foundRun = 1; 
 	fillCandidateHistograms(fRegion["AR1"]);
       } 
       if ((fRun >= 160328 && fRun < 161177) || fIsMC) {
-	foundRun = true; 
+	foundRun = 2; 
 	fillCandidateHistograms(fRegion["AR2"]);
       } 
       if ((fRun >= 161215 && fRun < 163262) || fIsMC) {
-	foundRun = true; 
+	foundRun = 3; 
 	fillCandidateHistograms(fRegion["AR3"]);
       } 
       if ((fRun >= 163268 && fRun <= 163870) || fIsMC) {
-	foundRun = true; 
+	foundRun = 4; 
 	fillCandidateHistograms(fRegion["AR4"]);
       } 
       if ((fRun >= 165087 && fRun <= 165634) || fIsMC) {
-	foundRun = true; 
+	foundRun = 5; 
 	fillCandidateHistograms(fRegion["AR5"]);
       } 
       if ((fRun >= 165969) || fIsMC) {
-	foundRun = true; 
+	foundRun = 6; 
 	fillCandidateHistograms(fRegion["AR6"]);
       } 
-      if (!foundRun) {
+      if (0 == foundRun) {
 	fillCandidateHistograms(fRegion["AR0"]);
       }
       
@@ -272,11 +277,11 @@ void bmmReader::eventProcessing() {
 	}
       }
       if (fIsMC) {
-	((TH1D*)fpHistFile->Get("monEvents"))->Fill(3); 
+	((TH1D*)fpHistFile->Get("monEvents"))->Fill(4); 
 	fTree->Fill(); 
       } else {
 	if (fPreselection) {
-	  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(3); 
+	  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(4); 
 	  fTree->Fill(); 
 	}	  
       }
@@ -288,7 +293,7 @@ void bmmReader::eventProcessing() {
   //  studyL1T();
   
   fillHist();
-  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(4); 
+  ((TH1D*)fpHistFile->Get("monEvents"))->Fill(5); 
 
 }
 
@@ -1682,7 +1687,7 @@ void bmmReader::bookHist() {
   //     h = new TH1D(Form("c%dNm", i), fAnaCuts.getName(i), 40, MASSMIN, MASSMAX); 
   //   }
 
-  h = new TH1D("analysisDistributions", "analysisDistributions", 1000, 0., 1000.); 
+  h = new TH1D("analysisDistributions", "analysisDistributions", 10000, 0., 10000.); 
 
 //   vector<string> prefix;
 //   prefix.push_back(""); 

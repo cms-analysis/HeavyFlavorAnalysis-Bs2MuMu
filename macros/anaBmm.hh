@@ -102,7 +102,7 @@ public:
   void breco(TH1D *h); 
   void effTree(int mode);
   TH1* loopTree(int mode, int proc = -1);
-  void compareTrigger(double m1pt = 3.0, double m2pt = 3.0); 
+  void tnpVsMC(double m1pt = 3.0, double m2pt = 3.0); 
   
   void plotVar(const char *plotstring, const char *cuts, const char *options = "");
   void testSimpleUL(const char *cuts);
