@@ -33,6 +33,7 @@
 #include "otherDecays.hh"
 #include "mumuReader.hh"
 #include "mumuBdReader.hh"
+#include "mumuPsiReader.hh"
 
 using namespace std;
 
@@ -218,6 +219,7 @@ int main(int argc, char *argv[]) {
   else if (readerName == "otherDecays") a = new otherDecays(chain,TString(evtClassName));
   else if (readerName == "mumuReader") a = new mumuReader(chain,TString(evtClassName));
   else if (readerName == "mumuBdReader") a = new mumuBdReader(chain,TString(evtClassName));
+  else if (readerName == "mumuPsiReader") a = new mumuPsiReader(chain,TString(evtClassName));
   else {
     cout << "please provide a class name to instantiate" << endl;
   }
