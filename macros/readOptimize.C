@@ -2,7 +2,7 @@
 
 int chan, file, run; 
 float mlo, mhi, pt, m1pt, m2pt, iso1, chi2dof, alpha, fls3d, docatrk; 
-float ul, nobs, nexp, eff, sig, ssb; 
+float ul, nobs, nexp, eff, sig, ssb, ssb0, ssb1, ssb2; 
 
 // ----------------------------------------------------------------------
 void readOptimize(int nfiles = 50) {
@@ -19,6 +19,8 @@ void readOptimize(int nfiles = 50) {
   t->Branch("nexp", &nexp, "nexp/F");
   t->Branch("sig", &sig, "sig/F");
   t->Branch("ssb", &ssb, "ssb/F");
+  t->Branch("ssb1", &ssb1, "ssb1/F");
+  t->Branch("ssb2", &ssb2, "ssb2/F");
   t->Branch("eff", &eff, "eff/F");
   t->Branch("mlo", &mlo, "mlo/F");
   t->Branch("mhi", &mhi, "mhi/F");
@@ -31,8 +33,8 @@ void readOptimize(int nfiles = 50) {
   t->Branch("fls3d", &fls3d, "fls3d/F");
   t->Branch("docatrk", &docatrk, "docatrk/F");
   
-  for (int i = 0; i < nfiles; ++i) {
-    file = i; readFile(Form("optimizeUL-%d.txt", i), t);
+  for (int i = 0; i <= nfiles; ++i) {
+    file = i; readFile(Form("optimizeUL-%d.txt", i-1), t);
   }
 
   t->Write(); 
@@ -47,6 +49,7 @@ void readFile(const char *fname, TTree *t) {
   char  buffer[200];
   ifstream is(fname);
   string line;
+  double nu(0.); 
 
   while (is.getline(buffer, 200, '\n')) {
     line = buffer; 
@@ -72,11 +75,19 @@ void readFile(const char *fname, TTree *t) {
       sscanf(buffer, "==> UL     = %f chan=0 version=%d", &ul, &run); 
       sscanf(buffer, "==> Signal = %f chan=0 version=%d", &sig, &run); 
       sscanf(buffer, "==> SSB    = %f chan=0 version=%d", &ssb, &run); 
-      if (ul > 0) {
+      if (ssb > 0) {
 	chan = 0; 
-	cout << "eff: " << eff << " ul = " << ul << " version = " << run << endl;
+	nu = 1.0; 
+	ssb0 = nu*sig/TMath::Sqrt(nu*sig + nexp);
+	nu = 1.0/0.32; 
+	ssb1 = nu*sig/TMath::Sqrt(nu*sig + nexp);
+	nu = 2.0/0.32; 
+	ssb2 = nu*sig/TMath::Sqrt(nu*sig + nexp);
+	
+	cout << "eff: " << eff << " ul = " << ul << " version = " << run 
+	     << " " << ssb << " " << ssb0 << " " << ssb1 << " " << ssb2 << endl;
 	t->Fill();
-	ul = -1;
+	ssb = -1;
       }
     }
 
@@ -85,13 +96,21 @@ void readFile(const char *fname, TTree *t) {
       sscanf(buffer, "==> nObs   = %f chan=1 version=%d", &nobs, &run); 
       sscanf(buffer, "==> nExp   = %f chan=1 version=%d", &nexp, &run); 
       sscanf(buffer, "==> UL     = %f chan=1 version=%d", &ul, &run); 
-      sscanf(buffer, "==> Signal = %f chan=0 version=%d", &sig, &run); 
-      sscanf(buffer, "==> SSB    = %f chan=0 version=%d", &ssb, &run); 
-      if (ul > 0) {
+      sscanf(buffer, "==> Signal = %f chan=1 version=%d", &sig, &run); 
+      sscanf(buffer, "==> SSB    = %f chan=1 version=%d", &ssb, &run); 
+      if (ssb > 0) {
 	chan = 1; 
-	cout << "eff: " << eff << " ul = " << ul << " version = " << run << endl;
+	nu = 1.0; 
+	ssb0 = nu*sig/TMath::Sqrt(nu*sig + nexp);
+	nu = 1.0/0.32; 
+	ssb1 = nu*sig/TMath::Sqrt(nu*sig + nexp);
+	nu = 2.0/0.32; 
+	ssb2 = nu*sig/TMath::Sqrt(nu*sig + nexp);
+
+	cout << "eff: " << eff << " ul = " << ul << " version = " << run
+	     << " " << ssb << " " << ssb0 << " " << ssb1 << " " << ssb2 << endl;
 	t->Fill();
-	ul = -1;
+	ssb = -1;
       }
     }
   }

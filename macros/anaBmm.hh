@@ -42,6 +42,7 @@ struct numbers {
   double accMuidMC, accMuidMCE, accTrigMC, accTrigMCE;
   double effMuidMC, effMuidMCE, effTrigMC, effTrigMCE;
   double effMuidPid, effMuidPidE, effTrigPid, effTrigPidE;
+  double effMuidPidMC, effMuidPidMCE, effTrigPidMC, effTrigPidMCE;
   double effCand, effCandE; 
   double effAna, effAnaE; 
   double effTot, effTotE, aEffProdMC, aEffProdMCE, effProdMC, effProdMCE, effProdPid, effProdPidE; 
@@ -51,7 +52,8 @@ struct numbers {
   double expSignal;
   double bgObs, bgBsExp, bgBsExpE, bgBdExp, bgBdExpE; 
   double bsObs, bdObs; 
-  double bsRare, bsRareE, bdRare, bdRareE; 
+  double tauBs, tauBsE, tauBd, tauBdE; 
+  double offRare, offRareE, bsRare, bsRareE, bdRare, bdRareE; 
   double pss, pssE, pdd, pddE;
   double psd, psdE, pds, pdsE;
   double mBdLo, mBdHi, mBsLo, mBsHi;
@@ -129,7 +131,8 @@ public:
   void procAcc(int mode, int chan); 
   void allInvertedIso(); 
   void histInvertedIso(const char *var, int n, double lo, double hi); 
-  void invertedIso(int chan, const char *cuts = "fls3d>10"); 
+  TH1D* invertedIso(int chan, const char *cuts = "fls3d>10"); 
+  void invertedIsoPrediction(); 
 
   // -- Utilities and helper methods
   // -------------------------------
@@ -205,6 +208,7 @@ public:
   std::vector<TH1D*> fhMassChan;
   std::vector<TH1D*> fhMassAbsNoCuts;
   std::vector<TH1D*> fhMassNoCuts;
+  std::vector<TH1D*> fhMassNoCutsManyBins;
   std::vector<TH1D*> fhMassWithAnaCuts;
   std::vector<TH1D*> fhMassWithMuonCuts; 
   std::vector<TH1D*> fhMassWithTriggerCuts; 
@@ -215,9 +219,10 @@ public:
   std::vector<TH1D*> fhMassWithTriggerCutsManyBins; 
   std::vector<TH1D*> fhMassWithAllCutsManyBins; 
   std::vector<TH1D*> fhMassWithMassCutsManyBins; 
-  std::vector<TH1D*> fhMuId;
-  std::vector<TH1D*> fhMuTr;
+  std::vector<TH1D*> fhMuId, fhMuIdMC;
+  std::vector<TH1D*> fhMuTr, fhMuTrMC;
   std::vector<TH1D*> fh0PidTrigger, fh1PidTrigger, fh0PidMuID, fh1PidMuID;
+  std::vector<TH1D*> fh0PidMCTrigger, fh1PidMCTrigger, fh0PidMCMuID, fh1PidMCMuID;
   std::vector<TH1D*> fh0MCTrigger, fh1MCTrigger, fh0MCMuID, fh1MCMuID;
 
 

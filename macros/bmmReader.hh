@@ -140,7 +140,7 @@ public:
   // -- variables for reduced tree, they are from fpCand
   bool                    fJSON;
   int                     fCandTM, fCandType; 
-  int                     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fCandQ;
+  int                     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fMu1Chi2, fMu2Chi2, fCandQ;
   bool                    fMu1Id, fMu2Id;
   double                  fHltMu1Pt, fHltMu1Eta, fHltMu1Phi, fHltMu2Pt, fHltMu2Eta, fHltMu2Phi;
   double                  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
@@ -197,6 +197,11 @@ public:
     *fpFLS3dPv1[NAD], *fpFLS3dPv2[NAD], *fpFLS3dPv3[NAD], *fpFLS3dPv4[NAD], *fpFLS3dPv5[NAD], *fpFLS3dPv6[NAD],  
     *fpFLSxyPv1[NAD], *fpFLSxyPv2[NAD], *fpFLSxyPv3[NAD], *fpFLSxyPv4[NAD], *fpFLSxyPv5[NAD], *fpFLSxyPv6[NAD],  
     *fpAlphaPv1[NAD], *fpAlphaPv2[NAD], *fpAlphaPv3[NAD], *fpAlphaPv4[NAD], *fpAlphaPv5[NAD], *fpAlphaPv6[NAD],  
+
+    *fpIsoR05Pt03[NAD], *fpIsoR05Pt05[NAD], *fpIsoR05Pt07[NAD], *fpIsoR05Pt09[NAD], *fpIsoR05Pt11[NAD],
+    *fpIsoR07Pt03[NAD], *fpIsoR07Pt05[NAD], *fpIsoR07Pt07[NAD], *fpIsoR07Pt09[NAD], *fpIsoR07Pt11[NAD],
+    *fpIsoR10Pt03[NAD], *fpIsoR10Pt05[NAD], *fpIsoR10Pt07[NAD], *fpIsoR10Pt09[NAD], *fpIsoR10Pt11[NAD],
+
     *fpDoca[NAD], *fpIP[NAD],
     *fpChi2[NAD], *fpChi2Dof[NAD], *fpProb[NAD], 
     *fpFLS3d[NAD], *fpFLSxy[NAD], 

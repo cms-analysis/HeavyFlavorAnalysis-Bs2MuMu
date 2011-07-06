@@ -186,7 +186,7 @@ void bmmReader::eventProcessing() {
 	fillCandidateHistograms(fRegion["AR0"]);
       }
       
-      if (5 == foundRun || fIsMC) {
+      if (foundRun  >= 4 || fIsMC) {
 	fillCandidateHistograms(fRegion["A"]);
 	if (fBarrel) {
 	  fillCandidateHistograms(fRegion["B"]); 
@@ -876,6 +876,12 @@ void bmmReader::fillCandidateVariables() {
   fMu1BPix      = numberOfBPixLayers(p1);
   fMu1BPixL1    = numberOfBPixLayer1Hits(p1);
 
+  if (p1->fMuIndex > -1) {
+    fMu1Chi2      = fpEvt->getMuon(p1->fMuIndex)->fMuonChi2;
+  } else {
+    fMu1Chi2 = -98.;
+  }
+
   if (fCandTM && fGenM1Tmi < 0) fpEvt->dump();
 
   //  cout << "  " << p1->fGenIndex << "  " << fCandTM << " fCandTmi: " << fCandTmi << " gen m " << fGenM1Tmi << " " << fGenM2Tmi << endl;
@@ -903,6 +909,12 @@ void bmmReader::fillCandidateVariables() {
   fMu2Pix       = numberOfPixLayers(p2);
   fMu2BPix      = numberOfBPixLayers(p2);
   fMu2BPixL1    = numberOfBPixLayer1Hits(p2);
+
+  if (p2->fMuIndex > -1) {
+    fMu2Chi2      = fpEvt->getMuon(p2->fMuIndex)->fMuonChi2;
+  } else {
+    fMu2Chi2 = -98.;
+  }
 
   if ((TMath::Abs(fMu1Eta) < 1.4) && (TMath::Abs(fMu2Eta) < 1.4)) {
     fBarrel = true; 
@@ -1015,12 +1027,12 @@ void bmmReader::fillCandidateVariables() {
   double iso = isoClassic(fpCand); 
   fCandI0trk = fCandItrk;
   double iso1= isoClassicOnePv(fpCand); 
-  double iso2= isoClassicWithDOCA(fpCand, 0.03); // 300um DOCA cut
-  double iso3= isoClassicWithDOCA(fpCand, 0.04); // 400um DOCA cut
-  double iso4= isoClassicWithDOCA(fpCand, 0.05); // 500um DOCA cut
-  fCandI4trk = fCandItrk;
+  double iso2= isoWithDOCA(fpCand, 0.03); // 300um DOCA cut
+  double iso3= isoWithDOCA(fpCand, 0.04); // 400um DOCA cut
+  double iso4= isoWithDOCA(fpCand, 0.05); // 500um DOCA cut
 
   double iso5= isoWithDOCA(fpCand, 0.05); // 500um DOCA cut
+  fCandI4trk = fCandItrk;
 
   fCandIso   = iso; 
   fCandIso1  = iso1; 
@@ -1030,23 +1042,23 @@ void bmmReader::fillCandidateVariables() {
   fCandIso5  = iso5; 
 
   // -- the matrix
-  fIsoR05Pt03 = isoClassicWithDOCA(fpCand, 0.05, 0.5, 0.3);
-  fIsoR05Pt05 = isoClassicWithDOCA(fpCand, 0.05, 0.5, 0.5);
-  fIsoR05Pt07 = isoClassicWithDOCA(fpCand, 0.05, 0.5, 0.7);
-  fIsoR05Pt09 = isoClassicWithDOCA(fpCand, 0.05, 0.5, 0.9);
-  fIsoR05Pt11 = isoClassicWithDOCA(fpCand, 0.05, 0.5, 1.1);
+  fIsoR05Pt03 = isoWithDOCA(fpCand, 0.05, 0.5, 0.3);
+  fIsoR05Pt05 = isoWithDOCA(fpCand, 0.05, 0.5, 0.5);
+  fIsoR05Pt07 = isoWithDOCA(fpCand, 0.05, 0.5, 0.7);
+  fIsoR05Pt09 = isoWithDOCA(fpCand, 0.05, 0.5, 0.9);
+  fIsoR05Pt11 = isoWithDOCA(fpCand, 0.05, 0.5, 1.1);
 
-  fIsoR07Pt03 = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.3);
-  fIsoR07Pt05 = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.5);
-  fIsoR07Pt07 = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.7);
-  fIsoR07Pt09 = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.9);
-  fIsoR07Pt11 = isoClassicWithDOCA(fpCand, 0.05, 0.7, 1.1);
+  fIsoR07Pt03 = isoWithDOCA(fpCand, 0.05, 0.7, 0.3);
+  fIsoR07Pt05 = isoWithDOCA(fpCand, 0.05, 0.7, 0.5);
+  fIsoR07Pt07 = isoWithDOCA(fpCand, 0.05, 0.7, 0.7);
+  fIsoR07Pt09 = isoWithDOCA(fpCand, 0.05, 0.7, 0.9);
+  fIsoR07Pt11 = isoWithDOCA(fpCand, 0.05, 0.7, 1.1);
 
-  fIsoR10Pt03 = isoClassicWithDOCA(fpCand, 0.05, 1.0, 0.3);
-  fIsoR10Pt05 = isoClassicWithDOCA(fpCand, 0.05, 1.0, 0.5);
-  fIsoR10Pt07 = isoClassicWithDOCA(fpCand, 0.05, 1.0, 0.7);
-  fIsoR10Pt09 = isoClassicWithDOCA(fpCand, 0.05, 1.0, 0.9);
-  fIsoR10Pt11 = isoClassicWithDOCA(fpCand, 0.05, 1.0, 1.1);
+  fIsoR10Pt03 = isoWithDOCA(fpCand, 0.05, 1.0, 0.3);
+  fIsoR10Pt05 = isoWithDOCA(fpCand, 0.05, 1.0, 0.5);
+  fIsoR10Pt07 = isoWithDOCA(fpCand, 0.05, 1.0, 0.7);
+  fIsoR10Pt09 = isoWithDOCA(fpCand, 0.05, 1.0, 0.9);
+  fIsoR10Pt11 = isoWithDOCA(fpCand, 0.05, 1.0, 1.1);
 
   fCandChi2  = sv.fChi2;
   fCandDof   = sv.fNdof;
@@ -1441,12 +1453,14 @@ double bmmReader::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, doub
 
 // ----------------------------------------------------------------------
 double bmmReader::isoWithDOCA(TAnaCand *pC, float docaCut, double r, double ptmin) {
-  const double ptCut=ptmin, coneSize=r;
-  const bool verbose=false;
+  double ptCut=ptmin, coneSize=r;
+  bool verbose=false;
   
-  double iso(-1.), pt(0.), sumPt(0.), candPt(0.), candPtScalar(0.); 
+  if (fEvt == 371082276) verbose = true; 
+
+  double iso(-1.), pt(0.), sumPt(0.), candPt(0.); 
   TAnaTrack *pT; 
-  vector<int> cIdx; 
+  vector<int> cIdx, pIdx; 
   int pvIdx = pC->fPvIdx;
   
   fCandItrk = 0; 
@@ -1454,11 +1468,11 @@ double bmmReader::isoWithDOCA(TAnaCand *pC, float docaCut, double r, double ptmi
   for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
     pT = fpEvt->getSigTrack(i); 
     cIdx.push_back(pT->fIndex); 
-    candPtScalar += pT->fPlab.Perp(); 
     if (verbose) {
       int tIdx = fpEvt->getRecTrack(pT->fIndex)->fPvIdx;
+      cout << "Signal track " << pT->fIndex << endl;
       if (pvIdx != tIdx) {
-	cout << "Signal track pointing to PV " << tIdx << " instead of " << pvIdx << endl;
+	cout << "    pointing to PV " << tIdx << " instead of " << pvIdx << endl;
       }
     }
   }
@@ -1468,28 +1482,29 @@ double bmmReader::isoWithDOCA(TAnaCand *pC, float docaCut, double r, double ptmi
   for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
     if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  continue;
     pT = fpEvt->getRecTrack(i); 
-    if (verbose) {
-      cout << "   track " << i 
-     	   << " with pT = " << pT->fPlab.Perp()
-     	   << " eta = " << pT->fPlab.Eta()
-     	   << " pointing at PV " << pT->fPvIdx;
-    }
     if (pvIdx != pT->fPvIdx) {
-      if (verbose) cout << " skipped because of PV index mismatch" << endl;
+      //      if (verbose) cout << " track " << i << " skipped because of PV index mismatch" << endl;
       continue;
     }
+    pIdx.push_back(i); 
     pt = pT->fPlab.Perp(); 
     if (pt < ptCut) {
-      if (verbose) cout << " skipped because of pt = " << pt << endl;
+      //      if (verbose) cout << " track " << i << " skipped because of pt = " << pt << endl;
       continue;
     }
     if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
       ++fCandItrk;
       sumPt += pt; 
-      if (verbose) cout << endl;
+      if (verbose) 
+	cout << "track " << i 
+	     << " with pT = " << pT->fPlab.Perp()
+	     << " eta = " << pT->fPlab.Eta()
+	     << " dR = " << pT->fPlab.DeltaR(pC->fPlab)
+	     << " pointing at PV " << pT->fPvIdx 
+	     << endl;
     } 
     else {
-      if (verbose) cout << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+      //      if (verbose) cout << " track " << i << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
     }
   }
   
@@ -1503,23 +1518,29 @@ double bmmReader::isoWithDOCA(TAnaCand *pC, float docaCut, double r, double ptmi
       double doca = pC->fNstTracks[i].second.first;
       //      double docaE = pC->fNstTracks[i].second.second;
       
-      if(doca > docaCut) continue; // check the doca cut
-      
+      if (pIdx.end() != find(pIdx.begin(), pIdx.end(), i))  continue; // skip tracks already included above
+      if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  continue;
+      if(doca > docaCut) continue; // check doca cut
+   
       pT = fpEvt->getRecTrack(trkId);
 
       pt = pT->fPlab.Perp();  // cut on track pt
       if (pt < ptCut) {
-	if (verbose) cout << " doca skipped because of pt = " << pt << endl;
+	//	if (verbose) cout << " close track " << i << " skipped because of pt = " << pt << endl;
 	continue;
       }
 
-      if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
+      if (pT->fPlab.DeltaR(pC->fPlab) < 99.) {
 	++fCandItrk;
 	sumPt += pt; 
-	if (verbose) cout << " doaa track included "<<doca<<" "<<pt<<endl;
+	if (verbose) cout << "close track " << i 
+			  << " with pT = " << pT->fPlab.Perp()
+			  << " eta = " << pT->fPlab.Eta()
+			  << " pointing at PV " << pT->fPvIdx 
+			  << endl;
       } 
       else {
-	if (verbose) cout << " doca track skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+	//	if (verbose) cout << " close track " << i << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
       }
 
     } // for loop over tracks
@@ -1587,6 +1608,24 @@ void bmmReader::fillCandidateHistograms(int offset) {
   fpIso3[offset]->fill(fCandIso3, fCandM);
   fpIso4[offset]->fill(fCandIso4, fCandM);
   fpIso5[offset]->fill(fCandIso5, fCandM);
+
+  fpIsoR05Pt03[offset]->fill(fIsoR05Pt03, fCandM);
+  fpIsoR05Pt05[offset]->fill(fIsoR05Pt05, fCandM);
+  fpIsoR05Pt07[offset]->fill(fIsoR05Pt07, fCandM);
+  fpIsoR05Pt09[offset]->fill(fIsoR05Pt09, fCandM);
+  fpIsoR05Pt11[offset]->fill(fIsoR05Pt11, fCandM);
+
+  fpIsoR07Pt03[offset]->fill(fIsoR07Pt03, fCandM);
+  fpIsoR07Pt05[offset]->fill(fIsoR07Pt05, fCandM);
+  fpIsoR07Pt07[offset]->fill(fIsoR07Pt07, fCandM);
+  fpIsoR07Pt09[offset]->fill(fIsoR07Pt09, fCandM);
+  fpIsoR07Pt11[offset]->fill(fIsoR07Pt11, fCandM);
+
+  fpIsoR10Pt03[offset]->fill(fIsoR10Pt03, fCandM);
+  fpIsoR10Pt05[offset]->fill(fIsoR10Pt05, fCandM);
+  fpIsoR10Pt07[offset]->fill(fIsoR10Pt07, fCandM);
+  fpIsoR10Pt09[offset]->fill(fIsoR10Pt09, fCandM);
+  fpIsoR10Pt11[offset]->fill(fIsoR10Pt11, fCandM);
 
   // -- N[offset](PV) dependent
   if (fPvN > 0 && fPvN <= 2) {
@@ -1746,6 +1785,24 @@ void bmmReader::bookHist() {
     fpIP1[i]       = bookDistribution(Form("%sip1", name.c_str()), "IP_{1}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
     fpIP2[i]       = bookDistribution(Form("%sip2", name.c_str()), "IP_{2}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
 
+    fpIsoR05Pt03[i] = bookDistribution(Form("%sisor05pt03", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR05Pt05[i] = bookDistribution(Form("%sisor05pt05", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR05Pt07[i] = bookDistribution(Form("%sisor05pt07", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR05Pt09[i] = bookDistribution(Form("%sisor05pt09", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR05Pt11[i] = bookDistribution(Form("%sisor05pt11", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+
+    fpIsoR07Pt03[i] = bookDistribution(Form("%sisor07pt03", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR07Pt05[i] = bookDistribution(Form("%sisor07pt05", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR07Pt07[i] = bookDistribution(Form("%sisor07pt07", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR07Pt09[i] = bookDistribution(Form("%sisor07pt09", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR07Pt11[i] = bookDistribution(Form("%sisor07pt11", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+
+    fpIsoR10Pt03[i] = bookDistribution(Form("%sisor10pt03", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR10Pt05[i] = bookDistribution(Form("%sisor10pt05", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR10Pt07[i] = bookDistribution(Form("%sisor10pt07", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR10Pt09[i] = bookDistribution(Form("%sisor10pt09", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR10Pt11[i] = bookDistribution(Form("%sisor10pt11", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+
     fpAlphaPv1[i]  = bookDistribution(Form("%salphapv1", name.c_str()),  "#alpha", "fGoodCosA", 20, 0., 0.2); 
     fpAlphaPv2[i]  = bookDistribution(Form("%salphapv2", name.c_str()),  "#alpha", "fGoodCosA", 20, 0., 0.2); 
     fpAlphaPv3[i]  = bookDistribution(Form("%salphapv3", name.c_str()),  "#alpha", "fGoodCosA", 20, 0., 0.2); 
@@ -1865,6 +1922,7 @@ void bmmReader::bookHist() {
   fTree->Branch("m1pix",   &fMu1Pix,            "m1pix/I");
   fTree->Branch("m1bpix",  &fMu1BPix,           "m1bpix/I");
   fTree->Branch("m1bpixl1",&fMu1BPixL1,         "m1bpixl1/I");
+  fTree->Branch("m1chi2",  &fMu1Chi2,           "m1chi2/D");
   fTree->Branch("m2q",     &fMu2Q,              "m2q/I");
   fTree->Branch("m2id",    &fMu2Id,             "m2id/O");
   fTree->Branch("m2pt",    &fMu2Pt,             "m2pt/D");
@@ -1875,6 +1933,7 @@ void bmmReader::bookHist() {
   fTree->Branch("m2pix",   &fMu2Pix,            "m2pix/I");
   fTree->Branch("m2bpix",  &fMu2BPix,           "m2bpix/I");
   fTree->Branch("m2bpixl1",&fMu2BPixL1,         "m2bpixl1/I");
+  fTree->Branch("m2chi2",  &fMu2Chi2,           "m2chi2/D");
 
   fTree->Branch("g1pt",    &fMu1PtGen,          "g1pt/D");
   fTree->Branch("g2pt",    &fMu2PtGen,          "g2pt/D");
