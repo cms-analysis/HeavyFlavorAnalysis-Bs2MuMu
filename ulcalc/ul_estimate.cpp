@@ -561,7 +561,6 @@ RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, set<i
 	hypoInv.UseCLs();
 	hypoInv.SetTestSize(1.0 - cLevel);
 	hypoInv.SetVerbose(verbosity);
-	hypoInv.SetNumErr(err);
 		
 	measure_params(wspace, data, channels, verbosity);
 	sbModel->LoadSnapshot();
@@ -590,8 +589,7 @@ void est_ul_clb(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels,
 	
 	result = frequCalc.GetHypoTest();
 	result->SetBackgroundAsAlt(kTRUE);
-	result->SetTestStatisticData(result->GetTestStatisticData()-err);
-	*pvalue = 1 - result->CLsplusb(); // for profile likelihood, it seems flipped
+	*pvalue = result->CLsplusb(); // for profile likelihood, it seems flipped
 	
 	
 	delete mcSampler;
