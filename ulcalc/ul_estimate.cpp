@@ -74,7 +74,7 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 			measurement_t m = (*bsmm)[make_pair(kTau_bmm, *chan)];
 			wspace->factory(Form("TauS0_%d[%f]",*chan,m.getVal()));
 			wspace->factory(Form("TauSErr_%d[%f]",*chan,m.getErr()));
-			wspace->factory(Form("TauS_%d[%f]",*chan,m.getVal()));
+			wspace->factory(Form("TauS_%d[%f,%f,%f]",*chan,m.getVal(),0.0,1.0));
 			wspace->factory(Form("Gaussian::TauS_Gauss_%d(TauS_%d,TauS0_%d,TauSErr_%d)",*chan,*chan,*chan,*chan));
 		}
 		else {
@@ -88,7 +88,7 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 			measurement_t m = (*bdmm)[make_pair(kTau_bmm, *chan)];
 			wspace->factory(Form("TauD0_%d[%f]",*chan,m.getVal()));
 			wspace->factory(Form("TauDErr_%d[%f]",*chan,m.getErr()));
-			wspace->factory(Form("TauD_%d[%f]",*chan,m.getVal()));
+			wspace->factory(Form("TauD_%d[%f,%f,%f]",*chan,m.getVal(),0.0,1.0));
 			wspace->factory(Form("Gaussian::TauD_Gauss_%d(TauD_%d,TauD0_%d,TauDErr_%d)",*chan,*chan,*chan,*chan));
 		} else {
 			wspace->factory(Form("TauD_%d[%f]",*chan,((*bdmm)[make_pair(kTau_bmm, *chan)]).getVal()));
