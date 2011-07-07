@@ -16,7 +16,13 @@
 
 using namespace std;
 
-void estimate_bmm(map<bmm_param,measurement_t> *bmm, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, pair<double,double> bd_window, pair<double,double> bs_window, bool is_bstomumu, double eff_filter)
+// Systematics
+const static double system_prod = 0.04; // 4 % uncertainty due to unknown production processes
+const static double system_ana = 0.113; // 11.3 % systematics on ana efficiency
+const static double system_muon = 0.0354; // 5 % on the ratio
+const static double system_trig = 0.0141421; // 2 % on the ratio
+
+void estimate_bmm(map<bmm_param,measurement_t> *bmm, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, pair<double,double> bd_window, pair<double,double> bs_window, bool is_bstomumu, double eff_filter, bool enable_systematics)
 {
 	TCut cut;
 	TCut histo_cut(Form("%f < mass && mass < %f",low_histo_bound,high_histo_bound));
@@ -24,6 +30,7 @@ void estimate_bmm(map<bmm_param,measurement_t> *bmm, TTree *dataTree, TTree *mcT
 	TCut bs_mass_cut(Form("%f < mass && mass < %f",bs_window.first,bs_window.second));
 	double eff,tot;
 	double nbr_gens,nbr_acc,nbr_trig,nbr_cand,nbr_ana,nbr_mu;
+	measurement_t m;
 	
 	/* Extend the anaCut with the base cut */
 	anaCut = anaCut && TCut(bmmBaseCut);
@@ -69,14 +76,26 @@ void estimate_bmm(map<bmm_param,measurement_t> *bmm, TTree *dataTree, TTree *mcT
 	// acceptance
 	eff = nbr_acc / (nbr_gens / eff_filter);
 	(*bmm)[make_pair(kAcc_bmm, channelIx)] = measurement_t(eff, std_dev_binomail(eff, nbr_gens));
+	if (enable_systematics) {
+		m = (*bmm)[make_pair(kAcc_bmm, channelIx)];
+		(*bmm)[make_pair(kAcc_bmm, channelIx)] = m + measurement_t(0,m.getVal()*system_prod);
+	}
 	
 	// muon eff
 	eff = nbr_mu / nbr_acc;
 	(*bmm)[make_pair(kEff_mu_bmm, channelIx)] = measurement_t(eff, std_dev_binomail(eff, nbr_acc));
+	if (enable_systematics) {
+		m = (*bmm)[make_pair(kEff_mu_bmm, channelIx)];
+		(*bmm)[make_pair(kEff_mu_bmm, channelIx)] = m + measurement_t(0,m.getVal()*system_muon);
+	}
 	
 	// trigger efficiency
 	eff = nbr_trig / nbr_mu;
 	(*bmm)[make_pair(kEff_trig_bmm, channelIx)] = measurement_t(eff, std_dev_binomail(eff, nbr_mu));
+	if (enable_systematics) {
+		m = (*bmm)[make_pair(kEff_trig_bmm, channelIx)];
+		(*bmm)[make_pair(kEff_trig_bmm, channelIx)] = m + measurement_t(0,m.getVal()*system_trig);
+	}
 	
 	// cand efficiency
 	eff = nbr_cand / nbr_trig;
@@ -85,6 +104,10 @@ void estimate_bmm(map<bmm_param,measurement_t> *bmm, TTree *dataTree, TTree *mcT
 	// ana efficiency
 	eff = nbr_ana / nbr_cand;
 	(*bmm)[make_pair(kEff_ana_bmm, channelIx)] = measurement_t(eff, std_dev_binomail(eff, nbr_cand));
+	if (enable_systematics) {
+		m = (*bmm)[make_pair(kEff_ana_bmm, channelIx)];
+		(*bmm)[make_pair(kEff_ana_bmm, channelIx)] = m + measurement_t(0, m.getVal()*system_ana);
+	}
 	
 	/* Observations */
 	(*bmm)[make_pair(kObsBkg_bmm, channelIx)] = measurement_t((double)dataTree->Draw("", anaCut && histo_cut && !bd_mass_cut && !bs_mass_cut));

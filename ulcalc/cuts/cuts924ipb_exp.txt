@@ -1,0 +1,5 @@
+# Cuts file
+# <max_eta>	"Cut"
+# Cuts von 924 / pb
+1.4	"pt > 6.4 && pt_mu1 > 4 && pt_mu2 > 4 && iso10_pt9_sv5u > 0.70 && chi2/Ndof < 2.2 && alpha < 0.05 && d3/d3e > 15 && tracks_ip[0] > 0.005"
+10.0	"pt > 6.4 && pt_mu1 > 4.5 && pt_mu2 > 4 && iso10_pt9_sv5u > 0.75 && chi2/Ndof < 1.8 && alpha < 0.03 && d3/d3e > 11 && tracks_ip[0] > 0.015"

@@ -195,7 +195,6 @@ static bool parse_arguments(const char **first, const char **last)
 	const char *arg;
 	string s;
 	string::iterator col;
-	double def_err_algo = 0.0;
 	bool force_error = false;
 	
 	while (first != last) {
@@ -247,13 +246,10 @@ static bool parse_arguments(const char **first, const char **last)
 				if (s.compare("bayes") == 0)	gAlgorithm = kAlgo_Bayesian;
 				else if (s.compare("fc") == 0) {
 					gAlgorithm = kAlgo_FeldmanCousins;
-					def_err_algo = 1e-5;
 				} else if (s.compare("cls") == 0) {
 					gAlgorithm = kAlgo_CLs;
-					def_err_algo = 1e-9;
 				} else if (s.compare("clb") == 0) {
 					gAlgorithm = kAlgo_CLb;
-					def_err_algo = 1e-9;
 				} else {
 					usage();
 					abort();
@@ -290,9 +286,6 @@ static bool parse_arguments(const char **first, const char **last)
 			configfile_path = arg;
 	}
 	
-	if (!force_error && def_err_algo != 0.0)
-		gNumErr = def_err_algo;
-	
 	if (!configfile_path) {
 		ok = false;
 		goto bail;
@@ -308,6 +301,8 @@ static bool parse_arguments(const char **first, const char **last)
 	if (gAlgorithm == kAlgo_FeldmanCousins) {
 		cout << "mu_s range: (" << gMuSRange.first << ", " << gMuSRange.second << ")." << endl;
 		cout << "Number of Steps " << gFCSteps << endl;
+	}
+	if (gAlgorithm == kAlgo_FeldmanCousins || gAlgorithm == kAlgo_CLs || gAlgorithm == kAlgo_CLb) {
 		cout << "Additional error in acceptance region " << gNumErr << endl;
 	}
 	cout << "Algorithm is " << algo_name(gAlgorithm) << endl;

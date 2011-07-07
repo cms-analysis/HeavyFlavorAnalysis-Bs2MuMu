@@ -31,7 +31,7 @@ enum
 	//	kEffAna is not needed
 };
 
-void estimate_bplus(std::map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, double eff_filter = 1.0);
+void estimate_bplus(std::map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, double eff_filter = 1.0, bool enable_systematics = false);
 
 
 #endif

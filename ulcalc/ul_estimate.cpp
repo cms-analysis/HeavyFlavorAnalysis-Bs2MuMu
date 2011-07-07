@@ -300,7 +300,7 @@ RooWorkspace *build_model_light(map<bmm_param,measurement_t> *bsmm, int verbosit
 	wspace->factory("nu_b[0,0,1000]"); // background strength
 	
 	// build the constants
-	wspace->factory(Form("TauS[%f]",compute_tau(bsmm, bsmm, 0, true)));
+	wspace->factory(Form("TauS[%f]", ((*bsmm)[make_pair(kTau_bmm, 0)]).getVal()));
 	wspace->factory(Form("NuS[%f]", ((*bsmm)[make_pair(kExp_bmm, 0)]).getVal()));
 	wspace->factory(Form("Pss[%f]", ((*bsmm)[make_pair(kProb_swind_bmm, 0)]).getVal()));
 	

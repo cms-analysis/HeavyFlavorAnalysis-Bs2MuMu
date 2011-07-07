@@ -23,7 +23,14 @@
 
 using namespace std;
 
-void estimate_bplus(map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, double eff_filter)
+const static double system_prod = 0.04; // 4 % uncertainty due to unknown production processes
+const static double system_ana = 0.071; // 7.1 % uncertainty on analysis cuts
+const static double system_muon = 0.0354; // 5 % on the ratio
+const static double system_trig = 0.0141421; // 2 % on the ratio
+const static double system_fit = 0.05; // 5 % uncertainty due to unknow shape of background
+const static double system_track = 0.039; // 3.9 % hadron tracking uncertainty
+
+void estimate_bplus(map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, double eff_filter, bool enable_systematics)
 {
 	double nbr_gens;
 	double nbr_acc;
@@ -34,6 +41,7 @@ void estimate_bplus(map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree 
 	double lambda;
 	fit_t fit;
 	TCut cut;
+	measurement_t v;
 	
 	TH1D *m = new TH1D("mbplus","",20,5.18,5.36);
 	TCanvas *can = new TCanvas;
@@ -44,7 +52,7 @@ void estimate_bplus(map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree 
 	gStyle->SetOptStat(111111);
 	gStyle->SetOptFit(111);
 	
-	anaCut = anaCut && TCut(bmmBaseCut) && TCut("TMath::Abs(eta_kp) < 2.4");
+	anaCut = anaCut && TCut(bmmBaseCut) && TCut("TMath::Abs(eta_kp) < 2.4 && q_mu1*delta_phi < 0");
 	anaCut = anaCut && TCut(Form("TMath::Abs(eta_mu1) < %f && TMath::Abs(eta_mu2) < %f",maxEta,maxEta));
 	anaCut = anaCut && TCut(Form("!(TMath::Abs(eta_mu1) < %f && TMath::Abs(eta_mu2) < %f)",minEta,minEta));
 	
@@ -75,14 +83,29 @@ void estimate_bplus(map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree 
 	// acceptance
 	lambda = nbr_acc / (nbr_gens / eff_filter);
 	(*bplus)[make_pair(kAcc_bplus, channelIx)] = measurement_t(lambda, std_dev_binomail(lambda, nbr_gens));
+	if (enable_systematics) {
+		v = (*bplus)[make_pair(kAcc_bplus, channelIx)];
+		(*bplus)[make_pair(kAcc_bplus, channelIx)] = v + measurement_t(0, v.getVal()*system_track);
+		
+		v = (*bplus)[make_pair(kAcc_bplus, channelIx)];
+		(*bplus)[make_pair(kAcc_bplus, channelIx)] = v + measurement_t(0, v.getVal()*system_prod);
+	}
 	
 	// muon efficiency
 	lambda = nbr_mu / nbr_acc;
 	(*bplus)[make_pair(kEff_mu_bplus, channelIx)] = measurement_t(lambda, std_dev_binomail(lambda, nbr_acc));
+	if (enable_systematics) {
+		v = (*bplus)[make_pair(kEff_mu_bplus, channelIx)];
+		(*bplus)[make_pair(kEff_mu_bplus, channelIx)] = v + measurement_t(0,v.getVal()*system_muon);
+	}
 	
 	// trigger efficiency
 	lambda = nbr_trig / nbr_mu;
 	(*bplus)[make_pair(kEff_trig_bplus, channelIx)] = measurement_t(lambda, std_dev_binomail(lambda, nbr_mu));
+	if (enable_systematics) {
+		v = (*bplus)[make_pair(kEff_trig_bplus, channelIx)];
+		(*bplus)[make_pair(kEff_trig_bplus, channelIx)] = v + measurement_t(0,v.getVal()*system_trig);
+	}
 	
 	// cand efficiency
 	lambda = nbr_cand / nbr_trig;
@@ -91,6 +114,10 @@ void estimate_bplus(map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree 
 	// ana efficiency
 	lambda = nbr_ana / nbr_cand;
 	(*bplus)[make_pair(kEff_ana_bplus, channelIx)] = measurement_t(lambda, std_dev_binomail(lambda, nbr_cand));
+	if (enable_systematics) {
+		v = (*bplus)[make_pair(kEff_ana_bplus, channelIx)];
+		(*bplus)[make_pair(kEff_ana_bplus, channelIx)] = v + measurement_t(0, v.getVal()*system_ana);
+	}
 	
 	// get the number of Bp -> J/psi Kp
 	dataTree->Draw("mass_c >> mbplus", anaCut);
@@ -103,6 +130,10 @@ void estimate_bplus(map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree 
 	lambda = signal_events_gauss_linear(fit.fit_fct, m->GetBinWidth(1));
 	fit.fit_fct->SetParameter(0, fit.fit_fct->GetParError(0));
 	(*bplus)[make_pair(kObs_bplus, channelIx)] = measurement_t(lambda,signal_events_gauss_linear(fit.fit_fct, m->GetBinWidth(1)));
+	if (enable_systematics) {
+		v = (*bplus)[make_pair(kObs_bplus, channelIx)];
+		(*bplus)[make_pair(kObs_bplus, channelIx)] = v + measurement_t(0, v.getVal()*system_fit);
+	}
 	
 	// save the histogram
 	m->Draw("E1");

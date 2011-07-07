@@ -26,13 +26,14 @@ static const char *g_bs_file = NULL;
 static const char *g_bd_file = NULL;
 static const char *g_data_file = NULL;
 static const char *g_outputfile = NULL;
+static bool g_systematics = false;
 
 static double g_eff_filter_bs = 1;
 static double g_eff_filter_bd = 1;
 
 static void usage()
 {
-	cout << "bmm_est [--eff_filter_bd <eff>] [--eff_filter_bs <eff>] -c <cutsfile> -s <bs_mcfile> -0 <b0_mcfile> -d <datafile> <complement_file>" << endl;
+	cout << "bmm_est [--enable-systematics] [--eff_filter_bd <eff>] [--eff_filter_bs <eff>] -c <cutsfile> -s <bs_mcfile> -0 <b0_mcfile> -d <datafile> <complement_file>" << endl;
 	abort();
 } // usage()
 
@@ -67,6 +68,8 @@ static void parse_arguments(const char **first, const char **last)
 			} else if (strcmp(arg, "--eff_filter_bs") == 0) {
 				if (first == last) usage();
 				g_eff_filter_bs = atof(*first++);
+			} else if (strcmp(arg, "--enable-systematics") == 0) {
+				g_systematics = true;
 			} else {
 				cerr << "Unknown option: " << arg << endl;
 				usage();
@@ -89,6 +92,7 @@ static void parse_arguments(const char **first, const char **last)
 		cout << '\t' << it->first << ": " << it->second.GetTitle() << endl;
 	cout << "Filter efficiency Bs: " << g_eff_filter_bs << endl;
 	cout << "Filter efficiency Bd: " << g_eff_filter_bd << endl;
+	cout << "Systematics " << (g_systematics ? "enabled" : "disabled") << endl;
 } // parse_arguments()
 
 int main(int argc, const char *argv [])
@@ -100,8 +104,6 @@ int main(int argc, const char *argv [])
 	map<bmm_param,measurement_t> bsmm;
 	map<bmm_param,measurement_t> bdmm;
 	double last_eta = -1.0;
-	pair<double,double> bdWindow(5.2,5.32);
-	pair<double,double> bsWindow(5.32,5.45);
 	measurement_t m;
 	
 	static uint32_t channelIx = 0;
@@ -123,19 +125,29 @@ int main(int argc, const char *argv [])
 	for (it = g_eta_cuts.begin(); it != g_eta_cuts.end(); ++it) {
 		
 		bsmm.clear();
-		estimate_bmm(&bsmm, dataTree, bsTree, last_eta, it->first, channelIx, it->second, bdWindow, bsWindow, true, g_eff_filter_bs);
+		estimate_bmm(&bsmm, dataTree, bsTree, last_eta, it->first, channelIx, it->second, bd_range, bs_range, true, g_eff_filter_bs, g_systematics);
 		
 		bdmm.clear();
-		estimate_bmm(&bdmm, dataTree, bdTree, last_eta, it->first, channelIx, it->second, bdWindow, bsWindow, false, g_eff_filter_bd);
+		estimate_bmm(&bdmm, dataTree, bdTree, last_eta, it->first, channelIx, it->second, bd_range, bs_range, false, g_eff_filter_bd, g_systematics);
+		
+		// compute histogram specific stuff
+		bsmm[make_pair(kLow_signal_window_bmm, channelIx)] = measurement_t(bs_range.first);
+		bsmm[make_pair(kHigh_signal_window_bmm, channelIx)] = measurement_t(bs_range.second);
+		
+		bdmm[make_pair(kLow_signal_window_bmm, channelIx)] = measurement_t(bd_range.first);
+		bdmm[make_pair(kHigh_signal_window_bmm, channelIx)] = measurement_t(bd_range.second);
+		
+		bsmm[make_pair(kTau_bmm, channelIx)] = measurement_t(compute_tau(&bsmm, &bdmm, channelIx, true), (g_systematics ? 0.01 : 0.0));
+		bdmm[make_pair(kTau_bmm, channelIx)] = measurement_t(compute_tau(&bsmm, &bdmm, channelIx, false), (g_systematics ? 0.01 : 0.0));
 		
 		// add the numbers to the file
 		fprintf(outputFile, "#######################################\n");
 		fprintf(outputFile, "# B -> mumu (channel = %u, eta < %.2f) #\n", channelIx, it->first);
 		fprintf(outputFile, "#######################################\n");
-		fprintf(outputFile, "LOW_BD\t%u\t%f\n", channelIx, bdWindow.first);
-		fprintf(outputFile, "HIGH_BD\t%u\t%f\n", channelIx, bdWindow.second);
-		fprintf(outputFile, "LOW_BS\t%u\t%f\n", channelIx, bsWindow.first);
-		fprintf(outputFile, "HIGH_BS\t%u\t%f\n", channelIx, bsWindow.second);
+		fprintf(outputFile, "LOW_BD\t%u\t%f\n", channelIx, bd_range.first);
+		fprintf(outputFile, "HIGH_BD\t%u\t%f\n", channelIx, bd_range.second);
+		fprintf(outputFile, "LOW_BS\t%u\t%f\n", channelIx, bs_range.first);
+		fprintf(outputFile, "HIGH_BS\t%u\t%f\n", channelIx, bs_range.second);
 		
 		// crossfeed
 		m = bsmm[make_pair(kProb_swind_bmm, channelIx)];
@@ -196,6 +208,10 @@ int main(int argc, const char *argv [])
 		fprintf(outputFile, "PEAK_BKG_OFF\t%u\t%f\n",channelIx,0.0);
 		fprintf(outputFile, "PEAK_BKG_BS\t%u\t%f\n",channelIx,0.0);
 		fprintf(outputFile, "PEAK_BKG_BD\t%u\t%f\n",channelIx,0.0);
+		
+		// Print tau
+		fprintf(outputFile, "TAU_BS\t%u\t%f\t%f\n", channelIx, bsmm[make_pair(kTau_bmm, channelIx)].getVal(),bsmm[make_pair(kTau_bmm, channelIx)].getErr());
+		fprintf(outputFile, "TAU_BD\t%u\t%f\t%f\n", channelIx, bdmm[make_pair(kTau_bmm, channelIx)].getVal(),bdmm[make_pair(kTau_bmm, channelIx)].getErr());
 		
 		last_eta = it->first;
 		channelIx++;

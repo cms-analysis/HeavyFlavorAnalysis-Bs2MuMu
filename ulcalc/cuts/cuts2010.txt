@@ -1,0 +1,2 @@
+1.4     "alpha < 0.05 && chi2/Ndof < 1.6 && d3/d3e > 10 && iso10_pt9_sv5u > 0.70 && pt_mu2 > 3.0 && pt_mu1 > 3.5 && pt > 6.4"
+10.0    "alpha < 0.02 && chi2/Ndof < 2.4 && d3/d3e > 10 && iso10_pt9_sv5u > 0.75 && pt_mu2 > 3.0 && pt_mu1 > 4.0 && pt > 4.6"

@@ -30,10 +30,11 @@ static const char *g_data_file;
 static const char *g_outputfile;
 static bool g_append = false;
 static double g_filter_efficiency = 1.0;
+static bool g_systematics = false;
 
 static void usage()
 {
-	cout << "bplus [-a] [-f <eff_filter>] -c <cutsfile> -m <mcfile> -d <datafile> <outputfile>" << endl;
+	cout << "bplus [-a] [--enable-systematics] [-f <eff_filter>] -c <cutsfile> -m <mcfile> -d <datafile> <outputfile>" << endl;
 	abort();
 } // usage()
 
@@ -65,6 +66,8 @@ static void parse_arguments(const char **first, const char **last)
 			} else if (strcmp(arg, "-f") == 0) {
 				if (first == last) usage();
 				g_filter_efficiency = atof(*first++);
+			} else if (strcmp(arg, "--enable-systematics") == 0) {
+				g_systematics = true;
 			}
 
 		} else {
@@ -83,6 +86,7 @@ static void parse_arguments(const char **first, const char **last)
 	for (map<double,TCut>::const_iterator it = g_eta_cuts.begin(); it != g_eta_cuts.end(); ++it)
 		cout << '\t' << it->first << ": " << it->second.GetTitle() << endl;
 	cout << "Filter efficiency: " << g_filter_efficiency << endl;
+	cout << "Systematics " << (g_systematics ? "enabled" : "disabled") << endl;
 } // parse_arguments()
 
 int main(int argc, const char *argv [])
@@ -111,7 +115,7 @@ int main(int argc, const char *argv [])
 	for (it = g_eta_cuts.begin(); it != g_eta_cuts.end(); ++it) {
 		
 		bplus.clear();
-		estimate_bplus(&bplus, dataTree, mcTree, last_eta, it->first, channelIx, it->second, g_filter_efficiency);
+		estimate_bplus(&bplus, dataTree, mcTree, last_eta, it->first, channelIx, it->second, g_filter_efficiency, g_systematics);
 		last_eta = it->first;
 		
 		// add the numbers to the file
