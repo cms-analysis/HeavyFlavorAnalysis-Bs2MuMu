@@ -517,7 +517,8 @@ int main(int argc, const char *argv [])
 	if (gAlgorithm == kAlgo_CLb) {
 		cout << "p value for background model: " << avgUL << " corresponding to " << sqrt(2.)*TMath::ErfInverse(1-2*avgUL) << " sigmas." << endl;
 	} else {
-		cout << (gBdToMuMu ? "Bd -> mumu" : "Bs -> mumu") << " upper limit for config file '" << configfile_path << "' using algorithm " << algo_name(gAlgorithm) << ": " << avgUL*(gBdToMuMu ? bdtomumu() : bstomumu()) << "\t(" << avgUL << ")" << endl;
+		cout << (gBdToMuMu ? "Bd -> mumu" : "Bs -> mumu") << " upper limit for config file '" << configfile_path << "' using algorithm " << algo_name(gAlgorithm) << ": " << avgUL*(gBdToMuMu ? bdtomumu() : bstomumu()) << "\t(" << avgUL << ") @ " << (int)(gCLLevel*100.) << " % CL" << endl;
+		cout << (gBdToMuMu ? "Bd -> mumu" : "Bs -> mumu") << " lower limit for config file '" << configfile_path << "' using algorithm " << algo_name(gAlgorithm) << ": " << avgLL*(gBdToMuMu ? bdtomumu() : bstomumu()) << "\t(" << avgLL << ") @ " << (int)(gCLLevel*100.) << " % CL" << endl;
 	}
 	
 	if (workspace_path) wspace->writeToFile(workspace_path,kTRUE);
