@@ -24,7 +24,7 @@ void measure_params(RooWorkspace *wspace, RooDataSet *data, std::set<int> *chann
 
 void est_ul_clb(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double err, double *pvalue);
 RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double err = 0.0, double *ulLimit = NULL, double *cpuUsed = NULL);
-RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, uint32_t nbins = 20, std::pair<double,double> *rg = NULL, double err = 0.0, double *ulLimit = NULL, double *cpuUsed = NULL);
+RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, uint32_t nbins = 20, std::pair<double,double> *rg = NULL, double *ulLimit = NULL, double *loLimit = NULL, double *cpuUsed = NULL);
 RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit = NULL, double *cpuUsed = NULL);
 RooStats::ConfInterval *est_ul_bc_light(RooWorkspace *wspace, RooDataSet *data, double cLevel, int verbosity, double *upperLimit, double *cpuUsed);
 

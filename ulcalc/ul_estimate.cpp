@@ -406,17 +406,14 @@ void measure_params(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, 
 	bConfig->SetSnapshot(*wspace->set("poi"));
 } // measure_params()
 
-RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, uint32_t nbins, pair<double,double> *rg, double err, double *ulLimit, double *cpuUsed)
+RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, int verbosity, uint32_t nbins, pair<double,double> *rg, double *ulLimit, double *loLimit, double *cpuUsed)
 {
 	using namespace RooStats;
 	ModelConfig *splusbConfig = dynamic_cast<ModelConfig*>(wspace->obj("splusbConfig"));
 	FeldmanCousins fc(*data,*splusbConfig);
 	PointSetInterval *psInterval = NULL;
-	ConfidenceBelt *belt;
 	TStopwatch swatch;
 	RooDataSet *custom_points;
-	RooDataSet *pointsInInterval;
-	RooAbsData *paramPts;
 	Double_t v;
 	Int_t j;
 	
@@ -446,28 +443,10 @@ RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::s
 	splusbConfig->LoadSnapshot();
 	psInterval = fc.GetInterval();
 	
-	// if 'err' specified, correct for numerical inaccurancies...
-	if (err > 0) {
-		// construct our own PointSetInterval
-		pointsInInterval = new RooDataSet("pointsInInterval","points in interval", *(fc.GetPointsToScan()->get(0)));
-		delete psInterval; // delete the old one (we are replacing it!)
-		
-		belt = fc.GetConfidenceBelt();
-		paramPts = fc.GetPointsToScan();
-		for (j = 0; j < paramPts->numEntries(); j++) {
-			RooArgSet params;
-			params.add(*paramPts->get(j));
-			v = fc.GetTestStatSampler()->EvaluateTestStatistic(*data, params);
-			if (v - err < belt->GetAcceptanceRegionMax(params))
-				pointsInInterval->add(params);
-		}
-		
-		psInterval = new PointSetInterval("ClassicalConfidenceInterval",*pointsInInterval);
-		psInterval->SetConfidenceLevel(cLevel);
-	}
-	
 	if (ulLimit)
 		*ulLimit = psInterval->UpperLimit((RooRealVar&)*wspace->set("poi")->first());
+	if (loLimit)
+		*loLimit = psInterval->LowerLimit((RooRealVar&)*wspace->set("poi")->first());
 	
 	swatch.Stop();
 	if (cpuUsed) *cpuUsed = swatch.CpuTime();
@@ -587,10 +566,13 @@ void est_ul_clb(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels,
 	mcSampler->SetNEventsPerToy(1);
 	measure_params(wspace, data, channels, verbosity);
 	
+	// set the signal strengths to constant (=0)
+	wspace->var("mu_s")->setConstant(kTRUE);
+	wspace->var("mu_d")->setConstant(kTRUE);
+	
 	result = frequCalc.GetHypoTest();
 	result->SetBackgroundAsAlt(kTRUE);
-	*pvalue = result->CLsplusb(); // for profile likelihood, it seems flipped
-	
+	*pvalue = result->CLsplusb();
 	
 	delete mcSampler;
 	delete result;

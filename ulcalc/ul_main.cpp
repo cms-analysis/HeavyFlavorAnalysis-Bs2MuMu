@@ -186,7 +186,7 @@ static void parse_input(const char *path, map<bmm_param,measurement_t> *bsmm, ma
 
 static void usage()
 {
-	cerr << "ulcalc [--bdtomumu] [--light] [--disable-errors] [[-n <FC steps>] -r x,y ] [-e num_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\"|\"cls\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
+	cerr << "ulcalc [--bdtomumu] [--light] [--disable-errors] [[-n <FC steps>] -r x,y ] [-e num_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
 } // usage()
 
 static bool parse_arguments(const char **first, const char **last)
@@ -324,11 +324,11 @@ static void dump_params(pair<bmm_param,measurement_t> p)
 	cout << endl;
 } // dump_params()
 
-static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *channels, set<int>::iterator a,set<int>::iterator b, map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, double *avgUL, double *avgWeight)
+static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *channels, set<int>::iterator a,set<int>::iterator b, map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, double *avgUL, double *avgLL, double *avgWeight)
 {
 	RooDataSet *data = NULL;
 	RooStats::ConfInterval *inter = NULL;
-	double bkg,weight,ul;
+	double bkg,weight,ul,ll = 0.0;
 	uint32_t obsBsMin,obsBsMax;
 	uint32_t obsBdMin = 0,obsBdMax = 0;
 	uint32_t obsBs,obsBd;
@@ -372,7 +372,7 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 					inter = est_ul_bc(wspace, data, channels, gCLLevel, gVerbosity, &ul, NULL);
 				break;
 			case kAlgo_FeldmanCousins:
-				inter = est_ul_fc(wspace, data, channels, gCLLevel, gVerbosity, gFCSteps, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), gNumErr, &ul, NULL);
+				inter = est_ul_fc(wspace, data, channels, gCLLevel, gVerbosity, gFCSteps, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &ul, &ll, NULL);
 				break;
 			case kAlgo_CLs:
 				inter = est_ul_cls(wspace, data, channels, gCLLevel, gVerbosity, gNumErr, &ul, NULL);
@@ -389,6 +389,7 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 		
 		*avgWeight = *avgWeight + weight;
 		*avgUL = *avgUL + ul * weight;
+		*avgLL = *avgLL + ll * weight;
 		
 		delete inter;
 		delete data;
@@ -426,13 +427,13 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 	for (obsBs = obsBsMin; obsBs <= obsBsMax; obsBs++) {
 		if (gLightModel) {
 			((RooRealVar&)((*obs)["NsObs"])).setVal(obsBs);
-			recursive_calc(wspace,obs,channels,a,b,bsmm,bdmm,avgUL,avgWeight);
+			recursive_calc(wspace,obs,channels,a,b,bsmm,bdmm,avgUL,avgLL,avgWeight);
 		} else {
 			((RooRealVar&)((*obs)[Form("NsObs_%d",ch)])).setVal(obsBs);
 			
 			for (obsBd = obsBdMin; obsBd <= obsBdMax; obsBd++) {
 				((RooRealVar&)((*obs)[Form("NdObs_%d",ch)])).setVal(obsBd);
-				recursive_calc(wspace,obs,channels,a,b,bsmm,bdmm,avgUL,avgWeight);
+				recursive_calc(wspace,obs,channels,a,b,bsmm,bdmm,avgUL,avgLL,avgWeight);
 			}
 		}
 	}
@@ -448,6 +449,7 @@ int main(int argc, const char *argv [])
 	set<int> channels;
 	double avgUL = 0;
 	double avgWeight = 0;
+	double avgLL = 0;
 	
 	if(!parse_arguments(&argv[1], &argv[argc])) {
 		usage();
@@ -506,15 +508,16 @@ int main(int argc, const char *argv [])
 	
 	// set the measured candidates...
 	observables.addClone(*wspace->set("obs"));
-	recursive_calc(wspace,&observables,&channels,channels.begin(),channels.end(),&bsmm,&bdmm,&avgUL,&avgWeight);
+	recursive_calc(wspace,&observables,&channels,channels.begin(),channels.end(),&bsmm,&bdmm,&avgUL,&avgLL,&avgWeight);
 	
 	// reweight the UL.
 	avgUL /= avgWeight;
+	avgLL /= avgWeight;
 	
 	if (gAlgorithm == kAlgo_CLb) {
 		cout << "p value for background model: " << avgUL << " corresponding to " << sqrt(2.)*TMath::ErfInverse(1-2*avgUL) << " sigmas." << endl;
 	} else {
-		cout << (gBdToMuMu ? "Bd -> mumu" : "Bs -> mumu") << " upper limit for config file using algorithm " << algo_name(gAlgorithm) << ": " << avgUL*(gBdToMuMu ? bdtomumu() : bstomumu()) << "\t(" << avgUL << ")" << endl;
+		cout << (gBdToMuMu ? "Bd -> mumu" : "Bs -> mumu") << " upper limit for config file '" << configfile_path << "' using algorithm " << algo_name(gAlgorithm) << ": " << avgUL*(gBdToMuMu ? bdtomumu() : bstomumu()) << "\t(" << avgUL << ")" << endl;
 	}
 	
 	if (workspace_path) wspace->writeToFile(workspace_path,kTRUE);
@@ -523,7 +526,8 @@ int main(int argc, const char *argv [])
 		if (gAlgorithm == kAlgo_CLb)
 			fprintf(outFile, "p value of background model: %.2f\n corresponding to %.f sigmas\n", avgUL, sqrt(2.)*TMath::ErfInverse(1 - 2*avgUL));
 		else
-			fprintf(outFile, "%s with algorithm %s: %.3e (%.1f)\n", (gBdToMuMu ? "Bd->mumu" : "Bs->mumu"), algo_name(gAlgorithm), avgUL*(gBdToMuMu ? bdtomumu() : bstomumu()), avgUL);
+			fprintf(outFile, "%s upper limit with algorithm %s: %.3e (%.1f) @ %d %% CL\n", (gBdToMuMu ? "Bd->mumu" : "Bs->mumu"), algo_name(gAlgorithm), avgUL*(gBdToMuMu ? bdtomumu() : bstomumu()), avgUL, (int)(100.*gCLLevel));
+			fprintf(outFile, "%s lower limit with algorithm %s: %.3e (%.1f) @ %d %% CL\n", (gBdToMuMu ? "Bd->mumu" : "Bs->mumu"), algo_name(gAlgorithm), avgLL*(gBdToMuMu ? bdtomumu() : bstomumu()), avgLL, (int)(100.*gCLLevel));
 		fclose(outFile);
 	}
 	delete wspace;
