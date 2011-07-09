@@ -27,7 +27,8 @@ enum algo_t {
 	kAlgo_Bayesian = 1,
 	kAlgo_FeldmanCousins,
 	kAlgo_CLs,
-	kAlgo_CLb
+	kAlgo_CLb,
+	kAlgo_None
 };
 
 static const char *workspace_path = NULL;
@@ -60,6 +61,9 @@ static const char *algo_name(algo_t a)
 			break;
 		case kAlgo_CLb:
 			result = "CLb";
+			break;
+		case kAlgo_None:
+			result = "None";
 			break;
 		default:
 			cerr << "Unknown algorithm selected: " << a << endl;
@@ -186,7 +190,7 @@ static void parse_input(const char *path, map<bmm_param,measurement_t> *bsmm, ma
 
 static void usage()
 {
-	cerr << "ulcalc [--bdtomumu] [--light] [--disable-errors] [[-n <FC steps>] -r x,y ] [-e num_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
+	cerr << "ulcalc [--bdtomumu] [--light] [--disable-errors] [[-n <FC steps>] -r x,y ] [-e num_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
 } // usage()
 
 static bool parse_arguments(const char **first, const char **last)
@@ -250,6 +254,8 @@ static bool parse_arguments(const char **first, const char **last)
 					gAlgorithm = kAlgo_CLs;
 				} else if (s.compare("clb") == 0) {
 					gAlgorithm = kAlgo_CLb;
+				} else if (s.compare("none") == 0) {
+					gAlgorithm = kAlgo_None;
 				} else {
 					usage();
 					abort();
@@ -328,7 +334,7 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 {
 	RooDataSet *data = NULL;
 	RooStats::ConfInterval *inter = NULL;
-	double bkg,weight,ul,ll = 0.0;
+	double bkg,weight,ul = 0,ll = 0.0;
 	uint32_t obsBsMin,obsBsMax;
 	uint32_t obsBdMin = 0,obsBdMax = 0;
 	uint32_t obsBs,obsBd;
@@ -380,6 +386,9 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 			case kAlgo_CLb:
 				// note, here upper limit represents p-value of background model.
 				est_ul_clb(wspace, data, channels, gVerbosity, gNumErr, &ul);
+				break;
+			case kAlgo_None:
+				measure_params(wspace, data, channels, gVerbosity);
 				break;
 			default:
 				cerr << "Unknown algorithm selected to determine the upper limit..." << endl;
@@ -447,6 +456,7 @@ int main(int argc, const char *argv [])
 	RooArgSet observables;
 	map<bmm_param,measurement_t> bsmm,bdmm;
 	set<int> channels;
+	set<int>::const_iterator ch;
 	double avgUL = 0;
 	double avgWeight = 0;
 	double avgLL = 0;
@@ -524,11 +534,15 @@ int main(int argc, const char *argv [])
 	if (workspace_path) wspace->writeToFile(workspace_path,kTRUE);
 	if (output_path) {
 		FILE *outFile = fopen(output_path, "w");
-		if (gAlgorithm == kAlgo_CLb)
+		if (gAlgorithm == kAlgo_CLb) {
 			fprintf(outFile, "p value of background model: %.2f\n corresponding to %.f sigmas\n", avgUL, sqrt(2.)*TMath::ErfInverse(1 - 2*avgUL));
-		else
+		} else {
+			for (ch = channels.begin(); ch != channels.end(); ++ch) {
+				fprintf(outFile, "NbObs_%d=%d, NsObs_%d=%d, NdObs_%d=%d\n", *ch, (int)(bsmm[make_pair(kObsBkg_bmm, *ch)].getVal()), *ch, (int)(bsmm[make_pair(kObsB_bmm, *ch)].getVal()),*ch, (int)(bdmm[make_pair(kObsB_bmm, *ch)].getVal()));
+			}
 			fprintf(outFile, "%s upper limit with algorithm %s: %.3e (%.1f) @ %d %% CL\n", (gBdToMuMu ? "Bd->mumu" : "Bs->mumu"), algo_name(gAlgorithm), avgUL*(gBdToMuMu ? bdtomumu() : bstomumu()), avgUL, (int)(100.*gCLLevel));
 			fprintf(outFile, "%s lower limit with algorithm %s: %.3e (%.1f) @ %d %% CL\n", (gBdToMuMu ? "Bd->mumu" : "Bs->mumu"), algo_name(gAlgorithm), avgLL*(gBdToMuMu ? bdtomumu() : bstomumu()), avgLL, (int)(100.*gCLLevel));
+		}
 		fclose(outFile);
 	}
 	delete wspace;
