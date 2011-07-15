@@ -104,7 +104,8 @@ HFLambdas::HFLambdas(const ParameterSet& iConfig) :
     fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.2)),
     fPAngle(iConfig.getUntrackedParameter<double>("pAngle",0.1)),
     fUseV0producer(iConfig.getUntrackedParameter<bool>("useV0",false)),
-    fDoVcands(iConfig.getUntrackedParameter<bool>("doVcands",false))
+    fDoVcands(iConfig.getUntrackedParameter<bool>("doVcands",false)),
+    fRemoveCandTracksFromVertex(iConfig.getUntrackedParameter<bool>("removeCandTracksFromVertex",true))
 
 {
     cout << "----------------------------------------------------------------------" << endl;
@@ -347,7 +348,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
 
     const int V0Cand = fUseV0producer ? 10000 : 0;
     // do the vertex fitting...
-    HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
+    HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose, fRemoveCandTracksFromVertex);
     //TLorentzVector tlvPsi, tlvMu1, tlvMu2, tlvPion, tlvProton, tlvLambda0, tlvLambdaB;
 
     for (unsigned int i = 0; i < psiList.size(); i++)

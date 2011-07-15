@@ -36,6 +36,7 @@ private:
     double fPAngle;
     bool fUseV0producer;
     bool fDoVcands;
+    bool fRemoveCandTracksFromVertex;
 
     reco::Vertex	fPV;
     edm::ESHandle<TransientTrackBuilder> fTTB;

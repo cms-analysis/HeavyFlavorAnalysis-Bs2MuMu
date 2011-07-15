@@ -16,6 +16,8 @@
 #include "RecoVertex/VertexTools/interface/VertexDistanceXY.h"
 #include "RecoVertex/VertexTools/interface/VertexDistance3D.h"
 #include "RecoVertex/VertexPrimitives/interface/ConvertToFromReco.h"
+#include "RecoVertex/AdaptiveVertexFit/interface/AdaptiveVertexFitter.h"
+#include "RecoVertex/VertexPrimitives/interface/TransientVertex.h"
 
 #include "TrackingTools/GeomPropagators/interface/AnalyticalImpactPointExtrapolator.h"
 #include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
@@ -54,13 +56,14 @@ using namespace std;
 using namespace edm;
 using namespace reco;
 
-HFSequentialVertexFit::HFSequentialVertexFit(Handle<View<Track> > hTracks, const TransientTrackBuilder *TTB, Handle<VertexCollection> pvCollection, const MagneticField *field, int verbose) :
+HFSequentialVertexFit::HFSequentialVertexFit(Handle<View<Track> > hTracks, const TransientTrackBuilder *TTB, Handle<VertexCollection> pvCollection, const MagneticField *field, int verbose, bool removeCandTracksFromVtx) :
 
 	fVerbose(verbose),
 	fpTTB(TTB),
 	fhTracks(hTracks),
 	fPVCollection(pvCollection),
-	magneticField(field)
+	magneticField(field),
+	removeCandTracksFromVtx_(removeCandTracksFromVtx)
 {} // HFSequentialVertexFit()
 
 HFSequentialVertexFit::~HFSequentialVertexFit()
@@ -376,11 +379,47 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   } else if (pvIx >= 0) {
 	  // -- Distance w.r.t primary vertex
 	  Vertex currentPV = (*fPVCollection)[pvIx];
+
+	  // refit the vertex without the tracks of the candidate
+	  if (removeCandTracksFromVtx_)
+	  {
+	      vector<TransientTrack> vrtxRefit;
+	      vector<pair<int,int> > completeTrackList = tree->getAllTracks(0);
+	      bool removedTracks(false); // to check if we really need to perform the refit
+	      for (std::vector<TrackBaseRef>::const_iterator itTBR = currentPV.tracks_begin();  itTBR != currentPV.tracks_end(); itTBR++)
+	      {   // loop over all tracks in the PV to check if tracks from the candidate were used for fittingthe PV
+		  TrackRef tref = itTBR->castTo<TrackRef>();
+		  bool trkFound(false);
+		  for (vector<pair<int,int> >::const_iterator trackIt = completeTrackList.begin(); trackIt != completeTrackList.end(); ++trackIt) 
+		  {
+		      TrackBaseRef curTr(fhTracks,trackIt->first);
+		      TrackRef curTref = curTr.castTo<TrackRef>();
+		      if (tref == curTref) trkFound = true;
+		  }
+		  if (!trkFound)
+		  {
+		      TransientTrack tTrk = fpTTB->build(*(*itTBR));
+		      vrtxRefit.push_back(tTrk);
+		  }
+		  else
+		  { // track contained in PV, don't add to list
+		      removedTracks = true;
+		  }
+	      }
+	      if (removedTracks)
+	      { // so we need to fit a new PV
+		  AdaptiveVertexFitter avf;
+		  TransientVertex newVtx = avf.vertex(vrtxRefit);
+		  if (newVtx.isValid()) currentPV = reco::Vertex(newVtx);
+	      }
+	  }
+
 	  anaVtx.fDxy = axy.distance(currentPV,kinVertex->vertexState()).value();
 	  anaVtx.fDxyE = axy.distance(currentPV,kinVertex->vertexState()).error();
 	  
 	  anaVtx.fD3d = a3d.distance(currentPV,kinVertex->vertexState()).value();
 	  anaVtx.fD3dE = a3d.distance(currentPV,kinVertex->vertexState()).error();
+
 	  // -- get covariance matrix for error propagation in lifetime calculation
 	  vtxDistanceCov = makeCovarianceMatrix(GlobalError2SMatrix_33(currentPV.error()),
 		  kinParticle->currentState().kinematicParametersError().matrix());

@@ -26,7 +26,7 @@ class HFSequentialVertexFit
 {
  public:
   
-  HFSequentialVertexFit(edm::Handle<edm::View<reco::Track> > hTracks, const TransientTrackBuilder *TTB, edm::Handle<reco::VertexCollection> pvCollection, const MagneticField *field, int verbose = 0);
+  HFSequentialVertexFit(edm::Handle<edm::View<reco::Track> > hTracks, const TransientTrackBuilder *TTB, edm::Handle<reco::VertexCollection> pvCollection, const MagneticField *field, int verbose = 0, bool removeCandTracksFromVtx = true);
   virtual ~HFSequentialVertexFit();
   
   void doFit(HFDecayTree *tree);
@@ -68,6 +68,7 @@ class HFSequentialVertexFit
 	edm::Handle<edm::View<reco::Track> > fhTracks;
 	edm::Handle<reco::VertexCollection> fPVCollection;
 	const MagneticField* magneticField;
+	bool removeCandTracksFromVtx_;
 };
 
 #endif

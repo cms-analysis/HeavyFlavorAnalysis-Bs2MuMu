@@ -22,6 +22,7 @@
 <use   name="TrackingTools/IPTools"/>
 <use   name="RecoVertex/KinematicFit"/>
 <use   name="RecoVertex/KinematicFitPrimitives"/>
+<use   name="RecoVertex/AdaptiveVertexFit"/>
 <use   name="DataFormats/TrajectorySeed"/>
 <use   name="SimTracker/Records"/>
 <use   name="SimTracker/TrackerHitAssociation"/>
