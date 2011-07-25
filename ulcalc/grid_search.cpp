@@ -153,7 +153,7 @@ static double process_cut(RooWorkspace *wspace, TTree *dataTree, TTree *bsmcTree
 	j = 0;
 	while (abs(j) < 10 && avg_weight < 0.95) {
 		
-		n_s = round(mean_bs) + j;
+       	        n_s = (int64_t)round(mean_bs) + j;
 		if (n_s >= 0) {
 			weight_ns = TMath::PoissonI(n_s, mean_bs);
 			

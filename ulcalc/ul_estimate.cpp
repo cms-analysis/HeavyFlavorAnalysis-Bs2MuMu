@@ -423,7 +423,7 @@ RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, set<in
 	fc.CreateConfBelt(true);
 	fc.SetTestSize(1.-cLevel);
 //	fc.UseAdaptiveSampling(true); // adaptive sampling (disable later on)
-	fc.AdditionalNToysFactor(10.0);
+	fc.AdditionalNToysFactor(20.0);
 	fc.SetNBins(nbins);
 	fc.FluctuateNumDataEntries(false);
 	if (rg) {
@@ -562,8 +562,9 @@ void est_ul_clb(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels,
 	FrequentistCalculator frequCalc(*data,*sbModel,*bModel,mcSampler); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
 	HypoTestResult *result;
 	
-	// congigure
+	// configure
 	mcSampler->SetNEventsPerToy(1);
+	frequCalc.SetToys(1000,100);
 	measure_params(wspace, data, channels, verbosity);
 	
 	// set the signal strengths to constant (=0)
