@@ -28,7 +28,7 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 
 # ----------------------------------------------------------------------
-rootFileName = "bmm-BsToMuMu_2MuPtFilter_7TeV.root"
+rootFileName = "bmm-BdToMuMu_2MuPtFilter_7TeV.root"
 
 process.tree = cms.EDAnalyzer(
     "HFTree",

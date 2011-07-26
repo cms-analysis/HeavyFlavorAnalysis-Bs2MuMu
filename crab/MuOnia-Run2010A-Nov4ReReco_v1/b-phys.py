@@ -20,7 +20,7 @@ process.load("Configuration.StandardSequences.MagneticField_38T_cff")
 process.load("Configuration.StandardSequences.Geometry_cff")
 process.load("RecoVertex.BeamSpotProducer.BeamSpot_cfi")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = "GR_R_38X_V15::All"
+process.GlobalTag.globaltag = "GR_R_311_V4::All"
 
 # ----------------------------------------------------------------------
 process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring())
