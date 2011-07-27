@@ -1,0 +1,944 @@
+
+[1mRooFit v3.16 -- Developed by Wouter Verkerke and David Kirkby[0m 
+                Copyright (C) 2000-2011 NIKHEF, University of California & Stanford University
+                All rights reserved, please read http://roofit.sourceforge.net/license.txt
+
+Reading configuration file: anaBmm.final.ulc
+Confidence Level: 0.9
+Output File: final90.out
+Additional error in acceptance region 0
+Algorithm is CLs
+Errors on Variables are enabled
+Verbosity level 1
+Computing using Full Model
+Computing Upper limit for decay Bs -> mumu
+-------------------------------------
+---------------------------
+Bs -> mumu parameters read:
+	ACC_BPLUS[0]: 0.161379 +/- 0.00645515
+	ACC_BPLUS[1]: 0.111157 +/- 0.00444629
+	EFF_MU_BPLUS[0]: 0.916152 +/- 0.0323909
+	EFF_MU_BPLUS[1]: 0.944591 +/- 0.0333963
+	EFF_TRIG_BPLUS[0]: 0.805395 +/- 0.01139
+	EFF_TRIG_BPLUS[1]: 0.821229 +/- 0.0116139
+	EFF_CAND_BPLUS[0]: 0.971963 +/- 0.00971963
+	EFF_CAND_BPLUS[1]: 0.964858 +/- 0.00964858
+	EFF_ANA_BPLUS[0]: 0.00675635 +/- 0.000675635
+	EFF_ANA_BPLUS[1]: 0.00336464 +/- 0.000336464
+	OBS_BPLUS[0]: 13045 +/- 652.25
+	OBS_BPLUS[1]: 4451 +/- 222.55
+	ACC_BMM[0]: 0.247182 +/- 0.00988729
+	ACC_BMM[1]: 0.231403 +/- 0.00925614
+	EFF_MU_BMM[0]: 0.841652 +/- 0.0297569
+	EFF_MU_BMM[1]: 0.927032 +/- 0.0327755
+	EFF_TRIG_BMM[0]: 0.794479 +/- 0.0112356
+	EFF_TRIG_BMM[1]: 0.813953 +/- 0.011511
+	EFF_CAND_BMM[0]: 0.997393 +/- 0.00997393
+	EFF_CAND_BMM[1]: 0.996644 +/- 0.00996644
+	EFF_ANA_BMM[0]: 0.0222129 +/- 0.00222129
+	EFF_ANA_BMM[1]: 0.012385 +/- 0.0012385
+	PROB_SWIND[0]: 0.875161 +/- 0.043758
+	PROB_SWIND[1]: 0.696703 +/- 0.0348352
+	PROB_DWIND[0]: 0.0682111 +/- 0.00341055
+	PROB_DWIND[1]: 0.162637 +/- 0.00813187
+	LOW_SIGNAL_WINDOW[0]: 5.3
+	LOW_SIGNAL_WINDOW[1]: 5.3
+	HIGH_SIGNAL_WINDOW[0]: 5.45
+	HIGH_SIGNAL_WINDOW[1]: 5.45
+	OBS_BKG[0]: 3
+	OBS_BKG[1]: 4
+	OBS_BMM[0]: 2
+	OBS_BMM[1]: 1
+	PEAK_BKG_ON[0]: 0.0711099 +/- 0.0197852
+	PEAK_BKG_ON[1]: 0.0437793 +/- 0.0114496
+	PEAK_BKG_OFF[0]: 0
+	PEAK_BKG_OFF[1]: 0
+	TAU[0]: 0.199999 +/- 0.00799998
+	TAU[1]: 0.199999 +/- 0.00799998
+---------------------------
+Bd -> mumu parameters read:
+	ACC_BPLUS[0]: 0.161379 +/- 0.00645515
+	ACC_BPLUS[1]: 0.111157 +/- 0.00444629
+	EFF_MU_BPLUS[0]: 0.916152 +/- 0.0323909
+	EFF_MU_BPLUS[1]: 0.944591 +/- 0.0333963
+	EFF_TRIG_BPLUS[0]: 0.805395 +/- 0.01139
+	EFF_TRIG_BPLUS[1]: 0.821229 +/- 0.0116139
+	EFF_CAND_BPLUS[0]: 0.971963 +/- 0.00971963
+	EFF_CAND_BPLUS[1]: 0.964858 +/- 0.00964858
+	EFF_ANA_BPLUS[0]: 0.00675635 +/- 0.000675635
+	EFF_ANA_BPLUS[1]: 0.00336464 +/- 0.000336464
+	OBS_BPLUS[0]: 13045 +/- 652.25
+	OBS_BPLUS[1]: 4451 +/- 222.55
+	ACC_BMM[0]: 0.246197 +/- 0.0098479
+	ACC_BMM[1]: 0.226096 +/- 0.00904382
+	EFF_MU_BMM[0]: 0.82475 +/- 0.0291593
+	EFF_MU_BMM[1]: 0.930421 +/- 0.0328953
+	EFF_TRIG_BMM[0]: 0.804287
+	EFF_TRIG_BMM[1]: 0.789565
+	EFF_CAND_BMM[0]: 0.996472 +/- 0.00996472
+	EFF_CAND_BMM[1]: 0.99493 +/- 0.0099493
+	EFF_ANA_BMM[0]: 0.022274 +/- 0.0022274
+	EFF_ANA_BMM[1]: 0.0115984 +/- 0.00115984
+	PROB_SWIND[0]: 0.289687 +/- 0.0144844
+	PROB_SWIND[1]: 0.361233 +/- 0.0180617
+	PROB_DWIND[0]: 0.650058 +/- 0.0325029
+	PROB_DWIND[1]: 0.482379 +/- 0.0241189
+	LOW_SIGNAL_WINDOW[0]: 5.2
+	LOW_SIGNAL_WINDOW[1]: 5.2
+	HIGH_SIGNAL_WINDOW[0]: 5.3
+	HIGH_SIGNAL_WINDOW[1]: 5.3
+	OBS_BKG[0]: 3
+	OBS_BKG[1]: 4
+	OBS_BMM[0]: 0
+	OBS_BMM[1]: 1
+	PEAK_BKG_ON[0]: 0.245169 +/- 0.0562046
+	PEAK_BKG_ON[1]: 0.158276 +/- 0.0390134
+	PEAK_BKG_OFF[0]: 0
+	PEAK_BKG_OFF[1]: 0
+	TAU[0]: 0.133334 +/- 0.00533335
+	TAU[1]: 0.133334 +/- 0.00533335
+---------------------------
+[#1] INFO:ObjectHandling -- RooWorkspace::import(wspace) importing RooProdPdf::total_pdf
+-------------------------------------
+Workspace Configuration:
+
+RooWorkspace(wspace) wspace contents
+
+variables
+---------
+(NbObs_0,NbObs_1,NdObs_0,NdObs_1,NsObs_0,NsObs_1,NuD0_0,NuD0_1,NuDErr_0,NuDErr_1,NuD_0,NuD_1,NuS0_0,NuS0_1,NuSErr_0,NuSErr_1,NuS_0,NuS_1,Pdd0_0,Pdd0_1,PddErr_0,PddErr_1,Pdd_0,Pdd_1,Pds0_0,Pds0_1,PdsErr_0,PdsErr_1,Pds_0,Pds_1,PeakBkgBd0_0,PeakBkgBd0_1,PeakBkgBdErr_0,PeakBkgBdErr_1,PeakBkgBd_0,PeakBkgBd_1,PeakBkgBs0_0,PeakBkgBs0_1,PeakBkgBsErr_0,PeakBkgBsErr_1,PeakBkgBs_0,PeakBkgBs_1,PeakBkgSB_0,PeakBkgSB_1,Psd0_0,Psd0_1,PsdErr_0,PsdErr_1,Psd_0,Psd_1,Pss0_0,Pss0_1,PssErr_0,PssErr_1,Pss_0,Pss_1,TauD0_0,TauD0_1,TauDErr_0,TauDErr_1,TauD_0,TauD_1,TauS0_0,TauS0_1,TauSErr_0,TauSErr_1,TauS_0,TauS_1,mu_d,mu_s,nu_b_0,nu_b_1)
+
+p.d.f.s
+-------
+RooGaussian::NuD_Gauss_0[ x=NuD_0 mean=NuD0_0 sigma=NuDErr_0 ] = 1
+RooGaussian::NuD_Gauss_1[ x=NuD_1 mean=NuD0_1 sigma=NuDErr_1 ] = 1
+RooGaussian::NuS_Gauss_0[ x=NuS_0 mean=NuS0_0 sigma=NuSErr_0 ] = 1
+RooGaussian::NuS_Gauss_1[ x=NuS_1 mean=NuS0_1 sigma=NuSErr_1 ] = 1
+RooGaussian::Pdd_Gauss_0[ x=Pdd_0 mean=Pdd0_0 sigma=PddErr_0 ] = 1
+RooGaussian::Pdd_Gauss_1[ x=Pdd_1 mean=Pdd0_1 sigma=PddErr_1 ] = 1
+RooGaussian::Pds_Gauss_0[ x=Pds_0 mean=Pds0_0 sigma=PdsErr_0 ] = 1
+RooGaussian::Pds_Gauss_1[ x=Pds_1 mean=Pds0_1 sigma=PdsErr_1 ] = 1
+RooGaussian::PeakBkgBd_Gauss_0[ x=PeakBkgBd_0 mean=PeakBkgBd0_0 sigma=PeakBkgBdErr_0 ] = 1
+RooGaussian::PeakBkgBd_Gauss_1[ x=PeakBkgBd_1 mean=PeakBkgBd0_1 sigma=PeakBkgBdErr_1 ] = 1
+RooGaussian::PeakBkgBs_Gauss_0[ x=PeakBkgBs_0 mean=PeakBkgBs0_0 sigma=PeakBkgBsErr_0 ] = 1
+RooGaussian::PeakBkgBs_Gauss_1[ x=PeakBkgBs_1 mean=PeakBkgBs0_1 sigma=PeakBkgBsErr_1 ] = 1
+RooGaussian::Psd_Gauss_0[ x=Psd_0 mean=Psd0_0 sigma=PsdErr_0 ] = 1
+RooGaussian::Psd_Gauss_1[ x=Psd_1 mean=Psd0_1 sigma=PsdErr_1 ] = 1
+RooGaussian::Pss_Gauss_0[ x=Pss_0 mean=Pss0_0 sigma=PssErr_0 ] = 1
+RooGaussian::Pss_Gauss_1[ x=Pss_1 mean=Pss0_1 sigma=PssErr_1 ] = 1
+RooGaussian::TauD_Gauss_0[ x=TauD_0 mean=TauD0_0 sigma=TauDErr_0 ] = 1
+RooGaussian::TauD_Gauss_1[ x=TauD_1 mean=TauD0_1 sigma=TauDErr_1 ] = 1
+RooGaussian::TauS_Gauss_0[ x=TauS_0 mean=TauS0_0 sigma=TauSErr_0 ] = 1
+RooGaussian::TauS_Gauss_1[ x=TauS_1 mean=TauS0_1 sigma=TauSErr_1 ] = 1
+RooPoisson::bd_window_0[ x=NdObs_0 mean=bd_mean_0 ] = 0
+RooPoisson::bd_window_1[ x=NdObs_1 mean=bd_mean_1 ] = 0
+RooPoisson::bkg_window_0[ x=NbObs_0 mean=bkg_mean_0 ] = 0
+RooPoisson::bkg_window_1[ x=NbObs_1 mean=bkg_mean_1 ] = 0
+RooPoisson::bs_window_0[ x=NsObs_0 mean=bs_mean_0 ] = 0
+RooPoisson::bs_window_1[ x=NsObs_1 mean=bs_mean_1 ] = 0
+RooUniform::prior_mu[ x=(mu_s) ] = 1
+RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+
+functions
+--------
+RooFormulaVar::bd_mean_0[ actualVars=(TauD_0,nu_b_0,PeakBkgBd_0,Pds_0,NuS_0,mu_s,Pdd_0,NuD_0,mu_d) formula="TauD_0*nu_b_0+PeakBkgBd_0+Pds_0*NuS_0*mu_s+Pdd_0*NuD_0*mu_d" ] = 0.373032
+RooFormulaVar::bd_mean_1[ actualVars=(TauD_1,nu_b_1,PeakBkgBd_1,Pds_1,NuS_1,mu_s,Pdd_1,NuD_1,mu_d) formula="TauD_1*nu_b_1+PeakBkgBd_1+Pds_1*NuS_1*mu_s+Pdd_1*NuD_1*mu_d" ] = 0.266308
+RooFormulaVar::bkg_mean_0[ actualVars=(nu_b_0,PeakBkgSB_0) formula="nu_b_0+PeakBkgSB_0" ] = 0
+RooFormulaVar::bkg_mean_1[ actualVars=(nu_b_1,PeakBkgSB_1) formula="nu_b_1+PeakBkgSB_1" ] = 0
+RooFormulaVar::bs_mean_0[ actualVars=(TauS_0,nu_b_0,PeakBkgBs_0,Pss_0,NuS_0,mu_s,Psd_0,NuD_0,mu_d) formula="TauS_0*nu_b_0+PeakBkgBs_0+Pss_0*NuS_0*mu_s+Psd_0*NuD_0*mu_d" ] = 0.901997
+RooFormulaVar::bs_mean_1[ actualVars=(TauS_1,nu_b_1,PeakBkgBs_1,Pss_1,NuS_1,mu_s,Psd_1,NuD_1,mu_d) formula="TauS_1*nu_b_1+PeakBkgBs_1+Pss_1*NuS_1*mu_s+Psd_1*NuD_1*mu_d" ] = 0.420142
+
+named sets
+----------
+bConfig_NuisParams:(mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+bConfig_Observables:(NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+bConfig_POI:(mu_s)
+nui:(mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+obs:(NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+poi:(mu_s)
+splusbConfig_NuisParams:(mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+splusbConfig_Observables:(NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+splusbConfig_POI:(mu_s)
+
+generic objects
+---------------
+RooStats::ModelConfig::splusbConfig
+RooStats::ModelConfig::bConfig
+
+-------------------------------------
+S+B ModelConfig configuration:
+
+=== Using the following for splusbConfig ===
+Observables:             RooArgSet:: = (NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+Parameters of Interest:  RooArgSet:: = (mu_s)
+Nuisance Parameters:     RooArgSet:: = (mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+PDF:                     RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+Prior PDF:               RooUniform::prior_mu[ x=(mu_s) ] = 1
+
+-------------------------------------
+B ModelConfig configuration:
+
+=== Using the following for bConfig ===
+Observables:             RooArgSet:: = (NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+Parameters of Interest:  RooArgSet:: = (mu_s)
+Nuisance Parameters:     RooArgSet:: = (mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+PDF:                     RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+Prior PDF:               RooUniform::prior_mu[ x=(mu_s) ] = 1
+
+-------------------------------------
+Variables:
+  1) 0x1279b940 RooRealVar::           mu_s = 1  L(0 - 20)  "mu_s"
+  2) 0x1279c280 RooRealVar::           mu_d = 1  L(0 - 200)  "mu_d"
+  3) 0x1279cb70 RooRealVar::        NbObs_0 = 500  L(0 - 1000)  "NbObs_0"
+  4) 0x127967b0 RooRealVar::        NsObs_0 = 500  L(0 - 1000)  "NsObs_0"
+  5) 0x1279b340 RooRealVar::        NdObs_0 = 500  L(0 - 1000)  "NdObs_0"
+  6) 0x127926e0 RooRealVar::         nu_b_0 = 0  L(0 - 1000)  "nu_b_0"
+  7) 0x1279f210 RooRealVar::        TauS0_0 = 0.199999 C  L(-INF - +INF)  "TauS0_0"
+  8) 0x1279f930 RooRealVar::      TauSErr_0 = 0.008 C  L(-INF - +INF)  "TauSErr_0"
+  9) 0x127a02b0 RooRealVar::         TauS_0 = 0.199999  L(0 - 1)  "TauS_0"
+ 10) 0x12a99950 RooRealVar::        TauD0_0 = 0.133334 C  L(-INF - +INF)  "TauD0_0"
+ 11) 0x12a91670 RooRealVar::      TauDErr_0 = 0.005333 C  L(-INF - +INF)  "TauDErr_0"
+ 12) 0x12a713d0 RooRealVar::         TauD_0 = 0.133334  L(0 - 1)  "TauD_0"
+ 13) 0x12a88de0 RooRealVar::         NuS0_0 = 0.916122 C  L(-INF - +INF)  "NuS0_0"
+ 14) 0x12a6ff50 RooRealVar::       NuSErr_0 = 0.20117 C  L(-INF - +INF)  "NuSErr_0"
+ 15) 0x12a98bc0 RooRealVar::          NuS_0 = 0.916122  L(0 - 21.0331)  "NuS_0"
+ 16) 0x12aa7c80 RooRealVar::         NuD0_0 = 0.100565 C  L(-INF - +INF)  "NuD0_0"
+ 17) 0x12a9ffc0 RooRealVar::       NuDErr_0 = 0.020069 C  L(-INF - +INF)  "NuDErr_0"
+ 18) 0x12aa0940 RooRealVar::          NuD_0 = 0.100565  L(0 - 2.1075)  "NuD_0"
+ 19) 0x12aa1400 RooRealVar::         Pss0_0 = 0.875161 C  L(-INF - +INF)  "Pss0_0"
+ 20) 0x12a793a0 RooRealVar::       PssErr_0 = 0.043758 C  L(-INF - +INF)  "PssErr_0"
+ 21) 0x12a6c0c0 RooRealVar::          Pss_0 = 0.875161  L(0 - 1)  "Pss_0"
+ 22) 0x12ab7850 RooRealVar::         Psd0_0 = 0.289687 C  L(-INF - +INF)  "Psd0_0"
+ 23) 0x12a7d070 RooRealVar::       PsdErr_0 = 0.014484 C  L(-INF - +INF)  "PsdErr_0"
+ 24) 0x12a7da20 RooRealVar::          Psd_0 = 0.289687  L(0 - 1)  "Psd_0"
+ 25) 0x12a7e250 RooRealVar::         Pds0_0 = 0.068211 C  L(-INF - +INF)  "Pds0_0"
+ 26) 0x12a86b40 RooRealVar::       PdsErr_0 = 0.003411 C  L(-INF - +INF)  "PdsErr_0"
+ 27) 0x12a87110 RooRealVar::          Pds_0 = 0.068211  L(0 - 1)  "Pds_0"
+ 28) 0x12a879a0 RooRealVar::         Pdd0_0 = 0.650058 C  L(-INF - +INF)  "Pdd0_0"
+ 29) 0x12a88320 RooRealVar::       PddErr_0 = 0.032503 C  L(-INF - +INF)  "PddErr_0"
+ 30) 0x12aafc20 RooRealVar::          Pdd_0 = 0.650058  L(0 - 1)  "Pdd_0"
+ 31) 0x12ab0450 RooRealVar::    PeakBkgSB_0 = 0 C  L(-INF - +INF)  "PeakBkgSB_0"
+ 32) 0x12ab0da0 RooRealVar::   PeakBkgBs0_0 = 0.07111 C  L(-INF - +INF)  "PeakBkgBs0_0"
+ 33) 0x12a89c30 RooRealVar:: PeakBkgBsErr_0 = 0.019785 C  L(-INF - +INF)  "PeakBkgBsErr_0"
+ 34) 0x12a8a320 RooRealVar::    PeakBkgBs_0 = 0.07111  L(0 - 0.268962)  "PeakBkgBs_0"
+ 35) 0x12aa83f0 RooRealVar::   PeakBkgBd0_0 = 0.245169 C  L(-INF - +INF)  "PeakBkgBd0_0"
+ 36) 0x12a8ad60 RooRealVar:: PeakBkgBdErr_0 = 0.056205 C  L(-INF - +INF)  "PeakBkgBdErr_0"
+ 37) 0x12a90a20 RooRealVar::    PeakBkgBd_0 = 0.245169  L(0 - 0.807215)  "PeakBkgBd_0"
+ 38) 0x12a69730 RooRealVar::        NbObs_1 = 500  L(0 - 1000)  "NbObs_1"
+ 39) 0x12ac01e0 RooRealVar::        NsObs_1 = 500  L(0 - 1000)  "NsObs_1"
+ 40) 0x12a75240 RooRealVar::        NdObs_1 = 500  L(0 - 1000)  "NdObs_1"
+ 41) 0x12a6a150 RooRealVar::         nu_b_1 = 0  L(0 - 1000)  "nu_b_1"
+ 42) 0x12a9a9a0 RooRealVar::        TauS0_1 = 0.199999 C  L(-INF - +INF)  "TauS0_1"
+ 43) 0x12ad2120 RooRealVar::      TauSErr_1 = 0.008 C  L(-INF - +INF)  "TauSErr_1"
+ 44) 0x12af2a20 RooRealVar::         TauS_1 = 0.199999  L(0 - 1)  "TauS_1"
+ 45) 0x12af32b0 RooRealVar::        TauD0_1 = 0.133334 C  L(-INF - +INF)  "TauD0_1"
+ 46) 0x12a81e00 RooRealVar::      TauDErr_1 = 0.005333 C  L(-INF - +INF)  "TauDErr_1"
+ 47) 0x12a826a0 RooRealVar::         TauD_1 = 0.133334  L(0 - 1)  "TauD_1"
+ 48) 0x12b10250 RooRealVar::         NuS0_1 = 0.513927 C  L(-INF - +INF)  "NuS0_1"
+ 49) 0x12a830b0 RooRealVar::       NuSErr_1 = 0.112852 C  L(-INF - +INF)  "NuSErr_1"
+ 50) 0x12ae1ff0 RooRealVar::          NuS_1 = 0.513927  L(0 - 11.7992)  "NuS_1"
+ 51) 0x12ae28e0 RooRealVar::         NuD0_1 = 0.050684 C  L(-INF - +INF)  "NuD0_1"
+ 52) 0x12b0e2a0 RooRealVar::       NuDErr_1 = 0.010115 C  L(-INF - +INF)  "NuDErr_1"
+ 53) 0x12b0ea80 RooRealVar::          NuD_1 = 0.050684  L(0 - 1.06216)  "NuD_1"
+ 54) 0x12b0f220 RooRealVar::         Pss0_1 = 0.696703 C  L(-INF - +INF)  "Pss0_1"
+ 55) 0x12ae4950 RooRealVar::       PssErr_1 = 0.034835 C  L(-INF - +INF)  "PssErr_1"
+ 56) 0x12ae5330 RooRealVar::          Pss_1 = 0.696703  L(0 - 1)  "Pss_1"
+ 57) 0x12ae5ad0 RooRealVar::         Psd0_1 = 0.361233 C  L(-INF - +INF)  "Psd0_1"
+ 58) 0x12b15fd0 RooRealVar::       PsdErr_1 = 0.018062 C  L(-INF - +INF)  "PsdErr_1"
+ 59) 0x12b16930 RooRealVar::          Psd_1 = 0.361233  L(0 - 1)  "Psd_1"
+ 60) 0x12b2f610 RooRealVar::         Pds0_1 = 0.162637 C  L(-INF - +INF)  "Pds0_1"
+ 61) 0x12b17220 RooRealVar::       PdsErr_1 = 0.008132 C  L(-INF - +INF)  "PdsErr_1"
+ 62) 0x12b1e2b0 RooRealVar::          Pds_1 = 0.162637  L(0 - 1)  "Pds_1"
+ 63) 0x12b1ea50 RooRealVar::         Pdd0_1 = 0.482379 C  L(-INF - +INF)  "Pdd0_1"
+ 64) 0x12b1f370 RooRealVar::       PddErr_1 = 0.024119 C  L(-INF - +INF)  "PddErr_1"
+ 65) 0x12a84990 RooRealVar::          Pdd_1 = 0.482379  L(0 - 1)  "Pdd_1"
+ 66) 0x12a852b0 RooRealVar::    PeakBkgSB_1 = 0 C  L(-INF - +INF)  "PeakBkgSB_1"
+ 67) 0x12b25c90 RooRealVar::   PeakBkgBs0_1 = 0.043779 C  L(-INF - +INF)  "PeakBkgBs0_1"
+ 68) 0x12b26520 RooRealVar:: PeakBkgBsErr_1 = 0.01145 C  L(-INF - +INF)  "PeakBkgBsErr_1"
+ 69) 0x12b26e70 RooRealVar::    PeakBkgBs_1 = 0.043779  L(0 - 0.158275)  "PeakBkgBs_1"
+ 70) 0x12b27700 RooRealVar::   PeakBkgBd0_1 = 0.158276 C  L(-INF - +INF)  "PeakBkgBd0_1"
+ 71) 0x12a7a920 RooRealVar:: PeakBkgBdErr_1 = 0.039013 C  L(-INF - +INF)  "PeakBkgBdErr_1"
+ 72) 0x12a7b2a0 RooRealVar::    PeakBkgBd_1 = 0.158276  L(0 - 0.54841)  "PeakBkgBd_1"
+-------------------------------------
+DataStore data ()
+  Contains 1 entries
+  Observables: 
+    1)  NbObs_0 = 3  L(0 - 1000)  "NbObs_0"
+    2)  NsObs_0 = 2  L(0 - 1000)  "NsObs_0"
+    3)  NdObs_0 = 0  L(0 - 1000)  "NdObs_0"
+    4)  NbObs_1 = 4  L(0 - 1000)  "NbObs_1"
+    5)  NsObs_1 = 1  L(0 - 1000)  "NsObs_1"
+    6)  NdObs_1 = 1  L(0 - 1000)  "NdObs_1"
+[#1] INFO:InputArguments -- HypoTestInverter ---- Input models: 
+		 using as S+B (null) model     : splusbConfig
+		 using as B (alternate) model  : bConfig
+
+[#0] WARNING:InputArguments -- HypoTestInverter - using a B model  with POI mu_s not equal to zero  user must check input model configurations 
+[#1] INFO:Minization --  Including the following contraint terms in minimization: (TauS_Gauss_0,TauD_Gauss_0,NuS_Gauss_0,NuD_Gauss_0,Pss_Gauss_0,Psd_Gauss_0,Pds_Gauss_0,Pdd_Gauss_0,PeakBkgBs_Gauss_0,PeakBkgBd_Gauss_0,TauS_Gauss_1,TauD_Gauss_1,NuS_Gauss_1,NuD_Gauss_1,Pss_Gauss_1,Psd_Gauss_1,Pds_Gauss_1,Pdd_Gauss_1,PeakBkgBs_Gauss_1,PeakBkgBd_Gauss_1)
+[#1] INFO:Fitting -- RooAddition::defaultErrorLevel(nll_total_pdf_data_with_constr) Summation contains a RooNLLVar, using its error level
+[#1] INFO:Minization -- RooMinuit::optimizeConst: activating const optimization
+ **********
+ **   13 **MIGRAD     1.2e+04           1
+ **********
+ FIRST CALL TO USER FUNCTION AT NEW START POINT, WITH IFLAG=4.
+ MINUIT WARNING IN MIGrad    
+ ============== VARIABLE22 IS AT ITS LOWER ALLOWED LIMIT.
+ START MIGRAD MINIMIZATION.  STRATEGY  1.  CONVERGENCE WHEN EDM .LT. 1.00e-03
+ FCN=-52.3383 FROM MIGRAD    STATUS=INITIATE      151 CALLS         152 TOTAL
+                     EDM= unknown      STRATEGY= 1      NO ERROR MATRIX       
+  EXT PARAMETER               CURRENT GUESS       STEP         FIRST   
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+   1  NuD_0        1.00565e-01   5.02825e-02   0.00000e+00   5.46715e+00
+   2  NuD_1        5.06840e-02   2.53420e-02   0.00000e+00   9.07720e-01
+   3  NuS_0        9.16122e-01   4.58061e-01   0.00000e+00  -2.45399e-01
+   4  NuS_1        5.13927e-01   2.56964e-01   0.00000e+00   2.38217e-01
+   5  Pdd_0        6.50058e-01   1.00000e-01   0.00000e+00   9.98460e-01
+   6  Pdd_1        4.82379e-01   1.00000e-01   0.00000e+00   1.01162e-01
+   7  Pds_0        6.82110e-02   3.41055e-02   0.00000e+00   1.01946e-01
+   8  Pds_1        1.62637e-01   8.13185e-02   0.00000e+00   1.60714e-02
+   9  PeakBkgBd_0   2.45169e-01   8.07215e-02   0.00000e+00   3.71215e-01
+  10  PeakBkgBd_1   1.58276e-01   5.48410e-02   0.00000e+00   4.76872e-02
+  11  PeakBkgBs_0   7.11100e-02   2.68962e-02   0.00000e+00  -2.67960e-02
+  12  PeakBkgBs_1   4.37790e-02   1.58275e-02   0.00000e+00   1.96098e-02
+  13  Psd_0        2.89687e-01   1.00000e-01   0.00000e+00  -2.14575e-01
+  14  Psd_1        3.61233e-01   1.00000e-01   0.00000e+00   1.40335e-01
+  15  Pss_0        8.75161e-01   6.24195e-02   0.00000e+00  -3.02108e-02
+  16  Pss_1        6.96703e-01   1.00000e-01   0.00000e+00   2.88619e-02
+  17  TauD_0       1.33334e-01   6.66670e-02   0.00000e+00   1.01982e+00
+  18  TauD_1       1.33334e-01   6.66670e-02   0.00000e+00   2.60923e-01
+  19  TauS_0       1.99999e-01   9.99995e-02   0.00000e+00  -2.71149e-01
+  20  TauS_1       1.99999e-01   9.99995e-02   0.00000e+00   4.43032e-01
+  21  mu_d         2.08167e+01   1.04083e+01   0.00000e+00   4.18666e+00
+  22  mu_s         4.41307e-01   2.00000e+00   2.96239e-01  -1.02373e-02
+  23  nu_b_0       3.00000e+00   1.50000e+00   0.00000e+00   4.82041e+00
+  24  nu_b_1       4.00000e+00   2.00000e+00   0.00000e+00   5.11021e+00
+                               ERR DEF= 0.5
+ MIGRAD MINIMIZATION HAS CONVERGED.
+ MIGRAD WILL VERIFY CONVERGENCE AND ERROR MATRIX.
+ COVARIANCE MATRIX CALCULATED SUCCESSFULLY
+ FCN=-53.699 FROM MIGRAD    STATUS=CONVERGED     726 CALLS         727 TOTAL
+                     EDM=5.5145e-05    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                                   STEP         FIRST   
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+   1  NuD_0        1.00609e-01   2.00602e-02   2.28484e-04   4.92122e-02
+   2  NuD_1        5.06964e-02   1.01110e-02   2.27203e-04   2.74432e-02
+   3  NuS_0        9.19382e-01   1.99917e-01   2.33790e-04  -7.57291e-02
+   4  NuS_1        5.11634e-01   1.12599e-01   2.37882e-04  -2.99219e-03
+   5  Pdd_0        6.50120e-01   3.24785e-02   3.46341e-04   2.80071e-02
+   6  Pdd_1        4.82384e-01   2.41096e-02   2.45381e-04   3.91308e-03
+   7  Pds_0        6.81960e-02   3.41093e-03   6.87886e-05  -6.39829e-03
+   8  Pds_1        1.62649e-01   8.13115e-03   1.12019e-04   3.21730e-03
+   9  PeakBkgBd_0   2.41987e-01   5.59897e-02   7.72968e-04  -2.74807e-03
+  10  PeakBkgBd_1   1.58688e-01   3.88110e-02   7.96641e-04   5.05856e-03
+  11  PeakBkgBs_0   7.11741e-02   1.96930e-02   8.47268e-04   5.27839e-04
+  12  PeakBkgBs_1   4.37478e-02   1.13998e-02   8.22289e-04   4.87654e-04
+  13  Psd_0        2.89685e-01   1.44816e-02   1.62317e-04  -3.52211e-03
+  14  Psd_1        3.61236e-01   1.80577e-02   1.91155e-04   4.31921e-03
+  15  Pss_0        8.75516e-01   4.36072e-02   6.72775e-04  -5.37754e-03
+  16  Pss_1        6.96490e-01   3.47991e-02   3.85109e-04  -1.42916e-03
+  17  TauD_0       1.33254e-01   5.33299e-03   7.97783e-05  -2.76919e-02
+  18  TauD_1       1.33364e-01   5.33103e-03   7.97205e-05   2.44824e-02
+  19  TauS_0       2.00028e-01   7.99928e-03   1.01643e-04   8.18099e-03
+  20  TauS_1       1.99939e-01   7.99783e-03   1.01654e-04   1.42444e-02
+  21  mu_d         2.90620e-05   8.33713e+00   2.11954e-03** at limit **
+  22  mu_s         1.37724e+00   1.44254e+00   1.40533e-03   4.44333e-03
+  23  nu_b_0       2.72662e+00   1.56624e+00   1.49088e-04   5.85223e-02
+  24  nu_b_1       3.94911e+00   1.82495e+00   1.45984e-04   1.69724e-01
+                               ERR DEF= 0.5
+ EXTERNAL ERROR MATRIX.    NDIM=  50    NPAR= 24    ERR DEF=0.5
+ ELEMENTS ABOVE DIAGONAL ARE NOT PRINTED.
+  4.027e-04 
+ -4.555e-12  1.023e-04 
+ -6.682e-11  1.512e-11  4.000e-02 
+  3.415e-11 -8.483e-12  1.864e-04  1.269e-02 
+  1.329e-10 -1.966e-12 -1.813e-11  8.803e-12  1.056e-03 
+ -1.020e-11  6.726e-13  4.431e-12 -1.837e-12 -4.401e-12  5.817e-04 
+ -5.599e-13  1.550e-14 -1.566e-07  9.143e-08 -3.305e-13  2.026e-14  1.164e-05 
+  2.345e-12 -1.345e-13 -1.885e-07  1.074e-07  1.104e-12 -1.204e-13 -9.246e-11  6.613e-05 
+  9.031e-19  1.561e-13 -3.483e-12  1.566e-12  5.022e-13  3.725e-13 -1.583e-13  2.510e-13  3.159e-03 
+  6.144e-11 -3.546e-12  6.172e-06 -3.493e-06  2.673e-11 -3.718e-12  3.028e-09 -1.018e-07  5.885e-13  1.519e-03 
+ -1.805e-12  1.534e-13 -2.921e-06  1.688e-06 -6.967e-13  7.707e-14  4.434e-09 -1.707e-09 -3.090e-13  5.589e-08  3.914e-04 
+  1.043e-13 -5.843e-14  1.064e-06 -6.033e-07  1.114e-13  8.750e-14  5.221e-10  2.507e-10 -1.175e-15  2.251e-08  9.638e-09 
+  1.043e-13 -5.843e-14  1.064e-06 -6.033e-07  1.114e-13  8.750e-14  5.221e-10  2.507e-10 -1.175e-15  2.251e-08  9.638e-09  1.311e-04 
+ -4.196e-12  1.427e-13 -3.516e-12  3.266e-12 -1.748e-12  3.313e-13  1.548e-14 -2.902e-15  2.237e-13 -7.580e-13  2.640e-15 
+ -4.196e-12  1.427e-13 -3.516e-12  3.266e-12 -1.748e-12  3.313e-13  1.548e-14 -2.902e-15  2.237e-13 -7.580e-13  2.640e-15 -3.082e-14  2.098e-04 
+  5.629e-12 -2.757e-13  5.309e-12 -1.885e-12  2.739e-12  7.191e-14 -8.260e-15  8.037e-14  2.790e-13  1.097e-12  2.061e-13 
+  5.629e-12 -2.757e-13  5.309e-12 -1.885e-12  2.739e-12  7.191e-14 -8.260e-15  8.037e-14  2.790e-13  1.097e-12  2.061e-13 -4.926e-14 -7.644e-14  3.262e-04 
+  4.124e-12  5.538e-13 -1.376e-05  8.111e-06  2.573e-12 -4.051e-14  2.131e-08 -8.203e-09  6.624e-13  2.686e-07 -2.028e-07 
+  4.124e-12  5.538e-13 -1.376e-05  8.111e-06  2.573e-12 -4.051e-14  2.131e-08 -8.203e-09  6.624e-13  2.686e-07 -2.028e-07  4.632e-08 -4.505e-13  7.053e-13  1.913e-03 
+ -7.810e-12  8.261e-14  1.379e-05 -7.783e-06 -3.801e-12  3.668e-13  6.764e-09  2.260e-10  5.257e-13  1.929e-07  1.249e-07 
+ -7.810e-12  8.261e-14  1.379e-05 -7.783e-06 -3.801e-12  3.668e-13  6.764e-09  2.260e-10  5.257e-13  1.929e-07  1.249e-07 -4.314e-08  5.930e-13 -4.125e-13  6.001e-07  1.213e-03 
+  3.269e-14 -5.526e-15  1.052e-07 -6.079e-08  2.508e-14 -2.777e-15 -1.597e-10  6.147e-11 -8.154e-14 -2.013e-09  5.210e-10 
+  3.269e-14 -5.526e-15  1.052e-07 -6.079e-08  2.508e-14 -2.777e-15 -1.597e-10  6.147e-11 -8.154e-14 -2.013e-09  5.210e-10 -3.472e-10 -4.274e-14 -8.022e-16  7.305e-09 -4.497e-09  2.844e-05 
+  4.703e-12 -2.841e-13  5.149e-07 -2.914e-07  2.085e-12 -2.359e-13  2.526e-10 -7.746e-09 -9.374e-16 -2.461e-07  4.662e-09 
+  4.703e-12 -2.841e-13  5.149e-07 -2.914e-07  2.085e-12 -2.359e-13  2.526e-10 -7.746e-09 -9.374e-16 -2.461e-07  4.662e-09  1.387e-09 -7.838e-14  5.606e-14  2.241e-08  1.289e-08 -1.679e-10  2.842e-05 
+ -7.862e-13  1.148e-13 -1.339e-06  7.739e-07 -1.764e-13  1.415e-13  2.033e-09 -7.826e-10  1.218e-13  2.563e-08 -6.633e-09 
+ -7.862e-13  1.148e-13 -1.339e-06  7.739e-07 -1.764e-13  1.415e-13  2.033e-09 -7.826e-10  1.218e-13  2.563e-08 -6.633e-09  4.419e-09  7.154e-14  4.541e-15 -9.299e-08  5.725e-08 -4.754e-10  2.138e-09  6.400e-05 
+ -1.394e-13 -6.047e-14  1.919e-06 -1.088e-06 -5.529e-14  9.395e-14  9.413e-10  1.006e-09 -2.602e-15  5.868e-08  1.738e-08 
+ -1.394e-13 -6.047e-14  1.919e-06 -1.088e-06 -5.529e-14  9.395e-14  9.413e-10  1.006e-09 -2.602e-15  5.868e-08  1.738e-08 -1.449e-08 -6.853e-16 -2.864e-14  8.351e-08 -8.015e-08 -6.259e-10  3.433e-09  7.967e-09  6.397e-05 
+ -5.715e-07  7.738e-09  7.137e-08 -3.466e-08 -2.497e-07  1.732e-08  1.061e-09 -4.059e-09 -1.612e-15 -1.052e-07  2.742e-09 
+ -5.715e-07  7.738e-09  7.137e-08 -3.466e-08 -2.497e-07  1.732e-08  1.061e-09 -4.059e-09 -1.612e-15 -1.052e-07  2.742e-09 -3.564e-11  7.900e-09 -9.511e-09 -1.013e-08  1.496e-08 -9.873e-11 -8.018e-09  1.257e-09  4.992e-10  9.829e-04 
+  5.412e-08 -1.470e-09 -4.524e-02 -8.815e-03  2.520e-08 -1.899e-09 -2.219e-05  8.916e-06  2.690e-11 -2.919e-04 -4.097e-04 
+  5.412e-08 -1.470e-09 -4.524e-02 -8.815e-03  2.520e-08 -1.899e-09 -2.219e-05  8.916e-06  2.690e-11 -2.919e-04 -4.097e-04 -5.034e-05 -1.440e-09  7.633e-10 -1.969e-03 -6.522e-04  1.476e-05 -2.435e-05 -1.878e-04 -9.076e-05 -9.918e-05  2.140e+00 
+ -2.176e-09  1.942e-10 -3.697e-03  2.136e-03 -8.816e-10  9.758e-11  5.612e-06 -2.160e-06 -2.892e-11  7.073e-05 -1.831e-05 
+ -2.176e-09  1.942e-10 -3.697e-03  2.136e-03 -8.816e-10  9.758e-11  5.612e-06 -2.160e-06 -2.892e-11  7.073e-05 -1.831e-05  1.220e-05  9.458e-12  2.817e-11 -2.567e-04  1.580e-04 -6.984e-05  5.900e-06  1.670e-05  2.199e-05  3.471e-06 -5.184e-01 
+ -2.176e-09  1.942e-10 -3.697e-03  2.136e-03 -8.816e-10  9.758e-11  5.612e-06 -2.160e-06 -2.892e-11  7.073e-05 -1.831e-05  1.220e-05  9.458e-12  2.817e-11 -2.567e-04  1.580e-04 -6.984e-05  5.900e-06  1.670e-05  2.199e-05  3.471e-06 -5.184e-01  2.454e+00 
+  2.162e-08 -1.513e-09  8.414e-03 -4.767e-03  9.163e-09 -1.180e-09  4.127e-06 -3.321e-05  2.139e-11 -9.714e-04  7.619e-05 
+  2.162e-08 -1.513e-09  8.414e-03 -4.767e-03  9.163e-09 -1.180e-09  4.127e-06 -3.321e-05  2.139e-11 -9.714e-04  7.619e-05 -3.878e-05 -1.707e-10  2.258e-10  3.662e-04 -1.900e-04 -2.744e-06 -4.817e-05  3.494e-05 -1.272e-04 -3.607e-05 -3.980e-01 
+  2.162e-08 -1.513e-09  8.414e-03 -4.767e-03  9.163e-09 -1.180e-09  4.127e-06 -3.321e-05  2.139e-11 -9.714e-04  7.619e-05 -3.878e-05 -1.707e-10  2.258e-10  3.662e-04 -1.900e-04 -2.744e-06 -4.817e-05  3.494e-05 -1.272e-04 -3.607e-05 -3.980e-01  9.642e-02  3.331e+00 
+ PARAMETER  CORRELATION COEFFICIENTS  
+       NO.  GLOBAL      1      2      3      4      5      6      7      8      9     10     11     12     13     14     15     16
+        1  0.00091   1.000 -0.000 -0.000  0.000  0.000 -0.000 -0.000  0.000  0.000  0.000 -0.000  0.000 -0.000  0.000  0.000 -0.000
+        2  0.00002  -0.000  1.000  0.000 -0.000 -0.000  0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000  0.000
+        3  0.16215  -0.000  0.000  1.000  0.008 -0.000  0.000 -0.000 -0.000 -0.000  0.001 -0.001  0.000 -0.000  0.000 -0.002  0.002
+        4  0.06222   0.000 -0.000  0.008  1.000  0.000 -0.000  0.000  0.000  0.000 -0.001  0.001 -0.000  0.000 -0.000  0.002 -0.002
+        5  0.00025   0.000 -0.000 -0.000  0.000  1.000 -0.000 -0.000  0.000  0.000  0.000 -0.000  0.000 -0.000  0.000  0.000 -0.000
+        6  0.00002  -0.000  0.000  0.000 -0.000 -0.000  1.000  0.000 -0.000  0.000 -0.000  0.000  0.000  0.000  0.000 -0.000  0.000
+        7  0.00454  -0.000  0.000 -0.000  0.000 -0.000  0.000  1.000 -0.000 -0.000  0.000  0.000  0.000  0.000 -0.000  0.000  0.000
+        8  0.00231   0.000 -0.000 -0.000  0.000  0.000 -0.000 -0.000  1.000  0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000
+        9  0.00000   0.000  0.000 -0.000  0.000  0.000  0.000 -0.000  0.000  1.000  0.000 -0.000 -0.000  0.000  0.000  0.000  0.000
+       10  0.01559   0.000 -0.000  0.001 -0.001  0.000 -0.000  0.000 -0.000  0.000  1.000  0.000  0.000 -0.000  0.000  0.000  0.000
+       11  0.01504  -0.000  0.000 -0.001  0.001 -0.000  0.000  0.000 -0.000 -0.000  0.000  1.000  0.000  0.000  0.000 -0.000  0.000
+       12  0.00388   0.000 -0.000  0.000 -0.000  0.000  0.000  0.000  0.000 -0.000  0.000  0.000  1.000 -0.000 -0.000  0.000 -0.000
+       13  0.00002  -0.000  0.000 -0.000  0.000 -0.000  0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000  1.000 -0.000 -0.000  0.000
+       14  0.00002   0.000 -0.000  0.000 -0.000  0.000  0.000 -0.000  0.000  0.000  0.000  0.000 -0.000 -0.000  1.000  0.000 -0.000
+       15  0.03343   0.000  0.000 -0.002  0.002  0.000 -0.000  0.000 -0.000  0.000  0.000 -0.000  0.000 -0.000  0.000  1.000  0.000
+       16  0.01402  -0.000  0.000  0.002 -0.002 -0.000  0.000  0.000  0.000  0.000  0.000  0.000 -0.000  0.000 -0.000  0.000  1.000
+       17  0.00836   0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000  0.000 -0.000 -0.000  0.000 -0.000 -0.000 -0.000  0.000 -0.000
+                     1.000 -0.000 -0.000 -0.000 -0.000  0.002 -0.008 -0.000
+       18  0.00649   0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000 -0.001  0.000  0.000 -0.000  0.000  0.000  0.000
+                    -0.000  1.000  0.000  0.000 -0.000 -0.003  0.001 -0.005
+       19  0.01662  -0.000  0.000 -0.001  0.001 -0.000  0.000  0.000 -0.000  0.000  0.000 -0.000  0.000  0.000  0.000 -0.000  0.000
+                    -0.000  0.000  1.000  0.000  0.000 -0.016  0.001  0.002
+       20  0.01280  -0.000 -0.000  0.001 -0.001 -0.000  0.000  0.000  0.000 -0.000  0.000  0.000 -0.000 -0.000 -0.000  0.000 -0.000
+                    -0.000  0.000  0.000  1.000  0.000 -0.008  0.002 -0.009
+       21  0.00262  -0.001  0.000  0.000 -0.000 -0.000  0.000  0.000 -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000  0.000
+                    -0.000 -0.000  0.000  0.000  1.000 -0.002  0.000 -0.001
+       22  0.31535   0.000 -0.000 -0.155 -0.054  0.000 -0.000 -0.004  0.001  0.000 -0.005 -0.014 -0.003 -0.000  0.000 -0.031 -0.013
+                     0.002 -0.003 -0.016 -0.008 -0.002  1.000 -0.226 -0.149
+       23  0.23159  -0.000  0.000 -0.012  0.012 -0.000  0.000  0.001 -0.000 -0.000  0.001 -0.001  0.001  0.000  0.000 -0.004  0.003
+                    -0.008  0.001  0.001  0.002  0.000 -0.226  1.000  0.034
+       24  0.15351   0.000 -0.000  0.023 -0.023  0.000 -0.000  0.001 -0.002  0.000 -0.014  0.002 -0.002 -0.000  0.000  0.005 -0.003
+                    -0.000 -0.005  0.002 -0.009 -0.001 -0.149  0.034  1.000
+ **********
+ **   18 **HESSE     1.2e+04
+ **********
+ COVARIANCE MATRIX CALCULATED SUCCESSFULLY
+ FCN=-53.699 FROM HESSE     STATUS=OK            373 CALLS        1100 TOTAL
+                     EDM=5.5155e-05    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                                INTERNAL      INTERNAL  
+  NO.   NAME      VALUE            ERROR       STEP SIZE       VALUE   
+   1  NuD_0        1.00609e-01   2.00602e-02   4.56967e-05  -1.13026e+00
+   2  NuD_1        5.06964e-02   1.01110e-02   4.54407e-05  -1.13030e+00
+   3  NuS_0        9.19382e-01   1.99900e-01   4.67580e-05  -1.14954e+00
+   4  NuS_1        5.11634e-01   1.12598e-01   4.75765e-05  -1.15126e+00
+   5  Pdd_0        6.50120e-01   3.24785e-02   6.92681e-05   3.04944e-01
+   6  Pdd_1        4.82384e-01   2.41096e-02   4.90761e-05  -3.52402e-02
+   7  Pds_0        6.81960e-02   3.41093e-03   1.37577e-05  -1.04238e+00
+   8  Pds_1        1.62649e-01   8.13115e-03   2.24038e-05  -7.40560e-01
+   9  PeakBkgBd_0   2.41987e-01   5.59897e-02   1.54594e-04  -4.11998e-01
+  10  PeakBkgBd_1   1.58688e-01   3.88110e-02   1.59328e-04  -4.34858e-01
+  11  PeakBkgBs_0   7.11741e-02   1.96930e-02   1.69454e-04  -4.90140e-01
+  12  PeakBkgBs_1   4.37478e-02   1.13998e-02   1.64458e-04  -4.63624e-01
+  13  Psd_0        2.89685e-01   1.44816e-02   3.24633e-05  -4.34139e-01
+  14  Psd_1        3.61236e-01   1.80577e-02   3.82310e-05  -2.81220e-01
+  15  Pss_0        8.75516e-01   4.36071e-02   1.34555e-04   8.49624e-01
+  16  Pss_1        6.96490e-01   3.47991e-02   7.70219e-05   4.03870e-01
+  17  TauD_0       1.33254e-01   5.33299e-03   1.59557e-05  -8.23445e-01
+  18  TauD_1       1.33364e-01   5.33103e-03   1.59441e-05  -8.23121e-01
+  19  TauS_0       2.00028e-01   7.99929e-03   2.03287e-05  -6.43431e-01
+  20  TauS_1       1.99939e-01   7.99783e-03   2.03309e-05  -6.43653e-01
+  21  mu_d         2.90620e-05   8.33711e+00   4.23907e-04  -1.57003e+00
+                                 WARNING -   - ABOVE PARAMETER IS AT LIMIT.
+  22  mu_s         1.37724e+00   1.44258e+00   2.81066e-04  -1.03975e+00
+  23  nu_b_0       2.72662e+00   1.56640e+00   2.98176e-05  -1.46631e+00
+  24  nu_b_1       3.94911e+00   1.82499e+00   2.91967e-05  -1.44503e+00
+                               ERR DEF= 0.5
+ EXTERNAL ERROR MATRIX.    NDIM=  50    NPAR= 24    ERR DEF=0.5
+ ELEMENTS ABOVE DIAGONAL ARE NOT PRINTED.
+  4.027e-04 
+  1.484e-12  1.023e-04 
+ -9.064e-11  1.650e-11  3.999e-02 
+  3.547e-11 -1.907e-12  1.850e-04  1.269e-02 
+  2.814e-11 -2.821e-12 -1.431e-10 -4.733e-11  1.056e-03 
+ -2.881e-12  3.391e-12 -7.379e-11  1.832e-11 -1.743e-11  5.817e-04 
+  7.982e-13  1.072e-14 -1.585e-07  9.101e-08 -8.410e-13  1.132e-12  1.164e-05 
+  6.579e-13  8.950e-16 -1.889e-07  1.076e-07  2.122e-12 -8.838e-15 -9.253e-11  6.613e-05 
+ -2.310e-11 -3.903e-12 -2.341e-10 -1.139e-12 -2.511e-11 -2.794e-11 -1.317e-12  3.142e-12  3.159e-03 
+  1.254e-11 -2.399e-12  6.143e-06 -3.495e-06  7.881e-12 -6.777e-12  3.023e-09 -1.018e-07 -1.238e-14  1.519e-03 
+ -7.811e-12 -1.220e-12 -2.939e-06  1.684e-06 -9.067e-12 -3.328e-12  4.438e-09 -1.718e-09 -1.527e-11  5.593e-08  3.914e-04 
+  8.342e-14  1.631e-12  1.061e-06 -6.039e-07 -2.549e-12  9.993e-16  5.224e-10  2.500e-10  4.415e-12  2.252e-08  9.660e-09 
+  8.342e-14  1.631e-12  1.061e-06 -6.039e-07 -2.549e-12  9.993e-16  5.224e-10  2.500e-10  4.415e-12  2.252e-08  9.660e-09  1.311e-04 
+  2.655e-12  1.781e-14 -2.438e-11 -8.300e-12 -3.812e-12  4.842e-12  9.842e-15  1.608e-12 -5.593e-12  3.781e-12  2.122e-12 
+  2.655e-12  1.781e-14 -2.438e-11 -8.300e-12 -3.812e-12  4.842e-12  9.842e-15  1.608e-12 -5.593e-12  3.781e-12  2.122e-12  2.298e-12  2.098e-04 
+ -8.942e-13  1.233e-12 -2.523e-11 -4.827e-14  6.910e-13 -3.042e-12  4.206e-13 -9.981e-13 -6.156e-17  2.888e-13 -4.994e-15 
+ -8.942e-13  1.233e-12 -2.523e-11 -4.827e-14  6.910e-13 -3.042e-12  4.206e-13 -9.981e-13 -6.156e-17  2.888e-13 -4.994e-15 -1.422e-12  1.776e-12  3.262e-04 
+ -6.415e-12  6.851e-13 -1.400e-05  8.057e-06 -2.868e-11 -1.484e-11  2.123e-08 -8.225e-09 -1.683e-11  2.675e-07 -2.035e-07 
+ -6.415e-12  6.851e-13 -1.400e-05  8.057e-06 -2.868e-11 -1.484e-11  2.123e-08 -8.225e-09 -1.683e-11  2.675e-07 -2.035e-07  4.619e-08  6.816e-13 -5.396e-12  1.913e-03 
+  3.343e-12  2.836e-12  1.370e-05 -7.793e-06 -1.664e-11 -5.777e-12  6.742e-09  2.241e-10 -8.955e-14  1.927e-07  1.248e-07 
+  3.343e-12  2.836e-12  1.370e-05 -7.793e-06 -1.664e-11 -5.777e-12  6.742e-09  2.241e-10 -8.955e-14  1.927e-07  1.248e-07 -4.316e-08  3.727e-12 -5.205e-14  5.967e-07  1.213e-03 
+  1.973e-14  7.323e-13  1.058e-07 -6.065e-08 -3.568e-12  9.278e-15 -1.596e-10  6.192e-11 -6.179e-12 -2.015e-09  5.093e-10 
+  1.973e-14  7.323e-13  1.058e-07 -6.065e-08 -3.568e-12  9.278e-15 -1.596e-10  6.192e-11 -6.179e-12 -2.015e-09  5.093e-10 -3.478e-10  1.061e-12 -6.619e-13  7.323e-09 -4.494e-09  2.844e-05 
+  2.101e-12  3.845e-13  5.130e-07 -2.919e-07 -1.790e-12 -9.151e-13  2.524e-10 -7.747e-09 -4.121e-12 -2.461e-07  4.670e-09 
+  2.101e-12  3.845e-13  5.130e-07 -2.919e-07 -1.790e-12 -9.151e-13  2.524e-10 -7.747e-09 -4.121e-12 -2.461e-07  4.670e-09  1.386e-09  5.222e-13  2.197e-14  2.233e-08  1.287e-08 -1.683e-10  2.842e-05 
+  1.235e-12 -4.834e-13 -1.348e-06  7.726e-07 -3.677e-12  1.303e-12  2.035e-09 -7.882e-10  8.274e-15  2.565e-08 -6.496e-09 
+  1.235e-12 -4.834e-13 -1.348e-06  7.726e-07 -3.677e-12  1.303e-12  2.035e-09 -7.882e-10  8.274e-15  2.565e-08 -6.496e-09  4.431e-09 -7.288e-13 -2.285e-15 -9.332e-08  5.722e-08 -4.833e-10  2.142e-09  6.400e-05 
+  2.247e-12  9.675e-14  1.914e-06 -1.089e-06 -1.796e-12 -2.633e-12  9.413e-10  1.003e-09 -3.102e-12  5.867e-08  1.742e-08 
+  2.247e-12  9.675e-14  1.914e-06 -1.089e-06 -1.796e-12 -2.633e-12  9.413e-10  1.003e-09 -3.102e-12  5.867e-08  1.742e-08 -1.449e-08  3.781e-14  9.904e-13  8.332e-08 -8.022e-08 -6.279e-10  3.427e-09  7.990e-09  6.397e-05 
+ -3.055e-07  4.138e-09  3.530e-08 -1.895e-08 -1.335e-07  9.269e-09  5.677e-10 -2.171e-09  1.196e-11 -5.624e-08  1.499e-09 
+ -3.055e-07  4.138e-09  3.530e-08 -1.895e-08 -1.335e-07  9.269e-09  5.677e-10 -2.171e-09  1.196e-11 -5.624e-08  1.499e-09 -1.419e-11  4.230e-09 -5.087e-09 -5.514e-09  7.985e-09 -5.396e-11 -4.288e-09  6.898e-10  2.707e-10  9.829e-04 
+  1.292e-08 -1.027e-09 -4.508e-02 -8.783e-03  7.565e-09  2.724e-12 -2.217e-05  8.966e-06  3.027e-10 -2.916e-04 -4.104e-04 
+  1.292e-08 -1.027e-09 -4.508e-02 -8.783e-03  7.565e-09  2.724e-12 -2.217e-05  8.966e-06  3.027e-10 -2.916e-04 -4.104e-04 -5.036e-05 -8.833e-10  3.066e-10 -1.963e-03 -6.505e-04  1.478e-05 -2.435e-05 -1.882e-04 -9.084e-05 -5.311e-05  2.140e+00 
+ -6.938e-10  3.077e-10 -3.721e-03  2.132e-03 -2.692e-10 -3.262e-10  5.618e-06 -2.177e-06  3.771e-11  7.079e-05 -1.793e-05 
+ -6.938e-10  3.077e-10 -3.721e-03  2.132e-03 -2.692e-10 -3.262e-10  5.618e-06 -2.177e-06  3.771e-11  7.079e-05 -1.793e-05  1.223e-05  2.760e-11 -4.677e-12 -2.575e-04  1.579e-04 -6.982e-05  5.911e-06  1.700e-05  2.205e-05  1.897e-06 -5.195e-01 
+ -6.938e-10  3.077e-10 -3.721e-03  2.132e-03 -2.692e-10 -3.262e-10  5.618e-06 -2.177e-06  3.771e-11  7.079e-05 -1.793e-05  1.223e-05  2.760e-11 -4.677e-12 -2.575e-04  1.579e-04 -6.982e-05  5.911e-06  1.700e-05  2.205e-05  1.897e-06 -5.195e-01  2.454e+00 
+  6.899e-09 -1.310e-09  8.393e-03 -4.776e-03  1.784e-09 -1.171e-09  4.128e-06 -3.324e-05 -4.527e-11 -9.722e-04  7.640e-05 
+  6.899e-09 -1.310e-09  8.393e-03 -4.776e-03  1.784e-09 -1.171e-09  4.128e-06 -3.324e-05 -4.527e-11 -9.722e-04  7.640e-05 -3.879e-05 -1.416e-10  9.267e-11  3.655e-04 -1.904e-04 -2.751e-06 -4.809e-05  3.504e-05 -1.270e-04 -1.929e-05 -3.984e-01 
+  6.899e-09 -1.310e-09  8.393e-03 -4.776e-03  1.784e-09 -1.171e-09  4.128e-06 -3.324e-05 -4.527e-11 -9.722e-04  7.640e-05 -3.879e-05 -1.416e-10  9.267e-11  3.655e-04 -1.904e-04 -2.751e-06 -4.809e-05  3.504e-05 -1.270e-04 -1.929e-05 -3.984e-01  9.672e-02  3.332e+00 
+ PARAMETER  CORRELATION COEFFICIENTS  
+       NO.  GLOBAL      1      2      3      4      5      6      7      8      9     10     11     12     13     14     15     16
+        1  0.00049   1.000  0.000 -0.000  0.000  0.000 -0.000  0.000  0.000 -0.000  0.000 -0.000  0.000  0.000 -0.000 -0.000  0.000
+        2  0.00001   0.000  1.000  0.000 -0.000 -0.000  0.000  0.000  0.000 -0.000 -0.000 -0.000  0.000  0.000  0.000  0.000  0.000
+        3  0.16165  -0.000  0.000  1.000  0.008 -0.000 -0.000 -0.000 -0.000 -0.000  0.001 -0.001  0.000 -0.000 -0.000 -0.002  0.002
+        4  0.06206   0.000 -0.000  0.008  1.000 -0.000  0.000  0.000  0.000 -0.000 -0.001  0.001 -0.000 -0.000 -0.000  0.002 -0.002
+        5  0.00013   0.000 -0.000 -0.000 -0.000  1.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000 -0.000  0.000 -0.000 -0.000
+        6  0.00001  -0.000  0.000 -0.000  0.000 -0.000  1.000  0.000 -0.000 -0.000 -0.000 -0.000  0.000  0.000 -0.000 -0.000 -0.000
+        7  0.00454   0.000  0.000 -0.000  0.000 -0.000  0.000  1.000 -0.000 -0.000  0.000  0.000  0.000  0.000  0.000  0.000  0.000
+        8  0.00232   0.000  0.000 -0.000  0.000  0.000 -0.000 -0.000  1.000  0.000 -0.000 -0.000  0.000  0.000 -0.000 -0.000  0.000
+        9  0.00000  -0.000 -0.000 -0.000 -0.000 -0.000 -0.000 -0.000  0.000  1.000 -0.000 -0.000  0.000 -0.000 -0.000 -0.000 -0.000
+       10  0.01560   0.000 -0.000  0.001 -0.001  0.000 -0.000  0.000 -0.000 -0.000  1.000  0.000  0.000  0.000  0.000  0.000  0.000
+       11  0.01506  -0.000 -0.000 -0.001  0.001 -0.000 -0.000  0.000 -0.000 -0.000  0.000  1.000  0.000  0.000 -0.000 -0.000  0.000
+       12  0.00388   0.000  0.000  0.000 -0.000 -0.000  0.000  0.000  0.000  0.000  0.000  0.000  1.000  0.000 -0.000  0.000 -0.000
+       13  0.00001   0.000  0.000 -0.000 -0.000 -0.000  0.000  0.000  0.000 -0.000  0.000  0.000  0.000  1.000  0.000  0.000  0.000
+       14  0.00001  -0.000  0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000  0.000 -0.000 -0.000  0.000  1.000 -0.000 -0.000
+       15  0.03335  -0.000  0.000 -0.002  0.002 -0.000 -0.000  0.000 -0.000 -0.000  0.000 -0.000  0.000  0.000 -0.000  1.000  0.000
+       16  0.01399   0.000  0.000  0.002 -0.002 -0.000 -0.000  0.000  0.000 -0.000  0.000  0.000 -0.000  0.000 -0.000  0.000  1.000
+       17  0.00836   0.000  0.000  0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000
+                     1.000 -0.000 -0.000 -0.000 -0.000  0.002 -0.008 -0.000
+       18  0.00648   0.000  0.000  0.000 -0.000 -0.000 -0.000  0.000 -0.000 -0.000 -0.001  0.000  0.000  0.000  0.000  0.000  0.000
+                    -0.000  1.000  0.000  0.000 -0.000 -0.003  0.001 -0.005
+       19  0.01665   0.000 -0.000 -0.001  0.001 -0.000  0.000  0.000 -0.000  0.000  0.000 -0.000  0.000 -0.000 -0.000 -0.000  0.000
+                    -0.000  0.000  1.000  0.000  0.000 -0.016  0.001  0.002
+       20  0.01280   0.000  0.000  0.001 -0.001 -0.000 -0.000  0.000  0.000 -0.000  0.000  0.000 -0.000  0.000  0.000  0.000 -0.000
+                    -0.000  0.000  0.000  1.000  0.000 -0.008  0.002 -0.009
+       21  0.00140  -0.000  0.000  0.000 -0.000 -0.000  0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000  0.000
+                    -0.000 -0.000  0.000  0.000  1.000 -0.001  0.000 -0.000
+       22  0.31542   0.000 -0.000 -0.154 -0.053  0.000  0.000 -0.004  0.001  0.000 -0.005 -0.014 -0.003 -0.000  0.000 -0.031 -0.013
+                     0.002 -0.003 -0.016 -0.008 -0.001  1.000 -0.227 -0.149
+       23  0.23202  -0.000  0.000 -0.012  0.012 -0.000 -0.000  0.001 -0.000  0.000  0.001 -0.001  0.001  0.000 -0.000 -0.004  0.003
+                    -0.008  0.001  0.001  0.002  0.000 -0.227  1.000  0.034
+       24  0.15366   0.000 -0.000  0.023 -0.023  0.000 -0.000  0.001 -0.002 -0.000 -0.014  0.002 -0.002 -0.000  0.000  0.005 -0.003
+                    -0.000 -0.005  0.002 -0.009 -0.000 -0.149  0.034  1.000
+[#1] INFO:Minization -- RooMinuit::optimizeConst: deactivating const optimization
+[#1] INFO:Minization --  Including the following contraint terms in minimization: (TauS_Gauss_0,TauD_Gauss_0,NuS_Gauss_0,NuD_Gauss_0,Pss_Gauss_0,Psd_Gauss_0,Pds_Gauss_0,Pdd_Gauss_0,PeakBkgBs_Gauss_0,PeakBkgBd_Gauss_0,TauS_Gauss_1,TauD_Gauss_1,NuS_Gauss_1,NuD_Gauss_1,Pss_Gauss_1,Psd_Gauss_1,Pds_Gauss_1,Pdd_Gauss_1,PeakBkgBs_Gauss_1,PeakBkgBd_Gauss_1)
+[#1] INFO:Fitting -- RooAddition::defaultErrorLevel(nll_total_pdf_data_with_constr) Summation contains a RooNLLVar, using its error level
+[#1] INFO:Minization -- RooMinuit::optimizeConst: activating const optimization
+ **********
+ **   13 **MIGRAD     1.1e+04           1
+ **********
+ FIRST CALL TO USER FUNCTION AT NEW START POINT, WITH IFLAG=4.
+ START MIGRAD MINIMIZATION.  STRATEGY  1.  CONVERGENCE WHEN EDM .LT. 1.00e-03
+ FCN=-52.8239 FROM MIGRAD    STATUS=INITIATE       88 CALLS          89 TOTAL
+                     EDM= unknown      STRATEGY= 1      NO ERROR MATRIX       
+  EXT PARAMETER               CURRENT GUESS       STEP         FIRST   
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+   1  NuD_0        1.00609e-01   2.00602e-02   4.48621e-02   4.92301e-02
+   2  NuD_1        5.06964e-02   1.01110e-02   4.48701e-02   2.74693e-02
+   3  NuS_0        9.19382e-01   1.99900e-01   4.67582e-02   3.46486e-01
+   4  NuS_1        5.11634e-01   1.12598e-01   4.71361e-02  -4.32602e-01
+   5  Pdd_0        6.50120e-01   3.24785e-02   6.81674e-02   2.80019e-02
+   6  Pdd_1        4.82384e-01   2.41096e-02   4.82680e-02   3.91369e-03
+   7  Pds_0        6.81960e-02   3.41093e-03   1.35351e-02  -3.25565e-01
+   8  Pds_1        1.62649e-01   8.13115e-03   2.20392e-02   6.82528e-02
+   9  PeakBkgBd_0   2.41987e-01   5.59897e-02   1.52321e-01  -2.74274e-03
+  10  PeakBkgBd_1   1.58688e-01   3.88110e-02   1.57135e-01  -4.69213e-02
+  11  PeakBkgBs_0   7.11741e-02   1.96930e-02   1.67439e-01  -2.46778e-01
+  12  PeakBkgBs_1   4.37478e-02   1.13998e-02   1.62305e-01  -3.09892e-02
+  13  Psd_0        2.89685e-01   1.44816e-02   3.19336e-02  -3.51624e-03
+  14  Psd_1        3.61236e-01   1.80577e-02   3.76033e-02   4.32256e-03
+  15  Pss_0        8.75516e-01   4.36071e-02   1.34074e-01   6.12043e-02
+  16  Pss_1        6.96490e-01   3.47991e-02   7.57998e-02  -8.07350e-02
+  17  TauD_0       1.33254e-01   5.33299e-03   1.56951e-02  -2.76787e-02
+  18  TauD_1       1.33364e-01   5.33103e-03   1.56839e-02  -2.56158e-01
+  19  TauS_0       2.00028e-01   7.99929e-03   2.00007e-02  -2.26529e+00
+  20  TauS_1       1.99939e-01   7.99783e-03   2.00004e-02  -6.88257e-01
+  21  nu_b_0       2.72662e+00   1.56640e+00   3.14997e-02  -2.16833e+01
+  22  nu_b_1       3.94911e+00   1.82499e+00   2.99564e-02  -7.15619e+00
+                               ERR DEF= 0.5
+ MIGRAD MINIMIZATION HAS CONVERGED.
+ MIGRAD WILL VERIFY CONVERGENCE AND ERROR MATRIX.
+ COVARIANCE MATRIX CALCULATED SUCCESSFULLY
+ FCN=-53.0132 FROM MIGRAD    STATUS=CONVERGED     521 CALLS         522 TOTAL
+                     EDM=1.35841e-06    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                                   STEP         FIRST   
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+   1  NuD_0        1.00565e-01   2.00623e-02   2.25658e-04  -9.55930e-05
+   2  NuD_1        5.06840e-02   1.01116e-02   2.25667e-04  -6.48945e-05
+   3  NuS_0        9.16116e-01   2.01097e-01   2.36711e-04  -5.85940e-04
+   4  NuS_1        5.13929e-01   1.12811e-01   2.36709e-04   4.02834e-04
+   5  Pdd_0        6.50058e-01   3.24778e-02   3.44243e-04  -3.38983e-05
+   6  Pdd_1        4.82379e-01   2.41096e-02   2.43823e-04  -5.77298e-06
+   7  Pds_0        6.82110e-02   3.41090e-03   6.83457e-05   4.15742e-04
+   8  Pds_1        1.62637e-01   8.13134e-03   1.11313e-04  -1.04814e-04
+   9  PeakBkgBd_0   2.42010e-01   5.59889e-02   7.67663e-04  -1.84933e-06
+  10  PeakBkgBd_1   1.58819e-01   3.88052e-02   7.90808e-04  -2.01945e-03
+  11  PeakBkgBs_0   7.16858e-02   1.96868e-02   8.38249e-04  -5.09006e-03
+  12  PeakBkgBs_1   4.37918e-02   1.13994e-02   8.16694e-04  -5.66232e-04
+  13  Psd_0        2.89687e-01   1.44815e-02   1.61293e-04  -1.12611e-06
+  14  Psd_1        3.61233e-01   1.80577e-02   1.89940e-04  -9.56216e-06
+  15  Pss_0        8.75161e-01   4.36303e-02   6.68733e-04  -5.64134e-05
+  16  Pss_1        6.96703e-01   3.48017e-02   3.82801e-04   1.17569e-04
+  17  TauD_0       1.33230e-01   5.33300e-03   7.92650e-05  -1.02705e-02
+  18  TauD_1       1.33378e-01   5.33031e-03   7.91959e-05  -7.16348e-03
+  19  TauS_0       2.00348e-01   7.98938e-03   1.00819e-04  -6.59705e-03
+  20  TauS_1       2.00026e-01   7.99446e-03   1.00944e-04  -1.05906e-02
+  21  nu_b_0       3.61327e+00   1.67498e+00   1.40486e-04  -2.01074e-02
+  22  nu_b_1       4.30148e+00   1.83124e+00   1.41275e-04   1.30029e-02
+                               ERR DEF= 0.5
+ EXTERNAL ERROR MATRIX.    NDIM=  46    NPAR= 22    ERR DEF=0.5
+ ELEMENTS ABOVE DIAGONAL ARE NOT PRINTED.
+  4.028e-04 
+  1.417e-22  1.023e-04 
+  1.124e-12  5.666e-13  4.047e-02 
+ -6.307e-13 -3.179e-13 -1.594e-20  1.274e-02 
+ -3.633e-13  2.295e-22  1.821e-12 -1.021e-12  1.056e-03 
+ -1.348e-13 -6.793e-14 -3.407e-21  2.337e-21 -2.183e-13  5.817e-04 
+ -3.812e-14  2.408e-23  1.911e-13 -1.072e-13 -6.174e-14 -2.291e-14  1.163e-05 
+ -4.544e-14 -2.290e-14 -1.149e-21  7.880e-22 -7.360e-14  1.684e-22 -7.724e-15  6.613e-05 
+ -3.141e-13 -1.583e-13 -7.923e-21  5.437e-21 -5.087e-13  1.162e-21 -5.338e-14  3.918e-22  3.159e-03 
+ -2.175e-13 -1.100e-13 -3.866e-14  2.168e-14 -3.523e-13  4.634e-15 -3.697e-14  1.563e-15  1.080e-14  1.518e-03 
+  3.715e-16  1.042e-17  1.135e-12 -6.350e-13  6.017e-16 -1.357e-13  6.315e-17 -4.575e-14 -3.161e-13  2.197e-13  3.912e-04 
+ -6.403e-14 -3.227e-14 -3.284e-15  1.842e-15 -1.037e-13  3.937e-16 -1.088e-14  1.327e-16  9.174e-16  4.040e-08 -6.443e-14 
+ -6.403e-14 -3.227e-14 -3.284e-15  1.842e-15 -1.037e-13  3.937e-16 -1.088e-14  1.327e-16  9.174e-16  4.040e-08 -6.443e-14  1.311e-04 
+  2.479e-22  1.023e-22  8.114e-13 -4.552e-13  4.015e-22 -9.728e-14  4.214e-23 -3.280e-14 -2.267e-13 -1.570e-13  1.492e-17 
+  2.479e-22  1.023e-22  8.114e-13 -4.552e-13  4.015e-22 -9.728e-14  4.214e-23 -3.280e-14 -2.267e-13 -1.570e-13  1.492e-17 -4.621e-14  2.098e-04 
+ -1.406e-22 -9.916e-23 -1.012e-12  5.676e-13 -2.277e-22  1.213e-13 -2.390e-23  4.090e-14  2.827e-13 -1.957e-13 -1.860e-17 
+ -1.406e-22 -9.916e-23 -1.012e-12  5.676e-13 -2.277e-22  1.213e-13 -2.390e-23  4.090e-14  2.827e-13 -1.957e-13 -1.860e-17  5.756e-14 -1.015e-22  3.262e-04 
+ -2.445e-13 -1.232e-13 -6.181e-21  4.240e-21 -3.960e-13  9.062e-22 -4.156e-14  3.055e-22  2.108e-21  8.408e-15 -2.462e-13 
+ -2.445e-13 -1.232e-13 -6.181e-21  4.240e-21 -3.960e-13  9.062e-22 -4.156e-14  3.055e-22  2.108e-21  8.408e-15 -2.462e-13  7.142e-16 -1.765e-13  2.201e-13  1.915e-03 
+ -2.712e-22 -1.912e-22 -1.951e-12  1.095e-12 -4.392e-22  2.340e-13 -4.609e-23  7.888e-14  5.452e-13 -3.775e-13 -3.587e-17 
+ -2.712e-22 -1.912e-22 -1.951e-12  1.095e-12 -4.392e-22  2.340e-13 -4.609e-23  7.888e-14  5.452e-13 -3.775e-13 -3.587e-17  1.110e-13 -1.957e-22  5.365e-22  4.245e-13  1.213e-03 
+  2.980e-14  1.502e-14  2.709e-15 -1.551e-15  4.827e-14 -3.314e-16  5.065e-15 -1.118e-16  1.662e-13 -4.513e-16  1.972e-08 
+  2.980e-14  1.502e-14  2.709e-15 -1.551e-15  4.827e-14 -3.314e-16  5.065e-15 -1.118e-16  1.662e-13 -4.513e-16  1.972e-08  3.376e-14  2.151e-14 -2.683e-14 -6.013e-16 -5.174e-14  2.844e-05 
+ -2.974e-14  1.504e-14 -2.048e-15  1.149e-15 -4.817e-14  2.455e-16 -5.055e-15  8.277e-17  5.721e-16 -3.204e-07 -2.890e-14 
+ -2.974e-14  1.504e-14 -2.048e-15  1.149e-15 -4.817e-14  2.455e-16 -5.055e-15  8.277e-17  5.721e-16 -3.204e-07 -2.890e-14  2.140e-09 -2.147e-14 -2.677e-14  4.454e-16 -5.162e-14  1.794e-17  2.841e-05 
+ -8.931e-14  2.078e-18 -4.437e-13 -2.533e-13 -1.446e-13 -5.414e-14 -1.518e-14 -1.825e-14 -1.261e-13  8.739e-14 -2.508e-07 
+ -8.931e-14  2.078e-18 -4.437e-13 -2.533e-13 -1.446e-13 -5.414e-14 -1.518e-14 -1.825e-14 -1.261e-13  8.739e-14 -2.508e-07 -2.571e-14  2.975e-18 -3.711e-18 -9.823e-14 -7.156e-18  3.934e-09  1.199e-14  6.384e-05 
+  4.469e-14  2.253e-14 -6.213e-15  3.485e-15  7.238e-14  7.449e-16  7.596e-15  2.511e-16  1.736e-15  7.643e-08  4.318e-14 
+  4.469e-14  2.253e-14 -6.213e-15  3.485e-15  7.238e-14  7.449e-16  7.596e-15  2.511e-16  1.736e-15  7.643e-08  4.318e-14 -3.758e-08  3.225e-14  4.019e-14  1.351e-15  7.751e-14  2.348e-14  4.049e-09  1.760e-14  6.392e-05 
+  1.097e-13 -4.218e-14 -9.520e-11  5.449e-11  1.777e-13  1.165e-11  1.864e-14  3.927e-12  2.667e-11 -1.879e-11 -6.930e-04 
+  1.097e-13 -4.218e-14 -9.520e-11  5.449e-11  1.777e-13  1.165e-11  1.864e-14  3.927e-12  2.667e-11 -1.879e-11 -6.930e-04  5.431e-12 -6.041e-14  7.533e-14  2.113e-11  1.453e-13 -7.986e-05 -2.465e-12 -1.382e-04  3.559e-12  2.806e+00 
+  1.619e-13  1.087e-14  1.027e-10 -5.759e-11  2.621e-13 -1.231e-11  2.751e-14 -4.150e-12 -2.868e-11 -1.263e-03 -1.970e-13 
+  1.619e-13  1.087e-14  1.027e-10 -5.759e-11  2.621e-13 -1.231e-11  2.751e-14 -4.150e-12 -2.868e-11 -1.263e-03 -1.970e-13 -1.073e-04  1.168e-13  5.140e-14 -2.233e-11  9.913e-14  2.619e-12 -6.690e-05 -1.355e-13 -2.030e-04 -1.923e-12  3.354e+00 
+ PARAMETER  CORRELATION COEFFICIENTS  
+       NO.  GLOBAL      1      2      3      4      5      6      7      8      9     10     11     12     13     14     15     16
+        1  0.00000   1.000  0.000  0.000 -0.000 -0.000 -0.000 -0.000 -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000 -0.000
+        2  0.00000   0.000  1.000  0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000 -0.000
+        3  0.00000   0.000  0.000  1.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000 -0.000
+        4  0.00000  -0.000 -0.000 -0.000  1.000 -0.000  0.000 -0.000  0.000  0.000  0.000 -0.000  0.000 -0.000  0.000  0.000  0.000
+        5  0.00000  -0.000  0.000  0.000 -0.000  1.000 -0.000 -0.000 -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000 -0.000
+        6  0.00000  -0.000 -0.000 -0.000  0.000 -0.000  1.000 -0.000  0.000  0.000  0.000 -0.000  0.000 -0.000  0.000  0.000  0.000
+        7  0.00000  -0.000  0.000  0.000 -0.000 -0.000 -0.000  1.000 -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000 -0.000
+        8  0.00000  -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000  1.000  0.000  0.000 -0.000  0.000 -0.000  0.000  0.000  0.000
+        9  0.00000  -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000  1.000  0.000 -0.000  0.000 -0.000  0.000  0.000  0.000
+       10  0.01778  -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000  0.000  1.000  0.000  0.000 -0.000 -0.000  0.000 -0.000
+       11  0.02099   0.000  0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000  0.000  1.000 -0.000  0.000 -0.000 -0.000 -0.000
+       12  0.00514  -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000  0.000  0.000 -0.000  1.000 -0.000  0.000  0.000  0.000
+       13  0.00000   0.000  0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000 -0.000  0.000 -0.000  1.000 -0.000 -0.000 -0.000
+       14  0.00000  -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000  0.000 -0.000 -0.000  0.000 -0.000  1.000  0.000  0.000
+       15  0.00000  -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000  0.000  0.000 -0.000  0.000 -0.000  0.000  1.000  0.000
+       16  0.00000  -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000  0.000 -0.000 -0.000  0.000 -0.000  0.000  0.000  1.000
+       17  0.00894   0.000  0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000  0.000  0.000 -0.000 -0.000 -0.000
+                     1.000  0.000  0.000  0.000 -0.009  0.000
+       18  0.00705  -0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000  0.000 -0.002 -0.000  0.000 -0.000 -0.000  0.000 -0.000
+                     0.000  1.000  0.000  0.000 -0.000 -0.007
+       19  0.01048  -0.000  0.000 -0.000 -0.000 -0.000 -0.000 -0.000 -0.000 -0.000  0.000 -0.002 -0.000  0.000 -0.000 -0.000 -0.000
+                     0.000  0.000  1.000  0.000 -0.010 -0.000
+       20  0.01387   0.000  0.000 -0.000  0.000  0.000  0.000  0.000  0.000  0.000  0.000  0.000 -0.000  0.000  0.000  0.000  0.000
+                     0.000  0.000  0.000  1.000  0.000 -0.014
+       21  0.02499   0.000 -0.000 -0.000  0.000  0.000  0.000  0.000  0.000  0.000 -0.000 -0.021  0.000 -0.000  0.000  0.000  0.000
+                    -0.009 -0.000 -0.010  0.000  1.000 -0.000
+       22  0.02406   0.000  0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000 -0.018 -0.000 -0.005  0.000  0.000 -0.000  0.000
+                     0.000 -0.007 -0.000 -0.014 -0.000  1.000
+ **********
+ **   18 **HESSE     1.1e+04
+ **********
+ COVARIANCE MATRIX CALCULATED SUCCESSFULLY
+ FCN=-53.0132 FROM HESSE     STATUS=OK            320 CALLS         842 TOTAL
+                     EDM=1.35849e-06    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                                INTERNAL      INTERNAL  
+  NO.   NAME      VALUE            ERROR       STEP SIZE       VALUE   
+   1  NuD_0        1.00565e-01   2.00623e-02   9.02634e-06  -1.13036e+00
+   2  NuD_1        5.06840e-02   1.01116e-02   9.02668e-06  -1.13036e+00
+   3  NuS_0        9.16116e-01   2.01097e-01   4.73421e-05  -1.15030e+00
+   4  NuS_1        5.13929e-01   1.12811e-01   9.46835e-06  -1.15030e+00
+   5  Pdd_0        6.50058e-01   3.24779e-02   1.37697e-05   3.04814e-01
+   6  Pdd_1        4.82379e-01   2.41096e-02   9.75292e-06  -3.52493e-02
+   7  Pds_0        6.82110e-02   3.41090e-03   2.73383e-06  -1.04232e+00
+   8  Pds_1        1.62637e-01   8.13134e-03   4.45252e-06  -7.40593e-01
+   9  PeakBkgBd_0   2.42010e-01   5.59889e-02   3.07065e-05  -4.11935e-01
+  10  PeakBkgBd_1   1.58819e-01   3.88053e-02   1.58162e-04  -4.34328e-01
+  11  PeakBkgBs_0   7.16858e-02   1.96868e-02   1.67650e-04  -4.85832e-01
+  12  PeakBkgBs_1   4.37918e-02   1.13994e-02   1.63339e-04  -4.63002e-01
+  13  Psd_0        2.89687e-01   1.44815e-02   6.45171e-06  -4.34135e-01
+  14  Psd_1        3.61233e-01   1.80577e-02   7.59760e-06  -2.81226e-01
+  15  Pss_0        8.75161e-01   4.36303e-02   2.67493e-05   8.48548e-01
+  16  Pss_1        6.96703e-01   3.48017e-02   7.65603e-05   4.04334e-01
+  17  TauD_0       1.33230e-01   5.33300e-03   1.58530e-05  -8.23515e-01
+  18  TauD_1       1.33378e-01   5.33031e-03   1.58392e-05  -8.23080e-01
+  19  TauS_0       2.00348e-01   7.98938e-03   2.01638e-05  -6.42631e-01
+  20  TauS_1       2.00026e-01   7.99446e-03   2.01889e-05  -6.43435e-01
+  21  nu_b_0       3.61327e+00   1.67498e+00   2.80971e-05  -1.45050e+00
+  22  nu_b_1       4.30148e+00   1.83124e+00   2.82549e-05  -1.43953e+00
+                               ERR DEF= 0.5
+ EXTERNAL ERROR MATRIX.    NDIM=  46    NPAR= 22    ERR DEF=0.5
+ ELEMENTS ABOVE DIAGONAL ARE NOT PRINTED.
+  4.028e-04 
+  7.136e-18  1.023e-04 
+ -1.405e-10 -7.083e-11  4.047e-02 
+  7.962e-17  1.812e-16 -7.902e-10  1.274e-02 
+  1.035e-16  1.156e-17 -2.276e-10  1.289e-16  1.056e-03 
+ -4.516e-17  7.390e-18  1.689e-10  8.245e-17 -7.313e-17  5.817e-04 
+ -2.383e-11 -5.393e-18  2.388e-11 -6.017e-17 -3.629e-18 -2.293e-18  1.163e-05 
+ -2.840e-11 -1.432e-11  6.143e-17 -1.597e-10 -4.600e-11  3.413e-11  4.827e-12  6.613e-05 
+  1.963e-10  9.894e-11 -2.819e-16  1.104e-09  3.179e-10  2.359e-10 -3.337e-11 -5.697e-17  3.159e-03 
+ -4.405e-13 -2.220e-13 -5.462e-11 -2.477e-12 -7.134e-13 -6.304e-13  7.487e-14 -1.104e-11  7.356e-11  1.518e-03 
+  1.935e-14  1.236e-14 -2.718e-11  1.379e-13  3.134e-14  2.947e-14  3.286e-15 -5.493e-12  3.798e-11 -9.274e-14  3.912e-04 
+ -4.126e-14 -2.080e-14 -1.603e-11 -2.321e-13 -6.683e-14 -4.893e-14  7.014e-15 -3.240e-12  2.218e-11  4.048e-08 -1.078e-14 
+ -4.126e-14 -2.080e-14 -1.603e-11 -2.321e-13 -6.683e-14 -4.893e-14  7.014e-15 -3.240e-12  2.218e-11  4.048e-08 -1.078e-14  1.311e-04 
+ -5.059e-11  2.550e-11 -2.111e-18  2.845e-10 -8.193e-11  6.080e-11 -8.598e-12 -4.266e-19  4.627e-17  1.966e-11  9.780e-12 
+ -5.059e-11  2.550e-11 -2.111e-18  2.845e-10 -8.193e-11  6.080e-11 -8.598e-12 -4.266e-19  4.627e-17  1.966e-11  9.780e-12 -5.775e-12  2.098e-04 
+ -6.309e-11 -3.180e-11  1.364e-16 -3.547e-10 -1.022e-10  7.582e-11  1.072e-11  2.758e-17 -1.265e-16 -2.452e-11 -1.220e-11 
+ -6.309e-11 -3.180e-11  1.364e-16 -3.547e-10 -1.022e-10  7.582e-11  1.072e-11  2.758e-17 -1.265e-16 -2.452e-11 -1.220e-11 -7.197e-12 -9.476e-19  3.262e-04 
+ -1.528e-10  7.703e-11 -6.377e-18  8.594e-10 -2.475e-10  1.837e-10 -2.598e-11 -1.289e-18  1.398e-16  5.939e-11  2.955e-11 
+ -1.528e-10  7.703e-11 -6.377e-18  8.594e-10 -2.475e-10  1.837e-10 -2.598e-11 -1.289e-18  1.398e-16  5.939e-11  2.955e-11 -1.745e-11 -2.206e-10 -2.863e-18  1.915e-03 
+ -2.433e-11 -1.226e-11  5.263e-17 -1.368e-10 -3.941e-11  2.924e-11  4.136e-12  1.064e-17 -4.881e-17 -9.458e-12 -4.706e-12 
+ -2.433e-11 -1.226e-11  5.263e-17 -1.368e-10 -3.941e-11  2.924e-11  4.136e-12  1.064e-17 -4.881e-17 -9.458e-12 -4.706e-12 -2.776e-12 -3.655e-19  2.363e-17 -1.104e-18  1.213e-03 
+ -3.726e-12  1.878e-12  6.559e-14  2.095e-11 -6.035e-12  4.478e-12 -6.334e-13  1.326e-14  2.078e-11  1.397e-12  1.973e-08 
+ -3.726e-12  1.878e-12  6.559e-14  2.095e-11 -6.035e-12  4.478e-12 -6.334e-13  1.326e-14  2.078e-11  1.397e-12  1.973e-08 -4.296e-13 -5.402e-12  2.944e-14 -1.632e-11  1.136e-14  2.844e-05 
+ -3.749e-12 -1.890e-12  1.056e-14 -2.108e-11 -6.072e-12  4.445e-12  6.373e-13  2.135e-15 -1.596e-13 -3.205e-07 -7.251e-13 
+ -3.749e-12 -1.890e-12  1.056e-14 -2.108e-11 -6.072e-12  4.445e-12  6.373e-13  2.135e-15 -1.596e-13 -3.205e-07 -7.251e-13  2.139e-09 -3.988e-15  4.742e-15 -1.205e-14  1.829e-15 -1.255e-15  2.841e-05 
+ -5.583e-12 -2.813e-12  1.337e-13 -3.139e-11 -9.042e-12 -6.708e-12 -9.489e-13  2.702e-14 -1.839e-13  2.169e-12 -2.508e-07 
+ -5.583e-12 -2.813e-12  1.337e-13 -3.139e-11 -9.042e-12 -6.708e-12 -9.489e-13  2.702e-14 -1.839e-13  2.169e-12 -2.508e-07  6.373e-13 -4.887e-14  6.002e-14 -1.476e-13  2.315e-14  3.928e-09  3.091e-15  6.384e-05 
+ -7.796e-14 -3.929e-14 -1.120e-11 -4.384e-13 -1.263e-13 -9.242e-14  1.325e-14 -2.263e-12 -1.608e-11  7.647e-08 -1.313e-14 
+ -7.796e-14 -3.929e-14 -1.120e-11 -4.384e-13 -1.263e-13 -9.242e-14  1.325e-14 -2.263e-12 -1.608e-11  7.647e-08 -1.313e-14 -3.758e-08  4.034e-12 -5.026e-12  1.219e-11 -1.939e-12  2.889e-13  4.042e-09 -4.448e-13  6.392e-05 
+  2.253e-11  8.159e-13 -2.306e-09  9.103e-12  3.649e-11  1.944e-12  3.829e-12 -4.661e-10  3.163e-09 -1.584e-11 -6.938e-04 
+  2.253e-11  8.159e-13 -2.306e-09  9.103e-12  3.649e-11  1.944e-12  3.829e-12 -4.661e-10  3.163e-09 -1.584e-11 -6.938e-04 -8.499e-13  8.452e-10 -1.035e-09  2.553e-09 -3.993e-10 -7.982e-05 -6.151e-11 -1.381e-04 -1.128e-12  2.806e+00 
+  1.289e-09  6.496e-10  9.415e-11  7.248e-09  2.088e-09  1.528e-09 -2.191e-10  1.903e-11  7.138e-09 -1.264e-03  2.494e-10 
+  1.289e-09  6.496e-10  9.415e-11  7.248e-09  2.088e-09  1.528e-09 -2.191e-10  1.903e-11  7.138e-09 -1.264e-03  2.494e-10 -1.074e-04 -2.443e-11  4.226e-11 -7.381e-11  1.630e-11  1.337e-10 -6.683e-05 -2.124e-12 -2.029e-04  2.078e-08  3.354e+00 
+ PARAMETER  CORRELATION COEFFICIENTS  
+       NO.  GLOBAL      1      2      3      4      5      6      7      8      9     10     11     12     13     14     15     16
+        1  0.00000   1.000  0.000 -0.000  0.000  0.000 -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000 -0.000 -0.000 -0.000
+        2  0.00000   0.000  1.000 -0.000  0.000  0.000  0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000
+        3  0.00000  -0.000 -0.000  1.000 -0.000 -0.000  0.000  0.000  0.000 -0.000 -0.000 -0.000 -0.000 -0.000  0.000 -0.000  0.000
+        4  0.00000   0.000  0.000 -0.000  1.000  0.000  0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000
+        5  0.00000   0.000  0.000 -0.000  0.000  1.000 -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000 -0.000 -0.000 -0.000
+        6  0.00000  -0.000  0.000  0.000  0.000 -0.000  1.000 -0.000  0.000  0.000 -0.000  0.000 -0.000  0.000  0.000  0.000  0.000
+        7  0.00000  -0.000 -0.000  0.000 -0.000 -0.000 -0.000  1.000  0.000 -0.000  0.000  0.000  0.000 -0.000  0.000 -0.000  0.000
+        8  0.00000  -0.000 -0.000  0.000 -0.000 -0.000  0.000  0.000  1.000 -0.000 -0.000 -0.000 -0.000 -0.000  0.000 -0.000  0.000
+        9  0.00000   0.000  0.000 -0.000  0.000  0.000  0.000 -0.000 -0.000  1.000  0.000  0.000  0.000  0.000 -0.000  0.000 -0.000
+       10  0.01779  -0.000 -0.000 -0.000 -0.000 -0.000 -0.000  0.000 -0.000  0.000  1.000 -0.000  0.000  0.000 -0.000  0.000 -0.000
+       11  0.02102   0.000  0.000 -0.000  0.000  0.000  0.000  0.000 -0.000  0.000 -0.000  1.000 -0.000  0.000 -0.000  0.000 -0.000
+       12  0.00514  -0.000 -0.000 -0.000 -0.000 -0.000 -0.000  0.000 -0.000  0.000  0.000 -0.000  1.000 -0.000 -0.000 -0.000 -0.000
+       13  0.00000  -0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000  0.000  0.000  0.000 -0.000  1.000 -0.000 -0.000 -0.000
+       14  0.00000  -0.000 -0.000  0.000 -0.000 -0.000  0.000  0.000  0.000 -0.000 -0.000 -0.000 -0.000 -0.000  1.000 -0.000  0.000
+       15  0.00000  -0.000  0.000 -0.000  0.000 -0.000  0.000 -0.000 -0.000  0.000  0.000  0.000 -0.000 -0.000 -0.000  1.000 -0.000
+       16  0.00000  -0.000 -0.000  0.000 -0.000 -0.000  0.000  0.000  0.000 -0.000 -0.000 -0.000 -0.000 -0.000  0.000 -0.000  1.000
+       17  0.00893  -0.000  0.000  0.000  0.000 -0.000  0.000 -0.000  0.000  0.000  0.000  0.000 -0.000 -0.000  0.000 -0.000  0.000
+                     1.000 -0.000  0.000  0.000 -0.009  0.000
+       18  0.00704  -0.000 -0.000  0.000 -0.000 -0.000  0.000  0.000  0.000 -0.000 -0.002 -0.000  0.000 -0.000  0.000 -0.000  0.000
+                    -0.000  1.000  0.000  0.000 -0.000 -0.007
+       19  0.01047  -0.000 -0.000  0.000 -0.000 -0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.002  0.000 -0.000  0.000 -0.000  0.000
+                     0.000  0.000  1.000 -0.000 -0.010 -0.000
+       20  0.01386  -0.000 -0.000 -0.000 -0.000 -0.000 -0.000  0.000 -0.000 -0.000  0.000 -0.000 -0.000  0.000 -0.000  0.000 -0.000
+                     0.000  0.000 -0.000  1.000 -0.000 -0.014
+       21  0.02501   0.000  0.000 -0.000  0.000  0.000  0.000  0.000 -0.000  0.000 -0.000 -0.021 -0.000  0.000 -0.000  0.000 -0.000
+                    -0.009 -0.000 -0.010 -0.000  1.000  0.000
+       22  0.02407   0.000  0.000  0.000  0.000  0.000  0.000 -0.000  0.000  0.000 -0.018  0.000 -0.005 -0.000  0.000 -0.000  0.000
+                     0.000 -0.007 -0.000 -0.014  0.000  1.000
+[#1] INFO:Minization -- RooMinuit::optimizeConst: deactivating const optimization
+Search for upper limit to the limit
+[#1] INFO:ObjectHandling -- RooWorkspace::saveSnaphot(wspace) replacing previous snapshot with name splusbConfig__snapshot
+[#0] PROGRESS:Eval -- Running for mu_s = 20
+
+=== Using the following for splusbConfig ===
+Observables:             RooArgSet:: = (NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+Parameters of Interest:  RooArgSet:: = (mu_s)
+Nuisance Parameters:     RooArgSet:: = (mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+PDF:                     RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+Prior PDF:               RooUniform::prior_mu[ x=(mu_s) ] = 1
+Snapshot:                
+  1) 0x12b61040 RooRealVar:: mu_s = 20 +/- 1.44258 C  L(0 - 20)  "mu_s"
+
+
+=== Using the following for bConfig ===
+Observables:             RooArgSet:: = (NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+Parameters of Interest:  RooArgSet:: = (mu_s)
+Nuisance Parameters:     RooArgSet:: = (mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+PDF:                     RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+Prior PDF:               RooUniform::prior_mu[ x=(mu_s) ] = 1
+Snapshot:                
+  1) 0x12b501d0 RooRealVar:: mu_s = 0 +/- 1.44258  L(0 - 20)  "mu_s"
+
+[#0] PROGRESS:Generation -- Test Statistic on data: 10.6631
+[#1] INFO:InputArguments -- Using a ToyMCSampler. Now configuring for Null.
+[#0] PROGRESS:Generation -- generated toys: 500 / 1000
+[#1] INFO:InputArguments -- Using a ToyMCSampler. Now configuring for Alt.
+[#0] PROGRESS:Generation -- generated toys: 500 / 1000
+[#0] PROGRESS:Eval -- P values for  mu_s =  20
+	CLs      = 0.00118765 +/- 0.00118717
+	CLb      = 0.842 +/- 0.0115341
+	CLsplusb = 0.001 +/- 0.0009995
+
+[#1] INFO:Eval -- HypoTestInverter::RunLimit - Search for lower limit to the limit
+[#1] INFO:Eval -- HypoTestInverter::RunLimit - Now doing proper bracketing & bisection
+[#1] INFO:ObjectHandling -- RooWorkspace::saveSnaphot(wspace) replacing previous snapshot with name splusbConfig__snapshot
+[#0] PROGRESS:Eval -- Running for mu_s = 6.83688
+
+=== Using the following for splusbConfig ===
+Observables:             RooArgSet:: = (NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+Parameters of Interest:  RooArgSet:: = (mu_s)
+Nuisance Parameters:     RooArgSet:: = (mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+PDF:                     RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+Prior PDF:               RooUniform::prior_mu[ x=(mu_s) ] = 1
+Snapshot:                
+  1) 0x134d83b0 RooRealVar:: mu_s = 6.83688 +/- 10 C  L(0 - 20)  "mu_s"
+
+
+=== Using the following for bConfig ===
+Observables:             RooArgSet:: = (NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+Parameters of Interest:  RooArgSet:: = (mu_s)
+Nuisance Parameters:     RooArgSet:: = (mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+PDF:                     RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+Prior PDF:               RooUniform::prior_mu[ x=(mu_s) ] = 1
+Snapshot:                
+  1) 0x134d83b0 RooRealVar:: mu_s = 0 +/- 1.44258  L(0 - 20)  "mu_s"
+
+[#0] PROGRESS:Generation -- Test Statistic on data: 2.71634
+[#1] INFO:InputArguments -- Using a ToyMCSampler. Now configuring for Null.
+[#0] PROGRESS:Generation -- generated toys: 500 / 1000
+[#1] INFO:InputArguments -- Using a ToyMCSampler. Now configuring for Alt.
+[#0] PROGRESS:Generation -- generated toys: 500 / 1000
+[#0] PROGRESS:Eval -- P values for  mu_s =  6.83688
+	CLs      = 0.0324826 +/- 0.00606602
+	CLb      = 0.862 +/- 0.0109067
+	CLsplusb = 0.028 +/- 0.0052169
+
+[#1] INFO:ObjectHandling -- RooWorkspace::saveSnaphot(wspace) replacing previous snapshot with name splusbConfig__snapshot
+[#0] PROGRESS:Eval -- Running for mu_s = 4.5936
+
+=== Using the following for splusbConfig ===
+Observables:             RooArgSet:: = (NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+Parameters of Interest:  RooArgSet:: = (mu_s)
+Nuisance Parameters:     RooArgSet:: = (mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+PDF:                     RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+Prior PDF:               RooUniform::prior_mu[ x=(mu_s) ] = 1
+Snapshot:                
+  1) 0x13404fb0 RooRealVar:: mu_s = 4.5936 +/- 3.41844 C  L(0 - 20)  "mu_s"
+
+
+=== Using the following for bConfig ===
+Observables:             RooArgSet:: = (NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+Parameters of Interest:  RooArgSet:: = (mu_s)
+Nuisance Parameters:     RooArgSet:: = (mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+PDF:                     RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+Prior PDF:               RooUniform::prior_mu[ x=(mu_s) ] = 1
+Snapshot:                
+  1) 0x13404fb0 RooRealVar:: mu_s = 0 +/- 1.44258  L(0 - 20)  "mu_s"
+
+[#0] PROGRESS:Generation -- Test Statistic on data: 1.27211
+[#1] INFO:InputArguments -- Using a ToyMCSampler. Now configuring for Null.
+[#1] INFO:InputArguments -- Using a ToyMCSampler. Now configuring for Alt.
+[#0] PROGRESS:Generation -- generated toys: 500 / 2000
+[#0] PROGRESS:Generation -- generated toys: 1000 / 2000
+[#0] PROGRESS:Generation -- generated toys: 1500 / 2000
+
+=== Using the following for splusbConfig ===
+Observables:             RooArgSet:: = (NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+Parameters of Interest:  RooArgSet:: = (mu_s)
+Nuisance Parameters:     RooArgSet:: = (mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+PDF:                     RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+Prior PDF:               RooUniform::prior_mu[ x=(mu_s) ] = 1
+Snapshot:                
+  1) 0x13404fb0 RooRealVar:: mu_s = 4.5936 +/- 3.41844 C  L(0 - 20)  "mu_s"
+
+
+=== Using the following for bConfig ===
+Observables:             RooArgSet:: = (NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+Parameters of Interest:  RooArgSet:: = (mu_s)
+Nuisance Parameters:     RooArgSet:: = (mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+PDF:                     RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+Prior PDF:               RooUniform::prior_mu[ x=(mu_s) ] = 1
+Snapshot:                
+  1) 0x13404fb0 RooRealVar:: mu_s = 0 +/- 1.44258  L(0 - 20)  "mu_s"
+
+[#0] PROGRESS:Generation -- Test Statistic on data: 1.27211
+[#1] INFO:InputArguments -- Using a ToyMCSampler. Now configuring for Null.
+[#1] INFO:InputArguments -- Using a ToyMCSampler. Now configuring for Alt.
+[#0] PROGRESS:Generation -- generated toys: 500 / 2000
+[#0] PROGRESS:Generation -- generated toys: 1000 / 2000
+[#0] PROGRESS:Generation -- generated toys: 1500 / 2000
+	CLs = 0.120767 +/- 0.011054
+
+=== Using the following for splusbConfig ===
+Observables:             RooArgSet:: = (NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+Parameters of Interest:  RooArgSet:: = (mu_s)
+Nuisance Parameters:     RooArgSet:: = (mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+PDF:                     RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+Prior PDF:               RooUniform::prior_mu[ x=(mu_s) ] = 1
+Snapshot:                
+  1) 0x13404fb0 RooRealVar:: mu_s = 4.5936 +/- 3.41844 C  L(0 - 20)  "mu_s"
+
+
+=== Using the following for bConfig ===
+Observables:             RooArgSet:: = (NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+Parameters of Interest:  RooArgSet:: = (mu_s)
+Nuisance Parameters:     RooArgSet:: = (mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+PDF:                     RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+Prior PDF:               RooUniform::prior_mu[ x=(mu_s) ] = 1
+Snapshot:                
+  1) 0x13404fb0 RooRealVar:: mu_s = 0 +/- 1.44258  L(0 - 20)  "mu_s"
+
+[#0] PROGRESS:Generation -- Test Statistic on data: 1.27211
+[#1] INFO:InputArguments -- Using a ToyMCSampler. Now configuring for Null.
+[#1] INFO:InputArguments -- Using a ToyMCSampler. Now configuring for Alt.
+[#0] PROGRESS:Generation -- generated toys: 500 / 2000
+[#0] PROGRESS:Generation -- generated toys: 1000 / 2000
+[#0] PROGRESS:Generation -- generated toys: 1500 / 2000
+	CLs = 0.124364 +/- 0.00915213
+
+=== Using the following for splusbConfig ===
+Observables:             RooArgSet:: = (NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+Parameters of Interest:  RooArgSet:: = (mu_s)
+Nuisance Parameters:     RooArgSet:: = (mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+PDF:                     RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+Prior PDF:               RooUniform::prior_mu[ x=(mu_s) ] = 1
+Snapshot:                
+  1) 0x13404fb0 RooRealVar:: mu_s = 4.5936 +/- 3.41844 C  L(0 - 20)  "mu_s"
+
+
+=== Using the following for bConfig ===
+Observables:             RooArgSet:: = (NbObs_0,NsObs_0,NdObs_0,NbObs_1,NsObs_1,NdObs_1)
+Parameters of Interest:  RooArgSet:: = (mu_s)
+Nuisance Parameters:     RooArgSet:: = (mu_d,nu_b_0,TauS_0,TauD_0,NuS_0,NuD_0,Pss_0,Psd_0,Pds_0,Pdd_0,PeakBkgBs_0,PeakBkgBd_0,nu_b_1,TauS_1,TauD_1,NuS_1,NuD_1,Pss_1,Psd_1,Pds_1,Pdd_1,PeakBkgBs_1,PeakBkgBd_1)
+PDF:                     RooProdPdf::total_pdf[ TauS_Gauss_0 * TauD_Gauss_0 * NuS_Gauss_0 * NuD_Gauss_0 * Pss_Gauss_0 * Psd_Gauss_0 * Pds_Gauss_0 * Pdd_Gauss_0 * PeakBkgBs_Gauss_0 * PeakBkgBd_Gauss_0 * bkg_window_0 * bs_window_0 * bd_window_0 * TauS_Gauss_1 * TauD_Gauss_1 * NuS_Gauss_1 * NuD_Gauss_1 * Pss_Gauss_1 * Psd_Gauss_1 * Pds_Gauss_1 * Pdd_Gauss_1 * PeakBkgBs_Gauss_1 * PeakBkgBd_Gauss_1 * bkg_window_1 * bs_window_1 * bd_window_1 ] = 0
+Prior PDF:               RooUniform::prior_mu[ x=(mu_s) ] = 1
+Snapshot:                
+  1) 0x13404fb0 RooRealVar:: mu_s = 0 +/- 1.44258  L(0 - 20)  "mu_s"
+
+[#0] PROGRESS:Generation -- Test Statistic on data: 1.27211
+[#1] INFO:InputArguments -- Using a ToyMCSampler. Now configuring for Null.
+[#1] INFO:InputArguments -- Using a ToyMCSampler. Now configuring for Alt.
+[#0] PROGRESS:Generation -- generated toys: 500 / 2000
+[#0] PROGRESS:Generation -- generated toys: 1000 / 2000
+[#0] PROGRESS:Generation -- generated toys: 1500 / 2000
+	CLs = 0.124185 +/- 0.00793518
+[#0] PROGRESS:Eval -- P values for  mu_s =  4.5936
+	CLs      = 0.124185 +/- 0.00793518
+	CLb      = 0.88175 +/- 0.00361018
+	CLsplusb = 0.1095 +/- 0.00698247
+
+[#1] INFO:Eval -- HypoTestInverter::RunLimit - Result:    
+	Limit: mu_s < 4.95592 +/- 0.102848 @ 90% CL
+Bs -> mumu upper limit for config file 'anaBmm.final.ulc' using algorithm CLs: 1.58589e-08	(4.95592) @ 90 % CL
+Bs -> mumu lower limit for config file 'anaBmm.final.ulc' using algorithm CLs: 0	(0) @ 90 % CL
