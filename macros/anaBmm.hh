@@ -148,8 +148,14 @@ public:
   void dumpSamples();
   void dumpCutNames();
   void setErrors(TH1D *h);
+  void stamp(double x1, std::string text1, double x2, std::string text2);
+  std::string scientificTex(double n, double nE, std::string name, double base = 1.e-2, int digits = 2);
   std::string formatTex(double n, std::string name, int digits);
   std::string formatTex(double n, std::string name, std::string tag);
+  void drawArrow(double height, int mode = 0, int color = kBlue);
+  void drawBox(int mode, double hi = 0.5, int ylo = 0.01);
+
+
   void replaceAll(std::string &s, std::string a, std::string b);
   int  wait();
   void makeCanvas(int i = 3);
@@ -182,6 +188,7 @@ public:
 
   // -- Display utilities
   int fFont; 
+  double fSize; 
   TCanvas *c0, *c1, *c2, *c3, *c4, *c5;
   TLatex *tl; 
   TBox *box;
@@ -213,6 +220,8 @@ public:
   std::vector<TH1D*> fhMassWithMuonCuts; 
   std::vector<TH1D*> fhMassWithTriggerCuts; 
   std::vector<TH1D*> fhMassWithAllCuts;
+  std::vector<TH1D*> fhMassWithAllCutsBlind;
+  std::vector<TH1D*> fhNorm;
   std::vector<TH1D*> fhMassWithMassCuts;
   std::vector<TH1D*> fhMassWithAnaCutsManyBins;
   std::vector<TH1D*> fhMassWithMuonCutsManyBins; 
@@ -281,7 +290,7 @@ public:
   //  numbers fNumbersSig, fNumbersNorm, fNumbersCS; 
   std::vector<numbers*> fNumbersBs, fNumbersBd, fNumbersNorm, fNumbersCS; 
 
-  double fBF, fu, fs;
+  double fBF, fu, fs, fsfu, fsfuE;
   double fMassLo, fMassHi;
 
   bool fDoPrint;

@@ -9,7 +9,7 @@ TRIGRANGE    HLT_Dimuon0_Barrel_Upsilon_v1(163268:163870)
 TRIGRANGE    HLT_Dimuon0_Upsilon_v1(165087:165634)
 TRIGRANGE    HLT_Dimuon0_Upsilon_v3(165969:999999)
 L1TRIGGER   L1_DoubleMuOpen
-JSON        cuts/Cert_160404-167784_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
+JSON        cuts/Cert_160404-167913_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
 # -- boxes
 +input cuts/boxes.cuts
 # -- tracks

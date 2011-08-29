@@ -26,7 +26,9 @@ public:
 
   TF1* pol1gauss2c(TH1 *h, double peak = 5.3, double sigma = 0.04); 
 
-  TF1* expoErrGauss(TH1 *h, double peak = 5.3, double sigma = 0.04); 
+  TF1* expoGauss(TH1 *h, double peak = 5.3, double sigma = 0.04);
+  TF1* expoErrGauss(TH1 *h, double peak = 5.3, double sigma = 0.04, double preco = 5.14); 
+  TF1* pol1ErrGauss(TH1 *h, double peak = 5.3, double sigma = 0.04, double preco = 5.14); 
 
   TF1* pol0BsBlind(TH1 *h); 
   TF1* pol1BsBlind(TH1 *h); 

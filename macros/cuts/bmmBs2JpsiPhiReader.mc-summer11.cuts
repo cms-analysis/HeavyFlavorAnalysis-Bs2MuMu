@@ -4,7 +4,7 @@ SELMODE            -1
 TRIGGER        HLT_DoubleMu3_Jpsi_v1,HLT_DoubleMu3_Jpsi_v2,HLT_Dimuon6p5_Jpsi_Displaced_v1,HLT_Dimuon7_Jpsi_Displaced_v1
 TRIGRANGE     HLT_DoubleMu3_Jpsi_v2(0:99)
 L1TRIGGER   L1_DoubleMuOpen
-JSON        cuts/Cert_160404-167784_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
+JSON        cuts/Cert_160404-167913_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
 # -- boxes
 +input cuts/boxes.Bs2JpsiPhi.cuts
 # -- tracks

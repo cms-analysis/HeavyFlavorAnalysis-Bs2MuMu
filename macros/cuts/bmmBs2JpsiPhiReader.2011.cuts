@@ -7,7 +7,7 @@ TRIGRANGE    HLT_Dimuon6p5_Jpsi_Displaced_v1(163268:163870)
 TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v1(165087:167044)
 TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v3(167077:999999)
 L1TRIGGER   L1_DoubleMuOpen
-JSON        cuts/Cert_160404-167784_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
+JSON        cuts/Cert_160404-167913_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
 # -- boxes
 +input cuts/boxes.Bs2JpsiPhi.cuts
 # -- tracks

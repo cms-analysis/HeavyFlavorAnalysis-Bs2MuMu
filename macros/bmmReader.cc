@@ -102,11 +102,11 @@ void bmmReader::eventProcessing() {
 
   if (fVerbose > 1) cout << "event: " << fEvent << endl;
   
-//   if (218505 == fEvt) {
-//     fVerbose = 100; 
-//   } else {
-//     fVerbose = 0; 
-//   }
+  if (210818502 == fEvt) {
+    fVerbose = 100; 
+  } else {
+    fVerbose = 0; 
+  }
   //  fVerbose = 100; 
   
   //   cout << "------------------------" 
@@ -150,12 +150,14 @@ void bmmReader::eventProcessing() {
       ((TH1D*)fpHistFile->Get("monEvents"))->Fill(3); 
       fpCand = fCands[iC];
       fCandIdx = iC; 
+      fillCandidateVariables();
       if (fVerbose > 4) cout << "Filling candidate " << iC 
 			     << " with sig tracks " << fpCand->fSig1 << ".." << fpCand->fSig2
+			     << " pointing of PV = " << fpCand->fPvIdx 
+			     << " with lip: " << fpCand->fPvLip << " tip: " << fpCand->fPvTip
 			     << endl;
-      
-      fillCandidateVariables();
-      if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX && fCandIso5 > 0.7) continue;
+
+      if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX && fCandIso4 > 0.7) continue;
       
       foundRun = 0; 
       if ((fRun < 150000) || fIsMC) {
@@ -225,7 +227,7 @@ void bmmReader::eventProcessing() {
     if (fVerbose > 4) cout << "Filling candidate " << fCandIdx << endl;
     fillCandidateVariables();
     foundRun = 0; 
-    if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX && fCandIso5 > 0.7) {
+    if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX && fCandIso4 > 0.7) {
       // do nothing
     } else {
       if ((fRun < 150000) || fIsMC) {
@@ -643,12 +645,14 @@ void bmmReader::trackSelection() {
       }
 
       if (TMath::Abs(pt->fTip) > TRACKTIP) {
-	if (fVerbose > 5) cout << "track " << ps->fIndex << " failed tip: " << pt->fTip << endl;
+	if (fVerbose > 5) cout << "track " << ps->fIndex << " failed tip: " << pt->fTip
+			       << " pointing to PV = "  << pt->fPvIdx  << endl;
 	fvGoodTracks[iC] = false; 
       }
       
       if (TMath::Abs(pt->fLip) > TRACKLIP) { 
-	if (fVerbose > 5) cout << "track " << ps->fIndex << " failed lip: " << pt->fLip << endl;          
+	if (fVerbose > 5) cout << "track " << ps->fIndex << " failed lip: " << pt->fLip 
+			       << " pointing to PV = "  << pt->fPvIdx  << endl;          
 	fvGoodTracks[iC] = false; 
       }
 
@@ -1029,7 +1033,7 @@ void bmmReader::fillCandidateVariables() {
   double iso1= isoClassicOnePv(fpCand); 
   double iso2= isoWithDOCA(fpCand, 0.03); // 300um DOCA cut
   double iso3= isoWithDOCA(fpCand, 0.04); // 400um DOCA cut
-  double iso4= isoWithDOCA(fpCand, 0.05); // 500um DOCA cut
+  double iso4= isoClassicWithDOCA(fpCand, 0.05); // 500um DOCA cut
 
   double iso5= isoWithDOCA(fpCand, 0.05); // 500um DOCA cut
   fCandI4trk = fCandItrk;
@@ -1356,7 +1360,7 @@ double bmmReader::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, doub
 
   double iso(-1.), pt(0.), sumPt(0.), candPt(0.), candPtScalar(0.); 
   TAnaTrack *pT; 
-  vector<int> cIdx; 
+  vector<int> cIdx, pIdx; 
   int pvIdx = pC->fPvIdx;
 
   fCandItrk = 0; 
@@ -1394,6 +1398,7 @@ double bmmReader::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, doub
       continue;
     }
     if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
+      pIdx.push_back(i); 
       ++fCandItrk;
       sumPt += pt; 
       if (verbose) cout << endl;
@@ -1415,6 +1420,8 @@ double bmmReader::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, doub
       //      double docaE = pC->fNstTracks[i].second.second;
 
       if(doca > docaCut) continue; // check the doca cut
+      if (pIdx.end() != find(pIdx.begin(), pIdx.end(), trkId))  continue; // skip tracks already included above
+      if (cIdx.end() != find(cIdx.begin(), cIdx.end(), trkId))  continue;
       
       pT = fpEvt->getRecTrack(trkId);
       // Consider only tracks from an undefined PV
@@ -1456,8 +1463,6 @@ double bmmReader::isoWithDOCA(TAnaCand *pC, float docaCut, double r, double ptmi
   double ptCut=ptmin, coneSize=r;
   bool verbose=false;
   
-  if (fEvt == 371082276) verbose = true; 
-
   double iso(-1.), pt(0.), sumPt(0.), candPt(0.); 
   TAnaTrack *pT; 
   vector<int> cIdx, pIdx; 
@@ -1518,8 +1523,8 @@ double bmmReader::isoWithDOCA(TAnaCand *pC, float docaCut, double r, double ptmi
       double doca = pC->fNstTracks[i].second.first;
       //      double docaE = pC->fNstTracks[i].second.second;
       
-      if (pIdx.end() != find(pIdx.begin(), pIdx.end(), i))  continue; // skip tracks already included above
-      if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  continue;
+      if (pIdx.end() != find(pIdx.begin(), pIdx.end(), trkId))  continue; // skip tracks already included above
+      if (cIdx.end() != find(cIdx.begin(), cIdx.end(), trkId))  continue;
       if(doca > docaCut) continue; // check doca cut
    
       pT = fpEvt->getRecTrack(trkId);
@@ -1778,10 +1783,10 @@ void bmmReader::bookHist() {
     fpChi2Dof[i]   = bookDistribution(Form("%schi2dof", name.c_str()),  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
     fpProb[i]      = bookDistribution(Form("%spchi2dof", name.c_str()),  "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
     fpFLS3d[i]     = bookDistribution(Form("%sfls3d", name.c_str()), "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
-    fpFL3d[i]      = bookDistribution(Form("%sfl3d", name.c_str()),  "l_{3d}", "fGoodFLS", 25, 0., 5.);  
-    fpFL3dE[i]     = bookDistribution(Form("%sfl3dE", name.c_str()), "#sigma(l_{3d})", "fGoodFLS", 25, 0., 0.5);  
+    fpFL3d[i]      = bookDistribution(Form("%sfl3d", name.c_str()),  "l_{3d} [cm]", "fGoodFLS", 25, 0., 5.);  
+    fpFL3dE[i]     = bookDistribution(Form("%sfl3dE", name.c_str()), "#sigma(l_{3d}) [cm]", "fGoodFLS", 25, 0., 0.5);  
     fpFLSxy[i]     = bookDistribution(Form("%sflsxy", name.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
-    fpDocaTrk[i]   = bookDistribution(Form("%sdocatrk", name.c_str()), "d_{ca}^{0}", "fGoodDocaTrk", 35, 0., 0.14);   
+    fpDocaTrk[i]   = bookDistribution(Form("%sdocatrk", name.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 35, 0., 0.14);   
     fpIP1[i]       = bookDistribution(Form("%sip1", name.c_str()), "IP_{1}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
     fpIP2[i]       = bookDistribution(Form("%sip2", name.c_str()), "IP_{2}/lsin(#beta)", "fGoodIP", 40, -4., 4.);        
 

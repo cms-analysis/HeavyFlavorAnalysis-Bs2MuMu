@@ -6,7 +6,7 @@ TRIGGER      HLT_DoubleMu3_Bs_v1,HLT_DoubleMu2_Bs_v1,HLT_DoubleMu2_Bs_v2,HLT_Dou
 TRIGRANGE    HLT_DoubleMu2_Bs_v2(0:100000)
 #TRIGGER     HLT_L1DoubleMuOpen
 L1TRIGGER   L1_DoubleMuOpen
-JSON         cuts/Cert_160404-167784_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
+JSON         cuts/Cert_160404-167913_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
 # -- boxes
 +input cuts/boxes.cuts
 # -- tracks

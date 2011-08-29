@@ -22,7 +22,7 @@ double f_expo(double *x, double *par) {
 // ----------------------------------------------------------------------
 double f_err(double *x, double *par) {
   // from DK: TMath::Erf((a1-x)/a2))+a3
-  return par[3]*TMath::Erf((par[0]-x[0])/par[1])+par[2]; 
+  return par[3]*(TMath::Erf((par[0]-x[0])/par[1])+par[2]); 
 } 
 
 
@@ -157,18 +157,18 @@ double f_pol1_gauss(double *x, double *par) {
 
 // ----------------------------------------------------------------------
 // expo and gauss 
-double f_expo_gauss(double *x, double *par) {
+double f_expo_Gauss(double *x, double *par) {
   //   par[0] = normalization of gaussian
   //   par[1] = mean of gaussian
   //   par[2] = sigma of gaussian
   //   par[3] = par 0 of expo
   //   par[4] = par 1 of expo
-  return  (f_expo(x, &par[3]) + f_gauss(x, &par[0]));
+  return  (f_expo(x, &par[3]) + f_Gauss(x, &par[0]));
 }
 
 // ----------------------------------------------------------------------
 // expo and err and gauss 
-double f_expo_err_gauss(double *x, double *par) {
+double f_expo_err_Gauss(double *x, double *par) {
   //   par[0] = normalization of gaussian
   //   par[1] = mean of gaussian
   //   par[2] = sigma of gaussian
@@ -178,7 +178,48 @@ double f_expo_err_gauss(double *x, double *par) {
   //   par[6] = par[1] of err
   //   par[7] = par[2] of err
   //   par[8] = par[3] of err
-  return  (f_err(x, &par[5]) + f_expo(x, &par[3]) + f_gauss(x, &par[0]));
+  return  (f_err(x, &par[5]) + f_expo(x, &par[3]) + f_Gauss(x, &par[0]));
+}
+
+// ----------------------------------------------------------------------
+// expo and err and gauss 
+double f_expo_err(double *x, double *par) {
+  //   par[0] = norm
+  //   par[1] = exp
+  //   par[2] = par[0] of err
+  //   par[3] = par[1] of err
+  //   par[4] = par[2] of err
+  //   par[5] = par[3] of err
+  return  (f_err(x, &par[2]) + f_expo(x, &par[0]));
+}
+
+
+// ----------------------------------------------------------------------
+// expo and err and gauss 
+double f_pol1_err_Gauss(double *x, double *par) {
+  //   par[0] = normalization of gaussian
+  //   par[1] = mean of gaussian
+  //   par[2] = sigma of gaussian
+  //   par[3] = const 
+  //   par[4] = slope
+  //   par[5] = par[0] of err
+  //   par[6] = par[1] of err
+  //   par[7] = par[2] of err
+  //   par[8] = par[3] of err
+  return  (f_err(x, &par[5]) + f_pol1(x, &par[3]) + f_Gauss(x, &par[0]));
+}
+
+
+// ----------------------------------------------------------------------
+// expo and err and gauss 
+double f_pol1_err(double *x, double *par) {
+  //   par[0] = const 
+  //   par[1] = slope
+  //   par[2] = par[0] of err
+  //   par[3] = par[1] of err
+  //   par[4] = par[2] of err
+  //   par[5] = par[3] of err
+  return  (f_err(x, &par[2]) + f_pol1(x, &par[0]));
 }
 
 
@@ -419,14 +460,14 @@ TF1* initFunc::pol1Gauss(TH1 *h, double peak, double sigma) {
 
 
 // ----------------------------------------------------------------------
-TF1* initFunc::expoErrGauss(TH1 *h, double peak, double sigma) {
+TF1* initFunc::expoGauss(TH1 *h, double peak, double sigma) {
 
-  TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_gauss"); 
+  TF1 *f = (TF1*)gROOT->FindObject("f1_expo_Gauss"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_err_gauss", f_expo_err_gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 9);
-  f->SetParNames("norm", "peak", "sigma", "const", "exp", "err0", "err1", "err2", "err3"); 			   
+  f = new TF1("f1_expo_Gauss", f_expo_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 5);
+  f->SetParNames("area", "peak", "sigma", "const", "exp"); 			   
   //  f->SetLineColor(kBlue); 
-  f->SetLineWidth(2); 
+  f->SetLineWidth(3); 
 
   int lbin(1), hbin(h->GetNbinsX()); 
   if (fLo < fHi) {
@@ -440,20 +481,110 @@ TF1* initFunc::expoErrGauss(TH1 *h, double peak, double sigma) {
 
   double g0 = (h->Integral(lbin, hbin)*h->GetBinWidth(1) - A);  
 
-  double e0(5.14),  e0Min(5.13), e0Max(5.15); 
-  double e1(0.07),  e1Min(0.06), e1Max(0.075);
-  double e2(1.112), e2Min(1.0),  e2Max(1.2);
+  cout << "A: " << A << " g0: " << g0 << " p0: " << p0 << " p1: " << p1 << endl;
 
-  cout << "A: " << A << " g0: " << g0 << " e0: " << e0 << " e1: " << e1 << " e2: " << e2 << " p0: " << p0 << " p1: " << p1 << endl;
-
-  f->SetParameters(g0, peak, sigma, p0, p1, e0, e1, e2, 0.1*g0); 
+  f->SetParameters(g0, peak, sigma, p0, p1); 
 
   f->ReleaseParameter(0);     f->SetParLimits(0, 0., 1.e7); 
   f->ReleaseParameter(1);     f->SetParLimits(1, 5.2, 5.45); 
   f->ReleaseParameter(2);     f->SetParLimits(2, 0.010, 0.080); 
-  f->ReleaseParameter(3);     f->SetParLimits(5, e0Min, e0Max); 
-  f->ReleaseParameter(4);     f->SetParLimits(6, e1Min, e1Max); 
-  f->ReleaseParameter(5);     f->SetParLimits(7, e2Min, e2Max); 
+  f->ReleaseParameter(3);     
+  f->ReleaseParameter(4);     
+
+  return f; 
+
+}
+
+
+
+// ----------------------------------------------------------------------
+TF1* initFunc::expoErrGauss(TH1 *h, double peak, double sigma, double preco) {
+
+  TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_Gauss"); 
+  if (f) delete f; 
+  f = new TF1("f1_expo_err_Gauss", f_expo_err_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 9);
+  f->SetParNames("area", "peak", "sigma", "const", "exp", "err0", "err1", "err2", "err3"); 			   
+  //  f->SetLineColor(kBlue); 
+  f->SetLineWidth(3); 
+
+  int lbin(1), hbin(h->GetNbinsX()); 
+  if (fLo < fHi) {
+    lbin = h->FindBin(fLo); 
+    hbin = h->FindBin(fHi); 
+  }
+
+  double p0, p1; 
+  initExpo(p0, p1, h);
+  double A   = p0*(TMath::Exp(p1*fHi) - TMath::Exp(p1*fLo));
+
+  double g0 = (h->Integral(lbin, hbin)*h->GetBinWidth(1) - A);  
+
+  double e0(preco),  e0Min(preco-0.01), e0Max(preco+0.01); 
+  double e1(0.07),  e1Min(0.05), e1Max(0.09);
+  double e2(1.112), e2Min(1.0),  e2Max(1.2);
+
+  cout << "A: " << A << " g0: " << g0 << " e0: " << e0 << " e1: " << e1 << " e2: " << e2 << " p0: " << p0 << " p1: " << p1 << endl;
+
+  f->SetParameters(g0, peak, sigma, p0, p1, e0, e1, e2, 0.05*g0); 
+
+  f->ReleaseParameter(0);     f->SetParLimits(0, 0., 1.e7); 
+  f->ReleaseParameter(1);     f->SetParLimits(1, 5.2, 5.45); 
+  f->ReleaseParameter(2);     f->SetParLimits(2, 0.010, 0.080); 
+  f->ReleaseParameter(3);     
+  f->ReleaseParameter(4);     
+  f->ReleaseParameter(5);     f->SetParLimits(5, e0Min, e0Max); 
+  f->ReleaseParameter(6);     f->SetParLimits(6, e1Min, e1Max); 
+  f->ReleaseParameter(7);     f->SetParLimits(7, e2Min, e2Max); 
+  f->ReleaseParameter(8);     //f->SetParLimits(8, 0, 0.05*g0); 
+
+  //        RooRealVar a1("a1","a1",5.14,5.13,5.15);
+  //        RooRealVar a2("a2","a2",0.07,0.06,0.075);
+  //        RooRealVar a3("a3","a3",1.112,1.,1.2);
+
+  return f; 
+
+}
+
+
+// ----------------------------------------------------------------------
+TF1* initFunc::pol1ErrGauss(TH1 *h, double peak, double sigma, double preco) {
+
+  TF1 *f = (TF1*)gROOT->FindObject("f1_pol1_err_Gauss"); 
+  if (f) delete f; 
+  f = new TF1("f1_pol1_err_Gauss", f_pol1_err_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 9);
+  f->SetParNames("area", "peak", "sigma", "const", "slope", "err0", "err1", "err2", "err3"); 			   
+  //  f->SetLineColor(kBlue); 
+  f->SetLineWidth(3); 
+
+  int lbin(1), hbin(h->GetNbinsX()); 
+  if (fLo < fHi) {
+    lbin = h->FindBin(fLo); 
+    hbin = h->FindBin(fHi); 
+  }
+
+  double p0, p1; 
+  initPol1(p0, p1, h);
+  double A   = p0*(TMath::Exp(p1*fHi) - TMath::Exp(p1*fLo));
+
+  double g0 = (h->Integral(lbin, hbin)*h->GetBinWidth(1) - A);  
+
+  double e0(preco),  e0Min(preco-0.01), e0Max(preco+0.01); 
+  double e1(0.07),  e1Min(0.05), e1Max(0.09);
+  double e2(1.112), e2Min(1.0),  e2Max(1.2);
+
+  cout << "A: " << A << " g0: " << g0 << " e0: " << e0 << " e1: " << e1 << " e2: " << e2 << " p0: " << p0 << " p1: " << p1 << endl;
+
+  f->SetParameters(g0, peak, sigma, p0, p1, e0, e1, e2, 0.05*g0); 
+
+  f->ReleaseParameter(0);     f->SetParLimits(0, 0., 1.e7); 
+  f->ReleaseParameter(1);     f->SetParLimits(1, 5.2, 5.45); 
+  f->ReleaseParameter(2);     f->SetParLimits(2, 0.010, 0.080); 
+  f->ReleaseParameter(3);     
+  f->ReleaseParameter(4);     
+  f->ReleaseParameter(5);     f->SetParLimits(5, e0Min, e0Max); 
+  f->ReleaseParameter(6);     f->SetParLimits(6, e1Min, e1Max); 
+  f->ReleaseParameter(7);     f->SetParLimits(7, e2Min, e2Max); 
+  f->ReleaseParameter(8);     //f->SetParLimits(8, 0, 0.2*g0); 
 
   //        RooRealVar a1("a1","a1",5.14,5.13,5.15);
   //        RooRealVar a2("a2","a2",0.07,0.06,0.075);
@@ -547,14 +678,14 @@ void initFunc::initExpo(double &p0, double &p1, TH1 *h) {
   double ylo = h->Integral(lbin, lbin+EDG)/NB; 
   double yhi = h->Integral(hbin-EDG, hbin)/NB;
 
-     cout << "fHi: " << fHi << " fLo: " << fLo << endl;
-     cout << "ylo: " << ylo << " yhi: " << yhi << endl;
+  cout << "fHi: " << fHi << " fLo: " << fLo << endl;
+  cout << "ylo: " << ylo << " yhi: " << yhi << endl;
   
   p1 = (TMath::Log(yhi) - TMath::Log(ylo))/dx; 
-  p0 = ylo*TMath::Exp(p1*h->GetBinLowEdge(1)); 
+  p0 = ylo/TMath::Exp(p1*fLo); 
 
-     cout << "p0: " << p0 << endl;
-     cout << "p1: " << p1 << endl;
+  cout << "p0: " << p0 << endl;
+  cout << "p1: " << p1 << endl;
 
 }
 
