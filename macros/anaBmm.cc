@@ -112,6 +112,8 @@ void anaBmm::init(const char *files, const char *cuts, const char *dir, int mode
 
   double confLevel = 0.9;
 
+  legg = 0; 
+
   fSize = 0.05; 
   
   fBF = 0.0593*1.014e-3;
@@ -1912,7 +1914,7 @@ void anaBmm::rareBg() {
   legg->Draw(); 
   hhRareBg0->Draw("same");
   string pdfname = Form("%s/%s_rare0.pdf", fDirectory.c_str(), fSuffix.c_str());
-  stamp(0.2, "CMS, 1.14 fb^{-1}", 0.75, "#sqrt{s} = 7 TeV"); 
+  stamp(0.2, "CMS, 1.14 fb^{-1}", 0.65, "#sqrt{s} = 7 TeV"); 
   if (fDoPrint) {
     if (c0) c0->SaveAs(pdfname.c_str());
   }
@@ -1926,7 +1928,7 @@ void anaBmm::rareBg() {
   legg->Draw(); 
   hhRareBg1->Draw("same");
   pdfname = Form("%s/%s_rare1.pdf", fDirectory.c_str(), fSuffix.c_str());
-  stamp(0.2, "CMS, 1.14 fb^{-1}", 0.75, "#sqrt{s} = 7 TeV"); 
+  stamp(0.2, "CMS, 1.14 fb^{-1}", 0.65, "#sqrt{s} = 7 TeV"); 
   if (fDoPrint){
     if (c0) c0->SaveAs(pdfname.c_str());
   }
@@ -2997,6 +2999,7 @@ void anaBmm::puEff(const char *var, double cut, const char *ylabel, const char *
 				 heff->GetFunction("pol0")->GetChisquare(), 
 				 heff->GetFunction("pol0")->GetNDF())); 
 
+  stamp(0.2, "CMS, 1.14 fb^{-1}", 0.7, "#sqrt{s} = 7 TeV"); 
   
   if (fDoPrint)  c0->SaveAs(Form("%s/pu-eff-%s-%s-0_%d.pdf", fDirectory.c_str(), var, file1, static_cast<int>(100.*cut)));
 
@@ -3974,13 +3977,6 @@ TH1* anaBmm::loopTree(int mode, int proc) {
       csYield(h, i, 5.0, 5.6);
       aa->fitYield  = fCsSig; 
       aa->fitYieldE = fCsSigE; 
-      setHist(h, kBlack, 20, 1.); 
-      setTitles(h, "m_{#mu#muKK} [GeV]", "Candidates/Bin", 0.05, 1.2, 1.6); 
-      h->SetMinimum(0.01); 
-      gStyle->SetOptStat(0); 
-      gStyle->SetOptTitle(0); 
-      h->Draw("e");
-      if (fDoPrint) c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), i));
     } 
 
     printNumbers(*aa, cout); 
@@ -4876,6 +4872,13 @@ void anaBmm::csYield(TH1 *h, int mode, double lo, double hi) {
 
   double ierr = lF1->IntegralError(5.15, 5.4)/h->GetBinWidth(1); 
 
+  setHist(h, kBlack, 20, 1.); 
+  setTitles(h, "m_{#mu#muKK} [GeV]", "Candidates/Bin", 0.05, 1.2, 1.6); 
+  h->SetMinimum(0.01); 
+  gStyle->SetOptStat(0); 
+  gStyle->SetOptTitle(0); 
+  h->Draw("e");
+
   fCsSig = c/h->GetBinWidth(1);
   if (ierr > TMath::Sqrt(fCsSig)) {
     fCsSigE = ierr;
@@ -4883,6 +4886,17 @@ void anaBmm::csYield(TH1 *h, int mode, double lo, double hi) {
     fCsSigE = cE/c*fCsSig;
   }
 
+  tl->SetTextSize(0.07); 
+  if (0 == mode) {
+    tl->DrawLatex(0.22, 0.8, "Barrel");   
+  } 
+
+  if (1 == mode) {
+    tl->DrawLatex(0.22, 0.8, "Endcap");   
+  } 
+
+  stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+  if (fDoPrint) c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), mode));
 
   cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
   
