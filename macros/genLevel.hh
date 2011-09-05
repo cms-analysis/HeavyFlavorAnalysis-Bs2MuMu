@@ -44,6 +44,7 @@ public:
   void         initVariables();
   int          muonType(TGenCand *pCand);
   void         bbbarCrossSection();
+  void         printBdecays(); 
 
   int          NTOTAL; 
   double       XSECTION;

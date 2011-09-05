@@ -15,7 +15,7 @@
 //
 // Original Author:  Daniele Pedrini
 //         Created:  Apr 29 2008
-// $Id: PythiaDauVFilter.h,v 1.1 2010/03/09 12:45:07 ursl Exp $
+// $Id: PythiaDauVFilter.h,v 1.2 2010/07/07 09:54:16 frmeier Exp $
 //
 //
 
@@ -38,29 +38,26 @@
 //
 
 class PythiaDauVFilter : public edm::EDFilter {
-   public:
-      explicit PythiaDauVFilter(const edm::ParameterSet&);
-      ~PythiaDauVFilter();
-
-
-      virtual bool filter(edm::Event&, const edm::EventSetup&);
-   private:
-      // ----------memeber function----------------------
-
-      // ----------member data ---------------------------
-      
-       std::string label_;
-       std::vector<int> dauIDs;
-       int particleID;
-       bool chargeconju; 
-       int ndaughters;
-       std::vector<double> minptcut;
-       double maxptcut;
-       std::vector<double> minetacut;
-       std::vector<double> maxetacut;
+ public:
+  explicit PythiaDauVFilter(const edm::ParameterSet&);
+  ~PythiaDauVFilter();
+  
+  
+  virtual bool filter(edm::Event&, const edm::EventSetup&);
+ private:
+  int fVerbose;  
+  std::string label_;
+  std::vector<int> dauIDs;
+  int particleID;
+  bool chargeconju; 
+  int ndaughters;
+  std::vector<double> minptcut;
+  double maxptcut;
+  std::vector<double> minetacut;
+  std::vector<double> maxetacut;
 };
 #define PYCOMP pycomp_
 extern "C" {
- int PYCOMP(int& ip);
+  int PYCOMP(int& ip);
 } 
 #endif

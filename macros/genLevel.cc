@@ -3,10 +3,12 @@
 
 #include "TRandom.h"
 #include <cmath>
+#include <map>
 
 using std::cout;
 using std::endl;
 using std::string;
+using std::map;
 
 // ----------------------------------------------------------------------
 // Run with: ./runTreeReaders -c chains/bg-test -D root -C cuts/genLevel.default.cuts
@@ -32,9 +34,10 @@ void genLevel::startAnalysis() {
 // ----------------------------------------------------------------------
 void genLevel::eventProcessing() {
 
-  bbbarCrossSection();
+  printBdecays();
+  //  bbbarCrossSection();
   // -- initialize all variables
-  initVariables(); 
+  //  initVariables(); 
 
 }
 
@@ -61,6 +64,62 @@ void genLevel::endAnalysis() {
   cout << "bbbar xsection:       " << c0/(2.*ftilde*NTOTAL)*XSECTION << endl;
   cout << "b-mu  xsection:       " << n0/(NTOTAL)*XSECTION << endl;
   cout << "b-mu in acc xsection: " << n1/(NTOTAL)*XSECTION << endl;
+}
+
+// ----------------------------------------------------------------------
+void genLevel::printBdecays() {
+  
+  TGenCand *pCand, *pD; 
+  int muType(0), evtType(0), nevt(0), bevt(0), bacc(0); 
+  bool acc(false);
+  double pt(0.), eta(0.); 
+  for (int iC = 0; iC < fpEvt->nGenCands(); ++iC) {
+    pCand = fpEvt->getGenCand(iC);
+
+    if (TMath::Abs(pCand->fID) == 531 || TMath::Abs(pCand->fID) == 511) {
+      cout << "--- Event " << fEvent << " ------------------------------------------------------------------" << endl;
+      pCand->dump();
+      for (int iD = pCand->fDau1; iD <= pCand->fDau2; ++iD) {
+	pD = fpEvt->getGenCand(iD);
+	pD->dump();
+	cout << "pT: " << pD->fP.Perp() << " eta: " << pD->fP.Eta() << endl;
+      }
+    }
+  }
+
+
+  TAnaCand *pC; 
+  for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
+    pC = fpEvt->getCand(iC);
+    cout << "typ " << pC->fType << endl;
+  }
+
+  TAnaTrack *pT;       
+  cout << "rec tracks: " << fpEvt->nRecTracks() << endl;
+  for (int it = 0; it < fpEvt->nRecTracks(); ++it) {
+    pT = fpEvt->getRecTrack(it); 
+    pT->dump();
+  }
+
+
+  TString a; 
+  int ps(0); 
+  bool result(false), wasRun(false), error(false); 
+
+  for (int i = 0; i < NHLT; ++i) {
+    result = wasRun = error = false;
+    a = fpEvt->fHLTNames[i]; 
+    ps = fpEvt->fHLTPrescale[i]; 
+    wasRun = fpEvt->fHLTWasRun[i]; 
+    result = fpEvt->fHLTResult[i]; 
+    error  = fpEvt->fHLTError[i]; 
+
+    if (wasRun && result) {
+      cout << a << endl;
+    }      
+  }
+
+
 }
 
 
