@@ -4,6 +4,7 @@
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 #include "HepMC/PythiaWrapper6_2.h"
 #include <iostream>
+#include <vector>
 
 using namespace edm;
 using namespace std;
@@ -13,6 +14,7 @@ PythiaDauVFilter::PythiaDauVFilter(const edm::ParameterSet& iConfig) :
   fVerbose(iConfig.getUntrackedParameter("verbose",0)),
   label_(iConfig.getUntrackedParameter("moduleLabel",std::string("generator"))),
   particleID(iConfig.getUntrackedParameter("ParticleID", 0)),
+  motherID(iConfig.getUntrackedParameter("MotherID", 0)),
   chargeconju(iConfig.getUntrackedParameter("ChargeConjugation", true)),
   ndaughters(iConfig.getUntrackedParameter("NumberDaughters", 0)),
   //minptcut(iConfig.getUntrackedParameter("MinPt", 0.)),
@@ -39,7 +41,9 @@ PythiaDauVFilter::PythiaDauVFilter(const edm::ParameterSet& iConfig) :
   for (unsigned int i=0; i<dauIDs.size(); ++i) {
     cout << "ID: " <<  dauIDs[i] << " pT > " << minptcut[i] << " " << minetacut[i] << " eta < " << maxetacut[i] << endl;
   }
-  cout << "maxptcut = " << maxptcut << endl;
+  cout << "maxptcut   = " << maxptcut << endl;
+  cout << "particleID = " << particleID << endl;
+  cout << "motherID   = " << motherID << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
 }
@@ -64,31 +68,55 @@ bool PythiaDauVFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   bool accepted = false;
   Handle<HepMCProduct> evt;
   iEvent.getByLabel(label_, evt);
+
+  int OK(1); 
+  vector<int> vparticles; 
   
   HepMC::GenEvent *myGenEvent = new HepMC::GenEvent(*(evt->GetEvent()));
   
-  if (fVerbose > 2) {
+  if (fVerbose > 5) {
     cout << "looking for " << particleID << endl;
   }
+    
   for (HepMC::GenEvent::particle_iterator p = myGenEvent->particles_begin(); p != myGenEvent->particles_end(); ++p) {
     
     if ((*p)->pdg_id() != particleID) continue ;
+
+    // -- Check for mother of this particle
+    if (0 != motherID) {
+      OK = 0; 
+      for (HepMC::GenVertex::particles_in_const_iterator des = (*p)->production_vertex()->particles_in_const_begin(); 
+	   des != (*p)->production_vertex()->particles_in_const_end();
+	   ++des) {
+	if (fVerbose > 10) {
+	  cout << "mother: " << (*des)->pdg_id() << " pT: " << (*des)->momentum().perp() << " eta: " << (*des)->momentum().eta() << endl;
+	}
+	if (abs(motherID) == abs((*des)->pdg_id())) {
+	  OK = 1; 
+	  break;
+	}
+      }
+    }
+    if (0 == OK) continue; 
+
+    // -- check for daugthers
     int ndauac = 0;
     int ndau = 0;     
-    if (fVerbose > 2) {
+    if (fVerbose > 5) {
       cout << "found ID: " << (*p)->pdg_id() << " pT: " << (*p)->momentum().perp() << " eta: " << (*p)->momentum().eta() << endl;
     }
+    vparticles.push_back((*p)->pdg_id()); 
     if ((*p)->end_vertex()) {	
       for (HepMC::GenVertex::particle_iterator des=(*p)->end_vertex()->particles_begin(HepMC::children);
 	   des != (*p)->end_vertex()->particles_end(HepMC::children);
 	   ++des) {
 	++ndau;       
-	if (fVerbose > 2) {
+	if (fVerbose > 5) {
 	  cout << "ID: " << (*des)->pdg_id() << " pT: " << (*des)->momentum().perp() << " eta: " << (*des)->momentum().eta() << endl;
 	}
 	for (unsigned int i=0; i<dauIDs.size(); ++i) {
 	  if ((*des)->pdg_id() != dauIDs[i] ) continue ;
-	  if (fVerbose > 2) {
+	  if (fVerbose > 5) {
 	    cout << "i = " << i << " pT = " << (*des)->momentum().perp() << " eta = " << (*des)->momentum().eta() << endl;
 	  }
 	  if ((*des)->momentum().perp() >  minptcut[i]  &&
@@ -96,8 +124,10 @@ bool PythiaDauVFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	      (*des)->momentum().eta()  >  minetacut[i] && 
 	      (*des)->momentum().eta()  <  maxetacut[i] ) {
 	    ++ndauac;
+	    vparticles.push_back((*des)->pdg_id()); 
 	    if (fVerbose > 2) {
-	      cout << "  accepted this particle" << endl;
+	      cout << "  accepted this particle " <<  (*des)->pdg_id()
+		   << " pT = " << (*des)->momentum().perp() << " eta = " << (*des)->momentum().eta() << endl;
 	    }
 	    break;
 	  } 
@@ -109,7 +139,9 @@ bool PythiaDauVFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
     if (ndau >=  ndaughters && ndauac == ndaughters) {
       accepted = true;
       if (fVerbose > 0) {
-	cout << "  accepted this decay" << endl;
+	cout << "  accepted this decay: ";
+	for (unsigned int iv = 0; iv < vparticles.size(); ++iv) cout << vparticles[iv] << " "; 
+	cout << " from mother = " << motherID << endl;
       }
       break;
     }    
@@ -118,14 +150,34 @@ bool PythiaDauVFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   
   if (!accepted && chargeconju ) {
-    
+    OK = 1; 
+
     for (HepMC::GenEvent::particle_iterator p = myGenEvent->particles_begin();
 	 p != myGenEvent->particles_end(); ++p) {
       
       if ((*p)->pdg_id() != -particleID) continue ;
-      if (fVerbose > 2) {
+      
+      // -- Check for mother of this particle
+      if (0 != motherID) {
+	OK = 0; 
+	for (HepMC::GenVertex::particles_in_const_iterator des = (*p)->production_vertex()->particles_in_const_begin(); 
+	     des != (*p)->production_vertex()->particles_in_const_end();
+	     ++des) {
+	  if (fVerbose > 10) {
+	    cout << "mother: " << (*des)->pdg_id() << " pT: " << (*des)->momentum().perp() << " eta: " << (*des)->momentum().eta() << endl;
+	  }
+	  if (abs(motherID) == abs((*des)->pdg_id())) {
+	    OK = 1; 
+	    break;
+	  }
+	}
+      }
+      if (0 == OK) continue; 
+      
+      if (fVerbose > 5) {
 	cout << "found ID: " << (*p)->pdg_id() << " pT: " << (*p)->momentum().perp() << " eta: " << (*p)->momentum().eta() << endl;
       }
+      vparticles.push_back((*p)->pdg_id()); 
       int ndauac = 0;
       int ndau = 0;     
       if ((*p)->end_vertex()) {
@@ -133,7 +185,7 @@ bool PythiaDauVFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	     des != (*p)->end_vertex()->particles_end(HepMC::children);
 	     ++des) {
 	  ++ndau;
-	  if (fVerbose > 2) {
+	  if (fVerbose > 5) {
 	    cout << "ID: " << (*des)->pdg_id() << " pT: " << (*des)->momentum().perp() << " eta: " << (*des)->momentum().eta() << endl;
 	  }
 	  for (unsigned int i=0; i<dauIDs.size(); ++i) {
@@ -142,7 +194,7 @@ bool PythiaDauVFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	    int has_antipart = pydat2.kchg[3-1][pythiaCode-1];
 	    if (has_antipart == 0) IDanti = dauIDs[i];
 	    if ((*des)->pdg_id() != IDanti) continue ;
-	    if (fVerbose > 2) {
+	    if (fVerbose > 5) {
 	      cout << "i = " << i << " pT = " << (*des)->momentum().perp() << " eta = " << (*des)->momentum().eta() << endl;
 	    }
 	    if ((*des)->momentum().perp() >  minptcut[i]  &&
@@ -150,8 +202,10 @@ bool PythiaDauVFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 		(*des)->momentum().eta()  >  minetacut[i] && 
 		(*des)->momentum().eta()  <  maxetacut[i] ) {
 	      ++ndauac;
+	      vparticles.push_back((*des)->pdg_id()); 
 	      if (fVerbose > 2) {
-		cout << "  accepted this anti-particle" << endl;
+		cout << "  accepted this particle " <<  (*des)->pdg_id()
+		     << " pT = " << (*des)->momentum().perp() << " eta = " << (*des)->momentum().eta() << endl;
 	      }
 	      break;
 	    } 
@@ -161,7 +215,9 @@ bool PythiaDauVFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
       if (ndau >=  ndaughters && ndauac == ndaughters ) {
 	accepted = true;
 	if (fVerbose > 0) {
-	  cout << "  accepted this anti-decay" << endl;
+	  cout << "  accepted this anti-decay: ";
+	  for (unsigned int iv = 0; iv < vparticles.size(); ++iv) cout << vparticles[iv] << " "; 
+	  cout << " from mother = " << motherID << endl;
 	}
 	break;
       }    

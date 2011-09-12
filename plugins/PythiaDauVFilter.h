@@ -15,7 +15,7 @@
 //
 // Original Author:  Daniele Pedrini
 //         Created:  Apr 29 2008
-// $Id: PythiaDauVFilter.h,v 1.2 2010/07/07 09:54:16 frmeier Exp $
+// $Id: PythiaDauVFilter.h,v 1.3 2011/09/05 14:18:52 ursl Exp $
 //
 //
 
@@ -49,6 +49,7 @@ class PythiaDauVFilter : public edm::EDFilter {
   std::string label_;
   std::vector<int> dauIDs;
   int particleID;
+  int motherID;
   bool chargeconju; 
   int ndaughters;
   std::vector<double> minptcut;
