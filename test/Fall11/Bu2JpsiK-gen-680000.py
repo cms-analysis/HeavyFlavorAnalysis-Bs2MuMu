@@ -121,7 +121,7 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
             'PARP(93)=10.0  ! primordial kT-max', 
             'MSTP(81)=21    ! multiple parton interactions 1 is Pythia default', 
             'MSTP(82)=4     ! Defines the multi-parton model'),
-        bbbarSettings = cms.vstring('MSEL = 5'),  
+        bbbarSettings = cms.vstring('MSEL = 1'),  
         parameterSets = cms.vstring('pythiaUESettings', 
             'bbbarSettings')
     )
