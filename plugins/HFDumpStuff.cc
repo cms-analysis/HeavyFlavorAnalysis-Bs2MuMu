@@ -1,4 +1,6 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
+
+
 #include "HFDumpStuff.h"
 
 #include <iostream>
@@ -11,8 +13,14 @@
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
 
+// For luminosity
+#include "FWCore/Framework/interface/LuminosityBlock.h"
+#include "DataFormats/Luminosity/interface/LumiSummary.h"
+#include "DataFormats/Common/interface/ConditionsInEdm.h"
+
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "CommonTools/Statistics/interface/ChiSquared.h"
+
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
@@ -71,6 +79,29 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   
   gHFEvent->fTimeLo      = low;
   gHFEvent->fTimeHi      = high;
+
+  // Get the luminosity information 
+  edm::LuminosityBlock const& iLumi = iEvent.getLuminosityBlock();
+  edm::Handle<LumiSummary> lumi;
+  iLumi.getByLabel("lumiProducer", lumi);
+  edm::Handle<edm::ConditionsInLumiBlock> cond;
+  float intlumi = 0, instlumi=0;
+  //int beamint1=0, beamint2=0;
+  iLumi.getByLabel("conditionsInEdm", cond);
+  // This will only work when running on RECO until (if) they fix it in the FW
+  // When running on RAW and reconstructing, the LumiSummary will not appear
+  // in the event before reaching endLuminosityBlock(). Therefore, it is not
+  // possible to get this info in the event
+  if (lumi.isValid()) {
+    intlumi =(lumi->intgRecLumi())/1000.; // integrated lumi in pb-1 per LS
+    instlumi=(lumi->avgInsDelLumi())/1000.; //inst. lumi per pb-1 averaged overLS
+    //beamint1=(cond->totalIntensityBeam1)/1000;
+    //beamint2=(cond->totalIntensityBeam2)/1000;
+  } else {
+    //std::cout << "** ERROR: Event does not get lumi info\n";
+  }
+
+  gHFEvent->fLumi      = instlumi;
 
   // -- Primary vertex
   int bestPV(-1), bestN(-1), cnt(0); 

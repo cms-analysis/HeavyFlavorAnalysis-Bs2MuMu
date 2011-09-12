@@ -29,6 +29,8 @@
 <use   name="SimTracker/TrackAssociation"/>
 <use   name="Alignment/OfflineValidation"/>
 <use   name="AnalysisDataFormats/HeavyFlavorObjects"/>
+# for lumi
+<use   name="DataFormats/Luminosity"/>
 <use   name="pythia6"/>
 <use   name="clhep"/>
 <use   name="boost"/>
