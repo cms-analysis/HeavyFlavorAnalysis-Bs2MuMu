@@ -34,7 +34,7 @@ process.bfilter = cms.EDFilter(
 
 process.jpsifilter = cms.EDFilter(
         "PythiaDauVFilter",
-	verbose         = cms.untracked.int32(3), 
+	verbose         = cms.untracked.int32(1), 
 	NumberDaughters = cms.untracked.int32(2), 
 	MotherID        = cms.untracked.int32(521),  
 	ParticleID      = cms.untracked.int32(443),  
@@ -46,20 +46,20 @@ process.jpsifilter = cms.EDFilter(
 
 process.kfilter = cms.EDFilter(
         "PythiaDauVFilter",
-	verbose         = cms.untracked.int32(3), 
-	NumberDaughters = cms.untracked.int32(1), 
+	verbose         = cms.untracked.int32(1), 
+	NumberDaughters = cms.untracked.int32(2), 
 	MotherID        = cms.untracked.int32(0),  
 	ParticleID      = cms.untracked.int32(521),  
-        DaughterIDs     = cms.untracked.vint32(321),
-	MinPt           = cms.untracked.vdouble(0.5), 
-	MinEta          = cms.untracked.vdouble(-2.5), 
-	MaxEta          = cms.untracked.vdouble( 2.5)
+        DaughterIDs     = cms.untracked.vint32(443, 321),
+	MinPt           = cms.untracked.vdouble(0., 0.4), 
+	MinEta          = cms.untracked.vdouble(-99., -2.5), 
+	MaxEta          = cms.untracked.vdouble(99.,   2.5)
         )
 
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.1 $'),
+    version = cms.untracked.string('$Revision: 1.2 $'),
     annotation = cms.untracked.string('Bu2JpsiK'),
     name = cms.untracked.string('Bu2JpsiK')
 )
@@ -86,7 +86,7 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
             use_default_decay = cms.untracked.bool(False),
             decay_table = cms.FileInPath('GeneratorInterface/ExternalDecays/data/DECAY_NOLONGLIFE.DEC'),
             particle_property_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/evt.pdl'),
-            user_decay_file = cms.FileInPath('HeavyFlavorAnalysis/Bs2MuMu/data/Bu_JpsiK_mumuK.dec'),
+            user_decay_file = cms.FileInPath('HeavyFlavorAnalysis/Bs2MuMu/data/Bu_JpsiK.dec'),
             list_forced_decays = cms.vstring('MyB+', 
                 'MyB-'),
             operates_on_particles = cms.vint32(0)

@@ -29,38 +29,15 @@ process.bfilter = cms.EDFilter(
         "PythiaFilter",
         MaxEta = cms.untracked.double(9999.),
         MinEta = cms.untracked.double(-9999.),
-        ParticleID = cms.untracked.int32(531)
+        ParticleID = cms.untracked.int32(5122)
         )
 
-process.jpsifilter = cms.EDFilter(
-        "PythiaDauVFilter",
-	verbose         = cms.untracked.int32(1), 
-	NumberDaughters = cms.untracked.int32(2), 
-	MotherID        = cms.untracked.int32(531),  
-	ParticleID      = cms.untracked.int32(443),  
-        DaughterIDs     = cms.untracked.vint32(13, -13),
-	MinPt           = cms.untracked.vdouble(3.5, 3.5), 
-	MinEta          = cms.untracked.vdouble(-2.5, -2.5), 
-	MaxEta          = cms.untracked.vdouble( 2.5,  2.5)
-        )
-
-process.phifilter = cms.EDFilter(
-        "PythiaDauVFilter",
-	verbose         = cms.untracked.int32(1), 
-	NumberDaughters = cms.untracked.int32(2), 
-	MotherID        = cms.untracked.int32(531),  
-	ParticleID      = cms.untracked.int32(333),  
-        DaughterIDs     = cms.untracked.vint32(321, -321),
-	MinPt           = cms.untracked.vdouble(0.4, 0.4), 
-	MinEta          = cms.untracked.vdouble(-2.5, -2.5), 
-	MaxEta          = cms.untracked.vdouble( 2.5,  2.5)
-        )
-
+# ----------------------------------------------------------------------
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
     version = cms.untracked.string('$Revision: 1.1 $'),
-    annotation = cms.untracked.string('Bs2JpsiPhi'),
-    name = cms.untracked.string('Bs2JpsiPhi')
+    annotation = cms.untracked.string('Lb2XY'),
+    name = cms.untracked.string('Lb2XY')
 )
 
 # Output definition
@@ -68,7 +45,7 @@ process.RAWSIMoutput = cms.OutputModule("PoolOutputModule",
     splitLevel = cms.untracked.int32(0),
     eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
     outputCommands = process.RAWSIMEventContent.outputCommands,
-    fileName = cms.untracked.string('Bs2JpsiPhi-gen-670000.root'),
+    fileName = cms.untracked.string('Lb2XY-gen-630000.root'),
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string(''),
         dataTier = cms.untracked.string('GEN-SIM')
@@ -85,9 +62,8 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
             use_default_decay = cms.untracked.bool(False),
             decay_table = cms.FileInPath('GeneratorInterface/ExternalDecays/data/DECAY_NOLONGLIFE.DEC'),
             particle_property_file = cms.FileInPath('GeneratorInterface/ExternalDecays/data/evt.pdl'),
-            user_decay_file = cms.FileInPath('HeavyFlavorAnalysis/Bs2MuMu/data/Bs_Jpsiphi.dec'),
-            list_forced_decays = cms.vstring('MyB_s0', 
-                'Myanti-B_s0'),
+            user_decay_file = cms.FileInPath('HeavyFlavorAnalysis/Bs2MuMu/data/LambdaB_pmunu.dec'),
+            list_forced_decays = cms.vstring(),
             operates_on_particles = cms.vint32(0)
         ),
         parameterSets = cms.vstring('EvtGen')
@@ -126,43 +102,66 @@ process.generator = cms.EDFilter("Pythia6GeneratorFilter",
     )
 )
 
+# ----------------------------------------------------------------------
+# -- required input for LambdaB filter
+process.load("HeavyFlavorAnalysis.Bs2MuMu.HFTree_cff")
+rootFileName = "bla.root"
+process.tree.fileName = rootFileName
+
+process.genParticles = cms.EDProducer(
+    "GenParticleProducer",
+    saveBarCodes          = cms.untracked.bool(True),
+    src                   = cms.InputTag("generator"),
+    abortOnUnknownPDGCode = cms.untracked.bool(False)
+    )
+
+
+# ----------------------------------------------------------------------
+process.genDump = cms.EDAnalyzer(
+    "HFDumpGenerator",
+    generatorCandidates = cms.untracked.string('genParticles'),
+    generatorEvent = cms.untracked.string('generator')
+    )
+
+process.decayfilter = cms.EDFilter("HFGenLbBgFilter")
+
 
 process.load('Configuration.StandardSequences.Services_cff')
 process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService",
     moduleSeeds = cms.PSet(
-        g4SimHits = cms.untracked.uint32(670000),
-        mix = cms.untracked.uint32(670000),
-        VtxSmeared = cms.untracked.uint32(670000),
-        caloRecHits = cms.untracked.uint32(670000),
-        MuonSimHits = cms.untracked.uint32(670000),
-        muonCSCDigis = cms.untracked.uint32(670000),
-        muonDTDigis = cms.untracked.uint32(670000),
-        famosSimHits = cms.untracked.uint32(670000),
-        famosPileUp = cms.untracked.uint32(670000),
-        l1ParamMuons = cms.untracked.uint32(670000),
-        paramMuons = cms.untracked.uint32(670000),
-        muonRPCDigis = cms.untracked.uint32(670000),
-        siTrackerGaussianSmearingRecHits = cms.untracked.uint32(670000),
-        simMuonCSCDigis = cms.untracked.uint32(670000),
-        simMuonDTDigis = cms.untracked.uint32(670000),
-        simMuonRPCDigis = cms.untracked.uint32(670000),
-        simSiPixelDigis = cms.untracked.uint32(670000),
-        simSiStripDigis = cms.untracked.uint32(670000),
-        simEcalUnsuppressedDigis = cms.untracked.uint32(670000),
-        simHcalUnsuppressedDigis = cms.untracked.uint32(670000),
-        ecalRecHit = cms.untracked.uint32(670000),
-        ecalPreshowerRecHit = cms.untracked.uint32(670000),
-        hbhereco = cms.untracked.uint32(670000),
-        horeco = cms.untracked.uint32(670000),
-        hfreco = cms.untracked.uint32(670000),
-        generator = cms.untracked.uint32(670000)
+        g4SimHits = cms.untracked.uint32(630000),
+        mix = cms.untracked.uint32(630000),
+        VtxSmeared = cms.untracked.uint32(630000),
+        caloRecHits = cms.untracked.uint32(630000),
+        MuonSimHits = cms.untracked.uint32(630000),
+        muonCSCDigis = cms.untracked.uint32(630000),
+        muonDTDigis = cms.untracked.uint32(630000),
+        famosSimHits = cms.untracked.uint32(630000),
+        famosPileUp = cms.untracked.uint32(630000),
+        l1ParamMuons = cms.untracked.uint32(630000),
+        paramMuons = cms.untracked.uint32(630000),
+        muonRPCDigis = cms.untracked.uint32(630000),
+        siTrackerGaussianSmearingRecHits = cms.untracked.uint32(630000),
+        simMuonCSCDigis = cms.untracked.uint32(630000),
+        simMuonDTDigis = cms.untracked.uint32(630000),
+        simMuonRPCDigis = cms.untracked.uint32(630000),
+        simSiPixelDigis = cms.untracked.uint32(630000),
+        simSiStripDigis = cms.untracked.uint32(630000),
+        simEcalUnsuppressedDigis = cms.untracked.uint32(630000),
+        simHcalUnsuppressedDigis = cms.untracked.uint32(630000),
+        ecalRecHit = cms.untracked.uint32(630000),
+        ecalPreshowerRecHit = cms.untracked.uint32(630000),
+        hbhereco = cms.untracked.uint32(630000),
+        horeco = cms.untracked.uint32(630000),
+        hfreco = cms.untracked.uint32(630000),
+        generator = cms.untracked.uint32(630000)
     ), 
-    sourceSeed = cms.untracked.uint32(670000)
+    sourceSeed = cms.untracked.uint32(630000)
 )
 from IOMC.RandomEngine.RandomServiceHelper import  RandomNumberServiceHelper
 randHelper =  RandomNumberServiceHelper(process.RandomNumberGeneratorService)
 randHelper.populate() 
-process.RandomNumberGeneratorService.saveFileName =  cms.untracked.string("RandomEngineState-670000.log")
+process.RandomNumberGeneratorService.saveFileName =  cms.untracked.string("RandomEngineState-630000.log")
 
 
 # ----------------------------------------------------------------------
@@ -185,6 +184,7 @@ process.options = cms.untracked.PSet(
 # Other statements
 process.GlobalTag.globaltag = 'START42_V13::All'
 
+
 # Path and EndPath definitions
 process.generation_step = cms.Path(process.pgen)
 process.simulation_step = cms.Path(process.psim)
@@ -192,11 +192,10 @@ process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
 process.endjob_step = cms.EndPath(process.endOfProcess)
 process.RAWSIMoutput_step = cms.EndPath(process.RAWSIMoutput)
 
-
 # Schedule definition
 process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.endjob_step,process.RAWSIMoutput_step)
 
 # filter all path with the production filter sequence
-process.ProductionFilterSequence = cms.Sequence(process.generator+process.bfilter+process.jpsifilter+process.phifilter)
+process.ProductionFilterSequence = cms.Sequence(process.generator+process.bfilter+process.genParticles+process.genDump+process.decayfilter+process.tree)
 for path in process.paths:
         getattr(process,path)._seq = process.ProductionFilterSequence * getattr(process,path)._seq 
