@@ -1,0 +1,8 @@
+# -- tracks
+TRACKQUALITY      4
+TRACKPTLO         0.5
+TRACKPTHI      9999.0
+TRACKTIP          1.0
+TRACKLIP         25.0
+TRACKETALO       -2.4
+TRACKETAHI        2.4

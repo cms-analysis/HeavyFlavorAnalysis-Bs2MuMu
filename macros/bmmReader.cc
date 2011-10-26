@@ -21,26 +21,25 @@ bmmReader::bmmReader(TChain *tree, TString evtClassName): treeReader01(tree, evt
   cout << "==> Defining analysis cuts" << endl;
   MASSMIN = 4.5;
   MASSMAX = 6.5; 
-  fVerbose = 0; 
 
   cout << "==> Defining regions for histogramming" << endl;
   fRegion.insert(make_pair("A", 0)); 
-  fRegion.insert(make_pair("APV0", 1)); 
-  fRegion.insert(make_pair("APV1", 2)); 
-  fRegion.insert(make_pair("B", 3)); 
-  fRegion.insert(make_pair("BPV0", 4)); 
-  fRegion.insert(make_pair("BPV1", 5)); 
-  fRegion.insert(make_pair("E", 6)); 
-  fRegion.insert(make_pair("EPV0", 7)); 
-  fRegion.insert(make_pair("EPV1", 8)); 
-  fRegion.insert(make_pair("AR0", 9)); 
-  fRegion.insert(make_pair("AR1", 10)); 
-  fRegion.insert(make_pair("AR2", 11)); 
-  fRegion.insert(make_pair("AR3", 12)); 
-  fRegion.insert(make_pair("AR4", 13)); 
-  fRegion.insert(make_pair("AR5", 14)); 
-  fRegion.insert(make_pair("AR6", 15)); 
-  fRegion.insert(make_pair("AR7", 17)); 
+//   fRegion.insert(make_pair("APV0", 1)); 
+//   fRegion.insert(make_pair("APV1", 2)); 
+//   fRegion.insert(make_pair("B", 3)); 
+//   fRegion.insert(make_pair("BPV0", 4)); 
+//   fRegion.insert(make_pair("BPV1", 5)); 
+//   fRegion.insert(make_pair("E", 6)); 
+//   fRegion.insert(make_pair("EPV0", 7)); 
+//   fRegion.insert(make_pair("EPV1", 8)); 
+//   fRegion.insert(make_pair("AR0", 9)); 
+//   fRegion.insert(make_pair("AR1", 10)); 
+//   fRegion.insert(make_pair("AR2", 11)); 
+//   fRegion.insert(make_pair("AR3", 12)); 
+//   fRegion.insert(make_pair("AR4", 13)); 
+//   fRegion.insert(make_pair("AR5", 14)); 
+//   fRegion.insert(make_pair("AR6", 15)); 
+//   fRegion.insert(make_pair("AR7", 17)); 
 
   for (map<string, int>::iterator imap = fRegion.begin(); imap != fRegion.end(); ++imap) {  
     int i       = imap->second; 
@@ -79,6 +78,9 @@ bool bmmReader::evtFoundInCN(int evt) {
 
 // ----------------------------------------------------------------------
 void bmmReader::startAnalysis() {
+  
+  cout << "==>bmmReader: fVerbose = " << fVerbose << endl;
+  
   cout << "==>bmmReader: setup PidTables" << endl;
 
   // -- Note that the return value is -99 for ranges not covered by the PidTables!
@@ -102,18 +104,6 @@ void bmmReader::eventProcessing() {
 
   if (fVerbose > 1) cout << "event: " << fEvent << endl;
   
-  if (210818502 == fEvt) {
-    fVerbose = 100; 
-  } else {
-    fVerbose = 0; 
-  }
-  //  fVerbose = 100; 
-  
-  //   cout << "------------------------" 
-  //        << fRun << " " << fEvt
-  //        << endl;
-  //  if (fRun == 1 && fEvt == 218505) fpEvt->dump();
-
   // -- initialize all variables
   initVariables(); 
 
@@ -160,56 +150,7 @@ void bmmReader::eventProcessing() {
       if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX && fCandIso4 > 0.7) continue;
       
       foundRun = 0; 
-      if ((fRun < 150000) || fIsMC) {
-	foundRun = 1; 
-	fillCandidateHistograms(fRegion["AR1"]);
-      } 
-      if ((fRun >= 160328 && fRun < 161177) || fIsMC) {
-	foundRun = 2; 
-	fillCandidateHistograms(fRegion["AR2"]);
-      } 
-      if ((fRun >= 161215 && fRun < 163262) || fIsMC) {
-	foundRun = 3; 
-	fillCandidateHistograms(fRegion["AR3"]);
-      } 
-      if ((fRun >= 163268 && fRun <= 163870) || fIsMC) {
-	foundRun = 4; 
-	fillCandidateHistograms(fRegion["AR4"]);
-      } 
-      if ((fRun >= 165087 && fRun <= 165634) || fIsMC) {
-	foundRun = 5; 
-	fillCandidateHistograms(fRegion["AR5"]);
-      } 
-      if ((fRun >= 165969) || fIsMC) {
-	foundRun = 6; 
-	fillCandidateHistograms(fRegion["AR6"]);
-      } 
-      if (0 == foundRun) {
-	fillCandidateHistograms(fRegion["AR0"]);
-      }
-      
-      if (foundRun  >= 4 || fIsMC) {
-	fillCandidateHistograms(fRegion["A"]);
-	if (fBarrel) {
-	  fillCandidateHistograms(fRegion["B"]); 
-	  if (fPvN < 4) {
-	    fillCandidateHistograms(fRegion["APV0"]); 
-	    fillCandidateHistograms(fRegion["BPV0"]); 
-	  } else {
-	    fillCandidateHistograms(fRegion["APV1"]); 
-	    fillCandidateHistograms(fRegion["BPV1"]); 
-	  }
-	} else {
-	  fillCandidateHistograms(fRegion["E"]); 
-	  if (fPvN < 4) {
-	    fillCandidateHistograms(fRegion["APV0"]); 
-	    fillCandidateHistograms(fRegion["EPV0"]); 
-	  } else {
-	    fillCandidateHistograms(fRegion["APV1"]); 
-	    fillCandidateHistograms(fRegion["EPV1"]); 
-	  }
-	}
-      }
+      fillCandidateHistograms(fRegion["A"]);
       if (fIsMC) {
 	((TH1D*)fpHistFile->Get("monEvents"))->Fill(4); 
 	fTree->Fill(); 
@@ -230,54 +171,7 @@ void bmmReader::eventProcessing() {
     if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX && fCandIso4 > 0.7) {
       // do nothing
     } else {
-      if ((fRun < 150000) || fIsMC) {
-	foundRun = 1; 
-	fillCandidateHistograms(fRegion["AR1"]);
-      } 
-      if ((fRun >= 160328 && fRun < 161177) || fIsMC) {
-	foundRun = 2; 
-	fillCandidateHistograms(fRegion["AR2"]);
-      } 
-      if ((fRun >= 161215 && fRun < 163262) || fIsMC) {
-	foundRun = 3; 
-	fillCandidateHistograms(fRegion["AR3"]);
-      } 
-      if ((fRun >= 163268 && fRun <= 163870) || fIsMC) {
-	foundRun = 4; 
-	fillCandidateHistograms(fRegion["AR4"]);
-      } 
-      if ((fRun >= 165087 && fRun <= 165634) || fIsMC) {
-	foundRun = 5; 
-	fillCandidateHistograms(fRegion["AR5"]);
-      } 
-      if ((fRun >= 165969) || fIsMC) {
-	foundRun = 6; 
-	fillCandidateHistograms(fRegion["AR6"]);
-      } 
-      if (0 == foundRun) {
-	fillCandidateHistograms(fRegion["AR0"]);
-      }
-      
       fillCandidateHistograms(fRegion["A"]);
-      if (fBarrel) {
-	fillCandidateHistograms(fRegion["B"]); 
-	if (fPvN < 4) {
-	  fillCandidateHistograms(fRegion["APV0"]); 
-	  fillCandidateHistograms(fRegion["BPV0"]); 
-	} else {
-	  fillCandidateHistograms(fRegion["APV1"]); 
-	  fillCandidateHistograms(fRegion["BPV1"]); 
-	}
-      } else {
-	fillCandidateHistograms(fRegion["E"]); 
-	if (fPvN < 4) {
-	  fillCandidateHistograms(fRegion["APV0"]); 
-	  fillCandidateHistograms(fRegion["EPV0"]); 
-	} else {
-	  fillCandidateHistograms(fRegion["APV1"]); 
-	  fillCandidateHistograms(fRegion["EPV1"]); 
-	}
-      }
       if (fIsMC) {
 	((TH1D*)fpHistFile->Get("monEvents"))->Fill(4); 
 	fTree->Fill(); 
@@ -587,8 +481,9 @@ void bmmReader::HLTSelection() {
     result = fpEvt->fHLTResult[i]; 
     error  = fpEvt->fHLTError[i]; 
 
+    //    if (-32 == fVerbose) cout << "path " << i << ": " << a << endl;
     if (wasRun && result) {
-      if (-32 == fVerbose) cout << a << endl;
+      if (-32 == fVerbose) cout << "run and fired: " << a << endl;
       for (map<string, int>::iterator imap = HLTRangeMin.begin(); imap != HLTRangeMin.end(); ++imap) {  
 	if (a.Contains(imap->first.c_str()) && (imap->second <= fRun) && (fRun <= HLTRangeMax[imap->first])) {
 	  if (-32 == fVerbose) cout << "close match: " << imap->first.c_str() << " HLT: " << a 

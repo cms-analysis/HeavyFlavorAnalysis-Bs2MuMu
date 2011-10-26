@@ -65,7 +65,6 @@ public:
   virtual void   candMatch();
   virtual bool   evtFoundInCN(int evt);
 
-
   virtual void   studyL1T(); 
 
   virtual AnalysisDistribution* bookDistribution(const char *hn, const char *ht, const char *hc, int nbins, double lo, double hi);

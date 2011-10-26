@@ -184,6 +184,15 @@ truthLambdaBToPKDump = cms.EDAnalyzer(
     daughtersID  = cms.untracked.vint32(2212, -321)
     )
 
+# ----------------------------------------------------------------------
+truthLambdaBToKMuNuDump = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(5122),
+    type         = cms.untracked.int32(62),
+    GenType      = cms.untracked.int32(-62),
+    daughtersID  = cms.untracked.vint32(2212, -13, 14)
+    )
 
 
 # ######################################################################
@@ -191,7 +200,7 @@ truthLambdaBToPKDump = cms.EDAnalyzer(
 # ######################################################################
 
 # ----------------------------------------------------------------------
-truthBsDump = cms.EDAnalyzer(
+truthBs2JpsiPhiDump = cms.EDAnalyzer(
     "HFTruthCandidate",
     tracksLabel  = cms.untracked.InputTag(trackList),
     motherID     = cms.untracked.int32(531),
@@ -201,7 +210,7 @@ truthBsDump = cms.EDAnalyzer(
     )
 
 # ----------------------------------------------------------------------
-truthBuDump = cms.EDAnalyzer(
+truthBu2JpsiKpDump = cms.EDAnalyzer(
     "HFTruthCandidate",
     tracksLabel  = cms.untracked.InputTag(trackList),
     motherID     = cms.untracked.int32(521),
@@ -375,17 +384,64 @@ truthUps3SToMuMu = cms.EDAnalyzer(
 
 truthSignalsSequence     = cms.Sequence(truthBsToMuMuDump*truthBdToMuMuDump)
 
-truthRareBsSequence      = cms.Sequence(truthBsToMuMuGaDump*truthBsToKKDump*truthBsToKPiDump*truthBsToPiPiDump*truthBsToPiMuNuDump*truthBsToKMuNuDump)
-truthRareBdSequence      = cms.Sequence(truthBdToPiPiDump*truthBdToKPiDump*truthBdToKKDump*truthBdToMuMuPi0Dump*truthBdToPiMuNuDump)
+truthRareBsSequence      = cms.Sequence(truthBsToMuMuGaDump
+                                        *truthBsToKKDump
+                                        *truthBsToKPiDump
+                                        *truthBsToPiPiDump
+                                        *truthBsToPiMuNuDump
+                                        *truthBsToKMuNuDump)
+
+truthRareBdSequence      = cms.Sequence(truthBdToPiPiDump
+                                        *truthBdToKPiDump
+                                        *truthBdToKKDump
+                                        *truthBdToMuMuPi0Dump
+                                        *truthBdToPiMuNuDump)
+
 truthRareBuSequence      = cms.Sequence(truthBuTo3MuNuDump)
-truthRareLambdaBSequence = cms.Sequence(truthLambdaBToPPiDump*truthLambdaBToPKDump)
 
-truthB2JpsiSequence      = cms.Sequence(truthBsDump*truthBd2JpsiKsDump*truthBd2JpsiKstarDump*truthBuDump)
+truthRareLambdaBSequence = cms.Sequence(truthLambdaBToPPiDump
+                                        *truthLambdaBToPKDump
+                                        *truthLambdaBToKMuNuDump)
 
-truthOniaSequence        = cms.Sequence(truthPsiToMuMu*truthPsi2SToMuMu*truthUps1SToMuMu*truthUps2SToMuMu*truthUps3SToMuMu)
-truthCharmSequence       = cms.Sequence(truthD0ToKPi*truthDpToKPiPi*truthDpToKstarPi*truthDsToPhiPi*truthDstarToD0PiToKPiPi*truthDpToKKPi*truthLambdaCToPrKPi)
+truthB2JpsiSequence      = cms.Sequence(truthBs2JpsiPhiDump
+                                        *truthBd2JpsiKsDump
+                                        *truthBd2JpsiKstarDump
+                                        *truthBu2JpsiKpDump)
 
-truthBmmSequence         = cms.Sequence(truthSignalsSequence*truthBsDump*truthBuDump)
+truthOniaSequence        = cms.Sequence(truthPsiToMuMu
+                                        *truthPsi2SToMuMu
+                                        *truthUps1SToMuMu
+                                        *truthUps2SToMuMu
+                                        *truthUps3SToMuMu)
 
+truthCharmSequence       = cms.Sequence(truthD0ToKPi
+                                        *truthDpToKPiPi
+                                        *truthDpToKstarPi
+                                        *truthDsToPhiPi
+                                        *truthDstarToD0PiToKPiPi
+                                        *truthDpToKKPi
+                                        *truthLambdaCToPrKPi)
 
-truthAllSequence         = cms.Sequence(truthSignalsSequence*truthRareBsSequence*truthRareBdSequence*truthRareBuSequence*truthRareLambdaBSequence*truthB2JpsiSequence*truthOniaSequence*truthCharmSequence)
+truthBmmSequence         = cms.Sequence(truthSignalsSequence
+                                        *truthB2JpsiSequence
+                                        *truthRareBsSequence
+                                        *truthRareBdSequence
+                                        *truthRareBuSequence
+                                        *truthRareLambdaBSequence
+                                        )
+
+truthBmtSequence         = cms.Sequence(truthSignalsSequence
+                                        *truthB2JpsiSequence
+                                        *truthD0ToKPi
+                                        *truthDstarToD0PiToKPiPi
+                                        *truthOniaSequence
+                                        )
+
+truthAllSequence         = cms.Sequence(truthSignalsSequence
+                                        *truthRareBsSequence
+                                        *truthRareBdSequence
+                                        *truthRareBuSequence
+                                        *truthRareLambdaBSequence
+                                        *truthB2JpsiSequence
+                                        *truthOniaSequence
+                                        *truthCharmSequence)

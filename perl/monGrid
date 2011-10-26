@@ -6,6 +6,7 @@
 #              if done, retrieve sandbox and put files into job directory 
 #              if sandbox retrieved, check for successful job completion
 #
+# 2011/09/16   copy logfile out from sandbox
 # 2010/05/03   reworked some bugs
 # 2010/03/09   remove capability of checking SGE jobs,use monSge instead
 # 2010/03/03   First version
@@ -16,10 +17,10 @@
 # Author    Urs Langenegger <urs.langenegger@psi.ch>
 # ----------------------------------------------------------------------
 
+use File::Copy; 
 use Getopt::Std;
 getopts('i:oru:');
 
-my $STORAGE1 = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2\?SFN=";
 my $user  = $ENV{'USER'};
 
 my $minRootFileSize = 13362; 
@@ -89,9 +90,14 @@ while(<IN>) {
     # -- get output sandbox if successful and not yet already happened and not vetoed
     if ($jobStatus =~ /Done/ && $opt_o) {
 	$logfile = getOutputSandBox($url, $dir, $jdl, $jobStatus); 
+	chop($logfile); 
+	if (-e "$sdir/$logfile") {
+	    copy("$sdir/$logfile", "$mdir/$logfile");
+	}
 	$ok = parseOutput($sdir, $logfile); 
 	($rsize, $lsize, $srmFile) = rootFileSize("$sdir/$logfile"); 
-    	printf("%60s %s %15s; %s/root: %10i, log: %7i\n", $mdir, $url, $jobStatus, $ok, $rsize, $lsize);
+    	printf("%50s %s %15s; %s/root: %10i, log: %7i\n", $mdir, $url, $jobStatus, $ok, $rsize, $lsize);
+	
 	if ($ok =~ /no problems seen/) { 
 	    system("/bin/touch $mdir/OK"); 
 	    $goodJobs++; 
@@ -185,15 +191,19 @@ sub getOutputSandBox {
 sub parseOutput {
     ($ldir, $logfile) = @_;
 
-    $foundMyEnd     = `/bin/grep -i "run: This is the end, my friend"  $ldir/$logfile`;
-    if ($foundMyEnd) { $return = "no problems seen"; }
-
     # -- now search for possible problems in the logfile
     $foundException = `/bin/grep -i cms::exception  $ldir/$logfile`;
     if ($foundException) { $return = "cms::exception found"; }
 
     $foundGlibc     = `/bin/grep -i "glibc detected" $ldir/$logfile`;
     if ($foundGlibc) {$return = "core dump detected"; }
+
+    $abort     = `/bin/grep -i "Abort" $ldir/$logfile`;
+    if ($abort) {$return = "abort detected"; }
+
+    # -- finally if no error found: 
+    $foundMyEnd     = `/bin/grep -i "run: This is the end, my friend"  $ldir/$logfile`;
+    if ($foundMyEnd) { $return = "no problems seen"; }
 
     return $return;
 }

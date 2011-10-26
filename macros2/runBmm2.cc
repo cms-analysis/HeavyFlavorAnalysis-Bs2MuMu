@@ -13,34 +13,14 @@
 #include "TRandom.h"
 #include "TUnixSystem.h"
 
-#include "bmmReader.hh"
-#include "bmmSignalReader.hh"
-#include "bmmNormalizationReader.hh"
-#include "bmmBs2JpsiPhiReader.hh"
-#include "dpReader.hh"
-#include "d0Reader.hh"
-#include "massReader.hh"
-#include "kpReader.hh"
-#include "phiReader.hh"
-#include "ksReader.hh"
-#include "copyReader.hh"
-#include "dumpReader.hh"
-#include "muCharmReader.hh"
-#include "triggerValidation.hh"
-#include "genLevel.hh"
-#include "decayCounter.hh"
-#include "impactReader.hh"
-#include "otherDecays.hh"
-#include "mumuReader.hh"
-#include "mumuBdReader.hh"
-#include "mumuPsiReader.hh"
+#include "bmm2Reader.hh"
 
 using namespace std;
 
 
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-// %% Usage: ./runTreeReaders -f test.root
-// %%        ./runTreeReaders -c chains/bg-test -D root
+// %% Usage: ./runBmm2Reader -f test.root
+// %%        ./runBmm2Reader -c chains/bg-test -D root
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 int main(int argc, char *argv[]) {
@@ -75,20 +55,20 @@ int main(int argc, char *argv[]) {
   // -- command line arguments
   for (int i = 0; i < argc; i++){
     if (!strcmp(argv[i],"-h")) {
-	std::cout << "List of arguments:" << std::endl;
+	cout << "List of arguments:" << endl;
 	cout << "-b {0,1}      run blind?" << endl; 
-	std::cout << "-c filename   chain definition file" << std::endl;
-	std::cout << "-C filename   file with cuts" << std::endl;
-	std::cout << "-D path       where to put the output" << std::endl;
-	std::cout << "-f filename   single file instead of chain" << std::endl;
+	cout << "-c filename   chain definition file" << endl;
+	cout << "-C filename   file with cuts" << endl;
+	cout << "-D path       where to put the output" << endl;
+	cout << "-f filename   single file instead of chain" << endl;
 	cout << "-m            use MC information" << endl;
-	std::cout << "-n integer    number of events to run on" << std::endl;
-	std::cout << "-r class name which tree reader class to run" << std::endl;
-	std::cout << "-s number     seed for random number generator" << std::endl;
+	cout << "-n integer    number of events to run on" << endl;
+	cout << "-r class name which tree reader class to run" << endl;
+	cout << "-s number     seed for random number generator" << endl;
 	cout << "-S start     starting event number" << endl;
-	std::cout << "-o filename   set output file" << std::endl;
+	cout << "-o filename   set output file" << endl;
 	cout << "-v level      set verbosity level" << endl;
-	std::cout << "-h            prints this message and exits" << std::endl;
+	cout << "-h            prints this message and exits" << endl;
 	return 0;
     }
     if (!strcmp(argv[i],"-b"))  {blind      = atoi(argv[++i]); }                 // run blind?
@@ -199,53 +179,18 @@ int main(int argc, char *argv[]) {
   }
 
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
-  treeReader01 *a = NULL;
-  if (readerName == "bmmReader") a = new bmmReader(chain, TString(evtClassName));
-  else if (readerName == "bmmSignalReader") a = new bmmSignalReader(chain,TString(evtClassName));
-  else if (readerName == "bmmNormalizationReader") a = new bmmNormalizationReader(chain,TString(evtClassName));
-  else if (readerName == "bmmBs2JpsiPhiReader") a = new bmmBs2JpsiPhiReader(chain,TString(evtClassName));
-  else if (readerName == "kpReader") a = new kpReader(chain,TString(evtClassName));
-  else if (readerName == "ksReader") a = new ksReader(chain,TString(evtClassName));
-  else if (readerName == "phiReader") a = new phiReader(chain,TString(evtClassName));
-  else if (readerName == "dumpReader") a = new dumpReader(chain,TString(evtClassName));
-  else if (readerName == "dpReader") a = new dpReader(chain,TString(evtClassName));
-  else if (readerName == "d0Reader") a = new d0Reader(chain,TString(evtClassName));
-  else if (readerName == "copyReader") a = new copyReader(chain,TString(evtClassName));
-  else if (readerName == "muCharmReader") a = new muCharmReader(chain,TString(evtClassName));
-  else if (readerName == "triggerValidation") a = new triggerValidation(chain,TString(evtClassName));
-  else if (readerName == "genLevel") a = new genLevel(chain,TString(evtClassName));
-  else if (readerName == "decayCounter") a = new decayCounter(chain,TString(evtClassName));
-  else if (readerName == "impactReader") a = new impactReader(chain,TString(evtClassName));
-  else if (readerName == "otherDecays") a = new otherDecays(chain,TString(evtClassName));
-  else if (readerName == "mumuReader") a = new mumuReader(chain,TString(evtClassName));
-  else if (readerName == "mumuBdReader") a = new mumuBdReader(chain,TString(evtClassName));
-  else if (readerName == "mumuPsiReader") a = new mumuPsiReader(chain,TString(evtClassName));
-  else {
-    cout << "please provide a class name to instantiate" << endl;
-  }
-
+  treeReader01 *a = new bmm2Reader(chain, TString(evtClassName));
 
   if (a) {
-    if (verbose > -99) {
-      cout << "Setting verbosity to " << verbose << endl;
-      a->setVerbosity(verbose); 
-    }
+    if (verbose > -99) a->setVerbosity(verbose); 
     a->openHistFile(histfile); 
-    a->readCuts(cutFile, 1);
+    a->readCuts(cutFile.c_str(), 1);
     a->bookHist();
-    if (json) {
-      a->setJSONFile(jsonName.c_str()); 
-      a->forceJSON();
-    }
+    //     if (json) {
+    //       a->setJSONFile(jsonName.c_str()); 
+    //       a->forceJSON();
+    //     }
 
-    if (isMC) {
-      blind = 0; 
-      a->setMC(1);
-    } else {
-      a->setMC(0); 
-    }
-    if (blind) a->runBlind();
-    
     a->startAnalysis(); 
     a->loop(nevents, start);
     a->endAnalysis();

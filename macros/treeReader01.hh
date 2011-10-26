@@ -46,7 +46,7 @@ public:
   virtual void initVariables(); 
   virtual void fillHist();
   virtual bool goodRun();
-  virtual void setVerbosity(int f) {fVerbose = f;}
+  virtual void setVerbosity(int f) {std::cout << Form("setVerbosity(%d)", f) << std::endl;  fVerbose = f;}
   virtual void setMC(int f) {std::cout << Form("setMC(%d)", f) << std::endl; fIsMC = f;}
   virtual void runBlind() {std::cout << "running blinded" << std::endl; BLIND = 1;}
   virtual int  numberOfBPixLayers(TAnaTrack *t);

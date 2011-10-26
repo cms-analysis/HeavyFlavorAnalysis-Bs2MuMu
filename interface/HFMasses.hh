@@ -7,7 +7,7 @@
 #define MKSTAR     0.8960 
 #define MPHI       1.0195
 #define MLAMBDA_0  1.1157
-#define MD0        1.8645 
+#define MD0        1.8648 
 #define MDS        1.9682
 #define MDPLUS     1.8693 
 #define MDSTARPLUS 2.0100     

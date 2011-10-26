@@ -11,6 +11,7 @@
  <use name="DataFormats/Math">
  <use name="DataFormats/MuonReco">
  <use name="DataFormats/Provenance">
+ <use name="DataFormats/BeamSpot">
  <use name="DataFormats/TrackReco">
  <use name="DataFormats/TrackerRecHit2D">
  <use name="DataFormats/TrackingRecHit">

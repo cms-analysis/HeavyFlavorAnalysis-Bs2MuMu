@@ -469,6 +469,8 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   pCand->fPvTipE = pvImpParams.tip.error();
   pCand->fPvLip2 = pvImpParams2nd.lip.value();
   pCand->fPvLipE2 = pvImpParams2nd.lip.error();
+  pCand->fPvTip2 = pvImpParams2nd.tip.value();
+  pCand->fPvTipE2 = pvImpParams2nd.tip.error();
   
   // -- calculate lifetime
   {

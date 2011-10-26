@@ -65,6 +65,8 @@ obj/%.o : %.cc $(READER_HEADERS)
 obj/%.o : %.c $(CSTUFF)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+
+
 ###########
 # TARGETS #
 ###########
@@ -95,7 +97,7 @@ clean:
 	rm -f obj/*.o *Dict.* lib/libAna00.so lib/libUtil.so
 
 cleanall: clean
-	rm -f bin/runTreeReaders bin/runMergeTrees
+	rm -f bin/runTreeReaders bin/runMergeTrees 
 	rm -f bin/writeA01Event bin/readA01Event
 	rm -f lib/lib*.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libAna00.so

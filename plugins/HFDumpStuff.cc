@@ -10,6 +10,7 @@
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingVertexContainer.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingVertex.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
 
@@ -46,12 +47,16 @@ HFDumpStuff::HFDumpStuff(const edm::ParameterSet& iConfig):
   fCandidates1Label(iConfig.getUntrackedParameter<string>("Candidates1Label", string("JPsiToMuMu"))),
   fCandidates2Label(iConfig.getUntrackedParameter<string>("Candidates2Label", string("JPsiToMuMu"))),
   fCandidates3Label(iConfig.getUntrackedParameter<string>("Candidates3Label", string("JPsiToMuMu"))),
+  fLumiSummaryLabel(iConfig.getUntrackedParameter<InputTag>("LumiSummaryLabel", InputTag("lumiProducer"))),
+  fBeamSpotLabel(iConfig.getUntrackedParameter<InputTag>("BeamSpotLabel", InputTag("offlineBeamSpot"))),
   fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexLabel", InputTag("offlinePrimaryVertices"))),
   fPrimaryVertexTracksLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexTracksLabel", InputTag("generalTracks")))
 {
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFDumpStuff constructor" << endl;
   cout << "---  verbose:                    " << fVerbose << endl;
+  cout << "---  LumiSummaryLabel:           " << fLumiSummaryLabel << endl;
+  cout << "---  BeamSpotLabel:              " << fBeamSpotLabel << endl;
   cout << "---  PrimaryVertexLabel:         " << fPrimaryVertexLabel << endl;
   cout << "---  PrimaryVertexTracksLabel:   " << fPrimaryVertexTracksLabel << endl;
   cout << "----------------------------------------------------------------------" << endl;
@@ -83,7 +88,7 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   // Get the luminosity information 
   edm::LuminosityBlock const& iLumi = iEvent.getLuminosityBlock();
   edm::Handle<LumiSummary> lumi;
-  iLumi.getByLabel("lumiProducer", lumi);
+  iLumi.getByLabel(fLumiSummaryLabel, lumi);
   edm::Handle<edm::ConditionsInLumiBlock> cond;
   float intlumi = 0, instlumi=0;
   //int beamint1=0, beamint2=0;
@@ -101,7 +106,27 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     //std::cout << "** ERROR: Event does not get lumi info\n";
   }
 
-  gHFEvent->fLumi      = instlumi;
+  gHFEvent->fLumi     = instlumi;
+  gHFEvent->fLumiInt  = intlumi;
+
+  // -- beam spot
+  reco::BeamSpot beamSpot;
+  edm::Handle<reco::BeamSpot> beamSpotHandle;
+  iEvent.getByLabel(fBeamSpotLabel, beamSpotHandle);
+  
+  if (beamSpotHandle.isValid())    {
+    beamSpot = *beamSpotHandle;
+  } else {
+    cout << "==>HFDumpStuff> No beam spot available from EventSetup" << endl;
+  }
+  
+  double x0 = beamSpot.x0();
+  double y0 = beamSpot.y0();
+  double z0 = beamSpot.z0();
+
+  TAnaVertex bs; 
+  bs.fPoint.SetXYZ(x0, y0, z0); 
+  gHFEvent->fBeamSpot = bs;
 
   // -- Primary vertex
   int bestPV(-1), bestN(-1), cnt(0); 
@@ -178,15 +203,15 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   if (fVerbose > 0) cout << "The best pV is at position: " << bestPV  << " and has " << bestN << " tracks" << endl;
 
 
-	// -- pthat 
-	gHFEvent->fPtHat = -1.; 
-	try { 
-		edm::Handle<GenEventInfoProduct> evt_info; 
-		iEvent.getByType(evt_info); 
-		gHFEvent->fPtHat     = evt_info->qScale(); 
-	} catch (cms::Exception &ex) { 
-		if (fVerbose > 0) cout << "GenEventInfoProduct not found." << endl; 
-	} 
+  // -- pthat 
+  gHFEvent->fPtHat = -1.; 
+  try { 
+    edm::Handle<GenEventInfoProduct> evt_info; 
+    iEvent.getByType(evt_info); 
+    gHFEvent->fPtHat     = evt_info->qScale(); 
+  } catch (cms::Exception &ex) { 
+    if (fVerbose > 0) cout << "GenEventInfoProduct not found." << endl; 
+  } 
 
 
 }

@@ -36,7 +36,7 @@ using namespace edm;
 // ----------------------------------------------------------------------
 HFBs2JpsiPhi::HFBs2JpsiPhi(const ParameterSet& iConfig) :
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
-  fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("goodTracks"))), 
+  fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("generalTracks"))), 
   fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexLabel", InputTag("offlinePrimaryVertices"))),
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
   fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 1.0)), 
@@ -194,17 +194,17 @@ void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup)
 
   HFTwoParticleCombinatorics a(fVerbose); 
   vector<pair<int, int> > psiList; 
-  a.combine(psiList, tlist1, tlist2, 2.8, 3.4, 1); 
+  a.combine(psiList, tlist1, tlist2, MJPSI-fPsiWindow, MJPSI+fPsiWindow, 1); 
   if (fVerbose > 0) cout << "==>HFBs2JpsiKp> J/psi list size: " << psiList.size() << endl;
   vector<pair<int, int> > phiList; 
-  a.combine(phiList, klist, klist, 0.8, 1.3, 1); 
+  a.combine(phiList, klist, klist, MPHI-fPhiWindow, MPHI+fPhiWindow, 1); 
   if (fVerbose > 0) cout << "==>HFBs2JpsiKp> phi list size: " << phiList.size() << endl;
   
-  HFKalmanVertexFit    aKal(fTTB.product(), fPV, 100521, fVerbose);   aKal.fMaxDoca     = fMaxDoca; 
   HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
-  vector<Track> trackList; 
-  vector<int> trackIndices;
-  vector<double> trackMasses;
+  //  HFKalmanVertexFit    aKal(fTTB.product(), fPV, 100521, fVerbose);   aKal.fMaxDoca     = fMaxDoca; 
+  //   vector<Track> trackList; 
+  //   vector<int> trackIndices;
+  //   vector<double> trackMasses;
 
   // -- Build J/psi + phi
   TLorentzVector psi, phi, m1, m2, ka1, ka2, bs;
@@ -249,34 +249,34 @@ void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup)
       bs = psi + phi; 
       if (TMath::Abs(bs.M() - MBS) > fBsWindow) continue; 
       
-      // -- KVF: muon muon kaon
-      trackList.clear();
-      trackIndices.clear(); 
-      trackMasses.clear(); 
+      //       // -- KVF: muon muon kaon
+      //       trackList.clear();
+      //       trackIndices.clear(); 
+      //       trackMasses.clear(); 
       
-      trackList.push_back(tMuon1); 
-      trackIndices.push_back(iMuon1); 
-      trackMasses.push_back(MMUON);
+      //       trackList.push_back(tMuon1); 
+      //       trackIndices.push_back(iMuon1); 
+      //       trackMasses.push_back(MMUON);
       
-      trackList.push_back(tMuon2); 
-      trackIndices.push_back(iMuon2); 
-      trackMasses.push_back(MMUON);
-
-      trackList.push_back(tKaon1); 
-      trackIndices.push_back(iKaon1); 
-      trackMasses.push_back(MKAON);
-
-      trackList.push_back(tKaon2); 
-      trackIndices.push_back(iKaon2); 
-      trackMasses.push_back(MKAON);
+      //       trackList.push_back(tMuon2); 
+      //       trackIndices.push_back(iMuon2); 
+      //       trackMasses.push_back(MMUON);
       
-      if (0 == fVertexing) {
-		aKal.doNotFit(trackList, trackIndices, trackMasses, -100531); 	
-		continue; 
-      }
-
-      aKal.doFit(trackList, trackIndices, trackMasses, 100531); 	
-      aKal.doFit(trackList, trackIndices, trackMasses, 200531, 2); 	
+      //       trackList.push_back(tKaon1); 
+      //       trackIndices.push_back(iKaon1); 
+      //       trackMasses.push_back(MKAON);
+      
+      //       trackList.push_back(tKaon2); 
+      //       trackIndices.push_back(iKaon2); 
+      //       trackMasses.push_back(MKAON);
+      
+      //       if (0 == fVertexing) {
+      // 		aKal.doNotFit(trackList, trackIndices, trackMasses, -100531); 	
+      // 		continue; 
+      //       }
+      
+      //       aKal.doFit(trackList, trackIndices, trackMasses, 100531); 	
+      //       aKal.doFit(trackList, trackIndices, trackMasses, 200531, 2); 	
 
       // -- sequential fit: J/Psi kaons
       HFDecayTree theTree(300531, true, MBS, false, -1.0, true);

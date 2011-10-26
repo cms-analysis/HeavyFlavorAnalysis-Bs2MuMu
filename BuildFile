@@ -4,6 +4,7 @@
 <use name=FWCore/ParameterSet>
 <use name=DataFormats/TrackReco>
 <use name=DataFormats/VertexReco>
+<use name=DataFormats/BeamSpot>
 <use name=Geometry/TrackerGeometryBuilder>
 <use name=Geometry/TrackerNumberingBuilder>
 <use name=Geometry/Records>
@@ -39,6 +40,7 @@
    <use name=FWCore/ParameterSet>
    <use name=DataFormats/TrackReco>
    <use name=DataFormats/VertexReco>
+   <use name=DataFormats/BeamSpot>
    <use name=Geometry/TrackerGeometryBuilder>
    <use name=Geometry/TrackerNumberingBuilder>
    <use name=Geometry/Records>

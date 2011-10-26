@@ -80,8 +80,7 @@ HFDimuons::~HFDimuons() {
 
 
 // ----------------------------------------------------------------------
-void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup)
-{
+void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
   // -- get the magnetic field
   ESHandle<MagneticField> magfield;
   iSetup.get<IdealMagneticFieldRecord>().get(magfield);
@@ -141,14 +140,13 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup)
   }
 
   // -- set up vertex fitter 
-  HFKalmanVertexFit a(fTTB.product(), fPV, 1313, 0);
-  a.setNoCuts();
-  a.fMaxDoca = fMaxDoca;
   HFSequentialVertexFit aSeq(hTracks,fTTB.product(),recoPrimaryVertexCollection, field, fVerbose);
-
-  vector<Track> trackList; 
-  vector<int> trackIndices;
-  vector<double> trackMasses;
+  //   HFKalmanVertexFit a(fTTB.product(), fPV, 1313, 0);
+  //   a.setNoCuts();
+  //   a.fMaxDoca = fMaxDoca;
+  //   vector<Track> trackList; 
+  //   vector<int> trackIndices;
+  //   vector<double> trackMasses;
 
   TLorentzVector dimuon, m1, m2;
   int iMuon1(-1), iMuon2(-1); 
@@ -174,23 +172,23 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup)
 	continue; 
       }
       
-      // -- Vertexing, new style
-      trackList.clear();
-      trackIndices.clear(); 
-      trackMasses.clear(); 
+      //       // -- Vertexing, new style
+      //       trackList.clear();
+      //       trackIndices.clear(); 
+      //       trackMasses.clear(); 
       
-      trackList.push_back(tMuon1); 
-      trackIndices.push_back(iMuon1); 
-      trackMasses.push_back(MMUON);
+      //       trackList.push_back(tMuon1); 
+      //       trackIndices.push_back(iMuon1); 
+      //       trackMasses.push_back(MMUON);
       
-      trackList.push_back(tMuon2); 
-      trackIndices.push_back(iMuon2); 
-      trackMasses.push_back(MMUON);
-      if (fVertexing > 0) {
-	a.doFit(trackList, trackIndices, trackMasses, fType); 
-      } else {
-	a.doNotFit(trackList, trackIndices, trackMasses, fType); 	
-      }
+      //       trackList.push_back(tMuon2); 
+      //       trackIndices.push_back(iMuon2); 
+      //       trackMasses.push_back(MMUON);
+      //       if (fVertexing > 0) {
+      // 	a.doFit(trackList, trackIndices, trackMasses, fType); 
+      //       } else {
+      // 	a.doNotFit(trackList, trackIndices, trackMasses, fType); 	
+      //       }
 
       // -- Vertexing, with Kinematic Particles
       HFDecayTree theTree(301313, true, 0, false); // TODO adjust mass to meaningful value

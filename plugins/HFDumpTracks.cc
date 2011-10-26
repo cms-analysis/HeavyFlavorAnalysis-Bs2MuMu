@@ -34,6 +34,7 @@
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
@@ -59,6 +60,7 @@ using namespace reco;
 HFDumpTracks::HFDumpTracks(const edm::ParameterSet& iConfig):
   fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("ctfWithMaterialTracks"))),
   fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("primaryVertexLabel", InputTag("offlinePrimaryVertices"))),
+  fBeamSpotLabel(iConfig.getUntrackedParameter<InputTag>("beamSpotLabel", InputTag("offlineBeamSpot"))),
   fGenEventLabel(iConfig.getUntrackedParameter<InputTag>("generatorEventLabel", InputTag("source"))),
   fSimTracksLabel(iConfig.getUntrackedParameter<InputTag>("simTracksLabel", InputTag("famosSimHits"))),
   fAssociatorLabel(iConfig.getUntrackedParameter<InputTag>("associatorLabel", InputTag("TrackAssociatorByChi2"))), 
@@ -73,6 +75,7 @@ HFDumpTracks::HFDumpTracks(const edm::ParameterSet& iConfig):
   cout << "--- HFDumpTracks constructor  " << endl;
   cout << "---  tracksLabel:             " << fTracksLabel << endl;
   cout << "---  primaryVertexLabel:      " << fPrimaryVertexLabel << endl;
+  cout << "---  beamSpotLabel:           " << fBeamSpotLabel << endl;
   cout << "---  muonsLabel:              " << fMuonsLabel << endl;
   cout << "---  calomuonsLabel:          " << fCaloMuonsLabel << endl;
   cout << "---  generatorEventLabel:     " << fGenEventLabel << endl;
@@ -122,6 +125,19 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     cout << "==>HFDumpTracks> No primary vertex found, skipping" << endl;
     return;
   }
+
+  // -- get the beam spot
+  reco::BeamSpot beamSpot;
+  edm::Handle<reco::BeamSpot> beamSpotHandle;
+  iEvent.getByLabel(fBeamSpotLabel, beamSpotHandle);
+
+  if (beamSpotHandle.isValid()) {
+    beamSpot = *beamSpotHandle;
+  } else {
+    cout << "==>HFDumpTracks> No beam spot available from EventSetup" << endl;
+  }
+
+
 
 
   // -- get the collection of muons and store their corresponding track indices
@@ -205,14 +221,21 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     TrackBaseRef rTrackView(tracksView,i);
     Track trackView(*rTrackView);
 
+    math::XYZPoint refPt; 
+    double xE(0.), yE(0), zE(0.);
     if (fTrack2Pv[i] > -1) {
-      fPV = vertices[fTrack2Pv[i]]; 
+      //      fPV   = vertices[fTrack2Pv[i]]; 
+      refPt = vertices[fTrack2Pv[i]].position();
+      xE = vertices[fTrack2Pv[i]].xError();
+      yE = vertices[fTrack2Pv[i]].yError();
+      zE = vertices[fTrack2Pv[i]].zError();
     } else {
-      fPV = vertices[0]; 
+      // FIXME!!! Change to beamspot
+      refPt = beamSpot.position(); 
+      xE = beamSpot.BeamWidthX();
+      yE = beamSpot.BeamWidthY();
+      zE = beamSpot.sigmaZ();
     }
-
-    math::XYZPoint refPt = fPV.position();
-
 
     pTrack = gHFEvent->addRecTrack();
     pTrack->fIndex = i;
@@ -220,14 +243,33 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 			      trackView.eta(),
 			      trackView.phi()
 			      );
+    pTrack->fPtE   = trackView.ptError();
+    pTrack->fPhiE  = trackView.phiError();
+    pTrack->fEtaE  = trackView.etaError();
+
     pTrack->fTip   = trackView.dxy(refPt);
+    pTrack->fTipE  = sqrt(trackView.d0Error()*trackView.d0Error() + 0.5*xE*xE + 0.5*yE*yE); 
+    
     pTrack->fLip   = trackView.dz(refPt); 
+    pTrack->fLipE  = sqrt(trackView.dzError()*trackView.dzError() + zE*zE); 
     pTrack->fPvIdx = fTrack2Pv[i];
 
-    pTrack->fd0  = trackView.d0();
-    pTrack->fd0E = trackView.d0Error();
-    pTrack->fdz  = trackView.dz();
-    pTrack->fdzE = trackView.dzError();
+    math::XYZPoint bsPt(beamSpot.x0(),beamSpot.y0(), beamSpot.z0());
+    pTrack->fBsTip  = trackView.dxy(bsPt);
+    pTrack->fBsTipE = sqrt(trackView.d0Error()*trackView.d0Error() 
+			   + 0.5*beamSpot.BeamWidthX()*beamSpot.BeamWidthX() 
+			   + 0.5*beamSpot.BeamWidthY()*beamSpot.BeamWidthY()); 
+    pTrack->fBsLip  = trackView.dz(bsPt);
+    pTrack->fBsLipE = sqrt(trackView.dzError()*trackView.dzError() + beamSpot.sigmaZ()*beamSpot.sigmaZ());
+
+    pTrack->fdxy  = trackView.dxy();
+    pTrack->fdxyE = trackView.dxyError();
+    pTrack->fd0   = trackView.d0();
+    pTrack->fd0E  = trackView.d0Error();
+    pTrack->fdz   = trackView.dz();
+    pTrack->fdzE  = trackView.dzError();
+    pTrack->fdsz  = trackView.dsz();
+    pTrack->fdszE = trackView.dszError();
 
     pTrack->fQ = trackView.charge();
     pTrack->fChi2 = trackView.chi2();
@@ -236,23 +278,27 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     pTrack->fAlgorithm = trackView.algo(); 
 
     // -- see https://indico.cern.ch/getFile.py/access?contribId=2&resId=1&materialId=slides&confId=123067
-    pTrack->fDouble1 = trackView.validFraction(); 
+    pTrack->fValidHitFraction = trackView.validFraction(); 
 
     // -- from: RecoBTag/TrackProbability/src/TrackClassFilter.cc
-    reco::TrackBase::TrackQuality trackQualityUndef         =  reco::TrackBase::qualityByName("undefQuality");
-    reco::TrackBase::TrackQuality trackQualityLoose         =  reco::TrackBase::qualityByName("loose");
-    reco::TrackBase::TrackQuality trackQualityTight         =  reco::TrackBase::qualityByName("tight");
-    reco::TrackBase::TrackQuality trackQualityhighPur       =  reco::TrackBase::qualityByName("highPurity");
-    reco::TrackBase::TrackQuality trackQualityConfirmed     =  reco::TrackBase::qualityByName("confirmed");
-    reco::TrackBase::TrackQuality trackQualityGoodIterative =  reco::TrackBase::qualityByName("goodIterative");
-    
+    reco::TrackBase::TrackQuality trackQualityUndef               =  reco::TrackBase::qualityByName("undefQuality");
+    reco::TrackBase::TrackQuality trackQualityLoose               =  reco::TrackBase::qualityByName("loose");
+    reco::TrackBase::TrackQuality trackQualityTight               =  reco::TrackBase::qualityByName("tight");
+    reco::TrackBase::TrackQuality trackQualityhighPur             =  reco::TrackBase::qualityByName("highPurity");
+    reco::TrackBase::TrackQuality trackQualityConfirmed           =  reco::TrackBase::qualityByName("confirmed");
+    reco::TrackBase::TrackQuality trackQualityGoodIterative       =  reco::TrackBase::qualityByName("goodIterative");
+    reco::TrackBase::TrackQuality trackQualityLooseSetWithPV      =  reco::TrackBase::qualityByName("looseSetWithPV");
+    reco::TrackBase::TrackQuality trackQualityHighPuritySetWithPV =  reco::TrackBase::qualityByName("highPuritySetWithPV");
+
     int trakQuality  = 0;
-    if (trackView.quality(trackQualityUndef))          trakQuality |= 0x1<<5;
-    if (trackView.quality(trackQualityLoose))          trakQuality |= 0x1<<0;
-    if (trackView.quality(trackQualityTight))          trakQuality |= 0x1<<1;
-    if (trackView.quality(trackQualityhighPur))        trakQuality |= 0x1<<2;
-    if (trackView.quality(trackQualityConfirmed))      trakQuality |= 0x1<<3;
-    if (trackView.quality(trackQualityGoodIterative))  trakQuality |= 0x1<<4;
+    if (trackView.quality(trackQualityUndef))               trakQuality |= 0x1<<10;
+    if (trackView.quality(trackQualityLoose))               trakQuality |= 0x1<<0;
+    if (trackView.quality(trackQualityTight))               trakQuality |= 0x1<<1;
+    if (trackView.quality(trackQualityhighPur))             trakQuality |= 0x1<<2;
+    if (trackView.quality(trackQualityConfirmed))           trakQuality |= 0x1<<3;
+    if (trackView.quality(trackQualityGoodIterative))       trakQuality |= 0x1<<4;
+    if (trackView.quality(trackQualityLooseSetWithPV))      trakQuality |= 0x1<<5;
+    if (trackView.quality(trackQualityHighPuritySetWithPV)) trakQuality |= 0x1<<6;
     pTrack->fTrackQuality = trakQuality; 
 
     // -- filling dE/dx information (from Loic)

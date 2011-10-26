@@ -1,0 +1,7 @@
+# boxes ...
+BGLBOXMIN         5.10
+BGLBOXMAX         5.20
+SIGBOXMIN         5.27
+SIGBOXMAX         5.47
+BGHBOXMIN         5.50
+BGHBOXMAX         5.60

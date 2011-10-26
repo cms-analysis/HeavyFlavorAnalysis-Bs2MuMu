@@ -39,7 +39,7 @@ using namespace edm;
 // ----------------------------------------------------------------------
 HFBu2JpsiKp::HFBu2JpsiKp(const ParameterSet& iConfig) :
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
-  fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("goodTracks"))), 
+  fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("generalTracks"))), 
   fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexLabel", InputTag("offlinePrimaryVertices"))),
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
   fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 1.0)), 
@@ -191,14 +191,14 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup)
 
   HFTwoParticleCombinatorics a(fVerbose); 
   vector<pair<int, int> > psiList; 
-  a.combine(psiList, tlist1, tlist2, 2.8, 3.4, 1); 
+  a.combine(psiList, tlist1, tlist2, MJPSI-fPsiWindow, MJPSI+fPsiWindow, 1); 
   if (fVerbose > 0) cout << "==>HFBu2JpsiKp> J/psi list size: " << psiList.size() << endl;
-  
-  HFKalmanVertexFit     aKal(fTTB.product(), fPV, 100521, fVerbose);  aKal.fMaxDoca     = fMaxDoca; 
+   
   HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
-  vector<Track> trackList; 
-  vector<int> trackIndices;
-  vector<double> trackMasses;
+  //   HFKalmanVertexFit     aKal(fTTB.product(), fPV, 100521, fVerbose);  aKal.fMaxDoca     = fMaxDoca; 
+  //   vector<Track> trackList; 
+  //   vector<int> trackIndices;
+  //   vector<double> trackMasses;
 
   // -- Build J/psi + track
   TLorentzVector psi, cpsi, m1, m2, ka, bu;
@@ -232,39 +232,39 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup)
       bu = ka + psi; 
       if (TMath::Abs(bu.M() - MBPLUS) > fBuWindow) continue; 
 
-      // -- KVF: muon muon kaon
-      trackList.clear();
-      trackIndices.clear(); 
-      trackMasses.clear(); 
+      //       // -- KVF: muon muon kaon
+      //       trackList.clear();
+      //       trackIndices.clear(); 
+      //       trackMasses.clear(); 
       
-      trackList.push_back(tMuon1); 
-      trackIndices.push_back(iMuon1); 
-      trackMasses.push_back(MMUON);
+      //       trackList.push_back(tMuon1); 
+      //       trackIndices.push_back(iMuon1); 
+      //       trackMasses.push_back(MMUON);
       
-      trackList.push_back(tMuon2); 
-      trackIndices.push_back(iMuon2); 
-      trackMasses.push_back(MMUON);
+      //       trackList.push_back(tMuon2); 
+      //       trackIndices.push_back(iMuon2); 
+      //       trackMasses.push_back(MMUON);
+      
+      //       trackList.push_back(tKaon); 
+      //       trackIndices.push_back(iTrack); 
+      //       trackMasses.push_back(MKAON);
+      
+      //       if (0 == fVertexing) {
+      // 	aKal.doNotFit(trackList, trackIndices, trackMasses, -100521); 	
+      // 	continue; 
+      //       }
 
-      trackList.push_back(tKaon); 
-      trackIndices.push_back(iTrack); 
-      trackMasses.push_back(MKAON);
+      //       if (fVerbose > 1) {
+      //     	cout << "psiList/track: " << i << "/" << iTrack << endl;
+      //       }
+      //       aKal.doFit(trackList, trackIndices, trackMasses, 100521); 	
+      //       aKal.doFit(trackList, trackIndices, trackMasses, 200521, 2);
       
-      if (0 == fVertexing) {
-	aKal.doNotFit(trackList, trackIndices, trackMasses, -100521); 	
-	continue; 
-      }
-
-      if (fVerbose > 1) {
-    	cout << "psiList/track: " << i << "/" << iTrack << endl;
-      }
-      aKal.doFit(trackList, trackIndices, trackMasses, 100521); 	
-      aKal.doFit(trackList, trackIndices, trackMasses, 200521, 2);
-	  
       // -- sequential fit: J/Psi kaon
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> going to sequential fit" << endl;
-	  HFDecayTree theTree(300521, true, MBPLUS, false, -1.0, true);
+      HFDecayTree theTree(300521, true, MBPLUS, false, -1.0, true);
       
-	  HFDecayTreeIterator iterator = theTree.addDecayTree(300443, false, MJPSI, false);
+      HFDecayTreeIterator iterator = theTree.addDecayTree(300443, false, MJPSI, false);
       iterator->addTrack(iMuon1,13);
       iterator->addTrack(iMuon2,13);
       iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
@@ -276,7 +276,7 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup)
       aSeq.doFit(&theTree);
       
       // -- sequential fit: J/Psi kaon
-	  theTree.clear(400521, true, MBPLUS, false, -1.0, true);
+      theTree.clear(400521, true, MBPLUS, false, -1.0, true);
       
       iterator = theTree.addDecayTree(400443, true, MJPSI, true);
       iterator->addTrack(iMuon1,13);
