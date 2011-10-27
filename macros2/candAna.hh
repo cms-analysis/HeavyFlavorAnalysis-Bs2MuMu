@@ -70,12 +70,9 @@ public:
 
   int fVerbose;
   int fIsMC;
-  bool fForceJson;
 
   int fRun, fEvt, fLS;
 
-  // -- Cut values
-  std::string JSONFILE;
 
   double       MASSMIN,   MASSMAX; 
   double       SIGBOXMIN, SIGBOXMAX; 
@@ -95,8 +92,8 @@ public:
   
   int BLIND, TYPE, SELMODE, MUIDMASK, MUIDRESULT, TRACKQUALITY, TRUTHCAND, IGNORETRIGGER;
 
-  std::map<std::string, int> HLTRangeMin;
-  std::map<std::string, int> HLTRangeMax;
+  std::map<std::string, pair<int, int> > HLTRANGE;
+  //  std::map<std::string, int> HLTRangeMax;
 
 
   bool fBarrel, fWideMass; 

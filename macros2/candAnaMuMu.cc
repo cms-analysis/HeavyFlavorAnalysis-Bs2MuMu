@@ -8,7 +8,7 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 candAnaMuMu::candAnaMuMu(bmm2Reader *pReader, std::string name, std::string cutsFile) : candAna(pReader, name, cutsFile) {
-  cout << "==> candAnaMuMu: name = " << name << ", reading cutsfile " << cutsFile << endl;
+  cout << "==> candMuMuAna: constructor..." << endl;
 }
 
 
@@ -26,10 +26,14 @@ void candAnaMuMu::candAnalysis() {
   if (fIsMC) {
     fTree->Fill(); 
   } else {
-    if (fPreselection) {
-      ((TH1D*)fHistDir->Get("../monEvents"))->Fill(12); 
-      fTree->Fill(); 
-    }         
+    if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX) {
+      // do nothing
+    } else {
+      if (fPreselection) {
+	((TH1D*)fHistDir->Get("../monEvents"))->Fill(12); 
+	fTree->Fill(); 
+      }         
+    }
   }
 
 }

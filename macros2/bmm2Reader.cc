@@ -7,13 +7,14 @@
 #include "candAna.hh"
 #include "candAnaMuMu.hh"
 #include "candAnaBu2JpsiKp.hh"
+#include "candAnaBs2JpsiPhi.hh"
 
 using namespace std;
 
 // ----------------------------------------------------------------------
 bmm2Reader::bmm2Reader(TChain *tree, TString evtClassName): treeReader01(tree, evtClassName) {
   cout << "==> bmm2Reader: constructor..." << endl;
-  
+  fVerbose = 0; 
 }
 
 
@@ -42,9 +43,22 @@ void bmm2Reader::startAnalysis() {
 // ----------------------------------------------------------------------
 void bmm2Reader::eventProcessing() {
   ((TH1D*)fpHistFile->Get("monEvents"))->Fill(0); 
+
+  bool json = false;  
+   
+  if (fIsMC) {
+    json = 1; 
+  } else {
+    json = fpJSON->good(fRun, fLS); 
+    if (fVerbose > 1 && !json) {
+      cout << "JSON = 0 for run = " << fRun << " and LS = " << fLS << endl;
+    }
+  }
   
   for (unsigned int i = 0; i < lCandAnalysis.size(); ++i) {
     //    cout << "  calling " << lCandAnalysis[i]->fName << " analysis()" << endl;
+
+    lCandAnalysis[i]->fJSON  = json; 
     lCandAnalysis[i]->evtAnalysis(fpEvt);
   }
 
@@ -80,6 +94,7 @@ void bmm2Reader::readCuts(TString filename, int dump) {
     if (!strcmp(className, "candAnaMuMu")) {
       candAna *a = new candAnaMuMu(this, "candAnaMuMu", cutFile); 
       a->fVerbose = fVerbose; 
+      a->BLIND = BLIND; 
       lCandAnalysis.push_back(a); 
       if (dump) cout << "candAnaMuMu with          " << cutFile << endl;
     }
@@ -89,6 +104,13 @@ void bmm2Reader::readCuts(TString filename, int dump) {
       a->fVerbose = fVerbose; 
       lCandAnalysis.push_back(a); 
       if (dump) cout << "candAnaBu2JpsiKp with     " << cutFile << endl;
+    }
+
+    if (!strcmp(className, "candAnaBs2JpsiPhi")) {
+      candAna *a = new candAnaBs2JpsiPhi(this, "candAnaBs2JpsiPhi", cutFile); 
+      a->fVerbose = fVerbose; 
+      lCandAnalysis.push_back(a); 
+      if (dump) cout << "candAnaBs2JpsiPhi with     " << cutFile << endl;
     }
 
     if (!strcmp(className, "JSON")) {

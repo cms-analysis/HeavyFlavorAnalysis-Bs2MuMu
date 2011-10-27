@@ -1,7 +1,7 @@
 TYPE           301313
 TRUTHCAND         531
-TRIGRANGE    HLT_DoubleMu2_Bs_v5(1:99999999)
-#JSON        cuts/Cert_160404-167913_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
+TRIGRANGE   HLT_Dimuon6_Bs_v6_Bs2E33v1p2V4(1:99999999)
+TRIGRANGE   HLT_Dimuon4_Bs_Barrel_v7_Bs2E33v1p2V4(1:99999999)
 # -- boxes
 +input cuts/boxes.cuts
 # -- tracks

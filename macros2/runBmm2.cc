@@ -183,13 +183,14 @@ int main(int argc, char *argv[]) {
 
   if (a) {
     if (verbose > -99) a->setVerbosity(verbose); 
+    if (1 == blind) a->runBlind();
     a->openHistFile(histfile); 
     a->readCuts(cutFile.c_str(), 1);
     a->bookHist();
-    //     if (json) {
-    //       a->setJSONFile(jsonName.c_str()); 
-    //       a->forceJSON();
-    //     }
+    if (json) {
+      a->setJSONFile(jsonName.c_str()); 
+      a->forceJSON();
+    }
 
     a->startAnalysis(); 
     a->loop(nevents, start);

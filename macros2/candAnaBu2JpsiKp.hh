@@ -38,14 +38,18 @@ public:
 
   void        candAnalysis();
 
-  void        processType(); 
   void        genMatch(); 
   void        recoMatch(); 
   void        candMatch(); 
   
   void        bookHist();
 
-  double fMMKSpecial;
+  double       fKaonPt, fKaonEta, fKaonPhi;
+  double       fKPtGen, fKEtaGen;
+  double       fKaonPtNrf, fKaonEtaNrf;
+  int          fKaonTkQuality;
+  double       fJpsiPt, fJpsiEta, fJpsiPhi;
+
 };
 
 #endif

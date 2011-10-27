@@ -33,6 +33,8 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     recoMatch(); 
     candMatch(); 
   }
+
+  triggerSelection();
   
   TAnaCand *pCand(0);
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
@@ -74,7 +76,7 @@ void candAna::candAnalysis() {
       //      cout << "skipping  fake vertex" << endl;
     }
   }
-  cout << "fPvN = " << fPvN << endl;
+  //  cout << "fPvN = " << fPvN << endl;
 
   if (fpCand->fPvIdx > -1 && fpCand->fPvIdx < fpEvt->nPV()) {
     goodSV = 1; 
@@ -90,16 +92,7 @@ void candAna::candAnalysis() {
     fPvNtrk = -99;
   }
 
-  fJSON = 0; 
-  if (fIsMC) {
-    fJSON = 1; 
-  } else {
-    fJSON = fpReader->fpJSON->good(fRun, fLS); 
-    if (fVerbose > 1 && !fJSON) {
-      cout << "JSON = 0 for run = " << fRun << " and LS = " << fLS << endl;
-    }
-  }
-  
+ 
 //   if (fIsMC) {
 //     fCandTM    = tmCand(fpCand); 
 //   } else {
@@ -401,6 +394,142 @@ void candAna::candAnalysis() {
 // ----------------------------------------------------------------------
 void candAna::processType() {
 
+  TGenCand *pG;
+  
+  // documentation line partons (entries { d, u, s, c, b, t } )
+  double docPartCnt[6];
+  double docAntiCnt[6];
+
+  // partons
+  double parPartCnt[6];
+  double parAntiCnt[6];    
+    
+  for (int i = 0; i < 6; i++) {
+    docPartCnt[i] = 0; 
+    docAntiCnt[i] = 0; 
+    parPartCnt[i] = 0; 
+    parAntiCnt[i] = 0; 
+  }
+
+  int aid(0);
+  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
+
+    pG = fpEvt->getGenCand(i);
+
+    aid = TMath::Abs(pG->fID); 
+    if ( aid == 1 || aid == 2 ||
+         aid == 3 || aid == 4 || 
+         aid == 5 || aid == 6 || 
+         aid == 21) {
+      if ( pG->fStatus == 3 ) {
+        //      cout << "quark/gluon from documentation #" << i << "(ID: " << pG->fID << ")" << endl;
+      }
+      if ( pG->fStatus == 2 &&  TMath::Abs(pG->fID) != 21) {
+        //      cout << "decayed quark/gluon #" << i << " (ID: " << pG->fID << ")" << endl;
+      }
+      if ( pG->fStatus == 1 ) {
+        //      cout << "undecayed (?) quark/gluon #" << i << " (ID: " << pG->fID  << ")" << endl;
+      }
+    }
+
+    for (int j = 0; j < 6; j++) {
+
+      if ( pG->fStatus == 3 ) {
+        if ( pG->fID == j+1 ) {  
+          docPartCnt[j]++;
+        }
+        if ( pG->fID == -(j+1) ) {  
+          docAntiCnt[j]++;
+        }
+      }
+
+      if ( pG->fStatus == 2 ) {
+        if ( pG->fID == j+1 ) {  
+          parPartCnt[j]++;
+        }
+        if ( pG->fID == -(j+1) ) {  
+          parAntiCnt[j]++;
+        }
+      }
+    }
+  }
+
+  fProcessType = -99;
+  // -- top 
+  if (docPartCnt[5] >= 1 && docAntiCnt[5] >= 1) {
+    fProcessType = 50; 
+    //    printf("====> t: GGF (%i)\n", fProcessType);
+    return;
+  }
+  
+  if ((docPartCnt[5] >= 1 && docAntiCnt[5] == 0) || (docPartCnt[5] == 0 && docAntiCnt[5] >= 1) ) {
+    fProcessType = 51; 
+    //    printf("====> t: FEX (%i)\n", fProcessType);
+    return;
+  }
+
+  if (docPartCnt[5] == 0 && docAntiCnt[5] == 0 && (parPartCnt[5] >= 1 || parAntiCnt[5] >= 1)) {
+    fProcessType = 52;
+    //    printf("====> t: GSP (%i)\n", fProcessType); 
+    return;
+  }
+  
+  // -- beauty
+  if (docPartCnt[4] >= 1 && docAntiCnt[4] >= 1) {
+    fProcessType = 40; 
+   //    printf("====> b: GGF (%i)\n", fProcessType);
+    return;
+  } 
+  
+  if ((docPartCnt[4] >= 1 && docAntiCnt[4] == 0) || (docPartCnt[4] == 0 && docAntiCnt[4] >= 1) ) {
+    fProcessType = 41; 
+    //    printf("====> b: FEX (%i)\n", fProcessType);
+    return;
+  }
+
+  if (docPartCnt[4] == 0 && docAntiCnt[4] == 0 && (parPartCnt[4] >= 1 || parAntiCnt[4] >= 1)) {
+    fProcessType = 42; 
+    //    printf("====> b: GSP (%i)\n", fProcessType);
+
+    return;
+  }
+
+  if (docPartCnt[3] >= 1 && docAntiCnt[3] >= 1) {
+    fProcessType = 30; 
+    //    printf("====> c: GGF (%i)\n", fProcessType);
+    return;
+  }
+  
+ 
+  if ((docPartCnt[3] >= 1 && docAntiCnt[3] == 0) || (docPartCnt[3] == 0 && docAntiCnt[3] >= 1) ) {
+    fProcessType = 31; 
+    //    printf("====> c: FEX (%i)\n", fProcessType);
+    return;
+  }
+  
+  if (docPartCnt[3] == 0 && docAntiCnt[3] == 0 && (parPartCnt[3] >= 1 || parAntiCnt[3] >= 1)) {
+    fProcessType = 32; 
+    //    printf("====> c: GSP (%i)\n", fProcessType);
+    return;
+  }
+  
+  // light flavors
+  if ((docPartCnt[5] == 0 && docAntiCnt[5] == 0) && (parPartCnt[5] == 0 && parAntiCnt[5] == 0)
+      && (docPartCnt[4] == 0 && docAntiCnt[4] == 0) && (parPartCnt[4] == 0 && parAntiCnt[4] == 0)
+      && (docPartCnt[3] == 0 && docAntiCnt[3] == 0) && (parPartCnt[3] == 0 && parAntiCnt[3] == 0)
+      ) {
+    fProcessType = 1; 
+    //    printf("====> UDS: light flavors (%i)\n", fProcessType);
+    return;
+  }
+
+  // if no process type was determined
+  //  printf("====> Could not determine process type !!!\n");
+
+  fpEvt->dumpGenBlock();     
+
+
+
 }
 
 
@@ -448,18 +577,45 @@ void candAna::triggerSelection() {
     
     //    if (-32 == fVerbose) cout << "path " << i << ": " << a << endl;
     if (wasRun && result) {
-      if (-32 == fVerbose) cout << "run and fired: " << a << endl;
-      for (map<string, int>::iterator imap = HLTRangeMin.begin(); imap != HLTRangeMin.end(); ++imap) {  
-	if (a.Contains(imap->first.c_str()) && (imap->second <= fRun) && (fRun <= HLTRangeMax[imap->first])) {
-	  if (-32 == fVerbose) cout << "close match: " << imap->first.c_str() << " HLT: " << a 
-				    << " result: " << result 
-				    << " in run " << fRun 
-				    << endl;
-	  fGoodHLT = true; 
-	  // 	  if (!a.CompareTo(imap->first.c_str())) {
-	  // 	    cout << "exact match: " << imap->first.c_str() << " HLT: " << a << " result: " << result << endl;
-	  // 	  }
+      if (-32 == fVerbose) {
+	if ((a != "digitisation_step") 
+	    && (a != "L1simulation_step") 
+	    && (a != "digi2raw_step") 
+	    && (a != "HLTriggerFinalPath") 
+	    && (a != "raw2digi_step") 
+	    && (a != "reconstruction_step") 
+	    ) {
+	  cout << "run and fired: " << a << endl;
 	}
+      }
+
+      string spath; 
+      int rmin, rmax; 
+      for (map<string, pair<int, int> >::iterator imap = HLTRANGE.begin(); imap != HLTRANGE.end(); ++imap) {  
+	spath = imap->first; 
+	rmin = imap->second.first; 
+	rmax = imap->second.second; 
+	// 	if ((a != "digitisation_step") 
+	// 	    && (a != "L1simulation_step") 
+	// 	    && (a != "digi2raw_step") 
+	// 	    && (a != "HLTriggerFinalPath") 
+	// 	    && (a != "raw2digi_step") 
+	// 	    && (a != "reconstruction_step") 
+	// 	    ) {
+	// 	  cout << "path: " << a << ", comparing to " << spath << " for run range " << rmin << " .. " << rmax << endl;
+	// 	}
+	if (!a.CompareTo(imap->first.c_str())) {
+ 	  fGoodHLT = true; 
+	  if (fVerbose > 0) cout << "exact match: " << imap->first.c_str() << " HLT: " << a << " result: " << result << endl;
+	}
+
+ 	if (a.Contains(spath.c_str()) && (rmin <= fRun) && (fRun <= rmax)) {
+ 	  fGoodHLT = true; 
+	  if (fVerbose > 0) cout << "close match: " << imap->first.c_str() << " HLT: " << a 
+				 << " result: " << result 
+				 << " in run " << fRun 
+				 << endl;
+ 	}
       }
     }      
   }
@@ -621,13 +777,11 @@ void candAna::readCuts(string fileName, int dump) {
       char triggerlist[1000]; ok = 1; 
       sscanf(buffer, "%s %s", CutName, triggerlist);
       string tl(triggerlist); 
-      //      string::size_type idx = tl.find_first_of(","); 
       int r1(0), r2(0); 
       string hlt = splitTrigRange(tl, r1, r2); 
-      HLTRangeMin.insert(make_pair(hlt, r1)); 
-      HLTRangeMax.insert(make_pair(hlt, r2)); 
+      HLTRANGE.insert(make_pair(hlt, make_pair(r1, r2))); 
       if (dump) {
-	cout << "TRIGRANGE:       " << hlt << " from " << r1 << " to " << r2 << endl; 
+	cout << "HLTRANGE:       " << hlt << " from " << r1 << " to " << r2 << endl; 
       }
       ibin = 5; 
       hcuts->SetBinContent(ibin, 1);
@@ -683,10 +837,18 @@ void candAna::readCuts(string fileName, int dump) {
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: cos#alpha :: %5.4f", CutName, CANDCOSALPHA));
     }
 
+    if (!strcmp(CutName, "CANDALPHA")) {
+      CANDALPHA = CutValue; ok = 1;
+      if (dump) cout << "CANDALPHA:           " << CANDALPHA << endl;
+      ibin = 15;
+      hcuts->SetBinContent(ibin, CANDALPHA);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #alpha :: %5.4f", CutName, CANDALPHA));
+    }
+
     if (!strcmp(CutName, "CANDFLS3D")) {
       CANDFLS3D = CutValue; ok = 1;
       if (dump) cout << "CANDFLS3D:           " << CANDFLS3D << endl;
-      ibin = 15;
+      ibin = 16;
       hcuts->SetBinContent(ibin, CANDFLS3D);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{3d}/#sigma(l_{3d}) :: %3.1f", CutName, CANDFLS3D));
     }
@@ -694,7 +856,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDFLSXY")) {
       CANDFLSXY = CutValue; ok = 1;
       if (dump) cout << "CANDFLSXY:           " << CANDFLSXY << endl;
-      ibin = 16;
+      ibin = 17;
       hcuts->SetBinContent(ibin, CANDFLSXY);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{xy}/#sigma(l_{xy}) :: %3.1f", CutName, CANDFLSXY));
     }
@@ -702,7 +864,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDVTXCHI2")) {
       CANDVTXCHI2 = CutValue; ok = 1;
       if (dump) cout << "CANDVTXCHI2:           " << CANDVTXCHI2 << endl;
-      ibin = 17;
+      ibin = 18;
       hcuts->SetBinContent(ibin, CANDVTXCHI2);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #chi^{2} :: %3.1f", CutName, CANDVTXCHI2));
     }
@@ -710,7 +872,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDISOLATION")) {
       CANDISOLATION = CutValue; ok = 1;
       if (dump) cout << "CANDISOLATION:           " << CANDISOLATION << endl;
-      ibin = 18;
+      ibin = 19;
       hcuts->SetBinContent(ibin, CANDISOLATION);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: I_{trk} :: %4.2f", CutName, CANDISOLATION));
     }
@@ -718,7 +880,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDDOCATRK")) {
       CANDDOCATRK = CutValue; ok = 1;
       if (dump) cout << "CANDDOCATRK:           " << CANDDOCATRK << endl;
-      ibin = 19;
+      ibin = 20;
       hcuts->SetBinContent(ibin, CANDDOCATRK);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: doca_{trk} :: %4.3f", CutName, CANDDOCATRK));
     }

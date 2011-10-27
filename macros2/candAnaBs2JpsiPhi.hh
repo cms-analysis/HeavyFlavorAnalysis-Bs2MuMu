@@ -1,5 +1,5 @@
-#ifndef BMM2READER_H
-#define BMM2READER_H
+#ifndef CANDANABS2JPSIPHI_H
+#define CANDANABS2JPSIPHI_H
 
 #include <iostream>
 #include <string>
@@ -25,31 +25,27 @@
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
 
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/JSON.hh"
 
-#include "../macros/treeReader01.hh"
+#include "candAna.hh"
+#include "bmm2Reader.hh"
 
-#define DR      57.29577951
 
-class candAna;
-
-class bmm2Reader : public treeReader01 {
-
+class candAnaBs2JpsiPhi : public candAna {
+  
 public:
-  bmm2Reader(TChain *tree, TString evtClassName);
-  ~bmm2Reader();
+  candAnaBs2JpsiPhi(bmm2Reader *pReader, std::string name, std::string cutsFile);
+  ~candAnaBs2JpsiPhi();
 
-  virtual void   startAnalysis();
-  virtual void   eventProcessing();
-  virtual void   readCuts(TString filename, int dump = 1);
-  virtual void   bookHist();
+  void        candAnalysis();
 
-  std::vector<candAna*> lCandAnalysis;
+  void        processType(); 
+  void        genMatch(); 
+  void        recoMatch(); 
+  void        candMatch(); 
+  
+  void        bookHist();
 
-  // -- PidTables
-  PidTable *fpMuonID;
-  PidTable *fpMuonTr, *fpMuonTr1, *fpMuonTr2;
-
+  double fMMKSpecial;
 };
 
 #endif

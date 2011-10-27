@@ -1,7 +1,6 @@
-TYPE           301313
+TYPE          2000082
 TRUTHCAND         531
-# -- trigger
-+input cuts/triggerBs.cuts
+TRIGRANGE    HLT_DoubleMu2_Bs_v5(1:99999999)
 # -- boxes
 +input cuts/boxes.cuts
 # -- tracks

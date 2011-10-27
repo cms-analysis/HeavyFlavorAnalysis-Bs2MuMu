@@ -1,14 +1,7 @@
 TYPE           300521
 TRUTHCAND         521
-TRIGRANGE    HLT_DoubleMu3_Jpsi_v1(160329:161176)
-TRIGRANGE    HLT_DoubleMu3_Jpsi_v2(161216:163261)
-TRIGRANGE    HLT_Dimuon6p5_Jpsi_Displaced_v1(163269:163869)
-TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v1(165088:167043)
-TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v3(167078:167913)
-TRIGRANGE    HLT_DoubleMu3p5_Jpsi_Displaced_v2(170249:173198)
-TRIGRANGE    HLT_DoubleMu5_Jpsi_Displaced_v1(173236:177053)
-TRIGRANGE    HLT_DoubleMu5_Jpsi_Displaced_v2(177074:178380)
-TRIGRANGE    HLT_DoubleMu5_Jpsi_Displaced_v4(178420:99999999)
+# -- trigger
++input cuts/triggerDisplacedJpsi.cuts
 # -- boxes
 +input cuts/boxes.cuts
 # -- tracks
