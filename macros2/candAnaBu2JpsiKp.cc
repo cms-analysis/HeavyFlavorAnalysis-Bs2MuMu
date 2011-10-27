@@ -45,20 +45,21 @@ void candAnaBu2JpsiKp::candAnalysis() {
   fKaonPtNrf     = pks->fPlab.Perp();
   fKaonEtaNrf    = pks->fPlab.Eta();
 
-  
-  if (fIsMC) {
-    fGenBpartial = partialReco(fpCand); 
-    if (fpCand->fMass > 5.5 && fGenBpartial == 511) fpEvt->dumpGenBlock();
-  }
+//FIXME  
+//   if (fIsMC) {
+//     fGenBpartial = partialReco(fpCand); 
+//     if (fpCand->fMass > 5.5 && fGenBpartial == 511) fpEvt->dumpGenBlock();
+//   }
 
-  if (tmCand(fpCand)) {
-    TGenCand *pg1 = fpEvt->getGenCand(fpEvt->getRecTrack(pk->fIndex)->fGenIndex);
-    fKPtGen     = pg1->fP.Perp();
-    fKEtaGen    = pg1->fP.Eta();
-  } else {
-    fKPtGen     = -99.;
-    fKEtaGen    = -99.;
-  }
+//FIXME
+//   if (tmCand(fpCand)) {
+//     TGenCand *pg1 = fpEvt->getGenCand(fpEvt->getRecTrack(pk->fIndex)->fGenIndex);
+//     fKPtGen     = pg1->fP.Perp();
+//     fKEtaGen    = pg1->fP.Eta();
+//   } else {
+//     fKPtGen     = -99.;
+//     fKEtaGen    = -99.;
+//   }
   
 
   // -- Check for J/psi mass
@@ -173,5 +174,62 @@ void candAnaBu2JpsiKp::bookHist() {
   fTree->Branch("t3eta",&fKaonEtaNrf,"t3eta/D");
   fTree->Branch("g3pt", &fKPtGen,    "g3pt/D");
   fTree->Branch("g3eta",&fKEtaGen,   "g3eta/D");
+
+}
+
+
+// ----------------------------------------------------------------------
+void candAnaBu2JpsiKp::readCuts(string filename, int dump) {
+  candAna::readCuts(filename, dump); 
+
+  fCutFile = filename;
+
+  if (dump) cout << "==> candAna: Reading " << fCutFile << " for cut settings" << endl;
+  vector<string> cutLines; 
+  readFile(fCutFile, cutLines);
+
+  char CutName[100];
+  float CutValue;
+  int ok(0);
+
+  char  buffer[200];
+  TH1D *hcuts = new TH1D("hcuts", "", 1000, 0., 1000.);
+  hcuts->GetXaxis()->SetBinLabel(1, fCutFile.c_str());
+  int ibin; 
+  string cstring = "B cand"; 
+
+  for (unsigned int i = 0; i < cutLines.size(); ++i) {
+    sprintf(buffer, "%s", cutLines[i].c_str()); 
+    
+    ok = 0;
+    if (buffer[0] == '#') {continue;}
+    if (buffer[0] == '/') {continue;}
+    sscanf(buffer, "%s %f", CutName, &CutValue);
+
+    if (!strcmp(CutName, "JPSITYPE")) {
+      JPSITYPE = CutValue; ok = 1;
+      if (dump) cout << "JPSITYPE:      " << JPSITYPE << endl;
+      ibin = 210;
+      hcuts->SetBinContent(ibin, JPSITYPE);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: J/#psi ID :: %d", CutName, JPSITYPE));
+    }
+
+    if (!strcmp(CutName, "JPSIMASSLO")) {
+      JPSIMASSLO = CutValue; ok = 1;
+      if (dump) cout << "JPSIMASSLO:      " << JPSIMASSLO << endl;
+      ibin = 211;
+      hcuts->SetBinContent(ibin, JPSIMASSLO);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: m(J/#psi) :: %3.1f", CutName, JPSIMASSLO));
+    }
+
+    if (!strcmp(CutName, "JPSIMASSHI")) {
+      JPSIMASSHI = CutValue; ok = 1;
+      if (dump) cout << "JPSIMASSLO:      " << JPSIMASSHI << endl;
+      ibin = 212;
+      hcuts->SetBinContent(ibin, JPSIMASSHI);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: m(J/#psi) :: %3.1f", CutName, JPSIMASSHI));
+    }
+    
+  }
 
 }

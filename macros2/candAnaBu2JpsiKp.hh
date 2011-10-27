@@ -41,14 +41,21 @@ public:
   void        genMatch(); 
   void        recoMatch(); 
   void        candMatch(); 
+  void        readCuts(string filename, int dump);
   
   void        bookHist();
+
+  
+  int          JPSITYPE; 
+  double       JPSIMASSLO, JPSIMASSHI;
 
   double       fKaonPt, fKaonEta, fKaonPhi;
   double       fKPtGen, fKEtaGen;
   double       fKaonPtNrf, fKaonEtaNrf;
   int          fKaonTkQuality;
-  double       fJpsiPt, fJpsiEta, fJpsiPhi;
+  double       fJpsiMass, fJpsiPt, fJpsiEta, fJpsiPhi;
+
+  bool         fGoodJpsiMass;
 
 };
 
