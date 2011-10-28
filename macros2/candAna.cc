@@ -13,6 +13,9 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   fpReader = pReader; 
   fName = name; 
 
+  MASSMIN = 4.5;
+  MASSMAX = 6.5; 
+
   fHistDir = gFile->mkdir(fName.c_str());
   //   fHistDir->cd();
   //   cout << "pwd(): "; fHistDir->pwd();
@@ -57,6 +60,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 
     fpCand = pCand;
     candAnalysis();
+    fillCandidateHistograms(0);
   }
 
 }
@@ -197,7 +201,7 @@ void candAna::candAnalysis() {
     }
   }
 
-  fMu1Id        = muonID(p1); 
+  fMu1Id        = goodMuon(p1); 
   fMu1Pt        = p1->fPlab.Perp(); 
   fMu1Eta       = p1->fPlab.Eta(); 
   fMu1Phi       = p1->fPlab.Phi(); 
@@ -228,7 +232,7 @@ void candAna::candAnalysis() {
     fMu1EtaGen    = -99.;
   }
   
-  fMu2Id        = muonID(p2); 
+  fMu2Id        = goodMuon(p2); 
   fMu2Pt        = p2->fPlab.Perp(); 
   fMu2Eta       = p2->fPlab.Eta(); 
   fMu2Phi       = p2->fPlab.Phi(); 
@@ -365,18 +369,17 @@ void candAna::candAnalysis() {
   // -- fill cut variables
   fWideMass = ((fpCand->fMass > MASSMIN) && (fpCand->fMass < MASSMAX)); 
 
-// FIXME
-//   fGoodTracks = fvGoodTracks[fCandIdx];
-//   fGoodTracksPt = fvGoodTracksPt[fCandIdx];
-//   fGoodTracksEta = fvGoodTracksEta[fCandIdx];
-//   fGoodMuonsID  = fvGoodMuonsID[fCandIdx];
-//   fGoodMuonsPt  = fvGoodMuonsPt[fCandIdx]; 
-//   fGoodMuonsEta  = fvGoodMuonsEta[fCandIdx]; 
+  fGoodMuonsID   = (fMu1Id && fMu2Id);
+  fGoodMuonsPt   = ((fMu1Pt > MUPTLO) && (fMu1Pt < MUPTHI) && (fMu2Pt > MUPTLO) && (fMu2Pt < MUPTHI));
+  fGoodMuonsEta  = ((fMu1Eta > MUETALO) && (fMu1Eta < MUETAHI) && (fMu2Eta > MUETALO) && (fMu2Eta < MUETAHI));
+  fGoodTracks    = (goodTrack(p1) && goodTrack(p2));
+  fGoodTracksPt  = ((fMu1Pt > TRACKPTLO) && (fMu1Pt < TRACKPTHI) && (fMu2Pt > TRACKPTLO) && (fMu2Pt < TRACKPTHI));
+  fGoodTracksEta = ((fMu1Eta > TRACKETALO) && (fMu1Eta < TRACKETAHI) && (fMu2Eta > TRACKETALO) && (fMu2Eta < TRACKETAHI));
 
   fGoodQ = (fMu1Q*fMu2Q < 0); 
   fGoodPt = (fCandPt > CANDPTLO);
   fGoodEta = ((fCandEta > CANDETALO) && (fCandEta < CANDETAHI)); 
-  fGoodCosA = (fCandCosA > CANDCOSALPHA); 
+  fGoodAlpha = (fCandA < CANDALPHA); 
   fGoodIso = (fCandIso4 > CANDISOLATION); 
   fGoodChi2 = (fCandChi2/fCandDof < CANDVTXCHI2);
   fGoodFLS =  ((fCandFLS3d > CANDFLS3D) && (fCandFLSxy > CANDFLSXY)); 
@@ -392,6 +395,130 @@ void candAna::candAnalysis() {
 
   fPreselection = true; 
 }
+
+
+
+// ----------------------------------------------------------------------
+void candAna::fillCandidateHistograms(int offset) {
+ 
+  // -- only candidate histograms below
+  if (0 == fpCand) return;
+  
+  // -- Fill distributions
+  fpTracksPt[offset]->fill(fMu1Pt, fCandM);
+  fpTracksPt[offset]->fill(fMu2Pt, fCandM);
+  fpTracksEta[offset]->fill(fMu1Eta, fCandM);
+  fpTracksEta[offset]->fill(fMu2Eta, fCandM);
+
+  fpMuonsPt[offset]->fill(fMu1Pt, fCandM);
+  fpMuonsPt[offset]->fill(fMu2Pt, fCandM);
+  fpMuonsEta[offset]->fill(fMu1Eta, fCandM);
+  fpMuonsEta[offset]->fill(fMu2Eta, fCandM);
+  fpMuon1Eta[offset]->fill(fMu1Eta, fCandM);
+  fpMuon2Eta[offset]->fill(fMu2Eta, fCandM);
+  fpMuon1Pt[offset]->fill(fMu1Pt, fCandM);
+  fpMuon2Pt[offset]->fill(fMu2Pt, fCandM);
+
+  fpPvZ[offset]->fill(fPvZ, fCandM); 
+  fpPvN[offset]->fill(fPvN, fCandM); 
+  fpPvNtrk[offset]->fill(fPvNtrk, fCandM); 
+  fpPt[offset]->fill(fCandPt, fCandM); 
+  fpEta[offset]->fill(fCandEta, fCandM); 
+  fpAlpha[offset]->fill(fCandA, fCandM);
+  fpCosA[offset]->fill(fCandCosA, fCandM);
+  fpIso[offset]->fill(fCandIso, fCandM);
+
+}
+
+
+// ----------------------------------------------------------------------
+void candAna::basicCuts() {
+  cout << "    candAna basic cuts" << endl;
+  fAnaCuts.addCut("fWideMass", "m(B candidate) [GeV]", fWideMass); 
+  fAnaCuts.addCut("fGoodHLT", "HLT", fGoodHLT); 
+  fAnaCuts.addCut("fGoodMuonsID", "lepton ID", fGoodMuonsID); 
+  fAnaCuts.addCut("fGoodMuonsPt", "p_{T,#mu} [GeV]", fGoodMuonsPt); 
+  fAnaCuts.addCut("fGoodMuonsEta", "#eta_{#mu}", fGoodMuonsEta); 
+  fAnaCuts.addCut("fGoodTracks", "good tracks", fGoodTracks); 
+  fAnaCuts.addCut("fGoodTracksPt", "p_{T,trk} [GeV]", fGoodTracksPt); 
+  fAnaCuts.addCut("fGoodTracksEta", "#eta_{trk} ", fGoodTracksEta); 
+}
+
+
+// ----------------------------------------------------------------------
+void candAna::moreBasicCuts() {
+  cout << "    candAna more basic cuts?" << endl;
+
+}
+
+
+// ----------------------------------------------------------------------
+void candAna::candidateCuts() {
+  cout << "    candAna candidate cuts" << endl;
+  fAnaCuts.addCut("fGoodQ", "q_{1} 1_{2}", fGoodQ); 
+  fAnaCuts.addCut("fGoodPt", "p_{T,B}", fGoodPt); 
+  fAnaCuts.addCut("fGoodEta", "#eta_{B}", fGoodEta); 
+  fAnaCuts.addCut("fGoodAlpha", "#alpha", fGoodAlpha); 
+  fAnaCuts.addCut("fGoodFLS", "l/#sigma(l)", fGoodFLS); 
+  fAnaCuts.addCut("fGoodChi2", "#chi^{2}", fGoodChi2); 
+  fAnaCuts.addCut("fGoodIso", "I_{trk}", fGoodIso); 
+  fAnaCuts.addCut("fGoodDocaTrk", "d_{ca}(trk)", fGoodDocaTrk); 
+  fAnaCuts.addCut("fGoodIP", "sin#beta*l_{3d}/IP", fGoodIP); 
+}
+
+
+// ----------------------------------------------------------------------
+void candAna::moreCandidateCuts() {
+  cout << "    candAna more candidate cuts?" << endl;
+
+}
+
+
+// ---------------------------------------------------------------------- 
+AnalysisDistribution* candAna::bookDistribution(const char *hn, const char *ht, const char *hc, int nbins, double lo, double hi) {
+  AnalysisDistribution *p = new AnalysisDistribution(hn, ht, nbins, lo, hi); 
+  p->setSigWindow(SIGBOXMIN, SIGBOXMAX); 
+  p->setBg1Window(BGLBOXMIN, BGLBOXMAX); 
+  p->setBg2Window(BGHBOXMIN, BGHBOXMAX); 
+  p->setAnalysisCuts(&fAnaCuts, hc); 
+  p->setPreselCut(&fPreselection); 
+
+  TH1 *h = (TH1D*)fHistDir->Get("analysisDistributions"); 
+  for (int i = 1; i < h->GetNbinsX(); ++i) {
+    if (!strcmp(h->GetXaxis()->GetBinLabel(i), "")) {
+      // cout << "adding at bin " << i << " the label " << hn << endl;
+      h->GetXaxis()->SetBinLabel(i, hn);
+      break;
+    }
+  }
+  return p; 
+}
+
+
+
+// ----------------------------------------------------------------------
+bool candAna::goodTrack(TAnaTrack *pt) {
+
+  if (TRACKQUALITY > 0 && (0 == (pt->fTrackQuality & TRACKQUALITY))) {
+    if (fVerbose > 5) cout << "track " << pt->fIndex << " failed track quality: " << pt->fTrackQuality << endl;
+    return false; 
+  }
+  
+  if (TMath::Abs(pt->fTip) > TRACKTIP) {
+    if (fVerbose > 5) cout << "track " << pt->fIndex << " failed tip: " << pt->fTip
+			   << " pointing to PV = "  << pt->fPvIdx  << endl;
+    return false; 
+  }
+  
+  if (TMath::Abs(pt->fLip) > TRACKLIP) { 
+    if (fVerbose > 5) cout << "track " << pt->fIndex << " failed lip: " << pt->fLip 
+			   << " pointing to PV = "  << pt->fPvIdx  << endl;          
+    return false; 
+  }
+
+  return true; 
+}
+
 
 // ----------------------------------------------------------------------
 void candAna::processType() {
@@ -629,15 +756,11 @@ void candAna::triggerSelection() {
 
 // ----------------------------------------------------------------------
 void candAna::bookHist() {
-  cout << "==>candAna: bookHist" << endl;
 
-  //   fHistDir = gFile->mkdir(fName.c_str());
   fHistDir->cd();
-  cout << "pwd(): "; fHistDir->pwd();
 
   // -- Reduced Tree
   fTree = new TTree("events", "events");
-  cout << "fTree: " << fTree << endl;
   fTree->Branch("run",    &fRun,               "run/I");
   fTree->Branch("json",   &fJSON,              "json/O");
   fTree->Branch("evt",    &fEvt,               "evt/I");
@@ -722,12 +845,42 @@ void candAna::bookHist() {
   fTree->Branch("hm2pt",  &fHltMu2Pt,  "hm2pt/D");    
   fTree->Branch("hm2eta", &fHltMu2Eta, "hm2eta/D");  
   fTree->Branch("hm2phi", &fHltMu2Phi, "hm2phi/D");  
+
+
+  // -- Analysis distributions
+  TH1D *h = new TH1D("analysisDistributions", "analysisDistributions", 10000, 0., 10000.); 
+
+  int i = 0; 
+  string name = "A"; 
+  fpPvZ[i]       = bookDistribution(Form("%spvz", name.c_str()), "z_{PV} [cm]", "fGoodHLT", 50, -25., 25.);           
+  fpPvN[i]       = bookDistribution(Form("%spvn", name.c_str()), "N(PV) ", "fGoodHLT", 20, 0., 20.);           
+  fpPvNtrk[i]    = bookDistribution(Form("%spvntrk", name.c_str()), "N_{trk}^{PV} ", "fGoodHLT", 20, 0., 200.);           
+  fpTracksPt[i]  = bookDistribution(Form("%strackspt", name.c_str()), "p_{T} [GeV]", "fGoodTracksPt", 25, 0., 25.);
+  fpTracksEta[i] = bookDistribution(Form("%strackseta", name.c_str()), "#eta_{T}", "fGoodTracksEta", 25, -2.5, 2.5);
+  fpMuonsPt[i]   = bookDistribution(Form("%smuonspt", name.c_str()), "p_{T, #mu} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+  fpMuon1Pt[i]   = bookDistribution(Form("%smuon1pt", name.c_str()), "p_{T, #mu1} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+  fpMuon2Pt[i]   = bookDistribution(Form("%smuon2pt", name.c_str()), "p_{T, #mu2} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+  fpMuonsEta[i]  = bookDistribution(Form("%smuonseta", name.c_str()), "#eta_{#mu}", "fGoodMuonsEta", 20, -2.5, 2.5); 
+  fpMuon1Eta[i]  = bookDistribution(Form("%smuon1eta", name.c_str()), "#eta_{#mu1}", "fGoodMuonsEta", 20, -2.5, 2.5); 
+  fpMuon2Eta[i]  = bookDistribution(Form("%smuon2eta", name.c_str()), "#eta_{#mu2}", "fGoodMuonsEta", 20, -2.5, 2.5); 
+  fpPt[i]        = bookDistribution(Form("%spt", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 20, 0., 50.); 
+  fpEta[i]       = bookDistribution(Form("%seta", name.c_str()), "#eta(B)", "fGoodEta", 20, -2.5, 2.5); 
+  fpCosA[i]      = bookDistribution(Form("%scosa", name.c_str()), "cos(#alpha_{3D})", "fGoodAlpha", 30, 0.97, 1.); 
+  fpAlpha[i]     = bookDistribution(Form("%salpha", name.c_str()), "#alpha_{3D}", "fGoodAlpha", 20, 0., 0.2); 
+  fpIso[i]       = bookDistribution(Form("%siso", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
   
   
 }
 
 // ----------------------------------------------------------------------
 void candAna::readCuts(string fileName, int dump) {
+
+  // -- set up cut sequence for analysis
+  basicCuts(); 
+  moreBasicCuts(); 
+  candidateCuts(); 
+  moreCandidateCuts(); 
+
   fCutFile = fileName;
 
   if (dump) cout << "==> candAna: Reading " << fCutFile << " for cut settings" << endl;
@@ -1081,7 +1234,7 @@ void candAna::readFile(string filename, vector<string> &lines) {
 
 
 // ----------------------------------------------------------------------
-bool candAna::muonID(TAnaTrack *pT) {
+bool candAna::goodMuon(TAnaTrack *pT) {
   int result = pT->fMuID & MUIDMASK;
 
 //   FIXME

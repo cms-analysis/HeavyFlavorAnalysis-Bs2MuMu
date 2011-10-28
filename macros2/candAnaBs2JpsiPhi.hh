@@ -38,6 +38,7 @@ public:
 
   void        candAnalysis();
 
+  void        moreBasicCuts();
   void        processType(); 
   void        genMatch(); 
   void        recoMatch(); 

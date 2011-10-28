@@ -47,8 +47,8 @@ void candAnaBs2JpsiPhi::candAnalysis() {
   // -- special case for truth candidates (which have no daughter cands)
   if (fpCand->fType > 999999) {
     TAnaTrack *p0; 
-    TAnaTrack *p1(0), *ps1(0);
-    TAnaTrack *p2(0), *ps2(0); 
+    TAnaTrack *p1(0);
+    TAnaTrack *p2(0); 
     
     for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
       p0 = fpEvt->getSigTrack(it);     
@@ -172,6 +172,15 @@ void candAnaBs2JpsiPhi::candAnalysis() {
   }
 
 }
+
+// ----------------------------------------------------------------------
+void candAnaBs2JpsiPhi::moreBasicCuts() {
+  cout << "   candAnaBs2JpsiPhi: more basic cuts" << endl;
+  fAnaCuts.addCut("fGoodJpsiMass", "m(J/psi)", fGoodJpsiMass); 
+  fAnaCuts.addCut("fGoodDeltaR", "Delta R(KK)", fGoodDeltaR); 
+  fAnaCuts.addCut("fGoodMKK", "m(KK) [GeV]", fGoodMKK); 
+}
+
 
 // ----------------------------------------------------------------------
 void candAnaBs2JpsiPhi::processType() {

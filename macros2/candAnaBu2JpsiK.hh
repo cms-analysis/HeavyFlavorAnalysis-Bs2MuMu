@@ -37,6 +37,7 @@ public:
   ~candAnaBu2JpsiK();
 
   void        candAnalysis();
+  void        moreBasicCuts();
 
   void        genMatch(); 
   void        recoMatch(); 

@@ -46,13 +46,22 @@ public:
   virtual void        recoMatch(); 
   virtual void        candMatch(); 
   virtual void        triggerSelection();
-
+  virtual void        fillCandidateHistograms(int offset);
+    
   virtual void        bookHist();
+  virtual AnalysisDistribution* bookDistribution(const char *hn, const char *ht, const char *hc, int nbins, double lo, double hi);
+
+  virtual void        basicCuts();
+  virtual void        moreBasicCuts();
+  virtual void        candidateCuts();
+  virtual void        moreCandidateCuts();
 
   virtual void        readCuts(std::string fileName, int dump = 1);
   virtual void        readFile(std::string fileName, std::vector<std::string> &lines);
 
-  virtual bool        muonID(TAnaTrack *pT);
+  virtual bool        goodTrack(TAnaTrack *pt);
+  virtual bool        goodMuon(TAnaTrack *pt);
+
   virtual std::string splitTrigRange(std::string tl, int &r1, int &r2);
 
   virtual double      isoClassic(TAnaCand*); 
@@ -72,7 +81,6 @@ public:
   int fIsMC;
 
   int fRun, fEvt, fLS;
-
 
   double       MASSMIN,   MASSMAX; 
   double       SIGBOXMIN, SIGBOXMAX; 
@@ -130,10 +138,22 @@ public:
   double  fCandDocaTrk, fMu1IP, fMu2IP, fCandPvTip, fCandPvTipE, fCandPvLip, fCandPvLipE; 
 
   bool    fGoodHLT, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta, fGoodTracks, fGoodTracksPt, fGoodTracksEta;
-  bool    fGoodQ, fGoodPt, fGoodEta, fGoodCosA, fGoodIso, fGoodChi2, fGoodFLS; 
+  bool    fGoodQ, fGoodPt, fGoodEta, fGoodCosA, fGoodAlpha, fGoodIso, fGoodChi2, fGoodFLS; 
   bool    fGoodDocaTrk, fGoodIP; 
 
   bool    fPreselection; 
+
+  // -- Analysis distributions
+#define NAD 10
+  AnalysisDistribution   *fpPvZ[NAD], *fpPvN[NAD], *fpPvNtrk[NAD],  
+    *fpTracksPt[NAD],  *fpTracksEta[NAD], 
+    *fpMuonsPt[NAD], *fpMuonsEta[NAD], *fpMuon1Pt[NAD], *fpMuon2Pt[NAD], *fpMuon1Eta[NAD], *fpMuon2Eta[NAD],
+    *fpPt[NAD], *fpEta[NAD], 
+    *fpCosA[NAD], *fpAlpha[NAD],
+    *fpIso[NAD]
+    ;
+
+
 };
 
 #endif

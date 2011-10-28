@@ -27,12 +27,7 @@ bmm2Reader::~bmm2Reader() {
 // ----------------------------------------------------------------------
 void bmm2Reader::startAnalysis() {
   cout << "==> bmm2Reader: fVerbose = " << fVerbose << endl;
-  cout << "==> bmm2Reader: setup PidTables and JSON file" << endl;
-
   fpJSON = new JSON(JSONFILE.c_str(), (fVerbose!=0?1:0)); 
-  
-  cout << "==> bmm2Reader: start analysis" << endl;
-
 }
 
 
@@ -68,7 +63,7 @@ void bmm2Reader::bookHist() {
   h = new TH1D("monEvents", "monEvents", 10, 0., 10.);
 
   for (unsigned int i = 0; i < lCandAnalysis.size(); ++i) {
-    cout << "  calling " << lCandAnalysis[i]->fName << " bookHist()" << endl;
+    //    cout << "  calling " << lCandAnalysis[i]->fName << " bookHist()" << endl;
     lCandAnalysis[i]->bookHist();
   }
 

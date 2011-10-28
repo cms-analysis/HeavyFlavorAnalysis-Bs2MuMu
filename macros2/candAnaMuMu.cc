@@ -67,10 +67,6 @@ void candAnaMuMu::candMatch() {
 // ----------------------------------------------------------------------
 void candAnaMuMu::bookHist() {
   candAna::bookHist();
-  cout << "==>candAnaMuMu: bookHist" << endl;
-  cout << "pwd(): "; fHistDir->pwd();
-  cout << "fTree: " << fTree << endl;
-  fTree->Branch("mmspecial",      &fMMSpecial,  "mmspecial/D");
 
 }
 
