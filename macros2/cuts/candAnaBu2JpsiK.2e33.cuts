@@ -1,12 +1,13 @@
 TYPE           300521
 TRUTHCAND         521
-# -- trigger
-+input cuts/triggerDisplacedJpsi.cuts
+TRIGRANGE    HLT_DoubleMu3p5_Jpsi_Displaced_v2_Bs2E33v1p2V4(1:99999999)
 # -- boxes
-+input cuts/boxes.cuts
++input cuts/boxes.Bu2JpsiK.cuts
 # -- tracks
 +input cuts/tracks.cuts
 # -- muons
 +input cuts/muons.cuts
 # -- candidate
 +input cuts/candidate.cuts
+# -- J/psi cuts
++input cuts/jpsi.cuts

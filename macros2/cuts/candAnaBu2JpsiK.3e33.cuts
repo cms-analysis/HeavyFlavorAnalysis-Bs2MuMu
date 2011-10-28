@@ -1,8 +1,8 @@
 TYPE           300521
 TRUTHCAND         521
-TRIGRANGE    HLT_DoubleMu3p5_Jpsi_Displaced_v2_Bs2E33v1p2V4(1:99999999)
+TRIGRANGE    HLT_DoubleMu3p5_Jpsi_Displaced_v2_Bs3E33v1p2V4(1:99999999)
 # -- boxes
-+input cuts/boxes.cuts
++input cuts/boxes.Bu2JpsiK.cuts
 # -- tracks
 +input cuts/tracks.cuts
 # -- muons

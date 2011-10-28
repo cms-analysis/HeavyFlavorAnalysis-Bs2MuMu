@@ -44,6 +44,7 @@ public:
   void        candMatch(); 
   
   void        bookHist();
+  void        readCuts(string filename, int dump);
 
   double fMMSpecial;
 };

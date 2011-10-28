@@ -44,8 +44,45 @@ public:
   void        candMatch(); 
   
   void        bookHist();
+  void        readCuts(string filename, int dump);
 
-  double fMMKSpecial;
+  int          JPSITYPE; 
+  double       JPSIMASSLO, JPSIMASSHI;
+
+  double       fKaonPt, fKaonEta, fKaonPhi;
+  double       fKPtGen, fKEtaGen;
+  double       fKaonPtNrf, fKaonEtaNrf;
+  int          fKaonTkQuality;
+  double       fJpsiMass, fJpsiPt, fJpsiEta, fJpsiPhi;
+
+  bool         fGoodJpsiMass;
+
+
+  double       fKa1Pt, fKa1Eta, fKa1Phi;
+  double       fKa2Pt, fKa2Eta, fKa2Phi;
+  double       fPhiPt, fPhiEta, fPhiPhi; 
+
+  double       fKa1PtNrf, fKa1EtaNrf;
+  double       fKa2PtNrf, fKa2EtaNrf;
+
+  double       fKa1PtGen, fKa1EtaGen, fKa2PtGen, fKa2EtaGen;
+  int          fKa1TkQuality, fKa2TkQuality;
+
+  // -- TM 
+  int                     fGenK1Tmi, fGenK2Tmi; 
+  int                     fRecK1Tmi, fRecK2Tmi; 
+  
+  // -- effTree
+  float fETk1pt, fETk1eta, fETg3pt, fETg3eta;
+  float fETk2pt, fETk2eta, fETg4pt, fETg4eta;
+  int   fETk1q,  fETk2q; 
+  bool  fETk1gt, fETk2gt;
+
+  // -- Additional variables and cuts for Bs -> J/psi phi
+  double            MKKLO, MKKHI, DELTAR;
+  double            fDeltaR, fMKK;
+  bool              fGoodDeltaR, fGoodMKK;
+
 };
 
 #endif

@@ -9,6 +9,7 @@ using namespace std;
 // ----------------------------------------------------------------------
 candAnaMuMu::candAnaMuMu(bmm2Reader *pReader, std::string name, std::string cutsFile) : candAna(pReader, name, cutsFile) {
   cout << "==> candMuMuAna: constructor..." << endl;
+  readCuts(cutsFile, 1); 
 }
 
 
@@ -70,5 +71,13 @@ void candAnaMuMu::bookHist() {
   cout << "pwd(): "; fHistDir->pwd();
   cout << "fTree: " << fTree << endl;
   fTree->Branch("mmspecial",      &fMMSpecial,  "mmspecial/D");
+
+}
+
+
+// ----------------------------------------------------------------------
+void candAnaMuMu::readCuts(string filename, int dump) {
+
+  candAna::readCuts(filename, dump); 
 
 }

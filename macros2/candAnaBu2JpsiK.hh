@@ -1,5 +1,5 @@
-#ifndef CANDANABU2JPSIKP_H
-#define CANDANABU2JPSIKP_H
+#ifndef CANDANABU2JPSIK_H
+#define CANDANABU2JPSIK_H
 
 #include <iostream>
 #include <string>
@@ -30,11 +30,11 @@
 #include "bmm2Reader.hh"
 
 
-class candAnaBu2JpsiKp : public candAna {
+class candAnaBu2JpsiK : public candAna {
   
 public:
-  candAnaBu2JpsiKp(bmm2Reader *pReader, std::string name, std::string cutsFile);
-  ~candAnaBu2JpsiKp();
+  candAnaBu2JpsiK(bmm2Reader *pReader, std::string name, std::string cutsFile);
+  ~candAnaBu2JpsiK();
 
   void        candAnalysis();
 

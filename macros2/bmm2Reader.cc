@@ -6,7 +6,7 @@
 
 #include "candAna.hh"
 #include "candAnaMuMu.hh"
-#include "candAnaBu2JpsiKp.hh"
+#include "candAnaBu2JpsiK.hh"
 #include "candAnaBs2JpsiPhi.hh"
 
 using namespace std;
@@ -29,11 +29,7 @@ void bmm2Reader::startAnalysis() {
   cout << "==> bmm2Reader: fVerbose = " << fVerbose << endl;
   cout << "==> bmm2Reader: setup PidTables and JSON file" << endl;
 
-  fpMuonID = new PidTable("../macros/pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
-  fpMuonTr1 = new PidTable("../macros/pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
-  fpMuonTr2 = new PidTable("../macros/pidtables/110606/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
-
-  fpJSON = new JSON(JSONFILE.c_str()); 
+  fpJSON = new JSON(JSONFILE.c_str(), (fVerbose!=0?1:0)); 
   
   cout << "==> bmm2Reader: start analysis" << endl;
 
@@ -81,8 +77,6 @@ void bmm2Reader::bookHist() {
 
 // ----------------------------------------------------------------------
 void bmm2Reader::readCuts(TString filename, int dump) {
-  cout << "==> bmm2Reader: readCuts" << endl;
-  
   if (dump) cout << "==> bmm2Reader: Reading " << filename << " for classes setup" << endl;
   
   ifstream is(filename.Data());
@@ -91,33 +85,75 @@ void bmm2Reader::readCuts(TString filename, int dump) {
   while (is.getline(buffer, 1000, '\n')) {
     sscanf(buffer, "%s %s", className, cutFile);
 
+    // -- set up candidate analyzer classes
     if (!strcmp(className, "candAnaMuMu")) {
       candAna *a = new candAnaMuMu(this, "candAnaMuMu", cutFile); 
       a->fVerbose = fVerbose; 
       a->BLIND = BLIND; 
       lCandAnalysis.push_back(a); 
-      if (dump) cout << "candAnaMuMu with          " << cutFile << endl;
     }
 
-    if (!strcmp(className, "candAnaBu2JpsiKp")) {
-      candAna *a = new candAnaBu2JpsiKp(this, "candAnaBu2JpsiKp", cutFile); 
+    if (!strcmp(className, "candAnaBu2JpsiK")) {
+      candAna *a = new candAnaBu2JpsiK(this, "candAnaBu2JpsiK", cutFile); 
       a->fVerbose = fVerbose; 
       lCandAnalysis.push_back(a); 
-      if (dump) cout << "candAnaBu2JpsiKp with     " << cutFile << endl;
     }
 
     if (!strcmp(className, "candAnaBs2JpsiPhi")) {
       candAna *a = new candAnaBs2JpsiPhi(this, "candAnaBs2JpsiPhi", cutFile); 
       a->fVerbose = fVerbose; 
       lCandAnalysis.push_back(a); 
-      if (dump) cout << "candAnaBs2JpsiPhi with     " << cutFile << endl;
     }
 
+
+    // -- all the rest ...
     if (!strcmp(className, "JSON")) {
       char json[1000];
       sscanf(buffer, "%s %s", className, json);
       JSONFILE = string(json);
       if (dump) cout << "JSON FILE:           " << JSONFILE << endl;
+    }
+
+    if (!strcmp(className, "ptSgMUID")) {
+      char name[1000];
+      sscanf(buffer, "%s %s", className, name);
+      ptSgMUID = new PidTable(name); 
+      if (dump) cout << "Seagulls MUID:           " << name << endl;
+    }
+
+    if (!strcmp(className, "ptCbMUID")) {
+      char name[1000];
+      sscanf(buffer, "%s %s", className, name);
+      ptCbMUID = new PidTable(name); 
+      if (dump) cout << "Cowboys MUID:           " << name << endl;
+    }
+
+    if (!strcmp(className, "ptSgMUT1")) {
+      char name[1000];
+      sscanf(buffer, "%s %s", className, name);
+      ptSgMUT1 = new PidTable(name); 
+      if (dump) cout << "Seagulls MUT1:           " << name << endl;
+    }
+
+    if (!strcmp(className, "ptCbMUT1")) {
+      char name[1000];
+      sscanf(buffer, "%s %s", className, name);
+      ptCbMUT1 = new PidTable(name); 
+      if (dump) cout << "Cowboys MUT1:           " << name << endl;
+    }
+
+    if (!strcmp(className, "ptSgMUT2")) {
+      char name[1000];
+      sscanf(buffer, "%s %s", className, name);
+      ptSgMUT2 = new PidTable(name); 
+      if (dump) cout << "Seagulls MUT2:           " << name << endl;
+    }
+
+    if (!strcmp(className, "ptCbMUT2")) {
+      char name[1000];
+      sscanf(buffer, "%s %s", className, name);
+      ptCbMUT2 = new PidTable(name); 
+      if (dump) cout << "Cowboys MUT2:           " << name << endl;
     }
 
   }

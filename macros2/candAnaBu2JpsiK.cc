@@ -1,4 +1,4 @@
-#include "candAnaBu2JpsiKp.hh"
+#include "candAnaBu2JpsiK.hh"
 #include <cmath>
 #include <string>
 
@@ -7,19 +7,20 @@
 using namespace std;
 
 // ----------------------------------------------------------------------
-candAnaBu2JpsiKp::candAnaBu2JpsiKp(bmm2Reader *pReader, std::string name, std::string cutsFile) : candAna(pReader, name, cutsFile) {
-  cout << "==> candAnaBu2JpsiKp: name = " << name << ", reading cutsfile " << cutsFile << endl;
+candAnaBu2JpsiK::candAnaBu2JpsiK(bmm2Reader *pReader, std::string name, std::string cutsFile) : candAna(pReader, name, cutsFile) {
+  cout << "==> candAnaBu2JpsiK: name = " << name << ", reading cutsfile " << cutsFile << endl;
+  readCuts(cutsFile, 1); 
 }
 
 
 // ----------------------------------------------------------------------
-candAnaBu2JpsiKp::~candAnaBu2JpsiKp() {
-  cout << "==> candAnaBu2JpsiKp: destructor..." << endl;
+candAnaBu2JpsiK::~candAnaBu2JpsiK() {
+  cout << "==> candAnaBu2JpsiK: destructor..." << endl;
 }
 
 
 // ----------------------------------------------------------------------
-void candAnaBu2JpsiKp::candAnalysis() {
+void candAnaBu2JpsiK::candAnalysis() {
 
   if (0 == fpCand) return;
 
@@ -32,7 +33,7 @@ void candAnaBu2JpsiKp::candAnalysis() {
   }
 
   if (0 == pks) {
-    cout << "candAnaBu2JpsiKp::candAnalysis:  no kaon found " << endl;
+    cout << "candAnaBu2JpsiK::candAnalysis:  no kaon found " << endl;
     return;
   }
 
@@ -119,10 +120,7 @@ void candAnaBu2JpsiKp::candAnalysis() {
     fJpsiPhi  = psi.Phi();
   }    
 
-
   
-  //  bmmReader::fillCandidateVariables();
-
   candAna::candAnalysis();
   fPreselection = fPreselection && fGoodJpsiMass;
 
@@ -140,19 +138,19 @@ void candAnaBu2JpsiKp::candAnalysis() {
 }
 
 // ----------------------------------------------------------------------
-void candAnaBu2JpsiKp::genMatch() {
+void candAnaBu2JpsiK::genMatch() {
 
 }
 
 
 // ----------------------------------------------------------------------
-void candAnaBu2JpsiKp::recoMatch() {
+void candAnaBu2JpsiK::recoMatch() {
 
 }
 
 
 // ----------------------------------------------------------------------
-void candAnaBu2JpsiKp::candMatch() {
+void candAnaBu2JpsiK::candMatch() {
 
 }
 
@@ -160,9 +158,9 @@ void candAnaBu2JpsiKp::candMatch() {
 
 
 // ----------------------------------------------------------------------
-void candAnaBu2JpsiKp::bookHist() {
+void candAnaBu2JpsiK::bookHist() {
   candAna::bookHist();
-  cout << "==>candAnaBu2JpsiKp: bookHist" << endl;
+  cout << "==>candAnaBu2JpsiK: bookHist" << endl;
 
   // -- Additional reduced tree variables
   fTree->Branch("mpsi", &fJpsiMass,  "mpsi/D");
@@ -179,12 +177,12 @@ void candAnaBu2JpsiKp::bookHist() {
 
 
 // ----------------------------------------------------------------------
-void candAnaBu2JpsiKp::readCuts(string filename, int dump) {
+void candAnaBu2JpsiK::readCuts(string filename, int dump) {
   candAna::readCuts(filename, dump); 
 
   fCutFile = filename;
 
-  if (dump) cout << "==> candAna: Reading " << fCutFile << " for cut settings" << endl;
+  if (dump) cout << "==> candAnaBu2JpsiK: Reading " << fCutFile << " for cut settings" << endl;
   vector<string> cutLines; 
   readFile(fCutFile, cutLines);
 
@@ -193,8 +191,9 @@ void candAnaBu2JpsiKp::readCuts(string filename, int dump) {
   int ok(0);
 
   char  buffer[200];
-  TH1D *hcuts = new TH1D("hcuts", "", 1000, 0., 1000.);
-  hcuts->GetXaxis()->SetBinLabel(1, fCutFile.c_str());
+  fHistDir->cd();
+  TH1D *hcuts = (TH1D*)fHistDir->Get("hcuts");
+  hcuts->GetXaxis()->SetBinLabel(200, fCutFile.c_str());
   int ibin; 
   string cstring = "B cand"; 
 

@@ -8,11 +8,14 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
+  cout << "======================================================================" << endl;
   cout << "==> candAna: name = " << name << ", reading cutsfile " << cutsFile << endl;
   fpReader = pReader; 
   fName = name; 
-  readCuts(cutsFile); 
-  
+
+  fHistDir = gFile->mkdir(fName.c_str());
+  //   fHistDir->cd();
+  //   cout << "pwd(): "; fHistDir->pwd();
 }
 
 
@@ -92,7 +95,7 @@ void candAna::candAnalysis() {
     fPvNtrk = -99;
   }
 
- 
+// FIXME 
 //   if (fIsMC) {
 //     fCandTM    = tmCand(fpCand); 
 //   } else {
@@ -201,10 +204,6 @@ void candAna::candAnalysis() {
   fMu1PtNrf     = ps1->fPlab.Perp();
   fMu1EtaNrf    = ps1->fPlab.Eta();
   fMu1TkQuality = p1->fTrackQuality & TRACKQUALITY;
-  fMu1W8Mu      = fpReader->fpMuonID->effD(fMu1Pt, fMu1Eta, fMu1Phi);
-  //  fMu1W8Tr      = fpMuonTr->effD(fMu1Pt, fMu1Eta, fMu1Phi);
-  fMu1W8Tr      = fpReader->fpMuonTr1->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi)
-    *fpReader->fpMuonTr2->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi);
   fMu1Q         = p1->fQ;
   fMu1Pix       = fpReader->numberOfPixLayers(p1);
   fMu1BPix      = fpReader->numberOfBPixLayers(p1);
@@ -236,9 +235,6 @@ void candAna::candAnalysis() {
   fMu2PtNrf     = ps2->fPlab.Perp();
   fMu2EtaNrf    = ps2->fPlab.Eta();
   fMu2TkQuality = p2->fTrackQuality & TRACKQUALITY;
-  fMu2W8Mu      = fpReader->fpMuonID->effD(fMu2Pt, fMu2Eta, fMu2Phi);
-  //  fMu2W8Tr      = fpMuonTr->effD(fMu2Pt, fMu2Eta, fMu2Phi);
-  fMu2W8Tr      = fpReader->fpMuonTr1->effD(fMu2Pt, fMu2Eta, fMu2Phi)*fpReader->fpMuonTr2->effD(fMu2Pt, fMu2Eta, fMu2Phi);
   fMu2Q         = p2->fQ;
   fMu2Pix       = fpReader->numberOfPixLayers(p2);
   fMu2BPix      = fpReader->numberOfBPixLayers(p2);
@@ -256,6 +252,30 @@ void candAna::candAnalysis() {
     fBarrel = false; 
   }    
 
+  double dphi = p1->fPlab.DeltaPhi(p2->fPlab);
+  fCowboy = (p1->fQ*dphi > 0); 
+
+  // -- Muon weights
+  PidTable *pT, *pT1, *pT2; 
+  if (fCowboy) {
+    pT = fpReader->ptCbMUID; 
+  } else {
+    pT = fpReader->ptSgMUID; 
+  }
+  fMu1W8Mu      = pT->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi);
+  fMu2W8Mu      = pT->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi);
+  
+  if (fCowboy) {
+    pT1 = fpReader->ptCbMUT1;
+    pT2 = fpReader->ptCbMUT2;
+  } else {
+    pT1 = fpReader->ptSgMUT1;
+    pT2 = fpReader->ptSgMUT2;
+  }
+  fMu1W8Tr      = pT1->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi)*pT2->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi);
+  fMu2W8Tr      = pT1->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi)*pT2->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi);
+
+
   if (fCandTM) {
     TGenCand *pg2 = fpEvt->getGenCand(p2->fGenIndex);
     fMu2PtGen     = pg2->fP.Perp();
@@ -265,11 +285,6 @@ void candAna::candAnalysis() {
     fMu2EtaGen    = -99.;
   }
 
-  //   cout << "bmmReader: m = " << fCandM << " from cand " << fpCand 
-  //        << " mu gen: " << fGenM1Tmi << " " << fGenM2Tmi 
-  //        << " mu gen: " << fMu1PtGen << " " << fMu2PtGen 
-  //        << endl;
-  
   fCandW8Mu     = fMu1W8Mu*fMu2W8Mu;
   if (TMath::Abs(fCandW8Mu) > 1.) fCandW8Mu = 0.2; // FIXME correction for missing entries at low pT
   fCandW8Tr     = fMu1W8Tr*fMu2W8Tr;
@@ -302,23 +317,10 @@ void candAna::candAnalysis() {
   fCandCosA  = TMath::Cos(alpha);
   fCandA     = alpha; 
 
-  double iso = isoClassic(fpCand); 
-  fCandI0trk = fCandItrk;
-  double iso1= isoClassicOnePv(fpCand); 
-  double iso2= isoWithDOCA(fpCand, 0.03); // 300um DOCA cut
-  double iso3= isoWithDOCA(fpCand, 0.04); // 400um DOCA cut
-  double iso4= isoClassicWithDOCA(fpCand, 0.05); // 500um DOCA cut
-
-  double iso5= isoWithDOCA(fpCand, 0.05); // 500um DOCA cut
+  double iso= isoClassicWithDOCA(fpCand, 0.05); // 500um DOCA cut
   fCandI4trk = fCandItrk;
-
   fCandIso   = iso; 
-  fCandIso1  = iso1; 
-  fCandIso2  = iso2; 
-  fCandIso3  = iso3; 
-  fCandIso4  = iso4; 
-  fCandIso5  = iso5; 
-
+  
   // -- the matrix
   fIsoR05Pt03 = isoWithDOCA(fpCand, 0.05, 0.5, 0.3);
   fIsoR05Pt05 = isoWithDOCA(fpCand, 0.05, 0.5, 0.5);
@@ -629,7 +631,7 @@ void candAna::triggerSelection() {
 void candAna::bookHist() {
   cout << "==>candAna: bookHist" << endl;
 
-  fHistDir = gFile->mkdir(fName.c_str());
+  //   fHistDir = gFile->mkdir(fName.c_str());
   fHistDir->cd();
   cout << "pwd(): "; fHistDir->pwd();
 
@@ -645,6 +647,7 @@ void candAna::bookHist() {
   fTree->Branch("procid", &fProcessType,       "procid/I");
   fTree->Branch("hlt",    &fGoodHLT,           "hlt/O");
   fTree->Branch("pvn",    &fPvN,               "pvn/I");
+  fTree->Branch("cb",     &fCowboy,            "cb/O");
 
   // -- global cuts and weights
   fTree->Branch("gmuid",  &fGoodMuonsID,       "gmuid/O");
@@ -655,6 +658,7 @@ void candAna::bookHist() {
   fTree->Branch("gteta",  &fGoodTracksEta,     "gteta/O");
   fTree->Branch("w8mu",   &fCandW8Mu,          "w8mu/D");
   fTree->Branch("w8tr",   &fCandW8Tr,          "w8tr/D");
+
   // -- cand
   fTree->Branch("q",      &fCandQ,             "q/I");
   fTree->Branch("type",   &fCandType,          "type/I");
@@ -666,11 +670,6 @@ void candAna::bookHist() {
   fTree->Branch("cosa",   &fCandCosA,          "cosa/D");
   fTree->Branch("alpha",  &fCandA,             "alpha/D");
   fTree->Branch("iso",    &fCandIso,           "iso/D");
-  fTree->Branch("iso1",   &fCandIso1,          "iso1/D");
-  fTree->Branch("iso2",   &fCandIso2,          "iso2/D");
-  fTree->Branch("iso3",   &fCandIso3,          "iso3/D");
-  fTree->Branch("iso4",   &fCandIso4,          "iso4/D");
-  fTree->Branch("iso5",   &fCandIso5,          "iso5/D");
   fTree->Branch("chi2",   &fCandChi2,          "chi2/D");
   fTree->Branch("dof",    &fCandDof,           "dof/D");
   fTree->Branch("prob",   &fCandProb,          "prob/D");
@@ -740,6 +739,8 @@ void candAna::readCuts(string fileName, int dump) {
   int ok(0);
 
   char  buffer[200];
+  fHistDir->cd();
+  if (dump) cout << "gDirectory: "; fHistDir->pwd();
   TH1D *hcuts = new TH1D("hcuts", "", 1000, 0., 1000.);
   hcuts->GetXaxis()->SetBinLabel(1, fCutFile.c_str());
   int ibin; 
@@ -1060,9 +1061,12 @@ void candAna::readCuts(string fileName, int dump) {
 
 // ----------------------------------------------------------------------
 void candAna::readFile(string filename, vector<string> &lines) {
-  cout << "readFile " << filename << endl;
+  cout << "    readFile " << filename << endl;
   char  buffer[200];
   ifstream is(filename.c_str());
+  if (!is) {
+    exit(1);
+  }
   char input[1000]; 
   while (is.getline(buffer, 200, '\n')) {
     if (buffer[0] != '+') {

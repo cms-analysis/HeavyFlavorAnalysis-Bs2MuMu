@@ -108,7 +108,7 @@ public:
   int     fProcessType;
  
   // -- variables for reduced tree, they are from fpCand
-  bool    fJSON;
+  bool    fJSON, fCowboy;
   int     fCandTM, fCandType; 
   int     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fMu1Chi2, fMu2Chi2, fCandQ;
   bool    fMu1Id, fMu2Id;
