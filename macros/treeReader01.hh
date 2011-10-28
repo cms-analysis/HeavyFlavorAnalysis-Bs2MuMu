@@ -67,7 +67,7 @@ protected:
   // -- Pre-filled variables
   int          fNentries;      // number of events in chain; filled in treeReader01::treeReader01()
   int          fEvent;         // current sequential event number in chain; filled in treeReader01::loop()
-  int          fEvt;           // current event number; filled in treeReader01::loop()
+  unsigned int fEvt;           // current event number; filled in treeReader01::loop()
   int          fRun;           // current run number; filled in treeReader01::loop()
   int          fLS;            // current lumi section; filled in treeReader01::loop()
 
