@@ -41,6 +41,8 @@ public:
   void        moreBasicCuts();
 
   bool        truthMatch(TAnaCand *pC); 
+  void        dumpHFTruthCand(TAnaCand *pC); 
+  void        dumpHFDstarCand(TAnaCand *pC); 
 
   void        readCuts(string filename, int dump);
   
