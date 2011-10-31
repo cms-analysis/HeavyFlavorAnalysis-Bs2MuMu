@@ -39,8 +39,8 @@ RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 #########
 # FILES #
 #########
-READER_HEADERS = bmm2Reader.hh candAna.hh candAnaMuMu.hh candAnaBu2JpsiK.hh candAnaBs2JpsiPhi.hh
-READER = bmm2Reader.o candAna.o candAnaMuMu.o candAnaBu2JpsiK.o candAnaBs2JpsiPhi.o
+READER_HEADERS = bmm2Reader.hh candAna.hh candAnaMuMu.hh candAnaBu2JpsiK.hh candAnaBs2JpsiPhi.hh candAnaDstar.hh
+READER = bmm2Reader.o candAna.o candAnaMuMu.o candAnaBu2JpsiK.o candAnaBs2JpsiPhi.o candAnaDstar.o
 
 READERDICT = ${READER:.o=Dict.o}
 

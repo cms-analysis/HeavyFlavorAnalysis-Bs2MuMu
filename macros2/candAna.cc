@@ -19,6 +19,23 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   fHistDir = gFile->mkdir(fName.c_str());
   //   fHistDir->cd();
   //   cout << "pwd(): "; fHistDir->pwd();
+
+  fRegion.insert(make_pair("A", 0)); // all
+  fRegion.insert(make_pair("B", 1)); // barrel
+  fRegion.insert(make_pair("E", 2)); // endcap
+
+  fRegion.insert(make_pair("AR0", 3)); // run range 0: HLT_DoubleMu3_Jpsi_v1 
+                                       //              HLT_DoubleMu3_Jpsi_v2
+  fRegion.insert(make_pair("AR1", 4)); // run range 1: HLT_Dimuon6p5_Jpsi_Displaced_v1
+  fRegion.insert(make_pair("AR2", 5)); // run range 2: HLT_Dimuon7_Jpsi_Displaced_v1 
+                                       //              HLT_Dimuon7_Jpsi_Displaced_v3
+  fRegion.insert(make_pair("AR3", 6)); // run range 3: HLT_DoubleMu3p5_Jpsi_Displaced_v2
+  fRegion.insert(make_pair("AR4", 7)); // run range 4: HLT_DoubleMu5_Jpsi_Displaced_v1 
+                                       //              HLT_DoubleMu5_Jpsi_Displaced_v2
+  fRegion.insert(make_pair("AR5", 8)); // run range 5: HLT_DoubleMu5_Jpsi_Displaced_v4
+  fRegion.insert(make_pair("AR6", 9)); // should be empty
+
+
 }
 
 
@@ -41,7 +58,28 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   }
 
   triggerSelection();
-  
+
+  fRunRange = 6;
+  if ((fRun >= 160329) && (fRun <= 163261)) {
+    fRunRange = 0; 
+  } 
+  if ((fRun >= 163269) && (fRun <= 163869)) {
+    fRunRange = 1; 
+  } 
+  if ((fRun >= 165088) && (fRun <= 167913)) {
+    fRunRange = 2; 
+  } 
+  if ((fRun >= 170249) && (fRun <= 173198)) {
+    fRunRange = 3; 
+  } 
+  if ((fRun >= 173236) && (fRun <= 178380)) {
+    fRunRange = 4; 
+  } 
+  if ((fRun >= 178420) && (fRun <= 999999)) {
+    fRunRange = 5; 
+  } 
+
+
   TAnaCand *pCand(0);
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
     pCand = fpEvt->getCand(iC);
@@ -59,8 +97,19 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 			   << endl;
 
     fpCand = pCand;
+    fCandIdx = iC; 
+    // -- call derived functions
     candAnalysis();
-    fillCandidateHistograms(0);
+    // -- fill histograms
+    fillCandidateHistograms(fRegion[Form("AR%i", fRunRange)]);
+    if (fRunRange > 0) {
+      fillCandidateHistograms(fRegion["A"]);
+      if (fBarrel) {
+	fillCandidateHistograms(fRegion["B"]);
+      } else {
+	fillCandidateHistograms(fRegion["E"]);
+      }
+    }
   }
 
 }
@@ -99,12 +148,19 @@ void candAna::candAnalysis() {
     fPvNtrk = -99;
   }
 
-// FIXME 
-//   if (fIsMC) {
-//     fCandTM    = tmCand(fpCand); 
-//   } else {
-//     fCandTM = 0; 
-//   }
+  if (fIsMC) {
+    if (fCandTmi == fCandIdx) {
+      if (fNGenPhotons) {
+	fCandTM = 2; 
+      } else {
+	fCandTM = 1; 
+      }
+    } else {
+      fCandTM = 0; 
+    }
+  } else {
+    fCandTM = 0; 
+  }
   
   fCandType  = fpCand->fType;
   fCandPt    = fpCand->fPlab.Perp();
@@ -318,12 +374,12 @@ void candAna::candAnalysis() {
 
   TVector3 svpv(sv.fPoint - fpEvt->getPV(pvidx)->fPoint); 
   double alpha = svpv.Angle(fpCand->fPlab);
-  fCandCosA  = TMath::Cos(alpha);
-  fCandA     = alpha; 
+  fCandCosA   = TMath::Cos(alpha);
+  fCandA      = alpha; 
 
-  double iso= isoClassicWithDOCA(fpCand, 0.05); // 500um DOCA cut
-  fCandI4trk = fCandItrk;
-  fCandIso   = iso; 
+  double iso  = isoClassicWithDOCA(fpCand, 0.05); // 500um DOCA cut
+  fCandIsoTrk = fCandItrk;
+  fCandIso    = iso; 
   
   // -- the matrix
   fIsoR05Pt03 = isoWithDOCA(fpCand, 0.05, 0.5, 0.3);
@@ -380,13 +436,13 @@ void candAna::candAnalysis() {
   fGoodPt = (fCandPt > CANDPTLO);
   fGoodEta = ((fCandEta > CANDETALO) && (fCandEta < CANDETAHI)); 
   fGoodAlpha = (fCandA < CANDALPHA); 
-  fGoodIso = (fCandIso4 > CANDISOLATION); 
+  fGoodIso = (fCandIso > CANDISOLATION); 
   fGoodChi2 = (fCandChi2/fCandDof < CANDVTXCHI2);
   fGoodFLS =  ((fCandFLS3d > CANDFLS3D) && (fCandFLSxy > CANDFLSXY)); 
   if (TMath::IsNaN(fCandFLS3d)) fGoodFLS = false;
 
   fGoodDocaTrk = (fCandDocaTrk > CANDDOCATRK);
-  fGoodIP = true; 
+  fGoodLastCut = true; 
 
   fAnaCuts.update(); 
 
@@ -428,6 +484,26 @@ void candAna::fillCandidateHistograms(int offset) {
   fpCosA[offset]->fill(fCandCosA, fCandM);
   fpIso[offset]->fill(fCandIso, fCandM);
 
+  fpChi2[offset]->fill(fCandChi2, fCandM);
+  fpChi2Dof[offset]->fill(fCandChi2/fCandDof, fCandM); 
+  fpProb[offset]->fill(fCandProb, fCandM);   
+  fpFLS3d[offset]->fill(fCandFLS3d, fCandM); 
+  fpFL3d[offset]->fill(fCandFL3d, fCandM); 
+  fpFL3dE[offset]->fill(fCandFL3dE, fCandM); 
+  fpFLSxy[offset]->fill(fCandFLSxy, fCandM); 
+  fpDocaTrk[offset]->fill(fCandDocaTrk, fCandM); 
+
+  int ipv = (fPvN<30?fPvN/2:NADPV-1); 
+  if (fpNpvPvN[ipv][offset]) {
+    fpNpvPvN[ipv][offset]->fill(fPvN, fCandM); 
+    fpNpvChi2Dof[ipv][offset]->fill(fCandChi2/fCandDof, fCandM); 
+    fpNpvProb[ipv][offset]->fill(fCandProb, fCandM);   
+    fpNpvFLS3d[ipv][offset]->fill(fCandFLS3d, fCandM); 
+    fpNpvFLSxy[ipv][offset]->fill(fCandFLSxy, fCandM); 
+    fpNpvDocaTrk[ipv][offset]->fill(fCandDocaTrk, fCandM); 
+    fpNpvIso[ipv][offset]->fill(fCandIso, fCandM);
+    fpNpvIsoTrk[ipv][offset]->fill(fCandIsoTrk, fCandM);
+  }
 }
 
 
@@ -463,7 +539,7 @@ void candAna::candidateCuts() {
   fAnaCuts.addCut("fGoodChi2", "#chi^{2}", fGoodChi2); 
   fAnaCuts.addCut("fGoodIso", "I_{trk}", fGoodIso); 
   fAnaCuts.addCut("fGoodDocaTrk", "d_{ca}(trk)", fGoodDocaTrk); 
-  fAnaCuts.addCut("fGoodIP", "sin#beta*l_{3d}/IP", fGoodIP); 
+  fAnaCuts.addCut("fGoodLastCut", "lastCut", fGoodLastCut); 
 }
 
 
@@ -664,19 +740,19 @@ void candAna::processType() {
 
 // ----------------------------------------------------------------------
 void candAna::genMatch() {
-
+  cout << "candAna::genMatch()  wrong function" << endl;
 }
 
 
 // ----------------------------------------------------------------------
 void candAna::recoMatch() {
-
+  cout << "candAna::recoMatch()  wrong function" << endl;
 }
 
 
 // ----------------------------------------------------------------------
 void candAna::candMatch() {
-
+  cout << "candAna::candMatch()  wrong function" << endl;
 }
 
 
@@ -793,6 +869,7 @@ void candAna::bookHist() {
   fTree->Branch("cosa",   &fCandCosA,          "cosa/D");
   fTree->Branch("alpha",  &fCandA,             "alpha/D");
   fTree->Branch("iso",    &fCandIso,           "iso/D");
+  fTree->Branch("isotrk", &fCandIsoTrk,        "isotrk/I");
   fTree->Branch("chi2",   &fCandChi2,          "chi2/D");
   fTree->Branch("dof",    &fCandDof,           "dof/D");
   fTree->Branch("prob",   &fCandProb,          "prob/D");
@@ -850,26 +927,61 @@ void candAna::bookHist() {
   // -- Analysis distributions
   TH1D *h = new TH1D("analysisDistributions", "analysisDistributions", 10000, 0., 10000.); 
 
-  int i = 0; 
-  string name = "A"; 
-  fpPvZ[i]       = bookDistribution(Form("%spvz", name.c_str()), "z_{PV} [cm]", "fGoodHLT", 50, -25., 25.);           
-  fpPvN[i]       = bookDistribution(Form("%spvn", name.c_str()), "N(PV) ", "fGoodHLT", 20, 0., 20.);           
-  fpPvNtrk[i]    = bookDistribution(Form("%spvntrk", name.c_str()), "N_{trk}^{PV} ", "fGoodHLT", 20, 0., 200.);           
-  fpTracksPt[i]  = bookDistribution(Form("%strackspt", name.c_str()), "p_{T} [GeV]", "fGoodTracksPt", 25, 0., 25.);
-  fpTracksEta[i] = bookDistribution(Form("%strackseta", name.c_str()), "#eta_{T}", "fGoodTracksEta", 25, -2.5, 2.5);
-  fpMuonsPt[i]   = bookDistribution(Form("%smuonspt", name.c_str()), "p_{T, #mu} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
-  fpMuon1Pt[i]   = bookDistribution(Form("%smuon1pt", name.c_str()), "p_{T, #mu1} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
-  fpMuon2Pt[i]   = bookDistribution(Form("%smuon2pt", name.c_str()), "p_{T, #mu2} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
-  fpMuonsEta[i]  = bookDistribution(Form("%smuonseta", name.c_str()), "#eta_{#mu}", "fGoodMuonsEta", 20, -2.5, 2.5); 
-  fpMuon1Eta[i]  = bookDistribution(Form("%smuon1eta", name.c_str()), "#eta_{#mu1}", "fGoodMuonsEta", 20, -2.5, 2.5); 
-  fpMuon2Eta[i]  = bookDistribution(Form("%smuon2eta", name.c_str()), "#eta_{#mu2}", "fGoodMuonsEta", 20, -2.5, 2.5); 
-  fpPt[i]        = bookDistribution(Form("%spt", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 20, 0., 50.); 
-  fpEta[i]       = bookDistribution(Form("%seta", name.c_str()), "#eta(B)", "fGoodEta", 20, -2.5, 2.5); 
-  fpCosA[i]      = bookDistribution(Form("%scosa", name.c_str()), "cos(#alpha_{3D})", "fGoodAlpha", 30, 0.97, 1.); 
-  fpAlpha[i]     = bookDistribution(Form("%salpha", name.c_str()), "#alpha_{3D}", "fGoodAlpha", 20, 0., 0.2); 
-  fpIso[i]       = bookDistribution(Form("%siso", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
-  
-  
+  TDirectory *pD;
+  string name, dname; 
+  int i(0); 
+  for (map<string, int>::iterator imap = fRegion.begin(); imap != fRegion.end(); ++imap) {  
+    i    = imap->second; 
+    name = imap->first + "_";
+
+    fpPvZ[i]       = bookDistribution(Form("%spvz", name.c_str()), "z_{PV} [cm]", "fGoodHLT", 50, -25., 25.);           
+    fpPvN[i]       = bookDistribution(Form("%spvn", name.c_str()), "N(PV) ", "fGoodHLT", 20, 0., 20.);           
+    fpPvNtrk[i]    = bookDistribution(Form("%spvntrk", name.c_str()), "N_{trk}^{PV} ", "fGoodHLT", 20, 0., 200.);           
+    fpTracksPt[i]  = bookDistribution(Form("%strackspt", name.c_str()), "p_{T} [GeV]", "fGoodTracksPt", 25, 0., 25.);
+    fpTracksEta[i] = bookDistribution(Form("%strackseta", name.c_str()), "#eta_{T}", "fGoodTracksEta", 25, -2.5, 2.5);
+    fpMuonsPt[i]   = bookDistribution(Form("%smuonspt", name.c_str()), "p_{T, #mu} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+    fpMuon1Pt[i]   = bookDistribution(Form("%smuon1pt", name.c_str()), "p_{T, #mu1} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+    fpMuon2Pt[i]   = bookDistribution(Form("%smuon2pt", name.c_str()), "p_{T, #mu2} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+    fpMuonsEta[i]  = bookDistribution(Form("%smuonseta", name.c_str()), "#eta_{#mu}", "fGoodMuonsEta", 20, -2.5, 2.5); 
+    fpMuon1Eta[i]  = bookDistribution(Form("%smuon1eta", name.c_str()), "#eta_{#mu1}", "fGoodMuonsEta", 20, -2.5, 2.5); 
+    fpMuon2Eta[i]  = bookDistribution(Form("%smuon2eta", name.c_str()), "#eta_{#mu2}", "fGoodMuonsEta", 20, -2.5, 2.5); 
+    fpPt[i]        = bookDistribution(Form("%spt", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 20, 0., 50.); 
+    fpEta[i]       = bookDistribution(Form("%seta", name.c_str()), "#eta(B)", "fGoodEta", 20, -2.5, 2.5); 
+    fpCosA[i]      = bookDistribution(Form("%scosa", name.c_str()), "cos(#alpha_{3D})", "fGoodAlpha", 30, 0.97, 1.); 
+    fpAlpha[i]     = bookDistribution(Form("%salpha", name.c_str()), "#alpha_{3D}", "fGoodAlpha", 20, 0., 0.2); 
+    fpIso[i]       = bookDistribution(Form("%siso", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoTrk[i]    = bookDistribution(Form("%sisotrk", name.c_str()),  "N_{trk}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpChi2[i]      = bookDistribution(Form("%schi2", name.c_str()),  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
+    fpChi2Dof[i]   = bookDistribution(Form("%schi2dof", name.c_str()),  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
+    fpProb[i]      = bookDistribution(Form("%spchi2dof", name.c_str()),  "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
+    fpFLS3d[i]     = bookDistribution(Form("%sfls3d", name.c_str()), "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
+    fpFL3d[i]      = bookDistribution(Form("%sfl3d", name.c_str()),  "l_{3d} [cm]", "fGoodFLS", 25, 0., 5.);  
+    fpFL3dE[i]     = bookDistribution(Form("%sfl3dE", name.c_str()), "#sigma(l_{3d}) [cm]", "fGoodFLS", 25, 0., 0.5);  
+    fpFLSxy[i]     = bookDistribution(Form("%sflsxy", name.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
+    fpDocaTrk[i]   = bookDistribution(Form("%sdocatrk", name.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 35, 0., 0.14);   
+    
+    if (name == "A_") {
+      for (int ipv = 0; ipv < NADPV; ++ipv) {
+	pD = fHistDir->mkdir(Form("%sNpv%i", name.c_str(), ipv));
+	pD->cd();
+	dname = Form("%snpv%i_", name.c_str(), ipv);
+	fpNpvPvN[ipv][i]     = bookDistribution(Form("%spvn", dname.c_str()), "N(PV) ", "fGoodHLT", 30, 0., 30.);           
+	fpNpvChi2Dof[ipv][i] = bookDistribution(Form("%schi2dof", dname.c_str()), "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
+	fpNpvProb[ipv][i]    = bookDistribution(Form("%spchi2dof", dname.c_str()), "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
+	fpNpvFLS3d[ipv][i]   = bookDistribution(Form("%sfls3d", dname.c_str()), "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
+	fpNpvFLSxy[ipv][i]   = bookDistribution(Form("%sflsxy", dname.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
+	fpNpvDocaTrk[ipv][i] = bookDistribution(Form("%sdocatrk", dname.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 35, 0., 0.14);   
+	fpNpvIso[ipv][i]     = bookDistribution(Form("%siso", dname.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+	fpNpvIsoTrk[ipv][i]  = bookDistribution(Form("%sisotrk", dname.c_str()),  "N_{trk}^{I}", "fGoodIso", 20, 0., 20.); 
+	
+      }
+    } else {
+      for (int ipv = 0; ipv < NADPV; ++ipv) {
+	fpNpvPvN[ipv][i] = 0; 
+      }
+    }
+  }
 }
 
 // ----------------------------------------------------------------------

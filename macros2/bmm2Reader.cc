@@ -8,6 +8,7 @@
 #include "candAnaMuMu.hh"
 #include "candAnaBu2JpsiK.hh"
 #include "candAnaBs2JpsiPhi.hh"
+#include "candAnaDstar.hh"
 
 using namespace std;
 
@@ -49,7 +50,13 @@ void bmm2Reader::eventProcessing() {
   for (unsigned int i = 0; i < lCandAnalysis.size(); ++i) {
     //    cout << "  calling " << lCandAnalysis[i]->fName << " analysis()" << endl;
 
+    lCandAnalysis[i]->fIsMC  = fIsMC;
     lCandAnalysis[i]->fJSON  = json; 
+    lCandAnalysis[i]->fRun   = fRun; 
+    lCandAnalysis[i]->fEvt   = fEvt; 
+    lCandAnalysis[i]->fLS    = fLS; 
+    lCandAnalysis[i]->fEvent = fEvent; 
+
     lCandAnalysis[i]->evtAnalysis(fpEvt);
   }
 
@@ -100,6 +107,12 @@ void bmm2Reader::readCuts(TString filename, int dump) {
       lCandAnalysis.push_back(a); 
     }
 
+    if (!strcmp(className, "candAnaDstar")) {
+      candAna *a = new candAnaDstar(this, "candAnaDstar", cutFile); 
+      a->fVerbose = fVerbose; 
+      lCandAnalysis.push_back(a); 
+    }
+
 
     // -- all the rest ...
     if (!strcmp(className, "JSON")) {
@@ -120,7 +133,7 @@ void bmm2Reader::readCuts(TString filename, int dump) {
       char name[1000];
       sscanf(buffer, "%s %s", className, name);
       ptCbMUID = new PidTable(name); 
-      if (dump) cout << "Cowboys MUID:           " << name << endl;
+      if (dump) cout << "Cowboys MUID:            " << name << endl;
     }
 
     if (!strcmp(className, "ptSgMUT1")) {
@@ -134,7 +147,7 @@ void bmm2Reader::readCuts(TString filename, int dump) {
       char name[1000];
       sscanf(buffer, "%s %s", className, name);
       ptCbMUT1 = new PidTable(name); 
-      if (dump) cout << "Cowboys MUT1:           " << name << endl;
+      if (dump) cout << "Cowboys MUT1:            " << name << endl;
     }
 
     if (!strcmp(className, "ptSgMUT2")) {
@@ -148,7 +161,7 @@ void bmm2Reader::readCuts(TString filename, int dump) {
       char name[1000];
       sscanf(buffer, "%s %s", className, name);
       ptCbMUT2 = new PidTable(name); 
-      if (dump) cout << "Cowboys MUT2:           " << name << endl;
+      if (dump) cout << "Cowboys MUT2:            " << name << endl;
     }
 
   }

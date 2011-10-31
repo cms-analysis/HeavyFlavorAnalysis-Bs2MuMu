@@ -76,11 +76,13 @@ public:
   TTree *fTree; 
   TAna01Event *fpEvt;
   TAnaCand *fpCand;
+  int fCandIdx; 
 
   int fVerbose;
   int fIsMC;
 
   int fRun, fEvt, fLS;
+  int fEvent; 
 
   double       MASSMIN,   MASSMAX; 
   double       SIGBOXMIN, SIGBOXMAX; 
@@ -101,7 +103,6 @@ public:
   int BLIND, TYPE, SELMODE, MUIDMASK, MUIDRESULT, TRACKQUALITY, TRUTHCAND, IGNORETRIGGER;
 
   std::map<std::string, pair<int, int> > HLTRANGE;
-  //  std::map<std::string, int> HLTRangeMax;
 
 
   bool fBarrel, fWideMass; 
@@ -134,25 +135,41 @@ public:
   double  fIsoR05Pt03, fIsoR05Pt05, fIsoR05Pt07, fIsoR05Pt09, fIsoR05Pt11;
   double  fIsoR07Pt03, fIsoR07Pt05, fIsoR07Pt07, fIsoR07Pt09, fIsoR07Pt11;
   double  fIsoR10Pt03, fIsoR10Pt05, fIsoR10Pt07, fIsoR10Pt09, fIsoR10Pt11;
-  int     fCandItrk, fCandI0trk, fCandI4trk; 
+  int     fCandIsoTrk, fCandItrk; 
   double  fCandDocaTrk, fMu1IP, fMu2IP, fCandPvTip, fCandPvTipE, fCandPvLip, fCandPvLipE; 
 
   bool    fGoodHLT, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta, fGoodTracks, fGoodTracksPt, fGoodTracksEta;
   bool    fGoodQ, fGoodPt, fGoodEta, fGoodCosA, fGoodAlpha, fGoodIso, fGoodChi2, fGoodFLS; 
-  bool    fGoodDocaTrk, fGoodIP; 
+  bool    fGoodDocaTrk, fGoodLastCut; 
 
   bool    fPreselection; 
 
   // -- Analysis distributions
+  int fRunRange;
+  std::map<std::string, int> fRegion;
 #define NAD 10
-  AnalysisDistribution   *fpPvZ[NAD], *fpPvN[NAD], *fpPvNtrk[NAD],  
-    *fpTracksPt[NAD],  *fpTracksEta[NAD], 
-    *fpMuonsPt[NAD], *fpMuonsEta[NAD], *fpMuon1Pt[NAD], *fpMuon2Pt[NAD], *fpMuon1Eta[NAD], *fpMuon2Eta[NAD],
-    *fpPt[NAD], *fpEta[NAD], 
-    *fpCosA[NAD], *fpAlpha[NAD],
-    *fpIso[NAD]
+  AnalysisDistribution   *fpPvZ[NAD], *fpPvN[NAD], *fpPvNtrk[NAD]  
+    , *fpTracksPt[NAD],  *fpTracksEta[NAD] 
+    , *fpMuonsPt[NAD], *fpMuonsEta[NAD], *fpMuon1Pt[NAD], *fpMuon2Pt[NAD], *fpMuon1Eta[NAD], *fpMuon2Eta[NAD]
+    , *fpPt[NAD], *fpEta[NAD] 
+    , *fpCosA[NAD], *fpAlpha[NAD]
+    , *fpIso[NAD], *fpIsoTrk[NAD]
+    , *fpChi2[NAD], *fpChi2Dof[NAD], *fpProb[NAD] 
+    , *fpFLS3d[NAD], *fpFLSxy[NAD] 
+    , *fpFL3d[NAD], *fpFL3dE[NAD] 
+    , *fpDocaTrk[NAD]   
     ;
 
+  // -- Analysis distributions in bins of n(PV)
+#define NADPV 15
+  AnalysisDistribution   *fpNpvPvN[NADPV][NAD];
+  AnalysisDistribution   *fpNpvChi2Dof[NADPV][NAD];
+  AnalysisDistribution   *fpNpvProb[NADPV][NAD];
+  AnalysisDistribution   *fpNpvFLS3d[NADPV][NAD];
+  AnalysisDistribution   *fpNpvFLSxy[NADPV][NAD];
+  AnalysisDistribution   *fpNpvDocaTrk[NADPV][NAD];
+  AnalysisDistribution   *fpNpvIso[NADPV][NAD];
+  AnalysisDistribution   *fpNpvIsoTrk[NADPV][NAD];
 
 };
 
