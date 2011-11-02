@@ -84,30 +84,30 @@ void HFDstar::analyze(const Event& iEvent, const EventSetup& iSetup)
   iSetup.get<IdealMagneticFieldRecord>().get(magfield);
   const MagneticField *field = magfield.product();
 
-  // -- Filter on truth candidates
-  TAnaCand *pCand(0);
-  TAnaTrack *pT(0); 
-  int OK(0); 
-  for (int iC = 0; iC < gHFEvent->nCands(); ++iC) {
-    pCand = gHFEvent->getCand(iC);
-    if (54 == pCand->fType) {
-      OK = 1; 
-      for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
-	pT = gHFEvent->getRecTrack(gHFEvent->getSigTrack(i)->fIndex); 
-	if (pT->fPlab.Perp() < 0.) {
-	  OK = 0; 
-	}
-      }
-      break;
-    }
-  }
-  if (0 == OK) return;
-  cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" << endl;
-  for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
-    pT = gHFEvent->getRecTrack(gHFEvent->getSigTrack(i)->fIndex); 
-    pT->dump();
-  }
-  cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" << endl;
+  //   // -- Filter on truth candidates
+  //   TAnaCand *pCand(0);
+  //   TAnaTrack *pT(0); 
+  //   int OK(0); 
+  //   for (int iC = 0; iC < gHFEvent->nCands(); ++iC) {
+  //     pCand = gHFEvent->getCand(iC);
+  //     if (54 == pCand->fType) {
+  //       OK = 1; 
+  //       for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
+  // 	pT = gHFEvent->getRecTrack(gHFEvent->getSigTrack(i)->fIndex); 
+  // 	if (pT->fPlab.Perp() < 0.) {
+  // 	  OK = 0; 
+  // 	}
+  //       }
+  //       break;
+  //     }
+  //   }
+  //   if (0 == OK) return;
+  //   cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" << endl;
+  //   for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
+  //     pT = gHFEvent->getRecTrack(gHFEvent->getSigTrack(i)->fIndex); 
+  //     pT->dump();
+  //   }
+  //   cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" << endl;
   
   // -- get the primary vertex
   Handle<VertexCollection> recoPrimaryVertexCollection;

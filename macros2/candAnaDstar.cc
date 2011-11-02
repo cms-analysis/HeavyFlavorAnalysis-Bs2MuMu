@@ -124,21 +124,22 @@ void candAnaDstar::evtAnalysis(TAna01Event *evt) {
       ((TH1D*)fHistDir->Get("all_alpha"))->Fill(alpha);
       ((TH1D*)fHistDir->Get("all_pt"))->Fill(pt);
 
-      //       if (dm < 0.147 && dm > 0.145 && !tm) {
-      // 	cout << "%%%%%%%%  ??" << endl;
-      // 	tm = truthMatch(pCand, 1); 
-      // 	cout << "  %%%" << endl;
-      // 	dumpHFDstarCand(pCand); 
-      // 	cout << "  %%%" << endl;
-      // 	for (int i = 0; i < fpEvt->nCands(); ++i) {
-      // 	  pC1 = fpEvt->getCand(i);
-      // 	  if (300054 == pC1->fType) {
-      // 	    dumpHFDstarCand(pC1); 
-      // 	  }
-      // 	}
-      //       }
+      if (1) {
+	if (dm < 0.147 && dm > 0.145 && !tm) {
+	  cout << "%%%%%%%%  ??" << endl;
+	  tm = truthMatch(pCand, 1); 
+	  cout << "  %%%" << endl;
+	  dumpHFDstarCand(pCand); 
+	  cout << "  %%%" << endl;
+	  for (int i = 0; i < fpEvt->nCands(); ++i) {
+	    pC1 = fpEvt->getCand(i);
+	    if (300054 == pC1->fType) {
+	      dumpHFDstarCand(pC1); 
+	    }
+	  }
+	}
+      }
     }
-
 
   }
 
@@ -177,10 +178,12 @@ void candAnaDstar::dumpHFDstarCand(TAnaCand *pC) {
   //  if (fVerbose > -1) cout << "   mdz = " << pD->fMass << endl;
   for (int id = pD->fSig1; id <= pD->fSig2; ++id) {
     pT = fpEvt->getRecTrack(fpEvt->getSigTrack(id)->fIndex);
+    cout << fpEvt->getSigTrack(id)->fMCID << " " ; 
     pT->dump(); 
   }
   // -- slow pion
   pT = fpEvt->getRecTrack(fpEvt->getSigTrack(pC->fSig1)->fIndex); 
+  cout << fpEvt->getSigTrack(pC->fSig1)->fMCID << " " ; 
   pT->dump(); 
 
 }
