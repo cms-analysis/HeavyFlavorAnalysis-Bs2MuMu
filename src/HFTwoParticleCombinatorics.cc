@@ -64,7 +64,7 @@ void HFTwoParticleCombinatorics::combine(vector<pair<int, int> > &combList,
       if (loMass < mass && mass < hiMass) {
 	duplicate = 0; 
 	for (unsigned int k = 0; k < combList.size(); ++k) {
-	  if (combList[k].second == tlist1[i].first && combList[k].first == tlist2[j].first) {
+	  if (combList[k].second == tlist1[i].first && combList[k].first == tlist2[j].first) { 
 	    duplicate = 1; 
 	    break;
 	  }

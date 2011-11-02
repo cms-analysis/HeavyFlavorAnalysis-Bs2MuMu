@@ -58,6 +58,10 @@ public:
 
   bool         fGoodJpsiMass;
 
+  // -- TM
+  int          fGenK1Tmi; 
+  int          fRecK1Tmi; 
+
 };
 
 #endif

@@ -100,6 +100,19 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     fCandIdx = iC; 
     // -- call derived functions
     candAnalysis();
+    if (fIsMC) {
+      fTree->Fill(); 
+    } else {
+      if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX) {
+	// do nothing
+      } else {
+	if (fPreselection) {
+	  ((TH1D*)fHistDir->Get("../monEvents"))->Fill(12); 
+	  fTree->Fill(); 
+	}         
+      }
+    }
+
     // -- fill histograms
     fillCandidateHistograms(fRegion[Form("AR%i", fRunRange)]);
     if (fRunRange > 0) {
@@ -926,6 +939,7 @@ void candAna::bookHist() {
 
   // -- Analysis distributions
   TH1D *h = new TH1D("analysisDistributions", "analysisDistributions", 10000, 0., 10000.); 
+  h = 0; 
 
   TDirectory *pD;
   string name, dname; 

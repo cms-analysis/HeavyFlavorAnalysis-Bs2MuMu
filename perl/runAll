@@ -33,8 +33,8 @@ if ($opt_r) {
 
 
 my %jobs = (
-    "signal Bs2MuMu MC 5e32"  
-    => "-m,bmmSignalReader,bmmBs2MuMuReader.mc-5e32.cuts,cv02-signal-Bs2MuMu-5e32,signalMC2011-5e32.root"
+    "signal Bs2MuMu MC 2e33"  
+    => "-m,,cv02-signal-Bs2MuMu-5e32,signalMC2011-5e32.root"
     , "signal Bs2MuMu MC 1e33"  
     => "-m,bmmSignalReader,bmmBs2MuMuReader.mc-1e33.cuts,cv02-signal-Bs2MuMu-1e33,signalMC2011.root"
     , "signal Bd2MuMu MC 5e32"  

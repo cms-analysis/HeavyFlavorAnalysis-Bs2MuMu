@@ -292,7 +292,7 @@ truthDstarToD0PiToKPiPi = cms.EDAnalyzer(
     motherID     = cms.untracked.int32(413),
     type         = cms.untracked.int32(54),
     GenType      = cms.untracked.int32(-54),
-    daughtersID  = cms.untracked.vint32(421, 321, -211, 211)
+    daughtersID  = cms.untracked.vint32(421, -321, 211, 211)
     )
 
 # ----------------------------------------------------------------------

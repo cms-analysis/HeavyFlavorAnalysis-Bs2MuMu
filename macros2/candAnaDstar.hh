@@ -40,7 +40,7 @@ public:
   void        candAnalysis();
   void        moreBasicCuts();
 
-  bool        truthMatch(TAnaCand *pC); 
+  bool        truthMatch(TAnaCand *pC, int verbose = 0); 
   void        dumpHFTruthCand(TAnaCand *pC); 
   void        dumpHFDstarCand(TAnaCand *pC); 
 

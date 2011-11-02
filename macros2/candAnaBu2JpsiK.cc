@@ -126,15 +126,6 @@ void candAnaBu2JpsiK::candAnalysis() {
 
   ((TH1D*)fHistDir->Get("../monEvents"))->Fill(3); 
 
-  if (fIsMC) {
-    fTree->Fill(); 
-  } else {
-    if (fPreselection) {
-      ((TH1D*)fHistDir->Get("../monEvents"))->Fill(13); 
-      fTree->Fill(); 
-    }         
-  }
-
 }
 
 // ----------------------------------------------------------------------
@@ -147,17 +138,156 @@ void candAnaBu2JpsiK::moreBasicCuts() {
 // ----------------------------------------------------------------------
 void candAnaBu2JpsiK::genMatch() {
 
+  fGenM1Tmi = fGenM2Tmi = fGenK1Tmi = -1; 
+  fNGenPhotons = 0; 
+
+  TGenCand *pC(0), *pM1(0), *pM2(0), *pK(0), *pB(0), *pPsi(0); 
+  int nb(0), npsi(0), nphotons(0); 
+  bool goodMatch(false); 
+  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
+    pC = fpEvt->getGenCand(i); 
+    if (521 == TMath::Abs(pC->fID)) {
+      pB = pC;
+      nb = 0; 
+      for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
+	pC = fpEvt->getGenCand(id); 
+	if (443 == TMath::Abs(pC->fID)) {
+	  ++nb;
+	  pPsi = pC; 
+	  npsi = pPsi->fDau2 - pPsi->fDau1 + 1; 
+	  pM1 = pM2 = 0; 
+	  for (int idd = pPsi->fDau1; idd <= pPsi->fDau2; ++idd) {
+	    pC = fpEvt->getGenCand(idd); 
+	    if (22 == TMath::Abs(pC->fID)) ++nphotons;
+	    if (13 == TMath::Abs(pC->fID)) {
+	      if (0 == pM1) {
+		pM1 = fpEvt->getGenCand(idd); 
+	      } else {
+		pM2 = fpEvt->getGenCand(idd); 
+	      }
+	    }
+	  }
+	} else if (321 == TMath::Abs(pC->fID)) {
+	  ++nb;
+	  pK = fpEvt->getGenCand(id); 
+	} else 	if (22 == TMath::Abs(pC->fID)) {
+	  ++nphotons;
+	} else {
+	  ++nb;
+	}
+      }
+      if (nb > 2) {
+	pM1 = pM2 = pK = pPsi = 0; 
+	continue; // skip B decays where more than J/psi and kaon came from B
+      }
+      if (0 != pM1 && 0 != pM2 && 0 != pK && (pPsi->fMom1 == pK->fMom1)) {
+	goodMatch = true; 
+	fNGenPhotons = nphotons;
+	break;
+      }
+    }
+  }
+
+  fGenBTmi = -1; 
+  if (goodMatch) {
+    fGenBTmi = pB->fNumber; 
+    if (pM1->fP.Perp() > pM2->fP.Perp()) {
+      fGenM1Tmi = pM1->fNumber; 
+      fGenM2Tmi = pM2->fNumber; 
+    } else {
+      fGenM1Tmi = pM2->fNumber; 
+      fGenM2Tmi = pM1->fNumber; 
+    }
+    fGenK1Tmi = pK->fNumber; 
+  } else {
+    fGenM1Tmi = -1; 
+    fGenM2Tmi = -1; 
+    fGenK1Tmi = -1;  
+  }
+  
+  if (fVerbose > 10) {
+    cout << "fGenM1Tmi = " << fGenM1Tmi << endl;
+    cout << "fGenM2Tmi = " << fGenM2Tmi << endl;
+    cout << "fGenK1Tmi = " << fGenK1Tmi << endl;
+  }
+
 }
 
 
 // ----------------------------------------------------------------------
 void candAnaBu2JpsiK::recoMatch() {
 
+  fRecM1Tmi = fRecM2Tmi = fRecK1Tmi = -1; 
+  TAnaTrack *pT(0);
+  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+    pT = fpEvt->getRecTrack(i); 
+    if (pT->fGenIndex < 0) continue;
+    // -- muon 1
+    if (fGenM1Tmi > -1 && pT->fGenIndex == fGenM1Tmi) {
+      fRecM1Tmi = i; 
+    }
+
+    // -- muon 2
+    if (fGenM2Tmi > -1 && pT->fGenIndex == fGenM2Tmi) {
+      fRecM2Tmi = i; 
+    }
+
+    // -- kaon
+    if (fGenK1Tmi > -1 && pT->fGenIndex == fGenK1Tmi) {
+      fRecK1Tmi = i; 
+    }
+
+    // -- skip rest if all matches found
+    if (fRecM1Tmi > -1 && fRecM2Tmi > -1 && fRecK1Tmi > -1) break;
+  }
+
+
+  if (fVerbose > 10) {
+    cout << "fRecM1Tmi = " << fRecM1Tmi << " matched to fGenM1Tmi = " << fGenM1Tmi << endl;
+    cout << "fRecM2Tmi = " << fRecM2Tmi << " matched to fGenM2Tmi = " << fGenM2Tmi << endl;
+    cout << "fRecK1Tmi = " << fRecK1Tmi << " matched to fGenK1Tmi = " << fGenK1Tmi << endl;
+  }
+
 }
 
 
 // ----------------------------------------------------------------------
 void candAnaBu2JpsiK::candMatch() {
+
+  fCandTmi = -1;   
+  int idx(-1), type(-1); 
+  int d1Matched(0), d2Matched(0), d3Matched(0); 
+  TAnaCand *pCand(0);
+  for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
+    pCand = fpEvt->getCand(iC); 
+    if (TYPE != pCand->fType) continue;
+    
+    d1Matched = d2Matched = d3Matched = 0; 
+    for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
+      idx = fpEvt->getSigTrack(i)->fIndex; 
+      type = TMath::Abs(fpEvt->getSigTrack(i)->fMCID);
+      if (fVerbose > 10) {
+	cout << idx << " " << fRecM1Tmi << " " << fRecM2Tmi << " " << fRecK1Tmi << endl;
+      }
+      if (fRecM1Tmi > -1 && type == 13 && idx == fRecM1Tmi) {
+	d1Matched = 1; 
+      }
+      if (fRecM2Tmi > -1 && type == 13 && idx == fRecM2Tmi) {
+	d2Matched = 1; 
+      }
+      if (fRecK1Tmi > -1 && type == 321 && idx == fRecK1Tmi) {
+	d3Matched = 1; 
+      }
+    }
+    
+    if (d1Matched && d2Matched && d3Matched) {
+      fCandTmi = iC;
+      break;
+    }
+  }
+  if (fVerbose > 10) {
+    cout << "fCandTmi = " << fCandTmi << " matched to rec tracks " << fRecM1Tmi << " " << fRecM2Tmi << " " << fRecK1Tmi << endl;
+  }
 
 }
 

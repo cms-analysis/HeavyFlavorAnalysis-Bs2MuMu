@@ -24,19 +24,6 @@ void candAnaMuMu::candAnalysis() {
   candAna::candAnalysis();
   ((TH1D*)fHistDir->Get("../monEvents"))->Fill(2); 
 
-  if (fIsMC) {
-    fTree->Fill(); 
-  } else {
-    if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX) {
-      // do nothing
-    } else {
-      if (fPreselection) {
-	((TH1D*)fHistDir->Get("../monEvents"))->Fill(12); 
-	fTree->Fill(); 
-      }         
-    }
-  }
-
 }
 
 // ----------------------------------------------------------------------
@@ -140,7 +127,7 @@ void candAnaMuMu::candMatch() {
   int idx(-1); 
   int d1Matched(0), d2Matched(0); 
   TAnaCand *pCand(0);
-  for (unsigned int iC = 0; iC < fpEvt->nCands(); ++iC) {
+  for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
     pCand = fpEvt->getCand(iC); 
     if (TYPE != pCand->fType) continue;
     
