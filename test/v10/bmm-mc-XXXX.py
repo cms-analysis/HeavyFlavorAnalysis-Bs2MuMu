@@ -40,6 +40,7 @@ process.tree = cms.EDAnalyzer(
 
 
 # ----------------------------------------------------------------------
+process.load("Configuration.StandardSequences.Reconstruction_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFRecoStuff_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFBmm_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFPhysicsDeclared_cff")

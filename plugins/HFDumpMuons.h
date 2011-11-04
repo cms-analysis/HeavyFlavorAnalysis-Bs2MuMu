@@ -16,6 +16,8 @@
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 
+#include "MuonAnalysis/MuonAssociators/interface/PropagateToMuon.h"
+
 
 class TFile;
 class TTree;
@@ -27,10 +29,13 @@ class HFDumpMuons : public edm::EDAnalyzer {
   explicit HFDumpMuons(const edm::ParameterSet&);
   ~HFDumpMuons();
 
+  
+  
   static int                muonID(const reco::Muon &);
   
  private:
   virtual void              beginJob();
+  virtual void              beginRun(const edm::Run&, const edm::EventSetup&);
   virtual void              analyze(const edm::Event&, const edm::EventSetup&);
   virtual void              endJob();
   void                      fillMuon(const reco::Muon& tr, int type);
@@ -41,6 +46,8 @@ class HFDumpMuons : public edm::EDAnalyzer {
 
   int                       fVerbose, fDoTruthMatching; 
   bool                      fRunOnAOD;
+  
+  PropagateToMuon           fpropM1, fpropM2;
 
 };
 

@@ -50,7 +50,9 @@ HFDumpMuons::HFDumpMuons(const edm::ParameterSet& iConfig):
   fCaloMuonsLabel(iConfig.getUntrackedParameter<InputTag>("calomuonsLabel")),
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1)),
-  fRunOnAOD(iConfig.getUntrackedParameter<bool>("runOnAOD",false))
+  fRunOnAOD(iConfig.getUntrackedParameter<bool>("runOnAOD",false)),
+  fpropM1(iConfig.getParameter<edm::ParameterSet>("propM1")),
+  fpropM2(iConfig.getParameter<edm::ParameterSet>("propM2"))
 {
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFDumpMuons constructor" << endl;
@@ -68,6 +70,10 @@ HFDumpMuons::~HFDumpMuons() {
 
 }
 
+void HFDumpMuons::beginRun(const edm::Run& iRun, const edm::EventSetup& iSetup) {
+  fpropM1.init(iSetup);
+  fpropM2.init(iSetup);
+}
 
 // ----------------------------------------------------------------------
 void HFDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
@@ -155,6 +161,14 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
     pM->fOuterPlab.SetPtEtaPhi(trk.pt(), trk.eta(), trk.phi());
   }
 
+  TrajectoryStateOnSurface prop_M1 = fpropM1.extrapolate(rm);
+  TrajectoryStateOnSurface prop_M2 = fpropM2.extrapolate(rm);
+  if (prop_M1.isValid()) {
+    pM->fPositionAtM1.SetXYZ(prop_M1.globalPosition().x(), prop_M1.globalPosition().y(), prop_M1.globalPosition().z());
+  }
+  if (prop_M2.isValid()) {
+    pM->fPositionAtM2.SetXYZ(prop_M2.globalPosition().x(), prop_M2.globalPosition().y(), prop_M2.globalPosition().z());
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -225,7 +239,6 @@ vector<unsigned int> HFDumpMuons::muonStatHits(const reco::Track& tr) {
   theMuonHits.push_back(nRecHitRPC);
   return theMuonHits; 
 }
-
 
 // ------------ method called once each job just before starting event loop  ------------
 void  HFDumpMuons::beginJob() {

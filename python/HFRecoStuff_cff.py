@@ -35,7 +35,20 @@ muonDump = cms.EDAnalyzer(
     muonsLabel      = cms.untracked.InputTag("muons"),
     calomuonsLabel  = cms.untracked.InputTag("calomuons"),
     doTruthMatching = cms.untracked.int32(0),
-    runOnAOD        = cms.untracked.bool(True)
+    runOnAOD        = cms.untracked.bool(True),
+    # Configuration for the extrapolation at the muon system 
+    propM1 = cms.PSet(
+                      useStation2 = cms.bool(False), 
+                      useTrack = cms.string("tracker"),
+                      useState = cms.string("atVertex"),  # in AOD
+                      useSimpleGeometry = cms.bool(True), # use just one cylinder and two planes, not all the fancy chambers
+                      ),
+    propM2 = cms.PSet(
+                      useStation2 = cms.bool(True), 
+                      useTrack = cms.string("tracker"),
+                      useState = cms.string("atVertex"),  # in AOD
+                      useSimpleGeometry = cms.bool(True), # use just one cylinder and two planes, not all the fancy chambers
+                      )
     )
 
 

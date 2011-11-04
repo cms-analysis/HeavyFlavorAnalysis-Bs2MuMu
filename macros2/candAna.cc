@@ -313,6 +313,31 @@ void candAna::candAnalysis() {
   fMu2BPix      = fpReader->numberOfBPixLayers(p2);
   fMu2BPixL1    = fpReader->numberOfBPixLayer1Hits(p2);
 
+  if  (fMu1Id && fMu2Id) {
+    //  if (p1->fMuIndex > -1 && p2->fMuIndex > -1) {
+    TVector3 rm1  = fpEvt->getMuon(p1->fMuIndex)->fPositionAtM2;
+    TVector3 rm2  = fpEvt->getMuon(p2->fMuIndex)->fPositionAtM2;
+
+    if (rm1.Mag() > 0.1 && rm2.Mag() > 0.1) {
+      TVector3 rD   = rm2-rm1; 
+      fMuDist   = rD.Mag(); 
+      fMuDeltaR =  rm1.DeltaR(rm2); 
+    } else {
+      fMuDist   = -99.; 
+      fMuDeltaR = -99.; 
+    }
+
+    if (fMuDeltaR > 100) {
+      cout << "r1 = (" << rm1.X() << ", " << rm1.Y() << ", " << rm1.Z() 
+	   << ") r2 = (" << rm2.X() << ", " << rm2.Y() << ", " << rm2.Z() << ")"
+	   << endl;
+    }
+    if (fVerbose > 10) cout << "dist: " << fMuDist << " dr = " << fMuDeltaR << endl;
+  } else {
+    fMuDist   = -99.; 
+    fMuDeltaR = -99.; 
+  }
+
   if (p2->fMuIndex > -1) {
     fMu2Chi2      = fpEvt->getMuon(p2->fMuIndex)->fMuonChi2;
   } else {
@@ -918,6 +943,9 @@ void candAna::bookHist() {
   fTree->Branch("m2bpix",  &fMu2BPix,           "m2bpix/I");
   fTree->Branch("m2bpixl1",&fMu2BPixL1,         "m2bpixl1/I");
   fTree->Branch("m2chi2",  &fMu2Chi2,           "m2chi2/D");
+
+  fTree->Branch("mudist",  &fMuDist,            "mudist/D");
+  fTree->Branch("mudeltar",&fMuDeltaR,          "mudeltar/D");
 
   fTree->Branch("g1pt",    &fMu1PtGen,          "g1pt/D");
   fTree->Branch("g2pt",    &fMu2PtGen,          "g2pt/D");

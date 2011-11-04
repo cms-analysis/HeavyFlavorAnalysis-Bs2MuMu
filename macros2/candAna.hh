@@ -121,6 +121,7 @@ public:
   int     fCandTM, fCandType; 
   int     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fMu1Chi2, fMu2Chi2, fCandQ;
   bool    fMu1Id, fMu2Id;
+  double  fMuDist, fMuDeltaR;
   double  fHltMu1Pt, fHltMu1Eta, fHltMu1Phi, fHltMu2Pt, fHltMu2Eta, fHltMu2Phi;
   double  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
   double  fMu1PtGen, fMu2PtGen, fMu1EtaGen, fMu2EtaGen;
