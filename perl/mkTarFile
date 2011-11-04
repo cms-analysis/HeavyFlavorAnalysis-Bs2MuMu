@@ -10,7 +10,7 @@ if ($ARGV[0]) {
     die "need a name for the tarfile\n";
 }
 
-$include  = "AnalysisDataFormats/HeavyFlavorObjects HeavyFlavorAnalysis/Bs2MuMu";
+$include  = "AnalysisDataFormats/HeavyFlavorObjects HeavyFlavorAnalysis/Bs2MuMu MuonAnalysis/MuonAssociators";
 if ($opt_i) {
     $include .= " $opt_i";
 }
