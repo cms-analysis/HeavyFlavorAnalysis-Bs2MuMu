@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 #
-# mkPyFiles -t file-XXXX.py [-n 5| -e 5000] -f filenames.txt -d outputDirectory -s suffix
+# mkPyFiles -t file-XXXX.py [[-l] -n 5| -e 5000] -f filenames.txt -d outputDirectory -s suffix
 #
 # This is useful for creating a set of python files, inserting opt_n lines (or opt_e events) from opt_f, and incrementing XXXX 
 #

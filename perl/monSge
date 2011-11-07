@@ -129,8 +129,11 @@ sub parseOutput {
     $foundException = `/bin/grep -i cms::exception  $llogfile`;
     if ($foundException) { $return = "cms::exception found"; }
 
+    $foundException = `/bin/grep -i 'Abort (core dumped)'  $llogfile`;
+    if ($foundException) { $return = "abort/core dump detected"; }
+
     $foundGlibc     = `/bin/grep -i "glibc detected" $llogfile`;
-    if ($foundGlibc) {$return = "core dump detected"; }
+    if ($foundGlibc) {$return = "abort/core dump detected"; }
 
     $foundBadAlloc   = `/bin/grep -i "std::bad_alloc" $llogfile`;
     if ($foundBadAlloc) {$return = "std::bad_alloc detected"; }

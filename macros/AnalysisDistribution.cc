@@ -406,6 +406,11 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
   TH1D *hm = (TH1D*)gDirectory->Get(Form("%sMass%s", variable, cut));
   TH1D *h0 = (TH1D*)gDirectory->Get(Form("%s%s0", variable, cut));
   TH1D *h1 = (TH1D*)gDirectory->Get(Form("%s%s1", variable, cut));
+  if (0 == hm) {
+    cout << "no histogram " << Form("%sMass%s", variable, cut) << " found in gDirectory = "; gDirectory->pwd();
+    return 0;
+  }
+
 
   if (DISPLAY) {
     c0->cd(1);

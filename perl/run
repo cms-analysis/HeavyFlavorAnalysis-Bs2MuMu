@@ -171,6 +171,7 @@ foreach $jobfile (@ARGV) {
     # -- get a timestamp
     ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
     $year += 1900; 
+    $mon += 1; 
     $timeStamp = sprintf("%s, %4i/%02i/%02i %02i:%02i:%02i", $host, $year, $mon, $mday, $hour, $min, $sec); 
 
     if ($opt_m eq "local") {

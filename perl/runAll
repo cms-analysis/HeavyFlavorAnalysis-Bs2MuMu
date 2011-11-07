@@ -8,18 +8,21 @@
 #            -s {mc,data,signal,norm,cs}  run jobs of a specific sample
 #            -r rootdir                   place where to put output
 #
-# 2010/11/23 first shot
-# 2010/11/25 remove inclusion of old merged file in dataset-* list ...
-# 2010/12/14 bug fix to allow really n wildcards (in addition to the trailing -*)
-# 2011/05/17 added rare backgrounds
+# 2011/10/27 changed to new candAna setup
 # 2011/05/26 realized that same dataset name will lead to problems on identical WN!
+# 2011/05/17 added rare backgrounds
+# 2010/11/25 remove inclusion of old merged file in dataset-* list ...
+# 2010/11/23 first shot
+# 2010/12/14 bug fix to allow really n wildcards (in addition to the trailing -*)
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
 # Author    Urs Langenegger <urs.langenegger@psi.ch>
 # ----------------------------------------------------------------------
 use Getopt::Std;
-getopts('Cdhj:q:r:s:t:');
+getopts('Cdhj:q:r:s:t:v:');
+
+#use Tie::IxHash;
 
 my $job = "2011";
 if ($opt_j) {
@@ -31,68 +34,41 @@ if ($opt_r) {
     $rootdir = $opt_r; 
 }
 
+if ($opt_v) {
+    $version = $opt_v; 
+} else {
+    $version = "v10";
+}
 
-my %jobs = (
+#tie %jobs, "Tie::IxHash";
+
+%jobs = (
     "signal Bs2MuMu MC 2e33"  
-    => "-m,,cv02-signal-Bs2MuMu-5e32,signalMC2011-5e32.root"
-    , "signal Bs2MuMu MC 1e33"  
-    => "-m,bmmSignalReader,bmmBs2MuMuReader.mc-1e33.cuts,cv02-signal-Bs2MuMu-1e33,signalMC2011.root"
-    , "signal Bd2MuMu MC 5e32"  
-    => "-m,bmmSignalReader,bmmBd2MuMuReader.mc-5e32.cuts,cv02-signal-Bd2MuMu-5e32,Bd2MuMu2011-5e32.root"
-    , "signal Bd2MuMu MC 1e33"  
-    => "-m,bmmSignalReader,bmmBd2MuMuReader.mc-1e33.cuts,cv02-signal-Bd2MuMu-1e33,Bd2MuMu2011.root"
-    , "signal Bd2MuMu MC Summer11"  
-    => "-m,bmmSignalReader,bmmBd2MuMuReader.mc-summer11.cuts,cn-00-BdToMuMu-Summer11,Bd2MuMu-Summer11.root"
-# -- signal bg mc
-    , "signal bg MC 60" => "-m,bmmSignalReader,bmm-bg60-LambdaB2PPiReader.$job.cuts,cv02-signal-bg60-LambdaB2PPi-5e32,bg60.root"
-    , "signal bg MC 61" => "-m,bmmSignalReader,bmm-bg61-LambdaB2PKReader.$job.cuts,cv02-signal-bg61-LambdaB2PK-5e32,bg61.root"
-    , "signal bg MC 82" => "-m,bmmSignalReader,bmm-bg82-Bs2KKReader.$job.cuts,cv02-signal-bg82-Bs2KK-5e32,bg82.root"
-    , "signal bg MC 83" => "-m,bmmSignalReader,bmm-bg83-Bs2KPiReader.$job.cuts,cv02-signal-bg83-Bs2KPi-5e32,bg83.root"
-    , "signal bg MC 84" => "-m,bmmSignalReader,bmm-bg84-Bs2PiPiReader.$job.cuts,cv02-signal-bg84-Bs2PiPi-5e32,bg84.root"
-    , "signal bg MC 86" => "-m,bmmSignalReader,bmm-bg86-Bs2KMuNuReader.$job.cuts,cv02-signal-bg86-Bs2KMuNu-5e32,bg86.root"
-    , "signal bg MC 93" => "-m,bmmSignalReader,bmm-bg93-Bd2KKReader.$job.cuts,cv02-signal-bg93-Bd2KK-5e32,bg93.root"
-    , "signal bg MC 92" => "-m,bmmSignalReader,bmm-bg92-Bd2KPiReader.$job.cuts,cv02-signal-bg92-Bd2KPi-5e32,bg92.root"
-    , "signal bg MC 91" => "-m,bmmSignalReader,bmm-bg91-Bd2PiPiReader.$job.cuts,cv02-signal-bg91-Bd2PiPi-5e32,bg91.root"
-    , "signal bg MC 95" => "-m,bmmSignalReader,bmm-bg95-Bd2PiMuNuReader.$job.cuts,cv02-signal-bg95-Bd2PiMuNu-5e32,bg95.root"
-# -- signal data
-    , "signal data" 
-    => "-b 1,bmmSignalReader,bmmSignalReader.$job.cuts,cv02-signal-MuOnia-Run2011A*,signalData2011.root"
-# -- normalization
-    , "norm MC 1e33" 
-    => "-m,bmmNormalizationReader,bmmNormalizationReader.mc-1e33.cuts,cv02-norm-Bu2JpsiK-1e33-*,normMC2011.root"
-    , "norm MC 5e32" 
-    => "-m,bmmNormalizationReader,bmmNormalizationReader.mc-5e32.cuts,cv02-norm-Bu2JpsiK-5e32-*,normMC2011-5e32.root"
-    , "norm MC Summer11" 
-    => "-m,bmmNormalizationReader,bmmNormalizationReader.mc-summer11.cuts,cn-00-BpToPsiMuMu-Summer11-*,normMC-Summer11.root"
-    , "norm data" 
-    => "-b 0,bmmNormalizationReader,bmmNormalizationReader.$job.cuts,cv02-norm-MuOnia-Run2011A*,normData2011.root"
-# -- control sample
-    , "cs MC 1e33" 
-    => "-m,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.mc-1e33.cuts,cv02-cs-Bs2JpsiPhi-1e33,Bs2JpsiPhiMC2011.root"
-    , "cs MC 5e32" 
-    => "-m,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.mc-5e32.cuts,cv02-cs-Bs2JpsiPhi-5e32,Bs2JpsiPhiMC2011-5e32.root"
-    , "cs MC Summer11" 
-    => "-m,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.mc-summer11.cuts,cn-00-BsToPsiMuMu-Summer11-*,Bs2JpsiPhiMC-Summer11.root"
-    , "cs data" 
-    => "-b 0,bmmBs2JpsiPhiReader,bmmBs2JpsiPhiReader.$job.cuts,cv02-cs-MuOnia-Run2011A*,Bs2JpsiPhiData2011.root",
-# -- BMT
-    , "bmt ht 30521" 
-    => "-m,bmmNormalizationReader,bmt300521Reader.$job.cuts,cv02-bmt-HT-Run2011A-*,cv02-300521-bmt-ht.root"
-    , "bmt photon 30521" 
-    => "-m,bmmNormalizationReader,bmt300521Reader.$job.cuts,cv02-bmt-Photon-Run2011A-*,cv02-300521-bmt-photon.root"
-    , "bmt jet 30521" 
-    => "-m,bmmNormalizationReader,bmt300521Reader.$job.cuts,cv02-bmt-Jet-Run2011A-*,cv02-300521-bmt-jet.root"
-    , "bmt ht 1313" 
-    => "-m,bmmSignalReader,bmt1313Reader.$job.cuts,cv02-bmt-HT-Run2011A-*,cv02-1313-bmt-ht.root"
-    , "bmt photon 1313" 
-    => "-m,bmmSignalReader,bmt1313Reader.$job.cuts,cv02-bmt-Photon-Run2011A-*,cv02-1313-bmt-photon.root"
-    , "bmt jet 1313" 
-    => "-m,bmmSignalReader,bmt1313Reader.$job.cuts,cv02-bmt-Jet-Run2011A-*,cv02-1313-bmt-jet.root"
+    => "-m,bmm2Reader.2e33-Bs2MuMu,cbmm-$version-2e33-Bs2MuMu,$version-2e33-Bs2MuMu.root"
+    , "signal Bs2MuMu MC 3e33"  
+    => "-m,bmm2Reader.3e33-Bs2MuMu,cbmm-$version-3e33-Bs2MuMu,$version-3e33-Bs2MuMu.root"
+    , "signal Bd2MuMu MC 2e33"  
+    => "-m,bmm2Reader.2e33-Bd2MuMu,cbmm-$version-2e33-Bd2MuMu,$version-2e33-Bd2MuMu.root"
+    , "signal Bd2MuMu MC 3e33"  
+    => "-m,bmm2Reader.3e33-Bd2MuMu,cbmm-$version-2e33-Bd2MuMu,$version-3e33-Bd2MuMu.root"
+    #
+    , "norm Bu2JpsiK MC 2e33"  
+    => "-m,bmm2Reader.2e33-Bu2JpsiK,cbmm-$version-2e33-Bu2JpsiK-*,$version-2e33-Bu2JpsiK.root"
+    , "norm Bu2JpsiK MC 3e33"  
+    => "-m,bmm2Reader.3e33-Bu2JpsiK,cbmm-$version-3e33-Bu2JpsiK-*,$version-3e33-Bu2JpsiK.root"
+    #
+    , "cs Bs2JpsiPhi MC 2e33"  
+    => "-m,bmm2Reader.2e33-Bs2JpsiPhi,cbmm-$version-2e33-Bs2JpsiPhi,$version-2e33-Bs2JpsiPhi.root"
+    , "cs Bs2JpsiPhi MC 3e33"  
+    => "-m,bmm2Reader.3e33-Bs2JpsiPhi,cbmm-$version-3e33-Bs2JpsiPhi,$version-3e33-Bs2JpsiPhi.root"
+    #
+    , "data 2011"  
+    => "-m,bmm2Reader.data,cbmm-$version-Run2011*,$version-2011-data.root"
     );
 
 my $user  = $ENV{'USER'};
 
-my $tarfile = "../../../../../101123.tar.gz";
+my $tarfile = "../../../../../111027.tar.gz";
 if ($opt_t) {
     $tarfile = $opt_t; 
 } else {
@@ -106,9 +82,13 @@ my $crash = "";
 if ($opt_C) {$crash = "-C";}
 
 my $queue = ""; 
-if (!$opt_q && !opt_h) {
-    print "-q not set\n";
-    $queue = "-q all.q";
+if (!$opt_q) {
+    if (!$opt_h) {
+	print "-q not set\n";
+	$queue = "-q short.q";
+    } else {
+	# do nothing when merging
+    }
 } else {
     $queue = "-q $opt_q";
 }
@@ -126,15 +106,17 @@ my $runCommand = "run $queue $crash -c ../../treeNoCompNoSE.csh -t $tarfile -m b
 # -- run hadd instead of submitting
 if ($opt_h) {
     foreach $j (keys %jobs) {
+	if ($opt_s =~ /2e33/   && !($j =~ /2e33/)) {next; }
+	if ($opt_s =~ /3e33/   && !($j =~ /3e33/)) {next; }
 	if ($opt_s =~ /signal/ && !($j =~ /signal/)) {next; }
 	if ($opt_s =~ /cs/     && !($j =~ /cs/)) {next; }
 	if ($opt_s =~ /norm/   && !($j =~ /norm/)) {next; }
 	if ($opt_s =~ /data/   && !($j =~ /data/)) {next; }
 	if ($opt_s =~ /mc/     && !($j =~ /MC/)) {next; }
-	($options, $class, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
+	($options, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
 	#@lines = `srmls $storage/$class | grep root`;
-	@lines = `ls $storage/$class/* | grep root`;
-
+	@lines = `ls $storage/* | grep root`;
+	
 	$dataset =~ s/-\*//;
 	$dataset =~ s/\*/.\*/g;
 	print "dataset = $dataset\n";
@@ -143,7 +125,14 @@ if ($opt_h) {
 	@rootfiles = grep(/\.root/, @rootfiles); 
 	#@rootfiles = grep(s/.*\/trivcat/$dcap/, @rootfiles); 
 	@rootfiles = grep(s/\n//, @rootfiles); 
-	if ($#rootfiles > -1) {
+	if ($#rootfiles == 0) {
+	    if ($opt_d) {
+		print "cp $rootfiles[0] $scratch/$output \n";
+	    } else {
+		print "cp $rootfiles[0] $scratch/$output \n";
+		system("/bin/cp $rootfiles[0] $scratch/$output");
+	    }	    
+	} elsif ($#rootfiles > 0) {
 	    if ($opt_d) {
 		print "hadd $scratch/$output \n";
 		foreach $f (@rootfiles) {print "  $f\n";}
@@ -164,8 +153,10 @@ if ($opt_h) {
 # ----------------------------------------------------------------------
 # -- submit the jobs
 foreach $j (keys %jobs) {
-    ($options, $class, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
-    $command = "$runCommand -x 'bin/runTreeReaders -r $class $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
+    ($options, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
+    $command = "$runCommand -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
+    if ($opt_s =~ /2e33/   && !($j =~ /2e33/)) {next; }
+    if ($opt_s =~ /3e33/   && !($j =~ /3e33/)) {next; }
     if ($opt_s =~ /data/   && !($j =~ /data/)) {next; }
     if ($opt_s =~ /norm/   && !($j =~ /norm/)) {next; }
     if ($opt_s =~ /signal/ && !($j =~ /signal/)) {next; }

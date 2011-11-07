@@ -6,6 +6,7 @@
 #            -c counts how many events were put into a chain (for verification)
 #
 # 2010/11/22 first shot
+# 2011/11/07 split chains will be created in pwd 
 #
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
@@ -34,9 +35,11 @@ foreach $file (@ARGV) {
 
 # ----------------------------------------------------------------------
 sub splitChain() {
-    ($cfile, $nmax) = @_; 
-    open(IN, "$cfile") || die "Cannot open $cfile\n";
+    ($cifile, $nmax) = @_; 
+    open(IN, "$cifile") || die "Cannot open $cifile\n";
     my $ccnt= "00";
+    # -- split off possible path 
+    $tmp = $cifile; @tmp = split(/\//, $cifile); $cfile = pop(@tmp);
     open(OUT, ">$cfile-$ccnt") || die "Cannot open $cfile-$ccnt\n";
     @lines = <IN>; 
     close(IN); 
