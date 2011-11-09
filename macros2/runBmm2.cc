@@ -182,10 +182,11 @@ int main(int argc, char *argv[]) {
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
   //treeReader01 *a = new bmm2Reader(chain, TString(evtClassName));  
   treeReader01 *a = NULL;
-  if (readerName == "bmm2Reader") a = new bmm2Reader(chain, TString(evtClassName));
-  else if (readerName == "lmtreeReader") a = new lmtreeReader(chain,TString(evtClassName));
+  if (readerName == "lmtreeReader") a = new lmtreeReader(chain, TString(evtClassName));
+  else if (readerName == "bmm2Reader") a = new bmm2Reader(chain, TString(evtClassName));
   else {
-    cout << "please provide a class name to instantiate" << endl;
+    cout << "default class: bmm2Reader" << endl;
+    a = new bmm2Reader(chain, TString(evtClassName));
   }
   
   
