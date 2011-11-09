@@ -153,13 +153,21 @@ int treeReader01::loop(int nevents, int start) {
   if (maxEvents < 10000)   step = 500; 
   if (maxEvents < 1000)    step = 100; 
 
+  int treeNumber(0), oldTreeNumber(-1); 
+
   for (int jEvent = start; jEvent < maxEvents; ++jEvent) {
+    treeNumber = fpChain->GetTreeNumber();
+    if (treeNumber != oldTreeNumber) {
+      cout << "    " << Form("      %8d", jEvent) << " " << fpChain->GetFile()->GetName() << endl;
+      oldTreeNumber = treeNumber; 
+    }
+
     if (jEvent%step == 0) cout << Form(" .. Event %8d", jEvent);
 
     fEvent = jEvent; 
     fpEvt->Clear();                        
     nb += fpChain->GetEvent(jEvent);          
-
+    
     fEvt = static_cast<unsigned int>(fpEvt->fEventNumber);   
     fRun = fpEvt->fRunNumber;
     fLS  = fpEvt->fLumiSection;

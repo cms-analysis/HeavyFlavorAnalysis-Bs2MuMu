@@ -420,23 +420,23 @@ void candAna::candAnalysis() {
   fCandIso    = iso; 
   
   // -- the matrix
-  fIsoR05Pt03 = isoWithDOCA(fpCand, 0.05, 0.5, 0.3);
-  fIsoR05Pt05 = isoWithDOCA(fpCand, 0.05, 0.5, 0.5);
-  fIsoR05Pt07 = isoWithDOCA(fpCand, 0.05, 0.5, 0.7);
-  fIsoR05Pt09 = isoWithDOCA(fpCand, 0.05, 0.5, 0.9);
-  fIsoR05Pt11 = isoWithDOCA(fpCand, 0.05, 0.5, 1.1);
+//   fIsoR05Pt03 = isoWithDOCA(fpCand, 0.05, 0.5, 0.3);
+//   fIsoR05Pt05 = isoWithDOCA(fpCand, 0.05, 0.5, 0.5);
+//   fIsoR05Pt07 = isoWithDOCA(fpCand, 0.05, 0.5, 0.7);
+//   fIsoR05Pt09 = isoWithDOCA(fpCand, 0.05, 0.5, 0.9);
+//   fIsoR05Pt11 = isoWithDOCA(fpCand, 0.05, 0.5, 1.1);
 
-  fIsoR07Pt03 = isoWithDOCA(fpCand, 0.05, 0.7, 0.3);
-  fIsoR07Pt05 = isoWithDOCA(fpCand, 0.05, 0.7, 0.5);
-  fIsoR07Pt07 = isoWithDOCA(fpCand, 0.05, 0.7, 0.7);
-  fIsoR07Pt09 = isoWithDOCA(fpCand, 0.05, 0.7, 0.9);
-  fIsoR07Pt11 = isoWithDOCA(fpCand, 0.05, 0.7, 1.1);
+//   fIsoR07Pt03 = isoWithDOCA(fpCand, 0.05, 0.7, 0.3);
+//   fIsoR07Pt05 = isoWithDOCA(fpCand, 0.05, 0.7, 0.5);
+//   fIsoR07Pt07 = isoWithDOCA(fpCand, 0.05, 0.7, 0.7);
+//   fIsoR07Pt09 = isoWithDOCA(fpCand, 0.05, 0.7, 0.9);
+//   fIsoR07Pt11 = isoWithDOCA(fpCand, 0.05, 0.7, 1.1);
 
-  fIsoR10Pt03 = isoWithDOCA(fpCand, 0.05, 1.0, 0.3);
-  fIsoR10Pt05 = isoWithDOCA(fpCand, 0.05, 1.0, 0.5);
-  fIsoR10Pt07 = isoWithDOCA(fpCand, 0.05, 1.0, 0.7);
-  fIsoR10Pt09 = isoWithDOCA(fpCand, 0.05, 1.0, 0.9);
-  fIsoR10Pt11 = isoWithDOCA(fpCand, 0.05, 1.0, 1.1);
+//   fIsoR10Pt03 = isoWithDOCA(fpCand, 0.05, 1.0, 0.3);
+//   fIsoR10Pt05 = isoWithDOCA(fpCand, 0.05, 1.0, 0.5);
+//   fIsoR10Pt07 = isoWithDOCA(fpCand, 0.05, 1.0, 0.7);
+//   fIsoR10Pt09 = isoWithDOCA(fpCand, 0.05, 1.0, 0.9);
+//   fIsoR10Pt11 = isoWithDOCA(fpCand, 0.05, 1.0, 1.1);
 
   fCandChi2  = sv.fChi2;
   fCandDof   = sv.fNdof;
@@ -444,7 +444,9 @@ void candAna::candAnalysis() {
   fCandFL3d  = sv.fD3d;
   fCandFL3dE = sv.fD3dE;
   fCandFLS3d = sv.fD3d/sv.fD3dE; 
+  if (TMath::IsNaN(fCandFLS3d)) fCandFLS3d = -1.;
   fCandFLSxy = sv.fDxy/sv.fDxyE; 
+  if (TMath::IsNaN(fCandFLSxy)) fCandFLSxy = -1.;
 
   if (fpCand->fNstTracks.size() == 0) {
     //    cout << "HHHHEEEELLLLPPPP" << endl;
@@ -484,10 +486,10 @@ void candAna::candAnalysis() {
 
   fAnaCuts.update(); 
 
-//   fPreselection = fWideMass && fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID && fGoodMuonsPt && fGoodMuonsEta; 
-//   fPreselection = fPreselection && fGoodQ && (fCandPt > 4) && (fCandCosA > 0.9) && (fCandFLS3d > 2) && (fCandChi2/fCandDof < 10); 
+  fPreselection = fWideMass && fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID && fGoodMuonsPt && fGoodMuonsEta; 
+  fPreselection = fPreselection && fGoodQ && (fCandPt > 4) && (fCandA < 0.4) && (fCandFLS3d > 2) && (fCandChi2/fCandDof < 10); 
 
-  fPreselection = true; 
+  //  fPreselection = true; 
 }
 
 

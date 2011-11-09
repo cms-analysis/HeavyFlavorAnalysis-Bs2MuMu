@@ -22,8 +22,6 @@
 use Getopt::Std;
 getopts('Cdhj:q:r:s:t:v:');
 
-#use Tie::IxHash;
-
 my $job = "2011";
 if ($opt_j) {
     $job = $opt_j; 
@@ -39,8 +37,6 @@ if ($opt_v) {
 } else {
     $version = "v10";
 }
-
-#tie %jobs, "Tie::IxHash";
 
 %jobs = (
     "signal Bs2MuMu MC 2e33"  
@@ -93,18 +89,23 @@ if (!$opt_q) {
     $queue = "-q $opt_q";
 }
 
-my $storage = "/shome/ursl/scratch/$rootdir";
-my $srmcmd = "srmcp -2 --streams_num=1";
-my $dcap = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
-#my $scratch = "/scratch/$user"; 
-my $scratch = "/shome/$user/scratch"; 
+my $srmcmd  = "srmcp -2 --streams_num=1";
+my $dcap    = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
+my $scratch = "/shome/$user/scratch"; # /scratch is likely too small
+my $srm     = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store";
+my $storage = "$srm/user/$user/$rootdir";
 
+#my $runCommand = "run $queue $crash -c ../../treeNoCompNoSE.csh -t $tarfile -m batch";
 my $runCommand = "run $queue $crash -c ../../treeNoCompNoSE.csh -t $tarfile -m batch";
 
 
 # ----------------------------------------------------------------------
 # -- run hadd instead of submitting
 if ($opt_h) {
+    # print "srmls $storage | grep root\n";
+    @lines = `srmls $storage | grep root`;
+    #@lines = `ls $storage/* | grep root`;
+
     foreach $j (keys %jobs) {
 	if ($opt_s =~ /2e33/   && !($j =~ /2e33/)) {next; }
 	if ($opt_s =~ /3e33/   && !($j =~ /3e33/)) {next; }
@@ -114,8 +115,6 @@ if ($opt_h) {
 	if ($opt_s =~ /data/   && !($j =~ /data/)) {next; }
 	if ($opt_s =~ /mc/     && !($j =~ /MC/)) {next; }
 	($options, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
-	#@lines = `srmls $storage/$class | grep root`;
-	@lines = `ls $storage/* | grep root`;
 	
 	$dataset =~ s/-\*//;
 	$dataset =~ s/\*/.\*/g;
@@ -123,25 +122,32 @@ if ($opt_h) {
 	print "file = $output\n";
 	@rootfiles = grep(/$dataset/, @lines); 
 	@rootfiles = grep(/\.root/, @rootfiles); 
-	#@rootfiles = grep(s/.*\/trivcat/$dcap/, @rootfiles); 
 	@rootfiles = grep(s/\n//, @rootfiles); 
 	if ($#rootfiles == 0) {
+	    @rootfiles = grep(s/.*$user\/$rootdir\///, @rootfiles); 
 	    if ($opt_d) {
-		print "cp $rootfiles[0] $scratch/$output \n";
+		# print "cp $rootfiles[0] $scratch/$output \n";
+		# print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";		
+		print "$srmcmd $storage/$rootfiles[0] file:///$scratch/$output \n";
 	    } else {
-		print "cp $rootfiles[0] $scratch/$output \n";
-		system("/bin/cp $rootfiles[0] $scratch/$output");
+		# print "cp $rootfiles[0] $scratch/$output \n";
+		# system("/bin/cp $rootfiles[0] $scratch/$output");
+                # print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";
+                # system("$srmcmd $storage/$rootfiles[0] $storage/$output");
+		print "$srmcmd $storage/$rootfiles[0] $scratch/$output \n";
+		system("$srmcmd $storage/$rootfiles[0] file:///$scratch/$output");
 	    }	    
 	} elsif ($#rootfiles > 0) {
+	    @rootfiles = grep(s/.*\/trivcat/$dcap/, @rootfiles); 
 	    if ($opt_d) {
 		print "hadd $scratch/$output \n";
 		foreach $f (@rootfiles) {print "  $f\n";}
 	    } else {
 		print "hadd $scratch/$output @rootfiles\n";
-		if (-e "$scratch/$output") {unlink("/scratch/$user/$output"); }
+		if (-e "$scratch/$output") {unlink("$scratch/$output"); }
 		system("hadd $scratch/$output @rootfiles");
-		#system("srmrm $storage/$class/$output");
-		#system("$srmcmd file:///$scratch/$output $storage/$class/$output");
+		system("srmrm $storage/$class/$output");
+		system("$srmcmd file:///$scratch/$output $storage/$class/$output");
 	    }
 	}
     }

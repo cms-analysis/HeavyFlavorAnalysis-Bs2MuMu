@@ -22,32 +22,32 @@ using std::cout;
 using std::endl;
 
 
-// ----------------------------------------------------------------------
-// expo and Gauss 
-double f_epaG(double *x, double *par) {
-  //   par[0] = area of gaussian
-  //   par[1] = mean of gaussian
-  //   par[2] = sigma of gaussian
-  //   par[3] = par 0 of expo
-  //   par[4] = par 1 of expo
-  //   par[5] = par 0 of pol1
-  //   par[6] = par 1 of pol1
-  return  (f_p1(x, &par[5]) + f_expo(x, &par[3]) + f_Gauss(x, &par[0]));
-}
+// // ----------------------------------------------------------------------
+// // expo and Gauss 
+// double f_epaG(double *x, double *par) {
+//   //   par[0] = area of gaussian
+//   //   par[1] = mean of gaussian
+//   //   par[2] = sigma of gaussian
+//   //   par[3] = par 0 of expo
+//   //   par[4] = par 1 of expo
+//   //   par[5] = par 0 of pol1
+//   //   par[6] = par 1 of pol1
+//   return  (f_p1(x, &par[5]) + f_expo(x, &par[3]) + f_Gauss(x, &par[0]));
+// }
 
-// ----------------------------------------------------------------------
-// expo and double Gauss 
-double f_ea2G(double *x, double *par) {
-  // par[0] -> area
-  // par[1] -> mean
-  // par[2] -> sigma
-  // par[3] -> fraction in second gaussian
-  // par[4] -> mean
-  // par[5] -> sigma
-  // par[6] = par 0 of expo
-  // par[7] = par 1 of expo
-  return  (f_expo(x, &par[6]) + f_2G(x, &par[0]));
-}
+// // ----------------------------------------------------------------------
+// // expo and double Gauss 
+// double f_ea2G(double *x, double *par) {
+//   // par[0] -> area
+//   // par[1] -> mean
+//   // par[2] -> sigma
+//   // par[3] -> fraction in second gaussian
+//   // par[4] -> mean
+//   // par[5] -> sigma
+//   // par[6] = par 0 of expo
+//   // par[7] = par 1 of expo
+//   return  (f_expo(x, &par[6]) + f_2G(x, &par[0]));
+// }
 
 // ----------------------------------------------------------------------
 AnalysisDistribution::AnalysisDistribution(const char *name, const char *title, int nbins, double lo, double hi) {
@@ -59,6 +59,7 @@ AnalysisDistribution::AnalysisDistribution(const char *name, const char *title, 
   fMassSigma = -1.; 
 
   fVerbose = 0; 
+  fDirectory = ".";
 
   fpIF = new initFunc(); 
 
@@ -104,14 +105,14 @@ AnalysisDistribution::AnalysisDistribution(const char *name, const char *title, 
   hMassBGH   = new TH1D(Form("%sMassBGH", name), Form("%sMassGBH", name), NBINS, fMassLo, fMassHi); 
 
 
-  fF0 = new TF1("ADf0", f_p1, 0., 7., 2);         fF0->SetParNames("Offset", "Slope"); 			   
-  fF1 = new TF1("ADf1", f_expo, 0., 7., 2);       fF1->SetParNames("Norm", "Exp"); 			   
+//   fF0 = new TF1("ADf0", f_p1, 0., 7., 2);         fF0->SetParNames("Offset", "Slope"); 			   
+//   fF1 = new TF1("ADf1", f_expo, 0., 7., 2);       fF1->SetParNames("Norm", "Exp"); 			   
 
-  fP1  = new TF1("ADp1", f_p1, 0., 7., 2);        fP1->SetParNames("Offset", "Slope"); 			   
-  fPG1 = new TF1("ADpg1", f_p1aG, 0., 7., 5);     fPG1->SetParNames("Area", "Peak", "Sigma", "Offset", "Slope"); 
-  fEG1 = new TF1("ADeg1", f_eaG, 0., 7., 5);      fEG1->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp"); 
-  fEG2 = new TF1("ADeg2", f_ea2G, 0., 7., 8);     fEG2->SetParNames("Area", "Peak", "Sigma", "Fraction2", "Peak2", "Sigma2", "Norm", "Exp"); 
-  fEPG = new TF1("ADepg", f_epaG, 0., 7., 7);     fEPG->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp", "Offset", "Slope");             
+//   fP1  = new TF1("ADp1", f_p1, 0., 7., 2);        fP1->SetParNames("Offset", "Slope"); 			   
+//   fPG1 = new TF1("ADpg1", f_p1aG, 0., 7., 5);     fPG1->SetParNames("Area", "Peak", "Sigma", "Offset", "Slope"); 
+//   fEG1 = new TF1("ADeg1", f_eaG, 0., 7., 5);      fEG1->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp"); 
+//   fEG2 = new TF1("ADeg2", f_ea2G, 0., 7., 8);     fEG2->SetParNames("Area", "Peak", "Sigma", "Fraction2", "Peak2", "Sigma2", "Norm", "Exp"); 
+//   fEPG = new TF1("ADepg", f_epaG, 0., 7., 7);     fEPG->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp", "Offset", "Slope");             
   
 }
 
@@ -122,6 +123,10 @@ AnalysisDistribution::AnalysisDistribution(const char *name, double SigLo, doubl
 
   fMassLo = 4.8;
   fMassHi = 6.0;
+
+  fVerbose = 0; 
+  fDirectory = ".";
+
   fpIF = new initFunc(); 
   
   hMassSi    = (TH1D*)gDirectory->Get(Form("%sMassSi", name)); 
@@ -154,14 +159,14 @@ AnalysisDistribution::AnalysisDistribution(const char *name, double SigLo, doubl
   fBg2Lo = Bg2Lo;
   fBg2Hi = Bg2Hi;
 
-  fF0 = new TF1("ADf0", f_p1, 0., 7., 2);         fF0->SetParNames("Offset", "Slope"); 			   
-  fF1 = new TF1("ADf1", f_expo, 0., 7., 2);  	  fF1->SetParNames("Norm", "Exp"); 			   
+//   fF0 = new TF1("ADf0", f_p1, 0., 7., 2);         fF0->SetParNames("Offset", "Slope"); 			   
+//   fF1 = new TF1("ADf1", f_expo, 0., 7., 2);  	  fF1->SetParNames("Norm", "Exp"); 			   
 
-  fP1  = new TF1("ADp1", f_p1, 0., 7., 2);        fP1->SetParNames("Offset", "Slope"); 			   				    
-  fPG1 = new TF1("ADpg1", f_p1aG, 0., 7., 5);     fPG1->SetParNames("Area", "Peak", "Sigma", "Offset", "Slope"); 			    
-  fEG1 = new TF1("ADeg1", f_eaG, 0., 7., 5);      fEG1->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp"); 				    
-  fEG2 = new TF1("ADeg2", f_ea2G, 0., 7., 8);     fEG2->SetParNames("Area", "Peak", "Sigma", "Fraction2", "Peak2", "Sigma2", "Norm", "Exp");
-  fEPG = new TF1("ADepg", f_epaG, 0., 7., 7);     fEPG->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp", "Offset", "Slope");             
+//   fP1  = new TF1("ADp1", f_p1, 0., 7., 2);        fP1->SetParNames("Offset", "Slope"); 			   				    
+//   fPG1 = new TF1("ADpg1", f_p1aG, 0., 7., 5);     fPG1->SetParNames("Area", "Peak", "Sigma", "Offset", "Slope"); 			    
+//   fEG1 = new TF1("ADeg1", f_eaG, 0., 7., 5);      fEG1->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp"); 				    
+//   fEG2 = new TF1("ADeg2", f_ea2G, 0., 7., 8);     fEG2->SetParNames("Area", "Peak", "Sigma", "Fraction2", "Peak2", "Sigma2", "Norm", "Exp");
+//   fEPG = new TF1("ADepg", f_epaG, 0., 7., 7);     fEPG->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp", "Offset", "Slope");             
   
 }
 
@@ -169,12 +174,12 @@ AnalysisDistribution::AnalysisDistribution(const char *name, double SigLo, doubl
 
 // ----------------------------------------------------------------------
 AnalysisDistribution::~AnalysisDistribution() {
-  if (fF0) delete fF0; 
-  if (fF1) delete fF1; 
-  if (fP1) delete fP1; 
-  if (fPG1) delete fPG1; 
-  if (fEG1) delete fEG1; 
-  if (fEG2) delete fEG2; 
+//   if (fF0) delete fF0; 
+//   if (fF1) delete fF1; 
+//   if (fP1) delete fP1; 
+//   if (fPG1) delete fPG1; 
+//   if (fEG1) delete fEG1; 
+//   if (fEG2) delete fEG2; 
   if (fpIF) delete fpIF; 
 }
 
@@ -227,8 +232,7 @@ double AnalysisDistribution::fitMass(TH1 *h1, double &error, int mode) {
     return n; 
   } else if (1 == mode) {
     // -- blinded signal box 
-    f1 = fP1; 
-    setFunctionParameters(f1, h1, mode); 
+    f1 = fpIF->pol1(h1);
     h1->Fit(f1, "q", "", fMassLo, fMassHi); 
     double p0  = f1->GetParameter(0); 
     double p0E2= f1->GetParError(0)*f1->GetParError(0); 
@@ -243,8 +247,11 @@ double AnalysisDistribution::fitMass(TH1 *h1, double &error, int mode) {
     return yield;
   } else if (10 == mode) {
     // -- One Gaussian plus pol1
-    f1 = fPG1;
-    setFunctionParameters(f1, h1, mode); 
+    fpIF->fLo = fMassLo; 
+    fpIF->fHi = fMassHi;
+    double peak = (fMassPeak>0.?fMassPeak:5.3);
+    double sigma = (fMassSigma>0.?fMassSigma:0.04);
+    f1 = fpIF->pol1gauss(h1, peak, sigma);
     h1->Fit(f1, "q", "", fMassLo, fMassHi); 
     error = f1->GetParError(0)/h1->GetBinWidth(1); 
     return f1->GetParameter(0)/h1->GetBinWidth(1); 
@@ -285,15 +292,11 @@ double AnalysisDistribution::fitMass(TH1 *h1, double &error, int mode) {
     return yield; 
   } else if (12 == mode) {
     // -- One Gaussian plus expo
-    f1 = fEG1;
-    setFunctionParameters(f1, h1, mode); 
-    h1->Fit(f1, "q", "", fMassLo, fMassHi); 
-    error = f1->GetParError(0)/h1->GetBinWidth(1); 
-    return f1->GetParameter(0)/h1->GetBinWidth(1); 
-  } else if (13 == mode) {
-    // -- one Gaussian plus expo plus pol1
-    f1 = fEPG;
-    setFunctionParameters(f1, h1, mode); 
+    fpIF->fLo = fMassLo; 
+    fpIF->fHi = fMassHi;
+    double peak = (fMassPeak>0.?fMassPeak:5.3);
+    double sigma = (fMassSigma>0.?fMassSigma:0.04);
+    f1 = fpIF->expoGauss(h1, peak, sigma);
     h1->Fit(f1, "q", "", fMassLo, fMassHi); 
     error = f1->GetParError(0)/h1->GetBinWidth(1); 
     return f1->GetParameter(0)/h1->GetBinWidth(1); 
@@ -305,93 +308,11 @@ double AnalysisDistribution::fitMass(TH1 *h1, double &error, int mode) {
 }
 
 
-// ----------------------------------------------------------------------
-// -- mode: 
-//           1 pol1+Gauss
-//           2 expo+Gauss
-void AnalysisDistribution::setFunctionParameters(TF1 *f1, TH1 *h, int mode) {
-  const int EDG(4), NB(EDG+1); 
-  double ylo(0.), yhi(0.), dx(0.);
-  int lo(0), hi(0); 
-  double xlo(0.), xhi(0.); 
-  double p0(0.), p1(0.);
-
-  int lbin = h->FindBin(fMassLo); 
-  int hbin = h->FindBin(fMassHi); 
-  
-  ylo = h->Integral(lbin, lbin+EDG)/NB; 
-  yhi = h->Integral(hbin-EDG, hbin)/NB;
-  dx = h->GetBinLowEdge(hbin) - h->GetBinLowEdge(lbin);
-  
-  // -- signal parameters
-  double g0(0.), g1(5.3), g2(0.05); 
-  xlo = g1-3.*g2;
-  xhi = g1+3.*g2;
-  lo = h->FindBin(xlo); 
-  hi = h->FindBin(xhi);
-
-  if (1 == mode) {
-    // -- pol1 only
-    p1 = (yhi-ylo)/dx;
-    p0 = ylo - p1*h->GetBinLowEdge(1);
-    f1->SetParameters(p0, p1); 
-  } else if (10 == mode) {
-    p1 = (yhi-ylo)/dx;
-    p0 = ylo - p1*h->GetBinLowEdge(1);
-    fF0->SetParameters(p0, p1); 
-    g0 = (h->Integral(lo, hi) - fF0->Integral(xlo, xhi)/h->GetBinWidth(1))*h->GetBinWidth(1);  
-    
-    f1->SetParameters(g0, g1, g2, p0, p1); 
-    f1->ReleaseParameter(0);     f1->SetParLimits(0, 0., 1.e7); 
-    f1->ReleaseParameter(1);     f1->SetParLimits(1, 5.2, 5.45); 
-    f1->ReleaseParameter(2);     f1->SetParLimits(2, 0.010, 0.080); 
-  } else if (11 == mode) {
-    p1 = (TMath::Log(yhi) - TMath::Log(ylo))/(-dx*NB); 
-    p0 = ylo*TMath::Exp(p1*h->GetBinLowEdge(1)); 
-    fF1->SetParameters(p0, p1); 
-    g0 = (h->Integral(lo, hi) - fF1->Integral(xlo, xhi)/h->GetBinWidth(1))*h->GetBinWidth(1);  
-    //     cout << "==> hist: " << h->Integral(lo, hi) 
-    // 	 << " func: " << fF1->Integral(xlo, xhi)/h->GetBinWidth(1)
-    // 	 << " g0: " << g0 
-    // 	 << endl;
-    f1->SetParameters(g0, g1, g2, p0, p1); 
-    f1->ReleaseParameter(0);  f1->SetParLimits(0, 0., 1.e7); 
-    f1->ReleaseParameter(1);  f1->SetParLimits(1, 5.2, 5.45); 
-    f1->ReleaseParameter(2);  f1->SetParLimits(2, 0.010, 0.060); 
-  } else if (12 == mode) {
-    p1 = (TMath::Log(yhi) - TMath::Log(ylo))/(-dx*NB); 
-    p0 = ylo*TMath::Exp(p1*h->GetBinLowEdge(1)); 
-    fF1->SetParameters(p0, p1); 
-    g0 = (h->Integral(lo, hi) - fF1->Integral(xlo, xhi)/h->GetBinWidth(1))*h->GetBinWidth(1);  
-
-    f1->SetParameters(0.8*g0, g1, g2, 0.2, g1, 1.5*g2, p0, p1); 
-    f1->ReleaseParameter(0);  f1->SetParLimits(0, 0., 1.e7); 
-    f1->ReleaseParameter(1);  f1->SetParLimits(1, 5.2, 5.45); 
-    f1->ReleaseParameter(2);  f1->SetParLimits(2, 0.010, 0.080); 
-    f1->ReleaseParameter(3);  f1->SetParLimits(3, 0., 0.9); 
-    f1->ReleaseParameter(4);  f1->SetParLimits(4, 5.2, 5.45); 
-    f1->ReleaseParameter(5);  f1->SetParLimits(5, 0.020, 0.150); 
-  } else if (13 == mode) {
-    double offset = (yhi-ylo)/dx; 
-    p1 = (TMath::Log(yhi) - TMath::Log(ylo))/(-dx*NB); 
-    p0 = ylo*TMath::Exp(p1*h->GetBinLowEdge(1)); 
-    fF1->SetParameters(p0, p1); 
-    g0 = (h->Integral(lo, hi) - fF1->Integral(xlo, xhi)/h->GetBinWidth(1))*h->GetBinWidth(1);  
-
-    f1->SetParameters(g0, g1, g2, p0, p1, offset, 1.); 
-    f1->ReleaseParameter(0);  f1->SetParLimits(0, 0., 1.e7); 
-    f1->ReleaseParameter(1);  f1->SetParLimits(1, 5.2, 5.45); 
-    f1->ReleaseParameter(2);  f1->SetParLimits(2, 0.010, 0.080); 
-  }
-}
-
-
 // ----------------------------------------------------------------------  
 TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cut) {
 
   TCanvas *c0;
-  int DISPLAY(0); 
-  if (DISPLAY) {
+  if (fVerbose > 0) {
     gStyle->SetOptTitle(1);
     c0 = (TCanvas*)gROOT->FindObject("c1"); 
     if (c0) {
@@ -412,7 +333,7 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
   }
 
 
-  if (DISPLAY) {
+  if (fVerbose > 0) {
     c0->cd(1);
     h0->Draw();
     c0->cd(2);
@@ -445,39 +366,46 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
   fpIF->fLo = fMassLo;
   fpIF->fHi = fMassHi;
 
-  cout << "fMass: " << fMassLo << " .. " << fMassHi << ", fMassPeak = " << fMassPeak << ", fMassSigma = " << fMassSigma << endl;
+  //  cout << "fMass: " << fMassLo << " .. " << fMassHi << ", fMassPeak = " << fMassPeak << ", fMassSigma = " << fMassSigma << endl;
 
   double peak  = (fMassPeak>0.?fMassPeak:5.3);
   double sigma = (fMassSigma>0.?fMassSigma:0.04);
-  TF1 *f1 = fpIF->pol1gauss2c(hm, peak, sigma);
+  //  TF1 *f1 = fpIF->pol1gauss2c(hm, peak, sigma);
+  TF1 *f1 = fpIF->pol1gauss(hm, peak, sigma);
   hm->SetMinimum(0.);
 
   TFitResultPtr r;
   r = hm->Fit(f1, "lsq", "", fMassLo, fMassHi); 
-  double hlimit(0.), llimit(0.); 
-  f1->GetParLimits(3, llimit, hlimit);
-  double relError = f1->GetParError(3)/f1->GetParameter(3); 
-  double limit = TMath::Abs(f1->GetParameter(3) - llimit); 
-  if (TMath::Abs(f1->GetParameter(3) - hlimit) < limit) limit = TMath::Abs(f1->GetParameter(3) - hlimit); 
-  if (limit < relError || relError > 0.1) {
-    cout << "%%%%% REFITTING %%%%% " << endl;
-    f1->SetParameters(f1->GetParameters()); 
-    f1->SetParameter(0, hm->GetMaximum()); 
-    f1->FixParameter(3, 0.);
-    f1->FixParameter(4, 0.);
-    r = hm->Fit(f1, "lsq", "", fMassLo, fMassHi); 
-  }
   hm->DrawCopy();
 
+  // -- Fitting with pol1gauss2c
+  //   TFitResultPtr r;
+  //   r = hm->Fit(f1, "lsq", "", fMassLo, fMassHi); 
+  //   double hlimit(0.), llimit(0.); 
+  //   f1->GetParLimits(3, llimit, hlimit);
+  //   double relError = f1->GetParError(3)/f1->GetParameter(3); 
+  //   double limit = TMath::Abs(f1->GetParameter(3) - llimit); 
+  //   if (TMath::Abs(f1->GetParameter(3) - hlimit) < limit) limit = TMath::Abs(f1->GetParameter(3) - hlimit); 
+  //   if (limit < relError || relError > 0.1) {
+  //     cout << "%%%%% REFITTING %%%%% " << endl;
+  //     f1->SetParameters(f1->GetParameters()); 
+  //     f1->SetParameter(0, hm->GetMaximum()); 
+  //     f1->FixParameter(3, 0.);
+  //     f1->FixParameter(4, 0.);
+  //     r = hm->Fit(f1, "lsq", "", fMassLo, fMassHi); 
+  //   }
+  //   hm->DrawCopy();
+  
   //   hm->Fit(f1, "l", "", fMassLo, fMassHi); 
   //   hm->DrawCopy(); 
-
+  
   // -- compute integrals
   TF1 *fpol1 = (TF1*)gROOT->FindObject("fpol1"); 
   if (fpol1) delete fpol1; 
   fpol1 = new TF1("fpol1", f_p1, fMassLo, fMassHi, 2);
-  fpol1->SetParameters(f1->GetParameter(5), f1->GetParameter(6)); 
-  if (DISPLAY) {
+  //  fpol1->SetParameters(f1->GetParameter(5), f1->GetParameter(6)); 
+  fpol1->SetParameters(f1->GetParameter(3), f1->GetParameter(4)); 
+  if (fVerbose > 0) {
     c0->cd(5); 
     fpol1->Draw();
   }
@@ -486,17 +414,20 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
   double sg  = fpol1->Integral(s0, s1); 
   double bgh = fpol1->Integral(u0, u1); 
 
-  cout << "bgl (" << l0 << " .. " << l1 << ") = " << bgl << endl;
-  cout << "sg  (" << s0 << " .. " << s1 << ") = " << sg << endl;
-  cout << "bgh (" << u0 << " .. " << u1 << ") = " << bgh << endl;
-  
+  if (fVerbose > 0) {
+    cout << "bgl (" << l0 << " .. " << l1 << ") = " << bgl << endl;
+    cout << "sg  (" << s0 << " .. " << s1 << ") = " << sg << endl;
+    cout << "bgh (" << u0 << " .. " << u1 << ") = " << bgh << endl;
+  }
+
   TH1D *h = (TH1D*)h0->Clone(Form("sbs_%s%s", variable, cut)); 
   h->Sumw2(); 
   h->Add(h0, h1, 1., -sg/(bgl+bgh)); 
-
-  if (DISPLAY) {
+  
+  if (fVerbose > 0) {
     c0->cd(6); 
     h->Draw();
+    c0->SaveAs(Form("%s/sbs-control-%s-%s.pdf", fDirectory.c_str(), variable, cut));
   }
 
   return h; 

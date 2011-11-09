@@ -113,6 +113,9 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
   fBgLo = 4.9;
   fBgHi = 5.9;
 
+  fSgLo = 5.20;
+  fSgHi = 5.45;
+
   // -- initialize cuts
   cout << "Reading cuts from " << Form("plotClass.%s.cuts", cuts) << endl;
   readCuts(Form("plotClass.%s.cuts", cuts)); 
@@ -491,10 +494,6 @@ void plotClass::dumpCutNames(const char *hname) {
       replaceAll(cutvalue, "cuts/", ""); 
       fTEX <<  Form("\\vdef{%s:%s:cutLine}   {{%s } }", fSuffix.c_str(), cutstring.c_str(), cutline.c_str()) << endl;
       fTEX <<  Form("\\vdef{%s:%s:cutValue}  {{%s } }", fSuffix.c_str(), cutstring.c_str(), cutvalue.c_str()) << endl;
-    } else if (string::npos != cutstring.find("CANDCOSALPHA")) {
-      fTEX <<  Form("\\vdef{%s:CANDALPHA:cutLine}   {\\ensuremath{{\\alpha } } }", fSuffix.c_str()) << endl;
-      fTEX <<  Form("\\vdef{%s:CANDALPHA:cutValue}  {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), TMath::ACos(atof(cutvalue.c_str()))) 
-	   << endl;
     } else {
       fTEX <<  Form("\\vdef{%s:%s:cutLine}   {\\ensuremath{{%s } } }", fSuffix.c_str(), cutstring.c_str(), cutline.c_str()) << endl;
       fTEX <<  Form("\\vdef{%s:%s:cutValue}  {\\ensuremath{{%s } } }", fSuffix.c_str(), cutstring.c_str(), cutvalue.c_str()) << endl;

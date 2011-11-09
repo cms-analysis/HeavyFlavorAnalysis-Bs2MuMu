@@ -31,7 +31,6 @@ public:
 
   double fitMass(TH1 *h, double &error, int mode = 0); 
   TH1D*  sbsDistribution(const char *variable, const char *cut); 
-  void   setFunctionParameters(TF1 *f1, TH1 *h, int mode); 
 
   void   setPreselCut(bool *p) {fpPreselCutTrue = p;} 
 
@@ -54,10 +53,11 @@ public:
 
   TH1D *hMassAll, *hMassBGL, *hMassSG, *hMassBGH; 
 
-  TF1 *fF0, *fF1; 
-  TF1 *fP1, *fPG1, *fEG1, *fEG2, *fEPG; 
+//   TF1 *fF0, *fF1; 
+//   TF1 *fP1, *fPG1, *fEG1, *fEG2, *fEPG; 
 
   int fVerbose;
+  std::string fDirectory;
   
   initFunc *fpIF; 
 

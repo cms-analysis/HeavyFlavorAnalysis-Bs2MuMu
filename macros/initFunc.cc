@@ -274,7 +274,7 @@ TF1* initFunc::pol1(TH1 *h) {
   //   cout << "Created f1 from " << h->GetBinLowEdge(1) << " to " << h->GetBinLowEdge(h->GetNbinsX()+1) << endl;
 
   double p1(0.), p0(0.); 
-  initExpo(p0, p1, h); 
+  initPol1(p0, p1, h); 
   f->SetParameters(p0, p1); 
 
   //   cout << "  initialized to " << p0 << " and " << p1 << endl;

@@ -118,10 +118,10 @@ public:
   initFunc  *fpFunc;
 
   double fMassLo, fMassHi
+    , fBgLo, fBgHi
     , fSgLo, fSgHi
     , fNoLo, fNoHi
     , fCsLo, fCsHi
-    , fBgLo, fBgHi
     ;
 
   ClassDef(plotClass,1) //Testing plotClass
