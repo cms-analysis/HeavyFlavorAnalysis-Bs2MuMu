@@ -8,6 +8,8 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 candAnaBs2JpsiPhi::candAnaBs2JpsiPhi(bmm2Reader *pReader, std::string name, std::string cutsFile) : candAna(pReader, name, cutsFile) {
+  fGenK1Tmi = fGenK2Tmi = fRecK1Tmi = fRecK2Tmi = -1; 
+
   cout << "==> candAnaBs2JpsiPhi: name = " << name << ", reading cutsfile " << cutsFile << endl;
   readCuts(cutsFile, 1); 
 }
@@ -24,7 +26,7 @@ void candAnaBs2JpsiPhi::candAnalysis() {
 
   if (0 == fpCand) return;
 
-  // -- Check for J/psi mass (but see below for truth candidates)
+  // -- Check for J/psi mass
   TAnaCand *pD = 0; 
   fGoodJpsiMass = false; 
   for (int i = fpCand->fDau1; i <= fpCand->fDau2; ++i) {
@@ -38,48 +40,59 @@ void candAnaBs2JpsiPhi::candAnalysis() {
       fJpsiEta  = pD->fPlab.Eta();
       fJpsiPhi  = pD->fPlab.Phi(); 
       //       cout << "type = " << pD->fType 
-      //        	   << " with mass = " << pD->fMass 
+      // 	   << " with mass = " << pD->fMass 
       // 	   << " fGoodJpsiMass = " << fGoodJpsiMass 
+      // 	   << endl;
+    }
+    if (pD->fType == PHITYPE) {
+      if ((MKKLO < pD->fMass) && (pD->fMass < MKKHI)) fGoodMKK = true;
+      fMKK     = pD->fMass;
+      fPhiPt   = pD->fPlab.Perp();
+      fPhiEta  = pD->fPlab.Eta();
+      fPhiPhi  = pD->fPlab.Phi(); 
+      //       cout << "type = " << pD->fType 
+      // 	   << " with mass = " << pD->fMass 
+      // 	   << " fGoodMKK = " << fGoodMKK 
       // 	   << endl;
     }
   }
 
-  // -- special case for truth candidates (which have no daughter cands)
-  if (fpCand->fType > 999999) {
-    TAnaTrack *p0; 
-    TAnaTrack *p1(0);
-    TAnaTrack *p2(0); 
-    
-    for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
-      p0 = fpEvt->getSigTrack(it);     
-      if (TMath::Abs(p0->fMCID) != 13) continue;
-      if (0 == p1) {
-	p1 = p0; 
-      } else {
-	p2 = p0; 
-      }
-    }
-    
-    if (0 == p1) {
-      cout << "candAnaBs2JpsiPhi::candAnalysis  no muon 1 found " << endl;
-      return; 
-    }
-    if (0 == p2) {
-      cout << "candAnaBs2JpsiPhi::candAnalysis  no muon 2 found " << endl;
-      return; 
-    }
-
-    TLorentzVector mu1, mu2; 
-    mu1.SetPtEtaPhiM(p1->fPlab.Perp(), p1->fPlab.Eta(), p1->fPlab.Phi(), MMUON); 
-    mu2.SetPtEtaPhiM(p2->fPlab.Perp(), p2->fPlab.Eta(), p2->fPlab.Phi(), MMUON); 
-    
-    TLorentzVector psi = mu1 + mu2; 
-    if ((JPSIMASSLO < psi.M()) && (psi.M() < JPSIMASSHI)) fGoodJpsiMass = true;
-    fJpsiMass = psi.M();
-    fJpsiPt   = psi.Pt();
-    fJpsiEta  = psi.Eta();
-    fJpsiPhi  = psi.Phi(); 
-  }    
+  //   // -- special case for truth candidates (which have no daughter cands)
+  //   if (fpCand->fType > 999999) {
+  //     TAnaTrack *p0; 
+  //     TAnaTrack *p1(0);
+  //     TAnaTrack *p2(0); 
+  
+  //     for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
+  //       p0 = fpEvt->getSigTrack(it);     
+  //       if (TMath::Abs(p0->fMCID) != 13) continue;
+  //       if (0 == p1) {
+  // 	p1 = p0; 
+  //       } else {
+  // 	p2 = p0; 
+  //       }
+  //     }
+  
+  //     if (0 == p1) {
+  //       cout << "candAnaBs2JpsiPhi::candAnalysis  no muon 1 found " << endl;
+  //       return; 
+  //     }
+  //     if (0 == p2) {
+  //       cout << "candAnaBs2JpsiPhi::candAnalysis  no muon 2 found " << endl;
+  //       return; 
+  //     }
+  
+  //     TLorentzVector mu1, mu2; 
+  //     mu1.SetPtEtaPhiM(p1->fPlab.Perp(), p1->fPlab.Eta(), p1->fPlab.Phi(), MMUON); 
+  //     mu2.SetPtEtaPhiM(p2->fPlab.Perp(), p2->fPlab.Eta(), p2->fPlab.Phi(), MMUON); 
+  
+  //     TLorentzVector psi = mu1 + mu2; 
+  //     if ((JPSIMASSLO < psi.M()) && (psi.M() < JPSIMASSHI)) fGoodJpsiMass = true;
+  //     fJpsiMass = psi.M();
+  //     fJpsiPt   = psi.Pt();
+  //     fJpsiEta  = psi.Eta();
+  //     fJpsiPhi  = psi.Phi(); 
+  //   }    
 
   // -- Get Kaons
   TAnaTrack *p0; 
@@ -126,20 +139,19 @@ void candAnaBs2JpsiPhi::candAnalysis() {
   fKa2PtNrf     = ps2->fPlab.Perp();
   fKa2EtaNrf    = ps2->fPlab.Eta();
 
-// FIXME
-//   if (tmCand(fpCand)) {
-//     TGenCand *pg1 = fpEvt->getGenCand(fpEvt->getRecTrack(p1->fIndex)->fGenIndex);
-//     fKa1PtGen     = pg1->fP.Perp();
-//     fKa1EtaGen    = pg1->fP.Eta();
-//     TGenCand *pg2 = fpEvt->getGenCand(fpEvt->getRecTrack(p2->fIndex)->fGenIndex);
-//     fKa2PtGen     = pg2->fP.Perp();
-//     fKa2EtaGen    = pg2->fP.Eta();
-//   } else {
-//     fKa1PtGen     = -99.;
-//     fKa1EtaGen    = -99.;
-//     fKa2PtGen     = -99.;
-//     fKa2EtaGen    = -99.;
-//   }
+  if (fCandTmi > -1) {
+    TGenCand *pg1 = fpEvt->getGenCand(fpEvt->getRecTrack(p1->fIndex)->fGenIndex);
+    fKa1PtGen     = pg1->fP.Perp();
+    fKa1EtaGen    = pg1->fP.Eta();
+    TGenCand *pg2 = fpEvt->getGenCand(fpEvt->getRecTrack(p2->fIndex)->fGenIndex);
+    fKa2PtGen     = pg2->fP.Perp();
+    fKa2EtaGen    = pg2->fP.Eta();
+  } else {
+    fKa1PtGen     = -99.;
+    fKa1EtaGen    = -99.;
+    fKa2PtGen     = -99.;
+    fKa2EtaGen    = -99.;
+  }
 
   fDeltaR  = p1->fPlab.DeltaR(p2->fPlab); 
 
@@ -161,16 +173,6 @@ void candAnaBs2JpsiPhi::candAnalysis() {
 
   candAna::candAnalysis();
   ((TH1D*)fHistDir->Get("../monEvents"))->Fill(3); 
-
-//   if (fIsMC) {
-//     fTree->Fill(); 
-//   } else {
-//     if (fPreselection) {
-//       ((TH1D*)fHistDir->Get("../monEvents"))->Fill(13); 
-//       fTree->Fill(); 
-//     }         
-//   }
-
 }
 
 // ----------------------------------------------------------------------
@@ -180,13 +182,6 @@ void candAnaBs2JpsiPhi::moreBasicCuts() {
   fAnaCuts.addCut("fGoodDeltaR", "Delta R(KK)", fGoodDeltaR); 
   fAnaCuts.addCut("fGoodMKK", "m(KK) [GeV]", fGoodMKK); 
 }
-
-
-// ----------------------------------------------------------------------
-void candAnaBs2JpsiPhi::processType() {
-
-}
-
 
 // ----------------------------------------------------------------------
 void candAnaBs2JpsiPhi::genMatch() {
@@ -371,12 +366,10 @@ void candAnaBs2JpsiPhi::candMatch() {
 }
 
 
-
-
 // ----------------------------------------------------------------------
 void candAnaBs2JpsiPhi::bookHist() {
-  candAna::bookHist();
   cout << "==>candAnaBs2JpsiPhi: bookHist" << endl;
+  candAna::bookHist();
 
   // -- Additional reduced tree variables
   fTree->Branch("mpsi",  &fJpsiMass, "mpsi/D");
@@ -408,6 +401,53 @@ void candAnaBs2JpsiPhi::bookHist() {
   fTree->Branch("g3eta",&fKa1EtaGen, "g3eta/D");
   fTree->Branch("g4pt", &fKa2PtGen,  "g4pt/D");
   fTree->Branch("g4eta",&fKa2EtaGen, "g4eta/D");
+
+  string name; 
+  int i(0); 
+  for (map<string, int>::iterator imap = fRegion.begin(); imap != fRegion.end(); ++imap) {  
+    i    = imap->second;
+    name = imap->first + "_";
+
+    //    cout << "booking with offset = " << i << Form("   %smpsi", name.c_str()) << endl;
+
+    fpMpsi[i]    = bookDistribution(Form("%smpsi", name.c_str()), "m(J/#psi) [GeV]", "fGoodJpsiMass", 40, 2.8, 3.4);           
+    fpDeltaR[i]  = bookDistribution(Form("%sdeltar", name.c_str()), "#Delta R", "fGoodDeltaR", 50, 0., 1.);           
+    fpMKK[i]     = bookDistribution(Form("%smkk", name.c_str()), "m(KK) [GeV]", "fGoodMKK", 50, 0.95, 1.15);           
+    
+    fpKaonsPt[i] = bookDistribution(Form("%skaonspt", name.c_str()), "p_{T, K} [GeV]", "fGoodTracksPt", 25, 0., 25.);           
+    fpKaonsEta[i]= bookDistribution(Form("%skaonseta", name.c_str()), "#eta_{K}", "fGoodTracksEta", 25, -2.5, 2.5);
+    fpPsiPt[i]   = bookDistribution(Form("%spsipt", name.c_str()), "p_{T, J/#psi} [GeV]", "fGoodTracksPt", 25, 0., 25.);           
+    fpPsiEta[i]  = bookDistribution(Form("%spsieta", name.c_str()), "#eta_{J/#psi}", "fGoodTracksEta", 25, -2.5, 2.5);  
+    fpPhiPt[i]   = bookDistribution(Form("%sphipt", name.c_str()), "p_{T, #phi} [GeV]", "fGoodTracksPt", 25, 0., 25.);
+    fpPhiEta[i]  = bookDistribution(Form("%sphieta", name.c_str()), "#eta_{#phi}", "fGoodTracksEta", 25, -2.5, 2.5);  
+  }
+
+}
+
+
+// ----------------------------------------------------------------------
+void candAnaBs2JpsiPhi::fillCandidateHistograms(int offset) {
+
+  fpDeltaR[offset]->fill(fDeltaR, fCandM); 
+  fpMKK[offset]->fill(fMKK, fCandM); 
+
+  fpMpsi[offset]->fill(fJpsiMass, fCandM); 
+  fpTracksPt[offset]->fill(fKa1Pt, fCandM);
+  fpTracksPt[offset]->fill(fKa2Pt, fCandM);
+  fpTracksEta[offset]->fill(fKa1Eta, fCandM);
+  fpTracksEta[offset]->fill(fKa2Eta, fCandM);
+
+  fpKaonsPt[offset]->fill(fKa1Pt, fCandM);
+  fpKaonsPt[offset]->fill(fKa2Pt, fCandM);
+  fpKaonsEta[offset]->fill(fKa1Eta, fCandM);
+  fpKaonsEta[offset]->fill(fKa2Eta, fCandM);
+
+  fpPsiPt[offset]->fill(fJpsiPt, fCandM); 
+  fpPsiEta[offset]->fill(fJpsiEta, fCandM); 
+  fpPhiPt[offset]->fill(fPhiPt, fCandM); 
+  fpPhiEta[offset]->fill(fPhiEta, fCandM); 
+
+  candAna::fillCandidateHistograms(offset); 
 
 }
 
@@ -463,6 +503,14 @@ void candAnaBs2JpsiPhi::readCuts(string filename, int dump) {
       ibin = 212;
       hcuts->SetBinContent(ibin, JPSIMASSHI);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: m(J/#psi) :: %3.1f", CutName, JPSIMASSHI));
+    }
+
+    if (!strcmp(CutName, "PHITYPE")) {
+      PHITYPE = CutValue; ok = 1;
+      if (dump) cout << "PHITYPE:      " << PHITYPE << endl;
+      ibin = 213;
+      hcuts->SetBinContent(ibin, PHITYPE);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #phi ID :: %d", CutName, PHITYPE));
     }
 
     if (!strcmp(CutName, "MKKLO")) {

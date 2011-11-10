@@ -44,6 +44,8 @@ public:
   virtual void   readCuts(TString filename, int dump = 1);
   virtual void   bookHist();
 
+  virtual void   processType();
+
   std::vector<candAna*> lCandAnalysis;
 
   // -- PidTables
@@ -53,6 +55,8 @@ public:
   PidTable *ptSgMUID, *ptCbMUID; 
   PidTable *ptSgMUT1, *ptCbMUT1; 
   PidTable *ptSgMUT2, *ptCbMUT2; 
+
+  int fProcessType; 
 };
 
 #endif

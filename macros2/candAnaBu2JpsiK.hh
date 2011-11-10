@@ -27,8 +27,6 @@
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
 
 #include "candAna.hh"
-#include "bmm2Reader.hh"
-
 
 class candAnaBu2JpsiK : public candAna {
   
@@ -42,9 +40,10 @@ public:
   void        genMatch(); 
   void        recoMatch(); 
   void        candMatch(); 
-  void        readCuts(string filename, int dump);
   
+  void        readCuts(string filename, int dump);
   void        bookHist();
+  void        fillCandidateHistograms(int offset);
 
   
   int          JPSITYPE; 
@@ -61,6 +60,9 @@ public:
   // -- TM
   int          fGenK1Tmi; 
   int          fRecK1Tmi; 
+
+  // -- AnalysisDistributionsa
+  AnalysisDistribution *fpKaonPt[NAD], *fpKaonEta[NAD], *fpMpsi[NAD], *fpPsiPt[NAD], *fpPsiEta[NAD];
 
 };
 

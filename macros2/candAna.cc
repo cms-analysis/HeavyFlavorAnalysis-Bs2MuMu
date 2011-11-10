@@ -16,9 +16,9 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   MASSMIN = 4.5;
   MASSMAX = 6.5; 
 
+  fGenBTmi = fGenM1Tmi = fGenM2Tmi = fNGenPhotons = fRecM1Tmi = fRecM2Tmi = fCandTmi = -1; 
+
   fHistDir = gFile->mkdir(fName.c_str());
-  //   fHistDir->cd();
-  //   cout << "pwd(): "; fHistDir->pwd();
 
   fRegion.insert(make_pair("A", 0)); // all
   fRegion.insert(make_pair("B", 1)); // barrel
@@ -51,33 +51,13 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   fpEvt = evt; 
 
   if (fIsMC) {
-    processType();
     genMatch(); 
     recoMatch(); 
     candMatch(); 
-  }
+  } 
 
   triggerSelection();
-
-  fRunRange = 6;
-  if ((fRun >= 160329) && (fRun <= 163261)) {
-    fRunRange = 0; 
-  } 
-  if ((fRun >= 163269) && (fRun <= 163869)) {
-    fRunRange = 1; 
-  } 
-  if ((fRun >= 165088) && (fRun <= 167913)) {
-    fRunRange = 2; 
-  } 
-  if ((fRun >= 170249) && (fRun <= 173198)) {
-    fRunRange = 3; 
-  } 
-  if ((fRun >= 173236) && (fRun <= 178380)) {
-    fRunRange = 4; 
-  } 
-  if ((fRun >= 178420) && (fRun <= 999999)) {
-    fRunRange = 5; 
-  } 
+  runRange(); 
 
 
   TAnaCand *pCand(0);
@@ -174,7 +154,7 @@ void candAna::candAnalysis() {
   } else {
     fCandTM = 0; 
   }
-  
+
   fCandType  = fpCand->fType;
   fCandPt    = fpCand->fPlab.Perp();
   fCandEta   = fpCand->fPlab.Eta();
@@ -185,52 +165,12 @@ void candAna::candAnalysis() {
   fCandPvLip = fpCand->fPvLip;
   fCandPvLipE= fpCand->fPvLipE;
   
-  // -- find mass-constrained candidate with the same rectracks as this one
-  fCandM2 = -1.;
-  vector<int> rectracks;
-  int bla;
-  for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
-    bla = fpEvt->getSigTrack(it)->fIndex; 
-    rectracks.push_back(bla);
-  } 
-
-  TAnaCand *pC(0), *pDau(0), *pMcCand(0); 
-  int mctype = TYPE + 100000; 
-  unsigned int nmatch(0); 
-  for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
-    pC = fpEvt->getCand(iC);
-    if (pC->fType != mctype) continue;
-    nmatch = 0; 
-    for (int it = pC->fSig1; it <= pC->fSig2; ++it) {
-      bla = fpEvt->getSigTrack(it)->fIndex; 
-      if (rectracks.end() != find(rectracks.begin(), rectracks.end(), bla)) {
-	++nmatch; 
-      }
-    }
-    if (pC->fDau1 > 0) {
-      pDau = fpEvt->getCand(pC->fDau1); 
-      for (int it = pDau->fSig1; it <= pDau->fSig2; ++it) {
-	bla = fpEvt->getSigTrack(it)->fIndex; 
-	if (rectracks.end() != find(rectracks.begin(), rectracks.end(), bla)) {
-	  ++nmatch; 
-	}
-      }
-    }
-    if (nmatch == rectracks.size()) {
-      pMcCand = pC; 
-      break;
-    }
-  }
-  if (pMcCand) {
-    fCandM2 = pMcCand->fMass;
-  } else {
-    fCandM2 = -2.;
-  }
-
+  fCandM2 = constrainedMass();
+  
   TAnaTrack *p0; 
   TAnaTrack *p1(0), *ps1(0);
   TAnaTrack *p2(0), *ps2(0); 
-
+  
   fCandQ    = 0;
 
   for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
@@ -264,7 +204,7 @@ void candAna::candAnalysis() {
       p1 = p2; 
       p2 = p0; 
       
-      p0 = ps1; 
+      p0  = ps1; 
       ps1 = ps2; 
       ps2 = p0;
     }
@@ -289,10 +229,8 @@ void candAna::candAnalysis() {
   }
 
   if (fCandTM && fGenM1Tmi < 0) fpEvt->dump();
-
-  //  cout << "  " << p1->fGenIndex << "  " << fCandTM << " fCandTmi: " << fCandTmi << " gen m " << fGenM1Tmi << " " << fGenM2Tmi << endl;
-
-  if (fCandTM) {
+  
+  if (fCandTmi > -1) {
     TGenCand *pg1 = fpEvt->getGenCand(p1->fGenIndex);
     fMu1PtGen     = pg1->fP.Perp();
     fMu1EtaGen    = pg1->fP.Eta();
@@ -327,11 +265,6 @@ void candAna::candAnalysis() {
       fMuDeltaR = -99.; 
     }
 
-    if (fMuDeltaR > 100) {
-      cout << "r1 = (" << rm1.X() << ", " << rm1.Y() << ", " << rm1.Z() 
-	   << ") r2 = (" << rm2.X() << ", " << rm2.Y() << ", " << rm2.Z() << ")"
-	   << endl;
-    }
     if (fVerbose > 10) cout << "dist: " << fMuDist << " dr = " << fMuDeltaR << endl;
   } else {
     fMuDist   = -99.; 
@@ -374,7 +307,7 @@ void candAna::candAnalysis() {
   fMu2W8Tr      = pT1->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi)*pT2->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi);
 
 
-  if (fCandTM) {
+  if (fCandTmi > -1) {
     TGenCand *pg2 = fpEvt->getGenCand(p2->fGenIndex);
     fMu2PtGen     = pg2->fP.Perp();
     fMu2EtaGen    = pg2->fP.Eta();
@@ -461,7 +394,7 @@ void candAna::candAnalysis() {
   double bmu2   = TMath::Sin(fpCand->fPlab.Angle(t2->fPlab));
   fMu1IP        = sv.fD3d*bmu1/t1->fTip;
   fMu2IP        = sv.fD3d*bmu2/t2->fTip;
-
+  
   // -- fill cut variables
   fWideMass = ((fpCand->fMass > MASSMIN) && (fpCand->fMass < MASSMAX)); 
 
@@ -487,7 +420,7 @@ void candAna::candAnalysis() {
   fAnaCuts.update(); 
 
   fPreselection = fWideMass && fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID && fGoodMuonsPt && fGoodMuonsEta; 
-  fPreselection = fPreselection && fGoodQ && (fCandPt > 4) && (fCandA < 0.4) && (fCandFLS3d > 2) && (fCandChi2/fCandDof < 10); 
+  fPreselection = fPreselection && fGoodQ && (fCandPt > 5) && (fCandA < 0.2) && (fCandFLS3d > 7) && (fCandChi2/fCandDof < 5); 
 
   //  fPreselection = true; 
 }
@@ -499,7 +432,7 @@ void candAna::fillCandidateHistograms(int offset) {
  
   // -- only candidate histograms below
   if (0 == fpCand) return;
-  
+
   // -- Fill distributions
   fpTracksPt[offset]->fill(fMu1Pt, fCandM);
   fpTracksPt[offset]->fill(fMu2Pt, fCandM);
@@ -523,6 +456,7 @@ void candAna::fillCandidateHistograms(int offset) {
   fpAlpha[offset]->fill(fCandA, fCandM);
   fpCosA[offset]->fill(fCandCosA, fCandM);
   fpIso[offset]->fill(fCandIso, fCandM);
+  fpIsoTrk[offset]->fill(fCandIsoTrk, fCandM);
 
   fpChi2[offset]->fill(fCandChi2, fCandM);
   fpChi2Dof[offset]->fill(fCandChi2/fCandDof, fCandM); 
@@ -545,7 +479,7 @@ void candAna::fillCandidateHistograms(int offset) {
     fpNpvIsoTrk[ipv][offset]->fill(fCandIsoTrk, fCandM);
   }
 }
-
+    
 
 // ----------------------------------------------------------------------
 void candAna::basicCuts() {
@@ -633,148 +567,6 @@ bool candAna::goodTrack(TAnaTrack *pt) {
   }
 
   return true; 
-}
-
-
-// ----------------------------------------------------------------------
-void candAna::processType() {
-
-  TGenCand *pG;
-  
-  // documentation line partons (entries { d, u, s, c, b, t } )
-  double docPartCnt[6];
-  double docAntiCnt[6];
-
-  // partons
-  double parPartCnt[6];
-  double parAntiCnt[6];    
-    
-  for (int i = 0; i < 6; i++) {
-    docPartCnt[i] = 0; 
-    docAntiCnt[i] = 0; 
-    parPartCnt[i] = 0; 
-    parAntiCnt[i] = 0; 
-  }
-
-  int aid(0);
-  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
-
-    pG = fpEvt->getGenCand(i);
-
-    aid = TMath::Abs(pG->fID); 
-    if ( aid == 1 || aid == 2 ||
-         aid == 3 || aid == 4 || 
-         aid == 5 || aid == 6 || 
-         aid == 21) {
-      if ( pG->fStatus == 3 ) {
-        //      cout << "quark/gluon from documentation #" << i << "(ID: " << pG->fID << ")" << endl;
-      }
-      if ( pG->fStatus == 2 &&  TMath::Abs(pG->fID) != 21) {
-        //      cout << "decayed quark/gluon #" << i << " (ID: " << pG->fID << ")" << endl;
-      }
-      if ( pG->fStatus == 1 ) {
-        //      cout << "undecayed (?) quark/gluon #" << i << " (ID: " << pG->fID  << ")" << endl;
-      }
-    }
-
-    for (int j = 0; j < 6; j++) {
-
-      if ( pG->fStatus == 3 ) {
-        if ( pG->fID == j+1 ) {  
-          docPartCnt[j]++;
-        }
-        if ( pG->fID == -(j+1) ) {  
-          docAntiCnt[j]++;
-        }
-      }
-
-      if ( pG->fStatus == 2 ) {
-        if ( pG->fID == j+1 ) {  
-          parPartCnt[j]++;
-        }
-        if ( pG->fID == -(j+1) ) {  
-          parAntiCnt[j]++;
-        }
-      }
-    }
-  }
-
-  fProcessType = -99;
-  // -- top 
-  if (docPartCnt[5] >= 1 && docAntiCnt[5] >= 1) {
-    fProcessType = 50; 
-    //    printf("====> t: GGF (%i)\n", fProcessType);
-    return;
-  }
-  
-  if ((docPartCnt[5] >= 1 && docAntiCnt[5] == 0) || (docPartCnt[5] == 0 && docAntiCnt[5] >= 1) ) {
-    fProcessType = 51; 
-    //    printf("====> t: FEX (%i)\n", fProcessType);
-    return;
-  }
-
-  if (docPartCnt[5] == 0 && docAntiCnt[5] == 0 && (parPartCnt[5] >= 1 || parAntiCnt[5] >= 1)) {
-    fProcessType = 52;
-    //    printf("====> t: GSP (%i)\n", fProcessType); 
-    return;
-  }
-  
-  // -- beauty
-  if (docPartCnt[4] >= 1 && docAntiCnt[4] >= 1) {
-    fProcessType = 40; 
-   //    printf("====> b: GGF (%i)\n", fProcessType);
-    return;
-  } 
-  
-  if ((docPartCnt[4] >= 1 && docAntiCnt[4] == 0) || (docPartCnt[4] == 0 && docAntiCnt[4] >= 1) ) {
-    fProcessType = 41; 
-    //    printf("====> b: FEX (%i)\n", fProcessType);
-    return;
-  }
-
-  if (docPartCnt[4] == 0 && docAntiCnt[4] == 0 && (parPartCnt[4] >= 1 || parAntiCnt[4] >= 1)) {
-    fProcessType = 42; 
-    //    printf("====> b: GSP (%i)\n", fProcessType);
-
-    return;
-  }
-
-  if (docPartCnt[3] >= 1 && docAntiCnt[3] >= 1) {
-    fProcessType = 30; 
-    //    printf("====> c: GGF (%i)\n", fProcessType);
-    return;
-  }
-  
- 
-  if ((docPartCnt[3] >= 1 && docAntiCnt[3] == 0) || (docPartCnt[3] == 0 && docAntiCnt[3] >= 1) ) {
-    fProcessType = 31; 
-    //    printf("====> c: FEX (%i)\n", fProcessType);
-    return;
-  }
-  
-  if (docPartCnt[3] == 0 && docAntiCnt[3] == 0 && (parPartCnt[3] >= 1 || parAntiCnt[3] >= 1)) {
-    fProcessType = 32; 
-    //    printf("====> c: GSP (%i)\n", fProcessType);
-    return;
-  }
-  
-  // light flavors
-  if ((docPartCnt[5] == 0 && docAntiCnt[5] == 0) && (parPartCnt[5] == 0 && parAntiCnt[5] == 0)
-      && (docPartCnt[4] == 0 && docAntiCnt[4] == 0) && (parPartCnt[4] == 0 && parAntiCnt[4] == 0)
-      && (docPartCnt[3] == 0 && docAntiCnt[3] == 0) && (parPartCnt[3] == 0 && parAntiCnt[3] == 0)
-      ) {
-    fProcessType = 1; 
-    //    printf("====> UDS: light flavors (%i)\n", fProcessType);
-    return;
-  }
-
-  // if no process type was determined
-  //  printf("====> Could not determine process type !!!\n");
-
-  fpEvt->dumpGenBlock();     
-
-
-
 }
 
 
@@ -887,6 +679,7 @@ void candAna::bookHist() {
   fTree->Branch("hlt",    &fGoodHLT,           "hlt/O");
   fTree->Branch("pvn",    &fPvN,               "pvn/I");
   fTree->Branch("cb",     &fCowboy,            "cb/O");
+  fTree->Branch("rr",     &fRunRange,          "rr/I");
 
   // -- global cuts and weights
   fTree->Branch("gmuid",  &fGoodMuonsID,       "gmuid/O");
@@ -978,6 +771,8 @@ void candAna::bookHist() {
     i    = imap->second; 
     name = imap->first + "_";
 
+    //    cout << "  booking analysis distributions for " << name << " at offset i = " << i << endl;
+
     fpPvZ[i]       = bookDistribution(Form("%spvz", name.c_str()), "z_{PV} [cm]", "fGoodHLT", 50, -25., 25.);           
     fpPvN[i]       = bookDistribution(Form("%spvn", name.c_str()), "N(PV) ", "fGoodHLT", 20, 0., 20.);           
     fpPvNtrk[i]    = bookDistribution(Form("%spvntrk", name.c_str()), "N_{trk}^{PV} ", "fGoodHLT", 20, 0., 200.);           
@@ -1006,6 +801,7 @@ void candAna::bookHist() {
     fpDocaTrk[i]   = bookDistribution(Form("%sdocatrk", name.c_str()), "d_{ca}^{min} [cm]", "fGoodDocaTrk", 35, 0., 0.14);   
     
     if (name == "A_") {
+      //      cout << "  booking NPV distributions for " << name << endl;
       for (int ipv = 0; ipv < NADPV; ++ipv) {
 	pD = fHistDir->mkdir(Form("%sNpv%i", name.c_str(), ipv));
 	pD->cd();
@@ -1018,7 +814,8 @@ void candAna::bookHist() {
 	fpNpvDocaTrk[ipv][i] = bookDistribution(Form("%sdocatrk", dname.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 35, 0., 0.14);   
 	fpNpvIso[ipv][i]     = bookDistribution(Form("%siso", dname.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
 	fpNpvIsoTrk[ipv][i]  = bookDistribution(Form("%sisotrk", dname.c_str()),  "N_{trk}^{I}", "fGoodIso", 20, 0., 20.); 
-	
+
+	fHistDir->cd();	
       }
     } else {
       for (int ipv = 0; ipv < NADPV; ++ipv) {
@@ -1703,3 +1500,71 @@ double candAna::isoWithDOCA(TAnaCand *pC, float docaCut, double r, double ptmin)
   return iso; 
 }
 
+ 
+// ----------------------------------------------------------------------
+double candAna::constrainedMass() {
+  vector<int> rectracks;
+  int bla;
+  for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
+    bla = fpEvt->getSigTrack(it)->fIndex; 
+    rectracks.push_back(bla);
+  } 
+  
+  TAnaCand *pC(0), *pDau(0), *pMcCand(0); 
+  int mctype = TYPE + 100000; 
+  unsigned int nmatch(0); 
+  for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
+    pC = fpEvt->getCand(iC);
+    if (pC->fType != mctype) continue;
+    nmatch = 0; 
+    for (int it = pC->fSig1; it <= pC->fSig2; ++it) {
+      bla = fpEvt->getSigTrack(it)->fIndex; 
+      if (rectracks.end() != find(rectracks.begin(), rectracks.end(), bla)) {
+	++nmatch; 
+      }
+    }
+    if (pC->fDau1 > 0) {
+      pDau = fpEvt->getCand(pC->fDau1); 
+      for (int it = pDau->fSig1; it <= pDau->fSig2; ++it) {
+	bla = fpEvt->getSigTrack(it)->fIndex; 
+	if (rectracks.end() != find(rectracks.begin(), rectracks.end(), bla)) {
+	  ++nmatch; 
+	}
+      }
+    }
+    if (nmatch == rectracks.size()) {
+      pMcCand = pC; 
+      break;
+    }
+  }
+  if (pMcCand) {
+    return pMcCand->fMass;
+  } else {
+    return -2.;
+  }
+}
+
+
+// ----------------------------------------------------------------------
+void candAna::runRange() {
+  fRunRange = 6;
+  if ((fRun >= 160329) && (fRun <= 163261)) {
+    fRunRange = 0; 
+  } 
+  if ((fRun >= 163269) && (fRun <= 163869)) {
+    fRunRange = 1; 
+  } 
+  if ((fRun >= 165088) && (fRun <= 167913)) {
+    fRunRange = 2; 
+  } 
+  if ((fRun >= 170249) && (fRun <= 173198)) {
+    fRunRange = 3; 
+  } 
+  if ((fRun >= 173236) && (fRun <= 178380)) {
+    fRunRange = 4; 
+  } 
+  if ((fRun >= 178420) && (fRun <= 999999)) {
+    fRunRange = 5; 
+  } 
+
+}

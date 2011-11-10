@@ -159,6 +159,7 @@ void candAnaMuMu::candMatch() {
 
 // ----------------------------------------------------------------------
 void candAnaMuMu::bookHist() {
+  cout << "==>candAnaMuMu: bookHist" << endl;
   candAna::bookHist();
 
 }

@@ -37,15 +37,15 @@ public:
   ~candAnaBs2JpsiPhi();
 
   void        candAnalysis();
-
   void        moreBasicCuts();
-  void        processType(); 
+
   void        genMatch(); 
   void        recoMatch(); 
   void        candMatch(); 
   
-  void        bookHist();
   void        readCuts(string filename, int dump);
+  void        bookHist();
+  void        fillCandidateHistograms(int offset);
 
   int          JPSITYPE; 
   double       JPSIMASSLO, JPSIMASSHI;
@@ -80,9 +80,16 @@ public:
   bool  fETk1gt, fETk2gt;
 
   // -- Additional variables and cuts for Bs -> J/psi phi
+  int               PHITYPE; 
   double            MKKLO, MKKHI, DELTAR;
   double            fDeltaR, fMKK;
   bool              fGoodDeltaR, fGoodMKK;
+
+  // -- AnalysisDistributions
+  AnalysisDistribution *fpMpsi[NAD], *fpMKK[NAD], *fpDeltaR[NAD], 
+    *fpKaonsPt[NAD], *fpKaonsEta[NAD], 
+    *fpPsiPt[NAD], *fpPsiEta[NAD],  
+    *fpPhiPt[NAD], *fpPhiEta[NAD];
 
 };
 

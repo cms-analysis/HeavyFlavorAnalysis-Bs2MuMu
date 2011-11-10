@@ -11,12 +11,26 @@ ClassImp(plotOverlays)
 // ----------------------------------------------------------------------
 plotOverlays::plotOverlays(const char *files, const char *cuts, const char *dir, int mode) : plotClass(files, cuts, dir, mode) { 
 
+  fMode = 2; // expo+gauss
+  fMode = 1; // pol1+gauss
 }
+
 
 // ----------------------------------------------------------------------
 plotOverlays::~plotOverlays() {
   fHistFile->Write();
   fHistFile->Close();
+}
+
+
+// ----------------------------------------------------------------------
+void plotOverlays::makeAll(int channels) {
+  
+  fMode = 1; sbsDistributionOverlay("SgData", "candAnaMuMu", "SgMc", "candAnaMuMu", "Ao", "A");
+  fMode = 1; sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "NoMc", "candAnaBu2JpsiK", "Ao", "A");
+  fMode = 2; sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "CsMc", "candAnaBs2JpsiPhi", "Ao", "A");
+  
+
 }
 
 
@@ -103,8 +117,9 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
     return;
   }
 
-  TH1D *h1, *h2;
+  TH1D *h1(0), *h2(0);
   AnalysisDistribution a("A_pvz"); 
+  a.fVerbose = 1; 
   TH1D *hcuts = (TH1D*)gDirectory->Get("hcuts"); 
 
   vector<string> doList; 
@@ -124,47 +139,21 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
   doList.push_back("pchi2dof");
   doList.push_back("alpha"); cutMap.insert(make_pair("alpha", "CANDCOSALPHA"));
   doList.push_back("iso");
-//   doList.push_back("iso1");
-//   doList.push_back("iso2");
-//   doList.push_back("iso3");
-//   doList.push_back("iso4"); cutMap.insert(make_pair("iso4", "CANDISOLATION"));
-//   doList.push_back("iso5");
-//   doList.push_back("i0trk");
-//   doList.push_back("i4trk");
   doList.push_back("docatrk");
+  doList.push_back("isotrk");
 
-//   if (string::npos != file1.find("No")) {
-//     doList.push_back("kaonpt");
-//     doList.push_back("psipt");
-//   } 
+  if (string::npos != file1.find("No")) {
+    doList.push_back("kaonpt");
+    doList.push_back("psipt");
+  } 
 
-//   if (string::npos != file1.find("Cs")) {
-//     doList.push_back("kaonspt");
-//     doList.push_back("psipt");
-//     doList.push_back("phipt");
-//     doList.push_back("deltar");
-//     doList.push_back("mkk");
-//   }
-
-
-//   doList.clear();
-//   doList.push_back("isor05pt03");
-//   doList.push_back("isor05pt05");
-//   doList.push_back("isor05pt07");
-//   doList.push_back("isor05pt09");
-//   doList.push_back("isor05pt11");
-
-//   doList.push_back("isor07pt03");
-//   doList.push_back("isor07pt05");
-//   doList.push_back("isor07pt07");
-//   doList.push_back("isor07pt09");
-//   doList.push_back("isor07pt11");
-
-//   doList.push_back("isor10pt03");
-//   doList.push_back("isor10pt05");
-//   doList.push_back("isor10pt07");
-//   doList.push_back("isor10pt09");
-//   doList.push_back("isor10pt11");
+  if (string::npos != file1.find("Cs")) {
+    doList.push_back("kaonspt");
+    doList.push_back("psipt");
+    doList.push_back("phipt");
+    doList.push_back("deltar");
+    doList.push_back("mkk");
+  }
 
   vector<string> leftList; 
   leftList.push_back("iso"); 
@@ -197,7 +186,8 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
       //       cout << "WARNING MC VALIDATION" << endl;
       //       h1 = (TH1D*)gDirectory->Get(Form("%s%s2", cut.c_str(), selection));
     } else {
-      h1 = a.sbsDistribution(cut.c_str(), selection);
+      if (1 == fMode) h1 = a.sbsDistribution(cut.c_str(), selection);
+      if (2 == fMode) h1 = a.sbsDistributionExpoGauss(cut.c_str(), selection);
     }
 
     c1 = (TCanvas*)gROOT->FindObject("c1"); 
@@ -214,7 +204,8 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
       //       cout << "WARNING MC VALIDATION" << endl;
       //       h2 = (TH1D*)gDirectory->Get(Form("%s%s2", cut.c_str(), selection));
     } else {
-      h2 = a.sbsDistribution(cut.c_str(), selection) ;
+      h2 = a.sbsDistribution(cut.c_str(), selection);
+      //      if (2 == fMode) h2 = a.sbsDistributionExpoGauss(cut.c_str(), selection);
     }
     c1 = (TCanvas*)gROOT->FindObject("c1"); 
     if (fDoPrint) {
@@ -340,12 +331,6 @@ void plotOverlays::sbsDistributionOverlaySameFile(string file1, string dir1, str
 }
 
 
-// ----------------------------------------------------------------------
-void plotOverlays::makeAll(int channels) {
-  
-  
-
-}
 
 
 

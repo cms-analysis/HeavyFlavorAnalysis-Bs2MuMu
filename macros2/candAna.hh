@@ -41,7 +41,8 @@ public:
   virtual void        evtAnalysis(TAna01Event *evt);
   virtual void        candAnalysis();
 
-  virtual void        processType(); 
+  virtual double      constrainedMass();
+  virtual void        runRange();
   virtual void        genMatch(); 
   virtual void        recoMatch(); 
   virtual void        candMatch(); 
@@ -83,6 +84,7 @@ public:
 
   int fRun, fEvt, fLS;
   int fEvent; 
+  int fRunRange;
 
   double       MASSMIN,   MASSMAX; 
   double       SIGBOXMIN, SIGBOXMAX; 
@@ -146,7 +148,6 @@ public:
   bool    fPreselection; 
 
   // -- Analysis distributions
-  int fRunRange;
   std::map<std::string, int> fRegion;
 #define NAD 10
   AnalysisDistribution   *fpPvZ[NAD], *fpPvN[NAD], *fpPvNtrk[NAD]  
