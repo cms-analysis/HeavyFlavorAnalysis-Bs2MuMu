@@ -335,6 +335,65 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
       theTree2.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
       aSeq.doFit(&theTree2);
 
+      // -- special case for the normalization sample
+      if (68 == fType) {
+	HFDecayTree theTree3(3000000 + fType, true, MBPLUS, false, -1.0, true);
+
+	HFDecayTreeIterator iterator = theTree3.addDecayTree(300443, false, MJPSI, false);
+	for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
+	  IDX = trackIndices[ii];
+	  ID  = gHFEvent->getRecTrack(IDX)->fMCID;
+	  if (13 == TMath::Abs(ID)) {
+	    iterator->addTrack(IDX, 13);
+	  }
+	}
+	iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+	for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
+	  IDX = trackIndices[ii];
+	  ID  = gHFEvent->getRecTrack(IDX)->fMCID;
+	  if (321 == TMath::Abs(ID)) {
+	    theTree3.addTrack(IDX, 321);
+	  }
+	}
+	theTree3.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+	if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit for Bu2JpsiKp" << endl;
+	aSeq.doFit(&theTree3);
+      }
+
+
+
+      // -- special case for the control sample
+      if (67 == fType) {
+	HFDecayTree theTree4(3000000 + fType, true, MBS, false, -1.0, true);
+	
+	HFDecayTreeIterator iterator = theTree4.addDecayTree(300443, false, MJPSI, false);
+	for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
+	  IDX = trackIndices[ii];
+	  ID  = gHFEvent->getRecTrack(IDX)->fMCID;
+	  if (13 == TMath::Abs(ID)) {
+	    iterator->addTrack(IDX, 13);
+	  }
+	}
+	iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+	iterator = theTree4.addDecayTree(300333, false, MPHI, false);
+	for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
+	  IDX = trackIndices[ii];
+	  ID  = gHFEvent->getRecTrack(IDX)->fMCID;
+	  if (321 == TMath::Abs(ID)) {
+	    iterator->addTrack(IDX, 321);
+	  }
+	}
+	iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+	theTree4.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+	if (fVerbose > 5) cout << "==>HFTruthCandidate> sequential fit for Bs2JpsiPhi" << endl;
+	aSeq.doFit(&theTree4);
+      }
+
+      
     }
     
   }

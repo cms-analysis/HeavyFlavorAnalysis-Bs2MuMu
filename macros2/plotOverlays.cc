@@ -179,15 +179,17 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
     fF[file1]->cd(dir1.c_str()); 
     cout << "==> File1: "; gDirectory->pwd(); 
     cout << "==> pdf: " << pdfname << endl;
+    // -- separate mm from rest because the former don't need sbs
     if (mm) {
-      // -- normal
       h1 = (TH1D*)gDirectory->Get(Form("%s%s1", cut.c_str(), selection));
-      // -- validation of signal MC!
-      //       cout << "WARNING MC VALIDATION" << endl;
-      //       h1 = (TH1D*)gDirectory->Get(Form("%s%s2", cut.c_str(), selection));
     } else {
-      if (1 == fMode) h1 = a.sbsDistribution(cut.c_str(), selection);
-      if (2 == fMode) h1 = a.sbsDistributionExpoGauss(cut.c_str(), selection);
+      if (string::npos != file1.find("Mc")) {
+	// -- For MC use the signal distributions directly
+	h1 = (TH1D*)gDirectory->Get(Form("%s%s0", cut.c_str(), selection));
+      } else {
+	if (1 == fMode) h1 = a.sbsDistribution(cut.c_str(), selection);
+	if (2 == fMode) h1 = a.sbsDistributionExpoGauss(cut.c_str(), selection);
+      }
     }
 
     c1 = (TCanvas*)gROOT->FindObject("c1"); 
@@ -198,13 +200,15 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
     fF[file2]->cd(dir2.c_str()); 
     cout << "==> File2: pwd() = "; gDirectory->pwd(); 
     if (mm) {
-      // -- normal
       h2 = (TH1D*)gDirectory->Get(Form("%s%s0", cut.c_str(), selection));
-      // -- validation of signal MC!
-      //       cout << "WARNING MC VALIDATION" << endl;
-      //       h2 = (TH1D*)gDirectory->Get(Form("%s%s2", cut.c_str(), selection));
     } else {
-      h2 = a.sbsDistribution(cut.c_str(), selection);
+      if (string::npos != file1.find("Mc")) {
+	// -- For MC use the signal distributions directly
+	h2 = (TH1D*)gDirectory->Get(Form("%s%s0", cut.c_str(), selection));
+      } else {
+	if (1 == fMode) h2 = a.sbsDistribution(cut.c_str(), selection);
+	if (2 == fMode) h2 = a.sbsDistributionExpoGauss(cut.c_str(), selection);
+      }
       //      if (2 == fMode) h2 = a.sbsDistributionExpoGauss(cut.c_str(), selection);
     }
     c1 = (TCanvas*)gROOT->FindObject("c1"); 

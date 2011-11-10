@@ -30,7 +30,10 @@ public:
   void fill(double value, double m);
 
   double fitMass(TH1 *h, double &error, int mode = 0); 
+  // -- default version: pol1 + Gauss
   TH1D*  sbsDistribution(const char *variable, const char *cut); 
+  // -- expo + Gauss
+  TH1D* sbsDistributionExpoGauss(const char *variable, const char *cut);
 
   void   setPreselCut(bool *p) {fpPreselCutTrue = p;} 
 

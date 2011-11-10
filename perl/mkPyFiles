@@ -8,6 +8,7 @@
 #
 # History   
 # -------   
+#           11/11/10  Bug fix to produce py files with last batch of files even if not > $opt_e (!)
 #           11/05/24  Will this odyssee ever end? bug fix when searching for /store in @files instead of @afiles
 #           11/05/17  Added -l to split a file with input lines only (and no event numbers)
 #           11/05/09  Bug fix to properly fill withEvents also whent the dbs header was removed (e.g., by a diff)
@@ -378,7 +379,7 @@ sub createPyFilesPerBlock() {
 
         print "file $iFile:  $fileList[$iFile]->{FILELIST} -> $fileList[$iFile]->{NEVENTS} .. $fEvt \n";
 	
-	if ($fEvt > $opt_e) {
+	if (($fEvt > $opt_e) || ($iFile == $#fileList)) {
 	    $jobID++; 
 
 	    $blockName .= sprintf("-%04i", $jobID);

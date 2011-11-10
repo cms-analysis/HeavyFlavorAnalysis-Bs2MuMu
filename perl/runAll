@@ -59,7 +59,7 @@ if ($opt_v) {
     => "-m,bmm2Reader.3e33-Bs2JpsiPhi,cbmm-$version-3e33-Bs2JpsiPhi,$version-3e33-Bs2JpsiPhi.root"
     #
     , "data 2011"  
-    => "-m,bmm2Reader.data,cbmm-$version-Run2011*,$version-2011-data.root"
+    => "-b 1,bmm2Reader.data,cbmm-$version-Run2011*,$version-2011-data.root"
     );
 
 my $user  = $ENV{'USER'};
@@ -96,7 +96,7 @@ my $srm     = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/tri
 my $storage = "$srm/user/$user/$rootdir";
 
 #my $runCommand = "run $queue $crash -c ../../treeNoCompNoSE.csh -t $tarfile -m batch";
-my $runCommand = "run $queue $crash -c ../../treeNoCompNoSE.csh -t $tarfile -m batch";
+my $runCommand = "run $crash -c ../../treeNoComp.csh -t $tarfile -m batch";
 
 
 # ----------------------------------------------------------------------
@@ -160,7 +160,6 @@ if ($opt_h) {
 # -- submit the jobs
 foreach $j (keys %jobs) {
     ($options, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
-    $command = "$runCommand -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
     if ($opt_s =~ /2e33/   && !($j =~ /2e33/)) {next; }
     if ($opt_s =~ /3e33/   && !($j =~ /3e33/)) {next; }
     if ($opt_s =~ /data/   && !($j =~ /data/)) {next; }
@@ -168,6 +167,12 @@ foreach $j (keys %jobs) {
     if ($opt_s =~ /signal/ && !($j =~ /signal/)) {next; }
     if ($opt_s =~ /cs/     && !($j =~ /cs/)) {next; }
     if ($opt_s =~ /mc/     && !($j =~ /MC/)) {next; }
+
+    if ($j =~ /data/) {
+	$command = "$runCommand -q all.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
+    } else {
+	$command = "$runCommand -q short.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
+    }
 
     if ($opt_d) {
 	print "$j \n$command\n";
