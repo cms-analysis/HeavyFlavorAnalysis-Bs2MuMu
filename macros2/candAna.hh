@@ -32,6 +32,13 @@
 
 #include "bmm2Reader.hh"
 
+struct isoNumbers {
+  double iso; 
+  int    pvTracks; 
+  int    clTracks; 
+  int    Tracks; 
+};
+
 class candAna {
   
 public:
@@ -65,10 +72,12 @@ public:
 
   virtual std::string splitTrigRange(std::string tl, int &r1, int &r2);
 
-  virtual double      isoClassic(TAnaCand*); 
-  virtual double      isoClassicOnePv(TAnaCand*, double r = 1.0, double ptmin = 0.9); 
   virtual double      isoClassicWithDOCA(TAnaCand*, float dca, double r = 1.0, double ptmin = 0.9); 
-  virtual double      isoWithDOCA(TAnaCand*, float dca, double r = 1.0, double ptmin = 0.9); 
+
+
+  virtual void        isolationStudy(double doca);
+  virtual void        bookIsoPlots();  
+  virtual void        fillIsoPlots();
 
   std::string fName; 
   std::string fCutFile; 
@@ -134,12 +143,18 @@ public:
   int     fPvN;
   double  fCandPt, fCandEta, fCandPhi, fCandM, fCandM2, fCandW8Tr, fCandW8Mu; 
   double  fCandCosA, fCandA, fCandChi2, fCandDof, fCandProb, fCandFL3d, fCandFL3dE, fCandFLS3d, fCandFLSxy; 
-  double  fCandIso, fCandIso1, fCandIso2, fCandIso3, fCandIso4, fCandIso5;
-  double  fIsoR05Pt03, fIsoR05Pt05, fIsoR05Pt07, fIsoR05Pt09, fIsoR05Pt11;
-  double  fIsoR07Pt03, fIsoR07Pt05, fIsoR07Pt07, fIsoR07Pt09, fIsoR07Pt11;
-  double  fIsoR10Pt03, fIsoR10Pt05, fIsoR10Pt07, fIsoR10Pt09, fIsoR10Pt11;
-  int     fCandIsoTrk, fCandItrk; 
+  double  fCandIso;
+  int     fCandIsoTrk, fCandCloseTrk, fCandPvTrk, fCandI0trk, fCandI1trk, fCandI2trk; 
   double  fCandDocaTrk, fMu1IP, fMu2IP, fCandPvTip, fCandPvTipE, fCandPvLip, fCandPvLipE; 
+
+  // -- isolation study
+  isoNumbers fIsoR03Pt03, fIsoR03Pt05, fIsoR03Pt07, fIsoR03Pt09, fIsoR03Pt11;
+  isoNumbers fIsoR05Pt03, fIsoR05Pt05, fIsoR05Pt07, fIsoR05Pt09, fIsoR05Pt11;
+  isoNumbers fIsoR07Pt03, fIsoR07Pt05, fIsoR07Pt07, fIsoR07Pt09, fIsoR07Pt11;
+  isoNumbers fIsoR09Pt03, fIsoR09Pt05, fIsoR09Pt07, fIsoR09Pt09, fIsoR09Pt11;
+  isoNumbers fIsoR10Pt03, fIsoR10Pt05, fIsoR10Pt07, fIsoR10Pt09, fIsoR10Pt11;
+  isoNumbers fIsoR11Pt03, fIsoR11Pt05, fIsoR11Pt07, fIsoR11Pt09, fIsoR11Pt11;
+
 
   bool    fGoodHLT, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta, fGoodTracks, fGoodTracksPt, fGoodTracksEta;
   bool    fGoodQ, fGoodPt, fGoodEta, fGoodCosA, fGoodAlpha, fGoodIso, fGoodChi2, fGoodFLS; 
@@ -172,6 +187,40 @@ public:
   AnalysisDistribution   *fpNpvDocaTrk[NADPV][NAD];
   AnalysisDistribution   *fpNpvIso[NADPV][NAD];
   AnalysisDistribution   *fpNpvIsoTrk[NADPV][NAD];
+
+  // -- Isolation study
+#define NISO 10
+  AnalysisDistribution   
+    *fpIsoR03Pt03[NISO], *fpIsoR03Pt05[NISO], *fpIsoR03Pt07[NISO], *fpIsoR03Pt09[NISO], *fpIsoR03Pt11[NISO],      
+    *fpIsoR05Pt03[NISO], *fpIsoR05Pt05[NISO], *fpIsoR05Pt07[NISO], *fpIsoR05Pt09[NISO], *fpIsoR05Pt11[NISO],      
+    *fpIsoR07Pt03[NISO], *fpIsoR07Pt05[NISO], *fpIsoR07Pt07[NISO], *fpIsoR07Pt09[NISO], *fpIsoR07Pt11[NISO],      
+    *fpIsoR09Pt03[NISO], *fpIsoR09Pt05[NISO], *fpIsoR09Pt07[NISO], *fpIsoR09Pt09[NISO], *fpIsoR09Pt11[NISO],    
+    *fpIsoR10Pt03[NISO], *fpIsoR10Pt05[NISO], *fpIsoR10Pt07[NISO], *fpIsoR10Pt09[NISO], *fpIsoR10Pt11[NISO],  
+    *fpIsoR11Pt03[NISO], *fpIsoR11Pt05[NISO], *fpIsoR11Pt07[NISO], *fpIsoR11Pt09[NISO], *fpIsoR11Pt11[NISO];
+
+  AnalysisDistribution   
+    *fpTk0R03Pt03[NISO], *fpTk0R03Pt05[NISO], *fpTk0R03Pt07[NISO], *fpTk0R03Pt09[NISO], *fpTk0R03Pt11[NISO],      
+    *fpTk0R05Pt03[NISO], *fpTk0R05Pt05[NISO], *fpTk0R05Pt07[NISO], *fpTk0R05Pt09[NISO], *fpTk0R05Pt11[NISO],      
+    *fpTk0R07Pt03[NISO], *fpTk0R07Pt05[NISO], *fpTk0R07Pt07[NISO], *fpTk0R07Pt09[NISO], *fpTk0R07Pt11[NISO],      
+    *fpTk0R09Pt03[NISO], *fpTk0R09Pt05[NISO], *fpTk0R09Pt07[NISO], *fpTk0R09Pt09[NISO], *fpTk0R09Pt11[NISO],    
+    *fpTk0R10Pt03[NISO], *fpTk0R10Pt05[NISO], *fpTk0R10Pt07[NISO], *fpTk0R10Pt09[NISO], *fpTk0R10Pt11[NISO],  
+    *fpTk0R11Pt03[NISO], *fpTk0R11Pt05[NISO], *fpTk0R11Pt07[NISO], *fpTk0R11Pt09[NISO], *fpTk0R11Pt11[NISO];
+
+  AnalysisDistribution   
+    *fpTk1R03Pt03[NISO], *fpTk1R03Pt05[NISO], *fpTk1R03Pt07[NISO], *fpTk1R03Pt09[NISO], *fpTk1R03Pt11[NISO],      
+    *fpTk1R05Pt03[NISO], *fpTk1R05Pt05[NISO], *fpTk1R05Pt07[NISO], *fpTk1R05Pt09[NISO], *fpTk1R05Pt11[NISO],      
+    *fpTk1R07Pt03[NISO], *fpTk1R07Pt05[NISO], *fpTk1R07Pt07[NISO], *fpTk1R07Pt09[NISO], *fpTk1R07Pt11[NISO],      
+    *fpTk1R09Pt03[NISO], *fpTk1R09Pt05[NISO], *fpTk1R09Pt07[NISO], *fpTk1R09Pt09[NISO], *fpTk1R09Pt11[NISO],    
+    *fpTk1R10Pt03[NISO], *fpTk1R10Pt05[NISO], *fpTk1R10Pt07[NISO], *fpTk1R10Pt09[NISO], *fpTk1R10Pt11[NISO],  
+    *fpTk1R11Pt03[NISO], *fpTk1R11Pt05[NISO], *fpTk1R11Pt07[NISO], *fpTk1R11Pt09[NISO], *fpTk1R11Pt11[NISO];
+
+  AnalysisDistribution   
+    *fpTk2R03Pt03[NISO], *fpTk2R03Pt05[NISO], *fpTk2R03Pt07[NISO], *fpTk2R03Pt09[NISO], *fpTk2R03Pt11[NISO],      
+    *fpTk2R05Pt03[NISO], *fpTk2R05Pt05[NISO], *fpTk2R05Pt07[NISO], *fpTk2R05Pt09[NISO], *fpTk2R05Pt11[NISO],      
+    *fpTk2R07Pt03[NISO], *fpTk2R07Pt05[NISO], *fpTk2R07Pt07[NISO], *fpTk2R07Pt09[NISO], *fpTk2R07Pt11[NISO],      
+    *fpTk2R09Pt03[NISO], *fpTk2R09Pt05[NISO], *fpTk2R09Pt07[NISO], *fpTk2R09Pt09[NISO], *fpTk2R09Pt11[NISO],    
+    *fpTk2R10Pt03[NISO], *fpTk2R10Pt05[NISO], *fpTk2R10Pt07[NISO], *fpTk2R10Pt09[NISO], *fpTk2R10Pt11[NISO],  
+    *fpTk2R11Pt03[NISO], *fpTk2R11Pt05[NISO], *fpTk2R11Pt07[NISO], *fpTk2R11Pt09[NISO], *fpTk2R11Pt11[NISO];
 
 };
 

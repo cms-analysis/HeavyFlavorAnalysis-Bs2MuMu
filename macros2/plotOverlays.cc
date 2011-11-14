@@ -24,11 +24,28 @@ plotOverlays::~plotOverlays() {
 
 
 // ----------------------------------------------------------------------
-void plotOverlays::makeAll(int channels) {
+void plotOverlays::makeAll(int verbose) {
+
+  fVerbose = verbose;
   
-  fMode = 1; sbsDistributionOverlay("SgData", "candAnaMuMu", "SgMc", "candAnaMuMu", "Ao", "A");
-  fMode = 1; sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "NoMc", "candAnaBu2JpsiK", "Ao", "A");
-  fMode = 2; sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "CsMc", "candAnaBs2JpsiPhi", "Ao", "A");
+  fMode = 0; 
+  sbsDistributionOverlay("SgData", "candAnaMuMu", "SgMc", "candAnaMuMu", "Ao", "A");
+  sbsDistributionOverlay("SgData", "candAnaMuMu", "SgMc", "candAnaMuMu", "Ao", "B");
+  sbsDistributionOverlay("SgData", "candAnaMuMu", "SgMc", "candAnaMuMu", "Ao", "E");
+
+  // -- For normalization sample, use pol1 + error function for bg parametrization
+  fMode = 1; 
+  fMode = 3; 
+  fPreco = 5.1;
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "NoMc", "candAnaBu2JpsiK", "Ao", "A");
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "NoMc", "candAnaBu2JpsiK", "Ao", "B");
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "NoMc", "candAnaBu2JpsiK", "Ao", "E");
+
+  // -- For control sample, use expo function for bg parametrization
+  fMode = 2; 
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "CsMc", "candAnaBs2JpsiPhi", "Ao", "A");
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "CsMc", "candAnaBs2JpsiPhi", "Ao", "B");
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "CsMc", "candAnaBs2JpsiPhi", "Ao", "E");
   
 
 }
@@ -43,7 +60,6 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
 
   char option1[100], option2[100],  loption1[100], loption2[100]; 
   int color1(1), fill1(1000), color2(1), fill2(1000), marker1(20), marker2(25); 
-  int mm(0); 
 
   if (string::npos != file1.find("No")) {
     color1 = kBlack; 
@@ -68,7 +84,6 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
 
   if (string::npos != file1.find("Sg")) {
     // -- data is first, then signal MC
-    mm = 1; 
     color1 = kBlack; 
     fill1  = 0; 
     sprintf(option1, "e"); 
@@ -81,31 +96,29 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
   }
   
   // -- now fix overlays of two data files
-  if (0 == mm ) {
-    sprintf(option1, "e");
-    sprintf(loption1, "p");
-    
-    sprintf(option2,  "hist");
-    sprintf(loption2, "f");
-    
-    if (string::npos != file2.find("Data")) {
-      sprintf(option1, "hist"); 
-      sprintf(loption1, "f");
-      sprintf(option2, "e"); 
-      sprintf(loption2, "p");
-      fill2   = 0; 
-      color2  = kBlack; 
-      marker2 = 21; 
-    }
-    
-    if (string::npos != file1.find("Mc")) {
-      sprintf(option1, "hist"); 
-      sprintf(loption1, "f");
-      sprintf(loption2, "p");
-      fill2   = 0; 
-      color2  = kBlack; 
-      marker2 = 25; 
-    }
+  sprintf(option1, "e");
+  sprintf(loption1, "p");
+  
+  sprintf(option2,  "hist");
+  sprintf(loption2, "f");
+  
+  if (string::npos != file2.find("Data")) {
+    sprintf(option1, "hist"); 
+    sprintf(loption1, "f");
+    sprintf(option2, "e"); 
+    sprintf(loption2, "p");
+    fill2   = 0; 
+    color2  = kBlack; 
+    marker2 = 21; 
+  }
+  
+  if (string::npos != file1.find("Mc")) {
+    sprintf(option1, "hist"); 
+    sprintf(loption1, "f");
+    sprintf(loption2, "p");
+    fill2   = 0; 
+    color2  = kBlack; 
+    marker2 = 25; 
   }
  
   //  ofstream OUT("testUL.txt", ios::app);
@@ -119,7 +132,7 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
 
   TH1D *h1(0), *h2(0);
   AnalysisDistribution a("A_pvz"); 
-  a.fVerbose = 1; 
+  a.fVerbose = fVerbose; 
   TH1D *hcuts = (TH1D*)gDirectory->Get("hcuts"); 
 
   vector<string> doList; 
@@ -179,8 +192,8 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
     fF[file1]->cd(dir1.c_str()); 
     cout << "==> File1: "; gDirectory->pwd(); 
     cout << "==> pdf: " << pdfname << endl;
-    // -- separate mm from rest because the former don't need sbs
-    if (mm) {
+    // -- 0 == fMode is dimuon case: separate this from rest because the former don't need sbs
+    if (0 == fMode) {
       h1 = (TH1D*)gDirectory->Get(Form("%s%s1", cut.c_str(), selection));
     } else {
       if (string::npos != file1.find("Mc")) {
@@ -189,6 +202,7 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
       } else {
 	if (1 == fMode) h1 = a.sbsDistribution(cut.c_str(), selection);
 	if (2 == fMode) h1 = a.sbsDistributionExpoGauss(cut.c_str(), selection);
+	if (3 == fMode) h1 = a.sbsDistributionPol1ErrGauss(cut.c_str(), selection, fPreco);
       }
     }
 
@@ -199,15 +213,16 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
 
     fF[file2]->cd(dir2.c_str()); 
     cout << "==> File2: pwd() = "; gDirectory->pwd(); 
-    if (mm) {
+    if (0 == fMode) {
       h2 = (TH1D*)gDirectory->Get(Form("%s%s0", cut.c_str(), selection));
     } else {
-      if (string::npos != file1.find("Mc")) {
+      if (string::npos != file2.find("Mc")) {
 	// -- For MC use the signal distributions directly
 	h2 = (TH1D*)gDirectory->Get(Form("%s%s0", cut.c_str(), selection));
       } else {
 	if (1 == fMode) h2 = a.sbsDistribution(cut.c_str(), selection);
 	if (2 == fMode) h2 = a.sbsDistributionExpoGauss(cut.c_str(), selection);
+	if (3 == fMode) h2 = a.sbsDistributionPol1ErrGauss(cut.c_str(), selection, fPreco);
       }
       //      if (2 == fMode) h2 = a.sbsDistributionExpoGauss(cut.c_str(), selection);
     }

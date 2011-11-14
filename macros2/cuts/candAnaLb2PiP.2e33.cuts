@@ -1,5 +1,5 @@
-TYPE          1000082
-TRUTHCAND         531
+TYPE          1000060
+TRUTHCAND        5122
 TRIGRANGE    NOTRIGGER
 # -- boxes
 +input cuts/boxes.cuts

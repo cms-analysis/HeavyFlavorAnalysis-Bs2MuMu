@@ -103,6 +103,10 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 	fillCandidateHistograms(fRegion["E"]);
       }
     }
+
+    // -- special studies
+    //    fillIsoPlots();  FIXISOPLOTS
+    
   }
 
 }
@@ -251,8 +255,8 @@ void candAna::candAnalysis() {
   fMu2BPix      = fpReader->numberOfBPixLayers(p2);
   fMu2BPixL1    = fpReader->numberOfBPixLayer1Hits(p2);
 
-  if  (fMu1Id && fMu2Id) {
-    //  if (p1->fMuIndex > -1 && p2->fMuIndex > -1) {
+  // -- cut on fMuIndex so that (rare) fake muons can be treated above as real muons
+  if (p1->fMuIndex > -1 && p2->fMuIndex > -1) {
     TVector3 rm1  = fpEvt->getMuon(p1->fMuIndex)->fPositionAtM2;
     TVector3 rm2  = fpEvt->getMuon(p2->fMuIndex)->fPositionAtM2;
 
@@ -342,18 +346,17 @@ void candAna::candAnalysis() {
   // -- go back to original!
   sv = fpCand->fVtx;
 
-
   TVector3 svpv(sv.fPoint - fpEvt->getPV(pvidx)->fPoint); 
   double alpha = svpv.Angle(fpCand->fPlab);
   fCandCosA   = TMath::Cos(alpha);
   fCandA      = alpha; 
 
-  double iso  = isoClassicWithDOCA(fpCand, 0.05); // 500um DOCA cut
-  fCandIsoTrk = fCandItrk;
-  fCandIso    = iso; 
+  double iso = isoClassicWithDOCA(fpCand, 0.05); // 500um DOCA cut
+  fCandPvTrk    = fCandI0trk;
+  fCandCloseTrk = fCandI1trk;
+  fCandIsoTrk   = fCandI2trk;
+  fCandIso      = iso; 
   
-  // -- the matrix
-//   fIsoR05Pt03 = isoWithDOCA(fpCand, 0.05, 0.5, 0.3);
 //   fIsoR05Pt05 = isoWithDOCA(fpCand, 0.05, 0.5, 0.5);
 //   fIsoR05Pt07 = isoWithDOCA(fpCand, 0.05, 0.5, 0.7);
 //   fIsoR05Pt09 = isoWithDOCA(fpCand, 0.05, 0.5, 0.9);
@@ -466,8 +469,14 @@ void candAna::fillCandidateHistograms(int offset) {
   fpFL3dE[offset]->fill(fCandFL3dE, fCandM); 
   fpFLSxy[offset]->fill(fCandFLSxy, fCandM); 
   fpDocaTrk[offset]->fill(fCandDocaTrk, fCandM); 
-
-  int ipv = (fPvN<30?fPvN/2:NADPV-1); 
+  
+  int ipv = 0; 
+  if (fPvN < 30) {
+    ipv = fPvN/2; 
+  } else {
+    ipv = NADPV-1; 
+  }
+  
   if (fpNpvPvN[ipv][offset]) {
     fpNpvPvN[ipv][offset]->fill(fPvN, fCandM); 
     fpNpvChi2Dof[ipv][offset]->fill(fCandChi2/fCandDof, fCandM); 
@@ -597,12 +606,11 @@ void candAna::triggerSelection() {
   bool result(false), wasRun(false), error(false); 
   //  cout << " ----------------------------------------------------------------------" << endl;
 
-  //   FIXME
-  //   if (HLTPath.end() != find(HLTPath.begin(), HLTPath.end(), "NOTRIGGER"))  {
-  //     //    cout << "NOTRIGGER requested... " << endl;
-  //     fGoodHLT = true; 
-  //     return;
-  //   }
+  if (HLTRANGE.begin()->first == "NOTRIGGER") {
+    //    cout << "NOTRIGGER requested... " << endl;
+    fGoodHLT = true; 
+    return;
+  }
   
   for (int i = 0; i < NHLT; ++i) {
     result = wasRun = error = false;
@@ -799,7 +807,7 @@ void candAna::bookHist() {
     fpFL3dE[i]     = bookDistribution(Form("%sfl3dE", name.c_str()), "#sigma(l_{3D}) [cm]", "fGoodFLS", 25, 0., 0.5);  
     fpFLSxy[i]     = bookDistribution(Form("%sflsxy", name.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
     fpDocaTrk[i]   = bookDistribution(Form("%sdocatrk", name.c_str()), "d_{ca}^{min} [cm]", "fGoodDocaTrk", 35, 0., 0.14);   
-    
+
     if (name == "A_") {
       //      cout << "  booking NPV distributions for " << name << endl;
       for (int ipv = 0; ipv < NADPV; ++ipv) {
@@ -823,7 +831,396 @@ void candAna::bookHist() {
       }
     }
   }
+
+  // bookIsoPlots(); FIXISOPLOTS
+
 }
+
+// ----------------------------------------------------------------------
+void candAna::fillIsoPlots() {
+
+  double iso(0.), doca(0.); 
+
+  // -- make sure this is the same as in bookIsoPlots!
+  vector<string> vname; 
+  vname.push_back("Doca05"); 
+  vname.push_back("Doca04"); 
+  vname.push_back("Doca03"); 
+  vname.push_back("Doca02"); 
+  
+  string name; 
+  for (unsigned int i = 0; i < vname.size(); ++i) {
+    name = vname[i];
+
+    if (0 == i) {doca = 0.05; }
+    if (1 == i) {doca = 0.04; }
+    if (2 == i) {doca = 0.03; }
+    if (3 == i) {doca = 0.02; }
+
+    // R < 0.3
+    iso = isoClassicWithDOCA(fpCand, doca, 0.3, 0.3);
+    fpIsoR03Pt03[i]->fill(iso, fCandM);
+    fpTk0R03Pt03[i]->fill(fCandI0trk, fCandM);
+    fpTk1R03Pt03[i]->fill(fCandI1trk, fCandM);
+    fpTk2R03Pt03[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 0.3, 0.5);
+    fpIsoR03Pt05[i]->fill(iso, fCandM);
+    fpTk0R03Pt05[i]->fill(fCandI0trk, fCandM);
+    fpTk1R03Pt05[i]->fill(fCandI1trk, fCandM);
+    fpTk2R03Pt05[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 0.3, 0.7);
+    fpIsoR03Pt07[i]->fill(iso, fCandM);
+    fpTk0R03Pt07[i]->fill(fCandI0trk, fCandM);
+    fpTk1R03Pt07[i]->fill(fCandI1trk, fCandM);
+    fpTk2R03Pt07[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 0.3, 0.9);
+    fpIsoR03Pt09[i]->fill(iso, fCandM);
+    fpTk0R03Pt09[i]->fill(fCandI0trk, fCandM);
+    fpTk1R03Pt09[i]->fill(fCandI1trk, fCandM);
+    fpTk2R03Pt09[i]->fill(fCandI2trk, fCandM);
+    
+    iso = isoClassicWithDOCA(fpCand, doca, 0.3, 1.1);
+    fpIsoR03Pt11[i]->fill(iso, fCandM);
+    fpTk0R03Pt11[i]->fill(fCandI0trk, fCandM);
+    fpTk1R03Pt11[i]->fill(fCandI1trk, fCandM);
+    fpTk2R03Pt11[i]->fill(fCandI2trk, fCandM);
+
+    // R < 0.5
+    iso = isoClassicWithDOCA(fpCand, doca, 0.5, 0.3);
+    fpIsoR05Pt03[i]->fill(iso, fCandM);
+    fpTk0R05Pt03[i]->fill(fCandI0trk, fCandM);
+    fpTk1R05Pt03[i]->fill(fCandI1trk, fCandM);
+    fpTk2R05Pt03[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 0.5, 0.5);
+    fpIsoR05Pt05[i]->fill(iso, fCandM);
+    fpTk0R05Pt05[i]->fill(fCandI0trk, fCandM);
+    fpTk1R05Pt05[i]->fill(fCandI1trk, fCandM);
+    fpTk2R05Pt05[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 0.5, 0.7);
+    fpIsoR05Pt07[i]->fill(iso, fCandM);
+    fpTk0R05Pt07[i]->fill(fCandI0trk, fCandM);
+    fpTk1R05Pt07[i]->fill(fCandI1trk, fCandM);
+    fpTk2R05Pt07[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 0.5, 0.9);
+    fpIsoR05Pt09[i]->fill(iso, fCandM);
+    fpTk0R05Pt09[i]->fill(fCandI0trk, fCandM);
+    fpTk1R05Pt09[i]->fill(fCandI1trk, fCandM);
+    fpTk2R05Pt09[i]->fill(fCandI2trk, fCandM);
+    
+    iso = isoClassicWithDOCA(fpCand, doca, 0.5, 1.1);
+    fpIsoR05Pt11[i]->fill(iso, fCandM);
+    fpTk0R05Pt11[i]->fill(fCandI0trk, fCandM);
+    fpTk1R05Pt11[i]->fill(fCandI1trk, fCandM);
+    fpTk2R05Pt11[i]->fill(fCandI2trk, fCandM);
+
+
+    // R < 0.7
+    iso = isoClassicWithDOCA(fpCand, doca, 0.7, 0.3);
+    fpIsoR07Pt03[i]->fill(iso, fCandM);
+    fpTk0R07Pt03[i]->fill(fCandI0trk, fCandM);
+    fpTk1R07Pt03[i]->fill(fCandI1trk, fCandM);
+    fpTk2R07Pt03[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 0.7, 0.5);
+    fpIsoR07Pt05[i]->fill(iso, fCandM);
+    fpTk0R07Pt05[i]->fill(fCandI0trk, fCandM);
+    fpTk1R07Pt05[i]->fill(fCandI1trk, fCandM);
+    fpTk2R07Pt05[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 0.7, 0.7);
+    fpIsoR07Pt07[i]->fill(iso, fCandM);
+    fpTk0R07Pt07[i]->fill(fCandI0trk, fCandM);
+    fpTk1R07Pt07[i]->fill(fCandI1trk, fCandM);
+    fpTk2R07Pt07[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 0.7, 0.9);
+    fpIsoR07Pt09[i]->fill(iso, fCandM);
+    fpTk0R07Pt09[i]->fill(fCandI0trk, fCandM);
+    fpTk1R07Pt09[i]->fill(fCandI1trk, fCandM);
+    fpTk2R07Pt09[i]->fill(fCandI2trk, fCandM);
+    
+    iso = isoClassicWithDOCA(fpCand, doca, 0.7, 1.1);
+    fpIsoR07Pt11[i]->fill(iso, fCandM);
+    fpTk0R07Pt11[i]->fill(fCandI0trk, fCandM);
+    fpTk1R07Pt11[i]->fill(fCandI1trk, fCandM);
+    fpTk2R07Pt11[i]->fill(fCandI2trk, fCandM);
+
+
+    // R < 0.9
+    iso = isoClassicWithDOCA(fpCand, doca, 0.9, 0.3);
+    fpIsoR09Pt03[i]->fill(iso, fCandM);
+    fpTk0R09Pt03[i]->fill(fCandI0trk, fCandM);
+    fpTk1R09Pt03[i]->fill(fCandI1trk, fCandM);
+    fpTk2R09Pt03[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 0.9, 0.5);
+    fpIsoR09Pt05[i]->fill(iso, fCandM);
+    fpTk0R09Pt05[i]->fill(fCandI0trk, fCandM);
+    fpTk1R09Pt05[i]->fill(fCandI1trk, fCandM);
+    fpTk2R09Pt05[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 0.9, 0.7);
+    fpIsoR09Pt07[i]->fill(iso, fCandM);
+    fpTk0R09Pt07[i]->fill(fCandI0trk, fCandM);
+    fpTk1R09Pt07[i]->fill(fCandI1trk, fCandM);
+    fpTk2R09Pt07[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 0.9, 0.9);
+    fpIsoR09Pt09[i]->fill(iso, fCandM);
+    fpTk0R09Pt09[i]->fill(fCandI0trk, fCandM);
+    fpTk1R09Pt09[i]->fill(fCandI1trk, fCandM);
+    fpTk2R09Pt09[i]->fill(fCandI2trk, fCandM);
+    
+    iso = isoClassicWithDOCA(fpCand, doca, 0.9, 1.1);
+    fpIsoR09Pt11[i]->fill(iso, fCandM);
+    fpTk0R09Pt11[i]->fill(fCandI0trk, fCandM);
+    fpTk1R09Pt11[i]->fill(fCandI1trk, fCandM);
+    fpTk2R09Pt11[i]->fill(fCandI2trk, fCandM);
+
+
+    // R < 1.0
+    iso = isoClassicWithDOCA(fpCand, doca, 1.0, 0.3);
+    fpIsoR10Pt03[i]->fill(iso, fCandM);
+    fpTk0R10Pt03[i]->fill(fCandI0trk, fCandM);
+    fpTk1R10Pt03[i]->fill(fCandI1trk, fCandM);
+    fpTk2R10Pt03[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 1.0, 0.5);
+    fpIsoR10Pt05[i]->fill(iso, fCandM);
+    fpTk0R10Pt05[i]->fill(fCandI0trk, fCandM);
+    fpTk1R10Pt05[i]->fill(fCandI1trk, fCandM);
+    fpTk2R10Pt05[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 1.0, 0.7);
+    fpIsoR10Pt07[i]->fill(iso, fCandM);
+    fpTk0R10Pt07[i]->fill(fCandI0trk, fCandM);
+    fpTk1R10Pt07[i]->fill(fCandI1trk, fCandM);
+    fpTk2R10Pt07[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 1.0, 0.9);
+    fpIsoR10Pt09[i]->fill(iso, fCandM);
+    fpTk0R10Pt09[i]->fill(fCandI0trk, fCandM);
+    fpTk1R10Pt09[i]->fill(fCandI1trk, fCandM);
+    fpTk2R10Pt09[i]->fill(fCandI2trk, fCandM);
+    
+    iso = isoClassicWithDOCA(fpCand, doca, 1.0, 1.1);
+    fpIsoR10Pt11[i]->fill(iso, fCandM);
+    fpTk0R10Pt11[i]->fill(fCandI0trk, fCandM);
+    fpTk1R10Pt11[i]->fill(fCandI1trk, fCandM);
+    fpTk2R10Pt11[i]->fill(fCandI2trk, fCandM);
+
+
+    // R < 1.1
+    iso = isoClassicWithDOCA(fpCand, doca, 1.1, 0.3);
+    fpIsoR11Pt03[i]->fill(iso, fCandM);
+    fpTk0R11Pt03[i]->fill(fCandI0trk, fCandM);
+    fpTk1R11Pt03[i]->fill(fCandI1trk, fCandM);
+    fpTk2R11Pt03[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 1.1, 0.5);
+    fpIsoR11Pt05[i]->fill(iso, fCandM);
+    fpTk0R11Pt05[i]->fill(fCandI0trk, fCandM);
+    fpTk1R11Pt05[i]->fill(fCandI1trk, fCandM);
+    fpTk2R11Pt05[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 1.1, 0.7);
+    fpIsoR11Pt07[i]->fill(iso, fCandM);
+    fpTk0R11Pt07[i]->fill(fCandI0trk, fCandM);
+    fpTk1R11Pt07[i]->fill(fCandI1trk, fCandM);
+    fpTk2R11Pt07[i]->fill(fCandI2trk, fCandM);
+
+    iso = isoClassicWithDOCA(fpCand, doca, 1.1, 0.9);
+    fpIsoR11Pt09[i]->fill(iso, fCandM);
+    fpTk0R11Pt09[i]->fill(fCandI0trk, fCandM);
+    fpTk1R11Pt09[i]->fill(fCandI1trk, fCandM);
+    fpTk2R11Pt09[i]->fill(fCandI2trk, fCandM);
+    
+    iso = isoClassicWithDOCA(fpCand, doca, 1.1, 1.1);
+    fpIsoR11Pt11[i]->fill(iso, fCandM);
+    fpTk0R11Pt11[i]->fill(fCandI0trk, fCandM);
+    fpTk1R11Pt11[i]->fill(fCandI1trk, fCandM);
+    fpTk2R11Pt11[i]->fill(fCandI2trk, fCandM);
+  }
+}
+
+
+// ----------------------------------------------------------------------
+void candAna::bookIsoPlots() {
+
+  TDirectory *pD = fHistDir->mkdir(Form("Isolation"));
+  pD->cd();
+  
+  vector<string> vname; 
+  vname.push_back("Doca05"); 
+  vname.push_back("Doca04"); 
+  vname.push_back("Doca03"); 
+  vname.push_back("Doca02"); 
+
+  string name; 
+  for (unsigned int i = 0; i < vname.size(); ++i) {
+    name = vname[i];
+    cout << "booking i = " << i << " with name = " << name << endl;
+
+    fpIsoR03Pt03[i] = bookDistribution(Form("%sisor03pt03", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR03Pt05[i] = bookDistribution(Form("%sisor03pt05", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR03Pt07[i] = bookDistribution(Form("%sisor03pt07", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR03Pt09[i] = bookDistribution(Form("%sisor03pt09", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR03Pt11[i] = bookDistribution(Form("%sisor03pt11", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    
+    fpIsoR05Pt03[i] = bookDistribution(Form("%sisor05pt03", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR05Pt05[i] = bookDistribution(Form("%sisor05pt05", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR05Pt07[i] = bookDistribution(Form("%sisor05pt07", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR05Pt09[i] = bookDistribution(Form("%sisor05pt09", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR05Pt11[i] = bookDistribution(Form("%sisor05pt11", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    
+    fpIsoR07Pt03[i] = bookDistribution(Form("%sisor07pt03", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR07Pt05[i] = bookDistribution(Form("%sisor07pt05", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR07Pt07[i] = bookDistribution(Form("%sisor07pt07", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR07Pt09[i] = bookDistribution(Form("%sisor07pt09", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR07Pt11[i] = bookDistribution(Form("%sisor07pt11", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    
+    fpIsoR09Pt03[i] = bookDistribution(Form("%sisor09pt03", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR09Pt05[i] = bookDistribution(Form("%sisor09pt05", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR09Pt07[i] = bookDistribution(Form("%sisor09pt07", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR09Pt09[i] = bookDistribution(Form("%sisor09pt09", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR09Pt11[i] = bookDistribution(Form("%sisor09pt11", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    
+    fpIsoR10Pt03[i] = bookDistribution(Form("%sisor10pt03", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR10Pt05[i] = bookDistribution(Form("%sisor10pt05", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR10Pt07[i] = bookDistribution(Form("%sisor10pt07", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR10Pt09[i] = bookDistribution(Form("%sisor10pt09", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR10Pt11[i] = bookDistribution(Form("%sisor10pt11", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    
+    fpIsoR11Pt03[i] = bookDistribution(Form("%sisor11pt03", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR11Pt05[i] = bookDistribution(Form("%sisor11pt05", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR11Pt07[i] = bookDistribution(Form("%sisor11pt07", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR11Pt09[i] = bookDistribution(Form("%sisor11pt09", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    fpIsoR11Pt11[i] = bookDistribution(Form("%sisor11pt11", name.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+    
+    
+    // same PV track multiplicity
+    fpTk0R03Pt03[i]  = bookDistribution(Form("%stk0r03pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R03Pt05[i]  = bookDistribution(Form("%stk0r03pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R03Pt07[i]  = bookDistribution(Form("%stk0r03pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R03Pt09[i]  = bookDistribution(Form("%stk0r03pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R03Pt11[i]  = bookDistribution(Form("%stk0r03pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk0R05Pt03[i]  = bookDistribution(Form("%stk0r05pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R05Pt05[i]  = bookDistribution(Form("%stk0r05pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R05Pt07[i]  = bookDistribution(Form("%stk0r05pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R05Pt09[i]  = bookDistribution(Form("%stk0r05pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R05Pt11[i]  = bookDistribution(Form("%stk0r05pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk0R07Pt03[i]  = bookDistribution(Form("%stk0r07pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R07Pt05[i]  = bookDistribution(Form("%stk0r07pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R07Pt07[i]  = bookDistribution(Form("%stk0r07pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R07Pt09[i]  = bookDistribution(Form("%stk0r07pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R07Pt11[i]  = bookDistribution(Form("%stk0r07pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk0R09Pt03[i]  = bookDistribution(Form("%stk0r09pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R09Pt05[i]  = bookDistribution(Form("%stk0r09pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R09Pt07[i]  = bookDistribution(Form("%stk0r09pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R09Pt09[i]  = bookDistribution(Form("%stk0r09pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R09Pt11[i]  = bookDistribution(Form("%stk0r09pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk0R10Pt03[i]  = bookDistribution(Form("%stk0r10pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R10Pt05[i]  = bookDistribution(Form("%stk0r10pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R10Pt07[i]  = bookDistribution(Form("%stk0r10pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R10Pt09[i]  = bookDistribution(Form("%stk0r10pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R10Pt11[i]  = bookDistribution(Form("%stk0r10pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk0R11Pt03[i]  = bookDistribution(Form("%stk0r11pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R11Pt05[i]  = bookDistribution(Form("%stk0r11pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R11Pt07[i]  = bookDistribution(Form("%stk0r11pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R11Pt09[i]  = bookDistribution(Form("%stk0r11pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk0R11Pt11[i]  = bookDistribution(Form("%stk0r11pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    // close track multiplicity
+    fpTk1R03Pt03[i]  = bookDistribution(Form("%stk1r03pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R03Pt05[i]  = bookDistribution(Form("%stk1r03pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R03Pt07[i]  = bookDistribution(Form("%stk1r03pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R03Pt09[i]  = bookDistribution(Form("%stk1r03pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R03Pt11[i]  = bookDistribution(Form("%stk1r03pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk1R05Pt03[i]  = bookDistribution(Form("%stk1r05pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R05Pt05[i]  = bookDistribution(Form("%stk1r05pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R05Pt07[i]  = bookDistribution(Form("%stk1r05pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R05Pt09[i]  = bookDistribution(Form("%stk1r05pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R05Pt11[i]  = bookDistribution(Form("%stk1r05pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk1R07Pt03[i]  = bookDistribution(Form("%stk1r07pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R07Pt05[i]  = bookDistribution(Form("%stk1r07pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R07Pt07[i]  = bookDistribution(Form("%stk1r07pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R07Pt09[i]  = bookDistribution(Form("%stk1r07pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R07Pt11[i]  = bookDistribution(Form("%stk1r07pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk1R09Pt03[i]  = bookDistribution(Form("%stk1r09pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R09Pt05[i]  = bookDistribution(Form("%stk1r09pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R09Pt07[i]  = bookDistribution(Form("%stk1r09pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R09Pt09[i]  = bookDistribution(Form("%stk1r09pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R09Pt11[i]  = bookDistribution(Form("%stk1r09pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk1R10Pt03[i]  = bookDistribution(Form("%stk1r10pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R10Pt05[i]  = bookDistribution(Form("%stk1r10pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R10Pt07[i]  = bookDistribution(Form("%stk1r10pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R10Pt09[i]  = bookDistribution(Form("%stk1r10pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R10Pt11[i]  = bookDistribution(Form("%stk1r10pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk1R11Pt03[i]  = bookDistribution(Form("%stk1r11pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R11Pt05[i]  = bookDistribution(Form("%stk1r11pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R11Pt07[i]  = bookDistribution(Form("%stk1r11pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R11Pt09[i]  = bookDistribution(Form("%stk1r11pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk1R11Pt11[i]  = bookDistribution(Form("%stk1r11pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+
+
+    // total track multiplicity
+    fpTk2R03Pt03[i]  = bookDistribution(Form("%stk2r03pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R03Pt05[i]  = bookDistribution(Form("%stk2r03pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R03Pt07[i]  = bookDistribution(Form("%stk2r03pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R03Pt09[i]  = bookDistribution(Form("%stk2r03pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R03Pt11[i]  = bookDistribution(Form("%stk2r03pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk2R05Pt03[i]  = bookDistribution(Form("%stk2r05pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R05Pt05[i]  = bookDistribution(Form("%stk2r05pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R05Pt07[i]  = bookDistribution(Form("%stk2r05pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R05Pt09[i]  = bookDistribution(Form("%stk2r05pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R05Pt11[i]  = bookDistribution(Form("%stk2r05pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk2R07Pt03[i]  = bookDistribution(Form("%stk2r07pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R07Pt05[i]  = bookDistribution(Form("%stk2r07pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R07Pt07[i]  = bookDistribution(Form("%stk2r07pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R07Pt09[i]  = bookDistribution(Form("%stk2r07pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R07Pt11[i]  = bookDistribution(Form("%stk2r07pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk2R09Pt03[i]  = bookDistribution(Form("%stk2r09pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R09Pt05[i]  = bookDistribution(Form("%stk2r09pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R09Pt07[i]  = bookDistribution(Form("%stk2r09pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R09Pt09[i]  = bookDistribution(Form("%stk2r09pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R09Pt11[i]  = bookDistribution(Form("%stk2r09pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk2R10Pt03[i]  = bookDistribution(Form("%stk2r10pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R10Pt05[i]  = bookDistribution(Form("%stk2r10pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R10Pt07[i]  = bookDistribution(Form("%stk2r10pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R10Pt09[i]  = bookDistribution(Form("%stk2r10pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R10Pt11[i]  = bookDistribution(Form("%stk2r10pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    
+    fpTk2R11Pt03[i]  = bookDistribution(Form("%stk2r11pt03", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R11Pt05[i]  = bookDistribution(Form("%stk2r11pt05", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R11Pt07[i]  = bookDistribution(Form("%stk2r11pt07", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R11Pt09[i]  = bookDistribution(Form("%stk2r11pt09", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+    fpTk2R11Pt11[i]  = bookDistribution(Form("%stk2r11pt11", name.c_str()),  "N_{tk0}^{I}", "fGoodIso", 20, 0., 20.); 
+  }
+  
+  fHistDir->cd();	
+
+}
+
 
 // ----------------------------------------------------------------------
 void candAna::readCuts(string fileName, int dump) {
@@ -1190,10 +1587,10 @@ void candAna::readFile(string filename, vector<string> &lines) {
 bool candAna::goodMuon(TAnaTrack *pT) {
   int result = pT->fMuID & MUIDMASK;
 
-//   FIXME
-//   if (HLTPath.end() != find(HLTPath.begin(), HLTPath.end(), "NOTRIGGER"))  {
-//     return true; 
-//   }
+  if (HLTRANGE.begin()->first == "NOTRIGGER") {
+    //    cout << "NOTRIGGER requested... " << endl;
+    return true;
+  }
 
   if (0 == MUIDRESULT ) {
     // -- result must be larger than zero for successful muon ID, i.e., the OR of the bits
@@ -1237,65 +1634,6 @@ string candAna::splitTrigRange(string tl, int &r1, int &r2) {
 }
 
 
-// ----------------------------------------------------------------------
-double candAna::isoClassic(TAnaCand *pC) {
-  double iso(-1.), pt(0.), sumPt(0.), candPt(0.); 
-  TAnaTrack *pT; 
-  vector<int> cIdx; 
-  for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
-    pT = fpEvt->getSigTrack(i); 
-    cIdx.push_back(pT->fIndex); 
-    candPt += pT->fPlab.Perp(); 
-  }
-  
-  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
-    if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  continue;
-    pT = fpEvt->getRecTrack(i); 
-    pt = pT->fPlab.Perp(); 
-    if (pt < 0.9) continue;
-    if (pT->fPlab.DeltaR(pC->fPlab) < 1.0) sumPt += pt; 
-  }
-
-  iso = candPt/(candPt + sumPt); 
-
-  return iso; 
-}
-
-
-// ----------------------------------------------------------------------
-double candAna::isoClassicOnePv(TAnaCand *pC, double r, double ptmin) {
-  double iso(-1.), pt(0.), sumPt(0.), candPt(0.), candPtScalar(0.); 
-  TAnaTrack *pT; 
-  vector<int> cIdx; 
-  int pvIdx = pC->fPvIdx;
-
-  for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
-    pT = fpEvt->getSigTrack(i); 
-    cIdx.push_back(pT->fIndex); 
-    candPtScalar += pT->fPlab.Perp(); 
-  }
-
-  candPt = pC->fPlab.Perp(); 
-  
-  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
-    if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  continue;
-    pT = fpEvt->getRecTrack(i); 
-    if (pvIdx != pT->fPvIdx) {
-      continue;
-    }
-    pt = pT->fPlab.Perp(); 
-    if (pt < ptmin) {
-      continue;
-    }
-    if (pT->fPlab.DeltaR(pC->fPlab) < r) {
-      sumPt += pt; 
-    } 
-  }
-
-  iso = candPt/(candPt + sumPt); 
-
-  return iso; 
-}
 
 // ----------------------------------------------------------------------
 double candAna::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, double ptmin) {
@@ -1307,31 +1645,34 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, double
   vector<int> cIdx, pIdx; 
   int pvIdx = pC->fPvIdx;
 
-  fCandItrk = 0; 
+  fCandI0trk = 0; 
+  fCandI1trk = 0; 
+  fCandI2trk = 0; 
  
   for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
     pT = fpEvt->getSigTrack(i); 
     cIdx.push_back(pT->fIndex); 
     candPtScalar += pT->fPlab.Perp(); 
-        if (verbose) {
-          int tIdx = fpEvt->getRecTrack(pT->fIndex)->fPvIdx;
-          if (pvIdx != tIdx) {
+    if (verbose) {
+      int tIdx = fpEvt->getRecTrack(pT->fIndex)->fPvIdx;
+      if (pvIdx != tIdx) {
     	cout << "Signal track pointing to PV " << tIdx << " instead of " << pvIdx << endl;
-          }
-        }
+      }
+    }
   }
-
+  
   candPt = pC->fPlab.Perp(); 
   
+  // -- look at all tracks that are associated to the same vertex
   for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
     if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  continue;
     pT = fpEvt->getRecTrack(i); 
-        if (verbose) {
-          cout << "   track " << i 
+    if (verbose) {
+      cout << "   track " << i 
      	   << " with pT = " << pT->fPlab.Perp()
      	   << " eta = " << pT->fPlab.Eta()
      	   << " pointing at PV " << pT->fPvIdx;
-        }
+    }
     if (pvIdx != pT->fPvIdx) {
       if (verbose) cout << " skipped because of PV index mismatch" << endl;
       continue;
@@ -1343,7 +1684,7 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, double
     }
     if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
       pIdx.push_back(i); 
-      ++fCandItrk;
+      ++fCandI0trk;
       sumPt += pt; 
       if (verbose) cout << endl;
     } 
@@ -1352,45 +1693,47 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, double
     }
   }
 
-
-
   // Now consider the DOCA tracks, but only those which have PV=-1
-  // DOCA of close tracks
   int nsize = pC->fNstTracks.size(); 
-  if(nsize>0) {
-    for(int i = 0; i<nsize;++i) {
+  if (nsize>0) {
+    for(int i = 0; i<nsize; ++i) {
       int trkId = pC->fNstTracks[i].first;
       double doca = pC->fNstTracks[i].second.first;
-      //      double docaE = pC->fNstTracks[i].second.second;
+      double docaE = pC->fNstTracks[i].second.second;
 
       if(doca > docaCut) continue; // check the doca cut
-      if (pIdx.end() != find(pIdx.begin(), pIdx.end(), trkId))  continue; // skip tracks already included above
-      if (cIdx.end() != find(cIdx.begin(), cIdx.end(), trkId))  continue;
-      
+
       pT = fpEvt->getRecTrack(trkId);
-      // Consider only tracks from an undefined PV
+
+      // -- Consider only tracks from an undefined PV
       if (pT->fPvIdx >= 0) { 
 	if (verbose) cout << " doca track skipped because it has a defined  PV " << pT->fPvIdx <<endl;
 	continue;
       }
 
-      pt = pT->fPlab.Perp();  // cut on track pt
+      pt = pT->fPlab.Perp();  
       if (pt < ptCut) {
-	if (verbose) cout << " doca skipped because of pt = " << pt << endl;
+	if (verbose) cout << " doca track skipped because of pt = " << pt << endl;
 	continue;
       }
 
-      if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
-	++fCandItrk;
-	sumPt += pt; 
-	if (verbose) cout << " doaa track included "<<doca<<" "<<pt<<endl;
-      } 
-      else {
+      if (pT->fPlab.DeltaR(pC->fPlab) > coneSize) {
 	if (verbose) cout << " doca track skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+	continue;
       }
+
+      // -- Skip tracks already included above
+      if (pIdx.end() != find(pIdx.begin(), pIdx.end(), trkId))  continue;
+      if (cIdx.end() != find(cIdx.begin(), cIdx.end(), trkId))  continue;
+
+      ++fCandI1trk;
+      sumPt += pt; 
+      if (verbose) cout << " doca track included "<<doca<<" "<<pt<<endl;
 
     } // for loop over tracks
   } // end if 
+
+  fCandI2trk = fCandI0trk + fCandI1trk;
 
   iso = candPt/(candPt + sumPt); 
 
@@ -1399,107 +1742,6 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, double
 
   return iso; 
 }
-
-
-
-// ----------------------------------------------------------------------
-double candAna::isoWithDOCA(TAnaCand *pC, float docaCut, double r, double ptmin) {
-  double ptCut=ptmin, coneSize=r;
-  bool verbose=false;
-  
-  double iso(-1.), pt(0.), sumPt(0.), candPt(0.); 
-  TAnaTrack *pT; 
-  vector<int> cIdx, pIdx; 
-  int pvIdx = pC->fPvIdx;
-  
-  fCandItrk = 0; 
-  
-  for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
-    pT = fpEvt->getSigTrack(i); 
-    cIdx.push_back(pT->fIndex); 
-    if (verbose) {
-      int tIdx = fpEvt->getRecTrack(pT->fIndex)->fPvIdx;
-      cout << "Signal track " << pT->fIndex << endl;
-      if (pvIdx != tIdx) {
-	cout << "    pointing to PV " << tIdx << " instead of " << pvIdx << endl;
-      }
-    }
-  }
-  
-  candPt = pC->fPlab.Perp(); 
-  
-  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
-    if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  continue;
-    pT = fpEvt->getRecTrack(i); 
-    if (pvIdx != pT->fPvIdx) {
-      //      if (verbose) cout << " track " << i << " skipped because of PV index mismatch" << endl;
-      continue;
-    }
-    pIdx.push_back(i); 
-    pt = pT->fPlab.Perp(); 
-    if (pt < ptCut) {
-      //      if (verbose) cout << " track " << i << " skipped because of pt = " << pt << endl;
-      continue;
-    }
-    if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
-      ++fCandItrk;
-      sumPt += pt; 
-      if (verbose) 
-	cout << "track " << i 
-	     << " with pT = " << pT->fPlab.Perp()
-	     << " eta = " << pT->fPlab.Eta()
-	     << " dR = " << pT->fPlab.DeltaR(pC->fPlab)
-	     << " pointing at PV " << pT->fPvIdx 
-	     << endl;
-    } 
-    else {
-      //      if (verbose) cout << " track " << i << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
-    }
-  }
-  
-  
-  
-  // Now consider ALL the DOCA tracks
-  int nsize = pC->fNstTracks.size(); 
-  if (nsize>0) {
-    for(int i = 0; i<nsize;++i) {
-      int trkId = pC->fNstTracks[i].first;
-      double doca = pC->fNstTracks[i].second.first;
-      //      double docaE = pC->fNstTracks[i].second.second;
-      
-      if (pIdx.end() != find(pIdx.begin(), pIdx.end(), trkId))  continue; // skip tracks already included above
-      if (cIdx.end() != find(cIdx.begin(), cIdx.end(), trkId))  continue;
-      if(doca > docaCut) continue; // check doca cut
-   
-      pT = fpEvt->getRecTrack(trkId);
-
-      pt = pT->fPlab.Perp();  // cut on track pt
-      if (pt < ptCut) {
-	//	if (verbose) cout << " close track " << i << " skipped because of pt = " << pt << endl;
-	continue;
-      }
-
-      if (pT->fPlab.DeltaR(pC->fPlab) < 99.) {
-	++fCandItrk;
-	sumPt += pt; 
-	if (verbose) cout << "close track " << i 
-			  << " with pT = " << pT->fPlab.Perp()
-			  << " eta = " << pT->fPlab.Eta()
-			  << " pointing at PV " << pT->fPvIdx 
-			  << endl;
-      } 
-      else {
-	//	if (verbose) cout << " close track " << i << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
-      }
-
-    } // for loop over tracks
-  } // end if 
-
-  iso = candPt/(candPt + sumPt); 
-
-  return iso; 
-}
-
  
 // ----------------------------------------------------------------------
 double candAna::constrainedMass() {
@@ -1568,3 +1810,198 @@ void candAna::runRange() {
   } 
 
 }
+
+
+// ----------------------------------------------------------------------
+void candAna::isolationStudy(double doca) {
+  // r = 0.3
+  double iso = isoClassicWithDOCA(fpCand, doca, 0.3, 0.3);
+  fIsoR03Pt03.iso       = iso; 
+  fIsoR03Pt03.pvTracks  = fCandI0trk; 
+  fIsoR03Pt03.clTracks  = fCandI1trk; 
+  fIsoR03Pt03.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.3, 0.5);
+  fIsoR03Pt05.iso       = iso; 
+  fIsoR03Pt05.pvTracks  = fCandI0trk; 
+  fIsoR03Pt05.clTracks  = fCandI1trk; 
+  fIsoR03Pt05.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.3, 0.7);
+  fIsoR03Pt07.iso       = iso; 
+  fIsoR03Pt07.pvTracks  = fCandI0trk; 
+  fIsoR03Pt07.clTracks  = fCandI1trk; 
+  fIsoR03Pt07.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.3, 0.9);
+  fIsoR03Pt09.iso       = iso; 
+  fIsoR03Pt09.pvTracks  = fCandI0trk; 
+  fIsoR03Pt09.clTracks  = fCandI1trk; 
+  fIsoR03Pt09.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.3, 1.1);
+  fIsoR03Pt11.iso       = iso; 
+  fIsoR03Pt11.pvTracks  = fCandI0trk; 
+  fIsoR03Pt11.clTracks  = fCandI1trk; 
+  fIsoR03Pt11.Tracks    = fCandI2trk; 
+
+  // r = 0.5
+  iso = isoClassicWithDOCA(fpCand, doca, 0.5, 0.3);
+  fIsoR05Pt03.iso       = iso; 
+  fIsoR05Pt03.pvTracks  = fCandI0trk; 
+  fIsoR05Pt03.clTracks  = fCandI1trk; 
+  fIsoR05Pt03.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.5, 0.5);
+  fIsoR05Pt05.iso       = iso; 
+  fIsoR05Pt05.pvTracks  = fCandI0trk; 
+  fIsoR05Pt05.clTracks  = fCandI1trk; 
+  fIsoR05Pt05.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.5, 0.7);
+  fIsoR05Pt07.iso       = iso; 
+  fIsoR05Pt07.pvTracks  = fCandI0trk; 
+  fIsoR05Pt07.clTracks  = fCandI1trk; 
+  fIsoR05Pt07.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.5, 0.9);
+  fIsoR05Pt09.iso       = iso; 
+  fIsoR05Pt09.pvTracks  = fCandI0trk; 
+  fIsoR05Pt09.clTracks  = fCandI1trk; 
+  fIsoR05Pt09.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.5, 1.1);
+  fIsoR05Pt11.iso       = iso; 
+  fIsoR05Pt11.pvTracks  = fCandI0trk; 
+  fIsoR05Pt11.clTracks  = fCandI1trk; 
+  fIsoR05Pt11.Tracks    = fCandI2trk; 
+
+
+  // r = 0.7
+  iso = isoClassicWithDOCA(fpCand, doca, 0.7, 0.3);
+  fIsoR07Pt03.iso       = iso; 
+  fIsoR07Pt03.pvTracks  = fCandI0trk; 
+  fIsoR07Pt03.clTracks  = fCandI1trk; 
+  fIsoR07Pt03.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.7, 0.5);
+  fIsoR07Pt05.iso       = iso; 
+  fIsoR07Pt05.pvTracks  = fCandI0trk; 
+  fIsoR07Pt05.clTracks  = fCandI1trk; 
+  fIsoR07Pt05.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.7, 0.7);
+  fIsoR07Pt07.iso       = iso; 
+  fIsoR07Pt07.pvTracks  = fCandI0trk; 
+  fIsoR07Pt07.clTracks  = fCandI1trk; 
+  fIsoR07Pt07.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.7, 0.9);
+  fIsoR07Pt09.iso       = iso; 
+  fIsoR07Pt09.pvTracks  = fCandI0trk; 
+  fIsoR07Pt09.clTracks  = fCandI1trk; 
+  fIsoR07Pt09.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.7, 1.1);
+  fIsoR07Pt11.iso       = iso; 
+  fIsoR07Pt11.pvTracks  = fCandI0trk; 
+  fIsoR07Pt11.clTracks  = fCandI1trk; 
+  fIsoR07Pt11.Tracks    = fCandI2trk; 
+
+  // r = 0.9
+  iso = isoClassicWithDOCA(fpCand, doca, 0.9, 0.3);
+  fIsoR09Pt03.iso       = iso; 
+  fIsoR09Pt03.pvTracks  = fCandI0trk; 
+  fIsoR09Pt03.clTracks  = fCandI1trk; 
+  fIsoR09Pt03.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.9, 0.5);
+  fIsoR09Pt05.iso       = iso; 
+  fIsoR09Pt05.pvTracks  = fCandI0trk; 
+  fIsoR09Pt05.clTracks  = fCandI1trk; 
+  fIsoR09Pt05.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.9, 0.7);
+  fIsoR09Pt07.iso       = iso; 
+  fIsoR09Pt07.pvTracks  = fCandI0trk; 
+  fIsoR09Pt07.clTracks  = fCandI1trk; 
+  fIsoR09Pt07.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.9, 0.9);
+  fIsoR09Pt09.iso       = iso; 
+  fIsoR09Pt09.pvTracks  = fCandI0trk; 
+  fIsoR09Pt09.clTracks  = fCandI1trk; 
+  fIsoR09Pt09.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 0.9, 1.1);
+  fIsoR09Pt11.iso       = iso; 
+  fIsoR09Pt11.pvTracks  = fCandI0trk; 
+  fIsoR09Pt11.clTracks  = fCandI1trk; 
+  fIsoR09Pt11.Tracks    = fCandI2trk; 
+
+
+  // r = 1.0
+  iso = isoClassicWithDOCA(fpCand, doca, 1.1, 0.3);
+  fIsoR10Pt03.iso       = iso; 
+  fIsoR10Pt03.pvTracks  = fCandI0trk; 
+  fIsoR10Pt03.clTracks  = fCandI1trk; 
+  fIsoR10Pt03.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 1.1, 0.5);
+  fIsoR10Pt05.iso       = iso; 
+  fIsoR10Pt05.pvTracks  = fCandI0trk; 
+  fIsoR10Pt05.clTracks  = fCandI1trk; 
+  fIsoR10Pt05.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 1.1, 0.7);
+  fIsoR10Pt07.iso       = iso; 
+  fIsoR10Pt07.pvTracks  = fCandI0trk; 
+  fIsoR10Pt07.clTracks  = fCandI1trk; 
+  fIsoR10Pt07.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 1.1, 0.9);
+  fIsoR10Pt09.iso       = iso; 
+  fIsoR10Pt09.pvTracks  = fCandI0trk; 
+  fIsoR10Pt09.clTracks  = fCandI1trk; 
+  fIsoR10Pt09.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 1.1, 1.1);
+  fIsoR10Pt11.iso       = iso; 
+  fIsoR10Pt11.pvTracks  = fCandI0trk; 
+  fIsoR10Pt11.clTracks  = fCandI1trk; 
+  fIsoR10Pt11.Tracks    = fCandI2trk; 
+
+
+  // r = 1.1
+  iso = isoClassicWithDOCA(fpCand, doca, 1.1, 0.3);
+  fIsoR11Pt03.iso       = iso; 
+  fIsoR11Pt03.pvTracks  = fCandI0trk; 
+  fIsoR11Pt03.clTracks  = fCandI1trk; 
+  fIsoR11Pt03.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 1.1, 0.5);
+  fIsoR11Pt05.iso       = iso; 
+  fIsoR11Pt05.pvTracks  = fCandI0trk; 
+  fIsoR11Pt05.clTracks  = fCandI1trk; 
+  fIsoR11Pt05.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 1.1, 0.7);
+  fIsoR11Pt07.iso       = iso; 
+  fIsoR11Pt07.pvTracks  = fCandI0trk; 
+  fIsoR11Pt07.clTracks  = fCandI1trk; 
+  fIsoR11Pt07.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 1.1, 0.9);
+  fIsoR11Pt09.iso       = iso; 
+  fIsoR11Pt09.pvTracks  = fCandI0trk; 
+  fIsoR11Pt09.clTracks  = fCandI1trk; 
+  fIsoR11Pt09.Tracks    = fCandI2trk; 
+
+  iso = isoClassicWithDOCA(fpCand, doca, 1.1, 1.1);
+  fIsoR11Pt11.iso       = iso; 
+  fIsoR11Pt11.pvTracks  = fCandI0trk; 
+  fIsoR11Pt11.clTracks  = fCandI1trk; 
+  fIsoR11Pt11.Tracks    = fCandI2trk; 
+
+
+ }

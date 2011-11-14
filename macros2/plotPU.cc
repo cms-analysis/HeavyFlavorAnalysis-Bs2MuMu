@@ -23,20 +23,25 @@ plotPU::~plotPU() {
 // ----------------------------------------------------------------------
 void plotPU::makeAll(int channels) {
   
+  fDoPrint = true; 
   string candName("candAnaBu2JpsiK"); 
-  cd("NoData");  
+  fFile = "NoData"; 
+  cd(fFile.c_str());  
   effVsNpv("iso",      0.75, "#epsilon(I>0.75)",           "A", candName.c_str(), "Ao"); 
   effVsNpv("chi2dof", -1.60, "#epsilon(#chi^{2}/dof<1.6)", "A", candName.c_str(), "Ao"); 
   effVsNpv("pchi2dof", 0.10, "#epsilon(prob>0.10)",        "A", candName.c_str(), "Ao"); 
-  effVsNpv("fls3d",    15.0, "#epsilon(l/#sigma>15)",      "A", candName.c_str(), "Ao"); 
+  effVsNpv("fls3d",    15.0, "#epsilon(l_{3D}/#sigma>15)", "A", candName.c_str(), "Ao"); 
+  effVsNpv("flsxy",    15.0, "#epsilon(l_{xy}/#sigma>15)", "A", candName.c_str(), "Ao"); 
   effVsNpv("docatrk", 0.015, "#epsilon(d^{0}_{ca}>0.015)", "A", candName.c_str(), "Ao"); 
 
   candName = "candAnaBs2JpsiPhi"; 
-  cd("CsData");  
+  fFile = "CsData"; 
+  cd(fFile.c_str());  
   effVsNpv("iso",      0.75, "#epsilon(I>0.75)",           "A", candName.c_str(), "Ao"); 
   effVsNpv("chi2dof", -1.60, "#epsilon(#chi^{2}/dof<1.6)", "A", candName.c_str(), "Ao"); 
   effVsNpv("pchi2dof", 0.10, "#epsilon(prob>0.10)",        "A", candName.c_str(), "Ao"); 
-  effVsNpv("fls3d",    15.0, "#epsilon(l/#sigma>15)",      "A", candName.c_str(), "Ao"); 
+  effVsNpv("fls3d",    15.0, "#epsilon(l_{3D}/#sigma>15)", "A", candName.c_str(), "Ao"); 
+  effVsNpv("flsxy",    15.0, "#epsilon(l_{xy}/#sigma>15)", "A", candName.c_str(), "Ao"); 
   effVsNpv("docatrk", 0.015, "#epsilon(d^{0}_{ca}>0.015)", "A", candName.c_str(), "Ao"); 
   
 
@@ -81,7 +86,8 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
     h[i]->Draw("hist");
   }
 
-  if (fDoPrint)  c0->SaveAs(Form("%s/effVsNpv0-%s-%s-%s-0_%d.pdf", fDirectory.c_str(), dir, chan, var, static_cast<int>(100.*cut)));
+  if (fDoPrint)  
+    c0->SaveAs(Form("%s/effVsNpv0-%s-%s-%s-%s-0_%d.pdf", fDirectory.c_str(), fFile.c_str(), dir, chan, var, static_cast<int>(100.*cut)));
 
 
   TH1D *heff = new TH1D("heff", "", 15, 0., 30.);
@@ -135,6 +141,7 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
 
   //  stamp(0.2, "CMS, 1.14 fb^{-1}", 0.7, "#sqrt{s} = 7 TeV"); 
   
-  if (fDoPrint)  c0->SaveAs(Form("%s/effVsNpv-%s-%s-%s-0_%d.pdf", fDirectory.c_str(), dir, chan, var, static_cast<int>(100.*cut)));
+  if (fDoPrint)  
+    c0->SaveAs(Form("%s/effVsNpv-%s-%s-%s-%s-0_%d.pdf", fDirectory.c_str(), fFile.c_str(), dir, chan, var, static_cast<int>(100.*cut)));
 
 }

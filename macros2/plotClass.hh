@@ -78,13 +78,14 @@ public:
   std::map<std::string, std::string> fName; 
 
   int fShow; 
-  TString fFile; 
+  std::string fFile; 
 
   // -- output histograms and numbers
   TFile *fHistFile; 
   ofstream fOUT, fTEX; 
 
   bool fDoPrint; 
+  int fVerbose; 
 
   // -- cuts 
   std::vector<cuts*> fCuts; 

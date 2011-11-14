@@ -1,6 +1,6 @@
-TYPE          1000082
+TYPE          1000086
 TRUTHCAND         531
-TRIGRANGE    NOTRIGGER
+TRIGRANGE   NOTRIGGER
 # -- boxes
 +input cuts/boxes.cuts
 # -- tracks

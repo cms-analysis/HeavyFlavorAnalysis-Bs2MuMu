@@ -11,7 +11,7 @@ public:
   ~plotOverlays();
 
 
-  void makeAll(int channels = 3);
+  void makeAll(int verbose = 0);
   
   ClassDef(plotOverlays,1) //Testing plotOverlays
 
@@ -23,6 +23,7 @@ public:
 
   int fMode;
 
+  double fPreco; 
 };
 
 

@@ -91,6 +91,7 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
   gStyle->SetHatchesSpacing(2);
 
   fDoPrint = true; // create output
+  fVerbose = 0; 
 
   legg = 0; 
 
