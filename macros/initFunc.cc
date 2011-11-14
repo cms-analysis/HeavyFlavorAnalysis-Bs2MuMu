@@ -264,6 +264,37 @@ initFunc::~initFunc() {
 
 
 // ----------------------------------------------------------------------
+TF1* initFunc::pol0(double lo, double hi) {
+  TF1 *f = new TF1("f1", f_pol0, lo, hi, 1);
+  return f; 
+}
+
+// ----------------------------------------------------------------------
+TF1* initFunc::pol1(double lo, double hi) {
+  TF1 *f = new TF1("f1", f_pol1, lo, hi, 2);
+  return f; 
+}
+
+// ----------------------------------------------------------------------
+TF1* initFunc::pol1Err(double lo, double hi) {
+  TF1 *f = new TF1("f1", f_pol1_err, lo, hi, 6);
+  return f; 
+}
+
+// ----------------------------------------------------------------------
+TF1* initFunc::expo(double lo, double hi) {
+  TF1 *f = new TF1("f1", f_expo, lo, hi, 2);
+  return f; 
+}
+
+// ----------------------------------------------------------------------
+TF1* initFunc::expoErr(double lo, double hi) {
+  TF1 *f = new TF1("f1", f_expo_err, lo, hi, 6);
+  return f; 
+}
+
+
+// ----------------------------------------------------------------------
 TF1* initFunc::pol1(TH1 *h) {
   if (0 == h) {
     cout << "empty histogram pointer" << endl;
@@ -467,7 +498,7 @@ TF1* initFunc::expoGauss(TH1 *h, double peak, double sigma) {
   f = new TF1("f1_expo_Gauss", f_expo_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 5);
   f->SetParNames("area", "peak", "sigma", "const", "exp"); 			   
   //  f->SetLineColor(kBlue); 
-  f->SetLineWidth(3); 
+  f->SetLineWidth(2); 
 
   int lbin(1), hbin(h->GetNbinsX()); 
   if (fLo < fHi) {
@@ -505,7 +536,7 @@ TF1* initFunc::expoErrGauss(TH1 *h, double peak, double sigma, double preco) {
   f = new TF1("f1_expo_err_Gauss", f_expo_err_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 9);
   f->SetParNames("area", "peak", "sigma", "const", "exp", "err0", "err1", "err2", "err3"); 			   
   //  f->SetLineColor(kBlue); 
-  f->SetLineWidth(3); 
+  f->SetLineWidth(2); 
 
   int lbin(1), hbin(h->GetNbinsX()); 
   if (fLo < fHi) {
@@ -554,7 +585,7 @@ TF1* initFunc::pol1ErrGauss(TH1 *h, double peak, double sigma, double preco) {
   f = new TF1("f1_pol1_err_Gauss", f_pol1_err_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 9);
   f->SetParNames("area", "peak", "sigma", "const", "slope", "err0", "err1", "err2", "err3"); 			   
   //  f->SetLineColor(kBlue); 
-  f->SetLineWidth(3); 
+  f->SetLineWidth(2); 
 
   int lbin(1), hbin(h->GetNbinsX()); 
   if (fLo < fHi) {
@@ -569,8 +600,8 @@ TF1* initFunc::pol1ErrGauss(TH1 *h, double peak, double sigma, double preco) {
   double g0 = (h->Integral(lbin, hbin)*h->GetBinWidth(1) - A);  
 
   double e0(preco),  e0Min(preco-0.01), e0Max(preco+0.01); 
-  double e1(0.07),  e1Min(0.05), e1Max(0.09);
-  double e2(1.112), e2Min(1.0),  e2Max(1.2);
+  double e1(0.07),  e1Min(0.04), e1Max(0.09);
+  double e2(1.112), e2Min(0.900),  e2Max(1.200);
 
   cout << "A: " << A << " g0: " << g0 << " e0: " << e0 << " e1: " << e1 << " e2: " << e2 << " p0: " << p0 << " p1: " << p1 << endl;
 

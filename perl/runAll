@@ -8,6 +8,7 @@
 #            -s {mc,data,signal,norm,cs}  run jobs of a specific sample
 #            -r rootdir                   place where to put output
 #
+# 2011/11/14 added rare backgrounds (again)
 # 2011/10/27 changed to new candAna setup
 # 2011/05/26 realized that same dataset name will lead to problems on identical WN!
 # 2011/05/17 added rare backgrounds
@@ -20,7 +21,7 @@
 # Author    Urs Langenegger <urs.langenegger@psi.ch>
 # ----------------------------------------------------------------------
 use Getopt::Std;
-getopts('Cdhj:q:r:s:t:v:');
+getopts('Cdhj:r:s:t:v:');
 
 my $job = "2011";
 if ($opt_j) {
@@ -58,6 +59,25 @@ if ($opt_v) {
     , "cs Bs2JpsiPhi MC 3e33"  
     => "-m,bmm2Reader.3e33-Bs2JpsiPhi,cbmm-$version-3e33-Bs2JpsiPhi,$version-3e33-Bs2JpsiPhi.root"
     #
+    , "Bs2KMuNu rare MC"  
+    => "-m,bmm2Reader.2e33-Bs2KMuNu,cbmm-$version-2e33-Bs2KMuNu,$version-2e33-Bs2KMuNu.root"
+    , "Bd2PiMuNu rare MC"  
+    => "-m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-$version-2e33-Bd2PiMuNu,$version-2e33-Bd2PiMuNu.root"
+    , "Lb2PMuNu rare MC"  
+    => "-m,bmm2Reader.2e33-Lb2PMuNu,cbmm-$version-2e33-Lb2PMuNu,$version-2e33-Lb2PMuNu.root"
+    , "Bs2KK rare MC"  
+    => "-m,bmm2Reader.2e33-Bs2KK,cbmm-$version-2e33-Bs2KK,$version-2e33-Bs2KK.root"
+    , "Bs2KPi rare MC"  
+    => "-m,bmm2Reader.2e33-Bs2KPi,cbmm-$version-2e33-Bs2KPi,$version-2e33-Bs2KPi.root"
+    , "Bs2PiPi rare MC"  
+    => "-m,bmm2Reader.2e33-Bs2PiPi,cbmm-$version-2e33-Bs2PiPi,$version-2e33-Bs2PiPi.root"
+    , "Bd2KK rare MC"  
+    => "-m,bmm2Reader.2e33-Bd2KK,cbmm-$version-2e33-Bd2KK,$version-2e33-Bd2KK.root"
+    , "Bd2KPi rare MC"  
+    => "-m,bmm2Reader.2e33-Bd2KPi,cbmm-$version-2e33-Bd2KPi,$version-2e33-Bd2KPi.root"
+    , "Bd2PiPi rare MC"  
+    => "-m,bmm2Reader.2e33-Bd2PiPi,cbmm-$version-2e33-Bd2PiPi,$version-2e33-Bd2PiPi.root"
+    #
     , "data 2011"  
     => "-b 1,bmm2Reader.data,cbmm-$version-Run2011*,$version-2011-data.root"
     );
@@ -76,18 +96,6 @@ if ($opt_t) {
 
 my $crash = ""; 
 if ($opt_C) {$crash = "-C";}
-
-my $queue = ""; 
-if (!$opt_q) {
-    if (!$opt_h) {
-	print "-q not set\n";
-	$queue = "-q short.q";
-    } else {
-	# do nothing when merging
-    }
-} else {
-    $queue = "-q $opt_q";
-}
 
 my $srmcmd  = "srmcp -2 --streams_num=1";
 my $dcap    = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
@@ -114,6 +122,7 @@ if ($opt_h) {
 	if ($opt_s =~ /norm/   && !($j =~ /norm/)) {next; }
 	if ($opt_s =~ /data/   && !($j =~ /data/)) {next; }
 	if ($opt_s =~ /mc/     && !($j =~ /MC/)) {next; }
+	if ($opt_s =~ /rare/   && !($j =~ /rare/)) {next; }
 	($options, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
 	
 	$dataset =~ s/-\*//;
@@ -167,6 +176,7 @@ foreach $j (keys %jobs) {
     if ($opt_s =~ /signal/ && !($j =~ /signal/)) {next; }
     if ($opt_s =~ /cs/     && !($j =~ /cs/)) {next; }
     if ($opt_s =~ /mc/     && !($j =~ /MC/)) {next; }
+    if ($opt_s =~ /rare/   && !($j =~ /rare/)) {next; }
 
     if ($j =~ /data/) {
 	$command = "$runCommand -q all.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 

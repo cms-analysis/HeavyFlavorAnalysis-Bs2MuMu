@@ -261,7 +261,7 @@ void candAna::candAnalysis() {
   fMu2BPix      = fpReader->numberOfBPixLayers(p2);
   fMu2BPixL1    = fpReader->numberOfBPixLayer1Hits(p2);
 
-  // -- cut on fMuIndex so that (rare) fake muons can be treated above as real muons
+  // -- cut on fMuIndex so that fake muons (from rare backgrounds) can be treated above as real muons
   if (p1->fMuIndex > -1 && p2->fMuIndex > -1) {
     TVector3 rm1  = fpEvt->getMuon(p1->fMuIndex)->fPositionAtM2;
     TVector3 rm2  = fpEvt->getMuon(p2->fMuIndex)->fPositionAtM2;
@@ -316,7 +316,6 @@ void candAna::candAnalysis() {
   fMu1W8Tr      = pT1->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi)*pT2->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi);
   fMu2W8Tr      = pT1->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi)*pT2->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi);
 
-
   if (fCandTmi > -1) {
     TGenCand *pg2 = fpEvt->getGenCand(p2->fGenIndex);
     fMu2PtGen     = pg2->fP.Perp();
@@ -337,13 +336,16 @@ void candAna::candAnalysis() {
   TAnaVertex sv = fpCand->fVtx;
   // -- this is from the dimuon vertex
   TAnaCand *pD; 
+  TAnaVertex sv2m;
+  bool good2m(false); 
   //  cout << "looking at daughters " << fpCand->fDau1  << " .. " << fpCand->fDau2 << endl;
   for (int id = fpCand->fDau1; id <= fpCand->fDau2; ++id) {
     if (id < 0) break;
     pD = fpEvt->getCand(id); 
     //    cout << "looking at daughter " <<  id << " with type = " << pD->fType << endl;
     if (300443 == pD->fType) {
-      sv = pD->fVtx;
+      sv2m = pD->fVtx;
+      good2m = true; 
       //      cout << "  Found J/psi vertex" << endl;
       break;
     }
@@ -389,6 +391,27 @@ void candAna::candAnalysis() {
   if (TMath::IsNaN(fCandFLS3d)) fCandFLS3d = -1.;
   fCandFLSxy = sv.fDxy/sv.fDxyE; 
   if (TMath::IsNaN(fCandFLSxy)) fCandFLSxy = -1.;
+
+  // -- dimuon vertex version
+  if (good2m) { 
+    f2MChi2  = sv2m.fChi2;
+    f2MDof   = sv2m.fNdof;
+    f2MProb  = sv2m.fProb;
+    f2MFL3d  = sv2m.fD3d;
+    f2MFL3dE = sv2m.fD3dE;
+    f2MFLS3d = sv2m.fD3d/sv2m.fD3dE; 
+    if (TMath::IsNaN(f2MFLS3d)) f2MFLS3d = -1.;
+    f2MFLSxy = sv2m.fDxy/sv2m.fDxyE; 
+    if (TMath::IsNaN(f2MFLSxy)) f2MFLSxy = -1.;
+  } else {
+    f2MChi2  = -1.;
+    f2MDof   = -1;
+    f2MProb  = -1.;
+    f2MFL3d  = -1.;
+    f2MFL3dE = -1.;
+    f2MFLS3d = -1.; 
+    f2MFLSxy = -1.; 
+  }
 
   if (fpCand->fNstTracks.size() == 0) {
     //    cout << "HHHHEEEELLLLPPPP" << endl;
@@ -487,6 +510,15 @@ void candAna::fillCandidateHistograms(int offset) {
   fpLip12[offset]->fill(fCandPvLip12, fCandM); 
   fpLipE12[offset]->fill(fCandPvLipE12, fCandM); 
   fpLipS12[offset]->fill(fCandPvLipS12, fCandM); 
+
+  fp2MChi2[offset]->fill(f2MChi2, fCandM);
+  fp2MChi2Dof[offset]->fill(f2MChi2/f2MDof, fCandM); 
+  fp2MProb[offset]->fill(f2MProb, fCandM);   
+  fp2MFLS3d[offset]->fill(f2MFLS3d, fCandM); 
+  fp2MFL3d[offset]->fill(f2MFL3d, fCandM); 
+  fp2MFL3dE[offset]->fill(f2MFL3dE, fCandM); 
+  fp2MFLSxy[offset]->fill(f2MFLSxy, fCandM); 
+
 
   int ipv = 0; 
   if (fPvN < 30) {
@@ -837,6 +869,14 @@ void candAna::bookHist() {
     fpLip12[i]     = bookDistribution(Form("%slip12", name.c_str()), "ratio l_{z} ", "fGoodDocaTrk", 50, 0., 2.);   
     fpLipE12[i]    = bookDistribution(Form("%slipe12", name.c_str()), "ratio #sigma(l_{z})", "fGoodDocaTrk", 50, 0., 2.);   
     fpLipS12[i]    = bookDistribution(Form("%slips12", name.c_str()), "ratio l_{z}/#sigma(l_{z})", "fGoodDocaTrk", 50, 0., 2.);   
+
+    fp2MChi2[i]    = bookDistribution(Form("%s2mchi2", name.c_str()),  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
+    fp2MChi2Dof[i] = bookDistribution(Form("%s2mchi2dof", name.c_str()),  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
+    fp2MProb[i]    = bookDistribution(Form("%s2mpchi2dof", name.c_str()),  "P(#chi^{2},dof)", "fGoodChi2", 26, 0., 1.04);    
+    fp2MFLS3d[i]   = bookDistribution(Form("%s2mfls3d", name.c_str()), "l_{3D}/#sigma(l_{3D})", "fGoodFLS", 30, 0., 120.);  
+    fp2MFL3d[i]    = bookDistribution(Form("%s2mfl3d", name.c_str()),  "l_{3D} [cm]", "fGoodFLS", 25, 0., 5.);  
+    fp2MFL3dE[i]   = bookDistribution(Form("%s2mfl3de", name.c_str()), "#sigma(l_{3D}) [cm]", "fGoodFLS", 25, 0., 0.5);  
+    fp2MFLSxy[i]   = bookDistribution(Form("%s2mflsxy", name.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 30, 0., 120.);  
 
     if (name == "A_") {
       //      cout << "  booking NPV distributions for " << name << endl;

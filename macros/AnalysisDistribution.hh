@@ -34,7 +34,11 @@ public:
   TH1D*  sbsDistribution(const char *variable, const char *cut); 
   // -- expo + Gauss
   TH1D* sbsDistributionExpoGauss(const char *variable, const char *cut);
-
+  // -- expo + error function + Gauss
+  TH1D* sbsDistributionExpoErrGauss(const char *variable, const char *cut, double preco=5.1);
+  // -- pol1 + error function + Gauss
+  TH1D* sbsDistributionPol1ErrGauss(const char *variable, const char *cut, double preco=5.1);
+  
   void   setPreselCut(bool *p) {fpPreselCutTrue = p;} 
 
   std::string fCutName; 

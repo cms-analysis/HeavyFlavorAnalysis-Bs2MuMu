@@ -21,34 +21,6 @@ using std::string;
 using std::cout;
 using std::endl;
 
-
-// // ----------------------------------------------------------------------
-// // expo and Gauss 
-// double f_epaG(double *x, double *par) {
-//   //   par[0] = area of gaussian
-//   //   par[1] = mean of gaussian
-//   //   par[2] = sigma of gaussian
-//   //   par[3] = par 0 of expo
-//   //   par[4] = par 1 of expo
-//   //   par[5] = par 0 of pol1
-//   //   par[6] = par 1 of pol1
-//   return  (f_p1(x, &par[5]) + f_expo(x, &par[3]) + f_Gauss(x, &par[0]));
-// }
-
-// // ----------------------------------------------------------------------
-// // expo and double Gauss 
-// double f_ea2G(double *x, double *par) {
-//   // par[0] -> area
-//   // par[1] -> mean
-//   // par[2] -> sigma
-//   // par[3] -> fraction in second gaussian
-//   // par[4] -> mean
-//   // par[5] -> sigma
-//   // par[6] = par 0 of expo
-//   // par[7] = par 1 of expo
-//   return  (f_expo(x, &par[6]) + f_2G(x, &par[0]));
-// }
-
 // ----------------------------------------------------------------------
 AnalysisDistribution::AnalysisDistribution(const char *name, const char *title, int nbins, double lo, double hi) {
   int NBINS(120);
@@ -103,16 +75,6 @@ AnalysisDistribution::AnalysisDistribution(const char *name, const char *title, 
   hMassBGL   = new TH1D(Form("%sMassBGL", name), Form("%sMassBGL", name), NBINS, fMassLo, fMassHi); 
   hMassSG    = new TH1D(Form("%sMassSG", name), Form("%sMassSG", name), NBINS, fMassLo, fMassHi);  
   hMassBGH   = new TH1D(Form("%sMassBGH", name), Form("%sMassGBH", name), NBINS, fMassLo, fMassHi); 
-
-
-//   fF0 = new TF1("ADf0", f_p1, 0., 7., 2);         fF0->SetParNames("Offset", "Slope"); 			   
-//   fF1 = new TF1("ADf1", f_expo, 0., 7., 2);       fF1->SetParNames("Norm", "Exp"); 			   
-
-//   fP1  = new TF1("ADp1", f_p1, 0., 7., 2);        fP1->SetParNames("Offset", "Slope"); 			   
-//   fPG1 = new TF1("ADpg1", f_p1aG, 0., 7., 5);     fPG1->SetParNames("Area", "Peak", "Sigma", "Offset", "Slope"); 
-//   fEG1 = new TF1("ADeg1", f_eaG, 0., 7., 5);      fEG1->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp"); 
-//   fEG2 = new TF1("ADeg2", f_ea2G, 0., 7., 8);     fEG2->SetParNames("Area", "Peak", "Sigma", "Fraction2", "Peak2", "Sigma2", "Norm", "Exp"); 
-//   fEPG = new TF1("ADepg", f_epaG, 0., 7., 7);     fEPG->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp", "Offset", "Slope");             
   
 }
 
@@ -158,16 +120,7 @@ AnalysisDistribution::AnalysisDistribution(const char *name, double SigLo, doubl
   fBg1Hi = Bg1Hi; 
   fBg2Lo = Bg2Lo;
   fBg2Hi = Bg2Hi;
-
-//   fF0 = new TF1("ADf0", f_p1, 0., 7., 2);         fF0->SetParNames("Offset", "Slope"); 			   
-//   fF1 = new TF1("ADf1", f_expo, 0., 7., 2);  	  fF1->SetParNames("Norm", "Exp"); 			   
-
-//   fP1  = new TF1("ADp1", f_p1, 0., 7., 2);        fP1->SetParNames("Offset", "Slope"); 			   				    
-//   fPG1 = new TF1("ADpg1", f_p1aG, 0., 7., 5);     fPG1->SetParNames("Area", "Peak", "Sigma", "Offset", "Slope"); 			    
-//   fEG1 = new TF1("ADeg1", f_eaG, 0., 7., 5);      fEG1->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp"); 				    
-//   fEG2 = new TF1("ADeg2", f_ea2G, 0., 7., 8);     fEG2->SetParNames("Area", "Peak", "Sigma", "Fraction2", "Peak2", "Sigma2", "Norm", "Exp");
-//   fEPG = new TF1("ADepg", f_epaG, 0., 7., 7);     fEPG->SetParNames("Area", "Peak", "Sigma", "Norm", "Exp", "Offset", "Slope");             
-  
+ 
 }
 
 
@@ -310,7 +263,238 @@ double AnalysisDistribution::fitMass(TH1 *h1, double &error, int mode) {
 
 
 // ----------------------------------------------------------------------  
+TH1D* AnalysisDistribution::sbsDistributionExpoErrGauss(const char *variable, const char *cut, double preco) {
+
+  //  cout << "fVerbose: " << fVerbose << endl;
+
+  TCanvas *c0;
+  if (fVerbose > 0) {
+    gStyle->SetOptTitle(1);
+    c0 = (TCanvas*)gROOT->FindObject("c1"); 
+    if (c0) {
+      delete c0; 
+    }
+    c0 = new TCanvas("c1"); 
+    c0->Clear(); 
+    c0->Divide(2,3);
+  }
+
+  // -- this is not really necessary, could use the class members instead
+  TH1D *hm = (TH1D*)gDirectory->Get(Form("%sMass%s", variable, cut));
+  TH1D *h0 = (TH1D*)gDirectory->Get(Form("%s%s0", variable, cut));
+  TH1D *h1 = (TH1D*)gDirectory->Get(Form("%s%s1", variable, cut));
+  if (0 == hm) {
+    cout << "no histogram " << Form("%sMass%s", variable, cut) << " found in gDirectory = "; gDirectory->pwd();
+    return 0;
+  }
+
+
+  if (fVerbose > 0) {
+    c0->cd(1);
+    h0->Draw();
+    c0->cd(2);
+    h1->Draw();
+    c0->cd(3); 
+    if (hMassBGL) {
+      hMassBGL->SetMinimum(0.);
+      hMassBGL->SetMaximum(1.);
+      hMassBGL->Draw();
+      hMassBGH->Draw("same");
+      hMassSG->Draw("same");
+    } else {
+      cout << "%%%% > Did not find hMassBGL for " << variable << endl;
+    }
+    c0->cd(4); 
+  }
+
+  double l0   = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
+  double l1   = hMassBGL->GetBinLowEdge(hMassBGL->FindLastBinAbove(1.)+1);
+  double s0   = hMassSG->GetBinLowEdge(hMassSG->FindFirstBinAbove(1.));
+  double s1   = hMassSG->GetBinLowEdge(hMassSG->FindLastBinAbove(1.)+1);
+  double u0   = hMassBGH->GetBinLowEdge(hMassBGH->FindFirstBinAbove(1.));
+  double u1   = hMassBGH->GetBinLowEdge(hMassBGH->FindLastBinAbove(1.)+1);
+
+  // -- fit mass distribution 
+  fMassPeak = 0.5*(s0+s1);
+  fMassSigma= 0.2*(s1-s0);
+  fMassLo   = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
+  fMassHi   = hMassBGH->GetBinLowEdge(hMassBGH->FindLastBinAbove(1.)+1);
+  fpIF->fLo = fMassLo;
+  fpIF->fHi = fMassHi;
+
+  //  cout << "fMass: " << fMassLo << " .. " << fMassHi << ", fMassPeak = " << fMassPeak << ", fMassSigma = " << fMassSigma << endl;
+
+  double peak  = (fMassPeak>0.?fMassPeak:5.3);
+  double sigma = (fMassSigma>0.?fMassSigma:0.04);
+  TF1 *f1 = fpIF->expoErrGauss(hm, peak, sigma, preco);
+  hm->SetMinimum(0.);
+
+  cout << "====> PRECO: " << preco << " in the function: " << f1->GetParameter(5) << endl;
+
+  TFitResultPtr r;
+  r = hm->Fit(f1, "lsq", "", fMassLo, fMassHi); 
+  hm->DrawCopy();
+
+  TF1 *fpol1 = (TF1*)gROOT->FindObject("fpol1"); 
+  if (fpol1) delete fpol1; 
+  fpol1 = fpIF->expoErr(fMassLo, fMassHi); 
+  fpol1->SetParameters(f1->GetParameters()); 
+  if (fVerbose > 0) {
+    c0->cd(5); 
+    fpol1->Draw();
+  }
+
+  double bgl = fpol1->Integral(l0, l1); 
+  double sg  = fpol1->Integral(s0, s1); 
+  double bgh = fpol1->Integral(u0, u1); 
+
+  if (fVerbose > 0) {
+    cout << "bgl (" << l0 << " .. " << l1 << ") = " << bgl << endl;
+    cout << "sg  (" << s0 << " .. " << s1 << ") = " << sg << endl;
+    cout << "bgh (" << u0 << " .. " << u1 << ") = " << bgh << endl;
+  }
+
+  TH1D *h = (TH1D*)h0->Clone(Form("sbs_%s%s", variable, cut)); 
+  h->Sumw2(); 
+  h->Add(h0, h1, 1., -sg/(bgl+bgh)); 
+  
+  if (fVerbose > 0) {
+    c0->cd(6); 
+    h->Draw();
+    TString fname = gFile->GetName();
+    fname.Remove(0, fname.Last('/')+1); 
+    fname.ReplaceAll(".root", ""); 
+    cout << "=========> " 
+	 << Form("%s/eg-sbs-control-%s-%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), gDirectory->GetName(), variable, cut) 
+	 << endl;
+    c0->SaveAs(Form("%s/eg-sbs-control-%s-%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), gDirectory->GetName(), variable, cut));
+  }
+
+  return h; 
+}
+
+
+// ----------------------------------------------------------------------  
+TH1D* AnalysisDistribution::sbsDistributionPol1ErrGauss(const char *variable, const char *cut, double preco) {
+  
+  //  cout << "fVerbose: " << fVerbose << endl;
+
+  TCanvas *c0;
+  if (fVerbose > 0) {
+    gStyle->SetOptTitle(1);
+    c0 = (TCanvas*)gROOT->FindObject("c1"); 
+    if (c0) {
+      delete c0; 
+    }
+    c0 = new TCanvas("c1"); 
+    c0->Clear(); 
+    c0->Divide(2,3);
+  }
+
+  // -- this is not really necessary, could use the class members instead
+  TH1D *hm = (TH1D*)gDirectory->Get(Form("%sMass%s", variable, cut));
+  TH1D *h0 = (TH1D*)gDirectory->Get(Form("%s%s0", variable, cut));
+  TH1D *h1 = (TH1D*)gDirectory->Get(Form("%s%s1", variable, cut));
+  if (0 == hm) {
+    cout << "no histogram " << Form("%sMass%s", variable, cut) << " found in gDirectory = "; gDirectory->pwd();
+    return 0;
+  }
+
+
+  if (fVerbose > 0) {
+    c0->cd(1);
+    h0->Draw();
+    c0->cd(2);
+    h1->Draw();
+    c0->cd(3); 
+    if (hMassBGL) {
+      hMassBGL->SetMinimum(0.);
+      hMassBGL->SetMaximum(1.);
+      hMassBGL->Draw();
+      hMassBGH->Draw("same");
+      hMassSG->Draw("same");
+    } else {
+      cout << "%%%% > Did not find hMassBGL for " << variable << endl;
+    }
+    c0->cd(4); 
+  }
+
+  double l0   = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
+  double l1   = hMassBGL->GetBinLowEdge(hMassBGL->FindLastBinAbove(1.)+1);
+  double s0   = hMassSG->GetBinLowEdge(hMassSG->FindFirstBinAbove(1.));
+  double s1   = hMassSG->GetBinLowEdge(hMassSG->FindLastBinAbove(1.)+1);
+  double u0   = hMassBGH->GetBinLowEdge(hMassBGH->FindFirstBinAbove(1.));
+  double u1   = hMassBGH->GetBinLowEdge(hMassBGH->FindLastBinAbove(1.)+1);
+
+  // -- fit mass distribution 
+  fMassPeak = 0.5*(s0+s1);
+  fMassSigma= 0.2*(s1-s0);
+  fMassLo   = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
+  fMassHi   = hMassBGH->GetBinLowEdge(hMassBGH->FindLastBinAbove(1.)+1);
+  fpIF->fLo = fMassLo;
+  fpIF->fHi = fMassHi;
+
+  //  cout << "fMass: " << fMassLo << " .. " << fMassHi << ", fMassPeak = " << fMassPeak << ", fMassSigma = " << fMassSigma << endl;
+
+  double peak  = (fMassPeak>0.?fMassPeak:5.3);
+  double sigma = (fMassSigma>0.?fMassSigma:0.04);
+  TF1 *f1 = fpIF->pol1ErrGauss(hm, peak, sigma, preco); 
+  hm->SetMinimum(0.);
+
+  cout << "====> PRECO: " << preco << " in the function: " << f1->GetParameter(5);
+
+  TFitResultPtr r;
+  r = hm->Fit(f1, "lsq", "", fMassLo, fMassHi); 
+  hm->DrawCopy();
+  
+  cout << " and after the fit: " << f1->GetParameter(5) 
+       << " .. " << f1->GetParameter(6) 
+       << " .. " << f1->GetParameter(7) 
+       << endl;
+
+  TF1 *fpol1 = (TF1*)gROOT->FindObject("fpol1"); 
+  if (fpol1) delete fpol1; 
+  fpol1 = fpIF->pol1Err(fMassLo, fMassHi); 
+  fpol1->SetParameters(f1->GetParameters()); 
+  if (fVerbose > 0) {
+    c0->cd(5); 
+    fpol1->Draw();
+  }
+
+  double bgl = fpol1->Integral(l0, l1); 
+  double sg  = fpol1->Integral(s0, s1); 
+  double bgh = fpol1->Integral(u0, u1); 
+
+  if (fVerbose > 0) {
+    cout << "bgl (" << l0 << " .. " << l1 << ") = " << bgl << endl;
+    cout << "sg  (" << s0 << " .. " << s1 << ") = " << sg << endl;
+    cout << "bgh (" << u0 << " .. " << u1 << ") = " << bgh << endl;
+  }
+
+  TH1D *h = (TH1D*)h0->Clone(Form("sbs_%s%s", variable, cut)); 
+  h->Sumw2(); 
+  h->Add(h0, h1, 1., -sg/(bgl+bgh)); 
+  
+  if (fVerbose > 0) {
+    c0->cd(6); 
+    h->Draw();
+    TString fname = gFile->GetName();
+    fname.Remove(0, fname.Last('/')+1); 
+    fname.ReplaceAll(".root", ""); 
+    cout << "=========> " 
+	 << Form("%s/eg-sbs-control-%s-%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), gDirectory->GetName(), variable, cut) 
+	 << endl;
+    c0->SaveAs(Form("%s/eg-sbs-control-%s-%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), gDirectory->GetName(), variable, cut));
+  }
+
+  return h; 
+}
+
+
+// ----------------------------------------------------------------------  
 TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const char *cut) {
+
+  //  cout << "fVerbose: " << fVerbose << endl;
 
   TCanvas *c0;
   if (fVerbose > 0) {
@@ -382,7 +566,7 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
 
   TF1 *fpol1 = (TF1*)gROOT->FindObject("fpol1"); 
   if (fpol1) delete fpol1; 
-  fpol1 = new TF1("fpol1", f_expo, fMassLo, fMassHi, 2);
+  fpol1 = fpIF->expo(fMassLo, fMassHi);
   fpol1->SetParameters(f1->GetParameter(3), f1->GetParameter(4)); 
   if (fVerbose > 0) {
     c0->cd(5); 
@@ -421,6 +605,8 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
 
 // ----------------------------------------------------------------------  
 TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cut) {
+
+  //  cout << "fVerbose: " << fVerbose << endl;
 
   TCanvas *c0;
   if (fVerbose > 0) {
@@ -491,7 +677,7 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
   // -- compute integrals
   TF1 *fpol1 = (TF1*)gROOT->FindObject("fpol1"); 
   if (fpol1) delete fpol1; 
-  fpol1 = new TF1("fpol1", f_p1, fMassLo, fMassHi, 2);
+  fpol1 = fpIF->pol1(fMassLo, fMassHi);
 
   fpol1->SetParameters(f1->GetParameter(3), f1->GetParameter(4)); 
   if (fVerbose > 0) {

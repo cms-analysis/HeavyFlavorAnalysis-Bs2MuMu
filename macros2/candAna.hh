@@ -142,7 +142,9 @@ public:
   double  fPvX, fPvY, fPvZ, fPvNtrk; 
   int     fPvN;
   double  fCandPt, fCandEta, fCandPhi, fCandM, fCandM2, fCandW8Tr, fCandW8Mu; 
-  double  fCandCosA, fCandA, fCandChi2, fCandDof, fCandProb, fCandFL3d, fCandFL3dE, fCandFLS3d, fCandFLSxy; 
+  double  fCandCosA, fCandA;
+  double  fCandChi2, fCandDof, fCandProb, fCandFL3d, fCandFL3dE, fCandFLS3d, fCandFLSxy; 
+  double  f2MChi2,   f2MDof,   f2MProb,   f2MFL3d,   f2MFL3dE,   f2MFLS3d,   f2MFLSxy; 
   double  fCandIso;
   int     fCandIsoTrk, fCandCloseTrk, fCandPvTrk, fCandI0trk, fCandI1trk, fCandI2trk; 
   double  fCandDocaTrk, fMu1IP, fMu2IP; 
@@ -179,6 +181,9 @@ public:
     , *fpLip[NAD], *fpLipE[NAD], *fpLipS[NAD] 
     , *fpTip[NAD], *fpTipE[NAD], *fpTipS[NAD] 
     , *fpLip12[NAD], *fpLipE12[NAD], *fpLipS12[NAD] 
+    , *fp2MChi2[NAD],  *fp2MChi2Dof[NAD], *fp2MProb[NAD] 
+    , *fp2MFLS3d[NAD], *fp2MFLSxy[NAD] 
+    , *fp2MFL3d[NAD],  *fp2MFL3dE[NAD] 
     ;
 
   // -- Analysis distributions in bins of n(PV)
