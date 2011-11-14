@@ -54,7 +54,7 @@ public:
 
   // -- main methods
   // --------------
-  virtual void makeAll(int channels = 3);
+  virtual void makeAll(int verbose = 0);
 
   virtual void dumpSamples();
   virtual void dumpCutNames(const char *h);

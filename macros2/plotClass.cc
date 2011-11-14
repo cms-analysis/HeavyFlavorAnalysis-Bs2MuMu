@@ -244,14 +244,14 @@ void plotClass::loadFiles(const char *files) {
 	sname = "SgMc2e33"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (MC 2e33)")); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (2e33)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
       if (string::npos != stype.find("3e33") && string::npos != stype.find("sg")) {
 	sname = "SgMc3e33"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (MC 3e33)")); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (3e33)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
 
@@ -266,14 +266,14 @@ void plotClass::loadFiles(const char *files) {
 	sname = "BdMc2e33"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (MC 2e33)")); 
+	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (2e33)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
       if (string::npos != stype.find("3e33") && string::npos != stype.find("bd")) {
 	sname = "BdMc3e33"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (MC 3e33)")); 
+	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (3e33)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
 
@@ -288,14 +288,14 @@ void plotClass::loadFiles(const char *files) {
 	sname = "NoMc2e33"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (MC 2e33)")); 
+	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (2e33)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
       if (string::npos != stype.find("3e33") && string::npos != stype.find("no")) {
 	sname = "NoMc3e33"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (MC 3e33)")); 
+	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (3e33)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
 
@@ -310,14 +310,14 @@ void plotClass::loadFiles(const char *files) {
 	sname = "CsMc2e33"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (MC 2e33)")); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (2e33)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
       if (string::npos != stype.find("3e33") && string::npos != stype.find("cs")) {
 	sname = "CsMc3e33"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (MC 3e33)")); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (3e33)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
 

@@ -1,16 +1,20 @@
 # ----------------------------------------------------------------------
 # signal data and MC
-type=sg,default       dset=data lumi=4000    file=/shome/ursl/scratch/v10-2011-data.root
-type=sg,default       dset=mc   lumi=1600000 file=/shome/ursl/scratch/v10-2e33-Bs2MuMu.root
-type=bd,default       dset=mc   lumi=8200000 file=/shome/ursl/scratch/v10-2e33-Bd2MuMu.root
+type=sg,default       dset=data lumi=4000    file=/shome/ursl/scratch/default/v10-2011-data.root
+type=sg,default       dset=mc   lumi=1600000 file=/shome/ursl/scratch/default/v10-2e33-Bs2MuMu.root
+type=bd,default       dset=mc   lumi=8200000 file=/shome/ursl/scratch/default/v10-2e33-Bd2MuMu.root
 # ----------------------------------------------------------------------
 # control sample  data and MC
-type=cs,default       dset=data lumi=4000    file=/shome/ursl/scratch/v10-2011-data.root
-type=cs,default       dset=mc   lumi=5000    file=/shome/ursl/scratch/v10-2e33-Bs2JpsiPhi.root
+type=cs,default       dset=data lumi=4000    file=/shome/ursl/scratch/default/v10-2011-data.root
+type=cs,default       dset=mc   lumi=5000    file=/shome/ursl/scratch/default/v10-2e33-Bs2JpsiPhi.root
+type=cs,2e33          dset=mc   lumi=5000    file=/shome/ursl/scratch/default/v10-2e33-Bs2JpsiPhi.root
+type=cs,3e33          dset=mc   lumi=5000    file=/shome/ursl/scratch/default/v10-3e33-Bs2JpsiPhi.root
 # ----------------------------------------------------------------------
 # normalization data and MC
-type=no,default       dset=data lumi=4000    file=/shome/ursl/scratch/v10-2011-data.root
-type=no,default       dset=mc   lumi=5000    file=/shome/ursl/scratch/v10-2e33-Bu2JpsiK.root
+type=no,default       dset=data lumi=4000    file=/shome/ursl/scratch/default/v10-2011-data.root
+type=no,default       dset=mc   lumi=5000    file=/shome/ursl/scratch/default/v10-2e33-Bu2JpsiK.root
+type=no,2e33          dset=mc   lumi=5000    file=/shome/ursl/scratch/default/v10-2e33-Bu2JpsiK.root
+type=no,3e33          dset=mc   lumi=5000    file=/shome/ursl/scratch/default/v10-3e33-Bu2JpsiK.root
 # ----------------------------------------------------------------------
 # rare background MC
 #type=bg,82            dset=mc lumi=15   file=/scratch/ursl/default/bg82.root

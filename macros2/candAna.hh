@@ -145,7 +145,8 @@ public:
   double  fCandCosA, fCandA, fCandChi2, fCandDof, fCandProb, fCandFL3d, fCandFL3dE, fCandFLS3d, fCandFLSxy; 
   double  fCandIso;
   int     fCandIsoTrk, fCandCloseTrk, fCandPvTrk, fCandI0trk, fCandI1trk, fCandI2trk; 
-  double  fCandDocaTrk, fMu1IP, fMu2IP, fCandPvTip, fCandPvTipE, fCandPvLip, fCandPvLipE; 
+  double  fCandDocaTrk, fMu1IP, fMu2IP; 
+  double  fCandPvTip, fCandPvTipE, fCandPvTipS, fCandPvLip, fCandPvLipE, fCandPvLipS, fCandPvLip12, fCandPvLipE12, fCandPvLipS12; 
 
   // -- isolation study
   isoNumbers fIsoR03Pt03, fIsoR03Pt05, fIsoR03Pt07, fIsoR03Pt09, fIsoR03Pt11;
@@ -175,6 +176,9 @@ public:
     , *fpFLS3d[NAD], *fpFLSxy[NAD] 
     , *fpFL3d[NAD], *fpFL3dE[NAD] 
     , *fpDocaTrk[NAD]   
+    , *fpLip[NAD], *fpLipE[NAD], *fpLipS[NAD] 
+    , *fpTip[NAD], *fpTipE[NAD], *fpTipS[NAD] 
+    , *fpLip12[NAD], *fpLipE12[NAD], *fpLipS12[NAD] 
     ;
 
   // -- Analysis distributions in bins of n(PV)

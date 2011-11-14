@@ -29,30 +29,39 @@ void plotOverlays::makeAll(int verbose) {
   fVerbose = verbose;
   
   fMode = 0; 
-  sbsDistributionOverlay("SgData", "candAnaMuMu", "SgMc", "candAnaMuMu", "Ao", "A");
-  sbsDistributionOverlay("SgData", "candAnaMuMu", "SgMc", "candAnaMuMu", "Ao", "B");
-  sbsDistributionOverlay("SgData", "candAnaMuMu", "SgMc", "candAnaMuMu", "Ao", "E");
+  sbsDistributionOverlay("SgData", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Ao");
+  sbsDistributionOverlay("SgData", "candAnaMuMu", "B", "SgMc", "candAnaMuMu", "B", "Ao");
+  sbsDistributionOverlay("SgData", "candAnaMuMu", "E", "SgMc", "candAnaMuMu", "E", "Ao");
 
   // -- For normalization sample, use pol1 + error function for bg parametrization
   fMode = 1; 
   fMode = 3; 
   fPreco = 5.1;
-  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "NoMc", "candAnaBu2JpsiK", "Ao", "A");
-  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "NoMc", "candAnaBu2JpsiK", "Ao", "B");
-  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "NoMc", "candAnaBu2JpsiK", "Ao", "E");
+  // -- default/mix
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Ao");
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "B", "NoMc", "candAnaBu2JpsiK", "B", "Ao");
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "E", "NoMc", "candAnaBu2JpsiK", "E", "Ao");
+  // -- run ranges
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR3", "NoMc2e33", "candAnaBu2JpsiK", "A", "Ao");
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR4", "NoMc3e33", "candAnaBu2JpsiK", "A", "Ao");
 
   // -- For control sample, use expo function for bg parametrization
   fMode = 2; 
-  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "CsMc", "candAnaBs2JpsiPhi", "Ao", "A");
-  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "CsMc", "candAnaBs2JpsiPhi", "Ao", "B");
-  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "CsMc", "candAnaBs2JpsiPhi", "Ao", "E");
+  // -- default/mix
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMc", "candAnaBs2JpsiPhi", "A", "Ao");
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "B", "CsMc", "candAnaBs2JpsiPhi", "B", "Ao");
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "E", "CsMc", "candAnaBs2JpsiPhi", "E", "Ao");
+  // -- run ranges
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "AR3", "CsMc2e33", "candAnaBs2JpsiPhi", "A", "Ao");
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "AR4", "CsMc3e33", "candAnaBs2JpsiPhi", "A", "Ao");
   
 
 }
 
 
 // ----------------------------------------------------------------------
-void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file2, string dir2, const char *selection, const char *region) {
+void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string region1, string file2, string dir2, string region2, 
+					  string selection) {
 
   gStyle->SetOptTitle(0); 
   gStyle->SetOptStat(0); 
@@ -181,11 +190,11 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
   TCanvas *c1;
   string skipregion, skipcut, cut, pdfname; 
   for (unsigned int i = 0; i < doList.size(); ++i) {
-    cut = Form("%s_%s", region, doList[i].c_str()); 
+    cut = Form("%s_%s", region1.c_str(), doList[i].c_str()); 
     skipregion =  cut.substr(0, cut.find_first_of("_")); 
 
-    pdfname = Form("%s/%s_%s-%s_sbs_%s_%s.pdf", fDirectory.c_str(), fSuffix.c_str(),
-		   file1.c_str(), file2.c_str(), cut.c_str(), selection);
+    pdfname = Form("%s/%s_%s-%s_sbs_%s_%s_%s_%s.pdf", fDirectory.c_str(), fSuffix.c_str(),
+		   file1.c_str(), region1.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str(), selection.c_str());
     
     cout << pdfname << endl;
     
@@ -194,41 +203,42 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string file
     cout << "==> pdf: " << pdfname << endl;
     // -- 0 == fMode is dimuon case: separate this from rest because the former don't need sbs
     if (0 == fMode) {
-      h1 = (TH1D*)gDirectory->Get(Form("%s%s1", cut.c_str(), selection));
+      h1 = (TH1D*)gDirectory->Get(Form("%s%s1", cut.c_str(), selection.c_str()));
     } else {
       if (string::npos != file1.find("Mc")) {
 	// -- For MC use the signal distributions directly
-	h1 = (TH1D*)gDirectory->Get(Form("%s%s0", cut.c_str(), selection));
+	h1 = (TH1D*)gDirectory->Get(Form("%s%s0", cut.c_str(), selection.c_str()));
       } else {
-	if (1 == fMode) h1 = a.sbsDistribution(cut.c_str(), selection);
-	if (2 == fMode) h1 = a.sbsDistributionExpoGauss(cut.c_str(), selection);
-	if (3 == fMode) h1 = a.sbsDistributionPol1ErrGauss(cut.c_str(), selection, fPreco);
+	if (1 == fMode) h1 = a.sbsDistribution(cut.c_str(), selection.c_str());
+	if (2 == fMode) h1 = a.sbsDistributionExpoGauss(cut.c_str(), selection.c_str());
+	if (3 == fMode) h1 = a.sbsDistributionPol1ErrGauss(cut.c_str(), selection.c_str(), fPreco);
       }
     }
 
     c1 = (TCanvas*)gROOT->FindObject("c1"); 
     if (fDoPrint){
-      if (c1) c1->SaveAs(Form("%s/tmp/%s_sbs_%s_%s.pdf", fDirectory.c_str(), file1.c_str(), cut.c_str(), selection));
+      if (c1) c1->SaveAs(Form("%s/tmp/%s_sbs_%s_%s.pdf", fDirectory.c_str(), file1.c_str(), cut.c_str(), selection.c_str()));
     }
 
     fF[file2]->cd(dir2.c_str()); 
+    cut = Form("%s_%s", region2.c_str(), doList[i].c_str()); 
     cout << "==> File2: pwd() = "; gDirectory->pwd(); 
     if (0 == fMode) {
-      h2 = (TH1D*)gDirectory->Get(Form("%s%s0", cut.c_str(), selection));
+      h2 = (TH1D*)gDirectory->Get(Form("%s%s0", cut.c_str(), selection.c_str()));
     } else {
       if (string::npos != file2.find("Mc")) {
 	// -- For MC use the signal distributions directly
-	h2 = (TH1D*)gDirectory->Get(Form("%s%s0", cut.c_str(), selection));
+	h2 = (TH1D*)gDirectory->Get(Form("%s%s0", cut.c_str(), selection.c_str()));
       } else {
-	if (1 == fMode) h2 = a.sbsDistribution(cut.c_str(), selection);
-	if (2 == fMode) h2 = a.sbsDistributionExpoGauss(cut.c_str(), selection);
-	if (3 == fMode) h2 = a.sbsDistributionPol1ErrGauss(cut.c_str(), selection, fPreco);
+	if (1 == fMode) h2 = a.sbsDistribution(cut.c_str(), selection.c_str());
+	if (2 == fMode) h2 = a.sbsDistributionExpoGauss(cut.c_str(), selection.c_str());
+	if (3 == fMode) h2 = a.sbsDistributionPol1ErrGauss(cut.c_str(), selection.c_str(), fPreco);
       }
-      //      if (2 == fMode) h2 = a.sbsDistributionExpoGauss(cut.c_str(), selection);
+      //      if (2 == fMode) h2 = a.sbsDistributionExpoGauss(cut.c_str(), selection.c_str());
     }
     c1 = (TCanvas*)gROOT->FindObject("c1"); 
     if (fDoPrint) {
-      if (c1) c1->SaveAs(Form("%s/tmp/%s_sbs_%s_%s.pdf", fDirectory.c_str(), file2.c_str(), cut.c_str(), selection));
+      if (c1) c1->SaveAs(Form("%s/tmp/%s_sbs_%s_%s.pdf", fDirectory.c_str(), file2.c_str(), cut.c_str(), selection.c_str()));
     }
 
     if (h2->GetSumOfWeights() > 0) h2->Scale(h1->GetSumOfWeights()/h2->GetSumOfWeights());

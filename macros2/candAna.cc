@@ -159,16 +159,22 @@ void candAna::candAnalysis() {
     fCandTM = 0; 
   }
 
-  fCandType  = fpCand->fType;
-  fCandPt    = fpCand->fPlab.Perp();
-  fCandEta   = fpCand->fPlab.Eta();
-  fCandPhi   = fpCand->fPlab.Phi();
-  fCandM     = fpCand->fMass;
-  fCandPvTip = fpCand->fPvTip;
-  fCandPvTipE= fpCand->fPvTipE;
-  fCandPvLip = fpCand->fPvLip;
-  fCandPvLipE= fpCand->fPvLipE;
-  
+  fCandType     = fpCand->fType;
+  fCandPt       = fpCand->fPlab.Perp();
+  fCandEta      = fpCand->fPlab.Eta();
+  fCandPhi      = fpCand->fPlab.Phi();
+  fCandM        = fpCand->fMass;
+  // -- values of cand wrt PV
+  fCandPvTip    = fpCand->fPvTip;
+  fCandPvTipE   = fpCand->fPvTipE;
+  fCandPvTipS   = fCandPvTip/fCandPvTipE;
+  fCandPvLip    = fpCand->fPvLip;
+  fCandPvLipE   = fpCand->fPvLipE;
+  fCandPvLipS   = fCandPvLip/fCandPvLipE;
+  fCandPvLip12  = fCandPvLip/fpCand->fPvLip2;
+  fCandPvLipE12 = fCandPvLipE/fpCand->fPvLipE2;
+  fCandPvLipS12 = fCandPvLipS/(fpCand->fPvLip2/fpCand->fPvLipE2);
+
   fCandM2 = constrainedMass();
   
   TAnaTrack *p0; 
@@ -469,7 +475,19 @@ void candAna::fillCandidateHistograms(int offset) {
   fpFL3dE[offset]->fill(fCandFL3dE, fCandM); 
   fpFLSxy[offset]->fill(fCandFLSxy, fCandM); 
   fpDocaTrk[offset]->fill(fCandDocaTrk, fCandM); 
-  
+
+  fpLip[offset]->fill(fCandPvLip, fCandM); 
+  fpLipE[offset]->fill(fCandPvLipE, fCandM); 
+  fpLipS[offset]->fill(fCandPvLipS, fCandM); 
+
+  fpTip[offset]->fill(fCandPvTip, fCandM); 
+  fpTipE[offset]->fill(fCandPvTipE, fCandM); 
+  fpTipS[offset]->fill(fCandPvTipS, fCandM); 
+
+  fpLip12[offset]->fill(fCandPvLip12, fCandM); 
+  fpLipE12[offset]->fill(fCandPvLipE12, fCandM); 
+  fpLipS12[offset]->fill(fCandPvLipS12, fCandM); 
+
   int ipv = 0; 
   if (fPvN < 30) {
     ipv = fPvN/2; 
@@ -781,32 +799,44 @@ void candAna::bookHist() {
 
     //    cout << "  booking analysis distributions for " << name << " at offset i = " << i << endl;
 
-    fpPvZ[i]       = bookDistribution(Form("%spvz", name.c_str()), "z_{PV} [cm]", "fGoodHLT", 50, -25., 25.);           
+    fpPvZ[i]       = bookDistribution(Form("%spvz", name.c_str()), "z_{PV} [cm]", "fGoodHLT", 40, -20., 20.);           
     fpPvN[i]       = bookDistribution(Form("%spvn", name.c_str()), "N(PV) ", "fGoodHLT", 20, 0., 20.);           
     fpPvNtrk[i]    = bookDistribution(Form("%spvntrk", name.c_str()), "N_{trk}^{PV} ", "fGoodHLT", 20, 0., 200.);           
     fpTracksPt[i]  = bookDistribution(Form("%strackspt", name.c_str()), "p_{T} [GeV]", "fGoodTracksPt", 25, 0., 25.);
     fpTracksEta[i] = bookDistribution(Form("%strackseta", name.c_str()), "#eta_{T}", "fGoodTracksEta", 25, -2.5, 2.5);
     fpMuonsPt[i]   = bookDistribution(Form("%smuonspt", name.c_str()), "p_{T, #mu} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
-    fpMuon1Pt[i]   = bookDistribution(Form("%smuon1pt", name.c_str()), "p_{T, #mu1} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
-    fpMuon2Pt[i]   = bookDistribution(Form("%smuon2pt", name.c_str()), "p_{T, #mu2} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
+    fpMuon1Pt[i]   = bookDistribution(Form("%smuon1pt", name.c_str()), "p_{T, #mu1} [GeV]", "fGoodMuonsPt", 30, 0., 30.); 
+    fpMuon2Pt[i]   = bookDistribution(Form("%smuon2pt", name.c_str()), "p_{T, #mu2} [GeV]", "fGoodMuonsPt", 20, 0., 20.); 
     fpMuonsEta[i]  = bookDistribution(Form("%smuonseta", name.c_str()), "#eta_{#mu}", "fGoodMuonsEta", 20, -2.5, 2.5); 
     fpMuon1Eta[i]  = bookDistribution(Form("%smuon1eta", name.c_str()), "#eta_{#mu1}", "fGoodMuonsEta", 20, -2.5, 2.5); 
     fpMuon2Eta[i]  = bookDistribution(Form("%smuon2eta", name.c_str()), "#eta_{#mu2}", "fGoodMuonsEta", 20, -2.5, 2.5); 
-    fpPt[i]        = bookDistribution(Form("%spt", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 20, 0., 50.); 
+    fpPt[i]        = bookDistribution(Form("%spt", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 30, 0., 60.); 
     fpEta[i]       = bookDistribution(Form("%seta", name.c_str()), "#eta(B)", "fGoodEta", 20, -2.5, 2.5); 
     fpCosA[i]      = bookDistribution(Form("%scosa", name.c_str()), "cos(#alpha_{3D})", "fGoodAlpha", 30, 0.97, 1.); 
-    fpAlpha[i]     = bookDistribution(Form("%salpha", name.c_str()), "#alpha_{3D}", "fGoodAlpha", 20, 0., 0.2); 
+    fpAlpha[i]     = bookDistribution(Form("%salpha", name.c_str()), "#alpha_{3D}", "fGoodAlpha", 30, 0., 0.15); 
     fpIso[i]       = bookDistribution(Form("%siso", name.c_str()),  "isolation", "fGoodIso", 22, 0., 1.1); 
     fpIsoTrk[i]    = bookDistribution(Form("%sisotrk", name.c_str()),  "N_{trk}^{I}", "fGoodIso", 20, 0., 20.); 
     
     fpChi2[i]      = bookDistribution(Form("%schi2", name.c_str()),  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
     fpChi2Dof[i]   = bookDistribution(Form("%schi2dof", name.c_str()),  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
-    fpProb[i]      = bookDistribution(Form("%spchi2dof", name.c_str()),  "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
-    fpFLS3d[i]     = bookDistribution(Form("%sfls3d", name.c_str()), "l_{3D}/#sigma(l_{3D})", "fGoodFLS", 25, 0., 100.);  
+    fpProb[i]      = bookDistribution(Form("%spchi2dof", name.c_str()),  "P(#chi^{2},dof)", "fGoodChi2", 26, 0., 1.04);    
+    fpFLS3d[i]     = bookDistribution(Form("%sfls3d", name.c_str()), "l_{3D}/#sigma(l_{3D})", "fGoodFLS", 30, 0., 120.);  
     fpFL3d[i]      = bookDistribution(Form("%sfl3d", name.c_str()),  "l_{3D} [cm]", "fGoodFLS", 25, 0., 5.);  
-    fpFL3dE[i]     = bookDistribution(Form("%sfl3dE", name.c_str()), "#sigma(l_{3D}) [cm]", "fGoodFLS", 25, 0., 0.5);  
-    fpFLSxy[i]     = bookDistribution(Form("%sflsxy", name.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
-    fpDocaTrk[i]   = bookDistribution(Form("%sdocatrk", name.c_str()), "d_{ca}^{min} [cm]", "fGoodDocaTrk", 35, 0., 0.14);   
+    fpFL3dE[i]     = bookDistribution(Form("%sfl3de", name.c_str()), "#sigma(l_{3D}) [cm]", "fGoodFLS", 25, 0., 0.5);  
+    fpFLSxy[i]     = bookDistribution(Form("%sflsxy", name.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 30, 0., 120.);  
+    fpDocaTrk[i]   = bookDistribution(Form("%sdocatrk", name.c_str()), "d_{ca}^{min} [cm]", "fGoodDocaTrk", 40, 0., 0.20);   
+
+    fpLip[i]       = bookDistribution(Form("%slip", name.c_str()), "l_{z} [cm]", "fGoodDocaTrk", 50, -0.05, 0.05);   
+    fpLipE[i]      = bookDistribution(Form("%slipe", name.c_str()), "#sigma(l_{z}) [cm]", "fGoodDocaTrk", 50, 0., 0.05);   
+    fpLipS[i]      = bookDistribution(Form("%slips", name.c_str()), "l_{z}/#sigma(l_{z})", "fGoodDocaTrk", 50, -10., 10.);   
+
+    fpTip[i]       = bookDistribution(Form("%stip", name.c_str()), "l_{T} [cm]", "fGoodDocaTrk", 50, 0., 0.5);   
+    fpTipE[i]      = bookDistribution(Form("%stipe", name.c_str()), "#sigma(l_{T}) [cm]", "fGoodDocaTrk", 50, 0., 0.05);   
+    fpTipS[i]      = bookDistribution(Form("%stips", name.c_str()), "l_{T}/#sigma(l_{T})", "fGoodDocaTrk", 25, 0., 20.);   
+
+    fpLip12[i]     = bookDistribution(Form("%slip12", name.c_str()), "ratio l_{z} ", "fGoodDocaTrk", 50, 0., 2.);   
+    fpLipE12[i]    = bookDistribution(Form("%slipe12", name.c_str()), "ratio #sigma(l_{z})", "fGoodDocaTrk", 50, 0., 2.);   
+    fpLipS12[i]    = bookDistribution(Form("%slips12", name.c_str()), "ratio l_{z}/#sigma(l_{z})", "fGoodDocaTrk", 50, 0., 2.);   
 
     if (name == "A_") {
       //      cout << "  booking NPV distributions for " << name << endl;
@@ -1649,8 +1679,12 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, double
   fCandI1trk = 0; 
   fCandI2trk = 0; 
  
+  if (verbose) cout << "Looking at cand " << pC->fType << " with " << pC->fSig2 - pC->fSig1 + 1 << " sig tracks" 
+		    << " from PV = " << pvIdx
+		    << endl;
   for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
     pT = fpEvt->getSigTrack(i); 
+    if (verbose) cout << " track idx = " << pT->fIndex << " with ID = " << pT->fMCID << endl;
     cIdx.push_back(pT->fIndex); 
     candPtScalar += pT->fPlab.Perp(); 
     if (verbose) {
@@ -1665,7 +1699,6 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, double
   
   // -- look at all tracks that are associated to the same vertex
   for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
-    if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  continue;
     pT = fpEvt->getRecTrack(i); 
     if (verbose) {
       cout << "   track " << i 
@@ -1680,6 +1713,10 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, double
     pt = pT->fPlab.Perp(); 
     if (pt < ptCut) {
       if (verbose) cout << " skipped because of pt = " << pt << endl;
+      continue;
+    }
+    if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  {
+      if (verbose) cout << " skipped because it is a sig track " << endl;
       continue;
     }
     if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
@@ -1706,19 +1743,27 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, double
       pT = fpEvt->getRecTrack(trkId);
 
       // -- Consider only tracks from an undefined PV
-      if (pT->fPvIdx >= 0) { 
-	if (verbose) cout << " doca track skipped because it has a defined  PV " << pT->fPvIdx <<endl;
+//FIXME!!
+//       if (pT->fPvIdx >= 0) { 
+// 	if (verbose) cout << " doca track " << trkId << " skipped because it has a defined  PV " << pT->fPvIdx <<endl;
+// 	continue;
+//       }
+
+//TEST!!
+      if ((pT->fPvIdx > -1) && (pT->fPvIdx != pvIdx)) { 
+	if (verbose) cout << " doca track " << trkId << " skipped because it is from a different PV " << pT->fPvIdx <<endl;
 	continue;
       }
 
+
       pt = pT->fPlab.Perp();  
       if (pt < ptCut) {
-	if (verbose) cout << " doca track skipped because of pt = " << pt << endl;
+	if (verbose) cout << " doca track " << trkId << " skipped because of pt = " << pt << endl;
 	continue;
       }
 
       if (pT->fPlab.DeltaR(pC->fPlab) > coneSize) {
-	if (verbose) cout << " doca track skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+	if (verbose) cout << " doca track " << trkId << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
 	continue;
       }
 
@@ -1728,7 +1773,7 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, float docaCut, double r, double
 
       ++fCandI1trk;
       sumPt += pt; 
-      if (verbose) cout << " doca track included "<<doca<<" "<<pt<<endl;
+      if (verbose) cout << " doca track " << trkId << " included "<<doca<<" "<<pt<<endl;
 
     } // for loop over tracks
   } // end if 
