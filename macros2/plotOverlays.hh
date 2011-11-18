@@ -22,7 +22,6 @@ public:
 				      std::string r1 = "B_iso5", std::string r2 = "E_iso5", std::string sel = "Ao", 
 				      std::string L1="barrel", std::string L2="endcap"); 
 
-  double fPreco; 
 };
 
 

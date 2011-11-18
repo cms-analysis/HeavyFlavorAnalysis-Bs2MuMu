@@ -39,8 +39,10 @@ RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 #########
 # FILES #
 #########
-READER_HEADERS = bmm2Reader.hh lmtreeReader.hh candAna.hh candAnaMuMu.hh candAnaBu2JpsiK.hh candAnaBs2JpsiPhi.hh candAnaDstar.hh plotClass.hh plotPU.hh plotOverlays.hh plotReducedTree.hh plotIso.hh
-READER = bmm2Reader.o lmtreeReader.o candAna.o candAnaMuMu.o candAnaBu2JpsiK.o candAnaBs2JpsiPhi.o candAnaDstar.o plotClass.o plotPU.o plotOverlays.o plotReducedTree.o plotIso.o
+READER_HEADERS = bmm2Reader.hh lmtreeReader.hh candAna.hh candAnaMuMu.hh candAnaBu2JpsiK.hh candAnaBs2JpsiPhi.hh candAnaDstar.hh plotClass.hh plotPU.hh plotOverlays.hh plotReducedTree.hh plotIso.hh 
+READER = bmm2Reader.o lmtreeReader.o candAna.o candAnaMuMu.o candAnaBu2JpsiK.o candAnaBs2JpsiPhi.o candAnaDstar.o plotClass.o plotPU.o plotOverlays.o plotReducedTree.o plotIso.o 
+
+#CSTUFF = TMVAClassification_BDT.class.o
 
 READERDICT = ${READER:.o=Dict.o}
 
@@ -58,7 +60,7 @@ obj/%.o : %.cc $(READER_HEADERS)
 	$(ROOTCINT) -f $@ -c $<
 
 
-obj/%.o : %.c $(CSTUFF)
+obj/%.o : %.C $(CSTUFF)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 

@@ -1,9 +1,13 @@
 # -- muons 
+# mask = 6: 
 # root [4] mask |= 0x1<<1;  muon::AllGlobalMuons
 # root [5] mask |= 0x1<<2;  muon::AllTrackerMuons
-MUIDMASK            6
-MUIDRESULT          6
-MUPTLO             3.0
+# mask = 80: 
+# root [4] mask |= 0x1<<4;  muon::TrackerMuonArbitrated
+# root [5] mask |= 0x1<<6;  muon::GlobalMuonPromptTight
+MUIDMASK           80
+MUIDRESULT         80
+MUPTLO            3.0
 MUPTHI         9999.0
 MUETALO          -2.4
 MUETAHI           2.4

@@ -3,6 +3,13 @@
 
 #include "plotClass.hh"
 
+struct data {
+  std::string name; 
+  double doca, r, pt; 
+  double eff1, eff2, ratio; 
+};
+
+
 class plotIso: public plotClass {
 
 public:
@@ -11,11 +18,14 @@ public:
   ~plotIso();
   
   
-  void makeAll(int channels = 3);
-  void dataVsMc(std::string file1, std::string dir1, std::string file2, std::string dir2, const char *selection);
+  void makeAll(double isoCut = 0.80);
+  void dataVsMc(std::string file1, std::string dir1, std::string file2, std::string dir2, std::string selection);
+  void anaTextFiles(int cutval = 80);
+  void readFile(std::string fname, std::vector<data> &v);
   
 
   int fMode;
+  double fIsoCut; 
 
   ClassDef(plotIso,1) //Testing plotOverlays
 

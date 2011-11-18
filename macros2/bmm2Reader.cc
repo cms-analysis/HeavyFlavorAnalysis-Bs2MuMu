@@ -49,9 +49,23 @@ void bmm2Reader::eventProcessing() {
     fProcessType = -98; 
   }
   
+  // -- fill a few basic histograms
+  TAnaTrack *pT(0); 
+  double x(0.);
+  ((TH1D*)fpHistFile->Get("ntracks"))->Fill(fpEvt->nRecTracks()); 
+  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+    pT = fpEvt->getRecTrack(i); 
+    x = pT->fPlab.Perp();
+    ((TH1D*)fpHistFile->Get("pt0"))->Fill(x); 
+    ((TH1D*)fpHistFile->Get("pt1"))->Fill(x); 
+    x = pT->fPlab.Eta();
+    ((TH1D*)fpHistFile->Get("eta"))->Fill(x); 
+    x = pT->fPlab.Phi();
+    ((TH1D*)fpHistFile->Get("phi"))->Fill(x); 
+  }
+  
+  // -- call candidate analyses
   for (unsigned int i = 0; i < lCandAnalysis.size(); ++i) {
-    //    cout << "  calling " << lCandAnalysis[i]->fName << " analysis()" << endl;
-
     lCandAnalysis[i]->fIsMC        = fIsMC;
     lCandAnalysis[i]->fJSON        = json; 
     lCandAnalysis[i]->fRun         = fRun; 
@@ -71,6 +85,11 @@ void bmm2Reader::bookHist() {
   fpHistFile->cd();
   TH1D *h;
   h = new TH1D("monEvents", "monEvents", 10, 0., 10.);
+  h = new TH1D("ntracks", "ntracks", 100, 0., 1000.);
+  h = new TH1D("pt0", "pt(tracks)", 100, 0., 10.);
+  h = new TH1D("pt1", "pt(tracks)", 100, 0., 50.);
+  h = new TH1D("eta", "eta(tracks)", 60, -3.0, 3.0);
+  h = new TH1D("phi", "phi(tracks)", 50, -3.15, 3.15);
 
   for (unsigned int i = 0; i < lCandAnalysis.size(); ++i) {
     //    cout << "  calling " << lCandAnalysis[i]->fName << " bookHist()" << endl;

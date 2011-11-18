@@ -145,24 +145,34 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
   TH1D *hcuts = (TH1D*)gDirectory->Get("hcuts"); 
 
   vector<string> doList; 
+  vector<string> leftList, skipList; 
+
   map<string, string> cutMap; 
-  doList.push_back("pvz"); 
+  doList.push_back("pvz");  skipList.push_back("pvz"); 
   doList.push_back("pvn");
+  doList.push_back("pvavew8"); leftList.push_back("pvavew8"); 
   doList.push_back("pvntrk");
   doList.push_back("muon1pt");
   doList.push_back("muon2pt"); cutMap.insert(make_pair("muon2pt", "MUPTLO"));
-  doList.push_back("muonseta");
+  doList.push_back("muonseta");  skipList.push_back("muonseta"); 
   doList.push_back("pt"); cutMap.insert(make_pair("pt", "CANDPTLO"));
-  doList.push_back("eta");
+  doList.push_back("eta"); skipList.push_back("eta"); 
+  doList.push_back("bdt"); skipList.push_back("bdt"); 
 
+  doList.push_back("fl3d");  
   doList.push_back("fls3d");  cutMap.insert(make_pair("fls3d", "CANDFLS3D"));
   doList.push_back("flsxy");
   doList.push_back("chi2dof"); cutMap.insert(make_pair("chi2dof", "CANDVTXCHI2"));
-  doList.push_back("pchi2dof");
+  doList.push_back("pchi2dof"); leftList.push_back("pchi2dof"); 
   doList.push_back("alpha"); cutMap.insert(make_pair("alpha", "CANDCOSALPHA"));
-  doList.push_back("iso");
+  doList.push_back("iso");  leftList.push_back("iso"); 
   doList.push_back("docatrk");
   doList.push_back("isotrk");
+  doList.push_back("closetrk");
+  doList.push_back("lip"); skipList.push_back("lip");
+  doList.push_back("lips"); skipList.push_back("lips");
+  doList.push_back("lip12"); skipList.push_back("lip12");
+  doList.push_back("lips12"); skipList.push_back("lips12");
 
   if (string::npos != file1.find("No")) {
     doList.push_back("kaonpt");
@@ -177,14 +187,7 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
     doList.push_back("mkk");
   }
 
-  vector<string> leftList; 
-  leftList.push_back("iso"); 
 
-  vector<string> skipList; 
-  skipList.push_back("pvz"); 
-  skipList.push_back("psipt"); 
-  skipList.push_back("muonseta"); 
-  skipList.push_back("pchi2dof"); 
 
 
   TCanvas *c1;

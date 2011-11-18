@@ -32,6 +32,9 @@
 
 #include "bmm2Reader.hh"
 
+
+class ReadBDT; 
+
 struct isoNumbers {
   double iso; 
   int    pvTracks; 
@@ -68,12 +71,12 @@ public:
   virtual void        readFile(std::string fileName, std::vector<std::string> &lines);
 
   virtual bool        goodTrack(TAnaTrack *pt);
-  virtual bool        goodMuon(TAnaTrack *pt);
+  virtual bool        goodMuon(TAnaTrack *pt, int mask = 0);
 
   virtual std::string splitTrigRange(std::string tl, int &r1, int &r2);
 
-  virtual double      isoClassicWithDOCA(TAnaCand*, float dca, double r = 1.0, double ptmin = 0.9); 
-
+  virtual double      isoClassicWithDOCA(TAnaCand*, double dca, double r = 1.0, double ptmin = 0.9); 
+  virtual int         nCloseTracks(TAnaCand*, double dca, double pt = 0.5); 
 
   virtual void        isolationStudy(double doca);
   virtual void        bookIsoPlots();  
@@ -130,6 +133,7 @@ public:
   // -- variables for reduced tree, they are from fpCand
   bool    fJSON, fCowboy;
   int     fCandTM, fCandType; 
+  double  fCandBDT; 
   int     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fMu1Chi2, fMu2Chi2, fCandQ;
   bool    fMu1Id, fMu2Id;
   double  fMuDist, fMuDeltaR;
@@ -139,11 +143,11 @@ public:
   double  fMu1PtNrf, fMu2PtNrf, fMu1EtaNrf, fMu2EtaNrf; // "now refitted"
   int     fMu1Pix, fMu1BPix, fMu1BPixL1, fMu2Pix, fMu2BPix, fMu2BPixL1;
   double  fMu1W8Mu, fMu1W8Tr, fMu2W8Mu, fMu2W8Tr; 
-  double  fPvX, fPvY, fPvZ, fPvNtrk; 
+  double  fPvX, fPvY, fPvZ, fPvNtrk, fPvNdof, fPvAveW8; 
   int     fPvN;
   double  fCandPt, fCandEta, fCandPhi, fCandM, fCandM2, fCandW8Tr, fCandW8Mu; 
   double  fCandCosA, fCandA;
-  double  fCandChi2, fCandDof, fCandProb, fCandFL3d, fCandFL3dE, fCandFLS3d, fCandFLSxy; 
+  double  fCandChi2, fCandDof, fCandProb, fCandFL3d, fCandFL3dE, fCandFLS3d, fCandFLxy, fCandFLSxy, fCandDoca; 
   double  f2MChi2,   f2MDof,   f2MProb,   f2MFL3d,   f2MFL3dE,   f2MFLS3d,   f2MFLSxy; 
   double  fCandIso;
   int     fCandIsoTrk, fCandCloseTrk, fCandPvTrk, fCandI0trk, fCandI1trk, fCandI2trk; 
@@ -160,7 +164,8 @@ public:
 
 
   bool    fGoodHLT, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta, fGoodTracks, fGoodTracksPt, fGoodTracksEta;
-  bool    fGoodQ, fGoodPt, fGoodEta, fGoodCosA, fGoodAlpha, fGoodIso, fGoodChi2, fGoodFLS; 
+  bool    fGoodPvLip, fGoodPvLipS; 
+  bool    fGoodQ, fGoodPt, fGoodEta, fGoodCosA, fGoodAlpha, fGoodIso, fGoodCloseTrack, fGoodChi2, fGoodFLS; 
   bool    fGoodDocaTrk, fGoodLastCut; 
 
   bool    fPreselection; 
@@ -168,16 +173,17 @@ public:
   // -- Analysis distributions
   std::map<std::string, int> fRegion;
 #define NAD 10
-  AnalysisDistribution   *fpPvZ[NAD], *fpPvN[NAD], *fpPvNtrk[NAD]  
+  AnalysisDistribution   *fpPvZ[NAD], *fpPvN[NAD], *fpPvNtrk[NAD], *fpPvAveW8[NAD]  
     , *fpTracksPt[NAD],  *fpTracksEta[NAD] 
     , *fpMuonsPt[NAD], *fpMuonsEta[NAD], *fpMuon1Pt[NAD], *fpMuon2Pt[NAD], *fpMuon1Eta[NAD], *fpMuon2Eta[NAD]
     , *fpPt[NAD], *fpEta[NAD] 
     , *fpCosA[NAD], *fpAlpha[NAD]
-    , *fpIso[NAD], *fpIsoTrk[NAD]
+    , *fpIso[NAD], *fpIsoTrk[NAD], *fpCloseTrk[NAD]
     , *fpChi2[NAD], *fpChi2Dof[NAD], *fpProb[NAD] 
     , *fpFLS3d[NAD], *fpFLSxy[NAD] 
     , *fpFL3d[NAD], *fpFL3dE[NAD] 
     , *fpDocaTrk[NAD]   
+    , *fpBDT[NAD]   
     , *fpLip[NAD], *fpLipE[NAD], *fpLipS[NAD] 
     , *fpTip[NAD], *fpTipE[NAD], *fpTipS[NAD] 
     , *fpLip12[NAD], *fpLipE12[NAD], *fpLipS12[NAD] 
@@ -231,6 +237,8 @@ public:
     *fpTk2R10Pt03[NISO], *fpTk2R10Pt05[NISO], *fpTk2R10Pt07[NISO], *fpTk2R10Pt09[NISO], *fpTk2R10Pt11[NISO],  
     *fpTk2R11Pt03[NISO], *fpTk2R11Pt05[NISO], *fpTk2R11Pt07[NISO], *fpTk2R11Pt09[NISO], *fpTk2R11Pt11[NISO];
 
+
+  ReadBDT *fBdtReader; 
 };
 
 #endif
