@@ -50,7 +50,8 @@ public:
 
   virtual void        evtAnalysis(TAna01Event *evt);
   virtual void        candAnalysis();
-
+  virtual void        efficiencyCalculation();
+  
   virtual double      constrainedMass();
   virtual void        runRange();
   virtual void        genMatch(); 
@@ -153,6 +154,17 @@ public:
   int     fCandIsoTrk, fCandCloseTrk, fCandPvTrk, fCandI0trk, fCandI1trk, fCandI2trk; 
   double  fCandDocaTrk, fMu1IP, fMu2IP; 
   double  fCandPvTip, fCandPvTipE, fCandPvTipS, fCandPvLip, fCandPvLipE, fCandPvLipS, fCandPvLip12, fCandPvLipE12, fCandPvLipS12; 
+
+  // -- another reduced tree
+  TTree       *fEffTree;
+  bool fETm1gt, fETm2gt, fETm1id, fETm2id;
+  int fETm1q, fETm2q; 
+  float fETgpt, fETgeta; 
+  float fETcandMass;
+  float fETm1pt, fETm1eta, fETg1pt, fETg1eta;
+  float fETm2pt, fETm2eta, fETg2pt, fETg2eta;
+
+  bool    fGoodEffCand; 
 
   // -- isolation study
   isoNumbers fIsoR03Pt03, fIsoR03Pt05, fIsoR03Pt07, fIsoR03Pt09, fIsoR03Pt11;

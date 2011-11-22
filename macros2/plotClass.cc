@@ -120,6 +120,7 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
   // -- initialize cuts
   cout << "Reading cuts from " << Form("plotClass.%s.cuts", cuts) << endl;
   readCuts(Form("plotClass.%s.cuts", cuts)); 
+  fNchan = fCuts.size(); 
 
   printCuts(cout); 
 
@@ -252,6 +253,13 @@ void plotClass::loadFiles(const char *files) {
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (3e33)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }
+      if (string::npos != stype.find("acc") && string::npos != stype.find("sg")) {
+	sname = "SgMcAcc"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (acc)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
 

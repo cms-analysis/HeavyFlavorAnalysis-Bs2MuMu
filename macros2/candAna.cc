@@ -67,6 +67,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     genMatch(); 
     recoMatch(); 
     candMatch(); 
+    efficiencyCalculation();
   } 
 
   triggerSelection();
@@ -679,6 +680,11 @@ void candAna::candMatch() {
 
 
 // ----------------------------------------------------------------------
+void candAna::efficiencyCalculation() {
+  cout << "candAna::efficiencyCalculation()  wrong function" << endl;
+}
+
+// ----------------------------------------------------------------------
 void candAna::triggerSelection() {
 
   fGoodHLT = false; 
@@ -854,6 +860,36 @@ void candAna::bookHist() {
   fTree->Branch("hm2pt",  &fHltMu2Pt,  "hm2pt/D");    
   fTree->Branch("hm2eta", &fHltMu2Eta, "hm2eta/D");  
   fTree->Branch("hm2phi", &fHltMu2Phi, "hm2phi/D");  
+
+
+  // -- Efficiency/Acceptance Tree
+  fEffTree = new TTree("effTree", "effTree");
+  fEffTree->Branch("run",    &fRun,               "run/I");
+  fEffTree->Branch("evt",    &fEvt,               "evt/I");
+  fEffTree->Branch("hlt",    &fGoodHLT,           "hlt/O");
+  fEffTree->Branch("procid", &fProcessType,       "procid/I");
+  fEffTree->Branch("bidx",   &fGenBTmi,           "bidx/I");
+
+  fEffTree->Branch("gpt",    &fETgpt,             "gpt/F");
+  fEffTree->Branch("geta",   &fETgeta,            "geta/F");
+
+  fEffTree->Branch("m1pt",   &fETm1pt,            "m1pt/F");
+  fEffTree->Branch("g1pt",   &fETg1pt,            "g1pt/F");
+  fEffTree->Branch("m1eta",  &fETm1eta,           "m1eta/F");
+  fEffTree->Branch("g1eta",  &fETg1eta,           "g1eta/F");
+  fEffTree->Branch("m1q",    &fETm1q,             "m1q/I");
+  fEffTree->Branch("m1gt",   &fETm1gt,            "m1gt/O");
+  fEffTree->Branch("m1id",   &fETm1id,            "m1id/O");
+
+  fEffTree->Branch("m2pt",   &fETm2pt,            "m2pt/F");
+  fEffTree->Branch("g2pt",   &fETg2pt,            "g2pt/F");
+  fEffTree->Branch("m2eta",  &fETm2eta,           "m2eta/F");
+  fEffTree->Branch("g2eta",  &fETg2eta,           "g2eta/F");
+  fEffTree->Branch("m2q",    &fETm2q,             "m2q/I");
+  fEffTree->Branch("m2gt",   &fETm2gt,            "m2gt/O");
+  fEffTree->Branch("m2id",   &fETm2id,            "m2id/O");
+
+  fEffTree->Branch("m",      &fETcandMass,        "m/F");
 
 
   // -- Analysis distributions

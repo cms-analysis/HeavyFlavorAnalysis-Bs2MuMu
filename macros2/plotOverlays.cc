@@ -1,10 +1,10 @@
 #include "plotOverlays.hh"
 
 #include "../macros/AnalysisDistribution.hh"
+#include "../macros/HistCutEfficiency.hh"
 #include "TMath.h"
 
 using namespace std; 
-using std::string; 
 
 ClassImp(plotOverlays)
 
@@ -27,11 +27,13 @@ plotOverlays::~plotOverlays() {
 void plotOverlays::makeAll(int verbose) {
 
   fVerbose = verbose;
+
+  int all(1);
   
   fMode = 0; 
   sbsDistributionOverlay("SgData", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Ao");
-  sbsDistributionOverlay("SgData", "candAnaMuMu", "B", "SgMc", "candAnaMuMu", "B", "Ao");
-  sbsDistributionOverlay("SgData", "candAnaMuMu", "E", "SgMc", "candAnaMuMu", "E", "Ao");
+  if (all) sbsDistributionOverlay("SgData", "candAnaMuMu", "B", "SgMc", "candAnaMuMu", "B", "Ao");
+  if (all) sbsDistributionOverlay("SgData", "candAnaMuMu", "E", "SgMc", "candAnaMuMu", "E", "Ao");
 
   // -- For normalization sample, use pol1 + error function for bg parametrization
   fMode = 1; 
@@ -39,8 +41,8 @@ void plotOverlays::makeAll(int verbose) {
   fPreco = 5.1;
   // -- default/mix
   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Ao");
-  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "B", "NoMc", "candAnaBu2JpsiK", "B", "Ao");
-  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "E", "NoMc", "candAnaBu2JpsiK", "E", "Ao");
+  if (all) sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "B", "NoMc", "candAnaBu2JpsiK", "B", "Ao");
+  if (all) sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "E", "NoMc", "candAnaBu2JpsiK", "E", "Ao");
   // -- run ranges
   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR3", "NoMc2e33", "candAnaBu2JpsiK", "A", "Ao");
   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR4", "NoMc3e33", "candAnaBu2JpsiK", "A", "Ao");
@@ -49,8 +51,8 @@ void plotOverlays::makeAll(int verbose) {
   fMode = 2; 
   // -- default/mix
   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMc", "candAnaBs2JpsiPhi", "A", "Ao");
-  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "B", "CsMc", "candAnaBs2JpsiPhi", "B", "Ao");
-  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "E", "CsMc", "candAnaBs2JpsiPhi", "E", "Ao");
+  if (all) sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "B", "CsMc", "candAnaBs2JpsiPhi", "B", "Ao");
+  if (all) sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "E", "CsMc", "candAnaBs2JpsiPhi", "E", "Ao");
   // -- run ranges
   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "AR3", "CsMc2e33", "candAnaBs2JpsiPhi", "A", "Ao");
   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "AR4", "CsMc3e33", "candAnaBs2JpsiPhi", "A", "Ao");
@@ -261,36 +263,19 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
 	}
       }
     }
-  
-    double ntot   = h1->Integral(0, h1->GetNbinsX()+1);
-    //    double ntot   = h1->Integral();
-    double ucut   = h1->Integral(h1->FindBin(cutval), h1->GetNbinsX()+1);
-    double ueff   = ucut/ntot; 
-    double ustat  = dEff(static_cast<int>(ucut), static_cast<int>(ntot));
 
-    double lcut   = h1->Integral(0, h1->FindBin(cutval)-1);
-    double leff   = lcut/ntot; 
-    double lstat  = dEff(static_cast<int>(lcut), static_cast<int>(ntot));
+    HistCutEfficiency a(h1); 
+    a.eff(h1, cutval); 
+    fTEX << formatTex(a.loEff, Form("%s:%s:%s:loEff", fSuffix.c_str(), file1.c_str(), cut.c_str()), 3) << endl;
+    fTEX << formatTex(a.loErr, Form("%s:%s:%s:loEffE", fSuffix.c_str(), file1.c_str(), cut.c_str()), 3) << endl;
+    fTEX << formatTex(a.hiEff, Form("%s:%s:%s:hiEff", fSuffix.c_str(), file1.c_str(), cut.c_str()), 3) << endl;
+    fTEX << formatTex(a.hiErr, Form("%s:%s:%s:hiEffE", fSuffix.c_str(), file1.c_str(), cut.c_str()), 3) << endl;
 
-    fTEX << formatTex(ueff, Form("%s:%s:%s:ueff", fSuffix.c_str(), file1.c_str(), cut.c_str()), 3) << endl;
-    fTEX << formatTex(ustat, Form("%s:%s:%s:ueffE", fSuffix.c_str(), file1.c_str(), cut.c_str()), 3) << endl;
-    fTEX << formatTex(leff, Form("%s:%s:%s:leff", fSuffix.c_str(), file1.c_str(), cut.c_str()), 3) << endl;
-    fTEX << formatTex(lstat, Form("%s:%s:%s:leffE", fSuffix.c_str(), file1.c_str(), cut.c_str()), 3) << endl;
-
-
-    ntot   = h2->GetSumOfWeights();
-    ucut   = h2->Integral(h2->FindBin(cutval), h2->GetNbinsX());
-    ueff   = ucut/ntot; 
-    ustat  = dEff(static_cast<int>(ucut), static_cast<int>(ntot));
-    
-    lcut   = h2->Integral(1, h2->FindBin(cutval)-1);
-    leff   = lcut/ntot; 
-    lstat  = dEff(static_cast<int>(lcut), static_cast<int>(ntot));
-
-    fTEX << formatTex(ueff, Form("%s:%s:%s:ueff", fSuffix.c_str(), file2.c_str(), cut.c_str()), 3) << endl;
-    fTEX << formatTex(ustat, Form("%s:%s:%s:ueffE", fSuffix.c_str(), file2.c_str(), cut.c_str()), 3) << endl;
-    fTEX << formatTex(leff, Form("%s:%s:%s:leff", fSuffix.c_str(), file2.c_str(), cut.c_str()), 3) << endl;
-    fTEX << formatTex(lstat, Form("%s:%s:%s:leffE", fSuffix.c_str(), file2.c_str(), cut.c_str()), 3) << endl;
+    a.eff(h2, cutval); 
+    fTEX << formatTex(a.loEff, Form("%s:%s:%s:loEff", fSuffix.c_str(), file2.c_str(), cut.c_str()), 3) << endl;
+    fTEX << formatTex(a.loErr, Form("%s:%s:%s:loEffE", fSuffix.c_str(), file2.c_str(), cut.c_str()), 3) << endl;
+    fTEX << formatTex(a.hiEff, Form("%s:%s:%s:hiEff", fSuffix.c_str(), file2.c_str(), cut.c_str()), 3) << endl;
+    fTEX << formatTex(a.hiErr, Form("%s:%s:%s:hiEffE", fSuffix.c_str(), file2.c_str(), cut.c_str()), 3) << endl;
 
     c0->cd(); 
     c0->Clear();

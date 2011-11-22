@@ -16,6 +16,8 @@ ClassImp(plotReducedTree)
 // ----------------------------------------------------------------------
 plotReducedTree::plotReducedTree(const char *files, const char *cuts, const char *dir, int mode) : plotClass(files, cuts, dir, mode) { 
 
+  fDoPrint = false; 
+
   int NBINS = (fMassHi - fMassLo)/0.025;
 
   int HBINS(15); 
@@ -23,7 +25,10 @@ plotReducedTree::plotReducedTree(const char *files, const char *cuts, const char
 
   TH1D *h; 
   numbers *a(0); 
+  cout << "----> fNchan = " << fNchan << " fCuts.size() = " << fCuts.size() << endl;
   for (unsigned int i = 0; i < fNchan; ++i) {
+    cout << "--> set up structures for channel #" << i << endl;
+    cout << "    etaMin: " << fCuts[i]->etaMin << " etaMax: " << fCuts[i]->etaMax << endl;
     // -- signal Bs2MuMu
     a = new numbers;
     initNumbers(a); 
@@ -157,9 +162,9 @@ void plotReducedTree::loopTree(int mode, int proc) {
   // 1  Bd2MuMu MC
   // 5  Bs2MuMu data
   // 10 Bp2JpsiKp MC
-  // 11 Bp2JpsiKp data
+  // 15 Bp2JpsiKp data
   // 20 Bs2JpsiPhi MC
-  // 21 Bs2JpsiPhi data
+  // 25 Bs2JpsiPhi data
 
   PidTable *ptT1;
   PidTable *ptT2;
@@ -171,72 +176,73 @@ void plotReducedTree::loopTree(int mode, int proc) {
   
   bool bp2jpsikp(false), bs2jpsiphi(false), isMC(false); 
 
+  string directory; 
   string fAcc;
 
   numbers *aa(0);
   if (0 == mode) {
     isMC = true; 
-    fF["SgMc"]->cd();
-    //    fpMc[fSgMc]->cd(); 
+    directory = "candAnaMuMu"; 
+    fF["SgMc"]->cd(directory.c_str());
     fAcc = "SgMcAcc";
   }  else if (1 == mode) {
     isMC = true; 
-    fF["BdMc"]->cd();
-    //    fpMc[fBdMc]->cd(); 
+    directory = "candAnaMuMu"; 
+    fF["BdMc"]->cd(directory.c_str());
     fAcc = "BdMcAcc";
   } else if (5 == mode) {
     isMC = false;     
-    fF["SgData"]->cd();
-    //    fpData[fSgData]->cd(); 
+    directory = "candAnaMuMu"; 
+    fF["SgData"]->cd(directory.c_str());
   } else if (10 == mode) {
     isMC = true; 
     bp2jpsikp = true; 
-    fF["NoMc"]->cd();
-    //    fpMc[fNoMc]->cd(); 
+    directory = "candAnaBu2JpsiK"; 
+    fF["NoMc"]->cd(directory.c_str());
     fAcc = "NoMcAcc";
-  } else if (11 == mode) {
+  } else if (15 == mode) {
     isMC = false;     
     bp2jpsikp = true; 
-    fF["NoData"]->cd();
-    //    fpData[fNoData]->cd(); 
+    directory = "candAnaBu2JpsiK"; 
+    fF["NoData"]->cd(directory.c_str());
   } else if (20 == mode) {
     isMC = true; 
     bs2jpsiphi = true; 
-    fF["CsMc"]->cd();
-    //    fpMc[fCsMc]->cd(); 
+    directory = "candAnaBs2JpsiPhi"; 
+    fF["CsMc"]->cd(directory.c_str());
     fAcc = "CsMcAcc";
-  } else if (21 == mode) {
+  } else if (25 == mode) {
     isMC = false;     
     bs2jpsiphi = true; 
-    fF["CsData"]->cd();
-    //    fpData[fCsData]->cd(); 
+    directory = "candAnaBs2JpsiPhi"; 
+    fF["CsData"]->cd(directory.c_str());
   } else if (98 == mode) {
     cout << "mode 98" << endl;
   } else {
     cout << "mode 99" << endl;
   }
 
-  ptT1 = new PidTable("pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 	
-  ptT2 = new PidTable("pidtables/110606/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 	
-  ptM  = new PidTable("pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
+  ptT1 = new PidTable("../macros/pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 	
+  ptT2 = new PidTable("../macros/pidtables/110606/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 	
+  ptM  = new PidTable("../macros/pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
 
-  ptT1MC = new PidTable("pidtables/110625/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
-  ptT2MC = new PidTable("pidtables/110625/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
-  ptMMC  = new PidTable("pidtables/110625/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 
+  ptT1MC = new PidTable("../macros/pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
+  ptT2MC = new PidTable("../macros/pidtables/110606/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
+  ptMMC  = new PidTable("../macros/pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 
 
-  //   if (isMC) {
-  //     ptT1 = new PidTable("pidtables/110625/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
-  //     ptT2 = new PidTable("pidtables/110625/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
-  //     ptM  = new PidTable("pidtables/110625/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 
-  //     //    ptM  = new PidTable("pidtables/110701/H2D_TagPt_MuonIDEfficiency_GlbTM_TagHighPt_mc.dat"); 
-  //     //     ptT1 = new PidTable("pidtables/110625/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.dat"); 	
-  //     //     ptT2 = new PidTable("pidtables/110625/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.dat"); 	
-  //     //     ptM  = new PidTable("pidtables/110625/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.dat"); 
-  //   } else {
-  //   }
+  if (isMC) {
+    ptT1 = new PidTable("pidtables/110625/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
+    ptT2 = new PidTable("pidtables/110625/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
+    ptM  = new PidTable("pidtables/110625/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 
+    //    ptM  = new PidTable("pidtables/110701/H2D_TagPt_MuonIDEfficiency_GlbTM_TagHighPt_mc.dat"); 
+    //     ptT1 = new PidTable("pidtables/110625/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.dat"); 	
+    //     ptT2 = new PidTable("pidtables/110625/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.dat"); 	
+    //     ptM  = new PidTable("pidtables/110625/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.dat"); 
+  } else {
+  }
 
   cout << "--> loopTree with mode " << mode << " proc = " << proc << " on file ";
-  gFile->pwd();
+  gDirectory->pwd();
 
   // -- reset all histograms
   for (unsigned int i = 0; i < fNchan; ++i) {
@@ -286,7 +292,7 @@ void plotReducedTree::loopTree(int mode, int proc) {
   // -- set up tree
   double mass(0.); 
   TTree *t;
-  t = (TTree*)gFile->Get("events");
+  t = (TTree*)gDirectory->Get("events");
   int brun, bevt, bls, btm, bq1, bq2, bprocid; 
   double bg1pt, bg2pt, bg1eta, bg2eta;
   double bm, bcm, bpt, beta, bphi, bcosa, balpha, biso, bchi2, bdof, bdocatrk, bfls3d, bfl3dE, bfl3d;
@@ -450,7 +456,7 @@ void plotReducedTree::loopTree(int mode, int proc) {
     }
 
     // -- immutable cuts: require basic muon and trackQual cuts
-    if (false == bgtqual) continue;
+    if (false == bgtqual)  continue;
     if (TMath::Abs(bm1eta) > 2.4) continue;
     if (TMath::Abs(bm2eta) > 2.4) continue;
 
@@ -668,7 +674,7 @@ void plotReducedTree::loopTree(int mode, int proc) {
     
   }
 
-  cout << gFile->GetName() << ": " << fhMassWithAllCuts[0]->GetSumOfWeights() 
+  cout << gDirectory->GetName() << ": " << fhMassWithAllCuts[0]->GetSumOfWeights() 
        << "  " << fhMassWithAllCuts[1]->GetSumOfWeights()
        << endl;
   if (98 == mode) {
@@ -728,11 +734,11 @@ void plotReducedTree::loopTree(int mode, int proc) {
       aa->mBsLo = pCuts->mBsLo;
     }
 
-    if (10 == mode || 11 == mode) {
+    if (10 == mode || 15 == mode) {
       aa = fNumbersNo[i];
     }
 
-    if (20 == mode || 21 == mode) {
+    if (20 == mode || 25 == mode) {
       aa = fNumbersCs[i];
     }
 
@@ -779,9 +785,7 @@ void plotReducedTree::loopTree(int mode, int proc) {
 
     // -- Efficiency and acceptance
     if (isMC) {
-      accEffFromEffTree(fAcc, *aa, *fCuts[i], proc);
-      //      accEffFromEffTree(gFile, *aa, *fCuts[i], 0, 1, proc);
-      //      double a = fhMassAbsNoCuts[i]->GetSumOfWeights(); 
+      accEffFromEffTree(fAcc, directory, *aa, *fCuts[i], proc);
       double a = fhMassNoCuts[i]->GetSumOfWeights(); 
       double b = fhMassWithAnaCuts[i]->GetSumOfWeights();
       double c = fhMassWithMuonCuts[i]->GetSumOfWeights();
@@ -861,7 +865,7 @@ void plotReducedTree::loopTree(int mode, int proc) {
       tl->DrawLatex(0.2, 0.77, Form("w/o cuts: %5.1f", fhMassNoCuts[i]->GetSumOfWeights())); 
       tl->DrawLatex(0.2, 0.7, Form("w/   cuts: %5.1f", fhMassWithAnaCuts[i]->GetSumOfWeights())); 
       if (fDoPrint)      c0->SaveAs(Form("%s/sig-mc-chan%d.pdf", fDirectory.c_str(), i));
-      cout << "----> "; gFile->pwd(); 
+      cout << "----> "; gDirectory->pwd(); 
     } else if (5 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
       cout << "==> loopTree: DATA SIGNAL, channel " << i  << endl;
@@ -913,7 +917,7 @@ void plotReducedTree::loopTree(int mode, int proc) {
       legg->AddEntry(dummy2, "B^{0} signal window", "f"); 
       legg->Draw();
       
-      stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+      //      stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
       if (fDoPrint)  c0->SaveAs(Form("%s/sig-data-chan%d.pdf", fDirectory.c_str(), i));
       // -- unblinded version
       h = fhMassWithAllCuts[i]; 
@@ -950,7 +954,7 @@ void plotReducedTree::loopTree(int mode, int proc) {
 //       legg->Draw();
 
 
-      stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+//      stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
       if (fDoPrint)  c0->SaveAs(Form("%s/unblinded-sig-data-chan%d.pdf", fDirectory.c_str(), i));
     } else if (10 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
@@ -960,7 +964,7 @@ void plotReducedTree::loopTree(int mode, int proc) {
       tl->DrawLatex(0.2, 0.77, Form("w/o cuts: %5.1f", fhMassNoCuts[i]->GetSumOfWeights())); 
       tl->DrawLatex(0.2, 0.7, Form("w/   cuts: %5.1f", fhMassWithAnaCuts[i]->GetSumOfWeights())); 
       if (fDoPrint) c0->SaveAs(Form("%s/norm-mc-chan%d.pdf", fDirectory.c_str(), i));
-    } else if (11 == mode) {
+    } else if (15 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
       cout << "==> loopTree: DATA NORMALIZATION, channel " << i  << endl;
       //      TH1D *h = fhMassWithAllCutsManyBins[i]; 
@@ -993,7 +997,7 @@ void plotReducedTree::loopTree(int mode, int proc) {
     printNumbers(*aa, fOUT); 
     
     // -- Cache the pwd...
-    TDirectory *pD = gFile; 
+    TDirectory *pD = gDirectory; 
     fHistFile->cd();
     cout << "==> " << i << "  " << mode << " hMassWithMassCuts[i] = " << fhMassWithMassCuts[i] << endl;
     fhMassWithMassCutsManyBins[i]->SetName(Form("hMassWithMassCutsManyBins%d_chan%d", mode, i)); fhMassWithMassCutsManyBins[i]->Write();
@@ -1048,23 +1052,126 @@ int plotReducedTree::detChan(double m1eta, double m2eta) {
 
 
 // ----------------------------------------------------------------------
-void plotReducedTree::accEffFromEffTree(string fname, numbers &a, cuts &b, int proc) {
+void plotReducedTree::tnpVsMC(double m1pt, double m2pt) {
+  
+  for (unsigned int i = 0; i < fNchan; ++i) {
+    fCuts[i]->m1pt = m1pt; 
+    fCuts[i]->m2pt = m2pt; 
+  }
+  
+  loopTree(0); 
+  loopTree(10); 
+
+  fTEX << "% -- tnpVsMC for pt = " << m1pt << " and " << m2pt << endl;
+
+  double r(0.); 
+  for (int i = 0; i < fNchan; ++i) {
+    r = fNumbersBs[i]->effMuidMC/fNumbersBs[i]->effMuidPidMC;
+    fTEX << formatTex(r, Form("%s:rhoMuidSg%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersNo[i]->effMuidMC/fNumbersNo[i]->effMuidPidMC;
+    fTEX << formatTex(r, Form("%s:rhoMuidNo%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersBs[i]->effMuidMC/fNumbersNo[i]->effMuidMC;
+    fTEX << formatTex(r, Form("%s:rMcMuid%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = dRatio(fNumbersBs[i]->effMuidMC, fNumbersBs[i]->effMuidMCE, fNumbersNo[i]->effMuidMC, fNumbersNo[i]->effMuidMCE); 
+    fTEX << formatTex(r, Form("%s:rMcMuid%i-pT%2.0fpT%2.0f:err", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersBs[i]->effMuidPidMC/fNumbersNo[i]->effMuidPidMC;
+    fTEX << formatTex(r, Form("%s:rPidMuid%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = dRatio(fNumbersBs[i]->effMuidPidMC, fNumbersBs[i]->effMuidPidMCE, fNumbersNo[i]->effMuidPidMC, fNumbersNo[i]->effMuidPidMCE); 
+    fTEX << formatTex(r, Form("%s:rPidMuid%i-pT%2.0fpT%2.0f:err", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+
+    r = fNumbersBs[i]->effTrigMC/fNumbersBs[i]->effTrigPidMC;
+    fTEX << formatTex(r, Form("%s:rhoTrigSg%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersNo[i]->effTrigMC/fNumbersNo[i]->effTrigPidMC;
+    fTEX << formatTex(r, Form("%s:rhoTrigNo%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersBs[i]->effTrigMC/fNumbersNo[i]->effTrigMC;
+    fTEX << formatTex(r, Form("%s:rMcTrig%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = dRatio(fNumbersBs[i]->effTrigMC, fNumbersBs[i]->effTrigMCE, fNumbersNo[i]->effTrigMC, fNumbersNo[i]->effTrigMCE); 
+    fTEX << formatTex(r, Form("%s:rMcTrig%i-pT%2.0fpT%2.0f:err", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersBs[i]->effTrigPidMC/fNumbersNo[i]->effTrigPidMC;
+    fTEX << formatTex(r, Form("%s:rPidTrig%i-pT%2.0fpT%2.0f:val", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = dRatio(fNumbersBs[i]->effTrigPidMC, fNumbersBs[i]->effTrigPidMCE, fNumbersNo[i]->effTrigPidMC, fNumbersNo[i]->effTrigPidMCE); 
+    fTEX << formatTex(r, Form("%s:rPidTrig%i-pT%2.0fpT%2.0f:err", fSuffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+  }
+
+  // -- muid 
+  cout << Form("pT > %3.1f muid: ", m2pt) 
+       << Form("%3.2f %3.2f %3.2f %3.2f", 
+	       fNumbersBs[0]->effMuidMC, fNumbersBs[0]->effMuidPidMC, 
+	       fNumbersBs[1]->effMuidMC, fNumbersBs[1]->effMuidPidMC)
+       << " " 
+       << Form("%3.2f %3.2f %3.2f %3.2f", 
+	       fNumbersNo[0]->effMuidMC, fNumbersNo[0]->effMuidPid, 
+	       fNumbersNo[1]->effMuidMC, fNumbersNo[1]->effMuidPid)
+       << " -> " 
+       << Form(" rho_B = %3.2f rho_E = %3.2f", 
+	       fNumbersNo[0]->effMuidMC/fNumbersNo[0]->effMuidPidMC, 
+	       fNumbersNo[1]->effMuidMC/fNumbersNo[1]->effMuidPidMC)
+       << Form(" r_MC = %3.2f %3.2f r_Pid(MC) = %3.2f %3.2f r_Pid(D) = %3.2f %3.2f", 
+	       fNumbersBs[0]->effMuidMC/fNumbersNo[0]->effMuidMC, 
+	       fNumbersBs[1]->effMuidMC/fNumbersNo[1]->effMuidMC, 
+	       fNumbersBs[0]->effMuidPidMC/fNumbersNo[0]->effMuidPidMC,
+	       fNumbersBs[1]->effMuidPidMC/fNumbersNo[1]->effMuidPidMC,
+	       fNumbersBs[0]->effMuidPid/fNumbersNo[0]->effMuidPid,
+	       fNumbersBs[1]->effMuidPid/fNumbersNo[1]->effMuidPid
+	       )
+       << endl;
+
+  // -- trig
+  cout << Form("pT > %3.1f trig: ", m2pt) 
+       << Form("%3.2f %3.2f %3.2f %3.2f", 
+	       fNumbersBs[0]->effTrigMC, fNumbersBs[0]->effTrigPidMC, 
+	       fNumbersBs[1]->effTrigMC, fNumbersBs[1]->effTrigPidMC)
+       << " " 
+       << Form("%3.2f %3.2f %3.2f %3.2f", 
+	       fNumbersNo[0]->effTrigMC, fNumbersNo[0]->effTrigPidMC, 
+	       fNumbersNo[1]->effTrigMC, fNumbersNo[1]->effTrigPidMC)
+       << " -> " 
+       << Form(" rho_B = %3.2f rho_E = %3.2f", 
+	       fNumbersNo[0]->effTrigMC/fNumbersNo[0]->effTrigPidMC, 
+	       fNumbersNo[1]->effTrigMC/fNumbersNo[1]->effTrigPidMC)
+       << Form(" r_MC = %3.2f %3.2f r_Pid(MC) = %3.2f %3.2f  r_Pid(D) = %3.2f %3.2f", 
+	       fNumbersBs[0]->effTrigMC/fNumbersNo[0]->effTrigMC, 
+	       fNumbersBs[1]->effTrigMC/fNumbersNo[1]->effTrigMC, 
+	       fNumbersBs[0]->effTrigPidMC/fNumbersNo[0]->effTrigPidMC,
+	       fNumbersBs[1]->effTrigPidMC/fNumbersNo[1]->effTrigPidMC,
+	       fNumbersBs[0]->effTrigPid/fNumbersNo[0]->effTrigPid,
+	       fNumbersBs[1]->effTrigPid/fNumbersNo[1]->effTrigPid
+	       )
+       << endl;
+}
+
+
+// ----------------------------------------------------------------------
+void plotReducedTree::accEffFromEffTree(string fname, string dname, numbers &a, cuts &b, int proc) {
 
   TFile *f = fF[fname];
   if (0 == f) {
     cout << "anaBmm::accEffFromEffTree(" << a.name << "): no file " << fname << " found " << endl;
     return;
   }
-  TTree *t  = (TTree*)(f->Get("effTree"));
+  TTree *t  = (TTree*)(f->Get(Form("%s/effTree", dname.c_str())));
   double effFilter(1.); 
   if (!t) {
-    cout << "anaBmm::accEffFromEffTree(" << a.name << "): no tree `effTree' found " << endl;
-    f->pwd(); 
+    cout << "anaBmm::accEffFromEffTree(" << a.name << "): no tree `effTree' found in " 
+	 << f->GetName() << " and dir = " << Form("%s/effTree", dname.c_str()) 
+	 << endl;
+    
     return;
   } else {
     effFilter = fFilterEff[fname]; 
     cout << "anaBmm::accEffFromEffTree(" << a.name << ")" << endl
-	 << " get acceptance from file " << f->GetName() 
+	 << " get acceptance from file " << f->GetName() << " and dir = " << Form("%s/effTree", dname.c_str()) 
 	 << " with filterEff = " << effFilter
 	 << endl;
   }
@@ -1253,7 +1360,7 @@ void plotReducedTree::accEffFromEffTree(string fname, numbers &a, cuts &b, int p
   a.muidYield     = nmuid;
   a.trigYield     = nhlt;
   a.candYield     = ncand;
-  
+
   if (a.genYield > 0) {
     a.cFrac  = a.genChanYield/a.genYield;
     a.cFracE = dEff(static_cast<int>(a.genChanYield), static_cast<int>(a.genYield));
@@ -1278,6 +1385,12 @@ void plotReducedTree::accEffFromEffTree(string fname, numbers &a, cuts &b, int p
     a.effCand = a.candYield/a.trigYield;
     a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.trigYield));
   } 
+
+  cout << "NGEN      = " << ngen << endl;
+  cout << "NRECO     = " << nreco << endl;
+  cout << "NCAND     = " << ncand << endl;
+  cout << "acc       = " << a.acc << endl;
+  cout << "effFilter = " << effFilter << endl;
 
   //   if (0) {
   //     if (a.chanYield > 0) {
@@ -1342,19 +1455,19 @@ void plotReducedTree::bgBlind(TH1 *h, int mode, double lo, double hi) {
 // ----------------------------------------------------------------------
 void plotReducedTree::normYield(TH1 *h, int mode, double lo, double hi) {
 
-  TF1 *lF1(0);
+  TF1 *lF1(0), *lBg(0);
   
   //  lF1 = fpFunc->pol1Gauss(h); 
   if (0 == mode) { 
     fpFunc->fLo = 5.0;
     fpFunc->fHi = 5.5;
     lF1 = fpFunc->pol1ErrGauss(h, 5.27, 0.034, 5.1); 
-    //    lBg = new TF1("fbg", fa_pol1_err, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 6);
+    lBg = fpFunc->pol1Err(fpFunc->fLo, fpFunc->fHi); 
   } else {
     fpFunc->fLo = 5.0;
     fpFunc->fHi = 5.5;
-    lF1 = fpFunc->expoErrGauss(h, 5.27, 0.034, 5.1); 
-    //    lBg = new TF1("fbg", fa_expo_err, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 6);
+    lF1 = fpFunc->expoErrGauss(h, 5.27, 0.056, 5.1); 
+    lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
   }
   h->Fit(lF1, "rm", "", lo, hi); 
 
@@ -1379,15 +1492,16 @@ void plotReducedTree::normYield(TH1 *h, int mode, double lo, double hi) {
   gStyle->SetOptTitle(0); 
   h->Draw("e");
 
-//   for (int i = 0; i < lBg->GetNpar(); ++i) {
-//     lBg->SetParameter(i, lF1->GetParameter(3+i));
-//     cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
-//   }
+  // -- Overlay BG function
+  for (int i = 0; i < lBg->GetNpar(); ++i) {
+    lBg->SetParameter(i, lF1->GetParameter(3+i));
+    cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
+  }
 
-//   lBg->SetLineStyle(kDashed);
-//   lBg->SetLineColor(kRed);
-//   lBg->SetLineWidth(3);
-//   lBg->Draw("same");
+  lBg->SetLineStyle(kDashed);
+  lBg->SetLineColor(kRed);
+  lBg->SetLineWidth(3);
+  lBg->Draw("same");
 
   tl->SetTextSize(0.07); 
   if (0 == mode) {
@@ -1398,7 +1512,7 @@ void plotReducedTree::normYield(TH1 *h, int mode, double lo, double hi) {
     tl->DrawLatex(0.6, 0.8, "Endcap");   
   } 
 
-  stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+  //  stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
   if (fDoPrint) c0->SaveAs(Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode));
   
 
@@ -1458,7 +1572,7 @@ void plotReducedTree::csYield(TH1 *h, int mode, double lo, double hi) {
     tl->DrawLatex(0.22, 0.8, "Endcap");   
   } 
 
-  stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+  //  stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
   if (fDoPrint) c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), mode));
 
   cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;

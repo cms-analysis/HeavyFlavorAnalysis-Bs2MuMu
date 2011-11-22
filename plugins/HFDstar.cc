@@ -61,6 +61,7 @@ HFDstar::HFDstar(const ParameterSet& iConfig) :
   cout << "---  trackPt:                  " << fTrackPt << endl;
   cout << "---  slowPionPt:               " << fSlowPionPt << endl;
   cout << "---  deltaR:                   " << fDeltaR << endl;
+  cout << "---  deltaM:                   " << fDeltaM << endl;
   cout << "---  maxDoca:                  " << fMaxDoca << endl;
   cout << "---  maxD0:                    " << fMaxD0 << endl;
   cout << "---  maxDz:                    " << fMaxDz << endl;
@@ -194,6 +195,9 @@ void HFDstar::analyze(const Event& iEvent, const EventSetup& iSetup)
       if (iTrack == iKaon || iTrack == iPion) continue; 
       TrackBaseRef rTrackView(hTracks, iTrack);
       Track tSlowPion(*rTrackView);
+      
+      // -- the slow pion has the same charge like the fast pion
+      if (tSlowPion.charge()*tPion.charge() < 0) continue; 
 
       if (tSlowPion.d0() > fMaxD0) continue;
       if (tSlowPion.dz() > fMaxDz) continue;
@@ -203,7 +207,7 @@ void HFDstar::analyze(const Event& iEvent, const EventSetup& iSetup)
       if (d0.DeltaR(pis) > fDeltaR) continue; 
       
       dstar = d0 + pis; 
-      if (TMath::Abs(dstar.M() - MDSTARPLUS) > 0.3) continue; 
+      if (TMath::Abs(dstar.M() - d0.M()) > 0.16) continue; 
 
       // -- sequential fit: D0 pi_slow
       if (fVerbose > 5) {

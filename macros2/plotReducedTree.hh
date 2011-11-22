@@ -44,8 +44,9 @@ public:
 
   void makeAll(int channels = 3);
   
-  void loopTree(int mode, int proc);
-  void accEffFromEffTree(std::string fname, numbers &a, cuts &b, int proc);
+  void loopTree(int mode, int proc = -1);
+  void tnpVsMC(double m1pt, double m2pt);
+  void accEffFromEffTree(std::string fname, std::string dname, numbers &a, cuts &b, int proc);
   void normYield(TH1 *h, int mode, double lo = 5.15, double hi=5.5);
   void csYield(TH1 *h, int mode, double lo = 5.25, double hi=5.6);
   void bgBlind(TH1 *h, int mode = 2, double lo = 4.5, double hi = 6.5); 
@@ -54,8 +55,6 @@ public:
   void initNumbers(numbers *a); 
   int  detChan(double m1eta, double m2eta);
 
-
-  std::vector<cuts*> fCuts; 
   std::vector<TH1D*> fhMassAcc;
   std::vector<TH1D*> fhMassChan;
   std::vector<TH1D*> fhMassAbsNoCuts;
@@ -90,7 +89,6 @@ public:
   double fCsSig, fCsSigE; 
 
   double fBF, fu, fs, fsfu, fsfuE;
-  double fMassLo, fMassHi;
 
   bool fDoPrint;
 

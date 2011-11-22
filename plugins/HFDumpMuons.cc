@@ -138,6 +138,7 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   if (gTrack.isNonnull()) {
     Track trk(*gTrack);
     pM->fGlobalPlab.SetPtEtaPhi(trk.pt(), trk.eta(), trk.phi());
+    //    cout << " gpt = " << trk.pt() << " " <<  trk.eta() << " "  <<  trk.phi() << endl;
 
     if (!fRunOnAOD) {
       vector<unsigned int> hits = muonStatHits(trk);
@@ -154,6 +155,7 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   if (iTrack.isNonnull()) {
     Track trk(*iTrack);
     pM->fInnerPlab.SetPtEtaPhi(trk.pt(), trk.eta(), trk.phi());
+    //    cout << " ipt = " << trk.pt() << " " <<  trk.eta() << " "  <<  trk.phi() << endl;
   }
 
   if (oTrack.isNonnull()) {

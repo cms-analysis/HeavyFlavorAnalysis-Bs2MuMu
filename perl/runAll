@@ -62,7 +62,7 @@ if ($opt_v) {
     , "Bs2KMuNu rare MC"  
     => "-m,bmm2Reader.2e33-Bs2KMuNu,cbmm-$version-2e33-Bs2KMuNu,$version-2e33-Bs2KMuNu.root"
     , "Bd2PiMuNu rare MC"  
-    => "-m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-$version-2e33-Bd2PiMuNu,$version-2e33-Bd2PiMuNu.root"
+    => "-m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-$version-2e33-Bd2PiMuNu-*,$version-2e33-Bd2PiMuNu.root"
     , "Lb2PMuNu rare MC"  
     => "-m,bmm2Reader.2e33-Lb2PMuNu,cbmm-$version-2e33-Lb2PMuNu,$version-2e33-Lb2PMuNu.root"
     , "Bs2KK rare MC"  
@@ -179,7 +179,7 @@ foreach $j (keys %jobs) {
     if ($opt_s =~ /rare/   && !($j =~ /rare/)) {next; }
 
     if ($j =~ /data/) {
-	$command = "$runCommand -q all.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
+	$command = "$runCommand -q long.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
     } else {
 	$command = "$runCommand -q short.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
     }

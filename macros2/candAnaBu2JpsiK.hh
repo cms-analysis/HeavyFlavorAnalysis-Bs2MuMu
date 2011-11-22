@@ -35,6 +35,7 @@ public:
   ~candAnaBu2JpsiK();
 
   void        candAnalysis();
+  void        efficiencyCalculation();
   void        moreBasicCuts();
 
   void        genMatch(); 
@@ -60,6 +61,12 @@ public:
   // -- TM
   int          fGenK1Tmi; 
   int          fRecK1Tmi; 
+
+  // -- effTree
+  float fETk1pt, fETk1eta, fETg3pt, fETg3eta;
+  int   fETk1q; 
+  bool  fETk1gt;
+
 
   // -- AnalysisDistributionsa
   AnalysisDistribution *fpKaonPt[NAD], *fpKaonEta[NAD], *fpMpsi[NAD], *fpPsiPt[NAD], *fpPsiEta[NAD];

@@ -37,6 +37,7 @@ public:
   ~candAnaMuMu();
 
   void        candAnalysis();
+  void        efficiencyCalculation();
   
   void        processType(); 
   void        genMatch(); 

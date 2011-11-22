@@ -37,6 +37,7 @@ public:
   ~candAnaBs2JpsiPhi();
 
   void        candAnalysis();
+  void        efficiencyCalculation();
   void        moreBasicCuts();
 
   void        genMatch(); 
