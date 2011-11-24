@@ -1,10 +1,9 @@
 #include "lmtreeReader.hh"
 
-
-
 using std::cout;
 using std::endl;
 using std::string;
+using std::vector;
 
 lmtreeReader::lmtreeReader(TChain *tree, TString evtClassName): treeReader01(tree, evtClassName) {
   cout << "==> lmtreeReader: constructor..." << endl;
@@ -15,6 +14,7 @@ lmtreeReader::lmtreeReader(TChain *tree, TString evtClassName): treeReader01(tre
   Reco_B2MM_size = 0;
   Reco_B2JpsiK_size = 0;
   Reco_B2JpsiPhi_size = 0;
+  Reco_Jpsi_size = 0;
   Reco_Muon_size = 0;
 
   Gen_Cand_size = 0;
@@ -173,6 +173,7 @@ void lmtreeReader::bookHist() {
   T1->Branch("Reco_Muon_ID", Reco_Muon_ID, "Reco_Muon_ID[Reco_Muon_size]/I");
   T1->Branch("Reco_Muon_pdgId", Reco_Muon_pdgId, "Reco_Muon_pdgId[Reco_Muon_size]/I");
   T1->Branch("Reco_Muon_ValidHits", Reco_Muon_ValidHits, "Reco_Muon_ValidHits[Reco_Muon_size]/I");
+  T1->Branch("Reco_Muon_PxValidHits", Reco_Muon_PxValidHits, "Reco_Muon_PxValidHits[Reco_Muon_size]/I");
   T1->Branch("Reco_Muon_Index", Reco_Muon_Index, "Reco_Muon_Index[Reco_Muon_size]/I");
 
   if (SAVECANDS) {
@@ -188,7 +189,7 @@ void lmtreeReader::bookHist() {
     T1->Branch("Reco_B2MM_Alpha", Reco_B2MM_Alpha, "Reco_B2MM_Alpha[Reco_B2MM_size]/D");
     T1->Branch("Reco_B2MM_Alphaxy", Reco_B2MM_Alphaxy, "Reco_B2MM_Alphaxy[Reco_B2MM_size]/D");
     T1->Branch("Reco_B2MM_VxChi2", Reco_B2MM_VxChi2, "Reco_B2MM_VxChi2[Reco_B2MM_size]/D");
-    T1->Branch("Reco_B2MM_DOCA", Reco_B2MM_DOCA, "Reco_B2MM_DOCA[Reco_B2MM_size]/D");
+    T1->Branch("Reco_B2MM_DOCAtrk", Reco_B2MM_DOCAtrk, "Reco_B2MM_DOCAtrk[Reco_B2MM_size]/D");
     T1->Branch("Reco_B2MM_NDOF", Reco_B2MM_NDOF, "Reco_B2MM_NDOF[Reco_B2MM_size]/I");
     T1->Branch("Reco_B2MM_Iso1_pt09", Reco_B2MM_Iso1_pt09, "Reco_B2MM_Iso1_pt09[Reco_B2MM_size]/D");
     T1->Branch("Reco_B2MM_Mu1_index", Reco_B2MM_Mu1_index, "Reco_B2MM_Mu1_index[Reco_B2MM_size]/I");
@@ -208,7 +209,7 @@ void lmtreeReader::bookHist() {
     T1->Branch("Reco_B2JpsiK_Alpha", Reco_B2JpsiK_Alpha, "Reco_B2JpsiK_Alpha[Reco_B2JpsiK_size]/D");
     T1->Branch("Reco_B2JpsiK_Alphaxy", Reco_B2JpsiK_Alphaxy, "Reco_B2JpsiK_Alphaxy[Reco_B2JpsiK_size]/D");
     T1->Branch("Reco_B2JpsiK_VxChi2", Reco_B2JpsiK_VxChi2, "Reco_B2JpsiK_VxChi2[Reco_B2JpsiK_size]/D");
-    T1->Branch("Reco_B2JpsiK_DOCA", Reco_B2JpsiK_DOCA, "Reco_B2JpsiK_DOCA[Reco_B2JpsiK_size]/D");
+    T1->Branch("Reco_B2JpsiK_DOCAtrk", Reco_B2JpsiK_DOCAtrk, "Reco_B2JpsiK_DOCAtrk[Reco_B2JpsiK_size]/D");
     T1->Branch("Reco_B2JpsiK_NDOF", Reco_B2JpsiK_NDOF, "Reco_B2JpsiK_NDOF[Reco_B2JpsiK_size]/I");
     T1->Branch("Reco_B2JpsiK_Iso1_pt09", Reco_B2JpsiK_Iso1_pt09, "Reco_B2JpsiK_Iso1_pt09[Reco_B2JpsiK_size]/D");
     T1->Branch("Reco_B2JpsiK_Tk1_4mom", "TClonesArray", &Reco_B2JpsiK_Tk1_4mom, 32000, 0);
@@ -233,7 +234,7 @@ void lmtreeReader::bookHist() {
     T1->Branch("Reco_B2JpsiPhi_Alpha", Reco_B2JpsiPhi_Alpha, "Reco_B2JpsiPhi_Alpha[Reco_B2JpsiPhi_size]/D");
     T1->Branch("Reco_B2JpsiPhi_Alphaxy", Reco_B2JpsiPhi_Alphaxy, "Reco_B2JpsiPhi_Alphaxy[Reco_B2JpsiPhi_size]/D");
     T1->Branch("Reco_B2JpsiPhi_VxChi2", Reco_B2JpsiPhi_VxChi2, "Reco_B2JpsiPhi_VxChi2[Reco_B2JpsiPhi_size]/D");
-    T1->Branch("Reco_B2JpsiPhi_DOCA", Reco_B2JpsiPhi_DOCA, "Reco_B2JpsiPhi_DOCA[Reco_B2JpsiPhi_size]/D");
+    T1->Branch("Reco_B2JpsiPhi_DOCAtrk", Reco_B2JpsiPhi_DOCAtrk, "Reco_B2JpsiPhi_DOCAtrk[Reco_B2JpsiPhi_size]/D");
     T1->Branch("Reco_B2JpsiPhi_NDOF", Reco_B2JpsiPhi_NDOF, "Reco_B2JpsiPhi_NDOF[Reco_B2JpsiPhi_size]/I");
     T1->Branch("Reco_B2JpsiPhi_Iso1_pt09", Reco_B2JpsiPhi_Iso1_pt09, "Reco_B2JpsiPhi_Iso1_pt09[Reco_B2JpsiPhi_size]/D");
     T1->Branch("Reco_B2JpsiPhi_Mu1_index", Reco_B2JpsiPhi_Mu1_index, "Reco_B2JpsiPhi_Mu1_index[Reco_B2JpsiPhi_size]/I");
@@ -246,6 +247,7 @@ void lmtreeReader::bookHist() {
     T1->Branch("Reco_B2JpsiPhi_Phi_4mom", "TClonesArray", &Reco_B2JpsiPhi_Phi_4mom, 32000, 0);
 
     Reco_Jpsi_4mom = new TClonesArray("TLorentzVector");
+    /*
     T1->Branch("Reco_Jpsi_size", &Reco_Jpsi_size, "Reco_Jpsi_size/I");
     T1->Branch("Reco_Jpsi_MCTruth", Reco_Jpsi_MCTruth, "Reco_Jpsi_MCTruth[Reco_Jpsi_size]/O");
     T1->Branch("Reco_Jpsi_4mom", "TClonesArray", &Reco_Jpsi_4mom, 32000, 0);
@@ -257,12 +259,12 @@ void lmtreeReader::bookHist() {
     T1->Branch("Reco_Jpsi_Alpha", Reco_Jpsi_Alpha, "Reco_Jpsi_Alpha[Reco_Jpsi_size]/D");
     T1->Branch("Reco_Jpsi_Alphaxy", Reco_Jpsi_Alphaxy, "Reco_Jpsi_Alphaxy[Reco_Jpsi_size]/D");
     T1->Branch("Reco_Jpsi_VxChi2", Reco_Jpsi_VxChi2, "Reco_Jpsi_VxChi2[Reco_Jpsi_size]/D");
-    T1->Branch("Reco_Jpsi_DOCA", Reco_Jpsi_DOCA, "Reco_Jpsi_DOCA[Reco_Jpsi_size]/D");
+    T1->Branch("Reco_Jpsi_DOCAtrk", Reco_Jpsi_DOCAtrk, "Reco_Jpsi_DOCAtrk[Reco_Jpsi_size]/D");
     T1->Branch("Reco_Jpsi_NDOF", Reco_Jpsi_NDOF, "Reco_Jpsi_NDOF[Reco_Jpsi_size]/I");
     T1->Branch("Reco_Jpsi_Iso1_pt09", Reco_Jpsi_Iso1_pt09, "Reco_Jpsi_Iso1_pt09[Reco_Jpsi_size]/D");
     T1->Branch("Reco_Jpsi_Mu1_index", Reco_Jpsi_Mu1_index, "Reco_Jpsi_Mu1_index[Reco_Jpsi_size]/I");
     T1->Branch("Reco_Jpsi_Mu2_index", Reco_Jpsi_Mu2_index, "Reco_Jpsi_Mu2_index[Reco_Jpsi_size]/I");
-
+*/
   }
   if (MC) {
     Gen_Cand_4mom  = new TClonesArray("TLorentzVector");
@@ -312,7 +314,7 @@ void lmtreeReader::eventProcessing() {
 
 void lmtreeReader::fillGen() {
   int nc = fpEvt->nGenCands();
-  for (int j = 0; j < nc; j++) {
+  for (int j = 0; j < nc && j < array_size; j++) {
     TGenCand* Cand = fpEvt->getGenCand(j);
     if (abs(Cand->fID) == 531 || abs(Cand->fID) == 521) {
       if (abs(Cand->fID) == 531) {
@@ -440,9 +442,9 @@ void lmtreeReader::fillRecoCand() {
     TAnaCand* Cand = fpEvt->getCand(j);
     //if ( j != Cand->fIndex) cout << j << " = " << Cand->fIndex << " ?" << endl;
     if (selCand(Cand)) {
-      if (Cand->fType == B2MMTYPE)  fillB2MMCand(Cand);
-      if (Cand->fType == B2JpsiKTYPE) fillB2JpsiKCand(Cand);
-      if (Cand->fType == B2JpsiPhiTYPE) fillB2JpsiPhiCand(Cand);
+      if (Cand->fType == B2MMTYPE && Reco_B2MM_size < array_size)  fillB2MMCand(Cand);
+      if (Cand->fType == B2JpsiKTYPE && Reco_B2JpsiK_size < array_size) fillB2JpsiKCand(Cand);
+      if (Cand->fType == B2JpsiPhiTYPE && Reco_B2JpsiPhi_size < array_size) fillB2JpsiPhiCand(Cand);
 
       if (Reco_B2MM_size >= array_size) {
         cout << "event "<< fEvt <<" B2MM array too small: "<< array_size << " nCands = " << Reco_B2MM_size << endl;
@@ -493,7 +495,43 @@ void lmtreeReader::fillB2MMCand(TAnaCand* Cand) {
   Reco_B2MM_DxyzE[Reco_B2MM_size]  = Cand->fVtx.fD3dE;
   Reco_B2MM_VxChi2[Reco_B2MM_size] = Cand->fVtx.fChi2;
   Reco_B2MM_NDOF[Reco_B2MM_size]   = Cand->fVtx.fNdof;
-  Reco_B2MM_DOCA[Reco_B2MM_size]   = Cand->fMaxDoca;
+  double fCandDocaTrk = 99.;
+  if (Cand->fNstTracks.size() != 0) {
+    fCandDocaTrk = Cand->fNstTracks[0].second.first;
+  }
+  Reco_B2MM_DOCAtrk[Reco_B2MM_size]   = fCandDocaTrk;
+  double iso  = isoClassicWithDOCA(Cand, 0.05, 0.5, 0.5); // 500um DOCA cut
+  Reco_B2MM_Iso1_pt09[Reco_B2MM_size] = iso;
+  int pvidx = (Cand->fPvIdx > -1? Cand->fPvIdx : 0);
+  TVector3 svpv(Cand->fVtx.fPoint - fpEvt->getPV(pvidx)->fPoint);
+  double alpha = svpv.Angle(Cand->fPlab);
+  Reco_B2MM_Alpha[Reco_B2MM_size] = alpha;
+
+  bool mc = false;
+  int bs_mu1 = -1, bs_mu2 = -2;
+  if (mu1r->fGenIndex >= 0 && mu2r->fGenIndex >= 0) {
+    TGenCand* mu1_gen = fpEvt->getGenCand(mu1r->fGenIndex);
+    TGenCand* mu2_gen = fpEvt->getGenCand(mu2r->fGenIndex);
+    if ( (mu1_gen->fID == 13 && mu2_gen->fID == -13) || (mu1_gen->fID == -13 && mu2_gen->fID == 13)) {
+      for (int i = mu1_gen->fMom1; i <= mu1_gen->fMom2 && i >= 0; i++) {
+        TGenCand* Bs_gen = fpEvt->getGenCand(i);
+        if (abs(Bs_gen->fID) == 531) {
+          bs_mu1 = i;
+          break;
+        }
+      }
+      for (int i = mu2_gen->fMom1; i <= mu2_gen->fMom2 && i >= 0; i++) {
+        TGenCand* Bs_gen = fpEvt->getGenCand(i);
+        if (abs(Bs_gen->fID) == 531) {
+          bs_mu2 = i;
+          break;
+        }
+      }
+    }
+    if (bs_mu1 == bs_mu2) mc = true;
+  }
+  Reco_B2MM_MCTruth[Reco_B2MM_size] = mc;
+
   Reco_B2MM_Mu1_index[Reco_B2MM_size] = mu1_index;
   Reco_B2MM_Mu2_index[Reco_B2MM_size] = mu2_index;
 
@@ -549,7 +587,17 @@ void lmtreeReader::fillB2JpsiKCand(TAnaCand* Cand) {
   Reco_B2JpsiK_DxyzE[Reco_B2JpsiK_size]  = Cand->fVtx.fD3dE;
   Reco_B2JpsiK_VxChi2[Reco_B2JpsiK_size] = Cand->fVtx.fChi2;
   Reco_B2JpsiK_NDOF[Reco_B2JpsiK_size]   = Cand->fVtx.fNdof;
-  Reco_B2JpsiK_DOCA[Reco_B2JpsiK_size]   = Cand->fMaxDoca;
+  double fCandDocaTrk = 99.;
+  if (Cand->fNstTracks.size() != 0) {
+    fCandDocaTrk = Cand->fNstTracks[0].second.first;
+  }
+  Reco_B2JpsiK_DOCAtrk[Reco_B2JpsiK_size]   = fCandDocaTrk;
+  double iso  = isoClassicWithDOCA(Cand, 0.05, 0.5, 0.5); // 500um DOCA cut
+  Reco_B2JpsiK_Iso1_pt09[Reco_B2JpsiK_size] = iso;
+  int pvidx = (Cand->fPvIdx > -1? Cand->fPvIdx : 0);
+  TVector3 svpv(Cand->fVtx.fPoint - fpEvt->getPV(pvidx)->fPoint);
+  double alpha = svpv.Angle(Cand->fPlab);
+  Reco_B2JpsiK_Alpha[Reco_B2JpsiK_size] = alpha;
   Reco_B2JpsiK_Mu1_index[Reco_B2JpsiK_size] = mu1_index;
   Reco_B2JpsiK_Mu2_index[Reco_B2JpsiK_size] = mu2_index;
 
@@ -573,6 +621,53 @@ void lmtreeReader::fillB2JpsiKCand(TAnaCand* Cand) {
   TLorentzVector jpsi;
   jpsi = m1_4mom + m2_4mom;
   new ((*Reco_B2JpsiK_Jpsi_4mom)[Reco_B2JpsiK_size])TLorentzVector(jpsi);
+
+  bool mc = false;
+  int jpsi_mu1 = -1, jpsi_mu2 = -2, bu_jpsi = -3, bu_k = -4;
+  if (mu1r->fGenIndex >= 0 && mu2r->fGenIndex >= 0 && kappar->fGenIndex >=0 ) {
+    TGenCand* mu1_gen = fpEvt->getGenCand(mu1r->fGenIndex);
+    TGenCand* mu2_gen = fpEvt->getGenCand(mu2r->fGenIndex);
+    if ( (mu1_gen->fID == 13 && mu2_gen->fID == -13) || (mu1_gen->fID == -13 && mu2_gen->fID == 13)) {
+      for (int i = mu1_gen->fMom1; i <= mu1_gen->fMom2 && i >= 0; i++) {
+        TGenCand* Jpsi_gen = fpEvt->getGenCand(i);
+        if (abs(Jpsi_gen->fID) == 443) {
+          jpsi_mu1 = i;
+          break;
+        }
+      }
+      for (int i = mu2_gen->fMom1; i <= mu2_gen->fMom2 && i >= 0; i++) {
+        TGenCand* Jpsi_gen = fpEvt->getGenCand(i);
+        if (abs(Jpsi_gen->fID) == 443) {
+          jpsi_mu2 = i;
+          break;
+        }
+      }
+      if (jpsi_mu1 == jpsi_mu2) {
+        TGenCand* Jpsi_gen = fpEvt->getGenCand(jpsi_mu1);
+        for (int i = Jpsi_gen->fMom1; i <= Jpsi_gen->fMom2 && i >= 0; i++) {
+          TGenCand* Bu_gen = fpEvt->getGenCand(i);
+          if (abs(Bu_gen->fID) == 521) {
+            bu_jpsi = i;
+            break;
+          }
+        }
+        TGenCand* k_gen = fpEvt->getGenCand(kappar->fGenIndex);
+        if ( fabs(k_gen->fID) == 321) {
+          for (int i = k_gen->fMom1; i <= k_gen->fMom2 && i >= 0; i++) {
+            TGenCand* Bu_gen = fpEvt->getGenCand(i);
+            if (abs(Bu_gen->fID) == 521) {
+              if (k_gen->fQ == Bu_gen->fQ) {
+                bu_k = i;
+                break;
+              }
+            }
+          }
+        }
+      }
+      if (bu_jpsi == bu_k) mc = true;
+    }
+  }
+  Reco_B2JpsiK_MCTruth[Reco_B2JpsiK_size] = mc;
 
   Reco_B2JpsiK_size++;
 
@@ -631,7 +726,17 @@ void lmtreeReader::fillB2JpsiPhiCand(TAnaCand* Cand) {
   Reco_B2JpsiPhi_DxyzE[Reco_B2JpsiPhi_size]  = Cand->fVtx.fD3dE;
   Reco_B2JpsiPhi_VxChi2[Reco_B2JpsiPhi_size] = Cand->fVtx.fChi2;
   Reco_B2JpsiPhi_NDOF[Reco_B2JpsiPhi_size]   = Cand->fVtx.fNdof;
-  Reco_B2JpsiPhi_DOCA[Reco_B2JpsiPhi_size]   = Cand->fMaxDoca;
+  double fCandDocaTrk = 99.;
+  if (Cand->fNstTracks.size() != 0) {
+    fCandDocaTrk = Cand->fNstTracks[0].second.first;
+  }
+  Reco_B2JpsiPhi_DOCAtrk[Reco_B2JpsiPhi_size]   = fCandDocaTrk;
+  double iso  = isoClassicWithDOCA(Cand, 0.05, 0.5, 0.5); // 500um DOCA cut
+  Reco_B2JpsiPhi_Iso1_pt09[Reco_B2JpsiPhi_size] = iso;
+  int pvidx = (Cand->fPvIdx > -1? Cand->fPvIdx : 0);
+  TVector3 svpv(Cand->fVtx.fPoint - fpEvt->getPV(pvidx)->fPoint);
+  double alpha = svpv.Angle(Cand->fPlab);
+  Reco_B2JpsiPhi_Alpha[Reco_B2JpsiPhi_size] = alpha;
   Reco_B2JpsiPhi_Mu1_index[Reco_B2JpsiPhi_size] = mu1_index;
   Reco_B2JpsiPhi_Mu2_index[Reco_B2JpsiPhi_size] = mu2_index;
 
@@ -675,6 +780,69 @@ void lmtreeReader::fillB2JpsiPhiCand(TAnaCand* Cand) {
   Phi = kappa1_4mom + kappa2_4mom;
   new ((*Reco_B2JpsiPhi_Phi_4mom)[Reco_B2JpsiPhi_size])TLorentzVector(Phi);
 
+  bool mc = false;
+  int jpsi_mu1 = -1, jpsi_mu2 = -2, phi_k1 = -3, phi_k2 = -4, bs_jpsi = -5, bs_phi = -6;
+  if (mu1r->fGenIndex >= 0 && mu2r->fGenIndex >= 0 && kappa1r->fGenIndex >=0 && kappa2r->fGenIndex >=0) {
+    TGenCand* mu1_gen = fpEvt->getGenCand(mu1r->fGenIndex);
+    TGenCand* mu2_gen = fpEvt->getGenCand(mu2r->fGenIndex);
+    if ( (mu1_gen->fID == 13 && mu2_gen->fID == -13) || (mu1_gen->fID == -13 && mu2_gen->fID == 13)) {
+      for (int i = mu1_gen->fMom1; i <= mu1_gen->fMom2 && i >= 0; i++) {
+        TGenCand* Jpsi_gen = fpEvt->getGenCand(i);
+        if (abs(Jpsi_gen->fID) == 443) {
+          jpsi_mu1 = i;
+          break;
+        }
+      }
+      for (int i = mu2_gen->fMom1; i <= mu2_gen->fMom2 && i >= 0; i++) {
+        TGenCand* Jpsi_gen = fpEvt->getGenCand(i);
+        if (abs(Jpsi_gen->fID) == 443) {
+          jpsi_mu2 = i;
+          break;
+        }
+      }
+      if (jpsi_mu1 == jpsi_mu2) {
+        TGenCand* k1_gen = fpEvt->getGenCand(kappa1r->fGenIndex);
+        TGenCand* k2_gen = fpEvt->getGenCand(kappa2r->fGenIndex);
+        if ( (k1_gen->fID == 321 && k2_gen->fID == -321) || (k1_gen->fID == -321 && k2_gen->fID == 321)) {
+          for (int i = k1_gen->fMom1; i <= k1_gen->fMom2 && i >= 0; i++) {
+            TGenCand* phi_gen = fpEvt->getGenCand(i);
+            if (abs(phi_gen->fID) == 333) {
+              phi_k1 = i;
+              break;
+            }
+          }
+          for (int i = k2_gen->fMom1; i <= k2_gen->fMom2 && i >= 0; i++) {
+            TGenCand* phi_gen = fpEvt->getGenCand(i);
+            if (abs(phi_gen->fID) == 333) {
+              phi_k2 = i;
+              break;
+            }
+          }
+          if (phi_k1 == phi_k2) {
+            TGenCand* Jpsi_gen = fpEvt->getGenCand(jpsi_mu1);
+            for (int i = Jpsi_gen->fMom1; i <= Jpsi_gen->fMom2 && i >= 0; i++) {
+              TGenCand* Bs_gen = fpEvt->getGenCand(i);
+              if (abs(Bs_gen->fID) == 531) {
+                bs_jpsi = i;
+                break;
+              }
+            }
+            TGenCand* phi_gen = fpEvt->getGenCand(phi_k1);
+            for (int i = phi_gen->fMom1; i <= phi_gen->fMom2 && i >= 0; i++) {
+              TGenCand* Bs_gen = fpEvt->getGenCand(i);
+              if (abs(Bs_gen->fID) == 531) {
+                bs_phi = i;
+                break;
+              }
+            }
+          }
+        }
+        if (bs_jpsi == bs_phi) mc = true;
+      }
+    }
+  }
+  Reco_B2JpsiPhi_MCTruth[Reco_B2JpsiPhi_size] = mc;
+
   Reco_B2JpsiPhi_size++;
 
 }
@@ -712,7 +880,11 @@ void lmtreeReader::fillJpsiCand(TAnaCand* Cand) {
   Reco_Jpsi_DxyzE[Reco_Jpsi_size]  = Cand->fVtx.fD3dE;
   Reco_Jpsi_VxChi2[Reco_Jpsi_size] = Cand->fVtx.fChi2;
   Reco_Jpsi_NDOF[Reco_Jpsi_size]   = Cand->fVtx.fNdof;
-  Reco_Jpsi_DOCA[Reco_Jpsi_size]   = Cand->fMaxDoca;
+  double fCandDocaTrk = 99.;
+  if (Cand->fNstTracks.size() != 0) {
+    fCandDocaTrk = Cand->fNstTracks[0].second.first;
+  }
+  Reco_Jpsi_DOCAtrk[Reco_Jpsi_size]   = fCandDocaTrk;
   Reco_Jpsi_Mu1_index[Reco_Jpsi_size] = mu1_index;
   Reco_Jpsi_Mu2_index[Reco_Jpsi_size] = mu2_index;
 
@@ -724,11 +896,12 @@ void lmtreeReader::fillJpsiCand(TAnaCand* Cand) {
 void lmtreeReader::fillMuons() {
 
   int nm = fpEvt->nRecTracks();
-  for (int j = 0; j < nm; j++) {
+  for (int j = 0; j < nm && Reco_Muon_size < Muon_array_size; j++) {
     TAnaTrack* Track = fpEvt->getRecTrack(j);
     if (selMuon(Track)) {
       Reco_Muon_Index[Reco_Muon_size] = j;
       Reco_Muon_ValidHits[Reco_Muon_size] = Track->fValidHits;
+      Reco_Muon_PxValidHits[Reco_Muon_size] = numberOfPixLayers(Track);
       double pt   = Track->fPlab.Pt();
       double eta  = Track->fPlab.Eta();
       double phi  = Track->fPlab.Phi();
@@ -835,3 +1008,125 @@ void lmtreeReader::closeHistFile() {
   treeReader01::closeHistFile();
 
 } // massReader::closeHistFile()
+
+double lmtreeReader::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, double ptmin) {
+  const double ptCut=ptmin, coneSize=r;
+  const bool verbose=false;
+
+  double iso(-1.), pt(0.), sumPt(0.), candPt(0.), candPtScalar(0.);
+  TAnaTrack *pT;
+  vector<int> cIdx, pIdx;
+  int pvIdx = pC->fPvIdx;
+
+  /// fCandI0trk = 0;
+  /// fCandI1trk = 0;
+  /// fCandI2trk = 0;
+
+  if (verbose) cout << "Looking at cand " << pC->fType << " with " << pC->fSig2 - pC->fSig1 + 1 << " sig tracks"
+            << " from PV = " << pvIdx
+            << endl;
+  for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
+    pT = fpEvt->getSigTrack(i);
+    if (verbose) cout << " track idx = " << pT->fIndex << " with ID = " << pT->fMCID << endl;
+    cIdx.push_back(pT->fIndex);
+    candPtScalar += pT->fPlab.Perp();
+    if (verbose) {
+      int tIdx = fpEvt->getRecTrack(pT->fIndex)->fPvIdx;
+      if (pvIdx != tIdx) {
+        cout << "Signal track pointing to PV " << tIdx << " instead of " << pvIdx << endl;
+      }
+    }
+  }
+
+  candPt = pC->fPlab.Perp();
+
+  // -- look at all tracks that are associated to the same vertex
+  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+    pT = fpEvt->getRecTrack(i);
+    if (verbose) {
+      cout << "   track " << i
+           << " with pT = " << pT->fPlab.Perp()
+           << " eta = " << pT->fPlab.Eta()
+           << " pointing at PV " << pT->fPvIdx;
+    }
+    if (pvIdx != pT->fPvIdx) {
+      if (verbose) cout << " skipped because of PV index mismatch" << endl;
+      continue;
+    }
+    pt = pT->fPlab.Perp();
+    if (pt < ptCut) {
+      if (verbose) cout << " skipped because of pt = " << pt << endl;
+      continue;
+    }
+    if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  {
+      if (verbose) cout << " skipped because it is a sig track " << endl;
+      continue;
+    }
+    if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
+      pIdx.push_back(i);
+      /// ++fCandI0trk;
+      sumPt += pt;
+      if (verbose) cout << endl;
+    }
+    else {
+      if (verbose) cout << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+    }
+  }
+
+  // Now consider the DOCA tracks, but only those which have PV=-1
+  int nsize = pC->fNstTracks.size();
+  if (nsize>0) {
+    for(int i = 0; i<nsize; ++i) {
+      int trkId = pC->fNstTracks[i].first;
+      double doca = pC->fNstTracks[i].second.first;
+      double docaE = pC->fNstTracks[i].second.second;
+
+      if(doca > docaCut) continue; // check the doca cut
+
+      pT = fpEvt->getRecTrack(trkId);
+
+      // -- Consider only tracks from an undefined PV
+//FIXME!!
+//       if (pT->fPvIdx >= 0) {
+// 	if (verbose) cout << " doca track " << trkId << " skipped because it has a defined  PV " << pT->fPvIdx <<endl;
+// 	continue;
+//       }
+
+//TEST!!
+	  if ((pT->fPvIdx > -1) && (pT->fPvIdx != pvIdx)) {
+	if (verbose) cout << " doca track " << trkId << " skipped because it is from a different PV " << pT->fPvIdx <<endl;
+	continue;
+	  }
+
+
+      pt = pT->fPlab.Perp();
+      if (pt < ptCut) {
+    if (verbose) cout << " doca track " << trkId << " skipped because of pt = " << pt << endl;
+    continue;
+      }
+
+	  if (pT->fPlab.DeltaR(pC->fPlab) > coneSize) {
+	if (verbose) cout << " doca track " << trkId << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+	continue;
+	  }
+
+      // -- Skip tracks already included above
+      if (pIdx.end() != find(pIdx.begin(), pIdx.end(), trkId))  continue;
+      if (cIdx.end() != find(cIdx.begin(), cIdx.end(), trkId))  continue;
+
+      /// ++fCandI1trk;
+      sumPt += pt;
+      if (verbose) cout << " doca track " << trkId << " included "<<doca<<" "<<pt<<endl;
+
+    } // for loop over tracks
+  } // end if
+
+  /// fCandI2trk = fCandI0trk + fCandI1trk;
+
+  iso = candPt/(candPt + sumPt);
+
+  //   if (verbose) cout << "--> iso = " << candPt << " .. " << sumPt << " = " << iso << endl;
+  //   if (verbose) cout << "--> iso = " << pC->fPlab.Perp() << " .. " << sumPt << " = " << pC->fPlab.Perp()/(pC->fPlab.Perp() + sumPt) << endl;
+
+  return iso;
+}
