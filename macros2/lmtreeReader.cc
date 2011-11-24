@@ -542,6 +542,7 @@ void lmtreeReader::fillB2MMCand(TAnaCand* Cand) {
 
 void lmtreeReader::fillB2JpsiKCand(TAnaCand* Cand) {
 
+  bool children[3] = {false, false, false}; // k, mu+, mu-
   int counter = 0;
   int zerocounter = 0;
   TAnaTrack *sigtrack0;
@@ -555,14 +556,23 @@ void lmtreeReader::fillB2JpsiKCand(TAnaCand* Cand) {
     if (abs(sigtrack0->fMCID) == 321) {
       kappas = sigtrack0;
       counter++;
+      children[0] = true;
     }
     if (abs(sigtrack0->fMCID) == 13) {
       if (mu1s == 0) mu1s = sigtrack0;
       else mu2s = sigtrack0;
       counter++;
+      if (sigtrack0->fQ == 1) children[1] = true;
+      if (sigtrack0->fQ == -1) children[2] = true;
     }
   }
   if (counter != 3) {cout << "counter " << counter << "zer0counter " << counter << endl; abort();}
+  for (int i = 0; i < 3; i++) {
+    if (children[i] == false) {
+      cout << "skipping not true Bu2JpsiK, event " << fEvt << endl;
+      return;
+    }
+  }
   kappar = fpEvt->getRecTrack(kappas->fIndex);
   int mu1_index = mu1s->fIndex;
   int mu2_index = mu2s->fIndex;
