@@ -1,4 +1,4 @@
-# cuts after discussion on 2011/07/06
+# new default cuts
 # -- channel 0: barrel 
 index   0
 mBdLo   5.200
@@ -16,7 +16,7 @@ iso     0.75
 chi2dof 1.6
 alpha   0.05
 fls3d   15
-docatrk -0.02
+docatrk 0.015
 # -- channel 1: endcap
 index   1
 mBdLo   5.200

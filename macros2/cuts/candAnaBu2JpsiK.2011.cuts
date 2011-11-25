@@ -7,7 +7,7 @@ TRUTHCAND         521
 # -- tracks
 +input cuts/tracks.cuts
 # -- muons
-+input cuts/muons.cuts
++input cuts/jpsimuons.cuts
 # -- candidate
 +input cuts/candidate.cuts
 # -- J/psi cuts

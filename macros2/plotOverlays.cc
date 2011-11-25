@@ -198,7 +198,7 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
     cut = Form("%s_%s", region1.c_str(), doList[i].c_str()); 
     skipregion =  cut.substr(0, cut.find_first_of("_")); 
 
-    pdfname = Form("%s/%s_%s-%s_sbs_%s_%s_%s_%s.pdf", fDirectory.c_str(), fSuffix.c_str(),
+    pdfname = Form("%s/%s_%s-%s_sbs_%s-%s_%s_%s.pdf", fDirectory.c_str(), fSuffix.c_str(),
 		   file1.c_str(), region1.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str(), selection.c_str());
     
     cout << pdfname << endl;

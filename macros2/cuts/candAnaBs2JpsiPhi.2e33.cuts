@@ -6,7 +6,7 @@ TRIGRANGE    HLT_DoubleMu3p5_Jpsi_Displaced_v2_Bs2E33v1p2V4(1:99999999)
 # -- tracks
 +input cuts/tracks.cuts
 # -- muons
-+input cuts/muons.cuts
++input cuts/jpsimuons.cuts
 # -- candidate
 +input cuts/candidate.cuts
 # -- J/psi cuts

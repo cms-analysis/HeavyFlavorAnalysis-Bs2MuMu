@@ -16,7 +16,7 @@ ClassImp(plotReducedTree)
 // ----------------------------------------------------------------------
 plotReducedTree::plotReducedTree(const char *files, const char *cuts, const char *dir, int mode) : plotClass(files, cuts, dir, mode) { 
 
-  fDoPrint = false; 
+  fDoPrint = true; 
 
   int NBINS = (fMassHi - fMassLo)/0.025;
 
@@ -901,7 +901,7 @@ void plotReducedTree::loopTree(int mode, int proc) {
       gStyle->SetOptStat(0); 
       gStyle->SetOptTitle(0); 
       h->SetAxisRange(4.9, 5.9, "X"); 
-      h->SetMaximum(2.2);
+      //      h->SetMaximum(.2);
       h->Draw();
       //       drawArrow(0.5, 2); 
       //       drawArrow(0.5, 1); 
@@ -926,7 +926,7 @@ void plotReducedTree::loopTree(int mode, int proc) {
       h->SetMinimum(0.01); 
       h->SetNdivisions(003, "Y");
       h->SetAxisRange(4.9, 5.9, "X"); 
-      h->SetMaximum(2.2);
+      //      h->SetMaximum(2.2);
       gStyle->SetOptStat(0); 
       gStyle->SetOptTitle(0); 
       h->Draw();

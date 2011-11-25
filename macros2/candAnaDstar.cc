@@ -63,8 +63,8 @@ void candAnaDstar::evtAnalysis(TAna01Event *evt) {
       // -- D0 
       if (pCand->fDau1 < 0) {
 	if (pCand->fDau2 < 0) {
-	  cout << "pCand->fDauX = -1!!! " << pCand->fType << endl;
-	  pCand->dump();
+// 	  cout << "pCand->fDauX = -1!!! " << pCand->fType << endl;
+// 	  pCand->dump();
 	}
 	continue;
       }
@@ -80,24 +80,29 @@ void candAnaDstar::evtAnalysis(TAna01Event *evt) {
 	}
       }
       pPis = fpEvt->getRecTrack(fpEvt->getSigTrack(pC->fSig1)->fIndex); 
+
+      if (pK->fPlab.Perp() < 4.) continue;
+      if (pPi->fPlab.Perp() < 4.) continue;
+      if (pPis->fPlab.Perp() < 0.4) continue;
 	
       mdz = pC->fMass;
       dm = mdstar - mdz;
 
-      TAnaVertex sv = pCand->fVtx;
-      int pvidx = (pCand->fPvIdx > -1? pCand->fPvIdx : 0); 
+      TAnaVertex sv = pC->fVtx;
+      int pvidx = (pC->fPvIdx > -1? pC->fPvIdx : 0); 
       TVector3 svpv(sv.fPoint - fpEvt->getPV(pvidx)->fPoint); 
       fls3d = sv.fD3d/sv.fD3dE; 
       flsxy = sv.fDxy/sv.fDxyE; 
       prob  = sv.fProb;
       chi2  = sv.fChi2;
-      pt    = pCand->fPlab.Perp(); 
-      alpha = svpv.Angle(pCand->fPlab);
+      pt    = pC->fPlab.Perp(); 
+      alpha = svpv.Angle(pC->fPlab);
 
 
       if (prob < 0.05) continue;
       if (pt < 3) continue;
       if (alpha > 0.05) continue;
+      if (fls3d < 2) continue;
 
       if (tm) {
 	((TH1D*)fHistDir->Get("mds"))->Fill(mdstar);
@@ -114,9 +119,9 @@ void candAnaDstar::evtAnalysis(TAna01Event *evt) {
       } 
 
       ((TH1D*)fHistDir->Get("all_mds"))->Fill(mdstar);
-      ((TH1D*)fHistDir->Get("all_mdz"))->Fill(mdz);
+      if (dm < 0.15) ((TH1D*)fHistDir->Get("all_mdz"))->Fill(mdz);
       ((TH2D*)fHistDir->Get("all_h2"))->Fill(mdz, dm);
-      ((TH1D*)fHistDir->Get("all_dm"))->Fill(dm);
+      if (TMath::Abs(mdz - MD0) < 0.03) ((TH1D*)fHistDir->Get("all_dm"))->Fill(dm);
       ((TH1D*)fHistDir->Get("all_fls3d"))->Fill(fls3d);
       ((TH1D*)fHistDir->Get("all_flsxy"))->Fill(flsxy);
       ((TH1D*)fHistDir->Get("all_prob"))->Fill(prob);
@@ -124,7 +129,7 @@ void candAnaDstar::evtAnalysis(TAna01Event *evt) {
       ((TH1D*)fHistDir->Get("all_alpha"))->Fill(alpha);
       ((TH1D*)fHistDir->Get("all_pt"))->Fill(pt);
 
-      if (1) {
+      if (0) {
 	if (dm < 0.147 && dm > 0.145 && !tm) {
 	  cout << "%%%%%%%%  ??" << endl;
 	  tm = truthMatch(pCand, 1); 

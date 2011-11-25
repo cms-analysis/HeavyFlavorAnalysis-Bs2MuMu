@@ -52,6 +52,7 @@ public:
   virtual void        candAnalysis();
   virtual void        efficiencyCalculation();
   
+  virtual int         nearestPV(int pvIdx);
   virtual double      constrainedMass();
   virtual void        runRange();
   virtual void        genMatch(); 
@@ -73,6 +74,7 @@ public:
 
   virtual bool        goodTrack(TAnaTrack *pt);
   virtual bool        goodMuon(TAnaTrack *pt, int mask = 0);
+  virtual bool        tightMuon(TAnaTrack *pt);
 
   virtual std::string splitTrigRange(std::string tl, int &r1, int &r2);
 
@@ -135,8 +137,8 @@ public:
   bool    fJSON, fCowboy;
   int     fCandTM, fCandType; 
   double  fCandBDT; 
-  int     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fMu1Chi2, fMu2Chi2, fCandQ;
-  bool    fMu1Id, fMu2Id;
+  int     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fMu1Chi2, fMu2Chi2, fCandQ, fMu1PV, fMu2PV;
+  bool    fMu1Id, fMu2Id;  
   double  fMuDist, fMuDeltaR;
   double  fHltMu1Pt, fHltMu1Eta, fHltMu1Phi, fHltMu2Pt, fHltMu2Eta, fHltMu2Phi;
   double  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
@@ -152,8 +154,9 @@ public:
   double  f2MChi2,   f2MDof,   f2MProb,   f2MFL3d,   f2MFL3dE,   f2MFLS3d,   f2MFLSxy; 
   double  fCandIso;
   int     fCandIsoTrk, fCandCloseTrk, fCandPvTrk, fCandI0trk, fCandI1trk, fCandI2trk; 
-  double  fCandDocaTrk, fMu1IP, fMu2IP; 
-  double  fCandPvTip, fCandPvTipE, fCandPvTipS, fCandPvLip, fCandPvLipE, fCandPvLipS, fCandPvLip12, fCandPvLipE12, fCandPvLipS12; 
+  double  fCandDocaTrk, fMu1IP, fMu1IPE, fMu2IP, fMu2IPE; 
+  double  fCandPvTip, fCandPvTipE, fCandPvTipS, fCandPvLip, fCandPvLipE, fCandPvLipS;
+  double  fCandPvLip2, fCandPvLipS2, fCandPvLip12, fCandPvLipE12, fCandPvLipS12; 
 
   // -- another reduced tree
   TTree       *fEffTree;
@@ -166,6 +169,8 @@ public:
 
   bool    fGoodEffCand; 
 
+  TAnaTrack *fpMuon1, *fpMuon2; 
+
   // -- isolation study
   isoNumbers fIsoR03Pt03, fIsoR03Pt05, fIsoR03Pt07, fIsoR03Pt09, fIsoR03Pt11;
   isoNumbers fIsoR05Pt03, fIsoR05Pt05, fIsoR05Pt07, fIsoR05Pt09, fIsoR05Pt11;
@@ -176,7 +181,7 @@ public:
 
 
   bool    fGoodHLT, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta, fGoodTracks, fGoodTracksPt, fGoodTracksEta;
-  bool    fGoodPvLip, fGoodPvLipS; 
+  bool    fGoodPvAveW8, fGoodPvLip, fGoodPvLipS; 
   bool    fGoodQ, fGoodPt, fGoodEta, fGoodCosA, fGoodAlpha, fGoodIso, fGoodCloseTrack, fGoodChi2, fGoodFLS; 
   bool    fGoodDocaTrk, fGoodLastCut; 
 
@@ -199,6 +204,7 @@ public:
     , *fpLip[NAD], *fpLipE[NAD], *fpLipS[NAD] 
     , *fpTip[NAD], *fpTipE[NAD], *fpTipS[NAD] 
     , *fpLip12[NAD], *fpLipE12[NAD], *fpLipS12[NAD] 
+    , *fpLip2[NAD], *fpLipS2[NAD]
     , *fp2MChi2[NAD],  *fp2MChi2Dof[NAD], *fp2MProb[NAD] 
     , *fp2MFLS3d[NAD], *fp2MFLSxy[NAD] 
     , *fp2MFL3d[NAD],  *fp2MFL3dE[NAD] 
@@ -207,6 +213,7 @@ public:
   // -- Analysis distributions in bins of n(PV)
 #define NADPV 15
   AnalysisDistribution   *fpNpvPvN[NADPV][NAD];
+  AnalysisDistribution   *fpNpvAveW8[NADPV][NAD];
   AnalysisDistribution   *fpNpvChi2Dof[NADPV][NAD];
   AnalysisDistribution   *fpNpvProb[NADPV][NAD];
   AnalysisDistribution   *fpNpvFLS3d[NADPV][NAD];
@@ -214,6 +221,9 @@ public:
   AnalysisDistribution   *fpNpvDocaTrk[NADPV][NAD];
   AnalysisDistribution   *fpNpvIso[NADPV][NAD];
   AnalysisDistribution   *fpNpvIsoTrk[NADPV][NAD];
+  AnalysisDistribution   *fpNpvCloseTrk[NADPV][NAD];
+  AnalysisDistribution   *fpNpvLip[NADPV][NAD];
+  AnalysisDistribution   *fpNpvLipS[NADPV][NAD];
 
   // -- Isolation study
 #define NISO 10
