@@ -4,6 +4,7 @@
 
 #include "../interface/HFMasses.hh"
 #include "TMVAClassification_BDT.class.C"
+#include "TMVAClassification_BDT2.class.C"
 
 using namespace std;
 
@@ -49,6 +50,22 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   vvars.push_back("docatrk"); 
 
   fBdtReader = new ReadBDT(vvars); 
+
+
+  //  const char* inputVars[] = { "alpha", "fls3d", "chi2/dof", "iso", "m1pt", "m2pt", "m1eta", "m2eta", "docatrk", "pvlip", "closetrk" };
+  vvars.clear(); 
+  vvars.push_back("alpha"); 
+  vvars.push_back("fls3d"); 
+  vvars.push_back("chi2/dof"); 
+  vvars.push_back("iso"); 
+  vvars.push_back("m1pt"); 
+  vvars.push_back("m2pt"); 
+  vvars.push_back("m1eta"); 
+  vvars.push_back("m2eta"); 
+  vvars.push_back("docatrk"); 
+  vvars.push_back("pvlip"); 
+  vvars.push_back("closetrk"); 
+  fBdt2Reader = new ReadBDT2(vvars); 
 }
 
 
@@ -122,7 +139,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 
     // -- special studies
     if ((4 == fRunRange) || fIsMC) {
-      //      fillIsoPlots(); // FIXISOPLOTS
+      fillIsoPlots(); // FIXISOPLOTS
     }
     
   }
@@ -456,7 +473,21 @@ void candAna::candAnalysis() {
   inputVec[6] = fCandPt;
   inputVec[7] = fMu1Eta;
   inputVec[8] = fCandDocaTrk;
-  fCandBDT        = fBdtReader->GetMvaValue(inputVec);
+  fCandBDT    = fBdtReader->GetMvaValue(inputVec);
+
+  std::vector<double> inputVec2(11);
+  inputVec2[0] = fCandA; 
+  inputVec2[1] = fCandFLS3d;
+  inputVec2[2] = fCandChi2/fCandDof; 
+  inputVec2[3] = fCandIso;
+  inputVec2[4] = fMu1Pt;
+  inputVec2[5] = fMu2Pt;
+  inputVec2[6] = fMu1Eta;
+  inputVec2[7] = fMu2Eta;
+  inputVec2[8] = fCandDocaTrk;
+  inputVec2[9] = fCandPvLip;
+  inputVec2[10]= fCandCloseTrk;
+  fCandBDT2    = fBdt2Reader->GetMvaValue(inputVec2);
   
   fWideMass       = ((fpCand->fMass > MASSMIN) && (fpCand->fMass < MASSMAX)); 
 
@@ -793,6 +824,7 @@ void candAna::bookHist() {
   fTree->Branch("cb",      &fCowboy,            "cb/O");
   fTree->Branch("rr",      &fRunRange,          "rr/I");
   fTree->Branch("bdt",     &fCandBDT,           "bdt/D");
+  fTree->Branch("bdt2",    &fCandBDT2,          "bdt2/D");
 
   // -- global cuts and weights
   fTree->Branch("gmuid",   &fGoodMuonsID,       "gmuid/O");
@@ -1005,7 +1037,7 @@ void candAna::bookHist() {
     }
   }
 
-  //  bookIsoPlots(); //FIXISOPLOTS
+  bookIsoPlots(); //FIXISOPLOTS
 
 }
 

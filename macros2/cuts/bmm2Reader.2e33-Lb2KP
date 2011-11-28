@@ -1,6 +1,6 @@
 candAnaMuMu       cuts/candAnaLb2KP.2e33.cuts
 #
-JSON             cuts/Cert_160404-179431_7TeV_PromptReco_Collisions11_JSON_MuonPhys.txt
+JSON             cuts/Cert_160404-180252_7TeV_PromptReco_May10ReReco_Collisions11_JSON_MuonPhys.txt
 ptSgMUID         ../macros/pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat
 ptCbMUID         ../macros/pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat
 ptSgMUT1         ../macros/pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.dat

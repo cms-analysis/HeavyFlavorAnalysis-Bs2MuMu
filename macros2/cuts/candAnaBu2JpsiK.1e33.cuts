@@ -1,0 +1,14 @@
+TYPE          3000068
+TRUTHCAND         521
+TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v1_Bs1E33v1p3V13(1:99999999)
+TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v1_Bs1E33v2p3V1(1:99999999)
+# -- boxes
++input cuts/boxes.Bu2JpsiK.cuts
+# -- tracks
++input cuts/tracks.cuts
+# -- muons
++input cuts/jpsimuons.cuts
+# -- candidate
++input cuts/candidate.cuts
+# -- J/psi cuts
++input cuts/jpsi.cuts

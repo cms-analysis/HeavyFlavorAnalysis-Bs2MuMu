@@ -1,0 +1,16 @@
+TYPE          1000090
+TRUTHCAND         511
+TRIGRANGE   HLT_Dimuon6_Bs_v1_Bs1E33v1p3V13(1:99999999)
+TRIGRANGE   HLT_DoubleMu2_Bs_v3_Bs1E33v2p3V1(1:99999999)
+TRIGRANGE   HLT_Dimuon6_Bs_v6_Bs2E33v1p2V4(1:99999999)
+TRIGRANGE   HLT_Dimuon4_Bs_Barrel_v7_Bs2E33v1p2V4(1:99999999)
+TRIGRANGE   HLT_DoubleMu4_Dimuon4_Bs_Barrel_v1(1:99999999)
+TRIGRANGE   HLT_DoubleMu4_Dimuon6_Bs_v1(1:99999999)
+# -- boxes
++input cuts/boxes.cuts
+# -- tracks
++input cuts/tracks.cuts
+# -- muons
++input cuts/muons.cuts
+# -- candidate
++input cuts/candidate.cuts

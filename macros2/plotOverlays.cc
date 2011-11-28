@@ -28,7 +28,7 @@ void plotOverlays::makeAll(int verbose) {
 
   fVerbose = verbose;
 
-  int all(1);
+  int all(0);
   
   fMode = 0; 
   sbsDistributionOverlay("SgData", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Ao");
@@ -173,8 +173,8 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
   doList.push_back("closetrk");
   doList.push_back("lip"); skipList.push_back("lip");
   doList.push_back("lips"); skipList.push_back("lips");
-  doList.push_back("lip12"); skipList.push_back("lip12");
-  doList.push_back("lips12"); skipList.push_back("lips12");
+  doList.push_back("lip2"); skipList.push_back("lip2");
+  doList.push_back("lips2"); skipList.push_back("lips2");
 
   if (string::npos != file1.find("No")) {
     doList.push_back("kaonpt");
@@ -317,6 +317,11 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
     setFilledHist(h2, color2, color2, fill2); 
     h2->Draw(Form("same%s", option2));
 
+    //     double kprob = h1->KolmogorovTest(h2); 
+    //     double xprob = h1->Chi2Test(h2, "WW"); 
+    //     tl->DrawLatex(0.20, 0.92, Form("P(K): %4.3f", kprob));
+    //     tl->DrawLatex(0.60, 0.92, Form("P(#chi^{2}): %4.3f", xprob));
+    
     if (skipList.end() != find(skipList.begin(), skipList.end(), doList[i])) {
       // do nothing 
     } else {

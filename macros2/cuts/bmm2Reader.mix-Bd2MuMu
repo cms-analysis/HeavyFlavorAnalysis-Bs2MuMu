@@ -1,4 +1,4 @@
-candAnaBs2JpsiPhi cuts/candAnaBs2JpsiPhi.3e33.cuts
+candAnaMuMu       cuts/candAnaBd2MuMu.mix.cuts
 #
 JSON             cuts/Cert_160404-180252_7TeV_PromptReco_May10ReReco_Collisions11_JSON_MuonPhys.txt
 ptSgMUID         ../macros/pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat

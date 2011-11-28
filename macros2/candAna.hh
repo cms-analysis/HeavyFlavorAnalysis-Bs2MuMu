@@ -34,6 +34,7 @@
 
 
 class ReadBDT; 
+class ReadBDT2; 
 
 struct isoNumbers {
   double iso; 
@@ -136,7 +137,7 @@ public:
   // -- variables for reduced tree, they are from fpCand
   bool    fJSON, fCowboy;
   int     fCandTM, fCandType; 
-  double  fCandBDT; 
+  double  fCandBDT, fCandBDT2; 
   int     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fMu1Chi2, fMu2Chi2, fCandQ, fMu1PV, fMu2PV;
   bool    fMu1Id, fMu2Id;  
   double  fMuDist, fMuDeltaR;
@@ -261,6 +262,7 @@ public:
 
 
   ReadBDT *fBdtReader; 
+  ReadBDT2 *fBdt2Reader; 
 };
 
 #endif

@@ -181,7 +181,7 @@ foreach $j (keys %jobs) {
     if ($j =~ /data/) {
 	$command = "$runCommand -q all.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
     } else {
-	$command = "$runCommand -q short.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
+	$command = "$runCommand -q all.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
     }
 
     if ($opt_d) {
