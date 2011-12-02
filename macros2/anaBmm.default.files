@@ -7,13 +7,13 @@ type=bd,default       dset=mc       lumi=8200000 file=/shome/ursl/scratch/v10-2e
 # --------------------------------------------------------------------
 # control sample  data and MC
 type=cs,default       dset=data lumi=4000          file=/shome/ursl/scratch/v10-2011-data.root
-type=cs,default       dset=mc   lumi=5000          file=/shome/ursl/scratch/v10-2e33-Bs2JpsiPhi.root
+type=cs,default       dset=mc   lumi=5000          file=/shome/ursl/scratch/v10-mix-Bs2JpsiPhi.root
 type=cs,2e33          dset=mc   lumi=5000          file=/shome/ursl/scratch/v10-2e33-Bs2JpsiPhi.root
 type=cs,3e33          dset=mc   lumi=5000          file=/shome/ursl/scratch/v10-3e33-Bs2JpsiPhi.root
 # --------------------------------------------------------------------
 # normalization data and MC
 type=no,default       dset=data lumi=4000          file=/shome/ursl/scratch/v10-2011-data.root
-type=no,default       dset=mc   lumi=5000          file=/shome/ursl/scratch/v10-2e33-Bu2JpsiK.root
+type=no,default       dset=mc   lumi=5000          file=/shome/ursl/scratch/v10-mix-Bu2JpsiK.root
 type=no,2e33          dset=mc   lumi=5000          file=/shome/ursl/scratch/v10-2e33-Bu2JpsiK.root
 type=no,3e33          dset=mc   lumi=5000         file=/shome/ursl/scratch/v10-3e33-Bu2JpsiK.root
 # ----------------------------------------------------------------------

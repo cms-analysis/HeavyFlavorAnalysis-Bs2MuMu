@@ -44,8 +44,8 @@ void plotOverlays::makeAll(int verbose) {
   if (all) sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "B", "NoMc", "candAnaBu2JpsiK", "B", "Ao");
   if (all) sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "E", "NoMc", "candAnaBu2JpsiK", "E", "Ao");
   // -- run ranges
-  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR3", "NoMc2e33", "candAnaBu2JpsiK", "A", "Ao");
-  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR4", "NoMc3e33", "candAnaBu2JpsiK", "A", "Ao");
+  //   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR3", "NoMc2e33", "candAnaBu2JpsiK", "A", "Ao");
+  //   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR4", "NoMc3e33", "candAnaBu2JpsiK", "A", "Ao");
 
   // -- For control sample, use expo function for bg parametrization
   fMode = 2; 
@@ -54,8 +54,8 @@ void plotOverlays::makeAll(int verbose) {
   if (all) sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "B", "CsMc", "candAnaBs2JpsiPhi", "B", "Ao");
   if (all) sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "E", "CsMc", "candAnaBs2JpsiPhi", "E", "Ao");
   // -- run ranges
-  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "AR3", "CsMc2e33", "candAnaBs2JpsiPhi", "A", "Ao");
-  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "AR4", "CsMc3e33", "candAnaBs2JpsiPhi", "A", "Ao");
+  //   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "AR3", "CsMc2e33", "candAnaBs2JpsiPhi", "A", "Ao");
+  //   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "AR4", "CsMc3e33", "candAnaBs2JpsiPhi", "A", "Ao");
   
 
 }
@@ -150,31 +150,34 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
   vector<string> leftList, skipList; 
 
   map<string, string> cutMap; 
+  doList.push_back("hlt");  
+  doList.push_back("muonsid");  
+  doList.push_back("tracksqual"); 
   doList.push_back("pvz");  skipList.push_back("pvz"); 
   doList.push_back("pvn");
   doList.push_back("pvavew8"); leftList.push_back("pvavew8"); 
   doList.push_back("pvntrk");
   doList.push_back("muon1pt");
-  doList.push_back("muon2pt"); cutMap.insert(make_pair("muon2pt", "MUPTLO"));
+  doList.push_back("muon2pt");  cutMap.insert(make_pair("muon2pt", "MUPTLO"));
   doList.push_back("muonseta");  skipList.push_back("muonseta"); 
-  doList.push_back("pt"); cutMap.insert(make_pair("pt", "CANDPTLO"));
-  doList.push_back("eta"); skipList.push_back("eta"); 
-  doList.push_back("bdt"); skipList.push_back("bdt"); 
+  doList.push_back("pt");       cutMap.insert(make_pair("pt", "CANDPTLO"));
+  doList.push_back("eta");            skipList.push_back("eta"); 
+  doList.push_back("bdt");            skipList.push_back("bdt"); 
 
   doList.push_back("fl3d");  
-  doList.push_back("fls3d");  cutMap.insert(make_pair("fls3d", "CANDFLS3D"));
+  doList.push_back("fls3d");    cutMap.insert(make_pair("fls3d", "CANDFLS3D"));
   doList.push_back("flsxy");
-  doList.push_back("chi2dof"); cutMap.insert(make_pair("chi2dof", "CANDVTXCHI2"));
-  doList.push_back("pchi2dof"); leftList.push_back("pchi2dof"); 
-  doList.push_back("alpha"); cutMap.insert(make_pair("alpha", "CANDCOSALPHA"));
-  doList.push_back("iso");  leftList.push_back("iso"); 
-  doList.push_back("docatrk");
+  doList.push_back("chi2dof");  cutMap.insert(make_pair("chi2dof", "CANDVTXCHI2"));
+  doList.push_back("pchi2dof");       leftList.push_back("pchi2dof"); 
+  doList.push_back("alpha");    cutMap.insert(make_pair("alpha", "CANDALPHA"));
+  doList.push_back("iso");      cutMap.insert(make_pair("iso", "CANDISOLATION"));  leftList.push_back("iso");  
+  doList.push_back("docatrk");  cutMap.insert(make_pair("docatrk", "CANDDOCATRK"));
   doList.push_back("isotrk");
-  doList.push_back("closetrk");
-  doList.push_back("lip"); skipList.push_back("lip");
-  doList.push_back("lips"); skipList.push_back("lips");
-  doList.push_back("lip2"); skipList.push_back("lip2");
-  doList.push_back("lips2"); skipList.push_back("lips2");
+  doList.push_back("closetrk"); cutMap.insert(make_pair("closetrk", "CANDCLOSETRK"));
+  doList.push_back("lip");      cutMap.insert(make_pair("lip", "CANDLIP")); skipList.push_back("lip");
+  doList.push_back("lips");     cutMap.insert(make_pair("lips", "CANDLIPS")); skipList.push_back("lips");
+  doList.push_back("lip2");          skipList.push_back("lip2");
+  doList.push_back("lips2");         skipList.push_back("lips2");
 
   if (string::npos != file1.find("No")) {
     doList.push_back("kaonpt");
@@ -189,7 +192,8 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
     doList.push_back("mkk");
   }
 
-
+//   doList.clear(); 
+//   doList.push_back("chi2dof"); 
 
 
   TCanvas *c1;
@@ -258,32 +262,44 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
 	if (string::npos != label.find(bla)) {
 	  bla = label.substr(label.find_last_of("::")+1);
 	  cutval = atof(bla.c_str());
-	  if (doList[i] == "alpha") cutval = 0.05; 
 	  break;
 	}
       }
     }
 
+    if (doList[i] == "hlt") cutval = 1; 
+    if (doList[i] == "muonsid") cutval = 1; 
+    if (doList[i] == "tracksqual") cutval = 1; 
+
     HistCutEfficiency a(h1); 
+    //    a.fVerbose = 1; 
+    a.fIncludeOverflow = 0;
     a.eff(h1, cutval); 
-    fTEX << formatTex(a.loEff, Form("%s:%s:%s:loEff", fSuffix.c_str(), file1.c_str(), cut.c_str()), 3) << endl;
-    fTEX << formatTex(a.loErr, Form("%s:%s:%s:loEffE", fSuffix.c_str(), file1.c_str(), cut.c_str()), 3) << endl;
-    fTEX << formatTex(a.hiEff, Form("%s:%s:%s:hiEff", fSuffix.c_str(), file1.c_str(), cut.c_str()), 3) << endl;
-    fTEX << formatTex(a.hiErr, Form("%s:%s:%s:hiEffE", fSuffix.c_str(), file1.c_str(), cut.c_str()), 3) << endl;
+    fTEX << formatTex(a.loEff, Form("%s:%s-%s:%s:loEff",  fSuffix.c_str(), file1.c_str(), region1.c_str(), doList[i].c_str()), 3) << endl;
+    fTEX << formatTex(a.loErr, Form("%s:%s-%s:%s:loEffE", fSuffix.c_str(), file1.c_str(), region1.c_str(), doList[i].c_str()), 3) << endl;
+    fTEX << formatTex(a.hiEff, Form("%s:%s-%s:%s:hiEff",  fSuffix.c_str(), file1.c_str(), region1.c_str(), doList[i].c_str()), 3) << endl;
+    fTEX << formatTex(a.hiErr, Form("%s:%s-%s:%s:hiEffE", fSuffix.c_str(), file1.c_str(), region1.c_str(), doList[i].c_str()), 3) << endl;
 
     a.eff(h2, cutval); 
-    fTEX << formatTex(a.loEff, Form("%s:%s:%s:loEff", fSuffix.c_str(), file2.c_str(), cut.c_str()), 3) << endl;
-    fTEX << formatTex(a.loErr, Form("%s:%s:%s:loEffE", fSuffix.c_str(), file2.c_str(), cut.c_str()), 3) << endl;
-    fTEX << formatTex(a.hiEff, Form("%s:%s:%s:hiEff", fSuffix.c_str(), file2.c_str(), cut.c_str()), 3) << endl;
-    fTEX << formatTex(a.hiErr, Form("%s:%s:%s:hiEffE", fSuffix.c_str(), file2.c_str(), cut.c_str()), 3) << endl;
+    fTEX << formatTex(a.loEff, Form("%s:%s-%s:%s:loEff",  fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3) << endl;
+    fTEX << formatTex(a.loErr, Form("%s:%s-%s:%s:loEffE", fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3) << endl;
+    fTEX << formatTex(a.hiEff, Form("%s:%s-%s:%s:hiEff",  fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3) << endl;
+    fTEX << formatTex(a.hiErr, Form("%s:%s-%s:%s:hiEffE", fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3) << endl;
+
+    if (doList[i] == "lip" || doList[i] == "lips") {
+      HistCutEfficiency a(h1); 
+      //      a.fVerbose = 1; 
+      a.eff(h1, -cutval, cutval); 
+      fTEX << formatTex(a.inEff, Form("%s:%s-%s:%s:inEff",  fSuffix.c_str(), file1.c_str(), region1.c_str(), doList[i].c_str()), 3) << endl;
+      fTEX << formatTex(a.inErr, Form("%s:%s-%s:%s:inEffE", fSuffix.c_str(), file1.c_str(), region1.c_str(), doList[i].c_str()), 3) << endl;
+      a.eff(h2, -cutval, cutval); 
+      fTEX << formatTex(a.inEff, Form("%s:%s-%s:%s:inEff",  fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3) << endl;
+      fTEX << formatTex(a.inErr, Form("%s:%s-%s:%s:inEffE", fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3) << endl;
+    }      
 
     c0->cd(); 
     c0->Clear();
     double dmax = (h1->GetMaximum() > h2->GetMaximum()? 1.1*h1->GetMaximum(): 1.1*h2->GetMaximum()); 
-
-    //     if (doList[i] == "docatrk") {
-    //       h1->GetXaxis()->SetTitle("d_{ca}^{min} [cm]");
-    //     }
 
     if (string::npos != file1.find("Sg") && doList[i] == "fls3d") {
       h1->SetMaximum(2.*dmax); 

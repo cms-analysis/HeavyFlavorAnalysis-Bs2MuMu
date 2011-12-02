@@ -34,6 +34,14 @@ void plotPU::makeAll(int channels) {
   effVsNpv("flsxy",    15.0, "#epsilon(l_{xy}/#sigma>15)", "A", candName.c_str(), "Ao"); 
   effVsNpv("docatrk", 0.015, "#epsilon(d^{0}_{ca}>0.015)", "A", candName.c_str(), "Ao"); 
 
+  effVsNpv("iso0",     0.75, "#epsilon(I0>0.75)",           "A", candName.c_str(), "Ao"); 
+  effVsNpv("iso1",     0.75, "#epsilon(I1>0.75)",           "A", candName.c_str(), "Ao"); 
+  effVsNpv("iso2",     0.75, "#epsilon(I2>0.75)",           "A", candName.c_str(), "Ao"); 
+  effVsNpv("iso3",     0.75, "#epsilon(I3>0.75)",           "A", candName.c_str(), "Ao"); 
+  effVsNpv("iso4",     0.75, "#epsilon(I4>0.75)",           "A", candName.c_str(), "Ao"); 
+  effVsNpv("iso5",     0.75, "#epsilon(I5>0.75)",           "A", candName.c_str(), "Ao"); 
+
+
   candName = "candAnaBs2JpsiPhi"; 
   fFile = "CsData"; 
   cd(fFile.c_str());  
@@ -44,6 +52,12 @@ void plotPU::makeAll(int channels) {
   effVsNpv("flsxy",    15.0, "#epsilon(l_{xy}/#sigma>15)", "A", candName.c_str(), "Ao"); 
   effVsNpv("docatrk", 0.015, "#epsilon(d^{0}_{ca}>0.015)", "A", candName.c_str(), "Ao"); 
   
+  effVsNpv("iso0",     0.75, "#epsilon(I0>0.75)",           "A", candName.c_str(), "Ao"); 
+  effVsNpv("iso1",     0.75, "#epsilon(I1>0.75)",           "A", candName.c_str(), "Ao"); 
+  effVsNpv("iso2",     0.75, "#epsilon(I2>0.75)",           "A", candName.c_str(), "Ao"); 
+  effVsNpv("iso3",     0.75, "#epsilon(I3>0.75)",           "A", candName.c_str(), "Ao"); 
+  effVsNpv("iso4",     0.75, "#epsilon(I4>0.75)",           "A", candName.c_str(), "Ao"); 
+  effVsNpv("iso5",     0.75, "#epsilon(I5>0.75)",           "A", candName.c_str(), "Ao"); 
 
 }
 

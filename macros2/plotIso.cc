@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "../macros/AnalysisDistribution.hh"
+#include "../macros/HistCutEfficiency.hh"
 #include "TMath.h"
 
 using namespace std; 
@@ -63,14 +64,139 @@ void plotIso::anaTextFiles(int cutval) {
   sort(mm.begin(), mm.end(), largerRatio); 
   double maxDev(1.03); 
 
+  TH2D *mr3 = new TH2D("mr3", "MM MC/data, doca = 0.3 mm", 6, 0., 6., 5, 0., 5.); relabel(mr3);
+  TH2D *mr4 = new TH2D("mr4", "MM MC/data, doca = 0.4 mm", 6, 0., 6., 5, 0., 5.); relabel(mr4);
+  TH2D *mr5 = new TH2D("mr5", "MM MC/data, doca = 0.5 mm", 6, 0., 6., 5, 0., 5.); relabel(mr5);
+
+  TH2D *mm3 = new TH2D("mm3", "MM data, doca = 0.3 mm", 6, 0., 6., 5, 0., 5.); relabel(mm3);
+  TH2D *mm4 = new TH2D("mm4", "MM data, doca = 0.4 mm", 6, 0., 6., 5, 0., 5.); relabel(mm4);
+  TH2D *mm5 = new TH2D("mm5", "MM data, doca = 0.5 mm", 6, 0., 6., 5, 0., 5.); relabel(mm5);
+
+  TH2D *no3 = new TH2D("no3", "NO MC/data, doca = 0.3 mm", 6, 0., 6., 5, 0., 5.); relabel(no3); no3->SetMinimum(1.0); no3->SetMaximum(1.05);
+  TH2D *no4 = new TH2D("no4", "NO MC/data, doca = 0.4 mm", 6, 0., 6., 5, 0., 5.); relabel(no4); no4->SetMinimum(1.0); no4->SetMaximum(1.05);
+  TH2D *no5 = new TH2D("no5", "NO MC/data, doca = 0.5 mm", 6, 0., 6., 5, 0., 5.); relabel(no5); no5->SetMinimum(1.0); no5->SetMaximum(1.05);
+
+  TH2D *cs3 = new TH2D("cs3", "CS MC/data, doca = 0.3 mm", 6, 0., 6., 5, 0., 5.); relabel(cs3); cs3->SetMinimum(1.0); cs3->SetMaximum(1.05);
+  TH2D *cs4 = new TH2D("cs4", "CS MC/data, doca = 0.4 mm", 6, 0., 6., 5, 0., 5.); relabel(cs4); cs4->SetMinimum(1.0); cs4->SetMaximum(1.05);
+  TH2D *cs5 = new TH2D("cs5", "CS MC/data, doca = 0.5 mm", 6, 0., 6., 5, 0., 5.); relabel(cs5); cs5->SetMinimum(1.0); cs5->SetMaximum(1.05);
+  double doca, pt, r, x; 
+  int ipt, ir; 
+  for (unsigned int i = 0; i < mm.size(); ++i) {
+    doca = mm[i].doca; 
+    pt   = mm[i].pt; 
+    r    = mm[i].r;
+    ipt = ptBin(pt); 
+    ir  = rBin(r); 
+    x    = mm[i].eff1;
+    if (doca > 0.025 && doca < 0.035)  mm3->SetBinContent(ir, ipt, x); 
+    if (doca > 0.035 && doca < 0.045)  mm4->SetBinContent(ir, ipt, x); 
+    if (doca > 0.045 && doca < 0.055)  mm5->SetBinContent(ir, ipt, x); 
+    x    = mm[i].ratio;
+    if (doca > 0.025 && doca < 0.035)  mr3->SetBinContent(ir, ipt, x); 
+    if (doca > 0.035 && doca < 0.045)  mr4->SetBinContent(ir, ipt, x); 
+    if (doca > 0.045 && doca < 0.055)  mr5->SetBinContent(ir, ipt, x); 
+  }
+
+  for (unsigned int i = 0; i < no.size(); ++i) {
+    doca = no[i].doca; 
+    pt   = no[i].pt; 
+    r    = no[i].r;
+    x    = no[i].ratio;
+
+    ipt = ptBin(pt); 
+    ir  = rBin(r); 
+    if (doca > 0.025 && doca < 0.035)  no3->SetBinContent(ir, ipt, x); 
+    if (doca > 0.035 && doca < 0.045)  no4->SetBinContent(ir, ipt, x); 
+    if (doca > 0.045 && doca < 0.055)  no5->SetBinContent(ir, ipt, x); 
+  }
+
+  for (unsigned int i = 0; i < cs.size(); ++i) {
+    doca = cs[i].doca; 
+    pt   = cs[i].pt; 
+    r    = cs[i].r;
+    x    = cs[i].ratio;
+
+    ipt = ptBin(pt); 
+    ir  = rBin(r); 
+    if (doca > 0.025 && doca < 0.035)  cs3->SetBinContent(ir, ipt, x); 
+    if (doca > 0.035 && doca < 0.045)  cs4->SetBinContent(ir, ipt, x); 
+    if (doca > 0.045 && doca < 0.055)  cs5->SetBinContent(ir, ipt, x); 
+  }
+
+  gStyle->SetOptStat(0); 
+  makeCanvas(1); 
+  c1->cd(); 
+  c1->Clear();
+  c1->Divide(4,1);
+  
+  c1->cd(1); 
+  gPad->SetRightMargin(0.15); 
+  mm3->Draw("colztext"); 
+
+  c1->cd(2); 
+  gPad->SetRightMargin(0.15); 
+  mr3->Draw("colztext"); 
+
+  c1->cd(3); 
+  gPad->SetRightMargin(0.15); 
+  no3->Draw("colztext"); 
+
+  c1->cd(4); 
+  gPad->SetRightMargin(0.15); 
+  cs3->Draw("colztext"); 
+  c1->SaveAs(Form("doca3-%d.pdf", cutval)); 
+
+
+  c1->cd(); 
+  c1->Clear();
+  c1->Divide(4,1);
+  
+  c1->cd(1); 
+  gPad->SetRightMargin(0.15); 
+  mm4->Draw("colztext"); 
+
+  c1->cd(2); 
+  gPad->SetRightMargin(0.15); 
+  mr4->Draw("colztext"); 
+
+  c1->cd(3); 
+  gPad->SetRightMargin(0.15); 
+  no4->Draw("colztext"); 
+
+  c1->cd(4); 
+  gPad->SetRightMargin(0.15); 
+  cs4->Draw("colztext"); 
+  c1->SaveAs(Form("doca4-%d.pdf", cutval)); 
+
+  c1->cd(); 
+  c1->Clear();
+  c1->Divide(4,1);
+  
+  c1->cd(1); 
+  gPad->SetRightMargin(0.15); 
+  mm5->Draw("colztext"); 
+
+  c1->cd(2); 
+  gPad->SetRightMargin(0.15); 
+  mr5->Draw("colztext"); 
+
+  c1->cd(3); 
+  gPad->SetRightMargin(0.15); 
+  no5->Draw("colztext"); 
+
+  c1->cd(4); 
+  gPad->SetRightMargin(0.15); 
+  cs5->Draw("colztext"); 
+  c1->SaveAs(Form("doca5-%d.pdf", cutval)); 
+  
   for (unsigned int i = 0; i < mm.size(); ++i) {
     for (unsigned int j = 0; j < no.size(); ++j) {
       for (unsigned int k = 0; k < cs.size(); ++k) {
 	if (no[j].name == mm[i].name && (cs[k].name == mm[i].name)) {
 	  if (no[j].ratio < maxDev &&cs[k].ratio < maxDev) 
-	    cout << mm[i].name << ": " << mm[i].ratio << " r = " << mm[i].r << " pt = " << mm[i].pt << " doca = " << mm[i].doca 
-		 << " and " << no[j].name << " ratio = " << no[j].ratio 
-		 << " and " << cs[k].name << " ratio = " << cs[k].ratio 
+	    cout << "MM: " << mm[i].name << ": " << mm[i].ratio << " r = " << mm[i].r << " pt = " << mm[i].pt << " doca = " << mm[i].doca 
+		 << " NO: " << no[j].name << " ratio = " << no[j].ratio 
+		 << " CS: " << cs[k].name << " ratio = " << cs[k].ratio 
 		 << endl;
 	}
       }
@@ -81,9 +207,9 @@ void plotIso::anaTextFiles(int cutval) {
     for (unsigned int j = 0; j < no.size(); ++j) {
       for (unsigned int k = 0; k < cs.size(); ++k) {
 	if ((mm[i].name == "Doca05isor010pt09") && (no[j].name == mm[i].name) && (cs[k].name == mm[i].name)) {
-	  cout << "* " << mm[i].name << ": " << mm[i].ratio << " r = " << mm[i].r << " pt = " << mm[i].pt << " doca = " << mm[i].doca 
-	       << " and " << no[j].name << " ratio = " << no[j].ratio 
-	       << " and " << cs[k].name << " ratio = " << cs[k].ratio 
+	  cout << "*MM: " << mm[i].name << ": " << mm[i].ratio << " r = " << mm[i].r << " pt = " << mm[i].pt << " doca = " << mm[i].doca 
+	       << " NO: " << no[j].name << " ratio = " << no[j].ratio 
+	       << " CS: " << cs[k].name << " ratio = " << cs[k].ratio 
 	       << endl;
 	}
       }
@@ -286,14 +412,15 @@ void plotIso::dataVsMc(string file1, string dir1, string file2, string dir2, str
     h2->Draw(Form("same%s", option2));
 
     if (string::npos != cut.find("iso")) {
-      double ntot   = h1->Integral(0, h1->GetNbinsX()+1);
-      double ucut   = h1->Integral(h1->FindBin(cutval), h1->GetNbinsX()+1);
-      double eps1   = ucut/ntot; 
-      cout << "====> " << cutval << " at bin " << h1->FindBin(cutval) << endl;
-      
-      ntot          = h2->Integral(0, h2->GetNbinsX()+1);
-      ucut          = h2->Integral(h2->FindBin(cutval), h2->GetNbinsX()+1);
-      double eps2   = ucut/ntot; 
+
+      HistCutEfficiency h(h1); 
+      //      h.fVerbose = 1; 
+      h.eff(h1, cutval); 
+
+      double eps1   = h.hiEff; 
+
+      h.eff(h2, cutval); 
+      double eps2   = h.hiEff; 
       
       tl->DrawLatex(0.2, 0.92, cut.c_str());
       tl->DrawLatex(0.2, 0.80, Form("#epsilon_{D}  = %4.3f", eps1));
@@ -304,14 +431,49 @@ void plotIso::dataVsMc(string file1, string dir1, string file2, string dir2, str
     }
 
     if (fDoPrint) c0->SaveAs(pdfname.c_str()); 
+    //    break;
   }
 
 } 
 
+// ----------------------------------------------------------------------
+int plotIso::ptBin(double pt) {
+
+  if (pt > 0.25 && pt < 0.35) return 1; 
+  if (pt > 0.45 && pt < 0.55) return 2; 
+  if (pt > 0.65 && pt < 0.75) return 3; 
+  if (pt > 0.85 && pt < 0.95) return 4; 
+  if (pt > 1.05 && pt < 1.15) return 5; 
+  cout << "don't know what to do with pt = " << pt << endl;
+}
 
 
+// ----------------------------------------------------------------------
+int plotIso::rBin(double r) {
+  if (r > 0.25 && r < 0.35) return 1; 
+  if (r > 0.45 && r < 0.55) return 2; 
+  if (r > 0.65 && r < 0.75) return 3; 
+  if (r > 0.85 && r < 0.95) return 4; 
+  if (r > 0.95 && r < 1.05) return 5; 
+  if (r > 1.05 && r < 1.15) return 6; 
+  cout << "don't know what to do with r = " << r << endl;
+}
 
 
+// ----------------------------------------------------------------------
+void plotIso::relabel(TH2 *h) {
+  h->GetYaxis()->SetBinLabel(1, "pT<0.3"); 
+  h->GetYaxis()->SetBinLabel(2, "pT<0.5"); 
+  h->GetYaxis()->SetBinLabel(3, "pT<0.7"); 
+  h->GetYaxis()->SetBinLabel(4, "pT<0.9"); 
+  h->GetYaxis()->SetBinLabel(5, "pT<1.1"); 
 
-
-
+  h->GetXaxis()->SetBinLabel(1, "r<0.3"); 
+  h->GetXaxis()->SetBinLabel(2, "r<0.5"); 
+  h->GetXaxis()->SetBinLabel(3, "r<0.7"); 
+  h->GetXaxis()->SetBinLabel(4, "r<0.9"); 
+  h->GetXaxis()->SetBinLabel(5, "r<1.0"); 
+  h->GetXaxis()->SetBinLabel(6, "r<1.1"); 
+  
+  h->SetMarkerSize(2);
+}

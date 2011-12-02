@@ -22,7 +22,10 @@ public:
   void dataVsMc(std::string file1, std::string dir1, std::string file2, std::string dir2, std::string selection);
   void anaTextFiles(int cutval = 80);
   void readFile(std::string fname, std::vector<data> &v);
-  
+
+  int ptBin(double pt);
+  int rBin(double r);
+  void relabel(TH2 *h);
 
   int fMode;
   double fIsoCut; 

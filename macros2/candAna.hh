@@ -53,7 +53,7 @@ public:
   virtual void        candAnalysis();
   virtual void        efficiencyCalculation();
   
-  virtual int         nearestPV(int pvIdx);
+  virtual int         nearestPV(int pvIdx, double maxDist = 99.);
   virtual double      constrainedMass();
   virtual void        runRange();
   virtual void        genMatch(); 
@@ -111,7 +111,8 @@ public:
   CANDPTLO, CANDETALO, CANDETAHI
     , CANDCOSALPHA, CANDALPHA
     , CANDFLS3D, CANDFLSXY, CANDVTXCHI2
-    , CANDISOLATION, CANDDOCATRK
+    , CANDISOLATION, CANDDOCATRK, CANDCLOSETRK
+    , PVAVEW8, CANDLIP, CANDLIPS
     , TRACKPTLO, TRACKPTHI, TRACKETALO, TRACKETAHI
     , TRACKTIP, TRACKLIP
     , MUPTLO, MUPTHI
@@ -191,9 +192,9 @@ public:
   // -- Analysis distributions
   std::map<std::string, int> fRegion;
 #define NAD 10
-  AnalysisDistribution   *fpPvZ[NAD], *fpPvN[NAD], *fpPvNtrk[NAD], *fpPvAveW8[NAD]  
-    , *fpTracksPt[NAD],  *fpTracksEta[NAD] 
-    , *fpMuonsPt[NAD], *fpMuonsEta[NAD], *fpMuon1Pt[NAD], *fpMuon2Pt[NAD], *fpMuon1Eta[NAD], *fpMuon2Eta[NAD]
+  AnalysisDistribution   *fpHLT[NAD], *fpPvZ[NAD], *fpPvN[NAD], *fpPvNtrk[NAD], *fpPvAveW8[NAD]  
+    , *fpTracksQual[NAD], *fpTracksPt[NAD],  *fpTracksEta[NAD] 
+    , *fpMuonsID[NAD], *fpMuonsPt[NAD], *fpMuonsEta[NAD], *fpMuon1Pt[NAD], *fpMuon2Pt[NAD], *fpMuon1Eta[NAD], *fpMuon2Eta[NAD]
     , *fpPt[NAD], *fpEta[NAD] 
     , *fpCosA[NAD], *fpAlpha[NAD]
     , *fpIso[NAD], *fpIsoTrk[NAD], *fpCloseTrk[NAD]
@@ -225,6 +226,12 @@ public:
   AnalysisDistribution   *fpNpvCloseTrk[NADPV][NAD];
   AnalysisDistribution   *fpNpvLip[NADPV][NAD];
   AnalysisDistribution   *fpNpvLipS[NADPV][NAD];
+  AnalysisDistribution   *fpNpvIso0[NADPV][NAD];
+  AnalysisDistribution   *fpNpvIso1[NADPV][NAD];
+  AnalysisDistribution   *fpNpvIso2[NADPV][NAD];
+  AnalysisDistribution   *fpNpvIso3[NADPV][NAD];
+  AnalysisDistribution   *fpNpvIso4[NADPV][NAD];
+  AnalysisDistribution   *fpNpvIso5[NADPV][NAD];
 
   // -- Isolation study
 #define NISO 10

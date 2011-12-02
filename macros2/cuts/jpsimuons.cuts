@@ -7,7 +7,7 @@
 # root [5] mask |= 0x1<<6;  muon::GlobalMuonPromptTight
 MUIDMASK           80
 MUIDRESULT         80
-MUPTLO            5.0
+MUPTLO            4.0
 MUPTHI         9999.0
 MUETALO          -2.4
 MUETAHI           2.4

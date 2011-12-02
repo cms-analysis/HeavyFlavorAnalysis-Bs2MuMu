@@ -1,3 +1,6 @@
+PVAVEW8          0.6
+CANDLIP          0.015
+CANDLIPS         3
 CANDPTLO         7.0
 CANDETALO        -24.
 CANDETAHI         24.
@@ -7,3 +10,4 @@ CANDFLSXY       -99.0
 CANDVTXCHI2       1.6
 CANDISOLATION     0.75
 CANDDOCATRK       0.015
+CANDCLOSETRK      2
