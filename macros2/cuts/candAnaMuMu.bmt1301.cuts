@@ -1,0 +1,17 @@
+TYPE             1301
+TRUTHCAND        1111
+# -- trigger
+TRIGRANGE    NOTRIGGER
+# -- boxes
+SIGBOXMIN         3.0
+SIGBOXMAX         3.2
+BGLBOXMIN         2.9
+BGLBOXMAX         3.0
+BGHBOXMIN         3.2
+BGHBOXMAX         3.3
+# -- tracks
++input cuts/tracks.cuts
+# -- muons
++input cuts/muons.cuts
+# -- candidate
++input cuts/candidate.cuts

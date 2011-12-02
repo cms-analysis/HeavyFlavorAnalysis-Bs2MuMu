@@ -21,6 +21,8 @@ public:
   void sbsDistributionOverlaySameFile(std::string file1, std::string dir1, 
 				      std::string r1 = "B_iso5", std::string r2 = "E_iso5", std::string sel = "Ao", 
 				      std::string L1="barrel", std::string L2="endcap"); 
+  std::vector<double> computeDelta(double lo1, double lo1E, double lo2, double lo2E); 
+
 
 };
 

@@ -172,24 +172,6 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	continue; 
       }
       
-      //       // -- Vertexing, new style
-      //       trackList.clear();
-      //       trackIndices.clear(); 
-      //       trackMasses.clear(); 
-      
-      //       trackList.push_back(tMuon1); 
-      //       trackIndices.push_back(iMuon1); 
-      //       trackMasses.push_back(MMUON);
-      
-      //       trackList.push_back(tMuon2); 
-      //       trackIndices.push_back(iMuon2); 
-      //       trackMasses.push_back(MMUON);
-      //       if (fVertexing > 0) {
-      // 	a.doFit(trackList, trackIndices, trackMasses, fType); 
-      //       } else {
-      // 	a.doNotFit(trackList, trackIndices, trackMasses, fType); 	
-      //       }
-
       // -- Vertexing, with Kinematic Particles
       HFDecayTree theTree(301313, true, 0, false); // TODO adjust mass to meaningful value
       theTree.addTrack(iMuon1,13);

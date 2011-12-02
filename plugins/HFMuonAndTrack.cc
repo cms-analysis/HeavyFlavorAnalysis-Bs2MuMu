@@ -9,6 +9,8 @@
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TGenCand.hh"
 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKalmanVertexFit.hh"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFSequentialVertexFit.h"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFMasses.hh"
 
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "RecoVertex/VertexTools/interface/VertexDistance3D.h"
@@ -41,8 +43,6 @@ extern TAna01Event *gHFEvent;
 using namespace std;
 using namespace reco;
 using namespace edm;
-
-#define MMUON 0.10566
 
 // ----------------------------------------------------------------------
 HFMuonAndTrack::HFMuonAndTrack(const edm::ParameterSet& iConfig) :
@@ -82,6 +82,11 @@ HFMuonAndTrack::~HFMuonAndTrack() {
 
 // ----------------------------------------------------------------------
 void HFMuonAndTrack::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+
+  // -- get the magnetic field
+  ESHandle<MagneticField> magfield;
+  iSetup.get<IdealMagneticFieldRecord>().get(magfield);
+  const MagneticField *field = magfield.product();
 
   // -- get the primary vertex
   edm::Handle<VertexCollection> recoPrimaryVertexCollection;
@@ -158,6 +163,9 @@ void HFMuonAndTrack::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
   vector<int> trackIndices;
   vector<double> trackMasses;
 
+  // -- set up vertex fitter 
+  HFSequentialVertexFit aSeq(hTracks,fTTB.product(),recoPrimaryVertexCollection, field, fVerbose);
+
   TLorentzVector dimuon, m1, m2;
   int iMuon1(-1); 
   for (unsigned int imuon1 = 0; imuon1 < muonIndices.size(); ++imuon1) {
@@ -189,26 +197,15 @@ void HFMuonAndTrack::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 	cout << "==>HFMuonAndTrack> dimuon mass = " << dimuon.M() << ", vertexing" << endl;
 	cout << "==>HFMuonAndTrack>  tMuon1.charge() = " << tMuon1.charge() << ", tTrack2.charge() " << tTrack2.charge() << endl;
       }
+
+      // -- Vertexing, with Kinematic Particles
+      HFDecayTree theTree(fType, true, 0, false); // TODO adjust mass to meaningful value
+      theTree.addTrack(iMuon1,13);
+      theTree.addTrack(itrack2,13);
+      theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
       
-      // -- vertexing
-      trackList.clear();
-      trackIndices.clear(); 
-      trackMasses.clear(); 
-      
-      trackList.push_back(tMuon1); 
-      trackIndices.push_back(iMuon1); 
-      trackMasses.push_back(MMUON);
-      
-      trackList.push_back(tTrack2); 
-      trackIndices.push_back(itrack2); 
-      trackMasses.push_back(MMUON);
-      
-      if (fVertexing > 0) {
-	a.doFit(trackList, trackIndices, trackMasses, fType); 	
-      } else {
-	a.doNotFit(trackList, trackIndices, trackMasses, fType); 	
-      }
-      
+      aSeq.doFit(&theTree);
+
     } 
   }
 }

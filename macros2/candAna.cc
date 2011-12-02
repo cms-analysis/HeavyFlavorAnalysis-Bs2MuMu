@@ -2383,6 +2383,7 @@ void candAna::isolationStudy(double doca) {
 int candAna::nearestPV(int pvIdx, double maxDist) {
 
   TAnaVertex *v0 = fpEvt->getPV(pvIdx); 
+
   double zV0 = v0->fPoint.Z(); 
   
   int idx(-1); 

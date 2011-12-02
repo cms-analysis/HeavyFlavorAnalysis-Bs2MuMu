@@ -21,11 +21,16 @@ public:
   void eff(TH1* h1, double cut);
   void eff(TH1* h1, double cut, int includeOverFlow);
 
+  void eff(double cut1, double cut2);
+  void eff(TH1* h1, double cut1, double cut2);
+  void eff(TH1* h1, double cut, double cut2, int includeOverFlow);
+
   TH1 *fH; 
   int fIncludeOverflow; 
 
   double loEff, loErr; // efficiency of integral BELOW the cut
   double hiEff, hiErr; // efficiency of integral ABOVE the cut
+  double inEff, inErr; // efficiency of integral inside the cuts
 
   int fVerbose; 
 

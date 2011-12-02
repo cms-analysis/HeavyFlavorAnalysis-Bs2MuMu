@@ -117,6 +117,24 @@ void bmm2Reader::readCuts(TString filename, int dump) {
       lCandAnalysis.push_back(a); 
     }
 
+    if (!strcmp(className, "candAnaMuMu1301")) {
+      candAna *a = new candAnaMuMu(this, "candAnaMuMu1301", cutFile); 
+      a->fVerbose = fVerbose; 
+      lCandAnalysis.push_back(a); 
+    }
+
+    if (!strcmp(className, "candAnaMuMu1302")) {
+      candAna *a = new candAnaMuMu(this, "candAnaMuMu1302", cutFile); 
+      a->fVerbose = fVerbose; 
+      lCandAnalysis.push_back(a); 
+    }
+
+    if (!strcmp(className, "candAnaMuMu1313")) {
+      candAna *a = new candAnaMuMu(this, "candAnaMuMu1313", cutFile); 
+      a->fVerbose = fVerbose; 
+      lCandAnalysis.push_back(a); 
+    }
+
     if (!strcmp(className, "candAnaBu2JpsiK")) {
       candAna *a = new candAnaBu2JpsiK(this, "candAnaBu2JpsiK", cutFile); 
       a->fVerbose = fVerbose; 

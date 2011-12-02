@@ -64,7 +64,7 @@ public:
   virtual void setErrors(TH1D *h);
   virtual void stamp(double x1, std::string text1, double x2, std::string text2);
   virtual std::string scientificTex(double n, double nE, std::string name, double base = 1.e-2, int digits = 2);
-  virtual std::string formatTex(double n, std::string name, int digits);
+  virtual std::string formatTex(double n, std::string name, int digits, int sgn = 0);
   virtual std::string formatTex(double n, std::string name, std::string tag);
   virtual void drawArrow(double height, int mode = 0, int color = kBlue);
   virtual void drawBox(int mode, double hi = 0.5, int ylo = 0.01);

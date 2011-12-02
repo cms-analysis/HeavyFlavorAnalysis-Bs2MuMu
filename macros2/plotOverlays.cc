@@ -193,7 +193,7 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
   }
 
 //   doList.clear(); 
-//   doList.push_back("chi2dof"); 
+//   doList.push_back("hlt"); 
 
 
   TCanvas *c1;
@@ -272,13 +272,17 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
     if (doList[i] == "tracksqual") cutval = 1; 
 
     HistCutEfficiency a(h1); 
-    //    a.fVerbose = 1; 
+    a.fVerbose = 1; 
     a.fIncludeOverflow = 0;
     a.eff(h1, cutval); 
     fTEX << formatTex(a.loEff, Form("%s:%s-%s:%s:loEff",  fSuffix.c_str(), file1.c_str(), region1.c_str(), doList[i].c_str()), 3) << endl;
     fTEX << formatTex(a.loErr, Form("%s:%s-%s:%s:loEffE", fSuffix.c_str(), file1.c_str(), region1.c_str(), doList[i].c_str()), 3) << endl;
     fTEX << formatTex(a.hiEff, Form("%s:%s-%s:%s:hiEff",  fSuffix.c_str(), file1.c_str(), region1.c_str(), doList[i].c_str()), 3) << endl;
     fTEX << formatTex(a.hiErr, Form("%s:%s-%s:%s:hiEffE", fSuffix.c_str(), file1.c_str(), region1.c_str(), doList[i].c_str()), 3) << endl;
+    double lo1  = a.loEff; 
+    double lo1E = a.loErr; 
+    double hi1  = a.hiEff; 
+    double hi1E = a.hiErr; 
 
     a.eff(h2, cutval); 
     fTEX << formatTex(a.loEff, Form("%s:%s-%s:%s:loEff",  fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3) << endl;
@@ -286,17 +290,43 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
     fTEX << formatTex(a.hiEff, Form("%s:%s-%s:%s:hiEff",  fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3) << endl;
     fTEX << formatTex(a.hiErr, Form("%s:%s-%s:%s:hiEffE", fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3) << endl;
 
+    double lo2  = a.loEff; 
+    double lo2E = a.loErr; 
+    double hi2  = a.hiEff; 
+    double hi2E = a.hiErr; 
+
+    vector<double> loDelta = computeDelta(lo1, lo1E, lo2, lo2E); 
+    cout << "..> delta = " << loDelta[0] << " +/- " << loDelta[1] << endl;
+    vector<double> hiDelta = computeDelta(hi1, hi1E, hi2, hi2E); 
+    cout << "..> delta = " << hiDelta[0] << " +/- " << hiDelta[1] << endl;
+    
+    fTEX << formatTex(loDelta[0],  Form("%s:%s-%s:%s:loDelta",  fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3, 1) << endl;
+    fTEX << formatTex(loDelta[1], Form("%s:%s-%s:%s:loDeltaE", fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3) << endl;
+    fTEX << formatTex(hiDelta[0], Form("%s:%s-%s:%s:hiDelta",  fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3, 1) << endl;
+    fTEX << formatTex(hiDelta[1], Form("%s:%s-%s:%s:hiDeltaE", fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3) << endl;
+
+
     if (doList[i] == "lip" || doList[i] == "lips") {
       HistCutEfficiency a(h1); 
       //      a.fVerbose = 1; 
       a.eff(h1, -cutval, cutval); 
+      double lo1  = a.inEff; 
+      double lo1E = a.inErr; 
       fTEX << formatTex(a.inEff, Form("%s:%s-%s:%s:inEff",  fSuffix.c_str(), file1.c_str(), region1.c_str(), doList[i].c_str()), 3) << endl;
       fTEX << formatTex(a.inErr, Form("%s:%s-%s:%s:inEffE", fSuffix.c_str(), file1.c_str(), region1.c_str(), doList[i].c_str()), 3) << endl;
+
       a.eff(h2, -cutval, cutval); 
       fTEX << formatTex(a.inEff, Form("%s:%s-%s:%s:inEff",  fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3) << endl;
       fTEX << formatTex(a.inErr, Form("%s:%s-%s:%s:inEffE", fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3) << endl;
+      double lo2  = a.inEff; 
+      double lo2E = a.inErr; 
+      
+      vector<double> loDelta = computeDelta(lo1, lo1E, lo2, lo2E); 
+      
+      fTEX << formatTex(loDelta[0], Form("%s:%s-%s:%s:inDelta",  fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3, 1) << endl;
+      fTEX << formatTex(loDelta[1], Form("%s:%s-%s:%s:inDeltaE", fSuffix.c_str(), file2.c_str(), region2.c_str(), doList[i].c_str()), 3) << endl;
     }      
-
+    
     c0->cd(); 
     c0->Clear();
     double dmax = (h1->GetMaximum() > h2->GetMaximum()? 1.1*h1->GetMaximum(): 1.1*h2->GetMaximum()); 
@@ -361,6 +391,20 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
   }
 
 } 
+
+
+// ----------------------------------------------------------------------
+vector<double> plotOverlays::computeDelta(double lo1, double lo1E, double lo2, double lo2E) {
+  vector<double> result; 
+
+  double a = 2.*(lo1-lo2)/(lo1+lo2);
+  double c = lo1+lo2; c = c*c*c*c;
+  double b = TMath::Sqrt(16.*lo2*lo2*lo1E*lo1E/c + 16*lo1*lo1*lo2E*lo2E/c);
+  cout << "--> delta = " << a << " +/- " << b << endl;
+  result.push_back(a); 
+  result.push_back(b); 
+  return result;
+}
 
 
 // ----------------------------------------------------------------------

@@ -40,24 +40,44 @@ if ($opt_v) {
 }
 
 %jobs = (
-    "signal Bs2MuMu MC 2e33"  
+    "signal Bs2MuMu MC 1e33"  
+    => "-m,bmm2Reader.1e33-Bs2MuMu,cbmm-$version-1e33-Bs2MuMu,$version-1e33-Bs2MuMu.root"
+    , "signal Bs2MuMu MC 2e33"  
     => "-m,bmm2Reader.2e33-Bs2MuMu,cbmm-$version-2e33-Bs2MuMu,$version-2e33-Bs2MuMu.root"
     , "signal Bs2MuMu MC 3e33"  
     => "-m,bmm2Reader.3e33-Bs2MuMu,cbmm-$version-3e33-Bs2MuMu,$version-3e33-Bs2MuMu.root"
+    , "signal Bs2MuMu MC mix"  
+    => "-m,bmm2Reader.mix-Bs2MuMu,cbmm-$version-mix-Bs2MuMu,$version-mix-Bs2MuMu.root"
+    , "signal Bd2MuMu MC 1e33"  
+    => "-m,bmm2Reader.1e33-Bd2MuMu,cbmm-$version-1e33-Bd2MuMu,$version-1e33-Bd2MuMu.root"
     , "signal Bd2MuMu MC 2e33"  
     => "-m,bmm2Reader.2e33-Bd2MuMu,cbmm-$version-2e33-Bd2MuMu,$version-2e33-Bd2MuMu.root"
     , "signal Bd2MuMu MC 3e33"  
-    => "-m,bmm2Reader.3e33-Bd2MuMu,cbmm-$version-2e33-Bd2MuMu,$version-3e33-Bd2MuMu.root"
+    => "-m,bmm2Reader.3e33-Bd2MuMu,cbmm-$version-3e33-Bd2MuMu,$version-3e33-Bd2MuMu.root"
+    , "signal Bd2MuMu MC mix"  
+    => "-m,bmm2Reader.mix-Bd2MuMu,cbmm-$version-mix-Bd2MuMu,$version-mix-Bd2MuMu.root"
     #
+    , "norm Bu2JpsiK MC 1e33"  
+    => "-m,bmm2Reader.1e33-Bu2JpsiK,cbmm-$version-1e33-Bu2JpsiK-*,$version-1e33-Bu2JpsiK.root"
     , "norm Bu2JpsiK MC 2e33"  
     => "-m,bmm2Reader.2e33-Bu2JpsiK,cbmm-$version-2e33-Bu2JpsiK-*,$version-2e33-Bu2JpsiK.root"
     , "norm Bu2JpsiK MC 3e33"  
     => "-m,bmm2Reader.3e33-Bu2JpsiK,cbmm-$version-3e33-Bu2JpsiK-*,$version-3e33-Bu2JpsiK.root"
+    , "norm Bu2JpsiK MC mix"  
+    => "-m,bmm2Reader.mix-Bu2JpsiK,cbmm-$version-mix-Bu2JpsiK-*,$version-mix-Bu2JpsiK.root"
+    , "norm Bu2JpsiK MC acc"  
+    => "-m,bmm2Reader.2e33-Bu2JpsiK,cbmm-$version-2e33-accBu2JpsiK,$version-2e33-accBu2JpsiK.root"
     #
+    , "cs Bs2JpsiPhi MC 1e33"  
+    => "-m,bmm2Reader.1e33-Bs2JpsiPhi,cbmm-$version-1e33-Bs2JpsiPhi,$version-1e33-Bs2JpsiPhi.root"
     , "cs Bs2JpsiPhi MC 2e33"  
     => "-m,bmm2Reader.2e33-Bs2JpsiPhi,cbmm-$version-2e33-Bs2JpsiPhi,$version-2e33-Bs2JpsiPhi.root"
     , "cs Bs2JpsiPhi MC 3e33"  
     => "-m,bmm2Reader.3e33-Bs2JpsiPhi,cbmm-$version-3e33-Bs2JpsiPhi,$version-3e33-Bs2JpsiPhi.root"
+    , "cs Bs2JpsiPhi MC mix"  
+    => "-m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-$version-mix-Bs2JpsiPhi,$version-mix-Bs2JpsiPhi.root"
+    , "cs Bs2JpsiPhi MC acc"  
+    => "-m,bmm2Reader.2e33-Bs2JpsiPhi,cbmm-$version-2e33-accBs2JpsiPhi,$version-2e33-accBs2JpsiPhi.root"
     #
     , "Bs2KMuNu rare MC"  
     => "-m,bmm2Reader.2e33-Bs2KMuNu,cbmm-$version-2e33-Bs2KMuNu,$version-2e33-Bs2KMuNu.root"
@@ -80,6 +100,13 @@ if ($opt_v) {
     #
     , "data 2011"  
     => "-b 1,bmm2Reader.data,cbmm-$version-Run2011*,$version-2011-data.root"
+    # 
+    , "bmt jet"  
+    => "-b 0,bmt2Reader.data,cbmt-$version-Jet-*,$version-bmt-Jet.root"
+    , "bmt ht"  
+    => "-b 0,bmt2Reader.data,cbmt-$version-HT-*,$version-bmt-HT.root"
+    , "bmt photon"  
+    => "-b 0,bmt2Reader.data,cbmt-$version-Photon-*,$version-bmt-Photon.root"
     );
 
 my $user  = $ENV{'USER'};
@@ -115,6 +142,7 @@ if ($opt_h) {
     #@lines = `ls $storage/* | grep root`;
 
     foreach $j (keys %jobs) {
+	if ($opt_s =~ /1e33/   && !($j =~ /1e33/)) {next; }
 	if ($opt_s =~ /2e33/   && !($j =~ /2e33/)) {next; }
 	if ($opt_s =~ /3e33/   && !($j =~ /3e33/)) {next; }
 	if ($opt_s =~ /signal/ && !($j =~ /signal/)) {next; }
@@ -123,6 +151,11 @@ if ($opt_h) {
 	if ($opt_s =~ /data/   && !($j =~ /data/)) {next; }
 	if ($opt_s =~ /mc/     && !($j =~ /MC/)) {next; }
 	if ($opt_s =~ /rare/   && !($j =~ /rare/)) {next; }
+	if ($opt_s =~ /acc/    && !($j =~ /acc/)) {next; }
+	if ($opt_s =~ /bmt/    && !($j =~ /bmt/)) {next; }
+	# -- skip bmt jobs if not explicitely requested
+	if (!($opt_s =~ /bmt/) && ($j =~ /bmt/)) {next; }
+
 	($options, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
 	
 	$dataset =~ s/-\*//;
@@ -169,6 +202,7 @@ if ($opt_h) {
 # -- submit the jobs
 foreach $j (keys %jobs) {
     ($options, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
+    if ($opt_s =~ /1e33/   && !($j =~ /1e33/)) {next; }
     if ($opt_s =~ /2e33/   && !($j =~ /2e33/)) {next; }
     if ($opt_s =~ /3e33/   && !($j =~ /3e33/)) {next; }
     if ($opt_s =~ /data/   && !($j =~ /data/)) {next; }
@@ -177,9 +211,13 @@ foreach $j (keys %jobs) {
     if ($opt_s =~ /cs/     && !($j =~ /cs/)) {next; }
     if ($opt_s =~ /mc/     && !($j =~ /MC/)) {next; }
     if ($opt_s =~ /rare/   && !($j =~ /rare/)) {next; }
+    if ($opt_s =~ /acc/    && !($j =~ /acc/)) {next; }
+    if ($opt_s =~ /bmt/    && !($j =~ /bmt/)) {next; }
+    # -- skip bmt jobs if not explicitely requested
+    if (!($opt_s =~ /bmt/) && ($j =~ /bmt/)) {next; }  
 
     if ($j =~ /data/) {
-	$command = "$runCommand -q all.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
+	$command = "$runCommand -q long.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
     } else {
 	$command = "$runCommand -q all.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
     }

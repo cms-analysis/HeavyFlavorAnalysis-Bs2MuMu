@@ -79,6 +79,16 @@ while(<IN>) {
 	next; 
     }
 
+    # -- check whether this job had its sandbox retrieved already
+    ($llog = $jdl) =~ s/jdl/log/;
+    print "==> $llog\n";
+    if (-e "$dir/$llog") {
+	$ok = parseOutput($dir, $llog); 
+	($rsize, $lsize, $srmFile) = rootFileSize("$dir/$llog"); 
+    	printf("%50s %s; %s/root: %10i, log: %7i\n", $mdir, $url, $jobStatus, $ok, $rsize, $lsize);
+	next; 
+    }
+
     # -- get job status
     $gliteResult = `$gliteStatus $url`; 
     parseStatus($gliteResult); 
