@@ -1153,6 +1153,235 @@ void plotReducedTree::tnpVsMC(double m1pt, double m2pt) {
 
 
 // ----------------------------------------------------------------------
+void plotReducedTree::triggerSignal(string cuts) { 
+  static int version(0); 
+
+  string defaultCuts = "4.8<m&&m<6&&gmuid&&gtqual&&m1pt>3&&m2pt>3&&m1q*m2q<0&&abs(eta)<2.4&&abs(m2eta)<2.4&&pt>5&&abs(m1ip)<2&&abs(m2ip)<2";
+
+  string allCuts = defaultCuts + "&&" + cuts;
+  string hltCuts = defaultCuts + "&&" + cuts + "&&hlt";
+
+  int NBINS(4); 
+  double HLO(0.), HHI(40.); 
+  TH1D *M0 = new TH1D("M0", "", 40, 4.8, 6.0); 
+  TH1D *H0 = new TH1D("H0", "", NBINS, HLO, HHI); 
+  TH1D *H1 = new TH1D("H1", "", NBINS, HLO, HHI); 
+  TH1D *EF = new TH1D("EF", "", NBINS, HLO, HHI); EF->Sumw2();
+  
+  int yNBINS(4); 
+  double  yHLO(0), yHHI(2.4);
+  TH1D *Y0 = new TH1D("Y0", "", yNBINS, yHLO, yHHI); 
+  TH1D *Y1 = new TH1D("Y1", "", yNBINS, yHLO, yHHI); 
+  TH1D *YR = new TH1D("YR", "", yNBINS, yHLO, yHHI); YR->Sumw2(); 
+
+  TTree *t; 
+
+  //  loopTree(0); 
+
+  c0->Clear(); 
+  c0->Divide(2,2); 
+  gStyle->SetOptStat(0); 
+
+  int i(1); 
+  for (map<string, string>::iterator imap = fName.begin(); imap != fName.end(); ++imap) {  
+    if (string::npos == imap->first.find("Bmt")) continue;
+    cout << "===> " << imap->first;
+    cout << ": " << fF[imap->first]->GetName();
+    cout << " -> " << imap->second << endl;
+
+    fF[imap->first]->cd("candAnaMuMu1313");
+    TH1D *m0 = new TH1D("m0", "", 40, 4.8, 6.0); 
+    TH1D *h0 = new TH1D("h0", "", NBINS, HLO, HHI); 
+    TH1D *h1 = new TH1D("h1", "", NBINS, HLO, HHI); 
+    TH1D *y0 = new TH1D("y0", "", yNBINS, yHLO, yHHI); 
+    TH1D *y1 = new TH1D("y1", "", yNBINS, yHLO, yHHI); 
+    t = (TTree*)gDirectory->Get("events"); 
+    
+    t->Draw("m>>m0", allCuts.c_str(), "goff");
+    double n0   = t->Draw("pt>>h0", allCuts.c_str(), "goff");
+    double n1   = t->Draw("pt>>h1", hltCuts.c_str(), "goff");
+    t->Draw("eta>>y0", allCuts.c_str(), "goff");
+    t->Draw("eta>>y1", hltCuts.c_str(), "goff");
+    double eff  = n1/n0; 
+    double deff = dEff(static_cast<int>(n1), static_cast<int>(n0)); 
+
+    M0->Add(m0); 
+    H0->Add(h0); 
+    H1->Add(h1); 
+
+    Y0->Add(y0); 
+    Y1->Add(y1); 
+    
+    c0->cd(i++); 
+    setFilledHist(h0, kBlack, kRed, 3004); 
+    setTitles(h0, "p_{T} [GeV]", "Entries/bin"); 
+    h0->Draw();
+
+    setFilledHist(h1, kBlack, kBlue, 3005); 
+    h1->Draw("same");
+
+    tl->SetTextSize(0.04); tl->DrawLatex(0.2, 0.92, imap->first.c_str()); 
+    tl->SetTextSize(0.04); tl->DrawLatex(0.5, 0.92, Form("eff = %4.3f #pm %4.3f", eff, deff)); 
+    
+  }
+
+  c0->cd(i++); 
+  setFilledHist(H0, kBlack, kRed, 3004); 
+  setTitles(H0, "p_{T} [GeV]", "Entries/bin"); 
+  H0->Draw();
+  
+  setFilledHist(H1, kBlack, kBlue, 3005); 
+  H1->Draw("same");
+
+  double n0   = H0->GetSumOfWeights(); 
+  double n1   = H1->GetSumOfWeights(); 
+  double eff  = n1/n0; 
+  double deff = dEff(static_cast<int>(n1), static_cast<int>(n0)); 
+
+  tl->SetTextSize(0.04); tl->DrawLatex(0.2, 0.92, "Combined:"); 
+  tl->SetTextSize(0.04); tl->DrawLatex(0.5, 0.92, Form("eff = %4.3f #pm %4.3f", eff, deff)); 
+  
+//   double ave(0.), aveE(0.); 
+//   average(ave, aveE, 3, vEff, vEffE); 
+
+  if (fDoPrint) c0->SaveAs(Form("%s/triggerSignal-overlay-pt-%d.pdf", fDirectory.c_str(), version));     
+
+  c0->Clear();
+  EF->Divide(H1, H0, 1., 1., "B");
+  setTitles(EF, "p_{T} [GeV]", "efficiency"); 
+  EF->SetMinimum(0.); EF->SetMaximum(1.05); 
+  EF->Draw();
+  if (fDoPrint) c0->SaveAs(Form("%s/triggerSignal-efficiency-pt-%d.pdf", fDirectory.c_str(), version));     
+
+  c0->Clear();
+  YR->Divide(Y1, Y0, 1., 1., "B");
+  setTitles(YR, "|#eta|", "efficiency"); 
+  YR->SetMinimum(0.); YR->SetMaximum(1.05);
+  YR->Draw();
+  if (fDoPrint) c0->SaveAs(Form("%s/triggerSignal-efficiency-eta-%d.pdf", fDirectory.c_str(), version));     
+
+  ++version;
+
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotReducedTree::triggerNormalization(string cuts) { 
+  static int version(0); 
+
+  string defaultCuts = "4.8<m&&m<6&&gmuid&&gtqual&&m1pt>3&&m2pt>3&&m1q*m2q<0&&abs(eta)<2.4&&abs(m2eta)<2.4&&pt>5&&abs(m1ip)<2&&abs(m2ip)<2";
+
+  string allCuts = defaultCuts + "&&" + cuts;
+  string hltCuts = defaultCuts + "&&" + cuts + "&&hlt";
+
+  int NBINS(8); 
+  double HLO(0.), HHI(40.); 
+  TH1D *M0 = new TH1D("M0", "", 40, 4.8, 6.0); 
+  TH1D *H0 = new TH1D("H0", "", NBINS, HLO, HHI); 
+  TH1D *H1 = new TH1D("H1", "", NBINS, HLO, HHI); 
+  TH1D *HR = new TH1D("HR", "", NBINS, HLO, HHI); HR->Sumw2();  
+
+  int yNBINS(6); 
+  double  yHLO(0), yHHI(2.4);
+  TH1D *Y0 = new TH1D("Y0", "", yNBINS, yHLO, yHHI); 
+  TH1D *Y1 = new TH1D("Y1", "", yNBINS, yHLO, yHHI); 
+  TH1D *YR = new TH1D("YR", "", yNBINS, yHLO, yHHI); YR->Sumw2(); 
+  
+  TTree *t; 
+
+  //  loopTree(0); 
+
+  c0->Clear(); 
+  c0->Divide(2,2); 
+  gStyle->SetOptStat(0); 
+
+  int i(1); 
+  for (map<string, string>::iterator imap = fName.begin(); imap != fName.end(); ++imap) {  
+    if (string::npos == imap->first.find("Bmt")) continue;
+    cout << "===> " << imap->first;
+    cout << ": " << fF[imap->first]->GetName();
+    cout << " -> " << imap->second << endl;
+
+    fF[imap->first]->cd("candAnaBu2JpsiK");
+    TH1D *m0 = new TH1D("m0", "", 40, 4.8, 6.0); 
+    TH1D *h0 = new TH1D("h0", "", NBINS, HLO, HHI); 
+    TH1D *h1 = new TH1D("h1", "", NBINS, HLO, HHI); 
+    TH1D *y0 = new TH1D("y0", "", yNBINS, yHLO, yHHI); 
+    TH1D *y1 = new TH1D("y1", "", yNBINS, yHLO, yHHI); 
+    t = (TTree*)gDirectory->Get("events"); 
+    
+    //    t->Draw("m>>m0", allCuts.c_str(), "goff");
+    double n0   = t->Draw("pt>>h0", allCuts.c_str(), "goff");
+    double n1   = t->Draw("pt>>h1", hltCuts.c_str(), "goff");
+    t->Draw("eta>>y0", allCuts.c_str(), "goff");
+    t->Draw("eta>>y1", hltCuts.c_str(), "goff");
+    double eff  = n1/n0; 
+    double deff = dEff(static_cast<int>(n1), static_cast<int>(n0)); 
+
+    M0->Add(m0); 
+    H0->Add(h0); 
+    H1->Add(h1); 
+
+    Y0->Add(y0); 
+    Y1->Add(y1); 
+    
+    c0->cd(i++); 
+    setFilledHist(h0, kBlack, kRed, 3004); 
+    setTitles(h0, "p_{T} [GeV]", "Entries/bin"); 
+    h0->Draw();
+
+    setFilledHist(h1, kBlack, kBlue, 3005); 
+    h1->Draw("same");
+
+    tl->SetTextSize(0.04); tl->DrawLatex(0.2, 0.92, imap->first.c_str()); 
+    tl->SetTextSize(0.04); tl->DrawLatex(0.5, 0.92, Form("eff = %4.3f #pm %4.3f", eff, deff)); 
+    
+  }
+
+  c0->cd(i++); 
+  setFilledHist(H0, kBlack, kRed, 3004); 
+  setTitles(H0, "p_{T} [GeV]", "Entries/bin"); 
+  H0->Draw();
+  
+  setFilledHist(H1, kBlack, kBlue, 3005); 
+  H1->Draw("same");
+
+  double n0   = H0->GetSumOfWeights(); 
+  double n1   = H1->GetSumOfWeights(); 
+  double eff  = n1/n0; 
+  double deff = dEff(static_cast<int>(n1), static_cast<int>(n0)); 
+
+  tl->SetTextSize(0.04); tl->DrawLatex(0.2, 0.92, "Combined:"); 
+  tl->SetTextSize(0.04); tl->DrawLatex(0.5, 0.92, Form("eff = %4.3f #pm %4.3f", eff, deff)); 
+  
+//   double ave(0.), aveE(0.); 
+//   average(ave, aveE, 3, vEff, vEffE); 
+
+  if (fDoPrint) c0->SaveAs(Form("%s/triggerNormalization-overlay-pt-%d.pdf", fDirectory.c_str(), version));     
+
+  c0->Clear();
+  HR->Divide(H1, H0, 1., 1., "B");
+  setTitles(HR, "p_{T} [GeV]", "efficiency"); 
+  HR->SetMinimum(0.); HR->SetMaximum(1.05); 
+  HR->Draw();
+  if (fDoPrint) c0->SaveAs(Form("%s/triggerNormalization-efficiency-pt-%d.pdf", fDirectory.c_str(), version));     
+
+  c0->Clear();
+  YR->Divide(Y1, Y0, 1., 1., "B");
+  setTitles(YR, "|#eta|", "efficiency"); 
+  YR->SetMinimum(0.); YR->SetMaximum(1.05); 
+  YR->Draw();
+  if (fDoPrint) c0->SaveAs(Form("%s/triggerNormalization-efficiency-eta-%d.pdf", fDirectory.c_str(), version));     
+  
+
+  ++version;
+
+}
+
+
+
+// ----------------------------------------------------------------------
 void plotReducedTree::accEffFromEffTree(string fname, string dname, numbers &a, cuts &b, int proc) {
 
   TFile *f = fF[fname];

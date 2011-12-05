@@ -607,6 +607,7 @@ void candAna::fillCandidateHistograms(int offset) {
     if (fpNpvPvN[ipv][offset]) fpNpvPvN[ipv][offset]->fill(fPvN, fCandM);  else cout << "missing fpNpvPvN" << endl;
     if (fpNpvChi2Dof[ipv][offset]) fpNpvChi2Dof[ipv][offset]->fill(fCandChi2/fCandDof, fCandM); else cout << "missing fpNpvChi2Dof" << endl;
     if (fpNpvProb[ipv][offset]) fpNpvProb[ipv][offset]->fill(fCandProb, fCandM); else cout << "missing fpNpvProb" << endl;
+    if (fpNpvAlpha[ipv][offset]) fpNpvAlpha[ipv][offset]->fill(fCandA, fCandM);  else cout << "missing fpNpvAlpha" << endl;
     if (fpNpvFLS3d[ipv][offset]) fpNpvFLS3d[ipv][offset]->fill(fCandFLS3d, fCandM);  else cout << "missing fpNpvFLS3d" << endl;
     if (fpNpvFLSxy[ipv][offset]) fpNpvFLSxy[ipv][offset]->fill(fCandFLSxy, fCandM); else cout << "missing fpNpvFLSxy" << endl;
     if (fpNpvDocaTrk[ipv][offset]) fpNpvDocaTrk[ipv][offset]->fill(fCandDocaTrk, fCandM); else cout << "missing fpNpvDocaTrk" << endl;
@@ -1039,6 +1040,7 @@ void candAna::bookHist() {
 	fpNpvPvN[ipv][i]     = bookDistribution(Form("%spvn", dname.c_str()), "N(PV) ", "fGoodHLT", 30, 0., 30.);           
 	fpNpvChi2Dof[ipv][i] = bookDistribution(Form("%schi2dof", dname.c_str()), "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
 	fpNpvProb[ipv][i]    = bookDistribution(Form("%spchi2dof", dname.c_str()), "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
+	fpNpvAlpha[ipv][i]   = bookDistribution(Form("%salpha", dname.c_str()),  "#alpha_{3D}", "fGoodAlpha", 30, 0., 0.15); 
 	fpNpvFLS3d[ipv][i]   = bookDistribution(Form("%sfls3d", dname.c_str()), "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
 	fpNpvFLSxy[ipv][i]   = bookDistribution(Form("%sflsxy", dname.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
 	fpNpvDocaTrk[ipv][i] = bookDistribution(Form("%sdocatrk", dname.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 35, 0., 0.14);   
@@ -1993,7 +1995,7 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
   TAnaTrack *pT; 
   vector<int> cIdx, pIdx; 
   int pvIdx = pC->fPvIdx;
-  int pvIdx2= nearestPV(pvIdx, 0.1);
+  int pvIdx2= nearestPV(pvIdx, 0.05);
   bool sameOrCloseVertex(false);
 
   fCandI0trk = 0; 

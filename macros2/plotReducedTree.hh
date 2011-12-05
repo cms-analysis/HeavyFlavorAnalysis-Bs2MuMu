@@ -46,6 +46,9 @@ public:
   
   void loopTree(int mode, int proc = -1);
   void tnpVsMC(double m1pt, double m2pt);
+  void triggerSignal(std::string cuts = "fls3d>5&&alpha<0.05");
+  void triggerNormalization(std::string cuts = "fls3d>5&&alpha<0.05");
+
   void accEffFromEffTree(std::string fname, std::string dname, numbers &a, cuts &b, int proc);
   void normYield(TH1 *h, int mode, double lo = 5.15, double hi=5.5);
   void csYield(TH1 *h, int mode, double lo = 5.25, double hi=5.6);

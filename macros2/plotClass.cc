@@ -228,6 +228,25 @@ void plotClass::loadFiles(const char *files) {
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "Data")); 
       }
+
+      if (string::npos != stype.find("bmt,HT")) {
+	sname = "BmtHT"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "HT")); 
+      }
+      if (string::npos != stype.find("bmt,Photon")) {
+	sname = "BmtPhoton"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "Photon")); 
+      }
+      if (string::npos != stype.find("bmt,Jet")) {
+	sname = "BmtJet"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "Jet")); 
+      }
     } else {
       string sfilter = sdset; 
       replaceAll(sfilter, "mc,", ""); 
@@ -329,66 +348,72 @@ void plotClass::loadFiles(const char *files) {
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
 
-      if (string::npos != stype.find("bg,82")) {
-	sname = "bg82"; 
+      if (string::npos != stype.find("bg,Bs2KK")) {
+	sname = "bgBs2KK"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow K^{+}K^{-}")); 
       }	
-      if (string::npos != stype.find("bg,83")) {
-	sname = "bg83"; 
+      if (string::npos != stype.find("bg,Bs2KPi")) {
+	sname = "bgBs2KPi"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #pi^{+}K^{-}")); 
       }	
-      if (string::npos != stype.find("bg,84")) {
-	sname = "bg84"; 
+      if (string::npos != stype.find("bg,Bs2PiPi")) {
+	sname = "bgBs2PiPi"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #pi^{+}#pi^{-}")); 
       }	
-      if (string::npos != stype.find("bg,86")) {
-	sname = "bg86"; 
+      if (string::npos != stype.find("bg,Bs2KMuNu")) {
+	sname = "bgBs2KMuNu"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow K^{-}#mu^{+}#nu")); 
       }	
 
-      if (string::npos != stype.find("bg,95")) {
-	sname = "bg95"; 
+      if (string::npos != stype.find("bg,Bd2PiMuNu")) {
+	sname = "bgBd2PiMuNu"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow #pi^{-}#mu^{+}#nu")); 
       }	
-      if (string::npos != stype.find("bg,93")) {
-	sname = "bg93"; 
+      if (string::npos != stype.find("bg,Bd2KK")) {
+	sname = "bgBd2KK"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow K^{+}K^{-}")); 
       }	
-      if (string::npos != stype.find("bg,92")) {
-	sname = "bg92"; 
+      if (string::npos != stype.find("bg,Bd2KPi")) {
+	sname = "bgBd2KPi"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow K^{+}#pi^{-}")); 
       }	
-      if (string::npos != stype.find("bg,91")) {
-	sname = "bg91"; 
+      if (string::npos != stype.find("bg,Bd2PiPi")) {
+	sname = "bgBd2PiPi"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow #pi^{+}#pi^{-}")); 
       }	
-      if (string::npos != stype.find("bg,60")) {
-	sname = "bg60"; 
+      if (string::npos != stype.find("bg,Lb2KP")) {
+	sname = "bgLb2KP"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#Lambda_{b}^{0} #rightarrow p K^{-}")); 
       }	
-      if (string::npos != stype.find("bg,61")) {
-	sname = "bg61"; 
+      if (string::npos != stype.find("bg,Lb2PiP")) {
+	sname = "bgLb2PiP"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#Lambda_{b}^{0} #rightarrow p #pi^{-}")); 
+      }	
+      if (string::npos != stype.find("bg,Lb2PMuNu")) {
+	sname = "bgLb2PMuNu"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "#Lambda^{0}_{b} #rightarrow p#mu^{-}#bar{#nu}")); 
       }	
       cout << "open MC file "  << sfile  << " as " << sname << " (" << stype << ") with lumi = " << slumi << endl;
     }
@@ -414,30 +439,30 @@ void plotClass::makeAll(int channel) {
 
 // ----------------------------------------------------------------------
 void plotClass::dumpSamples() {
-  // FIXME
   std::map<string, double> ngen;
-  ngen.insert(make_pair("bg60", 20.e6)); 
-  ngen.insert(make_pair("bg61", 20.e6)); 
+  // https://docs.google.com/spreadsheet/ccc?key=0AhrdqmQ22qAldHREbHpVOGVMaHhQaU9ULXAydkpZc2c&hl=en#gid=0
+  ngen.insert(make_pair("bgLb2KP",    356.e6)); 
+  ngen.insert(make_pair("bgLb2PiP",    374.e6)); 
+  ngen.insert(make_pair("bgLb2PMuNu", 6910.e6)); 
 
-  ngen.insert(make_pair("bg86", 20.e6)); 
-  ngen.insert(make_pair("bg84", 20.e6)); 
-  ngen.insert(make_pair("bg83", 20.e6)); 
-  ngen.insert(make_pair("bg82", 20.e6)); 
+  ngen.insert(make_pair("SgMc",      249.e6)); 
+  ngen.insert(make_pair("bgBs2KK",    1392.e6)); 
+  ngen.insert(make_pair("bgBs2KPi",    598.e6)); 
+  ngen.insert(make_pair("bgBs2PiPi",   148.e6)); 
+  ngen.insert(make_pair("bgBs2KMuNu", 6702.e6)); 
 
-  ngen.insert(make_pair("bg91", 20.e6)); 
-  ngen.insert(make_pair("bg92", 20.e6)); 
-  ngen.insert(make_pair("bg93", 20.e6)); 
-  ngen.insert(make_pair("bg95", 16.8e6)); 
+  ngen.insert(make_pair("BdMc",        40.e6)); 
+  ngen.insert(make_pair("bgBd2PiPi",    394.e6)); 
+  ngen.insert(make_pair("bgBd2KPi",     996.e6)); 
+  ngen.insert(make_pair("bgBd2KK",      200.e6)); 
+  ngen.insert(make_pair("bgBd2PiMuNu", 6742.e6)); 
 
-  ngen.insert(make_pair("SgMcAcc", 100.e6)); 
+  ngen.insert(make_pair("NoMc",15166.e6)); 
+  ngen.insert(make_pair("CsMc", 9970.e6)); 
 
-  ngen.insert(make_pair("BdMcAcc", 40.e6)); 
-
-  ngen.insert(make_pair("NoMcAcc", 160.e6)); 
-  //  ngen.insert(make_pair("CsMcAcc", 40.e6)); 
-  ngen.insert(make_pair("CsMcAcc", 154.e6)); 
+  ngen.insert(make_pair("NoMcAcc", 1)); 
+  ngen.insert(make_pair("CsMcAcc", 1)); 
   
-  //  ofstream OUT(fNumbersFileName.c_str(), ios::app);
 
   fTEX << "% ----------------------------------------------------------------------" << endl;
   string name; 
@@ -449,7 +474,7 @@ void plotClass::dumpSamples() {
     name = imap->second; 
     lumi = fLumi[imap->first];
     n = ngen[imap->first];
-    //FIXME    f = ((TH1D*)fF[imap->first]->Get("monEvents"))->GetBinContent(1);
+    f = ((TH1D*)fF[imap->first]->Get("monEvents"))->GetBinContent(1);
     replaceAll(name, "#", "\\"); 
     //    cout <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
     fTEX <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;

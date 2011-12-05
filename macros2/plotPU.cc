@@ -27,12 +27,16 @@ void plotPU::makeAll(int channels) {
   string candName("candAnaBu2JpsiK"); 
   fFile = "NoData"; 
   cd(fFile.c_str());  
-  effVsNpv("iso",      0.75, "#epsilon(I>0.75)",           "A", candName.c_str(), "Ao"); 
-  effVsNpv("chi2dof", -1.60, "#epsilon(#chi^{2}/dof<1.6)", "A", candName.c_str(), "Ao"); 
-  effVsNpv("pchi2dof", 0.10, "#epsilon(prob>0.10)",        "A", candName.c_str(), "Ao"); 
-  effVsNpv("fls3d",    15.0, "#epsilon(l_{3D}/#sigma>15)", "A", candName.c_str(), "Ao"); 
-  effVsNpv("flsxy",    15.0, "#epsilon(l_{xy}/#sigma>15)", "A", candName.c_str(), "Ao"); 
-  effVsNpv("docatrk", 0.015, "#epsilon(d^{0}_{ca}>0.015)", "A", candName.c_str(), "Ao"); 
+  effVsNpv("iso",      0.75,   "#epsilon(I>0.75)",           "A", candName.c_str(), "Ao"); 
+  effVsNpv("chi2dof", -1.60,   "#epsilon(#chi^{2}/dof<1.6)", "A", candName.c_str(), "Ao"); 
+  effVsNpv("pchi2dof", 0.10,   "#epsilon(prob>0.10)",        "A", candName.c_str(), "Ao"); 
+  effVsNpv("fls3d",    15.0,   "#epsilon(l_{3D}/#sigma>15)", "A", candName.c_str(), "Ao"); 
+  effVsNpv("flsxy",    15.0,   "#epsilon(l_{xy}/#sigma>15)", "A", candName.c_str(), "Ao"); 
+  effVsNpv("docatrk",  0.015,  "#epsilon(d^{0}_{ca}>0.015)", "A", candName.c_str(), "Ao"); 
+  effVsNpv("closetrk", -2,     "#epsilon(N_{trk}<2)",        "A", candName.c_str(), "Ao"); 
+  effVsNpv("lip",      -0.015, "#epsilon(l_{z}<0.015)",      "A", candName.c_str(), "Ao"); 
+  effVsNpv("lips",     -3,     "#epsilon(l_{z}/#sigma(l_{z})<3)",  "A", candName.c_str(), "Ao"); 
+  effVsNpv("pvavew8",  0.6,    "#epsilon(<w_{trk}>0.6)",     "A", candName.c_str(), "Ao"); 
 
   effVsNpv("iso0",     0.75, "#epsilon(I0>0.75)",           "A", candName.c_str(), "Ao"); 
   effVsNpv("iso1",     0.75, "#epsilon(I1>0.75)",           "A", candName.c_str(), "Ao"); 
@@ -45,12 +49,16 @@ void plotPU::makeAll(int channels) {
   candName = "candAnaBs2JpsiPhi"; 
   fFile = "CsData"; 
   cd(fFile.c_str());  
-  effVsNpv("iso",      0.75, "#epsilon(I>0.75)",           "A", candName.c_str(), "Ao"); 
-  effVsNpv("chi2dof", -1.60, "#epsilon(#chi^{2}/dof<1.6)", "A", candName.c_str(), "Ao"); 
-  effVsNpv("pchi2dof", 0.10, "#epsilon(prob>0.10)",        "A", candName.c_str(), "Ao"); 
-  effVsNpv("fls3d",    15.0, "#epsilon(l_{3D}/#sigma>15)", "A", candName.c_str(), "Ao"); 
-  effVsNpv("flsxy",    15.0, "#epsilon(l_{xy}/#sigma>15)", "A", candName.c_str(), "Ao"); 
-  effVsNpv("docatrk", 0.015, "#epsilon(d^{0}_{ca}>0.015)", "A", candName.c_str(), "Ao"); 
+  effVsNpv("iso",      0.75,   "#epsilon(I>0.75)",           "A", candName.c_str(), "Ao"); 
+  effVsNpv("chi2dof", -1.60,   "#epsilon(#chi^{2}/dof<1.6)", "A", candName.c_str(), "Ao"); 
+  effVsNpv("pchi2dof", 0.10,   "#epsilon(prob>0.10)",        "A", candName.c_str(), "Ao"); 
+  effVsNpv("fls3d",    15.0,   "#epsilon(l_{3D}/#sigma>15)", "A", candName.c_str(), "Ao"); 
+  effVsNpv("flsxy",    15.0,   "#epsilon(l_{xy}/#sigma>15)", "A", candName.c_str(), "Ao"); 
+  effVsNpv("docatrk", 0.015,   "#epsilon(d^{0}_{ca}>0.015)", "A", candName.c_str(), "Ao"); 
+  effVsNpv("closetrk", -2,     "#epsilon(N_{trk}<2)",        "A", candName.c_str(), "Ao"); 
+  effVsNpv("lip",      -0.015, "#epsilon(l_{z}<0.015)",      "A", candName.c_str(), "Ao"); 
+  effVsNpv("lips",     -3,     "#epsilon(l_{z}/#sigma(l_{z})<3)",  "A", candName.c_str(), "Ao"); 
+  effVsNpv("pvavew8",  0.6,    "#epsilon(<w_{trk}>0.6)",     "A", candName.c_str(), "Ao"); 
   
   effVsNpv("iso0",     0.75, "#epsilon(I0>0.75)",           "A", candName.c_str(), "Ao"); 
   effVsNpv("iso1",     0.75, "#epsilon(I1>0.75)",           "A", candName.c_str(), "Ao"); 

@@ -220,6 +220,7 @@ public:
   AnalysisDistribution   *fpNpvProb[NADPV][NAD];
   AnalysisDistribution   *fpNpvFLS3d[NADPV][NAD];
   AnalysisDistribution   *fpNpvFLSxy[NADPV][NAD];
+  AnalysisDistribution   *fpNpvAlpha[NADPV][NAD];
   AnalysisDistribution   *fpNpvDocaTrk[NADPV][NAD];
   AnalysisDistribution   *fpNpvIso[NADPV][NAD];
   AnalysisDistribution   *fpNpvIsoTrk[NADPV][NAD];
