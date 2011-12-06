@@ -37,6 +37,9 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   fRegion.insert(make_pair("AR5", 8)); // run range 5: HLT_DoubleMu5_Jpsi_Displaced_v4
   fRegion.insert(make_pair("AR6", 9)); // should be empty
 
+  fRegion.insert(make_pair("APV0", 9));  // low-NPV events
+  fRegion.insert(make_pair("APV1", 10)); // large-NPV events
+
   //  const char* inputVars[] = { "alpha", "fls3d", "chi2/dof", "iso", "m1pt", "m2pt", "pt", "m1eta", "docatrk" };
   vector<string> vvars; 
   vvars.push_back("alpha"); 
@@ -128,6 +131,9 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 
     // -- fill histograms
     fillCandidateHistograms(fRegion[Form("AR%i", fRunRange)]);
+    if (fPvN <  6) fillCandidateHistograms(fRegion["APV0"]);
+    if (fPvN > 10) fillCandidateHistograms(fRegion["APV1"]);
+      
     if (fRunRange > 0) {
       fillCandidateHistograms(fRegion["A"]);
       if (fBarrel) {
@@ -986,20 +992,20 @@ void candAna::bookHist() {
     fpMuonsID[i]   = bookDistribution(Form("%smuonsid", name.c_str()), "muon ID", "fGoodMuonsID", 10, 0., 10.); 
     fpMuonsPt[i]   = bookDistribution(Form("%smuonspt", name.c_str()), "p_{T, #mu} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
     fpMuon1Pt[i]   = bookDistribution(Form("%smuon1pt", name.c_str()), "p_{T, #mu1} [GeV]", "fGoodMuonsPt", 30, 0., 30.); 
-    fpMuon2Pt[i]   = bookDistribution(Form("%smuon2pt", name.c_str()), "p_{T, #mu2} [GeV]", "fGoodMuonsPt", 20, 0., 20.); 
+    fpMuon2Pt[i]   = bookDistribution(Form("%smuon2pt", name.c_str()), "p_{T, #mu2} [GeV]", "fGoodMuonsPt", 40, 0., 20.); 
     fpMuonsEta[i]  = bookDistribution(Form("%smuonseta", name.c_str()), "#eta_{#mu}", "fGoodMuonsEta", 20, -2.5, 2.5); 
     fpMuon1Eta[i]  = bookDistribution(Form("%smuon1eta", name.c_str()), "#eta_{#mu1}", "fGoodMuonsEta", 20, -2.5, 2.5); 
     fpMuon2Eta[i]  = bookDistribution(Form("%smuon2eta", name.c_str()), "#eta_{#mu2}", "fGoodMuonsEta", 20, -2.5, 2.5); 
     fpPt[i]        = bookDistribution(Form("%spt", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 30, 0., 60.); 
     fpEta[i]       = bookDistribution(Form("%seta", name.c_str()), "#eta(B)", "fGoodEta", 20, -2.5, 2.5); 
     fpCosA[i]      = bookDistribution(Form("%scosa", name.c_str()), "cos(#alpha_{3D})", "fGoodAlpha", 30, 0.97, 1.); 
-    fpAlpha[i]     = bookDistribution(Form("%salpha", name.c_str()), "#alpha_{3D}", "fGoodAlpha", 30, 0., 0.15); 
-    fpIso[i]       = bookDistribution(Form("%siso", name.c_str()),  "isolation", "fGoodIso", 22, 0., 1.1); 
+    fpAlpha[i]     = bookDistribution(Form("%salpha", name.c_str()), "#alpha_{3D}", "fGoodAlpha", 40, 0., 0.1); 
+    fpIso[i]       = bookDistribution(Form("%siso", name.c_str()),  "isolation", "fGoodIso", 52, 0., 1.04); 
     fpIsoTrk[i]    = bookDistribution(Form("%sisotrk", name.c_str()),  "N_{trk}^{I}", "fGoodIso", 20, 0., 20.); 
     fpCloseTrk[i]  = bookDistribution(Form("%sclosetrk", name.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 10, 0., 10.); 
     
     fpChi2[i]      = bookDistribution(Form("%schi2", name.c_str()),  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
-    fpChi2Dof[i]   = bookDistribution(Form("%schi2dof", name.c_str()),  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
+    fpChi2Dof[i]   = bookDistribution(Form("%schi2dof", name.c_str()),  "#chi^{2}/dof", "fGoodChi2", 40, 0., 4.);
     fpProb[i]      = bookDistribution(Form("%spchi2dof", name.c_str()),  "P(#chi^{2},dof)", "fGoodChi2", 26, 0., 1.04);    
     fpFLS3d[i]     = bookDistribution(Form("%sfls3d", name.c_str()), "l_{3D}/#sigma(l_{3D})", "fGoodFLS", 30, 0., 120.);  
     fpFL3d[i]      = bookDistribution(Form("%sfl3d", name.c_str()),  "l_{3D} [cm]", "fGoodFLS", 25, 0., 5.);  
@@ -1008,9 +1014,9 @@ void candAna::bookHist() {
     fpDocaTrk[i]   = bookDistribution(Form("%sdocatrk", name.c_str()), "d_{ca}^{min} [cm]", "fGoodDocaTrk", 40, 0., 0.20);   
     fpBDT[i]       = bookDistribution(Form("%sbdt", name.c_str()), "BDT", "fGoodHLT", 40, -1.0, 1.0);   
 
-    fpLip[i]       = bookDistribution(Form("%slip", name.c_str()), "l_{z} [cm]", "fGoodPvLip", 50, -0.05, 0.05);   
+    fpLip[i]       = bookDistribution(Form("%slip", name.c_str()), "l_{z} [cm]", "fGoodPvLip", 32, -0.02, 0.02);   
     fpLipE[i]      = bookDistribution(Form("%slipe", name.c_str()), "#sigma(l_{z}) [cm]", "fGoodPvLip", 50, 0., 0.05);   
-    fpLipS[i]      = bookDistribution(Form("%slips", name.c_str()), "l_{z}/#sigma(l_{z})", "fGoodPvLipS", 50, -10., 10.);   
+    fpLipS[i]      = bookDistribution(Form("%slips", name.c_str()), "l_{z}/#sigma(l_{z})", "fGoodPvLipS", 40, -5., 5.);   
 
     fpTip[i]       = bookDistribution(Form("%stip", name.c_str()), "l_{T} [cm]", "fGoodPvLip", 50, 0., 0.5);   
     fpTipE[i]      = bookDistribution(Form("%stipe", name.c_str()), "#sigma(l_{T}) [cm]", "fGoodPvLip", 50, 0., 0.05);   

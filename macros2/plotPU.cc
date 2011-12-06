@@ -1,6 +1,7 @@
 #include "plotPU.hh"
 
 #include "../macros/AnalysisDistribution.hh"
+#include "../macros/HistCutEfficiency.hh"
 #include "TMath.h"
 
 using namespace std; 
@@ -27,10 +28,10 @@ void plotPU::makeAll(int channels) {
   string candName("candAnaBu2JpsiK"); 
   fFile = "NoData"; 
   cd(fFile.c_str());  
+  effVsNpv("fls3d",    15.0,   "#epsilon(l_{3D}/#sigma>15)", "A", candName.c_str(), "Ao"); 
   effVsNpv("iso",      0.75,   "#epsilon(I>0.75)",           "A", candName.c_str(), "Ao"); 
   effVsNpv("chi2dof", -1.60,   "#epsilon(#chi^{2}/dof<1.6)", "A", candName.c_str(), "Ao"); 
   effVsNpv("pchi2dof", 0.10,   "#epsilon(prob>0.10)",        "A", candName.c_str(), "Ao"); 
-  effVsNpv("fls3d",    15.0,   "#epsilon(l_{3D}/#sigma>15)", "A", candName.c_str(), "Ao"); 
   effVsNpv("flsxy",    15.0,   "#epsilon(l_{xy}/#sigma>15)", "A", candName.c_str(), "Ao"); 
   effVsNpv("docatrk",  0.015,  "#epsilon(d^{0}_{ca}>0.015)", "A", candName.c_str(), "Ao"); 
   effVsNpv("closetrk", -2,     "#epsilon(N_{trk}<2)",        "A", candName.c_str(), "Ao"); 
@@ -91,11 +92,11 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
   for (int i = 0; i < 15; ++i) {
     c0->cd(i+1);
     // A_Npv0/A_npv0_iso
-    cout << "   directory: " << Form("%s/Npv%d", dir, i) << endl;
+    //    cout << "   directory: " << Form("%s/Npv%d", dir, i) << endl;
     gFile->cd(Form("%s/%s_Npv%d", dir, chan, i));
-    cout << "     sbsDistribution(" << Form("%s_npv%d_%s", chan, i, var) << ", " << selection << ") " 
-	 << var << (larger?" > ":" < ") << cut 
-	 << endl;
+    //     cout << "     sbsDistribution(" << Form("%s_npv%d_%s", chan, i, var) << ", " << selection << ") " 
+    // 	 << var << (larger?" > ":" < ") << cut 
+    // 	  << endl;
     h[i] = a.sbsDistribution(Form("%s_npv%d_%s", chan, i, var), selection);
     // -- check that the bins are not negative. If they are, reset to zero
     for (int ix = 1; ix <= h[i]->GetNbinsX(); ++ix) {
@@ -113,26 +114,32 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
 
 
   TH1D *heff = new TH1D("heff", "", 15, 0., 30.);
+  double eff(0.); 
+  double stat(0.); 
   for (int i = 0; i < 15; ++i) {
-    double ntot = h[i]->GetSumOfWeights();
-    double ncut(0.);
+    HistCutEfficiency a(h[i]); 
+    a.fVerbose = 1; 
+    a.fIncludeOverflow = 0;
+    a.eff(h[i], cut); 
+
     if (larger) {
-      ncut = h[i]->Integral(h[i]->FindBin(cut)+1, h[i]->GetNbinsX());
+      eff  = a.hiEff; 
+      stat = a.hiErr; 
     } else {
-      ncut = h[i]->Integral(1, h[i]->FindBin(cut));
+      eff  = a.loEff; 
+      stat = a.loErr; 
     }
-    double eff  = ncut/ntot; 
-    double stat = dEff(static_cast<int>(ncut), static_cast<int>(ntot));
     double effE = TMath::Sqrt(stat*stat + 0.02*eff*0.02*eff);
     // -- can go above 1, if single bins with too large negative entries are present
     if (eff > 1) {
       eff = 0.; 
       effE = 0.;
     }
+    cout << "h[i] : " << h[i]->GetName() << endl;
     cout << "h[i]->FindBin(cut) = " << h[i]->FindBin(cut) << endl;
     cout << "h[i]->GetNbinsX()  = " << h[i]->GetNbinsX() << endl;
-    cout << "ntot = " << ntot << endl;
-    cout << "ncut = " << ncut << endl;
+    //    cout << "ntot = " << ntot << endl;
+    //     cout << "ncut = " << ncut << endl;
     cout << "eff = " << eff << endl;
     cout << "effE = " << effE << endl;
     heff->SetBinContent(i+1, eff); 

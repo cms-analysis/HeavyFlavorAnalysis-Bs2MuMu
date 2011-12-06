@@ -24,7 +24,6 @@
 #include <list>
 
 using namespace std; 
-using std::string; 
 
 ClassImp(plotClass)
 
@@ -80,8 +79,8 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
 
 // ----------------------------------------------------------------------
 plotClass::~plotClass() {
-  fHistFile->Write();
-  fHistFile->Close();
+//   fHistFile->Write();
+//   fHistFile->Close();
 }
 
 

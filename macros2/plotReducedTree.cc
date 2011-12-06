@@ -301,7 +301,7 @@ void plotReducedTree::loopTree(int mode, int proc) {
   double bg3pt, bg3eta, bg4pt, bg4eta; 
   double bmpsi, bmkk, bdr;
   double bw8mu, bw8tr;
-  bool bhlt, bgmuid, bgtqual, bjson;
+  bool bhlt, bgmuid, bgtqual, bjson, bcb;
   double tr1w8(0.), tr2w8(0.), trw8(0.), m1w8(0.), m2w8(0.), mw8(0.0);
 
   double blip, blipE, btip, btipE; 
@@ -323,6 +323,7 @@ void plotReducedTree::loopTree(int mode, int proc) {
   t->SetBranchAddress("evt",&bevt);
   t->SetBranchAddress("hlt",&bhlt);
   t->SetBranchAddress("ls",&bls);
+  t->SetBranchAddress("cb",&bcb);
   t->SetBranchAddress("json",&bjson);
   t->SetBranchAddress("gmuid",&bgmuid);
   t->SetBranchAddress("gtqual",&bgtqual);
@@ -389,7 +390,6 @@ void plotReducedTree::loopTree(int mode, int proc) {
   int nentries = Int_t(t->GetEntries());
   int nb(0), ievt(0), bsevt(0), bdevt(0), bgevt(0); 
   cuts *pCuts(0); 
-  bool cowboy(false); 
   double dphi; 
   TLorentzVector vm1, vm2, vpsi; 
   for (int jentry = 0; jentry < nentries; jentry++) {
@@ -497,18 +497,16 @@ void plotReducedTree::loopTree(int mode, int proc) {
     if (bs2jpsiphi && bmkk < 0.995) continue;
     if (bs2jpsiphi && bmkk > 1.045) continue;
 
-    cowboy = false; 
     vm1.SetPtEtaPhiM(bm1pt, bm1eta, bm1phi, MMUON);
     vm2.SetPtEtaPhiM(bm2pt, bm2eta, bm2phi, MMUON);
     dphi = vm1.DeltaPhi(vm2); 
-    cowboy = bq1*dphi > 0; 
     if (bs2jpsiphi || bp2jpsikp) {
       vpsi = vm1 + vm2; 
       if (bmpsi > 3.2) continue;
       if (bmpsi < 3.0) continue;
       // -- cowboy veto 
-      if (cowboy) {
- 	continue;
+      if (fDoApplyCowboyVeto && bcb) {
+	continue;
       }
       if (vpsi.Perp() < 7) {
 	continue;
@@ -640,7 +638,7 @@ void plotReducedTree::loopTree(int mode, int proc) {
       fTEX << formatTex(bphi,      Form("%s:%s%i:phi", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
       fTEX << formatTex(beta,      Form("%s:%s%i:eta", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
       fTEX << Form("\\vdef{%s:%s%i:channel}   {%s }", fSuffix.c_str(), st.c_str(), ievt, fChan==0?"barrel":"endcap") << endl;
-      fTEX << formatTex((cowboy?1:0),    Form("%s:%s%i:cowboy", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
+      fTEX << formatTex((bcb?1:0),    Form("%s:%s%i:cowboy", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
       fTEX << formatTex(bm1pt,     Form("%s:%s%i:m1pt", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
       fTEX << formatTex(bm2pt,     Form("%s:%s%i:m2pt", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
       fTEX << formatTex(bm1eta,    Form("%s:%s%i:m1eta", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
@@ -1202,7 +1200,10 @@ void plotReducedTree::triggerSignal(string cuts) {
     double n1   = t->Draw("pt>>h1", hltCuts.c_str(), "goff");
     t->Draw("eta>>y0", allCuts.c_str(), "goff");
     t->Draw("eta>>y1", hltCuts.c_str(), "goff");
+    n0 = h0->Integral(1, h0->GetNbinsX()); 
+    n1 = h1->Integral(1, h1->GetNbinsX()); 
     double eff  = n1/n0; 
+    cout << "n0 = " << n0 << " n1 = " << n1 << " eff = " << eff << endl;
     double deff = dEff(static_cast<int>(n1), static_cast<int>(n0)); 
 
     M0->Add(m0); 
@@ -1233,16 +1234,19 @@ void plotReducedTree::triggerSignal(string cuts) {
   setFilledHist(H1, kBlack, kBlue, 3005); 
   H1->Draw("same");
 
-  double n0   = H0->GetSumOfWeights(); 
-  double n1   = H1->GetSumOfWeights(); 
+  //   double n0   = H0->GetSumOfWeights(); 
+  //   double n1   = H1->GetSumOfWeights(); 
+  double n0   = H0->Integral(1, H0->GetNbinsX()); 
+  double n1   = H1->Integral(1, H1->GetNbinsX()); 
+  cout << "n0 = " << n0 << " n1 = " << n1 << endl;
   double eff  = n1/n0; 
   double deff = dEff(static_cast<int>(n1), static_cast<int>(n0)); 
 
   tl->SetTextSize(0.04); tl->DrawLatex(0.2, 0.92, "Combined:"); 
   tl->SetTextSize(0.04); tl->DrawLatex(0.5, 0.92, Form("eff = %4.3f #pm %4.3f", eff, deff)); 
   
-//   double ave(0.), aveE(0.); 
-//   average(ave, aveE, 3, vEff, vEffE); 
+  //   double ave(0.), aveE(0.); 
+  //   average(ave, aveE, 3, vEff, vEffE); 
 
   if (fDoPrint) c0->SaveAs(Form("%s/triggerSignal-overlay-pt-%d.pdf", fDirectory.c_str(), version));     
 
@@ -1314,6 +1318,8 @@ void plotReducedTree::triggerNormalization(string cuts) {
     //    t->Draw("m>>m0", allCuts.c_str(), "goff");
     double n0   = t->Draw("pt>>h0", allCuts.c_str(), "goff");
     double n1   = t->Draw("pt>>h1", hltCuts.c_str(), "goff");
+    n0 = h0->Integral(1, h0->GetNbinsX()); 
+    n1 = h1->Integral(1, h1->GetNbinsX()); 
     t->Draw("eta>>y0", allCuts.c_str(), "goff");
     t->Draw("eta>>y1", hltCuts.c_str(), "goff");
     double eff  = n1/n0; 
@@ -1347,9 +1353,12 @@ void plotReducedTree::triggerNormalization(string cuts) {
   setFilledHist(H1, kBlack, kBlue, 3005); 
   H1->Draw("same");
 
-  double n0   = H0->GetSumOfWeights(); 
-  double n1   = H1->GetSumOfWeights(); 
+//   double n0   = H0->GetSumOfWeights(); 
+//   double n1   = H1->GetSumOfWeights(); 
+  double n0 = H0->Integral(1, H0->GetNbinsX()); 
+  double n1 = H1->Integral(1, H1->GetNbinsX()); 
   double eff  = n1/n0; 
+  cout << "n0 = " << n0 << " n1 = " << n1 << endl;
   double deff = dEff(static_cast<int>(n1), static_cast<int>(n0)); 
 
   tl->SetTextSize(0.04); tl->DrawLatex(0.2, 0.92, "Combined:"); 

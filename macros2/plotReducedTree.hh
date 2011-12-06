@@ -84,6 +84,7 @@ public:
   //  numbers fNumbersSig, fNumbersNorm, fNumbersCS; 
   std::vector<numbers*> fNumbersBs, fNumbersBd, fNumbersNo, fNumbersCs; 
 
+  bool fDoApplyCowboyVeto; 
   double fBgExp, fBgExpE; 
   double fBgHist, fBgHistE; 
   double fBgHistExp, fBgHistExpE;

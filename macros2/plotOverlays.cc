@@ -18,8 +18,10 @@ plotOverlays::plotOverlays(const char *files, const char *cuts, const char *dir,
 
 // ----------------------------------------------------------------------
 plotOverlays::~plotOverlays() {
-  fHistFile->Write();
-  fHistFile->Close();
+
+  cout << "fHistFile = " << fHistFile << endl;
+  if (fHistFile) fHistFile->Write();
+  if (fHistFile) fHistFile->Close();
 }
 
 

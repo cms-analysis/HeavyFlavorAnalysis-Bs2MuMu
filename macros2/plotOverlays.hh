@@ -13,8 +13,6 @@ public:
 
   void makeAll(int verbose = 0);
   
-  ClassDef(plotOverlays,1) //Testing plotOverlays
-
   void sbsDistributionOverlay(std::string file1, std::string dir1, std::string region1,
 			      std::string file2, std::string dir2, std::string region2 = "A", 
 			      std::string selection="Ao"); 
@@ -23,6 +21,7 @@ public:
 				      std::string L1="barrel", std::string L2="endcap"); 
   std::vector<double> computeDelta(double lo1, double lo1E, double lo2, double lo2E); 
 
+  ClassDef(plotOverlays,1) //Testing plotOverlays
 
 };
 
