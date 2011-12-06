@@ -37,10 +37,11 @@ public:
   ~candAnaDstar();
 
   void        evtAnalysis(TAna01Event *evt);
+  bool        anaMC(TAna01Event *evt);
   void        candAnalysis();
   void        moreBasicCuts();
 
-  bool        truthMatch(TAnaCand *pC, int verbose = 0); 
+  int         truthMatch(TAnaCand *pC, int verbose = 0); 
   void        dumpHFTruthCand(TAnaCand *pC); 
   void        dumpHFDstarCand(TAnaCand *pC); 
 
@@ -48,6 +49,12 @@ public:
   
   void        bookHist();
 
+private:
+  TTree * tree;
+  int fcands, ftm[10], fmu[10];
+  float fmds[10], fmdz[10];
+  float ffls3d[10],fchi2[10],falpha[10],fqpis[10],fdr[10];
+  float fpt[10],fptdz[10],fptpis[10],fptpi[10],fptk[10];
 };
 
 #endif
