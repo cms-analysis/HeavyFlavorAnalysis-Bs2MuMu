@@ -513,7 +513,7 @@ void candAna::candAnalysis() {
   fGoodFLS        =  ((fCandFLS3d > CANDFLS3D) && (fCandFLSxy > CANDFLSXY)); 
   if (TMath::IsNaN(fCandFLS3d)) fGoodFLS = false;
 
-  fGoodCloseTrack = (fCandCloseTrk < 10*CANDCLOSETRK); 
+  fGoodCloseTrack = (fCandCloseTrk < CANDCLOSETRK); 
   fGoodIso        = (fCandIso > CANDISOLATION); 
   fGoodDocaTrk    = (fCandDocaTrk > CANDDOCATRK);
   fGoodLastCut    = true; 
