@@ -1,4 +1,4 @@
-#include "plotReducedTree.hh"
+#include "plotEfficiencies.hh"
 
 #include "../macros/AnalysisDistribution.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
@@ -10,15 +10,15 @@
 using namespace std; 
 using std::string; 
 
-ClassImp(plotReducedTree)
+ClassImp(plotEfficiencies)
 
 
 // ----------------------------------------------------------------------
-plotReducedTree::plotReducedTree(const char *files, const char *cuts, const char *dir, int mode) : plotClass(files, cuts, dir, mode) { 
+plotEfficiencies::plotEfficiencies(const char *files, const char *cuts, const char *dir, int mode) : plotClass(files, cuts, dir, mode) { 
 
   fDoPrint = true; 
 
-  fNumbersFileName = fDirectory + "/anaBmm.plotReducedTree." + fSuffix + ".tex";
+  fNumbersFileName = fDirectory + "/anaBmm.plotEfficiencies." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);
 
@@ -143,14 +143,14 @@ plotReducedTree::plotReducedTree(const char *files, const char *cuts, const char
 }
 
 // ----------------------------------------------------------------------
-plotReducedTree::~plotReducedTree() {
+plotEfficiencies::~plotEfficiencies() {
   fHistFile->Write();
   fHistFile->Close();
 }
 
 
 // ----------------------------------------------------------------------
-void plotReducedTree::makeAll(int channels) {
+void plotEfficiencies::makeAll(int channels) {
 
   fDoApplyCowboyVeto = true;   
   fDoApplyCowboyVetoAlsoInSignal = false;   
@@ -171,7 +171,7 @@ void plotReducedTree::makeAll(int channels) {
 
 
 // ----------------------------------------------------------------------
-void plotReducedTree::tnpVsMC(double m1pt, double m2pt, int chan, string what) {
+void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) {
   
   for (unsigned int i = 0; i < fNchan; ++i) {
     fCuts[i]->m1pt = m1pt; 
@@ -292,7 +292,7 @@ void plotReducedTree::tnpVsMC(double m1pt, double m2pt, int chan, string what) {
 }
 
 // ----------------------------------------------------------------------
-void plotReducedTree::triggerSignal(string cuts) { 
+void plotEfficiencies::triggerSignal(string cuts) { 
   static int version(0); 
 
   string defaultCuts = "4.9<m&&m<5.9&&gmuid&&gtqual&&m1pt>4&&m2pt>4&&m1q*m2q<0&&abs(eta)<2.4&&abs(m2eta)<2.4&&pt>5&&abs(m1ip)<2&&abs(m2ip)<2";
@@ -426,7 +426,7 @@ void plotReducedTree::triggerSignal(string cuts) {
 
 
 // ----------------------------------------------------------------------
-void plotReducedTree::triggerNormalization(string cuts) { 
+void plotEfficiencies::triggerNormalization(string cuts) { 
   static int version(0); 
 
   string defaultCuts = "2.9<mpsi&&mpsi<3.3&&4.8<m&&m<6&&gmuid&&gtqual&&m1pt>4&&m2pt>4&&pt>7&&m1q*m2q<0&&abs(eta)<2.4&&abs(m2eta)<2.4&&pt>5&&abs(m1ip)<2&&abs(m2ip)<2";

@@ -12,6 +12,10 @@ ClassImp(plotPU)
 // ----------------------------------------------------------------------
 plotPU::plotPU(const char *files, const char *cuts, const char *dir, int mode) : plotClass(files, cuts, dir, mode) { 
 
+  fNumbersFileName = fDirectory + "/anaBmm.plotPU." + fSuffix + ".tex";
+  system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
+  fTEX.open(fNumbersFileName.c_str(), ios::app);
+
 }
 
 // ----------------------------------------------------------------------
@@ -35,8 +39,8 @@ void plotPU::makeAll(int channels) {
   effVsNpv("flsxy",    15.0,   "#epsilon(l_{xy}/#sigma>15)", "A", candName.c_str(), "Ao"); 
   effVsNpv("docatrk",  0.015,  "#epsilon(d^{0}_{ca}>0.015)", "A", candName.c_str(), "Ao"); 
   effVsNpv("closetrk", -2,     "#epsilon(N_{trk}<2)",        "A", candName.c_str(), "Ao"); 
-  effVsNpv("lip",      -0.015, "#epsilon(l_{z}<0.015)",      "A", candName.c_str(), "Ao"); 
-  effVsNpv("lips",     -3,     "#epsilon(l_{z}/#sigma(l_{z})<3)",  "A", candName.c_str(), "Ao"); 
+  effVsNpv("lip",      -0.010, "#epsilon(l_{z}<0.015)",      "A", candName.c_str(), "Ao"); 
+  effVsNpv("lips",     -2.5,   "#epsilon(l_{z}/#sigma(l_{z})<3)",  "A", candName.c_str(), "Ao"); 
   effVsNpv("pvavew8",  0.6,    "#epsilon(<w_{trk}>0.6)",     "A", candName.c_str(), "Ao"); 
 
   effVsNpv("iso0",     0.75, "#epsilon(I0>0.75)",           "A", candName.c_str(), "Ao"); 
@@ -57,8 +61,8 @@ void plotPU::makeAll(int channels) {
   effVsNpv("flsxy",    15.0,   "#epsilon(l_{xy}/#sigma>15)", "A", candName.c_str(), "Ao"); 
   effVsNpv("docatrk", 0.015,   "#epsilon(d^{0}_{ca}>0.015)", "A", candName.c_str(), "Ao"); 
   effVsNpv("closetrk", -2,     "#epsilon(N_{trk}<2)",        "A", candName.c_str(), "Ao"); 
-  effVsNpv("lip",      -0.015, "#epsilon(l_{z}<0.015)",      "A", candName.c_str(), "Ao"); 
-  effVsNpv("lips",     -3,     "#epsilon(l_{z}/#sigma(l_{z})<3)",  "A", candName.c_str(), "Ao"); 
+  effVsNpv("lip",      -0.010, "#epsilon(l_{z}<0.015)",      "A", candName.c_str(), "Ao"); 
+  effVsNpv("lips",     -2.5,   "#epsilon(l_{z}/#sigma(l_{z})<3)",  "A", candName.c_str(), "Ao"); 
   effVsNpv("pvavew8",  0.6,    "#epsilon(<w_{trk}>0.6)",     "A", candName.c_str(), "Ao"); 
   
   effVsNpv("iso0",     0.75, "#epsilon(I0>0.75)",           "A", candName.c_str(), "Ao"); 

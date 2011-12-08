@@ -32,10 +32,9 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   fRegion.insert(make_pair("AR2", 5)); // run range 2: HLT_Dimuon7_Jpsi_Displaced_v1 
                                        //              HLT_Dimuon7_Jpsi_Displaced_v3
   fRegion.insert(make_pair("AR3", 6)); // run range 3: HLT_DoubleMu3p5_Jpsi_Displaced_v2
-  fRegion.insert(make_pair("AR4", 7)); // run range 4: HLT_DoubleMu5_Jpsi_Displaced_v1 
-                                       //              HLT_DoubleMu5_Jpsi_Displaced_v2
-  fRegion.insert(make_pair("AR5", 8)); // run range 5: HLT_DoubleMu5_Jpsi_Displaced_v4
-  fRegion.insert(make_pair("AR6", 9)); // should be empty
+  fRegion.insert(make_pair("AR4", 7)); // run range 4: HLT_DoubleMu4_Jpsi_Displaced_v1 
+                                       //              HLT_DoubleMu4_Jpsi_Displaced_v2
+  fRegion.insert(make_pair("AR5", 8)); // run range 5: HLT_DoubleMu4_Jpsi_Displaced_v4/5
 
   fRegion.insert(make_pair("APV0", 9));  // low-NPV events
   fRegion.insert(make_pair("APV1", 10)); // large-NPV events
@@ -130,24 +129,21 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     }
 
     // -- fill histograms
-    fillCandidateHistograms(fRegion[Form("AR%i", fRunRange)]);
-    if (fPvN <  6) fillCandidateHistograms(fRegion["APV0"]);
-    if (fPvN > 10) fillCandidateHistograms(fRegion["APV1"]);
-      
-    if (fRunRange > 0) {
-      fillCandidateHistograms(fRegion["A"]);
-      if (fBarrel) {
-	fillCandidateHistograms(fRegion["B"]);
-      } else {
-	fillCandidateHistograms(fRegion["E"]);
-      }
+    fillCandidateHistograms(fRegion["A"]);
+    if (fBarrel) {
+      fillCandidateHistograms(fRegion["B"]);
+    } else {
+      fillCandidateHistograms(fRegion["E"]);
     }
 
-    // -- special studies
-    if ((4 == fRunRange) || fIsMC) {
-      //      fillIsoPlots(); // FIXISOPLOTS
-    }
+    if (fPvN <  6) fillCandidateHistograms(fRegion["APV0"]);
+    if (fPvN > 10) fillCandidateHistograms(fRegion["APV1"]);
     
+    fillCandidateHistograms(fRegion[Form("AR%i", fRunRange)]);
+
+    // -- special studies
+    //    fillIsoPlots(); // FIXISOPLOTS
+
   }
 
 }
@@ -417,11 +413,12 @@ void candAna::candAnalysis() {
   fCandCosA   = TMath::Cos(alpha);
   fCandA      = alpha; 
 
-  double iso = isoClassicWithDOCA(fpCand, 0.05, 0.5, 0.5); // 500um DOCA cut
+  //  virtual double      isoClassicWithDOCA(TAnaCand*, double dca, double r = 1.0, double ptmin = 0.9); 
+  double iso = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.9); // 500um DOCA cut
+  fCandIso      = iso; 
   fCandPvTrk    = fCandI0trk;
   fCandIsoTrk   = fCandI2trk;
   fCandCloseTrk = nCloseTracks(fpCand, 0.03, 0.5);
-  fCandIso      = iso; 
 
   fCandChi2  = sv.fChi2;
   fCandDof   = sv.fNdof;
@@ -516,7 +513,7 @@ void candAna::candAnalysis() {
   fGoodFLS        =  ((fCandFLS3d > CANDFLS3D) && (fCandFLSxy > CANDFLSXY)); 
   if (TMath::IsNaN(fCandFLS3d)) fGoodFLS = false;
 
-  fGoodCloseTrack = (fCandCloseTrk < CANDCLOSETRK); 
+  fGoodCloseTrack = (fCandCloseTrk < 10*CANDCLOSETRK); 
   fGoodIso        = (fCandIso > CANDISOLATION); 
   fGoodDocaTrk    = (fCandDocaTrk > CANDDOCATRK);
   fGoodLastCut    = true; 
@@ -609,33 +606,38 @@ void candAna::fillCandidateHistograms(int offset) {
     ipv = NADPV-1; 
   }
 
+  
   if (fpNpvPvN[ipv][offset]) {
     if (fpNpvPvN[ipv][offset]) fpNpvPvN[ipv][offset]->fill(fPvN, fCandM);  else cout << "missing fpNpvPvN" << endl;
-    if (fpNpvChi2Dof[ipv][offset]) fpNpvChi2Dof[ipv][offset]->fill(fCandChi2/fCandDof, fCandM); else cout << "missing fpNpvChi2Dof" << endl;
+    if (fpNpvChi2Dof[ipv][offset])  fpNpvChi2Dof[ipv][offset]->fill(fCandChi2/fCandDof, fCandM);  else cout << "missing fpNpvChi2Dof" << endl;
     if (fpNpvProb[ipv][offset]) fpNpvProb[ipv][offset]->fill(fCandProb, fCandM); else cout << "missing fpNpvProb" << endl;
-    if (fpNpvAlpha[ipv][offset]) fpNpvAlpha[ipv][offset]->fill(fCandA, fCandM);  else cout << "missing fpNpvAlpha" << endl;
-    if (fpNpvFLS3d[ipv][offset]) fpNpvFLS3d[ipv][offset]->fill(fCandFLS3d, fCandM);  else cout << "missing fpNpvFLS3d" << endl;
+    if (fpNpvAlpha[ipv][offset]) fpNpvAlpha[ipv][offset]->fill(fCandA, fCandM); else cout << "missing fpNpvAlpha" << endl;
+    if (fpNpvFLS3d[ipv][offset]) fpNpvFLS3d[ipv][offset]->fill(fCandFLS3d, fCandM); else cout << "missing fpNpvFLS3d" << endl;
     if (fpNpvFLSxy[ipv][offset]) fpNpvFLSxy[ipv][offset]->fill(fCandFLSxy, fCandM); else cout << "missing fpNpvFLSxy" << endl;
     if (fpNpvDocaTrk[ipv][offset]) fpNpvDocaTrk[ipv][offset]->fill(fCandDocaTrk, fCandM); else cout << "missing fpNpvDocaTrk" << endl;
     if (fpNpvIso[ipv][offset]) fpNpvIso[ipv][offset]->fill(fCandIso, fCandM); else cout << "missing fpNpvIso" << endl;
     if (fpNpvIsoTrk[ipv][offset]) fpNpvIsoTrk[ipv][offset]->fill(fCandIsoTrk, fCandM); else cout << "missing fpNpvIsoTrk" << endl;
     if (fpNpvLip[ipv][offset]) fpNpvLip[ipv][offset]->fill(fCandPvLip, fCandM); else cout << "missing fpNpvLip" << endl;
     if (fpNpvLipS[ipv][offset]) fpNpvLipS[ipv][offset]->fill(fCandPvLipS, fCandM); else cout << "missing fpNpvLipS" << endl;
+    if (fpNpvAveW8[ipv][offset]) fpNpvAveW8[ipv][offset]->fill(fPvAveW8, fCandM); else  cout << " fpNpvAveW8 missing! " << endl;
     if (fpNpvCloseTrk[ipv][offset]) fpNpvCloseTrk[ipv][offset]->fill(fCandCloseTrk, fCandM); else cout << "missing fpNpvCloseTrk" << endl;
-    if (fpNpvAveW8[ipv][offset]) fpNpvAveW8[ipv][offset]->fill(fPvAveW8, fCandM); else cout << "missing fpNpvAveW8" << endl;
+
+
+    //   //  virtual double      isoClassicWithDOCA(TAnaCand*, double dca, double r = 1.0, double ptmin = 0.9); 
+    //   double iso = isoClassicWithDOCA(fpCand, 0.05, 0.9, 0.7); // 500um DOCA cut
 
     double iso = isoClassicWithDOCA(fpCand, 0.05, 1.0, 0.9);
-    if (fpNpvIso0[ipv][offset]) fpNpvIso0[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso" << endl;
+    if (fpNpvIso0[ipv][offset]) fpNpvIso0[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso0" << endl;
     iso = isoClassicWithDOCA(fpCand, 0.05, 0.5, 0.5);
-    if (fpNpvIso1[ipv][offset]) fpNpvIso1[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso" << endl;
+    if (fpNpvIso1[ipv][offset]) fpNpvIso1[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso1" << endl;
     iso = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.5);
-    if (fpNpvIso2[ipv][offset]) fpNpvIso2[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso" << endl;
+    if (fpNpvIso2[ipv][offset]) fpNpvIso2[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso2" << endl;
     iso = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.9);
-    if (fpNpvIso3[ipv][offset]) fpNpvIso3[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso" << endl;
+    if (fpNpvIso3[ipv][offset]) fpNpvIso3[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso3" << endl;
     iso = isoClassicWithDOCA(fpCand, 0.04, 0.7, 0.5);
-    if (fpNpvIso4[ipv][offset]) fpNpvIso4[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso" << endl;
+    if (fpNpvIso4[ipv][offset]) fpNpvIso4[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso4" << endl;
     iso = isoClassicWithDOCA(fpCand, 0.03, 0.7, 0.7);
-    if (fpNpvIso5[ipv][offset]) fpNpvIso5[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso" << endl;
+    if (fpNpvIso5[ipv][offset]) fpNpvIso5[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso5" << endl;
 
   }
 } 
@@ -885,7 +887,8 @@ void candAna::bookHist() {
   fTree->Branch("flxy",    &fCandFLxy,          "flxy/D");
   fTree->Branch("fl3dE",   &fCandFL3dE,         "fl3dE/D");
   fTree->Branch("flsxy",   &fCandFLSxy,         "flsxy/D");
-  fTree->Branch("docatrk", &fCandDocaTrk,       "docatrk/D");
+  fTree->Branch("docatrk", &fCandDocaTrk,       "docatrk/D");  
+  fTree->Branch("maxdoca", &fCandDoca,          "maxdoca/D");
   fTree->Branch("lip",     &fCandPvLip,         "lip/D");
   fTree->Branch("lipE",    &fCandPvLipE,        "lipE/D");
   fTree->Branch("tip",     &fCandPvTip,         "tip/D");
@@ -1044,6 +1047,7 @@ void candAna::bookHist() {
 	pD->cd();
 	dname = Form("%snpv%i_", name.c_str(), ipv);
 	fpNpvPvN[ipv][i]     = bookDistribution(Form("%spvn", dname.c_str()), "N(PV) ", "fGoodHLT", 30, 0., 30.);           
+        fpNpvAveW8[ipv][i]   = bookDistribution(Form("%spvavew8", dname.c_str()),  "<w^{PV}>", "fGoodPvAveW8", 25, 0.5, 1.0); 
 	fpNpvChi2Dof[ipv][i] = bookDistribution(Form("%schi2dof", dname.c_str()), "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
 	fpNpvProb[ipv][i]    = bookDistribution(Form("%spchi2dof", dname.c_str()), "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
 	fpNpvAlpha[ipv][i]   = bookDistribution(Form("%salpha", dname.c_str()),  "#alpha_{3D}", "fGoodAlpha", 30, 0., 0.15); 
@@ -1055,7 +1059,6 @@ void candAna::bookHist() {
 	fpNpvCloseTrk[ipv][i]= bookDistribution(Form("%sclosetrk", dname.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 20, 0., 20.); 
 	fpNpvLip[ipv][i]     = bookDistribution(Form("%slip", dname.c_str()),  "l_{z}", "fGoodPvLip", 25, -0.05, 0.05); 
 	fpNpvLipS[ipv][i]    = bookDistribution(Form("%slips", dname.c_str()),  "l_{z}/#sigma(l_{z})", "fGoodPvLipS", 25, -10., 10.); 
-	fpNpvAveW8[ipv][i]   = bookDistribution(Form("%spvavew8", dname.c_str()),  "<w^{PV}>", "fGoodPvAveW8", 25, 0.5, 1.0); 
 
 	fpNpvIso0[ipv][i]     = bookDistribution(Form("%siso0", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
 	fpNpvIso1[ipv][i]     = bookDistribution(Form("%siso1", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
@@ -1656,7 +1659,7 @@ void candAna::readCuts(string fileName, int dump) {
 
     if (!strcmp(CutName, "CANDLIPS")) {
       CANDLIPS = CutValue; ok = 1;
-      if (dump) cout << "CANDLIP:           " << CANDLIPS << endl;
+      if (dump) cout << "CANDLIPS:          " << CANDLIPS << endl;
       ibin = 32;
       hcuts->SetBinContent(ibin, CANDLIPS);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{z}/#sigma(l_{z}) :: %4.3f", CutName, CANDLIPS));
@@ -1938,6 +1941,8 @@ int candAna::nCloseTracks(TAnaCand *pC, double dcaCut, double ptCut) {
   int nsize = pC->fNstTracks.size(); 
   int pvIdx = pC->fPvIdx;
   int pvIdx2= nearestPV(pvIdx, 0.1);
+  if (TMath::Abs(fCandPvLipS2) > 2) pvIdx2 = -1;
+  
   bool sameOrCloseVertex(false);
   
   if (0) {
@@ -1974,11 +1979,12 @@ int candAna::nCloseTracks(TAnaCand *pC, double dcaCut, double ptCut) {
       if (doca > dcaCut) continue; // check the doca cut
       
       pT = fpEvt->getRecTrack(trkId);
-      // -- check that any track associated with a definitive vertex is from the same or the closest other PV
-      if (pT->fPvIdx > -1) {
-	sameOrCloseVertex = (pT->fPvIdx == pvIdx) || (pT->fPvIdx == pvIdx2);
-	if (!sameOrCloseVertex) continue;
-      }
+      // -- check that any track associated with a definitive vertex is from the same or the closest (compatible) other PV
+      if ((pT->fPvIdx > -1) && (pT->fPvIdx != pvIdx)) continue;
+//       if (pT->fPvIdx > -1) {
+// 	sameOrCloseVertex = (pT->fPvIdx == pvIdx) || (pT->fPvIdx == pvIdx2);
+// 	if (!sameOrCloseVertex) continue;
+//       }
 
       //      if ((pT->fPvIdx > -1) && (pT->fPvIdx != pvIdx)) continue;
       
@@ -2001,7 +2007,9 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
   TAnaTrack *pT; 
   vector<int> cIdx, pIdx; 
   int pvIdx = pC->fPvIdx;
-  int pvIdx2= nearestPV(pvIdx, 0.05);
+  int pvIdx2= nearestPV(pvIdx, 0.1);
+  if (TMath::Abs(fCandPvLipS2) > 2) pvIdx2 = -1;
+  
   bool sameOrCloseVertex(false);
 
   fCandI0trk = 0; 
@@ -2036,16 +2044,18 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
      	   << " pointing at PV " << pT->fPvIdx;
     }
     
-    //FIXME
-    // -- check that any track associated with a definitive vertex is from the same or the closest other PV
-    if (pT->fPvIdx > -1) {
-      sameOrCloseVertex = (pT->fPvIdx == pvIdx) || (pT->fPvIdx == pvIdx2);
-      if (!sameOrCloseVertex) continue;
-    }
-//     if (pvIdx != pT->fPvIdx) {
-//       if (verbose) cout << " skipped because of PV index mismatch" << endl;
-//       continue;
+//     // -- check that any track associated with a definitive vertex is from the same PV
+//     if (pT->fPvIdx > -1) {
+//       sameOrCloseVertex = (pT->fPvIdx == pvIdx);
+//       //       sameOrCloseVertex = (pT->fPvIdx == pvIdx) || (pT->fPvIdx == pvIdx2);
+//       if (!sameOrCloseVertex) continue;
 //     }
+
+    if (pT->fPvIdx != pvIdx) { 	 
+      if (verbose) cout << " skipped because of PV index mismatch" << endl; 	     //FIXME
+      continue;
+    }
+    
 
     pt = pT->fPlab.Perp(); 
     if (pt < ptCut) {
@@ -2067,29 +2077,29 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
     }
   }
 
-  // Now consider the DOCA tracks
+  // -- Now consider the DOCA tracks
   int nsize = pC->fNstTracks.size(); 
   if (nsize>0) {
     for(int i = 0; i<nsize; ++i) {
       int trkId = pC->fNstTracks[i].first;
       double doca = pC->fNstTracks[i].second.first;
-      double docaE = pC->fNstTracks[i].second.second;
+      // double docaE = pC->fNstTracks[i].second.second;
 
       if(doca > docaCut) continue; // check the doca cut
 
       pT = fpEvt->getRecTrack(trkId);
 
-      //FIXME
-      // -- check that any track associated with a definitive vertex is from the same or the closest other PV
-      if (pT->fPvIdx > -1) {
-	sameOrCloseVertex = (pT->fPvIdx == pvIdx) || (pT->fPvIdx == pvIdx2);
-	if (!sameOrCloseVertex) continue;
-      }
-//       if ((pT->fPvIdx > -1) && (pT->fPvIdx != pvIdx)) { 
-// 	if (verbose) cout << " doca track " << trkId << " skipped because it is from a different PV " << pT->fPvIdx <<endl;
-// 	continue;
+//       // -- check that any track associated with a definitive vertex is from the same or the closest other PV
+//       if (pT->fPvIdx > -1) {
+// 	sameOrCloseVertex = (pT->fPvIdx == pvIdx);
+// 	//	sameOrCloseVertex = (pT->fPvIdx == pvIdx) || (pT->fPvIdx == pvIdx2);
+// 	if (!sameOrCloseVertex) continue;
 //       }
 
+      if ((pT->fPvIdx > -1) && (pT->fPvIdx != pvIdx)) { 	 
+	if (verbose) cout << " doca track " << trkId << " skipped because it is from a different PV " << pT->fPvIdx <<endl; 	 
+	continue; 	 
+      }
 
       pt = pT->fPlab.Perp();  
       if (pt < ptCut) {
@@ -2406,8 +2416,10 @@ int candAna::nearestPV(int pvIdx, double maxDist) {
     }
   }
   
-  //  cout << "pcIdx = " << pvIdx << ", nearest other PV with idx = " << idx << " and delta(z) = " << zmin << endl;
   if (zmin < maxDist) {
+    //     cout << "pvIdx = " << pvIdx << " at = " << zV0 
+    // 	 << ", nearest other PV with idx = " << idx << " at z = " << fpEvt->getPV(idx)->fPoint.Z() 
+    // 	 << " and delta(z) = " << zmin << endl;
     return idx; 
   } else {
     return -1;

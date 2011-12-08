@@ -13,6 +13,11 @@ plotOverlays::plotOverlays(const char *files, const char *cuts, const char *dir,
 
   fMode = 2; // expo+gauss
   fMode = 1; // pol1+gauss
+
+  fNumbersFileName = fDirectory + "/anaBmm.plotOverlays." + fSuffix + ".tex";
+  system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
+  fTEX.open(fNumbersFileName.c_str(), ios::app);
+
 }
 
 
@@ -34,7 +39,8 @@ void plotOverlays::makeAll(int verbose) {
   
   fMode = 0; 
   sbsDistributionOverlay("SgData", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Ao");
-  //  sbsDistributionOverlay("SgData", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Presel");
+  sbsDistributionOverlay("SgData", "candAnaMuMu", "APV0", "SgMc", "candAnaMuMu", "APV0", "Ao"); // FIXME: Change MC to PU-MC
+  sbsDistributionOverlay("SgData", "candAnaMuMu", "APV1", "SgMc", "candAnaMuMu", "APV1", "Ao"); // FIXME: Change MC to PU-MC
   if (all) sbsDistributionOverlay("SgData", "candAnaMuMu", "B", "SgMc", "candAnaMuMu", "B", "Ao");
   if (all) sbsDistributionOverlay("SgData", "candAnaMuMu", "E", "SgMc", "candAnaMuMu", "E", "Ao");
 
@@ -44,23 +50,19 @@ void plotOverlays::makeAll(int verbose) {
   fPreco = 5.1;
   // -- default/mix
   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Ao");
-  //  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Presel");
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "APV0", "NoMc", "candAnaBu2JpsiK", "A", "Ao");
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "APV1", "NoMc", "candAnaBu2JpsiK", "A", "Ao");
   if (all) sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "B", "NoMc", "candAnaBu2JpsiK", "B", "Ao");
   if (all) sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "E", "NoMc", "candAnaBu2JpsiK", "E", "Ao");
-  // -- run ranges
-  //   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR3", "NoMc2e33", "candAnaBu2JpsiK", "A", "Ao");
-  //   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR4", "NoMc3e33", "candAnaBu2JpsiK", "A", "Ao");
 
   // -- For control sample, use expo function for bg parametrization
   fMode = 2; 
   // -- default/mix
   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMc", "candAnaBs2JpsiPhi", "A", "Ao");
-  //  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMc", "candAnaBs2JpsiPhi", "A", "Presel");
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "APV0", "CsMc", "candAnaBs2JpsiPhi", "A", "Ao");
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "APV1", "CsMc", "candAnaBs2JpsiPhi", "A", "Ao");
   if (all) sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "B", "CsMc", "candAnaBs2JpsiPhi", "B", "Ao");
   if (all) sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "E", "CsMc", "candAnaBs2JpsiPhi", "E", "Ao");
-  // -- run ranges
-  //   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "AR3", "CsMc2e33", "candAnaBs2JpsiPhi", "A", "Ao");
-  //   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "AR4", "CsMc3e33", "candAnaBs2JpsiPhi", "A", "Ao");
   
 
 }
