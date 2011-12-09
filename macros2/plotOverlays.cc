@@ -50,8 +50,8 @@ void plotOverlays::makeAll(int verbose) {
   fPreco = 5.1;
   // -- default/mix
   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Ao");
-  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "APV0", "NoMc", "candAnaBu2JpsiK", "A", "Ao");
-  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "APV1", "NoMc", "candAnaBu2JpsiK", "A", "Ao");
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "APV0", "NoMc", "candAnaBu2JpsiK", "APV0", "Ao");
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "APV1", "NoMc", "candAnaBu2JpsiK", "APV1", "Ao");
   if (all) sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "B", "NoMc", "candAnaBu2JpsiK", "B", "Ao");
   if (all) sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "E", "NoMc", "candAnaBu2JpsiK", "E", "Ao");
 
@@ -59,8 +59,8 @@ void plotOverlays::makeAll(int verbose) {
   fMode = 2; 
   // -- default/mix
   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMc", "candAnaBs2JpsiPhi", "A", "Ao");
-  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "APV0", "CsMc", "candAnaBs2JpsiPhi", "A", "Ao");
-  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "APV1", "CsMc", "candAnaBs2JpsiPhi", "A", "Ao");
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "APV0", "CsMc", "candAnaBs2JpsiPhi", "APV0", "Ao");
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "APV1", "CsMc", "candAnaBs2JpsiPhi", "APV1", "Ao");
   if (all) sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "B", "CsMc", "candAnaBs2JpsiPhi", "B", "Ao");
   if (all) sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "E", "CsMc", "candAnaBs2JpsiPhi", "E", "Ao");
   

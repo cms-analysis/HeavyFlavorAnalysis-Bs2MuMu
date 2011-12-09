@@ -34,6 +34,8 @@ struct cuts {
   double etaMin, etaMax, pt; 
   double m1pt, m2pt, m1eta, m2eta;
   double iso, chi2dof, alpha, fls3d, docatrk; 
+  // -- new variables
+  double closetrk, pvlip, pvlips; 
 };
 
 struct numbers {

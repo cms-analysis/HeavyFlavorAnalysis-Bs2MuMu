@@ -193,6 +193,16 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
     fh1MCMuID.push_back(h); 
   }
 
+
+  fNumbersFileName = fDirectory + "/anaBmm.plotClass." + fSuffix + ".tex";
+  system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
+  fTEX.open(fNumbersFileName.c_str(), ios::app);
+  
+  dumpSamples();
+  fF["SgMc"]->cd();
+  dumpCutNames("candAnaMuMu/hcuts");
+  fTEX.close();
+  
 }
 
 // ----------------------------------------------------------------------
@@ -307,8 +317,11 @@ void plotClass::loopTree(int mode, int proc) {
   ptMMC  = new PidTable("../macros/pidtables/110625/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 
 
   if (isMC) {
+    delete ptT1; 
     ptT1 = new PidTable("/shome/ursl/prod/CMSSW_4_2_3/src/HeavyFlavorAnalysis/Bs2MuMu/macros/pidtables/110625/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
+    delete ptT2; 
     ptT2 = new PidTable("/shome/ursl/prod/CMSSW_4_2_3/src/HeavyFlavorAnalysis/Bs2MuMu/macros/pidtables/110625/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
+    delete ptM; 
     ptM  = new PidTable("/shome/ursl/prod/CMSSW_4_2_3/src/HeavyFlavorAnalysis/Bs2MuMu/macros/pidtables/110625/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 
   } else {
   }
@@ -379,10 +392,17 @@ void plotClass::loopTree(int mode, int proc) {
   double blip, blipE, btip, btipE; 
   int bm1pix, bm2pix, bm1bpix, bm2bpix, bm1bpixl1, bm2bpixl1;
 
+  int bclosetrk; 
+  double bpvlip, bpvlips; 
+
   t->SetBranchAddress("lip",&blip);
   t->SetBranchAddress("lipE",&blipE);
   t->SetBranchAddress("tip",&btip);
   t->SetBranchAddress("tipE",&btipE);
+
+  t->SetBranchAddress("closetrk",&bclosetrk);
+  t->SetBranchAddress("pvlip",&bpvlip);
+  t->SetBranchAddress("pvlips",&bpvlips);
 
   t->SetBranchAddress("m1pix",&bm1pix);
   t->SetBranchAddress("m2pix",&bm2pix);
@@ -568,6 +588,12 @@ void plotClass::loopTree(int mode, int proc) {
     if (bs2jpsiphi && bdr >0.3) continue;
     if (bs2jpsiphi && bmkk < 0.995) continue;
     if (bs2jpsiphi && bmkk > 1.045) continue;
+
+    // -- new cuts
+    //     cout << "-> " << bclosetrk << " " << bpvlip <<  "  " << bpvlips << endl;
+    if (bclosetrk >= pCuts->closetrk) continue;
+    if (bpvlip > pCuts->pvlip) continue;
+    if (bpvlips > pCuts->pvlips) continue;
 
     vm1.SetPtEtaPhiM(bm1pt, bm1eta, bm1phi, MMUON);
     vm2.SetPtEtaPhiM(bm2pt, bm2eta, bm2phi, MMUON);
@@ -1028,6 +1054,10 @@ void plotClass::loopTree(int mode, int proc) {
 
 //      stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
       if (fDoPrint)  c0->SaveAs(Form("%s/unblinded-sig-data-chan%d.pdf", fDirectory.c_str(), i));
+
+      delete dummy1; 
+      delete dummy2; 
+
     } else if (10 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
       cout << "==> loopTree: MC NORMALIZATION, channel " << i  << endl;
@@ -1083,11 +1113,17 @@ void plotClass::loopTree(int mode, int proc) {
     fhMuId[i]->SetName(Form("hMuId%d_chan%d", mode, i)); fhMuId[i]->Write();
     // -- and get back to it
     pD->cd();
+
   }
+
 
   delete ptT1;
   delete ptT2;
   delete ptM;
+  
+  delete ptT1MC; 
+  delete ptT2MC; 
+  delete ptMMC; 
 
   return;
 }
@@ -1430,10 +1466,6 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
   fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
 
   printCuts(fOUT); 
-
-  dumpSamples();
-  fF["SgMc"]->cd();
-  dumpCutNames("candAnaMuMu/hcuts");
 
 }
 
@@ -2317,46 +2349,61 @@ void plotClass::printCuts(ostream &OUT) {
   for (unsigned int i = 0; i < fCuts.size(); ++i) {
     cuts *a = fCuts[i]; 
     OUT << "# -- channel " << a->index << endl;
-    OUT << "index   " << a->index << endl;
+    OUT << "index    " << a->index << endl;
     fTEX << "% ----------------------------------------------------------------------" << endl;
     fTEX << "% -- Cuts for channel " << a->index << endl;
 
-    OUT << "mBdLo   " << Form("%4.3f", a->mBdLo) << endl;
-    OUT << "mBdHi   " << Form("%4.3f", a->mBdHi) << endl;
+    OUT << "mBdLo    " << Form("%4.3f", a->mBdLo) << endl;
+    OUT << "mBdHi    " << Form("%4.3f", a->mBdHi) << endl;
     fTEX <<  Form("\\vdef{%s:mBdLo:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->mBdLo) << endl;
     fTEX <<  Form("\\vdef{%s:mBdHi:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->mBdHi) << endl;
 
-    OUT << "mBsLo   " << Form("%4.3f", a->mBsLo) << endl;
-    OUT << "mBsHi   " << Form("%4.3f", a->mBsHi) << endl;
+    OUT << "mBsLo    " << Form("%4.3f", a->mBsLo) << endl;
+    OUT << "mBsHi    " << Form("%4.3f", a->mBsHi) << endl;
     fTEX <<  Form("\\vdef{%s:mBsLo:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->mBsLo) << endl;
     fTEX <<  Form("\\vdef{%s:mBsHi:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->mBsHi) << endl;
-
-    OUT << "etaMin  " << Form("%3.1f", a->etaMin) << endl;
-    OUT << "etaMax  " << Form("%3.1f", a->etaMax) << endl;
+ 
+    OUT << "etaMin   " << Form("%3.1f", a->etaMin) << endl;
+    OUT << "etaMax   " << Form("%3.1f", a->etaMax) << endl;
     fTEX <<  Form("\\vdef{%s:etaMin:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->etaMin) << endl;
     fTEX <<  Form("\\vdef{%s:etaMax:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->etaMax) << endl;
 
-    OUT << "pt      " << Form("%3.1f", a->pt) << endl;
+    OUT << "pt       " << Form("%3.1f", a->pt) << endl;
     fTEX <<  Form("\\vdef{%s:pt:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->pt) << endl;
-    OUT << "m1pt    " << a->m1pt << endl;
+    OUT << "m1pt     " << a->m1pt << endl;
     fTEX <<  Form("\\vdef{%s:m1pt:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->m1pt) << endl;
-    OUT << "m2pt    " << a->m2pt << endl;
+    OUT << "m2pt     " << a->m2pt << endl;
     fTEX <<  Form("\\vdef{%s:m2pt:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->m2pt) << endl;
-    OUT << "m1eta   " << a->m1eta << endl;
+    OUT << "m1eta    " << a->m1eta << endl;
     fTEX <<  Form("\\vdef{%s:m1eta:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->m1eta) << endl;
-    OUT << "m2eta   " << a->m2eta << endl;
+    OUT << "m2eta    " << a->m2eta << endl;
     fTEX <<  Form("\\vdef{%s:m2eta:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->m2eta) << endl;
 
-    OUT << "iso    " << a->iso << endl;
+    OUT << "iso      " << a->iso << endl;
     fTEX <<  Form("\\vdef{%s:iso:%d}   {\\ensuremath{{%3.2f } } }", fSuffix.c_str(), a->index, a->iso) << endl;
-    OUT << "chi2dof " << a->chi2dof << endl;
+    OUT << "chi2dof  " << a->chi2dof << endl;
     fTEX <<  Form("\\vdef{%s:chi2dof:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->chi2dof) << endl;
-    OUT << "alpha   " << a->alpha << endl;
+    OUT << "alpha    " << a->alpha << endl;
     fTEX <<  Form("\\vdef{%s:alpha:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->alpha) << endl;
-    OUT << "fls3d   " << a->fls3d << endl;
+    OUT << "fls3d    " << a->fls3d << endl;
     fTEX <<  Form("\\vdef{%s:fls3d:%d}   {\\ensuremath{{%3.1f } } }", fSuffix.c_str(), a->index, a->fls3d) << endl;
-    OUT << "docatrk   " << a->docatrk << endl;
+    OUT << "docatrk  " << a->docatrk << endl;
     fTEX <<  Form("\\vdef{%s:docatrk:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->docatrk) << endl;
+
+    OUT << "closetrk " << a->closetrk << endl;
+    fTEX <<  Form("\\vdef{%s:closetrk:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->closetrk) << endl;
+    OUT << "pvlip    " << a->pvlip << endl;
+    fTEX <<  Form("\\vdef{%s:pvlip:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->pvlip) << endl;
+    OUT << "pvlips   " << a->pvlips << endl;
+    fTEX <<  Form("\\vdef{%s:pvlips:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->pvlips) << endl;
+
+    OUT << "doApplyCowboyVeto  " << fDoApplyCowboyVeto << endl;
+    fTEX <<  Form("\\vdef{%s:doApplyCowboyVeto:%d}   {%s } }", 
+		  fSuffix.c_str(), a->index, fDoApplyCowboyVeto?"true":"false") << endl;
+    OUT << "fDoApplyCowboyVetoAlsoInSignal  " << fDoApplyCowboyVetoAlsoInSignal << endl;
+    fTEX <<  Form("\\vdef{%s:fDoApplyCowboyVetoAlsoInSignal:%d}   {%s } }", 
+		  fSuffix.c_str(), a->index, fDoApplyCowboyVetoAlsoInSignal?"true":"false") << endl;
+    
   }
   OUT.flush();
 }
