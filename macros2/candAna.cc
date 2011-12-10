@@ -118,7 +118,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     if (fIsMC) {
       fTree->Fill(); 
     } else {
-      if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX) {
+      if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX  && fCandIso > 0.7) {
 	// do nothing
       } else {
 	if (fPreselection) {
@@ -142,7 +142,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     fillCandidateHistograms(fRegion[Form("AR%i", fRunRange)]);
 
     // -- special studies
-    //    fillIsoPlots(); // FIXISOPLOTS
+    //fillIsoPlots(); // FIXISOPLOTS
 
   }
 
@@ -1076,7 +1076,7 @@ void candAna::bookHist() {
     }
   }
 
-  //  bookIsoPlots(); //FIXISOPLOTS
+  //bookIsoPlots(); //FIXISOPLOTS
 
 }
 

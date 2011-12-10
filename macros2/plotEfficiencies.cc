@@ -5,6 +5,7 @@
 #include "../interface/HFMasses.hh"
 #include "TMath.h"
 #include "TTree.h"
+#include "TH2.h"
 #include "TLorentzVector.h"
 
 using namespace std; 
@@ -167,6 +168,100 @@ void plotEfficiencies::makeAll(int channels) {
     cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
     tnpVsMC(pt, pt, 1, "woCowboyVeto");
   }
+
+  mcTriggerEffs();
+}
+
+// ----------------------------------------------------------------------
+void plotEfficiencies::mcTriggerEffs() {
+  
+  fF["SgMc3e33"]->cd("candAnaMuMu");
+  loopTree(98); 
+  cout << "trigger eff 0: " << fNumbersBla[0]->effTrigMC << endl;
+  cout << "trigger eff 1: " << fNumbersBla[1]->effTrigMC << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMC, Form("%s:SgMc3e33:trigEff0:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMCE, Form("%s:SgMc3e33:trigEff0:err", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMC, Form("%s:SgMc3e33:trigEff1:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMCE, Form("%s:SgMc3e33:trigEff1:err", fSuffix.c_str()), 3) << endl;
+
+  fF["SgMc2e33"]->cd("candAnaMuMu");
+  loopTree(98); 
+  cout << "trigger eff 0: " << fNumbersBla[0]->effTrigMC << endl;
+  cout << "trigger eff 1: " << fNumbersBla[1]->effTrigMC << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMC, Form("%s:SgMc2e33:trigEff0:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMCE, Form("%s:SgMc2e33:trigEff0:err", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMC, Form("%s:SgMc2e33:trigEff1:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMCE, Form("%s:SgMc2e33:trigEff1:err", fSuffix.c_str()), 3) << endl;
+
+  fF["SgMc1e33"]->cd("candAnaMuMu");
+  loopTree(98); 
+  cout << "trigger eff 0: " << fNumbersBla[0]->effTrigMC << endl;
+  cout << "trigger eff 1: " << fNumbersBla[1]->effTrigMC << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMC, Form("%s:SgMc1e33:trigEff0:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMCE, Form("%s:SgMc1e33:trigEff0:err", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMC, Form("%s:SgMc1e33:trigEff1:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMCE, Form("%s:SgMc1e33:trigEff1:err", fSuffix.c_str()), 3) << endl;
+
+
+  // -- Bu -> J/psi phi
+  fF["NoMc3e33"]->cd("candAnaBu2JpsiK");
+  loopTree(98); 
+  cout << "trigger eff 0: " << fNumbersBla[0]->effTrigMC << endl;
+  cout << "trigger eff 1: " << fNumbersBla[1]->effTrigMC << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMC, Form("%s:NoMc3e33:trigEff0:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMCE, Form("%s:NoMc3e33:trigEff0:err", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMC, Form("%s:NoMc3e33:trigEff1:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMCE, Form("%s:NoMc3e33:trigEff1:err", fSuffix.c_str()), 3) << endl;
+
+  fF["NoMc2e33"]->cd("candAnaBu2JpsiK");
+  loopTree(98); 
+  cout << "trigger eff 0: " << fNumbersBla[0]->effTrigMC << endl;
+  cout << "trigger eff 1: " << fNumbersBla[1]->effTrigMC << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMC, Form("%s:NoMc2e33:trigEff0:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMCE, Form("%s:NoMc2e33:trigEff0:err", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMC, Form("%s:NoMc2e33:trigEff1:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMCE, Form("%s:NoMc2e33:trigEff1:err", fSuffix.c_str()), 3) << endl;
+
+
+  fF["NoMc1e33"]->cd("candAnaBu2JpsiK");
+  loopTree(98); 
+  cout << "trigger eff 0: " << fNumbersBla[0]->effTrigMC << endl;
+  cout << "trigger eff 1: " << fNumbersBla[1]->effTrigMC << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMC, Form("%s:NoMc1e33:trigEff0:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMCE, Form("%s:NoMc1e33:trigEff0:err", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMC, Form("%s:NoMc1e33:trigEff1:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMCE, Form("%s:NoMc1e33:trigEff1:err", fSuffix.c_str()), 3) << endl;
+
+
+  // -- Bs -> J/psi phi
+  fF["CsMc3e33"]->cd("candAnaBs2JpsiPhi");
+  loopTree(98); 
+  cout << "trigger eff 0: " << fNumbersBla[0]->effTrigMC << endl;
+  cout << "trigger eff 1: " << fNumbersBla[1]->effTrigMC << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMC, Form("%s:CsMc3e33:trigEff0:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMCE, Form("%s:CsMc3e33:trigEff0:err", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMC, Form("%s:CsMc3e33:trigEff1:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMCE, Form("%s:CsMc3e33:trigEff1:err", fSuffix.c_str()), 3) << endl;
+
+  fF["CsMc2e33"]->cd("candAnaBs2JpsiPhi");
+  loopTree(98); 
+  cout << "trigger eff 0: " << fNumbersBla[0]->effTrigMC << endl;
+  cout << "trigger eff 1: " << fNumbersBla[1]->effTrigMC << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMC, Form("%s:CsMc2e33:trigEff0:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMCE, Form("%s:CsMc2e33:trigEff0:err", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMC, Form("%s:CsMc2e33:trigEff1:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMCE, Form("%s:CsMc2e33:trigEff1:err", fSuffix.c_str()), 3) << endl;
+
+
+  fF["CsMc1e33"]->cd("candAnaBs2JpsiPhi");
+  loopTree(98); 
+  cout << "trigger eff 0: " << fNumbersBla[0]->effTrigMC << endl;
+  cout << "trigger eff 1: " << fNumbersBla[1]->effTrigMC << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMC, Form("%s:CsMc1e33:trigEff0:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[0]->effTrigMCE, Form("%s:CsMc1e33:trigEff0:err", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMC, Form("%s:CsMc1e33:trigEff1:val", fSuffix.c_str()), 3) << endl;
+  fTEX << formatTex(fNumbersBla[1]->effTrigMCE, Form("%s:CsMc1e33:trigEff1:err", fSuffix.c_str()), 3) << endl;
+
 }
 
 
@@ -558,3 +653,76 @@ void plotEfficiencies::triggerNormalization(string cuts) {
 
 }
 
+
+
+
+// ----------------------------------------------------------------------
+void plotEfficiencies::convertLucasHistograms() {
+  // void makeMC() {
+  readFile("luca/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MC.root", "MC"); 
+  readFile("luca/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MC.root", "MC"); 
+  readFile("luca/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MC.root", "MC"); 
+
+  // void makeMCTRUTH() {
+  readFile("luca/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.root", "MCTRUTH"); 
+  readFile("luca/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.root", "MCTRUTH"); 
+  readFile("luca/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.root", "MCTRUTH"); 
+
+  // void makeData() {
+  readFile("luca/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.root"); 
+  readFile("luca/H2D_L1L2Efficiency_TMOSTTMA_ProbeTrackMatched_data_all.root");
+  readFile("luca/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_data_all.root");
+  readFile("luca/H2D_L3Efficiency_TMOSTTMA_ProbeTrackMatched_data_all.root");
+
+  readFile("luca/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.root");
+  readFile("luca/H2D_MuonIDEfficiency_TMOSTTMA_ProbeTrackMatched_data_all.root");
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotEfficiencies::readFile(const char *fname, const char *pfix) {
+
+  TFile *f = TFile::Open(fname); 
+
+  TH2D *hc = 0; //((TH2D*)gFile->Get(Form("hEff_%s_central", pfix)))->Clone("hc"); 
+  TH2D *hu = 0; //((TH2D*)gFile->Get(Form("hEff_%s_upper", pfix)))->Clone("hu"); 
+  TH2D *hl = 0; //((TH2D*)gFile->Get(Form("hEff_%s_lower", pfix)))->Clone("hl"); 
+
+  TH2D *h1 = 0; //((TH2D*)gFile->Get(Form("hEff_%s_central", pfix)))->Clone("h1"); 
+  h1->Clear();
+  h1->SetTitle("h1");
+
+  cout << hc->GetEntries() << endl;
+
+  zone(2,2);
+  hc->DrawCopy("colz");
+
+  double error(0.); 
+  for (int ix = 1; ix <= hc->GetNbinsX(); ++ix) {
+    for (int iy = 1; iy <= hc->GetNbinsY(); ++iy) {
+      error = 0.5*(hu->GetBinContent(ix, iy) - hl->GetBinContent(ix, iy));
+      hc->SetBinError(ix, iy, error); 
+      cout << hc->GetBinContent(ix, iy) << "+/-" << hc->GetBinError(ix, iy) << endl;
+    }
+  }
+
+  PidTable a;
+  a.readFromEffHist(gFile, "hc"); 
+    
+  a.eff2d(h1);
+  c0->cd(2);
+  h1->DrawCopy("colz");
+  
+  h1->Add(hc, -1.); 
+
+  c0->cd(3);
+  h1->DrawCopy("colz");
+  
+  a.printAll();
+
+  TString pname(fname); 
+  pname.ReplaceAll(".root", ".dat"); 
+  a.dumpToFile(pname.Data()); 
+
+}

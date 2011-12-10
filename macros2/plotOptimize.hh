@@ -11,10 +11,10 @@ public:
   plotOptimize(const char *files="anaBmm.default.files", const char *cuts = "default", const char *dir = "default", int mode = 11);
   ~plotOptimize();
 
-  void makeAll(int nfiles = 50, int ichan = 0, int mode = 0);
+  void makeAll(int nfiles = 50, int mode = 0);
   void optimizeULs(int nruns, int seed);
 
-  void bestUL(const char *fname, int ichan, int mode);
+  void bestUL(const char *fname, int mode);
   void readOptimize(int nfiles = 50);
   void readFile(const char *fname, TTree *t);
 

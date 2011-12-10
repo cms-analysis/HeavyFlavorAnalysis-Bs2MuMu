@@ -115,6 +115,14 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
     a->name  = Form("control sample %i", i); 
     fNumbersCs.push_back(a); 
 
+    // -- temporary numbers (e.g. trigger efficiency)
+    a = new numbers;
+    initNumbers(a); 
+    a->index = i; 
+    a->name  = Form("Bla %i", i); 
+    fNumbersBla.push_back(a); 
+    
+
     h = new TH1D(Form("hMassWithMassCuts%d", i), Form("hMassWithMassCuts%d", i), NBINS, fMassLo, fMassHi);
     fhMassWithMassCuts.push_back(h); 
     h = new TH1D(Form("fhMassWithMassCutsManyBins%d", i), Form("fhMassWithMassCutsManyBins%d", i), (fMassHi-fMassLo)*1000, fMassLo, fMassHi);
@@ -224,6 +232,7 @@ void plotClass::initNumbers(numbers *a) {
   a->effMuidTNP = a->effMuidTNPE = a->effTrigTNP = a->effTrigTNPE = 0; 
   a->effCand = a->effCandE = 0; 
   a->effAna = a->effAnaE = 0; 
+  a->effPtReco = a->effPtRecoE = 0;
   // -- this is only relevant for the signal(s)
   a->pss   = a->pdd = 1.;
   a->psd   = a->pds = 1.;
@@ -251,6 +260,8 @@ void plotClass::loopTree(int mode, int proc) {
   // 15 Bp2JpsiKp data
   // 20 Bs2JpsiPhi MC
   // 25 Bs2JpsiPhi data
+  // 98 preset file/directory, do not change anywhere else 
+  // 99 peaking decays
 
   PidTable *ptT1;
   PidTable *ptT2;
@@ -303,8 +314,10 @@ void plotClass::loopTree(int mode, int proc) {
     directory = "candAnaBs2JpsiPhi"; 
     fF["CsData"]->cd(directory.c_str());
   } else if (98 == mode) {
+    directory = "candAnaMuMu"; 
     cout << "mode 98" << endl;
   } else {
+    directory = "candAnaMuMu"; 
     cout << "mode 99" << endl;
   }
 
@@ -393,7 +406,7 @@ void plotClass::loopTree(int mode, int proc) {
   int bm1pix, bm2pix, bm1bpix, bm2bpix, bm1bpixl1, bm2bpixl1;
 
   int bclosetrk; 
-  double bpvlip, bpvlips; 
+  double bpvlip, bpvlips, bmaxdoca; 
 
   t->SetBranchAddress("lip",&blip);
   t->SetBranchAddress("lipE",&blipE);
@@ -403,6 +416,7 @@ void plotClass::loopTree(int mode, int proc) {
   t->SetBranchAddress("closetrk",&bclosetrk);
   t->SetBranchAddress("pvlip",&bpvlip);
   t->SetBranchAddress("pvlips",&bpvlips);
+  t->SetBranchAddress("maxdoca",&bmaxdoca);
 
   t->SetBranchAddress("m1pix",&bm1pix);
   t->SetBranchAddress("m2pix",&bm2pix);
@@ -530,6 +544,9 @@ void plotClass::loopTree(int mode, int proc) {
       if (bg1pt < 1.0) continue;
       if (bg2pt < 1.0) continue;
       if (bp2jpsikp) {
+	// gen-level cuts for Bu2JpsiKp
+	if (bg1pt < 3.5) continue;
+	if (bg2pt < 3.5) continue;
 	if (TMath::Abs(bg3eta) > 2.5) continue;
 	if (bg3pt < 0.4) continue;
       }
@@ -537,6 +554,9 @@ void plotClass::loopTree(int mode, int proc) {
       if (bs2jpsiphi) {
 	if (TMath::Abs(bg3eta) > 2.5) continue;
 	if (TMath::Abs(bg4eta) > 2.5) continue;
+	// gen-level cuts for Bs2JpsiPhi
+	if (bg1pt < 3.5) continue;
+	if (bg2pt < 3.5) continue;
 	if (bg3pt < 0.4) continue;
 	if (bg4pt < 0.4) continue;
       }
@@ -760,6 +780,9 @@ void plotClass::loopTree(int mode, int proc) {
       fTEX << formatTex(blipE,     Form("%s:%s%i:lipE", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
       fTEX << formatTex(btip,      Form("%s:%s%i:tip", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
       fTEX << formatTex(btipE,     Form("%s:%s%i:tipE", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(bpvlip,    Form("%s:%s%i:pvlip", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(bpvlips,   Form("%s:%s%i:pvlips", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(bmaxdoca,  Form("%s:%s%i:maxdoca", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
 
       fTEX << formatTex(bm1pix,    Form("%s:%s%i:m1pix", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
       fTEX << formatTex(bm2pix,    Form("%s:%s%i:m2pix", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
@@ -775,38 +798,6 @@ void plotClass::loopTree(int mode, int proc) {
   cout << gDirectory->GetName() << ": " << fhMassWithAllCuts[0]->GetSumOfWeights() 
        << "  " << fhMassWithAllCuts[1]->GetSumOfWeights()
        << endl;
-  if (98 == mode) {
-    if (fhMassWithAllCuts[0]->GetSumOfWeights() > 0) {
-      fhMassNoCuts[0]->Scale(fhMassWithAllCuts[0]->GetSumOfWeights()/fhMassNoCuts[0]->GetSumOfWeights());
-    } else {
-      fhMassNoCuts[0]->Scale(2.3/fhMassNoCuts[0]->GetSumOfWeights());
-    }
-    if (fhMassWithAllCuts[1]->GetSumOfWeights() > 0) {
-      fhMassNoCuts[1]->Scale(fhMassWithAllCuts[1]->GetSumOfWeights()/fhMassNoCuts[1]->GetSumOfWeights());
-    } else {
-      fhMassNoCuts[1]->Scale(2.3/fhMassNoCuts[1]->GetSumOfWeights());
-    }
-
-    if (fhMassWithAllCutsManyBins[0]->GetSumOfWeights() > 0) {
-      fhMassNoCutsManyBins[0]->Scale(fhMassWithAllCutsManyBins[0]->GetSumOfWeights()/fhMassNoCutsManyBins[0]->GetSumOfWeights());
-    } else {
-      fhMassNoCutsManyBins[0]->Scale(2.3/fhMassNoCutsManyBins[0]->GetSumOfWeights());
-    }
-    if (fhMassWithAllCutsManyBins[1]->GetSumOfWeights() > 0) {
-      fhMassNoCutsManyBins[1]->Scale(fhMassWithAllCutsManyBins[1]->GetSumOfWeights()/fhMassNoCutsManyBins[1]->GetSumOfWeights());
-    } else {
-      fhMassNoCutsManyBins[1]->Scale(2.3/fhMassNoCutsManyBins[1]->GetSumOfWeights());
-    }
-
-//     c0->Clear(); 
-//     c0->Divide(1,2);
-//     c0->cd(1);
-//     fhMassNoCuts[0]->Draw();
-//     c0->cd(2);
-//     fhMassNoCuts[1]->Draw();
-    
-    return;
-  }
 
   if (99 == mode) return;
 
@@ -839,7 +830,10 @@ void plotClass::loopTree(int mode, int proc) {
     if (20 == mode || 25 == mode) {
       aa = fNumbersCs[i];
     }
-
+    
+    if (98 == mode) {
+      aa = fNumbersBla[i]; 
+    }
 
     if (0 == aa) { 
       cout << "++++++++++++????????????++++++++++ aa unset?????????????" << endl;
@@ -903,8 +897,8 @@ void plotClass::loopTree(int mode, int proc) {
       aa->anaTriggerYieldE = TMath::Sqrt(d); 
       aa->anaWmcYield      = f; 
       aa->anaWmcYieldE     = TMath::Sqrt(f);
-      aa->effAna           = b/a;
-      aa->effAnaE          = dEff(static_cast<int>(b), static_cast<int>(a));
+      aa->effAna           = b/a*aa->effPtReco;
+      aa->effAnaE          = dEff(static_cast<int>(b), static_cast<int>(a)); // FIXME add error from effPtReco
       aa->effMuidMC        = c/b;
       aa->effMuidMCE       = dEff(static_cast<int>(c), static_cast<int>(b));
       aa->effMuidTNP       = fhMuId[i]->GetMean();
@@ -917,7 +911,7 @@ void plotClass::loopTree(int mode, int proc) {
       aa->effTrigTNPE      = fhMuTr[i]->GetMeanError();
       aa->effTrigTNPMC     = fhMuTrMC[i]->GetMean();
       aa->effTrigTNPMCE    = fhMuTrMC[i]->GetMeanError();
-      aa->effTot           = e/(aa->genYield);
+      aa->effTot           = e/(aa->genYield)*aa->effPtReco; // this only works without genlevel cuts
       aa->effTotE          = dEff(static_cast<int>(e), static_cast<int>(aa->genYield));
       aa->effTotChan       = e/(aa->genChanYield);
       aa->effTotChanE      = dEff(static_cast<int>(e), static_cast<int>(aa->genChanYield));
@@ -1084,7 +1078,7 @@ void plotClass::loopTree(int mode, int proc) {
       tl->DrawLatex(0.2, 0.77, Form("w/o cuts: %5.1f", fhMassNoCuts[i]->GetSumOfWeights())); 
       tl->DrawLatex(0.2, 0.7, Form("w/   cuts: %5.1f", fhMassWithAnaCuts[i]->GetSumOfWeights())); 
       if (fDoPrint) c0->SaveAs(Form("%s/cs-mc-chan%d.pdf", fDirectory.c_str(), i));
-    } else if (21 == mode) {
+    } else if (25 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
       cout << "==> loopTree: DATA CONTROL SAMPLE, channel " << i  << endl;
       //      TH1D *h = fhMassWithAllCuts[i]; 
@@ -1093,7 +1087,32 @@ void plotClass::loopTree(int mode, int proc) {
       csYield(h, i, 5.0, 5.6);
       aa->fitYield  = fCsSig; 
       aa->fitYieldE = fCsSigE; 
-    } 
+    } else if (98 == mode) {
+      double a = fhMassNoCuts[i]->GetSumOfWeights(); 
+      double b = fhMassWithAnaCuts[i]->GetSumOfWeights();
+      double c = fhMassWithMuonCuts[i]->GetSumOfWeights();
+      double d = fhMassWithTriggerCuts[i]->GetSumOfWeights();
+      double e = fhMassWithAllCuts[i]->GetSumOfWeights();
+      double f = fhMassWithMassCuts[i]->GetSumOfWeights();
+      aa->ana0Yield        = a;
+      aa->ana0YieldE       = TMath::Sqrt(a);
+      aa->anaYield         = b; 
+      aa->anaYieldE        = TMath::Sqrt(b); 
+      aa->anaMuonYield     = c; 
+      aa->anaMuonYieldE    = TMath::Sqrt(c); 
+      aa->anaTriggerYield  = d; 
+      aa->anaTriggerYieldE = TMath::Sqrt(d); 
+      aa->anaWmcYield      = f; 
+      aa->anaWmcYieldE     = TMath::Sqrt(f);
+      aa->effAna           = b/a;
+      aa->effAnaE          = dEff(static_cast<int>(b), static_cast<int>(a));
+      aa->effMuidMC        = c/b;
+      aa->effMuidMCE       = dEff(static_cast<int>(c), static_cast<int>(b));
+      aa->effTrigMC        = d/c;
+      aa->effTrigMCE       = dEff(static_cast<int>(d), static_cast<int>(c));
+      continue;
+    }
+
 
     printNumbers(*aa, cout); 
     printNumbers(*aa, fOUT); 
@@ -1225,6 +1244,7 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
   int nb(0); 
   int ngen(0), nchangen(0), nreco(0), nchan(0), nmuid(0), nhlt(0), ncand(0); 
   int chan(-1); 
+  int recoPtA(0), recoPtB(0); 
   cout << "channel = " << a.index << endl;
   for (int jentry = 0; jentry < nentries; jentry++) {
     nb = t->GetEntry(jentry);
@@ -1274,6 +1294,8 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
 		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4
 		&& bm1gt && bm2gt && bk1gt
 		) {
+	      ++recoPtA; 
+	      if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
 	      chan = detChan(bm1eta, bm2eta); 
 	      if (chan == a.index) {
 		++nreco;
@@ -1306,6 +1328,8 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
 		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4 && TMath::Abs(bk2eta) < 2.4
 		&& bm1gt && bm2gt && bk1gt && bk2gt
 		) {
+	      ++recoPtA; 
+	      if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
 	      chan = detChan(bm1eta, bm2eta); 
 	      if (chan == a.index) {
 		++nreco;
@@ -1328,7 +1352,13 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
       }
     }
   }
-  a.effGenFilter  = effFilter; 
+  if (recoPtA > 0) {
+    a.effPtReco     = static_cast<double>(recoPtB)/static_cast<double>(recoPtA); 
+    a.effPtRecoE    = dEff(recoPtB, recoPtA);
+  } else {
+    a.effPtReco     = 1.; 
+    a.effPtRecoE    = 0.;
+  }
   a.genFileYield  = ngen;
   a.genYield      = a.genFileYield/effFilter;
   a.genChanYield  = nchangen; 
@@ -1369,16 +1399,6 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
   cout << "acc       = " << a.acc << endl;
   cout << "effFilter = " << effFilter << endl;
 
-  //   if (0) {
-  //     if (a.chanYield > 0) {
-  //       a.accMuidMC = a.muidYield/a.chanYield;
-  //       a.accMuidMCE = dEff(static_cast<int>(a.muidYield), static_cast<int>(a.chanYield));
-  //     } 
-  //     if (a.muidYield > 0) {
-  //       a.accTrigMC = a.trigYield/a.muidYield;
-  //       a.accTrigMCE = dEff(static_cast<int>(a.trigYield), static_cast<int>(a.muidYield));
-  //     } 
-  //   }
 }
 
 
@@ -1415,8 +1435,8 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
   fSgHi = 5.45;
 
   // -- initialize cuts
-  cout << "Reading cuts from " << Form("plotClass.%s.cuts", cuts) << endl;
-  readCuts(Form("plotClass.%s.cuts", cuts)); 
+  cout << "===> Reading cuts from " << Form("anaBmm.%s.cuts", cuts) << endl;
+  readCuts(Form("anaBmm.%s.cuts", cuts)); 
   fNchan = fCuts.size(); 
 
   printCuts(cout); 
@@ -1472,6 +1492,8 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
 
 // ----------------------------------------------------------------------
 void plotClass::loadFiles(const char *files) {
+
+  cout << "==> Loading files listed in " << files << endl;
 
   char buffer[1000];
   ifstream is(files);
@@ -1549,6 +1571,13 @@ void plotClass::loadFiles(const char *files) {
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (MC)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
+      if (string::npos != stype.find("1e33") && string::npos != stype.find("sg")) {
+	sname = "SgMc1e33"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (1e33)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }
       if (string::npos != stype.find("2e33") && string::npos != stype.find("sg")) {
 	sname = "SgMc2e33"; 
 	fF.insert(make_pair(sname, pF)); 
@@ -1578,6 +1607,13 @@ void plotClass::loadFiles(const char *files) {
 	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (MC)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
+      if (string::npos != stype.find("1e33") && string::npos != stype.find("bd")) {
+	sname = "BdMc1e33"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (1e33)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }
       if (string::npos != stype.find("2e33") && string::npos != stype.find("bd")) {
 	sname = "BdMc2e33"; 
 	fF.insert(make_pair(sname, pF)); 
@@ -1590,6 +1626,13 @@ void plotClass::loadFiles(const char *files) {
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (3e33)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }
+      if (string::npos != stype.find("acc") && string::npos != stype.find("bd")) {
+	sname = "BdMcAcc"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (acc)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
 
@@ -1607,11 +1650,25 @@ void plotClass::loadFiles(const char *files) {
 	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (2e33)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
+      if (string::npos != stype.find("1e33") && string::npos != stype.find("no")) {
+	sname = "NoMc1e33"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (1e33)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }
       if (string::npos != stype.find("3e33") && string::npos != stype.find("no")) {
 	sname = "NoMc3e33"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (3e33)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }
+      if (string::npos != stype.find("acc") && string::npos != stype.find("no")) {
+	sname = "NoMcAcc"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (acc)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
 
@@ -1620,6 +1677,13 @@ void plotClass::loadFiles(const char *files) {
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (MC)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }	
+      if (string::npos != stype.find("1e33") && string::npos != stype.find("cs")) {
+	sname = "CsMc1e33"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (1e33)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
       if (string::npos != stype.find("2e33") && string::npos != stype.find("cs")) {
@@ -1634,6 +1698,13 @@ void plotClass::loadFiles(const char *files) {
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (3e33)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }	
+      if (string::npos != stype.find("acc") && string::npos != stype.find("cs")) {
+	sname = "CsMcAcc"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (acc)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
 
@@ -1969,7 +2040,7 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi) {
 // ----------------------------------------------------------------------
 void plotClass::printNumbers(numbers &a, ostream &OUT) {
   OUT << "======================================================================" << endl;
-  OUT << "numbers for \"" << a.name.c_str() << "\"" << endl;
+  OUT << "numbers for \""  << a.name.c_str() << "\"" << endl;
   OUT << "fitYield     = " << a.fitYield << "+/-" << a.fitYieldE << endl;
   OUT << "genFileYield = " << a.genFileYield << endl;
   OUT << "genYield     = " << a.genYield << endl;
@@ -1995,6 +2066,7 @@ void plotClass::printNumbers(numbers &a, ostream &OUT) {
   OUT << "bsRare       = " << a.bsRare << endl;
   OUT << "bdRare       = " << a.bdRare << endl;
   OUT << "gen filter   = " << a.effGenFilter << endl;
+  OUT << "pt ratio     = " << a.effPtReco << "+/-" << a.effPtRecoE << endl;
   OUT << "acceptance   = " << a.acc << "+/-" << a.accE << endl;
   OUT << "accChan      = " << a.accChan << "+/-" << a.accChanE << endl; 
   OUT << "cFrac        = " << a.cFrac << "+/-" << a.cFracE << endl; 
@@ -2004,11 +2076,9 @@ void plotClass::printNumbers(numbers &a, ostream &OUT) {
   OUT << "effMuidMC    = " << a.effMuidMC << "+/-" << a.effMuidMCE << endl;
   OUT << "effMuidTNP   = " << a.effMuidTNP << "+/-" << a.effMuidTNPE << endl;
   OUT << "effMuidTNPMC = " << a.effMuidTNPMC << "+/-" << a.effMuidTNPMCE << endl;
-  OUT << "accMuidMC    = " << a.accMuidMC << "+/-" << a.accMuidMCE << endl;
   OUT << "effTrigMC    = " << a.effTrigMC << "+/-" << a.effTrigMCE << endl;
   OUT << "effTrigTNP   = " << a.effTrigTNP << "+/-" << a.effTrigTNPE << endl;
   OUT << "effTrigTNPMC = " << a.effTrigTNPMC << "+/-" << a.effTrigTNPMCE << endl;
-  OUT << "accTrigMC    = " << a.accTrigMC << "+/-" << a.accTrigMCE << endl;
   OUT << "effProd(MC)  = " << a.effProdMC << endl;
   OUT << "effProd(TNP) = " << a.effProdTNP << endl;
   OUT << "effProd(MC)A = " << a.effProdMC*a.acc << endl;
@@ -2332,6 +2402,22 @@ void plotClass::readCuts(const char *filename) {
       if (dump) cout << "docatrk:               " << CutValue << endl;
     }
 
+    if (!strcmp(CutName, "closetrk")) {
+      a->closetrk = static_cast<int>(CutValue); ok = 1;
+      if (dump) cout << "closetrk:              " << CutValue << endl;
+    }
+
+    if (!strcmp(CutName, "pvlip")) {
+      a->pvlip = CutValue; ok = 1;
+      if (dump) cout << "pvlip:                 " << CutValue << endl;
+    }
+
+    if (!strcmp(CutName, "pvlips")) {
+      a->pvlips = CutValue; ok = 1;
+      if (dump) cout << "pvlips:                " << CutValue << endl;
+    }
+
+
   }
 
   if (a) fCuts.push_back(a); 
@@ -2391,18 +2477,18 @@ void plotClass::printCuts(ostream &OUT) {
     fTEX <<  Form("\\vdef{%s:docatrk:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->docatrk) << endl;
 
     OUT << "closetrk " << a->closetrk << endl;
-    fTEX <<  Form("\\vdef{%s:closetrk:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->closetrk) << endl;
+    fTEX <<  Form("\\vdef{%s:closetrk:%d}   {\\ensuremath{{%d } } }", fSuffix.c_str(), a->index, static_cast<int>(a->closetrk)) << endl;
     OUT << "pvlip    " << a->pvlip << endl;
     fTEX <<  Form("\\vdef{%s:pvlip:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->pvlip) << endl;
     OUT << "pvlips   " << a->pvlips << endl;
     fTEX <<  Form("\\vdef{%s:pvlips:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->pvlips) << endl;
 
     OUT << "doApplyCowboyVeto  " << fDoApplyCowboyVeto << endl;
-    fTEX <<  Form("\\vdef{%s:doApplyCowboyVeto:%d}   {%s } }", 
-		  fSuffix.c_str(), a->index, fDoApplyCowboyVeto?"true":"false") << endl;
+    fTEX <<  Form("\\vdef{%s:doApplyCowboyVeto:%d}   {%s }", 
+		  fSuffix.c_str(), a->index, fDoApplyCowboyVeto?"yes":"no") << endl;
     OUT << "fDoApplyCowboyVetoAlsoInSignal  " << fDoApplyCowboyVetoAlsoInSignal << endl;
-    fTEX <<  Form("\\vdef{%s:fDoApplyCowboyVetoAlsoInSignal:%d}   {%s } }", 
-		  fSuffix.c_str(), a->index, fDoApplyCowboyVetoAlsoInSignal?"true":"false") << endl;
+    fTEX <<  Form("\\vdef{%s:fDoApplyCowboyVetoAlsoInSignal:%d}   {%s }", 
+		  fSuffix.c_str(), a->index, fDoApplyCowboyVetoAlsoInSignal?"yes":"no") << endl;
     
   }
   OUT.flush();

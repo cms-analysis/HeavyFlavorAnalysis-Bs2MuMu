@@ -129,15 +129,16 @@ struct bla{
   double mlo, mhi; 
   double m1pt, m2pt, pt; 
   double chi2dof, iso, alpha, fls3d, docatrk; 
+  double lip, lips; 
+  int closetrk, cowboyVeto; 
 };
 
 
 // ----------------------------------------------------------------------
-void plotOptimize::bestUL(const char *fname, int ichan, int mode) {
+void plotOptimize::bestUL(const char *fname, int mode) {
   // mode = 0 UL
   //        1 SM S/sqrt(S+B) 
-  //        2 1e-8 S/sqrt(S+B) 
-  //        3 2e-8 S/sqrt(S+B) 
+  //        2 SM sig
   TFile *f = TFile::Open(fname); 
   
   TTree *t = (TTree*)f->Get("t");
@@ -147,6 +148,8 @@ void plotOptimize::bestUL(const char *fname, int ichan, int mode) {
   int chan, file, run; 
   float mlo, mhi, pt, m1pt, m2pt, iso, chi2dof, alpha, fls3d, docatrk; 
   float ul, ssb, ssb1, ssb2, nobs, nexp, sig, eff; 
+  int closetrk, cowboyVeto; 
+  float lip, lips; 
 
   t->SetBranchAddress("chan", &chan);
   t->SetBranchAddress("file", &file);
@@ -171,23 +174,38 @@ void plotOptimize::bestUL(const char *fname, int ichan, int mode) {
   t->SetBranchAddress("alpha", &alpha);
   t->SetBranchAddress("fls3d", &fls3d);
   t->SetBranchAddress("docatrk", &docatrk);
+  t->SetBranchAddress("closetrk", &closetrk);
+  t->SetBranchAddress("pvlip", &lip);
+  t->SetBranchAddress("pvlips", &lips);
+  t->SetBranchAddress("cowboyVeto", &cowboyVeto);
 
-
-  cout << "helo" << endl;
-
-  bla ini = {1., -1., -1., -1., 
+  // -- initialize to some minimum values beyond which neither ul nor ssb are interesting
+  bla ini = {2.5e-8, 1.4, 1.2, 1.2, 
 	     0., 0., 
-	     0., 0.,
+	     4.1, 0.,
 	     0., 0., 0., 
-	     0., 0., 0., 0., 0.};
+	     0., 0., 0., 0., 0.,
+	     0., 0., 0, 0
+  };
 
-  list<bla> bestList(1, ini) ;
+  list<bla> bestList0(1, ini) ;
+
+  ini.ul = 3.0e-8; 
+  ini.ssb = 0.8;
+  ini.sig = 2.0;
+  list<bla> bestList1(1, ini) ;
 
   int nb(0); 
   int nentries = Int_t(t->GetEntries());
+  cout << "Searching for best fom in " << nentries << " cut settings" << endl;
   for (int jentry = 0; jentry < nentries; jentry++) {
     nb = t->GetEntry(jentry);
-    if (chan != ichan) continue;
+
+    if (jentry %20000 == 0) cout << "setting " << jentry 
+				<< " bestList0.size() = " << bestList0.size()
+				<< " bestList1.size() = " << bestList1.size()
+				<< endl;
+    
     ini.ul = ul; 
     ini.ssb  = ssb; 
     ini.ssb1 = ssb1; 
@@ -206,33 +224,59 @@ void plotOptimize::bestUL(const char *fname, int ichan, int mode) {
     ini.alpha = alpha; 
     ini.fls3d = fls3d; 
     ini.docatrk = docatrk; 
-    for (list<bla>::iterator i = bestList.begin(); i != bestList.end(); ++i) {
-      if (0 == mode) {
-	if (ini.ul < i->ul) { 
-	  bestList.insert(i, ini); 
-	  break;
+    ini.closetrk = closetrk; 
+    ini.lip = lip; 
+    ini.lips = lips; 
+    ini.cowboyVeto = cowboyVeto; 
+
+    if (chan == 0) {
+      for (list<bla>::iterator i = bestList0.begin(); i != bestList0.end(); ++i) {
+	if (0 == mode) {
+	  if (ini.ul < i->ul) { 
+	    bestList0.insert(i, ini); 
+	    break;
+	  }
 	}
+	if (1 == mode) {
+	  if (ini.ssb > i->ssb) { 
+	    bestList0.insert(i, ini); 
+	    break;
+	  }
+	}
+	
+	if (2 == mode) {
+	  if (ini.sig > i->sig) { 
+	    bestList0.insert(i, ini); 
+	    break;
+	  }
+	}
+	
       }
-      if (1 == mode) {
-	if (ini.ssb > i->ssb) { 
-	  bestList.insert(i, ini); 
-	  break;
+    } else {
+      for (list<bla>::iterator i = bestList1.begin(); i != bestList1.end(); ++i) {
+	if (0 == mode) {
+	  if (ini.ul < i->ul) { 
+	    bestList1.insert(i, ini); 
+	    break;
+	  }
 	}
+	if (1 == mode) {
+	  if (ini.ssb > i->ssb) { 
+	    bestList1.insert(i, ini); 
+	    break;
+	  }
+	}
+	
+	if (2 == mode) {
+	  if (ini.sig > i->sig) { 
+	    bestList1.insert(i, ini); 
+	    break;
+	  }
+	}
+	
       }
 
-      if (2 == mode) {
-	if (ini.ssb1 > i->ssb1) { 
-	  bestList.insert(i, ini); 
-	  break;
-	}
-      }
 
-      if (3 == mode) {
-	if (ini.ssb2 > i->ssb2) { 
-	  bestList.insert(i, ini); 
-	  break;
-	}
-      }
     }
 
   }
@@ -242,16 +286,36 @@ void plotOptimize::bestUL(const char *fname, int ichan, int mode) {
   cout << "nobs: number of observed events in histogram" << endl;
   cout << "S/B: number of sg/bg events expected in Bs signal window" << endl;
   cout << "e:    efficiency" << endl;
- 
-  for (list<bla>::iterator i = bestList.begin(); i != bestList.end(); ++i) {
+  cout << "channel 0, mode " << mode << endl;
+  for (list<bla>::iterator i = bestList0.begin(); i != bestList0.end(); ++i) {
     ++icnt;
     if (icnt > nsettings) break;
     ini = *i;
     cout << Form("ul=%2.1e ssb=%3.2f S/B=%3.2f/%3.2f e=%5.4f nobs=%2.0f ", ini.ul, ini.ssb,
 		 ini.sig, ini.nexp, ini.eff, ini.nobs)
 	 << Form("%4.3f<m<%4.3f pT=%3.1f ",  ini.mlo,  ini.mhi,  ini.pt)
-	 << Form("pt1=%3.1f pt2=%3.1f I=%3.2f c2=%3.2f a=%4.3f f=%3.1f d=%4.3f", 
+	 << Form("pt1=%3.1f pt2=%3.1f I=%3.2f c2=%3.2f a=%4.3f f=%3.1f d=%4.3f ", 
 		 ini.m1pt, ini.m2pt, ini.iso, ini.chi2dof, ini.alpha, ini.fls3d, ini.docatrk)
+	 << Form("l=%4.3f/%3.2f n=%d v=%d", ini.lip, ini.lips, ini.closetrk, ini.cowboyVeto)
+	 << endl;
+  }
+
+  cout << "ssb:  S/sqrt(S+B) for SM BF" << endl;
+  cout << "nobs: number of observed events in histogram" << endl;
+  cout << "S/B: number of sg/bg events expected in Bs signal window" << endl;
+  cout << "e:    efficiency" << endl;
+  cout << "channel 1, mode " << mode << endl;
+  icnt = 0; 
+  for (list<bla>::iterator i = bestList1.begin(); i != bestList1.end(); ++i) {
+    ++icnt;
+    if (icnt > nsettings) break;
+    ini = *i;
+    cout << Form("ul=%2.1e ssb=%3.2f S/B=%3.2f/%3.2f e=%5.4f nobs=%2.0f ", ini.ul, ini.ssb,
+		 ini.sig, ini.nexp, ini.eff, ini.nobs)
+	 << Form("%4.3f<m<%4.3f pT=%3.1f ",  ini.mlo,  ini.mhi,  ini.pt)
+	 << Form("pt1=%3.1f pt2=%3.1f I=%3.2f c2=%3.2f a=%4.3f f=%3.1f d=%4.3f ", 
+		 ini.m1pt, ini.m2pt, ini.iso, ini.chi2dof, ini.alpha, ini.fls3d, ini.docatrk)
+	 << Form("l=%4.3f/%3.2f n=%d v=%d", ini.lip, ini.lips, ini.closetrk, ini.cowboyVeto)
 	 << endl;
   }
 
@@ -307,6 +371,7 @@ void plotOptimize::readFile(const char *fname, TTree *t) {
 
   char  buffer[200];
   ifstream is(fname);
+  if (!is.is_open()) return;
   string line;
   double nu(0.); 
 
@@ -406,10 +471,10 @@ plotOptimize::~plotOptimize() {
 
 
 // ----------------------------------------------------------------------
-void plotOptimize::makeAll(int nfiles, int ichan, int mode) {
+void plotOptimize::makeAll(int nfiles, int mode) {
 
   readOptimize(nfiles);
-  bestUL("optimize.root", ichan, mode);
+  bestUL("optimize.root", mode);
 
 }
 

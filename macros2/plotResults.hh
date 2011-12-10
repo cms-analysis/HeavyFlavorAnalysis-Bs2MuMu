@@ -22,6 +22,8 @@ public:
   
   std::string fUlcalcFileName; 
   
+  bool fNormProcessed; 
+  
   ClassDef(plotResults,1) //Testing plotResults
 
 };

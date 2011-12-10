@@ -402,6 +402,22 @@ void candAnaBs2JpsiPhi::bookHist() {
   fTree->Branch("g4pt", &fKa2PtGen,  "g4pt/D");
   fTree->Branch("g4eta",&fKa2EtaGen, "g4eta/D");
 
+  // -- Additional effTree variables
+  fEffTree->Branch("k1pt",   &fETk1pt,            "k1pt/F");
+  fEffTree->Branch("g3pt",   &fETg3pt,            "g3pt/F");
+  fEffTree->Branch("k1eta",  &fETk1eta,           "k1eta/F");
+  fEffTree->Branch("g3eta",  &fETg3eta,           "g3eta/F");
+  fEffTree->Branch("k1q",    &fETk1q,             "k1q/I");
+  fEffTree->Branch("k1gt",   &fETk1gt,            "k1gt/O");
+
+  fEffTree->Branch("k2pt",   &fETk2pt,            "k2pt/F");
+  fEffTree->Branch("g4pt",   &fETg4pt,            "g4pt/F");
+  fEffTree->Branch("k2eta",  &fETk2eta,           "k2eta/F");
+  fEffTree->Branch("g4eta",  &fETg4eta,           "g4eta/F");
+  fEffTree->Branch("k2q",    &fETk2q,             "k2q/I");
+  fEffTree->Branch("k2gt",   &fETk2gt,            "k2gt/O");
+
+
   string name; 
   int i(0); 
   for (map<string, int>::iterator imap = fRegion.begin(); imap != fRegion.end(); ++imap) {  

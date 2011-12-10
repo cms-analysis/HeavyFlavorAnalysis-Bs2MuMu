@@ -25,9 +25,20 @@ plotResults::plotResults(const char *files, const char *cuts, const char *dir, i
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);
 
-  fUlcalcFileName  = fDirectory + "/anaBmm.plotResults" + fSuffix + ".ulc";
+  fUlcalcFileName  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".ulc";
   system(Form("/bin/rm -f %s", fUlcalcFileName.c_str()));
 
+  printCuts(cout); 
+
+  fBF = 0.0593*1.014e-3;
+  // PDG 2010:
+  fu  = 0.401;
+  fs  = 0.113;
+  // -- CMS with PDG input
+  fsfu = 0.282;
+  fsfuE = 0.037/0.282;
+
+  fNormProcessed = false; 
 }
 
 // ----------------------------------------------------------------------
@@ -42,11 +53,9 @@ void plotResults::makeAll(int channels) {
 
   fDoApplyCowboyVeto = true;   
   fDoApplyCowboyVetoAlsoInSignal = false;   
-
-  
-
+  computeNormUL();
+  computeCsBF();
 }
-
 
 // ----------------------------------------------------------------------
 void plotResults::computeNormUL() {
@@ -61,25 +70,17 @@ void plotResults::computeNormUL() {
   cout << "--> loopTree: signal data" << endl;
   loopTree(5);  // data signal
   c0->Modified(); c0->Update();
-  cout << "--> loopTree: norm MC" << endl;
-  loopTree(10); // normalization eff
-  c0->Modified(); c0->Update();
-  cout << "--> loopTree: norm data" << endl;
-  loopTree(11); // data normalization 
-  c0->Modified(); c0->Update();
+  if (false == fNormProcessed) {
+    fNormProcessed = true; 
+    cout << "--> loopTree: norm MC" << endl;
+    loopTree(10); // normalization eff
+    c0->Modified(); c0->Update();
+    cout << "--> loopTree: norm data" << endl;
+    loopTree(15); // data normalization 
+    c0->Modified(); c0->Update();
+  }
 
   printUlcalcNumbers();
-
-//   int fNobs = static_cast<int>(fBgExp + 0.5);
-  
-//   double ulbarlow = barlow(fNobs, fBgExp, fBgExpE, 0.2);
-//   double alpha = 1.; 
-
-//   if (fBgExp < 0.001) fBgExp = 0.1;
-//   double ulBayes90 =  blimit(0.9, fNobs, 1.0, 0.2, fBgExp, fBgExpE, alpha);
-//   double ulBayes95 =  blimit(0.95, fNobs, 1.0, 0.2, fBgExp, fBgExpE, alpha);
-  
-//   cout << "Bayes: " << ulBayes90 << "(95%CL: " << ulBayes95  << ") vs barlow: " << ulbarlow << endl;
 
   double   fNul = 0.;
 
@@ -124,14 +125,17 @@ void plotResults::computeCsBF() {
   loopTree(20);  // CS signal eff
   c0->Modified(); c0->Update();
   cout << "--> loopTree: signal data" << endl;
-  loopTree(21);  // control sample data 
+  loopTree(25);  // control sample data 
   c0->Modified(); c0->Update();
-  cout << "--> loopTree: norm MC" << endl;
-  loopTree(10); // normalization eff
-  c0->Modified(); c0->Update();
-  cout << "--> loopTree: norm data" << endl;
-  loopTree(11); // data normalization 
-  c0->Modified(); c0->Update();
+  if (false == fNormProcessed) {
+    fNormProcessed = true; 
+    cout << "--> loopTree: norm MC" << endl;
+    loopTree(10); // normalization eff
+    c0->Modified(); c0->Update();
+    cout << "--> loopTree: norm data" << endl;
+    loopTree(15); // data normalization 
+    c0->Modified(); c0->Update();
+  }
 
   fTEX << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;    
   fTEX << "% -- Control sample branching fraction" << endl;
@@ -753,33 +757,35 @@ void plotResults::rareBg() {
   THStack *hRareBg1 = new THStack("hRareBg1","");
 
   std::map<string, int> colors, hatches;
-  std::map<string, double> mscale;  // pions: 0.002, kaons: 0.005, protons: 0.001
+  std::map<string, double> mscale;  
   std::map<string, double> err;  
-  double epsPi(0.003), errPi2(0.04*0.04); // relative errors on misid rates from MUO-10-002
-  double epsKa(0.003), errKa2(0.13*0.13); 
+  double epsPi(0.0015), errPi2(0.15*0.15); // relative errors on misid rates are statistical error from Danek's fits
+  double epsKa(0.0017), errKa2(0.15*0.15); 
   double epsPr(0.0005), errPr2(0.15*0.15);
-  colors.insert(make_pair("bg60", 46)); hatches.insert(make_pair("bg60", 3004)); mscale.insert(make_pair("bg60", epsPi*epsPr)); 
-  err.insert(make_pair("bg60", TMath::Sqrt(0.3*0.3 + errPi2 + errPr2))); 
-  colors.insert(make_pair("bg61", 49)); hatches.insert(make_pair("bg61", 3005)); mscale.insert(make_pair("bg61", epsKa*epsPr)); 
-  err.insert(make_pair("bg61", TMath::Sqrt(0.31*0.31 + errKa2 + errPr2))); 
+  colors.insert(make_pair("bgLb2KP", 46)); hatches.insert(make_pair("bgLb2KP", 3004)); mscale.insert(make_pair("bgLb2KP", epsPi*epsPr)); 
+  err.insert(make_pair("bgLb2KP", TMath::Sqrt(0.3*0.3 + errPi2 + errPr2))); 
+  colors.insert(make_pair("bgLb2PiP", 49)); hatches.insert(make_pair("bgLb2PiP", 3005)); mscale.insert(make_pair("bgLb2PiP", epsKa*epsPr)); 
+  err.insert(make_pair("bgLb2PiP", TMath::Sqrt(0.31*0.31 + errKa2 + errPr2))); 
+  colors.insert(make_pair("bgLb2PMuNu", 48)); hatches.insert(make_pair("bgLb2PMuNu", 3006)); mscale.insert(make_pair("bgLb2PMuNu", epsPr)); 
+  err.insert(make_pair("bgLb2PMuNu", TMath::Sqrt(0.31*0.31 + errPr2))); 
 
-  colors.insert(make_pair("bg82", 30)); hatches.insert(make_pair("bg82", 3004)); mscale.insert(make_pair("bg82", epsKa*epsKa)); 
-  err.insert(make_pair("bg82", TMath::Sqrt(0.15*0.15 + errKa2 + errKa2))); 
-  colors.insert(make_pair("bg83", 32)); hatches.insert(make_pair("bg83", 3005)); mscale.insert(make_pair("bg83", epsPi*epsKa)); 
-  err.insert(make_pair("bg83", TMath::Sqrt(0.22*0.22 + errPi2 + errKa2))); 
-  colors.insert(make_pair("bg84", 33)); hatches.insert(make_pair("bg84", 3007)); mscale.insert(make_pair("bg84", epsPi*epsPi)); 
-  err.insert(make_pair("bg84", TMath::Sqrt(1.0*1.0 + errPi2 + errPi2))); 
-  colors.insert(make_pair("bg86", 34)); hatches.insert(make_pair("bg86", 3008)); mscale.insert(make_pair("bg86", epsKa)); 
-  err.insert(make_pair("bg86", TMath::Sqrt(0.2*0.2 + errKa2))); 
+  colors.insert(make_pair("bgBs2KK", 30)); hatches.insert(make_pair("bgBs2KK", 3004)); mscale.insert(make_pair("bgBs2KK", epsKa*epsKa)); 
+  err.insert(make_pair("bgBs2KK", TMath::Sqrt(0.15*0.15 + errKa2 + errKa2))); 
+  colors.insert(make_pair("bgBs2KPi", 32)); hatches.insert(make_pair("bgBs2KPi", 3005)); mscale.insert(make_pair("bgBs2KPi", epsPi*epsKa)); 
+  err.insert(make_pair("bgBs2KPi", TMath::Sqrt(0.22*0.22 + errPi2 + errKa2))); 
+  colors.insert(make_pair("bgBs2PiPi", 33)); hatches.insert(make_pair("bgBs2PiPi", 3007)); mscale.insert(make_pair("bgBs2PiPi", epsPi*epsPi)); 
+  err.insert(make_pair("bgBs2PiPi", TMath::Sqrt(1.0*1.0 + errPi2 + errPi2))); 
+  colors.insert(make_pair("bgBs2KMuNu", 34)); hatches.insert(make_pair("bgBs2KMuNu", 3008)); mscale.insert(make_pair("bgBs2KMuNu", epsKa)); 
+  err.insert(make_pair("bgBs2KMuNu", TMath::Sqrt(0.2*0.2 + errKa2))); 
 
-  colors.insert(make_pair("bg93", 40)); hatches.insert(make_pair("bg93", 3004)); mscale.insert(make_pair("bg93", epsKa*epsKa)); 
-  err.insert(make_pair("bg93", TMath::Sqrt(0.73*0.73 + errKa2 + errKa2))); 
-  colors.insert(make_pair("bg92", 41)); hatches.insert(make_pair("bg92", 3005)); mscale.insert(make_pair("bg92", epsKa*epsPi)); 
-  err.insert(make_pair("bg92", TMath::Sqrt(0.05*0.05 + errKa2 + errPi2))); 
-  colors.insert(make_pair("bg91", 42)); hatches.insert(make_pair("bg91", 3007)); mscale.insert(make_pair("bg91", epsPi*epsPi)); 
-  err.insert(make_pair("bg91", TMath::Sqrt(0.04*0.04 + errPi2 + errPi2))); 
-  colors.insert(make_pair("bg95", 43)); hatches.insert(make_pair("bg95", 3008)); mscale.insert(make_pair("bg95", epsPi)); 
-  err.insert(make_pair("bg95", TMath::Sqrt(0.2*0.2 + errPi2))); 
+  colors.insert(make_pair("bgBd2KK", 40)); hatches.insert(make_pair("bgBd2KK", 3004)); mscale.insert(make_pair("bgBd2KK", epsKa*epsKa)); 
+  err.insert(make_pair("bgBd2KK", TMath::Sqrt(0.73*0.73 + errKa2 + errKa2))); 
+  colors.insert(make_pair("bgBd2KPi", 41)); hatches.insert(make_pair("bgBd2KPi", 3005)); mscale.insert(make_pair("bgBd2KPi", epsKa*epsPi)); 
+  err.insert(make_pair("bgBd2KPi", TMath::Sqrt(0.05*0.05 + errKa2 + errPi2))); 
+  colors.insert(make_pair("bgBd2PiPi", 42)); hatches.insert(make_pair("bgBd2PiPi", 3007)); mscale.insert(make_pair("bgBd2PiPi", epsPi*epsPi)); 
+  err.insert(make_pair("bgBd2PiPi", TMath::Sqrt(0.04*0.04 + errPi2 + errPi2))); 
+  colors.insert(make_pair("bgBd2PiMuNu", 43)); hatches.insert(make_pair("bgBd2PiMuNu", 3008)); mscale.insert(make_pair("bgBd2PiMuNu", epsPi)); 
+  err.insert(make_pair("bgBd2PiMuNu", TMath::Sqrt(0.2*0.2 + errPi2))); 
 
   newLegend(0.55, 0.3, 0.80, 0.85); 
 
@@ -804,43 +810,25 @@ void plotResults::rareBg() {
     double misid = mscale[imap->first];
     cout << "==>" << imap->first << " lumi: " << fLumi[imap->first] << " -> lscale: " << lscale << " -> misid: " << misid << endl;
  
-    fF[imap->first]->cd();
+    fF[imap->first]->cd("candAnaMuMu");
 
     TH1D *h1Rare0, *h1Rare1;
     double bd0, bs0, bd1, bs1;
 
-    if (string::npos != imap->first.find("bg86") || string::npos != imap->first.find("bg95")) {
-      loopTree(98); 
-      cout << "LOOKING AT 85 or 96 " << endl;
-      h1Rare0 = (TH1D*)(fhMassNoCuts[0]->Clone("h1Rare0"));  
-      h1Rare1 = (TH1D*)(fhMassNoCuts[1]->Clone("h1Rare1"));  
+    loopTree(99); 
+    h1Rare0 = (TH1D*)(fhMassWithAllCuts[0]->Clone("h1Rare0"));  
+    h1Rare1 = (TH1D*)(fhMassWithAllCuts[1]->Clone("h1Rare1"));  
+    
+    bd0 = fhMassWithAllCutsManyBins[0]->Integral(fhMassWithAllCutsManyBins[0]->FindBin(fCuts[0]->mBdLo)+1, 
+						 fhMassWithAllCutsManyBins[0]->FindBin(fCuts[0]->mBdHi)-1);
+    bs0 = fhMassWithAllCutsManyBins[0]->Integral(fhMassWithAllCutsManyBins[0]->FindBin(fCuts[0]->mBsLo)+1, 
+						 fhMassWithAllCutsManyBins[0]->FindBin(fCuts[0]->mBsHi)-1);
+    
+    bd1 = fhMassWithAllCutsManyBins[1]->Integral(fhMassWithAllCutsManyBins[1]->FindBin(fCuts[1]->mBdLo)+1, 
+						 fhMassWithAllCutsManyBins[1]->FindBin(fCuts[1]->mBdHi)-1);
+    bs1 = fhMassWithAllCutsManyBins[1]->Integral(fhMassWithAllCutsManyBins[1]->FindBin(fCuts[1]->mBsLo)+1, 
+						 fhMassWithAllCutsManyBins[1]->FindBin(fCuts[1]->mBsHi)-1);
 
-      bd0 = fhMassNoCutsManyBins[0]->Integral(fhMassNoCutsManyBins[0]->FindBin(fCuts[0]->mBdLo)+1, 
-					      fhMassNoCutsManyBins[0]->FindBin(fCuts[0]->mBdHi)-1);
-      bs0 = fhMassNoCutsManyBins[0]->Integral(fhMassNoCutsManyBins[0]->FindBin(fCuts[0]->mBsLo)+1, 
-					      fhMassNoCutsManyBins[0]->FindBin(fCuts[0]->mBsHi)-1);
-      
-      bd1 = fhMassNoCutsManyBins[1]->Integral(fhMassNoCutsManyBins[1]->FindBin(fCuts[1]->mBdLo)+1, 
-					      fhMassNoCutsManyBins[1]->FindBin(fCuts[1]->mBdHi)-1);
-      bs1 = fhMassNoCutsManyBins[1]->Integral(fhMassNoCutsManyBins[1]->FindBin(fCuts[1]->mBsLo)+1, 
-					      fhMassNoCutsManyBins[1]->FindBin(fCuts[1]->mBsHi)-1);
-
-    } else { 
-      loopTree(99); 
-      h1Rare0 = (TH1D*)(fhMassWithAllCuts[0]->Clone("h1Rare0"));  
-      h1Rare1 = (TH1D*)(fhMassWithAllCuts[1]->Clone("h1Rare1"));  
-
-      bd0 = fhMassWithAllCutsManyBins[0]->Integral(fhMassWithAllCutsManyBins[0]->FindBin(fCuts[0]->mBdLo)+1, 
-						   fhMassWithAllCutsManyBins[0]->FindBin(fCuts[0]->mBdHi)-1);
-      bs0 = fhMassWithAllCutsManyBins[0]->Integral(fhMassWithAllCutsManyBins[0]->FindBin(fCuts[0]->mBsLo)+1, 
-						   fhMassWithAllCutsManyBins[0]->FindBin(fCuts[0]->mBsHi)-1);
-      
-      bd1 = fhMassWithAllCutsManyBins[1]->Integral(fhMassWithAllCutsManyBins[1]->FindBin(fCuts[1]->mBdLo)+1, 
-						   fhMassWithAllCutsManyBins[1]->FindBin(fCuts[1]->mBdHi)-1);
-      bs1 = fhMassWithAllCutsManyBins[1]->Integral(fhMassWithAllCutsManyBins[1]->FindBin(fCuts[1]->mBsLo)+1, 
-						   fhMassWithAllCutsManyBins[1]->FindBin(fCuts[1]->mBsHi)-1);
-
-    }
     h1Rare0->SetLineColor(kBlack); 
     h1Rare1->SetLineColor(kBlack);
 
@@ -892,12 +880,12 @@ void plotResults::rareBg() {
   hRareBg0->Draw();
   TH1D *hhRareBg0 = (TH1D*)hRareBg0->GetHistogram(); 
   hhRareBg0->SetAxisRange(4.9, 5.9, "X"); 
-  setTitles(hhRareBg0, "m_{#mu #mu} [GeV]", Form("Candidates/%3.2f GeV", hhRareBg0->GetBinWidth(1)), 0.06, 0.9, 1.5);
+  setTitles(hhRareBg0, "m_{#mu #mu} [GeV]", Form("Candidates/%4.3f GeV", hhRareBg0->GetBinWidth(1)), 0.06, 0.9, 1.5);
   legg->SetHeader("CMS simulation"); 
   legg->Draw(); 
   hhRareBg0->Draw("same");
   string pdfname = Form("%s/%s_rare0.pdf", fDirectory.c_str(), fSuffix.c_str());
-  stamp(0.2, "CMS, 1.14 fb^{-1}", 0.65, "#sqrt{s} = 7 TeV"); 
+  //  stamp(0.2, "CMS, 4.9 fb^{-1}", 0.65, "#sqrt{s} = 7 TeV"); 
   if (fDoPrint) {
     if (c0) c0->SaveAs(pdfname.c_str());
   }
@@ -906,12 +894,12 @@ void plotResults::rareBg() {
   hRareBg1->Draw();
   TH1D *hhRareBg1 = (TH1D*)hRareBg1->GetHistogram(); 
   hhRareBg1->SetAxisRange(4.9, 5.9, "X"); 
-  setTitles(hhRareBg1, "m_{#mu #mu} [GeV]", Form("Candidates/%3.2f GeV", hhRareBg0->GetBinWidth(1)), 0.06, 0.9, 1.5);
+  setTitles(hhRareBg1, "m_{#mu #mu} [GeV]", Form("Candidates/%4.3f GeV", hhRareBg0->GetBinWidth(1)), 0.06, 0.9, 1.5);
   legg->SetHeader("CMS simulation"); 
   legg->Draw(); 
   hhRareBg1->Draw("same");
   pdfname = Form("%s/%s_rare1.pdf", fDirectory.c_str(), fSuffix.c_str());
-  stamp(0.2, "CMS, 1.14 fb^{-1}", 0.65, "#sqrt{s} = 7 TeV"); 
+  //  stamp(0.2, "CMS, 4.9 fb^{-1}", 0.65, "#sqrt{s} = 7 TeV"); 
   if (fDoPrint){
     if (c0) c0->SaveAs(pdfname.c_str());
   }

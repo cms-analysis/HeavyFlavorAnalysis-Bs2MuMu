@@ -312,6 +312,14 @@ void candAnaBu2JpsiK::bookHist() {
   fTree->Branch("g3pt", &fKPtGen,    "g3pt/D");
   fTree->Branch("g3eta",&fKEtaGen,   "g3eta/D");
 
+  // -- Additional effTree variables
+  fEffTree->Branch("k1pt",   &fETk1pt,            "k1pt/F");
+  fEffTree->Branch("g3pt",   &fETg3pt,            "g3pt/F");
+  fEffTree->Branch("k1eta",  &fETk1eta,           "k1eta/F");
+  fEffTree->Branch("g3eta",  &fETg3eta,           "g3eta/F");
+  fEffTree->Branch("k1q",    &fETk1q,             "k1q/I");
+  fEffTree->Branch("k1gt",   &fETk1gt,            "k1gt/O");
+
   string name; 
   int i(0); 
   for (map<string, int>::iterator imap = fRegion.begin(); imap != fRegion.end(); ++imap) {  

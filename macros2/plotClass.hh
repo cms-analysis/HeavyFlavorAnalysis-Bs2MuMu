@@ -42,6 +42,7 @@ struct numbers {
   std::string name;
   int index;
   double effGenFilter, effGenFilterE; 
+  double effPtReco, effPtRecoE;
   double fitYield, fitYieldE;
   double genFileYield, genYield, genChanYield, recoYield, chanYield, muidYield, trigYield, candYield;
   double genFileYieldE, genYieldE, genChanYieldE, recoYieldE, chanYieldE, muidYieldE, trigYieldE, candYieldE;
@@ -195,7 +196,7 @@ public:
   std::vector<TH1D*> fh0MCTrigger, fh1MCTrigger, fh0MCMuID, fh1MCMuID;
 
   //  numbers fNumbersSig, fNumbersNorm, fNumbersCS; 
-  std::vector<numbers*> fNumbersBs, fNumbersBd, fNumbersNo, fNumbersCs; 
+  std::vector<numbers*> fNumbersBs, fNumbersBd, fNumbersNo, fNumbersCs, fNumbersBla; 
 
   bool fDoApplyCowboyVeto, fDoApplyCowboyVetoAlsoInSignal; 
   double fBgExp, fBgExpE; 
