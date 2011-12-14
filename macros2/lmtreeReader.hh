@@ -19,7 +19,7 @@ const static double MUON_MASS = 0.1057;
 const static double KAON_MASS = 0.4937;
 
 const static int array_size = 256;
-const static int Muon_array_size = 512;
+const static int Muon_array_size = 1024;
 
 class lmtreeReader : public treeReader01 {
   public:
@@ -43,13 +43,16 @@ class lmtreeReader : public treeReader01 {
     virtual bool selMuon(TAnaTrack* Muon);
 
     virtual double isoClassicWithDOCA(TAnaCand*, double dca, double r = 1.0, double ptmin = 0.9);
+    virtual int nCloseTracks(TAnaCand*, double dca, double pt = 0.5);
+
 
     virtual void clearVariables();
     virtual void closeHistFile();
 
   protected:
     //cuts
-    int SAVECANDS, NCANDS, B2MMTYPE, B2JpsiKTYPE, B2JpsiPhiTYPE;
+    int SAVECANDS, NCANDS, B2MMTYPE, B2JpsiKTYPE, B2JpsiPhiTYPE, CANDCLOSETRK;
+    double PVAVEW8, PVLIP, PVLIPS;
     double CANDMINMASS, CANDMAXMASS, CANDPT, CANDETA;
     double MUONPT, MUONETA;
     // options
@@ -72,9 +75,9 @@ class lmtreeReader : public treeReader01 {
     double Reco_B2MM_DxyE[array_size];
     double Reco_B2MM_Alpha[array_size];
     double Reco_B2MM_Alphaxy[array_size];
-    double Reco_B2MM_VxChi2[array_size];
+    double Reco_B2MM_VxRChi2[array_size];
     double Reco_B2MM_DOCAtrk[array_size];
-    int Reco_B2MM_NDOF[array_size];
+    int Reco_B2MM_Type[array_size];
     double Reco_B2MM_Iso1_pt09[array_size];
     bool Reco_B2MM_MCTruth[array_size];
     int Reco_B2MM_Mu1_index[array_size];
@@ -90,9 +93,9 @@ class lmtreeReader : public treeReader01 {
     double Reco_B2JpsiK_DxyE[array_size];
     double Reco_B2JpsiK_Alpha[array_size];
     double Reco_B2JpsiK_Alphaxy[array_size];
-    double Reco_B2JpsiK_VxChi2[array_size];
+    double Reco_B2JpsiK_VxRChi2[array_size];
     double Reco_B2JpsiK_DOCAtrk[array_size];
-    int Reco_B2JpsiK_NDOF[array_size];
+    int Reco_B2JpsiK_Type[array_size];
     double Reco_B2JpsiK_Iso1_pt09[array_size];
     bool Reco_B2JpsiK_MCTruth[array_size];
     int Reco_B2JpsiK_Mu1_index[array_size];
@@ -111,9 +114,9 @@ class lmtreeReader : public treeReader01 {
     double Reco_B2JpsiPhi_DxyE[array_size];
     double Reco_B2JpsiPhi_Alpha[array_size];
     double Reco_B2JpsiPhi_Alphaxy[array_size];
-    double Reco_B2JpsiPhi_VxChi2[array_size];
+    double Reco_B2JpsiPhi_VxRChi2[array_size];
     double Reco_B2JpsiPhi_DOCAtrk[array_size];
-    int Reco_B2JpsiPhi_NDOF[array_size];
+    int Reco_B2JpsiPhi_Type[array_size];
     double Reco_B2JpsiPhi_Iso1_pt09[array_size];
     bool Reco_B2JpsiPhi_MCTruth[array_size];
     int Reco_B2JpsiPhi_Mu1_index[array_size];
@@ -129,9 +132,8 @@ class lmtreeReader : public treeReader01 {
     double Reco_Jpsi_DxyE[array_size];
     double Reco_Jpsi_Alpha[array_size];
     double Reco_Jpsi_Alphaxy[array_size];
-    double Reco_Jpsi_VxChi2[array_size];
+    double Reco_Jpsi_VxRChi2[array_size];
     double Reco_Jpsi_DOCAtrk[array_size];
-    int Reco_Jpsi_NDOF[array_size];
     double Reco_Jpsi_Iso1_pt09[array_size];
     bool Reco_Jpsi_MCTruth[array_size];
     int Reco_Jpsi_Mu1_index[array_size];
