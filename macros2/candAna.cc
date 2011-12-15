@@ -40,16 +40,18 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   fRegion.insert(make_pair("APV1", 10)); // large-NPV events
 
   //  const char* inputVars[] = { "alpha", "fls3d", "chi2/dof", "iso", "m1pt", "m2pt", "pt", "m1eta", "docatrk" };
+  //  const char* inputVars[] = { "alpha", "fls3d", "iso", "m1pt", "m2pt", "m1eta", "m2eta", "docatrk", "pvlips", "closetrk" };
   vector<string> vvars; 
   vvars.push_back("alpha"); 
   vvars.push_back("fls3d"); 
-  vvars.push_back("chi2/dof"); 
   vvars.push_back("iso"); 
   vvars.push_back("m1pt"); 
   vvars.push_back("m2pt"); 
-  vvars.push_back("pt"); 
   vvars.push_back("m1eta"); 
+  vvars.push_back("m2eta"); 
   vvars.push_back("docatrk"); 
+  vvars.push_back("pvlips"); 
+  vvars.push_back("closetrk"); 
 
   fBdtReader = new ReadBDT(vvars); 
 
@@ -142,7 +144,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     fillCandidateHistograms(fRegion[Form("AR%i", fRunRange)]);
 
     // -- special studies
-    //fillIsoPlots(); // FIXISOPLOTS
+    fillIsoPlots(); // FIXISOPLOTS
 
   }
 
@@ -466,16 +468,18 @@ void candAna::candAnalysis() {
   }
   
   // -- fill cut variables
-  std::vector<double> inputVec(9);
+  std::vector<double> inputVec(10);
   inputVec[0] = fCandA; 
   inputVec[1] = fCandFLS3d;
-  inputVec[2] = fCandChi2/fCandDof; 
-  inputVec[3] = fCandIso;
-  inputVec[4] = fMu1Pt;
-  inputVec[5] = fMu2Pt;
-  inputVec[6] = fCandPt;
-  inputVec[7] = fMu1Eta;
-  inputVec[8] = fCandDocaTrk;
+  inputVec[2] = fCandIso;
+  inputVec[3] = fMu1Pt;
+  inputVec[4] = fMu2Pt;
+  inputVec[5] = fMu1Eta;
+  inputVec[6] = fMu2Eta;
+  inputVec[7] = fCandDocaTrk;
+  inputVec[8] = fCandPvLipS;
+  inputVec[9] = fCandCloseTrk;
+
   fCandBDT    = fBdtReader->GetMvaValue(inputVec);
 
   std::vector<double> inputVec2(11);
@@ -1076,7 +1080,7 @@ void candAna::bookHist() {
     }
   }
 
-  //bookIsoPlots(); //FIXISOPLOTS
+  bookIsoPlots(); //FIXISOPLOTS
 
 }
 

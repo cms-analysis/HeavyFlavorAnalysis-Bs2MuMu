@@ -19,7 +19,7 @@ public:
   void printUlcalcNumbers();
   void printCsBFNumbers();
   double barlow(int nobs, double bg, double bgE, double sE);
-  
+  double scaledYield(numbers *a, numbers *no, double chanbf, double fsfu); 
   std::string fUlcalcFileName; 
   
   bool fNormProcessed; 

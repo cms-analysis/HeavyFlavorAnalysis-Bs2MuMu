@@ -152,7 +152,11 @@ plotEfficiencies::~plotEfficiencies() {
 
 // ----------------------------------------------------------------------
 void plotEfficiencies::makeAll(int channels) {
+  // -- BMT results
+  triggerSignal(); 
+  triggerNormalization(); 
 
+  // -- efciciency ratios
   fDoApplyCowboyVeto = true;   
   fDoApplyCowboyVetoAlsoInSignal = false;   
   for (int i = 0; i < 6; ++i) {
@@ -169,11 +173,15 @@ void plotEfficiencies::makeAll(int channels) {
     tnpVsMC(pt, pt, 1, "woCowboyVeto");
   }
 
+  // -- MC trigger efficiencies
   mcTriggerEffs();
 }
 
 // ----------------------------------------------------------------------
 void plotEfficiencies::mcTriggerEffs() {
+
+  fDoApplyCowboyVeto = true;   
+  fDoApplyCowboyVetoAlsoInSignal = false; 
   
   fF["SgMc3e33"]->cd("candAnaMuMu");
   loopTree(98); 
@@ -655,66 +663,65 @@ void plotEfficiencies::triggerNormalization(string cuts) {
 
 
 
+                                                   
+// L1L2Efficiency_VBTF_Track2_data_all_histo.root     
+// L1L2Efficiency_VBTF_Track2_datalike_mc_histo.root  
+// L1L2Efficiency_VBTF_Track7_data_all_histo.root     
+// L1L2Efficiency_VBTF_Track7_datalike_mc_histo.root  
+// L3Efficiency_VBTF_data_all_histo.root              
+// L3Efficiency_VBTF_datalike_mc_histo.root 
+
+
+// MuonID_VBTF_Track2_data_all_histo.root    
+// MuonID_VBTF_Track2_datalike_mc_histo.root 
+// MuonID_VBTF_Track7_data_all_histo.root    
+// MuonID_VBTF_Track7_datalike_mc_histo.root 
+
 
 // ----------------------------------------------------------------------
 void plotEfficiencies::convertLucasHistograms() {
-  // void makeMC() {
-  readFile("luca/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MC.root", "MC"); 
-  readFile("luca/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MC.root", "MC"); 
-  readFile("luca/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MC.root", "MC"); 
 
-  // void makeMCTRUTH() {
-  readFile("luca/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.root", "MCTRUTH"); 
-  readFile("luca/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.root", "MCTRUTH"); 
-  readFile("luca/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MCTRUTH.root", "MCTRUTH"); 
+  readFile("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.root", "L3"); 
+  readFile("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.root", "L3"); 
 
-  // void makeData() {
-  readFile("luca/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.root"); 
-  readFile("luca/H2D_L1L2Efficiency_TMOSTTMA_ProbeTrackMatched_data_all.root");
-  readFile("luca/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_data_all.root");
-  readFile("luca/H2D_L3Efficiency_TMOSTTMA_ProbeTrackMatched_data_all.root");
-
-  readFile("luca/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.root");
-  readFile("luca/H2D_MuonIDEfficiency_TMOSTTMA_ProbeTrackMatched_data_all.root");
-
+  PidTable aTemplate;
+  read2Files(aTemplate, 
+	     "../macros/pidtables/111210/L1L2Efficiency_VBTF_Track2_data_all_histo.root", 
+	     "../macros/pidtables/111210/L1L2Efficiency_VBTF_Track7_data_all_histo.root", 
+	     "L1L2_sg"); 
+  aTemplate.shiftPmax(24.9, 999.); 
+  aTemplate.dumpToFile("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo.dat"); 
+ 
 }
 
 
 // ----------------------------------------------------------------------
-void plotEfficiencies::readFile(const char *fname, const char *pfix) {
+void plotEfficiencies::readFile(const char *fname, const char *hname) {
 
   TFile *f = TFile::Open(fname); 
+  f->ls(); 
 
-  TH2D *hc = 0; //((TH2D*)gFile->Get(Form("hEff_%s_central", pfix)))->Clone("hc"); 
-  TH2D *hu = 0; //((TH2D*)gFile->Get(Form("hEff_%s_upper", pfix)))->Clone("hu"); 
-  TH2D *hl = 0; //((TH2D*)gFile->Get(Form("hEff_%s_lower", pfix)))->Clone("hl"); 
+  TH2F *hsg = (TH2F*)(f->Get(Form("%s", hname)))->Clone("hsg");
+  cout << "hsg: " << hsg << endl;
 
-  TH2D *h1 = 0; //((TH2D*)gFile->Get(Form("hEff_%s_central", pfix)))->Clone("h1"); 
+  TH2F *h1 = (TH2F*)(f->Get(Form("%s", hname))); 
+  cout << "h1: " << h1 << endl;
   h1->Clear();
   h1->SetTitle("h1");
-
-  cout << hc->GetEntries() << endl;
-
+  
+  cout << hsg->GetEntries() << endl;
+  
   zone(2,2);
-  hc->DrawCopy("colz");
-
-  double error(0.); 
-  for (int ix = 1; ix <= hc->GetNbinsX(); ++ix) {
-    for (int iy = 1; iy <= hc->GetNbinsY(); ++iy) {
-      error = 0.5*(hu->GetBinContent(ix, iy) - hl->GetBinContent(ix, iy));
-      hc->SetBinError(ix, iy, error); 
-      cout << hc->GetBinContent(ix, iy) << "+/-" << hc->GetBinError(ix, iy) << endl;
-    }
-  }
+  hsg->DrawCopy("colz");
 
   PidTable a;
-  a.readFromEffHist(gFile, "hc"); 
+  a.readFromEffHist(gFile, "hsg"); 
     
   a.eff2d(h1);
   c0->cd(2);
   h1->DrawCopy("colz");
   
-  h1->Add(hc, -1.); 
+  h1->Add(hsg, -1.); 
 
   c0->cd(3);
   h1->DrawCopy("colz");
@@ -725,4 +732,36 @@ void plotEfficiencies::readFile(const char *fname, const char *pfix) {
   pname.ReplaceAll(".root", ".dat"); 
   a.dumpToFile(pname.Data()); 
 
+}
+
+
+// ----------------------------------------------------------------------
+void plotEfficiencies::read2Files(PidTable &a, const char *f1name, const char *f2name, const char *hname) {
+
+  TFile *f1 = TFile::Open(f1name); 
+  f1->ls(); 
+  TH2F *hsg1 = (TH2F*)(f1->Get(hname))->Clone("hsg1");
+  cout << "hsg1: " << hsg1 << endl;
+
+  TFile *f2 = TFile::Open(f2name); 
+  f2->ls(); 
+  TH2F *hsg2 = (TH2F*)(f2->Get(hname))->Clone("hsg2");
+  cout << "hsg2: " << hsg2 << endl;
+  
+  TH2F *h1 = (TH2F*)(f1->Get(hname))->Clone("h1"); 
+  cout << "h1: " << h1 << endl;
+  h1->Clear();
+  h1->SetTitle("h1");
+  
+  PidTable a1;
+  a1.readFromEffHist(f1, "hsg1"); 
+  a1.printAll();
+
+  PidTable a2;
+  a2.readFromEffHist(f2, "hsg2"); 
+  a2.printAll();
+  
+  a.fillTable(a1);
+  a.fillTable(a2);
+  
 }

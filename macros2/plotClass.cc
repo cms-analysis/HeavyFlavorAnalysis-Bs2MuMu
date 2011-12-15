@@ -275,6 +275,8 @@ void plotClass::loopTree(int mode, int proc) {
 
   string directory; 
   string fAcc;
+  
+  double effFilter(1.), genFileYield(0.); 
 
   numbers *aa(0);
   if (0 == mode) {
@@ -282,11 +284,13 @@ void plotClass::loopTree(int mode, int proc) {
     directory = "candAnaMuMu"; 
     fF["SgMc"]->cd(directory.c_str());
     fAcc = "SgMcAcc";
+    genFileYield = ((TTree*)gDirectory->Get("effTree"))->GetEntries();
   }  else if (1 == mode) {
     isMC = true; 
     directory = "candAnaMuMu"; 
     fF["BdMc"]->cd(directory.c_str());
     fAcc = "BdMcAcc";
+    genFileYield = ((TTree*)gDirectory->Get("effTree"))->GetEntries();
   } else if (5 == mode) {
     isMC = false;     
     directory = "candAnaMuMu"; 
@@ -297,6 +301,8 @@ void plotClass::loopTree(int mode, int proc) {
     directory = "candAnaBu2JpsiK"; 
     fF["NoMc"]->cd(directory.c_str());
     fAcc = "NoMcAcc";
+    effFilter = fFilterEff["NoMc"];
+    genFileYield = ((TTree*)gDirectory->Get("effTree"))->GetEntries();
   } else if (15 == mode) {
     isMC = false;     
     bp2jpsikp = true; 
@@ -308,6 +314,8 @@ void plotClass::loopTree(int mode, int proc) {
     directory = "candAnaBs2JpsiPhi"; 
     fF["CsMc"]->cd(directory.c_str());
     fAcc = "CsMcAcc";
+    effFilter = fFilterEff["CsMc"];
+    genFileYield = ((TTree*)gDirectory->Get("effTree"))->GetEntries();
   } else if (25 == mode) {
     isMC = false;     
     bs2jpsiphi = true; 
@@ -911,19 +919,17 @@ void plotClass::loopTree(int mode, int proc) {
       aa->effTrigTNPE      = fhMuTr[i]->GetMeanError();
       aa->effTrigTNPMC     = fhMuTrMC[i]->GetMean();
       aa->effTrigTNPMCE    = fhMuTrMC[i]->GetMeanError();
-      aa->effTot           = e/(aa->genYield)*aa->effPtReco; // this only works without genlevel cuts
+      aa->genFileYield     = genFileYield;
+      aa->effGenFilter     = effFilter; 
+      aa->genYield         = aa->genFileYield/aa->effGenFilter;
+      aa->effTot           = e/aa->genYield;
       aa->effTotE          = dEff(static_cast<int>(e), static_cast<int>(aa->genYield));
-      aa->effTotChan       = e/(aa->genChanYield);
-      aa->effTotChanE      = dEff(static_cast<int>(e), static_cast<int>(aa->genChanYield));
       aa->effProdMC        = aa->effCand * aa->effAna * aa->effMuidMC * aa->effTrigMC;
       aa->effProdMCE       = 0.;
       aa->effProdTNP       = aa->effCand * aa->effAna * aa->effMuidTNP * aa->effTrigTNP;
       aa->effProdTNPE      = 0.;
-      aa->aEffProdMC       = aa->effProdMC * aa->accChan * aa->cFrac;
-      aa->aEffProdMCE      = 0.;
 
       aa->combGenYield     = e/(aa->acc * aa->effProdMC);
-      aa->chanGenYield     = e/(aa->accChan * aa->effProdMC); 
       aa->prodGenYield     = e/(aa->effTot); 
     }
 
@@ -1110,6 +1116,8 @@ void plotClass::loopTree(int mode, int proc) {
       aa->effMuidMCE       = dEff(static_cast<int>(c), static_cast<int>(b));
       aa->effTrigMC        = d/c;
       aa->effTrigMCE       = dEff(static_cast<int>(d), static_cast<int>(c));
+      aa->effTot           = e/aa->genYield;
+      aa->effTotE          = dEff(static_cast<int>(e), static_cast<int>(aa->genYield));
       continue;
     }
 
@@ -1145,6 +1153,96 @@ void plotClass::loopTree(int mode, int proc) {
   delete ptMMC; 
 
   return;
+}
+
+
+// ----------------------------------------------------------------------
+// call this on the acceptance files
+void plotClass::filterEfficiency(string fname, string name) {
+ 
+  TFile *f = fF[fname];
+  if (0 == f) {
+    cout << "anaBmm::filterEffciciency(" << name << "): no file " << fname << " found " << endl;
+    return;
+  }
+  TTree *t  = (TTree*)(f->Get(Form("%s/effTree", name.c_str())));
+
+  bool sg(false), no(false), cs(false); 
+
+  float bg1pt, bg2pt, bg1eta, bg2eta;
+  float bg3pt, bg4pt, bg3eta, bg4eta; 
+
+  t->SetBranchAddress("g1pt",&bg1pt);
+  t->SetBranchAddress("g2pt",&bg2pt);
+  t->SetBranchAddress("g1eta",&bg1eta);
+  t->SetBranchAddress("g2eta",&bg2eta);
+
+  if (string::npos != name.find("MuMu")) {
+    cout << "anaBmm::filterEfficiency(" << name << "): SIGNAL " << endl;
+    sg = true; 
+  }
+
+  if (string::npos != name.find("Bu2JpsiK")) {
+    cout << "anaBmm::filterEfficiency(" << name << "): NORMALIZATION " << endl;
+    no = true; 
+    t->SetBranchAddress("g3pt", &bg3pt);
+    t->SetBranchAddress("g3eta",&bg3eta);
+  }
+
+  if (string::npos != name.find("Bs2JpsiPhi")) {
+    cout << "anaBmm::filterEfficiency(" << name << "): CONTROL SAMPLE " << endl;
+    cs = true; 
+    t->SetBranchAddress("g3pt", &bg3pt);
+    t->SetBranchAddress("g3eta",&bg3eta);
+    t->SetBranchAddress("g4pt", &bg4pt);
+    t->SetBranchAddress("g4eta",&bg4eta);
+  }
+
+  int nb(0); 
+  int ngen(0), ngenlevel(0); 
+  int nentries = Int_t(t->GetEntries());
+  for (int jentry = 0; jentry < nentries; jentry++) {
+    nb = t->GetEntry(jentry);
+
+    ++ngen;
+
+    if (sg) {
+      if ((TMath::Abs(bg1eta) < 2.5) && (TMath::Abs(bg2eta) < 2.5) 
+	  && (bg1pt > 3.5) && (bg2pt > 3.5)
+	  ) {
+	++ngenlevel;
+      }
+    }
+
+    if (no) {
+      if ((TMath::Abs(bg1eta) < 2.5) && (TMath::Abs(bg2eta) < 2.5) && (TMath::Abs(bg3eta) < 2.5) 
+	  && (bg1pt > 3.5) && (bg2pt > 3.5) && (bg3pt > 0.4)
+	  ) {
+	++ngenlevel;
+      }
+    }
+
+
+    if (cs) {
+      if ((TMath::Abs(bg1eta) < 2.5) && (TMath::Abs(bg2eta) < 2.5) && (TMath::Abs(bg3eta) < 2.5) && (TMath::Abs(bg4eta) < 2.5) 
+	  && (bg1pt > 3.5) && (bg2pt > 3.5) && (bg3pt > 0.4) && (bg4pt > 0.4)
+	  ) {
+	++ngenlevel;
+      }
+    }
+  }
+
+  cout << "======================================================================" << endl;
+  cout << "Filter efficiency for " << fname << " and " << name << endl;
+  cout << " => " 
+       << ngenlevel 
+       << "/" 
+       << ngen
+       << " = " 
+       << static_cast<double>(ngenlevel)/static_cast<double>(ngen) 
+       << endl;
+  cout << "======================================================================" << endl;
+
 }
 
 
@@ -1302,13 +1400,13 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
 		if (bm1pt > b.m1pt && bm2pt > b.m2pt
 		    ) {
 		  ++nchan; 
+		  if (bm > 0) {
+		    ++ncand;
+		  }
 		  if (bm1id && bm2id) {
 		    ++nmuid;
 		    if (bhlt) {
 		      ++nhlt;
-		      if (bm > 0) {
-			++ncand;
-		      }
 		    }
 		  }
 		}
@@ -1335,13 +1433,13 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
 		++nreco;
 		if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
 		  ++nchan; 
+		  if (bm > 0) {
+		    ++ncand;
+		  }
 		  if (bm1id && bm2id) {
 		    ++nmuid;
 		    if (bhlt) {
 		      ++nhlt;
-		      if (bm > 0) {
-			++ncand;
-		      }
 		    }
 		  }
 		}
@@ -1359,45 +1457,53 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
     a.effPtReco     = 1.; 
     a.effPtRecoE    = 0.;
   }
-  a.genFileYield  = ngen;
-  a.genYield      = a.genFileYield/effFilter;
-  a.genChanYield  = nchangen; 
+  a.genAccFileYield = ngen;
+  a.genAccYield     = a.genAccFileYield/effFilter; 
   a.recoYield     = nreco; // reco'ed in chan, basic global reconstruction cuts 
-  a.chanYield     = nchan; // reco'ed in chan, with channel-dependent (pT) cuts
   a.muidYield     = nmuid;
   a.trigYield     = nhlt;
   a.candYield     = ncand;
 
-  if (a.genYield > 0) {
-    a.cFrac  = a.genChanYield/a.genYield;
-    a.cFracE = dEff(static_cast<int>(a.genChanYield), static_cast<int>(a.genYield));
-  }
-  if (a.genYield > 0) {
-    a.acc = a.recoYield/a.genYield;
-    a.accE = dEff(static_cast<int>(a.recoYield), static_cast<int>(a.genYield));
-  }
-  
-  if (a.genChanYield > 0) {
-    a.accChan = a.recoYield/a.genChanYield;
-    a.accChanE = dEff(static_cast<int>(a.recoYield), static_cast<int>(a.genChanYield));
-  }
-  
-  if (a.recoYield > 0) {
-    a.effChan = a.chanYield/a.recoYield;
-    a.effChanE = dEff(static_cast<int>(a.chanYield), static_cast<int>(a.recoYield));
-  }
-
+  if (a.genAccYield > 0) {
+    a.acc = a.recoYield/a.genAccYield;
+    a.accE = dEff(static_cast<int>(a.recoYield), static_cast<int>(a.genAccYield));
+  }  
 
   if (a.trigYield > 0) {
-    a.effCand = a.candYield/a.trigYield;
+    a.effCand  = a.candYield/a.trigYield;
     a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.trigYield));
+    a.effCand  = a.candYield/nchan;
+    a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(nchan));
+    a.effCand  = 0.98; // estimate
+    a.effCandE = 0.01; 
   } 
 
   cout << "NGEN      = " << ngen << endl;
+  cout << "NGENCHAN  = " << nchangen << endl;
   cout << "NRECO     = " << nreco << endl;
+  cout << "NRECOCHAN = " << nchan << endl;
+  cout << "NMUID     = " << nmuid << endl;
+  cout << "NHLT      = " << nhlt << endl;
   cout << "NCAND     = " << ncand << endl;
-  cout << "acc       = " << a.acc << endl;
-  cout << "effFilter = " << effFilter << endl;
+
+
+//   a.genChanYield  = nchangen; 
+//   a.chanYield     = nchan; // reco'ed in chan, with channel-dependent (pT) cuts
+
+//   if (a.genAccYield > 0) {
+//     a.cFrac  = a.genChanYield/a.genAccYield;
+//     a.cFracE = dEff(static_cast<int>(a.genChanYield), static_cast<int>(a.genAccYield));
+//   }
+
+//   if (a.genChanYield > 0) {
+//     a.accChan = a.recoYield/a.genChanYield;
+//     a.accChanE = dEff(static_cast<int>(a.recoYield), static_cast<int>(a.genChanYield));
+//   }
+  
+//   if (a.recoYield > 0) {
+//     a.effChan = a.chanYield/a.recoYield;
+//     a.effChanE = dEff(static_cast<int>(a.chanYield), static_cast<int>(a.recoYield));
+//   }
 
 }
 
@@ -1713,24 +1819,28 @@ void plotClass::loadFiles(const char *files) {
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow K^{+}K^{-}")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
       if (string::npos != stype.find("bg,Bs2KPi")) {
 	sname = "bgBs2KPi"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #pi^{+}K^{-}")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
       if (string::npos != stype.find("bg,Bs2PiPi")) {
 	sname = "bgBs2PiPi"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #pi^{+}#pi^{-}")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
       if (string::npos != stype.find("bg,Bs2KMuNu")) {
 	sname = "bgBs2KMuNu"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow K^{-}#mu^{+}#nu")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
 
       if (string::npos != stype.find("bg,Bd2PiMuNu")) {
@@ -1738,47 +1848,77 @@ void plotClass::loadFiles(const char *files) {
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow #pi^{-}#mu^{+}#nu")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
       if (string::npos != stype.find("bg,Bd2KK")) {
 	sname = "bgBd2KK"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow K^{+}K^{-}")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
       if (string::npos != stype.find("bg,Bd2KPi")) {
 	sname = "bgBd2KPi"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow K^{+}#pi^{-}")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
       if (string::npos != stype.find("bg,Bd2PiPi")) {
 	sname = "bgBd2PiPi"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow #pi^{+}#pi^{-}")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
       if (string::npos != stype.find("bg,Lb2KP")) {
 	sname = "bgLb2KP"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#Lambda_{b}^{0} #rightarrow p K^{-}")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
       if (string::npos != stype.find("bg,Lb2PiP")) {
 	sname = "bgLb2PiP"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#Lambda_{b}^{0} #rightarrow p #pi^{-}")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
       if (string::npos != stype.find("bg,Lb2PMuNu")) {
 	sname = "bgLb2PMuNu"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#Lambda^{0}_{b} #rightarrow p#mu^{-}#bar{#nu}")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
       cout << "open MC file "  << sfile  << " as " << sname << " (" << stype << ") with lumi = " << slumi << endl;
     }
   }
 
+  
+  // https://docs.google.com/spreadsheet/ccc?key=0AhrdqmQ22qAldHREbHpVOGVMaHhQaU9ULXAydkpZc2c&hl=en#gid=0
+  fNgen.insert(make_pair("bgLb2KP",    356.e6)); 
+  fNgen.insert(make_pair("bgLb2PiP",    374.e6)); 
+  fNgen.insert(make_pair("bgLb2PMuNu", 6910.e6)); 
+
+  fNgen.insert(make_pair("SgMc",      249.e6)); 
+  fNgen.insert(make_pair("bgBs2KK",    1392.e6)); 
+  fNgen.insert(make_pair("bgBs2KPi",    598.e6)); 
+  fNgen.insert(make_pair("bgBs2PiPi",   148.e6)); 
+  fNgen.insert(make_pair("bgBs2KMuNu", 6702.e6)); 
+
+  fNgen.insert(make_pair("BdMc",        40.e6)); 
+  fNgen.insert(make_pair("bgBd2PiPi",    394.e6)); 
+  fNgen.insert(make_pair("bgBd2KPi",     996.e6)); 
+  fNgen.insert(make_pair("bgBd2KK",      200.e6)); 
+  fNgen.insert(make_pair("bgBd2PiMuNu", 6742.e6)); 
+
+  fNgen.insert(make_pair("NoMc",15166.e6)); 
+  fNgen.insert(make_pair("CsMc", 9970.e6)); 
+
+  fNgen.insert(make_pair("NoMcAcc", 1)); 
+  fNgen.insert(make_pair("CsMcAcc", 1)); 
 
 }
 
@@ -1799,30 +1939,6 @@ void plotClass::makeAll(int channel) {
 
 // ----------------------------------------------------------------------
 void plotClass::dumpSamples() {
-  std::map<string, double> ngen;
-  // https://docs.google.com/spreadsheet/ccc?key=0AhrdqmQ22qAldHREbHpVOGVMaHhQaU9ULXAydkpZc2c&hl=en#gid=0
-  ngen.insert(make_pair("bgLb2KP",    356.e6)); 
-  ngen.insert(make_pair("bgLb2PiP",    374.e6)); 
-  ngen.insert(make_pair("bgLb2PMuNu", 6910.e6)); 
-
-  ngen.insert(make_pair("SgMc",      249.e6)); 
-  ngen.insert(make_pair("bgBs2KK",    1392.e6)); 
-  ngen.insert(make_pair("bgBs2KPi",    598.e6)); 
-  ngen.insert(make_pair("bgBs2PiPi",   148.e6)); 
-  ngen.insert(make_pair("bgBs2KMuNu", 6702.e6)); 
-
-  ngen.insert(make_pair("BdMc",        40.e6)); 
-  ngen.insert(make_pair("bgBd2PiPi",    394.e6)); 
-  ngen.insert(make_pair("bgBd2KPi",     996.e6)); 
-  ngen.insert(make_pair("bgBd2KK",      200.e6)); 
-  ngen.insert(make_pair("bgBd2PiMuNu", 6742.e6)); 
-
-  ngen.insert(make_pair("NoMc",15166.e6)); 
-  ngen.insert(make_pair("CsMc", 9970.e6)); 
-
-  ngen.insert(make_pair("NoMcAcc", 1)); 
-  ngen.insert(make_pair("CsMcAcc", 1)); 
-  
 
   fTEX << "% ----------------------------------------------------------------------" << endl;
   string name; 
@@ -1833,7 +1949,7 @@ void plotClass::dumpSamples() {
     cout << " -> " << imap->second << endl;
     name = imap->second; 
     lumi = fLumi[imap->first];
-    n = ngen[imap->first];
+    n = fNgen[imap->first];
     f = ((TH1D*)fF[imap->first]->Get("monEvents"))->GetBinContent(1);
     replaceAll(name, "#", "\\"); 
     //    cout <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
@@ -2041,52 +2157,47 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi) {
 void plotClass::printNumbers(numbers &a, ostream &OUT) {
   OUT << "======================================================================" << endl;
   OUT << "numbers for \""  << a.name.c_str() << "\"" << endl;
-  OUT << "fitYield     = " << a.fitYield << "+/-" << a.fitYieldE << endl;
-  OUT << "genFileYield = " << a.genFileYield << endl;
-  OUT << "genYield     = " << a.genYield << endl;
-  OUT << "genChanYield = " << a.genChanYield << endl;
-  OUT << "recoYield    = " << a.recoYield << endl;
-  OUT << "chanYield    = " << a.chanYield << endl;
-  OUT << "muidYield    = " << a.muidYield << endl;
-  OUT << "trigYield    = " << a.trigYield << endl;
-  OUT << "candYield    = " << a.candYield << endl;
-  OUT << "ana0Yield    = " << a.ana0Yield << endl;
-  OUT << "anaYield     = " << a.anaYield << endl;
-  OUT << "anaMuYield   = " << a.anaMuonYield << endl;
-  OUT << "anaTrigYield = " << a.anaTriggerYield << endl;
-  OUT << "anaWmcYield  = " << a.anaWmcYield << endl;
-  OUT << "mBsLo        = " << a.mBsLo << endl;
-  OUT << "mBsHi        = " << a.mBsHi << endl;
-  OUT << "mBdLo        = " << a.mBdLo << endl;
-  OUT << "mBdHi        = " << a.mBdHi << endl;
-  OUT << "PSS          = " << a.pss << endl;
-  OUT << "PDS          = " << a.pds << endl;
-  OUT << "PSD          = " << a.psd << endl;
-  OUT << "PDD          = " << a.pdd << endl;
-  OUT << "bsRare       = " << a.bsRare << endl;
-  OUT << "bdRare       = " << a.bdRare << endl;
-  OUT << "gen filter   = " << a.effGenFilter << endl;
-  OUT << "pt ratio     = " << a.effPtReco << "+/-" << a.effPtRecoE << endl;
-  OUT << "acceptance   = " << a.acc << "+/-" << a.accE << endl;
-  OUT << "accChan      = " << a.accChan << "+/-" << a.accChanE << endl; 
-  OUT << "cFrac        = " << a.cFrac << "+/-" << a.cFracE << endl; 
-  OUT << "effChan      = " << a.effChan << "+/-" << a.effChanE << endl; 
-  OUT << "effCand      = " << a.effCand << "+/-" << a.effCandE << endl;
-  OUT << "effAna       = " << a.effAna << "+/-" << a.effAnaE << endl; 
-  OUT << "effMuidMC    = " << a.effMuidMC << "+/-" << a.effMuidMCE << endl;
-  OUT << "effMuidTNP   = " << a.effMuidTNP << "+/-" << a.effMuidTNPE << endl;
-  OUT << "effMuidTNPMC = " << a.effMuidTNPMC << "+/-" << a.effMuidTNPMCE << endl;
-  OUT << "effTrigMC    = " << a.effTrigMC << "+/-" << a.effTrigMCE << endl;
-  OUT << "effTrigTNP   = " << a.effTrigTNP << "+/-" << a.effTrigTNPE << endl;
-  OUT << "effTrigTNPMC = " << a.effTrigTNPMC << "+/-" << a.effTrigTNPMCE << endl;
-  OUT << "effProd(MC)  = " << a.effProdMC << endl;
-  OUT << "effProd(TNP) = " << a.effProdTNP << endl;
-  OUT << "effProd(MC)A = " << a.effProdMC*a.acc << endl;
-  OUT << "effTot       = " << a.effTot << "+/-" << a.effTotE << endl; 
-  OUT << "effTotChan   = " << a.effTotChan << "+/-" << a.effTotChanE << endl; 
-  OUT << "combGenYield     = " << a.combGenYield << endl; 
-  OUT << "prodGenYield     = " << a.prodGenYield << endl; 
-  OUT << "prodChanGenYield = " << a.chanGenYield << endl; 
+  OUT << "fitYield        = " << a.fitYield << "+/-" << a.fitYieldE << endl;
+  OUT << "genAccFileYield = " << a.genAccFileYield << endl;
+  OUT << "genAccYield     = " << a.genAccYield << endl;
+  OUT << "genFileYield    = " << a.genFileYield << endl;
+  OUT << "genYield        = " << a.genYield << endl;
+  OUT << "recoYield       = " << a.recoYield << endl;
+  OUT << "muidYield       = " << a.muidYield << endl;
+  OUT << "trigYield       = " << a.trigYield << endl;
+  OUT << "candYield       = " << a.candYield << endl;
+  OUT << "ana0Yield       = " << a.ana0Yield << endl;
+  OUT << "anaYield        = " << a.anaYield << endl;
+  OUT << "anaMuYield      = " << a.anaMuonYield << endl;
+  OUT << "anaTrigYield    = " << a.anaTriggerYield << endl;
+  OUT << "anaWmcYield     = " << a.anaWmcYield << endl;
+  OUT << "mBsLo           = " << a.mBsLo << endl;
+  OUT << "mBsHi           = " << a.mBsHi << endl;
+  OUT << "mBdLo           = " << a.mBdLo << endl;
+  OUT << "mBdHi           = " << a.mBdHi << endl;
+  OUT << "PSS             = " << a.pss << endl;
+  OUT << "PDS             = " << a.pds << endl;
+  OUT << "PSD             = " << a.psd << endl;
+  OUT << "PDD             = " << a.pdd << endl;
+  OUT << "bsRare          = " << a.bsRare << endl;
+  OUT << "bdRare          = " << a.bdRare << endl;
+  OUT << "gen filter      = " << a.effGenFilter << endl;
+  OUT << "pt ratio        = " << a.effPtReco << "+/-" << a.effPtRecoE << endl;
+  OUT << "acceptance      = " << a.acc << "+/-" << a.accE << endl;
+  OUT << "effCand         = " << a.effCand << "+/-" << a.effCandE << endl;
+  OUT << "effAna          = " << a.effAna << "+/-" << a.effAnaE << endl; 
+  OUT << "effMuidMC       = " << a.effMuidMC << "+/-" << a.effMuidMCE << endl;
+  OUT << "effMuidTNP      = " << a.effMuidTNP << "+/-" << a.effMuidTNPE << endl;
+  OUT << "effMuidTNPMC    = " << a.effMuidTNPMC << "+/-" << a.effMuidTNPMCE << endl;
+  OUT << "effTrigMC       = " << a.effTrigMC << "+/-" << a.effTrigMCE << endl;
+  OUT << "effTrigTNP      = " << a.effTrigTNP << "+/-" << a.effTrigTNPE << endl;
+  OUT << "effTrigTNPMC    = " << a.effTrigTNPMC << "+/-" << a.effTrigTNPMCE << endl;
+  OUT << "effProd(MC)     = " << a.effProdMC << endl;
+  OUT << "effProd(TNP)    = " << a.effProdTNP << endl;
+  OUT << "effProd(MC)A    = " << a.effProdMC*a.acc << endl;
+  OUT << "effTot          = " << a.effTot << "+/-" << a.effTotE << endl; 
+  OUT << "combGenYield    = " << a.combGenYield << endl; 
+  OUT << "prodGenYield    = " << a.prodGenYield << endl; 
   OUT.flush();
 
 }

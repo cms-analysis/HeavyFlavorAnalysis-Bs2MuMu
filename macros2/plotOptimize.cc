@@ -29,11 +29,11 @@ void plotOptimize::optimizeULs(int nruns, int seed) {
   int NCUTS(12);
   //                  0       1      2     3        4       5        6          7      8           9      10      11
   //string cuts[] = {"m2pt", "m1pt","pt", "alpha", "chi2", "fls3d", "docatrk", "iso", "closetrk", "lip", "lips", "mwindow"}; 
-  double loCuts[] = {4.0,    4.0,   7.0,  0.01,    0.8,     12,       0.0,       0.65,  1,         0.0,   1.,     0.020 };
-  double hiCuts[] = {6.0,    7.0,   12.,  0.04,    1.8,     25,       0.1,       0.95,  4,         0.1,   2.5,    0.100};
+  double loCuts[] = {4.0,    4.0,   5.0,  0.01,    1.2,      5,       0.0,      0.70,  1,         0.0,   1.,     0.020 };
+  double hiCuts[] = {6.0,    7.0,   11.,  0.10,    2.5,     25,       0.1,      0.95,  4,         1.0,   3.5,    0.100};
 
   // to add: 
-  // CLOSETRK, cowboy veto, LIP(S), LIP(S)2
+  // LIP(S)2
 
   if (seed > 0) {
     cout << "Setting random number seed " << seed << endl;
@@ -62,8 +62,12 @@ void plotOptimize::optimizeULs(int nruns, int seed) {
 	if (10== i) fCuts[ic]->pvlips = cut;
 	if (11== i) fCuts[ic]->mBsLo = 5.370 - cut; 
 	if (11== i) fCuts[ic]->mBsHi = 5.370 + cut; 
+	if (11== i) fCuts[ic]->mBsLo = 5.30;
+	if (11== i) fCuts[ic]->mBsHi = 5.45;
       }
     }
+
+	
 
     if (gRandom->Rndm() > 0.5) { 
       fDoApplyCowboyVetoAlsoInSignal = true; 
@@ -371,10 +375,14 @@ void plotOptimize::readFile(const char *fname, TTree *t) {
 
   char  buffer[200];
   ifstream is(fname);
-  if (!is.is_open()) return;
+  if (!is.is_open()) {
+    cout << "skipping file " << fname << endl;
+    return;
+  }
   string line;
   double nu(0.); 
 
+  cout << "reading file  " << fname << endl;
   while (is.getline(buffer, 200, '\n')) {
     line = buffer; 
     //    cout << line << endl;
@@ -412,8 +420,8 @@ void plotOptimize::readFile(const char *fname, TTree *t) {
 	nu = 2.0/0.38; 
 	_ssb2 = nu*_sig/TMath::Sqrt(nu*_sig + _nexp);
 	
-	cout << "eff: " << _eff << " ul = " << _ul << " version = " << _run 
-	     << " " << _ssb << " " << _ssb0 << " " << _ssb1 << " " << _ssb2 << endl;
+// 	cout << "eff: " << _eff << " ul = " << _ul << " version = " << _run 
+// 	     << " " << _ssb << " " << _ssb0 << " " << _ssb1 << " " << _ssb2 << endl;
 	t->Fill();
 	_ssb = -1;
       }
@@ -435,8 +443,8 @@ void plotOptimize::readFile(const char *fname, TTree *t) {
 	nu = 2.0/0.38; 
 	_ssb2 = nu*_sig/TMath::Sqrt(nu*_sig + _nexp);
 
-	cout << "eff: " << _eff << " ul = " << _ul << " version = " << _run
-	     << " " << _ssb << " " << _ssb0 << " " << _ssb1 << " " << _ssb2 << endl;
+// 	cout << "eff: " << _eff << " ul = " << _ul << " version = " << _run
+// 	     << " " << _ssb << " " << _ssb0 << " " << _ssb1 << " " << _ssb2 << endl;
 	t->Fill();
 	_ssb = -1;
       }

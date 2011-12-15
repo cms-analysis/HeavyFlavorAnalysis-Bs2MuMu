@@ -41,14 +41,18 @@ struct cuts {
 struct numbers {
   std::string name;
   int index;
-  double effGenFilter, effGenFilterE; 
   double effPtReco, effPtRecoE;
   double fitYield, fitYieldE;
-  double genFileYield, genYield, genChanYield, recoYield, chanYield, muidYield, trigYield, candYield;
-  double genFileYieldE, genYieldE, genChanYieldE, recoYieldE, chanYieldE, muidYieldE, trigYieldE, candYieldE;
+  //  double genFileYield, genYield, genChanYield, recoYield, chanYield, muidYield, trigYield, candYield;
+  double genAccFileYield, genYield, genFileYield, genAccYield;
+  double effGenFilter, effGenFilterE; // only for the non-genAccFileYield!
+  double recoYield, muidYield, trigYield, candYield;
+  //  double genFileYieldE, genYieldE, genChanYieldE, recoYieldE, chanYieldE, muidYieldE, trigYieldE, candYieldE;
+  double genFileYieldE, genYieldE, recoYieldE, muidYieldE, trigYieldE, candYieldE;
   double ana0Yield,  anaYield,  anaMuonYield,  anaTriggerYield,  anaWmcYield;
   double ana0YieldE, anaYieldE, anaMuonYieldE, anaTriggerYieldE, anaWmcYieldE;
-  double cFrac, cFracE, acc, accE, accChan, accChanE;
+  //  double cFrac, cFracE, acc, accE, accChan, accChanE;
+  double acc, accE;
   double effChan, effChanE; 
   double accMuidMC, accMuidMCE, accTrigMC, accTrigMCE;
   double effMuidMC, effMuidMCE, effTrigMC, effTrigMCE;
@@ -65,6 +69,7 @@ struct numbers {
   double bsObs, bdObs; 
   double tauBs, tauBsE, tauBd, tauBdE; 
   double offRare, offRareE, bsRare, bsRareE, bdRare, bdRareE; 
+  double bsNoScaled, bsNoScaledE, bdNoScaled, bdNoScaledE;
   double pss, pssE, pdd, pddE;
   double psd, psdE, pds, pdsE;
   double mBdLo, mBdHi, mBsLo, mBsHi;
@@ -92,6 +97,7 @@ public:
 
   void loopTree(int mode, int proc = -1);
   void accEffFromEffTree(std::string fname, std::string dname, numbers &a, cuts &b, int proc);
+  void filterEfficiency(std::string fname, std::string name);
   void normYield(TH1 *h, int mode, double lo = 5.15, double hi=5.5);
   void csYield(TH1 *h, int mode, double lo = 5.25, double hi=5.6);
   void bgBlind(TH1 *h, int mode = 2, double lo = 4.5, double hi = 6.5); 
@@ -121,6 +127,8 @@ public:
   std::map<std::string, TFile*> fF; 
   std::map<std::string, double> fLumi, fFilterEff; 
   std::map<std::string, std::string> fName; 
+
+  std::map<std::string, double> fNgen;
 
   int fShow; 
   std::string fFile; 
