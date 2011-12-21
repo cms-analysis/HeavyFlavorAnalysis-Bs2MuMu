@@ -28,9 +28,6 @@ plotResults::plotResults(const char *files, const char *cuts, const char *dir, i
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);
 
-  fUlcalcFileName  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".ulc";
-  system(Form("/bin/rm -f %s", fUlcalcFileName.c_str()));
-
   printCuts(cout); 
 
   fBF = 0.0593*1.014e-3;
@@ -57,20 +54,45 @@ plotResults::~plotResults() {
 // ----------------------------------------------------------------------
 void plotResults::makeAll(int channels) {
 
+  fNumbersNo[0]->effTot = 0.00053;
+  fNumbersNo[1]->effTot = 0.00019;
+  fNumbersNo[0]->fitYield = 36208;
+  fNumbersNo[1]->fitYield = 12758;
 
-  plotOverlays a1; 
-  a1.makeAll(); 
+  rareBg(); 
+  return;
 
-  plotPU a2; 
-  a2.makeAll(); 
 
-  plotEfficiencies a3; 
-  a3.makeAll(); 
+  if (channels & 2) {
+    plotOverlays a1; 
+    a1.makeAll(); 
+  }
 
-  fDoApplyCowboyVeto = true;   
-  fDoApplyCowboyVetoAlsoInSignal = false;   
-  computeNormUL();
-  computeCsBF();
+  if (channels & 4) {
+    plotPU a2; 
+    a2.makeAll(); 
+  }
+
+  if (channels & 8) {
+    plotEfficiencies a3; 
+    a3.makeAll(); 
+  }
+
+  if (channels & 1) {
+    fNormProcessed = false; 
+    fDoUseBDT = false; 
+    fDoApplyCowboyVeto = true;   
+    fDoApplyCowboyVetoAlsoInSignal = false;   
+    computeNormUL();
+    computeCsBF();
+
+    fNormProcessed = false; 
+    fDoUseBDT = true; 
+    fDoApplyCowboyVeto = true;   
+    fDoApplyCowboyVetoAlsoInSignal = false;   
+    computeNormUL();
+    computeCsBF();
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -99,7 +121,16 @@ void plotResults::computeNormUL() {
   loopTree(5);  // data signal
   c0->Modified(); c0->Update();
 
-  printUlcalcNumbers();
+
+  string bla = fDirectory + "/anaBmm.plotResults." + fSuffix;
+  if (fDoUseBDT) {
+    bla += ".bdt.ulc";
+  } else {
+    bla += ".cnc.ulc";
+  }
+  cout << "===> Storing ULC numbers in file " << bla << endl;
+  system(Form("/bin/rm -f %s", bla.c_str()));
+  printUlcalcNumbers(bla);
 
   double   fNul = 0.;
 
@@ -159,6 +190,9 @@ void plotResults::computeCsBF() {
   fTEX << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;    
   fTEX << "% -- Control sample branching fraction" << endl;
   fTEX << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;    
+
+  string cache = fSuffix; 
+  if (fDoUseBDT) fSuffix = "bdt" + fSuffix; 
   
   double result, resultE; 
   for (int i = 0; i < 2; ++i) {
@@ -220,14 +254,16 @@ void plotResults::computeCsBF() {
 
   }
 
+  fSuffix = cache; 
+
   printCsBFNumbers();
 }
 
 
 
 // ----------------------------------------------------------------------
-void plotResults::printUlcalcNumbers() {
-  ofstream OUT(fUlcalcFileName.c_str());
+void plotResults::printUlcalcNumbers(string fname) {
+  ofstream OUT(fname.c_str());
 
   OUT << "######################################################################" << endl;
   fTEX << " %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;
@@ -236,6 +272,9 @@ void plotResults::printUlcalcNumbers() {
     sysAna(0.08), sysAnaNo(0.04), sysCand(0.01), sysAcc(0.04), sysNorm(0.05), 
     sysPSS(0.05), sysTot(-1.); 
   double totE, err1, err2; 
+
+  string cache = fSuffix; 
+  if (fDoUseBDT) fSuffix = "bdt" + fSuffix; 
   
   if (1) {
     sysTot = 0.05*0.05 + 0.02*0.02 + sysAna*sysAna + sysCand*sysCand + sysAcc*sysAcc;
@@ -383,7 +422,7 @@ void plotResults::printUlcalcNumbers() {
     fTEX << formatTex(scale, Form("%s:N-EXP-SIG-BSMM%d:scale", fSuffix.c_str(), i), 2) << endl;
     fTEX << formatTex(scaledSig, Form("%s:N-EXP-SIG-BSMM%d:val", fSuffix.c_str(), i), 2) << endl;
     fTEX << formatTex(scaledSigE, Form("%s:N-EXP-SIG-BSMM%d:err", fSuffix.c_str(), i), 2) << endl;
-    fTEX << formatTex(0.2*scaledSig, Form("%s:N-EXP-SIG-BSMM%d:sys", fSuffix.c_str(), i), 2) << endl;
+    //    fTEX << formatTex(0.2*scaledSig, Form("%s:N-EXP-SIG-BSMM%d:sys", fSuffix.c_str(), i), 2) << endl;
 
     double yield = scaledYield(fNumbersBs[i], fNumbersNo[i], 3.2e-9, fsfu);
 
@@ -403,6 +442,7 @@ void plotResults::printUlcalcNumbers() {
     scaledSig  = fNumbersBs[i]->bsNoScaled;
     scaledSigE = fNumbersBs[i]->bsNoScaledE;
     cout << "****** scaledSig(Bs) =   " << scaledSig << endl;
+    OUT << "#EXP_SIG_BSMM\t" << i << "\t" << fNumbersBs[i]->bsNoScaled << endl;
 
     fTEX << formatTex(scaledSig, Form("%s:N-EXP2-SIG-BSMM%d:val", fSuffix.c_str(), i), 2) << endl;
     fTEX << formatTex(scaledSigE, Form("%s:N-EXP2-SIG-BSMM%d:err", fSuffix.c_str(), i), 2) << endl;
@@ -422,6 +462,7 @@ void plotResults::printUlcalcNumbers() {
     scaledSig  = fNumbersBd[i]->bdNoScaled;
     scaledSigE = fNumbersBd[i]->bdNoScaledE;
     cout << "****** scaledSig(Bd) =   " << scaledSig << endl;
+    OUT << "#EXP_SIG_BDMM\t" << i << "\t" << fNumbersBd[i]->bdNoScaled << endl;
 
     fTEX << formatTex(scaledSig, Form("%s:N-EXP2-SIG-BDMM%d:val", fSuffix.c_str(), i), 3) << endl;
     fTEX << formatTex(scaledSigE, Form("%s:N-EXP2-SIG-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
@@ -435,7 +476,7 @@ void plotResults::printUlcalcNumbers() {
 
     OUT << "LOW_BD\t" << i << "\t" << fNumbersBs[i]->mBdLo << endl;
     fTEX << formatTex(fNumbersBs[i]->mBdLo, Form("%s:N-LOW-BD%d:val", fSuffix.c_str(), i), 3) << endl;
-
+    
     OUT << "HIGH_BD\t" << i << "\t" << fNumbersBs[i]->mBdHi << endl;
     fTEX << formatTex(fNumbersBs[i]->mBdHi, Form("%s:N-HIGH-BD%d:val", fSuffix.c_str(), i), 3) << endl;
 
@@ -450,28 +491,28 @@ void plotResults::printUlcalcNumbers() {
 	<< endl;
     fTEX << formatTex(fNumbersBs[i]->pss, Form("%s:N-PSS%d:val", fSuffix.c_str(), i), 3) << endl;
     fTEX << formatTex(fNumbersBs[i]->pssE, Form("%s:N-PSS%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(sysPSS*fNumbersBs[i]->pss, Form("%s:N-PSS%d:sys", fSuffix.c_str(), i), 3) << endl;
+    //    fTEX << formatTex(sysPSS*fNumbersBs[i]->pss, Form("%s:N-PSS%d:sys", fSuffix.c_str(), i), 3) << endl;
 
     OUT << "PSD\t" << i << "\t" << fNumbersBd[i]->psd
 	<< "\t" << sysPSS*fNumbersBd[i]->psd 
 	<< endl;
     fTEX << formatTex(fNumbersBd[i]->psd, Form("%s:N-PSD%d:val", fSuffix.c_str(), i), 3) << endl;
     fTEX << formatTex(fNumbersBd[i]->psdE, Form("%s:N-PSD%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(sysPSS*fNumbersBd[i]->psdE, Form("%s:N-PSD%d:sys", fSuffix.c_str(), i), 3) << endl;
+    //    fTEX << formatTex(sysPSS*fNumbersBd[i]->psdE, Form("%s:N-PSD%d:sys", fSuffix.c_str(), i), 3) << endl;
 
     OUT << "PDS\t" << i << "\t" << fNumbersBs[i]->pds
 	<< "\t" << sysPSS*fNumbersBs[i]->pds 
 	<< endl;
     fTEX << formatTex(fNumbersBs[i]->pds, Form("%s:N-PDS%d:val", fSuffix.c_str(), i), 3) << endl;
     fTEX << formatTex(fNumbersBs[i]->pdsE, Form("%s:N-PDS%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(sysPSS*fNumbersBs[i]->pds, Form("%s:N-PDS%d:sys", fSuffix.c_str(), i), 3) << endl;
+    //    fTEX << formatTex(sysPSS*fNumbersBs[i]->pds, Form("%s:N-PDS%d:sys", fSuffix.c_str(), i), 3) << endl;
 
     OUT << "PDD\t" << i << "\t" << fNumbersBd[i]->pdd
 	<< "\t" << sysPSS*fNumbersBd[i]->pdd 
 	<< endl;
     fTEX << formatTex(fNumbersBd[i]->pdd, Form("%s:N-PDD%d:val", fSuffix.c_str(), i), 3) << endl;
     fTEX << formatTex(fNumbersBd[i]->pddE, Form("%s:N-PDD%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(sysPSS*fNumbersBd[i]->pdd, Form("%s:N-PDD%d:sys", fSuffix.c_str(), i), 3) << endl;
+    //    fTEX << formatTex(sysPSS*fNumbersBd[i]->pdd, Form("%s:N-PDD%d:sys", fSuffix.c_str(), i), 3) << endl;
 
     OUT << "#EFF_TOT_BSMM\t" << i << "\t" << fNumbersBs[i]->effTot << endl;
     err1 = fNumbersBs[i]->effTotE; 
@@ -720,17 +761,46 @@ void plotResults::printUlcalcNumbers() {
     fTEX << formatTex(fNumbersBs[i]->tauBd, Form("%s:N-TAU-BD%d:val", fSuffix.c_str(), i), 2) << endl;
     fTEX << formatTex(fNumbersBs[i]->tauBdE, Form("%s:N-TAU-BD%d:err", fSuffix.c_str(), i), 2) << endl;
 
+    
+    double bsExpObs = fNumbersBs[i]->tauBs*fNumbersBs[i]->bgObs
+      + fNumbersBs[i]->bsRare
+      + fNumbersBs[i]->bsNoScaled;
+
+    double bsExpObsE = TMath::Sqrt(fNumbersBs[i]->tauBs*fNumbersBs[i]->tauBs*fNumbersBs[i]->bgObs
+				   + fNumbersBs[i]->bsRareE*fNumbersBs[i]->bsRareE
+				   + fNumbersBs[i]->bsNoScaledE*fNumbersBs[i]->bsNoScaledE);
+
+    OUT << "#EXP_OBS_BSMM\t" << i << "\t" << bsExpObs << "\t" << bsExpObsE << endl;
+    fTEX << formatTex(bsExpObs, Form("%s:N-EXP-OBS-BS%d:val", fSuffix.c_str(), i), 2) << endl;
+    fTEX << formatTex(bsExpObsE, Form("%s:N-EXP-OBS-BS%d:err", fSuffix.c_str(), i), 2) << endl;
+
+    double bdExpObs = fNumbersBs[i]->tauBd*fNumbersBs[i]->bgObs
+      + fNumbersBs[i]->bdRare
+      + fNumbersBd[i]->bdNoScaled;
+
+    double bdExpObsE = TMath::Sqrt(fNumbersBs[i]->tauBd*fNumbersBs[i]->tauBd*fNumbersBs[i]->bgObs
+				   + fNumbersBs[i]->bdRareE*fNumbersBs[i]->bdRareE
+				   + fNumbersBd[i]->bdNoScaledE*fNumbersBd[i]->bdNoScaledE);
+
+    OUT << "#EXP_OBS_BDMM\t" << i << "\t" << bdExpObs << "\t" << bdExpObsE << endl;
+    fTEX << formatTex(bdExpObs, Form("%s:N-EXP-OBS-BD%d:val", fSuffix.c_str(), i), 2) << endl;
+    fTEX << formatTex(bdExpObsE, Form("%s:N-EXP-OBS-BD%d:err", fSuffix.c_str(), i), 2) << endl;
+
 
   }
 
   OUT.close();
 
+  fSuffix = cache; 
 }
 
 
 // ----------------------------------------------------------------------
 void plotResults::printCsBFNumbers() {
 
+  string cache = fSuffix; 
+  if (fDoUseBDT) fSuffix = "bdt" + fSuffix; 
+  
   fTEX << " %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;
   for (unsigned int i = 0; i < fNchan; ++i) {
     fTEX << "% -- CONTROL SAMPLE " << i << endl;
@@ -767,6 +837,8 @@ void plotResults::printCsBFNumbers() {
     fTEX << formatTex(fNumbersCs[i]->fitYield, Form("%s:N-OBS-BS%i:val", fSuffix.c_str(), i), 0) << endl;
     fTEX << formatTex(fNumbersCs[i]->fitYieldE, Form("%s:N-OBS-BS%i:err", fSuffix.c_str(), i), 0) << endl;
   }
+
+  fSuffix = cache; 
 }
 
 
@@ -775,7 +847,7 @@ void plotResults::printCsBFNumbers() {
 // (corresponding to the efftot given, careful about mass cuts!)
 double  plotResults::scaledYield(numbers *a, numbers *no, double chanbf, double fsfu) {
 
-  bool verbose(false); 
+  bool verbose(true); 
 
     //          BF(Bs -> mu mu)   fs epstot(Bs) 
     //   n_s = -----------------  -- ---------  N(B+) 
@@ -823,6 +895,9 @@ double  plotResults::scaledYield(numbers *a, numbers *no, double chanbf, double 
 
 // ----------------------------------------------------------------------
 void plotResults::rareBg() {
+
+  string cache = fSuffix; 
+  if (fDoUseBDT) fSuffix = "bdt" + fSuffix; 
 
   c0->Clear();
   gStyle->SetOptStat(0);
@@ -1071,6 +1146,8 @@ void plotResults::rareBg() {
   eRare->SetDirectory(gDirectory);
   eRare->Write(); 
   pD->cd();
+
+  fSuffix = cache; 
 }
 
 

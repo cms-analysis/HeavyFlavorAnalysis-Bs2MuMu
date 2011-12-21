@@ -681,17 +681,57 @@ void plotEfficiencies::triggerNormalization(string cuts) {
 // ----------------------------------------------------------------------
 void plotEfficiencies::convertLucasHistograms() {
 
+  // -- no seagull/cowboy difference here
   readFile("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.root", "L3"); 
   readFile("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.root", "L3"); 
 
+  vector<string> top; 
+  top.push_back("sg"); 
+  top.push_back("cb"); 
+
   PidTable aTemplate;
-  read2Files(aTemplate, 
-	     "../macros/pidtables/111210/L1L2Efficiency_VBTF_Track2_data_all_histo.root", 
-	     "../macros/pidtables/111210/L1L2Efficiency_VBTF_Track7_data_all_histo.root", 
-	     "L1L2_sg"); 
-  aTemplate.shiftPmax(24.9, 999.); 
-  aTemplate.dumpToFile("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo.dat"); 
- 
+  
+  for (unsigned int i = 0; i < top.size(); ++i) {
+    aTemplate.clear(); 
+    read2Files(aTemplate, 
+	       "../macros/pidtables/111210/L1L2Efficiency_VBTF_Track2_data_all_histo.root", 
+	       "../macros/pidtables/111210/L1L2Efficiency_VBTF_Track7_data_all_histo.root", 
+	       Form("L1L2_%s", top[i].c_str())); 
+    aTemplate.shiftPmax(24.9, 999.); 
+    aTemplate.dumpToFile(Form("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo_%s.dat", top[i].c_str())); 
+
+
+    aTemplate.clear();
+    read2Files(aTemplate, 
+	       "../macros/pidtables/111210/L1L2Efficiency_VBTF_Track2_datalike_mc_histo.root", 
+	       "../macros/pidtables/111210/L1L2Efficiency_VBTF_Track7_datalike_mc_histo.root", 
+	       Form("L1L2_%s", top[i].c_str())); 
+    aTemplate.shiftPmax(24.9, 999.); 
+    aTemplate.dumpToFile(Form("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo_%s.dat", top[i].c_str())); 
+
+
+    aTemplate.clear();
+    read2Files(aTemplate, 
+	       "../macros/pidtables/111210/MuonID_VBTF_Track2_data_all_histo.root", 
+	       "../macros/pidtables/111210/MuonID_VBTF_Track7_data_all_histo.root", 
+	       Form("tight_%s", top[i].c_str())); 
+    aTemplate.shiftPmax(24.9, 999.); 
+    aTemplate.dumpToFile(Form("../macros/pidtables/111210/MuonID_VBTF_Track2_data_all_histo_%s.dat", top[i].c_str())); 
+
+
+    aTemplate.clear();
+    read2Files(aTemplate, 
+	       "../macros/pidtables/111210/MuonID_VBTF_Track2_datalike_mc_histo.root", 
+	       "../macros/pidtables/111210/MuonID_VBTF_Track7_datalike_mc_histo.root", 
+	       Form("tight_%s", top[i].c_str())); 
+    aTemplate.shiftPmax(24.9, 999.); 
+    aTemplate.dumpToFile(Form("../macros/pidtables/111210/MuonID_VBTF_Track7_datalike_mc_histo_%s.dat", top[i].c_str())); 
+
+
+
+  }
+
+  
 }
 
 

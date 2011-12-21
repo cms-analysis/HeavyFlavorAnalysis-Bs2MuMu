@@ -54,7 +54,6 @@ struct numbers {
   //  double cFrac, cFracE, acc, accE, accChan, accChanE;
   double acc, accE;
   double effChan, effChanE; 
-  double accMuidMC, accMuidMCE, accTrigMC, accTrigMCE;
   double effMuidMC, effMuidMCE, effTrigMC, effTrigMCE;
   double effMuidTNP, effMuidTNPE, effTrigTNP, effTrigTNPE;
   double effMuidTNPMC, effMuidTNPMCE, effTrigTNPMC, effTrigTNPMCE;
@@ -206,6 +205,7 @@ public:
   //  numbers fNumbersSig, fNumbersNorm, fNumbersCS; 
   std::vector<numbers*> fNumbersBs, fNumbersBd, fNumbersNo, fNumbersCs, fNumbersBla; 
 
+  bool fDoUseBDT;
   bool fDoApplyCowboyVeto, fDoApplyCowboyVetoAlsoInSignal; 
   double fBgExp, fBgExpE; 
   double fBgHist, fBgHistE; 

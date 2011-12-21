@@ -10,17 +10,16 @@ public:
   plotResults(const char *files="anaBmm.default.files", const char *cuts = "default", const char *dir = "default", int mode = 11);
   ~plotResults();
 
-  void makeAll(int channels = 3);
+  void makeAll(int channels = 15);
 
   void computeNormUL();
   void computeCsBF();
   
   void rareBg();
-  void printUlcalcNumbers();
+  void printUlcalcNumbers(std::string fname);
   void printCsBFNumbers();
   double barlow(int nobs, double bg, double bgE, double sE);
   double scaledYield(numbers *a, numbers *no, double chanbf, double fsfu); 
-  std::string fUlcalcFileName; 
   
   bool fNormProcessed; 
   

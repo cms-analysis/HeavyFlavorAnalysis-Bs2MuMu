@@ -5,6 +5,7 @@ type=sg,default       dset=mc       lumi=1600.0 file=/shome/ursl/scratch/default
 type=sg,1e33          dset=mc       lumi=1600.0 file=/shome/ursl/scratch/default/v10-1e33-Bs2MuMu.root
 type=sg,2e33          dset=mc       lumi=1600.0 file=/shome/ursl/scratch/default/v10-2e33-Bs2MuMu.root
 type=sg,3e33          dset=mc       lumi=1600.0 file=/shome/ursl/scratch/default/v10-3e33-Bs2MuMu.root
+type=sg,pu            dset=mc       lumi=1600.0 file=/shome/ursl/scratch/default/v10-cms-Bs2MuMu.root
 type=sg,acc           dset=mc,1.00  lumi=1600.0 file=/shome/ursl/scratch/default/v10-mix-Bs2MuMu.root
 type=bd,default       dset=mc       lumi=8200.0 file=/shome/ursl/scratch/default/v10-mix-Bd2MuMu.root
 type=bd,acc           dset=mc,1.00  lumi=8200.0 file=/shome/ursl/scratch/default/v10-mix-Bd2MuMu.root

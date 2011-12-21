@@ -39,8 +39,9 @@ void plotOverlays::makeAll(int verbose) {
   
   fMode = 0; 
   sbsDistributionOverlay("SgData", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Ao");
-  sbsDistributionOverlay("SgData", "candAnaMuMu", "APV0", "SgMc", "candAnaMuMu", "APV0", "Ao"); // FIXME: Change MC to PU-MC
-  sbsDistributionOverlay("SgData", "candAnaMuMu", "APV1", "SgMc", "candAnaMuMu", "APV1", "Ao"); // FIXME: Change MC to PU-MC
+  sbsDistributionOverlay("SgData", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "Ao");
+  sbsDistributionOverlay("SgData", "candAnaMuMu", "APV0", "SgMcPU", "candAnaMuMu", "APV0", "Ao"); // FIXME: Change MC to PU-MC
+  sbsDistributionOverlay("SgData", "candAnaMuMu", "APV1", "SgMcPU", "candAnaMuMu", "APV1", "Ao"); // FIXME: Change MC to PU-MC
   if (all) sbsDistributionOverlay("SgData", "candAnaMuMu", "B", "SgMc", "candAnaMuMu", "B", "Ao");
   if (all) sbsDistributionOverlay("SgData", "candAnaMuMu", "E", "SgMc", "candAnaMuMu", "E", "Ao");
 
@@ -130,13 +131,16 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
     marker2 = 21; 
   }
   
-  if (string::npos != file1.find("Mc")) {
+  if ((string::npos != file1.find("Mc")) && (string::npos != file2.find("Mc"))) {
     sprintf(option1, "hist"); 
     sprintf(loption1, "f");
-    sprintf(loption2, "p");
-    fill2   = 0; 
-    color2  = kBlack; 
-    marker2 = 25; 
+    fill1   = 3356; 
+    color1  = kBlue; 
+
+    sprintf(option2, "hist"); 
+    sprintf(loption2, "f");
+    fill2   = 3365; 
+    color2  = kRed; 
   }
  
   //  ofstream OUT("testUL.txt", ios::app);
@@ -384,12 +388,16 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
 	newLegend(0.50, 0.7, 0.75, 0.85); 
       }
       //      legg->AddEntry(h1, fName[file1].c_str(), loption1); 
-      if (string::npos != file1.find("Sg")) {
+      if (string::npos != file1.find("SgMcPU") && string::npos != file2.find("SgMcPU")) {
+	legg->AddEntry(h1, "low PU ", loption1); 
+	legg->AddEntry(h2, "high PU ", loption2); 
+      } else if (string::npos != file1.find("Sg")) {
 	legg->AddEntry(h1, "Data (sideband)", loption1); 
+	legg->AddEntry(h2, fName[file2].c_str(), loption2); 
       } else {
 	legg->AddEntry(h1, "Data", loption1); 
+	legg->AddEntry(h2, fName[file2].c_str(), loption2); 
       }
-      legg->AddEntry(h2, fName[file2].c_str(), loption2); 
       legg->Draw(); 
     }
 

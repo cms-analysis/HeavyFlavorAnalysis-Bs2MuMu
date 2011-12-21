@@ -67,7 +67,7 @@ pwd
 
 root -b -q "runUL.C($JOB)"
 cp optimizeUL-$JOB.txt /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/macros2/optjobs
-Date
+date
 
 # BATCH END
 

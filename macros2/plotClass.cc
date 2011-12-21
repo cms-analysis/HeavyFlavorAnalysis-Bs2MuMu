@@ -224,21 +224,41 @@ plotClass::~plotClass() {
 void plotClass::initNumbers(numbers *a) {
 
   a->name = "";
+  a->genAccYield  = a->genAccFileYield = 0; 
   a->effGenFilter = a->effGenFilterE = 1.;
-  a->fitYield = a->fitYieldE = 0.;
-  a->genFileYield = a->genYield = a->recoYield = a->muidYield = a->trigYield = a->candYield = a->ana0Yield = a->anaYield = a->anaWmcYield = 0; 
-  a->acc = a->accE = 0; 
-  a->effMuidMC =  a->effMuidMCE = a->effTrigMC = a->effTrigMCE = 0; 
-  a->effMuidTNP = a->effMuidTNPE = a->effTrigTNP = a->effTrigTNPE = 0; 
-  a->effCand = a->effCandE = 0; 
-  a->effAna = a->effAnaE = 0; 
-  a->effPtReco = a->effPtRecoE = 0;
+  a->genFileYield = a->genYield = 0.;
+  a->recoYield    = a->muidYield = a->trigYield = a->candYield = a->ana0Yield = a->anaYield = a->anaWmcYield = 0; 
+  a->ana0YieldE   = a->anaYieldE = a->anaMuonYieldE = a->anaTriggerYieldE = a->anaWmcYieldE = 0.;
+  a->anaMuonYield = a->anaTriggerYield = 0.;
+  a->fitYield     = a->fitYieldE = 0.;
+  a->acc          = a->accE = 0; 
+  a->effMuidMC    = a->effMuidMCE = a->effTrigMC = a->effTrigMCE = 0; 
+  a->effMuidTNP   = a->effMuidTNPE = a->effTrigTNP = a->effTrigTNPE = 0; 
+  a->effMuidTNPMC = a->effMuidTNPMCE = a->effTrigTNPMC = a->effTrigTNPMCE = 0.;
+  a->effCand      = a->effCandE = 0; 
+  a->effPtReco    = a->effPtRecoE = 0.;
+  a->effAna       = a->effAnaE = 0; 
+  a->effPtReco    = a->effPtRecoE = 0;
+  a->effTot       = a->effTotE = a->aEffProdMC = a->aEffProdMCE = a->effProdMC = a->effProdMCE = a->effProdTNP = a->effProdTNPE = 0.; 
+  a->prodGenYield = a->combGenYield;
   // -- this is only relevant for the signal(s)
-  a->pss   = a->pdd = 1.;
-  a->psd   = a->pds = 1.;
+  a->expSignal = 0.;
+  a->pss   = a->pdd  = 1.;
+  a->psd   = a->pds  = 1.;
+  a->pssE  = a->pddE = 1.;
+  a->psdE  = a->pdsE = 1.;
   a->bgObs = a->bgBsExp = a->bgBsExpE = a->bgBdExp = a->bgBdExpE =0; 
   a->bsObs = a->bdObs = 0; 
   a->mBdLo = a->mBdHi = a->mBsLo = a->mBsHi = 0.;
+
+  a->genFileYieldE = a->genYieldE = a->recoYieldE = a->muidYieldE = a->trigYieldE = a->candYieldE = 0;
+
+  a->tauBs = a->tauBsE = a->tauBd = a->tauBdE = 0.; 
+
+  a->offRare = a->offRareE = a->bsRare = a->bsRareE = a->bdRare = a->bdRareE = 0.; 
+  a->bsNoScaled = a->bsNoScaledE = a->bdNoScaled = a->bdNoScaledE = 0.;
+  a->mBdLo = a->mBdHi = a->mBsLo = a->mBsHi = 0.;
+
 }
 
 
@@ -401,11 +421,12 @@ void plotClass::loopTree(int mode, int proc) {
   t = (TTree*)gDirectory->Get("events");
   int brun, bevt, bls, btm, bq1, bq2, bprocid; 
   double bg1pt, bg2pt, bg1eta, bg2eta;
+  double bbdt, bbdt2; 
   double bm, bcm, bpt, beta, bphi, bcosa, balpha, biso, bchi2, bdof, bdocatrk, bfls3d, bfl3dE, bfl3d;
   double bm1pt, bm1eta, bm2pt, bm2eta, bm1phi, bm2phi;
   double bk1pt, bk1eta, bk2pt, bk2eta; 
   double bg3pt, bg3eta, bg4pt, bg4eta; 
-  double bmpsi, bmkk, bdr;
+  double bptpsi, bmpsi, bmkk, bdr;
   double bw8mu, bw8tr;
   bool bhlt, bgmuid, bgtqual, bjson, bcb;
   double tr1w8(0.), tr2w8(0.), trw8(0.), m1w8(0.), m2w8(0.), mw8(0.0);
@@ -416,6 +437,8 @@ void plotClass::loopTree(int mode, int proc) {
   int bclosetrk; 
   double bpvlip, bpvlips, bmaxdoca; 
 
+  t->SetBranchAddress("bdt",&bbdt);
+  t->SetBranchAddress("bdt2",&bbdt2);
   t->SetBranchAddress("lip",&blip);
   t->SetBranchAddress("lipE",&blipE);
   t->SetBranchAddress("tip",&btip);
@@ -480,6 +503,7 @@ void plotClass::loopTree(int mode, int proc) {
     t->SetBranchAddress("kpt",&bk1pt);
     t->SetBranchAddress("keta",&bk1eta);
     t->SetBranchAddress("mpsi",&bmpsi);
+    t->SetBranchAddress("ptpsi",&bptpsi); //FIXME
   }
 
   if (bs2jpsiphi) {
@@ -489,6 +513,7 @@ void plotClass::loopTree(int mode, int proc) {
       t->SetBranchAddress("g4pt",&bg4pt);
       t->SetBranchAddress("g4eta",&bg4eta);
     }
+    t->SetBranchAddress("psipt",&bptpsi);   //FIXME
     t->SetBranchAddress("mpsi",&bmpsi);
     t->SetBranchAddress("mkk",&bmkk);
     t->SetBranchAddress("dr",&bdr);
@@ -504,8 +529,6 @@ void plotClass::loopTree(int mode, int proc) {
   int nentries = Int_t(t->GetEntries());
   int nb(0), ievt(0), bsevt(0), bdevt(0), bgevt(0); 
   cuts *pCuts(0); 
-  double dphi; 
-  TLorentzVector vm1, vm2, vpsi; 
   for (int jentry = 0; jentry < nentries; jentry++) {
     nb = t->GetEntry(jentry);
     // -- require truth matching when on MC
@@ -597,49 +620,75 @@ void plotClass::loopTree(int mode, int proc) {
     // -- this is the base, after the raw acceptance cuts
     fhMassNoCuts[fChan]->Fill(mass);
     fhMassNoCutsManyBins[fChan]->Fill(mass); 
+
+    if (fDoUseBDT) {
+      // Gemma's cuts:
+      //      mycuts="hlt  && (m1pt>4.5) && (m2pt>4) && (pt>5) && (alpha<0.2) && (fls3d>5)  && (json) &&  (gmuid)
+      // && (gmupt) && (gmueta) && gteta && gtpt && gtqual  && (m1q*m2q<0) && (m>4.9) && (m<5.9) && (tm>0) &&
+      // fabs(m1eta)<2.4 && fabs(m2eta)<2.4";
+
+      if (bm1pt < 4.5) continue; 
+      if (bm2pt < 4.0) continue; 
+      if (bq1*bq2 > 0) continue;
+      if (bfls3d < 5) continue;
+      if (!bjson) continue;
+      // -- skip inverted isolation events
+      if (5 == mode && 5.2 < mass && mass < 5.45 && biso < 0.7) continue; 
+      
+
+      if (TMath::IsNaN(bfls3d)) continue;
+      if (bs2jpsiphi && bdr >0.3) continue;
+      if (bs2jpsiphi && bmkk < 0.995) continue;
+      if (bs2jpsiphi && bmkk > 1.045) continue;
+
+      if (bs2jpsiphi || bp2jpsikp) {
+	if (bmpsi > 3.2) continue;
+	if (bmpsi < 3.0) continue;
+	// -- cowboy veto 
+	if (fDoApplyCowboyVeto && bcb) continue;
+	if (bptpsi < 7) continue;
+      } 
+
+      if (0 == fChan && bbdt < -0.03) continue;
+      if (1 == fChan && bbdt2 < -0.07) continue;
+    } else {
     
-    // -- analysis cuts
-    if (bq1*bq2 > 0) continue;
-    if (bm1pt < pCuts->m1pt) continue; 
-    if (bm2pt < pCuts->m2pt) continue; 
+      // -- analysis cuts
+      if (bq1*bq2 > 0) continue;
+      if (bm1pt < pCuts->m1pt) continue; 
+      if (bm2pt < pCuts->m2pt) continue; 
+      
+      if (bfl3d > 2) continue;
+      
+      if (bpt < pCuts->pt) continue; 
+      if (biso < pCuts->iso) continue; 
+      if (bchi2/bdof > pCuts->chi2dof) continue;
+      if (TMath::IsNaN(bfls3d)) continue;
+      if (bfls3d < pCuts->fls3d) continue;
+      if (balpha > pCuts->alpha) continue;
+      if (bdocatrk < pCuts->docatrk) continue;
+      
+      if (bs2jpsiphi && bdr >0.3) continue;
+      if (bs2jpsiphi && bmkk < 0.995) continue;
+      if (bs2jpsiphi && bmkk > 1.045) continue;
+      
+      // -- new cuts
+      //     cout << "-> " << bclosetrk << " " << bpvlip <<  "  " << bpvlips << endl;
+      if (bclosetrk >= pCuts->closetrk) continue;
+      if (bpvlip > pCuts->pvlip) continue;
+      if (bpvlips > pCuts->pvlips) continue;
+      
+      if (bs2jpsiphi || bp2jpsikp) {
+	if (bmpsi > 3.2) continue;
+	if (bmpsi < 3.0) continue;
+	// -- cowboy veto 
+	if (fDoApplyCowboyVeto && bcb) continue;
+	if (bptpsi < 7) continue;
+      } 
+      
+      if (fDoApplyCowboyVetoAlsoInSignal && bcb) continue;
+    }
 
-    if (bfl3d > 2) continue;
-
-    if (bpt < pCuts->pt) continue; 
-    if (biso < pCuts->iso) continue; 
-    if (bchi2/bdof > pCuts->chi2dof) continue;
-    if (TMath::IsNaN(bfls3d)) continue;
-    if (bfls3d < pCuts->fls3d) continue;
-    if (balpha > pCuts->alpha) continue;
-    if (bdocatrk < pCuts->docatrk) continue;
-
-    if (bs2jpsiphi && bdr >0.3) continue;
-    if (bs2jpsiphi && bmkk < 0.995) continue;
-    if (bs2jpsiphi && bmkk > 1.045) continue;
-
-    // -- new cuts
-    //     cout << "-> " << bclosetrk << " " << bpvlip <<  "  " << bpvlips << endl;
-    if (bclosetrk >= pCuts->closetrk) continue;
-    if (bpvlip > pCuts->pvlip) continue;
-    if (bpvlips > pCuts->pvlips) continue;
-
-    vm1.SetPtEtaPhiM(bm1pt, bm1eta, bm1phi, MMUON);
-    vm2.SetPtEtaPhiM(bm2pt, bm2eta, bm2phi, MMUON);
-    dphi = vm1.DeltaPhi(vm2); 
-    if (bs2jpsiphi || bp2jpsikp) {
-      vpsi = vm1 + vm2; 
-      if (bmpsi > 3.2) continue;
-      if (bmpsi < 3.0) continue;
-      // -- cowboy veto 
-      if (fDoApplyCowboyVeto && bcb) {
-	continue;
-      }
-      if (vpsi.Perp() < 7) {
-	continue;
-      }
-    } 
-
-    if (fDoApplyCowboyVetoAlsoInSignal && bcb) continue;
 
     fhMassWithAnaCuts[fChan]->Fill(mass); 
     fhMassWithAnaCutsManyBins[fChan]->Fill(mass); 
@@ -860,28 +909,51 @@ void plotClass::loopTree(int mode, int proc) {
 						       fhMassWithAllCutsManyBins[i]->FindBin(pCuts->mBsHi));
     
     fhMuId[i]->Draw();
-    if (fDoPrint)    c0->SaveAs(Form("%s/muid-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
-
+    if (fDoPrint) {
+      if (fDoUseBDT) c0->SaveAs(Form("%s/bdtmuid-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+      else c0->SaveAs(Form("%s/muid-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    }
     fhMuTr[i]->Draw();
-    if (fDoPrint)   c0->SaveAs(Form("%s/mutr-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    if (fDoPrint) {
+      if (fDoUseBDT) c0->SaveAs(Form("%s/bdtmutr-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+      else  c0->SaveAs(Form("%s/mutr-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    }
 
     fhMassAbsNoCuts[i]->Draw();
-    if (fDoPrint)    c0->SaveAs(Form("%s/anc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    if (fDoPrint) {
+      if (fDoUseBDT) c0->SaveAs(Form("%s/bdtanc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+      else c0->SaveAs(Form("%s/anc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    }
 
     fhMassNoCuts[i]->Draw();
-    if (fDoPrint)    c0->SaveAs(Form("%s/noc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    if (fDoPrint) {
+      if (fDoUseBDT) c0->SaveAs(Form("%s/bdtnoc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+      else c0->SaveAs(Form("%s/noc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    }
 
     fhMassWithAllCutsManyBins[i]->Draw();
-    if (fDoPrint)    c0->SaveAs(Form("%s/wac-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    if (fDoPrint) {
+      if (fDoUseBDT) c0->SaveAs(Form("%s/bdtwac-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+      else c0->SaveAs(Form("%s/wac-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    }
 
     fhMassWithMuonCutsManyBins[i]->Draw();
-    if (fDoPrint)    c0->SaveAs(Form("%s/muc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    if (fDoPrint) {
+      if (fDoUseBDT) c0->SaveAs(Form("%s/bdtmuc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+      else c0->SaveAs(Form("%s/muc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    }
 
     fhMassWithTriggerCutsManyBins[i]->Draw();
-    if (fDoPrint)    c0->SaveAs(Form("%s/trc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    if (fDoPrint) {
+      if (fDoUseBDT) c0->SaveAs(Form("%s/bdttrc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+      else c0->SaveAs(Form("%s/trc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    }
 
     fhMassWithMassCutsManyBins[i]->Draw();
-    if (fDoPrint)    c0->SaveAs(Form("%s/wmc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    if (fDoPrint) {
+      if (fDoUseBDT) c0->SaveAs(Form("%s/bdtwmc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+      else c0->SaveAs(Form("%s/wmc-mode-%d-chan%d.pdf", fDirectory.c_str(), mode, i));
+    }
 
     // -- Efficiency and acceptance
     if (isMC) {
@@ -962,7 +1034,10 @@ void plotClass::loopTree(int mode, int proc) {
       fhMassWithAnaCuts[i]->Draw("same");
       tl->DrawLatex(0.2, 0.77, Form("w/o cuts: %5.1f", fhMassNoCuts[i]->GetSumOfWeights())); 
       tl->DrawLatex(0.2, 0.7, Form("w/   cuts: %5.1f", fhMassWithAnaCuts[i]->GetSumOfWeights())); 
-      if (fDoPrint)      c0->SaveAs(Form("%s/sig-mc-chan%d.pdf", fDirectory.c_str(), i));
+      if (fDoPrint) {
+	if (fDoUseBDT) c0->SaveAs(Form("%s/bdtsig-mc-chan%d.pdf", fDirectory.c_str(), i));
+	else c0->SaveAs(Form("%s/sig-mc-chan%d.pdf", fDirectory.c_str(), i));
+      }
       cout << "----> "; gDirectory->pwd(); 
     } else if (5 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
@@ -1016,7 +1091,10 @@ void plotClass::loopTree(int mode, int proc) {
       legg->Draw();
       
       //      stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
-      if (fDoPrint)  c0->SaveAs(Form("%s/sig-data-chan%d.pdf", fDirectory.c_str(), i));
+      if (fDoPrint)  {
+	if (fDoUseBDT) c0->SaveAs(Form("%s/bdtsig-data-chan%d.pdf", fDirectory.c_str(), i));
+	else c0->SaveAs(Form("%s/sig-data-chan%d.pdf", fDirectory.c_str(), i));
+      }
       // -- unblinded version
       h = fhMassWithAllCuts[i]; 
       setHist(h, kBlack, 20, 1.); 
@@ -1053,7 +1131,10 @@ void plotClass::loopTree(int mode, int proc) {
 
 
 //      stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
-      if (fDoPrint)  c0->SaveAs(Form("%s/unblinded-sig-data-chan%d.pdf", fDirectory.c_str(), i));
+      if (fDoPrint) {
+	if (fDoUseBDT) c0->SaveAs(Form("%s/bdtunblinded-sig-data-chan%d.pdf", fDirectory.c_str(), i));
+	else c0->SaveAs(Form("%s/unblinded-sig-data-chan%d.pdf", fDirectory.c_str(), i));
+      }
 
       delete dummy1; 
       delete dummy2; 
@@ -1065,7 +1146,10 @@ void plotClass::loopTree(int mode, int proc) {
       fhMassWithAnaCuts[i]->Draw("same");
       tl->DrawLatex(0.2, 0.77, Form("w/o cuts: %5.1f", fhMassNoCuts[i]->GetSumOfWeights())); 
       tl->DrawLatex(0.2, 0.7, Form("w/   cuts: %5.1f", fhMassWithAnaCuts[i]->GetSumOfWeights())); 
-      if (fDoPrint) c0->SaveAs(Form("%s/norm-mc-chan%d.pdf", fDirectory.c_str(), i));
+      if (fDoPrint) {
+	if (fDoUseBDT) c0->SaveAs(Form("%s/bdtnorm-mc-chan%d.pdf", fDirectory.c_str(), i));
+	else c0->SaveAs(Form("%s/norm-mc-chan%d.pdf", fDirectory.c_str(), i));
+      }
     } else if (15 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
       cout << "==> loopTree: DATA NORMALIZATION, channel " << i  << endl;
@@ -1083,7 +1167,10 @@ void plotClass::loopTree(int mode, int proc) {
       fhMassWithAnaCuts[i]->Draw("same");
       tl->DrawLatex(0.2, 0.77, Form("w/o cuts: %5.1f", fhMassNoCuts[i]->GetSumOfWeights())); 
       tl->DrawLatex(0.2, 0.7, Form("w/   cuts: %5.1f", fhMassWithAnaCuts[i]->GetSumOfWeights())); 
-      if (fDoPrint) c0->SaveAs(Form("%s/cs-mc-chan%d.pdf", fDirectory.c_str(), i));
+      if (fDoPrint) {
+	if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-mc-chan%d.pdf", fDirectory.c_str(), i));
+	else c0->SaveAs(Form("%s/cs-mc-chan%d.pdf", fDirectory.c_str(), i));
+      }
     } else if (25 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
       cout << "==> loopTree: DATA CONTROL SAMPLE, channel " << i  << endl;
@@ -1129,15 +1216,19 @@ void plotClass::loopTree(int mode, int proc) {
     TDirectory *pD = gDirectory; 
     fHistFile->cd();
     cout << "==> " << i << "  " << mode << " hMassWithMassCuts[i] = " << fhMassWithMassCuts[i] << endl;
-    fhMassWithMassCutsManyBins[i]->SetName(Form("hMassWithMassCutsManyBins%d_chan%d", mode, i)); fhMassWithMassCutsManyBins[i]->Write();
-    fhMassWithAllCutsManyBins[i]->SetName(Form("hMassWithAllCutsManyBins%d_chan%d", mode, i)); fhMassWithAllCutsManyBins[i]->Write();
-    fhMassWithMassCuts[i]->SetName(Form("hMassWithMassCuts%d_chan%d", mode, i)); fhMassWithMassCuts[i]->Write();
-    fhMassWithAllCuts[i]->SetName(Form("hMassWithAllCuts%d_chan%d", mode, i)); fhMassWithAllCuts[i]->Write();
-    fhNorm[i]->SetName(Form("hNorm%d_chan%d", mode, i)); fhNorm[i]->Write();
-    fhMassNoCuts[i]->SetName(Form("hMassNoCuts%d_chan%d", mode, i)); fhMassNoCuts[i]->Write();
-    fhMassAbsNoCuts[i]->SetName(Form("hMassAbsNoCuts%d_chan%d", mode, i)); fhMassAbsNoCuts[i]->Write();
-    fhMuTr[i]->SetName(Form("hMuTr%d_chan%d", mode, i)); fhMuTr[i]->Write();
-    fhMuId[i]->SetName(Form("hMuId%d_chan%d", mode, i)); fhMuId[i]->Write();
+    string modifier = (fDoUseBDT?"bdt":"cnc"); 
+    //    fhMassWithMassCutsManyBins[i]->SetName(Form("hMassWithMassCutsManyBins%d_chan%d", mode, i)); fhMassWithMassCutsManyBins[i]->Write();
+    //    fhMassWithMassCuts[i]->SetName(Form("hMassWithMassCuts%d_chan%d", mode, i)); fhMassWithMassCuts[i]->Write();
+    fhMassWithAllCutsManyBins[i]->SetName(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i)); 
+    fhMassWithAllCutsManyBins[i]->Write();
+    fhMassWithAllCuts[i]->SetName(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i)); 
+    fhMassWithAllCuts[i]->Write();
+    fhNorm[i]->SetName(Form("hNorm_%s_%d_chan%d", modifier.c_str(), mode, i)); 
+    fhNorm[i]->Write();
+    //    fhMassNoCuts[i]->SetName(Form("hMassNoCuts%d_chan%d", mode, i)); fhMassNoCuts[i]->Write();
+    //    fhMassAbsNoCuts[i]->SetName(Form("hMassAbsNoCuts%d_chan%d", mode, i)); fhMassAbsNoCuts[i]->Write();
+    //    fhMuTr[i]->SetName(Form("hMuTr%d_chan%d", mode, i)); fhMuTr[i]->Write();
+    //    fhMuId[i]->SetName(Form("hMuId%d_chan%d", mode, i)); fhMuId[i]->Write();
     // -- and get back to it
     pD->cd();
 
@@ -1698,6 +1789,13 @@ void plotClass::loadFiles(const char *files) {
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (3e33)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
+      if (string::npos != stype.find("pu") && string::npos != stype.find("sg")) {
+	sname = "SgMcPU"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (PU)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }
       if (string::npos != stype.find("acc") && string::npos != stype.find("sg")) {
 	sname = "SgMcAcc"; 
 	fF.insert(make_pair(sname, pF)); 
@@ -2084,7 +2182,10 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi) {
   } 
 
   //  stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
-  if (fDoPrint) c0->SaveAs(Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode));
+  if (fDoPrint) {
+    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), mode));
+    else c0->SaveAs(Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode));
+  }
   
 
   //   double c  = h->GetFunction("f1")->GetParameter(0); 
@@ -2144,7 +2245,10 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi) {
   } 
 
   //  stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
-  if (fDoPrint) c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), mode));
+  if (fDoPrint) {
+    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d.pdf", fDirectory.c_str(), mode));
+    else c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), mode));
+  }
 
   cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
   

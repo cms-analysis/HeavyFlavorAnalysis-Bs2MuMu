@@ -302,7 +302,7 @@ void candAnaBu2JpsiK::bookHist() {
 
   // -- Additional reduced tree variables
   fTree->Branch("mpsi", &fJpsiMass,  "mpsi/D");
-  fTree->Branch("ptpsi",&fJpsiPt,    "ptpsi/D");
+  fTree->Branch("psipt",&fJpsiPt,    "psipt/D");
   fTree->Branch("kpt",  &fKaonPt,    "kpt/D");
   fTree->Branch("keta", &fKaonEta,   "keta/D");
   fTree->Branch("kphi", &fKaonPhi,   "kphi/D");

@@ -24,13 +24,16 @@ ClassImp(plotOptimize)
 void plotOptimize::optimizeULs(int nruns, int seed) {
   int version(-1); 
   fDoPrint = false; 
+
+  fDoUseBDT = false; 
+
   ofstream OUT(Form("optimizeUL-%d.txt", seed)); 
 
   int NCUTS(12);
   //                  0       1      2     3        4       5        6          7      8           9      10      11
   //string cuts[] = {"m2pt", "m1pt","pt", "alpha", "chi2", "fls3d", "docatrk", "iso", "closetrk", "lip", "lips", "mwindow"}; 
   double loCuts[] = {4.0,    4.0,   5.0,  0.01,    1.2,      5,       0.0,      0.70,  1,         0.0,   1.,     0.020 };
-  double hiCuts[] = {6.0,    7.0,   11.,  0.10,    2.5,     25,       0.1,      0.95,  4,         1.0,   3.5,    0.100};
+  double hiCuts[] = {6.0,    7.0,   12.,  0.10,    2.5,     25,       0.1,      0.95,  3,         0.1,   3.5,    0.100};
 
   // to add: 
   // LIP(S)2
