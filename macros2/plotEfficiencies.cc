@@ -467,6 +467,7 @@ void plotEfficiencies::triggerSignal(string cuts) {
     c0->cd(i++); 
     setFilledHist(h0, kBlack, kRed, 3004); 
     setTitles(h0, "p_{T} [GeV]", "Entries/bin"); 
+    h0->SetMinimum(0.01);
     h0->Draw();
 
     setFilledHist(h1, kBlack, kBlue, 3005); 
@@ -480,6 +481,7 @@ void plotEfficiencies::triggerSignal(string cuts) {
   c0->cd(i++); 
   setFilledHist(H0, kBlack, kRed, 3004); 
   setTitles(H0, "p_{T} [GeV]", "Entries/bin"); 
+  H0->SetMinimum(0.01);
   H0->Draw();
   
   setFilledHist(H1, kBlack, kBlue, 3005); 
@@ -681,6 +683,8 @@ void plotEfficiencies::triggerNormalization(string cuts) {
 // ----------------------------------------------------------------------
 void plotEfficiencies::convertLucasHistograms() {
 
+  PidTable aTemplate, bTemplate, cTemplate;
+
   // -- no seagull/cowboy difference here
   readFile("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.root", "L3"); 
   readFile("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.root", "L3"); 
@@ -689,8 +693,7 @@ void plotEfficiencies::convertLucasHistograms() {
   top.push_back("sg"); 
   top.push_back("cb"); 
 
-  PidTable aTemplate;
-  
+ 
   for (unsigned int i = 0; i < top.size(); ++i) {
     aTemplate.clear(); 
     read2Files(aTemplate, 
@@ -716,7 +719,7 @@ void plotEfficiencies::convertLucasHistograms() {
 	       "../macros/pidtables/111210/MuonID_VBTF_Track7_data_all_histo.root", 
 	       Form("tight_%s", top[i].c_str())); 
     aTemplate.shiftPmax(24.9, 999.); 
-    aTemplate.dumpToFile(Form("../macros/pidtables/111210/MuonID_VBTF_Track2_data_all_histo_%s.dat", top[i].c_str())); 
+    aTemplate.dumpToFile(Form("../macros/pidtables/111210/MuonID_VBTF_data_all_histo_%s.dat", top[i].c_str())); 
 
 
     aTemplate.clear();
@@ -725,13 +728,24 @@ void plotEfficiencies::convertLucasHistograms() {
 	       "../macros/pidtables/111210/MuonID_VBTF_Track7_datalike_mc_histo.root", 
 	       Form("tight_%s", top[i].c_str())); 
     aTemplate.shiftPmax(24.9, 999.); 
-    aTemplate.dumpToFile(Form("../macros/pidtables/111210/MuonID_VBTF_Track7_datalike_mc_histo_%s.dat", top[i].c_str())); 
-
-
-
+    aTemplate.dumpToFile(Form("../macros/pidtables/111210/MuonID_VBTF_datalike_mc_histo_%s.dat", top[i].c_str())); 
   }
 
-  
+  // -- create combined sg/cb PidTables
+  vector<string> tables; 
+  tables.push_back("../macros/pidtables/111210/MuonID_VBTF_data_all_histo");
+  tables.push_back("../macros/pidtables/111210/MuonID_VBTF_datalike_mc_histo");
+  tables.push_back("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo");
+  tables.push_back("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo");
+  for (int i = 0; i < tables.size(); ++i) {
+    aTemplate.clear();
+    bTemplate.clear();
+    aTemplate.readFromFile(Form("%s_cb.dat", tables[i].c_str()));
+    bTemplate.readFromFile(Form("%s_sg.dat", tables[i].c_str()));
+    aTemplate.combine(bTemplate); 
+    aTemplate.dumpToFile(Form("%s.dat", tables[i].c_str()));
+  }
+
 }
 
 
@@ -805,3 +819,5 @@ void plotEfficiencies::read2Files(PidTable &a, const char *f1name, const char *f
   a.fillTable(a2);
   
 }
+
+

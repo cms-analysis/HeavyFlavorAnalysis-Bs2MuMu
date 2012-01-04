@@ -185,7 +185,7 @@ void candAnaBs2JpsiPhi::moreBasicCuts() {
 
 // ----------------------------------------------------------------------
 void candAnaBs2JpsiPhi::genMatch() {
-
+  
   fGenM1Tmi = fGenM2Tmi = fGenK1Tmi = -1; 
   fNGenPhotons = 0; 
 

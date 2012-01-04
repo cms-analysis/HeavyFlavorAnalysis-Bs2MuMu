@@ -349,23 +349,23 @@ void plotClass::loopTree(int mode, int proc) {
     cout << "mode 99" << endl;
   }
 
-  ptT1 = new PidTable("../macros/pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 	
-  ptT2 = new PidTable("../macros/pidtables/110606/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 	
-  ptM  = new PidTable("../macros/pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat"); 
+  ptT1 = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo.dat"); 	
+  ptT2 = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.dat"); 	
+  ptM  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_Track2_data_all_histo.dat"); 
 
-  ptT1MC = new PidTable("../macros/pidtables/110625/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
-  ptT2MC = new PidTable("../macros/pidtables/110625/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
-  ptMMC  = new PidTable("../macros/pidtables/110625/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 
+  ptT1MC = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo.dat"); 	
+  ptT2MC = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.dat"); 	
+  ptMMC  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_Track7_datalike_mc_histo.dat"); 
 
-  if (isMC) {
-    delete ptT1; 
-    ptT1 = new PidTable("/shome/ursl/prod/CMSSW_4_2_3/src/HeavyFlavorAnalysis/Bs2MuMu/macros/pidtables/110625/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
-    delete ptT2; 
-    ptT2 = new PidTable("/shome/ursl/prod/CMSSW_4_2_3/src/HeavyFlavorAnalysis/Bs2MuMu/macros/pidtables/110625/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 	
-    delete ptM; 
-    ptM  = new PidTable("/shome/ursl/prod/CMSSW_4_2_3/src/HeavyFlavorAnalysis/Bs2MuMu/macros/pidtables/110625/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_mc_MC.dat"); 
-  } else {
-  }
+  //   if (isMC) {
+  //     delete ptT1; 
+  //     ptT1 = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo_sg.dat"); 	
+  //     delete ptT2; 
+  //     ptT2 = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.dat"); 	
+  //     delete ptM; 
+  //     ptM  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_Track7_datalike_mc_histo_sg.dat"); 
+  //   } else {
+  //   }
 
   cout << "--> loopTree with mode " << mode << " proc = " << proc << " on file ";
   gDirectory->pwd();
@@ -406,6 +406,8 @@ void plotClass::loopTree(int mode, int proc) {
     fhMassWithTriggerCutsManyBins[i]->Reset();
 
     fhMassWithAllCuts[i]->Reset();
+    fhMassWithAllCuts[i]->SetTitle(Form("hMassWithAllCuts%d", i));
+
     fhMassWithAllCutsBlind[i]->Reset();
     fhMassWithAllCutsManyBins[i]->Reset();
 
@@ -564,9 +566,9 @@ void plotClass::loopTree(int mode, int proc) {
     
 
     fhMassAbsNoCuts[fChan]->Fill(mass);
-    // -- require wide mass window
-    if (mass < fMassLo) continue;
-    if (fMassHi < mass) continue;
+    // -- require wide mass window ??? FIXME WHY????
+    //     if (mass < fMassLo) continue;
+    //     if (fMassHi < mass) continue;
 
     // -- gen-level acceptance cuts
     if (isMC) {
@@ -673,7 +675,6 @@ void plotClass::loopTree(int mode, int proc) {
       if (bs2jpsiphi && bmkk > 1.045) continue;
       
       // -- new cuts
-      //     cout << "-> " << bclosetrk << " " << bpvlip <<  "  " << bpvlips << endl;
       if (bclosetrk >= pCuts->closetrk) continue;
       if (bpvlip > pCuts->pvlip) continue;
       if (bpvlips > pCuts->pvlips) continue;
@@ -693,25 +694,23 @@ void plotClass::loopTree(int mode, int proc) {
     fhMassWithAnaCuts[fChan]->Fill(mass); 
     fhMassWithAnaCutsManyBins[fChan]->Fill(mass); 
 
-    // -- MUON ID
-    if (false == bgmuid) continue;
+    // ----------------------------
+    // -- Intermezzo with PidTables
+    // ----------------------------
 
-    // -- Data PidTables
+    // -- muon ID: Data PidTables
     m1w8 = ptM->effD(bm1pt, TMath::Abs(bm1eta), 0.);
     m2w8 = ptM->effD(bm2pt, TMath::Abs(bm2eta), 0.);
     mw8  = m1w8*m2w8; 
-
-    if (mw8 > 0.) {
-      fhMuId[fChan]->Fill(mw8, 1./mw8); 
-    } else {
-      cout << "mw8 = " << mw8 << " for muons = " << bm1pt << " " << bm1eta << " " << bm2pt << " " << bm2eta << endl;
-    }
+    fhMuId[fChan]->Fill(mw8); 
+//     if (mw8 > 0.) {
+//       fhMuId[fChan]->Fill(mw8, 1./mw8); 
+//     } else {
+//       cout << "mw8 = " << mw8 << " for muons = " << bm1pt << " " << bm1eta << " " << bm2pt << " " << bm2eta << endl;
+//     }
 
     fh0TNPMuID[fChan]->Fill(bpt, mw8); 
     fh1TNPMuID[fChan]->Fill(bpt); 
-
-    fhMassWithMuonCuts[fChan]->Fill(mass); 
-    fhMassWithMuonCutsManyBins[fChan]->Fill(mass); 
 
     // -- MC for comparison 
     m1w8 = ptMMC->effD(bm1pt, TMath::Abs(bm1eta), 0.);
@@ -723,20 +722,16 @@ void plotClass::loopTree(int mode, int proc) {
     fh0TNPMCMuID[fChan]->Fill(bpt, mw8); 
     fh1TNPMCMuID[fChan]->Fill(bpt); 
 
-    // -- TRIGGER
-    fh1MCTrigger[fChan]->Fill(bpt); 
-    if (false == bhlt) continue;
-    fhMassWithTriggerCuts[fChan]->Fill(mass); 
-    fhMassWithTriggerCutsManyBins[fChan]->Fill(mass); 
 
-    // -- Data PidTables
+    // -- muon trigger: Data PidTables
     tr1w8 = ptT1->effD(bm1pt, TMath::Abs(bm1eta), 0.)*ptT2->effD(bm1pt, TMath::Abs(bm1eta), 0.);
     tr2w8 = ptT1->effD(bm2pt, TMath::Abs(bm2eta), 0.)*ptT2->effD(bm2pt, TMath::Abs(bm2eta), 0.);
     trw8  = tr1w8*tr2w8; 
-    if (trw8 > 0.) {
-      fhMuTr[fChan]->Fill(trw8, 1./trw8); 
-    }
-
+    fhMuTr[fChan]->Fill(trw8); 
+    //     if (trw8 > 0.) {
+    //       fhMuTr[fChan]->Fill(trw8, 1./trw8); 
+    //     }
+    
     fh0TNPTrigger[fChan]->Fill(bpt, trw8); 
     fh1TNPTrigger[fChan]->Fill(bpt); 
 
@@ -744,13 +739,29 @@ void plotClass::loopTree(int mode, int proc) {
     tr1w8 = ptT1MC->effD(bm1pt, TMath::Abs(bm1eta), 0.)*ptT2->effD(bm1pt, TMath::Abs(bm1eta), 0.);
     tr2w8 = ptT1MC->effD(bm2pt, TMath::Abs(bm2eta), 0.)*ptT2->effD(bm2pt, TMath::Abs(bm2eta), 0.);
     trw8  = tr1w8*tr2w8; 
-    if (trw8 > 0.) {
-      fhMuTrMC[fChan]->Fill(trw8, 1./trw8); 
-    }
+    fhMuTrMC[fChan]->Fill(trw8); 
+    //     if (trw8 > 0.) {
+    //       fhMuTrMC[fChan]->Fill(trw8, 1./trw8); 
+    //     }
     fh0TNPMCTrigger[fChan]->Fill(bpt, trw8); 
     fh1TNPMCTrigger[fChan]->Fill(bpt); 
 
+
+    // ---------------------------
+    // -- now to the MC simulation
+    // ---------------------------
+
+    // -- MUON ID
+    if (false == bgmuid) continue;
+    fhMassWithMuonCuts[fChan]->Fill(mass); 
+    fhMassWithMuonCutsManyBins[fChan]->Fill(mass); 
+
+    // -- TRIGGER
     fh0MCTrigger[fChan]->Fill(bpt); 
+    if (false == bhlt) continue;
+    fh1MCTrigger[fChan]->Fill(bpt); 
+    fhMassWithTriggerCuts[fChan]->Fill(mass); 
+    fhMassWithTriggerCutsManyBins[fChan]->Fill(mass); 
 
     fhMassWithAllCuts[fChan]->Fill(mass); 
     if (5 == mode && !(5.2 < mass && mass < 5.45)) {
@@ -853,10 +864,25 @@ void plotClass::loopTree(int mode, int proc) {
   }
 
   cout << gDirectory->GetName() << ": " << fhMassWithAllCuts[0]->GetSumOfWeights() 
+       << " (" << fhMassWithAllCuts[0]->Integral(0, fhMassWithAllCuts[0]->GetNbinsX())  << ") " 
        << "  " << fhMassWithAllCuts[1]->GetSumOfWeights()
+       << " (" << fhMassWithAllCuts[1]->Integral(0, fhMassWithAllCuts[1]->GetNbinsX())  << ") " 
        << endl;
 
-  if (99 == mode) return;
+  if (99 == mode) {
+    // -- Cache the pwd...
+    TDirectory *pD = gDirectory; 
+    fHistFile->cd();
+    for (unsigned int i = 0; i < fNchan; ++i) {
+      string modifier = (fDoUseBDT?"bdt":"cnc"); 
+      fhMassWithAllCuts[i]->SetName(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i)); 
+      fhMassWithAllCuts[i]->SetTitle(Form("hMassWithAllCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, pD->GetFile()->GetName())); 
+      fhMassWithAllCuts[i]->Write();
+    }
+    pD->cd();
+
+    return;
+  }
 
   //   c0->Clear();
   //   c0->Divide(1,2);
@@ -1215,11 +1241,11 @@ void plotClass::loopTree(int mode, int proc) {
     // -- Cache the pwd...
     TDirectory *pD = gDirectory; 
     fHistFile->cd();
-    cout << "==> " << i << "  " << mode << " hMassWithMassCuts[i] = " << fhMassWithMassCuts[i] << endl;
     string modifier = (fDoUseBDT?"bdt":"cnc"); 
     //    fhMassWithMassCutsManyBins[i]->SetName(Form("hMassWithMassCutsManyBins%d_chan%d", mode, i)); fhMassWithMassCutsManyBins[i]->Write();
     //    fhMassWithMassCuts[i]->SetName(Form("hMassWithMassCuts%d_chan%d", mode, i)); fhMassWithMassCuts[i]->Write();
     fhMassWithAllCutsManyBins[i]->SetName(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i)); 
+    fhMassWithAllCutsManyBins[i]->SetTitle(Form("hMassWithAllCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, pD->GetName())); 
     fhMassWithAllCutsManyBins[i]->Write();
     fhMassWithAllCuts[i]->SetName(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i)); 
     fhMassWithAllCuts[i]->Write();

@@ -37,6 +37,10 @@ void candAnaMuMu::genMatch() {
   fGenM1Tmi = fGenM2Tmi = -1; 
   fNGenPhotons = 0; 
 
+  int id1(13), id2(13); 
+  if (1000095 == TYPE) {id1 = 211; id2 = 13;}
+  if (1000086 == TYPE) {id1 = 321; id2 = 13;}
+
   TGenCand *pC(0), *pM1(0), *pM2(0), *pB(0); 
   bool goodMatch(false); 
   for (int i = 0; i < fpEvt->nGenCands(); ++i) {
@@ -46,7 +50,7 @@ void candAnaMuMu::genMatch() {
       pB = pC;
       for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
 	pC = fpEvt->getGenCand(id); 
-	if (13 == TMath::Abs(pC->fID)) {
+	if (id1 == TMath::Abs(pC->fID) || id2 == TMath::Abs(pC->fID)) {
 	  if (0 == pM1) {
 	    pM1 = fpEvt->getGenCand(id); 
 	  } else {

@@ -1900,8 +1900,8 @@ bool candAna::tightMuon(TAnaTrack *pT) {
     return true;
   }
 
-  //  bool muflag = ((pT->fMuID & 80) == 80);
-  bool muflag = ((pT->fMuID & 16) == 16);
+  bool muflag = ((pT->fMuID & 80) == 80);
+  //  bool muflag = ((pT->fMuID & 16) == 16);
   bool trackcuts(true); 
 
   if (TMath::Abs(pT->fBsTip) > 0.2) trackcuts = false;
