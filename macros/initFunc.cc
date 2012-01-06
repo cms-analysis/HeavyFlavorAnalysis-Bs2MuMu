@@ -568,9 +568,10 @@ TF1* initFunc::expoErrGauss(TH1 *h, double peak, double sigma, double preco) {
 
   double g0 = (h->Integral(lbin, hbin)*h->GetBinWidth(1) - A);  
 
-  double e0(preco),  e0Min(preco-0.01), e0Max(preco+0.01); 
-  double e1(0.07),  e1Min(0.05), e1Max(0.09);
-  double e2(1.112), e2Min(1.0),  e2Max(1.2);
+  double e0(preco),  e0Min(preco-0.001), e0Max(preco+0.001); 
+  double e1(0.075),  e1Min(0.050), e1Max(0.100);
+  double e2(1.15), e2Min(1.05),  e2Max(1.25);
+
 
   cout << "A: " << A << " g0: " << g0 << " e0: " << e0 << " e1: " << e1 << " e2: " << e2 << " p0: " << p0 << " p1: " << p1 << endl;
 
@@ -595,7 +596,7 @@ TF1* initFunc::expoErrGauss(TH1 *h, double peak, double sigma, double preco) {
 }
 
 // ----------------------------------------------------------------------
-TF1* initFunc::expoErrGauss2(TH1 *h, double peak, double sigma, double preco) {
+TF1* initFunc::expoErrgauss2c(TH1 *h, double peak, double sigma, double preco) {
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_gauss2c"); 
   if (f) delete f; 
@@ -613,13 +614,16 @@ TF1* initFunc::expoErrGauss2(TH1 *h, double peak, double sigma, double preco) {
 
   double p0, p1; 
   initExpo(p0, p1, h);
+  if (p0 > 1.e7) p0 = 1.e7;
+
   double A   = p0*(TMath::Exp(p1*fHi) - TMath::Exp(p1*fLo));
 
   double g0 = (h->Integral(lbin, hbin)*h->GetBinWidth(1) - A);  
 
-  double e0(preco),  e0Min(preco-0.01), e0Max(preco+0.01); 
+  double e0(preco),  e0Min(preco-0.001), e0Max(preco+0.001); 
   double e1(0.075),  e1Min(0.050), e1Max(0.100);
   double e2(1.15), e2Min(1.05),  e2Max(1.25);
+
 
   cout << "A: " << A << " g0: " << g0 << " e0: " << e0 << " e1: " << e1 << " e2: " << e2 << " p0: " << p0 << " p1: " << p1 << endl;
 
@@ -632,9 +636,9 @@ TF1* initFunc::expoErrGauss2(TH1 *h, double peak, double sigma, double preco) {
   f->ReleaseParameter(4);     f->SetParLimits(4, 1.3*0.010, 1.3*0.080); 
   f->ReleaseParameter(5);     
   f->ReleaseParameter(6);     
-  f->ReleaseParameter(7);     f->SetParLimits(5, e0Min, e0Max); 
-  f->ReleaseParameter(8);     f->SetParLimits(6, e1Min, e1Max); 
-  f->ReleaseParameter(9);     f->SetParLimits(7, e2Min, e2Max); 
+  f->ReleaseParameter(7);     f->SetParLimits(7, e0Min, e0Max); 
+  f->ReleaseParameter(8);     f->SetParLimits(8, e1Min, e1Max); 
+  f->ReleaseParameter(9);     f->SetParLimits(9, e2Min, e2Max); 
   f->ReleaseParameter(10);     //f->SetParLimits(8, 0, 0.05*g0); 
 
 

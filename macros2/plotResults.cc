@@ -85,7 +85,7 @@ void plotResults::makeAll(int channels) {
     fDoApplyCowboyVeto = false;   
     fDoApplyCowboyVetoAlsoInSignal = false;   
     computeNormUL();
-    //    computeCsBF();
+    computeCsBF();
   }
 
   if (channels & 2) {

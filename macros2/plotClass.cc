@@ -2160,7 +2160,7 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi) {
   if (0 == mode) { 
     fpFunc->fLo = 5.0;
     fpFunc->fHi = 5.5;
-    lF1 = fpFunc->pol1Errgauss2c(h, 5.27, 0.034, 5.146); 
+    lF1 = fpFunc->expoErrgauss2c(h, 5.27, 0.034, 5.146); 
     lBg = fpFunc->pol1Err(fpFunc->fLo, fpFunc->fHi); 
   } else {
     fpFunc->fLo = 5.0;
@@ -2170,7 +2170,13 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi) {
   }
   h->Fit(lF1, "rm", "", lo, hi); 
 
+  for (int i = 0; i < lBg->GetNpar(); ++i) {
+    lBg->SetParameter(i, lF1->GetParameter(3+i));
+    cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
+  }
+
   double c  = lF1->GetParameter(0); 
+  c = lF1->Integral(5.15, 5.4) - lBg->Integral(5.15, 5.4); 
   double cE = lF1->GetParError(0); 
   double ierr = lF1->IntegralError(5.15, 5.4)/h->GetBinWidth(1); 
 
@@ -2192,11 +2198,6 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi) {
   h->Draw("e");
 
   // -- Overlay BG function
-  for (int i = 0; i < lBg->GetNpar(); ++i) {
-    lBg->SetParameter(i, lF1->GetParameter(3+i));
-    cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
-  }
-
   lBg->SetLineStyle(kDashed);
   lBg->SetLineColor(kRed);
   lBg->SetLineWidth(3);
