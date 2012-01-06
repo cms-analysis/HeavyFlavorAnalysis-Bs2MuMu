@@ -41,6 +41,8 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
 
   //  const char* inputVars[] = { "alpha", "fls3d", "chi2/dof", "iso", "m1pt", "m2pt", "pt", "m1eta", "docatrk" };
   //  const char* inputVars[] = { "alpha", "fls3d", "iso", "m1pt", "m2pt", "m1eta", "m2eta", "docatrk", "pvlips", "closetrk" };
+  //  const char* inputVars[] = { "alpha", "fls3d", "iso", "m1pt", "m2pt", "m1eta", "m2eta", "docatrk", "pvlips", "closetrk" };
+
   vector<string> vvars; 
   vvars.push_back("alpha"); 
   vvars.push_back("fls3d"); 
@@ -57,6 +59,8 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
 
 
   //  const char* inputVars[] = { "alpha", "fls3d", "iso", "m1pt", "m2pt", "m1eta", "m2eta", "docatrk", "pvlips", "closetrk" };
+  //  const char* inputVars[] = { "alpha", "fls3d", "iso", "m1pt", "m2pt", "m1eta", "m2eta", "docatrk", "pvlips", "closetrk" };
+
   vvars.clear(); 
   vvars.push_back("alpha"); 
   vvars.push_back("fls3d"); 
@@ -814,10 +818,12 @@ void candAna::triggerSelection() {
 	// 	}
 	if (!a.CompareTo(imap->first.c_str())) {
  	  fGoodHLT = true; 
+	  fHLTPath = a.Data();
 	  if (fVerbose > 0) cout << "exact match: " << imap->first.c_str() << " HLT: " << a << " result: " << result << endl;
 	}
 
  	if (a.Contains(spath.c_str()) && (rmin <= fRun) && (fRun <= rmax)) {
+	  fHLTPath = a.Data();
  	  fGoodHLT = true; 
 	  if (fVerbose > 0) cout << "close match: " << imap->first.c_str() << " HLT: " << a 
 				 << " result: " << result 
@@ -2184,23 +2190,35 @@ double candAna::constrainedMass() {
 void candAna::runRange() {
   fRunRange = 6;
   if ((fRun >= 160329) && (fRun <= 163261)) {
-    fRunRange = 0; 
+    fRunRange = 0; // the beginning
   } 
   if ((fRun >= 163269) && (fRun <= 163869)) {
-    fRunRange = 1; 
+    fRunRange = 1; // displaced J/psi
   } 
   if ((fRun >= 165088) && (fRun <= 167913)) {
-    fRunRange = 2; 
+    fRunRange = 2; // HLTDimuon7
   } 
   if ((fRun >= 170249) && (fRun <= 173198)) {
-    fRunRange = 3; 
+    fRunRange = 3; // 2e33
   } 
   if ((fRun >= 173236) && (fRun <= 178380)) {
-    fRunRange = 4; 
+    fRunRange = 4; // 3e33 WITH the ETA cut!
   } 
   if ((fRun >= 178420) && (fRun <= 999999)) {
-    fRunRange = 5; 
+    fRunRange = 5; // 5e33
   } 
+
+  if (fIsMC) {
+    if (string::npos != fHLTPath.find("HLT_Dimuon7_Jpsi_Displaced_v1")) {
+      fRunRange = 2;
+    }
+    if (string::npos != fHLTPath.find("HLT_DoubleMu3p5_Jpsi_Displaced_v2_Bs")) {
+      fRunRange = 3;
+    }
+    if (string::npos != fHLTPath.find("HLT_DoubleMu4_Jpsi_Displaced_v1")) {
+      fRunRange = 4;
+    }
+  }
 
 }
 

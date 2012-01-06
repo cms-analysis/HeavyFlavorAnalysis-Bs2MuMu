@@ -37,21 +37,32 @@ my @startbd;
 my @endbs;
 my @endbd;
 
+# -- print table template
 if ($opt_t) {
+    
+    &readUlcFile(); 
+    &produceTexFile("cls"); 
+    &produceTexFile("bayes"); 
+#    &readUlCalcResults();
+
+    open(TEX, ">ulMatrixTable.tex") || die "cannot open ulMatrixTable.tex\n";
     for ($id0 = $startbd[0]; $id0 <= $endbd[0]; $id0++) {
 	for ($is0 = $startbs[0]; $is0 <= $endbs[0]; $is0++) {
 	    for ($id1 = $startbd[1]; $id1 <= $endbd[1]; $id1++) {
 		for ($is1 = $startbs[1]; $is1 <= $endbs[1]; $is1++) {
-		    $name = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:val";
-		    $named = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:vald";
-		    print "$is0 &$id0 &$is1 &$id1 &\\vuse{$name} &\\vuse{$named} \\\\ \n";
+		    $name = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:cls";
+		    $name1 = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:bayes";
+#		    $name2 = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:valSignificance";
+		    print TEX "$id0 &$is0 &$id1 &$is1 &\\vuse{$name} &\\vuse{$name1} \\\\ \n";
 		}
-		print "%\n";
+		print TEX "%\n";
 	    }
-		print "%\n";
+	    print TEX "%\n";
 	}
-		print "%\n";
+	print TEX "%\n";
     }
+    close(TEX);
+
     die "\n";
 }
 
@@ -59,28 +70,33 @@ if ($opt_t) {
 
 &readUlcFile();
 &createConfigFiles();
-die "\n";
-&runUlCalc();
+&readUlCalcResults();
 &produceTexFile(); 
 die "\n";
 
 
 # ----------------------------------------------------------------------
 sub produceTexFile() {
-    if ($opt_d) {
-	open(TEX, ">ulMatrix-$opt_p.bdtomumu.tex") || die "cannot open ulMatrix-$opt_p.bdtomumu.tex\n";
-    } else {
-	open(TEX, ">ulMatrix-$opt_p.bstomumu.tex") || die "cannot open ulMatrix-$opt_p.bstomumu.tex\n";
-    }
+    ($alg) = @_; 
+
+    print "+++++ $algo\n";
+
+    open(TEX, ">ulMatrix-$alg-$opt_p.bstomumu.tex") || die "cannot open ulMatrix-$alg-$opt_p.bstomumu.tex\n";
+    
     for ($id0 = $startbd[0]; $id0 <= $endbd[0]; $id0++) {
 	for ($is0 = $startbs[0]; $is0 <= $endbs[0]; $is0++) {
 	    for ($id1 = $startbd[1]; $id1 <= $endbd[1]; $id1++) {
 		for ($is1 = $startbs[1]; $is1 <= $endbs[1]; $is1++) {
-		    $oname    = "$opt_a"."-"."$opt_c".".B$id0"."_$is0"."E$id1"."_$is1"; 
-		    open(IN, "$oname") || die "cannot open $oname\n";
-		    $line = <IN>;
+		    $oname    = "$alg"."."."$opt_c".".B$id0"."_$is0"."E$id1"."_$is1"; 
+		    open(IN, "$oname") || next; 
+		    $line0 = <IN>;
+		    $line1 = <IN>;
+		    $line2 = <IN>;
+		    $line3 = <IN>;
+		    $line = $line2; 
 		    chop($line); 
 		    close(IN); 
+		    print "==> $line\n";
 		    ($algo, $numbers) = split(/:/, $line); 
 		    $algo =~ s/Algorithm //;
 		    $algo =~ s/://;
@@ -88,13 +104,11 @@ sub produceTexFile() {
 		    $ul = sprintf("%2.1e", $ul); 
 		    ($sf0, $sf1) = split(/e/, $ul);
 		    $sf1 =~ s/0//g;
-		    if ($opt_d) {
-			$name = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:vald";
-		    } else {
-			$name = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:val";
-		    }
-		    print "$oname: $algo $numbers -> \\vdef{$name} {\ensuremath {$sf0 \\times 10^{$sf1} } }\n";
-		    print TEX "\\vdef{$name} {\\ensuremath {$sf0 \\times 10^{$sf1} } }\n";
+		    $name = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:$alg";
+		    if ($ul < 3.2e-8) {
+			print "$oname: $algo $numbers -> \\vdef{$name} {\ensuremath {$sf0 \\times 10^{$sf1} } }\n";
+			print TEX "\\vdef{$name} {\\ensuremath {$sf0 \\times 10^{$sf1} } }\n";
+		    } 
 		}
 	    }
 	}
@@ -104,21 +118,17 @@ sub produceTexFile() {
 
 
 # ----------------------------------------------------------------------
-sub runUlCalc() {
-
+sub readUlCalcResults() {
     for ($id0 = $startbd[0]; $id0 <= $endbd[0]; $id0++) {
 	for ($is0 = $startbs[0]; $is0 <= $endbs[0]; $is0++) {
 	    for ($id1 = $startbd[1]; $id1 <= $endbd[1]; $id1++) {
 		for ($is1 = $startbs[1]; $is1 <= $endbs[1]; $is1++) {
-		    $filename = "$opt_c".".B$id0"."_$is0"."E$id1"."_$is1"; 
-		    $oname   =  "$opt_a"."-"."$opt_c".".B$id0"."_$is0"."E$id1"."_$is1"; 
-		    if ($opt_d) {
-			$command =  "bin/ulcalc --bdtomumu -a \"$opt_a\" -o $oname -l $opt_L --disable-errors $filename";
-		    } else {
-			$command =  "bin/ulcalc -a \"$opt_a\" -o $oname -l $opt_L --disable-errors $filename";
-		    }
-		    print "$command\n";
-		    system("$command");
+		    $oname   =  "$opt_a"."."."$opt_c".".B$id0"."_$is0"."E$id1"."_$is1"; 
+		    $line =  `grep 'Bs->mumu upper limit with algorithm' $oname`;
+		    chop($line);
+		    ($b0, $rest) = split(/:/, $line); 
+		    ($ul, $rest) = split(/\(/, $rest); 
+		    print "$oname: $ul\n";
 		}
 	    }
 	}

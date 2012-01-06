@@ -63,19 +63,20 @@ void plotResults::makeAll(int channels) {
 //   return;
 
 
-  if (channels & 2) {
-    plotOverlays a1; 
-    a1.makeAll(); 
+  if (channels & 16) {
+    plotEfficiencies a3; 
+    a3.makeAll(); 
+    acceptancePerProcess();
   }
 
-  if (channels & 4) {
+  if (channels & 8) {
     plotPU a2; 
     a2.makeAll(); 
   }
 
-  if (channels & 8) {
-    plotEfficiencies a3; 
-    a3.makeAll(); 
+  if (channels & 4) {
+    plotOverlays a1; 
+    a1.makeAll(); 
   }
 
   if (channels & 1) {
@@ -84,17 +85,16 @@ void plotResults::makeAll(int channels) {
     fDoApplyCowboyVeto = false;   
     fDoApplyCowboyVetoAlsoInSignal = false;   
     computeNormUL();
-//     computeCsBF();
+    //    computeCsBF();
+  }
 
-//     fNormProcessed = false; 
-//     fDoUseBDT = true; 
-//     fDoApplyCowboyVeto = false;   
-//     fDoApplyCowboyVetoAlsoInSignal = false;   
-//     computeNormUL();
-//     computeCsBF();
-
-    acceptancePerProcess();
-
+  if (channels & 2) {
+    fNormProcessed = false; 
+    fDoUseBDT = true; 
+    fDoApplyCowboyVeto = false;   
+    fDoApplyCowboyVetoAlsoInSignal = false;   
+    computeNormUL();
+    computeCsBF();
   }
 
 }
@@ -152,23 +152,23 @@ void plotResults::computeNormUL() {
   printNumbers(*fNumbersNo[0], cout); 
   printNumbers(*fNumbersNo[0], fOUT); 
 
-  double fUL = (fNumbersBs[0]->bgBsExp/fNumbersNo[0]->fitYield) //????FIXME
-    *(fu/fs)
-    *(fNumbersNo[0]->acc/fNumbersBs[0]->acc)
-    *(fNumbersNo[0]->effCand/fNumbersBs[0]->effCand)     
-    *(fNumbersNo[0]->effMuidMC/fNumbersBs[0]->effMuidMC)
-    *(fNumbersNo[0]->effTrigMC/fNumbersBs[0]->effTrigMC)
-    *(fNumbersNo[0]->effAna/fNumbersBs[0]->effAna)
-    * fBF;
+//   double fUL = (fNumbersBs[0]->bgBsExp/fNumbersNo[0]->fitYield) //????FIXME
+//     *(fu/fs)
+//     *(fNumbersNo[0]->acc/fNumbersBs[0]->acc)
+//     *(fNumbersNo[0]->effCand/fNumbersBs[0]->effCand)     
+//     *(fNumbersNo[0]->effMuidMC/fNumbersBs[0]->effMuidMC)
+//     *(fNumbersNo[0]->effTrigMC/fNumbersBs[0]->effTrigMC)
+//     *(fNumbersNo[0]->effAna/fNumbersBs[0]->effAna)
+//     * fBF;
 
-  cout << "prod(eff) expected UL: " << fUL << endl;
+//   cout << "prod(eff) expected UL: " << fUL << endl;
 
-  fUL = (fNul/fNumbersNo[0]->fitYield)
-    *(fu/fs)
-    *(fNumbersNo[0]->effTot/fNumbersBs[0]->effTot)
-    * fBF;
+//   fUL = (fNul/fNumbersNo[0]->fitYield)
+//     *(fu/fs)
+//     *(fNumbersNo[0]->effTot/fNumbersBs[0]->effTot)
+//     * fBF;
 
-  cout << "effTot expected UL:    " << fUL << endl;
+//   cout << "effTot expected UL:    " << fUL << endl;
 
   //  system(Form("../ulcalc/bin/ulcalc %s", fUlcalcFileName.c_str())); 
 
@@ -765,11 +765,13 @@ void plotResults::printUlcalcNumbers(string fname) {
     OUT << "OBS_BDMM\t" << i << "\t" << fNumbersBs[i]->bdObs << endl;
     fTEX << formatTex(fNumbersBs[i]->bdObs, Form("%s:N-OBS-BDMM%d:val", fSuffix.c_str(), i), 0) << endl;
 
-    OUT << "PEAK_BKG_OFF\t" << i << "\t" << fNumbersBs[i]->offRare 
-	<< "\t" << fNumbersBs[i]->offRareE
+    OUT << "PEAK_BKG_OFF\t" << i << "\t" << fNumbersBs[i]->offLoRare+fNumbersBs[i]->offHiRare 
+	<< "\t" << TMath::Sqrt(fNumbersBs[i]->offLoRareE*fNumbersBs[i]->offLoRareE + fNumbersBs[i]->offHiRareE*fNumbersBs[i]->offHiRareE)
 	<< endl;
-    fTEX << formatTex(fNumbersBs[i]->offRare, Form("%s:N-OFF-RARE%d:val", fSuffix.c_str(), i), 2) << endl;
-    fTEX << formatTex(fNumbersBs[i]->offRareE,Form("%s:N-OFF-RARE%d:err", fSuffix.c_str(), i), 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->offLoRare, Form("%s:N-OFFLO-RARE%d:val", fSuffix.c_str(), i), 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->offLoRareE,Form("%s:N-OFFLO-RARE%d:err", fSuffix.c_str(), i), 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->offHiRare, Form("%s:N-OFFHI-RARE%d:val", fSuffix.c_str(), i), 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->offHiRareE,Form("%s:N-OFFHI-RARE%d:err", fSuffix.c_str(), i), 2) << endl;
 
     OUT << "PEAK_BKG_BS\t" << i << "\t" << fNumbersBs[i]->bsRare
 	<< "\t" << fNumbersBs[i]->bsRareE
@@ -794,11 +796,11 @@ void plotResults::printUlcalcNumbers(string fname) {
     fTEX << formatTex(fNumbersBs[i]->tauBdE, Form("%s:N-TAU-BD%d:err", fSuffix.c_str(), i), 2) << endl;
 
     
-    double bsExpObs = fNumbersBs[i]->tauBs*fNumbersBs[i]->bgObs
+    double bsExpObs = fNumbersBs[i]->bgBsExp
       + fNumbersBs[i]->bsRare
       + fNumbersBs[i]->bsNoScaled;
 
-    double bsExpObsE = TMath::Sqrt(fNumbersBs[i]->tauBs*fNumbersBs[i]->tauBs*fNumbersBs[i]->bgObs
+    double bsExpObsE = TMath::Sqrt(fNumbersBs[i]->bgBsExpE
 				   + fNumbersBs[i]->bsRareE*fNumbersBs[i]->bsRareE
 				   + fNumbersBs[i]->bsNoScaledE*fNumbersBs[i]->bsNoScaledE);
 
@@ -806,11 +808,11 @@ void plotResults::printUlcalcNumbers(string fname) {
     fTEX << formatTex(bsExpObs, Form("%s:N-EXP-OBS-BS%d:val", fSuffix.c_str(), i), 2) << endl;
     fTEX << formatTex(bsExpObsE, Form("%s:N-EXP-OBS-BS%d:err", fSuffix.c_str(), i), 2) << endl;
 
-    double bdExpObs = fNumbersBs[i]->tauBd*fNumbersBs[i]->bgObs
+    double bdExpObs = fNumbersBs[i]->bgBdExp
       + fNumbersBs[i]->bdRare
       + fNumbersBd[i]->bdNoScaled;
 
-    double bdExpObsE = TMath::Sqrt(fNumbersBs[i]->tauBd*fNumbersBs[i]->tauBd*fNumbersBs[i]->bgObs
+    double bdExpObsE = TMath::Sqrt(fNumbersBs[i]->bgBdExpE
 				   + fNumbersBs[i]->bdRareE*fNumbersBs[i]->bdRareE
 				   + fNumbersBd[i]->bdNoScaledE*fNumbersBd[i]->bdNoScaledE);
 
@@ -950,10 +952,19 @@ void plotResults::rareBg() {
   std::map<string, double> mscale;  
   std::map<string, double> err;  
   std::map<string, double> chanbf;  
+
+  // -- tight muon values
   double epsMu(0.8); // FIXME: this should be different for barrel and endcap!
   double epsPi(0.0015), errPi2(0.15*0.15); // relative errors on misid rates are statistical error from Danek's fits
   double epsKa(0.0017), errKa2(0.15*0.15); 
   double epsPr(0.0005), errPr2(0.15*0.15);
+
+//   // -- ATM values
+//   double epsMu(0.9); // FIXME: this should be different for barrel and endcap!
+//   double epsPi(0.009), errPi2(0.15*0.15); // relative errors on misid rates are statistical error from Danek's fits
+//   double epsKa(0.01),  errKa2(0.15*0.15); 
+//   double epsPr(0.003), errPr2(0.15*0.15);
+
   colors.insert(make_pair("bgLb2KP", 46)); hatches.insert(make_pair("bgLb2KP", 3004)); mscale.insert(make_pair("bgLb2KP", epsPi*epsPr)); 
   chanbf.insert(make_pair("bgLb2KP", 5.6e-6)); 
   err.insert(make_pair("bgLb2KP", TMath::Sqrt(0.3*0.3 + errPi2 + errPr2))); 
@@ -1169,14 +1180,23 @@ void plotResults::rareBg() {
   fNumbersBs[0]->bsRareE= rareBsE[0]; 
   fNumbersBs[0]->bdRare = rareBd[0]; 
   fNumbersBs[0]->bdRareE= rareBdE[0]; 
+  double relErr = (fNumbersBs[0]->bdRareE/fNumbersBs[0]->bdRare); 
 
-  fNumbersBs[0]->offRare = 0.; 
-  fNumbersBs[0]->offRareE= 0.; 
+  fNumbersBs[0]->offLoRare = bRare->Integral(bRare->FindBin(4.9001), bRare->FindBin(5.199));
+  fNumbersBs[0]->offLoRareE= relErr*fNumbersBs[0]->offLoRare; 
+  fNumbersBs[0]->offHiRare = bRare->Integral(bRare->FindBin(5.451), bRare->FindBin(5.899));
+  fNumbersBs[0]->offHiRareE= relErr*fNumbersBs[0]->offHiRare; 
 
   fNumbersBs[1]->bsRare = rareBs[1]; 
   fNumbersBs[1]->bsRareE= rareBsE[1]; 
   fNumbersBs[1]->bdRare = rareBd[1]; 
   fNumbersBs[1]->bdRareE= rareBdE[1]; 
+  relErr = (fNumbersBs[1]->bdRareE/fNumbersBs[1]->bdRare); 
+
+  fNumbersBs[1]->offLoRare = eRare->Integral(eRare->FindBin(4.9001), eRare->FindBin(5.199));
+  fNumbersBs[1]->offLoRareE= relErr*fNumbersBs[1]->offLoRare; 
+  fNumbersBs[1]->offHiRare = eRare->Integral(eRare->FindBin(5.451), eRare->FindBin(5.899));
+  fNumbersBs[1]->offHiRareE= relErr*fNumbersBs[1]->offHiRare; 
 
   fTEX << "% ----------------------------------------------------------------------" << endl;
   fTEX << "% --- rare Background summary numbers" << endl;  

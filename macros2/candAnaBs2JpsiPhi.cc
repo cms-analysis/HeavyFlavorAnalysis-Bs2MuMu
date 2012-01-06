@@ -9,7 +9,7 @@ using namespace std;
 // ----------------------------------------------------------------------
 candAnaBs2JpsiPhi::candAnaBs2JpsiPhi(bmm2Reader *pReader, std::string name, std::string cutsFile) : candAna(pReader, name, cutsFile) {
   fGenK1Tmi = fGenK2Tmi = fRecK1Tmi = fRecK2Tmi = -1; 
-
+  BLIND = 0; 
   cout << "==> candAnaBs2JpsiPhi: name = " << name << ", reading cutsfile " << cutsFile << endl;
   readCuts(cutsFile, 1); 
 }

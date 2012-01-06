@@ -1,4 +1,4 @@
-# 2011/12/10 after about 700*800 random grid jobs
+# 2012/01/06 after 2*2'100'000 random grid jobs
 # -- channel 0: barrel 
 index    0
 mBdLo    5.200
@@ -7,19 +7,19 @@ mBsLo    5.300
 mBsHi    5.450
 etaMin   0.0
 etaMax   1.4
-pt       8.0
-m1pt     4.5
-m2pt     4.2
+pt       7.5
+m1pt     5.4
+m2pt     4.1
 m1eta    1.4
 m2eta    1.4
 iso      0.75
-chi2dof  1.4
+chi2dof  2.4
 alpha    0.03
-fls3d    13
-docatrk  0.015
-closetrk 3
-pvlip    0.085
-pvlips   1.3
+fls3d    10
+docatrk  0.006
+closetrk 2
+pvlip    0.05
+pvlips   3.0
 # -- channel 1: endcap
 index    1
 mBdLo    5.200
@@ -28,16 +28,16 @@ mBsLo    5.300
 mBsHi    5.450
 etaMin   1.4
 etaMax   2.4
-pt       8.0
-m1pt     5.1
-m2pt     4.2
+pt       8.1
+m1pt     4.5
+m2pt     4.1
 m1eta    2.4
 m2eta    2.4
-iso      0.81
-chi2dof  1.6
-alpha    0.015
+iso      0.83
+chi2dof  1.7
+alpha    0.025
 fls3d    15
-docatrk  0.015
+docatrk  0.005
 closetrk 2
-pvlip    0.090
-pvlips   1.4
+pvlip    0.04
+pvlips   2.5

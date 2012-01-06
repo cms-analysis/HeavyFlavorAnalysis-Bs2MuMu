@@ -182,6 +182,24 @@ double f_expo_err_Gauss(double *x, double *par) {
 }
 
 // ----------------------------------------------------------------------
+// expo and err and gauss2c 
+double f_expo_err_gauss2c(double *x, double *par) {
+  // par[0] -> const
+  // par[1] -> mean
+  // par[2] -> sigma
+  // par[3] -> fraction in second gaussian
+  // par[4] -> sigma of second gaussian
+  //   par[5]  = norm
+  //   par[6]  = exp
+  //   par[7]  = par[0] of err
+  //   par[8]  = par[1] of err
+  //   par[9]  = par[2] of err
+  //   par[10] = par[3] of err
+  return  (f_err(x, &par[7]) + f_expo(x, &par[5]) + f_gauss2c(x, &par[0]));
+}
+
+
+// ----------------------------------------------------------------------
 // expo and err and gauss 
 double f_expo_err(double *x, double *par) {
   //   par[0] = norm
@@ -571,6 +589,57 @@ TF1* initFunc::expoErrGauss(TH1 *h, double peak, double sigma, double preco) {
   //        RooRealVar a1("a1","a1",5.14,5.13,5.15);
   //        RooRealVar a2("a2","a2",0.07,0.06,0.075);
   //        RooRealVar a3("a3","a3",1.112,1.,1.2);
+
+  return f; 
+
+}
+
+// ----------------------------------------------------------------------
+TF1* initFunc::expoErrGauss2(TH1 *h, double peak, double sigma, double preco) {
+
+  TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_gauss2c"); 
+  if (f) delete f; 
+  f = new TF1("f1_expo_err_gauss2c", f_expo_err_gauss2c, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 11);
+  f->SetParNames("const", "peak", "sigma", "f2ndG", "s2ndG", "const", "exp", "err0", "err1", "err2", "err3"); 			   
+
+  //  f->SetLineColor(kBlue); 
+  f->SetLineWidth(2); 
+
+  int lbin(1), hbin(h->GetNbinsX()); 
+  if (fLo < fHi) {
+    lbin = h->FindBin(fLo); 
+    hbin = h->FindBin(fHi); 
+  }
+
+  double p0, p1; 
+  initExpo(p0, p1, h);
+  double A   = p0*(TMath::Exp(p1*fHi) - TMath::Exp(p1*fLo));
+
+  double g0 = (h->Integral(lbin, hbin)*h->GetBinWidth(1) - A);  
+
+  double e0(preco),  e0Min(preco-0.01), e0Max(preco+0.01); 
+  double e1(0.075),  e1Min(0.050), e1Max(0.100);
+  double e2(1.15), e2Min(1.05),  e2Max(1.25);
+
+  cout << "A: " << A << " g0: " << g0 << " e0: " << e0 << " e1: " << e1 << " e2: " << e2 << " p0: " << p0 << " p1: " << p1 << endl;
+
+  f->SetParameters(g0, peak, sigma, 0.2, 1.3*sigma, p0, p1, e0, e1, e2, 0.05*g0); 
+
+  f->ReleaseParameter(0);     f->SetParLimits(0, 0., 1.e7); 
+  f->ReleaseParameter(1);     f->SetParLimits(1, 5.2, 5.45); 
+  f->ReleaseParameter(2);     f->SetParLimits(2, 0.010, 0.080); 
+  f->ReleaseParameter(3);     f->SetParLimits(3, 5.2, 5.45); 
+  f->ReleaseParameter(4);     f->SetParLimits(4, 1.3*0.010, 1.3*0.080); 
+  f->ReleaseParameter(5);     
+  f->ReleaseParameter(6);     
+  f->ReleaseParameter(7);     f->SetParLimits(5, e0Min, e0Max); 
+  f->ReleaseParameter(8);     f->SetParLimits(6, e1Min, e1Max); 
+  f->ReleaseParameter(9);     f->SetParLimits(7, e2Min, e2Max); 
+  f->ReleaseParameter(10);     //f->SetParLimits(8, 0, 0.05*g0); 
+
+
+ //RooGenericPdf bkg2("bkg2","(TMath::Erf((5.146-x)/0.0550))+1.098",RooArgSet(x));  // psik bar
+ //RooGenericPdf bkg2("bkg2","(TMath::Erf((5.145-x)/0.0987))+1.203",RooArgSet(x));  // psik end
 
   return f; 
 

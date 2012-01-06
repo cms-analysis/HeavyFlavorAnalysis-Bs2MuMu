@@ -67,7 +67,7 @@ struct numbers {
   double bgObs, bgBsExp, bgBsExpE, bgBdExp, bgBdExpE; 
   double bsObs, bdObs; 
   double tauBs, tauBsE, tauBd, tauBdE; 
-  double offRare, offRareE, bsRare, bsRareE, bdRare, bdRareE; 
+  double offHiRare, offHiRareE, offLoRare, offLoRareE, bsRare, bsRareE, bdRare, bdRareE; 
   double bsNoScaled, bsNoScaledE, bdNoScaled, bdNoScaledE;
   double pss, pssE, pdd, pddE;
   double psd, psdE, pds, pdsE;

@@ -255,7 +255,7 @@ void plotClass::initNumbers(numbers *a) {
 
   a->tauBs = a->tauBsE = a->tauBd = a->tauBdE = 0.; 
 
-  a->offRare = a->offRareE = a->bsRare = a->bsRareE = a->bdRare = a->bdRareE = 0.; 
+  a->offLoRare = a->offLoRareE = a->offHiRare = a->offHiRareE = a->bsRare = a->bsRareE = a->bdRare = a->bdRareE = 0.; 
   a->bsNoScaled = a->bsNoScaledE = a->bdNoScaled = a->bdNoScaledE = 0.;
   a->mBdLo = a->mBdHi = a->mBsLo = a->mBsHi = 0.;
 
@@ -351,11 +351,11 @@ void plotClass::loopTree(int mode, int proc) {
 
   ptT1 = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo.dat"); 	
   ptT2 = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.dat"); 	
-  ptM  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_Track2_data_all_histo.dat"); 
+  ptM  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_data_all_histo.dat"); 
 
   ptT1MC = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo.dat"); 	
   ptT2MC = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.dat"); 	
-  ptMMC  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_Track7_datalike_mc_histo.dat"); 
+  ptMMC  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_datalike_mc_histo.dat"); 
 
   //   if (isMC) {
   //     delete ptT1; 
@@ -421,7 +421,7 @@ void plotClass::loopTree(int mode, int proc) {
   double mass(0.); 
   TTree *t;
   t = (TTree*)gDirectory->Get("events");
-  int brun, bevt, bls, btm, bq1, bq2, bprocid; 
+  int brr, brun, bevt, bls, btm, bq1, bq2, bprocid; 
   double bg1pt, bg2pt, bg1eta, bg2eta;
   double bbdt, bbdt2; 
   double bm, bcm, bpt, beta, bphi, bcosa, balpha, biso, bchi2, bdof, bdocatrk, bfls3d, bfl3dE, bfl3d;
@@ -458,6 +458,7 @@ void plotClass::loopTree(int mode, int proc) {
   t->SetBranchAddress("m1bpixl1",&bm1bpixl1);
   t->SetBranchAddress("m2bpixl1",&bm2bpixl1);
 
+  t->SetBranchAddress("rr",&brr);
   t->SetBranchAddress("run",&brun);
   t->SetBranchAddress("evt",&bevt);
   t->SetBranchAddress("hlt",&bhlt);
@@ -505,7 +506,7 @@ void plotClass::loopTree(int mode, int proc) {
     t->SetBranchAddress("kpt",&bk1pt);
     t->SetBranchAddress("keta",&bk1eta);
     t->SetBranchAddress("mpsi",&bmpsi);
-    t->SetBranchAddress("ptpsi",&bptpsi); //FIXME
+    t->SetBranchAddress("psipt",&bptpsi); //FIXME
   }
 
   if (bs2jpsiphi) {
@@ -651,8 +652,8 @@ void plotClass::loopTree(int mode, int proc) {
 	if (bptpsi < 7) continue;
       } 
 
-      if (0 == fChan && bbdt < -0.03) continue;
-      if (1 == fChan && bbdt2 < -0.07) continue;
+      if (0 == fChan && bbdt < -0.07) continue;
+      if (1 == fChan && bbdt2 < -0.1) continue;
     } else {
     
       // -- analysis cuts
@@ -703,12 +704,6 @@ void plotClass::loopTree(int mode, int proc) {
     m2w8 = ptM->effD(bm2pt, TMath::Abs(bm2eta), 0.);
     mw8  = m1w8*m2w8; 
     fhMuId[fChan]->Fill(mw8); 
-//     if (mw8 > 0.) {
-//       fhMuId[fChan]->Fill(mw8, 1./mw8); 
-//     } else {
-//       cout << "mw8 = " << mw8 << " for muons = " << bm1pt << " " << bm1eta << " " << bm2pt << " " << bm2eta << endl;
-//     }
-
     fh0TNPMuID[fChan]->Fill(bpt, mw8); 
     fh1TNPMuID[fChan]->Fill(bpt); 
 
@@ -727,11 +722,13 @@ void plotClass::loopTree(int mode, int proc) {
     tr1w8 = ptT1->effD(bm1pt, TMath::Abs(bm1eta), 0.)*ptT2->effD(bm1pt, TMath::Abs(bm1eta), 0.);
     tr2w8 = ptT1->effD(bm2pt, TMath::Abs(bm2eta), 0.)*ptT2->effD(bm2pt, TMath::Abs(bm2eta), 0.);
     trw8  = tr1w8*tr2w8; 
+    if (bs2jpsiphi || bp2jpsikp) {
+      if (brr >= 3) {
+	if (TMath::Abs(bm1eta) > 2.2) trw8 = 0; 
+	if (TMath::Abs(bm2eta) > 2.2) trw8 = 0; 
+      }
+    }
     fhMuTr[fChan]->Fill(trw8); 
-    //     if (trw8 > 0.) {
-    //       fhMuTr[fChan]->Fill(trw8, 1./trw8); 
-    //     }
-    
     fh0TNPTrigger[fChan]->Fill(bpt, trw8); 
     fh1TNPTrigger[fChan]->Fill(bpt); 
 
@@ -739,10 +736,13 @@ void plotClass::loopTree(int mode, int proc) {
     tr1w8 = ptT1MC->effD(bm1pt, TMath::Abs(bm1eta), 0.)*ptT2->effD(bm1pt, TMath::Abs(bm1eta), 0.);
     tr2w8 = ptT1MC->effD(bm2pt, TMath::Abs(bm2eta), 0.)*ptT2->effD(bm2pt, TMath::Abs(bm2eta), 0.);
     trw8  = tr1w8*tr2w8; 
+    if (bs2jpsiphi || bp2jpsikp) {
+      if (brr >= 3) {
+	if (TMath::Abs(bm1eta) > 2.2) trw8 = 0; 
+	if (TMath::Abs(bm2eta) > 2.2) trw8 = 0; 
+      }
+    }
     fhMuTrMC[fChan]->Fill(trw8); 
-    //     if (trw8 > 0.) {
-    //       fhMuTrMC[fChan]->Fill(trw8, 1./trw8); 
-    //     }
     fh0TNPMCTrigger[fChan]->Fill(bpt, trw8); 
     fh1TNPMCTrigger[fChan]->Fill(bpt); 
 
@@ -1079,10 +1079,14 @@ void plotClass::loopTree(int mode, int proc) {
       aa->tauBd    = scaleBd; 
       aa->tauBdE   = 0.04*scaleBd; 
       cout << "CCCCCCCCCCCC  " << scaleBs << " " << aa->tauBs << "+/-" << aa->tauBsE << endl;
-      aa->bgBsExp  = scaleBs*aa->bgObs;
-      aa->bgBsExpE = scaleBs*TMath::Sqrt(aa->bgObs);
-      aa->bgBdExp  = scaleBd*aa->bgObs;
-      aa->bgBdExpE = scaleBd*TMath::Sqrt(aa->bgObs);
+      // FIXME subtract rare bg 
+      double combBg  = aa->bgObs - aa->offLoRare - aa->offHiRare;
+      double combBgE = 0.2*0.2*(aa->offLoRare + aa->offHiRare)*(aa->offLoRare + aa->offHiRare)  + aa->bgObs;
+      combBgE        = TMath::Sqrt(combBgE);
+      aa->bgBsExp    = scaleBs*combBg;
+      aa->bgBsExpE   = scaleBs*combBgE;
+      aa->bgBdExp    = scaleBd*combBg;
+      aa->bgBdExpE   = scaleBd*combBgE;
 
       double cnt = fhMassWithAllCuts[i]->Integral(fhMassWithAllCuts[i]->FindBin(aa->mBsLo), 
 						  fhMassWithAllCuts[i]->FindBin(aa->mBsHi));
@@ -2156,12 +2160,12 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi) {
   if (0 == mode) { 
     fpFunc->fLo = 5.0;
     fpFunc->fHi = 5.5;
-    lF1 = fpFunc->pol1ErrGauss(h, 5.27, 0.034, 5.1); 
+    lF1 = fpFunc->pol1Errgauss2c(h, 5.27, 0.034, 5.146); 
     lBg = fpFunc->pol1Err(fpFunc->fLo, fpFunc->fHi); 
   } else {
     fpFunc->fLo = 5.0;
     fpFunc->fHi = 5.5;
-    lF1 = fpFunc->expoErrGauss(h, 5.27, 0.056, 5.1); 
+    lF1 = fpFunc->expoErrGauss(h, 5.27, 0.056, 5.145); 
     lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
   }
   h->Fit(lF1, "rm", "", lo, hi); 

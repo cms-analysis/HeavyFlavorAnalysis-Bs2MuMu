@@ -37,6 +37,7 @@ public:
   TF1* expoGauss(TH1 *h, double peak = 5.3, double sigma = 0.04);
 
   TF1* expoErrGauss(TH1 *h, double peak = 5.3, double sigma = 0.04, double preco = 5.14); 
+  TF1* expoErrGauss2(TH1 *h, double peak = 5.3, double sigma = 0.04, double preco = 5.14); 
   TF1* pol1ErrGauss(TH1 *h, double peak = 5.3, double sigma = 0.04, double preco = 5.14); 
 
   TF1* pol0BsBlind(TH1 *h); 
