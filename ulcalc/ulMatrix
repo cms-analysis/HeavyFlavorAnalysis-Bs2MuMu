@@ -41,27 +41,11 @@ my @endbd;
 if ($opt_t) {
     
     &readUlcFile(); 
-    &produceTexFile("cls"); 
-    &produceTexFile("bayes"); 
-#    &readUlCalcResults();
+    &produceTexVars("cls"); 
+#    &produceTexVars("bayes"); 
+    &produceTexTable(); 
 
-    open(TEX, ">ulMatrixTable.tex") || die "cannot open ulMatrixTable.tex\n";
-    for ($id0 = $startbd[0]; $id0 <= $endbd[0]; $id0++) {
-	for ($is0 = $startbs[0]; $is0 <= $endbs[0]; $is0++) {
-	    for ($id1 = $startbd[1]; $id1 <= $endbd[1]; $id1++) {
-		for ($is1 = $startbs[1]; $is1 <= $endbs[1]; $is1++) {
-		    $name = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:cls";
-		    $name1 = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:bayes";
-#		    $name2 = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:valSignificance";
-		    print TEX "$id0 &$is0 &$id1 &$is1 &\\vuse{$name} &\\vuse{$name1} \\\\ \n";
-		}
-		print TEX "%\n";
-	    }
-	    print TEX "%\n";
-	}
-	print TEX "%\n";
-    }
-    close(TEX);
+#    &readUlCalcResults();
 
     die "\n";
 }
@@ -71,18 +55,48 @@ if ($opt_t) {
 &readUlcFile();
 &createConfigFiles();
 &readUlCalcResults();
-&produceTexFile(); 
+&produceTexVars(); 
 die "\n";
 
 
 # ----------------------------------------------------------------------
-sub produceTexFile() {
+sub produceTexTable() {
+    open(TEX, ">ulTable.tex") || die "cannot open ulTable.tex\n";
+    $tcnt = 0; 
+    $lcnt = 0; 
+    &printHeader($tcnt, TEX); 
+    for ($id0 = $startbd[0]; $id0 <= $endbd[0]; $id0++) {
+	for ($is0 = $startbs[0]; $is0 <= $endbs[0]; $is0++) {
+	    for ($id1 = $startbd[1]; $id1 <= $endbd[1]; $id1++) {
+		for ($is1 = $startbs[1]; $is1 <= $endbs[1]; $is1++) {
+		    $name = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:cls";
+		    $name1 = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:bayes";
+		    $name2 = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:clb";
+		    print TEX "$id0 &$is0 &$id1 &$is1 &\\vuse{$name} &\\vuse{$name1} &\\vuse{$name2} \\\\ \n";
+		    $lcnt++; 
+		    if ($lcnt > 44) {
+			$lcnt = 0; 
+			&printFooter(TEX); 
+			$tcnt++;
+			&printHeaer($tcnt, TEX); 
+		    }
+		}
+		print TEX "%\n";
+	    }
+	    print TEX "%\n";
+	}
+	print TEX "%\n";
+    }
+    close(TEX);
+
+
+
+# ----------------------------------------------------------------------
+sub produceTexVars() {
     ($alg) = @_; 
 
     print "+++++ $algo\n";
-
     open(TEX, ">ulMatrix-$alg-$opt_p.bstomumu.tex") || die "cannot open ulMatrix-$alg-$opt_p.bstomumu.tex\n";
-    
     for ($id0 = $startbd[0]; $id0 <= $endbd[0]; $id0++) {
 	for ($is0 = $startbs[0]; $is0 <= $endbs[0]; $is0++) {
 	    for ($id1 = $startbd[1]; $id1 <= $endbd[1]; $id1++) {
@@ -116,6 +130,39 @@ sub produceTexFile() {
     close(TEX);
 }
 
+
+
+# ----------------------------------------------------------------------
+sub printHeader() {
+    ($ver, $OUT) = @_; 
+    
+    print $OUT "\\begin{table}[!htb] \n";
+    print $OUT "\\begin{center} \n";
+    print $OUT "\\caption{\\ulcaption} \n";
+    print $OUT "\\label{tab:ulTable$ver} \n";
+    print $OUT "\\vspace{0.1in} \n";
+    print $OUT "\\begin{footnotesize} \n";
+    print $OUT "\\begin{tabular}{|c|c|c|c|c|c|c|} \n";
+    print $OUT "\\hline \n";
+    print $OUT "\\multicolumn{2}{|c|}{Barrel}&\multicolumn{2}{c|}{Endcap}&\multicolumn{2}{c|}{Upper  limit} &Sensitivity\\ \n";
+    print $OUT "\\hline \n";
+    print $OUT "  \$n_{\\mathrm{obs}}(\\B)\$ &\$n_{\\mathrm{obs}}(\\Bs)\$  \n";
+    print $OUT "  &\$n_{\\mathrm{obs}}(\\B)\$ &\$n_{\\mathrm{obs}}(\\Bs)\$ \n";
+    print $OUT "  &CLs &Bayes &CLb\\\\ \n";
+
+}
+
+# ----------------------------------------------------------------------
+sub printFooter() {
+    ($OUT) = @_; 
+    
+    print $OUT "      \\hline\n";
+    print $OUT "  \\end{tabular}\n";
+    print $OUT "  \\end{footnotesize}\n";
+    print $OUT "   \\end{center}\n";
+    print $OUT "   \\end{table}\n";
+    print $OUT "\\clearpage \n";
+}
 
 # ----------------------------------------------------------------------
 sub readUlCalcResults() {
@@ -187,8 +234,8 @@ sub readUlcFile() {
 	$startbs[$i] = sprintf("%d", $totbs[$i] - 2 + 0.5); if ($startbs[$i] < 0) {$startbs[$i] = 0;}
 	$endbs[$i]   = sprintf("%d", $totbs[$i] + 2 + 0.5); 
 
-	$startbd[$i] = sprintf("%d", $totbd[$i] - 2 + 0.5); if ($startbd[$i] < 0) {$startbd[$i] = 0;}
-	$endbd[$i]   = sprintf("%d", $totbd[$i] + 2 + 0.5); 
+	$startbd[$i] = sprintf("%d", $totbd[$i] - 1 + 0.5); if ($startbd[$i] < 0) {$startbd[$i] = 0;}
+	$endbd[$i]   = sprintf("%d", $totbd[$i] + 1 + 0.5); 
 	
     }
     print "expected events in barrel: $startbd[0] < $totbd[0] < $endbd[0]; $startbs[0] < $totbs[0] < $endbs[0]\n";
