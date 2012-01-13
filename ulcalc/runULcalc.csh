@@ -72,15 +72,15 @@ pwd
 bin/ulcalc -a "clb" -l 0.95 -o clb.$JOB $JOB
 cp clb.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
 
-#bin/ulcalc -a "bayes" -l 0.95 --disable-errors -o bayes.$JOB $JOB
-#cp bayes.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
-#
-#bin/ulcalc -a "cls" -l 0.95 -o cls.$JOB $JOB 
-#cp cls.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
-#
-#bin/ulcalc -a "fc" -l 0.68 -r 0.5,4 -n 101 -o fc68.$JOB $JOB
-#cp fc68.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
-#
+bin/ulcalc -a "bayes" -l 0.95 --disable-errors -o bayes.$JOB $JOB
+cp bayes.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
+
+bin/ulcalc -a "cls" -l 0.95 -o cls.$JOB $JOB 
+cp cls.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
+
+bin/ulcalc -a "fc" -l 0.68 -r 0.5,4 -n 101 -o fc68.$JOB $JOB
+cp fc68.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
+
 #bin/ulcalc -a "fc" -l 0.95 -r 0.5,5 -n 101 -o fc95.$JOB $JOB
 #cp fc95.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env perl
 
+# ./ulMatrix -t -c bdt.ulc -p bdt
+# ./ulMatrix -t -c cnc.ulc -p cnc
 
 # ulMatrix [-d] -a "bayes" -p "prefix" -c anaBmm.plotResults.default-11.bdt.ulc
 
@@ -39,29 +41,25 @@ my @endbd;
 
 # -- print table template
 if ($opt_t) {
-    
     &readUlcFile(); 
+    &produceTexVars("clb"); 
     &produceTexVars("cls"); 
-#    &produceTexVars("bayes"); 
+    &produceTexVars("bayes"); 
     &produceTexTable(); 
 
 #    &readUlCalcResults();
 
     die "\n";
+} else {
+    &readUlcFile();
+    &createConfigFiles();
+    die "\n";
 }
-
-
-
-&readUlcFile();
-&createConfigFiles();
-&readUlCalcResults();
-&produceTexVars(); 
-die "\n";
-
 
 # ----------------------------------------------------------------------
 sub produceTexTable() {
-    open(TEX, ">ulTable.tex") || die "cannot open ulTable.tex\n";
+    ($alg) = @_; 
+    open(TEX, ">ulTable-$opt_p.tex") || die "cannot open ulTable-$opt_p.tex\n";
     $tcnt = 0; 
     $lcnt = 0; 
     &printHeader($tcnt, TEX); 
@@ -78,7 +76,7 @@ sub produceTexTable() {
 			$lcnt = 0; 
 			&printFooter(TEX); 
 			$tcnt++;
-			&printHeaer($tcnt, TEX); 
+			&printHeader($tcnt, TEX); 
 		    }
 		}
 		print TEX "%\n";
@@ -88,48 +86,74 @@ sub produceTexTable() {
 	print TEX "%\n";
     }
     close(TEX);
-
+}
 
 
 # ----------------------------------------------------------------------
 sub produceTexVars() {
     ($alg) = @_; 
 
-    print "+++++ $algo\n";
+    print "+++++ $alg\n";
     open(TEX, ">ulMatrix-$alg-$opt_p.bstomumu.tex") || die "cannot open ulMatrix-$alg-$opt_p.bstomumu.tex\n";
-    for ($id0 = $startbd[0]; $id0 <= $endbd[0]; $id0++) {
-	for ($is0 = $startbs[0]; $is0 <= $endbs[0]; $is0++) {
-	    for ($id1 = $startbd[1]; $id1 <= $endbd[1]; $id1++) {
-		for ($is1 = $startbs[1]; $is1 <= $endbs[1]; $is1++) {
-		    $oname    = "$alg"."."."$opt_c".".B$id0"."_$is0"."E$id1"."_$is1"; 
-		    open(IN, "$oname") || next; 
-		    $line0 = <IN>;
-		    $line1 = <IN>;
-		    $line2 = <IN>;
-		    $line3 = <IN>;
-		    $line = $line2; 
-		    chop($line); 
-		    close(IN); 
-		    print "==> $line\n";
-		    ($algo, $numbers) = split(/:/, $line); 
-		    $algo =~ s/Algorithm //;
-		    $algo =~ s/://;
-		    ($ul, $bl) = split(/\(/, $numbers); 
-		    $ul = sprintf("%2.1e", $ul); 
-		    ($sf0, $sf1) = split(/e/, $ul);
-		    $sf1 =~ s/0//g;
-		    $name = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:$alg";
-		    if ($ul < 3.2e-8) {
-			print "$oname: $algo $numbers -> \\vdef{$name} {\ensuremath {$sf0 \\times 10^{$sf1} } }\n";
-			print TEX "\\vdef{$name} {\\ensuremath {$sf0 \\times 10^{$sf1} } }\n";
-		    } 
+    if ($alg eq "clb") {
+	for ($id0 = $startbd[0]; $id0 <= $endbd[0]; $id0++) {
+	    for ($is0 = $startbs[0]; $is0 <= $endbs[0]; $is0++) {
+		for ($id1 = $startbd[1]; $id1 <= $endbd[1]; $id1++) {
+		    for ($is1 = $startbs[1]; $is1 <= $endbs[1]; $is1++) {
+			# output/clb.cnc.1424.B0_3E2_2
+			$oname    = "output/$alg"."."."$opt_c".".B$id0"."_$is0"."E$id1"."_$is1"; 
+			open(IN, "$oname") || next; 
+			$line0 = <IN>;
+			$line1 = <IN>;
+			$line = $line1; 
+			chop($line); 
+			close(IN); 
+			print "==> $line\n";
+			($bla, $ul) = split(/to/, $line); 
+			$ul =~ s/sigmas//g;
+			$name = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:$alg";
+			if ($ul < 3.2e88) {
+			    print "$oname: $bla .. $ul -> \\vdef{$name} {\\ensuremath {$ul } }\n";
+			    print TEX "\\vdef{$name} {\\ensuremath {$ul}  } \n";
+			} 
+		    }
+		}    
+	    }
+	}
+    } else {
+	for ($id0 = $startbd[0]; $id0 <= $endbd[0]; $id0++) {
+	    for ($is0 = $startbs[0]; $is0 <= $endbs[0]; $is0++) {
+		for ($id1 = $startbd[1]; $id1 <= $endbd[1]; $id1++) {
+		    for ($is1 = $startbs[1]; $is1 <= $endbs[1]; $is1++) {
+			$oname    = "output/$alg"."."."$opt_c".".B$id0"."_$is0"."E$id1"."_$is1"; 
+			open(IN, "$oname") || next; 
+			$line0 = <IN>;
+			$line1 = <IN>;
+			$line2 = <IN>;
+			$line3 = <IN>;
+			$line = $line2; 
+			chop($line); 
+			close(IN); 
+			print "==> $line\n";
+			($algo, $numbers) = split(/:/, $line); 
+			$algo =~ s/Algorithm //;
+			$algo =~ s/://;
+			($ul, $bl) = split(/\(/, $numbers); 
+			$ul = sprintf("%2.1e", $ul); 
+			($sf0, $sf1) = split(/e/, $ul);
+			$sf1 =~ s/0//g;
+			$name = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:$alg";
+			if ($ul < 3.2e-8) {
+			    print "$oname: $algo $numbers -> \\vdef{$name} {\ensuremath {$sf0 \\times 10^{$sf1} } }\n";
+			    print TEX "\\vdef{$name} {\\ensuremath {$sf0 \\times 10^{$sf1} } }\n";
+			} 
+		    }
 		}
 	    }
 	}
     }
     close(TEX);
 }
-
 
 
 # ----------------------------------------------------------------------
@@ -139,12 +163,12 @@ sub printHeader() {
     print $OUT "\\begin{table}[!htb] \n";
     print $OUT "\\begin{center} \n";
     print $OUT "\\caption{\\ulcaption} \n";
-    print $OUT "\\label{tab:ulTable$ver} \n";
+    print $OUT "\\label{tab:$opt_p:ulTable$ver} \n";
     print $OUT "\\vspace{0.1in} \n";
     print $OUT "\\begin{footnotesize} \n";
     print $OUT "\\begin{tabular}{|c|c|c|c|c|c|c|} \n";
     print $OUT "\\hline \n";
-    print $OUT "\\multicolumn{2}{|c|}{Barrel}&\multicolumn{2}{c|}{Endcap}&\multicolumn{2}{c|}{Upper  limit} &Sensitivity\\ \n";
+    print $OUT "\\multicolumn{2}{|c|}{Barrel}&\\multicolumn{2}{c|}{Endcap}&\\multicolumn{2}{c|}{Upper  limit} &Sensitivity\\\\ \n";
     print $OUT "\\hline \n";
     print $OUT "  \$n_{\\mathrm{obs}}(\\B)\$ &\$n_{\\mathrm{obs}}(\\Bs)\$  \n";
     print $OUT "  &\$n_{\\mathrm{obs}}(\\B)\$ &\$n_{\\mathrm{obs}}(\\Bs)\$ \n";
@@ -186,11 +210,11 @@ sub readUlCalcResults() {
 
 # ----------------------------------------------------------------------
 sub createConfigFiles() {
-
+    
     open(IN, "$opt_c") || die "cannot open $opt_c\n";
     @lines = <IN>;
     close(IN); 
-
+    
     for ($id0 = $startbd[0]; $id0 <= $endbd[0]; $id0++) {
 	for ($is0 = $startbs[0]; $is0 <= $endbs[0]; $is0++) {
 	    for ($id1 = $startbd[1]; $id1 <= $endbd[1]; $id1++) {
@@ -213,27 +237,27 @@ sub createConfigFiles() {
 
 # ----------------------------------------------------------------------
 sub readUlcFile() {
-
+    
     open(IN, "$opt_c") || die "cannot open $opt_c\n";
     @lines = <IN>;
     close(IN); 
-
+    
     for ($i = 0; $i <= 1; $i++) {
 	@matched = grep(/#EXP_OBS_BSMM\t$i\t([0-9.]{1,5})/, @lines);
 	chop($matched[0]); 
 	($tag, $chan, $value) = split(/\t/, $matched[0]); 
 	$totbs[$i] = $value; 
 	#print "matched $i: $matched[0] -> $value\n";
-
+	
 	@matched = grep(/#EXP_OBS_BDMM\t$i\t([0-9.]{1,5})/, @lines);
 	chop($matched[0]); 
 	($tag, $chan, $value) = split(/\t/, $matched[0]); 
 	$totbd[$i] = $value; 
 	#print "matched $i: $matched[0] -> $value\n";
-
+	
 	$startbs[$i] = sprintf("%d", $totbs[$i] - 2 + 0.5); if ($startbs[$i] < 0) {$startbs[$i] = 0;}
 	$endbs[$i]   = sprintf("%d", $totbs[$i] + 2 + 0.5); 
-
+	
 	$startbd[$i] = sprintf("%d", $totbd[$i] - 1 + 0.5); if ($startbd[$i] < 0) {$startbd[$i] = 0;}
 	$endbd[$i]   = sprintf("%d", $totbd[$i] + 1 + 0.5); 
 	
