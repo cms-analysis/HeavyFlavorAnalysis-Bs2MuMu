@@ -112,7 +112,8 @@ public:
     , CANDCOSALPHA, CANDALPHA
     , CANDFLS3D, CANDFLSXY, CANDVTXCHI2
     , CANDISOLATION, CANDDOCATRK, CANDCLOSETRK
-    , PVAVEW8, CANDLIP, CANDLIPS
+    , PVAVEW8, CANDLIP, CANDLIPS, CANDLIP2, CANDLIPS2
+    , CANDDOCA, CANDIP, CANDIPS
     , TRACKPTLO, TRACKPTHI, TRACKETALO, TRACKETAHI
     , TRACKTIP, TRACKLIP
     , MUPTLO, MUPTHI
@@ -156,8 +157,8 @@ public:
   double  f2MChi2,   f2MDof,   f2MProb,   f2MFL3d,   f2MFL3dE,   f2MFLS3d,   f2MFLSxy; 
   double  fCandIso;
   int     fCandIsoTrk, fCandCloseTrk, fCandPvTrk, fCandI0trk, fCandI1trk, fCandI2trk; 
-  double  fCandDocaTrk, fMu1IP, fMu1IPE, fMu2IP, fMu2IPE; 
-  double  fCandPvTip, fCandPvTipE, fCandPvTipS, fCandPvLip, fCandPvLipE, fCandPvLipS;
+  double  fCandDocaTrk, fCandDocaTrkBdt, fMu1IP, fMu1IPE, fMu2IP, fMu2IPE; 
+  double  fCandPvTip, fCandPvTipE, fCandPvTipS, fCandPvLip, fCandPvLipE, fCandPvLipS, fCandPvIp, fCandPvIpE, fCandPvIpS;
   double  fCandPvLip2, fCandPvLipS2, fCandPvLip12, fCandPvLipE12, fCandPvLipS12; 
 
   // -- another reduced tree
@@ -183,7 +184,7 @@ public:
 
   string  fHLTPath;
   bool    fGoodHLT, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta, fGoodTracks, fGoodTracksPt, fGoodTracksEta;
-  bool    fGoodPvAveW8, fGoodPvLip, fGoodPvLipS; 
+  bool    fGoodPvAveW8, fGoodPvLip, fGoodPvLipS, fGoodPvLip2, fGoodPvLipS2, fGoodMaxDoca, fGoodIp, fGoodIpS; 
   bool    fGoodQ, fGoodPt, fGoodEta, fGoodCosA, fGoodAlpha, fGoodIso, fGoodCloseTrack, fGoodChi2, fGoodFLS; 
   bool    fGoodDocaTrk, fGoodLastCut; 
 
@@ -207,6 +208,7 @@ public:
     , *fpTip[NAD], *fpTipE[NAD], *fpTipS[NAD] 
     , *fpLip12[NAD], *fpLipE12[NAD], *fpLipS12[NAD] 
     , *fpLip2[NAD], *fpLipS2[NAD]
+    , *fpMaxDoca[NAD], *fpIp[NAD], *fpIpS[NAD]
     , *fp2MChi2[NAD],  *fp2MChi2Dof[NAD], *fp2MProb[NAD] 
     , *fp2MFLS3d[NAD], *fp2MFLSxy[NAD] 
     , *fp2MFL3d[NAD],  *fp2MFL3dE[NAD] 
@@ -227,6 +229,11 @@ public:
   AnalysisDistribution   *fpNpvCloseTrk[NADPV][NAD];
   AnalysisDistribution   *fpNpvLip[NADPV][NAD];
   AnalysisDistribution   *fpNpvLipS[NADPV][NAD];
+  AnalysisDistribution   *fpNpvLip2[NADPV][NAD];
+  AnalysisDistribution   *fpNpvLipS2[NADPV][NAD];
+  AnalysisDistribution   *fpNpvMaxDoca[NADPV][NAD];
+  AnalysisDistribution   *fpNpvIp[NADPV][NAD];
+  AnalysisDistribution   *fpNpvIpS[NADPV][NAD];
   AnalysisDistribution   *fpNpvIso0[NADPV][NAD];
   AnalysisDistribution   *fpNpvIso1[NADPV][NAD];
   AnalysisDistribution   *fpNpvIso2[NADPV][NAD];

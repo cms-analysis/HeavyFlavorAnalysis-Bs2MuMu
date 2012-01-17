@@ -38,6 +38,7 @@ public:
 
   TF1* expoErrGauss(TH1 *h, double peak = 5.3, double sigma = 0.04, double preco = 5.14); 
   TF1* expoErrgauss2c(TH1 *h, double peak = 5.3, double sigma = 0.04, double preco = 5.14); 
+  TF1* expoErrgauss2(TH1 *h, double peak = 5.3, double sigma = 0.04, double preco = 5.14); 
   TF1* pol1ErrGauss(TH1 *h, double peak = 5.3, double sigma = 0.04, double preco = 5.14); 
 
   TF1* pol0BsBlind(TH1 *h); 
@@ -49,6 +50,7 @@ public:
   void initExpo(double &p0, double &p1, TH1 *h);
 
   double fLo, fHi;
+  double fBgFractionLo, fBgFractionHi; 
 
 private: 
 

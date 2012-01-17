@@ -36,6 +36,8 @@ struct cuts {
   double iso, chi2dof, alpha, fls3d, docatrk; 
   // -- new variables
   double closetrk, pvlip, pvlips; 
+  double bdt; 
+  double maxdoca, pvlip2, pvlips2;
 };
 
 struct numbers {
@@ -68,6 +70,7 @@ struct numbers {
   double bsObs, bdObs; 
   double tauBs, tauBsE, tauBd, tauBdE; 
   double offHiRare, offHiRareE, offLoRare, offLoRareE, bsRare, bsRareE, bdRare, bdRareE; 
+  double offHi, offLo;
   double bsNoScaled, bsNoScaledE, bdNoScaled, bdNoScaledE;
   double pss, pssE, pdd, pddE;
   double psd, psdE, pds, pdsE;
@@ -97,8 +100,8 @@ public:
   void loopTree(int mode, int proc = -1);
   void accEffFromEffTree(std::string fname, std::string dname, numbers &a, cuts &b, int proc);
   void filterEfficiency(std::string fname, std::string name);
-  void normYield(TH1 *h, int mode, double lo = 5.15, double hi=5.5);
-  void csYield(TH1 *h, int mode, double lo = 5.25, double hi=5.6);
+  void normYield(TH1 *h, int mode, double lo = 5.15, double hi=5.5, double preco=-1.);
+  void csYield(TH1 *h, int mode, double lo = 5.25, double hi=5.6, double preco=-1.);
   void bgBlind(TH1 *h, int mode = 2, double lo = 4.5, double hi = 6.5); 
 
   void printNumbers(numbers &a, ostream &OUT);
@@ -122,6 +125,8 @@ public:
   virtual void makeCanvas(int i = 3);
   virtual void newLegend(double x1, double y1, double x2, double y2);
 
+
+  std::string fFiles; 
   // -- Files for Signal and Normalization modes in data and MC
   std::map<std::string, TFile*> fF; 
   std::map<std::string, double> fLumi, fFilterEff; 
@@ -208,7 +213,7 @@ public:
   bool fDoUseBDT;
   bool fDoApplyCowboyVeto, fDoApplyCowboyVetoAlsoInSignal; 
   double fBgExp, fBgExpE; 
-  double fBgHist, fBgHistE; 
+  double fBgHist, fBgHistE, fBgHistLo, fBgHistHi; 
   double fBgHistExp, fBgHistExpE;
 
   double fNoSig, fNoSigE; 

@@ -11,7 +11,7 @@ public:
   plotEfficiencies(const char *files="anaBmm.default.files", const char *cuts = "default", const char *dir = "default", int mode = 11);
   ~plotEfficiencies();
 
-  void makeAll(int channels = 3);
+  void makeAll(int channels = 7);
   
   void mcTriggerEffs();
   void tnpVsMC(double m1pt, double m2pt, int chan = 3, std::string what = "default");

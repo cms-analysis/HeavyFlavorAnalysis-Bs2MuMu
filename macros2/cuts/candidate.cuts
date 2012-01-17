@@ -1,6 +1,10 @@
 PVAVEW8          0.6
 CANDLIP          0.01
 CANDLIPS         2.5
+CAND2LIP         0.2
+CAND2LIPS        3
+MAXDOCA          0.6
+CANDIP           12
 CANDPTLO         7.0
 CANDETALO        -24.
 CANDETAHI         24.

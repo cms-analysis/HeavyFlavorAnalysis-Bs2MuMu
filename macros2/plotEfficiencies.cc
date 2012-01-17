@@ -28,118 +28,6 @@ plotEfficiencies::plotEfficiencies(const char *files, const char *cuts, const ch
   int HBINS(15); 
   double HLO(0.), HHI(45.); 
 
-  TH1D *h; 
-  numbers *a(0); 
-  cout << "----> fNchan = " << fNchan << " fCuts.size() = " << fCuts.size() << endl;
-  for (unsigned int i = 0; i < fNchan; ++i) {
-    cout << "--> set up structures for channel #" << i << endl;
-    cout << "    etaMin: " << fCuts[i]->etaMin << " etaMax: " << fCuts[i]->etaMax << endl;
-    // -- signal Bs2MuMu
-    a = new numbers;
-    initNumbers(a); 
-    a->index = i; 
-    a->name  = Form("signal Bs2MuMu %i", i); 
-    fNumbersBs.push_back(a); 
-
-    // -- signal Bd2MuMu
-    a = new numbers;
-    initNumbers(a); 
-    a->index = i; 
-    a->name  = Form("signal Bd2MuMu %i", i); 
-    fNumbersBd.push_back(a); 
-
-    // --  normalization
-    a = new numbers;
-    initNumbers(a); 
-    a->index = i; 
-    a->name = Form("normalization %i", i); 
-    fNumbersNo.push_back(a); 
-
-    // --  control sample
-    a = new numbers;
-    initNumbers(a); 
-    a->index = i; 
-    a->name  = Form("control sample %i", i); 
-    fNumbersCs.push_back(a); 
-
-    h = new TH1D(Form("hMassWithMassCuts%d", i), Form("hMassWithMassCuts%d", i), NBINS, fMassLo, fMassHi);
-    fhMassWithMassCuts.push_back(h); 
-    h = new TH1D(Form("fhMassWithMassCutsManyBins%d", i), Form("fhMassWithMassCutsManyBins%d", i), (fMassHi-fMassLo)*1000, fMassLo, fMassHi);
-    fhMassWithMassCutsManyBins.push_back(h); 
-  
-    h = new TH1D(Form("hMassWithAllCuts%d", i), Form("hMassWithAllCuts%d", i), NBINS, fMassLo, fMassHi);
-    fhMassWithAllCuts.push_back(h); 
-    h = new TH1D(Form("hMassWithAllCutsBlind%d", i), Form("hMassWithAllCutsBlind%d", i), NBINS, fMassLo, fMassHi);
-    fhMassWithAllCutsBlind.push_back(h); 
-    h = new TH1D(Form("hMassWithAllCutsManyBins%d", i), Form("hMassWithAllCutsManyBins%d", i), (fMassHi-fMassLo)*1000, fMassLo, fMassHi);
-    fhMassWithAllCutsManyBins.push_back(h); 
-
-    h = new TH1D(Form("hNorm%d", i), Form("hNorm%d", i), 60, 5.0, 5.6);
-    fhNorm.push_back(h); 
-
-
-    h = new TH1D(Form("hMassWithTriggerCuts%d", i), Form("hMassWithTriggerCuts%d", i), NBINS, fMassLo, fMassHi);
-    fhMassWithTriggerCuts.push_back(h); 
-    h = new TH1D(Form("hMassWithTriggerCutsManyBins%d", i), Form("hMassWithTriggerCutsManyBins%d", i), (fMassHi-fMassLo)*1000, fMassLo, fMassHi);
-    fhMassWithTriggerCutsManyBins.push_back(h); 
-
-    h = new TH1D(Form("hMassWithMuonCuts%d", i), Form("hMassWithMuonCuts%d", i), NBINS, fMassLo, fMassHi);
-    fhMassWithMuonCuts.push_back(h); 
-    h = new TH1D(Form("hMassWithMuonCutsManyBins%d", i), Form("hMassWithMuonCutsManyBins%d", i), (fMassHi-fMassLo)*1000, fMassLo, fMassHi);
-    fhMassWithMuonCutsManyBins.push_back(h); 
-
-    h = new TH1D(Form("fhMassWithAnaCuts%d", i), Form("hMassChan%d", i), NBINS, fMassLo, fMassHi);
-    fhMassWithAnaCuts.push_back(h); 
-    h = new TH1D(Form("fhMassWithAnaCutsManyBins%d", i), Form("hMassChan%d", i), (fMassHi-fMassLo)*1000, fMassLo, fMassHi);
-    fhMassWithAnaCutsManyBins.push_back(h); 
-
-    h = new TH1D(Form("hMassNoCuts%d", i), Form("hMassNoCuts%d", i), NBINS, fMassLo, fMassHi);
-    fhMassNoCuts.push_back(h); 
-    h = new TH1D(Form("fhMassNoCutsManyBins%d", i), Form("hMassChan%d", i), (fMassHi-fMassLo)*1000, fMassLo, fMassHi);
-    fhMassNoCutsManyBins.push_back(h); 
-
-    h = new TH1D(Form("hMassAbsNoCuts%d", i), Form("hMassAbsNoCuts%d", i), 100, 0, 10);
-    fhMassAbsNoCuts.push_back(h); 
-
-    h = new TH1D(Form("hMuId%d", i), Form("hMuId%d", i), 100, 0., 1.);
-    fhMuId.push_back(h); 
-    h = new TH1D(Form("hMuTr%d", i), Form("hMuTr%d", i), 100, 0., 1.);
-    fhMuTr.push_back(h); 
-
-    h = new TH1D(Form("hMuIdMC%d", i), Form("hMuIdMC%d", i), 100, 0., 1.);
-    fhMuIdMC.push_back(h); 
-    h = new TH1D(Form("hMuTrMC%d", i), Form("hMuTrMC%d", i), 100, 0., 1.);
-    fhMuTrMC.push_back(h); 
-
-    h = new TH1D(Form("h0TNPTrigger%d", i), Form("hTNPTrigger%d", i), HBINS, HLO, HHI); h->Sumw2();
-    fh0TNPTrigger.push_back(h); 
-    h = new TH1D(Form("h1TNPTrigger%d", i), Form("hTNPTrigger%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh1TNPTrigger.push_back(h); 
-    h = new TH1D(Form("h0TNPMuID%d", i), Form("hTNPMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh0TNPMuID.push_back(h); 
-    h = new TH1D(Form("h1TNPMuID%d", i), Form("hTNPMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh1TNPMuID.push_back(h); 
-
-    h = new TH1D(Form("h0TNPMCTrigger%d", i), Form("hTNPMCTrigger%d", i), HBINS, HLO, HHI); h->Sumw2();
-    fh0TNPMCTrigger.push_back(h); 
-    h = new TH1D(Form("h1TNPMCTrigger%d", i), Form("hTNPMCTrigger%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh1TNPMCTrigger.push_back(h); 
-    h = new TH1D(Form("h0TNPMCMuID%d", i), Form("hTNPMCMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh0TNPMCMuID.push_back(h); 
-    h = new TH1D(Form("h1TNPMCMuID%d", i), Form("hTNPMCMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh1TNPMCMuID.push_back(h); 
-
-
-    h = new TH1D(Form("h0MCTrigger%d", i), Form("hMCTrigger%d", i), HBINS, HLO, HHI); h->Sumw2();
-    fh0MCTrigger.push_back(h); 
-    h = new TH1D(Form("h1MCTrigger%d", i), Form("hMCTrigger%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh1MCTrigger.push_back(h); 
-    h = new TH1D(Form("h0MCMuID%d", i), Form("hMCMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh0MCMuID.push_back(h); 
-    h = new TH1D(Form("h1MCMuID%d", i), Form("hMCMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh1MCMuID.push_back(h); 
-  }
-
 
 }
 
@@ -151,30 +39,36 @@ plotEfficiencies::~plotEfficiencies() {
 
 
 // ----------------------------------------------------------------------
-void plotEfficiencies::makeAll(int channels) {
-  // -- BMT results
-  triggerSignal(); 
-  triggerNormalization(); 
-
-  // -- efciciency ratios
-  fDoApplyCowboyVeto = true;   
-  fDoApplyCowboyVetoAlsoInSignal = false;   
-  for (int i = 0; i < 6; ++i) {
-    double pt = 4.0 + i*1.0; 
-    cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
-    tnpVsMC(pt, pt, 1, "wCowboyVeto");
+void plotEfficiencies::makeAll(int channel) {
+  if (channel &1) {
+    // -- efficiency ratios
+    fDoApplyCowboyVeto = true;   
+    fDoApplyCowboyVetoAlsoInSignal = false;   
+    for (int i = 0; i < 6; ++i) {
+      double pt = 4.0 + i*1.0; 
+      cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
+      tnpVsMC(pt, pt, 1, "wCowboyVeto");
+    }
+    
+    fDoApplyCowboyVeto = false;   
+    fDoApplyCowboyVetoAlsoInSignal = false; 
+    for (int i = 0; i < 6; ++i) {
+      double pt = 4.0 + i*1; 
+      cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
+      tnpVsMC(pt, pt, 1, "woCowboyVeto");
+    }
   }
 
-  fDoApplyCowboyVeto = false;   
-  fDoApplyCowboyVetoAlsoInSignal = false; 
-  for (int i = 0; i < 6; ++i) {
-    double pt = 4.0 + i*1; 
-    cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
-    tnpVsMC(pt, pt, 1, "woCowboyVeto");
+  if (channel &2) {
+    // -- BMT results
+    triggerSignal(); 
+    triggerNormalization(); 
   }
 
-  // -- MC trigger efficiencies
-  mcTriggerEffs();
+  if (channel &4) {
+    // -- MC trigger efficiencies
+    mcTriggerEffs();
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -297,8 +191,13 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) 
     fTEX << formatTex(r, Form("%s:MuidNo%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
 
     r = fNumbersBs[i]->effMuidTNPMC;
-    fTEX << formatTex(r, Form("%s:TNPMuidSg%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+    fTEX << formatTex(r, Form("%s:TNPMCMuidSg%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
     r = fNumbersNo[i]->effMuidTNPMC;
+    fTEX << formatTex(r, Form("%s:TNPMCMuidNo%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersBs[i]->effMuidTNP;
+    fTEX << formatTex(r, Form("%s:TNPMuidSg%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+    r = fNumbersNo[i]->effMuidTNP;
     fTEX << formatTex(r, Form("%s:TNPMuidNo%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
 
 
@@ -315,9 +214,15 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) 
     fTEX << formatTex(r, Form("%s:rMcMuid%i-pT%2.0fpT%2.0f:err", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
 
     r = fNumbersBs[i]->effMuidTNPMC/fNumbersNo[i]->effMuidTNPMC;
-    fTEX << formatTex(r, Form("%s:rTNPMuid%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+    fTEX << formatTex(r, Form("%s:rTNPMCMuid%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
 
     r = dRatio(fNumbersBs[i]->effMuidTNPMC, fNumbersBs[i]->effMuidTNPMCE, fNumbersNo[i]->effMuidTNPMC, fNumbersNo[i]->effMuidTNPMCE); 
+    fTEX << formatTex(r, Form("%s:rTNPMCMuid%i-pT%2.0fpT%2.0f:err", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersBs[i]->effMuidTNP/fNumbersNo[i]->effMuidTNP;
+    fTEX << formatTex(r, Form("%s:rTNPMuid%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = dRatio(fNumbersBs[i]->effMuidTNP, fNumbersBs[i]->effMuidTNPE, fNumbersNo[i]->effMuidTNPMC, fNumbersNo[i]->effMuidTNPMCE); 
     fTEX << formatTex(r, Form("%s:rTNPMuid%i-pT%2.0fpT%2.0f:err", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
 
     // -- trig
@@ -327,8 +232,13 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) 
     fTEX << formatTex(r, Form("%s:TrigNo%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
 
     r = fNumbersBs[i]->effTrigTNPMC;
-    fTEX << formatTex(r, Form("%s:TNPTrigSg%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+    fTEX << formatTex(r, Form("%s:TNPMCTrigSg%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
     r = fNumbersNo[i]->effTrigTNPMC;
+    fTEX << formatTex(r, Form("%s:TNPMCTrigNo%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersBs[i]->effTrigTNP;
+    fTEX << formatTex(r, Form("%s:TNPTrigSg%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+    r = fNumbersNo[i]->effTrigTNP;
     fTEX << formatTex(r, Form("%s:TNPTrigNo%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
 
     r = fNumbersBs[i]->effTrigMC/fNumbersBs[i]->effTrigTNPMC;
@@ -344,9 +254,15 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) 
     fTEX << formatTex(r, Form("%s:rMcTrig%i-pT%2.0fpT%2.0f:err", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
 
     r = fNumbersBs[i]->effTrigTNPMC/fNumbersNo[i]->effTrigTNPMC;
-    fTEX << formatTex(r, Form("%s:rTNPTrig%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+    fTEX << formatTex(r, Form("%s:rTNPMCTrig%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
 
     r = dRatio(fNumbersBs[i]->effTrigTNPMC, fNumbersBs[i]->effTrigTNPMCE, fNumbersNo[i]->effTrigTNPMC, fNumbersNo[i]->effTrigTNPMCE); 
+    fTEX << formatTex(r, Form("%s:rTNPMCTrig%i-pT%2.0fpT%2.0f:err", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = fNumbersBs[i]->effTrigTNP/fNumbersNo[i]->effTrigTNP;
+    fTEX << formatTex(r, Form("%s:rTNPTrig%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = dRatio(fNumbersBs[i]->effTrigTNP, fNumbersBs[i]->effTrigTNPE, fNumbersNo[i]->effTrigTNPMC, fNumbersNo[i]->effTrigTNPMCE); 
     fTEX << formatTex(r, Form("%s:rTNPTrig%i-pT%2.0fpT%2.0f:err", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
   }
 

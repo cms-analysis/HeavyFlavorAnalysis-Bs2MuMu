@@ -219,9 +219,16 @@ void candAna::candAnalysis() {
   fCandPvLipS   = fCandPvLip/fCandPvLipE;
   fCandPvLip2   = fpCand->fPvLip2;
   fCandPvLipS2  = fpCand->fPvLip2/fpCand->fPvLipE2;
+  if (fpCand->fPvLip2 > 999) fCandPvLipS2 = 999.; // in this case no 2nd best PV was found, reset to 'good' state
   fCandPvLip12  = fCandPvLip/fpCand->fPvLip2;
   fCandPvLipE12 = fCandPvLipE/fpCand->fPvLipE2;
   fCandPvLipS12 = fCandPvLipS/(fpCand->fPvLip2/fpCand->fPvLipE2);
+
+  // -- 3d impact parameter wrt PV
+  fCandPvIp     = TMath::Sqrt(fCandPvLip*fCandPvLip + fCandPvTip*fCandPvTip); 
+  fCandPvIpE    = (fCandPvLip*fCandPvLip*fCandPvLipE*fCandPvLipE + fCandPvTip*fCandPvTip*fCandPvTipE*fCandPvTipE)/(fCandPvIp*fCandPvIp); 
+  fCandPvIpE    = TMath::Sqrt(fCandPvIpE); 
+  fCandPvIpS    = fCandPvIp/fCandPvIpE;
 
   fCandM2 = constrainedMass();
   
@@ -466,8 +473,22 @@ void candAna::candAnalysis() {
   if (fpCand->fNstTracks.size() == 0) {
     //    cout << "HHHHEEEELLLLPPPP" << endl;
     fCandDocaTrk = 99.;
+    fCandDocaTrkBdt = 99.;
   } else {
-    fCandDocaTrk = fpCand->fNstTracks[0].second.first;
+    fCandDocaTrk    = fpCand->fNstTracks[0].second.first;
+    fCandDocaTrkBdt = fpCand->fNstTracks[0].second.first;
+    
+    int nsize(fpCand->fNstTracks.size());
+    for (int i = 0; i<nsize; ++i) {
+      int trkId = fpCand->fNstTracks[i].first;
+      p0 = fpEvt->getRecTrack(trkId);
+      // -- check that any track associated with a definitive vertex is from the same or the closest (compatible) other PV
+      if ((p0->fPvIdx > -1) && (p0->fPvIdx != pvidx)) continue;
+      
+      fCandDocaTrk = fpCand->fNstTracks[i].second.first;
+      break;
+    }
+
   }
   
   // -- fill cut variables
@@ -479,7 +500,7 @@ void candAna::candAnalysis() {
   inputVec[4] = fMu2Pt;
   inputVec[5] = fMu1Eta;
   inputVec[6] = fMu2Eta;
-  inputVec[7] = fCandDocaTrk;
+  inputVec[7] = fCandDocaTrkBdt;
   inputVec[8] = fCandPvLipS;
   inputVec[9] = fCandCloseTrk;
 
@@ -493,7 +514,7 @@ void candAna::candAnalysis() {
   inputVec2[4] = fMu2Pt;
   inputVec2[5] = fMu1Eta;
   inputVec2[6] = fMu2Eta;
-  inputVec2[7] = fCandDocaTrk;
+  inputVec2[7] = fCandDocaTrkBdt;
   inputVec2[8] = fCandPvLipS;
   inputVec2[9] = fCandCloseTrk;
   fCandBDT2    = fBdt2Reader->GetMvaValue(inputVec2);
@@ -511,6 +532,11 @@ void candAna::candAnalysis() {
   fGoodPvAveW8    = (fPvAveW8 > PVAVEW8);
   fGoodPvLip      = (TMath::Abs(fCandPvLip) < CANDLIP); 
   fGoodPvLipS     = (TMath::Abs(fCandPvLipS) < CANDLIPS); 
+  fGoodPvLip2     = (TMath::Abs(fCandPvLip) > CANDLIP2); 
+  fGoodPvLipS2    = (TMath::Abs(fCandPvLipS) > CANDLIPS2); 
+  fGoodMaxDoca    = (TMath::Abs(fCandDoca) < CANDDOCA); 
+  fGoodIp         = (TMath::Abs(fCandPvIp) < CANDIP); 
+  fGoodIpS        = (TMath::Abs(fCandPvIpS) < CANDIPS); 
     
   fGoodPt         = (fCandPt > CANDPTLO);
   fGoodEta        = ((fCandEta > CANDETALO) && (fCandEta < CANDETAHI)); 
@@ -596,6 +622,10 @@ void candAna::fillCandidateHistograms(int offset) {
   fpLip2[offset]->fill(fCandPvLip2, fCandM); 
   fpLipS2[offset]->fill(fCandPvLipS2, fCandM); 
 
+  fpMaxDoca[offset]->fill(fCandDoca, fCandM); 
+  fpIp[offset]->fill(fCandPvIp, fCandM); 
+  fpIpS[offset]->fill(fCandPvIpS, fCandM); 
+
   fp2MChi2[offset]->fill(f2MChi2, fCandM);
   fp2MChi2Dof[offset]->fill(f2MChi2/f2MDof, fCandM); 
   fp2MProb[offset]->fill(f2MProb, fCandM);   
@@ -625,6 +655,11 @@ void candAna::fillCandidateHistograms(int offset) {
     if (fpNpvIsoTrk[ipv][offset]) fpNpvIsoTrk[ipv][offset]->fill(fCandIsoTrk, fCandM); else cout << "missing fpNpvIsoTrk" << endl;
     if (fpNpvLip[ipv][offset]) fpNpvLip[ipv][offset]->fill(fCandPvLip, fCandM); else cout << "missing fpNpvLip" << endl;
     if (fpNpvLipS[ipv][offset]) fpNpvLipS[ipv][offset]->fill(fCandPvLipS, fCandM); else cout << "missing fpNpvLipS" << endl;
+    if (fpNpvLip2[ipv][offset]) fpNpvLip2[ipv][offset]->fill(fCandPvLip2, fCandM); else cout << "missing fpNpvLip2" << endl;
+    if (fpNpvLipS2[ipv][offset]) fpNpvLipS2[ipv][offset]->fill(fCandPvLipS2, fCandM); else cout << "missing fpNpvLipS2" << endl;
+    if (fpNpvMaxDoca[ipv][offset]) fpNpvLipS2[ipv][offset]->fill(fCandDoca, fCandM); else cout << "missing fpNpvMaxDoca" << endl;
+    if (fpNpvIp[ipv][offset]) fpNpvIp[ipv][offset]->fill(fCandPvIp, fCandM); else cout << "missing fpNpvIp" << endl;
+    if (fpNpvIpS[ipv][offset]) fpNpvIpS[ipv][offset]->fill(fCandPvIpS, fCandM); else cout << "missing fpNpvIpS" << endl;
     if (fpNpvAveW8[ipv][offset]) fpNpvAveW8[ipv][offset]->fill(fPvAveW8, fCandM); else  cout << " fpNpvAveW8 missing! " << endl;
     if (fpNpvCloseTrk[ipv][offset]) fpNpvCloseTrk[ipv][offset]->fill(fCandCloseTrk, fCandM); else cout << "missing fpNpvCloseTrk" << endl;
 
@@ -676,6 +711,11 @@ void candAna::candidateCuts() {
   fAnaCuts.addCut("fGoodPvAveW8", "<w8>", fGoodPvAveW8); 
   fAnaCuts.addCut("fGoodPvLip", "LIP(PV)", fGoodPvLip); 
   fAnaCuts.addCut("fGoodPvLipS", "LIPS(PV)", fGoodPvLipS); 
+  fAnaCuts.addCut("fGoodPvLip2", "LIP2(PV)", fGoodPvLip2); 
+  fAnaCuts.addCut("fGoodPvLipS2", "LIPS2(PV)", fGoodPvLipS2); 
+  fAnaCuts.addCut("fGoodIp", "IP", fGoodIp); 
+  fAnaCuts.addCut("fGoodIpS", "IPS", fGoodIpS); 
+  fAnaCuts.addCut("fGoodMaxDoca", "MAXDOCA", fGoodMaxDoca); 
   fAnaCuts.addCut("fGoodPt", "p_{T,B}", fGoodPt); 
   fAnaCuts.addCut("fGoodEta", "#eta_{B}", fGoodEta); 
   fAnaCuts.addCut("fGoodAlpha", "#alpha", fGoodAlpha); 
@@ -859,6 +899,7 @@ void candAna::bookHist() {
   fTree->Branch("rr",      &fRunRange,          "rr/I");
   fTree->Branch("bdt",     &fCandBDT,           "bdt/D");
   fTree->Branch("bdt2",    &fCandBDT2,          "bdt2/D");
+  fTree->Branch("npv",     &fPvN,               "npv/I");
 
   // -- global cuts and weights
   fTree->Branch("gmuid",   &fGoodMuonsID,       "gmuid/O");
@@ -873,6 +914,10 @@ void candAna::bookHist() {
   // -- PV
   fTree->Branch("pvlip",    &fCandPvLip,        "pvlip/D");
   fTree->Branch("pvlips",   &fCandPvLipS,       "pvlips/D");
+  fTree->Branch("pvlip2",   &fCandPvLip2,       "pvlip2/D");
+  fTree->Branch("pvlips2",  &fCandPvLipS2,      "pvlips2/D");
+  fTree->Branch("pvip",     &fCandPvIp,         "pvip/D");
+  fTree->Branch("pvips",    &fCandPvIpS,        "pvips/D");
 
   // -- cand
   fTree->Branch("q",       &fCandQ,             "q/I");
@@ -896,6 +941,7 @@ void candAna::bookHist() {
   fTree->Branch("fl3dE",   &fCandFL3dE,         "fl3dE/D");
   fTree->Branch("flsxy",   &fCandFLSxy,         "flsxy/D");
   fTree->Branch("docatrk", &fCandDocaTrk,       "docatrk/D");  
+  fTree->Branch("docatrkbdt", &fCandDocaTrkBdt, "docatrkbdt/D");  
   fTree->Branch("maxdoca", &fCandDoca,          "maxdoca/D");
   fTree->Branch("lip",     &fCandPvLip,         "lip/D");
   fTree->Branch("lipE",    &fCandPvLipE,        "lipE/D");
@@ -1037,8 +1083,12 @@ void candAna::bookHist() {
     fpLipE12[i]    = bookDistribution(Form("%slipe12", name.c_str()), "ratio #sigma(l_{z})", "fGoodPvLip", 50, 0., 2.);   
     fpLipS12[i]    = bookDistribution(Form("%slips12", name.c_str()), "ratio l_{z}/#sigma(l_{z})", "fGoodPvLipS", 50, -1., 1.);   
 
-    fpLip2[i]      = bookDistribution(Form("%slip2", name.c_str()), "l_{z}^{2nd} [cm]", "fGoodPvLip", 50, -0.05, 0.05);   
-    fpLipS2[i]     = bookDistribution(Form("%slips2", name.c_str()), "l_{z}^{2nd}/#sigma(l_{z}^{2nd})", "fGoodPvLipS", 50, -10., 10.);   
+    fpLip2[i]      = bookDistribution(Form("%slip2", name.c_str()), "l_{z}^{2nd} [cm]", "fGoodPvLip2", 50, -10.0, 10.0);   
+    fpLipS2[i]     = bookDistribution(Form("%slips2", name.c_str()), "l_{z}^{2nd}/#sigma(l_{z}^{2nd})", "fGoodPvLipS2", 50, -100., 100.);   
+
+    fpMaxDoca[i]   = bookDistribution(Form("%smaxdoca", name.c_str()), "d", "fGoodMaxDoca", 50, 0., 0.1);   
+    fpIp[i]        = bookDistribution(Form("%sip", name.c_str()), "d", "fGoodIp", 50, 0., 0.1);   
+    fpIpS[i]       = bookDistribution(Form("%sips", name.c_str()), "d", "fGoodIpS", 50, 0., 10);   
 
     fp2MChi2[i]    = bookDistribution(Form("%s2mchi2", name.c_str()),  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
     fp2MChi2Dof[i] = bookDistribution(Form("%s2mchi2dof", name.c_str()),  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
@@ -1067,6 +1117,13 @@ void candAna::bookHist() {
 	fpNpvCloseTrk[ipv][i]= bookDistribution(Form("%sclosetrk", dname.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 20, 0., 20.); 
 	fpNpvLip[ipv][i]     = bookDistribution(Form("%slip", dname.c_str()),  "l_{z}", "fGoodPvLip", 25, -0.05, 0.05); 
 	fpNpvLipS[ipv][i]    = bookDistribution(Form("%slips", dname.c_str()),  "l_{z}/#sigma(l_{z})", "fGoodPvLipS", 25, -10., 10.); 
+
+	fpNpvLip2[ipv][i]    = bookDistribution(Form("%slip2", dname.c_str()),  "l_{z,2}", "fGoodPvLip2", 25, -0.05, 0.05); 
+	fpNpvLipS2[ipv][i]   = bookDistribution(Form("%slips2", dname.c_str()),  "l_{z,2}/#sigma(l_{z,2})", "fGoodPvLipS2", 25, -10., 10.); 
+
+	fpNpvMaxDoca[ipv][i] = bookDistribution(Form("%smaxdoca", dname.c_str()), "d", "fGoodMaxDoca", 50, 0., 0.1);   
+	fpNpvIp[ipv][i]      = bookDistribution(Form("%sip", dname.c_str()), "d", "fGoodIp", 50, 0., 0.1);   
+	fpNpvIpS[ipv][i]     = bookDistribution(Form("%sips", dname.c_str()), "d", "fGoodIpS", 50, 0., 10);   
 
 	fpNpvIso0[ipv][i]     = bookDistribution(Form("%siso0", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
 	fpNpvIso1[ipv][i]     = bookDistribution(Form("%siso1", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
@@ -1671,6 +1728,46 @@ void candAna::readCuts(string fileName, int dump) {
       ibin = 32;
       hcuts->SetBinContent(ibin, CANDLIPS);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{z}/#sigma(l_{z}) :: %4.3f", CutName, CANDLIPS));
+    }
+
+    if (!strcmp(CutName, "CAND2LIP")) {
+      CANDLIP2 = CutValue; ok = 1;
+      if (dump) cout << "CAND2LIP:           " << CANDLIP2 << endl;
+      ibin = 31;
+      hcuts->SetBinContent(ibin, CANDLIP2);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{z,2} :: %4.3f", CutName, CANDLIP2));
+    }
+
+    if (!strcmp(CutName, "CAND2LIPS")) {
+      CANDLIPS2 = CutValue; ok = 1;
+      if (dump) cout << "CAND2LIPS:          " << CANDLIPS2 << endl;
+      ibin = 32;
+      hcuts->SetBinContent(ibin, CANDLIPS2);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{z,2}/#sigma(l_{z,2}) :: %4.3f", CutName, CANDLIPS2));
+    }
+
+    if (!strcmp(CutName, "CANDIP")) {
+      CANDIP = CutValue; ok = 1;
+      if (dump) cout << "CANDIP:          " << CANDIP << endl;
+      ibin = 32;
+      hcuts->SetBinContent(ibin, CANDIP);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{3d} :: %4.3f", CutName, CANDIP));
+    }
+
+    if (!strcmp(CutName, "MAXDOCA")) {
+      CANDDOCA = CutValue; ok = 1;
+      if (dump) cout << "MAXDOCA:         " << CANDDOCA << endl;
+      ibin = 32;
+      hcuts->SetBinContent(ibin, CANDDOCA);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: d :: %4.3f", CutName, CANDDOCA));
+    }
+
+    if (!strcmp(CutName, "CANDIPS")) {
+      CANDIPS = CutValue; ok = 1;
+      if (dump) cout << "CANDIPS:          " << CANDIPS << endl;
+      ibin = 32;
+      hcuts->SetBinContent(ibin, CANDIPS);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{3d}/#sigma(l_{3d}) :: %4.3f", CutName, CANDIPS));
     }
 
     if (!strcmp(CutName, "SIGBOXMIN")) {

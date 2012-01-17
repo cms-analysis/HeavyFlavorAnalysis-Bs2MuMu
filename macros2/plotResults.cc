@@ -64,18 +64,17 @@ void plotResults::makeAll(int channels) {
 
 
   if (channels & 16) {
-    plotEfficiencies a3; 
+    plotEfficiencies a3(fFiles.c_str()); 
     a3.makeAll(); 
-    acceptancePerProcess();
   }
 
   if (channels & 8) {
-    plotPU a2; 
+    plotPU a2(fFiles.c_str()); 
     a2.makeAll(); 
   }
 
   if (channels & 4) {
-    plotOverlays a1; 
+    plotOverlays a1(fFiles.c_str()); 
     a1.makeAll(); 
   }
 
@@ -86,6 +85,7 @@ void plotResults::makeAll(int channels) {
     fDoApplyCowboyVetoAlsoInSignal = false;   
     computeNormUL();
     computeCsBF();
+    acceptancePerProcess();
   }
 
   if (channels & 2) {
@@ -95,6 +95,7 @@ void plotResults::makeAll(int channels) {
     fDoApplyCowboyVetoAlsoInSignal = false;   
     computeNormUL();
     computeCsBF();
+    //    acceptancePerProcess();
   }
 
 }

@@ -19,7 +19,11 @@ fls3d    10
 docatrk  0.006
 closetrk 2
 pvlip    0.05
-pvlips   3.0
+pvlips   2.0
+pvlip2   -0.05
+pvlips2  -2.0
+maxdoca  3
+bdt      -0.07
 # -- channel 1: endcap
 index    1
 mBdLo    5.200
@@ -40,4 +44,8 @@ fls3d    15
 docatrk  0.005
 closetrk 2
 pvlip    0.04
-pvlips   2.5
+pvlips   2.0
+pvlip2   -0.05
+pvlips2  -2.0
+maxdoca  3
+bdt      -0.10

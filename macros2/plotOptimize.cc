@@ -29,11 +29,11 @@ void plotOptimize::optimizeULs(int nruns, int seed) {
 
   ofstream OUT(Form("optimizeUL-%d.txt", seed)); 
 
-  int NCUTS(12);
-  //                  0       1      2     3        4       5        6          7      8           9      10      11
-  //string cuts[] = {"m2pt", "m1pt","pt", "alpha", "chi2", "fls3d", "docatrk", "iso", "closetrk", "lip", "lips", "mwindow"}; 
-  double loCuts[] = {4.0,    4.0,   5.0,  0.01,    1.2,      5,       0.0,      0.70,  1,         0.0,   1.,     0.020 };
-  double hiCuts[] = {6.0,    7.0,   12.,  0.10,    2.5,     25,       0.1,      0.95,  3,         0.1,   3.5,    0.100};
+  int NCUTS(14);
+  //                  0     1      2    3       4      5       6         7     8          9     10     11     12      13        14
+  //string cuts[] = {"m2pt","m1pt","pt","alpha","chi2","fls3d","docatrk","iso","closetrk","lip","lips","lip2","lips2","maxdoca"}; 
+  double loCuts[] = {4.0,   4.0,   5.0, 0.01,   1.2,   5,      0.0,      0.70, 1,         0.0,  1.,    0.0,   0.,     0.01};
+  double hiCuts[] = {6.0,   7.0,   12., 0.10,   2.5,   25,     0.1,      0.95, 3,         0.01, 2.5,   0.1,   5.,     0.05};
 
   // to add: 
   // LIP(S)2
@@ -63,19 +63,10 @@ void plotOptimize::optimizeULs(int nruns, int seed) {
 	if (8 == i) fCuts[ic]->closetrk = static_cast<int>(cut);
 	if (9 == i) fCuts[ic]->pvlip = cut;
 	if (10== i) fCuts[ic]->pvlips = cut;
-	if (11== i) fCuts[ic]->mBsLo = 5.370 - cut; 
-	if (11== i) fCuts[ic]->mBsHi = 5.370 + cut; 
-	if (11== i) fCuts[ic]->mBsLo = 5.30;
-	if (11== i) fCuts[ic]->mBsHi = 5.45;
+	if (11== i) fCuts[ic]->pvlip2 = cut;
+	if (12== i) fCuts[ic]->pvlips2 = cut;
+	if (13== i) fCuts[ic]->maxdoca = cut;
       }
-    }
-
-	
-
-    if (gRandom->Rndm() > 0.5) { 
-      fDoApplyCowboyVetoAlsoInSignal = true; 
-    } else {
-      fDoApplyCowboyVetoAlsoInSignal = false; 
     }
 
     printCuts(OUT); 
@@ -93,6 +84,7 @@ void plotOptimize::optimizeULs(int nruns, int seed) {
     // -- simple blimits in two channels
     int nobs(-1); 
     for (int ichan = 0; ichan < 2; ++ichan) {
+      
 	fhMassWithAllCuts[ichan]->Draw();
 	double scale   = fLumi["SgData"]/39.4;
 	double nbs     = 2.0e9*(1.0-0.12)*scale;
@@ -112,6 +104,8 @@ void plotOptimize::optimizeULs(int nruns, int seed) {
 	double ulbayes  = nulbayes/(effTot*nbs);
 	cout << "==> effTot:     " << effTot << " chan=" << ichan << " version=" << version << endl;
 	cout << "==> nObs:       " << fNumbersBs[ichan]->bgObs << " chan=" << ichan << " version=" << version  << endl;
+	cout << "==> nHistLo:    " << fNumbersBs[ichan]->offLo << " chan=" << ichan << " version=" << version  << endl;
+	cout << "==> nHistHi:    " << fNumbersBs[ichan]->offHi << " chan=" << ichan << " version=" << version  << endl;
 	cout << "==> nExp:       " << fBgHistExp << " chan=" << ichan << " version=" << version << endl;
 	cout << "==> ul(Bayes):  " << ulbayes << " chan=" << ichan << " version=" << version << endl;
 	cout << "==> Signal:     " << signal << " chan=" << ichan << " version=" << version << endl;
@@ -119,6 +113,83 @@ void plotOptimize::optimizeULs(int nruns, int seed) {
 	
 	OUT << "==> effTot = " << effTot << " chan=" << ichan << " version=" << version << endl;
 	OUT << "==> nObs   = " << fNumbersBs[ichan]->bgObs << " chan=" << ichan << " version=" << version << endl;
+	OUT << "==> nHistLo= " << fNumbersBs[ichan]->offLo << " chan=" << ichan << " version=" << version  << endl;
+	OUT << "==> nHistHi= " << fNumbersBs[ichan]->offHi << " chan=" << ichan << " version=" << version  << endl;
+	OUT << "==> nExp   = " << fBgHistExp << " chan=" << ichan << " version=" << version << endl;
+	OUT << "==> UL     = " << ulbayes << " chan=" << ichan << " version=" << version << endl;
+	OUT << "==> Signal = " << signal << " chan=" << ichan << " version=" << version << endl;
+	OUT << "==> SSB    = " << signal/TMath::Sqrt(signal+fBgHistExp) << " chan=" << ichan << " version=" << version << endl;
+      }
+  }
+
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotOptimize::optimizeBdtULs(double minBdt, double maxBdt) {
+  int version(-1); 
+  fDoPrint = false; 
+  fDoUseBDT = true; 
+
+  ofstream OUT(Form("optimizeBdtUL.txt")); 
+
+  string cutline; 
+  double cut; 
+  int nruns = (maxBdt - minBdt)/0.01;
+  for (int j = 0; j < nruns; ++j) {
+    ++version; 
+    cut = minBdt + j*0.01;
+
+    fCuts[0]->bdt = cut; 
+    fCuts[1]->bdt = cut; 
+
+    printCuts(OUT); 
+
+    cout << "--> loopTree: signal MC" << endl;
+    loopTree(0);  // signal eff
+    c0->Modified(); c0->Update();
+    loopTree(1);  // Bd2MuMu eff
+    c0->Modified(); c0->Update();
+    cout << "--> loopTree: signal data" << endl;
+    loopTree(5);  // data signal
+    c0->Modified(); c0->Update();
+    
+    
+    // -- simple blimits in two channels
+    int nobs(-1); 
+    for (int ichan = 0; ichan < 2; ++ichan) {
+      
+	fhMassWithAllCuts[ichan]->Draw();
+	double scale   = fLumi["SgData"]/39.4;
+	double nbs     = 2.0e9*(1.0-0.12)*scale;
+	double siglo   = fNumbersBs[ichan]->mBsLo; 
+	double sighi   = fNumbersBs[ichan]->mBsHi; 
+	double mFactor = (sighi-siglo)/(fBgHi-fBgLo-(5.45-5.20)); 
+	double lscale  = fLumi["SgData"]/fLumi["SgMc"];
+    
+	double signal  = fNumbersBs[ichan]->anaWmcYield*lscale;
+	fBgHistExp     = fNumbersBs[ichan]->bgObs*mFactor;
+	
+	fBgExp = fBgHistExp;
+	fBgExpE = 0.2*fBgExp;
+	nobs = static_cast<int>(fBgExp + 0.5 + signal); 
+	double nulbayes  = blimit(0.95, nobs, 1.0, 0.2, fBgExp, fBgExpE, 1);
+	double effTot = fNumbersBs[ichan]->effTot*fNumbersBs[0]->pss;
+	double ulbayes  = nulbayes/(effTot*nbs);
+	cout << "==> effTot:     " << effTot << " chan=" << ichan << " version=" << version << endl;
+	cout << "==> nObs:       " << fNumbersBs[ichan]->bgObs << " chan=" << ichan << " version=" << version  << endl;
+	cout << "==> nHistLo:    " << fNumbersBs[ichan]->offLo << " chan=" << ichan << " version=" << version  << endl;
+	cout << "==> nHistHi:    " << fNumbersBs[ichan]->offHi << " chan=" << ichan << " version=" << version  << endl;
+	cout << "==> nExp:       " << fBgHistExp << " chan=" << ichan << " version=" << version << endl;
+	cout << "==> ul(Bayes):  " << ulbayes << " chan=" << ichan << " version=" << version << endl;
+	cout << "==> Signal:     " << signal << " chan=" << ichan << " version=" << version << endl;
+	cout << "==> SSB:        " << signal/TMath::Sqrt(signal+fBgHistExp) << " chan=" << ichan << " version=" << version << endl;
+	
+	OUT << "==> effTot = " << effTot << " chan=" << ichan << " version=" << version << endl;
+	OUT << "==> nObs   = " << fNumbersBs[ichan]->bgObs << " chan=" << ichan << " version=" << version << endl;
+	OUT << "==> nHistLo= " << fNumbersBs[ichan]->offLo << " chan=" << ichan << " version=" << version  << endl;
+	OUT << "==> nHistHi= " << fNumbersBs[ichan]->offHi << " chan=" << ichan << " version=" << version  << endl;
 	OUT << "==> nExp   = " << fBgHistExp << " chan=" << ichan << " version=" << version << endl;
 	OUT << "==> UL     = " << ulbayes << " chan=" << ichan << " version=" << version << endl;
 	OUT << "==> Signal = " << signal << " chan=" << ichan << " version=" << version << endl;
@@ -130,13 +201,14 @@ void plotOptimize::optimizeULs(int nruns, int seed) {
 
 
 struct bla{
-  double ul, ssb, ssb1, ssb2;
+  double ul, ulc, ulcp, ssb, ssb1, ssb2;
   double nobs, nexp; 
   double sig, eff; 
   double mlo, mhi; 
   double m1pt, m2pt, pt; 
   double chi2dof, iso, alpha, fls3d, docatrk; 
-  double lip, lips; 
+  double lip, lips, lip2, lips2, maxdoca; 
+  double bdt; 
   int closetrk, cowboyVeto; 
 };
 
@@ -154,14 +226,16 @@ void plotOptimize::bestUL(const char *fname, int mode) {
 
   int chan, file, run; 
   float mlo, mhi, pt, m1pt, m2pt, iso, chi2dof, alpha, fls3d, docatrk; 
-  float ul, ssb, ssb1, ssb2, nobs, nexp, sig, eff; 
+  float ul, ulc, ulcp, ssb, ssb1, ssb2, nobs, nexp, sig, eff; 
   int closetrk, cowboyVeto; 
-  float lip, lips; 
+  float lip, lips, lip2, lips2, maxdoca, bdt; 
 
   t->SetBranchAddress("chan", &chan);
   t->SetBranchAddress("file", &file);
   t->SetBranchAddress("run", &run);
   t->SetBranchAddress("ul", &ul);
+  t->SetBranchAddress("ulc", &ulc);
+  t->SetBranchAddress("ulcp", &ulcp);
   t->SetBranchAddress("ssb", &ssb);
   t->SetBranchAddress("ssb1", &ssb1);
   t->SetBranchAddress("ssb2", &ssb2);
@@ -184,20 +258,25 @@ void plotOptimize::bestUL(const char *fname, int mode) {
   t->SetBranchAddress("closetrk", &closetrk);
   t->SetBranchAddress("pvlip", &lip);
   t->SetBranchAddress("pvlips", &lips);
+  t->SetBranchAddress("pvlip2", &lip2);
+  t->SetBranchAddress("pvlips2", &lips2);
+  t->SetBranchAddress("maxdoca", &maxdoca);
+  t->SetBranchAddress("bdt", &bdt);
   t->SetBranchAddress("cowboyVeto", &cowboyVeto);
 
   // -- initialize to some minimum values beyond which neither ul nor ssb are interesting
-  bla ini = {2.5e-8, 1.4, 1.2, 1.2, 
+  bla ini = {2.5e-8, 2.5e-8, 1.95e-8, 
+	     1.4, 1.2, 1.2, 
 	     0., 0., 
 	     4.1, 0.,
 	     0., 0., 0., 
 	     0., 0., 0., 0., 0.,
-	     0., 0., 0, 0
+	     0., 0., -99., 0, 0
   };
 
   list<bla> bestList0(1, ini) ;
 
-  ini.ul = 3.0e-8; 
+  ini.ulcp = 2.2e-8; 
   ini.ssb = 0.8;
   ini.sig = 2.0;
   list<bla> bestList1(1, ini) ;
@@ -209,11 +288,13 @@ void plotOptimize::bestUL(const char *fname, int mode) {
     nb = t->GetEntry(jentry);
 
     if (jentry %20000 == 0) cout << "setting " << jentry 
-				<< " bestList0.size() = " << bestList0.size()
-				<< " bestList1.size() = " << bestList1.size()
-				<< endl;
+				 << " bestList0.size() = " << bestList0.size()
+				 << " bestList1.size() = " << bestList1.size()
+				 << endl;
     
-    ini.ul = ul; 
+    ini.ul   = ul; 
+    ini.ulc  = ulc; 
+    ini.ulcp = ulcp; 
     ini.ssb  = ssb; 
     ini.ssb1 = ssb1; 
     ini.ssb2 = ssb2; 
@@ -234,12 +315,19 @@ void plotOptimize::bestUL(const char *fname, int mode) {
     ini.closetrk = closetrk; 
     ini.lip = lip; 
     ini.lips = lips; 
+    ini.lip2 = lip2; 
+    ini.lips2 = lips2; 
+    ini.maxdoca = maxdoca; 
+    ini.bdt = bdt; 
     ini.cowboyVeto = cowboyVeto; 
+    
+    if (docatrk > 0.002) continue;
 
     if (chan == 0) {
       for (list<bla>::iterator i = bestList0.begin(); i != bestList0.end(); ++i) {
 	if (0 == mode) {
-	  if (ini.ul < i->ul) { 
+	  if (ini.ulcp < i->ulcp) { 
+	    //	    cout << " ulcp: " << i->ulcp << endl;
 	    bestList0.insert(i, ini); 
 	    break;
 	  }
@@ -262,7 +350,7 @@ void plotOptimize::bestUL(const char *fname, int mode) {
     } else {
       for (list<bla>::iterator i = bestList1.begin(); i != bestList1.end(); ++i) {
 	if (0 == mode) {
-	  if (ini.ul < i->ul) { 
+	  if (ini.ulcp < i->ulcp) { 
 	    bestList1.insert(i, ini); 
 	    break;
 	  }
@@ -298,12 +386,13 @@ void plotOptimize::bestUL(const char *fname, int mode) {
     ++icnt;
     if (icnt > nsettings) break;
     ini = *i;
-    cout << Form("ul=%2.1e ssb=%3.2f S/B=%3.2f/%3.2f e=%5.4f nobs=%2.0f ", ini.ul, ini.ssb,
+    cout << Form("ulcp=%2.1e ssb=%3.2f S/B=%3.2f/%3.2f e=%5.4f nobs=%2.0f ", ini.ulcp, ini.ssb,
 		 ini.sig, ini.nexp, ini.eff, ini.nobs)
 	 << Form("%4.3f<m<%4.3f pT=%3.1f ",  ini.mlo,  ini.mhi,  ini.pt)
-	 << Form("pt1=%3.1f pt2=%3.1f I=%3.2f c2=%3.2f a=%4.3f f=%3.1f d=%4.3f ", 
+	 << Form("pt1=%3.1f pt2=%3.1f I=%3.2f c2=%3.2f a=%4.3f f=%3.1f dt=%4.3f ", 
 		 ini.m1pt, ini.m2pt, ini.iso, ini.chi2dof, ini.alpha, ini.fls3d, ini.docatrk)
-	 << Form("l=%4.3f/%3.2f n=%d v=%d", ini.lip, ini.lips, ini.closetrk, ini.cowboyVeto)
+	 << Form("pv=%4.3f/%3.2f/%4.3f/%3.2f m=%3.2f n=%d ", 
+		 ini.lip, ini.lips, ini.lip2, ini.lips2, ini.maxdoca, ini.closetrk)
 	 << endl;
   }
 
@@ -317,12 +406,13 @@ void plotOptimize::bestUL(const char *fname, int mode) {
     ++icnt;
     if (icnt > nsettings) break;
     ini = *i;
-    cout << Form("ul=%2.1e ssb=%3.2f S/B=%3.2f/%3.2f e=%5.4f nobs=%2.0f ", ini.ul, ini.ssb,
+    cout << Form("ulcp=%2.1e ssb=%3.2f S/B=%3.2f/%3.2f e=%5.4f nobs=%2.0f ", ini.ulcp, ini.ssb,
 		 ini.sig, ini.nexp, ini.eff, ini.nobs)
 	 << Form("%4.3f<m<%4.3f pT=%3.1f ",  ini.mlo,  ini.mhi,  ini.pt)
-	 << Form("pt1=%3.1f pt2=%3.1f I=%3.2f c2=%3.2f a=%4.3f f=%3.1f d=%4.3f ", 
+	 << Form("pt1=%3.1f pt2=%3.1f I=%3.2f c2=%3.2f a=%4.3f f=%3.1f dt=%4.3f ", 
 		 ini.m1pt, ini.m2pt, ini.iso, ini.chi2dof, ini.alpha, ini.fls3d, ini.docatrk)
-	 << Form("l=%4.3f/%3.2f n=%d v=%d", ini.lip, ini.lips, ini.closetrk, ini.cowboyVeto)
+	 << Form("pv=%4.3f/%3.2f/%4.3f/%3.2f m=%3.2f n=%d", 
+		 ini.lip, ini.lips, ini.lip2, ini.lips2, ini.maxdoca, ini.closetrk)
 	 << endl;
   }
 
@@ -331,8 +421,8 @@ void plotOptimize::bestUL(const char *fname, int mode) {
 
 
 // ----------------------------------------------------------------------
-void plotOptimize::readOptimize(int nfiles) {
-  TFile f("optimize.root", "RECREATE"); 
+void plotOptimize::readOptimize(int nfiles, const char *fname) {
+  TFile f(Form("%s.root", fname), "RECREATE"); 
 
   TTree *t = new TTree("t","t");
   
@@ -341,6 +431,8 @@ void plotOptimize::readOptimize(int nfiles) {
   t->Branch("file", &_file ,"file/I");
   t->Branch("run", &_run ,"run/I");
   t->Branch("ul", &_ul, "ul/F");
+  t->Branch("ulc", &_ulC, "ulc/F");
+  t->Branch("ulcp", &_ulCP, "ulcp/F");
   t->Branch("nobs", &_nobs, "nobs/F");
   t->Branch("nexp", &_nexp, "nexp/F");
   t->Branch("sig", &_sig, "sig/F");
@@ -361,10 +453,14 @@ void plotOptimize::readOptimize(int nfiles) {
   t->Branch("closetrk", &_closetrk, "closetrk/I");
   t->Branch("pvlip", &_pvlip, "pvlip/F");
   t->Branch("pvlips", &_pvlips, "pvlips/F");
+  t->Branch("pvlip2", &_pvlip2, "pvlip2/F");
+  t->Branch("pvlips2", &_pvlips2, "pvlips2/F");
+  t->Branch("maxdoca", &_maxdoca, "maxdoca/F");
+  t->Branch("bdt", &_bdt, "bdt/F");
   t->Branch("cowboyVeto", &_cowboyVeto, "cowboyveto/I");
   
-  for (int i = 0; i <= nfiles; ++i) {
-    _file = i; readFile(Form("optjobs/optimizeUL-%d.txt", i-1), t);
+  for (int i = 1; i <= nfiles; ++i) {
+    _file = i; readFile(Form("optjobs/%s-%d.txt", fname, i-1), t);
   }
 
   t->Write(); 
@@ -393,6 +489,7 @@ void plotOptimize::readFile(const char *fname, TTree *t) {
       sscanf(buffer, "mBsLo %f", &_mlo); 
       _ul  = +1.; // reset 
     }
+    if (string::npos != line.find("bdt")) sscanf(buffer, "bdt %f", &_bdt); 
     if (string::npos != line.find("mBsHi")) sscanf(buffer, "mBsHi %f", &_mhi); 
     if (string::npos != line.find("pt")) sscanf(buffer, "pt %f", &_pt); 
     if (string::npos != line.find("m1pt")) sscanf(buffer, "m1pt %f", &_m1pt); 
@@ -403,24 +500,35 @@ void plotOptimize::readFile(const char *fname, TTree *t) {
     if (string::npos != line.find("fls3d")) sscanf(buffer, "fls3d %f", &_fls3d); 
     if (string::npos != line.find("docatrk")) sscanf(buffer, "docatrk %f", &_docatrk); 
     if (string::npos != line.find("closetrk")) sscanf(buffer, "closetrk %i", &_closetrk); 
-    if (string::npos != line.find("pvlip")) sscanf(buffer, "pvlip %f", &_pvlip); 
-    if (string::npos != line.find("pvlips")) sscanf(buffer, "pvlips %f", &_pvlips); 
+    if (string::npos != line.find("pvlip ")) sscanf(buffer, "pvlip %f", &_pvlip); 
+    if (string::npos != line.find("pvlips ")) sscanf(buffer, "pvlips %f", &_pvlips); 
+    if (string::npos != line.find("pvlip2 ")) sscanf(buffer, "pvlip2 %f", &_pvlip2); 
+    if (string::npos != line.find("pvlips2 ")) sscanf(buffer, "pvlips2 %f", &_pvlips2); 
+    if (string::npos != line.find("maxdoca")) sscanf(buffer, "maxdoca %f", &_maxdoca); 
     if (string::npos != line.find("fDoApplyCowboyVetoAlsoInSignal")) sscanf(buffer, "fDoApplyCowboyVetoAlsoInSignal %i", &_cowboyVeto); 
 
     if (string::npos != line.find("chan=0")) {
       sscanf(buffer, "==> effTot = %f chan=0 version=%d", &_eff, &_run); 
       sscanf(buffer, "==> nObs   = %f chan=0 version=%d", &_nobs, &_run); 
+      sscanf(buffer, "==> nHistLo= %f chan=0 version=%d", &_nhlo, &_run); 
+      sscanf(buffer, "==> nHistHi= %f chan=0 version=%d", &_nhhi, &_run); 
       sscanf(buffer, "==> nExp   = %f chan=0 version=%d", &_nexp, &_run); 
       sscanf(buffer, "==> UL     = %f chan=0 version=%d", &_ul, &_run); 
       sscanf(buffer, "==> Signal = %f chan=0 version=%d", &_sig, &_run); 
       sscanf(buffer, "==> SSB    = %f chan=0 version=%d", &_ssb, &_run); 
+      
+
       if (_ssb > 0) {
+	double ul0, ul1; 
+	recalcUL(0, ul0, ul1); 
+	_ulCP = ul0;
+	_ulC  = ul1;
 	_chan = 0; 
 	nu = 1.0; 
 	_ssb0 = nu*_sig/TMath::Sqrt(nu*_sig + _nexp);
-	nu = 1.0/0.38; 
+	nu = 1.0/0.32; 
 	_ssb1 = nu*_sig/TMath::Sqrt(nu*_sig + _nexp);
-	nu = 2.0/0.38; 
+	nu = 2.0/0.32; 
 	_ssb2 = nu*_sig/TMath::Sqrt(nu*_sig + _nexp);
 	
 // 	cout << "eff: " << _eff << " ul = " << _ul << " version = " << _run 
@@ -433,11 +541,17 @@ void plotOptimize::readFile(const char *fname, TTree *t) {
     if (string::npos != line.find("chan=1")) {
       sscanf(buffer, "==> effTot = %f chan=1 version=%d", &_eff, &_run); 
       sscanf(buffer, "==> nObs   = %f chan=1 version=%d", &_nobs, &_run); 
+      sscanf(buffer, "==> nHistLo= %f chan=0 version=%d", &_nhlo, &_run); 
+      sscanf(buffer, "==> nHistHi= %f chan=0 version=%d", &_nhhi, &_run); 
       sscanf(buffer, "==> nExp   = %f chan=1 version=%d", &_nexp, &_run); 
       sscanf(buffer, "==> UL     = %f chan=1 version=%d", &_ul, &_run); 
       sscanf(buffer, "==> Signal = %f chan=1 version=%d", &_sig, &_run); 
       sscanf(buffer, "==> SSB    = %f chan=1 version=%d", &_ssb, &_run); 
       if (_ssb > 0) {
+	double ul0, ul1; 
+	recalcUL(0, ul0, ul1); 
+	_ulCP = ul0;
+	_ulC  = ul1;
 	_chan = 1; 
 	nu = 1.0; 
 	_ssb0 = nu*_sig/TMath::Sqrt(nu*_sig + _nexp);
@@ -490,3 +604,46 @@ void plotOptimize::makeAll(int nfiles, int mode) {
 }
 
 
+// ----------------------------------------------------------------------
+void plotOptimize::recalcUL(int mode, double &ul0, double &ul1) {
+  //   double slo(0.3);  // 5.2-4.9
+  //   double shi(0.45); // 5.9-5.45
+  double nbs(2.2e11); //4900./39.4*2.0e9*(1.0-0.12));
+
+  double sratio = 0.667;
+  double slbg = _nhlo - _nhhi*sratio; 
+  double cbg0(0.); 
+  if (_nhlo > slbg && slbg > 0) {
+    //     cout << "subtracting sl bg: " << slbg << endl;
+    cbg0 = _nobs - slbg; 
+  } else {
+    //     cout << "not subtracting sl bg" << endl;
+    cbg0 = _nobs;
+  }
+  // -- rescale to Bs signal window
+  cbg0 = 0.2*cbg0;
+  
+  double nexp = cbg0 + _sig; 
+  int    nobs = static_cast<int>(nexp+0.5); 
+  double w8(0.), w8cum(0.); 
+  double nulbayes(0.), nulw8(0.); 
+//   cout << "Lo: " << _nhlo << " Hi: " << _nhhi << " -> comb. BG = " << cbg0 << " sig: " << _sig 
+//        << " -> nexp: " << nexp << " -> nobs<exp> = " << nobs
+//        << endl;
+  for (int i = 0; i < 5*nexp; ++i) {
+    w8 = TMath::PoissonI(i, nexp); 
+    w8cum += w8; 
+    nulbayes = blimit(0.95, i, 1.0, 0.2, cbg0, 0.2*cbg0, 1);
+    nulw8 += w8*nulbayes; 
+//     cout << "  i = " << i << "(w8 = " << w8 << ", cumulative: " << w8cum << ") ->  " << nulbayes << endl;
+    if (i < nexp && w8 < 0.01) continue;
+    if (i > nexp && w8cum > 0.99) break;
+  }
+  nulbayes = blimit(0.95, nobs, 1.0, 0.2, cbg0, 0.2*cbg0, 1);
+  ul1  = nulbayes/(_eff*nbs);
+  ul0     = nulw8/(_eff*nbs);
+//   cout << "  --> nulw8 = " << nulw8 
+//        << " ulbayes: " << ul1
+//        << " ulw8: " << ul0
+//        << endl;
+}

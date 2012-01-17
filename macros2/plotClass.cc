@@ -18,6 +18,7 @@
 #include "TMinuit.h"
 #include "TCanvas.h"
 #include "TVirtualFitter.h"
+#include "TEventList.h"
 
 #include <iomanip>
 #include <string>
@@ -70,6 +71,8 @@ double fa_pol1_err(double *x, double *par) {
 
 // ----------------------------------------------------------------------
 plotClass::plotClass(const char *files, const char *cuts, const char *dir, int mode) { 
+
+  fFiles = files; 
 
   delete gRandom;
   gRandom = (TRandom*) new TRandom3;
@@ -135,7 +138,7 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
     h = new TH1D(Form("hMassWithAllCutsManyBins%d", i), Form("hMassWithAllCutsManyBins%d", i), (fMassHi-fMassLo)*1000, fMassLo, fMassHi);
     fhMassWithAllCutsManyBins.push_back(h); 
 
-    h = new TH1D(Form("hNorm%d", i), Form("hNorm%d", i), 60, 5.0, 5.6);
+    h = new TH1D(Form("hNorm%d", i), Form("hNorm%d", i), 100, 4.9, 5.9);
     fhNorm.push_back(h); 
 
 
@@ -421,6 +424,7 @@ void plotClass::loopTree(int mode, int proc) {
   double mass(0.); 
   TTree *t;
   t = (TTree*)gDirectory->Get("events");
+  TEventList *tlist = new TEventList;
   int brr, brun, bevt, bls, btm, bq1, bq2, bprocid; 
   double bg1pt, bg2pt, bg1eta, bg2eta;
   double bbdt, bbdt2; 
@@ -437,7 +441,7 @@ void plotClass::loopTree(int mode, int proc) {
   int bm1pix, bm2pix, bm1bpix, bm2bpix, bm1bpixl1, bm2bpixl1;
 
   int bclosetrk; 
-  double bpvlip, bpvlips, bmaxdoca; 
+  double bpvlip, bpvlips, bpvlip2, bpvlips2, bmaxdoca; 
 
   t->SetBranchAddress("bdt",&bbdt);
   t->SetBranchAddress("bdt2",&bbdt2);
@@ -449,6 +453,8 @@ void plotClass::loopTree(int mode, int proc) {
   t->SetBranchAddress("closetrk",&bclosetrk);
   t->SetBranchAddress("pvlip",&bpvlip);
   t->SetBranchAddress("pvlips",&bpvlips);
+  t->SetBranchAddress("pvlip2",&bpvlip2);
+  t->SetBranchAddress("pvlips2",&bpvlips2);
   t->SetBranchAddress("maxdoca",&bmaxdoca);
 
   t->SetBranchAddress("m1pix",&bm1pix);
@@ -634,6 +640,8 @@ void plotClass::loopTree(int mode, int proc) {
       if (bm2pt < 4.0) continue; 
       if (bq1*bq2 > 0) continue;
       if (bfls3d < 5) continue;
+      if (bfl3d > 2) continue;
+
       if (!bjson) continue;
       // -- skip inverted isolation events
       if (5 == mode && 5.2 < mass && mass < 5.45 && biso < 0.7) continue; 
@@ -652,8 +660,8 @@ void plotClass::loopTree(int mode, int proc) {
 	if (bptpsi < 7) continue;
       } 
 
-      if (0 == fChan && bbdt < -0.07) continue;
-      if (1 == fChan && bbdt2 < -0.1) continue;
+      if (0 == fChan && bbdt < pCuts->bdt) continue;
+      if (1 == fChan && bbdt2 < pCuts->bdt) continue;
     } else {
     
       // -- analysis cuts
@@ -677,8 +685,11 @@ void plotClass::loopTree(int mode, int proc) {
       
       // -- new cuts
       if (bclosetrk >= pCuts->closetrk) continue;
-      if (bpvlip > pCuts->pvlip) continue;
-      if (bpvlips > pCuts->pvlips) continue;
+      if (TMath::Abs(bpvlip) > pCuts->pvlip) continue;
+      if (TMath::Abs(bpvlips) > pCuts->pvlips) continue;
+      if (TMath::Abs(bpvlip2) < pCuts->pvlip2) continue;
+      if (TMath::Abs(bpvlips2) < pCuts->pvlips2) continue;
+      if (bmaxdoca > pCuts->maxdoca) continue;
       
       if (bs2jpsiphi || bp2jpsikp) {
 	if (bmpsi > 3.2) continue;
@@ -785,21 +796,24 @@ void plotClass::loopTree(int mode, int proc) {
     fhMassWithMassCutsManyBins[fChan]->Fill(mass); 
 
     if (fDoPrint && 5 == mode && mass > 4.9 && mass < 5.9) {
-      cout << Form("m = %4.3f pT = %4.3f eta = %4.3f", mass, bpt, beta)
-	   <<	" r = " << brun << "/" << bevt
-	   << " chan = " << fChan 
-	   << Form(" mpt = %4.3f,%4.3f", bm1pt, bm2pt)
-	   << Form(" meta = %4.3f,%4.3f", TMath::Abs(bm1eta), TMath::Abs(bm2eta))
-	   << Form(" a = %4.3f iso = %4.3f chi2 = %4.3f fls3d = %4.3f, fl/E=%4.3f/%4.3f", 
+      tlist->Enter(jentry); 
+      cout << Form("%d m = %4.3f pT = %3.1f eta = %3.2f", fChan, mass, bpt, beta)
+	//	   <<	" r = " << brun << "/" << bevt
+	   << Form(" mpt = %3.1f,%3.1f", bm1pt, bm2pt)
+	   << Form(" meta = %3.2f,%3.2f", TMath::Abs(bm1eta), TMath::Abs(bm2eta))
+	   << Form(" a = %4.3f iso = %3.2f chi2 = %3.1f fls3d = %3.1f, fl/E=%3.1f/%3.2f", 
 		   TMath::ACos(bcosa), biso, bchi2/bdof, bfls3d, bfl3d, bfl3dE)
+	   << Form(" pv1: %4.3f/%3.1f pv2: %4.3f/%3.1f", bpvlip, bpvlips,  bpvlip2, bpvlips2) 
+	   << Form(" d: %5.4f md: %4.3f", TMath::Sqrt(btip*btip + blip*blip), bmaxdoca) 
 	   << endl;
-      fOUT << Form("m = %4.3f pT = %4.3f eta = %4.3f", mass, bpt, beta)
+      fOUT << Form("%d m = %4.3f pT = %3.1f eta = %3.2f", fChan, mass, bpt, beta)
 	//	   <<	" run = " << brun << " event = " << bevt
-	   << " chan = " << fChan 
-	   << Form(" mpt = %4.3f,%4.3f", bm1pt, bm2pt)
-	   << Form(" meta = %4.3f,%4.3f", TMath::Abs(bm1eta), TMath::Abs(bm2eta))
-	   << Form(" a = %4.3f iso = %4.3f chi2 = %4.3f fls3d = %4.3f, fl/E=%4.3f/%4.3f", 
+	   << Form(" mpt = %3.1f,%3.1f", bm1pt, bm2pt)
+	   << Form(" meta = %3.2f,%3.2f", TMath::Abs(bm1eta), TMath::Abs(bm2eta))
+	   << Form(" a = %4.3f iso = %3.2f chi2 = %3.1f fls3d = %3.1f, fl/E=%3.1f/%3.2f", 
 		   TMath::ACos(bcosa), biso, bchi2/bdof, bfls3d, bfl3d, bfl3dE)
+	   << Form(" pv1: %4.3f/%3.1f pv2: %4.3f/%3.1f", bpvlip, bpvlips,  bpvlip2, bpvlips2) 
+	   << Form(" d: %5.4f md: %4.3f", TMath::Sqrt(btip*btip + blip*blip), bmaxdoca) 
 	   << endl;
 
 
@@ -1069,9 +1083,13 @@ void plotClass::loopTree(int mode, int proc) {
       cout << "----------------------------------------------------------------------" << endl;
       cout << "==> loopTree: DATA SIGNAL, channel " << i  << endl;
       bgBlind(fhMassWithAllCutsBlind[i], 1, fBgLo, fBgHi);
-      cout << "fBgHist = " << fBgHist << "+/-" << fBgHistE << endl;
+      cout << "fBgHist = " << fBgHist << "+/-" << fBgHistE 
+	   << " lo: " << fBgHistLo << " hi: " << fBgHistHi 
+	   << endl;
       aa->bgObs = fBgHist;
-      double blind = 5.45 - 5.20; 
+      aa->offLo = fBgHistLo;
+      aa->offHi = fBgHistHi;
+      double blind = fSgHi - fSgLo; 
       double scaleBs = (aa->mBsHi-aa->mBsLo)/(fBgHi-fBgLo-blind);
       double scaleBd = (aa->mBdHi-aa->mBdLo)/(fBgHi-fBgLo-blind);
       aa->tauBs    = scaleBs; 
@@ -1079,7 +1097,6 @@ void plotClass::loopTree(int mode, int proc) {
       aa->tauBd    = scaleBd; 
       aa->tauBdE   = 0.04*scaleBd; 
       cout << "CCCCCCCCCCCC  " << scaleBs << " " << aa->tauBs << "+/-" << aa->tauBsE << endl;
-      // FIXME subtract rare bg 
       double combBg  = aa->bgObs - aa->offLoRare - aa->offHiRare;
       double combBgE = 0.2*0.2*(aa->offLoRare + aa->offHiRare)*(aa->offLoRare + aa->offHiRare)  + aa->bgObs;
       combBgE        = TMath::Sqrt(combBgE);
@@ -1092,8 +1109,8 @@ void plotClass::loopTree(int mode, int proc) {
 						  fhMassWithAllCuts[i]->FindBin(aa->mBsHi));
       aa->bsObs = cnt;
 
-      cnt = fhMassWithAllCuts[i]->Integral(fhMassWithAllCuts[i]->FindBin(aa->mBdLo), 
-					   fhMassWithAllCuts[i]->FindBin(aa->mBdHi));
+      cnt = fhMassWithAllCuts[i]->Integral(fhMassWithAllCuts[i]->FindBin(aa->mBdLo+0.001), 
+					   fhMassWithAllCuts[i]->FindBin(aa->mBdHi-0.001));
       aa->bdObs = cnt;
 
       // -- blinded version
@@ -1187,7 +1204,7 @@ void plotClass::loopTree(int mode, int proc) {
       //      TH1D *h = fhMassWithAllCuts[i]; 
       //      normYield(h, mode, 5.10, 5.5);
       TH1D *h = fhNorm[i];
-      normYield(h, i, 5.0, 5.6);
+      normYield(h, i, 4.8, 6.0);
       aa->fitYield  = fNoSig; 
       aa->fitYieldE = fNoSigE; 
     } else if (20 == mode) {
@@ -1207,7 +1224,7 @@ void plotClass::loopTree(int mode, int proc) {
       //      TH1D *h = fhMassWithAllCuts[i]; 
       //      csYield(h, mode, 5.20, 5.6);
       TH1D *h = fhNorm[i];
-      csYield(h, i, 5.0, 5.6);
+      csYield(h, i, 5.1, 6.0);
       aa->fitYield  = fCsSig; 
       aa->fitYieldE = fCsSigE; 
     } else if (98 == mode) {
@@ -1255,6 +1272,13 @@ void plotClass::loopTree(int mode, int proc) {
     fhMassWithAllCuts[i]->Write();
     fhNorm[i]->SetName(Form("hNorm_%s_%d_chan%d", modifier.c_str(), mode, i)); 
     fhNorm[i]->Write();
+
+    if (5 == mode) {
+      t->SetEventList(tlist);
+      TTree *small = t->CopyTree(""); 
+      t->SetName(Form("%s", (fDoUseBDT?"bdt":"cnc")));
+      small->Write(); 
+    }
     //    fhMassNoCuts[i]->SetName(Form("hMassNoCuts%d_chan%d", mode, i)); fhMassNoCuts[i]->Write();
     //    fhMassAbsNoCuts[i]->SetName(Form("hMassAbsNoCuts%d_chan%d", mode, i)); fhMassAbsNoCuts[i]->Write();
     //    fhMuTr[i]->SetName(Form("hMuTr%d_chan%d", mode, i)); fhMuTr[i]->Write();
@@ -1646,9 +1670,6 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
   fMassLo = 4.5; 
   fMassHi = 6.5;
 
-  fSgLo = 5.27;
-  fSgHi = 5.47;
-
   fNoLo = 5.10;
   fNoHi = 5.40;
 
@@ -1905,6 +1926,13 @@ void plotClass::loadFiles(const char *files) {
 	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (acc)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
+      if (string::npos != stype.find("pu") && string::npos != stype.find("no")) {
+	sname = "NoMcPU"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (PU)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }	
 
       if (string::npos != stype.find("default") && string::npos != stype.find("cs")) {
 	sname = "CsMc"; 
@@ -1939,6 +1967,13 @@ void plotClass::loadFiles(const char *files) {
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (acc)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }	
+      if (string::npos != stype.find("pu") && string::npos != stype.find("cs")) {
+	sname = "CsMcPU"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (PU)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
 
@@ -2114,11 +2149,15 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
   
   TF1 *lF1(0);
 
-  double histCount = h->Integral(h->FindBin(fBgLo), h->FindBin(fBgHi)-1); 
-  cout << "bgBlind: histCount = " << histCount << " starting at " << h->FindBin(fBgLo) << " to " << h->FindBin(fBgHi)-1 << endl;
+  double histCount = h->Integral(h->FindBin(fBgLo+0.0001), h->FindBin(fBgHi-0.0001)); 
+  cout << "bgBlind: histCount = " << histCount 
+       << " starting at " << h->FindBin(fBgLo+0.0001) << " to " << h->FindBin(fBgHi-0.0001) << endl;
   fBgHist  = histCount; 
   fBgHistE  = TMath::Sqrt(histCount); 
-  fBgHistExp  = histCount*(fSgHi-fSgLo)/(fBgHi-fBgLo-0.25); // FIXME fixed limits
+  double delta = fSgHi-fSgLo; 
+  fBgHistExp  = histCount*(delta)/(fBgHi-fBgLo-delta);
+  fBgHistLo =  h->Integral(h->FindBin(fBgLo+0.0001), h->FindBin(fSgLo-0.0001)); 
+  fBgHistHi =  h->Integral(h->FindBin(fSgHi+0.0001), h->FindBin(fBgHi-0.0001)); 
   if (histCount > 0) {
     fBgHistE = TMath::Sqrt(histCount)/histCount*fBgHist;
   } else {
@@ -2152,29 +2191,36 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
 
 
 // ----------------------------------------------------------------------
-void plotClass::normYield(TH1 *h, int mode, double lo, double hi) {
+void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) {
+
+  double pReco = (preco<0? (1 == mode?5.145:5.146): preco);
 
   TF1 *lF1(0), *lBg(0);
   
-  //  lF1 = fpFunc->pol1Gauss(h); 
   if (0 == mode) { 
-    fpFunc->fLo = 5.0;
-    fpFunc->fHi = 5.5;
-    lF1 = fpFunc->expoErrgauss2c(h, 5.27, 0.034, 5.146); 
-    lBg = fpFunc->pol1Err(fpFunc->fLo, fpFunc->fHi); 
+    fpFunc->fLo = lo; //5.0;
+    fpFunc->fHi = hi; //5.5;
+    lF1 = fpFunc->expoErrgauss2c(h, 5.27, 0.034, pReco); 
+    lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
   } else {
-    fpFunc->fLo = 5.0;
-    fpFunc->fHi = 5.5;
-    lF1 = fpFunc->expoErrGauss(h, 5.27, 0.056, 5.145); 
+    fpFunc->fLo = lo; //5.0;
+    fpFunc->fHi = hi; //5.5;
+    lF1 = fpFunc->expoErrGauss(h, 5.27, 0.056, pReco); 
     lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
   }
   h->Fit(lF1, "rm", "", lo, hi); 
 
-  for (int i = 0; i < lBg->GetNpar(); ++i) {
-    lBg->SetParameter(i, lF1->GetParameter(3+i));
-    cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
+  if (0 == mode) {
+    for (int i = 0; i < lBg->GetNpar(); ++i) {
+      lBg->SetParameter(i, lF1->GetParameter(5+i));
+      cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
+    }
+  } else {
+    for (int i = 0; i < lBg->GetNpar(); ++i) {
+      lBg->SetParameter(i, lF1->GetParameter(3+i));
+      cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
+    }
   }
-
   double c  = lF1->GetParameter(0); 
   c = lF1->Integral(5.15, 5.4) - lBg->Integral(5.15, 5.4); 
   double cE = lF1->GetParError(0); 
@@ -2188,6 +2234,10 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi) {
   }
 
   cout << "N(Sig) = " << fNoSig << " +/- " << fNoSigE << endl;
+  cout << "chi2/dof = " << lF1->GetChisquare() << "/" << lF1->GetNDF() 
+       << " prob = " << TMath::Prob(lF1->GetChisquare(), lF1->GetNDF()) 
+       << endl;
+
 
 
   setHist(h, kBlack, 20, 1.); 
@@ -2228,43 +2278,75 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi) {
 
 
 // ----------------------------------------------------------------------
-void plotClass::csYield(TH1 *h, int mode, double lo, double hi) {
+void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
 
-  TF1 *lF1(0);
-  
+  double pReco = (preco<0? 5.2: preco);
+
+  TF1 *lF1(0), *lBg(0);
+
   if (0 == mode) { 
-    fpFunc->fLo = 5.1;
-    fpFunc->fHi = 5.6;
-    lF1 = fpFunc->expoGauss(h, 5.365, 0.033); 
+    fpFunc->fLo = lo; //5.0;
+    fpFunc->fHi = hi; //5.5;
+    lF1 = fpFunc->expoGauss(h, 5.37, 0.030); 
+    lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
   } else {
-    fpFunc->fLo = 5.1;
-    fpFunc->fHi = 5.6;
-    lF1 = fpFunc->expoGauss(h, 5.365, 0.033); 
+    fpFunc->fLo = lo; //5.0;
+    fpFunc->fHi = hi; //5.5;
+    lF1 = fpFunc->expoGauss(h, 5.37, 0.056); 
+    lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
   }
   h->Fit(lF1, "rm", "", lo, hi); 
 
 
-  //   double c  = h->GetFunction("f1")->GetParameter(0); 
-  //   double cE = h->GetFunction("f1")->GetParError(0); 
+  if (0 == mode) {
+    for (int i = 0; i < lBg->GetNpar(); ++i) {
+      lBg->SetParameter(i, lF1->GetParameter(3+i));
+      cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
+    }
+  } else {
+    for (int i = 0; i < lBg->GetNpar(); ++i) {
+      lBg->SetParameter(i, lF1->GetParameter(3+i));
+      cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
+    }
+  }
+  
 
   double c  = lF1->GetParameter(0); 
-  double cE = lF1->GetParError(0); 
+  c = lF1->Integral(5.25, 5.5) - lBg->Integral(5.25, 5.5); 
+  double cE = lF1->GetParError(0)/lF1->GetParameter(0); 
+  if (0 == mode) {
+    cE = (lF1->GetParError(0)/lF1->GetParameter(0))*(lF1->GetParError(0)/lF1->GetParameter(0))
+      + (lF1->GetParError(3)/lF1->GetParameter(3))*(lF1->GetParError(3)/lF1->GetParameter(3));
+    cE = TMath::Sqrt(cE);
+  }
+  double ierr = lF1->IntegralError(5.25, 5.5)/h->GetBinWidth(1); 
 
-  double ierr = lF1->IntegralError(5.15, 5.4)/h->GetBinWidth(1); 
+  fCsSig = c/h->GetBinWidth(1);
+  if (ierr > TMath::Sqrt(fCsSig)) {
+    cout << "chose integral error" << endl;
+    fCsSigE = ierr;
+  } else {
+    cout << "chose parameter error" << endl;
+    fCsSigE = cE*fCsSig;
+  }
+
+  cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
+  cout << "chi2/dof = " << lF1->GetChisquare() << "/" << lF1->GetNDF() 
+       << " prob = " << TMath::Prob(lF1->GetChisquare(), lF1->GetNDF()) 
+       << endl;
 
   setHist(h, kBlack, 20, 1.); 
-  setTitles(h, "m_{#mu#muKK} [GeV]", "Candidates/Bin", 0.05, 1.2, 1.6); 
+  setTitles(h, "m_{#mu#muKK} [GeV]", Form("Candidates / %3.3f GeV", h->GetBinWidth(1)), 0.05, 1.2, 1.6); 
   h->SetMinimum(0.01); 
   gStyle->SetOptStat(0); 
   gStyle->SetOptTitle(0); 
   h->Draw("e");
 
-  fCsSig = c/h->GetBinWidth(1);
-  if (ierr > TMath::Sqrt(fCsSig)) {
-    fCsSigE = ierr;
-  } else {
-    fCsSigE = cE/c*fCsSig;
-  }
+  // -- Overlay BG function
+  lBg->SetLineStyle(kDashed);
+  lBg->SetLineColor(kRed);
+  lBg->SetLineWidth(3);
+  lBg->Draw("same");
 
   tl->SetTextSize(0.07); 
   if (0 == mode) {
@@ -2274,6 +2356,7 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi) {
   if (1 == mode) {
     tl->DrawLatex(0.22, 0.8, "Endcap");   
   } 
+
 
   //  stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
   if (fDoPrint) {
@@ -2293,6 +2376,9 @@ void plotClass::printNumbers(numbers &a, ostream &OUT) {
   OUT << "======================================================================" << endl;
   OUT << "numbers for \""  << a.name.c_str() << "\"" << endl;
   OUT << "fitYield        = " << a.fitYield << "+/-" << a.fitYieldE << endl;
+  OUT << "bgHist          = " << a.bgObs << endl;
+  OUT << "bgHistLo        = " << a.offLo << endl;
+  OUT << "bgHistHi        = " << a.offHi << endl;
   OUT << "genAccFileYield = " << a.genAccFileYield << endl;
   OUT << "genAccYield     = " << a.genAccYield << endl;
   OUT << "genFileYield    = " << a.genFileYield << endl;
@@ -2573,6 +2659,11 @@ void plotClass::readCuts(const char *filename) {
       if (dump) cout << "mBdLo:            " << CutValue << endl;
     }
 
+    if (!strcmp(CutName, "bdt")) {
+      a->bdt = CutValue; ok = 1;
+      if (dump) cout << "bdt:              " << CutValue << endl;
+    }
+
     if (!strcmp(CutName, "mBdHi")) {
       a->mBdHi = CutValue; ok = 1;
       if (dump) cout << "mBdHi:            " << CutValue << endl;
@@ -2663,6 +2754,20 @@ void plotClass::readCuts(const char *filename) {
       if (dump) cout << "pvlips:                " << CutValue << endl;
     }
 
+    if (!strcmp(CutName, "pvlip2")) {
+      a->pvlip2 = CutValue; ok = 1;
+      if (dump) cout << "pvlip2:                 " << CutValue << endl;
+    }
+
+    if (!strcmp(CutName, "pvlips2")) {
+      a->pvlips2 = CutValue; ok = 1;
+      if (dump) cout << "pvlips2:                 " << CutValue << endl;
+    }
+
+    if (!strcmp(CutName, "maxdoca")) {
+      a->maxdoca = CutValue; ok = 1;
+      if (dump) cout << "maxdoca:                 " << CutValue << endl;
+    }
 
   }
 
@@ -2684,6 +2789,9 @@ void plotClass::printCuts(ostream &OUT) {
     OUT << "index    " << a->index << endl;
     fTEX << "% ----------------------------------------------------------------------" << endl;
     fTEX << "% -- Cuts for channel " << a->index << endl;
+
+    OUT << "bdt      " << Form("%4.3f", a->bdt) << endl;
+    fTEX <<  Form("\\vdef{%s:bdt:%d}     {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->bdt) << endl;
 
     OUT << "mBdLo    " << Form("%4.3f", a->mBdLo) << endl;
     OUT << "mBdHi    " << Form("%4.3f", a->mBdHi) << endl;
@@ -2728,6 +2836,12 @@ void plotClass::printCuts(ostream &OUT) {
     fTEX <<  Form("\\vdef{%s:pvlip:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->pvlip) << endl;
     OUT << "pvlips   " << a->pvlips << endl;
     fTEX <<  Form("\\vdef{%s:pvlips:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->pvlips) << endl;
+    OUT << "pvlip2   " << a->pvlip2 << endl;
+    fTEX <<  Form("\\vdef{%s:pvlip2:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->pvlip2) << endl;
+    OUT << "pvlips2  " << a->pvlips2 << endl;
+    fTEX <<  Form("\\vdef{%s:pvlips2:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->pvlips2) << endl;
+    OUT << "maxdoca  " << a->maxdoca << endl;
+    fTEX <<  Form("\\vdef{%s:maxdoca:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->maxdoca) << endl;
 
     OUT << "doApplyCowboyVeto  " << fDoApplyCowboyVeto << endl;
     fTEX <<  Form("\\vdef{%s:doApplyCowboyVeto:%d}   {%s }", 
