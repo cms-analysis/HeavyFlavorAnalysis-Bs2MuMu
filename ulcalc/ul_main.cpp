@@ -37,7 +37,7 @@ enum algo_t {
 static const char *workspace_path = NULL;
 static const char *configfile_path = NULL;
 static double gCLLevel = 0.95;
-static uint32_t gDefaultPoissonLimit = 0;
+static uint32_t gDefaultPoissonLimit = 5;
 static pair<double,double> gMuSRange(-1,-1);
 static uint32_t gFCSteps = 20;
 static double gNumErr = 0.0; // additional error in acceptance region
@@ -376,11 +376,12 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 	set<int>::const_iterator it;
 	RooAbsReal *bs_mean;
 	RooAbsReal *bd_mean;
+	RooArgSet *saved_vars = NULL;
 	int ch;
 	
 	if (a == b) { // end of recursion over channels
 		
-		if (*avgWeight > 0.95)
+		if (*avgWeight > 0.99)
 			goto bail;
 		
 		// compute the weight of this configuration...
@@ -407,9 +408,8 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 		
 		wspace->import(*data);
 		
-		// initialize random number generator seed
-		if (gSeed) RooRandom::randomGenerator()->SetSeed(0);
-		
+		// save the variable state s.t. it does not get lost for the weight computation in the next round
+		saved_vars = dynamic_cast<RooArgSet*>(wspace->allVars().snapshot());
 		switch (gAlgorithm) {
 			case kAlgo_Bayesian:
 				if (gLightModel)
@@ -442,6 +442,7 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 				abort();
 				break;
 		}
+		wspace->allVars() = *saved_vars; // restore the values
 		
 		*avgWeight = *avgWeight + weight;
 		*avgUL = *avgUL + ul * weight;
@@ -498,6 +499,9 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 		}
 	}
 bail:
+	if(saved_vars)
+		delete saved_vars;
+	
 	return;
 } // recursive_calc()
 
@@ -566,6 +570,9 @@ int main(int argc, const char *argv [])
 		wspace = build_model_light(&bsmm, gVerbosity);
 	else
 		wspace = build_model_nchannel(&bsmm, &bdmm, gDisableErrors, gVerbosity, gBdToMuMu, (gAlgorithm == kAlgo_Hybrid) || (gAlgorithm == kAlgo_CLb_Hybrid) || (gAlgorithm == kAlgo_CLs) || (gAlgorithm == kAlgo_CLb) || (gAlgorithm == kAlgo_None));
+	
+	// initialize random number generator seed
+	if (gSeed) RooRandom::randomGenerator()->SetSeed(0);
 	
 	// set the measured candidates...
 	observables.addClone(*wspace->set("obs"));
