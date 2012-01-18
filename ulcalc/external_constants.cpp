@@ -23,8 +23,8 @@ const char *bmmBaseCut = "TMath::Abs(eta_mu1) < 2.4 && TMath::Abs(eta_mu2) < 2.4
 ////////////////////////
 static const measurement_t f_s(0.113,0.013);
 static const measurement_t f_u(0.401,0.013);
-static const measurement_t bf_sm_bstomumu(3.2e-9,0.2e-9);
-static const measurement_t bf_sm_bdtomumu(1.0e-10,0.1e-10);
+static const measurement_t bf_sm_bstomumu(3.2e-9,0);
+static const measurement_t bf_sm_bdtomumu(1.0e-10,0);
 static const measurement_t bf_bptojpsik(1.014e-3,0.034e-3);
 static const measurement_t bf_jpsitomumu(0.0593,0.0006);
 

@@ -78,3 +78,6 @@ clean:
 
 cleanall: clean
 	rm -rf bin/*
+
+distclean: cleanall
+	@true

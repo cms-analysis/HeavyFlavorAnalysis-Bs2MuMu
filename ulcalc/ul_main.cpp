@@ -16,6 +16,7 @@
 #include <TMath.h>
 #include <RooRealVar.h>
 #include <RooWorkspace.h>
+#include <RooRandom.h>
 #include <RooStats/ConfInterval.h>
 
 #include "external_constants.h"
@@ -28,12 +29,14 @@ enum algo_t {
 	kAlgo_FeldmanCousins,
 	kAlgo_CLs,
 	kAlgo_CLb,
+	kAlgo_Hybrid,
+	kAlgo_CLb_Hybrid,
 	kAlgo_None
 };
 
 static const char *workspace_path = NULL;
 static const char *configfile_path = NULL;
-static double gCLLevel = 0.9;
+static double gCLLevel = 0.95;
 static uint32_t gDefaultPoissonLimit = 0;
 static pair<double,double> gMuSRange(-1,-1);
 static uint32_t gFCSteps = 20;
@@ -44,6 +47,9 @@ static int gVerbosity = 1; // 0 = quite, 1 = standard, 2 = verbose
 static const char *output_path = NULL;
 static bool gLightModel = false;
 static bool gBdToMuMu = false;
+static bool gSeed = false;
+static uint32_t gProofWorkers = 0;
+static int gToys = 5000;
 
 static const char *algo_name(algo_t a)
 {
@@ -61,6 +67,12 @@ static const char *algo_name(algo_t a)
 			break;
 		case kAlgo_CLb:
 			result = "CLb";
+			break;
+		case kAlgo_Hybrid:
+			result = "Hybrid";
+			break;
+		case kAlgo_CLb_Hybrid:
+			result = "CLb using Hybrid";
 			break;
 		case kAlgo_None:
 			result = "None";
@@ -190,7 +202,7 @@ static void parse_input(const char *path, map<bmm_param,measurement_t> *bsmm, ma
 
 static void usage()
 {
-	cerr << "ulcalc [--bdtomumu] [--light] [--disable-errors] [[-n <FC steps>] -r x,y ] [-e num_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
+	cerr << "ulcalc [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--light] [--disable-errors] [[-n <nbr steps>] -r x,y ] [-e num_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"clb_hybrid\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
 } // usage()
 
 static bool parse_arguments(const char **first, const char **last)
@@ -254,6 +266,10 @@ static bool parse_arguments(const char **first, const char **last)
 					gAlgorithm = kAlgo_CLs;
 				} else if (s.compare("clb") == 0) {
 					gAlgorithm = kAlgo_CLb;
+				} else if (s.compare("hybrid") == 0) {
+					gAlgorithm = kAlgo_Hybrid;
+				} else if (s.compare("clb_hybrid") == 0) {
+					gAlgorithm = kAlgo_CLb_Hybrid;
 				} else if (s.compare("none") == 0) {
 					gAlgorithm = kAlgo_None;
 				} else {
@@ -267,7 +283,7 @@ static bool parse_arguments(const char **first, const char **last)
 					usage();
 					abort();
 				}
-				force_error =true;
+				force_error = true;
 				gNumErr = atof(*first++);
 			} else if (strcmp(arg, "-v") == 0) {
 				gVerbosity = 2; // verbose
@@ -283,7 +299,22 @@ static bool parse_arguments(const char **first, const char **last)
 				gLightModel = true;
 			} else if (strcmp(arg, "--bdtomumu") == 0) {
 				gBdToMuMu = true;
-			} else {
+			} else if (strcmp(arg, "--seed") == 0) {
+				gSeed = true;
+			} else if (strcmp(arg, "--proof") == 0) {
+				if (first == last) {
+					usage();
+					abort();
+				}
+				gProofWorkers = atoi(*first++);
+			} else if (strcmp(arg, "--toys") == 0) {
+				if (first == last) {
+					usage();
+					abort();
+				}
+				gToys = atoi(*first++);
+			}
+			else {
 				cerr << "Unknown option '" << arg << "'." << endl;
 				usage();
 				abort();
@@ -316,6 +347,9 @@ static bool parse_arguments(const char **first, const char **last)
 	cout << "Verbosity level " << gVerbosity << endl;
 	cout << (gLightModel ? "Light model Selected" : "Computing using Full Model") << endl;
 	cout << "Computing Upper limit for decay " << (gBdToMuMu ? "Bd -> mumu" : "Bs -> mumu") << endl;
+	if (gSeed) cout << "Unique Random seed" << endl;
+	cout << "Number of MC Toys used: " << gToys << endl;
+	if (gProofWorkers > 0) cout << "Number of Proof Workers: " << gProofWorkers << endl;
 	cout << "-------------------------------------" << endl;
 	
 bail:
@@ -334,6 +368,7 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 {
 	RooDataSet *data = NULL;
 	RooStats::ConfInterval *inter = NULL;
+	RooStats::HypoTestResult *testResult = NULL;
 	double bkg,weight,ul = 0,ll = 0.0;
 	uint32_t obsBsMin,obsBsMax;
 	uint32_t obsBdMin = 0,obsBdMax = 0;
@@ -370,6 +405,11 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 		if (gVerbosity > 0)
 			data->Print("v");
 		
+		wspace->import(*data);
+		
+		// initialize random number generator seed
+		if (gSeed) RooRandom::randomGenerator()->SetSeed(0);
+		
 		switch (gAlgorithm) {
 			case kAlgo_Bayesian:
 				if (gLightModel)
@@ -378,14 +418,21 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 					inter = est_ul_bc(wspace, data, channels, gCLLevel, gVerbosity, &ul, NULL);
 				break;
 			case kAlgo_FeldmanCousins:
-				inter = est_ul_fc(wspace, data, channels, gCLLevel, gVerbosity, gFCSteps, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &ul, &ll, NULL);
+				inter = est_ul_fc(wspace, data, channels, gCLLevel, gVerbosity, gNumErr, &ul, &ll, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys);
 				break;
 			case kAlgo_CLs:
-				inter = est_ul_cls(wspace, data, channels, gCLLevel, gVerbosity, gNumErr, &ul, NULL);
+				inter = est_ul_cls(wspace, data, channels, gCLLevel, gVerbosity, gNumErr, &ul, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys);
 				break;
 			case kAlgo_CLb:
 				// note, here upper limit represents p-value of background model.
-				est_ul_clb(wspace, data, channels, gVerbosity, gNumErr, &ul);
+				testResult = est_ul_clb(wspace, data, channels, gVerbosity, gNumErr, &ul, gProofWorkers, gToys);
+				break;
+			case kAlgo_Hybrid:
+				inter = est_ul_hybrid(wspace, data, channels, gCLLevel, gVerbosity, gNumErr, &ul, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys, gBdToMuMu);
+				break;
+			case kAlgo_CLb_Hybrid:
+				// note, here upper limit represents p-value of background model.
+				testResult = est_ul_clb_hybrid(wspace, data, channels, gVerbosity, gNumErr, &ul, gProofWorkers, gToys, gBdToMuMu);
 				break;
 			case kAlgo_None:
 				measure_params(wspace, data, channels, gVerbosity);
@@ -400,7 +447,11 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 		*avgUL = *avgUL + ul * weight;
 		*avgLL = *avgLL + ll * weight;
 		
+		if (inter)		wspace->import(*inter);
+		if (testResult)	wspace->import(*testResult);
+		
 		delete inter;
+		delete testResult;
 		delete data;
 		goto bail;
 	}
@@ -514,7 +565,7 @@ int main(int argc, const char *argv [])
 	if (gLightModel)
 		wspace = build_model_light(&bsmm, gVerbosity);
 	else
-		wspace = build_model_nchannel(&bsmm, &bdmm, gDisableErrors, gVerbosity, gBdToMuMu);
+		wspace = build_model_nchannel(&bsmm, &bdmm, gDisableErrors, gVerbosity, gBdToMuMu, (gAlgorithm == kAlgo_Hybrid) || (gAlgorithm == kAlgo_CLb_Hybrid) || (gAlgorithm == kAlgo_CLs) || (gAlgorithm == kAlgo_CLb) || (gAlgorithm == kAlgo_None));
 	
 	// set the measured candidates...
 	observables.addClone(*wspace->set("obs"));
@@ -524,7 +575,7 @@ int main(int argc, const char *argv [])
 	avgUL /= avgWeight;
 	avgLL /= avgWeight;
 	
-	if (gAlgorithm == kAlgo_CLb) {
+	if (gAlgorithm == kAlgo_CLb || gAlgorithm == kAlgo_CLb_Hybrid) {
 		cout << "p value for background model: " << avgUL << " corresponding to " << sqrt(2.)*TMath::ErfInverse(1-2*avgUL) << " sigmas." << endl;
 	} else {
 		cout << (gBdToMuMu ? "Bd -> mumu" : "Bs -> mumu") << " upper limit for config file '" << configfile_path << "' using algorithm " << algo_name(gAlgorithm) << ": " << avgUL*(gBdToMuMu ? bdtomumu() : bstomumu()) << "\t(" << avgUL << ") @ " << (int)(gCLLevel*100.) << " % CL" << endl;
