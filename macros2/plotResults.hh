@@ -20,6 +20,7 @@ public:
   void scaledHist(int mode = 0);
 
   void printUlcalcNumbers(std::string fname);
+  void createAllCfgFiles(std::string fname);
   void printCsBFNumbers();
   double barlow(int nobs, double bg, double bgE, double sE);
   double scaledYield(numbers *a, numbers *no, double chanbf, double fsfu); 

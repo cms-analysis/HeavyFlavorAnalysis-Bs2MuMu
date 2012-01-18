@@ -4,7 +4,8 @@ CANDLIPS         2.5
 CAND2LIP         0.2
 CAND2LIPS        3
 MAXDOCA          0.6
-CANDIP           12
+CANDIP           0.05
+CANDIPS          4
 CANDPTLO         7.0
 CANDETALO        -24.
 CANDETAHI         24.

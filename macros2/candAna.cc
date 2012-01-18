@@ -532,8 +532,8 @@ void candAna::candAnalysis() {
   fGoodPvAveW8    = (fPvAveW8 > PVAVEW8);
   fGoodPvLip      = (TMath::Abs(fCandPvLip) < CANDLIP); 
   fGoodPvLipS     = (TMath::Abs(fCandPvLipS) < CANDLIPS); 
-  fGoodPvLip2     = (TMath::Abs(fCandPvLip) > CANDLIP2); 
-  fGoodPvLipS2    = (TMath::Abs(fCandPvLipS) > CANDLIPS2); 
+  fGoodPvLip2     = (TMath::Abs(fCandPvLip2) > CANDLIP2); 
+  fGoodPvLipS2    = (TMath::Abs(fCandPvLipS2) > CANDLIPS2); 
   fGoodMaxDoca    = (TMath::Abs(fCandDoca) < CANDDOCA); 
   fGoodIp         = (TMath::Abs(fCandPvIp) < CANDIP); 
   fGoodIpS        = (TMath::Abs(fCandPvIpS) < CANDIPS); 
@@ -1086,9 +1086,9 @@ void candAna::bookHist() {
     fpLip2[i]      = bookDistribution(Form("%slip2", name.c_str()), "l_{z}^{2nd} [cm]", "fGoodPvLip2", 50, -10.0, 10.0);   
     fpLipS2[i]     = bookDistribution(Form("%slips2", name.c_str()), "l_{z}^{2nd}/#sigma(l_{z}^{2nd})", "fGoodPvLipS2", 50, -100., 100.);   
 
-    fpMaxDoca[i]   = bookDistribution(Form("%smaxdoca", name.c_str()), "d", "fGoodMaxDoca", 50, 0., 0.1);   
-    fpIp[i]        = bookDistribution(Form("%sip", name.c_str()), "d", "fGoodIp", 50, 0., 0.1);   
-    fpIpS[i]       = bookDistribution(Form("%sips", name.c_str()), "d", "fGoodIpS", 50, 0., 10);   
+    fpMaxDoca[i]   = bookDistribution(Form("%smaxdoca", name.c_str()), "d", "fGoodMaxDoca", 50, 0., 0.05);   
+    fpIp[i]        = bookDistribution(Form("%sip", name.c_str()), "d", "fGoodIp", 50, 0., 0.05);   
+    fpIpS[i]       = bookDistribution(Form("%sips", name.c_str()), "d", "fGoodIpS", 50, 0., 5);   
 
     fp2MChi2[i]    = bookDistribution(Form("%s2mchi2", name.c_str()),  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
     fp2MChi2Dof[i] = bookDistribution(Form("%s2mchi2dof", name.c_str()),  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
@@ -1596,7 +1596,7 @@ void candAna::readCuts(string fileName, int dump) {
       if (dump) {
 	cout << "HLTRANGE:       " << hlt << " from " << r1 << " to " << r2 << endl; 
       }
-      ibin = 5; 
+      ibin = 3; 
       hcuts->SetBinContent(ibin, 1);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: %s", CutName, triggerlist));
     }
@@ -1605,7 +1605,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "TRUTHCAND")) {
       TRUTHCAND = int(CutValue); ok = 1;
       if (dump) cout << "TRUTHCAND:           " << TRUTHCAND << endl;
-      ibin = 7;
+      ibin = 4;
       hcuts->SetBinContent(ibin, TYPE);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: Candidate type", CutName));
     }
@@ -1613,7 +1613,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "IGNORETRIGGER")) {
       IGNORETRIGGER = int(CutValue); ok = 1;
       if (dump) cout << "IGNORETRIGGER      " << IGNORETRIGGER << endl;
-      ibin = 8;
+      ibin = 5;
       hcuts->SetBinContent(ibin, IGNORETRIGGER);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: Ignore trigger :: %i", CutName, IGNORETRIGGER));
     }
@@ -1645,7 +1645,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDCOSALPHA")) {
       CANDCOSALPHA = CutValue; ok = 1;
       if (dump) cout << "CANDCOSALPHA:           " << CANDCOSALPHA << endl;
-      ibin = 14;
+      ibin = 20;
       hcuts->SetBinContent(ibin, CANDCOSALPHA);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: cos#alpha :: %5.4f", CutName, CANDCOSALPHA));
     }
@@ -1653,7 +1653,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDALPHA")) {
       CANDALPHA = CutValue; ok = 1;
       if (dump) cout << "CANDALPHA:           " << CANDALPHA << endl;
-      ibin = 15;
+      ibin = 21;
       hcuts->SetBinContent(ibin, CANDALPHA);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #alpha :: %5.4f", CutName, CANDALPHA));
     }
@@ -1661,7 +1661,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDFLS3D")) {
       CANDFLS3D = CutValue; ok = 1;
       if (dump) cout << "CANDFLS3D:           " << CANDFLS3D << endl;
-      ibin = 16;
+      ibin = 22;
       hcuts->SetBinContent(ibin, CANDFLS3D);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{3d}/#sigma(l_{3d}) :: %3.1f", CutName, CANDFLS3D));
     }
@@ -1669,7 +1669,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDFLSXY")) {
       CANDFLSXY = CutValue; ok = 1;
       if (dump) cout << "CANDFLSXY:           " << CANDFLSXY << endl;
-      ibin = 17;
+      ibin = 23;
       hcuts->SetBinContent(ibin, CANDFLSXY);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{xy}/#sigma(l_{xy}) :: %3.1f", CutName, CANDFLSXY));
     }
@@ -1677,7 +1677,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDVTXCHI2")) {
       CANDVTXCHI2 = CutValue; ok = 1;
       if (dump) cout << "CANDVTXCHI2:           " << CANDVTXCHI2 << endl;
-      ibin = 18;
+      ibin = 24;
       hcuts->SetBinContent(ibin, CANDVTXCHI2);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: #chi^{2} :: %3.1f", CutName, CANDVTXCHI2));
     }
@@ -1685,7 +1685,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDISOLATION")) {
       CANDISOLATION = CutValue; ok = 1;
       if (dump) cout << "CANDISOLATION:           " << CANDISOLATION << endl;
-      ibin = 19;
+      ibin = 25;
       hcuts->SetBinContent(ibin, CANDISOLATION);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: I_{trk} :: %4.2f", CutName, CANDISOLATION));
     }
@@ -1693,7 +1693,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDDOCATRK")) {
       CANDDOCATRK = CutValue; ok = 1;
       if (dump) cout << "CANDDOCATRK:           " << CANDDOCATRK << endl;
-      ibin = 20;
+      ibin = 26;
       hcuts->SetBinContent(ibin, CANDDOCATRK);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: doca_{trk} :: %4.3f", CutName, CANDDOCATRK));
     }
@@ -1701,7 +1701,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDCLOSETRK")) {
       CANDCLOSETRK = CutValue; ok = 1;
       if (dump) cout << "CANDCLOSETRK:           " << CANDCLOSETRK << endl;
-      ibin = 21;
+      ibin = 27;
       hcuts->SetBinContent(ibin, CANDCLOSETRK);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: N_{close tracks} :: %4.2f", CutName, CANDCLOSETRK));
     }
@@ -1709,7 +1709,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "PVAVEW8")) {
       PVAVEW8 = CutValue; ok = 1;
       if (dump) cout << "PVAVEW8:           " << PVAVEW8 << endl;
-      ibin = 30;
+      ibin = 28;
       hcuts->SetBinContent(ibin, PVAVEW8);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: <w^{PV}_{trk}> :: %4.3f", CutName, PVAVEW8));
     }
@@ -1717,7 +1717,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDLIP")) {
       CANDLIP = CutValue; ok = 1;
       if (dump) cout << "CANDLIP:           " << CANDLIP << endl;
-      ibin = 31;
+      ibin = 40;
       hcuts->SetBinContent(ibin, CANDLIP);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{z} :: %4.3f", CutName, CANDLIP));
     }
@@ -1725,7 +1725,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDLIPS")) {
       CANDLIPS = CutValue; ok = 1;
       if (dump) cout << "CANDLIPS:          " << CANDLIPS << endl;
-      ibin = 32;
+      ibin = 41;
       hcuts->SetBinContent(ibin, CANDLIPS);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{z}/#sigma(l_{z}) :: %4.3f", CutName, CANDLIPS));
     }
@@ -1733,7 +1733,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CAND2LIP")) {
       CANDLIP2 = CutValue; ok = 1;
       if (dump) cout << "CAND2LIP:           " << CANDLIP2 << endl;
-      ibin = 31;
+      ibin = 42;
       hcuts->SetBinContent(ibin, CANDLIP2);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{z,2} :: %4.3f", CutName, CANDLIP2));
     }
@@ -1741,7 +1741,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CAND2LIPS")) {
       CANDLIPS2 = CutValue; ok = 1;
       if (dump) cout << "CAND2LIPS:          " << CANDLIPS2 << endl;
-      ibin = 32;
+      ibin = 43;
       hcuts->SetBinContent(ibin, CANDLIPS2);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{z,2}/#sigma(l_{z,2}) :: %4.3f", CutName, CANDLIPS2));
     }
@@ -1749,26 +1749,27 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "CANDIP")) {
       CANDIP = CutValue; ok = 1;
       if (dump) cout << "CANDIP:          " << CANDIP << endl;
-      ibin = 32;
+      ibin = 44;
       hcuts->SetBinContent(ibin, CANDIP);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{3d} :: %4.3f", CutName, CANDIP));
-    }
-
-    if (!strcmp(CutName, "MAXDOCA")) {
-      CANDDOCA = CutValue; ok = 1;
-      if (dump) cout << "MAXDOCA:         " << CANDDOCA << endl;
-      ibin = 32;
-      hcuts->SetBinContent(ibin, CANDDOCA);
-      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: d :: %4.3f", CutName, CANDDOCA));
     }
 
     if (!strcmp(CutName, "CANDIPS")) {
       CANDIPS = CutValue; ok = 1;
       if (dump) cout << "CANDIPS:          " << CANDIPS << endl;
-      ibin = 32;
+      ibin = 45;
       hcuts->SetBinContent(ibin, CANDIPS);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: l_{3d}/#sigma(l_{3d}) :: %4.3f", CutName, CANDIPS));
     }
+
+    if (!strcmp(CutName, "MAXDOCA")) {
+      CANDDOCA = CutValue; ok = 1;
+      if (dump) cout << "MAXDOCA:         " << CANDDOCA << endl;
+      ibin = 46;
+      hcuts->SetBinContent(ibin, CANDDOCA);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: d :: %4.3f", CutName, CANDDOCA));
+    }
+
 
     if (!strcmp(CutName, "SIGBOXMIN")) {
       SIGBOXMIN = CutValue; ok = 1;

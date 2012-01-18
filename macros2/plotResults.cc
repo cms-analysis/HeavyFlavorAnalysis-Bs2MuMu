@@ -138,6 +138,7 @@ void plotResults::computeNormUL() {
   cout << "===> Storing ULC numbers in file " << bla << endl;
   system(Form("/bin/rm -f %s", bla.c_str()));
   printUlcalcNumbers(bla);
+  createAllCfgFiles(bla); 
 
   double   fNul = 0.;
 
@@ -293,6 +294,50 @@ void plotResults::scaledHist(int mode) {
   }
 }
 
+
+// ----------------------------------------------------------------------
+void plotResults::createAllCfgFiles(string fname) { 
+
+  vector<string> lines; 
+  char  buffer[200];
+  ifstream is(fname.c_str());
+  while (is.getline(buffer, 200, '\n')) {
+    lines.push_back(string(buffer));
+  }
+  is.close();
+
+  float bsExp0(0.), bsExp1(0.), bdExp0(0.), bdExp1(0.), err(0.); 
+  for (int i = 0; i < lines.size(); ++i) {
+    cout << lines[i] << endl;   
+    if (string::npos != lines[i].find("#EXP_OBS_BSMM\t0")) sscanf(lines[i].c_str(), "#EXP_OBS_BSMM\t0\t%f\t%f", &bsExp0, &err);
+    if (string::npos != lines[i].find("#EXP_OBS_BDMM\t0")) sscanf(lines[i].c_str(), "#EXP_OBS_BDMM\t0\t%f\t%f", &bdExp0, &err);
+    if (string::npos != lines[i].find("#EXP_OBS_BSMM\t1")) sscanf(lines[i].c_str(), "#EXP_OBS_BSMM\t1\t%f\t%f", &bsExp1, &err);
+    if (string::npos != lines[i].find("#EXP_OBS_BDMM\t1")) sscanf(lines[i].c_str(), "#EXP_OBS_BDMM\t1\t%f\t%f", &bdExp1, &err);
+  }
+  cout << "bsExp0: " << bsExp0 << endl;
+  cout << "bdExp0: " << bdExp0 << endl;
+  cout << "bsExp1: " << bsExp1 << endl;
+  cout << "bdExp1: " << bdExp1 << endl;
+
+
+//   double nexp = cbg0 + _sig; 
+//   int    nobs = static_cast<int>(nexp+0.5); 
+//   double w8(0.), w8cum(0.); 
+//   double nulbayes(0.), nulw8(0.); 
+// //   cout << "Lo: " << _nhlo << " Hi: " << _nhhi << " -> comb. BG = " << cbg0 << " sig: " << _sig 
+// //        << " -> nexp: " << nexp << " -> nobs<exp> = " << nobs
+// //        << endl;
+//   vector<int> bd0, bs0, bd1, bs1; 
+//   for (int ibd0 = 0; ibd0 < 5*bdExp0; ++ibd0) {
+//     w8bd0 = TMath::PoissonI(ibd0, bdExp0); 
+//     w8bd0Cum += w8bd0; 
+//     if (ibd0 < bdExp0 && w8bd0 < 0.01) continue;
+//     if (ibd0 > bdExp0 && w8db0cum > 0.99) break;
+//   }
+
+
+
+}
 
 // ----------------------------------------------------------------------
 void plotResults::printUlcalcNumbers(string fname) {
@@ -759,6 +804,31 @@ void plotResults::printUlcalcNumbers(string fname) {
     fTEX << formatTex(totE, Form("%s:N-EFF-ANA-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
     fTEX << scientificTex(fNumbersBd[i]->effAna, totE, Form("%s:N-EFF-ANA-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
+    OUT << "# Expected in signal boxes" << endl;
+    double bsExpObs = fNumbersBs[i]->bgBsExp
+      + fNumbersBs[i]->bsRare
+      + fNumbersBs[i]->bsNoScaled;
+
+    double bsExpObsE = TMath::Sqrt(fNumbersBs[i]->bgBsExpE
+				   + fNumbersBs[i]->bsRareE*fNumbersBs[i]->bsRareE
+				   + fNumbersBs[i]->bsNoScaledE*fNumbersBs[i]->bsNoScaledE);
+
+    OUT << "#EXP_OBS_BSMM\t" << i << "\t" << bsExpObs << "\t" << bsExpObsE << endl;
+    fTEX << formatTex(bsExpObs, Form("%s:N-EXP-OBS-BS%d:val", fSuffix.c_str(), i), 2) << endl;
+    fTEX << formatTex(bsExpObsE, Form("%s:N-EXP-OBS-BS%d:err", fSuffix.c_str(), i), 2) << endl;
+
+    double bdExpObs = fNumbersBs[i]->bgBdExp
+      + fNumbersBs[i]->bdRare
+      + fNumbersBd[i]->bdNoScaled;
+
+    double bdExpObsE = TMath::Sqrt(fNumbersBs[i]->bgBdExpE
+				   + fNumbersBs[i]->bdRareE*fNumbersBs[i]->bdRareE
+				   + fNumbersBd[i]->bdNoScaledE*fNumbersBd[i]->bdNoScaledE);
+
+    OUT << "#EXP_OBS_BDMM\t" << i << "\t" << bdExpObs << "\t" << bdExpObsE << endl;
+    fTEX << formatTex(bdExpObs, Form("%s:N-EXP-OBS-BD%d:val", fSuffix.c_str(), i), 2) << endl;
+    fTEX << formatTex(bdExpObsE, Form("%s:N-EXP-OBS-BD%d:err", fSuffix.c_str(), i), 2) << endl;
+
     OUT << "# Observed in signal boxes" << endl;
     OUT << "OBS_BSMM\t" << i << "\t" << fNumbersBs[i]->bsObs << endl;
     fTEX << formatTex(fNumbersBs[i]->bsObs, Form("%s:N-OBS-BSMM%d:val", fSuffix.c_str(), i), 0) << endl;
@@ -795,33 +865,6 @@ void plotResults::printUlcalcNumbers(string fname) {
     OUT << "TAU_BD\t" << i << "\t" << fNumbersBs[i]->tauBd << "\t" << fNumbersBs[i]->tauBdE << endl;
     fTEX << formatTex(fNumbersBs[i]->tauBd, Form("%s:N-TAU-BD%d:val", fSuffix.c_str(), i), 2) << endl;
     fTEX << formatTex(fNumbersBs[i]->tauBdE, Form("%s:N-TAU-BD%d:err", fSuffix.c_str(), i), 2) << endl;
-
-    
-    double bsExpObs = fNumbersBs[i]->bgBsExp
-      + fNumbersBs[i]->bsRare
-      + fNumbersBs[i]->bsNoScaled;
-
-    double bsExpObsE = TMath::Sqrt(fNumbersBs[i]->bgBsExpE
-				   + fNumbersBs[i]->bsRareE*fNumbersBs[i]->bsRareE
-				   + fNumbersBs[i]->bsNoScaledE*fNumbersBs[i]->bsNoScaledE);
-
-    OUT << "#EXP_OBS_BSMM\t" << i << "\t" << bsExpObs << "\t" << bsExpObsE << endl;
-    fTEX << formatTex(bsExpObs, Form("%s:N-EXP-OBS-BS%d:val", fSuffix.c_str(), i), 2) << endl;
-    fTEX << formatTex(bsExpObsE, Form("%s:N-EXP-OBS-BS%d:err", fSuffix.c_str(), i), 2) << endl;
-
-    double bdExpObs = fNumbersBs[i]->bgBdExp
-      + fNumbersBs[i]->bdRare
-      + fNumbersBd[i]->bdNoScaled;
-
-    double bdExpObsE = TMath::Sqrt(fNumbersBs[i]->bgBdExpE
-				   + fNumbersBs[i]->bdRareE*fNumbersBs[i]->bdRareE
-				   + fNumbersBd[i]->bdNoScaledE*fNumbersBd[i]->bdNoScaledE);
-
-    OUT << "#EXP_OBS_BDMM\t" << i << "\t" << bdExpObs << "\t" << bdExpObsE << endl;
-    fTEX << formatTex(bdExpObs, Form("%s:N-EXP-OBS-BD%d:val", fSuffix.c_str(), i), 2) << endl;
-    fTEX << formatTex(bdExpObsE, Form("%s:N-EXP-OBS-BD%d:err", fSuffix.c_str(), i), 2) << endl;
-
-
   }
 
   OUT.close();
