@@ -129,7 +129,8 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   pM->fTimeInOutE = rm.time().timeAtIpInOutErr; 
   pM->fTimeOutIn  = rm.time().timeAtIpOutIn; 
   pM->fTimeOutInE = rm.time().timeAtIpOutInErr; 
-  pM->fTimeNdof   = rm.time().nDof;
+  //  pM->fTimeNdof   = rm.time().nDof;
+  pM->fTimeNdof   = -1; // abused below!!!
 
   TrackRef gTrack = rm.globalTrack();
   TrackRef iTrack = rm.innerTrack();
@@ -139,6 +140,8 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
     Track trk(*gTrack);
     pM->fGlobalPlab.SetPtEtaPhi(trk.pt(), trk.eta(), trk.phi());
     //    cout << " gpt = " << trk.pt() << " " <<  trk.eta() << " "  <<  trk.phi() << endl;
+
+    pM->fTimeNdof = rm.numberOfMatchedStations();
 
     if (!fRunOnAOD) {
       vector<unsigned int> hits = muonStatHits(trk);
