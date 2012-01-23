@@ -13,6 +13,7 @@ type=bd,acc           dset=mc,1.00  lumi=8200.0 file=/shome/ursl/scratch/default
 # control sample  data and MC
 type=cs,default       dset=data    lumi=4.9    file=/shome/ursl/scratch/default/v10-2011-data.root
 type=cs,default       dset=mc,0.0162 lumi=5.4  file=/shome/ursl/scratch/default/v10-mix-Bs2JpsiPhi.root
+type=cs,pu            dset=mc      lumi=5.0    file=/shome/ursl/scratch/default/v10-cms-Bs2JpsiPhi.root
 type=cs,acc           dset=mc,1.00 lumi=5.4    file=/shome/ursl/scratch/default/v10-2e33-accBs2JpsiPhi.root
 type=cs,1e33          dset=mc      lumi=5.4    file=/shome/ursl/scratch/default/v10-1e33-Bs2JpsiPhi.root
 type=cs,2e33          dset=mc      lumi=5.4    file=/shome/ursl/scratch/default/v10-2e33-Bs2JpsiPhi.root
@@ -21,6 +22,7 @@ type=cs,3e33          dset=mc      lumi=5.4    file=/shome/ursl/scratch/default/
 # normalization data and MC
 type=no,default       dset=data    lumi=4.9    file=/shome/ursl/scratch/default/v10-2011-data.root
 type=no,default       dset=mc,0.0181 lumi=5.2  file=/shome/ursl/scratch/default/v10-mix-Bu2JpsiK.root
+type=no,pu            dset=mc      lumi=5.0    file=/shome/ursl/scratch/default/v10-cms-Bu2JpsiK.root
 type=no,acc           dset=mc,1.00 lumi=5.2    file=/shome/ursl/scratch/default/v10-2e33-accBu2JpsiK.root
 type=no,1e33          dset=mc      lumi=5.2     file=/shome/ursl/scratch/default/v10-1e33-Bu2JpsiK.root
 type=no,2e33          dset=mc      lumi=5.2     file=/shome/ursl/scratch/default/v10-2e33-Bu2JpsiK.root

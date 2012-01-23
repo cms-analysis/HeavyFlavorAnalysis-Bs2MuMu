@@ -62,11 +62,12 @@ sub produceTexTable() {
     open(TEX, ">ulTable-$opt_p.tex") || die "cannot open ulTable-$opt_p.tex\n";
     $tcnt = 0; 
     $lcnt = 0; 
-    &printHeader($tcnt, TEX); 
+    $header = 0; 
     for ($id0 = $startbd[0]; $id0 <= $endbd[0]; $id0++) {
 	for ($is0 = $startbs[0]; $is0 <= $endbs[0]; $is0++) {
 	    for ($id1 = $startbd[1]; $id1 <= $endbd[1]; $id1++) {
 		for ($is1 = $startbs[1]; $is1 <= $endbs[1]; $is1++) {
+		    if ($header == 0) {&printHeader($tcnt, TEX); $header = 1; }
 		    $name = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:cls";
 		    $name1 = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:bayes";
 		    $name2 = "$opt_p:ulMatrix:0s$is0"."_0d$id0"."_1s$is1"."_1d$id1:clb";
@@ -75,8 +76,8 @@ sub produceTexTable() {
 		    if ($lcnt > 44) {
 			$lcnt = 0; 
 			&printFooter(TEX); 
+			$header = 0; 
 			$tcnt++;
-			&printHeader($tcnt, TEX); 
 		    }
 		}
 		print TEX "%\n";
@@ -85,6 +86,8 @@ sub produceTexTable() {
 	}
 	print TEX "%\n";
     }
+    if ($header == 1) {&printFooter(TEX); }
+
     close(TEX);
 }
 

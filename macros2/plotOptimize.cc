@@ -30,13 +30,10 @@ void plotOptimize::optimizeULs(int nruns, int seed) {
   ofstream OUT(Form("optimizeUL-%d.txt", seed)); 
 
   int NCUTS(14);
-  //                  0     1      2    3       4      5       6         7     8          9     10     11     12      13        14
-  //string cuts[] = {"m2pt","m1pt","pt","alpha","chi2","fls3d","docatrk","iso","closetrk","lip","lips","lip2","lips2","maxdoca"}; 
-  double loCuts[] = {4.0,   4.0,   5.0, 0.01,   1.2,   5,      0.0,      0.70, 1,         0.0,  1.,    0.0,   0.,     0.01};
-  double hiCuts[] = {6.0,   7.0,   12., 0.10,   2.5,   25,     0.1,      0.95, 3,         0.01, 2.5,   0.1,   5.,     0.05};
-
-  // to add: 
-  // LIP(S)2
+  //                  0     1      2    3       4      5       6         7     8          9     10     11        12   13
+  //string cuts[] = {"m2pt","m1pt","pt","alpha","chi2","fls3d","docatrk","iso","closetrk","lip","lips","maxdoca","ip","ips"}; 
+  double loCuts[] = {4.0,   4.0,   5.0, 0.01,   1.2,   5,      0.0,      0.70, 1,         0.0,  1.,    0.01,     0.0, 0.0 };
+  double hiCuts[] = {6.0,   7.0,   12., 0.10,   2.5,   25,     0.1,      0.95, 3,         0.01, 2.5,   0.05,     0.05,5.0};
 
   if (seed > 0) {
     cout << "Setting random number seed " << seed << endl;
@@ -63,9 +60,9 @@ void plotOptimize::optimizeULs(int nruns, int seed) {
 	if (8 == i) fCuts[ic]->closetrk = static_cast<int>(cut);
 	if (9 == i) fCuts[ic]->pvlip = cut;
 	if (10== i) fCuts[ic]->pvlips = cut;
-	if (11== i) fCuts[ic]->pvlip2 = cut;
-	if (12== i) fCuts[ic]->pvlips2 = cut;
-	if (13== i) fCuts[ic]->maxdoca = cut;
+	if (11== i) fCuts[ic]->maxdoca = cut;
+	if (12== i) fCuts[ic]->pvip = cut;
+	if (13== i) fCuts[ic]->pvips = cut;
       }
     }
 
@@ -207,7 +204,7 @@ struct bla{
   double mlo, mhi; 
   double m1pt, m2pt, pt; 
   double chi2dof, iso, alpha, fls3d, docatrk; 
-  double lip, lips, lip2, lips2, maxdoca; 
+  double lip, lips, lip2, lips2, ip, ips, maxdoca; 
   double bdt; 
   int closetrk, cowboyVeto; 
 };
@@ -228,7 +225,7 @@ void plotOptimize::bestUL(const char *fname, int mode) {
   float mlo, mhi, pt, m1pt, m2pt, iso, chi2dof, alpha, fls3d, docatrk; 
   float ul, ulc, ulcp, ssb, ssb1, ssb2, nobs, nexp, sig, eff; 
   int closetrk, cowboyVeto; 
-  float lip, lips, lip2, lips2, maxdoca, bdt; 
+  float lip, lips, lip2, lips2, ip, ips, maxdoca, bdt; 
 
   t->SetBranchAddress("chan", &chan);
   t->SetBranchAddress("file", &file);
@@ -260,6 +257,8 @@ void plotOptimize::bestUL(const char *fname, int mode) {
   t->SetBranchAddress("pvlips", &lips);
   t->SetBranchAddress("pvlip2", &lip2);
   t->SetBranchAddress("pvlips2", &lips2);
+  t->SetBranchAddress("pvip", &ip);
+  t->SetBranchAddress("pvips", &ips);
   t->SetBranchAddress("maxdoca", &maxdoca);
   t->SetBranchAddress("bdt", &bdt);
   t->SetBranchAddress("cowboyVeto", &cowboyVeto);
@@ -270,13 +269,13 @@ void plotOptimize::bestUL(const char *fname, int mode) {
 	     0., 0., 
 	     4.1, 0.,
 	     0., 0., 0., 
-	     0., 0., 0., 0., 0.,
+	     0., 0., 0., 0., 0.,0., 0.,
 	     0., 0., -99., 0, 0
   };
 
   list<bla> bestList0(1, ini) ;
 
-  ini.ulcp = 2.2e-8; 
+  ini.ulcp = 2.3e-8; 
   ini.ssb = 0.8;
   ini.sig = 2.0;
   list<bla> bestList1(1, ini) ;
@@ -317,11 +316,13 @@ void plotOptimize::bestUL(const char *fname, int mode) {
     ini.lips = lips; 
     ini.lip2 = lip2; 
     ini.lips2 = lips2; 
+    ini.ip = ip; 
+    ini.ips = ips; 
     ini.maxdoca = maxdoca; 
     ini.bdt = bdt; 
     ini.cowboyVeto = cowboyVeto; 
     
-    if (docatrk > 0.002) continue;
+    if (docatrk > 0.004) continue;
 
     if (chan == 0) {
       for (list<bla>::iterator i = bestList0.begin(); i != bestList0.end(); ++i) {
@@ -392,7 +393,7 @@ void plotOptimize::bestUL(const char *fname, int mode) {
 	 << Form("pt1=%3.1f pt2=%3.1f I=%3.2f c2=%3.2f a=%4.3f f=%3.1f dt=%4.3f ", 
 		 ini.m1pt, ini.m2pt, ini.iso, ini.chi2dof, ini.alpha, ini.fls3d, ini.docatrk)
 	 << Form("pv=%4.3f/%3.2f/%4.3f/%3.2f m=%3.2f n=%d ", 
-		 ini.lip, ini.lips, ini.lip2, ini.lips2, ini.maxdoca, ini.closetrk)
+		 ini.lip, ini.lips, ini.ip, ini.ips, ini.maxdoca, ini.closetrk)
 	 << endl;
   }
 
@@ -412,7 +413,7 @@ void plotOptimize::bestUL(const char *fname, int mode) {
 	 << Form("pt1=%3.1f pt2=%3.1f I=%3.2f c2=%3.2f a=%4.3f f=%3.1f dt=%4.3f ", 
 		 ini.m1pt, ini.m2pt, ini.iso, ini.chi2dof, ini.alpha, ini.fls3d, ini.docatrk)
 	 << Form("pv=%4.3f/%3.2f/%4.3f/%3.2f m=%3.2f n=%d", 
-		 ini.lip, ini.lips, ini.lip2, ini.lips2, ini.maxdoca, ini.closetrk)
+		 ini.lip, ini.lips, ini.ip, ini.ips, ini.maxdoca, ini.closetrk)
 	 << endl;
   }
 
@@ -455,6 +456,8 @@ void plotOptimize::readOptimize(int nfiles, const char *fname) {
   t->Branch("pvlips", &_pvlips, "pvlips/F");
   t->Branch("pvlip2", &_pvlip2, "pvlip2/F");
   t->Branch("pvlips2", &_pvlips2, "pvlips2/F");
+  t->Branch("pvip", &_pvip, "pvip/F");
+  t->Branch("pvips", &_pvips, "pvips/F");
   t->Branch("maxdoca", &_maxdoca, "maxdoca/F");
   t->Branch("bdt", &_bdt, "bdt/F");
   t->Branch("cowboyVeto", &_cowboyVeto, "cowboyveto/I");
@@ -504,6 +507,8 @@ void plotOptimize::readFile(const char *fname, TTree *t) {
     if (string::npos != line.find("pvlips ")) sscanf(buffer, "pvlips %f", &_pvlips); 
     if (string::npos != line.find("pvlip2 ")) sscanf(buffer, "pvlip2 %f", &_pvlip2); 
     if (string::npos != line.find("pvlips2 ")) sscanf(buffer, "pvlips2 %f", &_pvlips2); 
+    if (string::npos != line.find("pvip ")) sscanf(buffer, "pvip %f", &_pvip); 
+    if (string::npos != line.find("pvips ")) sscanf(buffer, "pvips %f", &_pvips); 
     if (string::npos != line.find("maxdoca")) sscanf(buffer, "maxdoca %f", &_maxdoca); 
     if (string::npos != line.find("fDoApplyCowboyVetoAlsoInSignal")) sscanf(buffer, "fDoApplyCowboyVetoAlsoInSignal %i", &_cowboyVeto); 
 
@@ -572,8 +577,44 @@ void plotOptimize::readFile(const char *fname, TTree *t) {
 }
 
 
+// ----------------------------------------------------------------------
+void plotOptimize::displayCuts(const char *fname) {
 
+  TFile *f = TFile::Open(fname); 
+  
+  TTree *t = (TTree*)f->Get("t");
 
+  float maxUl0(2.1e-8), maxUl1(2.5e-8); 
+  vector<string> cuts;
+  cuts.push_back(Form("chan==0&&ulcp<%e", maxUl0)); 
+  cuts.push_back(Form("chan==1&&ulcp<%e", maxUl1)); 
+
+  vector<string> vars;
+  vars.push_back("fls3d"); 
+  vars.push_back("alpha"); 
+  vars.push_back("pt"); 
+  vars.push_back("m1pt"); 
+  vars.push_back("m2pt"); 
+  vars.push_back("pvip"); 
+  vars.push_back("pvips"); 
+  vars.push_back("pvlip"); 
+  vars.push_back("pvlips"); 
+  vars.push_back("chi2dof"); 
+  vars.push_back("iso"); 
+  vars.push_back("closetrk"); 
+  vars.push_back("docatrk"); 
+  vars.push_back("maxdoca"); 
+
+  for (int j = 0; j < vars.size(); ++j) {
+    for (int i = 0; i < 2; ++i) {
+      cout << Form("ulcp:%s", vars[j].c_str()) << ", " <<  cuts[i].c_str() << endl;
+      t->Draw(Form("ulcp:%s", vars[j].c_str()), cuts[i].c_str(), "colz");
+      c0->Modified(); c0->Update();
+      c0->SaveAs(Form("%s/opt-ulcp-%s-%d.pdf", fDirectory.c_str(), vars[j].c_str(), i)); 
+    }
+  }
+
+}
 
 
 
@@ -622,7 +663,8 @@ void plotOptimize::recalcUL(int mode, double &ul0, double &ul1) {
   }
   // -- rescale to Bs signal window
   cbg0 = 0.2*cbg0;
-  
+  if (cbg0 < 0.001) cbg0 = 0.1; // to avoid a fatal assert in blimit()
+
   double nexp = cbg0 + _sig; 
   int    nobs = static_cast<int>(nexp+0.5); 
   double w8(0.), w8cum(0.); 

@@ -141,6 +141,9 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
     h = new TH1D(Form("hNorm%d", i), Form("hNorm%d", i), 100, 4.9, 5.9);
     fhNorm.push_back(h); 
 
+    h = new TH1D(Form("hNormC%d", i), Form("hNormC%d", i), 200, 4.9, 5.9);
+    fhNormC.push_back(h); 
+
 
     h = new TH1D(Form("hMassWithTriggerCuts%d", i), Form("hMassWithTriggerCuts%d", i), NBINS, fMassLo, fMassHi);
     fhMassWithTriggerCuts.push_back(h); 
@@ -415,6 +418,7 @@ void plotClass::loopTree(int mode, int proc) {
     fhMassWithAllCutsManyBins[i]->Reset();
 
     fhNorm[i]->Reset();
+    fhNormC[i]->Reset();
 
     fhMassWithMassCutsManyBins[i]->Reset();
     fhMassWithMassCuts[i]->Reset();
@@ -441,7 +445,7 @@ void plotClass::loopTree(int mode, int proc) {
   int bm1pix, bm2pix, bm1bpix, bm2bpix, bm1bpixl1, bm2bpixl1;
 
   int bclosetrk; 
-  double bpvlip, bpvlips, bpvlip2, bpvlips2, bmaxdoca; 
+  double bpvlip, bpvlips, bpvlip2, bpvlips2, bmaxdoca, bpvip, bpvips, bpvw8; 
 
   t->SetBranchAddress("bdt",&bbdt);
   t->SetBranchAddress("bdt2",&bbdt2);
@@ -456,6 +460,9 @@ void plotClass::loopTree(int mode, int proc) {
   t->SetBranchAddress("pvlip2",&bpvlip2);
   t->SetBranchAddress("pvlips2",&bpvlips2);
   t->SetBranchAddress("maxdoca",&bmaxdoca);
+  t->SetBranchAddress("pvip",&bpvip);
+  t->SetBranchAddress("pvips",&bpvips);
+  t->SetBranchAddress("pvw8",&bpvw8);
 
   t->SetBranchAddress("m1pix",&bm1pix);
   t->SetBranchAddress("m2pix",&bm2pix);
@@ -565,12 +572,9 @@ void plotClass::loopTree(int mode, int proc) {
     }
 
     mass = bm; 
-    //     if (10 == mode || 11 == mode) {
-    //       mass = bcm; 
-    //     } else if (20 == mode || 21 == mode) {
-    //       mass = bcm; 
-    //     }
-    
+//     if (bs2jpsiphi || bp2jpsikp) {
+//       mass = bcm; 
+//     }     
 
     fhMassAbsNoCuts[fChan]->Fill(mass);
     // -- require wide mass window ??? FIXME WHY????
@@ -632,20 +636,34 @@ void plotClass::loopTree(int mode, int proc) {
 
     if (fDoUseBDT) {
       // Gemma's cuts:
-      //      mycuts="hlt  && (m1pt>4.5) && (m2pt>4) && (pt>5) && (alpha<0.2) && (fls3d>5)  && (json) &&  (gmuid)
-      // && (gmupt) && (gmueta) && gteta && gtpt && gtqual  && (m1q*m2q<0) && (m>4.9) && (m<5.9) && (tm>0) &&
-      // fabs(m1eta)<2.4 && fabs(m2eta)<2.4";
+      // //for MC
+      //  mycuts="(m1pt>4.5) && (m2pt>4) && (pt>5) && (alpha<0.2) && (fls3d>5)  && (json) && (gmupt) && (gmueta) 
+      //  && gteta && gtpt && gtqual  && (m1q*m2q<0) && (m>4.9) && (m<5.9) && (tm>0) && fabs(m1eta)<2.4 && fabs(m2eta)<2.4
+      //  && fabs(pvlip)<0.015 && fabs(pvlips)<3 && fl3d<2";
+
+      // //for Data   (should be the same but hlt and gmuid required in addition)
+      //  mycutb="hlt  && (m1pt>4.5) && (m2pt>4) && (pt>5) && (alpha<0.2) && (fls3d>5) && json  && gmuid
+      //  && gmupt && gmueta && gteta && gtpt && gtqual  && (m1q*m2q<0) 
+      //  && ( ( (m>4.9) && (m<=5.2) )|| ((m>=5.45) && (m<5.9))) && fabs(m1eta)<2.4 && fabs(m2eta)<2.4
+      //  && fabs(pvlip)<0.015 && fabs(pvlips)<3 && fl3d<2";
 
       if (bm1pt < 4.5) continue; 
       if (bm2pt < 4.0) continue; 
       if (bq1*bq2 > 0) continue;
+      if (bfl3d > 1.5) continue;
       if (bfls3d < 5) continue;
-      if (bfl3d > 2) continue;
-
+      if (balpha > 0.2) continue;
+      if (bpvlip > 0.015) continue;
+      if (bpvlips > 3) continue;
       if (!bjson) continue;
+
       // -- skip inverted isolation events
       if (5 == mode && 5.2 < mass && mass < 5.45 && biso < 0.7) continue; 
       
+      if(5 == mode || 15 == mode || 25 == mode) {
+	if (false == bhlt) continue;
+	if (false == bgmuid) continue;
+      }
 
       if (TMath::IsNaN(bfls3d)) continue;
       if (bs2jpsiphi && bdr >0.3) continue;
@@ -669,7 +687,8 @@ void plotClass::loopTree(int mode, int proc) {
       if (bm1pt < pCuts->m1pt) continue; 
       if (bm2pt < pCuts->m2pt) continue; 
       
-      if (bfl3d > 2) continue;
+      if (bfl3d > 1.5) continue;
+      if (bpvw8 < 0.6) continue;
       
       if (bpt < pCuts->pt) continue; 
       if (biso < pCuts->iso) continue; 
@@ -690,6 +709,8 @@ void plotClass::loopTree(int mode, int proc) {
       if (TMath::Abs(bpvlip2) < pCuts->pvlip2) continue;
       if (TMath::Abs(bpvlips2) < pCuts->pvlips2) continue;
       if (bmaxdoca > pCuts->maxdoca) continue;
+      if (bpvips > pCuts->pvips) continue;
+      if (bpvip > pCuts->pvip) continue;
       
       if (bs2jpsiphi || bp2jpsikp) {
 	if (bmpsi > 3.2) continue;
@@ -782,6 +803,8 @@ void plotClass::loopTree(int mode, int proc) {
     fhMassWithAllCutsManyBins[fChan]->Fill(mass); 
 
     fhNorm[fChan]->Fill(mass);
+    fhNormC[fChan]->Fill(bcm);
+    //    fhNorm[fChan]->Fill(mass);
     
     if (0 == mode && mass < pCuts->mBsLo) continue;
     if (0 == mode && mass > pCuts->mBsHi) continue;
@@ -803,8 +826,8 @@ void plotClass::loopTree(int mode, int proc) {
 	   << Form(" meta = %3.2f,%3.2f", TMath::Abs(bm1eta), TMath::Abs(bm2eta))
 	   << Form(" a = %4.3f iso = %3.2f chi2 = %3.1f fls3d = %3.1f, fl/E=%3.1f/%3.2f", 
 		   TMath::ACos(bcosa), biso, bchi2/bdof, bfls3d, bfl3d, bfl3dE)
-	   << Form(" pv1: %4.3f/%3.1f pv2: %4.3f/%3.1f", bpvlip, bpvlips,  bpvlip2, bpvlips2) 
-	   << Form(" d: %5.4f md: %4.3f", TMath::Sqrt(btip*btip + blip*blip), bmaxdoca) 
+	   << Form(" pv1: %4.3f/%3.1f", bpvlip, bpvlips) 
+	   << Form(" d/s: %5.4f/%3.2f md: %4.3f d: %4.3f", bpvip, bpvips, bmaxdoca, bdocatrk) 
 	   << endl;
       fOUT << Form("%d m = %4.3f pT = %3.1f eta = %3.2f", fChan, mass, bpt, beta)
 	//	   <<	" run = " << brun << " event = " << bevt
@@ -812,8 +835,8 @@ void plotClass::loopTree(int mode, int proc) {
 	   << Form(" meta = %3.2f,%3.2f", TMath::Abs(bm1eta), TMath::Abs(bm2eta))
 	   << Form(" a = %4.3f iso = %3.2f chi2 = %3.1f fls3d = %3.1f, fl/E=%3.1f/%3.2f", 
 		   TMath::ACos(bcosa), biso, bchi2/bdof, bfls3d, bfl3d, bfl3dE)
-	   << Form(" pv1: %4.3f/%3.1f pv2: %4.3f/%3.1f", bpvlip, bpvlips,  bpvlip2, bpvlips2) 
-	   << Form(" d: %5.4f md: %4.3f", TMath::Sqrt(btip*btip + blip*blip), bmaxdoca) 
+	   << Form(" pv1: %4.3f/%3.1f", bpvlip, bpvlips) 
+	   << Form(" d/s: %5.4f/%3.2f md: %4.3f d: %4.3f", bpvip, bpvips, bmaxdoca, bdocatrk) 
 	   << endl;
 
 
@@ -832,46 +855,52 @@ void plotClass::loopTree(int mode, int proc) {
 	++bgevt; 
       }
 
-      fTEX << formatTex(brun,      Form("%s:%s%i:run", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bevt,      Form("%s:%s%i:evt", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(fChan,     Form("%s:%s%i:chan", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bm,        Form("%s:%s%i:m", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bpt,       Form("%s:%s%i:pt", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bphi,      Form("%s:%s%i:phi", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(beta,      Form("%s:%s%i:eta", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << Form("\\vdef{%s:%s%i:channel}   {%s }", fSuffix.c_str(), st.c_str(), ievt, fChan==0?"barrel":"endcap") << endl;
-      fTEX << formatTex((bcb?1:0),    Form("%s:%s%i:cowboy", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bm1pt,     Form("%s:%s%i:m1pt", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bm2pt,     Form("%s:%s%i:m2pt", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bm1eta,    Form("%s:%s%i:m1eta", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bm2eta,    Form("%s:%s%i:m2eta", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bm1phi,    Form("%s:%s%i:m1phi", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bm2phi,    Form("%s:%s%i:m2phi", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bq1,       Form("%s:%s%i:m1q", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bq2,       Form("%s:%s%i:m2q", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(biso,      Form("%s:%s%i:iso", fSuffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(balpha,    Form("%s:%s%i:alpha", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(bchi2,     Form("%s:%s%i:chi2", fSuffix.c_str(), st.c_str(), ievt), 2) << endl;
-      fTEX << formatTex(bdof,      Form("%s:%s%i:dof", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bfls3d,    Form("%s:%s%i:fls3d", fSuffix.c_str(), st.c_str(), ievt), 2) << endl;
-      fTEX << formatTex(bfl3d,     Form("%s:%s%i:fl3d", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(bfl3dE,    Form("%s:%s%i:fl3dE", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
+      if (0 == fChan) st += "0";
+      if (1 == fChan) st += "1";
 
-      fTEX << formatTex(bdocatrk,  Form("%s:%s%i:docatrk", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(blip,      Form("%s:%s%i:lip", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(blipE,     Form("%s:%s%i:lipE", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(btip,      Form("%s:%s%i:tip", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(btipE,     Form("%s:%s%i:tipE", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(bpvlip,    Form("%s:%s%i:pvlip", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(bpvlips,   Form("%s:%s%i:pvlips", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(bmaxdoca,  Form("%s:%s%i:maxdoca", fSuffix.c_str(), st.c_str(), ievt), 4) << endl;
+      string suffix(fSuffix); 
+      if (fDoUseBDT) suffix += "Bdt"; 
 
-      fTEX << formatTex(bm1pix,    Form("%s:%s%i:m1pix", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bm2pix,    Form("%s:%s%i:m2pix", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bm1bpix,   Form("%s:%s%i:m1bpix", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bm2bpix,   Form("%s:%s%i:m2bpix", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bm1bpixl1, Form("%s:%s%i:m1bpixl1", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bm2bpixl1, Form("%s:%s%i:m2bpixl1", fSuffix.c_str(), st.c_str(), ievt), 0) << endl;
+      fTEX << formatTex(brun,      Form("%s:%s%i:run", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+      fTEX << formatTex(bevt,      Form("%s:%s%i:evt", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+      fTEX << formatTex(fChan,     Form("%s:%s%i:chan", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+      fTEX << formatTex(bm,        Form("%s:%s%i:m", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+      fTEX << formatTex(bpt,       Form("%s:%s%i:pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+      fTEX << formatTex(bphi,      Form("%s:%s%i:phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+      fTEX << formatTex(beta,      Form("%s:%s%i:eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+      fTEX << Form("\\vdef{%s:%s%i:channel}   {%s }", suffix.c_str(), st.c_str(), ievt, fChan==0?"barrel":"endcap") << endl;
+      fTEX << formatTex((bcb?1:0),    Form("%s:%s%i:cowboy", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+      fTEX << formatTex(bm1pt,     Form("%s:%s%i:m1pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+      fTEX << formatTex(bm2pt,     Form("%s:%s%i:m2pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+      fTEX << formatTex(bm1eta,    Form("%s:%s%i:m1eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+      fTEX << formatTex(bm2eta,    Form("%s:%s%i:m2eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+      fTEX << formatTex(bm1phi,    Form("%s:%s%i:m1phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+      fTEX << formatTex(bm2phi,    Form("%s:%s%i:m2phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+      fTEX << formatTex(bq1,       Form("%s:%s%i:m1q", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+      fTEX << formatTex(bq2,       Form("%s:%s%i:m2q", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+      fTEX << formatTex(biso,      Form("%s:%s%i:iso", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+      fTEX << formatTex(balpha,    Form("%s:%s%i:alpha", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(bchi2,     Form("%s:%s%i:chi2", suffix.c_str(), st.c_str(), ievt), 2) << endl;
+      fTEX << formatTex(bdof,      Form("%s:%s%i:dof", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+      fTEX << formatTex(bfls3d,    Form("%s:%s%i:fls3d", suffix.c_str(), st.c_str(), ievt), 2) << endl;
+      fTEX << formatTex(bfl3d,     Form("%s:%s%i:fl3d", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(bfl3dE,    Form("%s:%s%i:fl3dE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+
+      fTEX << formatTex(bdocatrk,  Form("%s:%s%i:docatrk", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(blip,      Form("%s:%s%i:lip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(blipE,     Form("%s:%s%i:lipE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(btip,      Form("%s:%s%i:tip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(btipE,     Form("%s:%s%i:tipE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(bpvlip,    Form("%s:%s%i:pvlip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(bpvlips,   Form("%s:%s%i:pvlips", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(bmaxdoca,  Form("%s:%s%i:maxdoca", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+
+      fTEX << formatTex(bm1pix,    Form("%s:%s%i:m1pix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+      fTEX << formatTex(bm2pix,    Form("%s:%s%i:m2pix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+      fTEX << formatTex(bm1bpix,   Form("%s:%s%i:m1bpix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+      fTEX << formatTex(bm2bpix,   Form("%s:%s%i:m2bpix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+      fTEX << formatTex(bm1bpixl1, Form("%s:%s%i:m1bpixl1", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+      fTEX << formatTex(bm2bpixl1, Form("%s:%s%i:m2bpixl1", suffix.c_str(), st.c_str(), ievt), 0) << endl;
       
     }
     
@@ -1207,6 +1236,8 @@ void plotClass::loopTree(int mode, int proc) {
       normYield(h, i, 4.8, 6.0);
       aa->fitYield  = fNoSig; 
       aa->fitYieldE = fNoSigE; 
+      h = fhNormC[i];
+      normYield(h, 0, 5.16, 5.6, 4.15);
     } else if (20 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
       cout << "==> loopTree: MC CONTROL SAMPLE, channel " << i  << endl;
@@ -1272,6 +1303,8 @@ void plotClass::loopTree(int mode, int proc) {
     fhMassWithAllCuts[i]->Write();
     fhNorm[i]->SetName(Form("hNorm_%s_%d_chan%d", modifier.c_str(), mode, i)); 
     fhNorm[i]->Write();
+    fhNormC[i]->SetName(Form("hNormC_%s_%d_chan%d", modifier.c_str(), mode, i)); 
+    fhNormC[i]->Write();
 
     if (5 == mode) {
       t->SetEventList(tlist);
@@ -2253,19 +2286,28 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
   lBg->SetLineWidth(3);
   lBg->Draw("same");
 
-  tl->SetTextSize(0.07); 
-  if (0 == mode) {
-    tl->DrawLatex(0.6, 0.8, "Barrel");   
-  } 
+//   tl->SetTextSize(0.07); 
+//   if (0 == mode) {
+//     tl->DrawLatex(0.6, 0.8, "Barrel");   
+//   } 
 
-  if (1 == mode) {
-    tl->DrawLatex(0.6, 0.8, "Endcap");   
-  } 
+//   if (1 == mode) {
+//     tl->DrawLatex(0.6, 0.8, "Endcap");   
+//   } 
 
   //  stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
   if (fDoPrint) {
-    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), mode));
-    else c0->SaveAs(Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode));
+    
+    string pdfname;
+    string hname(h->GetName());
+    if (string::npos != hname.find("NormC")) {
+      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), mode);
+    } else {
+      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode);
+    }
+
+    if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), mode);
+    c0->SaveAs(pdfname.c_str());
   }
   
 
@@ -2769,6 +2811,16 @@ void plotClass::readCuts(const char *filename) {
       if (dump) cout << "maxdoca:                 " << CutValue << endl;
     }
 
+    if (!strcmp(CutName, "pvip")) {
+      a->pvip = CutValue; ok = 1;
+      if (dump) cout << "pvip:                    " << CutValue << endl;
+    }
+
+    if (!strcmp(CutName, "pvips")) {
+      a->pvips = CutValue; ok = 1;
+      if (dump) cout << "pvips:                   " << CutValue << endl;
+    }
+
   }
 
   if (a) fCuts.push_back(a); 
@@ -2842,6 +2894,10 @@ void plotClass::printCuts(ostream &OUT) {
     fTEX <<  Form("\\vdef{%s:pvlips2:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->pvlips2) << endl;
     OUT << "maxdoca  " << a->maxdoca << endl;
     fTEX <<  Form("\\vdef{%s:maxdoca:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->maxdoca) << endl;
+    OUT << "pvip     " << a->pvip << endl;
+    fTEX <<  Form("\\vdef{%s:pvip:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->pvip) << endl;
+    OUT << "pvips    " << a->pvips << endl;
+    fTEX <<  Form("\\vdef{%s:pvips:%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->pvips) << endl;
 
     OUT << "doApplyCowboyVeto  " << fDoApplyCowboyVeto << endl;
     fTEX <<  Form("\\vdef{%s:doApplyCowboyVeto:%d}   {%s }", 

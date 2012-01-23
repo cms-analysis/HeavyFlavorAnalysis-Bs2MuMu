@@ -1462,3 +1462,250 @@ void plotResults::acceptancePerProcess() {
   }
 
 }
+
+
+
+// ----------------------------------------------------------------------
+void plotResults::allInvertedIso() {
+  histInvertedIso("fls3d>", 10, 8., 28.); 
+  histInvertedIso("chi2/dof<", 10, 1., 2.); 
+  histInvertedIso("alpha<", 10, 0.01, 0.06); 
+  histInvertedIso("m1pt>", 10, 4., 9.0); 
+  histInvertedIso("m2pt>", 10, 4., 6.0); 
+  histInvertedIso("pt>", 10, 6.0, 24.0); 
+  histInvertedIso("docatrk>", 10, 0.00, 0.05); 
+  histInvertedIso("pvips<", 10, 0.5, 4.); 
+}
+
+// ----------------------------------------------------------------------  
+void plotResults::histInvertedIso(const char *var, int n, double lo, double hi) {
+
+  gStyle->SetOptStat(0);
+  
+  vector<string> cuts;
+  vector<double> cutv;
+  vector<string> cutt;
+  vector<string> cutf;
+  string filename; 
+
+  TH1D *BE = new TH1D("BE", "", n, lo, hi); BE->Sumw2(); 
+  TH1D *BO = new TH1D("BO", "", n, lo, hi); BO->Sumw2(); 
+  TH1D *EE = new TH1D("EE", "", n, lo, hi); EE->Sumw2(); 
+  TH1D *EO = new TH1D("EO", "", n, lo, hi); EO->Sumw2(); 
+
+  for (int ichan = 0; ichan < 2; ++ichan) {
+    cuts.clear(); 
+    cutv.clear(); 
+    cutf.clear();
+    
+    cuts.push_back("fls3d>");    cutv.push_back(fCuts[ichan]->fls3d);   
+    cutt.push_back("l_{3d}/#sigma(l_{3d}) >");
+    cutf.push_back("fls3d");
+
+    cuts.push_back("pvips<");    cutv.push_back(fCuts[ichan]->pvips);   
+    cutt.push_back("#delta_{3D}/#sigma(#delta_{3d}) <");
+    cutf.push_back("pvips");
+
+    cuts.push_back("chi2/dof<"); cutv.push_back(fCuts[ichan]->chi2dof);
+    cutt.push_back("#chi^{2}/dof < ");
+    cutf.push_back("chi2dof");
+
+    cuts.push_back("alpha<");    cutv.push_back(fCuts[ichan]->alpha);
+    cutt.push_back("#alpha < ");
+    cutf.push_back("alpha");
+
+    cuts.push_back("m1pt>");     cutv.push_back(fCuts[ichan]->m1pt);
+    cutt.push_back("p_{T,#mu1} > ");
+    cutf.push_back("m1pt");
+
+    cuts.push_back("m2pt>");     cutv.push_back(fCuts[ichan]->m2pt);
+    cutt.push_back("p_{T,#mu2} > ");
+    cutf.push_back("m2pt");
+
+    cuts.push_back("docatrk>");  cutv.push_back(fCuts[ichan]->docatrk);
+    cutt.push_back("d^{0}_{trk} > ");
+    cutf.push_back("docatrk");
+
+    cuts.push_back("pt>");  cutv.push_back(fCuts[ichan]->pt);
+    cutt.push_back("p_{T,B} > ");
+    cutf.push_back("pt");
+    
+    string ocuts, tcuts, rcuts;
+    for (unsigned int i = 0; i < cuts.size(); ++i) {
+      if (!strcmp(cuts[i].c_str(), var)) {
+	setTitles(BE, cutt[i].c_str(), "Candidates", 0.08, 1., 0.9, 0.07); 
+	setTitles(EE, cutt[i].c_str(), "Candidates", 0.08, 1., 0.9, 0.07); 
+	filename = cutf[i];
+	continue;
+      }
+      tcuts += Form("%s %f && ", cuts[i].c_str(), cutv[i]);
+    }
+    
+    string::size_type n1 = tcuts.find_last_of("&&"); 
+    ocuts = tcuts.substr(0, n1-1); 
+    
+    double steps = (hi-lo)/n;
+    double cut; 
+    for (int i = 0; i < n; ++i) {
+      cut = lo + i*steps; 
+      rcuts = ocuts + Form(" && %s %f", var, cut); 
+      //      cout << "-->" << rcuts << endl;
+      
+      invertedIso(ichan, rcuts.c_str()); 
+      if (0 == ichan) {
+	BE->SetBinContent(i+1, fBlExp); BE->SetBinError(i+1, fBlExpE); 
+	BO->SetBinContent(i+1, fBlObs); BO->SetBinError(i+1, fBlObsE); 
+      } else {
+	EE->SetBinContent(i+1, fBlExp); EE->SetBinError(i+1, fBlExpE); 
+	EO->SetBinContent(i+1, fBlObs); EO->SetBinError(i+1, fBlObsE); 
+      }	
+    }
+  }
+  
+  c0->Clear();
+  c0->Divide(1,2);
+  
+  c0->cd(1);
+  shrinkPad(0.2, 0.15); 
+  double maxi = BE->GetMaximum(); 
+  if (BO->GetMaximum() > maxi) {
+    maxi = 1.2*BO->GetMaximum();
+  } else {
+    maxi = 1.2*BE->GetMaximum();
+  }
+  setFilledHist(BE);
+  BE->SetMaximum(maxi); 
+  BE->SetMinimum(0.); 
+  BE->Draw("hist");
+  BO->Draw("esame");
+  tl->DrawLatex(0.15, 0.92, "Barrel");
+
+  maxi = EE->GetMaximum(); 
+  if (EO->GetMaximum() > maxi) {
+    maxi = 1.2*EO->GetMaximum();  
+  } else {
+    maxi = 1.2*EE->GetMaximum();  
+  }
+  c0->cd(2);
+  shrinkPad(0.2, 0.15); 
+  setFilledHist(EE);
+  EE->SetMaximum(maxi); 
+  EE->SetMinimum(0.); 
+  EE->Draw("hist");
+  EO->Draw("esame");
+  tl->DrawLatex(0.15, 0.92, "Endcap");
+
+  c0->SaveAs(Form("%s/invertedIso-%s.pdf", fDirectory.c_str(), filename.c_str())); 
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotResults::invertedIsoPrediction() {
+  
+  gStyle->SetOptStat(0); 
+  c0->Clear();
+  
+  string cuts; 
+  TH1D *h1;
+  for (int i = 0; i < 2; ++i) {
+    cuts = string(Form("fls3d>%f", fCuts[i]->fls3d))
+      + string(Form("&&chi2/dof<%f", fCuts[i]->chi2dof))
+      + string(Form("&&alpha<%f", fCuts[i]->alpha))
+      + string(Form("&&pt>%f", fCuts[i]->pt))
+      + string(Form("&&m1pt>%f", fCuts[i]->m1pt))
+      + string(Form("&&m2pt>%f", fCuts[i]->m2pt))
+      //NO!      + string(Form("&&iso5>%f", fCuts[i]->iso1))
+      + string(Form("&&docatrk>%f", fCuts[i]->docatrk))
+      + string(Form("&&!TMath::IsNaN(fls3d)"))
+      ;
+    h1 = invertedIso(i, cuts.c_str()); 
+    setTitles(h1, "m [GeV]", "Entries/bin"); 
+    h1->DrawCopy();
+    tl->DrawLatex(0.2, 0.92, (i==0?"Barrel":"Endcap"));
+    double lo = h1->Integral(h1->FindBin(fBgLo), h1->FindBin(5.2));
+    double hi = h1->Integral(h1->FindBin(5.45), h1->FindBin(fBgHi));
+    double bs = h1->Integral(h1->FindBin(fCuts[i]->mBsLo), h1->FindBin(fCuts[i]->mBsHi)); 
+    double bd = h1->Integral(h1->FindBin(fCuts[i]->mBdLo), h1->FindBin(fCuts[i]->mBdHi)); 
+    double taus= (fCuts[i]->mBsHi - fCuts[i]->mBsLo)/(fBgHi - fBgLo - 0.25);
+    double taud= (fCuts[i]->mBdHi - fCuts[i]->mBdLo)/(fBgHi - fBgLo - 0.25);
+    double preds = (lo+hi)*taus;
+    double relE  = TMath::Sqrt(lo+hi)/(lo+hi);
+    double predd = (lo+hi)*taud;
+    cout << "channel " << i << endl;
+    cout << "taus = " << taus << " taud = " << taud << endl;
+    cout << "lo: " << lo << " hi: " << hi << endl;
+    cout << "predS = " << preds << " obs = " << bs << endl;
+    cout << "predD = " << predd << " obs = " << bd << endl;
+
+    fTEX << formatTex(preds,      Form("%s:invIsoPredBs%i:val", fSuffix.c_str(), i), 2) << endl;
+    fTEX << formatTex(preds*relE, Form("%s:invIsoPredBs%i:err", fSuffix.c_str(), i), 2) << endl;
+
+    fTEX << formatTex(predd,      Form("%s:invIsoPredBd%i:val", fSuffix.c_str(), i), 2) << endl;
+    fTEX << formatTex(predd*relE, Form("%s:invIsoPredBd%i:err", fSuffix.c_str(), i), 2) << endl;
+
+    fTEX << formatTex(bs,              Form("%s:invIsoObsBs%i:val", fSuffix.c_str(), i), 0) << endl;
+    fTEX << formatTex(TMath::Sqrt(bs), Form("%s:invIsoObsBs%i:err", fSuffix.c_str(), i), 2) << endl;
+
+    fTEX << formatTex(bd,              Form("%s:invIsoObsBd%i:val", fSuffix.c_str(), i), 0) << endl;
+    fTEX << formatTex(TMath::Sqrt(bd), Form("%s:invIsoObsBd%i:err", fSuffix.c_str(), i), 2) << endl;
+
+    c0->SaveAs(Form("%s/%s_invertedIsoPrediction%d.pdf", fDirectory.c_str(), fSuffix.c_str(), i)); 
+
+  }
+
+
+}
+
+
+
+// ----------------------------------------------------------------------
+TH1D* plotResults::invertedIso(int chan, const char *cuts) {
+  string baseCuts = "gmuid&&hlt&&gmupt&&gmueta&&iso<0.7&&abs(pvlip)<0.05&&abs(pvlips)<2&&closetrk<3";
+  string chanCut; 
+  if (0 == chan) {
+    chanCut = "(abs(m1eta)<1.4&&abs(m2eta)<1.4)";
+  } else {
+    chanCut = "(abs(m1eta)>1.4||abs(m2eta)>1.4)";
+  }
+  
+  string allCuts  = baseCuts + "&&" + chanCut + "&&" + cuts; 
+  cout << allCuts << endl;
+  
+  fF["SgData"]->cd();
+  TH1D *h1(0); 
+  if (h1) delete h1; 
+  h1 = new TH1D("h1", "", 1000, 4.9, 5.9); 
+  TTree *t = (TTree*)gFile->Get("candAnaMuMu/events"); 
+  t->Draw("m>>h1", allCuts.c_str(), "goff");
+  h1->Draw();
+
+  int blo = h1->FindBin(5.2+0.001); 
+  int bhi = h1->FindBin(5.45-0.001); 
+  //  cout << "blo: " << blo << " bhi: " << bhi << endl;
+
+  cout << "fBgLo: " << fBgLo << " fBgHi: " << fBgHi << endl;
+
+  double lo = h1->Integral(1, blo);
+  double bl = h1->Integral(blo, bhi);
+  double blE= TMath::Sqrt(bl); 
+  double hi = h1->Integral(bhi, h1->GetNbinsX());
+  double ex = (lo+hi)*0.25/(fBgHi-fBgLo-0.25);
+  double exE= TMath::Sqrt(ex); 
+  double df = bl - ex; 
+  double dfE=TMath::Sqrt(blE*blE + exE*exE);
+  
+  //  cout << "bl: " << bl << " lo: " << lo << " hi: " << hi << endl;
+  cout << Form("seen: %4.0f+/-%3.1f", bl, blE) 
+       << Form(" expected: %4.1f+/-%3.1f", ex, exE) 
+       << Form(" difference: %4.1f+/-%3.1f", df, dfE) 
+       << endl;
+
+  fBlExp  = ex; 
+  fBlExpE = exE; 
+  fBlObs  = (bl>0.?bl:0.01);
+  fBlObsE = (bl>0.5?blE:1.);
+
+  return h1; 
+}
+

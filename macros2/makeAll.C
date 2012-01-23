@@ -24,7 +24,9 @@ void makeAll(std::string files = "anaBmm.scratch.files", int channels = 31) {
     a0.computeNormUL();
     a0.computeCsBF();
     a0.acceptancePerProcess();
-    
+    a0.allInvertedIso();
+    a0.invertedIsoPrediction();
+
     if (channels & 2) {
       a0.fNormProcessed = false; 
       a0.fDoUseBDT = true; 

@@ -31,6 +31,7 @@ public:
   double loEff, loErr; // efficiency of integral BELOW the cut
   double hiEff, hiErr; // efficiency of integral ABOVE the cut
   double inEff, inErr; // efficiency of integral inside the cuts
+  double outEff, outErr; // efficiency of integral outside the cuts
 
   int fVerbose; 
 

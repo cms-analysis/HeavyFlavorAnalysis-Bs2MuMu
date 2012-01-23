@@ -19,6 +19,11 @@ public:
   void rareBg();
   void scaledHist(int mode = 0);
 
+  void allInvertedIso();
+  void histInvertedIso(const char *var, int n, double lo, double hi);
+  TH1D* invertedIso(int chan, const char *cuts);
+  void invertedIsoPrediction();
+
   void printUlcalcNumbers(std::string fname);
   void createAllCfgFiles(std::string fname);
   void printCsBFNumbers();
@@ -27,8 +32,10 @@ public:
 
   
   bool fNormProcessed; 
+  double fBlExp, fBlExpE, fBlObs, fBlObsE;
   
   ClassDef(plotResults,1) //Testing plotResults
+
 
 };
 

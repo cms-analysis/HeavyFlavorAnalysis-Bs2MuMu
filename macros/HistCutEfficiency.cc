@@ -49,6 +49,7 @@ void HistCutEfficiency::eff(TH1* h1, double cut) {
 
 // ----------------------------------------------------------------------
 void HistCutEfficiency::eff(double cut) {
+  cout << "eff: " << " cut: " << cut << endl;
   double epsilon = 1.e-4 * fH->GetBinWidth(1);
   int firstbin = 1; 
   if (fIncludeOverflow) firstbin = 0; 
@@ -94,6 +95,7 @@ void HistCutEfficiency::eff(TH1* h1, double cut1, double cut2, int includeOverfl
 
 // ----------------------------------------------------------------------
 void HistCutEfficiency::eff(TH1* h1, double cut1, double cut2) {
+  cout << "eff0: " << " cut1: " << cut1 << " " << cut2 << endl;
   fH = h1; 
   eff(cut1, cut2); 
 }
@@ -101,6 +103,7 @@ void HistCutEfficiency::eff(TH1* h1, double cut1, double cut2) {
 
 // ----------------------------------------------------------------------
 void HistCutEfficiency::eff(double cut1, double cut2) {
+  cout << "eff1: " << " cut1: " << cut1 << " " << cut2 << endl;
   double epsilon = 1.e-4 * fH->GetBinWidth(1);
   int firstbin = 1; 
   if (fIncludeOverflow) firstbin = 0; 
@@ -111,12 +114,15 @@ void HistCutEfficiency::eff(double cut1, double cut2) {
   double ntot   = fH->Integral(firstbin, lastbin);
 
   int cut1bin = fH->FindBin(cut1+epsilon); 
-  int cut2bin = fH->FindBin(cut2+epsilon); 
+  int cut2bin = fH->FindBin(cut2-epsilon); 
 
   double cut   = fH->Integral(cut1bin, cut2bin);
   
   inEff = cut/ntot; 
   inErr = dEff(static_cast<int>(cut), static_cast<int>(ntot));
+
+  outEff = (ntot-cut)/ntot; 
+  outErr = dEff(static_cast<int>(ntot-cut), static_cast<int>(ntot));
   
   if (fVerbose) {
     cout << "cut1    : " << cut1 << endl;
@@ -128,7 +134,8 @@ void HistCutEfficiency::eff(double cut1, double cut2) {
     cout << "cut2bin : " << cut2bin << endl;
     cout << "ntot    : " << ntot << endl;
     cout << "cut     : " << cut << endl;
-    cout << "inEff   : " << inEff << endl;
+    cout << "inEff   : " << inEff << endl;    
+    cout << "outEff  : " << outEff << endl;
   }
 }
 

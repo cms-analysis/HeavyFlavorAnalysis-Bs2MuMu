@@ -38,6 +38,7 @@ struct cuts {
   double closetrk, pvlip, pvlips; 
   double bdt; 
   double maxdoca, pvlip2, pvlips2;
+  double pvip, pvips; 
 };
 
 struct numbers {
@@ -194,7 +195,7 @@ public:
   std::vector<TH1D*> fhMassWithTriggerCuts; 
   std::vector<TH1D*> fhMassWithAllCuts;
   std::vector<TH1D*> fhMassWithAllCutsBlind;
-  std::vector<TH1D*> fhNorm;
+  std::vector<TH1D*> fhNorm, fhNormC;
   std::vector<TH1D*> fhMassWithMassCuts;
   std::vector<TH1D*> fhMassWithAnaCutsManyBins;
   std::vector<TH1D*> fhMassWithMuonCutsManyBins; 

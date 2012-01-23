@@ -38,10 +38,17 @@ void plotOverlays::makeAll(int verbose) {
   int all(0);
   
   fMode = 0; 
+  cout << " ########################## SG DATA/MC A #########################" << endl;
   sbsDistributionOverlay("SgData", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Ao");
+  cout << " ########################## SG DATA/MCPU A #########################" << endl;
   sbsDistributionOverlay("SgData", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "Ao");
+  cout << " ########################## SG DATA/MCPU APV0 #########################" << endl;
   sbsDistributionOverlay("SgData", "candAnaMuMu", "APV0", "SgMcPU", "candAnaMuMu", "APV0", "Ao"); 
+  cout << " ########################## SG DATA/MCPU APV1 #########################" << endl;
   sbsDistributionOverlay("SgData", "candAnaMuMu", "APV1", "SgMcPU", "candAnaMuMu", "APV1", "Ao"); 
+  cout << " ########################## MCPU APV0/MCPU APV1 #########################" << endl;
+  sbsDistributionOverlay("SgMcPU", "candAnaMuMu", "APV0", "SgMcPU", "candAnaMuMu", "APV1", "Ao"); 
+
   if (all) sbsDistributionOverlay("SgData", "candAnaMuMu", "B", "SgMc", "candAnaMuMu", "B", "Ao");
   if (all) sbsDistributionOverlay("SgData", "candAnaMuMu", "E", "SgMc", "candAnaMuMu", "E", "Ao");
 
@@ -50,18 +57,28 @@ void plotOverlays::makeAll(int verbose) {
   fMode = 3; 
   fPreco = 5.1;
   // -- default/mix
+  cout << " ########################## NO DATA/MC A #########################" << endl;
   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Ao");
+  cout << " ########################## NO DATA/MCPU APV0 #########################" << endl;
   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "APV0", "NoMcPU", "candAnaBu2JpsiK", "APV0", "Ao");
+  cout << " ########################## NO DATA/MCPU APV1 #########################" << endl;
   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "APV1", "NoMcPU", "candAnaBu2JpsiK", "APV1", "Ao");
+  cout << " ########################## NO MCPU APV0/MCPU APV1 #########################" << endl;
+  sbsDistributionOverlay("NoMcPU", "candAnaBu2JpsiK", "APV0", "NoMcPU", "candAnaBu2JpsiK", "APV1", "Ao"); 
   if (all) sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "B", "NoMc", "candAnaBu2JpsiK", "B", "Ao");
   if (all) sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "E", "NoMc", "candAnaBu2JpsiK", "E", "Ao");
 
   // -- For control sample, use expo function for bg parametrization
   fMode = 2; 
   // -- default/mix
+  cout << " ########################## CS DATA/MC A #########################" << endl;
   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMc", "candAnaBs2JpsiPhi", "A", "Ao");
+  cout << " ########################## CS DATA/MCPU APV0 #########################" << endl;
   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "APV0", "CsMcPU", "candAnaBs2JpsiPhi", "APV0", "Ao");
+  cout << " ########################## CS DATA/MCPU APV0 #########################" << endl;
   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "APV1", "CsMcPU", "candAnaBs2JpsiPhi", "APV1", "Ao");
+  cout << " ########################## CS MCPU APV1/MCPU APV0 #########################" << endl;
+  sbsDistributionOverlay("CsMcPU", "candAnaBs2JpsiPhi", "APV0", "CsMcPU", "candAnaBs2JpsiPhi", "APV1", "Ao");
   if (all) sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "B", "CsMc", "candAnaBs2JpsiPhi", "B", "Ao");
   if (all) sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "E", "CsMc", "candAnaBs2JpsiPhi", "E", "Ao");
   
@@ -161,6 +178,7 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
   vector<string> leftList, skipList; 
 
   map<string, string> cutMap; 
+  map<string, double> cutVal; 
   doList.push_back("hlt");  
   doList.push_back("muonsid");  
   doList.push_back("tracksqual"); 
@@ -169,26 +187,27 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
   doList.push_back("pvavew8"); leftList.push_back("pvavew8"); 
   doList.push_back("pvntrk");
   doList.push_back("muon1pt");
-  doList.push_back("muon2pt");  cutMap.insert(make_pair("muon2pt", "MUPTLO"));
+  doList.push_back("muon2pt");  cutMap.insert(make_pair("muon2pt", "MUPTLO")); cutVal.insert(make_pair("muon2pt", fCuts[0]->m2pt));
   doList.push_back("muonseta");  skipList.push_back("muonseta"); 
-  doList.push_back("pt");       cutMap.insert(make_pair("pt", "CANDPTLO"));
+  doList.push_back("pt");       cutMap.insert(make_pair("pt", "CANDPTLO"));  cutVal.insert(make_pair("pt", fCuts[0]->pt));
   doList.push_back("eta");            skipList.push_back("eta"); 
   doList.push_back("bdt");            skipList.push_back("bdt"); 
 
   doList.push_back("fl3d");  
-  doList.push_back("fls3d");    cutMap.insert(make_pair("fls3d", "CANDFLS3D"));
+  doList.push_back("fls3d");    cutMap.insert(make_pair("fls3d", "CANDFLS3D")); cutVal.insert(make_pair("fls3d", fCuts[0]->fls3d));
   doList.push_back("flsxy");
-  doList.push_back("chi2dof");  cutMap.insert(make_pair("chi2dof", "CANDVTXCHI2"));
+  doList.push_back("chi2dof");  cutMap.insert(make_pair("chi2dof", "CANDVTXCHI2")); cutVal.insert(make_pair("chi2dof", fCuts[0]->chi2dof));
   doList.push_back("pchi2dof");       leftList.push_back("pchi2dof"); 
-  doList.push_back("alpha");    cutMap.insert(make_pair("alpha", "CANDALPHA"));
-  doList.push_back("iso");      cutMap.insert(make_pair("iso", "CANDISOLATION"));  leftList.push_back("iso");  
-  doList.push_back("docatrk");  cutMap.insert(make_pair("docatrk", "CANDDOCATRK"));
+  doList.push_back("alpha");    cutMap.insert(make_pair("alpha", "CANDALPHA")); cutVal.insert(make_pair("alpha", fCuts[0]->alpha));
+  doList.push_back("iso");      cutMap.insert(make_pair("iso", "CANDISOLATION"));  leftList.push_back("iso");  cutVal.insert(make_pair("iso", fCuts[0]->iso));
+  doList.push_back("docatrk");  cutMap.insert(make_pair("docatrk", "CANDDOCATRK")); cutVal.insert(make_pair("docatrk", fCuts[0]->docatrk));
   doList.push_back("isotrk");
-  doList.push_back("closetrk"); cutMap.insert(make_pair("closetrk", "CANDCLOSETRK"));
-  doList.push_back("lip");      cutMap.insert(make_pair("lip", "CANDLIP")); skipList.push_back("lip");
-  doList.push_back("lips");     cutMap.insert(make_pair("lips", "CANDLIPS")); skipList.push_back("lips");
-  doList.push_back("lip2");          skipList.push_back("lip2");
-  doList.push_back("lips2");         skipList.push_back("lips2");
+  doList.push_back("closetrk"); cutMap.insert(make_pair("closetrk", "CANDCLOSETRK"));  cutVal.insert(make_pair("closetrk", fCuts[0]->closetrk));
+  doList.push_back("lip");      cutMap.insert(make_pair("lip", "CANDLIP")); skipList.push_back("lip"); cutVal.insert(make_pair("lip", fCuts[0]->pvlip));
+  doList.push_back("lips");     cutMap.insert(make_pair("lips", "CANDLIPS")); skipList.push_back("lips"); cutVal.insert(make_pair("lips", fCuts[0]->pvlips));
+  doList.push_back("ip");       cutMap.insert(make_pair("ip", "CANDIP"));  cutVal.insert(make_pair("ip", fCuts[0]->pvip));
+  doList.push_back("ips");      cutMap.insert(make_pair("ips", "CANDIPS")); cutVal.insert(make_pair("ips", fCuts[0]->pvips));
+  doList.push_back("maxdoca");  cutMap.insert(make_pair("maxdoca", "MAXDOCA")); cutVal.insert(make_pair("maxdoca", fCuts[0]->maxdoca));
 
   if (string::npos != file1.find("No")) {
     doList.push_back("kaonpt");
@@ -204,7 +223,7 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
   }
 
 //   doList.clear(); 
-//   doList.push_back("hlt"); 
+//   doList.push_back("ips"); 
 
 
   TCanvas *c1;
@@ -277,10 +296,14 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
 	}
       }
     }
+    
+    //    cutval = cutVal[doList[i]];
 
     if (doList[i] == "hlt") cutval = 1; 
     if (doList[i] == "muonsid") cutval = 1; 
     if (doList[i] == "tracksqual") cutval = 1; 
+
+    cout << "--> cutval = " << cutval << endl;
 
     HistCutEfficiency a(h1); 
     a.fVerbose = 1; 
@@ -320,6 +343,7 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
     if (doList[i] == "lip" || doList[i] == "lips") {
       HistCutEfficiency a(h1); 
       //      a.fVerbose = 1; 
+      cout << "--> cutval = " << cutval << endl;
       a.eff(h1, -cutval, cutval); 
       double lo1  = a.inEff; 
       double lo1E = a.inErr; 
