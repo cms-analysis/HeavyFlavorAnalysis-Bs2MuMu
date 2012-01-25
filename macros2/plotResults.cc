@@ -38,8 +38,9 @@ plotResults::plotResults(const char *files, const char *cuts, const char *dir, i
   fsfu = 0.282;
   fsfuE = 0.037/0.282;
 
-  fDoApplyCowboyVeto = true;   
-  fDoApplyCowboyVetoAlsoInSignal = false;   
+  fDoUseBDT = false; 
+  fDoApplyCowboyVeto = false;   
+  fDoApplyCowboyVetoAlsoInSignal = false; 
 
   fNormProcessed = false; 
 }
@@ -476,11 +477,15 @@ void plotResults::printUlcalcNumbers(string fname) {
       err1 = fNumbersNo[i]->fitYieldE; 
       err2 = sysNorm*fNumbersNo[i]->fitYield;
       totE = TMath::Sqrt(err1*err1 + err2*err2); 
+
       fTEX << formatTex(fNumbersNo[i]->fitYield, Form("%s:N-OBS-BPLUS%i:val", fSuffix.c_str(), i), 0) << endl;
       fTEX << formatTex(err1, Form("%s:N-OBS-BPLUS%i:err", fSuffix.c_str(), i), 0) << endl;
       fTEX << formatTex(err2, Form("%s:N-OBS-BPLUS%i:sys", fSuffix.c_str(), i), 0) << endl;
       fTEX << formatTex(totE, Form("%s:N-OBS-BPLUS%i:tot", fSuffix.c_str(), i), 0) << endl;
       fTEX << scientificTex(fNumbersNo[i]->fitYield, totE, Form("%s:N-OBS-BPLUS%i:all", fSuffix.c_str(), i), 1e3, 0) << endl;
+
+      fTEX << formatTex(fNumbersNo[i]->fitYieldC, Form("%s:N-OBS-CBPLUS%i:val", fSuffix.c_str(), i), 0) << endl;
+      fTEX << formatTex(fNumbersNo[i]->fitYieldCE, Form("%s:N-OBS-CBPLUS%i:err", fSuffix.c_str(), i), 0) << endl;
     } 
   } else {
     //     OUT << "TOT_BPLUS\t" << "0\t" << (fDataLumi[fSgData]/39.4)*440000 << endl;

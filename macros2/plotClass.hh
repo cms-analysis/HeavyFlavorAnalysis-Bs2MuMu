@@ -46,6 +46,7 @@ struct numbers {
   int index;
   double effPtReco, effPtRecoE;
   double fitYield, fitYieldE;
+  double fitYieldC, fitYieldCE;
   //  double genFileYield, genYield, genChanYield, recoYield, chanYield, muidYield, trigYield, candYield;
   double genAccFileYield, genYield, genFileYield, genAccYield;
   double effGenFilter, effGenFilterE; // only for the non-genAccFileYield!

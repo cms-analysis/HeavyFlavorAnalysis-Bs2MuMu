@@ -14,6 +14,11 @@ plotOverlays::plotOverlays(const char *files, const char *cuts, const char *dir,
   fMode = 2; // expo+gauss
   fMode = 1; // pol1+gauss
 
+  fDoUseBDT = false; 
+  fDoApplyCowboyVeto = false;   
+  fDoApplyCowboyVetoAlsoInSignal = false; 
+
+
   fNumbersFileName = fDirectory + "/anaBmm.plotOverlays." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);

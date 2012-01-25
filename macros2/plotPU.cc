@@ -12,6 +12,10 @@ ClassImp(plotPU)
 // ----------------------------------------------------------------------
 plotPU::plotPU(const char *files, const char *cuts, const char *dir, int mode) : plotClass(files, cuts, dir, mode) { 
 
+  fDoUseBDT = false; 
+  fDoApplyCowboyVeto = false;   
+  fDoApplyCowboyVetoAlsoInSignal = false; 
+
   fNumbersFileName = fDirectory + "/anaBmm.plotPU." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);

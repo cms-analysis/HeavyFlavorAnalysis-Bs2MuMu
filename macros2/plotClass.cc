@@ -237,6 +237,7 @@ void plotClass::initNumbers(numbers *a) {
   a->ana0YieldE   = a->anaYieldE = a->anaMuonYieldE = a->anaTriggerYieldE = a->anaWmcYieldE = 0.;
   a->anaMuonYield = a->anaTriggerYield = 0.;
   a->fitYield     = a->fitYieldE = 0.;
+  a->fitYieldC    = a->fitYieldCE = 0.;
   a->acc          = a->accE = 0; 
   a->effMuidMC    = a->effMuidMCE = a->effTrigMC = a->effTrigMCE = 0; 
   a->effMuidTNP   = a->effMuidTNPE = a->effTrigTNP = a->effTrigTNPE = 0; 
@@ -375,6 +376,7 @@ void plotClass::loopTree(int mode, int proc) {
 
   cout << "--> loopTree with mode " << mode << " proc = " << proc << " on file ";
   gDirectory->pwd();
+  cout << "    m1pt> " << fCuts[0]->m1pt << " m2pt> " << fCuts[0]->m2pt << endl;
 
   // -- reset all histograms
   for (unsigned int i = 0; i < fNchan; ++i) {
@@ -543,7 +545,7 @@ void plotClass::loopTree(int mode, int proc) {
   }
 
   int nentries = Int_t(t->GetEntries());
-  int nb(0), ievt(0), bsevt(0), bdevt(0), bgevt(0); 
+  int nb(0), ievt(0), bsevt0(0), bdevt0(0), bsevt1(0), bdevt1(0), bgevt0(0), bgevt1(0); 
   cuts *pCuts(0); 
   for (int jentry = 0; jentry < nentries; jentry++) {
     nb = t->GetEntry(jentry);
@@ -844,19 +846,34 @@ void plotClass::loopTree(int mode, int proc) {
 
       if (pCuts->mBsLo < mass  && mass < pCuts->mBsHi) {
 	st = "BsSgEvt"; 
-	ievt = bsevt;
-	++bsevt; 
+	if (0 == fChan) {
+	  ievt = bsevt0;
+	  ++bsevt0; 
+	} else {
+	  ievt = bsevt1;
+	  ++bsevt1; 
+	}
       } else if (pCuts->mBdLo < mass  && mass < pCuts->mBdHi) {
 	st = "BdSgEvt"; 
-	ievt = bdevt;
-	++bdevt; 
+	if (0 == fChan) {
+	  ievt = bdevt0;
+	  ++bdevt0; 
+	} else {
+	  ievt = bdevt1;
+	  ++bdevt1; 
+	}
       } else {
-	ievt = bgevt;
-	++bgevt; 
+	if (0 == fChan) {
+	  ievt = bgevt0;
+	  ++bgevt0; 
+	} else {
+	  ievt = bgevt1;
+	  ++bgevt1; 
+	}
       }
 
-      if (0 == fChan) st += "0";
-      if (1 == fChan) st += "1";
+      if (0 == fChan) st += "0:";
+      if (1 == fChan) st += "1:";
 
       string suffix(fSuffix); 
       if (fDoUseBDT) suffix += "Bdt"; 
@@ -887,13 +904,18 @@ void plotClass::loopTree(int mode, int proc) {
       fTEX << formatTex(bfl3dE,    Form("%s:%s%i:fl3dE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
 
       fTEX << formatTex(bdocatrk,  Form("%s:%s%i:docatrk", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(bclosetrk, Form("%s:%s%i:closetrk", suffix.c_str(), st.c_str(), ievt), 0) << endl;
       fTEX << formatTex(blip,      Form("%s:%s%i:lip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
       fTEX << formatTex(blipE,     Form("%s:%s%i:lipE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
       fTEX << formatTex(btip,      Form("%s:%s%i:tip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
       fTEX << formatTex(btipE,     Form("%s:%s%i:tipE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
       fTEX << formatTex(bpvlip,    Form("%s:%s%i:pvlip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
       fTEX << formatTex(bpvlips,   Form("%s:%s%i:pvlips", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(bpvip,     Form("%s:%s%i:pvip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(bpvips,    Form("%s:%s%i:pvips", suffix.c_str(), st.c_str(), ievt), 4) << endl;
       fTEX << formatTex(bmaxdoca,  Form("%s:%s%i:maxdoca", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex(bpvw8,     Form("%s:%s%i:pvw8", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      fTEX << formatTex((fChan == 0?bbdt:bbdt2),     Form("%s:%s%i:bdt", suffix.c_str(), st.c_str(), ievt), 4) << endl;
 
       fTEX << formatTex(bm1pix,    Form("%s:%s%i:m1pix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
       fTEX << formatTex(bm2pix,    Form("%s:%s%i:m2pix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
@@ -1233,11 +1255,22 @@ void plotClass::loopTree(int mode, int proc) {
       //      TH1D *h = fhMassWithAllCuts[i]; 
       //      normYield(h, mode, 5.10, 5.5);
       TH1D *h = fhNorm[i];
-      normYield(h, i, 4.8, 6.0);
+      fChan = i; 
+      if (0 == i) {
+	normYield(h, 0, 4.8, 6.0, 5.13);
+      } else {
+	normYield(h, 0, 4.9, 5.9, 5.15);
+      }
       aa->fitYield  = fNoSig; 
       aa->fitYieldE = fNoSigE; 
       h = fhNormC[i];
-      normYield(h, 0, 5.16, 5.6, 4.15);
+      if (0 == i) {
+	normYield(h, 0, 5.18, 5.6, 4.15);
+      } else {
+	normYield(h, 0, 5.14, 5.6, 4.15);
+      }
+      aa->fitYieldC  = fNoSig; 
+      aa->fitYieldCE = fNoSigE; 
     } else if (20 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
       cout << "==> loopTree: MC CONTROL SAMPLE, channel " << i  << endl;
@@ -2286,14 +2319,14 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
   lBg->SetLineWidth(3);
   lBg->Draw("same");
 
-//   tl->SetTextSize(0.07); 
-//   if (0 == mode) {
-//     tl->DrawLatex(0.6, 0.8, "Barrel");   
-//   } 
+  tl->SetTextSize(0.07); 
+  if (0 == fChan) {
+    tl->DrawLatex(0.6, 0.8, "Barrel");   
+  } 
 
-//   if (1 == mode) {
-//     tl->DrawLatex(0.6, 0.8, "Endcap");   
-//   } 
+  if (1 == fChan) {
+    tl->DrawLatex(0.6, 0.8, "Endcap");   
+  } 
 
   //  stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
   if (fDoPrint) {
@@ -2301,19 +2334,17 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
     string pdfname;
     string hname(h->GetName());
     if (string::npos != hname.find("NormC")) {
-      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), mode);
+      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), fChan);
     } else {
-      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode);
+      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), fChan);
     }
 
-    if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), mode);
     c0->SaveAs(pdfname.c_str());
   }
   
 
-  //   double c  = h->GetFunction("f1")->GetParameter(0); 
-  //   double cE = h->GetFunction("f1")->GetParError(0); 
-  
   delete lF1; 
 
 }
@@ -2418,6 +2449,7 @@ void plotClass::printNumbers(numbers &a, ostream &OUT) {
   OUT << "======================================================================" << endl;
   OUT << "numbers for \""  << a.name.c_str() << "\"" << endl;
   OUT << "fitYield        = " << a.fitYield << "+/-" << a.fitYieldE << endl;
+  OUT << "fitYieldC       = " << a.fitYieldC << "+/-" << a.fitYieldCE << endl;
   OUT << "bgHist          = " << a.bgObs << endl;
   OUT << "bgHistLo        = " << a.offLo << endl;
   OUT << "bgHistHi        = " << a.offHi << endl;

@@ -20,8 +20,8 @@ alpha    0.05
 fls3d    13
 docatrk  0.015
 closetrk 2
-pvlip    0.008
-pvlips   2.0
+pvlip    100.008
+pvlips   102.0
 pvlip2   -0.05
 pvlips2  -2.0
 maxdoca  3
@@ -47,8 +47,8 @@ alpha    0.03
 fls3d    15
 docatrk  0.015
 closetrk 2
-pvlip    0.008
-pvlips   2.0
+pvlip    100.008
+pvlips   102.0
 pvip     0.008
 pvips     2.0
 bdt      -0.08

@@ -2006,13 +2006,21 @@ bool candAna::tightMuon(TAnaTrack *pT) {
 
   bool muflag = ((pT->fMuID & 80) == 80);
   //  bool muflag = ((pT->fMuID & 16) == 16);
+
+  bool mucuts(false); 
+  if (pT->fMuIndex > -1) {
+    TAnaMuon *pM = fpEvt->getMuon(pT->fMuIndex);
+    if (pM->fTimeNdof > 1) mucuts = true; 
+    //    if (!muflag) cout << "matched muon stations: " << pM->fTimeNdof << endl;
+  }
+
   bool trackcuts(true); 
 
   if (TMath::Abs(pT->fBsTip) > 0.2) trackcuts = false;
   if (fpReader->numberOfPixLayers(pT) < 1) trackcuts = false;
-  if (pT->fValidHits < 10) trackcuts = false; 
+  if (pT->fValidHits < 11) trackcuts = false; 
 
-  if (muflag && trackcuts) {
+  if (muflag && mucuts && trackcuts) {
     return true; 
   } else {
     return false;

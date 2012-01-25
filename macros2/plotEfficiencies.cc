@@ -19,6 +19,10 @@ plotEfficiencies::plotEfficiencies(const char *files, const char *cuts, const ch
 
   fDoPrint = true; 
 
+  fDoUseBDT = false; 
+  fDoApplyCowboyVeto = false;   
+  fDoApplyCowboyVetoAlsoInSignal = false; 
+
   fNumbersFileName = fDirectory + "/anaBmm.plotEfficiencies." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);
@@ -174,6 +178,8 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) 
     fCuts[i]->m1pt = m1pt; 
     fCuts[i]->m2pt = m2pt; 
   }
+
+//   printCuts(cout);
   
   loopTree(0); 
   loopTree(10); 
@@ -182,9 +188,11 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) 
 
   string Suffix = fSuffix + what; 
 
-  double r(0.); 
+  double r(0.), rs(1.), rp(1.); 
   for (int i = 0; i < fNchan; ++i) {
+    // -------
     // -- muid
+    // -------
     r = fNumbersBs[i]->effMuidMC;
     fTEX << formatTex(r, Form("%s:MuidSg%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
     r = fNumbersNo[i]->effMuidMC;
@@ -200,13 +208,16 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) 
     r = fNumbersNo[i]->effMuidTNP;
     fTEX << formatTex(r, Form("%s:TNPMuidNo%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
 
-
+    // -- rho
     r = fNumbersBs[i]->effMuidMC/fNumbersBs[i]->effMuidTNPMC;
     fTEX << formatTex(r, Form("%s:rhoMuidSg%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+    rs = r; 
 
     r = fNumbersNo[i]->effMuidMC/fNumbersNo[i]->effMuidTNPMC;
     fTEX << formatTex(r, Form("%s:rhoMuidNo%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+    rp = r; 
 
+    // -- ratios
     r = fNumbersBs[i]->effMuidMC/fNumbersNo[i]->effMuidMC;
     fTEX << formatTex(r, Form("%s:rMcMuid%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
 
@@ -225,7 +236,24 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) 
     r = dRatio(fNumbersBs[i]->effMuidTNP, fNumbersBs[i]->effMuidTNPE, fNumbersNo[i]->effMuidTNPMC, fNumbersNo[i]->effMuidTNPMCE); 
     fTEX << formatTex(r, Form("%s:rTNPMuid%i-pT%2.0fpT%2.0f:err", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
 
+    // -- TNP: ratios*rho
+    r = (fNumbersBs[i]->effMuidTNPMC/fNumbersNo[i]->effMuidTNPMC)*(rs/rp);
+    fTEX << formatTex(r, Form("%s:rRhoTNPMCMuid%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = dRatio(fNumbersBs[i]->effMuidTNPMC*rs, fNumbersBs[i]->effMuidTNPMCE, fNumbersNo[i]->effMuidTNPMC*rp, fNumbersNo[i]->effMuidTNPMCE); 
+    fTEX << formatTex(r, Form("%s:rRhoTNPMCMuid%i-pT%2.0fpT%2.0f:err", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = (fNumbersBs[i]->effMuidTNP/fNumbersNo[i]->effMuidTNP)*(rs/rp);
+    fTEX << formatTex(r, Form("%s:rRhoTNPMuid%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = dRatio(fNumbersBs[i]->effMuidTNP*rs, fNumbersBs[i]->effMuidTNPE, fNumbersNo[i]->effMuidTNPMC*rp, fNumbersNo[i]->effMuidTNPMCE); 
+    fTEX << formatTex(r, Form("%s:rRhoTNPMuid%i-pT%2.0fpT%2.0f:err", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+
+
+    // -------
     // -- trig
+    // -------
     r = fNumbersBs[i]->effTrigMC;
     fTEX << formatTex(r, Form("%s:TrigSg%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
     r = fNumbersNo[i]->effTrigMC;
@@ -241,12 +269,16 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) 
     r = fNumbersNo[i]->effTrigTNP;
     fTEX << formatTex(r, Form("%s:TNPTrigNo%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
 
+    // -- rho
     r = fNumbersBs[i]->effTrigMC/fNumbersBs[i]->effTrigTNPMC;
     fTEX << formatTex(r, Form("%s:rhoTrigSg%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+    rs = r; 
 
     r = fNumbersNo[i]->effTrigMC/fNumbersNo[i]->effTrigTNPMC;
     fTEX << formatTex(r, Form("%s:rhoTrigNo%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+    rp = r; 
 
+    // -- ratios
     r = fNumbersBs[i]->effTrigMC/fNumbersNo[i]->effTrigMC;
     fTEX << formatTex(r, Form("%s:rMcTrig%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
 
@@ -264,6 +296,20 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) 
 
     r = dRatio(fNumbersBs[i]->effTrigTNP, fNumbersBs[i]->effTrigTNPE, fNumbersNo[i]->effTrigTNPMC, fNumbersNo[i]->effTrigTNPMCE); 
     fTEX << formatTex(r, Form("%s:rTNPTrig%i-pT%2.0fpT%2.0f:err", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    // -- TNP ratios*rho
+    r = (fNumbersBs[i]->effTrigTNPMC/fNumbersNo[i]->effTrigTNPMC)*(rs/rp);
+    fTEX << formatTex(r, Form("%s:rRhoTNPMCTrig%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = dRatio(fNumbersBs[i]->effTrigTNPMC*rs, fNumbersBs[i]->effTrigTNPMCE, fNumbersNo[i]->effTrigTNPMC*rp, fNumbersNo[i]->effTrigTNPMCE); 
+    fTEX << formatTex(r, Form("%s:rRhoTNPMCTrig%i-pT%2.0fpT%2.0f:err", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = (fNumbersBs[i]->effTrigTNP/fNumbersNo[i]->effTrigTNP)*(rs/rp);
+    fTEX << formatTex(r, Form("%s:rRhoTNPTrig%i-pT%2.0fpT%2.0f:val", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
+    r = dRatio(fNumbersBs[i]->effTrigTNP*rs, fNumbersBs[i]->effTrigTNPE, fNumbersNo[i]->effTrigTNPMC*rp, fNumbersNo[i]->effTrigTNPMCE); 
+    fTEX << formatTex(r, Form("%s:rRhoTNPTrig%i-pT%2.0fpT%2.0f:err", Suffix.c_str(), i, 10*m1pt, 10*m2pt), 3) << endl;
+
   }
 
   // -- muid 
