@@ -51,9 +51,9 @@ cmsrel $CMSSW
 cd $CMSSW/src
 eval `scramv1 runtime -csh`
 setenv LD_LIBRARY_PATH /swshare/glite/d-cache/dcap/lib/:${LD_LIBRARY_PATH}
-# -- use CN's root version
-setenv ROOTSYS /shome/naegelic/root/
-setenv LD_LIBRARY_PATH ${ROOTSYS}/lib:${LD_LIBRARY_PATH}
+# -- use special root version
+setenv ROOTSYS /swshare/ROOT/root_v32.00.patches42593_slc5_amd64
+setenv LD_LIBRARY_PATH ${ROOTSYS}/lib/root:${LD_LIBRARY_PATH}
 setenv PATH ${ROOTSYS}/bin:${PATH}
 pwd
 
@@ -66,8 +66,20 @@ tar zxf ../../$JOB.tar.gz
 ####cd - 
 ####echo "--> Building TreeReader"
 cd HeavyFlavorAnalysis/Bs2MuMu/ulcalc
-####make
+#make clean
+#make
 pwd
+
+printenv
+echo ls -rtl 
+ls -rtl 
+echo ls -rtl bin
+ls -rtl bin
+echo ls -rtl $ROOTSYS
+ls -rtl $ROOTSYS
+echo ls -rtl $ROOTSYS/lib
+ls -rtl $ROOTSYS/lib
+
 
 bin/ulcalc -a "clb" -l 0.95 -o clb.$JOB $JOB
 cp clb.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
@@ -75,14 +87,14 @@ cp clb.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/
 bin/ulcalc -a "bayes" -l 0.95 --disable-errors -o bayes.$JOB $JOB
 cp bayes.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
 
-bin/ulcalc -a "cls" -l 0.95 -o cls.$JOB $JOB 
+bin/ulcalc --toys 20000 --proof 4 --seed -r 2,4 -n 11 -a "cls" -l 0.95 -o cls.$JOB $JOB 
 cp cls.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
+
+#bin/ulcalc --toys 20000 --proof 4 --seed -a "fc" -l 0.95 -r 0.1,4 -n 11 -o fc95.$JOB $JOB
+#cp fc95.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
 
 #bin/ulcalc -a "fc" -l 0.68 -r 0.5,4 -n 101 -o fc68.$JOB $JOB
 #cp fc68.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
-
-#bin/ulcalc -a "fc" -l 0.95 -r 0.5,5 -n 101 -o fc95.$JOB $JOB
-#cp fc95.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
 
 # BATCH END
 
