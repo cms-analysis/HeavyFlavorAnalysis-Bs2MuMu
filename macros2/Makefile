@@ -40,8 +40,8 @@ RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 #########
 # FILES #
 #########
-READER_HEADERS = bmm2Reader.hh lmtreeReader.hh candAna.hh candAnaMuMu.hh candAnaBu2JpsiK.hh candAnaBs2JpsiPhi.hh candAnaDstar.hh plotClass.hh plotPU.hh plotOverlays.hh plotEfficiencies.hh plotIso.hh plotResults.hh plotOptimize.hh
-READER = bmm2Reader.o lmtreeReader.o candAna.o candAnaMuMu.o candAnaBu2JpsiK.o candAnaBs2JpsiPhi.o candAnaDstar.o plotClass.o plotPU.o plotOverlays.o plotEfficiencies.o plotIso.o plotResults.o plotOptimize.o
+READER_HEADERS = bmm2Reader.hh lmtreeReader.hh candAna.hh candAnaMuMu.hh candAnaBu2JpsiK.hh candAnaBs2JpsiPhi.hh candAnaDstar.hh plotClass.hh plotPU.hh plotOverlays.hh plotEfficiencies.hh plotIso.hh plotResults.hh plotOptimize.hh 
+READER = bmm2Reader.o lmtreeReader.o candAna.o candAnaMuMu.o candAnaBu2JpsiK.o candAnaBs2JpsiPhi.o candAnaDstar.o plotClass.o plotPU.o plotOverlays.o plotEfficiencies.o plotIso.o plotResults.o plotOptimize.o 
 
 #CSTUFF = TMVAClassification_BDT.class.o
 

@@ -1,12 +1,10 @@
 #include "plotResults.hh"
-#include "plotOverlays.hh"
-#include "plotPU.hh"
-#include "plotEfficiencies.hh"
 
 #include "../macros/AnalysisDistribution.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
 #include "../interface/HFMasses.hh"
 #include "../macros/bayesianlimit.hh"
+#include "relativeYield.hh"
 #include "TMath.h"
 #include "TTree.h"
 #include "TLorentzVector.h"
@@ -30,18 +28,10 @@ plotResults::plotResults(const char *files, const char *cuts, const char *dir, i
 
   printCuts(cout); 
 
-  fBF = 0.0593*1.014e-3;
-  // PDG 2010:
-  fu  = 0.401;
-  fs  = 0.113;
-  // -- CMS with PDG input
-  fsfu = 0.282;
-  fsfuE = 0.037/0.282;
-
   fDoUseBDT = false; 
   fDoApplyCowboyVeto = false;   
   fDoApplyCowboyVetoAlsoInSignal = false; 
-
+  fInvertedIso = false; 
   fNormProcessed = false; 
 }
 
@@ -54,30 +44,30 @@ plotResults::~plotResults() {
 
 // ----------------------------------------------------------------------
 void plotResults::makeAll(int channels) {
-
-//   fNumbersNo[0]->effTot = 0.00101;
-//   fNumbersNo[1]->effTot = 0.00030;
-//   fNumbersNo[0]->fitYield = 69177;
-//   fNumbersNo[1]->fitYield = 19991;
   
-//   rareBg(); 
+//   fNumbersNo[0]->effTot = 0.00117;
+//   fNumbersNo[1]->effTot = 0.00034;
+//   fNumbersNo[0]->fitYield = 87878;
+//   fNumbersNo[1]->fitYield = 23883;
+
+//   cout << fNumbersNo[0]->effTot << " +/- " << fNumbersNo[0]->effTotTE << endl;
+//   computeErrors(fNumbersNo); 
+//   cout << fNumbersNo[0]->effTot << " +/- " << fNumbersNo[0]->effTotTE << endl;
+
 //   return;
 
+//   zone(2,2);
 
-  if (channels & 16) {
-    plotEfficiencies a3(fFiles.c_str()); 
-    a3.makeAll(); 
-  }
+//   pair<TH1D*, TH1D*> bothH = singleRelativeYield("bgBd2PiMuNu");
+//   c0->cd(1);  bothH.first->Draw();
+//   c0->cd(2);  bothH.second->Draw();
 
-  if (channels & 8) {
-    plotPU a2(fFiles.c_str()); 
-    a2.makeAll(); 
-  }
-
-  if (channels & 4) {
-    plotOverlays a1(fFiles.c_str()); 
-    a1.makeAll(); 
-  }
+//   bothH = singleRelativeYield("bgBs2KMuNu");
+//   c0->cd(3);  bothH.first->Draw();
+//   c0->cd(4);  bothH.second->Draw();
+  
+//   return;
+  
 
   if (channels & 1) {
     fNormProcessed = false; 
@@ -87,6 +77,8 @@ void plotResults::makeAll(int channels) {
     computeNormUL();
     computeCsBF();
     acceptancePerProcess();
+    allInvertedIso();
+    invertedIsoPrediction();
   }
 
   if (channels & 2) {
@@ -129,6 +121,28 @@ void plotResults::computeNormUL() {
   loopTree(5);  // data signal
   c0->Modified(); c0->Update();
 
+  double yield(0.); 
+
+  for (int i = 0; i < 2; ++i) {
+    yield = scaledYield(fNumbersBs[i], fNumbersNo[i], fBF["SgMc"], fsfu);
+    yield = scaledYield(fNumbersBd[i], fNumbersNo[i], fBF["BdMc"], 1.);
+
+    fNumbersBs[i]->bsExpObs = fNumbersBs[i]->bgBsExp + fNumbersBs[i]->bsRare + fNumbersBs[i]->bsNoScaled;
+  
+    fNumbersBs[i]->bsExpObsE = TMath::Sqrt(fNumbersBs[i]->bgBsExpE*fNumbersBs[i]->bgBsExpE //??
+					   + fNumbersBs[i]->bsRareE*fNumbersBs[i]->bsRareE
+					   + fNumbersBs[i]->bsNoScaledE*fNumbersBs[i]->bsNoScaledE);
+    
+    fNumbersBs[i]->bdExpObs = fNumbersBs[i]->bgBdExp + fNumbersBs[i]->bdRare + fNumbersBd[i]->bdNoScaled;
+    
+    fNumbersBs[i]->bdExpObsE = TMath::Sqrt(fNumbersBs[i]->bgBdExpE*fNumbersBs[i]->bgBdExpE //??
+					   + fNumbersBs[i]->bdRareE*fNumbersBs[i]->bdRareE
+					   + fNumbersBd[i]->bdNoScaledE*fNumbersBd[i]->bdNoScaledE);
+  }
+
+  computeErrors(fNumbersNo); 
+  computeErrors(fNumbersBs); 
+  computeErrors(fNumbersBd); 
 
   string bla = fDirectory + "/anaBmm.plotResults." + fSuffix;
   if (fDoUseBDT) {
@@ -212,7 +226,7 @@ void plotResults::computeCsBF() {
       *(fNumbersNo[i]->effAna/fNumbersCs[i]->effAna)
       *(fNumbersNo[i]->effMuidTNP/fNumbersCs[i]->effMuidTNP)
       *(fNumbersNo[i]->effTrigTNP/fNumbersCs[i]->effTrigTNP)
-      * fBF;
+      * fBF["NoMc"];
 
     
     resultE = dRatio(fNumbersCs[i]->fitYield, fNumbersCs[i]->fitYieldE, fNumbersNo[i]->fitYield, fNumbersNo[i]->fitYieldE)
@@ -222,7 +236,7 @@ void plotResults::computeCsBF() {
       *(fNumbersNo[i]->effMuidTNP/fNumbersCs[i]->effMuidTNP)
       *(fNumbersNo[i]->effTrigTNP/fNumbersCs[i]->effTrigTNP)
       *(fNumbersNo[i]->effAna/fNumbersCs[i]->effAna)
-      * fBF;
+      * fBF["NoMc"];
 
     cout << "chan " << i << ": PID fact branching fraction: " << result << "+/-" << resultE << endl;
     fTEX << formatTex(result, Form("%s:N-CSBF-TNP-BS%i:val", fSuffix.c_str(), i), 6) << endl;
@@ -235,7 +249,7 @@ void plotResults::computeCsBF() {
       *(fNumbersNo[i]->effAna/fNumbersCs[i]->effAna)
       *(fNumbersNo[i]->effMuidMC/fNumbersCs[i]->effMuidMC)
       *(fNumbersNo[i]->effTrigMC/fNumbersCs[i]->effTrigMC)
-      * fBF;
+      * fBF["NoMc"];
 
     
     resultE = dRatio(fNumbersCs[i]->fitYield, fNumbersCs[i]->fitYieldE, fNumbersNo[i]->fitYield, fNumbersNo[i]->fitYieldE)
@@ -245,7 +259,7 @@ void plotResults::computeCsBF() {
       *(fNumbersNo[i]->effMuidMC/fNumbersCs[i]->effMuidMC)
       *(fNumbersNo[i]->effTrigMC/fNumbersCs[i]->effTrigMC)
       *(fNumbersNo[i]->effAna/fNumbersCs[i]->effAna)
-      * fBF;
+      * fBF["NoMc"];
 
     cout << "chan " << i << ": MC fact branching fraction: " << result << "+/-" << resultE << endl;
     fTEX << formatTex(result, Form("%s:N-CSBF-MC-BS%i:val", fSuffix.c_str(), i), 6) << endl;
@@ -254,7 +268,7 @@ void plotResults::computeCsBF() {
     result = (fNumbersCs[i]->fitYield/fNumbersNo[i]->fitYield)
       *(fu/fs)
       *(fNumbersNo[i]->effTot/fNumbersCs[i]->effTot)
-      * fBF;
+      * fBF["NoMc"];
 
     cout << "chan " << i << ": branching fraction: " << result << "+/-" << resultE << endl;
 
@@ -340,6 +354,125 @@ void plotResults::createAllCfgFiles(string fname) {
 
 }
 
+
+// ----------------------------------------------------------------------
+void plotResults::computeErrors(std::vector<numbers*> a) {
+
+  double sysMuid[]  = {0.04, 0.08};
+  double sysTrig[]  = {0.03, 0.06};
+  double sysTrk[]   = {0.04, 0.04};
+  double sysAnaSg[] = {0.03, 0.03};
+  double sysAnaCs[] = {0.03, 0.03};
+  double sysAnaNo[] = {0.04, 0.04};
+  double sysCand[]  = {0.01, 0.01};
+  double sysAcc[]   = {0.035, 0.05};
+  double sysNorm[]  = {0.05, 0.05};
+  double sysPSS[]   = {0.05, 0.05};
+  double sysTau[]   = {0.04, 0.04};
+  
+  double sysAna[2]; 
+  double syst(0.), total(0.);
+  
+  string mode("nada"); 
+  if (string::npos != a[0]->name.find("signal")) {
+    mode = "sg"; 
+    sysAna[0] = sysAnaSg[0];
+    sysAna[1] = sysAnaSg[1];
+  } 
+
+  if (string::npos != a[0]->name.find("normalization")) {
+    mode = "no"; 
+    sysAna[0] = TMath::Sqrt(sysAnaNo[0]*sysAnaNo[0] + sysTrk[0]*sysTrk[0]);
+    sysAna[1] = TMath::Sqrt(sysAnaNo[1]*sysAnaNo[1] + sysTrk[1]*sysTrk[1]);
+  } 
+
+  if (string::npos != a[0]->name.find("control")) {
+    mode = "cs"; 
+    sysAna[0] = TMath::Sqrt(sysAnaCs[0]*sysAnaCs[0] + 2*sysTrk[0]*sysTrk[0]);
+    sysAna[1] = TMath::Sqrt(sysAnaCs[1]*sysAnaCs[1] + 2*sysTrk[1]*sysTrk[1]);
+  } 
+
+  for (int i = 0; i < 2; ++i) {
+    cout << "Setting errors for " << a[i]->name << endl;
+
+    // -- acceptance and selection
+    syst = sysAcc[i]*a[i]->acc; 
+    a[i]->accTE = TMath::Sqrt(a[i]->accE*a[i]->accE + syst*syst);
+
+    syst = sysCand[i]*a[i]->effCand;
+    a[i]->effCandTE = TMath::Sqrt(a[i]->effCandE*a[i]->effCandE + syst*syst);
+
+    syst = sysAna[i]*a[i]->effAna;
+    a[i]->effAnaTE = TMath::Sqrt(a[i]->effAnaE*a[i]->effAnaE + syst*syst); 
+
+    // -- total efficiency
+    total= TMath::Sqrt(sysAcc[i]*sysAcc[i] + sysAna[i]*sysAna[i] + sysCand[i]*sysCand[i] 
+		       + sysMuid[i]*sysMuid[i] + sysTrig[i]*sysTrig[i]); 
+    syst = total*a[i]->effTot;
+    a[i]->effTotTE = TMath::Sqrt(a[i]->effTotE*a[i]->effTotE + syst*syst); 
+
+    // -- muon id 
+    syst = sysMuid[i]*a[i]->effMuidMC;
+    a[i]->effMuidTE = TMath::Sqrt(a[i]->effMuidMCE*a[i]->effMuidMCE + syst*syst); 
+
+    syst = sysMuid[i]*a[i]->effMuidMC;
+    a[i]->effMuidMCTE = TMath::Sqrt(a[i]->effMuidMCE*a[i]->effMuidMCE + syst*syst); 
+
+    syst = sysMuid[i]*a[i]->effMuidTNP;
+    a[i]->effMuidTNPTE = TMath::Sqrt(a[i]->effMuidTNPE*a[i]->effMuidTNPE + syst*syst); 
+
+    syst = sysMuid[i]*a[i]->effMuidTNPMC;
+    a[i]->effMuidTNPMCTE = TMath::Sqrt(a[i]->effMuidTNPMCE*a[i]->effMuidTNPMCE + syst*syst); 
+
+    // -- trigger
+    syst = sysTrig[i]*a[i]->effTrigMC;
+    a[i]->effTrigTE = TMath::Sqrt(a[i]->effTrigMCE*a[i]->effTrigMCE + syst*syst); 
+
+    syst = sysTrig[i]*a[i]->effTrigMC;
+    a[i]->effTrigMCTE = TMath::Sqrt(a[i]->effTrigMCE*a[i]->effTrigMCE + syst*syst); 
+
+    syst = sysTrig[i]*a[i]->effTrigTNP;
+    a[i]->effTrigTNPTE = TMath::Sqrt(a[i]->effTrigTNPE*a[i]->effTrigTNPE + syst*syst); 
+
+    syst = sysTrig[i]*a[i]->effTrigTNPMC;
+    a[i]->effTrigTNPMCTE = TMath::Sqrt(a[i]->effTrigTNPMCE*a[i]->effTrigTNPMCE + syst*syst); 
+
+    // -- yields
+    syst = sysNorm[i]*a[i]->fitYield;
+    a[i]->fitYieldTE = TMath::Sqrt(a[i]->fitYieldE*a[i]->fitYieldE + syst*syst);
+    
+    // -- bg estimates
+    if (mode == "sg") {
+      syst = sysTau[i]*a[i]->bgBsExp; 
+      a[i]->bgBsExpTE = TMath::Sqrt(a[i]->bgBsExpE*a[i]->bgBsExpE + syst*syst); 
+      
+      syst = sysTau[i]*a[i]->bgBdExp; 
+      a[i]->bgBdExpTE = TMath::Sqrt(a[i]->bgBdExpE*a[i]->bgBdExpE + syst*syst); 
+
+      syst = sysTau[i]*a[i]->bgBsExp; // the other errors already include the (dominant) systematic contribution
+      a[i]->bsExpObsTE = TMath::Sqrt(a[i]->bsExpObsE*a[i]->bsExpObsE + syst*syst);
+
+      syst = sysTau[i]*a[i]->bgBdExp; // the other errors already include the (dominant) systematic contribution
+      a[i]->bdExpObsTE = TMath::Sqrt(a[i]->bsExpObsE*a[i]->bsExpObsE + syst*syst);
+
+      syst = sysPSS[i]*a[i]->pss; 
+      a[i]->pssTE = TMath::Sqrt(a[i]->pssE*a[i]->pssE + syst*syst);
+
+      syst = sysPSS[i]*a[i]->pds; 
+      a[i]->pdsTE = TMath::Sqrt(a[i]->pdsE*a[i]->pdsE + syst*syst);
+
+      syst = sysPSS[i]*a[i]->pdd; 
+      a[i]->pddTE = TMath::Sqrt(a[i]->pddE*a[i]->pddE + syst*syst);
+
+      syst = sysPSS[i]*a[i]->psd; 
+      a[i]->psdTE = TMath::Sqrt(a[i]->psdE*a[i]->psdE + syst*syst);
+    }
+  }
+
+}
+
+
+
 // ----------------------------------------------------------------------
 void plotResults::printUlcalcNumbers(string fname) {
   ofstream OUT(fname.c_str());
@@ -364,125 +497,78 @@ void plotResults::printUlcalcNumbers(string fname) {
       fTEX << "% -- NORMALIZATION " << i << endl;
 
       OUT << "#EFF_TOT_BPLUS\t" << i << "\t" << fNumbersNo[i]->effTot << endl;
-      err1 = fNumbersNo[i]->effTotE; 
-      err2 = sysTot*fNumbersNo[i]->effTot;
-      totE = TMath::Sqrt(err1*err1 + err2*err2); 
       fTEX << formatTex(fNumbersNo[i]->effTot, Form("%s:N-EFF-TOT-BPLUS%i:val", fSuffix.c_str(), i), 5) << endl;
-      fTEX << formatTex(err1, Form("%s:N-EFF-TOT-BPLUS%i:err", fSuffix.c_str(), i), 5) << endl;
-      fTEX << formatTex(err2, Form("%s:N-EFF-TOT-BPLUS%i:sys", fSuffix.c_str(), i), 5) << endl;
-      fTEX << formatTex(totE, Form("%s:N-EFF-TOT-BPLUS%i:tot", fSuffix.c_str(), i), 5) << endl;
-      fTEX << scientificTex(fNumbersNo[i]->effTot, totE, Form("%s:N-EFF-TOT-BPLUS%i:all", fSuffix.c_str(), i), 1e-3, 2) 
-	   << endl;
+      fTEX << formatTex(fNumbersNo[i]->effTotE, Form("%s:N-EFF-TOT-BPLUS%i:err", fSuffix.c_str(), i), 6) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effTotTE, Form("%s:N-EFF-TOT-BPLUS%i:tot", fSuffix.c_str(), i), 5) << endl;
+      fTEX << scientificTex(fNumbersNo[i]->effTot, fNumbersNo[i]->effTotTE, 
+			    Form("%s:N-EFF-TOT-BPLUS%i:all", fSuffix.c_str(), i), 1e-3, 2) << endl;
 
-      OUT << "ACC_BPLUS\t" << i << "\t" << fNumbersNo[i]->acc 
-	  <<"\t" << sysAcc*fNumbersNo[i]->acc 
-	  << endl;
-      err1 = fNumbersNo[i]->accE; 
-      err2 = sysAcc*fNumbersNo[i]->acc;
-      totE = TMath::Sqrt(err1*err1 + err2*err2); 
+      OUT << "ACC_BPLUS\t" << i << "\t" << fNumbersNo[i]->acc <<"\t" << fNumbersNo[i]->accTE  << endl;
       fTEX << formatTex(fNumbersNo[i]->acc, Form("%s:N-ACC-BPLUS%i:val", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err1, Form("%s:N-ACC-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err2, Form("%s:N-ACC-BPLUS%i:sys", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(totE, Form("%s:N-ACC-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
-      fTEX << scientificTex(fNumbersNo[i]->acc, totE, Form("%s:N-ACC-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+      fTEX << formatTex(fNumbersNo[i]->accE, Form("%s:N-ACC-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
+      fTEX << formatTex(fNumbersNo[i]->accTE, Form("%s:N-ACC-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
+      fTEX << scientificTex(fNumbersNo[i]->acc, fNumbersNo[i]->accTE, 
+			    Form("%s:N-ACC-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-      err1 = fNumbersNo[i]->effMuidTNPE; 
-      err2 = sysMu*fNumbersNo[i]->effMuidTNP;
-      totE = TMath::Sqrt(err1*err1 + err2*err2); 
       fTEX << formatTex(fNumbersNo[i]->effMuidTNP, Form("%s:N-EFF-MU-PID-BPLUS%i:val", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err1, Form("%s:N-EFF-MU-PID-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err2, Form("%s:N-EFF-MU-PID-BPLUS%i:sys", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(totE, Form("%s:N-EFF-MU-PID-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
-      fTEX << scientificTex(fNumbersNo[i]->effMuidTNP, totE, Form("%s:N-EFF-MU-PID-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effMuidTNPE, Form("%s:N-EFF-MU-PID-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effMuidTNPTE, Form("%s:N-EFF-MU-PID-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
+      fTEX << scientificTex(fNumbersNo[i]->effMuidTNP, fNumbersNo[i]->effMuidTNPTE, 
+			    Form("%s:N-EFF-MU-PID-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-      OUT << "EFF_MU_BPLUS\t" << i << "\t"  << fNumbersNo[i]->effMuidMC 
-	  << "\t"  << sysMu*fNumbersNo[i]->effMuidMC 
-	  << endl;
-      err1 = fNumbersNo[i]->effMuidMCE; 
-      err2 = sysMu*fNumbersNo[i]->effMuidMC;
-      totE = TMath::Sqrt(err1*err1 + err2*err2); 
+      OUT << "EFF_MU_BPLUS\t" << i << "\t"  << fNumbersNo[i]->effMuidMC << "\t"  << fNumbersNo[i]->effMuidMCTE << endl;
+      //	  << "\t"  << sysMu*fNumbersNo[i]->effMuidMC 
       fTEX << formatTex(fNumbersNo[i]->effMuidTNPMC, Form("%s:N-EFF-MU-PIDMC-BPLUS%i:val", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err1, Form("%s:N-EFF-MU-PIDMC-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err2, Form("%s:N-EFF-MU-PIDMC-BPLUS%i:sys", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(totE, Form("%s:N-EFF-MU-PIDMC-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
-      fTEX << scientificTex(fNumbersNo[i]->effMuidTNPMC, totE, Form("%s:N-EFF-MU-PIDMC-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effMuidTNPMCE, Form("%s:N-EFF-MU-PIDMC-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effMuidTNPMCTE, Form("%s:N-EFF-MU-PIDMC-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
+      fTEX << scientificTex(fNumbersNo[i]->effMuidTNPMC, fNumbersNo[i]->effMuidTNPMCTE, 
+			    Form("%s:N-EFF-MU-PIDMC-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-      err1 = fNumbersNo[i]->effMuidMCE; 
-      err2 = sysNorm*fNumbersNo[i]->effMuidMC;
-      totE = TMath::Sqrt(err1*err1 + err2*err2); 
       fTEX << formatTex(fNumbersNo[i]->effMuidMC, Form("%s:N-EFF-MU-MC-BPLUS%i:val", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err1, Form("%s:N-EFF-MU-MC-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err2, Form("%s:N-EFF-MU-MC-BPLUS%i:sys", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(totE, Form("%s:N-EFF-MU-MC-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
-      fTEX << scientificTex(fNumbersNo[i]->effMuidMC, totE, Form("%s:N-EFF-MU-MC-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effMuidMCE, Form("%s:N-EFF-MU-MC-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effMuidMCTE, Form("%s:N-EFF-MU-MC-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
+      fTEX << scientificTex(fNumbersNo[i]->effMuidMC, fNumbersNo[i]->effMuidMCTE, 
+			    Form("%s:N-EFF-MU-MC-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-      //    OUT << "EFF_TRIG_BPLUS\t" << i << "\t" << fNumbersNo[i]->effTrigTNP << endl;
-      err1 = fNumbersNo[i]->effTrigTNPE; 
-      err2 = sysTr*fNumbersNo[i]->effTrigTNP;
-      totE = TMath::Sqrt(err1*err1 + err2*err2); 
       fTEX << formatTex(fNumbersNo[i]->effTrigTNP, Form("%s:N-EFF-TRIG-PID-BPLUS%i:val", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err1, Form("%s:N-EFF-TRIG-PID-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err2, Form("%s:N-EFF-TRIG-PID-BPLUS%i:sys", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(totE, Form("%s:N-EFF-TRIG-PID-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
-      fTEX << scientificTex(fNumbersNo[i]->effTrigTNP, totE, Form("%s:N-EFF-TRIG-PID-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effTrigTNPE, Form("%s:N-EFF-TRIG-PID-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effTrigTNPTE, Form("%s:N-EFF-TRIG-PID-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
+      fTEX << scientificTex(fNumbersNo[i]->effTrigTNP, fNumbersNo[i]->effTrigTNPTE, 
+			    Form("%s:N-EFF-TRIG-PID-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-      err1 = fNumbersNo[i]->effTrigTNPMCE; 
-      err2 = sysTr*fNumbersNo[i]->effTrigTNPMC;
-      totE = TMath::Sqrt(err1*err1 + err2*err2); 
       fTEX << formatTex(fNumbersNo[i]->effTrigTNPMC, Form("%s:N-EFF-TRIG-PIDMC-BPLUS%i:val", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err1, Form("%s:N-EFF-TRIG-PIDMC-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err2, Form("%s:N-EFF-TRIG-PIDMC-BPLUS%i:sys", fSuffix.c_str(), i), 3) << endl;
-      fTEX << scientificTex(fNumbersNo[i]->effTrigTNPMC, totE, Form("%s:N-EFF-TRIG-PIDMC-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effTrigTNPMCE, Form("%s:N-EFF-TRIG-PIDMC-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effTrigTNPMCTE, Form("%s:N-EFF-TRIG-PIDMC-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
+      fTEX << scientificTex(fNumbersNo[i]->effTrigTNPMC, fNumbersNo[i]->effTrigTNPMCTE, 
+			    Form("%s:N-EFF-TRIG-PIDMC-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-      OUT << "EFF_TRIG_BPLUS\t" << i << "\t" << fNumbersNo[i]->effTrigMC 
-	  << "\t" << sysTr*fNumbersNo[i]->effTrigMC 
-	  << endl;
-      err1 = fNumbersNo[i]->effTrigMCE; 
-      err2 = sysTr*fNumbersNo[i]->effTrigMC;
-      totE = TMath::Sqrt(err1*err1 + err2*err2); 
+      OUT << "EFF_TRIG_BPLUS\t" << i << "\t" << fNumbersNo[i]->effTrigMC << "\t" << fNumbersNo[i]->effTrigMCTE << endl;
       fTEX << formatTex(fNumbersNo[i]->effTrigMC, Form("%s:N-EFF-TRIG-MC-BPLUS%i:val", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err1, Form("%s:N-EFF-TRIG-MC-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err2, Form("%s:N-EFF-TRIG-MC-BPLUS%i:sys", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(totE, Form("%s:N-EFF-TRIG-MC-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
-      fTEX << scientificTex(fNumbersNo[i]->effTrigMC, totE, Form("%s:N-EFF-TRIG-MC-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effTrigMCE, Form("%s:N-EFF-TRIG-MC-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effTrigMCTE, Form("%s:N-EFF-TRIG-MC-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
+      fTEX << scientificTex(fNumbersNo[i]->effTrigMC, fNumbersNo[i]->effTrigMCTE, 
+			    Form("%s:N-EFF-TRIG-MC-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-      OUT << "EFF_CAND_BPLUS\t" << i << "\t" << fNumbersNo[i]->effCand
-	  << "\t" << sysCand*fNumbersNo[i]->effCand
-	  << endl;
-      err1 = fNumbersNo[i]->effCandE; 
-      err2 = sysCand*fNumbersNo[i]->effCand;
-      totE = TMath::Sqrt(err1*err1 + err2*err2); 
+      OUT << "EFF_CAND_BPLUS\t" << i << "\t" << fNumbersNo[i]->effCand << "\t" << fNumbersNo[i]->effCandTE << endl;
       fTEX << formatTex(fNumbersNo[i]->effCand, Form("%s:N-EFF-CAND-BPLUS%i:val", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err1, Form("%s:N-EFF-CAND-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(err2, Form("%s:N-EFF-CAND-BPLUS%i:sys", fSuffix.c_str(), i), 3) << endl;
-      fTEX << formatTex(totE, Form("%s:N-EFF-CAND-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
-      fTEX << scientificTex(fNumbersNo[i]->effCand, totE, Form("%s:N-EFF-CAND-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effCandE, Form("%s:N-EFF-CAND-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effCandTE, Form("%s:N-EFF-CAND-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
+      fTEX << scientificTex(fNumbersNo[i]->effCand, fNumbersNo[i]->effCandTE, 
+			    Form("%s:N-EFF-CAND-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-      //    OUT << "EFF_ANA_BPLUS\t" << i << "\t" << fNumbersNo[i]->effAna << endl;
-      OUT << "EFF_ANA_BPLUS\t" << i << "\t" << fNumbersNo[i]->effAna
-	  << "\t" << sysAnaNo*fNumbersNo[i]->effAna 
-	  << endl;
-      err1 = fNumbersNo[i]->effAnaE; 
-      err2 = sysAnaNo*fNumbersNo[i]->effAna;
-      totE = TMath::Sqrt(err1*err1 + err2*err2); 
+      OUT << "EFF_ANA_BPLUS\t" << i << "\t" << fNumbersNo[i]->effAna  << "\t" << fNumbersNo[i]->effAnaTE << endl;
       fTEX << formatTex(fNumbersNo[i]->effAna, Form("%s:N-EFF-ANA-BPLUS%i:val", fSuffix.c_str(), i), 4) << endl;
-      fTEX << formatTex(err1, Form("%s:N-EFF-ANA-BPLUS%i:err", fSuffix.c_str(), i), 4) << endl;
-      fTEX << formatTex(err2, Form("%s:N-EFF-ANA-BPLUS%i:sys", fSuffix.c_str(), i), 4) << endl;
-      fTEX << formatTex(totE, Form("%s:N-EFF-ANA-BPLUS%i:tot", fSuffix.c_str(), i), 4) << endl;
-      fTEX << scientificTex(fNumbersNo[i]->effAna, totE, Form("%s:N-EFF-ANA-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effAnaE, Form("%s:N-EFF-ANA-BPLUS%i:err", fSuffix.c_str(), i), 4) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effAnaTE, Form("%s:N-EFF-ANA-BPLUS%i:tot", fSuffix.c_str(), i), 4) << endl;
+      fTEX << scientificTex(fNumbersNo[i]->effAna, fNumbersNo[i]->effAnaTE, 
+			    Form("%s:N-EFF-ANA-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-      OUT << "OBS_BPLUS\t" << i << "\t" << fNumbersNo[i]->fitYield
-	  << "\t" << sysNorm*fNumbersNo[i]->fitYield 
-	  << endl;
-      err1 = fNumbersNo[i]->fitYieldE; 
-      err2 = sysNorm*fNumbersNo[i]->fitYield;
-      totE = TMath::Sqrt(err1*err1 + err2*err2); 
-
+      OUT << "OBS_BPLUS\t" << i << "\t" << fNumbersNo[i]->fitYield << "\t" << fNumbersNo[i]->fitYieldTE << endl;
       fTEX << formatTex(fNumbersNo[i]->fitYield, Form("%s:N-OBS-BPLUS%i:val", fSuffix.c_str(), i), 0) << endl;
-      fTEX << formatTex(err1, Form("%s:N-OBS-BPLUS%i:err", fSuffix.c_str(), i), 0) << endl;
-      fTEX << formatTex(err2, Form("%s:N-OBS-BPLUS%i:sys", fSuffix.c_str(), i), 0) << endl;
-      fTEX << formatTex(totE, Form("%s:N-OBS-BPLUS%i:tot", fSuffix.c_str(), i), 0) << endl;
-      fTEX << scientificTex(fNumbersNo[i]->fitYield, totE, Form("%s:N-OBS-BPLUS%i:all", fSuffix.c_str(), i), 1e3, 0) << endl;
+      fTEX << formatTex(fNumbersNo[i]->fitYieldE, Form("%s:N-OBS-BPLUS%i:err", fSuffix.c_str(), i), 0) << endl;
+      fTEX << formatTex(fNumbersNo[i]->fitYieldTE, Form("%s:N-OBS-BPLUS%i:tot", fSuffix.c_str(), i), 0) << endl;
+      fTEX << scientificTex(fNumbersNo[i]->fitYield, fNumbersNo[i]->fitYieldTE, 
+			    Form("%s:N-OBS-BPLUS%i:all", fSuffix.c_str(), i), 1e3, 0) << endl;
 
       fTEX << formatTex(fNumbersNo[i]->fitYieldC, Form("%s:N-OBS-CBPLUS%i:val", fSuffix.c_str(), i), 0) << endl;
       fTEX << formatTex(fNumbersNo[i]->fitYieldCE, Form("%s:N-OBS-CBPLUS%i:err", fSuffix.c_str(), i), 0) << endl;
@@ -498,29 +584,6 @@ void plotResults::printUlcalcNumbers(string fname) {
   for (unsigned int i = 0; i < fNchan; ++i) {
     OUT << "# -- SIGNAL " << i << endl;
     fTEX << "% -- SIGNAL " << i << endl;
-    scale      = fLumi["SgData"]/fLumi["SgMc"];
-    scaledSig  = fNumbersBs[i]->anaWmcYield*scale;
-    scaledSigE = scaledSig*TMath::Sqrt(fNumbersBs[i]->anaWmcYield)/fNumbersBs[i]->anaWmcYield;
-    fTEX << formatTex(fNumbersBs[i]->anaWmcYield, Form("%s:N-EXP-SIG-BSMM%d:wmcyield", fSuffix.c_str(), i), 2) << endl;
-    fTEX << formatTex(scale, Form("%s:N-EXP-SIG-BSMM%d:scale", fSuffix.c_str(), i), 2) << endl;
-    fTEX << formatTex(scaledSig, Form("%s:N-EXP-SIG-BSMM%d:val", fSuffix.c_str(), i), 2) << endl;
-    fTEX << formatTex(scaledSigE, Form("%s:N-EXP-SIG-BSMM%d:err", fSuffix.c_str(), i), 2) << endl;
-    //    fTEX << formatTex(0.2*scaledSig, Form("%s:N-EXP-SIG-BSMM%d:sys", fSuffix.c_str(), i), 2) << endl;
-
-    double yield = scaledYield(fNumbersBs[i], fNumbersNo[i], 3.2e-9, fsfu);
-
-    //          BF(Bs -> mu mu)   fs epstot(Bs) 
-    //   n_s = -----------------  -- ---------  N(B+) 
-    //          BF(B+ -> mu muK)  fu epstot(B+) 
-
-    //                   mass reso   signal eff  norm eff    kaon          norm fit    muid        trigger
-    double commonError = TMath::Sqrt(0.03*0.03 + 0.08*0.08 + 0.04*0.04 + 0.039*0.039 + 0.05*0.05 + 0.05*0.05 + 0.03*0.03);
-    cout << "****** commonError = " << commonError << endl;
-
-    double bf = 3.2e-9/6.0e-5;
-    scaledSig  = bf * (fsfu) * fNumbersBs[i]->pss * (fNumbersBs[i]->effTot/fNumbersNo[i]->effTot) * fNumbersNo[i]->fitYield;
-    scaledSigE = TMath::Sqrt(fsfuE*fsfuE + commonError*commonError + (0.2/3.2)*(0.2/3.2))*scaledSig;
-    cout << "****** scaledSig(orig) = " << scaledSig << endl;
 
     scaledSig  = fNumbersBs[i]->bsNoScaled;
     scaledSigE = fNumbersBs[i]->bsNoScaledE;
@@ -529,19 +592,7 @@ void plotResults::printUlcalcNumbers(string fname) {
 
     fTEX << formatTex(scaledSig, Form("%s:N-EXP2-SIG-BSMM%d:val", fSuffix.c_str(), i), 2) << endl;
     fTEX << formatTex(scaledSigE, Form("%s:N-EXP2-SIG-BSMM%d:err", fSuffix.c_str(), i), 2) << endl;
-    fTEX << formatTex(scaledSigS, Form("%s:N-EXP2-SIG-BSMM%d:sys", fSuffix.c_str(), i), 2) << endl;
 
-    scaledSig  = fNumbersBd[i]->anaWmcYield*fLumi["SgData"]/fLumi["BdMc"];
-    scaledSigE = scaledSig*TMath::Sqrt(fNumbersBd[i]->anaWmcYield)/fNumbersBd[i]->anaWmcYield;
-    fTEX << formatTex(scaledSig, Form("%s:N-EXP-SIG-BDMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(scaledSigE, Form("%s:N-EXP-SIG-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    
-    bf = 1.0e-10/6.0e-5;
-    scaledSig  = bf * fNumbersBd[i]->pdd * (fNumbersBd[i]->effTot/fNumbersNo[i]->effTot) * fNumbersNo[i]->fitYield;
-    scaledSigE = TMath::Sqrt(commonError*commonError + (0.1/1.0)*(0.1/1.0))*scaledSig;
-    cout << "****** scaledSig(orig) = " << scaledSig << endl;
-
-    yield = scaledYield(fNumbersBd[i], fNumbersNo[i], 1.0e-10, 1.);
     scaledSig  = fNumbersBd[i]->bdNoScaled;
     scaledSigE = fNumbersBd[i]->bdNoScaledE;
     cout << "****** scaledSig(Bd) =   " << scaledSig << endl;
@@ -569,270 +620,166 @@ void plotResults::printUlcalcNumbers(string fname) {
     OUT << "HIGH_BS\t" << i << "\t" << fNumbersBs[i]->mBsHi << endl;
     fTEX << formatTex(fNumbersBs[i]->mBsHi, Form("%s:N-HIGH-BS%d:val", fSuffix.c_str(), i), 3) << endl;
 
-    OUT << "PSS\t" << i << "\t" << fNumbersBs[i]->pss
-	<< "\t" << sysPSS*fNumbersBs[i]->pss 
-	<< endl;
+    OUT << "PSS\t" << i << "\t" << fNumbersBs[i]->pss << "\t" << fNumbersBs[i]->pssTE << endl;
     fTEX << formatTex(fNumbersBs[i]->pss, Form("%s:N-PSS%d:val", fSuffix.c_str(), i), 3) << endl;
     fTEX << formatTex(fNumbersBs[i]->pssE, Form("%s:N-PSS%d:err", fSuffix.c_str(), i), 3) << endl;
-    //    fTEX << formatTex(sysPSS*fNumbersBs[i]->pss, Form("%s:N-PSS%d:sys", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBs[i]->pssTE, Form("%s:N-PSS%d:tot", fSuffix.c_str(), i), 3) << endl;
 
-    OUT << "PSD\t" << i << "\t" << fNumbersBd[i]->psd
-	<< "\t" << sysPSS*fNumbersBd[i]->psd 
-	<< endl;
+    OUT << "PSD\t" << i << "\t" << fNumbersBd[i]->psd << "\t" << fNumbersBd[i]->psdTE << endl;
     fTEX << formatTex(fNumbersBd[i]->psd, Form("%s:N-PSD%d:val", fSuffix.c_str(), i), 3) << endl;
     fTEX << formatTex(fNumbersBd[i]->psdE, Form("%s:N-PSD%d:err", fSuffix.c_str(), i), 3) << endl;
-    //    fTEX << formatTex(sysPSS*fNumbersBd[i]->psdE, Form("%s:N-PSD%d:sys", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBd[i]->psdTE, Form("%s:N-PSD%d:tot", fSuffix.c_str(), i), 3) << endl;
 
-    OUT << "PDS\t" << i << "\t" << fNumbersBs[i]->pds
-	<< "\t" << sysPSS*fNumbersBs[i]->pds 
-	<< endl;
+    OUT << "PDS\t" << i << "\t" << fNumbersBs[i]->pds << "\t" << fNumbersBs[i]->pdsTE << endl;
     fTEX << formatTex(fNumbersBs[i]->pds, Form("%s:N-PDS%d:val", fSuffix.c_str(), i), 3) << endl;
     fTEX << formatTex(fNumbersBs[i]->pdsE, Form("%s:N-PDS%d:err", fSuffix.c_str(), i), 3) << endl;
-    //    fTEX << formatTex(sysPSS*fNumbersBs[i]->pds, Form("%s:N-PDS%d:sys", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBs[i]->pdsTE, Form("%s:N-PDS%d:tot", fSuffix.c_str(), i), 3) << endl;
 
-    OUT << "PDD\t" << i << "\t" << fNumbersBd[i]->pdd
-	<< "\t" << sysPSS*fNumbersBd[i]->pdd 
-	<< endl;
+    OUT << "PDD\t" << i << "\t" << fNumbersBd[i]->pdd << "\t" << fNumbersBd[i]->pddTE << endl;
     fTEX << formatTex(fNumbersBd[i]->pdd, Form("%s:N-PDD%d:val", fSuffix.c_str(), i), 3) << endl;
     fTEX << formatTex(fNumbersBd[i]->pddE, Form("%s:N-PDD%d:err", fSuffix.c_str(), i), 3) << endl;
-    //    fTEX << formatTex(sysPSS*fNumbersBd[i]->pdd, Form("%s:N-PDD%d:sys", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBd[i]->pddTE, Form("%s:N-PDD%d:tot", fSuffix.c_str(), i), 3) << endl;
 
     OUT << "#EFF_TOT_BSMM\t" << i << "\t" << fNumbersBs[i]->effTot << endl;
-    err1 = fNumbersBs[i]->effTotE; 
-    err2 = sysTot*fNumbersBs[i]->effTot;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
     fTEX << formatTex(fNumbersBs[i]->effTot, Form("%s:N-EFF-TOT-BSMM%d:val", fSuffix.c_str(), i), 4) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-TOT-BSMM%d:err", fSuffix.c_str(), i), 4) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-TOT-BSMM%d:sys", fSuffix.c_str(), i), 4) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-TOT-BSMM%d:tot", fSuffix.c_str(), i), 4) << endl;
-    fTEX << scientificTex(fNumbersBs[i]->effTot, totE, Form("%s:N-EFF-TOT-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effTotE, Form("%s:N-EFF-TOT-BSMM%d:err", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effTotTE, Form("%s:N-EFF-TOT-BSMM%d:tot", fSuffix.c_str(), i), 4) << endl;
+    fTEX << scientificTex(fNumbersBs[i]->effTot, fNumbersBs[i]->effTotTE, 
+			  Form("%s:N-EFF-TOT-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    OUT << "ACC_BSMM\t" << i << "\t" << fNumbersBs[i]->acc
-	<< "\t" << sysAcc*fNumbersBs[i]->acc 
-	<< endl;
-    err1 = fNumbersBs[i]->accE; 
-    err2 = sysAcc*fNumbersBs[i]->acc;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
+    OUT << "ACC_BSMM\t" << i << "\t" << fNumbersBs[i]->acc << "\t" << fNumbersBs[i]->accTE << endl;
     fTEX << formatTex(fNumbersBs[i]->acc, Form("%s:N-ACC-BSMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-ACC-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-ACC-BSMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-ACC-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBs[i]->acc, totE, Form("%s:N-ACC-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->accE, Form("%s:N-ACC-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBs[i]->accTE, Form("%s:N-ACC-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBs[i]->acc, fNumbersBs[i]->accTE, 
+			  Form("%s:N-ACC-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    //    OUT << "EFF_MU_BSMM\t" << i << "\t" << fNumbersBs[i]->effMuidTNP << endl;
-    err1 = fNumbersBs[i]->effMuidTNPE; 
-    err2 = sysMu*fNumbersBs[i]->effMuidTNP;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
     fTEX << formatTex(fNumbersBs[i]->effMuidTNP, Form("%s:N-EFF-MU-PID-BSMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-MU-PID-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-MU-PID-BSMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-MU-PID-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBs[i]->effMuidTNP, totE, Form("%s:N-EFF-MU-PID-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effMuidTNPE, Form("%s:N-EFF-MU-PID-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effMuidTNPTE, Form("%s:N-EFF-MU-PID-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBs[i]->effMuidTNP, fNumbersBs[i]->effMuidTNPTE, 
+			  Form("%s:N-EFF-MU-PID-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    err1 = fNumbersBs[i]->effMuidTNPMCE; 
-    err2 = sysMu*fNumbersBs[i]->effMuidTNPMC;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
     fTEX << formatTex(fNumbersBs[i]->effMuidTNPMC, Form("%s:N-EFF-MU-PIDMC-BSMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-MU-PIDMC-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-MU-PIDMC-BSMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-MU-PIDMC-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBs[i]->effMuidTNPMC, totE, Form("%s:N-EFF-MU-PIDMC-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effMuidTNPMCE, Form("%s:N-EFF-MU-PIDMC-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effMuidTNPMCTE, Form("%s:N-EFF-MU-PIDMC-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBs[i]->effMuidTNPMC, fNumbersBs[i]->effMuidTNPMCTE, 
+			  Form("%s:N-EFF-MU-PIDMC-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    OUT << "EFF_MU_BSMM\t" << i << "\t" << fNumbersBs[i]->effMuidMC 
-	<< "\t" << sysMu*fNumbersBs[i]->effMuidMC << endl;
-    err1 = fNumbersBs[i]->effMuidMCE; 
-    err2 = sysMu*fNumbersBs[i]->effMuidMC;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
+    OUT << "EFF_MU_BSMM\t" << i << "\t" << fNumbersBs[i]->effMuidMC << "\t" << fNumbersBs[i]->effMuidMCTE << endl;
     fTEX << formatTex(fNumbersBs[i]->effMuidMC, Form("%s:N-EFF-MU-MC-BSMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-MU-MC-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-MU-MC-BSMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-MU-MC-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBs[i]->effMuidMC, totE, Form("%s:N-EFF-MU-MC-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effMuidMCE, Form("%s:N-EFF-MU-MC-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effMuidMCTE, Form("%s:N-EFF-MU-MC-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBs[i]->effMuidMC, fNumbersBs[i]->effMuidMCTE, 
+			  Form("%s:N-EFF-MU-MC-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    //    OUT << "EFF_TRIG_BSMM\t" << i << "\t" << fNumbersBs[i]->effTrigTNP << endl;
-    err1 = fNumbersBs[i]->effTrigTNPE; 
-    err2 = sysTr*fNumbersBs[i]->effTrigTNP;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
     fTEX << formatTex(fNumbersBs[i]->effTrigTNP, Form("%s:N-EFF-TRIG-PID-BSMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-TRIG-PID-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-TRIG-PID-BSMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-TRIG-PID-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBs[i]->effTrigTNP, totE, Form("%s:N-EFF-TRIG-PID-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effTrigTNPE, Form("%s:N-EFF-TRIG-PID-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effTrigTNPTE, Form("%s:N-EFF-TRIG-PID-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBs[i]->effTrigTNP, fNumbersBs[i]->effTrigTNPTE, 
+			  Form("%s:N-EFF-TRIG-PID-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    err1 = fNumbersBs[i]->effTrigTNPMCE; 
-    err2 = sysTr*fNumbersBs[i]->effTrigTNPMC;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
     fTEX << formatTex(fNumbersBs[i]->effTrigTNPMC, Form("%s:N-EFF-TRIG-PIDMC-BSMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-TRIG-PIDMC-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-TRIG-PIDMC-BSMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-TRIG-PIDMC-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBs[i]->effTrigTNPMC, totE, Form("%s:N-EFF-TRIG-PIDMC-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effTrigTNPMCE, Form("%s:N-EFF-TRIG-PIDMC-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effTrigTNPMCTE, Form("%s:N-EFF-TRIG-PIDMC-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBs[i]->effTrigTNPMC, fNumbersBs[i]->effTrigTNPMCTE, 
+			  Form("%s:N-EFF-TRIG-PIDMC-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    OUT << "EFF_TRIG_BSMM\t" << i << "\t" << fNumbersBs[i]->effTrigMC 
-	<< "\t" << sysTr*fNumbersBs[i]->effTrigMC 
-	<< endl;
-    err1 = fNumbersBs[i]->effTrigMCE; 
-    err2 = sysTr*fNumbersBs[i]->effTrigMC;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
+    OUT << "EFF_TRIG_BSMM\t" << i << "\t" << fNumbersBs[i]->effTrigMC << "\t" << fNumbersBs[i]->effTrigMCTE << endl;
     fTEX << formatTex(fNumbersBs[i]->effTrigMC, Form("%s:N-EFF-TRIG-MC-BSMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-TRIG-MC-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-TRIG-MC-BSMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-TRIG-MC-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBs[i]->effTrigMC, totE, Form("%s:N-EFF-TRIG-MC-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effTrigMCE, Form("%s:N-EFF-TRIG-MC-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effTrigMCTE, Form("%s:N-EFF-TRIG-MC-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBs[i]->effTrigMC, fNumbersBs[i]->effTrigMCTE, 
+			  Form("%s:N-EFF-TRIG-MC-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    OUT << "EFF_CAND_BSMM\t" << i << "\t" << fNumbersBs[i]->effCand
-	<< "\t" << sysCand*fNumbersBs[i]->effCand << endl;
-    err1 = fNumbersBs[i]->effCandE; 
-    err2 = sysCand*fNumbersBs[i]->effCand;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
+    OUT << "EFF_CAND_BSMM\t" << i << "\t" << fNumbersBs[i]->effCand << "\t" << fNumbersBs[i]->effCandTE << endl;
     fTEX << formatTex(fNumbersBs[i]->effCand, Form("%s:N-EFF-CAND-BSMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-CAND-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-CAND-BSMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-CAND-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBs[i]->effCand, totE, Form("%s:N-EFF-CAND-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effCandE, Form("%s:N-EFF-CAND-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effCandTE, Form("%s:N-EFF-CAND-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBs[i]->effCand, fNumbersBs[i]->effCandTE, 
+			  Form("%s:N-EFF-CAND-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    OUT << "EFF_ANA_BSMM\t" << i << "\t" << fNumbersBs[i]->effAna
-	<< "\t" << sysAna*fNumbersBs[i]->effAna 
-	<< endl;
-    err1 = fNumbersBs[i]->effAnaE; 
-    err2 = sysAna*fNumbersBs[i]->effAna;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
+    OUT << "EFF_ANA_BSMM\t" << i << "\t" << fNumbersBs[i]->effAna << "\t" << fNumbersBs[i]->effAnaTE << endl;
     fTEX << formatTex(fNumbersBs[i]->effAna, Form("%s:N-EFF-ANA-BSMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-ANA-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-ANA-BSMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-ANA-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBs[i]->effAna, totE, Form("%s:N-EFF-ANA-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effAnaE, Form("%s:N-EFF-ANA-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effAnaTE, Form("%s:N-EFF-ANA-BSMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBs[i]->effAna, fNumbersBs[i]->effAnaTE, 
+			  Form("%s:N-EFF-ANA-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
     OUT << "#EFF_TOT_BDMM\t" << i << "\t" << fNumbersBd[i]->effTot << endl;
-    err1 = fNumbersBs[i]->effTotE; 
-    err2 = sysTot*fNumbersBs[i]->effTot;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
     fTEX << formatTex(fNumbersBd[i]->effTot, Form("%s:N-EFF-TOT-BDMM%d:val", fSuffix.c_str(), i), 4) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-TOT-BDMM%d:err", fSuffix.c_str(), i), 4) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-TOT-BDMM%d:sys", fSuffix.c_str(), i), 4) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-TOT-BDMM%d:tot", fSuffix.c_str(), i), 4) << endl;
-    fTEX << scientificTex(fNumbersBs[i]->effTot, totE, Form("%s:N-EFF-TOT-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effTotE, Form("%s:N-EFF-TOT-BDMM%d:err", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effTotTE, Form("%s:N-EFF-TOT-BDMM%d:tot", fSuffix.c_str(), i), 4) << endl;
+    fTEX << scientificTex(fNumbersBs[i]->effTot, fNumbersBs[i]->effTotTE, 
+			  Form("%s:N-EFF-TOT-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    OUT << "ACC_BDMM\t" << i << "\t" << fNumbersBd[i]->acc 
-	<< "\t" << sysAcc*fNumbersBd[i]->acc
-	<< endl;
-    err1 = fNumbersBd[i]->accE; 
-    err2 = sysAcc*fNumbersBd[i]->acc;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
+    OUT << "ACC_BDMM\t" << i << "\t" << fNumbersBd[i]->acc << "\t" << fNumbersBd[i]->accTE << endl;
     fTEX << formatTex(fNumbersBd[i]->acc, Form("%s:N-ACC-BDMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-ACC-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-ACC-BDMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-ACC-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBd[i]->acc, totE, Form("%s:N-ACC-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBd[i]->accE, Form("%s:N-ACC-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBd[i]->accTE, Form("%s:N-ACC-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBd[i]->acc, fNumbersBd[i]->accTE, 
+			  Form("%s:N-ACC-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    //    OUT << "EFF_MU_BDMM\t" << i << "\t" << fNumbersBd[i]->effMuidTNP << endl;
-    err1 = fNumbersBd[i]->effMuidTNPE; 
-    err2 = sysMu*fNumbersBd[i]->effMuidTNP;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
     fTEX << formatTex(fNumbersBd[i]->effMuidTNP, Form("%s:N-EFF-MU-PID-BDMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-MU-PID-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-MU-PID-BDMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-MU-PID-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBd[i]->effMuidTNP, totE, Form("%s:N-EFF-MU-PID-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effMuidTNPE, Form("%s:N-EFF-MU-PID-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effMuidTNPTE, Form("%s:N-EFF-MU-PID-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBd[i]->effMuidTNP, fNumbersBd[i]->effMuidTNPTE, 
+			  Form("%s:N-EFF-MU-PID-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    err1 = fNumbersBd[i]->effMuidTNPMCE; 
-    err2 = sysMu*fNumbersBd[i]->effMuidTNPMC;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
     fTEX << formatTex(fNumbersBd[i]->effMuidTNPMC, Form("%s:N-EFF-MU-PIDMC-BDMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-MU-PIDMC-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-MU-PIDMC-BDMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-MU-PIDMC-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBd[i]->effMuidTNPMC, totE, Form("%s:N-EFF-MU-PIDMC-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effMuidTNPMCE, Form("%s:N-EFF-MU-PIDMC-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effMuidTNPMCTE, Form("%s:N-EFF-MU-PIDMC-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBd[i]->effMuidTNPMC, fNumbersBd[i]->effMuidTNPMCTE, 
+			  Form("%s:N-EFF-MU-PIDMC-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    OUT << "EFF_MU_BDMM\t" << i	<< "\t" << fNumbersBd[i]->effMuidMC
-	<< "\t" << sysMu*fNumbersBd[i]->effMuidMC
-	<< endl;
-    err1 = fNumbersBd[i]->effMuidMCE; 
-    err2 = sysMu*fNumbersBd[i]->effMuidMC;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
+    OUT << "EFF_MU_BDMM\t" << i	<< "\t" << fNumbersBd[i]->effMuidMC << "\t" << fNumbersBd[i]->effMuidMCTE << endl;
     fTEX << formatTex(fNumbersBd[i]->effMuidMC, Form("%s:N-EFF-MU-MC-BDMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-MU-MC-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-MU-MC-BDMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-MU-MC-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBd[i]->effMuidMC, totE, Form("%s:N-EFF-MU-MC-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effMuidMCE, Form("%s:N-EFF-MU-MC-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effMuidMCTE, Form("%s:N-EFF-MU-MC-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBd[i]->effMuidMC, fNumbersBd[i]->effMuidMCTE, 
+			  Form("%s:N-EFF-MU-MC-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    //    OUT << "EFF_TRIG_BDMM\t" << i << "\t" << fNumbersBd[i]->effTrigTNP << endl;
-    err1 = fNumbersBd[i]->effTrigTNPE; 
-    err2 = sysTr*fNumbersBd[i]->effTrigTNP;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
     fTEX << formatTex(fNumbersBd[i]->effTrigTNP, Form("%s:N-EFF-TRIG-PID-BDMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-TRIG-PID-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-TRIG-PID-BDMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-TRIG-PID-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBd[i]->effTrigTNP, totE, Form("%s:N-EFF-TRIG-PID-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effTrigTNPE, Form("%s:N-EFF-TRIG-PID-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effTrigTNPTE, Form("%s:N-EFF-TRIG-PID-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBd[i]->effTrigTNP, fNumbersBd[i]->effTrigTNPTE, 
+			  Form("%s:N-EFF-TRIG-PID-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    err1 = fNumbersBd[i]->effTrigTNPMCE; 
-    err2 = sysTr*fNumbersBd[i]->effTrigTNPMC;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
     fTEX << formatTex(fNumbersBd[i]->effTrigTNPMC, Form("%s:N-EFF-TRIG-PIDMC-BDMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-TRIG-PIDMC-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-TRIG-PIDMC-BDMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-TRIG-PIDMC-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBd[i]->effTrigTNPMC, totE, Form("%s:N-EFF-TRIG-PIDMC-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effTrigTNPMCE, Form("%s:N-EFF-TRIG-PIDMC-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effTrigTNPMCTE, Form("%s:N-EFF-TRIG-PIDMC-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBd[i]->effTrigTNPMC, fNumbersBd[i]->effTrigTNPMCTE, 
+			  Form("%s:N-EFF-TRIG-PIDMC-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    OUT << "EFF_TRIG_BDMM\t" << i << "\t" << fNumbersBd[i]->effTrigMC << endl;
-    err1 = fNumbersBd[i]->effTrigMCE; 
-    err2 = sysTr*fNumbersBd[i]->effTrigMC;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
+    OUT << "EFF_TRIG_BDMM\t" << i << "\t" << fNumbersBd[i]->effTrigMC << "\t" << fNumbersBd[i]->effTrigMCTE << endl;
     fTEX << formatTex(fNumbersBd[i]->effTrigMC, Form("%s:N-EFF-TRIG-MC-BDMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-TRIG-MC-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-TRIG-MC-BDMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-TRIG-MC-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBd[i]->effTrigMC, totE, Form("%s:N-EFF-TRIG-MC-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effTrigMCE, Form("%s:N-EFF-TRIG-MC-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effTrigMCTE, Form("%s:N-EFF-TRIG-MC-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBd[i]->effTrigMC, fNumbersBd[i]->effTrigMCTE, 
+			  Form("%s:N-EFF-TRIG-MC-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    OUT << "EFF_CAND_BDMM\t" << i << "\t" << fNumbersBd[i]->effCand
-	<< "\t" << sysCand*fNumbersBd[i]->effCand 
-	<< endl;
-    err1 = fNumbersBd[i]->effCandE; 
-    err2 = sysCand*fNumbersBd[i]->effCand;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
+    OUT << "EFF_CAND_BDMM\t" << i << "\t" << fNumbersBd[i]->effCand << "\t" << fNumbersBd[i]->effCandTE << endl;
     fTEX << formatTex(fNumbersBd[i]->effCand, Form("%s:N-EFF-CAND-BDMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-CAND-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-CAND-BDMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-CAND-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(totE, fNumbersBd[i]->effCand, Form("%s:N-EFF-CAND-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effCandE, Form("%s:N-EFF-CAND-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effCandTE, Form("%s:N-EFF-CAND-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBd[i]->effCand, fNumbersBd[i]->effCandTE,
+			  Form("%s:N-EFF-CAND-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-    OUT << "EFF_ANA_BDMM\t" << i << "\t" << fNumbersBd[i]->effAna 
-	<< "\t" << sysAna*fNumbersBd[i]->effAna
-	<< endl;
-    err1 = fNumbersBd[i]->effAnaE; 
-    err2 = sysAna*fNumbersBd[i]->effAna;
-    totE = TMath::Sqrt(err1*err1 + err2*err2); 
+    OUT << "EFF_ANA_BDMM\t" << i << "\t" << fNumbersBd[i]->effAna << "\t" << fNumbersBd[i]->effAnaTE << endl;
     fTEX << formatTex(fNumbersBd[i]->effAna, Form("%s:N-EFF-ANA-BDMM%d:val", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err1, Form("%s:N-EFF-ANA-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(err2, Form("%s:N-EFF-ANA-BDMM%d:sys", fSuffix.c_str(), i), 3) << endl;
-    fTEX << formatTex(totE, Form("%s:N-EFF-ANA-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
-    fTEX << scientificTex(fNumbersBd[i]->effAna, totE, Form("%s:N-EFF-ANA-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effAnaE, Form("%s:N-EFF-ANA-BDMM%d:err", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effAnaTE, Form("%s:N-EFF-ANA-BDMM%d:tot", fSuffix.c_str(), i), 3) << endl;
+    fTEX << scientificTex(fNumbersBd[i]->effAna, fNumbersBd[i]->effAnaTE, 
+			  Form("%s:N-EFF-ANA-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
     OUT << "# Expected in signal boxes" << endl;
-    double bsExpObs = fNumbersBs[i]->bgBsExp
-      + fNumbersBs[i]->bsRare
-      + fNumbersBs[i]->bsNoScaled;
+    OUT << "#EXP_OBS_BSMM\t" << i << "\t" << fNumbersBs[i]->bsExpObs << "\t" << fNumbersBs[i]->bsExpObsTE << endl;
+    fTEX << formatTex(fNumbersBs[i]->bsExpObs, Form("%s:N-EXP-OBS-BS%d:val", fSuffix.c_str(), i), 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->bsExpObsE, Form("%s:N-EXP-OBS-BS%d:err", fSuffix.c_str(), i), 2) << endl;
 
-    double bsExpObsE = TMath::Sqrt(fNumbersBs[i]->bgBsExpE
-				   + fNumbersBs[i]->bsRareE*fNumbersBs[i]->bsRareE
-				   + fNumbersBs[i]->bsNoScaledE*fNumbersBs[i]->bsNoScaledE);
-
-    OUT << "#EXP_OBS_BSMM\t" << i << "\t" << bsExpObs << "\t" << bsExpObsE << endl;
-    fTEX << formatTex(bsExpObs, Form("%s:N-EXP-OBS-BS%d:val", fSuffix.c_str(), i), 2) << endl;
-    fTEX << formatTex(bsExpObsE, Form("%s:N-EXP-OBS-BS%d:err", fSuffix.c_str(), i), 2) << endl;
-
-    double bdExpObs = fNumbersBs[i]->bgBdExp
-      + fNumbersBs[i]->bdRare
-      + fNumbersBd[i]->bdNoScaled;
-
-    double bdExpObsE = TMath::Sqrt(fNumbersBs[i]->bgBdExpE
-				   + fNumbersBs[i]->bdRareE*fNumbersBs[i]->bdRareE
-				   + fNumbersBd[i]->bdNoScaledE*fNumbersBd[i]->bdNoScaledE);
-
-    OUT << "#EXP_OBS_BDMM\t" << i << "\t" << bdExpObs << "\t" << bdExpObsE << endl;
-    fTEX << formatTex(bdExpObs, Form("%s:N-EXP-OBS-BD%d:val", fSuffix.c_str(), i), 2) << endl;
-    fTEX << formatTex(bdExpObsE, Form("%s:N-EXP-OBS-BD%d:err", fSuffix.c_str(), i), 2) << endl;
+    OUT << "#EXP_OBS_BDMM\t" << i << "\t" << fNumbersBs[i]->bdExpObs << "\t" << fNumbersBs[i]->bdExpObsTE << endl;
+    fTEX << formatTex(fNumbersBs[i]->bdExpObs, Form("%s:N-EXP-OBS-BD%d:val", fSuffix.c_str(), i), 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->bdExpObsE, Form("%s:N-EXP-OBS-BD%d:err", fSuffix.c_str(), i), 2) << endl;
 
     OUT << "# Observed in signal boxes" << endl;
     OUT << "OBS_BSMM\t" << i << "\t" << fNumbersBs[i]->bsObs << endl;
@@ -849,21 +796,15 @@ void plotResults::printUlcalcNumbers(string fname) {
     fTEX << formatTex(fNumbersBs[i]->offHiRare, Form("%s:N-OFFHI-RARE%d:val", fSuffix.c_str(), i), 2) << endl;
     fTEX << formatTex(fNumbersBs[i]->offHiRareE,Form("%s:N-OFFHI-RARE%d:err", fSuffix.c_str(), i), 2) << endl;
 
-    OUT << "PEAK_BKG_BS\t" << i << "\t" << fNumbersBs[i]->bsRare
-	<< "\t" << fNumbersBs[i]->bsRareE
-	<< endl;
+    OUT << "PEAK_BKG_BS\t" << i << "\t" << fNumbersBs[i]->bsRare << "\t" << fNumbersBs[i]->bsRareE << endl;
     fTEX << formatTex(fNumbersBs[i]->bsRare, Form("%s:N-PEAK-BKG-BS%d:val", fSuffix.c_str(), i), 2) << endl;
     fTEX << formatTex(fNumbersBs[i]->bsRareE,Form("%s:N-PEAK-BKG-BS%d:err", fSuffix.c_str(), i), 2) << endl;
 
-    OUT << "PEAK_BKG_BD\t" << i << "\t"	<< fNumbersBs[i]->bdRare
-	<< "\t" << fNumbersBs[i]->bdRareE
-	<< endl;
+    OUT << "PEAK_BKG_BD\t" << i << "\t"	<< fNumbersBs[i]->bdRare << "\t" << fNumbersBs[i]->bdRareE << endl;
     fTEX << formatTex(fNumbersBs[i]->bdRare, Form("%s:N-PEAK-BKG-BD%d:val", fSuffix.c_str(), i), 2) << endl;
     fTEX << formatTex(fNumbersBs[i]->bdRareE,Form("%s:N-PEAK-BKG-BD%d:err", fSuffix.c_str(), i), 2) << endl;
 
-    OUT << "TAU_BS\t" << i << "\t" << fNumbersBs[i]->tauBs 
-	<< "\t" << fNumbersBs[i]->tauBsE
-	<< endl;
+    OUT << "TAU_BS\t" << i << "\t" << fNumbersBs[i]->tauBs << "\t" << fNumbersBs[i]->tauBsE << endl;
     fTEX << formatTex(fNumbersBs[i]->tauBs, Form("%s:N-TAU-BS%d:val", fSuffix.c_str(), i), 2) << endl;
     fTEX << formatTex(fNumbersBs[i]->tauBsE, Form("%s:N-TAU-BS%d:err", fSuffix.c_str(), i), 2) << endl;
 
@@ -1002,11 +943,17 @@ void plotResults::rareBg() {
   std::map<string, double> err;  
   std::map<string, double> chanbf;  
 
-  // -- tight muon values
-  double epsMu(0.8); // FIXME: this should be different for barrel and endcap!
-  double epsPi(0.0015), errPi2(0.15*0.15); // relative errors on misid rates are statistical error from Danek's fits
-  double epsKa(0.0017), errKa2(0.15*0.15); 
+  // -- 'tight muon' values
+  double epsMu(0.75); // FIXME: this should be different for barrel and endcap!
+  double epsPi(0.001),  errPi2(0.15*0.15); // relative errors on misid rates are statistical error from Danek's fits
+  double epsKa(0.001),  errKa2(0.15*0.15); 
   double epsPr(0.0005), errPr2(0.15*0.15);
+
+//   // -- not quite tight muon values
+//   double epsMu(0.8); // FIXME: this should be different for barrel and endcap!
+//   double epsPi(0.0015), errPi2(0.15*0.15); // relative errors on misid rates are statistical error from Danek's fits
+//   double epsKa(0.0017), errKa2(0.15*0.15); 
+//   double epsPr(0.0005), errPr2(0.15*0.15);
 
 //   // -- ATM values
 //   double epsMu(0.9); // FIXME: this should be different for barrel and endcap!
@@ -1469,6 +1416,69 @@ void plotResults::acceptancePerProcess() {
 }
 
 
+// ----------------------------------------------------------------------
+void plotResults::invertedIsolationStudy() {
+
+  fInvertedIso = true; 
+
+  fNumbersNo[0]->effTot = 0.0011;
+  fNumbersNo[1]->effTot = 0.00032;
+  fNumbersNo[0]->fitYield = 83642;
+  fNumbersNo[1]->fitYield = 19714;
+
+  double lo(10.0), hi(20.0), cut(0.); 
+  int npoints(2); 
+  readCuts(Form("anaBmm.default.cuts")); 
+  TH1D *h0, *h1;
+  for (int j = 0; j < npoints; ++j) {
+    cut = lo + j*(hi-lo)/npoints;
+    fCuts[0]->fls3d = cut;
+    fCuts[1]->fls3d = cut;
+    printCuts(cout);
+    determineInvertedIsolationYield();
+  }
+}
+
+// ----------------------------------------------------------------------
+void plotResults::determineInvertedIsolationYield() {
+  
+  loopTree(5); 
+  TH1D *hd[] = {fhMassWithAllCutsManyBins[0], fhMassWithAllCutsManyBins[1]};
+
+  pair<TH1D*, TH1D*> hrare = singleRelativeYield("bgBd2PiMuNu");
+  TH1D *hr[] = {hrare.first, hrare.second};
+  
+  for (int i = 0; i < 1; ++i) {
+    double dlo = hd[i]->Integral(hd[i]->FindBin(fBgLo), hd[i]->FindBin(5.2));
+    double dhi = hd[i]->Integral(hd[i]->FindBin(5.45), hd[i]->FindBin(fBgHi));
+    double dbs = hd[i]->Integral(hd[i]->FindBin(fCuts[i]->mBsLo), hd[i]->FindBin(fCuts[i]->mBsHi)); 
+    double dbd = hd[i]->Integral(hd[i]->FindBin(fCuts[i]->mBdLo), hd[i]->FindBin(fCuts[i]->mBdHi)); 
+
+    double rlo = hr[i]->Integral(hr[i]->FindBin(fBgLo), hr[i]->FindBin(5.2));
+    double rhi = hr[i]->Integral(hr[i]->FindBin(5.45), hr[i]->FindBin(fBgHi));
+    double rbs = hr[i]->Integral(hr[i]->FindBin(fCuts[i]->mBsLo), hr[i]->FindBin(fCuts[i]->mBsHi)); 
+    double rbd = hr[i]->Integral(hr[i]->FindBin(fCuts[i]->mBdLo), hr[i]->FindBin(fCuts[i]->mBdHi)); 
+
+    double taus= (fCuts[i]->mBsHi - fCuts[i]->mBsLo)/(fBgHi - fBgLo - 0.25);
+    double taud= (fCuts[i]->mBdHi - fCuts[i]->mBdLo)/(fBgHi - fBgLo - 0.25);
+    //    double preds = (dlo+dhi)*taus;
+    double preds = (dlo+dhi-rlo-rhi)*taus + rbs;
+    double relE  = TMath::Sqrt(dlo+dhi)/(dlo+dhi);
+    //    double predd = (dlo+dhi)*taud;
+    double predd = (dlo+dhi-rlo-rhi)*taud + rbd;
+    cout << "channel " << i << endl;
+    cout << "taus = " << taus << " taud = " << taud << endl;
+    cout << "dlo: " << dlo << " dhi: " << dhi << " rlo: " << rlo << " rhi: " << rhi << endl;
+    cout << "predS = " << preds << " obs = " << dbs << endl;
+    cout << "predD = " << predd << " obs = " << dbd << endl;
+  }
+
+  c0->Clear();
+  hd[0]->Draw();
+  
+}
+
+
 
 // ----------------------------------------------------------------------
 void plotResults::allInvertedIso() {
@@ -1714,3 +1724,85 @@ TH1D* plotResults::invertedIso(int chan, const char *cuts) {
   return h1; 
 }
 
+
+
+// ----------------------------------------------------------------------
+pair<TH1D*, TH1D*> plotResults::singleRelativeYield(std::string fstring) {
+
+  fF[fstring]->cd("candAnaMuMu");
+  gDirectory->pwd();
+  loopTree(99); 
+
+  TH1D *h[2];
+  cout << "fstring:   " << fstring << endl;
+  double ngenfile = ((TH1D*)fF[fstring.c_str()]->Get("monEvents"))->GetBinContent(1); 
+  cout << "ngenfile:  " << ngenfile << endl;
+  double filtereff = fFilterEff[fstring.c_str()];
+  if (filtereff < 0.001) filtereff = 1; 
+  cout << "filtereff: " << filtereff << endl;
+
+  // -- definition of (mis)id and trigger efficiency numbers
+  double mutrig[2] = {0.821, 0.726};
+  double mumuid[2] = {0.77, 0.895};
+  double pimuid[2] = {1.0e-3, 1.0e-3};
+  double kamuid[2] = {1.0e-3, 1.0e-3};
+  double prmuid[2] = {0.5e-3, 0.5e-3};
+  
+  string mode(""); 
+
+  if (string::npos != fstring.find("KP")) mode = "KP";
+  if (string::npos != fstring.find("KPi")) mode = "KPi";
+  if (string::npos != fstring.find("KK")) mode = "KK";
+
+  if (string::npos != fstring.find("PiPi")) mode = "PiPi";
+
+  if (string::npos != fstring.find("KMu")) mode = "KMu";
+  if (string::npos != fstring.find("PiMu")) mode = "PiMu";
+  if (string::npos != fstring.find("PMu")) mode = "PMu";
+
+  double bfn = fBF["NoMc"]; 
+  double bf1 = fBF[fstring]; 
+  cout << " ==> BF: " << bf1 << " mode = " << mode << endl;
+
+  double total, scaledYield, nx;
+  double eff, muScale, brScale, prScale, scale; 
+  for (int ichan = 0; ichan < 2; ++ichan) {
+
+    if (mode == "KP")   muScale = kamuid[ichan]*prmuid[ichan];
+    if (mode == "KPi")  muScale = kamuid[ichan]*pimuid[ichan];
+    if (mode == "KK")   muScale = kamuid[ichan]*kamuid[ichan];
+    if (mode == "PiPi") muScale = pimuid[ichan]*pimuid[ichan];
+
+    if (mode == "KMu")  muScale = kamuid[ichan]*mumuid[ichan];
+    if (mode == "PiMu") muScale = pimuid[ichan]*mumuid[ichan];
+    if (mode == "PMu")  muScale = prmuid[ichan]*mumuid[ichan];
+   
+    muScale *= mutrig[ichan];
+ 
+    if (fDoUseBDT) {
+      h[ichan] = (TH1D*)(fhMassWithAllCuts[ichan]->Clone(Form("h1Rare_BDT_%d", ichan)));  
+      h[ichan]->SetTitle(Form("%s (BDT, %s)", fstring.c_str(), (0 == ichan?"barrel":"endcap")));
+    } else {
+      h[ichan] = (TH1D*)(fhMassWithAllCuts[ichan]->Clone(Form("h1Rare_CNC_%d", ichan)));  
+      h[ichan]->SetTitle(Form("%s (baseline, %s)", fstring.c_str(), (0 == ichan?"barrel":"endcap")));
+    }
+    
+    total   = fhMassWithAllCutsManyBins[ichan]->Integral(0, fhMassWithAllCutsManyBins[ichan]->GetNbinsX()+1); 
+    eff     = total/static_cast<double>(ngenfile)*filtereff;
+    brScale = fBF[fstring]/fBF["NoMc"];
+    prScale = fProdR[fstring];
+
+    cout << "channel " << ichan << ": " << total << " -> eff = " << eff << endl;
+    cout << " ==> mutrig * muid * misid * mutrig: " << muScale << endl;
+    cout << " ==> brScale: " << brScale << " (" << fBF[fstring] << "/" << fBF["NoMc"] << ")" << endl;
+    cout << " ==> prScale: " << prScale << endl;
+    scale = mutrig[ichan] * muScale * fProdR[fstring] * (eff/fNumbersNo[ichan]->effTot) * brScale;
+    
+    scaledYield = scale * fNumbersNo[ichan]->fitYield; 
+    nx          = h[ichan]->Integral(0, h[ichan]->GetNbinsX()+1);
+    h[ichan]->Scale(scaledYield/nx);
+  }
+
+  return(make_pair(h[0], h[1])); 
+  
+}

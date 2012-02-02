@@ -61,22 +61,28 @@ struct numbers {
   double effMuidMC, effMuidMCE, effTrigMC, effTrigMCE;
   double effMuidTNP, effMuidTNPE, effTrigTNP, effTrigTNPE;
   double effMuidTNPMC, effMuidTNPMCE, effTrigTNPMC, effTrigTNPMCE;
-  double effCand, effCandE; 
+  double effCand, effCandE, effCandTE; 
   double effAna, effAnaE; 
   double effTot, effTotE, aEffProdMC, aEffProdMCE, effProdMC, effProdMCE, effProdTNP, effProdTNPE; 
   double effTotChan, effTotChanE; 
   double prodGenYield, combGenYield, chanGenYield; // eps*A corrected
   // -- signal stuff
   double expSignal;
-  double bgObs, bgBsExp, bgBsExpE, bgBdExp, bgBdExpE; 
-  double bsObs, bdObs; 
+  double bgObs, bgBsExp, bgBsExpE, bgBsExpTE, bgBdExp, bgBdExpE, bgBdExpTE;  // observed sideband bg and expected backgrounds in Bs/Bs signal windows
+  double bsObs, bdObs; // observed events in Bs/B0 signal windows
+  double bsExpObs, bdExpObs, bsExpObsE, bdExpObsE, bsExpObsTE, bdExpObsTE; // expected observation in Bs/B0 signal windows
   double tauBs, tauBsE, tauBd, tauBdE; 
   double offHiRare, offHiRareE, offLoRare, offLoRareE, bsRare, bsRareE, bdRare, bdRareE; 
   double offHi, offLo;
   double bsNoScaled, bsNoScaledE, bdNoScaled, bdNoScaledE;
-  double pss, pssE, pdd, pddE;
-  double psd, psdE, pds, pdsE;
+  double pss, pssE, pssTE, pdd, pddE, pddTE;
+  double psd, psdE, psdTE, pds, pdsE, pdsTE;
   double mBdLo, mBdHi, mBsLo, mBsHi;
+  // -- total errors: quad sum of stat and syst errors
+  double accTE, effAnaTE, effTotTE; 
+  double tauTE; 
+  double fitYieldTE;
+  double effMuidTE, effMuidTNPTE, effMuidMCTE, effMuidTNPMCTE, effTrigTE, effTrigMCTE, effTrigTNPTE, effTrigTNPMCTE; 
 };
 
 
@@ -88,6 +94,7 @@ public:
   ~plotClass();
 
   virtual void cd(const char *file) {fF[file]->cd();}
+  virtual numbers* getNumbersNo(int i) {return fNumbersNo[i];}
 
   // -- initialization and setup
   // ---------------------------
@@ -131,7 +138,7 @@ public:
   std::string fFiles; 
   // -- Files for Signal and Normalization modes in data and MC
   std::map<std::string, TFile*> fF; 
-  std::map<std::string, double> fLumi, fFilterEff; 
+  std::map<std::string, double> fLumi, fFilterEff, fBF, fBFE, fProdR; 
   std::map<std::string, std::string> fName; 
 
   std::map<std::string, double> fNgen;
@@ -214,6 +221,9 @@ public:
 
   bool fDoUseBDT;
   bool fDoApplyCowboyVeto, fDoApplyCowboyVetoAlsoInSignal; 
+  bool fInvertedIso;
+  bool fNormProcessed; 
+
   double fBgExp, fBgExpE; 
   double fBgHist, fBgHistE, fBgHistLo, fBgHistHi; 
   double fBgHistExp, fBgHistExpE;
@@ -221,7 +231,7 @@ public:
   double fNoSig, fNoSigE; 
   double fCsSig, fCsSigE; 
 
-  double fBF, fu, fs, fsfu, fsfuE;
+  double fu, fs, fsfu, fsfuE;
 
   ClassDef(plotClass,1) //Testing plotClass
 };

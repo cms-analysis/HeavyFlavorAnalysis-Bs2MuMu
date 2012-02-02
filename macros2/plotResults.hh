@@ -19,11 +19,17 @@ public:
   void rareBg();
   void scaledHist(int mode = 0);
 
+  // -- new:
+  void invertedIsolationStudy();
+  void determineInvertedIsolationYield();
+  // -- old:
   void allInvertedIso();
   void histInvertedIso(const char *var, int n, double lo, double hi);
   TH1D* invertedIso(int chan, const char *cuts);
   void invertedIsoPrediction();
+  std::pair<TH1D*, TH1D*> singleRelativeYield(std::string fstring);
 
+  void computeErrors(std::vector<numbers*>); 
   void printUlcalcNumbers(std::string fname);
   void createAllCfgFiles(std::string fname);
   void printCsBFNumbers();
@@ -31,7 +37,6 @@ public:
   double scaledYield(numbers *a, numbers *no, double chanbf, double fsfu); 
 
   
-  bool fNormProcessed; 
   double fBlExp, fBlExpE, fBlObs, fBlObsE;
   
   ClassDef(plotResults,1) //Testing plotResults

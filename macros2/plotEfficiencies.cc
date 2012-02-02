@@ -45,6 +45,18 @@ plotEfficiencies::~plotEfficiencies() {
 // ----------------------------------------------------------------------
 void plotEfficiencies::makeAll(int channel) {
   if (channel &1) {
+    fDoUseBDT = false;   
+    fDoApplyCowboyVeto = false;   
+    fDoApplyCowboyVetoAlsoInSignal = false; 
+    // -- the analysis version
+    tnpVsMC(fCuts[0]->m1pt, fCuts[0]->m2pt, 1, "anaBarrel");
+    tnpVsMC(fCuts[1]->m1pt, fCuts[1]->m2pt, 1, "anaEndcap");
+
+    for (int i = 0; i < 6; ++i) {
+      double pt = 4.0 + i*1; 
+      cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
+      tnpVsMC(pt, pt, 1, "woCowboyVeto");
+    }
     // -- efficiency ratios
     fDoApplyCowboyVeto = true;   
     fDoApplyCowboyVetoAlsoInSignal = false;   
@@ -54,13 +66,10 @@ void plotEfficiencies::makeAll(int channel) {
       tnpVsMC(pt, pt, 1, "wCowboyVeto");
     }
     
+    // -- reset to normal
+    fDoUseBDT = false;   
     fDoApplyCowboyVeto = false;   
     fDoApplyCowboyVetoAlsoInSignal = false; 
-    for (int i = 0; i < 6; ++i) {
-      double pt = 4.0 + i*1; 
-      cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
-      tnpVsMC(pt, pt, 1, "woCowboyVeto");
-    }
   }
 
   if (channel &2) {
@@ -187,6 +196,11 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) 
   fTEX << "% -- tnpVsMC for pt = " << m1pt << " and " << m2pt << " and what = " << what << endl;
 
   string Suffix = fSuffix + what; 
+  // -- reset to have constant name for the default analysis setup
+  if (what == "anaBarrel" || what == "anaEndcap") {
+    m1pt = 1.1; 
+    m2pt = 1.1; 
+  }
 
   double r(0.), rs(1.), rp(1.); 
   for (int i = 0; i < fNchan; ++i) {

@@ -1,0 +1,47 @@
+# ----------------------------------------------------------------------
+# signal data and MC
+type=sg,default       dset=data     lumi=4.9    file=/shome/ursl/scratch/v11-2011-data.root
+type=sg,default       dset=mc       lumi=1600.0 file=/shome/ursl/scratch/v11-mix-Bs2MuMu.root
+type=sg,1e33          dset=mc       lumi=1600.0 file=/shome/ursl/scratch/v11-1e33-Bs2MuMu.root
+type=sg,2e33          dset=mc       lumi=1600.0 file=/shome/ursl/scratch/v11-2e33-Bs2MuMu.root
+type=sg,3e33          dset=mc       lumi=1600.0 file=/shome/ursl/scratch/v11-3e33-Bs2MuMu.root
+type=sg,pu            dset=mc       lumi=1600.0 file=/shome/ursl/scratch/v11-cms-Bs2MuMu.root
+type=sg,acc           dset=mc,1.00  lumi=1600.0 file=/shome/ursl/scratch/v11-mix-Bs2MuMu.root
+type=bd,default       dset=mc       lumi=8200.0 file=/shome/ursl/scratch/v11-mix-Bd2MuMu.root
+type=bd,acc           dset=mc,1.00  lumi=8200.0 file=/shome/ursl/scratch/v11-mix-Bd2MuMu.root
+# --------------------------------------------------------------------
+# control sample  data and MC
+type=cs,default       dset=data    lumi=4.9    file=/shome/ursl/scratch/v11-2011-data.root
+type=cs,default       dset=mc,0.0162 lumi=5.4  file=/shome/ursl/scratch/v11-mix-Bs2JpsiPhi.root
+type=cs,pu            dset=mc      lumi=5.0    file=/shome/ursl/scratch/v11-cms-Bs2JpsiPhi.root
+type=cs,acc           dset=mc,1.00 lumi=5.4    file=/shome/ursl/scratch/v11-2e33-accBs2JpsiPhi.root
+type=cs,1e33          dset=mc      lumi=5.4    file=/shome/ursl/scratch/v11-1e33-Bs2JpsiPhi.root
+type=cs,2e33          dset=mc      lumi=5.4    file=/shome/ursl/scratch/v11-2e33-Bs2JpsiPhi.root
+type=cs,3e33          dset=mc      lumi=5.4    file=/shome/ursl/scratch/v11-3e33-Bs2JpsiPhi.root
+# --------------------------------------------------------------------
+# normalization data and MC
+type=no,default       dset=data    lumi=4.9    file=/shome/ursl/scratch/v11-2011-data.root
+type=no,default       dset=mc,0.0181 lumi=5.2  file=/shome/ursl/scratch/v11-mix-Bu2JpsiK.root
+type=no,pu            dset=mc      lumi=5.0    file=/shome/ursl/scratch/v11-cms-Bu2JpsiK.root
+type=no,acc           dset=mc,1.00 lumi=5.2    file=/shome/ursl/scratch/v11-2e33-accBu2JpsiK.root
+type=no,1e33          dset=mc      lumi=5.2     file=/shome/ursl/scratch/v11-1e33-Bu2JpsiK.root
+type=no,2e33          dset=mc      lumi=5.2     file=/shome/ursl/scratch/v11-2e33-Bu2JpsiK.root
+type=no,3e33          dset=mc      lumi=5.2     file=/shome/ursl/scratch/v11-3e33-Bu2JpsiK.root
+# ----------------------------------------------------------------------
+# rare background MC
+type=bg,Bs2KK         dset=mc,0.06  lumi=1.000  file=/shome/ursl/scratch/v11-2e33-Bs2KK.root
+type=bg,Bs2KPi        dset=mc,0.06  lumi=2.470  file=/shome/ursl/scratch/v11-2e33-Bs2KPi.root
+type=bg,Bs2PiPi       dset=mc,0.06  lumi=2.550  file=/shome/ursl/scratch/v11-2e33-Bs2PiPi.root
+type=bg,Bs2KMuNu      dset=mc,0.024 lumi=1.070  file=/shome/ursl/scratch/v11-2e33-Bs2KMuNu.root
+type=bg,Bd2KK         dset=mc,0.06  lumi=27.550 file=/shome/ursl/scratch/v11-2e33-Bd2KK.root
+type=bg,Bd2KPi        dset=mc,0.06  lumi=1.080  file=/shome/ursl/scratch/v11-2e33-Bd2KPi.root
+type=bg,Bd2PiPi       dset=mc,0.06  lumi=1.570  file=/shome/ursl/scratch/v11-2e33-Bd2PiPi.root
+type=bg,Bd2PiMuNu     dset=mc,0.024 lumi=1.040  file=/shome/ursl/scratch/v11-2e33-Bd2PiMuNu.root
+type=bg,Lb2KP         dset=mc,0.06  lumi=1.310  file=/shome/ursl/scratch/v11-2e33-Lb2KP.root
+type=bg,Lb2PiP        dset=mc,0.06  lumi=2.210  file=/shome/ursl/scratch/v11-2e33-Lb2PiP.root
+type=bg,Lb2PMuNu      dset=mc,0.024 lumi=1.110  file=/shome/ursl/scratch/v11-2e33-Lb2PMuNu.root
+# ----------------------------------------------------------------------
+# BMT
+type=bmt,HT           dset=data lumi=4.900  file=/shome/ursl/scratch/v10-bmt-HT.root
+type=bmt,Jet          dset=data lumi=4.900  file=/shome/ursl/scratch/v10-bmt-Jet.root
+type=bmt,Photon       dset=data lumi=4.900  file=/shome/ursl/scratch/v10-bmt-Photon.root
