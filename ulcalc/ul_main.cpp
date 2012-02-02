@@ -37,7 +37,7 @@ enum algo_t {
 static const char *workspace_path = NULL;
 static const char *configfile_path = NULL;
 static double gCLLevel = 0.95;
-static uint32_t gDefaultPoissonLimit = 5;
+static uint32_t gDefaultPoissonLimit = 2;
 static pair<double,double> gMuSRange(-1,-1);
 static uint32_t gFCSteps = 20;
 static double gNumErr = 0.0; // additional error in acceptance region
@@ -49,7 +49,7 @@ static bool gLightModel = false;
 static bool gBdToMuMu = false;
 static bool gSeed = false;
 static uint32_t gProofWorkers = 0;
-static int gToys = 5000;
+static int gToys = 50000;
 
 static const char *algo_name(algo_t a)
 {
@@ -370,9 +370,9 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 	RooStats::ConfInterval *inter = NULL;
 	RooStats::HypoTestResult *testResult = NULL;
 	double bkg,weight,ul = 0,ll = 0.0;
-	uint32_t obsBsMin,obsBsMax;
-	uint32_t obsBdMin = 0,obsBdMax = 0;
-	uint32_t obsBs,obsBd;
+	int32_t obsBsMin,obsBsMax;
+	int32_t obsBdMin = 0,obsBdMax = 0;
+	int32_t obsBs,obsBd;
 	set<int>::const_iterator it;
 	RooAbsReal *bs_mean;
 	RooAbsReal *bd_mean;
@@ -462,25 +462,38 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 	
 	// Set current value and do recursive...
 	bkg = ((*bsmm)[make_pair(kObsBkg_bmm, ch)]).getVal();
-	if (gLightModel)
+	if (gLightModel) {
 		((RooRealVar&)((*obs)["NbObs"])).setVal(bkg);
-	else
+		wspace->var("nu_b")->setVal(bkg);
+	} else {
+		double bbb = bkg - wspace->var(Form("PeakBkgSB_%d",ch))->getVal();
+		if (bbb < 0) bbb = 0;
 		((RooRealVar&)((*obs)[Form("NbObs_%d",ch)])).setVal(bkg);
+		wspace->var(Form("nu_b_%d",ch))->setVal(bbb);
+	}
 	
 	
 	if (bsmm->count(make_pair(kObsB_bmm, ch)) > 0) {
 		obsBsMin = obsBsMax = (uint32_t)((*bsmm)[make_pair(kObsB_bmm, ch)]).getVal();
 	} else {
-		obsBsMin = 0;
-		obsBsMax = gDefaultPoissonLimit;
+		
+		if (gLightModel)	bs_mean = wspace->function("bs_mean");
+		else				bs_mean = wspace->function(Form("bs_mean_%d",ch));
+		
+		obsBsMin = (int32_t)round(bs_mean->getVal()) - gDefaultPoissonLimit;
+		obsBsMax = (int32_t)round(bs_mean->getVal()) + gDefaultPoissonLimit;
+		if (obsBsMin < 0) obsBsMin = 0;
 	}
 	
 	if (!gLightModel) {
 		if (bdmm->count(make_pair(kObsB_bmm, ch)) > 0) {
 			obsBdMin = obsBdMax = (uint32_t)((*bdmm)[make_pair(kObsB_bmm, ch)]).getVal();
 		} else {
-			obsBdMin = 0;
-			obsBdMax = gDefaultPoissonLimit;
+			
+			bd_mean = wspace->function(Form("bd_mean_%d",ch));
+			obsBdMin = (int32_t)round(bd_mean->getVal()) - gDefaultPoissonLimit;
+			obsBdMax = (int32_t)round(bd_mean->getVal()) + gDefaultPoissonLimit;
+			if (obsBdMin < 0) obsBdMin = 0;
 		}
 	}
 	
@@ -497,7 +510,7 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 				recursive_calc(wspace,obs,channels,a,b,bsmm,bdmm,avgUL,avgLL,avgWeight);
 			}
 		}
-	}
+	}	
 bail:
 	if(saved_vars)
 		delete saved_vars;
@@ -582,6 +595,7 @@ int main(int argc, const char *argv [])
 	avgUL /= avgWeight;
 	avgLL /= avgWeight;
 	
+	cout << "Average Weight of computed result: " << avgWeight << endl;
 	if (gAlgorithm == kAlgo_CLb || gAlgorithm == kAlgo_CLb_Hybrid) {
 		cout << "p value for background model: " << avgUL << " corresponding to " << sqrt(2.)*TMath::ErfInverse(1-2*avgUL) << " sigmas." << endl;
 	} else {

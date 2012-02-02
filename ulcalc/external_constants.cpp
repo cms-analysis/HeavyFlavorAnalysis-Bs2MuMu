@@ -249,7 +249,7 @@ const measurement_t c_s_theory()
 {
 	measurement_t c_s;
 	
-	c_s = (f_s * bf_sm_bstomumu) / (f_u * bf_bptojpsik * bf_jpsitomumu);
+	c_s = bf_sm_bstomumu / (bf_bptojpsik * bf_jpsitomumu);
 	
 	return c_s;
 } // c_s_theory()
@@ -259,6 +259,11 @@ const measurement_t c_d_theory()
 	measurement_t c_d = bf_sm_bdtomumu / (bf_bptojpsik * bf_jpsitomumu);
 	return c_d;
 } // c_d_theory()
+
+const measurement_t f_ratio()
+{
+	return f_s / f_u;
+} // f_ratio()
 
 double bstomumu()
 {

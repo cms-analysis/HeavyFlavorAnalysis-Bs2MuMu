@@ -61,6 +61,7 @@ class measurement_t {
 /* external constants */
 const measurement_t c_s_theory();
 const measurement_t c_d_theory();
+const measurement_t f_ratio();
 double bstomumu();
 double bdtomumu();
 
@@ -86,6 +87,7 @@ enum bmm_param_tag {
 	kEff_ana_bmm,
 	kEff_total_bmm,	// Used for shortcut in Grid search
 	kExp_bmm,
+	kExpUncor_bmm,
 	kProb_swind_bmm,
 	kProb_dwind_bmm,
 	kLow_signal_window_bmm,

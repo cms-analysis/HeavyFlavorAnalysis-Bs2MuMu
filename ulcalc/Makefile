@@ -12,7 +12,7 @@ endif
 
 CXXFLAGS	= -g -O3 -Wall -Werror -fPIC -pipe
 CXX			= g++
-LDFLAGS		= -g -lRooFitCore -lRooFit -lRooStats -lFoam -Llib -lMinuit -lMathMore
+LDFLAGS		= -g -lRooFitCore -lRooFit -lRooStats -lFoam -lMinuit -lMathMore
 LD			= $(CXX)
 
 #########
