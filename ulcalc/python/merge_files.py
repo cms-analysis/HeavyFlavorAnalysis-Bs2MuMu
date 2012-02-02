@@ -5,7 +5,7 @@ import os
 
 if len(sys.argv) < 3:
     print "usage: " + sys.argv[0] + " <targetfile> <name> <sourcefiles>"
-    exit(0)
+    sys.exit(0)
 
 
 rootfilename="merge.C"
