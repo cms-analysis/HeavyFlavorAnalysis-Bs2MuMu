@@ -36,7 +36,7 @@ void add_channels(map<bmm_param,measurement_t> *bmm, set<int> *channels)
 		channels->insert(it->first.second);
 } // add_channels()
 
-RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, bool no_errors, int verbosity, bool compute_bd_ul, bool create_gammas)
+RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, bool no_errors, int verbosity, bool compute_bd_ul, bool create_gammas, bool fixed_bkg)
 {
 	RooStats::ModelConfig *splusbModel = NULL;
 	RooStats::ModelConfig *bModel = NULL;
@@ -74,12 +74,15 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 	for (chan = channels.begin(); chan != channels.end(); ++chan) {
 		
 		// Observables
-		wspace->factory(Form("NbObs_%d[0,1000]",*chan)); // Observed Background
 		wspace->factory(Form("NsObs_%d[0,1000]",*chan)); // Observed Evts in Bs window
 		wspace->factory(Form("NdObs_%d[0,1000]",*chan)); // Observed Evts in Bd window
-		observables.add(*wspace->var(Form("NbObs_%d",*chan)));
+		wspace->factory(Form("NbObs_%d[0,1000]",*chan)); // Observed Background
 		observables.add(*wspace->var(Form("NsObs_%d",*chan)));
 		observables.add(*wspace->var(Form("NdObs_%d",*chan)));
+		if (fixed_bkg)
+			wspace->var(Form("NbObs_%d",*chan))->setConstant(kTRUE);
+		else
+			observables.add(*wspace->var(Form("NbObs_%d",*chan)));
 		
 		// nuisance parameter
 		wspace->factory(Form("nu_b_%d[1,0,1000]",*chan)); // background strength
@@ -247,15 +250,15 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 		
 		//////////////////////
 		// Main Poissonians //
-		//////////////////////
-		wspace->factory(Form("Poisson::bkg_window_%d(NbObs_%d,bkg_mean_%d)",*chan,*chan,*chan));
+		//////////////////////		
 		wspace->factory(Form("Poisson::bs_window_%d(NsObs_%d,bs_mean_%d)",*chan,*chan,*chan));
 		wspace->factory(Form("Poisson::bd_window_%d(NdObs_%d,bd_mean_%d)",*chan,*chan,*chan));
+		wspace->factory(Form("Poisson::bkg_window_%d(NbObs_%d,bkg_mean_%d)",*chan,*chan,*chan));
 		
 		// add the poissonians of this channel
-		poissonList.add(*wspace->pdf(Form("bkg_window_%d",*chan)));
 		poissonList.add(*wspace->pdf(Form("bs_window_%d",*chan)));
 		poissonList.add(*wspace->pdf(Form("bd_window_%d",*chan)));
+		if (!fixed_bkg) poissonList.add(*wspace->pdf(Form("bkg_window_%d",*chan)));
 	}
 	
 	// define the sets
@@ -339,7 +342,6 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 	return wspace;
 } // build_model_nchannel()
 
-// FIXME: introduce gamma prior for the background, too!
 // FIXME: Merge with the above one.
 RooWorkspace *build_model_light(map<bmm_param,measurement_t> *bsmm, int verbosity)
 {
@@ -417,48 +419,15 @@ RooWorkspace *build_model_light(map<bmm_param,measurement_t> *bsmm, int verbosit
  */
 void measure_params(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, int verbosity)
 {
-	double p[2][2];
-	double tau[2];
-	double munu[2];
-	double N[2];
-	double nu_b;
-	double det;
 	RooStats::ModelConfig *splusbConfig = dynamic_cast<RooStats::ModelConfig*> (wspace->obj("splusbConfig"));
 	RooStats::ModelConfig *bConfig = dynamic_cast<RooStats::ModelConfig*> (wspace->obj("bConfig"));
+	wspace->allVars() = *data->get(0);
 	
-	for (set<int>::const_iterator ch = channels->begin(); ch != channels->end(); ++ch) {
-		
-		// set the constants
-		p[0][0] = wspace->var(Form("Pss_%d",*ch))->getVal();
-		p[0][1] = wspace->var(Form("Psd_%d",*ch))->getVal();
-		p[1][0] = wspace->var(Form("Pds_%d",*ch))->getVal();
-		p[1][1] = wspace->var(Form("Pdd_%d",*ch))->getVal();
-		det = p[0][0]*p[1][1] - p[1][0]*p[0][1];
-		
-		tau[0] = wspace->var(Form("TauS_%d",*ch))->getVal();
-		tau[1] = wspace->var(Form("TauD_%d",*ch))->getVal();
-		
-		N[0] = ((RooRealVar&)(*data->get(0))[Form("NsObs_%d",*ch)]).getVal();
-		N[1] = ((RooRealVar&)(*data->get(0))[Form("NdObs_%d",*ch)]).getVal();
-		
-		// we need to set nui & poi
-		nu_b = ((RooRealVar&)(*data->get(0))[Form("NbObs_%d",*ch)]).getVal();
-		munu[0] = (p[1][1]*(N[0] - nu_b*tau[0]) - p[0][1]*(N[1] - nu_b*tau[1])) / det;
-		munu[1] = (-p[1][0]*(N[0] - nu_b*tau[0]) + p[0][0]*(N[1]-  nu_b*tau[1])) / det;
-		
-		wspace->var(Form("nu_b_%d",*ch))->setVal(nu_b);
-		wspace->var(Form("nu_b_%d",*ch))->setConstant(kFALSE);
-		
-		wspace->var("mu_s")->setVal(munu[0] / wspace->function(Form("NuS_%d",*ch))->getVal());
-		wspace->var("mu_s")->setConstant(kFALSE);
-		wspace->var("mu_d")->setVal(munu[1] / wspace->var(Form("NuD_%d",*ch))->getVal());
-		wspace->var("mu_d")->setConstant(kFALSE);
-	}
 	((RooRealVar*)wspace->set("poi")->first())->setVal(0.0);
 	((RooRealVar*)wspace->set("poi")->first())->setConstant(kTRUE);
 	wspace->pdf("total_pdf")->fitTo(*data, ((verbosity > 0) ? RooCmdArg::none() : RooFit::PrintLevel(-1)));
 	((RooRealVar*)wspace->set("poi")->first())->setConstant(kFALSE);
-	bConfig->SetSnapshot(*wspace->set("poi"));	
+	bConfig->SetSnapshot(*wspace->set("poi"));
 	
 	// do a likelihood fit to the data to get the real values...
 	wspace->pdf("total_pdf")->fitTo(*data, ((verbosity > 0) ? RooCmdArg::none() : RooFit::PrintLevel(-1)));
@@ -628,9 +597,9 @@ RooStats::ConfInterval *est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, se
 	if (bdmm) {
 		for (set<int>::const_iterator it = channels->begin(); it != channels->end(); ++it)
 			beta += wspace->var(Form("Pss_%d",*it))->getVal() * wspace->var(Form("NuS_%d",*it))->getVal();
-		 
+		
 		obs = beta * wspace->var("mu_s")->getVal();
-		 
+		
 		beta = 1./beta; // beta is actually the inverse thereof in RooFit
 		wspace->factory(Form("Gamma::mu_prior_gamma(mu_s,gamma_b[%f],beta_b[%f],mu)",1.0 + obs,beta));
 	} else {
@@ -676,7 +645,7 @@ RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, set<i
 	FrequentistCalculator frequCalc(*data,*bModel,*sbModel,mcSampler); // Note null = sb, alt = b
 	HypoTestInverter *hypoInv = NULL;
 	HypoTestInverterResult *result = NULL;
-	double limitErr = 0.1; // FIXME: Understand this parameter
+	double limitErr = 0.1;
 	TStopwatch swatch;
 	bool ok;
 	int nbr = npts ? *npts : 10; // defaults to 10 points if not otherwise specified.
@@ -691,8 +660,6 @@ RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, set<i
 	
 	swatch.Start(kTRUE);
 	
-	wspace->var("gamma_0")->setVal(((RooRealVar&)((*data->get(0))["NbObs_0"])).getVal()+1);
-	wspace->var("gamma_1")->setVal(((RooRealVar&)((*data->get(0))["NbObs_1"])).getVal()+1);
 	measure_params(wspace, data, channels, verbosity);
 	sbModel->LoadSnapshot();
 	
@@ -796,8 +763,6 @@ RooStats::HypoTestResult *est_ul_clb(RooWorkspace *wspace, RooDataSet *data, set
 	}
 	
 	// set background prior to measurement
-	wspace->var("gamma_0")->setVal(((RooRealVar&)((*data->get(0))["NbObs_0"])).getVal()+1);
-	wspace->var("gamma_1")->setVal(((RooRealVar&)((*data->get(0))["NbObs_1"])).getVal()+1);	
 	measure_params(wspace, data, channels, verbosity);
 	bModel->LoadSnapshot();
 	mcSampler->SetNEventsPerToy(1);

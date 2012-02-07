@@ -50,6 +50,7 @@ static bool gBdToMuMu = false;
 static bool gSeed = false;
 static uint32_t gProofWorkers = 0;
 static int gToys = 50000;
+static bool gFixBackground = false;
 
 static const char *algo_name(algo_t a)
 {
@@ -202,7 +203,7 @@ static void parse_input(const char *path, map<bmm_param,measurement_t> *bsmm, ma
 
 static void usage()
 {
-	cerr << "ulcalc [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--light] [--disable-errors] [[-n <nbr steps>] -r x,y ] [-e num_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"clb_hybrid\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
+	cerr << "ulcalc [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--light] [--disable-errors] [[-n <nbr steps>] -r x,y ] [-e num_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"clb_hybrid\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
 } // usage()
 
 static bool parse_arguments(const char **first, const char **last)
@@ -313,8 +314,9 @@ static bool parse_arguments(const char **first, const char **last)
 					abort();
 				}
 				gToys = atoi(*first++);
-			}
-			else {
+			} else if (strcmp(arg, "--fixed-bkg") == 0) {
+				gFixBackground = true;
+			} else {
 				cerr << "Unknown option '" << arg << "'." << endl;
 				usage();
 				abort();
@@ -351,6 +353,8 @@ static bool parse_arguments(const char **first, const char **last)
 	cout << "Number of MC Toys used: " << gToys << endl;
 	if (gProofWorkers > 0) cout << "Number of Proof Workers: " << gProofWorkers << endl;
 	cout << "-------------------------------------" << endl;
+	if (gFixBackground)	cout << "Toys with fixed sideband window" << endl;
+	else				cout << "Toys with floating sideband window" << endl;
 	
 bail:
 	return ok;
@@ -468,8 +472,9 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 	} else {
 		double bbb = bkg - wspace->var(Form("PeakBkgSB_%d",ch))->getVal();
 		if (bbb < 0) bbb = 0;
-		((RooRealVar&)((*obs)[Form("NbObs_%d",ch)])).setVal(bkg);
-		wspace->var(Form("nu_b_%d",ch))->setVal(bbb);
+		if (!gFixBackground) ((RooRealVar&)((*obs)[Form("NbObs_%d",ch)])).setVal(bkg);
+		wspace->var(Form("NbObs_%d",ch))->setVal(bkg);
+		wspace->var(Form("nu_b_%d",ch))->setVal(bbb);		
 	}
 	
 	
@@ -582,7 +587,7 @@ int main(int argc, const char *argv [])
 	if (gLightModel)
 		wspace = build_model_light(&bsmm, gVerbosity);
 	else
-		wspace = build_model_nchannel(&bsmm, &bdmm, gDisableErrors, gVerbosity, gBdToMuMu, (gAlgorithm == kAlgo_Hybrid) || (gAlgorithm == kAlgo_CLb_Hybrid) || (gAlgorithm == kAlgo_CLs) || (gAlgorithm == kAlgo_CLb) || (gAlgorithm == kAlgo_None));
+		wspace = build_model_nchannel(&bsmm, &bdmm, gDisableErrors, gVerbosity, gBdToMuMu, !gFixBackground && ((gAlgorithm == kAlgo_Hybrid) || (gAlgorithm == kAlgo_CLb_Hybrid)), gFixBackground);
 	
 	// initialize random number generator seed
 	if (gSeed) RooRandom::randomGenerator()->SetSeed(0);
@@ -604,6 +609,7 @@ int main(int argc, const char *argv [])
 	}
 	
 	if (workspace_path) wspace->writeToFile(workspace_path,kTRUE);
+	
 	if (output_path) {
 		FILE *outFile = fopen(output_path, "w");
 		if (gAlgorithm == kAlgo_CLb) {
