@@ -19,14 +19,20 @@ const static double MKAON = 0.4937;
 // When adding one, be sure to update the code in massReader::loadTrigger()
 enum trigger_bits
 {
-	kHLT_DoubleMu3_Bit					= 1 << 0,
-	kHLT_DoubleMu0_Bit					= 1 << 1,
-	kHLT_DoubleMu0_Quarkonium_Bit		= 1 << 2,
-	kHLT_DoubleMu3_Jpsi_Bit				= 1 << 3,
-	kHLT_DoubleMu3_Bs_Bit				= 1 << 4,
-	kHLT_DoubleMu2_Bs_Bit				= 1 << 5,
-	kHLT_Dimuon6p5_Jpsi_Displaced_Bit	= 1 << 6,
-	kHLT_Dimuon7_Jpsi_Displaced_Bit		= 1 << 7
+	kHLT_DoubleMu3_Bit						= 1 << 0,
+	kHLT_DoubleMu0_Bit						= 1 << 1,
+	kHLT_DoubleMu0_Quarkonium_Bit			= 1 << 2,
+	kHLT_DoubleMu3_Jpsi_Bit					= 1 << 3,
+	kHLT_DoubleMu3_Bs_Bit					= 1 << 4,
+	kHLT_DoubleMu2_Bs_Bit					= 1 << 5,
+	kHLT_Dimuon6p5_Jpsi_Displaced_Bit		= 1 << 6,
+	kHLT_Dimuon7_Jpsi_Displaced_Bit			= 1 << 7,
+	kHLT_Dimuon6_Bs_Bit						= 1 << 8,
+	kHLT_Dimuon4_Bs_Barrel_Bit				= 1 << 9,
+	kHLT_DoubleMu4_Dimuon6_Bs_Bit			= 1 << 10,
+	kHLT_DoubleMu4_Dimuon4_Bs_Barrel_Bit	= 1 << 11,
+	kHLT_DoubleMu3p5_Jpsi_Displaced_Bit		= 1 << 12,
+	kHLT_DoubleMu4_Jpsi_Displaced_Bit		= 1 << 13
 };
 
 struct trigger_table_t {
@@ -80,11 +86,14 @@ class massReader : public treeReader01 {
 		virtual int checkTruth(TAnaCand *cand); // check if all are originating from the same particle
 		virtual int loadTruthFlags(TAnaCand *cand); // set truth flags
 		virtual int countMuons(TAnaCand *cand); // count the number of identified muons
-		float calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt, bool sameVertex, double maxDocaSV);
+		float calculateIsolation(TAnaCand *pCand);
+		float calculateDoca0(TAnaCand *pCand);
+		int countTracksNearby(TAnaCand *pCand);
 		int loadTrigger(int *errTriggerOut = NULL, int *triggersFoundOut = NULL);
-		int hasTriggeredJPsi(int triggers);
-		int hasTriggeredBs(int triggers);
-		int hasTriggered(int triggers,int avail_triggers);
+		int isMuonTight(TAnaTrack *sigTrack);
+		int hasTriggeredNorm();
+		int hasTriggeredSignal();
+		int hasTriggered(int triggers,trigger_table_t *table, unsigned size);
 		virtual int loadEfficiencyFlags(TGenCand *gen);
 
 		// other utility routines
@@ -125,16 +134,13 @@ class massReader : public treeReader01 {
 		int fQ_mu1; // charge of muon 1
 		int fQ_mu2;	// charge of muon 2
 		float fDeltaPhiMu; // mu1.Phi(mu2)
-		// isolation variables. fIsoX_ptY means opening angle deltaR < X/10 and only sum over
-		// tracks with pt > Y/10 GeV
-		float fIso10_pt9;
-		float fIso10_pt9_pv;
-		float fIso10_pt9_sv3u;
-		float fIso10_pt9_sv4u;
-		float fIso10_pt9_sv5u;
+		float fIsoMoriond12; // isolation variable defined as for moriond 12
+		float fDoca0;
+		int fNbrNearby;
 		// muon properties
 		float fPtMu1,fPtMu2;
 		int fMuID1,fMuID2;
+		int fMuTight1,fMuTight2; // muon is identified as tight muond
 		float fEtaMu1,fEtaMu2;
 		float fDeltaR; // deltaR of the muons
 		// triggers

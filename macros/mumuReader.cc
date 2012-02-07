@@ -30,7 +30,7 @@ mumuReader::mumuReader(TChain *tree, TString evtClassName) :
 int mumuReader::loadCandidateVariables(TAnaCand *pCand)
 {
   int result = massReader::loadCandidateVariables(pCand);
-  result = result && !((BLIND && 5.2 < pCand->fMass && pCand->fMass < 5.45) && (fIso10_pt9_sv5u > 0.7));
+  result = result && !((BLIND && 5.2 < pCand->fMass && pCand->fMass < 5.45) && (fIsoMoriond12 > 2.0)); // FIXME: adjust here the right 'anti'-isolation cut
 
   return result;
 } // loadCandidateVariables()

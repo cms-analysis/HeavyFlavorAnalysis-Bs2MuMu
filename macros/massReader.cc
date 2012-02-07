@@ -4,15 +4,21 @@
 
 using namespace std;
 
-trigger_table_t g_trigger_table [] = {
-	{kHLT_DoubleMu3_Bit,				"HLT_DoubleMu3",std::pair<int64_t,int64_t>(0ll,0ll)},
-	{kHLT_DoubleMu0_Bit,				"HLT_DoubleMu0",std::pair<int64_t,int64_t>(132440ll,147116ll)},
-	{kHLT_DoubleMu0_Quarkonium_Bit,		"HLT_DoubleMu0_Quarkonium",std::pair<int64_t,int64_t>(147195ll,149294ll)},
-	{kHLT_DoubleMu3_Jpsi_Bit,			"HLT_DoubleMu3_Jpsi",std::pair<int64_t,int64_t>(160329ll,163261ll)},
-	{kHLT_DoubleMu3_Bs_Bit,				"HLT_DoubleMu3_Bs",std::pair<int64_t,int64_t>(160329ll,161176ll)},
-	{kHLT_DoubleMu2_Bs_Bit,				"HLT_DoubleMu2_Bs",std::pair<int64_t,int64_t>(161216ll,190000ll)},
-	{kHLT_Dimuon6p5_Jpsi_Displaced_Bit,	"HLT_Dimuon6p5_Jpsi_Displaced",std::pair<int64_t,int64_t>(163269ll,163869ll)},
-	{kHLT_Dimuon7_Jpsi_Displaced_Bit,	"HLT_Dimuon7_Jpsi_Displaced",std::pair<int64_t,int64_t>(165088ll,190000ll)}
+trigger_table_t g_trigger_table_signal [] = {
+	{kHLT_DoubleMu3_Bs_Bit,	"HLT_DoubleMu3_Bs", std::pair<int64_t,int64_t>(160329ll,161176ll)},
+	{kHLT_DoubleMu2_Bs_Bit, "HLT_DoubleMu2_Bs", std::pair<int64_t,int64_t>(161216ll,167913ll)},
+	{kHLT_Dimuon4_Bs_Barrel_Bit, "HLT_Dimuon4_Bs_Barrel", std::pair<int64_t,int64_t>(170249ll,173198ll)}, // barrel trigger
+	{kHLT_Dimuon6_Bs_Bit, "HLT_Dimuon6_Bs", std::pair<int64_t,int64_t>(170249ll,173198ll)}, // endcap trigger
+	{kHLT_DoubleMu4_Dimuon4_Bs_Barrel_Bit, "HLT_DoubleMu4_Dimuon4_Bs_Barrel", std::pair<int64_t,int64_t>(173236ll,180252ll)}, // barrel trigger
+	{kHLT_DoubleMu4_Dimuon6_Bs_Bit, "HLT_DoubleMu4_Dimuon6_Bs", std::pair<int64_t,int64_t>(173236ll,180252ll)} // endcap trigger
+};
+
+trigger_table_t g_trigger_table_norm [] = {
+	{kHLT_DoubleMu3_Jpsi_Bit, "HLT_DoubleMu3_Jpsi", std::pair<int64_t,int64_t>(160329ll,163261ll)},
+	{kHLT_Dimuon6p5_Jpsi_Displaced_Bit,"HLT_Dimuon6p5_Jpsi_Displaced", std::pair<int64_t,int64_t>(163269ll,163869ll)},
+	{kHLT_Dimuon7_Jpsi_Displaced_Bit,"HLT_Dimuon7_Jpsi_Displaced", std::pair<int64_t,int64_t>(165088ll,167913ll)},
+	{kHLT_DoubleMu3p5_Jpsi_Displaced_Bit,"HLT_DoubleMu3p5_Jpsi_Displaced", std::pair<int64_t,int64_t>(170249ll,173198ll)},
+	{kHLT_DoubleMu4_Jpsi_Displaced_Bit,"HLT_DoubleMu4_Jpsi_Displaced", std::pair<int64_t,int64_t>(173236ll,180252ll)}
 };
 
 massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName),
@@ -83,11 +89,9 @@ void massReader::clearVariables()
 	fChi2 = 0.0;
 	fNdof = 0.0;
 	fMaxDoca = 0.0;
-	fIso10_pt9 = 0.0;
-	fIso10_pt9_pv = 0.0;
-	fIso10_pt9_sv3u = 0.0;
-	fIso10_pt9_sv4u = 0.0;
-	fIso10_pt9_sv5u = 0.0;
+	fIsoMoriond12 = 0.0;
+	fDoca0 = FLT_MAX;
+	fNbrNearby = 0;
 	fTriggers = 0;
 	fTriggersError = 0;
 	fTriggersFound = 0;
@@ -104,6 +108,7 @@ void massReader::clearVariables()
 	fEtaMu2_Gen = 0.0; // eta of gen muon 2
 	fPtMu1 = fPtMu2 = 0.0f;
 	fMuID1 = fMuID2 = 0;
+	fMuTight1 = fMuTight2 = 0;
 	fEtaMu1 = fEtaMu2 = 0.0f;
 	fTrackQual_mu1 = fTrackQual_mu2 = 0;
 	fQ_mu1 = fQ_mu2 = 0;
@@ -147,8 +152,8 @@ int massReader::loadGeneratorVariables(TGenCand *pGen)
 	fPt = pGen->fP.Perp();
 	fEta = pGen->fP.Eta();
 	fTriggers = loadTrigger(&fTriggersError,&fTriggersFound);
-	fTriggeredJPsi = hasTriggeredJPsi(fTriggers);
-	fTriggeredBs = hasTriggeredBs(fTriggers);
+	fTriggeredJPsi = hasTriggeredNorm();
+	fTriggeredBs = hasTriggeredSignal();
 	fNbrPV = fpEvt->nPV();
 	
 	// save the muon pt
@@ -226,11 +231,9 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fMaxDoca = pCand->fMaxDoca;
 	fNbrPV = fpEvt->nPV();
 	
-	fIso10_pt9 = calculateIsolation(pCand, 1.0, 0.9, false, 0.0);
-	fIso10_pt9_pv = calculateIsolation(pCand, 1.0, 0.9, true, 0.0);
-	fIso10_pt9_sv3u = calculateIsolation(pCand, 1.0, 0.9, true, 0.03); // 300u near SV nevertheless included
-	fIso10_pt9_sv4u = calculateIsolation(pCand, 1.0, 0.9, true, 0.04); // 400u
-	fIso10_pt9_sv5u = calculateIsolation(pCand, 1.0, 0.9, true, 0.05); // 500u
+	fIsoMoriond12 = calculateIsolation(pCand);
+	fDoca0 = calculateDoca0(pCand);
+	fNbrNearby = countTracksNearby(pCand);
 	
 	fCtau = pCand->fTau3d;
 	fCtauE = pCand->fTau3dE;
@@ -249,15 +252,17 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 					plabMu1 = sigTrack->fPlab;
 					fPtMu1 = sigTrack->fPlab.Perp();
 					fMuID1 = recTrack->fMuID > 0 ? recTrack->fMuID : 0;
-					fEtaMu1 = sigTrack->fPlab.Eta();
 					fTrackQual_mu1 = recTrack->fTrackQuality;
+					fMuTight1 = isMuonTight(sigTrack);
+					fEtaMu1 = sigTrack->fPlab.Eta();
 					fQ_mu1 = recTrack->fQ;
 				} else {
 					plabMu2 = sigTrack->fPlab;
 					fPtMu2 = sigTrack->fPlab.Perp();
 					fMuID2 = recTrack->fMuID > 0 ? recTrack->fMuID : 0;
-					fEtaMu2 = sigTrack->fPlab.Eta();
 					fTrackQual_mu2 = recTrack->fTrackQuality;
+					fMuTight2 = isMuonTight(sigTrack);
+					fEtaMu2 = sigTrack->fPlab.Eta();
 					fQ_mu2 = recTrack->fQ;
 				}
 				firstMu = false;
@@ -272,6 +277,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		swap(plabMu1,plabMu2);
 		swap(fPtMu1,fPtMu2);
 		swap(fMuID1,fMuID2);
+		swap(fMuTight1,fMuTight2);
 		swap(fEtaMu1,fEtaMu2);
 		swap(fTrackQual_mu1,fTrackQual_mu2);
 		swap(fQ_mu1,fQ_mu2);
@@ -326,8 +332,8 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fTruth = checkTruth(pCand);
 	fTruthFlags = loadTruthFlags(pCand);
 	fTriggers = loadTrigger(&fTriggersError,&fTriggersFound);
-	fTriggeredJPsi = hasTriggeredJPsi(fTriggers);
-	fTriggeredBs = hasTriggeredBs(fTriggers);
+	fTriggeredJPsi = hasTriggeredNorm();
+	fTriggeredBs = hasTriggeredSignal();
 	fEffFlags = 0;
 	
 	// generator pt of muons...
@@ -386,6 +392,8 @@ void massReader::bookHist()
 	reduced_tree->Branch("pt_mu2",&fPtMu2,"pt_mu2/F");
 	reduced_tree->Branch("id_mu1",&fMuID1,"id_mu1/I");
 	reduced_tree->Branch("id_mu2",&fMuID2,"id_mu2/I");
+	reduced_tree->Branch("tight_mu1",&fMuTight1,"tight_mu1/I");
+	reduced_tree->Branch("tight_mu2",&fMuTight2,"tight_mu2/I");
 	reduced_tree->Branch("eta_mu1",&fEtaMu1,"eta_mu1/F");
 	reduced_tree->Branch("eta_mu2",&fEtaMu2,"eta_mu2/F");
 	reduced_tree->Branch("track_qual_mu1",&fTrackQual_mu1,"track_qual_mu1/I");
@@ -409,11 +417,9 @@ void massReader::bookHist()
 	reduced_tree->Branch("eta_mu2_gen",&fEtaMu2_Gen,"eta_mu2_gen/F");
 	reduced_tree->Branch("p_mu1_gen",&fPMu1_Gen,"p_mu1_gen/F");
 	reduced_tree->Branch("p_mu2_gen",&fPMu2_Gen,"p_mu2_gen/F");
-	reduced_tree->Branch("iso10_pt9",&fIso10_pt9,"iso10_pt9/F");
-	reduced_tree->Branch("iso10_pt9_pv",&fIso10_pt9_pv,"iso10_pt9_pv/F");
-	reduced_tree->Branch("iso10_pt9_sv3u",&fIso10_pt9_sv3u,"iso10_pt9_sv3u/F");
-	reduced_tree->Branch("iso10_pt9_sv4u",&fIso10_pt9_sv4u,"iso10_pt9_sv4u/F");
-	reduced_tree->Branch("iso10_pt9_sv5u",&fIso10_pt9_sv5u,"iso10_pt9_sv5u/F");
+	reduced_tree->Branch("iso_mor12",&fIsoMoriond12,"iso_mor12/F");
+	reduced_tree->Branch("doca0",&fDoca0,"doca0/F");
+	reduced_tree->Branch("ntrk",&fNbrNearby,"ntrk/I");
 	reduced_tree->Branch("triggers",&fTriggers,"triggers/I");
 	reduced_tree->Branch("triggers_error",&fTriggersError,"triggers_error/I");
 	reduced_tree->Branch("triggers_found",&fTriggersFound,"triggers_found/I");
@@ -632,49 +638,96 @@ void massReader::findAllTrackIndices(TAnaCand* pCand, map<int,int> *indices)
 		findAllTrackIndices(fpEvt->getCand(j),indices);
 } // findAllTrackIndices()
 
-float massReader::calculateIsolation(TAnaCand *pCand, double openingAngle, double minPt, bool sameVertex, double maxDocaSV)
+float massReader::calculateIsolation(TAnaCand *pCand)
 {
-	double iso; // calculate in double precision and return single
-	TVector3 plabB;
+	const double cone = 0.7;
+	const double pt_thres = 0.9;
+	const double maxDocaSV = 0.05; // 500 um
+	double sum_pt = 0.0;
+	double isolation;
 	int j,ntracks;
-	TAnaTrack *pTrack;
-	double r;
-	map<int,int> usedTracks;
+	map<int,int> candTracks;
 	set<int> nearSV;
+	TAnaTrack *pTrack;
 	
-	plabB = pCand->fPlab;
-	findAllTrackIndices(pCand,&usedTracks);
-	
+	// build a set of all tracks near SV
 	ntracks = pCand->fNstTracks.size();
 	for (j = 0; j < ntracks; j++) {
-		if(pCand->fNstTracks[j].second.first < maxDocaSV)
+		if (pCand->fNstTracks[j].second.first < maxDocaSV)
 			nearSV.insert(pCand->fNstTracks[j].first);
 	}
 	
-	iso = 0.0;
+	// find the candidate tracks
+	findAllTrackIndices(pCand,&candTracks);
+	
 	ntracks = fpEvt->nRecTracks();
 	for (j = 0; j < ntracks; j++) {
-		
-		if (usedTracks.count(j) > 0) continue; // this track belongs to the candidate
+		if (candTracks.count(j) > 0) // this track belongs to the candidate...
+			continue;
 		
 		pTrack = fpEvt->getRecTrack(j);
 		
-		// if samevertex, veto tracks not from the same PV
-		if ( sameVertex && (pTrack->fPvIdx != pCand->fPvIdx) && (nearSV.count(j) == 0) ) continue;
+		// check for sufficient pt of track
+		if (pTrack->fPlab.Pt() <= pt_thres)
+			continue;
 		
-		// pt veto
-		if (pTrack->fPlab.Perp() <= minPt) continue;
+		// check if track_j is within cone
+		if (pCand->fPlab.DeltaR(pTrack->fPlab) >= cone)
+			continue;
 		
-		// opening angle
-		r = plabB.DeltaR(pTrack->fPlab);
-		if (r < openingAngle)
-			iso += pTrack->fPlab.Perp();
+		// check that not the same PV
+		if (pCand->fPvIdx != pTrack->fPvIdx && (pTrack->fPvIdx >= 0 || nearSV.count(j) == 0))
+			continue;
+		
+		sum_pt += pTrack->fPlab.Pt();
 	}
 	
-	iso = plabB.Perp() / (plabB.Perp() + iso);
+	isolation = pCand->fPlab.Pt();
+	isolation = isolation / (isolation + sum_pt);
 	
-	return (float)iso;
+	return (float)isolation;
 } // calculateIsolation()
+
+float massReader::calculateDoca0(TAnaCand *pCand)
+{
+	TAnaTrack *pTrack;
+	float doca0 = FLT_MAX;
+	int j,ntracks = pCand->fNstTracks.size();
+	
+	for (j = 0; j < ntracks; j++) {
+		
+		pTrack = fpEvt->getRecTrack(pCand->fNstTracks[j].first);
+		
+		if (pTrack->fPvIdx < 0 || pTrack->fPvIdx == pCand->fPvIdx) {
+			if (pCand->fNstTracks[j].second.first < doca0)
+				doca0 = pCand->fNstTracks[j].second.first;
+		}
+	}
+	
+	return doca0;
+} // calculateDoca0()
+
+int massReader::countTracksNearby(TAnaCand *pCand)
+{
+	int result = 0;
+	int j,ntracks = pCand->fNstTracks.size();
+	const double pt_thres = 0.5;
+	const double maxDocaSV = 0.03;
+	TAnaTrack *pTrack;
+	
+	for (j = 0; j < ntracks; j++) {
+		
+		pTrack = fpEvt->getRecTrack(pCand->fNstTracks[j].first);
+		
+		if (pTrack->fPlab.Pt() <= pt_thres)
+			continue;
+		
+		if (pCand->fNstTracks[j].second.first < maxDocaSV)
+			result++;
+	}
+	
+	return result;
+} // countTracksNearby()
 
 int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 {
@@ -689,9 +742,23 @@ int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 		std::string name(fpEvt->fHLTNames[j].Data());
 		
 		// check the name...
-		for (k = 0; k < sizeof(g_trigger_table)/sizeof(trigger_table_t); k++) {
+		for (k = 0; k < sizeof(g_trigger_table_signal)/sizeof(trigger_table_t); k++) {
 			
-			trg = g_trigger_table[k];
+			trg = g_trigger_table_signal[k];
+			if (name.find(trg.trigger_name.c_str()) <= name.size()) {
+				triggers_found |= trg.t_bit;
+				if (fpEvt->fHLTError[j]) {
+					triggers_err |= trg.t_bit;
+					continue;
+				}
+				if (fpEvt->fHLTResult[j])
+					triggers |= trg.t_bit;
+			}
+		}
+		
+		for (k = 0; k < sizeof(g_trigger_table_norm)/sizeof(trigger_table_t); k++) {
+			
+			trg = g_trigger_table_norm[k];
 			if (name.find(trg.trigger_name.c_str()) <= name.size()) {
 				triggers_found |= trg.t_bit;
 				if (fpEvt->fHLTError[j]) {
@@ -710,33 +777,67 @@ int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 	return triggers;
 } // loadTrigger()
 
-int massReader::hasTriggeredJPsi(int triggers)
+int massReader::isMuonTight(TAnaTrack *sigTrack)
 {
-	int psitriggers = (kHLT_DoubleMu0_Bit | kHLT_DoubleMu0_Quarkonium_Bit | kHLT_DoubleMu3_Jpsi_Bit | kHLT_Dimuon6p5_Jpsi_Displaced_Bit | kHLT_Dimuon7_Jpsi_Displaced_Bit);
+	int result;
+	TAnaTrack *recTrack = fpEvt->getRecTrack(sigTrack->fIndex);
+	TAnaMuon *mu;
 	
-	return hasTriggered(triggers,psitriggers);
-} // hasTriggeredJPsi()
+	// high purity track
+	result = (recTrack->fTrackQuality & 4) != 0;
+	if (!result) goto bail;
+	
+	// muon::GlobalMuonPromptTight()
+	result = (0 <= recTrack->fMuIndex) && (recTrack->fMuIndex < fpEvt->nMuons());
+	if(!result) goto bail;
+	
+	// check for the muon id (muon::TrackerMuonArbitrated && muon::GlobalMuonPromptTight)
+	result = ((recTrack->fMuID & 80) == 80);
+	if (!result) goto bail;
+	
+	// Additional requirements
+	mu = fpEvt->getMuon(recTrack->fMuIndex);
+	
+	//	* at least two muon stations are matched to the track
+	result = mu->fTimeNdof >= 2;
+	if (!result) goto bail;
+	
+	//	* the transverse impact parameter with respect to the beamspot is < 0.2cm
+	result = (recTrack->fBsTip < 0.2);
+	if (!result) goto bail;
+	
+	//	* at least one pixel detector hit be part of the muon track
+	result = (numberOfPixLayers(recTrack) >= 1);
+	if (!result) goto bail;
+	
+	//	* the muon track has at least 11 (strip or pixel) hits
+	result = (recTrack->fValidHits >= 11);
+	
+bail:
+	return result;
+} // isMuonTight()
 
-int massReader::hasTriggeredBs(int triggers)
+int massReader::hasTriggeredNorm()
 {
-	int bstriggers = (kHLT_DoubleMu0_Bit | kHLT_DoubleMu0_Quarkonium_Bit | kHLT_DoubleMu3_Bs_Bit | kHLT_DoubleMu2_Bs_Bit);
-	return hasTriggered(triggers,bstriggers);
-} // hasTriggeredBs()
+	return hasTriggered(fTriggers, g_trigger_table_norm, sizeof(g_trigger_table_norm)/sizeof(trigger_table_t));
+} // hasTriggeredNorm()
 
-int massReader::hasTriggered(int triggers,int avail_triggers)
+int massReader::hasTriggeredSignal()
+{
+	return hasTriggered(fTriggers, g_trigger_table_signal, sizeof(g_trigger_table_signal)/sizeof(trigger_table_t));
+} // hasTriggeredSignal()
+
+int massReader::hasTriggered(int triggers,trigger_table_t *table, unsigned size)
 {
 	unsigned j;
 	int result = 0;
 	
-	for (j = 0; !result && j < sizeof(g_trigger_table)/sizeof(trigger_table_t); j++) {
+	for (j = 0; !result && j < size; j++) {
 		
-		if ((g_trigger_table[j].t_bit & avail_triggers) == 0)
-			continue; // this trigger is not important to us
-		
-		if ((g_trigger_table[j].t_bit & triggers) != 0) { // we triggered this one
-			// hence check the run range or mc always passes
-		  result = ((g_trigger_table[j].run_range.first <= fRun) && (fRun <= g_trigger_table[j].run_range.second))
-			    || (fIsMC);
+		if((table[j].t_bit & triggers) != 0) {
+			// we triggered this one. Hence check the run range (or in case of mc always proceed)
+			result = ((table[j].run_range.first <= fRun) && (fRun <= table[j].run_range.second))
+			|| (fIsMC);
 		}
 	}
 	
