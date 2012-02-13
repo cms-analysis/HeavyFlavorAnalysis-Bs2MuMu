@@ -30,7 +30,7 @@ RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, std::
 RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double err, double *ulLimit, double *loLimit, std::pair<double,double> *rg, uint32_t *inBins, double *cpuUsed, uint32_t nbrProof, int nToys);
 RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit, double *cpuUsed);
 RooStats::ConfInterval *est_ul_bc_light(RooWorkspace *wspace, RooDataSet *data, double cLevel, int verbosity, double *upperLimit, double *cpuUsed);
-
+RooStats::ConfInterval *est_ul_zbi(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, bool bdlimit, double *ul);
 void compute_vars(std::map<bmm_param,measurement_t> *bmm, bool bstomumu);
 
 #endif

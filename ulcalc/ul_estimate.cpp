@@ -589,8 +589,8 @@ RooStats::ConfInterval *est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, se
 	
 	swatch.Start(kTRUE);
 
-	wspace->var("gamma_0")->setVal(((RooRealVar&)((*data->get(0))["NbObs_0"])).getVal()+1);
-	wspace->var("gamma_1")->setVal(((RooRealVar&)((*data->get(0))["NbObs_1"])).getVal()+1);
+	if (wspace->var("gamma_0")) wspace->var("gamma_0")->setVal(((RooRealVar&)((*data->get(0))["NbObs_0"])).getVal()+1);
+	if (wspace->var("gamma_1")) wspace->var("gamma_1")->setVal(((RooRealVar&)((*data->get(0))["NbObs_1"])).getVal()+1);
 	measure_params(wspace, data, channels, verbosity);
 	sbModel->LoadSnapshot();
 	
@@ -776,6 +776,63 @@ RooStats::HypoTestResult *est_ul_clb(RooWorkspace *wspace, RooDataSet *data, set
 	
 	return result;
 } // est_ul_clb()
+
+RooStats::ConfInterval *est_ul_zbi(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, bool bdlimit, double *ul)
+{
+	RooRealVar *poi = dynamic_cast<RooRealVar*>(wspace->set("poi")->first());
+	RooFormulaVar *formula;
+	set<int>::const_iterator it;
+	double max = poi->getMax();
+	double min = 0.;
+	double mu = poi->getMax(),pvalue;
+	
+	double nu_off,nu_on,rho;
+	double nbkg,nsig;
+	
+	wspace->allVars() = *data->get(0);
+	poi->setConstant(kTRUE);
+	
+	nbkg = nsig = 0.0;
+	for (it = channels->begin(); it != channels->end(); ++it) {
+		nbkg += wspace->var(Form("NbObs_%d",*it))->getVal();
+		if (bdlimit)	nsig += wspace->var(Form("NsObs_%d",*it))->getVal();
+		else			nsig += wspace->var(Form("NsObs_%d",*it))->getVal();
+	}
+	
+	while ( (max - min) > 1.e-2 ) {
+		
+		mu = (max + min) /2.;
+		poi->setVal(mu); // estimate the values for 
+		
+		// estimate the values for the current mu
+		wspace->pdf("total_pdf")->fitTo(*data, RooFit::PrintLevel(-2));
+		
+		// compute the rho = nu_on / nu_tot
+		nu_off = nu_on = 0.0;
+		for (it = channels->begin(); it != channels->end(); ++it) {
+			
+			formula = dynamic_cast<RooFormulaVar*> (wspace->function(Form("bkg_mean_%d",*it)));
+			nu_off += formula->getVal();
+			
+			if (bdlimit)	formula = dynamic_cast<RooFormulaVar*> (wspace->function(Form("bd_mean_%d",*it)));
+			else			formula = dynamic_cast<RooFormulaVar*> (wspace->function(Form("bs_mean_%d",*it)));
+			
+			nu_on += formula->getVal();
+		}
+		
+		rho = nu_on / (nu_off + nu_on);
+		pvalue = TMath::BetaIncomplete(1 - rho, nbkg, nsig + 1);
+		
+		if (pvalue > 1. - cLevel)	min = mu;
+		else						max = mu;
+	}
+	
+	poi->setConstant(kFALSE);
+	
+	*ul = mu;
+	
+	return 0;
+} // est_ul_zbi()
 
 void compute_vars(map<bmm_param,measurement_t> *bmm, bool bstomumu)
 {
