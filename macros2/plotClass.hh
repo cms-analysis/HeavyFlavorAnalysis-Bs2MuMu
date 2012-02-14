@@ -154,6 +154,7 @@ public:
   int fVerbose; 
 
   // -- cuts 
+  std::string fCutsFileName;
   std::vector<cuts*> fCuts; 
 
   // -- functions

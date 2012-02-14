@@ -207,6 +207,7 @@ void candAna::candAnalysis() {
 
   fCandType     = fpCand->fType;
   fCandPt       = fpCand->fPlab.Perp();
+  fCandP        = fpCand->fPlab.Mag();
   fCandEta      = fpCand->fPlab.Eta();
   fCandPhi      = fpCand->fPlab.Phi();
   fCandM        = fpCand->fMass;
@@ -445,6 +446,17 @@ void candAna::candAnalysis() {
   fCandFLSxy = sv.fDxy/sv.fDxyE; 
   if (TMath::IsNaN(fCandFLSxy)) fCandFLSxy = -1.;
 
+  fCandTau   = fCandFL3d*MBS/fCandP/TMath::Ccgs();
+
+  // -- variables for production mechanism studies
+  fpOsCand      = osCand(fpCand);
+  fOsIso        = osIsolation(fpCand, 1.0, 0.9); 
+  fOsRelIso     = fOsIso/fCandPt; 
+  int osm       = osMuon(fpCand, 0.);
+  fOsMuonPt     = (osm > -1? fpEvt->getRecTrack(osm)->fPlab.Perp():-1.);
+  fOsMuonPtRel  = (osm > -1? fpEvt->getRecTrack(osm)->fPlab.Perp(fpCand->fPlab):-1);
+  fOsMuonDeltaR =  (osm > -1? fpCand->fPlab.DeltaR(fpEvt->getRecTrack(osm)->fPlab):-1.);
+
 //   if (301313 == fCandType) 
 //     cout << fRun << " " << fEvt 
 // 	 << " from PV = " << fpCand->fPvIdx << " with ntrk = " << fPvNtrk << " av w8 = " << fPvAveW8
@@ -589,12 +601,56 @@ void candAna::fillCandidateHistograms(int offset) {
   fpPvNtrk[offset]->fill(fPvNtrk, fCandM); 
   fpPvAveW8[offset]->fill(fPvAveW8, fCandM); 
   fpPt[offset]->fill(fCandPt, fCandM); 
+  fpP[offset]->fill(fCandP, fCandM);
   fpEta[offset]->fill(fCandEta, fCandM); 
   fpAlpha[offset]->fill(fCandA, fCandM);
   fpCosA[offset]->fill(fCandCosA, fCandM);
-  fpIso[offset]->fill(fCandIso, fCandM);
   fpIsoTrk[offset]->fill(fCandIsoTrk, fCandM);
+
+  fpPt[offset]->fill(fCandPt, fCandM); 
+  if (40 == fProcessType) fpPtGGF[offset]->fill(fCandPt, fCandM); 
+  if (41 == fProcessType) fpPtFEX[offset]->fill(fCandPt, fCandM); 
+  if (42 == fProcessType) fpPtGSP[offset]->fill(fCandPt, fCandM); 
+
+  fpIso[offset]->fill(fCandIso, fCandM);
+  if (40 == fProcessType) fpIsoGGF[offset]->fill(fCandIso, fCandM); 
+  if (41 == fProcessType) fpIsoFEX[offset]->fill(fCandIso, fCandM); 
+  if (42 == fProcessType) fpIsoGSP[offset]->fill(fCandIso, fCandM); 
+
   fpCloseTrk[offset]->fill(fCandCloseTrk, fCandM); 
+  if (40 == fProcessType) fpCloseTrkGGF[offset]->fill(fCandCloseTrk, fCandM); 
+  if (41 == fProcessType) fpCloseTrkFEX[offset]->fill(fCandCloseTrk, fCandM); 
+  if (42 == fProcessType) fpCloseTrkGSP[offset]->fill(fCandCloseTrk, fCandM); 
+
+  fpOsIso[offset]->fill(fOsIso, fCandM); 
+  if (40 == fProcessType) fpOsIsoGGF[offset]->fill(fOsIso, fCandM); 
+  if (41 == fProcessType) fpOsIsoFEX[offset]->fill(fOsIso, fCandM); 
+  if (42 == fProcessType) fpOsIsoGSP[offset]->fill(fOsIso, fCandM); 
+
+  fpOsRelIso[offset]->fill(fOsRelIso, fCandM); 
+  if (40 == fProcessType) fpOsRelIsoGGF[offset]->fill(fOsRelIso, fCandM); 
+  if (41 == fProcessType) fpOsRelIsoFEX[offset]->fill(fOsRelIso, fCandM); 
+  if (42 == fProcessType) fpOsRelIsoGSP[offset]->fill(fOsRelIso, fCandM); 
+
+  fpOsMuonPt[offset]->fill(fOsMuonPt, fCandM);
+  if (40 == fProcessType) fpOsMuonPtGGF[offset]->fill(fOsMuonPt, fCandM); 
+  if (41 == fProcessType) fpOsMuonPtFEX[offset]->fill(fOsMuonPt, fCandM); 
+  if (42 == fProcessType) fpOsMuonPtGSP[offset]->fill(fOsMuonPt, fCandM); 
+
+  fpOsMuonPtRel[offset]->fill(fOsMuonPtRel, fCandM);
+  if (40 == fProcessType) fpOsMuonPtRelGGF[offset]->fill(fOsMuonPtRel, fCandM); 
+  if (41 == fProcessType) fpOsMuonPtRelFEX[offset]->fill(fOsMuonPtRel, fCandM); 
+  if (42 == fProcessType) fpOsMuonPtRelGSP[offset]->fill(fOsMuonPtRel, fCandM); 
+
+  fpOsMuonDeltaR[offset]->fill(fOsMuonDeltaR, fCandM); 
+  if (40 == fProcessType) fpOsMuonDeltaRGGF[offset]->fill(fOsMuonDeltaR, fCandM); 
+  if (41 == fProcessType) fpOsMuonDeltaRFEX[offset]->fill(fOsMuonDeltaR, fCandM); 
+  if (42 == fProcessType) fpOsMuonDeltaRGSP[offset]->fill(fOsMuonDeltaR, fCandM); 
+
+  fpDocaTrk[offset]->fill(fCandDocaTrk, fCandM); 
+  if (40 == fProcessType) fpDocaTrkGGF[offset]->fill(fCandDocaTrk, fCandM); 
+  if (41 == fProcessType) fpDocaTrkFEX[offset]->fill(fCandDocaTrk, fCandM); 
+  if (42 == fProcessType) fpDocaTrkGSP[offset]->fill(fCandDocaTrk, fCandM); 
 
   fpChi2[offset]->fill(fCandChi2, fCandM);
   fpChi2Dof[offset]->fill(fCandChi2/fCandDof, fCandM); 
@@ -603,7 +659,6 @@ void candAna::fillCandidateHistograms(int offset) {
   fpFL3d[offset]->fill(fCandFL3d, fCandM); 
   fpFL3dE[offset]->fill(fCandFL3dE, fCandM); 
   fpFLSxy[offset]->fill(fCandFLSxy, fCandM); 
-  fpDocaTrk[offset]->fill(fCandDocaTrk, fCandM); 
   fpBDT[offset]->fill(fCandBDT, fCandM);    
 
   fpLip[offset]->fill(fCandPvLip, fCandM); 
@@ -633,7 +688,17 @@ void candAna::fillCandidateHistograms(int offset) {
   fp2MFL3dE[offset]->fill(f2MFL3dE, fCandM); 
   fp2MFLSxy[offset]->fill(f2MFLSxy, fCandM); 
 
+  // -- eta profiles
+  int ieta = ((fCandEta+2.4)/5.)*NADPV;
+  if (ieta < 0) ieta = 0; 
+  if (ieta > 14) ieta = 14; 
 
+  if (fpEtaFLS3d[ieta][offset]) 
+    fpEtaFLS3d[ieta][offset]->fill(fCandFLS3d, fCandM); 
+//   else 
+//     cout << "missing fpEtaFLS3d: " << ieta << "  " << offset << endl;
+
+  // -- NPV analysis distributions
   int ipv = 0; 
   if (fPvN < 30) {
     ipv = fPvN/2; 
@@ -641,7 +706,6 @@ void candAna::fillCandidateHistograms(int offset) {
     ipv = NADPV-1; 
   }
 
-  
   if (fpNpvPvN[ipv][offset]) {
     if (fpNpvPvN[ipv][offset]) fpNpvPvN[ipv][offset]->fill(fPvN, fCandM);  else cout << "missing fpNpvPvN" << endl;
     if (fpNpvChi2Dof[ipv][offset])  fpNpvChi2Dof[ipv][offset]->fill(fCandChi2/fCandDof, fCandM);  else cout << "missing fpNpvChi2Dof" << endl;
@@ -925,6 +989,7 @@ void candAna::bookHist() {
   fTree->Branch("pt",      &fCandPt,            "pt/D");
   fTree->Branch("eta",     &fCandEta,           "eta/D");
   fTree->Branch("phi",     &fCandPhi,           "phi/D");
+  fTree->Branch("tau",     &fCandTau,           "tau/D");
   fTree->Branch("m",       &fCandM,             "m/D");
   fTree->Branch("cm",      &fCandM2,            "cm/D");
   fTree->Branch("cosa",    &fCandCosA,          "cosa/D");
@@ -947,6 +1012,12 @@ void candAna::bookHist() {
   fTree->Branch("lipE",    &fCandPvLipE,        "lipE/D");
   fTree->Branch("tip",     &fCandPvTip,         "tip/D");
   fTree->Branch("tipE",    &fCandPvTipE,        "tipE/D");
+  fTree->Branch("osiso",   &fOsIso,             "osiso/D");
+  fTree->Branch("osreliso",&fOsRelIso,          "osreliso/D");
+  fTree->Branch("osmpt",   &fOsMuonPt,          "osmpt/D");
+  fTree->Branch("osmptrel",&fOsMuonPtRel,       "osmptrel/D");
+  fTree->Branch("osmdr",   &fOsMuonDeltaR,      "osmdr/D");
+
   // -- muons
   fTree->Branch("m1q",     &fMu1Q,              "m1q/I");
   fTree->Branch("m1id",    &fMu1Id,             "m1id/O");
@@ -980,6 +1051,7 @@ void candAna::bookHist() {
   fTree->Branch("g2pt",    &fMu2PtGen,          "g2pt/D");
   fTree->Branch("g1eta",   &fMu1EtaGen,         "g1eta/D");
   fTree->Branch("g2eta",   &fMu2EtaGen,         "g2eta/D");
+  fTree->Branch("gtau",    &fGenLifeTime,       "gtau/D");
 
   fTree->Branch("t1pt",    &fMu1PtNrf,          "t1pt/D");
   fTree->Branch("t1eta",   &fMu1EtaNrf,         "t1eta/D");
@@ -1054,6 +1126,7 @@ void candAna::bookHist() {
     fpMuon1Eta[i]  = bookDistribution(Form("%smuon1eta", name.c_str()), "#eta_{#mu1}", "fGoodMuonsEta", 20, -2.5, 2.5); 
     fpMuon2Eta[i]  = bookDistribution(Form("%smuon2eta", name.c_str()), "#eta_{#mu2}", "fGoodMuonsEta", 20, -2.5, 2.5); 
     fpPt[i]        = bookDistribution(Form("%spt", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 30, 0., 60.); 
+    fpP[i]         = bookDistribution(Form("%sp", name.c_str()), "p(B) [GeV]", "fGoodPt", 50, 0., 100.); 
     fpEta[i]       = bookDistribution(Form("%seta", name.c_str()), "#eta(B)", "fGoodEta", 20, -2.5, 2.5); 
     fpCosA[i]      = bookDistribution(Form("%scosa", name.c_str()), "cos(#alpha_{3D})", "fGoodAlpha", 30, 0.97, 1.); 
     fpAlpha[i]     = bookDistribution(Form("%salpha", name.c_str()), "#alpha_{3D}", "fGoodAlpha", 40, 0., 0.1); 
@@ -1061,12 +1134,55 @@ void candAna::bookHist() {
     fpIsoTrk[i]    = bookDistribution(Form("%sisotrk", name.c_str()),  "N_{trk}^{I}", "fGoodIso", 20, 0., 20.); 
     fpCloseTrk[i]  = bookDistribution(Form("%sclosetrk", name.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 10, 0., 10.); 
     
+    fpOsIso[i]        = bookDistribution(Form("%sosiso", name.c_str()),  "F_{OS} [GeV]", "fGoodIso", 100, 0., 100.);              
+    fpOsRelIso[i]     = bookDistribution(Form("%sosreliso", name.c_str()),  "I_{OS}^{rel}", "fGoodIso", 60, 0., 6.);              
+    fpOsMuonPt[i]     = bookDistribution(Form("%sosmuonpt", name.c_str()),  "p_{T,#mu}^{OS} [GeV]", "fGoodMuonsPt", 40, 0., 20.);              
+    fpOsMuonPtRel[i]  = bookDistribution(Form("%sosmuonptrel", name.c_str()),  "p_{T,#mu}^{OS, rel} [GeV]", "fGoodMuonsPt", 40, 0., 20.); 
+    fpOsMuonDeltaR[i] = bookDistribution(Form("%sosmuondr", name.c_str()),  "#Delta R(C, #mu^{OS})", "fGoodMuonsPt", 60, 0., 6.);              
+
+    // -- mode dependent plots
+    fpPtGGF[i]        = bookDistribution(Form("%sptggf", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 30, 0., 60.); 
+    fpPtGSP[i]        = bookDistribution(Form("%sptgsp", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 30, 0., 60.); 
+    fpPtFEX[i]        = bookDistribution(Form("%sptfex", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 30, 0., 60.); 
+
+    fpIsoGGF[i]       = bookDistribution(Form("%sisoggf", name.c_str()),  "isolation", "fGoodIso", 52, 0., 1.04); 
+    fpIsoGSP[i]       = bookDistribution(Form("%sisogsp", name.c_str()),  "isolation", "fGoodIso", 52, 0., 1.04); 
+    fpIsoFEX[i]       = bookDistribution(Form("%sisofex", name.c_str()),  "isolation", "fGoodIso", 52, 0., 1.04); 
+
+    fpCloseTrkGGF[i]  = bookDistribution(Form("%sclosetrkggf", name.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 10, 0., 10.); 
+    fpCloseTrkGSP[i]  = bookDistribution(Form("%sclosetrkgsp", name.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 10, 0., 10.); 
+    fpCloseTrkFEX[i]  = bookDistribution(Form("%sclosetrkfex", name.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 10, 0., 10.); 
+
+    fpDocaTrkGGF[i]   = bookDistribution(Form("%sdocatrkggf", name.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 40, 0., 0.20);   
+    fpDocaTrkGSP[i]   = bookDistribution(Form("%sdocatrkgsp", name.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 40, 0., 0.20);   
+    fpDocaTrkFEX[i]   = bookDistribution(Form("%sdocatrkfex", name.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 40, 0., 0.20);   
+
+    fpOsIsoGGF[i]     = bookDistribution(Form("%sosisoggf", name.c_str()),  "F_{OS} [GeV]", "fGoodIso", 100, 0., 100.);              
+    fpOsIsoGSP[i]     = bookDistribution(Form("%sosisogsp", name.c_str()),  "F_{OS} [GeV]", "fGoodIso", 100, 0., 100.);              
+    fpOsIsoFEX[i]     = bookDistribution(Form("%sosisofex", name.c_str()),  "F_{OS} [GeV]", "fGoodIso", 100, 0., 100.);              
+    
+    fpOsRelIsoGGF[i]  = bookDistribution(Form("%sosrelisoggf", name.c_str()),  "I_{OS}^{rel}", "fGoodIso", 60, 0., 6.);              
+    fpOsRelIsoGSP[i]  = bookDistribution(Form("%sosrelisogsp", name.c_str()),  "I_{OS}^{rel}", "fGoodIso", 60, 0., 6.);              
+    fpOsRelIsoFEX[i]  = bookDistribution(Form("%sosrelisofex", name.c_str()),  "I_{OS}^{rel}", "fGoodIso", 60, 0., 6.);              
+
+    fpOsMuonPtGGF[i]  = bookDistribution(Form("%sosmuonptggf", name.c_str()),  "p_{T,#mu}^{OS} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
+    fpOsMuonPtGSP[i]  = bookDistribution(Form("%sosmuonptgsp", name.c_str()),  "p_{T,#mu}^{OS} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
+    fpOsMuonPtFEX[i]  = bookDistribution(Form("%sosmuonptfex", name.c_str()),  "p_{T,#mu}^{OS} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
+
+    fpOsMuonPtRelGGF[i]  = bookDistribution(Form("%sosmuonptrelggf", name.c_str()),  "p_{T,#mu}^{OS, rel} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
+    fpOsMuonPtRelGSP[i]  = bookDistribution(Form("%sosmuonptrelgsp", name.c_str()),  "p_{T,#mu}^{OS, rel} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
+    fpOsMuonPtRelFEX[i]  = bookDistribution(Form("%sosmuonptrelfex", name.c_str()),  "p_{T,#mu}^{OS, rel} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
+
+    fpOsMuonDeltaRGGF[i] = bookDistribution(Form("%sosmuondrggf", name.c_str()),  "#Delta R(C, #mu^{OS})", "fGoodMuonsPt", 60, 0., 6.);
+    fpOsMuonDeltaRGSP[i] = bookDistribution(Form("%sosmuondrgsp", name.c_str()),  "#Delta R(C, #mu^{OS})", "fGoodMuonsPt", 60, 0., 6.);
+    fpOsMuonDeltaRFEX[i] = bookDistribution(Form("%sosmuondrfex", name.c_str()),  "#Delta R(C, #mu^{OS})", "fGoodMuonsPt", 60, 0., 6.);
+
     fpChi2[i]      = bookDistribution(Form("%schi2", name.c_str()),  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
     fpChi2Dof[i]   = bookDistribution(Form("%schi2dof", name.c_str()),  "#chi^{2}/dof", "fGoodChi2", 40, 0., 4.);
     fpProb[i]      = bookDistribution(Form("%spchi2dof", name.c_str()),  "P(#chi^{2},dof)", "fGoodChi2", 26, 0., 1.04);    
     fpFLS3d[i]     = bookDistribution(Form("%sfls3d", name.c_str()), "l_{3D}/#sigma(l_{3D})", "fGoodFLS", 30, 0., 120.);  
-    fpFL3d[i]      = bookDistribution(Form("%sfl3d", name.c_str()),  "l_{3D} [cm]", "fGoodFLS", 25, 0., 5.);  
-    fpFL3dE[i]     = bookDistribution(Form("%sfl3de", name.c_str()), "#sigma(l_{3D}) [cm]", "fGoodFLS", 25, 0., 0.5);  
+    fpFL3d[i]      = bookDistribution(Form("%sfl3d", name.c_str()),  "l_{3D} [cm]", "fGoodFLS", 30, 0., 3.);  
+    fpFL3dE[i]     = bookDistribution(Form("%sfl3de", name.c_str()), "#sigma(l_{3D}) [cm]", "fGoodFLS", 25, 0., 0.1);  
     fpFLSxy[i]     = bookDistribution(Form("%sflsxy", name.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 30, 0., 120.);  
     fpDocaTrk[i]   = bookDistribution(Form("%sdocatrk", name.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 40, 0., 0.20);   
     fpBDT[i]       = bookDistribution(Form("%sbdt", name.c_str()), "BDT", "fGoodHLT", 40, -1.0, 1.0);   
@@ -1100,6 +1216,16 @@ void candAna::bookHist() {
 
     if (name == "A_") {
       //      cout << "  booking NPV distributions for " << name << endl;
+
+      // -- eta 'profiles'
+      for (int ipv = 0; ipv < NADPV; ++ipv) {
+	pD = fHistDir->mkdir(Form("%sEta%i", name.c_str(), ipv));
+	pD->cd();
+	dname = Form("%seta%i_", name.c_str(), ipv);
+	fpEtaFLS3d[ipv][i] =  bookDistribution(Form("%sfls3d", dname.c_str()), "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
+      }
+
+      // -- NPV analysis distributions
       for (int ipv = 0; ipv < NADPV; ++ipv) {
 	pD = fHistDir->mkdir(Form("%sNpv%i", name.c_str(), ipv));
 	pD->cd();
@@ -1111,7 +1237,8 @@ void candAna::bookHist() {
 	fpNpvAlpha[ipv][i]   = bookDistribution(Form("%salpha", dname.c_str()),  "#alpha_{3D}", "fGoodAlpha", 30, 0., 0.15); 
 	fpNpvFLS3d[ipv][i]   = bookDistribution(Form("%sfls3d", dname.c_str()), "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
 	fpNpvFLSxy[ipv][i]   = bookDistribution(Form("%sflsxy", dname.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
-	fpNpvDocaTrk[ipv][i] = bookDistribution(Form("%sdocatrk", dname.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 35, 0., 0.14);   
+	//	fpNpvDocaTrk[ipv][i] = bookDistribution(Form("%sdocatrk", dname.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 35, 0., 0.14);   
+	fpNpvDocaTrk[ipv][i] = bookDistribution(Form("%sdocatrk", dname.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 100, 0., 0.20);   
 	fpNpvIso[ipv][i]     = bookDistribution(Form("%siso", dname.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
 	fpNpvIsoTrk[ipv][i]  = bookDistribution(Form("%sisotrk", dname.c_str()),  "N_{trk}^{I}", "fGoodIso", 20, 0., 20.); 
 	fpNpvCloseTrk[ipv][i]= bookDistribution(Form("%sclosetrk", dname.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 20, 0., 20.); 
@@ -2111,6 +2238,136 @@ int candAna::nCloseTracks(TAnaCand *pC, double dcaCut, double ptCut) {
   }
   return cnt;
 }
+
+
+// ----------------------------------------------------------------------
+TAnaCand* candAna::osCand(TAnaCand *pC) {
+  TAnaCand *a = new TAnaCand(); 
+  a->fPvIdx = pC->fPvIdx; 
+  a->fType = pC->fType; 
+  a->fSig1 = a->fSig2 = -1; 
+  a->fPlab = TVector3(-pC->fPlab.X(), -pC->fPlab.Y(), -pC->fPlab.Z()); //???
+  return a; 
+}
+
+
+// ----------------------------------------------------------------------
+double candAna::osIsolation(TAnaCand *pC, double r, double ptmin) {
+  double iso(0.); 
+  TAnaTrack *pT(0); 
+  int overlap(0), verbose(0); 
+
+  // -- look at all tracks that are associated to the same vertex
+  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+    pT = fpEvt->getRecTrack(i); 
+    if (verbose) {
+      cout << "   track " << i 
+     	   << " with pT = " << pT->fPlab.Perp()
+     	   << " eta = " << pT->fPlab.Eta()
+     	   << " pointing at PV " << pT->fPvIdx;
+    }
+
+    // -- check against overlap to primary candidate
+    overlap = 0; 
+    for (int j = pC->fSig1; j <= pC->fSig2; ++j) {
+      if (i == fpEvt->getSigTrack(j)->fIndex) {
+	overlap = 1;
+	break;
+      }
+    }
+    if (1 == overlap) continue;
+    
+    
+// ???
+//     if ((pT->fPvIdx > -1) && (pT->fPvIdx != pvIdx)) { 	 
+//       if (verbose) cout << " doca track " << trkId << " skipped because it is from a different PV " << pT->fPvIdx <<endl; 	 
+//       continue; 	 
+//     }
+
+
+    if (pT->fPvIdx != pC->fPvIdx) { 	 
+      if (verbose) cout << " skipped because of PV index mismatch" << endl; 	     //FIXME
+      continue;
+    }
+    
+    double pt = pT->fPlab.Perp(); 
+    if (pt < ptmin) {
+      if (verbose) cout << " skipped because of pt = " << pt << endl;
+      continue;
+    }
+
+    if (pT->fPlab.DeltaR(pC->fPlab) > r) {
+      iso += pt; 
+      if (verbose) cout << endl;
+    } 
+    else {
+      if (verbose) cout << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+    }
+  }
+  
+  return iso;
+ 
+}
+
+// ----------------------------------------------------------------------
+int candAna::osMuon(TAnaCand *pC, double r) {
+
+  double mpt(-1.); 
+  int idx (-1); 
+  TAnaTrack *pT(0); 
+  int overlap(0), verbose(0); 
+  
+  // -- look at all tracks that are associated to the same vertex
+  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+    pT = fpEvt->getRecTrack(i); 
+    if (!tightMuon(pT)) continue;
+
+    // -- check against overlap to primary candidate
+    overlap = 0; 
+    for (int j = pC->fSig1; j <= pC->fSig2; ++j) {
+      if (i == fpEvt->getSigTrack(j)->fIndex) {
+	overlap = 1;
+	break;
+      }
+    }
+    if (1 == overlap) continue;
+
+    if (verbose) {
+      cout << "   track " << i 
+     	   << " with pT = " << pT->fPlab.Perp()
+     	   << " eta = " << pT->fPlab.Eta()
+     	   << " pointing at PV " << pT->fPvIdx;
+    }
+    
+    // ???
+    //     if (pT->fPvIdx != pvIdx) { 	 
+    //       if (verbose) cout << " skipped because of PV index mismatch" << endl; 	     //FIXME
+    //       continue;
+    //     }
+    
+    if ((pT->fPvIdx > -1) && (pT->fPvIdx != pC->fPvIdx)) { 	 
+      if (verbose) cout << " track " << i << " skipped because it is from a different PV " << pT->fPvIdx <<endl; 	 
+      continue; 	 
+    }
+    
+    if (pT->fPlab.DeltaR(pC->fPlab) > r) {
+      if (pT->fPlab.Perp() > mpt) {
+	mpt = pT->fPlab.Perp(); 
+	idx = i; 
+      }
+      if (verbose) cout << endl;
+    } 
+    else {
+      if (verbose) cout << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+    }
+  }
+  
+  return idx;
+
+
+}
+
+
 
 
 // ----------------------------------------------------------------------

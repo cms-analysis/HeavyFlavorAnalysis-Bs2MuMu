@@ -123,6 +123,8 @@ void candAnaBu2JpsiK::candAnalysis() {
 
   
   candAna::candAnalysis();
+  fCandTau   = fCandFL3d*MBPLUS/fCandP/TMath::Ccgs();
+
   fPreselection = fPreselection && fGoodJpsiMass;
 
   ((TH1D*)fHistDir->Get("../monEvents"))->Fill(3); 
@@ -192,6 +194,12 @@ void candAnaBu2JpsiK::genMatch() {
   fGenBTmi = -1; 
   if (goodMatch) {
     fGenBTmi = pB->fNumber; 
+    double m = pB->fP.Mag();
+    double p = pB->fP.P();
+    // Meson pointer
+    TGenCand *pM = pB; 
+    double x = (pM1->fV - pM->fV).Mag(); 
+    fGenLifeTime = x*m/p/TMath::Ccgs();
     if (pM1->fP.Perp() > pM2->fP.Perp()) {
       fGenM1Tmi = pM1->fNumber; 
       fGenM2Tmi = pM2->fNumber; 

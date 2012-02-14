@@ -83,6 +83,10 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
   // -- CMS with PDG input
   fsfu = 0.282;
   fsfuE = 0.037/0.282;
+  // -- CMS with LHCb input
+  fsfu = 0.267;
+  fsfuE = 0.021;
+
 
   fDoUseBDT = false; 
   fDoApplyCowboyVeto = false;   
@@ -90,6 +94,7 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
   fInvertedIso = false; 
   fNormProcessed = false; 
 
+  fCutsFileName = cuts; 
   init(files, cuts, dir, mode);
 
   int NBINS = (fMassHi - fMassLo)/0.025;
@@ -698,7 +703,7 @@ void plotClass::loopTree(int mode, int proc) {
       if (0 == fChan && bbdt < pCuts->bdt) continue;
       if (1 == fChan && bbdt2 < pCuts->bdt) continue;
     } else {
-    
+
       // -- analysis cuts
       if (bq1*bq2 > 0) continue;
       if (bm1pt < pCuts->m1pt) continue; 
@@ -709,7 +714,7 @@ void plotClass::loopTree(int mode, int proc) {
       
       if (bpt < pCuts->pt) continue; 
       if (fInvertedIso) {
-	if (biso > pCuts->iso) continue; 
+	if (biso > 0.7) continue; 
       } else {
 	if (biso < pCuts->iso) continue; 
       }
@@ -968,6 +973,7 @@ void plotClass::loopTree(int mode, int proc) {
     return;
   }
 
+
   //   c0->Clear();
   //   c0->Divide(1,2);
   for (unsigned int i = 0; i < fNchan; ++i) {
@@ -1194,6 +1200,7 @@ void plotClass::loopTree(int mode, int proc) {
       gStyle->SetOptTitle(0); 
       h->SetAxisRange(4.9, 5.9, "X"); 
       //      h->SetMaximum(.2);
+      h->SetMaximum(h->GetBinContent(h->GetMaximumBin())+1); 
       h->Draw();
       //       drawArrow(0.5, 2); 
       //       drawArrow(0.5, 1); 
@@ -1219,7 +1226,8 @@ void plotClass::loopTree(int mode, int proc) {
       setHist(h, kBlack, 20, 1.); 
       setTitles(h, "m_{#mu#mu} [GeV]", Form("Candidates / %3.3f GeV", h->GetBinWidth(1)), 0.05, 1.2, 1.3); 
       h->SetMinimum(0.01); 
-      h->SetNdivisions(003, "Y");
+      h->SetMaximum(h->GetBinContent(h->GetMaximumBin())+1); 
+      //      h->SetNdivisions(003, "Y");
       h->SetAxisRange(4.9, 5.9, "X"); 
       //      h->SetMaximum(2.2);
       gStyle->SetOptStat(0); 
@@ -1230,6 +1238,7 @@ void plotClass::loopTree(int mode, int proc) {
 
       tl->SetNDC(kTRUE); 
       tl->SetTextSize(0.07); 
+      tl->SetTextColor(kBlack); 
       if (0 == i) {
 	tl->DrawLatex(0.6, 0.8, "Barrel");   
       } 
@@ -2448,6 +2457,7 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
   lBg->Draw("same");
 
   tl->SetTextSize(0.07); 
+      tl->SetTextColor(kBlack); 
   if (0 == fChan) {
     tl->DrawLatex(0.6, 0.8, "Barrel");   
   } 
@@ -2550,6 +2560,7 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
   lBg->Draw("same");
 
   tl->SetTextSize(0.07); 
+  tl->SetTextColor(kBlack); 
   if (0 == mode) {
     tl->DrawLatex(0.22, 0.8, "Barrel");   
   } 

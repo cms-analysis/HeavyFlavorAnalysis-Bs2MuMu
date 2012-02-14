@@ -79,8 +79,12 @@ public:
 
   virtual std::string splitTrigRange(std::string tl, int &r1, int &r2);
 
-  virtual double      isoClassicWithDOCA(TAnaCand*, double dca, double r = 1.0, double ptmin = 0.9); 
+  virtual double      isoClassicWithDOCA(TAnaCand*, double dca, double r = 0.7, double ptmin = 0.9); 
   virtual int         nCloseTracks(TAnaCand*, double dca, double pt = 0.5); 
+
+  virtual TAnaCand*   osCand(TAnaCand *pC);
+  virtual double      osIsolation(TAnaCand *pC, double r = 1.0, double ptmin = 0.9); 
+  virtual int         osMuon(TAnaCand *pC, double r = 1.0); 
 
   virtual void        isolationStudy(double doca);
   virtual void        bookIsoPlots();  
@@ -92,7 +96,7 @@ public:
   bmm2Reader *fpReader; 
   TTree *fTree; 
   TAna01Event *fpEvt;
-  TAnaCand *fpCand;
+  TAnaCand *fpCand, *fpOsCand;
   int fCandIdx; 
 
   int fVerbose;
@@ -135,7 +139,8 @@ public:
   int     fCandTmi; 
   int     fGenBpartial; 
   int     fProcessType;
- 
+  double  fGenLifeTime; 
+
   // -- variables for reduced tree, they are from fpCand
   bool    fJSON, fCowboy;
   int     fCandTM, fCandType; 
@@ -151,7 +156,7 @@ public:
   double  fMu1W8Mu, fMu1W8Tr, fMu2W8Mu, fMu2W8Tr; 
   double  fPvX, fPvY, fPvZ, fPvNtrk, fPvNdof, fPvAveW8; 
   int     fPvN;
-  double  fCandPt, fCandEta, fCandPhi, fCandM, fCandM2, fCandW8Tr, fCandW8Mu; 
+  double  fCandPt, fCandP, fCandTau, fCandEta, fCandPhi, fCandM, fCandM2, fCandW8Tr, fCandW8Mu; 
   double  fCandCosA, fCandA;
   double  fCandChi2, fCandDof, fCandProb, fCandFL3d, fCandFL3dE, fCandFLS3d, fCandFLxy, fCandFLSxy, fCandDoca; 
   double  f2MChi2,   f2MDof,   f2MProb,   f2MFL3d,   f2MFL3dE,   f2MFLS3d,   f2MFLSxy; 
@@ -160,6 +165,8 @@ public:
   double  fCandDocaTrk, fCandDocaTrkBdt, fMu1IP, fMu1IPE, fMu2IP, fMu2IPE; 
   double  fCandPvTip, fCandPvTipE, fCandPvTipS, fCandPvLip, fCandPvLipE, fCandPvLipS, fCandPvIp, fCandPvIpE, fCandPvIpS;
   double  fCandPvLip2, fCandPvLipS2, fCandPvLip12, fCandPvLipE12, fCandPvLipS12; 
+
+  double  fOsMuonPt, fOsMuonPtRel, fOsIso, fOsRelIso, fOsMuonDeltaR;
 
   // -- another reduced tree
   TTree       *fEffTree;
@@ -196,7 +203,7 @@ public:
   AnalysisDistribution   *fpHLT[NAD], *fpPvZ[NAD], *fpPvN[NAD], *fpPvNtrk[NAD], *fpPvAveW8[NAD]  
     , *fpTracksQual[NAD], *fpTracksPt[NAD],  *fpTracksEta[NAD] 
     , *fpMuonsID[NAD], *fpMuonsPt[NAD], *fpMuonsEta[NAD], *fpMuon1Pt[NAD], *fpMuon2Pt[NAD], *fpMuon1Eta[NAD], *fpMuon2Eta[NAD]
-    , *fpPt[NAD], *fpEta[NAD] 
+    , *fpPt[NAD], *fpP[NAD], *fpEta[NAD] 
     , *fpCosA[NAD], *fpAlpha[NAD]
     , *fpIso[NAD], *fpIsoTrk[NAD], *fpCloseTrk[NAD]
     , *fpChi2[NAD], *fpChi2Dof[NAD], *fpProb[NAD] 
@@ -212,8 +219,20 @@ public:
     , *fp2MChi2[NAD],  *fp2MChi2Dof[NAD], *fp2MProb[NAD] 
     , *fp2MFLS3d[NAD], *fp2MFLSxy[NAD] 
     , *fp2MFL3d[NAD],  *fp2MFL3dE[NAD] 
-    ;
+    , *fpOsIso[NAD],  *fpOsRelIso[NAD] 
+    , *fpOsMuonPt[NAD],  *fpOsMuonDeltaR[NAD], *fpOsMuonPtRel[NAD]
 
+    , *fpOsIsoGGF[NAD], *fpOsIsoGSP[NAD], *fpOsIsoFEX[NAD]  
+    , *fpOsRelIsoGGF[NAD], *fpOsRelIsoGSP[NAD], *fpOsRelIsoFEX[NAD] 
+    , *fpOsMuonPtGGF[NAD], *fpOsMuonPtGSP[NAD], *fpOsMuonPtFEX[NAD]
+    , *fpOsMuonPtRelGGF[NAD], *fpOsMuonPtRelGSP[NAD], *fpOsMuonPtRelFEX[NAD]
+    , *fpOsMuonDeltaRGGF[NAD], *fpOsMuonDeltaRGSP[NAD], *fpOsMuonDeltaRFEX[NAD] 
+    , *fpIsoGGF[NAD], *fpIsoGSP[NAD], *fpIsoFEX[NAD]
+    , *fpCloseTrkGGF[NAD], *fpCloseTrkGSP[NAD], *fpCloseTrkFEX[NAD]
+    , *fpDocaTrkGGF[NAD], *fpDocaTrkGSP[NAD], *fpDocaTrkFEX[NAD]   
+    , *fpPtGGF[NAD], *fpPtGSP[NAD], *fpPtFEX[NAD]   
+    ;
+  
   // -- Analysis distributions in bins of n(PV)
 #define NADPV 15
   AnalysisDistribution   *fpNpvPvN[NADPV][NAD];
@@ -240,6 +259,8 @@ public:
   AnalysisDistribution   *fpNpvIso3[NADPV][NAD];
   AnalysisDistribution   *fpNpvIso4[NADPV][NAD];
   AnalysisDistribution   *fpNpvIso5[NADPV][NAD];
+
+  AnalysisDistribution   *fpEtaFLS3d[NADPV][NAD];
 
   // -- Isolation study
 #define NISO 10

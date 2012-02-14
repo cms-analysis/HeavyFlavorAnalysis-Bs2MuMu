@@ -13,6 +13,11 @@ public:
 
   void makeAll(int verbose = 0);
   
+  void productionMechanism(std::string dsample, std::string msample, std::string region = "A");
+  void fitDistribution(std::string var, std::string sample, std::string mcsample, std::string selection);
+
+  void profileVsEta(const char *var, const char *chan, const char *dir, const char *selection);
+
   void sbsDistributionOverlay(std::string file1, std::string dir1, std::string region1,
 			      std::string file2, std::string dir2, std::string region2 = "A", 
 			      std::string selection="Ao"); 

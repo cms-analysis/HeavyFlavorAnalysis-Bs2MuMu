@@ -73,6 +73,23 @@ void candAnaMuMu::genMatch() {
   fGenBTmi = -1; 
   if (goodMatch) {
     fGenBTmi = pB->fNumber; 
+    double m = pB->fP.Mag();
+    double p = pB->fP.P();
+    // Meson pointer
+    TGenCand *pM = fpEvt->getGenCand(pB->fMom1); 
+    // the meson is the original except if it oscillated
+    if (531 != TMath::Abs(pM->fID)) pM = pB;
+    double x = (pM1->fV - pM->fV).Mag(); 
+    fGenLifeTime = x*m/p/TMath::Ccgs();
+    //     if (fGenLifeTime < 0.0004) {
+    //       cout << "idx = " << pB->fNumber << " t: " << fGenLifeTime << " p: " << p  << " x: " << x 
+    // 	   << " ID: " << pB->fID 
+    // 	   << " m: " << pM1->fV.X() << ", " << pM1->fV.Y()  << ", " << pM1->fV.Z()
+    // 	   << " B: " << pB->fV.X() << ", " << pB->fV.Y()  << ", " << pB->fV.Z()
+    // 	   << endl;
+    //       fpEvt->dumpGenBlock();
+    //     }
+
     if (pM1->fP.Perp() > pM2->fP.Perp()) {
       fGenM1Tmi = pM1->fNumber; 
       fGenM2Tmi = pM2->fNumber; 

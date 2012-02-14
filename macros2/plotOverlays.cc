@@ -3,6 +3,7 @@
 #include "../macros/AnalysisDistribution.hh"
 #include "../macros/HistCutEfficiency.hh"
 #include "TMath.h"
+#include "TFractionFitter.h"
 
 using namespace std; 
 
@@ -40,7 +41,24 @@ void plotOverlays::makeAll(int verbose) {
 
   fVerbose = verbose;
 
-  int all(0);
+  // -- try to fit 
+  fMode = 3; 
+  fPreco = 5.1;
+  productionMechanism("NoData", "NoMc");
+  fMode = 2; 
+  productionMechanism("CsData", "CsMc");
+
+  // -- profile vs eta
+  string candName("candAnaBu2JpsiK"); 
+  profileVsEta("fls3d", "A", candName.c_str(), "Ao"); 
+
+  candName = "candAnaBs2JpsiPhi"; 
+  profileVsEta("fls3d", "A", candName.c_str(), "Ao"); 
+
+  candName = "candAnaMuMu"; 
+  profileVsEta("fls3d", "A", candName.c_str(), "Ao"); 
+
+  int all(1);
   
   fMode = 0; 
   cout << " ########################## SG DATA/MC A #########################" << endl;
@@ -64,6 +82,8 @@ void plotOverlays::makeAll(int verbose) {
   // -- default/mix
   cout << " ########################## NO DATA/MC A #########################" << endl;
   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Ao");
+  cout << " ########################## NO DATA/MCPU A #########################" << endl;
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMcPU", "candAnaBu2JpsiK", "A", "Ao");
   cout << " ########################## NO DATA/MCPU APV0 #########################" << endl;
   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "APV0", "NoMcPU", "candAnaBu2JpsiK", "APV0", "Ao");
   cout << " ########################## NO DATA/MCPU APV1 #########################" << endl;
@@ -78,6 +98,8 @@ void plotOverlays::makeAll(int verbose) {
   // -- default/mix
   cout << " ########################## CS DATA/MC A #########################" << endl;
   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMc", "candAnaBs2JpsiPhi", "A", "Ao");
+  cout << " ########################## CS DATA/MCPU A #########################" << endl;
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMcPU", "candAnaBs2JpsiPhi", "A", "Ao");
   cout << " ########################## CS DATA/MCPU APV0 #########################" << endl;
   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "APV0", "CsMcPU", "candAnaBs2JpsiPhi", "APV0", "Ao");
   cout << " ########################## CS DATA/MCPU APV0 #########################" << endl;
@@ -184,6 +206,11 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
 
   map<string, string> cutMap; 
   map<string, double> cutVal; 
+  doList.push_back("osiso");    
+  doList.push_back("osreliso");  
+  doList.push_back("osmuonpt");  
+  doList.push_back("osmuondr");  skipList.push_back("osmuondr");  
+
   doList.push_back("hlt");  
   doList.push_back("muonsid");  
   doList.push_back("tracksqual"); 
@@ -195,10 +222,12 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
   doList.push_back("muon2pt");  cutMap.insert(make_pair("muon2pt", "MUPTLO")); cutVal.insert(make_pair("muon2pt", fCuts[0]->m2pt));
   doList.push_back("muonseta");  skipList.push_back("muonseta"); 
   doList.push_back("pt");       cutMap.insert(make_pair("pt", "CANDPTLO"));  cutVal.insert(make_pair("pt", fCuts[0]->pt));
-  doList.push_back("eta");            skipList.push_back("eta"); 
-  doList.push_back("bdt");            skipList.push_back("bdt"); 
+  doList.push_back("p");            
+  doList.push_back("eta");          skipList.push_back("eta"); 
+  doList.push_back("bdt");          skipList.push_back("bdt"); 
 
   doList.push_back("fl3d");  
+  doList.push_back("fl3de");  
   doList.push_back("fls3d");    cutMap.insert(make_pair("fls3d", "CANDFLS3D")); cutVal.insert(make_pair("fls3d", fCuts[0]->fls3d));
   doList.push_back("flsxy");
   doList.push_back("chi2dof");  cutMap.insert(make_pair("chi2dof", "CANDVTXCHI2")); cutVal.insert(make_pair("chi2dof", fCuts[0]->chi2dof));
@@ -458,6 +487,323 @@ void plotOverlays::sbsDistributionOverlaySameFile(string file1, string dir1, str
 
 
 
+
+
+
+// ----------------------------------------------------------------------
+void plotOverlays::profileVsEta(const char *var, const char *chan, const char *dir, const char *selection) {
+
+  TH1D *h[15], *m[15];
+
+
+  if (!strcmp(dir, "candAnaMuMu")) fF["SgData"]->cd(dir);
+  if (!strcmp(dir, "candAnaBu2JpsiK")) fF["NoData"]->cd(dir);
+  if (!strcmp(dir, "candAnaBs2JpsiPhi")) fF["CsData"]->cd(dir);
+  AnalysisDistribution a("A_pvz"); 
+  cout << "==> gDirectory = "; gDirectory->pwd(); 
+  c0->Clear();
+  c0->Divide(4,4);
+  for (int i = 0; i < 15; ++i) {
+    c0->cd(i+1);
+    gFile->cd(Form("%s/%s_Eta%d", dir, chan, i));
+    h[i] = a.sbsDistribution(Form("%s_eta%d_%s", chan, i, var), selection);
+    // -- check that the bins are not negative. If they are, reset to zero
+    for (int ix = 1; ix <= h[i]->GetNbinsX(); ++ix) {
+      if (h[i]->GetBinContent(ix) < 0) {
+	h[i]->SetBinContent(ix, 0.); 
+	h[i]->SetBinError(ix, 0.); 
+      }	
+    }
+
+    h[i]->Draw("hist");
+  }
+
+
+  if (!strcmp(dir, "candAnaMuMu")) fF["SgMc"]->cd(dir);
+  if (!strcmp(dir, "candAnaBu2JpsiK")) fF["NoMc"]->cd(dir);
+  if (!strcmp(dir, "candAnaBs2JpsiPhi")) fF["CsMc"]->cd(dir);
+  AnalysisDistribution b("A_pvz"); 
+  cout << "==> gDirectory = "; gDirectory->pwd(); 
+  c0->Clear();
+  c0->Divide(4,4);
+  for (int i = 0; i < 15; ++i) {
+    c0->cd(i+1);
+    gFile->cd(Form("%s/%s_Eta%d", dir, chan, i));
+    m[i] = b.sbsDistribution(Form("%s_eta%d_%s", chan, i, var), selection);
+    // -- check that the bins are not negative. If they are, reset to zero
+    for (int ix = 1; ix <= h[i]->GetNbinsX(); ++ix) {
+      if (m[i]->GetBinContent(ix) < 0) {
+	m[i]->SetBinContent(ix, 0.); 
+	m[i]->SetBinError(ix, 0.); 
+      }	
+    }
+
+    m[i]->Draw("hist");
+  }
+
+  TH1D *heff = new TH1D("heff", "", 15, -2.4, 2.4);
+  TH1D *meff = new TH1D("meff", "", 15, -2.41, 2.41);
+  gStyle->SetOptTitle(0); 
+  gStyle->SetOptStat(0); 
+  double eff(0.); 
+  double stat(0.); 
+  for (int i = 0; i < 15; ++i) {
+    heff->SetBinContent(i+1, h[i]->GetMean()); 
+    heff->SetBinError(i+1, h[i]->GetMeanError()); 
+
+    meff->SetBinContent(i+1, m[i]->GetMean()); 
+    meff->SetBinError(i+1, m[i]->GetMeanError()); 
+  }
+  
+  c0->Clear();
+  setTitles(heff, "#eta", "<l_{3D}/#sigma(l_{3D})>"); 
+  heff->SetMinimum(0.01); 
+  heff->SetMaximum(1.2*meff->GetMaximum()); 
+  heff->SetMarkerSize(2); 
+  heff->Draw();
+
+  meff->SetMarkerSize(2); 
+  meff->SetMarkerStyle(25); 
+  meff->Draw("same");
+
+  if (fDoPrint)  
+    c0->SaveAs(Form("%s/profVsEta-%s-%s-%s.pdf", fDirectory.c_str(), dir, chan, var));
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotOverlays::productionMechanism(string dsample, string msample, string region) {
+
+  if (string::npos != dsample.find("No")) {
+    fMode = 3; 
+    fPreco = 5.1;
+  }
+
+  if (string::npos != dsample.find("Cs")) {
+    fMode = 2; 
+  }
+
+  // -- fit for production mechanism
+  vector<string> doList; 
+  doList.push_back("osmuondr");
+  doList.push_back("osmuonptrel");
+  doList.push_back("osiso");
+  doList.push_back("osreliso");
+  doList.push_back("osmuonpt");
+  doList.push_back("pt");
+  doList.push_back("iso");
+
+  //  doList.push_back("docatrk");
+  //  doList.push_back("closetrk");
+  for (int i = 0; i < doList.size(); ++i) {
+    fitDistribution(Form("%s_%s", region.c_str(), doList[i].c_str()), dsample, msample, "Ao");
+  }
+}
+
+
+// ----------------------------------------------------------------------
+TH1D *h0(0), *hggf(0), *hfex(0), *hgsp(0); 
+// ----------------------------------------------------------------------
+Double_t ftotal(Double_t *x, Double_t *par) {
+  Double_t xx = x[0];
+  Int_t bin = h0->GetXaxis()->FindBin(xx);
+  Double_t comp1 = par[0]*hggf->GetBinContent(bin);
+  Double_t comp2 = par[1]*hfex->GetBinContent(bin);
+  Double_t comp3 = (1.-par[0]-par[1])*hgsp->GetBinContent(bin);
+  return comp1+comp2+comp3;
+}
+
+// ----------------------------------------------------------------------
+void fithist(double p0, double p1, double p2) {
+
+  TF1 *ftot = new TF1("ftot",ftotal,0,100,2);
+  Double_t norm = h0->GetMaximum();
+  ftot->SetParameters(p0, p1);
+  ftot->SetParLimits(0,0.6*p0,1.4*p0);
+  ftot->SetParLimits(1,0.6*p1,1.4*p1);
+  
+  h0->Fit("ftot","0mel");   
+}
+
+// ----------------------------------------------------------------------
+void plotOverlays::fitDistribution(string var, string sample, string mcsample, string selection) {
+  gStyle->SetOptFit(0);
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+  string dir; 
+  if (string::npos != sample.find("No")) dir = "candAnaBu2JpsiK"; 
+  if (string::npos != sample.find("Cs")) dir = "candAnaBs2JpsiPhi"; 
+
+  fF[mcsample]->cd(dir.c_str());
+  hggf = (TH1D*)gDirectory->Get(Form("%sggf%s0", var.c_str(), selection.c_str()));
+  hfex = (TH1D*)gDirectory->Get(Form("%sfex%s0", var.c_str(), selection.c_str()));
+  hgsp = (TH1D*)gDirectory->Get(Form("%sgsp%s0", var.c_str(), selection.c_str()));
+
+  fF[sample]->cd(dir.c_str());
+  AnalysisDistribution b("A_pvz"); 
+  b.fVerbose = 10; 
+  if (string::npos != sample.find("Mc")) {
+    cout << "==> searching in file/dir" << sample << "/" << dir << " for " << Form("%s%s0", var.c_str(), selection.c_str());
+    h0 = (TH1D*)gDirectory->Get(Form("%s%s0", var.c_str(), selection.c_str()));
+    cout << " " << h0 << endl;
+  } else {
+    if (1 == fMode) h0 = b.sbsDistribution(var.c_str(), selection.c_str());
+    if (2 == fMode) h0 = b.sbsDistributionExpoGauss(var.c_str(), selection.c_str());
+    if (3 == fMode) h0 = b.sbsDistributionPol1ErrGauss(var.c_str(), selection.c_str(), fPreco);
+  }
+
+  if (0 == h0) return;
+  
+  double eps(1.e-5);
+  int nmax(-1), nmin(1); 
+  if (string::npos != var.find("docatrk")) nmax = h0->FindBin(0.15+eps);
+  if (string::npos != var.find("closetrk")) nmax = h0->FindBin(3+eps);
+  if (string::npos != var.find("osmuondr")) {
+    nmin = h0->FindBin(0.5+eps);
+    nmax = h0->FindBin(4.5+eps);
+  }
+  if (string::npos != var.find("pt")) {
+    nmin = h0->FindBin(8.+eps);
+    nmax = h0->FindBin(45.+eps);
+  }
+  if (string::npos != var.find("osmuonpt")) {
+    nmin = h0->FindBin(1.+eps);
+    nmax = h0->FindBin(15.+eps);
+  }
+  if (string::npos != var.find("iso")) {
+    nmin = h0->FindBin(0.4+eps);
+    nmax = h0->FindBin(1.0+eps);
+  }
+  if (string::npos != var.find("osiso")) {
+    nmin = h0->FindBin(0.0+eps);
+    nmax = h0->FindBin(60.0+eps);
+  }
+  if (string::npos != var.find("osreliso")) {
+    nmin = h0->FindBin(0.0+eps);
+    nmax = h0->FindBin(3.0+eps);
+  }
+  cout << "Fitting " << var << " up to bin " << nmax << " -> " << h0->GetBinLowEdge(nmax) << endl;
+  
+  zone(2,3);
+
+  c0->cd(1);  h0->Draw();
+  c0->cd(2);  hggf->Draw();
+  c0->cd(3);  hfex->Draw();
+  c0->cd(4);  hgsp->Draw();
+
+  // -- fit h0 with the components 
+  double fractions[3], errors[3];
+  vector<string> name;
+  name.push_back("GGF");
+  name.push_back("FEX");
+  name.push_back("GSP");
+
+  double mctotal(0.), mcfractions[3];
+  mcfractions[0] = hggf->Integral(0, hggf->GetNbinsX()+1);
+  mcfractions[1] = hfex->Integral(0, hfex->GetNbinsX()+1);
+  mcfractions[2] = hgsp->Integral(0, hgsp->GetNbinsX()+1);
+  mctotal = mcfractions[0] + mcfractions[1] + mcfractions[2];
+  mcfractions[0] /= mctotal;
+  mcfractions[1] /= mctotal;
+  mcfractions[2] /= mctotal;
+
+  hggf->Scale(h0->GetSumOfWeights()/hggf->GetSumOfWeights()); 
+  hfex->Scale(h0->GetSumOfWeights()/hfex->GetSumOfWeights()); 
+  hgsp->Scale(h0->GetSumOfWeights()/hgsp->GetSumOfWeights()); 
+  c0->cd(5); 
+
+  zone(1);
+  gStyle->SetOptFit(0);
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+  fithist(mcfractions[0], mcfractions[1], mcfractions[2]); 
+  h0->SetMinimum(0.);
+  h0->DrawCopy("e");
+  for (int i = 0; i < 2; ++i) {
+    fractions[i] =  ((TF1*)h0->GetFunction("ftot"))->GetParameter(i);
+    errors[i]      =  ((TF1*)h0->GetFunction("ftot"))->GetParError(i);
+    cout << "fraction " << i << ": " << ((TF1*)h0->GetFunction("ftot"))->GetParameter(i) 
+	 << " +/- " << ((TF1*)h0->GetFunction("ftot"))->GetParError(i)  << " (MC: " << mcfractions[i] << ")" << endl;
+  }
+
+  fractions[2] =  1. - fractions[0] - fractions[1]; 
+  errors[2]    = TMath::Sqrt(errors[0]*errors[0] + errors[1]*errors[1]);
+
+  hggf->Scale(fractions[0]); setHist(hggf, kBlue, 20, 2); 
+  hfex->Scale(fractions[1]); setHist(hfex, kBlack, 21, 2); 
+  hgsp->Scale(fractions[2]); setHist(hgsp, kRed, 22, 2); 
+
+  TH1D *h1 = (TH1D*)h0->Clone("h1"); h1->Reset();
+  h1->Add(hggf);
+  h1->Add(hfex);
+  h1->Add(hgsp);
+  setFilledHist(h1, kBlack, kYellow); 
+  h1->Draw("samehist");
+  h0->Draw("samee");
+
+  hggf->Draw("samehist");
+  hfex->Draw("samehist");
+  hgsp->Draw("samehist");
+
+  tl->SetTextSize(0.03);
+  double x(0.6); 
+  if (string::npos != var.find("iso")) x = 0.2;
+  if (string::npos != var.find("osiso")) x = 0.6;
+  if (string::npos != var.find("osreliso")) x = 0.6;
+
+  tl->SetTextColor(kBlue); 
+  tl->DrawLatex(x, 0.85, Form("%s: %4.3f+/-%4.3f",  name[0].c_str(), fractions[0], errors[0]));      
+  tl->DrawLatex(x+0.08, 0.81, Form("(%4.3f)", mcfractions[0])); 
+  tl->SetTextColor(kBlack); 
+  tl->DrawLatex(x, 0.75, Form("%s: %4.3f+/-%4.3f",  name[1].c_str(), fractions[1], errors[1]));      
+  tl->DrawLatex(x+0.08, 0.71, Form("(%4.3f)", mcfractions[1])); 
+  tl->SetTextColor(kRed); 
+  tl->DrawLatex(x, 0.65, Form("%s: %4.3f+/-%4.3f",  name[2].c_str(), fractions[2], errors[2]));
+  tl->DrawLatex(x+0.08, 0.61, Form("(%4.3f)", mcfractions[2])); 
+
+  tl->SetTextColor(kBlack); 
+  tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof: %4.1f/%d", ((TF1*)h0->GetFunction("ftot"))->GetChisquare(), 
+				((TF1*)h0->GetFunction("ftot"))->GetNDF()));      
+
+  c0->SaveAs(Form("%s/prodMechanism-%s-%s-%s.pdf", fDirectory.c_str(), var.c_str(), sample.c_str(), mcsample.c_str()));
+
+  return;
+
+//   TObjArray *mc = new TObjArray(3);      
+//   mc->Add(hggf);
+//   mc->Add(hfex);
+//   mc->Add(hgsp);
+//   TFractionFitter *fit = new TFractionFitter(h0, mc);
+//   fit->Constrain(0, 0.1, 0.5);              
+//   fit->Constrain(1, 0.2, 0.8);              
+//   fit->Constrain(2, 0.1, 0.5);              
+
+//   fit->ReleaseRangeX();
+//   if (nmax > 0) fit->SetRangeX(nmin, nmax);
+//   //  TVirtualFitter* vFit = fit->GetFitter();
+//   //  vFit->SetMaxIterations(20000);
+//   int status = fit->Fit();               
+//   cout << "fit status: " << status << endl;
+//   c0->cd(5); 
+//   if (0 == status) {                     
+//     TH1D* h1 = (TH1D*)fit->GetPlot();
+//     h0->Draw("Ep");
+//     h1->Draw("same");
+//     c0->cd(6);
+//     for (int i = 0; i < 3; ++i) {
+//       fit->GetResult(i, fractions[i], errors[i]); 
+//       cout << "fraction " << i << ": " << fractions[i] << " +/- " << errors[i] << "(MC: " << mcfractions[i] << ")" << endl;
+//       tl->DrawLatex(0.2, 0.8-i*0.1, Form("%s: %4.3f+/-%4.3f (MC: %4.3f)", name[i].c_str(), fractions[i], errors[i], mcfractions[i]));      
+//     }
+//     tl->DrawLatex(0.2, 0.4, Form("#chi^{2}/dof: %4.3f/%d", fit->GetChisquare(), fit->GetNDF()));      
+//     tl->DrawLatex(0.2, 0.3, Form("Fitrange: %4.3f - %4.3f", h0->GetBinLowEdge(nmin), h0->GetBinLowEdge(nmax)));      
+//   }
+  
+//   c0->SaveAs(Form("%s/prodMechanism-%s-%s-%s.pdf", fDirectory.c_str(), var.c_str(), sample.c_str(), mcsample.c_str()));
+//   delete fit;
+//   delete mc;
+}
 
 
 

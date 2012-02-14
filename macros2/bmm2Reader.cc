@@ -73,6 +73,8 @@ void bmm2Reader::eventProcessing() {
     lCandAnalysis[i]->fLS          = fLS; 
     lCandAnalysis[i]->fEvent       = fEvent; 
     lCandAnalysis[i]->fProcessType = fProcessType; 
+    lCandAnalysis[i]->fCandTau     = -1.; 
+    lCandAnalysis[i]->fGenLifeTime = -1.; 
 
     lCandAnalysis[i]->evtAnalysis(fpEvt);
   }

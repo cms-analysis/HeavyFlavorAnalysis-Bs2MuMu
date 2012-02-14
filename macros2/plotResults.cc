@@ -10,6 +10,7 @@
 #include "TLorentzVector.h"
 #include "TRandom.h"
 #include "THStack.h"
+#include "TProfile.h"
 
 using namespace std; 
 using std::string; 
@@ -45,30 +46,43 @@ plotResults::~plotResults() {
 // ----------------------------------------------------------------------
 void plotResults::makeAll(int channels) {
   
-//   fNumbersNo[0]->effTot = 0.00117;
-//   fNumbersNo[1]->effTot = 0.00034;
-//   fNumbersNo[0]->fitYield = 87878;
-//   fNumbersNo[1]->fitYield = 23883;
+//   fNumbersNo[0]->effTot = 0.0011;
+//   fNumbersNo[1]->effTot = 0.00032;
+//   fNumbersNo[0]->fitYield = 82712;
+//   fNumbersNo[1]->fitYield = 23810;
 
-//   cout << fNumbersNo[0]->effTot << " +/- " << fNumbersNo[0]->effTotTE << endl;
-//   computeErrors(fNumbersNo); 
-//   cout << fNumbersNo[0]->effTot << " +/- " << fNumbersNo[0]->effTotTE << endl;
+// //   cout << fNumbersNo[0]->effTot << " +/- " << fNumbersNo[0]->effTotTE << endl;
+// //   computeErrors(fNumbersNo); 
+// //   cout << fNumbersNo[0]->effTot << " +/- " << fNumbersNo[0]->effTotTE << endl;
 
-//   return;
+// //   return;
 
 //   zone(2,2);
 
 //   pair<TH1D*, TH1D*> bothH = singleRelativeYield("bgBd2PiMuNu");
 //   c0->cd(1);  bothH.first->Draw();
 //   c0->cd(2);  bothH.second->Draw();
+//   return;
 
 //   bothH = singleRelativeYield("bgBs2KMuNu");
 //   c0->cd(3);  bothH.first->Draw();
 //   c0->cd(4);  bothH.second->Draw();
   
 //   return;
-  
 
+  fls3dVsX("pt", "m1pt>4.5&&m2pt>4.2&&hlt", "fls3d_prof_pt.pdf");
+  fls3dVsX("pt", "m1pt>4.5&&m2pt>4.2&&hlt&&docatrk>0.015", "fls3d_prof_docatrk_pt.pdf");
+  
+  fls3dVsX("abs(eta)", "m1pt>4.5&&m2pt>4.2&&hlt&&docatrk>0.015", "fls3d_prof_docatrk_eta.pdf");
+  fls3dVsX("abs(eta)", "m1pt>4.5&&m2pt>4.2&&hlt", "fls3d_prof_eta.pdf");
+
+  fls3dEfficiency("1", "fls3dStudy_muoncuts.pdf");
+  fls3dEfficiency("alpha<0.05", "fls3dStudy_alpha_muoncuts.pdf");
+  fls3dEfficiency("alpha<0.05&&docatrk>0.015", "fls3dStudy_docatrk_alpha_muoncuts.pdf");
+
+  if (channels & 4) invertedIsolationStudy();
+
+  zone(1);
   if (channels & 1) {
     fNormProcessed = false; 
     fDoUseBDT = false; 
@@ -77,10 +91,9 @@ void plotResults::makeAll(int channels) {
     computeNormUL();
     computeCsBF();
     acceptancePerProcess();
-    allInvertedIso();
-    invertedIsoPrediction();
   }
 
+  zone(1);
   if (channels & 2) {
     fNormProcessed = false; 
     fDoUseBDT = true; 
@@ -168,26 +181,6 @@ void plotResults::computeNormUL() {
   cout << "printing fNumbersNorm[0]" << endl;
   printNumbers(*fNumbersNo[0], cout); 
   printNumbers(*fNumbersNo[0], fOUT); 
-
-//   double fUL = (fNumbersBs[0]->bgBsExp/fNumbersNo[0]->fitYield) //????FIXME
-//     *(fu/fs)
-//     *(fNumbersNo[0]->acc/fNumbersBs[0]->acc)
-//     *(fNumbersNo[0]->effCand/fNumbersBs[0]->effCand)     
-//     *(fNumbersNo[0]->effMuidMC/fNumbersBs[0]->effMuidMC)
-//     *(fNumbersNo[0]->effTrigMC/fNumbersBs[0]->effTrigMC)
-//     *(fNumbersNo[0]->effAna/fNumbersBs[0]->effAna)
-//     * fBF;
-
-//   cout << "prod(eff) expected UL: " << fUL << endl;
-
-//   fUL = (fNul/fNumbersNo[0]->fitYield)
-//     *(fu/fs)
-//     *(fNumbersNo[0]->effTot/fNumbersBs[0]->effTot)
-//     * fBF;
-
-//   cout << "effTot expected UL:    " << fUL << endl;
-
-  //  system(Form("../ulcalc/bin/ulcalc %s", fUlcalcFileName.c_str())); 
 
 }
 
@@ -516,7 +509,7 @@ void plotResults::printUlcalcNumbers(string fname) {
       fTEX << scientificTex(fNumbersNo[i]->effMuidTNP, fNumbersNo[i]->effMuidTNPTE, 
 			    Form("%s:N-EFF-MU-PID-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-      OUT << "EFF_MU_BPLUS\t" << i << "\t"  << fNumbersNo[i]->effMuidMC << "\t"  << fNumbersNo[i]->effMuidMCTE << endl;
+      OUT << "EFF_MU_BPLUS\t" << i << "\t"  << fNumbersNo[i]->effMuidMC << "\t"  << "0." << endl;
       //	  << "\t"  << sysMu*fNumbersNo[i]->effMuidMC 
       fTEX << formatTex(fNumbersNo[i]->effMuidTNPMC, Form("%s:N-EFF-MU-PIDMC-BPLUS%i:val", fSuffix.c_str(), i), 3) << endl;
       fTEX << formatTex(fNumbersNo[i]->effMuidTNPMCE, Form("%s:N-EFF-MU-PIDMC-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
@@ -542,7 +535,7 @@ void plotResults::printUlcalcNumbers(string fname) {
       fTEX << scientificTex(fNumbersNo[i]->effTrigTNPMC, fNumbersNo[i]->effTrigTNPMCTE, 
 			    Form("%s:N-EFF-TRIG-PIDMC-BPLUS%i:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
-      OUT << "EFF_TRIG_BPLUS\t" << i << "\t" << fNumbersNo[i]->effTrigMC << "\t" << fNumbersNo[i]->effTrigMCTE << endl;
+      OUT << "EFF_TRIG_BPLUS\t" << i << "\t" << fNumbersNo[i]->effTrigMC << "\t" << "0." << endl;
       fTEX << formatTex(fNumbersNo[i]->effTrigMC, Form("%s:N-EFF-TRIG-MC-BPLUS%i:val", fSuffix.c_str(), i), 3) << endl;
       fTEX << formatTex(fNumbersNo[i]->effTrigMCE, Form("%s:N-EFF-TRIG-MC-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
       fTEX << formatTex(fNumbersNo[i]->effTrigMCTE, Form("%s:N-EFF-TRIG-MC-BPLUS%i:tot", fSuffix.c_str(), i), 3) << endl;
@@ -1421,61 +1414,286 @@ void plotResults::invertedIsolationStudy() {
 
   fInvertedIso = true; 
 
-  fNumbersNo[0]->effTot = 0.0011;
-  fNumbersNo[1]->effTot = 0.00032;
-  fNumbersNo[0]->fitYield = 83642;
-  fNumbersNo[1]->fitYield = 19714;
+  fTEX.close();
+  fTEX.open(Form("%s/anaBmm.invertedIsolation.default-11.tex", fDirectory.c_str()));
 
-  double lo(10.0), hi(20.0), cut(0.); 
-  int npoints(2); 
-  readCuts(Form("anaBmm.default.cuts")); 
-  TH1D *h0, *h1;
+  // -- determine the inverted isolation prediction and observation without cut variation
+  readCuts(fCutsFileName.c_str()); 
+  determineInvertedIsolationYield(1);
+
+  // -- scan a few cuts
+  TH1D *h0, *h1, *x0, *x1;
+  string axis(""), pdfname(""); 
+  double lo(5.0), hi(15.0), cut(0.); 
+  int npoints(5); 
+
+  // -- m1pt
+  readCuts(fCutsFileName.c_str()); 
+  npoints = 5; 
+  lo = 4.0; 
+  hi = 5.0;
+  h0 = new TH1D("h0", "", npoints, lo, hi); 
+  h1 = new TH1D("h1", "", npoints, lo, hi); 
+  x0 = new TH1D("x0", "", npoints, lo, hi); x0->Sumw2();
+  x1 = new TH1D("x1", "", npoints, lo, hi); x1->Sumw2();
+  axis = "p_{T,#mu1} > ";
+  pdfname = "muon1pt";
+  setTitles(x0, axis.c_str(), "Candidates", 0.08, 1., 0.9, 0.07); 
+  setTitles(x1, axis.c_str(), "Candidates", 0.08, 1., 0.9, 0.07); 
+
+  for (int j = 0; j < npoints; ++j) {
+    cut = lo + j*(hi-lo)/npoints;
+    fCuts[0]->m1pt = cut;
+    fCuts[1]->m1pt = cut;
+    printCuts(cout);
+    determineInvertedIsolationYield();
+    x0->SetBinContent(j+1, fBl0Exp); x0->SetBinError(j+1, fBl0ExpE); 
+    x1->SetBinContent(j+1, fBl1Exp); x1->SetBinError(j+1, fBl1ExpE); 
+    h0->SetBinContent(j+1, fBl0Obs); 
+    h1->SetBinContent(j+1, fBl1Obs); 
+  }
+ 
+  plotInvertedIsolationScan(pdfname, h0, h1, x0, x1);
+
+
+  // -- fls3d
+  readCuts(fCutsFileName.c_str()); 
+  npoints = 5; 
+  lo = 5.0; 
+  hi = 15.0;
+  h0 = new TH1D("h0", "", npoints, lo, hi); 
+  h1 = new TH1D("h1", "", npoints, lo, hi); 
+  x0 = new TH1D("x0", "", npoints, lo, hi); x0->Sumw2();
+  x1 = new TH1D("x1", "", npoints, lo, hi); x1->Sumw2();
+  axis = "l/#sigma(l_{3d}) > ";
+  pdfname = "fls3d";
+  setTitles(x0, axis.c_str(), "Candidates", 0.08, 1., 0.9, 0.07); 
+  setTitles(x1, axis.c_str(), "Candidates", 0.08, 1., 0.9, 0.07); 
+
   for (int j = 0; j < npoints; ++j) {
     cut = lo + j*(hi-lo)/npoints;
     fCuts[0]->fls3d = cut;
     fCuts[1]->fls3d = cut;
     printCuts(cout);
     determineInvertedIsolationYield();
+    x0->SetBinContent(j+1, fBl0Exp); x0->SetBinError(j+1, fBl0ExpE); 
+    x1->SetBinContent(j+1, fBl1Exp); x1->SetBinError(j+1, fBl1ExpE); 
+    h0->SetBinContent(j+1, fBl0Obs); 
+    h1->SetBinContent(j+1, fBl1Obs); 
   }
+ 
+  plotInvertedIsolationScan(pdfname, h0, h1, x0, x1);
+
+
+  // -- alpha
+  readCuts(fCutsFileName.c_str()); 
+  npoints = 5; 
+  lo = 0.05; 
+  hi = 0.15;
+  h0 = new TH1D("h0", "", npoints, lo, hi); 
+  h1 = new TH1D("h1", "", npoints, lo, hi); 
+  x0 = new TH1D("x0", "", npoints, lo, hi); x0->Sumw2();
+  x1 = new TH1D("x1", "", npoints, lo, hi); x1->Sumw2();
+  axis = "#alpha < ";
+  pdfname = "alpha";
+  setTitles(x0, axis.c_str(), "Candidates", 0.08, 1., 0.9, 0.07); 
+  setTitles(x1, axis.c_str(), "Candidates", 0.08, 1., 0.9, 0.07); 
+
+  for (int j = 0; j < npoints; ++j) {
+    cut = lo + j*(hi-lo)/npoints;
+    fCuts[0]->alpha = cut;
+    fCuts[1]->alpha = cut;
+    printCuts(cout);
+    determineInvertedIsolationYield();
+    x0->SetBinContent(j+1, fBl0Exp); x0->SetBinError(j+1, fBl0ExpE); 
+    x1->SetBinContent(j+1, fBl1Exp); x1->SetBinError(j+1, fBl1ExpE); 
+    h0->SetBinContent(j+1, fBl0Obs); 
+    h1->SetBinContent(j+1, fBl1Obs); 
+  }
+ 
+  plotInvertedIsolationScan(pdfname, h0, h1, x0, x1);
+
+
+  // -- chi2/dof
+  readCuts(fCutsFileName.c_str()); 
+  npoints = 5; 
+  lo = 2.0; 
+  hi = 4.0;
+  h0 = new TH1D("h0", "", npoints, lo, hi); 
+  h1 = new TH1D("h1", "", npoints, lo, hi); 
+  x0 = new TH1D("x0", "", npoints, lo, hi); x0->Sumw2();
+  x1 = new TH1D("x1", "", npoints, lo, hi); x1->Sumw2();
+  axis = "#chi^{2}/dof < ";
+  pdfname = "chi2dof";
+  setTitles(x0, axis.c_str(), "Candidates", 0.08, 1., 0.9, 0.07); 
+  setTitles(x1, axis.c_str(), "Candidates", 0.08, 1., 0.9, 0.07); 
+
+  for (int j = 0; j < npoints; ++j) {
+    cut = lo + j*(hi-lo)/npoints;
+    fCuts[0]->chi2dof = cut;
+    fCuts[1]->chi2dof = cut;
+    printCuts(cout);
+    determineInvertedIsolationYield();
+    x0->SetBinContent(j+1, fBl0Exp); x0->SetBinError(j+1, fBl0ExpE); 
+    x1->SetBinContent(j+1, fBl1Exp); x1->SetBinError(j+1, fBl1ExpE); 
+    h0->SetBinContent(j+1, fBl0Obs); 
+    h1->SetBinContent(j+1, fBl1Obs); 
+  }
+ 
+  plotInvertedIsolationScan(pdfname, h0, h1, x0, x1);
+
+  // -- reset cuts to default
+  readCuts(fCutsFileName.c_str()); 
+
+  fTEX.close();
+  fTEX.open(fNumbersFileName.c_str(), ios::app);
+
 }
 
-// ----------------------------------------------------------------------
-void plotResults::determineInvertedIsolationYield() {
-  
-  loopTree(5); 
-  TH1D *hd[] = {fhMassWithAllCutsManyBins[0], fhMassWithAllCutsManyBins[1]};
 
+// ----------------------------------------------------------------------
+void plotResults::plotInvertedIsolationScan(string pdfname, TH1D *h0, TH1D *h1, TH1D *x0, TH1D *x1) {
+  zone(1,2);
+  c0->cd(1);
+  shrinkPad(0.2, 0.15); 
+  double maxi = h0->GetMaximum(); 
+  if (x0->GetMaximum() > maxi) {
+    maxi = 1.2*x0->GetMaximum();
+  } else {
+    maxi = 1.2*h0->GetMaximum();
+  }
+  //  setFilledHist(x0);
+  x0->SetMaximum(maxi); 
+  x0->SetMinimum(0.); 
+  x0->SetMarkerSize(0.); 
+  x0->Draw("ehist");
+  h0->Draw("e1same");
+  tl->SetTextColor(kBlack);
+  tl->DrawLatex(0.15, 0.92, "Barrel");
+  
+  maxi = x1->GetMaximum(); 
+  if (h1->GetMaximum() > maxi) {
+    maxi = 1.2*h1->GetMaximum();  
+  } else {
+    maxi = 1.2*x1->GetMaximum();  
+  }
+  c0->cd(2);
+  shrinkPad(0.2, 0.15); 
+  //  setFilledHist(x1);
+  x1->SetMarkerSize(0.); 
+  x1->SetMaximum(maxi); 
+  x1->SetMinimum(0.); 
+  x1->Draw("ehist");
+  h1->Draw("e1same");
+  tl->DrawLatex(0.15, 0.92, "Endcap");
+  
+  c0->SaveAs(Form("%s/invertedIso-%s.pdf", fDirectory.c_str(), pdfname.c_str())); 
+  c0->Clear();
+}
+
+
+// ----------------------------------------------------------------------
+void plotResults::determineInvertedIsolationYield(int print) {
+  
+  zone(2,2);
+  loopTree(5); 
+  TH1D *hd[] = {(TH1D*)(fhMassWithAllCuts[0]->Clone("inviso_cnc_0")),
+		(TH1D*)(fhMassWithAllCuts[1]->Clone("inviso_cnc_1"))
+  };
+
+  // -- must run on norm sample to get correct scaling factor (which depends on the cuts!)
+  loopTree(15); 
+  loopTree(10); 
+
+  c0->cd(2);
   pair<TH1D*, TH1D*> hrare = singleRelativeYield("bgBd2PiMuNu");
   TH1D *hr[] = {hrare.first, hrare.second};
+  // -- correct for missing rest
+  hr[0]->Scale(2.0);
+  hr[1]->Scale(2.0);
   
-  for (int i = 0; i < 1; ++i) {
-    double dlo = hd[i]->Integral(hd[i]->FindBin(fBgLo), hd[i]->FindBin(5.2));
-    double dhi = hd[i]->Integral(hd[i]->FindBin(5.45), hd[i]->FindBin(fBgHi));
-    double dbs = hd[i]->Integral(hd[i]->FindBin(fCuts[i]->mBsLo), hd[i]->FindBin(fCuts[i]->mBsHi)); 
-    double dbd = hd[i]->Integral(hd[i]->FindBin(fCuts[i]->mBdLo), hd[i]->FindBin(fCuts[i]->mBdHi)); 
+  double eps(0.0001);
+  for (int i = 0; i < 2; ++i) {
+    double dlo = hd[i]->Integral(hd[i]->FindBin(fBgLo), hd[i]->FindBin(5.2-eps));
+    double dhi = hd[i]->Integral(hd[i]->FindBin(5.45+eps), hd[i]->FindBin(fBgHi));
+    double dbs = hd[i]->Integral(hd[i]->FindBin(fCuts[i]->mBsLo+eps), hd[i]->FindBin(fCuts[i]->mBsHi-eps)); 
+    double dbd = hd[i]->Integral(hd[i]->FindBin(fCuts[i]->mBdLo+eps), hd[i]->FindBin(fCuts[i]->mBdHi-eps)); 
 
-    double rlo = hr[i]->Integral(hr[i]->FindBin(fBgLo), hr[i]->FindBin(5.2));
-    double rhi = hr[i]->Integral(hr[i]->FindBin(5.45), hr[i]->FindBin(fBgHi));
-    double rbs = hr[i]->Integral(hr[i]->FindBin(fCuts[i]->mBsLo), hr[i]->FindBin(fCuts[i]->mBsHi)); 
-    double rbd = hr[i]->Integral(hr[i]->FindBin(fCuts[i]->mBdLo), hr[i]->FindBin(fCuts[i]->mBdHi)); 
+    double rlo = hr[i]->Integral(hr[i]->FindBin(fBgLo), hr[i]->FindBin(5.2-eps));
+    double rhi = hr[i]->Integral(hr[i]->FindBin(5.45+eps), hr[i]->FindBin(fBgHi));
+    double rbs = hr[i]->Integral(hr[i]->FindBin(fCuts[i]->mBsLo+eps), hr[i]->FindBin(fCuts[i]->mBsHi-eps)); 
+    double rbd = hr[i]->Integral(hr[i]->FindBin(fCuts[i]->mBdLo+eps), hr[i]->FindBin(fCuts[i]->mBdHi-eps)); 
 
+    // -- per decay mode in signal windows
     double taus= (fCuts[i]->mBsHi - fCuts[i]->mBsLo)/(fBgHi - fBgLo - 0.25);
     double taud= (fCuts[i]->mBdHi - fCuts[i]->mBdLo)/(fBgHi - fBgLo - 0.25);
-    //    double preds = (dlo+dhi)*taus;
     double preds = (dlo+dhi-rlo-rhi)*taus + rbs;
     double relE  = TMath::Sqrt(dlo+dhi)/(dlo+dhi);
-    //    double predd = (dlo+dhi)*taud;
     double predd = (dlo+dhi-rlo-rhi)*taud + rbd;
     cout << "channel " << i << endl;
     cout << "taus = " << taus << " taud = " << taud << endl;
     cout << "dlo: " << dlo << " dhi: " << dhi << " rlo: " << rlo << " rhi: " << rhi << endl;
     cout << "predS = " << preds << " obs = " << dbs << endl;
     cout << "predD = " << predd << " obs = " << dbd << endl;
+
+    if (1 == print) {
+      fTEX << formatTex(preds,      Form("%s:invIsoPredBs%i:val", fSuffix.c_str(), i), 2) << endl;
+      fTEX << formatTex(preds*relE, Form("%s:invIsoPredBs%i:err", fSuffix.c_str(), i), 2) << endl;
+      
+      fTEX << formatTex(predd,      Form("%s:invIsoPredBd%i:val", fSuffix.c_str(), i), 2) << endl;
+      fTEX << formatTex(predd*relE, Form("%s:invIsoPredBd%i:err", fSuffix.c_str(), i), 2) << endl;
+      
+      fTEX << formatTex(dbs,              Form("%s:invIsoObsBs%i:val", fSuffix.c_str(), i), 0) << endl;
+      fTEX << formatTex(TMath::Sqrt(dbs), Form("%s:invIsoObsBs%i:err", fSuffix.c_str(), i), 2) << endl;
+      
+      fTEX << formatTex(dbd,              Form("%s:invIsoObsBd%i:val", fSuffix.c_str(), i), 0) << endl;
+      fTEX << formatTex(TMath::Sqrt(dbd), Form("%s:invIsoObsBd%i:err", fSuffix.c_str(), i), 2) << endl;
+    
+      zone(1);
+      hd[i]->Draw();
+      tl->SetTextColor(kBlack);
+      if (0 == i) tl->DrawLatex(0.15, 0.92, "Barrel");
+      if (1 == i) tl->DrawLatex(0.15, 0.92, "Endcap");
+      c0->SaveAs(Form("%s/%s_invertedIsoPrediction%d.pdf", fDirectory.c_str(), fSuffix.c_str(), i)); 
+    }
+
+    // -- in blinding window
+    int blo = hd[i]->FindBin(5.2+eps); 
+    int bhi = hd[i]->FindBin(5.45-eps); 
+    double dbds = hd[i]->Integral(blo, bhi);
+
+    taus = 0.25/(fBgHi-fBgLo-0.25);
+    double predds = (dlo+dhi-rlo-rhi)*taus + rbs;
+
+    if (0 == i) {
+      fBl0Exp  = predds; 
+      fBl0ExpE = predds*relE; 
+      fBl0Obs  = (dbds>0.?dbds:0.01);
+      fBl0ObsE = (dbds>0.5?dbds*relE:1.);
+    } else {
+      fBl1Exp  = predds;      
+      fBl1ExpE = predds*relE; 
+      fBl1Obs  = (dbds>0.?dbds:0.01);
+      fBl1ObsE = (dbds>0.5?dbds*relE:1.);
+    }
+
+
   }
 
-  c0->Clear();
+  //  c0->Clear();
+  zone(2,2);
   hd[0]->Draw();
-  
+
+  c0->cd(2); 
+  hd[1]->Draw();
+
+  c0->cd(3); 
+  hr[0]->Draw();
+
+  c0->cd(4); 
+  hr[1]->Draw();
+
+  c0->Clear();
 }
 
 
@@ -1593,6 +1811,7 @@ void plotResults::histInvertedIso(const char *var, int n, double lo, double hi) 
   BE->SetMinimum(0.); 
   BE->Draw("hist");
   BO->Draw("esame");
+  tl->SetTextColor(kBlack);
   tl->DrawLatex(0.15, 0.92, "Barrel");
 
   maxi = EE->GetMaximum(); 
@@ -1637,6 +1856,7 @@ void plotResults::invertedIsoPrediction() {
     h1 = invertedIso(i, cuts.c_str()); 
     setTitles(h1, "m [GeV]", "Entries/bin"); 
     h1->DrawCopy();
+    tl->SetTextColor(kBlack);
     tl->DrawLatex(0.2, 0.92, (i==0?"Barrel":"Endcap"));
     double lo = h1->Integral(h1->FindBin(fBgLo), h1->FindBin(5.2));
     double hi = h1->Integral(h1->FindBin(5.45), h1->FindBin(fBgHi));
@@ -1787,22 +2007,121 @@ pair<TH1D*, TH1D*> plotResults::singleRelativeYield(std::string fstring) {
       h[ichan]->SetTitle(Form("%s (baseline, %s)", fstring.c_str(), (0 == ichan?"barrel":"endcap")));
     }
     
-    total   = fhMassWithAllCutsManyBins[ichan]->Integral(0, fhMassWithAllCutsManyBins[ichan]->GetNbinsX()+1); 
+    double orig0 = h[ichan]->GetSumOfWeights();
+    double orig1 = h[ichan]->Integral(h[ichan]->FindBin(4.9001), h[ichan]->FindBin(5.8999)); 
+    total   = h[ichan]->Integral(0, h[ichan]->GetNbinsX()+1); 
     eff     = total/static_cast<double>(ngenfile)*filtereff;
     brScale = fBF[fstring]/fBF["NoMc"];
     prScale = fProdR[fstring];
 
-    cout << "channel " << ichan << ": " << total << " -> eff = " << eff << endl;
-    cout << " ==> mutrig * muid * misid * mutrig: " << muScale << endl;
-    cout << " ==> brScale: " << brScale << " (" << fBF[fstring] << "/" << fBF["NoMc"] << ")" << endl;
-    cout << " ==> prScale: " << prScale << endl;
-    scale = mutrig[ichan] * muScale * fProdR[fstring] * (eff/fNumbersNo[ichan]->effTot) * brScale;
-    
+    scale = muScale * fProdR[fstring] * (eff/fNumbersNo[ichan]->effTot) * brScale;
+
     scaledYield = scale * fNumbersNo[ichan]->fitYield; 
     nx          = h[ichan]->Integral(0, h[ichan]->GetNbinsX()+1);
     h[ichan]->Scale(scaledYield/nx);
+
+    cout << "channel " << ichan << ": " << total << " -> eff = " << eff << endl;
+    cout << " ==> mutrig * muid * misid: " << muScale << endl;
+    cout << " ==> eff:         " << eff << endl;
+    cout << " ==> brScale:     " << brScale << " (" << fBF[fstring] << "/" << fBF["NoMc"] << ")" << endl;
+    cout << " ==> prScale:     " << prScale << endl;
+    cout << " ==> scale:       " << scale << endl;
+    cout << " ==> n(B+):       " << fNumbersNo[ichan]->fitYield << endl;
+    cout << " ==> nx:          " << nx 
+	 << " in histogram: " << orig0
+	 << " in range: " << orig1
+	 << endl;
+    cout << " ==> scaledYield: " << scaledYield
+	 << " in histogram: " << h[ichan]->GetSumOfWeights() 
+	 << " in range: " << h[ichan]->Integral(h[ichan]->FindBin(4.9001), h[ichan]->FindBin(5.8999))
+	 << endl;
+
   }
 
   return(make_pair(h[0], h[1])); 
   
+}
+
+
+// ----------------------------------------------------------------------
+void plotResults::fls3dEfficiency(string cuts, string pdfname) {
+
+  gStyle->SetOptStat(0);
+
+  zone(1,2);
+  fF["SgMc"]->cd("candAnaMuMu");
+  TH1D *h1 = new TH1D("h1", "", 100, 0., 5); h1->Sumw2(); setHist(h1, kBlack);
+  TH1D *h2 = new TH1D("h2", "", 100, 0., 5); h2->Sumw2(); setHist(h2, kBlue);
+  TH1D *h3 = new TH1D("h3", "", 100, 0., 5); h3->Sumw2(); setHist(h3, kRed);
+  TH1D *hr = new TH1D("hr", "", 100, 0., 5); hr->Sumw2();
+  TH1D *hs = new TH1D("hs", "", 100, 0., 5); hs->Sumw2();
+  TTree *t = (TTree*)gDirectory->Get("events"); 
+  
+  string baseCuts = "m1pt>4.5&&m2pt>4.2&&hlt&&" + cuts; 
+  t->Draw("1e12*tau>>h1", baseCuts.c_str(), "goff");
+  setTitles(h1, "#tau [ps]", "a.u.");
+  h1->Draw("hist");
+  
+  string allCuts = baseCuts + " && fls3d>10";
+  t->Draw("1e12*tau>>h2", allCuts.c_str(), "goff");
+  h2->Draw("histsame");
+
+  allCuts = baseCuts + " && fls3d>15";
+  t->Draw("1e12*tau>>h3", allCuts.c_str(), "goff");
+  h3->Draw("histsame");
+
+  tl->SetTextSize(0.03);
+  tl->SetTextColor(kBlack);
+  tl->DrawLatex(0.2, 0.95, baseCuts.c_str());
+
+  tl->SetTextSize(0.07);
+  tl->SetTextColor(kBlue);
+  tl->DrawLatex(0.6, 0.8, "l/#sigma(l_{3D}) > 10");
+
+  tl->SetTextColor(kRed);
+  tl->DrawLatex(0.6, 0.70, "l/#sigma(l_{3D}) > 15");
+
+  hr->Divide(h2, h1, 1., 1., "b"); setHist(hr, kBlue); 
+  hs->Divide(h3, h1, 1., 1., "b"); setHist(hs, kRed); 
+
+  c0->cd(2);
+  setTitles(hr, "#tau [ps]", "#epsilon'");
+  hr->Draw();
+  hs->Draw("same");
+
+  c0->SaveAs(Form("%s/%s", fDirectory.c_str(), pdfname.c_str())); 
+}
+
+
+// ----------------------------------------------------------------------
+void plotResults::fls3dVsX(std::string x, std::string cuts, std::string pdfname) {
+
+  gStyle->SetOptStat(0);
+
+  double xmax(10);
+  string xt;
+  if (string::npos != x.find("pt")) {
+    xmax = 40;
+    xt = "pT(B) [GeV]";
+  }
+  if (string::npos != x.find("eta")) {
+    xmax = 2.5;
+    xt = "|#eta(B)| ";
+  }    
+
+  zone(1);
+  fF["SgMc"]->cd("candAnaMuMu");
+  TProfile *h1 = new TProfile("h1", "", 100, 0., xmax); 
+  h1->SetMinimum(0.);
+  h1->SetMaximum(80.);
+
+  TTree *t = (TTree*)gDirectory->Get("events"); 
+  
+  string baseCuts = "m1pt>4.5&&m2pt>4.2&&hlt&&" + cuts; 
+  t->Draw(Form("fls3d:%s>>h1", x.c_str()), baseCuts.c_str(), "prof");
+  h1->SetXTitle(xt.c_str());
+  h1->SetYTitle("l_{3D}/#sigma(l_{3D})"); 
+  h1->Draw();
+
+  c0->SaveAs(Form("%s/%s", fDirectory.c_str(), pdfname.c_str())); 
 }

@@ -10,7 +10,7 @@ public:
   plotResults(const char *files="anaBmm.default.files", const char *cuts = "default", const char *dir = "default", int mode = 11);
   ~plotResults();
 
-  void makeAll(int channels = 15);
+  void makeAll(int channels = 3);
 
   void computeNormUL();
   void computeCsBF();
@@ -19,9 +19,13 @@ public:
   void rareBg();
   void scaledHist(int mode = 0);
 
+  void fls3dEfficiency(std::string cuts, std::string pdfname);
+  void fls3dVsX(std::string x, std::string cuts, std::string pdfname);
+
   // -- new:
   void invertedIsolationStudy();
-  void determineInvertedIsolationYield();
+  void determineInvertedIsolationYield(int print = 0);
+  void plotInvertedIsolationScan(std::string pdfname, TH1D *h0, TH1D *h1, TH1D *x0, TH1D *x1);
   // -- old:
   void allInvertedIso();
   void histInvertedIso(const char *var, int n, double lo, double hi);
@@ -38,6 +42,10 @@ public:
 
   
   double fBlExp, fBlExpE, fBlObs, fBlObsE;
+
+  double fBl0Exp, fBl0ExpE, fBl0Obs, fBl0ObsE;
+  double fBl1Exp, fBl1ExpE, fBl1Obs, fBl1ObsE;
+
   
   ClassDef(plotResults,1) //Testing plotResults
 

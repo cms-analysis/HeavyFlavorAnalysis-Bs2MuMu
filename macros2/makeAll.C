@@ -16,27 +16,14 @@ void makeAll(std::string files = "anaBmm.v11.files", int channels = 31) {
   }
 
   if (channels & 1) {
+    plotResults a4(files.c_str()); 
+    a4.makeAll(4);
+
     plotResults a0(files.c_str()); 
-    a0.makeAll(1);
-//     a0.fNormProcessed = false; 
-//     a0.fDoUseBDT = false; 
-//     a0.fDoApplyCowboyVeto = false;   
-//     a0.fDoApplyCowboyVetoAlsoInSignal = false;   
-//     a0.computeNormUL();
-//     a0.computeCsBF();
-//     a0.acceptancePerProcess();
-//     a0.allInvertedIso();
-//     a0.invertedIsoPrediction();
+    a0.makeAll(3);
 
     if (channels & 2) {
       a0.makeAll(2);
-//       a0.fNormProcessed = false; 
-//       a0.fDoUseBDT = true; 
-//       a0.fDoApplyCowboyVeto = false;   
-//       a0.fDoApplyCowboyVetoAlsoInSignal = false;   
-//       a0.computeNormUL();
-//       a0.computeCsBF();
-//       //    acceptancePerProcess();
     }
   }
   

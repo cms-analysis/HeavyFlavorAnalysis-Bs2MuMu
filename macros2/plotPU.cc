@@ -178,4 +178,26 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
   if (fDoPrint)  
     c0->SaveAs(Form("%s/effVsNpv-%s-%s-%s-%s-0_%d.pdf", fDirectory.c_str(), fFile.c_str(), dir, chan, var, static_cast<int>(100.*cut)));
 
+
+  heff->Fit("pol1", "FM");
+  heff->GetFunction("pol1")->SetLineWidth(3);
+  tl->SetTextSize(0.04); 
+  tl->DrawLatex(0.16, 0.91, Form("p0 = %4.3f#pm%4.3f", 
+				 heff->GetFunction("pol1")->GetParameter(0), 
+				 heff->GetFunction("pol1")->GetParError(0))); 
+
+  tl->DrawLatex(0.50, 0.91, Form("p1 = %5.4f#pm%5.4f", 
+				 heff->GetFunction("pol1")->GetParameter(1), 
+				 heff->GetFunction("pol1")->GetParError(1))); 
+
+  tl->SetTextSize(0.05); 
+  tl->DrawLatex(0.25, 0.82, Form("#chi^{2}/dof = %3.1f/%i", 
+				 heff->GetFunction("pol1")->GetChisquare(), 
+				 heff->GetFunction("pol1")->GetNDF())); 
+
+  //  stamp(0.2, "CMS, 1.14 fb^{-1}", 0.7, "#sqrt{s} = 7 TeV"); 
+  
+  if (fDoPrint)  
+    c0->SaveAs(Form("%s/effVsNpv-%s-%s-%s-%s-1_%d.pdf", fDirectory.c_str(), fFile.c_str(), dir, chan, var, static_cast<int>(100.*cut)));
+
 }
