@@ -115,6 +115,8 @@ void massReader::clearVariables()
 	fDeltaR = 0.0f; // deltaR
 	fNbrPV = 0;
 	fDeltaPhiMu = 0;
+	fIPCand = 0.0f;
+	fIPCandE = 0.0f;
 	
 	memset(fTracksIx,0,sizeof(fTracksIx));
 	memset(fTracksIP,0,sizeof(fTracksIP));
@@ -230,7 +232,8 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fNdof = pCand->fVtx.fNdof;
 	fMaxDoca = pCand->fMaxDoca;
 	fNbrPV = fpEvt->nPV();
-	
+	fIPCand = pCand->fPvLip;
+	fIPCandE = pCand->fPvLipE;	
 	fIsoMoriond12 = calculateIsolation(pCand);
 	fDoca0 = calculateDoca0(pCand);
 	fNbrNearby = countTracksNearby(pCand);
@@ -429,6 +432,8 @@ void massReader::bookHist()
 	reduced_tree->Branch("ctaue",&fCtauE,"ctaue/F");
 	reduced_tree->Branch("eta",&fEta,"eta/F");
 	reduced_tree->Branch("nbr_pv",&fNbrPV,"nbr_pv/I");
+	reduced_tree->Branch("ip",&fIPCand,"ip/F");
+	reduced_tree->Branch("ipe",&fIPCandE,"ipe/F");
 	reduced_tree->Branch("tracks_ix",fTracksIx,Form("tracks_ix[%d]/I",NBR_TRACKS_STORE));
 	reduced_tree->Branch("tracks_ip",fTracksIP,Form("tracks_ip[%d]/F",NBR_TRACKS_STORE));
 	reduced_tree->Branch("tracks_ipe",fTracksIPE,Form("tracks_ipe[%d]/F",NBR_TRACKS_STORE));

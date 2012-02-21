@@ -153,6 +153,8 @@ class massReader : public treeReader01 {
 		float fCtauE;
 		float fEta; // eta of the candidate
 		int fNbrPV; // nbr of PV in this event
+		float fIPCand;
+		float fIPCandE;
 		int fTracksIx[NBR_TRACKS_STORE];
 		float fTracksIP[NBR_TRACKS_STORE];
 		float fTracksIPE[NBR_TRACKS_STORE];
