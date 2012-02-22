@@ -232,8 +232,8 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fNdof = pCand->fVtx.fNdof;
 	fMaxDoca = pCand->fMaxDoca;
 	fNbrPV = fpEvt->nPV();
-	fIPCand = pCand->fPvLip;
-	fIPCandE = pCand->fPvLipE;	
+	fIPCand = TMath::Sqrt(pCand->fPvLip*pCand->fPvLip + pCand->fPvTip*pCand->fPvTip);
+	fIPCandE = TMath::Sqrt((pCand->fPvLip*pCand->fPvLip)/(fIPCand*fIPCand)*(pCand->fPvLipE*pCand->fPvLipE) + (pCand->fPvTip*pCand->fPvTip)/(fIPCand*fIPCand)*(pCand->fPvTipE*pCand->fPvTipE));
 	fIsoMoriond12 = calculateIsolation(pCand);
 	fDoca0 = calculateDoca0(pCand);
 	fNbrNearby = countTracksNearby(pCand);
