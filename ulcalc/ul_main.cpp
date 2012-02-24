@@ -627,8 +627,8 @@ int main(int argc, const char *argv [])
 			for (ch = channels.begin(); ch != channels.end(); ++ch) {
 				fprintf(outFile, "NbObs_%d=%d, NsObs_%d=%d, NdObs_%d=%d\n", *ch, (int)(bsmm[make_pair(kObsBkg_bmm, *ch)].getVal()), *ch, (int)(bsmm[make_pair(kObsB_bmm, *ch)].getVal()),*ch, (int)(bdmm[make_pair(kObsB_bmm, *ch)].getVal()));
 			}
-			fprintf(outFile, "%s upper limit with algorithm %s: %.3e (%.1f) @ %d %% CL\n", (gBdToMuMu ? "Bd->mumu" : "Bs->mumu"), algo_name(gAlgorithm), avgUL*(gBdToMuMu ? bdtomumu() : bstomumu()), avgUL, (int)(100.*gCLLevel));
-			fprintf(outFile, "%s lower limit with algorithm %s: %.3e (%.1f) @ %d %% CL\n", (gBdToMuMu ? "Bd->mumu" : "Bs->mumu"), algo_name(gAlgorithm), avgLL*(gBdToMuMu ? bdtomumu() : bstomumu()), avgLL, (int)(100.*gCLLevel));
+			fprintf(outFile, "%s upper limit with algorithm %s: %.5e (%.3f) @ %d %% CL\n", (gBdToMuMu ? "Bd->mumu" : "Bs->mumu"), algo_name(gAlgorithm), avgUL*(gBdToMuMu ? bdtomumu() : bstomumu()), avgUL, (int)(100.*gCLLevel));
+			fprintf(outFile, "%s lower limit with algorithm %s: %.5e (%.3f) @ %d %% CL\n", (gBdToMuMu ? "Bd->mumu" : "Bs->mumu"), algo_name(gAlgorithm), avgLL*(gBdToMuMu ? bdtomumu() : bstomumu()), avgLL, (int)(100.*gCLLevel));
 		}
 		fclose(outFile);
 	}
