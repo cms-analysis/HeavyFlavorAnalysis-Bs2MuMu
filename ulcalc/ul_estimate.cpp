@@ -766,6 +766,7 @@ RooStats::HypoTestResult *est_ul_clb(RooWorkspace *wspace, RooDataSet *data, set
 	measure_params(wspace, data, channels, verbosity);
 	bModel->LoadSnapshot();
 	mcSampler->SetNEventsPerToy(1);
+	frequCalc.SetToys(nToys, 100);
 	
 	result = frequCalc.GetHypoTest();
 	result->SetBackgroundAsAlt(kTRUE);
