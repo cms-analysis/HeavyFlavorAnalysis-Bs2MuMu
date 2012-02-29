@@ -1,4 +1,6 @@
 #include "massReader.hh"
+
+#include <utility>
 #include <cstdlib>
 #include <cmath>
 
@@ -21,9 +23,24 @@ trigger_table_t g_trigger_table_norm [] = {
 	{kHLT_DoubleMu4_Jpsi_Displaced_Bit,"HLT_DoubleMu4_Jpsi_Displaced", std::pair<int64_t,int64_t>(173236ll,180252ll)}
 };
 
+static decay_t make_decay(int nbr, ...)
+{
+	decay_t dec;
+	va_list ids;
+	int id,i;
+	
+	va_start(ids,nbr);
+	for (i = 0; i < nbr; i++) {
+		id = va_arg(ids,int);
+		dec.insert(id);
+	}
+	va_end(ids);
+	
+	return dec;
+} // make_decay()
+
 massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName),
 	reduced_tree(NULL),
-	fTruthType(0),
 	fCutFileParsed(false),
 	fCutTriggered(false),
 	fCutCand(0),
@@ -32,19 +49,34 @@ massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, 
 	fCutPt(0.0),
 	fCutAlpha(0.0),
 	fCutChi2ByNdof(0.0),
-	fCutTruth(0),
 	fCutTrackQual_mu1(0),
 	fCutTrackQual_mu2(0),
-	fCutMuID_mask(0),
 	fCutMuID_reqall(false),
-	fCutOppSign_mu(false)
-{	
+	fCutOppSign_mu(false),
+	fCutMass_JPsiLow(0.0),
+	fCutMass_JPsiHigh(0.0),
+	fCutTrackQual_kp(0),
+	fCutPt_Kaon(0.0)
+{
 	fTreeName = "massReader reduced tree";
 	
 	// add only the ones we actually need.
 	// feel free to enlarge this set.
 	stableParticles.insert(13); // muon
 	stableParticles.insert(321); // kaon
+	
+	// build the decays we're interested in...
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 531,13,13), kDecay_BsToMuMu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 511,13,13), kDecay_BdToMuMu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(7, 531, 443, 333, 13, 13, 321, 321), kDecay_BsToJPsiPhi) );
+	decayTable.insert( pair<decay_t,int>(make_decay(5, 521, 443, 321, 13, 13), kDecay_BuToJPsiKp) );
+	decayTable.insert( pair<decay_t,int>(make_decay(511, 443, 310, 211, 211, 13, 13), kDecay_BdToJPsiKs) );
+	
+	// mothers we're interested in
+	validMothers.insert(511); // Bd
+	validMothers.insert(521); // Bu
+	validMothers.insert(531); // Bs
+	validMothers.insert(5122); // Lambdab
 } // massReader()
 
 massReader::~massReader()
@@ -53,13 +85,6 @@ massReader::~massReader()
 void massReader::eventProcessing()
 {
 	int j,nc;
-	
-	// Fill Generator Block candidates (for efficiency determination)
-	nc = fpEvt->nGenCands();
-	for (j = 0; j < nc; j++) {
-		if (loadGeneratorVariables(fpEvt->getGenCand(j)))
-			reduced_tree->Fill();
-	}
 	
 	// Fill a reduced tree
 	nc = fpEvt->nCands();
@@ -75,11 +100,9 @@ void massReader::clearVariables()
 	fCandidate = 0;
 	fMass = 0.0;
 	fMassConstraint = 0.0;
-	fTruth = 0;
-	fTruthFlags = 0;
-	fEffFlags = 0;
+	fSameMother = 0;
+	fTrueDecay = 0;
 	fPt = 0.0;
-	fNbrMuons = 0;
 	fD3 = 0.0;
 	fD3E = 0.0;
 	fDxy = 0.0;
@@ -107,9 +130,8 @@ void massReader::clearVariables()
 	fEtaMu1_Gen = 0.0; // eta of gen muon 1
 	fEtaMu2_Gen = 0.0; // eta of gen muon 2
 	fPtMu1 = fPtMu2 = 0.0f;
-	fMuID1 = fMuID2 = 0;
-	fMuTight1 = fMuTight2 = 0;
 	fEtaMu1 = fEtaMu2 = 0.0f;
+	fMuTight1 = fMuTight2 = 0;
 	fTrackQual_mu1 = fTrackQual_mu2 = 0;
 	fQ_mu1 = fQ_mu2 = 0;
 	fDeltaR = 0.0f; // deltaR
@@ -118,6 +140,19 @@ void massReader::clearVariables()
 	fIPCand = 0.0f;
 	fIPCandE = 0.0f;
 	
+	// jpsi
+	fPtJPsi = 0.0;
+	fMassJPsi = 0.0;
+	fChi2Jpsi = 0.0;
+	
+	// kaons
+	fPtKp = 0.0;
+	fEtaKp = 0.0;
+	fPtKp_Gen = 0.0;
+	fEtaKp_Gen = 0.0;
+	fTrackQual_kp = 0;
+	fQ_kp = 0.0;
+	
 	memset(fTracksIx,0,sizeof(fTracksIx));
 	memset(fTracksIP,0,sizeof(fTracksIP));
 	memset(fTracksIPE,0,sizeof(fTracksIPE));
@@ -125,96 +160,23 @@ void massReader::clearVariables()
 	memset(fTracksPTRel,0,sizeof(fTracksPTRel));
 } // clearVariables()
 
-int massReader::loadGeneratorVariables(TGenCand *pGen)
-{
-	int save = 0;
-	multiset<int> particles;
-	map<int,int> genStructure;
-	TGenCand *dau;
-	bool firstMu;
-	
-	if (abs(pGen->fID) != fTruthType)
-		goto bail;
-	
-	if (trueDecay.size() == 0)
-		goto bail;
-	
-	buildDecay(pGen,&particles);
-	particles.erase(22); // remove Bremsstrahlung
-	if (particles != trueDecay)
-		goto bail;
-	
-	// reset variables
-	clearVariables();
-	
-	// this is the right decay...
-	fCandidate = 0; // use 0 as special case...
-	fMass = pGen->fP.M();
-	fEffFlags = loadEfficiencyFlags(pGen);
-	fPt = pGen->fP.Perp();
-	fEta = pGen->fP.Eta();
-	fTriggers = loadTrigger(&fTriggersError,&fTriggersFound);
-	fTriggeredJPsi = hasTriggeredNorm();
-	fTriggeredBs = hasTriggeredSignal();
-	fNbrPV = fpEvt->nPV();
-	
-	// save the muon pt
-	firstMu = true;
-	findGenStructure(pGen,&genStructure);
-	for (map<int,int>::const_iterator it = genStructure.begin(); it != genStructure.end(); ++it) {
-		dau = fpEvt->getGenCand(it->first);
-		switch (abs(dau->fID)) {
-			case 13: // muon
-				if (firstMu) {
-					fPtMu1_Gen = dau->fP.Perp();
-					fEtaMu1_Gen = dau->fP.Eta();
-					fPMu1_Gen = dau->fP.P();
-					if (it->second >= 0) {
-						fPtMu1 = fpEvt->getRecTrack(it->second)->fPlab.Perp();
-						fEtaMu1 = fpEvt->getRecTrack(it->second)->fPlab.Eta();
-					}
-				} else {
-					fPtMu2_Gen = dau->fP.Perp();
-					fEtaMu2_Gen = dau->fP.Eta();
-					fPMu2_Gen = dau->fP.P();
-					if (it->second >= 0) {
-						fPtMu2 = fpEvt->getRecTrack(it->second)->fPlab.Perp();
-						fEtaMu2 = fpEvt->getRecTrack(it->second)->fPlab.Eta();
-					}
-				}
-				firstMu = false;
-				break;
-			default:
-				break;
-		}
-	}
-	if (fPtMu2_Gen > fPtMu1_Gen) {
-		swap(fPtMu1,fPtMu2);
-		swap(fPtMu1_Gen,fPtMu2_Gen);
-		swap(fEtaMu1,fEtaMu2);
-		swap(fEtaMu1_Gen,fEtaMu2_Gen);
-		swap(fPMu1_Gen,fPMu2_Gen);
-	}
-	
-	// save the candidate...
-	save = 1;
-bail:
-	return save;
-} // loadGeneratorVariables()
-
 int massReader::loadCandidateVariables(TAnaCand *pCand)
 {
 	TAnaTrack *pTrack;
 	TAnaTrack *sigTrack;
 	TAnaTrack *recTrack;
 	TAnaCand *momCand;
+	TAnaCand *jpsiCand;
 	TGenCand *muGen;
 	TVector3 v1,v2,uVector;
-	unsigned j,k;
+	int j,k;
 	bool firstMu = true;
 	map<int,int> aTracks;
 	map<int,int> cand_tracks;
 	TVector3 plabMu1,plabMu2;
+	TLorentzVector pMu1,pMu2;
+
+	int result;
 	
 	clearVariables();
 	
@@ -223,7 +185,6 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fPt = pCand->fPlab.Perp();
 	fMass = pCand->fMass;
 	fMassConstraint = -1.0f;
-	fNbrMuons = countMuons(pCand);
 	fD3 = pCand->fVtx.fD3d;
 	fD3E = pCand->fVtx.fD3dE;
 	fDxy = pCand->fVtx.fDxy;
@@ -242,7 +203,13 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fCtauE = pCand->fTau3dE;
 	fEta = pCand->fPlab.Eta();
 	
+	// set the constraint mass value
+	findCandStructure(pCand, &cand_tracks);
+	jpsiCand = findCandidate(400000 + (pCand->fType % 1000), &cand_tracks);
+	if (jpsiCand) fMassConstraint = jpsiCand->fMass;
+	
 	// Load muon variables
+	cand_tracks.clear();
 	findAllTrackIndices(pCand,&cand_tracks);
 	for (map<int,int>::const_iterator it = cand_tracks.begin(); it!=cand_tracks.end(); ++it) {
 		
@@ -254,21 +221,25 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 				if (firstMu) {
 					plabMu1 = sigTrack->fPlab;
 					fPtMu1 = sigTrack->fPlab.Perp();
-					fMuID1 = recTrack->fMuID > 0 ? recTrack->fMuID : 0;
 					fTrackQual_mu1 = recTrack->fTrackQuality;
-					fMuTight1 = isMuonTight(sigTrack);
 					fEtaMu1 = sigTrack->fPlab.Eta();
 					fQ_mu1 = recTrack->fQ;
+					fMuTight1 = isMuonTight(sigTrack);
 				} else {
 					plabMu2 = sigTrack->fPlab;
 					fPtMu2 = sigTrack->fPlab.Perp();
-					fMuID2 = recTrack->fMuID > 0 ? recTrack->fMuID : 0;
 					fTrackQual_mu2 = recTrack->fTrackQuality;
-					fMuTight2 = isMuonTight(sigTrack);
 					fEtaMu2 = sigTrack->fPlab.Eta();
 					fQ_mu2 = recTrack->fQ;
+					fMuTight2 = isMuonTight(sigTrack);
 				}
 				firstMu = false;
+				break;
+			case 321: // kaon
+				fPtKp = sigTrack->fPlab.Perp();
+				fEtaKp = sigTrack->fPlab.Eta();
+				fQ_kp = sigTrack->fQ;
+				fTrackQual_kp = recTrack->fTrackQuality;
 				break;
 			default:
 				break;
@@ -279,11 +250,10 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	if (fPtMu1 < fPtMu2) {
 		swap(plabMu1,plabMu2);
 		swap(fPtMu1,fPtMu2);
-		swap(fMuID1,fMuID2);
-		swap(fMuTight1,fMuTight2);
 		swap(fEtaMu1,fEtaMu2);
 		swap(fTrackQual_mu1,fTrackQual_mu2);
 		swap(fQ_mu1,fQ_mu2);
+		swap(fMuTight1,fMuTight2);
 	}
 	
 	fDeltaPhiMu = plabMu1.DeltaPhi(plabMu2);
@@ -296,7 +266,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	memset(fTracksPTRel,0,sizeof(fTracksPTRel));
 	
 	// fill the histogramms...
-	for (j = 0, k = 0; j < pCand->fNstTracks.size(); j++) {
+	for (j = 0, k = 0; j < (int)pCand->fNstTracks.size(); j++) {
 		
 		pTrack = fpEvt->getRecTrack(pCand->fNstTracks[j].first);
 		uVector = pCand->fPlab.Unit();
@@ -332,12 +302,11 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	
 	// do this at the end so the checkTruth algorithm can use
 	// all variables of this candidate.
-	fTruth = checkTruth(pCand);
-	fTruthFlags = loadTruthFlags(pCand);
+	fSameMother = sameMother(pCand) >= 0;
+	fTrueDecay = loadDecay(pCand);
 	fTriggers = loadTrigger(&fTriggersError,&fTriggersFound);
 	fTriggeredJPsi = hasTriggeredNorm();
 	fTriggeredBs = hasTriggeredSignal();
-	fEffFlags = 0;
 	
 	// generator pt of muons...
 	firstMu = true;
@@ -348,18 +317,26 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 			continue;
 		
 		muGen = fpEvt->getGenCand(pTrack->fGenIndex);
-		if (abs(muGen->fID) == 13) {
-			if (firstMu) {
-				fPtMu1_Gen = muGen->fP.Perp();
-				fEtaMu1_Gen = muGen->fP.Eta();
-				fPMu1_Gen = muGen->fP.P();
-			}
-			else {
-				fPtMu2_Gen = muGen->fP.Perp();
-				fEtaMu2_Gen = muGen->fP.Eta();
-				fPMu2_Gen = muGen->fP.P();
-			}
-			firstMu = false;
+		switch (abs(muGen->fID)) {
+			case 13: // muon
+				if (firstMu) {
+					fPtMu1_Gen = muGen->fP.Perp();
+					fEtaMu1_Gen = muGen->fP.Eta();
+					fPMu1_Gen = muGen->fP.P();
+				}
+				else {
+					fPtMu2_Gen = muGen->fP.Perp();
+					fEtaMu2_Gen = muGen->fP.Eta();
+					fPMu2_Gen = muGen->fP.P();
+				}
+				firstMu = false;
+				break;
+			case 321: // kaon
+				fPtKp_Gen = muGen->fP.Perp();
+				fEtaKp_Gen = muGen->fP.Eta();
+				break;
+			default:
+				break;
 		}
 	}
 	
@@ -372,7 +349,30 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	if (plabMu2.Perp() > 0)
 		fDeltaR = plabMu1.DeltaR(plabMu2);
 	
-	return 1;
+	// J/psi
+	pMu1.SetVectM(plabMu1,MMUON);
+	pMu2.SetVectM(plabMu2,MMUON);
+	fPtJPsi = (pMu1 + pMu2).Perp();
+	fMassJPsi = (pMu1 + pMu2).M();
+	
+	for (j = pCand->fDau1; 0 <= j && j <= pCand->fDau2; j++) {
+		
+		jpsiCand = fpEvt->getCand(j);
+		if ((jpsiCand->fType % 1000) == 443) {
+			
+			fPtJPsi = jpsiCand->fPlab.Perp();
+			fMassJPsi = jpsiCand->fMass;
+			fChi2Jpsi = jpsiCand->fVtx.fChi2;
+			break;
+		}
+	}
+	
+	if (fCandidate != 301313) // maybe run blind...
+		result = 1;
+	else
+		result = !(BLIND && 5.2 < pCand->fMass && pCand->fMass < 5.45);
+	
+	return result;
 } // loadCandidateVariables()
 
 void massReader::bookHist()
@@ -387,14 +387,10 @@ void massReader::bookHist()
 	reduced_tree->Branch("pt",&fPt,"pt/F");
 	reduced_tree->Branch("mass",&fMass,"mass/F");
 	reduced_tree->Branch("mass_c",&fMassConstraint,"mass_c/F");
-	reduced_tree->Branch("truth",&fTruth,"truth/I");
-	reduced_tree->Branch("truth_flags",&fTruthFlags,"truth_flags/I");
-	reduced_tree->Branch("eff_flags",&fEffFlags,"eff_flags/I");
-	reduced_tree->Branch("ident_muons",&fNbrMuons,"ident_muons/F");
+	reduced_tree->Branch("same_mother",&fSameMother,"same_mother/I");
+	reduced_tree->Branch("true_decay",&fTrueDecay,"true_decay/I");
 	reduced_tree->Branch("pt_mu1",&fPtMu1,"pt_mu1/F");
 	reduced_tree->Branch("pt_mu2",&fPtMu2,"pt_mu2/F");
-	reduced_tree->Branch("id_mu1",&fMuID1,"id_mu1/I");
-	reduced_tree->Branch("id_mu2",&fMuID2,"id_mu2/I");
 	reduced_tree->Branch("tight_mu1",&fMuTight1,"tight_mu1/I");
 	reduced_tree->Branch("tight_mu2",&fMuTight2,"tight_mu2/I");
 	reduced_tree->Branch("eta_mu1",&fEtaMu1,"eta_mu1/F");
@@ -424,6 +420,14 @@ void massReader::bookHist()
 	reduced_tree->Branch("doca0",&fDoca0,"doca0/F");
 	reduced_tree->Branch("ntrk",&fNbrNearby,"ntrk/I");
 	reduced_tree->Branch("triggers",&fTriggers,"triggers/I");
+	reduced_tree->Branch("pt_dimuon",&fPtJPsi,"pt_dimuon/F");
+	reduced_tree->Branch("mass_dimuon",&fMassJPsi,"mass_dimuon/F");
+	reduced_tree->Branch("pt_kp",&fPtKp,"pt_kp/F");
+	reduced_tree->Branch("pt_kp_gen",&fPtKp_Gen,"pt_kp_gen/F");
+	reduced_tree->Branch("eta_kp",&fEtaKp,"eta_kp/F");
+	reduced_tree->Branch("eta_kp_gen",&fEtaKp_Gen,"eta_kp_gen/F");
+	reduced_tree->Branch("track_qual_kp",&fTrackQual_kp,"track_qual_kp/I");
+	reduced_tree->Branch("q_kp",&fQ_kp,"q_kp/I");
 	reduced_tree->Branch("triggers_error",&fTriggersError,"triggers_error/I");
 	reduced_tree->Branch("triggers_found",&fTriggersFound,"triggers_found/I");
 	reduced_tree->Branch("triggered_jpsi",&fTriggeredJPsi,"triggered_jpsi/I");
@@ -447,123 +451,66 @@ void massReader::closeHistFile()
 	treeReader01::closeHistFile();
 } // massReader::closeHistFile()
 
-int massReader::checkTruth(TAnaCand *cand)
+int massReader::sameMother(TAnaCand *cand)
 {
-	int result = 0;
+	int result = -1;
 	TAnaTrack *pTrack;
-	TGenCand *truthParticle;
+	TGenCand *motherParticle = NULL;
 	TGenCand *trackParticle;
-	int theTruthType;
 	int nGens, j;
-	
-	if (fTruthType) theTruthType = fTruthType;
-	else theTruthType = cand->fType % 10000;
-	
-	nGens = fpEvt->nGenCands();
-	
-	if (cand->fSig1 < 0 || cand->fSig2 < cand->fSig1) goto bail;
-	pTrack = fpEvt->getSigTrack(cand->fSig1);
-	pTrack = fpEvt->getRecTrack(pTrack->fIndex);
-	
-	if (pTrack->fGenIndex < 0 || pTrack->fGenIndex >= nGens) goto bail;
-	truthParticle = fpEvt->getGenCand(pTrack->fGenIndex);
-	
-	while (abs(truthParticle->fID) != theTruthType) {
-		if (truthParticle->fMom1 < 0 || truthParticle->fMom1 >= nGens) goto bail;
-		truthParticle = fpEvt->getGenCand(truthParticle->fMom1);
-	}
-	
-	// check to see if the other tracks originate from the same particle...
-	for (j = cand->fSig1+1; j <= cand->fSig2; j++) {
 		
+	nGens = fpEvt->nGenCands();
+	for (j = cand->fSig1; j >= 0 && j <= cand->fSig2; j++) {
 		pTrack = fpEvt->getSigTrack(j);
 		pTrack = fpEvt->getRecTrack(pTrack->fIndex);
+		
+		// get the generator info
 		if (pTrack->fGenIndex < 0 || pTrack->fGenIndex >= nGens) goto bail;
 		
+		// look for the mother particle
 		trackParticle = fpEvt->getGenCand(pTrack->fGenIndex);
-		while (trackParticle->fNumber != truthParticle->fNumber) {
+		while (validMothers.count(abs(trackParticle->fID)) == 0) {
 			if (trackParticle->fMom1 < 0 || trackParticle->fMom1 >= nGens) goto bail;
 			trackParticle = fpEvt->getGenCand(trackParticle->fMom1);
 		}
+		
+		if (motherParticle) {
+			if (motherParticle->fNumber != trackParticle->fNumber)
+				goto bail;
+		} else {
+			motherParticle = trackParticle;
+		}
+
 	}
 	
-	result = 1;
+	// still here? all particle from the same 'valid' mother
+	if (motherParticle) result = motherParticle->fNumber;
 bail:
 	return result;
 } // checkTruth()
 
-int massReader::loadTruthFlags(TAnaCand *cand)
+int massReader::loadDecay(TAnaCand *anaCand)
 {
-	TAnaTrack *pTrack;
-	TGenCand *truthParticle = NULL;
-	TGenCand *pGen;
-	int nGens;
-	int result = 0;
-	set<int> bhadrons;
+	TGenCand *mother;
+	int ix, result = 0;
+	decay_t dec;
+	map<decay_t,int>::const_iterator it;
 	
-	map<int,int> tracks_indices; // map(recTrackIx,sigTrackIndex)
-	map<int,int>::iterator it;
 	
-	// build the number of b hadrons
-	bhadrons.insert(511); // B0
-	bhadrons.insert(521); // B+
-	bhadrons.insert(531); // Bs
-	bhadrons.insert(5122); // Lambda_b
+	// search for the decay..
+	if ((ix = sameMother(anaCand)) >= 0)
+		mother = fpEvt->getGenCand(ix);
+	else goto bail;
 	
-	// get the list of tracks of the candidate
-	findAllTrackIndices(cand,&tracks_indices);
+	buildDecay(mother, &dec);
 	
-	// iterate through all tracks and see if they have the same origin
-	nGens = fpEvt->nGenCands();
-	for (it = tracks_indices.begin(); it!=tracks_indices.end(); ++it) {
-		pTrack = fpEvt->getRecTrack(it->first);
-		if (pTrack->fGenIndex < 0 || pTrack->fGenIndex >= nGens) // no generator info available
-			goto bail;
-		
-		// get the originating b-hadron (if available)
-		pGen = fpEvt->getGenCand(pTrack->fGenIndex);
-		while (bhadrons.count(abs(pGen->fID)) == 0) {
-			if (0 <= pGen->fMom1 && pGen->fMom1 < nGens)
-				pGen = fpEvt->getGenCand(pGen->fMom1);
-			else
-				goto bail; // not found
-		}
-		
-		// found an originating b-hadron
-		if (!truthParticle) truthParticle = pGen;
-		else if (truthParticle->fNumber != pGen->fNumber) goto bail;
-	}
-	// still here?
-	result |= kTruthSameB_Bit;
+	it = decayTable.find(dec);
+	if (it != decayTable.end())
+		result = it->second;
 	
 bail:
 	return result;
-} // loadTruthFlags()
-
-// count the number of identified muons in the candidate 'cand'
-int massReader::countMuons(TAnaCand *cand)
-{
-	TAnaTrack *track;
-	unsigned nbrMu = 0;
-	int j;
-	
-	// check for invalid candidates
-	if (cand->fSig1 < 0)
-		return 0;
-	
-	for (j = cand->fSig1; j <= cand->fSig2; j++) {
-		
-		track = fpEvt->getSigTrack(j); // signal track
-		// check if this is supposed to be a muon!
-		if (abs(track->fMCID) == 13) {
-			track = fpEvt->getRecTrack(track->fIndex); // rec track
-			if (track->fMuID > 0 && (track->fMuID & 6)) // needs to be a tracker or global muon
-				nbrMu++;
-		}
-	}
-	
-	return nbrMu;
-} // countMuons()
+} // loadDecay()
 
 void massReader::buildDecay(TGenCand *gen, multiset<int> *particles)
 {
@@ -849,72 +796,6 @@ int massReader::hasTriggered(int triggers,trigger_table_t *table, unsigned size)
 	return result;
 } // hasTriggered()
 
-int massReader::loadEfficiencyFlags(TGenCand *gen)
-{
-	int effFlags = kGeneratorCand; // the fact we're here already implies we're a generator cand.
-	TGenCand *dau;
-	TAnaTrack *track;
-	map<int,int> genStruct; // (genIx,recTrackIx)
-	map<int,int>::const_iterator it;
-	bool muon;
-	
-	findGenStructure(gen,&genStruct);
-	
-	/* Check acceptance
-	 *	both muons have high purity track with pt_gen > 1 && |eta_gen| < 2.5 (pt > 2.0, |eta < 2.4| on reco)
-	 *	all kaons have high purity track with pt_gen > .4 && |eta_gen| < 2.5 (pt > 0.5, |eta < 2.4| on reco)
-	 */
-	for (it = genStruct.begin(); it != genStruct.end(); ++it) {
-		
-		dau = fpEvt->getGenCand(it->first);
-		if (stableParticles.count(abs(dau->fID)) == 0) // only check stable particles
-			continue;
-		
-		muon = (abs(dau->fID) == 13);
-		
-		// pt (muon > 3 && kaon > 0.5)
-		if (dau->fP.Perp() <= (muon ? 1. : 0.4)) // not in pt acceptance
-			goto bail;
-		
-		// eta
-		if (fabs(dau->fP.Eta()) >= 2.5) // not in eta acceptance
-			goto bail;
-		
-		if (it->second < 0) // no associated track
-			goto bail;
-		
-		track = fpEvt->getRecTrack(it->second);
-		if ((track->fTrackQuality & 0x1<<2) == 0) // no high purity track
-			goto bail;
-		
-		// momentum and eta of reco tracks
-		if (track->fPlab.Perp() <= (muon ? 2.0 : 0.5))
-			goto bail;
-		if (fabs(track->fPlab.Eta()) >= 2.4)
-			goto bail;
-	}
-	effFlags |= kAcceptance; // candidate was in acceptance.
-	
-	/* Check muon efficiency
-	 *	both muons are global && tracker muon
-	 */
-	for (it = genStruct.begin(); it != genStruct.end(); ++it) {
-		
-		dau = fpEvt->getGenCand(it->first);
-		if (abs(dau->fID) != 13)
-			continue;
-		
-		// check muon id
-		track = fpEvt->getRecTrack(it->second);
-		if (track->fMuIndex < 0 || (track->fMuID & 6) != 6)
-			goto bail;
-	}
-	effFlags |= kEffMuon;
-	
-bail:
-	return effFlags;
-} // loadEfficiencyFlags()
-
 void massReader::readCuts(TString filename, int dump)
 {
 	// parse the files...
@@ -1004,14 +885,7 @@ bool massReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 		if (dump) cout << "ALPHA: " << fCutAlpha << endl;
 		goto bail;
 	}
-	
-	parsed = (strcmp(cutName,"TRUTH") == 0);
-	if (parsed) {
-		fCutTruth = (int)cutLow;
-		if (dump) cout << "TRUTH: " << fCutTruth << endl;
-		goto bail;
-	}
-	
+		
 	parsed = (strcmp(cutName,"TRIGGERED") == 0);
 	if (parsed) {
 		fCutTriggered = (cutLow != 0.0f);
@@ -1047,11 +921,25 @@ bool massReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 		goto bail;
 	}
 	
-	parsed = (strcmp(cutName,"MUID") == 0);
+	parsed = (strcmp(cutName,"TRACK_QUAL_KP") == 0);
 	if (parsed) {
-		fCutMuID_mask = (int)cutLow;
-		fCutMuID_reqall = (cutHigh != 0.0);
-		if (dump) cout << "MUID: mask " << fCutMuID_mask << " and require all " << fCutMuID_reqall << endl;
+		fCutTrackQual_kp = (int)cutLow;
+		if (dump) cout << "TRACK_QUAL_KP: " << fCutTrackQual_kp << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"MASS_JPSI") == 0);
+	if (parsed) {
+		fCutMass_JPsiLow = cutLow;
+		fCutMass_JPsiHigh = cutHigh;
+		if (dump) cout << "MASS_JPSI: (" << fCutMass_JPsiLow << ", " << fCutMass_JPsiHigh << ")" << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"PT_KAON") == 0);
+	if (parsed) {
+		fCutPt_Kaon = cutLow;
+		if (dump) cout << "PT_KAON: " << fCutPt_Kaon << endl;
 		goto bail;
 	}
 	
@@ -1089,11 +977,6 @@ bool massReader::applyCut()
 		if (!pass) goto bail;
 	}
 	
-	if (fCutTruth != 0) {
-		pass = (fTruth == fCutTruth); // can be used to deselect all truth matched ones
-		if (!pass) goto bail;
-	}
-	
 	if (fCutChi2ByNdof > 0.0) {
 		pass = fChi2 / fNdof < fCutChi2ByNdof;
 		if (!pass) goto bail;
@@ -1116,21 +999,32 @@ bool massReader::applyCut()
 		if (!pass) goto bail;
 	}
 	
-	// check the Muon ID
-	if (fCutMuID_mask != 0) {
-		if (fCutMuID_reqall)
-			pass = ((fMuID1 & fCutMuID_mask) == fCutMuID_mask) && ((fMuID2 & fCutMuID_mask) == fCutMuID_mask);
-		else
-			pass = ((fMuID1 & fCutMuID_mask) != 0) && ((fMuID2 & fCutMuID_mask) != 0);
-		
-		if (!pass) goto bail;
-	}
-	
 	// check opposite sign of muons
 	if (fCutOppSign_mu) {
 		pass = fQ_mu1 != fQ_mu2;
 		if (!pass) goto bail;
 	}	
+	
+	// check track quality of kp
+	if (fCutTrackQual_kp) {
+		pass = (fTrackQual_kp & fCutTrackQual_kp) != 0;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutMass_JPsiLow > 0.0) {
+		pass = fMassJPsi > fCutMass_JPsiLow;
+		if(!pass) goto bail;
+	}
+	
+	if (fCutMass_JPsiHigh > 0.0) {
+		pass = fMassJPsi < fCutMass_JPsiHigh;
+		if(!pass) goto bail;
+	}
+	
+	if (fCutPt_Kaon > 0.0) {
+		pass = fPtKp > fCutPt_Kaon;
+		if (!pass) goto bail;
+	}
 	
 bail:
 	return pass;

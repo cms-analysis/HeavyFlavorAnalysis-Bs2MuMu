@@ -15,6 +15,17 @@ const static double MMUON = 0.1057;
 const static double MPION = 0.1396;
 const static double MKAON = 0.4937;
 
+enum {
+	kDecay_BsToMuMu = 1,
+	kDecay_BdToMuMu = 2,
+	kDecay_BuToJPsiKp = 3,
+	kDecay_BsToJPsiPhi = 4,
+	kDecay_BdToJPsiKs = 5
+};
+
+// used to store decays...
+typedef std::multiset<int> decay_t;
+
 // The trigger information stored.
 // When adding one, be sure to update the code in massReader::loadTrigger()
 enum trigger_bits
@@ -41,23 +52,6 @@ struct trigger_table_t {
 	std::pair<int64_t,int64_t> run_range;
 }; // trigger_table_t
 
-// Truth Flags Bits
-enum truth_bits
-{
-	kTruthSameB_Bit = 1 << 0
-};
-
-// Efficiency Flags
-enum
-{
-	kGeneratorCand	= 1 << 0,
-	kAcceptance		= 1 << 1,
-	kEffMuon		= 1 << 2,
-//	kEffTrig is not needed
-//	kEffCand is not needed
-//	kEffAna is not needed
-};
-
 class massReader : public treeReader01 {
 	
 	public:
@@ -72,20 +66,18 @@ class massReader : public treeReader01 {
 	protected:
 		// For subclasses
 		TTree *reduced_tree;
-		std::multiset<int> trueDecay;
+		std::map<decay_t,int> decayTable;
 		std::set<int> stableParticles; // the particles in here are considered stable
-		int fTruthType;
+		std::set<int> validMothers;
 		
 		virtual void clearVariables();
-		virtual int loadGeneratorVariables(TGenCand *pGen);
 		virtual int loadCandidateVariables(TAnaCand *pCand);
 		virtual bool parseCut(char *cutName, float cutLow, float cutHigh, int dump = 1);
 		virtual bool applyCut();
 		
 		// loading variables
-		virtual int checkTruth(TAnaCand *cand); // check if all are originating from the same particle
-		virtual int loadTruthFlags(TAnaCand *cand); // set truth flags
-		virtual int countMuons(TAnaCand *cand); // count the number of identified muons
+		int sameMother(TAnaCand *cand); // check if all are originating from the same mother
+		int loadDecay(TAnaCand *anaCand);
 		float calculateIsolation(TAnaCand *pCand);
 		float calculateDoca0(TAnaCand *pCand);
 		int countTracksNearby(TAnaCand *pCand);
@@ -94,7 +86,6 @@ class massReader : public treeReader01 {
 		int hasTriggeredNorm();
 		int hasTriggeredSignal();
 		int hasTriggered(int triggers,trigger_table_t *table, unsigned size);
-		virtual int loadEfficiencyFlags(TGenCand *gen);
 
 		// other utility routines
 		TAnaCand *findCandidate(int candID, std::map<int,int> *particles); // particles = map(recTrackIx,particleID)
@@ -109,11 +100,9 @@ class massReader : public treeReader01 {
 		int fCandidate;
 		float fMass;
 		float fMassConstraint; // mass of the constraint candidate...
-		int fTruth;		// is this background or a true candidate?
-		int fTruthFlags; // several partial truth flags
-		int fEffFlags; // flags to calculate the efficiencies...
+		int fSameMother; // set if the originate from the same 'valid' mother
+		int fTrueDecay; // set the MC true decay
 		float fPt; // pt of the top particle
-		float fNbrMuons;  // number of muons in the muon list.
 		float fD3;
 		float fD3E;
 		float fDxy;	// distance to originating vertex (2d)
@@ -139,10 +128,20 @@ class massReader : public treeReader01 {
 		int fNbrNearby;
 		// muon properties
 		float fPtMu1,fPtMu2;
-		int fMuID1,fMuID2;
-		int fMuTight1,fMuTight2; // muon is identified as tight muond
+		int fMuTight1,fMuTight2;
 		float fEtaMu1,fEtaMu2;
 		float fDeltaR; // deltaR of the muons
+		// J/Psi
+		float fPtJPsi;
+		float fMassJPsi;
+		float fChi2Jpsi;
+		// kaons
+		float fPtKp;
+		float fEtaKp;
+		float fPtKp_Gen;
+		float fEtaKp_Gen;
+		int fTrackQual_kp;
+		int fQ_kp;
 		// triggers
 		int	fTriggers; // store some trigger information
 		int fTriggersError; // error information of trigger
@@ -171,12 +170,16 @@ class massReader : public treeReader01 {
 		double fCutPt;
 		double fCutAlpha;
 		double fCutChi2ByNdof;
-		int fCutTruth; // truth matching
 		int fCutTrackQual_mu1;
 		int fCutTrackQual_mu2;
-		int fCutMuID_mask;
 		bool fCutMuID_reqall;
 		bool fCutOppSign_mu;
+		// Additional cut variables for j/psi
+		double fCutMass_JPsiLow;
+		double fCutMass_JPsiHigh;
+		// Additional cut variables for kaon
+		int fCutTrackQual_kp;
+		double fCutPt_Kaon;
 };
 
 #endif
