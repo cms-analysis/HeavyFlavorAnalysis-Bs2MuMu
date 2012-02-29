@@ -14,16 +14,7 @@ ksReader::ksReader(TChain *tree, TString evtClassName) : massReader(tree,evtClas
 	fPlabKsTruePtr = &fPlabKsTrue;
 	
 	fTreeName = "ksReader reduced tree";
-	
-	// build the true decay
-	trueDecay.insert(13);
-	trueDecay.insert(13);
-	trueDecay.insert(211);
-	trueDecay.insert(211);
-	trueDecay.insert(310);
-	trueDecay.insert(443);
-	trueDecay.insert(511);
-	
+		
 	cout << "ksReader instantiated..." << endl;
 } // ksReader()
 
@@ -33,33 +24,6 @@ ksReader::~ksReader()
 	cout << "\treco counter: " << reco_counter << endl;
 	cout << "\ttotal counter: " << total_counter << endl;
 } // ~ksReader()
-
-void ksReader::eventProcessing()
-{
-	unsigned j,nc;
-	TGenCand *pGen;
-	multiset<int> current_decay;
-	
-	decay_indices.clear();
-	
-	// count the number of real decay using the generator block
-	nc = fpEvt->nGenCands();
-	for (j = 0; j < nc; j++) {
-		pGen = fpEvt->getGenCand(j);
-		if (abs(pGen->fID) == 511) {
-			current_decay.clear();
-			buildDecay(pGen,&current_decay);
-			current_decay.erase(22); // remove Bremsstrahlung
-			if (current_decay == trueDecay)
-				total_counter++;
-		}
-	}
-	
-	// do the normal stuff
-	massReader::eventProcessing(); // here, the decay indices are modified in loadCandidateVariables
-	
-	reco_counter += decay_indices.size();
-} // eventProcessing()
 
 int ksReader::loadCandidateVariables(TAnaCand *pCand)
 {
@@ -194,37 +158,6 @@ void ksReader::bookHist()
 	reduced_tree->Branch("plab_ks","TVector3",&fPlabKsPtr);
 	reduced_tree->Branch("plab_ks_true","TVector3",&fPlabKsTruePtr);
 } // bookHist()
-
-// a more sophisticated truth matching for the B0 particles
-int ksReader::checkTruth(TAnaCand *cand)
-{
-	int result;
-	multiset<int> particles;
-	TAnaTrack *track;
-	TGenCand *gen;
-	
-	result = massReader::checkTruth(cand);
-	if (!result) goto bail;
-	
-	// check they come from the right decay channel!
-	track = fpEvt->getSigTrack(cand->fSig1);
-	track = fpEvt->getRecTrack(track->fIndex);
-	
-	gen = fpEvt->getGenCand(track->fGenIndex);
-	while (abs(gen->fID) != 511)
-		gen = fpEvt->getGenCand(gen->fMom1); // this works because else, massReader::checkTruth would return 0
-	
-	buildDecay(gen,&particles);
-	particles.erase(22); // remove Bremsstahlung
-	
-	result = (particles == trueDecay);
-	
-	if (result && fCandidate == 700511)
-		decay_indices.insert(gen->fNumber);
-
-bail:
-	return result;
-} // checkTruth()
 
 int ksReader::getGenIndex(TAnaCand *pCand, int candID)
 {

@@ -10,11 +10,9 @@ class ksReader : public massReader {
 		~ksReader();
 		
 		virtual void bookHist();
-		virtual void eventProcessing();
 
 	protected:
 		virtual int loadCandidateVariables(TAnaCand *pCand);
-		virtual int checkTruth(TAnaCand *cand);
 	
 	private:
 		float fMassKs;
