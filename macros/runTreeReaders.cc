@@ -20,20 +20,13 @@
 #include "dpReader.hh"
 #include "d0Reader.hh"
 #include "massReader.hh"
-#include "kpReader.hh"
 #include "phiReader.hh"
 #include "ksReader.hh"
 #include "copyReader.hh"
-#include "dumpReader.hh"
 #include "muCharmReader.hh"
 #include "triggerValidation.hh"
 #include "genLevel.hh"
-#include "decayCounter.hh"
 #include "impactReader.hh"
-#include "otherDecays.hh"
-#include "mumuReader.hh"
-#include "mumuBdReader.hh"
-#include "mumuPsiReader.hh"
 
 using namespace std;
 
@@ -204,22 +197,16 @@ int main(int argc, char *argv[]) {
   else if (readerName == "bmmSignalReader") a = new bmmSignalReader(chain,TString(evtClassName));
   else if (readerName == "bmmNormalizationReader") a = new bmmNormalizationReader(chain,TString(evtClassName));
   else if (readerName == "bmmBs2JpsiPhiReader") a = new bmmBs2JpsiPhiReader(chain,TString(evtClassName));
-  else if (readerName == "kpReader") a = new kpReader(chain,TString(evtClassName));
+  else if (readerName == "massReader") a = new massReader(chain,TString(evtClassName));
   else if (readerName == "ksReader") a = new ksReader(chain,TString(evtClassName));
   else if (readerName == "phiReader") a = new phiReader(chain,TString(evtClassName));
-  else if (readerName == "dumpReader") a = new dumpReader(chain,TString(evtClassName));
   else if (readerName == "dpReader") a = new dpReader(chain,TString(evtClassName));
   else if (readerName == "d0Reader") a = new d0Reader(chain,TString(evtClassName));
   else if (readerName == "copyReader") a = new copyReader(chain,TString(evtClassName));
   else if (readerName == "muCharmReader") a = new muCharmReader(chain,TString(evtClassName));
   else if (readerName == "triggerValidation") a = new triggerValidation(chain,TString(evtClassName));
   else if (readerName == "genLevel") a = new genLevel(chain,TString(evtClassName));
-  else if (readerName == "decayCounter") a = new decayCounter(chain,TString(evtClassName));
   else if (readerName == "impactReader") a = new impactReader(chain,TString(evtClassName));
-  else if (readerName == "otherDecays") a = new otherDecays(chain,TString(evtClassName));
-  else if (readerName == "mumuReader") a = new mumuReader(chain,TString(evtClassName));
-  else if (readerName == "mumuBdReader") a = new mumuBdReader(chain,TString(evtClassName));
-  else if (readerName == "mumuPsiReader") a = new mumuPsiReader(chain,TString(evtClassName));
   else {
     cout << "please provide a class name to instantiate" << endl;
   }
