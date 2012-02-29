@@ -39,20 +39,17 @@ RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 #########
 # FILES #
 #########
-READER_HEADERS = treeReader01.hh bmmReader.hh bmmSignalReader.hh bmmNormalizationReader.hh bmmBs2JpsiPhiReader.hh d0Reader.hh dumpReader.hh muCharmReader.hh copyReader.hh dpReader.hh massReader.hh triggerValidation.hh ksReader.hh genLevel.hh kpReader.hh phiReader.hh decayCounter.hh impactReader.hh anaBmm.hh otherDecays.hh mumuReader.hh mumuBdReader.hh mumuPsiReader.hh AnalysisCuts.hh AnalysisDistribution.hh initFunc.hh HistCutEfficiency.hh
-READER = treeReader01.o bmmReader.o bmmSignalReader.o bmmNormalizationReader.o bmmBs2JpsiPhiReader.o massReader.o dumpReader.o copyReader.o muCharmReader.o dpReader.o d0Reader.o triggerValidation.o ksReader.o genLevel.o kpReader.o phiReader.o decayCounter.o impactReader.o anaBmm.o otherDecays.o mumuReader.o mumuBdReader.o mumuPsiReader.o AnalysisCuts.o AnalysisDistribution.o initFunc.o HistCutEfficiency.o
-
-SUPPORTCLASSES = mclimit_csm.o
-
+READER = treeReader01.o bmmReader.o bmmSignalReader.o bmmNormalizationReader.o bmmBs2JpsiPhiReader.o massReader.o copyReader.o muCharmReader.o dpReader.o d0Reader.o triggerValidation.o ksReader.o genLevel.o phiReader.o impactReader.o anaBmm.o AnalysisCuts.o AnalysisDistribution.o initFunc.o HistCutEfficiency.o
 READERDICT = ${READER:.o=Dict.o}
 
+SUPPORTCLASSES = mclimit_csm.o
 CSTUFF = bayesianlimit.o
 
 #################
 # PATTERN RULES #
 #################
 
-obj/%.o : %.cc $(READER_HEADERS)
+obj/%.o : %.cc
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 %Dict.cc : %.hh %LinkDef.h
@@ -61,19 +58,19 @@ obj/%.o : %.cc $(READER_HEADERS)
 %Dict.cc : %.hh
 	$(ROOTCINT) -f $@ -c $<
 
-
 obj/%.o : %.c $(CSTUFF)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-
+obj/%.d: %.cc
+	@echo "Creating $@"
+	$(shell $(CXX) -MM $(CXXFLAGS) $< | sed "s/.*\.o[ :]*/obj\/$(notdir $@) obj\/&/g" > $@)
 
 ###########
 # TARGETS #
 ###########
 
-all:
-	@$(MAKE) bin/runTreeReaders
-	@$(MAKE) bin/runMergeTrees
+all: bin/runTreeReaders bin/runMergeTrees
+	@true
 
 lib/libAnaClasses.so: $(addprefix obj/,$(CSTUFF) $(READER) $(SUPPORTCLASSES) $(READERDICT)) lib/libAna00.so lib/libUtil.so 
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(CSTUFF) $(READER) $(READERDICT) $(SUPPORTCLASSES)) -o lib/libAnaClasses.so $(GLIBS) -lMinuit lib/libAna00.so lib/libUtil.so
@@ -94,7 +91,7 @@ bin/cls: lib/libAnaClasses.so obj/cls.o lib/libAna00.so
 	$(LD) $(LDFLAGS) -o bin/cls $(GLIBS) obj/cls.o lib/libAnaClasses.so lib/libAna00.so lib/libUtil.so
 
 clean:
-	rm -f obj/*.o *Dict.* lib/libAna00.so lib/libUtil.so
+	rm -f obj/*.o obj/*.d *Dict.* lib/libAna00.so lib/libUtil.so
 
 cleanall: clean
 	rm -f bin/runTreeReaders bin/runMergeTrees 
@@ -103,3 +100,5 @@ cleanall: clean
 	rm -f ../../../lib/$(SCRAM_ARCH)/libAna00.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libUtil.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libAnaClasses.so
+
+-include $(addprefix obj/,${READER:.o=.d})
