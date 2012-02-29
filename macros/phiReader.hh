@@ -15,7 +15,6 @@ class phiReader : public massReader {
 	protected:
 		virtual void clearVariables();
 		virtual int loadCandidateVariables(TAnaCand *pCand);
-		virtual int checkTruth(TAnaCand *cand);
 		
 		virtual bool parseCut(char *cutName, float cutLow, float cutHigh, int dump = 1);
 		virtual bool applyCut();

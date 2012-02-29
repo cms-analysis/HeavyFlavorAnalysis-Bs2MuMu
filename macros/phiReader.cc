@@ -19,20 +19,7 @@ phiReader::phiReader(TChain *tree, TString evtClassName) :
 	fCutPt_Kp2(0.0),
 	fCutDeltaR_Kaons(0.0)
 {
-	cout << "Instantiating phiReader..." << endl;	
 	fTreeName = "phiReader reduced tree.";
-	
-	trueDecay.insert(13); // mu
-	trueDecay.insert(13); // mu
-	trueDecay.insert(321); // kp
-	trueDecay.insert(321); // kp
-	trueDecay.insert(443); // j/psi
-	trueDecay.insert(333); // phi
-	trueDecay.insert(531); // Bs
-	
-	fTruthType = 531; // Bs is our real type
-
-	cout << "phiReader instantiated..." << endl;
 } // phiReader()
 
 phiReader::~phiReader()
@@ -186,41 +173,6 @@ void phiReader::bookHist()
 	reduced_tree->Branch("d3_bs_to_jpsi",&fD3_BsJpsi,"d3_bs_to_jpsi/F");
 	reduced_tree->Branch("d3e_bs_to_jpsi",&fD3e_BsJpsi,"d3e_bs_to_jpsi/F");
 } // bookHist()
-
-int phiReader::checkTruth(TAnaCand *pCand)
-{
-	int result;
-	multiset<int> particles;
-	TAnaTrack *track;
-	TGenCand *gen;
-	
-	result = massReader::checkTruth(pCand);
-	if(!result) goto bail;
-	
-	// check if the decay conincides
-	if (pCand->fSig1 < 0 || pCand->fSig1 >= fpEvt->nSigTracks()) {
-		result = 0;
-		goto bail;
-	}
-	track = fpEvt->getSigTrack(pCand->fSig1);
-	track = fpEvt->getRecTrack(track->fIndex);
-	
-	if (track->fGenIndex < 0 || track->fGenIndex >= fpEvt->nGenCands()) {
-	  result = 0;
-	  goto bail;
-	}
-
-	gen = fpEvt->getGenCand(track->fGenIndex);
-	while (abs(gen->fID) != 531)
-		gen = fpEvt->getGenCand(gen->fMom1);
-	
-	buildDecay(gen,&particles);
-	particles.erase(22); // remove Bremsstrahlung
-	
-	result = (particles == trueDecay);
-bail:
-	return result;
-} // checkTruth()
 
 bool phiReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 {
