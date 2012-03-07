@@ -20,7 +20,6 @@
 #include "dpReader.hh"
 #include "d0Reader.hh"
 #include "massReader.hh"
-#include "phiReader.hh"
 #include "ksReader.hh"
 #include "copyReader.hh"
 #include "muCharmReader.hh"
@@ -199,7 +198,6 @@ int main(int argc, char *argv[]) {
   else if (readerName == "bmmBs2JpsiPhiReader") a = new bmmBs2JpsiPhiReader(chain,TString(evtClassName));
   else if (readerName == "massReader") a = new massReader(chain,TString(evtClassName));
   else if (readerName == "ksReader") a = new ksReader(chain,TString(evtClassName));
-  else if (readerName == "phiReader") a = new phiReader(chain,TString(evtClassName));
   else if (readerName == "dpReader") a = new dpReader(chain,TString(evtClassName));
   else if (readerName == "d0Reader") a = new d0Reader(chain,TString(evtClassName));
   else if (readerName == "copyReader") a = new copyReader(chain,TString(evtClassName));
@@ -244,4 +242,3 @@ int main(int argc, char *argv[]) {
   
   return 0;
 }
-
