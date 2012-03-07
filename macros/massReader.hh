@@ -20,7 +20,18 @@ enum {
 	kDecay_BdToMuMu = 2,
 	kDecay_BuToJPsiKp = 3,
 	kDecay_BsToJPsiPhi = 4,
-	kDecay_BdToJPsiKs = 5
+	kDecay_BdToJPsiKs = 5,
+	kDecay_BdToKK = 6,
+	kDecay_BsToPiPi = 7,
+	kDecay_BdToKPi = 8,
+	kDecay_BsToKK = 9,
+	kDecay_BsToKMuNu = 10,
+	kDecay_LbToKP = 11,
+	kDecay_BdToPiMuNu = 12,
+	kDecay_BsToKPi = 13,
+	kDecay_LbToPMuNu = 14,
+	kDecay_BdToPiPi = 15,
+	kDecay_LbToPiP = 16
 };
 
 // used to store decays...
@@ -135,13 +146,20 @@ class massReader : public treeReader01 {
 		float fPtJPsi;
 		float fMassJPsi;
 		float fChi2Jpsi;
+		// phi
+		float fMassPhi;
 		// kaons
-		float fPtKp;
-		float fEtaKp;
+		float fPtKp1;
+		float fPtKp2;
+		float fEtaKp1;
+		float fEtaKp2;
 		float fPtKp_Gen;
 		float fEtaKp_Gen;
-		int fTrackQual_kp;
-		int fQ_kp;
+		int fTrackQual_kp1;
+		int fTrackQual_kp2;
+		int fQ_kp1;
+		int fQ_kp2;
+		float fDeltaR_Kaons; // delta R of the two Kaons
 		// triggers
 		int	fTriggers; // store some trigger information
 		int fTriggersError; // error information of trigger
@@ -178,8 +196,13 @@ class massReader : public treeReader01 {
 		double fCutMass_JPsiLow;
 		double fCutMass_JPsiHigh;
 		// Additional cut variables for kaon
-		int fCutTrackQual_kp;
-		double fCutPt_Kaon;
+		int fCutTrackQual_kp1;
+		int fCutTrackQual_kp2;
+		double fCutPt_Kaon1;
+		double fCutPt_Kaon2;
+		bool fCutOppSign_kp;
+		double fCutMass_PhiLow;
+		double fCutMass_PhiHigh;
 };
 
 #endif

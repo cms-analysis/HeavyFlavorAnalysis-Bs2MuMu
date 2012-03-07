@@ -55,8 +55,13 @@ massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, 
 	fCutOppSign_mu(false),
 	fCutMass_JPsiLow(0.0),
 	fCutMass_JPsiHigh(0.0),
-	fCutTrackQual_kp(0),
-	fCutPt_Kaon(0.0)
+	fCutTrackQual_kp1(0),
+	fCutTrackQual_kp2(0),
+	fCutPt_Kaon1(0.0),
+	fCutPt_Kaon2(0.0),
+	fCutOppSign_kp(false),
+	fCutMass_PhiLow(0.0),
+	fCutMass_PhiHigh(0.0)
 {
 	fTreeName = "massReader reduced tree";
 	
@@ -66,11 +71,22 @@ massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, 
 	stableParticles.insert(321); // kaon
 	
 	// build the decays we're interested in...
-	decayTable.insert( pair<decay_t,int>(make_decay(3, 531,13,13), kDecay_BsToMuMu) );
-	decayTable.insert( pair<decay_t,int>(make_decay(3, 511,13,13), kDecay_BdToMuMu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 531, 13, 13), kDecay_BsToMuMu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 511, 13, 13), kDecay_BdToMuMu) );
 	decayTable.insert( pair<decay_t,int>(make_decay(7, 531, 443, 333, 13, 13, 321, 321), kDecay_BsToJPsiPhi) );
 	decayTable.insert( pair<decay_t,int>(make_decay(5, 521, 443, 321, 13, 13), kDecay_BuToJPsiKp) );
-	decayTable.insert( pair<decay_t,int>(make_decay(511, 443, 310, 211, 211, 13, 13), kDecay_BdToJPsiKs) );
+	decayTable.insert( pair<decay_t,int>(make_decay(7, 511, 443, 310, 211, 211, 13, 13), kDecay_BdToJPsiKs) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 511, 321, 321), kDecay_BdToKK) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 531, 211, 211), kDecay_BsToPiPi) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 511, 321, 211), kDecay_BdToKPi) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 531, 321, 321), kDecay_BsToKK) );
+	decayTable.insert( pair<decay_t,int>(make_decay(4, 531, 13, 14, 321), kDecay_BsToKMuNu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 5122, 321, 2212), kDecay_LbToKP) );
+	decayTable.insert( pair<decay_t,int>(make_decay(4, 511, 211, 13, 14), kDecay_BdToPiMuNu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 531, 321, 211), kDecay_BsToKPi) );
+	decayTable.insert( pair<decay_t,int>(make_decay(4, 5122, 2212,13,14), kDecay_LbToPMuNu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 511, 211, 211), kDecay_BdToPiPi) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 5122, 211, 2212), kDecay_LbToPiP) );
 	
 	// mothers we're interested in
 	validMothers.insert(511); // Bd
@@ -145,13 +161,17 @@ void massReader::clearVariables()
 	fMassJPsi = 0.0;
 	fChi2Jpsi = 0.0;
 	
+	// phi
+	fMassPhi = 0.0f;
+	
 	// kaons
-	fPtKp = 0.0;
-	fEtaKp = 0.0;
+	fPtKp1 = fPtKp2 = 0.0;
+	fEtaKp1 = fEtaKp2 = 0.0;
 	fPtKp_Gen = 0.0;
 	fEtaKp_Gen = 0.0;
-	fTrackQual_kp = 0;
-	fQ_kp = 0.0;
+	fTrackQual_kp1 = fTrackQual_kp2 = 0;
+	fQ_kp1 = fQ_kp2 = 0;
+	fDeltaR_Kaons = 0.0f;
 	
 	memset(fTracksIx,0,sizeof(fTracksIx));
 	memset(fTracksIP,0,sizeof(fTracksIP));
@@ -166,14 +186,16 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	TAnaTrack *sigTrack;
 	TAnaTrack *recTrack;
 	TAnaCand *momCand;
-	TAnaCand *jpsiCand;
+	TAnaCand *dauCand;
 	TGenCand *muGen;
 	TVector3 v1,v2,uVector;
 	int j,k;
 	bool firstMu = true;
+	bool firstKaon = true;
 	map<int,int> aTracks;
 	map<int,int> cand_tracks;
 	TVector3 plabMu1,plabMu2;
+	TVector3 plabKp1,plabKp2;
 	TLorentzVector pMu1,pMu2;
 
 	int result;
@@ -205,8 +227,8 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	
 	// set the constraint mass value
 	findCandStructure(pCand, &cand_tracks);
-	jpsiCand = findCandidate(400000 + (pCand->fType % 1000), &cand_tracks);
-	if (jpsiCand) fMassConstraint = jpsiCand->fMass;
+	dauCand = findCandidate(400000 + (pCand->fType % 1000), &cand_tracks);
+	if (dauCand) fMassConstraint = dauCand->fMass;
 	
 	// Load muon variables
 	cand_tracks.clear();
@@ -236,10 +258,20 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 				firstMu = false;
 				break;
 			case 321: // kaon
-				fPtKp = sigTrack->fPlab.Perp();
-				fEtaKp = sigTrack->fPlab.Eta();
-				fQ_kp = sigTrack->fQ;
-				fTrackQual_kp = recTrack->fTrackQuality;
+				if (firstKaon) {
+					plabKp1 = sigTrack->fPlab;
+					fPtKp1 = plabKp1.Perp();
+					fEtaKp1 = plabKp1.Eta();
+					fQ_kp1 = recTrack->fQ;
+					fTrackQual_kp1 = recTrack->fTrackQuality;					
+				} else {
+					plabKp2 = sigTrack->fPlab;
+					fPtKp2 = plabKp2.Perp();
+					fEtaKp2 = plabKp2.Eta();
+					fQ_kp2 = recTrack->fQ;
+					fTrackQual_kp2 = recTrack->fTrackQuality;
+				}
+				firstKaon = false;
 				break;
 			default:
 				break;
@@ -257,6 +289,15 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	}
 	
 	fDeltaPhiMu = plabMu1.DeltaPhi(plabMu2);
+	
+	// kaon ordering
+	if (fPtKp1 < fPtKp2) {
+		swap(plabKp1,plabKp2);
+		swap(fPtKp1,fPtKp2);
+		swap(fEtaKp1,fEtaKp2);
+		swap(fQ_kp1,fQ_kp2);
+		swap(fTrackQual_kp1,fTrackQual_kp2);
+	}
 	
 	// Clean entries of nearest tracks
 	for (j = 0; j < NBR_TRACKS_STORE; j++) fTracksIx[j] = -1;
@@ -340,30 +381,40 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		}
 	}
 	
+	// muon generator ordering
 	if (fPtMu1_Gen < fPtMu2_Gen) {
 		swap(fPtMu1_Gen,fPtMu2_Gen);
 		swap(fEtaMu1_Gen,fEtaMu2_Gen);
 		swap(fPMu1_Gen,fPMu2_Gen);
 	}
-	
-	if (plabMu2.Perp() > 0)
-		fDeltaR = plabMu1.DeltaR(plabMu2);
-	
-	// J/psi
+		
+	// dimuon
 	pMu1.SetVectM(plabMu1,MMUON);
 	pMu2.SetVectM(plabMu2,MMUON);
 	fPtJPsi = (pMu1 + pMu2).Perp();
 	fMassJPsi = (pMu1 + pMu2).M();
+	if (plabMu1.Perp() > 0 && plabMu2.Perp() > 0)
+		fDeltaR = plabMu1.DeltaR(plabMu2);
 	
+	// dikaon
+	pMu1.SetVectM(plabKp1,MKAON);
+	pMu2.SetVectM(plabKp2,MKAON);
+	fMassPhi = (pMu1 + pMu2).M();
+	if (plabKp1.Perp() > 0 && plabKp2.Perp() > 0)
+		fDeltaR_Kaons = (float)plabKp1.DeltaR(plabKp2);
+	
+	// daughters
 	for (j = pCand->fDau1; 0 <= j && j <= pCand->fDau2; j++) {
 		
-		jpsiCand = fpEvt->getCand(j);
-		if ((jpsiCand->fType % 1000) == 443) {
+		dauCand = fpEvt->getCand(j);
+		if ((dauCand->fType % 1000) == 443) {
 			
-			fPtJPsi = jpsiCand->fPlab.Perp();
-			fMassJPsi = jpsiCand->fMass;
-			fChi2Jpsi = jpsiCand->fVtx.fChi2;
+			fPtJPsi = dauCand->fPlab.Perp();
+			fMassJPsi = dauCand->fMass;
+			fChi2Jpsi = dauCand->fVtx.fChi2;
 			break;
+		} else if ((dauCand->fType % 1000) == 333) {
+			fMassPhi = dauCand->fMass;
 		}
 	}
 	
@@ -422,12 +473,18 @@ void massReader::bookHist()
 	reduced_tree->Branch("triggers",&fTriggers,"triggers/I");
 	reduced_tree->Branch("pt_dimuon",&fPtJPsi,"pt_dimuon/F");
 	reduced_tree->Branch("mass_dimuon",&fMassJPsi,"mass_dimuon/F");
-	reduced_tree->Branch("pt_kp",&fPtKp,"pt_kp/F");
+	reduced_tree->Branch("pt_kp1",&fPtKp1,"pt_kp1/F");
+	reduced_tree->Branch("pt_kp2",&fPtKp2,"pt_kp2/F");
 	reduced_tree->Branch("pt_kp_gen",&fPtKp_Gen,"pt_kp_gen/F");
-	reduced_tree->Branch("eta_kp",&fEtaKp,"eta_kp/F");
+	reduced_tree->Branch("eta_kp1",&fEtaKp1,"eta_kp1/F");
+	reduced_tree->Branch("eta_kp2",&fEtaKp2,"eta_kp2/F");
 	reduced_tree->Branch("eta_kp_gen",&fEtaKp_Gen,"eta_kp_gen/F");
-	reduced_tree->Branch("track_qual_kp",&fTrackQual_kp,"track_qual_kp/I");
-	reduced_tree->Branch("q_kp",&fQ_kp,"q_kp/I");
+	reduced_tree->Branch("track_qual_kp1",&fTrackQual_kp1,"track_qual_kp1/I");
+	reduced_tree->Branch("track_qual_kp2",&fTrackQual_kp2,"track_qual_kp2/I");
+	reduced_tree->Branch("q_kp1",&fQ_kp1,"q_kp1/I");
+	reduced_tree->Branch("q_kp2",&fQ_kp2,"q_kp2/I");
+	reduced_tree->Branch("mass_dikaon",&fMassPhi,"mass_dikaon/F");
+	reduced_tree->Branch("deltaR_kaons",&fDeltaR_Kaons,"deltaR_kaons/F");
 	reduced_tree->Branch("triggers_error",&fTriggersError,"triggers_error/I");
 	reduced_tree->Branch("triggers_found",&fTriggersFound,"triggers_found/I");
 	reduced_tree->Branch("triggered_jpsi",&fTriggeredJPsi,"triggered_jpsi/I");
@@ -495,7 +552,8 @@ int massReader::loadDecay(TAnaCand *anaCand)
 	int ix, result = 0;
 	decay_t dec;
 	map<decay_t,int>::const_iterator it;
-	
+	bool correct;
+	TAnaTrack *sigTrack,*recTrack;
 	
 	// search for the decay..
 	if ((ix = sameMother(anaCand)) >= 0)
@@ -505,9 +563,17 @@ int massReader::loadDecay(TAnaCand *anaCand)
 	buildDecay(mother, &dec);
 	
 	it = decayTable.find(dec);
-	if (it != decayTable.end())
-		result = it->second;
-	
+	if (it != decayTable.end()) {
+		// check wether all tracks are assigned correctly
+		correct = true;
+		for (ix = anaCand->fSig1; correct && 0 <= ix && ix <= anaCand->fSig2; ix++) {
+			sigTrack = fpEvt->getSigTrack(ix);
+			recTrack = fpEvt->getRecTrack(sigTrack->fIndex);
+			correct = (sigTrack->fMCID == recTrack->fMCID); // track was assigned correctly
+		}
+		if (correct)
+			result = it->second;
+	}
 bail:
 	return result;
 } // loadDecay()
@@ -628,7 +694,15 @@ float massReader::calculateIsolation(TAnaCand *pCand)
 			continue;
 		
 		// check that not the same PV
-		if (pCand->fPvIdx != pTrack->fPvIdx && (pTrack->fPvIdx >= 0 || nearSV.count(j) == 0))
+		
+		if ((pCand->fPvIdx == pTrack->fPvIdx) || (nearSV.count(j)>0 && pTrack->fPvIdx < 0))
+			sum_pt += pTrack->fPlab.Pt();
+
+
+		if ((pCand->fPvIdx != pTrack->fPvIdx) && (nearSV.count(j)==0 || pTrack->fPvIdx >= 0))
+			continue;
+				
+		if ((pCand->fPvIdx != pTrack->fPvIdx) && (pTrack->fPvIdx >= 0 || nearSV.count(j) == 0))
 			continue;
 		
 		sum_pt += pTrack->fPlab.Pt();
@@ -921,10 +995,16 @@ bool massReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 		goto bail;
 	}
 	
-	parsed = (strcmp(cutName,"TRACK_QUAL_KP") == 0);
+	parsed = (strcmp(cutName,"TRACK_QUAL_KP1") == 0);
 	if (parsed) {
-		fCutTrackQual_kp = (int)cutLow;
-		if (dump) cout << "TRACK_QUAL_KP: " << fCutTrackQual_kp << endl;
+		fCutTrackQual_kp1 = (int)cutLow;
+		if (dump) cout << "TRACK_QUAL_KP1: " << fCutTrackQual_kp1 << endl;
+		goto bail;
+	}
+	parsed = (strcmp(cutName,"TRACK_QUAL_KP2") == 0);
+	if (parsed) {
+		fCutTrackQual_kp2 = (int)cutLow;
+		if (dump) cout << "TRACK_QUAL_KP2: " << fCutTrackQual_kp2 << endl;
 		goto bail;
 	}
 	
@@ -936,10 +1016,33 @@ bool massReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 		goto bail;
 	}
 	
-	parsed = (strcmp(cutName,"PT_KAON") == 0);
+	parsed = (strcmp(cutName,"PT_KAON1") == 0);
 	if (parsed) {
-		fCutPt_Kaon = cutLow;
-		if (dump) cout << "PT_KAON: " << fCutPt_Kaon << endl;
+		fCutPt_Kaon1 = cutLow;
+		if (dump) cout << "PT_KAON1: " << fCutPt_Kaon1 << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"PT_KAON2") == 0);
+	if (parsed) {
+		fCutPt_Kaon2 = cutLow;
+		if (dump) cout << "PT_KAON2: " << fCutPt_Kaon2 << endl;
+		goto bail;
+	}
+	
+	
+	parsed = (strcmp(cutName,"OPPOSITE_SIGN_KP") == 0);
+	if (parsed) {
+		fCutOppSign_kp = (cutLow != 0.0f);
+		if (dump) cout << "OPPOSITE_SIGN_KP: " << fCutOppSign_kp << endl;
+		goto bail;
+	}
+	
+	parsed = (strcmp(cutName,"MASS_PHI") == 0);
+	if (parsed) {
+		fCutMass_PhiLow = cutLow;
+		fCutMass_PhiHigh = cutHigh;
+		if (dump) cout << "MASS_PHI: (" << fCutMass_PhiLow << ", " << fCutMass_PhiHigh << ")" << endl;
 		goto bail;
 	}
 	
@@ -952,7 +1055,7 @@ bool massReader::applyCut()
 	bool pass = true;
 	
 	// check the candidate
-	if (fCutCand != 0 && fCandidate != 0) { // cut on candidate requested
+	if (fCutCand != 0) {
 		pass = fCandidate == fCutCand;
 		if (!pass) goto bail;
 	}
@@ -1006,8 +1109,13 @@ bool massReader::applyCut()
 	}	
 	
 	// check track quality of kp
-	if (fCutTrackQual_kp) {
-		pass = (fTrackQual_kp & fCutTrackQual_kp) != 0;
+	if (fCutTrackQual_kp1) {
+		pass = (fTrackQual_kp1 & fCutTrackQual_kp1) != 0;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutTrackQual_kp2) {
+		pass = (fTrackQual_kp2 & fCutTrackQual_kp2) != 0;
 		if (!pass) goto bail;
 	}
 	
@@ -1021,8 +1129,28 @@ bool massReader::applyCut()
 		if(!pass) goto bail;
 	}
 	
-	if (fCutPt_Kaon > 0.0) {
-		pass = fPtKp > fCutPt_Kaon;
+	if (fCutPt_Kaon1 > 0.0) {
+		pass = fPtKp1 > fCutPt_Kaon1;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutPt_Kaon2 > 0.0) {
+		pass = fPtKp2 > fCutPt_Kaon2;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutOppSign_kp) {
+		pass = fQ_kp1 != fQ_kp2;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutMass_PhiLow > 0.0) {
+		pass = fMassPhi > fCutMass_PhiLow;
+		if (!pass) goto bail;
+	}
+	
+	if (fCutMass_PhiHigh > 0.0) {
+		pass = fMassPhi < fCutMass_PhiHigh;
 		if (!pass) goto bail;
 	}
 	
