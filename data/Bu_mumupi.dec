@@ -1,4 +1,4 @@
-# $Id: Bd_mumupi0.dec,v 1.1 2010/03/12 08:29:29 ursl Exp $
+# $Id: Bu_mumupi.dec,v 1.1 2012/02/23 19:32:04 ursl Exp $
 #
 # This is the decay file for the decay BD0 -> MU+ MU- PI0
 #
@@ -7,7 +7,7 @@ Alias      MyB-        B-
 ChargeConj MyB-        MyB+
 #
 Decay MyB+
-1.000        pi+    mu+     mu-     BTOSLLBALL;
+1.000        pi+    mu+     mu-     BTOSLLALI;
 Enddecay
 CDecay MyB-
 #
