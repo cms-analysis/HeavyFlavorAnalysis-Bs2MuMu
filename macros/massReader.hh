@@ -153,8 +153,10 @@ class massReader : public treeReader01 {
 		float fPtKp2;
 		float fEtaKp1;
 		float fEtaKp2;
-		float fPtKp_Gen;
-		float fEtaKp_Gen;
+		float fPtKp_Gen1;
+		float fPtKp_Gen2;
+		float fEtaKp_Gen1;
+		float fEtaKp_Gen2;
 		int fTrackQual_kp1;
 		int fTrackQual_kp2;
 		int fQ_kp1;

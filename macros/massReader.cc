@@ -167,8 +167,8 @@ void massReader::clearVariables()
 	// kaons
 	fPtKp1 = fPtKp2 = 0.0;
 	fEtaKp1 = fEtaKp2 = 0.0;
-	fPtKp_Gen = 0.0;
-	fEtaKp_Gen = 0.0;
+	fPtKp_Gen1 = fPtKp_Gen2 = 0.0;
+	fEtaKp_Gen1 = fEtaKp_Gen2 = 0.0;
 	fTrackQual_kp1 = fTrackQual_kp2 = 0;
 	fQ_kp1 = fQ_kp2 = 0;
 	fDeltaR_Kaons = 0.0f;
@@ -349,8 +349,9 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fTriggeredJPsi = hasTriggeredNorm();
 	fTriggeredBs = hasTriggeredSignal();
 	
-	// generator pt of muons...
+	// generator tracks...
 	firstMu = true;
+	firstKaon = true;
 	findAllTrackIndices(pCand,&aTracks);
 	for (map<int,int>::const_iterator it = aTracks.begin(); it != aTracks.end(); ++it) {
 		pTrack = fpEvt->getRecTrack(it->first);
@@ -373,8 +374,14 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 				firstMu = false;
 				break;
 			case 321: // kaon
-				fPtKp_Gen = muGen->fP.Perp();
-				fEtaKp_Gen = muGen->fP.Eta();
+				if (firstKaon) {
+					fPtKp_Gen1 = muGen->fP.Perp();
+					fEtaKp_Gen1 = muGen->fP.Eta();
+				} else {
+					fPtKp_Gen1 = muGen->fP.Perp();
+					fEtaKp_Gen1 = muGen->fP.Eta();
+				}
+				firstKaon = false;
 				break;
 			default:
 				break;
@@ -475,10 +482,12 @@ void massReader::bookHist()
 	reduced_tree->Branch("mass_dimuon",&fMassJPsi,"mass_dimuon/F");
 	reduced_tree->Branch("pt_kp1",&fPtKp1,"pt_kp1/F");
 	reduced_tree->Branch("pt_kp2",&fPtKp2,"pt_kp2/F");
-	reduced_tree->Branch("pt_kp_gen",&fPtKp_Gen,"pt_kp_gen/F");
+	reduced_tree->Branch("pt_kp1_gen",&fPtKp_Gen1,"pt_kp1_gen/F");
+	reduced_tree->Branch("pt_kp2_gen",&fPtKp_Gen2,"pt_kp2_gen/F");
 	reduced_tree->Branch("eta_kp1",&fEtaKp1,"eta_kp1/F");
 	reduced_tree->Branch("eta_kp2",&fEtaKp2,"eta_kp2/F");
-	reduced_tree->Branch("eta_kp_gen",&fEtaKp_Gen,"eta_kp_gen/F");
+	reduced_tree->Branch("eta_kp1_gen",&fEtaKp_Gen1,"eta_kp1_gen/F");
+	reduced_tree->Branch("eta_kp2_gen",&fEtaKp_Gen2,"eta_kp2_gen/F");
 	reduced_tree->Branch("track_qual_kp1",&fTrackQual_kp1,"track_qual_kp1/I");
 	reduced_tree->Branch("track_qual_kp2",&fTrackQual_kp2,"track_qual_kp2/I");
 	reduced_tree->Branch("q_kp1",&fQ_kp1,"q_kp1/I");
