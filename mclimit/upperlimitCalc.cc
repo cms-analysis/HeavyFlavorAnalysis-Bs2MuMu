@@ -12,7 +12,7 @@
 #include "TCanvas.h"
 #include "TArrow.h"
 #include "TStopwatch.h"
-//#include "TString.h"
+#include "TString.h"
 
 #define N_MASS_BINS 6
 #define N_BDT_BINS 4
@@ -68,14 +68,12 @@ int main(int argc, char **argv)
 		cms12bs = true;
 		barrel = true;
 		endcap = true;
-		//bsmm = true;
 		i_numb = atoi(argv[2]);
 	}	
 	else if (!strcmp(cms12bdchan,argv[1])) {
 		cms12bd = true;
 		barrel = true;
 		endcap = true;
-		//bdmm = true;
 		i_numb = atoi(argv[2]);
 	}	
 	else if (!strcmp(lhcbchan,argv[1])) {
@@ -119,59 +117,19 @@ int main(int argc, char **argv)
 		i_numb = atoi(argv[2]);
 	}	
 
-	
-//	else if (!strcmp(cms11bschan,argv[2])) {
-//		cms11bs = true;
-//		barrel = true;
-//		endcap = true;
-//		i_numb = atoi(argv[1]);
-//	}
-//	else if (!strcmp(cms12bschan,argv[2])) {
-//		cms12bs = true;
-//		barrel = true;
-//		endcap = true;
-//		i_numb = atoi(argv[1]);
-//	}
-//	else if (!strcmp(lhcbchan,argv[2])) {
-//		lhcbs = true;
-//		lhcbs10 = true;
-//		lhcbs11 = true;
-//		i_numb = atoi(argv[1]);
-//	}
-//	else if	(!strcmp(combned11,argv[2])) {
-//		cms11bs = true;
-//		barrel = true;
-//		endcap = true;
-//		
-//		lhcbs = true;
-//		lhcbs10 = true;
-//		lhcbs11 = true;
-//
-//		i_numb = atoi(argv[1]);
-//	}
-//	else if (!strcmp(lhcb10chan,argv[2])) {
-//		lhcbs10 = true;
-//		
-//		i_numb = atoi(argv[1]);
-//	}
-//	else if (!strcmp(lhcb11chan,argv[2])) {
-//		lhcbs11 = true;
-//		
-//		i_numb = atoi(argv[1]);
-//	}
-	
+		
 	gRandom->SetSeed(i_numb);
 
 	TString s_outputfile;
-	if (combined11) s_outputfile = Form("CMS_LHCb_S11_Comb_Results%i.txt",i_numb);
-	else if (combined12) s_outputfile = Form("CMS_LHCb_W12_Comb_Results%i.txt",i_numb);
+	if (combined11) s_outputfile = Form("CMS_LHCb_S11_Comb_Bs_Results%i.txt",i_numb);
+	else if (combined12) s_outputfile = Form("CMS_LHCb_W12_Comb_Bs_Results%i.txt",i_numb);
 	else if(cms11bs) s_outputfile = Form("CMS_S11_Bs_Results%i.txt",i_numb);
 	else if(cms11bd) s_outputfile = Form("CMS_S11_Bd_Results%i.txt",i_numb);
 	else if(cms12bs) s_outputfile = Form("CMS_W12_Bs_Results%i.txt",i_numb);
 	else if(cms12bd) s_outputfile = Form("CMS_W12_Bd_Results%i.txt",i_numb);
-	else if(lhcbs) s_outputfile = Form("LHCb_10_11_Comb_Results%i.txt",i_numb);
-	else if(lhcbs10) s_outputfile = Form("LHCb_10_Results%i.txt",i_numb);
-	else if(lhcbs11) s_outputfile = Form("LHCb_11_Results%i.txt",i_numb);
+	else if(lhcbs) s_outputfile = Form("LHCb_10_11_Comb_Bs_Results%i.txt",i_numb);
+	else if(lhcbs10) s_outputfile = Form("LHCb_10_Bs_Results%i.txt",i_numb);
+	else if(lhcbs11) s_outputfile = Form("LHCb_11_Bs_Results%i.txt",i_numb);
 	
 	ofstream f_outputfile;
 	f_outputfile.open(s_outputfile);
@@ -185,12 +143,15 @@ int main(int argc, char **argv)
 	//========================================
 	// Have a visualization of how fitting looks like
 	// It has nothing to do with limit calculation
-	TCanvas * mycanvas; 
-	mycanvas = (TCanvas *) new TCanvas("Canvas1","Canvas1",0,0,600,600);
+	TCanvas *mycanvas = (TCanvas *) new TCanvas("Canvas1","Canvas1",0,0,600,600);
+	if ((cms11bs || cms11bd || cms12bs || cms12bd) && !(combined11 || combined12)) {
+		mycanvas->Divide(2,2);
+		mycanvas->cd(1);
+	}
 		
 	cout << ">>>>>>> Begin calculating!!! <<<<<<<<" << endl;
 	csm* mycsm = new csm();
-	if (cms11bs || cms11bd || cms12bs || cms12bd) {///////
+	if (cms11bs || cms11bd || cms12bs || cms12bd) {
 		mycsm->set_htofit(h_dataB,channameB);
 		mycsm->set_htofit(h_dataE,channameE);
 	}
@@ -226,6 +187,7 @@ int main(int argc, char **argv)
 	csm_model* bestnullfit = mycsm->getbestmodel();
 	if (cms11bs || cms11bd || cms12bs || cms12bd) { //////////////
 		bestnullfit->plotwithdata(channameB,h_dataB);
+		if ((cms11bs || cms11bd || cms12bs || cms12bd) && !(combined11 || combined12)) mycanvas->cd(2);/////////
 		bestnullfit->plotwithdata(channameE,h_dataE);
 	}
 	if (lhcbs11) {
@@ -390,7 +352,7 @@ int main(int argc, char **argv)
 	TH1F* ts_test = new TH1F("ts_test","",100,-50,50);
 	TH1F* ts_null = new TH1F("ts_null","",100,-50,50);
 	mymclimit->tshists(ts_test,ts_null); 
-//	mycanvas->SetLogy(1);
+	if ((cms11bs || cms11bd || cms12bs || cms12bd) && !(combined11 || combined12)) mycanvas->cd(3);//////
 	ts_null->SetLineColor(2);//red
 	ts_test->SetLineColor(4);//blue
 	ts_null->Draw();
@@ -399,15 +361,15 @@ int main(int argc, char **argv)
 	TArrow* arrow = new TArrow(ts_data,0.3*ts_null->GetMaximum(),ts_data,0);
 	arrow->Draw();
 	TString s_pdffilename;
-	if (combined11) s_pdffilename = Form("CMS_LHCb_S11_Comb_Results%i.pdf",i_numb);
-	if (combined12) s_pdffilename = Form("CMS_LHCb_W12_Comb_Results%i.pdf",i_numb);
+	if (combined11) s_pdffilename = Form("CMS_LHCb_S11_Comb_Bs_Results%i.pdf",i_numb);
+	else if (combined12) s_pdffilename = Form("CMS_LHCb_W12_Comb_Bs_Results%i.pdf",i_numb);
 	else if (cms11bs) s_pdffilename = Form("CMS_S11_Bs_Results%i.pdf",i_numb);
 	else if (cms11bd) s_pdffilename = Form("CMS_S11_Bd_Results%i.pdf",i_numb);
 	else if (cms12bs) s_pdffilename = Form("CMS_W12_Bs_Results%i.pdf",i_numb);
 	else if (cms12bd) s_pdffilename = Form("CMS_W12_Bd_Results%i.pdf",i_numb);
-	else if (lhcbs) s_pdffilename = Form("LHCb_10_11_Comb_Results%i.pdf",i_numb);
-	else if (lhcbs10) s_pdffilename = Form("LHCb_10_Results%i.pdf",i_numb);
-	else if (lhcbs11) s_pdffilename = Form("LHCb_11_Results%i.pdf",i_numb);
+	else if (lhcbs) s_pdffilename = Form("LHCb_10_11_Comb_Bs_Results%i.pdf",i_numb);
+	else if (lhcbs10) s_pdffilename = Form("LHCb_10_Bs_Results%i.pdf",i_numb);
+	else if (lhcbs11) s_pdffilename = Form("LHCb_11_Bs_Results%i.pdf",i_numb);
 	mycanvas->Print(s_pdffilename);
 	
 	
