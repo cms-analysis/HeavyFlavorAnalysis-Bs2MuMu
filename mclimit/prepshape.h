@@ -25,8 +25,8 @@ char experrname[]="EXPERR";
 char peakerrname[]="PCKERR";
 //char combbgerrname[]="CMBKGERR";
 
-char channameB[] = "bsmmB";
-char channameE[] = "bsmmE";
+char channameB[] = "bmmB";
+char channameE[] = "bmmE";
 
 //declare the shape functions
 double nps_low[NSYS];
@@ -49,12 +49,12 @@ TH1 *highshape[NSYS];
 // Opent the data file
 TFile *f_data = TFile::Open("anaBmm.default-11.root");
 TString s_outfilename;
-if (bscombined) s_outfilename = Form("CMS_Bs_Comb_Results%i.root",i_numb);
-else if (bdcombined) s_outfilename = Form("CMS_Bd_Comb_Results%i.root",i_numb);
-else if(barrel && bsmm) s_outfilename = Form("CMS_Bs_brrl_Results%i.root",i_numb);
-else if(endcap && bsmm) s_outfilename = Form("CMS_Bs_endc_Results%i.root",i_numb);
-else if(barrel && bdmm) s_outfilename = Form("CMS_Bd_brrl_Results%i.root",i_numb);
-else if(endcap && bdmm) s_outfilename = Form("CMS_Bd_endc_Results%i.root",i_numb);
+if (bscombined) s_outfilename = Form("CMS_W12_Bs_Comb_ShpReslts%i.root",i_numb);
+else if (bdcombined) s_outfilename = Form("CMS_W12_Bd_Comb_ShpReslts%i.root",i_numb);
+else if(barrel && bsmm) s_outfilename = Form("CMS_W12_Bs_brrl_ShpReslts%i.root",i_numb);
+else if(endcap && bsmm) s_outfilename = Form("CMS_W12_Bs_endc_ShpReslts%i.root",i_numb);
+else if(barrel && bdmm) s_outfilename = Form("CMS_W12_Bd_brrl_ShpReslts%i.root",i_numb);
+else if(endcap && bdmm) s_outfilename = Form("CMS_W12_Bd_endc_ShpReslts%i.root",i_numb);
 cout << s_outfilename << endl;
 TFile f_outfile(s_outfilename,"RECREATE");
 
