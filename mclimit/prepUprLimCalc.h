@@ -64,7 +64,7 @@ else if(cms11bs) s_outfilename = Form("CMS_S11_Bs_Results%i.root",i_numb);
 else if(cms11bd) s_outfilename = Form("CMS_S11_Bd_Results%i.root",i_numb);
 else if(cms12bs) s_outfilename = Form("CMS_W12_Bs_Results%i.root",i_numb);
 else if(cms12bd) s_outfilename = Form("CMS_W12_Bd_Results%i.root",i_numb);
-else if(lhcbs) s_outfilename = Form("LHCb_Comb_Bs_Results%i.root",i_numb);
+else if(lhcbs) s_outfilename = Form("LHCb_10_11_Comb_Bs_Results%i.root",i_numb);
 else if(lhcbs10) s_outfilename = Form("LHCb_10_Bs_Results%i.root",i_numb);
 else if(lhcbs11) s_outfilename = Form("LHCb_11_Bs_Results%i.root",i_numb);
 cout << s_outfilename << endl;

@@ -77,12 +77,12 @@ int main(int argc, char **argv)
 	gRandom->SetSeed(i_numb);
 
 	TString s_outputfile;
-	if (bscombined) s_outputfile = Form("CMS_Bs_Comb_Results%i.txt",i_numb);
-	else if (bdcombined) s_outputfile = Form("CMS_Bd_Comb_Results%i.txt",i_numb);
-	else if(barrel && bsmm) s_outputfile = Form("CMS_Bs_brrl_Results%i.txt",i_numb);
-	else if(endcap && bsmm) s_outputfile = Form("CMS_Bs_endc_Results%i.txt",i_numb);
-	else if(barrel && bdmm) s_outputfile = Form("CMS_Bd_brrl_Results%i.txt",i_numb);
-	else if(endcap && bdmm) s_outputfile = Form("CMS_Bd_endc_Results%i.txt",i_numb);
+	if (bscombined) s_outputfile = Form("CMS_W12_Bs_Comb_ShpReslts%i.txt",i_numb);
+	else if (bdcombined) s_outputfile = Form("CMS_W12_Bd_Comb_ShpReslts%i.txt",i_numb);
+	else if(barrel && bsmm) s_outputfile = Form("CMS_W12_Bs_brrl_ShpReslts%i.txt",i_numb);
+	else if(endcap && bsmm) s_outputfile = Form("CMS_W12_Bs_endc_ShpReslts%i.txt",i_numb);
+	else if(barrel && bdmm) s_outputfile = Form("CMS_W12_Bd_brrl_ShpReslts%i.txt",i_numb);
+	else if(endcap && bdmm) s_outputfile = Form("CMS_W12_Bd_endc_ShpReslts%i.txt",i_numb);
 	
 	ofstream f_outputfile;
 	f_outputfile.open(s_outputfile);
@@ -299,12 +299,12 @@ int main(int argc, char **argv)
 	arrow->Draw();
 	
 	TString s_pdffilename;
-	if (bscombined ) s_pdffilename = Form("CMS_Bs_Comb_Results%i.pdf", i_numb);
-	else if (bdcombined ) s_pdffilename = Form("CMS_Bd_Comb_Results%i.pdf", i_numb);
-	else if (bsmm && barrel) s_pdffilename = Form("CMS_Bs_Barrel_Results%i.pdf", i_numb);
-	else if (bsmm && endcap) s_pdffilename = Form("CMS_Bs_Endcap_Results%i.pdf", i_numb);
-	else if (bdmm && barrel) s_pdffilename = Form("CMS_Bd_Barrel_Results%i.pdf", i_numb);
-	else if (bdmm && endcap) s_pdffilename = Form("CMS_Bd_Endcap_Results%i.pdf", i_numb);
+	if (bscombined ) s_pdffilename = Form("CMS_W12_Bs_Comb_ShpReslts%i.pdf", i_numb);
+	else if (bdcombined ) s_pdffilename = Form("CMS_W12_Bd_Comb_ShpReslts%i.pdf", i_numb);
+	else if (bsmm && barrel) s_pdffilename = Form("CMS_W12_Bs_Barrel_ShpReslts%i.pdf", i_numb);
+	else if (bsmm && endcap) s_pdffilename = Form("CMS_W12_Bs_Endcap_ShpReslts%i.pdf", i_numb);
+	else if (bdmm && barrel) s_pdffilename = Form("CMS_W12_Bd_Barrel_ShpReslts%i.pdf", i_numb);
+	else if (bdmm && endcap) s_pdffilename = Form("CMS_W12_Bd_Endcap_ShpReslts%i.pdf", i_numb);
 	mycanvas->Print(s_pdffilename);
 	
 	delete mymclimit;

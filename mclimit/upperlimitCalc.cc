@@ -169,7 +169,7 @@ int main(int argc, char **argv)
 	else if(cms11bd) s_outputfile = Form("CMS_S11_Bd_Results%i.txt",i_numb);
 	else if(cms12bs) s_outputfile = Form("CMS_W12_Bs_Results%i.txt",i_numb);
 	else if(cms12bd) s_outputfile = Form("CMS_W12_Bd_Results%i.txt",i_numb);
-	else if(lhcbs) s_outputfile = Form("LHCb_Comb_Results%i.txt",i_numb);
+	else if(lhcbs) s_outputfile = Form("LHCb_10_11_Comb_Results%i.txt",i_numb);
 	else if(lhcbs10) s_outputfile = Form("LHCb_10_Results%i.txt",i_numb);
 	else if(lhcbs11) s_outputfile = Form("LHCb_11_Results%i.txt",i_numb);
 	
@@ -405,7 +405,7 @@ int main(int argc, char **argv)
 	else if (cms11bd) s_pdffilename = Form("CMS_S11_Bd_Results%i.pdf",i_numb);
 	else if (cms12bs) s_pdffilename = Form("CMS_W12_Bs_Results%i.pdf",i_numb);
 	else if (cms12bd) s_pdffilename = Form("CMS_W12_Bd_Results%i.pdf",i_numb);
-	else if (lhcbs) s_pdffilename = Form("LHCb_Comb_Results%i.pdf",i_numb);
+	else if (lhcbs) s_pdffilename = Form("LHCb_10_11_Comb_Results%i.pdf",i_numb);
 	else if (lhcbs10) s_pdffilename = Form("LHCb_10_Results%i.pdf",i_numb);
 	else if (lhcbs11) s_pdffilename = Form("LHCb_11_Results%i.pdf",i_numb);
 	mycanvas->Print(s_pdffilename);
