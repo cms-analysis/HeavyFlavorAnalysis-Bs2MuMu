@@ -4228,7 +4228,7 @@ void csm_channel_model::plotwithdata(TH1* dh)
   Double_t stackmax,datamax,plotmax;
   THStack *hs = new THStack("hs",dh->GetTitle());
   ntemplates = (Int_t) histotemplate.size();
-  TLegend *slegend = (TLegend*) new TLegend(0.7,0.6,0.89,0.89);
+  TLegend *slegend = (TLegend*) new TLegend(0.6,0.6,0.89,0.89);//TLegend(0.7,0.6,0.89,0.89)
 
   for (i=0;i<ntemplates;i++)
     {

@@ -22,55 +22,73 @@ int main(int argc, char **argv)
 
 	delete gRandom;
 	gRandom = (TRandom*) new TRandom3;
-	gRandom->SetSeed(0);
 	
-	if (argc<4||argc>4) {
+	if (argc<3||argc>3) {
 		cout << endl;
 		cout << "Usage: bin/multibin_cls option1 option2 option3" << endl;
-		cout << "Set option1 to bs or bd." << endl;
-		cout << "Set option2 to chan0, chan1 or comb for barrel, encap or combined, respectively." << endl;
-		cout << "Set option3 to any int (it will be used to set the random seed" << endl;
+		cout << "Set option1 to bsbarrel, bdbarrel, bscomb, bdcomb" << endl;
+//		cout << "Set option2 to chan0, chan1 or comb for barrel, encap or combined, respectively." << endl;
+		cout << "Set option2 to any int (it will be used to set the random seed" << endl;
 		cout << "NOTE: In TRandom3, SetSeed(0) is always random so the results are NOT reproducible." << endl;
 		cout << endl;
 		return 0;		
 	}
 	
-	char bsmumu[] = "bs"; char bdmumu[] = "bd"; 
-	char chann0[] = "chan0"; char chann1[] = "chan1"; char combd[] = "comb";
+	char bschn0[] = "bsbarrel"; char bdchn0[] = "bdbarrel"; 
+	char bschn1[] = "bsendcap"; char bdchn1[] = "bdendcap"; 
+	char combs[] = "bscomb"; char combd[] = "bdcomb";
 	bool bsmm = false; bool bdmm = false;
-	bool barrel = false; bool endcap = false; bool combined = false;
-	int i_numb = atoi(argv[3]);
+	bool barrel = false; bool endcap = false; 
+	bool bscombined = false; bool bdcombined = false;
 
-	if (!strcmp(bsmumu,argv[1])) {
+	if (!strcmp(bschn0,argv[1])) {
 		bsmm = true;
+		barrel = true;
 	}
-	else if (!strcmp(bdmumu,argv[1])) {
+	else if (!strcmp(bdchn0,argv[1])) {
 		bdmm = true;
-	}
-	if (!strcmp(chann0,argv[2])) {
 		barrel = true;
 	}
-	else if (!strcmp(chann1,argv[2])) {
+	else if (!strcmp(bschn1,argv[1])) {
+		bsmm = true;
 		endcap = true;
 	}
-	else if (!strcmp(combd,argv[2])) {
+	else if (!strcmp(bdchn1,argv[1])) {
+		bdmm = true;
+		endcap = true;
+	}
+	else if (!strcmp(combs,argv[1])) {
+		bsmm = true;
 		barrel = true;
 		endcap = true;
-		combined = true;
+		bscombined = true;
 	}
+	else if (!strcmp(combd,argv[1])) {
+		bdmm = true;
+		barrel = true;
+		endcap = true;
+		bdcombined = true;
+	}
+	
+	int i_numb = atoi(argv[2]);
 
 	cout << "Analyzing signal " << argv[1] << ", for channel " << argv[2] 
 		 << ", with random seed " << i_numb << endl;
+	gRandom->SetSeed(i_numb);
 
 	TString s_outputfile;
-	if (combined) s_outputfile = Form("CMS_Comb_Results%i.txt",i_numb);
-	else if(barrel) s_outputfile = Form("CMS_brrl_Results%i.txt",i_numb);
-	else if(endcap) s_outputfile = Form("CMS_endc_Results%i.txt",i_numb);
+	if (bscombined) s_outputfile = Form("CMS_Bs_Comb_Results%i.txt",i_numb);
+	else if (bdcombined) s_outputfile = Form("CMS_Bd_Comb_Results%i.txt",i_numb);
+	else if(barrel && bsmm) s_outputfile = Form("CMS_Bs_brrl_Results%i.txt",i_numb);
+	else if(endcap && bsmm) s_outputfile = Form("CMS_Bs_endc_Results%i.txt",i_numb);
+	else if(barrel && bdmm) s_outputfile = Form("CMS_Bd_brrl_Results%i.txt",i_numb);
+	else if(endcap && bdmm) s_outputfile = Form("CMS_Bd_endc_Results%i.txt",i_numb);
 	
 	ofstream f_outputfile;
 	f_outputfile.open(s_outputfile);
 
-#include "my_prepare.h"
+//#include "my_prepare.h"
+#include "prepshape.h"
   
 	cout << "Back from my_prepare.h" << endl;
 	
@@ -78,37 +96,35 @@ int main(int argc, char **argv)
 	// Have a visualization of how fitting looks like
 	// It has nothing to do with limit calculation
 	TCanvas * mycanvas; 
-	if (combined) {
+	if (bscombined || bdcombined) {
 		mycanvas = (TCanvas *) new TCanvas("Canvas1","Canvas1",0,0,1000,800);
 		mycanvas->Divide(2,2);
 	}
 	else {
-		mycanvas = (TCanvas *) new TCanvas("Canvas1","Canvas1",0,0,600,800);
+		mycanvas = (TCanvas *) new TCanvas("Canvas1","Canvas1",0,0,500,800);
 		mycanvas->Divide(1,2);
 	}
 	mycanvas->cd(1);
 	
 	cout << ">>>>>>> Begin calculating!!! <<<<<<<<" << endl;
 	csm* mycsm = new csm();
-	if (combined) {
+	if (bscombined || bdcombined) {
 		mycsm->set_htofit(h_dataB,channameB);
 		mycsm->set_htofit(h_dataE,channameE);
-		barrel = false;
-		endcap = false;
 	}
-	if (barrel) mycsm->set_htofit(h_dataB,channameB);
-	if (endcap) mycsm->set_htofit(h_dataE,channameE);
+	else if (barrel) mycsm->set_htofit(h_dataB,channameB);
+	else if (endcap) mycsm->set_htofit(h_dataE,channameE);
 	mycsm->set_modeltofit(testhyp);
 	double chisq = mycsm->chisquared();
 	
 	csm_model* bestnullfit = mycsm->getbestmodel();
-	if (combined) {
+	if (bscombined || bdcombined) {
 		bestnullfit->plotwithdata(channameB,h_dataB);
 		mycanvas->cd(2);
 		bestnullfit->plotwithdata(channameE,h_dataE);
 	}
-	if (barrel) bestnullfit->plotwithdata(channameB,h_dataB);
-	if (endcap) bestnullfit->plotwithdata(channameE,h_dataE);
+	else if (barrel) bestnullfit->plotwithdata(channameB,h_dataB);
+	else if (endcap) bestnullfit->plotwithdata(channameE,h_dataE);
 
 	cout << "chisq from fitter " << chisq << endl; 
 	delete mycsm;
@@ -126,12 +142,12 @@ int main(int argc, char **argv)
 	mymclimit->set_test_hypothesis(testhyp);
 	mymclimit->set_null_hypothesis_pe(nullhyp_pe);
 	mymclimit->set_test_hypothesis_pe(testhyp_pe);
-	if (combined) {
+	if (bscombined || bdcombined) {
 		mymclimit->set_datahist(h_dataB,channameB);
 		mymclimit->set_datahist(h_dataE,channameE);
 	}
-	if (barrel) mymclimit->set_datahist(h_dataB,channameB);
-	if (endcap) mymclimit->set_datahist(h_dataE,channameE);
+	else if (barrel) mymclimit->set_datahist(h_dataB,channameB);
+	else if (endcap) mymclimit->set_datahist(h_dataE,channameE);
 
 	cout << ">>>>>>> PRINTING Pseudo-exp (debug purposes) <<<<<<<<" << endl;
 	testhyp_pe->print();
@@ -179,15 +195,15 @@ int main(int argc, char **argv)
 	cout << "<<<<<<<< Getting results from Rate calculations >>>>>>>>" << endl;
 	double d_sf95 = mymclimit->s95();
 	f_outputfile << "Scale factor of 95% CL excluded signal: s95 = " << d_sf95 << endl;
-	if (combined) {
+	if (bscombined || bdcombined) {
 		if (bsmm) f_outputfile << "95% CL upper limit (combined): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
 		if (bdmm) f_outputfile << "95% CL upper limit (combined): Br(Bd->MuMu) = " << d_sf95*(1.0e-10) << endl;
 	}
-	if (barrel) {
+	else if (barrel) {
 		if (bsmm) f_outputfile << "95% CL upper limit (barrel): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
 		if (bdmm) f_outputfile << "95% CL upper limit (barrel): Br(Bd->MuMu) = " << d_sf95*(1.0e-10) << endl;
 	}
-	if (endcap) {
+	else if (endcap) {
 		if (bsmm) f_outputfile << "95% CL upper limit (endcap): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
 		if (bdmm) f_outputfile << "95% CL upper limit (endcap): Br(Bd->MuMu) = " << d_sf95*(1.0e-10) << endl;
 	}
@@ -271,7 +287,7 @@ int main(int argc, char **argv)
 	TH1F* ts_test = new TH1F("ts_test","",100,-50,50);
 	TH1F* ts_null = new TH1F("ts_null","",100,-50,50);
 	mymclimit->tshists(ts_test,ts_null); 
-	if (combined) mycanvas->cd(3);
+	if (bscombined || bdcombined) mycanvas->cd(3);
 	else mycanvas->cd(2);
 	mycanvas->SetLogy(1);
 	ts_null->SetLineColor(2);//red
@@ -282,18 +298,14 @@ int main(int argc, char **argv)
 	TArrow* arrow = new TArrow(ts_data,0.3*ts_null->GetMaximum(),ts_data,0);
 	arrow->Draw();
 	
-	if (combined) {
-		if (bsmm) mycanvas->Print("multibin_clsBsmmComb.pdf");
-		if (bdmm) mycanvas->Print("multibin_clsBdmmComb.pdf");
-	}
-	if (barrel) {
-		if (bsmm) mycanvas->Print("multibin_clsBsmmBrrl.pdf");
-		if (bdmm) mycanvas->Print("multibin_clsBdmmBrrl.pdf");
-	}
-	if (endcap) {
-		if (bsmm) mycanvas->Print("multibin_clsBsmmEndc.pdf");
-		if (bdmm) mycanvas->Print("multibin_clsBdmmEndc.pdf");
-	}
+	TString s_pdffilename;
+	if (bscombined ) s_pdffilename = Form("CMS_Bs_Comb_Results%i.pdf", i_numb);
+	else if (bdcombined ) s_pdffilename = Form("CMS_Bd_Comb_Results%i.pdf", i_numb);
+	else if (bsmm && barrel) s_pdffilename = Form("CMS_Bs_Barrel_Results%i.pdf", i_numb);
+	else if (bsmm && endcap) s_pdffilename = Form("CMS_Bs_Endcap_Results%i.pdf", i_numb);
+	else if (bdmm && barrel) s_pdffilename = Form("CMS_Bd_Barrel_Results%i.pdf", i_numb);
+	else if (bdmm && endcap) s_pdffilename = Form("CMS_Bd_Endcap_Results%i.pdf", i_numb);
+	mycanvas->Print(s_pdffilename);
 	
 	delete mymclimit;
 	f_outfile.Write();

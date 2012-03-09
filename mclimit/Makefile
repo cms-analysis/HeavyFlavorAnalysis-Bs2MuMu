@@ -53,27 +53,22 @@ obj/%.o : %.cc
 # TARGETS #
 ###########
 
-all:
-lib/libAnaClasses.so: 
-	cd lib && ln -s $(ANALIBPATH)/libAnaClasses.so libAnaClasses.so && cd -
-	
-lib/libAna00.so:
-	cd lib && ln -s $(RELLIBPATH)/libAna00.so libAna00.so && cd -
+all:	
+lib/libAnaClasses.so: $(addprefix obj/,$(SUPPORTCLASSES)) 
+	$(CXX) $(SOFLAGS) $(addprefix obj/,$(SUPPORTCLASSES)) -o lib/libAnaClasses.so $(GLIBS) -lMinuit
 
-lib/libUtil.so:
-	cd lib && ln -s $(RELLIBPATH)/libUtil.so libUtil.so && cd -
+bin/multibin_cls: lib/libAnaClasses.so obj/multibin_cls.o
+	$(LD) $(LDFLAGS) -o bin/multibin_cls $(GLIBS) obj/multibin_cls.o lib/libAnaClasses.so
 
-#bin/multibin_cls: lib/libAnaClasses.so obj/multibin_cls.o lib/libAna00.so
-#	$(LD) $(LDFLAGS) -o bin/multibin_cls $(GLIBS) obj/multibin_cls.o lib/libAnaClasses.so lib/libAna00.so lib/libUtil.so
-#
-bin/cms_lhcb_comb_cls: lib/libAnaClasses.so obj/cms_lhcb_comb_cls.o lib/libAna00.so
-	$(LD) $(LDFLAGS) -o bin/cms_lhcb_comb_cls $(GLIBS) obj/cms_lhcb_comb_cls.o lib/libAnaClasses.so lib/libAna00.so lib/libUtil.so
+bin/cms_lhcb_comb_cls: lib/libAnaClasses.so obj/cms_lhcb_comb_cls.o 
+	$(LD) $(LDFLAGS) -o bin/cms_lhcb_comb_cls $(GLIBS) obj/cms_lhcb_comb_cls.o lib/libAnaClasses.so
+
+bin/upperlimitCalc: lib/libAnaClasses.so obj/upperlimitCalc.o 
+	$(LD) $(LDFLAGS) -o bin/upperlimitCalc $(GLIBS) obj/upperlimitCalc.o lib/libAnaClasses.so
 
 clean:
-	rm -f obj/*.o lib/libAna00.so lib/libUtil.so
+	rm -f obj/*.o 
 
 cleanall: clean
 	rm -f lib/lib*.so
-	rm -f ../../../lib/$(SCRAM_ARCH)/libAna00.so
-	rm -f ../../../lib/$(SCRAM_ARCH)/libUtil.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libAnaClasses.so
