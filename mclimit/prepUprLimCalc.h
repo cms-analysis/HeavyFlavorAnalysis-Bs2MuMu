@@ -11,8 +11,6 @@ public:
 	expectation_t() : value(0.0),hi_err(0.0),lo_err(0.0) {}
 	expectation_t(double v, double hi, double lo) : value(v),hi_err(hi),lo_err(lo) {}
 };
-//expectation_t e;
-//cout << e.value << " + " << e.hi_err << " - " << e.lo_err << endl;
 
 //declare nusiance parameters
 const int NSYS = 10;
@@ -59,7 +57,7 @@ Double_t xbins[2] = {0, 1};
 //TFile *f_data = TFile::Open("anaBmm.default-11.root");
 TString s_outfilename;
 if (combined11) s_outfilename = Form("CMS_LHCb_S11_Comb_Bs_Results%i.root",i_numb);
-else if (combined12) s_outfilename = Form("CMS_LHCb_W12_Comb_Bd_Results%i.root",i_numb);
+else if (combined12) s_outfilename = Form("CMS_LHCb_W12_Comb_Bs_Results%i.root",i_numb);
 else if(cms11bs) s_outfilename = Form("CMS_S11_Bs_Results%i.root",i_numb);
 else if(cms11bd) s_outfilename = Form("CMS_S11_Bd_Results%i.root",i_numb);
 else if(cms12bs) s_outfilename = Form("CMS_W12_Bs_Results%i.root",i_numb);
@@ -748,6 +746,7 @@ if (cms11bd) {
 		cout << "Finished setting up testhyp, testhyp_pe for signal in the endcaps" << endl;			
 	}
 }
+
 // Combination for cms data in winter 11-12 
 if (cms12bs) {
 	Int_t nnbins = 2;
@@ -823,7 +822,6 @@ if (cms12bs) {
 		cout << "Total (expected in blind window) = " << totblndwin << " ~ " << floor(totblndwin + 0.5) << endl << endl;
 		
 		Double_t toteff = 0.0029; Double_t totefferr = 0.0002;
-		//	return 0;
 		
 		// Setup the Histos
 		//Rare bkgd Histogram
@@ -1028,8 +1026,8 @@ if (cms12bs) {
 		h_combbkgE->SetBinContent(2,combkgbs); 
 		
 		//Signal Histograms
-			h_signalbsE->SetBinContent(1,0.0);
-			h_signalbsE->SetBinContent(2,exptbsevnts);
+		h_signalbsE->SetBinContent(1,0.0);
+		h_signalbsE->SetBinContent(2,exptbsevnts);
 		
 		// Data histogram
 		h_dataE->SetBinContent(1,obsrvshldrs);
@@ -1157,9 +1155,7 @@ if (cms12bs) {
 							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
 		
 		cout << "Finished setting up testhyp, testhyp_pe for signal in the endcaps" << endl;			
-	}
-
-	
+	}	
 }
 
 if (cms12bd) {
@@ -1242,7 +1238,6 @@ if (cms12bd) {
 		cout << "Total (expected in blind window) = " << totblndwin << " ~ " << floor(totblndwin + 0.5) << endl << endl;
 		
 		Double_t toteff = 0.0029; Double_t totefferr = 0.0002;
-		//	return 0;
 		
 		// Setup the Histos
 		//Rare bkgd Histogram
@@ -1366,11 +1361,7 @@ if (cms12bd) {
 		ename[4] = peakerrname;
 		nps_low[4] = -rarebkgbdwinerr/rarebkgbdwin;
 		nps_high[4] = rarebkgbdwinerr/rarebkgbdwin;
-		
-//		ename[5] = combbgerrname;
-//		nps_low[5] = -combkgbderr/combkgbd;
-//		nps_high[5] = combkgbderr/combkgbd;		
-		
+				
 		nps_count = 5;
 		
 		sfact = 1.;
@@ -1530,8 +1521,7 @@ if (cms12bd) {
 			highsigma[i] = 0;
 			lowshape[i] = 0;
 			highshape[i] = 0;
-		}
-		
+		}		
 			
 		ename[0] = toteffname;
 		nps_low[0] = -totefferr/toteff;
@@ -1553,10 +1543,6 @@ if (cms12bd) {
 		nps_low[4] = -rarebkgbdwinerr/rarebkgbdwin;
 		nps_high[4] = rarebkgbdwinerr/rarebkgbdwin;
 		
-//		ename[5] = combbgerrname;
-//		nps_low[5] = -combkgbderr/combkgbd;
-//		nps_high[5] = combkgbderr/combkgbd;		
-		
 		nps_count = 5;
 		
 		sfact = 1.;
@@ -1570,12 +1556,9 @@ if (cms12bd) {
 							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
 		
 		cout << "Finished setting up testhyp, testhyp_pe for signal in the endcaps" << endl;			
-	}
-	
-	
+	}	
 }
 
-//return 0;
 
 //Setting up the LHCb 2010 data
 const static expectation_t bkg1[N_MASS_BINS][N_BDT_BINS] = {
@@ -1879,6 +1862,5 @@ if (lhcbs11) {
 	cout << "Fnished setting up LHCb summer 2011 results, total number of channels = " << counter << endl;
 }
 
-//return 0;
 
 cout << ">>>>>> End of templates <<<<<<<" << endl;
