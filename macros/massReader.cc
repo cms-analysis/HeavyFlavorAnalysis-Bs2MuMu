@@ -578,7 +578,7 @@ int massReader::loadDecay(TAnaCand *anaCand)
 		for (ix = anaCand->fSig1; correct && 0 <= ix && ix <= anaCand->fSig2; ix++) {
 			sigTrack = fpEvt->getSigTrack(ix);
 			recTrack = fpEvt->getRecTrack(sigTrack->fIndex);
-			correct = (sigTrack->fMCID == recTrack->fMCID); // track was assigned correctly
+			correct = (abs(sigTrack->fMCID) == abs(recTrack->fMCID)); // track was assigned correctly
 		}
 		if (correct)
 			result = it->second;
