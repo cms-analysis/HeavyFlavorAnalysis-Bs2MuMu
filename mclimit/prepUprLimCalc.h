@@ -2,6 +2,8 @@
 // limit inputs -- using SM with SM single top
 // as the null hypothesis and SM with SM single top and extra anomalous
 // single top as the test hypothesis
+gROOT->SetStyle("Plain");
+gROOT->ForceStyle();
 
 struct expectation_t {
 	double value;
