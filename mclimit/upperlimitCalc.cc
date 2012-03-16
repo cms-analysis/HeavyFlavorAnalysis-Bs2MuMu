@@ -4,7 +4,7 @@
 #include <fstream>
 #include "TFile.h"
 #include "TROOT.h"
-#include "mclimit_csm.hh"
+#include "mclimit_csm.h"
 #include "TH1.h"
 #include "TF1.h"
 #include "TRandom3.h"
@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 	t.Start();
 	if (argc<3||argc>3) {
 		cout << endl;
-		cout << "Usage: bin/multibin_cls option1 option2" << endl;
+		cout << "Usage: bin/upperlimitCalc option1 option2" << endl;
 		cout << "Option1 can be:" << endl;
 		cout << "---> cms11bs or cmb11bd for summer 11 Bs or Bd" << endl; 
 		cout << "---> cms12bs or cms12bd for Spring 12 Bs or Bd" << endl; 
@@ -266,83 +266,143 @@ int main(int argc, char **argv)
 	
 	
 	cout << "<<<<<<<< Getting Results >>>>>>>>" << endl;
-	Double_t tsobs = mymclimit->ts();// test statistics of observed data
+	Double_t tsobs = mymclimit->ts(); Double_t d_tsbmed = mymclimit->tsbmed(); Double_t d_tssmed = mymclimit->tssmed();
 	cout << "Test statistics of observed data --> " << "ts: " << tsobs << endl;
 	cout << "Test statistic in null hypothesis (H0), 2sig low edge --> " << "tsbm2: "   << mymclimit->tsbm2() << endl;
 	cout << "Test statistic in null hypothesis (H0), 1sig low edge --> " << "tsbm1: "   << mymclimit->tsbm1() << endl;
-	cout << "Test statistic in null hypothesis (H0), medium --> "        << "tsbmed: "  << mymclimit->tsbmed() << endl;
+	cout << "Test statistic in null hypothesis (H0), medium --> "        << "tsbmed: "  << d_tsbmed << endl;
 	cout << "Test statistic in null hypothesis (H0), 1sig upper edge --> " << "tsbp1: " << mymclimit->tsbp1() << endl;
 	cout << "Test statistic in null hypothesis (H0), 2sig upper edge --> " << "tsbp2: " << mymclimit->tsbp2() << endl;
 	cout << "Test statistic in null hypothesis (H1), 2sig low edge --> "   << "tssm2: " << mymclimit->tssm2() << endl;
 	cout << "Test statistic in null hypothesis (H1), 1sig low edge --> "   << "tssm1: " << mymclimit->tssm1() << endl;
-	cout << "Test statistic in null hypothesis (H0), medium --> "         << "tssmed: " << mymclimit->tssmed() << endl;
+	cout << "Test statistic in null hypothesis (H0), medium --> "         << "tssmed: " << d_tssmed << endl;
 	cout << "Test statistic in null hypothesis (H1), 1sig upper edge --> " << "tssp1: " << mymclimit->tssp1() << endl;
 	cout << "Test statistic in null hypothesis (H1), 2sig upper edge --> " << "tssp2: " << mymclimit->tssp2() << endl;
 	
 	f_outputfile << "CLb = " << mymclimit->clb() << endl;
 	f_outputfile << "CLsb = " << mymclimit->clsb() << endl;
-	f_outputfile << "CLs (CLsb/CLb) = " << mymclimit->cls() << endl;
-
-	f_outputfile << "<<<<<<<< Getting Expected CLs Results for Null Hyp >>>>>>>>" << endl;
-	f_outputfile << "CLs -2sigma (bkg): " << mymclimit->clsexpbm2() << endl;
-	f_outputfile << "CLs -1sigma (bkg): " << mymclimit->clsexpbm1() << endl;
-	f_outputfile << "CLs median  (bkg): " << mymclimit->clsexpbmed() << endl;
-	f_outputfile << "CLs +1sigma (bkg): " << mymclimit->clsexpbp1() << endl;
-	f_outputfile << "CLs +2sigma (bkg): " << mymclimit->clsexpbp2() << endl;
-	f_outputfile << "<<<<<<<< Could background only explain the observed data? >>>>>>>>" << endl;
-	f_outputfile << "1-CLb -2sigma (sig): " << mymclimit->omclbexpsm2() << endl;
-	f_outputfile << "1-CLb -1sigma (sig): " << mymclimit->omclbexpsm1() << endl;
-	f_outputfile << "1-CLb median  (sig): " << mymclimit->omclbexpsmed() << endl;
-	f_outputfile << "1-CLb +1sigma (sig): " << mymclimit->omclbexpsp1() << endl;
-	f_outputfile << "1-CLb +2sigma (sig): " << mymclimit->omclbexpsp2() << endl;
+	f_outputfile << "CLs (CLsb/CLb) = " << mymclimit->cls() << endl << endl;
 	
-	f_outputfile << "<<<<<<<< Getting Probabilities assuming test Hyp is TRUE >>>>>>>>" << endl;
+	cout << "<<<<<<<< Getting Expected CLs Results for Null Hyp >>>>>>>>" << endl;
+	Double_t d_omclbexpbmed = mymclimit->omclbexpbmed();
+	f_outputfile << "Expected CLs in null hypothesis: -2 sigma = " << mymclimit->clsexpbm2() << endl;
+	f_outputfile << "Expected CLs in null hypothesis: -1 sigma = " << mymclimit->clsexpbm1() << endl;
+	f_outputfile << "Expected CLs in null hypothesis: median = " << mymclimit->clsexpbmed() << endl;
+	f_outputfile << "Expected CLs in null hypothesis: +1 sigma = " << mymclimit->clsexpbp1() << endl;
+	f_outputfile << "Expected CLs in null hypothesis: +2 sigma = " << mymclimit->clsexpbp2() << endl << endl;
+	cout << "<<<<<<<< Could background only explain the observed data? >>>>>>>>" << endl;	
+	f_outputfile << "Expected 1-CLb in null hypothesis: -2 sigma = " << mymclimit->omclbexpbm2() << endl;
+	f_outputfile << "Expected 1-CLb in null hypothesis: -1 sigma = " << mymclimit->omclbexpbm1() << endl;
+	f_outputfile << "Expected 1-CLb in null hypothesis: median = " << d_omclbexpbmed << endl;
+	f_outputfile << "Expected 1-CLb in null hypothesis: +1 sigma = " << mymclimit->omclbexpbp1() << endl;
+	f_outputfile << "Expected 1-CLb in null hypothesis: +1 sigma = " << mymclimit->omclbexpbp2() << endl << endl;
+	
+	cout << "<<<<<<<< Getting Expected CLs Results for Test Hyp >>>>>>>>" << endl;
+	Double_t d_omclbexpsmed = mymclimit->omclbexpsmed();
+	f_outputfile << "Expected CLs in test hypothesis: -2 sigma = " << mymclimit->clsexpsm2() << endl;
+	f_outputfile << "Expected CLs in test hypothesis: -1 sigma = " << mymclimit->clsexpsm1() << endl;
+	f_outputfile << "Expected CLs in test hypothesis: median = " << mymclimit->clsexpsmed() << endl;
+	f_outputfile << "Expected CLs in test hypothesis: +1 sigma = " << mymclimit->clsexpsp1() << endl;
+	f_outputfile << "Expected CLs in test hypothesis: +2 sigma = " << mymclimit->clsexpsp2() << endl << endl;
+	cout << "<<<<<<<< Could signal+background explain the observed data? >>>>>>>>" << endl;
+	f_outputfile << "Expected 1-CLb in test hypothesis: -2 sigma = " << mymclimit->omclbexpsm2() << endl;
+	f_outputfile << "Expected 1-CLb in test hypothesis: -1 sigma = " << mymclimit->omclbexpsm1() << endl;
+	f_outputfile << "Expected 1-CLb in test hypothesis: median = " << d_omclbexpsmed << endl;
+	f_outputfile << "Expected 1-CLb in test hypothesis: +1 sigma = " << mymclimit->omclbexpsp1() << endl;
+	f_outputfile << "Expected 1-CLb in test hypothesis: +2 sigma = " << mymclimit->omclbexpsp2() << endl << endl;
+	
+	cout << "<<<<<<<< Getting Probabilities assuming test Hyp is TRUE >>>>>>>>" << endl;
 	// Sensitivity of test hypothesis. Probability of a x-sigma evidence assuming test hyp. is true
-	f_outputfile << "2-sigma prob (H1 is true): " << mymclimit->p2sigmat() << endl; 
-	f_outputfile << "3-sigma prob (H1 is true): " << mymclimit->p3sigmat() << endl; 
-	f_outputfile << "5-sigma prob (H1 is true): " << mymclimit->p5sigmat() << endl; 
-
-	f_outputfile << "<<<<<<<< Getting results from Rate calculations >>>>>>>>" << endl;
+	f_outputfile << "Probability of a 2 sigma evidence assuming test hyp. is true: Prob = " << mymclimit->p2sigmat() << endl; 
+	f_outputfile << "Probability of a 3 sigma evidence assuming test hyp. is true: Prob = " << mymclimit->p3sigmat() << endl; 
+	f_outputfile << "Probability of a 5 sigma discovery assuming test hyp. is true: Prob = " << mymclimit->p5sigmat() << endl 
+	<< endl; 
+	
+	cout << "<<<<<<<< Getting results from Rate calculations >>>>>>>>" << endl;
 	double d_sf95 = mymclimit->s95();
-	f_outputfile << "Scale factor of 95% CL excluded signal: s95 = " << d_sf95 << endl;
-	if (combined11) f_outputfile << "95% CL upper limit (CERN combined summer 11): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
-	if (combined12) f_outputfile << "95% CL upper limit (CERN combined winter 11-12): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
-	else if (cms11bs) f_outputfile << "95% CL upper limit (CMS summer 11): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
-	else if (cms11bd) f_outputfile << "95% CL upper limit (CMS summer 11): Br(Bd->MuMu) = " << d_sf95*(1.0e-10) << endl;
-	else if (cms12bs) f_outputfile << "95% CL upper limit (CMS winter 11-12): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
-	else if (cms12bd) f_outputfile << "95% CL upper limit (CMS winter 11-12): Br(Bd->MuMu) = " << d_sf95*(1.0e-10) << endl;
-	else if (lhcbs) f_outputfile << "95% CL upper limit (LHCb): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
-	else if (lhcbs10) f_outputfile << "95% CL upper limit (LHCb 10): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
-	else if (lhcbs11) f_outputfile << "95% CL upper limit (LHCb 11): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
+	double d_lumi3s = mymclimit->lumi3s(); double d_lumi5s = mymclimit->lumi5s(); 
+	double d_totlumi = 0.0; double d_cms11lumi = 1.14; double d_cms12lumi = 4.9; 
+	double d_lhcb10lumi = 0.037; double d_lhcb11lumi = 0.30; //double d_lhcb12lumi = 0;
 	
-	f_outputfile << "s95 -2sigma (sig): " << mymclimit->s95m2() << endl;
-	f_outputfile << "s95 -1sigma (sig): " << mymclimit->s95m1() << endl;
-	f_outputfile << "s95 median  (sig): " << mymclimit->s95med() << endl;
-	f_outputfile << "s95 +1sigma (sig): " << mymclimit->s95p1() << endl;
-	f_outputfile << "s95 +2sigma (sig): " << mymclimit->s95p2() << endl;
-		
+	if (combined11) d_totlumi = d_cms11lumi + d_lhcb10lumi + d_lhcb11lumi;
+	else if (combined12)  d_totlumi = d_cms12lumi + d_lhcb10lumi + d_lhcb11lumi;// + d_lhcb12lumi;
+	else if (cms11bs || cms11bd) d_totlumi = d_cms11lumi;
+	else if (cms12bs || cms12bd) d_totlumi = d_cms12lumi;
+	else if (lhcbs) d_totlumi = d_lhcb10lumi + d_lhcb11lumi;
+	else if (lhcbs10) d_totlumi = d_lhcb10lumi;
+	else if (lhcbs11) d_totlumi = d_lhcb11lumi;
+	
+	f_outputfile << "Observed scale factor of 95% CL excluded signal: sc_f = " << d_sf95 << endl;
+	f_outputfile << "Expected scale factor at 95% CL in the null hyp.: sc_f(-2sig) = " << mymclimit->s95m2() << endl;
+	f_outputfile << "Expected scale factor at 95% CL in the null hyp.: sc_f(-1sig) = " << mymclimit->s95m1() << endl;
+	f_outputfile << "Expected scale factor at 95% CL in the null hyp.: sc_f(median) = " << mymclimit->s95med() << endl;
+	f_outputfile << "Expected scale factor at 95% CL in the null hyp.: sc_f(+1sig) = " << mymclimit->s95p1() << endl;
+	f_outputfile << "Expected scale factor at 95% CL in the null hyp.: sc_f(+2sig) = " << mymclimit->s95p2() << endl << endl;
+	//	f_outputfile << "Lumi scale factor of 95% CL excluded signal: lumiSf = " << d_lumi95 << endl;
+	f_outputfile << "Lumi needed for 3 sigma discovery: lumi3sig = " << d_lumi3s*d_totlumi << " fb-1" << endl;
+	f_outputfile << "Lumi needed for 5 sigma discovery: lumi5sig = " << d_lumi5s*d_totlumi << " fb-1" << endl << endl;
+	double pval = mymclimit->omclb();
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+	double d_sf90 = mymclimit->s90();
+	f_outputfile << "Observed scale factor of 90% CL excluded signal: sc_f = " << d_sf90 << endl;
+	f_outputfile << "Expected scale factor at 90% CL in the null hyp.: sc_f(-2sig) = " << mymclimit->s90m2() << endl;
+	f_outputfile << "Expected scale factor at 90% CL in the null hyp.: sc_f(-1sig) = " << mymclimit->s90m1() << endl;
+	f_outputfile << "Expected scale factor at 90% CL in the null hyp.: sc_f(median) = " << mymclimit->s90med() << endl;
+	f_outputfile << "Expected scale factor at 90% CL in the null hyp.: sc_f(+1sig) = " << mymclimit->s90p1() << endl;
+	f_outputfile << "Expected scale factor at 90% CL in the null hyp.: sc_f(+2sig) = " << mymclimit->s90p2() << endl << endl;
+	
+	if (combined11) {
+		f_outputfile << "95% CL upper limit (CERN combined summer 11): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
+		f_outputfile << "90% CL upper limit (CERN combined summer 11): Br(Bs->MuMu) = " << d_sf90*(3.2e-9) << endl;
+	}
+	else if (combined12) {
+		f_outputfile << "95% CL upper limit (CERN combined winter 11-12): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
+		f_outputfile << "90% CL upper limit (CERN combined winter 11-12): Br(Bs->MuMu) = " << d_sf90*(3.2e-9) << endl;
+	}
+	else if (cms11bs) {
+		f_outputfile << "95% CL upper limit (CMS summer 11): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
+		f_outputfile << "90% CL upper limit (CMS summer 11): Br(Bs->MuMu) = " << d_sf90*(3.2e-9) << endl;
+	}
+	else if (cms11bd) {
+		f_outputfile << "95% CL upper limit (CMS summer 11): Br(Bd->MuMu) = " << d_sf95*(1.0e-10) << endl;
+		f_outputfile << "90% CL upper limit (CMS summer 11): Br(Bd->MuMu) = " << d_sf90*(1.0e-10) << endl;
+	}
+	else if (cms12bs) {
+		f_outputfile << "95% CL upper limit (CMS winter 11-12): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
+		f_outputfile << "90% CL upper limit (CMS winter 11-12): Br(Bs->MuMu) = " << d_sf90*(3.2e-9) << endl;
+	}
+	else if (cms12bd) {
+		f_outputfile << "95% CL upper limit (CMS winter 11-12): Br(Bd->MuMu) = " << d_sf95*(1.0e-10) << endl;
+		f_outputfile << "90% CL upper limit (CMS winter 11-12): Br(Bd->MuMu) = " << d_sf90*(1.0e-10) << endl;
+	}
+	else if (lhcbs) {
+		f_outputfile << "95% CL upper limit (LHCb): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
+		f_outputfile << "90% CL upper limit (LHCb): Br(Bs->MuMu) = " << d_sf90*(3.2e-9) << endl;
+	}
+	else if (lhcbs10) {
+		f_outputfile << "95% CL upper limit (LHCb 10): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
+		f_outputfile << "90% CL upper limit (LHCb 10): Br(Bs->MuMu) = " << d_sf90*(3.2e-9) << endl;
+	}
+	else if (lhcbs11) {
+		f_outputfile << "95% CL upper limit (LHCb 11): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl;
+		f_outputfile << "90% CL upper limit (LHCb 11): Br(Bs->MuMu) = " << d_sf90*(3.2e-9) << endl;
+	}
+	
+	
 	//Null hypothesis 
-	f_outputfile << "Null Hypothesis:"
-				 << " Median of test statistics = " << mymclimit->tsbmed() 
-				 << ", p-value = " << mymclimit->omclbexpbmed()
-				 << ", significance = "<< TMath::ErfcInverse(mymclimit->omclbexpbmed()*2)*sqrt(2)
-				 << endl;
-	
+	f_outputfile << "Null Hypothesis: Median of test statistics = " << d_tsbmed 
+	<< ", p-value = " << d_omclbexpbmed << ", significance = " 
+	<< TMath::ErfcInverse(d_omclbexpbmed*2)*sqrt(2) << endl;
 	
 	//Expected significance
-	f_outputfile << "Test Hypothesis:"
-				 << " Median of test statistics = " << mymclimit->tssmed() 
-				 << ", p-value = " << mymclimit->omclbexpsmed() 
-				 << ", significance = " << TMath::ErfcInverse(mymclimit->omclbexpsmed()*2)*sqrt(2)
-				 << endl;
+	f_outputfile << "Test Hypothesis: Median of test statistics = " << d_tssmed 
+	<< ", p-value = " << d_omclbexpsmed << ", significance = " 
+	<< TMath::ErfcInverse(d_omclbexpsmed*2)*sqrt(2) << endl;
 	
 	// Significance of input data 
-	double ts_data = mymclimit->ts();
-	double pval = mymclimit->omclb();
-	double significance = TMath::ErfcInverse(pval*2)*sqrt(2); //convert pval to one-side gaussian significance
-	
-	f_outputfile << "Input Data: test statistics = " << ts_data << ", p-val = " << pval 
-				 << ", significance = " << significance << endl;
+	double significance = TMath::ErfcInverse(pval*2)*sqrt(2); //convert pval to one-side gaussian significance	
+	f_outputfile << "Input Data: test statistics = " << tsobs << ", p-value = " << pval 
+	<< ", significance = " << significance << endl;
 	
 	
 	//==============================================
@@ -358,7 +418,7 @@ int main(int argc, char **argv)
 	ts_null->Draw();
 	ts_test->Draw("same");
 	
-	TArrow* arrow = new TArrow(ts_data,0.3*ts_null->GetMaximum(),ts_data,0);
+	TArrow* arrow = new TArrow(tsobs,0.3*ts_null->GetMaximum(),tsobs,0);
 	arrow->Draw();
 	TString s_pdffilename;
 	if (combined11) s_pdffilename = Form("CMS_LHCb_S11_Comb_Bs_Results%i.pdf",i_numb);

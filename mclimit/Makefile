@@ -26,9 +26,10 @@ else
   endif
 endif
 
-CXXFLAGS      = -g -O3 -Wall -fPIC -pipe
+#CXXFLAGS      = -g -O3 -Wall -fPIC -pipe 
+CXXFLAGS      = -g -O3 -Wall -fPIC -pipe -fpermissive
 LD            = $(CXX)
-LDFLAGS       = -g
+LDFLAGS       = -g 
 SOFLAGS       = -shared
 
 CXXFLAGS     += $(ROOTCFLAGS)
@@ -54,7 +55,7 @@ obj/%.o : %.cc
 ###########
 
 all:	
-lib/libAnaClasses.so: $(addprefix obj/,$(SUPPORTCLASSES)) 
+lib/libAnaClasses: $(addprefix obj/,$(SUPPORTCLASSES)) 
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(SUPPORTCLASSES)) -o lib/libAnaClasses.so $(GLIBS) -lMinuit
 
 bin/multibin_cls: lib/libAnaClasses.so obj/multibin_cls.o
@@ -71,4 +72,4 @@ clean:
 
 cleanall: clean
 	rm -f lib/lib*.so
-	rm -f ../../../lib/$(SCRAM_ARCH)/libAnaClasses.so
+#	rm -f ../../../lib/$(SCRAM_ARCH)/libAnaClasses.so
