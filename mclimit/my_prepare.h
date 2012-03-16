@@ -3,6 +3,8 @@
 // as the null hypothesis and SM with SM single top and extra anomalous
 // single top as the test hypothesis
 
+gROOT->SetStyle("Plain");
+gROOT->ForceStyle();
 
 //declare nusiance parameters
 const int NSYS = 10;
@@ -21,6 +23,7 @@ char pddname[]="PDD";
 char bkgerrname[]="BKGERR";
 char experrname[]="EXPERR";
 char peakerrname[]="PCKERR";
+char combbgerrname[]="CMBKGERR";
 
 char channameB[] = "bsmmB";
 char channameE[] = "bsmmE";
@@ -304,11 +307,11 @@ if (barrel) {
 		nps_low[5] = -rarebkgbswinerr/rarebkgbswin;
 		nps_high[5] = rarebkgbswinerr/rarebkgbswin;
 				
-//		ename[6] = psdname;
-//		nps_low[6] = -0.0224451/0.291961;
-//		nps_high[6] = 0.0224451/0.291961;
+		ename[6] = combbgerrname;
+		nps_low[6] = -combkgbserr/combkgbs;
+		nps_high[6] = combkgbserr/combkgbs;
 		
-		nps_count = 6;
+		nps_count = 7;
 
 		sfact = 1.;
 		
@@ -343,11 +346,11 @@ if (barrel) {
 		nps_low[4] = -rarebkgbdwinerr/rarebkgbdwin;
 		nps_high[4] = rarebkgbdwinerr/rarebkgbdwin;
 
-//		ename[5] = pdsname;
-//		nps_low[5] = -0.00741162/0.0712015;
-//		nps_high[5] = 0.00741162/0.0712015;		
+		ename[5] = combbgerrname;
+		nps_low[5] = -combkgbderr/combkgbd;
+		nps_high[5] = combkgbderr/combkgbd;		
 
-		nps_count = 5;
+		nps_count = 6;
 
 		sfact = 1.;
 		
@@ -567,11 +570,11 @@ if (endcap) {
 		nps_low[5] = -rarebkgbswinerr/rarebkgbswin;
 		nps_high[5] = rarebkgbswinerr/rarebkgbswin;
 		
-//		ename[6] = psdname;
-//		nps_low[6] = -0.0285105/0.318653;
-//		nps_high[6] = 0.0285105/0.318653;
+		ename[6] = combbgerrname;
+		nps_low[6] = -combkgbserr/combkgbs;
+		nps_high[6] = combkgbserr/combkgbs;
 		
-		nps_count = 6;
+		nps_count = 7;
 		
 		sfact = 1.;
 		
@@ -605,11 +608,11 @@ if (endcap) {
 		nps_low[4] = -rarebkgbdwinerr/rarebkgbdwin;
 		nps_high[4] = rarebkgbdwinerr/rarebkgbdwin;
 		
-//		ename[5] = pdsname;
-//		nps_low[5] = -0.0148983/0.163842;
-//		nps_high[5] = 0.0148983/0.163842;
+		ename[5] = combbgerrname;
+		nps_low[5] = -combkgbderr/combkgbd;
+		nps_high[5] = combkgbderr/combkgbd;		
 		
-		nps_count = 5;
+		nps_count = 6;
 
 		sfact = 1.;
 		

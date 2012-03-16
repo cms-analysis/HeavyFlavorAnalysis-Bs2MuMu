@@ -27,6 +27,10 @@
 #include <TH1.h>
 #include <TH2.h>
 #include <TProfile.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <cstdlib>
+
 
 // include FastTH1.hh explicitly here so fewer files to distribute
 
@@ -1472,7 +1476,7 @@ public:
 	
 	Double_t tssm2(); // distributions of test statistic in test hyp pseudoexperiments 2 sigma low edge
 	Double_t tssm1(); // 1 sigma low edge
-	Double_t tssmed(); // median test statistic in null hyp pseudoexperiments
+	Double_t tssmed(); // median test statistic in test hyp pseudoexperiments
 	Double_t tssp1();  // 1 sigma upper edge
 	Double_t tssp2();  // 2 sigma upper edge
 	

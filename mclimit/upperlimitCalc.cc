@@ -282,7 +282,8 @@ int main(int argc, char **argv)
 	f_outputfile << "CLb = " << mymclimit->clb() << endl;
 	f_outputfile << "CLsb = " << mymclimit->clsb() << endl;
 	f_outputfile << "CLs (CLsb/CLb) = " << mymclimit->cls() << endl << endl;
-	
+	double pval = mymclimit->omclb();
+
 	cout << "<<<<<<<< Getting Expected CLs Results for Null Hyp >>>>>>>>" << endl;
 	Double_t d_omclbexpbmed = mymclimit->omclbexpbmed();
 	f_outputfile << "Expected CLs in null hypothesis: -2 sigma = " << mymclimit->clsexpbm2() << endl;
@@ -341,7 +342,6 @@ int main(int argc, char **argv)
 	//	f_outputfile << "Lumi scale factor of 95% CL excluded signal: lumiSf = " << d_lumi95 << endl;
 	f_outputfile << "Lumi needed for 3 sigma discovery: lumi3sig = " << d_lumi3s*d_totlumi << " fb-1" << endl;
 	f_outputfile << "Lumi needed for 5 sigma discovery: lumi5sig = " << d_lumi5s*d_totlumi << " fb-1" << endl << endl;
-	double pval = mymclimit->omclb();
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
 	double d_sf90 = mymclimit->s90();
 	f_outputfile << "Observed scale factor of 90% CL excluded signal: sc_f = " << d_sf90 << endl;
