@@ -2,8 +2,6 @@
 // limit inputs -- using SM with SM single top
 // as the null hypothesis and SM with SM single top and extra anomalous
 // single top as the test hypothesis
-gROOT->SetStyle("Plain");
-gROOT->ForceStyle();
 
 struct expectation_t {
 	double value;
@@ -26,6 +24,7 @@ char experrname[]="EXPERR";
 //LHCb nuisance parameters
 char lhcbbkgerrna[]="LHCBBKGERR";
 char lhcbmisiderna[]="MISIDERR";
+char lhcbxfeederna[]="XFEEDERR";
 char lhcbsigerrna[]="SIGERR";
 // Posible additional CMS parameters
 //char rarename[]="RARE";
@@ -60,6 +59,7 @@ Double_t xbins[2] = {0, 1};
 TString s_outfilename;
 if (combined11) s_outfilename = Form("CMS_LHCb_S11_Comb_Bs_Results%i.root",i_numb);
 else if (combined12) s_outfilename = Form("CMS_LHCb_W12_Comb_Bs_Results%i.root",i_numb);
+else if (combined12bd) s_outfilename = Form("CMS_LHCb_W12_Comb_Bd_Results%i.root",i_numb);
 else if(cms11bs) s_outfilename = Form("CMS_S11_Bs_Results%i.root",i_numb);
 else if(cms11bd) s_outfilename = Form("CMS_S11_Bd_Results%i.root",i_numb);
 else if(cms12bs) s_outfilename = Form("CMS_W12_Bs_Results%i.root",i_numb);
@@ -67,6 +67,9 @@ else if(cms12bd) s_outfilename = Form("CMS_W12_Bd_Results%i.root",i_numb);
 else if(lhcbs) s_outfilename = Form("LHCb_10_11_Comb_Bs_Results%i.root",i_numb);
 else if(lhcbs10) s_outfilename = Form("LHCb_10_Bs_Results%i.root",i_numb);
 else if(lhcbs11) s_outfilename = Form("LHCb_11_Bs_Results%i.root",i_numb);
+else if(lhcbs12) s_outfilename = Form("LHCb_12_Bs_Results%i.root",i_numb);
+else if(lhcbd12) s_outfilename = Form("LHCb_12_Bd_Results%i.root",i_numb);
+
 cout << s_outfilename << endl;
 TFile f_outfile(s_outfilename,"RECREATE");
 
@@ -749,7 +752,7 @@ if (cms11bd) {
 	}
 }
 
-// Combination for cms data in winter 11-12 
+// Bs combination for cms data in winter 11-12 
 if (cms12bs) {
 	Int_t nnbins = 2;
 	Double_t xxbins[3] = {0, 1, 2};
@@ -1160,6 +1163,7 @@ if (cms12bs) {
 	}	
 }
 
+// Bd combination for cms data in winter 11-12
 if (cms12bd) {
 	Int_t nnbins = 2;
 	Double_t xxbins[3] = {0, 1, 2};
@@ -1638,6 +1642,31 @@ TH1D *h_lhcbsig[N_MASS_BINS][N_BDT_BINS];
 TH1D *h_lhcbdat[N_MASS_BINS][N_BDT_BINS];
 string s_lhcbchan[N_MASS_BINS][N_BDT_BINS];	
 
+// Setting up the Bs LHCb winter 11-12 data
+const static expectation_t bkg2[N_MASS_BINS12][N_BDT_BINS12] = {
+	{expectation_t(1889,38,39), expectation_t(57,11,11), expectation_t(15.3,3.8,3.8), expectation_t(4.3,1.0,1.0), 
+		expectation_t(3.30,0.92,0.85), expectation_t(1.06,0.51,0.46), expectation_t(1.27,0.53,0.52), expectation_t(0.44,0.41,0.24)}
+};
+
+const static expectation_t misid2[N_MASS_BINS12][N_BDT_BINS12] = {
+	{expectation_t(0.124,0.066, 0.049), expectation_t(0.063, 0.024, 0.018), expectation_t(0.049, 0.016, 0.012), expectation_t(0.045, 0.016, 0.012),
+		expectation_t(0.050, 0.018, 0.013), expectation_t(0.047, 0.017, 0.013), expectation_t(0.049, 0.017, 0.013), expectation_t(0.047, 0.018, 0.014)}
+};
+
+const static expectation_t sig2[N_MASS_BINS12][N_BDT_BINS12] = {
+	{expectation_t(2.55, 0.70, 0.74), expectation_t(1.22, 0.20, 0.19), expectation_t(0.97, 0.14, 0.13), expectation_t(0.861, 0.102, 0.088),
+		expectation_t(1.00, 0.12, 0.10), expectation_t(1.034, 0.109, 0.095), expectation_t(1.18, 0.13, 0.11), expectation_t(1.23, 0.21, 0.21)}
+};
+
+const static int obs2[N_MASS_BINS12][N_BDT_BINS12] = {
+	{1818, 39, 12, 6, 1, 2, 1, 1}
+};
+// Histos to hold the winter 2011-2012 data 
+TH1D *h_lhcbbkg2[N_MASS_BINS12][N_BDT_BINS12];
+TH1D *h_lhcbmisid2[N_MASS_BINS12][N_BDT_BINS12];
+TH1D *h_lhcbsig2[N_MASS_BINS12][N_BDT_BINS12];
+TH1D *h_lhcbdat2[N_MASS_BINS12][N_BDT_BINS12];
+string s_lhcbchan2[N_MASS_BINS12][N_BDT_BINS12];
 
 int counter1 = 0;
 if (lhcbs10) {
@@ -1864,5 +1893,335 @@ if (lhcbs11) {
 	cout << "Fnished setting up LHCb summer 2011 results, total number of channels = " << counter << endl;
 }
 
+int counter2 = 0;
+if (lhcbs12) {
+	for (int j = 0; j<N_MASS_BINS12; j++) {
+		for (int l = 0; l<N_BDT_BINS12; l++) {
+			//		cout << "FUBAR1" << endl;
+			s_lhcbchan2[j][l] = Form("lhcbChan2%i%i",j,l);
+			// Make a char* from the string
+			char * c_lhcbchan2 = new char[s_lhcbchan2[j][l].size() + 1];
+			copy(s_lhcbchan2[j][l].begin(), s_lhcbchan2[j][l].end(), c_lhcbchan2);
+			c_lhcbchan2[s_lhcbchan2[j][l].size()] = '\0'; 
+			
+			// Make the histograms
+			h_lhcbbkg2[j][l] = new TH1D(Form("h_lhcbbkg2%i%i",j,l),Form("LHCb Bkgd M_bn%i G_bn%i",j,l),nbins,xbins); 
+			h_lhcbbkg2[j][l]->SetBinContent(1,bkg2[j][l].value);
+			
+			h_lhcbmisid2[j][l] = new TH1D(Form("h_lhcbmisid2%i%i",j,l),Form("LHCb msID M_bn%i G_bn%i",j,l),nbins,xbins);
+			h_lhcbmisid2[j][l]->SetBinContent(1,misid2[j][l].value);
+			
+			h_lhcbsig2[j][l] = new TH1D(Form("h_lhcbsig2%i%i",j,l),Form("LHCb Sgnl M_bn%i G_bn%i",j,l),nbins,xbins);
+			h_lhcbsig2[j][l]->SetBinContent(1,sig2[j][l].value);
+			
+			h_lhcbdat2[j][l] = new TH1D(Form("h_lhcbdat2%i%i",j,l),Form("LHCb Obsd M_bn%i G_bn%i",j,l),nbins,xbins);
+			h_lhcbdat2[j][l]->SetBinContent(1,obs2[j][l]);
+			
+			// Add background templates
+			// Initialize everything
+			for(int i=0;i<NSYS;i++)
+			{
+				nps_low[i]  = 0;
+				nps_high[i] = 0;
+				lowsigma[i] = 0;
+				highsigma[i]= 0;
+				lowshape[i] = 0;
+				highshape[i]= 0;
+			}
+			
+			sfact = 1;
+			
+			ename[0] = lhcbbkgerrna;
+			nps_low[0] = -bkg2[j][l].lo_err/bkg2[j][l].value;
+			nps_high[0] = bkg2[j][l].hi_err/bkg2[j][l].value;
+			
+			nps_count=1;		
+			pssnflg = 0;
+			sclflg = 0;
+			
+			// Construct test/null hypothesis for pseudo-experiments.
+			nullhyp_pe->add_template(h_lhcbbkg2[j][l],sfact,nps_count,ename,nps_low,nps_high,
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan2);
+			testhyp_pe->add_template(h_lhcbbkg2[j][l],sfact,nps_count,ename,nps_low,nps_high,
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan2);
+			nps_count=0;
+			nullhyp->add_template(h_lhcbbkg2[j][l],sfact,nps_count,ename,nps_low,nps_high,
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan2);
+			testhyp->add_template(h_lhcbbkg2[j][l],sfact,nps_count,ename,nps_low,nps_high,
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan2);
+			cout << "Finished setting up the background nullhyp, testhyp, nullhyp_pe, and testhyp_pe for channel " << counter2 << endl;
+			
+			// Initialize everything
+			for(int i=0;i<NSYS;i++)
+			{
+				nps_low[i]  = 0;
+				nps_high[i] = 0;
+				lowsigma[i] = 0;
+				highsigma[i]= 0;
+				lowshape[i] = 0;
+				highshape[i]= 0;
+			}
+			
+			// Add GLbin1 misid background templates
+			sfact = 1;
+			
+			ename[0] = lhcbmisiderna;
+			nps_low[0] = -misid2[j][l].lo_err/misid2[j][l].value;
+			nps_high[0] = misid2[j][l].hi_err/misid2[j][l].value;
+			
+			nps_count=1;		
+			pssnflg = 0;
+			sclflg = 0;
+			
+			// Construct test/null hypothesis for pseudo-experiments.
+			nullhyp_pe->add_template(h_lhcbmisid2[j][l],sfact,nps_count,ename,nps_low,nps_high,
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan2);
+			testhyp_pe->add_template(h_lhcbmisid2[j][l],sfact,nps_count,ename,nps_low,nps_high,
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan2);
+			nps_count=0;
+			nullhyp->add_template(h_lhcbmisid2[j][l],sfact,nps_count,ename,nps_low,nps_high,
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan2);
+			testhyp->add_template(h_lhcbmisid2[j][l],sfact,nps_count,ename,nps_low,nps_high,
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan2);
+			cout << "Finished setting up the misID bkgnd nullhyp, testhyp, nullhyp_pe, testhyp_pe for channel " << counter2 << endl;
+			
+			// Add signal templates
+			for(int i=0;i<NSYS;i++) {
+				nps_low[i] = 0;
+				nps_high[i] = 0;
+				lowsigma[i] = 0;
+				highsigma[i] = 0;
+				lowshape[i] = 0;
+				highshape[i] = 0;
+			}
+			// Add GLbin1 misid background templates
+			sfact = 1;	
+			
+			ename[0] = pdfhadron;
+			nps_low[0] = -0.021/0.267;
+			nps_high[0] = 0.021/0.267;
+			
+			ename[1] = lhcbsigerrna;
+			nps_low[1] = -sig2[j][l].lo_err/sig2[j][l].value;
+			nps_high[1] = sig2[j][l].hi_err/sig2[j][l].value;
+			
+			nps_count = 2;
+			
+			pssnflg = 0;// 
+			sclflg = 1;// this is set to 1 if signal, 
+			testhyp_pe->add_template(h_lhcbsig2[j][l],sfact,nps_count,ename,nps_low,nps_high, 
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan2);
+			nps_count = 0;
+			testhyp->add_template(h_lhcbsig2[j][l],sfact,nps_count,ename,nps_low,nps_high, 
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan2);
+			
+			cout << "Finished setting up the signal testhyp, testhyp_pe for channel " << counter2 << endl;	
+			
+			delete[] c_lhcbchan2;
+			counter2++;
+		}
+	}
+	cout << "Fnished setting up LHCb summer 2011 results, total number of channels = " << counter2 << endl;
+}
+
+// Setting up the Bd LHCb winter 11-12 data
+const static expectation_t bkg3[N_MASS_BINS12][N_BDT_BINS12] = {
+	{expectation_t(2003, 38, 39), expectation_t(61, 12, 11), expectation_t(16.6, 4.3, 4.1), expectation_t(4.7, 1.3, 1.2),
+		expectation_t(3.52, 1.13, 0.97), expectation_t(1.11, 0.71, 0.50), expectation_t(1.62, 0.76, 0.59), expectation_t(0.54, 0.53, 0.29)}
+};
+
+const static expectation_t misid3[N_MASS_BINS12][N_BDT_BINS12] = {
+	{expectation_t(0.71, 0.36, 0.26), expectation_t(0.355, 0.146, 0.088), expectation_t(0.279, 0.110, 0.068), expectation_t(0.249, 0.099, 0.055),
+		expectation_t(0.280, 0.109, 0.062), expectation_t(0.264, 0.103, 0.057), expectation_t(0.275, 0.108, 0.060), expectation_t(0.267, 0.106, 0.069)}
+};
+
+const static expectation_t xfeed3[N_MASS_BINS12][N_BDT_BINS12] = {
+	{expectation_t(0.40, 0.11, 0.12), expectation_t(0.193, 0.033, 0.030), expectation_t(0.153, 0.023, 0.021), expectation_t(0.136, 0.017, 0.015),
+		expectation_t(0.158, 0.019, 0.017), expectation_t(0.164, 0.019, 0.017), expectation_t(0.187, 0.022, 0.020), expectation_t(0.194, 0.036, 0.033)}
+};
+
+const static expectation_t sig3[N_MASS_BINS12][N_BDT_BINS12] = {
+	{expectation_t(0.30, 0.086, 0.090), expectation_t(0.145, 0.027, 0.024), expectation_t(0.115, 0.020, 0.017), expectation_t(0.102, 0.014, 0.013),
+		expectation_t(0.119, 0.017, 0.015), expectation_t(0.123, 0.016, 0.015), expectation_t(0.140, 0.019, 0.017), expectation_t(0.145, 0.030, 0.026)}
+};
+
+const static int obs3[N_MASS_BINS12][N_BDT_BINS12] = {
+	{1904, 50, 20, 5, 2, 1, 4, 1}
+};
+// Histos to hold the winter 2011-2012 data 
+TH1D *h_lhcbbkg3[N_MASS_BINS12][N_BDT_BINS12];
+TH1D *h_lhcbmisid3[N_MASS_BINS12][N_BDT_BINS12];
+TH1D *h_lhcbxfeed3[N_MASS_BINS12][N_BDT_BINS12];
+TH1D *h_lhcbsig3[N_MASS_BINS12][N_BDT_BINS12];
+TH1D *h_lhcbdat3[N_MASS_BINS12][N_BDT_BINS12];
+string s_lhcbchan3[N_MASS_BINS12][N_BDT_BINS12];
+
+int counter3 = 0;
+if (lhcbd12) {
+	for (int j = 0; j<N_MASS_BINS12; j++) {
+		for (int l = 0; l<N_BDT_BINS12; l++) {
+			//		cout << "FUBAR1" << endl;
+			s_lhcbchan3[j][l] = Form("lhcbChan3%i%i",j,l);
+			// Make a char* from the string
+			char * c_lhcbchan3 = new char[s_lhcbchan3[j][l].size() + 1];
+			copy(s_lhcbchan3[j][l].begin(), s_lhcbchan3[j][l].end(), c_lhcbchan3);
+			c_lhcbchan3[s_lhcbchan3[j][l].size()] = '\0'; 
+			
+			// Make the histograms
+			h_lhcbbkg3[j][l] = new TH1D(Form("h_lhcbbkg3%i%i",j,l),Form("LHCb Bkgd M_bn%i G_bn%i",j,l),nbins,xbins); 
+			h_lhcbbkg3[j][l]->SetBinContent(1,bkg3[j][l].value);
+			
+			h_lhcbmisid3[j][l] = new TH1D(Form("h_lhcbmisid3%i%i",j,l),Form("LHCb msID M_bn%i G_bn%i",j,l),nbins,xbins);
+			h_lhcbmisid3[j][l]->SetBinContent(1,misid3[j][l].value);
+			
+			h_lhcbxfeed3[j][l] = new TH1D(Form("h_lhcbxfeed3%i%i",j,l),Form("LHCb x-feed M_bn%i G_bn%i",j,l),nbins,xbins);
+			h_lhcbxfeed3[j][l]->SetBinContent(1,xfeed3[j][l].value);
+			
+			h_lhcbsig3[j][l] = new TH1D(Form("h_lhcbsig3%i%i",j,l),Form("LHCb Sgnl M_bn%i G_bn%i",j,l),nbins,xbins);
+			h_lhcbsig3[j][l]->SetBinContent(1,sig3[j][l].value);
+			
+			h_lhcbdat3[j][l] = new TH1D(Form("h_lhcbdat3%i%i",j,l),Form("LHCb Obsd M_bn%i G_bn%i",j,l),nbins,xbins);
+			h_lhcbdat3[j][l]->SetBinContent(1,obs3[j][l]);
+			
+			// Add background templates
+			// Initialize everything
+			for(int i=0;i<NSYS;i++)
+			{
+				nps_low[i]  = 0;
+				nps_high[i] = 0;
+				lowsigma[i] = 0;
+				highsigma[i]= 0;
+				lowshape[i] = 0;
+				highshape[i]= 0;
+			}
+			
+			sfact = 1;
+			
+			ename[0] = lhcbbkgerrna;
+			nps_low[0] = -bkg3[j][l].lo_err/bkg3[j][l].value;
+			nps_high[0] = bkg3[j][l].hi_err/bkg3[j][l].value;
+			
+			nps_count=1;		
+			pssnflg = 0;
+			sclflg = 0;
+			
+			// Construct test/null hypothesis for pseudo-experiments.
+			nullhyp_pe->add_template(h_lhcbbkg3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
+			testhyp_pe->add_template(h_lhcbbkg3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
+			nps_count=0;
+			nullhyp->add_template(h_lhcbbkg3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
+			testhyp->add_template(h_lhcbbkg3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
+			cout << "Finished setting up the background nullhyp, testhyp, nullhyp_pe, and testhyp_pe for channel " << counter3 << endl;
+			
+			// Add GLbin1 misid background templates
+			// Initialize everything
+			for(int i=0;i<NSYS;i++)
+			{
+				nps_low[i]  = 0;
+				nps_high[i] = 0;
+				lowsigma[i] = 0;
+				highsigma[i]= 0;
+				lowshape[i] = 0;
+				highshape[i]= 0;
+			}
+			
+			sfact = 1;
+			
+			ename[0] = lhcbmisiderna;
+			nps_low[0] = -misid3[j][l].lo_err/misid3[j][l].value;
+			nps_high[0] = misid3[j][l].hi_err/misid3[j][l].value;
+			
+			nps_count=1;		
+			pssnflg = 0;
+			sclflg = 0;
+			
+			// Construct test/null hypothesis for pseudo-experiments.
+			nullhyp_pe->add_template(h_lhcbmisid3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
+			testhyp_pe->add_template(h_lhcbmisid3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
+			nps_count=0;
+			nullhyp->add_template(h_lhcbmisid3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
+			testhyp->add_template(h_lhcbmisid3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
+			cout << "Finished setting up the misID bkgnd nullhyp, testhyp, nullhyp_pe, testhyp_pe for channel " << counter3 << endl;
+			
+			// Add GLbin1 cross-feed background templates
+			// Initialize everything
+			for(int i=0;i<NSYS;i++)
+			{
+				nps_low[i]  = 0;
+				nps_high[i] = 0;
+				lowsigma[i] = 0;
+				highsigma[i]= 0;
+				lowshape[i] = 0;
+				highshape[i]= 0;
+			}
+			
+			sfact = 1;
+			
+			ename[0] = lhcbxfeederna;
+			nps_low[0] = -xfeed3[j][l].lo_err/xfeed3[j][l].value;
+			nps_high[0] = xfeed3[j][l].hi_err/xfeed3[j][l].value;
+			
+			nps_count=1;		
+			pssnflg = 0;
+			sclflg = 0;
+			
+			// Construct test/null hypothesis for pseudo-experiments.
+			nullhyp_pe->add_template(h_lhcbdat3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
+			testhyp_pe->add_template(h_lhcbdat3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
+			nps_count=0;
+			nullhyp->add_template(h_lhcbdat3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
+			testhyp->add_template(h_lhcbdat3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
+			cout << "Finished setting up the misID bkgnd nullhyp, testhyp, nullhyp_pe, testhyp_pe for channel " << counter3 << endl;
+
+			// Add signal templates
+			for(int i=0;i<NSYS;i++) {
+				nps_low[i] = 0;
+				nps_high[i] = 0;
+				lowsigma[i] = 0;
+				highsigma[i] = 0;
+				lowshape[i] = 0;
+				highshape[i] = 0;
+			}
+			// Add GLbin1 misid background templates
+			sfact = 1;	
+			
+			ename[0] = pdfhadron;
+			nps_low[0] = -0.021/0.267;
+			nps_high[0] = 0.021/0.267;
+			
+			ename[1] = lhcbsigerrna;
+			nps_low[1] = -sig3[j][l].lo_err/sig3[j][l].value;
+			nps_high[1] = sig3[j][l].hi_err/sig3[j][l].value;
+			
+			nps_count = 2;
+			
+			pssnflg = 0;// 
+			sclflg = 1;// this is set to 1 if signal, 
+			testhyp_pe->add_template(h_lhcbsig3[j][l],sfact,nps_count,ename,nps_low,nps_high, 
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
+			nps_count = 0;
+			testhyp->add_template(h_lhcbsig3[j][l],sfact,nps_count,ename,nps_low,nps_high, 
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
+			
+			cout << "Finished setting up the signal testhyp, testhyp_pe for channel " << counter3 << endl;	
+			
+			delete[] c_lhcbchan3;
+			counter3++;
+		}
+	}
+	cout << "Fnished setting up LHCb summer 2011 results, total number of channels = " << counter3 << endl;
+}
 
 cout << ">>>>>> End of templates <<<<<<<" << endl;
