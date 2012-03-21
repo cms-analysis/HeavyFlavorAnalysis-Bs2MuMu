@@ -829,21 +829,30 @@ if (cms12bs) {
 		Double_t toteff = 0.0029; Double_t totefferr = 0.0002;
 		
 		// Setup the Histos
-		//Rare bkgd Histogram
-		h_rarebkgB->SetBinContent(1,rarebkgshldrs);
-		h_rarebkgB->SetBinContent(2,rarebkgbswin); 
-		
-		//Combinatorial bkgd Histogram
-		h_combbkgB->SetBinContent(1,combkg);
-		h_combbkgB->SetBinContent(2,combkgbs); 
-		
-		//Signal Histograms
-		h_signalbsB->SetBinContent(1,0.0);
-		h_signalbsB->SetBinContent(2,exptbsevnts);
-		
-		// Data histogram
-		h_dataB->SetBinContent(1,obsrvshldrs);
-		h_dataB->SetBinContent(2,obsrvbswin);
+		if (lhcbs12) {
+			//Rare bkgd Histogram
+			h_rarebkgB->SetBinContent(1,rarebkgbswin); 
+			//Combinatorial bkgd Histogram
+			h_combbkgB->SetBinContent(1,combkgbs); 
+			//Signal Histograms
+			h_signalbsB->SetBinContent(1,exptbsevnts);
+			// Data histogram
+			h_dataB->SetBinContent(1,obsrvbswin);
+		}
+		else {
+			//Rare bkgd Histogram
+			h_rarebkgB->SetBinContent(1,rarebkgshldrs);
+			h_rarebkgB->SetBinContent(2,rarebkgbswin); 
+			//Combinatorial bkgd Histogram
+			h_combbkgB->SetBinContent(1,combkg);
+			h_combbkgB->SetBinContent(2,combkgbs); 			
+			//Signal Histograms
+			h_signalbsB->SetBinContent(1,0.0);
+			h_signalbsB->SetBinContent(2,exptbsevnts);			
+			// Data histogram
+			h_dataB->SetBinContent(1,obsrvshldrs);
+			h_dataB->SetBinContent(2,obsrvbswin);
+		}
 		
 		cout << "<<<<<< Done Setting up Histos for Barrel Channel>>>>>>>" << endl;
 		
@@ -1022,22 +1031,33 @@ if (cms12bs) {
 		Double_t toteff = 0.0016; Double_t totefferr = 0.0002;
 		
 		// Setup the Histos
-		//Rare bkgd Histogram
-		h_rarebkgE->SetBinContent(1,rarebkgshldrs);
-		h_rarebkgE->SetBinContent(2,rarebkgbswin); 
-		
-		//Combinatorial bkgd Histogram
-		h_combbkgE->SetBinContent(1,combkg);
-		h_combbkgE->SetBinContent(2,combkgbs); 
-		
-		//Signal Histograms
-		h_signalbsE->SetBinContent(1,0.0);
-		h_signalbsE->SetBinContent(2,exptbsevnts);
-		
-		// Data histogram
-		h_dataE->SetBinContent(1,obsrvshldrs);
-		h_dataE->SetBinContent(2,obsrvbswin);
-		
+		if (lhcbs12) {
+			//Rare bkgd Histogram
+			h_rarebkgE->SetBinContent(1,rarebkgbswin); 
+			//Combinatorial bkgd Histogram
+			h_combbkgE->SetBinContent(1,combkgbs); 
+			//Signal Histograms
+			h_signalbsE->SetBinContent(1,exptbsevnts);
+			// Data histogram
+			h_dataE->SetBinContent(1,obsrvbswin);
+		}
+		else {
+			//Rare bkgd Histogram
+			h_rarebkgE->SetBinContent(1,rarebkgshldrs);
+			h_rarebkgE->SetBinContent(2,rarebkgbswin); 
+			
+			//Combinatorial bkgd Histogram
+			h_combbkgE->SetBinContent(1,combkg);
+			h_combbkgE->SetBinContent(2,combkgbs); 
+			
+			//Signal Histograms
+			h_signalbsE->SetBinContent(1,0.0);
+			h_signalbsE->SetBinContent(2,exptbsevnts);
+			
+			// Data histogram
+			h_dataE->SetBinContent(1,obsrvshldrs);
+			h_dataE->SetBinContent(2,obsrvbswin);
+		}
 		cout << "<<<<<< Done Setting up Histos for Endcap Channel>>>>>>>" << endl;
 		
 		// Initialize everything
@@ -1246,22 +1266,33 @@ if (cms12bd) {
 		Double_t toteff = 0.0029; Double_t totefferr = 0.0002;
 		
 		// Setup the Histos
-		//Rare bkgd Histogram
-		h_rarebkgB->SetBinContent(1,rarebkgshldrs);
-		h_rarebkgB->SetBinContent(2,rarebkgbdwin); 
-		
-		//Combinatorial bkgd Histogram
-		h_combbkgB->SetBinContent(1,combkg);
-		h_combbkgB->SetBinContent(2,combkgbd); 
-		
-		//Signal Histograms
-		h_signalbdB->SetBinContent(1,0.0);
-		h_signalbdB->SetBinContent(2,exptbdevnts);
-		
-		// Data histogram
-		h_dataB->SetBinContent(1,obsrvshldrs);
-		h_dataB->SetBinContent(2,obsrvbdwin);
-		
+		if (lhcbd12) {
+			//Rare bkgd Histogram
+			h_rarebkgB->SetBinContent(1,rarebkgbdwin); 			
+			//Combinatorial bkgd Histogram
+			h_combbkgB->SetBinContent(1,combkgbd); 			
+			//Signal Histograms
+			h_signalbdB->SetBinContent(1,exptbdevnts);			
+			// Data histogram
+			h_dataB->SetBinContent(1,obsrvbdwin);
+		}
+		else {
+			//Rare bkgd Histogram
+			h_rarebkgB->SetBinContent(1,rarebkgshldrs);
+			h_rarebkgB->SetBinContent(2,rarebkgbdwin); 
+			
+			//Combinatorial bkgd Histogram
+			h_combbkgB->SetBinContent(1,combkg);
+			h_combbkgB->SetBinContent(2,combkgbd); 
+			
+			//Signal Histograms
+			h_signalbdB->SetBinContent(1,0.0);
+			h_signalbdB->SetBinContent(2,exptbdevnts);
+			
+			// Data histogram
+			h_dataB->SetBinContent(1,obsrvshldrs);
+			h_dataB->SetBinContent(2,obsrvbdwin);
+		}
 		cout << "<<<<<< Done Setting up Histos for Barrel Channel>>>>>>>" << endl;
 		
 		// Initialize everything
@@ -1430,22 +1461,33 @@ if (cms12bd) {
 		Double_t toteff = 0.0016; Double_t totefferr = 0.0002;
 		
 		// Setup the Histos
-		//Rare bkgd Histogram
-		h_rarebkgE->SetBinContent(1,rarebkgshldrs);
-		h_rarebkgE->SetBinContent(2,rarebkgbdwin); 
-		
-		//Combinatorial bkgd Histogram
-		h_combbkgE->SetBinContent(1,combkg);
-		h_combbkgE->SetBinContent(2,combkgbd); 
-		
-		//Signal Histograms
-		h_signalbdE->SetBinContent(1,0.0);
-		h_signalbdE->SetBinContent(2,exptbdevnts);
-		
-		// Data histogram
-		h_dataE->SetBinContent(1,obsrvshldrs);
-		h_dataE->SetBinContent(2,obsrvbdwin);
-		
+		if (lhcbd12) {
+			//Rare bkgd Histogram
+			h_rarebkgE->SetBinContent(1,rarebkgbdwin); 
+			//Combinatorial bkgd Histogram
+			h_combbkgE->SetBinContent(1,combkgbd); 
+			//Signal Histograms
+			h_signalbdE->SetBinContent(1,exptbdevnts);
+			// Data histogram
+			h_dataE->SetBinContent(1,obsrvbdwin);
+		}
+		else {
+			//Rare bkgd Histogram
+			h_rarebkgE->SetBinContent(1,rarebkgshldrs);
+			h_rarebkgE->SetBinContent(2,rarebkgbdwin); 
+			
+			//Combinatorial bkgd Histogram
+			h_combbkgE->SetBinContent(1,combkg);
+			h_combbkgE->SetBinContent(2,combkgbd); 
+			
+			//Signal Histograms
+			h_signalbdE->SetBinContent(1,0.0);
+			h_signalbdE->SetBinContent(2,exptbdevnts);
+			
+			// Data histogram
+			h_dataE->SetBinContent(1,obsrvshldrs);
+			h_dataE->SetBinContent(2,obsrvbdwin);
+		}
 		cout << "<<<<<< Done Setting up Histos for Endcap Channel>>>>>>>" << endl;
 		
 		// Initialize everything
@@ -2174,14 +2216,14 @@ if (lhcbd12) {
 			sclflg = 0;
 			
 			// Construct test/null hypothesis for pseudo-experiments.
-			nullhyp_pe->add_template(h_lhcbdat3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+			nullhyp_pe->add_template(h_lhcbxfeed3[j][l],sfact,nps_count,ename,nps_low,nps_high,
 									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
-			testhyp_pe->add_template(h_lhcbdat3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+			testhyp_pe->add_template(h_lhcbxfeed3[j][l],sfact,nps_count,ename,nps_low,nps_high,
 									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
 			nps_count=0;
-			nullhyp->add_template(h_lhcbdat3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+			nullhyp->add_template(h_lhcbxfeed3[j][l],sfact,nps_count,ename,nps_low,nps_high,
 								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
-			testhyp->add_template(h_lhcbdat3[j][l],sfact,nps_count,ename,nps_low,nps_high,
+			testhyp->add_template(h_lhcbxfeed3[j][l],sfact,nps_count,ename,nps_low,nps_high,
 								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan3);
 			cout << "Finished setting up the misID bkgnd nullhyp, testhyp, nullhyp_pe, testhyp_pe for channel " << counter3 << endl;
 
