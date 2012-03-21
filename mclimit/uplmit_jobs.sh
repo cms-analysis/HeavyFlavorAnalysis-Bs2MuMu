@@ -20,6 +20,9 @@ then
 elif [ "$1" == "comb12" ]
 then
 	OUTFILES="CMS_LHCb_W12_Comb_Bs_Results$2.txt CMS_LHCb_W12_Comb_Bs_Results$2.root CMS_LHCb_W12_Comb_Bs_Results$2.pdf"
+elif [ "$1" == "comb12bd" ]
+then
+	OUTFILES="CMS_LHCb_W12_Comb_Bd_Results$2.txt CMS_LHCb_W12_Comb_Bd_Results$2.root CMS_LHCb_W12_Comb_Bd_Results$2.pdf"
 elif [ "$1" == "cms11bs" ]
 then
 	OUTFILES="CMS_S11_Bs_Results$2.txt CMS_S11_Bs_Results$2.root CMS_S11_Bs_Results$2.pdf"
@@ -41,6 +44,12 @@ then
 elif [ "$1" == "lhcb11" ]
 then
 	OUTFILES="LHCb_11_Bs_Results$2.txt LHCb_11_Bs_Results$2.root LHCb_11_Bs_Results$2.pdf"
+elif [ "$1" == "lhcb12" ]
+then
+	OUTFILES="LHCb_12_Bs_Results$2.txt LHCb_12_Bs_Results$2.root LHCb_12_Bs_Results$2.pdf"
+elif [ "$1" == "lhcb12bd" ]
+then
+	OUTFILES="LHCb_12_Bd_Results$2.txt LHCb_12_Bd_Results$2.root LHCb_12_Bd_Results$2.pdf"
 fi
 
 # Output files to be copied to the SE
