@@ -3,6 +3,10 @@
 // as the null hypothesis and SM with SM single top and extra anomalous
 // single top as the test hypothesis
 
+gROOT->SetStyle("Plain");
+gROOT->ForceStyle();
+
+
 struct expectation_t {
 	double value;
 	double hi_err;
@@ -11,6 +15,15 @@ public:
 	expectation_t() : value(0.0),hi_err(0.0),lo_err(0.0) {}
 	expectation_t(double v, double hi, double lo) : value(v),hi_err(hi),lo_err(lo) {}
 };
+
+// declare some constant variables
+static const double Brbsmm = 3.2e-9;
+static const double Brbdmm = 1.0e-10;
+static const double cmslumiw12 = 5.0;
+static const double cmslumis11 = 1.14;
+static const double lhcblumis10 = 0.037;
+static const double lhcblumis11 = 0.30;
+static const double lhcblumiw12 = 1.0;
 
 //declare nusiance parameters
 const int NSYS = 10;
@@ -21,6 +34,7 @@ char toteffname[]="TOTEFF";
 char bkgerrname[]="BKGERR";
 char combbkgerrname[]="CBKGERR";
 char experrname[]="EXPERR";
+char unconstrned[]="UNCONSTRAINED";
 //LHCb nuisance parameters
 char lhcbbkgerrna[]="LHCBBKGERR";
 char lhcbmisiderna[]="MISIDERR";
@@ -29,8 +43,8 @@ char lhcbsigerrna[]="SIGERR";
 // Posible additional CMS parameters
 //char rarename[]="RARE";
 char pssname[]="PSS";
-char psdname[]="PSD";
-char pdsname[]="PDS";
+//char psdname[]="PSD";
+//char pdsname[]="PDS";
 char pddname[]="PDD";
 char peakerrname[]="PCKERR";
 
@@ -57,18 +71,18 @@ Double_t xbins[2] = {0, 1};
 // Opent the data file
 //TFile *f_data = TFile::Open("anaBmm.default-11.root");
 TString s_outfilename;
-if (combined11) s_outfilename = Form("CMS_LHCb_S11_Comb_Bs_Results%i.root",i_numb);
-else if (combined12) s_outfilename = Form("CMS_LHCb_W12_Comb_Bs_Results%i.root",i_numb);
-else if (combined12bd) s_outfilename = Form("CMS_LHCb_W12_Comb_Bd_Results%i.root",i_numb);
-else if(cms11bs) s_outfilename = Form("CMS_S11_Bs_Results%i.root",i_numb);
-else if(cms11bd) s_outfilename = Form("CMS_S11_Bd_Results%i.root",i_numb);
-else if(cms12bs) s_outfilename = Form("CMS_W12_Bs_Results%i.root",i_numb);
-else if(cms12bd) s_outfilename = Form("CMS_W12_Bd_Results%i.root",i_numb);
-else if(lhcbs) s_outfilename = Form("LHCb_10_11_Comb_Bs_Results%i.root",i_numb);
-else if(lhcbs10) s_outfilename = Form("LHCb_10_Bs_Results%i.root",i_numb);
-else if(lhcbs11) s_outfilename = Form("LHCb_11_Bs_Results%i.root",i_numb);
-else if(lhcbs12) s_outfilename = Form("LHCb_12_Bs_Results%i.root",i_numb);
-else if(lhcbd12) s_outfilename = Form("LHCb_12_Bd_Results%i.root",i_numb);
+if (combined11) s_outfilename = Form("CMS_LHCb_S11_Comb_Bs_Results%f_%i.root",d_scale,i_numb);
+else if (combined12) s_outfilename = Form("CMS_LHCb_W12_Comb_Bs_Results%f_%i.root",d_scale,i_numb);
+else if (combined12bd) s_outfilename = Form("CMS_LHCb_W12_Comb_Bd_Results%f_%i.root",d_scale,i_numb);
+else if(cms11bs) s_outfilename = Form("CMS_S11_Bs_Results%f_%i.root",d_scale,i_numb);
+else if(cms11bd) s_outfilename = Form("CMS_S11_Bd_Results%f_%i.root",d_scale,i_numb);
+else if(cms12bs) s_outfilename = Form("CMS_W12_Bs_Results%f_%i.root",d_scale,i_numb);
+else if(cms12bd) s_outfilename = Form("CMS_W12_Bd_Results%f_%i.root",d_scale,i_numb);
+else if(lhcbs) s_outfilename = Form("LHCb_10_11_Comb_Bs_Results%f_%i.root",d_scale,i_numb);
+else if(lhcbs10) s_outfilename = Form("LHCb_10_Bs_Results%f_%i.root",d_scale,i_numb);
+else if(lhcbs11) s_outfilename = Form("LHCb_11_Bs_Results%f_%i.root",d_scale,i_numb);
+else if(lhcbs12) s_outfilename = Form("LHCb_12_Bs_Results%f_%i.root",d_scale,i_numb);
+else if(lhcbd12) s_outfilename = Form("LHCb_12_Bd_Results%f_%i.root",d_scale,i_numb);
 
 cout << s_outfilename << endl;
 TFile f_outfile(s_outfilename,"RECREATE");
@@ -132,6 +146,7 @@ if (cms11bs) {
 		
 		//Signal Histograms		
 		h_signalbsB->SetBinContent(1,exptbsevnts);
+		h_signalbsB->Scale(d_scale);
 		
 		// Data histogram
 		h_dataB->SetBinContent(1,obsrvbswin);
@@ -298,6 +313,7 @@ if (cms11bs) {
 		
 		//Signal Histograms
 		h_signalbsE->SetBinContent(1,exptbsevnts);
+		h_signalbsE->Scale(d_scale);
 		
 		// Data histogram
 		h_dataE->SetBinContent(1,obsrvbswin);
@@ -462,6 +478,7 @@ if (cms11bd) {
 		
 		//Signal Histograms		
 		h_signalbsB->SetBinContent(1,exptbdevnts);
+		h_signalbsB->Scale(d_scale);
 		
 		// Data histogram
 		h_dataB->SetBinContent(1,obsrvbdwin);
@@ -628,6 +645,7 @@ if (cms11bd) {
 		
 		//Signal Histograms
 		h_signalbsE->SetBinContent(1,exptbdevnts);
+		h_signalbsE->Scale(d_scale);
 		
 		// Data histogram
 		h_dataE->SetBinContent(1,obsrvbdwin);
@@ -754,21 +772,23 @@ if (cms11bd) {
 
 // Bs combination for cms data in winter 11-12 
 if (cms12bs) {
-	Int_t nnbins = 2;
-	Double_t xxbins[3] = {0, 1, 2};
+//	Int_t nnbins = 2;
+//	Double_t xxbins[3] = {0, 1, 2};
 	Double_t bsmsswin = 5.45 - 5.3; Double_t bdmsswin = 5.3 - 5.2; Double_t msswin = 5.9 - 4.9 - 0.25;
 
 	TFile *f_data = TFile::Open("anaBmm.default-11.root");
 	//Templates and input Data
 	
-	h_rarebkgB = new TH1D("h_rarebkgB","Rare bkgd brrl",nnbins,xxbins);
-	h_combbkgB = new TH1D("h_combbkgB","Comb bkgd brrl",nnbins,xxbins); 
-	h_signalbsB = new TH1D("h_signalbsB","Sigl bs brrl",nnbins,xxbins);
-	h_dataB = new TH1D("h_dataB","Obsd evts brrl",nnbins,xxbins);
-	h_rarebkgE	= new TH1D("h_rarebkgE","Rare bkgd endc",nnbins,xxbins);
-	h_combbkgE = new TH1D("h_combbkgE","Comb bkgd endc",nnbins,xxbins);
-	h_signalbsE = new TH1D("h_signalbsE","Sigl bs endc",nnbins,xxbins); 
-	h_dataE = new TH1D("h_dataE","Obsd evts in endc",nnbins,xxbins);
+	h_rarebkgB = new TH1D("h_rarebkgB","Rare bkgd brrl",nbins,xbins);
+	h_combbkgB = new TH1D("h_combbkgB","Comb bkgd brrl",nbins,xbins); 
+	h_signalbsB = new TH1D("h_signalbsB","Sigl bs brrl",nbins,xbins);
+	TH1D *h_signalbdB = new TH1D("h_signalbdB","signal bd barrel",nbins,xbins); 
+	h_dataB = new TH1D("h_dataB","Obsd evts brrl",nbins,xbins);
+	h_rarebkgE	= new TH1D("h_rarebkgE","Rare bkgd endc",nbins,xbins);
+	h_combbkgE = new TH1D("h_combbkgE","Comb bkgd endc",nbins,xbins);
+	h_signalbsE = new TH1D("h_signalbsE","Sigl bs endc",nbins,xbins); 
+	TH1D *h_signalbdE = new TH1D("h_signalbdE","signal bd endcap",nbins,xbins); 
+	h_dataE = new TH1D("h_dataE","Obsd evts in endc",nbins,xbins);
 	
 	TH1D *h_sigbsB = (TH1D*)f_data->Get("Bs_cnc_chan0");
 	TH1D *h_sigbdB = (TH1D*)f_data->Get("Bd_cnc_chan0");
@@ -829,30 +849,21 @@ if (cms12bs) {
 		Double_t toteff = 0.0029; Double_t totefferr = 0.0002;
 		
 		// Setup the Histos
-		if (lhcbs12) {
-			//Rare bkgd Histogram
-			h_rarebkgB->SetBinContent(1,rarebkgbswin); 
-			//Combinatorial bkgd Histogram
-			h_combbkgB->SetBinContent(1,combkgbs); 
-			//Signal Histograms
-			h_signalbsB->SetBinContent(1,exptbsevnts);
-			// Data histogram
-			h_dataB->SetBinContent(1,obsrvbswin);
-		}
-		else {
-			//Rare bkgd Histogram
-			h_rarebkgB->SetBinContent(1,rarebkgshldrs);
-			h_rarebkgB->SetBinContent(2,rarebkgbswin); 
-			//Combinatorial bkgd Histogram
-			h_combbkgB->SetBinContent(1,combkg);
-			h_combbkgB->SetBinContent(2,combkgbs); 			
-			//Signal Histograms
-			h_signalbsB->SetBinContent(1,0.0);
-			h_signalbsB->SetBinContent(2,exptbsevnts);			
-			// Data histogram
-			h_dataB->SetBinContent(1,obsrvshldrs);
-			h_dataB->SetBinContent(2,obsrvbswin);
-		}
+		//Rare bkgd Histogram
+		h_rarebkgB->SetBinContent(1,rarebkgbswin); 
+		
+		//Combinatorial bkgd Histogram
+		h_combbkgB->SetBinContent(1,combkgbs); 	
+		
+		//Signal Histograms
+		h_signalbsB->SetBinContent(1,exptbsevnts);
+		h_signalbsB->Scale(d_scale);
+
+		//Bd contribution Histogram
+		h_signalbdB->SetBinContent(1,exptbdevntsbswin);
+		
+		// Data histogram
+		h_dataB->SetBinContent(1,obsrvbswin);
 		
 		cout << "<<<<<< Done Setting up Histos for Barrel Channel>>>>>>>" << endl;
 		
@@ -870,16 +881,14 @@ if (cms12bs) {
 		// Add rare background templates
 		sfact = 1;
 		ename[0] = bkgerrname;
-		//		nps_low[0] = -0.632963/3.03294;
-		//		nps_high[0] = 0.632963/3.03294;
 		nps_low[0] = -rarebkgshldrserr/rarebkgshldrs;
 		nps_high[0] = rarebkgshldrserr/rarebkgshldrs;
 		
-		ename[1] = psdname;
-		nps_low[1] = -0.0224451/0.291961;
-		nps_high[1] = 0.0224451/0.291961;
+//		ename[1] = psdname;
+//		nps_low[1] = -0.0224451/0.291961;
+//		nps_high[1] = 0.0224451/0.291961;
 		
-		nps_count=2;	
+		nps_count=1;	
 		
 		pssnflg = 0;
 		sclflg = 0;
@@ -910,10 +919,10 @@ if (cms12bs) {
 		
 		sfact = 1;
 		ename[0] = bkgerrname;
-		nps_low[0] = 0.;
-		nps_high[0] = 0.;
+		nps_low[1] = 0.0;
+		nps_high[1] = 0.0;
 		
-		nps_count=0;
+		nps_count=1;
 		
 		pssnflg = 0;
 		sclflg = 0;
@@ -931,6 +940,39 @@ if (cms12bs) {
 		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for combinatorial background" << endl;
 		
 		
+		// Add Bd background contribution templates
+		for(int i=0;i<NSYS;i++)
+		{
+			nps_low[i]  = 0;
+			nps_high[i] = 0;
+			lowsigma[i] = 0;
+			highsigma[i]= 0;
+			lowshape[i] = 0;
+			highshape[i]= 0;
+		}
+		
+		sfact = 1;
+		ename[0] = unconstrned;
+		nps_low[0] = -0.0224451/0.291961;
+		nps_high[0] = 0.0224451/0.291961;
+		
+		nps_count=0;
+		
+		pssnflg = 0;
+		sclflg = 0;
+		
+		// Construct test/null hypothesis for pseudo-experiments.
+		nullhyp_pe->add_template(h_signalbdB,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		testhyp_pe->add_template(h_signalbdB,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		nps_count=0;
+		nullhyp->add_template(h_signalbdB,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		testhyp->add_template(h_signalbdB,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for Bd background" << endl;
+		
 		// Add signal templates
 		for(int i=0;i<NSYS;i++) {
 			nps_low[i] = 0;
@@ -944,16 +986,12 @@ if (cms12bs) {
 		ename[0] = pdfhadron;
 		nps_low[0] = -0.021/0.267;
 		nps_high[0] = 0.021/0.267;
-		//		nps_low[0] = -0.1192/3.5487;
-		//		nps_high[0] = 0.1192/3.5487;
 		
 		ename[1] = toteffname;
 		nps_low[1] = -totefferr/toteff;
 		nps_high[1] = totefferr/toteff;
 		
 		ename[2] = experrname;
-		//		nps_low[2] = -0.65/3.9;
-		//		nps_high[2] = 0.65/3.9;
 		nps_low[2] = -totbswinerr/totbswin;
 		nps_high[2] = totbswinerr/totbswin;
 		
@@ -1031,33 +1069,22 @@ if (cms12bs) {
 		Double_t toteff = 0.0016; Double_t totefferr = 0.0002;
 		
 		// Setup the Histos
-		if (lhcbs12) {
 			//Rare bkgd Histogram
-			h_rarebkgE->SetBinContent(1,rarebkgbswin); 
-			//Combinatorial bkgd Histogram
-			h_combbkgE->SetBinContent(1,combkgbs); 
-			//Signal Histograms
-			h_signalbsE->SetBinContent(1,exptbsevnts);
-			// Data histogram
-			h_dataE->SetBinContent(1,obsrvbswin);
-		}
-		else {
-			//Rare bkgd Histogram
-			h_rarebkgE->SetBinContent(1,rarebkgshldrs);
-			h_rarebkgE->SetBinContent(2,rarebkgbswin); 
-			
-			//Combinatorial bkgd Histogram
-			h_combbkgE->SetBinContent(1,combkg);
-			h_combbkgE->SetBinContent(2,combkgbs); 
-			
-			//Signal Histograms
-			h_signalbsE->SetBinContent(1,0.0);
-			h_signalbsE->SetBinContent(2,exptbsevnts);
-			
-			// Data histogram
-			h_dataE->SetBinContent(1,obsrvshldrs);
-			h_dataE->SetBinContent(2,obsrvbswin);
-		}
+		h_rarebkgE->SetBinContent(1,rarebkgbswin); 
+		
+		//Combinatorial bkgd Histogram
+		h_combbkgE->SetBinContent(1,combkgbs); 
+		
+		//Signal Histograms
+		h_signalbsE->SetBinContent(1,exptbsevnts);
+		h_signalbsE->Scale(d_scale);
+		
+		// Bd contribution 
+		h_signalbdE->SetBinContent(1,exptbdevntsbswin);
+		
+		// Data histogram
+		h_dataE->SetBinContent(1,obsrvbswin);
+		
 		cout << "<<<<<< Done Setting up Histos for Endcap Channel>>>>>>>" << endl;
 		
 		// Initialize everything
@@ -1077,11 +1104,11 @@ if (cms12bs) {
 		nps_low[0] = -rarebkgshldrserr/rarebkgshldrs;
 		nps_high[0] = rarebkgshldrserr/rarebkgshldrs;
 		
-		ename[1] = psdname;
-		nps_low[1] = -0.0285105/0.318653;
-		nps_high[1] = 0.0285105/0.318653;
+//		ename[1] = psdname;
+//		nps_low[1] = -0.0285105/0.318653;
+//		nps_high[1] = 0.0285105/0.318653;
 		
-		nps_count=2;	
+		nps_count=1;	
 		
 		pssnflg = 0;
 		sclflg = 0;
@@ -1130,6 +1157,40 @@ if (cms12bs) {
 		testhyp->add_template(h_combbkgE,sfact,nps_count,ename,nps_low,nps_high,
 							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
 		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for combinatorial background" << endl;
+		
+		// Add Bd background contribution templates
+		for(int i=0;i<NSYS;i++)
+		{
+			nps_low[i]  = 0;
+			nps_high[i] = 0;
+			lowsigma[i] = 0;
+			highsigma[i]= 0;
+			lowshape[i] = 0;
+			highshape[i]= 0;
+		}
+		
+		sfact = 1;
+		ename[0] = unconstrned;
+		nps_low[0] = -0.0285105/0.318653;
+		nps_high[0] = 0.0285105/0.318653;
+		
+		nps_count=1;
+		
+		pssnflg = 0;
+		sclflg = 0;
+		
+		// Construct test/null hypothesis for pseudo-experiments.
+		nullhyp_pe->add_template(h_signalbdE,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		testhyp_pe->add_template(h_signalbdE,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		nps_count=0;
+		nullhyp->add_template(h_signalbdE,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		testhyp->add_template(h_signalbdE,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for Bd background" << endl;
+		
 		
 		// Add signal templates
 		for(int i=0;i<NSYS;i++) {
@@ -1185,8 +1246,8 @@ if (cms12bs) {
 
 // Bd combination for cms data in winter 11-12
 if (cms12bd) {
-	Int_t nnbins = 2;
-	Double_t xxbins[3] = {0, 1, 2};
+//	Int_t nnbins = 2;
+//	Double_t xxbins[3] = {0, 1, 2};
 	Double_t bsmsswin = 5.45 - 5.3; Double_t bdmsswin = 5.3 - 5.2; Double_t msswin = 5.9 - 4.9 - 0.25;
 
 	TFile *f_data = TFile::Open("anaBmm.default-11.root");
@@ -1196,16 +1257,16 @@ if (cms12bd) {
 	//	TH1D *h_sigbsE; TH1D *h_sigbdE; 
 	//	TH1D *h_bkgE; TH1D *h_obsE; 
 	
-	h_rarebkgB = new TH1D("h_rarebkgB","Rare bkgd brrl",nnbins,xxbins);
-	h_combbkgB = new TH1D("h_combbkgB","Comb bkgd brrl",nnbins,xxbins); 
-	h_signalbsB = new TH1D("h_signalbsB","Sigl bs brrl",nnbins,xxbins);
-	TH1D *h_signalbdB = new TH1D("h_signalbdB","signal bd barrel",nnbins,xxbins); 
-	h_dataB = new TH1D("h_dataB","Obsd evts brrl",nnbins,xxbins);
-	h_rarebkgE	= new TH1D("h_rarebkgE","Rare bkgd endc",nnbins,xxbins);
-	h_combbkgE = new TH1D("h_combbkgE","Comb bkgd endc",nnbins,xxbins);
-	h_signalbsE = new TH1D("h_signalbsE","Sigl bs endc",nnbins,xxbins); 
-	TH1D *h_signalbdE = new TH1D("h_signalbdE","signal bd endcaps",nnbins,xxbins); 
-	h_dataE = new TH1D("h_dataE","Obsd evts in endc",nnbins,xxbins);
+	h_rarebkgB = new TH1D("h_rarebkgB","Rare bkgd brrl",nbins,xbins);
+	h_combbkgB = new TH1D("h_combbkgB","Comb bkgd brrl",nbins,xbins); 
+	h_signalbsB = new TH1D("h_signalbsB","Sigl bs brrl",nbins,xbins);
+	TH1D *h_signalbdB = new TH1D("h_signalbdB","signal bd barrel",nbins,xbins); 
+	h_dataB = new TH1D("h_dataB","Obsd evts brrl",nbins,xbins);
+	h_rarebkgE	= new TH1D("h_rarebkgE","Rare bkgd endc",nbins,xbins);
+	h_combbkgE = new TH1D("h_combbkgE","Comb bkgd endc",nbins,xbins);
+	h_signalbsE = new TH1D("h_signalbsE","Sigl bs endc",nbins,xbins); 
+	TH1D *h_signalbdE = new TH1D("h_signalbdE","signal bd endcaps",nbins,xbins); 
+	h_dataE = new TH1D("h_dataE","Obsd evts in endc",nbins,xbins);
 	
 	TH1D *h_sigbsB = (TH1D*)f_data->Get("Bs_cnc_chan0");
 	TH1D *h_sigbdB = (TH1D*)f_data->Get("Bd_cnc_chan0");
@@ -1266,33 +1327,22 @@ if (cms12bd) {
 		Double_t toteff = 0.0029; Double_t totefferr = 0.0002;
 		
 		// Setup the Histos
-		if (lhcbd12) {
-			//Rare bkgd Histogram
-			h_rarebkgB->SetBinContent(1,rarebkgbdwin); 			
-			//Combinatorial bkgd Histogram
-			h_combbkgB->SetBinContent(1,combkgbd); 			
-			//Signal Histograms
-			h_signalbdB->SetBinContent(1,exptbdevnts);			
-			// Data histogram
-			h_dataB->SetBinContent(1,obsrvbdwin);
-		}
-		else {
-			//Rare bkgd Histogram
-			h_rarebkgB->SetBinContent(1,rarebkgshldrs);
-			h_rarebkgB->SetBinContent(2,rarebkgbdwin); 
-			
-			//Combinatorial bkgd Histogram
-			h_combbkgB->SetBinContent(1,combkg);
-			h_combbkgB->SetBinContent(2,combkgbd); 
-			
-			//Signal Histograms
-			h_signalbdB->SetBinContent(1,0.0);
-			h_signalbdB->SetBinContent(2,exptbdevnts);
-			
-			// Data histogram
-			h_dataB->SetBinContent(1,obsrvshldrs);
-			h_dataB->SetBinContent(2,obsrvbdwin);
-		}
+		//Rare bkgd Histogram
+		h_rarebkgB->SetBinContent(1,rarebkgbdwin); 
+		
+		//Combinatorial bkgd Histogram
+		h_combbkgB->SetBinContent(1,combkgbd); 
+		
+		//Signal Histograms
+		h_signalbdB->SetBinContent(1,exptbdevnts);
+		h_signalbdB->Scale(d_scale);
+		
+		// Bs contribution histogram
+		h_signalbsB->SetBinContent(1,exptbsevntsbdwin);
+		
+		// Data histogram
+		h_dataB->SetBinContent(1,obsrvbdwin);
+		
 		cout << "<<<<<< Done Setting up Histos for Barrel Channel>>>>>>>" << endl;
 		
 		// Initialize everything
@@ -1312,11 +1362,11 @@ if (cms12bd) {
 		nps_low[0] = -rarebkgshldrserr/rarebkgshldrs;
 		nps_high[0] = rarebkgshldrserr/rarebkgshldrs;
 		
-		ename[1] = pdsname;
-		nps_low[1] = -0.00741162/0.0712015;
-		nps_high[1] = 0.00741162/0.0712015;		
+//		ename[1] = pdsname;
+//		nps_low[1] = -0.00741162/0.0712015;
+//		nps_high[1] = 0.00741162/0.0712015;		
 		
-		nps_count=2;
+		nps_count=1;
 		
 		pssnflg = 0;
 		sclflg = 0;
@@ -1367,6 +1417,38 @@ if (cms12bd) {
 							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
 		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for combinatorial background" << endl;
 		
+		// Add Bs background templates
+		for(int i=0;i<NSYS;i++)
+		{
+			nps_low[i]  = 0;
+			nps_high[i] = 0;
+			lowsigma[i] = 0;
+			highsigma[i]= 0;
+			lowshape[i] = 0;
+			highshape[i]= 0;
+		}
+		
+		sfact = 1;
+		
+		ename[0] = unconstrned;
+		nps_low[0] = -0.00741162/0.0712015;
+		nps_high[0] = 0.00741162/0.0712015;		
+		
+		nps_count=1;
+		
+		pssnflg = 0;
+		sclflg = 0;
+		// Construct test/null hypothesis for pseudo-experiments.
+		nullhyp_pe->add_template(h_signalbsB,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		testhyp_pe->add_template(h_signalbsB,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		nps_count=0;
+		nullhyp->add_template(h_signalbsB,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		testhyp->add_template(h_signalbsB,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
 		
 		// Add signal templates
 		for(int i=0;i<NSYS;i++) {
@@ -1461,33 +1543,20 @@ if (cms12bd) {
 		Double_t toteff = 0.0016; Double_t totefferr = 0.0002;
 		
 		// Setup the Histos
-		if (lhcbd12) {
-			//Rare bkgd Histogram
-			h_rarebkgE->SetBinContent(1,rarebkgbdwin); 
-			//Combinatorial bkgd Histogram
-			h_combbkgE->SetBinContent(1,combkgbd); 
-			//Signal Histograms
-			h_signalbdE->SetBinContent(1,exptbdevnts);
-			// Data histogram
-			h_dataE->SetBinContent(1,obsrvbdwin);
-		}
-		else {
-			//Rare bkgd Histogram
-			h_rarebkgE->SetBinContent(1,rarebkgshldrs);
-			h_rarebkgE->SetBinContent(2,rarebkgbdwin); 
-			
-			//Combinatorial bkgd Histogram
-			h_combbkgE->SetBinContent(1,combkg);
-			h_combbkgE->SetBinContent(2,combkgbd); 
-			
-			//Signal Histograms
-			h_signalbdE->SetBinContent(1,0.0);
-			h_signalbdE->SetBinContent(2,exptbdevnts);
-			
-			// Data histogram
-			h_dataE->SetBinContent(1,obsrvshldrs);
-			h_dataE->SetBinContent(2,obsrvbdwin);
-		}
+		//Rare bkgd Histogram
+		h_rarebkgE->SetBinContent(1,rarebkgbdwin); 
+		
+		//Combinatorial bkgd Histogram
+		h_combbkgE->SetBinContent(1,combkgbd); 
+		
+		//Signal Histograms
+		h_signalbdE->SetBinContent(1,exptbdevnts);
+		h_signalbdE->Scale(d_scale);
+		
+		// Bs contribution Histogram
+		h_signalbsE->SetBinContent(1,exptbsevntsbdwin);
+		// Data histogram
+		h_dataE->SetBinContent(1,obsrvbdwin);
 		cout << "<<<<<< Done Setting up Histos for Endcap Channel>>>>>>>" << endl;
 		
 		// Initialize everything
@@ -1507,11 +1576,11 @@ if (cms12bd) {
 		nps_low[0] = -rarebkgshldrserr/rarebkgshldrs;
 		nps_high[0] = rarebkgshldrserr/rarebkgshldrs;
 		
-		ename[1] = pdsname;
-		nps_low[1] = -0.0148983/0.163842;
-		nps_high[1] = 0.0148983/0.163842;
+//		ename[1] = pdsname;
+//		nps_low[1] = -0.0148983/0.163842;
+//		nps_high[1] = 0.0148983/0.163842;
 		
-		nps_count=2;
+		nps_count=1;
 		
 		pssnflg = 0;
 		sclflg = 0;
@@ -1560,6 +1629,39 @@ if (cms12bd) {
 		testhyp->add_template(h_combbkgE,sfact,nps_count,ename,nps_low,nps_high,
 							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
 		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for combinatorial background" << endl;
+		
+		// Add Bs background templates
+		for(int i=0;i<NSYS;i++)
+		{
+			nps_low[i]  = 0;
+			nps_high[i] = 0;
+			lowsigma[i] = 0;
+			highsigma[i]= 0;
+			lowshape[i] = 0;
+			highshape[i]= 0;
+		}
+		
+		sfact = 1;
+		
+		ename[0] = unconstrned;
+		nps_low[0] = -0.0148983/0.163842;
+		nps_high[0] = 0.0148983/0.163842;
+		
+		nps_count=1;
+		
+		pssnflg = 0;
+		sclflg = 0;
+		// Construct test/null hypothesis for pseudo-experiments.
+		nullhyp_pe->add_template(h_signalbsE,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		testhyp_pe->add_template(h_signalbsE,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		nps_count=0;
+		nullhyp->add_template(h_signalbsE,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		testhyp->add_template(h_signalbsE,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
 		
 		// Add signal templates
 		for(int i=0;i<NSYS;i++) {
@@ -1710,6 +1812,38 @@ TH1D *h_lhcbsig2[N_MASS_BINS12][N_BDT_BINS12];
 TH1D *h_lhcbdat2[N_MASS_BINS12][N_BDT_BINS12];
 string s_lhcbchan2[N_MASS_BINS12][N_BDT_BINS12];
 
+// Setting up the Bd LHCb winter 11-12 data
+const static expectation_t bkg3[N_MASS_BINS12][N_BDT_BINS12] = {
+	{expectation_t(2003, 38, 39), expectation_t(61, 12, 11), expectation_t(16.6, 4.3, 4.1), expectation_t(4.7, 1.3, 1.2),
+		expectation_t(3.52, 1.13, 0.97), expectation_t(1.11, 0.71, 0.50), expectation_t(1.62, 0.76, 0.59), expectation_t(0.54, 0.53, 0.29)}
+};
+
+const static expectation_t misid3[N_MASS_BINS12][N_BDT_BINS12] = {
+	{expectation_t(0.71, 0.36, 0.26), expectation_t(0.355, 0.146, 0.088), expectation_t(0.279, 0.110, 0.068), expectation_t(0.249, 0.099, 0.055),
+		expectation_t(0.280, 0.109, 0.062), expectation_t(0.264, 0.103, 0.057), expectation_t(0.275, 0.108, 0.060), expectation_t(0.267, 0.106, 0.069)}
+};
+
+const static expectation_t xfeed3[N_MASS_BINS12][N_BDT_BINS12] = {
+	{expectation_t(0.40, 0.11, 0.12), expectation_t(0.193, 0.033, 0.030), expectation_t(0.153, 0.023, 0.021), expectation_t(0.136, 0.017, 0.015),
+		expectation_t(0.158, 0.019, 0.017), expectation_t(0.164, 0.019, 0.017), expectation_t(0.187, 0.022, 0.020), expectation_t(0.194, 0.036, 0.033)}
+};
+
+const static expectation_t sig3[N_MASS_BINS12][N_BDT_BINS12] = {
+	{expectation_t(0.30, 0.086, 0.090), expectation_t(0.145, 0.027, 0.024), expectation_t(0.115, 0.020, 0.017), expectation_t(0.102, 0.014, 0.013),
+		expectation_t(0.119, 0.017, 0.015), expectation_t(0.123, 0.016, 0.015), expectation_t(0.140, 0.019, 0.017), expectation_t(0.145, 0.030, 0.026)}
+};
+
+const static int obs3[N_MASS_BINS12][N_BDT_BINS12] = {
+	{1904, 50, 20, 5, 2, 1, 4, 1}
+};
+// Histos to hold the winter 2011-2012 data 
+TH1D *h_lhcbbkg3[N_MASS_BINS12][N_BDT_BINS12];
+TH1D *h_lhcbmisid3[N_MASS_BINS12][N_BDT_BINS12];
+TH1D *h_lhcbxfeed3[N_MASS_BINS12][N_BDT_BINS12];
+TH1D *h_lhcbsig3[N_MASS_BINS12][N_BDT_BINS12];
+TH1D *h_lhcbdat3[N_MASS_BINS12][N_BDT_BINS12];
+string s_lhcbchan3[N_MASS_BINS12][N_BDT_BINS12];
+
 int counter1 = 0;
 if (lhcbs10) {
 	for (int j = 0; j<N_MASS_BINS; j++) {
@@ -1725,6 +1859,7 @@ if (lhcbs10) {
 			
 			h_lhcbsig1[j][l] = new TH1D(Form("h_lhcbsig1%i%i",j,l),Form("LHCb1 Sgnl M_bn%i G_bn%i",j,l),nbins,xbins);
 			h_lhcbsig1[j][l]->SetBinContent(1,sig1[j][l].value);
+			h_lhcbsig1[j][l]->Scale(d_scale);
 			
 			h_lhcbdat1[j][l] = new TH1D(Form("h_lhcbdat1%i%i",j,l),Form("LHCb1 Obsd M_bn%i G_bn%i",j,l),nbins,xbins);
 			h_lhcbdat1[j][l]->SetBinContent(1,obs1[j][l]);
@@ -1824,6 +1959,7 @@ if (lhcbs11) {
 			
 			h_lhcbsig[j][l] = new TH1D(Form("h_lhcbsig%i%i",j,l),Form("LHCb Sgnl M_bn%i G_bn%i",j,l),nbins,xbins);
 			h_lhcbsig[j][l]->SetBinContent(1,sig[j][l].value);
+			h_lhcbsig[j][l]->Scale(d_scale);
 			
 			h_lhcbdat[j][l] = new TH1D(Form("h_lhcbdat%i%i",j,l),Form("LHCb Obsd M_bn%i G_bn%i",j,l),nbins,xbins);
 			h_lhcbdat[j][l]->SetBinContent(1,obs[j][l]);
@@ -1955,6 +2091,7 @@ if (lhcbs12) {
 			
 			h_lhcbsig2[j][l] = new TH1D(Form("h_lhcbsig2%i%i",j,l),Form("LHCb Sgnl M_bn%i G_bn%i",j,l),nbins,xbins);
 			h_lhcbsig2[j][l]->SetBinContent(1,sig2[j][l].value);
+			h_lhcbsig2[j][l]->Scale(d_scale);
 			
 			h_lhcbdat2[j][l] = new TH1D(Form("h_lhcbdat2%i%i",j,l),Form("LHCb Obsd M_bn%i G_bn%i",j,l),nbins,xbins);
 			h_lhcbdat2[j][l]->SetBinContent(1,obs2[j][l]);
@@ -2066,38 +2203,6 @@ if (lhcbs12) {
 	cout << "Fnished setting up LHCb summer 2011 results, total number of channels = " << counter2 << endl;
 }
 
-// Setting up the Bd LHCb winter 11-12 data
-const static expectation_t bkg3[N_MASS_BINS12][N_BDT_BINS12] = {
-	{expectation_t(2003, 38, 39), expectation_t(61, 12, 11), expectation_t(16.6, 4.3, 4.1), expectation_t(4.7, 1.3, 1.2),
-		expectation_t(3.52, 1.13, 0.97), expectation_t(1.11, 0.71, 0.50), expectation_t(1.62, 0.76, 0.59), expectation_t(0.54, 0.53, 0.29)}
-};
-
-const static expectation_t misid3[N_MASS_BINS12][N_BDT_BINS12] = {
-	{expectation_t(0.71, 0.36, 0.26), expectation_t(0.355, 0.146, 0.088), expectation_t(0.279, 0.110, 0.068), expectation_t(0.249, 0.099, 0.055),
-		expectation_t(0.280, 0.109, 0.062), expectation_t(0.264, 0.103, 0.057), expectation_t(0.275, 0.108, 0.060), expectation_t(0.267, 0.106, 0.069)}
-};
-
-const static expectation_t xfeed3[N_MASS_BINS12][N_BDT_BINS12] = {
-	{expectation_t(0.40, 0.11, 0.12), expectation_t(0.193, 0.033, 0.030), expectation_t(0.153, 0.023, 0.021), expectation_t(0.136, 0.017, 0.015),
-		expectation_t(0.158, 0.019, 0.017), expectation_t(0.164, 0.019, 0.017), expectation_t(0.187, 0.022, 0.020), expectation_t(0.194, 0.036, 0.033)}
-};
-
-const static expectation_t sig3[N_MASS_BINS12][N_BDT_BINS12] = {
-	{expectation_t(0.30, 0.086, 0.090), expectation_t(0.145, 0.027, 0.024), expectation_t(0.115, 0.020, 0.017), expectation_t(0.102, 0.014, 0.013),
-		expectation_t(0.119, 0.017, 0.015), expectation_t(0.123, 0.016, 0.015), expectation_t(0.140, 0.019, 0.017), expectation_t(0.145, 0.030, 0.026)}
-};
-
-const static int obs3[N_MASS_BINS12][N_BDT_BINS12] = {
-	{1904, 50, 20, 5, 2, 1, 4, 1}
-};
-// Histos to hold the winter 2011-2012 data 
-TH1D *h_lhcbbkg3[N_MASS_BINS12][N_BDT_BINS12];
-TH1D *h_lhcbmisid3[N_MASS_BINS12][N_BDT_BINS12];
-TH1D *h_lhcbxfeed3[N_MASS_BINS12][N_BDT_BINS12];
-TH1D *h_lhcbsig3[N_MASS_BINS12][N_BDT_BINS12];
-TH1D *h_lhcbdat3[N_MASS_BINS12][N_BDT_BINS12];
-string s_lhcbchan3[N_MASS_BINS12][N_BDT_BINS12];
-
 int counter3 = 0;
 if (lhcbd12) {
 	for (int j = 0; j<N_MASS_BINS12; j++) {
@@ -2121,6 +2226,7 @@ if (lhcbd12) {
 			
 			h_lhcbsig3[j][l] = new TH1D(Form("h_lhcbsig3%i%i",j,l),Form("LHCb Sgnl M_bn%i G_bn%i",j,l),nbins,xbins);
 			h_lhcbsig3[j][l]->SetBinContent(1,sig3[j][l].value);
+			h_lhcbsig3[j][l]->Scale(d_scale);
 			
 			h_lhcbdat3[j][l] = new TH1D(Form("h_lhcbdat3%i%i",j,l),Form("LHCb Obsd M_bn%i G_bn%i",j,l),nbins,xbins);
 			h_lhcbdat3[j][l]->SetBinContent(1,obs3[j][l]);

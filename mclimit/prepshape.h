@@ -6,24 +6,25 @@
 gROOT->SetStyle("Plain");
 gROOT->ForceStyle();
 
+// declare some constant variables
+static const double Brbsmm = 3.2e-9;
+static const double Brbdmm = 1.0e-10;
+static const double cmslumiw12 = 5.0;
+
 //declare nusiance parameters
 const int NSYS = 10;
 char *ename[NSYS];
 char accname[]="ACC";// acceptance
 char toteffname[]="TOTEFF";
-//char anaeffname[]="ANAEFF";
-//char mscname[]="MSC";
-//char tauname[]="TAU";
-//char rarename[]="RARE";
 char pdfhadron[]="HPDF";
 char pssname[]="PSS";
-char psdname[]="PSD";
-char pdsname[]="PDS";
+//char psdname[]="PSD";
+//char pdsname[]="PDS";
 char pddname[]="PDD";
 char bkgerrname[]="BKGERR";
 char experrname[]="EXPERR";
 char peakerrname[]="PCKERR";
-//char combbgerrname[]="CMBKGERR";
+char unconstrned[]="UNCONSTRAINED";
 
 char channameB[] = "bmmB";
 char channameE[] = "bmmE";
@@ -49,21 +50,16 @@ TH1 *highshape[NSYS];
 // Opent the data file
 TFile *f_data = TFile::Open("anaBmm.default-11.root");
 TString s_outfilename;
-if (bscombined) s_outfilename = Form("CMS_W12_Bs_Comb_ShpReslts%i.root",i_numb);
-else if (bdcombined) s_outfilename = Form("CMS_W12_Bd_Comb_ShpReslts%i.root",i_numb);
-else if(barrel && bsmm) s_outfilename = Form("CMS_W12_Bs_brrl_ShpReslts%i.root",i_numb);
-else if(endcap && bsmm) s_outfilename = Form("CMS_W12_Bs_endc_ShpReslts%i.root",i_numb);
-else if(barrel && bdmm) s_outfilename = Form("CMS_W12_Bd_brrl_ShpReslts%i.root",i_numb);
-else if(endcap && bdmm) s_outfilename = Form("CMS_W12_Bd_endc_ShpReslts%i.root",i_numb);
+if (bscombined) s_outfilename = Form("CMS_W12_Bs_Comb_ShpReslts%f_%i.root",d_scale,i_numb);
+else if (bdcombined) s_outfilename = Form("CMS_W12_Bd_Comb_ShpReslts%f_%i.root",d_scale,i_numb);
+else if(barrel && bsmm) s_outfilename = Form("CMS_W12_Bs_brrl_ShpReslts%f_%i.root",d_scale,i_numb);
+else if(endcap && bsmm) s_outfilename = Form("CMS_W12_Bs_endc_ShpReslts%f_%i.root",d_scale,i_numb);
+else if(barrel && bdmm) s_outfilename = Form("CMS_W12_Bd_brrl_ShpReslts%f_%i.root",d_scale,i_numb);
+else if(endcap && bdmm) s_outfilename = Form("CMS_W12_Bd_endc_ShpReslts%f_%i.root",d_scale,i_numb);
 cout << s_outfilename << endl;
 TFile f_outfile(s_outfilename,"RECREATE");
 
 //Templates and input Data
-//TH1D *h_sigbsB; TH1D *h_sigbdB; 
-//TH1D *h_bkgB; TH1D *h_obsB; 
-//TH1D *h_sigbsE; TH1D *h_sigbdE; 
-//TH1D *h_bkgE; TH1D *h_obsE; 
-
 TH1D *h_sigbsB = (TH1D*)f_data->Get("Bs_cnc_chan0");
 TH1D *h_sigbdB = (TH1D*)f_data->Get("Bd_cnc_chan0");
 TH1D *h_bkgB = (TH1D*)f_data->Get("bRare_cnc");
@@ -160,17 +156,15 @@ if (barrel) {
 		h_rarebkgB->SetBinContent(i,h_bkgB->GetBinContent(lowmassbin+i));
 		
 		//Signal Histograms
-		if (bsmm) {
-			h_signalbsB->SetBinContent(i,h_sigbsB->GetBinContent(lowmassbin+i));
-		}
-		if (bdmm) {
-			h_signalbdB->SetBinContent(i,h_sigbdB->GetBinContent(lowmassbin+i));
-		}
+		h_signalbsB->SetBinContent(i,h_sigbsB->GetBinContent(lowmassbin+i));
+		h_signalbdB->SetBinContent(i,h_sigbdB->GetBinContent(lowmassbin+i));
 		
 		// Data histogram
 		h_dataB->SetBinContent(i,h_obsB->GetBinContent(lowmassbin+i));
 	}
-	
+	if (bsmm) h_signalbsB->Scale(d_scale);
+	if (bdmm) h_signalbdB->Scale(d_scale);
+
 	// Combinatorial background histo
 	h_combbkgB->FillRandom("myft",10000);
 	Double_t scale = combkgtot/h_combbkgB->Integral();
@@ -236,27 +230,25 @@ if (barrel) {
 	sfact = 1;
 	if (bsmm) {
 		ename[0] = bkgerrname;
-		//		nps_low[0] = -0.632963/3.03294;
-		//		nps_high[0] = 0.632963/3.03294;
 		nps_low[0] = -rarebkgshldrserr/rarebkgshldrs;
 		nps_high[0] = rarebkgshldrserr/rarebkgshldrs;
 		
-		ename[1] = psdname;
-		nps_low[1] = -0.0224451/0.291961;
-		nps_high[1] = 0.0224451/0.291961;
+//		ename[1] = psdname;
+//		nps_low[1] = -0.0224451/0.291961;
+//		nps_high[1] = 0.0224451/0.291961;
 		
-		nps_count=2;	
+		nps_count=1;	
 	}	
 	if (bdmm) {
 		ename[0] = bkgerrname;
 		nps_low[0] = -rarebkgshldrserr/rarebkgshldrs;
 		nps_high[0] = rarebkgshldrserr/rarebkgshldrs;
 		
-		ename[1] = pdsname;
-		nps_low[1] = -0.00741162/0.0712015;
-		nps_high[1] = 0.00741162/0.0712015;		
+//		ename[1] = pdsname;
+//		nps_low[1] = -0.00741162/0.0712015;
+//		nps_high[1] = 0.00741162/0.0712015;		
 		
-		nps_count=2;
+		nps_count=1;
 	}
 	
 	pssnflg = 0;
@@ -274,6 +266,70 @@ if (barrel) {
 						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
 	cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
 	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// Add Bd/bs background templates
+	for(int i=0;i<NSYS;i++)
+	{
+		nps_low[i]  = 0;
+		nps_high[i] = 0;
+		lowsigma[i] = 0;
+		highsigma[i]= 0;
+		lowshape[i] = 0;
+		highshape[i]= 0;
+	}
+	
+	sfact = 1;
+	if (bsmm) {
+		ename[0] = unconstrned;
+		nps_low[0] = -0.0224451/0.291961;
+		nps_high[0] = 0.0224451/0.291961;
+		
+//		ename[1] = psdname;
+//		nps_low[1] = -0.0224451/0.291961;
+//		nps_high[1] = 0.0224451/0.291961;
+		
+		nps_count=1;	
+		pssnflg = 0;
+		sclflg = 0;
+		
+		// Construct test/null hypothesis for pseudo-experiments.
+		nullhyp_pe->add_template(h_signalbdB,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		testhyp_pe->add_template(h_signalbdB,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		nps_count=0;
+		nullhyp->add_template(h_signalbdB,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		testhyp->add_template(h_signalbdB,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
+	}	
+	if (bdmm) {
+		ename[0] = unconstrned;
+		nps_low[0] = -0.00741162/0.0712015;
+		nps_high[0] = 0.00741162/0.0712015;
+		
+//		ename[1] = pdsname;
+//		nps_low[1] = -0.00741162/0.0712015;
+//		nps_high[1] = 0.00741162/0.0712015;		
+		
+		nps_count=1;
+		pssnflg = 0;
+		sclflg = 0;
+		
+		// Construct test/null hypothesis for pseudo-experiments.
+		nullhyp_pe->add_template(h_signalbsB,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		testhyp_pe->add_template(h_signalbsB,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		nps_count=0;
+		nullhyp->add_template(h_signalbsB,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		testhyp->add_template(h_signalbsB,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
+		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
+	}
+	///////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Add signal templates
 	for(int i=0;i<NSYS;i++) {
@@ -286,19 +342,16 @@ if (barrel) {
 	}
 
 	if (bsmm) {
+		
 		ename[0] = pdfhadron;
 		nps_low[0] = -0.021/0.267;
 		nps_high[0] = 0.021/0.267;
-//		nps_low[0] = -0.1192/3.5487;
-//		nps_high[0] = 0.1192/3.5487;
 
 		ename[1] = toteffname;
 		nps_low[1] = -totefferr/toteff;
 		nps_high[1] = totefferr/toteff;
 		
 		ename[2] = experrname;
-//		nps_low[2] = -0.65/3.9;
-//		nps_high[2] = 0.65/3.9;
 		nps_low[2] = -totbswinerr/totbswin;
 		nps_high[2] = totbswinerr/totbswin;
 		
@@ -428,16 +481,14 @@ if (endcap) {
 		h_rarebkgE->SetBinContent(i,h_bkgE->GetBinContent(lowmassbin+i));
 		
 		//Signal Histograms
-		if (bsmm) {
-			h_signalbsE->SetBinContent(i,h_sigbsE->GetBinContent(lowmassbin+i));
-		}
-		if (bdmm) {
-			h_signalbdE->SetBinContent(i,h_sigbdE->GetBinContent(lowmassbin+i));
-		}
+		h_signalbsE->SetBinContent(i,h_sigbsE->GetBinContent(lowmassbin+i));
+		h_signalbdE->SetBinContent(i,h_sigbdE->GetBinContent(lowmassbin+i));
 		
 		// Data histogram
 		h_dataE->SetBinContent(i,h_obsE->GetBinContent(lowmassbin+i));
 	}
+	if (bsmm) h_signalbsE->Scale(d_scale);
+	if (bdmm) h_signalbdE->Scale(d_scale);
 	
 	// Combinatorial background histo
 	h_combbkgE->FillRandom("myft",10000);
@@ -489,6 +540,7 @@ if (endcap) {
 						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
 	cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for combinatorial background" << endl;
 	
+	// Add rare background templates
 	// Initialize everything
 	for(int i=0;i<NSYS;i++)
 	{
@@ -500,29 +552,28 @@ if (endcap) {
 		highshape[i]= 0;
 	}
 	
-	// Add rare background templates
 	sfact = 1;
 	if (bsmm) {
 		ename[0] = bkgerrname;
 		nps_low[0] = -rarebkgshldrserr/rarebkgshldrs;
 		nps_high[0] = rarebkgshldrserr/rarebkgshldrs;
 		
-		ename[1] = psdname;
-		nps_low[1] = -0.0285105/0.318653;
-		nps_high[1] = 0.0285105/0.318653;
+//		ename[1] = psdname;
+//		nps_low[1] = -0.0285105/0.318653;
+//		nps_high[1] = 0.0285105/0.318653;
 		
-		nps_count=2;	
+		nps_count=1;	
 	}	
 	if (bdmm) {
 		ename[0] = bkgerrname;
 		nps_low[0] = -rarebkgshldrserr/rarebkgshldrs;
 		nps_high[0] = rarebkgshldrserr/rarebkgshldrs;
 		
-		ename[1] = pdsname;
-		nps_low[1] = -0.0148983/0.163842;
-		nps_high[1] = 0.0148983/0.163842;
+//		ename[1] = pdsname;
+//		nps_low[1] = -0.0148983/0.163842;
+//		nps_high[1] = 0.0148983/0.163842;
 		
-		nps_count=2;
+		nps_count=1;
 	}
 	
 	pssnflg = 0;
@@ -540,6 +591,65 @@ if (endcap) {
 						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
 	cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
 
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// Add Bs/Bd background templates
+	// Initialize everything
+	for(int i=0;i<NSYS;i++)
+	{
+		nps_low[i]  = 0;
+		nps_high[i] = 0;
+		lowsigma[i] = 0;
+		highsigma[i]= 0;
+		lowshape[i] = 0;
+		highshape[i]= 0;
+	}
+	
+	sfact = 1;
+	if (bsmm) {
+		ename[0] = unconstrned;
+		nps_low[0] = -0.0285105/0.318653;
+		nps_high[0] = 0.0285105/0.318653;
+		
+		nps_count=1;	
+		pssnflg = 0;
+		sclflg = 0;
+		
+		// Construct test/null hypothesis for pseudo-experiments.
+		nullhyp_pe->add_template(h_signalbdE,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		testhyp_pe->add_template(h_signalbdE,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		nps_count=0;
+		nullhyp->add_template(h_signalbdE,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		testhyp->add_template(h_signalbdE,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
+	}	
+	if (bdmm) {
+		ename[0] = unconstrned;
+		nps_low[0] = -0.0148983/0.163842;
+		nps_high[0] = 0.0148983/0.163842;
+		
+		nps_count=2;
+		pssnflg = 0;
+		sclflg = 0;
+		
+		// Construct test/null hypothesis for pseudo-experiments.
+		nullhyp_pe->add_template(h_signalbsE,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		testhyp_pe->add_template(h_signalbsE,sfact,nps_count,ename,nps_low,nps_high,
+								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		nps_count=0;
+		nullhyp->add_template(h_signalbsE,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		testhyp->add_template(h_signalbsE,sfact,nps_count,ename,nps_low,nps_high,
+							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
+		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
+	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
 	// Add signal templates
 	for(int i=0;i<NSYS;i++) {
 		nps_low[i] = 0;
@@ -554,8 +664,6 @@ if (endcap) {
 		ename[0] = pdfhadron;
 		nps_low[0] = -0.021/0.267;
 		nps_high[0] = 0.021/0.267;
-//		nps_low[0] = -0.1192/3.5487;
-//		nps_high[0] = 0.1192/3.5487;
 		
 		ename[1] = toteffname;
 		nps_low[1] = -totefferr/toteff;

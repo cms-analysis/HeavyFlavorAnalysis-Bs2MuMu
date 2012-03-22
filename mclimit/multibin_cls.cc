@@ -23,12 +23,14 @@ int main(int argc, char **argv)
 	delete gRandom;
 	gRandom = (TRandom*) new TRandom3;
 	
-	if (argc<3||argc>3) {
+	if (argc<4||argc>4) {
 		cout << endl;
 		cout << "Usage: bin/multibin_cls option1 option2" << endl;
-		cout << "Set option1 to bsbarrel, bdbarrel, bscomb, bdcomb" << endl;
+		cout << "Set option1 to: bsbarrel, bdbarrel, bsendcap, bdendcap, bscomb, or bdcomb" << endl; 
 		cout << "Set option2 to any int (it will be used to set the random seed" << endl;
 		cout << "NOTE: In TRandom3, SetSeed(0) is always random so the results are NOT reproducible." << endl;
+		cout << "Option3 is a float used to scale the signal histogram." << endl;
+		cout << "***NOTE: Should be set to 1.0 for normal calculations or range from 0.5-2.0 for CLs scans.***" << endl;
 		cout << endl;
 		return 0;		
 	}
@@ -70,18 +72,19 @@ int main(int argc, char **argv)
 	}
 	
 	int i_numb = atoi(argv[2]);
+	double d_scale = atof(argv[3]);
 
 	cout << "Analyzing signal " << argv[1] << ", for channel " << argv[2] 
 		 << ", with random seed " << i_numb << endl;
 	gRandom->SetSeed(i_numb);
 
 	TString s_outputfile;
-	if (bscombined) s_outputfile = Form("CMS_W12_Bs_Comb_ShpReslts%i.txt",i_numb);
-	else if (bdcombined) s_outputfile = Form("CMS_W12_Bd_Comb_ShpReslts%i.txt",i_numb);
-	else if(barrel && bsmm) s_outputfile = Form("CMS_W12_Bs_brrl_ShpReslts%i.txt",i_numb);
-	else if(endcap && bsmm) s_outputfile = Form("CMS_W12_Bs_endc_ShpReslts%i.txt",i_numb);
-	else if(barrel && bdmm) s_outputfile = Form("CMS_W12_Bd_brrl_ShpReslts%i.txt",i_numb);
-	else if(endcap && bdmm) s_outputfile = Form("CMS_W12_Bd_endc_ShpReslts%i.txt",i_numb);
+	if (bscombined) s_outputfile = Form("CMS_W12_Bs_Comb_ShpReslts%f_%i.txt",d_scale,i_numb);
+	else if (bdcombined) s_outputfile = Form("CMS_W12_Bd_Comb_ShpReslts%f_%i.txt",d_scale,i_numb);
+	else if(barrel && bsmm) s_outputfile = Form("CMS_W12_Bs_brrl_ShpReslts%f_%i.txt",d_scale,i_numb);
+	else if(endcap && bsmm) s_outputfile = Form("CMS_W12_Bs_endc_ShpReslts%f_%i.txt",d_scale,i_numb);
+	else if(barrel && bdmm) s_outputfile = Form("CMS_W12_Bd_brrl_ShpReslts%f_%i.txt",d_scale,i_numb);
+	else if(endcap && bdmm) s_outputfile = Form("CMS_W12_Bd_endc_ShpReslts%f_%i.txt",d_scale,i_numb);
 	
 	ofstream f_outputfile;
 	f_outputfile.open(s_outputfile);
@@ -135,7 +138,7 @@ int main(int argc, char **argv)
 	
 	mclimit_csm* mymclimit = (mclimit_csm*) new mclimit_csm();		
 	//print out pseudo-experiments details 
-	//mymclimit->setpxprintflag(1);	
+	mymclimit->setpxprintflag(0);	
 	cout << ">>>>>> setting up hypotheses <<<<<<<" << endl;
 	mymclimit->set_null_hypothesis(nullhyp);
 	mymclimit->set_test_hypothesis(testhyp);
@@ -162,11 +165,11 @@ int main(int argc, char **argv)
 	cout << "Test statistic in null hypothesis (H0), medium --> "        << "tsbmed: "  << d_tsbmed << endl;
 	cout << "Test statistic in null hypothesis (H0), 1sig upper edge --> " << "tsbp1: " << mymclimit->tsbp1() << endl;
 	cout << "Test statistic in null hypothesis (H0), 2sig upper edge --> " << "tsbp2: " << mymclimit->tsbp2() << endl;
-	cout << "Test statistic in null hypothesis (H1), 2sig low edge --> "   << "tssm2: " << mymclimit->tssm2() << endl;
-	cout << "Test statistic in null hypothesis (H1), 1sig low edge --> "   << "tssm1: " << mymclimit->tssm1() << endl;
-	cout << "Test statistic in null hypothesis (H1), medium --> "         << "tssmed: " << d_tssmed << endl;
-	cout << "Test statistic in null hypothesis (H1), 1sig upper edge --> " << "tssp1: " << mymclimit->tssp1() << endl;
-	cout << "Test statistic in null hypothesis (H1), 2sig upper edge --> " << "tssp2: " << mymclimit->tssp2() << endl;
+	cout << "Test statistic in test hypothesis (H1), 2sig low edge --> "   << "tssm2: " << mymclimit->tssm2() << endl;
+	cout << "Test statistic in test hypothesis (H1), 1sig low edge --> "   << "tssm1: " << mymclimit->tssm1() << endl;
+	cout << "Test statistic in test hypothesis (H1), medium --> "         << "tssmed: " << d_tssmed << endl;
+	cout << "Test statistic in test hypothesis (H1), 1sig upper edge --> " << "tssp1: " << mymclimit->tssp1() << endl;
+	cout << "Test statistic in test hypothesis (H1), 2sig upper edge --> " << "tssp2: " << mymclimit->tssp2() << endl;
 	
 	f_outputfile << "CLb = " << mymclimit->clb() << endl;
 	f_outputfile << "CLsb = " << mymclimit->clsb() << endl;
@@ -213,125 +216,129 @@ int main(int argc, char **argv)
 	f_outputfile << "Probability of a 5 sigma discovery assuming null hyp. is true: Prob = " << mymclimit->p5sigman() << endl 
 																													 << endl; 
 	
-	cout << "<<<<<<<< Getting results from Rate calculations >>>>>>>>" << endl;
+	cout << "<<<<<<<< Calculating scale factors at 95% CL" << endl;
 	double d_sf95 = mymclimit->s95(); double d_s95m2 = mymclimit->s95m2();
 	double d_s95m1 = mymclimit->s95m1(); double d_s95med = mymclimit->s95med();
 	double d_s95p1 = mymclimit->s95p1(); double d_s95p2 = mymclimit->s95p2();
 	double d_lumi3s = mymclimit->lumi3s(); double d_lumi5s = mymclimit->lumi5s(); //double d_lumi95 = mymclimit->lumi95();
-	 cout  << "Observed scale factor of 95% CL excluded signal: sc_f = " << d_sf95 << endl;
-	 cout  << "Expected scale factor at 95% CL in the null hyp.: sc_f(-2sig) = " << d_s95m2 << endl;
-	 cout  << "Expected scale factor at 95% CL in the null hyp.: sc_f(-1sig) = " << d_s95m1 << endl;
-	 cout  << "Expected scale factor at 95% CL in the null hyp.: sc_f(median) = " << d_s95med << endl;
-	 cout  << "Expected scale factor at 95% CL in the null hyp.: sc_f(+1sig) = " << d_s95p1 << endl;
-	 cout  << "Expected scale factor at 95% CL in the null hyp.: sc_f(+2sig) = " << d_s95p2 << endl << endl;
+	cout << "<<<<<<<< Finshed calculating scale factors at 95% CL >>>>>>>>" << endl;
+	f_outputfile  << "Observed scale factor of 95% CL excluded signal: sc_f = " << d_sf95 << endl;
+	f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(-2sig) = " << d_s95m2 << endl;
+	f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(-1sig) = " << d_s95m1 << endl;
+	f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(median) = " << d_s95med << endl;
+	f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(+1sig) = " << d_s95p1 << endl;
+	f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(+2sig) = " << d_s95p2 << endl << endl;
 	//	f_outputfile << "Lumi scale factor of 95% CL excluded signal: lumiSf = " << d_lumi95 << endl;
-	f_outputfile << "Lumi needed for 3 sigma discovery: lumi3sig = " << d_lumi3s*4.9 << " fb-1" << endl;
-	f_outputfile << "Lumi needed for 5 sigma discovery: lumi5sig = " << d_lumi5s*4.9 << " fb-1" << endl << endl;
+	f_outputfile << "Lumi needed for 3 sigma discovery: lumi3sig = " << d_lumi3s*cmslumiw12 << " fb-1" << endl;
+	f_outputfile << "Lumi needed for 5 sigma discovery: lumi5sig = " << d_lumi5s*cmslumiw12 << " fb-1" << endl << endl;
+	cout << "<<<<<<<< Finished calculating luminosity scale factors for discovery 95% CL >>>>>>>>" << endl;
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
-	double d_sf90 = mymclimit->s90();double d_s90m2 = mymclimit->s90m2();
+	cout << "<<<<<<<< Calculating scale factors at 90% CL >>>>>>>>" << endl;
+	double d_sf90 = mymclimit->s90(); double d_s90m2 = mymclimit->s90m2();
 	double d_s90m1 = mymclimit->s90m1(); double d_s90med = mymclimit->s90med();
 	double d_s90p1 = mymclimit->s90p1(); double d_s90p2 = mymclimit->s90p2();	
-	 cout  << "Observed scale factor of 90% CL excluded signal: sc_f = " << d_sf90 << endl;
-	 cout  << "Expected scale factor at 90% CL in the null hyp.: sc_f(-2sig) = " << d_s90m2 << endl;
-	 cout  << "Expected scale factor at 90% CL in the null hyp.: sc_f(-1sig) = " << d_s90m1 << endl;
-	 cout  << "Expected scale factor at 90% CL in the null hyp.: sc_f(median) = " << d_s90med << endl;
-	 cout  << "Expected scale factor at 90% CL in the null hyp.: sc_f(+1sig) = " << d_s90p1 << endl;
-	 cout  << "Expected scale factor at 90% CL in the null hyp.: sc_f(+2sig) = " << d_s90p2 << endl << endl;
+	cout << "<<<<<<<< Finshed calculating scale factors at 90% CL >>>>>>>>" << endl;
+	f_outputfile  << "Observed scale factor of 90% CL excluded signal: sc_f = " << d_sf90 << endl;
+	f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(-2sig) = " << d_s90m2 << endl;
+	f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(-1sig) = " << d_s90m1 << endl;
+	f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(median) = " << d_s90med << endl;
+	f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(+1sig) = " << d_s90p1 << endl;
+	f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(+2sig) = " << d_s90p2 << endl << endl;
 	
 	if (bscombined || bdcombined) {
 		if (bsmm) {
-			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*(3.2e-9) << endl;
-			f_outputfile << "95% CL upper limit (combined): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
+			f_outputfile << "95% CL upper limit (combined): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
 
-			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*(3.2e-9) << endl;
-			f_outputfile << "90% CL upper limit (combined): Br(Bs->MuMu) = " << d_sf90*(3.2e-9) << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
+			f_outputfile << "90% CL upper limit (combined): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
 		}
 		if (bdmm) {
-			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*(1.0e-10) << endl;
-			f_outputfile << "95% CL upper limit (combined): Br(Bd->MuMu) = " << d_sf95*(1.0e-10) << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
+			f_outputfile << "95% CL upper limit (combined): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
 			
-			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*(1.0e-10) << endl;
-			f_outputfile << "90% CL upper limit (combined): Br(Bd->MuMu) = " << d_sf90*(1.0e-10) << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
+			f_outputfile << "90% CL upper limit (combined): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
 		}
 	}
 	else if (barrel) {
 		if (bsmm) {
-			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*(3.2e-9) << endl;
-			f_outputfile << "95% CL upper limit (barrel): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
+			f_outputfile << "95% CL upper limit (barrel): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
 			
-			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*(3.2e-9) << endl;
-			f_outputfile << "90% CL upper limit (barrel): Br(Bs->MuMu) = " << d_sf90*(3.2e-9) << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
+			f_outputfile << "90% CL upper limit (barrel): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
 		}
 		if (bdmm) {
-			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*(1.0e-10) << endl;
-			f_outputfile << "95% CL upper limit (barrel): Br(Bd->MuMu) = " << d_sf95*(1.0e-10) << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
+			f_outputfile << "95% CL upper limit (barrel): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
 			
-			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*(1.0e-10) << endl;
-			f_outputfile << "90% CL upper limit (barrel): Br(Bd->MuMu) = " << d_sf90*(1.0e-10) << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
+			f_outputfile << "90% CL upper limit (barrel): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
 		}
 	}
 	else if (endcap) {
 		if (bsmm) {
-			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*(3.2e-9) << endl;
-			f_outputfile << "95% CL upper limit (endcap): Br(Bs->MuMu) = " << d_sf95*(3.2e-9) << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
+			f_outputfile << "95% CL upper limit (endcap): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
 			
-			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*(3.2e-9) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*(3.2e-9) << endl;
-			f_outputfile << "90% CL upper limit (endcap): Br(Bs->MuMu) = " << d_sf90*(3.2e-9) << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
+			f_outputfile << "90% CL upper limit (endcap): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
 		}
 		if (bdmm) {
-			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*(1.0e-10) << endl;
-			f_outputfile << "95% CL upper limit (endcap): Br(Bd->MuMu) = " << d_sf95*(1.0e-10) << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
+			f_outputfile << "95% CL upper limit (endcap): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
 			
-			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*(1.0e-10) << endl;
-			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*(1.0e-10) << endl;
-			f_outputfile << "90% CL upper limit (endcap): Br(Bd->MuMu) = " << d_sf90*(1.0e-10) << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
+			f_outputfile << "90% CL upper limit (endcap): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
 		}
 	}
 		
@@ -357,32 +364,32 @@ int main(int argc, char **argv)
 //	mymclimit->bayes_heinrich(conf_lv, &sf, &sfE);
 //	cout << "Bayes scale factor at 95% CL = " << sf << " +/- " << sfE << endl;
 //	if (bscombined || bdcombined) {
-//		if (bsmm) cout << "Bayes 95% CL upper limit (combined): Br(Bs->MuMu) = " << sf*(3.2e-9) << endl;
-//		if (bdmm) cout << "Bayes 95% CL upper limit (combined): Br(Bd->MuMu) = " << sf*(1.0e-10) << endl;
+//		if (bsmm) cout << "Bayes 95% CL upper limit (combined): Br(Bs->MuMu) = " << sf*Brbsmm << endl;
+//		if (bdmm) cout << "Bayes 95% CL upper limit (combined): Br(Bd->MuMu) = " << sf*Brbdmm << endl;
 //	}
 //	else if (barrel) {
-//		if (bsmm) cout << "Bayes 95% CL upper limit (barrel): Br(Bs->MuMu) = " << sf*(3.2e-9) << endl;
-//		if (bdmm) cout << "Bayes 95% CL upper limit (barrel): Br(Bd->MuMu) = " << sf*(1.0e-10) << endl;
+//		if (bsmm) cout << "Bayes 95% CL upper limit (barrel): Br(Bs->MuMu) = " << sf*Brbsmm << endl;
+//		if (bdmm) cout << "Bayes 95% CL upper limit (barrel): Br(Bd->MuMu) = " << sf*Brbdmm << endl;
 //	}
 //	else if (endcap) {
-//		if (bsmm) cout << "Bayes 95% CL upper limit (endcap): Br(Bs->MuMu) = " << sf*(3.2e-9) << endl;
-//		if (bdmm) cout << "Bayes 95% CL upper limit (endcap): Br(Bd->MuMu) = " << sf*(1.0e-10) << endl;
+//		if (bsmm) cout << "Bayes 95% CL upper limit (endcap): Br(Bs->MuMu) = " << sf*Brbsmm << endl;
+//		if (bdmm) cout << "Bayes 95% CL upper limit (endcap): Br(Bd->MuMu) = " << sf*Brbdmm << endl;
 //	}
 //	
 //	double sf90, sf90E;
 //	mymclimit->bayes_heinrich(0.90, &sf90, &sf90E);
 //	cout << "Bayes scale factor at 90% CL = " << sf90 << " +/- " << sf90E << endl;
 //	if (bscombined || bdcombined) {
-//		if (bsmm) cout << "Bayes 90% CL upper limit (combined): Br(Bs->MuMu) = " << sf90*(3.2e-9) << endl;
-//		if (bdmm) cout << "Bayes 90% CL upper limit (combined): Br(Bd->MuMu) = " << sf90*(1.0e-10) << endl;
+//		if (bsmm) cout << "Bayes 90% CL upper limit (combined): Br(Bs->MuMu) = " << sf90*Brbsmm << endl;
+//		if (bdmm) cout << "Bayes 90% CL upper limit (combined): Br(Bd->MuMu) = " << sf90*Brbdmm << endl;
 //	}
 //	else if (barrel) {
-//		if (bsmm) cout << "Bayes 90% CL upper limit (barrel): Br(Bs->MuMu) = " << sf90*(3.2e-9) << endl;
-//		if (bdmm) cout << "Bayes 90% CL upper limit (barrel): Br(Bd->MuMu) = " << sf90*(1.0e-10) << endl;
+//		if (bsmm) cout << "Bayes 90% CL upper limit (barrel): Br(Bs->MuMu) = " << sf90*Brbsmm << endl;
+//		if (bdmm) cout << "Bayes 90% CL upper limit (barrel): Br(Bd->MuMu) = " << sf90*Brbdmm << endl;
 //	}
 //	else if (endcap) {
-//		if (bsmm) cout << "Bayes 90% CL upper limit (endcap): Br(Bs->MuMu) = " << sf90*(3.2e-9) << endl;
-//		if (bdmm) cout << "Bayes 90% CL upper limit (endcap): Br(Bd->MuMu) = " << sf90*(1.0e-10) << endl;
+//		if (bsmm) cout << "Bayes 90% CL upper limit (endcap): Br(Bs->MuMu) = " << sf90*Brbsmm << endl;
+//		if (bdmm) cout << "Bayes 90% CL upper limit (endcap): Br(Bd->MuMu) = " << sf90*Brbdmm << endl;
 //	}
 //	
 //	cout << "<<<<<<<< Getting Bayes with expect sf Results >>>>>>>>" << endl;
@@ -422,12 +429,12 @@ int main(int argc, char **argv)
 	arrow->Draw();
 	
 	TString s_pdffilename;
-	if (bscombined ) s_pdffilename = Form("CMS_W12_Bs_Comb_ShpReslts%i.pdf", i_numb);
-	else if (bdcombined ) s_pdffilename = Form("CMS_W12_Bd_Comb_ShpReslts%i.pdf", i_numb);
-	else if (bsmm && barrel) s_pdffilename = Form("CMS_W12_Bs_Barrel_ShpReslts%i.pdf", i_numb);
-	else if (bsmm && endcap) s_pdffilename = Form("CMS_W12_Bs_Endcap_ShpReslts%i.pdf", i_numb);
-	else if (bdmm && barrel) s_pdffilename = Form("CMS_W12_Bd_Barrel_ShpReslts%i.pdf", i_numb);
-	else if (bdmm && endcap) s_pdffilename = Form("CMS_W12_Bd_Endcap_ShpReslts%i.pdf", i_numb);
+	if (bscombined ) s_pdffilename = Form("CMS_W12_Bs_Comb_ShpReslts%f_%i.pdf",d_scale,i_numb);
+	else if (bdcombined ) s_pdffilename = Form("CMS_W12_Bd_Comb_ShpReslts%f_%i.pdf",d_scale,i_numb);
+	else if (bsmm && barrel) s_pdffilename = Form("CMS_W12_Bs_brrl_ShpReslts%f_%i.pdf",d_scale,i_numb);
+	else if (bsmm && endcap) s_pdffilename = Form("CMS_W12_Bs_endc_ShpReslts%f_%i.pdf",d_scale,i_numb);
+	else if (bdmm && barrel) s_pdffilename = Form("CMS_W12_Bd_brrl_ShpReslts%f_%i.pdf",d_scale,i_numb);
+	else if (bdmm && endcap) s_pdffilename = Form("CMS_W12_Bd_endc_ShpReslts%f_%i.pdf",d_scale,i_numb);
 	mycanvas->Print(s_pdffilename);
 	
 	delete mymclimit;
