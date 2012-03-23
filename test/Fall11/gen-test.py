@@ -149,7 +149,7 @@ process.RandomNumberGeneratorService.saveFileName =  cms.untracked.string("gen-t
 # -- rest of setup
 # ----------------------------------------------------------------------
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(20000)
+    input = cms.untracked.int32(2000)
 )
 
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
@@ -170,5 +170,6 @@ process.load("HeavyFlavorAnalysis.Bs2MuMu.HFTree_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFMCTruth_cff")
 rootFileName = "gen-test.root"
 process.tree.fileName = rootFileName
+process.tree.requireCand = False
 process.gentest = cms.Path(process.generator*process.bfilter*process.decayfilter*process.MCTruthSequence*process.tree)
 #process.gentest = cms.Path(process.generator*process.bfilter*process.MCTruthSequence*process.tree)
