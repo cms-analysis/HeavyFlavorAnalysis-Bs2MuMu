@@ -68,25 +68,38 @@ massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, 
 	// add only the ones we actually need.
 	// feel free to enlarge this set.
 	stableParticles.insert(13); // muon
+	stableParticles.insert(22); // photon
 	stableParticles.insert(321); // kaon
+	stableParticles.insert(211); // pion+
+	stableParticles.insert(111); // pion0
 	
 	// build the decays we're interested in...
 	decayTable.insert( pair<decay_t,int>(make_decay(3, 531, 13, 13), kDecay_BsToMuMu) );
-	decayTable.insert( pair<decay_t,int>(make_decay(3, 511, 13, 13), kDecay_BdToMuMu) );
-	decayTable.insert( pair<decay_t,int>(make_decay(7, 531, 443, 333, 13, 13, 321, 321), kDecay_BsToJPsiPhi) );
-	decayTable.insert( pair<decay_t,int>(make_decay(5, 521, 443, 321, 13, 13), kDecay_BuToJPsiKp) );
-	decayTable.insert( pair<decay_t,int>(make_decay(7, 511, 443, 310, 211, 211, 13, 13), kDecay_BdToJPsiKs) );
-	decayTable.insert( pair<decay_t,int>(make_decay(3, 511, 321, 321), kDecay_BdToKK) );
+	decayTable.insert( pair<decay_t,int>(make_decay(4, 531, 13, 13, 22), kDecay_BsToMuMuGa) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 531, 321, 321), kDecay_BsToKK) );	
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 531, 321, 211), kDecay_BsToKPi) );	
 	decayTable.insert( pair<decay_t,int>(make_decay(3, 531, 211, 211), kDecay_BsToPiPi) );
-	decayTable.insert( pair<decay_t,int>(make_decay(3, 511, 321, 211), kDecay_BdToKPi) );
-	decayTable.insert( pair<decay_t,int>(make_decay(3, 531, 321, 321), kDecay_BsToKK) );
-	decayTable.insert( pair<decay_t,int>(make_decay(4, 531, 13, 14, 321), kDecay_BsToKMuNu) );
-	decayTable.insert( pair<decay_t,int>(make_decay(3, 5122, 321, 2212), kDecay_LbToKP) );
-	decayTable.insert( pair<decay_t,int>(make_decay(4, 511, 211, 13, 14), kDecay_BdToPiMuNu) );
-	decayTable.insert( pair<decay_t,int>(make_decay(3, 531, 321, 211), kDecay_BsToKPi) );
-	decayTable.insert( pair<decay_t,int>(make_decay(4, 5122, 2212,13,14), kDecay_LbToPMuNu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(4, 531, 211, 13, 14), kDecay_BsToPiMuNu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(4, 531, 321, 13, 14), kDecay_BsToKMuNu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 511, 13, 13), kDecay_BdToMuMu) );
 	decayTable.insert( pair<decay_t,int>(make_decay(3, 511, 211, 211), kDecay_BdToPiPi) );
-	decayTable.insert( pair<decay_t,int>(make_decay(3, 5122, 211, 2212), kDecay_LbToPiP) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 511, 321, 211), kDecay_BdToKPi) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 511, 321, 321), kDecay_BdToKK) );
+	decayTable.insert( pair<decay_t,int>(make_decay(4, 511, 13, 13, 111), kDecay_BdToMuMuPi0) );	
+	decayTable.insert( pair<decay_t,int>(make_decay(4, 511, 211, 13, 14), kDecay_BdToPiMuNu) );	
+	decayTable.insert( pair<decay_t,int>(make_decay(5, 521, 13, 13, 13, 14), kDecay_BuTo3MuNu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 5122, 2212, 211), kDecay_LambdaBToPPi) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 5122, 2212, 321), kDecay_LambdaBToPK) );
+	decayTable.insert( pair<decay_t,int>(make_decay(4, 5122, 2212, 13, 14), kDecay_LambdaBToPMuNu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(7, 531, 443, 333, 13, 13, 321, 321), kDecay_Bs2JpsiPhi) );
+	decayTable.insert( pair<decay_t,int>(make_decay(5, 521, 443, 13, 13, 321), kDecay_Bu2JpsiKp) );
+	decayTable.insert( pair<decay_t,int>(make_decay(7, 511, 443, 13, 13, 313, 321, 211), kDecay_Bd2JpsiKstar) );
+	decayTable.insert( pair<decay_t,int>(make_decay(7, 511, 443, 13, 13, 310, 211, 211), kDecay_Bd2JpsiKs) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 443, 13, 13), kDecay_PsiToMuMu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 100443, 13, 13), kDecay_Psi2SToMuMu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 553, 13, 13), kDecay_Ups1SToMuMu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 100553, 13, 13), kDecay_Ups2SToMuMu) );
+	decayTable.insert( pair<decay_t,int>(make_decay(3, 200553, 13, 13), kDecay_Ups3SToMuMu) );
 	
 	// mothers we're interested in
 	validMothers.insert(511); // Bd

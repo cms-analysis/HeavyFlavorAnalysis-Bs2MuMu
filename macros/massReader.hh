@@ -15,23 +15,35 @@ const static double MMUON = 0.1057;
 const static double MPION = 0.1396;
 const static double MKAON = 0.4937;
 
+// enumeration of known decays for truth matching
+// corresponds to HFTruthCandidates_cff.py
 enum {
-	kDecay_BsToMuMu = 1,
-	kDecay_BdToMuMu = 2,
-	kDecay_BuToJPsiKp = 3,
-	kDecay_BsToJPsiPhi = 4,
-	kDecay_BdToJPsiKs = 5,
-	kDecay_BdToKK = 6,
-	kDecay_BsToPiPi = 7,
-	kDecay_BdToKPi = 8,
-	kDecay_BsToKK = 9,
-	kDecay_BsToKMuNu = 10,
-	kDecay_LbToKP = 11,
-	kDecay_BdToPiMuNu = 12,
-	kDecay_BsToKPi = 13,
-	kDecay_LbToPMuNu = 14,
-	kDecay_BdToPiPi = 15,
-	kDecay_LbToPiP = 16
+	kDecay_BsToMuMu			= 1,
+	kDecay_BsToMuMuGa		= 2,
+	kDecay_BsToKK			= 3,
+	kDecay_BsToKPi			= 4,
+	kDecay_BsToPiPi			= 5,
+	kDecay_BsToPiMuNu		= 6,
+	kDecay_BsToKMuNu		= 7,
+	kDecay_BdToMuMu			= 8,
+	kDecay_BdToPiPi			= 9,
+	kDecay_BdToKPi			= 10,
+	kDecay_BdToKK			= 11,
+	kDecay_BdToMuMuPi0		= 12,
+	kDecay_BdToPiMuNu		= 13,
+	kDecay_BuTo3MuNu		= 14,
+	kDecay_LambdaBToPPi		= 15,
+	kDecay_LambdaBToPK		= 16,
+	kDecay_LambdaBToPMuNu	= 17,
+	kDecay_Bs2JpsiPhi		= 18,
+	kDecay_Bu2JpsiKp		= 19,
+	kDecay_Bd2JpsiKstar		= 20,
+	kDecay_Bd2JpsiKs		= 21,
+	kDecay_PsiToMuMu		= 22,
+	kDecay_Psi2SToMuMu		= 23,
+	kDecay_Ups1SToMuMu		= 24,
+	kDecay_Ups2SToMuMu		= 25,
+	kDecay_Ups3SToMuMu		= 26
 };
 
 // used to store decays...
