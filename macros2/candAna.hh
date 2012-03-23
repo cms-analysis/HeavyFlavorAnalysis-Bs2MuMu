@@ -199,7 +199,7 @@ public:
 
   // -- Analysis distributions
   std::map<std::string, int> fRegion;
-#define NAD 11
+#define NAD 13
   AnalysisDistribution   *fpHLT[NAD], *fpPvZ[NAD], *fpPvN[NAD], *fpPvNtrk[NAD], *fpPvAveW8[NAD]  
     , *fpTracksQual[NAD], *fpTracksPt[NAD],  *fpTracksEta[NAD] 
     , *fpMuonsID[NAD], *fpMuonsPt[NAD], *fpMuonsEta[NAD], *fpMuon1Pt[NAD], *fpMuon2Pt[NAD], *fpMuon1Eta[NAD], *fpMuon2Eta[NAD]

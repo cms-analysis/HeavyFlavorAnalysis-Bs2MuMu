@@ -20,7 +20,7 @@ void makeAll(std::string files = "anaBmm.v11.files", int channels = 31) {
     a4.makeAll(4);
 
     plotResults a0(files.c_str()); 
-    a0.makeAll(3);
+    a0.makeAll(1);
 
     if (channels & 2) {
       a0.makeAll(2);

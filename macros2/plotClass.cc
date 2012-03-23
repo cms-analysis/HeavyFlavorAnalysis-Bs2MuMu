@@ -89,6 +89,8 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
 
 
   fDoUseBDT = false; 
+  fDoPrintSingleEvent = false;
+
   fDoApplyCowboyVeto = false;   
   fDoApplyCowboyVetoAlsoInSignal = false; 
   fInvertedIso = false; 
@@ -450,23 +452,7 @@ void plotClass::loopTree(int mode, int proc) {
   TTree *t;
   t = (TTree*)gDirectory->Get("events");
   TEventList *tlist = new TEventList;
-  int brr, brun, bevt, bls, btm, bq1, bq2, bprocid; 
-  double bg1pt, bg2pt, bg1eta, bg2eta;
-  double bbdt, bbdt2; 
-  double bm, bcm, bpt, beta, bphi, bcosa, balpha, biso, bchi2, bdof, bdocatrk, bfls3d, bfl3dE, bfl3d;
-  double bm1pt, bm1eta, bm2pt, bm2eta, bm1phi, bm2phi;
-  double bk1pt, bk1eta, bk2pt, bk2eta; 
-  double bg3pt, bg3eta, bg4pt, bg4eta; 
-  double bptpsi, bmpsi, bmkk, bdr;
-  double bw8mu, bw8tr;
-  bool bhlt, bgmuid, bgtqual, bjson, bcb;
   double tr1w8(0.), tr2w8(0.), trw8(0.), m1w8(0.), m2w8(0.), mw8(0.0);
-
-  double blip, blipE, btip, btipE; 
-  int bm1pix, bm2pix, bm1bpix, bm2bpix, bm1bpixl1, bm2bpixl1;
-
-  int bclosetrk; 
-  double bpvlip, bpvlips, bpvlip2, bpvlips2, bmaxdoca, bpvip, bpvips, bpvw8; 
 
   t->SetBranchAddress("bdt",&bbdt);
   t->SetBranchAddress("bdt2",&bbdt2);
@@ -573,6 +559,27 @@ void plotClass::loopTree(int mode, int proc) {
     if (1 == mode && 0 == btm) continue;
     if (10 == mode && 0 == btm) continue;
     if (20 == mode && 0 == btm) continue;
+
+    //  -- EPS analysis
+    //     if (false == isMC && brun > 167914) {
+    //       continue;
+    //     }
+
+    // -- print any event
+    if (fDoPrintSingleEvent) {
+      if (brun == fPrintSingleRun && bevt == fPrintSingleEvt) {
+	cout << "====> Printing " << brun << "/" << bevt << endl;
+	string bla("epsSignalEvent"); 
+	static int pse(0); 
+	singleEventPrintout(bla, bla, pse); 
+	++pse;
+	return;
+      } else {
+	continue;
+      }
+    }
+
+
 
     if (isMC && proc > 0) {
       if (bprocid != proc) continue;
@@ -902,52 +909,8 @@ void plotClass::loopTree(int mode, int proc) {
       string suffix(fSuffix); 
       if (fDoUseBDT) suffix += "Bdt"; 
 
-      fTEX << formatTex(brun,      Form("%s:%s%i:run", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bevt,      Form("%s:%s%i:evt", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(fChan,     Form("%s:%s%i:chan", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bm,        Form("%s:%s%i:m", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bpt,       Form("%s:%s%i:pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bphi,      Form("%s:%s%i:phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(beta,      Form("%s:%s%i:eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << Form("\\vdef{%s:%s%i:channel}   {%s }", suffix.c_str(), st.c_str(), ievt, fChan==0?"barrel":"endcap") << endl;
-      fTEX << formatTex((bcb?1:0),    Form("%s:%s%i:cowboy", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bm1pt,     Form("%s:%s%i:m1pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bm2pt,     Form("%s:%s%i:m2pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bm1eta,    Form("%s:%s%i:m1eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bm2eta,    Form("%s:%s%i:m2eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bm1phi,    Form("%s:%s%i:m1phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bm2phi,    Form("%s:%s%i:m2phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(bq1,       Form("%s:%s%i:m1q", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bq2,       Form("%s:%s%i:m2q", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(biso,      Form("%s:%s%i:iso", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-      fTEX << formatTex(balpha,    Form("%s:%s%i:alpha", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(bchi2,     Form("%s:%s%i:chi2", suffix.c_str(), st.c_str(), ievt), 2) << endl;
-      fTEX << formatTex(bdof,      Form("%s:%s%i:dof", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bfls3d,    Form("%s:%s%i:fls3d", suffix.c_str(), st.c_str(), ievt), 2) << endl;
-      fTEX << formatTex(bfl3d,     Form("%s:%s%i:fl3d", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(bfl3dE,    Form("%s:%s%i:fl3dE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+      singleEventPrintout(suffix, st, ievt);
 
-      fTEX << formatTex(bdocatrk,  Form("%s:%s%i:docatrk", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(bclosetrk, Form("%s:%s%i:closetrk", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(blip,      Form("%s:%s%i:lip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(blipE,     Form("%s:%s%i:lipE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(btip,      Form("%s:%s%i:tip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(btipE,     Form("%s:%s%i:tipE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(bpvlip,    Form("%s:%s%i:pvlip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(bpvlips,   Form("%s:%s%i:pvlips", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(bpvip,     Form("%s:%s%i:pvip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(bpvips,    Form("%s:%s%i:pvips", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(bmaxdoca,  Form("%s:%s%i:maxdoca", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex(bpvw8,     Form("%s:%s%i:pvw8", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-      fTEX << formatTex((fChan == 0?bbdt:bbdt2),     Form("%s:%s%i:bdt", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-
-      fTEX << formatTex(bm1pix,    Form("%s:%s%i:m1pix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bm2pix,    Form("%s:%s%i:m2pix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bm1bpix,   Form("%s:%s%i:m1bpix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bm2bpix,   Form("%s:%s%i:m2bpix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bm1bpixl1, Form("%s:%s%i:m1bpixl1", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-      fTEX << formatTex(bm2bpixl1, Form("%s:%s%i:m2bpixl1", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-      
     }
     
   }
@@ -1200,7 +1163,8 @@ void plotClass::loopTree(int mode, int proc) {
       gStyle->SetOptTitle(0); 
       h->SetAxisRange(4.9, 5.9, "X"); 
       //      h->SetMaximum(.2);
-      h->SetMaximum(h->GetBinContent(h->GetMaximumBin())+1); 
+      h->SetMaximum(h->GetBinContent(h->GetMaximumBin())+2); 
+      h->SetMaximum(2.2);
       h->Draw();
       //       drawArrow(0.5, 2); 
       //       drawArrow(0.5, 1); 
@@ -1211,12 +1175,21 @@ void plotClass::loopTree(int mode, int proc) {
       TH1D *dummy2 = new TH1D("dummy2", "", 10, 0., 10.); setFilledHist(dummy2, kRed, kRed, 3365); 
       
       newLegend(0.4, 0.65, 0.8, 0.8); 
-      legg->SetTextSize(0.045);  
+      legg->SetTextSize(0.04);  
+
       legg->AddEntry(dummy1, "B_{s}^{0} signal window", "f"); 
       legg->AddEntry(dummy2, "B^{0} signal window", "f"); 
+      if (0 == i) {
+	legg->SetHeader("Barrel");   
+      } else {
+	legg->SetHeader("Endcap");   
+      }      
+
       legg->Draw();
-      
-      //      stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+
+
+      stamp(0.18, "CMS, 5 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+      //      stamp(0.18, "CMS, 5.3 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
       if (fDoPrint)  {
 	if (fDoUseBDT) c0->SaveAs(Form("%s/bdtsig-data-chan%d.pdf", fDirectory.c_str(), i));
 	else c0->SaveAs(Form("%s/sig-data-chan%d.pdf", fDirectory.c_str(), i));
@@ -1226,15 +1199,19 @@ void plotClass::loopTree(int mode, int proc) {
       setHist(h, kBlack, 20, 1.); 
       setTitles(h, "m_{#mu#mu} [GeV]", Form("Candidates / %3.3f GeV", h->GetBinWidth(1)), 0.05, 1.2, 1.3); 
       h->SetMinimum(0.01); 
-      h->SetMaximum(h->GetBinContent(h->GetMaximumBin())+1); 
-      //      h->SetNdivisions(003, "Y");
+      double ymax0 = (fhMassWithAllCuts[0]->GetBinContent(fhMassWithAllCuts[0]->GetMaximumBin()) >
+	fhMassWithAllCuts[1]->GetBinContent(fhMassWithAllCuts[1]->GetMaximumBin()) ? 
+		      fhMassWithAllCuts[0]->GetBinContent(fhMassWithAllCuts[0]->GetMaximumBin())+2:
+		      fhMassWithAllCuts[1]->GetBinContent(fhMassWithAllCuts[1]->GetMaximumBin())+2);
+      h->SetMaximum(ymax0); 
       h->SetAxisRange(4.9, 5.9, "X"); 
-      //      h->SetMaximum(2.2);
       gStyle->SetOptStat(0); 
       gStyle->SetOptTitle(0); 
       h->Draw();
-      drawArrow(0.6, 1); 
-      drawArrow(0.4, 2); 
+      double yleg = ymax0-1.1;
+      
+      drawArrow(0.6, 1, yleg); 
+      drawArrow(0.4, 2, yleg-0.35); 
 
       tl->SetNDC(kTRUE); 
       tl->SetTextSize(0.07); 
@@ -1247,18 +1224,8 @@ void plotClass::loopTree(int mode, int proc) {
 	tl->DrawLatex(0.6, 0.8, "Endcap");   
       } 
       
-
-//       drawBox(2, 0.5); 
-//       drawBox(1, 0.5); 
-
-//       newLegend(0.4, 0.65, 0.8, 0.8); 
-//       legg->SetTextSize(0.045);  
-//       legg->AddEntry(dummy1, "B_{s}^{0} signal window", "f"); 
-//       legg->AddEntry(dummy2, "B^{0} signal window", "f"); 
-//       legg->Draw();
-
-
-//      stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+      stamp(0.18, "CMS, 5 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+      //      stamp(0.18, "CMS, 5.3 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
       if (fDoPrint) {
 	if (fDoUseBDT) c0->SaveAs(Form("%s/bdtunblinded-sig-data-chan%d.pdf", fDirectory.c_str(), i));
 	else c0->SaveAs(Form("%s/unblinded-sig-data-chan%d.pdf", fDirectory.c_str(), i));
@@ -2019,7 +1986,8 @@ void plotClass::loadFiles(const char *files) {
 	fBFE.insert(make_pair(sname, 0.03)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (MC)")); 
+	//	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (MC)")); 
+	fName.insert(make_pair(sname, "MC simulation")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
       if (string::npos != stype.find("2e33") && string::npos != stype.find("no")) {
@@ -2072,6 +2040,16 @@ void plotClass::loadFiles(const char *files) {
 	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (PU)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
+      if (string::npos != stype.find("CMS") && string::npos != stype.find("no")) {
+	sname = "NoMcCMS"; 
+	fF.insert(make_pair(sname, pF)); 
+	fBF.insert(make_pair(sname, 6.0e-5)); 
+	fBFE.insert(make_pair(sname, 0.03)); 
+	fProdR.insert(make_pair(sname, 1.0)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (CMS)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }	
 
       if (string::npos != stype.find("default") && string::npos != stype.find("cs")) {
 	sname = "CsMc"; 
@@ -2080,7 +2058,8 @@ void plotClass::loadFiles(const char *files) {
 	fBFE.insert(make_pair(sname, 0.32)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (MC)")); 
+	//	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (MC)")); 
+	fName.insert(make_pair(sname, "MC simulation")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
       if (string::npos != stype.find("1e33") && string::npos != stype.find("cs")) {
@@ -2245,6 +2224,40 @@ void plotClass::loadFiles(const char *files) {
 	fName.insert(make_pair(sname, "#Lambda^{0}_{b} #rightarrow p#mu^{-}#bar{#nu}")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
+
+      if (string::npos != stype.find("bg,Bu2PiMuMu")) {
+	sname = "bgBu2PiMuMu"; 
+	fF.insert(make_pair(sname, pF)); 
+	fBF.insert(make_pair(sname, 4.9e-8)); 
+	fBFE.insert(make_pair(sname, 0.2)); 
+	fProdR.insert(make_pair(sname, 1.0)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{+} #rightarrow #pi^{+}#mu^{+}#mu^{-}")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }	
+
+      if (string::npos != stype.find("bg,Bu2KMuMu")) {
+	sname = "bgBu2KMuMu"; 
+	fF.insert(make_pair(sname, pF)); 
+	fBF.insert(make_pair(sname, 5.0e-7)); 
+	fBFE.insert(make_pair(sname, 0.2)); 
+	fProdR.insert(make_pair(sname, 1.0)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{+} #rightarrow K^{+}#mu^{+}#mu^{-}")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }	
+
+      if (string::npos != stype.find("bg,Bs2PhiMuMu")) {
+	sname = "bgBs2PhiMuMu"; 
+	fF.insert(make_pair(sname, pF)); 
+	fBF.insert(make_pair(sname, 1.4e-6)); 
+	fBFE.insert(make_pair(sname, 0.4)); 
+	fProdR.insert(make_pair(sname, 1.0)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{0}_{s} #rightarrow #phi#mu^{+}#mu^{-}")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }	
+
       cout << "open MC file "  << sfile  << " as " << sname << " (" << stype << ") with lumi = " << slumi << endl;
     }
   }
@@ -2442,9 +2455,10 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
   cout << "chi2/dof = " << lF1->GetChisquare() << "/" << lF1->GetNDF() 
        << " prob = " << TMath::Prob(lF1->GetChisquare(), lF1->GetNDF()) 
        << endl;
-
+  
+  shrinkPad(0.13, 0.2);
   setHist(h, kBlack, 20, 1.); 
-  setTitles(h, "m_{#mu#muK} [GeV]", Form("Candidates / %3.3f GeV", h->GetBinWidth(1)), 0.05, 1.2, 1.6); 
+  setTitles(h, "m_{#mu#muK} [GeV]", Form("Candidates / %3.3f GeV", h->GetBinWidth(1)), 0.05, 1.1, 2.0); 
   h->SetMinimum(0.01); 
   gStyle->SetOptStat(0); 
   gStyle->SetOptTitle(0); 
@@ -2457,7 +2471,7 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
   lBg->Draw("same");
 
   tl->SetTextSize(0.07); 
-      tl->SetTextColor(kBlack); 
+  tl->SetTextColor(kBlack); 
   if (0 == fChan) {
     tl->DrawLatex(0.6, 0.8, "Barrel");   
   } 
@@ -2465,8 +2479,9 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
   if (1 == fChan) {
     tl->DrawLatex(0.6, 0.8, "Endcap");   
   } 
-
-  //  stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+  
+  stamp(0.20, "CMS, 5 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+  //  stamp(0.20, "CMS, 5.3 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
   if (fDoPrint) {
     
     string pdfname;
@@ -3088,13 +3103,16 @@ void plotClass::stamp(double x1, string text1, double x2, string text2) {
   tl->SetTextSize(fSize); 
   tl->DrawLatex(x1, 0.91, text1.c_str());   
   tl->DrawLatex(x2, 0.91, text2.c_str()); 
-  //  tl->DrawLatex(x2, 0.85, text2.c_str()); 
+  //  tl->DrawLatex(x1, 0.95, "Preliminary"); 
+  tl->SetTextSize(0.03); 
+  //  tl->DrawLatex(0.47, 0.91, "Preliminary"); 
+  tl->SetTextSize(fSize); 
 }
 
 
 
 // ----------------------------------------------------------------------
-void plotClass::drawArrow(double height, int mode, int color) {
+void plotClass::drawArrow(double height, int mode, double ylegend) {
 
   double ylo(0.01); 
   pl->SetLineWidth(3.); 
@@ -3111,7 +3129,7 @@ void plotClass::drawArrow(double height, int mode, int color) {
     pl->DrawLine(fCuts[0]->mBsHi, height+d, fCuts[0]->mBsHi, height-d); 
 
     if (1) {
-      y = 1.75;
+      y = ylegend;
       x = 5.25; 
       d = 0.05;
       pl->SetLineWidth(3.); 
@@ -3136,7 +3154,7 @@ void plotClass::drawArrow(double height, int mode, int color) {
 
     if (1) {
       x = 5.25; 
-      y = 1.55;
+      y = ylegend;
       d = 0.05;
       pl->SetLineWidth(3.); 
       pl->SetLineStyle(kDashed); 
@@ -3195,4 +3213,55 @@ void plotClass::drawBox(int mode, double hi, int ylo) {
 
   
  
+}
+
+
+// ----------------------------------------------------------------------
+void plotClass::singleEventPrintout(string suffix, string st, int ievt) {
+
+  fTEX << formatTex(brun,      Form("%s:%s%i:run", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(bevt,      Form("%s:%s%i:evt", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(fChan,     Form("%s:%s%i:chan", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(bm,        Form("%s:%s%i:m", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(bpt,       Form("%s:%s%i:pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(bphi,      Form("%s:%s%i:phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(beta,      Form("%s:%s%i:eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << Form("\\vdef{%s:%s%i:channel}   {%s }", suffix.c_str(), st.c_str(), ievt, fChan==0?"barrel":"endcap") << endl;
+  fTEX << formatTex((bcb?1:0),    Form("%s:%s%i:cowboy", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(bm1pt,     Form("%s:%s%i:m1pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(bm2pt,     Form("%s:%s%i:m2pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(bm1eta,    Form("%s:%s%i:m1eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(bm2eta,    Form("%s:%s%i:m2eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(bm1phi,    Form("%s:%s%i:m1phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(bm2phi,    Form("%s:%s%i:m2phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(bq1,       Form("%s:%s%i:m1q", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(bq2,       Form("%s:%s%i:m2q", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(biso,      Form("%s:%s%i:iso", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(balpha,    Form("%s:%s%i:alpha", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(bchi2,     Form("%s:%s%i:chi2", suffix.c_str(), st.c_str(), ievt), 2) << endl;
+  fTEX << formatTex(bdof,      Form("%s:%s%i:dof", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(bfls3d,    Form("%s:%s%i:fls3d", suffix.c_str(), st.c_str(), ievt), 2) << endl;
+  fTEX << formatTex(bfl3d,     Form("%s:%s%i:fl3d", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(bfl3dE,    Form("%s:%s%i:fl3dE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  
+  fTEX << formatTex(bdocatrk,  Form("%s:%s%i:docatrk", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(bclosetrk, Form("%s:%s%i:closetrk", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(blip,      Form("%s:%s%i:lip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(blipE,     Form("%s:%s%i:lipE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(btip,      Form("%s:%s%i:tip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(btipE,     Form("%s:%s%i:tipE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(bpvlip,    Form("%s:%s%i:pvlip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(bpvlips,   Form("%s:%s%i:pvlips", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(bpvip,     Form("%s:%s%i:pvip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(bpvips,    Form("%s:%s%i:pvips", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(bmaxdoca,  Form("%s:%s%i:maxdoca", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(bpvw8,     Form("%s:%s%i:pvw8", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex((fChan == 0?bbdt:bbdt2),     Form("%s:%s%i:bdt", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  
+  fTEX << formatTex(bm1pix,    Form("%s:%s%i:m1pix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(bm2pix,    Form("%s:%s%i:m2pix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(bm1bpix,   Form("%s:%s%i:m1bpix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(bm2bpix,   Form("%s:%s%i:m2bpix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(bm1bpixl1, Form("%s:%s%i:m1bpixl1", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(bm2bpixl1, Form("%s:%s%i:m2bpixl1", suffix.c_str(), st.c_str(), ievt), 0) << endl;
 }

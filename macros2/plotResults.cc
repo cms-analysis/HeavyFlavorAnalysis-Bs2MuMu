@@ -914,7 +914,12 @@ double  plotResults::scaledYield(numbers *a, numbers *no, double chanbf, double 
 
 
 // ----------------------------------------------------------------------
-void plotResults::rareBg() {
+void plotResults::rareBg(std::string mode) {
+
+  if (!fNormProcessed) {
+    setupNorm();
+  }
+
 
   c0->Clear();
   gStyle->SetOptStat(0);
@@ -953,6 +958,7 @@ void plotResults::rareBg() {
 //   double epsPi(0.009), errPi2(0.15*0.15); // relative errors on misid rates are statistical error from Danek's fits
 //   double epsKa(0.01),  errKa2(0.15*0.15); 
 //   double epsPr(0.003), errPr2(0.15*0.15);
+
 
   colors.insert(make_pair("bgLb2KP", 46)); hatches.insert(make_pair("bgLb2KP", 3004)); mscale.insert(make_pair("bgLb2KP", epsPi*epsPr)); 
   chanbf.insert(make_pair("bgLb2KP", 5.6e-6)); 
@@ -996,9 +1002,26 @@ void plotResults::rareBg() {
   chanbf.insert(make_pair("bgBd2PiPi", 5.2e-6)); 
   err.insert(make_pair("bgBd2PiPi", TMath::Sqrt(0.04*0.04 + errPi2 + errPi2))); 
 
-  colors.insert(make_pair("bgBd2PiMuNu", 43)); hatches.insert(make_pair("bgBd2PiMuNu", 3008)); mscale.insert(make_pair("bgBd2PiMuNu", epsPi*epsMu)); 
+  colors.insert(make_pair("bgBd2PiMuNu", 43));hatches.insert(make_pair("bgBd2PiMuNu", 3008));mscale.insert(make_pair("bgBd2PiMuNu", epsPi*epsMu));
   chanbf.insert(make_pair("bgBd2PiMuNu", 1.3e-4)); 
   err.insert(make_pair("bgBd2PiMuNu", TMath::Sqrt(0.2*0.2 + errPi2))); 
+
+
+  colors.insert(make_pair("bgBu2PiMuMu", 50));hatches.insert(make_pair("bgBu2PiMuMu", 3004));mscale.insert(make_pair("bgBu2PiMuMu", epsMu*epsMu));
+  chanbf.insert(make_pair("bgBu2PiMuMu", 1.0e-8)); 
+  err.insert(make_pair("bgBu2PiMuMu", TMath::Sqrt(0.2*0.2))); 
+
+  colors.insert(make_pair("bgBu2KMuMu", 51));hatches.insert(make_pair("bgBu2KMuMu", 3005));mscale.insert(make_pair("bgBu2KMuMu", epsMu*epsMu));
+  chanbf.insert(make_pair("bgBu2KMuMu", 4.3e-7)); 
+  err.insert(make_pair("bgBu2KMuMu", TMath::Sqrt(0.2*0.2))); 
+
+  colors.insert(make_pair("bgBu2KMuMu", 52));hatches.insert(make_pair("bgBu2KMuMu", 3005));mscale.insert(make_pair("bgBu2KMuMu", epsMu*epsMu));
+  chanbf.insert(make_pair("bgBu2KMuMu", 5.0e-7)); 
+  err.insert(make_pair("bgBu2KMuMu", TMath::Sqrt(0.1*0.1))); 
+
+  colors.insert(make_pair("bgBs2PhiMuMu",53));hatches.insert(make_pair("bgBs2PhiMuMu",3006));mscale.insert(make_pair("bgBs2PhiMuMu",epsMu*epsMu));
+  chanbf.insert(make_pair("bgBs2PhiMuMu", 1.4e-6)); 
+  err.insert(make_pair("bgBs2PhiMuMu", TMath::Sqrt(0.4*0.4))); 
 
   newLegend(0.55, 0.3, 0.80, 0.85); 
 
@@ -1020,9 +1043,9 @@ void plotResults::rareBg() {
       continue;
     }
 
-//          if (string::npos == imap->first.find("bgBd2PiMuNu")) {
-//            continue;
-//          }
+    if (mode != "nada" && string::npos == imap->first.find(mode)) {
+      continue;
+    }
 
     if (0 == fF[imap->first]) {
       continue; 
@@ -1104,6 +1127,13 @@ void plotResults::rareBg() {
 	   << endl;
       cout << "yield:      " << yield << endl;
       cout << "misid*teff: " << misid*teff[ichan] << endl;
+
+      double loSb = hRare[ichan]->Integral(hRare[ichan]->FindBin(4.9001), hRare[ichan]->FindBin(5.199));
+      
+      fTEX <<  Form("\\vdef{%s:%s:loSideband%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, 
+		    loSb) << endl;
+      fTEX <<  Form("\\vdef{%s:%s:loSideband%d:err}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, 
+		    loSb*0.3) << endl;
     }
 
     bRare->Add(hRare[0]); 
@@ -1137,14 +1167,21 @@ void plotResults::rareBg() {
   hRareBg0->SetMaximum(1.0); 
   hRareBg0->Draw();
   TH1D *hhRareBg0 = (TH1D*)hRareBg0->GetHistogram(); 
-  hhRareBg0->SetAxisRange(4.9, 5.9, "X"); 
+  if (mode == "nada") hhRareBg0->SetAxisRange(4.9, 5.9, "X"); 
   setTitles(hhRareBg0, "m_{#mu #mu} [GeV]", Form("Candidates/%4.3f GeV", hhRareBg0->GetBinWidth(1)), 0.06, 0.9, 1.5);
   legg->SetHeader("CMS simulation"); 
   legg->Draw(); 
   hhRareBg0->Draw("same");
+  stamp(0.18, "CMS, 5 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+  double size = tl->GetTextSize();
+  tl->SetTextSize(0.07); 
+  tl->DrawLatex(0.25, 0.8, "Barrel");   
+  tl->SetTextSize(size); 
+
   string pdfname;
   if (fDoUseBDT) pdfname = Form("%s/%s_bdt_rare0.pdf", fDirectory.c_str(), fSuffix.c_str());
   else  pdfname = Form("%s/%s_cnc_rare0.pdf", fDirectory.c_str(), fSuffix.c_str());
+  if (mode != "nada") pdfname = Form("%s/%s_cnc_%s_0.pdf", fDirectory.c_str(), mode.c_str(), fSuffix.c_str());
   //  stamp(0.2, "CMS, 4.9 fb^{-1}", 0.65, "#sqrt{s} = 7 TeV"); 
   if (fDoPrint) {
     if (c0) c0->SaveAs(pdfname.c_str());
@@ -1153,14 +1190,19 @@ void plotResults::rareBg() {
   hRareBg1->SetMaximum(1.0); 
   hRareBg1->Draw();
   TH1D *hhRareBg1 = (TH1D*)hRareBg1->GetHistogram(); 
-  hhRareBg1->SetAxisRange(4.9, 5.9, "X"); 
+  if (mode == "nada") hhRareBg1->SetAxisRange(4.9, 5.9, "X"); 
   setTitles(hhRareBg1, "m_{#mu #mu} [GeV]", Form("Candidates/%4.3f GeV", hhRareBg0->GetBinWidth(1)), 0.06, 0.9, 1.5);
   legg->SetHeader("CMS simulation"); 
   legg->Draw(); 
   hhRareBg1->Draw("same");
   if (fDoUseBDT) pdfname = Form("%s/%s_bdt_rare1.pdf", fDirectory.c_str(), fSuffix.c_str());
   else  pdfname = Form("%s/%s_cnc_rare1.pdf", fDirectory.c_str(), fSuffix.c_str());
+  if (mode != "nada") pdfname = Form("%s/%s_cnc_%s_1.pdf", fDirectory.c_str(), mode.c_str(), fSuffix.c_str());
   //  stamp(0.2, "CMS, 4.9 fb^{-1}", 0.65, "#sqrt{s} = 7 TeV"); 
+  stamp(0.18, "CMS, 5 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+  tl->SetTextSize(0.07); 
+  tl->DrawLatex(0.25, 0.8, "Endcap");   
+  tl->SetTextSize(size); 
   if (fDoPrint){
     if (c0) c0->SaveAs(pdfname.c_str());
   }
@@ -2124,4 +2166,15 @@ void plotResults::fls3dVsX(std::string x, std::string cuts, std::string pdfname)
   h1->Draw();
 
   c0->SaveAs(Form("%s/%s", fDirectory.c_str(), pdfname.c_str())); 
+}
+
+
+// ----------------------------------------------------------------------
+void plotResults::setupNorm() {
+
+  fNumbersNo[0]->effTot = 0.0011;
+  fNumbersNo[1]->effTot = 0.00032;
+  fNumbersNo[0]->fitYield = 82712;
+  fNumbersNo[1]->fitYield = 23809;
+
 }

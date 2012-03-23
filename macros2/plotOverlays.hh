@@ -18,6 +18,8 @@ public:
 
   void profileVsEta(const char *var, const char *chan, const char *dir, const char *selection);
 
+  void invertedMuonID(std::string var, std::string cuts, double lo, double hi, int nbin);
+
   void sbsDistributionOverlay(std::string file1, std::string dir1, std::string region1,
 			      std::string file2, std::string dir2, std::string region2 = "A", 
 			      std::string selection="Ao"); 

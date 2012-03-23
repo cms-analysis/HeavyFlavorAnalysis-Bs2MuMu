@@ -131,6 +131,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
   vector<int>::iterator blaIt; 
   
   //   cout << "----------------------------------------------------------------------" << endl;
+  //  cout << " ngenCands: " << gHFEvent->nGenCands() << endl;
   for (int ig = 0; ig < gHFEvent->nGenCands(); ++ig) {
     pGen = gHFEvent->getGenCand(ig);
     if (TMath::Abs(pGen->fID) == fMotherID) {
@@ -142,15 +143,6 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
       genDaughters.clear(); 
       genIndices.clear();
       genMap.clear();
-      // -- version with direct daughters
-      //       for (int id = pGen->fDau1; id <= pGen->fDau2; ++id) {
-      // 	pDau = gHFEvent->getGenCand(id);
-      // 	//	cout << "  daug: ";
-      // 	//	pDau->dump(); 
-      // 	genDaughters.insert(TMath::Abs(pDau->fID)); 
-      // 	genIndices.insert(id); 
-      // 	genMap.insert(make_pair(id, TMath::Abs(pDau->fID))); 
-      //       }
 
       // -- version with descendants
       for (int id = ig+1; id < gHFEvent->nGenCands(); ++id) {
@@ -165,9 +157,17 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	    cout << "  daug: ";
 	    pDau->dump(); 
 	  }
-	  genDaughters.insert(TMath::Abs(pDau->fID)); 
-	  genIndices.insert(id); 
-	  genMap.insert(make_pair(id, TMath::Abs(pDau->fID))); 
+	  if (fPartialDecayMatching) {
+	    if (fDaughtersSet.find(TMath::Abs(pDau->fID)) != fDaughtersSet.end()) {
+	      genDaughters.insert(TMath::Abs(pDau->fID)); 
+	      genIndices.insert(id); 
+	      genMap.insert(make_pair(id, TMath::Abs(pDau->fID))); 
+	    }
+	  } else {
+	    genDaughters.insert(TMath::Abs(pDau->fID)); 
+	    genIndices.insert(id); 
+	    genMap.insert(make_pair(id, TMath::Abs(pDau->fID))); 
+	  }
 	}
       }
 

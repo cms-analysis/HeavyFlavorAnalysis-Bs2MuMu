@@ -15,8 +15,10 @@ public:
   void computeNormUL();
   void computeCsBF();
 
+  void setupNorm();
+
   void acceptancePerProcess();
-  void rareBg();
+  void rareBg(std::string mode = "nada");
   void scaledHist(int mode = 0);
 
   void fls3dEfficiency(std::string cuts, std::string pdfname);

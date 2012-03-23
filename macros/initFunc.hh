@@ -20,12 +20,15 @@ public:
   TF1* pol0(TH1 *h); 
   TF1* pol0(double lo, double hi); 
 
-  TF1* pol1(TH1 *h); 
   TF1* pol1(double lo, double hi); 
-  TF1* pol1Err(double lo, double hi); 
+  TF1* pol1(TH1 *h); 
+  TF1* pol1(TH1 *h, double lo, double hi); 
 
-  TF1* expo(TH1 *h); 
   TF1* expo(double lo, double hi); 
+  TF1* expo(TH1 *h); 
+  TF1* expo(TH1 *h, double lo, double hi); 
+
+  TF1* pol1Err(double lo, double hi); 
   TF1* expoErr(double lo, double hi); 
 
   // -- signal+background functions
@@ -37,8 +40,8 @@ public:
   TF1* expoGauss(TH1 *h, double peak = 5.3, double sigma = 0.04);
 
   TF1* expoErrGauss(TH1 *h, double peak = 5.3, double sigma = 0.04, double preco = 5.14); 
-  TF1* expoErrgauss2c(TH1 *h, double peak = 5.3, double sigma = 0.04, double preco = 5.14); 
-  TF1* expoErrgauss2(TH1 *h, double peak = 5.3, double sigma = 0.04, double preco = 5.14); 
+  TF1* expoErrgauss2c(TH1 *h, double peak = 5.3, double sigma1 = 0.04, double sigma2 = 0.1, double preco = 5.14); 
+  TF1* expoErrgauss2(TH1 *h, double peak = 5.3, double sigma = 0.04, double peak2 = 5.3, double sigma2 = 0.1, double preco = 5.14); 
   TF1* pol1ErrGauss(TH1 *h, double peak = 5.3, double sigma = 0.04, double preco = 5.14); 
 
   TF1* pol0BsBlind(TH1 *h); 

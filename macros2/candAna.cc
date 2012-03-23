@@ -39,6 +39,9 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   fRegion.insert(make_pair("APV0", 9));  // low-NPV events
   fRegion.insert(make_pair("APV1", 10)); // large-NPV events
 
+  fRegion.insert(make_pair("near", 11)); // another PV is closeby 
+  fRegion.insert(make_pair("away", 12)); // the closest other PV is far away
+
 
   // -- BARREL version
   //  const char* inputVars[] = { "alpha", "fls3d", "chi2/dof", "iso", "m1pt", "m2pt", "pt", "m1eta", "docatrk" };
@@ -110,18 +113,55 @@ void candAna::evtAnalysis(TAna01Event *evt) {
       if (fVerbose > 19) cout << "Skipping candidate at " << iC << " which is of type " << pCand->fType << endl;
       continue;
     }
-    if (fVerbose > 2) cout << "Analyzing candidate at " << iC << " which is of type " << TYPE 
-			   << " with sig tracks: " << pCand->fSig1 << " .. " << pCand->fSig2
-			   << " and rec tracks: " 
-			   << fpEvt->getSigTrack(pCand->fSig1)->fIndex
-			   << " .. " 
-			   << fpEvt->getSigTrack(pCand->fSig2)->fIndex
-			   << endl;
+    if (fVerbose > 10) {
+      
+      int gen1(-1), gen2(-1), gen0(-1);
+      gen1 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fID;
+      gen2 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig2)->fIndex)->fGenIndex)->fID;
+      gen0 = fpEvt->getGenCand(fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fMom1)->fID;
 
+      cout << "Analyzing candidate at " << iC << " which is of type " << TYPE 
+	   << " with sig tracks: " << pCand->fSig1 << " .. " << pCand->fSig2
+	   << " and rec tracks: " 
+	   << fpEvt->getSigTrack(pCand->fSig1)->fIndex
+	   << " .. " 
+	   << fpEvt->getSigTrack(pCand->fSig2)->fIndex
+	   << " gen IDs =  " << gen1 << " " << gen2 << " from " << gen0
+	   << " tm = " << fGenM1Tmi << " " << fGenM2Tmi 
+	   << " ctm " << fCandTmi 
+	   << endl;
+      if (TMath::Abs(gen1) != 13 || TMath::Abs(gen2) != 13) fpEvt->dumpGenBlock();
+    }
     fpCand = pCand;
     fCandIdx = iC; 
     // -- call derived functions
     candAnalysis();
+    if (0 && fCandM > 4.99 && fCandM < 5.02 && fCandFLS3d > 13 && fCandA < 0.05 && fMu1Pt > 4.5 && fMu2Pt > 4.5) {
+      cout << "----------------------------------------------------------------------" << endl;
+      int gen1(-1), gen2(-1), gen0(-1);
+      gen1 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fID;
+      gen2 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig2)->fIndex)->fGenIndex)->fID;
+      gen0 = fpEvt->getGenCand(fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fMom1)->fID;
+
+      cout << "Analyzing candidate at " << iC << " which is of type " << TYPE 
+	   << " with sig tracks: " << pCand->fSig1 << " .. " << pCand->fSig2
+	   << " and rec tracks: " 
+	   << fpEvt->getSigTrack(pCand->fSig1)->fIndex
+	   << " .. " 
+	   << fpEvt->getSigTrack(pCand->fSig2)->fIndex << endl
+	   << " gen IDs =  " << gen1 << " " << gen2 << " from " << gen0
+	   << " tm = " << fGenM1Tmi << " " << fGenM2Tmi 
+	   << " ctm " << fCandTmi 
+	   << endl;
+      cout << fpCand->fMass << endl;
+
+      TLorentzVector gm1 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fP;
+      TLorentzVector gm2 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig2)->fIndex)->fGenIndex)->fP;
+      cout << "gen level mass: " << (gm1+gm2).M() << endl;
+      cout << "----------------------------------------------------------------------" << endl;
+      fpEvt->dumpGenBlock();
+    }
+
     if (fIsMC) {
       fTree->Fill(); 
     } else {
@@ -147,6 +187,9 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     if (fPvN > 10) fillCandidateHistograms(fRegion["APV1"]);
     
     fillCandidateHistograms(fRegion[Form("AR%i", fRunRange)]);
+
+    
+
 
     // -- special studies
     //    fillIsoPlots(); // FIXISOPLOTS
@@ -563,7 +606,7 @@ void candAna::candAnalysis() {
 
   fAnaCuts.update(); 
 
-  fPreselection = fWideMass && fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsID && fGoodMuonsPt && fGoodMuonsEta; 
+  fPreselection = fWideMass && fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsPt && fGoodMuonsEta; 
   fPreselection = fPreselection && fGoodPvLip && fGoodPvLipS && fGoodQ; 
   fPreselection = fPreselection && (fCandPt > 5) && (fCandA < 0.2) && (fCandFLS3d > 5) && (fCandChi2/fCandDof < 5); 
 

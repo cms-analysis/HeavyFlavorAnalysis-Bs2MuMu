@@ -81,7 +81,7 @@ echo ls -rtl $ROOTSYS/lib
 ls -rtl $ROOTSYS/lib
 
 
-bin/ulcalc -a "clb" -l 0.95 -o clb.$JOB $JOB
+bin/ulcalc --toys 20000 -a "clb" -l 0.95 -o clb.$JOB $JOB
 cp clb.$JOB /shome/ursl/prod/CMSSW_4_2_8/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/output
 
 bin/ulcalc -a "bayes" -l 0.95 --disable-errors -o bayes.$JOB $JOB

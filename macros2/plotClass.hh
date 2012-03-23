@@ -113,6 +113,7 @@ public:
   void csYield(TH1 *h, int mode, double lo = 5.25, double hi=5.6, double preco=-1.);
   void bgBlind(TH1 *h, int mode = 2, double lo = 4.5, double hi = 6.5); 
 
+  void singleEventPrintout(std::string suffix, std::string st, int ievt);
   void printNumbers(numbers &a, ostream &OUT);
   void initNumbers(numbers *a); 
   int  detChan(double m1eta, double m2eta);
@@ -128,7 +129,7 @@ public:
   virtual std::string scientificTex(double n, double nE, std::string name, double base = 1.e-2, int digits = 2);
   virtual std::string formatTex(double n, std::string name, int digits, int sgn = 0);
   virtual std::string formatTex(double n, std::string name, std::string tag);
-  virtual void drawArrow(double height, int mode = 0, int color = kBlue);
+  virtual void drawArrow(double height, int mode = 0, double y = 0.1);
   virtual void drawBox(int mode, double hi = 0.5, int ylo = 0.01);
   virtual void replaceAll(std::string &s, std::string a, std::string b);
   virtual void makeCanvas(int i = 3);
@@ -220,6 +221,27 @@ public:
   //  numbers fNumbersSig, fNumbersNorm, fNumbersCS; 
   std::vector<numbers*> fNumbersBs, fNumbersBd, fNumbersNo, fNumbersCs, fNumbersBla; 
 
+  // loopTree variables: 
+  int brr, brun, bevt, bls, btm, bq1, bq2, bprocid; 
+  double bg1pt, bg2pt, bg1eta, bg2eta;
+  double bbdt, bbdt2; 
+  double bm, bcm, bpt, beta, bphi, bcosa, balpha, biso, bchi2, bdof, bdocatrk, bfls3d, bfl3dE, bfl3d;
+  double bm1pt, bm1eta, bm2pt, bm2eta, bm1phi, bm2phi;
+  double bk1pt, bk1eta, bk2pt, bk2eta; 
+  double bg3pt, bg3eta, bg4pt, bg4eta; 
+  double bptpsi, bmpsi, bmkk, bdr;
+  double bw8mu, bw8tr;
+  bool bhlt, bgmuid, bgtqual, bjson, bcb;
+
+  double blip, blipE, btip, btipE; 
+  int bm1pix, bm2pix, bm1bpix, bm2bpix, bm1bpixl1, bm2bpixl1;
+
+  int bclosetrk; 
+  double bpvlip, bpvlips, bpvlip2, bpvlips2, bmaxdoca, bpvip, bpvips, bpvw8; 
+
+
+  bool fDoPrintSingleEvent;
+  int  fPrintSingleEvt, fPrintSingleRun;
   bool fDoUseBDT;
   bool fDoApplyCowboyVeto, fDoApplyCowboyVetoAlsoInSignal; 
   bool fInvertedIso;

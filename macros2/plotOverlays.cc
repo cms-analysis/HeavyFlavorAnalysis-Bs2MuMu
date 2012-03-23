@@ -3,6 +3,7 @@
 #include "../macros/AnalysisDistribution.hh"
 #include "../macros/HistCutEfficiency.hh"
 #include "TMath.h"
+#include "TTree.h"
 #include "TFractionFitter.h"
 
 using namespace std; 
@@ -92,6 +93,18 @@ void plotOverlays::makeAll(int verbose) {
   sbsDistributionOverlay("NoMcPU", "candAnaBu2JpsiK", "APV0", "NoMcPU", "candAnaBu2JpsiK", "APV1", "Ao"); 
   if (all) sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "B", "NoMc", "candAnaBu2JpsiK", "B", "Ao");
   if (all) sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "E", "NoMc", "candAnaBu2JpsiK", "E", "Ao");
+
+  cout << " ########################## special CMS MC production #########################" << endl;
+  sbsDistributionOverlay("NoMc2e33", "candAnaBu2JpsiK", "A", "NoMcCMS", "candAnaBu2JpsiK", "A", "Ao"); 
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR3", "NoMc2e33", "candAnaBu2JpsiK", "A", "Ao"); 
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR3", "NoMcCMS", "candAnaBu2JpsiK", "A", "Ao"); 
+
+  sbsDistributionOverlay("NoMc3e33", "candAnaBu2JpsiK", "A", "NoMcCMS", "candAnaBu2JpsiK", "A", "Ao"); 
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR4", "NoMc3e33", "candAnaBu2JpsiK", "A", "Ao"); 
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR4", "NoMcCMS", "candAnaBu2JpsiK", "A", "Ao"); 
+
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "AR5", "NoMc3e33", "candAnaBu2JpsiK", "A", "Ao"); 
+
 
   // -- For control sample, use expo function for bg parametrization
   fMode = 2; 
@@ -409,20 +422,31 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
     }
     h1->SetMinimum(0.1);
     string xtitle = h1->GetXaxis()->GetTitle();
+    double yoffset(1.5); 
+    shrinkPad(0.15, 0.18); 
+    if (string::npos != file1.find("No")) {
+      yoffset = 2.0;
+    }
+    if (string::npos != file1.find("Cs")) yoffset = 1.7;
+
     if (string::npos != xtitle.find("[")) {
       string unit = xtitle.substr(xtitle.find("[")+1, xtitle.find("]")-xtitle.find("[")-1); 
       cout << "%%%%%%%%% > unit: " << unit << endl;
       if (TMath::Abs(h1->GetBinWidth(1) - 1.) < 0.1) {
-	setTitles(h1, h1->GetXaxis()->GetTitle(), Form("Candidates / %2.0f %s", h1->GetBinWidth(1), unit.c_str()), 0.05, 1.1, 1.6); 
+	setTitles(h1, h1->GetXaxis()->GetTitle(), Form("Candidates / %2.0f %s", h1->GetBinWidth(1), unit.c_str()), 0.05, 1.1, yoffset); 
       } else if (h1->GetBinWidth(1) < 0.1) {
-	setTitles(h1, h1->GetXaxis()->GetTitle(), Form("Candidates / %4.3f %s", h1->GetBinWidth(1), unit.c_str()), 0.05, 1.1, 1.6); 
+	setTitles(h1, h1->GetXaxis()->GetTitle(), Form("Candidates / %4.3f %s", h1->GetBinWidth(1), unit.c_str()), 0.05, 1.1, yoffset); 
       }	else {
-	setTitles(h1, h1->GetXaxis()->GetTitle(), Form("Candidates / %2.1f %s", h1->GetBinWidth(1), unit.c_str()), 0.05, 1.1, 1.6); 
+	setTitles(h1, h1->GetXaxis()->GetTitle(), Form("Candidates / %2.1f %s", h1->GetBinWidth(1), unit.c_str()), 0.05, 1.1, yoffset); 
       }
     } else {
-      setTitles(h1, h1->GetXaxis()->GetTitle(), Form("Candidates"), 0.05, 1.1, 1.6); 
+      setTitles(h1, h1->GetXaxis()->GetTitle(), Form("Candidates"), 0.05, 1.1, yoffset); 
     }
-    
+
+    if (doList[i] == "ip") {
+      setTitles(h1, h1->GetXaxis()->GetTitle(), Form("Candidates / %5.4f cm", h1->GetBinWidth(1)), 0.05, 1.1, yoffset); 
+    }
+ 
     setHist(h1, color1, marker1, 1.5); 
     setFilledHist(h1, color1, color1, fill1); 
     h1->SetTitle("");
@@ -452,6 +476,14 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
       } else if (string::npos != file1.find("Sg")) {
 	legg->AddEntry(h1, "Data (sideband)", loption1); 
 	legg->AddEntry(h2, fName[file2].c_str(), loption2); 
+      } else if (string::npos != file1.find("No")) {
+	legg->SetHeader("B^{+} #rightarrow J/#psi K^{+}");
+	legg->AddEntry(h1, "Data", loption1); 
+	legg->AddEntry(h2, fName[file2].c_str(), loption2); 
+      } else if (string::npos != file1.find("Cs")) {
+	legg->SetHeader("B^{0}_{s} #rightarrow J/#psi #phi");
+	legg->AddEntry(h1, "Data", loption1); 
+	legg->AddEntry(h2, fName[file2].c_str(), loption2); 
       } else {
 	legg->AddEntry(h1, "Data", loption1); 
 	legg->AddEntry(h2, fName[file2].c_str(), loption2); 
@@ -459,7 +491,8 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
       legg->Draw(); 
     }
 
-    //    stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+    stamp(0.18, "CMS, 5 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+    //    stamp(0.18, "CMS, 5.3 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
     if (fDoPrint) c0->SaveAs(pdfname.c_str()); 
   }
 
@@ -806,4 +839,14 @@ void plotOverlays::fitDistribution(string var, string sample, string mcsample, s
 }
 
 
+// ----------------------------------------------------------------------
+void plotOverlays::invertedMuonID(string var, string cuts, double lo, double hi, int nbin) {
 
+//   string preselection = "m > 4.9 && m < 5.9 && iso > 0.7";
+//   string allCuts = preselection + " && " + cuts;
+
+//   TTree *t = (TTree*)fF["SgData"]->Get("candAnaMuMu/events"); 
+//   t->Draw(Form("%s>>h1", var), allCuts.c_str(), "goff");
+//   h1->Draw();
+
+}
