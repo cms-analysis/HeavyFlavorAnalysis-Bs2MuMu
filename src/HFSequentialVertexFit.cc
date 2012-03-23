@@ -358,7 +358,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  pvImpParams.tip = axy.distance(VertexState(tsos.globalPosition(),tsos.cartesianError().position()),VertexState(RecoVertex::convertPos((*fPVCollection)[pvIx].position()),RecoVertex::convertError((*fPVCollection)[pvIx].error())));
   }
   
-  double vtxDistanceSign(0); // will be used later while calculating the lifetime but easier to determine here.
+  double vtxDistanceCosAlphaPlab(0); // will be used later while calculating the lifetime but easier to determine here.
   cov99_t vtxDistanceCov;
   jac9_t vtxDistanceJac3d, vtxDistanceJac2d;
   if (wrtVertexState) {
@@ -375,7 +375,8 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  vtxDistanceJac2d = makeJacobianVector2d(wrtVertexState->position(), kinVertex->vertexState().position(), plab);
           // -- get sign of distance
 	  const GlobalVector diff = kinVertex->vertexState().position() - wrtVertexState->position() ;
-	  vtxDistanceSign = plab.Dot(TVector3(diff.x(),diff.y(),diff.z())) >= 0 ? 1 : -1;;
+	  const TVector3 tv3diff = TVector3(diff.x(),diff.y(),diff.z());
+	  vtxDistanceCosAlphaPlab = plab.Dot(tv3diff) / (plab.Mag() * tv3diff.Mag());
   } else if (pvIx >= 0) {
 	  // -- Distance w.r.t primary vertex
 	  Vertex currentPV = (*fPVCollection)[pvIx];
@@ -428,7 +429,8 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
           // -- get sign of distance
 	  const TVector3 p1(currentPV.position().x(), currentPV.position().y(), currentPV.position().z());
 	  const TVector3 p2(kinVertex->vertexState().position().x(), kinVertex->vertexState().position().y(), kinVertex->vertexState().position().z());
-	  vtxDistanceSign = plab.Dot(p2-p1) >= 0 ? 1 : -1;
+	  const TVector3 pDiff = p2-p1;
+	  vtxDistanceCosAlphaPlab = plab.Dot(pDiff) / (plab.Mag() * pDiff.Mag());
 	  
   } else if (fVerbose > 0)
 	  cout << "==> HFSequentialVertexFit: No idea what distance to compute in TAnaVertex.fDxy and TAnaVertex.fD3d" << endl;
@@ -479,12 +481,15 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
     {
 	const double massOverC = tree->mass() / TMath::Ccgs();
 	// from 3d vertexing
-	pCand->fTau3d = anaVtx.fD3d / pCand->fPlab.Mag() * vtxDistanceSign * massOverC;
+	pCand->fTau3d = anaVtx.fD3d / pCand->fPlab.Mag() * vtxDistanceCosAlphaPlab * massOverC;
 	pCand->fTau3dE = TMath::Sqrt(ROOT::Math::Similarity(vtxDistanceCov, vtxDistanceJac3d)) * massOverC;
+	//const double tEsimple = anaVtx.fD3dE / pCand->fPlab.Mag() * vtxDistanceCosAlphaPlab * massOverC;
+	//cout << tree->particleID() << " t: " << pCand->fTau3d << " tE: " << pCand->fTau3dE << " tE/t: " << pCand->fTau3dE/pCand->fTau3d << 
+	//    " tEsimple: " << tEsimple << " tEsimple/tE: " << tEsimple/pCand->fTau3dE << " m/c: " << massOverC << endl;
 	// from 2d vertexing
 	const double sinTheta = TMath::Sin(pCand->fPlab.Theta());
 	const double flightlength2d = sinTheta != 0 ? anaVtx.fDxy / sinTheta : 0;
-	pCand->fTauxy = flightlength2d / pCand->fPlab.Mag() * vtxDistanceSign * massOverC;
+	pCand->fTauxy = flightlength2d / pCand->fPlab.Mag() * vtxDistanceCosAlphaPlab * massOverC;
 	pCand->fTauxyE = TMath::Sqrt(ROOT::Math::Similarity(vtxDistanceCov, vtxDistanceJac2d)) * massOverC;
     }
     else
@@ -657,19 +662,17 @@ HFSequentialVertexFit::cov99_t
 HFSequentialVertexFit::jac9_t HFSequentialVertexFit::makeJacobianVector3d(const AlgebraicVector3 &vtx1, const AlgebraicVector3 &vtx2, const AlgebraicVector3 &momentum)
 {
     HFSequentialVertexFit::jac9_t jac;
-    const double momentumMag = ROOT::Math::Mag(momentum);
     const AlgebraicVector3 dist = vtx2 - vtx1;
-    const double distMag = ROOT::Math::Mag(dist);
-    const double factorPositionComponent = 1./(distMag*momentumMag);
-    const double factorMomentumComponent = 1./pow(momentumMag,3);
-    jac.Place_at(-dist*factorPositionComponent,0);
-    jac.Place_at( dist*factorPositionComponent,3);
-    jac.Place_at( momentum*factorMomentumComponent,6);
+    const double factor2 = 1. / ROOT::Math::Mag2(momentum);
+    const double lifetime = ROOT::Math::Dot(dist, momentum) * factor2;
+    jac.Place_at(-momentum*factor2,0);
+    jac.Place_at( momentum*factor2,3);
+    jac.Place_at( factor2*(dist-2*lifetime*momentum*factor2),6);
     return jac;
 }
 
 HFSequentialVertexFit::jac9_t HFSequentialVertexFit::makeJacobianVector3d(const GlobalPoint &vtx1, const GlobalPoint &vtx2, const TVector3 &tv3momentum)
-{
+{   // TODO: Update 2d calculation to projected version as in 3d
     return makeJacobianVector3d(AlgebraicVector3(vtx1.x(),vtx1.y(),vtx1.z()),
 			      AlgebraicVector3(vtx2.x(),vtx2.y(),vtx2.z()),
 			      AlgebraicVector3(tv3momentum.x(),tv3momentum.y(),tv3momentum.z()));
