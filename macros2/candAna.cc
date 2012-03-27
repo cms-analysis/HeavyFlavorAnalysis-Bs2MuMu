@@ -924,6 +924,20 @@ void candAna::triggerSelection() {
     fGoodHLT = true; 
     return;
   }
+
+  if (fVerbose == -33) {
+    cout << "--------------------" << endl;
+    for (int i = 0; i < NL1T; ++i) {
+      result = wasRun = error = false;
+      a = fpEvt->fL1TNames[i]; 
+      ps = fpEvt->fL1TPrescale[i]; 
+      result = fpEvt->fL1TResult[i]; 
+      error  = fpEvt->fL1TMask[i]; 
+      if (a.Contains("Mu")) {
+	cout << a <<  " mask: " << error << " result: " << result << " ps: " << ps << endl;
+      }
+    }
+  }
   
   for (int i = 0; i < NHLT; ++i) {
     result = wasRun = error = false;
