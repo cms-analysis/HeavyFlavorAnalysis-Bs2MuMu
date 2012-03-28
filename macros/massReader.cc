@@ -200,7 +200,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	TAnaTrack *recTrack;
 	TAnaCand *momCand;
 	TAnaCand *dauCand;
-	TGenCand *muGen;
+	TGenCand *dauGen;
 	TVector3 v1,v2,uVector;
 	int j,k;
 	bool firstMu = true;
@@ -251,6 +251,10 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		sigTrack = fpEvt->getSigTrack(it->second);
 		recTrack = fpEvt->getRecTrack(sigTrack->fIndex);
 		
+		dauGen = NULL;
+		if (0 <= recTrack->fGenIndex && recTrack->fGenIndex < fpEvt->nGenCands())
+			dauGen = fpEvt->getGenCand(recTrack->fGenIndex);
+		
 		switch (abs(sigTrack->fMCID)) {
 			case 13: // muon
 				if (firstMu) {
@@ -260,6 +264,12 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 					fEtaMu1 = sigTrack->fPlab.Eta();
 					fQ_mu1 = recTrack->fQ;
 					fMuTight1 = isMuonTight(sigTrack);
+					if (dauGen) {
+						fPtMu1_Gen = dauGen->fP.Perp();
+						if (fPtMu1_Gen > 0)
+							fEtaMu1_Gen = dauGen->fP.Eta();
+						fPMu1_Gen = dauGen->fP.P();
+					}
 				} else {
 					plabMu2 = sigTrack->fPlab;
 					fPtMu2 = sigTrack->fPlab.Perp();
@@ -267,6 +277,12 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 					fEtaMu2 = sigTrack->fPlab.Eta();
 					fQ_mu2 = recTrack->fQ;
 					fMuTight2 = isMuonTight(sigTrack);
+					if (dauGen) {
+						fPtMu2_Gen = dauGen->fP.Perp();
+						if (fPtMu2_Gen > 0)
+							fEtaMu2_Gen = dauGen->fP.Eta();
+						fPMu2_Gen = dauGen->fP.P();
+					}
 				}
 				firstMu = false;
 				break;
@@ -277,12 +293,22 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 					fEtaKp1 = plabKp1.Eta();
 					fQ_kp1 = recTrack->fQ;
 					fTrackQual_kp1 = recTrack->fTrackQuality;					
+					if (dauGen) {
+						fPtKp_Gen1 = dauGen->fP.Perp();
+						if (fPtKp_Gen1 > 0)
+							fEtaKp_Gen1 = dauGen->fP.Eta();
+					}
 				} else {
 					plabKp2 = sigTrack->fPlab;
 					fPtKp2 = plabKp2.Perp();
 					fEtaKp2 = plabKp2.Eta();
 					fQ_kp2 = recTrack->fQ;
 					fTrackQual_kp2 = recTrack->fTrackQuality;
+					if (dauGen) {
+						fPtKp_Gen2 = dauGen->fP.Perp();
+						if (fPtKp_Gen2 > 0)
+							fEtaKp_Gen2 = dauGen->fP.Eta();
+					}
 				}
 				firstKaon = false;
 				break;
@@ -299,9 +325,10 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		swap(fTrackQual_mu1,fTrackQual_mu2);
 		swap(fQ_mu1,fQ_mu2);
 		swap(fMuTight1,fMuTight2);
+		swap(fPtMu1_Gen,fPtMu2_Gen);
+		swap(fEtaMu1_Gen,fEtaMu2_Gen);
+		swap(fPMu1_Gen,fPMu2_Gen);
 	}
-	
-	fDeltaPhiMu = plabMu1.DeltaPhi(plabMu2);
 	
 	// kaon ordering
 	if (fPtKp1 < fPtKp2) {
@@ -310,7 +337,11 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		swap(fEtaKp1,fEtaKp2);
 		swap(fQ_kp1,fQ_kp2);
 		swap(fTrackQual_kp1,fTrackQual_kp2);
+		swap(fPtKp_Gen1,fPtKp_Gen2);
+		swap(fEtaKp_Gen1,fEtaKp_Gen2);
 	}
+	
+	fDeltaPhiMu = plabMu1.DeltaPhi(plabMu2);
 	
 	// Clean entries of nearest tracks
 	for (j = 0; j < NBR_TRACKS_STORE; j++) fTracksIx[j] = -1;
@@ -362,52 +393,6 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fTriggeredJPsi = hasTriggeredNorm();
 	fTriggeredBs = hasTriggeredSignal();
 	
-	// generator tracks...
-	firstMu = true;
-	firstKaon = true;
-	findAllTrackIndices(pCand,&aTracks);
-	for (map<int,int>::const_iterator it = aTracks.begin(); it != aTracks.end(); ++it) {
-		pTrack = fpEvt->getRecTrack(it->first);
-		if (pTrack->fGenIndex < 0 || pTrack->fGenIndex >= fpEvt->nGenCands())
-			continue;
-		
-		muGen = fpEvt->getGenCand(pTrack->fGenIndex);
-		switch (abs(muGen->fID)) {
-			case 13: // muon
-				if (firstMu) {
-					fPtMu1_Gen = muGen->fP.Perp();
-					fEtaMu1_Gen = muGen->fP.Eta();
-					fPMu1_Gen = muGen->fP.P();
-				}
-				else {
-					fPtMu2_Gen = muGen->fP.Perp();
-					fEtaMu2_Gen = muGen->fP.Eta();
-					fPMu2_Gen = muGen->fP.P();
-				}
-				firstMu = false;
-				break;
-			case 321: // kaon
-				if (firstKaon) {
-					fPtKp_Gen1 = muGen->fP.Perp();
-					fEtaKp_Gen1 = muGen->fP.Eta();
-				} else {
-					fPtKp_Gen1 = muGen->fP.Perp();
-					fEtaKp_Gen1 = muGen->fP.Eta();
-				}
-				firstKaon = false;
-				break;
-			default:
-				break;
-		}
-	}
-	
-	// muon generator ordering
-	if (fPtMu1_Gen < fPtMu2_Gen) {
-		swap(fPtMu1_Gen,fPtMu2_Gen);
-		swap(fEtaMu1_Gen,fEtaMu2_Gen);
-		swap(fPMu1_Gen,fPMu2_Gen);
-	}
-		
 	// dimuon
 	pMu1.SetVectM(plabMu1,MMUON);
 	pMu2.SetVectM(plabMu2,MMUON);
