@@ -195,10 +195,6 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup)
   if (fVerbose > 0) cout << "==>HFBu2JpsiKp> J/psi list size: " << psiList.size() << endl;
    
   HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
-  //   HFKalmanVertexFit     aKal(fTTB.product(), fPV, 100521, fVerbose);  aKal.fMaxDoca     = fMaxDoca; 
-  //   vector<Track> trackList; 
-  //   vector<int> trackIndices;
-  //   vector<double> trackMasses;
 
   // -- Build J/psi + track
   TLorentzVector psi, cpsi, m1, m2, ka, bu;
@@ -230,36 +226,8 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup)
       if (psi.DeltaR(ka) > fDeltaR) continue; 
       
       bu = ka + psi; 
-      if (TMath::Abs(bu.M() - MBPLUS) > fBuWindow) continue; 
-
-      //       // -- KVF: muon muon kaon
-      //       trackList.clear();
-      //       trackIndices.clear(); 
-      //       trackMasses.clear(); 
-      
-      //       trackList.push_back(tMuon1); 
-      //       trackIndices.push_back(iMuon1); 
-      //       trackMasses.push_back(MMUON);
-      
-      //       trackList.push_back(tMuon2); 
-      //       trackIndices.push_back(iMuon2); 
-      //       trackMasses.push_back(MMUON);
-      
-      //       trackList.push_back(tKaon); 
-      //       trackIndices.push_back(iTrack); 
-      //       trackMasses.push_back(MKAON);
-      
-      //       if (0 == fVertexing) {
-      // 	aKal.doNotFit(trackList, trackIndices, trackMasses, -100521); 	
-      // 	continue; 
-      //       }
-
-      //       if (fVerbose > 1) {
-      //     	cout << "psiList/track: " << i << "/" << iTrack << endl;
-      //       }
-      //       aKal.doFit(trackList, trackIndices, trackMasses, 100521); 	
-      //       aKal.doFit(trackList, trackIndices, trackMasses, 200521, 2);
-      
+      if (TMath::Abs(bu.M() - MBPLUS) > fBuWindow) continue;
+	        
       // -- sequential fit: J/Psi kaon
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> going to sequential fit" << endl;
       HFDecayTree theTree(300521, true, MBPLUS, false, -1.0, true);
@@ -289,10 +257,22 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup)
       
       aSeq.doFit(&theTree);
       if (fVerbose > 5) cout << "==>HFBu2JpsiKp> done with fitting for track " << iTrack << endl;
+	  
+	  // -- global fit: J/Psi kaon
+	  theTree.clear(500521, true, MBPLUS, false, -1.0, true);
+	  iterator = theTree.addDecayTree(500443, false, MJPSI, false);
+	  iterator->addTrack(iMuon1,13,true);
+	  iterator->addTrack(iMuon2,13,true);
+	  iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+	  
+	  theTree.addTrack(iTrack,321,false);
+	  theTree.set_mass_tracks(MJPSI);
+	  theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+	  
+	  aSeq.doFit(&theTree);
     }
   }
 }
-
 
 // ------------ method called once each job just before starting event loop  ------------
 void  HFBu2JpsiKp::beginJob() {
