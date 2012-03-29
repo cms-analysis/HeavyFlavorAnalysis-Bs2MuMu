@@ -34,7 +34,7 @@ int trackIx;
 int particleID;
 bool massFit;
 
-HFNodeCut::HFNodeCut() : fMaxDoca(0.0), fVtxChi2(0.0), fVtxPos(), fPtCand(), fPvWeight(0.0)
+HFNodeCut::HFNodeCut() : fMaxDoca(0.0), fVtxChi2(0.0), fVtxPos(), fPtCand()
 {} // HFNodeCut()
 
 void HFNodeCut::setFields(double maxDoca, double vtxChi2, TVector3 vtxPos, TVector3 ptCand)

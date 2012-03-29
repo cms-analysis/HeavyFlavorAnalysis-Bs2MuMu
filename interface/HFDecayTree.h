@@ -44,7 +44,7 @@ class HFNodeCut : public ReferenceCounted {
 	public:
 		double fMaxDoca;
 		double fVtxChi2;
-		double fPvWeight;
+		//double fPvWeight;
 		TVector3 fVtxPos;
 		TVector3 fPtCand;
 };

@@ -82,7 +82,7 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 	vector<track_entry_t> allTreeTracks;
 	RefCountedKinematicTree kinTree;
 	HFDecayTreeIterator treeIt;
-	//RefCountedHFNodeCut nodeCut;
+	RefCountedHFNodeCut nodeCut;
 	map<int,int> *kinParticleMap;
 	int mass_constrained_tracks = 0;
 	
@@ -315,7 +315,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  // calculate the impact parameters for all primary vertices
 	  if (fVerbose > 0)
 		  cout << "==> HFSequentialVertexFit: Number of PV vertices to compare is " << fPVCollection->size() << endl;
-	  double pvWeightCut = nodeCut->getPvWeightCut();
+	  double pvWeightCut = tree->getNodeCut()->getPvWeightCut();
 	  
 	  // iterate through all PVs and estimate the impact parameters of this particle
 	  unsigned int nGoodVtx;

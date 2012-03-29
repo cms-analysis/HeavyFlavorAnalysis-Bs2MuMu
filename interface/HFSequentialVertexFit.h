@@ -69,7 +69,7 @@ class HFSequentialVertexFit
 	edm::Handle<reco::VertexCollection> fPVCollection;
 	const MagneticField* magneticField;
 	bool removeCandTracksFromVtx_;
-	RefCountedHFNodeCut nodeCut;
+	//RefCountedHFNodeCut nodeCut;
 
 };
 
