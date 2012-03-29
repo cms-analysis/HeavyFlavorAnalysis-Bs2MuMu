@@ -225,93 +225,111 @@ void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup)
     psi = m1 + m2; 
     if ((TMath::Abs(psi.M() - MJPSI) > fPsiWindow)) continue;
     
-    for (unsigned int j = 0; j < phiList.size(); ++j){    
-      unsigned int iKaon1 = phiList[j].first; 
-      unsigned int iKaon2 = phiList[j].second; 
-      if (iKaon1 == iMuon1 || iKaon1 == iMuon2) continue; 
-      if (iKaon2 == iMuon1 || iKaon2 == iMuon2) continue; 
+	for (unsigned int j = 0; j < phiList.size(); ++j){    
+		unsigned int iKaon1 = phiList[j].first; 
+		unsigned int iKaon2 = phiList[j].second; 
+		if (iKaon1 == iMuon1 || iKaon1 == iMuon2) continue; 
+		if (iKaon2 == iMuon1 || iKaon2 == iMuon2) continue; 
 
-      TrackBaseRef rTrackView1(hTracks, iKaon1);
-      Track tKaon1(*rTrackView1);
-      if (tKaon1.pt() < fTrackPt) continue;
-      ka1.SetXYZM(tKaon1.px(), tKaon1.py(), tKaon1.pz(), MKAON); 
-      if (psi.DeltaR(ka1) > fDeltaR) continue; 
+		TrackBaseRef rTrackView1(hTracks, iKaon1);
+		Track tKaon1(*rTrackView1);
+		if (tKaon1.pt() < fTrackPt) continue;
+		ka1.SetXYZM(tKaon1.px(), tKaon1.py(), tKaon1.pz(), MKAON); 
+		if (psi.DeltaR(ka1) > fDeltaR) continue; 
 
-      TrackBaseRef rTrackView2(hTracks, iKaon2);
-      Track tKaon2(*rTrackView2);
-      if (tKaon2.pt() < fTrackPt) continue;
-      ka2.SetXYZM(tKaon2.px(), tKaon2.py(), tKaon2.pz(), MKAON); 
-      if (psi.DeltaR(ka2) > fDeltaR) continue; 
+		TrackBaseRef rTrackView2(hTracks, iKaon2);
+		Track tKaon2(*rTrackView2);
+		if (tKaon2.pt() < fTrackPt) continue;
+		ka2.SetXYZM(tKaon2.px(), tKaon2.py(), tKaon2.pz(), MKAON); 
+		if (psi.DeltaR(ka2) > fDeltaR) continue; 
 
-      phi = ka1 + ka2; 
-      if ((TMath::Abs(phi.M() - MPHI) > fPhiWindow)) continue;
-      
-      bs = psi + phi; 
-      if (TMath::Abs(bs.M() - MBS) > fBsWindow) continue; 
-      
-      //       // -- KVF: muon muon kaon
-      //       trackList.clear();
-      //       trackIndices.clear(); 
-      //       trackMasses.clear(); 
-      
-      //       trackList.push_back(tMuon1); 
-      //       trackIndices.push_back(iMuon1); 
-      //       trackMasses.push_back(MMUON);
-      
-      //       trackList.push_back(tMuon2); 
-      //       trackIndices.push_back(iMuon2); 
-      //       trackMasses.push_back(MMUON);
-      
-      //       trackList.push_back(tKaon1); 
-      //       trackIndices.push_back(iKaon1); 
-      //       trackMasses.push_back(MKAON);
-      
-      //       trackList.push_back(tKaon2); 
-      //       trackIndices.push_back(iKaon2); 
-      //       trackMasses.push_back(MKAON);
-      
-      //       if (0 == fVertexing) {
-      // 		aKal.doNotFit(trackList, trackIndices, trackMasses, -100531); 	
-      // 		continue; 
-      //       }
-      
-      //       aKal.doFit(trackList, trackIndices, trackMasses, 100531); 	
-      //       aKal.doFit(trackList, trackIndices, trackMasses, 200531, 2); 	
+		phi = ka1 + ka2; 
+		if ((TMath::Abs(phi.M() - MPHI) > fPhiWindow)) continue;
 
-      // -- sequential fit: J/Psi kaons
-      HFDecayTree theTree(300531, true, MBS, false, -1.0, true);
-      
-      HFDecayTreeIterator iterator = theTree.addDecayTree(300443, false, MJPSI, false); // Don't use kinematic particle for the Psi
-      iterator->addTrack(iMuon1,13);
-      iterator->addTrack(iMuon2,13);
-      iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-      
-	  iterator = theTree.addDecayTree(300333, false, MPHI, false);
-      iterator->addTrack(iKaon1,321);
-      iterator->addTrack(iKaon2,321);
-	  iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-	  
-      theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-      
-      aSeq.doFit(&theTree);
-      
-      // -- sequential fit: J/Psi (constraint) phi (unconstraint)
-      theTree.clear(400531, true, MBS, false, -1.0, true);
-      
-      iterator = theTree.addDecayTree(400443, true, MJPSI, true);
-      iterator->addTrack(iMuon1,13);
-      iterator->addTrack(iMuon2,13);
-      iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-      
-	  iterator = theTree.addDecayTree(400333, false, MPHI, false);
-      iterator->addTrack(iKaon1,321);
-      iterator->addTrack(iKaon2,321);
-	  iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-	  
-      theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-      
-      aSeq.doFit(&theTree);
-    }
+		bs = psi + phi; 
+		if (TMath::Abs(bs.M() - MBS) > fBsWindow) continue; 
+
+		//       // -- KVF: muon muon kaon
+		//       trackList.clear();
+		//       trackIndices.clear(); 
+		//       trackMasses.clear(); 
+
+		//       trackList.push_back(tMuon1); 
+		//       trackIndices.push_back(iMuon1); 
+		//       trackMasses.push_back(MMUON);
+
+		//       trackList.push_back(tMuon2); 
+		//       trackIndices.push_back(iMuon2); 
+		//       trackMasses.push_back(MMUON);
+
+		//       trackList.push_back(tKaon1); 
+		//       trackIndices.push_back(iKaon1); 
+		//       trackMasses.push_back(MKAON);
+
+		//       trackList.push_back(tKaon2); 
+		//       trackIndices.push_back(iKaon2); 
+		//       trackMasses.push_back(MKAON);
+
+		//       if (0 == fVertexing) {
+		// 		aKal.doNotFit(trackList, trackIndices, trackMasses, -100531); 	
+		// 		continue; 
+		//       }
+
+		//       aKal.doFit(trackList, trackIndices, trackMasses, 100531); 	
+		//       aKal.doFit(trackList, trackIndices, trackMasses, 200531, 2); 	
+
+		// -- sequential fit: J/Psi kaons
+		HFDecayTree theTree(300531, true, MBS, false, -1.0, true);
+
+		HFDecayTreeIterator iterator = theTree.addDecayTree(300443, false, MJPSI, false); // Don't use kinematic particle for the Psi
+		iterator->addTrack(iMuon1,13);
+		iterator->addTrack(iMuon2,13);
+		iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+		iterator = theTree.addDecayTree(300333, false, MPHI, false);
+		iterator->addTrack(iKaon1,321);
+		iterator->addTrack(iKaon2,321);
+		iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+		theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+		aSeq.doFit(&theTree);
+
+		// -- sequential fit: J/Psi (constraint) phi (unconstraint)
+		theTree.clear(400531, true, MBS, false, -1.0, true);
+
+		iterator = theTree.addDecayTree(400443, true, MJPSI, true);
+		iterator->addTrack(iMuon1,13);
+		iterator->addTrack(iMuon2,13);
+		iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+		iterator = theTree.addDecayTree(400333, false, MPHI, false);
+		iterator->addTrack(iKaon1,321);
+		iterator->addTrack(iKaon2,321);
+		iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+		theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+		aSeq.doFit(&theTree);
+
+
+		// -- global fit: J/Psi (constraint) phi (unconstraint)
+		theTree.clear(500531, true, MBS, false, -1.0, true);
+		iterator = theTree.addDecayTree(500443, false, MJPSI, false);
+		iterator->addTrack(iMuon1,13,true);
+		iterator->addTrack(iMuon2,13,true);
+		iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+		
+		iterator = theTree.addDecayTree(400333, false, MPHI, false);
+		iterator->addTrack(iKaon1,321,false);
+		iterator->addTrack(iKaon2,321,false);
+		iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+		
+		theTree.set_mass_tracks(MJPSI);
+		theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+		
+		aSeq.doFit(&theTree);
+	}
   }
 }
 
