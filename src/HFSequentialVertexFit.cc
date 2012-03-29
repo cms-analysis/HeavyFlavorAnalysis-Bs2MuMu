@@ -331,10 +331,10 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 
 		  // Compute the PV weight
 		  double weight = (vertexIt->ndof()+2.)/(2.*vertexIt->tracksSize());
-// 		  cout<<j<<" "<<nGoodVtx<<" "<<vertexIt->position()<<" "<<vertexIt->chi2()<<" "
-// 		   <<vertexIt->ndof()<<" "<<vertexIt->tracksSize()<<" "<<vertexIt->nTracks()<<" "
-// 		   <<vertexIt->isFake()<<" "<<vertexIt->isValid()<<" "<<vertexIt->normalizedChi2()<<" "<<weight<<" "
-// 		   <<currentIp.second.value()<<" "<<pvWeightCut<<endl;
+		  //cout<<j<<" "<<nGoodVtx<<" "<<vertexIt->position()<<" "<<vertexIt->chi2()<<" "
+		  //<<vertexIt->ndof()<<" "<<vertexIt->tracksSize()<<" "<<vertexIt->nTracks()<<" "
+		  //<<vertexIt->isFake()<<" "<<vertexIt->isValid()<<" "<<vertexIt->normalizedChi2()<<" "<<weight<<" "
+		  //<<currentIp.second.value()<<" "<<pvWeightCut<<endl;
 
 		  if( weight < pvWeightCut) { // Check the PV weight and skip it if lower than the cut 
 		    if (fVerbose > 2) cout<<"==>HFSequentialVertexFit: PV "<<j<<" rejected because of too low weight "<<weight<<endl; 
@@ -354,8 +354,8 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 		  }
 		  else if (nGoodVtx == 1) // now the second PV
 		  {
-		      if (fabs(currentIp.second.value()) >= fabs(pvImpParams.lip.value())) // not the best but the second best
-			  pvImpParams2nd.lip = currentIp.second;
+		    if (fabs(currentIp.second.value()) >= fabs(pvImpParams.lip.value()))  // not the best but the second best
+		      {pvImpParams2nd.lip = currentIp.second; pvIx2 = j;}
 		      else // the best, the previous one is the current 2nd best
 		      {
 			  pvIx2 = pvIx;
