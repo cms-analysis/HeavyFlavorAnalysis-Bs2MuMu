@@ -3101,8 +3101,8 @@ void plotClass::printCuts(ostream &OUT) {
 // ----------------------------------------------------------------------
 void plotClass::stamp(double x1, string text1, double x2, string text2) {
   tl->SetTextSize(fSize); 
-  tl->DrawLatex(x1, 0.91, text1.c_str());   
-  tl->DrawLatex(x2, 0.91, text2.c_str()); 
+  tl->DrawLatex(x1, 10.91, text1.c_str());   
+  tl->DrawLatex(x2, 10.91, text2.c_str()); 
   //  tl->DrawLatex(x1, 0.95, "Preliminary"); 
   tl->SetTextSize(0.03); 
   //  tl->DrawLatex(0.47, 0.91, "Preliminary"); 

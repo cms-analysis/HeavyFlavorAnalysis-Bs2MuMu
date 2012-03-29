@@ -18,7 +18,6 @@
 #include "TCanvas.h"
 #include "TStyle.h"
 #include "TROOT.h"
-#include "TVirtualPad.h"  // access to gPad
 
 #include <iostream>
 #include <fstream>

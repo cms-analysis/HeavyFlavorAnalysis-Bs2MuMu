@@ -6,6 +6,8 @@
 #include "TTree.h"
 #include "TFractionFitter.h"
 
+#include "TVirtualPad.h"  // access to gPad
+
 using namespace std; 
 
 ClassImp(plotOverlays)
@@ -41,6 +43,25 @@ plotOverlays::~plotOverlays() {
 void plotOverlays::makeAll(int verbose) {
 
   fVerbose = verbose;
+
+  fMode = 1; 
+  cout << " ########################## MC APV0/MCPU APV1 #########################" << endl;
+  sbsDistributionOverlay("SgMc3e33", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "Ao"); 
+  sbsDistributionOverlay("SgMc3e33", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "HLT"); 
+  sbsDistributionOverlay("SgMc3e33", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "Presel"); 
+
+//   cout << " ########################## MCPU APV0/MCPU APV1 #########################" << endl;
+//   sbsDistributionOverlay("SgMcPU", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "Ao"); 
+
+//   cout << " ########################## MCPU APV0/MCPU APV1 #########################" << endl;
+//   sbsDistributionOverlay("SgMcPU", "candAnaMuMu", "APV0", "SgMcPU", "candAnaMuMu", "APV1", "Ao"); 
+
+//   cout << " ########################## MC APV0/MCPU APV1 #########################" << endl;
+//   sbsDistributionOverlay("SgMc", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "Presel"); 
+//   cout << " ########################## MCPU APV0/MCPU APV1 #########################" << endl;
+//   sbsDistributionOverlay("SgMc", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "HLT"); 
+
+  return;
 
   // -- try to fit 
   fMode = 3; 
@@ -471,8 +492,13 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
       }
       //      legg->AddEntry(h1, fName[file1].c_str(), loption1); 
       if (string::npos != file1.find("SgMcPU") && string::npos != file2.find("SgMcPU")) {
+	legg->SetHeader("Signal MC");
 	legg->AddEntry(h1, "low PU ", loption1); 
 	legg->AddEntry(h2, "high PU ", loption2); 
+      } else if ((string::npos != file1.find("SgMc")) && (string::npos != file2.find("SgMcPU"))) {
+	legg->SetHeader("Signal MC");
+	legg->AddEntry(h1, "MC (4_2_X)", loption1); 
+	legg->AddEntry(h2, "MC (5_2_X)", loption2); 
       } else if (string::npos != file1.find("Sg")) {
 	legg->AddEntry(h1, "Data (sideband)", loption1); 
 	legg->AddEntry(h2, fName[file2].c_str(), loption2); 
@@ -492,7 +518,6 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
     }
 
     stamp(0.18, "CMS, 5 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
-    //    stamp(0.18, "CMS, 5.3 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
     if (fDoPrint) c0->SaveAs(pdfname.c_str()); 
   }
 
