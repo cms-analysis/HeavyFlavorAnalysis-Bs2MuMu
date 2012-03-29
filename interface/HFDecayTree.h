@@ -39,10 +39,12 @@ class HFNodeCut : public ReferenceCounted {
 		
 		/* This function has to be overwritten. True if the particle passes the test */
 		virtual bool operator()();
+		virtual double getPvWeightCut(void) {return 0.0;}
 		
 	public:
 		double fMaxDoca;
 		double fVtxChi2;
+		double fPvWeight;
 		TVector3 fVtxPos;
 		TVector3 fPtCand;
 };
@@ -54,6 +56,15 @@ class HFMaxDocaCut : public HFNodeCut {
 		virtual bool operator()() { return (fMaxDoca < fDocaCut);}
 	protected:
 		double fDocaCut;
+};
+class HFPvWeightCut : public HFNodeCut {
+	public:
+                HFPvWeightCut(double docaCut, double pvWeightCut) : fDocaCut(docaCut), fPvWeightCut(pvWeightCut) {}
+		//virtual bool operator()() { return ( (fMaxDoca < fDocaCut) || (fPvWeight < fPvWeightCut) );}
+		virtual bool operator()() { return ( fMaxDoca < fDocaCut );}
+		virtual double getPvWeightCut(void) {return fPvWeightCut;}
+	protected:
+		double fDocaCut, fPvWeightCut;
 };
 
 class HFDecayTree;
