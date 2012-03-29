@@ -12,6 +12,28 @@
 
 using namespace std;
 
+// tack_entry operator for including in set
+bool operator<(const track_entry_t &t1, const track_entry_t &t2)
+{
+	bool result = false;
+	if (t1.massFit && !t2.massFit) // only t1 has mass fit
+		result = true;
+	else if (!t1.massFit && t2.massFit) // only t2 has massFit
+		result = false;
+	else if (t1.trackIx < t2.trackIx)
+		result = true;
+	else if (t1.trackIx > t2.trackIx)
+		result = false;
+	else if (t1.particleID < t2.particleID)
+		result = true;
+	
+	return result;
+} // operator<
+
+int trackIx;
+int particleID;
+bool massFit;
+
 HFNodeCut::HFNodeCut() : fMaxDoca(0.0), fVtxChi2(0.0), fVtxPos(), fPtCand()
 {} // HFNodeCut()
 
@@ -26,28 +48,16 @@ void HFNodeCut::setFields(double maxDoca, double vtxChi2, TVector3 vtxPos, TVect
 bool HFNodeCut::operator()() {return true;}
 
 HFDecayTree::HFDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma, bool daughtersToPV) :
-  particleID_(pID), vertexing_(doVertexing), mass_(mass), massConstraint_(massConstraint), massSigma_(massSigma), maxDoca_(0), minDoca_(0), daughtersToPV_(daughtersToPV), kinTree_(0)
+  particleID_(pID), vertexing_(doVertexing), mass_(mass), mass_tracks_(0), massConstraint_(massConstraint), massSigma_(massSigma), maxDoca_(0), minDoca_(0), daughtersToPV_(daughtersToPV), kinTree_(0)
 {
   if(massConstraint && massSigma <= 0.0) massSigma_ = 0.0001 * mass;
 
   nodeCut_ = RefCountedHFNodeCut(new HFNodeCut);
 } // HFDecayTree()
 
-// the following constructor is DEPRECATED, attribute set in header will issue a warning
-// initializers adjusted for new data member structure
-HFDecayTree::HFDecayTree(int pID, int doVertexing, double constraint, double constraintSigma) :
-  particleID_(pID), vertexing_(doVertexing>0?true:false),
-  mass_(constraint>=0?constraint:0.0), massConstraint_(constraint<0?false:true), massSigma_(constraintSigma),
-  maxDoca_(0), minDoca_(0), kinTree_(0)
+void HFDecayTree::addTrack(int trackIx, int trackID, bool massFit)
 {
-  if(massConstraint_ && massSigma_ <= 0.0) massSigma_ = 0.0001 * mass_;
-
-  nodeCut_ = RefCountedHFNodeCut(new HFNodeCut);
-} // HFDecayTree()
-
-void HFDecayTree::addTrack(int trackIx, int trackID)
-{
-	trackIndices_[trackIx] = trackID;
+	trackIndices_.insert(track_entry_t(trackIx,trackID,massFit));
 } // addTrack()
 
 void HFDecayTree::appendDecayTree(HFDecayTree subTree)
@@ -60,20 +70,9 @@ HFDecayTreeIterator HFDecayTree::addDecayTree(int pID, bool doVertexing, double 
   return subVertices_.insert(subVertices_.end(), HFDecayTree(pID, doVertexing, mass, massConstraint, massSigma, daughtersToPV));
 } // addDecayTree()
 
-// this version is DEPRECATED
-HFDecayTreeIterator HFDecayTree::addDecayTree(int pID, int doVertexing, double mass, double mass_sigma)
-{
-  return subVertices_.insert(subVertices_.end(), HFDecayTree(pID, doVertexing>0?true:false, mass, mass<0?false:true, mass_sigma));
-} // addDecayTree()
-
 void HFDecayTree::clear()
 {
   clear(-1, true, 0.0, false, -1.0);
-  // particleID_ = -1.0;
-  // vertexing_ = true;
-  // mass_ = 0.0;
-  // massConstraint_ = false;
-  // massSigma_ = -1.0;
 }
 
 void HFDecayTree::clear(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma, bool daughtersToPV)
@@ -86,7 +85,7 @@ void HFDecayTree::clear(int pID, bool doVertexing, double mass, bool massConstra
   maxDoca_ = -1.0;
   minDoca_ = -1.0;
   daughtersToPV_ = daughtersToPV;
-
+  mass_tracks_ = 0.0;
   
   // clear the containers
   trackIndices_.clear();
@@ -96,7 +95,6 @@ void HFDecayTree::clear(int pID, bool doVertexing, double mass, bool massConstra
   // clear the kinematic tree
   delete kinTree_;
   kinTree_ = NULL;
-
   anaCand_ = NULL;
 
   nodeCut_ = RefCountedHFNodeCut(new HFNodeCut);
@@ -122,7 +120,7 @@ HFDecayTreeIterator HFDecayTree::getVerticesEndIterator()
 	return subVertices_.end();
 } // getVerticesEndIterator()
 
-void HFDecayTree::getAllTracks(vector<pair<int,int> > *out_vector, int onlyThisVertex)
+void HFDecayTree::getAllTracks(vector<track_entry_t> *out_vector, int onlyThisVertex)
 {
 	HFDecayTreeTrackIterator trackIt;
 	HFDecayTreeIterator treeIt;
@@ -136,21 +134,21 @@ void HFDecayTree::getAllTracks(vector<pair<int,int> > *out_vector, int onlyThisV
 	}
 } // getAllTracks()
 
-vector<pair<int,int> > HFDecayTree::getAllTracks(int onlyThisVertex)
+vector<track_entry_t> HFDecayTree::getAllTracks(int onlyThisVertex)
 {
-  vector<pair<int,int> > tracks;
+  vector<track_entry_t> tracks;
   getAllTracks(&tracks,onlyThisVertex);
   return tracks;
 } // getAllTracks()
 
 set<int> HFDecayTree::getAllTracksIndices(int onlyThisVertex)
 {
-	vector<pair<int,int> > tracks;
+	vector<track_entry_t> tracks;
 	set<int> result;
 	getAllTracks(&tracks,onlyThisVertex);
 	
-	for(vector<pair<int,int> >::const_iterator it = tracks.begin(); it != tracks.end();++it)
-		result.insert(it->first);
+	for(vector<track_entry_t >::const_iterator it = tracks.begin(); it != tracks.end();++it)
+		result.insert(it->trackIx);
 	
 	return result;
 } // getAllTracksIndices()
@@ -219,7 +217,7 @@ void HFDecayTree::dump(unsigned indent)
 	
 	dumpTabs(indent+1);
 	for (trackIt = trackIndices_.begin(); trackIt!=trackIndices_.end(); ++trackIt)
-		cout << '(' << "trackIx = " << trackIt->first << ", trackParticleID = " << trackIt->second << ")\t";
+		cout << '(' << "trackIx = " << trackIt->trackIx << ", trackParticleID = " << trackIt->particleID << ", massFit = " << trackIt->massFit << ")\t";
 	cout << endl;
 	
 	for (treeIt = subVertices_.begin(); treeIt != subVertices_.end(); ++treeIt)

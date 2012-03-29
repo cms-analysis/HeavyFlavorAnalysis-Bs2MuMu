@@ -2,7 +2,7 @@
  *  HFDecayTree.h
  *  HFDecayTree
  *
- *  Created by Christoph on 28.4.10.
+ *  Created by Christoph Nägeli <christoph.naegeli@psi.ch> on 28.4.10.
  */
 
 #ifndef HFDECAYTREE_H
@@ -14,12 +14,21 @@
 #include "DataFormats/GeometrySurface/interface/ReferenceCounted.h"
 
 // STL
+#include <set>
 #include <map>
 #include <vector>
 #include <utility>
 
 // ROOT
 #include <TVector3.h>
+
+struct track_entry_t {
+	track_entry_t(int ix, int pid, bool mfit) : trackIx(ix), particleID(pid), massFit(mfit) {}
+	int trackIx;
+	int particleID;
+	bool massFit;
+};
+bool operator<(const track_entry_t &t1, const track_entry_t &t2);
 
 /* The Functor Cut Object base class */
 class HFNodeCut : public ReferenceCounted {
@@ -31,7 +40,7 @@ class HFNodeCut : public ReferenceCounted {
 		/* This function has to be overwritten. True if the particle passes the test */
 		virtual bool operator()();
 		
-        public:
+	public:
 		double fMaxDoca;
 		double fVtxChi2;
 		TVector3 fVtxPos;
@@ -49,22 +58,19 @@ class HFMaxDocaCut : public HFNodeCut {
 
 class HFDecayTree;
 typedef std::vector<HFDecayTree>::iterator HFDecayTreeIterator;
-typedef std::map<int,int>::iterator HFDecayTreeTrackIterator;
+typedef std::set<track_entry_t>::iterator HFDecayTreeTrackIterator;
 
 class HFDecayTree
 {
 	public:
 		HFDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma = -1.0, bool daughtersToPV = false);
-		HFDecayTree(int pID, int doVertexing, double constraint, double constraintSigma = -1.0) __attribute__((deprecated)); // DEPRECATED use new constructor instead
 		virtual ~HFDecayTree() { delete kinTree_; }
 		
 		// Constructing the tree structure
-		void addTrack(int trackIx, int trackID); // Add a track with a given type.
+		void addTrack(int trackIx, int trackID, bool massFit = true); // Add a track with a given type and massFit
 		
 		void appendDecayTree(HFDecayTree subTree); // to append an already constructed decay tree
 		HFDecayTreeIterator addDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma = -1.0, bool daughtersToPV = false); // to get a reference to the subvertex
-		//HFDecayTreeIterator addDecayTree(int pID = 0, int doVertexing = 1, double mass = -1.0, double mass_sigma = -1.0) __attribute__ ((deprecated)); // to get a reference to the subvertex
-		HFDecayTreeIterator addDecayTree(int pID, int doVertexing, double mass, double mass_sigma = -1.0) __attribute__ ((deprecated)); // to get a reference to the subvertex
 		
 		void clear();
 		void clear(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma = -1.0, bool daughtersToPV = false); // variant to clear and initialize the tree with same signature as constructor
@@ -76,8 +82,8 @@ class HFDecayTree
 		HFDecayTreeIterator getVerticesBeginIterator();
 		HFDecayTreeIterator getVerticesEndIterator();
 		
-		void getAllTracks(std::vector<std::pair<int,int> > *out_vector, int onlyThisVertex = 0);
-		std::vector<std::pair<int,int> > getAllTracks(int onlyThisVertex = 0);
+		void getAllTracks(std::vector<track_entry_t> *out_vector, int onlyThisVertex = 0);
+		std::vector<track_entry_t> getAllTracks(int onlyThisVertex = 0);
 		std::set<int> getAllTracksIndices(int onlyThisVertex = 0);
 		
 		// Kinematic Tree associated stuff
@@ -102,6 +108,7 @@ class HFDecayTree
 		double particleID() { return particleID_; };
 		bool massConstraint() { return massConstraint_; };
 		double mass() { return mass_; };
+		double mass_tracks() { return mass_tracks_; }
 		double massSigma() { return massSigma_; };
 		double maxDoca() { return maxDoca_; };
 		double minDoca() { return minDoca_; };
@@ -111,6 +118,7 @@ class HFDecayTree
 		void set_particleID(double particleID) { particleID_ = particleID; };
 		void set_massConstraint(bool massConstraint) { massConstraint_ = massConstraint; };
 		void set_mass(double mass) { mass_ = mass; };
+		void set_mass_tracks(double mass_tracks) { mass_tracks_ = mass_tracks; }
 		void set_massSigma(double massSigma) { massSigma_ = massSigma; };
 		void set_maxDoca(double maxDoca) { maxDoca_ = maxDoca; };
 		void set_minDoca(double minDoca) { minDoca_ = minDoca; };
@@ -121,6 +129,7 @@ class HFDecayTree
 		double particleID_; // if == 0, then no TAnaCandidate should be created.
 		bool vertexing_; // do a vertexing at this node
 		double mass_;
+		double mass_tracks_; // apply a mass constraint to the tracks
 		bool massConstraint_; // false: no massconstraint at this vertex
 		double massSigma_;
 		double maxDoca_;
@@ -129,7 +138,7 @@ class HFDecayTree
 
 		void dumpTabs(unsigned indent); // used by dump()
 		
-		std::map<int,int> trackIndices_; // map: trackIx -> particleTyp
+		std::set<track_entry_t> trackIndices_; // added tracks
 		std::map<int,int> kinParticleMap_; // map: trackIx -> entry in the daughter kinematic particles...
 		std::vector<HFDecayTree> subVertices_;
 		RefCountedKinematicTree *kinTree_;
