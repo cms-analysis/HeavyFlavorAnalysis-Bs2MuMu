@@ -55,6 +55,7 @@ HFDimuons::HFDimuons(const ParameterSet& iConfig) :
   fMassLow(iConfig.getUntrackedParameter<double>("massLow", 8.7)), 
   fMassHigh(iConfig.getUntrackedParameter<double>("massHigh", 11.2)), 
   fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.05)),
+  fPvWeight(iConfig.getUntrackedParameter<double>("pvWeight", 0.0)),
   fVertexing(iConfig.getUntrackedParameter<int>("vertexing", 1)),
   fType(iConfig.getUntrackedParameter<int>("type", 1313)) {
   using namespace std;
@@ -68,6 +69,8 @@ HFDimuons::HFDimuons(const ParameterSet& iConfig) :
   cout << "---  type:                     " << fType << endl;
   cout << "---  vertexing:                " << fVertexing << endl;
   cout << "---  maxDoca                   " << fMaxDoca << endl;
+  cout << "---  pvWeight                  " << fPvWeight << endl;
+
   cout << "----------------------------------------------------------------------" << endl;
 
 }
@@ -176,7 +179,8 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
       HFDecayTree theTree(301313, true, 0, false); // TODO adjust mass to meaningful value
       theTree.addTrack(iMuon1,13);
       theTree.addTrack(iMuon2,13);
-      theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+      //theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+      theTree.setNodeCut(RefCountedHFNodeCut(new HFPvWeightCut(fMaxDoca,fPvWeight)));
       
       aSeq.doFit(&theTree);
     }

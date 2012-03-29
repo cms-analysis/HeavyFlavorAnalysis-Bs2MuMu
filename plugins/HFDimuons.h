@@ -40,7 +40,7 @@ class HFDimuons : public edm::EDAnalyzer {
   edm::InputTag fTracksLabel, fPrimaryVertexLabel;
   edm::InputTag fMuonsLabel;
 
-  double        fMuonPt, fMassLow, fMassHigh, fMaxDoca;
+  double        fMuonPt, fMassLow, fMassHigh, fMaxDoca, fPvWeight;
   int           fVertexing, fType; 
 
   reco::Vertex  fPV;
