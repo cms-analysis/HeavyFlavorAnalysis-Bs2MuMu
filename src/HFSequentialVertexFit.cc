@@ -1,7 +1,7 @@
 /*
  *  HFSequentialVertexFit.cc
  *
- *  Created by Christoph N�geli <christoph.naegeli@psi.ch> on 29.4.10.
+ *  Created by Christoph Nägeli <christoph.naegeli@psi.ch> on 29.4.10.
  */
 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFSequentialVertexFit.h"
@@ -11,7 +11,9 @@
 
 #include "RecoVertex/KinematicFit/interface/KinematicParticleFitter.h"
 #include "RecoVertex/KinematicFit/interface/KinematicParticleVertexFitter.h"
+#include "RecoVertex/KinematicFit/interface/KinematicConstrainedVertexFitter.h"
 #include "RecoVertex/KinematicFit/interface/MassKinematicConstraint.h"
+#include "RecoVertex/KinematicFit/interface/MultiTrackMassKinematicConstraint.h"
 #include "RecoVertex/KinematicFitPrimitives/interface/KinematicParticleFactoryFromTransientTrack.h"
 #include "RecoVertex/VertexTools/interface/VertexDistanceXY.h"
 #include "RecoVertex/VertexTools/interface/VertexDistance3D.h"
@@ -27,6 +29,8 @@
 #include "DataFormats/GeometryCommonDetAlgo/interface/Measurement1D.h"
 
 #include "CommonTools/Statistics/interface/ChiSquared.h"
+
+#include <algorithm>
 
 const static unsigned kNBR_CLOSED_TRACKS = 20;
 
@@ -73,17 +77,29 @@ HFSequentialVertexFit::~HFSequentialVertexFit()
 bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 {
 	KinematicParticleFactoryFromTransientTrack pFactory;
-	KinematicParticleVertexFitter kpvFitter;
 	vector<RefCountedKinematicParticle> kinParticles;
-	vector<pair<int,int> >::const_iterator trackIt;
-	vector<pair<int,int> > allTreeTracks;
+	vector<track_entry_t>::const_iterator trackIt;
+	vector<track_entry_t> allTreeTracks;
 	RefCountedKinematicTree kinTree;
 	HFDecayTreeIterator treeIt;
 	RefCountedHFNodeCut nodeCut;
 	map<int,int> *kinParticleMap;
+	int mass_constrained_tracks = 0;
 	
 	// set up the kinParticleMap for 'tree'
 	kinParticleMap = tree->getKinParticleMap();
+	
+	// add the particles from the tracks, we have to add them first for the KinematicConstrainedVertexFitter
+	allTreeTracks = tree->getAllTracks(1);
+	sort(allTreeTracks.begin(), allTreeTracks.end()); // sort such that all mass fit tracks are first
+	for (trackIt = allTreeTracks.begin(); trackIt != allTreeTracks.end(); ++trackIt) {
+		float sigma;
+		float mass = getParticleMass(trackIt->particleID,&sigma);
+		TrackBaseRef baseRef(fhTracks,trackIt->trackIx);
+		(*kinParticleMap)[trackIt->trackIx] = kinParticles.size();
+		kinParticles.push_back(pFactory.particle(fpTTB->build(*baseRef),mass,0.0f,0.0f,sigma));
+		if (trackIt->massFit) mass_constrained_tracks++;
+	}
 	
 	// add the particles from the sub-tree's with vertexing...
 	for (treeIt = tree->getVerticesBeginIterator(); treeIt != tree->getVerticesEndIterator(); ++treeIt) {
@@ -99,18 +115,16 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 		}
 	}
 	
-	// add the particles from the tracks
-	allTreeTracks = tree->getAllTracks(1);
-	for (trackIt = allTreeTracks.begin(); trackIt != allTreeTracks.end(); ++trackIt) {
-		float sigma;
-		float mass = getParticleMass(trackIt->second,&sigma);
-		TrackBaseRef baseRef(fhTracks,trackIt->first);
-		(*kinParticleMap)[trackIt->first] = kinParticles.size();
-		kinParticles.push_back(pFactory.particle(fpTTB->build(*baseRef),mass,0.0f,0.0f,sigma));
+	// do the actual fit of this vertex
+	if (tree->mass_tracks() > 0 && mass_constrained_tracks > 0) {
+		KinematicConstrainedVertexFitter kcvFitter;
+		auto_ptr<MultiTrackKinematicConstraint> tr_c(new MultiTrackMassKinematicConstraint(tree->mass_tracks(),mass_constrained_tracks));
+		kinTree = kcvFitter.fit(kinParticles,&(*tr_c));
+	} else {
+		KinematicParticleVertexFitter kpvFitter;
+		kinTree = kpvFitter.fit(kinParticles);
 	}
 	
-	// do the actual fit of this vertex
-	kinTree = kpvFitter.fit(kinParticles);
 	if (!kinTree->isEmpty() && tree->massConstraint()) {
 		KinematicParticleFitter csFitter;
 		auto_ptr<KinematicConstraint> con(new MassKinematicConstraint(tree->mass(),tree->massSigma()));
@@ -246,7 +260,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   TAnaTrack *pTrack;
   VertexDistanceXY axy;
   VertexDistance3D a3d;
-  vector<pair<int,int> > allTreeTracks = tree->getAllTracks(1);
+  vector<track_entry_t> allTreeTracks = tree->getAllTracks(1);
   set<int> allUsedTrackIndices = tree->getAllTracksIndices();
   map<int,int> *kinParticleMap;
   RefCountedKinematicTree kinTree = *(tree->getKinematicTree());
@@ -385,15 +399,15 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  if (removeCandTracksFromVtx_)
 	  {
 	      vector<TransientTrack> vrtxRefit;
-	      vector<pair<int,int> > completeTrackList = tree->getAllTracks(0);
+	      vector<track_entry_t> completeTrackList = tree->getAllTracks(0);
 	      bool removedTracks(false); // to check if we really need to perform the refit
 	      for (std::vector<TrackBaseRef>::const_iterator itTBR = currentPV.tracks_begin();  itTBR != currentPV.tracks_end(); itTBR++)
 	      {   // loop over all tracks in the PV to check if tracks from the candidate were used for fittingthe PV
 		  TrackRef tref = itTBR->castTo<TrackRef>();
 		  bool trkFound(false);
-		  for (vector<pair<int,int> >::const_iterator trackIt = completeTrackList.begin(); trackIt != completeTrackList.end(); ++trackIt) 
+		  for (vector<track_entry_t>::const_iterator trackIt = completeTrackList.begin(); trackIt != completeTrackList.end(); ++trackIt) 
 		  {
-		      TrackBaseRef curTr(fhTracks,trackIt->first);
+		      TrackBaseRef curTr(fhTracks,trackIt->trackIx);
 		      TrackRef curTref = curTr.castTo<TrackRef>();
 		      if (tref == curTref) trkFound = true;
 		  }
@@ -507,11 +521,11 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 
   for (j = 0; j < allTreeTracks.size(); j++) {
     
-    TransientTrack fitTrack = daughterParticles[(*kinParticleMap)[allTreeTracks[j].first]]->refittedTransientTrack();
+    TransientTrack fitTrack = daughterParticles[(*kinParticleMap)[allTreeTracks[j].trackIx]]->refittedTransientTrack();
     
     pTrack = gHFEvent->addSigTrack();
-    pTrack->fIndex = allTreeTracks[j].first;
-    pTrack->fMCID = allTreeTracks[j].second; // Here, we use the MCID of the sigTrack to store the assumed particle ID for the mass hypothesis
+    pTrack->fIndex = allTreeTracks[j].trackIx;
+    pTrack->fMCID = allTreeTracks[j].particleID; // Here, we use the MCID of the sigTrack to store the assumed particle ID for the mass hypothesis
     pTrack->fPlab = TVector3(fitTrack.track().px(),fitTrack.track().py(),fitTrack.track().pz());
     pTrack->fDof = fitTrack.ndof();
     pTrack->fValidHits = fitTrack.numberOfValidHits();
