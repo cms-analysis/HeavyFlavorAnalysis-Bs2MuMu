@@ -13,7 +13,7 @@ bmmDump = cms.EDAnalyzer(
     massHigh           = cms.untracked.double(6.7),
     maxDoca            = cms.untracked.double(0.1),
     vertexing          = cms.untracked.int32(1), 
-    pvWeight           = cms.untracked.double(0.8)
+    pvWeight           = cms.untracked.double(0.6)
     )
 
 
