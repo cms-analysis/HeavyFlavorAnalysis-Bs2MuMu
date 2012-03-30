@@ -4,6 +4,7 @@
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/MuonReco/interface/MuonSelectors.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 
 #include "MagneticField/Engine/interface/MagneticField.h"
@@ -39,13 +40,14 @@ using namespace reco;
 class HFLambdaCut : public HFMaxDocaCut
 {
 public:
-    HFLambdaCut(double maxPAngle = 3.2, HFNodeCut *lambdaCut = NULL, double docaCut = 1E7) :
-        HFMaxDocaCut(docaCut), fLambdaCut(lambdaCut), fMaxPAngle(maxPAngle) {}
+    HFLambdaCut(double maxPAngle = 3.2, HFNodeCut *lambdaCut = NULL, double docaCut = 1E7, double maxVtxChi2 = 10000.0) :
+        HFMaxDocaCut(docaCut), fLambdaCut(lambdaCut), fMaxPAngle(maxPAngle), fMaxVtxChi2(maxVtxChi2) {}
     virtual bool operator()();
 
 protected:
     HFNodeCut *fLambdaCut; // cross reference for pointing angle calculation!
     double fMaxPAngle; // max pointing angle (in radians)
+    double fMaxVtxChi2; // max chi2 of vertex fit
 };
 
 bool HFLambdaCut::operator()()
@@ -57,7 +59,7 @@ bool HFLambdaCut::operator()()
 
         // check the pointing angle
         const double pAngle = fLambdaCut->fPtCand.Angle(fLambdaCut->fVtxPos - this->fVtxPos);
-        result = pAngle < fMaxPAngle;
+        result = (pAngle < fMaxPAngle && fVtxChi2 < fMaxVtxChi2);
     }
 
     return result;
@@ -66,19 +68,19 @@ bool HFLambdaCut::operator()()
 class HFV0Cut : public HFNodeCut
 {
 public:
-    HFV0Cut(double maxChi2, double minD3, double maxDoca) :
-        fCutChi2(maxChi2), fCutD3(minD3), fCutMaxDoca(maxDoca) {};
+    HFV0Cut(double maxVtxChi2, double minD3, double maxDoca) :
+        fCutVtxChi2(maxVtxChi2), fCutD3(minD3), fCutMaxDoca(maxDoca) {};
     virtual bool operator()();
 
 protected:
-    double fCutChi2;
+    double fCutVtxChi2;
     double fCutD3;
     double fCutMaxDoca;
 };
 
 bool HFV0Cut::operator()()
 {
-    return ((fVtxChi2 < fCutChi2) && (fVtxPos.Mag() > fCutD3) && (fMaxDoca < fCutMaxDoca));
+    return ((fVtxChi2 < fCutVtxChi2) && (fVtxPos.Mag() > fCutD3) && (fMaxDoca < fCutMaxDoca));
 }
 
 HFLambdas::HFLambdas(const ParameterSet& iConfig) :
@@ -86,6 +88,7 @@ HFLambdas::HFLambdas(const ParameterSet& iConfig) :
     fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("goodTracks"))),
     fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexLabel", InputTag("offlinePrimaryVertices"))),
     fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
+    fMuonType(iConfig.getUntrackedParameter<InputTag>("muonType")),
     fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 1.0)),
     fPionPt(iConfig.getUntrackedParameter<double>("pionPt", 0.4)),
     fProtonPt(iConfig.getUntrackedParameter<double>("protonPt", 0.4)),
@@ -102,6 +105,7 @@ HFLambdas::HFLambdas(const ParameterSet& iConfig) :
     fEffMaxDoca(iConfig.getUntrackedParameter<double>("EffMaxDoca",.05)),
     fDeltaR(iConfig.getUntrackedParameter<double>("deltaR",99.0)),
     fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.2)),
+    fMaxVtxChi2(iConfig.getUntrackedParameter<double>("maxVtxChi2", 10000.0)),
     fPAngle(iConfig.getUntrackedParameter<double>("pAngle",0.1)),
     fUseV0producer(iConfig.getUntrackedParameter<bool>("useV0",false)),
     fDoVcands(iConfig.getUntrackedParameter<bool>("doVcands",false)),
@@ -110,15 +114,16 @@ HFLambdas::HFLambdas(const ParameterSet& iConfig) :
 {
     cout << "----------------------------------------------------------------------" << endl;
     cout << "--- HFLambdas constructor" << endl;
-    cout << "---  verbose:					" << fVerbose << endl;
+    cout << "---  verbose:                                  " << fVerbose << endl;
     cout << "---  tracksLabel:                              " << fTracksLabel << endl;
     cout << "---  PrimaryVertexLabel:                       " << fPrimaryVertexLabel << endl;
-    cout << "---  muonsLabel:				" << fMuonsLabel << endl;
+    cout << "---  muonsLabel:                               " << fMuonsLabel << endl;
     cout << "---  muonPt:                                   " << fMuonPt << endl;
+    cout << "---  muonType:                                 " << fMuonType << endl;
     cout << "---  pionPt:                                   " << fPionPt << endl;
     cout << "---  protonPt:                                 " << fProtonPt << endl;
     cout << "---  fTrackNormChi2:                           " << fTrackNormChi2 << endl;
-    cout << "---  psiMuons:					" << fPsiMuons << endl;
+    cout << "---  psiMuons:                                 " << fPsiMuons << endl;
     cout << "---  psiWindow:                                " << fPsiWindow << endl;
     cout << "---  ksWindow:                                 " << fksWindow << endl;
     cout << "---  L0Window:                                 " << fL0Window << endl;
@@ -129,11 +134,13 @@ HFLambdas::HFLambdas(const ParameterSet& iConfig) :
     cout << "---  EffMin3d:                                 " << fEffMin3d << endl;
     cout << "---  EffMaxDoca:                               " << fEffMaxDoca << endl;
     cout << "---  deltaR:                                   " << fDeltaR << endl;
-    cout << "---  maxDoca:				    " << fMaxDoca << endl;
+    cout << "---  maxDoca:                                  " << fMaxDoca << endl;
     cout << "---  pAngle:                                   " << fPAngle << endl;
+    cout << "---  maxVtxCut                                 " << fMaxVtxChi2 << endl;
     cout << "---  fUseV0producer                            " << fUseV0producer << endl;
     cout << "---  fDoVcands:                                " << fDoVcands << endl;
 
+    fMuonSelType = muon::selectionTypeFromString(fMuonType.label());
 } // HFLambdas()
 
 HFLambdas::~HFLambdas()
@@ -200,7 +207,8 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
     for (MuonCollection::const_iterator muon = hMuons->begin(); muon != hMuons->end(); ++muon)
     {
         int im = muon->track().index();
-        if(im >= 0) muonIndices.push_back(im);
+	if (im >= 0 && muon::isGoodMuon(*muon, fMuonSelType))
+	    muonIndices.push_back(im);
     }
 
     if (fVerbose > 0)
@@ -413,7 +421,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
             iterator->addTrack(iProton,2212);
             iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 
-            theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()),fMaxDoca)));
+            theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
             aSeq.doFit(&theTree);
 
@@ -433,7 +441,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
             iterator->addTrack(iProton,2212);
             iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 
-            theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca)));
+            theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
             aSeq.doFit(&theTree);
 
@@ -450,7 +458,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
             iterator->addTrack(iPion,211);
             iterator->addTrack(iProton,2212);
             iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-            theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle,&(*iterator->getNodeCut()),fMaxDoca)));
+            theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
             aSeq.doFit(&theTree);
 #endif
@@ -467,7 +475,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
             iterator->addTrack(iPion,211);
             iterator->addTrack(iProton,2212);
             iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-            theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle,&(*iterator->getNodeCut()),fMaxDoca)));
+            theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
             aSeq.doFit(&theTree);
         }
@@ -502,7 +510,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
                 iterator->addTrack(iPion2,211);
                 iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 
-                theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()),fMaxDoca)));
+                theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
                 aSeq.doFit(&theTree);
 
@@ -519,7 +527,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
                 iterator->addTrack(iPion2,211);
                 iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 
-                theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca)));
+                theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
                 aSeq.doFit(&theTree);
 
@@ -535,7 +543,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
                 iterator->addTrack(iPion1,211);
                 iterator->addTrack(iPion2,211);
                 iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-                theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle,&(*iterator->getNodeCut()),fMaxDoca)));
+                theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
                 aSeq.doFit(&theTree);
 
@@ -551,7 +559,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
                 iterator->addTrack(iPion1,211);
                 iterator->addTrack(iPion2,211);
                 iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-                theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle,&(*iterator->getNodeCut()),fMaxDoca)));
+                theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
                 aSeq.doFit(&theTree);
             }      // K0List

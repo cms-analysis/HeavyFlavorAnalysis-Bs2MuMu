@@ -5,6 +5,8 @@
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 
+#include "DataFormats/MuonReco/interface/MuonSelectors.h"
+
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
 
@@ -22,8 +24,10 @@ private:
     int fVerbose;
     edm::InputTag	fTracksLabel,fPrimaryVertexLabel;
     edm::InputTag	fMuonsLabel;
+    edm::InputTag       fMuonType;
 
     double fMuonPt,fPionPt,fProtonPt;
+    muon::SelectionType fMuonSelType;
     double fTrackNormChi2;
     int fPsiMuons;
     double fPsiWindow,fksWindow,fL0Window,fLbWindow; // mass windows for event selection
@@ -32,8 +36,10 @@ private:
     double fDeltaR;
     //int fVertexing;
 
-    double fMaxDoca;
+    double fMaxDoca; // for LambdaCut
+    double fMaxVtxChi2;
     double fPAngle;
+
     bool fUseV0producer;
     bool fDoVcands;
     bool fRemoveCandTracksFromVertex;
