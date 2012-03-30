@@ -1,0 +1,14 @@
+# $Id: Bu_mumuK.dec,v 1.1 2012/02/23 19:57:05 ursl Exp $
+#
+# This is the decay file for the decay BD0 -> MU+ MU- PI0
+#
+Alias      MyB+        B+
+Alias      MyB-        B-
+ChargeConj MyB-        MyB+
+#
+Decay MyB+
+1.000        K+    mu+     mu-     BTOSLLBALL;
+Enddecay
+CDecay MyB-
+#
+End
