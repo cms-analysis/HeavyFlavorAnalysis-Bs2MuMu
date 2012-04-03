@@ -385,6 +385,7 @@ int main(int argc, char **argv)
 	cout << "Test statistic in test hypothesis (H1), 1sig upper edge --> " << "tssp1: " << mymclimit->tssp1() << endl;
 	cout << "Test statistic in test hypothesis (H1), 2sig upper edge --> " << "tssp2: " << mymclimit->tssp2() << endl;
 	
+	f_outputfile << "The signal scale factor for 95% calculation is = " << d_scale << endl;
 	f_outputfile << "CLb = " << mymclimit->clb() << endl;
 	f_outputfile << "CLsb = " << mymclimit->clsb() << endl;
 	f_outputfile << "CLs (CLsb/CLb) = " << mymclimit->cls() << endl << endl;
@@ -403,7 +404,13 @@ int main(int argc, char **argv)
 	f_outputfile << "Expected 1-CLb in null hypothesis: median = " << d_omclbexpbmed << endl;
 	f_outputfile << "Expected 1-CLb in null hypothesis: +1 sigma = " << mymclimit->omclbexpbp1() << endl;
 	f_outputfile << "Expected 1-CLb in null hypothesis: +1 sigma = " << mymclimit->omclbexpbp2() << endl << endl;
-	
+	cout << "<<<<<<<< Could signal+background explain the observed data? >>>>>>>>" << endl;	
+	f_outputfile << "Expected CLsb in null hypothesis: -2 sigma = " << mymclimit->clsbexpbm2() << endl;
+	f_outputfile << "Expected CLsb in null hypothesis: -1 sigma = " << mymclimit->clsbexpbm1() << endl;
+	f_outputfile << "Expected CLsb in null hypothesis: median = " << mymclimit->clsbexpbmed() << endl;
+	f_outputfile << "Expected CLsb in null hypothesis: +1 sigma = " << mymclimit->clsbexpbp1() << endl;
+	f_outputfile << "Expected CLsb in null hypothesis: +2 sigma = " << mymclimit->clsbexpbp2() << endl << endl;
+
 	cout << "<<<<<<<< Getting Expected CLs Results for Test Hyp >>>>>>>>" << endl;
 	Double_t d_omclbexpsmed = mymclimit->omclbexpsmed();
 	f_outputfile << "Expected CLs in test hypothesis: -2 sigma = " << mymclimit->clsexpsm2() << endl;
