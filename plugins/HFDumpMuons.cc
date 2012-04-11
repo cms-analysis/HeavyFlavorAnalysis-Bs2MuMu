@@ -129,6 +129,7 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   pM->fTimeOutIn        = rm.time().timeAtIpOutIn; 
   pM->fTimeOutInE       = rm.time().timeAtIpOutInErr; 
   pM->fTimeNdof         = rm.time().nDof;
+  pM->fTimeNdof         = rm.numberOfMatchedStations(); //FIXME!!!
   pM->fNmatchedStations = rm.numberOfMatchedStations();
 
   TrackRef gTrack = rm.globalTrack();
