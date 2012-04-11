@@ -36,7 +36,7 @@ if ($opt_r) {
 if ($opt_v) {
     $version = $opt_v; 
 } else {
-    $version = "v10";
+    $version = "v12";
 }
 
 %jobs = (
@@ -48,6 +48,8 @@ if ($opt_v) {
     => "-m,bmm2Reader.3e33-Bs2MuMu,cbmm-$version-3e33-Bs2MuMu,$version-3e33-Bs2MuMu.root"
     , "signal Bs2MuMu MC mix"  
     => "-m,bmm2Reader.mix-Bs2MuMu,cbmm-$version-mix-Bs2MuMu,$version-mix-Bs2MuMu.root"
+    , "signal Bs2MuMu MC cms"  
+    => "-m,bmm2Reader.mix-Bs2MuMu,cbmm-$version-mix-Bs2MuMu,$version-cms-Bs2MuMu.root"
     , "signal Bd2MuMu MC 1e33"  
     => "-m,bmm2Reader.1e33-Bd2MuMu,cbmm-$version-1e33-Bd2MuMu,$version-1e33-Bd2MuMu.root"
     , "signal Bd2MuMu MC 2e33"  

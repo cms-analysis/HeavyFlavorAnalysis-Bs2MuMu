@@ -9,7 +9,7 @@
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TGenCand.hh"
 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKalmanVertexFit.hh"
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKinematicVertexFit.hh"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFSequentialVertexFit.h"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTwoParticleCombinatorics.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFMasses.hh"
 
@@ -32,29 +32,28 @@ using namespace edm;
 // ----------------------------------------------------------------------
 HFDiTracks::HFDiTracks(const ParameterSet& iConfig) :
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
-  fVertexing(iConfig.getUntrackedParameter<int>("vertexing", 1)),
   fTracksLabel(iConfig.getUntrackedParameter<string>("tracksLabel", string("goodTracks"))), 
   fPrimaryVertexLabel(iConfig.getUntrackedParameter<string>("PrimaryVertexLabel", string("offlinePrimaryVertices"))),
-  fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
-  fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 3.0)), 
-  fTrackPt(iConfig.getUntrackedParameter<double>("trackPt", 1.0)), 
-  fTrackMass(iConfig.getUntrackedParameter<double>("trackMass", 0.1396)), 
+  fTrackPt(iConfig.getUntrackedParameter<double>("trackPt", 3.0)), 
+  fTrack1Mass(iConfig.getUntrackedParameter<double>("track1Mass", 0.1396)), 
+  fTrack2Mass(iConfig.getUntrackedParameter<double>("track2Mass", 0.1396)), 
   fMassLow(iConfig.getUntrackedParameter<double>("massLow", 0.0)), 
   fMassHigh(iConfig.getUntrackedParameter<double>("massHigh", 12.0)), 
+  fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.05)),
+  fPvWeight(iConfig.getUntrackedParameter<double>("pvWeight", 0.0)),
   fType(iConfig.getUntrackedParameter<int>("type", 1300)) {
 
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFDiTracks constructor" << endl;
-  cout << "---  tracksLabel:              " << fTracksLabel.c_str() << endl;
-  cout << "---  muonsLabel:               " << fMuonsLabel << endl;
-  cout << "---  vertexing                 " << fVertexing << endl;
-  cout << "---  muonPt:                   " << fMuonPt << endl;
+  cout << "---  tracksLabel:              " << fTracksLabel << endl;
   cout << "---  trackPt:                  " << fTrackPt << endl;
-  cout << "---  trackMass:                " << fTrackMass << endl;
-  cout << "---  Type:                     " << fType << endl;
+  cout << "---  track1Mass:               " << fTrack1Mass << endl;
+  cout << "---  track2Mass:               " << fTrack2Mass << endl;
   cout << "---  massLow:                  " << fMassLow << endl;
   cout << "---  massHigh:                 " << fMassHigh << endl;
-  cout << "---  type:                     " << fType << endl;
+  cout << "---  maxDoca:                  " << fMaxDoca << endl;
+  cout << "---  pvWeight:                 " << fPvWeight << endl;
+  cout << "---  Type:                     " << fType << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
 }
@@ -68,87 +67,104 @@ HFDiTracks::~HFDiTracks() {
 
 // ----------------------------------------------------------------------
 void HFDiTracks::analyze(const Event& iEvent, const EventSetup& iSetup) {
-
+  // -- get the magnetic field
+  ESHandle<MagneticField> magfield;
+  iSetup.get<IdealMagneticFieldRecord>().get(magfield);
+  const MagneticField *field = magfield.product();
+ 
   // -- get the primary vertex
   Handle<VertexCollection> recoPrimaryVertexCollection;
-  iEvent.getByLabel(fPrimaryVertexLabel.c_str(), recoPrimaryVertexCollection);
+  iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
   if(!recoPrimaryVertexCollection.isValid()) {
-    cout << "==>HFDiTracks> No primary vertex collection found, skipping" << endl;
+    cout << "==>HFDitracks> No primary vertex collection found, skipping" << endl;
     return;
   }
   const VertexCollection vertices = *(recoPrimaryVertexCollection.product());
   if (vertices.size() == 0) {
-    cout << "==>HFDiTracks> No primary vertex found, skipping" << endl;
+    cout << "==>HFDitracks> No primary vertex found, skipping" << endl;
     return;
   }
   fPV = vertices[gHFEvent->fBestPV]; 
   if (fVerbose > 0) {
-    cout << "HFDimuons: Taking vertex " << gHFEvent->fBestPV << " with ntracks = " << fPV.tracksSize() << endl;
+    cout << "HFDitracks: Taking vertex " << gHFEvent->fBestPV << " with ntracks = " << fPV.tracksSize() << endl;
   }
   
   // -- get the collection of tracks
   Handle<View<Track> > hTracks;
-  iEvent.getByLabel(fTracksLabel.c_str(), hTracks);
-  if (!hTracks.isValid()) {
-    cout << "==>HFDiTracks> No valid TrackCollection with label "<<fTracksLabel.c_str() <<" found, skipping" << endl;
+  iEvent.getByLabel(fTracksLabel, hTracks);
+  if(!hTracks.isValid()) {
+    cout << "==>HFDitracks> No valid TrackCollection with label "<<fTracksLabel <<" found, skipping" << endl;
     return;
+  }
+
+  // -- Build lists
+  vector<pair<int, TLorentzVector> > t1list, t2list; 
+  TLorentzVector tlv; 
+  t1list.reserve(1000); 
+  t2list.reserve(1000); 
+
+  for (unsigned int itrack = 0; itrack < hTracks->size(); ++itrack){    
+    TrackBaseRef rTrackView(hTracks, itrack);
+    Track tTrack(*rTrackView);
+
+    if (tTrack.pt() > fTrackPt)  {
+      tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), fTrack1Mass); 
+      t1list.push_back(make_pair(itrack, tlv));
+    }
+
+    if (tTrack.pt() > fTrackPt) {
+      tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), fTrack2Mass); 
+      t2list.push_back(make_pair(itrack, tlv));
+    }
+  }
+
+
+  HFTwoParticleCombinatorics a(fVerbose); 
+  vector<pair<int, int> > ttList; 
+  ttList.reserve(100000); 
+  if (TMath::Abs(fTrack1Mass - fTrack2Mass) < 0.0001) {
+    a.combine(ttList, t1list, t2list, fMassLow, fMassHigh, 1); 
+  } else {
+    a.combine(ttList, t1list, t2list, fMassLow, fMassHigh, 0); 
   }
   
   // -- Transient tracks for vertexing
   iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", fTTB);
   if (!fTTB.isValid()) {
-    cout << " -->HFDiTracks: Error: no TransientTrackBuilder found."<<endl;
+    cout << " -->HFDitracks: Error: no TransientTrackBuilder found."<<endl;
     return;
   }
 
   // -- set up vertex fitter 
-  HFKalmanVertexFit a(fTTB.product(), fPV, fType, 0); 
-  vector<Track> trackList; 
-  vector<int> trackIndices;
-  vector<double> trackMasses;
+  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
 
   TLorentzVector ditrack, t1, t2;
-  for (unsigned int it1 = 0; it1 < hTracks->size()-1; ++it1) {
-    TrackBaseRef t1TrackView(hTracks, it1);
-    Track tTrack1(*t1TrackView);
-    t1.SetPtEtaPhiM(tTrack1.pt(), tTrack1.eta(), tTrack1.phi(), fTrackMass); 
-    if (tTrack1.pt() < fMuonPt)  continue;
+  for (unsigned int i = 0; i < ttList.size(); ++i) {
+    unsigned int it1 = ttList[i].first; 
+    unsigned int it2 = ttList[i].second; 
 
-    for (unsigned int it2 = it1 + 1; it2 < hTracks->size(); ++it2) {
-      TrackBaseRef t2TrackView(hTracks, it2);
-      Track tTrack2(*t2TrackView);
-      if (tTrack2.pt() < fMuonPt)  continue;
+    TrackBaseRef t1View(hTracks, it1);
+    Track tT1(*t1View);
+    if (tT1.pt() < fTrackPt)  continue;
+    t1.SetPtEtaPhiM(tT1.pt(), tT1.eta(), tT1.phi(), fTrack1Mass); 
 
-      t2.SetPtEtaPhiM(tTrack2.pt(), tTrack2.eta(), tTrack2.phi(), fTrackMass); 
-      ditrack = t1 + t2; 
+    TrackBaseRef t2View(hTracks, it2);
+    Track tT2(*t2View);
+    if (tT2.pt() < fTrackPt)  continue;
+    t2.SetPtEtaPhiM(tT2.pt(), tT2.eta(), tT2.phi(), fTrack2Mass); 
 
-      if (ditrack.M() < fMassLow || ditrack.M() > fMassHigh) {
-	if (fVerbose > 0) {
-	  cout << "==>HFDiTracks> ditrack mass = " << ditrack.M() << ", skipping" << endl;
-	}
-	continue; 
-      }
+    ditrack = t1 + t2; 
+    if (ditrack.M() < fMassLow || ditrack.M() > fMassHigh) continue;
 
-      // -- Vertexing, new style
-      trackList.clear();
-      trackIndices.clear(); 
-      trackMasses.clear(); 
-      
-      trackList.push_back(tTrack1); 
-      trackIndices.push_back(it1); 
-      trackMasses.push_back(fTrackMass);
-      
-      trackList.push_back(tTrack2); 
-      trackIndices.push_back(it2); 
-      trackMasses.push_back(fTrackMass);
-      
-      if (fVertexing > 0) {
-	a.doFit(trackList, trackIndices, trackMasses); 	
-      } else {
-	a.doNotFit(trackList, trackIndices, trackMasses); 	
-      }
-      
-    }
+    
+    // -- Vertexing, with Kinematic Particles
+    HFDecayTree theTree(fType, true, 0, false); 
+    theTree.addTrack(it1, idFromMass(fTrack1Mass));
+    theTree.addTrack(it2, idFromMass(fTrack2Mass));
+    //theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+    theTree.setNodeCut(RefCountedHFNodeCut(new HFPvWeightCut(fMaxDoca,fPvWeight)));
+    
+    aSeq.doFit(&theTree);
   }
 
 }
@@ -160,6 +176,18 @@ void  HFDiTracks::beginJob() {
 // ------------ method called once each job just after ending the event loop  ------------
 void  HFDiTracks::endJob() {
 }
+
+// ----------------------------------------------------------------------
+int HFDiTracks::idFromMass(double mass) {
+  if (TMath::Abs(mass - MELECTRON) < 0.0001) return 11;
+  if (TMath::Abs(mass - MMUON) < 0.0001) return 13;
+  if (TMath::Abs(mass - MPION) < 0.0001) return 211;
+  if (TMath::Abs(mass - MKAON) < 0.0001) return 321;
+  if (TMath::Abs(mass - MPROTON) < 0.0001) return 2212;
+  cout << "%%%> HFDiTracks: mass " << mass << " not associated to any stable particle" << endl;
+  return 0; 
+}
+
 
 //define this as a plug-in
 DEFINE_FWK_MODULE(HFDiTracks);

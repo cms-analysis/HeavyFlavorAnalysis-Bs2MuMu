@@ -2,7 +2,8 @@
 
 
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
-#include "HepMC/PythiaWrapper6_2.h"
+#include "GeneratorInterface/Pythia6Interface/interface/Pythia6Service.h"
+#include "GeneratorInterface/Pythia6Interface/interface/Pythia6Declarations.h"
 #include <iostream>
 #include <vector>
 

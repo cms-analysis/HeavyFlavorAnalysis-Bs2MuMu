@@ -80,7 +80,7 @@ if ($opt_f) {
 }
 
 # -- Remove stuff from dbs txt file
-my $withEvents = 0; 
+$withEvents = 0; 
 if ($files[0] =~ /^\/store/) {
     $withEvents = 2; 
 } else {

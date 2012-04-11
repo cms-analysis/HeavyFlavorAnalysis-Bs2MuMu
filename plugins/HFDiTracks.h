@@ -35,22 +35,18 @@ class HFDiTracks : public edm::EDAnalyzer {
   virtual void beginJob() ;
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
-  void         doVertexFit(std::vector<reco::Track> &Tracks, int iMuon1, int iMuon2, TAnaCand *pCand);
-  void         doVertexFit(std::vector<reco::Track> &Tracks, int iMuon1, int iMuon2);
-  void         fillCandAndSignal(std::vector<reco::Track> &Tracks, int iMuon1, int iMuon2, TAnaCand *pCand);
-  void         fillCandAndSignal(std::vector<reco::Track> &Tracks, int iMuon1, int iMuon2);
+  virtual int  idFromMass(double mass);
 
-  int           fVerbose;
-  int           fVertexing; 
-  std::string   fTracksLabel, fPrimaryVertexLabel;
-  edm::InputTag fMuonsLabel;
+  int           fVerbose; 
+  edm::InputTag fTracksLabel, fPrimaryVertexLabel;
 
-  double        fMuonPt, fTrackPt, fTrackMass, fMassLow, fMassHigh;
+  double        fTrackPt, fTrack1Mass, fTrack2Mass, fMassLow, fMassHigh, fMaxDoca, fPvWeight;
   int           fType; 
 
   reco::Vertex  fPV;
 
   edm::ESHandle<TransientTrackBuilder> fTTB;
+
 };
 
 #endif

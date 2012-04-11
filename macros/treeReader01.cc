@@ -104,7 +104,7 @@ int  treeReader01::numberOfBPixLayers(TAnaTrack *pTrack) {
   //cout<<" muon1 "<<algo1<<" "<<qual1<<" "<<hits1<<hex<<" ";
   if(hits>20) hits=20; // pattern has only 20 locations
   for(int i =0; i<hits; ++i){
-    uint32_t pat = pTrack->fHitPattern[i];
+    int pat = pTrack->fHitPattern[i];
     //cout<<pat<<" ";
     if( pat == 0x488 ) layer1 = true;
     else if( pat == 0x490 ) layer2 = true;
@@ -125,7 +125,7 @@ int  treeReader01::numberOfPixLayers(TAnaTrack *pTrack) {
   //cout<<" muon1 "<<algo1<<" "<<qual1<<" "<<hits1<<hex<<" ";
   if(hits>20) hits=20; // pattern has only 20 locations
   for(int i =0; i<hits; ++i){
-    uint32_t pat = pTrack->fHitPattern[i];
+    unsigned int pat = pTrack->fHitPattern[i];
     //cout<<pat<<" ";
     if( pat == 0x488 ) layer1 = true;
     else if( pat == 0x490 ) layer2 = true;
@@ -150,7 +150,7 @@ int  treeReader01::numberOfBPixLayer1Hits(TAnaTrack *pTrack) {
   //cout<<" muon1 "<<algo1<<" "<<qual1<<" "<<hits1<<hex<<" ";
   if(hits>20) hits=20; // pattern has only 20 locations
   for(int i =0; i<hits; ++i){
-    uint32_t pat = pTrack->fHitPattern[i];
+    unsigned int pat = pTrack->fHitPattern[i];
     //cout<<pat<<" ";
     if( pat == 0x488 ) pixHits++;
     //else if( pat == 0x490 ) layer2 = true;

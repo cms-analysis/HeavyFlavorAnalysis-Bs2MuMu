@@ -84,31 +84,6 @@ void HFDstar::analyze(const Event& iEvent, const EventSetup& iSetup)
   ESHandle<MagneticField> magfield;
   iSetup.get<IdealMagneticFieldRecord>().get(magfield);
   const MagneticField *field = magfield.product();
-
-  //   // -- Filter on truth candidates
-  //   TAnaCand *pCand(0);
-  //   TAnaTrack *pT(0); 
-  //   int OK(0); 
-  //   for (int iC = 0; iC < gHFEvent->nCands(); ++iC) {
-  //     pCand = gHFEvent->getCand(iC);
-  //     if (54 == pCand->fType) {
-  //       OK = 1; 
-  //       for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
-  // 	pT = gHFEvent->getRecTrack(gHFEvent->getSigTrack(i)->fIndex); 
-  // 	if (pT->fPlab.Perp() < 0.) {
-  // 	  OK = 0; 
-  // 	}
-  //       }
-  //       break;
-  //     }
-  //   }
-  //   if (0 == OK) return;
-  //   cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" << endl;
-  //   for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
-  //     pT = gHFEvent->getRecTrack(gHFEvent->getSigTrack(i)->fIndex); 
-  //     pT->dump();
-  //   }
-  //   cout << "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" << endl;
   
   // -- get the primary vertex
   Handle<VertexCollection> recoPrimaryVertexCollection;
@@ -228,24 +203,6 @@ void HFDstar::analyze(const Event& iEvent, const EventSetup& iSetup)
       theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
       
       aSeq.doFit(&theTree);
-      //       if (fVerbose > 6) {
-      // 	cout << " XXXXXX: " << gHFEvent->nCands() << endl;
-      // 	cout << " XXXXXX: " << gHFEvent->getCand(gHFEvent->nCands()-2)->fType << endl;
-      // 	TAnaCand *pC = gHFEvent->getCand(gHFEvent->nCands()-2); 
-      // 	TAnaCand *pD = gHFEvent->getCand(pC->fDau1); 
-      // 	cout << " XXXXXX: HFDstarCand: idx = " << pC->fIndex << " type = " << pC->fType
-      // 	     << " m* = " << pC->fMass << " m0 = " << pD->fMass << " dm = " << pC->fMass-pD->fMass << endl;
-      // 	//  if (fVerbose > -1) cout << "   mdz = " << pD->fMass << endl;
-      // 	for (int id = pD->fSig1; id <= pD->fSig2; ++id) {
-      // 	  pT = gHFEvent->getRecTrack(gHFEvent->getSigTrack(id)->fIndex);
-      // 	  cout << " XXXXXX: " << gHFEvent->getSigTrack(id)->fMCID << " " ; 
-      // 	  pT->dump(); 
-      // 	}
-      // 	// -- slow pion
-      // 	pT = gHFEvent->getRecTrack(gHFEvent->getSigTrack(pC->fSig1)->fIndex); 
-      // 	cout << " XXXXXX: " << gHFEvent->getSigTrack(pC->fSig1)->fMCID << " " ; 
-      // 	pT->dump(); 
-      //       }
     }
   }
 }

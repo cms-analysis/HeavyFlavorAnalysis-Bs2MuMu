@@ -123,15 +123,13 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   pM->fMuID    = muonID(rm);
   pM->fQ       = rm.charge();
 
-  pM->fMuonChi2   = rm.combinedQuality().trkKink;
-
-  pM->fTimeInOut  = rm.time().timeAtIpInOut; 
-  pM->fTimeInOutE = rm.time().timeAtIpInOutErr; 
-  pM->fTimeOutIn  = rm.time().timeAtIpOutIn; 
-  pM->fTimeOutInE = rm.time().timeAtIpOutInErr; 
-  //  pM->fTimeNdof   = rm.time().nDof;
-  pM->fTimeNdof   = -1; // abused below!!!
-  pM->fTimeNdof = rm.numberOfMatchedStations();
+  pM->fMuonChi2         = rm.combinedQuality().trkKink;
+  pM->fTimeInOut        = rm.time().timeAtIpInOut; 
+  pM->fTimeInOutE       = rm.time().timeAtIpInOutErr; 
+  pM->fTimeOutIn        = rm.time().timeAtIpOutIn; 
+  pM->fTimeOutInE       = rm.time().timeAtIpOutInErr; 
+  pM->fTimeNdof         = rm.time().nDof;
+  pM->fNmatchedStations = rm.numberOfMatchedStations();
 
   TrackRef gTrack = rm.globalTrack();
   TrackRef iTrack = rm.innerTrack();
@@ -174,6 +172,7 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   if (prop_M2.isValid()) {
     pM->fPositionAtM2.SetXYZ(prop_M2.globalPosition().x(), prop_M2.globalPosition().y(), prop_M2.globalPosition().z());
   }
+
 }
 
 // ----------------------------------------------------------------------
