@@ -4,6 +4,8 @@ TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v1_Bs1E33v1p3V13(1:99999999)
 TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v1_Bs1E33v2p3V1(1:99999999)
 TRIGRANGE    HLT_DoubleMu3p5_Jpsi_Displaced_v2_Bs2E33v1p2V4(1:99999999)
 TRIGRANGE    HLT_DoubleMu4_Jpsi_Displaced_v1(1:99999999)
+TRIGRANGE    HLT_DoubleMu4_Jpsi_Displaced_v7(1:99999999)
+TRIGRANGE    HLT_DoubleMu4_Jpsi_Displaced_v9(1:99999999)
 # -- boxes
 +input cuts/boxes.Bs2JpsiPhi.cuts
 # -- tracks
