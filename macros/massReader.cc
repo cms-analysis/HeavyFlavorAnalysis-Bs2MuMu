@@ -701,15 +701,7 @@ float massReader::calculateIsolation(TAnaCand *pCand)
 			continue;
 		
 		// check that not the same PV
-		
-		if ((pCand->fPvIdx == pTrack->fPvIdx) || (nearSV.count(j)>0 && pTrack->fPvIdx < 0))
-			sum_pt += pTrack->fPlab.Pt();
-
-
 		if ((pCand->fPvIdx != pTrack->fPvIdx) && (nearSV.count(j)==0 || pTrack->fPvIdx >= 0))
-			continue;
-				
-		if ((pCand->fPvIdx != pTrack->fPvIdx) && (pTrack->fPvIdx >= 0 || nearSV.count(j) == 0))
 			continue;
 		
 		sum_pt += pTrack->fPlab.Pt();
