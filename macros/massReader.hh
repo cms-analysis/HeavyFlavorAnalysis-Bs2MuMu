@@ -148,7 +148,7 @@ class massReader : public treeReader01 {
 		float fDeltaPhiMu; // mu1.Phi(mu2)
 		float fIsoMoriond12; // isolation variable defined as for moriond 12
 		float fDoca0;
-		int fNbrNearby;
+		float fNbrNearby;
 		// muon properties
 		float fPtMu1,fPtMu2;
 		int fMuTight1,fMuTight2;

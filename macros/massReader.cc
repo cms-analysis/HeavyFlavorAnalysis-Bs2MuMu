@@ -474,7 +474,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("p_mu2_gen",&fPMu2_Gen,"p_mu2_gen/F");
 	reduced_tree->Branch("iso_mor12",&fIsoMoriond12,"iso_mor12/F");
 	reduced_tree->Branch("doca0",&fDoca0,"doca0/F");
-	reduced_tree->Branch("ntrk",&fNbrNearby,"ntrk/I");
+	reduced_tree->Branch("ntrk",&fNbrNearby,"ntrk/F");
 	reduced_tree->Branch("triggers",&fTriggers,"triggers/I");
 	reduced_tree->Branch("pt_dimuon",&fPtJPsi,"pt_dimuon/F");
 	reduced_tree->Branch("mass_dimuon",&fMassJPsi,"mass_dimuon/F");
