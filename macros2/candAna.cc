@@ -1168,7 +1168,7 @@ void candAna::bookHist() {
 
     fpHLT[i]       = bookDistribution(Form("%shlt", name.c_str()), "hlt", "fGoodHLT", 10, 0., 10.);           
     fpPvZ[i]       = bookDistribution(Form("%spvz", name.c_str()), "z_{PV} [cm]", "fGoodHLT", 40, -20., 20.);           
-    fpPvN[i]       = bookDistribution(Form("%spvn", name.c_str()), "N(PV) ", "fGoodHLT", 20, 0., 20.);           
+    fpPvN[i]       = bookDistribution(Form("%spvn", name.c_str()), "N(PV) ", "fGoodHLT", 50, 0., 50.);           
     fpPvNtrk[i]    = bookDistribution(Form("%spvntrk", name.c_str()), "N_{trk}^{PV} ", "fGoodHLT", 20, 0., 200.);           
     fpPvAveW8[i]   = bookDistribution(Form("%spvavew8", name.c_str()), "<w^{PV}>", "fGoodPvAveW8", 25, 0.5, 1.);           
 
@@ -1287,7 +1287,7 @@ void candAna::bookHist() {
 	pD = fHistDir->mkdir(Form("%sNpv%i", name.c_str(), ipv));
 	pD->cd();
 	dname = Form("%snpv%i_", name.c_str(), ipv);
-	fpNpvPvN[ipv][i]     = bookDistribution(Form("%spvn", dname.c_str()), "N(PV) ", "fGoodHLT", 30, 0., 30.);           
+	fpNpvPvN[ipv][i]     = bookDistribution(Form("%spvn", dname.c_str()), "N(PV) ", "fGoodHLT", 60, 0., 60.);           
         fpNpvAveW8[ipv][i]   = bookDistribution(Form("%spvavew8", dname.c_str()),  "<w^{PV}>", "fGoodPvAveW8", 25, 0.5, 1.0); 
 	fpNpvChi2Dof[ipv][i] = bookDistribution(Form("%schi2dof", dname.c_str()), "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
 	fpNpvProb[ipv][i]    = bookDistribution(Form("%spchi2dof", dname.c_str()), "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    

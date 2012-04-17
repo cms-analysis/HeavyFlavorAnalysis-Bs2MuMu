@@ -44,11 +44,25 @@ void plotOverlays::makeAll(int verbose) {
 
   fVerbose = verbose;
 
-  fMode = 1; 
+  fMode = 0; 
   cout << " ########################## MC APV0/MCPU APV1 #########################" << endl;
-  sbsDistributionOverlay("SgMc3e33", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "Ao"); 
-  sbsDistributionOverlay("SgMc3e33", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "HLT"); 
-  sbsDistributionOverlay("SgMc3e33", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "Presel"); 
+//  sbsDistributionOverlay("SgMc3e33", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "Ao"); 
+//  sbsDistributionOverlay("SgMc3e33", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "HLT"); 
+  sbsDistributionOverlay("SgData2011", "candAnaMuMu", "A", "SgData2012", "candAnaMuMu", "A", "HLT");
+//  sbsDistributionOverlay("SgData2012", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Presel");	
+//  sbsDistributionOverlay("SgData2012", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Ao");
+	cout << " ########################## No DATA/MC A #########################" << endl;
+  fMode = 3; 
+  fPreco = 5.1;
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Presel"); 
+  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Ao"); 
+  fMode = 2; 
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMc", "candAnaBs2JpsiPhi", "A", "Presel"); 
+  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMc", "candAnaBs2JpsiPhi", "A", "Ao"); 
+  fMode = 0; 
+  cout << " ########################## SG DATA/MC A #########################" << endl;
+  sbsDistributionOverlay("SgData", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Ao");
+  sbsDistributionOverlay("SgData", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Presel");
 
 //   cout << " ########################## MCPU APV0/MCPU APV1 #########################" << endl;
 //   sbsDistributionOverlay("SgMcPU", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "Ao"); 

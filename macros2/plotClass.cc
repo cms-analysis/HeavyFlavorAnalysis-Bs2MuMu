@@ -1829,7 +1829,21 @@ void plotClass::loadFiles(const char *files) {
 	fName.insert(make_pair(sname, "Data")); 
       }
 
-      if (string::npos != stype.find("default") && string::npos != stype.find("no")) {
+       if (string::npos != stype.find("2011") && string::npos != stype.find("sg")) {
+	sname = "SgData2011"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "Data")); 
+      }
+ 
+       if (string::npos != stype.find("2012") && string::npos != stype.find("sg")) {
+	sname = "SgData2012"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "Data")); 
+      }
+ 
+     if (string::npos != stype.find("default") && string::npos != stype.find("no")) {
 	sname = "NoData";
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
