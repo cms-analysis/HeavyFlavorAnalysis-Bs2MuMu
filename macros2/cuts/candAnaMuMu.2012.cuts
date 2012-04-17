@@ -1,7 +1,7 @@
 TYPE           301313
 TRUTHCAND         531
 # -- trigger
-+input cuts/triggerBs.cuts
++input cuts/triggerBs2012.cuts
 # -- boxes
 +input cuts/boxes.cuts
 # -- tracks
