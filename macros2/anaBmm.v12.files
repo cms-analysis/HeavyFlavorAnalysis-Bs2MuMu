@@ -1,0 +1,20 @@
+# ----------------------------------------------------------------------
+# signal data and MC
+#type=sg,default       dset=data     lumi=4.9    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/cbmm-v12-Run2012A-PromptReco-v1-00.root
+type=sg,default       dset=data     lumi=4.9    file=/shome/lazo-flores/scratch/v12-2012-data.root
+type=sg,2011          dset=data     lumi=4.9    file=/shome/lazo-flores/scratch/v11-2011-data.root
+type=sg,2012          dset=data     lumi=4.9    file=/shome/lazo-flores/scratch/v12-2012-data.root
+type=sg,default       dset=mc       lumi=1600.0 file=/shome/lazo-flores/scratch/v12-cms-Bs2MuMu.root
+# --------------------------------------------------------------------
+# control sample  data and MC
+#type=cs,default       dset=data    lumi=4.9    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/cbmm-v12-Run2012A-PromptReco-v1-00.root
+type=cs,default       dset=data     lumi=4.9    file=/shome/lazo-flores/scratch/v12-2012-data.root
+type=cs,default       dset=mc,0.0162 lumi=5.4  file=/shome/lazo-flores/scratch/v12-cms-Bs2JpsiPhi.root
+#type=cs,pu            dset=mc      lumi=5.0    file=/shome/lazo-flores/scratch/v11-cms-Bs2JpsiPhi.root
+#type=cs,acc           dset=mc,1.00 lumi=5.4    file=/shome/lazo-flores/scratch/v11-2e33-accBs2JpsiPhi.root
+# --------------------------------------------------------------------
+# normalization data and MC
+#type=no,default       dset=data    lumi=4.9    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/cbmm-v12-Run2012A-PromptReco-v1-00.root
+type=no,default       dset=data     lumi=4.9    file=/shome/lazo-flores/scratch/v12-2012-data.root
+#type=no,default       dset=data    lumi=4.9    file=/shome/lazo-flores/scratch/v12-2011-data.root
+type=no,default       dset=mc,0.0181 lumi=5.2  file=/shome/lazo-flores/scratch/v12-cms-Bu2JpsiK.root
