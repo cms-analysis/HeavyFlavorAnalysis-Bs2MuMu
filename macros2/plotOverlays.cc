@@ -49,8 +49,8 @@ void plotOverlays::makeAll(int verbose) {
 //  sbsDistributionOverlay("SgMc3e33", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "Ao"); 
 //  sbsDistributionOverlay("SgMc3e33", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "HLT"); 
   sbsDistributionOverlay("SgData2011", "candAnaMuMu", "A", "SgData2012", "candAnaMuMu", "A", "HLT");
-//  sbsDistributionOverlay("SgData2012", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Presel");	
-//  sbsDistributionOverlay("SgData2012", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Ao");
+  sbsDistributionOverlay("SgData2012", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Presel");	
+  sbsDistributionOverlay("SgData2012", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Ao");
 	cout << " ########################## No DATA/MC A #########################" << endl;
   fMode = 3; 
   fPreco = 5.1;
@@ -219,8 +219,8 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
     sprintf(option2, "e"); 
     sprintf(loption2, "p");
     fill2   = 0; 
-    color2  = kBlack; 
-    marker2 = 21; 
+	color2  = kBlue; //color2 = kBlack;
+    //marker2 = 21; 
   }
   
   if ((string::npos != file1.find("Mc")) && (string::npos != file2.find("Mc"))) {
