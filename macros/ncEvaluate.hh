@@ -22,7 +22,7 @@
 class ncEvaluate {
 	
 	public:
-		ncEvaluate(const char *inFile, TTree *inTree = NULL);
+		ncEvaluate(const char *inFile, TTree *inTree, int channelIx);
 		~ncEvaluate();
 		
 		double eval(int64_t j);

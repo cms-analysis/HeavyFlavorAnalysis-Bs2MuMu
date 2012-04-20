@@ -11,9 +11,11 @@
 #pragma link off all functions;
 
 #pragma link C++ function ncEvalAll(TTree*);
+#pragma link C++ function ncEvalAll(TTree*,bool);
 #pragma link C++ function ncEvalAll(const char*);
+#pragma link C++ function ncEvalAll(const char*,bool);
 
-#pragma link C++ function ncRunTraining(TTree*,double,TTree*,double);
+#pragma link C++ function ncRunTraining(TTree*,double,TTree*,double,int,TCut);
 #pragma link C++ function ncRunDefaultTraining(const char*, const char*);
 
 #endif

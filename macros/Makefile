@@ -94,7 +94,7 @@ bin/cls: lib/libAnaClasses.so obj/cls.o lib/libAna00.so
 	$(LD) $(LDFLAGS) -o bin/cls $(GLIBS) obj/cls.o lib/libAnaClasses.so lib/libAna00.so lib/libUtil.so
 
 clean:
-	rm -f obj/*.o obj/*.d *Dict.* lib/libAna00.so lib/libUtil.so
+	rm -f obj/*.o obj/*.d *Dict.* lib/libAna00.so lib/libUtil.so lib/libNCMVA.so
 
 cleanall: clean
 	rm -f bin/runTreeReaders bin/runMergeTrees 
@@ -104,10 +104,10 @@ cleanall: clean
 	rm -f ../../../lib/$(SCRAM_ARCH)/libUtil.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libAnaClasses.so
 
-lib/libNCLearn.so: $(addprefix obj/,$(NNLEARNING) $(NNLEARNINGDICT))
+lib/libNCMVA.so: $(addprefix obj/,$(NNLEARNING) $(NNLEARNINGDICT))
 	$(LD) $(SOFLAGS) -o $@ $(addprefix obj/,$(NNLEARNING) $(NNLEARNINGDICT)) $(GLIBS) -lTMVA -lTreePlayer
 
-ncLearn: lib/libNCLearn.so
+ncMVA: lib/libNCMVA.so
 	@true
 
 -include $(addprefix obj/,${READER:.o=.d})
