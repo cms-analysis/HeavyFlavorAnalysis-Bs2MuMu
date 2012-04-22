@@ -19,6 +19,7 @@
 #include "RooAbsData.h"
 #include "RooRealVar.h"
 #include "RooDataHist.h"
+#include "RooDataSet.h"
 #include "RooPlot.h"
 
 using namespace std;
@@ -26,32 +27,36 @@ using namespace RooFit;
 
 class pdf_analysis {
 public:
-  pdf_analysis(RooWorkspace *ws, bool print, string source_name, string meth, string ch_s);
+  pdf_analysis(RooWorkspace *ws, bool print, string meth, string ch_s);
   void set_ws(RooWorkspace *ws) {ws_ = ws;}
   RooWorkspace* get_ws() {return ws_;}
-  void fill_inputs(string input);
-
-  void define_pdf(string pdf_name);
+  
+  void define_pdfs();
   void define_bs();
   void define_bd();
   void define_peaking();
   void define_nonpeaking();
   void define_comb();
+  void define_signals();
+  void define_rare();
+  void define_bkg();
+  
+  void define_all(); // final pdf with fractional components, and also extended
+  void define_total(); // final pdf with all extended components
 
-  void fit_pdf ();
-
+  void fit_pdf (string pdf, RooAbsData* data, bool extended);
   void print();
+  void set_pdf_constant(string pdf);
+  
   string pdf_name;
   string rdh_name;
 
 private:
   bool print_;
-  string input_f;
   string meth_;
   string ch_s_;
-  string source_name_;
   RooWorkspace* ws_;
-  vector <string> pdf_primitives_;
+  RooAbsData* rds_;
 
 };
 
