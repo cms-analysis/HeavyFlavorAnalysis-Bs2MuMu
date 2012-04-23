@@ -27,7 +27,7 @@ using namespace RooFit;
 
 class pdf_analysis {
 public:
-  pdf_analysis(RooWorkspace *ws, bool print, string meth, string ch_s);
+  pdf_analysis(bool print, string meth, string ch_s, string range = "all");
   void set_ws(RooWorkspace *ws) {ws_ = ws;}
   RooWorkspace* get_ws() {return ws_;}
   
@@ -40,6 +40,7 @@ public:
   void define_signals();
   void define_rare();
   void define_bkg();
+  void define_signalsrare();
   
   void define_all(); // final pdf with fractional components, and also extended
   void define_total(); // final pdf with all extended components
@@ -57,6 +58,8 @@ private:
   string ch_s_;
   RooWorkspace* ws_;
   RooAbsData* rds_;
+  string range_;
+  
 
 };
 
