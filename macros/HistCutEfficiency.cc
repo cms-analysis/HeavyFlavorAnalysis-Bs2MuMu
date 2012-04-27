@@ -49,7 +49,7 @@ void HistCutEfficiency::eff(TH1* h1, double cut) {
 
 // ----------------------------------------------------------------------
 void HistCutEfficiency::eff(double cut) {
-  cout << "eff: " << " cut: " << cut << endl;
+//	cout << "eff: " << " cut: " << cut << endl;
   double epsilon = 1.e-4 * fH->GetBinWidth(1);
   int firstbin = 1; 
   if (fIncludeOverflow) firstbin = 0; 
@@ -58,19 +58,23 @@ void HistCutEfficiency::eff(double cut) {
   if (fIncludeOverflow) ++lastbin; 
 
   double ntot   = fH->Integral(firstbin, lastbin);
-
   int cutbin = fH->FindBin(cut+epsilon); 
-
   double lcut   = fH->Integral(cutbin, lastbin);
-  
+	////
+	double ucut   = fH->Integral(firstbin, cutbin-1);
+	////
+	if (ntot == 0) {
+		hiEff = 0;
+		hiErr = 0;
+		loEff = 0;
+		loErr = 0;
+	} else {
   hiEff = lcut/ntot; 
   hiErr = dEff(static_cast<int>(lcut), static_cast<int>(ntot));
   
-  double ucut   = fH->Integral(firstbin, cutbin-1);
-
   loEff = ucut/ntot; 
   loErr = dEff(static_cast<int>(ucut), static_cast<int>(ntot));
-
+  }
   if (fVerbose) {
     cout << "cut     : " << cut << endl;
     cout << "epsilon : " << epsilon << endl;

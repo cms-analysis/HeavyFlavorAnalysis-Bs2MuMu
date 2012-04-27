@@ -605,13 +605,14 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
 
 // ----------------------------------------------------------------------  
 TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cut) {
-
-  //  cout << "fVerbose: " << fVerbose << endl;
-
+//
+  cout << "fVerbose: " << fVerbose << endl;
+//
   TCanvas *c0;
   if (fVerbose > 0) {
     gStyle->SetOptTitle(1);
-    c0 = (TCanvas*)gROOT->FindObject("c1"); 
+    c0 = (TCanvas*)gROOT->FindObject("c1");
+	  
     if (c0) {
       delete c0; 
     }
@@ -662,9 +663,9 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
   fMassHi   = hMassBGH->GetBinLowEdge(hMassBGH->FindLastBinAbove(1.)+1);
   fpIF->fLo = fMassLo;
   fpIF->fHi = fMassHi;
-
-  //  cout << "fMass: " << fMassLo << " .. " << fMassHi << ", fMassPeak = " << fMassPeak << ", fMassSigma = " << fMassSigma << endl;
-
+//
+  cout << "fMass: " << fMassLo << " .. " << fMassHi << ", fMassPeak = " << fMassPeak << ", fMassSigma = " << fMassSigma << endl;
+//
   double peak  = (fMassPeak>0.?fMassPeak:5.3);
   double sigma = (fMassSigma>0.?fMassSigma:0.04);
   TF1 *f1 = fpIF->pol1gauss(hm, peak, sigma);
