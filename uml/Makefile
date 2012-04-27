@@ -30,13 +30,17 @@ endif
 # TARGETS #
 ###########
 
+main_toyMC: $(INCLUDEDIR)main_toyMC.cc pdf_analysis.o pdf_toyMC.o
+		$(CXX) $(CXXFLAGS) -o main_toyMC.o pdf_analysis.o pdf_toyMC.o $(GLIBS)  $(LDFLAGS) $ $<
+
 main_pdf_choise: $(INCLUDEDIR)main_pdf_choise.cc pdf_analysis.o
 		$(CXX) $(CXXFLAGS) -o main_pdf_choise.o pdf_analysis.o $(GLIBS)  $(LDFLAGS) $ $<
 
 pdf_analysis.o: $(INCLUDEDIR)pdf_analysis.cpp
 	$(CXX) $(CXXFLAGS) -c pdf_analysis.cpp  $ $<
 
-
+pdf_toyMC.o: $(INCLUDEDIR)pdf_toyMC.cpp
+	$(CXX) $(CXXFLAGS) -c pdf_toyMC.cpp  $ $<
 
 clean:
 	rm -f *.o *~

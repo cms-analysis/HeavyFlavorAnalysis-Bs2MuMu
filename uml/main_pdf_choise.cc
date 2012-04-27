@@ -1,8 +1,8 @@
+#include "CommonFun.h"
 #include "pdf_analysis.h"
 
 #include <string>
 #include <vector>
-#include <iostream>
 
 #include "RooWorkspace.h"
 #include "RooExtendPdf.h"
@@ -11,65 +11,11 @@
 
 #include "TRandom3.h"
 
-using namespace std;
-
-/// options
-static string input_name;
-static string output_name;
-static string meth;
-static string ch_s;
-static bool print = false;
-
-void help() {
-  cout << "-print \t save the fits to gif" << endl;
-  cout << "-i filename \t input (mandatory)" << endl;
-  cout << "-o filename \t output (mandatory)" << endl;
-  cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree (mandatory)" << endl;
-  cout << "-cha {0, 1} \t barrel OR endcap (mandatory)" << endl;
-  exit(0);
-}
-
-void parse_options(int argc, char* argv[]){
-  bool input = false, output = false, method = false, channel = false;
-  for (int i = 1; i < argc; i++) {
-    if (!strcmp(argv[i],"-meth")) {
-      if (!strcmp(argv[i+1],"cnc")) {
-        meth = "cnc";
-        method = true;
-      }
-      if (!strcmp(argv[i+1],"bdt")) {
-        meth = "bdt";
-        method = true;
-      }
-      cout << "method: " << meth << endl;
-    }
-    if (!strcmp(argv[i],"-cha")) {
-      ch_s = argv[i+1];
-      channel = true;
-      cout << "channel: " << ch_s << endl;
-    }
-    if (!strcmp(argv[i],"-print")) {
-      cout << "print plots" << endl;
-      print = true;
-    }
-    if (!strcmp(argv[i],"-i")) {
-      input_name = argv[i+1];
-      cout << "input = " << input_name << endl;
-      input = true;
-    }
-    if (!strcmp(argv[i],"-o")) {
-      output_name = argv[i+1];
-      cout << "output = " << output_name << endl;
-      output = true;
-    }
-    if (!strcmp(argv[i],"-h")) help();
-  }
-  if (!input || !output || !method || !channel) help();
-}
-
 int main(int argc, char* argv[]) {
 
   parse_options(argc, argv);
+  if (!input || !output || !method || !channel) help();
+  
   /// INPUTS
   TFile* input_f = new TFile(input_name.c_str());
   TH1D* Bs_h = (TH1D*)input_f->Get(Form("Bs_%s_chan%s", meth.c_str(), ch_s.c_str()));
@@ -99,20 +45,34 @@ int main(int argc, char* argv[]) {
   }
   TH1D* signals = (TH1D*)Bs_h->Clone("signals");
   signals->Add(Bd_h, 1);
+  TH1D* signalsrare = (TH1D*)signals->Clone("signalsrare");
+  signalsrare->Add(Rare_h, 1);
   TH1D* bkg_sub_h = (TH1D*)data_h->Clone("bkg_sub_h");
   bkg_sub_h->Add(Rare_h, -1.);
   for (int i = 1; i < bkg_sub_h->GetNbinsX(); i++){
     if ( (bkg_sub_h->GetBinCenter(i) >= 5.20 && bkg_sub_h->GetBinCenter(i) <= 5.45) || bkg_sub_h->GetBinCenter(i) < 4.90 || bkg_sub_h->GetBinCenter(i) > 5.90) {
       bkg_sub_h->SetBinContent(i, 0.);
       bkg_sub_h->SetBinError(i, 0.);
-      //bkg_h->SetBinContent(i, 0.);
-      //bkg_h->SetBinError(i, 0.);
     }
   }
-
-
+/// combinatorial estimation
+  double X_comb_estimated =bkg_sub_h->Integral() * (1. / 0.75); 
+  int N_comb_estimated = (int)X_comb_estimated;
+  if (X_comb_estimated - N_comb_estimated > 0.5) N_comb_estimated++;
+  cout << "estimated comb = " << N_comb_estimated << endl;
+  TH1D* uniform_histo = new TH1D("uniform_histo", "uniform_histo", signals->GetNbinsX(), signals->GetXaxis()->GetXmin(), signals->GetXaxis()->GetXmax());
+  TRandom3 rand0(0);
+  double N = rand0.Poisson(N_comb_estimated);
+  for (int i = 1; i <= N; i++) {
+    TRandom3 rand1(0);
+    double n = rand1.Uniform(4.9, 5.9);
+    uniform_histo->Fill(n);
+  }
+  TH1D* total = (TH1D*)signalsrare->Clone("total");
+  total->Add(uniform_histo);
+  
   /// MC shapes
-  pdf_analysis ana1(print ,meth, ch_s);
+  pdf_analysis ana1(print, meth, ch_s);
   RooWorkspace *ws = ana1.get_ws();
 
   ana1.define_pdfs();
@@ -134,41 +94,21 @@ int main(int argc, char* argv[]) {
   ana1.fit_pdf("rare", rdh_rare, false);
 
   /// signals + rare
-  RooDataHist* rdh_signalsrare = (RooDataHist*)rdh_signals->Clone("rdh_signalsrare");
-  rdh_signalsrare->add(*rdh_rare);
+  RooDataHist* rdh_signalsrare = new RooDataHist("rdh_signalsrare", "dataset template for signals + rare bkg", *ws->var("Mass"), signalsrare);
   ana1.fit_pdf("signalsrare", rdh_signalsrare, false);
   
-  ///
-  /// SB shapes
-  pdf_analysis ana1_SB(print ,meth, ch_s, "sb_lo,sb_hi");
-  RooWorkspace *ws_SB = ana1_SB.get_ws();
-
-  
-  /// comb in sidebands
-  ana1_SB.define_comb();
-  RooDataHist* comb_SB_rdh = new RooDataHist("comb_SB_rdh", "comb_SB_rdh", *ws->var("Mass"), bkg_sub_h);
-
-  ana1_SB.fit_pdf("comb", comb_SB_rdh, true);
-  
-  /// combinatorial estimation
-  double X_comb_estimated = ws_SB->var("N_comb")->getVal() * (1. / 0.75); 
-  int N_comb_estimated = (int)X_comb_estimated;
-  if (X_comb_estimated - N_comb_estimated > 0.5) N_comb_estimated++;
-  cout << "estimated comb = " << N_comb_estimated << endl;
-  TH1D* uniform_histo = new TH1D("uniform_histo", "uniform_histo", signals->GetNbinsX(), 4.9, 5.9);
-  for (int i = 1; i <= N_comb_estimated; i++) {
-    TRandom3 rand(0);
-    double n = rand.Uniform(4.9, 5.9);
-    uniform_histo->Fill(n);
-  }
+  /// comb
   RooDataHist* uniform_rdh = new RooDataHist("uniform_rdh", "uniform_rdh", *ws->var("Mass"), uniform_histo);
-
+  //ana1.fit_pdf("comb", uniform_rdh, false);
+  
   ///total
-  RooDataHist* total_rdh = new RooDataHist("total_rdh", "total_rdh", *ws->var("Mass"));
-  total_rdh->add(*rdh_bs);
-  total_rdh->add(*rdh_bd);
-  total_rdh->add(*rdh_rare);
-  total_rdh->add(*uniform_rdh);
+  RooDataHist* total_rdh = new RooDataHist("total_rdh", "total_rdh", *ws->var("Mass")
+          ,total
+          );
+//  total_rdh->add(*rdh_bs);
+//  total_rdh->add(*rdh_bd);
+//  total_rdh->add(*rdh_rare);
+//  total_rdh->add(*uniform_rdh);
   ana1.fit_pdf("total", total_rdh, true);
   //ana1.fit_pdf("all", total_rdh, true);
   
@@ -178,6 +118,6 @@ int main(int argc, char* argv[]) {
   cout << "starting Bd " << Bd_h->Integral() << " fit Bd " << ws->var("N_bd")->getVal() << endl;
   cout << "starting rare " << Rare_h->Integral() << " fit rare " << ws->var("N_rare")->getVal() << endl;
   cout << "starting comb " << uniform_histo->Integral() << " fit comb " << ws->var("N_comb")->getVal() << endl;
-  
-  return 0;
+    
+  return (EXIT_SUCCESS);
 }

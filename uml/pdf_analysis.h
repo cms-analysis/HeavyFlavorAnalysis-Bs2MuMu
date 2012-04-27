@@ -46,13 +46,13 @@ public:
   void define_total(); // final pdf with all extended components
 
   void fit_pdf (string pdf, RooAbsData* data, bool extended);
-  void print();
+  void print(string output = "");
   void set_pdf_constant(string pdf);
   
   string pdf_name;
   string rdh_name;
 
-private:
+protected:
   bool print_;
   string meth_;
   string ch_s_;
@@ -60,7 +60,6 @@ private:
   RooAbsData* rds_;
   string range_;
   
-
 };
 
 #endif // PDF_ANALYSIS_H
