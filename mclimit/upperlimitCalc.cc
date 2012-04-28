@@ -25,9 +25,9 @@ int main(int argc, char **argv)
 {
 	TStopwatch t;
 	t.Start();
-	if (argc<4||argc>4) {
+	if (argc<5||argc>5) {
 		cout << endl;
-		cout << "Usage: bin/upperlimitCalc option1 option2 option3" << endl;
+		cout << "Usage: bin/upperlimitCalc option1 option2 option3 option4" << endl;
 		cout << "Option1 can be:" << endl;
 		cout << "---> cms11bs or cmb11bd for summer 11 Bs or Bd" << endl; 
 		cout << "---> cms12bs or cms12bd for Spring 12 Bs or Bd" << endl; 
@@ -41,6 +41,8 @@ int main(int argc, char **argv)
 		cout << "Option3 is a float used to scale the signal histogram." << endl;
 		cout << "***NOTE: Should be set to 1.0 for normal calculations or range from 0.5-2.0 for Bs CLs scans.***" << endl;
 		cout << "***NOTE: Should be set to 1.0 for normal calculations or range from 0.5-80.0 for Bd CLs scans.***" << endl;
+		cout << "Option4 can be: " << endl;
+		cout << "95 or 90 and is used to set the confidence level for the calculation" << endl;
 		cout << endl;
 		return 0;		
 	}
@@ -63,6 +65,8 @@ int main(int argc, char **argv)
 	bool lhcbs11 = false; bool lhcbd11 = false;
 	bool lhcbs12 = false; bool lhcbd12 = false;
 	bool barrel = false; bool endcap = false; 
+	char conf_level95[] = "95"; char conf_level90[] = "90"; 
+	bool conflevel95 = false; bool conflevel90 = false; 
 	int i_numb = -1;
 
 	if (!strcmp(cms11bschan,argv[1])) {
@@ -173,6 +177,12 @@ int main(int argc, char **argv)
 	
 	double d_scale = atof(argv[3]);
 		
+	if (!strcmp(conf_level95,argv[4])) {
+		conflevel95 = true;
+	}
+	else if (!strcmp(conf_level90,argv[4])) {
+		conflevel90 = true;
+	}
 	gRandom->SetSeed(i_numb);
 
 	TString s_outputfile;
@@ -492,14 +502,8 @@ int main(int argc, char **argv)
 	f_outputfile << "Probability of a 3 sigma evidence assuming test hyp. is true: Prob = " << mymclimit->p3sigmat() << endl; 
 	f_outputfile << "Probability of a 5 sigma discovery assuming test hyp. is true: Prob = " << mymclimit->p5sigmat() << endl 
 	<< endl; 
-	
-	cout << "<<<<<<<< Calculating scale factors at 95% CL" << endl;
-	double d_sf95 = mymclimit->s95(); double d_s95m2 = mymclimit->s95m2();
-	double d_s95m1 = mymclimit->s95m1(); double d_s95med = mymclimit->s95med();
-	double d_s95p1 = mymclimit->s95p1(); double d_s95p2 = mymclimit->s95p2();	
-	double d_lumi3s = mymclimit->lumi3s(); double d_lumi5s = mymclimit->lumi5s(); 
+		
 	double d_totlumi = 0.0; 
-	
 	if (combined11) d_totlumi = cmslumis11 + lhcblumis10 + lhcblumis11;
 	else if (combined12)  d_totlumi = cmslumiw12 + lhcblumiw12;
 	else if (combined12bd)  d_totlumi = cmslumiw12 + lhcblumiw12;
@@ -511,254 +515,321 @@ int main(int argc, char **argv)
 	else if (lhcbs12) d_totlumi = lhcblumiw12;
 	else if (lhcbd12) d_totlumi = lhcblumiw12;
 	
-	cout << "<<<<<<<< Finshed calculating scale factors at 95% CL >>>>>>>>" << endl;
-	f_outputfile  << "Observed scale factor of 95% CL excluded signal: sc_f = " << d_sf95 << endl;
-	f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(-2sig) = " << d_s95m2 << endl;
-	f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(-1sig) = " << d_s95m1 << endl;
-	f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(median) = " << d_s95med << endl;
-	f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(+1sig) = " << d_s95p1 << endl;
-	f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(+2sig) = " << d_s95p2 << endl << endl;
-	//	f_outputfile << "Lumi scale factor of 95% CL excluded signal: lumiSf = " << d_lumi95 << endl;
-	f_outputfile << "Lumi needed for 3 sigma discovery: lumi3sig = " << d_lumi3s*d_totlumi << " fb-1" << endl;
-	f_outputfile << "Lumi needed for 5 sigma discovery: lumi5sig = " << d_lumi5s*d_totlumi << " fb-1" << endl << endl;
-	cout << "<<<<<<<< Finished calculating luminosity scale factors for discovery 95% CL >>>>>>>>" << endl;
+	if (conflevel95) {
+		cout << "<<<<<<<< Calculating scale factors at 95% CL" << endl;
+		double d_sf95 = mymclimit->s95(); double d_s95m2 = mymclimit->s95m2();
+		double d_s95m1 = mymclimit->s95m1(); double d_s95med = mymclimit->s95med();
+		double d_s95p1 = mymclimit->s95p1(); double d_s95p2 = mymclimit->s95p2();	
+		double d_lumi3s = mymclimit->lumi3s(); double d_lumi5s = mymclimit->lumi5s(); 
+		cout << "<<<<<<<< Finshed calculating scale factors at 95% CL >>>>>>>>" << endl;
+		f_outputfile  << "Observed scale factor of 95% CL excluded signal: sc_f = " << d_sf95 << endl;
+		f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(-2sig) = " << d_s95m2 << endl;
+		f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(-1sig) = " << d_s95m1 << endl;
+		f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(median) = " << d_s95med << endl;
+		f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(+1sig) = " << d_s95p1 << endl;
+		f_outputfile  << "Expected scale factor at 95% CL in the null hyp.: sc_f(+2sig) = " << d_s95p2 << endl << endl;
+		//	f_outputfile << "Lumi scale factor of 95% CL excluded signal: lumiSf = " << d_lumi95 << endl;
+		f_outputfile << "Lumi needed for 3 sigma discovery: lumi3sig = " << d_lumi3s*d_totlumi << " fb-1" << endl;
+		f_outputfile << "Lumi needed for 5 sigma discovery: lumi5sig = " << d_lumi5s*d_totlumi << " fb-1" << endl << endl;
+		cout << "<<<<<<<< Finished calculating luminosity scale factors for discovery 95% CL >>>>>>>>" << endl;
+		
+		if (combined11) {
+			f_outputfile << "CMS-LHCb summer 11 combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
+			f_outputfile << "95% CL upper limit (CERN combined summer 11): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
+			
+		}
+		else if (combined11bd) {
+			f_outputfile << "CMS-LHCb summer 11 combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
+			f_outputfile << "95% CL upper limit (CERN combined summer 11): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
+			
+		}
+		else if (combined12) {
+			f_outputfile << "CMS-LHCb winter 11-12 combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
+			f_outputfile << "95% CL upper limit (CERN combined winter 11-12): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
+			
+		}
+		else if (combined12bd) {
+			f_outputfile << "CMS-LHCb winter 11-12 combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
+			f_outputfile << "95% CL upper limit (CERN combined winter 11-12): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
+			
+		}
+		else if (cms11bs) {
+			f_outputfile << "CMS summer 11 Bs->MuMu combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
+			f_outputfile << "95% CL upper limit (CMS summer 11): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
+			
+		}
+		else if (cms11bd) {
+			f_outputfile << "CMS summer 11 Bd->MuMu combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
+			f_outputfile << "95% CL upper limit (CMS summer 11): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
+			
+		}
+		else if (cms12bs) {
+			f_outputfile << "CMS winter 11-12 Bs->MuMu combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
+			f_outputfile << "95% CL upper limit (CMS winter 11-12): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
+			
+		}
+		else if (cms12bd) {
+			f_outputfile << "CMS winter 11-12 Bd->MuMu combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
+			f_outputfile << "95% CL upper limit (CMS winter 11-12): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
+			
+		}
+		else if (lhcbs) {
+			f_outputfile << "LHCb 10-11 Bs->MuMu combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
+			f_outputfile << "95% CL upper limit (LHCb): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
+			
+		}
+		else if (lhcbs10) {
+			f_outputfile << "LHCb 10 Bs->MuMu combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
+			f_outputfile << "95% CL upper limit (LHCb 10): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
+			
+		}
+		else if (lhcbs11) {
+			f_outputfile << "LHCb 11 Bs->MuMu combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
+			f_outputfile << "95% CL upper limit (LHCb 11): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
+			
+		}
+		else if (lhcbd11) {
+			f_outputfile << "LHCb summer 11 Bd->MuMu combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
+			f_outputfile << "95% CL upper limit (LHCb summer 11): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
+			
+		}
+		else if (lhcbs12) {
+			f_outputfile << "LHCb 11-12 Bs->MuMu combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
+			f_outputfile << "95% CL upper limit (LHCb 11-12): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
+			
+		}
+		else if (lhcbd12) {
+			f_outputfile << "LHCb winter 11-12 Bd->MuMu combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
+			f_outputfile << "95% CL upper limit (LHCb winter 11-12): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
+			
+		}
+		
+	}
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
-	cout << "<<<<<<<< Calculating scale factors at 90% CL >>>>>>>>" << endl;
-	double d_sf90 = mymclimit->s90();double d_s90m2 = mymclimit->s90m2();
-	double d_s90m1 = mymclimit->s90m1(); double d_s90med = mymclimit->s90med();
-	double d_s90p1 = mymclimit->s90p1(); double d_s90p2 = mymclimit->s90p2();	
-	cout << "<<<<<<<< Finshed calculating scale factors at 90% CL >>>>>>>>" << endl;
-	f_outputfile  << "Observed scale factor of 90% CL excluded signal: sc_f = " << d_sf90 << endl;
-	f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(-2sig) = " << d_s90m2 << endl;
-	f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(-1sig) = " << d_s90m1 << endl;
-	f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(median) = " << d_s90med << endl;
-	f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(+1sig) = " << d_s90p1 << endl;
-	f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(+2sig) = " << d_s90p2 << endl << endl;
+	if (conflevel90) {
+		cout << "<<<<<<<< Calculating scale factors at 90% CL >>>>>>>>" << endl;
+		double d_sf90 = mymclimit->s90();double d_s90m2 = mymclimit->s90m2();
+		double d_s90m1 = mymclimit->s90m1(); double d_s90med = mymclimit->s90med();
+		double d_s90p1 = mymclimit->s90p1(); double d_s90p2 = mymclimit->s90p2();	
+		cout << "<<<<<<<< Finshed calculating scale factors at 90% CL >>>>>>>>" << endl;
+		f_outputfile  << "Observed scale factor of 90% CL excluded signal: sc_f = " << d_sf90 << endl;
+		f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(-2sig) = " << d_s90m2 << endl;
+		f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(-1sig) = " << d_s90m1 << endl;
+		f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(median) = " << d_s90med << endl;
+		f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(+1sig) = " << d_s90p1 << endl;
+		f_outputfile  << "Expected scale factor at 90% CL in the null hyp.: sc_f(+2sig) = " << d_s90p2 << endl << endl;
+		
+		if (combined11) {
+			f_outputfile << "CMS-LHCb summer 11 combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
+			f_outputfile << "90% CL upper limit (CERN combined summer 11): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl;
+		}
+		else if (combined11bd) {
+			f_outputfile << "CMS-LHCb summer 11 combined results:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
+			f_outputfile << "90% CL upper limit (CERN combined summer 11): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
+		}
+		else if (combined12) {
+			f_outputfile << "CMS-LHCb winter 11-12 combined results:" << endl << endl;
+			
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
+			f_outputfile << "90% CL upper limit (CERN combined winter 11-12): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
+		}
+		else if (combined12bd) {
+			f_outputfile << "CMS-LHCb winter 11-12 combined results:" << endl << endl;
+			
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
+			f_outputfile << "90% CL upper limit (CERN combined winter 11-12): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
+		}
+		else if (cms11bs) {
+			f_outputfile << "CMS summer 11 Bs->MuMu combined results:" << endl << endl;
+			
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
+			f_outputfile << "90% CL upper limit (CMS summer 11): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
+		}
+		else if (cms11bd) {
+			f_outputfile << "CMS summer 11 Bd->MuMu combined results:" << endl << endl;
+			
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
+			f_outputfile << "90% CL upper limit (CMS summer 11): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
+		}
+		else if (cms12bs) {
+			f_outputfile << "CMS winter 11-12 Bs->MuMu combined results:" << endl << endl;
+			
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
+			f_outputfile << "90% CL upper limit (CMS winter 11-12): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
+		}
+		else if (cms12bd) {
+			f_outputfile << "CMS winter 11-12 Bd->MuMu combined results:" << endl << endl;
+			
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
+			f_outputfile << "90% CL upper limit (CMS winter 11-12): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
+		}
+		else if (lhcbs) {
+			f_outputfile << "LHCb 10-11 Bs->MuMu combined results:" << endl << endl;
+			
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
+			f_outputfile << "90% CL upper limit (LHCb): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
+		}
+		else if (lhcbs10) {
+			f_outputfile << "LHCb 10 Bs->MuMu combined results:" << endl << endl;
+			
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
+			f_outputfile << "90% CL upper limit (LHCb 10): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
+		}
+		else if (lhcbs11) {
+			f_outputfile << "LHCb 11 Bs->MuMu combined results:" << endl << endl;
+			
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
+			f_outputfile << "90% CL upper limit (LHCb 11): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
+		}
+		else if (lhcbd11) {
+			f_outputfile << "LHCb summer 11 Bd->MuMu combined results:" << endl << endl;
+			
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
+			f_outputfile << "90% CL upper limit (LHCb summer 11): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
+		}
+		else if (lhcbs12) {
+			f_outputfile << "LHCb 11-12 Bs->MuMu combined results:" << endl << endl;
+			
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
+			f_outputfile << "90% CL upper limit (LHCb 11-12): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
+		}
+		else if (lhcbd12) {
+			f_outputfile << "LHCb winter 11-12 Bd->MuMu combined results:" << endl << endl;
+			
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
+			f_outputfile << "90% CL upper limit (LHCb winter 11-12): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
+		}
+		
+	}
 	
-	if (combined11) {
-		f_outputfile << "CMS-LHCb summer 11 combined results:" << endl << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
-		f_outputfile << "95% CL upper limit (CERN combined summer 11): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
-		
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
-		f_outputfile << "90% CL upper limit (CERN combined summer 11): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl;
-	}
-	else if (combined11bd) {
-		f_outputfile << "CMS-LHCb summer 11 combined results:" << endl << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
-		f_outputfile << "95% CL upper limit (CERN combined summer 11): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
-		
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
-		f_outputfile << "90% CL upper limit (CERN combined summer 11): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
-	}
-	else if (combined12) {
-		f_outputfile << "CMS-LHCb winter 11-12 combined results:" << endl << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
-		f_outputfile << "95% CL upper limit (CERN combined winter 11-12): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
-		
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
-		f_outputfile << "90% CL upper limit (CERN combined winter 11-12): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
-	}
-	else if (combined12bd) {
-		f_outputfile << "CMS-LHCb winter 11-12 combined results:" << endl << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
-		f_outputfile << "95% CL upper limit (CERN combined winter 11-12): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
-		
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
-		f_outputfile << "90% CL upper limit (CERN combined winter 11-12): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
-	}
-	else if (cms11bs) {
-		f_outputfile << "CMS summer 11 Bs->MuMu combined results:" << endl << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
-		f_outputfile << "95% CL upper limit (CMS summer 11): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
-		
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
-		f_outputfile << "90% CL upper limit (CMS summer 11): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
-	}
-	else if (cms11bd) {
-		f_outputfile << "CMS summer 11 Bd->MuMu combined results:" << endl << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
-		f_outputfile << "95% CL upper limit (CMS summer 11): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
-		
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
-		f_outputfile << "90% CL upper limit (CMS summer 11): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
-	}
-	else if (cms12bs) {
-		f_outputfile << "CMS winter 11-12 Bs->MuMu combined results:" << endl << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
-		f_outputfile << "95% CL upper limit (CMS winter 11-12): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
-		
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
-		f_outputfile << "90% CL upper limit (CMS winter 11-12): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
-	}
-	else if (cms12bd) {
-		f_outputfile << "CMS winter 11-12 Bd->MuMu combined results:" << endl << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
-		f_outputfile << "95% CL upper limit (CMS winter 11-12): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
-		
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
-		f_outputfile << "90% CL upper limit (CMS winter 11-12): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
-	}
-	else if (lhcbs) {
-		f_outputfile << "LHCb 10-11 Bs->MuMu combined results:" << endl << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
-		f_outputfile << "95% CL upper limit (LHCb): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
-		
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
-		f_outputfile << "90% CL upper limit (LHCb): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
-	}
-	else if (lhcbs10) {
-		f_outputfile << "LHCb 10 Bs->MuMu combined results:" << endl << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
-		f_outputfile << "95% CL upper limit (LHCb 10): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
-		
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
-		f_outputfile << "90% CL upper limit (LHCb 10): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
-	}
-	else if (lhcbs11) {
-		f_outputfile << "LHCb 11 Bs->MuMu combined results:" << endl << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
-		f_outputfile << "95% CL upper limit (LHCb 11): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
-		
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
-		f_outputfile << "90% CL upper limit (LHCb 11): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
-	}
-	else if (lhcbd11) {
-		f_outputfile << "LHCb summer 11 Bd->MuMu combined results:" << endl << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
-		f_outputfile << "95% CL upper limit (LHCb summer 11): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
-		
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
-		f_outputfile << "90% CL upper limit (LHCb summer 11): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
-	}
-	else if (lhcbs12) {
-		f_outputfile << "LHCb 11-12 Bs->MuMu combined results:" << endl << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
-		f_outputfile << "95% CL upper limit (LHCb 11-12): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
-		
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
-		f_outputfile << "90% CL upper limit (LHCb 11-12): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
-	}
-	else if (lhcbd12) {
-		f_outputfile << "LHCb winter 11-12 Bd->MuMu combined results:" << endl << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
-		f_outputfile << "95% CL upper limit (LHCb winter 11-12): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
-		
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
-		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
-		f_outputfile << "90% CL upper limit (LHCb winter 11-12): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
-	}
 	
 	
 	//Null hypothesis 
