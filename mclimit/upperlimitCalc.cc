@@ -16,7 +16,7 @@
 
 #define N_MASS_BINS 6
 #define N_BDT_BINS 4
-#define N_MASS_BINS12 1
+#define N_MASS_BINS12 9
 #define N_BDT_BINS12 8
 
 using namespace std;
@@ -33,13 +33,14 @@ int main(int argc, char **argv)
 		cout << "---> cms12bs or cms12bd for Spring 12 Bs or Bd" << endl; 
 		cout << "---> lhcb the combined 10 and 11 lhcb Bs results" << endl;
 		cout << "---> lhcb10, lhcb11 or lhcb12 for either bs data set" << endl;
-		cout << "---> lhcb12bd for lhcb Bd 12 results" << endl;
+		cout << "---> lhcb11bd, lhcb12bd for lhcb Bd 11 or 12 results" << endl;
 		cout << "---> comb11 or comb12 for CMS-LHCb combined bs result" << endl;
-		cout << "---> comb12bd for CMS-LHCb combined Bd result" << endl;
+		cout << "---> comb11bd or comb12bd for CMS-LHCb combined Bd result" << endl;
 		cout << "Option2 is a number (int) that is used to set the random seed." << endl;
 		cout << "NOTE: In TRandom3, SetSeed(0) is always random so the results are NOT reproducible." << endl;
 		cout << "Option3 is a float used to scale the signal histogram." << endl;
-		cout << "***NOTE: Should be set to 1.0 for normal calculations or range from 0.5-2.0 for CLs scans.***" << endl;
+		cout << "***NOTE: Should be set to 1.0 for normal calculations or range from 0.5-2.0 for Bs CLs scans.***" << endl;
+		cout << "***NOTE: Should be set to 1.0 for normal calculations or range from 0.5-80.0 for Bd CLs scans.***" << endl;
 		cout << endl;
 		return 0;		
 	}
@@ -50,13 +51,17 @@ int main(int argc, char **argv)
 	char cms11bschan[] = "cms11bs"; char cms11bdchan[] = "cms11bd";
 	char cms12bschan[] = "cms12bs"; char cms12bdchan[] = "cms12bd"; 
 	char lhcbchan[] = "lhcb"; char lhcb10chan[] = "lhcb10"; 
-	char lhcb11chan[] = "lhcb11"; char lhcb12chan[] = "lhcb12"; char lhcb12bdchan[] = "lhcb12bd";
-	char combned11[] = "comb11"; char combned12[] = "comb12"; char combned12bd[] = "comb12bd";
-	bool combined11 = false; bool combined12 = false; bool combined12bd = false;
+	char lhcb11chan[] = "lhcb11"; char lhcb11bdchan[] = "lhcb11bd";
+	char lhcb12chan[] = "lhcb12"; char lhcb12bdchan[] = "lhcb12bd";
+	char combned11[] = "comb11"; char combned11bd[] = "comb11bd";
+	char combned12[] = "comb12"; char combned12bd[] = "comb12bd";
+	bool combined11 = false; bool combined11bd = false;
+	bool combined12 = false; bool combined12bd = false;
 	bool cms11bs = false; bool cms11bd = false;
 	bool cms12bs = false; bool cms12bd = false;
 	bool lhcbs = false; bool lhcbs10 = false; 
-	bool lhcbs11 = false; bool lhcbs12 = false; bool lhcbd12 = false;
+	bool lhcbs11 = false; bool lhcbd11 = false;
+	bool lhcbs12 = false; bool lhcbd12 = false;
 	bool barrel = false; bool endcap = false; 
 	int i_numb = -1;
 
@@ -102,6 +107,20 @@ int main(int argc, char **argv)
 
 		i_numb = atoi(argv[2]);
 	}
+///////////////////
+	else if	(!strcmp(combned11bd,argv[1])) {
+		combined11bd = true;
+		cms11bd = true;
+		barrel = true;
+		endcap = true;
+		
+//		lhcbd = true;
+//		lhcbd10 = true;
+		lhcbd11 = true;
+		
+		i_numb = atoi(argv[2]);
+	}
+//////////////////
 	else if	(!strcmp(combned12,argv[1])) {
 		combined12 = true;
 		cms12bs = true;
@@ -136,6 +155,11 @@ int main(int argc, char **argv)
 		
 		i_numb = atoi(argv[2]);
 	}	
+	else if (!strcmp(lhcb11bdchan,argv[1])) {
+		lhcbd11 = true;
+		
+		i_numb = atoi(argv[2]);
+	}	
 	else if (!strcmp(lhcb12chan,argv[1])) {
 		lhcbs12 = true;
 		
@@ -162,6 +186,7 @@ int main(int argc, char **argv)
 	else if(lhcbs) s_outputfile = Form("LHCb_10_11_Comb_Bs_Results%f_%i.txt",d_scale,i_numb);
 	else if(lhcbs10) s_outputfile = Form("LHCb_10_Bs_Results%f_%i.txt",d_scale,i_numb);
 	else if(lhcbs11) s_outputfile = Form("LHCb_11_Bs_Results%f_%i.txt",d_scale,i_numb);
+	else if(lhcbd11) s_outputfile = Form("LHCb_11_Bd_Results%f_%i.txt",d_scale,i_numb);
 	else if(lhcbs12) s_outputfile = Form("LHCb_12_Bs_Results%f_%i.txt",d_scale,i_numb);
 	else if(lhcbd12) s_outputfile = Form("LHCb_12_Bd_Results%f_%i.txt",d_scale,i_numb);
 	
@@ -178,7 +203,7 @@ int main(int argc, char **argv)
 	// Have a visualization of how fitting looks like
 	// It has nothing to do with limit calculation
 	TCanvas *mycanvas = (TCanvas *) new TCanvas("Canvas1","Canvas1",0,0,600,600);
-	if ((cms11bs || cms11bd || cms12bs || cms12bd) && !(combined11 || combined12 || combined12bd)) {
+	if ((cms11bs || cms11bd || cms12bs || cms12bd) && !(combined11 || combined11bd || combined12 || combined12bd)) {
 		mycanvas->Divide(2,2);
 		mycanvas->cd(1);
 	}
@@ -213,6 +238,18 @@ int main(int argc, char **argv)
 			}
 		}
 	}
+	if (lhcbd11) {
+		for (int j = 0; j<N_MASS_BINS; j++) {
+			for ( int l = 0; l<N_BDT_BINS; l++) {
+				char * c_lhcbchan4 = new char[s_lhcbchan4[j][l].size() + 1];
+				copy(s_lhcbchan4[j][l].begin(), s_lhcbchan4[j][l].end(), c_lhcbchan4);
+				c_lhcbchan4[s_lhcbchan4[j][l].size()] = '\0'; 
+				mycsm->set_htofit(h_lhcbdat4[j][l],c_lhcbchan4);				
+				
+				delete[] c_lhcbchan4;
+			}
+		}
+	}
 	if (lhcbs12) {
 		for (int j = 0; j<N_MASS_BINS12; j++) {
 			for ( int l = 0; l<N_BDT_BINS12; l++) {				
@@ -244,7 +281,7 @@ int main(int argc, char **argv)
 	csm_model* bestnullfit = mycsm->getbestmodel();
 	if (cms11bs || cms11bd || cms12bs || cms12bd) { //////////////
 		bestnullfit->plotwithdata(channameB,h_dataB);
-		if ((cms11bs || cms11bd || cms12bs || cms12bd) && !(combined11 || combined12 || combined12bd)) mycanvas->cd(2);/////////
+		if ((cms11bs || cms11bd || cms12bs || cms12bd) && !(combined11 || combined11bd || combined12 || combined12bd)) mycanvas->cd(2);//
 		bestnullfit->plotwithdata(channameE,h_dataE);
 	}
 	if (lhcbs10) {
@@ -268,6 +305,18 @@ int main(int argc, char **argv)
 				bestnullfit->plotwithdata(c_lhcbchan,h_lhcbdat[j][l]);
 								
 				delete[] c_lhcbchan;
+			}
+		}
+	}
+	if (lhcbd11) {
+		for (int j = 0; j<N_MASS_BINS; j++) {
+			for ( int l = 0; l<N_BDT_BINS; l++) {
+				char * c_lhcbchan4 = new char[s_lhcbchan4[j][l].size() + 1];
+				copy(s_lhcbchan4[j][l].begin(), s_lhcbchan4[j][l].end(), c_lhcbchan4);
+				c_lhcbchan4[s_lhcbchan4[j][l].size()] = '\0'; 
+				bestnullfit->plotwithdata(c_lhcbchan4,h_lhcbdat4[j][l]);
+				
+				delete[] c_lhcbchan4;
 			}
 		}
 	}
@@ -337,6 +386,18 @@ int main(int argc, char **argv)
 				mymclimit->set_datahist(h_lhcbdat[j][l],c_lhcbchan);
 				
 				delete[] c_lhcbchan;
+			}
+		}
+	}
+	if (lhcbd11) {
+		for (int j = 0; j<N_MASS_BINS; j++) {
+			for ( int l = 0; l<N_BDT_BINS; l++) {
+				char * c_lhcbchan4 = new char[s_lhcbchan4[j][l].size() + 1];
+				copy(s_lhcbchan4[j][l].begin(), s_lhcbchan4[j][l].end(), c_lhcbchan4);
+				c_lhcbchan4[s_lhcbchan4[j][l].size()] = '\0'; 
+				mymclimit->set_datahist(h_lhcbdat4[j][l],c_lhcbchan4);
+				
+				delete[] c_lhcbchan4;
 			}
 		}
 	}
@@ -490,6 +551,22 @@ int main(int argc, char **argv)
 		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
 		f_outputfile << "90% CL upper limit (CERN combined summer 11): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl;
 	}
+	else if (combined11bd) {
+		f_outputfile << "CMS-LHCb summer 11 combined results:" << endl << endl;
+		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
+		f_outputfile << "95% CL upper limit (CERN combined summer 11): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
+		
+		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
+		f_outputfile << "90% CL upper limit (CERN combined summer 11): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
+	}
 	else if (combined12) {
 		f_outputfile << "CMS-LHCb winter 11-12 combined results:" << endl << endl;
 		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
@@ -634,6 +711,22 @@ int main(int argc, char **argv)
 		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
 		f_outputfile << "90% CL upper limit (LHCb 11): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
 	}
+	else if (lhcbd11) {
+		f_outputfile << "LHCb summer 11 Bd->MuMu combined results:" << endl << endl;
+		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bd->MuMu) = " << d_s95m2*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bd->MuMu) = " << d_s95m1*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bd->MuMu) = " << d_s95med*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bd->MuMu) = " << d_s95p1*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bd->MuMu) = " << d_s95p2*Brbdmm << endl;
+		f_outputfile << "95% CL upper limit (LHCb summer 11): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
+		
+		f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bd->MuMu) = " << d_s90m2*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bd->MuMu) = " << d_s90m1*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bd->MuMu) = " << d_s90med*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bd->MuMu) = " << d_s90p1*Brbdmm << endl;
+		f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
+		f_outputfile << "90% CL upper limit (LHCb summer 11): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
+	}
 	else if (lhcbs12) {
 		f_outputfile << "LHCb 11-12 Bs->MuMu combined results:" << endl << endl;
 		f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
@@ -710,6 +803,7 @@ int main(int argc, char **argv)
 	arrow->Draw();
 	TString s_pdffilename;
 	if (combined11) s_pdffilename = Form("CMS_LHCb_S11_Comb_Bs_Results%f_%i.pdf",d_scale,i_numb);
+	else if (combined11bd) s_pdffilename = Form("CMS_LHCb_S11_Comb_Bd_Results%f_%i.pdf",d_scale,i_numb);
 	else if (combined12) s_pdffilename = Form("CMS_LHCb_W12_Comb_Bs_Results%f_%i.pdf",d_scale,i_numb);
 	else if (combined12bd) s_pdffilename = Form("CMS_LHCb_W12_Comb_Bd_Results%f_%i.pdf",d_scale,i_numb);
 	else if (cms11bs) s_pdffilename = Form("CMS_S11_Bs_Results%f_%i.pdf",d_scale,i_numb);
@@ -719,6 +813,7 @@ int main(int argc, char **argv)
 	else if (lhcbs) s_pdffilename = Form("LHCb_10_11_Comb_Bs_Results%f_%i.pdf",d_scale,i_numb);
 	else if (lhcbs10) s_pdffilename = Form("LHCb_10_Bs_Results%f_%i.pdf",d_scale,i_numb);
 	else if (lhcbs11) s_pdffilename = Form("LHCb_11_Bs_Results%f_%i.pdf",d_scale,i_numb);
+	else if (lhcbd11) s_pdffilename = Form("LHCb_11_Bd_Results%f_%i.pdf",d_scale,i_numb);
 	else if (lhcbs12) s_pdffilename = Form("LHCb_12_Bs_Results%f_%i.pdf",d_scale,i_numb);
 	else if (lhcbd12) s_pdffilename = Form("LHCb_12_Bd_Results%f_%i.pdf",d_scale,i_numb);
 	mycanvas->Print(s_pdffilename);
