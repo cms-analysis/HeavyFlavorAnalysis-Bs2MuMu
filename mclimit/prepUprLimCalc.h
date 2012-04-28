@@ -67,11 +67,13 @@ TH1 *highshape[NSYS];
 
 Int_t nbins = 1;
 Double_t xbins[2] = {0, 1};
+int counter = 0; int counter1 = 0; int counter2 = 0; int counter3 = 0; int counter4 = 0; 
 
 // Opent the data file
 //TFile *f_data = TFile::Open("anaBmm.default-11.root");
 TString s_outfilename;
 if (combined11) s_outfilename = Form("CMS_LHCb_S11_Comb_Bs_Results%f_%i.root",d_scale,i_numb);
+else if (combined11bd) s_outfilename = Form("CMS_LHCb_S11_Comb_Bd_Results%f_%i.root",d_scale,i_numb);
 else if (combined12) s_outfilename = Form("CMS_LHCb_W12_Comb_Bs_Results%f_%i.root",d_scale,i_numb);
 else if (combined12bd) s_outfilename = Form("CMS_LHCb_W12_Comb_Bd_Results%f_%i.root",d_scale,i_numb);
 else if(cms11bs) s_outfilename = Form("CMS_S11_Bs_Results%f_%i.root",d_scale,i_numb);
@@ -81,6 +83,7 @@ else if(cms12bd) s_outfilename = Form("CMS_W12_Bd_Results%f_%i.root",d_scale,i_n
 else if(lhcbs) s_outfilename = Form("LHCb_10_11_Comb_Bs_Results%f_%i.root",d_scale,i_numb);
 else if(lhcbs10) s_outfilename = Form("LHCb_10_Bs_Results%f_%i.root",d_scale,i_numb);
 else if(lhcbs11) s_outfilename = Form("LHCb_11_Bs_Results%f_%i.root",d_scale,i_numb);
+else if(lhcbd11) s_outfilename = Form("LHCb_11_Bd_Results%f_%i.root",d_scale,i_numb);
 else if(lhcbs12) s_outfilename = Form("LHCb_12_Bs_Results%f_%i.root",d_scale,i_numb);
 else if(lhcbd12) s_outfilename = Form("LHCb_12_Bd_Results%f_%i.root",d_scale,i_numb);
 
@@ -1743,7 +1746,7 @@ TH1D *h_lhcbsig1[N_MASS_BINS][N_BDT_BINS];
 TH1D *h_lhcbdat1[N_MASS_BINS][N_BDT_BINS];
 string s_lhcbchan1[N_MASS_BINS][N_BDT_BINS];
 
-//Setting up the LHCb summer11 data
+//Setting up the LHCb summer11 Bs data
 const static expectation_t bkg[N_MASS_BINS][N_BDT_BINS] = {
 	{expectation_t(514,12,11), expectation_t(4.32,.39,.39), expectation_t(0.504,0.158,0.095), expectation_t(0.118,0.078,0.039)},
 	{expectation_t(506,12,11), expectation_t(4.25,0.38,0.38), expectation_t(0.502,0.157,0.094), expectation_t(0.115,0.076,0.038)},
@@ -1754,7 +1757,7 @@ const static expectation_t bkg[N_MASS_BINS][N_BDT_BINS] = {
 };
 
 const static expectation_t misid[N_MASS_BINS][N_BDT_BINS] = {
-	{expectation_t(0.52,0.066,0.045), expectation_t(0.052,0.065,0.045), expectation_t(0.050,0.065,-0.045), expectation_t(0.052,0.066,0.046)},
+	{expectation_t(0.052,0.066,0.045), expectation_t(0.052,0.065,0.045), expectation_t(0.050,0.065,0.045), expectation_t(0.052,0.066,0.046)},
 	{expectation_t(0.029,0.028,0.020), expectation_t(0.028,0.027,0.018), expectation_t(0.028,0.027,0.019), expectation_t(0.028,0.028,0.020)},
 	{expectation_t(0.019,0.023,0.021), expectation_t(0.019,0.022,0.020), expectation_t(0.020,0.023,0.022), expectation_t(0.019,0.022,0.020)},
 	{expectation_t(0.014,0.017,0.016), expectation_t(0.014,0.017,0.016), expectation_t(0.014,0.017,0.016), expectation_t(0.015,0.019,0.017)},
@@ -1786,24 +1789,124 @@ TH1D *h_lhcbsig[N_MASS_BINS][N_BDT_BINS];
 TH1D *h_lhcbdat[N_MASS_BINS][N_BDT_BINS];
 string s_lhcbchan[N_MASS_BINS][N_BDT_BINS];	
 
+//Setting up the LHCb summer 11 Bd data ////////////////////////////////////////////
+const static expectation_t bkg4[N_MASS_BINS][N_BDT_BINS] = {
+	{expectation_t(550,13,12), expectation_t(4.61,0.42,0.42), expectation_t(0.516,0.161,0.097), expectation_t(0.132,0.088,0.044)},
+	{expectation_t(542,13,12), expectation_t(4.54,0.41,0.41), expectation_t(0.513,0.160,0.096), expectation_t(0.129,0.086,0.043)},
+	{expectation_t(533,12,11), expectation_t(4.47,0.40,0.40), expectation_t(0.510,0.159,0.096), expectation_t(0.125,0.084,0.042)},	
+	{expectation_t(525,12,11), expectation_t(4.40,0.40,0.40), expectation_t(0.508,0.159,0.095), expectation_t(0.122,0.081,0.041)},
+	{expectation_t(517,12,11), expectation_t(4.34,0.39,0.39), expectation_t(0.505,0.158,0.095), expectation_t(0.119,0.079,0.040)},
+	{expectation_t(509,12,11), expectation_t(4.27,0.39,0.39), expectation_t(0.502,0.157,0.094), expectation_t(0.116,0.077,0.038)}
+};
+
+const static expectation_t misid4[N_MASS_BINS][N_BDT_BINS] = {
+	{expectation_t(0.113,0.077,0.063), expectation_t(0.111,0.078,0.064), expectation_t(0.113,0.077,0.063), expectation_t(0.112,0.077,0.064)},
+	{expectation_t(0.143,0.107,0.087), expectation_t(0.143,0.106,0.087), expectation_t(0.142,0.107,0.087), expectation_t(0.143,0.108,0.087)},
+	{expectation_t(0.160,0.130,0.100), expectation_t(0.160,0.130,0.100), expectation_t(0.160,0.130,0.100), expectation_t(0.160,0.130,0.100)},
+	{expectation_t(0.125,0.099,0.078), expectation_t(0.123,0.098,0.079), expectation_t(0.124,0.100,0.079), expectation_t(0.125,0.098,0.078)},
+	{expectation_t(0.067,0.047,0.039), expectation_t(0.067,0.047,0.038), expectation_t(0.067,0.046,0.038), expectation_t(0.067,0.047,0.039)},
+	{expectation_t(0.034,0.023,0.015), expectation_t(0.034,0.022,0.015), expectation_t(0.035,0.022,0.015), expectation_t(0.034,0.022,0.015)}
+};
+
+const static expectation_t sig4[N_MASS_BINS][N_BDT_BINS] = {
+	{expectation_t(0.0068,0.0019,0.0016),expectation_t(0.00333,0.0010,0.00087),expectation_t(0.00364,0.00082,0.00064),expectation_t(0.00394,0.00087,0.00068)},
+	{expectation_t(0.0236,0.0052,0.0051),expectation_t(0.01150,0.0033,0.00280),expectation_t(0.01250,0.00230,0.00180),expectation_t(0.01360,0.00240,0.00200)},
+	{expectation_t(0.0440,0.0096,0.0093),expectation_t(0.02140,0.0062,0.00520),expectation_t(0.02340,0.00420,0.00330),expectation_t(0.02540,0.00440,0.00360)},
+	{expectation_t(0.0440,0.0094,0.0093),expectation_t(0.02140,0.0062,0.00530),expectation_t(0.02340,0.00420,0.00330),expectation_t(0.02540,0.00440,0.00360)},
+	{expectation_t(0.0236,0.0051,0.0049),expectation_t(0.01150,0.0034,0.00280),expectation_t(0.01250,0.00230,0.00180),expectation_t(0.01360,0.00240,0.00190)},
+	{expectation_t(0.0067,0.0019,0.0016),expectation_t(0.00328,0.00112,0.00087),expectation_t(0.00358,0.00087,0.00067),expectation_t(0.00388,0.00092,0.00070)}
+};
+
+const static int obs4[N_MASS_BINS][N_BDT_BINS] = {
+	{489,4,0,2},
+	{485,6,1,1},
+	{547,6,1,0},
+	{543,6,2,0},
+	{495,5,0,0},
+	{466,4,1,1}
+};
+// Histos to hold the summer 2011 Bd data 
+TH1D *h_lhcbbkg4[N_MASS_BINS][N_BDT_BINS];
+TH1D *h_lhcbmisid4[N_MASS_BINS][N_BDT_BINS];
+TH1D *h_lhcbsig4[N_MASS_BINS][N_BDT_BINS];
+TH1D *h_lhcbdat4[N_MASS_BINS][N_BDT_BINS];
+string s_lhcbchan4[N_MASS_BINS][N_BDT_BINS];	
+///////////////////////////////////////////////////////////////////////////////////
+
 // Setting up the Bs LHCb winter 11-12 data
 const static expectation_t bkg2[N_MASS_BINS12][N_BDT_BINS12] = {
-	{expectation_t(1889,38,39), expectation_t(57,11,11), expectation_t(15.3,3.8,3.8), expectation_t(4.3,1.0,1.0), 
-		expectation_t(3.30,0.92,0.85), expectation_t(1.06,0.51,0.46), expectation_t(1.27,0.53,0.52), expectation_t(0.44,0.41,0.24)}
+	{expectation_t(195.7,4.1,4.1), expectation_t(6.0,1.2,1.1), expectation_t(1.6,0.41,0.40), expectation_t(0.45,0.12,0.11), 
+		expectation_t(0.345,0.105,0.094), expectation_t(0.110,0.063,0.049), expectation_t(0.147,0.065,0.056), expectation_t(0.050,0.048,0.027)},
+	{expectation_t(194.2,4.1,4.0), expectation_t(5.9,1.1,1.1), expectation_t(1.59,0.41,0.40), expectation_t(0.45,0.11,0.11), 
+		expectation_t(0.341,0.102,0.091), expectation_t(0.109,0.060,0.048), expectation_t(0.142,0.062,0.055), expectation_t(0.049,0.046,0.026)},
+	{expectation_t(96.5,2.0,2.0), expectation_t(2.94,0.56,0.56), expectation_t(0.79,0.20,0.20), expectation_t(0.223,0.055,0.053), 
+		expectation_t(0.169,0.051,0.044), expectation_t(0.054,0.029,0.024), expectation_t(0.069,0.030,0.027), expectation_t(0.024,0.022,0.013)},
+	{expectation_t(191.8,4.0,4.0), expectation_t(5.8,1.1,1.1), expectation_t(1.56,0.41,0.39), expectation_t(0.44,0.11,0.10), 
+		expectation_t(0.336,0.099,0.088), expectation_t(0.108,0.056,0.047), expectation_t(0.135,0.058,0.053), expectation_t(0.047,0.043,0.025)},
+	{expectation_t(566,12,12), expectation_t(17.2,3.3,3.3), expectation_t(4.6,1.2,1.1), expectation_t(1.30,0.31,0.30), 
+		expectation_t(0.99,0.28,0.26), expectation_t(0.32,0.15,0.14), expectation_t(0.38,0.16,0.15), expectation_t(0.133,0.121,0.073)},
+	{expectation_t(185.8,3.8,3.8), expectation_t(5.6,1.1,1.1), expectation_t(1.50,0.37,0.37), expectation_t(0.424,0.098,0.097), 
+		expectation_t(0.323,0.090,0.081), expectation_t(0.103,0.048,0.043), expectation_t(0.117,0.055,0.049), expectation_t(0.042,0.037,0.024)},
+	{expectation_t(92.3,1.9,1.9), expectation_t(2.78,0.53,0.53), expectation_t(0.74,0.18,0.18), expectation_t(0.210,0.048,0.048), 
+		expectation_t(0.160,0.045,0.039), expectation_t(0.051,0.023,0.021), expectation_t(0.057,0.028,0.024), expectation_t(0.021,0.018,0.012)},
+	{expectation_t(183.6,3.7,3.7), expectation_t(5.5,1.0,1.0), expectation_t(1.48,0.37,0.36), expectation_t(0.418,0.095,0.094), 
+		expectation_t(0.318,0.089,0.078), expectation_t(0.101,0.046,0.042), expectation_t(0.110,0.056,0.046), expectation_t(0.040,0.035,0.023)},
+	{expectation_t(182.6,3.7,3.7), expectation_t(5.5,1.0,1.0), expectation_t(1.46,0.36,0.36), expectation_t(0.413,0.093,0.093), 
+		expectation_t(0.317,0.087,0.077), expectation_t(0.100,0.044,0.042), expectation_t(0.106,0.056,0.044), expectation_t(0.039,0.033,0.022)}
 };
 
 const static expectation_t misid2[N_MASS_BINS12][N_BDT_BINS12] = {
-	{expectation_t(0.124,0.066, 0.049), expectation_t(0.063, 0.024, 0.018), expectation_t(0.049, 0.016, 0.012), expectation_t(0.045, 0.016, 0.012),
-		expectation_t(0.050, 0.018, 0.013), expectation_t(0.047, 0.017, 0.013), expectation_t(0.049, 0.017, 0.013), expectation_t(0.047, 0.018, 0.014)}
+	{expectation_t(0.035,0.016, 0.012), expectation_t(0.0177, 0.0058, 0.0043), expectation_t(0.0139, 0.0044, 0.0033), expectation_t(0.0125, 0.0039, 0.0028),
+		expectation_t(0.0140, 0.0043, 0.0032), expectation_t(0.0132, 0.0041, 0.0030), expectation_t(0.0137, 0.0042, 0.0032), expectation_t(0.0132, 0.0044, 0.0033)},
+	{expectation_t(0.0237,0.0093, 0.0083), expectation_t(0.0120, 0.0028, 0.0024), expectation_t(0.0094, 0.0020, 0.0018), expectation_t(0.0085, 0.0016, 0.0014),
+		expectation_t(0.0095, 0.0018, 0.0016), expectation_t(0.0090, 0.0016, 0.0016), expectation_t(0.0094, 0.0018, 0.0016), expectation_t(0.0090, 0.0022, 0.0019)},
+	{expectation_t(0.0092,0.0038, 0.0033), expectation_t(0.0046, 0.0012, 0.0010), expectation_t(0.00365, 0.00090, 0.00077), expectation_t(0.00328, 0.00075, 0.00063),
+		expectation_t(0.00368, 0.00083, 0.00070), expectation_t(0.00347, 0.00077, 0.00064), expectation_t(0.00361, 0.00081, 0.00068), expectation_t(0.00347, 0.00095, 0.00082)},
+	{expectation_t(0.0136,0.0080, 0.0055), expectation_t(0.0070, 0.0032, 0.0022), expectation_t(0.0055, 0.0024, 0.0017), expectation_t(0.0050, 0.0021, 0.0015),
+		expectation_t(0.0056, 0.0023, 0.0017), expectation_t(0.0054, 0.0021, 0.0016), expectation_t(0.0055, 0.0022, 0.0017), expectation_t(0.0052, 0.0024, 0.0017)},
+	{expectation_t(0.021,0.028, 0.011), expectation_t(0.0137, 0.0093, 0.0079), expectation_t(0.0113, 0.0066, 0.0067), expectation_t(0.0110, 0.0049, 0.0068),
+		expectation_t(0.0125, 0.0054, 0.0077), expectation_t(0.0121, 0.0047, 0.0076), expectation_t(0.0124, 0.0052, 0.0077), expectation_t(0.0098, 0.0075, 0.0055)},
+	{expectation_t(0.0034,0.0091, 0.0022), expectation_t(0.0035, 0.0024, 0.0028), expectation_t(0.0029, 0.0017, 0.0023), expectation_t(0.0028, 0.0013, 0.0023),
+		expectation_t(0.0032, 0.0014, 0.0026), expectation_t(0.0031, 0.0012, 0.0026), expectation_t(0.0032, 0.0013, 0.0026), expectation_t(0.0025, 0.0019, 0.0020)},
+	{expectation_t(0.0015,0.0041, 0.0010), expectation_t(0.0016, 0.0011, 0.0013), expectation_t(0.00129, 0.00076, 0.00108), expectation_t(0.00126, 0.00056, 0.00107),
+		expectation_t(0.00142, 0.00062, 0.00121), expectation_t(0.00138, 0.00054, 0.00118), expectation_t(0.00141, 0.00059, 0.00120), expectation_t(0.00112, 0.00085, 0.00092)},
+	{expectation_t(0.0029,0.0076, 0.0021), expectation_t(0.0030, 0.0020, 0.0026), expectation_t(0.0025, 0.0015, 0.0021), expectation_t(0.0024, 0.0011, 0.0021),
+		expectation_t(0.0027, 0.0012, 0.0024), expectation_t(0.0027, 0.0010, 0.0023), expectation_t(0.0027, 0.0011, 0.0024), expectation_t(0.0022, 0.0016, 0.0018)},
+	{expectation_t(0.0024,0.0067, 0.0018), expectation_t(0.0026, 0.0017, 0.0022), expectation_t(0.0021, 0.0012, 0.0018), expectation_t(0.00207, 0.00092, 0.00182),
+		expectation_t(0.0023, 0.0010, 0.0021), expectation_t(0.00227, 0.00088, 0.00200), expectation_t(0.00232, 0.00097, 0.00204), expectation_t(0.0018, 0.0014, 0.0016)}
 };
 
 const static expectation_t sig2[N_MASS_BINS12][N_BDT_BINS12] = {
-	{expectation_t(2.55, 0.70, 0.74), expectation_t(1.22, 0.20, 0.19), expectation_t(0.97, 0.14, 0.13), expectation_t(0.861, 0.102, 0.088),
-		expectation_t(1.00, 0.12, 0.10), expectation_t(1.034, 0.109, 0.095), expectation_t(1.18, 0.13, 0.11), expectation_t(1.23, 0.21, 0.21)}
+	{expectation_t(0.050, 0.014, 0.015), expectation_t(0.0240, 0.0046, 0.0040), expectation_t(0.0191, 0.0033, 0.0029), expectation_t(0.0170, 0.0025, 0.0021),
+		expectation_t(0.0197, 0.0028, 0.0024), expectation_t(0.0204, 0.0027, 0.0024), expectation_t(0.0233, 0.0033, 0.0028), expectation_t(0.0241, 0.0049, 0.0043)},
+	{expectation_t(0.120, 0.033, 0.035), expectation_t(0.0579, 0.0103, 0.0092), expectation_t(0.0459, 0.0073, 0.0065), expectation_t(0.0409, 0.0053, 0.0047),
+		expectation_t(0.0474, 0.0060, 0.0053), expectation_t(0.0492, 0.0058, 0.0052), expectation_t(0.0560, 0.0070, 0.0062), expectation_t(0.0582, 0.0111, 0.0100)},
+	{expectation_t(0.103, 0.028, 0.030), expectation_t(0.0494, 0.0083, 0.0076), expectation_t(0.0392, 0.0059, 0.0053), expectation_t(0.0349, 0.0042, 0.0038),
+		expectation_t(0.0404, 0.0047, 0.0042), expectation_t(0.0419, 0.0045, 0.0040), expectation_t(0.0478, 0.0054, 0.0048), expectation_t(0.0496, 0.0090, 0.0083)},
+	{expectation_t(0.312, 0.084, 0.089), expectation_t(0.150, 0.025, 0.023), expectation_t(0.119, 0.018, 0.016), expectation_t(0.106, 0.012, 0.011),
+		expectation_t(0.122, 0.014, 0.012), expectation_t(0.127, 0.013, 0.012), expectation_t(0.145, 0.016, 0.014), expectation_t(0.150, 0.027, 0.025)},
+	{expectation_t(1.37, 0.37, 0.39), expectation_t(0.66, 0.11, 0.10), expectation_t(0.523, 0.077, 0.070), expectation_t(0.466, 0.055, 0.049),
+		expectation_t(0.539, 0.061, 0.055), expectation_t(0.559, 0.059, 0.052), expectation_t(0.638, 0.071, 0.062), expectation_t(0.66, 0.12, 0.11)},
+	{expectation_t(0.311, 0.084, 0.089), expectation_t(0.150, 0.025, 0.023), expectation_t(0.119, 0.018, 0.016), expectation_t(0.106, 0.012, 0.011),
+		expectation_t(0.122, 0.014, 0.012), expectation_t(0.127, 0.013, 0.012), expectation_t(0.145, 0.016, 0.014), expectation_t(0.150, 0.027, 0.025)},
+	{expectation_t(0.103, 0.028, 0.030), expectation_t(0.0494, 0.0084, 0.0075), expectation_t(0.0391, 0.0059, 0.0053), expectation_t(0.0349, 0.0042, 0.0037),
+		expectation_t(0.0404, 0.0047, 0.0042), expectation_t(0.0419, 0.0045, 0.0040), expectation_t(0.0478, 0.0054, 0.0048), expectation_t(0.0496, 0.0091, 0.0082)},
+	{expectation_t(0.121, 0.033, 0.035), expectation_t(0.0580, 0.0103, 0.0092), expectation_t(0.0459, 0.0073, 0.0065), expectation_t(0.0409, 0.0053, 0.0047),
+		expectation_t(0.0474, 0.0060, 0.0054), expectation_t(0.0491, 0.0058, 0.0052), expectation_t(0.0560, 0.0069, 0.0062), expectation_t(0.0581, 0.0111, 0.0099)},
+	{expectation_t(0.048, 0.014, 0.014), expectation_t(0.0231, 0.0047, 0.0040), expectation_t(0.0183, 0.0034, 0.0030), expectation_t(0.0163, 0.0026, 0.0023),
+		expectation_t(0.0189, 0.0030, 0.0026), expectation_t(0.0196, 0.0029, 0.0026), expectation_t(0.0224, 0.0034, 0.0030), expectation_t(0.0231, 0.0050, 0.0043)}
 };
 
 const static int obs2[N_MASS_BINS12][N_BDT_BINS12] = {
-	{1818, 39, 12, 6, 1, 2, 1, 1}
+	{188, 2, 3, 0, 0, 0, 1, 0},
+	{185, 4, 1, 0, 0, 0, 0, 0},
+	{82, 1, 0, 1, 0, 0, 0, 0},
+	{167, 2, 3, 1, 0, 0, 0, 0},
+	{557, 22, 3, 2, 0, 2, 0, 1},
+	{219, 4, 2, 1, 0, 0, 0, 0},
+	{74, 2, 0, 0, 0, 0, 0, 0},
+	{176, 0, 0, 0, 0, 0, 0, 0},
+	{170, 2, 0, 1, 1, 0, 0, 0}
 };
 // Histos to hold the winter 2011-2012 data 
 TH1D *h_lhcbbkg2[N_MASS_BINS12][N_BDT_BINS12];
@@ -1844,7 +1947,6 @@ TH1D *h_lhcbsig3[N_MASS_BINS12][N_BDT_BINS12];
 TH1D *h_lhcbdat3[N_MASS_BINS12][N_BDT_BINS12];
 string s_lhcbchan3[N_MASS_BINS12][N_BDT_BINS12];
 
-int counter1 = 0;
 if (lhcbs10) {
 	for (int j = 0; j<N_MASS_BINS; j++) {
 		for (int l = 0; l<N_BDT_BINS; l++) {
@@ -1939,7 +2041,6 @@ if (lhcbs10) {
 	cout << "Fnished setting up LHCb 2010 results, total number of channels = " << counter1 << endl;
 }
 
-int counter = 0;
 if (lhcbs11) {
 	for (int j = 0; j<N_MASS_BINS; j++) {
 		for (int l = 0; l<N_BDT_BINS; l++) {
@@ -2071,7 +2172,137 @@ if (lhcbs11) {
 	cout << "Fnished setting up LHCb summer 2011 results, total number of channels = " << counter << endl;
 }
 
-int counter2 = 0;
+if (lhcbd11) {
+	for (int j = 0; j<N_MASS_BINS; j++) {
+		for (int l = 0; l<N_BDT_BINS; l++) {
+			//		cout << "FUBAR1" << endl;
+			s_lhcbchan4[j][l] = Form("lhcbChan4%i%i",j,l);
+			// Make a char* from the string
+			char * c_lhcbchan4 = new char[s_lhcbchan4[j][l].size() + 1];
+			copy(s_lhcbchan4[j][l].begin(), s_lhcbchan4[j][l].end(), c_lhcbchan4);
+			c_lhcbchan4[s_lhcbchan4[j][l].size()] = '\0'; 
+			
+			// Make the histograms
+			h_lhcbbkg4[j][l] = new TH1D(Form("h_lhcbbkg4%i%i",j,l),Form("LHCb Bkgd M_bn%i G_bn%i",j,l),nbins,xbins); 
+			h_lhcbbkg4[j][l]->SetBinContent(1,bkg4[j][l].value);
+			
+			h_lhcbmisid4[j][l] = new TH1D(Form("h_lhcbmisid4%i%i",j,l),Form("LHCb msID M_bn%i G_bn%i",j,l),nbins,xbins);
+			h_lhcbmisid4[j][l]->SetBinContent(1,misid4[j][l].value);
+			
+			h_lhcbsig4[j][l] = new TH1D(Form("h_lhcbsig4%i%i",j,l),Form("LHCb Sgnl M_bn%i G_bn%i",j,l),nbins,xbins);
+			h_lhcbsig4[j][l]->SetBinContent(1,sig4[j][l].value);
+			h_lhcbsig4[j][l]->Scale(d_scale);
+			
+			h_lhcbdat4[j][l] = new TH1D(Form("h_lhcbdat4%i%i",j,l),Form("LHCb Obsd M_bn%i G_bn%i",j,l),nbins,xbins);
+			h_lhcbdat4[j][l]->SetBinContent(1,obs4[j][l]);
+			
+			// Add background templates
+			// Initialize everything
+			for(int i=0;i<NSYS;i++)
+			{
+				nps_low[i]  = 0;
+				nps_high[i] = 0;
+				lowsigma[i] = 0;
+				highsigma[i]= 0;
+				lowshape[i] = 0;
+				highshape[i]= 0;
+			}
+			
+			sfact = 1;
+			
+			ename[0] = lhcbbkgerrna;
+			nps_low[0] = -bkg4[j][l].lo_err/bkg4[j][l].value;
+			nps_high[0] = bkg4[j][l].hi_err/bkg4[j][l].value;
+			
+			nps_count=1;		
+			pssnflg = 0;
+			sclflg = 0;
+			
+			// Construct test/null hypothesis for pseudo-experiments.
+			nullhyp_pe->add_template(h_lhcbbkg4[j][l],sfact,nps_count,ename,nps_low,nps_high,
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan4);
+			testhyp_pe->add_template(h_lhcbbkg4[j][l],sfact,nps_count,ename,nps_low,nps_high,
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan4);
+			nps_count=0;
+			nullhyp->add_template(h_lhcbbkg4[j][l],sfact,nps_count,ename,nps_low,nps_high,
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan4);
+			testhyp->add_template(h_lhcbbkg4[j][l],sfact,nps_count,ename,nps_low,nps_high,
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan4);
+			cout << "Finished setting up the background nullhyp, testhyp, nullhyp_pe, and testhyp_pe for channel " << counter4 << endl;
+			
+			// Initialize everything
+			for(int i=0;i<NSYS;i++)
+			{
+				nps_low[i]  = 0;
+				nps_high[i] = 0;
+				lowsigma[i] = 0;
+				highsigma[i]= 0;
+				lowshape[i] = 0;
+				highshape[i]= 0;
+			}
+			
+			// Add GLbin1 misid background templates
+			sfact = 1;
+			
+			ename[0] = lhcbmisiderna;
+			nps_low[0] = -misid4[j][l].lo_err/misid4[j][l].value;
+			nps_high[0] = misid4[j][l].hi_err/misid4[j][l].value;
+			
+			nps_count=1;		
+			pssnflg = 0;
+			sclflg = 0;
+			
+			// Construct test/null hypothesis for pseudo-experiments.
+			nullhyp_pe->add_template(h_lhcbmisid4[j][l],sfact,nps_count,ename,nps_low,nps_high,
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan4);
+			testhyp_pe->add_template(h_lhcbmisid4[j][l],sfact,nps_count,ename,nps_low,nps_high,
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan4);
+			nps_count=0;
+			nullhyp->add_template(h_lhcbmisid4[j][l],sfact,nps_count,ename,nps_low,nps_high,
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan4);
+			testhyp->add_template(h_lhcbmisid4[j][l],sfact,nps_count,ename,nps_low,nps_high,
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan4);
+			cout << "Finished setting up the misID bkgnd nullhyp, testhyp, nullhyp_pe, testhyp_pe for channel " << counter4 << endl;
+			
+			// Add signal templates
+			for(int i=0;i<NSYS;i++) {
+				nps_low[i] = 0;
+				nps_high[i] = 0;
+				lowsigma[i] = 0;
+				highsigma[i] = 0;
+				lowshape[i] = 0;
+				highshape[i] = 0;
+			}
+			// Add GLbin1 misid background templates
+			sfact = 1;	
+			
+			ename[0] = pdfhadron;
+			nps_low[0] = -0.021/0.267;
+			nps_high[0] = 0.021/0.267;
+			
+			ename[1] = lhcbsigerrna;
+			nps_low[1] = -sig4[j][l].lo_err/sig4[j][l].value;
+			nps_high[1] = sig4[j][l].hi_err/sig4[j][l].value;
+			
+			nps_count = 2;
+			
+			pssnflg = 0;// 
+			sclflg = 1;// this is set to 1 if signal, 
+			testhyp_pe->add_template(h_lhcbsig4[j][l],sfact,nps_count,ename,nps_low,nps_high, 
+									 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan4);
+			nps_count = 0;
+			testhyp->add_template(h_lhcbsig4[j][l],sfact,nps_count,ename,nps_low,nps_high, 
+								  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,c_lhcbchan4);
+			
+			cout << "Finished setting up the signal testhyp, testhyp_pe for channel " << counter4 << endl;	
+			
+			delete[] c_lhcbchan4;
+			counter4++;
+		}
+	}
+	cout << "Fnished setting up LHCb summer 2011 results, total number of channels = " << counter4 << endl;
+}
+
 if (lhcbs12) {
 	for (int j = 0; j<N_MASS_BINS12; j++) {
 		for (int l = 0; l<N_BDT_BINS12; l++) {
@@ -2203,7 +2434,6 @@ if (lhcbs12) {
 	cout << "Fnished setting up LHCb summer 2011 results, total number of channels = " << counter2 << endl;
 }
 
-int counter3 = 0;
 if (lhcbd12) {
 	for (int j = 0; j<N_MASS_BINS12; j++) {
 		for (int l = 0; l<N_BDT_BINS12; l++) {
