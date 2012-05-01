@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   pdf_toyMC.cpp
  * Author: lucamartini
  * 
@@ -61,7 +61,7 @@ bool pdf_toyMC::parse(char *cutName, float cut) {
   return false;
 }
 
-void pdf_toyMC::generate(int NExp) {
+void pdf_toyMC::generate(int NExp, string pdf_toy) {
   
   pull_bs = new RooRealVar("pull_bs", "pull_bs", -5., 5.);
   pull_bd = new RooRealVar("pull_bd", "pull_bd", -5., 5.);
@@ -73,6 +73,7 @@ void pdf_toyMC::generate(int NExp) {
   RooRandom::randomGenerator()->SetSeed(0);
   double p_bs = 0., p_bd = 0.;
   for (int i = 1; i <= NExp; i++) {
+    pdf_toy_ = pdf_toy;
     RooDataSet* data_bs   = ws_->pdf("pdf_bs")->generate(*ws_->var("Mass"), NumEvents((int)estimate_bs), Extended());
     RooDataSet* data_bd   = ws_->pdf("pdf_bd")->generate(*ws_->var("Mass"), NumEvents((int)estimate_bd), Extended());
     RooDataSet* data_rare = ws_->pdf("pdf_rare")->generate(*ws_->var("Mass"), NumEvents((int)estimate_rare), Extended());
@@ -80,39 +81,48 @@ void pdf_toyMC::generate(int NExp) {
     
     RooDataSet* data = new RooDataSet("data", "data", *ws_->var("Mass"));
     data->append(*data_bs);
-    data->append(*data_bd);
-    data->append(*data_rare);
-    data->append(*data_comb);
+    if (pdf_toy_ != "bs") {
+      data->append(*data_bd);
+      if (pdf_toy_ != "signals") {
+        data->append(*data_rare);
+        if (pdf_toy_ != "signalsrare") {
+          data->append(*data_comb);
+        }
+      }
+    }
     
     double printlevel = -1;
-    if (NExp == 1) printlevel = 1;
-    fit_pdf("total", data, printlevel);
-    if (NExp == 1) {
+    if (i == 1) printlevel = 1;
+    //////
+    fit_pdf(pdf_toy_, data, printlevel);
+    //////
+    if (i == 1) {
       rds_ = data;
+      pdf_name = pdf_toy_;
       print("_toyMC");
-      exit(1);
     }
       
     /// test statistics
     // PULL
     double bs_pull = (ws_->var("N_bs")->getVal() - data_bs->numEntries()) / ws_->var("N_bs")->getError();
     double bd_pull = (ws_->var("N_bd")->getVal() - data_bd->numEntries()) / ws_->var("N_bd")->getError();
-    
     pull_bs->setVal(bs_pull);
     pull_bd->setVal(bd_pull);
-
     pull_rds_bs->add(*pull_bs);
     pull_rds_bd->add(*pull_bd);
     
     // H_0
-    RooDataSet* bkg = new RooDataSet("bkg", "bkg", *ws_->var("Mass"));
-    bkg->append(*data_rare);
-    bkg->append(*data_comb);
-    fit_pdf("total", bkg);
-    if (ws_->var("N_bs")->getVal() >= estimate_bs) p_bs++;
-    if (ws_->var("N_bd")->getVal() >= estimate_bd) p_bd++;
+    if (pdf_toy_ == "pdf_ext_total") {
+      RooDataSet* bkg = new RooDataSet("bkg", "bkg", *ws_->var("Mass"));
+      bkg->append(*data_rare);
+      bkg->append(*data_comb);
+      fit_pdf("total", bkg, printlevel);
+      if (ws_->var("N_bs")->getVal() >= estimate_bs) p_bs++;
+      if (ws_->var("N_bd")->getVal() >= estimate_bd) p_bd++;
+    }
   }
-    
+
+  pdf_toy_ = pdf_toy;
   fit_pulls();
   
   double p_value_bs = p_bs / NExp;
@@ -123,15 +133,12 @@ void pdf_toyMC::generate(int NExp) {
   return;
 }
 
-
 void pdf_toyMC::fit_pdf (string pdf, RooAbsData* data, int printlevel) {
-  pdf_name = "pdf_ext_" + pdf;
-  ws_->pdf( pdf_name.c_str())->fitTo(*data, Extended(true), SumW2Error(0), Range(range_.c_str()), PrintLevel(printlevel));
+  pdf_toy_ = "pdf_ext_" + pdf;
+  ws_->pdf( pdf_toy_.c_str())->fitTo(*data, Extended(true), SumW2Error(0), Range(range_.c_str()), PrintLevel(printlevel));
 }
 
 void pdf_toyMC::fit_pulls() {
-  
-  
   RooRealVar* mean_bs = new RooRealVar("mean_bs", "mean_bs", -5., 5.);
   RooRealVar* sigma_bs = new RooRealVar("sigma_bs", "sigma_bs", 0.001, 5.);
   RooGaussian* gauss_bs = new RooGaussian("gauss_bs", "gauss_bs", *pull_bs, *mean_bs, *sigma_bs);
@@ -143,7 +150,7 @@ void pdf_toyMC::fit_pulls() {
   gauss_bs->paramOn(rp_bs, Layout(0.66, 0.9, 0.9));
   TCanvas* canvas_bs = new TCanvas("canvas_bs", "canvas_bs", 600, 600); 
   rp_bs->Draw();
-  string address = "fig/bs_pull_" + meth_ + "_" + ch_s_;
+  string address = "fig/bs_pull_" + meth_ + "_" + ch_s_ + "_" + pdf_toy_;
   canvas_bs->Print( (address + ".gif").c_str());
   delete rp_bs;
   delete canvas_bs;
@@ -159,7 +166,7 @@ void pdf_toyMC::fit_pulls() {
   gauss_bd->paramOn(rp_bd, Layout(0.66, 0.9, 0.9));
   TCanvas* canvas_bd = new TCanvas("canvas_bd", "canvas_bd", 600, 600); 
   rp_bd->Draw();
-  address = "fig/bd_pull_" + meth_ + "_" + ch_s_;
+  address = "fig/bd_pull_" + meth_ + "_" + ch_s_ + "_" + pdf_toy_;
   canvas_bd->Print( (address + ".gif").c_str());
   delete rp_bd;
   delete canvas_bd;

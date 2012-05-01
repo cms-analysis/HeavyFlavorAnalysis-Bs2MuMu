@@ -19,7 +19,7 @@ class pdf_toyMC : public pdf_analysis {
 public:
   
   pdf_toyMC(string input_estimates, bool print, string meth, string ch_s, string range = "all");
-  void generate(int NExp);
+  void generate(int NExp, string pdf_toy);
   void fit_pdf (string pdf, RooAbsData* data, int printlevel = -1);
   void fit_pulls();
   void parse_estimate();
@@ -36,6 +36,7 @@ private:
   double estimate_comb;
 
   string input_estimates_;
+  string pdf_toy_;
   
   RooDataSet* pull_rds_bs;
   RooDataSet* pull_rds_bd;

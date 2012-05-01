@@ -22,7 +22,6 @@ void pdf_analysis::define_pdfs () {
   define_nonpeaking();
   define_comb();
   
-  
   define_signals();
   define_rare();
   define_bkg();
@@ -117,7 +116,7 @@ void pdf_analysis::define_nonpeaking() {
   ws_->factory("N_nonpeaking[0, 100]");
   ws_->factory("m0_nonpeaking[5.5]");
   ws_->factory("c_nonpeaking[1., 0.1, 20]");
-  ws_->factory("p_nonpeaking[0.5, 0.1., 5.]");
+  ws_->factory("p_nonpeaking[0.5, 0.1, 5.]");
 
   ws_->factory("ArgusBG::pdf_nonpeaking(Mass,m0_nonpeaking,c_nonpeaking,p_nonpeaking)");
   
@@ -144,8 +143,9 @@ void pdf_analysis::define_signals() {
   
   ws_->factory("SUM::pdf_signals(bsfraction_signals*pdf_bs, pdf_bd)");
   
-  RooExtendPdf* signalsExt = new RooExtendPdf("pdf_ext_signals", "signalsExt", *ws_->pdf("pdf_signals"), *ws_->var("N_signals"), range_.c_str());
-  ws_->import(*signalsExt);
+  ws_->factory("SUM::pdf_ext_signals(N_bs*pdf_bs, N_bd*pdf_bd)");
+  //RooExtendPdf* signalsExt = new RooExtendPdf("pdf_ext_signals", "signalsExt", *ws_->pdf("pdf_signals"), *ws_->var("N_signals"), range_.c_str());
+  //ws_->import(*signalsExt);
   return; 
 }
 
@@ -165,6 +165,7 @@ void pdf_analysis::define_signalsrare() {
   
   ws_->factory("signalfraction_signalsrare[0.5, 0.0, 1.0]"); 
   ws_->factory("SUM::pdf_signalsrare(signalfraction_signalsrare*pdf_signals, pdf_rare)");
+  ws_->factory("SUM::pdf_ext_signalsrare(N_bs*pdf_bs, N_bd*pdf_bd, N_rare*pdf_rare)");
   return;
 }
 

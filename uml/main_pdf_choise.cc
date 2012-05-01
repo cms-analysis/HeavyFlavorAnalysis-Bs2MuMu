@@ -14,7 +14,7 @@
 int main(int argc, char* argv[]) {
 
   parse_options(argc, argv);
-  if (!input || !output || !method || !channel) help();
+  if (!input || !method || !channel) help();
   
   /// INPUTS
   TFile* input_f = new TFile(input_name.c_str());
