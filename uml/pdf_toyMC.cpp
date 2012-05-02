@@ -69,31 +69,44 @@ void pdf_toyMC::generate(int NExp, string pdf_toy) {
   pull_rds_bd = new RooDataSet("pull_rds_bd", "pull_rds_bd", *pull_bd);
   
   parse_estimate();
+  pdf_name = "total";
+  if (pdf_toy != "total") {
+    pdf_name = define_pdf_sum(pdf_toy);
+  }
   
   RooRandom::randomGenerator()->SetSeed(0);
   double p_bs = 0., p_bd = 0.;
   for (int i = 1; i <= NExp; i++) {
     pdf_toy_ = pdf_toy;
-    RooDataSet* data_bs   = ws_->pdf("pdf_bs")->generate(*ws_->var("Mass"), NumEvents((int)estimate_bs), Extended());
-    RooDataSet* data_bd   = ws_->pdf("pdf_bd")->generate(*ws_->var("Mass"), NumEvents((int)estimate_bd), Extended());
-    RooDataSet* data_rare = ws_->pdf("pdf_rare")->generate(*ws_->var("Mass"), NumEvents((int)estimate_rare), Extended());
-    RooDataSet* data_comb = ws_->pdf("pdf_comb")->generate(*ws_->var("Mass"), NumEvents((int)estimate_comb), Extended());
+    RooDataSet* data_bs   = ws_->pdf("pdf_bs")->generate(*ws_->var("Mass"), NumEvents((int)estimate_bs), Extended(1));
+    RooDataSet* data_bd   = ws_->pdf("pdf_bd")->generate(*ws_->var("Mass"), NumEvents((int)estimate_bd), Extended(1));
+    RooDataSet* data_rare = ws_->pdf("pdf_rare")->generate(*ws_->var("Mass"), NumEvents((int)estimate_rare), Extended(1));
+    RooDataSet* data_comb = ws_->pdf("pdf_comb")->generate(*ws_->var("Mass"), NumEvents((int)estimate_comb), Extended(1));
     
     RooDataSet* data = new RooDataSet("data", "data", *ws_->var("Mass"));
-    data->append(*data_bs);
-    if (pdf_toy_ != "bs") {
+    if (pdf_toy_ == "total") {
+      data->append(*data_bs);
       data->append(*data_bd);
-      if (pdf_toy_ != "signals") {
-        data->append(*data_rare);
-        if (pdf_toy_ != "signalsrare") {
-          data->append(*data_comb);
-        }
-      }
+      data->append(*data_rare);
+      data->append(*data_comb);
+    }
+    else {
+      size_t found;
+      found = pdf_toy_.find("bs");
+      if (found != string::npos) data->append(*data_bs);
+      found = pdf_toy_.find("bd");
+      if (found != string::npos) data->append(*data_bd);
+      found = pdf_toy_.find("rare");
+      if (found != string::npos) data->append(*data_rare);
+      found = pdf_toy_.find("comb");
+      if (found != string::npos) data->append(*data_comb);
     }
     
     double printlevel = -1;
     if (i == 1) printlevel = 1;
     //////
+
+    //string temp =
     fit_pdf(pdf_toy_, data, printlevel);
     //////
     if (i == 1) {
@@ -104,8 +117,8 @@ void pdf_toyMC::generate(int NExp, string pdf_toy) {
       
     /// test statistics
     // PULL
-    double bs_pull = (ws_->var("N_bs")->getVal() - data_bs->numEntries()) / ws_->var("N_bs")->getError();
-    double bd_pull = (ws_->var("N_bd")->getVal() - data_bd->numEntries()) / ws_->var("N_bd")->getError();
+    double bs_pull = (ws_->var("N_bs")->getVal() - estimate_bs) / ws_->var("N_bs")->getError();
+    double bd_pull = (ws_->var("N_bd")->getVal() - estimate_bd) / ws_->var("N_bd")->getError();
     pull_bs->setVal(bs_pull);
     pull_bd->setVal(bd_pull);
     pull_rds_bs->add(*pull_bs);
@@ -181,4 +194,48 @@ void pdf_toyMC::unset_constant() {
   while((var_Obj = it->Next())){
     ws_->var(var_Obj->GetName())->setConstant(0);
   }
+}
+
+void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
+
+  parse_estimate();
+  ws_->var("N_bs")->setVal(estimate_bs);
+  ws_->var("N_bd")->setVal(estimate_bd);
+  ws_->var("N_rare")->setVal(estimate_rare);
+  ws_->var("N_comb")->setVal(estimate_comb);
+
+  pdf_name = "pdf_ext_total";
+  if (pdf_toy != "total") {
+    pdf_name = "pdf_ext_" + define_pdf_sum(pdf_toy);
+  }
+
+  RooMCStudy* mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), *ws_->var("Mass"), Binned(kFALSE), Silence(), Extended(1), FitOptions(Save(kTRUE),PrintEvalErrors(0))) ;
+  mcstudy->generateAndFit(NExp) ;
+
+  // Make plots of the distributions of mean, the error on mean and the pull of mean
+  RooPlot* frame1 = mcstudy->plotParam(*ws_->var("N_bs"),Bins(40)) ;
+  RooPlot* frame2 = mcstudy->plotError(*ws_->var("N_bs"),Bins(40)) ;
+  RooPlot* frame3 = mcstudy->plotPull(*ws_->var("N_bs"),Bins(40),FitGauss(kTRUE)) ;
+
+  // Plot distribution of minimized likelihood
+  RooPlot* frame4 = mcstudy->plotNLL(Bins(40)) ;
+
+//  // Make some histograms from the parameter dataset
+  TH1* hh_cor_a0_s1f = mcstudy->fitParDataSet().createHistogram("hh",*ws_->var("N_bs"), YVar(*ws_->var("N_bd"))) ;
+
+  TCanvas* c = new TCanvas("rf801_mcstudy","rf801_mcstudy",900,900) ;
+  c->Divide(3,3) ;
+  c->cd(1) ; gPad->SetLeftMargin(0.15) ; frame1->GetYaxis()->SetTitleOffset(1.4) ; frame1->Draw() ;
+  c->cd(2) ; gPad->SetLeftMargin(0.15) ; frame2->GetYaxis()->SetTitleOffset(1.4) ; frame2->Draw() ;
+  c->cd(3) ; gPad->SetLeftMargin(0.15) ; frame3->GetYaxis()->SetTitleOffset(1.4) ; frame3->Draw() ;
+  c->cd(4) ; gPad->SetLeftMargin(0.15) ; frame4->GetYaxis()->SetTitleOffset(1.4) ; frame4->Draw() ;
+  c->cd(5) ; gPad->SetLeftMargin(0.15) ; hh_cor_a0_s1f->GetYaxis()->SetTitleOffset(1.4) ; hh_cor_a0_s1f->Draw("box") ;
+  string address = "fig/RooMCStudy_" + pdf_toy_ + ".gif";
+  c->Print(address.c_str());
+  delete frame1;
+  delete frame2;
+  delete frame3;
+  delete frame4;
+  delete c;
+
 }

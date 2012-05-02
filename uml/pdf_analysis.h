@@ -42,6 +42,7 @@ public:
   void define_bkg();
   void define_signalsrare();
   
+  string define_pdf_sum(string name);
   void define_all(); // final pdf with fractional components, and also extended
   void define_total(); // final pdf with all extended components
 

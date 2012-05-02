@@ -19,18 +19,22 @@
 /*
  * 
  */
+
 int main(int argc, char** argv) {
 
   parse_options(argc, argv);
-  if (!input || !estimate || !pdf || !method || !channel) help();
+  if (!input || !estimate || !pdf) help();
   
   TFile* input_f = new TFile(input_name.c_str());
   RooWorkspace* ws = (RooWorkspace*)input_f->Get("ws");
   
+  parse_input(input_name);
+
   pdf_toyMC toy1(input_estimates, false, meth, ch_s);
   toy1.set_ws(ws);
  // toy1.unset_constant();
-  toy1.generate(NExp, pdf_toy);
+  if(roomcs) toy1.mcstudy(NExp, pdf_toy);
+  else toy1.generate(NExp, pdf_toy);
   
   return (EXIT_SUCCESS);
 }
