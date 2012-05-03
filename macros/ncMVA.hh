@@ -9,6 +9,7 @@
 
 #include <string>
 #include <TTree.h>
+#include <TCut.h>
 
 TTree* ncEvalAll(TTree *tree, bool verbose = true);
 void ncEvalAll(const char *treeFileName, bool verbose = true);

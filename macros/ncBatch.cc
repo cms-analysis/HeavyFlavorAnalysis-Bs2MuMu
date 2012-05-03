@@ -9,6 +9,7 @@
 // Standard headers
 #include <string>
 #include <iostream>
+#include <stdlib.h>
 
 // ROOT headers
 #include <TFile.h>
