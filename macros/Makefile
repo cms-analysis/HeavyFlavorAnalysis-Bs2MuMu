@@ -99,6 +99,7 @@ clean:
 cleanall: clean
 	rm -f bin/runTreeReaders bin/runMergeTrees 
 	rm -f bin/writeA01Event bin/readA01Event
+	rm -f bin/ncBatch
 	rm -f lib/lib*.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libAna00.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libUtil.so
@@ -107,7 +108,13 @@ cleanall: clean
 lib/libNCMVA.so: $(addprefix obj/,$(NNLEARNING) $(NNLEARNINGDICT))
 	$(LD) $(SOFLAGS) -o $@ $(addprefix obj/,$(NNLEARNING) $(NNLEARNINGDICT)) $(GLIBS) -lTMVA -lTreePlayer
 
+bin/ncBatch: obj/ncBatch.o lib/libNCMVA.so
+	$(LD) $(LDFLAGS) -o $@ obj/ncBatch.o lib/libNCMVA.so $(GLIBS)
+
 ncMVA: lib/libNCMVA.so
+	@true
+
+ncBatch: bin/ncBatch
 	@true
 
 -include $(addprefix obj/,${READER:.o=.d})

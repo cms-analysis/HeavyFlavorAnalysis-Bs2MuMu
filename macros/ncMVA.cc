@@ -102,33 +102,25 @@ void ncEvalAll(const char *treeFileName, bool verbose)
 	free(tname);
 } // ncEvalAll()
 
-void ncRunTraining(TTree *signalTree, double signalWeight, TTree *bkgTree, double bkgWeight, int channelIx, TCut channelCut)
+void ncRunTraining(TTree *signalTree, double signalWeight, TTree *bkgTree, double bkgWeight, int channelIx, TCut channelCut, string *mOptions)
 {
 	TFile trainFile(Form("TMVA_%d.root",channelIx),"recreate");
 	TString factOptions("Transformations=I");
 	TString prepOptions("");
-	//TString methodTitle(Form("MLP_%d",channelIx));
-	char methodTitle[] = "MLP_%d";
-	TCut presel = ncEvaluate::getPreselCut() && TCut("triggered_bs") && channelCut; // FIXME: Also muon cuts?
+	TString methodTitle(Form("MLP_%d",channelIx));
+	TCut muonCut("tight_mu1 && tight_mu2");
+	TCut presel = ncEvaluate::getPreselCut() && muonCut && TCut("triggered_bs") && channelCut;
 	map<string,string> *variables = ncEvaluate::getDefaultVariables();
 	map<string,string>::const_iterator it;
 	const char *c;
-	unsigned j;
 	
 	cout << "===> Running training for channel " << channelIx << endl;
 	
 	// FIXME: Optimize the booking options
 	// TString allOptions("!H:V:VarTransform=Norm:NCycles=500:HiddenLayers=N,N-1:NeuronType=sigmoid:NeuronInputType=sum:LearningRate=0.02:DecayRate=0.01:TestRate=10:Tau=3:BPMode=sequential");
-	// TString methodOptions("!H:V:VarTransform=Norm:NCycles=600:HiddenLayers=N,N-1:NeuronType=sigmoid:LearningRate=0.02");
-	
-	// go for hidden layer...
-	// WE HAVE TO TEST THESE CONFIGURATIONS!!!
-	const char *methOpts[] = {
-		"!H:V:VarTransform=Norm:NCycles=600:HiddenLayers=N+8:NeuronType=sigmoid:LearningRate=0.02",
-		"!H:V:VarTransform=Norm:NCycles=600:HiddenLayers=N+15:NeuronType=sigmoid:LearningRate=0.02",
-		"!H:V:VarTransform=Norm:NCycles=600:HiddenLayers=N,N:NeuronType=sigmoid:LearningRate=0.02",
-		"!H:V:VarTransform=Norm:NCycles=600:HiddenLayers=N+4,N+4:NeuronType=sigmoid:LearningRate=0.02"
-	};
+	TString methodOptions("!H:V:VarTransform=Norm:NCycles=500:HiddenLayers=N+2,N+2:NeuronType=sigmoid:LearningRate=0.08:DecayRate=0.03");
+	// Also good
+	//	"!H:V:VarTransform=Norm:NCycles=800:HiddenLayers=N+2,N+2:NeuronType=sigmoid:LearningRate=0.01:DecayRate=0.005"
 	
 	// create factory
 	TMVA::Factory *factory = new TMVA::Factory("ncMVA",&trainFile,factOptions);
@@ -149,9 +141,9 @@ void ncRunTraining(TTree *signalTree, double signalWeight, TTree *bkgTree, doubl
 	factory->PrepareTrainingAndTestTree(presel, prepOptions);
 	
 	// book neural network
-	for (j = 0; j < sizeof(methOpts) / sizeof(const char *); j++)
-		factory->BookMethod(TMVA::Types::kMLP, Form(methodTitle,j), methOpts[j]);
-	
+	if (mOptions) methodOptions = *mOptions;
+	factory->BookMethod(TMVA::Types::kMLP, methodTitle, methodOptions);
+		
 	// Training & Testing
 	factory->TrainAllMethods();
 	factory->TestAllMethods();
@@ -190,8 +182,8 @@ void ncRunDefaultTraining(const char *mcFile, const char *dataFile)
 	double bkgWeight = 0.200000;
 	double signalWeight = 0.000156;
 	
-	ncRunTraining(signalTree, signalWeight, bkgTree, bkgWeight, 0, barrelCut);
-//	ncRunTraining(signalTree, signalWeight, bkgTree, bkgWeight, 1, !barrelCut);
+	ncRunTraining(signalTree, signalWeight, bkgTree, bkgWeight, 0, barrelCut, NULL);
+	ncRunTraining(signalTree, signalWeight, bkgTree, bkgWeight, 1, !barrelCut, NULL);
 	
 	unlink(tmpfilename);
 } // runTraining()
