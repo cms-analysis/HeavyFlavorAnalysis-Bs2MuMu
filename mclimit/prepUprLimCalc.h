@@ -36,10 +36,42 @@ char combbkgerrname[]="CBKGERR";
 char experrname[]="EXPERR";
 char unconstrned[]="UNCONSTRAINED";
 //LHCb nuisance parameters
+char lhcbxfeederna[]="XFEEDERR";
 char lhcbbkgerrna[]="LHCBBKGERR";
 char lhcbmisiderna[]="MISIDERR";
-char lhcbxfeederna[]="XFEEDERR";
 char lhcbsigerrna[]="SIGERR";
+
+char lhcbbkgerrna1[]="LHCBBKGERR1";
+char lhcbmisiderna1[]="MISIDERR1";
+char lhcbsigerrna1[]="SIGERR1";
+
+char lhcbbkgerrna2[]="LHCBBKGERR2";
+char lhcbmisiderna2[]="MISIDERR2";
+char lhcbsigerrna2[]="SIGERR2";
+
+char lhcbbkgerrna3[]="LHCBBKGERR3";
+char lhcbmisiderna3[]="MISIDERR3";
+char lhcbsigerrna3[]="SIGERR3";
+
+char lhcbbkgerrna4[]="LHCBBKGERR4";
+char lhcbmisiderna4[]="MISIDERR4";
+char lhcbsigerrna4[]="SIGERR4";
+
+char lhcbbkgerrna5[]="LHCBBKGERR5";
+char lhcbmisiderna5[]="MISIDERR5";
+char lhcbsigerrna5[]="SIGERR5";
+
+char lhcbbkgerrna6[]="LHCBBKGERR6";
+char lhcbmisiderna6[]="MISIDERR6";
+char lhcbsigerrna6[]="SIGERR6";
+
+char lhcbbkgerrna7[]="LHCBBKGERR7";
+char lhcbmisiderna7[]="MISIDERR7";
+char lhcbsigerrna7[]="SIGERR7";
+
+//char lhcbbkgerrna8[]="LHCBBKGERR8";
+//char lhcbmisiderna8[]="MISIDERR8";
+//char lhcbsigerrna8[]="SIGERR8";
 // Posible additional CMS parameters
 //char rarename[]="RARE";
 char pssname[]="PSS";
@@ -81,11 +113,11 @@ else if(cms11bd) s_outfilename = Form("CMS_S11_Bd_Results%f_%i.root",d_scale,i_n
 else if(cms12bs) s_outfilename = Form("CMS_W12_Bs_Results%f_%i.root",d_scale,i_numb);
 else if(cms12bd) s_outfilename = Form("CMS_W12_Bd_Results%f_%i.root",d_scale,i_numb);
 else if(lhcbs) s_outfilename = Form("LHCb_10_11_Comb_Bs_Results%f_%i.root",d_scale,i_numb);
-else if(lhcbs10) s_outfilename = Form("LHCb_10_Bs_Results%f_%i.root",d_scale,i_numb);
-else if(lhcbs11) s_outfilename = Form("LHCb_11_Bs_Results%f_%i.root",d_scale,i_numb);
-else if(lhcbd11) s_outfilename = Form("LHCb_11_Bd_Results%f_%i.root",d_scale,i_numb);
 else if(lhcbs12) s_outfilename = Form("LHCb_12_Bs_Results%f_%i.root",d_scale,i_numb);
 else if(lhcbd12) s_outfilename = Form("LHCb_12_Bd_Results%f_%i.root",d_scale,i_numb);
+else if(lhcbs11) s_outfilename = Form("LHCb_11_Bs_Results%f_%i.root",d_scale,i_numb);
+else if(lhcbd11) s_outfilename = Form("LHCb_11_Bd_Results%f_%i.root",d_scale,i_numb);
+else if(lhcbs10) s_outfilename = Form("LHCb_10_Bs_Results%f_%i.root",d_scale,i_numb);
 
 cout << s_outfilename << endl;
 TFile f_outfile(s_outfilename,"RECREATE");
@@ -1835,13 +1867,13 @@ string s_lhcbchan4[N_MASS_BINS][N_BDT_BINS];
 
 // Setting up the Bs LHCb winter 11-12 data
 const static expectation_t bkg2[N_MASS_BINS12][N_BDT_BINS12] = {
-	{expectation_t(195.7,4.1,4.1), expectation_t(6.0,1.2,1.1), expectation_t(1.6,0.41,0.40), expectation_t(0.45,0.12,0.11), 
+	{expectation_t(195.7,4.1,4.1), expectation_t(6.0,1.2,1.1), expectation_t(1.61,0.41,0.40), expectation_t(0.45,0.12,0.11), 
 		expectation_t(0.345,0.105,0.094), expectation_t(0.110,0.063,0.049), expectation_t(0.147,0.065,0.056), expectation_t(0.050,0.048,0.027)},
 	{expectation_t(194.2,4.1,4.0), expectation_t(5.9,1.1,1.1), expectation_t(1.59,0.41,0.40), expectation_t(0.45,0.11,0.11), 
 		expectation_t(0.341,0.102,0.091), expectation_t(0.109,0.060,0.048), expectation_t(0.142,0.062,0.055), expectation_t(0.049,0.046,0.026)},
 	{expectation_t(96.5,2.0,2.0), expectation_t(2.94,0.56,0.56), expectation_t(0.79,0.20,0.20), expectation_t(0.223,0.055,0.053), 
 		expectation_t(0.169,0.051,0.044), expectation_t(0.054,0.029,0.024), expectation_t(0.069,0.030,0.027), expectation_t(0.024,0.022,0.013)},
-	{expectation_t(191.8,4.0,4.0), expectation_t(5.8,1.1,1.1), expectation_t(1.56,0.41,0.39), expectation_t(0.44,0.11,0.10), 
+	{expectation_t(191.8,4.0,4.0), expectation_t(5.8,1.1,1.1), expectation_t(1.56,0.40,0.39), expectation_t(0.44,0.11,0.10), 
 		expectation_t(0.336,0.099,0.088), expectation_t(0.108,0.056,0.047), expectation_t(0.135,0.058,0.053), expectation_t(0.047,0.043,0.025)},
 	{expectation_t(566,12,12), expectation_t(17.2,3.3,3.3), expectation_t(4.6,1.2,1.1), expectation_t(1.30,0.31,0.30), 
 		expectation_t(0.99,0.28,0.26), expectation_t(0.32,0.15,0.14), expectation_t(0.38,0.16,0.15), expectation_t(0.133,0.121,0.073)},
@@ -1859,18 +1891,18 @@ const static expectation_t misid2[N_MASS_BINS12][N_BDT_BINS12] = {
 	{expectation_t(0.035,0.016, 0.012), expectation_t(0.0177, 0.0058, 0.0043), expectation_t(0.0139, 0.0044, 0.0033), expectation_t(0.0125, 0.0039, 0.0028),
 		expectation_t(0.0140, 0.0043, 0.0032), expectation_t(0.0132, 0.0041, 0.0030), expectation_t(0.0137, 0.0042, 0.0032), expectation_t(0.0132, 0.0044, 0.0033)},
 	{expectation_t(0.0237,0.0093, 0.0083), expectation_t(0.0120, 0.0028, 0.0024), expectation_t(0.0094, 0.0020, 0.0018), expectation_t(0.0085, 0.0016, 0.0014),
-		expectation_t(0.0095, 0.0018, 0.0016), expectation_t(0.0090, 0.0016, 0.0016), expectation_t(0.0094, 0.0018, 0.0016), expectation_t(0.0090, 0.0022, 0.0019)},
+		expectation_t(0.0095, 0.0018, 0.0016), expectation_t(0.0090, 0.0016, 0.0015), expectation_t(0.0094, 0.0018, 0.0016), expectation_t(0.0090, 0.0022, 0.0019)},
 	{expectation_t(0.0092,0.0038, 0.0033), expectation_t(0.0046, 0.0012, 0.0010), expectation_t(0.00365, 0.00090, 0.00077), expectation_t(0.00328, 0.00075, 0.00063),
 		expectation_t(0.00368, 0.00083, 0.00070), expectation_t(0.00347, 0.00077, 0.00064), expectation_t(0.00361, 0.00081, 0.00068), expectation_t(0.00347, 0.00095, 0.00082)},
 	{expectation_t(0.0136,0.0080, 0.0055), expectation_t(0.0070, 0.0032, 0.0022), expectation_t(0.0055, 0.0024, 0.0017), expectation_t(0.0050, 0.0021, 0.0015),
-		expectation_t(0.0056, 0.0023, 0.0017), expectation_t(0.0054, 0.0021, 0.0016), expectation_t(0.0055, 0.0022, 0.0017), expectation_t(0.0052, 0.0024, 0.0017)},
+		expectation_t(0.0056, 0.0023, 0.0017), expectation_t(0.0054, 0.0021, 0.0017), expectation_t(0.0055, 0.0022, 0.0017), expectation_t(0.0052, 0.0024, 0.0017)},
 	{expectation_t(0.021,0.028, 0.011), expectation_t(0.0137, 0.0093, 0.0079), expectation_t(0.0113, 0.0066, 0.0067), expectation_t(0.0110, 0.0049, 0.0068),
 		expectation_t(0.0125, 0.0054, 0.0077), expectation_t(0.0121, 0.0047, 0.0076), expectation_t(0.0124, 0.0052, 0.0077), expectation_t(0.0098, 0.0075, 0.0055)},
 	{expectation_t(0.0034,0.0091, 0.0022), expectation_t(0.0035, 0.0024, 0.0028), expectation_t(0.0029, 0.0017, 0.0023), expectation_t(0.0028, 0.0013, 0.0023),
 		expectation_t(0.0032, 0.0014, 0.0026), expectation_t(0.0031, 0.0012, 0.0026), expectation_t(0.0032, 0.0013, 0.0026), expectation_t(0.0025, 0.0019, 0.0020)},
 	{expectation_t(0.0015,0.0041, 0.0010), expectation_t(0.0016, 0.0011, 0.0013), expectation_t(0.00129, 0.00076, 0.00108), expectation_t(0.00126, 0.00056, 0.00107),
 		expectation_t(0.00142, 0.00062, 0.00121), expectation_t(0.00138, 0.00054, 0.00118), expectation_t(0.00141, 0.00059, 0.00120), expectation_t(0.00112, 0.00085, 0.00092)},
-	{expectation_t(0.0029,0.0076, 0.0021), expectation_t(0.0030, 0.0020, 0.0026), expectation_t(0.0025, 0.0015, 0.0021), expectation_t(0.0024, 0.0011, 0.0021),
+	{expectation_t(0.0029,0.0079, 0.0021), expectation_t(0.0030, 0.0020, 0.0026), expectation_t(0.0025, 0.0015, 0.0021), expectation_t(0.0024, 0.0011, 0.0021),
 		expectation_t(0.0027, 0.0012, 0.0024), expectation_t(0.0027, 0.0010, 0.0023), expectation_t(0.0027, 0.0011, 0.0024), expectation_t(0.0022, 0.0016, 0.0018)},
 	{expectation_t(0.0024,0.0067, 0.0018), expectation_t(0.0026, 0.0017, 0.0022), expectation_t(0.0021, 0.0012, 0.0018), expectation_t(0.00207, 0.00092, 0.00182),
 		expectation_t(0.0023, 0.0010, 0.0021), expectation_t(0.00227, 0.00088, 0.00200), expectation_t(0.00232, 0.00097, 0.00204), expectation_t(0.0018, 0.0014, 0.0016)}
@@ -2304,8 +2336,9 @@ if (lhcbd11) {
 }
 
 if (lhcbs12) {
-	for (int j = 0; j<N_MASS_BINS12; j++) {
-		for (int l = 0; l<N_BDT_BINS12; l++) {
+	for (int l = 0; l<N_BDT_BINS12; l++) {
+		for (int j = 0; j<N_MASS_BINS12; j++) {
+//		for (int l = 0; l<N_BDT_BINS12; l++) {
 			//		cout << "FUBAR1" << endl;
 			s_lhcbchan2[j][l] = Form("lhcbChan2%i%i",j,l);
 			// Make a char* from the string
@@ -2340,12 +2373,54 @@ if (lhcbs12) {
 			}
 			
 			sfact = 1;
-			
-			ename[0] = lhcbbkgerrna;
-			nps_low[0] = -bkg2[j][l].lo_err/bkg2[j][l].value;
-			nps_high[0] = bkg2[j][l].hi_err/bkg2[j][l].value;
-			
+			if (l==0) {
+				ename[0] = lhcbbkgerrna;
+				nps_low[0] = -bkg2[j][l].lo_err/bkg2[j][l].value;
+				nps_high[0] = bkg2[j][l].hi_err/bkg2[j][l].value;
+			}
+			else if (l==1) {
+				ename[0] = lhcbbkgerrna1;
+				nps_low[0] = -bkg2[j][l].lo_err/bkg2[j][l].value;
+				nps_high[0] = bkg2[j][l].hi_err/bkg2[j][l].value;
+			}
+			else if (l==2) {
+				ename[0] = lhcbbkgerrna2;
+				nps_low[0] = -bkg2[j][l].lo_err/bkg2[j][l].value;
+				nps_high[0] = bkg2[j][l].hi_err/bkg2[j][l].value;
+			}
+			else if (l==3) {
+				ename[0] = lhcbbkgerrna3;
+				nps_low[0] = -bkg2[j][l].lo_err/bkg2[j][l].value;
+				nps_high[0] = bkg2[j][l].hi_err/bkg2[j][l].value;
+			}
+			else if (l==4) {
+				ename[0] = lhcbbkgerrna4;
+				nps_low[0] = -bkg2[j][l].lo_err/bkg2[j][l].value;
+				nps_high[0] = bkg2[j][l].hi_err/bkg2[j][l].value;
+			}
+			else if (l==5) {
+				ename[0] = lhcbbkgerrna5;
+				nps_low[0] = -bkg2[j][l].lo_err/bkg2[j][l].value;
+				nps_high[0] = bkg2[j][l].hi_err/bkg2[j][l].value;
+			}
+			else if (l==6) {
+				ename[0] = lhcbbkgerrna6;
+				nps_low[0] = -bkg2[j][l].lo_err/bkg2[j][l].value;
+				nps_high[0] = bkg2[j][l].hi_err/bkg2[j][l].value;
+			}
+			else if (l==7) {
+				ename[0] = lhcbbkgerrna7;
+				nps_low[0] = -bkg2[j][l].lo_err/bkg2[j][l].value;
+				nps_high[0] = bkg2[j][l].hi_err/bkg2[j][l].value;
+			}
+//			else if (l==8) {
+//				ename[0] = lhcbbkgerrna8;
+//				nps_low[0] = -bkg2[j][l].lo_err/bkg2[j][l].value;
+//				nps_high[0] = bkg2[j][l].hi_err/bkg2[j][l].value;
+//			}
+			//Will try with zero errors
 			nps_count=1;		
+//			nps_count=0;		
 			pssnflg = 0;
 			sclflg = 0;
 			
@@ -2375,11 +2450,53 @@ if (lhcbs12) {
 			// Add GLbin1 misid background templates
 			sfact = 1;
 			
-			ename[0] = lhcbmisiderna;
-			nps_low[0] = -misid2[j][l].lo_err/misid2[j][l].value;
-			nps_high[0] = misid2[j][l].hi_err/misid2[j][l].value;
-			
-			nps_count=1;		
+			if (l==0) {
+				ename[0] = lhcbmisiderna;
+				nps_low[0] = -misid2[j][l].lo_err/misid2[j][l].value;
+				nps_high[0] = misid2[j][l].hi_err/misid2[j][l].value;
+			}
+			if (l==1) {
+				ename[0] = lhcbmisiderna1;
+				nps_low[0] = -misid2[j][l].lo_err/misid2[j][l].value;
+				nps_high[0] = misid2[j][l].hi_err/misid2[j][l].value;
+			}
+			if (l==2) {
+				ename[0] = lhcbmisiderna2;
+				nps_low[0] = -misid2[j][l].lo_err/misid2[j][l].value;
+				nps_high[0] = misid2[j][l].hi_err/misid2[j][l].value;
+			}
+			if (l==3) {
+				ename[0] = lhcbmisiderna3;
+				nps_low[0] = -misid2[j][l].lo_err/misid2[j][l].value;
+				nps_high[0] = misid2[j][l].hi_err/misid2[j][l].value;
+			}
+			if (l==4) {
+				ename[0] = lhcbmisiderna4;
+				nps_low[0] = -misid2[j][l].lo_err/misid2[j][l].value;
+				nps_high[0] = misid2[j][l].hi_err/misid2[j][l].value;
+			}
+			if (l==5) {
+				ename[0] = lhcbmisiderna5;
+				nps_low[0] = -misid2[j][l].lo_err/misid2[j][l].value;
+				nps_high[0] = misid2[j][l].hi_err/misid2[j][l].value;
+			}
+			if (l==6) {
+				ename[0] = lhcbmisiderna6;
+				nps_low[0] = -misid2[j][l].lo_err/misid2[j][l].value;
+				nps_high[0] = misid2[j][l].hi_err/misid2[j][l].value;
+			}
+			if (l==7) {
+				ename[0] = lhcbmisiderna7;
+				nps_low[0] = -misid2[j][l].lo_err/misid2[j][l].value;
+				nps_high[0] = misid2[j][l].hi_err/misid2[j][l].value;
+			}
+//			if (l==8) {
+//				ename[0] = lhcbmisiderna8;
+//				nps_low[0] = -misid2[j][l].lo_err/misid2[j][l].value;
+//				nps_high[0] = misid2[j][l].hi_err/misid2[j][l].value;
+//			}
+			//nps_count=1;//Will try with zero errors		
+			nps_count=1;
 			pssnflg = 0;
 			sclflg = 0;
 			
@@ -2411,11 +2528,54 @@ if (lhcbs12) {
 			nps_low[0] = -0.021/0.267;
 			nps_high[0] = 0.021/0.267;
 			
-			ename[1] = lhcbsigerrna;
-			nps_low[1] = -sig2[j][l].lo_err/sig2[j][l].value;
-			nps_high[1] = sig2[j][l].hi_err/sig2[j][l].value;
-			
+			if (l==0) {
+				ename[1] = lhcbsigerrna;
+				nps_low[1] = -sig2[j][l].lo_err/sig2[j][l].value;
+				nps_high[1] = sig2[j][l].hi_err/sig2[j][l].value;
+			}
+			if (l==1) {
+				ename[1] = lhcbsigerrna1;
+				nps_low[1] = -sig2[j][l].lo_err/sig2[j][l].value;
+				nps_high[1] = sig2[j][l].hi_err/sig2[j][l].value;
+			}
+			if (l==2) {
+				ename[1] = lhcbsigerrna2;
+				nps_low[1] = -sig2[j][l].lo_err/sig2[j][l].value;
+				nps_high[1] = sig2[j][l].hi_err/sig2[j][l].value;
+			}
+			if (l==3) {
+				ename[1] = lhcbsigerrna3;
+				nps_low[1] = -sig2[j][l].lo_err/sig2[j][l].value;
+				nps_high[1] = sig2[j][l].hi_err/sig2[j][l].value;
+			}
+			if (l==4) {
+				ename[1] = lhcbsigerrna4;
+				nps_low[1] = -sig2[j][l].lo_err/sig2[j][l].value;
+				nps_high[1] = sig2[j][l].hi_err/sig2[j][l].value;
+			}
+			if (l==5) {
+				ename[1] = lhcbsigerrna5;
+				nps_low[1] = -sig2[j][l].lo_err/sig2[j][l].value;
+				nps_high[1] = sig2[j][l].hi_err/sig2[j][l].value;
+			}
+			if (l==6) {
+				ename[1] = lhcbsigerrna6;
+				nps_low[1] = -sig2[j][l].lo_err/sig2[j][l].value;
+				nps_high[1] = sig2[j][l].hi_err/sig2[j][l].value;
+			}
+			if (l==7) {
+				ename[1] = lhcbsigerrna7;
+				nps_low[1] = -sig2[j][l].lo_err/sig2[j][l].value;
+				nps_high[1] = sig2[j][l].hi_err/sig2[j][l].value;
+			}
+//			if (l==8) {
+//				ename[1] = lhcbsigerrna8;
+//				nps_low[1] = -sig2[j][l].lo_err/sig2[j][l].value;
+//				nps_high[1] = sig2[j][l].hi_err/sig2[j][l].value;
+//			}
+			//Will try with zero errors
 			nps_count = 2;
+//			nps_count = 1;
 			
 			pssnflg = 0;// 
 			sclflg = 1;// this is set to 1 if signal, 
