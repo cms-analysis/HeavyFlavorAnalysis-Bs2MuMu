@@ -16,12 +16,21 @@
 #include "RooArgSet.h"
 #include "RooMCStudy.h"
 
+#include "RooStats/ModelConfig.h"
+#include "RooStats/ToyMCSampler.h"
+#include "RooStats/HypoTestResult.h"
+#include "RooStats/HypoTestPlot.h"
+#include "RooStats/ProfileLikelihoodCalculator.h"
+#include "RooStats/FrequentistCalculator.h"
+#include "RooStats/ProfileLikelihoodTestStat.h"
+
 class pdf_toyMC : public pdf_analysis {
 public:
   
   pdf_toyMC(string input_estimates, bool print, string meth, string ch_s, string range = "all");
   void generate(int NExp, string pdf_toy);
   void mcstudy(int NExp, string pdf_toy);
+  void pvalue(int nexp);
   void fit_pdf (string pdf, RooAbsData* data, int printlevel = -1);
   void fit_pulls();
   void parse_estimate();

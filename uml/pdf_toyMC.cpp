@@ -12,6 +12,7 @@ pdf_toyMC::pdf_toyMC(string input_estimates, bool print, string meth, string ch_
   input_estimates_ = input_estimates;
   pull_h_bs = new TH1D("pull_h_bs", "pull_h_bs", 100, -5., 5.);
   pull_h_bd = new TH1D("pull_h_bd", "pull_h_bd", 100, -5., 5.);
+  parse_estimate();
   
 }
 
@@ -28,7 +29,7 @@ void pdf_toyMC::parse_estimate(){
     if (buffer[0] == '#') continue;
     ok = sscanf(buffer, "%s %f", cutName, &cut);
     if (!parse(cutName, cut)) {
-      cout << "==> lmtreeReader: Error parsing variable " << cutName << ". abort..." << endl;
+      cout << "==> Error parsing variable " << cutName << ". abort..." << endl;
       exit(1);
     }
   }
@@ -68,7 +69,6 @@ void pdf_toyMC::generate(int NExp, string pdf_toy) {
   pull_rds_bs = new RooDataSet("pull_rds_bs", "pull_rds_bs", *pull_bs);
   pull_rds_bd = new RooDataSet("pull_rds_bd", "pull_rds_bd", *pull_bd);
   
-  parse_estimate();
   pdf_name = "total";
   if (pdf_toy != "total") {
     pdf_name = define_pdf_sum(pdf_toy);
@@ -213,29 +213,105 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
   mcstudy->generateAndFit(NExp) ;
 
   // Make plots of the distributions of mean, the error on mean and the pull of mean
-  RooPlot* frame1 = mcstudy->plotParam(*ws_->var("N_bs"),Bins(40)) ;
-  RooPlot* frame2 = mcstudy->plotError(*ws_->var("N_bs"),Bins(40)) ;
-  RooPlot* frame3 = mcstudy->plotPull(*ws_->var("N_bs"),Bins(40),FitGauss(kTRUE)) ;
+  RooPlot* frame1_bs = mcstudy->plotParam(*ws_->var("N_bs"), Bins(40)) ;
+  RooPlot* frame2_bs = mcstudy->plotError(*ws_->var("N_bs"), Bins(40)) ;
+  RooPlot* frame3_bs = mcstudy->plotPull(*ws_->var("N_bs"), Bins(40), FitGauss(kTRUE)) ;
+
+  RooPlot* frame1_bd = mcstudy->plotParam(*ws_->var("N_bd"), Bins(40)) ;
+  RooPlot* frame2_bd = mcstudy->plotError(*ws_->var("N_bd"), Bins(40)) ;
+  RooPlot* frame3_bd = mcstudy->plotPull(*ws_->var("N_bd"), Bins(40), FitGauss(kTRUE)) ;
+  TH1* hh_cor_bs_bd = mcstudy->fitParDataSet().createHistogram("hh",*ws_->var("N_bs"), YVar(*ws_->var("N_bd"))) ;
 
   // Plot distribution of minimized likelihood
   RooPlot* frame4 = mcstudy->plotNLL(Bins(40)) ;
 
-//  // Make some histograms from the parameter dataset
-  TH1* hh_cor_a0_s1f = mcstudy->fitParDataSet().createHistogram("hh",*ws_->var("N_bs"), YVar(*ws_->var("N_bd"))) ;
+  hh_cor_bs_bd->GetXaxis()->SetRangeUser(0, 20);
+  hh_cor_bs_bd->GetYaxis()->SetRangeUser(0, 5);
 
-  TCanvas* c = new TCanvas("rf801_mcstudy","rf801_mcstudy",900,900) ;
-  c->Divide(3,3) ;
-  c->cd(1) ; gPad->SetLeftMargin(0.15) ; frame1->GetYaxis()->SetTitleOffset(1.4) ; frame1->Draw() ;
-  c->cd(2) ; gPad->SetLeftMargin(0.15) ; frame2->GetYaxis()->SetTitleOffset(1.4) ; frame2->Draw() ;
-  c->cd(3) ; gPad->SetLeftMargin(0.15) ; frame3->GetYaxis()->SetTitleOffset(1.4) ; frame3->Draw() ;
-  c->cd(4) ; gPad->SetLeftMargin(0.15) ; frame4->GetYaxis()->SetTitleOffset(1.4) ; frame4->Draw() ;
-  c->cd(5) ; gPad->SetLeftMargin(0.15) ; hh_cor_a0_s1f->GetYaxis()->SetTitleOffset(1.4) ; hh_cor_a0_s1f->Draw("box") ;
-  string address = "fig/RooMCStudy_" + pdf_toy_ + ".gif";
-  c->Print(address.c_str());
-  delete frame1;
-  delete frame2;
-  delete frame3;
+  TCanvas* canvas_roomcs = new TCanvas("canvas_roomcs", "canvas_roomcs", 900, 900) ;
+  canvas_roomcs->Divide(3,3) ;
+  canvas_roomcs->cd(1) ; gPad->SetLeftMargin(0.15) ; frame1_bs->GetYaxis()->SetTitleOffset(1.4) ; frame1_bs->Draw() ;
+  canvas_roomcs->cd(2) ; gPad->SetLeftMargin(0.15) ; frame2_bs->GetYaxis()->SetTitleOffset(1.4) ; frame2_bs->Draw() ;
+  canvas_roomcs->cd(3) ; gPad->SetLeftMargin(0.15) ; frame3_bs->GetYaxis()->SetTitleOffset(1.4) ; frame3_bs->Draw() ;
+  canvas_roomcs->cd(4) ; gPad->SetLeftMargin(0.15) ; frame1_bd->GetYaxis()->SetTitleOffset(1.4) ; frame1_bd->Draw() ;
+  canvas_roomcs->cd(5) ; gPad->SetLeftMargin(0.15) ; frame2_bd->GetYaxis()->SetTitleOffset(1.4) ; frame2_bd->Draw() ;
+  canvas_roomcs->cd(6) ; gPad->SetLeftMargin(0.15) ; frame3_bd->GetYaxis()->SetTitleOffset(1.4) ; frame3_bd->Draw() ;
+  canvas_roomcs->cd(7) ; gPad->SetLeftMargin(0.15) ; frame4->GetYaxis()->SetTitleOffset(1.4) ; frame4->Draw() ;
+  canvas_roomcs->cd(8) ; gPad->SetLeftMargin(0.15) ; hh_cor_bs_bd->GetYaxis()->SetTitleOffset(1.4) ; hh_cor_bs_bd->Draw("box") ;
+  string address = "fig/RooMCStudy_" + pdf_toy + ".gif";
+  canvas_roomcs->Print(address.c_str());
+  delete frame1_bs;
+  delete frame2_bs;
+  delete frame3_bs;
+  delete frame1_bd;
+  delete frame2_bd;
+  delete frame3_bd;
   delete frame4;
-  delete c;
+  delete canvas_roomcs;
+}
 
+void pdf_toyMC::pvalue(int nexp) {
+
+  ws_->var("N_bs")->setVal((double)estimate_bs);
+  ws_->var("N_bd")->setVal((double)estimate_bd);
+  ws_->var("N_rare")->setVal((double)estimate_rare);
+  ws_->var("N_comb")->setVal((double)estimate_comb);
+
+  ws_->defineSet("obs", "Mass");
+  ws_->defineSet("poi", "N_bs");
+
+  using namespace RooStats;
+
+//  ModelConfig model;
+//  model.SetWorkspace(*ws_);
+//  model.SetPdf(*ws_->pdf("pdf_ext_total"));
+//  RooAbsPdf* pdf_ext_total = ws_->pdf("pdf_ext_total");
+//  RooRealVar* Mass = ws_->var("Mass");
+//  RooRandom::randomGenerator()->SetSeed(0);
+//  RooDataSet* data = pdf_ext_total->generate(*Mass, Extended(1));
+//  ProfileLikelihoodCalculator plc;
+//  plc.SetData( *data);
+//  plc.SetModel(model);
+//  RooArgSet poi(*ws_->var("N_bs"));
+//  poi.setRealValue("N_bs",0);
+//  plc.SetNullParameters( poi);
+//  HypoTestResult* htr = plc.GetHypoTest();
+//  cout << "The p-value for the null is " << htr->NullPValue() << endl;
+//  return;
+
+
+  RooDataSet *dataset = new RooDataSet("dataset", "dataset", *ws_->set("obs"));
+  dataset->add(*ws_->set("obs"));
+
+  ModelConfig* H0 = new ModelConfig("H0", "background only hypothesis", ws_);
+  H0->SetPdf(*ws_->pdf("pdf_ext_total"));
+  H0->SetParametersOfInterest(*ws_->set("poi"));
+  H0->SetObservables(*ws_->set("obs"));
+  ws_->var("N_bs")->setVal(0.0);
+  H0->SetSnapshot(*ws_->set("poi"));
+
+  ModelConfig* H1 = new ModelConfig("H1", "background + signal hypothesis", ws_);
+  H1->SetPdf(*ws_->pdf("pdf_ext_total"));
+  H1->SetParametersOfInterest(*ws_->set("poi"));
+  H1->SetObservables(*ws_->set("obs"));
+  ws_->var("N_bs")->setVal((double)estimate_bs);
+  H1->SetSnapshot(*ws_->set("poi"));
+
+  ProfileLikelihoodTestStat testStat(*ws_->pdf("pdf_ext_total"));
+  testStat.SetOneSidedDiscovery(true);
+
+  ToyMCSampler *mcSampler = new ToyMCSampler(testStat, nexp);
+  FrequentistCalculator frequCalc(*dataset, *H1,*H0, mcSampler); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
+
+  HypoTestResult *htr1 = frequCalc.GetHypoTest();
+  htr1->Print();
+
+  TCanvas c("canvas_roostats", "canvas_roostats", 600, 600);
+  HypoTestPlot *htp = new HypoTestPlot(*htr1, 30); // 30 bins
+  htp->SetLogYaxis(true);
+  htp->Draw();
+  string address = "fig/RooStats.gif";
+  c.Print(address.c_str());
+
+  return;
 }

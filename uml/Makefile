@@ -3,7 +3,7 @@ ROOTGLIBS     = $(shell root-config --glibs)
 
 CXX           = g++
 CXXFLAGS      = -g -fPIC -Wno-deprecated -ansi -D_GNU_SOURCE -O2
-LDFLAGS       = -g -lRooFit -lRooFitCore -lMinuit -lFoam -lGraf
+LDFLAGS       = -g -lRooFit -lRooFitCore -lMinuit -lFoam -lGraf -lRooStats
 
 SOFLAGS       = -shared
 

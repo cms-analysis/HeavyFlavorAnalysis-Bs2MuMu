@@ -13,7 +13,7 @@ static string ch_s;
 static string pdf_toy = "total";
 static bool print = false;
 static int NExp = 1;
-bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs;
+bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs, pvalue = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
 
@@ -27,6 +27,7 @@ void help() {
   cout << "-nexp # \t number of experiments" << endl;
   cout << "-pdf {bs, bd, rare, comb, total} \t combination of pdf names" << endl;
   cout << "-roomcs \t with RooMCStudy" << endl;
+  cout << "-pvalue \t evaluates pvalue" << endl;
   exit(0);
 }
 
@@ -80,6 +81,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-roomcs")) {
       cout << "using RooMCStudy" << endl;
       roomcs = true;
+    }
+    if (!strcmp(argv[i],"-pvalue")) {
+      cout << "evaluates pvalue" << endl;
+      pvalue = true;
     }
     if (!strcmp(argv[i],"-h")) help();
   }

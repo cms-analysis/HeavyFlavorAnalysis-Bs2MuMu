@@ -60,7 +60,7 @@ void pdf_analysis::set_pdf_constant(string name) {
 }
 
 void pdf_analysis::define_bs() {
-  ws_->factory("N_bs[0, 1000]");
+  ws_->factory("N_bs[0, 100]");
   ws_->factory("Mean_bs[5.35, 5.32, 5.4]");
   ws_->factory("Sigma_bs[0.02, 0.005, 0.2]");
   ws_->factory("Sigma2_bs[0.04, 0.005, 0.2]");
@@ -80,7 +80,7 @@ void pdf_analysis::define_bs() {
 
 void pdf_analysis::define_bd() {
 
-  ws_->factory("N_bd[0, 1000]");
+  ws_->factory("N_bd[0, 100]");
   ws_->factory("Mean_bd[5.25, 5.20, 5.29]");
   ws_->factory("Sigma_bd[0.02, 0.005, 0.2]");
   ws_->factory("Sigma2_bd[0.04, 0.005, 0.2]");
@@ -100,7 +100,7 @@ void pdf_analysis::define_bd() {
 
 void pdf_analysis::define_peaking() {
   
-  ws_->factory("N_peaking[0, 1000]");
+  ws_->factory("N_peaking[0, 100]");
   ws_->factory("Mean_peaking[5.25, 5.20, 5.3]");
   ws_->factory("Sigma_peaking[0.050, 0.01, 0.20]");
   
@@ -114,7 +114,7 @@ void pdf_analysis::define_peaking() {
 
 void pdf_analysis::define_nonpeaking() {
   
-  ws_->factory("N_nonpeaking[0, 1000]");
+  ws_->factory("N_nonpeaking[0, 100]");
   ws_->factory("m0_nonpeaking[5.5]");
   ws_->factory("c_nonpeaking[1., 0.1, 20]");
   ws_->factory("p_nonpeaking[0.5, 0.1, 5.]");
@@ -128,7 +128,7 @@ void pdf_analysis::define_nonpeaking() {
 
 void pdf_analysis::define_comb() {
   
-  ws_->factory("N_comb[0, 1000]");
+  ws_->factory("N_comb[0, 100]");
   
   ws_->factory("Uniform::pdf_comb(Mass)");
   
@@ -139,7 +139,7 @@ void pdf_analysis::define_comb() {
 
 void pdf_analysis::define_signals() {
   
-  ws_->factory("N_signals[0, 1000]");
+  ws_->factory("N_signals[0, 100]");
   ws_->factory("bsfraction_signals[0.5, 0.0, 1.0]"); 
   
   ws_->factory("SUM::pdf_signals(bsfraction_signals*pdf_bs, pdf_bd)");
@@ -152,7 +152,7 @@ void pdf_analysis::define_signals() {
 
 void pdf_analysis::define_rare() {
   
-  ws_->factory("N_rare[0, 1000]");
+  ws_->factory("N_rare[0, 100]");
   ws_->factory("peakingfraction_rare[0.5, 0.0, 1.0]"); 
   
   ws_->factory("SUM::pdf_rare(peakingfraction_rare*pdf_peaking, pdf_nonpeaking)");
@@ -172,7 +172,7 @@ void pdf_analysis::define_signalsrare() {
 
 void pdf_analysis::define_bkg() {
   
-  ws_->factory("N_bkg[0, 1000]");
+  ws_->factory("N_bkg[0, 100]");
   ws_->factory("rarefraction_bkg[0.5, 0.0, 1.0]"); 
   
   ws_->factory("SUM::pdf_bkg(rarefraction_bkg*pdf_rare, pdf_comb)");
@@ -184,7 +184,7 @@ void pdf_analysis::define_bkg() {
 
 void pdf_analysis::define_all() {
   
-  ws_->factory("N_all[0, 1000]");
+  ws_->factory("N_all[0, 100]");
   ws_->factory("signalsfraction_all[0.5, 0.0, 1.0]"); 
   
   ws_->factory("SUM::pdf_all(signalsfraction_all*pdf_signals, pdf_bkg)");

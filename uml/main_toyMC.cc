@@ -28,14 +28,20 @@ int main(int argc, char** argv) {
   TFile* input_f = new TFile(input_name.c_str());
   RooWorkspace* ws = (RooWorkspace*)input_f->Get("ws");
   
+  ws->pdf("pdf_ext_total")->printCompactTree("","fullModel.txt");
+  ws->pdf("pdf_ext_total")->graphVizTree("fullModel.dot");
+
   parse_input(input_name);
 
   pdf_toyMC toy1(input_estimates, false, meth, ch_s);
   toy1.set_ws(ws);
  // toy1.unset_constant();
-  if(roomcs) toy1.mcstudy(NExp, pdf_toy);
+  if (roomcs) toy1.mcstudy(NExp, pdf_toy);
+  else if (pvalue) toy1.pvalue(NExp);
   else toy1.generate(NExp, pdf_toy);
   
+  delete input_f;
+
   return (EXIT_SUCCESS);
 }
 
