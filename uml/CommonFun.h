@@ -13,7 +13,7 @@ static string ch_s;
 static string pdf_toy = "total";
 static bool print = false;
 static int NExp = 1;
-bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs, pvalue = false;
+bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, pvalue = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
 
