@@ -747,6 +747,9 @@ int massReader::countTracksNearby(TAnaCand *pCand)
 		if (pTrack->fPlab.Pt() <= pt_thres)
 			continue;
 		
+		if (pTrack->fPvIdx > -1 && pTrack->fPvIdx != pCand->fPvIdx)
+			continue; // track from a different PV
+		
 		if (pCand->fNstTracks[j].second.first < maxDocaSV)
 			result++;
 	}
