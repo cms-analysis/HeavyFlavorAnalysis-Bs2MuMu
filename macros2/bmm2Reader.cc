@@ -9,6 +9,7 @@
 #include "candAnaBu2JpsiK.hh"
 #include "candAnaBs2JpsiPhi.hh"
 #include "candAnaDstar.hh"
+#include "candAnaHh.hh"
 
 using namespace std;
 
@@ -76,6 +77,7 @@ void bmm2Reader::eventProcessing() {
     lCandAnalysis[i]->fCandTau     = -1.; 
     lCandAnalysis[i]->fGenLifeTime = -1.; 
 
+    //cout<<" call evtanalysis "<<i<<endl;
     lCandAnalysis[i]->evtAnalysis(fpEvt);
   }
 
@@ -151,6 +153,12 @@ void bmm2Reader::readCuts(TString filename, int dump) {
 
     if (!strcmp(className, "candAnaDstar")) {
       candAna *a = new candAnaDstar(this, "candAnaDstar", cutFile); 
+      a->fVerbose = fVerbose; 
+      lCandAnalysis.push_back(a); 
+    }
+
+    if (!strcmp(className, "candAnaHh")) {
+      candAna *a = new candAnaHh(this, "candAnaHh", cutFile); 
       a->fVerbose = fVerbose; 
       lCandAnalysis.push_back(a); 
     }
