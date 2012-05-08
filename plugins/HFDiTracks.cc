@@ -32,8 +32,8 @@ using namespace edm;
 // ----------------------------------------------------------------------
 HFDiTracks::HFDiTracks(const ParameterSet& iConfig) :
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
-  fTracksLabel(iConfig.getUntrackedParameter<string>("tracksLabel", string("goodTracks"))), 
-  fPrimaryVertexLabel(iConfig.getUntrackedParameter<string>("PrimaryVertexLabel", string("offlinePrimaryVertices"))),
+  fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("goodTracks"))), 
+  fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexLabel", InputTag("offlinePrimaryVertices"))),
   fTrackPt(iConfig.getUntrackedParameter<double>("trackPt", 3.0)), 
   fTrack1Mass(iConfig.getUntrackedParameter<double>("track1Mass", 0.1396)), 
   fTrack2Mass(iConfig.getUntrackedParameter<double>("track2Mass", 0.1396)), 
@@ -139,9 +139,11 @@ void HFDiTracks::analyze(const Event& iEvent, const EventSetup& iSetup) {
   HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
 
   TLorentzVector ditrack, t1, t2;
+  int n1=0, n2=0;
   for (unsigned int i = 0; i < ttList.size(); ++i) {
     unsigned int it1 = ttList[i].first; 
     unsigned int it2 = ttList[i].second; 
+    n1++;
 
     TrackBaseRef t1View(hTracks, it1);
     Track tT1(*t1View);
@@ -152,6 +154,8 @@ void HFDiTracks::analyze(const Event& iEvent, const EventSetup& iSetup) {
     Track tT2(*t2View);
     if (tT2.pt() < fTrackPt)  continue;
     t2.SetPtEtaPhiM(tT2.pt(), tT2.eta(), tT2.phi(), fTrack2Mass); 
+
+    if( tT1.charge() == tT2.charge() ) continue;  // select track pairs with opposite charge
 
     ditrack = t1 + t2; 
     if (ditrack.M() < fMassLow || ditrack.M() > fMassHigh) continue;
@@ -165,8 +169,9 @@ void HFDiTracks::analyze(const Event& iEvent, const EventSetup& iSetup) {
     theTree.setNodeCut(RefCountedHFNodeCut(new HFPvWeightCut(fMaxDoca,fPvWeight)));
     
     aSeq.doFit(&theTree);
+    n2++;
   }
-
+  //cout<<n1<<" "<<n2<<endl;
 }
 
 // ------------ method called once each job just before starting event loop  ------------
