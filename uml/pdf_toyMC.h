@@ -24,13 +24,16 @@
 #include "RooStats/FrequentistCalculator.h"
 #include "RooStats/ProfileLikelihoodTestStat.h"
 
+#include "RooStats/RatioOfProfiledLikelihoodsTestStat.h"
+#include "RooStats/HybridCalculator.h"
+
 class pdf_toyMC : public pdf_analysis {
 public:
   
   pdf_toyMC(string input_estimates, bool print, string meth, string ch_s, string range = "all");
   void generate(int NExp, string pdf_toy);
   void mcstudy(int NExp, string pdf_toy);
-  void pvalue(int nexp);
+  void pvalue(int NExp);
   void fit_pdf (string pdf, RooAbsData* data, int printlevel = -1);
   void fit_pulls();
   void parse_estimate();

@@ -26,8 +26,8 @@ void help() {
   cout << "-cha {0, 1} \t barrel OR endcap" << endl;
   cout << "-nexp # \t number of experiments" << endl;
   cout << "-pdf {bs, bd, rare, comb, total} \t combination of pdf names" << endl;
-  cout << "-roomcs \t with RooMCStudy" << endl;
-  cout << "-pvalue \t evaluates pvalue" << endl;
+  cout << "-roomcs \t toy mc with RooMCStudy" << endl;
+  cout << "-pvalue \t pvalue with RooStats" << endl;
   exit(0);
 }
 
