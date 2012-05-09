@@ -24,6 +24,7 @@ static const double cmslumis11 = 1.14;
 static const double lhcblumis10 = 0.037;
 static const double lhcblumis11 = 0.30;
 static const double lhcblumiw12 = 1.0;
+static const double atlaslumiw12 = 2.4;
 
 //declare nusiance parameters
 const int NSYS = 10;
@@ -35,43 +36,6 @@ char bkgerrname[]="BKGERR";
 char combbkgerrname[]="CBKGERR";
 char experrname[]="EXPERR";
 char unconstrned[]="UNCONSTRAINED";
-//LHCb nuisance parameters
-char lhcbxfeederna[]="XFEEDERR";
-char lhcbbkgerrna[]="LHCBBKGERR";
-char lhcbmisiderna[]="MISIDERR";
-char lhcbsigerrna[]="SIGERR";
-
-char lhcbbkgerrna1[]="LHCBBKGERR1";
-char lhcbmisiderna1[]="MISIDERR1";
-char lhcbsigerrna1[]="SIGERR1";
-
-char lhcbbkgerrna2[]="LHCBBKGERR2";
-char lhcbmisiderna2[]="MISIDERR2";
-char lhcbsigerrna2[]="SIGERR2";
-
-char lhcbbkgerrna3[]="LHCBBKGERR3";
-char lhcbmisiderna3[]="MISIDERR3";
-char lhcbsigerrna3[]="SIGERR3";
-
-char lhcbbkgerrna4[]="LHCBBKGERR4";
-char lhcbmisiderna4[]="MISIDERR4";
-char lhcbsigerrna4[]="SIGERR4";
-
-char lhcbbkgerrna5[]="LHCBBKGERR5";
-char lhcbmisiderna5[]="MISIDERR5";
-char lhcbsigerrna5[]="SIGERR5";
-
-char lhcbbkgerrna6[]="LHCBBKGERR6";
-char lhcbmisiderna6[]="MISIDERR6";
-char lhcbsigerrna6[]="SIGERR6";
-
-char lhcbbkgerrna7[]="LHCBBKGERR7";
-char lhcbmisiderna7[]="MISIDERR7";
-char lhcbsigerrna7[]="SIGERR7";
-
-//char lhcbbkgerrna8[]="LHCBBKGERR8";
-//char lhcbmisiderna8[]="MISIDERR8";
-//char lhcbsigerrna8[]="SIGERR8";
 // Posible additional CMS parameters
 //char rarename[]="RARE";
 char pssname[]="PSS";
@@ -79,11 +43,46 @@ char pssname[]="PSS";
 //char pdsname[]="PDS";
 char pddname[]="PDD";
 char peakerrname[]="PCKERR";
-
 char channameB[] = "bmmB";
 char channameE[] = "bmmE";
-
+//LHCb nuisance parameters
+char lhcbxfeederna[]="XFEEDERR";
+char lhcbbkgerrna[]="LHCBBKGERR";
+char lhcbmisiderna[]="MISIDERR";
+char lhcbsigerrna[]="SIGERR";
+char lhcbbkgerrna1[]="LHCBBKGERR1";
+char lhcbmisiderna1[]="MISIDERR1";
+char lhcbsigerrna1[]="SIGERR1";
+char lhcbbkgerrna2[]="LHCBBKGERR2";
+char lhcbmisiderna2[]="MISIDERR2";
+char lhcbsigerrna2[]="SIGERR2";
+char lhcbbkgerrna3[]="LHCBBKGERR3";
+char lhcbmisiderna3[]="MISIDERR3";
+char lhcbsigerrna3[]="SIGERR3";
+char lhcbbkgerrna4[]="LHCBBKGERR4";
+char lhcbmisiderna4[]="MISIDERR4";
+char lhcbsigerrna4[]="SIGERR4";
+char lhcbbkgerrna5[]="LHCBBKGERR5";
+char lhcbmisiderna5[]="MISIDERR5";
+char lhcbsigerrna5[]="SIGERR5";
+char lhcbbkgerrna6[]="LHCBBKGERR6";
+char lhcbmisiderna6[]="MISIDERR6";
+char lhcbsigerrna6[]="SIGERR6";
+char lhcbbkgerrna7[]="LHCBBKGERR7";
+char lhcbmisiderna7[]="MISIDERR7";
+char lhcbsigerrna7[]="SIGERR7";
+//ATLAS parameters 
+char atlrareerrna[]="ATLBKGRAERR";
+char atlbgkerrna[]="ATLBKGERR";
+char atlcomberrna[]="ATLCMBERR";
+char atlsignerrna[]="ATLSIGERR";
+char atlepsilon[]="ATLEPSL";
+char atlepsiloni[]="ATLEPSLI";
+char atchnname1[] = "bmmeta1";
+char atchnname2[] = "bmmeta2";
+char atchnname3[] = "bmmeta3";
 //declare the shape functions
+
 double nps_low[NSYS];
 double nps_high[NSYS];
 double lowsigma[NSYS];
@@ -113,11 +112,12 @@ else if(cms11bd) s_outfilename = Form("CMS_S11_Bd_Results%f_%i.root",d_scale,i_n
 else if(cms12bs) s_outfilename = Form("CMS_W12_Bs_Results%f_%i.root",d_scale,i_numb);
 else if(cms12bd) s_outfilename = Form("CMS_W12_Bd_Results%f_%i.root",d_scale,i_numb);
 else if(lhcbs) s_outfilename = Form("LHCb_10_11_Comb_Bs_Results%f_%i.root",d_scale,i_numb);
-else if(lhcbs12) s_outfilename = Form("LHCb_12_Bs_Results%f_%i.root",d_scale,i_numb);
-else if(lhcbd12) s_outfilename = Form("LHCb_12_Bd_Results%f_%i.root",d_scale,i_numb);
+else if(lhcbs10) s_outfilename = Form("LHCb_10_Bs_Results%f_%i.root",d_scale,i_numb);
 else if(lhcbs11) s_outfilename = Form("LHCb_11_Bs_Results%f_%i.root",d_scale,i_numb);
 else if(lhcbd11) s_outfilename = Form("LHCb_11_Bd_Results%f_%i.root",d_scale,i_numb);
-else if(lhcbs10) s_outfilename = Form("LHCb_10_Bs_Results%f_%i.root",d_scale,i_numb);
+else if(lhcbs12) s_outfilename = Form("LHCb_12_Bs_Results%f_%i.root",d_scale,i_numb);
+else if(lhcbd12) s_outfilename = Form("LHCb_12_Bd_Results%f_%i.root",d_scale,i_numb);
+else if(atlasbs12) s_outfilename = Form("ATLAS_12_Bs_Results%f_%i.root",d_scale,i_numb);
 
 cout << s_outfilename << endl;
 TFile f_outfile(s_outfilename,"RECREATE");
@@ -2760,6 +2760,503 @@ if (lhcbd12) {
 		}
 	}
 	cout << "Fnished setting up LHCb summer 2011 results, total number of channels = " << counter3 << endl;
+}
+
+
+////////////////// ATLAS Stuff Starts here /////////////////////////////////////////
+//TH1D *h_atlasrarebkg1; 
+//TH1D *h_atlasrarebkg2; 
+//TH1D *h_atlasrarebkg3; 
+//TH1D *h_atlascombbkg1;
+//TH1D *h_atlascombbkg2;
+//TH1D *h_atlascombbkg3;
+TH1D *h_atlasbkg1; TH1D *h_atlasbkg2; TH1D *h_atlasbkg3;
+TH1D *h_atlassignalbs1;
+TH1D *h_atlassignalbs2;
+TH1D *h_atlassignalbs3;
+TH1D *h_atlasdata1;
+TH1D *h_atlasdata2;
+TH1D *h_atlasdata3;
+if (atlasbs12) {
+	
+//	h_atlasrarebkg1 = new TH1D("h_atlasrarebkg1","Rare bkgd win1",nbins,xbins);
+//	h_atlascombbkg1 = new TH1D("h_atlascombbkg1","Comb bkgd win1",nbins,xbins); 
+	h_atlassignalbs1 = new TH1D("h_atlassignalbs1","Sigl bs win1",nbins,xbins);
+	h_atlasbkg1 = new TH1D("h_atlasbkg1","bkgd win1",nbins,xbins);
+	//	TH1D *h_atalssignalbd1 = new TH1D("h_atalssignalbd1","signal bd win1",nbins,xbins); 
+	h_atlasdata1 = new TH1D("h_atlasdata1","Obsd evts win1",nbins,xbins);
+	
+//	h_atlasrarebkg2	= new TH1D("h_atlasrarebkg2","Rare bkgd win2",nbins,xbins);
+//	h_atlascombbkg2 = new TH1D("h_atlascombbkg2","Comb bkgd win2",nbins,xbins);
+	h_atlassignalbs2 = new TH1D("h_atlassignalbs2","Sigl bs win2",nbins,xbins); 
+	h_atlasbkg2 = new TH1D("h_atlasbkg2","bkgd win2",nbins,xbins);
+	//	TH1D *h_atlassignalbd2 = new TH1D("h_atlassignalbd2","signal bd win2",nbins,xbins); 
+	h_atlasdata2 = new TH1D("h_atlasdata2","Obsd evts in win2",nbins,xbins);
+	
+//	h_atlasrarebkg3	= new TH1D("h_atlasrarebkg3","Rare bkgd win3",nbins,xbins);
+//	h_atlascombbkg3 = new TH1D("h_atlascombbkg3","Comb bkgd win3",nbins,xbins);
+	h_atlassignalbs3 = new TH1D("h_atlassignalbs3","Sigl bs win3",nbins,xbins); 
+	h_atlasbkg3 = new TH1D("h_atlasbkg3","bkgd win3",nbins,xbins);
+	//	TH1D *h_atlassignalbd3 = new TH1D("h_atlassignalbd3","signal bd win3",nbins,xbins); 
+	h_atlasdata3 = new TH1D("h_atlasdata3","Obsd evts in win3",nbins,xbins);
+	
+//	double d_atlrarebkg1 = 0.10; double d_atlrarebkg2 = 0.06; double d_atlrarebkg3 = 0.08;
+//	double d_atlcombkg1 = 5/1.29; double d_atlcombkg2 = 0.0; double d_atlcombkg3 = 2/0.88;
+	
+	double d_atlbkg1 = 3.97; double d_atlbkg2 = 0.06; double d_atlbkg3 = 2.36;
+//	double d_atlexptevnts1 = 3.97; double d_atlexptevnts2 = 0.06; double d_atlexptevnts3 = 2.36;
+	double d_atlexptevnts1 = 0.447; double d_atlexptevnts2 = 0.199; double d_atlexptevnts3 = 0.225;
+	double d_atlobsrvbswin1 = 2.0; double d_atlobsrvbswin2 = 1.0; double d_atlobsrvbswin3 = 0.0;
+	
+	cout << "<<<<<<Setting up Histos for the eta window 1 Channel>>>>>>>" << endl;
+	// Setup the Histos
+//	//Rare bkgd Histogram
+//	h_atlasrarebkg1->SetBinContent(1,d_atlrarebkg1); 	
+//	//Combinatorial bkgd Histogram
+//	h_atlascombbkg1->SetBinContent(1,d_atlcombkg1); 	
+	
+	h_atlasbkg1->SetBinContent(1,d_atlbkg1); 
+	
+	//Signal Histograms
+	h_atlassignalbs1->SetBinContent(1,d_atlexptevnts1);
+	h_atlassignalbs1->Scale(d_scale);
+	
+	//Bd contribution Histogram
+	//		h_atalssignalbd1->SetBinContent(1,exptbdevntsbswin);
+	
+	// Data histogram
+	h_atlasdata1->SetBinContent(1,d_atlobsrvbswin1);
+	
+	cout << "<<<<<< Done Setting up Histos for eta window 1 Channel>>>>>>>" << endl;
+	
+	// Initialize everything
+	for(int i=0;i<NSYS;i++)
+	{
+		nps_low[i]  = 0;
+		nps_high[i] = 0;
+		lowsigma[i] = 0;
+		highsigma[i]= 0;
+		lowshape[i] = 0;
+		highshape[i]= 0;
+	}
+	
+//	// Add rare background templates
+//	sfact = 1;
+//	ename[0] = atlrareerrna;
+//	nps_low[0] = 0.0;
+//	nps_high[0] = 0.0;
+//	
+//	nps_count=0;	
+//	
+//	pssnflg = 0;
+//	sclflg = 0;
+//	
+//	// Construct test/null hypothesis for pseudo-experiments.
+//	nullhyp_pe->add_template(h_atlasrarebkg1,sfact,nps_count,ename,nps_low,nps_high,
+//							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname1);
+//	testhyp_pe->add_template(h_atlasrarebkg1,sfact,nps_count,ename,nps_low,nps_high,
+//							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname1);
+//	nps_count=0;
+//	nullhyp->add_template(h_atlasrarebkg1,sfact,nps_count,ename,nps_low,nps_high,
+//						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname1);
+//	testhyp->add_template(h_atlasrarebkg1,sfact,nps_count,ename,nps_low,nps_high,
+//						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname1);
+//	cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
+	// Add rare background templates
+	sfact = 1;
+	ename[0] = atlbgkerrna;
+	nps_low[0] = -0.04/3.97;
+	nps_high[0] = 0.04/3.97;
+	
+	nps_count=1;	
+	
+	pssnflg = 0;
+	sclflg = 0;
+	
+	// Construct test/null hypothesis for pseudo-experiments.
+	nullhyp_pe->add_template(h_atlasbkg1,sfact,nps_count,ename,nps_low,nps_high,
+							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname1);
+	testhyp_pe->add_template(h_atlasbkg1,sfact,nps_count,ename,nps_low,nps_high,
+							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname1);
+	nps_count=0;
+	nullhyp->add_template(h_atlasbkg1,sfact,nps_count,ename,nps_low,nps_high,
+						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname1);
+	testhyp->add_template(h_atlasbkg1,sfact,nps_count,ename,nps_low,nps_high,
+						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname1);
+	cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
+	
+	
+	// Add combinatorial background templates
+//	for(int i=0;i<NSYS;i++)
+//	{
+//		nps_low[i]  = 0;
+//		nps_high[i] = 0;
+//		lowsigma[i] = 0;
+//		highsigma[i]= 0;
+//		lowshape[i] = 0;
+//		highshape[i]= 0;
+//	}
+//	
+//	sfact = 1;
+//	ename[0] = atlcomberrna;
+//	nps_low[1] = 0.0;
+//	nps_high[1] = 0.0;
+//	
+//	nps_count=0;
+//	
+//	pssnflg = 0;
+//	sclflg = 0;
+//	
+//	// Construct test/null hypothesis for pseudo-experiments.
+//	nullhyp_pe->add_template(h_atlascombbkg1,sfact,nps_count,ename,nps_low,nps_high,
+//							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname1);
+//	testhyp_pe->add_template(h_atlascombbkg1,sfact,nps_count,ename,nps_low,nps_high,
+//							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname1);
+//	nps_count=0;
+//	nullhyp->add_template(h_atlascombbkg1,sfact,nps_count,ename,nps_low,nps_high,
+//						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname1);
+//	testhyp->add_template(h_atlascombbkg1,sfact,nps_count,ename,nps_low,nps_high,
+//						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname1);
+//	cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for combinatorial background" << endl;
+	
+	
+	
+	// Add signal templates
+	for(int i=0;i<NSYS;i++) {
+		nps_low[i] = 0;
+		nps_high[i] = 0;
+		lowsigma[i] = 0;
+		highsigma[i] = 0;
+		lowshape[i] = 0;
+		highshape[i] = 0;
+	}
+	
+	ename[0] = atlepsilon;
+	nps_low[0] = -0.45/4.45;
+	nps_high[0] = 0.45/4.45;
+	
+	ename[1] = atlepsiloni;
+	nps_low[1] = -0.17/3.14;
+	nps_high[1] = 0.17/3.14;
+	
+//	ename[2] = atlbgkerrna;
+//	nps_low[2] = -0.04/3.97;
+//	nps_high[2] = 0.04/3.97;
+
+	nps_count = 2;		
+	sfact = 1.;		
+	pssnflg = 0;
+	sclflg = 1; 
+	testhyp_pe->add_template(h_atlassignalbs1,sfact,nps_count,ename,nps_low,nps_high, 
+							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname1);
+	nps_count = 0;
+	testhyp->add_template(h_atlassignalbs1,sfact,nps_count,ename,nps_low,nps_high, 
+						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname1);
+		
+	cout << "Finished setting up testhyp, testhyp_pe for signal in the eta window 1 channel" << endl;	
+	cout << "<<<<<<Finished adding templates for the eta window 1 channel>>>>>>>" << endl;	
+	
+	////////////////////////////////////////////
+	
+	cout << "<<<<<<Setting up Histos for the eta window 2 Channel>>>>>>>" << endl;
+	// Setup the Histos
+//	//Rare bkgd Histogram
+//	h_atlasrarebkg2->SetBinContent(1,d_atlrarebkg2); 	
+//	//Combinatorial bkgd Histogram
+//	h_atlascombbkg2->SetBinContent(1,d_atlcombkg2); 
+	
+	h_atlasbkg2->SetBinContent(1,d_atlbkg2); 
+
+	//Signal Histograms
+	h_atlassignalbs2->SetBinContent(1,d_atlexptevnts2);
+	h_atlassignalbs2->Scale(d_scale);
+	
+	// Bd contribution 
+	//		h_atlassignalbd2->SetBinContent(1,exptbdevntsbswin);
+	
+	// Data histogram
+	h_atlasdata2->SetBinContent(1,d_atlobsrvbswin2);
+	
+	cout << "<<<<<< Done Setting up Histos for eta window 2 Channel>>>>>>>" << endl;
+	
+	// Initialize everything
+	for(int i=0;i<NSYS;i++)
+	{
+		nps_low[i]  = 0;
+		nps_high[i] = 0;
+		lowsigma[i] = 0;
+		highsigma[i]= 0;
+		lowshape[i] = 0;
+		highshape[i]= 0;
+	}
+	
+//	// Add rare background templates
+//	sfact = 1;
+//	ename[0] = atlrareerrna;
+//	nps_low[0] = 0.0;
+//	nps_high[0] = 0.0;
+//		
+//	nps_count=0;	
+//	
+//	pssnflg = 0;
+//	sclflg = 0;
+//	
+//	// Construct test/null hypothesis for pseudo-experiments.
+//	nullhyp_pe->add_template(h_atlasrarebkg2,sfact,nps_count,ename,nps_low,nps_high,
+//							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname2);
+//	testhyp_pe->add_template(h_atlasrarebkg2,sfact,nps_count,ename,nps_low,nps_high,
+//							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname2);
+//	nps_count=0;
+//	nullhyp->add_template(h_atlasrarebkg2,sfact,nps_count,ename,nps_low,nps_high,
+//						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname2);
+//	testhyp->add_template(h_atlasrarebkg2,sfact,nps_count,ename,nps_low,nps_high,
+//						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname2);
+//	cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
+	
+	sfact = 1;
+	ename[0] = atlbgkerrna;
+	nps_low[0] = -0.04/0.06;
+	nps_high[0] = 0.04/0.06;
+	
+	nps_count=1;	
+	
+	pssnflg = 0;
+	sclflg = 0;
+	
+	// Construct test/null hypothesis for pseudo-experiments.
+	nullhyp_pe->add_template(h_atlasbkg2,sfact,nps_count,ename,nps_low,nps_high,
+							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname2);
+	testhyp_pe->add_template(h_atlasbkg2,sfact,nps_count,ename,nps_low,nps_high,
+							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname2);
+	nps_count=0;
+	nullhyp->add_template(h_atlasbkg2,sfact,nps_count,ename,nps_low,nps_high,
+						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname2);
+	testhyp->add_template(h_atlasbkg2,sfact,nps_count,ename,nps_low,nps_high,
+						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname2);
+	cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
+
+	
+//	// Add combinatorial background templates
+//	for(int i=0;i<NSYS;i++)
+//	{
+//		nps_low[i]  = 0;
+//		nps_high[i] = 0;
+//		lowsigma[i] = 0;
+//		highsigma[i]= 0;
+//		lowshape[i] = 0;
+//		highshape[i]= 0;
+//	}
+//	
+//	sfact = 1;
+//	ename[0] = atlcomberrna;
+//	nps_low[0] = 0.;
+//	nps_high[0] = 0.;
+//	
+//	nps_count=0;
+//	
+//	pssnflg = 0;
+//	sclflg = 0;
+//	
+//	// Construct test/null hypothesis for pseudo-experiments.
+//	nullhyp_pe->add_template(h_atlascombbkg2,sfact,nps_count,ename,nps_low,nps_high,
+//							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname2);
+//	testhyp_pe->add_template(h_atlascombbkg2,sfact,nps_count,ename,nps_low,nps_high,
+//							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname2);
+//	nps_count=0;
+//	nullhyp->add_template(h_atlascombbkg2,sfact,nps_count,ename,nps_low,nps_high,
+//						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname2);
+//	testhyp->add_template(h_atlascombbkg2,sfact,nps_count,ename,nps_low,nps_high,
+//						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname2);
+//	cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for combinatorial background" << endl;
+	
+	
+	// Add signal templates
+	for(int i=0;i<NSYS;i++) {
+		nps_low[i] = 0;
+		nps_high[i] = 0;
+		lowsigma[i] = 0;
+		highsigma[i] = 0;
+		lowshape[i] = 0;
+		highshape[i] = 0;
+	}
+	
+	ename[0] = atlepsilon;
+	nps_low[0] = -0.45/4.45;
+	nps_high[0] = 0.45/4.45;
+	
+	ename[1] = atlepsiloni;
+	nps_low[1] = -0.15/1.40;
+	nps_high[1] = 0.15/1.40;
+	
+//	ename[2] = atlbgkerrna;
+//	nps_low[2] = -0.04/0.06;
+//	nps_high[2] = 0.04/0.06;
+
+	nps_count = 2;		
+	
+	sfact = 1.;
+	
+	pssnflg = 0;// 
+	sclflg = 1;// this is set to 1 if signal, 
+	testhyp_pe->add_template(h_atlassignalbs2,sfact,nps_count,ename,nps_low,nps_high, 
+							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname2);
+	nps_count = 0;
+	testhyp->add_template(h_atlassignalbs2,sfact,nps_count,ename,nps_low,nps_high, 
+						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname2);
+	
+	cout << "Finished setting up testhyp, testhyp_pe for signal in the eta window 2 channel" << endl;	
+	cout << "<<<<<<Finished adding templates for the eta window 2 channel>>>>>>>" << endl;			
+	//////////////////////////////////////////////////////////
+	
+	cout << "<<<<<<Setting up Histos for the eta window 3 Channel>>>>>>>" << endl;
+	// Setup the Histos
+//	//Rare bkgd Histogram
+//	h_atlasrarebkg3->SetBinContent(1,d_atlrarebkg3); 
+//	//Combinatorial bkgd Histogram
+//	h_atlascombbkg3->SetBinContent(1,d_atlcombkg3); 
+	
+	h_atlasbkg3->SetBinContent(1,d_atlbkg3); 
+
+	//Signal Histograms
+	h_atlassignalbs3->SetBinContent(1,d_atlexptevnts3);
+	h_atlassignalbs3->Scale(d_scale);
+	
+	// Bd contribution 
+	//		h_atlassignalbd2->SetBinContent(1,exptbdevntsbswin);
+	
+	// Data histogram
+	h_atlasdata3->SetBinContent(1,d_atlobsrvbswin3);
+	
+	cout << "<<<<<< Done Setting up Histos for eta window 3 Channel>>>>>>>" << endl;
+	
+	// Initialize everything
+	for(int i=0;i<NSYS;i++)
+	{
+		nps_low[i]  = 0;
+		nps_high[i] = 0;
+		lowsigma[i] = 0;
+		highsigma[i]= 0;
+		lowshape[i] = 0;
+		highshape[i]= 0;
+	}
+	
+//	// Add rare background templates
+//	sfact = 1;
+//	ename[0] = atlrareerrna;
+//	nps_low[0] = 0.0;
+//	nps_high[0] = 0.0;
+//	
+//	nps_count=0;	
+//	
+//	pssnflg = 0;
+//	sclflg = 0;
+//	
+//	// Construct test/null hypothesis for pseudo-experiments.
+//	nullhyp_pe->add_template(h_atlasrarebkg3,sfact,nps_count,ename,nps_low,nps_high,
+//							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname3);
+//	testhyp_pe->add_template(h_atlasrarebkg3,sfact,nps_count,ename,nps_low,nps_high,
+//							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname3);
+//	nps_count=0;
+//	nullhyp->add_template(h_atlasrarebkg3,sfact,nps_count,ename,nps_low,nps_high,
+//						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname3);
+//	testhyp->add_template(h_atlasrarebkg3,sfact,nps_count,ename,nps_low,nps_high,
+//						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname3);
+//	cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
+	
+	sfact = 1;
+	ename[0] = atlbgkerrna;
+	nps_low[0] = -0.04/2.36;
+	nps_high[0] = 0.04/2.36;
+	
+	nps_count=1;	
+	
+	pssnflg = 0;
+	sclflg = 0;
+	
+	// Construct test/null hypothesis for pseudo-experiments.
+	nullhyp_pe->add_template(h_atlasbkg3,sfact,nps_count,ename,nps_low,nps_high,
+							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname3);
+	testhyp_pe->add_template(h_atlasbkg3,sfact,nps_count,ename,nps_low,nps_high,
+							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname3);
+	nps_count=0;
+	nullhyp->add_template(h_atlasbkg3,sfact,nps_count,ename,nps_low,nps_high,
+						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname3);
+	testhyp->add_template(h_atlasbkg3,sfact,nps_count,ename,nps_low,nps_high,
+						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname3);
+	cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
+	
+
+//	// Add combinatorial background templates
+//	for(int i=0;i<NSYS;i++)
+//	{
+//		nps_low[i]  = 0;
+//		nps_high[i] = 0;
+//		lowsigma[i] = 0;
+//		highsigma[i]= 0;
+//		lowshape[i] = 0;
+//		highshape[i]= 0;
+//	}
+//	
+//	sfact = 1;
+//	ename[0] = atlcomberrna;
+//	nps_low[0] = 0.;
+//	nps_high[0] = 0.;
+//	
+//	nps_count=0;
+//	
+//	pssnflg = 0;
+//	sclflg = 0;
+//	
+//	// Construct test/null hypothesis for pseudo-experiments.
+//	nullhyp_pe->add_template(h_atlascombbkg3,sfact,nps_count,ename,nps_low,nps_high,
+//							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname3);
+//	testhyp_pe->add_template(h_atlascombbkg3,sfact,nps_count,ename,nps_low,nps_high,
+//							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname3);
+//	nps_count=0;
+//	nullhyp->add_template(h_atlascombbkg3,sfact,nps_count,ename,nps_low,nps_high,
+//						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname3);
+//	testhyp->add_template(h_atlascombbkg3,sfact,nps_count,ename,nps_low,nps_high,
+//						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname3);
+//	cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for comb-bkg" << endl;
+	
+	
+	// Add signal templates
+	for(int i=0;i<NSYS;i++) {
+		nps_low[i] = 0;
+		nps_high[i] = 0;
+		lowsigma[i] = 0;
+		highsigma[i] = 0;
+		lowshape[i] = 0;
+		highshape[i] = 0;
+	}
+	
+	ename[0] = atlepsilon;
+	nps_low[0] = -0.45/4.45;
+	nps_high[0] = 0.45/4.45;
+	
+	ename[1] = atlepsiloni;
+	nps_low[1] = -0.15/1.40;
+	nps_high[1] = 0.15/1.40;
+	
+//	ename[2] = atlbgkerrna;
+//	nps_low[2] = -0.04/2.36;
+//	nps_high[2] = 0.04/2.36;
+
+	nps_count = 2;		
+	
+	sfact = 1.;
+	
+	pssnflg = 0;// 
+	sclflg = 1;// this is set to 1 if signal, 
+	testhyp_pe->add_template(h_atlassignalbs3,sfact,nps_count,ename,nps_low,nps_high, 
+							 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname3);
+	nps_count = 0;
+	testhyp->add_template(h_atlassignalbs3,sfact,nps_count,ename,nps_low,nps_high, 
+						  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,atchnname3);
+	
+	cout << "Finished setting up testhyp, testhyp_pe for signal in the eta window 3 channel" << endl;			
+	cout << "<<<<<<Finished adding templates for the eta window 3 channel>>>>>>>" << endl;			
+
 }
 
 cout << ">>>>>> End of templates <<<<<<<" << endl;

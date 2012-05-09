@@ -36,6 +36,7 @@ int main(int argc, char **argv)
 		cout << "---> lhcb11bd, lhcb12bd for lhcb Bd 11 or 12 results" << endl;
 		cout << "---> comb11 or comb12 for CMS-LHCb combined bs result" << endl;
 		cout << "---> comb11bd or comb12bd for CMS-LHCb combined Bd result" << endl;
+		cout << "---> atlas12bs or atlas12bd for winter Bs or Bd" << endl; 
 		cout << "Option2 is a number (int) that is used to set the random seed." << endl;
 		cout << "NOTE: In TRandom3, SetSeed(0) is always random so the results are NOT reproducible." << endl;
 		cout << "Option3 is a float used to scale the signal histogram." << endl;
@@ -57,6 +58,7 @@ int main(int argc, char **argv)
 	char lhcb12chan[] = "lhcb12"; char lhcb12bdchan[] = "lhcb12bd";
 	char combned11[] = "comb11"; char combned11bd[] = "comb11bd";
 	char combned12[] = "comb12"; char combned12bd[] = "comb12bd";
+	char atlas12bschan[] = "atlas12bs";
 	bool combined11 = false; bool combined11bd = false;
 	bool combined12 = false; bool combined12bd = false;
 	bool cms11bs = false; bool cms11bd = false;
@@ -64,40 +66,36 @@ int main(int argc, char **argv)
 	bool lhcbs = false; bool lhcbs10 = false; 
 	bool lhcbs11 = false; bool lhcbd11 = false;
 	bool lhcbs12 = false; bool lhcbd12 = false;
+	bool atlasbs12 = false;
 	bool barrel = false; bool endcap = false; 
 	char conf_level95[] = "95"; char conf_level90[] = "90"; 
 	bool conflevel95 = false; bool conflevel90 = false; 
-	int i_numb = -1;
 
 	if (!strcmp(cms11bschan,argv[1])) {
 		cms11bs = true;
 		barrel = true;
 		endcap = true;
-		i_numb = atoi(argv[2]);
 	}
 	else if (!strcmp(cms11bdchan,argv[1])) {
 		cms11bd = true;
 		barrel = true;
 		endcap = true;
-		i_numb = atoi(argv[2]);
 	}
 	else if (!strcmp(cms12bschan,argv[1])) {
 		cms12bs = true;
+//		lhcbs12 = true;
 		barrel = true;
 		endcap = true;
-		i_numb = atoi(argv[2]);
 	}	
 	else if (!strcmp(cms12bdchan,argv[1])) {
 		cms12bd = true;
 		barrel = true;
 		endcap = true;
-		i_numb = atoi(argv[2]);
 	}	
 	else if (!strcmp(lhcbchan,argv[1])) {
 		lhcbs = true;
 		lhcbs10 = true;
 		lhcbs11 = true;
-		i_numb = atoi(argv[2]);
 	}
 	else if	(!strcmp(combned11,argv[1])) {
 		combined11 = true;
@@ -109,7 +107,6 @@ int main(int argc, char **argv)
 		lhcbs10 = true;
 		lhcbs11 = true;
 
-		i_numb = atoi(argv[2]);
 	}
 ///////////////////
 	else if	(!strcmp(combned11bd,argv[1])) {
@@ -122,7 +119,6 @@ int main(int argc, char **argv)
 //		lhcbd10 = true;
 		lhcbd11 = true;
 		
-		i_numb = atoi(argv[2]);
 	}
 //////////////////
 	else if	(!strcmp(combned12,argv[1])) {
@@ -135,8 +131,8 @@ int main(int argc, char **argv)
 		//lhcbs10 = true;
 		//lhcbs11 = true;
 		lhcbs12 = true;
-		
-		i_numb = atoi(argv[2]);
+		atlasbs12 = true;
+
 	}
 	else if	(!strcmp(combned12bd,argv[1])) {
 		combined12bd = true;
@@ -144,37 +140,42 @@ int main(int argc, char **argv)
 		barrel = true;
 		endcap = true;
 		
-		//lhcbs = true;
 		lhcbd12 = true;
+//		atlasbd12 = true;
 		
-		i_numb = atoi(argv[2]);
 	}
 	else if (!strcmp(lhcb10chan,argv[1])) {
 		lhcbs10 = true;
 		
-		i_numb = atoi(argv[2]);
 	}
 	else if (!strcmp(lhcb11chan,argv[1])) {
 		lhcbs11 = true;
 		
-		i_numb = atoi(argv[2]);
 	}	
 	else if (!strcmp(lhcb11bdchan,argv[1])) {
 		lhcbd11 = true;
 		
-		i_numb = atoi(argv[2]);
 	}	
 	else if (!strcmp(lhcb12chan,argv[1])) {
 		lhcbs12 = true;
 		
-		i_numb = atoi(argv[2]);
 	}	
 	else if (!strcmp(lhcb12bdchan,argv[1])) {
 		lhcbd12 = true;
 		
-		i_numb = atoi(argv[2]);
+	}		
+	else if (!strcmp(atlas12bschan,argv[1])) {
+		atlasbs12 = true;
+		
 	}	
+	else {
+		cout << "Did not recognise your option, Please try again." << endl;
+		return 0;		
+	}
+
 	
+	int i_numb = atoi(argv[2]);
+
 	double d_scale = atof(argv[3]);
 		
 	if (!strcmp(conf_level95,argv[4])) {
@@ -199,6 +200,7 @@ int main(int argc, char **argv)
 	else if(lhcbd11) s_outputfile = Form("LHCb_11_Bd_Results%f_%i.txt",d_scale,i_numb);
 	else if(lhcbs12) s_outputfile = Form("LHCb_12_Bs_Results%f_%i.txt",d_scale,i_numb);
 	else if(lhcbd12) s_outputfile = Form("LHCb_12_Bd_Results%f_%i.txt",d_scale,i_numb);
+	else if(atlasbs12) s_outputfile = Form("ATLAS_12_Bs_Results%f_%i.txt",d_scale,i_numb);
 	
 	ofstream f_outputfile;
 	f_outputfile.open(s_outputfile);
@@ -284,6 +286,11 @@ int main(int argc, char **argv)
 			}
 		}
 	}
+	if (atlasbs12) {
+		mycsm->set_htofit(h_atlasdata1,atchnname1);
+		mycsm->set_htofit(h_atlasdata2,atchnname2);
+		mycsm->set_htofit(h_atlasdata3,atchnname3);
+	}
 	
 	mycsm->set_modeltofit(testhyp);
 	double chisq = mycsm->chisquared();
@@ -353,6 +360,11 @@ int main(int argc, char **argv)
 				delete[] c_lhcbchan3;
 			}
 		}
+	}
+	if (atlasbs12) { 
+		bestnullfit->plotwithdata(atchnname1,h_atlasdata1);
+		bestnullfit->plotwithdata(atchnname2,h_atlasdata2);
+		bestnullfit->plotwithdata(atchnname3,h_atlasdata3);
 	}
 	
 	cout << "chisq from fitter " << chisq << endl; 
@@ -435,10 +447,15 @@ int main(int argc, char **argv)
 			}
 		}
 	}
+	if (atlasbs12) { ////////////////
+		mymclimit->set_datahist(h_atlasdata1,atchnname1);
+		mymclimit->set_datahist(h_atlasdata2,atchnname2);
+		mymclimit->set_datahist(h_atlasdata3,atchnname3);
+	}
 	
 	cout << ">>>>>>> PRINTING Pseudo-exp (debug purposes) <<<<<<<<" << endl;
 	testhyp_pe->print();
-	mymclimit->set_npe(20000);
+	mymclimit->set_npe(50000);
 	mymclimit->run_pseudoexperiments();
 	
 	
@@ -512,8 +529,9 @@ int main(int argc, char **argv)
 	else if (lhcbs) d_totlumi = lhcblumis10 + lhcblumis11;
 	else if (lhcbs10) d_totlumi = lhcblumis10;
 	else if (lhcbs11) d_totlumi = lhcblumis11;
-	else if (lhcbs12) d_totlumi = lhcblumiw12;
+	else if (lhcbs12) d_totlumi = lhcblumiw12 + lhcblumis10;
 	else if (lhcbd12) d_totlumi = lhcblumiw12;
+	else if (atlasbs12) d_totlumi = atlaslumiw12;
 	
 	if (conflevel95) {
 		cout << "<<<<<<<< Calculating scale factors at 95% CL" << endl;
@@ -673,6 +691,16 @@ int main(int argc, char **argv)
 			f_outputfile << "95% CL upper limit (LHCb winter 11-12): Br(Bd->MuMu) = " << d_sf95*Brbdmm << endl << endl;
 			
 		}
+		else if (atlasbs12) {
+			f_outputfile << "ATLAS 12 Bs->MuMu result:" << endl << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -2sig: Br(Bs->MuMu) = " << d_s95m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL -1sig: Br(Bs->MuMu) = " << d_s95m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL median: Br(Bs->MuMu) = " << d_s95med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +1sig: Br(Bs->MuMu) = " << d_s95p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 95% CL +2sig: Br(Bs->MuMu) = " << d_s95p2*Brbsmm << endl;
+			f_outputfile << "95% CL upper limit (ATLAS 12): Br(Bs->MuMu) = " << d_sf95*Brbsmm << endl << endl;
+			
+		}
 		
 	}
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -827,6 +855,16 @@ int main(int argc, char **argv)
 			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bd->MuMu) = " << d_s90p2*Brbdmm << endl;
 			f_outputfile << "90% CL upper limit (LHCb winter 11-12): Br(Bd->MuMu) = " << d_sf90*Brbdmm << endl << endl;
 		}
+		else if (atlasbs12) {
+			f_outputfile << "ATLAS 12 Bs->MuMu results:" << endl << endl;
+			
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -2sig: Br(Bs->MuMu) = " << d_s90m2*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL -1sig: Br(Bs->MuMu) = " << d_s90m1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL median: Br(Bs->MuMu) = " << d_s90med*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +1sig: Br(Bs->MuMu) = " << d_s90p1*Brbsmm << endl;
+			f_outputfile << "Exp null hyp. upper limit at 90% CL +2sig: Br(Bs->MuMu) = " << d_s90p2*Brbsmm << endl;
+			f_outputfile << "90% CL upper limit (ATLAS 12): Br(Bs->MuMu) = " << d_sf90*Brbsmm << endl << endl;
+		}
 		
 	}
 	
@@ -852,8 +890,8 @@ int main(int argc, char **argv)
 	//Draw the test statistics distribution 
 	//test hypothesis - we can calculate probability of observering more than N sigma 
 	//null hypothesis - we can calculate p-value of a measured test statistics  
-	TH1F* ts_test = new TH1F("ts_test","",100,-50,50);
-	TH1F* ts_null = new TH1F("ts_null","",100,-50,50);
+	TH1F* ts_test = new TH1F("ts_test","",200,-100,100);
+	TH1F* ts_null = new TH1F("ts_null","",200,-100,100);
 	////////////////////////////////////////////////////////////////////////
 	TH1F* mcb_hist = new TH1F("mcb_hist","",20,0,2);
 	TH1F* mcs_hist = new TH1F("mcs_hist","",20,0,2);
@@ -887,6 +925,7 @@ int main(int argc, char **argv)
 	else if (lhcbd11) s_pdffilename = Form("LHCb_11_Bd_Results%f_%i.pdf",d_scale,i_numb);
 	else if (lhcbs12) s_pdffilename = Form("LHCb_12_Bs_Results%f_%i.pdf",d_scale,i_numb);
 	else if (lhcbd12) s_pdffilename = Form("LHCb_12_Bd_Results%f_%i.pdf",d_scale,i_numb);
+	else if (atlasbs12) s_pdffilename = Form("ATLAS_12_Bs_Results%f_%i.pdf",d_scale,i_numb);
 	mycanvas->Print(s_pdffilename);
 	
 	
