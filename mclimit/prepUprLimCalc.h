@@ -105,7 +105,7 @@ int counter = 0; int counter1 = 0; int counter2 = 0; int counter3 = 0; int count
 TString s_outfilename;
 if (combined11) s_outfilename = Form("CMS_LHCb_S11_Comb_Bs_Results%f_%i.root",d_scale,i_numb);
 else if (combined11bd) s_outfilename = Form("CMS_LHCb_S11_Comb_Bd_Results%f_%i.root",d_scale,i_numb);
-else if (combined12) s_outfilename = Form("CMS_LHCb_W12_Comb_Bs_Results%f_%i.root",d_scale,i_numb);
+else if (combined12) s_outfilename = Form("CERN_W12_Comb_Bs_Results%f_%i.root",d_scale,i_numb);
 else if (combined12bd) s_outfilename = Form("CMS_LHCb_W12_Comb_Bd_Results%f_%i.root",d_scale,i_numb);
 else if(cms11bs) s_outfilename = Form("CMS_S11_Bs_Results%f_%i.root",d_scale,i_numb);
 else if(cms11bd) s_outfilename = Form("CMS_S11_Bd_Results%f_%i.root",d_scale,i_numb);
@@ -877,7 +877,8 @@ if (cms12bs) {
 		
 		Double_t totbdwin = exptbdevnts + combkgbd + rarebkgbdwin + exptbsevntsbdwin;// including exptbsevntsbdwin
 		//Double_t totbdwinerr = 0.35;
-		Double_t totbswin = exptbsevnts + combkgbs + rarebkgbswin + exptbdevntsbswin;// including exptbsevntsbswin
+//		Double_t totbswin = exptbsevnts + combkgbs + rarebkgbswin + exptbdevntsbswin;// including exptbsevntsbswin
+		Double_t totbswin = 3.47;
 		Double_t totbswinerr = 0.65;
 		Double_t totblndwin = totbswin + totbdwin;
 		cout << "Total (expected in Bd blind window) = " << totbdwin << " ~ " << floor(totbdwin + 0.5) << endl;
@@ -921,8 +922,6 @@ if (cms12bs) {
 		ename[0] = rarebkgerrname;
 		nps_low[0] = -rarebkgbswinerr/rarebkgbswin;
 		nps_high[0] = rarebkgbswinerr/rarebkgbswin;
-//		nps_low[0] = -rarebkgshldrserr/rarebkgshldrs;
-//		nps_high[0] = rarebkgshldrserr/rarebkgshldrs;
 		
 		
 		nps_count = 1;	
@@ -990,10 +989,10 @@ if (cms12bs) {
 		ename[0] = pdfhadron;
 //		nps_low[0] = -0.021/0.267;
 //		nps_high[0] = 0.021/0.267;
-//		nps_low[0] = -0.1192/3.5487;
-//		nps_high[0] = 0.1192/3.5487;
-		nps_low[0] = -0.2958/3.745;
-		nps_high[0] = 0.2958/3.745;
+		nps_low[0] = -0.1192/3.5487;
+		nps_high[0] = 0.1192/3.5487;
+//		nps_low[0] = -0.2958/3.745;
+//		nps_high[0] = 0.2958/3.745;
 		
 		ename[1] = toteffname;
 		nps_low[1] = -totefferr/toteff;
@@ -1013,9 +1012,6 @@ if (cms12bs) {
 		nps_low[4] = -combkgbserr/combkgbs;
 		nps_high[4] = combkgbserr/combkgbs;
 		//		
-//		ename[5] = peakerrname;
-//		nps_low[5] = -rarebkgbswinerr/rarebkgbswin;
-//		nps_high[5] = rarebkgbswinerr/rarebkgbswin;
 		
 		nps_count = 3;		
 		sfact = 1.;
@@ -1072,7 +1068,8 @@ if (cms12bs) {
 		
 		Double_t totbdwin = exptbdevnts + combkgbd + rarebkgbdwin;// + exptbsevntsbdwin;// including exptbsevntsbdwin
 		//Double_t totbdwinerr = 0.35;
-		Double_t totbswin = exptbsevnts + combkgbs + rarebkgbswin;// + exptbdevntsbswin;// including exptbsevntsbswin
+//		Double_t totbswin = exptbsevnts + combkgbs + rarebkgbswin;// + exptbdevntsbswin;// including exptbsevntsbswin
+		Double_t totbswin = 2.45;
 		Double_t totbswinerr = 0.56;
 		Double_t totblndwin = totbswin + totbdwin;
 		cout << "Total (expected in Bd blind window) = " << totbdwin << " ~ " << floor(totbdwin + 0.5) << endl;
@@ -1115,10 +1112,7 @@ if (cms12bs) {
 		sfact = 1;
 		ename[0] = rarebkgerrname;
 		nps_low[0] = -rarebkgbswinerr/rarebkgbswin;
-		nps_high[0] = rarebkgbswinerr/rarebkgbswin;
-//		nps_low[0] = -rarebkgshldrserr/rarebkgshldrs;
-//		nps_high[0] = rarebkgshldrserr/rarebkgshldrs;
-		
+		nps_high[0] = rarebkgbswinerr/rarebkgbswin;		
 		
 		nps_count = 1;	
 		
@@ -1184,10 +1178,10 @@ if (cms12bs) {
 		ename[0] = pdfhadron;
 //		nps_low[0] = -0.021/0.267;
 //		nps_high[0] = 0.021/0.267;
-//		nps_low[0] = -0.1192/3.5487;
-//		nps_high[0] = 0.1192/3.5487;
-		nps_low[0] = -0.2958/3.745;
-		nps_high[0] = 0.2958/3.745;
+		nps_low[0] = -0.1192/3.5487;
+		nps_high[0] = 0.1192/3.5487;
+//		nps_low[0] = -0.2958/3.745;
+//		nps_high[0] = 0.2958/3.745;
 		
 		ename[1] = toteffname;
 		nps_low[1] = -totefferr/toteff;
@@ -1207,9 +1201,6 @@ if (cms12bs) {
 		nps_low[4] = -combkgbserr/combkgbs;
 		nps_high[4] = combkgbserr/combkgbs;
 		//		
-//		ename[5] = peakerrname;
-//		nps_low[5] = -rarebkgbswinerr/rarebkgbswin;
-//		nps_high[5] = rarebkgbswinerr/rarebkgbswin;
 		
 		nps_count = 3;
 		
@@ -1229,8 +1220,6 @@ if (cms12bs) {
 
 // Bd combination for cms data in winter 11-12
 if (cms12bd) {
-//	Int_t nnbins = 2;
-//	Double_t xxbins[3] = {0, 1, 2};
 	Double_t bsmsswin = 5.45 - 5.3; Double_t bdmsswin = 5.3 - 5.2; Double_t msswin = 5.9 - 4.9 - 0.25;
 
 	TFile *f_data = TFile::Open("anaBmm.default-11.root");
@@ -2879,9 +2868,12 @@ if (atlasbs12) {
 		highshape[i] = 0;
 	}
 	
-	ename[0] = atlepsilon;
-	nps_low[0] = -0.45/4.45;
-	nps_high[0] = 0.45/4.45;
+//	ename[0] = atlepsilon;
+//	nps_low[0] = -0.45/4.45;
+//	nps_high[0] = 0.45/4.45;
+	ename[0] = pdfhadron;
+	nps_low[0] = -0.1192/3.5487;
+	nps_high[0] = 0.1192/3.5487;
 	
 	ename[1] = atlepsiloni;
 	nps_low[1] = -0.17/3.14;
@@ -3028,9 +3020,12 @@ if (atlasbs12) {
 		highshape[i] = 0;
 	}
 	
-	ename[0] = atlepsilon;
-	nps_low[0] = -0.45/4.45;
-	nps_high[0] = 0.45/4.45;
+//	ename[0] = atlepsilon;
+//	nps_low[0] = -0.45/4.45;
+//	nps_high[0] = 0.45/4.45;
+	ename[0] = pdfhadron;
+	nps_low[0] = -0.1192/3.5487;
+	nps_high[0] = 0.1192/3.5487;
 	
 	ename[1] = atlepsiloni;
 	nps_low[1] = -0.15/1.40;
@@ -3178,9 +3173,12 @@ if (atlasbs12) {
 		highshape[i] = 0;
 	}
 	
-	ename[0] = atlepsilon;
-	nps_low[0] = -0.45/4.45;
-	nps_high[0] = 0.45/4.45;
+//	ename[0] = atlepsilon;
+//	nps_low[0] = -0.45/4.45;
+//	nps_high[0] = 0.45/4.45;
+	ename[0] = pdfhadron;
+	nps_low[0] = -0.1192/3.5487;
+	nps_high[0] = 0.1192/3.5487;
 	
 	ename[1] = atlepsiloni;
 	nps_low[1] = -0.15/1.40;
