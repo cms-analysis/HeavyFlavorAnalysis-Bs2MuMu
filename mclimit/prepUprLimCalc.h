@@ -1263,7 +1263,8 @@ if (cms12bd) {
 		Double_t obsrvbswin = h_obsB->Integral(lobsmssbin, hibldbin); Double_t obsrvbdwin = h_obsB->Integral(lobldbin,lobsmssbin);
 		cout << "Observed in Bs window = " << obsrvbswin << ", in Bd window = " << obsrvbdwin << endl << endl;
 		
-		Double_t rarebkgbdwin = h_bkgB->Integral(lobldbin,lobsmssbin); Double_t rarebkgbdwinerr = 0.070;
+//		Double_t rarebkgbdwin = h_bkgB->Integral(lobldbin,lobsmssbin); Double_t rarebkgbdwinerr = 0.070;
+		Double_t rarebkgbdwin = 0.330; Double_t rarebkgbdwinerr = 0.070;
 		Double_t rarebkgbswin = h_bkgB->Integral(lobsmssbin,hibldbin); //Double_t rarebkgbswinerr = 0.060;
 		Double_t rarebkgleft = h_bkgB->Integral(lowmassbin,lobldbin); Double_t rarebkgright = h_bkgB->Integral(hibldbin,himassbin);
 		Double_t rarebkgshldrs = rarebkgleft + rarebkgright; Double_t rarebkgshldrserr = 0.632963;
@@ -1272,13 +1273,15 @@ if (cms12bd) {
 		cout << "Rare bkgd (peaking in Bs signal window) = " << rarebkgbswin << endl << endl;
 		
 		Double_t combkg = (obsrvshldrs - rarebkgshldrs);
-		Double_t combkgbd = (obsrvshldrs - rarebkgleft)*bdmsswin/msswin; Double_t combkgbderr = 0.34;
+//		Double_t combkgbd = (obsrvshldrs - rarebkgleft)*bdmsswin/msswin; Double_t combkgbderr = 0.34;
+		Double_t combkgbd = 0.40; Double_t combkgbderr = 0.34;
 		Double_t combkgbs = (obsrvshldrs - rarebkgleft)*bsmsswin/msswin; Double_t combkgbserr = 0.50;
 		cout << "CombBkgd (shoulders) = " << combkg << endl;
 		cout << "CombBkgd (in Bd blind window) = " << combkgbd << " +- " << combkgbderr << endl;
 		cout << "CombBkgd (in Bs blind window) = " << combkgbs << " +- " << combkgbserr  << endl << endl;
 		
-		Double_t exptbdevnts = h_sigbdB->Integral(lobldbin,lobsmssbin); Double_t exptbdevntserr = 0.020;
+//		Double_t exptbdevnts = h_sigbdB->Integral(lobldbin,lobsmssbin); Double_t exptbdevntserr = 0.020;
+		Double_t exptbdevnts = 0.240; Double_t exptbdevntserr = 0.020;
 		Double_t exptbdevntsbswin = h_sigbdB->Integral(lobsmssbin,hibldbin);
 		Double_t exptbsevnts = h_sigbsB->Integral(lobsmssbin,hibldbin); Double_t exptbsevntserr = 0.41;
 		Double_t exptbsevntsbdwin = h_sigbsB->Integral(lobldbin,lobsmssbin);
@@ -1331,14 +1334,12 @@ if (cms12bd) {
 		// Add rare background templates
 		sfact = 1;
 		ename[0] = rarebkgerrname;
-		nps_low[0] = -rarebkgshldrserr/rarebkgshldrs;
-		nps_high[0] = rarebkgshldrserr/rarebkgshldrs;
-		
-//		ename[1] = pdsname;
-//		nps_low[1] = -0.00741162/0.0712015;
-//		nps_high[1] = 0.00741162/0.0712015;		
-		
-		nps_count=1;
+		nps_low[0] = -rarebkgbdwinerr/rarebkgbdwin;
+		nps_high[0] = rarebkgbdwinerr/rarebkgbdwin;		
+//		nps_low[0] = -rarebkgshldrserr/rarebkgshldrs;
+//		nps_high[0] = rarebkgshldrserr/rarebkgshldrs;
+				
+		nps_count = 1;
 		
 		pssnflg = 0;
 		sclflg = 0;
@@ -1369,10 +1370,10 @@ if (cms12bd) {
 		
 		sfact = 1;
 		ename[0] = combbkgerrname;
-		nps_low[0] = 0;
-		nps_high[0] = 0;
+		nps_low[0] = -combkgbderr/combkgbd;
+		nps_high[0] = combkgbderr/combkgbd;
 		
-		nps_count=0;
+		nps_count = 1;
 		
 		pssnflg = 0;
 		sclflg = 0;
@@ -1389,38 +1390,6 @@ if (cms12bd) {
 							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
 		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for combinatorial background" << endl;
 		
-		// Add Bs background templates
-		for(int i=0;i<NSYS;i++)
-		{
-			nps_low[i]  = 0;
-			nps_high[i] = 0;
-			lowsigma[i] = 0;
-			highsigma[i]= 0;
-			lowshape[i] = 0;
-			highshape[i]= 0;
-		}
-		
-		sfact = 1;
-		
-		ename[0] = unconstrned;
-		nps_low[0] = -0.00741162/0.0712015;
-		nps_high[0] = 0.00741162/0.0712015;		
-		
-		nps_count=1;
-		
-		pssnflg = 0;
-		sclflg = 0;
-		// Construct test/null hypothesis for pseudo-experiments.
-		nullhyp_pe->add_template(h_signalbsB,sfact,nps_count,ename,nps_low,nps_high,
-								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
-		testhyp_pe->add_template(h_signalbsB,sfact,nps_count,ename,nps_low,nps_high,
-								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
-		nps_count=0;
-		nullhyp->add_template(h_signalbsB,sfact,nps_count,ename,nps_low,nps_high,
-							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
-		testhyp->add_template(h_signalbsB,sfact,nps_count,ename,nps_low,nps_high,
-							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameB);
-		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
 		
 		// Add signal templates
 		for(int i=0;i<NSYS;i++) {
@@ -1433,27 +1402,25 @@ if (cms12bd) {
 		}
 		
 			
-		ename[0] = toteffname;
-		nps_low[0] = -totefferr/toteff;
-		nps_high[0] = totefferr/toteff;
+		ename[0] = pdfhadron;
+		//nps_low[0] = -0.021/0.267;
+		//nps_high[0] = 0.021/0.267;
+		nps_low[0] = -0.1192/3.5487;
+		nps_high[0] = 0.1192/3.5487;
+		//nps_low[0] = -0.2958/3.745;
+		//nps_high[0] = 0.2958/3.745;
+
+		ename[1] = toteffname;
+		nps_low[1] = -totefferr/toteff;
+		nps_high[1] = totefferr/toteff;
 		
-		ename[1] = experrname;
-		nps_low[1] = -totbdwinerr/totbdwin;
-		nps_high[1] = totbdwinerr/totbdwin;
-		
-		ename[2] = accname;
-		nps_low[2] = -0.009/0.247;
-		nps_high[2] = 0.009/0.247;
-		
-		ename[3] = pddname;
-		nps_low[3] = -0.0366707/0.638928;
-		nps_high[3] = 0.0366707/0.638928;
-		
-		ename[4] = peakerrname;
-		nps_low[4] = -rarebkgbdwinerr/rarebkgbdwin;
-		nps_high[4] = rarebkgbdwinerr/rarebkgbdwin;
-				
-		nps_count = 5;
+		ename[2] = experrname;
+//		nps_low[2] = -totbdwinerr/totbdwin;
+//		nps_high[2] = totbdwinerr/totbdwin;
+		nps_low[2] = -exptbdevntserr/exptbdevnts;
+		nps_high[2] = exptbdevntserr/exptbdevnts;
+							
+		nps_count = 3;
 		
 		sfact = 1.;
 		
@@ -1479,7 +1446,8 @@ if (cms12bd) {
 		Double_t obsrvbswin = h_obsE->Integral(lobsmssbin, hibldbin); Double_t obsrvbdwin = h_obsE->Integral(lobldbin,lobsmssbin);
 		cout << "Observed in Bs window = " << obsrvbswin << ", in Bd window = " << obsrvbdwin << endl << endl;
 		
-		Double_t rarebkgbdwin = h_bkgE->Integral(lobldbin,lobsmssbin); Double_t rarebkgbdwinerr = 0.030;
+//		Double_t rarebkgbdwin = h_bkgE->Integral(lobldbin,lobsmssbin); Double_t rarebkgbdwinerr = 0.030;
+		Double_t rarebkgbdwin = 0.150; Double_t rarebkgbdwinerr = 0.030;
 		Double_t rarebkgbswin = h_bkgE->Integral(lobsmssbin,hibldbin); //Double_t rarebkgbswinerr = 0.020;
 		Double_t rarebkgleft = h_bkgE->Integral(lowmassbin,lobldbin); Double_t rarebkgright = h_bkgE->Integral(hibldbin,himassbin);
 		Double_t rarebkgshldrs = rarebkgleft + rarebkgright; Double_t rarebkgshldrserr = 0.238872;
@@ -1488,13 +1456,15 @@ if (cms12bd) {
 		cout << "Rare bkgd (peaking in Bs signal window) = " << rarebkgbswin << endl << endl;
 		
 		Double_t combkg = (obsrvshldrs - rarebkgshldrs);
-		Double_t combkgbd = (obsrvshldrs - rarebkgleft)*bdmsswin/msswin; Double_t combkgbderr = 0.35;
+//		Double_t combkgbd = (obsrvshldrs - rarebkgleft)*bdmsswin/msswin; Double_t combkgbderr = 0.35;
+		Double_t combkgbd = 0.76; Double_t combkgbderr = 0.35;
 		Double_t combkgbs = (obsrvshldrs - rarebkgleft)*bsmsswin/msswin; Double_t combkgbserr = 0.53;
 		cout << "CombBkgd (shoulders) = " << combkg << endl;
 		cout << "CombBkgd (in Bd blind window) = " << combkgbd << " +- " << combkgbderr << endl;
 		cout << "CombBkgd (in Bs blind window) = " << combkgbs << "+- " << combkgbserr << endl << endl;
 		
-		Double_t exptbdevnts = h_sigbdE->Integral(lobldbin,lobsmssbin); Double_t exptbdevntserr = 0.010;
+//		Double_t exptbdevnts = h_sigbdE->Integral(lobldbin,lobsmssbin); Double_t exptbdevntserr = 0.010;
+		Double_t exptbdevnts = 0.10; Double_t exptbdevntserr = 0.010;
 		Double_t exptbdevntsbswin = h_sigbdE->Integral(lobsmssbin,hibldbin);
 		Double_t exptbsevnts = h_sigbsE->Integral(lobsmssbin,hibldbin); Double_t exptbsevntserr = 0.18;
 		Double_t exptbsevntsbdwin = h_sigbsE->Integral(lobldbin,lobsmssbin);
@@ -1545,14 +1515,11 @@ if (cms12bd) {
 		// Add rare background templates
 		sfact = 1;
 		ename[0] = rarebkgerrname;
-		nps_low[0] = -rarebkgshldrserr/rarebkgshldrs;
-		nps_high[0] = rarebkgshldrserr/rarebkgshldrs;
+		nps_low[0] = -rarebkgbdwinerr/rarebkgbdwin;
+		nps_high[0] = rarebkgbdwinerr/rarebkgbdwin;		
 		
-//		ename[1] = pdsname;
-//		nps_low[1] = -0.0148983/0.163842;
-//		nps_high[1] = 0.0148983/0.163842;
 		
-		nps_count=1;
+		nps_count = 1;
 		
 		pssnflg = 0;
 		sclflg = 0;
@@ -1582,10 +1549,10 @@ if (cms12bd) {
 		
 		sfact = 1;
 		ename[0] = combbkgerrname;
-		nps_low[0] = 0.;
-		nps_high[0] = 0.;
+		nps_low[0] = -combkgbderr/combkgbd;
+		nps_high[0] = combkgbderr/combkgbd;
 		
-		nps_count=0;
+		nps_count = 1;
 		
 		pssnflg = 0;
 		sclflg = 0;
@@ -1602,38 +1569,6 @@ if (cms12bd) {
 							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
 		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for combinatorial background" << endl;
 		
-		// Add Bs background templates
-		for(int i=0;i<NSYS;i++)
-		{
-			nps_low[i]  = 0;
-			nps_high[i] = 0;
-			lowsigma[i] = 0;
-			highsigma[i]= 0;
-			lowshape[i] = 0;
-			highshape[i]= 0;
-		}
-		
-		sfact = 1;
-		
-		ename[0] = unconstrned;
-		nps_low[0] = -0.0148983/0.163842;
-		nps_high[0] = 0.0148983/0.163842;
-		
-		nps_count=1;
-		
-		pssnflg = 0;
-		sclflg = 0;
-		// Construct test/null hypothesis for pseudo-experiments.
-		nullhyp_pe->add_template(h_signalbsE,sfact,nps_count,ename,nps_low,nps_high,
-								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
-		testhyp_pe->add_template(h_signalbsE,sfact,nps_count,ename,nps_low,nps_high,
-								 lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
-		nps_count=0;
-		nullhyp->add_template(h_signalbsE,sfact,nps_count,ename,nps_low,nps_high,
-							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
-		testhyp->add_template(h_signalbsE,sfact,nps_count,ename,nps_low,nps_high,
-							  lowshape,lowsigma,highshape,highsigma,pssnflg,sclflg,channameE);
-		cout << "Finished setting up nullhyp, testhyp, nullhyp_pe, testhyp_pe for rare background" << endl;
 		
 		// Add signal templates
 		for(int i=0;i<NSYS;i++) {
@@ -1645,27 +1580,25 @@ if (cms12bd) {
 			highshape[i] = 0;
 		}		
 			
-		ename[0] = toteffname;
-		nps_low[0] = -totefferr/toteff;
-		nps_high[0] = totefferr/toteff;
+		ename[0] = pdfhadron;
+		//nps_low[0] = -0.021/0.267;
+		//nps_high[0] = 0.021/0.267;
+		nps_low[0] = -0.1192/3.5487;
+		nps_high[0] = 0.1192/3.5487;
+		//nps_low[0] = -0.2958/3.745;
+		//nps_high[0] = 0.2958/3.745;
+
+		ename[1] = toteffname;
+		nps_low[1] = -totefferr/toteff;
+		nps_high[1] = totefferr/toteff;
 		
-		ename[1] = experrname;
-		nps_low[1] = -totbdwinerr/totbdwin;
-		nps_high[1] = totbdwinerr/totbdwin;
-		
-		ename[2] = accname;
-		nps_low[2] = -0.011/0.226;
-		nps_high[2] = 0.011/0.226;
-		
-		ename[3] = pddname;
-		nps_low[3] = -0.036679/0.531088;
-		nps_high[3] = 0.036679/0.531088;
-		
-		ename[4] = peakerrname;
-		nps_low[4] = -rarebkgbdwinerr/rarebkgbdwin;
-		nps_high[4] = rarebkgbdwinerr/rarebkgbdwin;
-		
-		nps_count = 5;
+		ename[2] = experrname;
+//		nps_low[2] = -totbdwinerr/totbdwin;
+//		nps_high[2] = totbdwinerr/totbdwin;
+		nps_low[2] = -exptbdevntserr/exptbdevnts;
+		nps_high[2] = exptbdevntserr/exptbdevnts;
+			
+		nps_count = 3;
 		
 		sfact = 1.;
 		
@@ -1886,27 +1819,99 @@ string s_lhcbchan2[N_MASS_BINS12][N_BDT_BINS12];
 
 // Setting up the Bd LHCb winter 11-12 data
 const static expectation_t bkg3[N_MASS_BINS12][N_BDT_BINS12] = {
-	{expectation_t(2003, 38, 39), expectation_t(61, 12, 11), expectation_t(16.6, 4.3, 4.1), expectation_t(4.7, 1.3, 1.2),
-		expectation_t(3.52, 1.13, 0.97), expectation_t(1.11, 0.71, 0.50), expectation_t(1.62, 0.76, 0.59), expectation_t(0.54, 0.53, 0.29)}
+	{expectation_t(207.6, 4.5, 4.5), expectation_t(6.4, 1.3, 1.2), expectation_t(1.74, 0.47, 0.45), expectation_t(0.49, 0.14, 0.13),
+		expectation_t(0.37, 0.13, 0.11), expectation_t(0.121, 0.074, 0.059), expectation_t(0.187, 0.087, 0.067), expectation_t(0.063, 0.061, 0.033)},
+	{expectation_t(205.9, 4.5, 4.5), expectation_t(6.3, 1.2, 1.2), expectation_t(1.72, 0.46, 0.44), expectation_t(0.49, 0.14, 0.13),
+		expectation_t(0.37, 0.12, 0.11), expectation_t(0.119, 0.073, 0.058), expectation_t(0.181, 0.084, 0.065), expectation_t(0.061, 0.059, 0.032)},
+	{expectation_t(102.3, 2.2, 2.2), expectation_t(3.15, 0.61, 0.60), expectation_t(0.85, 0.23, 0.22), expectation_t(0.241, 0.068, 0.062),
+		expectation_t(0.182, 0.061, 0.053), expectation_t(0.059, 0.036, 0.029), expectation_t(0.088, 0.041, 0.032), expectation_t(0.030, 0.029, 0.015)},
+	{expectation_t(203.5, 4.4, 4.4), expectation_t(6.3, 1.2, 1.2), expectation_t(1.69, 0.45, 0.43), expectation_t(0.48, 0.13, 0.12),
+		expectation_t(0.36, 0.12, 0.10), expectation_t(0.115, 0.073, 0.055), expectation_t(0.172, 0.079, 0.062), expectation_t(0.058, 0.056, 0.030)},
+	{expectation_t(601, 13, 13), expectation_t(18, 3.6, 3.5), expectation_t(5.0, 1.3, 1.3), expectation_t(1.40, 0.38, 0.35),
+		expectation_t(1.06, 0.34, 0.30), expectation_t(0.33, 0.21, 0.15), expectation_t(0.48, 0.22, 0.18), expectation_t(0.163, 0.158, 0.086)},
+	{expectation_t(197.1, 4.1, 4.1), expectation_t(6.0, 1.2, 1.1), expectation_t(1.62, 0.42, 0.41), expectation_t(0.46, 0.12, 0.11),
+		expectation_t(0.348, 0.108, 0.096), expectation_t(0.111, 0.065, 0.050), expectation_t(0.152, 0.067, 0.057), expectation_t(0.051, 0.049, 0.027)},
+	{expectation_t(97.9, 2.0, 2.0), expectation_t(2.99, 0.57, 0.57), expectation_t(0.81, 0.21, 0.20), expectation_t(0.227, 0.058, 0.055),
+		expectation_t(0.173, 0.053, 0.047), expectation_t(0.055, 0.031, 0.025), expectation_t(0.074, 0.033, 0.028), expectation_t(0.025, 0.024, 0.013)},
+	{expectation_t(194.7, 4.1, 4.0), expectation_t(5.9, 1.1, 1.1), expectation_t(1.60, 0.41, 0.40), expectation_t(0.45, 0.11, 0.11),
+		expectation_t(0.343, 0.102, 0.092), expectation_t(0.110, 0.061, 0.048), expectation_t(0.144, 0.063, 0.055), expectation_t(0.049, 0.047, 0.026)},
+	{expectation_t(193.2, 4.0, 4.0), expectation_t(5.9, 1.1, 1.1), expectation_t(1.58, 0.40, 0.39), expectation_t(0.45, 0.11, 0.11),
+		expectation_t(0.339, 0.101, 0.089), expectation_t(0.109, 0.058, 0.048), expectation_t(0.140, 0.060, 0.054), expectation_t(0.048, 0.045, 0.026)}
 };
 
 const static expectation_t misid3[N_MASS_BINS12][N_BDT_BINS12] = {
-	{expectation_t(0.71, 0.36, 0.26), expectation_t(0.355, 0.146, 0.088), expectation_t(0.279, 0.110, 0.068), expectation_t(0.249, 0.099, 0.055),
-		expectation_t(0.280, 0.109, 0.062), expectation_t(0.264, 0.103, 0.057), expectation_t(0.275, 0.108, 0.060), expectation_t(0.267, 0.106, 0.069)}
+	{expectation_t(0.084, 0.043, 0.031), expectation_t(0.042, 0.017, 0.010), expectation_t(0.0333, 0.0131, 0.0079), expectation_t(0.0297, 0.0117, 0.0065),
+		expectation_t(0.0334, 0.0130, 0.0073), expectation_t(0.0315, 0.0122, 0.0067), expectation_t(0.0328, 0.0128, 0.0070), expectation_t(0.0317, 0.0129, 0.0081)},
+	{expectation_t(0.096, 0.054, 0.036), expectation_t(0.049, 0.022, 0.013), expectation_t(0.038, 0.017, 0.010), expectation_t(0.0346, 0.0147, 0.0091),
+		expectation_t(0.039, 0.016, 0.010), expectation_t(0.0371, 0.0149, 0.00100), expectation_t(0.038, 0.016, 0.010), expectation_t(0.036, 0.017, 0.010)},
+	{expectation_t(0.051, 0.030, 0.019), expectation_t(0.0249, 0.0122, 0.0074), expectation_t(0.0204, 0.0096, 0.0058), expectation_t(0.0186, 0.0080, 0.0052),
+		expectation_t(0.0209, 0.0088, 0.0059), expectation_t(0.0200, 0.0080, 0.0057), expectation_t(0.0206, 0.0086, 0.0058), expectation_t(0.0193, 0.0093, 0.0057)},
+	{expectation_t(0.104, 0.062, 0.040), expectation_t(0.053, 0.025, 0.016), expectation_t(0.042, 0.019, 0.012), expectation_t(0.038, 0.016, 0.011),
+		expectation_t(0.043, 0.018, 0.013), expectation_t(0.041, 0.017, 0.012), expectation_t(0.042, 0.018, 0.012), expectation_t(0.040, 0.019, 0.012)},
+	{expectation_t(0.256, 0.143, 0.096), expectation_t(0.130, 0.059, 0.036), expectation_t(0.102, 0.045, 0.027), expectation_t(0.092, 0.039, 0.024),
+		expectation_t(0.104, 0.043, 0.027), expectation_t(0.099, 0.040, 0.026), expectation_t(0.102, 0.042, 0.027), expectation_t(0.097, 0.044, 0.027)},
+	{expectation_t(0.048, 0.021, 0.017), expectation_t(0.0242, 0.0073, 0.0049), expectation_t(0.0190, 0.0055, 0.0026), expectation_t(0.0169, 0.0049, 0.0026),
+		expectation_t(0.0190, 0.0055, 0.0029), expectation_t(0.0179, 0.0052, 0.0026), expectation_t(0.0186, 0.0054, 0.0028), expectation_t(0.0181, 0.0056, 0.0038)},
+	{expectation_t(0.0175, 0.0068, 0.0059), expectation_t(0.0088, 0.0021, 0.0016), expectation_t(0.0069, 0.0015, 0.0012), expectation_t(0.00620, 0.00118, 0.00094),
+		expectation_t(0.0070, 0.0013, 0.0010), expectation_t(0.00657, 0.00115, 0.00095), expectation_t(0.00683, 0.00126, 0.00100), expectation_t(0.0066, 0.0016, 0.0013)},
+	{expectation_t(0.0257, 0.0104, 0.0087), expectation_t(0.0130, 0.0032, 0.0028), expectation_t(0.0103, 0.0024, 0.0021), expectation_t(0.0093, 0.0019, 0.0019),
+		expectation_t(0.0104, 0.0021, 0.0021), expectation_t(0.0099, 0.0019, 0.0020), expectation_t(0.0102, 0.0020, 0.0021), expectation_t(0.0097, 0.0025, 0.0021)},
+	{expectation_t(0.0172, 0.0092, 0.0064), expectation_t(0.0089, 0.0034, 0.0027), expectation_t(0.0071, 0.0026, 0.0021), expectation_t(0.0064, 0.0022, 0.0019),
+		expectation_t(0.0071, 0.0025, 0.0022), expectation_t(0.0067, 0.0023, 0.0021), expectation_t(0.0070, 0.0024, 0.0021), expectation_t(0.0067, 0.0026, 0.0020)}
 };
 
 const static expectation_t xfeed3[N_MASS_BINS12][N_BDT_BINS12] = {
-	{expectation_t(0.40, 0.11, 0.12), expectation_t(0.193, 0.033, 0.030), expectation_t(0.153, 0.023, 0.021), expectation_t(0.136, 0.017, 0.015),
-		expectation_t(0.158, 0.019, 0.017), expectation_t(0.164, 0.019, 0.017), expectation_t(0.187, 0.022, 0.020), expectation_t(0.194, 0.036, 0.033)}
+	{expectation_t(0.0064, 0.0018, 0.0019), expectation_t(0.00310, 0.00056, 0.00050), expectation_t(0.00246, 0.00040, 0.00036), expectation_t(0.00219, 0.00030, 0.00026),
+		expectation_t(0.00253, 0.00034, 0.00030), expectation_t(0.00263, 0.00033, 0.00029), expectation_t(0.00300, 0.00039, 0.00034), expectation_t(0.00311, 0.00060, 0.00055)},
+	{expectation_t(0.0073, 0.0021, 0.0021), expectation_t(0.00351, 0.00063, 0.00057), expectation_t(0.00279, 0.00045, 0.00040), expectation_t(0.00248, 0.00034, 0.00030),
+		expectation_t(0.00287, 0.00038, 0.00034), expectation_t(0.00298, 0.00037, 0.00033), expectation_t(0.00340, 0.00044, 0.00039), expectation_t(0.00353, 0.00068, 0.00062)},
+	{expectation_t(0.0040, 0.0011, 0.0012), expectation_t(0.00195, 0.00035, 0.00032), expectation_t(0.00155, 0.00025, 0.00022), expectation_t(0.00138, 0.00019, 0.00016),
+		expectation_t(0.00159, 0.00021, 0.00019), expectation_t(0.00165, 0.00021, 0.00018), expectation_t(0.00188, 0.00024, 0.00021), expectation_t(0.00196, 0.00038, 0.00034)},
+	{expectation_t(0.0091, 0.0026, 0.0026), expectation_t(0.00439, 0.00079, 0.00071), expectation_t(0.002348, 0.00057, 0.00050), expectation_t(0.00310, 0.00042, 0.00037),
+		expectation_t(0.00359, 0.00047, 0.00042), expectation_t(0.00373, 0.00046, 0.00041), expectation_t(0.00425, 0.00055, 0.00048), expectation_t(0.00441, 0.00085, 0.00077)},
+	{expectation_t(0.043, 0.012, 0.012), expectation_t(0.0207, 0.0037, 0.0033), expectation_t(0.0164, 0.0026, 0.0024), expectation_t(0.0146, 0.0020, 0.0017),
+		expectation_t(0.0169, 0.0022, 0.0020), expectation_t(0.0175, 0.0021, 0.0019), expectation_t(0.0200, 0.0026, 0.0022), expectation_t(0.0208, 0.0040, 0.0036)},
+	{expectation_t(0.0207, 0.0078, 0.0080), expectation_t(0.0134, 0.0024, 0.0021), expectation_t(0.0106, 0.0017, 0.0015), expectation_t(0.0094, 0.0013, 0.0011),
+		expectation_t(0.0109, 0.0014, 0.0013), expectation_t(0.0113, 0.0014, 0.0012), expectation_t(0.0129, 0.0017, 0.0014), expectation_t(0.0134, 0.0026, 0.0023)},
+	{expectation_t(0.0219, 0.0063, 0.0064), expectation_t(0.0106, 0.0020, 0.0017), expectation_t(0.0084, 0.0014, 0.0012), expectation_t(0.00745, 0.00108, 0.00093),
+		expectation_t(0.0086, 0.0012, 0.0011), expectation_t(0.0090, 0.0012, 0.0011), expectation_t(0.0102, 0.0014, 0.0012), expectation_t(0.0106, 0.0021, 0.0019)},
+	{expectation_t(0.089, 0.025, 0.026), expectation_t(0.0427, 0.0079, 0.0070), expectation_t(0.0339, 0.0056, 0.0050), expectation_t(0.0302, 0.0042, 0.0037),
+		expectation_t(0.0350, 0.0048, 0.0042), expectation_t(0.0363, 0.0046, 0.0041), expectation_t(0.0414, 0.0055, 0.0049), expectation_t(0.0429, 0.0084, 0.0075)},
+	{expectation_t(0.192, 0.052, 0.055), expectation_t(0.093, 0.016, 0.014), expectation_t(0.073, 0.011, 0.010), expectation_t(0.0653, 0.0079, 0.0071),
+		expectation_t(0.0756, 0.0090, 0.0080), expectation_t(0.0785, 0.0086, 0.0077), expectation_t(0.0895, 0.0102, 0.0092), expectation_t(0.093, 0.017, 0.016)}
 };
 
 const static expectation_t sig3[N_MASS_BINS12][N_BDT_BINS12] = {
-	{expectation_t(0.30, 0.086, 0.090), expectation_t(0.145, 0.027, 0.024), expectation_t(0.115, 0.020, 0.017), expectation_t(0.102, 0.014, 0.013),
-		expectation_t(0.119, 0.017, 0.015), expectation_t(0.123, 0.016, 0.015), expectation_t(0.140, 0.019, 0.017), expectation_t(0.145, 0.030, 0.026)}
+	{expectation_t(0.0055, 0.0017, 0.0016), expectation_t(0.00266, 0.00054, 0.00047), expectation_t(0.00211, 0.00039, 0.00034), expectation_t(0.00188, 0.00030, 0.00026),
+		expectation_t(0.00218, 0.00034, 0.00030), expectation_t(0.00226, 0.00034, 0.00030), expectation_t(0.00257, 0.00040, 0.00035), expectation_t(0.00266, 0.00057, 0.00050)},
+	{expectation_t(0.0136, 0.0040, 0.0040), expectation_t(0.0065, 0.0013, 0.0011), expectation_t(0.00519, 0.00092, 0.00082), expectation_t(0.00463, 0.00070, 0.00063),
+		expectation_t(0.00537, 0.00079, 0.00072), expectation_t(0.00556, 0.00079, 0.00071), expectation_t(0.00634, 0.00093, 0.00083), expectation_t(0.0066, 0.0014, 0.0012)},
+	{expectation_t(0.0119, 0.0034, 0.0035), expectation_t(0.00573, 0.00109, 0.00096), expectation_t(0.00454, 0.00078, 0.00070), expectation_t(0.00405, 0.00059, 0.00053),
+		expectation_t(0.00470, 0.00065, 0.00059), expectation_t(0.00487, 0.00065, 0.00059), expectation_t(0.00555, 0.00077, 0.00069), expectation_t(0.0057, 0.0012, 0.0010)},
+	{expectation_t(0.037, 0.011, 0.011), expectation_t(0.0177, 0.0033, 0.0029), expectation_t(0.0140, 0.0024, 0.0021), expectation_t(0.0125, 0.0018, 0.0016),
+		expectation_t(0.0145, 0.0020, 0.0019), expectation_t(0.0151, 0.0020, 0.0018), expectation_t(0.0172, 0.0023, 0.0021), expectation_t(0.0178, 0.0035, 0.0032)},
+	{expectation_t(0.165, 0.048, 0.049), expectation_t(0.080, 0.015, 0.013), expectation_t(0.0631, 0.0106, 0.0096), expectation_t(0.0563, 0.0080, 0.0072),
+		expectation_t(0.0652, 0.0091, 0.0083), expectation_t(0.0676, 0.0089, 0.0081), expectation_t(0.0771, 0.0105, 0.0095), expectation_t(0.080, 0.016, 0.014)},
+	{expectation_t(0.037, 0.011, 0.011), expectation_t(0.0177, 0.0033, 0.0029), expectation_t(0.0140, 0.0024, 0.0021), expectation_t(0.0125, 0.0018, 0.0016),
+		expectation_t(0.0145, 0.0020, 0.0018), expectation_t(0.0151, 0.0020, 0.0018), expectation_t(0.0172, 0.0024, 0.0021), expectation_t(0.0178, 0.0035, 0.0032)},
+	{expectation_t(0.0119, 0.0034, 0.0035), expectation_t(0.00573, 0.00108, 0.00096), expectation_t(0.00454, 0.00078, 0.00070), expectation_t(0.00405, 0.00059, 0.00052),
+		expectation_t(0.00469, 0.00066, 0.00061), expectation_t(0.00487, 0.00066, 0.00060), expectation_t(0.00555, 0.00078, 0.00069), expectation_t(0.0057, 0.0012, 0.0010)},
+	{expectation_t(0.0136, 0.0040, 0.0040), expectation_t(0.0065, 0.0013, 0.0011), expectation_t(0.00519, 0.00093, 0.00081), expectation_t(0.00463, 0.00070, 0.00062),
+		expectation_t(0.00537, 0.00080, 0.00072), expectation_t(0.00557, 0.00079, 0.00071), expectation_t(0.00635, 0.00093, 0.00083), expectation_t(0.0066, 0.0014, 0.0012)},
+	{expectation_t(0.0052, 0.0016, 0.0016), expectation_t(0.00249, 0.00053, 0.00046), expectation_t(0.00198, 0.00039, 0.00034), expectation_t(0.00176, 0.00030, 0.00027),
+		expectation_t(0.00204, 0.00035, 0.00030), expectation_t(0.00212, 0.00035, 0.00030), expectation_t(0.00242, 0.00041, 0.00035), expectation_t(0.00250, 0.00056, 0.00049)}
 };
 
 const static int obs3[N_MASS_BINS12][N_BDT_BINS12] = {
-	{1904, 50, 20, 5, 2, 1, 4, 1}
+	{177, 8, 3, 0, 0, 0, 1, 1},
+	{199, 3, 3, 1, 0, 0, 1, 0},
+	{110, 1, 1, 1, 1, 0, 0, 0},
+	{203, 11, 3, 0, 0, 0, 0, 0},
+	{578, 18, 5, 2, 1, 1, 1, 0},
+	{177, 3, 1, 0, 0, 0, 0, 0},
+	{92, 0, 1, 0, 0, 0, 0, 0},
+	{182, 3, 2, 0, 0, 0, 1, 0},
+	{186, 3, 1, 1, 0, 0, 0, 0}
 };
 // Histos to hold the winter 2011-2012 data 
 TH1D *h_lhcbbkg3[N_MASS_BINS12][N_BDT_BINS12];
