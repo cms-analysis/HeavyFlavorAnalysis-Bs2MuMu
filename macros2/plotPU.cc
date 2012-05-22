@@ -50,13 +50,14 @@ void plotPU::makeAll(int channels) {
   effVsNpv("ips",      -2.0,   "#delta_{3D}/#sigma(#delta_{3D}) < 2",  "A", candName.c_str(), "Ao"); 
   effVsNpv("pvavew8",  0.6,    "<w_{trk} > 0.6",     "A", candName.c_str(), "Ao"); 
 
+	/////////////// this part was commented out ////////////////
 //   effVsNpv("iso0",     0.75, "#epsilon(I0>0.75)",           "A", candName.c_str(), "Ao"); 
 //   effVsNpv("iso1",     0.75, "#epsilon(I1>0.75)",           "A", candName.c_str(), "Ao"); 
 //   effVsNpv("iso2",     0.75, "#epsilon(I2>0.75)",           "A", candName.c_str(), "Ao"); 
 //   effVsNpv("iso3",     0.75, "#epsilon(I3>0.75)",           "A", candName.c_str(), "Ao"); 
 //   effVsNpv("iso4",     0.75, "#epsilon(I4>0.75)",           "A", candName.c_str(), "Ao"); 
 //   effVsNpv("iso5",     0.75, "#epsilon(I5>0.75)",           "A", candName.c_str(), "Ao"); 
-
+	////////////////////
   candName = "candAnaBs2JpsiPhi"; 
   fFile = "CsData"; 
   cd(fFile.c_str());  
@@ -81,7 +82,7 @@ void plotPU::makeAll(int channels) {
 // ----------------------------------------------------------------------
 void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const char *chan, const char *dir, const char *selection) {
 
-  TH1D *h[15];
+  TH1D *h[25];
   
   bool larger(true); 
   if (cut < 0) {
@@ -93,15 +94,15 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
   AnalysisDistribution a("A_pvz"); 
   cout << "==> gDirectory = "; gDirectory->pwd(); 
   c0->Clear();
-  c0->Divide(4,4);
-  for (int i = 0; i < 15; ++i) {
+  c0->Divide(5,5);
+  for (int i = 0; i < 25; ++i) {
     c0->cd(i+1);
     // A_Npv0/A_npv0_iso
-    //    cout << "   directory: " << Form("%s/Npv%d", dir, i) << endl;
+	  cout << "   directory: " << Form("%s/Npv%d", dir, i) << endl;
     gFile->cd(Form("%s/%s_Npv%d", dir, chan, i));
-    //     cout << "     sbsDistribution(" << Form("%s_npv%d_%s", chan, i, var) << ", " << selection << ") " 
-    // 	 << var << (larger?" > ":" < ") << cut 
-    // 	  << endl;
+    cout << "     sbsDistribution(" << Form("%s_npv%d_%s", chan, i, var) << ", " << selection << ") " 
+	  << var << (larger?" > ":" < ") << cut 
+	  << endl;
     h[i] = a.sbsDistribution(Form("%s_npv%d_%s", chan, i, var), selection);
     // -- check that the bins are not negative. If they are, reset to zero
     for (int ix = 1; ix <= h[i]->GetNbinsX(); ++ix) {
@@ -110,7 +111,7 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
 	h[i]->SetBinError(ix, 0.); 
       }	
     }
-
+	  cout << "Number of entries in the " << i <<"th hist = " << h[i]->GetEntries() << endl;
     h[i]->Draw("hist");
   }
 
@@ -118,10 +119,10 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
     c0->SaveAs(Form("%s/effVsNpv0-%s-%s-%s-%s-0_%d.pdf", fDirectory.c_str(), fFile.c_str(), dir, chan, var, static_cast<int>(100.*cut)));
 
 
-  TH1D *heff = new TH1D("heff", "", 15, 0., 30.);
+  TH1D *heff = new TH1D("heff", "", 25, 0., 50.);/// changed from 15, 0., 30 to 25, 0., 50.
   double eff(0.); 
   double stat(0.); 
-  for (int i = 0; i < 15; ++i) {
+  for (int i = 0; i < 25; ++i) {
     HistCutEfficiency a(h[i]); 
     a.fVerbose = 1; 
     a.fIncludeOverflow = 0;
@@ -151,13 +152,15 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
     heff->SetBinContent(i+1, eff); 
     heff->SetBinError(i+1, effE); 
   }
+	cout << "****Made eff histo, now will make the pdf..." << endl;
 
   c0->Clear();
   gStyle->SetOptStat(0); 
   gStyle->SetOptFit(0); 
   //  setTitles(heff, "N_{PV}", Form("%s", ylabel), 0.05); 
   setTitles(heff, "N_{PV}", "efficiency", 0.06, 1.1, 1.4); 
-  heff->SetMaximum(1.05);
+//	heff->SetMaximum(1.05);
+	heff->SetMaximum(1.25);
   if (heff->GetMinimum() > 0.5) {
     heff->SetMinimum(0.75);
   } else {
@@ -176,10 +179,11 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
 //   tl->DrawLatex(0.25, 0.82, Form("#chi^{2}/dof = %3.1f/%i", 
 // 				 heff->GetFunction("pol0")->GetChisquare(), 
 // 				 heff->GetFunction("pol0")->GetNDF())); 
-
+	cout << "*****trying to draw the histo" << endl; ///HERE is the PROBLEM
+	heff->Draw("hist");
   stamp(0.18, "CMS, 5 fb^{-1}", 0.65, "#sqrt{s} = 7 TeV"); 
   //  stamp(0.18, "CMS, 5.3 fb^{-1}", 0.65, "#sqrt{s} = 7 TeV"); 
-  
+  cout << "*****Do Print = " << fDoPrint << endl;
   if (fDoPrint)  
     c0->SaveAs(Form("%s/effVsNpv-%s-%s-%s-%s-0_%d.pdf", fDirectory.c_str(), fFile.c_str(), dir, chan, var, static_cast<int>(100.*cut)));
 

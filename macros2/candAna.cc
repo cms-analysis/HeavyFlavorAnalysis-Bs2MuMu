@@ -743,7 +743,7 @@ void candAna::fillCandidateHistograms(int offset) {
 
   // -- NPV analysis distributions
   int ipv = 0; 
-  if (fPvN < 30) {
+  if (fPvN < 50) {
     ipv = fPvN/2; 
   } else {
     ipv = NADPV-1; 

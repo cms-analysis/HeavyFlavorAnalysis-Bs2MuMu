@@ -234,7 +234,7 @@ public:
     ;
   
   // -- Analysis distributions in bins of n(PV)
-#define NADPV 15
+#define NADPV 25
   AnalysisDistribution   *fpNpvPvN[NADPV][NAD];
   AnalysisDistribution   *fpNpvAveW8[NADPV][NAD];
   AnalysisDistribution   *fpNpvChi2Dof[NADPV][NAD];
