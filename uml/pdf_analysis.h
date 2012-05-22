@@ -21,11 +21,14 @@
 #include "RooDataHist.h"
 #include "RooDataSet.h"
 #include "RooPlot.h"
+#include "RooConstVar.h"
 
 using namespace std;
 using namespace RooFit;
 
 class pdf_analysis {
+
+
 public:
   pdf_analysis(bool print, string meth, string ch_s, string range = "all");
   void set_ws(RooWorkspace *ws) {ws_ = ws;}
@@ -41,6 +44,8 @@ public:
   void define_rare();
   void define_bkg();
   void define_signalsrare();
+
+  void set_SMconstraint(bool SM = true) { SM_ = SM;}
   
   string define_pdf_sum(string name);
   void define_all(); // final pdf with fractional components, and also extended
@@ -53,6 +58,7 @@ public:
   string pdf_name;
   string rdh_name;
 
+
 protected:
   bool print_;
   string meth_;
@@ -60,6 +66,9 @@ protected:
   RooWorkspace* ws_;
   RooAbsData* rds_;
   string range_;
+
+  double ratio_;
+  bool SM_;
   
 };
 

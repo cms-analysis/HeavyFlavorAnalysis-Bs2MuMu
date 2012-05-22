@@ -105,8 +105,6 @@ void pdf_toyMC::generate(int NExp, string pdf_toy) {
     double printlevel = -1;
     if (i == 1) printlevel = 1;
     //////
-
-    //string temp =
     fit_pdf(pdf_toy_, data, printlevel);
     //////
     if (i == 1) {
@@ -118,11 +116,13 @@ void pdf_toyMC::generate(int NExp, string pdf_toy) {
     /// test statistics
     // PULL
     double bs_pull = (ws_->var("N_bs")->getVal() - estimate_bs) / ws_->var("N_bs")->getError();
-    double bd_pull = (ws_->var("N_bd")->getVal() - estimate_bd) / ws_->var("N_bd")->getError();
     pull_bs->setVal(bs_pull);
-    pull_bd->setVal(bd_pull);
     pull_rds_bs->add(*pull_bs);
-    pull_rds_bd->add(*pull_bd);
+    if (!SM_) {
+      double bd_pull = (ws_->var("N_bd")->getVal() - estimate_bd) / ws_->var("N_bd")->getError();
+      pull_bd->setVal(bd_pull);
+      pull_rds_bd->add(*pull_bd);
+    }
     
     // H_0
     if (pdf_toy_ == "pdf_ext_total") {
@@ -131,7 +131,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy) {
       bkg->append(*data_comb);
       fit_pdf("total", bkg, printlevel);
       if (ws_->var("N_bs")->getVal() >= estimate_bs) p_bs++;
-      if (ws_->var("N_bd")->getVal() >= estimate_bd) p_bd++;
+      if (!SM_) if (ws_->var("N_bs")->getVal() >= estimate_bd) p_bd++;
     }
   }
 
@@ -139,10 +139,11 @@ void pdf_toyMC::generate(int NExp, string pdf_toy) {
   fit_pulls();
   
   double p_value_bs = p_bs / NExp;
-  double p_value_bd = p_bd / NExp;
   cout << "p-value bs = " << p_value_bs << endl;
-  cout << "p-value bd = " << p_value_bd << endl;
-
+  if (!SM_) {
+    double p_value_bd = p_bd / NExp;
+    cout << "p-value bd = " << p_value_bd << endl;
+  }
   return;
 }
 
@@ -165,25 +166,28 @@ void pdf_toyMC::fit_pulls() {
   rp_bs->Draw();
   string address = "fig/bs_pull_" + meth_ + "_" + ch_s_ + "_" + pdf_toy_;
   canvas_bs->Print( (address + ".gif").c_str());
+  canvas_bs->Print( (address + ".pdf").c_str());
   delete rp_bs;
   delete canvas_bs;
   
-  RooRealVar* mean_bd = new RooRealVar("mean_bd", "mean_bd", -5., 5.);
-  RooRealVar* sigma_bd = new RooRealVar("sigma_bd", "sigma_bd", 0.001, 5.);
-  RooGaussian* gauss_bd = new RooGaussian("gauss_bd", "gauss_bd", *pull_bd, *mean_bd, *sigma_bd);
-  gauss_bd->fitTo(*pull_rds_bd);
+  if (!SM_) {
+    RooRealVar* mean_bd = new RooRealVar("mean_bd", "mean_bd", -5., 5.);
+    RooRealVar* sigma_bd = new RooRealVar("sigma_bd", "sigma_bd", 0.001, 5.);
+    RooGaussian* gauss_bd = new RooGaussian("gauss_bd", "gauss_bd", *pull_bd, *mean_bd, *sigma_bd);
+    gauss_bd->fitTo(*pull_rds_bd);
   
-  RooPlot *rp_bd = pull_bd->frame();
-  pull_rds_bd->plotOn(rp_bd, Binning(40));
-  gauss_bd->plotOn(rp_bd, LineColor(kBlue));
-  gauss_bd->paramOn(rp_bd, Layout(0.66, 0.9, 0.9));
-  TCanvas* canvas_bd = new TCanvas("canvas_bd", "canvas_bd", 600, 600); 
-  rp_bd->Draw();
-  address = "fig/bd_pull_" + meth_ + "_" + ch_s_ + "_" + pdf_toy_;
-  canvas_bd->Print( (address + ".gif").c_str());
-  delete rp_bd;
-  delete canvas_bd;
-  
+    RooPlot *rp_bd = pull_bd->frame();
+    pull_rds_bd->plotOn(rp_bd, Binning(40));
+    gauss_bd->plotOn(rp_bd, LineColor(kBlue));
+    gauss_bd->paramOn(rp_bd, Layout(0.66, 0.9, 0.9));
+    TCanvas* canvas_bd = new TCanvas("canvas_bd", "canvas_bd", 600, 600);
+    rp_bd->Draw();
+    address = "fig/bd_pull_" + meth_ + "_" + ch_s_ + "_" + pdf_toy_;
+    canvas_bd->Print( (address + ".gif").c_str());
+    canvas_bd->Print( (address + ".pdf").c_str());
+    delete rp_bd;
+    delete canvas_bd;
+  }
 }
 
 void pdf_toyMC::unset_constant() {
@@ -209,12 +213,21 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
     pdf_name = "pdf_ext_" + define_pdf_sum(pdf_toy);
   }
 
-  RooMCStudy* mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), *ws_->var("Mass"), Binned(kFALSE), Silence(), Extended(1), FitOptions(Save(kTRUE),PrintEvalErrors(0))) ;
+  RooMCStudy* mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), *ws_->var("Mass"), Binned(kFALSE), Silence(), Extended(1), FitOptions(Save(kTRUE), PrintEvalErrors(0))) ;
+  cout << pdf_toy << endl;
+//  if(!pdf_toy.compare("bs")) {
+//    RooDLLSignificanceMCSModule sigModule(*ws_->var("N_bs"), 0);
+//    mcstudy->addModule(sigModule) ;
+//  }
+  cout << "toy MC on pdf: " << endl;
+  ws_->pdf(pdf_name.c_str())->Print();
   mcstudy->generateAndFit(NExp) ;
+  mcstudy->Print();
+  mcstudy->fitParDataSet().Print();
 
   // Make plots of the distributions of mean, the error on mean and the pull of mean
   RooPlot* frame1_bs = mcstudy->plotParam(*ws_->var("N_bs"), Bins(20)) ;
-  RooPlot* frame2_bs = mcstudy->plotError(*ws_->var("N_bs"), Bins(20)) ;
+  RooPlot* frame2_bs = mcstudy->plotError(*ws_->var("N_bs"), Bins(20), Range(0., 8.)) ;
   RooPlot* frame3_bs = mcstudy->plotPull(*ws_->var("N_bs"), Bins(20), FitGauss(kTRUE)) ;
   TCanvas* canvas_bs = new TCanvas("canvas_bs", "canvas_bs", 900, 500) ;
   canvas_bs->Divide(3,1) ;
@@ -223,28 +236,43 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
   canvas_bs->cd(3) ; gPad->SetLeftMargin(0.15) ; frame3_bs->GetYaxis()->SetTitleOffset(1.4) ; frame3_bs->Draw() ;
   string address = "fig/RooMCStudy_bs_" + pdf_toy + ".gif";
   canvas_bs->Print(address.c_str());
+  address = "fig/RooMCStudy_bs_" + pdf_toy + ".pdf";
+  canvas_bs->Print(address.c_str());
   delete frame1_bs;
   delete frame2_bs;
   delete frame3_bs;
   delete canvas_bs;
+//  if(!pdf_toy.compare("bs")) {
+//    TCanvas* sig_c = new TCanvas("sig_c", "sig_c", 600, 600);
+//    TH1* sig_h = mcstudy->fitParDataSet().createHistogram("significance_nullhypo_N_bs");
+//    cout << ">>>>>>>" << sig_h->GetXaxis()->GetTitle() << endl;
+//    sig_h->Draw();
+//    sig_c->Print("./fig/RooMCStudy_sig.gif");
+//    sig_c->Print("./fig/RooMCStudy_sig.pdf");
+//    delete sig_c;
+//  }
 
-  size_t found;
-  found = pdf_name.find("bd");
-  if (found != string::npos) {
-    RooPlot* frame1_bd = mcstudy->plotParam(*ws_->var("N_bd"), Bins(20)) ;
-    RooPlot* frame2_bd = mcstudy->plotError(*ws_->var("N_bd"), Bins(20)) ;
-    RooPlot* frame3_bd = mcstudy->plotPull(*ws_->var("N_bd"), Bins(20), FitGauss(kTRUE)) ;
-    TCanvas* canvas_bd = new TCanvas("canvas_bd", "canvas_bd", 900, 900) ;
-    canvas_bd->Divide(3,1) ;
-    canvas_bd->cd(1) ; gPad->SetLeftMargin(0.15) ; frame1_bd->GetYaxis()->SetTitleOffset(1.4) ; frame1_bd->Draw() ;
-    canvas_bd->cd(2) ; gPad->SetLeftMargin(0.15) ; frame2_bd->GetYaxis()->SetTitleOffset(1.4) ; frame2_bd->Draw() ;
-    canvas_bd->cd(3) ; gPad->SetLeftMargin(0.15) ; frame3_bd->GetYaxis()->SetTitleOffset(1.4) ; frame3_bd->Draw() ;
-    address = "fig/RooMCStudy_bd_" + pdf_toy + ".gif";
-    canvas_bd->Print(address.c_str());
-    delete frame1_bd;
-    delete frame2_bd;
-    delete frame3_bd;
-    delete canvas_bd;
+  if (!SM_) {
+    size_t found;
+    found = pdf_name.find("bd");
+    if (found != string::npos) {
+      RooPlot* frame1_bd = mcstudy->plotParam(*ws_->var("N_bd"), Bins(20)) ;
+      RooPlot* frame2_bd = mcstudy->plotError(*ws_->var("N_bd"), Bins(20)) ;
+      RooPlot* frame3_bd = mcstudy->plotPull(*ws_->var("N_bd"), Bins(20), FitGauss(kTRUE)) ;
+      TCanvas* canvas_bd = new TCanvas("canvas_bd", "canvas_bd", 900, 900) ;
+      canvas_bd->Divide(3,1) ;
+      canvas_bd->cd(1) ; gPad->SetLeftMargin(0.15) ; frame1_bd->GetYaxis()->SetTitleOffset(1.4) ; frame1_bd->Draw() ;
+      canvas_bd->cd(2) ; gPad->SetLeftMargin(0.15) ; frame2_bd->GetYaxis()->SetTitleOffset(1.4) ; frame2_bd->Draw() ;
+      canvas_bd->cd(3) ; gPad->SetLeftMargin(0.15) ; frame3_bd->GetYaxis()->SetTitleOffset(1.4) ; frame3_bd->Draw() ;
+      address = "fig/RooMCStudy_bd_" + pdf_toy + ".gif";
+      canvas_bd->Print(address.c_str());
+      address = "fig/RooMCStudy_bd_" + pdf_toy + ".pdf";
+      canvas_bd->Print(address.c_str());
+      delete frame1_bd;
+      delete frame2_bd;
+      delete frame3_bd;
+      delete canvas_bd;
+    }
   }
   return;
 }
@@ -259,28 +287,50 @@ void pdf_toyMC::pvalue(int NExp) {
   ws_->defineSet("obs", "Mass");
   ws_->defineSet("poi", "N_bs");
 
-  using namespace RooStats;
-
-//  ModelConfig model;
-//  model.SetWorkspace(*ws_);
-//  model.SetPdf(*ws_->pdf("pdf_ext_total"));
-//  RooAbsPdf* pdf_ext_total = ws_->pdf("pdf_ext_total");
-//  RooRealVar* Mass = ws_->var("Mass");
-//  RooRandom::randomGenerator()->SetSeed(0);
-//  RooDataSet* data = pdf_ext_total->generate(*Mass, Extended(1));
-//  ProfileLikelihoodCalculator plc;
-//  plc.SetData( *data);
-//  plc.SetModel(model);
-//  RooArgSet poi(*ws_->var("N_bs"));
-//  poi.setRealValue("N_bs",0);
-//  plc.SetNullParameters( poi);
-//  HypoTestResult* htr = plc.GetHypoTest();
-//  cout << "The p-value for the null is " << htr->NullPValue() << endl;
-//  return;
-
+  /// RooRandom::randomGenerator()->SetSeed(1231);
 
   RooDataSet *dataset = new RooDataSet("dataset", "dataset", *ws_->set("obs"));
-  dataset->add(*ws_->set("obs"));
+  RooDataSet* data_bs   = ws_->pdf("pdf_bs")->generate(*ws_->var("Mass"), NumEvents((int)estimate_bs), Extended(1));
+  RooDataSet* data_bd   = ws_->pdf("pdf_bd")->generate(*ws_->var("Mass"), NumEvents((int)estimate_bd), Extended(1));
+  RooDataSet* data_rare = ws_->pdf("pdf_rare")->generate(*ws_->var("Mass"), NumEvents((int)estimate_rare), Extended(1));
+  RooDataSet* data_comb = ws_->pdf("pdf_comb")->generate(*ws_->var("Mass"), NumEvents((int)estimate_comb), Extended(1));
+
+  dataset->append(*data_bs);
+  dataset->append(*data_bd);
+  dataset->append(*data_rare);
+  dataset->append(*data_comb);
+  dataset->Print();
+
+  RooPlot* plot = ws_->var("Mass")->frame();
+  dataset->plotOn(plot, Binning(20));
+  TCanvas* plot_c = new TCanvas("plot_c", "plot_c", 600, 600);
+  plot->Draw();
+  plot_c->Print("./fig/MCdataset.gif");
+  plot_c->Print("./fig/MCdataset.pdf");
+  delete plot;
+  delete plot_c;
+
+  using namespace RooStats;
+
+  ModelConfig model;
+  model.SetWorkspace(*ws_);
+  model.SetPdf(*ws_->pdf("pdf_ext_total"));
+  //RooDataSet* data = pdf_ext_total->generate(*Mass, Extended(1));
+  ProfileLikelihoodCalculator plc;
+  plc.SetData( *dataset);
+  plc.SetModel(model);
+  RooArgSet poi(*ws_->var("N_bs"));
+  poi.setRealValue("N_bs",0);
+  plc.SetNullParameters( poi);
+  HypoTestResult* htr = plc.GetHypoTest();
+  cout << "The p-value for the null is " << htr->NullPValue() << endl;
+  cout << "The significance for the null is " << htr->Significance() << endl;
+  //return;
+  //dataset = ws_->pdf("pdf_ext_total")->generate(*ws_->var("Mass"), Extended(1));
+  //dataset->add(*ws_->set("obs"));
+
+//  ProofConfig* pc = NULL;
+//  pc = new ProofConfig(*ws_, 2, "workers=2", kTRUE); // machine with 2 cores
 
   ModelConfig* H0 = new ModelConfig("H0", "background only hypothesis", ws_);
   H0->SetPdf(*ws_->pdf("pdf_ext_total"));
@@ -299,29 +349,48 @@ void pdf_toyMC::pvalue(int NExp) {
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf("pdf_ext_total"));
   pl_ts.SetOneSidedDiscovery(true);
   ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, NExp);
+//  if(pc) mcSampler_pl->SetProofConfig(pc);
+
   FrequentistCalculator frequCalc(*dataset, *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
-//  HypoTestResult *htr_pl = frequCalc.GetHypoTest();
+  //frequCalc.SetToys(NExp, 1);
 
-  RatioOfProfiledLikelihoodsTestStat ropl_ts(*H0->GetPdf(), *H1->GetPdf(), ws_->set("poi"));
-  ToyMCSampler *mcSampler_ropl = new ToyMCSampler(ropl_ts, NExp);
-  mcSampler_ropl->SetNEventsPerToy(1); // ??
-  //HybridCalculator hybriCalc(*dataset, *H1, *H0, mcSampler_ropl);
-  FrequentistCalculator hybriCalc(*dataset, *H1,*H0, mcSampler_ropl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
-  HypoTestResult *htr_ropl = hybriCalc.GetHypoTest();
+  RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
+  HypoTestResult *htr_pl = frequCalc.GetHypoTest();
+  RooMsgService::instance().cleanup();
 
-//  cout << endl << "ProfileLikelihoodTestStat + frequentist" << endl;
-//  htr_pl->Print();
-  cout << "RatioOfProfiledLikelihoodsTestStat + hybrid" << endl;
-  htr_ropl->Print();
+  cout << endl << "ProfileLikelihoodTestStat + frequentist" << endl;
+  htr_pl->Print();
+  cout << "The p-value for the alternative is " << htr_pl->AlternatePValue() << endl;
 
-//  TCanvas c("canvas_roostats", "canvas_roostats", 600, 600);
-//  HypoTestPlot *htp = new HypoTestPlot(*htr_pl, 30); // 30 bins
-//  htp->SetLogYaxis(true);
-//  htp->Draw();
-//  string address = "fig/RooStats.gif";
-//  c.Print(address.c_str());
+  TCanvas c("canvas_roostats", "canvas_roostats", 600, 600);
+  HypoTestPlot *htp = new HypoTestPlot(*htr_pl, 30); // 30 bins
+  htp->SetLogYaxis(true);
+  htp->Draw();
+  string address = "fig/RooStats.gif";
+  c.Print(address.c_str());
+  address = "fig/RooStats.pdf";
+  c.Print(address.c_str());
 
+//  double data_significance = htr_pl->Significance();
 
+////  HybridPlot* myHybridPlot = htr_pl->GetPlot("myHybridPlot","Plot of results with HybridCalculatorOriginal",100);
+
+////  /// compute the mean expected significance from toys
+////  double mean_sb_toys_test_stat = htp->GetSBmean();
+////  htr_pl->SetDataTestStatistics(mean_sb_toys_test_stat);
+////  double toys_significance = htr_pl->Significance();
+
+////  std::cout << " - significance of data  = " << data_significance << std::endl;
+////  std::cout << " - mean significance of toys  = " << toys_significance << std::endl;
 
   return;
+}
+
+void pdf_toyMC::set_ws(RooWorkspace *ws) {
+  ws_ = ws;
+  RooConstVar * SM_constr = (RooConstVar *) ws->obj("SM_Bs_over_Bd");
+  if (SM_constr) {
+    SM_ = true;
+  }
+  else SM_ = false;
 }

@@ -6,12 +6,17 @@ pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range) {
   meth_ = meth;
   ch_s_ = ch_s;
   range_ = range;
+  SM_ = false;
   RooRealVar* Mass = new RooRealVar("Mass", "Candidate invariant mass", 4.90, 5.90, "GeV/c^{2}");
   ws_->import(*Mass);   
   ws_->var("Mass")->setRange("sb_lo", 4.90, 5.20);  
   ws_->var("Mass")->setRange("blind", 5.20, 5.45);
   ws_->var("Mass")->setRange("sb_hi", 5.45, 5.90);
   ws_->var("Mass")->setRange("overall", 4.90, 5.90);
+
+  ratio_ = 9.;
+
+
 }
 
 void pdf_analysis::define_pdfs () {
@@ -61,6 +66,8 @@ void pdf_analysis::set_pdf_constant(string name) {
 
 void pdf_analysis::define_bs() {
   ws_->factory("N_bs[0, 100]");
+//  ws_->factory("Mean_bs[5.35, 5.32, 5.4]");
+//  ws_->factory("Sigma_bs[0.02, 0.005, 0.2]");
   ws_->factory("Mean_bs[5.35, 5.32, 5.4]");
   ws_->factory("Sigma_bs[0.02, 0.005, 0.2]");
   ws_->factory("Sigma2_bs[0.04, 0.005, 0.2]");
@@ -68,12 +75,14 @@ void pdf_analysis::define_bs() {
   ws_->factory("Enne_bs[1., 0., 1.5]");
   ws_->factory("CoeffGauss_bs[0.5,0.,1.]");
 
+//  ws_->factory("Gaussian::pdf_bs(Mass, Mean_bs, Sigma_bs)");
   ws_->factory("Gaussian::Gau_bs(Mass, Mean_bs, Sigma_bs)");
+
   ws_->factory("CBShape::CB_bs(Mass, Mean_bs, Sigma2_bs, Alpha_bs, Enne_bs)");
   ws_->factory("SUM::pdf_bs(CoeffGauss_bs*Gau_bs, CB_bs)");
   
-  RooExtendPdf* bsGauCBExt = new RooExtendPdf("pdf_ext_bs", "GauCBExt_bs", *ws_->pdf("pdf_bs"), *ws_->var("N_bs"), range_.c_str());
-  ws_->import(*bsGauCBExt);
+//  RooExtendPdf* bsGauCBExt = new RooExtendPdf("pdf_ext_bs", "GauCBExt_bs", *ws_->pdf("pdf_bs"), *ws_->var("N_bs"), range_.c_str());
+//  ws_->import(*bsGauCBExt);
 
   return;
 }
@@ -92,8 +101,14 @@ void pdf_analysis::define_bd() {
   ws_->factory("CBShape::CB_bd(Mass, Mean_bd, Sigma2_bd, Alpha_bd, Enne_bd)");
   ws_->factory("SUM::pdf_bd(CoeffGauss_bd*Gau_bd, CB_bd)");
   
-  RooExtendPdf* bdGauCBExt = new RooExtendPdf("pdf_ext_bd", "GauCBExt_bd", *ws_->pdf("pdf_bd"), *ws_->var("N_bd"), range_.c_str());
-  ws_->import(*bdGauCBExt);
+  RooConstVar *SM_Bs_over_Bd = new RooConstVar("SM_Bs_over_Bd", "SM_Bs_over_Bd", ratio_);
+  RooFormulaVar *N_bd_constr = new RooFormulaVar("N_bd_constr", "@0/@1", RooArgList(*ws_->var("N_bs"), *SM_Bs_over_Bd));
+  if (SM_) ws_->import(*N_bd_constr);
+
+//  RooExtendPdf* bdGauCBExt;
+//  if (SM_) bdGauCBExt = new RooExtendPdf("pdf_ext_bd", "GauCBExt_bd", *ws_->pdf("pdf_bd"), *N_bd_constr, range_.c_str());
+//  else bdGauCBExt = new RooExtendPdf("pdf_ext_bd", "GauCBExt_bd", *ws_->pdf("pdf_bd"), *ws_->var("N_bd"), range_.c_str());
+//  ws_->import(*bdGauCBExt);
 
   return;
 }
@@ -106,8 +121,8 @@ void pdf_analysis::define_peaking() {
   
   ws_->factory("Gaussian::pdf_peaking(Mass,Mean_peaking,Sigma_peaking)");
   
-  RooExtendPdf* peakingGaussExt = new RooExtendPdf("pdf_ext_peaking", "peakingGaussExt", *ws_->pdf("pdf_peaking"), *ws_->var("N_peaking"), range_.c_str());
-  ws_->import(*peakingGaussExt);
+//  RooExtendPdf* peakingGaussExt = new RooExtendPdf("pdf_ext_peaking", "peakingGaussExt", *ws_->pdf("pdf_peaking"), *ws_->var("N_peaking"), range_.c_str());
+//  ws_->import(*peakingGaussExt);
   
   return;
 }
@@ -121,8 +136,8 @@ void pdf_analysis::define_nonpeaking() {
 
   ws_->factory("ArgusBG::pdf_nonpeaking(Mass,m0_nonpeaking,c_nonpeaking,p_nonpeaking)");
   
-  RooExtendPdf* nonpeakingGaussExt = new RooExtendPdf("pdf_ext_nonpeaking", "nonpeakingGaussExt", *ws_->pdf("pdf_nonpeaking"), *ws_->var("N_nonpeaking"), range_.c_str());
-  ws_->import(*nonpeakingGaussExt);
+//  RooExtendPdf* nonpeakingGaussExt = new RooExtendPdf("pdf_ext_nonpeaking", "nonpeakingGaussExt", *ws_->pdf("pdf_nonpeaking"), *ws_->var("N_nonpeaking"), range_.c_str());
+//  ws_->import(*nonpeakingGaussExt);
   return;
 }
 
@@ -132,8 +147,8 @@ void pdf_analysis::define_comb() {
   
   ws_->factory("Uniform::pdf_comb(Mass)");
   
-  RooExtendPdf* combExt = new RooExtendPdf("pdf_ext_comb", "combExt", *ws_->pdf("pdf_comb"), *ws_->var("N_comb"), range_.c_str());
-  ws_->import(*combExt);
+//  RooExtendPdf* combExt = new RooExtendPdf("pdf_ext_comb", "combExt", *ws_->pdf("pdf_comb"), *ws_->var("N_comb"), range_.c_str());
+//  ws_->import(*combExt);
   return;
 }
 
@@ -157,8 +172,8 @@ void pdf_analysis::define_rare() {
   
   ws_->factory("SUM::pdf_rare(peakingfraction_rare*pdf_peaking, pdf_nonpeaking)");
   
-  RooExtendPdf* rareExt = new RooExtendPdf("pdf_ext_rare", "rareExt", *ws_->pdf("pdf_rare"), *ws_->var("N_rare"), range_.c_str());
-  ws_->import(*rareExt);
+//  RooExtendPdf* rareExt = new RooExtendPdf("pdf_ext_rare", "rareExt", *ws_->pdf("pdf_rare"), *ws_->var("N_rare"), range_.c_str());
+//  ws_->import(*rareExt);
   return; 
 }
 
@@ -196,7 +211,8 @@ void pdf_analysis::define_all() {
 
 void pdf_analysis::define_total() {
   
-  ws_->factory("SUM::pdf_ext_total(N_bs*pdf_bs, N_bd*pdf_bd, N_rare*pdf_rare, N_comb*pdf_comb)");
+  if (SM_) ws_->factory("SUM::pdf_ext_total(N_bs*pdf_bs, N_bd_constr*pdf_bd, N_rare*pdf_rare, N_comb*pdf_comb)");
+  else ws_->factory("SUM::pdf_ext_total(N_bs*pdf_bs, N_bd*pdf_bd, N_rare*pdf_rare, N_comb*pdf_comb)");
   
   return; 
 }
@@ -272,7 +288,7 @@ void pdf_analysis::print(string output) {
   rp->Draw();
   string address = "fig/" + pdf_name + "_" + meth_ + "_" + ch_s_ + output;
   c->Print( (address + ".gif").c_str());
-  //c->Print( (address + ".pdf").c_str());
+  c->Print( (address + ".pdf").c_str());
   delete rp;
   delete c;
   return;

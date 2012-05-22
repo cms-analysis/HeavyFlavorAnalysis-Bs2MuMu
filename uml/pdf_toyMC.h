@@ -15,6 +15,7 @@
 #include "RooRandom.h"
 #include "RooArgSet.h"
 #include "RooMCStudy.h"
+#include "RooDLLSignificanceMCSModule.h"
 
 #include "RooStats/ModelConfig.h"
 #include "RooStats/ToyMCSampler.h"
@@ -38,6 +39,7 @@ public:
   void fit_pulls();
   void parse_estimate();
   void unset_constant();
+  void set_ws(RooWorkspace *ws);
   
   TH1D* pull_h_bs;
   TH1D* pull_h_bd;

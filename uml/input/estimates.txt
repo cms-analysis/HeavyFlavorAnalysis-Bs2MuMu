@@ -1,4 +1,4 @@
-bs	8
+bs	9
 bd	1
 rare	3
 comb	15

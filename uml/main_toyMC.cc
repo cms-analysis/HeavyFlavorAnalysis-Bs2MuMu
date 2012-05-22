@@ -27,6 +27,7 @@ int main(int argc, char** argv) {
   
   TFile* input_f = new TFile(input_name.c_str());
   RooWorkspace* ws = (RooWorkspace*)input_f->Get("ws");
+  ws->Print();
 
   parse_input(input_name);
 

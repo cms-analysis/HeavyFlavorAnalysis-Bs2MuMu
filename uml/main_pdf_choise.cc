@@ -10,6 +10,7 @@
 #include "RooRealVar.h"
 
 #include "TRandom3.h"
+#include "TH1D.h"
 
 int main(int argc, char* argv[]) {
 
@@ -73,6 +74,7 @@ int main(int argc, char* argv[]) {
   
   /// MC shapes
   pdf_analysis ana1(print, meth, ch_s);
+  if (SM) ana1.set_SMconstraint();
   RooWorkspace *ws = ana1.get_ws();
 
   ana1.define_pdfs();
@@ -115,7 +117,8 @@ int main(int argc, char* argv[]) {
   ws->SaveAs(Form("output/fit_ws_%s_%s.root", meth.c_str(), ch_s.c_str()));
   
   cout << "starting Bs " << Bs_h->Integral() << " fit Bs " << ws->var("N_bs")->getVal() << endl;
-  cout << "starting Bd " << Bd_h->Integral() << " fit Bd " << ws->var("N_bd")->getVal() << endl;
+  if (SM) cout << "starting Bd " << Bd_h->Integral() << " fit Bd constraint to SM" << endl;
+  if (!SM) cout << "starting Bd " << Bd_h->Integral() << " fit Bd " << ws->var("N_bd")->getVal() << endl;
   cout << "starting rare " << Rare_h->Integral() << " fit rare " << ws->var("N_rare")->getVal() << endl;
   cout << "starting comb " << uniform_histo->Integral() << " fit comb " << ws->var("N_comb")->getVal() << endl;
     

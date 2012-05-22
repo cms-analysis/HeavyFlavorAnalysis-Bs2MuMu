@@ -13,7 +13,7 @@ static string ch_s;
 static string pdf_toy = "total";
 static bool print = false;
 static int NExp = 1;
-bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, pvalue = false;
+bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, pvalue = false, SM = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
 
@@ -28,6 +28,7 @@ void help() {
   cout << "-pdf {bs, bd, rare, comb, total} \t combination of pdf names" << endl;
   cout << "-roomcs \t toy mc with RooMCStudy" << endl;
   cout << "-pvalue \t pvalue with RooStats" << endl;
+  cout << "-SM \t SM constraints" << endl;
   exit(0);
 }
 
@@ -85,6 +86,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-pvalue")) {
       cout << "evaluates pvalue" << endl;
       pvalue = true;
+    }
+    if (!strcmp(argv[i],"-SM")) {
+      cout << "SM constraints" << endl;
+      SM = true;
     }
     if (!strcmp(argv[i],"-h")) help();
   }
