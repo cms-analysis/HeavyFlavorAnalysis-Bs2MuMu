@@ -42,7 +42,7 @@ RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 READER = treeReader01.o bmmReader.o bmmSignalReader.o bmmNormalizationReader.o bmmBs2JpsiPhiReader.o massReader.o copyReader.o muCharmReader.o dpReader.o d0Reader.o triggerValidation.o ksReader.o genLevel.o impactReader.o anaBmm.o AnalysisCuts.o AnalysisDistribution.o initFunc.o HistCutEfficiency.o
 READERDICT = ${READER:.o=Dict.o}
 
-NNLEARNING = ncMVA.o ncEvaluate.o
+NNLEARNING = ncMVA.o ncEvaluate.o mlp_eff.o
 NNLEARNINGDICT = ${NNLEARNING:.o=Dict.o}
 
 SUPPORTCLASSES = mclimit_csm.o
