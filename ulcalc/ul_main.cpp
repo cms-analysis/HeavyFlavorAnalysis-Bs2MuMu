@@ -52,6 +52,7 @@ static bool gSeed = false;
 static uint32_t gProofWorkers = 0;
 static int gToys = 50000;
 static bool gFixBackground = false;
+static bool gCreateGamma = false;
 
 static const char *algo_name(algo_t a)
 {
@@ -118,7 +119,7 @@ static bool validate_bmm(map<bmm_param,measurement_t> *bmm, int ch)
 		goto bail;
 	}
 	
-	// FIXME: complete this list...
+	// FIXME: consistence check here
 	
 bail:
 	return valid;
@@ -207,7 +208,7 @@ static void parse_input(const char *path, map<bmm_param,measurement_t> *bsmm, ma
 
 static void usage()
 {
-	cerr << "ulcalc [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--light] [--disable-errors] [[-n <nbr steps>] -r x,y ] [-e num_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"clb_hybrid\"|\"zbi\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
+	cerr << "ulcalc [--gamma] [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--light] [--disable-errors] [[-n <nbr steps>] -r x,y ] [-e num_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"clb_hybrid\"|\"zbi\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
 } // usage()
 
 static bool parse_arguments(const char **first, const char **last)
@@ -322,6 +323,8 @@ static bool parse_arguments(const char **first, const char **last)
 				gToys = atoi(*first++);
 			} else if (strcmp(arg, "--fixed-bkg") == 0) {
 				gFixBackground = true;
+			} else if (strcmp(arg, "--gamma") == 0) {
+				gCreateGamma = true;
 			} else {
 				cerr << "Unknown option '" << arg << "'." << endl;
 				usage();
@@ -358,6 +361,7 @@ static bool parse_arguments(const char **first, const char **last)
 	if (gSeed) cout << "Unique Random seed" << endl;
 	cout << "Number of MC Toys used: " << gToys << endl;
 	if (gProofWorkers > 0) cout << "Number of Proof Workers: " << gProofWorkers << endl;
+	if (gCreateGamma) cout << "Additional Gammas for background created" << endl;
 	cout << "-------------------------------------" << endl;
 	if (gFixBackground)	cout << "Toys with fixed sideband window" << endl;
 	else				cout << "Toys with floating sideband window" << endl;
@@ -420,6 +424,13 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 		
 		// save the variable state s.t. it does not get lost for the weight computation in the next round
 		saved_vars = dynamic_cast<RooArgSet*>(wspace->allVars().snapshot());
+		
+		// set the gamma bkg priors if there are...
+		for (it = channels->begin(); it != channels->end(); ++it) {
+			if (wspace->var(Form("gamma_%d",*it)))
+				wspace->var(Form("gamma_%d",*it))->setVal(((RooRealVar&)((*data->get(0))[Form("NbObs_%d",*it)])).getVal()+1);
+		}
+		
 		switch (gAlgorithm) {
 			case kAlgo_Bayesian:
 				if (gLightModel)
@@ -596,7 +607,7 @@ int main(int argc, const char *argv [])
 	if (gLightModel)
 		wspace = build_model_light(&bsmm, gVerbosity);
 	else
-		wspace = build_model_nchannel(&bsmm, &bdmm, gDisableErrors, gVerbosity, gBdToMuMu, !gFixBackground && ((gAlgorithm == kAlgo_Hybrid) || (gAlgorithm == kAlgo_CLb_Hybrid)), gFixBackground);
+		wspace = build_model_nchannel(&bsmm, &bdmm, gDisableErrors, gVerbosity, gBdToMuMu, gCreateGamma, gFixBackground);
 	
 	// initialize random number generator seed
 	if (gSeed) RooRandom::randomGenerator()->SetSeed(0);
