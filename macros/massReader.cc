@@ -144,6 +144,7 @@ void massReader::clearVariables()
 	fIsoMoriond12 = 0.0;
 	fDoca0 = FLT_MAX;
 	fNbrNearby = 0;
+	fPVTrkWeight = 0.0f;
 	fTriggers = 0;
 	fTriggersError = 0;
 	fTriggersFound = 0;
@@ -202,6 +203,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	TAnaCand *dauCand;
 	TGenCand *dauGen;
 	TVector3 v1,v2,uVector;
+	TAnaVertex *candPV;
 	int j,k;
 	bool firstMu = true;
 	bool firstKaon = true;
@@ -234,13 +236,16 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fDoca0 = calculateDoca0(pCand);
 	fNbrNearby = countTracksNearby(pCand);
 	
+	candPV = fpEvt->getPV(pCand->fPvIdx);
+	fPVTrkWeight = (candPV->fNdof + 2.) / (2. * candPV->getNtracks());
+	
 	fCtau = pCand->fTau3d;
 	fCtauE = pCand->fTau3dE;
 	fEta = pCand->fPlab.Eta();
 	
 	// set the constraint mass value
 	findCandStructure(pCand, &cand_tracks);
-	dauCand = findCandidate(400000 + (pCand->fType % 1000), &cand_tracks);
+	dauCand = findCandidate(500000 + (pCand->fType % 1000), &cand_tracks);
 	if (dauCand) fMassConstraint = dauCand->fMass;
 	
 	// Load muon variables
@@ -475,6 +480,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("iso_mor12",&fIsoMoriond12,"iso_mor12/F");
 	reduced_tree->Branch("doca0",&fDoca0,"doca0/F");
 	reduced_tree->Branch("ntrk",&fNbrNearby,"ntrk/F");
+	reduced_tree->Branch("trk_weight",&fPVTrkWeight,"trk_weight/F");
 	reduced_tree->Branch("triggers",&fTriggers,"triggers/I");
 	reduced_tree->Branch("pt_dimuon",&fPtJPsi,"pt_dimuon/F");
 	reduced_tree->Branch("mass_dimuon",&fMassJPsi,"mass_dimuon/F");
