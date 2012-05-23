@@ -104,8 +104,10 @@ echo "--> Building ncBatch"
 make ncBatch
 pwd
 
-SIGNALFILE=`basename $SIGNALSTORE`
-BKGFILE=`basename $BKGSTORE`
+echo "SIGNALFILE=/bin/basename $SIGNALSTORE"
+set SIGNALFILE = `/bin/basename "$SIGNALSTORE"`
+echo "BKGFILE=/bin/basename $BKGSTORE"
+set BKGFILE = `/bin/basename "$BKGSTORE"`
 
 echo "--> Copying training files to scratch"
 echo "$SRMCP $SIGNALSTORE file:///`pwd`/$SIGNALFILE"
@@ -113,13 +115,13 @@ $SRMCP "$SIGNALSTORE" file:///`pwd`/$SIGNALFILE
 echo "$SRMCP $BKGSTORE file:///`pwd`/$BKGFILE"
 $SRMCP "$BKGSTORE" file:///`pwd`/$BKGFILE
 
-MLPOPTIONS=`cat $JOB`
+set MLPOPTIONS = `cat $JOB`
 echo "$EXECUTABLE $MLPOPTIONS $SIGNALFILE $BKGFILE"
 $EXECUTABLE $MLPOPTIONS $SIGNALFILE $BKGFILE
 
 # copy to storage element
-FILE_BARREL=${JOB}_B.root
-FILE_ENDCAP=${JOB}_E.root
+set FILE_BARREL = ${JOB}_B.root
+set FILE_ENDCAP = ${JOB}_E.root
 
 # Barrel
 echo "srmrm $STORAGE1/$FILE_BARREL"
