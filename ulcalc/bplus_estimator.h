@@ -20,18 +20,6 @@
 #include <TCut.h>
 #include <TTree.h>
 
-// Copied from massReader.h
-enum
-{
-	kGeneratorCand	= 1 << 0,
-	kAcceptance		= 1 << 1,
-	kEffMuon		= 1 << 2
-	//	kEffTrig is not needed
-	//	kEffCand is not needed
-	//	kEffAna is not needed
-};
-
-void estimate_bplus(std::map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree *mcTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, double eff_filter = 1.0, bool enable_systematics = false);
-
+void estimate_bplus(std::map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree *mcTree, TTree *accTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, std::map<systematics_t,double> *systematics_table);
 
 #endif

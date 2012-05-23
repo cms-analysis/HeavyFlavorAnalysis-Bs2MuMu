@@ -141,7 +141,7 @@ static double process_cut(RooWorkspace *wspace, TTree *dataTree, TTree *bsmcTree
 	pair<int,int> key;
 	
 	// get the efficiencies for this cut (fast version w/o bplus estimate...)
-	estimate_bmm(&bsmm, dataTree, bsmcTree, -1.0, 100.0, 0, anaCut, make_pair(5.15,5.32), make_pair(5.32,5.45), true);
+//	estimate_bmm(&bsmm, dataTree, bsmcTree, -1.0, 100.0, 0, anaCut, make_pair(5.15, 5.32), make_pair(5.32,5.45), true, true);;
 	bsmm[make_pair(kLow_signal_window_bmm, 0)] = measurement_t(5.32,0);
 	bsmm[make_pair(kHigh_signal_window_bmm, 0)] = measurement_t(5.45,0);
 	bsmm[make_pair(kTot_bplus, 0)] = measurement_t(TOTAL_BPLUS);
@@ -284,7 +284,7 @@ int main(int argc, const char *argv[])
 	bsmm[make_pair(kTot_bplus, 0)] = measurement_t(TOTAL_BPLUS);
 	bsmm[make_pair(kLow_signal_window_bmm, 0)] = measurement_t(5.32,0);
 	bsmm[make_pair(kHigh_signal_window_bmm, 0)] = measurement_t(5.45,0);
-	estimate_bmm(&bsmm, dataTree, bsmcTree, -1.0, 100.0, 0, anaCut, make_pair(5.15, 5.32), make_pair(5.32, 5.45), true);
+//	estimate_bmm(&bsmm, dataTree, bsmcTree, -1.0, 100.0, 0, anaCut, make_pair(5.15, 5.32), make_pair(5.32, 5.45), true);
 	compute_vars(&bsmm, true);
 	wspace = build_model_light(&bsmm, 1);
 	Pss0 = bsmm[make_pair(kProb_swind_bmm, 0)].getVal();
