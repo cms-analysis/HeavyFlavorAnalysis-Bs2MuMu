@@ -21,8 +21,7 @@ LD			= $(CXX)
 
 HEADERS = external_constants.h ul_estimate.h bplus_estimator.h bmm_estimator.h
 ULCALC_OBJS = ul_main.o ul_estimate.o external_constants.o
-BPLUS_OBJS = bplus_main.o bplus_estimator.o external_constants.o
-BMM_OBJS = bmm_main.o bmm_estimator.o external_constants.o
+ULEXT_OBJS = ulc_ext.o bplus_estimator.o bmm_estimator.o external_constants.o
 GRID_SEARCH_OBJS = grid_search.o external_constants.o ul_estimate.o bmm_estimator.o
 GEN_OBJS = tree_gen.o
 
@@ -43,13 +42,10 @@ obj/%.o : %.cpp $(HEADERS)
 ulcalc: bin/ulcalc
 	@true
 
-all: ulcalc bplus_est bmm_est grid_search tree_gen
+all: ulcalc ulc_ext grid_search tree_gen
 	@true
 
-bplus_est: bin/bplus_est
-	@true
-
-bmm_est: bin/bmm_est
+ulc_ext: bin/ulc_ext
 	@true
 
 grid_search: bin/grid_search
@@ -58,20 +54,20 @@ grid_search: bin/grid_search
 tree_gen: bin/tree_gen
 	@true
 
+lib/libNCRootUtils.so:
+	ln -s /Users/cn/Documents/PSI/Projects/rootutils/lib/libNCRootUtils.so lib/libNCRootUtils.so
+
 bin/ulcalc: $(addprefix obj/,$(ULCALC_OBJS))
 	$(LD) -o $@ $(addprefix obj/,$(ULCALC_OBJS)) $(ROOTLIBS) $(LDFLAGS)
 
 bin/grid_search: $(addprefix obj/,$(GRID_SEARCH_OBJS))
 	$(LD) -o $@ $(addprefix obj/,$(GRID_SEARCH_OBJS)) $(ROOTLIBS) $(LDFLAGS)
 
-bin/bplus_est: $(addprefix obj/,$(BPLUS_OBJS))
-	$(LD) -o $@ $(addprefix obj/,$(BPLUS_OBJS)) $(ROOTLIBS) $(LDFLAGS) ../rootutils/lib/libNCRootUtils.so
+bin/ulc_ext: $(addprefix obj/,$(ULEXT_OBJS)) lib/libNCRootUtils.so
+	$(LD) -o $@ $(addprefix OBJ/,$(ULEXT_OBJS)) $(ROOTLIBS) $(LDFLAGS) lib/libNCRootUtils.so
 
-bin/bmm_est: $(addprefix obj/,$(BMM_OBJS))
-	$(LD) -o $@ $(addprefix obj/,$(BMM_OBJS)) $(ROOTLIBS) $(LDFLAGS)
-
-bin/tree_gen: $(addprefix obj/,$(GEN_OBJS))
-	$(LD) -o $@ $(addprefix obj/,$(GEN_OBJS)) $(ROOTLIBS) $(LDFLAGS) ../rootutils/lib/libNCRootUtils.so
+bin/tree_gen: $(addprefix obj/,$(GEN_OBJS)) lib/libNCRootUtils.so
+	$(LD) -o $@ $(addprefix obj/,$(GEN_OBJS)) $(ROOTLIBS) $(LDFLAGS) lib/libNCRootUtils.so
 
 clean:
 	rm -rf obj/*
