@@ -2,6 +2,7 @@
  * helper routines to compute upper limits *
  *******************************************/
 
+#include <TFile.h>
 #include <TTree.h>
 #include <RooDataSet.h>
 #include <RooRealVar.h>
@@ -63,6 +64,17 @@ void extract(RooDataSet *data1, RooDataSet *data2, const char *outfile)
 	if(data1) extract_into(data1,s);
 	if(data2) extract_into(data2,s);
 	write_set(s,outfile);
+} // extract()
+
+void extract(const char *data1, const char *data2, const char *outfile)
+{
+	TFile f1(data1);
+	TFile f2(data2);
+	
+	RooDataSet *d1 = (RooDataSet*)f1.Get("signalsData");
+	RooDataSet *d2 = (RooDataSet*)f2.Get("signalsData");
+	
+	extract(d1,d2,outfile);
 } // extract()
 
 map<obs_t,double> limit_table(const char *filename)
