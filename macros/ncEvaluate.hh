@@ -25,7 +25,10 @@ class ncEvaluate {
 		ncEvaluate(const char *inFile, TTree *inTree, int channelIx);
 		~ncEvaluate();
 		
-		double eval(int64_t j);
+		double eval(int64_t j); // load tree entry j and evaluate
+		double eval(); // evaluate the current vals
+		
+		std::map<std::string,Float_t> *getVals() {return &vals;}
 		
 		static TCut getPreselCut();
 		static std::map<std::string,std::string>* getDefaultVariables();

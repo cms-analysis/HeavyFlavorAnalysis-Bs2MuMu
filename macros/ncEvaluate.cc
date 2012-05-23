@@ -45,7 +45,6 @@ ncEvaluate::~ncEvaluate()
 
 double ncEvaluate::eval(int64_t j)
 {
-	double value;
 	map<string,Float_t>::iterator it;
 	map<string,TTreeFormula*>::iterator formIt;
 	
@@ -53,7 +52,12 @@ double ncEvaluate::eval(int64_t j)
 	for(it = vals.begin(); it != vals.end(); ++it)
 		it->second = formulas[it->first]->EvalInstance();
 	
-	value = (Float_t)reader->EvaluateMVA(methodTitle);
+	return eval();
+} // eval()
+
+double ncEvaluate::eval()
+{
+	double value = (double)reader->EvaluateMVA(methodTitle);
 	return value;
 } // eval()
 

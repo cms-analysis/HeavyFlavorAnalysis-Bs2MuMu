@@ -165,6 +165,8 @@ void ncRunDefaultTraining(const char *mcFile, const char *dataFile)
 	TCut signalWindow("5.2 < mass && mass < 5.45");
 	TCut barrelCut("TMath::Abs(eta_mu1) < 1.4 && TMath::Abs(eta_mu2) < 1.4");
 	TCut cut;
+	string barrelOpts("!H:V:TestRate=10:VarTransform=Norm:NeuronType=radial:NCycles=1291:HiddenLayers=N-5:LearningRate=0.318:DecayRate=0.022");
+	string endcapOpts("!H:V:TestRate=10:VarTransform=Norm:NeuronType=radial:NCycles=1107:HiddenLayers=N+7,N-1:LearningRate=0.086:DecayRate=0.0335");
 	
 	TTree *signalTree = (TTree*)signalFile.Get("T");
 	TTree *bkgTree = (TTree*)bkgFile.Get("T");
@@ -183,8 +185,8 @@ void ncRunDefaultTraining(const char *mcFile, const char *dataFile)
 	double bkgWeight = 0.200000;
 	double signalWeight = 0.000156;
 	
-	ncRunTraining(signalTree, signalWeight, bkgTree, bkgWeight, 0, barrelCut, NULL);
-	ncRunTraining(signalTree, signalWeight, bkgTree, bkgWeight, 1, !barrelCut, NULL);
+	ncRunTraining(signalTree, signalWeight, bkgTree, bkgWeight, 0, barrelCut, &barrelOpts);
+	ncRunTraining(signalTree, signalWeight, bkgTree, bkgWeight, 1, !barrelCut, &endcapOpts);
 	
 	unlink(tmpfilename);
 } // runTraining()
