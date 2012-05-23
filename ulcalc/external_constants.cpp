@@ -15,20 +15,35 @@
 #include <algorithm>
 #include <utility>
 
-const char *bmmGeneratorCuts = "pt_mu2_gen > 1 && TMath::Abs(eta_mu1_gen) < 2.5 && TMath::Abs(eta_mu2_gen) < 2.5";
-const char *bmmBaseCut = "TMath::Abs(eta_mu1) < 2.4 && TMath::Abs(eta_mu2) < 2.4 && d3 < 2.";
-
 ////////////////////////
 // External constants //
 ////////////////////////
-// NEW LHCb VALUES
-static const measurement_t f_s(0.267,0.021);
-static const measurement_t f_u(1,0); // note above is already the ratio
+// NEW LHCb VALUE
+static const measurement_t fs_by_fu(0.267,0.021);
 
-static const measurement_t bf_sm_bstomumu(3.2e-9,0);
-static const measurement_t bf_sm_bdtomumu(1.0e-10,0);
-static const measurement_t bf_bptojpsik(1.014e-3,0.034e-3);
-static const measurement_t bf_jpsitomumu(0.0593,0.0006);
+// PDG Values
+static const measurement_t f_s(0.113,0.013);
+static const measurement_t f_u(0.401,0.013);
+static const measurement_t f_bbaryon(0.085,0.022);
+
+// branching fractions
+static const measurement_t sm_bstomumu(3.2e-9,0);
+static const measurement_t sm_bdtomumu(1.0e-10,0);
+static const measurement_t bptojpsik(1.014e-3,0.034e-3);
+static const measurement_t jpsitomumu(0.0593,0.0006);
+
+// rare backgrounds
+static const measurement_t BsToKK(2.7e-5,0);
+static const measurement_t BsToKPi(5.0e-6,0);
+static const measurement_t BsToPiPi(1.2e-6,0);
+static const measurement_t BsToKMuNu(1.3e-4,0);
+static const measurement_t BdToPiPi(5.2e-6,0);
+static const measurement_t BdToKPi(1.9e-5,0);
+static const measurement_t BdToKK(1.5e-7,0);
+static const measurement_t BdToPiMuNu(1.3e-4,0);
+static const measurement_t LambdaBToPPi(3.5e-6,0);
+static const measurement_t LambdaBToPK(5.6e-6,0);
+static const measurement_t LambdaBToPMuNu(1.3e-4,0);
 
 using std::map;
 
@@ -251,30 +266,51 @@ const measurement_t c_s_theory()
 {
 	measurement_t c_s;
 	
-	c_s = bf_sm_bstomumu / (bf_bptojpsik * bf_jpsitomumu);
+	c_s = sm_bstomumu / (bptojpsik * jpsitomumu);
 	
 	return c_s;
 } // c_s_theory()
 
 const measurement_t c_d_theory()
 {
-	measurement_t c_d = bf_sm_bdtomumu / (bf_bptojpsik * bf_jpsitomumu);
+	measurement_t c_d = sm_bdtomumu / (bptojpsik * jpsitomumu);
 	return c_d;
 } // c_d_theory()
 
 const measurement_t f_ratio()
 {
-	return f_s / f_u;
+	return fs_by_fu;
 } // f_ratio()
+
+const measurement_t f_ratio_lb()
+{
+	return f_bbaryon / f_u;
+} // f_ratio_lb()
+
+const measurement_t bf_BsToMuMu()		{return sm_bstomumu;}
+const measurement_t bf_BsToKK()			{return BsToKK;}
+const measurement_t bf_BsToKPi()		{return BsToKPi;}
+const measurement_t bf_BsToPiPi()		{return BsToPiPi;}
+const measurement_t bf_BsToKMuNu()		{return BsToKMuNu;}
+const measurement_t bf_BdToMuMu()		{return sm_bdtomumu;}
+const measurement_t bf_BdToPiPi()		{return BdToPiPi;}
+const measurement_t bf_BdToKPi()		{return BdToKPi;}
+const measurement_t bf_BdToKK()			{return BdToKK;}
+const measurement_t bf_BdToPiMuNu()		{return BdToPiMuNu;}
+const measurement_t bf_LambdaBToPPi()	{return LambdaBToPPi;}
+const measurement_t bf_LambdaBToPK()	{return LambdaBToPK;}
+const measurement_t bf_LambdaBToPMuNu()	{return LambdaBToPMuNu;}
+const measurement_t bf_Bu2JpsiKp()		{return bptojpsik;}
+const measurement_t bf_PsiToMuMu()		{return jpsitomumu;}
 
 double bstomumu()
 {
-	return bf_sm_bstomumu.getVal();
+	return sm_bstomumu.getVal();
 } // bstomumu()
 
 double bdtomumu()
 {
-	return bf_sm_bdtomumu.getVal();
+	return sm_bdtomumu.getVal();
 } // bdtomumu()
 
 double std_dev_binomail(double lambda,double n)

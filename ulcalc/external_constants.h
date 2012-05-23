@@ -19,6 +19,21 @@
 // ROOT headers
 #include <TCut.h>
 
+// Systematic uncertainties
+enum systematics_t {
+	g_sys_acc_efftrack,		// tracking efficiency for each additional hadron (muon should cancel)
+	g_sys_acc_ppro_barrel,	// acceptance: production process uncertainty in barrel (ratio)
+	g_sys_acc_ppro_endcap,	// acceptance: production process uncertainty in endcap (ratio)
+	g_sys_effana,			// systematic uncertainty on ration of selection efficiency
+	g_sys_massscale,		// systematic uncertainty on P_{ij}
+	g_sys_effmu_barrel,		// ratio on muon efficiency barrel
+	g_sys_effmu_endcap,		// ratio on muon efficiency endcap
+	g_sys_efftrig_barrel,	// ratio on trigger efficiency in barrel
+	g_sys_efftrig_endcap,	// ratio on trigger efficiency in endcap
+	g_sys_normfit,			// systematic on normalization fitting procedure
+	g_sys_shapecombbkg		// systematic uncertainty on tau
+};
+
 // measurement class
 class measurement_t {
 	
@@ -62,12 +77,38 @@ class measurement_t {
 const measurement_t c_s_theory();
 const measurement_t c_d_theory();
 const measurement_t f_ratio();
+const measurement_t f_ratio_lb();
+
+/* braching fractions */
+const measurement_t bf_BsToMuMu();
+const measurement_t bf_BsToKK();
+const measurement_t bf_BsToKPi();
+const measurement_t bf_BsToPiPi();
+const measurement_t bf_BsToKMuNu();
+const measurement_t bf_BdToMuMu();
+const measurement_t bf_BdToPiPi();
+const measurement_t bf_BdToKPi();
+const measurement_t bf_BdToKK();
+const measurement_t bf_BdToPiMuNu();
+const measurement_t bf_LambdaBToPPi();
+const measurement_t bf_LambdaBToPK();
+const measurement_t bf_LambdaBToPMuNu();
+const measurement_t bf_Bs2JpsiPhi();
+const measurement_t bf_Bu2JpsiKp();
+const measurement_t bf_Bd2JpsiKstar();
+const measurement_t bf_Bd2JpsiKs();
+const measurement_t bf_PsiToMuMu();
+const measurement_t bf_Psi2SToMuMu();
+const measurement_t bf_Ups1SToMuMu();
+const measurement_t bf_Ups2SToMuMu();
+const measurement_t bf_Ups3SToMuMu();
+
+
 double bstomumu();
 double bdtomumu();
 
 /* cut to be applied for analysis */
 extern const char *bmmGeneratorCuts;
-extern const char *bmmBaseCut;
 
 /* Parameters estimated, saved in map */
 enum bmm_param_tag {
