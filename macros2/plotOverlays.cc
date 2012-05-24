@@ -48,21 +48,22 @@ void plotOverlays::makeAll(int verbose) {
   cout << " ########################## MC APV0/MCPU APV1 #########################" << endl;
 //  sbsDistributionOverlay("SgMc3e33", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "Ao"); 
 //  sbsDistributionOverlay("SgMc3e33", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "HLT"); 
-  sbsDistributionOverlay("SgData2011", "candAnaMuMu", "A", "SgData2012", "candAnaMuMu", "A", "HLT");
-  sbsDistributionOverlay("SgData2012", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Presel");	
+//	sbsDistributionOverlay("SgData2011", "candAnaMuMu", "AR5", "SgData2012", "candAnaMuMu", "AR5", "HLT");
+//  sbsDistributionOverlay("SgData2012", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Presel");	
   sbsDistributionOverlay("SgData2012", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Ao");
 	cout << " ########################## No DATA/MC A #########################" << endl;
+//	return;
   fMode = 3; 
   fPreco = 5.1;
-  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Presel"); 
+//  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Presel"); 
   sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Ao"); 
   fMode = 2; 
-  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMc", "candAnaBs2JpsiPhi", "A", "Presel"); 
+//  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMc", "candAnaBs2JpsiPhi", "A", "Presel"); 
   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMc", "candAnaBs2JpsiPhi", "A", "Ao"); 
   fMode = 0; 
   cout << " ########################## SG DATA/MC A #########################" << endl;
+//	sbsDistributionOverlay("SgData", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Presel");
   sbsDistributionOverlay("SgData", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Ao");
-  sbsDistributionOverlay("SgData", "candAnaMuMu", "A", "SgMc", "candAnaMuMu", "A", "Presel");
 
 //   cout << " ########################## MCPU APV0/MCPU APV1 #########################" << endl;
 //   sbsDistributionOverlay("SgMcPU", "candAnaMuMu", "A", "SgMcPU", "candAnaMuMu", "A", "Ao"); 
@@ -220,7 +221,7 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
     sprintf(loption2, "p");
     fill2   = 0; 
 	color2  = kBlue; //color2 = kBlack;
-    //marker2 = 21; 
+    marker2 = 21; 
   }
   
   if ((string::npos != file1.find("Mc")) && (string::npos != file2.find("Mc"))) {
@@ -513,7 +514,10 @@ void plotOverlays::sbsDistributionOverlay(string file1, string dir1, string regi
 	legg->SetHeader("Signal MC");
 	legg->AddEntry(h1, "MC (4_2_X)", loption1); 
 	legg->AddEntry(h2, "MC (5_2_X)", loption2); 
-      } else if (string::npos != file1.find("Sg")) {
+      } else if ((string::npos != file1.find("SgData2011")) && (string::npos != file2.find("SgData2012"))) {
+		  legg->AddEntry(h1, "Data (2011)", loption1); 
+		  legg->AddEntry(h2, "Data (2012)", loption2); 
+      } else if (string::npos != file1.find("SgData")) {
 	legg->AddEntry(h1, "Data (sideband)", loption1); 
 	legg->AddEntry(h2, fName[file2].c_str(), loption2); 
       } else if (string::npos != file1.find("No")) {
