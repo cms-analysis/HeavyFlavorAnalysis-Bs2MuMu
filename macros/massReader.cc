@@ -236,8 +236,10 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fDoca0 = calculateDoca0(pCand);
 	fNbrNearby = countTracksNearby(pCand);
 	
-	candPV = fpEvt->getPV(pCand->fPvIdx);
-	fPVTrkWeight = (candPV->fNdof + 2.) / (2. * candPV->getNtracks());
+	if (pCand->fPvIdx >= 0) {
+	  candPV = fpEvt->getPV(pCand->fPvIdx);
+	  fPVTrkWeight = (candPV->fNdof + 2.) / (2. * candPV->getNtracks());
+	}
 	
 	fCtau = pCand->fTau3d;
 	fCtauE = pCand->fTau3dE;
