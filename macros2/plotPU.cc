@@ -3,6 +3,9 @@
 #include "../macros/AnalysisDistribution.hh"
 #include "../macros/HistCutEfficiency.hh"
 #include "TMath.h"
+#include "TEfficiency.h"
+#include "TGraphAsymmErrors.h"
+#include "TGraph.h"
 
 using namespace std; 
 using std::string; 
@@ -119,9 +122,13 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
     c0->SaveAs(Form("%s/effVsNpv0-%s-%s-%s-%s-0_%d.pdf", fDirectory.c_str(), fFile.c_str(), dir, chan, var, static_cast<int>(100.*cut)));
 
 
-  TH1D *heff = new TH1D("heff", "", 25, 0., 50.);/// changed from 15, 0., 30 to 25, 0., 50.
+	TH1D *h_pass = new TH1D("h_pass","pass",25,0,50);
+	TH1D *h_tot = new TH1D("h_tot","tot",25,0,50);
+	TEfficiency* pEff = 0;
   double eff(0.); 
   double stat(0.); 
+	double ntot(0.);
+	double ncut(0.);
   for (int i = 0; i < 25; ++i) {
     HistCutEfficiency a(h[i]); 
     a.fVerbose = 1; 
@@ -131,9 +138,13 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
     if (larger) {
       eff  = a.hiEff; 
       stat = a.hiErr; 
+		ntot = a.nTot;
+		ncut = a.lCut;
     } else {
       eff  = a.loEff; 
       stat = a.loErr; 
+		ntot = a.nTot;
+		ncut = a.uCut;
     }
     double effE = TMath::Sqrt(stat*stat + 0.02*eff*0.02*eff);
     effE = stat;
@@ -145,68 +156,54 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
     cout << "h[i] : " << h[i]->GetName() << endl;
     cout << "h[i]->FindBin(cut) = " << h[i]->FindBin(cut) << endl;
     cout << "h[i]->GetNbinsX()  = " << h[i]->GetNbinsX() << endl;
-    //    cout << "ntot = " << ntot << endl;
-    //     cout << "ncut = " << ncut << endl;
-    cout << "eff = " << eff << endl;
-    cout << "effE = " << effE << endl;
-    heff->SetBinContent(i+1, eff); 
-    heff->SetBinError(i+1, effE); 
+    cout << "eff = " << eff << " +- (effE) = " << effE << endl;
+	cout << "ntot = " << ntot << ", ncut = " << ncut << endl;
+	h_tot->SetBinContent(i+1,ntot);
+	h_pass->SetBinContent(i+1,ncut);
   }
-	cout << "****Made eff histo, now will make the pdf..." << endl;
+	if (TEfficiency::CheckConsistency(*h_pass,*h_tot)) {
+		pEff = new TEfficiency(*h_pass,*h_tot);
+	}
+	pEff->Draw();
+//	cout << "****Made eff histo, now will make the pdf..." << endl;
 
   c0->Clear();
   gStyle->SetOptStat(0); 
   gStyle->SetOptFit(0); 
-  //  setTitles(heff, "N_{PV}", Form("%s", ylabel), 0.05); 
-  setTitles(heff, "N_{PV}", "efficiency", 0.06, 1.1, 1.4); 
-//	heff->SetMaximum(1.05);
-	heff->SetMaximum(1.25);
-  if (heff->GetMinimum() > 0.5) {
-    heff->SetMinimum(0.75);
-  } else {
-    heff->SetMinimum(0.);
-  }
-  heff->SetMarkerSize(2); 
-  heff->Fit("pol0", "FM");
-  heff->GetFunction("pol0")->SetLineWidth(3);
-  tl->SetTextSize(0.07); 
-  tl->DrawLatex(0.25, 0.2, ylabel); 
-  tl->SetTextSize(0.05); 
-//   tl->DrawLatex(0.55, 0.91, Form("#epsilon = %4.3f#pm%4.3f", 
-// 				 heff->GetFunction("pol0")->GetParameter(0), 
-// 				 heff->GetFunction("pol0")->GetParError(0))); 
+//	gStyle->SetOptFit(1111); 
 
-//   tl->DrawLatex(0.25, 0.82, Form("#chi^{2}/dof = %3.1f/%i", 
-// 				 heff->GetFunction("pol0")->GetChisquare(), 
-// 				 heff->GetFunction("pol0")->GetNDF())); 
-	cout << "*****trying to draw the histo" << endl; ///HERE is the PROBLEM
-	heff->Draw("hist");
-  stamp(0.18, "CMS, 5 fb^{-1}", 0.65, "#sqrt{s} = 7 TeV"); 
-  //  stamp(0.18, "CMS, 5.3 fb^{-1}", 0.65, "#sqrt{s} = 7 TeV"); 
-  cout << "*****Do Print = " << fDoPrint << endl;
+	TF1* f1 = new TF1("f1","pol0",0,50);
+	f1->SetLineWidth(3);
+
+	pEff->Fit(f1);
+	pEff->SetStatisticOption(TEfficiency:: kFCP);
+	pEff->Draw();
+	gPad->Update();
+//	cout << "Made Efficiency" << endl;
+	pEff->GetPaintedGraph()->GetYaxis()->SetTitle("Efficiency");
+	pEff->GetPaintedGraph()->SetMinimum(0.75);
+	pEff->GetPaintedGraph()->SetMaximum(1.05);
+	pEff->GetPaintedGraph()->GetXaxis()->SetTitle("N_{PV}");
+	pEff->SetMarkerStyle(20);
+	pEff->SetMarkerSize(1.4);
+//	cout << "Making the text" << endl;
+	pEff->Write();
+	pEff->Draw("ap");
+
+    tl->SetTextSize(0.04); 
+	cout << "after setting text size" << endl;
+	tl->DrawLatex(0.18, 0.91, Form("Prob = %4.3f", 
+								   f1->GetProb()));
+	
+	tl->DrawLatex(0.45, 0.91, Form("Cut = %5.4f", cut));
+
+    tl->SetTextSize(0.05); 
+    tl->DrawLatex(0.25, 0.82, Form("#chi^{2}/dof = %3.1f/%i", 
+								 f1->GetChisquare(),
+								 f1->GetNDF()));
+
+	stamp(0.2, "CMS, 4.9 fb^{-1}", 0.7, "#sqrt{s} = 7 TeV"); 
   if (fDoPrint)  
     c0->SaveAs(Form("%s/effVsNpv-%s-%s-%s-%s-0_%d.pdf", fDirectory.c_str(), fFile.c_str(), dir, chan, var, static_cast<int>(100.*cut)));
-
-
-  heff->Fit("pol1", "FM");
-  heff->GetFunction("pol1")->SetLineWidth(3);
-  tl->SetTextSize(0.04); 
-  tl->DrawLatex(0.16, 0.91, Form("p0 = %4.3f#pm%4.3f", 
-				 heff->GetFunction("pol1")->GetParameter(0), 
-				 heff->GetFunction("pol1")->GetParError(0))); 
-
-  tl->DrawLatex(0.50, 0.91, Form("p1 = %5.4f#pm%5.4f", 
-				 heff->GetFunction("pol1")->GetParameter(1), 
-				 heff->GetFunction("pol1")->GetParError(1))); 
-
-  tl->SetTextSize(0.05); 
-  tl->DrawLatex(0.25, 0.82, Form("#chi^{2}/dof = %3.1f/%i", 
-				 heff->GetFunction("pol1")->GetChisquare(), 
-				 heff->GetFunction("pol1")->GetNDF())); 
-
-  //  stamp(0.2, "CMS, 4.9 fb^{-1}", 0.7, "#sqrt{s} = 7 TeV"); 
-  
-  if (fDoPrint)  
-    c0->SaveAs(Form("%s/effVsNpv-%s-%s-%s-%s-1_%d.pdf", fDirectory.c_str(), fFile.c_str(), dir, chan, var, static_cast<int>(100.*cut)));
 
 }
