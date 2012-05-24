@@ -28,6 +28,7 @@ public:
   TH1 *fH; 
   int fIncludeOverflow; 
 
+  double nTot, lCut, uCut; // to hold total, number ABOVE the cut, number BELOW the cut
   double loEff, loErr; // efficiency of integral BELOW the cut
   double hiEff, hiErr; // efficiency of integral ABOVE the cut
   double inEff, inErr; // efficiency of integral inside the cuts
