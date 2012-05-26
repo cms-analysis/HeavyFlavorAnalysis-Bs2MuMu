@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <string>
+#include <algorithm>
 
 #include <TCut.h>
 #include <TChain.h>
@@ -67,11 +68,10 @@ static bool read_config(const char *configfile, vector<table_entry_t> *table)
 {
 	FILE *file = fopen(configfile,"r");
 	table_entry_t entry;
-	const char *input_line;
+	char buffer[4096];
 	string line;
 	string::iterator it,it2;
 	bool ok = false;
-	size_t len;
 	
 	if (!file) {
 		cout << "Unable to open file '" << configfile << "'" << endl;
@@ -79,21 +79,21 @@ static bool read_config(const char *configfile, vector<table_entry_t> *table)
 	}
 	
 	// look for an opening curly brace
-	while ( (input_line = fgetln(file, &len)) ) {
+	while ( fgets(buffer,sizeof(buffer),file) ) {
 		
 		entry.clear();
 		
-		if (input_line[0] == '#') // comment line
+		if (buffer[0] == '#') // comment line
 			continue;
 		
-		if (input_line[len-1] == '\n' || input_line[len-1] == '\r')
-			len--;
+		if (buffer[strlen(buffer)-1] == '\n' || buffer[strlen(buffer)-1] == '\r')
+		  buffer[strlen(buffer)-1] = '\0';
 		
-		if (len == 0) // empty line
-			continue;
+		if (strlen(buffer) == 0) // empty line
+		  continue;
 		
 		// append this line to the buffer
-		line = string(input_line,len);
+		line = string(buffer);
 		
 		it = find(line.begin(), line.end(), '{');
 		if (it == line.end()) {
@@ -108,7 +108,7 @@ static bool read_config(const char *configfile, vector<table_entry_t> *table)
 		if (it2 == line.end()) {
 			cout << "Invalid format of line:" << endl << line << endl;
 			continue;
-		};
+		}
 		
 		// save the name of the the outputfile
 		entry.filename = string(it,it2);
@@ -149,12 +149,10 @@ bail:
 static void process_entry(table_entry_t e)
 {
 	FILE *chainfile = fopen(e.chainname.c_str(),"r");
-	const char *input_line;
+	char buffer[1024];
 	char chain_entry[1024];
-	size_t len;
 	unsigned size;
 	int parsed;
-	string line;
 	TChain chain("T");
 	TFile *rFile = NULL;
 	TTree *copyTree = NULL;
@@ -163,18 +161,20 @@ static void process_entry(table_entry_t e)
 	e.Print();
 	
 	// open the chain
-	while ( (input_line = fgetln(chainfile, &len)) ) {
+	while ( fgets(buffer, sizeof(buffer), chainfile) ) {
 		
-		if(input_line[0] == '#') continue;
-		if(input_line[len-1] == '\n' || input_line[len-1] == '\r') len--;
-		if(!len) continue;
+		if(buffer[0] == '#') continue;
+		if(buffer[strlen(buffer)-1] == '\n' || buffer[strlen(buffer)-1] == '\r') buffer[strlen(buffer)-1] = '\0';
+		if(!strlen(buffer)) continue;
 		
-		line = string(input_line,len);
-		parsed = sscanf(line.c_str(), "%s %u", chain_entry, &size);
-		if (parsed > 1)
-			chain.Add(chain_entry,size);
-		else if(parsed > 0)
-			chain.Add(chain_entry);
+		parsed = sscanf(buffer, "%s %u", chain_entry, &size);
+		if (parsed > 1) {
+		  cout << "\tAdding " << chain_entry << endl;
+		  chain.Add(chain_entry,size);
+		} else if(parsed > 0) {
+		  cout << "\tAdding " << chain_entry << endl;
+		  chain.Add(chain_entry);
+		}
 	}
 	
 	// open the root file
@@ -184,8 +184,10 @@ static void process_entry(table_entry_t e)
 	copyTree->Write();
 	if(chainfile)
 		fclose(chainfile);
-	
+
 	delete rFile;
+
+	cout << "===> Entry done." << endl;
 } // process_entry()
 
 int main(int argc, const char *argv[])
