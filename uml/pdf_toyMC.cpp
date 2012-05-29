@@ -165,6 +165,7 @@ void pdf_toyMC::fit_pulls() {
   TCanvas* canvas_bs = new TCanvas("canvas_bs", "canvas_bs", 600, 600); 
   rp_bs->Draw();
   string address = "fig/bs_pull_" + meth_ + "_" + ch_s_ + "_" + pdf_toy_;
+  if (SM_) address += "_SM";
   canvas_bs->Print( (address + ".gif").c_str());
   canvas_bs->Print( (address + ".pdf").c_str());
   delete rp_bs;
@@ -215,10 +216,10 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
 
   RooMCStudy* mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), *ws_->var("Mass"), Binned(kFALSE), Silence(), Extended(1), FitOptions(Save(kTRUE), PrintEvalErrors(0))) ;
   cout << pdf_toy << endl;
-//  if(!pdf_toy.compare("bs")) {
-//    RooDLLSignificanceMCSModule sigModule(*ws_->var("N_bs"), 0);
-//    mcstudy->addModule(sigModule) ;
-//  }
+  //if(!pdf_toy.compare("bs")) {
+    RooDLLSignificanceMCSModule sigModule(*ws_->var("N_bs"), 0);
+    mcstudy->addModule(sigModule) ;
+  //}
   cout << "toy MC on pdf: " << endl;
   ws_->pdf(pdf_name.c_str())->Print();
   mcstudy->generateAndFit(NExp) ;
@@ -234,28 +235,29 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
   canvas_bs->cd(1) ; gPad->SetLeftMargin(0.15) ; frame1_bs->GetYaxis()->SetTitleOffset(1.4) ; frame1_bs->Draw() ;
   canvas_bs->cd(2) ; gPad->SetLeftMargin(0.15) ; frame2_bs->GetYaxis()->SetTitleOffset(1.4) ; frame2_bs->Draw() ;
   canvas_bs->cd(3) ; gPad->SetLeftMargin(0.15) ; frame3_bs->GetYaxis()->SetTitleOffset(1.4) ; frame3_bs->Draw() ;
-  string address = "fig/RooMCStudy_bs_" + pdf_toy + ".gif";
-  canvas_bs->Print(address.c_str());
-  address = "fig/RooMCStudy_bs_" + pdf_toy + ".pdf";
-  canvas_bs->Print(address.c_str());
+  string address = "fig/RooMCStudy_bs_" + meth_ + "_" + ch_s_ + "_" + pdf_toy;
+  if (SM_) address += "_SM";
+  canvas_bs->Print((address + ".gif").c_str());
+  canvas_bs->Print((address + ".pdf").c_str());
   delete frame1_bs;
   delete frame2_bs;
   delete frame3_bs;
   delete canvas_bs;
-//  if(!pdf_toy.compare("bs")) {
-//    TCanvas* sig_c = new TCanvas("sig_c", "sig_c", 600, 600);
-//    TH1* sig_h = mcstudy->fitParDataSet().createHistogram("significance_nullhypo_N_bs");
-//    cout << ">>>>>>>" << sig_h->GetXaxis()->GetTitle() << endl;
-//    sig_h->Draw();
-//    sig_c->Print("./fig/RooMCStudy_sig.gif");
-//    sig_c->Print("./fig/RooMCStudy_sig.pdf");
-//    delete sig_c;
-//  }
+  //if(!pdf_toy.compare("bs")) {
+    TCanvas* sig_c = new TCanvas("sig_c", "sig_c", 600, 600);
+    TH1* sig_h = mcstudy->fitParDataSet().createHistogram("significance_nullhypo_N_bs");
+    sig_h->Draw();
+    address = "fig/RooMCStudy_sig_bs_" + meth_ + "_" + ch_s_ + "_" + pdf_toy;
+    if (SM_) address += "_SM";
+    sig_c->Print((address + ".gif").c_str());
+    sig_c->Print((address + ".gif").c_str());
+    delete sig_c;
+  //}
 
   if (!SM_) {
     size_t found;
     found = pdf_name.find("bd");
-    if (found != string::npos) {
+    if (found != string::npos || pdf_toy == "total") {
       RooPlot* frame1_bd = mcstudy->plotParam(*ws_->var("N_bd"), Bins(20)) ;
       RooPlot* frame2_bd = mcstudy->plotError(*ws_->var("N_bd"), Bins(20)) ;
       RooPlot* frame3_bd = mcstudy->plotPull(*ws_->var("N_bd"), Bins(20), FitGauss(kTRUE)) ;
@@ -264,10 +266,9 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
       canvas_bd->cd(1) ; gPad->SetLeftMargin(0.15) ; frame1_bd->GetYaxis()->SetTitleOffset(1.4) ; frame1_bd->Draw() ;
       canvas_bd->cd(2) ; gPad->SetLeftMargin(0.15) ; frame2_bd->GetYaxis()->SetTitleOffset(1.4) ; frame2_bd->Draw() ;
       canvas_bd->cd(3) ; gPad->SetLeftMargin(0.15) ; frame3_bd->GetYaxis()->SetTitleOffset(1.4) ; frame3_bd->Draw() ;
-      address = "fig/RooMCStudy_bd_" + pdf_toy + ".gif";
-      canvas_bd->Print(address.c_str());
-      address = "fig/RooMCStudy_bd_" + pdf_toy + ".pdf";
-      canvas_bd->Print(address.c_str());
+      address = "fig/RooMCStudy_bd_" + meth_ + "_" + ch_s_ + "_" + pdf_toy;
+      canvas_bd->Print((address + ".gif").c_str());
+      canvas_bd->Print((address + ".pdf").c_str());
       delete frame1_bd;
       delete frame2_bd;
       delete frame3_bd;
@@ -362,14 +363,14 @@ void pdf_toyMC::pvalue(int NExp) {
   htr_pl->Print();
   cout << "The p-value for the alternative is " << htr_pl->AlternatePValue() << endl;
 
-  TCanvas c("canvas_roostats", "canvas_roostats", 600, 600);
-  HypoTestPlot *htp = new HypoTestPlot(*htr_pl, 30); // 30 bins
-  htp->SetLogYaxis(true);
-  htp->Draw();
-  string address = "fig/RooStats.gif";
-  c.Print(address.c_str());
-  address = "fig/RooStats.pdf";
-  c.Print(address.c_str());
+//  TCanvas c("canvas_roostats", "canvas_roostats", 600, 600);
+//  HypoTestPlot *htp = new HypoTestPlot(*htr_pl, 30); // 30 bins
+//  htp->SetLogYaxis(true);
+//  htp->Draw();
+//  string address = "fig/RooStats.gif";
+//  c.Print(address.c_str());
+//  address = "fig/RooStats.pdf";
+//  c.Print(address.c_str());
 
 //  double data_significance = htr_pl->Significance();
 

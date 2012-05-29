@@ -21,6 +21,7 @@ int main(int argc, char* argv[]) {
   TFile* input_f = new TFile(input_name.c_str());
   TH1D* Bs_h = (TH1D*)input_f->Get(Form("Bs_%s_chan%s", meth.c_str(), ch_s.c_str()));
   TH1D* Bd_h = (TH1D*)input_f->Get(Form("Bd_%s_chan%s", meth.c_str(), ch_s.c_str()));
+  double SM_ratio = Bs_h->Integral() / Bd_h->Integral();
   TH1D* Rare_h;
   if (ch_s=="0") Rare_h = (TH1D*)input_f->Get(Form("bRare_%s", meth.c_str()));
   if (ch_s=="1") Rare_h = (TH1D*)input_f->Get(Form("eRare_%s", meth.c_str()));
@@ -74,9 +75,8 @@ int main(int argc, char* argv[]) {
   
   /// MC shapes
   pdf_analysis ana1(print, meth, ch_s);
-  if (SM) ana1.set_SMconstraint();
+  if (SM) ana1.set_SMconstraint(SM_ratio);
   RooWorkspace *ws = ana1.get_ws();
-
   ana1.define_pdfs();
   /// FITS
   /// bs
@@ -114,7 +114,10 @@ int main(int argc, char* argv[]) {
   ana1.fit_pdf("total", total_rdh, true);
   //ana1.fit_pdf("all", total_rdh, true);
   
-  ws->SaveAs(Form("output/fit_ws_%s_%s.root", meth.c_str(), ch_s.c_str()));
+  string output_s = "output/fit_ws_" + meth + "_" + ch_s;
+  if (SM) output_s += "_SM";
+  output_s += ".root";
+  ws->SaveAs(output_s.c_str());
   
   cout << "starting Bs " << Bs_h->Integral() << " fit Bs " << ws->var("N_bs")->getVal() << endl;
   if (SM) cout << "starting Bd " << Bd_h->Integral() << " fit Bd constraint to SM" << endl;

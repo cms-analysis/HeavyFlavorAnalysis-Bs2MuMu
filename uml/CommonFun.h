@@ -6,7 +6,6 @@ using namespace std;
 
 /// options
 static string input_name;
-static string output_name;
 static string input_estimates;
 static string meth;
 static string ch_s;
@@ -18,17 +17,21 @@ bool input = false, output = false, method = false, channel = false, estimate = 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
 
 void help() {
-  cout << "-print \t save the fits to gif" << endl;
-  cout << "-i #filename \t input" << endl;
-  cout << "-o #filename \t output" << endl;
-  cout << "-e #filename \t estimates file" << endl;
-  cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree" << endl;
-  cout << "-cha {0, 1} \t barrel OR endcap" << endl;
+  cout << ">>>>>>>>> options for all programs:" << endl;
+  cout << "-i #filename \t input (mandatory)" << endl;
+  cout << endl;
+  cout << ">>>>>>>>> only for pdf_choise:" << endl;
+  cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (mandatory)" << endl;
+  cout << "-cha {0, 1} \t barrel OR endcap input (mandatory)" << endl;
+  cout << "-SM \t SM constraints" << endl;
+  cout << "-print \t save the fits to gif and pdf" << endl;
+  cout << endl;
+  cout << ">>>>>>>>> only for toyMC:" << endl;
+  cout << "-e #filename \t estimates file (mandatory)" << endl;
   cout << "-nexp # \t number of experiments" << endl;
-  cout << "-pdf {bs, bd, rare, comb, total} \t combination of pdf names" << endl;
+  cout << "-pdf {bs, bd, rare, comb, total} \t combination of pdf names (mandatory)" << endl;
   cout << "-roomcs \t toy mc with RooMCStudy" << endl;
   cout << "-pvalue \t pvalue with RooStats" << endl;
-  cout << "-SM \t SM constraints" << endl;
   exit(0);
 }
 
@@ -63,11 +66,6 @@ void parse_options(int argc, char* argv[]){
       input_name = argv[i+1];
       cout << "input = " << input_name << endl;
       input = true;
-    }
-    if (!strcmp(argv[i],"-o")) {
-      output_name = argv[i+1];
-      cout << "output = " << output_name << endl;
-      output = true;
     }
     if (!strcmp(argv[i],"-e")) {
       input_estimates = argv[i+1];

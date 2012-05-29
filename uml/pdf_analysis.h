@@ -45,11 +45,11 @@ public:
   void define_bkg();
   void define_signalsrare();
 
-  void set_SMconstraint(bool SM = true) { SM_ = SM;}
+  void set_SMconstraint(double ratio) {SM_ = true; ratio_ = ratio;}
   
   string define_pdf_sum(string name);
-  void define_all(); // final pdf with fractional components, and also extended
-  void define_total(); // final pdf with all extended components
+  void define_total_fractional(); // final pdf with fractional components, and also extended
+  void define_total_extended(); // final pdf with all extended components
 
   void fit_pdf (string pdf, RooAbsData* data, bool extended);
   void print(string output = "");
