@@ -30,7 +30,8 @@ private:
     muon::SelectionType fMuonSelType;
     double fTrackNormChi2;
     int fPsiMuons;
-    double fPsiWindow,fksWindow,fL0Window,fLbWindow; // mass windows for event selection
+    double fPsiWindow,fksWindow,fL0Window,fLbWindow,fB0Window; // mass windows for event selection
+    bool fUseAnalysisValuesForEff; // use same values for mass windows and node cuts as in analysis candidates
     double fPsiEffWindow,fL0EffWindow; // windows for efficiencies of J/Psi and Lambda0
     double fEffMaxChi2, fEffMin3d, fEffMaxDoca; // cuts for efficiencies of J/Psi and Lambda0
     double fDeltaR;

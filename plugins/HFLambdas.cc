@@ -25,7 +25,7 @@
 
 #include<vector>
 
-#define HFL_FIXMEMPROBLEM // this is a nasty fix for memory leak problems by restricting to just candidates 705122 and 905122
+#define noHFL_FIXMEMPROBLEM // this is a nasty fix for memory leak problems by restricting to just candidates 705122 and 905122
 
 extern TAna01Event *gHFEvent;
 
@@ -95,9 +95,11 @@ HFLambdas::HFLambdas(const ParameterSet& iConfig) :
     fTrackNormChi2(iConfig.getUntrackedParameter<double>("trackNormChi2", 7)),
     fPsiMuons(iConfig.getUntrackedParameter<int>("psiMuons", 1)),
     fPsiWindow(iConfig.getUntrackedParameter<double>("psiWindow",0.3)),
-    fksWindow(iConfig.getUntrackedParameter<double>("ksWindow",0.3)),
+    fksWindow(iConfig.getUntrackedParameter<double>("ksWindow",0.1)),
     fL0Window(iConfig.getUntrackedParameter<double>("L0Window",0.3)),
     fLbWindow(iConfig.getUntrackedParameter<double>("LbWindow",0.8)),
+    fB0Window(iConfig.getUntrackedParameter<double>("B0Window",0.8)),
+    fUseAnalysisValuesForEff(iConfig.getUntrackedParameter<bool>("useAnalysisValuesForEff",false)),
     fPsiEffWindow(iConfig.getUntrackedParameter<double>("psiEffWindow",0.12)),
     fL0EffWindow(iConfig.getUntrackedParameter<double>("L0EffWindow",0.015)),
     fEffMaxChi2(iConfig.getUntrackedParameter<double>("EffMaxChi2",3.84)),
@@ -128,6 +130,8 @@ HFLambdas::HFLambdas(const ParameterSet& iConfig) :
     cout << "---  ksWindow:                                 " << fksWindow << endl;
     cout << "---  L0Window:                                 " << fL0Window << endl;
     cout << "---  LbWindow:                                 " << fLbWindow << endl;
+    cout << "---  B0Window:                                 " << fB0Window << endl;
+    cout << "---  useAnalysisValuesForEff:                  " << fUseAnalysisValuesForEff << endl;
     cout << "---  PsiEffWindow:                             " << fL0EffWindow << endl;
     cout << "---  L0EffWindow:                              " << fPsiEffWindow << endl;
     cout << "---  EffMaxChi2:                               " << fEffMaxChi2 << endl;
@@ -137,8 +141,9 @@ HFLambdas::HFLambdas(const ParameterSet& iConfig) :
     cout << "---  maxDoca:                                  " << fMaxDoca << endl;
     cout << "---  pAngle:                                   " << fPAngle << endl;
     cout << "---  maxVtxCut                                 " << fMaxVtxChi2 << endl;
-    cout << "---  fUseV0producer                            " << fUseV0producer << endl;
-    cout << "---  fDoVcands:                                " << fDoVcands << endl;
+    cout << "---  useV0                                     " << fUseV0producer << endl;
+    cout << "---  doVcands:                                 " << fDoVcands << endl;
+    cout << "---  removeCandTracksFromVertex:               " << fRemoveCandTracksFromVertex << endl;
 
     fMuonSelType = muon::selectionTypeFromString(fMuonType.label());
 } // HFLambdas()
@@ -380,11 +385,14 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
         {
             HFDecayTree theTree(500443+V0Cand, true, MJPSI, false);
             // make a Jpsi
-            if (TMath::Abs(tlvPsi.M() - MJPSI) <= fPsiEffWindow)
+            if (TMath::Abs(tlvPsi.M() - MJPSI) <= (fUseAnalysisValuesForEff ? fPsiWindow : fPsiEffWindow))
             {
                 theTree.addTrack(iMuon1,13);
                 theTree.addTrack(iMuon2,13);
-                theTree.setNodeCut(RefCountedHFNodeCut(new HFV0Cut(fEffMaxChi2, 0, fEffMaxDoca)));
+		if (fUseAnalysisValuesForEff)
+		    theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+		else
+		    theTree.setNodeCut(RefCountedHFNodeCut(new HFV0Cut(fEffMaxChi2, 0, fEffMaxDoca)));
                 aSeq.doFit(&theTree);
             }
         }
@@ -407,6 +415,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
             if(fVerbose > 5) cout << "Making HFDecayTree's with tracks (mu:mu:pr:pi): "
                                       << iMuon1 << ":" << iMuon2 << ":" << iPion << ":" << iProton << endl;
 
+	    //cout << "-----------------------------------------------------" << endl;
             // without J/Psi mass constraint
             HFDecayTreeIterator iterator;
 #ifndef HFL_FIXMEMPROBLEM
@@ -478,6 +487,25 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
             theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
             aSeq.doFit(&theTree);
+
+            // with mass constraint for J/Psi and Lambda0 and non-living J/Psi candidate
+            theTree.clear(925122+V0Cand, true, MLAMBDA_B, false);
+
+            iterator = theTree.addDecayTree(920443+V0Cand, false, MJPSI, false);
+            iterator->addTrack(iMuon1,13,true);
+            iterator->addTrack(iMuon2,13,true);
+            iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+            iterator = theTree.addDecayTree(923122+V0Cand, true, MLAMBDA_0, true);
+            iterator->addTrack(iPion,211,false);
+            iterator->addTrack(iProton,2212,false);
+            iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+	    theTree.set_mass_tracks(MJPSI);
+            theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca,
+			   fMaxVtxChi2*4))); // this node has 4 dof and not 1. *4 is on the safe side
+
+            aSeq.doFit(&theTree);
         }
 
         if(!fUseV0producer)
@@ -495,7 +523,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
                 const TLorentzVector tlvK0 = K0List[j].mother;
 
                 const TLorentzVector tlvB0 = tlvPsi + tlvK0;
-                if (TMath::Abs(tlvB0.M() - MB_0) > fksWindow) continue;
+                if (TMath::Abs(tlvB0.M() - MB_0) > fB0Window) continue;
 
                 // without J/Psi mass constraint
                 HFDecayTree theTree(600511, true, MB_0, false);
@@ -547,7 +575,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
 
                 aSeq.doFit(&theTree);
 
-                // with mass constraint for J/Psi and Lambda0
+                // with mass constraint for J/Psi and Kshort
                 theTree.clear(900511, true, MB_0, false);
 
                 iterator = theTree.addDecayTree(900443, true, MJPSI, true);
@@ -562,6 +590,25 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
                 theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
                 aSeq.doFit(&theTree);
+
+                // with mass constraint for J/Psi and Kshort and non-living J/Psi
+                theTree.clear(920511, true, MB_0, false);
+
+                iterator = theTree.addDecayTree(920443, false, MJPSI, false);
+                iterator->addTrack(iMuon1,13,true);
+                iterator->addTrack(iMuon2,13,true);
+                iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+                iterator = theTree.addDecayTree(920310, true, MKSHORT, true);
+                iterator->addTrack(iPion1,211,false);
+                iterator->addTrack(iPion2,211,false);
+                iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+		theTree.set_mass_tracks(MJPSI);
+                theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca,
+				fMaxVtxChi2*4))); // this node has 4 dof and not 1. *4 is on the safe side
+
+                aSeq.doFit(&theTree);
             }      // K0List
         }         // fUseV0producer
     }               // psiList
@@ -569,26 +616,58 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
     if(fDoVcands) // this is mainly for efficiency studies to have the neutral cands separately from the full fit
         // here we have to apply more stringent cuts to have the combinatorics under control
     {
+	// Lambda0
         for(unsigned int j = 0; j < l0List.size(); j++)
         {
             const unsigned int iPion = l0List[j].id1;
             const unsigned int iProton = l0List[j].id2;
             const TLorentzVector tlvLambda0 = l0List[j].mother;
             // make a Lambda
-            if (TMath::Abs(tlvLambda0.M() - MLAMBDA_0) <= fL0EffWindow)
-            {
+            if (fUseAnalysisValuesForEff || TMath::Abs(tlvLambda0.M() - MLAMBDA_0) <= fL0EffWindow)
+            {	// if we require to use analysis values then every track pair in L0List enters the cand creation
                 TrackBaseRef tbrPi(hTracks, iPion);
                 Track tPi(*tbrPi);
-		if (tPi.chi2()/tPi.ndof() > 5) continue;
+		if (!fUseAnalysisValuesForEff && tPi.chi2()/tPi.ndof() > 5) continue;
                 TrackBaseRef tbrPr(hTracks, iProton);
                 Track tPr(*tbrPr);
-		if (tPr.chi2()/tPr.ndof() > 5) continue;
-                if(tPr.pt() > tPi.pt())
+		if (!fUseAnalysisValuesForEff && tPr.chi2()/tPr.ndof() > 5) continue;
+                if(fUseAnalysisValuesForEff || (tPr.pt() > tPi.pt()))
                 {
                     HFDecayTree theTree(503122+V0Cand, true, MLAMBDA_0, false);
                     theTree.addTrack(iPion,211);
                     theTree.addTrack(iProton,2212);
-                    theTree.setNodeCut(RefCountedHFNodeCut(new HFV0Cut(fEffMaxChi2, fEffMin3d, fEffMaxDoca)));
+		    if (fUseAnalysisValuesForEff)
+			theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+		    else
+			theTree.setNodeCut(RefCountedHFNodeCut(new HFV0Cut(fEffMaxChi2, fEffMin3d, fEffMaxDoca)));
+                    aSeq.doFit(&theTree);
+                }
+            }
+        }
+	// Kshort
+        for(unsigned int j = 0; j < K0List.size(); j++)
+        {
+            const unsigned int iPion1 = K0List[j].id1;
+            const unsigned int iPion2 = K0List[j].id2;
+            const TLorentzVector tlvKshort = K0List[j].mother;
+            // make a Lambda
+            if (fUseAnalysisValuesForEff || TMath::Abs(tlvKshort.M() - MKSHORT) <= fL0EffWindow) // ok, should have a Ks window but we don't use this mode for now
+            {	// if we require to use analysis values then every track pair in L0List enters the cand creation
+                TrackBaseRef tbrPi1(hTracks, iPion1);
+                Track tPi1(*tbrPi1);
+		if (!fUseAnalysisValuesForEff && tPi1.chi2()/tPi1.ndof() > 5) continue;
+                TrackBaseRef tbrPi2(hTracks, iPion2);
+                Track tPi2(*tbrPi2);
+		if (!fUseAnalysisValuesForEff && tPi2.chi2()/tPi2.ndof() > 5) continue;
+                if(fUseAnalysisValuesForEff || (tPi2.pt() > tPi2.pt()))
+                {
+                    HFDecayTree theTree(500310+V0Cand, true, MKSHORT, false);
+                    theTree.addTrack(iPion1,211);
+                    theTree.addTrack(iPion2,211);
+		    if (fUseAnalysisValuesForEff)
+			theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+		    else
+			theTree.setNodeCut(RefCountedHFNodeCut(new HFV0Cut(fEffMaxChi2, fEffMin3d, fEffMaxDoca)));
                     aSeq.doFit(&theTree);
                 }
             }
