@@ -23,7 +23,7 @@ else
 endif
 
 CXXFLAGS      = -g -O3 -Wall -fPIC -pipe $(ROOTCFLAGS)
-LIBS          = $(ROOTLIBS)
+LIBS          = $(ROOTLIBS) -lTreePlayer
 
 OBJS = ana-produce.o
 

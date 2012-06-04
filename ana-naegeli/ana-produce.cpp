@@ -12,6 +12,7 @@
 #include <TCut.h>
 #include <TChain.h>
 #include <TFile.h>
+#include <TTreeFormula.h>
 
 using namespace std;
 
@@ -152,10 +153,14 @@ static void process_entry(table_entry_t e)
 	char buffer[1024];
 	char chain_entry[1024];
 	unsigned size;
-	int parsed;
+	int parsed,written,k;
+	int completed = 0,old = -1;
+	string line;
 	TChain chain("T");
 	TFile *rFile = NULL;
 	TTree *copyTree = NULL;
+	TTreeFormula cutFormula("cutForm",e.cut.GetTitle(),&chain);
+	Long64_t j;
 	
 	cout << "====> Processing entry:" << endl;
 	e.Print();
@@ -179,7 +184,29 @@ static void process_entry(table_entry_t e)
 	
 	// open the root file
 	rFile = new TFile(Form("%s/%s",output_dir.c_str(),e.filename.c_str()),"recreate");
-	copyTree = chain.CopyTree(e.cut,"",chain.GetEntries());
+	
+	copyTree = chain.CloneTree(0);
+	written = printf("Copying: %d %%", completed);
+	fflush(stdout);
+	for (j = 0; j < chain.GetEntries(); j++) {
+		
+		chain.GetEntry(j); // load the entry
+		if (cutFormula.EvalInstance() > 0)
+			copyTree->Fill();
+		
+		completed = (int32_t)(100 * (j+1) / chain.GetEntries());
+		if (completed > old) {
+			old = completed;
+			// erase old progress
+			for (k = 0; k < written; k++) fputc('\b', stdout);
+			for (k = 0; k < written; k++) fputc(' ', stdout);
+			for (k = 0; k < written; k++) fputc('\b', stdout);
+			
+			written = printf("Copying: %d %%", completed);
+			fflush(stdout);
+		}
+	}
+	fputc('\n', stdout);
 	
 	copyTree->Write();
 	if(chainfile)
