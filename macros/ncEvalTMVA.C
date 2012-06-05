@@ -136,8 +136,8 @@ void evalTMVA2(const char *path, Double_t S, Double_t B)
 	Double_t cut,effSig,effBkg;
 	Double_t obsSig,obsBkg;
 	Double_t med,bestCut = -1;
-	Int_t nSigTest,nSigTrain;
-	Int_t nBkgTest,nBkgTrain;
+	Int_t nSigTest = 0,nSigTrain = 0;
+	Int_t nBkgTest = 0,nBkgTrain = 0;
 	Int_t j,k;
 	TRandom3 rand;
 	vector<Double_t> v(100);
@@ -170,7 +170,7 @@ void evalTMVA2(const char *path, Double_t S, Double_t B)
 		cerr << "ERROR: Could not fill the arrays from the root file." << endl;
 		goto bail;
 	}
-	
+
 	// Compute Kolmogorov-Smirnov
 	sort(sigTest, sigTest + nSigTest);
 	sort(sigTrain, sigTrain + nSigTrain);
