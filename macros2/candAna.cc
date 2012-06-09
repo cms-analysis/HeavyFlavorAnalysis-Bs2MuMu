@@ -2841,7 +2841,11 @@ void candAna::isolationStudy(double doca) {
 // ----------------------------------------------------------------------
 int candAna::nearestPV(int pvIdx, double maxDist) {
 
+  if(pvIdx==-1) return -1;  // add protection d.k. 9/6/12
+
   TAnaVertex *v0 = fpEvt->getPV(pvIdx); 
+
+  if(v0==0) return -1;  // add protection 
 
   double zV0 = v0->fPoint.Z(); 
   
