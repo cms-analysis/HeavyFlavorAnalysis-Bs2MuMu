@@ -76,63 +76,94 @@ void pdf_toyMC::generate(int NExp, string pdf_toy) {
   }
   
   double p_bs = 0., p_bd = 0.;
+  bool bd_b = false, corr0 = false, corrneg = false;
+  TH1D* correlation_h = new TH1D("correlation_h", "correlation_h", 100, -1., 1.);
+  TH2D* corr_Nbs_Nbd_vs_N_bs_h = new TH2D("corr_Nbs_Nbd_vs_N_bs_h", "corr_Nbs_Nbd_vs_N_bs_h", 30, 0., 30., 100, -1., 1.);
+
   for (int i = 1; i <= NExp; i++) {
+    if (i%100 == 0) cout << "Exp # " << i << " / " << NExp << endl;
     pdf_toy_ = pdf_toy;
-    RooDataSet* data_bs   = ws_->pdf("pdf_bs")->generate(*ws_->var("Mass"), NumEvents((int)estimate_bs), Extended(1));
-    RooDataSet* data_bd   = ws_->pdf("pdf_bd")->generate(*ws_->var("Mass"), NumEvents((int)estimate_bd), Extended(1));
-    RooDataSet* data_rare = ws_->pdf("pdf_rare")->generate(*ws_->var("Mass"), NumEvents((int)estimate_rare), Extended(1));
-    RooDataSet* data_comb = ws_->pdf("pdf_comb")->generate(*ws_->var("Mass"), NumEvents((int)estimate_comb), Extended(1));
+
+    RooWorkspace* ws_temp = (RooWorkspace*)ws_->Clone("ws_temp");
+
+    RooDataSet* data_bs   = ws_temp->pdf("pdf_bs")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_bs), Extended(1));
+    RooDataSet* data_bd   = ws_temp->pdf("pdf_bd")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_bd), Extended(1));
+    RooDataSet* data_rare = ws_temp->pdf("pdf_rare")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_rare), Extended(1));
+    RooDataSet* data_comb = ws_temp->pdf("pdf_comb")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_comb), Extended(1));
     
-    RooDataSet* data = new RooDataSet("data", "data", *ws_->var("Mass"));
+    RooDataSet* data = new RooDataSet("data", "data", *ws_temp->var("Mass"));
     if (pdf_toy_ == "total") {
       data->append(*data_bs);
       data->append(*data_bd);
       data->append(*data_rare);
       data->append(*data_comb);
+      bd_b = true;
     }
     else {
       size_t found;
       found = pdf_toy_.find("bs");
       if (found != string::npos) data->append(*data_bs);
       found = pdf_toy_.find("bd");
-      if (found != string::npos) data->append(*data_bd);
+      if (found != string::npos) { data->append(*data_bd); bd_b = true; }
       found = pdf_toy_.find("rare");
       if (found != string::npos) data->append(*data_rare);
       found = pdf_toy_.find("comb");
       if (found != string::npos) data->append(*data_comb);
     }
-    
-    double printlevel = -1;
+
+    ws_temp->var("N_bs")->setVal(estimate_bs);
+    ws_temp->var("N_bd")->setVal(estimate_bd);
+    ws_temp->var("N_rare")->setVal(estimate_rare);
+    ws_temp->var("N_comb")->setVal(estimate_comb);
+
+    double printlevel = 1;
     if (i == 1) printlevel = 1;
     //////
-    fit_pdf(pdf_toy_, data, printlevel);
+    RooFitResult* fit_i = fit_pdf(pdf_toy_, data, printlevel, ws_temp);
     //////
+    pdf_name = pdf_toy_;
+    rds_ = data;
     if (i == 1) {
-      rds_ = data;
-      pdf_name = pdf_toy_;
       print("_toyMC");
     }
-      
+    if (i == NExp) {
+      print("_last");
+    }
     /// test statistics
     // PULL
-    double bs_pull = (ws_->var("N_bs")->getVal() - estimate_bs) / ws_->var("N_bs")->getError();
+    double bs_pull = (ws_temp->var("N_bs")->getVal() - estimate_bs) / ws_temp->var("N_bs")->getError();
     pull_bs->setVal(bs_pull);
     pull_rds_bs->add(*pull_bs);
-    if (!SM_) {
-      double bd_pull = (ws_->var("N_bd")->getVal() - estimate_bd) / ws_->var("N_bd")->getError();
+    if (!SM_ && bd_b) {
+      double bd_pull = (ws_temp->var("N_bd")->getVal() - estimate_bd) / ws_temp->var("N_bd")->getError();
       pull_bd->setVal(bd_pull);
       pull_rds_bd->add(*pull_bd);
+
+      double correlation = fit_i->correlation(*ws_temp->var("N_bs"), *ws_temp->var("N_bd"));
+      correlation_h->Fill(correlation);
+      corr_Nbs_Nbd_vs_N_bs_h->Fill(data_bs->numEntries() , correlation);
+      if (correlation > 0. && corr0 == false) {
+        print("_corrzero");
+        corr0 = true;
+      }
+      if (correlation < -0.3 && corrneg == false) {
+        print("_corrneg");
+        corrneg = true;
+      }
     }
     
     // H_0
     if (pdf_toy_ == "pdf_ext_total") {
-      RooDataSet* bkg = new RooDataSet("bkg", "bkg", *ws_->var("Mass"));
+      RooDataSet* bkg = new RooDataSet("bkg", "bkg", *ws_temp->var("Mass"));
       bkg->append(*data_rare);
       bkg->append(*data_comb);
-      fit_pdf("total", bkg, printlevel);
-      if (ws_->var("N_bs")->getVal() >= estimate_bs) p_bs++;
-      if (!SM_) if (ws_->var("N_bs")->getVal() >= estimate_bd) p_bd++;
+      fit_pdf("total", bkg, printlevel, ws_temp);
+      if (ws_temp->var("N_bs")->getVal() >= estimate_bs) p_bs++;
+      if (!SM_) if (ws_temp->var("N_bd")->getVal() >= estimate_bd) p_bd++;
     }
+    if (i == NExp) ws_temp->pdf(pdf_toy_.c_str())->Print();
+    delete data;
+    delete ws_temp;
   }
 
   pdf_toy_ = pdf_toy;
@@ -144,12 +175,27 @@ void pdf_toyMC::generate(int NExp, string pdf_toy) {
     double p_value_bd = p_bd / NExp;
     cout << "p-value bd = " << p_value_bd << endl;
   }
+
+  if (!SM_ && bd_b) {
+    TCanvas* corr_c = new TCanvas("corr_c", "corr_c", 1200, 600);
+    corr_c->Divide(3);
+    corr_c->cd(1);
+    correlation_h->Draw();
+    corr_c->cd(2);
+    corr_Nbs_Nbd_vs_N_bs_h->Draw();
+    string address = "fig/corr_" + meth_ + "_" + ch_s_ + "_" + pdf_toy;
+    corr_c->Print((address + ".gif").c_str());
+    corr_c->Print((address + ".pdf").c_str());
+    delete corr_c;
+  }
+
   return;
 }
 
-void pdf_toyMC::fit_pdf (string pdf, RooAbsData* data, int printlevel) {
+RooFitResult* pdf_toyMC::fit_pdf (string pdf, RooAbsData* data, int printlevel, RooWorkspace* ws) {
   pdf_toy_ = "pdf_ext_" + pdf;
-  ws_->pdf( pdf_toy_.c_str())->fitTo(*data, Extended(true), SumW2Error(0), Range(range_.c_str()), PrintLevel(printlevel));
+  RooFitResult* result = ws->pdf( pdf_toy_.c_str())->fitTo(*data, Extended(true), SumW2Error(0), Range(range_.c_str()), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE));
+  return result;
 }
 
 void pdf_toyMC::fit_pulls() {
@@ -203,7 +249,7 @@ void pdf_toyMC::unset_constant() {
 
 void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
 
-  parse_estimate();
+  //parse_estimate();
   ws_->var("N_bs")->setVal(estimate_bs);
   ws_->var("N_bd")->setVal(estimate_bd);
   ws_->var("N_rare")->setVal(estimate_rare);
@@ -214,17 +260,25 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
     pdf_name = "pdf_ext_" + define_pdf_sum(pdf_toy);
   }
 
-  RooMCStudy* mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), *ws_->var("Mass"), Binned(kFALSE), Silence(), Extended(1), FitOptions(Save(kTRUE), PrintEvalErrors(0))) ;
+  RooMCStudy* mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), *ws_->var("Mass"), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(PrintLevel(-1), Save(kTRUE), PrintEvalErrors(-1))) ;
+
   cout << pdf_toy << endl;
-  //if(!pdf_toy.compare("bs")) {
-    RooDLLSignificanceMCSModule sigModule(*ws_->var("N_bs"), 0);
-    mcstudy->addModule(sigModule) ;
-  //}
+  RooDLLSignificanceMCSModule sigModule(*ws_->var("N_bs"), 0);
+  mcstudy->addModule(sigModule) ;
   cout << "toy MC on pdf: " << endl;
   ws_->pdf(pdf_name.c_str())->Print();
-  mcstudy->generateAndFit(NExp) ;
+  cout << endl;
+  mcstudy->generateAndFit(NExp, 0, kTRUE);
+  cout << "mcstudy:" << endl;
   mcstudy->Print();
+  cout << "fitParDataSet:"<< endl;
   mcstudy->fitParDataSet().Print();
+  cout << "fitResult(0):"<< endl;
+  mcstudy->fitResult(0)->Print();
+  cout << "genData(0):"<< endl;
+  mcstudy->genData(0)->Print();
+  cout << "fitParams(0):"<< endl;
+  mcstudy->fitParams(0)->Print();
 
   // Make plots of the distributions of mean, the error on mean and the pull of mean
   RooPlot* frame1_bs = mcstudy->plotParam(*ws_->var("N_bs"), Bins(20)) ;
@@ -243,21 +297,46 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
   delete frame2_bs;
   delete frame3_bs;
   delete canvas_bs;
-  //if(!pdf_toy.compare("bs")) {
-    TCanvas* sig_c = new TCanvas("sig_c", "sig_c", 600, 600);
-    TH1* sig_h = mcstudy->fitParDataSet().createHistogram("significance_nullhypo_N_bs");
-    sig_h->Draw();
-    address = "fig/RooMCStudy_sig_bs_" + meth_ + "_" + ch_s_ + "_" + pdf_toy;
-    if (SM_) address += "_SM";
-    sig_c->Print((address + ".gif").c_str());
-    sig_c->Print((address + ".gif").c_str());
-    delete sig_c;
-  //}
+  TCanvas* sig_c = new TCanvas("sig_c", "sig_c", 600, 600);
+  TH1* sig_h = mcstudy->fitParDataSet().createHistogram("significance_nullhypo_N_bs");
+  sig_h->Draw();
+  address = "fig/RooMCStudy_sig_bs_" + meth_ + "_" + ch_s_ + "_" + pdf_toy;
+  if (SM_) address += "_SM";
+  sig_c->Print((address + ".gif").c_str());
+  sig_c->Print((address + ".pdf").c_str());
+  delete sig_c;
 
   if (!SM_) {
     size_t found;
     found = pdf_name.find("bd");
     if (found != string::npos || pdf_toy == "total") {
+      TH1* corr_Nbs_Nbd  = mcstudy->fitParDataSet().createHistogram("corr_Nbs_Nbd", *ws_->var("N_bs"), YVar(*ws_->var("N_bd")));
+      corr_Nbs_Nbd->GetXaxis()->SetRangeUser(0., 30.);
+      corr_Nbs_Nbd->GetYaxis()->SetRangeUser(0., 10.);
+      TCanvas* corr_c = new TCanvas("corr_c", "corr_c", 1200, 600);
+      corr_c->Divide(3);
+      corr_c->cd(1);
+      corr_Nbs_Nbd->Draw("box");
+      TH1D* corr_Nbs_Nbd_h = new TH1D("corr_Nbs_Nbd_h", "corr_Nbs_Nbd_h", 100, -1., 1.);
+      TH2D* corr_Nbs_Nbd_vs_N_bs_h = new TH2D("corr_Nbs_Nbd_vs_N_bs_h", "corr_Nbs_Nbd_vs_N_bs_h", 30, 0., 30., 100, -1., 1.);
+      for (int i = 0; i < NExp; i++) {
+        double correlation = mcstudy->fitResult(i)->correlation(*ws_->var("N_bs"), *ws_->var("N_bd"));
+        corr_Nbs_Nbd_h->Fill(correlation);
+        double bs_pull = mcstudy->fitParams(i)->getRealValue("N_bspull");
+        double bs_fit = mcstudy->fitParams(i)->getRealValue("N_bs");
+        double bs_err = mcstudy->fitParams(i)->getRealValue("N_bserr");
+        double bs_gen = bs_fit - bs_err*bs_pull;
+        corr_Nbs_Nbd_vs_N_bs_h->Fill(bs_gen, correlation);
+      }
+      corr_c->cd(2);
+      corr_Nbs_Nbd_h->Draw();
+      corr_c->cd(3);
+      corr_Nbs_Nbd_vs_N_bs_h->Draw();
+      address = "fig/RooMCStudy_corr_" + meth_ + "_" + ch_s_ + "_" + pdf_toy;
+      corr_c->Print((address + ".gif").c_str());
+      corr_c->Print((address + ".pdf").c_str());
+      delete corr_c;
+
       RooPlot* frame1_bd = mcstudy->plotParam(*ws_->var("N_bd"), Bins(20)) ;
       RooPlot* frame2_bd = mcstudy->plotError(*ws_->var("N_bd"), Bins(20)) ;
       RooPlot* frame3_bd = mcstudy->plotPull(*ws_->var("N_bd"), Bins(20), FitGauss(kTRUE)) ;

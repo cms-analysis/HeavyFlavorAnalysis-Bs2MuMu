@@ -11,11 +11,13 @@
 #include "pdf_analysis.h"
 
 #include "TPaveStats.h"
+#include "TH2D.h"
 
 #include "RooRandom.h"
 #include "RooArgSet.h"
 #include "RooMCStudy.h"
 #include "RooDLLSignificanceMCSModule.h"
+#include "RooFitResult.h"
 
 #include "RooStats/ModelConfig.h"
 #include "RooStats/ToyMCSampler.h"
@@ -35,7 +37,7 @@ public:
   void generate(int NExp, string pdf_toy);
   void mcstudy(int NExp, string pdf_toy);
   void pvalue(int NExp);
-  void fit_pdf (string pdf, RooAbsData* data, int printlevel = -1);
+  RooFitResult* fit_pdf (string pdf, RooAbsData* data, int printlevel = -1, RooWorkspace *ws = 0);
   void fit_pulls();
   void parse_estimate();
   void unset_constant();

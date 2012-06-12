@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
   TFile* input_f = new TFile(input_name.c_str());
   TH1D* Bs_h = (TH1D*)input_f->Get(Form("Bs_%s_chan%s", meth.c_str(), ch_s.c_str()));
   TH1D* Bd_h = (TH1D*)input_f->Get(Form("Bd_%s_chan%s", meth.c_str(), ch_s.c_str()));
-  double SM_ratio = Bs_h->Integral() / Bd_h->Integral();
+  double SM_ratio = Bd_h->Integral() / Bs_h->Integral();
   TH1D* Rare_h;
   if (ch_s=="0") Rare_h = (TH1D*)input_f->Get(Form("bRare_%s", meth.c_str()));
   if (ch_s=="1") Rare_h = (TH1D*)input_f->Get(Form("eRare_%s", meth.c_str()));
@@ -75,7 +75,9 @@ int main(int argc, char* argv[]) {
   
   /// MC shapes
   pdf_analysis ana1(print, meth, ch_s);
+  if (SM && bd_const) {cout << "please select SM OR bd_const, not both" << endl; return (EXIT_SUCCESS);}
   if (SM) ana1.set_SMconstraint(SM_ratio);
+  if (bd_const) ana1.set_bdconstraint();
   RooWorkspace *ws = ana1.get_ws();
   ana1.define_pdfs();
   /// FITS
@@ -116,6 +118,7 @@ int main(int argc, char* argv[]) {
   
   string output_s = "output/fit_ws_" + meth + "_" + ch_s;
   if (SM) output_s += "_SM";
+  if (bd_const) output_s += "_BdConst";
   output_s += ".root";
   ws->SaveAs(output_s.c_str());
   

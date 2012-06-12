@@ -8,11 +8,14 @@ using namespace std;
 static string input_name;
 static string input_estimates;
 static string meth;
-static string ch_s;
+static string ch_s = "-1";
 static string pdf_toy = "total";
 static bool print = false;
+static bool simul = false;
 static int NExp = 1;
-bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, pvalue = false, SM = false;
+static int ch_i = -1;
+static int inputs = 1;
+bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, pvalue = false, SM = false, bd_const = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
 
@@ -24,6 +27,7 @@ void help() {
   cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (mandatory)" << endl;
   cout << "-cha {0, 1} \t barrel OR endcap input (mandatory)" << endl;
   cout << "-SM \t SM constraints" << endl;
+  cout << "-bd_const \t Bd constrainted to Bs, over all different channels" << endl;
   cout << "-print \t save the fits to gif and pdf" << endl;
   cout << endl;
   cout << ">>>>>>>>> only for toyMC:" << endl;
@@ -32,6 +36,12 @@ void help() {
   cout << "-pdf {bs, bd, rare, comb, total} \t combination of pdf names (mandatory)" << endl;
   cout << "-roomcs \t toy mc with RooMCStudy" << endl;
   cout << "-pvalue \t pvalue with RooStats" << endl;
+  cout << endl;
+  cout << ">>>>>>>>> only for fitData:" << endl;
+  cout << "-SM \t SM constraints" << endl;
+  cout << "-bd_const \t Bd constrainted to Bs, over all different channels" << endl;
+  cout << "-print \t save the fits to gif and pdf" << endl;
+  cout << "-simul # \t simultaneous fit of # channels (default 1)" << endl;
   exit(0);
 }
 
@@ -51,6 +61,7 @@ void parse_options(int argc, char* argv[]){
     }
     if (!strcmp(argv[i],"-cha")) {
       ch_s = argv[i+1];
+      ch_i = atoi(ch_s.c_str());
       channel = true;
       cout << "channel: " << ch_s << endl;
     }
@@ -88,6 +99,15 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-SM")) {
       cout << "SM constraints" << endl;
       SM = true;
+    }
+    if (!strcmp(argv[i],"-bd_const")) {
+      cout << "Bd constrainted" << endl;
+      bd_const = true;
+    }
+    if (!strcmp(argv[i],"-simul")) {
+      cout << "simultaneous fit" << endl;
+      inputs = atoi(argv[i+1]);
+      simul = true;
     }
     if (!strcmp(argv[i],"-h")) help();
   }
