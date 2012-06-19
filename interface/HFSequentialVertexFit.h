@@ -22,6 +22,8 @@
 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFDecayTree.h"
 
+#include <vector>
+
 class HFSequentialVertexFit
 {
  public:
@@ -42,6 +44,8 @@ class HFSequentialVertexFit
   TAnaCand *addCandidate(HFDecayTree *tree, VertexState *wrtVertexState = NULL);
   float getParticleMass(int particleID, float *mass_sigma);
   void computeDaughterDistance(HFDecayTree *tree);
+  void addFittedParticles(std::vector<RefCountedKinematicParticle> *kinParticles, HFDecayTree *decayTree);
+
 
   // to create a covariance matrix for error propagation
   typedef ROOT::Math::SMatrix<double,3,3,ROOT::Math::MatRepSym<double,3> > cov33_t;

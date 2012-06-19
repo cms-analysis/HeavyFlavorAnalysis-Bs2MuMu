@@ -73,6 +73,21 @@ HFSequentialVertexFit::HFSequentialVertexFit(Handle<View<Track> > hTracks, const
 HFSequentialVertexFit::~HFSequentialVertexFit()
 {} // ~HFSequentialVertexFit()
 
+void HFSequentialVertexFit::addFittedParticles(vector<RefCountedKinematicParticle> *kinParticles, HFDecayTree *decayTree)
+{
+	if (decayTree->vertexing()) {
+		RefCountedKinematicTree kinTree = *(decayTree->getKinematicTree());
+		if (kinTree->isEmpty()) throw EmptyTreeError();
+		
+		kinTree->movePointerToTheTop();
+		kinParticles->push_back(kinTree->currentParticle());
+	} else {
+		// recursively step down
+		for (HFDecayTreeIterator treeIt = decayTree->getVerticesBeginIterator(); treeIt != decayTree->getVerticesEndIterator(); ++treeIt)
+			addFittedParticles(kinParticles, &(*treeIt));
+	}
+} // addFittedParticles()
+
 // if this node does not survive the nodeCut, then it returns false and the fitting sequence stops
 bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 {
@@ -106,13 +121,8 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 		
 		if(!fitTree(&(*treeIt))) return false; // abort if there was some problem
 		
-		kinTree = *(treeIt->getKinematicTree());
-		if (kinTree->isEmpty()) throw EmptyTreeError();
-		
-		if (treeIt->vertexing()) {
-			kinTree->movePointerToTheTop();
-			kinParticles.push_back(kinTree->currentParticle());
-		}
+		// get all the already fit particles
+		addFittedParticles(&kinParticles,&(*treeIt));
 	}
 	
 	// do the actual fit of this vertex
