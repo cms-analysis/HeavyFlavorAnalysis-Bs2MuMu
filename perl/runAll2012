@@ -1,0 +1,207 @@
+#!/usr/bin/env perl
+
+# Usage: cd chains/subdir; runAll -t tarfile [-h] [-m] [-n] [-r] [-a] [-d]
+# ------
+#            -d                           printout only, don't do anything
+#            -h                           hadd the output rootfiles
+#            -C                           run crashed jobs
+#            -s {mc,data,signal,norm,cs}  run jobs of a specific sample
+#            -r rootdir                   place where to put output
+#
+# 2012/06/11 added rare backgrounds (again)
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urs.langenegger@psi.ch>
+#
+# Modified by	Jose Lazo-Flores <Jose.Lazo-Flores@cern.ch>
+# ----------------------------------------------------------------------
+use Getopt::Std;
+getopts('Cdhj:r:s:t:v:');
+
+my $job = "2012";
+if ($opt_j) {
+    $job = $opt_j; 
+}
+
+my $rootdir = "bmm/$job"; 
+if ($opt_r) {
+    $rootdir = $opt_r; 
+}
+
+if ($opt_v) {
+    $version = $opt_v; 
+} else {
+    $version = "v12";
+}
+
+%jobs = (
+    #"signal Bs2MuMu MC mix"  
+    #=> "-m,bmm2Reader.mix-Bs2MuMu,cbmm-$version-cms-Bs2MuMu_BsFilter_8TeV-START50_V15-v1-*,$version-cms-Bs2MuMu.root"
+    "signal Bs2MuMu MC mix"  
+    => "-m,bmm2Reader.mix-Bs2MuMu,cbmm-$version-cms-Bs2MuMu_BsFilter_8TeV-START52_V9-v1-*,$version-cms-Bs2MuMu.root"
+    , "signal Bd2MuMu MC mix"  
+    => "-m,bmm2Reader.mix-Bd2MuMu,cbmm-$version-cms-Bd2MuMu_BsFilter_8TeV-START52_V9-v1-*,$version-cms-Bd2MuMu.root"
+    #
+    #, "norm Bu2JpsiK MC mix V5"  
+    #=> "-m,bmm2Reader.mix-Bu2JpsiK,cbmm-$version-cms-Bu2JPsiK_K2MuPtEtaEtaFilter_8TeV-START52_V5-v1-*,$version-cms-Bu2JpsiK-V5.root"
+    , "norm Bu2JpsiK MC mix V9"  
+    => "-m,bmm2Reader.mix-Bu2JpsiK,cbmm-$version-cms-Bu2JPsiK_K2MuFilter_8TeV-START52_V9-v2-*,$version-cms-Bu2JpsiK-V9.root"
+    #
+    #, "cs Bs2JpsiPhi MC mix"  
+    #=> "-m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-$version-cms-Bs2JPsiPhi_2K2MuPtEtaFilter_8TeV-START52_V5-v1-*,$version-cms-Bs2JpsiPhi.root"
+    , "cs Bs2JpsiPhi MC mix"  
+    => "-m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-$version-cms-BsToJPsiPhi_2K2MuFilter_8TeV-START52_V9-v2-*,$version-cms-Bs2JpsiPhi.root"
+    #
+    #, "data 2012A"  
+    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012A-PromptReco-v1*,$version-2012A-data.root"
+    #, "data 2012B1"  
+    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_1*,$version-2012B_1-data.root"
+    #, "data 2012B2"  
+    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_2*,$version-2012B_2-data.root"
+    #, "data 2012B3"  
+    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_3*,$version-2012B_3-data.root"
+    , "data 2012B4"  
+    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_4*,$version-2012B_4-data.root"
+    #, "data 2012B5"  
+    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_5*,$version-2012B_5-data.root"
+    # 
+    , "Bs2KMuNu rare MC"  
+    => "-m,bmm2Reader.2e33-Bs2KMuNu,cbmm-$version-cms-BsToKMuNu_KMuNuEtaFilter_8TeV-START52_V9-v1-*,$version-2e33-Bs2KMuNu.root"
+    , "Bs2PiPi rare MC"  
+    => "-m,bmm2Reader.2e33-Bs2PiPi,cbmm-$version-cms-BsToPiPi_2PiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bs2PiPi.root"
+    , "Bs2KK rare MC"  
+    => "-m,bmm2Reader.2e33-Bs2KK,cbmm-$version-cms-BsToKK_2KPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bs2KK.root"
+    , "Bs2KPi rare MC"  
+    => "-m,bmm2Reader.2e33-Bs2KPi,cbmm-$version-cms-BsToKPi_KPiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bs2KPi.root"
+    , "Bd2KPi rare MC"  
+    => "-m,bmm2Reader.2e33-Bd2KPi,cbmm-$version-cms-BdToKPi_KPiPtEtaFilter_8TeV-START52_V9-v1,$version-2e33-Bd2KPi.root"
+    );
+
+#my $user  = $ENV{'USER'};
+my $user  = bstomumu;
+
+my $tarfile = "../../../../../120416.tar.gz";
+if ($opt_t) {
+    $tarfile = $opt_t; 
+} else {
+    if ($opt_h) {
+    } else {
+	die "provide a tarfile!\n";
+    }
+}
+
+my $crash = ""; 
+if ($opt_C) {$crash = "-C";}
+
+my $srmcmd  = "srmcp -2 --streams_num=1";
+my $dcap    = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
+my $scratch = "/shome/lazo-flores/scratch"; # /scratch is likely too small
+my $srm     = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store";
+my $storage = "$srm/user/$user/$rootdir";
+
+#my $runCommand = "run $queue $crash -c ../../treeNoCompNoSE.csh -t $tarfile -m batch";
+my $runCommand = "run $crash -c ../../treeNoComp.csh -t $tarfile -m batch";
+
+
+# ----------------------------------------------------------------------
+# -- run hadd instead of submitting
+if ($opt_h) {
+    # print "srmls $storage | grep root\n";
+    @lines = `srmls $storage | grep root`;
+    #@lines = `ls $storage/* | grep root`;
+
+    foreach $j (keys %jobs) {
+	if ($opt_s =~ /signal/ && !($j =~ /signal/)) {next; }
+	if ($opt_s =~ /cs/     && !($j =~ /cs/)) {next; }
+	if ($opt_s =~ /norm/   && !($j =~ /norm/)) {next; }
+	if ($opt_s =~ /data/   && !($j =~ /data/)) {next; }
+	if ($opt_s =~ /mc/     && !($j =~ /MC/)) {next; }
+	#if ($opt_s =~ /rare/   && !($j =~ /rare/)) {next; }
+	#if ($opt_s =~ /acc/    && !($j =~ /acc/)) {next; }
+	#if ($opt_s =~ /bmt/    && !($j =~ /bmt/)) {next; }
+	# -- skip bmt jobs if not explicitely requested
+	if (!($opt_s =~ /bmt/) && ($j =~ /bmt/)) {next; }
+
+	($options, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
+	
+	$dataset =~ s/-\*//;
+	$dataset =~ s/\*/.\*/g;
+	print "dataset = $dataset\n";
+	print "file = $output\n";
+	@rootfiles = grep(/$dataset/, @lines); 
+	@rootfiles = grep(/\.root/, @rootfiles); 
+	@rootfiles = grep(s/\n//, @rootfiles); 
+	if ($#rootfiles == 0) {
+	    @rootfiles = grep(s/.*$user\/$rootdir\///, @rootfiles); 
+	    if ($opt_d) {
+		# print "cp $rootfiles[0] $scratch/$output \n";
+		# print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";		
+		print "$srmcmd $storage/$rootfiles[0] file:///$scratch/$output \n";
+	    } else {
+		# print "cp $rootfiles[0] $scratch/$output \n";
+		# system("/bin/cp $rootfiles[0] $scratch/$output");
+                # print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";
+                # system("$srmcmd $storage/$rootfiles[0] $storage/$output");
+		print "$srmcmd $storage/$rootfiles[0] $scratch/$output \n";
+		system("$srmcmd $storage/$rootfiles[0] file:///$scratch/$output");
+	    }	    
+	} elsif ($#rootfiles > 0) {
+	    @rootfiles = grep(s/.*\/trivcat/$dcap/, @rootfiles); 
+		@files12b = `ls $scratch | grep v12-2012B`;#
+		@rootfiles12b = grep($scratch, @files12b);#
+
+	    if ($opt_d) {
+		print "hadd $scratch/$output \n";
+		foreach $f (@rootfiles) {print "  $f\n";}
+		print "hadd $scratch/v12-2012B-data.root \n";#
+		foreach $f (@rootfiles12b) {print " $f\n";}#
+		#print "hadd $scratch/v12-2012B-data.root $scratch/v12-2012A-data.root $scratch/v12-2012B_1-data.root 
+		#		$scratch/v12-2012B_2-data.root $scratch/v12-2012B_3-data.root $scratch/v12-2012B_4-data.root\n";
+	    } else {
+		print "hadd $scratch/$output @rootfiles\n";
+		if (-e "$scratch/$output") {unlink("$scratch/$output"); }
+		system("hadd $scratch/$output @rootfiles");
+		system("srmrm $storage/$class/$output");
+		system("$srmcmd file:///$scratch/$output $storage/$class/$output");
+		#@rootfiles12b = `ls $scratch | grep v12-2012B`;
+		#system("rm $scratch/v12-2012-data.root");
+		#system("hadd $scratch/v12-2012B-data.root $scratch/v12-2012A-data.root $scratch/v12-2012B_1-data.root 
+		#		$scratch/v12-2012B_2-data.root $scratch/v12-2012B_3-data.root $scratch/v12-2012B_4-data.root");
+	    }
+	}
+    }
+    
+    die "that's it \n";
+}
+
+
+# ----------------------------------------------------------------------
+# -- submit the jobs
+foreach $j (keys %jobs) {
+    ($options, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
+    if ($opt_s =~ /data/   && !($j =~ /data/)) {next; }
+    if ($opt_s =~ /norm/   && !($j =~ /norm/)) {next; }
+    if ($opt_s =~ /signal/ && !($j =~ /signal/)) {next; }
+    if ($opt_s =~ /cs/     && !($j =~ /cs/)) {next; }
+    if ($opt_s =~ /mc/     && !($j =~ /MC/)) {next; }
+    #if ($opt_s =~ /rare/   && !($j =~ /rare/)) {next; }
+    #if ($opt_s =~ /acc/    && !($j =~ /acc/)) {next; }
+    # -- skip bmt jobs if not explicitely requested
+    if (!($opt_s =~ /bmt/) && ($j =~ /bmt/)) {next; }  
+
+    if ($j =~ /data/) {
+	$command = "$runCommand -q all.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
+    } else {
+	$command = "$runCommand -q all.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset"; 
+    }
+
+    if ($opt_d) {
+	print "$j \n$command\n";
+    } else {
+	print "$command\n";
+	system($command);
+    }
+
+}
+

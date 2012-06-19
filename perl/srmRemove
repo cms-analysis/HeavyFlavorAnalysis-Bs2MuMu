@@ -1,0 +1,65 @@
+#!/usr/bin/env perl
+
+# ----------------------------------------------------------------------
+#
+# Usage: srmRemove -x URI -p pattern [-s 13362] [-d] [-a "-count=900"] [-X]
+# -----
+#
+# Examples:  srmRemove -d -x srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/v06-data -p \\.root -s 13362 
+# Examples:  srmRemove -d -x srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/v06-data -p '.\\*' 
+#
+#
+# ----------------------------------------------------------------------
+
+# -- Get arguments
+use Getopt::Std;
+getopts('a:dp:x:Xs:');
+
+# -- arguments for srmls
+if ($opt_a) {
+    ($arg = $opt_a) =~ s/\"//g;
+    print "--> srmls $arg $opt_x\n";
+}
+
+$prefix = substr($opt_x, 0, index($opt_x, '/store')); 
+@removes = `srmls $arg $opt_x`; 
+
+foreach $f (@removes) {
+    chop($f);
+    $f =~ s/^\ *//g;
+    if ($f =~ /$opt_p/) {
+	# -- search for pattern
+	($size, $file) = split(/ /, $f, 2); 
+	$lfn = substr($file, rindex($file, '/store')+1, length($file)); 
+	$ffn = $prefix."/".$lfn;
+	# print "lfn: $lfn -> $size\n";
+	if ($opt_p && !$opt_s) {
+	    # print "$file -> $opt_p\n";
+	    if ($opt_d) {
+		print("d: srmrm $ffn\n");
+	    } else {
+		print("srmrm $ffn\n");
+		system("srmrm $ffn");
+	    }
+	}
+
+	# -- determine size
+	if ($opt_s) {
+	    if ($size < $opt_s) {
+		# print "$s1 -> $fsize\n";
+		if ($opt_d) {
+		    print("d: srmrm $ffn\n");
+		} else {
+		    print("srmrm $ffn\n");
+		    system("srmrm $ffn");
+		}
+	    }
+	}
+	
+    }
+}
+
+if ($opt_X) {
+    print("srmrmdir $opt_x\n");
+    system("srmrmdir $opt_x");
+}    
