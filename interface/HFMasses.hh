@@ -10,7 +10,7 @@
 #define MD0        1.8648 
 #define MDS        1.9682
 #define MDPLUS     1.8693 
-#define MDSTARPLUS 2.0100     
+#define MDSTARPLUS 2.0103     
 #define MLAMBDA_C  2.2865
 #define MJPSI      3.0969
 #define MB_0       5.2795
