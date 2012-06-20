@@ -49,7 +49,7 @@ void HFNodeCut::setFields(double maxDoca, double vtxChi2, TVector3 vtxPos, TVect
 bool HFNodeCut::operator()() {return true;}
 
 HFDecayTree::HFDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma, bool daughtersToPV) :
-  particleID_(pID), vertexing_(doVertexing), mass_(mass), mass_tracks_(0), massConstraint_(massConstraint), massSigma_(massSigma), maxDoca_(0), minDoca_(0), daughtersToPV_(daughtersToPV), kinTree_(0)
+  particleID_(pID), vertexing_(doVertexing), mass_(mass), mass_tracks_(0), massConstraint_(massConstraint), massSigma_(massSigma), maxDoca_(0), minDoca_(0), daughtersToPV_(daughtersToPV), kinTree_(0), kinTreeStore_(0)
 {
   if(massConstraint && massSigma <= 0.0) massSigma_ = 0.0001 * mass;
 
@@ -95,7 +95,9 @@ void HFDecayTree::clear(int pID, bool doVertexing, double mass, bool massConstra
 
   // clear the kinematic tree
   delete kinTree_;
+  delete kinTreeStore_;
   kinTree_ = NULL;
+  kinTreeStore_ = NULL;
   anaCand_ = NULL;
 
   nodeCut_ = RefCountedHFNodeCut(new HFNodeCut);
@@ -176,6 +178,18 @@ void HFDecayTree::setKinematicTree(RefCountedKinematicTree newTree)
   *kinTree_ = newTree; // make a copy from the reference counting pointer
 } // setKinematicTree()
 
+RefCountedKinematicTree *HFDecayTree::getKinematicTreeStore()
+{
+	return kinTreeStore_;
+} // getKinematicTreeStore()
+
+void HFDecayTree::setKinematicTreeStore(RefCountedKinematicTree newTree)
+{
+	if (!kinTreeStore_) kinTreeStore_ = new RefCountedKinematicTree;
+	
+	*kinTreeStore_ = newTree;
+} // setKinematicTreeStore()
+
 void HFDecayTree::resetKinematicTree(int recursive)
 {
   HFDecayTreeIterator treeIt;
@@ -187,7 +201,9 @@ void HFDecayTree::resetKinematicTree(int recursive)
   
   kinParticleMap_.clear();
   delete kinTree_;
+  delete kinTreeStore_;
   kinTree_ = NULL;
+  kinTreeStore_ = NULL;
   anaCand_ = NULL;
 } // resetKinematicTree()
 

@@ -75,7 +75,7 @@ class HFDecayTree
 {
 	public:
 		HFDecayTree(int pID, bool doVertexing, double mass, bool massConstraint, double massSigma = -1.0, bool daughtersToPV = false);
-		virtual ~HFDecayTree() { delete kinTree_; }
+		virtual ~HFDecayTree() { delete kinTree_; delete kinTreeStore_;}
 		
 		// Constructing the tree structure
 		void addTrack(int trackIx, int trackID, bool massFit = true); // Add a track with a given type and massFit
@@ -102,6 +102,8 @@ class HFDecayTree
 		void setKinParticleMap(std::map<int,int> newMap);
 		RefCountedKinematicTree *getKinematicTree();
 		void setKinematicTree(RefCountedKinematicTree newTree);
+		RefCountedKinematicTree *getKinematicTreeStore();
+		void setKinematicTreeStore(RefCountedKinematicTree newTree);
 		void resetKinematicTree(int recursive = 0);
 		
 		// Reconstruction
@@ -153,6 +155,7 @@ class HFDecayTree
 		std::map<int,int> kinParticleMap_; // map: trackIx -> entry in the daughter kinematic particles...
 		std::vector<HFDecayTree> subVertices_;
 		RefCountedKinematicTree *kinTree_;
+		RefCountedKinematicTree *kinTreeStore_;
 		TAnaCand *anaCand_;
 		RefCountedHFNodeCut nodeCut_;
 };
