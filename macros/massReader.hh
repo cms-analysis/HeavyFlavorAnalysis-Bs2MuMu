@@ -120,21 +120,43 @@ class massReader : public treeReader01 {
 		const char *fTreeName;
 		
 	protected:
+		// Candidate Variables
 		int fCandidate;
 		float fMass;
 		float fMassConstraint; // mass of the constraint candidate...
+		float fPt; // pt of the top particle
 		int fSameMother; // set if the originate from the same 'valid' mother
 		int fTrueDecay; // set the MC true decay
-		float fPt; // pt of the top particle
+		float fMaxDoca; // max doca
+		float fEta; // eta of the candidate
+		float fIPCand;
+		float fIPCandE;
+		// SV Vertex Variables
 		float fD3;
 		float fD3E;
+		float fCtau;
+		float fCtauE;
 		float fDxy;	// distance to originating vertex (2d)
 		float fDxyE;	// error (2d)
 		float fAlpha; // angle between momentum and dist(vertex, motherVertex)
 		float fAlphaXY; // Angle between momentum and dist(vertex, motherVertex) in xy-plane
 		float fChi2; // chi2 of the vertex
 		float fNdof; // number of degrees of freedom of vertex
-		float fMaxDoca; // max doca
+		int fTracksIx[NBR_TRACKS_STORE];
+		float fTracksIP[NBR_TRACKS_STORE];
+		float fTracksIPE[NBR_TRACKS_STORE];
+		float fTracksPT[NBR_TRACKS_STORE];
+		float fTracksPTRel[NBR_TRACKS_STORexiE];
+		// Isolation variables
+		float fIsoMoriond12; // isolation variable defined as for moriond 12
+		float fDoca0;
+		float fNbrNearby;
+		// muon properties
+		float fPtMu1,fPtMu2;
+		int fMuTight1,fMuTight2;
+		float fEtaMu1,fEtaMu2;
+		float fDeltaPhiMu; // mu1.Phi(mu2)
+		float fDeltaR; // deltaR of the muons
 		float fPMu1_Gen; // p of generator muon 1
 		float fPMu2_Gen; // p of generator muon 2
 		float fPtMu1_Gen; // pt of generator muon
@@ -144,17 +166,7 @@ class massReader : public treeReader01 {
 		int fTrackQual_mu1; // track quality of muon 1
 		int fTrackQual_mu2; // track quality of muon 2
 		int fQ_mu1; // charge of muon 1
-		int fQ_mu2;	// charge of muon 2
-		float fDeltaPhiMu; // mu1.Phi(mu2)
-		float fIsoMoriond12; // isolation variable defined as for moriond 12
-		float fDoca0;
-		float fNbrNearby;
-		float fPVTrkWeight;
-		// muon properties
-		float fPtMu1,fPtMu2;
-		int fMuTight1,fMuTight2;
-		float fEtaMu1,fEtaMu2;
-		float fDeltaR; // deltaR of the muons
+		int fQ_mu2;	// charge of muon 2	
 		// J/Psi
 		float fPtJPsi;
 		float fMassJPsi;
@@ -181,17 +193,9 @@ class massReader : public treeReader01 {
 		int fTriggersFound; // what triggers were available
 		int fTriggeredJPsi;
 		int fTriggeredBs;
-		float fCtau;
-		float fCtauE;
-		float fEta; // eta of the candidate
+		// PV
 		int fNbrPV; // nbr of PV in this event
-		float fIPCand;
-		float fIPCandE;
-		int fTracksIx[NBR_TRACKS_STORE];
-		float fTracksIP[NBR_TRACKS_STORE];
-		float fTracksIPE[NBR_TRACKS_STORE];
-		float fTracksPT[NBR_TRACKS_STORE];
-		float fTracksPTRel[NBR_TRACKS_STORE];
+		float fPVTrkWeight;
 	
 	// Cut variables
 	protected:
