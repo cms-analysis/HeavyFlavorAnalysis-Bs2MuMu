@@ -15,7 +15,7 @@
 #pragma link C++ function ncEvalAll(const char*);
 #pragma link C++ function ncEvalAll(const char*,bool);
 
-#pragma link C++ function ncRunTraining(TTree*,double,TTree*,double,int,TCut,string*);
+#pragma link C++ function ncRunTraining(TTree*,double,TTree*,double,int,TCut,string);
 #pragma link C++ function ncRunDefaultTraining(const char*, const char*);
 
 #endif
