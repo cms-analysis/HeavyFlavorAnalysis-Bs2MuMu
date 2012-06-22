@@ -34,7 +34,7 @@ class HFSequentialVertexFit
   void doFit(HFDecayTree *tree);
   
  private:
-  bool fitTree(HFDecayTree *tree, bool save);
+  bool fitTree(HFDecayTree *tree);
   void saveTree(HFDecayTree *tree);
   
   double getMaxDoca(std::vector<RefCountedKinematicParticle> &kinParticles);
