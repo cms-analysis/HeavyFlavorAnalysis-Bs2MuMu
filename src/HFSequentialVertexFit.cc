@@ -76,6 +76,7 @@ HFSequentialVertexFit::~HFSequentialVertexFit()
 void HFSequentialVertexFit::addFittedParticles(vector<RefCountedKinematicParticle> *kinParticles, HFDecayTree *decayTree)
 {
 	if (decayTree->vertexing()) {
+		fitTree(decayTree); // fit again (no more dependencies on mothers)
 		RefCountedKinematicTree kinTree = *(decayTree->getKinematicTree());
 		if (kinTree->isEmpty()) throw EmptyTreeError();
 		
@@ -96,7 +97,7 @@ void HFSequentialVertexFit::addFittedParticles(vector<RefCountedKinematicParticl
 } // addFittedParticles()
 
 // if this node does not survive the nodeCut, then it returns false and the fitting sequence stops
-bool HFSequentialVertexFit::fitTree(HFDecayTree *tree, bool save)
+bool HFSequentialVertexFit::fitTree(HFDecayTree *tree)
 {
 	KinematicParticleFactoryFromTransientTrack pFactory;
 	vector<RefCountedKinematicParticle> kinParticles;
@@ -108,12 +109,13 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree, bool save)
 	map<int,int> *kinParticleMap;
 	int mass_constrained_tracks = 0;
 	
-	// propagate the save message down to all subnodes
-	for (treeIt = tree->getVerticesBeginIterator(); save && treeIt != tree->getVerticesEndIterator(); ++treeIt)
-		if (!fitTree(&(*treeIt),save)) return false; // abort if there was some problem
+	// propagate the fit message down the tree
+	for (treeIt = tree->getVerticesBeginIterator(); treeIt != tree->getVerticesEndIterator(); ++treeIt)
+		fitTree(&(*treeIt));
 	
 	// set up the kinParticleMap for 'tree'
 	kinParticleMap = tree->getKinParticleMap();
+	kinParticleMap->clear(); // erase previous content...
 	
 	// add the particles from the tracks, we have to add them first for the KinematicConstrainedVertexFitter
 	allTreeTracks = tree->getAllTracks(1);
@@ -129,67 +131,62 @@ bool HFSequentialVertexFit::fitTree(HFDecayTree *tree, bool save)
 	
 	// add the particles from the sub-tree's with vertexing...
 	for (treeIt = tree->getVerticesBeginIterator(); treeIt != tree->getVerticesEndIterator(); ++treeIt) {
-		
-		// no saving required here
-		if(!fitTree(&(*treeIt), false)) return false; // abort if there was some problem
-		
-		if (fVerbose > 5) cout << "Start assembling kinematic particles for tree->particleID() = " << (int)tree->particleID() << endl;
-		
+		if (fVerbose > 5) cout << "Start assembling kinematic particles for tree->particleID() = " << (int)tree->particleID() << endl;		
 		// get all the already fit particles
 		addFittedParticles(&kinParticles,&(*treeIt));
 	}
 	
 	// do the actual fit of this vertex
-	if (tree->vertexing() || save) {
-		if (tree->mass_tracks() > 0 && mass_constrained_tracks > 0) {
-			KinematicConstrainedVertexFitter kcvFitter;
-			auto_ptr<MultiTrackKinematicConstraint> tr_c(new MultiTrackMassKinematicConstraint(tree->mass_tracks(),mass_constrained_tracks));
-			kinTree = kcvFitter.fit(kinParticles,&(*tr_c));
-		} else {
-			KinematicParticleVertexFitter kpvFitter;
-			kinTree = kpvFitter.fit(kinParticles);
-		}
-	
-		if (!kinTree->isEmpty() && tree->massConstraint()) {
-			KinematicParticleFitter csFitter;
-			auto_ptr<KinematicConstraint> con(new MassKinematicConstraint(tree->mass(),tree->massSigma()));
-			kinTree = csFitter.fit(&(*con),kinTree);
-		}
-		
-		tree->setKinematicTree(kinTree);
-		if (save) tree->setKinematicTreeStore(kinTree);
-		
-		// set the node cut variables
-		nodeCut = tree->getNodeCut();
-		{
-			// initialize the node variables
-			double maxDoca;
-			double vtxChi2;
-			TVector3 vtxPos;
-			TVector3 ptCand;
-			
-			RefCountedKinematicVertex kinVertex;
-			RefCountedKinematicParticle kinPart;
-			
-			kinTree->movePointerToTheTop();
-			kinPart = kinTree->currentParticle();
-			kinVertex = kinTree->currentDecayVertex();
-			
-			maxDoca = getMaxDoca(kinParticles);
-			tree->set_maxDoca(maxDoca);
-			tree->set_minDoca(getMinDoca(kinParticles));
-			vtxChi2 = kinPart->chiSquared();
-			vtxPos.SetXYZ(kinVertex->position().x(),kinVertex->position().y(),kinVertex->position().z());
-			ptCand.SetXYZ(kinPart->currentState().globalMomentum().x(),
-						  kinPart->currentState().globalMomentum().y(),
-						  kinPart->currentState().globalMomentum().z());
-			nodeCut->setFields(maxDoca, vtxChi2, vtxPos, ptCand);
-		}
-	
-		return (*nodeCut)();
+	if (tree->mass_tracks() > 0 && mass_constrained_tracks > 0) {
+		KinematicConstrainedVertexFitter kcvFitter;
+		auto_ptr<MultiTrackKinematicConstraint> tr_c(new MultiTrackMassKinematicConstraint(tree->mass_tracks(),mass_constrained_tracks));
+		kinTree = kcvFitter.fit(kinParticles,&(*tr_c));
+	} else {
+		KinematicParticleVertexFitter kpvFitter;
+		kinTree = kpvFitter.fit(kinParticles);
+	}
+
+	if (!kinTree->isEmpty() && tree->massConstraint()) {
+		KinematicParticleFitter csFitter;
+		auto_ptr<KinematicConstraint> con(new MassKinematicConstraint(tree->mass(),tree->massSigma()));
+		kinTree = csFitter.fit(&(*con),kinTree);
 	}
 	
-	return true;
+	tree->setKinematicTree(kinTree);
+	
+	// set the node cut variables
+	nodeCut = tree->getNodeCut();
+	{
+		// initialize the node variables
+		double maxDoca;
+		double vtxChi2;
+		TVector3 vtxPos;
+		TVector3 ptCand;
+		
+		RefCountedKinematicVertex kinVertex;
+		RefCountedKinematicParticle kinPart;
+		
+		kinTree->movePointerToTheTop();
+		kinPart = kinTree->currentParticle();
+		kinVertex = kinTree->currentDecayVertex();
+		
+		if (fVerbose > 5) {
+			cout << "Sequential Vertex Fit (" << (int)tree->particleID() << "): " << endl;
+			cout << "\tP = (" << kinPart->currentState().globalMomentum().x() << ", " << kinPart->currentState().globalMomentum().y() << ", " << kinPart->currentState().globalMomentum().z() << "), mass = " << kinPart->currentState().mass() << endl;
+		}
+		
+		maxDoca = getMaxDoca(kinParticles);
+		tree->set_maxDoca(maxDoca);
+		tree->set_minDoca(getMinDoca(kinParticles));
+		vtxChi2 = kinPart->chiSquared();
+		vtxPos.SetXYZ(kinVertex->position().x(),kinVertex->position().y(),kinVertex->position().z());
+		ptCand.SetXYZ(kinPart->currentState().globalMomentum().x(),
+					  kinPart->currentState().globalMomentum().y(),
+					  kinPart->currentState().globalMomentum().z());
+		nodeCut->setFields(maxDoca, vtxChi2, vtxPos, ptCand);
+	}
+
+	return (*nodeCut)();
 } // fitTree()
 
 void HFSequentialVertexFit::saveTree(HFDecayTree *tree)
@@ -205,7 +202,7 @@ void HFSequentialVertexFit::saveTree(HFDecayTree *tree)
     tree->setAnaCand(addCandidate(tree)); // top candidate w.r.t. primary vertex
 
   // get the current vertex state
-  subTree = *(tree->getKinematicTreeStore());
+  subTree = *(tree->getKinematicTree());
   subTree->movePointerToTheTop();
   vState = subTree->currentDecayVertex()->vertexState();
   
@@ -262,7 +259,7 @@ void HFSequentialVertexFit::computeDaughterDistance(HFDecayTree *tree)
     dau = it->getAnaCand();
     if (!dau) continue;
 
-    dauTree = *(it->getKinematicTreeStore());
+    dauTree = *(it->getKinematicTree());
     dauTree->movePointerToTheTop();
     dauVertex = dauTree->currentDecayVertex();
 
@@ -291,7 +288,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   vector<track_entry_t> allTreeTracks = tree->getAllTracks(1);
   set<int> allUsedTrackIndices = tree->getAllTracksIndices();
   map<int,int> *kinParticleMap;
-  RefCountedKinematicTree kinTree = *(tree->getKinematicTreeStore());
+  RefCountedKinematicTree kinTree = *(tree->getKinematicTree());
   RefCountedKinematicParticle kinParticle;
   RefCountedKinematicVertex kinVertex;
   vector<RefCountedKinematicParticle> daughterParticles;
@@ -612,7 +609,7 @@ void HFSequentialVertexFit::doFit(HFDecayTree *tree)
   
   try {
     tree->resetKinematicTree(1);
-	if(fitTree(tree,true))
+	if(fitTree(tree))
 		saveTree(tree);
   } catch (cms::Exception &ex) {
     if (fVerbose > 0) cout << "==> HFSequentialVertexFit: cms exception caught: " << ex.what() << endl;
