@@ -146,7 +146,7 @@ class massReader : public treeReader01 {
 		float fTracksIP[NBR_TRACKS_STORE];
 		float fTracksIPE[NBR_TRACKS_STORE];
 		float fTracksPT[NBR_TRACKS_STORE];
-		float fTracksPTRel[NBR_TRACKS_STORexiE];
+		float fTracksPTRel[NBR_TRACKS_STORE];
 		// Isolation variables
 		float fIsoMoriond12; // isolation variable defined as for moriond 12
 		float fDoca0;
