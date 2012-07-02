@@ -1,5 +1,12 @@
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/Bd2MuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0000.root  102986
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/Bd2MuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0001.root  101674
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/Bd2MuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0002.root  102934
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/Bd2MuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0003.root  100372
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/Bd2MuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0004.root  99289
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/BdToMuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0000.root  41568
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/BdToMuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0001.root  46611
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/BdToMuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0002.root  44445
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/BdToMuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0003.root  40590
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/BdToMuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0004.root  45076
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/BdToMuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0005.root  45106
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/BdToMuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0006.root  44198
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/BdToMuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0007.root  44797
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/BdToMuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0008.root  44251
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/BdToMuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0009.root  40804
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/BdToMuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0010.root  45016
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/mc-cms/BdToMuMu_8TeV/bmm-mc-cms-v12-BdToMuMu-START52_V9-v1-0011.root  24793
