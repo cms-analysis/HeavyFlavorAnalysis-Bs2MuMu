@@ -39,32 +39,34 @@ if ($opt_v) {
     #"signal Bs2MuMu MC mix"  
     #=> "-m,bmm2Reader.mix-Bs2MuMu,cbmm-$version-cms-Bs2MuMu_BsFilter_8TeV-START50_V15-v1-*,$version-cms-Bs2MuMu.root"
     "signal Bs2MuMu MC mix"  
-    => "-m,bmm2Reader.mix-Bs2MuMu,cbmm-$version-cms-Bs2MuMu_BsFilter_8TeV-START52_V9-v1-*,$version-cms-Bs2MuMu.root"
+    => "-m,bmm2Reader.mix-Bs2MuMu,cbmm-$version-cms-BsToMuMu_BsFilter_8TeV-START52_V9-v1-*,$version-cms-Bs2MuMu.root"
     , "signal Bd2MuMu MC mix"  
-    => "-m,bmm2Reader.mix-Bd2MuMu,cbmm-$version-cms-Bd2MuMu_BsFilter_8TeV-START52_V9-v1-*,$version-cms-Bd2MuMu.root"
+    => "-m,bmm2Reader.mix-Bd2MuMu,cbmm-$version-cms-BdToMuMu_BdFilter_8TeV-START52_V9-v1-*,$version-cms-Bd2MuMu.root"
     #
-    #, "norm Bu2JpsiK MC mix V5"  
-    #=> "-m,bmm2Reader.mix-Bu2JpsiK,cbmm-$version-cms-Bu2JPsiK_K2MuPtEtaEtaFilter_8TeV-START52_V5-v1-*,$version-cms-Bu2JpsiK-V5.root"
     , "norm Bu2JpsiK MC mix V9"  
-    => "-m,bmm2Reader.mix-Bu2JpsiK,cbmm-$version-cms-Bu2JPsiK_K2MuFilter_8TeV-START52_V9-v2-*,$version-cms-Bu2JpsiK-V9.root"
+    => "-m,bmm2Reader.mix-Bu2JpsiK,cbmm-$version-cms-BuToJPsiK_K2MuFilter_8TeV-START52_V9-v2-*,$version-cms-Bu2JpsiK-V9.root"
     #
-    #, "cs Bs2JpsiPhi MC mix"  
-    #=> "-m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-$version-cms-Bs2JPsiPhi_2K2MuPtEtaFilter_8TeV-START52_V5-v1-*,$version-cms-Bs2JpsiPhi.root"
     , "cs Bs2JpsiPhi MC mix"  
     => "-m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-$version-cms-BsToJPsiPhi_2K2MuFilter_8TeV-START52_V9-v2-*,$version-cms-Bs2JpsiPhi.root"
     #
-    #, "data 2012A"  
-    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012A-PromptReco-v1*,$version-2012A-data.root"
+    , "data 2012A"  
+    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012A-PromptReco-v1*,$version-2012A-data.root"
+    , "data 2012B"  
+    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1*,$version-2012B-data.root"
     #, "data 2012B1"  
     #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_1*,$version-2012B_1-data.root"
     #, "data 2012B2"  
     #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_2*,$version-2012B_2-data.root"
     #, "data 2012B3"  
     #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_3*,$version-2012B_3-data.root"
-    , "data 2012B4"  
-    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_4*,$version-2012B_4-data.root"
+    #, "data 2012B4"  
+    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_4*,$version-2012B_4-data.root"
     #, "data 2012B5"  
     #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_5*,$version-2012B_5-data.root"
+    #, "data 2012B6"  
+    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_6*,$version-2012B_6-data.root"
+    #, "data 2012B7"  
+    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_7*,$version-2012B_7-data.root"
     # 
     , "Bs2KMuNu rare MC"  
     => "-m,bmm2Reader.2e33-Bs2KMuNu,cbmm-$version-cms-BsToKMuNu_KMuNuEtaFilter_8TeV-START52_V9-v1-*,$version-2e33-Bs2KMuNu.root"
@@ -75,7 +77,9 @@ if ($opt_v) {
     , "Bs2KPi rare MC"  
     => "-m,bmm2Reader.2e33-Bs2KPi,cbmm-$version-cms-BsToKPi_KPiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bs2KPi.root"
     , "Bd2KPi rare MC"  
-    => "-m,bmm2Reader.2e33-Bd2KPi,cbmm-$version-cms-BdToKPi_KPiPtEtaFilter_8TeV-START52_V9-v1,$version-2e33-Bd2KPi.root"
+    => "-m,bmm2Reader.2e33-Bd2KPi,cbmm-$version-cms-BdToKPi_KPiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bd2KPi.root"
+    , "Lb2PiP rare MC"  
+    => "-m,bmm2Reader.2e33-Lb2PiP,cbmm-$version-cms-LambdaBToPPi_PPiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-LambdaBToPPi.root"
     );
 
 #my $user  = $ENV{'USER'};
@@ -117,7 +121,7 @@ if ($opt_h) {
 	if ($opt_s =~ /norm/   && !($j =~ /norm/)) {next; }
 	if ($opt_s =~ /data/   && !($j =~ /data/)) {next; }
 	if ($opt_s =~ /mc/     && !($j =~ /MC/)) {next; }
-	#if ($opt_s =~ /rare/   && !($j =~ /rare/)) {next; }
+	if ($opt_s =~ /rare/   && !($j =~ /rare/)) {next; }
 	#if ($opt_s =~ /acc/    && !($j =~ /acc/)) {next; }
 	#if ($opt_s =~ /bmt/    && !($j =~ /bmt/)) {next; }
 	# -- skip bmt jobs if not explicitely requested
@@ -166,7 +170,7 @@ if ($opt_h) {
 		system("$srmcmd file:///$scratch/$output $storage/$class/$output");
 		#@rootfiles12b = `ls $scratch | grep v12-2012B`;
 		#system("rm $scratch/v12-2012-data.root");
-		#system("hadd $scratch/v12-2012B-data.root $scratch/v12-2012A-data.root $scratch/v12-2012B_1-data.root 
+		#system("hadd $scratch/v12-2012-data.root $scratch/v12-2012A-data.root $scratch/v12-2012B_1-data.root 
 		#		$scratch/v12-2012B_2-data.root $scratch/v12-2012B_3-data.root $scratch/v12-2012B_4-data.root");
 	    }
 	}
@@ -185,7 +189,7 @@ foreach $j (keys %jobs) {
     if ($opt_s =~ /signal/ && !($j =~ /signal/)) {next; }
     if ($opt_s =~ /cs/     && !($j =~ /cs/)) {next; }
     if ($opt_s =~ /mc/     && !($j =~ /MC/)) {next; }
-    #if ($opt_s =~ /rare/   && !($j =~ /rare/)) {next; }
+    if ($opt_s =~ /rare/   && !($j =~ /rare/)) {next; }
     #if ($opt_s =~ /acc/    && !($j =~ /acc/)) {next; }
     # -- skip bmt jobs if not explicitely requested
     if (!($opt_s =~ /bmt/) && ($j =~ /bmt/)) {next; }  
