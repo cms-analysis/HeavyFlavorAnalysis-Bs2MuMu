@@ -6,6 +6,7 @@
 #include "TEfficiency.h"
 #include "TGraphAsymmErrors.h"
 #include "TGraph.h"
+#include "TPaveStats.h"
 
 using namespace std; 
 using std::string; 
@@ -47,11 +48,11 @@ void plotPU::makeAll(int channels) {
   effVsNpv("flsxy",    15.0,   "l_{xy}/#sigma > 15", "A", candName.c_str(), "Ao"); 
   effVsNpv("docatrk",  0.015,  "d^{0}_{ca} > 0.015 cm", "A", candName.c_str(), "Ao"); 
   effVsNpv("closetrk", -2,     "N^{close}_{trk} < 2",        "A", candName.c_str(), "Ao"); 
-  effVsNpv("lip",      -0.008, "l_{z}<0.008 cm",      "A", candName.c_str(), "Ao"); 
+  effVsNpv("lip",      -0.008, "l_{z} < 0.008 cm",      "A", candName.c_str(), "Ao"); 
   effVsNpv("lips",     -2.0,   "l_{z}/#sigma(l_{z}) < 2",  "A", candName.c_str(), "Ao"); 
   effVsNpv("ip",       -0.008, "#delta_{3D} < 0.008 cm", "A", candName.c_str(), "Ao"); 
   effVsNpv("ips",      -2.0,   "#delta_{3D}/#sigma(#delta_{3D}) < 2",  "A", candName.c_str(), "Ao"); 
-  effVsNpv("pvavew8",  0.6,    "<w_{trk} > 0.6",     "A", candName.c_str(), "Ao"); 
+  effVsNpv("pvavew8",  0.6,    "< w_{trk} > 0.6",     "A", candName.c_str(), "Ao"); 
 
 	/////////////// this part was commented out ////////////////
 //   effVsNpv("iso0",     0.75, "#epsilon(I0>0.75)",           "A", candName.c_str(), "Ao"); 
@@ -76,7 +77,7 @@ void plotPU::makeAll(int channels) {
   effVsNpv("lips",     -2.0,   "l_{z}/#sigma(l_{z}) < 2",  "A", candName.c_str(), "Ao"); 
   effVsNpv("ip",       -0.008, "#delta_{3D} < 0.008 cm", "A", candName.c_str(), "Ao"); 
   effVsNpv("ips",      -2.0,   "#delta_{3D}/#sigma(#delta_{3D}) < 2",  "A", candName.c_str(), "Ao"); 
-  effVsNpv("pvavew8",  0.6,    "<w_{trk} > 0.6",     "A", candName.c_str(), "Ao"); 
+  effVsNpv("pvavew8",  0.6,    "< w_{trk} > 0.6",     "A", candName.c_str(), "Ao"); 
 }
 
 
@@ -170,6 +171,7 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
   c0->Clear();
   gStyle->SetOptStat(0); 
   gStyle->SetOptFit(0); 
+	c0->Update();
 //	gStyle->SetOptFit(1111); 
 
 	TF1* f1 = new TF1("f1","pol0",0,50);
@@ -177,6 +179,10 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
 
 	pEff->Fit(f1);
 	pEff->SetStatisticOption(TEfficiency:: kFCP);
+//	TPaveStats *st = (TPaveStats*)pEff->GetPaintedGraph()->FindObject("f1");
+//	st->SetOptStat(0); 
+//	st->SetOptFit(0); 
+
 	pEff->Draw();
 	gPad->Update();
 //	cout << "Made Efficiency" << endl;
@@ -192,17 +198,25 @@ void plotPU::effVsNpv(const char *var, double cut, const char *ylabel, const cha
 
     tl->SetTextSize(0.04); 
 	cout << "after setting text size" << endl;
-	tl->DrawLatex(0.18, 0.91, Form("Prob = %4.3f", 
+	tl->DrawLatex(0.18, 0.92, Form("Prob = %4.3f", 
 								   f1->GetProb()));
 	
-	tl->DrawLatex(0.45, 0.91, Form("Cut = %5.4f", cut));
+	tl->DrawLatex(0.45, 0.92, ylabel);//Form("Cut = %5.4f", cut));
 
     tl->SetTextSize(0.05); 
     tl->DrawLatex(0.25, 0.82, Form("#chi^{2}/dof = %3.1f/%i", 
-								 f1->GetChisquare(),
-								 f1->GetNDF()));
+								  f1->GetChisquare(),
+								  f1->GetNDF()));
 
 	stamp(0.2, "CMS, 4.9 fb^{-1}", 0.7, "#sqrt{s} = 7 TeV"); 
+	
+//	TPave *pave = new TPave(25.11976,1.055334,37.65518,1.086642,4,"br");
+//	pave->SetFillColor(0);
+//	pave->SetLineColor(0);
+//	pave->SetLineWidth(6);
+//	pave->SetShadowColor(0);
+//	pave->Draw();
+	
   if (fDoPrint)  
     c0->SaveAs(Form("%s/effVsNpv-%s-%s-%s-%s-0_%d.pdf", fDirectory.c_str(), fFile.c_str(), dir, chan, var, static_cast<int>(100.*cut)));
 

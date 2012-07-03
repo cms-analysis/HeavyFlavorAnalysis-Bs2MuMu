@@ -56,7 +56,8 @@ void plotOverlays::makeAll(int verbose) {
   fMode = 3; 
   fPreco = 5.1;
 //  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Presel"); 
-  sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Ao"); 
+	sbsDistributionOverlay("NoData", "candAnaBu2JpsiK", "A", "NoMc", "candAnaBu2JpsiK", "A", "Ao"); 
+//	sbsDistributionOverlay("NoMcA", "candAnaBu2JpsiK", "A", "NoMcB", "candAnaBu2JpsiK", "A", "Ao"); 
   fMode = 2; 
 //  sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMc", "candAnaBs2JpsiPhi", "A", "Presel"); 
   sbsDistributionOverlay("CsData", "candAnaBs2JpsiPhi", "A", "CsMc", "candAnaBs2JpsiPhi", "A", "Ao"); 
