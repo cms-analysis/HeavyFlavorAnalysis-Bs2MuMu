@@ -1,124 +1,148 @@
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0000.root  15289
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0001.root  14750
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0002.root  15168
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0003.root  17604
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0004.root  15368
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0005.root  15704
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0006.root  17412
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0007.root  15908
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0008.root  15079
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0009.root  18546
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0010.root  17974
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0011.root  18047
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0012.root  16118
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0013.root  15882
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0014.root  17885
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0015.root  16286
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0016.root  16866
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0017.root  18453
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0018.root  19697
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0019.root  15979
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0020.root  18777
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0021.root  18103
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0022.root  15890
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0023.root  19756
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0024.root  15656
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0025.root  15357
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0026.root  15420
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0027.root  14976
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0028.root  15211
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0029.root  15953
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0030.root  17634
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0031.root  16317
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0032.root  15635
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0033.root  15751
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0034.root  16936
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0035.root  15697
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0036.root  16917
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0037.root  17009
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0038.root  18645
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0039.root  17475
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0040.root  19076
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0041.root  16116
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0042.root  15805
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0043.root  17037
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0044.root  18409
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0045.root  19670
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0046.root  15617
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0047.root  15659
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0048.root  16203
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0049.root  19444
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0050.root  20239
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0051.root  15947
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0052.root  15459
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0053.root  18199
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0054.root  20623
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0055.root  15644
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0056.root  15785
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0057.root  18730
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0058.root  15537
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0059.root  16574
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0060.root  16138
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0061.root  16490
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0062.root  15984
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0063.root  15696
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0064.root  16460
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0065.root  16341
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0066.root  15250
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0067.root  15429
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0068.root  15718
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0069.root  16433
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0070.root  16839
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0071.root  16296
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0072.root  16906
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0073.root  15476
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0074.root  19460
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0075.root  19314
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0076.root  17459
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0077.root  16524
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0078.root  15417
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0079.root  15409
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0080.root  18517
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0081.root  16119
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0082.root  16772
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0083.root  16234
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0084.root  19717
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0085.root  18706
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0086.root  15573
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0087.root  16795
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0088.root  19322
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0089.root  18410
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0090.root  16208
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0091.root  16210
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0092.root  16298
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0093.root  16905
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0094.root  8715
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0094_1.root  7522
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0095.root  15975
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0096.root  16950
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0097.root  15105
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0098.root  15439
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0099.root  14998
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0100.root  17191
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0101.root  17588
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0102.root  17815
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0103.root  16771
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0104.root  18349
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0105.root  18762
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0106.root  18446
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0107.root  16926
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0108.root  17120
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0109.root  16725
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0110.root  16737
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0111.root  18146
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0112.root  18269
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0113.root  19024
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0114.root  14605
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0115.root  14949
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0116.root  14546
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0117.root  16384
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0118.root  17337
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0119.root  16538
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0120.root  16652
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0121.root  16072
-dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0122.root  4225
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0000.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0001.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0002.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0003.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0004.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0005.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0006.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0007.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0008.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0009.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0010.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0011.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0012.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0013.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0014.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0015.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0016.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0017.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0018.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0019.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0020.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0021.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0022.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0023.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0024.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0025.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0026.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0027.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0028.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0029.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0030.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0031.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0032.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0033.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0034.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0035.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0036.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0037.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0038.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0039.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0040.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0041.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0042.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0043.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0044.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0045.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0046.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0047.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0048.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0049.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0050.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0051.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0052.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0053.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0054.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0055.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0056.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0057.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0058.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0059.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0060.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0061.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0062.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0063.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0064.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0065.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0066.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0067.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0068.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0069.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0070.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0071.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0072.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0073.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0074.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0075.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0076.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0077.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0078.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0079.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0080.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0081.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0082.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0083.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0084.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0085.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0086.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0087.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0088.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0089.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0090.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0091.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0092.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0093.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0094.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0095.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0096.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0097.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0098.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0099.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0100.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0101.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0102.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0103.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0104.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0105.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0106.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0107.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0108.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0109.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0110.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0111.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0112.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0113.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0114.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0115.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0116.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0117.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0118.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0119.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0120.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0121.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0122.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0123.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0124.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0125.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0126.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0127.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0128.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0129.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0130.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0131.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0132.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0133.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0134.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0135.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0136.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0137.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0138.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0139.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0140.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0141.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0142.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0143.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0144.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0145.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0146.root
+dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/root/v12/Run2012B-PromptReco-v1/bmm-v12-Run2012B-PromptReco-v1_3-0147.root
