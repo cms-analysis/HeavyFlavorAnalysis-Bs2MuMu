@@ -41,6 +41,7 @@ class HFDiTracks : public edm::EDAnalyzer {
   edm::InputTag fTracksLabel, fPrimaryVertexLabel;
 
   double        fTrackPt, fTrack1Mass, fTrack2Mass, fMassLow, fMassHigh, fMaxDoca, fPvWeight;
+  bool          fSameSign;
   int           fType; 
 
   reco::Vertex  fPV;

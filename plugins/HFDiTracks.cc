@@ -41,6 +41,7 @@ HFDiTracks::HFDiTracks(const ParameterSet& iConfig) :
   fMassHigh(iConfig.getUntrackedParameter<double>("massHigh", 12.0)), 
   fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.05)),
   fPvWeight(iConfig.getUntrackedParameter<double>("pvWeight", 0.0)),
+  fSameSign(iConfig.getUntrackedParameter<bool>("sameSign", false)), 
   fType(iConfig.getUntrackedParameter<int>("type", 1300)) {
 
   cout << "----------------------------------------------------------------------" << endl;
@@ -53,6 +54,7 @@ HFDiTracks::HFDiTracks(const ParameterSet& iConfig) :
   cout << "---  massHigh:                 " << fMassHigh << endl;
   cout << "---  maxDoca:                  " << fMaxDoca << endl;
   cout << "---  pvWeight:                 " << fPvWeight << endl;
+  cout << "---  sameSign:                 " << fSameSign << endl;
   cout << "---  Type:                     " << fType << endl;
   cout << "----------------------------------------------------------------------" << endl;
 
@@ -155,7 +157,9 @@ void HFDiTracks::analyze(const Event& iEvent, const EventSetup& iSetup) {
     if (tT2.pt() < fTrackPt)  continue;
     t2.SetPtEtaPhiM(tT2.pt(), tT2.eta(), tT2.phi(), fTrack2Mass); 
 
-    if( tT1.charge() == tT2.charge() ) continue;  // select track pairs with opposite charge
+    // Select opposite charge pairs (or same)
+    if(fSameSign) {if( tT1.charge() != tT2.charge() ) continue;}  // select track pairs with same charge
+    else          {if( tT1.charge() == tT2.charge() ) continue;}  // select track pairs with opposite charge
 
     ditrack = t1 + t2; 
     if (ditrack.M() < fMassLow || ditrack.M() > fMassHigh) continue;
