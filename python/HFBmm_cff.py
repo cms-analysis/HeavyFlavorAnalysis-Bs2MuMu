@@ -67,7 +67,8 @@ hhDump = cms.EDAnalyzer(
     massHigh           = cms.untracked.double(6.5),
     maxDoca            = cms.untracked.double(0.025),
     pvWeight           = cms.untracked.double(0.70),
-    type              = cms.untracked.int32(211211)
+    type              = cms.untracked.int32(211211),
+    sameSign           = cms.untracked.bool( False )
     )
 
 
