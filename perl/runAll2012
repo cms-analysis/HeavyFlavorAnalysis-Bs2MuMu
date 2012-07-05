@@ -36,8 +36,6 @@ if ($opt_v) {
 }
 
 %jobs = (
-    #"signal Bs2MuMu MC mix"  
-    #=> "-m,bmm2Reader.mix-Bs2MuMu,cbmm-$version-cms-Bs2MuMu_BsFilter_8TeV-START50_V15-v1-*,$version-cms-Bs2MuMu.root"
     "signal Bs2MuMu MC mix"  
     => "-m,bmm2Reader.mix-Bs2MuMu,cbmm-$version-cms-BsToMuMu_BsFilter_8TeV-START52_V9-v1-*,$version-cms-Bs2MuMu.root"
     , "signal Bd2MuMu MC mix"  
@@ -53,6 +51,8 @@ if ($opt_v) {
     => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012A-PromptReco-v1*,$version-2012A-data.root"
     , "data 2012B"  
     => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1*,$version-2012B-data.root"
+    , "data 2012C"  
+    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012C-PromptReco-v1*,$version-2012C-data.root"
     #, "data 2012B1"  
     #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_1*,$version-2012B_1-data.root"
     #, "data 2012B2"  
