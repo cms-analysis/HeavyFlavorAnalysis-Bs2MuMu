@@ -1,7 +1,5 @@
 # ----------------------------------------------------------------------
 # signal data and MC
-#type=sg,default       dset=data     lumi=5.0    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/cbmm-v12-Run2012A-PromptReco-v1-00.root
-#type=sg,default       dset=data     lumi=5.0    file=cbmm-v12-Run2012A-PromptReco-v1_6.bmm2Reader.2012.root
 type=sg,default       dset=data     lumi=5.0    file=/shome/lazo-flores/scratch/v12-2012-data.root
 #type=sg,2011          dset=data     lumi=5.0    file=/shome/lazo-flores/scratch/v11-2011-data.root
 type=sg,2012          dset=data     lumi=5.0    file=/shome/lazo-flores/scratch/v12-2012-data.root
