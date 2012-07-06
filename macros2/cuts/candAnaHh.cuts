@@ -1,6 +1,10 @@
 TYPE           211211
 TRUTHCAND         91
-TRIGRANGE    HLT_DoubleMu3p5_Jpsi_Displaced_v2_Bs2E33v1p2V4(1:99999999)
+MUON_VETO  1
+HH_MLO 4.
+HH_MHI 7.
+# -- trigger
++input cuts/triggerDisplacedJpsi.cuts
 # -- boxes
 +input cuts/boxes.Bu2JpsiK.cuts
 # -- tracks
