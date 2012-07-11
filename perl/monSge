@@ -4,6 +4,7 @@
 # ------
 #              check status of SGE jobs
 #
+# 2011/11/29   find terminated jobs
 # 2011/01/20   parse for worker node that had failed job, dump into file problems.txt
 # 2010/06/15   allow killing running jobs
 # 2010/05/10   working again after some (previous) changes to jobs.list
@@ -122,27 +123,34 @@ sub parseOutput {
     $workerNode     = `/bin/grep Linux $llogfile | awk '{print \$2}'`;
     chop($workerNode);
 
-    $foundMyEnd     = `/bin/grep -i "run: This is the end, my friend"  $llogfile`;
-    if ($foundMyEnd) { $return = "no problems seen"; }
-
     # -- now search for possible problems in the logfile
     $foundException = `/bin/grep -i cms::exception  $llogfile`;
-    if ($foundException) { $return = "cms::exception found"; }
+    if ($foundException) { return "cms::exception found"; }
+
+    $foundException = `/bin/grep -i StdLibException $llogfile`;
+    if ($foundException) { return "StdLibException found"; }
 
     $foundException = `/bin/grep -i 'Abort (core dumped)'  $llogfile`;
-    if ($foundException) { $return = "abort/core dump detected"; }
+    if ($foundException) { return "abort/core dump detected"; }
 
     $foundGlibc     = `/bin/grep -i "glibc detected" $llogfile`;
-    if ($foundGlibc) {$return = "abort/core dump detected"; }
+    if ($foundGlibc) {return "abort/core dump detected"; }
 
     $foundBadAlloc   = `/bin/grep -i "std::bad_alloc" $llogfile`;
-    if ($foundBadAlloc) {$return = "std::bad_alloc detected"; }
+    if ($foundBadAlloc) {return "std::bad_alloc detected"; }
 
     $foundSEGV   = `/bin/grep -i "segmentation violation" $llogfile`;
-    if ($foundSEGV) {$return = "segmentation violation detected"; }
+    if ($foundSEGV) {return "segmentation violation detected"; }
 
     $foundJavaProblem   = `/bin/grep -i "java.lang.Error" $llogfile`;
-    if ($foundJavaProblem) {$return = "java.lang.Error detected"; }
+    if ($foundJavaProblem) {return "java.lang.Error detected"; }
+
+    # -- 
+    $foundMyEnd     = `/bin/grep -i "run: This is the end, my friend"  $llogfile`;
+    if ($foundMyEnd) { return "no problems seen"; }
+
+    $foundTerminated = `/bin/grep -i "JOB Resource USAGE for job" $llogfile`; 
+    if ($foundTerminated) {return "terminated job  "; }
 
     return $return;
 }
