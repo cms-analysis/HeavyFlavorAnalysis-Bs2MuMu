@@ -307,7 +307,7 @@ double f_p2ag(double *x, double *par) {
 }
 
 // ----------------------------------------------------------------------
-// pol0 and double Gauss 
+// pol0 and Gauss 
 double f_p0ag(double *x, double *par) {
   // par[0] -> const
   // par[1] -> mean
@@ -389,3 +389,32 @@ double f_boltzmann(double *x, double *par)
 	double exponent = par[1]*log(x[0])-par[2]*x[0];
 	return par[0]*exp(exponent);
 } // f_boltzmann()
+
+/* Characteristic function.
+ *	f(x) = 1_[[0],[1]](x) */
+double f_charact(double *x, double *par)
+{
+	double result;
+	if (par[0] < x[0] && x[0] < par[1])
+		result = 1.0;
+	else
+		result = 0.0;
+	
+	return result;
+} // f_charact()
+
+/* Skew Normal distribution (c.f. Wikipedia.org)
+ *	par[0] = xi		location parameter
+ *	par[1] = omega	scale parameter
+ *	par[2] = alpha	skewness parameter
+ */
+double f_skewnormal(double *x, double *par)
+{
+	double result = 2 / par[1];
+	double parm = (x[0] - par[0])/par[1];
+	
+	result *= TMath::Gaus(parm, 0, 1, kTRUE);
+	result *= (1 + TMath::Erf(par[2]*parm/sqrt(2))) / 2;
+	
+	return result;
+} // f_skewnormal()

@@ -57,6 +57,12 @@ double f_double_gauss_linear(double *x, double *par);
 // Boltzman
 double f_boltzmann(double *x, double *par);
 
+// characteristic function
+double f_charact(double *x, double *par);
+
+// skew normal function
+double f_skewnormal(double *x, double *par);
+
 #pragma GCC visibility pop
 
 #endif

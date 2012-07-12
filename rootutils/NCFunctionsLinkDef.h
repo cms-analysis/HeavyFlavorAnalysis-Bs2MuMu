@@ -48,4 +48,7 @@
 
 #pragma link C++ function f_boltzmann(double*,double*);
 
+#pragma link C++ function f_charact(double*,double*);
+#pragma link C++ function f_skewnormal(double*,double*);
+
 #endif
