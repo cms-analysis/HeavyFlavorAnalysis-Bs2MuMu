@@ -38,7 +38,6 @@ enum algo_t {
 static const char *workspace_path = NULL;
 static const char *configfile_path = NULL;
 static double gCLLevel = 0.95;
-static uint32_t gDefaultPoissonLimit = 2;
 static pair<double,double> gMuSRange(-1,-1);
 static uint32_t gFCSteps = 20;
 static double gNumErr = 0.0; // additional error in acceptance region
@@ -46,13 +45,12 @@ static algo_t gAlgorithm = kAlgo_Bayesian;
 static bool gDisableErrors = false;
 static int gVerbosity = 1; // 0 = quite, 1 = standard, 2 = verbose
 static const char *output_path = NULL;
-static bool gLightModel = false;
 static bool gBdToMuMu = false;
 static bool gSeed = false;
 static uint32_t gProofWorkers = 0;
 static int gToys = 50000;
 static bool gFixBackground = false;
-static bool gCreateGamma = false;
+static bool gFloatingData = false;
 
 static const char *algo_name(algo_t a)
 {
@@ -112,14 +110,6 @@ static bool validate_bmm(map<bmm_param,measurement_t> *bmm, int ch)
 		cerr << "Insufficient information in config file. Please specify 'OBS_BKG' for channel " << ch << endl;
 		goto bail;
 	}
-	
-	valid = !(gBdToMuMu && gLightModel);
-	if (!valid) {
-		cerr << "Light model only supported for Bs -> mumu" << endl;
-		goto bail;
-	}
-	
-	// FIXME: consistence check here
 	
 bail:
 	return valid;
@@ -208,7 +198,7 @@ static void parse_input(const char *path, map<bmm_param,measurement_t> *bsmm, ma
 
 static void usage()
 {
-	cerr << "ulcalc [--gamma] [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--light] [--disable-errors] [[-n <nbr steps>] -r x,y ] [-e num_err] [-l cl] [-w workspace_outfile.root] [-p <nbr poisson avg>] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"clb_hybrid\"|\"zbi\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
+	cerr << "ulcalc [--float-data] [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--disable-errors] [[-n <nbr steps>] -r x,y ] [-e num_err] [-l cl] [-w workspace_outfile.root] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"clb_hybrid\"|\"zbi\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
 } // usage()
 
 static bool parse_arguments(const char **first, const char **last)
@@ -235,12 +225,6 @@ static bool parse_arguments(const char **first, const char **last)
 					abort();
 				}
 				workspace_path = *first++; // set the workspace output path
-			} else if (strcmp(arg, "-p") == 0) {
-				if (first == last) {
-					usage();
-					abort();
-				}
-				gDefaultPoissonLimit = (uint32_t)atoi(*first++);
 			} else if (strcmp(arg, "-n") == 0) {
 				if (first == last) {
 					usage();
@@ -303,8 +287,6 @@ static bool parse_arguments(const char **first, const char **last)
 					abort();
 				}
 				output_path = *first++;
-			} else if (strcmp(arg, "--light") == 0) {
-				gLightModel = true;
 			} else if (strcmp(arg, "--bdtomumu") == 0) {
 				gBdToMuMu = true;
 			} else if (strcmp(arg, "--seed") == 0) {
@@ -323,8 +305,8 @@ static bool parse_arguments(const char **first, const char **last)
 				gToys = atoi(*first++);
 			} else if (strcmp(arg, "--fixed-bkg") == 0) {
 				gFixBackground = true;
-			} else if (strcmp(arg, "--gamma") == 0) {
-				gCreateGamma = true;
+			} else if (strcmp(arg, "--float-data") == 0) {
+				gFloatingData = true;
 			} else {
 				cerr << "Unknown option '" << arg << "'." << endl;
 				usage();
@@ -356,12 +338,11 @@ static bool parse_arguments(const char **first, const char **last)
 	cout << "Algorithm is " << algo_name(gAlgorithm) << endl;
 	cout << "Errors on Variables are " << (gDisableErrors ? "disabled" : "enabled") << endl;
 	cout << "Verbosity level " << gVerbosity << endl;
-	cout << (gLightModel ? "Light model Selected" : "Computing using Full Model") << endl;
 	cout << "Computing Upper limit for decay " << (gBdToMuMu ? "Bd -> mumu" : "Bs -> mumu") << endl;
 	if (gSeed) cout << "Unique Random seed" << endl;
 	cout << "Number of MC Toys used: " << gToys << endl;
 	if (gProofWorkers > 0) cout << "Number of Proof Workers: " << gProofWorkers << endl;
-	if (gCreateGamma) cout << "Additional Gammas for background created" << endl;
+	if (gFloatingData) cout << "Non Integer Observation allowed" << endl;
 	cout << "-------------------------------------" << endl;
 	if (gFixBackground)	cout << "Toys with fixed sideband window" << endl;
 	else				cout << "Toys with floating sideband window" << endl;
@@ -378,15 +359,13 @@ static void dump_params(pair<bmm_param,measurement_t> p)
 	cout << endl;
 } // dump_params()
 
-static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *channels, set<int>::iterator a,set<int>::iterator b, map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, double *avgUL, double *avgLL, double *avgWeight)
+static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *channels, set<int>::iterator a,set<int>::iterator b, map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, double *upperLimit, double *lowerLimit)
 {
 	RooDataSet *data = NULL;
 	RooStats::ConfInterval *inter = NULL;
 	RooStats::HypoTestResult *testResult = NULL;
-	double bkg,weight,ul = 0,ll = 0.0;
-	int32_t obsBsMin,obsBsMax;
-	int32_t obsBdMin = 0,obsBdMax = 0;
-	int32_t obsBs,obsBd;
+	double bkg;
+	double obsBs,obsBd,bbb;
 	set<int>::const_iterator it;
 	RooAbsReal *bs_mean;
 	RooAbsReal *bd_mean;
@@ -394,26 +373,6 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 	int ch;
 	
 	if (a == b) { // end of recursion over channels
-		
-		if (*avgWeight > 0.99)
-			goto bail;
-		
-		// compute the weight of this configuration...
-		wspace->var("mu_s")->setVal(1); // SM configuration
-		wspace->var("mu_d")->setVal(1); // SM configuration
-		weight = 1;
-		for (it = channels->begin(); it != channels->end(); ++it) {
-			
-			if (gLightModel) {
-				bs_mean = wspace->function("bs_mean");
-				weight *= TMath::Poisson(((RooRealVar&)(*obs)["NsObs"]).getVal(),bs_mean->getVal());
-			} else {
-				bs_mean = wspace->function(Form("bs_mean_%d",*it));
-				bd_mean = wspace->function(Form("bd_mean_%d",*it));
-				weight *= TMath::Poisson(((RooRealVar&)(*obs)[Form("NsObs_%d",*it)]).getVal(),bs_mean->getVal());
-				weight *= TMath::Poisson(((RooRealVar&)(*obs)[Form("NdObs_%d",*it)]).getVal(),bd_mean->getVal());
-			}
-		}
 		
 		data = new RooDataSet("data","",*obs);
 		data->add(*obs);
@@ -433,30 +392,27 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 		
 		switch (gAlgorithm) {
 			case kAlgo_Bayesian:
-				if (gLightModel)
-					inter = est_ul_bc_light(wspace, data, gCLLevel, gVerbosity, &ul, NULL);
-				else
-					inter = est_ul_bc(wspace, data, channels, gCLLevel, gVerbosity, &ul, NULL);
+				inter = est_ul_bc(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, NULL);
 				break;
 			case kAlgo_FeldmanCousins:
-				inter = est_ul_fc(wspace, data, channels, gCLLevel, gVerbosity, gNumErr, &ul, &ll, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys);
+				inter = est_ul_fc(wspace, data, channels, gCLLevel, gVerbosity, gNumErr, upperLimit, lowerLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys);
 				break;
 			case kAlgo_CLs:
-				inter = est_ul_cls(wspace, data, channels, gCLLevel, gVerbosity, gNumErr, &ul, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys);
+				inter = est_ul_cls(wspace, data, channels, gCLLevel, gVerbosity, gNumErr, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys);
 				break;
 			case kAlgo_CLb:
 				// note, here upper limit represents p-value of background model.
-				testResult = est_ul_clb(wspace, data, channels, gVerbosity, gNumErr, &ul, gProofWorkers, gToys);
+				testResult = est_ul_clb(wspace, data, channels, gVerbosity, gNumErr, upperLimit, gProofWorkers, gToys);
 				break;
 			case kAlgo_Hybrid:
-				inter = est_ul_hybrid(wspace, data, channels, gCLLevel, gVerbosity, gNumErr, &ul, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys, gBdToMuMu);
+				inter = est_ul_hybrid(wspace, data, channels, gCLLevel, gVerbosity, gNumErr, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys, gBdToMuMu, gFixBackground);
 				break;
 			case kAlgo_CLb_Hybrid:
 				// note, here upper limit represents p-value of background model.
-				testResult = est_ul_clb_hybrid(wspace, data, channels, gVerbosity, gNumErr, &ul, gProofWorkers, gToys, gBdToMuMu);
+				testResult = est_ul_clb_hybrid(wspace, data, channels, gVerbosity, gNumErr, upperLimit, gProofWorkers, gToys, gBdToMuMu, gFixBackground);
 				break;
 			case kAlgo_Zbi:
-				inter = est_ul_zbi(wspace,data,channels,gCLLevel,gBdToMuMu,&ul);
+				inter = est_ul_zbi(wspace,data,channels,gCLLevel,gBdToMuMu,upperLimit);
 				break;
 			case kAlgo_None:
 				measure_params(wspace, data, channels, gVerbosity);
@@ -467,10 +423,6 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 				break;
 		}
 		wspace->allVars() = *saved_vars; // restore the values
-		
-		*avgWeight = *avgWeight + weight;
-		*avgUL = *avgUL + ul * weight;
-		*avgLL = *avgLL + ll * weight;
 		
 		if (inter)		wspace->import(*inter);
 		if (testResult)	wspace->import(*testResult);
@@ -486,56 +438,35 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 	
 	// Set current value and do recursive...
 	bkg = ((*bsmm)[make_pair(kObsBkg_bmm, ch)]).getVal();
-	if (gLightModel) {
-		((RooRealVar&)((*obs)["NbObs"])).setVal(bkg);
-		wspace->var("nu_b")->setVal(bkg);
-	} else {
-		double bbb = bkg - wspace->var(Form("PeakBkgSB_%d",ch))->getVal();
-		if (bbb < 0) bbb = 0;
-		if (!gFixBackground) ((RooRealVar&)((*obs)[Form("NbObs_%d",ch)])).setVal(bkg);
-		wspace->var(Form("NbObs_%d",ch))->setVal(bkg);
-		wspace->var(Form("nu_b_%d",ch))->setVal(bbb);		
-	}
+	bbb = bkg - wspace->var(Form("PeakBkgSB_%d",ch))->getVal();
+	if (bbb < 0) bbb = 0;
+	if (!gFixBackground) ((RooRealVar&)((*obs)[Form("NbObs_%d",ch)])).setVal(bkg);
+	wspace->var(Form("NbObs_%d",ch))->setVal(bkg);
+	wspace->var(Form("nu_b_%d",ch))->setVal(bbb);
 	
 	
 	if (bsmm->count(make_pair(kObsB_bmm, ch)) > 0) {
-		obsBsMin = obsBsMax = (uint32_t)((*bsmm)[make_pair(kObsB_bmm, ch)]).getVal();
+		obsBs = ((*bsmm)[make_pair(kObsB_bmm, ch)]).getVal();
+		if (!gFloatingData) obsBs = (uint32_t)obsBs;
 	} else {
-		
-		if (gLightModel)	bs_mean = wspace->function("bs_mean");
-		else				bs_mean = wspace->function(Form("bs_mean_%d",ch));
-		
-		obsBsMin = (int32_t)round(bs_mean->getVal()) - gDefaultPoissonLimit;
-		obsBsMax = (int32_t)round(bs_mean->getVal()) + gDefaultPoissonLimit;
-		if (obsBsMin < 0) obsBsMin = 0;
+		bs_mean = wspace->function(Form("bs_mean_%d",ch));
+		obsBs = bs_mean->getVal();
+		if (!gFloatingData) obsBs = round(obsBs);
 	}
 	
-	if (!gLightModel) {
-		if (bdmm->count(make_pair(kObsB_bmm, ch)) > 0) {
-			obsBdMin = obsBdMax = (uint32_t)((*bdmm)[make_pair(kObsB_bmm, ch)]).getVal();
-		} else {
-			
-			bd_mean = wspace->function(Form("bd_mean_%d",ch));
-			obsBdMin = (int32_t)round(bd_mean->getVal()) - gDefaultPoissonLimit;
-			obsBdMax = (int32_t)round(bd_mean->getVal()) + gDefaultPoissonLimit;
-			if (obsBdMin < 0) obsBdMin = 0;
-		}
+	if (bdmm->count(make_pair(kObsB_bmm, ch)) > 0) {
+		obsBd = ((*bdmm)[make_pair(kObsB_bmm, ch)]).getVal();
+		if (!gFloatingData) obsBd = (uint32_t)obsBd;
+	} else {
+		bd_mean = wspace->function(Form("bd_mean_%d",ch));
+		obsBd = bd_mean->getVal();
+		if (!gFloatingData) obsBd = round(obsBd);
 	}
 	
 	// iterate through these variables
-	for (obsBs = obsBsMin; obsBs <= obsBsMax; obsBs++) {
-		if (gLightModel) {
-			((RooRealVar&)((*obs)["NsObs"])).setVal(obsBs);
-			recursive_calc(wspace,obs,channels,a,b,bsmm,bdmm,avgUL,avgLL,avgWeight);
-		} else {
-			((RooRealVar&)((*obs)[Form("NsObs_%d",ch)])).setVal(obsBs);
-			
-			for (obsBd = obsBdMin; obsBd <= obsBdMax; obsBd++) {
-				((RooRealVar&)((*obs)[Form("NdObs_%d",ch)])).setVal(obsBd);
-				recursive_calc(wspace,obs,channels,a,b,bsmm,bdmm,avgUL,avgLL,avgWeight);
-			}
-		}
-	}	
+	((RooRealVar&)((*obs)[Form("NsObs_%d",ch)])).setVal(obsBs);
+	((RooRealVar&)((*obs)[Form("NdObs_%d",ch)])).setVal(obsBd);
+	recursive_calc(wspace,obs,channels,a,b,bsmm,bdmm,upperLimit,lowerLimit);
 bail:
 	if(saved_vars)
 		delete saved_vars;
@@ -550,9 +481,7 @@ int main(int argc, const char *argv [])
 	map<bmm_param,measurement_t> bsmm,bdmm;
 	set<int> channels;
 	set<int>::const_iterator ch;
-	double avgUL = 0;
-	double avgWeight = 0;
-	double avgLL = 0;
+	double upperLimit = 0,lowerLimit = 0;
 	
 	if(!parse_arguments(&argv[1], &argv[argc])) {
 		usage();
@@ -604,28 +533,20 @@ int main(int argc, const char *argv [])
 	
 	compute_vars(&bsmm,true);
 	compute_vars(&bdmm,false);
-	if (gLightModel)
-		wspace = build_model_light(&bsmm, gVerbosity);
-	else
-		wspace = build_model_nchannel(&bsmm, &bdmm, gDisableErrors, gVerbosity, gBdToMuMu, gCreateGamma, gFixBackground);
+	wspace = build_model_nchannel(&bsmm, &bdmm, gDisableErrors, gVerbosity, gBdToMuMu, gFixBackground, gFloatingData);
 	
 	// initialize random number generator seed
 	if (gSeed) RooRandom::randomGenerator()->SetSeed(0);
 	
 	// set the measured candidates...
 	observables.addClone(*wspace->set("obs"));
-	recursive_calc(wspace,&observables,&channels,channels.begin(),channels.end(),&bsmm,&bdmm,&avgUL,&avgLL,&avgWeight);
+	recursive_calc(wspace,&observables,&channels,channels.begin(),channels.end(),&bsmm,&bdmm,&upperLimit,&lowerLimit);
 	
-	// reweight the UL.
-	avgUL /= avgWeight;
-	avgLL /= avgWeight;
-	
-	cout << "Average Weight of computed result: " << avgWeight << endl;
 	if (gAlgorithm == kAlgo_CLb || gAlgorithm == kAlgo_CLb_Hybrid) {
-		cout << "p value for background model: " << avgUL << " corresponding to " << sqrt(2.)*TMath::ErfInverse(1-2*avgUL) << " sigmas." << endl;
+		cout << "p value for background model: " << upperLimit << " corresponding to " << sqrt(2.)*TMath::ErfInverse(1-2*upperLimit) << " sigmas." << endl;
 	} else {
-		cout << (gBdToMuMu ? "Bd -> mumu" : "Bs -> mumu") << " upper limit for config file '" << configfile_path << "' using algorithm " << algo_name(gAlgorithm) << ": " << avgUL*(gBdToMuMu ? bdtomumu() : bstomumu()) << "\t(" << avgUL << ") @ " << (int)(gCLLevel*100.) << " % CL" << endl;
-		cout << (gBdToMuMu ? "Bd -> mumu" : "Bs -> mumu") << " lower limit for config file '" << configfile_path << "' using algorithm " << algo_name(gAlgorithm) << ": " << avgLL*(gBdToMuMu ? bdtomumu() : bstomumu()) << "\t(" << avgLL << ") @ " << (int)(gCLLevel*100.) << " % CL" << endl;
+		cout << (gBdToMuMu ? "Bd -> mumu" : "Bs -> mumu") << " upper limit for config file '" << configfile_path << "' using algorithm " << algo_name(gAlgorithm) << ": " << upperLimit*(gBdToMuMu ? bdtomumu() : bstomumu()) << "\t(" << upperLimit << ") @ " << (int)(gCLLevel*100.) << " % CL" << endl;
+		cout << (gBdToMuMu ? "Bd -> mumu" : "Bs -> mumu") << " lower limit for config file '" << configfile_path << "' using algorithm " << algo_name(gAlgorithm) << ": " << lowerLimit*(gBdToMuMu ? bdtomumu() : bstomumu()) << "\t(" << lowerLimit << ") @ " << (int)(gCLLevel*100.) << " % CL" << endl;
 	}
 	
 	if (workspace_path) wspace->writeToFile(workspace_path,kTRUE);
@@ -633,13 +554,13 @@ int main(int argc, const char *argv [])
 	if (output_path) {
 		FILE *outFile = fopen(output_path, "w");
 		if (gAlgorithm == kAlgo_CLb) {
-			fprintf(outFile, "p value of background model: %.3f\n corresponding to %2.1f sigmas\n", avgUL, sqrt(2.)*TMath::ErfInverse(1 - 2*avgUL));
+			fprintf(outFile, "p value of background model: %.3f\n corresponding to %2.1f sigmas\n", upperLimit, sqrt(2.)*TMath::ErfInverse(1 - 2*upperLimit));
 		} else {
 			for (ch = channels.begin(); ch != channels.end(); ++ch) {
 				fprintf(outFile, "NbObs_%d=%d, NsObs_%d=%d, NdObs_%d=%d\n", *ch, (int)(bsmm[make_pair(kObsBkg_bmm, *ch)].getVal()), *ch, (int)(bsmm[make_pair(kObsB_bmm, *ch)].getVal()),*ch, (int)(bdmm[make_pair(kObsB_bmm, *ch)].getVal()));
 			}
-			fprintf(outFile, "%s upper limit with algorithm %s: %.5e (%.3f) @ %d %% CL\n", (gBdToMuMu ? "Bd->mumu" : "Bs->mumu"), algo_name(gAlgorithm), avgUL*(gBdToMuMu ? bdtomumu() : bstomumu()), avgUL, (int)(100.*gCLLevel));
-			fprintf(outFile, "%s lower limit with algorithm %s: %.5e (%.3f) @ %d %% CL\n", (gBdToMuMu ? "Bd->mumu" : "Bs->mumu"), algo_name(gAlgorithm), avgLL*(gBdToMuMu ? bdtomumu() : bstomumu()), avgLL, (int)(100.*gCLLevel));
+			fprintf(outFile, "%s upper limit with algorithm %s: %.5e (%.3f) @ %d %% CL\n", (gBdToMuMu ? "Bd->mumu" : "Bs->mumu"), algo_name(gAlgorithm), upperLimit*(gBdToMuMu ? bdtomumu() : bstomumu()), upperLimit, (int)(100.*gCLLevel));
+			fprintf(outFile, "%s lower limit with algorithm %s: %.5e (%.3f) @ %d %% CL\n", (gBdToMuMu ? "Bd->mumu" : "Bs->mumu"), algo_name(gAlgorithm), lowerLimit*(gBdToMuMu ? bdtomumu() : bstomumu()), lowerLimit, (int)(100.*gCLLevel));
 		}
 		fclose(outFile);
 	}
