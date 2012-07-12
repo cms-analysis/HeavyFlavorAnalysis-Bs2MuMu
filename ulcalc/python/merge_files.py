@@ -18,21 +18,19 @@ using namespace RooStats;
 void merge(const char *filename, const char *resultname, const char *fromfile)
 {
 	TFile theFile(filename,"update");
-        TFile *fromF = TFile::Open(fromfile);
+	TFile fromF(fromfile);
 	
 	RooStats::HypoTestInverterResult *result = dynamic_cast<RooStats::HypoTestInverterResult*>(theFile.Get(resultname));
 	if(!result) // not yet loaded
 	  result = new RooStats::HypoTestInverterResult(resultname);
 
-	RooWorkspace *wspace = dynamic_cast<RooWorkspace*> (fromF->Get("wspace"));
+	RooWorkspace *wspace = dynamic_cast<RooWorkspace*> (fromF.Get("wspace"));
 	RooStats::HypoTestInverterResult *toadd = dynamic_cast<RooStats::HypoTestInverterResult*> (wspace->obj(resultname));
 	
 	result->Add(*toadd);
 	theFile.cd();
 	result->Write(resultname,TObject::kOverwrite);
 	theFile.Close();
-
-        delete fromF;
 } // merge_result()
 '''
 
