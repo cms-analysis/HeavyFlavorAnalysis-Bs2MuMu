@@ -1,0 +1,2 @@
+1.4	"pt_mu1 > 4.5 && pt_mu2 > 4.0 && pt > 6.5 && ip < 0.008 && ip/ipe < 2 && alpha < 0.05 && chi2/Ndof < 2.2 && d3/d3e > 13 && d3 < 1.5 && iso_mor12 > 0.8 && doca0 > 0.015 && ntrk < 2 && trk_weight > 0.6"
+10.0	"pt_mu1 > 4.5 && pt_mu2 > 4.2 && pt > 8.5 && ip < 0.008 && ip/ipe < 2 && alpha < 0.03 && chi2/Ndof < 1.8 && d3/d3e > 15 && d3 < 1.5 && iso_mor12 > 0.8 && doca0 > 0.015 && ntrk < 2 && trk_weight > 0.6"
