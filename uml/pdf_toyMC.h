@@ -8,7 +8,7 @@
 #ifndef PDF_TOYMC_H
 #define	PDF_TOYMC_H
 
-#include "pdf_analysis.h"
+#include "pdf_fitData.h"
 
 #include "TPaveStats.h"
 #include "TH2D.h"
@@ -17,7 +17,6 @@
 #include "RooArgSet.h"
 #include "RooMCStudy.h"
 #include "RooDLLSignificanceMCSModule.h"
-#include "RooFitResult.h"
 
 #include "RooStats/ModelConfig.h"
 #include "RooStats/ToyMCSampler.h"
@@ -30,16 +29,15 @@
 #include "RooStats/RatioOfProfiledLikelihoodsTestStat.h"
 #include "RooStats/HybridCalculator.h"
 
-class pdf_toyMC : public pdf_analysis {
+class pdf_toyMC : public pdf_fitData {
 public:
   
-  pdf_toyMC(string input_estimates, bool print, string meth, string ch_s, string range = "all");
-  void generate(int NExp, string pdf_toy);
+  pdf_toyMC(bool print, int inputs = 1, string input_estimates = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, string bias = "no", bool simul = true, string ch_s = "0");
+
+  void generate(int NExp, string pdf_toy, string test_pdf = "total");
   void mcstudy(int NExp, string pdf_toy);
-  void pvalue(int NExp);
   RooFitResult* fit_pdf (string pdf, RooAbsData* data, int printlevel = -1, RooWorkspace *ws = 0);
   void fit_pulls();
-  void parse_estimate();
   void unset_constant();
   void set_ws(RooWorkspace *ws);
   
@@ -47,14 +45,10 @@ public:
   TH1D* pull_h_bd;
   
 private:
-  bool parse(char *cutName, float cut);
-  double estimate_bs;
-  double estimate_bd;
-  double estimate_rare;
-  double estimate_comb;
+  string bias_;
 
-  string input_estimates_;
   string pdf_toy_;
+  string pdf_test_;
   
   RooDataSet* pull_rds_bs;
   RooDataSet* pull_rds_bd;

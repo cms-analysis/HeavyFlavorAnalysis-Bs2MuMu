@@ -45,9 +45,9 @@ int main(int argc, char* argv[]) {
     Bd_h->SetBinError(i, Bd_h->GetBinContent(i)*0.15);
     Rare_h->SetBinError(i, Rare_h->GetBinContent(i)*0.20);
   }
-  TH1D* signals = (TH1D*)Bs_h->Clone("signals");
-  signals->Add(Bd_h, 1);
-  TH1D* signalsrare = (TH1D*)signals->Clone("signalsrare");
+  TH1D* signals_h = (TH1D*)Bs_h->Clone("signals");
+  signals_h->Add(Bd_h, 1);
+  TH1D* signalsrare = (TH1D*)signals_h->Clone("signalsrare");
   signalsrare->Add(Rare_h, 1);
   TH1D* bkg_sub_h = (TH1D*)data_h->Clone("bkg_sub_h");
   bkg_sub_h->Add(Rare_h, -1.);
@@ -58,11 +58,11 @@ int main(int argc, char* argv[]) {
     }
   }
 /// combinatorial estimation
-  double X_comb_estimated =bkg_sub_h->Integral() * (1. / 0.75); 
+  double X_comb_estimated = bkg_sub_h->Integral() * (1. / 0.75);
   int N_comb_estimated = (int)X_comb_estimated;
   if (X_comb_estimated - N_comb_estimated > 0.5) N_comb_estimated++;
   cout << "estimated comb = " << N_comb_estimated << endl;
-  TH1D* uniform_histo = new TH1D("uniform_histo", "uniform_histo", signals->GetNbinsX(), signals->GetXaxis()->GetXmin(), signals->GetXaxis()->GetXmax());
+  TH1D* uniform_histo = new TH1D("uniform_histo", "uniform_histo", signals_h->GetNbinsX(), signals_h->GetXaxis()->GetXmin(), signals_h->GetXaxis()->GetXmax());
   TRandom3 rand0(0);
   double N = rand0.Poisson(N_comb_estimated);
   for (int i = 1; i <= N; i++) {
@@ -74,10 +74,9 @@ int main(int argc, char* argv[]) {
   total->Add(uniform_histo);
   
   /// MC shapes
-  pdf_analysis ana1(print, meth, ch_s);
-  if (SM && bd_const) {cout << "please select SM OR bd_const, not both" << endl; return (EXIT_SUCCESS);}
-  if (SM) ana1.set_SMconstraint(SM_ratio);
-  if (bd_const) ana1.set_bdconstraint();
+  if (SM && bd_const) {cout << "please select SM OR bd_const, not both" << endl; return (EXIT_FAILURE);}
+  pdf_analysis ana1(print, meth, ch_s, "all", SM, bd_const);
+  ana1.set_SMratio(SM_ratio);
   RooWorkspace *ws = ana1.get_ws();
   ana1.define_pdfs();
   /// FITS
@@ -90,12 +89,15 @@ int main(int argc, char* argv[]) {
   ana1.fit_pdf("bd", rdh_bd, false);
   
   /// signals
-  RooDataHist* rdh_signals = new RooDataHist("rdh_signals", "dataset template for signals", *ws->var("Mass"), signals);
+  RooDataHist* rdh_signals = new RooDataHist("rdh_signals", "dataset template for signals", *ws->var("Mass"), signals_h);
   ana1.fit_pdf("signals", rdh_signals, false);
   
   /// rare
   RooDataHist* rdh_rare = new RooDataHist("rdh_rare", "dataset template for rare bkg", *ws->var("Mass"), Rare_h);
+  ana1.define_rare2(rdh_rare);
   ana1.fit_pdf("rare", rdh_rare, false);
+  ana1.define_rare3();
+  ana1.fit_pdf("expo", rdh_rare, false);
 
   /// signals + rare
   RooDataHist* rdh_signalsrare = new RooDataHist("rdh_signalsrare", "dataset template for signals + rare bkg", *ws->var("Mass"), signalsrare);
@@ -106,15 +108,8 @@ int main(int argc, char* argv[]) {
   //ana1.fit_pdf("comb", uniform_rdh, false);
   
   ///total
-  RooDataHist* total_rdh = new RooDataHist("total_rdh", "total_rdh", *ws->var("Mass")
-          ,total
-          );
-//  total_rdh->add(*rdh_bs);
-//  total_rdh->add(*rdh_bd);
-//  total_rdh->add(*rdh_rare);
-//  total_rdh->add(*uniform_rdh);
+  RooDataHist* total_rdh = new RooDataHist("total_rdh", "total_rdh", *ws->var("Mass"), total);
   ana1.fit_pdf("total", total_rdh, true);
-  //ana1.fit_pdf("all", total_rdh, true);
   
   string output_s = "output/fit_ws_" + meth + "_" + ch_s;
   if (SM) output_s += "_SM";
