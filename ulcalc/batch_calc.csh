@@ -1,4 +1,4 @@
-#! /bin/tcsh -f
+#! /bin/csh -f
 
 setenv CMSSW
 setenv SCRAM_ARCH
@@ -47,43 +47,8 @@ echo "--> End of env testing"
 # ----------------------------------------------------------------------
 echo "--> Setup ulcalc"
 # -- use CN's root version
-setenv ROOTSYS /shome/naegelic/root
-set path = ($ROOTSYS/bin $path)
-if ($?LD_LIBRARY_PATH) then
-   setenv LD_LIBRARY_PATH $ROOTSYS/lib:$LD_LIBRARY_PATH      # Linux, ELF HP-UX                                                                                  
-else
-   setenv LD_LIBRARY_PATH $ROOTSYS/lib
-endif
-
-if ($?DYLD_LIBRARY_PATH) then
-   setenv DYLD_LIBRARY_PATH $ROOTSYS/lib:$DYLD_LIBRARY_PATH  # Mac OS X                                                                                          
-else
-   setenv DYLD_LIBRARY_PATH $ROOTSYS/lib
-endif
-
-if ($?SHLIB_PATH) then
-   setenv SHLIB_PATH $ROOTSYS/lib:$SHLIB_PATH                # legacy HP-UX                                                                                      
-else
-   setenv SHLIB_PATH $ROOTSYS/lib
-endif
-
-if ($?LIBPATH) then
-   setenv LIBPATH $ROOTSYS/lib:$LIBPATH                      # AIX                                                                                               
-else
-   setenv LIBPATH $ROOTSYS/lib
-endif
-
-if ($?PYTHONPATH) then
-   setenv PYTHONPATH $ROOTSYS/lib:$PYTHONPATH
-else
-   setenv PYTHONPATH $ROOTSYS/lib
-endif
-
-if ($?MANPATH) then
-   setenv MANPATH `dirname $ROOTSYS/man/man1`:$MANPATH
-else
-   setenv MANPATH `dirname $ROOTSYS/man/man1`:$default_manpath
-endif
+setenv ROOTSYS /swshare/ROOT/root_v32.00.patches42593_slc5_amd64
+setenv LD_LIBRARY_PATH /swshare/ROOT/root_v32.00.patches42593_slc5_amd64//lib/root:$LD_LIBRARY_PATH
 
 echo "--> Extract tar file"
 date
