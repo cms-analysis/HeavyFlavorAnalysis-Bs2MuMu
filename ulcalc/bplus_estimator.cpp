@@ -1,9 +1,7 @@
 /*
  *  bplus_estimator.cpp
- *  final_calculator
  *
- *  Created by Christoph on 09.03.11.
- *  Copyright 2011 PSI. All rights reserved.
+ *  Created by Christoph Nägeli <christoph.naegeli@psi.ch> on 09.03.11.
  *
  */
 
@@ -39,7 +37,7 @@ void estimate_bplus(std::map<bmm_param,measurement_t> *bplus, TTree *dataTree, T
 	TCut truthCut("true_decay == 19");
 	TCut acceptanceCutMCSoft("TMath::Abs(eta_mu1_gen) < 2.5 && TMath::Abs(eta_mu2_gen) < 2.5 && pt_mu1_gen > 1. && pt_mu2_gen > 1. && pt_kp1_gen > .4 && TMath::Abs(eta_kp1_gen) < 2.5");
 	TCut acceptanceCutMCHard("TMath::Abs(eta_mu1_gen) < 2.5 && TMath::Abs(eta_mu2_gen) < 2.5 && pt_mu1_gen > 3.5 && pt_mu2_gen > 3.5 && TMath::Abs(eta_mu1) < 2.4 && TMath::Abs(eta_mu2) < 2.4 && (track_qual_mu1 & 4) && (track_qual_mu2 & 4) && pt_kp1_gen > .4 && TMath::Abs(eta_kp1_gen) < 2.5 && pt_kp1 > .5 && TMath::Abs(eta_kp1) < 2.4");
-	TCut acceptanceCutData("(q_mu1*q_mu2 < 0) && TMath::Abs(eta_mu1) < 2.4 && TMath::Abs(eta_mu2) < 2.4 && pt_mu1 > 1. && pt_mu2 > 1. && (track_qual_mu1 & 4) && (track_qual_mu2 & 4) && pt_kp1 > .5 && TMath::Abs(eta_kp1) < 2.4");
+	TCut acceptanceCutData("(q_mu1*q_mu2 < 0) && TMath::Abs(eta_mu1) < 2.4 && TMath::Abs(eta_mu2) < 2.4 && pt_mu1 > 1. && pt_mu2 > 1. && (track_qual_mu1 & 4) && (track_qual_mu2 & 4) && pt_kp1 > .5 && TMath::Abs(eta_kp1) < 2.4 && (track_qual_kp1 & 4)");
 	TCut muonCut("tight_mu1 && tight_mu2");
 	TCut triggerCut("triggered_jpsi");
 	measurement_t mes;
@@ -49,8 +47,8 @@ void estimate_bplus(std::map<bmm_param,measurement_t> *bplus, TTree *dataTree, T
 	TCanvas *can = NULL;
 	static int plot_nbr = 1;
 	map<systematics_t,double>::iterator syst_it;
-	TEventList cutList("cutList");
-	TEventList treeList("treeList");
+	TEventList *elist;
+	TEventList treeList;
 	
 	anaCut = anaCut && TCut("3.0 < mass_dimuon && mass_dimuon < 3.2"); // j/psi cut
 	
@@ -64,55 +62,83 @@ void estimate_bplus(std::map<bmm_param,measurement_t> *bplus, TTree *dataTree, T
 	effCalc.SetConfidenceLevel(0.68);
 	effCalc.SetStatisticOption(TEfficiency::kFCP);
 	
+	/************************************
+	 * Working with the acceptance tree *
+	 ************************************/
+	accTree->GetDirectory()->cd();
+	
 	// generated
-	cout << "	Counting generator canidates..." << flush;
+	cout << "\tCounting generator canidates..." << flush;
 	cut = TCut("candidate == -68");
-	accTree->Draw(">>cutList",cut);
-	nbr_gens = cutList.GetN();
+	accTree->Draw(">>elist",cut);
+	elist = (TEventList*)gDirectory->Get("elist");
+	nbr_gens = elist->GetN();
 	cout << '\t' << nbr_gens << endl;
+	elist->Write("normGens", TObject::kOverwrite);
 	
 	// acceptance
-	cout << "	Counting accepted candidates..." << flush;
+	cout << "\tCounting accepted candidates..." << flush;
 	cut = TCut("candidate == 68") && acceptanceCutMCSoft && acceptanceCutData && channelCut; // channel cut also goes into acceptance
-	accTree->Draw(">>cutList", cut);
-	nbr_acc = cutList.GetN();
-	treeList.Clear();
-	treeList.Add(&cutList);
+	accTree->Draw(">>elist", cut);
+	elist = (TEventList*)gDirectory->Get("elist");
+	nbr_acc = elist->GetN();
 	cout << '\t' << nbr_acc << flush;
+	elist->Write(Form("normGensAcc_%d",channelIx), TObject::kOverwrite);
+	
 	cut = TCut("candidate == 68") && acceptanceCutMCHard && acceptanceCutData && channelCut; // for high stat mc different generator cuts
-	accTree->Draw(">>cutList", cut);
-	nbr_acc2 = cutList.GetN();
+	accTree->Draw(">>elist", cut);
+	elist = (TEventList*)gDirectory->Get("elist");
+	nbr_acc2 = elist->GetN();
 	cout << " (" << nbr_acc2 << " / " << flush;
-	treeList.Clear();
-	mcTree->Draw(">>cutList", cut); // the same, but with enlarged statistics
-	nbr_reco = cutList.GetN();
+	elist->Write(Form("normGensAccHard_%d",channelIx), TObject::kOverwrite);
+	
+	/****************************
+	 * Working with the MC tree *
+	 ****************************/	
+	mcTree->GetDirectory()->cd();
+	
+	// the same, but with enlarged statistics
+	mcTree->Draw(">>elist", cut);
+	elist = (TEventList*)gDirectory->Get("elist");
+	nbr_reco = elist->GetN();
 	cout << nbr_reco << ")" << endl;	
+	elist->Write(Form("normGensAccHard_%d",channelIx), TObject::kOverwrite);
 	
 	// analysis efficiency
-	cout << "	Counting analysis candidates..." << flush;
+	cout << "\tCounting analysis candidates..." << flush;
 	cut = TCut("candidate == 300521") && acceptanceCutMCHard && acceptanceCutData && channelCut && anaCut && truthCut;
-	mcTree->Draw(">>cutList",cut);
-	nbr_ana = cutList.GetN();
+	mcTree->Draw(">>elist",cut);
+	elist = (TEventList*)gDirectory->Get("elist");
+	nbr_ana = elist->GetN();
 	treeList.Clear();
-	treeList.Add(&cutList);
+	treeList.Add(elist);
 	mcTree->SetEventList(&treeList);
 	cout << '\t' << nbr_ana << endl;
+	elist->Write(Form("normAna_%d",channelIx), TObject::kOverwrite);
 	
 	// muon efficiency
-	cout << "	Counting muon candidates..." << flush;
-	cut = TCut("candidate == 300521") && acceptanceCutMCHard && acceptanceCutData && channelCut && anaCut && truthCut && muonCut;
-	mcTree->Draw(">>cutList", cut);
-	nbr_mu = cutList.GetN();
+	cout << "\tCounting muon candidates..." << flush;
+	mcTree->Draw(">>elist",muonCut);
+	elist = (TEventList*)gDirectory->Get("elist");
+	nbr_mu = elist->GetN();
 	treeList.Clear();
-	treeList.Add(&cutList);
+	treeList.Add(elist);
+	mcTree->SetEventList(&treeList);
 	cout << '\t' << nbr_mu << endl;
+	elist->Write(Form("normMuon_%d",channelIx), TObject::kOverwrite);
 	
 	// trigger efficiency
-	cout << "	Counting trigger candidates..." << flush;
-	cut = TCut("candidate == 300521") && acceptanceCutMCHard && acceptanceCutData && channelCut && anaCut && truthCut && muonCut && triggerCut;
-	mcTree->Draw(">>cutList",cut);
-	nbr_trig = cutList.GetN();
+	cout << "\tCounting trigger candidates..." << flush;
+	mcTree->Draw(">>elist",triggerCut);
+	elist = (TEventList*)gDirectory->Get("elist");
+	nbr_trig = elist->GetN();
+	treeList.Clear();
+	treeList.Add(elist);
+	mcTree->SetEventList(&treeList);
 	cout << '\t' << nbr_trig << endl;
+	elist->Write(Form("normTrig_%d",channelIx), TObject::kOverwrite);
+	
+	mcTree->SetEventList(NULL);
 	
 	cout << "	Computing efficiencies..." << flush;
 	// acceptance

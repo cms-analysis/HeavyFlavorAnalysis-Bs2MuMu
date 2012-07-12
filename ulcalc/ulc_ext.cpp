@@ -1,5 +1,6 @@
 /*
  *  ulc_ext.cpp
+ *  final_calculator
  *
  *  Created by Christoph Nägeli <christoph.naegeli@psi.ch> on 19.03.12.
  *
@@ -123,10 +124,10 @@ int main(int argc, const char *argv [])
 	parse_arguments(&argv[1], &argv[argc]);
 	
 	// prepare the input
-	dataFile = new TFile(g_data_file);
-	sigMcFile = new TFile(g_sig_mc_file);
-	rareMcFile = new TFile(g_rare_file);
-	accFile = new TFile(g_acc_file);
+	dataFile = new TFile(g_data_file, "update");
+	sigMcFile = new TFile(g_sig_mc_file, "update");
+	rareMcFile = new TFile(g_rare_file, "update");
+	accFile = new TFile(g_acc_file, "update");
 	
 	dataTree	= (TTree*)dataFile->Get("T");
 	sigTree		= (TTree*)sigMcFile->Get("T");

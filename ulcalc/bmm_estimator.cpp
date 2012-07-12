@@ -17,6 +17,7 @@
 #include <TMath.h>
 #include <TFile.h>
 #include <TEfficiency.h>
+#include <TEventList.h>
 
 using namespace std;
 
@@ -110,7 +111,7 @@ static triplet<measurement_t> eff_raredecay(TTree *mcTree, TCut accCut, TCut cut
 	// save histogram to file
 	mcTree->Draw(Form("mass>>%s",histoName.c_str()), candCut && accCut && cut);
 	histo->Scale( (result.a + result.b + result.c).getVal() / histo->Integral());
-	histo->Write();
+	histo->Write(histo->GetName(), TObject::kOverwrite);
 	
 	return result;
 } // eff_raredecay()
@@ -195,6 +196,9 @@ std::map<int,triplet<measurement_t> > *estimate_bmm_eff(std::map<bmm_param,measu
 	map<systematics_t,double>::const_iterator syst_it;
 	measurement_t m;
 	map<int,triplet<measurement_t> > *result = NULL;
+	TEventList *elist;
+	TEventList treeList;
+	string prefix( (is_bstomumu ? "sig" : "dig") );
 	
 	// Cuts
 	TCut histo_cut(Form("%f < mass && mass < %f",low_histo_bound,high_histo_bound));
@@ -205,6 +209,7 @@ std::map<int,triplet<measurement_t> > *estimate_bmm_eff(std::map<bmm_param,measu
 	TCut acceptanceCutGen("TMath::Abs(eta_mu1_gen) < 2.5 && TMath::Abs(eta_mu2_gen) < 2.5 && pt_mu1_gen > 1. && pt_mu2_gen > 1.");
 	TCut truthCut(Form("true_decay == %d", (is_bstomumu ? 1 : 8))); // see massReader.hh
 	TCut muonCut("tight_mu1 && tight_mu2");
+	TCut triggerCut("triggered_bs");
 	TCut cut;
 	
 	// candidate counting
@@ -218,41 +223,72 @@ std::map<int,triplet<measurement_t> > *estimate_bmm_eff(std::map<bmm_param,measu
 	effCalc.SetConfidenceLevel(0.68);
 	effCalc.SetStatisticOption(TEfficiency::kFCP);
 	
+	/***********************************
+	 * Working with the signal MC Tree *
+	 ***********************************/
+	sigTree->SetEventList(0);
+	sigTree->GetDirectory()->cd();
+	
 	// generated
 	cout << "\tCounting generator candidates..." << flush;
 	cut = TCut(Form("candidate == %d", -cand));
-	nbr_gens = sigTree->Draw("",cut);
+	sigTree->Draw(">>elist",cut);
+	elist = (TEventList*)gDirectory->Get("elist");
+	nbr_gens = elist->GetN();
 	cout << '\t' << nbr_gens << endl;
+	elist->Write(Form("%sGens",prefix.c_str()), TObject::kOverwrite);
 	
 	// accepted
 	cout << "\tCounting reco candidates..." << flush;
 	cut = TCut(Form("candidate == %d", cand)) && acceptanceCutData && acceptanceCutGen && channelCut;
-	nbr_reco = sigTree->Draw("",cut);
+	sigTree->Draw(">>elist",cut);
+	elist = (TEventList*)gDirectory->Get("elist");
+	nbr_reco = elist->GetN();
 	cout << '\t' << nbr_reco << endl;
+	elist->Write(Form("%sGensAcc_%d",prefix.c_str(),channelIx), TObject::kOverwrite);
 	
 	// analysis
 	cout << "\tCounting ana candiates..." << flush;
 	cut = TCut("candidate == 301313") && acceptanceCutData && acceptanceCutGen && channelCut && anaCut && truthCut;
-	nbr_ana = sigTree->Draw("",cut);
+	sigTree->Draw(">>elist",cut);
+	elist = (TEventList*)gDirectory->Get("elist");
+	nbr_ana = elist->GetN();
+	treeList.Clear();
+	treeList.Add(elist);
+	sigTree->SetEventList(&treeList);
 	cout << '\t' << nbr_ana << endl;
+	elist->Write(Form("%sAna_%d",prefix.c_str(),channelIx), TObject::kOverwrite);
 	
 	// muon
 	cout << "\tCounting muon candidates..." << flush;
-	cut = TCut("candidate == 301313") && acceptanceCutData && acceptanceCutGen && channelCut && anaCut && truthCut && muonCut;
-	nbr_mu = sigTree->Draw("",cut);
+	sigTree->Draw(">>elist",muonCut);
+	elist = (TEventList*)gDirectory->Get("elist");
+	nbr_mu = elist->GetN();
+	treeList.Clear();
+	treeList.Add(elist);
+	sigTree->SetEventList(&treeList);
 	cout << '\t' << nbr_mu << endl;
+	elist->Write(Form("%sMuon_%d",prefix.c_str(),channelIx), TObject::kOverwrite);
 	
 	// trigger
 	cout << "\tCounting trigger candidates..." << flush;
-	cut = TCut("candidate == 301313") && acceptanceCutData && acceptanceCutGen && channelCut && anaCut && truthCut && muonCut && TCut("triggered_bs");
-	nbr_trig = sigTree->Draw("",cut);
+	sigTree->Draw(">>elist",triggerCut);
+	elist = (TEventList*)gDirectory->Get("elist");
+	nbr_trig = elist->GetN();
+	treeList.Clear();
+	treeList.Add(elist);
+	sigTree->SetEventList(&treeList);
 	cout << '\t' << nbr_trig << endl;
+	elist->Write(Form("%sTrig_%d",prefix.c_str(),channelIx), TObject::kOverwrite);
 	
 	// cross feed
 	cout << "\tComputing cross feed..." << flush;
-	nbr_bs = sigTree->Draw("",cut && bs_mass_cut);
-	nbr_bd = sigTree->Draw("",cut && bd_mass_cut);
+	nbr_bs = sigTree->Draw("",bs_mass_cut);
+	nbr_bd = sigTree->Draw("",bd_mass_cut);
 	cout << "\tdone" << endl;
+	
+	// reset the event list
+	sigTree->SetEventList(NULL);
 	
 	effCalc.SetTotalEvents(0, nbr_trig);
 	effCalc.SetPassedEvents(0, nbr_bd);
@@ -356,6 +392,8 @@ std::map<int,triplet<measurement_t> > *estimate_bmm_eff(std::map<bmm_param,measu
 	
 	if (is_bstomumu) {
 		cout << "\tComputing efficiency of peaking background..." << flush;
+		accTree->SetEventList(0);
+		rareTree->SetEventList(0);
 		result = compute_peaking_eff(accTree, rareTree, histo_cut && acceptanceCutData && channelCut && anaCut, bd_mass_cut, bs_mass_cut, ((*bmm)[make_pair(kEff_mu_bmm, channelIx)]).getVal(), ((*bmm)[make_pair(kEff_trig_bmm,channelIx)]).getVal(),channelIx);
 		cout << "\tdone" << endl;
 	}
@@ -371,6 +409,7 @@ void estimate_bmm_obs(std::map<bmm_param,measurement_t> *bmm, TTree *dataTree, d
 	TCut acceptanceCutData("TMath::Abs(eta_mu1) < 2.4 && TMath::Abs(eta_mu2) < 2.4 && (track_qual_mu1 & 4) && (track_qual_mu2 & 4) && (q_mu1*q_mu2 < 0)");
 	TCut channelCut = TCut(Form("TMath::Abs(eta_mu1) < %f && TMath::Abs(eta_mu2) < %f",maxEta,maxEta)) && TCut(Form("!(TMath::Abs(eta_mu1) < %f && TMath::Abs(eta_mu2) < %f)",minEta,minEta));
 	TCut muonCut("tight_mu1 && tight_mu2");
+	TCut triggerCut("triggered_bs");
 	TCut cut;
 	triplet<measurement_t> exp_pkg;
 	
@@ -384,12 +423,12 @@ void estimate_bmm_obs(std::map<bmm_param,measurement_t> *bmm, TTree *dataTree, d
 	
 	// observations
 	cout << "\tComputing observation..." << flush;
-	cut = TCut("candidate == 301313") && acceptanceCutData && channelCut && anaCut && muonCut && TCut("triggered_bs") && histo_cut && !bd_mass_cut && !bs_mass_cut;
+	cut = TCut("candidate == 301313") && acceptanceCutData && channelCut && anaCut && muonCut && triggerCut && histo_cut && !bd_mass_cut && !bs_mass_cut;
 	(*bmm)[make_pair(kObsBkg_bmm, channelIx)] = measurement_t((double)dataTree->Draw("",cut),0.0);
 	
 	if (!is_bstomumu)
 		bs_mass_cut = bd_mass_cut;
-	cut = TCut("candidate == 301313") && acceptanceCutData && channelCut && anaCut && muonCut && TCut("triggered_bs") && bs_mass_cut;
+	cut = TCut("candidate == 301313") && acceptanceCutData && channelCut && anaCut && muonCut && triggerCut && bs_mass_cut;
 	(*bmm)[make_pair(kObsB_bmm, channelIx)] = measurement_t((double)dataTree->Draw("",cut),0.0);
 	cout << "\tdone" << endl;
 } // estiamte_bmm_obs()
