@@ -159,8 +159,8 @@ static void process_entry(table_entry_t e)
 	TChain chain("T");
 	TFile *rFile = NULL;
 	TTree *copyTree = NULL;
-	TTreeFormula cutFormula("cutForm",e.cut.GetTitle(),&chain);
-	Long64_t j;
+	TTreeFormula *cutFormula = NULL;
+	Long64_t j,local,diff = -1;
 	
 	cout << "====> Processing entry:" << endl;
 	e.Print();
@@ -181,7 +181,7 @@ static void process_entry(table_entry_t e)
 		  chain.Add(chain_entry);
 		}
 	}
-	
+
 	// open the root file
 	rFile = new TFile(Form("%s/%s",output_dir.c_str(),e.filename.c_str()),"recreate");
 	
@@ -191,7 +191,14 @@ static void process_entry(table_entry_t e)
 	for (j = 0; j < chain.GetEntries(); j++) {
 		
 		chain.GetEntry(j); // load the entry
-		if (cutFormula.EvalInstance() > 0)
+		local = chain.LoadTree(j); // get the local entry nbr
+		if (!cutFormula || cutFormula->GetTree() != chain.GetTree() || j - local > 0) {
+		  diff = j - local;
+		  if(cutFormula) delete cutFormula;
+		  cutFormula = new TTreeFormula("cutForm",e.cut.GetTitle(),chain.GetTree());
+		}
+		// cout << "DEBUG: j = " << j << ", local = " << chain.LoadTree(j) << ", tree = " << chain.GetTree() << ", diff = " << diff  << endl;
+		if (cutFormula->EvalInstance() > 0)
 			copyTree->Fill();
 		
 		completed = (int32_t)(100 * (j+1) / chain.GetEntries());
@@ -213,6 +220,7 @@ static void process_entry(table_entry_t e)
 		fclose(chainfile);
 
 	delete rFile;
+	delete cutFormula;
 
 	cout << "===> Entry done." << endl;
 } // process_entry()
