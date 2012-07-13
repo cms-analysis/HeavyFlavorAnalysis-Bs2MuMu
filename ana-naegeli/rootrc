@@ -1,0 +1,2 @@
+Unix.*.Root.MacroPath: /usr/local/src/root/tmva/test:.
+Rint.Logon:	rootlogon.C

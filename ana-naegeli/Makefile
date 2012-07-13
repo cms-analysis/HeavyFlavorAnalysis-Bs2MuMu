@@ -1,5 +1,8 @@
 # Makefile for ana-producer
 
+#########
+# SETUP #
+#########
 ifdef ROOTSYS
   ROOTCINT      = $(ROOTSYS)/bin/rootcint
   ROOTCFLAGS    = $(shell $(ROOTSYS)/bin/root-config --cflags)
@@ -24,14 +27,42 @@ endif
 
 CXXFLAGS      = -g -O3 -Wall -fPIC -pipe $(ROOTCFLAGS)
 LIBS          = $(ROOTLIBS) -lTreePlayer
+GLIBS		  = $(ROOTGLIBS) -lTreePlayer
+LDFLAGS       = -g
+SOFLAGS       = -shared
+LD            = $(CXX)
+
+################
+# OBJECT FILES #
+################
 
 OBJS = ana-produce.o
+LIB_OBJS = ncMVA.o ncAna.o ncCut.o ncFormula.o ncEvaluate.o
+LIB_OBJSDICT = ${LIB_OBJS:.o=Dict.o}
+
+#################
+# PATTERN RULES #
+#################
 
 obj/%.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-all: bin obj bin/ana-produce
+%Dict.cpp: %.h
+	$(ROOTCINT) -f $@ -c $<
+
+###########
+# TARGETS #
+###########
+
+all: bin obj lib bin/ana-produce lib/libNCAna.so
 	@true
+
+lib/libNCAna.so: $(addprefix obj/,$(LIB_OBJS) $(LIB_OBJSDICT)) lib/libNCRootUtils.so
+	$(LD) $(SOFLAGS) -o $@ $(addprefix obj/,$(LIB_OBJS) $(LIB_OBJSDICT)) $(GLIBS) lib/libNCRootUtils.so -lTMVA
+
+lib/libNCRootUtils.so:
+	rm -f lib/libNCRootUtils.so
+	cd lib && ln -s ../../rootutils/lib/libNCRootUtils.so && cd -
 
 bin/ana-produce: $(addprefix obj/,$(OBJS))
 	$(CXX) -o $@ $(addprefix obj/,$(OBJS)) $(LIBS)
@@ -42,8 +73,11 @@ bin:
 obj:
 	@mkdir -p obj
 
+lib:
+	@mkdir -p lib
+
 clean:
-	rm -rf obj
+	rm -rf obj *Dict.h
 
 distclean: clean
-	rm -rf bin
+	rm -rf bin lib
