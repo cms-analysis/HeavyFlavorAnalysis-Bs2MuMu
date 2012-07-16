@@ -124,8 +124,8 @@ void ncMVA::prepTraining(unsigned channelIx)
 {
 	char *tmp = tempnam(".", "training-");
 	TFile *tmpFile;
-	TFile sigFile(fMCPath.c_str());
-	TFile bkgFile(fDataPath.c_str());
+	TFile *sigFile = TFile::Open(fMCPath.c_str());
+	TFile *bkgFile = TFile::Open(fDataPath.c_str());
 	TCut preselCut = ncAna::cutMVAPresel() && ncAna::cutMuon() && ncAna::cutTrigger(true) && ncAna::cutChannel(channelIx);
 	TCut cut;
 	ncAna a; // default ncAna object
@@ -143,8 +143,8 @@ void ncMVA::prepTraining(unsigned channelIx)
 	// change to the temp file
 	tmpFile->cd();
 	
-	sigTree = (TTree*)sigFile.Get("T");
-	bkgTree = (TTree*)bkgFile.Get("T");
+	sigTree = (TTree*)sigFile->Get("T");
+	bkgTree = (TTree*)bkgFile->Get("T");
 	
 	// extract the signal
 	cout << "Truth matching signal..." << flush;
@@ -165,6 +165,8 @@ void ncMVA::prepTraining(unsigned channelIx)
 	
 	free(tmp);
 	delete tmpFile;
+	delete sigFile;
+	delete bkgFile;
 } // prepTraining()
 
 void ncMVA::runTraining(unsigned split, unsigned channelIx, bool prep)
