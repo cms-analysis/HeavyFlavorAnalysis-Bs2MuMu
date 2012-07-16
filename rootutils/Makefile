@@ -5,8 +5,6 @@
 CXX = g++
 CXXFLAGS = -g -Wall -Os -I/opt/local/include -fpic
 LDFLAGS = -shared -lTreePlayer
-INSTALL = install
-INSTALLPATH = /Users/cn/Documents/PSI/Projects/macros
 
 ifdef ROOTSYS
 	ROOTCINT	= $(ROOTSYS)/bin/rootcint
@@ -36,7 +34,7 @@ UTILS_DICTS = ${UTILS:.o=Dict.o}
 %Dict.cpp : %.h
 	$(ROOTCINT) -f $@ -c %<
 
-obj/%.o: %.cpp $(UTILS_HEADER)
+obj/%.o: %.cpp $(UTILS_HEADER) obj
 	$(CXX) -c $(ROOTCFLAGS) $(CXXFLAGS) $< -o $@
 
 ###########
@@ -46,14 +44,17 @@ obj/%.o: %.cpp $(UTILS_HEADER)
 all: lib/libNCRootUtils.so
 	@true
 
-install: all
-	$(INSTALL) -m 755 lib/libNCRootUtils.so $(INSTALLPATH)
-
-lib/libNCRootUtils.so: $(addprefix obj/,$(UTILS) $(UTILS_DICTS))
+lib/libNCRootUtils.so: $(addprefix obj/,$(UTILS) $(UTILS_DICTS)) lib
 	$(CXX) $(LDFLAGS) $(ROOTLIBS) $(addprefix obj/,$(UTILS) $(UTILS_DICTS)) -o lib/libNCRootUtils.so
 
 clean:
-	rm -rf obj/* lib/* rm *Dict.*
+	rm -rf obj lib rm *Dict.*
+
+obj:
+	mkdir -p obj
+
+lib:
+	mkdir -p lib
 
 # Dummy target for Xcode
 dicts: $(patsubst %.o,%.cpp,$(UTILS_DICTS)) ;
