@@ -100,6 +100,9 @@ else
    setenv MANPATH `dirname $ROOTSYS/man/man1`:$default_manpath
 endif
 
+echo "--> Building rootutils"
+cd ../rootutils; make; cd -
+
 echo "--> Building ncBatch"
 make
 pwd
