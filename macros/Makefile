@@ -42,9 +42,6 @@ RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 READER = treeReader01.o bmmReader.o bmmSignalReader.o bmmNormalizationReader.o bmmBs2JpsiPhiReader.o massReader.o copyReader.o muCharmReader.o dpReader.o d0Reader.o triggerValidation.o ksReader.o genLevel.o impactReader.o anaBmm.o AnalysisCuts.o AnalysisDistribution.o initFunc.o HistCutEfficiency.o
 READERDICT = ${READER:.o=Dict.o}
 
-NNLEARNING = ncMVA.o ncEvaluate.o ncPropErr.o
-NNLEARNINGDICT = ${NNLEARNING:.o=Dict.o}
-
 SUPPORTCLASSES = mclimit_csm.o
 CSTUFF = bayesianlimit.o
 
@@ -104,17 +101,5 @@ cleanall: clean
 	rm -f ../../../lib/$(SCRAM_ARCH)/libAna00.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libUtil.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libAnaClasses.so
-
-lib/libNCMVA.so: $(addprefix obj/,$(NNLEARNING) $(NNLEARNINGDICT))
-	$(LD) $(SOFLAGS) -o $@ $(addprefix obj/,$(NNLEARNING) $(NNLEARNINGDICT)) $(GLIBS) -lTMVA -lTreePlayer
-
-bin/ncBatch: obj/ncBatch.o lib/libNCMVA.so
-	$(LD) $(LDFLAGS) -o $@ obj/ncBatch.o lib/libNCMVA.so $(GLIBS)
-
-ncMVA: lib/libNCMVA.so
-	@true
-
-ncBatch: bin/ncBatch
-	@true
 
 -include $(addprefix obj/,${READER:.o=.d})
