@@ -27,6 +27,8 @@ pdf_fitData::pdf_fitData(bool print, int inputs, string input_estimates, string 
   ws_file_input.resize(channels);
   ws_input.resize(channels);
 
+      ws_ = new RooWorkspace("ws", "simultaneous fit workspace results");
+
 }
 
 void pdf_fitData::parse_estimate(){
@@ -44,7 +46,7 @@ void pdf_fitData::parse_estimate(){
     if (buffer[0] == '#') continue;
     ok = sscanf(buffer, "%s %f", cutName, &cut);
     if (!parse(cutName, cut)) {
-      cout << "==> Error parsing variable " << cutName << ". exiting..." << endl;
+      cout << "==> Error parsing variable " << cutName << endl;
       exit(EXIT_FAILURE);
     }
   }
@@ -111,7 +113,7 @@ bool pdf_fitData::parse(char *cutName, float cut) {
     }
     return true;
   }
-  return false;
+  return true;
 }
 
 void pdf_fitData::fit_pdf() {
@@ -248,7 +250,7 @@ void pdf_fitData::make_dataset() {
       channelName << "channel_" << i;
       RooDataSet* data_i;
       if (!random) {
-        data_i = new RooDataSet( Form("data_%i", i), "data i", *ws_->var("Mass"));
+        data_i = new RooDataSet( Form("data_%i", i), Form("data %i", i), *ws_->var("Mass"));
         FillRooDataSet(tree, data_i, ws_->var("Mass"), i);
       }
       else {
@@ -257,8 +259,10 @@ void pdf_fitData::make_dataset() {
         data_i = total_pdf_i[i]->generate(*ws_->var("Mass"), events);
       }
       data_map.insert(make_pair(channelName.str(), data_i));
-      channel->defineType(Form("channel_%d", i));
+      channel->defineType(channelName.str().c_str(), i);
     }
+//    cout << " >>>>>>>>>>>> "<< endl;
+//    channel->Print();
     global_data = new RooDataSet("global_data", "data for all channels", *ws_->var("Mass"), Index(*channel), Import(data_map));
   }
   else {
@@ -352,7 +356,7 @@ void pdf_fitData::make_pdf() {
       total_pdf_i[i] = (RooAbsPdf*)ws_input[i]->pdf(Form("pdf_ext_total_%d", i));
       simul_pdf->addPdf(*total_pdf_i[i], Form("channel_%d", i));
     }
-    ws_ = new RooWorkspace("ws", "simultaneous fit workspace results");
+
     ws_->import(*simul_pdf);
     ws_->Print();
   }
@@ -384,13 +388,19 @@ void pdf_fitData::save() {
 
 }
 
-void pdf_fitData::significance() {
+void pdf_fitData::significance(int meth) {
 
+  if (meth == 0) sig_hand();
+  else if (meth == 1) sig_plhc();
+  else if (meth == 2) sig_plhts();
+  else return;
+}
+
+void pdf_fitData::sig_hand() {
   /// by hand
   Double_t minNLL = RFR->minNll();
   TIterator* vars_it;
   RooRealVar *arg_var = 0;
-
   RooArgSet *all_vars;
   if (simul_) all_vars = simul_pdf->getVariables();
   else all_vars = total_pdf_i[0]->getVariables();
@@ -411,9 +421,16 @@ void pdf_fitData::significance() {
   Double_t deltaLL = newNLL - minNLL;
   Double_t signif = deltaLL>0 ? sqrt(2*deltaLL) : -sqrt(-2*deltaLL) ;
   cout << "significance (by hand) = " << signif << endl << endl;
+}
 
+void pdf_fitData::sig_plhc() {
   using namespace RooStats;
-  vars_it->Reset();
+  TIterator* vars_it;
+  RooRealVar *arg_var = 0;
+  RooArgSet *all_vars;
+  if (simul_) all_vars = simul_pdf->getVariables();
+  else all_vars = total_pdf_i[0]->getVariables();
+  vars_it = all_vars->createIterator();
   while ( (arg_var = (RooRealVar*)vars_it->Next())) {
     string name(arg_var->GetName());
     size_t found;
@@ -451,25 +468,25 @@ void pdf_fitData::significance() {
   plc.SetNullParameters(poi);
   HypoTestResult* htr = plc.GetHypoTest();
   cout << "ProfileLikelihoodCalculator: The p-value for the null is " << htr->NullPValue() << "; The significance for the null is " << htr->Significance() << endl;
+}
 
-  if (simul_) return;
-  /// it does not work simul...
+void pdf_fitData::sig_plhts() {
+  using namespace RooStats;
   RooWorkspace* ws2 = new RooWorkspace("ws2", "ws2");
   if (simul_) ws2->import(*simul_pdf);
   else ws2->import(*total_pdf_i[0]);
   ws2->import(*global_data);
-  ws2->defineSet("obs", "Mass");
+  if (simul_) ws2->defineSet("obs", "Mass,channel");
+  else ws2->defineSet("obs", "Mass");
   ostringstream name_poi;
   if (simul_) {
-    if (bd_constr_) name_poi << "Bd_over_Bs";
     for (int i = 0; i < channels; i++) {
-      if (i != 0 && !bd_constr_) name_poi << ",";
+      if (i != 0) name_poi << ",";
       name_poi << "N_bs_" << i;
     }
   }
   else name_poi << "N_bs";
   ws2->defineSet("poi", name_poi.str().c_str());
-  ws2->Print();
 
   ModelConfig* H0 = new ModelConfig("H0", "background only hypothesis", ws2);
   if (simul_) H0->SetPdf(*ws2->pdf("simul_pdf"));
@@ -484,7 +501,6 @@ void pdf_fitData::significance() {
     }
   }
   else ws2->var("N_bs")->setVal(0.0);
-  if (bd_constr_) ws2->var("Bd_over_Bs")->setVal(0.0);
   H0->SetSnapshot(*ws2->set("poi"));
 
   ModelConfig* H1 = new ModelConfig("H1", "background + signal hypothesis", ws2);
@@ -506,17 +522,24 @@ void pdf_fitData::significance() {
   if (bd_constr_) ws2->var("Bd_over_Bs")->setVal(0.1);
   H1->SetSnapshot(*ws2->set("poi"));
 
+  ws2->import(*H0);
+  ws2->import(*H1);
+  ws2->Print();
+
   string name_of_pdf = "simul_pdf";
   if (!simul_) name_of_pdf = "pdf_ext_total";
   ProfileLikelihoodTestStat pl_ts(*ws2->pdf(name_of_pdf.c_str()));
-  pl_ts.SetOneSidedDiscovery(true);
-  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 100);
-  FrequentistCalculator frequCalc(*global_data, *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
+//  pl_ts.SetPrintLevel(3);
+//  pl_ts.EnableDetailedOutput(true, true);
+//  pl_ts.SetOneSidedDiscovery(true);
+
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 1000);
+  FrequentistCalculator frequCalc(*global_data , *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
   RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();
   RooMsgService::instance().cleanup();
+  htr_pl->Print();
 
-  cout << "ProfileLikelihoodCalculator: The p-value for the null is " << htr->NullPValue() << "; The significance for the null is " << htr->Significance() << endl;
   cout << "ProfileLikelihoodTestStat + frequentist: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << endl;
 
 }

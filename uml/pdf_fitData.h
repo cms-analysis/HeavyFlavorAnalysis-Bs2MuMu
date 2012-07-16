@@ -34,7 +34,7 @@ class pdf_fitData : public pdf_analysis {
 
     void fit_pdf(string pdf, RooAbsData* data, bool extended, bool sumw2error = true, bool hesse = true);
     void fit_pdf();
-    void significance();
+    void significance(int meth);
     void save();
 
   protected:
@@ -53,6 +53,10 @@ class pdf_fitData : public pdf_analysis {
     TTree* tree;
     bool random;
     vector <RooAbsPdf*> total_pdf_i;
+
+    void sig_hand();
+    void sig_plhc();
+    void sig_plhts();
 };
 
 #endif // PDF_FITDATA_H

@@ -142,7 +142,7 @@ int main(int argc, char** argv) {
     if (simul) fitdata->print_each_channel();
     else fitdata->print();
   }
-  fitdata->significance();
+  fitdata->significance(sig_meth);
   fitdata->save();
 
   return EXIT_SUCCESS;

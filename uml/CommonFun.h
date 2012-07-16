@@ -22,6 +22,7 @@ static bool simul = false;
 static int NExp = 1;
 static int ch_i = -1;
 static int inputs = 1;
+static int sig_meth = -1;
 bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, pvalue = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
@@ -54,6 +55,7 @@ void help() {
   cout << "-simul # \t simultaneous fit of # channels (default 1)" << endl;
   cout << "-cuts #filename \t file with MVA selections" << endl;
   cout << "-SB \t fit side-bands only" << endl;
+  cout << "-sig # \t significance with method: 0 by hand; 1 ProfileLikelihoodCalculator; 2 ProfileLikelihoodTestStat" << endl;
   exit(0);
 }
 
@@ -142,6 +144,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-SB")) {
       SB = true;
       cout << "fitting only the side-bands" << endl;
+    }
+    if (!strcmp(argv[i],"-sig")) {
+      sig_meth = atoi(argv[i+1]);
+      cout << "significance with method " << sig_meth << endl;
     }
     if (!strcmp(argv[i],"-h")) help();
   }
