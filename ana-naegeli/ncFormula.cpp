@@ -9,6 +9,7 @@
 #include "ncFormula.h"
 
 // Standard headers
+#include <algorithm>
 #include <utility>
 #include <queue>
 

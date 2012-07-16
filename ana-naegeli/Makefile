@@ -68,7 +68,7 @@ bin/ana-produce: $(addprefix obj/,$(OBJS))
 	$(CXX) -o $@ $(addprefix obj/,$(OBJS)) $(LIBS)
 
 bin/ncBatch: obj/ncBatch.o lib/libNCAna.so
-	$(LD) $(LDFLAGS) -o $@ obj/ncBatch.o lib/libNCAna.so $(GLIBS)
+	$(LD) $(LDFLAGS) -o $@ obj/ncBatch.o lib/libNCAna.so lib/libNCRootUtils.so $(GLIBS)
 
 bin:
 	@mkdir -p bin
