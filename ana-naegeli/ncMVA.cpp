@@ -74,8 +74,8 @@ void ncMVA::splitTree(TTree *tree, bool save)
 	Long64_t j;
 	TLeaf *runLeaf = tree->FindLeaf("run");
 	TLeaf *evtLeaf = tree->FindLeaf("event");
-	unsigned e = 0; // even / odd marker
 	TTree *theTrees[2];
+	uint32_t e;
 	
 	cout << "splitting the tree()" << endl;
 	
@@ -109,7 +109,8 @@ void ncMVA::splitTree(TTree *tree, bool save)
 			
 			// load and save the corresponding entry
 			tree->GetEntry(it->second.first + j);
-			theTrees[e++ % 2]->Fill();
+			e = (uint32_t)TMath::Abs(evtLeaf->GetValue()) % 2;
+			theTrees[e]->Fill();
 		}
 	}
 	
