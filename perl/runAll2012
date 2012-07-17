@@ -69,7 +69,7 @@ if ($opt_v) {
     #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_7*,$version-2012B_7-data.root"
     # 
     , "Bs2KMuNu rare MC"  
-    => "-m,bmm2Reader.2e33-Bs2KMuNu,cbmm-$version-cms-BsToKMuNu_KMuNuEtaFilter_8TeV-START52_V9-v1-*,$version-2e33-Bs2KMuNu.root"
+    => "-m,bmm2Reader.2e33-Bs2KMuNu,cbmm-$version-cms-BsToKMuNu_KMuNuEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bs2KMuNu.root"
     , "Bs2PiPi rare MC"  
     => "-m,bmm2Reader.2e33-Bs2PiPi,cbmm-$version-cms-BsToPiPi_2PiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bs2PiPi.root"
     , "Bs2KK rare MC"  
@@ -79,7 +79,15 @@ if ($opt_v) {
     , "Bd2KPi rare MC"  
     => "-m,bmm2Reader.2e33-Bd2KPi,cbmm-$version-cms-BdToKPi_KPiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bd2KPi.root"
     , "Lb2PiP rare MC"  
-    => "-m,bmm2Reader.2e33-Lb2PiP,cbmm-$version-cms-LambdaBToPPi_PPiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-LambdaBToPPi.root"
+    => "-m,bmm2Reader.2e33-Lb2PiP,cbmm-$version-cms-LambdaBToPPi_PPiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-LambdaB2PPi.root"
+    , "Bd2KK rare MC"  
+    => "-m,bmm2Reader.2e33-Bd2KK,cbmm-$version-cms-BdToKK_2KPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bd2KK.root"
+    , "Bd2PiPi rare MC"  
+    => "-m,bmm2Reader.2e33-Bd2PiPi,cbmm-$version-cms-BdToPiPi_2PiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bd2PiPi.root"
+    , "Lb2PK rare MC"  
+    => "-m,bmm2Reader.2e33-Lb2KP,cbmm-$version-cms-LambdaBToPK_PKPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-LambdaB2PK.root"
+    , "Bd2PiMuNu rare MC"  
+    => "-m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-$version-cms-BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bd2PiMuNu.root"
     );
 
 #my $user  = $ENV{'USER'};
