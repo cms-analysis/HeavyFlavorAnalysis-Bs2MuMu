@@ -54,7 +54,7 @@ obj/%.o: %.cpp
 # TARGETS #
 ###########
 
-all: bin obj lib bin/ana-produce lib/libNCAna.so bin/ncBatch
+all: bin obj lib bin/ana-produce lib/libNCAna.so bin/ncBatch bin/ncEvalTMVA
 	@true
 
 lib/libNCAna.so: $(addprefix obj/,$(LIB_OBJS) $(LIB_OBJSDICT)) lib/libNCRootUtils.so
@@ -69,6 +69,9 @@ bin/ana-produce: $(addprefix obj/,$(OBJS))
 
 bin/ncBatch: obj/ncBatch.o lib/libNCAna.so
 	$(LD) $(LDFLAGS) -o $@ obj/ncBatch.o lib/libNCAna.so lib/libNCRootUtils.so $(GLIBS)
+
+bin/ncEvalTMVA: obj/ncEvalTMVA.o
+	$(LD) $(LDFLAGS) -o $@ obj/ncEvalTMVA.o $(GLIBS)
 
 bin:
 	@mkdir -p bin
