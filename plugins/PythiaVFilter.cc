@@ -73,7 +73,7 @@ bool PythiaVFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	using namespace edm;
 	Handle<HepMCProduct> evt;
 	iEvent.getByLabel(mcLabel,evt);
-	HepMC::GenEvent *genEvent = new HepMC::GenEvent(*(evt->GetEvent()));
+	HepMC::GenEvent genEvent(*(evt->GetEvent()));
 	vector<double> currentEtas;
 	vector<double> currentPts;
 	vector<int> currentIDs;
@@ -86,7 +86,7 @@ bool PythiaVFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 		cout << endl;
 	}
 	
-	for (HepMC::GenEvent::particle_iterator p = genEvent->particles_begin(); p != genEvent->particles_end(); ++p) {
+	for (HepMC::GenEvent::particle_iterator p = genEvent.particles_begin(); p != genEvent.particles_end(); ++p) {
 		
 		if(lookFor.count( (*p)->pdg_id() ) == 0)
 			continue; // not interested in that guy
