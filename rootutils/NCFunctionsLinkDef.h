@@ -1,9 +1,7 @@
 /*
  *  NCFunctionsLinkDef.h
- *  NCRootUtils
  *
- *  Created by Christoph on 8.3.10.
- *  Copyright 2010 Christoph Nägeli. All rights reserved.
+ *  Created by Christoph Nägeli <christoph.naegeli@psi.ch> on 8.3.10.
  *
  */
 
@@ -33,6 +31,7 @@
 
 #pragma link C++ function f_argus(double*,double*);
 #pragma link C++ function f_aag(double*,double*);
+#pragma link C++ function f_exparggau(double*,double*);
 #pragma link C++ function f_aacb(double*,double*);
 
 #pragma link C++ function f_p0ag(double*,double*);

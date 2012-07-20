@@ -191,24 +191,19 @@ double f_fnov(double *x, double *par) {
 
 // ----------------------------------------------------------------------
 // Argus only
-double f_argus(double *x, double *par) {
-  //   par[0] = normalization of argus
-  //   par[1] = exponential factor of argus
-
-  // --- If tail is small then Gauss
-  //  double ebeam = 10.5795/2;
-  double ebeam = 10.58/2;
-  double ebeam2 = ebeam*ebeam;
-  double background = 0.;
-  double x2 = x[0]*x[0];
-  if (x2/ebeam2 < 1.) {
-    background = par[0]*x[0] * sqrt(1. - (x2/ebeam2)) * exp(par[1] * (1. - (x2/ebeam2))); 
-  } else {
-    background = 0.;
-  }
-  return background;
-}
-
+double f_argus(double *x, double *par)
+	// par[0] = normalization
+	// par[1] = cutoff
+	// par[2] = curvature
+{
+	double result = x[0] / par[1];
+	if (result >= 1) return 0;
+	
+	result = 1 - result*result;
+	result = par[0] * x[0] * TMath::Sqrt(result)*exp(par[2]*result);
+	
+	return result;
+} // f_argus()
 
 // ----------------------------------------------------------------------
 // Argus and Gauss 
@@ -232,6 +227,13 @@ double f_aag(double *x, double *par) {
 
 }
 
+// exponential + argus + gaus
+double f_exparggau(double *x, double *par) {
+	// exp:		par[0] - par[1]
+	// argus:	par[2] - par[4]
+	// gaus:	par[5] - par[7]
+	return (f_expo(x, &par[0]) + f_argus(x, &par[2]) + f_gauss(x, &par[5]));
+}
 
 // ----------------------------------------------------------------------
 double f_aacb(double *x, double *par) {

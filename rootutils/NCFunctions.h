@@ -38,6 +38,8 @@ double f_fnov(double *x, double *par);
 double f_argus(double *x, double *par);
 // Argus and Gauss
 double f_aag(double *x, double *par);
+// Exp and Argus and Gauss
+double f_exparggau(double *x, double *par);
 // Argus and Crystall Ball
 double f_aacb(double *x, double *par);
 
