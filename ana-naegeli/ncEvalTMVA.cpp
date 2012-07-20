@@ -156,7 +156,7 @@ void evalTMVA2(const char *path, Double_t S, Double_t B)
 	trainTree = (TTree*)file->Get("TrainTree");
 	
 	if (!testTree || !trainTree) {
-		cerr << "ERRORT: Not all necessary trees found in root file '" << path << "'" << endl;
+		cerr << "ERROR: Not all necessary trees found in root file '" << path << "'" << endl;
 		goto bail;
 	}
 	
