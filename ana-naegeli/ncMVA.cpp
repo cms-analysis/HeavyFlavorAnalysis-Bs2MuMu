@@ -27,7 +27,7 @@ ncMVA::ncMVA() :
 	fBkgWeight(0.2),
 	fTrainFilename(NULL)
 {
-	fMVAOpts[0] = std::string("!H:V:TestRate=10:VarTransform=Norm:NeuronType=radial:NCycles=1291:HiddenLayers=N-5:LearningRate=0.318:DecayRate=0.022");
+	fMVAOpts[0] = std::string("!H:V:TestRate=10:VarTransform=Norm:NeuronType=radial:NCycles=856:HiddenLayers=N-3,N+3:LearningRate=0.477:DecayRate=0.031");
 	fMVAOpts[1] = std::string("!H:V:TestRate=10:VarTransform=Norm:NeuronType=radial:NCycles=1107:HiddenLayers=N+7,N-1:LearningRate=0.086:DecayRate=0.0335");
 } // ncMVA()
 
