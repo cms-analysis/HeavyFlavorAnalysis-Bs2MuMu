@@ -16,6 +16,9 @@ public:
   initFunc(); 
   ~initFunc(); 
 
+  void resetLimits(); 
+  void limitPar(int ipar, double lo, double hi); 
+
   // -- background functions
   TF1* pol0(TH1 *h); 
   TF1* pol0(double lo, double hi); 
@@ -54,6 +57,8 @@ public:
 
   double fLo, fHi;
   double fBgFractionLo, fBgFractionHi; 
+  double fLimitLo[20], fLimitHi[20]; 
+  bool fLimit[20];
 
 private: 
 

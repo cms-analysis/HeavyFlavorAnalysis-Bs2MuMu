@@ -301,6 +301,25 @@ initFunc::~initFunc() {
 
 
 // ----------------------------------------------------------------------
+void initFunc::limitPar(int i, double lo, double hi) {
+  fLimit[i] = true; 
+  fLimitLo[i] = lo; 
+  fLimitHi[i] = hi; 
+}
+
+
+// ----------------------------------------------------------------------
+void initFunc::resetLimits() {
+
+  for (int i = 0; i < 20; ++i) {
+    fLimitLo[i] = 0.; 
+    fLimitHi[i] = -1.; 
+    fLimit[i] = false; 
+  }
+
+}
+
+// ----------------------------------------------------------------------
 TF1* initFunc::pol0(double lo, double hi) {
   TF1 *f = new TF1("f1", f_pol0, lo, hi, 1);
   return f; 
@@ -568,11 +587,35 @@ TF1* initFunc::expoGauss(TH1 *h, double peak, double sigma) {
 
   f->SetParameters(g0, peak, sigma, p0, p1); 
 
-  f->ReleaseParameter(0);     f->SetParLimits(0, 0., 1.e7); 
-  f->ReleaseParameter(1);     f->SetParLimits(1, 5.2, 5.45); 
-  f->ReleaseParameter(2);     f->SetParLimits(2, 0.010, 0.080); 
+  f->ReleaseParameter(0);     
+  if (fLimit[0]) {
+    cout << "initFunc::expoGauss> limiting par 0 from " << fLimitLo[0] << " .. " << fLimitHi[0] << endl;
+    f->SetParLimits(0, fLimitLo[0], fLimitHi[0]); 
+  } else {
+    f->SetParLimits(0, 0., 1.e7); 
+  }
+
+  f->ReleaseParameter(1);
+  if (fLimit[1]) {
+    cout << "initFunc::expoGauss> limiting par 1 from " << fLimitLo[1] << " .. " << fLimitHi[1] << endl;
+    f->SetParLimits(1, fLimitLo[1], fLimitHi[1]); 
+  } else {
+    f->SetParLimits(1, 5.2, 5.45); 
+  }
+
+  f->ReleaseParameter(2); 
+  if (fLimit[2]) {
+    cout << "initFunc::expoGauss> limiting par 2 from " << fLimitLo[2] << " .. " << fLimitHi[2] << endl;
+    f->SetParLimits(2, fLimitLo[2], fLimitHi[2]); 
+  } else {
+    f->SetParLimits(2, 0.010, 0.080); 
+  }
+
   f->ReleaseParameter(3);     
+  if (fLimit[3]) f->SetParLimits(3, fLimitLo[3], fLimitHi[3]); 
+
   f->ReleaseParameter(4);     
+  if (fLimit[4]) f->SetParLimits(4, fLimitLo[4], fLimitHi[4]); 
 
   return f; 
 

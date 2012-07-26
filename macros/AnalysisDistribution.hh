@@ -65,6 +65,7 @@ public:
 
   int fVerbose;
   std::string fDirectory;
+  std::string fControlPlotsFileName;
   
   initFunc *fpIF; 
 

@@ -30,6 +30,8 @@ AnalysisDistribution::AnalysisDistribution(const char *name, const char *title, 
   fMassPeak = -1.; 
   fMassSigma = -1.; 
 
+  fControlPlotsFileName = "controlPlot";
+
   fVerbose = 0; 
   fDirectory = ".";
 
@@ -276,7 +278,7 @@ TH1D* AnalysisDistribution::sbsDistributionExpoErrGauss(const char *variable, co
     }
     c0 = new TCanvas("c1"); 
     c0->Clear(); 
-    c0->Divide(2,3);
+    c0->Divide(2,2);
   }
 
   // -- this is not really necessary, could use the class members instead
@@ -294,17 +296,6 @@ TH1D* AnalysisDistribution::sbsDistributionExpoErrGauss(const char *variable, co
     h0->Draw();
     c0->cd(2);
     h1->Draw();
-    c0->cd(3); 
-    if (hMassBGL) {
-      hMassBGL->SetMinimum(0.);
-      hMassBGL->SetMaximum(1.);
-      hMassBGL->Draw();
-      hMassBGH->Draw("same");
-      hMassSG->Draw("same");
-    } else {
-      cout << "%%%% > Did not find hMassBGL for " << variable << endl;
-    }
-    c0->cd(4); 
   }
 
   double l0   = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
@@ -333,16 +324,20 @@ TH1D* AnalysisDistribution::sbsDistributionExpoErrGauss(const char *variable, co
 
   TFitResultPtr r;
   r = hm->Fit(f1, "lsq", "", fMassLo, fMassHi); 
-  hm->DrawCopy();
+  if (fVerbose > 0) {
+    c0->cd(3);
+    hm->DrawCopy();
+//     hMassBGL->SetMinimum(0.);
+//     hMassBGL->SetMaximum(hm->GetMaximum());
+    hMassBGL->Draw("same");
+    hMassBGH->Draw("same");
+    hMassSG->Draw("same");
+  }
 
   TF1 *fpol1 = (TF1*)gROOT->FindObject("fpol1"); 
   if (fpol1) delete fpol1; 
   fpol1 = fpIF->expoErr(fMassLo, fMassHi); 
   fpol1->SetParameters(f1->GetParameters()); 
-  if (fVerbose > 0) {
-    c0->cd(5); 
-    fpol1->Draw();
-  }
 
   double bgl = fpol1->Integral(l0, l1); 
   double sg  = fpol1->Integral(s0, s1); 
@@ -359,15 +354,13 @@ TH1D* AnalysisDistribution::sbsDistributionExpoErrGauss(const char *variable, co
   h->Add(h0, h1, 1., -sg/(bgl+bgh)); 
   
   if (fVerbose > 0) {
-    c0->cd(6); 
+    c0->cd(4); 
     h->Draw();
-    TString fname = gFile->GetName();
-    fname.Remove(0, fname.Last('/')+1); 
-    fname.ReplaceAll(".root", ""); 
+    TString fname = fControlPlotsFileName;
     cout << "=========> " 
-	 << Form("%s/eg-sbs-control-%s-%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), gDirectory->GetName(), variable, cut) 
+	 << Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut) 
 	 << endl;
-    c0->SaveAs(Form("%s/eg-sbs-control-%s-%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), gDirectory->GetName(), variable, cut));
+    c0->SaveAs(Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut));
   }
 
   return h; 
@@ -388,7 +381,7 @@ TH1D* AnalysisDistribution::sbsDistributionPol1ErrGauss(const char *variable, co
     }
     c0 = new TCanvas("c1"); 
     c0->Clear(); 
-    c0->Divide(2,3);
+    c0->Divide(2,2);
   }
 
   // -- this is not really necessary, could use the class members instead
@@ -406,17 +399,7 @@ TH1D* AnalysisDistribution::sbsDistributionPol1ErrGauss(const char *variable, co
     h0->Draw();
     c0->cd(2);
     h1->Draw();
-    c0->cd(3); 
-    if (hMassBGL) {
-      hMassBGL->SetMinimum(0.);
-      hMassBGL->SetMaximum(1.);
-      hMassBGL->Draw();
-      hMassBGH->Draw("same");
-      hMassSG->Draw("same");
-    } else {
-      cout << "%%%% > Did not find hMassBGL for " << variable << endl;
-    }
-    c0->cd(4); 
+    c0->cd(3);
   }
 
   double l0   = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
@@ -445,8 +428,15 @@ TH1D* AnalysisDistribution::sbsDistributionPol1ErrGauss(const char *variable, co
 
   TFitResultPtr r;
   r = hm->Fit(f1, "lsq", "", fMassLo, fMassHi); 
-  hm->DrawCopy();
-  
+  if (fVerbose > 0) {
+    hm->DrawCopy();
+//     hMassBGL->SetMinimum(0.);
+//     hMassBGL->SetMaximum(hm->GetMaximum());
+    hMassBGL->Draw("same");
+    hMassBGH->Draw("same");
+    hMassSG->Draw("same");
+  }
+
   cout << " and after the fit: " << f1->GetParameter(5) 
        << " .. " << f1->GetParameter(6) 
        << " .. " << f1->GetParameter(7) 
@@ -456,10 +446,6 @@ TH1D* AnalysisDistribution::sbsDistributionPol1ErrGauss(const char *variable, co
   if (fpol1) delete fpol1; 
   fpol1 = fpIF->pol1Err(fMassLo, fMassHi); 
   fpol1->SetParameters(f1->GetParameters()); 
-  if (fVerbose > 0) {
-    c0->cd(5); 
-    fpol1->Draw();
-  }
 
   double bgl = fpol1->Integral(l0, l1); 
   double sg  = fpol1->Integral(s0, s1); 
@@ -476,15 +462,13 @@ TH1D* AnalysisDistribution::sbsDistributionPol1ErrGauss(const char *variable, co
   h->Add(h0, h1, 1., -sg/(bgl+bgh)); 
   
   if (fVerbose > 0) {
-    c0->cd(6); 
+    c0->cd(4); 
     h->Draw();
-    TString fname = gFile->GetName();
-    fname.Remove(0, fname.Last('/')+1); 
-    fname.ReplaceAll(".root", ""); 
+    TString fname = fControlPlotsFileName;
     cout << "=========> " 
-	 << Form("%s/eg-sbs-control-%s-%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), gDirectory->GetName(), variable, cut) 
+	 << Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut) 
 	 << endl;
-    c0->SaveAs(Form("%s/eg-sbs-control-%s-%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), gDirectory->GetName(), variable, cut));
+    c0->SaveAs(Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut));
   }
 
   return h; 
@@ -505,7 +489,7 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
     }
     c0 = new TCanvas("c1"); 
     c0->Clear(); 
-    c0->Divide(2,3);
+    c0->Divide(2,2);
   }
 
   // -- this is not really necessary, could use the class members instead
@@ -523,17 +507,7 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
     h0->Draw();
     c0->cd(2);
     h1->Draw();
-    c0->cd(3); 
-    if (hMassBGL) {
-      hMassBGL->SetMinimum(0.);
-      hMassBGL->SetMaximum(1.);
-      hMassBGL->Draw();
-      hMassBGH->Draw("same");
-      hMassSG->Draw("same");
-    } else {
-      cout << "%%%% > Did not find hMassBGL for " << variable << endl;
-    }
-    c0->cd(4); 
+    c0->cd(3);
   }
 
   double l0   = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
@@ -562,16 +536,19 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
 
   TFitResultPtr r;
   r = hm->Fit(f1, "lsq", "", fMassLo, fMassHi); 
-  hm->DrawCopy();
+  if (fVerbose > 0) {
+    hm->DrawCopy();
+//     hMassBGL->SetMinimum(0.);
+//     hMassBGL->SetMaximum(hm->GetMaximum());
+    hMassBGL->Draw("same");
+    hMassBGH->Draw("same");
+    hMassSG->Draw("same");
+  }
 
   TF1 *fpol1 = (TF1*)gROOT->FindObject("fpol1"); 
   if (fpol1) delete fpol1; 
   fpol1 = fpIF->expo(fMassLo, fMassHi);
   fpol1->SetParameters(f1->GetParameter(3), f1->GetParameter(4)); 
-  if (fVerbose > 0) {
-    c0->cd(5); 
-    fpol1->Draw();
-  }
 
   double bgl = fpol1->Integral(l0, l1); 
   double sg  = fpol1->Integral(s0, s1); 
@@ -588,15 +565,13 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
   h->Add(h0, h1, 1., -sg/(bgl+bgh)); 
   
   if (fVerbose > 0) {
-    c0->cd(6); 
+    c0->cd(4); 
     h->Draw();
-    TString fname = gFile->GetName();
-    fname.Remove(0, fname.Last('/')+1); 
-    fname.ReplaceAll(".root", ""); 
+    TString fname = fControlPlotsFileName;
     cout << "=========> " 
-	 << Form("%s/eg-sbs-control-%s-%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), gDirectory->GetName(), variable, cut) 
+	 << Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut) 
 	 << endl;
-    c0->SaveAs(Form("%s/eg-sbs-control-%s-%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), gDirectory->GetName(), variable, cut));
+    c0->SaveAs(Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut));
   }
 
   return h; 
@@ -618,7 +593,7 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
     }
     c0 = new TCanvas("c1"); 
     c0->Clear(); 
-    c0->Divide(2,3);
+    c0->Divide(2,2);
   }
 
   // -- this is not really necessary, could use the class members instead
@@ -636,17 +611,7 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
     h0->Draw();
     c0->cd(2);
     h1->Draw();
-    c0->cd(3); 
-    if (hMassBGL) {
-      hMassBGL->SetMinimum(0.);
-      hMassBGL->SetMaximum(1.);
-      hMassBGL->Draw();
-      hMassBGH->Draw("same");
-      hMassSG->Draw("same");
-    } else {
-      cout << "%%%% > Did not find hMassBGL for " << variable << endl;
-    }
-    c0->cd(4); 
+    c0->cd(3);
   }
 
   double l0   = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
@@ -673,7 +638,14 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
 
   TFitResultPtr r;
   r = hm->Fit(f1, "lsq", "", fMassLo, fMassHi); 
-  hm->DrawCopy();
+  if (fVerbose > 0) {
+    hm->DrawCopy();
+//     hMassBGL->SetMinimum(0.);
+//     hMassBGL->SetMaximum(hm->GetMaximum());
+    hMassBGL->Draw("same");
+    hMassBGH->Draw("same");
+    hMassSG->Draw("same");
+  }
 
   // -- compute integrals
   TF1 *fpol1 = (TF1*)gROOT->FindObject("fpol1"); 
@@ -681,10 +653,6 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
   fpol1 = fpIF->pol1(fMassLo, fMassHi);
 
   fpol1->SetParameters(f1->GetParameter(3), f1->GetParameter(4)); 
-  if (fVerbose > 0) {
-    c0->cd(5); 
-    fpol1->Draw();
-  }
 
   double bgl = fpol1->Integral(l0, l1); 
   double sg  = fpol1->Integral(s0, s1); 
@@ -701,15 +669,13 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
   h->Add(h0, h1, 1., -sg/(bgl+bgh)); 
   
   if (fVerbose > 0) {
-    c0->cd(6); 
+    c0->cd(4); 
     h->Draw();
-    TString fname = gFile->GetName();
-    fname.Remove(0, fname.Last('/')+1); 
-    fname.ReplaceAll(".root", ""); 
+    TString fname = fControlPlotsFileName;
     cout << "=========> " 
-	 << Form("%s/sbs-control-%s-%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), gDirectory->GetName(), variable, cut) 
+	 << Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut) 
 	 << endl;
-    c0->SaveAs(Form("%s/sbs-control-%s-%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), gDirectory->GetName(), variable, cut));
+    c0->SaveAs(Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut));
   }
 
   return h; 
