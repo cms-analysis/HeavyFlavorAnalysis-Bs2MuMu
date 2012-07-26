@@ -623,6 +623,11 @@ plotOptimize::plotOptimize(const char *files, const char *cuts, const char *dir,
 
   fDoPrint = true; 
 
+  string hfname  = fDirectory + "/anaBmm.plotOptimize." + fSuffix + ".root";
+  cout << "fHistFile: " << hfname << endl;
+  //  if (fHistFile) fHistFile->Close();
+  fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
+
   fNumbersFileName = fDirectory + "/anaBmm.plotOptimize." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);

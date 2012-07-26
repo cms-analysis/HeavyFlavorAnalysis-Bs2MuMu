@@ -14,6 +14,11 @@ ClassImp(plotIso)
 // ----------------------------------------------------------------------
 plotIso::plotIso(const char *files, const char *cuts, const char *dir, int mode) : plotClass(files, cuts, dir, mode) { 
 
+  string hfname  = fDirectory + "/anaBmm.plotIso." + fSuffix + ".root";
+  cout << "fHistFile: " << hfname << endl;
+  //  if (fHistFile) fHistFile->Close();
+  fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
+
   fNumbersFileName = fDirectory + "/anaBmm.plotIso." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);

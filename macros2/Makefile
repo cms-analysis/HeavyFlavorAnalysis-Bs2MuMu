@@ -33,7 +33,7 @@ LDFLAGS       = -g
 SOFLAGS       = -shared
 
 CXXFLAGS     += $(ROOTCFLAGS)
-LIBS          = $(ROOTLIBS)
+LIBS          = $(ROOTLIBS) 
 GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 
@@ -56,6 +56,7 @@ obj/%.o : %.cc $(READER_HEADERS)
 
 %Dict.cc : %.hh %LinkDef.h
 	$(ROOTCINT) -f $@ -c $^
+
 
 %Dict.cc : %.hh
 	$(ROOTCINT) -f $@ -c $<
@@ -85,7 +86,7 @@ lib/libAnaClasses.so:
 	cd lib && rm -f libAnaClasses.so && ln -s ../../macros/lib/libAnaClasses.so libAnaClasses.so && cd -
 
 bin/runBmm2: lib/libBmm2Classes.so obj/runBmm2.o lib/libBmm2Classes.so
-	$(LD) $(LDFLAGS) -o bin/runBmm2 $(GLIBS) obj/runBmm2.o lib/libBmm2Classes.so lib/libAna00.so lib/libUtil.so lib/libAnaClasses.so
+	$(LD) $(LDFLAGS) -o bin/runBmm2 $(GLIBS) obj/runBmm2.o lib/libAna00.so lib/libUtil.so lib/libAnaClasses.so lib/libBmm2Classes.so
 
 clean:
 	rm -f obj/*.o *Dict.* lib/lib*.so

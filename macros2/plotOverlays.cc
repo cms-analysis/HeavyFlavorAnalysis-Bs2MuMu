@@ -22,6 +22,10 @@ plotOverlays::plotOverlays(const char *files, const char *cuts, const char *dir,
   fDoApplyCowboyVeto = false;   
   fDoApplyCowboyVetoAlsoInSignal = false; 
 
+  string hfname  = fDirectory + "/anaBmm.plotOverlays." + fSuffix + ".root";
+  cout << "fHistFile: " << hfname << endl;
+  //  if (fHistFile) fHistFile->Close();
+  fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
 
   fNumbersFileName = fDirectory + "/anaBmm.plotOverlays." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));

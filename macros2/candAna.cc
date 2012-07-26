@@ -275,6 +275,7 @@ void candAna::candAnalysis() {
   fCandPvIpE    = (fCandPvLip*fCandPvLip*fCandPvLipE*fCandPvLipE + fCandPvTip*fCandPvTip*fCandPvTipE*fCandPvTipE)/(fCandPvIp*fCandPvIp); 
   fCandPvIpE    = TMath::Sqrt(fCandPvIpE); 
   fCandPvIpS    = fCandPvIp/fCandPvIpE;
+  if (TMath::IsNaN(fCandPvIpS)) fCandPvIpS = -1.;
 
   fCandM2 = constrainedMass();
   
@@ -606,10 +607,10 @@ void candAna::candAnalysis() {
 
   fAnaCuts.update(); 
 
-  fPreselection = fWideMass && fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsPt && fGoodMuonsEta; 
+//   fPreselection = fWideMass && fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsPt && fGoodMuonsEta; 
+//   fPreselection = fPreselection && fGoodQ;
   fPreselection = fPreselection && fGoodPvLip && fGoodPvLipS && fGoodQ; 
   fPreselection = fPreselection && (fCandPt > 5) && (fCandA < 0.2) && (fCandFLS3d > 5) && (fCandChi2/fCandDof < 5); 
-
   //  fPreselection = true; 
 }
 
@@ -919,6 +920,62 @@ void candAna::triggerSelection() {
   bool result(false), wasRun(false), error(false); 
   //  cout << " ----------------------------------------------------------------------" << endl;
 
+  if (1) {
+    TTrgObj *pM1(0), *pM2(0), *pM(0); 
+    TTrgObj *p; 
+    
+    for (int i = 0; i < fpEvt->nTrgObj(); ++i) {
+      p = fpEvt->getTrgObj(i); 
+      //      cout << p->fLabel << endl;
+      //      if (!p->fLabel.CompareTo("hltL1sL1DoubleMu33HighQ:HLT::")) cout << "= " << p->fLabel << endl;
+      if (!p->fLabel.CompareTo("hltL1sL1DoubleMuOpen:HLT::")) {
+        if (0 == pM1) {
+          pM1 = p; 
+        } else {
+          pM2 = p; 
+        }
+        if (0) cout << p->fLabel << " pT = " << p->fP.Perp() << " eta = " << p->fP.Eta() << " phi = " << p->fP.Phi() <<  endl;
+      }
+      
+      if (1 && !p->fLabel.CompareTo("hltL1sL1DoubleMu33HighQ:HLT::")) {
+        //cout << p->fLabel << " pT = " << p->fP.Perp() << " eta = " << p->fP.Eta() << " phi = " << p->fP.Phi() <<  endl;
+        ((TH1D*)fHistDir->Get("L1_0"))->Fill(p->fP.Eta());
+      }
+      
+      if (1 && !p->fLabel.CompareTo("hltL1sL1DoubleMu0or33HighQ:HLT::")) {
+        //      cout << p->fLabel << " pT = " << p->fP.Perp() << " eta = " << p->fP.Eta() << " phi = " << p->fP.Phi() <<  endl;
+        ((TH1D*)fHistDir->Get("L1_1"))->Fill(p->fP.Eta());
+      }
+
+      if (1 && !p->fLabel.CompareTo("hltDimuon33L1Filtered0:HLT::")) {
+        //      cout << p->fLabel << " pT = " << p->fP.Perp() << " eta = " << p->fP.Eta() << " phi = " << p->fP.Phi() <<  endl;
+        ((TH1D*)fHistDir->Get("L1_2"))->Fill(p->fP.Eta());
+      }
+
+      if (1 && !p->fLabel.CompareTo("hltDimuonL2PreFiltered0:HLT::")) {
+        //      cout << p->fLabel << " pT = " << p->fP.Perp() << " eta = " << p->fP.Eta() << " phi = " << p->fP.Phi() <<  endl;
+        ((TH1D*)fHistDir->Get("L1_3"))->Fill(p->fP.Eta());
+      }
+
+      if (1 && !p->fLabel.CompareTo("hltDimuonL2PreFiltered0:HLT::")) {
+        //      cout << p->fLabel << " pT = " << p->fP.Perp() << " eta = " << p->fP.Eta() << " phi = " << p->fP.Phi() <<  endl;
+        ((TH1D*)fHistDir->Get("L1_4"))->Fill(p->fP.Eta());
+      }
+
+      if (1 && !p->fLabel.CompareTo("hltDoubleDisplacedMu4L3PreFiltered:HLT::")) {
+        //      cout << p->fLabel << " pT = " << p->fP.Perp() << " eta = " << p->fP.Eta() << " phi = " << p->fP.Phi() <<  endl;
+        ((TH1D*)fHistDir->Get("L1_5"))->Fill(p->fP.Eta());
+      }
+
+      if (1 && !p->fLabel.CompareTo("hltDoubleMu3p5LowMassDisplacedL3Filtered:HLT::")) {
+        //      cout << p->fLabel << " pT = " << p->fP.Perp() << " eta = " << p->fP.Eta() << " phi = " << p->fP.Phi() <<  endl;
+        ((TH1D*)fHistDir->Get("L1_6"))->Fill(p->fP.Eta());
+      }
+    }
+    
+  }
+
+
   if (HLTRANGE.begin()->first == "NOTRIGGER") {
     //    cout << "NOTRIGGER requested... " << endl;
     fGoodHLT = true; 
@@ -1003,6 +1060,14 @@ void candAna::triggerSelection() {
 void candAna::bookHist() {
 
   fHistDir->cd();
+
+  TH1D *h11 = new TH1D("L1_0", "hltL1sL1DoubleMu33HighQ", 50, -2.5, 2.5); 
+  h11 = new TH1D("L1_1", "hltL1sL1DoubleMu0or33HighQ", 50, -2.5, 2.5); 
+  h11 = new TH1D("L1_2", "hltDimuon33L1Filtered0", 50, -2.5, 2.5); 
+  h11 = new TH1D("L1_3", "hltDimuon33L2PreFiltered0", 50, -2.5, 2.5); 
+  h11 = new TH1D("L1_4", "hltDimuonL2PreFiltered0", 50, -2.5, 2.5); 
+  h11 = new TH1D("L1_5", "hltDoubleDisplacedMu4L3PreFiltered", 50, -2.5, 2.5); 
+  h11 = new TH1D("L1_6", "hltDoubleMu3p5LowMassDisplacedL3Filtered", 50, -2.5, 2.5); 
 
   // -- Reduced Tree
   fTree = new TTree("events", "events");
@@ -2841,11 +2906,11 @@ void candAna::isolationStudy(double doca) {
 // ----------------------------------------------------------------------
 int candAna::nearestPV(int pvIdx, double maxDist) {
 
-  if(pvIdx==-1) return -1;  // add protection d.k. 9/6/12
+  if (pvIdx==-1) return -1;  // add protection d.k. 9/6/12
 
   TAnaVertex *v0 = fpEvt->getPV(pvIdx); 
 
-  if(v0==0) return -1;  // add protection 
+  if (0 == v0) return -1;  // add protection
 
   double zV0 = v0->fPoint.Z(); 
   

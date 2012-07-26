@@ -23,6 +23,11 @@ plotEfficiencies::plotEfficiencies(const char *files, const char *cuts, const ch
   fDoApplyCowboyVeto = false;   
   fDoApplyCowboyVetoAlsoInSignal = false; 
 
+  string hfname  = fDirectory + "/anaBmm.plotEfficiencies." + fSuffix + ".root";
+  cout << "fHistFile: " << hfname << endl;
+  //  if (fHistFile) fHistFile->Close();
+  fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
+
   fNumbersFileName = fDirectory + "/anaBmm.plotEfficiencies." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);

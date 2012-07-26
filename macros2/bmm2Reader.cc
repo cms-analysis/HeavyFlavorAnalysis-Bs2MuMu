@@ -88,7 +88,7 @@ void bmm2Reader::eventProcessing() {
 void bmm2Reader::bookHist() {
   fpHistFile->cd();
   TH1D *h;
-  h = new TH1D("monEvents", "monEvents", 10, 0., 10.);
+  h = new TH1D("monEvents", "monEvents", 20, 0., 20.);
   h = new TH1D("ntracks", "ntracks", 100, 0., 1000.);
   h = new TH1D("pt0", "pt(tracks)", 100, 0., 10.);
   h = new TH1D("pt1", "pt(tracks)", 100, 0., 50.);

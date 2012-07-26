@@ -74,6 +74,8 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
 
   fFiles = files; 
 
+  cout << "__plotClass_ IsWritable? " << (fHistFile?fHistFile->IsWritable()?"1":"0":"n/a") << endl;
+
   delete gRandom;
   gRandom = (TRandom*) new TRandom3;
 
@@ -86,7 +88,7 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
   // -- CMS with LHCb input
   fsfu = 0.267;
   fsfuE = 0.021;
-
+  
 
   fDoUseBDT = false; 
   fDoPrintSingleEvent = false;
@@ -95,6 +97,10 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
   fDoApplyCowboyVetoAlsoInSignal = false; 
   fInvertedIso = false; 
   fNormProcessed = false; 
+
+  fStampString = "CMS, 5fb^{-1}"; 
+  fStampString = "BDT preliminary"; 
+  fStampCms = "#sqrt{s} = 7 TeV";
 
   fCutsFileName = cuts; 
   init(files, cuts, dir, mode);
@@ -105,6 +111,11 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
   double HLO(0.), HHI(45.); 
 
   TH1D *h; 
+
+  hMassPiPi = new TH1D("hMassPiPi", "hMassPiPi", 100, 0., 0.6);
+  hMassKPi  = new TH1D("hMassKPi",  "hMassKPi", 100, 0.5, 1.0);
+  hMassPiK  = new TH1D("hMassPiK",  "hMassPiK", 100, 0.9, 1.4);
+
   numbers *a(0); 
   cout << "----> fNchan = " << fNchan << " fCuts.size() = " << fCuts.size() << endl;
   for (unsigned int i = 0; i < fNchan; ++i) {
@@ -160,6 +171,9 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
 
     h = new TH1D(Form("hNorm%d", i), Form("hNorm%d", i), 100, 4.9, 5.9);
     fhNorm.push_back(h); 
+
+    h = new TH1D(Form("hDstarPi%d", i), Form("hDstarPi%d", i), 20, 4.9, 5.9);
+    fhDstarPi.push_back(h); 
 
     h = new TH1D(Form("hNormC%d", i), Form("hNormC%d", i), 200, 4.9, 5.9);
     fhNormC.push_back(h); 
@@ -227,6 +241,29 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
     fh1MCMuID.push_back(h); 
   }
 
+  fAnaCuts.addCut("fGoodHLT", "HLT", fGoodHLT); 
+  fAnaCuts.addCut("fGoodMuonsID", "lepton ID", fGoodMuonsID); 
+  fAnaCuts.addCut("fGoodMuonsPt", "p_{T,#mu} [GeV]", fGoodMuonsPt); 
+  fAnaCuts.addCut("fGoodMuonsEta", "#eta_{#mu}", fGoodMuonsEta); 
+  fAnaCuts.addCut("fGoodTracks", "good tracks", fGoodTracks); 
+  fAnaCuts.addCut("fGoodTracksPt", "p_{T,trk} [GeV]", fGoodTracksPt); 
+  fAnaCuts.addCut("fGoodTracksEta", "#eta_{trk} ", fGoodTracksEta); 
+
+  fAnaCuts.addCut("fGoodQ", "q_{1} 1_{2}", fGoodQ);   
+  fAnaCuts.addCut("fGoodPvAveW8", "<w8>", fGoodPvAveW8); 
+  fAnaCuts.addCut("fGoodIp", "IP", fGoodIp); 
+  fAnaCuts.addCut("fGoodIpS", "IPS", fGoodIpS); 
+  fAnaCuts.addCut("fGoodMaxDoca", "MAXDOCA", fGoodMaxDoca); 
+  fAnaCuts.addCut("fGoodPt", "p_{T,B}", fGoodPt); 
+  fAnaCuts.addCut("fGoodEta", "#eta_{B}", fGoodEta); 
+  fAnaCuts.addCut("fGoodAlpha", "#alpha", fGoodAlpha); 
+  fAnaCuts.addCut("fGoodFLS", "l/#sigma(l)", fGoodFLS); 
+  fAnaCuts.addCut("fGoodChi2", "#chi^{2}", fGoodChi2); 
+  fAnaCuts.addCut("fGoodIso", "I_{trk}", fGoodIso); 
+  fAnaCuts.addCut("fGoodCloseTrack", "close track veto", fGoodCloseTrack); 
+  fAnaCuts.addCut("fGoodDocaTrk", "d_{ca}(trk)", fGoodDocaTrk); 
+  fAnaCuts.addCut("fGoodLastCut", "lastCut", fGoodLastCut); 
+
 
   fNumbersFileName = fDirectory + "/anaBmm.plotClass." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
@@ -236,13 +273,15 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
   fF["SgMc"]->cd();
   dumpCutNames("candAnaMuMu/hcuts");
   fTEX.close();
+
+  cout << "__plotClass_ IsWritable? " << (fHistFile?fHistFile->IsWritable()?"1":"0":"n/a") << endl;
   
 }
 
 // ----------------------------------------------------------------------
 plotClass::~plotClass() {
-//   fHistFile->Write();
-//   fHistFile->Close();
+  cout << "plotClass dtor" << endl;
+  cout << "__plotClass_ IsWritable? " << (fHistFile?fHistFile->IsWritable()?"1":"0":"n/a") << " " << endl;
 }
 
 
@@ -297,6 +336,7 @@ int plotClass::detChan(double m1eta, double m2eta) {
   return -1; 
 }
 
+
 // ----------------------------------------------------------------------
 void plotClass::loopTree(int mode, int proc) {
   // -- mode:
@@ -318,11 +358,11 @@ void plotClass::loopTree(int mode, int proc) {
   PidTable *ptT2MC;
   PidTable *ptMMC; 
   
-  bool bp2jpsikp(false), bs2jpsiphi(false), isMC(false); 
+  bool bp2jpsikp(false), bs2jpsiphi(false), bd2dstarpi(false), isMC(false); 
 
   string directory; 
   string fAcc;
-  
+  string smode; 
   double effFilter(1.), genFileYield(0.); 
 
   numbers *aa(0);
@@ -332,16 +372,19 @@ void plotClass::loopTree(int mode, int proc) {
     fF["SgMc"]->cd(directory.c_str());
     fAcc = "SgMcAcc";
     genFileYield = ((TTree*)gDirectory->Get("effTree"))->GetEntries();
+    smode = "SgMc";
   }  else if (1 == mode) {
     isMC = true; 
     directory = "candAnaMuMu"; 
     fF["BdMc"]->cd(directory.c_str());
     fAcc = "BdMcAcc";
     genFileYield = ((TTree*)gDirectory->Get("effTree"))->GetEntries();
+    smode = "BdMc";
   } else if (5 == mode) {
     isMC = false;     
     directory = "candAnaMuMu"; 
     fF["SgData"]->cd(directory.c_str());
+    smode = "SgData";
   } else if (10 == mode) {
     isMC = true; 
     bp2jpsikp = true; 
@@ -350,11 +393,13 @@ void plotClass::loopTree(int mode, int proc) {
     fAcc = "NoMcAcc";
     effFilter = fFilterEff["NoMc"];
     genFileYield = ((TTree*)gDirectory->Get("effTree"))->GetEntries();
+    smode = "NoMc";
   } else if (15 == mode) {
     isMC = false;     
     bp2jpsikp = true; 
     directory = "candAnaBu2JpsiK"; 
     fF["NoData"]->cd(directory.c_str());
+    smode = "NoData";
   } else if (20 == mode) {
     isMC = true; 
     bs2jpsiphi = true; 
@@ -363,17 +408,33 @@ void plotClass::loopTree(int mode, int proc) {
     fAcc = "CsMcAcc";
     effFilter = fFilterEff["CsMc"];
     genFileYield = ((TTree*)gDirectory->Get("effTree"))->GetEntries();
+    smode = "CsMc";
   } else if (25 == mode) {
     isMC = false;     
     bs2jpsiphi = true; 
     directory = "candAnaBs2JpsiPhi"; 
     fF["CsData"]->cd(directory.c_str());
+    smode = "CsData";
+  } else if (30 == mode) {
+    isMC = false;     
+    bd2dstarpi = true; 
+    directory = "candAnaBd2DstarPi"; 
+    fF["DstarPiMc"]->cd(directory.c_str());
+    smode = "DstarPiMc";
+  } else if (35 == mode) {
+    isMC = false;     
+    bd2dstarpi = true; 
+    directory = "candAnaBd2DstarPi"; 
+    fF["DstarPiData"]->cd(directory.c_str());
+    smode = "DstarPiData";
   } else if (98 == mode) {
     directory = "candAnaMuMu"; 
     cout << "mode 98" << endl;
+    smode = "SgData";
   } else {
     directory = "candAnaMuMu"; 
     cout << "mode 99" << endl;
+    smode = "SgData";
   }
 
   ptT1 = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo.dat"); 	
@@ -397,9 +458,19 @@ void plotClass::loopTree(int mode, int proc) {
   cout << "--> loopTree with mode " << mode << " fDoUseBDT: " << fDoUseBDT << " inv iso: " << fInvertedIso 
        << " proc = " << proc << "; ";
   gDirectory->pwd();
+  if (fDoUseBDT) {
+    fCuts[0]->m1pt = 4.0;
+    fCuts[0]->m2pt = 4.0; 
+    fCuts[1]->m1pt = 4.0;
+    fCuts[1]->m2pt = 4.0; 
+  }
   cout << "    m1pt> " << fCuts[0]->m1pt << " m2pt> " << fCuts[0]->m2pt << endl;
 
   // -- reset all histograms
+  hMassPiPi->Reset();
+  hMassKPi->Reset();
+  hMassPiK->Reset();
+
   for (unsigned int i = 0; i < fNchan; ++i) {
     fhMuId[i]->Reset();
     fhMuTr[i]->Reset();
@@ -440,6 +511,7 @@ void plotClass::loopTree(int mode, int proc) {
     fhMassWithAllCutsBlind[i]->Reset();
     fhMassWithAllCutsManyBins[i]->Reset();
 
+    fhDstarPi[i]->Reset();
     fhNorm[i]->Reset();
     fhNormC[i]->Reset();
 
@@ -451,124 +523,34 @@ void plotClass::loopTree(int mode, int proc) {
   double mass(0.); 
   TTree *t;
   t = (TTree*)gDirectory->Get("events");
+  setupTree(t, smode); 
+
   TEventList *tlist = new TEventList;
+  TEventList *elist = new TEventList;
   double tr1w8(0.), tr2w8(0.), trw8(0.), m1w8(0.), m2w8(0.), mw8(0.0);
-
-  t->SetBranchAddress("bdt",&bbdt);
-  t->SetBranchAddress("bdt2",&bbdt2);
-  t->SetBranchAddress("lip",&blip);
-  t->SetBranchAddress("lipE",&blipE);
-  t->SetBranchAddress("tip",&btip);
-  t->SetBranchAddress("tipE",&btipE);
-
-  t->SetBranchAddress("closetrk",&bclosetrk);
-  t->SetBranchAddress("pvlip",&bpvlip);
-  t->SetBranchAddress("pvlips",&bpvlips);
-  t->SetBranchAddress("pvlip2",&bpvlip2);
-  t->SetBranchAddress("pvlips2",&bpvlips2);
-  t->SetBranchAddress("maxdoca",&bmaxdoca);
-  t->SetBranchAddress("pvip",&bpvip);
-  t->SetBranchAddress("pvips",&bpvips);
-  t->SetBranchAddress("pvw8",&bpvw8);
-
-  t->SetBranchAddress("m1pix",&bm1pix);
-  t->SetBranchAddress("m2pix",&bm2pix);
-  t->SetBranchAddress("m1bpix",&bm1bpix);
-  t->SetBranchAddress("m2bpix",&bm2bpix);
-  t->SetBranchAddress("m1bpixl1",&bm1bpixl1);
-  t->SetBranchAddress("m2bpixl1",&bm2bpixl1);
-
-  t->SetBranchAddress("rr",&brr);
-  t->SetBranchAddress("run",&brun);
-  t->SetBranchAddress("evt",&bevt);
-  t->SetBranchAddress("hlt",&bhlt);
-  t->SetBranchAddress("ls",&bls);
-  t->SetBranchAddress("cb",&bcb);
-  t->SetBranchAddress("json",&bjson);
-  t->SetBranchAddress("gmuid",&bgmuid);
-  t->SetBranchAddress("gtqual",&bgtqual);
-  t->SetBranchAddress("w8mu",&bw8mu);
-  t->SetBranchAddress("w8tr",&bw8tr);
-  t->SetBranchAddress("tm",&btm);
-  t->SetBranchAddress("procid",&bprocid);
-  t->SetBranchAddress("m",&bm);
-  t->SetBranchAddress("cm",&bcm);
-  t->SetBranchAddress("pt",&bpt);
-  t->SetBranchAddress("phi",&bphi);
-  t->SetBranchAddress("eta",&beta);
-  t->SetBranchAddress("cosa",&bcosa);
-  t->SetBranchAddress("alpha",&balpha);
-  t->SetBranchAddress("iso",&biso);
-  t->SetBranchAddress("chi2",&bchi2);
-  t->SetBranchAddress("dof",&bdof);
-  t->SetBranchAddress("fls3d",&bfls3d);
-  t->SetBranchAddress("fl3d",&bfl3d);
-  t->SetBranchAddress("fl3dE",&bfl3dE);
-  t->SetBranchAddress("m1pt",&bm1pt);
-  t->SetBranchAddress("m1eta",&bm1eta);
-  t->SetBranchAddress("m1phi",&bm1phi);
-  t->SetBranchAddress("m1q",&bq1);
-  t->SetBranchAddress("m2pt",&bm2pt);
-  t->SetBranchAddress("m2eta",&bm2eta);
-  t->SetBranchAddress("m2phi",&bm2phi);
-  t->SetBranchAddress("m2q",&bq2);
-  t->SetBranchAddress("docatrk",&bdocatrk);
-
-  t->SetBranchAddress("g1pt",&bg1pt);
-  t->SetBranchAddress("g2pt",&bg2pt);
-  t->SetBranchAddress("g1eta",&bg1eta);
-  t->SetBranchAddress("g2eta",&bg2eta);
-  if (bp2jpsikp) {
-    if (isMC) {
-      t->SetBranchAddress("g3pt",&bg3pt);
-      t->SetBranchAddress("g3eta",&bg3eta);
-    }
-    t->SetBranchAddress("kpt",&bk1pt);
-    t->SetBranchAddress("keta",&bk1eta);
-    t->SetBranchAddress("mpsi",&bmpsi);
-    t->SetBranchAddress("psipt",&bptpsi); //FIXME
-  }
-
-  if (bs2jpsiphi) {
-    if (isMC) {
-      t->SetBranchAddress("g3pt",&bg3pt);
-      t->SetBranchAddress("g3eta",&bg3eta);
-      t->SetBranchAddress("g4pt",&bg4pt);
-      t->SetBranchAddress("g4eta",&bg4eta);
-    }
-    t->SetBranchAddress("psipt",&bptpsi);   //FIXME
-    t->SetBranchAddress("mpsi",&bmpsi);
-    t->SetBranchAddress("mkk",&bmkk);
-    t->SetBranchAddress("dr",&bdr);
-    t->SetBranchAddress("k1pt",&bk1pt);
-    t->SetBranchAddress("k1eta",&bk1eta);
-    t->SetBranchAddress("k2pt",&bk2pt);
-    t->SetBranchAddress("k2eta",&bk2eta);
-  } else {
-    bmkk = 999.;
-    bdr = 999.;
-  }
 
   int nentries = Int_t(t->GetEntries());
   int nb(0), ievt(0), bsevt0(0), bdevt0(0), bsevt1(0), bdevt1(0), bgevt0(0), bgevt1(0); 
   cuts *pCuts(0); 
+
+  if (bd2dstarpi) {
+    cout << "=============================================================" << endl;
+    cout << "BDT cut: " << static_cast<double>(proc)/100. << endl;
+    cout << "=============================================================" << endl;
+  }
+
   for (int jentry = 0; jentry < nentries; jentry++) {
     nb = t->GetEntry(jentry);
     // -- require truth matching when on MC
-    if (0 == mode && 0 == btm) continue;
-    if (1 == mode && 0 == btm) continue;
-    if (10 == mode && 0 == btm) continue;
-    if (20 == mode && 0 == btm) continue;
-
-    //  -- EPS analysis
-    //     if (false == isMC && brun > 167914) {
-    //       continue;
-    //     }
+    if (0 == mode && 0 == fb.tm) continue;
+    if (1 == mode && 0 == fb.tm) continue;
+    if (10 == mode && 0 == fb.tm) continue;
+    if (20 == mode && 0 == fb.tm) continue;
 
     // -- print any event
     if (fDoPrintSingleEvent) {
-      if (brun == fPrintSingleRun && bevt == fPrintSingleEvt) {
-	cout << "====> Printing " << brun << "/" << bevt << endl;
+      if (fb.run == fPrintSingleRun && fb.evt == fPrintSingleEvt) {
+	cout << "====> Printing " << fb.run << "/" << fb.evt << endl;
 	string bla("epsSignalEvent"); 
 	static int pse(0); 
 	singleEventPrintout(bla, bla, pse); 
@@ -582,14 +564,14 @@ void plotClass::loopTree(int mode, int proc) {
 
 
     if (isMC && proc > 0) {
-      if (bprocid != proc) continue;
+      if (fb.procid != proc) continue;
     }
 
     // -- channel index
     fChan = -1; 
     pCuts = 0; 
     
-    fChan = detChan(bm1eta, bm2eta); 
+    fChan = detChan(fb.m1eta, fb.m2eta); 
     if (fChan > -1) {
       pCuts = fCuts[fChan]; 
     } else {
@@ -599,10 +581,10 @@ void plotClass::loopTree(int mode, int proc) {
       continue;
     }
 
-    mass = bm; 
-//     if (bs2jpsiphi || bp2jpsikp) {
-//       mass = bcm; 
-//     }     
+    mass = fb.m; 
+    //     if (bs2jpsiphi || bp2jpsikp) {
+    //       mass = bcm; 
+    //     }     
 
     fhMassAbsNoCuts[fChan]->Fill(mass);
     // -- require wide mass window ??? FIXME WHY????
@@ -612,51 +594,54 @@ void plotClass::loopTree(int mode, int proc) {
 
     // -- gen-level acceptance cuts
     if (isMC) {
-      if (TMath::Abs(bg1eta) > 2.5) continue;
-      if (TMath::Abs(bg2eta) > 2.5) continue;
-      if (bg1pt < 1.0) continue;
-      if (bg2pt < 1.0) continue;
+      if (TMath::Abs(fb.g1eta) > 2.5) continue;
+      if (TMath::Abs(fb.g2eta) > 2.5) continue;
+      if (fb.g1pt < 1.0) continue;
+      if (fb.g2pt < 1.0) continue;
       if (bp2jpsikp) {
 	// gen-level cuts for Bu2JpsiKp
-	if (bg1pt < 3.5) continue;
-	if (bg2pt < 3.5) continue;
-	if (TMath::Abs(bg3eta) > 2.5) continue;
-	if (bg3pt < 0.4) continue;
+	if (fb.g1pt < 3.5) continue;
+	if (fb.g2pt < 3.5) continue;
+	if (TMath::Abs(fb.g3eta) > 2.5) continue;
+	if (fb.g3pt < 0.4) continue;
       }
       
       if (bs2jpsiphi) {
-	if (TMath::Abs(bg3eta) > 2.5) continue;
-	if (TMath::Abs(bg4eta) > 2.5) continue;
+	if (TMath::Abs(fb.g3eta) > 2.5) continue;
+	if (TMath::Abs(fb.g4eta) > 2.5) continue;
 	// gen-level cuts for Bs2JpsiPhi
-	if (bg1pt < 3.5) continue;
-	if (bg2pt < 3.5) continue;
-	if (bg3pt < 0.4) continue;
-	if (bg4pt < 0.4) continue;
+	if (fb.g1pt < 3.5) continue;
+	if (fb.g2pt < 3.5) continue;
+	if (fb.g3pt < 0.4) continue;
+	if (fb.g4pt < 0.4) continue;
       }
     } else {
-      if (!bjson) {
+      if (!fb.json) {
 	//	if (5 == mode) cout << "skipping run: " << brun << " LS: " << bls << endl;
-	continue;
+	if (bd2dstarpi) {
+	} else {
+	  continue;
+	}
       }
     }
 
     // -- immutable cuts: require basic muon and trackQual cuts
-    if (false == bgtqual)  continue;
-    if (TMath::Abs(bm1eta) > 2.4) continue;
-    if (TMath::Abs(bm2eta) > 2.4) continue;
+    if (false == fb.gtqual)  continue;
+    if (TMath::Abs(fb.m1eta) > 2.4) continue;
+    if (TMath::Abs(fb.m2eta) > 2.4) continue;
 
-    if (bm1pt < 1.0) continue;
-    if (bm2pt < 1.0) continue;
+    if (fb.m1pt < 1.0) continue;
+    if (fb.m2pt < 1.0) continue;
 
     if (bp2jpsikp) {
-      if (TMath::Abs(bk1eta) > 2.4) continue;
-      if (bk1pt < 0.5) continue;
+      if (TMath::Abs(fb.k1eta) > 2.4) continue;
+      if (fb.k1pt < 0.5) continue;
     }
     if (bs2jpsiphi) {
-      if (TMath::Abs(bk1eta) > 2.4) continue;
-      if (TMath::Abs(bk2eta) > 2.4) continue;
-      if (bk1pt < 0.5) continue;
-      if (bk2pt < 0.5) continue;
+      if (TMath::Abs(fb.k1eta) > 2.4) continue;
+      if (TMath::Abs(fb.k2eta) > 2.4) continue;
+      if (fb.k1pt < 0.5) continue;
+      if (fb.k2pt < 0.5) continue;
     }
 
     // -- this is the base, after the raw acceptance cuts
@@ -664,96 +649,87 @@ void plotClass::loopTree(int mode, int proc) {
     fhMassNoCutsManyBins[fChan]->Fill(mass); 
 
     if (fDoUseBDT) {
-      // Gemma's cuts:
-      // //for MC
-      //  mycuts="(m1pt>4.5) && (m2pt>4) && (pt>5) && (alpha<0.2) && (fls3d>5)  && (json) && (gmupt) && (gmueta) 
-      //  && gteta && gtpt && gtqual  && (m1q*m2q<0) && (m>4.9) && (m<5.9) && (tm>0) && fabs(m1eta)<2.4 && fabs(m2eta)<2.4
-      //  && fabs(pvlip)<0.015 && fabs(pvlips)<3 && fl3d<2";
-
-      // //for Data   (should be the same but hlt and gmuid required in addition)
-      //  mycutb="hlt  && (m1pt>4.5) && (m2pt>4) && (pt>5) && (alpha<0.2) && (fls3d>5) && json  && gmuid
-      //  && gmupt && gmueta && gteta && gtpt && gtqual  && (m1q*m2q<0) 
-      //  && ( ( (m>4.9) && (m<=5.2) )|| ((m>=5.45) && (m<5.9))) && fabs(m1eta)<2.4 && fabs(m2eta)<2.4
-      //  && fabs(pvlip)<0.015 && fabs(pvlips)<3 && fl3d<2";
-
-      if (bm1pt < 4.5) continue; 
-      if (bm2pt < 4.0) continue; 
-      if (bq1*bq2 > 0) continue;
-      if (bfl3d > 1.5) continue;
-      if (bfls3d < 5) continue;
-      if (balpha > 0.2) continue;
-      if (bpvlip > 0.015) continue;
-      if (bpvlips > 3) continue;
-      if (!bjson) continue;
-
       // -- skip inverted isolation events
-      if (5 == mode && 5.2 < mass && mass < 5.45 && biso < 0.7) continue; 
+      if (5 == mode && 5.2 < mass && mass < 5.45 && fb.iso < 0.7) continue; 
       
       if(5 == mode || 15 == mode || 25 == mode) {
-	if (false == bhlt) continue;
-	if (false == bgmuid) continue;
+	if (false == fb.hlt) continue;
+	if (false == fb.gmuid) continue;
       }
 
-      if (TMath::IsNaN(bfls3d)) continue;
-      if (bs2jpsiphi && bdr >0.3) continue;
-      if (bs2jpsiphi && bmkk < 0.995) continue;
-      if (bs2jpsiphi && bmkk > 1.045) continue;
+      if (TMath::IsNaN(fb.fls3d)) continue;
+      if (bs2jpsiphi && fb.dr >0.3) continue;
+      if (bs2jpsiphi && fb.mkk < 0.995) continue;
+      if (bs2jpsiphi && fb.mkk > 1.045) continue;
+      if (bd2dstarpi && fb.md0 < 1.82) continue;
+      if (bd2dstarpi && fb.md0 > 1.92) continue;
+      if (bd2dstarpi && fb.dm  < 0.1445) continue;
+      if (bd2dstarpi && fb.dm  > 0.1470) continue;
+      if (bd2dstarpi && fb.ptd0 < 15) continue;
+      if (bd2dstarpi && fb.pt   < 15) continue;
 
       if (bs2jpsiphi || bp2jpsikp) {
-	if (bmpsi > 3.2) continue;
-	if (bmpsi < 3.0) continue;
+	if (fb.mpsi > 3.2) continue;
+	if (fb.mpsi < 3.0) continue;
 	// -- cowboy veto 
-	if (fDoApplyCowboyVeto && bcb) continue;
-	if (bptpsi < 7) continue;
+	if (fDoApplyCowboyVeto && fb.cb) continue;
+	if (fb.psipt < 7) continue;
       } 
 
-      if (0 == fChan && bbdt < pCuts->bdt) continue;
-      if (1 == fChan && bbdt2 < pCuts->bdt) continue;
+      calcBDT();
+      if (bd2dstarpi) {
+	if (fBDT < static_cast<double>(proc)/100.) {
+	  continue;
+	}
+      } else if (fBDT < pCuts->bdt) {
+	continue;
+      }
+      //      cout << "keeping event: " << fBDT << endl;
     } else {
 
       // -- analysis cuts
-      if (bq1*bq2 > 0) continue;
-      if (bm1pt < pCuts->m1pt) continue; 
-      if (bm2pt < pCuts->m2pt) continue; 
+      if (fb.m1q*fb.m2q > 0) continue;
+      if (fb.m1pt < pCuts->m1pt) continue; 
+      if (fb.m2pt < pCuts->m2pt) continue; 
       
-      if (bfl3d > 1.5) continue;
-      if (bpvw8 < 0.6) continue;
+      if (fb.fl3d > 1.5) continue;
+      if (fb.pvw8 < 0.6) continue;
       
-      if (bpt < pCuts->pt) continue; 
+      if (fb.pt < pCuts->pt) continue; 
       if (fInvertedIso) {
-	if (biso > 0.7) continue; 
+	if (fb.iso > 0.7) continue; 
       } else {
-	if (biso < pCuts->iso) continue; 
+	if (fb.iso < pCuts->iso) continue; 
       }
-      if (bchi2/bdof > pCuts->chi2dof) continue;
-      if (TMath::IsNaN(bfls3d)) continue;
-      if (bfls3d < pCuts->fls3d) continue;
-      if (balpha > pCuts->alpha) continue;
-      if (bdocatrk < pCuts->docatrk) continue;
+      if (fb.chi2/fb.dof > pCuts->chi2dof) continue;
+      if (TMath::IsNaN(fb.fls3d)) continue;
+      if (fb.fls3d < pCuts->fls3d) continue;
+      if (fb.alpha > pCuts->alpha) continue;
+      if (fb.docatrk < pCuts->docatrk) continue;
       
-      if (bs2jpsiphi && bdr >0.3) continue;
-      if (bs2jpsiphi && bmkk < 0.995) continue;
-      if (bs2jpsiphi && bmkk > 1.045) continue;
+      if (bs2jpsiphi && fb.dr >0.3) continue;
+      if (bs2jpsiphi && fb.mkk < 0.995) continue;
+      if (bs2jpsiphi && fb.mkk > 1.045) continue;
       
       // -- new cuts
-      if (bclosetrk >= pCuts->closetrk) continue;
-      if (TMath::Abs(bpvlip) > pCuts->pvlip) continue;
-      if (TMath::Abs(bpvlips) > pCuts->pvlips) continue;
-      if (TMath::Abs(bpvlip2) < pCuts->pvlip2) continue;
-      if (TMath::Abs(bpvlips2) < pCuts->pvlips2) continue;
-      if (bmaxdoca > pCuts->maxdoca) continue;
-      if (bpvips > pCuts->pvips) continue;
-      if (bpvip > pCuts->pvip) continue;
+      if (fb.closetrk >= pCuts->closetrk) continue;
+      if (TMath::Abs(fb.pvlip) > pCuts->pvlip) continue;
+      if (TMath::Abs(fb.pvlips) > pCuts->pvlips) continue;
+      if (TMath::Abs(fb.pvlip2) < pCuts->pvlip2) continue;
+      if (TMath::Abs(fb.pvlips2) < pCuts->pvlips2) continue;
+      if (fb.maxdoca > pCuts->maxdoca) continue;
+      if (fb.pvips > pCuts->pvips) continue;
+      if (fb.pvip > pCuts->pvip) continue;
       
       if (bs2jpsiphi || bp2jpsikp) {
-	if (bmpsi > 3.2) continue;
-	if (bmpsi < 3.0) continue;
+	if (fb.mpsi > 3.2) continue;
+	if (fb.mpsi < 3.0) continue;
 	// -- cowboy veto 
-	if (fDoApplyCowboyVeto && bcb) continue;
-	if (bptpsi < 7) continue;
+	if (fDoApplyCowboyVeto && fb.cb) continue;
+	if (fb.psipt < 7) continue;
       } 
       
-      if (fDoApplyCowboyVetoAlsoInSignal && bcb) continue;
+      if (fDoApplyCowboyVetoAlsoInSignal && fb.cb) continue;
     }
 
 
@@ -765,51 +741,51 @@ void plotClass::loopTree(int mode, int proc) {
     // ----------------------------
 
     // -- muon ID: Data PidTables
-    m1w8 = ptM->effD(bm1pt, TMath::Abs(bm1eta), 0.);
-    m2w8 = ptM->effD(bm2pt, TMath::Abs(bm2eta), 0.);
+    m1w8 = ptM->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+    m2w8 = ptM->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
     mw8  = m1w8*m2w8; 
     fhMuId[fChan]->Fill(mw8); 
-    fh0TNPMuID[fChan]->Fill(bpt, mw8); 
-    fh1TNPMuID[fChan]->Fill(bpt); 
+    fh0TNPMuID[fChan]->Fill(fb.pt, mw8); 
+    fh1TNPMuID[fChan]->Fill(fb.pt); 
 
     // -- MC for comparison 
-    m1w8 = ptMMC->effD(bm1pt, TMath::Abs(bm1eta), 0.);
-    m2w8 = ptMMC->effD(bm2pt, TMath::Abs(bm2eta), 0.);
+    m1w8 = ptMMC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+    m2w8 = ptMMC->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
     mw8  = m1w8*m2w8; 
     if (mw8 > 0.) {
       fhMuIdMC[fChan]->Fill(mw8, 1./mw8); 
     }
-    fh0TNPMCMuID[fChan]->Fill(bpt, mw8); 
-    fh1TNPMCMuID[fChan]->Fill(bpt); 
+    fh0TNPMCMuID[fChan]->Fill(fb.pt, mw8); 
+    fh1TNPMCMuID[fChan]->Fill(fb.pt); 
 
 
     // -- muon trigger: Data PidTables
-    tr1w8 = ptT1->effD(bm1pt, TMath::Abs(bm1eta), 0.)*ptT2->effD(bm1pt, TMath::Abs(bm1eta), 0.);
-    tr2w8 = ptT1->effD(bm2pt, TMath::Abs(bm2eta), 0.)*ptT2->effD(bm2pt, TMath::Abs(bm2eta), 0.);
+    tr1w8 = ptT1->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*ptT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+    tr2w8 = ptT1->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.)*ptT2->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
     trw8  = tr1w8*tr2w8; 
     if (bs2jpsiphi || bp2jpsikp) {
-      if (brr >= 3) {
-	if (TMath::Abs(bm1eta) > 2.2) trw8 = 0; 
-	if (TMath::Abs(bm2eta) > 2.2) trw8 = 0; 
+      if (fb.rr >= 3) {
+	if (TMath::Abs(fb.m1eta) > 2.2) trw8 = 0; 
+	if (TMath::Abs(fb.m2eta) > 2.2) trw8 = 0; 
       }
     }
     fhMuTr[fChan]->Fill(trw8); 
-    fh0TNPTrigger[fChan]->Fill(bpt, trw8); 
-    fh1TNPTrigger[fChan]->Fill(bpt); 
+    fh0TNPTrigger[fChan]->Fill(fb.pt, trw8); 
+    fh1TNPTrigger[fChan]->Fill(fb.pt); 
 
     // -- MC for comparison 
-    tr1w8 = ptT1MC->effD(bm1pt, TMath::Abs(bm1eta), 0.)*ptT2->effD(bm1pt, TMath::Abs(bm1eta), 0.);
-    tr2w8 = ptT1MC->effD(bm2pt, TMath::Abs(bm2eta), 0.)*ptT2->effD(bm2pt, TMath::Abs(bm2eta), 0.);
+    tr1w8 = ptT1MC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*ptT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+    tr2w8 = ptT1MC->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.)*ptT2->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
     trw8  = tr1w8*tr2w8; 
     if (bs2jpsiphi || bp2jpsikp) {
-      if (brr >= 3) {
-	if (TMath::Abs(bm1eta) > 2.2) trw8 = 0; 
-	if (TMath::Abs(bm2eta) > 2.2) trw8 = 0; 
+      if (fb.rr >= 3) {
+	if (TMath::Abs(fb.m1eta) > 2.2) trw8 = 0; 
+	if (TMath::Abs(fb.m2eta) > 2.2) trw8 = 0; 
       }
     }
     fhMuTrMC[fChan]->Fill(trw8); 
-    fh0TNPMCTrigger[fChan]->Fill(bpt, trw8); 
-    fh1TNPMCTrigger[fChan]->Fill(bpt); 
+    fh0TNPMCTrigger[fChan]->Fill(fb.pt, trw8); 
+    fh1TNPMCTrigger[fChan]->Fill(fb.pt); 
 
 
     // ---------------------------
@@ -817,14 +793,14 @@ void plotClass::loopTree(int mode, int proc) {
     // ---------------------------
 
     // -- MUON ID
-    if (false == bgmuid) continue;
+    if (false == fb.gmuid) continue;
     fhMassWithMuonCuts[fChan]->Fill(mass); 
     fhMassWithMuonCutsManyBins[fChan]->Fill(mass); 
 
     // -- TRIGGER
-    fh0MCTrigger[fChan]->Fill(bpt); 
-    if (false == bhlt) continue;
-    fh1MCTrigger[fChan]->Fill(bpt); 
+    fh0MCTrigger[fChan]->Fill(fb.pt); 
+    if (false == fb.hlt) continue;
+    fh1MCTrigger[fChan]->Fill(fb.pt); 
     fhMassWithTriggerCuts[fChan]->Fill(mass); 
     fhMassWithTriggerCutsManyBins[fChan]->Fill(mass); 
 
@@ -836,7 +812,8 @@ void plotClass::loopTree(int mode, int proc) {
     fhMassWithAllCutsManyBins[fChan]->Fill(mass); 
 
     fhNorm[fChan]->Fill(mass);
-    fhNormC[fChan]->Fill(bcm);
+    fhDstarPi[fChan]->Fill(mass);
+    fhNormC[fChan]->Fill(fb.cm);
     //    fhNorm[fChan]->Fill(mass);
     
     if (0 == mode && mass < pCuts->mBsLo) continue;
@@ -848,28 +825,30 @@ void plotClass::loopTree(int mode, int proc) {
     if (20 == mode && mass < fCsLo) continue;
     if (20 == mode && mass > fCsHi) continue;
 
+    elist->Enter(jentry); 
+
     fhMassWithMassCuts[fChan]->Fill(mass);
     fhMassWithMassCutsManyBins[fChan]->Fill(mass); 
 
     if (fDoPrint && 5 == mode && mass > 4.9 && mass < 5.9) {
       tlist->Enter(jentry); 
-      cout << Form("%d m = %4.3f pT = %3.1f eta = %3.2f", fChan, mass, bpt, beta)
+      cout << Form("%d m = %4.3f pT = %3.1f eta = %3.2f", fChan, mass, fb.pt, fb.eta)
 	//	   <<	" r = " << brun << "/" << bevt
-	   << Form(" mpt = %3.1f,%3.1f", bm1pt, bm2pt)
-	   << Form(" meta = %3.2f,%3.2f", TMath::Abs(bm1eta), TMath::Abs(bm2eta))
+	   << Form(" mpt = %3.1f,%3.1f", fb.m1pt, fb.m2pt)
+	   << Form(" meta = %3.2f,%3.2f", TMath::Abs(fb.m1eta), TMath::Abs(fb.m2eta))
 	   << Form(" a = %4.3f iso = %3.2f chi2 = %3.1f fls3d = %3.1f, fl/E=%3.1f/%3.2f", 
-		   TMath::ACos(bcosa), biso, bchi2/bdof, bfls3d, bfl3d, bfl3dE)
-	   << Form(" pv1: %4.3f/%3.1f", bpvlip, bpvlips) 
-	   << Form(" d/s: %5.4f/%3.2f md: %4.3f d: %4.3f", bpvip, bpvips, bmaxdoca, bdocatrk) 
+		   fb.alpha, fb.iso, fb.chi2/fb.dof, fb.fls3d, fb.fl3d, fb.fl3dE)
+	   << Form(" pv1: %4.3f/%3.1f", fb.pvlip, fb.pvlips) 
+	   << Form(" d/s: %5.4f/%3.2f md: %4.3f d: %4.3f", fb.pvip, fb.pvips, fb.maxdoca, fb.docatrk) 
 	   << endl;
-      fOUT << Form("%d m = %4.3f pT = %3.1f eta = %3.2f", fChan, mass, bpt, beta)
+      fOUT << Form("%d m = %4.3f pT = %3.1f eta = %3.2f", fChan, mass, fb.pt, fb.eta)
 	//	   <<	" run = " << brun << " event = " << bevt
-	   << Form(" mpt = %3.1f,%3.1f", bm1pt, bm2pt)
-	   << Form(" meta = %3.2f,%3.2f", TMath::Abs(bm1eta), TMath::Abs(bm2eta))
+	   << Form(" mpt = %3.1f,%3.1f", fb.m1pt, fb.m2pt)
+	   << Form(" meta = %3.2f,%3.2f", TMath::Abs(fb.m1eta), TMath::Abs(fb.m2eta))
 	   << Form(" a = %4.3f iso = %3.2f chi2 = %3.1f fls3d = %3.1f, fl/E=%3.1f/%3.2f", 
-		   TMath::ACos(bcosa), biso, bchi2/bdof, bfls3d, bfl3d, bfl3dE)
-	   << Form(" pv1: %4.3f/%3.1f", bpvlip, bpvlips) 
-	   << Form(" d/s: %5.4f/%3.2f md: %4.3f d: %4.3f", bpvip, bpvips, bmaxdoca, bdocatrk) 
+		   fb.alpha, fb.iso, fb.chi2/fb.dof, fb.fls3d, fb.fl3d, fb.fl3dE)
+	   << Form(" pv1: %4.3f/%3.1f", fb.pvlip, fb.pvlips) 
+	   << Form(" d/s: %5.4f/%3.2f md: %4.3f d: %4.3f", fb.pvip, fb.pvips, fb.maxdoca, fb.docatrk) 
 	   << endl;
 
 
@@ -915,6 +894,21 @@ void plotClass::loopTree(int mode, int proc) {
     
   }
 
+
+  // -- dump output
+  t->SetEventList(elist);
+  string tname; 
+  if (99 == mode) {
+    tname = fRareName;
+  } else {
+    tname = smode; 
+  }
+  TTree *small = t->CopyTree(""); 
+  cout << "--> Writing small tree with name " << Form("%s_%s", tname.c_str(), (fDoUseBDT?"bdt":"cnc")) << endl;
+  small->SetName(Form("%s_%s", tname.c_str(), (fDoUseBDT?"bdt":"cnc")));
+  small->SetDirectory(fHistFile); 
+
+
   cout << gDirectory->GetName() << ": " << fhMassWithAllCuts[0]->GetSumOfWeights() 
        << " (" << fhMassWithAllCuts[0]->Integral(0, fhMassWithAllCuts[0]->GetNbinsX())  << ") " 
        << "  " << fhMassWithAllCuts[1]->GetSumOfWeights()
@@ -929,7 +923,8 @@ void plotClass::loopTree(int mode, int proc) {
       string modifier = (fDoUseBDT?"bdt":"cnc"); 
       fhMassWithAllCuts[i]->SetName(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i)); 
       fhMassWithAllCuts[i]->SetTitle(Form("hMassWithAllCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, pD->GetFile()->GetName())); 
-      fhMassWithAllCuts[i]->Write();
+      //      fhMassWithAllCuts[i]->Write();
+      fhMassWithAllCuts[i]->SetDirectory(fHistFile);
     }
     pD->cd();
 
@@ -968,6 +963,10 @@ void plotClass::loopTree(int mode, int proc) {
     }
     
     if (98 == mode) {
+      aa = fNumbersBla[i]; 
+    }
+
+    if (30 == mode || 35 == mode) {
       aa = fNumbersBla[i]; 
     }
 
@@ -1164,7 +1163,12 @@ void plotClass::loopTree(int mode, int proc) {
       h->SetAxisRange(4.9, 5.9, "X"); 
       //      h->SetMaximum(.2);
       h->SetMaximum(h->GetBinContent(h->GetMaximumBin())+2); 
-      h->SetMaximum(2.2);
+
+      double ymax0 = (fhMassWithAllCutsBlind[0]->GetBinContent(fhMassWithAllCutsBlind[0]->GetMaximumBin()) >
+		      fhMassWithAllCutsBlind[1]->GetBinContent(fhMassWithAllCutsBlind[1]->GetMaximumBin()) ? 
+		      fhMassWithAllCutsBlind[0]->GetBinContent(fhMassWithAllCutsBlind[0]->GetMaximumBin())+2:
+		      fhMassWithAllCutsBlind[1]->GetBinContent(fhMassWithAllCutsBlind[1]->GetMaximumBin())+2);
+      h->SetMaximum(ymax0); 
       h->Draw();
       //       drawArrow(0.5, 2); 
       //       drawArrow(0.5, 1); 
@@ -1188,8 +1192,7 @@ void plotClass::loopTree(int mode, int proc) {
       legg->Draw();
 
 
-      stamp(0.18, "CMS, 5 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
-      //      stamp(0.18, "CMS, 5.3 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+      stamp(0.18, fStampString, 0.67, fStampCms); 
       if (fDoPrint)  {
 	if (fDoUseBDT) c0->SaveAs(Form("%s/bdtsig-data-chan%d.pdf", fDirectory.c_str(), i));
 	else c0->SaveAs(Form("%s/sig-data-chan%d.pdf", fDirectory.c_str(), i));
@@ -1199,10 +1202,10 @@ void plotClass::loopTree(int mode, int proc) {
       setHist(h, kBlack, 20, 1.); 
       setTitles(h, "m_{#mu#mu} [GeV]", Form("Candidates / %3.3f GeV", h->GetBinWidth(1)), 0.05, 1.2, 1.3); 
       h->SetMinimum(0.01); 
-      double ymax0 = (fhMassWithAllCuts[0]->GetBinContent(fhMassWithAllCuts[0]->GetMaximumBin()) >
-	fhMassWithAllCuts[1]->GetBinContent(fhMassWithAllCuts[1]->GetMaximumBin()) ? 
-		      fhMassWithAllCuts[0]->GetBinContent(fhMassWithAllCuts[0]->GetMaximumBin())+2:
-		      fhMassWithAllCuts[1]->GetBinContent(fhMassWithAllCuts[1]->GetMaximumBin())+2);
+      ymax0 = (fhMassWithAllCuts[0]->GetBinContent(fhMassWithAllCuts[0]->GetMaximumBin()) >
+	       fhMassWithAllCuts[1]->GetBinContent(fhMassWithAllCuts[1]->GetMaximumBin()) ? 
+	       fhMassWithAllCuts[0]->GetBinContent(fhMassWithAllCuts[0]->GetMaximumBin())+2:
+	       fhMassWithAllCuts[1]->GetBinContent(fhMassWithAllCuts[1]->GetMaximumBin())+2);
       h->SetMaximum(ymax0); 
       h->SetAxisRange(4.9, 5.9, "X"); 
       gStyle->SetOptStat(0); 
@@ -1224,8 +1227,7 @@ void plotClass::loopTree(int mode, int proc) {
 	tl->DrawLatex(0.6, 0.8, "Endcap");   
       } 
       
-      stamp(0.18, "CMS, 5 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
-      //      stamp(0.18, "CMS, 5.3 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+      stamp(0.18, fStampString, 0.67, fStampCms); 
       if (fDoPrint) {
 	if (fDoUseBDT) c0->SaveAs(Form("%s/bdtunblinded-sig-data-chan%d.pdf", fDirectory.c_str(), i));
 	else c0->SaveAs(Form("%s/unblinded-sig-data-chan%d.pdf", fDirectory.c_str(), i));
@@ -1258,7 +1260,7 @@ void plotClass::loopTree(int mode, int proc) {
       aa->fitYieldE = fNoSigE; 
 
       h = fhNormC[i];
-      normYield(h, 0, 4.9, 5.9, 5.145);
+      normYield(h, 0, 5.0, 5.9, 5.145);
       aa->fitYieldC  = fNoSig; 
       aa->fitYieldCE = fNoSigE; 
     } else if (20 == mode) {
@@ -1281,6 +1283,39 @@ void plotClass::loopTree(int mode, int proc) {
       csYield(h, i, 5.1, 6.0);
       aa->fitYield  = fCsSig; 
       aa->fitYieldE = fCsSigE; 
+    } else if (30 == mode) {
+      cout << "----------------------------------------------------------------------" << endl;
+      cout << "==> loopTree: Bd2DstarPi SAMPLE, channel " << i  << endl;
+      fhMassNoCuts[i]->Draw();
+      fhMassWithAnaCuts[i]->Draw("same");
+      tl->DrawLatex(0.2, 0.77, Form("w/o cuts: %5.1f", fhMassNoCuts[i]->GetSumOfWeights())); 
+      tl->DrawLatex(0.2, 0.7, Form("w/   cuts: %5.1f", fhMassWithAnaCuts[i]->GetSumOfWeights())); 
+      TH1D *h = fhDstarPi[i];
+      h->Draw();
+      tl->SetTextSize(0.07); 
+      tl->SetTextColor(kBlack); 
+      if (0 == mode) {
+	tl->DrawLatex(0.22, 0.8, "Barrel");   
+      } 
+      
+      if (1 == mode) {
+	tl->DrawLatex(0.22, 0.8, "Endcap");   
+      } 
+      
+      if (fDoPrint) {
+	if (fDoUseBDT) c0->SaveAs(Form("%s/bdtdp-mc-chan%d.pdf", fDirectory.c_str(), i));
+	else c0->SaveAs(Form("%s/dp-mc-chan%d.pdf", fDirectory.c_str(), i));
+      }
+    } else if (35 == mode) {
+      cout << "----------------------------------------------------------------------" << endl;
+      cout << "==> loopTree: Bd2DstarPi SAMPLE, channel " << i  << endl;
+      TH1D *h = fhDstarPi[i];
+      //      dpYield(h, i, 5.05, 6.0, proc);
+      dpYield(h, i, 4.9, 5.65, proc);
+      fhMassNoCuts[i]->Draw();
+      fhMassWithAnaCuts[i]->Draw("same");
+      tl->DrawLatex(0.2, 0.77, Form("w/o cuts: %5.1f", fhMassNoCuts[i]->GetSumOfWeights())); 
+      tl->DrawLatex(0.2, 0.7, Form("w/   cuts: %5.1f", fhMassWithAnaCuts[i]->GetSumOfWeights())); 
     } else if (98 == mode) {
       double a = fhMassNoCuts[i]->GetSumOfWeights(); 
       double b = fhMassWithAnaCuts[i]->GetSumOfWeights();
@@ -1309,31 +1344,41 @@ void plotClass::loopTree(int mode, int proc) {
       continue;
     }
 
-
-    printNumbers(*aa, cout); 
+    if (0 == mode || 5 == mode || 10 == mode ||15 == mode || 20 == mode ||25 == mode) {
+      printNumbers(*aa, cout); 
+    }
     printNumbers(*aa, fOUT); 
-    
+
     // -- Cache the pwd...
     TDirectory *pD = gDirectory; 
+    cout << "fHistFile: " << fHistFile  << endl;
     fHistFile->cd();
     string modifier = (fDoUseBDT?"bdt":"cnc"); 
     //    fhMassWithMassCutsManyBins[i]->SetName(Form("hMassWithMassCutsManyBins%d_chan%d", mode, i)); fhMassWithMassCutsManyBins[i]->Write();
     //    fhMassWithMassCuts[i]->SetName(Form("hMassWithMassCuts%d_chan%d", mode, i)); fhMassWithMassCuts[i]->Write();
     fhMassWithAllCutsManyBins[i]->SetName(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i)); 
     fhMassWithAllCutsManyBins[i]->SetTitle(Form("hMassWithAllCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, pD->GetName())); 
-    fhMassWithAllCutsManyBins[i]->Write();
+    //    fhMassWithAllCutsManyBins[i]->Write();
+    fhMassWithAllCutsManyBins[i]->SetDirectory(fHistFile);
     fhMassWithAllCuts[i]->SetName(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i)); 
-    fhMassWithAllCuts[i]->Write();
+    //    fhMassWithAllCuts[i]->Write();
+    fhMassWithAllCuts[i]->SetDirectory(fHistFile);
     fhNorm[i]->SetName(Form("hNorm_%s_%d_chan%d", modifier.c_str(), mode, i)); 
-    fhNorm[i]->Write();
+    //    fhNorm[i]->Write();
+    fhNorm[i]->SetDirectory(fHistFile);
     fhNormC[i]->SetName(Form("hNormC_%s_%d_chan%d", modifier.c_str(), mode, i)); 
-    fhNormC[i]->Write();
+    //    fhNormC[i]->Write();
+    fhNormC[i]->SetDirectory(fHistFile);
+    fhDstarPi[i]->SetName(Form("hDstarPi_%s_%d_chan%d", modifier.c_str(), mode, i)); 
+    //    fhDstarPi[i]->Write();
+    fhDstarPi[i]->SetDirectory(fHistFile);
 
     if (5 == mode) {
       t->SetEventList(tlist);
       TTree *small = t->CopyTree(""); 
       t->SetName(Form("%s", (fDoUseBDT?"bdt":"cnc")));
-      small->Write(); 
+      //      small->Write(); 
+      small->SetDirectory(fHistFile); 
     }
     //    fhMassNoCuts[i]->SetName(Form("hMassNoCuts%d_chan%d", mode, i)); fhMassNoCuts[i]->Write();
     //    fhMassAbsNoCuts[i]->SetName(Form("hMassAbsNoCuts%d_chan%d", mode, i)); fhMassAbsNoCuts[i]->Write();
@@ -1785,8 +1830,8 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
   
   loadFiles(files);
   string hfname  = fDirectory + "/anaBmm." + fSuffix + ".root";
-  cout << "fHistFile: " << hfname << endl;
-  fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
+//   cout << "fHistFile: " << hfname << endl;
+//   fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
 
   printCuts(fOUT); 
 
@@ -1852,6 +1897,13 @@ void plotClass::loadFiles(const char *files) {
 
       if (string::npos != stype.find("default") && string::npos != stype.find("cs")) {
 	sname = "CsData"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "Data")); 
+      }
+
+      if (string::npos != stype.find("default") && string::npos != stype.find("dstarpi")) {
+	sname = "DstarPiData"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "Data")); 
@@ -2127,10 +2179,21 @@ void plotClass::loadFiles(const char *files) {
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
 
+      if (string::npos != stype.find("default") && string::npos != stype.find("dstarpi")) {
+	sname = "DstarPiMc"; 
+	fF.insert(make_pair(sname, pF)); 
+	fBF.insert(make_pair(sname, 7e-5)); 
+	fBFE.insert(make_pair(sname, 0.32)); 
+	fProdR.insert(make_pair(sname, fsfu)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{0} #rightarrow D^{*} #pi")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }	
+
       if (string::npos != stype.find("bg,Bs2KK")) {
 	sname = "bgBs2KK"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 2.7e-5)); 
+	fBF.insert(make_pair(sname, 23.e-6)); 
 	fBFE.insert(make_pair(sname, 0.15)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2140,7 +2203,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bs2KPi")) {
 	sname = "bgBs2KPi"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 5.0e-6)); 
+	fBF.insert(make_pair(sname, 5.4e-6)); 
 	fBFE.insert(make_pair(sname, 0.22)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2150,7 +2213,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bs2PiPi")) {
 	sname = "bgBs2PiPi"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 1.2e-6)); 
+	fBF.insert(make_pair(sname, 0.95e-6)); 
 	fBFE.insert(make_pair(sname, 0.9)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2181,7 +2244,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bd2KK")) {
 	sname = "bgBd2KK"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 1.5e-7)); 
+	fBF.insert(make_pair(sname, 0.11e-6)); 
 	fBFE.insert(make_pair(sname, 0.73)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2191,7 +2254,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bd2KPi")) {
 	sname = "bgBd2KPi"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 1.9e-5)); 
+	fBF.insert(make_pair(sname, 19.4e-6)); 
 	fBFE.insert(make_pair(sname, 0.05)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2201,7 +2264,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bd2PiPi")) {
 	sname = "bgBd2PiPi"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 5.2e-6)); 
+	fBF.insert(make_pair(sname, 5.1e-6)); 
 	fBFE.insert(make_pair(sname, 0.04)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2494,8 +2557,7 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
     tl->DrawLatex(0.6, 0.8, "Endcap");   
   } 
   
-  stamp(0.20, "CMS, 5 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
-  //  stamp(0.20, "CMS, 5.3 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+  stamp(0.20, fStampString, 0.67, fStampCms); 
   if (fDoPrint) {
     
     string pdfname;
@@ -2523,6 +2585,8 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
   double pReco = (preco<0? 5.2: preco);
 
   TF1 *lF1(0), *lBg(0);
+
+  fpFunc->resetLimits();
 
   if (0 == mode) { 
     fpFunc->fLo = lo; //5.0;
@@ -2599,13 +2663,116 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
   } 
 
 
-  //  stamp(0.18, "CMS, 1.14 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
   if (fDoPrint) {
     if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d.pdf", fDirectory.c_str(), mode));
     else c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), mode));
   }
 
   cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
+  
+  delete lF1; 
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotClass::dpYield(TH1 *h, int mode, double lo, double hi, int bdtc) {
+
+  TF1 *lF1(0), *lBg(0);
+
+  fpFunc->resetLimits();
+  fpFunc->fLimit[1] = true;
+  fpFunc->fLimitLo[1] = 5.26;
+  fpFunc->fLimitHi[1] = 5.30;
+
+  fpFunc->fLimit[2] = true;
+  fpFunc->fLimitLo[2] = 0.04;
+  fpFunc->fLimitHi[2] = 0.06;
+
+  if (0 == mode) { 
+    fpFunc->fLo = lo; //5.0;
+    fpFunc->fHi = hi; //5.5;
+    lF1 = fpFunc->expoGauss(h, 5.279, 0.050); 
+    lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
+  } else {
+    fpFunc->fLo = lo; //5.0;
+    fpFunc->fHi = hi; //5.5;
+    lF1 = fpFunc->expoGauss(h, 5.279, 0.06); 
+    lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
+  }
+
+  h->Fit(lF1, "rm", "", lo, hi); 
+
+
+  if (0 == mode) {
+    for (int i = 0; i < lBg->GetNpar(); ++i) {
+      lBg->SetParameter(i, lF1->GetParameter(3+i));
+      cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
+    }
+  } else {
+    for (int i = 0; i < lBg->GetNpar(); ++i) {
+      lBg->SetParameter(i, lF1->GetParameter(3+i));
+      cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
+    }
+  }
+  
+  double intmin = lF1->GetParameter(1)-lF1->GetParameter(2);
+  double intmax = lF1->GetParameter(1)+lF1->GetParameter(2);
+  double c  = lF1->GetParameter(0); 
+  c = lF1->Integral(intmin, intmax) - lBg->Integral(intmin, intmax); 
+  double ierr = lF1->IntegralError(intmin, intmax);
+  if (ierr/c < 0.001) {
+    cout << "ierr too small at " << ierr << endl;
+    ierr = lF1->GetParError(0);
+    cout << "chosing par error for ierr = " << ierr << endl;
+  }
+
+  fDpSig = c/h->GetBinWidth(1);
+  fDpSigE = ierr/h->GetBinWidth(1);
+
+  cout << "intmin = " << intmin << " intmax = " << intmax << endl;
+  cout << "N(Sig) = " << fDpSig << " +/- " << fDpSigE << endl;
+  cout << "chi2/dof = " << lF1->GetChisquare() << "/" << lF1->GetNDF() 
+       << " prob = " << TMath::Prob(lF1->GetChisquare(), lF1->GetNDF()) 
+       << endl;
+
+  setHist(h, kBlack, 20, 1.); 
+  setTitles(h, "m_{D^{*}#pi} [GeV]", Form("Candidates / %3.3f GeV", h->GetBinWidth(1)), 0.05, 1.2, 1.6); 
+  h->SetMinimum(0.01); 
+  gStyle->SetOptStat(0); 
+  gStyle->SetOptTitle(0); 
+  h->Draw("e");
+
+  // -- Overlay BG function
+  lBg->SetLineStyle(kDashed);
+  lBg->SetLineColor(kRed);
+  lBg->SetLineWidth(3);
+  lBg->Draw("same");
+
+  tl->SetTextSize(0.07); 
+  tl->SetTextColor(kBlack); 
+  if (0 == mode) {
+    tl->DrawLatex(0.22, 0.8, "Barrel");   
+  } 
+
+  if (1 == mode) {
+    tl->DrawLatex(0.22, 0.8, "Endcap");   
+  } 
+
+  tl->SetTextSize(0.04); 
+  tl->DrawLatex(0.5, 0.85, Form("b > %5.2f", bdtc/100.));   
+  tl->DrawLatex(0.5, 0.80, Form("#mu: %5.4f#pm%5.4f", lF1->GetParameter(1), lF1->GetParError(1)));   
+  tl->DrawLatex(0.5, 0.75, Form("#sigma: %5.4f#pm%5.4f", lF1->GetParameter(2), lF1->GetParError(2)));   
+  tl->DrawLatex(0.5, 0.70, Form("N_{sig}: %5.1f#pm%5.1f", fDpSig, fDpSigE));   
+  tl->DrawLatex(0.5, 0.65, Form("#chi^{2}/dof: %3.1f/%i", lF1->GetChisquare(), lF1->GetNDF()));   
+
+
+  if (fDoPrint) {
+    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtdp-data-bdt%d-chan%d.pdf", fDirectory.c_str(), bdtc, mode));
+    else c0->SaveAs(Form("%s/dp-data-bdt%d-chan%d.pdf", fDirectory.c_str(), bdtc, mode));
+  }
+
+  cout << "N(Sig) = " << fDpSig << " +/- " << fDpSigE << endl;
   
   delete lF1; 
 
@@ -2851,9 +3018,9 @@ void plotClass::setErrors(TH1D *h) {
 
 
 // ----------------------------------------------------------------------
-void plotClass::newLegend(double x1, double y1, double x2, double y2) {
+void plotClass::newLegend(double x1, double y1, double x2, double y2, string title) {
   if (legg) delete legg;
-  legg = new TLegend(x1, y1, x2, y2);
+  legg = new TLegend(x1, y1, x2, y2, title.c_str());
   legg->SetFillStyle(0); 
   legg->SetBorderSize(0); 
   legg->SetTextSize(0.04);  
@@ -2872,9 +3039,9 @@ void plotClass::readCuts(const char *filename) {
     cutLines.push_back(string(buffer));
   }
 
-  char CutName[100];
+  char CutName[100], XmlName[1000];
   float CutValue;
-  int dump(0), ok(0);
+  int dump(1), ok(0);
 
   cuts *a = 0;
   
@@ -3021,6 +3188,22 @@ void plotClass::readCuts(const char *filename) {
       if (dump) cout << "pvips:                   " << CutValue << endl;
     }
 
+    sscanf(buffer, "%s %s", CutName, XmlName);
+    string ctmp = CutName; 
+    string sXmlName;
+    replaceAll(ctmp, " ", ""); 
+    if (!strcmp(ctmp.c_str(), "xml")) {
+      a->xmlFile = XmlName;
+      sXmlName = "weights/" + a->xmlFile + "-even_BDT.weights.xml"; 
+      fReaderEven.push_back(setupReader(sXmlName, frd)); 
+      if (dump) cout << "xml:                   " << sXmlName << endl;
+      sXmlName = "weights/" + a->xmlFile + "-odd_BDT.weights.xml"; 
+      fReaderOdd.push_back(setupReader(sXmlName, frd)); 
+      if (dump) cout << "xml:                   " << sXmlName << endl;
+    }
+
+
+
   }
 
   if (a) fCuts.push_back(a); 
@@ -3042,6 +3225,7 @@ void plotClass::printCuts(ostream &OUT) {
     fTEX << "% ----------------------------------------------------------------------" << endl;
     fTEX << "% -- Cuts for channel " << a->index << endl;
 
+    OUT << "xml      " << Form("%s", a->xmlFile.c_str()) << endl;
     OUT << "bdt      " << Form("%4.3f", a->bdt) << endl;
     fTEX <<  Form("\\vdef{%s:bdt:%d}     {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->bdt) << endl;
 
@@ -3115,11 +3299,9 @@ void plotClass::printCuts(ostream &OUT) {
 // ----------------------------------------------------------------------
 void plotClass::stamp(double x1, string text1, double x2, string text2) {
   tl->SetTextSize(fSize); 
-  tl->DrawLatex(x1, 10.91, text1.c_str());   
-  tl->DrawLatex(x2, 10.91, text2.c_str()); 
-  //  tl->DrawLatex(x1, 0.95, "Preliminary"); 
+  tl->DrawLatex(x1, 0.91, text1.c_str());   
+  tl->DrawLatex(x2, 0.91, text2.c_str()); 
   tl->SetTextSize(0.03); 
-  //  tl->DrawLatex(0.47, 0.91, "Preliminary"); 
   tl->SetTextSize(fSize); 
 }
 
@@ -3233,49 +3415,510 @@ void plotClass::drawBox(int mode, double hi, int ylo) {
 // ----------------------------------------------------------------------
 void plotClass::singleEventPrintout(string suffix, string st, int ievt) {
 
-  fTEX << formatTex(brun,      Form("%s:%s%i:run", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-  fTEX << formatTex(bevt,      Form("%s:%s%i:evt", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(fb.run,      Form("%s:%s%i:run", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(fb.evt,      Form("%s:%s%i:evt", suffix.c_str(), st.c_str(), ievt), 0) << endl;
   fTEX << formatTex(fChan,     Form("%s:%s%i:chan", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-  fTEX << formatTex(bm,        Form("%s:%s%i:m", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-  fTEX << formatTex(bpt,       Form("%s:%s%i:pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-  fTEX << formatTex(bphi,      Form("%s:%s%i:phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-  fTEX << formatTex(beta,      Form("%s:%s%i:eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(fb.m,        Form("%s:%s%i:m", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(fb.pt,       Form("%s:%s%i:pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(fb.phi,      Form("%s:%s%i:phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(fb.eta,      Form("%s:%s%i:eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
   fTEX << Form("\\vdef{%s:%s%i:channel}   {%s }", suffix.c_str(), st.c_str(), ievt, fChan==0?"barrel":"endcap") << endl;
-  fTEX << formatTex((bcb?1:0),    Form("%s:%s%i:cowboy", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-  fTEX << formatTex(bm1pt,     Form("%s:%s%i:m1pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-  fTEX << formatTex(bm2pt,     Form("%s:%s%i:m2pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-  fTEX << formatTex(bm1eta,    Form("%s:%s%i:m1eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-  fTEX << formatTex(bm2eta,    Form("%s:%s%i:m2eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-  fTEX << formatTex(bm1phi,    Form("%s:%s%i:m1phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-  fTEX << formatTex(bm2phi,    Form("%s:%s%i:m2phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-  fTEX << formatTex(bq1,       Form("%s:%s%i:m1q", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-  fTEX << formatTex(bq2,       Form("%s:%s%i:m2q", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-  fTEX << formatTex(biso,      Form("%s:%s%i:iso", suffix.c_str(), st.c_str(), ievt), 3) << endl;
-  fTEX << formatTex(balpha,    Form("%s:%s%i:alpha", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-  fTEX << formatTex(bchi2,     Form("%s:%s%i:chi2", suffix.c_str(), st.c_str(), ievt), 2) << endl;
-  fTEX << formatTex(bdof,      Form("%s:%s%i:dof", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-  fTEX << formatTex(bfls3d,    Form("%s:%s%i:fls3d", suffix.c_str(), st.c_str(), ievt), 2) << endl;
-  fTEX << formatTex(bfl3d,     Form("%s:%s%i:fl3d", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-  fTEX << formatTex(bfl3dE,    Form("%s:%s%i:fl3dE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex((fb.cb?1:0),    Form("%s:%s%i:cowboy", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(fb.m1pt,     Form("%s:%s%i:m1pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(fb.m2pt,     Form("%s:%s%i:m2pt", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(fb.m1eta,    Form("%s:%s%i:m1eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(fb.m2eta,    Form("%s:%s%i:m2eta", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(fb.m1phi,    Form("%s:%s%i:m1phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(fb.m2phi,    Form("%s:%s%i:m2phi", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(fb.m1q,       Form("%s:%s%i:m1q", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(fb.m2q,       Form("%s:%s%i:m2q", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(fb.iso,      Form("%s:%s%i:iso", suffix.c_str(), st.c_str(), ievt), 3) << endl;
+  fTEX << formatTex(fb.alpha,    Form("%s:%s%i:alpha", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(fb.chi2,     Form("%s:%s%i:chi2", suffix.c_str(), st.c_str(), ievt), 2) << endl;
+  fTEX << formatTex(fb.dof,      Form("%s:%s%i:dof", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(fb.fls3d,    Form("%s:%s%i:fls3d", suffix.c_str(), st.c_str(), ievt), 2) << endl;
+  fTEX << formatTex(fb.fl3d,     Form("%s:%s%i:fl3d", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(fb.fl3dE,    Form("%s:%s%i:fl3dE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
   
-  fTEX << formatTex(bdocatrk,  Form("%s:%s%i:docatrk", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-  fTEX << formatTex(bclosetrk, Form("%s:%s%i:closetrk", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-  fTEX << formatTex(blip,      Form("%s:%s%i:lip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-  fTEX << formatTex(blipE,     Form("%s:%s%i:lipE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-  fTEX << formatTex(btip,      Form("%s:%s%i:tip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-  fTEX << formatTex(btipE,     Form("%s:%s%i:tipE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-  fTEX << formatTex(bpvlip,    Form("%s:%s%i:pvlip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-  fTEX << formatTex(bpvlips,   Form("%s:%s%i:pvlips", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-  fTEX << formatTex(bpvip,     Form("%s:%s%i:pvip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-  fTEX << formatTex(bpvips,    Form("%s:%s%i:pvips", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-  fTEX << formatTex(bmaxdoca,  Form("%s:%s%i:maxdoca", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-  fTEX << formatTex(bpvw8,     Form("%s:%s%i:pvw8", suffix.c_str(), st.c_str(), ievt), 4) << endl;
-  fTEX << formatTex((fChan == 0?bbdt:bbdt2),     Form("%s:%s%i:bdt", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(fb.docatrk,  Form("%s:%s%i:docatrk", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(fb.closetrk, Form("%s:%s%i:closetrk", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(fb.lip,      Form("%s:%s%i:lip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(fb.lipE,     Form("%s:%s%i:lipE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(fb.tip,      Form("%s:%s%i:tip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(fb.tipE,     Form("%s:%s%i:tipE", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(fb.pvlip,    Form("%s:%s%i:pvlip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(fb.pvlips,   Form("%s:%s%i:pvlips", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(fb.pvip,     Form("%s:%s%i:pvip", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(fb.pvips,    Form("%s:%s%i:pvips", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(fb.maxdoca,  Form("%s:%s%i:maxdoca", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(fb.pvw8,     Form("%s:%s%i:pvw8", suffix.c_str(), st.c_str(), ievt), 4) << endl;
+  fTEX << formatTex(fBDT,        Form("%s:%s%i:bdt", suffix.c_str(), st.c_str(), ievt), 4) << endl;
   
-  fTEX << formatTex(bm1pix,    Form("%s:%s%i:m1pix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-  fTEX << formatTex(bm2pix,    Form("%s:%s%i:m2pix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-  fTEX << formatTex(bm1bpix,   Form("%s:%s%i:m1bpix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-  fTEX << formatTex(bm2bpix,   Form("%s:%s%i:m2bpix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-  fTEX << formatTex(bm1bpixl1, Form("%s:%s%i:m1bpixl1", suffix.c_str(), st.c_str(), ievt), 0) << endl;
-  fTEX << formatTex(bm2bpixl1, Form("%s:%s%i:m2bpixl1", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(fb.m1pix,    Form("%s:%s%i:m1pix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(fb.m2pix,    Form("%s:%s%i:m2pix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(fb.m1bpix,   Form("%s:%s%i:m1bpix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(fb.m2bpix,   Form("%s:%s%i:m2bpix", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(fb.m1bpixl1, Form("%s:%s%i:m1bpixl1", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+  fTEX << formatTex(fb.m2bpixl1, Form("%s:%s%i:m2bpixl1", suffix.c_str(), st.c_str(), ievt), 0) << endl;
+}
+
+
+// ----------------------------------------------------------------------
+void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts) {
+  int nentries = Int_t(t->GetEntries());
+  if (nevts > 0) nentries = nevts;
+  //  nentries = 100000; 
+
+  hMassPiPi->Reset(); hMassPiPi->SetTitle(Form("mPiPi %s", mode.c_str()));
+  hMassKPi->Reset();  hMassKPi->SetTitle(Form("mKPi %s", mode.c_str()));
+  hMassPiK->Reset();  hMassPiK->SetTitle(Form("mPiK %s", mode.c_str()));
+
+  int nb(0);
+  int step(50000); 
+  if (nentries < 50000000) step = 5000000; 
+  if (nentries < 10000000) step = 1000000; 
+  if (nentries < 5000000)  step = 500000; 
+  if (nentries < 1000000)  step = 100000; 
+  if (nentries < 100000)   step = 10000; 
+  if (nentries < 10000)    step = 1000; 
+  if (nentries < 1000)     step = 100; 
+  int imode(0); 
+  if (string::npos != mode.find("No")) imode = 10; 
+  if (string::npos != mode.find("Cs")) imode = 20; 
+  cout << "==> plotClass::loopOverTree> looping in mode " << mode << " -> imode = " << imode 
+       << " with " << nentries << " entries" 
+       << endl;
+
+  for (int jentry = 0; jentry < nentries; jentry++) {
+    nb = t->GetEntry(jentry);
+    if (jentry%step == 0) cout << Form(" .. Event %8d", jentry) << endl;
+    candAnalysis(imode);
+    loopFunction(function);
+  }
+
+  //   hMassPiPi->Write();
+  //   hMassKPi->Write();
+  //   hMassPiK->Write();
+  
+}
+
+// ----------------------------------------------------------------------
+TTree* plotClass::getTree(string mode) {
+  TTree *t(0);
+  if (string::npos != mode.find("No")) t = (TTree*)fF[mode]->Get("candAnaBu2JpsiK/events"); 
+  if (string::npos != mode.find("Cs")) t = (TTree*)fF[mode]->Get("candAnaBs2JpsiPhi/events"); 
+  if (string::npos != mode.find("Sg")) t = (TTree*)fF[mode]->Get("candAnaMuMu/events"); 
+  return t; 
+}
+
+// ----------------------------------------------------------------------
+void plotClass::setupTree(TTree *t, string mode) {
+  t->SetBranchAddress("pt", &fb.pt);
+
+  t->SetBranchAddress("bdt",&fb.bdt);
+  t->SetBranchAddress("bdt",&fBDT);
+  t->SetBranchAddress("lip",&fb.lip);
+  t->SetBranchAddress("lipE",&fb.lipE);
+  t->SetBranchAddress("tip",&fb.tip);
+  t->SetBranchAddress("tipE",&fb.tipE);
+
+  t->SetBranchAddress("closetrk",&fb.closetrk);
+  t->SetBranchAddress("pvlip",&fb.pvlip);
+  t->SetBranchAddress("pvlips",&fb.pvlips);
+  t->SetBranchAddress("maxdoca",&fb.maxdoca);
+  t->SetBranchAddress("pvip",&fb.pvip);
+  t->SetBranchAddress("pvips",&fb.pvips);
+  t->SetBranchAddress("pvw8",&fb.pvw8);
+
+  t->SetBranchAddress("m1pix",&fb.m1pix);
+  t->SetBranchAddress("m2pix",&fb.m2pix);
+  t->SetBranchAddress("m1bpix",&fb.m1bpix);
+  t->SetBranchAddress("m2bpix",&fb.m2bpix);
+  t->SetBranchAddress("m1bpixl1",&fb.m1bpixl1);
+  t->SetBranchAddress("m2bpixl1",&fb.m2bpixl1);
+
+  t->SetBranchAddress("rr",&fb.rr);
+  t->SetBranchAddress("pvn",&fb.pvn);
+  t->SetBranchAddress("run",&fb.run);
+  t->SetBranchAddress("evt",&fb.evt);
+  t->SetBranchAddress("hlt",&fb.hlt);
+  t->SetBranchAddress("ls",&fb.ls);
+  t->SetBranchAddress("cb",&fb.cb);
+  t->SetBranchAddress("json",&fb.json);
+  t->SetBranchAddress("gmuid",&fb.gmuid);
+  t->SetBranchAddress("gtqual",&fb.gtqual);
+  t->SetBranchAddress("w8mu",&fb.w8mu);
+  t->SetBranchAddress("w8tr",&fb.w8tr);
+  t->SetBranchAddress("tm",&fb.tm);
+  t->SetBranchAddress("procid",&fb.procid);
+  t->SetBranchAddress("m",&fb.m);
+  t->SetBranchAddress("cm",&fb.cm);
+  t->SetBranchAddress("pt",&fb.pt);
+  t->SetBranchAddress("phi",&fb.phi);
+  t->SetBranchAddress("eta",&fb.eta);
+  t->SetBranchAddress("cosa",&fb.cosa);
+  t->SetBranchAddress("alpha",&fb.alpha);
+  t->SetBranchAddress("iso",&fb.iso);
+  t->SetBranchAddress("chi2",&fb.chi2);
+  t->SetBranchAddress("dof",&fb.dof);
+  t->SetBranchAddress("prob",&fb.pchi2dof);
+  t->SetBranchAddress("fls3d",&fb.fls3d);
+  t->SetBranchAddress("fl3d",&fb.fl3d);
+  t->SetBranchAddress("fl3dE",&fb.fl3dE);
+  t->SetBranchAddress("m1pt",&fb.m1pt);
+  t->SetBranchAddress("m1eta",&fb.m1eta);
+  t->SetBranchAddress("m1phi",&fb.m1phi);
+  t->SetBranchAddress("m1q",&fb.m1q);
+  t->SetBranchAddress("m2pt",&fb.m2pt);
+  t->SetBranchAddress("m2eta",&fb.m2eta);
+  t->SetBranchAddress("m2phi",&fb.m2phi);
+  t->SetBranchAddress("m2q",&fb.m2q);
+  t->SetBranchAddress("docatrk",&fb.docatrk);
+
+  t->SetBranchAddress("g1pt",&fb.g1pt);
+  t->SetBranchAddress("g2pt",&fb.g2pt);
+  t->SetBranchAddress("g1eta",&fb.g1eta);
+  t->SetBranchAddress("g2eta",&fb.g2eta);
+  if (string::npos != mode.find("No")) {
+    if (string::npos != mode.find("Mc")) {
+      t->SetBranchAddress("g3pt",&fb.g3pt);
+      t->SetBranchAddress("g3eta",&fb.g3eta);
+    }
+    t->SetBranchAddress("kpt",&fb.k1pt);
+    t->SetBranchAddress("keta",&fb.k1eta);
+    t->SetBranchAddress("mpsi",&fb.mpsi);
+    t->SetBranchAddress("psipt",&fb.psipt); //FIXME
+  }
+
+  if (string::npos != mode.find("Cs")) {
+    if (string::npos != mode.find("Mc")) {
+      t->SetBranchAddress("g3pt",&fb.g3pt);
+      t->SetBranchAddress("g3eta",&fb.g3eta);
+      t->SetBranchAddress("g4pt",&fb.g4pt);
+      t->SetBranchAddress("g4eta",&fb.g4eta);
+    }
+    t->SetBranchAddress("psipt",&fb.psipt);   //FIXME
+    t->SetBranchAddress("mpsi",&fb.mpsi);
+    t->SetBranchAddress("mkk",&fb.mkk);
+    t->SetBranchAddress("dr",&fb.dr);
+    t->SetBranchAddress("k1pt",&fb.k1pt);
+    t->SetBranchAddress("k1eta",&fb.k1eta);
+    t->SetBranchAddress("k2pt",&fb.k2pt);
+    t->SetBranchAddress("k2eta",&fb.k2eta);
+  } else {
+    fb.mkk = 999.;
+    fb.dr = 999.;
+  }
+
+  if (string::npos != mode.find("DstarPi")) {
+    t->SetBranchAddress("md0",&fb.md0);
+    t->SetBranchAddress("dm",&fb.dm);
+    t->SetBranchAddress("ptd0",&fb.ptd0);
+  }
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotClass::candAnalysis(int mode) {
+  cuts *pCuts(0); 
+  fChan = detChan(fb.m1eta, fb.m2eta); 
+
+  bool bp2jpsikp(false), bs2jpsiphi(false); 
+  if (10 == mode)  bp2jpsikp = true; 
+  if (20 == mode)  bs2jpsiphi = true; 
+  
+  // -- reset all
+  fBDT = -99.; 
+  fGoodHLT = fGoodMuonsID = fGoodMuonsPt = fGoodMuonsEta = fGoodTracks = fGoodTracksPt = fGoodTracksEta = false;
+  fGoodQ = fGoodPvAveW8 = fGoodMaxDoca = fGoodIp = fGoodIpS = fGoodPt = fGoodEta = fGoodAlpha =  fGoodChi2 = fGoodFLS = false;   
+  fGoodCloseTrack = fGoodIso = fGoodDocaTrk = fGoodLastCut = fPreselection = false;
+
+  if (!fIsMC) {
+    if (!fb.json) {
+      return;
+    }
+  }
+
+  if (fIsMC && bp2jpsikp) {
+    // gen-level cuts for Bu2JpsiKp
+    if (fb.g1pt < 3.5) return;
+    if (fb.g2pt < 3.5) return;
+    if (TMath::Abs(fb.g3eta) > 2.5) return;
+    if (fb.g3pt < 0.4) return;
+  }
+  
+  if (fIsMC && bs2jpsiphi) {
+    if (TMath::Abs(fb.g3eta) > 2.5) return;
+    if (TMath::Abs(fb.g4eta) > 2.5) return;
+    // gen-level cuts for Bs2JpsiPhi
+    if (fb.g1pt < 3.5) return;
+    if (fb.g2pt < 3.5) return;
+    if (fb.g3pt < 0.4) return;
+    if (fb.g4pt < 0.4) return;
+  }
+
+  if (bp2jpsikp) {
+    if (TMath::Abs(fb.k1eta) > 2.4) return;
+    if (fb.k1pt < 0.5) return;
+  }
+  if (bs2jpsiphi) {
+    if (TMath::Abs(fb.k1eta) > 2.4) return;
+    if (TMath::Abs(fb.k2eta) > 2.4) return;
+    if (fb.k1pt < 1.) return;
+    if (fb.k2pt < 1.) return;
+    if (fb.dr >0.3) return;
+    if (fb.mkk < 1.005) return;
+    if (fb.mkk > 1.045) return;
+  }
+
+  if (bs2jpsiphi || bp2jpsikp) {
+    if (fb.mpsi > 3.2) return;
+    if (fb.mpsi < 3.0) return;
+    // -- cowboy veto 
+    if (fDoApplyCowboyVeto && fb.cb) return;
+    if (fb.psipt < 7) return;
+  } 
+
+  hMassPiPi->Fill(recalcMass(MPION, MPION)); 
+  hMassKPi->Fill(recalcMass(MKAON, MPION)); 
+  hMassPiK->Fill(recalcMass(MKAON, MKAON)); 
+
+  if (fChan > -1) {
+    pCuts = fCuts[fChan]; 
+  } else {
+    //       cout << "event " << jentry << ", fChan = " << fOver << " for eta(B) = " << beta 
+    // 	   << " m1eta = " << bm1eta << " m2eta = " << bm2eta
+    // 	   << endl;
+    return;
+  }
+
+  if (fDoUseBDT) {
+    // -- skip inverted isolation events
+    if (0 == mode && 5.2 < fb.m && fb.m < 5.45 && fb.iso < 0.7) return; 
+    
+    if (TMath::IsNaN(fb.fls3d)) return;
+    calcBDT();
+  }
+
+  fGoodMuonsID    = fb.gmuid;
+  fGoodMuonsPt    = ((fb.m1pt > pCuts->m1pt)  && (fb.m2pt > pCuts->m2pt));
+  fGoodMuonsEta   = ((fb.m1eta > -2.4) && (fb.m1eta < 2.4) && (fb.m2eta > -2.4) && (fb.m2eta < 2.4));
+  fGoodTracks     = fb.gtqual;
+  fGoodTracksPt   = ((fb.m1pt > 3.0) && (fb.m1pt < 100.0) && (fb.m2pt > 3.0) && (fb.m2pt < 100.));
+  fGoodTracksEta  = ((fb.m1eta > -2.4) && (fb.m1eta < 2.4) && (fb.m2eta > -2.4) && (fb.m2eta < 2.4));
+  
+  fGoodQ          = (fb.m1q*fb.m2q < 0); 
+  fGoodPvAveW8    = (fb.pvw8 > 0.7);
+  fGoodMaxDoca    = (TMath::Abs(fb.maxdoca) < pCuts->maxdoca); 
+  fGoodIp         = (TMath::Abs(fb.pvip) < pCuts->pvip); 
+  fGoodIpS        = (TMath::Abs(fb.pvips) < pCuts->pvips); 
+  
+  fGoodPt         = (fb.pt > pCuts->pt);
+  fGoodEta        = ((fb.eta > -24.0) && (fb.eta < 24.0)); 
+  fGoodAlpha      = (fb.alpha < pCuts->alpha); 
+  fGoodChi2       = (fb.chi2/fb.dof < pCuts->chi2dof);
+  fGoodFLS        = (fb.fls3d > pCuts->fls3d);
+  if (TMath::IsNaN(fb.fls3d)) fGoodFLS = false;
+  
+  fGoodCloseTrack = (fb.closetrk < pCuts->closetrk); 
+  fGoodIso        = (fb.iso > pCuts->iso); 
+  fGoodDocaTrk    = (fb.docatrk > pCuts->docatrk);
+  fGoodLastCut    = true; 
+
+  // -- different preselection cuts used for the plotting of various (sbs) distributions
+  fGoodHLT        = fb.hlt && fGoodMuonsID && (fb.fls3d > 4) && (fb.chi2/fb.dof < 5) && (fBDT > -1.);
+  fPreselection   = ((fBDT > 0.) && fb.hlt && fGoodMuonsID); 
+  if (bs2jpsiphi) {
+    fGoodHLT      = fb.hlt && fGoodMuonsID && fGoodMuonsPt 
+      && (fb.fls3d > 5) && (fb.alpha < 0.1)&& (fb.chi2/fb.dof < 4) 
+      && (fb.iso > 0.5) && (fb.closetrk < 5)
+      && (fBDT > -1.)
+      ;
+  }
+
+  fAnaCuts.update(); 
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotClass::calcBDT() {
+  fBDT = -99.;
+  //??  if (5 == mode && 5.2 < mass && mass < 5.45 && fb.iso < 0.7) continue; 
+  if (fb.iso < 0.7) return;
+  if (fb.pt > 100) return;
+  if (fb.pt < 6) return;
+  if (fb.m1pt < 4) return;
+  if (fb.m2pt < 4) return;
+  if (fb.fl3d > 1.5) return;
+  if (fb.m > 5.9) return;
+  if (fb.m < 4.9) return;
+  
+  //   if (!fb.hlt) return;
+  //   if (!fb.gmuid) return;
+  
+  frd.pt = fb.pt; 
+  frd.eta = fb.eta; 
+  frd.m1eta = fb.m1eta; 
+  frd.m2eta = fb.m2eta; 
+  frd.m1pt = fb.m1pt; 
+  frd.m2pt = fb.m2pt;
+  frd.fls3d = fb.fls3d; 
+  frd.alpha = fb.alpha; 
+  frd.maxdoca = fb.maxdoca;
+  frd.pvip = fb.pvip; 
+  frd.pvips = fb.pvips; 
+  frd.iso = fb.iso; 
+  frd.docatrk = fb.docatrk; 
+  frd.chi2dof = fb.chi2/fb.dof; 
+  frd.closetrk = fb.closetrk; 
+  
+  frd.m  = fb.m; 
+  if (0 == fb.evt%2) {
+    fBDT   = fReaderEven[fChan]->EvaluateMVA("BDT"); 
+  } else {
+    fBDT   = fReaderOdd[fChan]->EvaluateMVA("BDT"); 
+  }
+}
+
+
+// ----------------------------------------------------------------------
+TMVA::Reader* setupReader(string xmlFile, readerData &rd) {
+  TMVA::Reader *reader = new TMVA::Reader( "!Color:!Silent" );
+  
+  TString dir    = "weights/";
+  TString methodNameprefix = "BDT";
+  //  TString methodName = TString(fBdt) + TString(" method");
+  //  TString weightfile = dir + fBdt + "_" + methodNameprefix + TString(".weights.xml");
+  TString weightfile = xmlFile;
+
+  // -- read in variables from weight file
+  vector<string> allLines; 
+  char  buffer[2000];
+  cout << "setupReader, open file " << weightfile << endl;
+  ifstream is(weightfile); 
+  while (is.getline(buffer, 2000, '\n')) allLines.push_back(string(buffer));
+  int ok(0), nvars(-1), ivar(-1); 
+  string::size_type m1, m2;
+  string stype; 
+  cout << "  read " << allLines.size() << " lines " << endl;
+  for (unsigned int i = 0; i < allLines.size(); ++i) {
+    // -- parse and add variables
+    if (string::npos != allLines[i].find("Variables NVar")) {
+      m1 = allLines[i].find("=\""); 
+      stype = allLines[i].substr(m1+2, allLines[i].size()-m1-2-2); 
+      cout << "  " << stype << " variables" << endl;
+      nvars = atoi(stype.c_str());
+      if (-1 == nvars) continue;
+      for (unsigned int j = i+1; j < i+nvars+1; ++j) {
+	m1 = allLines[j].find("Expression=\"")+10; 
+	m2 = allLines[j].find("\" Label=\"");
+	stype = allLines[j].substr(m1+2, m2-m1-2); 
+	//	cout << "ivar " << j-i << " variable string: ->" << stype << "<-" << endl;
+	if (stype == "m1pt") {
+	  cout << "  adding m1pt" << endl;
+	  reader->AddVariable( "m1pt", &rd.m1pt);
+	}
+	if (stype == "m2pt") {
+	  cout << "  adding m2pt" << endl;
+	  reader->AddVariable( "m2pt", &rd.m2pt);
+	}
+	if (stype == "m1eta") {
+	  cout << "  adding m1eta" << endl;
+	  reader->AddVariable( "m1eta", &rd.m1eta);
+	}
+	if (stype == "m2eta") {
+	  reader->AddVariable( "m2eta", &rd.m2eta);
+	  cout << "  adding m2eta" << endl;
+	}
+	if (stype == "pt") {
+	  cout << "  adding pt" << endl;
+	  reader->AddVariable( "pt", &rd.pt);
+	}
+	if (stype == "eta") {
+	  cout << "  adding eta" << endl;
+	  reader->AddVariable( "eta", &rd.eta);
+	}
+	if (stype == "fls3d") {
+	  cout << "  adding fls3d" << endl;
+	  reader->AddVariable( "fls3d", &rd.fls3d);
+	}
+	if (stype == "alpha") {
+	  cout << "  adding alpha" << endl;
+	  reader->AddVariable( "alpha", &rd.alpha);
+	}
+	if (stype == "maxdoca") {
+	  cout << "  adding maxdoca" << endl;
+	  reader->AddVariable( "maxdoca", &rd.maxdoca);
+	}
+	if (stype == "pvip") {
+	  cout << "  adding pvip" << endl;
+	  reader->AddVariable( "pvip", &rd.pvip);
+	}
+	if (stype == "pvips") {
+	  cout << "  adding pvips" << endl;
+	  reader->AddVariable( "pvips", &rd.pvips);
+	}
+	if (stype == "iso") {
+	  cout << "  adding iso" << endl;
+	  reader->AddVariable( "iso", &rd.iso);
+	}
+	if (stype == "docatrk") {
+	  cout << "  adding docatrk" << endl;
+	  reader->AddVariable( "docatrk", &rd.docatrk);
+	}
+	if (stype == "closetrk") {
+	  cout << "  adding closetrk" << endl;
+	  reader->AddVariable( "closetrk", &rd.closetrk);
+	}
+	if (stype == "chi2/dof") {
+	  cout << "  adding chi2/dof" << endl;
+	  reader->AddVariable( "chi2dof := chi2/dof", &rd.chi2dof);
+	}
+      }
+      break;
+    }
+  }
+  
+  nvars = -1; 
+  for (unsigned int i = 0; i < allLines.size(); ++i) {
+    // -- parse and add spectators
+    if (string::npos != allLines[i].find("Spectators NSpec")) {
+      m1 = allLines[i].find("=\""); 
+      stype = allLines[i].substr(m1+2, allLines[i].size()-m1-2-2); 
+      //      cout << "==> " << stype << endl;
+      nvars = atoi(stype.c_str());
+      if (-1 == nvars) continue;
+      for (unsigned int j = i+1; j < i+nvars+1; ++j) {
+	m1 = allLines[j].find("Expression=\"")+10; 
+	m2 = allLines[j].find("\" Label=\"");
+	stype = allLines[j].substr(m1+2, m2-m1-2); 
+	cout << "ivar " << j-i << " spectator string: ->" << stype << "<-" << endl;
+	if (stype == "m") {
+	  cout << "  adding m as spectator" << endl;
+	  reader->AddSpectator( "m", &rd.m);  
+	}
+      }
+      break;
+    }
+  }
+
+  // --- Book the MVA methods
+  reader->BookMVA("BDT", weightfile); 
+  return reader; 
+}
+
+
+// ----------------------------------------------------------------------
+double plotClass::recalcMass(double m1, double m2) {
+  
+  TLorentzVector p1, p2; 
+  p1.SetPtEtaPhiM(fb.k1pt, fb.k1eta, fb.k1phi, m1);
+  p2.SetPtEtaPhiM(fb.k2pt, fb.k2eta, fb.k2phi, m2);
+  
+  TLorentzVector p0 = p1 + p2; 
+  
+  return p0.M();
+  
 }

@@ -18,6 +18,11 @@ plotReducedTree::plotReducedTree(const char *files, const char *cuts, const char
 
   fDoPrint = true; 
 
+  string hfname  = fDirectory + "/anaBmm.plotReducedTree." + fSuffix + ".root";
+  cout << "fHistFile: " << hfname << endl;
+  //  if (fHistFile) fHistFile->Close();
+  fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
+
   fNumbersFileName = fDirectory + "/anaBmm.plotReducedTree." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);

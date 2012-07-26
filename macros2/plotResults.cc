@@ -23,75 +23,75 @@ plotResults::plotResults(const char *files, const char *cuts, const char *dir, i
 
   fDoPrint = true; 
 
+  string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
+  //  if (fHistFile) fHistFile->Close();
+  cout << "open fHistFile: " << hfname << " RECREATE" << endl;
+  fHistFile = new TFile(hfname.c_str(), "RECREATE");
+  cout << "__1 IsWritable? " << fHistFile->IsWritable() << endl;
+
+  fF["SgData"]->cd();
+  TH1D *h1 = new TH1D("hasd", "", 100, 0., 100.); 
+  h1->SetDirectory(fHistFile); 
+  cout << "__2 IsWritable? " << fHistFile->IsWritable() << endl;
+  //   fHistFile->Write(); 
+  //   fHistFile->Close();
+  //   fHistFile = 0; 
+  
   fNumbersFileName = fDirectory + "/anaBmm.plotResults." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);
 
   printCuts(cout); 
 
-  fDoUseBDT = false; 
+  fDoUseBDT = true; 
   fDoApplyCowboyVeto = false;   
   fDoApplyCowboyVetoAlsoInSignal = false; 
   fInvertedIso = false; 
   fNormProcessed = false; 
+  cout << "__3 IsWritable? " << fHistFile->IsWritable() << endl;
 }
 
 // ----------------------------------------------------------------------
 plotResults::~plotResults() {
-  fHistFile->Write();
-  fHistFile->Close();
+  cout << "plotResults dtor: " << fHistFile << endl;
+  if (fHistFile) {
+    fHistFile->cd();
+    //    fHistFile->SetWritable(); 
+    cout << "__ IsWritable? " << fHistFile->IsWritable() << endl;
+    fHistFile->Write();
+    fHistFile->Close();
+  }
 }
 
 
 // ----------------------------------------------------------------------
 void plotResults::makeAll(int channels) {
+
+  cout << "__ IsWritable? " << fHistFile->IsWritable() << endl;
+  return;
+
+//   fls3dVsX("pt", "m1pt>4.5&&m2pt>4.2&&hlt", "fls3d_prof_pt.pdf");
+//   fls3dVsX("pt", "m1pt>4.5&&m2pt>4.2&&hlt&&docatrk>0.015", "fls3d_prof_docatrk_pt.pdf");
   
-//   fNumbersNo[0]->effTot = 0.0011;
-//   fNumbersNo[1]->effTot = 0.00032;
-//   fNumbersNo[0]->fitYield = 82712;
-//   fNumbersNo[1]->fitYield = 23810;
+//   fls3dVsX("abs(eta)", "m1pt>4.5&&m2pt>4.2&&hlt&&docatrk>0.015", "fls3d_prof_docatrk_eta.pdf");
+//   fls3dVsX("abs(eta)", "m1pt>4.5&&m2pt>4.2&&hlt", "fls3d_prof_eta.pdf");
 
-// //   cout << fNumbersNo[0]->effTot << " +/- " << fNumbersNo[0]->effTotTE << endl;
-// //   computeErrors(fNumbersNo); 
-// //   cout << fNumbersNo[0]->effTot << " +/- " << fNumbersNo[0]->effTotTE << endl;
+//   fls3dEfficiency("1", "fls3dStudy_muoncuts.pdf");
+//   fls3dEfficiency("alpha<0.05", "fls3dStudy_alpha_muoncuts.pdf");
+//   fls3dEfficiency("alpha<0.05&&docatrk>0.015", "fls3dStudy_docatrk_alpha_muoncuts.pdf");
 
-// //   return;
+//   if (channels & 4) invertedIsolationStudy();
 
-//   zone(2,2);
-
-//   pair<TH1D*, TH1D*> bothH = singleRelativeYield("bgBd2PiMuNu");
-//   c0->cd(1);  bothH.first->Draw();
-//   c0->cd(2);  bothH.second->Draw();
-//   return;
-
-//   bothH = singleRelativeYield("bgBs2KMuNu");
-//   c0->cd(3);  bothH.first->Draw();
-//   c0->cd(4);  bothH.second->Draw();
-  
-//   return;
-
-  fls3dVsX("pt", "m1pt>4.5&&m2pt>4.2&&hlt", "fls3d_prof_pt.pdf");
-  fls3dVsX("pt", "m1pt>4.5&&m2pt>4.2&&hlt&&docatrk>0.015", "fls3d_prof_docatrk_pt.pdf");
-  
-  fls3dVsX("abs(eta)", "m1pt>4.5&&m2pt>4.2&&hlt&&docatrk>0.015", "fls3d_prof_docatrk_eta.pdf");
-  fls3dVsX("abs(eta)", "m1pt>4.5&&m2pt>4.2&&hlt", "fls3d_prof_eta.pdf");
-
-  fls3dEfficiency("1", "fls3dStudy_muoncuts.pdf");
-  fls3dEfficiency("alpha<0.05", "fls3dStudy_alpha_muoncuts.pdf");
-  fls3dEfficiency("alpha<0.05&&docatrk>0.015", "fls3dStudy_docatrk_alpha_muoncuts.pdf");
-
-  if (channels & 4) invertedIsolationStudy();
-
-  zone(1);
-  if (channels & 1) {
-    fNormProcessed = false; 
-    fDoUseBDT = false; 
-    fDoApplyCowboyVeto = false;   
-    fDoApplyCowboyVetoAlsoInSignal = false;   
-    computeNormUL();
-    computeCsBF();
-    acceptancePerProcess();
-  }
+//   zone(1);
+//   if (channels & 1) {
+//     fNormProcessed = false; 
+//     fDoUseBDT = false; 
+//     fDoApplyCowboyVeto = false;   
+//     fDoApplyCowboyVetoAlsoInSignal = false;   
+//     computeNormUL();
+//     computeCsBF();
+//     acceptancePerProcess();
+//   }
 
   zone(1);
   if (channels & 2) {
@@ -101,7 +101,7 @@ void plotResults::makeAll(int channels) {
     fDoApplyCowboyVetoAlsoInSignal = false;   
     computeNormUL();
     computeCsBF();
-    //    acceptancePerProcess();
+    //acceptancePerProcess();
   }
 
 }
@@ -298,7 +298,7 @@ void plotResults::scaledHist(int mode) {
       h->Scale(yield/tot);
     }
     h->SetDirectory(fHistFile);
-    h->Write();
+    //    h->Write();
   }
 }
 
@@ -1060,6 +1060,7 @@ void plotResults::rareBg(std::string mode) {
     TH1D *hRare[2]; 
     double tot0, tot, bd, bs, efftot, pss, pdd;
     
+    fRareName = imap->first; 
     loopTree(99); 
 
     for (int ichan = 0; ichan < 2; ++ichan) {
@@ -1172,7 +1173,7 @@ void plotResults::rareBg(std::string mode) {
   legg->SetHeader("CMS simulation"); 
   legg->Draw(); 
   hhRareBg0->Draw("same");
-  stamp(0.18, "CMS, 5 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+  stamp(0.18, fStampString, 0.67, fStampCms); 
   double size = tl->GetTextSize();
   tl->SetTextSize(0.07); 
   tl->DrawLatex(0.25, 0.8, "Barrel");   
@@ -1182,7 +1183,6 @@ void plotResults::rareBg(std::string mode) {
   if (fDoUseBDT) pdfname = Form("%s/%s_bdt_rare0.pdf", fDirectory.c_str(), fSuffix.c_str());
   else  pdfname = Form("%s/%s_cnc_rare0.pdf", fDirectory.c_str(), fSuffix.c_str());
   if (mode != "nada") pdfname = Form("%s/%s_cnc_%s_0.pdf", fDirectory.c_str(), mode.c_str(), fSuffix.c_str());
-  //  stamp(0.2, "CMS, 4.9 fb^{-1}", 0.65, "#sqrt{s} = 7 TeV"); 
   if (fDoPrint) {
     if (c0) c0->SaveAs(pdfname.c_str());
   }
@@ -1198,8 +1198,7 @@ void plotResults::rareBg(std::string mode) {
   if (fDoUseBDT) pdfname = Form("%s/%s_bdt_rare1.pdf", fDirectory.c_str(), fSuffix.c_str());
   else  pdfname = Form("%s/%s_cnc_rare1.pdf", fDirectory.c_str(), fSuffix.c_str());
   if (mode != "nada") pdfname = Form("%s/%s_cnc_%s_1.pdf", fDirectory.c_str(), mode.c_str(), fSuffix.c_str());
-  //  stamp(0.2, "CMS, 4.9 fb^{-1}", 0.65, "#sqrt{s} = 7 TeV"); 
-  stamp(0.18, "CMS, 5 fb^{-1}", 0.67, "#sqrt{s} = 7 TeV"); 
+  stamp(0.18, fStampString, 0.67, fStampCms); 
   tl->SetTextSize(0.07); 
   tl->DrawLatex(0.25, 0.8, "Endcap");   
   tl->SetTextSize(size); 
@@ -1243,9 +1242,9 @@ void plotResults::rareBg(std::string mode) {
   TDirectory *pD = gFile; 
   fHistFile->cd();
   bRare->SetDirectory(gDirectory);
-  bRare->Write(); 
+  //  bRare->Write(); 
   eRare->SetDirectory(gDirectory);
-  eRare->Write(); 
+  //  eRare->Write(); 
   pD->cd();
 
   fSuffix = cache; 
