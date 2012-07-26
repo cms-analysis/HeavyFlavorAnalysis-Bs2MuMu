@@ -302,6 +302,14 @@ void candAna::candAnalysis() {
     p2 = fpEvt->getSigTrack(fpCand->fSig2); 
   }
 
+  if (fpCand->fType == 300030) {
+    if (fpCand->fDau1 < 0 || fpCand->fDau1 > fpEvt->nCands()) return;
+    TAnaCand *pD = fpEvt->getCand(fpCand->fDau1); 
+    pD = fpEvt->getCand(pD->fDau1); 
+    p1 = fpEvt->getSigTrack(pD->fSig1); 
+    p2 = fpEvt->getSigTrack(pD->fSig2); 
+  }
+  
   // -- switch to RecTracks!
   ps1= p1; 
   p1 = fpEvt->getRecTrack(ps1->fIndex);
@@ -2509,14 +2517,12 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
   fCandI0trk = 0; 
   fCandI1trk = 0; 
   fCandI2trk = 0; 
+
+  getSigTracks(cIdx, pC); 
+  for (unsigned int i = 0; i < cIdx.size(); ++i) {
+    pT = fpEvt->getRecTrack(i); 
  
-  if (verbose) cout << "Looking at cand " << pC->fType << " with " << pC->fSig2 - pC->fSig1 + 1 << " sig tracks" 
-		    << " from PV = " << pvIdx
-		    << endl;
-  for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
-    pT = fpEvt->getSigTrack(i); 
     if (verbose) cout << " track idx = " << pT->fIndex << " with ID = " << pT->fMCID << endl;
-    cIdx.push_back(pT->fIndex); 
     candPtScalar += pT->fPlab.Perp(); 
     if (verbose) {
       int tIdx = fpEvt->getRecTrack(pT->fIndex)->fPvIdx;
@@ -2934,4 +2940,31 @@ int candAna::nearestPV(int pvIdx, double maxDist) {
   } else {
     return -1;
   }
+}
+
+
+// ----------------------------------------------------------------------
+void candAna::getSigTracks(vector<int> &v, TAnaCand *pC) {
+  TAnaCand *pD; 
+  TAnaTrack *pT; 
+  vector<int> bla; 
+
+  // -- loop over daughters
+  if (pC->fDau1 > -1) {
+    for (int j = pC->fDau1; j <= pC->fDau2; ++j) {
+      pD = fpEvt->getCand(j); 
+      getSigTracks(bla, pD); 
+    }
+
+    for (unsigned j = 0; j < bla.size(); ++j) v.push_back(bla[j]);
+  }
+
+  // -- add direct sigtracks
+  for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
+    pT = fpEvt->getSigTrack(i); 
+    if (v.end() == find(v.begin(), v.end(), pT->fIndex)) {
+      v.push_back(pT->fIndex); 
+    }
+  }
+
 }

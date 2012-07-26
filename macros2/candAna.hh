@@ -54,6 +54,7 @@ public:
   virtual void        efficiencyCalculation();
   
   virtual int         nearestPV(int pvIdx, double maxDist = 99.);
+  virtual void        getSigTracks(std::vector<int> &v, TAnaCand *pC);
   virtual double      constrainedMass();
   virtual void        runRange();
   virtual void        genMatch(); 
