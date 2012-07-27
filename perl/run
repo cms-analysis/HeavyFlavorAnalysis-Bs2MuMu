@@ -63,6 +63,7 @@ my $SCRAM = $ENV{'SCRAM_ARCH'};
 my $SRMCP = "\"srmcp -2\"";          
 if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 -globus_tcp_port_range 20000,25000\"";}
 if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 --streams_num=1\"";}
+if ($opt_m eq "batch") {$SRMCP = "\"lcg-cp -b -D srmv2\"";}
 
 if (!-e "$glite") {
     print "$glite does not exist, using /shome/ursl/grid/glite.conf\n";

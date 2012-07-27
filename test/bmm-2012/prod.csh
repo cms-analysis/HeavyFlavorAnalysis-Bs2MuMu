@@ -56,7 +56,7 @@ tar zxf ../../$JOB.tar.gz
 cd AnalysisDataFormats/HeavyFlavorObjects
 make 
 cd - 
-scramv1 b -j4
+scramv1 b 
 mv ../../$JOB.py .
 
 
@@ -78,12 +78,12 @@ ls -rtl
 # ----------------------------------------------------------------------
 echo "--> Save output to SE: $STORAGE1/$FILE1"
 
-echo srmrm     "$STORAGE1/$FILE1"
-srmrm          "$STORAGE1/$FILE1"
-echo $SRMCP    file:///`pwd`/$FILE1 "$STORAGE1/$FILE1"
-$SRMCP         file:///`pwd`/$FILE1 "$STORAGE1/$FILE1"
-echo srmls     "$STORAGE1/$FILE1"
-srmls          "$STORAGE1/$FILE1"
+echo lcg-del -b -D srmv2 -l  "$STORAGE1/$FILE1"
+lcg-del -b -D srmv2 -l"$STORAGE1/$FILE1"
+echo $SRMCP    $FILE1 "$STORAGE1/$FILE1"
+$SRMCP         $FILE1 "$STORAGE1/$FILE1"
+echo lcg-ls -b -D srmv2 -l  "$STORAGE1/$FILE1"
+lcg-ls -b -D srmv2 -l  "$STORAGE1/$FILE1"
 
 date
 
