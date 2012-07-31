@@ -68,6 +68,7 @@ while(<IN>) {
     if (-e "$mdir/$logfile") {
 	$ok = parseOutput("$mdir/$logfile"); 
 	($rsize, $lsize, $srmFile) = rootFileSize("$mdir/$logfile"); 
+	$lsize = -s "$mdir/$logfile";
     } else {
 	if (-e "$mdir/jobs.list") {
 	    $ok = "waiting";
@@ -80,7 +81,7 @@ while(<IN>) {
     if ($ok eq "running" || $ok eq "waiting") {
 	printf("%7i %10s %30s; %s\n", $sgeNumber, $jname, $mdir, $ok);
     } else {
-	printf("%7i %10s; %s/root: %10i, log: %7i. %30s (%s)\n", $sgeNumber, $jname, $ok, $rsize, $lsize, $mdir, $workerNode);
+	printf("%7i %10s; %s/root: %10i, log: %7i %30s (%s)\n", $sgeNumber, $jname, $ok, $rsize, $lsize, $mdir, $workerNode);
     }
 
     if ($ok =~ /no problems seen/) { 
@@ -163,26 +164,22 @@ sub rootFileSize {
     my $result  = 0; 
     my $logsize = 0; 
 
+#   284306076 /pnfs/psi.ch/cms/trivcat/store/user/ursl/production/Fall11/Bd2KPi2/Bd2KPi-gen-922000.root
+# -rw-r--r--   1     2     2 2698346               ONLINE /pnfs/psi.ch/cms/trivcat/store/user/ursl/test.root
+
     open(LIN, "$llogfile") || die "Cannot open $llogfile\n";
     my $lfn = ""; 
     # print "logfile: $llogfile\n";
+    my $gotRoot = 0; 
+    my $gotLog = 0; 
     while(<LIN>) {
 	if (/--> Save output to SE:/) {
 	    ($bla, $lfn) = split(/SFN=/); 
 	    chop($lfn); 
 	    my @tmp = split(/\//, $lfn); $rfn = pop(@tmp); 
-	    # print "lfn: $lfn\n";
-	    # print "rfn: $rfn\n";
+	    #print "lfn: $lfn\n";
+	    #print "rfn: $rfn\n";
 	    ($logn = $lfn) =~ s/root$/log/;
-	}
-
-
-	if ($lfn ne "" && /([0-9]*) *$lfn/) {
-	    if ($1 > 0) {
-		$result = $1; 
-		# print "-> $result\n";
-		# last; 
-	    }
 	}
 
 
@@ -190,9 +187,31 @@ sub rootFileSize {
 	    if ($1 > 0) {
 		$logsize = $1; 
 		# print "-> $logsize\n";
-		# last; 
+		$gotLog = 1; 
+		if ($gotRoot) {last; }
 	    }
 	}
+
+	if ($lfn ne "" && /ONLINE $lfn/) {
+	    ($stuff, $junk) = split(/ONLINE/); 
+	    $stuff =~ s/\s{1,99}/\ /g;
+	    my @tmpstuff = split(/\ /, $stuff);
+	    $result = pop(@tmpstuff);
+	    #print "result = $result\n";
+	    $gotRoot = 1; 
+	    if ($gotLog) {last; }
+	}
+
+	if ($lfn ne "" && /([0-9]*) *$lfn/) {
+	    if ($1 > 0) {
+		$result = $1; 
+		# print "-> $result\n";
+		$gotRoot = 1; 
+		if ($gotLog) {last; }
+	    }
+	}
+
+
     }
     close(LIN); 
 

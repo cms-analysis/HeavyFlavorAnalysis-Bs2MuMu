@@ -74,8 +74,6 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
 
   fFiles = files; 
 
-  cout << "__plotClass_ IsWritable? " << (fHistFile?fHistFile->IsWritable()?"1":"0":"n/a") << endl;
-
   delete gRandom;
   gRandom = (TRandom*) new TRandom3;
 
@@ -274,14 +272,11 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
   dumpCutNames("candAnaMuMu/hcuts");
   fTEX.close();
 
-  cout << "__plotClass_ IsWritable? " << (fHistFile?fHistFile->IsWritable()?"1":"0":"n/a") << endl;
-  
 }
 
 // ----------------------------------------------------------------------
 plotClass::~plotClass() {
   cout << "plotClass dtor" << endl;
-  cout << "__plotClass_ IsWritable? " << (fHistFile?fHistFile->IsWritable()?"1":"0":"n/a") << " " << endl;
 }
 
 

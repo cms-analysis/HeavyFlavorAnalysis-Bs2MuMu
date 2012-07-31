@@ -130,7 +130,7 @@ if ($opt_t) {
 my $crash = ""; 
 if ($opt_C) {$crash = "-C";}
 
-my $srmcmd  = "srmcp -2 --streams_num=1";
+my $srmcmd  = "lcg-cp -b -D srmv2";
 my $dcap    = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
 my $scratch = "/shome/$user/scratch"; # /scratch is likely too small
 my $srm     = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store";
@@ -176,14 +176,14 @@ if ($opt_h) {
 	    if ($opt_d) {
 		# print "cp $rootfiles[0] $scratch/$output \n";
 		# print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";		
-		print "$srmcmd $storage/$rootfiles[0] file:///$scratch/$output \n";
+		print "$srmcmd $storage/$rootfiles[0] $scratch/$output \n";
 	    } else {
 		# print "cp $rootfiles[0] $scratch/$output \n";
 		# system("/bin/cp $rootfiles[0] $scratch/$output");
                 # print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";
                 # system("$srmcmd $storage/$rootfiles[0] $storage/$output");
 		print "$srmcmd $storage/$rootfiles[0] $scratch/$output \n";
-		system("$srmcmd $storage/$rootfiles[0] file:///$scratch/$output");
+		system("$srmcmd $storage/$rootfiles[0] $scratch/$output");
 	    }	    
 	} elsif ($#rootfiles > 0) {
 	    @rootfiles = grep(s/.*\/trivcat/$dcap/, @rootfiles); 
@@ -195,7 +195,7 @@ if ($opt_h) {
 		if (-e "$scratch/$output") {unlink("$scratch/$output"); }
 		system("hadd $scratch/$output @rootfiles");
 		system("srmrm $storage/$class/$output");
-		system("$srmcmd file:///$scratch/$output $storage/$class/$output");
+		system("$srmcmd $scratch/$output $storage/$class/$output");
 	    }
 	}
     }

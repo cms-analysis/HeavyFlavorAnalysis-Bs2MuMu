@@ -27,15 +27,10 @@ plotResults::plotResults(const char *files, const char *cuts, const char *dir, i
   //  if (fHistFile) fHistFile->Close();
   cout << "open fHistFile: " << hfname << " RECREATE" << endl;
   fHistFile = new TFile(hfname.c_str(), "RECREATE");
-  cout << "__1 IsWritable? " << fHistFile->IsWritable() << endl;
 
   fF["SgData"]->cd();
   TH1D *h1 = new TH1D("hasd", "", 100, 0., 100.); 
   h1->SetDirectory(fHistFile); 
-  cout << "__2 IsWritable? " << fHistFile->IsWritable() << endl;
-  //   fHistFile->Write(); 
-  //   fHistFile->Close();
-  //   fHistFile = 0; 
   
   fNumbersFileName = fDirectory + "/anaBmm.plotResults." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
@@ -48,7 +43,6 @@ plotResults::plotResults(const char *files, const char *cuts, const char *dir, i
   fDoApplyCowboyVetoAlsoInSignal = false; 
   fInvertedIso = false; 
   fNormProcessed = false; 
-  cout << "__3 IsWritable? " << fHistFile->IsWritable() << endl;
 }
 
 // ----------------------------------------------------------------------
@@ -56,8 +50,6 @@ plotResults::~plotResults() {
   cout << "plotResults dtor: " << fHistFile << endl;
   if (fHistFile) {
     fHistFile->cd();
-    //    fHistFile->SetWritable(); 
-    cout << "__ IsWritable? " << fHistFile->IsWritable() << endl;
     fHistFile->Write();
     fHistFile->Close();
   }
@@ -67,8 +59,7 @@ plotResults::~plotResults() {
 // ----------------------------------------------------------------------
 void plotResults::makeAll(int channels) {
 
-  cout << "__ IsWritable? " << fHistFile->IsWritable() << endl;
-  return;
+  //  return;
 
 //   fls3dVsX("pt", "m1pt>4.5&&m2pt>4.2&&hlt", "fls3d_prof_pt.pdf");
 //   fls3dVsX("pt", "m1pt>4.5&&m2pt>4.2&&hlt&&docatrk>0.015", "fls3d_prof_docatrk_pt.pdf");

@@ -1,14 +1,5 @@
 #! /bin/csh -f
 
-# tree.csh
-#   Branched by Christoph Naegeli <naegelic@phys.ethz.ch> on 31.3.10.
-#   Usage: Use in conjunction with 'run'.
-#
-#   TREEREADER should be the name of the readerclass to run as
-#   can be found in runTreeReaders.cc and is supposed to be set
-#   using the replacement list of the 'run' command.
-#   JOB is the chain file on which the TreeReader should operate.
-
 setenv CMSSW
 setenv SCRAM_ARCH
 setenv SRMCP
@@ -70,7 +61,7 @@ tar zxf ../../$JOB.tar.gz
 ####make 
 ####cd - 
 ####echo "--> Building TreeReader"
-cd HeavyFlavorAnalysis/Bs2MuMu/macros
+cd HeavyFlavorAnalysis/Bs2MuMu/macros2
 ####make
 mkdir -p chains
 mv ../../../../../$JOB chains/
@@ -83,7 +74,7 @@ cd -
 echo "--> Run Treereader"
 
 date
-cd HeavyFlavorAnalysis/Bs2MuMu/macros
+cd HeavyFlavorAnalysis/Bs2MuMu/macros2
 pwd
 
 echo "$EXECUTABLE -c chains/$JOB  -o $FILE1 |& tee $JOB.log"
@@ -91,32 +82,31 @@ $EXECUTABLE -c chains/$JOB -o $FILE1 |& tee $JOB.log
 date
 
 # ----------------------------------------------------------------------
-# -- Save Output to SE
+# -- Save Output to NFS, not the SE
 # ----------------------------------------------------------------------
 
 # several files possible if tree grows to big. copy them all
 echo "--> Save output to SE: $STORAGE1/$FILE1"
-
-# dccp -d 10 dcap://t3se01.psi.ch:22125//pnfs/psi.ch/cms/testing/test100  /tmp/myfile
+echo $SRMCP 
 
 set FILES=`ls $JOB*.root`
 echo "Found the following output root files: $FILES"
 foreach f ($FILES)
-    echo srmrm "$STORAGE1/$f"
-    srmrm      "$STORAGE1/$f"
-    echo $SRMCP    file:///`pwd`/$f "$STORAGE1/$f"
-    $SRMCP         file:///`pwd`/$f "$STORAGE1/$f"
-    echo srmls     "$STORAGE1/$f"
-    srmls          "$STORAGE1/$f"
+  echo lcg-del "$STORAGE1/$f"
+  lcg-del -b -D srmv2 -l "$STORAGE1/$f"
+  echo lcg-cp    file:///`pwd`/$f "$STORAGE1/$f"
+  lcg-cp -b -D srmv2  file:///`pwd`/$f "$STORAGE1/$f"
+  echo lcg-ls     "$STORAGE1/$f"
+  lcg-ls -b -D srmv2  "$STORAGE1/$f"
 end
 
 # copy the log file.
-echo srmrm  "$STORAGE1/$JOB.log"
-srmrm       "$STORAGE1/$JOB.log"
-echo $SRMCP file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
-$SRMCP      file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
-echo        srmls     "$STORAGE1/$JOB.log"
-srmls       "$STORAGE1/$JOB.log"
+echo lcg-del  "$STORAGE1/$JOB.log"
+lcg-del -b -D srmv2 -l "$STORAGE1/$JOB.log"
+echo lcg-cp file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
+lcg-cp -b -D srmv2     file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
+echo lcg-ls     "$STORAGE1/$JOB.log"
+lcg-ls -b -D srmv2  "$STORAGE1/$JOB.log"
 
 date
 
