@@ -8,8 +8,9 @@
 #include "HFGenDimuon.h"
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
-
 #include "FWCore/Framework/interface/MakerMacros.h"
+#include "DataFormats/Common/interface/Handle.h"
+#include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 
 #include <iostream>
 #include <utility>
@@ -52,6 +53,7 @@ void HFGenDimuon::beginJob()
 
 void HFGenDimuon::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
+	using namespace edm;
 	// -- do all combinations with the daughters
 	map<int,int> particles;
 	set<int> indices;
@@ -83,6 +85,7 @@ void HFGenDimuon::combine(std::multiset<int>::iterator b, std::multiset<int>::it
 {
 	TAnaCand *cand;
 	TGenCand *gen;
+	TAnaTrack *trk;
 	set<int>::const_iterator it;
 	multiset<int>::iterator old;
 	map<int,int>::const_iterator mapIt;
@@ -101,19 +104,45 @@ void HFGenDimuon::combine(std::multiset<int>::iterator b, std::multiset<int>::it
 		cand = gHFEvent->addCand();
 		cand->fType = fGenType;
 		cand->fQ = 0;
+		cand->fSig1 = gHFEvent->nSigTracks();
+		cand->fSig2 = cand->fSig1 - 1;
 		
 		p.SetXYZT(0,0,0,0); // initialize to zero
 		for (it = indices->begin(); it != indices->end(); ++it) {
 			gen = gHFEvent->getGenCand(*it);
 			cand->fQ = cand->fQ + gen->fQ;
 			p = p + gen->fP;
+			
+			cand->fSig2 = gHFEvent->nSigTracks(); // enlarge the sig tracks array
+			trk = gHFEvent->addSigTrack();
+			trk->fIndex = -1; // no rec track as MC only
+			trk->fGenIndex = *it; // generator index
+			trk->fMCID = cand->fType;
+			trk->fPlab = gen->fP.Vect();
+			trk->fQ = gen->fQ;
 		}
 		
 		cand->fMass = p.M();
 		cand->fPlab = p.Vect();
+		
+		if (fVerbose > 6) {
+			cout << "===> HFGenDimuon: Add candidate with:" << endl;
+			cout << "	GenType:	" << cand->fType << endl;
+			cout << "	Q:			" << cand->fQ << endl;
+			cout << "	Mass:		" << cand->fMass << endl;
+			cout << "	P			(" << cand->fPlab.X() << "," << cand->fPlab.Y() << "," << cand->fPlab.Z() << ")" << endl;
+		}
+		
+		if (fVerbose > 7) {
+			cout << "===> HFGenDimuon: Daughter production vertices:" << endl;
+			for (it = indices->begin(); it != indices->end(); ++it) {
+				gen = gHFEvent->getGenCand(*it);
+				cout << '\t' << gen->fID << ":	(" << gen->fV.X() << "," << gen->fV.Y() << "," << gen->fV.Z() << ")" << endl;
+			}
+		}
 	}
 	else {
-		// search for particle b in part
+		// search for particle 'b' in part
 		for (mapIt = part->begin(); mapIt != part->end(); ++mapIt) {
 			if (mapIt->second == *b)
 				bIx.insert(mapIt->first);
