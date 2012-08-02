@@ -26,6 +26,7 @@
 #include "triggerValidation.hh"
 #include "genLevel.hh"
 #include "impactReader.hh"
+#include "pixelReader.hh"
 
 using namespace std;
 
@@ -205,6 +206,7 @@ int main(int argc, char *argv[]) {
   else if (readerName == "triggerValidation") a = new triggerValidation(chain,TString(evtClassName));
   else if (readerName == "genLevel") a = new genLevel(chain,TString(evtClassName));
   else if (readerName == "impactReader") a = new impactReader(chain,TString(evtClassName));
+  else if (readerName == "pixelReader") a = new pixelReader(chain,TString(evtClassName));
   else {
     cout << "please provide a class name to instantiate" << endl;
   }
