@@ -27,6 +27,9 @@ public:
   void variableRanking(); 
   void ssb();
   void overlap();
+
+  void validateAllOddEven();
+  void validateOddEven(const char *fnOdd, const char *fnEven, const char *type = "test", int classID = 0);
   
   void bdtScan();
   void bdtDependencies(std::string mode = "SgData");

@@ -160,7 +160,7 @@ public:
 
   // -- main methods
   // --------------
-  virtual void makeAll(int verbose = 0);
+  virtual void makeAll(int verbose);
 
   void loopTree(int mode, int proc = -1);
   void accEffFromEffTree(std::string fname, std::string dname, numbers &a, cuts &b, int proc);

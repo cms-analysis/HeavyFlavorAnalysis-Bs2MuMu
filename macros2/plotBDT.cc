@@ -72,6 +72,8 @@ plotBDT::~plotBDT() {
 // ----------------------------------------------------------------------
 void plotBDT::makeAll(int channels) { 
 
+  validateAllOddEven();
+
   if (channels & 1) {
     tmvaControlPlots();
   }
@@ -424,13 +426,15 @@ void plotBDT::tmvaControlPlots() {
       tmvaPlots();
       fRootFile->Close();
 
-      rootfile = "weights/" + fCuts[i]->xmlFile + "-combined.root";
-      fRootFile = TFile::Open(rootfile.c_str());
-      cout << "fRootFile: " << rootfile << endl;
-      variableRanking();
-      ssb();
-      fRootFile->Close();
-      
+      if (0 == j) {
+	rootfile = "weights/" + fCuts[i]->xmlFile + "-combined.root";
+	fRootFile = TFile::Open(rootfile.c_str());
+	cout << "fRootFile: " << rootfile << endl;
+	variableRanking();
+	ssb();
+	fRootFile->Close();
+      }
+
     }
   }
 
@@ -456,9 +460,104 @@ void plotBDT::dumpParameters() {
     if (!strcmp("AdaBoostBeta", h->GetXaxis()->GetBinLabel(ibin))) {
       fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s:AdaBoostBeta",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
     }
+    if (!strcmp("NNodesMax", h->GetXaxis()->GetBinLabel(ibin))) {
+      fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s:NNodesMax",  fSuffix.c_str(), fBdtString.c_str()), 0) << endl;
+    }
   }
 
 }
+
+
+// ----------------------------------------------------------------------
+void plotBDT::validateAllOddEven() {
+
+  validateOddEven("weights/TMVA-0-odd.root", "weights/TMVA-0-even.root", "train", 0);
+  validateOddEven("weights/TMVA-0-odd.root", "weights/TMVA-0-even.root", "train", 1);
+
+  validateOddEven("weights/TMVA-1-odd.root", "weights/TMVA-1-even.root", "train", 0);
+  validateOddEven("weights/TMVA-1-odd.root", "weights/TMVA-1-even.root", "train", 1);
+
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotBDT::validateOddEven(const char *fnOdd, const char *fnEven, const char *type, int classID) {
+
+  TFile *fOdd = TFile::Open(fnOdd); 
+  TFile *fEven = TFile::Open(fnEven); 
+
+  string sOdd = fnOdd;
+  string::size_type m1 = sOdd.find("weights/"); 
+  sOdd = sOdd.substr(m1+8, sOdd.length()-m1+1); 
+  m1 = sOdd.find(".root"); 
+  sOdd = sOdd.substr(0, m1); 
+
+  string sEven = fnEven;
+  m1 = sEven.find("weights/"); 
+  sEven = sEven.substr(m1+8, sEven.length()-m1+1); 
+  m1 = sEven.find(".root"); 
+  sEven = sEven.substr(0, m1); 
+
+  vector<string> varNames;
+  vector<double> varMin, varMax; 
+  vector<int> varNbins; 
+  vector<int> varLog; 
+  varNames.push_back("m1pt"); varMin.push_back(0.); varMax.push_back(40.); varNbins.push_back(200); varLog.push_back(0); 
+  varNames.push_back("m2pt"); varMin.push_back(0.); varMax.push_back(20.); varNbins.push_back(200); varLog.push_back(0); 
+  varNames.push_back("m1eta"); varMin.push_back(-2.5); varMax.push_back(2.5); varNbins.push_back(200); varLog.push_back(0); 
+  varNames.push_back("m2eta"); varMin.push_back(-2.5); varMax.push_back(2.5); varNbins.push_back(200); varLog.push_back(0); 
+  varNames.push_back("pt");    varMin.push_back(0.); varMax.push_back(40.); varNbins.push_back(200); varLog.push_back(0); 
+  varNames.push_back("eta");   varMin.push_back(-2.5); varMax.push_back(2.5); varNbins.push_back(200); varLog.push_back(0); 
+  varNames.push_back("fls3d"); varMin.push_back(0.); varMax.push_back(120.); varNbins.push_back(120); varLog.push_back(1); 
+  varNames.push_back("alpha"); varMin.push_back(0.); varMax.push_back(2.0); varNbins.push_back(200); varLog.push_back(0); 
+  varNames.push_back("maxdoca"); varMin.push_back(0.); varMax.push_back(0.03); varNbins.push_back(200); varLog.push_back(0); 
+  varNames.push_back("pvip"); varMin.push_back(0.); varMax.push_back(0.05); varNbins.push_back(200); varLog.push_back(0); 
+  varNames.push_back("pvips"); varMin.push_back(0.); varMax.push_back(5); varNbins.push_back(200); varLog.push_back(0); 
+  varNames.push_back("iso"); varMin.push_back(0.7); varMax.push_back(1.0); varNbins.push_back(300); varLog.push_back(0); 
+  varNames.push_back("closetrk"); varMin.push_back(0.); varMax.push_back(21); varNbins.push_back(21); varLog.push_back(0); 
+  varNames.push_back("docatrk"); varMin.push_back(0.); varMax.push_back(0.02); varNbins.push_back(200); varLog.push_back(0); 
+  varNames.push_back("chi2dof"); varMin.push_back(0.); varMax.push_back(5); varNbins.push_back(200); varLog.push_back(0); 
+
+  
+  TTree *t0Odd(0), *t0Even(0); 
+  if (!strcmp("test", type)) t0Odd = (TTree*)fOdd->Get("TestTree");
+  if (!strcmp("train", type)) t0Odd = (TTree*)fOdd->Get("TrainTree");
+  if (!strcmp("test", type)) t0Even = (TTree*)fEven->Get("TestTree");
+  if (!strcmp("train", type)) t0Even = (TTree*)fEven->Get("TrainTree");
+  TH1D *h1, *h2; 
+  string h1Name, h2Name; 
+  
+  gStyle->SetOptTitle(0); 
+  gStyle->SetOptStat(0); 
+  for (int i = 0; i < varNames.size(); ++i) {
+    h1Name = Form("h0_%s", varNames[i].c_str());
+    h1  = new TH1D(h1Name.c_str(), varNames[i].c_str(), varNbins[i], varMin[i], varMax[i]);
+    setFilledHist(h1, kBlue, kBlue, 3004); 
+    h2Name = Form("h1_%s", varNames[i].c_str());
+    h2 = new TH1D(h2Name.c_str(), h2Name.c_str(), varNbins[i], varMin[i], varMax[i]);
+    setFilledHist(h2, kRed, kRed, 3004); 
+    t0Odd->Draw(Form("%s>>%s", varNames[i].c_str(), h1Name.c_str()), Form("classID==%d", classID)); 
+    t0Even->Draw(Form("%s>>%s", varNames[i].c_str(), h2Name.c_str()), Form("classID==%d", classID)); 
+    
+    h1->Draw();
+    h2->Draw("same");
+    double ks = h1->KolmogorovTest(h2);
+    tl->DrawLatex(0.2, 0.92, Form("%s: P(KS)= %4.3f", varNames[i].c_str(), ks)); 
+
+    if (1 == varLog[i]) {
+      gPad->SetLogy(1); 
+    } else {
+      gPad->SetLogy(0); 
+    }
+
+    c0->SaveAs(Form("%s/ks-%s_%s_%s_%s_%s.pdf", 
+		   fDirectory.c_str(), (0 == classID?"sg":"bg"), varNames[i].c_str(), type, sOdd.c_str(), sEven.c_str())); 
+  }
+
+
+} 
+
 
 
 // ----------------------------------------------------------------------

@@ -27,6 +27,7 @@ else
 endif
 
 CXXFLAGS      = -g -O3 -Wall -fPIC -pipe
+CXXFLAGS      = -g -O0 -Wall -fPIC -pipe
 #CXXFLAGS      = -g -Wall -fPIC -pipe
 LD            = $(CXX)
 LDFLAGS       = -g
@@ -34,14 +35,14 @@ SOFLAGS       = -shared
 
 CXXFLAGS     += $(ROOTCFLAGS)
 LIBS          = $(ROOTLIBS) 
-GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
+GLIBS         = $(filter-out -lz, $(ROOTGLIBS)) -lTMVA
 RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 
 #########
 # FILES #
 #########
-READER_HEADERS = bmm2Reader.hh lmtreeReader.hh candAna.hh candAnaMuMu.hh candAnaBu2JpsiK.hh candAnaBs2JpsiPhi.hh candAnaDstar.hh candAnaHh.hh plotClass.hh plotPU.hh plotOverlays.hh plotEfficiencies.hh plotIso.hh plotResults.hh plotOptimize.hh 
-READER = bmm2Reader.o lmtreeReader.o candAna.o candAnaMuMu.o candAnaBu2JpsiK.o candAnaBs2JpsiPhi.o candAnaDstar.o candAnaHh.o plotClass.o plotPU.o plotOverlays.o plotEfficiencies.o plotIso.o plotResults.o plotOptimize.o 
+READER_HEADERS = bmm2Reader.hh lmtreeReader.hh candAna.hh candAnaMuMu.hh candAnaBu2JpsiK.hh candAnaBs2JpsiPhi.hh candAnaDstar.hh candAnaHh.hh plotClass.hh plotPU.hh plotOverlays.hh plotEfficiencies.hh plotIso.hh plotResults.hh plotOptimize.hh plotBDT.hh plotReducedOverlays.hh
+READER = bmm2Reader.o lmtreeReader.o candAna.o candAnaMuMu.o candAnaBu2JpsiK.o candAnaBs2JpsiPhi.o candAnaDstar.o candAnaHh.o plotClass.o plotPU.o plotOverlays.o plotEfficiencies.o plotIso.o plotResults.o plotOptimize.o plotBDT.o plotReducedOverlays.o
 
 #CSTUFF = TMVAClassification_BDT.class.o
 
