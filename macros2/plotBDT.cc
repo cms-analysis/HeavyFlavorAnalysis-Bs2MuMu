@@ -80,6 +80,7 @@ void plotBDT::makeAll(int channels) {
 
   if (channels & 2) {
     bdtScan();
+    plotSSB();
   }
 
   if (channels & 4) {
@@ -423,21 +424,43 @@ void plotBDT::tmvaControlPlots() {
       cout << "fBdtString: " << fBdtString << endl;
       
       dumpParameters();
-      tmvaPlots();
+      tmvaPlots(type[j]);
       fRootFile->Close();
 
       if (0 == j) {
 	rootfile = "weights/" + fCuts[i]->xmlFile + "-combined.root";
 	fRootFile = TFile::Open(rootfile.c_str());
 	cout << "fRootFile: " << rootfile << endl;
+
+	fBdtString = fRootFile->GetName(); 
+	fBdtString = fBdtString.substr(0, fBdtString.find(".root"));
+	fBdtString = fBdtString.substr(fBdtString.find("/")+1);
+	cout << "fBdtString: " << fBdtString << endl;
+
 	variableRanking();
-	ssb();
 	fRootFile->Close();
       }
 
     }
   }
 
+}
+
+
+// ----------------------------------------------------------------------
+void plotBDT::plotSSB() {
+  for (int i = 0; i < fNchan; ++i) {
+    string rootfile = "weights/" + fCuts[i]->xmlFile + "-combined.root";
+    fRootFile = TFile::Open(rootfile.c_str());
+    cout << "fRootFile: " << rootfile << endl;
+    
+    fBdtString = fRootFile->GetName(); 
+    fBdtString = fBdtString.substr(0, fBdtString.find(".root"));
+    fBdtString = fBdtString.substr(fBdtString.find("/")+1);
+    cout << "fBdtString: " << fBdtString << endl;
+    
+    ssb();
+  }
 }
 
 
@@ -533,10 +556,12 @@ void plotBDT::validateOddEven(const char *fnOdd, const char *fnEven, const char 
   for (int i = 0; i < varNames.size(); ++i) {
     h1Name = Form("h0_%s", varNames[i].c_str());
     h1  = new TH1D(h1Name.c_str(), varNames[i].c_str(), varNbins[i], varMin[i], varMax[i]);
-    setFilledHist(h1, kBlue, kBlue, 3004); 
+    //    setFilledHist(h1, kBlue, kBlue, 3004); 
     h2Name = Form("h1_%s", varNames[i].c_str());
     h2 = new TH1D(h2Name.c_str(), h2Name.c_str(), varNbins[i], varMin[i], varMax[i]);
-    setFilledHist(h2, kRed, kRed, 3004); 
+    //    setFilledHist(h2, kRed, kRed, 3004); 
+    SetSignalAndBackgroundStyle(h1, h2);            
+
     t0Odd->Draw(Form("%s>>%s", varNames[i].c_str(), h1Name.c_str()), Form("classID==%d", classID)); 
     t0Even->Draw(Form("%s>>%s", varNames[i].c_str(), h2Name.c_str()), Form("classID==%d", classID)); 
     
@@ -551,8 +576,8 @@ void plotBDT::validateOddEven(const char *fnOdd, const char *fnEven, const char 
       gPad->SetLogy(0); 
     }
 
-    c0->SaveAs(Form("%s/ks-%s_%s_%s_%s_%s.pdf", 
-		   fDirectory.c_str(), (0 == classID?"sg":"bg"), varNames[i].c_str(), type, sOdd.c_str(), sEven.c_str())); 
+    c0->SaveAs(Form("%s/ks-%s_%s_%s_%s-%s.pdf", 
+		    fDirectory.c_str(), (0 == classID?"sg":"bg"), type, sOdd.c_str(), sEven.c_str(), varNames[i].c_str())); 
   }
 
 
@@ -561,7 +586,7 @@ void plotBDT::validateOddEven(const char *fnOdd, const char *fnEven, const char 
 
 
 // ----------------------------------------------------------------------
-void plotBDT::tmvaPlots() {
+void plotBDT::tmvaPlots(string type) {
 
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
@@ -577,16 +602,14 @@ void plotBDT::tmvaPlots() {
   c0->SaveAs(Form("%s/%s-CorrelationMatrixB.pdf", fDirectory.c_str(), fBdtString.c_str()));
 
   // -- from "mvas"
+  // --------------
   Int_t xPad = 1; // no of plots in x
   Int_t yPad = 1; // no of plots in y
   Int_t noPad = xPad * yPad ; 
-  const Int_t width = 600;   // size of canvas
+  Int_t width = 600;   // size of canvas
   
   // this defines how many canvases we need
-  TCanvas *c = 0;
-  
-  // counter variables
-  Int_t countCanvas = 0;
+  TCanvas *c = new TCanvas( Form("canvas%d", 1), "canvas1",  200, 20, width, (Int_t)width*0.78 ); 
   
   // search for the right histograms in full list of keys
   TIter next(fRootFile->GetListOfKeys());
@@ -606,7 +629,8 @@ void plotBDT::tmvaPlots() {
     while ((titkey = (TKey*)keyIt())) {
       
       if (!gROOT->GetClass(titkey->GetClassName())->InheritsFrom("TDirectory")) continue;
-      
+      c->Clear();
+
       TDirectory *titDir = (TDirectory *)titkey->ReadObj();
       TString methodTitle;
       GetMethodTitle(methodTitle,titDir);
@@ -623,9 +647,6 @@ void plotBDT::tmvaPlots() {
       
       // create new canvas
       TString ctitle = Form("TMVA comparison %s",methodTitle.Data()) ;
-      
-      c = new TCanvas( Form("canvas%d", countCanvas+1), ctitle, 
-		       countCanvas*50+200, countCanvas*20, width, (Int_t)width*0.78 ); 
       
       // set the histogram style
       SetSignalAndBackgroundStyle( sig, bgd );
@@ -761,7 +782,6 @@ void plotBDT::tmvaPlots() {
       t->SetTextAngle( 90 );
       t->AppendPad();    
       
-      // update canvas
       c->Update();
       
       // save canvas to file
@@ -770,10 +790,108 @@ void plotBDT::tmvaPlots() {
       c->SetLogy(1);
       c->SaveAs(Form("%s/%s-overtrain1.pdf", fDirectory.c_str(), fBdtString.c_str())); 
       
-      countCanvas++;
     }
     cout << "";
   }
+
+  
+  // -- from "variables"
+  // -------------------
+
+  c->SetLogy(0);
+      
+  TString title = "TMVA Input Variables";
+  // obtain shorter histogram title 
+  TString htitle = title; 
+  htitle.ReplaceAll("variables ","variable");
+  htitle.ReplaceAll("and target(s)","");
+  htitle.ReplaceAll("(training sample)","");
+
+  TString dirName = "Method_BDT/BDT";
+  TDirectory* dir = (TDirectory*)fRootFile->Get(dirName);
+  if (dir==0) {
+    cout << "No information about " << title << " available in directory " << dirName << " of file " << fRootFile << endl;
+    return;
+  }
+  dir->cd();
+
+  // loop over all objects in directory
+  Bool_t   createNewFig = kFALSE;
+  TIter next1(dir->GetListOfKeys());
+  while ((key = (TKey*)next1())) {
+    // make sure, that we only look at histograms
+    TClass *cl = gROOT->GetClass(key->GetClassName());
+    if (!cl->InheritsFrom("TH1")) continue;
+    TH1 *sig = (TH1*)key->ReadObj();
+    TString hname(sig->GetName());
+    if (hname.Contains("__Background")) continue;
+    TString htitle(sig->GetTitle());
+    if (htitle.Contains("Input Variables")) continue;
+    if (htitle.Contains(" ")) continue;
+    
+    // find the corredponding backgrouns histo
+    TString bgname = hname;
+    bgname.ReplaceAll("__Signal","__Background");
+    TH1 *bgd = (TH1*)dir->Get(bgname);
+    if (bgd == NULL) {
+      cout << "ERROR!!! couldn't find background histo for" << hname << endl;
+      exit;
+    }
+
+    // this is set but not stored during plot creation in MVA_Factory
+    SetSignalAndBackgroundStyle(sig, bgd);            
+    
+    sig->SetTitle(TString( htitle ) + ": " + sig->GetTitle() );
+    SetFrameStyle(sig, 1.2);
+
+    // normalise both signal and background
+    NormalizeHists(sig, bgd);
+    
+    // finally plot and overlay
+    Float_t sc = 1.4;
+    sig->SetMaximum( TMath::Max( sig->GetMaximum(), bgd->GetMaximum() )*sc );
+    sig->Draw( "hist" );
+    gPad->SetLeftMargin( 0.17 );
+    
+    sig->GetYaxis()->SetTitleOffset( 1.70 );
+    bgd->Draw("histsame");
+    TString ytit = TString("(1/N) ") + sig->GetYaxis()->GetTitle();
+    sig->GetYaxis()->SetTitle( ytit ); // histograms are normalised
+    
+    // Draw legend
+    TLegend *legend= new TLegend( gPad->GetLeftMargin(), 
+				  1-gPad->GetTopMargin()-.15, 
+				  gPad->GetLeftMargin()+.4, 
+				  1-gPad->GetTopMargin() );
+    legend->SetFillStyle(1);
+    legend->AddEntry(sig,"Signal","F");
+    legend->AddEntry(bgd,"Background","F");
+    legend->SetBorderSize(1);
+    legend->SetMargin( 0.3 );
+    legend->Draw("same");
+    
+    // redraw axes
+    sig->Draw("sameaxis");
+    
+    // text for overflows
+    Int_t    nbin = sig->GetNbinsX();
+    Double_t dxu  = sig->GetBinWidth(0);
+    Double_t dxo  = sig->GetBinWidth(nbin+1);
+    TString uoflow = Form( "U/O-flow (S,B): (%.1f, %.1f)%% / (%.1f, %.1f)%%", 
+			   sig->GetBinContent(0)*dxu*100, bgd->GetBinContent(0)*dxu*100,
+			   sig->GetBinContent(nbin+1)*dxo*100, bgd->GetBinContent(nbin+1)*dxo*100 );
+    
+    TText* t = new TText( 0.98, 0.14, uoflow );
+    t->SetNDC();
+    t->SetTextSize( 0.040 );
+    t->SetTextAngle( 90 );
+    t->AppendPad();    
+    
+    c->SaveAs(Form("%s/%s-%s.pdf", fDirectory.c_str(), fBdtString.c_str(), htitle.Data())); 
+
+    delete legend;
+  }
+  
   
   
 }
@@ -804,30 +922,46 @@ string plotBDT::replaceLabelWithTex(string label) {
 // ----------------------------------------------------------------------
 void plotBDT::variableRanking() {
   string which = "IdTransformation";
-  TH1D *h = (TH1D*)fRootFile->Get(Form("rank_%s", which.c_str()));
-  for (int ibin = 1; ibin < h->GetNbinsX(); ++ibin) {
-   
-    string label = h->GetXaxis()->GetBinLabel(ibin);
-    if ("" == label) break;
-    replaceAll(label, " ", ""); 
-    string texlabel = replaceLabelWithTex(label);
-    fTEX << Form("\\vdef{%s:%s_%s:%d:name} {%s}", fSuffix.c_str(), fBdtString.c_str(), which.c_str(), ibin, texlabel.c_str()) << endl;
-    fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s_%s:%d:val", fSuffix.c_str(), fBdtString.c_str(), which.c_str(), ibin), 4)
-	 << endl;
-  }
+  TH1D *h(0); 
+  vector<string> splits; 
+  splits.push_back("odd"); 
+  splits.push_back("even"); 
 
-  which = "BDT";
-  h = (TH1D*)fRootFile->Get(Form("rank_%s", which.c_str()));
-  for (int ibin = 1; ibin < h->GetNbinsX(); ++ibin) {
-    string label = h->GetXaxis()->GetBinLabel(ibin);
-    if ("" == label) break;
-    replaceAll(label, " ", ""); 
-    string texlabel = replaceLabelWithTex(label);
-    fTEX << Form("\\vdef{%s:%s_%s:%d:name} {%s}", fSuffix.c_str(), fBdtString.c_str(), which.c_str(), ibin, texlabel.c_str()) << endl;
-    fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s_%s:%d:val", fSuffix.c_str(), fBdtString.c_str(), which.c_str(), ibin), 4)
-	 << endl;
+  for (unsigned int i = 0; i < splits.size(); ++i) {
+    which = "IdTransformation";
+    h = (TH1D*)fRootFile->Get(Form("rank_%s_%s", splits[i].c_str(), which.c_str()));
+    for (int ibin = 1; ibin < h->GetNbinsX(); ++ibin) {
+      
+      string label = h->GetXaxis()->GetBinLabel(ibin);
+      if ("" == label) break;
+      replaceAll(label, " ", ""); 
+      string texlabel = replaceLabelWithTex(label);
+      fTEX << Form("\\vdef{%s:%s_%s_%s:%d:name} {%s}", 
+		   fSuffix.c_str(), fBdtString.c_str(), splits[i].c_str(), which.c_str(), ibin, texlabel.c_str()) 
+	   << endl;
+      fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s_%s_%s:%d:val", 
+						     fSuffix.c_str(), fBdtString.c_str(), splits[i].c_str(), which.c_str(), ibin), 4)
+	   << endl;
+    }
+    
+    which = "BDT";
+    h = (TH1D*)fRootFile->Get(Form("rank_%s_%s", splits[i].c_str(), which.c_str()));
+    for (int ibin = 1; ibin < h->GetNbinsX(); ++ibin) {
+      string label = h->GetXaxis()->GetBinLabel(ibin);
+      if ("" == label) break;
+      replaceAll(label, " ", ""); 
+      string texlabel = replaceLabelWithTex(label);
+      fTEX << Form("\\vdef{%s:%s_%s_%s:%d:name} {%s}", 
+		   fSuffix.c_str(), fBdtString.c_str(), splits[i].c_str(), which.c_str(), ibin, texlabel.c_str()) 
+	   << endl;
+      fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s_%s_%s:%d:val", 
+						     fSuffix.c_str(), fBdtString.c_str(), splits[i].c_str(), which.c_str(), ibin), 4)
+	   << endl;
+      //       fTEX << Form("\\vdef{%s:%s_%s:%d:name} {%s}", fSuffix.c_str(), fBdtString.c_str(), which.c_str(), ibin, texlabel.c_str()) << endl;
+      //       fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s_%s:%d:val", fSuffix.c_str(), fBdtString.c_str(), which.c_str(), ibin), 4)
+      // 	   << endl;
+    }
   }
-
 
 
 }
@@ -919,108 +1053,6 @@ void plotBDT::ssb() {
   tl->DrawLatex(0.25, 0.68, Form("B_{max} = %4.3f", maxBDT));
   c0->SaveAs(Form("%s/%s-ssb.pdf", fDirectory.c_str(), fBdtString.c_str())); 
 
-}
-
-
-
-// ----------------------------------------------------------------------
-// -- stuff from tmvaglob.C
-void plotBDT::GetMethodName( TString & name, TKey * mkey ) {
-  if (mkey==0) return;
-  name = mkey->GetName();
-  name.ReplaceAll("Method_","");
-}
-
-void plotBDT::GetMethodTitle( TString & name, TKey * ikey ) {
-  if (ikey==0) return;
-  name = ikey->GetName();
-}
-
-void plotBDT::GetMethodTitle( TString & name, TDirectory * idir ) {
-  if (idir==0) return;
-  name = idir->GetName();
-}
-
-
-void plotBDT::SetSignalAndBackgroundStyle( TH1* sig, TH1* bkg, TH1* all )    {
-      //signal
-      // const Int_t FillColor__S = 38 + 150; // change of Color Scheme in ROOT-5.16.
-      // convince yourself with gROOT->GetListOfColors()->Print()
-  static Int_t c_Canvas         = kWhite; //TColor::GetColor( "#f0f0f0" );
-  static Int_t c_FrameFill      = kWhite; //TColor::GetColor( "#fffffd" );
-  static Int_t c_TitleBox       = kWhite; //TColor::GetColor( "#5D6B7D" );
-  static Int_t c_TitleBorder     = kWhite; //TColor::GetColor( "#7D8B9D" );
-  static Int_t c_TitleText      = TColor::GetColor( "#FFFFFF" );
-  static Int_t c_SignalLine     = TColor::GetColor( "#0000ee" );
-  static Int_t c_SignalFill     = TColor::GetColor( "#7d99d1" );
-  static Int_t c_BackgroundLine = TColor::GetColor( "#ff0000" );
-  static Int_t c_BackgroundFill = TColor::GetColor( "#ff0000" );
-  static Int_t c_NovelBlue      = TColor::GetColor( "#2244a5" );
-
-      Int_t FillColor__S = c_SignalFill;
-      Int_t FillStyle__S = 3356; //1001;
-      Int_t LineColor__S = c_SignalLine;
-      Int_t LineWidth__S = 2;
-
-      // background
-      //Int_t icolor = UsePaperStyle ? 2 + 100 : 2;
-      Int_t FillColor__B = c_BackgroundFill;
-      Int_t FillStyle__B = 3365; //3554;
-      Int_t LineColor__B = c_BackgroundLine;
-      Int_t LineWidth__B = 2;
-
-      if (sig != NULL) {
-         sig->SetLineColor( LineColor__S );
-         sig->SetLineWidth( LineWidth__S );
-         sig->SetFillStyle( FillStyle__S );
-         sig->SetFillColor( FillColor__S );
-      }
- 
-      if (bkg != NULL) {
-         bkg->SetLineColor( LineColor__B );
-         bkg->SetLineWidth( LineWidth__B );
-         bkg->SetFillStyle( FillStyle__B );
-         bkg->SetFillColor( FillColor__B );
-      }
-
-      if (all != NULL) {
-         all->SetLineColor( LineColor__S );
-         all->SetLineWidth( LineWidth__S );
-         all->SetFillStyle( FillStyle__S );
-         all->SetFillColor( FillColor__S );
-      }
-   }
-
-void plotBDT::NormalizeHists( TH1* sig, TH1* bkg )   {
-      if (sig->GetSumw2N() == 0) sig->Sumw2();
-      if (bkg && bkg->GetSumw2N() == 0) bkg->Sumw2();
-      
-      if(sig->GetSumOfWeights()!=0) {
-         Float_t dx = (sig->GetXaxis()->GetXmax() - sig->GetXaxis()->GetXmin())/sig->GetNbinsX();
-         sig->Scale( 1.0/sig->GetSumOfWeights()/dx );
-      }
-      if (bkg != 0 && bkg->GetSumOfWeights()!=0) {
-         Float_t dx = (bkg->GetXaxis()->GetXmax() - bkg->GetXaxis()->GetXmin())/bkg->GetNbinsX();
-         bkg->Scale( 1.0/bkg->GetSumOfWeights()/dx );
-      }
-   }
-
-void plotBDT::SetFrameStyle( TH1* frame, Float_t scale)   {
-  frame->SetLabelOffset( 0.012, "X" );// label offset on x axis
-  frame->SetLabelOffset( 0.012, "Y" );// label offset on x axis
-  frame->GetXaxis()->SetTitleOffset( 1.25 );
-  frame->GetYaxis()->SetTitleOffset( 1.22 );
-  frame->GetXaxis()->SetTitleSize( 0.045*scale );
-  frame->GetYaxis()->SetTitleSize( 0.045*scale );
-  Float_t labelSize = 0.04*scale;
-  frame->GetXaxis()->SetLabelSize( labelSize );
-  frame->GetYaxis()->SetLabelSize( labelSize );
-  
-  // global style settings
-  gPad->SetTicks();
-  gPad->SetLeftMargin  ( 0.108*scale );
-  gPad->SetRightMargin ( 0.050*scale );
-  gPad->SetBottomMargin( 0.120*scale  );
 }
 
 
@@ -1162,3 +1194,136 @@ void plotBDT::illustrateAntiMuonSample(const char *cuts) {
   c0->SaveAs(Form("%s/illustrateAMS-cs.pdf", fDirectory.c_str())); 
 
 }
+
+
+
+// ----------------------------------------------------------------------
+// -- stuff from tmvaglob.C
+void plotBDT::GetMethodName( TString & name, TKey * mkey ) {
+  if (mkey==0) return;
+  name = mkey->GetName();
+  name.ReplaceAll("Method_","");
+}
+
+void plotBDT::GetMethodTitle( TString & name, TKey * ikey ) {
+  if (ikey==0) return;
+  name = ikey->GetName();
+}
+
+void plotBDT::GetMethodTitle( TString & name, TDirectory * idir ) {
+  if (idir==0) return;
+  name = idir->GetName();
+}
+
+
+void plotBDT::SetSignalAndBackgroundStyle( TH1* sig, TH1* bkg, TH1* all )    {
+      //signal
+      // const Int_t FillColor__S = 38 + 150; // change of Color Scheme in ROOT-5.16.
+      // convince yourself with gROOT->GetListOfColors()->Print()
+  static Int_t c_Canvas         = kWhite; //TColor::GetColor( "#f0f0f0" );
+  static Int_t c_FrameFill      = kWhite; //TColor::GetColor( "#fffffd" );
+  static Int_t c_TitleBox       = kWhite; //TColor::GetColor( "#5D6B7D" );
+  static Int_t c_TitleBorder     = kWhite; //TColor::GetColor( "#7D8B9D" );
+  static Int_t c_TitleText      = TColor::GetColor( "#FFFFFF" );
+  static Int_t c_SignalLine     = TColor::GetColor( "#0000ee" );
+  static Int_t c_SignalFill     = TColor::GetColor( "#7d99d1" );
+  static Int_t c_BackgroundLine = TColor::GetColor( "#ff0000" );
+  static Int_t c_BackgroundFill = TColor::GetColor( "#ff0000" );
+  static Int_t c_NovelBlue      = TColor::GetColor( "#2244a5" );
+
+      Int_t FillColor__S = c_SignalFill;
+      Int_t FillStyle__S = 3356; //1001;
+      Int_t LineColor__S = c_SignalLine;
+      Int_t LineWidth__S = 2;
+
+      // background
+      //Int_t icolor = UsePaperStyle ? 2 + 100 : 2;
+      Int_t FillColor__B = c_BackgroundFill;
+      Int_t FillStyle__B = 3365; //3554;
+      Int_t LineColor__B = c_BackgroundLine;
+      Int_t LineWidth__B = 2;
+
+      if (sig != NULL) {
+         sig->SetLineColor( LineColor__S );
+         sig->SetLineWidth( LineWidth__S );
+         sig->SetFillStyle( FillStyle__S );
+         sig->SetFillColor( FillColor__S );
+      }
+ 
+      if (bkg != NULL) {
+         bkg->SetLineColor( LineColor__B );
+         bkg->SetLineWidth( LineWidth__B );
+         bkg->SetFillStyle( FillStyle__B );
+         bkg->SetFillColor( FillColor__B );
+      }
+
+      if (all != NULL) {
+         all->SetLineColor( LineColor__S );
+         all->SetLineWidth( LineWidth__S );
+         all->SetFillStyle( FillStyle__S );
+         all->SetFillColor( FillColor__S );
+      }
+   }
+
+void plotBDT::NormalizeHists( TH1* sig, TH1* bkg )   {
+      if (sig->GetSumw2N() == 0) sig->Sumw2();
+      if (bkg && bkg->GetSumw2N() == 0) bkg->Sumw2();
+      
+      if(sig->GetSumOfWeights()!=0) {
+         Float_t dx = (sig->GetXaxis()->GetXmax() - sig->GetXaxis()->GetXmin())/sig->GetNbinsX();
+         sig->Scale( 1.0/sig->GetSumOfWeights()/dx );
+      }
+      if (bkg != 0 && bkg->GetSumOfWeights()!=0) {
+         Float_t dx = (bkg->GetXaxis()->GetXmax() - bkg->GetXaxis()->GetXmin())/bkg->GetNbinsX();
+         bkg->Scale( 1.0/bkg->GetSumOfWeights()/dx );
+      }
+   }
+
+void plotBDT::SetFrameStyle( TH1* frame, Float_t scale)   {
+  frame->SetLabelOffset( 0.012, "X" );// label offset on x axis
+  frame->SetLabelOffset( 0.012, "Y" );// label offset on x axis
+  frame->GetXaxis()->SetTitleOffset( 1.25 );
+  frame->GetYaxis()->SetTitleOffset( 1.22 );
+  frame->GetXaxis()->SetTitleSize( 0.045*scale );
+  frame->GetYaxis()->SetTitleSize( 0.045*scale );
+  Float_t labelSize = 0.04*scale;
+  frame->GetXaxis()->SetLabelSize( labelSize );
+  frame->GetYaxis()->SetLabelSize( labelSize );
+  
+  // global style settings
+  gPad->SetTicks();
+  gPad->SetLeftMargin  ( 0.108*scale );
+  gPad->SetRightMargin ( 0.050*scale );
+  gPad->SetBottomMargin( 0.120*scale  );
+}
+
+
+int plotBDT::GetNumberOfTargets( TDirectory *dir )   {
+      TIter next(dir->GetListOfKeys());
+      TKey* key    = 0;
+      Int_t noTrgts = 0;
+         
+      while ((key = (TKey*)next())) {
+         if (key->GetCycle() != 1) continue;        
+         if (TString(key->GetName()).Contains("__Regression_target")) noTrgts++;
+      }
+      return noTrgts;
+}
+
+int plotBDT::GetNumberOfInputVariables( TDirectory *dir )   {
+  TIter next(dir->GetListOfKeys());
+  TKey* key    = 0;
+  Int_t noVars = 0;
+  
+  while ((key = (TKey*)next())) {
+    if (key->GetCycle() != 1) continue;
+    
+    // count number of variables (signal is sufficient), exclude target(s)
+    if (TString(key->GetName()).Contains("__Signal") || (TString(key->GetName()).Contains("__Regression") && !(TString(key->GetName()).Contains("__Regression_target")))) noVars++;
+  }
+  
+  return noVars;
+}
+
+
+

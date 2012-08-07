@@ -23,8 +23,9 @@ public:
 
   void tmvaControlPlots();
   void dumpParameters();
-  void tmvaPlots();
+  void tmvaPlots(std::string type);
   void variableRanking(); 
+  void plotSSB();
   void ssb();
   void overlap();
 
@@ -43,12 +44,14 @@ public:
   void plotEffVsBg(int offset);
 
   std::string replaceLabelWithTex(string label);
-  void SetFrameStyle( TH1* frame, Float_t scale = 1.0 );
+  void SetFrameStyle( TH1* frame, Float_t scale = 1.0);
   void NormalizeHists( TH1* sig, TH1* bkg = 0);
-  void SetSignalAndBackgroundStyle( TH1* sig, TH1* bkg, TH1* all = 0 );
-  void GetMethodTitle( TString & name, TKey * ikey );
-  void GetMethodName( TString & name, TKey * mkey );
-  void GetMethodTitle( TString & name, TDirectory * idir );
+  void SetSignalAndBackgroundStyle( TH1* sig, TH1* bkg, TH1* all = 0);
+  void GetMethodTitle( TString & name, TKey * ikey);
+  void GetMethodName( TString & name, TKey * mkey);
+  void GetMethodTitle( TString & name, TDirectory * idir);
+  int  GetNumberOfTargets( TDirectory *dir);
+  int  GetNumberOfInputVariables( TDirectory *dir);
 
   std::string fXmlFile, fBdtString;
   TFile *fRootFile; 

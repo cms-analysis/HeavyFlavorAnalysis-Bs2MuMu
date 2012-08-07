@@ -79,7 +79,7 @@ ls -rtl
 echo "--> Save output to SE: $STORAGE1/$FILE1"
 
 echo lcg-del -b -D srmv2 -l  "$STORAGE1/$FILE1"
-lcg-del -b -D srmv2 -l"$STORAGE1/$FILE1"
+lcg-del -b -D srmv2 -l "$STORAGE1/$FILE1"
 echo $SRMCP    $FILE1 "$STORAGE1/$FILE1"
 $SRMCP         $FILE1 "$STORAGE1/$FILE1"
 echo lcg-ls -b -D srmv2 -l  "$STORAGE1/$FILE1"

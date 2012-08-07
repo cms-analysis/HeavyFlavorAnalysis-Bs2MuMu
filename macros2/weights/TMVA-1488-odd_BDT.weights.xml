@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <MethodSetup Method="BDT::BDT">
   <GeneralInfo>
-    <Info name="TMVA Release" value="4.1.2 [262402]"/>
-    <Info name="ROOT Release" value="5.32/02 [335874]"/>
+    <Info name="TMVA Release" value="4.1.3 [262403]"/>
+    <Info name="ROOT Release" value="5.34/01 [336385]"/>
     <Info name="Creator" value="ursl"/>
-    <Info name="Date" value="Mon Jul 16 08:14:16 2012"/>
-    <Info name="Host" value="Darwin pb-d-128-141-161-89.cern.ch 10.8.0 Darwin Kernel Version 10.8.0: Tue Jun 7 16:33:36 PDT 2011; root:xnu-1504.15.3~1/RELEASE_I386 i386"/>
+    <Info name="Date" value="Tue Aug  7 08:44:53 2012"/>
+    <Info name="Host" value="Darwin marwees.psi.ch 10.8.0 Darwin Kernel Version 10.8.0: Tue Jun 7 16:33:36 PDT 2011; root:xnu-1504.15.3~1/RELEASE_I386 i386"/>
     <Info name="Dir" value="/Users/ursl/macros/bmm11-mva/HeavyFlavorAnalysis/Bs2MuMu/tmva"/>
     <Info name="Training events" value="213775"/>
-    <Info name="TrainingTime" value="3.25493060e+02"/>
+    <Info name="TrainingTime" value="3.18865455e+02"/>
     <Info name="AnalysisType" value="Classification"/>
   </GeneralInfo>
   <Options>
