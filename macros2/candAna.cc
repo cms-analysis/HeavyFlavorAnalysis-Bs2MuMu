@@ -6,6 +6,8 @@
 #include "TMVAClassification_BDT.class.C"
 #include "TMVAClassification_BDT.classEndcap.C"
 
+//#define MY
+
 using namespace std;
 
 // ----------------------------------------------------------------------
@@ -17,6 +19,7 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
 
   MASSMIN = 4.5;
   MASSMAX = 6.5; 
+  BLIND = 0;
 
   fGenBTmi = fGenM1Tmi = fGenM2Tmi = fNGenPhotons = fRecM1Tmi = fRecM2Tmi = fCandTmi = -1; 
 
@@ -90,9 +93,11 @@ candAna::~candAna() {
 
 // ----------------------------------------------------------------------
 void candAna::evtAnalysis(TAna01Event *evt) {
+  static int count=0, count0=0, count1=0, count2=0;
+  count0++;
   fpEvt = evt; 
 
-  //  cout << "----------------------------------------------------------------------" << endl;
+  //cout << "----------------------------------------------------------------------" << endl;
 
   if (fIsMC) {
     genMatch(); 
@@ -113,12 +118,18 @@ void candAna::evtAnalysis(TAna01Event *evt) {
       if (fVerbose > 19) cout << "Skipping candidate at " << iC << " which is of type " << pCand->fType << endl;
       continue;
     }
+
+    count2++;
+
     if (fVerbose > 10) {
       
       int gen1(-1), gen2(-1), gen0(-1);
-      gen1 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fID;
-      gen2 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig2)->fIndex)->fGenIndex)->fID;
-      gen0 = fpEvt->getGenCand(fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fMom1)->fID;
+
+      if (fIsMC) {
+	gen1 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fID;
+	gen2 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig2)->fIndex)->fGenIndex)->fID;
+	gen0 = fpEvt->getGenCand(fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fMom1)->fID;
+      }
 
       cout << "Analyzing candidate at " << iC << " which is of type " << TYPE 
 	   << " with sig tracks: " << pCand->fSig1 << " .. " << pCand->fSig2
@@ -131,11 +142,15 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 	   << " ctm " << fCandTmi 
 	   << endl;
       if (TMath::Abs(gen1) != 13 || TMath::Abs(gen2) != 13) fpEvt->dumpGenBlock();
+
     }
     fpCand = pCand;
     fCandIdx = iC; 
+
+    //cout<<" call analysis "<<fpCand<<" "<<iC<<endl;
     // -- call derived functions
     candAnalysis();
+
     if (0 && fCandM > 4.99 && fCandM < 5.02 && fCandFLS3d > 13 && fCandA < 0.05 && fMu1Pt > 4.5 && fMu2Pt > 4.5) {
       cout << "----------------------------------------------------------------------" << endl;
       int gen1(-1), gen2(-1), gen0(-1);
@@ -162,18 +177,34 @@ void candAna::evtAnalysis(TAna01Event *evt) {
       fpEvt->dumpGenBlock();
     }
 
+    
+    if(BLIND != 0) 
+      cout<<" ---------> blind "<<BLIND<<" "<<fpCand->fMass<<" "<<fCandM<<" "<<SIGBOXMIN<<" "<<SIGBOXMAX<<" "
+	  <<fCandIso<<" "<<fPreselection<<endl;;
+
     if (fIsMC) {
       fTree->Fill(); 
     } else {
       if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX  && fCandIso > 0.7) {
 	// do nothing
+	cout<<" blinded "<<BLIND<<" "<<fpCand->fMass<<" "<<fCandM<<" "<<SIGBOXMIN<<" "<<SIGBOXMAX<<" "<<fCandIso<<" "<<fPreselection<<endl;;
       } else {
+	//if (fPreselection) count1++;
+	count1++;
 	if (fPreselection) {
+	  count++;
+	  cout<<" write "<<count<<" "<<count1<<" "<<count2<<" "<<count0<<" "<<fPreselection<<endl;
 	  ((TH1D*)fHistDir->Get("../monEvents"))->Fill(12); 
 	  fTree->Fill(); 
 	}         
       }
     }
+
+    //cout<<" 1 "<<endl;
+
+#ifdef MY
+    return; // Skip histo fillingh d.k. 31/5/12
+#endif
 
     // -- fill histograms
     fillCandidateHistograms(fRegion["A"]);
@@ -188,9 +219,6 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     
     fillCandidateHistograms(fRegion[Form("AR%i", fRunRange)]);
 
-    
-
-
     // -- special studies
     //    fillIsoPlots(); // FIXISOPLOTS
 
@@ -200,6 +228,8 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 
 // ----------------------------------------------------------------------
 void candAna::candAnalysis() {
+
+  //cout<<" cand "<<fpCand<<endl;
 
   if (0 == fpCand) return;
 
@@ -216,7 +246,8 @@ void candAna::candAnalysis() {
       //      cout << "skipping  fake vertex" << endl;
     }
   }
-  //  cout << "fPvN = " << fPvN << endl;
+
+  //cout << "fPvN = " << fPvN << " "<<fpCand->fPvIdx <<" "<<fpCand->fPvIdx2 <<" "<<fpEvt->nPV()<<endl;
 
   if (fpCand->fPvIdx > -1 && fpCand->fPvIdx < fpEvt->nPV()) {
     goodSV = 1; 
@@ -615,18 +646,18 @@ void candAna::candAnalysis() {
 
   fAnaCuts.update(); 
 
-//   fPreselection = fWideMass && fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsPt && fGoodMuonsEta; 
-//   fPreselection = fPreselection && fGoodQ;
+  //fPreselection = fWideMass && fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsPt && fGoodMuonsEta; 
+  fPreselection = true; 
   fPreselection = fPreselection && fGoodPvLip && fGoodPvLipS && fGoodQ; 
   fPreselection = fPreselection && (fCandPt > 5) && (fCandA < 0.2) && (fCandFLS3d > 5) && (fCandChi2/fCandDof < 5); 
-  //  fPreselection = true; 
+
 }
-
-
 
 // ----------------------------------------------------------------------
 void candAna::fillCandidateHistograms(int offset) {
  
+  //cout<<" 11 "<<fpCand<<" "<<offset<<endl;
+
   // -- only candidate histograms below
   if (0 == fpCand) return;
 
@@ -1195,6 +1226,10 @@ void candAna::bookHist() {
   fTree->Branch("hm2eta", &fHltMu2Eta, "hm2eta/D");  
   fTree->Branch("hm2phi", &fHltMu2Phi, "hm2phi/D");  
 
+#ifdef MY
+  cout<<" Exit,do not book any special histos other than the redtreee, d.k. 31/5/12"<<endl;
+  return; 
+#endif
 
   // -- Efficiency/Acceptance Tree
   fEffTree = new TTree("effTree", "effTree");
