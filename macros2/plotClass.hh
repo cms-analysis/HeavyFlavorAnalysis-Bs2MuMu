@@ -1,6 +1,9 @@
 #ifndef PLOTCLASS
 #define PLOTCLASS
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "TLatex.h"
 #include "TLegend.h"
 #include "TLegendEntry.h"
@@ -33,6 +36,7 @@
 #include "TMVA/Factory.h"
 #include "TMVA/Reader.h"
 #include "TMVA/Tools.h"
+
 struct readerData {
   float pt, eta, m1eta, m2eta, m1pt, m2pt;
   float fls3d, alpha, maxdoca, pvip, pvips, iso, docatrk, chi2dof, closetrk; 
@@ -174,6 +178,7 @@ public:
   void printNumbers(numbers &a, ostream &OUT);
   void initNumbers(numbers *a); 
   int  detChan(double m1eta, double m2eta);
+  void reduceTree(TTree *t);
 
 
   virtual void dumpSamples();
@@ -308,10 +313,14 @@ public:
   virtual void loopOverTree(TTree *t, std::string mode, int function, int nevts = -1); 
   virtual void candAnalysis(int mode);
   virtual void loopFunction(int function) {std::cout << "replace me" << std::endl;} 
-  virtual void calcBDT();
+  
+  virtual TMVA::Reader* setupReader(std::string xmlFile, readerData &rd);
+  virtual void calcBDT(bool rejectInvIso = false);
+
   struct RedTreeData fb; 
-  std::vector<TMVA::Reader*> fReaderEven; 
-  std::vector<TMVA::Reader*> fReaderOdd; 
+  std::vector<TMVA::Reader*> fReaderEvents0; 
+  std::vector<TMVA::Reader*> fReaderEvents1; 
+  std::vector<TMVA::Reader*> fReaderEvents2; 
   bool fIsMC, fIsSignal;
   double fBDT; 
   readerData frd; 
@@ -332,7 +341,7 @@ public:
   ClassDef(plotClass,1) //Testing plotClass
 };
 
-TMVA::Reader* setupReader(std::string xmlFile, readerData& rd);
+//TMVA::Reader* setupReader(std::string xmlFile, readerData& rd);
 
 
 #endif

@@ -3,8 +3,6 @@
 #include <string>
 
 #include "../interface/HFMasses.hh"
-#include "TMVAClassification_BDT.class.C"
-#include "TMVAClassification_BDT.classEndcap.C"
 
 //#define MY
 
@@ -46,41 +44,6 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   fRegion.insert(make_pair("away", 12)); // the closest other PV is far away
 
 
-  // -- BARREL version
-  //  const char* inputVars[] = { "alpha", "fls3d", "chi2/dof", "iso", "m1pt", "m2pt", "pt", "m1eta", "docatrk" };
-  //  const char* inputVars[] = { "alpha", "fls3d", "iso", "m1pt", "m2pt", "m1eta", "m2eta", "docatrk", "pvlips", "closetrk" };
-  //  const char* inputVars[] = { "alpha", "fls3d", "iso", "m1pt", "m2pt", "m1eta", "m2eta", "docatrk", "pvlips", "closetrk" };
-  //  const char* inputVars[] = { "alpha", "fls3d", "iso", "m1eta", "m2eta", "pvlips", "closetrk", "prob" };
-
-  vector<string> vvars; 
-  vvars.push_back("alpha"); 
-  vvars.push_back("fls3d"); 
-  vvars.push_back("iso"); 
-  vvars.push_back("m1eta"); 
-  vvars.push_back("m2eta"); 
-  vvars.push_back("pvlips"); 
-  vvars.push_back("closetrk"); 
-  vvars.push_back("prob"); 
-
-  fBdtReader = new ReadBDT(vvars); 
-
-  // -- ENDCAP version
-  //  const char* inputVars[] = { "alpha", "fls3d", "iso", "m1pt", "m2pt", "m1eta", "m2eta", "docatrk", "pvlips", "closetrk" };
-  //  const char* inputVars[] = { "alpha", "fls3d", "iso", "m1pt", "m2pt", "m1eta", "m2eta", "docatrk", "pvlips", "closetrk" };
-  //  const char* inputVars[] = { "alpha", "fls3d", "iso", "m1pt", "m2pt", "m1eta", "m2eta", "docatrkbdt", "pvlips", "closetrk" };
-
-  vvars.clear(); 
-  vvars.push_back("alpha"); 
-  vvars.push_back("fls3d"); 
-  vvars.push_back("iso"); 
-  vvars.push_back("m1pt"); 
-  vvars.push_back("m2pt"); 
-  vvars.push_back("m1eta"); 
-  vvars.push_back("m2eta"); 
-  vvars.push_back("docatrkbdt"); 
-  vvars.push_back("pvlips"); 
-  vvars.push_back("closetrk"); 
-  fBdt2Reader = new ReadBDT2(vvars); 
 }
 
 
@@ -445,6 +408,8 @@ void candAna::candAnalysis() {
     fBarrel = false; 
   }    
 
+  fChan = detChan(fMu1Eta, fMu2Eta); 
+
   double dphi = p1->fPlab.DeltaPhi(p2->fPlab);
   fCowboy = (p1->fQ*dphi > 0); 
 
@@ -585,34 +550,15 @@ void candAna::candAnalysis() {
       fCandDocaTrk = fpCand->fNstTracks[i].second.first;
       break;
     }
-
+    
   }
   
-  // -- fill cut variables
-  std::vector<double> inputVec(8);
-  inputVec[0] = fCandA; 
-  inputVec[1] = fCandFLS3d;
-  inputVec[2] = fCandIso;
-  inputVec[3] = fMu1Eta;
-  inputVec[4] = fMu2Eta;
-  inputVec[5] = fCandPvLipS;
-  inputVec[6] = fCandCloseTrk;
-  inputVec[7] = fCandProb;
-  fCandBDT    = fBdtReader->GetMvaValue(inputVec);
+  if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX  && fCandIso < 0.7) {
+    calcBDT(true);
+  } else {
+    calcBDT(false);
+  }  
 
-  std::vector<double> inputVec2(10);
-  inputVec2[0] = fCandA; 
-  inputVec2[1] = fCandFLS3d;
-  inputVec2[2] = fCandIso;
-  inputVec2[3] = fMu1Pt;
-  inputVec2[4] = fMu2Pt;
-  inputVec2[5] = fMu1Eta;
-  inputVec2[6] = fMu2Eta;
-  inputVec2[7] = fCandDocaTrkBdt;
-  inputVec2[8] = fCandPvLipS;
-  inputVec2[9] = fCandCloseTrk;
-  fCandBDT2    = fBdt2Reader->GetMvaValue(inputVec2);
-  
   fWideMass       = ((fpCand->fMass > MASSMIN) && (fpCand->fMass < MASSMAX)); 
 
   fGoodMuonsID    = (fMu1Id && fMu2Id);
@@ -742,7 +688,7 @@ void candAna::fillCandidateHistograms(int offset) {
   fpFL3d[offset]->fill(fCandFL3d, fCandM); 
   fpFL3dE[offset]->fill(fCandFL3dE, fCandM); 
   fpFLSxy[offset]->fill(fCandFLSxy, fCandM); 
-  fpBDT[offset]->fill(fCandBDT, fCandM);    
+  fpBDT[offset]->fill(fBDT, fCandM);    
 
   fpLip[offset]->fill(fCandPvLip, fCandM); 
   fpLipE[offset]->fill(fCandPvLipE, fCandM); 
@@ -1121,8 +1067,7 @@ void candAna::bookHist() {
   fTree->Branch("pvn",     &fPvN,               "pvn/I");
   fTree->Branch("cb",      &fCowboy,            "cb/O");
   fTree->Branch("rr",      &fRunRange,          "rr/I");
-  fTree->Branch("bdt",     &fCandBDT,           "bdt/D");
-  fTree->Branch("bdt2",    &fCandBDT2,          "bdt2/D");
+  fTree->Branch("bdt",     &fBDT,               "bdt/D");
   fTree->Branch("npv",     &fPvN,               "npv/I");
   fTree->Branch("pvw8",    &fPvAveW8,           "pvw8/D");
 
@@ -1842,7 +1787,7 @@ void candAna::readCuts(string fileName, int dump) {
   float CutValue;
   int ok(0);
 
-  char  buffer[200];
+  char  buffer[1000], XmlName[1000];
   fHistDir->cd();
   if (dump) cout << "gDirectory: "; fHistDir->pwd();
   TH1D *hcuts = new TH1D("hcuts", "", 1000, 0., 1000.);
@@ -2226,6 +2171,38 @@ void candAna::readCuts(string fileName, int dump) {
       hcuts->SetBinContent(ibin, MUIP);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: IP(#mu) :: %3.1f", CutName, MUIP));
     }
+
+
+    sscanf(buffer, "%s %s", CutName, XmlName);
+    string ctmp = CutName; 
+    string sXmlName;
+    replaceAll(ctmp, " ", ""); 
+    // -- barrel
+    if (!strcmp(ctmp.c_str(), "xml0")) {
+      sXmlName = "weights/" + string(XmlName) + "-Events0_BDT.weights.xml"; 
+      fReaderEvents0.push_back(setupReader(sXmlName, frd)); 
+      if (dump) cout << "xml:                   " << sXmlName << endl;
+      sXmlName = "weights/" + string(XmlName) + "-Events1_BDT.weights.xml"; 
+      fReaderEvents1.push_back(setupReader(sXmlName, frd)); 
+      if (dump) cout << "xml:                   " << sXmlName << endl;
+      sXmlName = "weights/" + string(XmlName) + "-Events2_BDT.weights.xml"; 
+      fReaderEvents2.push_back(setupReader(sXmlName, frd)); 
+      if (dump) cout << "xml:                   " << sXmlName << endl;
+    }
+
+    // -- endcap
+    if (!strcmp(ctmp.c_str(), "xml1")) {
+      sXmlName = "weights/" + string(XmlName) + "-Events0_BDT.weights.xml"; 
+      fReaderEvents0.push_back(setupReader(sXmlName, frd)); 
+      if (dump) cout << "xml:                   " << sXmlName << endl;
+      sXmlName = "weights/" + string(XmlName) + "-Events1_BDT.weights.xml"; 
+      fReaderEvents1.push_back(setupReader(sXmlName, frd)); 
+      if (dump) cout << "xml:                   " << sXmlName << endl;
+      sXmlName = "weights/" + string(XmlName) + "-Events2_BDT.weights.xml"; 
+      fReaderEvents2.push_back(setupReader(sXmlName, frd)); 
+      if (dump) cout << "xml:                   " << sXmlName << endl;
+    }
+
 
     //    if (!ok) cout << "==> candAna: error? nothing done with " << CutName << "!!" << endl;
   }
@@ -3001,5 +2978,200 @@ void candAna::getSigTracks(vector<int> &v, TAnaCand *pC) {
       v.push_back(pT->fIndex); 
     }
   }
+
+}
+
+
+// ----------------------------------------------------------------------
+void candAna::calcBDT(bool rejectInvIso) {
+  fBDT = -99.;
+  //??  if (5 == mode && 5.2 < mass && mass < 5.45 && fb.iso < 0.7) continue; 
+  if (fChan < 0) return;
+  if (rejectInvIso && 5.2 < fCandM && fCandM < 5.45 && fCandIso < 0.7) return;
+  if (fCandPt > 100) return;
+  if (fCandPt < 6) return;
+  if (fMu1Pt < 4) return;
+  if (fMu1Pt < 4) return;
+  if (fCandFLS3d > 1.5) return;
+  if (fCandFLS3d < 0.) return;
+  if (fCandM > 5.9) return;
+  if (fCandM < 4.9) return;
+  
+  //   if (!fb.hlt) return;
+  //   if (!fb.gmuid) return;
+  
+  frd.pt = fCandPt; 
+  frd.eta = fCandEta; 
+  frd.m1eta = fMu1Eta; 
+  frd.m2eta = fMu2Eta; 
+  frd.m1pt = fMu1Pt; 
+  frd.m2pt = fMu2Pt;
+  frd.fls3d = fCandFLS3d; 
+  frd.alpha = fCandA; 
+  frd.maxdoca = fCandDoca;
+  frd.pvip = fCandPvIp; 
+  frd.pvips = fCandPvIpS; 
+  frd.iso = fCandIso; 
+  frd.docatrk = fCandDocaTrk; 
+  frd.chi2dof = fCandChi2/fCandDof; 
+  frd.closetrk = fCandCloseTrk; 
+  
+  frd.m  = fCandM; 
+  cout << "Evt = " << fEvt << " %3 = " << fEvt%3 << " chan = " << fChan << " " << " etas = " << fMu1Eta << " " << fMu2Eta;
+  if (0 == fEvt%3) {
+    fBDT   = fReaderEvents0[fChan]->EvaluateMVA("BDT"); 
+  } else if (1 == fEvt%3) {
+    fBDT   = fReaderEvents1[fChan]->EvaluateMVA("BDT"); 
+  } else if (2 == fEvt%3) {
+    fBDT   = fReaderEvents2[fChan]->EvaluateMVA("BDT"); 
+  } else {
+    cout << "all hell break loose" << endl;
+  }
+  cout << " bdt = " << fBDT << endl;
+}
+
+
+// ----------------------------------------------------------------------
+int candAna::detChan(double m1eta, double m2eta) {
+  // -- simple two channel analysis: channel 0 if both muons in barrel, channel 1 else
+  if (TMath::Abs(m1eta) < 1.4 && TMath::Abs(m2eta) < 1.4) return 0; 
+  if (TMath::Abs(m1eta) < 2.4 && TMath::Abs(m2eta) < 2.4) return 1; 
+  return -1; 
+}
+
+
+// ----------------------------------------------------------------------
+TMVA::Reader* candAna::setupReader(string xmlFile, readerData &rd) {
+  TMVA::Reader *reader = new TMVA::Reader( "!Color:!Silent" );
+  
+  TString dir    = "weights/";
+  TString methodNameprefix = "BDT";
+  //  TString methodName = TString(fBdt) + TString(" method");
+  //  TString weightfile = dir + fBdt + "_" + methodNameprefix + TString(".weights.xml");
+  TString weightfile = xmlFile;
+
+  // -- read in variables from weight file
+  vector<string> allLines; 
+  char  buffer[2000];
+  cout << "setupReader, open file " << weightfile << endl;
+  ifstream is(weightfile); 
+  while (is.getline(buffer, 2000, '\n')) allLines.push_back(string(buffer));
+  int nvars(-1); 
+  string::size_type m1, m2;
+  string stype; 
+  cout << "  read " << allLines.size() << " lines " << endl;
+  for (unsigned int i = 0; i < allLines.size(); ++i) {
+    // -- parse and add variables
+    if (string::npos != allLines[i].find("Variables NVar")) {
+      m1 = allLines[i].find("=\""); 
+      stype = allLines[i].substr(m1+2, allLines[i].size()-m1-2-2); 
+      cout << "  " << stype << " variables" << endl;
+      nvars = atoi(stype.c_str());
+      if (-1 == nvars) continue;
+      for (unsigned int j = i+1; j < i+nvars+1; ++j) {
+	m1 = allLines[j].find("Expression=\"")+10; 
+	m2 = allLines[j].find("\" Label=\"");
+	stype = allLines[j].substr(m1+2, m2-m1-2); 
+	//	cout << "ivar " << j-i << " variable string: ->" << stype << "<-" << endl;
+	if (stype == "m1pt") {
+	  cout << "  adding m1pt" << endl;
+	  reader->AddVariable( "m1pt", &rd.m1pt);
+	}
+	if (stype == "m2pt") {
+	  cout << "  adding m2pt" << endl;
+	  reader->AddVariable( "m2pt", &rd.m2pt);
+	}
+	if (stype == "m1eta") {
+	  cout << "  adding m1eta" << endl;
+	  reader->AddVariable( "m1eta", &rd.m1eta);
+	}
+	if (stype == "m2eta") {
+	  reader->AddVariable( "m2eta", &rd.m2eta);
+	  cout << "  adding m2eta" << endl;
+	}
+	if (stype == "pt") {
+	  cout << "  adding pt" << endl;
+	  reader->AddVariable( "pt", &rd.pt);
+	}
+	if (stype == "eta") {
+	  cout << "  adding eta" << endl;
+	  reader->AddVariable( "eta", &rd.eta);
+	}
+	if (stype == "fls3d") {
+	  cout << "  adding fls3d" << endl;
+	  reader->AddVariable( "fls3d", &rd.fls3d);
+	}
+	if (stype == "alpha") {
+	  cout << "  adding alpha" << endl;
+	  reader->AddVariable( "alpha", &rd.alpha);
+	}
+	if (stype == "maxdoca") {
+	  cout << "  adding maxdoca" << endl;
+	  reader->AddVariable( "maxdoca", &rd.maxdoca);
+	}
+	if (stype == "pvip") {
+	  cout << "  adding pvip" << endl;
+	  reader->AddVariable( "pvip", &rd.pvip);
+	}
+	if (stype == "pvips") {
+	  cout << "  adding pvips" << endl;
+	  reader->AddVariable( "pvips", &rd.pvips);
+	}
+	if (stype == "iso") {
+	  cout << "  adding iso" << endl;
+	  reader->AddVariable( "iso", &rd.iso);
+	}
+	if (stype == "docatrk") {
+	  cout << "  adding docatrk" << endl;
+	  reader->AddVariable( "docatrk", &rd.docatrk);
+	}
+	if (stype == "closetrk") {
+	  cout << "  adding closetrk" << endl;
+	  reader->AddVariable( "closetrk", &rd.closetrk);
+	}
+	if (stype == "chi2/dof") {
+	  cout << "  adding chi2/dof" << endl;
+	  reader->AddVariable( "chi2dof := chi2/dof", &rd.chi2dof);
+	}
+      }
+      break;
+    }
+  }
+  
+  nvars = -1; 
+  for (unsigned int i = 0; i < allLines.size(); ++i) {
+    // -- parse and add spectators
+    if (string::npos != allLines[i].find("Spectators NSpec")) {
+      m1 = allLines[i].find("=\""); 
+      stype = allLines[i].substr(m1+2, allLines[i].size()-m1-2-2); 
+      //      cout << "==> " << stype << endl;
+      nvars = atoi(stype.c_str());
+      if (-1 == nvars) continue;
+      for (unsigned int j = i+1; j < i+nvars+1; ++j) {
+	m1 = allLines[j].find("Expression=\"")+10; 
+	m2 = allLines[j].find("\" Label=\"");
+	stype = allLines[j].substr(m1+2, m2-m1-2); 
+	cout << "ivar " << j-i << " spectator string: ->" << stype << "<-" << endl;
+	if (stype == "m") {
+	  cout << "  adding m as spectator" << endl;
+	  reader->AddSpectator( "m", &rd.m);  
+	}
+      }
+      break;
+    }
+  }
+
+  // --- Book the MVA methods
+  reader->BookMVA("BDT", weightfile); 
+  return reader; 
+}
+
+
+// ----------------------------------------------------------------------
+void candAna::replaceAll(std::string &s, std::string a, std::string b) {
+  
+  TString ts(s.c_str()); 
+  ts.ReplaceAll(a.c_str(), b.c_str()); 
+  s = ts.Data(); 
 
 }

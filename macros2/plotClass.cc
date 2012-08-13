@@ -324,15 +324,6 @@ void plotClass::initNumbers(numbers *a) {
 
 
 // ----------------------------------------------------------------------
-int plotClass::detChan(double m1eta, double m2eta) {
-  // -- simple two channel analysis: channel 0 if both muons in barrel, channel 1 else
-  if (TMath::Abs(m1eta) < fCuts[0]->etaMax && TMath::Abs(m2eta) < fCuts[0]->etaMax) return 0; 
-  if (TMath::Abs(m1eta) < 2.4 && TMath::Abs(m2eta) < 2.4) return 1; 
-  return -1; 
-}
-
-
-// ----------------------------------------------------------------------
 void plotClass::loopTree(int mode, int proc) {
   // -- mode:
   // 0  Bs2MuMu MC
@@ -645,7 +636,7 @@ void plotClass::loopTree(int mode, int proc) {
 
     if (fDoUseBDT) {
       // -- skip inverted isolation events
-      if (5 == mode && 5.2 < mass && mass < 5.45 && fb.iso < 0.7) continue; 
+      if (5 == mode && 5.2 < mass && mass < 5.45) continue; 
       
       if(5 == mode || 15 == mode || 25 == mode) {
 	if (false == fb.hlt) continue;
@@ -671,7 +662,11 @@ void plotClass::loopTree(int mode, int proc) {
 	if (fb.psipt < 7) continue;
       } 
 
-      calcBDT();
+      if (5 == mode) {
+	calcBDT(true); 
+      } else {
+	calcBDT(false);
+      }
       if (bd2dstarpi) {
 	if (fBDT < static_cast<double>(proc)/100.) {
 	  continue;
@@ -811,6 +806,8 @@ void plotClass::loopTree(int mode, int proc) {
     fhNormC[fChan]->Fill(fb.cm);
     //    fhNorm[fChan]->Fill(mass);
     
+    elist->Enter(jentry); 
+
     if (0 == mode && mass < pCuts->mBsLo) continue;
     if (0 == mode && mass > pCuts->mBsHi) continue;
     if (1 == mode && mass < pCuts->mBdLo) continue;
@@ -819,8 +816,6 @@ void plotClass::loopTree(int mode, int proc) {
     if (10 == mode && mass > fNoHi) continue;
     if (20 == mode && mass < fCsLo) continue;
     if (20 == mode && mass > fCsHi) continue;
-
-    elist->Enter(jentry); 
 
     fhMassWithMassCuts[fChan]->Fill(mass);
     fhMassWithMassCutsManyBins[fChan]->Fill(mass); 
@@ -898,11 +893,15 @@ void plotClass::loopTree(int mode, int proc) {
   } else {
     tname = smode; 
   }
+  TFile *fLocal = TFile::Open(Form("small-%s.root", tname.c_str()), "RECREATE"); 
+  reduceTree(t);
+
   TTree *small = t->CopyTree(""); 
   cout << "--> Writing small tree with name " << Form("%s_%s", tname.c_str(), (fDoUseBDT?"bdt":"cnc")) << endl;
   small->SetName(Form("%s_%s", tname.c_str(), (fDoUseBDT?"bdt":"cnc")));
-  small->SetDirectory(fHistFile); 
-
+  fLocal->Write();
+  fLocal->Close();
+  t->SetBranchStatus("*",1);
 
   cout << gDirectory->GetName() << ": " << fhMassWithAllCuts[0]->GetSumOfWeights() 
        << " (" << fhMassWithAllCuts[0]->Integral(0, fhMassWithAllCuts[0]->GetNbinsX())  << ") " 
@@ -918,8 +917,8 @@ void plotClass::loopTree(int mode, int proc) {
       string modifier = (fDoUseBDT?"bdt":"cnc"); 
       fhMassWithAllCuts[i]->SetName(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i)); 
       fhMassWithAllCuts[i]->SetTitle(Form("hMassWithAllCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, pD->GetFile()->GetName())); 
-      //      fhMassWithAllCuts[i]->Write();
-      fhMassWithAllCuts[i]->SetDirectory(fHistFile);
+      fhMassWithAllCuts[i]->Write();
+      //      fhMassWithAllCuts[i]->SetDirectory(fHistFile);
     }
     pD->cd();
 
@@ -1349,31 +1348,33 @@ void plotClass::loopTree(int mode, int proc) {
     cout << "fHistFile: " << fHistFile  << endl;
     fHistFile->cd();
     string modifier = (fDoUseBDT?"bdt":"cnc"); 
-    //    fhMassWithMassCutsManyBins[i]->SetName(Form("hMassWithMassCutsManyBins%d_chan%d", mode, i)); fhMassWithMassCutsManyBins[i]->Write();
-    //    fhMassWithMassCuts[i]->SetName(Form("hMassWithMassCuts%d_chan%d", mode, i)); fhMassWithMassCuts[i]->Write();
-    fhMassWithAllCutsManyBins[i]->SetName(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i)); 
+    fhMassWithMassCutsManyBins[i]->SetName(Form("hMassWithMassCutsManyBins%d_chan%d", mode, i)); fhMassWithMassCutsManyBins[i]->Write();
+    fhMassWithMassCuts[i]->SetName(Form("hMassWithMassCuts%d_chan%d", mode, i)); fhMassWithMassCuts[i]->Write();
+    //     fhMassWithAllCutsManyBins[i]->SetName(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i)); 
     fhMassWithAllCutsManyBins[i]->SetTitle(Form("hMassWithAllCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, pD->GetName())); 
-    //    fhMassWithAllCutsManyBins[i]->Write();
-    fhMassWithAllCutsManyBins[i]->SetDirectory(fHistFile);
+    fhMassWithAllCutsManyBins[i]->Write();
+    //     fhMassWithAllCutsManyBins[i]->SetDirectory(fHistFile);
     fhMassWithAllCuts[i]->SetName(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i)); 
-    //    fhMassWithAllCuts[i]->Write();
-    fhMassWithAllCuts[i]->SetDirectory(fHistFile);
+    fhMassWithAllCuts[i]->Write();
+    //     fhMassWithAllCuts[i]->SetDirectory(fHistFile);
     fhNorm[i]->SetName(Form("hNorm_%s_%d_chan%d", modifier.c_str(), mode, i)); 
-    //    fhNorm[i]->Write();
-    fhNorm[i]->SetDirectory(fHistFile);
+    fhNorm[i]->Write();
+    //    fhNorm[i]->SetDirectory(fHistFile);
     fhNormC[i]->SetName(Form("hNormC_%s_%d_chan%d", modifier.c_str(), mode, i)); 
-    //    fhNormC[i]->Write();
-    fhNormC[i]->SetDirectory(fHistFile);
+    fhNormC[i]->Write();
+    //    fhNormC[i]->SetDirectory(fHistFile);
     fhDstarPi[i]->SetName(Form("hDstarPi_%s_%d_chan%d", modifier.c_str(), mode, i)); 
-    //    fhDstarPi[i]->Write();
-    fhDstarPi[i]->SetDirectory(fHistFile);
+    fhDstarPi[i]->Write();
+    //    fhDstarPi[i]->SetDirectory(fHistFile);
 
     if (5 == mode) {
       t->SetEventList(tlist);
+      reduceTree(t);
       TTree *small = t->CopyTree(""); 
       t->SetName(Form("%s", (fDoUseBDT?"bdt":"cnc")));
-      //      small->Write(); 
-      small->SetDirectory(fHistFile); 
+      small->Write(); 
+      t->SetBranchStatus("*",1);
+      //      small->SetDirectory(fHistFile); 
     }
     //    fhMassNoCuts[i]->SetName(Form("hMassNoCuts%d_chan%d", mode, i)); fhMassNoCuts[i]->Write();
     //    fhMassAbsNoCuts[i]->SetName(Form("hMassAbsNoCuts%d_chan%d", mode, i)); fhMassAbsNoCuts[i]->Write();
@@ -2570,6 +2571,7 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
   
 
   delete lF1; 
+  delete lBg; 
 
 }
 
@@ -2666,6 +2668,7 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
   cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
   
   delete lF1; 
+  delete lBg; 
 
 }
 
@@ -3189,11 +3192,14 @@ void plotClass::readCuts(const char *filename) {
     replaceAll(ctmp, " ", ""); 
     if (!strcmp(ctmp.c_str(), "xml")) {
       a->xmlFile = XmlName;
-      sXmlName = "weights/" + a->xmlFile + "-even_BDT.weights.xml"; 
-      fReaderEven.push_back(setupReader(sXmlName, frd)); 
+      sXmlName = "weights/" + a->xmlFile + "-Events0_BDT.weights.xml"; 
+      fReaderEvents0.push_back(setupReader(sXmlName, frd)); 
       if (dump) cout << "xml:                   " << sXmlName << endl;
-      sXmlName = "weights/" + a->xmlFile + "-odd_BDT.weights.xml"; 
-      fReaderOdd.push_back(setupReader(sXmlName, frd)); 
+      sXmlName = "weights/" + a->xmlFile + "-Events1_BDT.weights.xml"; 
+      fReaderEvents1.push_back(setupReader(sXmlName, frd)); 
+      if (dump) cout << "xml:                   " << sXmlName << endl;
+      sXmlName = "weights/" + a->xmlFile + "-Events2_BDT.weights.xml"; 
+      fReaderEvents2.push_back(setupReader(sXmlName, frd)); 
       if (dump) cout << "xml:                   " << sXmlName << endl;
     }
 
@@ -3692,8 +3698,12 @@ void plotClass::candAnalysis(int mode) {
     // -- skip inverted isolation events
     if (0 == mode && 5.2 < fb.m && fb.m < 5.45 && fb.iso < 0.7) return; 
     
-    if (TMath::IsNaN(fb.fls3d)) return;
-    calcBDT();
+    if (TMath::IsNaN(fb.fls3d)) return; 
+    if (5 == mode) {
+      calcBDT(true); 
+    } else {
+      calcBDT(false);
+    }
   }
 
   fGoodMuonsID    = fb.gmuid;
@@ -3738,10 +3748,10 @@ void plotClass::candAnalysis(int mode) {
 
 
 // ----------------------------------------------------------------------
-void plotClass::calcBDT() {
+void plotClass::calcBDT(bool rejectInvIso) {
   fBDT = -99.;
   //??  if (5 == mode && 5.2 < mass && mass < 5.45 && fb.iso < 0.7) continue; 
-  if (fb.iso < 0.7) return;
+  if (rejectInvIso && 5.2 < fb.m && fb.m < 5.45 && fb.iso < 0.7) return;
   if (fb.pt > 100) return;
   if (fb.pt < 6) return;
   if (fb.m1pt < 4) return;
@@ -3770,16 +3780,49 @@ void plotClass::calcBDT() {
   frd.closetrk = fb.closetrk; 
   
   frd.m  = fb.m; 
-  if (0 == fb.evt%2) {
-    fBDT   = fReaderEven[fChan]->EvaluateMVA("BDT"); 
+  if (0 == fb.evt%3) {
+    fBDT   = fReaderEvents0[fChan]->EvaluateMVA("BDT"); 
+  } else if (1 == fb.evt%3) {
+    fBDT   = fReaderEvents1[fChan]->EvaluateMVA("BDT"); 
+  } else if (2 == fb.evt%3) {
+    fBDT   = fReaderEvents2[fChan]->EvaluateMVA("BDT"); 
   } else {
-    fBDT   = fReaderOdd[fChan]->EvaluateMVA("BDT"); 
+    cout << "all hell break loose" << endl;
   }
 }
 
 
+
+
 // ----------------------------------------------------------------------
-TMVA::Reader* setupReader(string xmlFile, readerData &rd) {
+double plotClass::recalcMass(double m1, double m2) {
+  
+  TLorentzVector p1, p2; 
+  p1.SetPtEtaPhiM(fb.k1pt, fb.k1eta, fb.k1phi, m1);
+  p2.SetPtEtaPhiM(fb.k2pt, fb.k2eta, fb.k2phi, m2);
+  
+  TLorentzVector p0 = p1 + p2; 
+  
+  return p0.M();
+  
+}
+
+
+// ----------------------------------------------------------------------
+void plotClass::reduceTree(TTree *t) {
+  t->SetBranchStatus("*",0);
+  t->SetBranchStatus("run", 1); 
+  t->SetBranchStatus("evt", 1); 
+  t->SetBranchStatus("bdt", 1); 
+  t->SetBranchStatus("m", 1); 
+  t->SetBranchStatus("m1eta", 1); 
+  t->SetBranchStatus("m2eta", 1); 
+  t->SetBranchStatus("eta", 1); 
+}
+
+
+// ----------------------------------------------------------------------
+TMVA::Reader* plotClass::setupReader(string xmlFile, readerData &rd) {
   TMVA::Reader *reader = new TMVA::Reader( "!Color:!Silent" );
   
   TString dir    = "weights/";
@@ -3794,7 +3837,7 @@ TMVA::Reader* setupReader(string xmlFile, readerData &rd) {
   cout << "setupReader, open file " << weightfile << endl;
   ifstream is(weightfile); 
   while (is.getline(buffer, 2000, '\n')) allLines.push_back(string(buffer));
-  int ok(0), nvars(-1), ivar(-1); 
+  int nvars(-1); 
   string::size_type m1, m2;
   string stype; 
   cout << "  read " << allLines.size() << " lines " << endl;
@@ -3904,16 +3947,10 @@ TMVA::Reader* setupReader(string xmlFile, readerData &rd) {
   return reader; 
 }
 
-
 // ----------------------------------------------------------------------
-double plotClass::recalcMass(double m1, double m2) {
-  
-  TLorentzVector p1, p2; 
-  p1.SetPtEtaPhiM(fb.k1pt, fb.k1eta, fb.k1phi, m1);
-  p2.SetPtEtaPhiM(fb.k2pt, fb.k2eta, fb.k2phi, m2);
-  
-  TLorentzVector p0 = p1 + p2; 
-  
-  return p0.M();
-  
+int plotClass::detChan(double m1eta, double m2eta) {
+  // -- simple two channel analysis: channel 0 if both muons in barrel, channel 1 else
+  if (TMath::Abs(m1eta) < fCuts[0]->etaMax && TMath::Abs(m2eta) < fCuts[0]->etaMax) return 0; 
+  if (TMath::Abs(m1eta) < 2.4 && TMath::Abs(m2eta) < 2.4) return 1; 
+  return -1; 
 }

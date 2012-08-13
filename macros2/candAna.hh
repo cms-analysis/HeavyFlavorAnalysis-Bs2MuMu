@@ -32,10 +32,6 @@
 
 #include "bmm2Reader.hh"
 
-
-class ReadBDT; 
-class ReadBDT2; 
-
 struct isoNumbers {
   double iso; 
   int    pvTracks; 
@@ -43,6 +39,17 @@ struct isoNumbers {
   int    Tracks; 
 };
 
+// -- TMVA related
+#include "TMVA/Factory.h"
+#include "TMVA/Reader.h"
+#include "TMVA/Tools.h"
+struct readerData {
+  float pt, eta, m1eta, m2eta, m1pt, m2pt;
+  float fls3d, alpha, maxdoca, pvip, pvips, iso, docatrk, chi2dof, closetrk; 
+  float m;
+};
+
+// ----------------------------------------------------------------------
 class candAna {
   
 public:
@@ -62,6 +69,11 @@ public:
   virtual void        candMatch(); 
   virtual void        triggerSelection();
   virtual void        fillCandidateHistograms(int offset);
+  virtual void        replaceAll(std::string &s, std::string a, std::string b);
+
+  virtual TMVA::Reader* setupReader(std::string xmlFile, readerData &rd);
+  virtual void        calcBDT(bool rejectInvIso = false);
+  virtual int         detChan(double m1eta, double m2eta);
     
   virtual void        bookHist();
   virtual AnalysisDistribution* bookDistribution(const char *hn, const char *ht, const char *hc, int nbins, double lo, double hi);
@@ -142,10 +154,17 @@ public:
   int     fProcessType;
   double  fGenLifeTime; 
 
+  // -- BDT
+  std::vector<TMVA::Reader*> fReaderEvents0; 
+  std::vector<TMVA::Reader*> fReaderEvents1; 
+  std::vector<TMVA::Reader*> fReaderEvents2; 
+  double  fBDT; 
+  readerData frd; 
+
+
   // -- variables for reduced tree, they are from fpCand
   bool    fJSON, fCowboy;
   int     fCandTM, fCandType; 
-  double  fCandBDT, fCandBDT2; 
   int     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fMu1Chi2, fMu2Chi2, fCandQ, fMu1PV, fMu2PV;
   bool    fMu1Id, fMu2Id;  
   double  fMuDist, fMuDeltaR;
@@ -168,6 +187,8 @@ public:
   double  fCandPvLip2, fCandPvLipS2, fCandPvLip12, fCandPvLipE12, fCandPvLipS12; 
 
   double  fOsMuonPt, fOsMuonPtRel, fOsIso, fOsRelIso, fOsMuonDeltaR;
+
+  int     fChan; 
 
   // -- another reduced tree
   TTree       *fEffTree;
@@ -298,8 +319,6 @@ public:
     *fpTk2R11Pt03[NISO], *fpTk2R11Pt05[NISO], *fpTk2R11Pt07[NISO], *fpTk2R11Pt09[NISO], *fpTk2R11Pt11[NISO];
 
 
-  ReadBDT *fBdtReader; 
-  ReadBDT2 *fBdt2Reader; 
 };
 
 #endif
