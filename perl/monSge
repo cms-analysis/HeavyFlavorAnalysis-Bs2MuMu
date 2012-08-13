@@ -4,6 +4,7 @@
 # ------
 #              check status of SGE jobs
 #
+# 2012/08/13   -k adds NOK file for terminated waiting/running jobs
 # 2011/11/29   find terminated jobs
 # 2011/01/20   parse for worker node that had failed job, dump into file problems.txt
 # 2010/06/15   allow killing running jobs
@@ -94,6 +95,8 @@ while(<IN>) {
 	    # print "Killing job $jname $sgeNumber\n";
 	    $bla = `qdel $sgeNumber`;
 	    print $bla;
+	    system("/bin/rm -f  $mdir/OK"); 
+	    system("/bin/touch $mdir/NOK"); 
 	}
     } else { 
 	print OUT "$workerNode: $sgeNumber ($jname) $mdir\n";
