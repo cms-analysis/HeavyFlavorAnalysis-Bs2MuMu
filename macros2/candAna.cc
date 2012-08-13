@@ -2996,8 +2996,8 @@ void candAna::calcBDT(bool rejectInvIso) {
   if (fCandPt < 6) return;
   if (fMu1Pt < 4) return;
   if (fMu1Pt < 4) return;
-  if (fCandFLS3d > 1.5) return;
-  if (fCandFLS3d < 0.) return;
+  if (fCandFL3d > 1.5) return;
+  if (fCandFL3d < 0.) return;
   if (fCandM > 5.9) return;
   if (fCandM < 4.9) return;
   
