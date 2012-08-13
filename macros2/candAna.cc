@@ -3017,7 +3017,7 @@ void candAna::calcBDT(bool rejectInvIso) {
   frd.closetrk = fCandCloseTrk; 
   
   frd.m  = fCandM; 
-  cout << "Evt = " << fEvt << " %3 = " << fEvt%3 << " chan = " << fChan << " " << " etas = " << fMu1Eta << " " << fMu2Eta;
+  //  cout << "Evt = " << fEvt << " %3 = " << fEvt%3 << " chan = " << fChan << " " << " etas = " << fMu1Eta << " " << fMu2Eta;
   if (0 == fEvt%3) {
     fBDT   = fReaderEvents0[fChan]->EvaluateMVA("BDT"); 
   } else if (1 == fEvt%3) {
@@ -3027,7 +3027,7 @@ void candAna::calcBDT(bool rejectInvIso) {
   } else {
     cout << "all hell break loose" << endl;
   }
-  cout << " bdt = " << fBDT << endl;
+  //  cout << " bdt = " << fBDT << endl;
 }
 
 
