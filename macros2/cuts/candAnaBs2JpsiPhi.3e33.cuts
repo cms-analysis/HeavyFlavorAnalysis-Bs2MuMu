@@ -9,6 +9,8 @@ TRIGRANGE    HLT_DoubleMu4_Jpsi_Displaced_v1(1:99999999)
 +input cuts/jpsimuons.cuts
 # -- candidate
 +input cuts/candidate.cuts
+# -- bdt input
++input cuts/bdt.cuts
 # -- J/psi cuts
 +input cuts/jpsi.cuts
 # -- phi cuts

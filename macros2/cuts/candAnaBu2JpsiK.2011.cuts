@@ -10,5 +10,7 @@ TRUTHCAND         521
 +input cuts/jpsimuons.cuts
 # -- candidate
 +input cuts/candidate.cuts
+# -- bdt input
++input cuts/bdt.cuts
 # -- J/psi cuts
 +input cuts/jpsi.cuts

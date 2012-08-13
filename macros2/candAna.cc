@@ -2180,27 +2180,27 @@ void candAna::readCuts(string fileName, int dump) {
     // -- barrel
     if (!strcmp(ctmp.c_str(), "xml0")) {
       sXmlName = "weights/" + string(XmlName) + "-Events0_BDT.weights.xml"; 
+      if (dump) cout << "xml:                   " << sXmlName << endl;
       fReaderEvents0.push_back(setupReader(sXmlName, frd)); 
-      if (dump) cout << "xml:                   " << sXmlName << endl;
       sXmlName = "weights/" + string(XmlName) + "-Events1_BDT.weights.xml"; 
+      if (dump) cout << "xml:                   " << sXmlName << endl;
       fReaderEvents1.push_back(setupReader(sXmlName, frd)); 
-      if (dump) cout << "xml:                   " << sXmlName << endl;
       sXmlName = "weights/" + string(XmlName) + "-Events2_BDT.weights.xml"; 
-      fReaderEvents2.push_back(setupReader(sXmlName, frd)); 
       if (dump) cout << "xml:                   " << sXmlName << endl;
+      fReaderEvents2.push_back(setupReader(sXmlName, frd)); 
     }
 
     // -- endcap
     if (!strcmp(ctmp.c_str(), "xml1")) {
       sXmlName = "weights/" + string(XmlName) + "-Events0_BDT.weights.xml"; 
+      if (dump) cout << "xml:                   " << sXmlName << endl;
       fReaderEvents0.push_back(setupReader(sXmlName, frd)); 
-      if (dump) cout << "xml:                   " << sXmlName << endl;
       sXmlName = "weights/" + string(XmlName) + "-Events1_BDT.weights.xml"; 
+      if (dump) cout << "xml:                   " << sXmlName << endl;
       fReaderEvents1.push_back(setupReader(sXmlName, frd)); 
-      if (dump) cout << "xml:                   " << sXmlName << endl;
       sXmlName = "weights/" + string(XmlName) + "-Events2_BDT.weights.xml"; 
-      fReaderEvents2.push_back(setupReader(sXmlName, frd)); 
       if (dump) cout << "xml:                   " << sXmlName << endl;
+      fReaderEvents2.push_back(setupReader(sXmlName, frd)); 
     }
 
 
@@ -2987,6 +2987,10 @@ void candAna::calcBDT(bool rejectInvIso) {
   fBDT = -99.;
   //??  if (5 == mode && 5.2 < mass && mass < 5.45 && fb.iso < 0.7) continue; 
   if (fChan < 0) return;
+  if (0 == fReaderEvents0.size()) {
+    cout << "no BDT defined" << endl;
+    return;
+  }
   if (rejectInvIso && 5.2 < fCandM && fCandM < 5.45 && fCandIso < 0.7) return;
   if (fCandPt > 100) return;
   if (fCandPt < 6) return;

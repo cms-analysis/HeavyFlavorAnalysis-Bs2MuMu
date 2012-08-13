@@ -10,6 +10,8 @@ TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v1_Bs1E33v2p3V1(1:99999999)
 +input cuts/jpsimuons.cuts
 # -- candidate
 +input cuts/candidate.cuts
+# -- bdt input
++input cuts/bdt.cuts
 # -- J/psi cuts
 +input cuts/jpsi.cuts
 # -- phi cuts

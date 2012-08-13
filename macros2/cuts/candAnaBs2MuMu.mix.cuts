@@ -25,3 +25,5 @@ TRIGRANGE   HLT_DoubleMu4_Dimuon6_Bs_v6(1:99999999)
 +input cuts/candidate.cuts
 # -- bdt input
 +input cuts/bdt.cuts
+# -- bdt input
++input cuts/bdt.cuts

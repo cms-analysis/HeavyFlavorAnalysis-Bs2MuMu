@@ -15,3 +15,5 @@ BGHBOXMAX         9.8
 +input cuts/muons.cuts
 # -- candidate
 +input cuts/candidate.cuts
+# -- bdt input
++input cuts/bdt.cuts
