@@ -79,7 +79,7 @@ class massReader : public treeReader01 {
 	
 	public:
 		massReader(TChain *tree, TString evtClassName);
-		~massReader();
+		virtual ~massReader();
 
 		virtual void bookHist();
 		virtual void eventProcessing();
