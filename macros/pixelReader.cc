@@ -27,7 +27,7 @@ static decay_t make_decay(int nbr, ...)
 	return dec;
 } // make_decay()
 
-pixelReader::pixelReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName), reduced_tree(NULL), fResolutionXY(0.0), fResolutionZ(0.0)
+pixelReader::pixelReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName), reduced_tree(NULL), fTkResolutionXY(0.0), fTkResolutionZ(0.0), fPVResolutionXY(0.0), fPVResolutionZ(0.0)
 {
 	fStableParticles.insert(11); // e
 	fStableParticles.insert(13); // mu
@@ -66,8 +66,10 @@ void pixelReader::bookHist()
 	reduced_tree->Branch("true_decay",fTrueDecay,"true_decay/I");
 	
 	// dump resolution we are running with
-	std::cout << "	XY Resolution: " << fResolutionXY << " um" << std::endl;
-	std::cout << "	Z  Resolution: " << fResolutionZ << " um" << std::endl;
+	std::cout << "	XY Track Resolution: " << fTkResolutionXY << " um" << std::endl;
+	std::cout << "	Z  Track Resolution: " << fTkResolutionZ << " um" << std::endl;
+	std::cout << "	XY PV Resolution: " << fPVResolutionXY << " um" << std::endl;
+	std::cout << "	Z  PV Resolution: " << fPVResolutionZ << " um" << std::endl;
 } // bookHist()
 
 void pixelReader::eventProcessing()
@@ -114,9 +116,13 @@ void pixelReader::readCuts(TString filename, int dump)
 		}
 		
 		if (strcmp(name,"XYRES") == 0)
-			fResolutionXY = value;
+			fTkResolutionXY = value;
 		else if (strcmp(name,"ZRES") == 0)
-			fResolutionZ = value;
+			fTkResolutionZ = value;
+		else if (strcmp(name,"XYRES_PV") == 0)
+			fPVResolutionXY = value;
+		else if (strcmp(name,"ZRES_PV") == 0)
+			fPVResolutionZ = value;
 		else
 			std::cerr << "readCuts(): Unknown variable '" << name << "'found!" << std::endl;
 	}
@@ -149,6 +155,12 @@ bool pixelReader::loadCandidateVariables(TAnaCand *pCand)
 		gen = fpEvt->getGenCand(j);
 		if (gen->fMom1 == 0) {
 			pVtx = gen->fV;
+			if (fPVResolutionXY > 0) {
+				pVtx = smearPhi(pVtx,fPVResolutionXY*kMuMToCM);
+				pVtx = smearR(pVtx,fPVResolutionXY*kMuMToCM);
+			}
+			if (fPVResolutionZ)
+				pVtx = smearZ(pVtx,fPVResolutionZ*kMuMToCM);
 			break;
 		}
 	}
@@ -185,13 +197,13 @@ bool pixelReader::loadCandidateVariables(TAnaCand *pCand)
 		std::swap(p1,p2);
 	}
 	
-	if (fResolutionXY > 0) {
-		v1 = smearXY(v1);
-		v2 = smearXY(v2);
+	if (fTkResolutionXY > 0) {
+		v1 = smearPhi(v1,fTkResolutionXY*kMuMToCM);
+		v2 = smearPhi(v2,fTkResolutionXY*kMuMToCM);
 	}
-	if (fResolutionZ > 0) {
-		v1 = smearZ(v1);
-		v2 = smearZ(v2);
+	if (fTkResolutionZ > 0) {
+		v1 = smearZ(v1,fTkResolutionZ*kMuMToCM);
+		v2 = smearZ(v2,fTkResolutionZ*kMuMToCM);
 	}
 	
 	// compute the point of closes approach on each trajectory
@@ -342,19 +354,27 @@ void pixelReader::dumpGenerator()
 	cout << "================================" << endl;
 } // dumpGenerator()
 
-TVector3 pixelReader::smearXY(TVector3 v)
+TVector3 pixelReader::smearPhi(TVector3 v, double res_cm)
 {
 	TVector3 vec_phi = TVector3(-v.Y(),v.X(),0);
-	TVector3 result = v + fResolutionXY*kMuMToCM*vec_phi.Unit();
+	TVector3 result = v + fRand.Gaus(0, res_cm)*vec_phi.Unit();
 	
 	return result;
 } // smearXY()
 
-TVector3 pixelReader::smearZ(TVector3 v)
+TVector3 pixelReader::smearR(TVector3 v, double res_cm)
+{
+	TVector3 vec_r(v.X(), v.Y(), 0);
+	TVector3 result = v + fRand.Gaus(0, res_cm)*vec_r.Unit();
+	
+	return result;
+} // smearR()
+
+TVector3 pixelReader::smearZ(TVector3 v, double res_cm)
 {
 	TVector3 result(v);
 	
-	result.SetZ(fRand.Gaus(v.Z(),fResolutionZ*kMuMToCM));
+	result.SetZ(fRand.Gaus(v.Z(), res_cm));
 	
 	return result;
 } // smearZ()
