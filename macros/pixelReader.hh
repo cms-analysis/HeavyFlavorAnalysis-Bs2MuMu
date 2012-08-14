@@ -13,6 +13,8 @@
 
 #include <set>
 
+#include <TRandom3.h>
+
 class pixelReader : public treeReader01 {
 	
 	public:
@@ -22,6 +24,7 @@ class pixelReader : public treeReader01 {
 		virtual void bookHist();
 		virtual void eventProcessing();
 		virtual void closeHistFile();
+		virtual void readCuts(TString filename, int dump = 1);
 	
 	private:
 		void clearVariables();
@@ -67,6 +70,16 @@ class pixelReader : public treeReader01 {
 		
 		/* truth info */
 		int fTrueDecay;
+	
+	private:
+		// random number generator
+		TRandom3 fRand;
+		// Assumed resolution in µm
+		double fResolutionXY;
+		double fResolutionZ;
+		
+		TVector3 smearXY(TVector3 v);
+		TVector3 smearZ(TVector3 v);
 };
 
 #endif
