@@ -58,7 +58,18 @@ void HFGenDimuon::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	map<int,int> particles;
 	set<int> indices;
 	TGenCand *gen;
+	TAnaVertex *vtx;
 	int ix;
+	
+	// add the simulation Primary Vertex = Production of first daughter of proton
+	for (ix = 0; ix < gHFEvent->nGenCands(); ix++) {
+		gen = gHFEvent->getGenCand(ix);
+		if (gen->fMom1 == 0) {
+			vtx = gHFEvent->addPV();
+			vtx->fPoint = vtx->fSimPoint = gen->fV;
+			break;
+		}
+	}
 	
 	for (ix = 0; ix < gHFEvent->nGenCands(); ix++) {
 		gen = gHFEvent->getGenCand(ix);
