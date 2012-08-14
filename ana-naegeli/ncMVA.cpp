@@ -20,6 +20,14 @@
 
 using namespace std;
 
+/* FAVOURITE MVA CONFIGURATION STRINGS
+ *	BARREL:
+ *		!H:V:TestRate=10:VarTransform=Norm:NeuronType=radial:NCycles=667:HiddenLayers=N-1:LearningRate=0.497:DecayRate=0.0229
+ *		!H:V:TestRate=10:VarTransform=Norm,Gauss,Deco:NeuronType=sigmoid:NCycles=1432:HiddenLayers=N-1:LearningRate=0.378:DecayRate=0.0034
+ *	ENDCAP:
+ *		!H:V:TestRate=10:VarTransform=Norm,Deco:NeuronType=sigmoid:NCycles=1018:HiddenLayers=N+7,N+4:LearningRate=0.065:DecayRate=0.0214
+ */
+
 ncMVA::ncMVA() :
 	fMCPath("/Users/cn/CMSData/Reduced/production-mix-general.root"),
 	fDataPath("/Users/cn/CMSData/Reduced/data-2011.root"),
@@ -27,8 +35,8 @@ ncMVA::ncMVA() :
 	fBkgWeight(0.2),
 	fTrainFilename(NULL)
 {
-	fMVAOpts[0] = std::string("!H:V:TestRate=10:VarTransform=Norm:NeuronType=radial:NCycles=856:HiddenLayers=N-3,N+3:LearningRate=0.477:DecayRate=0.031");
-	fMVAOpts[1] = std::string("!H:V:TestRate=10:VarTransform=Norm:NeuronType=radial:NCycles=1107:HiddenLayers=N+7,N-1:LearningRate=0.086:DecayRate=0.0335");
+	fMVAOpts[0] = std::string("!H:V:TestRate=10:VarTransform=Norm,Gauss,Deco:NeuronType=sigmoid:NCycles=1432:HiddenLayers=N-1:LearningRate=0.378:DecayRate=0.0034");
+	fMVAOpts[1] = std::string("!H:V:TestRate=10:VarTransform=Norm,Deco:NeuronType=sigmoid:NCycles=1018:HiddenLayers=N+7,N+4:LearningRate=0.065:DecayRate=0.0214");
 } // ncMVA()
 
 ncMVA::~ncMVA()
@@ -127,11 +135,11 @@ void ncMVA::prepTraining(unsigned channelIx)
 	TFile *tmpFile;
 	TFile *sigFile = TFile::Open(fMCPath.c_str());
 	TFile *bkgFile = TFile::Open(fDataPath.c_str());
-	TCut preselCut = ncAna::cutMVAPresel() && ncAna::cutMuon() && ncAna::cutTrigger(true) && ncAna::cutChannel(channelIx);
 	TCut cut;
-	ncAna a; // default ncAna object
+	ncAna a; // default ncAna object to get default cuts
 	TTree *sigTree;
 	TTree *bkgTree;
+	TCut preselCut = a.cutMVAPresel() && a.cutMuon() && a.cutTrigger(true) && a.cutChannel(channelIx);
 	
 	if (fTrainFilename) {
 		unlink(fTrainFilename->c_str());
@@ -174,7 +182,7 @@ void ncMVA::runTraining(unsigned split, unsigned channelIx, bool prep)
 {
 	TFile *trainFile;
 	TFile *tmvaFile;
-	TString factOptions("Transformations=I");
+	TString factOptions("Transformations=I;G;D;G,D;D,G");
 	TString prepOptions("");
 	TString methodTitle(Form("MLP_s%u_c%u",split,channelIx));
 	map<string,string> *variables = getMVAVariables();
@@ -214,7 +222,7 @@ void ncMVA::runTraining(unsigned split, unsigned channelIx, bool prep)
 	
 	// book neural network
 	cout << "Booking method" << endl;
-	factory->BookMethod(TMVA::Types::kMLP, methodTitle, fMVAOpts[channelIx]);
+	factory->BookMethod(TMVA::Types::kMLP, methodTitle, TString(fMVAOpts[channelIx].c_str()));
 	
 	// Training & Testing
 	cout << "Training all methods" << endl;
@@ -224,6 +232,7 @@ void ncMVA::runTraining(unsigned split, unsigned channelIx, bool prep)
 	cout << "Evaluating all methods" << endl;
 	factory->EvaluateAllMethods();
 	
+	delete factory;
 	delete trainFile;
 	delete tmvaFile;
 } // runTraining()

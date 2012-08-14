@@ -10,25 +10,38 @@
 #include "ncTree.h"
 #include "ncFormula.h"
 
-#include "../ulcalc/external_constants.h"
 #include "../rootutils/NCRootUtils.h"
 
 #include <iostream>
 
+// import the utility functions from the ulcalc directory
+#include "../ulcalc/external_constants.cpp"
+
 // ROOT headers
 #include <TMath.h>
 #include <TTree.h>
+#include <TEfficiency.h>
+#include <TEventList.h>
+
+// RooFit
+#include <RooDataSet.h>
+#include <RooExtendPdf.h>
+#include <RooRealVar.h>
+#include <RooPlot.h>
 
 using std::cout;
 using std::endl;
 
 
-ncAna::ncAna() : dataFile(NULL), mcFile(NULL), fNbrMassBins(50), fMassRange(4.9,5.9), fNbrSidebandBins(50), fLowSidebandRange(5.05,5.15), fHighSidebandRange(5.4,5.5), fBlindedRegion(5.2,5.45), fPlotDir("plots")
+ncAna::ncAna() : fDataFileName("/Users/cn/CMSData/Reduced/data-2011.root"), fMCFileName("/Users/cn/CMSData/Reduced/production-mix-general.root"), fPeakFileName("/Users/cn/CMSData/Reduced/production-2e33-general.root"), fAccFileName("/Users/cn/CMSData/Reduced/production-2e33-acceptance.root"), fNbrMassBins(50), fMassRange(4.9,5.9), fNbrSidebandBins(50), fLowSidebandRange(5.05,5.15), fHighSidebandRange(5.4,5.5), fBlindedRegion(5.2,5.45), fBsWindowRegion(5.3,5.45),fBdWindowRegion(5.2,5.3), fFitRangeNorm(4.95,5.6), fPlotDir("plots"), fSystematicsTable(NULL), fMisIDKaonPion(0.001,0.0002), fMisIDProton(0.0005,0.0001)
 {
+	using std::string;
+	using std::make_pair;
 	typedef ncCut::ncCutRange range_t;
 	
-	// initialize the files
-	initFiles();
+	// channel initialization
+	fChannels.push_back(make_pair(range_t(0,1.4),string("pt_mu1 > 4.5 && pt_mu2 > 4.0 && pt > 6.5 && ip < 0.008 && ip/ipe < 2 && alpha < 0.05 && chi2/Ndof < 2.2 && d3/d3e > 13 && d3 < 1.5 && iso_mor12 > 0.8 && doca0 > 0.015 && ntrk < 2 && trk_weight > 0.6")));
+	fChannels.push_back(make_pair(range_t(1.4,10),string("pt_mu1 > 4.5 && pt_mu2 > 4.2 && pt > 8.5 && ip < 0.008 && ip/ipe < 2 && alpha < 0.03 && chi2/Ndof < 1.8 && d3/d3e > 15 && d3 < 1.5 && iso_mor12 > 0.8 && doca0 > 0.015 && ntrk < 2 && trk_weight > 0.6")));
 	
 	// FIXME: enable the other ones again
 	fSidebandCuts.push_back(ncCut("pt_mu1",		range_t(0.0,20.0),	range_t(4.5,1e30)));
@@ -43,19 +56,14 @@ ncAna::ncAna() : dataFile(NULL), mcFile(NULL), fNbrMassBins(50), fMassRange(4.9,
 	fSidebandCuts.push_back(ncCut("iso_mor12",	range_t(0.0,1.0),	range_t(0.8,1e30)));
 	fSidebandCuts.push_back(ncCut("doca0",		range_t(0.0,0.2),	range_t(0.015,1e30)));
 	fSidebandCuts.push_back(ncCut("ntrk",		range_t(0.0,20.0),	range_t(-1e30,2.0)));
+	
+	loadSystematics();
 } // ncAna()
 
 ncAna::~ncAna()
 {
-	if (dataFile) delete dataFile;
-	if (mcFile) delete mcFile;
+//	if (fSystematicsTable) delete fSystematicsTable;
 } // ~ncAna
-
-void ncAna::initFiles()
-{
-	dataFile = new TFile("/Users/cn/CMSData/Reduced/data-2011.root");
-	mcFile = new TFile("/Users/cn/CMSData/Reduced/production-mix-general.root");
-} // initFiles()
 
 TH1D *ncAna::getDefaultMassHistogram(const char *name)
 {
@@ -64,8 +72,10 @@ TH1D *ncAna::getDefaultMassHistogram(const char *name)
 
 void ncAna::showSidebandSubtraction(bool massConstraint)
 {
-	TTree *dataTree = (TTree*)dataFile->Get("T");
-	TTree *mcTree = (TTree*)mcFile->Get("T");
+	TFile dataFile(fDataFileName.c_str());
+	TFile mcFile(fMCFileName.c_str());
+	TTree *dataTree = (TTree*)dataFile.Get("T");
+	TTree *mcTree = (TTree*)mcFile.Get("T");
 	TH1D *hsg,*hlo,*hhi,*hmc;
 	TH1D *mHisto;
 	TCut cut;
@@ -209,8 +219,10 @@ double ncAna::getSystematicsEffAna(std::set<std::string> cuts, bool massConstrai
 	set<string> sigDeps,bkgDeps;
 	ncTree<ncFormula> *tree;
 	TCut bkgCut,sgCut; // signal == variable we are processing, background == all other variables
-	TTree *dataTree = (TTree*)dataFile->Get("T");
-	TTree *mcTree = (TTree*)mcFile->Get("T");
+	TFile dataFile(fDataFileName.c_str());
+	TFile mcFile(fMCFileName.c_str());
+	TTree *dataTree = (TTree*)dataFile.Get("T");
+	TTree *mcTree = (TTree*)mcFile.Get("T");
 	double total_cands,passed_cands;
 	double eff_mc,eff_data,rel;
 	double systemErr2 = 0;
@@ -294,7 +306,63 @@ double ncAna::getSystematicsEffAna(std::set<std::string> cuts, bool massConstrai
 	return TMath::Sqrt(systemErr2);
 } // getSystematicsEffAna()
 
+// FIXME: Check Systematics here
+void ncAna::loadSystematics(bool def)
+{
+	using std::make_pair;
+	if (fSystematicsTable) delete fSystematicsTable;
+	
+	fSystematicsTable = new std::map<systematics_t,double>;
+	
+	fSystematicsTable->insert(make_pair(g_sys_acc_efftrack, 0.04));
+	fSystematicsTable->insert(make_pair(g_sys_acc_ppro_barrel, 0.035));
+	fSystematicsTable->insert(make_pair(g_sys_acc_ppro_endcap, 0.05));
+	if(def) fSystematicsTable->insert(make_pair(g_sys_effana, 0.04));
+	else	fSystematicsTable->insert(make_pair(g_sys_effana, this->getSystematicsEffAna(TCut("pt_mu1 > 4.5 && pt_mu2 > 4.0 && pt > 6.5 && ip < 0.008 && ip/ipe < 2 && alpha < 0.05 && chi2/Ndof < 2.2 && d3/d3e > 13 && d3 < 1.5 && iso_mor12 > 0.8 && doca0 > 0.015 && ntrk < 2 && trk_weight > 0.6"), true))); // FIXME: correct cut here (!!!)
+	fSystematicsTable->insert(make_pair(g_sys_massscale, 0.03));
+	fSystematicsTable->insert(make_pair(g_sys_effmu_barrel, 0.04));
+	fSystematicsTable->insert(make_pair(g_sys_effmu_endcap, 0.08));
+	fSystematicsTable->insert(make_pair(g_sys_efftrig_barrel, 0.03));
+	fSystematicsTable->insert(make_pair(g_sys_efftrig_endcap, 0.06));
+	fSystematicsTable->insert(make_pair(g_sys_normfit, 0.05));
+	fSystematicsTable->insert(make_pair(g_sys_shapecombbkg, 0.04));
+} // loadSystematics()
+
 #pragma mark -
+
+TCut ncAna::cutAcceptanceMC(int nKaons)
+{
+	TCut accCut("TMath::Abs(eta_mu1_gen) < 2.5 && TMath::Abs(eta_mu2_gen) < 2.5 && pt_mu1_gen > 1. && pt_mu2_gen > 1.");
+	for (int n = 1; n <= nKaons; n++)
+		accCut = accCut && TCut(Form("pt_kp%d_gen > 0.4 && TMath::Abs(eta_kp%d_gen) < 2.5",n,n));
+	
+	return accCut;
+} // cutAcceptanceMC()
+
+TCut ncAna::cutAcceptanceMCHard(int nKaons)
+{
+	TCut accCut("TMath::Abs(eta_mu1_gen) < 2.5 && TMath::Abs(eta_mu2_gen) < 2.5 && pt_mu1_gen > 3.5 && pt_mu2_gen > 3.5 && (track_qual_mu1 & 4) && (track_qual_mu2 & 4)");
+	for (int n = 1; n <= nKaons; n++)
+		accCut = accCut && TCut(Form("pt_kp%d_gen > 0.4 && TMath::Abs(eta_kp%d_gen) < 2.5",n,n));
+	
+	return accCut;
+} // cutAcceptanceMCHard()
+
+TCut ncAna::cutAcceptanceData(int nKaons)
+{
+	TCut accCut("(q_mu1*q_mu2 < 0) && TMath::Abs(eta_mu1) < 2.4 && TMath::Abs(eta_mu2) < 2.4 && pt_mu1 > 1. && pt_mu2 > 1. && (track_qual_mu1 & 4) && (track_qual_mu2 & 4) && (q_kp1 * q_kp2 != 1)");
+	for (int n = 1; n <= nKaons; n++)
+		accCut = accCut && TCut(Form("pt_kp%d > 0.5 && TMath::Abs(eta_kp%d) < 2.4 && (track_qual_kp%d & 4)",n,n,n));
+	
+	return accCut;
+} // cutAcceptanceData()
+
+TCut ncAna::cutSigCandGen(bool bsmm, bool reco)
+{
+	int cand = bsmm ? 80 : 90;
+	if (!reco) cand = -cand;
+	return TCut(Form("candidate == %d",cand));
+} // cutSigCandGen()
 
 TCut ncAna::cutMVAPresel()
 {
@@ -303,6 +371,885 @@ TCut ncAna::cutMVAPresel()
 
 TCut ncAna::cutChannel(unsigned ix)
 {
-	TCut barrelCut("TMath::Abs(eta_mu1) < 1.4 && TMath::Abs(eta_mu2) < 1.4");
-	return (ix == 0) ? barrelCut : !barrelCut;
+	TCut up,low;
+	
+	if (ix >= fChannels.size()) throw std::string("Out of Channel exception!!!");
+	
+	low = TCut(Form("TMath::Abs(eta_mu1) < %f && TMath::Abs(eta_mu2) < %f", fChannels[ix].first.first, fChannels[ix].first.first));
+	up = TCut(Form("TMath::Abs(eta_mu1) < %f && TMath::Abs(eta_mu2) < %f", fChannels[ix].first.second, fChannels[ix].first.second));
+	
+	return (up && !low);
 } // cutChannel()
+
+TCut ncAna::cutAna(unsigned ix, bool jpsi)
+{
+	TCut result;
+	
+	if (ix >= fChannels.size()) throw std::string("Out of Channel exception!!!");
+	
+	result = TCut(fChannels[ix].second.c_str());
+	if (jpsi)
+		result = result && TCut("3.0 < mass_dimuon && mass_dimuon < 3.2");
+	
+	return result;
+} // cutAna()
+
+#pragma mark -
+
+void ncAna::computeBplus(unsigned channelIx, bool reload)
+{
+	using std::flush;
+	using std::string;
+	using std::make_pair;
+	TEventList *elist;
+	TEfficiency eff("eff","",1,0,1); // we only need one bin
+	TFile *file;
+	TTree *tree;
+	string listName;
+	ulc_t bplus;
+	TCut cut;
+	std::map<systematics_t,double>::iterator syst_it;
+	measurement_t mes;
+	
+	double nbr_gens,nbr_acc,nbr_acc2;			// acceptance file
+	double nbr_ana,nbr_reco,nbr_mu,nbr_trig;	// mc file
+	
+	cout << "===> ncAna::compute_bplus(" << channelIx << ")" << endl;
+	
+	// configure efficiency calculation
+	eff.SetConfidenceLevel(0.68);
+	eff.SetStatisticOption(TEfficiency::kFCP);
+	
+	/*******************
+	 * Acceptance file *
+	 *******************/
+	file = new TFile(fAccFileName.c_str(),"update");
+	tree = (TTree*)file->Get("T");
+	
+	// generated
+	cout << "\tCounting generator canidates..." << flush;
+	elist = NULL;
+	listName = string("normGens");
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		// create the event list
+		tree->Draw(Form(">>%s",listName.c_str()),cutNormCandGen(false));
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_gens = (double)elist->GetN();
+	cout << '\t' << nbr_gens << endl;
+	
+	// accepted
+	cout << "\tCounting accepted candidates..." << flush;
+	elist = NULL;
+	listName = string(Form("normGensAcc_%d",channelIx));
+	if(!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		// create the event list
+		cut = cutNormCandGen(true) && cutAcceptanceMC(1) && cutAcceptanceData(1) && cutChannel(channelIx);
+		tree->Draw(Form(">>%s",listName.c_str()),cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_acc = (double)elist->GetN();
+	cout << '\t' << nbr_acc << flush;
+	
+	elist = NULL;
+	listName = string(Form("normGensAccHard_%d",channelIx));
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		// create the event list
+		cut = cutNormCandGen(true) && cutAcceptanceMCHard(1) && cutAcceptanceData(1) && cutChannel(channelIx);
+		tree->Draw(Form(">>%s",listName.c_str()),cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_acc2 = (double)elist->GetN();
+	cout << " (" << nbr_acc2 << " / " << flush;
+	
+	// close the file
+	delete file;
+	
+	/***********
+	 * MC File *
+	 ***********/
+	
+	file = new TFile(fMCFileName.c_str(),"update");
+	tree = (TTree*)file->Get("T");
+	
+	elist = NULL;
+	listName = string(Form("normGensAccHard_%d",channelIx));
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		// create the event list
+		cut = cutNormCandGen(true) && cutAcceptanceMCHard(1) && cutAcceptanceData(1) && cutChannel(channelIx);
+		tree->Draw(Form(">>%s",listName.c_str()),cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_reco = (double)elist->GetN();
+	cout << nbr_reco << ")" << endl;
+	
+	// analysis
+	cout << "\tCounting analysis candidates..." << flush;
+	elist = NULL;
+	listName = string(Form("normAna_%d",channelIx));
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		// create the event list
+		cut = cutNormCand() && cutAcceptanceMCHard(1) && cutAcceptanceData(1) && cutChannel(channelIx) && cutAna(channelIx,true) && cutNormTruth();
+		tree->Draw(Form(">>%s",listName.c_str()),cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_ana = (double)elist->GetN();
+	cout << '\t' << nbr_ana << endl;
+	
+	// muon
+	cout << "\tCounting muon candidates..." << flush;
+	elist = NULL;
+	listName = string(Form("normMuon_%d",channelIx));
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		// create the event list
+		cut = cutNormCand() && cutAcceptanceMCHard(1) && cutAcceptanceData(1) && cutChannel(channelIx) && cutAna(channelIx, true) && cutMuon() && cutNormTruth();
+		tree->Draw(Form(">>%s", listName.c_str()), cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_mu = (double)elist->GetN();
+	cout << '\t' << nbr_mu << endl;
+	
+	// trigger
+	cout << "\tCounting trigger candidates..." << flush;
+	elist = NULL;
+	listName = string(Form("normTrig_%d",channelIx));
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		cut = cutNormCand() && cutAcceptanceMCHard(1) && cutAcceptanceData(1) && cutChannel(channelIx) && cutAna(channelIx, true) && cutMuon() && cutTrigger(false) && cutNormTruth();
+		tree->Draw(Form(">>%s",listName.c_str()),cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_trig = (double)elist->GetN();
+	cout << '\t' << nbr_trig << endl;
+	
+	delete file;
+	
+	/***********
+	 * Compute *
+	 ***********/
+	
+	cout << "	Computing efficiencies..." << flush;
+	// acceptance
+	eff.SetTotalEvents(0, nbr_gens);
+	eff.SetPassedEvents(0, nbr_acc);
+	bplus[make_pair(kAcc_bplus, channelIx)] = measurement_t(eff.GetEfficiency(0),(eff.GetEfficiencyErrorUp(0) + eff.GetEfficiencyErrorLow(0))/2.);
+	
+	// systematics tracking efficiency
+	if (!fSystematicsTable) loadSystematics(true);
+	if( (syst_it = fSystematicsTable->find(g_sys_acc_efftrack)) != fSystematicsTable->end() ) {
+		mes = bplus[make_pair(kAcc_bplus, channelIx)];
+		mes = measurement_t(0, mes.getVal() * syst_it->second);
+		bplus[make_pair(kAcc_bplus, channelIx)] = mes + bplus[make_pair(kAcc_bplus, channelIx)];
+	}
+	
+	// Candidate efficiency
+	bplus[make_pair(kEff_cand_bplus, channelIx)] = measurement_t(1., 0.);
+	
+	// Analysis efficiency
+	eff.SetPassedEvents(0, nbr_ana);
+	eff.SetTotalEvents(0, nbr_reco*nbr_acc/nbr_acc2);
+	bplus[make_pair(kEff_ana_bplus, channelIx)] = measurement_t(eff.GetEfficiency(0),(eff.GetEfficiencyErrorUp(0) + eff.GetEfficiencyErrorLow(0))/2.);
+	
+	// muon efficiency
+	eff.SetTotalEvents(0, nbr_ana);
+	eff.SetPassedEvents(0, nbr_mu);
+	bplus[make_pair(kEff_mu_bplus, channelIx)] = measurement_t(eff.GetEfficiency(0),(eff.GetEfficiencyErrorUp(0) + eff.GetEfficiencyErrorLow(0))/2.);	
+	
+	// trigger efficiency
+	eff.SetTotalEvents(0, nbr_mu);
+	eff.SetPassedEvents(0, nbr_trig);
+	bplus[make_pair(kEff_trig_bplus, channelIx)] = measurement_t(eff.GetEfficiency(0),(eff.GetEfficiencyErrorUp(0) + eff.GetEfficiencyErrorLow(0))/2.);
+	
+	cout << "\tdone" << endl;
+	
+	/***************
+	 * Observation *
+	 ***************/
+	
+	cout << "\tMeasuring number of B+ -> J/psi K+ decays..." << endl;
+	bplus[make_pair(kObs_bplus,channelIx)] = fitBplus(channelIx,reload);
+	if ( (syst_it = fSystematicsTable->find(g_sys_normfit)) != fSystematicsTable->end() ) {
+		mes = bplus[make_pair(kObs_bplus,channelIx)];
+		mes = measurement_t(0, mes.getVal() * syst_it->second);
+		bplus[make_pair(kObs_bplus,channelIx)] = mes + bplus[make_pair(kObs_bplus,channelIx)];
+	}
+	cout << "\tdone" << endl;
+	
+	// save locally
+	fUlcBplus = bplus;
+} // compute_bplus()
+
+void ncAna::computeBmm(unsigned channelIx, bool bsmm, bool reload)
+{
+	using std::flush;
+	using std::string;
+	using std::make_pair;
+	map<systematics_t,double>::const_iterator syst_it;
+	measurement_t m;
+	TEfficiency eff("eff","",1,0,1); // we only need one bin
+	TEventList *elist;
+	string listName;
+	ulc_t bmm;
+	TFile *file;
+	TTree *tree;
+	TCut cut;
+	const char *prefix = bsmm ? "bsmm" : "bdmm";
+	
+	double nbr_gens,nbr_reco,nbr_ana;
+	double nbr_mu,nbr_trig, nbr_bs, nbr_bd;
+	
+	cout << "===> ncAna::computeB" << (bsmm ? 's' : 'd') << "mm(" << channelIx << ")" << endl;
+	
+	// configure the efficiency calculation
+	eff.SetConfidenceLevel(0.68);
+	eff.SetStatisticOption(TEfficiency::kFCP);
+	
+	/*********
+	 * COUNT *
+	 *********/
+	
+	file = new TFile(fMCFileName.c_str(),"update");
+	tree = (TTree*)file->Get("T");
+	
+	// FIXME: Merge the subsequent block into a function
+	// generated
+	cout << "\tCounting generator candidates..." << flush;
+	elist = NULL;
+	listName = string(Form("%sGens",prefix));
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		tree->Draw(Form(">>%s",listName.c_str()),cutSigCandGen(bsmm, false));
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_gens = (double)elist->GetN();
+	cout << '\t' << nbr_gens << endl;
+	
+	// accepted
+	cout << "\tCounting reco candidates..." << flush;
+	elist = NULL;
+	listName = string(Form("%sReco_%u",prefix,channelIx));
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		cut = cutSigCandGen(bsmm, true) && cutAcceptanceMC(0) && cutAcceptanceData(0) && cutChannel(channelIx);
+		tree->Draw(Form(">>%s",listName.c_str()),cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_reco = (double)elist->GetN();
+	cout << '\t' << nbr_reco << endl;
+	
+	// analysis
+	cout << "\tCounting ana candiates..." << flush;
+	elist = NULL;
+	listName = string(Form("%sAna_%u",prefix,channelIx));
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		cut = cutSigCand() && cutAcceptanceMC(0) && cutAcceptanceData(0) && cutChannel(channelIx) && cutAna(channelIx, false) && cutSigTruth(bsmm);
+		tree->Draw(Form(">>%s",listName.c_str()),cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_ana = (double)elist->GetN();
+	cout << '\t' << nbr_ana << endl;
+	
+	// muon
+	cout << "\tCounting muon candidates..." << flush;
+	elist = NULL;
+	listName = string(Form("%sMuon_%u",prefix,channelIx));
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		cut = cutSigCand() && cutAcceptanceMC(0) && cutAcceptanceData(0) && cutChannel(channelIx) && cutAna(channelIx, false) && cutMuon() && cutSigTruth(bsmm);
+		tree->Draw(Form(">>%s",listName.c_str()),cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_mu = (double)elist->GetN();
+	cout << '\t' << nbr_mu << endl;
+	
+	// Trigger
+	cout << "\tCounting trigger candidates..." << flush;
+	elist = NULL;
+	listName = string(Form("%sTrig_%u",prefix,channelIx));
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		cut = cutSigCand() && cutAcceptanceMC(0) && cutAcceptanceData(0) && cutChannel(channelIx) && cutAna(channelIx, false) && cutMuon() && cutTrigger(true) && cutSigTruth(bsmm);
+		tree->Draw(Form(">>%s",listName.c_str()),cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_trig = (double)elist->GetN();
+	cout << '\t' << nbr_trig << endl;
+	
+	// cross feed
+	cout << "\tComputing cross feed..." << flush;
+	elist = NULL;
+	listName = string(Form("%sBsWind_%u",prefix,channelIx));
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		cut = cutSigCand() && cutAcceptanceMC(0) && cutAcceptanceData(0) && cutChannel(channelIx) && cutAna(channelIx, false) && cutMuon() && cutTrigger(true) && cutSigTruth(bsmm) && cutSigWindow(true);
+		tree->Draw(Form(">>%s",listName.c_str()), cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_bs = (double)elist->GetN();
+	
+	elist = NULL;
+	listName = string(Form("%sBdWind_%u",prefix,channelIx));
+	if (!reload) elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		cut = cutSigCand() && cutAcceptanceMC(0) && cutAcceptanceData(0) && cutChannel(channelIx) && cutAna(channelIx, false) && cutMuon() && cutTrigger(true) && cutSigTruth(bsmm) && cutSigWindow(false);
+		tree->Draw(Form(">>%s",listName.c_str()), cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_bd = (double)elist->GetN();
+	cout << "\tdone" << endl;
+	
+	delete file;
+	
+	/***********
+	 * COMPUTE *
+	 ***********/
+	
+	cout << "\tComputing efficiencies..." << flush;
+	// acceptance
+	eff.SetTotalEvents(0, nbr_gens);
+	eff.SetPassedEvents(0, nbr_reco);
+	bmm[make_pair(kAcc_bmm, channelIx)] = measurement_t(eff.GetEfficiency(0),(eff.GetEfficiencyErrorLow(0) + eff.GetEfficiencyErrorUp(0))/2.);
+	
+	// historical reason
+	bmm[make_pair(kEff_cand_bmm, channelIx)] = measurement_t(1.,0);
+	
+	// analysis efficiency
+	eff.SetTotalEvents(0, nbr_reco);
+	eff.SetPassedEvents(0, nbr_ana);
+	bmm[make_pair(kEff_ana_bmm, channelIx)] = measurement_t(eff.GetEfficiency(0),(eff.GetEfficiencyErrorLow(0) + eff.GetEfficiencyErrorUp(0))/2.);
+	if( (syst_it = fSystematicsTable->find(g_sys_effana)) != fSystematicsTable->end() ) {
+		m = bmm[make_pair(kEff_ana_bmm, channelIx)];
+		m = measurement_t(0, m.getVal() * syst_it->second);
+		bmm[make_pair(kEff_ana_bmm, channelIx)] = m + bmm[make_pair(kEff_ana_bmm, channelIx)];
+	}
+	
+	// muon efficiency
+	eff.SetTotalEvents(0, nbr_ana);
+	eff.SetPassedEvents(0, nbr_mu);
+	bmm[make_pair(kEff_mu_bmm, channelIx)] = measurement_t(eff.GetEfficiency(0),(eff.GetEfficiencyErrorLow(0) + eff.GetEfficiencyErrorUp(0))/2.);	
+	
+	// trigger efficiency
+	eff.SetTotalEvents(0, nbr_mu);
+	eff.SetPassedEvents(0, nbr_trig);
+	bmm[make_pair(kEff_trig_bmm, channelIx)] = measurement_t(eff.GetEfficiency(0),(eff.GetEfficiencyErrorLow(0) + eff.GetEfficiencyErrorUp(0))/2.);
+	
+	// cross feed
+	eff.SetTotalEvents(0,nbr_trig);
+	eff.SetPassedEvents(0,nbr_bs);
+	bmm[make_pair(kProb_swind_bmm,channelIx)] = measurement_t(eff.GetEfficiency(0),(eff.GetEfficiencyErrorLow(0) + eff.GetEfficiencyErrorUp(0))/2.);
+	
+	eff.SetTotalEvents(0,nbr_trig);
+	eff.SetPassedEvents(0,nbr_bd);
+	bmm[make_pair(kProb_dwind_bmm,channelIx)] = measurement_t(eff.GetEfficiency(0),(eff.GetEfficiencyErrorLow(0) + eff.GetEfficiencyErrorUp(0))/2.);
+	cout << "\tdone" << endl;
+	
+	/***************
+	 * OBSERVATION *
+	 ***************/
+	
+	file = new TFile(fDataFileName.c_str(),"update");
+	tree = (TTree*)file->Get("T");
+	
+	cout << "\tComputing background observation..." << flush;
+	elist = NULL;
+	listName = string(Form("bmmObsBkg_%u",channelIx));
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		cut = cutSigCand() && cutAcceptanceData(0) && cutChannel(channelIx) && cutAna(channelIx, false) && cutMuon() && cutTrigger(true) && cutHisto() && !cutSigWindow(true) && !cutSigWindow(false);
+		tree->Draw(Form(">>%s",listName.c_str()),cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	bmm[make_pair(kObsBkg_bmm, channelIx)] = measurement_t((double)elist->GetN(),0.0);
+	cout << "\tdone" << endl;
+	
+	cout << "\tComputing signal observation..." << flush;
+	elist = NULL;
+	listName = string(Form("%sObs_%u",prefix,channelIx));
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		cut = cutSigCand() && cutAcceptanceData(0) && cutChannel(channelIx) && cutAna(channelIx, false) && cutMuon() && cutTrigger(true) && cutSigWindow(bsmm);
+		tree->Draw(Form(">>%s",listName.c_str()),cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	bmm[make_pair(kObsB_bmm, channelIx)] = measurement_t((double)elist->GetN(),0.0);
+	cout << "\tdone" << endl;
+	
+	delete file;
+	
+	if (bsmm)	fUlcBsmm = bmm;
+	else		fUlcBdmm = bmm;
+} // computeBmm()
+
+// FIXME: Check all prerequesites are computed already
+void ncAna::computePeaking(unsigned channelIx, bool reload)
+{
+	TEfficiency eff("eff","",2,0,1);
+	TFile *file;
+	TTree *tree;
+	double nbr_gens,nbr_acc;
+	measurement_t filterHad,filterSemi;
+	measurement_t effSingleMu,m;
+	
+	cout << "===> ncAna::computePeaking(" << channelIx << ")" << endl;
+	
+	// configure efficiency calculation
+	eff.SetConfidenceLevel(0.68);
+	eff.SetStatisticOption(TEfficiency::kFCP);
+	
+	// compute hadronic filter efficiency based on bsmm
+	file = new TFile(fMCFileName.c_str());
+	tree = (TTree*)gDirectory->Get("T");
+	
+	nbr_gens = (double)tree->Draw("",cutSigCandGen(true, false));
+	nbr_acc = (double)tree->Draw("",cutSigCandGen(true, true) && cutAcceptanceMCHard(0));
+	eff.SetTotalEvents(0,nbr_gens);
+	eff.SetPassedEvents(0,nbr_acc);
+	filterHad = measurement_t(eff.GetEfficiency(0), (eff.GetEfficiencyErrorLow(0) + eff.GetEfficiencyErrorUp(0))/2.0);
+	delete file;
+	
+	std::cout << "DEBUG: filterHadronic = " << filterHad.getVal() << " +/- " << filterHad.getErr() << std::endl;
+	
+	// compute semileptonic filter efficiency based on Bd -> pi mu nu
+	file = new TFile(fAccFileName.c_str());
+	tree = (TTree*)gDirectory->Get("T");
+	
+	nbr_gens = (double)tree->Draw("", "candidate == -95");
+	nbr_acc = (double)tree->Draw("", TCut("candidate == 1000095") && cutAcceptanceMCHard(0));
+	eff.SetTotalEvents(1,nbr_gens);
+	eff.SetPassedEvents(1,nbr_acc);
+	filterSemi = measurement_t(eff.GetEfficiency(1), (eff.GetEfficiencyErrorLow(1) + eff.GetEfficiencyErrorUp(1))/2.0);
+	delete file;
+	
+	std::cout << "DEBUG: filterSemi = " << filterSemi.getVal() << " +/- " << filterSemi.getErr() << std::endl;
+	
+	// compute single muon efficiency
+	if (fUlcBsmm.count(make_pair(kEff_mu_bmm,channelIx)) == 0) computeBmm(channelIx, true, reload);
+	effSingleMu = fUlcBsmm[make_pair(kEff_mu_bmm,channelIx)];
+	effSingleMu = measurement_t(TMath::Sqrt(effSingleMu.getVal()), effSingleMu.getErr() / TMath::Sqrt(2*effSingleMu.getVal()));
+	
+	std::cout << "DEBUG: singleMu = " << effSingleMu.getVal() << " +/- " << effSingleMu.getErr() << std::endl;
+	
+	// init value
+	fUlcBsmm[make_pair(kPeakBkgOff_bmm,channelIx)] = measurement_t(0,0);
+	fUlcBsmm[make_pair(kPeakBkgOn_bmm,channelIx)] = measurement_t(0,0);
+	fUlcBdmm[make_pair(kPeakBkgOff_bmm,channelIx)] = measurement_t(0,0);
+	fUlcBdmm[make_pair(kPeakBkgOn_bmm,channelIx)] = measurement_t(0,0);
+	
+	// compute the peaking background efficiency of different channels
+	appendPeakingChannel(82, fMisIDKaonPion, fMisIDKaonPion, filterHad, bf_BsToKK()*f_ratio(), channelIx, reload);
+	appendPeakingChannel(83, fMisIDKaonPion, fMisIDKaonPion, filterHad, bf_BsToKPi()*f_ratio(), channelIx, reload);
+	appendPeakingChannel(84, fMisIDKaonPion, fMisIDKaonPion, filterHad, bf_BsToPiPi()*f_ratio(), channelIx, reload);
+	appendPeakingChannel(86, fMisIDKaonPion, effSingleMu, filterSemi, bf_BsToKMuNu()*f_ratio(), channelIx, reload);
+	appendPeakingChannel(91, fMisIDKaonPion, fMisIDKaonPion, filterHad, bf_BdToPiPi(), channelIx, reload);
+	appendPeakingChannel(92, fMisIDKaonPion, fMisIDKaonPion, filterHad, bf_BdToKPi(), channelIx, reload);
+	appendPeakingChannel(93, fMisIDKaonPion, fMisIDKaonPion, filterHad, bf_BdToKK(), channelIx, reload);
+	appendPeakingChannel(95, fMisIDKaonPion, effSingleMu, filterSemi, bf_BdToPiMuNu(), channelIx, reload);
+	appendPeakingChannel(60, fMisIDProton, fMisIDKaonPion, filterHad, bf_LambdaBToPPi()*f_ratio_lb(), channelIx, reload);
+	appendPeakingChannel(61, fMisIDProton, fMisIDKaonPion, filterHad, bf_LambdaBToPK()*f_ratio_lb(), channelIx, reload);
+	appendPeakingChannel(62, fMisIDProton, effSingleMu, filterSemi, bf_LambdaBToPMuNu()*f_ratio_lb(), channelIx, reload);
+	
+	m = fUlcBsmm[make_pair(kPeakBkgOff_bmm,channelIx)];
+	std::cout << "DEBUG: peak off bsmm = " << m.getVal() << " +/- " << m.getErr() << std::endl;
+	m = fUlcBsmm[make_pair(kPeakBkgOn_bmm,channelIx)];
+	std::cout << "DEBUG: peak on bsmm = " << m.getVal() << " +/- " << m.getErr() << std::endl;
+	m = fUlcBdmm[make_pair(kPeakBkgOff_bmm,channelIx)];
+	std::cout << "DEBUG: peak off bdmm = "  << m.getVal() << " +/- " << m.getErr() << std::endl;
+	m = fUlcBdmm[make_pair(kPeakBkgOn_bmm,channelIx)];
+	std::cout << "DEBUG: peak on bdmm = " << m.getVal() << " +/- " << m.getErr() << std::endl;
+} // computePeaking()
+
+void ncAna::appendPeakingChannel(int trueCand, measurement_t muMis1, measurement_t muMis2, measurement_t effFilter, measurement_t bf, unsigned channelIx, bool reload)
+{
+	using std::endl; using std::cout;
+	TEfficiency eff("eff","",3,0,1); // bkg, bd, bs
+	TFile peakFile(fPeakFileName.c_str(),"update");
+	double nbr_reco,nbr_off,nbr_bs,nbr_bd;
+	TTree *tree = (TTree*)peakFile.Get("T");
+	TEventList *elist;
+	string listName;
+	TCut candCut(Form("candidate == %d",1000000+trueCand));
+	TCut cut = cutHisto() && cutChannel(channelIx) && cutAna(channelIx, false);
+	measurement_t effTrigger = fUlcBsmm[make_pair(kEff_trig_bmm,channelIx)];
+	measurement_t m,efficiencies = effFilter * muMis1 * muMis2 * effTrigger * bf;
+	measurement_t tot_bu;
+	
+	if (fUlcBplus.count(make_pair(kTot_bplus,channelIx)) == 0) {
+		computeBplus(channelIx, reload);
+		fUlcBplus[make_pair(kTot_bplus, channelIx)] = fUlcBplus[make_pair(kObs_bplus, channelIx)] / compute_efftot_bplus(&fUlcBplus, channelIx);
+	}
+	tot_bu = fUlcBplus[make_pair(kTot_bplus,channelIx)] / (bf_Bu2JpsiKp() * bf_PsiToMuMu());
+	cout << "DEBUG: tot_bu = " << tot_bu.getVal() << " +/- " << tot_bu.getErr() << endl;
+	
+	// maybe the fit bplus has changed current file
+	peakFile.cd();
+	
+	eff.SetConfidenceLevel(0.68);
+	eff.SetStatisticOption(TEfficiency::kFCP);
+	
+	cout << "	appendPeakingChannel(" << trueCand << ")" << endl;
+	
+	// reco
+	elist = NULL;
+	listName = string(Form("peak%dReco_%u",trueCand,channelIx));
+	if (!reload)
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+	if (!elist) {
+		tree->Draw(Form(">>%s",listName.c_str()),candCut && cutAcceptanceMCHard(0));
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(), TObject::kOverwrite);
+	}
+	nbr_reco = (double)elist->GetN();
+	cout << "DEBUG: nbr_reco = " << nbr_reco << endl;
+	
+	// fix this as base
+	tree->SetEventList(elist);
+	
+	// nbr of passed candidates
+	nbr_off = (double)tree->Draw("", cut && !cutSigWindow(true) && !cutSigWindow(false));
+	nbr_bd = (double)tree->Draw("", cut && cutSigWindow(false));
+	nbr_bs = (double)tree->Draw("", cut && cutSigWindow(true));
+	
+	cout << "DEBUG: nbr_off = " << nbr_off << endl;
+	cout << "DEBUG: nbr_bd = " << nbr_bd << endl;
+	cout << "DEBUG: nbr_bs = " << nbr_bs << endl;
+	
+	if (nbr_reco > 0) {
+		
+		// bkg
+		eff.SetTotalEvents(0, nbr_reco);
+		eff.SetPassedEvents(0, nbr_off);
+		m = measurement_t(eff.GetEfficiency(0), (eff.GetEfficiencyErrorLow(0) + eff.GetEfficiencyErrorUp(0))/2.0);
+		m = m * efficiencies;
+		cout << "DEBUG: Bkg Efficiency = " << m.getVal() << " +/- " << m.getErr() << endl;
+		m = m * tot_bu;
+		cout << "DEBUG: Exp Contribution = " << m.getVal() << " +/- " << m.getErr() << endl;
+		fUlcBsmm[make_pair(kPeakBkgOff_bmm,channelIx)] = m + fUlcBsmm[make_pair(kPeakBkgOff_bmm,channelIx)];
+		fUlcBdmm[make_pair(kPeakBkgOff_bmm,channelIx)] = m + fUlcBdmm[make_pair(kPeakBkgOff_bmm,channelIx)];
+		
+		// bd
+		eff.SetTotalEvents(1, nbr_reco);
+		eff.SetPassedEvents(1, nbr_bd);
+		m = measurement_t(eff.GetEfficiency(1), (eff.GetEfficiencyErrorLow(1) + eff.GetEfficiencyErrorUp(1))/2.0);
+		fUlcBdmm[make_pair(kPeakBkgOn_bmm,channelIx)] = m*efficiencies*tot_bu + fUlcBdmm[make_pair(kPeakBkgOn_bmm,channelIx)];
+		
+		
+		eff.SetTotalEvents(2, nbr_reco);
+		eff.SetTotalEvents(2, nbr_bs);
+		m = measurement_t(eff.GetEfficiency(2), (eff.GetEfficiencyErrorLow(2) + eff.GetEfficiencyErrorUp(2))/2.0);
+		fUlcBsmm[make_pair(kPeakBkgOn_bmm,channelIx)] = m*efficiencies*tot_bu + fUlcBsmm[make_pair(kPeakBkgOn_bmm,channelIx)];
+	} else
+		std::cerr << "===> no reco candidate for rare background " << trueCand << "." << endl;
+} // appendPeakingChannel()
+
+measurement_t ncAna::fitBplus(unsigned channelIx, bool reload, RooWorkspace **wout)
+{
+	using std::string;
+	RooWorkspace *w = new RooWorkspace("w");
+	RooDataSet *data;
+	string listName(Form("normChannel_%d",channelIx));
+	TEventList *elist = NULL;
+	TFile *dataFile = NULL;
+	TTree *sourceTree,*copyTree;
+	char *treeFile = NULL;
+	TFile *smallFile;
+	RooExtendPdf *ex;
+	measurement_t m1,m2;
+	TCut cut;
+	TCanvas *c = NULL;
+	
+	std::cout << "===> fitBplus(" << channelIx << ")" << std::endl;
+	
+	// get the event list
+	std::cout << "		Getting candidate list..." << std::flush;
+	dataFile = new TFile(fDataFileName.c_str(),"update");
+	sourceTree = (TTree*)dataFile->Get("T");
+	if (!reload)
+		elist = (TEventList*)dataFile->Get(listName.c_str());
+	if (!elist) {
+		cut = cutNormCand() && cutAcceptanceData(1) && cutChannel(channelIx) && cutAna(channelIx, true) && cutMuon() && cutTrigger(false);
+		sourceTree->Draw(Form(">>%s",listName.c_str()),cut);
+		elist = (TEventList*)gDirectory->Get(listName.c_str());
+		elist->Write(listName.c_str(),TObject::kOverwrite);
+	}
+	std::cout << "	done" << std::endl;
+	
+	// get the working tree
+	std::cout << "		Extracting Tree..." << std::flush;
+	sourceTree->SetEventList(elist);
+	treeFile = tempnam(".", "fitting-");
+	smallFile = new TFile(treeFile, "recreate");
+	copyTree = sourceTree->CopyTree("");
+	std::cout << "	done" << std::endl;
+	
+	// import data to roofit
+	w->factory(Form("mass_c[5.28,%f,%f]",fMassRange.first,fMassRange.second));
+	w->defineSet("obs","mass_c");
+	
+	data = new RooDataSet("data","Norm mass distribution",copyTree,*w->set("obs"));
+	w->import(*data);
+	delete data;
+	
+	// setup model
+	w->factory("Gaussian::sig(mass_c,mu[5.28,4.9,5.9],sigma[0.01,0,0.02])");
+	w->factory("Gaussian::sig2(mass_c,mu,sigma2[0.03,0.02,0.4])");
+	w->factory("Gaussian::bump(mass_c,mu_bump[5.1,5.0,5.2],sigma_bump[0.01,0.0,0.1])");
+	w->factory("Gaussian::bump2(mass_c,mu_bump2[4.95,4.8,5.05],sigma_bump[0.01,0.0,0.1])");
+	w->factory("Exponential::bkg_comb(mass_c,c[0,-1e30,1e30])");
+	w->factory("GenericPdf::bkg_peak(\"TMath::Erf(sc*(mass_c - th))/2.0 + 0.5\",{sc[-10,-1000,1000],mass_c,th[5.15,4.9,5.2]})");
+	w->factory(Form("SUM::model(nsig[%f,0,1e7]*sig,nsig2[0,0,1e7]*sig2,ncomb[%f,0,1e7]*bkg_comb,npeak[%f,0,1e7]*bkg_peak,nbump[0,0,1e7]*bump,nbump2[0,0,1e7]*bump2)",(double)data->numEntries(),(double)data->numEntries(),(double)data->numEntries()));
+	
+	// fit
+	
+	// initial value setup
+	ex = new RooExtendPdf((const char *)"",(const char *)"",*w->pdf("bkg_peak"),*w->var("npeak"));
+	ex->fitTo(*w->data("data"),RooFit::Range(5.0,5.15));
+	delete ex;
+	
+	ex = new RooExtendPdf("","",*w->pdf("bkg_comb"),*w->var("ncomb"));
+	ex->fitTo(*w->data("data"),RooFit::Range(5.4,5.6));
+	delete ex;
+	
+	ex = new RooExtendPdf("","",*w->pdf("sig"),*w->var("nsig"));
+	ex->fitTo(*w->data("data"),RooFit::Range(5.25,5.35));
+	delete ex;
+	
+	// final fit
+	w->pdf("model")->fitTo(*w->data("data"), RooFit::Range(fFitRangeNorm.first,fFitRangeNorm.second));
+	
+	// extract result
+	m1 = measurement_t(w->var("nsig")->getVal(),w->var("nsig")->getError());
+	m2 = measurement_t(w->var("nsig2")->getVal(),w->var("nsig2")->getError());
+	
+	w->writeToFile(Form("%s/bplus_fit_ch%u.root",fPlotDir.c_str(),channelIx));
+	
+	{
+		RooPlot *p = w->var("mass_c")->frame();
+		c = new TCanvas;
+		w->data("data")->plotOn(p,RooFit::Binning(50));
+		w->pdf("model")->plotOn(p);
+		p->Draw();
+		c->SaveAs(Form("%s/bplus_fit_ch%u.pdf",fPlotDir.c_str(),channelIx));
+	}
+	
+	// clean up
+	if (wout)	*wout = w;
+	else		delete w;
+	delete smallFile;
+	if(c) delete c;
+	unlink(treeFile);
+	free(treeFile);
+	
+	return (m1 + m2);
+} // fitBplus()
+
+void ncAna::writeULC(const char *ulcname, bool reload)
+{
+	using std::make_pair;
+	unsigned channelIx;
+	measurement_t m;
+	FILE *outputFile = fopen(ulcname, "w");
+	
+	for (channelIx = 0; channelIx < fChannels.size(); channelIx++) {
+		
+		/*************************
+		 * NORMALIZATION CHANNEL *
+		 *************************/
+		
+		// Normalization stuff
+		computeBplus(channelIx,reload);
+		
+		// add the numbers to the file
+		fprintf(outputFile, "####################################################\n");
+		fprintf(outputFile, "# B+ -> J/psi K+ (channel = %u, %.2f < eta < %.2f) #\n", channelIx, fChannels[channelIx].first.first, fChannels[channelIx].first.second);
+		fprintf(outputFile, "####################################################\n");
+		
+		// acceptance
+		m = fUlcBplus[make_pair(kAcc_bplus, channelIx)];
+		fprintf(outputFile, "ACC_BPLUS\t%u\t%f\t%f\n",channelIx,m.getVal(),m.getErr());
+		// muon efficiency
+		m = fUlcBplus[make_pair(kEff_mu_bplus, channelIx)];
+		fprintf(outputFile, "EFF_MU_BPLUS\t%u\t%f\t%f\n",channelIx,m.getVal(),m.getErr());
+		// trigger efficiency
+		m = fUlcBplus[make_pair(kEff_trig_bplus, channelIx)];
+		fprintf(outputFile, "EFF_TRIG_BPLUS\t%u\t%f\t%f\n",channelIx,m.getVal(),m.getErr());
+		// cand efficiency
+		m = fUlcBplus[make_pair(kEff_cand_bplus, channelIx)];
+		fprintf(outputFile, "EFF_CAND_BPLUS\t%u\t%f\t%f\n",channelIx,m.getVal(),m.getErr());
+		// analysis efficiency
+		m = fUlcBplus[make_pair(kEff_ana_bplus, channelIx)];
+		fprintf(outputFile, "EFF_ANA_BPLUS\t%u\t%f\t%f\n",channelIx,m.getVal(),m.getErr());
+		// observed bpluses
+		m = fUlcBplus[make_pair(kObs_bplus, channelIx)];
+		fprintf(outputFile, "OBS_BPLUS\t%u\t%f\t%f\n",channelIx,m.getVal(),m.getErr());
+		
+		// for convenience, compute eff_tot and tot_bplus in comment line...
+		m = compute_efftot_bplus(&fUlcBplus, channelIx);
+		fprintf(outputFile, "# EFF_TOT_BPLUS\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		m = fUlcBplus[make_pair(kObs_bplus, channelIx)] / m;
+		fprintf(outputFile, "# TOT_BPLUS\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		
+		// save the total bplus -> j/psi k+
+		fUlcBplus[make_pair(kTot_bplus, channelIx)] = m;
+		
+		/******************
+		 * SIGNAL CHANNEL *
+		 ******************/
+		
+		computeBmm(channelIx, true, reload);
+		computeBmm(channelIx, false, reload);
+		
+		// add the numbers to the file
+		fprintf(outputFile, "#######################################\n");
+		fprintf(outputFile, "# B -> mumu (channel = %u, %.2f < eta < %.2f) #\n", channelIx, fChannels[channelIx].first.first, fChannels[channelIx].first.second);
+		fprintf(outputFile, "#######################################\n");
+		fprintf(outputFile, "LOW_BD\t%u\t%f\n", channelIx, fBdWindowRegion.first);
+		fprintf(outputFile, "HIGH_BD\t%u\t%f\n", channelIx, fBdWindowRegion.second);
+		fprintf(outputFile, "LOW_BS\t%u\t%f\n", channelIx, fBsWindowRegion.first);
+		fprintf(outputFile, "HIGH_BS\t%u\t%f\n", channelIx, fBsWindowRegion.second);
+		
+		// crossfeed
+		m = fUlcBsmm[make_pair(kProb_swind_bmm, channelIx)];
+		fprintf(outputFile, "PSS\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		m = fUlcBdmm[make_pair(kProb_swind_bmm, channelIx)];
+		fprintf(outputFile, "PSD\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		m = fUlcBsmm[make_pair(kProb_dwind_bmm, channelIx)];
+		fprintf(outputFile, "PDS\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		m = fUlcBdmm[make_pair(kProb_dwind_bmm, channelIx)];
+		fprintf(outputFile, "PDD\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		
+		/********
+		 * BSMM *
+		 ********/
+		// acceptance
+		m = fUlcBsmm[make_pair(kAcc_bmm, channelIx)];
+		fprintf(outputFile, "ACC_BSMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		// muon efficiency
+		m = fUlcBsmm[make_pair(kEff_mu_bmm, channelIx)];
+		fprintf(outputFile, "EFF_MU_BSMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		// trigger efficiency
+		m = fUlcBsmm[make_pair(kEff_trig_bmm, channelIx)];
+		fprintf(outputFile, "EFF_TRIG_BSMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		// cand efficiency
+		m = fUlcBsmm[make_pair(kEff_cand_bmm, channelIx)];
+		fprintf(outputFile, "EFF_CAND_BSMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		// ana effeciency
+		m = fUlcBsmm[make_pair(kEff_ana_bmm, channelIx)];
+		fprintf(outputFile, "EFF_ANA_BSMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		// total efficiency for convenience
+		m = compute_efftot_bmm(&fUlcBsmm, channelIx);
+		fprintf(outputFile, "# EFF_TOT_BSMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		
+		/********
+		 * BDMM *
+		 ********/
+		// acceptance
+		m = fUlcBdmm[make_pair(kAcc_bmm, channelIx)];
+		fprintf(outputFile, "ACC_BDMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		// muon efficiency
+		m = fUlcBdmm[make_pair(kEff_mu_bmm, channelIx)];
+		fprintf(outputFile, "EFF_MU_BDMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		// trigger efficiency
+		m = fUlcBdmm[make_pair(kEff_trig_bmm, channelIx)];
+		fprintf(outputFile, "EFF_TRIG_BDMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		// cand efficiency
+		m = fUlcBdmm[make_pair(kEff_cand_bmm, channelIx)];
+		fprintf(outputFile, "EFF_CAND_BDMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		// ana efficiency
+		m = fUlcBdmm[make_pair(kEff_ana_bmm, channelIx)];
+		fprintf(outputFile, "EFF_ANA_BDMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());
+		// total efficiency for convenience
+		m = compute_efftot_bmm(&fUlcBdmm, channelIx);
+		fprintf(outputFile, "# EFF_TOT_BDMM\t%u\t%f\t%f\n", channelIx, m.getVal(), m.getErr());		
+		
+		/***************
+		 * OBSERVATION *
+		 ***************/
+		fprintf(outputFile, "OBS_BKG\t%u\t%f\n",  channelIx, fUlcBsmm[make_pair(kObsBkg_bmm, channelIx)].getVal());
+		fprintf(outputFile, "OBS_BSMM\t%u\t%f\n", channelIx, fUlcBsmm[make_pair(kObsB_bmm, channelIx)].getVal());
+		fprintf(outputFile, "OBS_BDMM\t%u\t%f\n", channelIx, fUlcBdmm[make_pair(kObsB_bmm, channelIx)].getVal());		
+		
+		/***********
+		 * PEAKING *
+		 ***********/
+		computePeaking(channelIx, reload);
+		m = fUlcBsmm[make_pair(kPeakBkgOff_bmm, channelIx)];
+		fprintf(outputFile, "PEAK_BKG_OFF\t%u\t%f\t%f\n",channelIx,m.getVal(),m.getErr());
+		m = fUlcBsmm[make_pair(kPeakBkgOn_bmm, channelIx)];
+		fprintf(outputFile, "PEAK_BKG_BS\t%u\t%f\t%f\n",channelIx,m.getVal(),m.getErr());
+		m = fUlcBdmm[make_pair(kPeakBkgOn_bmm, channelIx)];
+		fprintf(outputFile, "PEAK_BKG_BD\t%u\t%f\t%f\n",channelIx,m.getVal(),m.getErr());
+		
+		// Print tau
+		fprintf(outputFile, "TAU_BS\t%u\t%f\t%f\n", channelIx, fUlcBsmm[make_pair(kTau_bmm, channelIx)].getVal(),fUlcBsmm[make_pair(kTau_bmm, channelIx)].getErr());
+		fprintf(outputFile, "TAU_BD\t%u\t%f\t%f\n", channelIx, fUlcBdmm[make_pair(kTau_bmm, channelIx)].getVal(),fUlcBdmm[make_pair(kTau_bmm, channelIx)].getErr());
+		
+		// Print extra stuff as comment
+		// needed for mva training
+		{
+			measurement_t tot_bpjpsik;
+			measurement_t exp_bmm;
+			measurement_t gen_bmm;
+			TFile file(fMCFileName.c_str());
+			TEventList *elist;
+			
+			fprintf(outputFile, "# Scaling factor for Background given by TAU_BS and TAU_BD\n");
+			tot_bpjpsik = fUlcBplus[make_pair(kTot_bplus, channelIx)];
+			
+			// scaling bsmm
+			elist = (TEventList*)file.Get("bsmmGens");
+			exp_bmm = f_ratio() * c_s_theory() * tot_bpjpsik;
+			gen_bmm = measurement_t((double)elist->GetN(),0);
+			fprintf(outputFile, "# SCALE_BS = %f\n", exp_bmm.getVal()/gen_bmm.getVal());
+			
+			// scaling bdmm
+			elist = (TEventList*)file.Get("bdmmGens");
+			exp_bmm = c_d_theory() * tot_bpjpsik;
+			gen_bmm = measurement_t((double)elist->GetN(),0);
+			fprintf(outputFile, "# SCALE_BD = %f\n", exp_bmm.getVal()/gen_bmm.getVal());			
+			
+			// dump output, all B+
+			exp_bmm = tot_bpjpsik / (bf_Bu2JpsiKp() * bf_PsiToMuMu());
+			fprintf(outputFile, "# TOTAL PRODUCED B+ (not B+ -> J/psi K+) = %.2f +/- %.2f\n", exp_bmm.getVal(), exp_bmm.getErr());
+		}
+	}
+	
+	fclose(outputFile);
+} // writeULC()

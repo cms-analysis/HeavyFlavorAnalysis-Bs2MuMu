@@ -58,7 +58,7 @@ all: bin obj lib bin/ana-produce lib/libNCAna.so bin/ncBatch bin/ncEvalTMVA
 	@true
 
 lib/libNCAna.so: $(addprefix obj/,$(LIB_OBJS) $(LIB_OBJSDICT)) lib/libNCRootUtils.so
-	$(LD) $(SOFLAGS) -o $@ $(addprefix obj/,$(LIB_OBJS) $(LIB_OBJSDICT)) $(GLIBS) lib/libNCRootUtils.so -lTMVA
+	$(LD) $(SOFLAGS) -o $@ $(addprefix obj/,$(LIB_OBJS) $(LIB_OBJSDICT)) $(GLIBS) lib/libNCRootUtils.so -lTMVA -lRooFit -lRooFitCore
 
 lib/libNCRootUtils.so:
 	rm -f lib/libNCRootUtils.so
