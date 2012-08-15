@@ -4,8 +4,6 @@
 
 #include "../interface/HFMasses.hh"
 
-//#define MY
-
 using namespace std;
 
 // ----------------------------------------------------------------------
@@ -56,8 +54,7 @@ candAna::~candAna() {
 
 // ----------------------------------------------------------------------
 void candAna::evtAnalysis(TAna01Event *evt) {
-  static int count=0, count0=0, count1=0, count2=0;
-  count0++;
+
   fpEvt = evt; 
 
   //cout << "----------------------------------------------------------------------" << endl;
@@ -81,8 +78,6 @@ void candAna::evtAnalysis(TAna01Event *evt) {
       if (fVerbose > 19) cout << "Skipping candidate at " << iC << " which is of type " << pCand->fType << endl;
       continue;
     }
-
-    count2++;
 
     if (fVerbose > 10) {
       
@@ -141,33 +136,20 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     }
 
     
-    if(BLIND != 0) 
-      cout<<" ---------> blind "<<BLIND<<" "<<fpCand->fMass<<" "<<fCandM<<" "<<SIGBOXMIN<<" "<<SIGBOXMAX<<" "
-	  <<fCandIso<<" "<<fPreselection<<endl;;
-
     if (fIsMC) {
       fTree->Fill(); 
     } else {
       if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX  && fCandIso > 0.7) {
 	// do nothing
-	cout<<" blinded "<<BLIND<<" "<<fpCand->fMass<<" "<<fCandM<<" "<<SIGBOXMIN<<" "<<SIGBOXMAX<<" "<<fCandIso<<" "<<fPreselection<<endl;;
+	//cout<<" blinded "<<BLIND<<" "<<fpCand->fMass<<" "<<fCandM<<" "<<SIGBOXMIN<<" "<<SIGBOXMAX<<" "<<fCandIso<<" "<<fPreselection<<endl;;
       } else {
-	//if (fPreselection) count1++;
-	count1++;
 	if (fPreselection) {
-	  count++;
-	  cout<<" write "<<count<<" "<<count1<<" "<<count2<<" "<<count0<<" "<<fPreselection<<endl;
 	  ((TH1D*)fHistDir->Get("../monEvents"))->Fill(12); 
 	  fTree->Fill(); 
 	}         
       }
     }
 
-    //cout<<" 1 "<<endl;
-
-#ifdef MY
-    return; // Skip histo fillingh d.k. 31/5/12
-#endif
 
     // -- fill histograms
     fillCandidateHistograms(fRegion["A"]);
@@ -1170,11 +1152,6 @@ void candAna::bookHist() {
   fTree->Branch("hm2pt",  &fHltMu2Pt,  "hm2pt/D");    
   fTree->Branch("hm2eta", &fHltMu2Eta, "hm2eta/D");  
   fTree->Branch("hm2phi", &fHltMu2Phi, "hm2phi/D");  
-
-#ifdef MY
-  cout<<" Exit,do not book any special histos other than the redtreee, d.k. 31/5/12"<<endl;
-  return; 
-#endif
 
   // -- Efficiency/Acceptance Tree
   fEffTree = new TTree("effTree", "effTree");
