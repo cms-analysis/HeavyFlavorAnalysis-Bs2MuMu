@@ -21,6 +21,14 @@ TRIGRANGE    HLT_DoubleMu3_4_Dimuon5_Bs_Central_v2(190456:194712)
 TRIGRANGE    HLT_DoubleMu3p5_4_Dimuon5_Bs_Central_v2(190456:194712)
 TRIGRANGE    HLT_DoubleMu4_Dimuon7_Bs_Forward_v2(190456:194712)
 #
-TRIGRANGE    HLT_DoubleMu3_4_Dimuon5_Bs_Central_v3(194712:9999999)
-TRIGRANGE    HLT_DoubleMu3p5_4_Dimuon5_Bs_Central_v3(194712:9999999)
-TRIGRANGE    HLT_DoubleMu4_Dimuon7_Bs_Forward_v3(194712:9999999)
+TRIGRANGE    HLT_DoubleMu3_4_Dimuon5_Bs_Central_v3(196351:196352)
+TRIGRANGE    HLT_DoubleMu3p5_4_Dimuon5_Bs_Central_v3(196351:196352)
+TRIGRANGE    HLT_DoubleMu4_Dimuon7_Bs_Forward_v3(196351:196352)
+#
+TRIGRANGE    HLT_DoubleMu3_4_Dimuon5_Bs_Central_v4(199336:199429)
+TRIGRANGE    HLT_DoubleMu3p5_4_Dimuon5_Bs_Central_v4(199336:199429)
+TRIGRANGE    HLT_DoubleMu4_Dimuon7_Bs_Forward_v4(199336:199429)
+#
+TRIGRANGE    HLT_DoubleMu3_4_Dimuon5_Bs_Central_v5(200186: 9999999)
+TRIGRANGE    HLT_DoubleMu3p5_4_Dimuon5_Bs_Central_v5(200186:9999999)
+TRIGRANGE    HLT_DoubleMu4_Dimuon7_Bs_Forward_v5(200186:9999999)
