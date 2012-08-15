@@ -74,11 +74,14 @@ class pixelReader : public treeReader01 {
 	private:
 		// random number generator
 		TRandom3 fRand;
-		// Assumed resolution in µm
-		double fTkResolutionXY;
-		double fTkResolutionZ;
+		// Assumed resolutions in µm
+		double fIPResolutionXY;
+		double fIPResolutionZ;
 		double fPVResolutionXY;
 		double fPVResolutionZ;
+		// relative momentum resolution
+		double fMoResolutionXY;
+		double fMoResolutionZ;
 		
 		TVector3 smearPhi(TVector3 v, double res_cm);
 		TVector3 smearZ(TVector3 v, double res_cm);
