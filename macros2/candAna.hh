@@ -115,7 +115,8 @@ public:
   int fVerbose;
   int fIsMC;
 
-  int fRun, fEvt, fLS;
+  Long64_t fRun, fEvt;
+  int fLS;
   int fEvent; 
   int fRunRange;
 

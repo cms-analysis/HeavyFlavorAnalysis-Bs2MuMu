@@ -56,6 +56,8 @@ candAna::~candAna() {
 void candAna::evtAnalysis(TAna01Event *evt) {
 
   fpEvt = evt; 
+  cout << fEvt << "  " << (fEvt>0? " >0" : "<0") << endl;
+  return;
 
   //cout << "----------------------------------------------------------------------" << endl;
 
@@ -1038,9 +1040,9 @@ void candAna::bookHist() {
 
   // -- Reduced Tree
   fTree = new TTree("events", "events");
-  fTree->Branch("run",     &fRun,               "run/I");
+  fTree->Branch("run",     &fRun,               "run/L");
   fTree->Branch("json",    &fJSON,              "json/O");
-  fTree->Branch("evt",     &fEvt,               "evt/I");
+  fTree->Branch("evt",     &fEvt,               "evt/L");
   fTree->Branch("ls",      &fLS,                "ls/I");
   fTree->Branch("tm",      &fCandTM,            "tm/I");
   fTree->Branch("pr",      &fGenBpartial,       "pr/I"); 
