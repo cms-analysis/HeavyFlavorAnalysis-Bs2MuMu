@@ -55,9 +55,9 @@ candAna::~candAna() {
 // ----------------------------------------------------------------------
 void candAna::evtAnalysis(TAna01Event *evt) {
 
-  fpEvt = evt; 
-  cout << fEvt << "  " << (fEvt>0? " >0" : "<0") << endl;
-  return;
+  //   fpEvt = evt; 
+  //   cout << fEvt << "  " << (fEvt>0? " >0" : "<0") << endl;
+  //   return;
 
   //cout << "----------------------------------------------------------------------" << endl;
 
@@ -1157,8 +1157,8 @@ void candAna::bookHist() {
 
   // -- Efficiency/Acceptance Tree
   fEffTree = new TTree("effTree", "effTree");
-  fEffTree->Branch("run",    &fRun,               "run/I");
-  fEffTree->Branch("evt",    &fEvt,               "evt/I");
+  fEffTree->Branch("run",    &fRun,               "run/L");
+  fEffTree->Branch("evt",    &fEvt,               "evt/L");
   fEffTree->Branch("hlt",    &fGoodHLT,           "hlt/O");
   fEffTree->Branch("procid", &fProcessType,       "procid/I");
   fEffTree->Branch("bidx",   &fGenBTmi,           "bidx/I");
