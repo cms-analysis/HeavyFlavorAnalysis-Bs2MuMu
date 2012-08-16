@@ -55,7 +55,7 @@ candAna::~candAna() {
 // ----------------------------------------------------------------------
 void candAna::evtAnalysis(TAna01Event *evt) {
 
-  //   fpEvt = evt; 
+  fpEvt = evt; 
   //   cout << fEvt << "  " << (fEvt>0? " >0" : "<0") << endl;
   //   return;
 
