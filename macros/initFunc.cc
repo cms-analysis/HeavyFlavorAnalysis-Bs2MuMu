@@ -927,5 +927,10 @@ void initFunc::initExpo(double &p0, double &p1, TH1 *h) {
   cout << "p0: " << p0 << endl;
   cout << "p1: " << p1 << endl;
 
+  if (p1 > 2) p1 = 1;
+  cout << "p1: " << p1 << " reset" << endl;
+  if (p0 > 1000*h->GetMaximum()) p0 = ylo;
+  cout << "p0: " << p0 << " reset" << endl;
+
 }
 
