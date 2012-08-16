@@ -59,7 +59,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   //   cout << fEvt << "  " << (fEvt>0? " >0" : "<0") << endl;
   //   return;
 
-  //cout << "----------------------------------------------------------------------" << endl;
+  //  cout << "----------------------------------------------------------------------" << endl;
 
   if (fIsMC) {
     genMatch(); 
@@ -706,10 +706,11 @@ void candAna::fillCandidateHistograms(int offset) {
   if (ieta < 0) ieta = 0; 
   if (ieta > 14) ieta = 14; 
 
-  if (fpEtaFLS3d[ieta][offset]) 
+  //  cout << "ieta = " << ieta << " offset = " << offset << endl;
+  if (0 == offset && fpEtaFLS3d[ieta][offset]) 
     fpEtaFLS3d[ieta][offset]->fill(fCandFLS3d, fCandM); 
-//   else 
-//     cout << "missing fpEtaFLS3d: " << ieta << "  " << offset << endl;
+  //  else 
+  //    cout << "missing fpEtaFLS3d: " << ieta << "  " << offset << endl;
 
   // -- NPV analysis distributions
   int ipv = 0; 
@@ -1311,6 +1312,7 @@ void candAna::bookHist() {
 	pD = fHistDir->mkdir(Form("%sEta%i", name.c_str(), ipv));
 	pD->cd();
 	dname = Form("%seta%i_", name.c_str(), ipv);
+	//	cout << "ipv = " << ipv << " i = " << i << endl;
 	fpEtaFLS3d[ipv][i] =  bookDistribution(Form("%sfls3d", dname.c_str()), "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
       }
 
