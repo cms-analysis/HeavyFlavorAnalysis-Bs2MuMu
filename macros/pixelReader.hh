@@ -74,15 +74,17 @@ class pixelReader : public treeReader01 {
 	private:
 		// random number generator
 		TRandom3 fRand;
-		// Assumed resolutions in µm
-		double fIPResolutionXY;
-		double fIPResolutionZ;
+		// Track resolution
+		double fD0Resolution;
+		double fDzResolution;
+		double fPhiResolution;
+		double fCotThetaResolution;
+		double fPtResolution;
+		// primary vertex resolution
 		double fPVResolutionXY;
 		double fPVResolutionZ;
-		// relative momentum resolution
-		double fMoResolutionXY;
-		double fMoResolutionZ;
 		
+		void smearTrack(TVector3 *v, TVector3 *p);
 		TVector3 smearPhi(TVector3 v, double res_cm);
 		TVector3 smearZ(TVector3 v, double res_cm);
 		TVector3 smearR(TVector3 v, double res_cm);
