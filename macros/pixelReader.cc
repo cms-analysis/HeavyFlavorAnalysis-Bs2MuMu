@@ -63,7 +63,7 @@ void pixelReader::bookHist()
 	reduced_tree->Branch("iso",&fIso,"iso/F");
 	reduced_tree->Branch("pv_z",&fPvZ,"pv_z/F"),
 	reduced_tree->Branch("pv_xy",&fPvXY,"pv_xy/F");
-	reduced_tree->Branch("true_decay",fTrueDecay,"true_decay/I");
+	reduced_tree->Branch("true_decay",&fTrueDecay,"true_decay/I");
 	
 	// dump resolution we are running with
 	std::cout << "	XY IP Resolution: " << fIPResolutionXY << " um" << std::endl;
