@@ -481,7 +481,7 @@ void candAna::candAnalysis() {
   fCandTau   = fCandFL3d*MBS/fCandP/TMath::Ccgs();
 
   // -- variables for production mechanism studies
-  fpOsCand      = osCand(fpCand);
+  //  fpOsCand      = osCand(fpCand);
   fOsIso        = osIsolation(fpCand, 1.0, 0.9); 
   fOsRelIso     = fOsIso/fCandPt; 
   int osm       = osMuon(fpCand, 0.);
