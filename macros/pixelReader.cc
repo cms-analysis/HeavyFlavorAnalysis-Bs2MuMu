@@ -389,11 +389,12 @@ void pixelReader::smearTrack(TVector3 *v, TVector3 *p)
 	
 	// smear impact parameters
 	*v = smearR(*v, fD0Resolution*kMuMToCM);
+	*v = smearPhi(*v, fD0Resolution*kMuMToCM); // FIXME: unclear wether this is true
 	*v = smearZ(*v, fDzResolution*kMuMToCM);
 	
 	// smear momentum
 	pt = p->Perp();
-	cot_theta = TMath::Tan(TMath::Pi() - p->Theta());
+	cot_theta = p->Z()/TMath::Sqrt(p->X()*p->X() + p->Y()*p->Y());
 	phi = p->Phi();
 	
 	pt = fRand.Gaus(pt, fPtResolution/100. * pt);
@@ -401,7 +402,7 @@ void pixelReader::smearTrack(TVector3 *v, TVector3 *p)
 	phi = fRand.Gaus(phi, fPhiResolution);
 	
 	// build momentum vector again
-	cot_theta = TMath::Pi() - TMath::ATan(cot_theta); // now it is theta
+	cot_theta = TMath::Pi()/2.0 - TMath::ATan(cot_theta); // now it is theta
 	pt = pt / TMath::Sin(cot_theta); // now it is p
 	p->SetMagThetaPhi(pt,cot_theta,phi);
 } // smearTrack()
