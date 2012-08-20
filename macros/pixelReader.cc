@@ -27,7 +27,7 @@ static decay_t make_decay(int nbr, ...)
 	return dec;
 } // make_decay()
 
-pixelReader::pixelReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName), reduced_tree(NULL), fD0Resolution(0.0), fDzResolution(0.0), fPhiResolution(0.0), fCotThetaResolution(0.0), fPtResolution(0.0), fPVResolutionXY(0.0), fPVResolutionZ(0.0)
+pixelReader::pixelReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName), reduced_tree(NULL), fD0Resolution(0.0), fDzResolution(0.0), fPhiResolution(0.0), fCotThetaResolution(0.0), fPtResolution(0.0), fPVResolutionXY(0.0), fPVResolutionZ(0.0), fHistoResIP_XY(NULL), fHistoResIP_Z(NULL)
 {
 	fStableParticles.insert(11); // e
 	fStableParticles.insert(13); // mu
@@ -60,6 +60,7 @@ void pixelReader::bookHist()
 	reduced_tree->Branch("doca_z",&fDocaZ,"doca_z/F");
 	reduced_tree->Branch("doca_xy",&fDocaXY,"doca_xy/F");
 	reduced_tree->Branch("d3",&fD3,"d3/F");
+	reduced_tree->Branch("d3_true",&fD3Truth,"d3_true/F");
 	reduced_tree->Branch("alpha",&fAlpha,"alpha/F");
 	reduced_tree->Branch("iso",&fIso,"iso/F");
 	reduced_tree->Branch("pv_z",&fPvZ,"pv_z/F"),
@@ -75,6 +76,9 @@ void pixelReader::bookHist()
 	// dump pv resolutions
 	cout << "	XY PV Resolution: " << fPVResolutionXY << " um" << endl;
 	cout << "	Z  PV Resolution: " << fPVResolutionZ << " um" << endl;
+	
+	// look for the resolution file...
+	readResolution();
 } // bookHist()
 
 void pixelReader::eventProcessing()
@@ -166,12 +170,6 @@ bool pixelReader::loadCandidateVariables(TAnaCand *pCand)
 		gen = fpEvt->getGenCand(j);
 		if (gen->fMom1 == 0) {
 			pVtx = gen->fV;
-			if (fPVResolutionXY > 0) {
-				pVtx = smearPhi(pVtx,fPVResolutionXY*kMuMToCM);
-				pVtx = smearR(pVtx,fPVResolutionXY*kMuMToCM);
-			}
-			if (fPVResolutionZ)
-				pVtx = smearZ(pVtx,fPVResolutionZ*kMuMToCM);
 			break;
 		}
 	}
@@ -188,19 +186,37 @@ bool pixelReader::loadCandidateVariables(TAnaCand *pCand)
 		if (first) {
 			p1 = gen->fP.Vect();
 			v1 = gen->fV;
-			smearTrack(&v1, &p1);
-			fPtMu1 = p1.Perp();
-			fEtaMu1 = p1.Eta();
 		} else {
 			p2 = gen->fP.Vect();
 			v2 = gen->fV;
-			smearTrack(&v2, &p2);
-			fPtMu2 = p2.Perp();
-			fEtaMu2 = p2.Eta();
 		}
 
 		first = false;
 	}
+	
+	// Compute 3D distance w/o resolution
+	q = p1.Cross(p2);
+	a1 = v1 - p2.Cross(q).Dot(v1 - v2) / q.Mag2() * p1;
+	q = p2.Cross(p1);
+	a2 = v2 - p1.Cross(q).Dot(v2 - v1) / q.Mag2() * p2;
+	// compute the flight length
+	q = 0.5 * (a1 + a2); // center of pocas
+	fD3Truth = (q - pVtx).Mag();
+	
+	// resolution of track
+	smearTrack(&v1, &p1);
+	fPtMu1 = p1.Perp();
+	fEtaMu1 = p1.Eta();
+	smearTrack(&v2, &p2);
+	fPtMu2 = p2.Perp();
+	fEtaMu2 = p2.Eta();
+	// resolution of PV
+	if (fPVResolutionXY > 0) {
+		pVtx = smearPhi(pVtx,fPVResolutionXY*kMuMToCM);
+		pVtx = smearR(pVtx,fPVResolutionXY*kMuMToCM);
+	}
+	if (fPVResolutionZ)
+		pVtx = smearZ(pVtx,fPVResolutionZ*kMuMToCM);
 	
 	// make muon1 the leading pt muon
 	if (fPtMu1 < fPtMu2) {
@@ -389,7 +405,6 @@ void pixelReader::smearTrack(TVector3 *v, TVector3 *p)
 	
 	// smear impact parameters
 	*v = smearR(*v, fD0Resolution*kMuMToCM);
-	*v = smearPhi(*v, fD0Resolution*kMuMToCM); // FIXME: unclear wether this is true
 	*v = smearZ(*v, fDzResolution*kMuMToCM);
 	
 	// smear momentum
@@ -406,3 +421,13 @@ void pixelReader::smearTrack(TVector3 *v, TVector3 *p)
 	pt = pt / TMath::Sin(cot_theta); // now it is p
 	p->SetMagThetaPhi(pt,cot_theta,phi);
 } // smearTrack()
+
+void pixelReader::readResolution()
+{
+	TFile *file = TFile::Open("resolution/histo.root");
+	
+	fHistoResIP_XY = (TH2D*)file->Get("res_ip_xy");
+	fHistoResIP_Z = (TH2D*)file->Get("res_ip_z");
+	
+	delete file;
+} // readResolution()
