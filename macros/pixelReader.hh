@@ -53,6 +53,7 @@ class pixelReader : public treeReader01 {
 		float fDocaZ;
 		float fDocaXY;
 		float fD3;
+		float fD3Truth;
 		float fAlpha;
 		
 		/* muon variables */
@@ -88,6 +89,13 @@ class pixelReader : public treeReader01 {
 		TVector3 smearPhi(TVector3 v, double res_cm);
 		TVector3 smearZ(TVector3 v, double res_cm);
 		TVector3 smearR(TVector3 v, double res_cm);
+	
+	private:
+		// resolution histograms
+		TH2D *fHistoResIP_XY;
+		TH2D *fHistoResIP_Z;
+		
+		void readResolution();
 };
 
 #endif
