@@ -77,6 +77,7 @@ class pixelReader : public treeReader01 {
 		TRandom3 fRand;
 		// Track resolution
 		double fD0Resolution;
+		double fD0PhiResolution;
 		double fDzResolution;
 		double fPhiResolution;
 		double fCotThetaResolution;

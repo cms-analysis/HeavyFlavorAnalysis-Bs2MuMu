@@ -27,7 +27,7 @@ static decay_t make_decay(int nbr, ...)
 	return dec;
 } // make_decay()
 
-pixelReader::pixelReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName), reduced_tree(NULL), fD0Resolution(0.0), fDzResolution(0.0), fPhiResolution(0.0), fCotThetaResolution(0.0), fPtResolution(0.0), fPVResolutionXY(0.0), fPVResolutionZ(0.0), fHistoResIP_XY(NULL), fHistoResIP_Z(NULL)
+pixelReader::pixelReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName), reduced_tree(NULL), fD0Resolution(0.0), fD0PhiResolution(0.0), fDzResolution(0.0), fPhiResolution(0.0), fCotThetaResolution(0.0), fPtResolution(0.0), fPVResolutionXY(0.0), fPVResolutionZ(0.0), fHistoResIP_XY(NULL), fHistoResIP_Z(NULL)
 {
 	fStableParticles.insert(11); // e
 	fStableParticles.insert(13); // mu
@@ -69,6 +69,7 @@ void pixelReader::bookHist()
 	
 	// dump track resolutions
 	cout << "	d0 resolution: " << fD0Resolution << " um" << endl;
+	cout << "	d0phi resolution: " << fD0PhiResolution << " um" << endl;
 	cout << "	dz resolution: " << fDzResolution << " um" << endl;
 	cout << "	phi resolution: " << fPhiResolution << " x 10^(-3)" << endl;
 	cout << "	cot(theta) resolution: " << fCotThetaResolution << " x 10^(-3)" << endl;
@@ -126,6 +127,8 @@ void pixelReader::readCuts(TString filename, int dump)
 		
 		if (strcmp(name, "TRK_D0") == 0)
 			fD0Resolution = value;
+		else if (strcmp(name, "TRK_D0PHI") == 0)
+			fD0PhiResolution = value;
 		else if (strcmp(name, "TRK_DZ") == 0)
 			fDzResolution = value;
 		else if (strcmp(name, "TRK_PHI") == 0)
@@ -405,6 +408,7 @@ void pixelReader::smearTrack(TVector3 *v, TVector3 *p)
 	
 	// smear impact parameters
 	*v = smearR(*v, fD0Resolution*kMuMToCM);
+	*v = smearPhi(*v, fD0PhiResolution*kMuMToCM);
 	*v = smearZ(*v, fDzResolution*kMuMToCM);
 	
 	// smear momentum
@@ -424,10 +428,17 @@ void pixelReader::smearTrack(TVector3 *v, TVector3 *p)
 
 void pixelReader::readResolution()
 {
-	TFile *file = TFile::Open("resolution/histo.root");
+	FILE *test = fopen("resolution/histo.root", "r");
+	TFile *file = NULL;
+	if (!test)
+		goto bail;
+	
+	file = TFile::Open("resolution/histo.root");
 	
 	fHistoResIP_XY = (TH2D*)file->Get("res_ip_xy");
 	fHistoResIP_Z = (TH2D*)file->Get("res_ip_z");
 	
-	delete file;
+bail:
+	if (file) delete file;
+	if (test) fclose(test);
 } // readResolution()
