@@ -8,3 +8,5 @@ TRK_PT	1
 # primary vertex
 PV_XY	30
 PV_Z	40
+# number of candidates produced
+NUM_CANDS	1

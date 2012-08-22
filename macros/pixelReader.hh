@@ -97,6 +97,9 @@ class pixelReader : public treeReader01 {
 		TH2D *fHistoResIP_Z;
 		
 		void readResolution();
+	
+	private:
+		unsigned fNumCands;
 };
 
 #endif

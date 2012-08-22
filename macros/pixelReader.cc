@@ -27,7 +27,7 @@ static decay_t make_decay(int nbr, ...)
 	return dec;
 } // make_decay()
 
-pixelReader::pixelReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName), reduced_tree(NULL), fD0Resolution(0.0), fD0PhiResolution(0.0), fDzResolution(0.0), fPhiResolution(0.0), fCotThetaResolution(0.0), fPtResolution(0.0), fPVResolutionXY(0.0), fPVResolutionZ(0.0), fHistoResIP_XY(NULL), fHistoResIP_Z(NULL)
+pixelReader::pixelReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName), reduced_tree(NULL), fD0Resolution(0.0), fD0PhiResolution(0.0), fDzResolution(0.0), fPhiResolution(0.0), fCotThetaResolution(0.0), fPtResolution(0.0), fPVResolutionXY(0.0), fPVResolutionZ(0.0), fHistoResIP_XY(NULL), fHistoResIP_Z(NULL), fNumCands(1)
 {
 	fStableParticles.insert(11); // e
 	fStableParticles.insert(13); // mu
@@ -68,6 +68,7 @@ void pixelReader::bookHist()
 	reduced_tree->Branch("true_decay",&fTrueDecay,"true_decay/I");
 	
 	// dump track resolutions
+	cout << "	Number of candidates: " << fNumCands << endl;
 	cout << "	d0 resolution: " << fD0Resolution << " um" << endl;
 	cout << "	d0phi resolution: " << fD0PhiResolution << " um" << endl;
 	cout << "	dz resolution: " << fDzResolution << " um" << endl;
@@ -85,13 +86,14 @@ void pixelReader::bookHist()
 void pixelReader::eventProcessing()
 {
 	int j,nc;
-	
-//	dumpGenerator();
+	unsigned k;
 	
 	nc = fpEvt->nCands();
 	for (j = 0; j < nc; j++) {
-		if (loadCandidateVariables(fpEvt->getCand(j)))
-			reduced_tree->Fill();
+		for (k = 0; k < fNumCands; k++) {
+			if (loadCandidateVariables(fpEvt->getCand(j)))
+				reduced_tree->Fill();
+		}
 	}
 } // eventProcessing()
 
@@ -141,6 +143,8 @@ void pixelReader::readCuts(TString filename, int dump)
 			fPVResolutionXY = value;
 		else if (strcmp(name, "PV_Z") == 0)
 			fPVResolutionZ = value;
+		else if (strcmp(name, "NUM_CANDS") == 0)
+			fNumCands = (unsigned)value;
 		else
 			std::cerr << "readCuts(): Unknown variable '" << name << "'found!" << std::endl;
 	}
