@@ -445,7 +445,7 @@ void massReader::bookHist()
 	
 	// and add the branches
 	reduced_tree->Branch("run",&fRun,"run/I");
-	reduced_tree->Branch("event",&fEvt,"event/I");
+	reduced_tree->Branch("event",&fEvt,"event/L");
 	reduced_tree->Branch("candidate",&fCandidate,"candidate/I");
 	reduced_tree->Branch("pt",&fPt,"pt/F");
 	reduced_tree->Branch("mass",&fMass,"mass/F");
