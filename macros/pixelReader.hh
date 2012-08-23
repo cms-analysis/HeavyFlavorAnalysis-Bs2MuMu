@@ -77,7 +77,6 @@ class pixelReader : public treeReader01 {
 		TRandom3 fRand;
 		// Track resolution
 		double fD0Resolution;
-		double fD0PhiResolution;
 		double fDzResolution;
 		double fPhiResolution;
 		double fCotThetaResolution;
@@ -89,6 +88,7 @@ class pixelReader : public treeReader01 {
 		void smearTrack(TVector3 *v, TVector3 *p);
 		TVector3 smearPhi(TVector3 v, double res_cm);
 		TVector3 smearZ(TVector3 v, double res_cm);
+		TVector3 smearD0(TVector3 v,double res_cm, TVector3 plab);
 		TVector3 smearR(TVector3 v, double res_cm);
 	
 	private:
@@ -100,6 +100,12 @@ class pixelReader : public treeReader01 {
 	
 	private:
 		unsigned fNumCands;
+	
+	private:
+		// DEBUG. Remove again afterwards
+		TH1D *hXres;
+		TH1D *hYres;
+		TH1D *hZres;
 };
 
 #endif

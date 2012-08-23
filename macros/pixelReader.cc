@@ -27,7 +27,7 @@ static decay_t make_decay(int nbr, ...)
 	return dec;
 } // make_decay()
 
-pixelReader::pixelReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName), reduced_tree(NULL), fD0Resolution(0.0), fD0PhiResolution(0.0), fDzResolution(0.0), fPhiResolution(0.0), fCotThetaResolution(0.0), fPtResolution(0.0), fPVResolutionXY(0.0), fPVResolutionZ(0.0), fHistoResIP_XY(NULL), fHistoResIP_Z(NULL), fNumCands(1)
+pixelReader::pixelReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName), reduced_tree(NULL), fD0Resolution(0.0), fDzResolution(0.0), fPhiResolution(0.0), fCotThetaResolution(0.0), fPtResolution(0.0), fPVResolutionXY(0.0), fPVResolutionZ(0.0), fHistoResIP_XY(NULL), fHistoResIP_Z(NULL), fNumCands(1)
 {
 	fStableParticles.insert(11); // e
 	fStableParticles.insert(13); // mu
@@ -70,7 +70,6 @@ void pixelReader::bookHist()
 	// dump track resolutions
 	cout << "	Number of candidates: " << fNumCands << endl;
 	cout << "	d0 resolution: " << fD0Resolution << " um" << endl;
-	cout << "	d0phi resolution: " << fD0PhiResolution << " um" << endl;
 	cout << "	dz resolution: " << fDzResolution << " um" << endl;
 	cout << "	phi resolution: " << fPhiResolution << " x 10^(-3)" << endl;
 	cout << "	cot(theta) resolution: " << fCotThetaResolution << " x 10^(-3)" << endl;
@@ -81,6 +80,10 @@ void pixelReader::bookHist()
 	
 	// look for the resolution file...
 	readResolution();
+	
+	hXres = new TH1D("hXres","",100,-0.015,0.015);
+	hYres = new TH1D("hYres","",100,-0.015,0.015);
+	hZres = new TH1D("hZres","",100,-0.03,0.03);
 } // bookHist()
 
 void pixelReader::eventProcessing()
@@ -129,8 +132,6 @@ void pixelReader::readCuts(TString filename, int dump)
 		
 		if (strcmp(name, "TRK_D0") == 0)
 			fD0Resolution = value;
-		else if (strcmp(name, "TRK_D0PHI") == 0)
-			fD0PhiResolution = value;
 		else if (strcmp(name, "TRK_DZ") == 0)
 			fDzResolution = value;
 		else if (strcmp(name, "TRK_PHI") == 0)
@@ -406,14 +407,26 @@ TVector3 pixelReader::smearZ(TVector3 v, double res_cm)
 	return result;
 } // smearZ()
 
+TVector3 pixelReader::smearD0(TVector3 v, double res_cm, TVector3 plab)
+{
+	TVector3 e(-plab.Y(),plab.X(),0.0); // direction to smear
+	TVector3 result = v + fRand.Gaus(0, res_cm)*e.Unit();
+	
+	return result;
+} // smearD0()
+
 void pixelReader::smearTrack(TVector3 *v, TVector3 *p)
 {
 	double pt,cot_theta,phi;
+	TVector3 save = *v;
 	
 	// smear impact parameters
-	*v = smearR(*v, fD0Resolution*kMuMToCM);
-	*v = smearPhi(*v, fD0PhiResolution*kMuMToCM);
+	*v = smearD0(*v,fD0Resolution*kMuMToCM, *p);
 	*v = smearZ(*v, fDzResolution*kMuMToCM);
+	
+	hXres->Fill(v->X() - save.X());
+	hYres->Fill(v->Y() - save.Y());
+	hZres->Fill(v->Z() - save.Z());
 	
 	// smear momentum
 	pt = p->Perp();
