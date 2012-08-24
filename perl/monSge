@@ -4,6 +4,7 @@
 # ------
 #              check status of SGE jobs
 #
+# 2012/08/23   adapt to changed sge output at the end
 # 2012/08/13   -k adds NOK file for terminated waiting/running jobs
 # 2011/11/29   find terminated jobs
 # 2011/01/20   parse for worker node that had failed job, dump into file problems.txt
@@ -154,6 +155,12 @@ sub parseOutput {
     if ($foundMyEnd) { return "no problems seen"; }
 
     $foundTerminated = `/bin/grep -i "JOB Resource USAGE for job" $llogfile`; 
+    if ($foundTerminated) {return "terminated job  "; }
+
+    $foundTerminated = `/bin/grep -i "JOB Live Resources USAGE for job" $llogfile`; 
+    if ($foundTerminated) {return "terminated job  "; }
+
+    $foundTerminated = `/bin/grep -i "JOB Historical Resources USAGE for job" $llogfile`; 
     if ($foundTerminated) {return "terminated job  "; }
 
     return $return;
