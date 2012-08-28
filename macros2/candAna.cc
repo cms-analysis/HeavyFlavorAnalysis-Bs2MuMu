@@ -335,13 +335,16 @@ void candAna::candAnalysis() {
 
   if (fCandTM && fGenM1Tmi < 0) fpEvt->dump();
   
+  TGenCand *pg1(0), *pg2(0);   
   if (fCandTmi > -1) {
-    TGenCand *pg1 = fpEvt->getGenCand(p1->fGenIndex);
+    pg1           = fpEvt->getGenCand(p1->fGenIndex);
     fMu1PtGen     = pg1->fP.Perp();
     fMu1EtaGen    = pg1->fP.Eta();
+    fMu1PhiGen    = pg1->fP.Phi();
   } else {
     fMu1PtGen     = -99.;
     fMu1EtaGen    = -99.;
+    fMu1PhiGen    = -99.;
   }
   
   //  fMu2Id        = goodMuon(p2); 
@@ -418,13 +421,22 @@ void candAna::candAnalysis() {
   fMu2W8Tr      = pT1->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi)*pT2->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi);
 
   if (fCandTmi > -1) {
-    TGenCand *pg2 = fpEvt->getGenCand(p2->fGenIndex);
+    pg2           = fpEvt->getGenCand(p2->fGenIndex);
     fMu2PtGen     = pg2->fP.Perp();
     fMu2EtaGen    = pg2->fP.Eta();
+    fMu2PhiGen    = pg2->fP.Phi(); 
   } else {
     fMu2PtGen     = -99.;
     fMu2EtaGen    = -99.;
+    fMu2PhiGen    = -99.;
   }
+
+  fGenMass = -99.;
+  if (0 != pg1 && 0 != pg2) {
+    TLorentzVector gendimuon = pg1->fP + pg2->fP; 
+    fGenMass = gendimuon.M(); 
+  }
+  cout << "m(mu,mu) = " << fGenMass << " n(photons) = " << fNGenPhotons << endl;
 
   fCandW8Mu     = fMu1W8Mu*fMu2W8Mu;
   if (TMath::Abs(fCandW8Mu) > 1.) fCandW8Mu = 0.2; // FIXME correction for missing entries at low pT
@@ -1142,6 +1154,9 @@ void candAna::bookHist() {
   fTree->Branch("g2pt",    &fMu2PtGen,          "g2pt/D");
   fTree->Branch("g1eta",   &fMu1EtaGen,         "g1eta/D");
   fTree->Branch("g2eta",   &fMu2EtaGen,         "g2eta/D");
+  fTree->Branch("g1phi",   &fMu1PhiGen,         "g1phi/D");
+  fTree->Branch("g2phi",   &fMu2PhiGen,         "g2phi/D");
+  fTree->Branch("gmass",   &fGenMass,           "gmass/D");
   fTree->Branch("gtau",    &fGenLifeTime,       "gtau/D");
 
   fTree->Branch("t1pt",    &fMu1PtNrf,          "t1pt/D");

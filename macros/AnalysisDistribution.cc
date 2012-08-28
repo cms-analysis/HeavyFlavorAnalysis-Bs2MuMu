@@ -689,6 +689,7 @@ void AnalysisDistribution::fill(double value, double mass) {
   int mBin(-1); 
 
   // -- these histograms are just to KNOW afterwards what the mass windows were exactly
+  //  cout <<   hMassAll << endl;
   hMassAll->Fill(mass); 
   if ((fSigLo < mass) && (mass < fSigHi)) {
     hMassSG->Fill(mass); 

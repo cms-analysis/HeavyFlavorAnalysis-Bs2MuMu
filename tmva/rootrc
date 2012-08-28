@@ -1,0 +1,11 @@
+
+Rint.Logon:              rootlogon.C
+
+# Path used by dynamic loader to find shared libraries and macros
+#Unix.*.Root.DynamicPath:    .:$(ROOTSYS)/lib:/shome/ursl/macros/lib
+#Unix.*.Root.MacroPath:  .:~/macros:~/macros/fsx:$ROOTSYS/macros:$ROOTSYS/tutorials
+
+# Path where to look for TrueType fonts
+#Unix.*.Root.UseTTFonts:     true
+#Unix.*.Root.TTFontPath:     $(ROOTSYS)/fonts/ttf
+
