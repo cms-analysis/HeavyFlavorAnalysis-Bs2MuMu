@@ -11,6 +11,11 @@
 
 const double kMuMToCM = 1E-4;
 
+bool operator<(res_t r1, res_t r2)
+{
+	return r1.p < r2.p;
+} // operator<()
+
 static decay_t make_decay(int nbr, ...)
 {
 	decay_t dec;
@@ -27,7 +32,7 @@ static decay_t make_decay(int nbr, ...)
 	return dec;
 } // make_decay()
 
-pixelReader::pixelReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName), reduced_tree(NULL), fD0Resolution(0.0), fDzResolution(0.0), fPhiResolution(0.0), fCotThetaResolution(0.0), fPtResolution(0.0), fPVResolutionXY(0.0), fPVResolutionZ(0.0), fHistoResIP_XY(NULL), fHistoResIP_Z(NULL), fNumCands(1)
+pixelReader::pixelReader(TChain *tree, TString evtClassName) : treeReader01(tree, evtClassName), reduced_tree(NULL), fD0Resolution(0.0), fDzResolution(0.0), fPhiResolution(0.0), fCotThetaResolution(0.0), fPtResolution(0.0), fPVResolutionXY(0.0), fPVResolutionZ(0.0), fNumCands(1), fResMode(kResFile)
 {
 	fStableParticles.insert(11); // e
 	fStableParticles.insert(13); // mu
@@ -39,6 +44,12 @@ pixelReader::pixelReader(TChain *tree, TString evtClassName) : treeReader01(tree
 	
 	// build the decays we're interested in...
 	fDecayTable.insert( std::pair<decay_t,int>(make_decay(3, 531, 13, 13), kDecay_BsToMuMu) );
+	
+	// eta resolution bins
+	fEtaBins[0] = 1.0;
+	fEtaBins[1] = 1.5;
+	fEtaBins[2] = 2.0;
+	fEtaBins[3] = 2.5;
 } // pixelReader()
 
 pixelReader::~pixelReader()
@@ -47,6 +58,10 @@ pixelReader::~pixelReader()
 void pixelReader::bookHist()
 {
 	using std::cout; using std::endl;
+	unsigned j,k;
+	res_t res;
+	double *pnt = NULL;
+	
 	reduced_tree = new TTree("T","Pixel2012 Reduced Tree");
 	
 	reduced_tree->Branch("mass",&fMass,"mass/F");
@@ -77,9 +92,34 @@ void pixelReader::bookHist()
 	// dump pv resolutions
 	cout << "	XY PV Resolution: " << fPVResolutionXY << " um" << endl;
 	cout << "	Z  PV Resolution: " << fPVResolutionZ << " um" << endl;
+	// dump resolution mode
+	cout << "	Resolution Mode: " << fResMode << endl;
 	
-	// look for the resolution file...
-	readResolution();
+	if (fResMode != kResFile) {
+		
+		switch (fResMode) {
+			case kResCMSStd:
+				pnt = &res.std_geom;
+				break;
+			case kResCMSUpg:
+				pnt = &res.upg_geom;
+				break;
+			default:
+				std::cerr << "ERROR: Selected resolution mode not yet supported!!!" << endl;
+				break;
+		}
+		for (j = 0; j < NBR_ETA_RESOLUTION; j++) {
+			cout << Form("\t\t===== eta %f=====",fEtaBins[j]) << endl;
+			for (k = 0; k < fResVecXY[j].size(); k++) {
+				res = fResVecXY[j][k];
+				cout << Form("\t\tp = %f, sigma(xy) = %f", res.p, *pnt) << endl;
+			}
+			for (k = 0; k < fResVecZ[j].size(); k++) {
+				res = fResVecZ[j][k];
+				cout << Form("\t\tp = %f, sigma(z) = %f", res.p, *pnt) << endl;
+			}
+		}
+	}
 	
 	hXres = new TH1D("hXres","",100,-0.015,0.015);
 	hYres = new TH1D("hYres","",100,-0.015,0.015);
@@ -146,11 +186,16 @@ void pixelReader::readCuts(TString filename, int dump)
 			fPVResolutionZ = value;
 		else if (strcmp(name, "NUM_CANDS") == 0)
 			fNumCands = (unsigned)value;
+		else if (strcmp(name, "RES_MODE") == 0)
+			fResMode = (unsigned)value;
 		else
 			std::cerr << "readCuts(): Unknown variable '" << name << "'found!" << std::endl;
 	}
 	
 	fclose(file);
+	
+	// read the resolution if set...
+	readResolution();
 bail:
 	return;
 } // readCuts()
@@ -421,8 +466,13 @@ void pixelReader::smearTrack(TVector3 *v, TVector3 *p)
 	TVector3 save = *v;
 	
 	// smear impact parameters
-	*v = smearD0(*v,fD0Resolution*kMuMToCM, *p);
-	*v = smearZ(*v, fDzResolution*kMuMToCM);
+	if (fResMode == kResFile) {
+		*v = smearD0(*v,fD0Resolution*kMuMToCM, *p);
+		*v = smearZ(*v, fDzResolution*kMuMToCM);
+	} else {
+		*v = smearD0(*v,findResolution(*p, fResVecXY), *p);
+		*v = smearZ(*v, findResolution(*p, fResVecZ));
+	}
 	
 	hXres->Fill(v->X() - save.X());
 	hYres->Fill(v->Y() - save.Y());
@@ -445,17 +495,89 @@ void pixelReader::smearTrack(TVector3 *v, TVector3 *p)
 
 void pixelReader::readResolution()
 {
-	FILE *test = fopen("resolution/histo.root", "r");
-	TFile *file = NULL;
-	if (!test)
+	int j;
+	
+	// parse xy file
+	parseResFile(fResVecXY, "resolution/ip_xy_pu50_dloss.txt");
+	parseResFile(fResVecZ, "resolution/ip_z_pu50_dloss.txt");
+	
+	// sort the vectors
+	for (j = 0; j < NBR_ETA_RESOLUTION; j++) {
+		std::sort(fResVecXY[j].begin(), fResVecXY[j].end());
+		std::sort(fResVecZ[j].begin(), fResVecZ[j].end());
+	}
+} // readResolution()
+
+void pixelReader::parseResFile(std::vector<res_t> *resVec, const char *resFileName)
+{
+	using namespace std;
+	FILE *resFile = fopen(resFileName, "r");
+	char buffer[1024];
+	double lastP;
+	res_t res;
+	int parsed;	
+	
+	if (resFile)
 		goto bail;
 	
-	file = TFile::Open("resolution/histo.root");
+	lastP = -1;
 	
-	fHistoResIP_XY = (TH2D*)file->Get("res_ip_xy");
-	fHistoResIP_Z = (TH2D*)file->Get("res_ip_z");
+	while(fgets(buffer, sizeof(buffer), resFile) != NULL) {
+		if (buffer[0] == '#') // comment
+			continue;
+		
+		if (buffer[0] == '\n' || buffer[0] == '\r') // empty line
+			continue;
+		
+		if( (parsed = sscanf(buffer, "%lf %lf %lf",&res.p, &res.std_geom, &res.upg_geom)) < 3) {
+			cerr << "ERROR: parseResFile(). parsed = " << parsed << " < 3" << endl;
+			continue;
+		}
+		
+		if (res.p < lastP)
+			resVec++;
+		
+		resVec->push_back(res);
+		lastP = res.p;
+	}
 	
 bail:
-	if (file) delete file;
-	if (test) fclose(test);
-} // readResolution()
+	if (resFile) fclose(resFile);
+} // parseResFile()
+
+double pixelReader::findResolution(TVector3 plab, std::vector<res_t> *resVec)
+{
+	unsigned j,k;
+	double result = 0.0;
+	double dist, minDist = 1.e30;
+	res_t res;
+	double *ptr;
+	
+	switch (fResMode) {
+		case kResCMSStd:
+			ptr = &res.std_geom;
+			break;
+		case kResCMSUpg:
+			ptr = &res.upg_geom;
+			break;
+		default:
+			ptr = NULL;
+			break;
+	}
+	
+	for (j = 0; j < NBR_ETA_RESOLUTION-1; j++) { // all eta > max => eta = max
+		if (TMath::Abs(plab.Eta()) < fEtaBins[j])
+			break;
+	}
+	
+	for (k = 0; k < resVec[j].size(); k++) {
+		dist = TMath::Abs(plab.Mag() - resVec[j][k].p);
+		if (dist < minDist) {
+			res = resVec[j][k];
+			result = *ptr;
+			minDist = dist;
+		}
+	}
+	
+	return result;
+} // findResolution()

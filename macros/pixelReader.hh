@@ -15,6 +15,22 @@
 
 #include <TRandom3.h>
 
+#define NBR_ETA_RESOLUTION 4
+
+enum {
+	kResFile = 0,
+	kResCMSStd = 1,
+	kResCMSUpg = 2,
+	kResCMSLong = 3
+};
+
+struct res_t {
+	double p;
+	double std_geom;
+	double upg_geom;
+};
+bool operator<(res_t r1, res_t r2);
+
 class pixelReader : public treeReader01 {
 	
 	public:
@@ -92,14 +108,16 @@ class pixelReader : public treeReader01 {
 		TVector3 smearR(TVector3 v, double res_cm);
 	
 	private:
-		// resolution histograms
-		TH2D *fHistoResIP_XY;
-		TH2D *fHistoResIP_Z;
-		
+		double fEtaBins[NBR_ETA_RESOLUTION]; // nbr bins
+		std::vector<res_t> fResVecXY[NBR_ETA_RESOLUTION];
+		std::vector<res_t> fResVecZ[NBR_ETA_RESOLUTION];
 		void readResolution();
+		void parseResFile(std::vector<res_t> *resVec, const char *resFileName);
+		double findResolution(TVector3 plab, std::vector<res_t> *resVec); // returns resolution in cm
 	
 	private:
 		unsigned fNumCands;
+		unsigned fResMode; // resolution mode
 	
 	private:
 		// DEBUG. Remove again afterwards
