@@ -517,7 +517,7 @@ void pixelReader::parseResFile(std::vector<res_t> *resVec, const char *resFileNa
 	res_t res;
 	int parsed;	
 	
-	if (resFile)
+	if (!resFile)
 		goto bail;
 	
 	lastP = -1;
