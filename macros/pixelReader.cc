@@ -104,6 +104,9 @@ void pixelReader::bookHist()
 			case kResCMSUpg:
 				pnt = &res.upg_geom;
 				break;
+			case kResCMSLong:
+				pnt = &res.lng_geom;
+				break;
 			default:
 				std::cerr << "ERROR: Selected resolution mode not yet supported!!!" << endl;
 				break;
@@ -515,7 +518,7 @@ void pixelReader::parseResFile(std::vector<res_t> *resVec, const char *resFileNa
 	char buffer[1024];
 	double lastP;
 	res_t res;
-	int parsed;	
+	int parsed;
 	
 	if (!resFile)
 		goto bail;
@@ -529,10 +532,12 @@ void pixelReader::parseResFile(std::vector<res_t> *resVec, const char *resFileNa
 		if (buffer[0] == '\n' || buffer[0] == '\r') // empty line
 			continue;
 		
-		if( (parsed = sscanf(buffer, "%lf %lf %lf",&res.p, &res.std_geom, &res.upg_geom)) < 3) {
+		if( (parsed = sscanf(buffer, "%lf %lf %lf %lf",&res.p, &res.std_geom, &res.upg_geom, &res.lng_geom)) < 3) {
 			cerr << "ERROR: parseResFile(). parsed = " << parsed << " < 3" << endl;
 			continue;
 		}
+		if (parsed == 3) // no entry for long geometry, use standard (i.e. xy)
+			res.lng_geom = res.std_geom;
 		
 		if (res.p < lastP)
 			resVec++;
@@ -559,6 +564,9 @@ double pixelReader::findResolution(TVector3 plab, std::vector<res_t> *resVec)
 			break;
 		case kResCMSUpg:
 			ptr = &res.upg_geom;
+			break;
+		case kResCMSLong:
+			ptr = &res.lng_geom;
 			break;
 		default:
 			ptr = NULL;

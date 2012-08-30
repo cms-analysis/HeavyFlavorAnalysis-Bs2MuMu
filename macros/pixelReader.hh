@@ -28,6 +28,7 @@ struct res_t {
 	double p;
 	double std_geom;
 	double upg_geom;
+	double lng_geom;
 };
 bool operator<(res_t r1, res_t r2);
 
