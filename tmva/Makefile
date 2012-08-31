@@ -27,7 +27,7 @@ else
 endif
 
 CXXFLAGS      = -g -O3 -Wall -fPIC -pipe
-#CXXFLAGS      = -g -Wall -fPIC -pipe
+CXXFLAGS      = -g -O0 -Wall -fPIC -pipe
 LD            = $(CXX)
 LDFLAGS       = -g
 SOFLAGS       = -shared
@@ -36,6 +36,7 @@ CXXFLAGS     += $(ROOTCFLAGS)
 LIBS          = $(ROOTLIBS)
 GLIBS         = $(filter-out -lz, $(ROOTGLIBS))
 RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
+RELLIBPATH    = ../../macros2/lib
 
 #########
 # FILES #
@@ -68,14 +69,17 @@ obj/%.o : %.C $(CSTUFF)
 # TARGETS #
 ###########
 
-lib/libTmvaClasses.so: $(addprefix obj/,$(CSTUFF) $(READER) $(SUPPORTCLASSES) $(READERDICT)) 
-	$(CXX) $(SOFLAGS) $(addprefix obj/,$(CSTUFF) $(READER) $(READERDICT) $(SUPPORTCLASSES)) -o lib/libTmvaClasses.so $(GLIBS) -lMinuit 
+lib/libTmvaClasses.so: $(addprefix obj/,$(CSTUFF) $(READER) $(SUPPORTCLASSES) $(READERDICT)) lib/libBmm2Classes.so lib/libAna00.so lib/libUtil.so lib/libAnaClasses.so
+	$(CXX) $(SOFLAGS) $(addprefix obj/,$(CSTUFF) $(READER) $(READERDICT) $(SUPPORTCLASSES)) -o lib/libTmvaClasses.so lib/libBmm2Classes.so $(GLIBS) -lMinuit 
 
 lib/libAna00.so:
 	cd lib && rm -f libAna00.so && ln -s $(RELLIBPATH)/libAna00.so libAna00.so && cd -
 
 lib/libUtil.so:
 	cd lib && rm -f libUtil.so && ln -s $(RELLIBPATH)/libUtil.so libUtil.so && cd -
+
+lib/libBmm2Classes.so:
+	cd lib && rm -f libBmm2Classes.so && ln -s $(RELLIBPATH)/libBmm2Classes.so libBmm2Classes.so && cd -
 
 lib/libAnaClasses.so:
 	cd lib && rm -f libAnaClasses.so && ln -s ../../macros/lib/libAnaClasses.so libAnaClasses.so && cd -

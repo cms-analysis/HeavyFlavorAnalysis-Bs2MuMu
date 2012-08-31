@@ -62,7 +62,7 @@ tmva1::tmva1() {
 
   // -- (mostly) standard from file:///Users/ursl/root/root-053202/htmldoc/src/TMVA__MethodBDT.cxx.html
   fBdtSetup.NTrees = 400;
-  fBdtSetup.nEventsMin = 100; 
+  fBdtSetup.nEventsMin = 50; 
   fBdtSetup.MaxDepth = 3;
   fBdtSetup.nCuts = 20; 
   fBdtSetup.AdaBoostBeta = 1.0; 
@@ -91,52 +91,9 @@ TCanvas* tmva1::getC0() {
 } 
 
 
-// ----------------------------------------------------------------------
-bool tmva1::preselection(treeData &b, bool rejectInvIso) {
-  //   if (fTrainAntiMuon && b.gmuid) return false;
-  //   if (!fTrainAntiMuon && !b.gmuid) return false;
-  if (!b.hlt) return false;
-  if (b.pt > 70) return false;
-  if (b.pt < 6) return false;
-
-  if (b.m1pt < 4) return false;
-  if (b.m1pt > 50) return false;
-  if (b.m2pt < 4) return false;
-  if (b.m2pt > 20) return false;
-
-  if (b.fl3d > 2) return false;
-  if (b.chi2/b.dof > 20) return false;
-  if (b.pvip > 0.05) return false;
-  if (b.pvips < 0) return false;
-  if (b.pvips > 10) return false;
-  if (TMath::IsNaN(b.pvips)) return false;
-  if (b.maxdoca > 0.05) return false;
-
-  if (b.closetrk > 21) return false;
-
-  if (rejectInvIso && 5.2 < b.m && b.m < 5.45 && b.iso < 0.7) return false;
-
-  if (b.m < 4.9) return false;
-  if (b.m > 5.9) return false;
-
-  // -- physics preselection: reduce background by factor 7, signal efficiency >90%
-  if (b.chi2/b.dof > 10) return false;
-  if (b.iso<0.6) return false; 
-  if (b.alpha > 0.3) return false; 
-
-  if (0 == fChannel) {
-    if (TMath::Abs(b.m1eta) > 1.4) return false;
-    if (TMath::Abs(b.m2eta) > 1.4) return false;
-  } else if (1 == fChannel) {
-    if (TMath::Abs(b.m1eta) < 1.4 && TMath::Abs(b.m2eta) < 1.4) return false;
-    if (TMath::Abs(b.m1eta) > 2.4 || TMath::Abs(b.m2eta) > 2.4) return false;
-  }
-
-  return true;
-}
 
 // ----------------------------------------------------------------------
-void tmva1::setupTree(TTree *t, treeData &b) {
+void tmva1::setupTree(TTree *t, RedTreeData &b) {
   t->SetBranchAddress("evt", &b.evt);
   t->SetBranchAddress("gmuid", &b.gmuid);
   t->SetBranchAddress("hlt", &b.hlt);
@@ -162,7 +119,7 @@ void tmva1::setupTree(TTree *t, treeData &b) {
 
 
 // ----------------------------------------------------------------------
-void tmva1::train(string oname) {
+void tmva1::train(string oname, string filename) {
    // This loads the library
    TMVA::Tools::Instance();
    
@@ -190,7 +147,6 @@ void tmva1::train(string oname) {
 
    cout << "----------------------------------------------------------------------" << endl;
    cout << "==> oname: " << oname << " antimuon: " << fTrainAntiMuon <<  endl;
-   hSetup->Write();
 
    string optstring = "V:!Silent:!Color:!DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification";
    optstring        = "V:!Silent:!Color:!DrawProgressBar:Transformations=I:AnalysisType=Classification";
@@ -198,8 +154,8 @@ void tmva1::train(string oname) {
    TMVA::Factory *factory = new TMVA::Factory(Form("%s", oname.c_str()), outputFile,  optstring.c_str());
 
    factory->AddVariable("m1pt",       'F' );
-   factory->AddVariable("m2pt",       'F' );
    factory->AddVariable("m1eta",      'F' );
+   factory->AddVariable("m2pt",       'F' );
    factory->AddVariable("m2eta",      'F' );
    factory->AddVariable("pt",         'F' );
    factory->AddVariable("eta",        'F' );
@@ -218,7 +174,7 @@ void tmva1::train(string oname) {
    TFile* inFile;
    TTree *applySg(0), *trainSg(0), *testSg(0), *applyBg(0), *trainBg(0), *testBg(0); 
 
-   inFile = TFile::Open("/scratch/ursl/tmva-trees.root");
+   inFile = TFile::Open(filename.c_str());
    if (fApplyOn0) {
      cout << "==============> Apply on events0, train on events1, test on events2" << endl;
      applySg = (TTree*)inFile->Get(Form("signalChan%dEvents0/events", fChannel));
@@ -255,6 +211,10 @@ void tmva1::train(string oname) {
      cout << "==============> trainBg =  "<< trainBg->GetDirectory()->GetName() << " entries: " << trainBg->GetEntries() << endl;
      cout << "==============> testBg  =  "<< testBg->GetDirectory()->GetName()  << " entries: " << testBg->GetEntries() << endl;
    } 
+
+   i = 30; hSetup->SetBinContent(i, applySg->GetEntries()); hSetup->GetXaxis()->SetBinLabel(i, "sgcnt");
+   i = 31; hSetup->SetBinContent(i, applyBg->GetEntries()); hSetup->GetXaxis()->SetBinLabel(i, "bgcnt");
+   writeOut(outputFile, hSetup); 
 
    Double_t signalWeight      = 1.; //= LUMISCALE; // 0.000388
    Double_t rbackgroundWeight = 1.;
@@ -370,19 +330,24 @@ void tmva1::apply(const char *fname) {
   classID = 1;
   cout << "--- Processing data: " << t->GetEntries() << " events" << endl;
   int nEvent = t->GetEntries();
-  int cnt0(0);
+  int cnt0(0), cnt1(0), cnt2(0);
   for (Long64_t ievt=0; ievt<nEvent; ievt++) {
     if (ievt%1000000 == 0) std::cout << "--- ... Processing data event: " << ievt << std::endl;
     t->GetEntry(ievt);
 
-    if (preselection(ftd, true)) {
+    if (preselection(ftd, fChannel, true)) {
       calcBDT();
       tt->Fill();
+      if (!ftd.gmuid) continue;
       if (ftd.evt%3 == 0) ++cnt0;
+      if (ftd.evt%3 == 1) ++cnt1;
+      if (ftd.evt%3 == 2) ++cnt2;
     }
   }
 
   cout << "=========> cnt0 = " << cnt0 << endl;
+  cout << "=========> cnt1 = " << cnt1 << endl;
+  cout << "=========> cnt2 = " << cnt2 << endl;
 
   // -- signal MC processing
   t = (TTree*)sfile->Get("candAnaMuMu/events");
@@ -391,15 +356,24 @@ void tmva1::apply(const char *fname) {
   w8 = LUMISCALE;
   cout << "--- Processing signal: " << t->GetEntries() << " events" << endl;
   nEvent = t->GetEntries();
+  cnt0 = cnt1 = cnt2 = 0; 
   for (Long64_t ievt=0; ievt<nEvent; ievt++) {
     if (ievt%1000000 == 0) std::cout << "--- ... Processing signal event: " << ievt << std::endl;
     t->GetEntry(ievt);
 
-    if (preselection(ftd, false)) {
+    if (preselection(ftd, fChannel, false)) {
       calcBDT();
       tt->Fill();
+      if (!ftd.gmuid) continue;
+      if (ftd.evt%3 == 0) ++cnt0;
+      if (ftd.evt%3 == 1) ++cnt1;
+      if (ftd.evt%3 == 2) ++cnt2;
     }
   }
+
+  cout << "=========> cnt0 = " << cnt0 << endl;
+  cout << "=========> cnt1 = " << cnt1 << endl;
+  cout << "=========> cnt2 = " << cnt2 << endl;
 
   f.Write();
   f.Close();
@@ -424,7 +398,6 @@ void tmva1::analyze(const char *fname) {
   TH1D *h = new TH1D("s1", "S/Sqrt(S+B)", bdtBins, bdtMin, bdtMax); h->Sumw2();
   setTitles(h, "b > ", "S/#sqrt{S+B}"); 
   TGraph *groc = new TGraph(bdtBins); 
-  groc->SetName("groc");
 
   TH1D *hroc = new TH1D("hroc", "", 200, 0., 1.); 
   TFile *f0 = TFile::Open(Form("%s-Events0.root", fname)); 
@@ -465,23 +438,42 @@ void tmva1::analyze(const char *fname) {
   TH1D *h2 = new TH1D("res_ssb", "max(S/Sqrt(S+B))", 10, 0., 10.); h2->Sumw2();  h2->SetDirectory(f); 
 
   // -- new rebinned versions of the BDT output plots. These ARE identical to the TMVA output IF the binning IS the same!
-  TH1D *ap0BDT = new TH1D("ap0BDT", "",    400, -1., 1.);
-  TH1D *tr0BDT = new TH1D("tr0BDT", "",    400, -1., 1.);
-  TH1D *te0BDT = new TH1D("te0BDT", "",    400, -1., 1.);
-  ap0BDT->SetLineColor(kBlack); te0BDT->SetLineColor(kBlack); tr0BDT->SetLineColor(kBlack);
-  ap0BDT->SetMarkerColor(kBlack); te0BDT->SetMarkerColor(kBlack); tr0BDT->SetMarkerColor(kBlack);
+  TH1D *ap0bgBDT = new TH1D("ap0bgBDT", "",    400, -1., 1.);
+  TH1D *tr0bgBDT = new TH1D("tr0bgBDT", "",    400, -1., 1.);
+  TH1D *te0bgBDT = new TH1D("te0bgBDT", "",    400, -1., 1.);
+  ap0bgBDT->SetLineColor(kBlack); te0bgBDT->SetLineColor(kBlack); tr0bgBDT->SetLineColor(kBlack);
+  ap0bgBDT->SetMarkerColor(kBlack); te0bgBDT->SetMarkerColor(kBlack); tr0bgBDT->SetMarkerColor(kBlack);
   
-  TH1D *ap1BDT = new TH1D("ap1BDT", "",    400, -1., 1.);
-  TH1D *tr1BDT = new TH1D("tr1BDT", "",    400, -1., 1.);
-  TH1D *te1BDT = new TH1D("te1BDT", "",    400, -1., 1.);
-  ap1BDT->SetLineColor(kRed); te1BDT->SetLineColor(kRed); tr1BDT->SetLineColor(kRed);
-  ap1BDT->SetMarkerColor(kRed); te1BDT->SetMarkerColor(kRed); tr1BDT->SetMarkerColor(kRed);
+  TH1D *ap1bgBDT = new TH1D("ap1bgBDT", "",    400, -1., 1.);
+  TH1D *tr1bgBDT = new TH1D("tr1bgBDT", "",    400, -1., 1.);
+  TH1D *te1bgBDT = new TH1D("te1bgBDT", "",    400, -1., 1.);
+  ap1bgBDT->SetLineColor(kRed); te1bgBDT->SetLineColor(kRed); tr1bgBDT->SetLineColor(kRed);
+  ap1bgBDT->SetMarkerColor(kRed); te1bgBDT->SetMarkerColor(kRed); tr1bgBDT->SetMarkerColor(kRed);
 
-  TH1D *ap2BDT = new TH1D("ap2BDT", "",    400, -1., 1.);
-  TH1D *tr2BDT = new TH1D("tr2BDT", "",    400, -1., 1.);
-  TH1D *te2BDT = new TH1D("te2BDT", "",    400, -1., 1.);
-  ap2BDT->SetLineColor(kBlue); te2BDT->SetLineColor(kBlue); tr2BDT->SetLineColor(kBlue);
-  ap2BDT->SetMarkerColor(kBlue); te2BDT->SetMarkerColor(kBlue); tr2BDT->SetMarkerColor(kBlue);
+  TH1D *ap2bgBDT = new TH1D("ap2bgBDT", "",    400, -1., 1.);
+  TH1D *tr2bgBDT = new TH1D("tr2bgBDT", "",    400, -1., 1.);
+  TH1D *te2bgBDT = new TH1D("te2bgBDT", "",    400, -1., 1.);
+  ap2bgBDT->SetLineColor(kBlue); te2bgBDT->SetLineColor(kBlue); tr2bgBDT->SetLineColor(kBlue);
+  ap2bgBDT->SetMarkerColor(kBlue); te2bgBDT->SetMarkerColor(kBlue); tr2bgBDT->SetMarkerColor(kBlue);
+
+  TH1D *ap0sgBDT = new TH1D("ap0sgBDT", "",    400, -1., 1.);
+  TH1D *tr0sgBDT = new TH1D("tr0sgBDT", "",    400, -1., 1.);
+  TH1D *te0sgBDT = new TH1D("te0sgBDT", "",    400, -1., 1.);
+  ap0sgBDT->SetLineColor(kBlack); te0sgBDT->SetLineColor(kBlack); tr0sgBDT->SetLineColor(kBlack);
+  ap0sgBDT->SetMarkerColor(kBlack); te0sgBDT->SetMarkerColor(kBlack); tr0sgBDT->SetMarkerColor(kBlack);
+  
+  TH1D *ap1sgBDT = new TH1D("ap1sgBDT", "",    400, -1., 1.);
+  TH1D *tr1sgBDT = new TH1D("tr1sgBDT", "",    400, -1., 1.);
+  TH1D *te1sgBDT = new TH1D("te1sgBDT", "",    400, -1., 1.);
+  ap1sgBDT->SetLineColor(kRed); te1sgBDT->SetLineColor(kRed); tr1sgBDT->SetLineColor(kRed);
+  ap1sgBDT->SetMarkerColor(kRed); te1sgBDT->SetMarkerColor(kRed); tr1sgBDT->SetMarkerColor(kRed);
+
+  TH1D *ap2sgBDT = new TH1D("ap2sgBDT", "",    400, -1., 1.);
+  TH1D *tr2sgBDT = new TH1D("tr2sgBDT", "",    400, -1., 1.);
+  TH1D *te2sgBDT = new TH1D("te2sgBDT", "",    400, -1., 1.);
+  ap2sgBDT->SetLineColor(kBlue); te2sgBDT->SetLineColor(kBlue); tr2sgBDT->SetLineColor(kBlue);
+  ap2sgBDT->SetMarkerColor(kBlue); te2sgBDT->SetMarkerColor(kBlue); tr2sgBDT->SetMarkerColor(kBlue);
+
   
   TTree *t = (TTree*)f->Get("bdtTree");
   double bdt, m, w8; 
@@ -513,36 +505,59 @@ void tmva1::analyze(const char *fname) {
       if (!hlt) continue;
       if (!gmuid) continue;
 
+      ap0bgBDT->Fill(bdt0);
+      ap1bgBDT->Fill(bdt1);
+      ap2bgBDT->Fill(bdt2);
+
       if (evt%3==0) {
-	ap0BDT->Fill(bdt0);
-	te1BDT->Fill(bdt1);
-	tr2BDT->Fill(bdt2);
+	te1bgBDT->Fill(bdt1);
+	tr2bgBDT->Fill(bdt2);
       }
       if (evt%3==1) {
-	ap1BDT->Fill(bdt1);
-	te2BDT->Fill(bdt2);
-	tr0BDT->Fill(bdt0);
+	te2bgBDT->Fill(bdt2);
+	tr0bgBDT->Fill(bdt0);
       }
       if (evt%3==2) {
-	ap2BDT->Fill(bdt2);
-	te0BDT->Fill(bdt0);
-	tr1BDT->Fill(bdt1);
+	te0bgBDT->Fill(bdt0);
+	tr1bgBDT->Fill(bdt1);
+      }
+    }
+
+    if (0 == classID) {
+      if (!hlt) continue;
+      if (!gmuid) continue;
+
+      ap0sgBDT->Fill(bdt0);
+      ap1sgBDT->Fill(bdt1);
+      ap2sgBDT->Fill(bdt2);
+
+      if (evt%3==0) {
+	te1sgBDT->Fill(bdt1);
+	tr2sgBDT->Fill(bdt2);
+      }
+      if (evt%3==1) {
+	te2sgBDT->Fill(bdt2);
+	tr0sgBDT->Fill(bdt0);
+      }
+      if (evt%3==2) {
+	te0sgBDT->Fill(bdt0);
+	tr1sgBDT->Fill(bdt1);
       }
     }
   }
 
-  double ks00   = tr0BDT->KolmogorovTest(te0BDT);
-  double ks11   = tr1BDT->KolmogorovTest(te1BDT);
-  double ks22   = tr2BDT->KolmogorovTest(te2BDT);
+  double bgks00   = tr0bgBDT->KolmogorovTest(te0bgBDT); 
+  double bgks11   = tr1bgBDT->KolmogorovTest(te1bgBDT); 
+  double bgks22   = tr2bgBDT->KolmogorovTest(te2bgBDT); 
 
-  double ks01te = te0BDT->KolmogorovTest(te1BDT);
-  double ks01tr = tr0BDT->KolmogorovTest(tr1BDT);
+  double bgks01te = te0bgBDT->KolmogorovTest(te1bgBDT);
+  double bgks01tr = tr0bgBDT->KolmogorovTest(tr1bgBDT);
 
-  double ks12te = te1BDT->KolmogorovTest(te2BDT);
-  double ks12tr = tr1BDT->KolmogorovTest(tr2BDT);
+  double bgks12te = te1bgBDT->KolmogorovTest(te2bgBDT);
+  double bgks12tr = tr1bgBDT->KolmogorovTest(tr2bgBDT);
 
-  double ks20te = te2BDT->KolmogorovTest(te0BDT);
-  double ks20tr = tr2BDT->KolmogorovTest(tr0BDT);
+  double bgks20te = te2bgBDT->KolmogorovTest(te0bgBDT);
+  double bgks20tr = tr2bgBDT->KolmogorovTest(tr0bgBDT);
 
   trainBDT0->Scale(1./trainBDT0->GetSumOfWeights());
   testBDT0->Scale(1./testBDT0->GetSumOfWeights());
@@ -551,33 +566,100 @@ void tmva1::analyze(const char *fname) {
   trainBDT2->Scale(1./trainBDT2->GetSumOfWeights());
   testBDT2->Scale(1./testBDT2->GetSumOfWeights());
 
-  ap0BDT->Scale(1./ap0BDT->GetSumOfWeights());
-  tr0BDT->Scale(1./tr0BDT->GetSumOfWeights());
-  te0BDT->Scale(1./te0BDT->GetSumOfWeights());
+  ap0bgBDT->Scale(1./ap0bgBDT->GetSumOfWeights());
+  tr0bgBDT->Scale(1./tr0bgBDT->GetSumOfWeights());
+  te0bgBDT->Scale(1./te0bgBDT->GetSumOfWeights());
 
-  ap1BDT->Scale(1./ap1BDT->GetSumOfWeights());
-  tr1BDT->Scale(1./tr1BDT->GetSumOfWeights());
-  te1BDT->Scale(1./te1BDT->GetSumOfWeights());
+  ap1bgBDT->Scale(1./ap1bgBDT->GetSumOfWeights());
+  tr1bgBDT->Scale(1./tr1bgBDT->GetSumOfWeights());
+  te1bgBDT->Scale(1./te1bgBDT->GetSumOfWeights());
 
-  ap2BDT->Scale(1./ap2BDT->GetSumOfWeights());
-  tr2BDT->Scale(1./tr2BDT->GetSumOfWeights());
-  te2BDT->Scale(1./te2BDT->GetSumOfWeights());
+  ap2bgBDT->Scale(1./ap2bgBDT->GetSumOfWeights());
+  tr2bgBDT->Scale(1./tr2bgBDT->GetSumOfWeights());
+  te2bgBDT->Scale(1./te2bgBDT->GetSumOfWeights());
 
-  double hmax = tr0BDT->GetMaximum(); 
-  if (tr1BDT->GetMaximum() > hmax) hmax = tr1BDT->GetMaximum();
-  if (tr2BDT->GetMaximum() > hmax) hmax = tr2BDT->GetMaximum();
-  tr0BDT->SetMaximum(1.3*hmax);
 
-  tr0BDT->Draw("p");
-  te0BDT->Draw("same");
+  double sgks00   = tr0sgBDT->KolmogorovTest(te0sgBDT); 
+  double sgks11   = tr1sgBDT->KolmogorovTest(te1sgBDT); 
+  double sgks22   = tr2sgBDT->KolmogorovTest(te2sgBDT); 
 
-  tr1BDT->Draw("psame");
-  te1BDT->Draw("same");
+  double sgks01te = te0sgBDT->KolmogorovTest(te1sgBDT);
+  double sgks01tr = tr0sgBDT->KolmogorovTest(tr1sgBDT);
 
-  tr2BDT->Draw("psame");
-  te2BDT->Draw("same");
+  double sgks12te = te1sgBDT->KolmogorovTest(te2sgBDT);
+  double sgks12tr = tr1sgBDT->KolmogorovTest(tr2sgBDT);
+
+  double sgks20te = te2sgBDT->KolmogorovTest(te0sgBDT);
+  double sgks20tr = tr2sgBDT->KolmogorovTest(tr0sgBDT);
+
+  ap0sgBDT->Scale(1./ap0sgBDT->GetSumOfWeights());
+  tr0sgBDT->Scale(1./tr0sgBDT->GetSumOfWeights());
+  te0sgBDT->Scale(1./te0sgBDT->GetSumOfWeights());
+
+  ap1sgBDT->Scale(1./ap1sgBDT->GetSumOfWeights());
+  tr1sgBDT->Scale(1./tr1sgBDT->GetSumOfWeights());
+  te1sgBDT->Scale(1./te1sgBDT->GetSumOfWeights());
+
+  ap2sgBDT->Scale(1./ap2sgBDT->GetSumOfWeights());
+  tr2sgBDT->Scale(1./tr2sgBDT->GetSumOfWeights());
+  te2sgBDT->Scale(1./te2sgBDT->GetSumOfWeights());
+
+  double hmax = tr0bgBDT->GetMaximum(); 
+  if (tr1bgBDT->GetMaximum() > hmax) hmax = tr1bgBDT->GetMaximum();
+  if (tr2bgBDT->GetMaximum() > hmax) hmax = tr2bgBDT->GetMaximum();
+  tr0bgBDT->SetMaximum(1.3*hmax);
+
+  tr0bgBDT->Draw("p");
+  te0bgBDT->Draw("same");
+
+  tr1bgBDT->Draw("psame");
+  te1bgBDT->Draw("same");
+
+  tr2bgBDT->Draw("psame");
+  te2bgBDT->Draw("same");
 
   c0->SaveAs(Form("plots/%s-rebinned-bg-overlays.pdf", fname)); 
+
+  hmax = tr0sgBDT->GetMaximum(); 
+  if (tr1sgBDT->GetMaximum() > hmax) hmax = tr1sgBDT->GetMaximum();
+  if (tr2sgBDT->GetMaximum() > hmax) hmax = tr2sgBDT->GetMaximum();
+  tr0sgBDT->SetMaximum(1.3*hmax);
+
+  tr0sgBDT->Draw("p");
+  te0sgBDT->Draw("same");
+
+  tr1sgBDT->Draw("psame");
+  te1sgBDT->Draw("same");
+
+  tr2sgBDT->Draw("psame");
+  te2sgBDT->Draw("same");
+
+  c0->SaveAs(Form("plots/%s-rebinned-bg-overlays.pdf", fname));
+
+
+  writeOut(f, ap0bgBDT); 
+  writeOut(f, tr0bgBDT); 
+  writeOut(f, te0bgBDT); 
+
+  writeOut(f, ap1bgBDT); 
+  writeOut(f, tr1bgBDT); 
+  writeOut(f, te1bgBDT); 
+
+  writeOut(f, ap2bgBDT); 
+  writeOut(f, tr2bgBDT); 
+  writeOut(f, te2bgBDT); 
+
+  writeOut(f, ap0sgBDT); 
+  writeOut(f, tr0sgBDT); 
+  writeOut(f, te0sgBDT); 
+
+  writeOut(f, ap1sgBDT); 
+  writeOut(f, tr1sgBDT); 
+  writeOut(f, te1sgBDT); 
+
+  writeOut(f, ap2sgBDT); 
+  writeOut(f, tr2sgBDT); 
+  writeOut(f, te2sgBDT); 
 
   // -- compute S and B
   double bdtCut, maxSSB(-1.), maxBDT(-1.), sCnt(0.), dCnt(0.); 
@@ -659,7 +741,9 @@ void tmva1::analyze(const char *fname) {
 
   bBDT->Scale(1./bBDT->GetSumOfWeights());
   cBDT->Scale(1./cBDT->GetSumOfWeights());
-  
+
+  // -- BG overlays
+  // --------------
   c0->Clear();
   c0->Divide(1,2);
   // -- linear plot
@@ -703,12 +787,10 @@ void tmva1::analyze(const char *fname) {
   legg->AddEntry(cBDT, "all events + failed #mu ID", "l"); 
   legg->Draw();
 
-
-  cout << "KS: " << ks00 << " " << ks11 << " " << ks22 << endl;
   tl->SetTextSize(0.04);
-  tl->DrawLatex(0.6, 0.80, Form("KS 0/1: %5.4f/%5.4f", ks01te, ks01tr)); 
-  tl->DrawLatex(0.6, 0.72, Form("KS 1/2: %5.4f/%5.4f", ks12te, ks12tr)); 
-  tl->DrawLatex(0.6, 0.64, Form("KS 2/0: %5.4f/%5.4f", ks20te, ks20tr)); 
+  tl->DrawLatex(0.6, 0.80, Form("KS 0/1: %5.4f/%5.4f", bgks01te, bgks01tr)); 
+  tl->DrawLatex(0.6, 0.72, Form("KS 1/2: %5.4f/%5.4f", bgks12te, bgks12tr)); 
+  tl->DrawLatex(0.6, 0.64, Form("KS 2/0: %5.4f/%5.4f", bgks20te, bgks20tr)); 
   tl->SetTextSize(0.03);
 
   // -- logarithmic plot
@@ -745,6 +827,9 @@ void tmva1::analyze(const char *fname) {
   groc->GetXaxis()->SetTitle("#epsilon_{ S}"); 
   groc->GetYaxis()->SetTitle("1 - #epsilon_{ B}"); 
   double rocInt = hroc->Integral(0, hroc->GetNbinsX())*hroc->GetBinWidth(1); 
+  groc->SetName("groc"); 
+  groc->SetTitle(Form("integral = %5.3f", rocInt));
+  
   tl->DrawLatex(0.25, 0.4, Form("integral = %5.3f", rocInt)); 
   c0->SaveAs(Form("plots/%s-roc0.pdf", fname)); 
   //   gPad->SetLogy(1);
@@ -950,7 +1035,8 @@ void tmva1::mvas(string fname) { //, HistType htype, Bool_t useTMVAStyle ) {
 	 
 	 h2->SetBinContent(1, kolS); h2->GetXaxis()->SetBinLabel(1, "KS(sg)");
 	 h2->SetBinContent(2, kolB); h2->GetXaxis()->SetBinLabel(2, "KS(bg)");
-	 h2->Write();
+	 writeOut(file, h2); 
+	 // h2->Write();
 	 
 
 
@@ -1136,10 +1222,12 @@ void tmva1::cleanup(string fname) {
 
 
 // ----------------------------------------------------------------------
-void tmva1::makeAll(int offset, int clean) {
-  make(offset, 0, clean);
-  make(offset, 1, clean);
-  make(offset, 2, clean);
+void tmva1::makeAll(int offset, string filename, int clean) {
+  // createInputFile(filename); 
+
+  make(offset, filename, 0, clean);
+  make(offset, filename, 1, clean);
+  make(offset, filename, 2, clean);
   
   string oname = Form("TMVA-%d", offset); 
   cout << "-->apply(...)" << endl;
@@ -1161,7 +1249,7 @@ void tmva1::makeAll(int offset, int clean) {
 }
 
 // ----------------------------------------------------------------------
-void tmva1::make(int offset, int evt, int clean) {
+void tmva1::make(int offset, string filename, int evt, int clean) {
 
   if (0 == evt)  setApply0();
   if (1 == evt)  setApply1();
@@ -1187,23 +1275,35 @@ void tmva1::make(int offset, int evt, int clean) {
   cout << "==> tmva1(" << oname << ") " << endl;
   cout << "======================================================================" << endl;
 
-  cout << "-->train(...)" << endl;
-  train(oname);
+  cout << "-->train(...) with oname = " << oname << " and filename = " << filename << endl;
+  train(oname, filename);
 }
 
 
 // ----------------------------------------------------------------------
-void tmva1::createInputFile() {
+void tmva1::createInputFile(string filename) {
   TFile *sinput = TFile::Open(fInputFiles.sname.c_str());
   TFile *dinput = TFile::Open(fInputFiles.dname.c_str());
 
   // -- cuts definition: this should be identical to preselection()
-  TCut sgcut = "hlt&&gmuid&&pt<70&&pt>6"; 
-  sgcut += "m1pt>4.0&&m1pt<50";
-  sgcut += "m2pt>4.0&&m2pt<20"; 
-  sgcut += "fl3d<2&&chi2/dof<20&&pvip<0.05&&!TMath::IsNaN(pvips)&&pvips<10&&pvips>0&&maxdoca<0.05";
-  sgcut += "closetrk<21"; 
-  sgcut += "alpha<0.3&&iso>0.6&&chi2/dof<10"; 
+  TCut sgcut0 = "hlt&&gmuid&&pt<70&&pt>6"; 
+  sgcut0 += "m1pt>4.0&&m1pt<50";
+  sgcut0 += "m2pt>4.0&&m2pt<20"; 
+  sgcut0 += "fl3d<2&&chi2/dof<10&&pvip<0.02&&!TMath::IsNaN(pvips)&&pvips<5&&pvips>0&&maxdoca<0.02";
+  sgcut0 += "closetrk<21"; 
+  sgcut0 += "fls3d<100&&docatrk<0.2";
+  sgcut0 += "alpha<0.3&&iso>0.6&&chi2/dof<10"; 
+
+  TCut sgcut = preselection().c_str(); 
+  
+  //  TCut sgcut = sgcut0;  
+
+  cout << "original: " << endl;
+  cout << sgcut0 << endl;
+
+  cout << "new: " << endl;
+  cout << sgcut << endl;
+  
   TCut masscut = "m>4.9&&m<5.9"; 
   TCut massbg  = "!(5.2<m&&m<5.45)";
   
@@ -1213,7 +1313,7 @@ void tmva1::createInputFile() {
   TTree *signal      = (TTree*)sinput->Get("candAnaMuMu/events");
   TTree *cbackground = (TTree*)dinput->Get("candAnaMuMu/events");
   
-  TFile *outFile = TFile::Open( "tmva-trees.root","RECREATE");
+  TFile *outFile = TFile::Open(filename.c_str(),"RECREATE");
 
   // -- channel selection/definition
   string chanDef[] = {"TMath::Abs(m1eta) < 1.4 && TMath::Abs(m2eta) < 1.4", 
@@ -1228,13 +1328,16 @@ void tmva1::createInputFile() {
   for (int j = 0; j < 3; ++j) {
     if (0 == j) {
       type = "Events0"; 
-      typeCut = "evt%3==0";
+      typeCut = "TMath::Abs(evt%3)==0";
+      typeCut = "3*rndm%3==0";
     } else if (1 == j) {
       type = "Events1";
-      typeCut = "evt%3==1";
+      typeCut = "TMath::Abs(evt%3)==1";
+      typeCut = "3*rndm%3==1";
     } else if (2 == j) {
       type = "Events2";
-      typeCut = "evt%3==2";
+      typeCut = "TMath::Abs(evt%3)==2";
+      typeCut = "3*rndm%3==2";
     }
 
     for (int i = 0; i < nchan; ++i) {
@@ -1269,6 +1372,7 @@ void tmva1::createInputFile() {
 }
 
 
+
 // ----------------------------------------------------------------------
 void tmva1::calcBDT() {
   fBDT = -99.;
@@ -1291,8 +1395,8 @@ void tmva1::calcBDT() {
   
   frd.m  = ftd.m; 
   int ichan = 0; 
-  if (ftd.evt%3 == 1) ichan = 1; 
-  if (ftd.evt%3 == 2) ichan = 2; 
+  if (TMath::Abs(ftd.evt%3) == 1) ichan = 1; 
+  if (TMath::Abs(ftd.evt%3) == 2) ichan = 2; 
   fBDT   = fReader[ichan]->EvaluateMVA("BDT"); 
   fBDT0  = fReader[0]->EvaluateMVA("BDT"); 
   fBDT1  = fReader[1]->EvaluateMVA("BDT"); 
@@ -1428,6 +1532,17 @@ TMVA::Reader* setupReader(string xmlFile, readerData &rd) {
   return reader; 
 }
 
+
+// ----------------------------------------------------------------------
+void tmva1::writeOut(TFile *f, TH1 *h) {
+  TDirectory *pD = gDirectory; 
+  f->cd();
+  h->SetDirectory(f); 
+  h->Write();
+  pD->cd();
+}
+
+
 // ----------------------------------------------------------------------
 void tmva1::redrawStats(double x, double y, const char *newname, int color) {
 
@@ -1475,4 +1590,392 @@ void setHist(TH1 *h, Int_t color, Int_t symbol, Double_t size, Double_t width) {
 }
 
 
+// ----------------------------------------------------------------------
+void tmva1::toyRuns(string ifilename, int nruns) {
+  string oname; 
+  int offset(100);
+  int seed(0); 
+  int nsg(200000), nbg(250000);
+  for (int i = 0; i < nruns; ++i) {
+    seed = offset + i;
+    oname = Form("/scratch/ursl/tmva-toy-%d.root", seed); 
+    createToyData(ifilename, oname, seed, nsg, nbg); 
+    trainOnToyData(oname, Form("toy-%d", seed)); 
+  }
 
+
+  TCanvas *c0 = getC0();
+  TColor::CreateColorWheel();
+  c0->Clear();
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+  double ymax = 0.1; 
+  TH2F* frame = new TH2F("frame", "BDT output distributions", 100, -1., 1., 100, 0., 1.3*ymax);
+  frame->GetXaxis()->SetTitle(" b");
+  frame->GetYaxis()->SetTitle("(1/N) dN^{ }/^{ }dx");
+  frame->Draw();  
+
+  int color(0); 
+  for (int i = 0; i < nruns; ++i) {
+    seed = offset + i;
+    oname = Form("toy-%d.root", seed);
+    TFile *file = TFile::Open(oname.c_str()); 
+    
+    color = 11+i; 
+    TH1F *hTrainBg = (TH1F*)file->Get("Method_BDT/BDT/MVA_BDT_Train_B"); hTrainBg->SetLineColor(color); hTrainBg->SetMarkerColor(color);
+    TH1F *hTrainSg = (TH1F*)file->Get("Method_BDT/BDT/MVA_BDT_Train_S"); hTrainSg->SetLineColor(color); hTrainSg->SetMarkerColor(color);
+    
+    hTrainBg->Scale(1./hTrainBg->GetSumOfWeights());
+    hTrainSg->Scale(1./hTrainSg->GetSumOfWeights());
+    
+    hTrainBg->DrawCopy("histsame");
+    hTrainSg->DrawCopy("histsame");
+    file->Close();
+  }
+
+  c0->SaveAs(Form("toys-training-%d.pdf", nruns));
+
+  c0->Clear();
+  frame->Draw();  
+  for (int i = 0; i < nruns; ++i) {
+    seed = offset + i;
+    oname = Form("toy-%d.root", seed);
+    TFile *file = TFile::Open(oname.c_str()); 
+
+    color = 11+i; 
+    TH1F *hTestBg = (TH1F*)file->Get("Method_BDT/BDT/MVA_BDT_B"); hTestBg->SetLineColor(color); hTestBg->SetMarkerColor(color);
+    TH1F *hTestSg = (TH1F*)file->Get("Method_BDT/BDT/MVA_BDT_S"); hTestSg->SetLineColor(color); hTestSg->SetMarkerColor(color);
+    
+    hTestBg->Scale(1./hTestBg->GetSumOfWeights());
+    hTestSg->Scale(1./hTestSg->GetSumOfWeights());
+    
+    hTestBg->DrawCopy("histsame");
+    hTestSg->DrawCopy("histsame");
+
+    file->Close();
+  }
+
+  c0->SaveAs(Form("toys-testing-%d.pdf", nruns));
+
+}
+
+// ----------------------------------------------------------------------
+void tmva1::createToyData(string ifilename, string ofilename, int seed, int nsg, int nbg) {
+  delete gRandom; 
+  gRandom = new TRandom3(seed); 
+
+  int channel = 0; 
+
+  vector<string> vNames;
+  vector<double> vMin, vMax; 
+  vector<int> vNbins; 
+  vNames.push_back("m1pt"); vMin.push_back(0.); vMax.push_back(40.); vNbins.push_back(100); 
+  vNames.push_back("m2pt"); vMin.push_back(0.); vMax.push_back(20.); vNbins.push_back(100); 
+  vNames.push_back("m1eta"); vMin.push_back(-2.5); vMax.push_back(2.5); vNbins.push_back(100); 
+  vNames.push_back("m2eta"); vMin.push_back(-2.5); vMax.push_back(2.5); vNbins.push_back(100); 
+  vNames.push_back("pt");    vMin.push_back(0.); vMax.push_back(40.); vNbins.push_back(100); 
+  vNames.push_back("eta");   vMin.push_back(-2.5); vMax.push_back(2.5); vNbins.push_back(100); 
+  vNames.push_back("fls3d"); vMin.push_back(0.); vMax.push_back(100.); vNbins.push_back(120); 
+  vNames.push_back("alpha"); vMin.push_back(0.); vMax.push_back(0.3); vNbins.push_back(100); 
+  vNames.push_back("maxdoca"); vMin.push_back(0.); vMax.push_back(0.03); vNbins.push_back(100); 
+  vNames.push_back("pvip"); vMin.push_back(0.); vMax.push_back(0.05); vNbins.push_back(100); 
+  vNames.push_back("pvips"); vMin.push_back(0.); vMax.push_back(5); vNbins.push_back(100); 
+  vNames.push_back("iso"); vMin.push_back(0.6); vMax.push_back(1.01); vNbins.push_back(41); 
+  vNames.push_back("closetrk"); vMin.push_back(0.); vMax.push_back(21); vNbins.push_back(21); 
+  vNames.push_back("docatrk"); vMin.push_back(0.); vMax.push_back(0.1); vNbins.push_back(100); 
+  vNames.push_back("chi2dof"); vMin.push_back(0.); vMax.push_back(5); vNbins.push_back(100); 
+
+  TFile *inFile = TFile::Open(ifilename.c_str());
+  TTree *tsg = (TTree*)inFile->Get(Form("signalChan%dEvents0/events", channel));
+  TTree *tbg = (TTree*)inFile->Get(Form("sidebandChan%dEvents0/events", channel));
+
+  TH1D *hs, *hb; 
+  string hsName, hbName; 
+
+  TCanvas *c0 = getC0();
+  c0->Clear();
+  c0->Divide(4,4);
+  for (int i = 0; i < vNames.size(); ++i) {
+    hsName = Form("hs_%s", vNames[i].c_str());
+    hs  = new TH1D(hsName.c_str(), vNames[i].c_str(), vNbins[i], vMin[i], vMax[i]);
+
+    hbName = Form("hb_%s", vNames[i].c_str());
+    hb  = new TH1D(hbName.c_str(), vNames[i].c_str(), vNbins[i], vMin[i], vMax[i]);
+    
+    string var = vNames[i]; 
+    if (var == string("chi2dof")) var = "chi2/dof"; 
+    cout << "--> " << var << endl;
+    tsg->Draw(Form("%s>>%s", var.c_str(), hsName.c_str()), "", "goff");
+    tbg->Draw(Form("%s>>%s", var.c_str(), hbName.c_str()), "", "goff");
+    c0->cd(i+1); 
+    hs->Draw("hist"); 
+    hb->Draw("esame");
+  }
+
+  c0->cd(vNames.size()+1);
+
+  TFile *outfile = TFile::Open(ofilename.c_str(), "RECREATE");  
+  struct readerData rd; 
+
+  outfile->mkdir("signalChan0Events0");
+  outfile->cd("signalChan0Events0");
+  TTree *osg0 = createTree(rd); 
+  for (int i = 0 ; i < nsg; ++i) {
+    rd.m = 5.37;
+    rd.pt = ((TH1D*)inFile->Get("hs_pt"))->GetRandom();
+    rd.eta = ((TH1D*)inFile->Get("hs_eta"))->GetRandom();
+    rd.m1eta = ((TH1D*)inFile->Get("hs_m1eta"))->GetRandom();
+    rd.m2eta = ((TH1D*)inFile->Get("hs_m2eta"))->GetRandom();
+    rd.m1pt = ((TH1D*)inFile->Get("hs_m1pt"))->GetRandom();
+    rd.m2pt = ((TH1D*)inFile->Get("hs_m2pt"))->GetRandom();
+
+    rd.fls3d = ((TH1D*)inFile->Get("hs_fls3d"))->GetRandom();
+    rd.alpha = ((TH1D*)inFile->Get("hs_alpha"))->GetRandom();
+    rd.maxdoca = ((TH1D*)inFile->Get("hs_maxdoca"))->GetRandom();
+    rd.pvip = ((TH1D*)inFile->Get("hs_pvip"))->GetRandom();
+    rd.pvips = ((TH1D*)inFile->Get("hs_pvips"))->GetRandom();
+    rd.iso = ((TH1D*)inFile->Get("hs_iso"))->GetRandom();
+    rd.docatrk = ((TH1D*)inFile->Get("hs_docatrk"))->GetRandom();
+    rd.chi2dof = ((TH1D*)inFile->Get("hs_chi2dof"))->GetRandom();
+    rd.closetrk = ((TH1D*)inFile->Get("hs_closetrk"))->GetRandom();
+    osg0->Fill();
+  }
+
+  outfile->mkdir("signalChan0Events1");
+  outfile->cd("signalChan0Events1");
+  TTree *osg1 = createTree(rd); 
+  for (int i = 0 ; i < nsg; ++i) {
+    rd.m = 5.37;
+    rd.pt = ((TH1D*)inFile->Get("hs_pt"))->GetRandom();
+    rd.eta = ((TH1D*)inFile->Get("hs_eta"))->GetRandom();
+    rd.m1eta = ((TH1D*)inFile->Get("hs_m1eta"))->GetRandom();
+    rd.m2eta = ((TH1D*)inFile->Get("hs_m2eta"))->GetRandom();
+    rd.m1pt = ((TH1D*)inFile->Get("hs_m1pt"))->GetRandom();
+    rd.m2pt = ((TH1D*)inFile->Get("hs_m2pt"))->GetRandom();
+
+    rd.fls3d = ((TH1D*)inFile->Get("hs_fls3d"))->GetRandom();
+    rd.alpha = ((TH1D*)inFile->Get("hs_alpha"))->GetRandom();
+    rd.maxdoca = ((TH1D*)inFile->Get("hs_maxdoca"))->GetRandom();
+    rd.pvip = ((TH1D*)inFile->Get("hs_pvip"))->GetRandom();
+    rd.pvips = ((TH1D*)inFile->Get("hs_pvips"))->GetRandom();
+    rd.iso = ((TH1D*)inFile->Get("hs_iso"))->GetRandom();
+    rd.docatrk = ((TH1D*)inFile->Get("hs_docatrk"))->GetRandom();
+    rd.chi2dof = ((TH1D*)inFile->Get("hs_chi2dof"))->GetRandom();
+    rd.closetrk = ((TH1D*)inFile->Get("hs_closetrk"))->GetRandom();
+    osg1->Fill();
+  }
+
+  outfile->mkdir("sidebandChan0Events0");
+  outfile->cd("sidebandChan0Events0");
+  TTree *obg0 = createTree(rd); 
+  for (int i = 0 ; i < nbg; ++i) {
+    rd.m = 5.37;
+    rd.pt = ((TH1D*)inFile->Get("hb_pt"))->GetRandom();
+    rd.eta = ((TH1D*)inFile->Get("hb_eta"))->GetRandom();
+    rd.m1eta = ((TH1D*)inFile->Get("hb_m1eta"))->GetRandom();
+    rd.m2eta = ((TH1D*)inFile->Get("hb_m2eta"))->GetRandom();
+    rd.m1pt = ((TH1D*)inFile->Get("hb_m1pt"))->GetRandom();
+    rd.m2pt = ((TH1D*)inFile->Get("hb_m2pt"))->GetRandom();
+
+    rd.fls3d = ((TH1D*)inFile->Get("hb_fls3d"))->GetRandom();
+    rd.alpha = ((TH1D*)inFile->Get("hb_alpha"))->GetRandom();
+    rd.maxdoca = ((TH1D*)inFile->Get("hb_maxdoca"))->GetRandom();
+    rd.pvip = ((TH1D*)inFile->Get("hb_pvip"))->GetRandom();
+    rd.pvips = ((TH1D*)inFile->Get("hb_pvips"))->GetRandom();
+    rd.iso = ((TH1D*)inFile->Get("hb_iso"))->GetRandom();
+    rd.docatrk = ((TH1D*)inFile->Get("hb_docatrk"))->GetRandom();
+    rd.chi2dof = ((TH1D*)inFile->Get("hb_chi2dof"))->GetRandom();
+    rd.closetrk = ((TH1D*)inFile->Get("hb_closetrk"))->GetRandom();
+    obg0->Fill();
+  }
+
+  outfile->mkdir("sidebandChan0Events1");
+  outfile->cd("sidebandChan0Events1");
+  TTree *obg1 = createTree(rd); 
+  for (int i = 0 ; i < nbg; ++i) {
+    rd.m = 5.37;
+    rd.pt = ((TH1D*)inFile->Get("hb_pt"))->GetRandom();
+    rd.eta = ((TH1D*)inFile->Get("hb_eta"))->GetRandom();
+    rd.m1eta = ((TH1D*)inFile->Get("hb_m1eta"))->GetRandom();
+    rd.m2eta = ((TH1D*)inFile->Get("hb_m2eta"))->GetRandom();
+    rd.m1pt = ((TH1D*)inFile->Get("hb_m1pt"))->GetRandom();
+    rd.m2pt = ((TH1D*)inFile->Get("hb_m2pt"))->GetRandom();
+
+    rd.fls3d = ((TH1D*)inFile->Get("hb_fls3d"))->GetRandom();
+    rd.alpha = ((TH1D*)inFile->Get("hb_alpha"))->GetRandom();
+    rd.maxdoca = ((TH1D*)inFile->Get("hb_maxdoca"))->GetRandom();
+    rd.pvip = ((TH1D*)inFile->Get("hb_pvip"))->GetRandom();
+    rd.pvips = ((TH1D*)inFile->Get("hb_pvips"))->GetRandom();
+    rd.iso = ((TH1D*)inFile->Get("hb_iso"))->GetRandom();
+    rd.docatrk = ((TH1D*)inFile->Get("hb_docatrk"))->GetRandom();
+    rd.chi2dof = ((TH1D*)inFile->Get("hb_chi2dof"))->GetRandom();
+    rd.closetrk = ((TH1D*)inFile->Get("hb_closetrk"))->GetRandom();
+    obg1->Fill();
+  }
+
+  osg0->Write();
+  osg1->Write();
+  obg0->Write();
+  obg1->Write();
+
+  outfile->Write();
+  outfile->Close();
+
+}
+
+
+// ----------------------------------------------------------------------
+void tmva1::trainOnToyData(string iname, string oname) {
+
+  // This loads the library
+  TMVA::Tools::Instance();
+  
+  (TMVA::gConfig().GetVariablePlotting()).fNbins1D = 40; 
+  (TMVA::gConfig().GetVariablePlotting()).fNbinsMVAoutput = 100; 
+  
+  // -- Create a ROOT output file where TMVA will store ntuples, histograms, etc.
+  TString outfileName(Form("%s.root", oname.c_str()));
+  TFile* outputFile = TFile::Open( outfileName, "RECREATE" );
+  
+  string optstring = "V:!Silent:!Color:!DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification";
+  optstring        = "V:!Silent:!Color:!DrawProgressBar:Transformations=I:AnalysisType=Classification";
+  cout << "==> Factory: " << optstring << endl;
+  TMVA::Factory *factory = new TMVA::Factory(Form("%s", oname.c_str()), outputFile,  optstring.c_str());
+  
+  factory->AddVariable("m1pt",       'F' );
+  factory->AddVariable("m2pt",       'F' );
+  factory->AddVariable("m1eta",      'F' );
+  factory->AddVariable("m2eta",      'F' );
+  factory->AddVariable("pt",         'F' );
+  factory->AddVariable("eta",        'F' );
+  factory->AddVariable("fls3d",      'F' );
+  factory->AddVariable("alpha",      'F' );
+  factory->AddVariable("maxdoca",    'F' );
+  factory->AddVariable("pvip",       'F' );
+  factory->AddVariable("pvips",      'F' );
+  factory->AddVariable("iso",        'F' );
+  factory->AddVariable("docatrk",    'F' );
+  factory->AddVariable("closetrk",   'I' );
+  factory->AddVariable("chi2dof",    'F' );
+  
+  factory->AddSpectator("m",  "mass", "GeV", 'F' );
+  
+  TTree *trainSg(0), *testSg(0), *trainBg(0), *testBg(0); 
+  
+  int channel(0); 
+  
+  TFile *inFile = TFile::Open(iname.c_str());
+  cout << "==============> Apply on events0, train on events1, test on events2" << endl;
+  trainSg = (TTree*)inFile->Get(Form("signalChan%dEvents0/events", channel));
+  testSg  = (TTree*)inFile->Get(Form("signalChan%dEvents1/events", channel));
+  trainBg = (TTree*)inFile->Get(Form("sidebandChan%dEvents0/events", channel));
+  testBg  = (TTree*)inFile->Get(Form("sidebandChan%dEvents1/events", channel));
+  cout << "==============> trainBg =  "<< trainBg->GetDirectory()->GetName() << " entries: " << trainBg->GetEntries() << endl;
+  cout << "==============> testBg  =  "<< testBg->GetDirectory()->GetName()  << " entries: " << testBg->GetEntries() << endl;
+  
+  Double_t signalWeight      = 1.; //= LUMISCALE; // 0.000388
+  Double_t rbackgroundWeight = 1.;
+  Double_t cbackgroundWeight = 1.;
+  Double_t tbackgroundWeight = cbackgroundWeight;
+  
+  factory->AddTree(trainSg,     "Signal",     signalWeight,  "", "train");
+  factory->AddTree(testSg,      "Signal",     signalWeight,  "", "test");
+  factory->AddTree(trainBg, "Background", cbackgroundWeight, "", "train");
+  factory->AddTree(testBg,  "Background", tbackgroundWeight, "", "test");
+  
+  int nSgTrain = trainSg->GetEntries();
+  int nSgTest  = testSg->GetEntries();
+  
+  int nBgTrain = trainBg->GetEntries();
+  int nBgTest  = testBg->GetEntries();
+  
+  optstring = Form("nTrain_Signal=%d:nTest_Signal=%d:nTrain_Background=%d:nTest_Background=%d:SplitMode=Block:NormMode=None:V", 
+		   nSgTrain, nSgTest, nBgTrain, nBgTest); 
+  cout << "==> PrepareTrainingAndTestTree: " << optstring << endl;
+  factory->PrepareTrainingAndTestTree("", "", optstring.c_str());
+  
+  if (1) {
+    optstring = Form("!H:V:NTrees=%d:nEventsMin=%d", fBdtSetup.NTrees, fBdtSetup.nEventsMin);
+    optstring += Form(":BoostType=AdaBoost:AdaBoostBeta=%f:SeparationType=GiniIndex:nCuts=%d:PruneMethod=NoPruning", 
+		      fBdtSetup.AdaBoostBeta, fBdtSetup.nCuts);
+    
+    optstring += Form(":MaxDepth=%d:NNodesMax=%d", fBdtSetup.MaxDepth, fBdtSetup.NNodesMax);
+  } else {
+    optstring = "";
+  }
+  cout << "==> BookMethod: " << optstring << endl;
+  factory->BookMethod( TMVA::Types::kBDT, "BDT", optstring);
+  
+  cout << "==> TrainAllMethods " << endl;
+  factory->TrainAllMethods();
+  
+  // ---- Evaluate all MVAs using the set of test events
+  cout << "==> TestAllMethods " << endl;
+  factory->TestAllMethods();
+  
+  // ----- Evaluate and compare performance of all configured MVAs
+  cout << "==> EvaluateAllMethods " << endl;
+  factory->EvaluateAllMethods();
+  
+  // Save the output
+  outputFile->Close();
+  
+  TFile *file = TFile::Open(outfileName.Data()); 
+  
+  TH1F *hTrainBg = (TH1F*)file->Get("Method_BDT/BDT/MVA_BDT_Train_B"); hTrainBg->SetLineColor(kRed); hTrainBg->SetMarkerColor(kRed);
+  TH1F *hTestBg = (TH1F*)file->Get("Method_BDT/BDT/MVA_BDT_B"); hTestBg->SetLineColor(kRed); hTestBg->SetMarkerColor(kRed);
+  
+  TH1F *hTrainSg = (TH1F*)file->Get("Method_BDT/BDT/MVA_BDT_Train_S"); hTrainSg->SetLineColor(kBlue); hTrainSg->SetMarkerColor(kBlue);
+  TH1F *hTestSg = (TH1F*)file->Get("Method_BDT/BDT/MVA_BDT_S"); hTestSg->SetLineColor(kBlue); hTestSg->SetMarkerColor(kBlue);
+  
+  TCanvas *c0 = getC0();
+
+  hTrainBg->Scale(1./hTrainBg->GetSumOfWeights());
+  hTestBg->Scale(1./hTestBg->GetSumOfWeights());
+  hTrainSg->Scale(1./hTrainSg->GetSumOfWeights());
+  hTestSg->Scale(1./hTestSg->GetSumOfWeights());
+
+  gStyle->SetOptStat(0);
+  double ymax = (hTrainBg->GetMaximum() > hTrainSg->GetMaximum()?hTrainBg->GetMaximum():hTrainSg->GetMaximum());
+  TH2F* frame = new TH2F("frame", "BDT output distributions", 100, -1., 1., 100, 0., 1.3*ymax);
+  frame->GetXaxis()->SetTitle(" b");
+  frame->GetYaxis()->SetTitle("(1/N) dN^{ }/^{ }dx");
+  frame->Draw();  
+
+  hTrainBg->Draw("hist");
+  hTestBg->Draw("psame");
+
+  hTrainSg->Draw("histsame");
+  hTestSg->Draw("psame");
+  
+  c0->SaveAs(Form("%s.pdf", oname.c_str()));
+
+  delete factory; 
+   
+}
+
+
+// ----------------------------------------------------------------------
+TTree* tmva1::createTree(struct readerData &rd) {
+
+
+  TTree *tree = new TTree("events", "events");
+  tree->Branch("m", &rd.m, "m/F");
+  tree->Branch("pt", &rd.pt, "pt/F");
+  tree->Branch("eta", &rd.eta, "eta/F");
+  tree->Branch("m1eta", &rd.m1eta, "m1eta/F");
+  tree->Branch("m2eta", &rd.m2eta, "m2eta/F");
+  tree->Branch("m1pt", &rd.m1pt, "m1pt/F");
+  tree->Branch("m2pt", &rd.m2pt, "m2pt/F");
+
+  tree->Branch("fls3d", &rd.fls3d, "fls3d/F");
+  tree->Branch("alpha", &rd.alpha, "alpha/F");
+  tree->Branch("maxdoca", &rd.maxdoca, "maxdoca/F");
+  tree->Branch("pvip", &rd.pvip, "pvips/F");
+  tree->Branch("pvips", &rd.pvips, "pvips/F");
+  tree->Branch("iso", &rd.iso, "iso/F");
+  tree->Branch("docatrk", &rd.docatrk, "docatrk/F");
+  tree->Branch("chi2dof", &rd.chi2dof, "chi2dof/F");
+  tree->Branch("closetrk", &rd.closetrk, "closetrk/F");
+  return tree; 
+}

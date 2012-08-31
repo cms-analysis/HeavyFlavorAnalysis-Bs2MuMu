@@ -548,6 +548,8 @@ void candAna::candAnalysis() {
     }
     
   }
+
+  fillRedTreeData();
   
   if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX  && fCandIso < 0.7) {
     calcBDT(true);
@@ -2988,14 +2990,17 @@ void candAna::calcBDT(bool rejectInvIso) {
     return;
   }
   if (rejectInvIso && 5.2 < fCandM && fCandM < 5.45 && fCandIso < 0.7) return;
-  if (fCandPt > 100) return;
-  if (fCandPt < 6) return;
-  if (fMu1Pt < 4) return;
-  if (fMu2Pt < 4) return;
-  if (fCandFL3d > 1.5) return;
-  if (fCandFL3d < 0.) return;
-  if (fCandM > 5.9) return;
-  if (fCandM < 4.9) return;
+
+  if (!preselection(fRTD, fChan, false)) return;
+
+  //   if (fCandPt > 100) return;
+  //   if (fCandPt < 6) return;
+  //   if (fMu1Pt < 4) return;
+  //   if (fMu2Pt < 4) return;
+  //   if (fCandFL3d > 1.5) return;
+  //   if (fCandFL3d < 0.) return;
+  //   if (fCandM > 5.9) return;
+  //   if (fCandM < 4.9) return;
   
   //   if (!fb.hlt) return;
   //   if (!fb.gmuid) return;
@@ -3173,5 +3178,38 @@ void candAna::replaceAll(std::string &s, std::string a, std::string b) {
   TString ts(s.c_str()); 
   ts.ReplaceAll(a.c_str(), b.c_str()); 
   s = ts.Data(); 
+
+}
+
+
+// ----------------------------------------------------------------------
+void candAna::fillRedTreeData() {
+  // -- this only fills the variables that are needed for the preselection() function
+  fRTD.hlt       = fGoodHLT;
+  fRTD.gmuid     = fGoodMuonsID;
+
+  fRTD.pt        = fCandPt;
+  fRTD.eta       = fCandEta;
+  fRTD.m         = fCandM;
+
+  fRTD.m1pt      = fMu1Pt;
+  fRTD.m2pt      = fMu2Pt;
+
+  fRTD.m1eta     = fMu1Eta;
+  fRTD.m2eta     = fMu2Eta;
+
+  fRTD.pvip      = fCandPvIp; 
+  fRTD.pvips     = fCandPvIpS; 
+
+  fRTD.closetrk  = fCandCloseTrk;
+  fRTD.iso       = fCandIso;
+
+  fRTD.fl3d      = fCandFL3d;
+  fRTD.fls3d     = fCandFLS3d;
+
+  fRTD.chi2      = fCandChi2;
+  fRTD.dof       = fCandDof;
+
+  fRTD.alpha     = fCandA;
 
 }

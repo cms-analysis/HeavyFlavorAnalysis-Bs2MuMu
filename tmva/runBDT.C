@@ -1,5 +1,11 @@
 // ----------------------------------------------------------------------
-void runBDT(int seed, int iChannel = 0) {
+void runAll() {
+  runBDT(0, 0); 
+  runBDT(1, 1); 
+}
+
+// ----------------------------------------------------------------------
+void runBDT(int seed, string filename, int iChannel = 0) {
   gSystem->Load("libTMVA.so");
   gRandom->SetSeed(seed);
 
@@ -36,6 +42,15 @@ void runBDT(int seed, int iChannel = 0) {
 //   maxdepth = 4; 
 //   nnodesmax = 4e5; 
 
+
+  ntrees = 400;
+  nevts = 50; 
+  maxdepth = 3;
+  ncuts = 20; 
+  beta = 1.0; 
+  nnodesmax = 1000000;
+
+
   cout << "seed: " << seed << " ntrees = " << ntrees << " nevts = " << nevts << " maxdepth = " 
        << maxdepth << " ncuts = " << ncuts << " beta = " << beta << " nnodesmax = " << nnodesmax
        << endl;
@@ -52,5 +67,5 @@ void runBDT(int seed, int iChannel = 0) {
   aT.setMaxDepth(maxdepth);
   aT.setNNodesMax(nnodesmax);
 
-  aT.makeAll(seed, 0);
+  aT.makeAll(seed, filename, 0);
 }

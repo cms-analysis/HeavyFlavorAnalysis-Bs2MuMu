@@ -3750,6 +3750,9 @@ void plotClass::candAnalysis(int mode) {
 // ----------------------------------------------------------------------
 void plotClass::calcBDT(bool rejectInvIso) {
   fBDT = -99.;
+
+  if (!preselection(fb, fChan, rejectInvIso)) return;
+
   //??  if (5 == mode && 5.2 < mass && mass < 5.45 && fb.iso < 0.7) continue; 
   if (rejectInvIso && 5.2 < fb.m && fb.m < 5.45 && fb.iso < 0.7) return;
   if (fb.pt > 100) return;
@@ -3780,11 +3783,12 @@ void plotClass::calcBDT(bool rejectInvIso) {
   frd.closetrk = fb.closetrk; 
   
   frd.m  = fb.m; 
-  if (0 == fb.evt%3) {
+  int remainder = TMath::Abs(fb.evt%3);
+  if (0 == remainder) {
     fBDT   = fReaderEvents0[fChan]->EvaluateMVA("BDT"); 
-  } else if (1 == fb.evt%3) {
+  } else if (1 == remainder) {
     fBDT   = fReaderEvents1[fChan]->EvaluateMVA("BDT"); 
-  } else if (2 == fb.evt%3) {
+  } else if (2 == remainder) {
     fBDT   = fReaderEvents2[fChan]->EvaluateMVA("BDT"); 
   } else {
     cout << "all hell break loose" << endl;

@@ -28,10 +28,11 @@ public:
   void plotSSB();
   void ssb();
   void overlap();
+  void overlayBdtOutput(); 
 
-  void validateAllOddEven();
-  void validateOddEven(const char *fnOdd, const char *fnEven, const char *type = "test", int classID = 0);
-  
+  void validateAllDistributions(); 
+  void validateDistributions(int channel, const char *type, int classID); 
+
   void bdtScan();
   void bdtDependencies(std::string mode = "SgData");
   void illustrateAntiMuonSample(const char *cuts = "hlt&&fls3d>5&&alpha<0.03&&chi2/dof<2&&iso>0.7"); 
@@ -55,6 +56,8 @@ public:
 
   std::string fXmlFile, fBdtString;
   TFile *fRootFile; 
+  
+  std::vector<string> fReaderVariables;
   
   // -- histograms/profiles  filled in loopFunction
   std::vector<TH1D*> fhMass, fhMassNoCuts;

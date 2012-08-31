@@ -30,6 +30,9 @@
 #include "../macros/AnalysisCuts.hh"
 #include "../macros/AnalysisDistribution.hh"
 
+#include "RedTreeData.hh"
+#include "preselection.hh"
+
 #include "bmm2Reader.hh"
 
 struct isoNumbers {
@@ -69,6 +72,7 @@ public:
   virtual void        candMatch(); 
   virtual void        triggerSelection();
   virtual void        fillCandidateHistograms(int offset);
+  virtual void        fillRedTreeData();
   virtual void        replaceAll(std::string &s, std::string a, std::string b);
 
   virtual TMVA::Reader* setupReader(std::string xmlFile, readerData &rd);
@@ -219,6 +223,8 @@ public:
   bool    fGoodDocaTrk, fGoodLastCut; 
 
   bool    fPreselection; 
+
+  struct RedTreeData fRTD;
 
   // -- Analysis distributions
   std::map<std::string, int> fRegion;

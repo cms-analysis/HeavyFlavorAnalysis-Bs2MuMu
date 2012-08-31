@@ -10,6 +10,7 @@
 #include "TLatex.h"
 #include "TLegend.h"
 #include "TLegendEntry.h"
+#include "TFile.h"
 #include "TLine.h"
 #include "TArrow.h"
 #include "TBox.h"
@@ -21,6 +22,8 @@
 #include "TTree.h"
 #include "TH1.h"
 
+#include "../macros2/RedTreeData.hh"
+#include "../macros2/preselection.hh"
 
 struct bdtSetup {
   int NTrees, nEventsMin, MaxDepth, NNodesMax;
@@ -28,14 +31,6 @@ struct bdtSetup {
   float AdaBoostBeta; 
 };
 
-struct treeData {
-  int    evt; 
-  double pt, eta, m1eta, m2eta, m1pt, m2pt;
-  double fl3d, fls3d, alpha, maxdoca, pvip, pvips, iso, docatrk, chi2, dof;
-  int    closetrk; 
-  double m;
-  bool   gmuid, hlt;
-};
 
 struct readerData {
   float pt, eta, m1eta, m2eta, m1pt, m2pt;
@@ -59,18 +54,17 @@ class tmva1: public TObject {
   ~tmva1();
 
   TCanvas* getC0();
-  void train(std::string oname = "TMVA-0");
+  void train(std::string oname = "TMVA-0", std::string filename = "/scratch/ursl/tmva-trees.root");
   void apply(const char *fname = "TMVA-0");
   void analyze(const char *fname = "TMVA-0");
-  void makeAll(int offset, int clean = 1);
-  void make(int offset, int evt, int clean);
+  void makeAll(int offset, std::string filename = "/scratch/ursl/tmva-trees.root", int clean = 1);
+  void make(int offset, std::string filename, int evt, int clean);
 
-  void createInputFile();
+  void createInputFile(std::string fname);
   void cleanup(std::string fname);
   TH1D* getRanking(std::string fname, std::string prefix, std::string after);
   
-  bool preselection(treeData &b, bool rejectInvIso);
-  void setupTree(TTree *t, treeData &b);
+  void setupTree(TTree *t, RedTreeData &b);
   void calcBDT();
   
   void mvas(std::string fname="TMVA");
@@ -83,12 +77,19 @@ class tmva1: public TObject {
   void setAdaBoostBeta(float f) {fBdtSetup.AdaBoostBeta = f;}; 
   void setNNodesMax(float f) {fBdtSetup.NNodesMax = f;}; 
   void newLegend(double x1, double y1, double x2, double y2, std::string title = "");
+  void writeOut(TFile*, TH1*);
 
   void setApply0() {fApplyOn0 = true;  fApplyOn1 = false; fApplyOn2 = false;};  // apply on even events, train on odd
   void setApply1() {fApplyOn0 = false; fApplyOn1 = true;  fApplyOn2 = false;};  // apply on odd events, train on even
   void setApply2() {fApplyOn0 = false; fApplyOn1 = false; fApplyOn2 = true; };  // apply on odd events, train on even
   void setTrainAntiMuon(bool yes) {fTrainAntiMuon = yes;};
   void setChannel(int channel) {fChannel = channel;};
+
+  void toyRuns(std::string ifilename, int nruns = 10); 
+  void createToyData(std::string ifilename, std::string ofilename, int seed = 100, int nsg=20000, int nbg=25000);
+  void trainOnToyData(std::string iname = "/scratch/ursl/tmva-toy-100.root", std::string oname = "toy-100"); 
+  TTree* createTree(struct readerData &rd);
+
 
   files fInputFiles;
   bdtSetup fBdtSetup;
@@ -98,7 +99,7 @@ class tmva1: public TObject {
   int fChannel;
   double fRsigma; 
 
-  treeData ftd;  
+  RedTreeData ftd;  
   readerData frd; 
   double fBDT, fBDT0, fBDT1, fBDT2; 
   std::vector<TMVA::Reader*> fReader; 

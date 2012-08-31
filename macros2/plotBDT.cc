@@ -72,19 +72,22 @@ plotBDT::~plotBDT() {
 // ----------------------------------------------------------------------
 void plotBDT::makeAll(int channels) { 
 
-  validateAllOddEven();
-
   if (channels & 1) {
     tmvaControlPlots();
+    overlayBdtOutput(); 
+    validateAllDistributions();
   }
 
   if (channels & 2) {
     bdtScan();
+    plotEffVsBg(0);   
+    plotEffVsBg(1);   
+
     plotSSB();
+    bdtDependencies("SgData");
   }
 
-  if (channels & 4) {
-    bdtDependencies("SgData");
+  if (channels & 8) {
     illustrateAntiMuonSample();
   }
 
@@ -173,6 +176,86 @@ void  plotBDT::resetHistograms() {
 void plotBDT::testLoop(string mode) { 
 
 }
+
+// ----------------------------------------------------------------------
+void  plotBDT::overlayBdtOutput() {
+
+  gStyle->SetOptTitle(0);
+  gStyle->SetOptStat(0);
+
+  vector<string> type; 
+  type.push_back("sg"); 
+  type.push_back("bg"); 
+
+  TH1D *hte0(0), *htr0(0), *hte1(0), *htr1(0), *hte2(0), *htr2(0); 
+  TH1D *hap0(0), *hap1(0), *hap2(0);
+  for (int j = 0; j < type.size(); ++j) {
+    for (int i = 0; i < fNchan; ++i) {
+      string rootfile = "weights/" + fCuts[i]->xmlFile + "-combined.root";
+      fRootFile = TFile::Open(rootfile.c_str());
+      cout << "fRootFile: " << rootfile << endl;
+      
+      hte0 = (TH1D*)fRootFile->Get(Form("te0%sBDT", type[j].c_str())); 
+      hte1 = (TH1D*)fRootFile->Get(Form("te1%sBDT", type[j].c_str())); 
+      hte2 = (TH1D*)fRootFile->Get(Form("te2%sBDT", type[j].c_str())); 
+
+      htr0 = (TH1D*)fRootFile->Get(Form("tr0%sBDT", type[j].c_str())); 
+      htr1 = (TH1D*)fRootFile->Get(Form("tr1%sBDT", type[j].c_str())); 
+      htr2 = (TH1D*)fRootFile->Get(Form("tr2%sBDT", type[j].c_str())); 
+
+      hap0 = (TH1D*)fRootFile->Get(Form("ap0%sBDT", type[j].c_str())); 
+      hap1 = (TH1D*)fRootFile->Get(Form("ap1%sBDT", type[j].c_str())); 
+      hap2 = (TH1D*)fRootFile->Get(Form("ap2%sBDT", type[j].c_str())); 
+
+      double hmax = htr0->GetMaximum(); 
+      if (htr1->GetMaximum() > hmax) hmax = htr1->GetMaximum();
+      if (htr2->GetMaximum() > hmax) hmax = htr2->GetMaximum();
+      htr0->SetMaximum(1.1*hmax);
+    
+      SetSignalAndBackgroundStyle(htr0, htr1, htr2);            
+      SetSignalAndBackgroundStyle(hte0, hte1, hte2);            
+      setTitles(htr0, "b", ""); 
+
+      c0->cd();
+      htr0->Draw("p");
+      hte0->Draw("same");
+    
+      htr1->Draw("psame");
+      hte1->Draw("same");
+    
+      htr2->Draw("psame");
+      hte2->Draw("same");
+    
+      double x = (j==0?0.25:0.50); 
+      newLegend(x, 0.6, x+0.3, 0.85, (i==0?(j==0?"Barrel signal":"Barrel background"):(j==0)?"Endcap signal":"Endcap background")); 
+      legg->AddEntry(htr0, "BDT 0 (train)", "p"); 
+      legg->AddEntry(hte0, "BDT 0 (test) ", "l"); 
+      legg->AddEntry(htr1, "BDT 1 (train)", "p"); 
+      legg->AddEntry(htr1, "BDT 1 (test) ", "l"); 
+      legg->AddEntry(htr2, "BDT 2 (train)", "p"); 
+      legg->AddEntry(htr2, "BDT 2 (test) ", "l"); 
+      legg->Draw();
+
+      c0->SaveAs(Form("%s/%s-b-overlays-%s.pdf", fDirectory.c_str(), fCuts[i]->xmlFile.c_str(), type[j].c_str())); 
+
+      SetSignalAndBackgroundStyle(hap0, hap1, hap2);            
+      hap0->Draw("");
+      hap1->Draw("same");
+      hap2->Draw("same");
+      newLegend(x, 0.6, x+0.3, 0.85, (i==0?(j==0?"Barrel signal":"Barrel background"):(j==0)?"Endcap signal":"Endcap background")); 
+      legg->AddEntry(hap0, "BDT 0", "p"); 
+      legg->AddEntry(hap1, "BDT 1", "p"); 
+      legg->AddEntry(hap2, "BDT 2", "p"); 
+      legg->Draw();
+      c0->SaveAs(Form("%s/%s-b-all-overlays-%s.pdf", fDirectory.c_str(), fCuts[i]->xmlFile.c_str(), type[j].c_str())); 
+
+    }
+  }
+
+}
+
+
+
 
 // ----------------------------------------------------------------------
 void plotBDT::overlap() {
@@ -367,11 +450,11 @@ void plotBDT::bdtScan() {
   legg->AddEntry(H2, "high sideband", "l"); 
   legg->Draw();
 
-  c0->SaveAs(Form("%s/bdt-lin-Bg-HiLo-Efficiency0.pdf", fDirectory.c_str())); 
+  c0->SaveAs(Form("%s/bdt-lin-Bg-HiLo-Efficiency-chan0.pdf", fDirectory.c_str())); 
   gPad->SetLogy(1); 
   H1->Draw();
   H2->Draw("same");
-  c0->SaveAs(Form("%s/bdt-log-Bg-HiLo-Efficiency0.pdf", fDirectory.c_str())); 
+  c0->SaveAs(Form("%s/bdt-log-Bg-HiLo-Efficiency-chan0.pdf", fDirectory.c_str())); 
 
   zone();
   H1 = (TH1D*)gDirectory->Get("hBgLoEff1"); 
@@ -391,14 +474,11 @@ void plotBDT::bdtScan() {
   legg->AddEntry(H2, "high sideband", "l"); 
   legg->Draw();
 
-  c0->SaveAs(Form("%s/bdt-lin-Bg-HiLo-Efficiency1.pdf", fDirectory.c_str())); 
+  c0->SaveAs(Form("%s/bdt-lin-Bg-HiLo-Efficiency-chan1.pdf", fDirectory.c_str())); 
   gPad->SetLogy(1);
   H1->Draw();
   H2->Draw("same");
-  c0->SaveAs(Form("%s/bdt-log-Bg-HiLo-Efficiency1.pdf", fDirectory.c_str())); 
-
-  plotEffVsBg(0);   
-  plotEffVsBg(1);   
+  c0->SaveAs(Form("%s/bdt-log-Bg-HiLo-Efficiency-chan1.pdf", fDirectory.c_str())); 
 
 }
 
@@ -406,9 +486,12 @@ void plotBDT::bdtScan() {
 // ----------------------------------------------------------------------
 void plotBDT::tmvaControlPlots() {
 
-  string type[2] = {"even", "odd"};
+  gStyle->SetOptTitle(0);
+  gStyle->SetOptStat(0);
+
+  string type[3] = {"Events0", "Events1", "Events2"};
   string XmlName;
-  for (int j = 0; j < 2; ++j) {
+  for (int j = 0; j < 3; ++j) {
 
     for (int i = 0; i < fNchan; ++i) {
       
@@ -438,6 +521,16 @@ void plotBDT::tmvaControlPlots() {
 	cout << "fBdtString: " << fBdtString << endl;
 
 	variableRanking();
+	
+	c0->cd();
+	TGraph *g = (TGraph*)fRootFile->Get("groc"); 
+	g->Draw("ap");
+	float integral(-1.); 
+	sscanf(g->GetTitle(), "integral = %f", &integral); 
+	fTEX << formatTex(integral, Form("%s:%s:ROCintegral",  fSuffix.c_str(), fBdtString.c_str()), 3) << endl;
+	  
+	c0->SaveAs(Form("%s/TMVA-%d-roc.pdf", fDirectory.c_str(), i)); 
+	
 	fRootFile->Close();
       }
 
@@ -486,100 +579,165 @@ void plotBDT::dumpParameters() {
     if (!strcmp("NNodesMax", h->GetXaxis()->GetBinLabel(ibin))) {
       fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s:NNodesMax",  fSuffix.c_str(), fBdtString.c_str()), 0) << endl;
     }
+
+    if (!strcmp("sgcnt", h->GetXaxis()->GetBinLabel(ibin))) {
+      fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s:sgcnt",  fSuffix.c_str(), fBdtString.c_str()), 0) << endl;
+    }
+
+    if (!strcmp("bgcnt", h->GetXaxis()->GetBinLabel(ibin))) {
+      fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s:bgcnt",  fSuffix.c_str(), fBdtString.c_str()), 0) << endl;
+    }
   }
 
 }
 
 
 // ----------------------------------------------------------------------
-void plotBDT::validateAllOddEven() {
+void plotBDT::validateAllDistributions() {
 
-  validateOddEven("weights/TMVA-0-odd.root", "weights/TMVA-0-even.root", "train", 0);
-  validateOddEven("weights/TMVA-0-odd.root", "weights/TMVA-0-even.root", "train", 1);
+  validateDistributions(0, "train", 0);
+  validateDistributions(0, "train", 1);
 
-  validateOddEven("weights/TMVA-1-odd.root", "weights/TMVA-1-even.root", "train", 0);
-  validateOddEven("weights/TMVA-1-odd.root", "weights/TMVA-1-even.root", "train", 1);
+  validateDistributions(1, "train", 0);
+  validateDistributions(1, "train", 1);
+
+  validateDistributions(0, "test", 0);
+  validateDistributions(0, "test", 1);
+
+  validateDistributions(1, "test", 0);
+  validateDistributions(1, "test", 1);
 
 }
 
 
 
 // ----------------------------------------------------------------------
-void plotBDT::validateOddEven(const char *fnOdd, const char *fnEven, const char *type, int classID) {
+void plotBDT::validateDistributions(int channel, const char *type, int classID) {
 
-  TFile *fOdd = TFile::Open(fnOdd); 
-  TFile *fEven = TFile::Open(fnEven); 
+  string fname0 = Form("weights/TMVA-%d-Events0.root", channel); 
+  string fname1 = Form("weights/TMVA-%d-Events1.root", channel);
+  string fname2 = Form("weights/TMVA-%d-Events2.root", channel);
 
-  string sOdd = fnOdd;
-  string::size_type m1 = sOdd.find("weights/"); 
-  sOdd = sOdd.substr(m1+8, sOdd.length()-m1+1); 
-  m1 = sOdd.find(".root"); 
-  sOdd = sOdd.substr(0, m1); 
+  string sname  = Form("tmva-%d-%s-%s", channel, type, (classID == 0?"sg":"bg")); 
 
-  string sEven = fnEven;
-  m1 = sEven.find("weights/"); 
-  sEven = sEven.substr(m1+8, sEven.length()-m1+1); 
-  m1 = sEven.find(".root"); 
-  sEven = sEven.substr(0, m1); 
+  TFile *fEvt0 = TFile::Open(fname0.c_str()); 
+  TFile *fEvt1 = TFile::Open(fname1.c_str()); 
+  TFile *fEvt2 = TFile::Open(fname2.c_str()); 
 
-  vector<string> varNames;
-  vector<double> varMin, varMax; 
-  vector<int> varNbins; 
-  vector<int> varLog; 
-  varNames.push_back("m1pt"); varMin.push_back(0.); varMax.push_back(40.); varNbins.push_back(200); varLog.push_back(0); 
-  varNames.push_back("m2pt"); varMin.push_back(0.); varMax.push_back(20.); varNbins.push_back(200); varLog.push_back(0); 
-  varNames.push_back("m1eta"); varMin.push_back(-2.5); varMax.push_back(2.5); varNbins.push_back(200); varLog.push_back(0); 
-  varNames.push_back("m2eta"); varMin.push_back(-2.5); varMax.push_back(2.5); varNbins.push_back(200); varLog.push_back(0); 
-  varNames.push_back("pt");    varMin.push_back(0.); varMax.push_back(40.); varNbins.push_back(200); varLog.push_back(0); 
-  varNames.push_back("eta");   varMin.push_back(-2.5); varMax.push_back(2.5); varNbins.push_back(200); varLog.push_back(0); 
-  varNames.push_back("fls3d"); varMin.push_back(0.); varMax.push_back(120.); varNbins.push_back(120); varLog.push_back(1); 
-  varNames.push_back("alpha"); varMin.push_back(0.); varMax.push_back(2.0); varNbins.push_back(200); varLog.push_back(0); 
-  varNames.push_back("maxdoca"); varMin.push_back(0.); varMax.push_back(0.03); varNbins.push_back(200); varLog.push_back(0); 
-  varNames.push_back("pvip"); varMin.push_back(0.); varMax.push_back(0.05); varNbins.push_back(200); varLog.push_back(0); 
-  varNames.push_back("pvips"); varMin.push_back(0.); varMax.push_back(5); varNbins.push_back(200); varLog.push_back(0); 
-  varNames.push_back("iso"); varMin.push_back(0.7); varMax.push_back(1.0); varNbins.push_back(300); varLog.push_back(0); 
-  varNames.push_back("closetrk"); varMin.push_back(0.); varMax.push_back(21); varNbins.push_back(21); varLog.push_back(0); 
-  varNames.push_back("docatrk"); varMin.push_back(0.); varMax.push_back(0.02); varNbins.push_back(200); varLog.push_back(0); 
-  varNames.push_back("chi2dof"); varMin.push_back(0.); varMax.push_back(5); varNbins.push_back(200); varLog.push_back(0); 
+  vector<string> vNames, vA;
+  vector<double> vMin, vMax; 
+  vector<int> vNbins; 
+  vector<int> vLog; 
+  vNames.push_back("m1pt"); vMin.push_back(0.); vMax.push_back(40.); vNbins.push_back(100); vLog.push_back(0); vA.push_back("p_{T,#mu1} [GeV]");
+  vNames.push_back("m2pt"); vMin.push_back(0.); vMax.push_back(20.); vNbins.push_back(100); vLog.push_back(0); vA.push_back("p_{T,#mu2} [GeV]");
+  vNames.push_back("m1eta"); vMin.push_back(-2.5); vMax.push_back(2.5); vNbins.push_back(100); vLog.push_back(0); vA.push_back("#eta_{#mu1}");
+  vNames.push_back("m2eta"); vMin.push_back(-2.5); vMax.push_back(2.5); vNbins.push_back(100); vLog.push_back(0); vA.push_back("#eta_{#mu2}");
+  vNames.push_back("pt");    vMin.push_back(0.); vMax.push_back(40.); vNbins.push_back(100); vLog.push_back(0); vA.push_back("p_{T} [GeV]");
+  vNames.push_back("eta");   vMin.push_back(-2.5); vMax.push_back(2.5); vNbins.push_back(100); vLog.push_back(0); vA.push_back("#eta");
+  vNames.push_back("fls3d"); vMin.push_back(0.); vMax.push_back(100.); vNbins.push_back(120); vLog.push_back(1); vA.push_back("l/#sigma(l)"); 
+  vNames.push_back("alpha"); vMin.push_back(0.); vMax.push_back(0.3); vNbins.push_back(100); vLog.push_back(0);  vA.push_back("#alpha"); 
+  vNames.push_back("maxdoca"); vMin.push_back(0.); vMax.push_back(0.03); vNbins.push_back(100); vLog.push_back(0); vA.push_back("d^{max} [cm]"); 
+  vNames.push_back("pvip"); vMin.push_back(0.); vMax.push_back(0.05); vNbins.push_back(100); vLog.push_back(0); vA.push_back("#delta_{3D}"); 
+  vNames.push_back("pvips"); vMin.push_back(0.); vMax.push_back(5); vNbins.push_back(100); vLog.push_back(0); vA.push_back("#delta_{3D}/#sigma(#delta_{3D})"); 
+  vNames.push_back("iso"); vMin.push_back(0.6); vMax.push_back(1.01); vNbins.push_back(41); vLog.push_back(0); vA.push_back("isolation"); 
+  vNames.push_back("closetrk"); vMin.push_back(0.); vMax.push_back(21); vNbins.push_back(21); vLog.push_back(0); vA.push_back("N_{trk}^{close}"); 
+  vNames.push_back("docatrk"); vMin.push_back(0.); vMax.push_back(0.1); vNbins.push_back(100); vLog.push_back(0); vA.push_back("d_{ca}^{0} [cm]"); 
+  vNames.push_back("chi2dof"); vMin.push_back(0.); vMax.push_back(5); vNbins.push_back(100); vLog.push_back(0); vA.push_back("#chi^{2}/dof"); 
 
   
-  TTree *t0Odd(0), *t0Even(0); 
-  if (!strcmp("test", type)) t0Odd = (TTree*)fOdd->Get("TestTree");
-  if (!strcmp("train", type)) t0Odd = (TTree*)fOdd->Get("TrainTree");
-  if (!strcmp("test", type)) t0Even = (TTree*)fEven->Get("TestTree");
-  if (!strcmp("train", type)) t0Even = (TTree*)fEven->Get("TrainTree");
-  TH1D *h1, *h2; 
-  string h1Name, h2Name; 
+  TTree *tEvt0(0), *tEvt1(0), *tEvt2(0); 
+  if (!strcmp("test", type)) {
+    tEvt0 = (TTree*)fEvt0->Get("TestTree");
+    tEvt1 = (TTree*)fEvt1->Get("TestTree");
+    tEvt2 = (TTree*)fEvt2->Get("TestTree");
+  } else {
+    tEvt0 = (TTree*)fEvt0->Get("TrainTree");
+    tEvt1 = (TTree*)fEvt1->Get("TrainTree");
+    tEvt2 = (TTree*)fEvt2->Get("TrainTree");
+  }
+
+  TH1D *h0, *h1, *h2; 
+  string h0Name, h1Name, h2Name; 
+
+  // -- KS probabilities
+  TH1D *sgKS = new TH1D("sgKS", "", 20, 0., 1.); setFilledHist(sgKS, kBlack, kYellow, 1000); 
+  TH1D *bgKS = new TH1D("bgKS", "", 20, 0., 1.); setFilledHist(bgKS, kBlack, kYellow, 1000); 
   
   gStyle->SetOptTitle(0); 
   gStyle->SetOptStat(0); 
-  for (int i = 0; i < varNames.size(); ++i) {
-    h1Name = Form("h0_%s", varNames[i].c_str());
-    h1  = new TH1D(h1Name.c_str(), varNames[i].c_str(), varNbins[i], varMin[i], varMax[i]);
-    //    setFilledHist(h1, kBlue, kBlue, 3004); 
-    h2Name = Form("h1_%s", varNames[i].c_str());
-    h2 = new TH1D(h2Name.c_str(), h2Name.c_str(), varNbins[i], varMin[i], varMax[i]);
-    //    setFilledHist(h2, kRed, kRed, 3004); 
-    SetSignalAndBackgroundStyle(h1, h2);            
-
-    t0Odd->Draw(Form("%s>>%s", varNames[i].c_str(), h1Name.c_str()), Form("classID==%d", classID)); 
-    t0Even->Draw(Form("%s>>%s", varNames[i].c_str(), h2Name.c_str()), Form("classID==%d", classID)); 
+  for (int i = 0; i < vNames.size(); ++i) {
     
-    h1->Draw();
-    h2->Draw("same");
-    double ks = h1->KolmogorovTest(h2);
-    tl->DrawLatex(0.2, 0.92, Form("%s: P(KS)= %4.3f", varNames[i].c_str(), ks)); 
+    if (fReaderVariables.end() == find(fReaderVariables.begin(), fReaderVariables.end(), vNames[i]))  {
+      cout << " =====> " << vNames[i] << " not found in fReaderVariables" << endl;
+      continue;
+    }
 
-    if (1 == varLog[i]) {
+    h0Name = Form("h0_%s", vNames[i].c_str());
+    h0  = new TH1D(h0Name.c_str(), vNames[i].c_str(), vNbins[i], vMin[i], vMax[i]);
+
+    h1Name = Form("h1_%s", vNames[i].c_str());
+    h1  = new TH1D(h1Name.c_str(), vNames[i].c_str(), vNbins[i], vMin[i], vMax[i]);
+
+    h2Name = Form("h2_%s", vNames[i].c_str());
+    h2 = new TH1D(h2Name.c_str(), h2Name.c_str(), vNbins[i], vMin[i], vMax[i]);
+
+    setTitles(h0, vA[i].c_str(), "#candidates/bin"); 
+    SetSignalAndBackgroundStyle(h0, h1, h2);            
+
+    tEvt0->Draw(Form("%s>>%s", vNames[i].c_str(), h0Name.c_str()), Form("classID==%d", classID)); 
+    tEvt1->Draw(Form("%s>>%s", vNames[i].c_str(), h1Name.c_str()), Form("classID==%d", classID)); 
+    tEvt2->Draw(Form("%s>>%s", vNames[i].c_str(), h2Name.c_str()), Form("classID==%d", classID)); 
+
+    double hmax = h0->GetMaximum(); 
+    if (h1->GetMaximum() > hmax) hmax = h1->GetMaximum();
+    if (h2->GetMaximum() > hmax) hmax = h2->GetMaximum();
+    h0->SetMaximum(1.3*hmax);
+    
+    h0->Draw();
+    h1->Draw("same");
+    h2->Draw("same");
+    double ks01 = h0->KolmogorovTest(h1);
+    double ks12 = h1->KolmogorovTest(h2);
+    double ks20 = h2->KolmogorovTest(h0);
+    tl->DrawLatex(0.15, 0.92, Form("P(KS)= %4.3f/%4.3f/%4.3f", ks01, ks12, ks20)); 
+
+    if (0 == classID) {
+      sgKS->Fill(ks01); 
+      sgKS->Fill(ks12); 
+      sgKS->Fill(ks20); 
+    } else {
+      bgKS->Fill(ks01); 
+      bgKS->Fill(ks12); 
+      bgKS->Fill(ks20); 
+    }
+    
+    if (1 == vLog[i]) {
       gPad->SetLogy(1); 
     } else {
       gPad->SetLogy(0); 
     }
 
-    c0->SaveAs(Form("%s/ks-%s_%s_%s_%s-%s.pdf", 
-		    fDirectory.c_str(), (0 == classID?"sg":"bg"), type, sOdd.c_str(), sEven.c_str(), varNames[i].c_str())); 
+    c0->SaveAs(Form("%s/ks-%s_%s.pdf", 
+		    fDirectory.c_str(), sname.c_str(), vNames[i].c_str())); 
   }
 
+
+  if (0 == classID) {
+    sgKS->Draw();
+    tl->DrawLatex(0.15, 0.92, Form("mean = %4.3f", sgKS->GetMean())); 
+    tl->DrawLatex(0.60, 0.92, Form("RMS = %4.3f",  sgKS->GetRMS())); 
+    
+    c0->SaveAs(Form("%s/ks-%s-sg-probs.pdf", 
+		    fDirectory.c_str(), fCuts[channel]->xmlFile.c_str())); 
+  }
+
+  if (1 == classID) {
+    bgKS->Draw();
+    tl->DrawLatex(0.15, 0.92, Form("mean = %4.3f", bgKS->GetMean())); 
+    tl->DrawLatex(0.60, 0.92, Form("RMS = %4.3f",  bgKS->GetRMS())); 
+    c0->SaveAs(Form("%s/ks-%s-bg-probs.pdf", 
+		    fDirectory.c_str(), fCuts[channel]->xmlFile.c_str())); 
+  }
 
 } 
 
@@ -794,6 +952,7 @@ void plotBDT::tmvaPlots(string type) {
     cout << "";
   }
 
+
   
   // -- from "variables"
   // -------------------
@@ -828,6 +987,11 @@ void plotBDT::tmvaPlots(string type) {
     TString htitle(sig->GetTitle());
     if (htitle.Contains("Input Variables")) continue;
     if (htitle.Contains(" ")) continue;
+
+    if (htitle.Contains("MVA_BDT")) {
+      //  cout << "--> SKIPPING " << htitle << endl;
+      continue;
+    }
     
     // find the corredponding backgrouns histo
     TString bgname = hname;
@@ -924,12 +1088,17 @@ void plotBDT::variableRanking() {
   string which = "IdTransformation";
   TH1D *h(0); 
   vector<string> splits; 
-  splits.push_back("odd"); 
-  splits.push_back("even"); 
+  splits.push_back("events0"); 
+  splits.push_back("events1"); 
+  splits.push_back("events2"); 
 
   for (unsigned int i = 0; i < splits.size(); ++i) {
     which = "IdTransformation";
     h = (TH1D*)fRootFile->Get(Form("rank_%s_%s", splits[i].c_str(), which.c_str()));
+    if (0 == h) {
+      cout << "==> histogram " << Form("rank_%s_%s", splits[i].c_str(), which.c_str()) << " NOT FOUND" << endl;
+      break;
+    }
     for (int ibin = 1; ibin < h->GetNbinsX(); ++ibin) {
       
       string label = h->GetXaxis()->GetBinLabel(ibin);
@@ -950,6 +1119,7 @@ void plotBDT::variableRanking() {
       string label = h->GetXaxis()->GetBinLabel(ibin);
       if ("" == label) break;
       replaceAll(label, " ", ""); 
+      if (0 == i) fReaderVariables.push_back(label); 
       string texlabel = replaceLabelWithTex(label);
       fTEX << Form("\\vdef{%s:%s_%s_%s:%d:name} {%s}", 
 		   fSuffix.c_str(), fBdtString.c_str(), splits[i].c_str(), which.c_str(), ibin, texlabel.c_str()) 
@@ -963,6 +1133,10 @@ void plotBDT::variableRanking() {
     }
   }
 
+  cout << "==> Read BDT variables" << endl;
+  for (unsigned int i = 0; i < fReaderVariables.size(); ++i) {
+    cout << "  " << fReaderVariables[i] << endl;
+  }
 
 }
 
@@ -1019,17 +1193,26 @@ void plotBDT::ssb() {
       }
       
     }
-    // FIXME: wo wird hier normiert?? Durch w8, aus dem tree gelesen!
+
     double s = sm->Integral(sm->FindBin(5.3), sm->FindBin(5.45));
-    double d = dm->Integral(0, h->GetNbinsX());
-    double b = d*(5.45-5.30)/(5.9-4.9+0.25);
+    double pbg = 0.07*s;
+    double d0 = dm->Integral(dm->FindBin(4.9), dm->FindBin(5.3));
+    double d1 = dm->Integral(dm->FindBin(5.45), dm->GetNbinsX());
+    double d = dm->Integral(0, dm->GetNbinsX());
+    double sd0 = (5.45-5.3)*d0/(5.2-4.9);
+    double sd1 = (5.45-5.3)*d1/(5.9-5.45);
+    double bsimple = d*(5.45-5.30)/(5.9-4.9+0.25);
+    double b = d1*(5.45-5.30)/(5.9-5.45);
     if (s+b >0) {
-      double ssb = s/TMath::Sqrt(s+b);
+      double ssb = s/TMath::Sqrt(s+b+pbg);
+      double ssbsimple = s/TMath::Sqrt(s+bsimple);
       if (ssb > maxSSB) {
 	maxSSB = ssb; 
 	maxBDT = bdtCut;
       }
       h->SetBinContent(ibin, ssb); 
+      h->SetBinError(ibin, TMath::Abs(ssb-ssbsimple)); 
+      //      cout << "data bg:  low = " << d0 << " high = " << d1 << " ssb = " << ssb << " ssbsimple = " << ssbsimple << endl;
     } else {
       h->SetBinContent(ibin, 0); 
     }
@@ -1106,7 +1289,7 @@ void plotBDT::plotEffVsBg(int offset) {
   axis->Draw();
 
   
-  c0->SaveAs(Form("%s/bdtSgEffVsBgEvts%d.pdf", fDirectory.c_str(), offset)); 
+  c0->SaveAs(Form("%s/bdt-SgEff-BgEvts-chan%d.pdf", fDirectory.c_str(), offset)); 
 
   // -- dump table of numbers
   h0 = (TH1D*)(gDirectory->Get(Form("hBgEvts%d", offset)))->Clone("H0"); 
@@ -1243,25 +1426,33 @@ void plotBDT::SetSignalAndBackgroundStyle( TH1* sig, TH1* bkg, TH1* all )    {
       Int_t LineColor__B = c_BackgroundLine;
       Int_t LineWidth__B = 2;
 
+      Int_t FillColor__A = kBlack; 
+      Int_t FillStyle__A = 3350; //3554;
+      Int_t LineColor__A = kBlack;
+      Int_t LineWidth__A = 2;
+
       if (sig != NULL) {
+         sig->SetMarkerColor(LineColor__S );
          sig->SetLineColor( LineColor__S );
          sig->SetLineWidth( LineWidth__S );
          sig->SetFillStyle( FillStyle__S );
          sig->SetFillColor( FillColor__S );
       }
- 
+      
       if (bkg != NULL) {
-         bkg->SetLineColor( LineColor__B );
-         bkg->SetLineWidth( LineWidth__B );
-         bkg->SetFillStyle( FillStyle__B );
-         bkg->SetFillColor( FillColor__B );
+	bkg->SetMarkerColor(LineColor__B );
+	bkg->SetLineColor( LineColor__B );
+	bkg->SetLineWidth( LineWidth__B );
+	bkg->SetFillStyle( FillStyle__B );
+	bkg->SetFillColor( FillColor__B );
       }
-
+      
       if (all != NULL) {
-         all->SetLineColor( LineColor__S );
-         all->SetLineWidth( LineWidth__S );
-         all->SetFillStyle( FillStyle__S );
-         all->SetFillColor( FillColor__S );
+	all->SetMarkerColor(LineColor__A );
+	all->SetLineColor( LineColor__A );
+	all->SetLineWidth( LineWidth__A );
+	all->SetFillStyle( FillStyle__A );
+	all->SetFillColor( FillColor__A );
       }
    }
 
