@@ -1,0 +1,50 @@
+#!/usr/bin/env perl
+
+# ----------------------------------------------------------------------
+#
+# Usage: srmMove -x old-URL -y new-URL -p pattern [-s 13362] [-d]
+# -----
+#
+# Examples:  srmMove -d -x srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/v06-data -y srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/v07-data -p \\.root -s 13362 
+#
+#
+# ----------------------------------------------------------------------
+
+# -- Get arguments
+use Getopt::Std;
+getopts('a:dp:x:y:s:');
+
+# -- arguments for srmls
+if ($opt_a) {
+    ($arg = $opt_a) =~ s/\"//g;
+    print "--> srmls $arg $opt_x\n";
+}
+
+
+$prefix = substr($opt_x, 0, index($opt_x, '/store')); 
+@moves = `srmls $arg $opt_x`; 
+
+foreach $f (@moves) {
+    chop($f);
+    $f =~ s/^\ *//g;
+    if ($f =~ /$opt_p/) {
+	# -- search for pattern
+	($size, $file) = split(/ /, $f, 2); 
+	$lfn = substr($file, rindex($file, '/store')+1, length($file)); 
+	$ffn = $prefix."/".$lfn;
+	$bfn = substr($file, rindex($file, '/')+1, length($file));  # bare filename
+	$nfn = $opt_y."/".$bfn; # new filename
+        # print "srmmv $ffn $nfn\n";
+	if ($opt_p) {
+	    # print "$file -> $opt_p\n";
+	    if ($opt_d) {
+		print("mv: srmrm $ffn $nfn\n");
+	    } else {
+		print("srmmv $ffn $nfn\n");
+		system("srmmv $ffn $nfn");
+	    }
+	}
+	
+    }
+}
+
