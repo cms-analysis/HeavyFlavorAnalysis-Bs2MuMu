@@ -287,7 +287,7 @@ double f_pol1_gauss2c(double *x, double *par) {
 
 // ----------------------------------------------------------------------
 initFunc::initFunc() {
-  //  cout << "ctor initFunc" << endl;
+  cout << "ctor initFunc" << endl;
   fLo = 99.; 
   fHi = -99.;
   fBgFractionLo = fBgFractionHi = -99.;
@@ -713,20 +713,98 @@ TF1* initFunc::expoErrgauss2c(TH1 *h, double peak, double sigma1, double sigma2,
 
   f->SetParameters(g0, peak, sigma1, 0.2, sigma2, p0, p1, e0, e1, e2, 0.05*g0); 
 
-  f->ReleaseParameter(0);     f->SetParLimits(0, 0., 1.e7); 
-  f->ReleaseParameter(1);     f->SetParLimits(1, 5.2, 5.45); 
-  f->ReleaseParameter(2);     f->SetParLimits(2, 0.2*sigma1, 1.5*sigma1); 
-  f->ReleaseParameter(3);     
-  f->ReleaseParameter(4);     f->SetParLimits(4, 0.5*sigma2, 2.0*sigma2); 
-  f->ReleaseParameter(5);     
-  f->ReleaseParameter(6);     
-  f->ReleaseParameter(7);     f->SetParLimits(7, e0Min, e0Max); 
-  f->ReleaseParameter(8);     f->SetParLimits(8, e1Min, e1Max); 
-  f->ReleaseParameter(9);     f->SetParLimits(9, e2Min, e2Max); 
-  f->ReleaseParameter(10);
-  //  f->ReleaseParameter(10);    //if (fBgFractionLo > 0) f->SetParLimits(10, fBgFractionLo*g0, fBgFractionHi*g0); 
-  //   f->FixParameter(8, e1);
-  //   f->FixParameter(9, e2);
+  if (fLimit[0]) {
+    cout << "initFunc::expoErrgauss2c> limiting par 0 from " << fLimitLo[0] << " .. " << fLimitHi[0] << endl;
+    f->SetParLimits(0, fLimitLo[0], fLimitHi[0]); 
+  } else {
+    f->SetParLimits(0, 0., 1.e7); 
+  }
+
+  if (fLimit[1]) {
+    cout << "initFunc::expoErrgauss2c> limiting par 1 from " << fLimitLo[1] << " .. " << fLimitHi[1] << endl;
+    f->SetParLimits(1, fLimitLo[1], fLimitHi[1]); 
+  } else {
+    f->SetParLimits(1, 5.2, 5.45); 
+  }
+
+  if (fLimit[2]) {
+    cout << "initFunc::expoErrgauss2c> limiting par 2 from " << fLimitLo[2] << " .. " << fLimitHi[2] << endl;
+    f->SetParLimits(2, fLimitLo[2], fLimitHi[2]); 
+  } else {
+    f->SetParLimits(2, 0.2*sigma1, 1.5*sigma1); 
+  }
+
+  if (fLimit[3]) {
+    cout << "initFunc::expoErrgauss2c> limiting par 3 from " << fLimitLo[3] << " .. " << fLimitHi[3] << endl;
+    f->SetParLimits(3, fLimitLo[3], fLimitHi[3]); 
+  } else {
+    //    f->SetParLimits(2, 0.2*sigma1, 1.5*sigma1); 
+  }
+
+  if (fLimit[4]) {
+    cout << "initFunc::expoErrgauss2c> limiting par 4 from " << fLimitLo[4] << " .. " << fLimitHi[4] << endl;
+    f->SetParLimits(4, fLimitLo[4], fLimitHi[4]); 
+  } else {
+    f->SetParLimits(4, 0.5*sigma2, 2.0*sigma2); 
+  }
+
+  if (fLimit[5]) {
+    cout << "initFunc::expoErrgauss2c> limiting par 5 from " << fLimitLo[5] << " .. " << fLimitHi[5] << endl;
+    f->SetParLimits(5, fLimitLo[5], fLimitHi[5]); 
+  } else {
+    //    f->SetParLimits(5, 0.5*sigma2, 2.0*sigma2); 
+  }
+
+  if (fLimit[6]) {
+    cout << "initFunc::expoErrgauss2c> limiting par 6 from " << fLimitLo[6] << " .. " << fLimitHi[6] << endl;
+    f->SetParLimits(6, fLimitLo[6], fLimitHi[6]); 
+  } else {
+    //    f->SetParLimits(6, 0.5*sigma2, 2.0*sigma2); 
+  }
+
+  if (fLimit[7]) {
+    cout << "initFunc::expoErrgauss2c> limiting par 7 from " << fLimitLo[7] << " .. " << fLimitHi[7] << endl;
+    f->SetParLimits(7, fLimitLo[7], fLimitHi[7]); 
+  } else {
+    f->SetParLimits(7, e0Min, e0Max); 
+  }
+
+  if (fLimit[8]) {
+    cout << "initFunc::expoErrgauss2c> limiting par 8 from " << fLimitLo[8] << " .. " << fLimitHi[8] << endl;
+    f->SetParLimits(8, fLimitLo[8], fLimitHi[8]); 
+  } else {
+    f->SetParLimits(8, e1Min, e1Max); 
+  }
+
+  if (fLimit[9]) {
+    cout << "initFunc::expoErrgauss2c> limiting par 9 from " << fLimitLo[9] << " .. " << fLimitHi[9] << endl;
+    f->SetParLimits(9, fLimitLo[9], fLimitHi[9]); 
+  } else {
+    f->SetParLimits(9, e2Min, e2Max); 
+  }
+
+  if (fLimit[10]) {
+    cout << "initFunc::expoErrgauss2c> limiting par 10 from " << fLimitLo[10] << " .. " << fLimitHi[10] << endl;
+    f->SetParLimits(10, fLimitLo[10], fLimitHi[10]); 
+  } else {
+    //    f->SetParLimits(10, e2Min, e2Max); 
+  }
+
+
+  //   f->ReleaseParameter(0);     f->SetParLimits(0, 0., 1.e7); 
+  //   f->ReleaseParameter(1);     f->SetParLimits(1, 5.2, 5.45); 
+  //   f->ReleaseParameter(2);     f->SetParLimits(2, 0.2*sigma1, 1.5*sigma1); 
+  //   f->ReleaseParameter(3);     
+  //   f->ReleaseParameter(4);     f->SetParLimits(4, 0.5*sigma2, 2.0*sigma2); 
+  //   f->ReleaseParameter(5);     
+  //   f->ReleaseParameter(6);     
+  //   f->ReleaseParameter(7);     f->SetParLimits(7, e0Min, e0Max); 
+  //   f->ReleaseParameter(8);     f->SetParLimits(8, e1Min, e1Max); 
+  //   f->ReleaseParameter(9);     f->SetParLimits(9, e2Min, e2Max); 
+  //   f->ReleaseParameter(10);
+  //   //  f->ReleaseParameter(10);    //if (fBgFractionLo > 0) f->SetParLimits(10, fBgFractionLo*g0, fBgFractionHi*g0); 
+  //   //   f->FixParameter(8, e1);
+  //   //   f->FixParameter(9, e2);
 
   return f; 
 

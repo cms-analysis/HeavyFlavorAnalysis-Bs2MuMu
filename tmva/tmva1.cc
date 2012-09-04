@@ -1596,32 +1596,40 @@ void tmva1::toyRuns(string ifilename, int nruns) {
   int offset(100);
   int seed(0); 
   int nsg(200000), nbg(250000);
-  for (int i = 0; i < nruns; ++i) {
-    seed = offset + i;
-    oname = Form("/scratch/ursl/tmva-toy-%d.root", seed); 
-    createToyData(ifilename, oname, seed, nsg, nbg); 
-    trainOnToyData(oname, Form("toy-%d", seed)); 
+  vector<int> vcolor; 
+  vcolor.push_back(kBlue); 
+  vcolor.push_back(kCyan); 
+  vcolor.push_back(kRed); 
+  vcolor.push_back(kMagenta); 
+  vcolor.push_back(kBlack); 
+  if (0) {
+    for (int i = 0; i < nruns; ++i) {
+      seed = offset + i;
+      oname = Form("/scratch/ursl/tmva-toy-%d.root", seed); 
+      createToyData(ifilename, oname, seed, nsg, nbg); 
+      trainOnToyData(oname, Form("toy-%d", seed)); 
+    }
+  } else {
+    cout << "UNCOMMENT CODE IF YOU WANT TO RUN NEW SAMPLES" << endl;
   }
 
-
   TCanvas *c0 = getC0();
-  TColor::CreateColorWheel();
   c0->Clear();
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
-  double ymax = 0.1; 
-  TH2F* frame = new TH2F("frame", "BDT output distributions", 100, -1., 1., 100, 0., 1.3*ymax);
+  double ymax = 0.07; 
+  TH2F* frame = new TH2F("frame", "BDT output distributions", 100, -1., 1., 100, 0., ymax);
   frame->GetXaxis()->SetTitle(" b");
   frame->GetYaxis()->SetTitle("(1/N) dN^{ }/^{ }dx");
   frame->Draw();  
 
-  int color(0); 
+  int color(0);
   for (int i = 0; i < nruns; ++i) {
     seed = offset + i;
     oname = Form("toy-%d.root", seed);
     TFile *file = TFile::Open(oname.c_str()); 
     
-    color = 11+i; 
+    color = (i < vcolor.size()? vcolor[i] :kBlack); 
     TH1F *hTrainBg = (TH1F*)file->Get("Method_BDT/BDT/MVA_BDT_Train_B"); hTrainBg->SetLineColor(color); hTrainBg->SetMarkerColor(color);
     TH1F *hTrainSg = (TH1F*)file->Get("Method_BDT/BDT/MVA_BDT_Train_S"); hTrainSg->SetLineColor(color); hTrainSg->SetMarkerColor(color);
     
@@ -1642,7 +1650,7 @@ void tmva1::toyRuns(string ifilename, int nruns) {
     oname = Form("toy-%d.root", seed);
     TFile *file = TFile::Open(oname.c_str()); 
 
-    color = 11+i; 
+    color = (i < vcolor.size()? vcolor[i] :kBlack); 
     TH1F *hTestBg = (TH1F*)file->Get("Method_BDT/BDT/MVA_BDT_B"); hTestBg->SetLineColor(color); hTestBg->SetMarkerColor(color);
     TH1F *hTestSg = (TH1F*)file->Get("Method_BDT/BDT/MVA_BDT_S"); hTestSg->SetLineColor(color); hTestSg->SetMarkerColor(color);
     

@@ -423,13 +423,17 @@ void plotClass::loopTree(int mode, int proc) {
     smode = "SgData";
   }
 
+  cout << "HALLO 0" << endl;
+
   ptT1 = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo.dat"); 	
   ptT2 = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.dat"); 	
   ptM  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_data_all_histo.dat"); 
+  cout << "HALLO 1" << endl;
 
   ptT1MC = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo.dat"); 	
   ptT2MC = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.dat"); 	
   ptMMC  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_datalike_mc_histo.dat"); 
+  cout << "HALLO 2" << endl;
 
   //   if (isMC) {
   //     delete ptT1; 
@@ -929,6 +933,7 @@ void plotClass::loopTree(int mode, int proc) {
   //   c0->Clear();
   //   c0->Divide(1,2);
   for (unsigned int i = 0; i < fNchan; ++i) {
+    fChan = i; 
     //     c0->cd(i+1);
     pCuts = fCuts[i]; 
     aa = 0; 
@@ -1248,13 +1253,13 @@ void plotClass::loopTree(int mode, int proc) {
       //      TH1D *h = fhMassWithAllCuts[i]; 
       //      normYield(h, mode, 5.10, 5.5);
       TH1D *h = fhNorm[i];
-      fChan = i; 
-      normYield(h, 0, 4.9, 5.9, 5.145);
+      //      normYield(h, 0, 4.9, 5.9, 5.145);
+      normYield(h, fChan, 5.0);
       aa->fitYield  = fNoSig; 
       aa->fitYieldE = fNoSigE; 
 
       h = fhNormC[i];
-      normYield(h, 0, 5.0, 5.9, 5.145);
+      //      normYield(h, 0, 5.0, 5.9, 5.145);
       aa->fitYieldC  = fNoSig; 
       aa->fitYieldCE = fNoSigE; 
     } else if (20 == mode) {
@@ -1274,7 +1279,8 @@ void plotClass::loopTree(int mode, int proc) {
       //      TH1D *h = fhMassWithAllCuts[i]; 
       //      csYield(h, mode, 5.20, 5.6);
       TH1D *h = fhNorm[i];
-      csYield(h, i, 5.1, 6.0);
+      //      csYield(h, i, 5.1, 6.0);
+      csYield(h, fChan, 5.1);
       aa->fitYield  = fCsSig; 
       aa->fitYieldE = fCsSigE; 
     } else if (30 == mode) {

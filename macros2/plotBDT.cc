@@ -768,7 +768,8 @@ void plotBDT::tmvaPlots(string type) {
   
   // this defines how many canvases we need
   TCanvas *c = new TCanvas( Form("canvas%d", 1), "canvas1",  200, 20, width, (Int_t)width*0.78 ); 
-  
+
+
   // search for the right histograms in full list of keys
   TIter next(fRootFile->GetListOfKeys());
   TKey *key(0);   
@@ -974,6 +975,7 @@ void plotBDT::tmvaPlots(string type) {
   }
   dir->cd();
 
+
   // loop over all objects in directory
   Bool_t   createNewFig = kFALSE;
   TIter next1(dir->GetListOfKeys());
@@ -1057,6 +1059,36 @@ void plotBDT::tmvaPlots(string type) {
   }
   
   
+
+  
+  // "BoostMonitor","BoostWeight","BoostWeightVsTree","ErrFractHist","NodesBeforePruning"
+  dirName = "Method_BDT/BDT";
+  dir = (TDirectory*)fRootFile->Get(dirName);
+  if (dir==0) {
+    cout << "No information about " << title << " available in directory " << dirName << " of file " << fRootFile << endl;
+    return;
+  }
+  dir->cd();
+
+  TCanvas *cc = new TCanvas("cc", "", 300, 200, 1000, 400);
+
+  cc->cd();
+  ((TH1F*)dir->Get("BoostWeight"))->Draw(); 
+  cc->SaveAs(Form("%s/%s-BoostWeight.pdf", fDirectory.c_str(), fBdtString.c_str())); 
+
+  cc->Clear();
+  ((TH1F*)dir->Get("BoostWeightVsTree"))->Draw(); 
+  cc->SaveAs(Form("%s/%s-BoostWeightVsTree.pdf", fDirectory.c_str(), fBdtString.c_str())); 
+
+  cc->Clear();
+  ((TH1F*)dir->Get("ErrFractHist"))->Draw(); 
+  cc->SaveAs(Form("%s/%s-ErrFractHist.pdf", fDirectory.c_str(), fBdtString.c_str())); 
+
+  cc->Clear();
+  ((TH1F*)dir->Get("NodesBeforePruning"))->Draw(); 
+  cc->SaveAs(Form("%s/%s-NodesBeforePruning.pdf", fDirectory.c_str(), fBdtString.c_str())); 
+  
+
   
 }
 
