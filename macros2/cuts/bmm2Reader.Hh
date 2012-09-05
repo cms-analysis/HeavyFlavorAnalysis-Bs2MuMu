@@ -1,9 +1,0 @@
-candAnaHh     cuts/candAnaHh.cuts
-#
-JSON             cuts/Cert_AllRuns_7TeV-8TeV_Collisions11-12_JSON_MuonPhys.txt
-ptSgMUID         ../macros/pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat
-ptCbMUID         ../macros/pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat
-ptSgMUT1         ../macros/pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.dat
-ptCbMUT1         ../macros/pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.dat
-ptSgMUT2         ../macros/pidtables/110606/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_data_all.dat
-ptCbMUT2         ../macros/pidtables/110606/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_data_all.dat
