@@ -2,6 +2,8 @@
 #define PDF_FITDATA_H
 
 #include <sstream>
+#include <iostream>
+#include <iomanip>
 
 #include "pdf_analysis.h"
 
@@ -21,11 +23,12 @@
 
 class pdf_fitData : public pdf_analysis {
   public:
-  pdf_fitData(bool print, int inputs = 1, string input_estimates = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, bool simul = true, string ch_s = "0");
+  pdf_fitData(bool print, int inputs = 1, string input_estimates = "", string input_cuts = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, bool simul = true, string ch_s = "0");
 
     void print();
     void print_each_channel();
 
+    void define_channels();
     void make_dataset();
     void make_pdf_input();
     void make_pdf();
@@ -40,7 +43,8 @@ class pdf_fitData : public pdf_analysis {
   protected:
     void parse_estimate();
     bool parse(char *cutName, float cut);
-    bool simul_;
+    string input_cuts_;
+    bool random;
 
   private:
 
@@ -48,10 +52,10 @@ class pdf_fitData : public pdf_analysis {
     vector < RooWorkspace*> ws_input;
 
     RooCategory* channel;
-    void FillRooDataSet(TTree* tree, RooDataSet* dataset, RooRealVar *Mass, int ch_i);
+    void FillRooDataSet(RooDataSet* dataset, int ch_i, string cuts_f);
     void changeName(RooWorkspace *ws, int str);
     TTree* tree;
-    bool random;
+
     vector <RooAbsPdf*> total_pdf_i;
 
     void sig_hand();

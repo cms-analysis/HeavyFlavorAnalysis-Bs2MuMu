@@ -25,14 +25,13 @@
 #include "RooStats/ProfileLikelihoodCalculator.h"
 #include "RooStats/FrequentistCalculator.h"
 #include "RooStats/ProfileLikelihoodTestStat.h"
-
 #include "RooStats/RatioOfProfiledLikelihoodsTestStat.h"
 #include "RooStats/HybridCalculator.h"
 
 class pdf_toyMC : public pdf_fitData {
 public:
   
-  pdf_toyMC(bool print, int inputs = 1, string input_estimates = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, string bias = "no", bool simul = true, string ch_s = "0");
+  pdf_toyMC(bool print, int inputs = 1, string input_estimates = "", string input_cuts = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, string bias = "no", bool simul = true, string ch_s = "0");
 
   void generate(int NExp, string pdf_toy, string test_pdf = "total");
   void mcstudy(int NExp, string pdf_toy);
@@ -50,10 +49,10 @@ private:
   string pdf_toy_;
   string pdf_test_;
   
-  RooDataSet* pull_rds_bs;
-  RooDataSet* pull_rds_bd;
-  RooRealVar* pull_bd;
-  RooRealVar* pull_bs;
+  vector <RooDataSet*> pull_rds_bs;
+  vector <RooDataSet*> pull_rds_bd;
+  vector <RooRealVar*> pull_bd;
+  vector <RooRealVar*> pull_bs;
 
 };
 

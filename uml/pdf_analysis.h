@@ -3,10 +3,13 @@
 
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include "TFile.h"
 #include "TH1.h"
 #include "TCanvas.h"
+#include "TPaveText.h"
+#include "TLatex.h"
 
 #include "RooWorkspace.h"
 #include "RooGaussian.h"
@@ -25,13 +28,16 @@
 #include "RooAbsReal.h"
 #include "RooFitResult.h"
 #include "RooHistPdf.h"
+#include "RooSimWSTool.h"
+#include "RooCategory.h"
+#include "RooChebychev.h"
+#include "RooPolynomial.h"
+#include "RooProdPdf.h"
 
 using namespace std;
 using namespace RooFit;
 
 class pdf_analysis {
-
-
 public:
   pdf_analysis(bool print, string meth = "bdt", string ch_s = "0", string range = "all", bool SM = false, bool bd_constr = false);
   void set_ws(RooWorkspace *ws) {ws_ = ws;}
@@ -40,25 +46,28 @@ public:
   void set_rad(RooAbsData* rad) {rds_ = rad;}
   RooAbsData* get_rad() {return rds_;}
   
+  void initialize();
+  RooHistPdf* define_etapdf(RooDataSet* rds, string name);
+
   void define_pdfs();
-  void define_bs();
-  void define_bd();
-  void define_peaking();
-  void define_nonpeaking();
-  void define_comb();
-  void define_signals();
-  void define_rare();
-  void define_rare2(RooDataHist *data);
-  void define_rare3();
-  void define_bkg_fractional();
-  void define_bkg_extended();
-  void define_signalsrare();
+  void define_bs(int i);
+  void define_bd(int i);
+  void define_peaking(int i);
+  void define_nonpeaking(int i);
+  void define_comb(int i);
+  void define_signals(int i);
+  void define_rare(int i);
+  void define_rare2(RooDataHist *data, int i);
+  void define_rare3(int i);
+  void define_bkg_fractional(int i);
+  void define_bkg_extended(int i);
+  void define_signalsrare(int i);
 
   void set_SMratio(double ratio) {ratio_ = ratio;}
   
-  string define_pdf_sum(string name);
-  void define_total_fractional(); // final pdf with fractional components, and also extended
-  void define_total_extended(); // final pdf with all extended components
+  string define_pdf_sum(string name, int i);
+  void define_total_fractional(int i); // final pdf with fractional components, and also extended
+  void define_total_extended(int i); // final pdf with all extended components
 
   void fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error = true, bool hesse = true);
   void print(string output = "", RooWorkspace *ws = 0);
@@ -66,13 +75,27 @@ public:
   
   string pdf_name;
 
+  //int channel;
   bool SM_;
   bool bd_constr_;
+  bool simul_;
   RooRealVar* Mass;
+  RooRealVar* eta;
 
   int channels;
   string range_;
   RooFitResult* RFR;
+
+  int verbosity;
+
+  void simsplit();
+
+  double getErrorHigh(RooRealVar* var);
+  double getErrorLow(RooRealVar* var);
+
+  bool old_tree;
+  bool pee;
+  bool no_legend;
 
 protected:
   bool print_;
@@ -89,6 +112,8 @@ protected:
   vector <double> estimate_rare;
   vector <double> estimate_comb;
   vector <double> estimate_channel;
+
+  RooDataHist getRandom_rdh();
   
 };
 

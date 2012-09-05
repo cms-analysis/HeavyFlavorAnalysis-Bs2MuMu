@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstring>
+#include <sstream>
 
 using namespace std;
 
@@ -23,40 +24,66 @@ static int NExp = 1;
 static int ch_i = -1;
 static int inputs = 1;
 static int sig_meth = -1;
-bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, pvalue = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false;
+static double bdt = 0.0;
+bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
 
 void help() {
-  cout << ">>>>>>>>> options for all programs:" << endl;
-  cout << "-i #filename \t input (mandatory)" << endl;
-  cout << "-t treename" << endl;
+
   cout << endl;
-  cout << ">>>>>>>>> only for pdf_choise:" << endl;
-  cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (mandatory)" << endl;
-  cout << "-cha {0, 1} \t barrel OR endcap input (mandatory)" << endl;
-  cout << "-SM \t SM constraints" << endl;
-  cout << "-bd_const \t Bd constrainted to Bs, over all different channels" << endl;
-  cout << "-print \t save the fits to gif and pdf" << endl;
+  cout << ">>>>>>>>> options for main_pdf_choise.o:" << endl;
+  cout << "-i #filename \t input for making pdf shapes (MANDATORY); if filename==new the inputs will be the new small trees" << endl;
+  cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (MANDATORY)" << endl;
+  cout << "-cha {0, 1} \t barrel OR endcap input (MANDATORY)" << endl;
+  cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
+  cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
+  cout << "-print \t save the fits to gif and pdf --> -no_legend without parameters on canvas" << endl;
+  cout << "-bdt # \t bdt cut, default is " << bdt << endl;
+  cout << "-pee \t per-event-error" << endl;
   cout << endl;
-  cout << ">>>>>>>>> only for toyMC:" << endl;
-  cout << "-e #filename \t estimates file (mandatory)" << endl;
-  cout << "-nexp # \t number of experiments" << endl;
-  cout << "-pdf {bs, bd, rare, comb, total} \t combination of pdf names, for generating (mandatory)" << endl;
-  cout << "-test \t fitting pdf, if different from pdf" << endl;
-  cout << "-bias [c+,c-,p+,p-]\t biasing rare pdf parameters" << endl;
-  cout << "-roomcs \t toy mc with RooMCStudy" << endl;
-  cout << "-pvalue \t pvalue with RooStats" << endl;
+  cout << ">>>>>>>>> options for main_simul_maker.o:" << endl;
+  cout << "-i #filename \t input for making pdf shapes (MANDATORY); if filename==new the inputs will be the new small trees" << endl;
+  cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (MANDATORY)" << endl;
+  cout << "-simul # \t number of channels (MANDATORY)" << endl;
+  cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
+  cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
+  cout << "-print \t save the fits to gif and pdf --> -no_legend without parameters on canvas" << endl;
+  cout << "-bdt # \t bdt cut, default is " << bdt << endl;
+  cout << "-pee \t per-event-error" << endl;
   cout << endl;
-  cout << ">>>>>>>>> only for fitData:" << endl;
-  cout << "-SM \t SM constraints" << endl;
-  cout << "-bd_const \t Bd constrainted to Bs, over all different channels" << endl;
-  cout << "-print \t save the fits to gif and pdf" << endl;
-  cout << "-simul # \t simultaneous fit of # channels (default 1)" << endl;
+  cout << ">>>>>>>>> options for main_fitData.o:" << endl;
+  cout << "-i #filename \t input for fitting events (MANDATORY)" << endl;
+  cout << "-t treename (default bdt)" << endl;
+  cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (MANDATORY)" << endl;
+  cout << "-cha {0, 1} \t barrel OR endcap input, incompatible with -simul" << endl;
+  cout << "-simul # \t simultaneous fit of # channels (default 1), incompatible with -cha" << endl;
+  cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
+  cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
+  cout << "-print \t save the fits to gif and pdf --> -no_legend without parameters on canvas" << endl;
   cout << "-cuts #filename \t file with MVA selections" << endl;
-  cout << "-SB \t fit side-bands only" << endl;
-  cout << "-sig # \t significance with method: 0 by hand; 1 ProfileLikelihoodCalculator; 2 ProfileLikelihoodTestStat" << endl;
-  exit(0);
+  cout << "-SB \t fit side-bands only" << endl; /// test
+  cout << "-sig # \t evaluate significance with method: 0 by hand; 1 ProfileLikelihoodCalculator; 2 ProfileLikelihoodTestStat" << endl;
+  cout << "-e #filename \t estimates file (useful for significance)" << endl;
+  cout << "-pee \t per-event-error" << endl;
+  cout << endl;
+  cout << ">>>>>>>>> options for main_toyMC.o:" << endl;
+  cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
+  cout << "-i #filename \t workspace input" << endl;
+  cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (MANDATORY)" << endl;
+  cout << "-roomcs \t toy mc with RooMCStudy, otherwise by hand" << endl;
+  cout << "-nexp # \t number of experiments (default 1)" << endl;
+  cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
+  cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
+  cout << "if simultaneous: " << endl;
+  cout << "\t -simul # \t simultaneous fit of # channels (default 1)" << endl;
+  cout << "if NOT simultaneous" << endl;
+  cout << "\t -pdf {bs, bd, rare, comb, total} \t combination of pdf names, for generating" << endl;
+  cout << "\t -test {bs, bd, rare, comb, total} \t fitting pdf, if different from pdf" << endl;
+  cout << "-bias [c+,c-,p+,p-]\t biasing rare pdf parameters (it works without -roomcs)" << endl;
+  cout << endl;
+
+  exit(EXIT_SUCCESS);
 }
 
 void parse_options(int argc, char* argv[]){
@@ -120,10 +147,6 @@ void parse_options(int argc, char* argv[]){
       cout << "using RooMCStudy" << endl;
       roomcs = true;
     }
-    if (!strcmp(argv[i],"-pvalue")) {
-      cout << "evaluates pvalue" << endl;
-      pvalue = true;
-    }
     if (!strcmp(argv[i],"-SM")) {
       cout << "SM constraints" << endl;
       SM = true;
@@ -134,7 +157,7 @@ void parse_options(int argc, char* argv[]){
     }
     if (!strcmp(argv[i],"-simul")) {
       inputs = atoi(argv[i+1]);
-      cout << inputs << " simultaneous fits of " << inputs << " channels" << endl;
+      cout << "simultaneous fits of " << inputs << " channels" << endl;
       simul = true;
     }
     if (!strcmp(argv[i],"-t")) {
@@ -149,6 +172,18 @@ void parse_options(int argc, char* argv[]){
       sig_meth = atoi(argv[i+1]);
       cout << "significance with method " << sig_meth << endl;
     }
+    if (!strcmp(argv[i],"-bdt")) {
+      bdt = atof(argv[i+1]);
+      cout << "bdt cut = " << bdt << endl;
+    }
+    if (!strcmp(argv[i],"-pee")) {
+      pee = true;
+      cout << "per-event-error" << endl;
+    }
+    if (!strcmp(argv[i],"-no_legend")) {
+      no_legend = true;
+      cout << "no legend on canvas" << endl;
+    }
     if (!strcmp(argv[i],"-h")) help();
   }
 }
@@ -159,13 +194,17 @@ void parse_input (string input) {
   size_t found;
   for (int i = 0; i < 2; i++) {
     found = input.find(a_meth_s[i]);
-    if (found!=string::npos) meth = a_meth_s[i];
-    cout << "meth = " << meth << endl;
+    if (found!=string::npos) {
+      meth = a_meth_s[i];
+      cout << "meth = " << meth << endl;
+    }
   }
   for (int i = 0; i < 2; i++) {
     found = input.find(a_ch_s[i]);
-    if (found!=string::npos) ch_s = a_ch_s[i];
-    cout << "channel = " << ch_s << endl;
+    if (found!=string::npos) {
+      ch_s = a_ch_s[i];
+      cout << "channel = " << ch_s << endl;
+    }
   }
   found = input.find("SM");
   if (found!=string::npos) {
@@ -187,4 +226,16 @@ void parse_input (string input) {
     inputs = atoi(number.str().c_str());
     cout << "simultaneous " << inputs << endl;
   }
+}
+
+string get_cut(int channel) {
+  string cut = "";
+  ostringstream bdt_cut;
+  bdt_cut << bdt;
+  cut += "bdt>";
+  cut += bdt_cut.str();
+  if (channel == 0) cut += " && abs(m1eta)<1.4 && abs(m2eta)<1.4";
+  if (channel == 1) cut += " && abs(m1eta)>1.4 || abs(m2eta)>1.4";
+  cout << "cut = " << cut << endl;
+  return cut;
 }
