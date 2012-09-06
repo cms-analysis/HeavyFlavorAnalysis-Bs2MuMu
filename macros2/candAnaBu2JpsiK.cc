@@ -29,6 +29,7 @@ void candAnaBu2JpsiK::candAnalysis() {
   TAnaTrack *p0, *pk(0), *pks(0); 
   for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
     p0 = fpEvt->getSigTrack(it);     
+    //    cout << it << " " << p0->fMCID << endl;
     if (321 == TMath::Abs(p0->fMCID)) {
       pks = p0; 
     }
