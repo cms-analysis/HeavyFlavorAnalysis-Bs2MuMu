@@ -32,6 +32,9 @@ void candAnaBu2JpsiK::candAnalysis() {
     if (321 == TMath::Abs(p0->fMCID)) {
       pks = p0; 
     }
+    if (211 == TMath::Abs(p0->fMCID)) {
+      pks = p0; 
+    }
   }
 
   if (0 == pks) {
