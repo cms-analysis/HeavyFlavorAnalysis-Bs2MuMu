@@ -436,7 +436,7 @@ void candAna::candAnalysis() {
     TLorentzVector gendimuon = pg1->fP + pg2->fP; 
     fGenMass = gendimuon.M(); 
   }
-  cout << "m(mu,mu) = " << fGenMass << " n(photons) = " << fNGenPhotons << endl;
+  //  cout << "m(mu,mu) = " << fGenMass << " n(photons) = " << fNGenPhotons << endl;
 
   fCandW8Mu     = fMu1W8Mu*fMu2W8Mu;
   if (TMath::Abs(fCandW8Mu) > 1.) fCandW8Mu = 0.2; // FIXME correction for missing entries at low pT
