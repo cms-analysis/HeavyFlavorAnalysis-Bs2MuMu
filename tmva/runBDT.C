@@ -45,10 +45,10 @@ void runBDT(int seed, string filename, int iChannel = 0) {
 
   ntrees = 800;
   nevts = 50; 
-  maxdepth = 2;
   ncuts = 20; 
-  beta = 1.0; 
+  maxdepth = 2;
   nnodesmax = 5;
+  beta = 1.0; 
 
 
   cout << "seed: " << seed << " ntrees = " << ntrees << " nevts = " << nevts << " maxdepth = " 

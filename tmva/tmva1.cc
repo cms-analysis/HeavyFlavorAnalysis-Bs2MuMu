@@ -56,17 +56,20 @@ tmva1::tmva1() {
 //   fInputFiles.dname = "/scratch/ursl/120509/v11-2011-data-looseBmm.root";
 //   fInputFiles.rname = "/scratch/ursl/120509/v11-2e33-Bd2PiMuNu.root";
 
-  fInputFiles.sname = "/shome/ursl/scratch/v11-mix-newSignalMC-Bs2MuMu.root"; 
-  fInputFiles.dname = "/shome/ursl/scratch/v11-2011-data-looseBmm.root";
-  fInputFiles.rname = "/shome/ursl/scratch/v11-2e33-Bd2PiMuNu.root";
+//   fInputFiles.sname = "/shome/ursl/scratch/v11-mix-newSignalMC-Bs2MuMu.root"; 
+//   fInputFiles.dname = "/shome/ursl/scratch/v11-2011-data-looseBmm.root";
 
-  // -- (mostly) standard from file:///Users/ursl/root/root-053202/htmldoc/src/TMVA__MethodBDT.cxx.html
-  fBdtSetup.NTrees = 400;
+                                                  
+  fInputFiles.sname = "/shome/lazo-flores/scratch/v11-mix-Bs2MuMu-newSignalMC.root"; 
+  fInputFiles.dname = "/shome/lazo-flores/scratch/v11-2011-data.root";
+
+  // -- BDT setup 108/109
+  fBdtSetup.NTrees = 800;
   fBdtSetup.nEventsMin = 50; 
-  fBdtSetup.MaxDepth = 3;
+  fBdtSetup.MaxDepth = 2;
   fBdtSetup.nCuts = 20; 
   fBdtSetup.AdaBoostBeta = 1.0; 
-  fBdtSetup.NNodesMax = 1000000;
+  fBdtSetup.NNodesMax = 5;
 
   fApplyOn0 = false;
   fApplyOn1 = false;
@@ -1286,20 +1289,20 @@ void tmva1::createInputFile(string filename) {
   TFile *dinput = TFile::Open(fInputFiles.dname.c_str());
 
   // -- cuts definition: this should be identical to preselection()
-  TCut sgcut0 = "hlt&&gmuid&&pt<70&&pt>6"; 
-  sgcut0 += "m1pt>4.0&&m1pt<50";
-  sgcut0 += "m2pt>4.0&&m2pt<20"; 
-  sgcut0 += "fl3d<2&&chi2/dof<10&&pvip<0.02&&!TMath::IsNaN(pvips)&&pvips<5&&pvips>0&&maxdoca<0.02";
-  sgcut0 += "closetrk<21"; 
-  sgcut0 += "fls3d<100&&docatrk<0.2";
-  sgcut0 += "alpha<0.3&&iso>0.6&&chi2/dof<10"; 
+  //   TCut sgcut0 = "hlt&&gmuid&&pt<70&&pt>6"; 
+  //   sgcut0 += "m1pt>4.0&&m1pt<50";
+  //   sgcut0 += "m2pt>4.0&&m2pt<20"; 
+  //   sgcut0 += "fl3d<2&&chi2/dof<10&&pvip<0.02&&!TMath::IsNaN(pvips)&&pvips<5&&pvips>0&&maxdoca<0.02";
+  //   sgcut0 += "closetrk<21"; 
+  //   sgcut0 += "fls3d<100&&docatrk<0.2";
+  //   sgcut0 += "alpha<0.3&&iso>0.6&&chi2/dof<10"; 
 
   TCut sgcut = preselection().c_str(); 
   
   //  TCut sgcut = sgcut0;  
 
-  cout << "original: " << endl;
-  cout << sgcut0 << endl;
+  //   cout << "original: " << endl;
+  //   cout << sgcut0 << endl;
 
   cout << "new: " << endl;
   cout << sgcut << endl;
@@ -1329,15 +1332,15 @@ void tmva1::createInputFile(string filename) {
     if (0 == j) {
       type = "Events0"; 
       typeCut = "TMath::Abs(evt%3)==0";
-      typeCut = "3*rndm%3==0";
+      //      typeCut = "3*rndm%3==0";
     } else if (1 == j) {
       type = "Events1";
       typeCut = "TMath::Abs(evt%3)==1";
-      typeCut = "3*rndm%3==1";
+      //      typeCut = "3*rndm%3==1";
     } else if (2 == j) {
       type = "Events2";
       typeCut = "TMath::Abs(evt%3)==2";
-      typeCut = "3*rndm%3==2";
+      //      typeCut = "3*rndm%3==2";
     }
 
     for (int i = 0; i < nchan; ++i) {
@@ -1595,14 +1598,14 @@ void tmva1::toyRuns(string ifilename, int nruns) {
   string oname; 
   int offset(100);
   int seed(0); 
-  int nsg(200000), nbg(250000);
+  int nsg(20000), nbg(25000);
   vector<int> vcolor; 
   vcolor.push_back(kBlue); 
   vcolor.push_back(kCyan); 
   vcolor.push_back(kRed); 
   vcolor.push_back(kMagenta); 
   vcolor.push_back(kBlack); 
-  if (0) {
+  if (1) {
     for (int i = 0; i < nruns; ++i) {
       seed = offset + i;
       oname = Form("/scratch/ursl/tmva-toy-%d.root", seed); 
@@ -1671,6 +1674,8 @@ void tmva1::toyRuns(string ifilename, int nruns) {
 void tmva1::createToyData(string ifilename, string ofilename, int seed, int nsg, int nbg) {
   delete gRandom; 
   gRandom = new TRandom3(seed); 
+
+  cout << "==> CREATE TOY DATA for seed = " << seed << endl;
 
   int channel = 0; 
 
@@ -1979,7 +1984,7 @@ TTree* tmva1::createTree(struct readerData &rd) {
   tree->Branch("fls3d", &rd.fls3d, "fls3d/F");
   tree->Branch("alpha", &rd.alpha, "alpha/F");
   tree->Branch("maxdoca", &rd.maxdoca, "maxdoca/F");
-  tree->Branch("pvip", &rd.pvip, "pvips/F");
+  tree->Branch("pvip", &rd.pvip, "pvip/F");
   tree->Branch("pvips", &rd.pvips, "pvips/F");
   tree->Branch("iso", &rd.iso, "iso/F");
   tree->Branch("docatrk", &rd.docatrk, "docatrk/F");
