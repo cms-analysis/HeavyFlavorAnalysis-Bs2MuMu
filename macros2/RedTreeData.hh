@@ -2,7 +2,7 @@
 #define REDTREEDATA
 
 struct RedTreeData {
-  Long_t run, evt; 
+  Long64_t run, evt; 
   int ls, tm, pr, procid, pvn, rr;
   bool json, hlt, cb;
   double bdt, bdt2, pvw8;
