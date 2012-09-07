@@ -2,7 +2,8 @@
 #define REDTREEDATA
 
 struct RedTreeData {
-  int run, evt, ls, tm, pr, procid, pvn, rr;
+  Long_t run, evt; 
+  int ls, tm, pr, procid, pvn, rr;
   bool json, hlt, cb;
   double bdt, bdt2, pvw8;
   //  npv

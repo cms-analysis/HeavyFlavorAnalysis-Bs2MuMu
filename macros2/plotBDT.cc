@@ -1204,7 +1204,7 @@ void plotBDT::ssb() {
   t->SetBranchAddress("gmuid", &gmuid);
 
   // -- compute S and B
-  double bdtCut, maxSSB(-1.), maxBDT(-1.); 
+  double bdtCut, maxSSB(-1.), maxBDT(-1.), maxSSBsimple(-1.); 
   int nEvent(0); 
   for (int ibin = 0; ibin < bdtBins; ++ibin) {
     bdtCut = bdtMin + ibin*(bdtMax-bdtMin)/bdtBins;
@@ -1238,6 +1238,9 @@ void plotBDT::ssb() {
     if (s+b >0) {
       double ssb = s/TMath::Sqrt(s+b+pbg);
       double ssbsimple = s/TMath::Sqrt(s+bsimple);
+      if (ssbsimple > maxSSBsimple) {
+	maxSSBsimple = ssbsimple; 
+      }
       if (ssb > maxSSB) {
 	maxSSB = ssb; 
 	maxBDT = bdtCut;
@@ -1258,13 +1261,14 @@ void plotBDT::ssb() {
     if (s < 1e-6) break;
   }
   fTEX << formatTex(maxSSB, Form("%s:%s:maxSSB:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+  fTEX << formatTex(maxSSBsimple, Form("%s:%s:maxSSBsimple:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
   fTEX << formatTex(maxBDT, Form("%s:%s:maxSSB:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
 
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
   
   h->Draw();
-  tl->DrawLatex(0.25, 0.75, Form("S_{max} = %4.3f", maxSSB));
+  tl->DrawLatex(0.25, 0.75, Form("S_{max} = %4.3f (%4.3f)", maxSSB, maxSSBsimple));
   tl->DrawLatex(0.25, 0.68, Form("B_{max} = %4.3f", maxBDT));
   c0->SaveAs(Form("%s/%s-ssb.pdf", fDirectory.c_str(), fBdtString.c_str())); 
 
