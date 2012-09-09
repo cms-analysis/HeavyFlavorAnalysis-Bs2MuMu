@@ -136,8 +136,11 @@ int main(int argc, char** argv) {
 
   pdf_fitData* fitdata = new pdf_fitData(false,  inputs, input_estimates, cuts_f, meth, "all", SM, bd_const, data_t, simul, ch_s);
   if (pee) fitdata->pee = true;
+  fitdata->initialize();
   fitdata->make_pdf_input();
   fitdata->make_pdf();
+  if (strcmp(rare_f.c_str(),"no")) fitdata->set_rare_normalization(rare_f, true);
+
   fitdata->make_dataset();
   fitdata->fit_pdf();
   if (print) {

@@ -18,6 +18,7 @@ static string pdf_test;
 static string tree_name = "bdt";
 static string bias_s = "no";
 static string cuts_f = "no";
+static string rare_f = "no";
 static bool print = false;
 static bool simul = false;
 static int NExp = 1;
@@ -32,7 +33,7 @@ static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
 void help() {
 
   cout << endl;
-  cout << ">>>>>>>>> options for main_pdf_choise.o:" << endl;
+  cout << ">>>>>>>>> main_pdf_choise.o: makes pdf workspace" << endl;
   cout << "-i #filename \t input for making pdf shapes (MANDATORY); if filename==new the inputs will be the new small trees" << endl;
   cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (MANDATORY)" << endl;
   cout << "-cha {0, 1} \t barrel OR endcap input (MANDATORY)" << endl;
@@ -41,8 +42,9 @@ void help() {
   cout << "-print \t save the fits to gif and pdf --> -no_legend without parameters on canvas" << endl;
   cout << "-bdt # \t bdt cut, default is " << bdt << endl;
   cout << "-pee \t per-event-error" << endl;
+  cout << "-rare #filename \t file with rare event estimations (for normalizing to B -> JpsiK)" << endl;
   cout << endl;
-  cout << ">>>>>>>>> options for main_simul_maker.o:" << endl;
+  cout << ">>>>>>>>> main_simul_maker.o: makes simul pdf workspace" << endl;
   cout << "-i #filename \t input for making pdf shapes (MANDATORY); if filename==new the inputs will be the new small trees" << endl;
   cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (MANDATORY)" << endl;
   cout << "-simul # \t number of channels (MANDATORY)" << endl;
@@ -51,8 +53,9 @@ void help() {
   cout << "-print \t save the fits to gif and pdf --> -no_legend without parameters on canvas" << endl;
   cout << "-bdt # \t bdt cut, default is " << bdt << endl;
   cout << "-pee \t per-event-error" << endl;
+  cout << "-rare #filename \t file with rare event estimations (for normalizing to B -> JpsiK)" << endl;
   cout << endl;
-  cout << ">>>>>>>>> options for main_fitData.o:" << endl;
+  cout << ">>>>>>>>> main_fitData.o: fits events with pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-i #filename \t input for fitting events (MANDATORY)" << endl;
   cout << "-t treename (default bdt)" << endl;
   cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (MANDATORY)" << endl;
@@ -67,7 +70,7 @@ void help() {
   cout << "-e #filename \t estimates file (useful for significance)" << endl;
   cout << "-pee \t per-event-error" << endl;
   cout << endl;
-  cout << ">>>>>>>>> options for main_toyMC.o:" << endl;
+  cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
   cout << "-i #filename \t workspace input" << endl;
   cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (MANDATORY)" << endl;
@@ -184,6 +187,10 @@ void parse_options(int argc, char* argv[]){
       no_legend = true;
       cout << "no legend on canvas" << endl;
     }
+    if (!strcmp(argv[i],"-rare")) {
+      rare_f = argv[i+1];
+      cout << "rare file = " << rare_f << endl;
+    }
     if (!strcmp(argv[i],"-h")) help();
   }
 }
@@ -234,8 +241,8 @@ string get_cut(int channel) {
   bdt_cut << bdt;
   cut += "bdt>";
   cut += bdt_cut.str();
-  if (channel == 0) cut += " && abs(m1eta)<1.4 && abs(m2eta)<1.4";
-  if (channel == 1) cut += " && abs(m1eta)>1.4 || abs(m2eta)>1.4";
+  //if (channel == 0) cut += " && abs(m1eta)<1.4 && abs(m2eta)<1.4";
+  //if (channel == 1) cut += " && abs(m1eta)>1.4 || abs(m2eta)>1.4";
   cout << "cut = " << cut << endl;
   return cut;
 }

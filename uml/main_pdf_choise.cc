@@ -29,6 +29,8 @@ int main(int argc, char* argv[]) {
   pdf_analysis ana1(print, meth, ch_s, "all", SM, bd_const);
   if (pee) ana1.pee = true;
   if (no_legend) ana1.no_legend = true;
+  ana1.simul_ = false;
+  ana1.set_SMratio(0.09);
 
   if (strcmp(input_name.c_str(), "new")) ana1.old_tree = true;
   ana1.initialize();
@@ -50,8 +52,9 @@ int main(int argc, char* argv[]) {
     TH1D* Bs_h = (TH1D*)input_f->Get(Form("Bs_%s_chan%s", meth.c_str(), ch_s.c_str()));
     TH1D* Bd_h = (TH1D*)input_f->Get(Form("Bd_%s_chan%s", meth.c_str(), ch_s.c_str()));
 
-    double SM_ratio = Bd_h->Integral() / Bs_h->Integral();
-    ana1.set_SMratio(SM_ratio);
+    //double SM_ratio = Bd_h->Integral() / Bs_h->Integral();
+    //ana1.set_SMratio(SM_ratio);
+    ana1.set_SMratio(0.09);
 
     TH1D* Rare_h;
     if (ch_s=="0") Rare_h = (TH1D*)input_f->Get(Form("bRare_%s", meth.c_str()));
@@ -147,46 +150,77 @@ int main(int argc, char* argv[]) {
     vector <string> decays_filename(decays_n);
     vector <string> decays_treename(decays_n);
     vector <string> decays_rdsname(decays_n);
+    vector <string> decays_MassRes_rdsname(decays_n);
 
     vector <TFile*> smalltree_f(decays_n);
     vector <TTree*> smalltree(decays_n);
     vector <RooDataSet*> rds_smalltree(decays_n);
+    vector <RooDataSet*> rds_MassRes_smalltree(decays_n);
 
     RooRealVar* m = ws->var("Mass");
     RooRealVar* eta = ws->var("eta");
-    RooRealVar* weight = new RooRealVar("weight", "weight", 0., 100000., "");
-    m->SetName("m");
+    RooRealVar* m1eta = ws->var("m1eta");
+    RooRealVar* m2eta = ws->var("m2eta");
+    RooRealVar* weight = ws->var("weight");
+    RooRealVar* MassRes = ws->var("MassRes");
+    RooCategory* channel_cat = ws->cat("channels");
     for (int i = 0; i < decays_n; i++) {
       decays_filename[i] = "input/small-" + decays[i] + ".root";
       decays_treename[i] = decays[i] + "_bdt";
       decays_rdsname[i] = decays[i] + "_rds";
+      decays_MassRes_rdsname[i] = decays[i] + "_MassRes_rds";
 
       smalltree_f[i] = new TFile(decays_filename[i].c_str(), "UPDATE");
       smalltree[i] = (TTree*)smalltree_f[i]->Get(decays_treename[i].c_str());
       TTree* reduced_tree = smalltree[i]->CopyTree(cut.c_str());
-      reduced_tree->Branch("weight", &weight_i[i], "weight/D");
-      rds_smalltree[i] = new RooDataSet(decays_rdsname[i].c_str(), decays_rdsname[i].c_str(), RooArgSet(*m, *eta, *weight), Import(*reduced_tree), WeightVar("weight"));
-      rds_smalltree[i]->changeObservableName("m", "Mass");
+      Double_t m_t, eta_t, m1eta_t, m2eta_t;
+      reduced_tree->SetBranchAddress("m",     &m_t);
+      reduced_tree->SetBranchAddress("eta",   &eta_t);
+      reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
+      reduced_tree->SetBranchAddress("m2eta", &m2eta_t);
+      //reduced_tree->Branch("weight", &weight_i[i], "weight/D");
+      RooArgList varlist(*m, *MassRes, *eta, *m1eta, *m2eta, *channel_cat, *weight);
+      rds_smalltree[i] = new RooDataSet(decays_rdsname[i].c_str(), decays_rdsname[i].c_str(), varlist, "weight");
+      rds_MassRes_smalltree[i] = new RooDataSet(decays_MassRes_rdsname[i].c_str(), decays_MassRes_rdsname[i].c_str(), RooArgList(*MassRes, *weight), "weight");
+      for (int j = 0; j<reduced_tree->GetEntries(); j++) {
+        reduced_tree->GetEntry(j);
+        m->setVal(m_t);
+        eta->setVal(eta_t);
+        m1eta->setVal(m1eta_t);
+        m2eta->setVal(m2eta_t);
+        MassRes->setVal(0.0078*eta_t*eta_t + 0.035);
+        if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) channel_cat->setIndex(0);
+        else channel_cat->setIndex(1);
+        RooArgSet varlist_tmp(*m, *MassRes, *eta, *m1eta, *m2eta, *channel_cat);
+        RooArgSet varlist_tmp_res(*MassRes);
+        rds_smalltree[i]->add(varlist_tmp, weight_i[i]);
+        rds_MassRes_smalltree[i]->add(varlist_tmp_res, weight_i[i]);
+      }
       cout << rds_smalltree[i]->GetName() << " done: " << reduced_tree->GetEntries() << " / " << smalltree[i]->GetEntries() << endl;
+
     }
-    m->SetName("Mass");
 
     rad_bs = rds_smalltree[0];
-    ana1.define_etapdf(rds_smalltree[0], "bs");
+    ana1.define_MassRes_pdf(rds_MassRes_smalltree[0], "bs");
 
     rad_bd = rds_smalltree[1];
-    ana1.define_etapdf(rds_smalltree[1], "bd");
+    ana1.define_MassRes_pdf(rds_MassRes_smalltree[1], "bd");
 
     RooDataSet* rds_signals = (RooDataSet*)rds_smalltree[0]->Clone("rds_signals");
     rds_signals->append(*rds_smalltree[1]);
     rad_signals = rds_signals;
-    ana1.define_etapdf(rds_signals, "signals");
+    RooDataSet* rds_MassRes_signals = (RooDataSet*)rds_MassRes_smalltree[0]->Clone("rds_MassRes_signals");
+    rds_MassRes_signals->append(*rds_MassRes_smalltree[1]);
+    ana1.define_MassRes_pdf(rds_MassRes_signals, "signals");
 
     RooDataSet* rds_semi = (RooDataSet*)rds_smalltree[10]->Clone("rds_semi");
     rds_semi->append(*rds_smalltree[11]);
     rds_semi->append(*rds_smalltree[12]);
     rad_semi = rds_semi;
-    ana1.define_etapdf(rds_semi, "semi");
+    RooDataSet* rds_MassRes_semi = (RooDataSet*)rds_MassRes_smalltree[10]->Clone("rds_MassRes_semi");
+    rds_MassRes_semi->append(*rds_MassRes_smalltree[11]);
+    rds_MassRes_semi->append(*rds_MassRes_smalltree[12]);
+    ana1.define_MassRes_pdf(rds_MassRes_semi, "semi");
 
     RooDataSet* rds_peak = (RooDataSet*)rds_smalltree[2]->Clone("rds_peak");
     rds_peak->append(*rds_smalltree[3]);
@@ -197,25 +231,37 @@ int main(int argc, char* argv[]) {
     rds_peak->append(*rds_smalltree[8]);
     rds_peak->append(*rds_smalltree[9]);
     rad_peak = rds_peak;
-    ana1.define_etapdf(rds_peak, "peak");
+    RooDataSet* rds_MassRes_peak = (RooDataSet*)rds_MassRes_smalltree[2]->Clone("rds_MassRes_peak");
+    rds_MassRes_peak->append(*rds_MassRes_smalltree[3]);
+    rds_MassRes_peak->append(*rds_MassRes_smalltree[4]);
+    rds_MassRes_peak->append(*rds_MassRes_smalltree[5]);
+    rds_MassRes_peak->append(*rds_MassRes_smalltree[6]);
+    rds_MassRes_peak->append(*rds_MassRes_smalltree[7]);
+    rds_MassRes_peak->append(*rds_MassRes_smalltree[8]);
+    rds_MassRes_peak->append(*rds_MassRes_smalltree[9]);
+    ana1.define_MassRes_pdf(rds_MassRes_peak, "peak");
 
     RooDataSet* rds_rare = (RooDataSet*)rds_peak->Clone("rds_rare");
     rds_rare->append(*rds_semi);
     rad_rare = rds_rare;
-    ana1.define_etapdf(rds_rare, "rare");
+    RooDataSet* rds_MassRes_rare = (RooDataSet*)rds_MassRes_peak->Clone("rds_MassRes_rare");
+    rds_MassRes_rare->append(*rds_MassRes_semi);
+    ana1.define_MassRes_pdf(rds_MassRes_rare, "rare");
 
     RooDataSet* rds_signalsrare = (RooDataSet*)rds_signals->Clone("rds_signalsrare");
     rds_signalsrare->append(*rds_rare);
     rad_signalsrare = rds_signalsrare;
-    ana1.define_etapdf(rds_rare, "signalsrare");
+    RooDataSet* rds_MassRes_signalsrare = (RooDataSet*)rds_MassRes_signals->Clone("rds_MassRes_signalsrare");
+    rds_MassRes_signalsrare->append(*rds_MassRes_rare);
+    ana1.define_MassRes_pdf(rds_MassRes_signalsrare, "signalsrare");
 
     //no uniform without estimation
 
     //    rad_uniform = rdh_uniform;
     //    rad_total = rdh_total;
   }
-  ana1.simul_ = false;
   ana1.define_pdfs();
+  if (strcmp(rare_f.c_str(),"no")) ana1.set_rare_normalization(rare_f);
   ws->Print();
   /// FITS
   /// bs
@@ -223,34 +269,35 @@ int main(int argc, char* argv[]) {
 
   /// bd
   ana1.fit_pdf("bd", rad_bd, false);
-
+//return 0;
   /// signals
   ana1.fit_pdf("signals", rad_signals, false);
 
  if (!strcmp(input_name.c_str(), "new")) {
    /// peak
-   ana1.fit_pdf("peaking", rad_peak, false);
+   ana1.fit_pdf("peak", rad_peak, false);
 
    /// semi
-   ana1.fit_pdf("nonpeaking", rad_semi, false);
+   ana1.fit_pdf("semi", rad_semi, false);
  }
 
  /// rare
  // ana1.define_rare2(rad_rare);
- ana1.fit_pdf("rare", rad_rare, false);
+ //    ws->var("eta")->setVal(2);
+ if (!strcmp(rare_f.c_str(),"no")) ana1.fit_pdf("rare", rad_rare, false);
 // ana1.define_rare3();
 // ana1.fit_pdf("expo", rad_rare, false);
 
   if (strcmp(input_name.c_str(), "new")) {
 
   /// signals + rare
-    ana1.fit_pdf("signalsrare", rad_signalsrare, false);
+  //  ana1.fit_pdf("signalsrare", rad_signalsrare, false);
 
   /// comb
     //ana1.fit_pdf("comb", rad_uniform, false);
   
   /// total
-    ana1.fit_pdf("total", rad_total, true);
+  //  ana1.fit_pdf("total", rad_total, true);
   }
 
   string output_s = "output/ws_pdf_" + meth + "_" + ch_s;

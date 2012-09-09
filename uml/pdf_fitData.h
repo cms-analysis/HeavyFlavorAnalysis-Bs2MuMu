@@ -51,8 +51,8 @@ class pdf_fitData : public pdf_analysis {
     vector < TFile*> ws_file_input;
     vector < RooWorkspace*> ws_input;
 
-    RooCategory* channel;
-    void FillRooDataSet(RooDataSet* dataset, int ch_i, string cuts_f);
+    //RooCategory* channels_cat;
+    void FillRooDataSet(RooDataSet* dataset, string cuts_f);
     void changeName(RooWorkspace *ws, int str);
     TTree* tree;
 

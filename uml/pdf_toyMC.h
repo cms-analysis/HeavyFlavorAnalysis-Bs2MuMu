@@ -54,6 +54,8 @@ private:
   vector <RooRealVar*> pull_bd;
   vector <RooRealVar*> pull_bs;
 
+  void print(string output, RooWorkspace* ws);
+
 };
 
 #endif	/* PDF_TOYMC_H */

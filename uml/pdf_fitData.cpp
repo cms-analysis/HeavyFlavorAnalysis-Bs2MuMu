@@ -35,16 +35,12 @@ void pdf_fitData::parse_estimate(){
   char buffer[1024];
   char cutName[128];
   float cut;
-  int ok;
   FILE *estimate_file = fopen(input_estimates_.c_str(), "r");
   cout << "event estimates in " << input_estimates_ << " :" << endl;
-  int counter = 0;
   while (fgets(buffer, sizeof(buffer), estimate_file)) {
     if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
-    counter++;
-    // skip comment line
     if (buffer[0] == '#') continue;
-    ok = sscanf(buffer, "%s %f", cutName, &cut);
+    sscanf(buffer, "%s %f", cutName, &cut);
     if (!parse(cutName, cut)) {
       cout << "==> Error parsing variable " << cutName << endl;
       exit(EXIT_FAILURE);
@@ -119,12 +115,16 @@ bool pdf_fitData::parse(char *cutName, float cut) {
 void pdf_fitData::fit_pdf() {
   if (verbosity > 0) cout << "making fit" << endl;
   if (simul_) {
-    RFR = simul_pdf->fitTo(*global_data, Extended(1), Save(1), Minos());
-    ws_->import(*simul_pdf, kTRUE);
+    if (!pee) RFR = ws_->pdf("pdf_ext_simul")->fitTo(*global_data, Extended(1), Save(1), Minos());
+    else RFR = ws_->pdf("pdf_ext_simul")->fitTo(*global_data, Extended(1), Save(1), Minos(), ConditionalObservables(*ws_->var("MassRes")));
+    //ws_->import(*simul_pdf, kTRUE);
   }
   else {
-    RFR = total_pdf_i[0]->fitTo(*global_data, Extended(1), Save(1), Minos());
-    ws_->import(*total_pdf_i[0], kTRUE);
+    RooAbsData* subdata = global_data->reduce(Form("channels==channels::channel_%d", channel));
+    global_data = (RooDataSet*)subdata;
+    if (!pee) RFR = ws_->pdf("pdf_ext_total")->fitTo(*global_data, Extended(1), Save(1), Minos());
+    else RFR = ws_->pdf("pdf_ext_total")->fitTo(*global_data, Extended(1), Save(1), Minos(), ConditionalObservables(*ws_->var("MassRes")));
+    ws_->import(*ws_->pdf("pdf_ext_total"), kTRUE);
   }
   if (verbosity > 0) RFR->Print();
 }
@@ -148,12 +148,18 @@ void pdf_fitData::print() {
 
   global_data->plotOn(rp, Binning(40));
 
-  total_pdf_i[0]->plotOn(rp, FillColor(kYellow), Range(range_.c_str()), LineWidth(3), VisualizeError(*RFR));
-  total_pdf_i[0]->plotOn(rp, LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
+  if (!pee) {
+    ws_->pdf("pdf_ext_total")->plotOn(rp, FillColor(kYellow), Range(range_.c_str()), LineWidth(3), VisualizeError(*RFR));
+    ws_->pdf("pdf_ext_total")->plotOn(rp, LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
+  }
+  else {
+    ws_->pdf("pdf_ext_total")->plotOn(rp, FillColor(kYellow), Range(range_.c_str()), LineWidth(3), VisualizeError(*RFR)/*, ProjWData(*ws_->data(Form("MassRes_rdh_%s", output.c_str())))*/);
+    ws_->pdf("pdf_ext_total")->plotOn(rp, LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
+  }
   global_data->plotOn(rp, Binning(40));
-  total_pdf_i[0]->paramOn(rp, Layout(0.50, 0.9, 0.9));
+  ws_->pdf("pdf_ext_total")->paramOn(rp, Layout(0.50, 0.9, 0.9));
   // components
-  RooArgSet * set = total_pdf_i[0]->getComponents();
+  RooArgSet * set = ws_->pdf("pdf_ext_total")->getComponents();
   TIterator* it = set->createIterator();
   TObject* var_Obj = 0;
   while((var_Obj = it->Next())){
@@ -161,18 +167,18 @@ void pdf_fitData::print() {
     if (name != pdf_name) {
       size_t found;
       found = name.find("pdf_bs");
-      if (found!=string::npos) total_pdf_i[0]->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kRed),          LineStyle(1), DrawOption("F"), FillColor(kRed), FillStyle(3001), LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str()));
+      if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kRed),          LineStyle(1), DrawOption("F"), FillColor(kRed), FillStyle(3001), LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str()));
       found = name.find("pdf_bd");
-      if (found!=string::npos) total_pdf_i[0]->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kViolet - 4),   LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144), LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str()));
+      if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kViolet - 4),   LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144), LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str()));
       found = name.find("pdf_comb");
-      if (found!=string::npos) total_pdf_i[0]->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str())/*, RooFit::Normalization(Ncomb, 2)*/);
+      if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str())/*, RooFit::Normalization(Ncomb, 2)*/);
       found = name.find("pdf_rare");
-      if (found!=string::npos) total_pdf_i[0]->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kGreen - 7), LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Range(range_.c_str()), NormRange(range_.c_str())/*, RooFit::Normalization(Nrare, 2)*/);
+      if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kGreen - 7), LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Range(range_.c_str()), NormRange(range_.c_str())/*, RooFit::Normalization(Nrare, 2)*/);
     }
   }
   TCanvas* c = new TCanvas("c", "c", 600, 600);
   rp->Draw();
-  string address = "fig/data_fitData_" + pdf_name + "_" + meth_ + "_" + ch_s_;
+  string address = "fig/data_fitData_" + (string)ws_->pdf("pdf_ext_total")->GetName() + "_" + meth_ + "_" + ch_s_;
   if (SM_) address += "_SM";
   if (pee)  address += "_PEE";
   c->Print( (address + ".gif").c_str());
@@ -182,51 +188,50 @@ void pdf_fitData::print() {
 }
 
 void pdf_fitData::print_each_channel() {
-
+  cout <<"printing"<< endl;
   for (int i = 0; i < channels; i++) {
 
     RooPlot* final_p = ws_->var("Mass")->frame(Bins(40), Title(Form("Candidate invariant mass for channel %d", i)));
+    global_data->plotOn(final_p, Cut(Form("channels==channels::channel_%d", i)));
+    ws_->pdf("pdf_ext_simul")->plotOn(final_p, VisualizeError(*RFR, 1), FillColor(kYellow), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data), Range(range_.c_str()), MoveToBack()) ;
+    ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data), LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
 
-    global_data->plotOn(final_p, Cut(Form("channel==channel::channel_%d", i)));
-    simul_pdf->plotOn(final_p, VisualizeError(*RFR, 1), FillColor(kYellow), Slice(*channel, Form("channel_%d", i)), ProjWData(*channel, *global_data), Range(range_.c_str()), MoveToBack()) ;
-    simul_pdf->plotOn(final_p, Slice(*channel, Form("channel_%d", i)), ProjWData(*channel, *global_data), LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
-
-    //simul_pdf->paramOn(final_p, Layout(0.30, 0.95, 0.95), Format("NEAU")/*, Parameters(*param)*/);
+    //ws_->pdf("pdf_ext_simul")->paramOn(final_p, Layout(0.30, 0.95, 0.95), Format("NEAU")/*, Parameters(*param)*/);
 
 
     // components
-    RooArgSet* set = simul_pdf->getComponents();
+    RooArgSet* set = ws_->pdf("pdf_ext_simul")->getComponents();
     TIterator* it = set->createIterator();
     TObject* var_Obj = 0;
     while((var_Obj = it->Next())){
       string name = var_Obj->GetName();
-      if (name != simul_pdf->GetName()) {
+      if (name != ws_->pdf("pdf_ext_simul")->GetName()) {
         size_t found;
-        found = name.find(Form("pdf_bs_channel_%d", i));
-        if (found != string::npos) simul_pdf->plotOn(final_p, Components(name.c_str()), LineColor(kRed),        LineStyle(1), DrawOption("F"), FillColor(kRed),        FillStyle(3001)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*channel, Form("channel_%d", i)), ProjWData(*channel, *global_data)/*, RooFit::Normalization(Nbs, 2)*/);
-        found = name.find(Form("pdf_bd_channel_%d", i));
-        if (found != string::npos) simul_pdf->plotOn(final_p, Components(name.c_str()), LineColor(kViolet - 4), LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*channel, Form("channel_%d", i)), ProjWData(*channel, *global_data)/*, RooFit::Normalization(Nbd, 2)*/);
-        found = name.find("pdf_comb");
-        if (found != string::npos) simul_pdf->plotOn(final_p, Components(name.c_str()), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Range(range_.c_str()), Slice(*channel, Form("channel_%d", i)), ProjWData(*channel, *global_data)/*, RooFit::Normalization(Ncomb, 2)*/);
-        found = name.find(Form("pdf_rare_channel_%d", i));
-        if (found != string::npos) simul_pdf->plotOn(final_p, Components(name.c_str()), LineColor(kGreen - 7),  LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Range(range_.c_str()), Slice(*channel, Form("channel_%d", i)), ProjWData(*channel, *global_data)/*, RooFit::Normalization(Nrare, 2)*/);
+        found = name.find(Form("pdf_bs_%d", i));
+        if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kRed),        LineStyle(1), DrawOption("F"), FillColor(kRed),        FillStyle(3001)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
+        found = name.find(Form("pdf_bd_%d", i));
+        if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kViolet - 4), LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
+        found = name.find(Form("pdf_comb_%d", i));
+        if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
+        found = name.find(Form("pdf_rare_%d", i));
+        if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kGreen - 7),  LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
       }
     }
-    //global_data->plotOn(final_p, Cut( Form("channel==channel::channel_%d", i)));
+    //global_data->plotOn(final_p, Cut( Form("channels==channels::channel_%d", i)));
 
     TCanvas* final_c = new TCanvas("final_c", "final_c", 600, 600);
     final_p->Draw();
 
-    RooArgSet* vars =  simul_pdf->getVariables();
-    RooRealVar* N_bs = (RooRealVar*)vars->find(Form("N_bs_channel_%d", i));
+    RooArgSet* vars =  ws_->pdf("pdf_ext_simul")->getVariables();
+    RooRealVar* N_bs = (RooRealVar*)vars->find(Form("N_bs_%d", i));
     RooRealVar* N_bd;
     if (!bd_constr_ && !SM_) {
-      N_bd = (RooRealVar*)vars->find(Form("N_bd_channel_%d", i));
+      N_bd = (RooRealVar*)vars->find(Form("N_bd_%d", i));
     }
     else if (bd_constr_) N_bd = (RooRealVar*)vars->find("Bd_over_Bs");
     else N_bd = 0;
-    RooRealVar* N_comb = (RooRealVar*)vars->find(Form("N_comb_channel_%d", i));
-    RooRealVar* N_rare = (RooRealVar*)vars->find(Form("N_rare_channel_%d", i));
+    RooRealVar* N_comb = (RooRealVar*)vars->find(Form("N_comb_%d", i));
+    RooRealVar* N_rare = (RooRealVar*)vars->find(Form("N_rare_%d", i));
     ostringstream fitresult_tex[4];
     fitresult_tex[0] << setprecision(2) << fixed << "N(B_{s}) = " << N_bs->getVal() << " ^{+" << getErrorHigh(N_bs) << "}_{" << getErrorLow(N_bs) << "}";
     if (!bd_constr_ && !SM_) fitresult_tex[1] <<setprecision(2) << fixed << "N(B_{d}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
@@ -267,103 +272,111 @@ void pdf_fitData::print_each_channel() {
   }
 }
 
-void pdf_fitData::FillRooDataSet(RooDataSet* dataset, int ch_i, string cuts_f) {
+void pdf_fitData::FillRooDataSet(RooDataSet* dataset, string cuts_f) {
   int events = 0;
   if (!strcmp(tree->GetName(), "bdt") || !strcmp(tree->GetName(), "cnc")) {
-    double m1eta, m2eta, m, eta_B;
-    tree->SetBranchAddress("m1eta", &m1eta);
-    tree->SetBranchAddress("m2eta", &m2eta);
-    tree->SetBranchAddress("m", &m);
-    tree->SetBranchAddress("eta", &eta_B);
+    double m1eta_t, m2eta_t, m_t, eta_B_t;
+    tree->SetBranchAddress("m1eta", &m1eta_t);
+    tree->SetBranchAddress("m2eta", &m2eta_t);
+    tree->SetBranchAddress("m", &m_t);
+    tree->SetBranchAddress("eta", &eta_B_t);
     for (int i = 0; i < tree->GetEntries(); i++){
       tree->GetEntry(i);
-      if (m > 4.9 && m < 5.9) {
-        Mass->setVal(m);
-        eta->setVal(eta_B);
-        if (ch_i == -1) {
-          dataset->add(RooArgSet(*Mass, *eta));
-          events++;
-        }
-        else if (ch_i == 0) {
-          if (fabs(m1eta) < 1.4 && fabs(m2eta) < 1.4) {
-            dataset->add(RooArgSet(*Mass, *eta));
-            events++;
-          }
-        }
-        else if (ch_i == 1) {
-          if (fabs(m1eta) > 1.4 || fabs(m2eta) > 1.4) {
-            dataset->add(RooArgSet(*Mass, *eta));
-            events++;
-          }
-        }
-        else {
-          cout << "wrong channel: " << ch_i << endl;
-          exit(EXIT_FAILURE);
-        }
+      if (m_t > 4.9 && m_t < 5.9) {
+        events++;
+        Mass->setVal(m_t);
+        eta->setVal(eta_B_t);
+        m1eta->setVal(m1eta_t);
+        m2eta->setVal(m2eta_t);
+        MassRes->setVal(0.0078*eta_B_t*eta_B_t + 0.035);
+        if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) channels_cat->setIndex(0);
+        else channels_cat->setIndex(1);
+        RooArgSet varlist_tmp(*Mass, *MassRes, *eta, *m1eta, *m2eta, *channels_cat);
+        dataset->add(varlist_tmp);
+//        if (ch_i == -1) {
+//          dataset->add(RooArgSet(*Mass, *eta));
+//          events++;
+//        }
+//        else if (ch_i == 0) {
+//          if (fabs(m1eta) < 1.4 && fabs(m2eta) < 1.4) {
+//            dataset->add(RooArgSet(*Mass, *eta));
+//            events++;
+//          }
+//        }
+//        else if (ch_i == 1) {
+//          if (fabs(m1eta) > 1.4 || fabs(m2eta) > 1.4) {
+//            dataset->add(RooArgSet(*Mass, *eta));
+//            events++;
+//          }
+//        }
+//        else {
+//          cout << "wrong channel: " << ch_i << endl;
+//          exit(EXIT_FAILURE);
+//        }
       }
     }
   }
-  if (!strcmp(tree->GetName(), "T")) {
-    float mlp_0_cut = -1, mlp_1_cut = -1;
-    if (cuts_f.compare("no")) {
-      FILE *cut_file = fopen(cuts_f.c_str(), "r");
-      char buffer[1024];
-      char cutName[1024];
-      float cut;
-      while (fgets(buffer, sizeof(buffer), cut_file)) {
-        if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
-        if (buffer[0] == '#') continue;
-        sscanf(buffer, "%s %f", cutName, &cut);
-        if (!strcmp(cutName, "NN_0")) mlp_0_cut = cut;
-        if (!strcmp(cutName, "NN_1")) mlp_1_cut = cut;
-      }
-      cout << "NN_0 = " <<  mlp_0_cut << "  ";
-      cout << "NN_1 = " <<  mlp_1_cut << endl;
-    }
-    else {
-      mlp_0_cut = 1.0036;
-      mlp_1_cut = 1.0041;
-    }
-    if (mlp_0_cut == -1 || mlp_1_cut == -1) { cout << "wrong parsing cut file" << endl; exit(EXIT_FAILURE);}
+//  if (!strcmp(tree->GetName(), "T")) {
+//    float mlp_0_cut = -1, mlp_1_cut = -1;
+//    if (cuts_f.compare("no")) {
+//      FILE *cut_file = fopen(cuts_f.c_str(), "r");
+//      char buffer[1024];
+//      char cutName[1024];
+//      float cut;
+//      while (fgets(buffer, sizeof(buffer), cut_file)) {
+//        if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
+//        if (buffer[0] == '#') continue;
+//        sscanf(buffer, "%s %f", cutName, &cut);
+//        if (!strcmp(cutName, "NN_0")) mlp_0_cut = cut;
+//        if (!strcmp(cutName, "NN_1")) mlp_1_cut = cut;
+//      }
+//      cout << "NN_0 = " <<  mlp_0_cut << "  ";
+//      cout << "NN_1 = " <<  mlp_1_cut << endl;
+//    }
+//    else {
+//      mlp_0_cut = 1.0036;
+//      mlp_1_cut = 1.0041;
+//    }
+//    if (mlp_0_cut == -1 || mlp_1_cut == -1) { cout << "wrong parsing cut file" << endl; exit(EXIT_FAILURE);}
 
-    Float_t mass, eta, mlp_0, mlp_1;
-    tree->SetBranchAddress("mass", &mass);
-    tree->SetBranchAddress("eta", &eta);
-    tree->SetBranchAddress("mlp_0", &mlp_0);
-    tree->SetBranchAddress("mlp_1", &mlp_1);
-    for (int i = 0; i < tree->GetEntries(); i++){
-      tree->GetEntry(i);
-      if (mass > 4.9 && mass < 5.9) {
-        Mass->setVal(mass);
-        if (ch_i == -1) {
-          if (mlp_0 > mlp_0_cut && mlp_0 < 2.0) {
-            dataset->add(*Mass);
-            events++;
-          }
-        }
-        else if (ch_i == 0) {
-          if (fabs(eta) < 1.4) {
-            if (mlp_0 > mlp_0_cut && mlp_0 < 2.0) {
-              dataset->add(*Mass);
-              events++;
-            }
-          }
-        }
-        else if (ch_i == 1) {
-          if (fabs(eta) > 1.4) {
-            if (mlp_1 > mlp_1_cut && mlp_1 < 2.0) {
-              dataset->add(*Mass);
-              events++;
-            }
-          }
-        }
-        else {
-          cout << "wrong channel: " << ch_i << endl;
-          exit(EXIT_FAILURE);
-        }
-      }
-    }
-  }
+//    Float_t mass, eta, mlp_0, mlp_1;
+//    tree->SetBranchAddress("mass", &mass);
+//    tree->SetBranchAddress("eta", &eta);
+//    tree->SetBranchAddress("mlp_0", &mlp_0);
+//    tree->SetBranchAddress("mlp_1", &mlp_1);
+//    for (int i = 0; i < tree->GetEntries(); i++){
+//      tree->GetEntry(i);
+//      if (mass > 4.9 && mass < 5.9) {
+//        Mass->setVal(mass);
+//        if (ch_i == -1) {
+//          if (mlp_0 > mlp_0_cut && mlp_0 < 2.0) {
+//            dataset->add(*Mass);
+//            events++;
+//          }
+//        }
+//        else if (ch_i == 0) {
+//          if (fabs(eta) < 1.4) {
+//            if (mlp_0 > mlp_0_cut && mlp_0 < 2.0) {
+//              dataset->add(*Mass);
+//              events++;
+//            }
+//          }
+//        }
+//        else if (ch_i == 1) {
+//          if (fabs(eta) > 1.4) {
+//            if (mlp_1 > mlp_1_cut && mlp_1 < 2.0) {
+//              dataset->add(*Mass);
+//              events++;
+//            }
+//          }
+//        }
+//        else {
+//          cout << "wrong channel: " << ch_i << endl;
+//          exit(EXIT_FAILURE);
+//        }
+//      }
+//    }
+//  }
   cout << "total events = " << events << endl;
 }
 
@@ -372,45 +385,16 @@ void pdf_fitData::define_channels() {
   for (int i = 0; i < channels; i++) {
     ostringstream channelName;
     channelName << "channel_" << i;
-    channel->defineType(channelName.str().c_str(), i);
+    channels_cat->defineType(channelName.str().c_str(), i);
   }
 }
 
 void pdf_fitData::make_dataset() {
-  cout << "making datasets" << endl;
-  if (simul_) {
-    map<string, RooDataSet* > data_map;
-    for (int i = 0; i < channels; i++) {
-      ostringstream channelName;
-      channelName << "channel_" << i;
-      RooDataSet* data_i;
-      if (!random) {
-        data_i = new RooDataSet( Form("data_%i", i), Form("data %i", i), RooArgSet(*ws_->var("Mass"), *ws_->var("eta")));
-        FillRooDataSet(data_i, i, input_cuts_);
-      }
-      else {
-        int events = estimate_bs[i] + estimate_bd[i] + estimate_rare[i] + estimate_comb[i];
-        data_i = total_pdf_i[i]->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("eta")), events, Extended(1));
-      }
-      data_map.insert(make_pair(channelName.str(), data_i));
-      //channel->defineType(channelName.str().c_str(), i);
-    }
-    channel = (RooCategory*) ws_input[0]->obj("channel");
-    global_data = new RooDataSet("global_data", "data for all channels", RooArgSet(*ws_->var("Mass"), *ws_->var("eta")), Index(*channel), Import(data_map));
-  }
-  else {
-    int i = atoi(ch_s_.c_str());
-    RooDataSet* data_i;
-    if (!random) {
-      data_i = new RooDataSet("data", "data", RooArgSet(*ws_->var("Mass"), *ws_->var("eta")));
-      FillRooDataSet(data_i, i, input_cuts_);
-    }
-    else {
-      int events = estimate_bs[i] + estimate_bd[i] + estimate_rare[i] + estimate_comb[i];
-      data_i = total_pdf_i[i]->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("eta")), events);
-    }
-    global_data = data_i;
-  }
+  cout << "making dataset" << endl;
+
+  RooArgList varlist(*Mass, *MassRes, *eta, *m1eta, *m2eta, *channels_cat);
+  global_data = new RooDataSet("global_data", "global_data", varlist);
+  FillRooDataSet(global_data, input_cuts_);
   ws_->import(*global_data, kTRUE);
 }
 
@@ -475,11 +459,16 @@ void pdf_fitData::make_pdf_input() {
 }
 
 void pdf_fitData::make_pdf() {
-  total_pdf_i.resize(channels);
+  total_pdf_i.resize(1);
   if (simul_) {
     cout << "making simultaneous pdf" << endl;
-    simul_pdf = (RooSimultaneous*)ws_input[0]->obj("pdf_ext_simul");
-    ws_->import(*simul_pdf);
+    //simul_pdf = (RooSimultaneous*)ws_input[0]->pdf("pdf_ext_simul");
+    //ws_->import(*simul_pdf);
+//    for (int i = 0; i < channels; i++) {
+//      ws_->import(*ws_input[0]->pdf(name("pdf_ext_total", i)));
+//    }
+//    define_simul();
+    ws_ = (RooWorkspace*)ws_input[0]->Clone("ws");
   }
   else {
     if (random) {
@@ -490,12 +479,13 @@ void pdf_fitData::make_pdf() {
       ws_input[0]->var("N_comb")->setVal(estimate_comb[i]);
       if (bd_constr_) ws_input[0]->var("Bd_over_Bs")->setVal(estimate_bd[i] / estimate_bs[i]);
     }
-    total_pdf_i[0] = (RooAbsPdf*)ws_input[0]->pdf("pdf_ext_total");
-    ws_->import(*total_pdf_i[0]);
+    //ws_->pdf("pdf_ext_total") = (RooAbsPdf*)ws_input[0]->pdf("pdf_ext_total");
+    //ws_->import(*ws_->pdf("pdf_ext_total"));
+    ws_ = (RooWorkspace*)ws_input[0]->Clone("ws");
   }
-  ws_->import(*ws_input[0]->var("eta"));
-  Mass = ws_->var("Mass");
-  eta = ws_->var("eta");
+  //ws_->import(*ws_input[0]->var("eta"));
+  //Mass = ws_->var("Mass");
+  //eta = ws_->var("eta");
   ws_->Print();
 }
 
@@ -506,6 +496,7 @@ void pdf_fitData::save() {
   else output_ws << "_" << ch_s_;
   if (SM_)             output_ws << "_SM";
   else if (bd_constr_) output_ws << "_BdConst";
+  if (pee) output_ws << "_PEE";
   output_ws << ".root";
 //  ws_->Print();
   ws_->SaveAs(output_ws.str().c_str());
@@ -525,7 +516,7 @@ void pdf_fitData::sig_hand() {
   RooRealVar *arg_var = 0;
   RooArgSet *all_vars;
   if (simul_) all_vars = simul_pdf->getVariables();
-  else all_vars = total_pdf_i[0]->getVariables();
+  else all_vars = ws_->pdf("pdf_ext_total")->getVariables();
   vars_it = all_vars->createIterator();
   size_t found;
   while ( (arg_var = (RooRealVar*)vars_it->Next())) {
@@ -564,13 +555,13 @@ void pdf_fitData::sig_plhc() {
     model.SetPdf(*ws_->pdf("pdf_ext_simul"));
     for (int i = 0; i < channels; i++) {
       ostringstream name_bs;
-      name_bs << "N_bs_channel_" << i;
+      name_bs << "N_bs_" << i;
       poi.add(*ws_->var(name_bs.str().c_str()));
       poi.setRealValue(name_bs.str().c_str(), 0);
     }
   }
   else {
-    //ws1->import(*total_pdf_i[0]);
+    //ws1->import(*ws_->pdf("pdf_ext_total"));
     //ws_->pdf("pdf_ext_total")->Print();
     model.SetPdf(*ws_->pdf("pdf_ext_total"));
     poi.add(*ws_->var("N_bs"));
@@ -592,13 +583,13 @@ void pdf_fitData::sig_plhc() {
 void pdf_fitData::sig_plhts() {
   using namespace RooStats;
 
-  if (simul_) ws_->defineSet("obs", "Mass,channel");
+  if (simul_) ws_->defineSet("obs", "Mass,channels");
   else ws_->defineSet("obs", "Mass");
   ostringstream name_poi;
   if (simul_) {
     for (int i = 0; i < channels; i++) {
       if (i != 0) name_poi << ",";
-      name_poi << "N_bs_channel_" << i;
+      name_poi << "N_bs_" << i;
     }
   }
   else name_poi << "N_bs";
@@ -613,7 +604,7 @@ void pdf_fitData::sig_plhts() {
   if (simul_) {
     for (int i = 0; i < channels; i++) {
       ostringstream name;
-      name << "N_bs_channel_" << i;
+      name << "N_bs_" << i;
       ws_->var(name.str().c_str())->setVal(0.0);
     }
   }
@@ -632,7 +623,7 @@ void pdf_fitData::sig_plhts() {
   if (simul_) {
     for (int i = 0; i < channels; i++) {
       ostringstream name;
-      name << "N_bs_channel_" << i;
+      name << "N_bs_" << i;
       ws_->var(name.str().c_str())->setVal(estimate_bs[i]);
     }
   }
@@ -658,7 +649,7 @@ void pdf_fitData::sig_plhts() {
 //  pl_ts.EnableDetailedOutput(true, true);
   pl_ts.SetOneSidedDiscovery(true);
 
-  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 2000);
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 100);
   FrequentistCalculator frequCalc(*global_data, *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
   RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();

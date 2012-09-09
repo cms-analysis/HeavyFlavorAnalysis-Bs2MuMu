@@ -33,6 +33,8 @@
 #include "RooChebychev.h"
 #include "RooPolynomial.h"
 #include "RooProdPdf.h"
+#include "RooExponential.h"
+#include "RooSimultaneous.h"
 
 using namespace std;
 using namespace RooFit;
@@ -47,7 +49,7 @@ public:
   RooAbsData* get_rad() {return rds_;}
   
   void initialize();
-  RooHistPdf* define_etapdf(RooDataSet* rds, string name);
+  RooHistPdf* define_MassRes_pdf(RooDataSet* rds, string name, int i = 0);
 
   void define_pdfs();
   void define_bs(int i);
@@ -65,22 +67,30 @@ public:
 
   void set_SMratio(double ratio) {ratio_ = ratio;}
   
-  string define_pdf_sum(string name, int i);
+  string define_pdf_sum(string name, int i = 0);
   void define_total_fractional(int i); // final pdf with fractional components, and also extended
   void define_total_extended(int i); // final pdf with all extended components
 
+  void define_simul();
+
   void fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error = true, bool hesse = true);
-  void print(string output = "", RooWorkspace *ws = 0);
+  void print(RooAbsData *data, string output = "");
   void set_pdf_constant(string pdf);
+  void set_rare_normalization(string input, bool extended = false); //set peak fraction parameter to Bu2JpsiK
   
   string pdf_name;
 
-  //int channel;
+  int channel;
   bool SM_;
   bool bd_constr_;
   bool simul_;
   RooRealVar* Mass;
+  RooRealVar* MassRes;
   RooRealVar* eta;
+  RooRealVar* m1eta;
+  RooRealVar* m2eta;
+  RooRealVar* weight;
+  RooCategory* channels_cat;
 
   int channels;
   string range_;
@@ -114,7 +124,9 @@ protected:
   vector <double> estimate_channel;
 
   RooDataHist getRandom_rdh();
-  
+  const char* name(string name, int i);
+private:
+
 };
 
 #endif // PDF_ANALYSIS_H
