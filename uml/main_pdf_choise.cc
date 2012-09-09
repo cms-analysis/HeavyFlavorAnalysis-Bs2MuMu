@@ -173,12 +173,13 @@ int main(int argc, char* argv[]) {
       smalltree_f[i] = new TFile(decays_filename[i].c_str(), "UPDATE");
       smalltree[i] = (TTree*)smalltree_f[i]->Get(decays_treename[i].c_str());
       TTree* reduced_tree = smalltree[i]->CopyTree(cut.c_str());
+      TObjArray MassRes_toa = Create_MassRes(reduced_tree);
+      TH1D* MassRes_h= (TH1D*)MassRes_toa[2];
       Double_t m_t, eta_t, m1eta_t, m2eta_t;
       reduced_tree->SetBranchAddress("m",     &m_t);
       reduced_tree->SetBranchAddress("eta",   &eta_t);
       reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
       reduced_tree->SetBranchAddress("m2eta", &m2eta_t);
-      //reduced_tree->Branch("weight", &weight_i[i], "weight/D");
       RooArgList varlist(*m, *MassRes, *eta, *m1eta, *m2eta, *channel_cat, *weight);
       rds_smalltree[i] = new RooDataSet(decays_rdsname[i].c_str(), decays_rdsname[i].c_str(), varlist, "weight");
       rds_MassRes_smalltree[i] = new RooDataSet(decays_MassRes_rdsname[i].c_str(), decays_MassRes_rdsname[i].c_str(), RooArgList(*MassRes, *weight), "weight");
@@ -188,7 +189,11 @@ int main(int argc, char* argv[]) {
         eta->setVal(eta_t);
         m1eta->setVal(m1eta_t);
         m2eta->setVal(m2eta_t);
-        MassRes->setVal(0.0078*eta_t*eta_t + 0.035);
+        if (i == 0 || i == 1) {
+          double res = MassRes_h->GetBinContent(MassRes_h->FindBin(eta_t));
+          MassRes->setVal(res);
+        }
+        else MassRes->setVal(0.0078*eta_t*eta_t + 0.035);
         if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) channel_cat->setIndex(0);
         else channel_cat->setIndex(1);
         RooArgSet varlist_tmp(*m, *MassRes, *eta, *m1eta, *m2eta, *channel_cat);
@@ -197,7 +202,6 @@ int main(int argc, char* argv[]) {
         rds_MassRes_smalltree[i]->add(varlist_tmp_res, weight_i[i]);
       }
       cout << rds_smalltree[i]->GetName() << " done: " << reduced_tree->GetEntries() << " / " << smalltree[i]->GetEntries() << endl;
-
     }
 
     rad_bs = rds_smalltree[0];

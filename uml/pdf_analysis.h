@@ -35,6 +35,7 @@
 #include "RooProdPdf.h"
 #include "RooExponential.h"
 #include "RooSimultaneous.h"
+#include "RooProduct.h"
 
 using namespace std;
 using namespace RooFit;

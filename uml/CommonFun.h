@@ -6,6 +6,8 @@
 #include <cstring>
 #include <sstream>
 
+#include "root_funcs.h"
+
 using namespace std;
 
 /// options

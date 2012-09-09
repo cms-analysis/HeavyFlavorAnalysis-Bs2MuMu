@@ -136,7 +136,8 @@ void pdf_analysis::define_bs(int i = 0) {
   }
   else {
     RooRealVar PESigma_bs(name("PESigma_bs", i), "PESigma_bs", 1., 0.1, 10.);
-    RooFormulaVar SigmaRes_bs(name("SigmaRes_bs", i), "@0*@1", RooArgList(*ws_->var("MassRes"), PESigma_bs));
+//    RooFormulaVar SigmaRes_bs(name("SigmaRes_bs", i), "@0*@1", RooArgList(*ws_->var("MassRes"), PESigma_bs));
+    RooProduct SigmaRes_bs(name("SigmaRes_bs", i), name("SigmaRes_bs", i), RooArgList(*ws_->var("MassRes"), PESigma_bs));
     ws_->import(SigmaRes_bs);
 
     RooCBShape CB_bs(name("CB_bs", i), "CB_bs", *ws_->var("Mass"), Mean_bs, *ws_->function(name("SigmaRes_bs", i)), Alpha_bs, Enne_bs);
