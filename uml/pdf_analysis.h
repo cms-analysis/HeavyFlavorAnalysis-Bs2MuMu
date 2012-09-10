@@ -36,6 +36,7 @@
 #include "RooExponential.h"
 #include "RooSimultaneous.h"
 #include "RooProduct.h"
+#include "RooGaussModel.h"
 
 using namespace std;
 using namespace RooFit;
@@ -50,7 +51,7 @@ public:
   RooAbsData* get_rad() {return rds_;}
   
   void initialize();
-  RooHistPdf* define_MassRes_pdf(RooDataSet* rds, string name, int i = 0);
+  RooHistPdf* define_MassRes_pdf(RooDataSet *rds, string name, int i = 0);
 
   void define_pdfs();
   void define_bs(int i);

@@ -4,7 +4,7 @@
 #include "TCanvas.h"
 
 TObjArray Create_MassRes(TTree* tree) {
-  TH2D* MassRes_hh = new TH2D("MassRes_hh", "MassRes_hh", 100, 4.9, 5.9, 30, -2.4, 2.4);
+  TH2D* MassRes_hh = new TH2D("MassRes_hh", "MassRes_hh", 100, 4.9, 5.9, 50, -2.4, 2.4);
   Double_t m_t, eta_t;
   tree->SetBranchAddress("m",     &m_t);
   tree->SetBranchAddress("eta",   &eta_t);
@@ -14,8 +14,8 @@ TObjArray Create_MassRes(TTree* tree) {
   }
   TObjArray aSlices;
   MassRes_hh->FitSlicesX(0, 0, -1, 0, "Q", &aSlices);
-//  TCanvas c("c", "c", 600, 600);
-//  aSlices[2]->Draw();
-//  c.Print("fig/slices.gif");
+  TCanvas c("c", "c", 600, 600);
+  aSlices[2]->Draw();
+//  c.Print("fig/slices.gif");exit(1);
   return aSlices;
 }

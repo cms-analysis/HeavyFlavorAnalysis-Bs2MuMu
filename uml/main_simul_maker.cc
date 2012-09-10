@@ -223,14 +223,14 @@ int main(int argc, char* argv[]) {
         reduced_tree->SetBranchAddress("m2eta", &m2eta_t);
         RooArgList varlist(*m, *MassRes, *eta, *m1eta, *m2eta, *channel_cat, *weight);
         rds_smalltree[i] = new RooDataSet(decays_rdsname[i].c_str(), decays_rdsname[i].c_str(), varlist, "weight");
-        rds_MassRes_smalltree[i] = new RooDataSet(decays_MassRes_rdsname[i].c_str(), decays_MassRes_rdsname[i].c_str(), RooArgList(*MassRes, *weight), "weight");
+        rds_MassRes_smalltree[i] = new RooDataSet(decays_MassRes_rdsname[i].c_str(), decays_MassRes_rdsname[i].c_str(), RooArgList(*MassRes, *channel_cat, *weight), "weight");
         for (int j = 0; j<reduced_tree->GetEntries(); j++) {
           reduced_tree->GetEntry(j);
           m->setVal(m_t);
           eta->setVal(eta_t);
           m1eta->setVal(m1eta_t);
           m2eta->setVal(m2eta_t);
-          if (i == 0 || i == 1) {
+          if ( (i == 0 || i == 1) && false) {
             double res = MassRes_h->GetBinContent(MassRes_h->FindBin(eta_t));
             MassRes->setVal(res);
           }
@@ -238,7 +238,7 @@ int main(int argc, char* argv[]) {
           if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) channel_cat->setIndex(0);
           else channel_cat->setIndex(1);
           RooArgSet varlist_tmp(*m, *MassRes, *eta, *m1eta, *m2eta, *channel_cat);
-          RooArgSet varlist_tmp_res(*MassRes);
+          RooArgSet varlist_tmp_res(*MassRes, *channel_cat);
           rds_smalltree[i]->add(varlist_tmp, weight_i[i]);
           rds_MassRes_smalltree[i]->add(varlist_tmp_res, weight_i[i]);
         }
@@ -343,6 +343,7 @@ int main(int argc, char* argv[]) {
   string output_s = "output/ws_simul_" + meth;
   if (SM) output_s += "_SM";
   if (bd_const) output_s += "_BdConst";
+  if (pee) output_s += "_PEE";
   output_s += ".root";
   ws->SaveAs(output_s.c_str());
   ws->pdf("pdf_ext_simul")->graphVizTree(Form("sim_%d_pdf.dot", inputs));

@@ -113,8 +113,11 @@ bool pdf_fitData::parse(char *cutName, float cut) {
 }
 
 void pdf_fitData::fit_pdf() {
-  if (verbosity > 0) cout << "making fit" << endl;
+  cout << "making fit" << endl;
   if (simul_) {
+    cout << "fitting " << global_data->GetName() << " in range " << range_ << " with pdf_ext_simul:" << endl;
+    ws_->pdf("pdf_ext_simul")->Print();
+
     if (!pee) RFR = ws_->pdf("pdf_ext_simul")->fitTo(*global_data, Extended(1), Save(1), Minos());
     else RFR = ws_->pdf("pdf_ext_simul")->fitTo(*global_data, Extended(1), Save(1), Minos(), ConditionalObservables(*ws_->var("MassRes")));
     //ws_->import(*simul_pdf, kTRUE);
@@ -122,41 +125,32 @@ void pdf_fitData::fit_pdf() {
   else {
     RooAbsData* subdata = global_data->reduce(Form("channels==channels::channel_%d", channel));
     global_data = (RooDataSet*)subdata;
+    cout << "fitting " << global_data->GetName() << " in range " << range_ << " with pdf_ext_total:" << endl;
+    ws_->pdf("pdf_ext_total")->Print();
+
     if (!pee) RFR = ws_->pdf("pdf_ext_total")->fitTo(*global_data, Extended(1), Save(1), Minos());
     else RFR = ws_->pdf("pdf_ext_total")->fitTo(*global_data, Extended(1), Save(1), Minos(), ConditionalObservables(*ws_->var("MassRes")));
     ws_->import(*ws_->pdf("pdf_ext_total"), kTRUE);
   }
-  if (verbosity > 0) RFR->Print();
-}
-
-void pdf_fitData::fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error, bool hesse) {
-  rds_ = data;
-  pdf_name = "pdf_" + pdf;
-  if (extended) pdf_name = "pdf_ext_" + pdf;
-  string rdh_name = rds_->GetName();
-  cout << "fitting " << rdh_name << " in range " << range_ << " with " << pdf_name << ":" << endl;
-  ws_->pdf( pdf_name.c_str())->Print();
-
-  RFR = ws_->pdf( pdf_name.c_str())->fitTo(*rds_, Extended(extended), Save(1) ,SumW2Error(sumw2error)/*, Range(range_.c_str()), SumCoefRange(range_.c_str())*/, Hesse(hesse));
-  if (print_) print();
   RFR->Print();
 }
 
 void pdf_fitData::print() {
   cout << "printing" << endl;
   RooPlot *rp = ws_->var("Mass")->frame();
-
+  //RooAbsData* subdata_res = global_data->reduce(Form("channels==channels::channel_%d", channel));
   global_data->plotOn(rp, Binning(40));
 
   if (!pee) {
-    ws_->pdf("pdf_ext_total")->plotOn(rp, FillColor(kYellow), Range(range_.c_str()), LineWidth(3), VisualizeError(*RFR));
+    ws_->pdf("pdf_ext_total")->plotOn(rp, FillColor(kYellow), Range(range_.c_str()), LineWidth(3), VisualizeError(*RFR), MoveToBack());
     ws_->pdf("pdf_ext_total")->plotOn(rp, LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
   }
   else {
-    ws_->pdf("pdf_ext_total")->plotOn(rp, FillColor(kYellow), Range(range_.c_str()), LineWidth(3), VisualizeError(*RFR)/*, ProjWData(*ws_->data(Form("MassRes_rdh_%s", output.c_str())))*/);
-    ws_->pdf("pdf_ext_total")->plotOn(rp, LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
+//    RooAbsData* subdata_res = ws_->pdf()
+//    ws_->pdf("pdf_ext_total")->plotOn(rp, FillColor(kYellow), Range(range_.c_str()), LineWidth(3), VisualizeError(*RFR), MoveToBack(), ProjWData(RooArgSet(*ws_->var("MassRes")), *global_data, kFALSE));
+    ws_->pdf("pdf_ext_total")->plotOn(rp, LineColor(kBlue), Range(range_.c_str()), LineWidth(3), ProjWData(RooArgSet(*ws_->var("MassRes")), *global_data, kFALSE));
+
   }
-  global_data->plotOn(rp, Binning(40));
   ws_->pdf("pdf_ext_total")->paramOn(rp, Layout(0.50, 0.9, 0.9));
   // components
   RooArgSet * set = ws_->pdf("pdf_ext_total")->getComponents();
@@ -165,15 +159,28 @@ void pdf_fitData::print() {
   while((var_Obj = it->Next())){
     string name = var_Obj->GetName();
     if (name != pdf_name) {
-      size_t found;
-      found = name.find("pdf_bs");
-      if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kRed),          LineStyle(1), DrawOption("F"), FillColor(kRed), FillStyle(3001), LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str()));
-      found = name.find("pdf_bd");
-      if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kViolet - 4),   LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144), LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str()));
-      found = name.find("pdf_comb");
-      if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str())/*, RooFit::Normalization(Ncomb, 2)*/);
-      found = name.find("pdf_rare");
-      if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kGreen - 7), LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Range(range_.c_str()), NormRange(range_.c_str())/*, RooFit::Normalization(Nrare, 2)*/);
+      if (!pee) {
+        size_t found;
+        found = name.find("pdf_bs");
+        if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kRed),          LineStyle(1), DrawOption("F"), FillColor(kRed), FillStyle(3001), LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str()));
+        found = name.find("pdf_bd");
+        if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kViolet - 4),   LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144), LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str()));
+        found = name.find("pdf_comb");
+        if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str())/*, RooFit::Normalization(Ncomb, 2)*/);
+        found = name.find("pdf_rare");
+        if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kGreen - 7), LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Range(range_.c_str()), NormRange(range_.c_str())/*, RooFit::Normalization(Nrare, 2)*/);
+      }
+      else {
+        size_t found;
+        found = name.find("pdf_bs");
+        if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *global_data, kFALSE), LineColor(kRed),          LineStyle(1), DrawOption("F"), FillColor(kRed), FillStyle(3001), LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str()));
+        found = name.find("pdf_bd");
+        if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *global_data, kFALSE), LineColor(kViolet - 4),   LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144), LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str()));
+        found = name.find("pdf_comb");
+        if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *global_data, kFALSE), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str())/*, RooFit::Normalization(Ncomb, 2)*/);
+        found = name.find("pdf_rare");
+        if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *global_data, kFALSE), LineColor(kGreen - 7), LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Range(range_.c_str()), NormRange(range_.c_str())/*, RooFit::Normalization(Nrare, 2)*/);
+      }
     }
   }
   TCanvas* c = new TCanvas("c", "c", 600, 600);
@@ -193,9 +200,13 @@ void pdf_fitData::print_each_channel() {
 
     RooPlot* final_p = ws_->var("Mass")->frame(Bins(40), Title(Form("Candidate invariant mass for channel %d", i)));
     global_data->plotOn(final_p, Cut(Form("channels==channels::channel_%d", i)));
-    ws_->pdf("pdf_ext_simul")->plotOn(final_p, VisualizeError(*RFR, 1), FillColor(kYellow), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data), Range(range_.c_str()), MoveToBack()) ;
-    ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data), LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
-
+    if (!pee) {
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, VisualizeError(*RFR, 1), FillColor(kYellow), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data), Range(range_.c_str()), MoveToBack()) ;
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data), LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
+    }
+    else {
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data), ProjWData(RooArgSet(*ws_->var("MassRes")), *global_data, kFALSE), LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
+    }
     //ws_->pdf("pdf_ext_simul")->paramOn(final_p, Layout(0.30, 0.95, 0.95), Format("NEAU")/*, Parameters(*param)*/);
 
 
@@ -391,7 +402,6 @@ void pdf_fitData::define_channels() {
 
 void pdf_fitData::make_dataset() {
   cout << "making dataset" << endl;
-
   RooArgList varlist(*Mass, *MassRes, *eta, *m1eta, *m2eta, *channels_cat);
   global_data = new RooDataSet("global_data", "global_data", varlist);
   FillRooDataSet(global_data, input_cuts_);
@@ -459,7 +469,7 @@ void pdf_fitData::make_pdf_input() {
 }
 
 void pdf_fitData::make_pdf() {
-  total_pdf_i.resize(1);
+  //total_pdf_i.resize(1);
   if (simul_) {
     cout << "making simultaneous pdf" << endl;
     //simul_pdf = (RooSimultaneous*)ws_input[0]->pdf("pdf_ext_simul");
@@ -468,7 +478,7 @@ void pdf_fitData::make_pdf() {
 //      ws_->import(*ws_input[0]->pdf(name("pdf_ext_total", i)));
 //    }
 //    define_simul();
-    ws_ = (RooWorkspace*)ws_input[0]->Clone("ws");
+    ws_ = ws_input[0];
   }
   else {
     if (random) {
@@ -481,12 +491,10 @@ void pdf_fitData::make_pdf() {
     }
     //ws_->pdf("pdf_ext_total") = (RooAbsPdf*)ws_input[0]->pdf("pdf_ext_total");
     //ws_->import(*ws_->pdf("pdf_ext_total"));
-    ws_ = (RooWorkspace*)ws_input[0]->Clone("ws");
+//    ws_ = (RooWorkspace*)ws_input[0]->Clone("ws_data");
+    ws_ = ws_input[0];
+
   }
-  //ws_->import(*ws_input[0]->var("eta"));
-  //Mass = ws_->var("Mass");
-  //eta = ws_->var("eta");
-  ws_->Print();
 }
 
 void pdf_fitData::save() {
@@ -498,7 +506,6 @@ void pdf_fitData::save() {
   else if (bd_constr_) output_ws << "_BdConst";
   if (pee) output_ws << "_PEE";
   output_ws << ".root";
-//  ws_->Print();
   ws_->SaveAs(output_ws.str().c_str());
 
 }

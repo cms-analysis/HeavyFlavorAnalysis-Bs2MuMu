@@ -35,7 +35,6 @@ class pdf_fitData : public pdf_analysis {
     RooDataSet* global_data;
     RooSimultaneous* simul_pdf;
 
-    void fit_pdf(string pdf, RooAbsData* data, bool extended, bool sumw2error = true, bool hesse = true);
     void fit_pdf();
     void significance(int meth);
     void save();
@@ -51,12 +50,10 @@ class pdf_fitData : public pdf_analysis {
     vector < TFile*> ws_file_input;
     vector < RooWorkspace*> ws_input;
 
-    //RooCategory* channels_cat;
     void FillRooDataSet(RooDataSet* dataset, string cuts_f);
     void changeName(RooWorkspace *ws, int str);
     TTree* tree;
 
-    vector <RooAbsPdf*> total_pdf_i;
 
     void sig_hand();
     void sig_plhc();

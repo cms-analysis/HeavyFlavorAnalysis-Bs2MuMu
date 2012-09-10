@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
 
   pdf_toyMC toy1(print, inputs, input_estimates, cuts_f, meth, "all", SM, bd_const, 0, bias_s, simul, ch_s);
   toy1.initialize();
+  if (pee) toy1.pee = true;
   TFile* input_f = new TFile(input_name.c_str());
   RooWorkspace* ws = (RooWorkspace*)input_f->Get("ws");
   toy1.set_ws(ws);

@@ -47,7 +47,7 @@ void pdf_analysis::initialize () {
   }
   ws_->import(*channels_cat);
 
-  MassRes = new RooRealVar("MassRes", "mass resolution", 0.01, .1, "GeV/c^{2}");
+  MassRes = new RooRealVar("MassRes", "mass resolution", 0.03, 0.12, "GeV/c^{2}");
   ws_->import(*MassRes);
 }
 
@@ -94,7 +94,8 @@ void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool su
     string rdh_name = subdata->GetName();
     cout << "fitting " << rdh_name << " in range " << range_ << " with " << pdf_name << ":" << endl;
     ws_->pdf( pdf_name.c_str())->Print();
-    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, ConditionalObservables(*ws_->var("MassRes")), Extended(extended), SumW2Error(sumw2error), Range(range_.c_str())/*, SumCoefRange(range_.c_str())*/, NumCPU(2), Hesse(hesse), Save());
+    cout << "WARNING: range option does not work with pee" << endl;
+    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, ConditionalObservables(*ws_->var("MassRes")), Extended(extended), SumW2Error(sumw2error)/*, Range(range_.c_str())*//*, SumCoefRange(range_.c_str())*/, NumCPU(2), Hesse(hesse), Save());
     if (print_) print(subdata, pdf);
   }
 
@@ -107,7 +108,7 @@ void pdf_analysis::set_pdf_constant(string name) {
   TObject* var_Obj = 0;
   while((var_Obj = it->Next())){
     string name = var_Obj->GetName();
-    if (!(name == "Mass") && !(name == "Bd_over_Bs")) {
+    if (!(name == "Mass") && !(name == "Bd_over_Bs") && !(name == "MassRes")) {
       size_t found;
       found = name.find("N");
       if (found == string::npos) ws_->var(var_Obj->GetName())->setConstant(1);
@@ -136,20 +137,13 @@ void pdf_analysis::define_bs(int i = 0) {
   }
   else {
     RooRealVar PESigma_bs(name("PESigma_bs", i), "PESigma_bs", 1., 0.1, 10.);
-//    RooFormulaVar SigmaRes_bs(name("SigmaRes_bs", i), "@0*@1", RooArgList(*ws_->var("MassRes"), PESigma_bs));
-    RooProduct SigmaRes_bs(name("SigmaRes_bs", i), name("SigmaRes_bs", i), RooArgList(*ws_->var("MassRes"), PESigma_bs));
+    RooFormulaVar SigmaRes_bs(name("SigmaRes_bs", i), "@0*@1", RooArgList(*ws_->var("MassRes"), PESigma_bs));
     ws_->import(SigmaRes_bs);
-
     RooCBShape CB_bs(name("CB_bs", i), "CB_bs", *ws_->var("Mass"), Mean_bs, *ws_->function(name("SigmaRes_bs", i)), Alpha_bs, Enne_bs);
 
-    if (!simul_) {
-      RooProdPdf pdf_bs (name("pdf_bs",i), "pdf_bs", *ws_->pdf("MassRes_pdf_bs"), Conditional(CB_bs, *ws_->var("Mass")));
-      ws_->import(pdf_bs);
-    }
-    else {
-      RooProdPdf pdf_bs (name("pdf_bs",i), "pdf_bs", *ws_->pdf(name("MassRes_pdf_bs",i)), Conditional(CB_bs, *ws_->var("Mass")));
-      ws_->import(pdf_bs);
-    }
+//    RooProdPdf pdf_bs (name("pdf_bs",i), "pdf_bs", *ws_->pdf(name("MassRes_pdf_bs",i)), Conditional(CB_bs, *ws_->var("Mass")));
+    RooProdPdf pdf_bs (name("pdf_bs",i), "pdf_bs", *ws_->var("MassRes"), Conditional(CB_bs, *ws_->var("Mass")));
+    ws_->import(pdf_bs);
   }
 }
 
@@ -173,17 +167,12 @@ void pdf_analysis::define_bd(int i = 0) {
     RooRealVar PESigma_bd(name("PESigma_bd", i), "PESigma_bd", 1., 0.1, 10.);
     RooFormulaVar SigmaRes_bd(name("SigmaRes_bd", i), "@0*@1", RooArgList(*ws_->function("MassRes"), PESigma_bd));
     ws_->import(SigmaRes_bd);
-
     RooCBShape CB_bd(name("CB_bd", i), "CB_bd", *ws_->var("Mass"), Mean_bd, *ws_->function(name("SigmaRes_bd", i)), Alpha_bd, Enne_bd);
 
-    if (!simul_) {
-      RooProdPdf pdf_bd (name("pdf_bd",i), "pdf_bd", *ws_->pdf("MassRes_pdf_bd"), Conditional(CB_bd, *ws_->var("Mass")));
-      ws_->import(pdf_bd);
-    }
-    else {
-      RooProdPdf pdf_bd (name("pdf_bd",i), "pdf_bd", *ws_->pdf(name("MassRes_pdf_bd",i)), Conditional(CB_bd, *ws_->var("Mass")));
-      ws_->import(pdf_bd);
-    }
+//    RooProdPdf pdf_bd (name("pdf_bd",i), "pdf_bd", *ws_->pdf(name("MassRes_pdf_bd",i)), Conditional(CB_bd, *ws_->var("Mass")));
+    RooProdPdf pdf_bd (name("pdf_bd",i), "pdf_bd", *ws_->var("MassRes"), Conditional(CB_bd, *ws_->var("Mass")));
+    ws_->import(pdf_bd);
+
   }
 
   if (SM_) {
@@ -230,14 +219,9 @@ void pdf_analysis::define_peaking(int i = 0) {
     }
     else {
       RooAddPdf mass_peak(name("mass_peak", i), "mass_peak", RooArgList(Gau_peak, CB_peak),  CoeffGauss_peak);
-      if (!simul_) {
-        RooProdPdf* pdf_peak = new RooProdPdf(name("pdf_peak", i), "pdf_peak", *ws_->pdf("MassRes_pdf_peak"), Conditional(mass_peak, *ws_->var("Mass")));
-        ws_->import(*pdf_peak);
-      }
-      else {
-        RooProdPdf pdf_peak (name("pdf_peak",i), "pdf_peak", *ws_->pdf(name("MassRes_pdf_peak",i)), Conditional(mass_peak, *ws_->var("Mass")));
-        ws_->import(pdf_peak);
-      }
+      RooProdPdf pdf_peak (name("pdf_peak",i), "pdf_peak", *ws_->pdf("MassRes"), Conditional(mass_peak, *ws_->var("Mass")));
+      ws_->import(pdf_peak);
+
     }
   }
 }
@@ -270,14 +254,8 @@ void pdf_analysis::define_nonpeaking(int i = 0) {
     }
     else {
       RooProdPdf mass_semi(name("mass_semi", i), "pdf_semi", expo, poly);
-      if (!simul_) {
-        RooProdPdf pdf_semi(name("pdf_semi", i), "pdf_semi", *ws_->pdf("MassRes_pdf_semi"), Conditional(mass_semi, *ws_->var("Mass")));
-        ws_->import(pdf_semi);
-      }
-      else {
-        RooProdPdf pdf_semi (name("pdf_semi",i), "pdf_semi", *ws_->pdf(name("MassRes_pdf_semi",i)), Conditional(mass_semi, *ws_->var("Mass")));
-        ws_->import(pdf_semi);
-      }
+      RooProdPdf pdf_semi (name("pdf_semi",i), "pdf_semi", *ws_->pdf("MassRes"), Conditional(mass_semi, *ws_->var("Mass")));
+      ws_->import(pdf_semi);
     }
   }
 }
@@ -293,14 +271,9 @@ void pdf_analysis::define_comb(int i = 0) {
   }
   else {
     RooUniform mass_comb(name("mass_comb", i), "N_comb", *ws_->var("Mass"));
-    if (!simul_) {
-      RooProdPdf pdf_comb(name("pdf_comb", i), "pdf_comb", *ws_->pdf("MassRes_pdf_comb"), Conditional(mass_comb, *ws_->var("Mass")));
-      ws_->import(pdf_comb);
-    }
-    else {
-      RooProdPdf pdf_comb (name("pdf_comb",i), "pdf_comb", *ws_->pdf(name("MassRes_pdf_comb",i)), Conditional(mass_comb, *ws_->var("Mass")));
-      ws_->import(pdf_comb);
-    }
+    RooProdPdf pdf_comb (name("pdf_comb",i), "pdf_comb", *ws_->pdf("MassRes"), Conditional(mass_comb, *ws_->var("Mass")));
+    ws_->import(pdf_comb);
+
   }
 }
 
@@ -443,15 +416,22 @@ string pdf_analysis::define_pdf_sum(string name, int i) {
 
 void pdf_analysis::print(RooAbsData* data, string output) {
   int colors[11] = {632, 400, 616, 432, 800, 416, 820, 840, 860, 880, 900};
+
+  RooAbsData* subdata_res = ws_->data(Form("MassRes_rdh_%s", output.c_str()))->reduce(Form("channels==channels::channel_%d", channel));
   RooPlot *rp = ws_->var("Mass")->frame();
   data->plotOn(rp, Binning(20));
   if (!pee) {
     ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue), Range(range_.c_str())/*, ProjectionRange("eta_all"), Normalization((rds_->sumEntries(), RooAbsReal::NumEvent))*/);
   }
   else {
+    if (!simul_) {
+      ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue)/*, Range(range_.c_str()), Normalization(data->sumEntries(), RooAbsReal::NumEvent)*/, ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE)/*, ProjectionRange(range_.c_str())*/);
+    }
+    else ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE)/*, Range(range_.c_str()), Normalization(data->sumEntries(), RooAbsReal::NumEvent)*//*, ProjWData(*ws_->data(Form("MassRes_rdh_%s_%d", output.c_str(), channel)))*//*, ProjectionRange(range_.c_str())*/);
+
     TH1* mass_eta_h;
     /*if (simul_) mass_eta_h = ws_->pdf(pdf_name.c_str())->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var(Form("eta_channel_%d", channel)), Binning(50))) ;
-    else*/ mass_eta_h = ws_->pdf(pdf_name.c_str())->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var("MassRes"), Binning(50))) ;
+    else*/ mass_eta_h = ws_->pdf(pdf_name.c_str())->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var("MassRes"), Binning(30))) ;
     mass_eta_h->SetLineColor(kBlue) ;
     mass_eta_h->GetXaxis()->SetTitleOffset(2.) ;
     mass_eta_h->GetYaxis()->SetTitleOffset(2.) ;
@@ -470,8 +450,8 @@ void pdf_analysis::print(RooAbsData* data, string output) {
     *ws_->data(Form("MassRes_rdh_%s", output.c_str()))->plotOn(rp_res);
     rp_res->Draw();
     string address;
-    if (simul_) address = "fig/" + pdf_name + "_MassEta_" + meth_ + "_simul" + output;
-    else address = "fig/" + pdf_name + "_MassEta_" + meth_ + "_" + ch_s_ + output;
+    if (simul_) address = "fig/" + pdf_name + "_MassEta_" + meth_ + "_simul";
+    else address = "fig/" + pdf_name + "_MassEta_" + meth_ + "_" + ch_s_;
     if (SM_) address += "_SM";
     if (bd_constr_) address += "_BdConst";
     cetad->Print( (address + ".gif").c_str());
@@ -480,12 +460,7 @@ void pdf_analysis::print(RooAbsData* data, string output) {
     delete frame;
     delete mass_eta_h;
     delete rp_res;
-
-    if (!simul_) ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue), Range(range_.c_str()), Normalization(data->sumEntries(), RooAbsReal::NumEvent), ProjWData(*ws_->data(Form("MassRes_rdh_%s", output.c_str())))/*, ProjectionRange(range_.c_str())*/);
-    else ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue), Range(range_.c_str()), Normalization(data->sumEntries(), RooAbsReal::NumEvent), ProjWData(*ws_->data(Form("MassRes_rdh_%s_%d", output.c_str(), channel)))/*, ProjectionRange(range_.c_str())*/);
   }
-
-
   if(!no_legend) ws_->pdf(pdf_name.c_str())->paramOn(rp, Layout(0.50, 0.9, 0.9));
   
   //components
@@ -493,14 +468,27 @@ void pdf_analysis::print(RooAbsData* data, string output) {
   TIterator* it = set->createIterator();
   TObject* var_Obj = 0;
   int i = 0;
-  while((var_Obj = it->Next()) && !pee){
+  while((var_Obj = it->Next())){
     string name = var_Obj->GetName();
     if (name != pdf_name) {
       if (i > 11) i = 0;
       size_t found1 = pdf_name.find("total");
-      if (found1 == string::npos) ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
+      cout << name << endl;
+      if (found1 == string::npos) {
+        if (!pee) {
+          ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
+        }
+        else {
+          ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
+        }
+      }
       else {
-        if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_rare" || name=="pdf_comb") ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
+        if (!pee) {
+          if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_rare" || name=="pdf_comb") ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
+        }
+        else {
+          if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_rare" || name=="pdf_comb") ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
+        }
       }
       i++;
     }
@@ -510,7 +498,7 @@ void pdf_analysis::print(RooAbsData* data, string output) {
   rp->Draw();
   string address;
   if (simul_) address = "fig/" + pdf_name + "_" + meth_ + "_simul" + output;
-  else address = "fig/" + pdf_name + "_" + meth_ + "_" + ch_s_ + output;
+  else address = "fig/" + pdf_name + "_" + meth_ + "_" + ch_s_;
   if (SM_) address += "_SM";
   if (bd_constr_) address += "_BdConst";
   if (pee) address += "_PEE";
@@ -572,15 +560,26 @@ double pdf_analysis::getErrorLow(RooRealVar *var) {
 }
 
 RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name, int i) {
+  //RooDataSet* subdata_res = (RooDataSet*)rds->reduce(Form("channels==channels::channel_%d", i));
   ostringstream name_rdh;
   name_rdh << "MassRes_rdh_" << name;
   if (simul_) name_rdh << "_" << i;
   RooDataHist *MassRes_rdh = rds->binnedClone(name_rdh.str().c_str());
+//  RooDataHist *MassRes_rdh = new RooDataHist(name_rdh.str().c_str(), name_rdh.str().c_str(), *ws_->var("MassRes"), rds);
+//  MassRes_rdh->SetName(name_rdh.str().c_str());
   ostringstream name_pdf;
   name_pdf << "MassRes_pdf_" << name;
   if (simul_) name_pdf << "_" << i;
-  RooHistPdf * MassRes_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), *ws_->var("MassRes"), *MassRes_rdh);
+  RooHistPdf * MassRes_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), RooArgList(*ws_->var("MassRes"), *ws_->cat("channels")), *MassRes_rdh);
   ws_->import(*MassRes_rhpdf);
+
+//  RooPlot* bo1 = ws_->var("MassRes")->frame();
+//  MassRes_rhpdf->plotOn(bo1);
+//  TCanvas* bo2 = new TCanvas("bo2", "bo2", 600, 600);
+//  bo1->Draw();
+//  bo2->Print("fig/bo2.gif");
+//  exit(2);
+
   return MassRes_rhpdf;
 }
 

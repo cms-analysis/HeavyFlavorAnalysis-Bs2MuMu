@@ -71,10 +71,18 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
     RooDataSet* data_comb;
     if (channels == 1) {
       if (pdf_toy_ == "total") {
-        data_bs   = ws_temp->pdf("pdf_bs")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_bs[0]), Extended(1));
-        data_bd   = ws_temp->pdf("pdf_bd")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_bd[0]), Extended(1));
-        data_rare = ws_temp->pdf("pdf_rare")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_rare[0]), Extended(1));
-        data_comb = ws_temp->pdf("pdf_comb")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_comb[0]), Extended(1));
+        if (!pee) {
+          data_bs   = ws_temp->pdf("pdf_bs")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_bs[0]), Extended(1));
+          data_bd   = ws_temp->pdf("pdf_bd")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_bd[0]), Extended(1));
+          data_rare = ws_temp->pdf("pdf_rare")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_rare[0]), Extended(1));
+          data_comb = ws_temp->pdf("pdf_comb")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_comb[0]), Extended(1));
+        }
+        else {
+          data_bs   = ws_temp->pdf("pdf_bs")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_bs[0]), Extended(1)); cout << "81" << endl;
+          data_bd   = ws_temp->pdf("pdf_bd")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_bd[0]), Extended(1));
+          data_rare = ws_temp->pdf("pdf_rare")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_rare[0]), Extended(1));
+          data_comb = ws_temp->pdf("pdf_comb")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_comb[0]), Extended(1));
+        }
         data->append(*data_bs);
         data->append(*data_bd);
         data->append(*data_rare);
@@ -285,7 +293,9 @@ RooFitResult* pdf_toyMC::fit_pdf (string pdf, RooAbsData* data, int printlevel, 
       }
     }
   }
-  RooFitResult* result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, Extended(true), SumW2Error(0), Range(range_.c_str()), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE));
+  RooFitResult* result;
+  if (!pee) result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, Extended(true), SumW2Error(0), Range(range_.c_str()), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE));
+  else result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, ConditionalObservables(*ws->var("MassRes")), Extended(true), SumW2Error(0), Range(range_.c_str()), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE));
   return result;
 }
 
