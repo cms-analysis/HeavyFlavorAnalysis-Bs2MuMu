@@ -522,13 +522,18 @@ void pdf_fitData::sig_hand() {
   TIterator* vars_it;
   RooRealVar *arg_var = 0;
   RooArgSet *all_vars;
-  if (simul_) all_vars = simul_pdf->getVariables();
+  if (simul_) all_vars = ws_->pdf("pdf_ext_simul")->getVariables();
   else all_vars = ws_->pdf("pdf_ext_total")->getVariables();
   vars_it = all_vars->createIterator();
   size_t found;
   while ( (arg_var = (RooRealVar*)vars_it->Next())) {
     string name(arg_var->GetName());
     found = name.find("N_bs");
+    if (found!=string::npos) {
+      arg_var->setVal(0.0);
+      arg_var->setConstant(1);
+    }
+    found = name.find("N_bd");
     if (found!=string::npos) {
       arg_var->setVal(0.0);
       arg_var->setConstant(1);
@@ -561,15 +566,15 @@ void pdf_fitData::sig_plhc() {
     //ws1->import(*simul_pdf);
     model.SetPdf(*ws_->pdf("pdf_ext_simul"));
     for (int i = 0; i < channels; i++) {
-      ostringstream name_bs;
-      name_bs << "N_bs_" << i;
-      poi.add(*ws_->var(name_bs.str().c_str()));
-      poi.setRealValue(name_bs.str().c_str(), 0);
+      poi.add(*ws_->var(name("N_bs", i)));
+      poi.setRealValue(name("N_bs", i), 0);
+      if (!bd_constr_ && !SM_) {
+        poi.add(*ws_->var(name("N_bd", i)));
+        poi.setRealValue(name("N_bd", i), 0);
+      }
     }
   }
   else {
-    //ws1->import(*ws_->pdf("pdf_ext_total"));
-    //ws_->pdf("pdf_ext_total")->Print();
     model.SetPdf(*ws_->pdf("pdf_ext_total"));
     poi.add(*ws_->var("N_bs"));
     poi.setRealValue("N_bs", 0);
@@ -597,6 +602,9 @@ void pdf_fitData::sig_plhts() {
     for (int i = 0; i < channels; i++) {
       if (i != 0) name_poi << ",";
       name_poi << "N_bs_" << i;
+      if (!bd_constr_ && !SM_) {
+        name_poi << ",N_bd_" << i;
+      }
     }
   }
   else name_poi << "N_bs";
@@ -610,9 +618,12 @@ void pdf_fitData::sig_plhts() {
   H0->SetObservables(*ws_->set("obs"));
   if (simul_) {
     for (int i = 0; i < channels; i++) {
-      ostringstream name;
-      name << "N_bs_" << i;
-      ws_->var(name.str().c_str())->setVal(0.0);
+      ostringstream name_oss;
+      name_oss << "N_bs_" << i;
+      ws_->var(name_oss.str().c_str())->setVal(0.0);
+      if (!bd_constr_ && !SM_) {
+        ws_->var(name("N_bd", i))->setVal(0.0);
+      }
     }
   }
   else ws_->var("N_bs")->setVal(0.0);
@@ -629,9 +640,12 @@ void pdf_fitData::sig_plhts() {
   parse_estimate();
   if (simul_) {
     for (int i = 0; i < channels; i++) {
-      ostringstream name;
-      name << "N_bs_" << i;
-      ws_->var(name.str().c_str())->setVal(estimate_bs[i]);
+      ostringstream name_oss;
+      name_oss << "N_bs_" << i;
+      ws_->var(name_oss.str().c_str())->setVal(estimate_bs[i]);
+      if (!bd_constr_ && !SM_) {
+        ws_->var(name("N_bd", i))->setVal(estimate_bd[i]);
+      }
     }
   }
   else {

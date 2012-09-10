@@ -417,7 +417,8 @@ string pdf_analysis::define_pdf_sum(string name, int i) {
 void pdf_analysis::print(RooAbsData* data, string output) {
   int colors[11] = {632, 400, 616, 432, 800, 416, 820, 840, 860, 880, 900};
 
-  RooAbsData* subdata_res = ws_->data(Form("MassRes_rdh_%s", output.c_str()))->reduce(Form("channels==channels::channel_%d", channel));
+  RooAbsData* subdata_res;
+  if (pee) subdata_res = ws_->data(Form("MassRes_rdh_%s", output.c_str()))->reduce(Form("channels==channels::channel_%d", channel));
   RooPlot *rp = ws_->var("Mass")->frame();
   data->plotOn(rp, Binning(20));
   if (!pee) {
