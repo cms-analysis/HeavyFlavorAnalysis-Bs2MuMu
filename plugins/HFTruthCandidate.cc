@@ -336,7 +336,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
       aSeq.doFit(&theTree2);
 
       // -- special case for the normalization sample
-      if (68 == fType) {
+      if (68 == fType || 66 == fType) {
 	HFDecayTree theTree3(3000000 + fType, true, MBPLUS, false, -1.0, true);
 
 	HFDecayTreeIterator iterator = theTree3.addDecayTree(300443, false, MJPSI, false);
