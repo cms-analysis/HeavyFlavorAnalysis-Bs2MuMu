@@ -355,6 +355,9 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	  if (321 == TMath::Abs(ID)) {
 	    theTree3.addTrack(IDX, 321);
 	  }
+	  if (211 == TMath::Abs(ID)) {
+	    theTree3.addTrack(IDX, 321); // assign the kaon mass!
+	  }
 	}
 	theTree3.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 
