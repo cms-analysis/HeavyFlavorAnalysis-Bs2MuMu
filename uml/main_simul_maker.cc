@@ -164,8 +164,8 @@ int main(int argc, char* argv[]) {
   }
   else { //new small trees way
 
-    string decays[] = {"SgMc", "BdMc", "bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgLb2KP", "bgLb2PiP", "bgBd2PiMuNu", "bgBs2KMuNu", "bgLb2PMuNu"};
-    double weight_i[] = { 1,      1,      1./27.6,   1./1.1,     1./1.6,      1./1.0,    1./2.5,     1./2.5,      1./1.3,    1./2.2,     1./1.0,        1./1.1,       1./1.1};
+    string decays[] = {"SgMc", "BdMc", "bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgLb2KP", "bgLb2PiP", "bgBd2PiMuNu", "bgBs2KMuNu", "bgLb2PMuNu", "SgData"};
+    double weight_i[] = { 1,      1,      1./27.6,   1./1.1,     1./1.6,      1./1.0,    1./2.5,     1./2.5,      1./1.3,    1./2.2,     1./1.0,        1./1.1,       1./1.1,    1};
     // misid:
     double pion_misid    = 0.0015;
     double kaons_misid   = 0.0017;
@@ -191,14 +191,13 @@ int main(int argc, char* argv[]) {
       vector <string> decays_filename(decays_n);
       vector <string> decays_treename(decays_n);
       vector <string> decays_rdsname(decays_n);
-      vector <string> decays_MassRes_rdsname(decays_n);
 
       vector <TFile*> smalltree_f(decays_n);
       vector <TTree*> smalltree(decays_n);
       vector <RooDataSet*> rds_smalltree(decays_n);
-      vector <RooDataSet*> rds_MassRes_smalltree(decays_n);
 
       RooRealVar* m = ws->var("Mass");
+      RooRealVar* bdt = ws->var("bdt");
       RooRealVar* eta = ws->var("eta");
       RooRealVar* m1eta = ws->var("m1eta");
       RooRealVar* m2eta = ws->var("m2eta");
@@ -209,27 +208,27 @@ int main(int argc, char* argv[]) {
         decays_filename[i] = "input/small-" + decays[i] + ".root";
         decays_treename[i] = decays[i] + "_bdt";
         decays_rdsname[i] = decays[i] + "_rds";
-        decays_MassRes_rdsname[i] = decays[i] + "_MassRes_rds";
 
         smalltree_f[i] = new TFile(decays_filename[i].c_str(), "UPDATE");
         smalltree[i] = (TTree*)smalltree_f[i]->Get(decays_treename[i].c_str());
         TTree* reduced_tree = smalltree[i]->CopyTree(cut.c_str());
         TObjArray MassRes_toa = Create_MassRes(reduced_tree);
         TH1D* MassRes_h= (TH1D*)MassRes_toa[2];
-        Double_t m_t, eta_t, m1eta_t, m2eta_t;
+        Double_t m_t, eta_t, m1eta_t, m2eta_t, bdt_t;
         reduced_tree->SetBranchAddress("m",     &m_t);
+        reduced_tree->SetBranchAddress("bdt",   &bdt_t);
         reduced_tree->SetBranchAddress("eta",   &eta_t);
         reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
         reduced_tree->SetBranchAddress("m2eta", &m2eta_t);
-        RooArgList varlist(*m, *MassRes, *eta, *m1eta, *m2eta, *channel_cat, *weight);
+        RooArgList varlist(*m, *MassRes, *eta, *m1eta, *m2eta, *bdt, *channel_cat, *weight);
         rds_smalltree[i] = new RooDataSet(decays_rdsname[i].c_str(), decays_rdsname[i].c_str(), varlist, "weight");
-        rds_MassRes_smalltree[i] = new RooDataSet(decays_MassRes_rdsname[i].c_str(), decays_MassRes_rdsname[i].c_str(), RooArgList(*MassRes, *channel_cat, *weight), "weight");
         for (int j = 0; j<reduced_tree->GetEntries(); j++) {
           reduced_tree->GetEntry(j);
           m->setVal(m_t);
           eta->setVal(eta_t);
           m1eta->setVal(m1eta_t);
           m2eta->setVal(m2eta_t);
+          bdt->setVal(bdt_t);
           if ( (i == 0 || i == 1) && false) {
             double res = MassRes_h->GetBinContent(MassRes_h->FindBin(eta_t));
             MassRes->setVal(res);
@@ -237,35 +236,29 @@ int main(int argc, char* argv[]) {
           else MassRes->setVal(0.0078*eta_t*eta_t + 0.035);
           if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) channel_cat->setIndex(0);
           else channel_cat->setIndex(1);
-          RooArgSet varlist_tmp(*m, *MassRes, *eta, *m1eta, *m2eta, *channel_cat);
-          RooArgSet varlist_tmp_res(*MassRes, *channel_cat);
+          RooArgSet varlist_tmp(*m, *MassRes, *eta, *m1eta, *m2eta, *bdt, *channel_cat);
           rds_smalltree[i]->add(varlist_tmp, weight_i[i]);
-          rds_MassRes_smalltree[i]->add(varlist_tmp_res, weight_i[i]);
         }
         cout << rds_smalltree[i]->GetName() << " done: " << reduced_tree->GetEntries() << " / " << smalltree[i]->GetEntries() << endl;
       }
 
+      ana1.channel = j;
       rad_bs[j] = rds_smalltree[0];
-      eta_rhp_bs[j] = ana1.define_MassRes_pdf(rds_MassRes_smalltree[0], "bs", j);
+      ana1.define_MassRes_pdf(rds_smalltree[0], "bs");
 
       rad_bd[j] = rds_smalltree[1];
-      eta_rhp_bd[j] = ana1.define_MassRes_pdf(rds_MassRes_smalltree[1], "bd", j);
+      ana1.define_MassRes_pdf(rds_smalltree[1], "bd");
 
       RooDataSet* rds_signals = (RooDataSet*)rds_smalltree[0]->Clone("rds_signals");
       rds_signals->append(*rds_smalltree[1]);
       rad_signals[j] = rds_signals;
-      RooDataSet* rds_MassRessignals = (RooDataSet*)rds_MassRes_smalltree[0]->Clone("rds_MassRessignals");
-      rds_MassRessignals->append(*rds_MassRes_smalltree[1]);
-      eta_rhp_signals[j] = ana1.define_MassRes_pdf(rds_MassRessignals, "signals", j);
+      ana1.define_MassRes_pdf(rds_signals, "signals");
 
       RooDataSet* rds_semi = (RooDataSet*)rds_smalltree[10]->Clone("rds_semi");
       rds_semi->append(*rds_smalltree[11]);
       rds_semi->append(*rds_smalltree[12]);
       rad_semi[j] = rds_semi;
-      RooDataSet* rds_MassRessemi = (RooDataSet*)rds_MassRes_smalltree[10]->Clone("rds_MassRessemi");
-      rds_MassRessemi->append(*rds_MassRes_smalltree[11]);
-      rds_MassRessemi->append(*rds_MassRes_smalltree[12]);
-      eta_rhp_semi[j] = ana1.define_MassRes_pdf(rds_MassRessemi, "semi", j);
+      ana1.define_MassRes_pdf(rds_semi, "semi");
 
       RooDataSet* rds_peak = (RooDataSet*)rds_smalltree[2]->Clone("rds_peak");
       rds_peak->append(*rds_smalltree[3]);
@@ -276,34 +269,19 @@ int main(int argc, char* argv[]) {
       rds_peak->append(*rds_smalltree[8]);
       rds_peak->append(*rds_smalltree[9]);
       rad_peak[j] = rds_peak;
-      RooDataSet* rds_MassRespeak = (RooDataSet*)rds_MassRes_smalltree[2]->Clone("rds_MassRespeak");
-      rds_MassRespeak->append(*rds_MassRes_smalltree[3]);
-      rds_MassRespeak->append(*rds_MassRes_smalltree[4]);
-      rds_MassRespeak->append(*rds_MassRes_smalltree[5]);
-      rds_MassRespeak->append(*rds_MassRes_smalltree[6]);
-      rds_MassRespeak->append(*rds_MassRes_smalltree[7]);
-      rds_MassRespeak->append(*rds_MassRes_smalltree[8]);
-      rds_MassRespeak->append(*rds_MassRes_smalltree[9]);
-      eta_rhp_peak[j] = ana1.define_MassRes_pdf(rds_MassRespeak, "peak", j);
+      ana1.define_MassRes_pdf(rds_peak, "peak");
 
       RooDataSet* rds_rare = (RooDataSet*)rds_peak->Clone("rds_rare");
       rds_rare->append(*rds_semi);
       rad_rare[j] = rds_rare;
-      RooDataSet* rds_MassResrare = (RooDataSet*)rds_MassRespeak->Clone("rds_MassResrare");
-      rds_MassResrare->append(*rds_MassRessemi);
-      eta_rhp_rare[j] = ana1.define_MassRes_pdf(rds_MassResrare, "rare", j);
+      ana1.define_MassRes_pdf(rds_rare, "rare");
 
       RooDataSet* rds_signalsrare = (RooDataSet*)rds_signals->Clone("rds_signalsrare");
       rds_signalsrare->append(*rds_rare);
       rad_signalsrare[j] = rds_signalsrare;
-      RooDataSet* rds_MassRessignalsrare = (RooDataSet*)rds_MassRessignals->Clone("rds_MassRessignalsrare");
-      rds_MassRessignalsrare->append(*rds_MassResrare);
-      eta_rhp_signalsrare[j] = ana1.define_MassRes_pdf(rds_MassRessignalsrare, "signalsrare", j);
+      ana1.define_MassRes_pdf(rds_signalsrare, "signalsrare");
 
-      //no uniform without estimation
-
-      //    rad_uniform = rdh_uniform;
-      //    rad_total = rdh_total;
+      ana1.define_MassRes_pdf(rds_smalltree[13], "comb");
     }
   }
   ana1.define_pdfs();

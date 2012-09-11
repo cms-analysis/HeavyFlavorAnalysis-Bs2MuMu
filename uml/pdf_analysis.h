@@ -37,6 +37,7 @@
 #include "RooSimultaneous.h"
 #include "RooProduct.h"
 #include "RooGaussModel.h"
+#include "RooFFTConvPdf.h"
 
 using namespace std;
 using namespace RooFit;
@@ -51,7 +52,7 @@ public:
   RooAbsData* get_rad() {return rds_;}
   
   void initialize();
-  RooHistPdf* define_MassRes_pdf(RooDataSet *rds, string name, int i = 0);
+  RooHistPdf* define_MassRes_pdf(RooDataSet *rds, string name);
 
   void define_pdfs();
   void define_bs(int i);
@@ -88,6 +89,7 @@ public:
   bool simul_;
   RooRealVar* Mass;
   RooRealVar* MassRes;
+  RooRealVar* bdt;
   RooRealVar* eta;
   RooRealVar* m1eta;
   RooRealVar* m2eta;
@@ -108,6 +110,8 @@ public:
   bool old_tree;
   bool pee;
   bool no_legend;
+
+  void gen_and_fit(string pdfname);
 
 protected:
   bool print_;

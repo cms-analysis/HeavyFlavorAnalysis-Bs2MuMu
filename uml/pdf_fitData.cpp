@@ -205,7 +205,7 @@ void pdf_fitData::print_each_channel() {
       ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data), LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
     }
     else {
-      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data), ProjWData(RooArgSet(*ws_->var("MassRes")), *global_data, kFALSE), LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(RooArgSet(*ws_->cat("channels"), *ws_->var("MassRes")), *global_data, kFALSE), LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
     }
     //ws_->pdf("pdf_ext_simul")->paramOn(final_p, Layout(0.30, 0.95, 0.95), Format("NEAU")/*, Parameters(*param)*/);
 
@@ -217,15 +217,28 @@ void pdf_fitData::print_each_channel() {
     while((var_Obj = it->Next())){
       string name = var_Obj->GetName();
       if (name != ws_->pdf("pdf_ext_simul")->GetName()) {
-        size_t found;
-        found = name.find(Form("pdf_bs_%d", i));
-        if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kRed),        LineStyle(1), DrawOption("F"), FillColor(kRed),        FillStyle(3001)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
-        found = name.find(Form("pdf_bd_%d", i));
-        if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kViolet - 4), LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
-        found = name.find(Form("pdf_comb_%d", i));
-        if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
-        found = name.find(Form("pdf_rare_%d", i));
-        if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kGreen - 7),  LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
+        if (!pee) {
+          size_t found;
+          found = name.find(Form("pdf_bs_%d", i));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kRed),        LineStyle(1), DrawOption("F"), FillColor(kRed),        FillStyle(3001)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
+          found = name.find(Form("pdf_bd_%d", i));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kViolet - 4), LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
+          found = name.find(Form("pdf_comb_%d", i));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
+          found = name.find(Form("pdf_rare_%d", i));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kGreen - 7),  LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
+        }
+        else {
+          size_t found;
+          found = name.find(Form("pdf_bs_%d", i));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kRed),        LineStyle(1), DrawOption("F"), FillColor(kRed),        FillStyle(3001)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(RooArgSet(*ws_->cat("channels"), *ws_->var("MassRes")), *global_data, kFALSE));
+          found = name.find(Form("pdf_bd_%d", i));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kViolet - 4), LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(RooArgSet(*ws_->cat("channels"), *ws_->var("MassRes")), *global_data, kFALSE));
+          found = name.find(Form("pdf_comb_%d", i));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(RooArgSet(*ws_->cat("channels"), *ws_->var("MassRes")), *global_data, kFALSE));
+          found = name.find(Form("pdf_rare_%d", i));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kGreen - 7),  LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(RooArgSet(*ws_->cat("channels"), *ws_->var("MassRes")), *global_data, kFALSE));
+        }
       }
     }
     //global_data->plotOn(final_p, Cut( Form("channels==channels::channel_%d", i)));
@@ -251,14 +264,7 @@ void pdf_fitData::print_each_channel() {
     fitresult_tex[2] << setprecision(2) << fixed<< "N(comb. bkg) = " << N_comb->getVal() << " ^{+" << getErrorHigh(N_comb) << "}_{" << getErrorLow(N_comb) << "}";
     fitresult_tex[3] << setprecision(2) << fixed<< "N(rare bkg) = " << N_rare->getVal() << " ^{+" << getErrorHigh(N_rare) << "}_{" << getErrorLow(N_rare) << "}";
 
-//    fitresult_tex[0] << setprecision(2) << fixed << "N(B_{s}) = " << N_bs->getVal() << " ^{+" << (N_bs->getErrorHi()>0?N_bs->getErrorHi():N_bs->getError()) << "}_{" << (N_bs->getErrorLo()<0?N_bs->getErrorLo():N_bs->getError()) << "}";
-//    if (!bd_constr_ && !SM_) fitresult_tex[1] <<setprecision(2) << fixed << "N(B_{d}) = " << N_bd->getVal() << " ^{+" << (N_bd->getErrorHi()>0?N_bd->getErrorHi():N_bd->getError()) << "}_{" << (N_bd->getErrorLo()<0?N_bd->getErrorLo():N_bd->getError()) << "}";
-//    else if (bd_constr_) fitresult_tex[1] << setprecision(2) << fixed << "N(B_{d}) / N(B_{s}) = " << N_bd->getVal() << " ^{+" << (N_bd->getErrorHi()>0?N_bd->getErrorHi():N_bd->getError()) << "}_{" << (N_bd->getErrorLo()<0?N_bd->getErrorLo():N_bd->getError()) << "}";
-//    else fitresult_tex[1] << setprecision(2) << fixed << "";
-//    fitresult_tex[2] << setprecision(2) << fixed<< "N(comb. bkg) = " << N_comb->getVal() << " ^{+" << (N_comb->getErrorHi()>0?N_comb->getErrorHi():N_comb->getError()) << "}_{" << (N_comb->getErrorLo()<0?N_comb->getErrorLo():N_comb->getError()) << "}";
-//    fitresult_tex[3] << setprecision(2) << fixed<< "N(rare bkg) = " << N_rare->getVal() << " ^{+" << (N_rare->getErrorHi()>0?N_rare->getErrorHi():N_rare->getError()) << "}_{" << (N_rare->getErrorLo()<0?N_rare->getErrorLo():N_rare->getError()) << "}";
-
-    TPaveText* fitresults = new TPaveText(0.57, 0.66, 0.9, 0.9, "NDCR");
+   TPaveText* fitresults = new TPaveText(0.57, 0.66, 0.9, 0.9, "NDCR");
     for (int j = 0; j < 4; j++) {
       if (SM_ && j == 1) continue;
       TText* text =  fitresults->AddText(fitresult_tex[j].str().c_str());
@@ -561,9 +567,13 @@ void pdf_fitData::sig_plhc() {
   using namespace RooStats;
   ModelConfig model;
   RooArgSet poi;
+  RooArgSet CO;
+  if (pee) {
+    CO.add(*ws_->var("MassRes"));
+    model.SetConditionalObservables(CO);
+  }
   model.SetWorkspace(*ws_);
   if (simul_) {
-    //ws1->import(*simul_pdf);
     model.SetPdf(*ws_->pdf("pdf_ext_simul"));
     for (int i = 0; i < channels; i++) {
       poi.add(*ws_->var(name("N_bs", i)));
@@ -578,21 +588,35 @@ void pdf_fitData::sig_plhc() {
     model.SetPdf(*ws_->pdf("pdf_ext_total"));
     poi.add(*ws_->var("N_bs"));
     poi.setRealValue("N_bs", 0);
+    if (!bd_constr_ && !SM_) {
+      poi.add(*ws_->var("N_bd"));
+      poi.setRealValue("N_bd", 0);
+    }
   }
   if (bd_constr_) {
     poi.add(*ws_->var("Bd_over_Bs"));
     poi.setRealValue("Bd_over_Bs", 0);
   }
+
+
   ProfileLikelihoodCalculator plc;
   //plc.SetData(*ws_->data("global_data"));
   plc.SetData(*global_data);
   plc.SetModel(model);
   plc.SetNullParameters(poi);
+//  if (pee) plc.SetNuisanceParameters(CO);
   HypoTestResult* htr = plc.GetHypoTest();
   cout << "ProfileLikelihoodCalculator: The p-value for the null is " << htr->NullPValue() << "; The significance for the null is " << htr->Significance() << endl;
 }
 
 void pdf_fitData::sig_plhts() {
+  RooRandom::randomGenerator()->SetSeed(0);
+  vector <double> N_bs(channels);
+  vector <double> N_bd(channels);
+  for (int i = 0; i < channels; i++) {
+    N_bs[i] = ws_->var(name("N_bs", i))->getVal();
+    N_bd[i] = ws_->var(name("N_bd", i))->getVal();
+  }
   using namespace RooStats;
 
   if (simul_) ws_->defineSet("obs", "Mass,channels");
@@ -607,11 +631,20 @@ void pdf_fitData::sig_plhts() {
       }
     }
   }
-  else name_poi << "N_bs";
+  else {
+    name_poi << "N_bs";
+    if (!bd_constr_ && !SM_) name_poi << ",N_bd";
+  }
   if (bd_constr_) name_poi << ",Bd_over_Bs";
   ws_->defineSet("poi", name_poi.str().c_str());
 
   ModelConfig* H0 = new ModelConfig("H0", "background only hypothesis", ws_);
+  RooArgSet CO;
+  if (pee) {
+    CO.add(*ws_->var("MassRes"));
+    H0->SetConditionalObservables(CO);
+    H0->SetGlobalObservables(CO);
+  }
   if (simul_) H0->SetPdf(*ws_->pdf("pdf_ext_simul"));
   else H0->SetPdf(*ws_->pdf("pdf_ext_total"));
   H0->SetParametersOfInterest(*ws_->set("poi"));
@@ -626,13 +659,20 @@ void pdf_fitData::sig_plhts() {
       }
     }
   }
-  else ws_->var("N_bs")->setVal(0.0);
+  else {
+    ws_->var("N_bs")->setVal(0.0);
+    if (!bd_constr_ && !SM_) ws_->var("N_bd")->setVal(0.0);
+  }
   if (bd_constr_) {
     ws_->var("Bd_over_Bs")->setVal(0.0);
   }
   H0->SetSnapshot(*ws_->set("poi"));
 
   ModelConfig* H1 = new ModelConfig("H1", "background + signal hypothesis", ws_);
+  if (pee) {
+    H1->SetConditionalObservables(CO);
+    H1->SetGlobalObservables(CO);
+  }
   if (simul_) H1->SetPdf(*ws_->pdf("pdf_ext_simul"));
   else H1->SetPdf(*ws_->pdf("pdf_ext_total"));
   H1->SetParametersOfInterest(*ws_->set("poi"));
@@ -642,14 +682,15 @@ void pdf_fitData::sig_plhts() {
     for (int i = 0; i < channels; i++) {
       ostringstream name_oss;
       name_oss << "N_bs_" << i;
-      ws_->var(name_oss.str().c_str())->setVal(estimate_bs[i]);
+      ws_->var(name_oss.str().c_str())->setVal(N_bs[i]);
       if (!bd_constr_ && !SM_) {
-        ws_->var(name("N_bd", i))->setVal(estimate_bd[i]);
+        ws_->var(name("N_bd", i))->setVal(N_bd[i]);
       }
     }
   }
   else {
-    ws_->var("N_bs")->setVal(estimate_bs[atoi(ch_s_.c_str())]);
+    ws_->var("N_bs")->setVal(N_bs[0]);
+    ws_->var("N_bd")->setVal(N_bd[0]);
   }
   if (bd_constr_) {
     int index = simul_ ? 0 : atoi(ch_s_.c_str());
@@ -670,7 +711,8 @@ void pdf_fitData::sig_plhts() {
 //  pl_ts.EnableDetailedOutput(true, true);
   pl_ts.SetOneSidedDiscovery(true);
 
-  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 100);
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 500);
+  if (pee) mcSampler_pl->SetGlobalObservables(CO);
   FrequentistCalculator frequCalc(*global_data, *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
   RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();

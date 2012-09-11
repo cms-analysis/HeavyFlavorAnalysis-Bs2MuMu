@@ -78,7 +78,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
           data_comb = ws_temp->pdf("pdf_comb")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_comb[0]), Extended(1));
         }
         else {
-          data_bs   = ws_temp->pdf("pdf_bs")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_bs[0]), Extended(1)); cout << "81" << endl;
+          data_bs   = ws_temp->pdf("pdf_bs")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_bs[0]), Extended(1));
           data_bd   = ws_temp->pdf("pdf_bd")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_bd[0]), Extended(1));
           data_rare = ws_temp->pdf("pdf_rare")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_rare[0]), Extended(1));
           data_comb = ws_temp->pdf("pdf_comb")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_comb[0]), Extended(1));
@@ -90,37 +90,73 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
         bd_b = true;
       }
       else {
-        size_t found;
-        found = pdf_toy_.find("bs");
-        if (found != string::npos) {
-          data_bs   = ws_temp->pdf("pdf_bs")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_bs[0]), Extended(1));
-          data->append(*data_bs);
+        if (!pee) {
+          size_t found;
+          found = pdf_toy_.find("bs");
+          if (found != string::npos) {
+            data_bs   = ws_temp->pdf("pdf_bs")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_bs[0]), Extended(1));
+            data->append(*data_bs);
+          }
+          found = pdf_toy_.find("bd");
+          if (found != string::npos) {
+            data_bd   = ws_temp->pdf("pdf_bd")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_bd[0]), Extended(1));
+            data->append(*data_bd);
+            bd_b = true;
+          }
+          found = pdf_toy_.find("rare");
+          if (found != string::npos) {
+            data_rare = ws_temp->pdf("pdf_rare")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_rare[0]), Extended(1));
+            data->append(*data_rare);
+          }
+          found = pdf_toy_.find("comb");
+          if (found != string::npos) {
+            data_comb = ws_temp->pdf("pdf_comb")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_comb[0]), Extended(1));
+            data->append(*data_comb);
+          }
+          found = pdf_toy_.find("hist");
+          if (found != string::npos) {
+            data_hist = ws_temp->pdf("pdf_hist")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_rare[0]), Extended(1));
+            data->append(*data_hist);
+          }
+          found = pdf_toy_.find("expo");
+          if (found != string::npos) {
+            data_expo = ws_temp->pdf("pdf_expo")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_rare[0]), Extended(1));
+            data->append(*data_expo);
+          }
         }
-        found = pdf_toy_.find("bd");
-        if (found != string::npos) {
-          data_bd   = ws_temp->pdf("pdf_bd")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_bd[0]), Extended(1));
-          data->append(*data_bd);
-          bd_b = true;
-        }
-        found = pdf_toy_.find("rare");
-        if (found != string::npos) {
-          data_rare = ws_temp->pdf("pdf_rare")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_rare[0]), Extended(1));
-          data->append(*data_rare);
-        }
-        found = pdf_toy_.find("comb");
-        if (found != string::npos) {
-          data_comb = ws_temp->pdf("pdf_comb")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_comb[0]), Extended(1));
-          data->append(*data_comb);
-        }
-        found = pdf_toy_.find("hist");
-        if (found != string::npos) {
-          data_hist = ws_temp->pdf("pdf_hist")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_rare[0]), Extended(1));
-          data->append(*data_hist);
-        }
-        found = pdf_toy_.find("expo");
-        if (found != string::npos) {
-          data_expo = ws_temp->pdf("pdf_expo")->generate(*ws_temp->var("Mass"), NumEvents((int)estimate_rare[0]), Extended(1));
-          data->append(*data_expo);
+        else {
+          size_t found;
+          found = pdf_toy_.find("bs");
+          if (found != string::npos) {
+            data_bs   = ws_temp->pdf("pdf_bs")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_bs[0]), Extended(1));
+            data->append(*data_bs);
+          }
+          found = pdf_toy_.find("bd");
+          if (found != string::npos) {
+            data_bd   = ws_temp->pdf("pdf_bd")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_bd[0]), Extended(1));
+            data->append(*data_bd);
+            bd_b = true;
+          }
+          found = pdf_toy_.find("rare");
+          if (found != string::npos) {
+            data_rare = ws_temp->pdf("pdf_rare")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_rare[0]), Extended(1));
+            data->append(*data_rare);
+          }
+          found = pdf_toy_.find("comb");
+          if (found != string::npos) {
+            data_comb = ws_temp->pdf("pdf_comb")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_comb[0]), Extended(1));
+            data->append(*data_comb);
+          }
+          found = pdf_toy_.find("hist");
+          if (found != string::npos) {
+            data_hist = ws_temp->pdf("pdf_hist")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_rare[0]), Extended(1));
+            data->append(*data_hist);
+          }
+          found = pdf_toy_.find("expo");
+          if (found != string::npos) {
+            data_expo = ws_temp->pdf("pdf_expo")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), NumEvents((int)estimate_rare[0]), Extended(1));
+            data->append(*data_expo);
+          }
         }
       }
       ws_temp->var("N_bs")->setVal(estimate_bs[0]);
@@ -147,7 +183,8 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
         ws_temp->var(Form("N_comb_%d",i))->setVal(estimate_comb[i]);
       }
       RooCategory* cat =  (RooCategory*)ws_temp->obj("channels");
-      data = ws_temp->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_temp->var("Mass"),*cat), Extended(1));
+      if (!pee) data = ws_temp->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_temp->var("Mass"),*cat), Extended(1));
+      else data = ws_temp->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes"), *cat), Extended(1));
     }
     //////
     RFR = pdf_toyMC::fit_pdf(pdf_test_, data, printlevel, ws_temp);
@@ -295,7 +332,7 @@ RooFitResult* pdf_toyMC::fit_pdf (string pdf, RooAbsData* data, int printlevel, 
   }
   RooFitResult* result;
   if (!pee) result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, Extended(true), SumW2Error(0), Range(range_.c_str()), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE));
-  else result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, ConditionalObservables(*ws->var("MassRes")), Extended(true), SumW2Error(0), Range(range_.c_str()), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE));
+  else result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, ConditionalObservables(*ws->var("MassRes")), Extended(true), SumW2Error(0)/*, Range(range_.c_str())*/, PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE));
   return result;
 }
 
@@ -366,7 +403,9 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
       pdf_name = "pdf_ext_" + define_pdf_sum(pdf_toy);
     }
 
-    RooMCStudy* mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), *ws_->var("Mass"), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(PrintLevel(-1), Save(kTRUE), PrintEvalErrors(-1)));
+    RooMCStudy* mcstudy;
+    if (!pee) mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), *ws_->var("Mass"), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(PrintLevel(-1), Save(kTRUE), PrintEvalErrors(-1)));
+    else mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), *ws_->var("Mass"), ConditionalObservables(*ws_->var("MassRes")), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(PrintLevel(-1), Save(kTRUE), PrintEvalErrors(-1)));
 
     cout << pdf_toy << endl;
     RooDLLSignificanceMCSModule sigModule(*ws_->var("N_bs"), 0);
@@ -485,7 +524,11 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
     simul_pdf = (RooSimultaneous*)ws_->obj("pdf_ext_simul");
     RooCategory* channel__ = (RooCategory*)ws_->obj("channels");
     RooRealVar* mass__ = ws_->var("Mass");
-    RooMCStudy * mcstudy = new RooMCStudy( *simul_pdf, RooArgSet(*mass__, *channel__),  Binned(kFALSE), Extended(kTRUE), FitOptions(Save(kTRUE)), Silence());
+    RooRealVar* massres__ = ws_->var("MassRes");
+    RooMCStudy * mcstudy;
+    if (!pee) mcstudy = new RooMCStudy( *simul_pdf, RooArgSet(*mass__, *channel__),  Binned(kFALSE), Extended(kTRUE), FitOptions(Save(kTRUE)), Silence());
+    else mcstudy = new RooMCStudy( *simul_pdf, RooArgSet(*mass__, *channel__)/*, ProjectedObservables(*massres__)*/, ConditionalObservables(*massres__), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(PrintLevel(-1), Save(kTRUE), PrintEvalErrors(-1)));
+
     vector <RooDLLSignificanceMCSModule*> sigModule;
     sigModule.resize(channels);
     for (int i = 0; i < channels; i++) {
