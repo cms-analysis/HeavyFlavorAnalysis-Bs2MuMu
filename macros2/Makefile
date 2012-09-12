@@ -26,8 +26,8 @@ else
   endif
 endif
 
-CXXFLAGS      = -g -O3 -Wall -fPIC -pipe
-#CXXFLAGS      = -g -O0 -Wall -fPIC -pipe
+#CXXFLAGS      = -g -O3 -Wall -fPIC -pipe
+CXXFLAGS      = -g -O0 -Wall -fPIC -pipe
 #CXXFLAGS      = -g -Wall -fPIC -pipe
 LD            = $(CXX)
 LDFLAGS       = -g
@@ -90,7 +90,7 @@ bin/runBmm2: lib/libBmm2Classes.so obj/runBmm2.o lib/libBmm2Classes.so
 	$(LD) $(LDFLAGS) -o bin/runBmm2 $(GLIBS) obj/runBmm2.o lib/libAna00.so lib/libUtil.so lib/libAnaClasses.so lib/libBmm2Classes.so
 
 clean:
-	rm -f obj/*.o *Dict.* lib/lib*.so
+	rm -f obj/*.o *Dict.* lib/libBmm2Classes.so
 
 cleanall: clean
 	rm -f bin/runBmm2
