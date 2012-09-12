@@ -52,12 +52,6 @@ void candAnaBu2JpsiK::candAnalysis() {
   fKaonPtNrf     = pks->fPlab.Perp();
   fKaonEtaNrf    = pks->fPlab.Eta();
 
-//FIXME  
-//   if (fIsMC) {
-//     fGenBpartial = partialReco(fpCand); 
-//     if (fpCand->fMass > 5.5 && fGenBpartial == 511) fpEvt->dumpGenBlock();
-//   }
-
   if (fCandTmi > -1) {
     TGenCand *pg1 = fpEvt->getGenCand(fpEvt->getRecTrack(pk->fIndex)->fGenIndex);
     fKPtGen     = pg1->fP.Perp();
@@ -73,6 +67,8 @@ void candAnaBu2JpsiK::candAnalysis() {
 
   TAnaCand *pD = 0; 
   fGoodJpsiMass = false; 
+  double chi2(0.);
+  int ndof(0); 
   for (int i = fpCand->fDau1; i <= fpCand->fDau2; ++i) {
     if (i < 0) break;
     pD = fpEvt->getCand(i); 
@@ -84,54 +80,18 @@ void candAnaBu2JpsiK::candAnalysis() {
       fJpsiPt   = pD->fPlab.Perp(); 
       fJpsiEta  = pD->fPlab.Eta(); 
       fJpsiPhi  = pD->fPlab.Phi(); 
-      //       cout << "type = " << pD->fType 
-      //        	   << " with mass = " << pD->fMass 
-      //        	   << " fGoodJpsiMass = " << fGoodJpsiMass 
-      //        	   << endl;
+
+      chi2 = pD->fVtx.fChi2;
+      ndof = pD->fVtx.fNdof;
       break;
     }
   }
-
-//   // -- special case for truth candidates (which have no daughter cands)
-//   if (fpCand->fType > 999999) {
-//     TAnaTrack *p0; 
-//     TAnaTrack *p1(0);
-//     TAnaTrack *p2(0); 
-    
-//     for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
-//       p0 = fpEvt->getSigTrack(it);     
-//       if (TMath::Abs(p0->fMCID) != 13) continue;
-//       if (0 == p1) {
-// 	p1 = p0; 
-//       } else {
-// 	p2 = p0; 
-//       }
-//     }
-    
-//     if (0 == p1) {
-//       cout << "bmmNormalizationReader::fillCandidateVariables:  no muon 1 found " << endl;
-//       return; 
-//     }
-//     if (0 == p2) {
-//       cout << "bmmNormalizationReader::fillCandidateVariables:  no muon 2 found " << endl;
-//       return; 
-//     }
-
-//     TLorentzVector mu1, mu2; 
-//     mu1.SetPtEtaPhiM(p1->fPlab.Perp(), p1->fPlab.Eta(), p1->fPlab.Phi(), MMUON); 
-//     mu2.SetPtEtaPhiM(p2->fPlab.Perp(), p2->fPlab.Eta(), p2->fPlab.Phi(), MMUON); 
-    
-//     TLorentzVector psi = mu1 + mu2; 
-//     if ((JPSIMASSLO < psi.M()) && (psi.M() < JPSIMASSHI)) fGoodJpsiMass = true;
-//     fJpsiMass = psi.M();
-//     fJpsiPt   = psi.Pt();
-//     fJpsiEta  = psi.Eta();
-//     fJpsiPhi  = psi.Phi();
-//   }    
-
-  
+ 
   candAna::candAnalysis();
+  // -- overwrite specific variables
   fCandTau   = fCandFL3d*MBPLUS/fCandP/TMath::Ccgs();
+  fCandChi2  = chi2; 
+  fCandDof   = ndof;
 
   fPreselection = fPreselection && fGoodJpsiMass;
 

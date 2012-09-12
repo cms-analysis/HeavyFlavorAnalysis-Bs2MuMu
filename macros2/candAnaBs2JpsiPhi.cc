@@ -29,6 +29,8 @@ void candAnaBs2JpsiPhi::candAnalysis() {
   // -- Check for J/psi mass
   TAnaCand *pD = 0; 
   fGoodJpsiMass = false; 
+  double chi2(0.);
+  int ndof(0); 
   for (int i = fpCand->fDau1; i <= fpCand->fDau2; ++i) {
     if (i < 0) break;
     pD = fpEvt->getCand(i); 
@@ -39,10 +41,9 @@ void candAnaBs2JpsiPhi::candAnalysis() {
       fJpsiPt   = pD->fPlab.Perp();
       fJpsiEta  = pD->fPlab.Eta();
       fJpsiPhi  = pD->fPlab.Phi(); 
-      //       cout << "type = " << pD->fType 
-      // 	   << " with mass = " << pD->fMass 
-      // 	   << " fGoodJpsiMass = " << fGoodJpsiMass 
-      // 	   << endl;
+
+      chi2 = pD->fVtx.fChi2;
+      ndof = pD->fVtx.fNdof;
     }
     if (pD->fType == PHITYPE) {
       if ((MKKLO < pD->fMass) && (pD->fMass < MKKHI)) fGoodMKK = true;
@@ -50,49 +51,9 @@ void candAnaBs2JpsiPhi::candAnalysis() {
       fPhiPt   = pD->fPlab.Perp();
       fPhiEta  = pD->fPlab.Eta();
       fPhiPhi  = pD->fPlab.Phi(); 
-      //       cout << "type = " << pD->fType 
-      // 	   << " with mass = " << pD->fMass 
-      // 	   << " fGoodMKK = " << fGoodMKK 
-      // 	   << endl;
     }
   }
 
-  //   // -- special case for truth candidates (which have no daughter cands)
-  //   if (fpCand->fType > 999999) {
-  //     TAnaTrack *p0; 
-  //     TAnaTrack *p1(0);
-  //     TAnaTrack *p2(0); 
-  
-  //     for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
-  //       p0 = fpEvt->getSigTrack(it);     
-  //       if (TMath::Abs(p0->fMCID) != 13) continue;
-  //       if (0 == p1) {
-  // 	p1 = p0; 
-  //       } else {
-  // 	p2 = p0; 
-  //       }
-  //     }
-  
-  //     if (0 == p1) {
-  //       cout << "candAnaBs2JpsiPhi::candAnalysis  no muon 1 found " << endl;
-  //       return; 
-  //     }
-  //     if (0 == p2) {
-  //       cout << "candAnaBs2JpsiPhi::candAnalysis  no muon 2 found " << endl;
-  //       return; 
-  //     }
-  
-  //     TLorentzVector mu1, mu2; 
-  //     mu1.SetPtEtaPhiM(p1->fPlab.Perp(), p1->fPlab.Eta(), p1->fPlab.Phi(), MMUON); 
-  //     mu2.SetPtEtaPhiM(p2->fPlab.Perp(), p2->fPlab.Eta(), p2->fPlab.Phi(), MMUON); 
-  
-  //     TLorentzVector psi = mu1 + mu2; 
-  //     if ((JPSIMASSLO < psi.M()) && (psi.M() < JPSIMASSHI)) fGoodJpsiMass = true;
-  //     fJpsiMass = psi.M();
-  //     fJpsiPt   = psi.Pt();
-  //     fJpsiEta  = psi.Eta();
-  //     fJpsiPhi  = psi.Phi(); 
-  //   }    
 
   // -- Get Kaons
   TAnaTrack *p0; 
@@ -170,9 +131,11 @@ void candAnaBs2JpsiPhi::candAnalysis() {
   
   fPreselection = fPreselection && fGoodJpsiMass && fGoodMKK && fGoodDeltaR; 
 
-
   candAna::candAnalysis();
-  fCandTau   = fCandFL3d*MBS/fCandP/TMath::Ccgs();
+  // -- overwrite specific variables
+  fCandTau   = fCandFL3d*MBPLUS/fCandP/TMath::Ccgs();
+  fCandChi2  = chi2; 
+  fCandDof   = ndof;
 
   ((TH1D*)fHistDir->Get("../monEvents"))->Fill(3); 
 }
