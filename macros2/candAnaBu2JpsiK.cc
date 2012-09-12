@@ -69,11 +69,15 @@ void candAnaBu2JpsiK::candAnalysis() {
   
 
   // -- Check for J/psi mass
+  //cout<<" check jpsi "<<endl;
+
   TAnaCand *pD = 0; 
   fGoodJpsiMass = false; 
   for (int i = fpCand->fDau1; i <= fpCand->fDau2; ++i) {
     if (i < 0) break;
     pD = fpEvt->getCand(i); 
+    //cout<<i<<" "<<pD->fType<<" "<<JPSITYPE<<endl;
+
     if (pD->fType == JPSITYPE) {
       if ((JPSIMASSLO < pD->fMass) && (pD->fMass < JPSIMASSHI)) fGoodJpsiMass = true;
       fJpsiMass = pD->fMass;
@@ -154,11 +158,13 @@ void candAnaBu2JpsiK::genMatch() {
   for (int i = 0; i < fpEvt->nGenCands(); ++i) {
     pC = fpEvt->getGenCand(i); 
     if (521 == TMath::Abs(pC->fID)) {
+      //cout<<" found B0 "<<TYPE<<endl;
       pB = pC;
       nb = 0; 
       for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
 	pC = fpEvt->getGenCand(id); 
 	if (443 == TMath::Abs(pC->fID)) {
+	  // cout<<" found JPsi "<<endl;
 	  ++nb;
 	  pPsi = pC; 
 	  npsi = pPsi->fDau2 - pPsi->fDau1 + 1; 
@@ -172,11 +178,17 @@ void candAnaBu2JpsiK::genMatch() {
 	      } else {
 		pM2 = fpEvt->getGenCand(idd); 
 	      }
+	      //cout<<" mu "<<pM1<<" "<<pM2<<endl;
 	    }
 	  }
+	} else if ( (TYPE%1000)==66 && 211 == TMath::Abs(pC->fID)) { // get Bu2JpsiPi
+	  ++nb;
+	  pK = fpEvt->getGenCand(id); 
+	  //cout<<" pi "<<pK<<" "<<nb<<endl;
 	} else if (321 == TMath::Abs(pC->fID)) {
 	  ++nb;
 	  pK = fpEvt->getGenCand(id); 
+	  //cout<<" K "<<pK<<" "<<nb<<endl;
 	} else 	if (22 == TMath::Abs(pC->fID)) {
 	  ++nphotons;
 	} else {
@@ -189,6 +201,7 @@ void candAnaBu2JpsiK::genMatch() {
       }
       if (0 != pM1 && 0 != pM2 && 0 != pK && (pPsi->fMom1 == pK->fMom1)) {
 	goodMatch = true; 
+	//cout<<" goodMatch "<<goodMatch<<endl;
 	fNGenPhotons = nphotons;
 	break;
       }
@@ -271,14 +284,22 @@ void candAnaBu2JpsiK::candMatch() {
   int idx(-1), type(-1); 
   int d1Matched(0), d2Matched(0), d3Matched(0); 
   TAnaCand *pCand(0);
+
+  //cout<<TYPE<<endl;
+
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
     pCand = fpEvt->getCand(iC); 
+
+    //cout<<TYPE<<" "<<pCand->fType<<" "<<iC<<endl;
+
     if (TYPE != pCand->fType) continue;
     
     d1Matched = d2Matched = d3Matched = 0; 
+    //cout<< TYPE;
     for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {
       idx = fpEvt->getSigTrack(i)->fIndex; 
       type = TMath::Abs(fpEvt->getSigTrack(i)->fMCID);
+      //cout<<" "<<idx<<" "<<type;
       if (fVerbose > 10) {
 	cout << idx << " " << fRecM1Tmi << " " << fRecM2Tmi << " " << fRecK1Tmi << endl;
       }
@@ -293,6 +314,8 @@ void candAnaBu2JpsiK::candMatch() {
       }
     }
     
+    //cout<<endl;
+
     if (d1Matched && d2Matched && d3Matched) {
       fCandTmi = iC;
       break;
