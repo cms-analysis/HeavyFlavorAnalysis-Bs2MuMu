@@ -13,7 +13,19 @@ using std::string;
 using std::cout;
 using std::endl;
 
-
+//-------------------------------------------------------------------------
+// This is the usual Landau from root
+double f_landau(double *x, double *par) {
+  //     const                        mpv   sigma
+  return par[2] * TMath::Landau(x[0],par[0],par[1]);
+}
+// ----------------------------------------------------------------------
+// This is a simplfied "landau" using an analytical formula.
+// I use it because it was easiter for me to understand the integral (area) of this formula,
+double f_landausimp(double *x, double *par) {  // simplified landau
+  double xx = ( x[0]- par[0] ) / par[1];
+  return par[2] * 0.3989 * TMath::Exp(-0.5 * ( xx + TMath::Exp(-xx) ) );
+} 
 // ----------------------------------------------------------------------
 double f_expo(double *x, double *par) {
   return par[0]*TMath::Exp(x[0]*par[1]);
@@ -213,7 +225,63 @@ double f_expo_err_gauss2(double *x, double *par) {
   //   par[9]  = par[1] of err
   //   par[10] = par[2] of err
   //   par[11] = par[3] of err
+
+
   return  (f_err(x, &par[8]) + f_expo(x, &par[6]) + f_gauss2(x, &par[0]));
+}
+
+// ----------------------------------------------------------------------
+// expo and err and gauss2 and landau
+double f_expo_err_gauss2_landau(double *x, double *par) {
+  // par[0] -> const
+  // par[1] -> mean
+  // par[2] -> sigma
+  // par[3] -> fraction in second gaussian
+  // par[4] -> mean of second gaussian
+  // par[5] -> sigma of second gaussian
+  //   par[6]  = norm
+  //   par[7]  = exp
+  //   par[8]  = par[0] of err
+  //   par[9]  = par[1] of err
+  //   par[10] = par[2] of err
+  //   par[11] = par[3] of err
+  //   par[12] = par[0] of landau (mpv)
+  //   par[13] = par[1] of landau (sigma)
+  //   par[14] = par[2] of landau (const) WILL BE FIXED BY THE AREA RATIO
+
+  // paramter 3 of the landau, the constant, has to be fixed by the BuJpsiPi / BuJpsiK ratio
+  const double branchingRatio = 0.049;
+  double area = 2.507 * par[0] * (par[2] + par[3]*par[5]); // area of the 2 gaussians
+  double area_landau = branchingRatio * area;  // expected area of the landau
+  par[14] = area_landau/par[13];  // landau const = area/sigma, feed it to the function
+  //cout<<par[14]<<" "<<par[13]<<" "<<par[12]<<endl;
+
+  return  ( f_err(x, &par[8]) + f_expo(x, &par[6]) + f_gauss2(x, &par[0]) + f_landausimp(x, &par[12]) );
+}
+
+// ----------------------------------------------------------------------
+// expo and err and gauss and landau
+double f_expo_err_Gauss_landau(double *x, double *par) {
+  // par[0] -> const
+  // par[1] -> mean
+  // par[2] -> sigma
+  //   par[3]  = norm
+  //   par[4]  = exp
+  //   par[5]  = par[0] of err
+  //   par[6]  = par[1] of err
+  //   par[7] = par[2] of err
+  //   par[8] = par[3] of err
+  //   par[9] = par[0] of landau (mpv)
+  //   par[10] = par[1] of landau (sigma)
+  //   par[11] = par[2] of landau (const) WILL BE FIXED BY THE AREA RATIO
+
+  // paramter 3 of the landau, the constant, has to be fixed by the BuJpsiPi / BuJpsiK ratio
+  const double branchingRatio = 0.049;
+  double area = 2.507 * par[0] * (par[2]); // area of the gaussian
+  double area_landau = branchingRatio * area;  // expected area of the landau
+  par[11] = area_landau/par[10];  // landau const = area/sigma, feed it to the function
+
+  return  (f_err(x, &par[5]) + f_expo(x, &par[3]) + f_Gauss(x, &par[0]) + f_landausimp(x, &par[9]) );
 }
 
 
@@ -287,7 +355,7 @@ double f_pol1_gauss2c(double *x, double *par) {
 
 // ----------------------------------------------------------------------
 initFunc::initFunc() {
-  //  cout << "ctor initFunc" << endl;
+  //cout << "ctor initFunc" << endl;
   fLo = 99.; 
   fHi = -99.;
   fBgFractionLo = fBgFractionHi = -99.;
@@ -673,6 +741,64 @@ TF1* initFunc::expoErrGauss(TH1 *h, double peak, double sigma, double preco) {
 }
 
 // ----------------------------------------------------------------------
+TF1* initFunc::expoErrGaussLandau(TH1 *h, double peak, double sigma, double preco) {
+
+  TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_Gauss_landau"); 
+  if (f) delete f; 
+  f = new TF1("f1_expo_err_Gauss_landau", f_expo_err_Gauss_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 11);
+  f->SetParNames("area", "peak", "sigma", "const", "exp", "err0", "err1", "err2", "err3"); 			   
+  f->SetParName(9, "mpvl");
+  f->SetParName(10, "sigl");
+
+ //  f->SetLineColor(kBlue); 
+  f->SetLineWidth(2); 
+
+  int lbin(1), hbin(h->GetNbinsX()); 
+  if (fLo < fHi) {
+    lbin = h->FindBin(fLo); 
+    hbin = h->FindBin(fHi); 
+  }
+
+  double p0, p1; 
+  initExpo(p0, p1, h);
+  double A   = p0*(TMath::Exp(p1*fHi) - TMath::Exp(p1*fLo));
+
+  double g0 = (h->Integral(lbin, hbin)*h->GetBinWidth(1) - A);  
+
+  double e0(preco),  e0Min(preco-0.001), e0Max(preco+0.001); 
+  double e1(0.075),  e1Min(0.050), e1Max(0.100);
+  double e2(1.15), e2Min(1.05),  e2Max(1.25);
+
+
+  cout << "A: " << A << " g0: " << g0 << " e0: " << e0 << " e1: " << e1 << " e2: " << e2 << " p0: " << p0 << " p1: " << p1 << endl;
+
+  f->SetParameters(g0, peak, sigma, p0, p1, e0, e1, e2, 0.05*g0); 
+
+  // for the landau
+  // Fix the mpv and sigma to the fit values from the Bu2JpisPi for the ENDCAP channel
+  f->FixParameter(9, 5.349);   // landau mpv 
+  f->FixParameter(10, 0.06454);  // landau sigma 
+  //f->SetParameter(11, 1.);    // landau const (NOT A PARAMETER, FIXED BY THE BRANCHING RATIO) 
+
+  f->ReleaseParameter(0);     f->SetParLimits(0, 0., 1.e7); 
+  f->ReleaseParameter(1);     f->SetParLimits(1, 5.2, 5.45); 
+  f->ReleaseParameter(2);     f->SetParLimits(2, 0.3*sigma, 1.3*sigma); 
+  f->ReleaseParameter(3);     
+  f->ReleaseParameter(4);     
+  f->ReleaseParameter(5);     f->SetParLimits(5, e0Min, e0Max); 
+  f->ReleaseParameter(6);     f->SetParLimits(6, e1Min, e1Max); 
+  f->ReleaseParameter(7);     f->SetParLimits(7, e2Min, e2Max); 
+  f->ReleaseParameter(8);     //f->SetParLimits(8, 0, 0.05*g0); 
+
+  //        RooRealVar a1("a1","a1",5.14,5.13,5.15);
+  //        RooRealVar a2("a2","a2",0.07,0.06,0.075);
+  //        RooRealVar a3("a3","a3",1.112,1.,1.2);
+
+  return f; 
+
+}
+
+// ----------------------------------------------------------------------
 TF1* initFunc::expoErrgauss2c(TH1 *h, double peak, double sigma1, double sigma2, double preco) {
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_gauss2c"); 
@@ -865,6 +991,71 @@ TF1* initFunc::expoErrgauss2(TH1 *h, double peak1, double sigma1, double peak2, 
 
 
 // ----------------------------------------------------------------------
+// Add a landau to expErrGauss2 
+// The position (mpv) and sigma of the landau are fixed to the values obtained from the Bu2JpsiPi fit
+TF1* initFunc::expoErrgauss2Landau(TH1 *h, double peak1, double sigma1, double peak2, double sigma2, double preco) {
+
+  TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_gauss2_landau"); 
+  if (f) delete f; 
+  f = new TF1("f1_expo_err_gauss2_landau", f_expo_err_gauss2_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 14);
+  f->SetParNames("const", "peak", "sigma", "f2ndG", "p2ndG", "s2ndG", "const", "exp", "err0", "err1", "err2");
+  f->SetParName(11, "err3");
+  f->SetParName(12, "mpvl");
+  f->SetParName(13, "sigl");
+  //f->SetParName(14, "constl");
+
+  f->SetLineWidth(2); 
+
+  int lbin(1), hbin(h->GetNbinsX()); 
+  if (fLo < fHi) {
+    lbin = h->FindBin(fLo); 
+    hbin = h->FindBin(fHi); 
+  }
+
+  double p0, p1; 
+  initExpo(p0, p1, h);
+  if (p0 > 1.e7) p0 = 1.e7;
+
+  double A   = p0*(TMath::Exp(p1*fHi) - TMath::Exp(p1*fLo));
+  double H   = h->Integral(lbin, hbin)*h->GetBinWidth(1);
+
+  double g0 = H - A;
+
+  double e0(preco),  e0Min(preco-0.001), e0Max(preco+0.001); 
+  double e1(0.055),  e1Min(0.8*e1), e1Max(1.2*e1);
+  double e2(1.00), e2Min(0.8*e2),  e2Max(1.2*e2);
+
+
+  cout << "A: " << A << " g0: " << g0 << " e0: " << e0 << " e1: " << e1 << " e2: " << e2 << " p0: " << p0 << " p1: " << p1 << endl;
+  
+  f->SetParameters(g0, peak1, sigma1, 0.2, peak2, sigma2, p0, p1, e0, e1, e2); 
+  f->SetParameter(11,  0.05*g0); 
+
+  // for the landau
+  // Fix the mpv and sigma to the fit values from the Bu2JpisPi for the BARREL channel
+  f->FixParameter(12, 5.357);   // landau mpv 
+  f->FixParameter(13, 0.04885);  // landau sigma 
+  //f->SetParameter(14, 1.);    // landau const (NOT A PARAMETER, FIXED BY THE BRANCHING RATIO) 
+
+
+  f->ReleaseParameter(0);     f->SetParLimits(0, 0., 1.e7); 
+  f->ReleaseParameter(1);     f->SetParLimits(1, 5.2, 5.45); 
+  f->ReleaseParameter(2);     f->SetParLimits(2, 0.2*sigma1, 1.5*sigma1); 
+  f->ReleaseParameter(3);     f->SetParLimits(3, 0., 10000.); 
+  f->ReleaseParameter(4);     f->SetParLimits(4, 5.2, 5.45); 
+  f->ReleaseParameter(5);     f->SetParLimits(5, 0.5*sigma2, 2.0*sigma2); 
+  f->ReleaseParameter(6);     
+  f->ReleaseParameter(7);     
+  f->ReleaseParameter(8);     f->SetParLimits(8, e0Min, e0Max); 
+  f->ReleaseParameter(9);     f->SetParLimits(9, e1Min, e1Max); 
+  f->ReleaseParameter(10);     f->SetParLimits(10, e2Min, e2Max); 
+  f->ReleaseParameter(11);     //f->SetParLimits(8, 0, 0.05*g0); 
+  return f; 
+
+
+}
+
+// ----------------------------------------------------------------------
 TF1* initFunc::pol1ErrGauss(TH1 *h, double peak, double sigma, double preco) {
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_pol1_err_Gauss"); 
@@ -1009,6 +1200,57 @@ void initFunc::initExpo(double &p0, double &p1, TH1 *h) {
   cout << "p1: " << p1 << " reset" << endl;
   if (p0 > 1000*h->GetMaximum()) p0 = ylo;
   cout << "p0: " << p0 << " reset" << endl;
+
+}
+
+// ----------------------------------------------------------------------
+// Uses the usuall Landau from ROOT
+TF1* initFunc::land(TH1 *h, double mpv, double sigma) {
+
+  TF1 *f = new TF1("land", f_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 3);
+  //f->SetParNames("peak", "sigma", "constant"); 			   
+
+  int lbin(1), hbin(h->GetNbinsX()); 
+  if (fLo < fHi) {
+    lbin = h->FindBin(fLo); 
+    hbin = h->FindBin(fHi); 
+  }
+
+  cout << "fLo: " << fLo << " fHi: " << fHi << " lbin: " << lbin << " hbin: " << hbin << endl;
+  
+  double p0 = mpv, p1 = sigma, p2=1.0; 
+
+  f->SetParameters(p0, p1, p2); 
+  f->ReleaseParameter(0);     f->SetParLimits(0, 5.0, 5.5); 
+  f->ReleaseParameter(1);     f->SetParLimits(1, 0., 0.1); 
+  f->ReleaseParameter(2);     f->SetParLimits(2, 0., 1e7); 
+
+  return f; 
+
+}
+// ----------------------------------------------------------------------
+// Simpler analytical "landau"
+TF1* initFunc::landsimp(TH1 *h, double mpv, double sigma) {
+
+  TF1 *f = new TF1("land", f_landausimp, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 3);
+  //f->SetParNames("area", "peak", "sigma", "constant", "slope"); 			   
+
+  int lbin(1), hbin(h->GetNbinsX()); 
+  if (fLo < fHi) {
+    lbin = h->FindBin(fLo); 
+    hbin = h->FindBin(fHi); 
+  }
+
+  cout << "fLo: " << fLo << " fHi: " << fHi << " lbin: " << lbin << " hbin: " << hbin << endl;
+  
+  double p0 = mpv, p1 = sigma, p2=1.0; 
+
+  f->SetParameters(p0, p1, p2); 
+  f->ReleaseParameter(0);     f->SetParLimits(0, 5.0, 5.5); 
+  f->ReleaseParameter(1);     f->SetParLimits(1, 0., 0.1); 
+  f->ReleaseParameter(2);     f->SetParLimits(2, 0., 1e7); 
+
+  return f; 
 
 }
 

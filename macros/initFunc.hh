@@ -50,6 +50,11 @@ public:
   TF1* pol0BsBlind(TH1 *h); 
   TF1* pol1BsBlind(TH1 *h); 
 
+  // Added to include ladaus
+  TF1* land(TH1 *h, double peak=5.3, double sigma=0.04); 
+  TF1* landsimp(TH1 *h, double peak=5.3, double sigma=0.04); 
+  TF1* expoErrgauss2Landau(TH1 *h, double peak = 5.3, double sigma = 0.04, double peak2 = 5.3, double sigma2 = 0.1, double preco = 5.14); 
+  TF1* expoErrGaussLandau(TH1 *h, double peak = 5.3, double sigma = 0.04, double preco = 5.14); 
 
 
   void initPol1(double &p0, double &p1, TH1 *h);
