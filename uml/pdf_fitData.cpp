@@ -1,8 +1,8 @@
 #include "pdf_fitData.h"
 
-pdf_fitData::pdf_fitData(bool print, int inputs, string input_estimates, string input_cuts, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, bool simul, string ch_s): pdf_analysis(print, meth, ch_s, range, SM, bd_constr) {
+pdf_fitData::pdf_fitData(bool print, int inputs, string input_estimates, string input_cuts, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, bool simul, bool pee_, bool bdt_fit, string ch_s): pdf_analysis(print, meth, ch_s, range, SM, bd_constr, simul, pee_, bdt_fit) {
   cout << "fitData constructor" << endl;
-  channels = inputs;
+  channels = inputs; cout <<"qui" << endl;
   simul_ = simul;
   input_estimates_ = input_estimates;
   input_cuts_ = input_cuts;
@@ -12,6 +12,11 @@ pdf_fitData::pdf_fitData(bool print, int inputs, string input_estimates, string 
   estimate_bd.resize(channels);
   estimate_rare.resize(channels);
   estimate_comb.resize(channels);
+
+  pee = pee_;
+  simul_ = simul;
+  bdt_fit_ = bdt_fit;
+
   parse_estimate();
   if (input_tree) {
     tree = input_tree;
@@ -510,6 +515,7 @@ void pdf_fitData::save() {
   else output_ws << "_" << ch_s_;
   if (SM_)             output_ws << "_SM";
   else if (bd_constr_) output_ws << "_BdConst";
+  if (bdt_fit_) output_ws << "_2D";
   if (pee) output_ws << "_PEE";
   output_ws << ".root";
   ws_->SaveAs(output_ws.str().c_str());
@@ -714,11 +720,16 @@ void pdf_fitData::sig_plhts() {
   ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 500);
   if (pee) mcSampler_pl->SetGlobalObservables(CO);
   FrequentistCalculator frequCalc(*global_data, *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
-  RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
+  //RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();
-  RooMsgService::instance().cleanup();
+  //RooMsgService::instance().cleanup();
   htr_pl->Print();
-
+//  HypoTestPlot *plot = new HypoTestPlot(*htr_pl);
+//  TCanvas* c_hypotest = new TCanvas("c_hypotest", "c_hypotest", 600, 600);
+//  plot->Draw();
+//  c_hypotest->Print("fig/ProfileLikelihoodTestStat.gif");
+//  delete plot;
+//  delete c_hypotest;
   cout << "ProfileLikelihoodTestStat + frequentist: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << endl;
-
 }
+

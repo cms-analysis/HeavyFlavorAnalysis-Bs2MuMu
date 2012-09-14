@@ -28,10 +28,10 @@ int main(int argc, char** argv) {
     if (!input || !pdf) help();
     parse_input(input_name);
   }
-  if (!(!bias_s.compare("no") || !bias_s.compare("c+") || !bias_s.compare("c-") || !bias_s.compare("p+") || !bias_s.compare("p-"))) { cout << "I don't understand what to bias: please enter -bias c+, c-, p+, p-" << endl; exit(EXIT_FAILURE);}
+  if (!(!bias_s.compare("no") || !bias_s.compare("c+") || !bias_s.compare("c-") || !bias_s.compare("tau+") || !bias_s.compare("tau-"))) { cout << "I don't understand what to bias: please enter -bias c+, c-, tau+, tau-" << endl; exit(EXIT_FAILURE);}
   if (!pdf_test_b) pdf_test = pdf_toy;
 
-  pdf_toyMC toy1(print, inputs, input_estimates, cuts_f, meth, "all", SM, bd_const, 0, bias_s, simul, ch_s);
+  pdf_toyMC toy1(print, inputs, input_estimates, cuts_f, meth, "all", SM, bd_const, 0, bias_s, simul, pee, bdt_fit, ch_s);
   toy1.initialize();
   if (pee) toy1.pee = true;
   TFile* input_f = new TFile(input_name.c_str());

@@ -44,7 +44,7 @@ using namespace RooFit;
 
 class pdf_analysis {
 public:
-  pdf_analysis(bool print, string meth = "bdt", string ch_s = "0", string range = "all", bool SM = false, bool bd_constr = false);
+  pdf_analysis(bool print, string meth = "bdt", string ch_s = "0", string range = "all", bool SM = false, bool bd_constr = false, bool simul = false, bool pee_ = false, bool bdt_fit = false);
   void set_ws(RooWorkspace *ws) {ws_ = ws;}
   RooWorkspace* get_ws() {return ws_;}
 
@@ -53,6 +53,7 @@ public:
   
   void initialize();
   RooHistPdf* define_MassRes_pdf(RooDataSet *rds, string name);
+  RooHistPdf* define_bdt_pdf(RooDataSet *rds, string name);
 
   void define_pdfs();
   void define_bs(int i);
@@ -109,12 +110,13 @@ public:
 
   bool old_tree;
   bool pee;
+  bool bdt_fit_;
   bool no_legend;
 
   void gen_and_fit(string pdfname);
+  bool print_;
 
 protected:
-  bool print_;
   string meth_;
   string ch_s_;
   RooWorkspace* ws_;

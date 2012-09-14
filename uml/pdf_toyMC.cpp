@@ -7,7 +7,7 @@
 
 #include "pdf_toyMC.h"
 
-pdf_toyMC::pdf_toyMC(bool print, int inputs, string input_estimates, string input_cuts, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, string bias, bool simul, string ch_s): pdf_fitData( print,  inputs,  input_estimates, input_cuts,  meth,  range,  SM,  bd_constr,  input_tree,   simul,  ch_s) {
+pdf_toyMC::pdf_toyMC(bool print, int inputs, string input_estimates, string input_cuts, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, string bias, bool simul, bool pee_, bool bdt_fit, string ch_s): pdf_fitData( print,  inputs,  input_estimates, input_cuts,  meth,  range,  SM,  bd_constr,  input_tree, simul, pee_, bdt_fit, ch_s) {
   cout << "pdf_toyMC constructor" << endl;
   bias_ = bias;
 
@@ -303,30 +303,30 @@ RooFitResult* pdf_toyMC::fit_pdf (string pdf, RooAbsData* data, int printlevel, 
   pdf_toy_ = "pdf_ext_" + pdf;
   if (bias_.compare("no")) {
     size_t found;
-    found = bias_.find("c");
+    found = bias_.find("tau");
     if (found != string::npos) {
-      double value =  ws->var("c_nonpeaking")->getVal();
+      double value =  ws->var("tau")->getVal();
       found = bias_.find("+");
       if (found != string::npos) {
-        double error = ws->var("c_nonpeaking")->getErrorHi();
-        ws->var("c_nonpeaking")->setVal(value + error);
+        double error = ws->var("tau")->getErrorHi();
+        ws->var("tau")->setVal(value + error);
       }
       else {
-        double error = ws->var("c_nonpeaking")->getErrorLo();
-        ws->var("c_nonpeaking")->setVal(value - error);
+        double error = ws->var("tau")->getErrorLo();
+        ws->var("tau")->setVal(value - error);
       }
     }
-    found = bias_.find("p");
+    found = bias_.find("c");
     if (found != string::npos) {
-      double value =  ws->var("p_nonpeaking")->getVal();
+      double value =  ws->var("C0")->getVal();
       found = bias_.find("+");
       if (found != string::npos) {
-        double error = ws->var("p_nonpeaking")->getErrorHi();
-        ws->var("p_nonpeaking")->setVal(value + error);
+        double error = ws->var("C0")->getErrorHi();
+        ws->var("C0")->setVal(value + error);
       }
       else {
-        double error = ws->var("p_nonpeaking")->getErrorLo();
-        ws->var("p_nonpeaking")->setVal(value - error);
+        double error = ws->var("C0")->getErrorLo();
+        ws->var("C0")->setVal(value - error);
       }
     }
   }
@@ -656,6 +656,7 @@ void pdf_toyMC::print(string output, RooWorkspace* ws) {
   else address = "fig/" + pdf_name + "_" + meth_ + "_" + ch_s_ + output;
   if (SM_) address += "_SM";
   if (bd_constr_) address += "_BdConst";
+  if (bdt_fit_) address += "_2D";
   if (pee) address += "_PEE";
   c->Print( (address + ".gif").c_str());
   c->Print( (address + ".pdf").c_str());

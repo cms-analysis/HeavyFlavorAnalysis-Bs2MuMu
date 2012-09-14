@@ -26,10 +26,8 @@ int main(int argc, char* argv[]) {
   if (SM && bd_const) {cout << "please select SM OR bd_const, not both" << endl; return EXIT_FAILURE;}
   if (pee && strcmp(input_name.c_str(), "new")) {cout << "per event error only with new trees, select -i new" << endl; return EXIT_FAILURE;}
 
-  pdf_analysis ana1(print, meth, ch_s, "all", SM, bd_const);
-  if (pee) ana1.pee = true;
+  pdf_analysis ana1(print, meth, ch_s, "all", SM, bd_const, false, pee, bdt_fit);
   if (no_legend) ana1.no_legend = true;
-  ana1.simul_ = false;
   ana1.set_SMratio(0.09);
 
   if (strcmp(input_name.c_str(), "new")) ana1.old_tree = true;
@@ -163,6 +161,10 @@ int main(int argc, char* argv[]) {
     RooRealVar* weight = ws->var("weight");
     RooRealVar* MassRes = ws->var("MassRes");
     RooCategory* channel_cat = ws->cat("channels");
+
+    Double_t p0, p1, p2;
+    Fit_MassRes("input/small-SgMc.root", p0, p1, p2);
+
     for (int i = 0; i < decays_n; i++) {
       decays_filename[i] = "input/small-" + decays[i] + ".root";
       decays_treename[i] = decays[i] + "_bdt";
@@ -171,8 +173,7 @@ int main(int argc, char* argv[]) {
       smalltree_f[i] = new TFile(decays_filename[i].c_str(), "UPDATE");
       smalltree[i] = (TTree*)smalltree_f[i]->Get(decays_treename[i].c_str());
       TTree* reduced_tree = smalltree[i]->CopyTree(cut.c_str());
-      TObjArray MassRes_toa = Create_MassRes(reduced_tree);
-      TH1D* MassRes_h = (TH1D*)MassRes_toa[2];
+
       Double_t m_t, eta_t, m1eta_t, m2eta_t, bdt_t;
       reduced_tree->SetBranchAddress("m",     &m_t);
       reduced_tree->SetBranchAddress("bdt",   &bdt_t);
@@ -188,11 +189,8 @@ int main(int argc, char* argv[]) {
         m1eta->setVal(m1eta_t);
         m2eta->setVal(m2eta_t);
         bdt->setVal(bdt_t);
-        if ( (i == 0 || i == 1) && false) {
-          double res = MassRes_h->GetBinContent(MassRes_h->FindBin(eta_t));
-          MassRes->setVal(res);
-        }
-        else MassRes->setVal(0.0078*eta_t*eta_t + 0.035);
+        // MassRes->setVal(0.0078*eta_t*eta_t + 0.035);
+        MassRes->setVal(p2*eta_t*eta_t + p1*eta_t + p0);
         if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) channel_cat->setIndex(0);
         else channel_cat->setIndex(1);
         RooArgSet varlist_tmp(*m, *MassRes, *eta, *m1eta, *m2eta, *bdt, *channel_cat);
@@ -203,9 +201,11 @@ int main(int argc, char* argv[]) {
 
     rad_bs = rds_smalltree[0];
     ana1.define_MassRes_pdf(rds_smalltree[0], "bs");
+    ana1.define_bdt_pdf(rds_smalltree[0], "bs");
 
     rad_bd = rds_smalltree[1];
     ana1.define_MassRes_pdf(rds_smalltree[1], "bd");
+    ana1.define_bdt_pdf(rds_smalltree[1], "bd");
 
     RooDataSet* rds_signals = (RooDataSet*)rds_smalltree[0]->Clone("rds_signals");
     rds_signals->append(*rds_smalltree[1]);
@@ -217,6 +217,7 @@ int main(int argc, char* argv[]) {
     rds_semi->append(*rds_smalltree[12]);
     rad_semi = rds_semi;
     ana1.define_MassRes_pdf(rds_semi, "semi");
+    ana1.define_bdt_pdf(rds_semi, "semi");
 
     RooDataSet* rds_peak = (RooDataSet*)rds_smalltree[2]->Clone("rds_peak");
     rds_peak->append(*rds_smalltree[3]);
@@ -228,11 +229,13 @@ int main(int argc, char* argv[]) {
     rds_peak->append(*rds_smalltree[9]);
     rad_peak = rds_peak;
     ana1.define_MassRes_pdf(rds_peak, "peak");
+    ana1.define_bdt_pdf(rds_peak, "peak");
 
     RooDataSet* rds_rare = (RooDataSet*)rds_peak->Clone("rds_rare");
     rds_rare->append(*rds_semi);
     rad_rare = rds_rare;
     ana1.define_MassRes_pdf(rds_rare, "rare");
+    ana1.define_bdt_pdf(rds_rare, "rare");
 
     RooDataSet* rds_signalsrare = (RooDataSet*)rds_signals->Clone("rds_signalsrare");
     rds_signalsrare->append(*rds_rare);
@@ -240,6 +243,8 @@ int main(int argc, char* argv[]) {
     ana1.define_MassRes_pdf(rds_signalsrare, "signalsrare");
 
     ana1.define_MassRes_pdf(rds_smalltree[13], "comb");
+    ana1.define_bdt_pdf(rds_smalltree[13], "comb");
+
   }
   ana1.define_pdfs();
   if (strcmp(rare_f.c_str(),"no")) ana1.set_rare_normalization(rare_f);
@@ -267,8 +272,10 @@ int main(int argc, char* argv[]) {
  // ana1.define_rare2(rad_rare);
  //    ws->var("eta")->setVal(2);
  if (!strcmp(rare_f.c_str(),"no")) ana1.fit_pdf("rare", rad_rare, false);
-// ana1.define_rare3();
-// ana1.fit_pdf("expo", rad_rare, false);
+ ana1.print_ = false;
+ ana1.define_rare3(0);
+ ana1.fit_pdf("expo3", rad_rare, false);
+ ana1.print_ = print;
 
   if (strcmp(input_name.c_str(), "new")) {
 
@@ -285,6 +292,7 @@ int main(int argc, char* argv[]) {
   string output_s = "output/ws_pdf_" + meth + "_" + ch_s;
   if (SM) output_s += "_SM";
   if (bd_const) output_s += "_BdConst";
+  if (bdt_fit) output_s += "_2D";
   if (pee) output_s += "_PEE";
   output_s += ".root";
   ws->SaveAs(output_s.c_str());

@@ -28,7 +28,7 @@ static int ch_i = -1;
 static int inputs = 1;
 static int sig_meth = -1;
 static double bdt = 0.0;
-bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false;
+bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
 
@@ -44,6 +44,7 @@ void help() {
   cout << "-print \t save the fits to gif and pdf --> -no_legend without parameters on canvas" << endl;
   cout << "-bdt # \t bdt cut, default is " << bdt << endl;
   cout << "-pee \t per-event-error" << endl;
+  cout << "-bdt_fit \t bdt_fit" << endl;
   cout << "-rare #filename \t file with rare event estimations (for normalizing to B -> JpsiK)" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_simul_maker.o: makes simul pdf workspace" << endl;
@@ -55,6 +56,7 @@ void help() {
   cout << "-print \t save the fits to gif and pdf --> -no_legend without parameters on canvas" << endl;
   cout << "-bdt # \t bdt cut, default is " << bdt << endl;
   cout << "-pee \t per-event-error" << endl;
+  cout << "-bdt_fit \t bdt_fit" << endl;
   cout << "-rare #filename \t file with rare event estimations (for normalizing to B -> JpsiK)" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_fitData.o: fits events with pdf given by main_pdf_choise or main_simul_maker" << endl;
@@ -71,6 +73,7 @@ void help() {
   cout << "-sig # \t evaluate significance with method: 0 by hand; 1 ProfileLikelihoodCalculator; 2 ProfileLikelihoodTestStat" << endl;
   cout << "-e #filename \t estimates file (useful for significance)" << endl;
   cout << "-pee \t per-event-error" << endl;
+  cout << "-bdt_fit \t bdt_fit" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -85,7 +88,9 @@ void help() {
   cout << "if NOT simultaneous" << endl;
   cout << "\t -pdf {bs, bd, rare, comb, total} \t combination of pdf names, for generating" << endl;
   cout << "\t -test {bs, bd, rare, comb, total} \t fitting pdf, if different from pdf" << endl;
-  cout << "-bias [c+,c-,p+,p-]\t biasing rare pdf parameters (it works without -roomcs)" << endl;
+  cout << "-bias [c+,c-,tau+,tau-]\t biasing rare pdf parameters (it works without -roomcs)" << endl;
+  cout << "-pee \t per-event-error" << endl;
+  cout << "-bdt_fit \t bdt_fit" << endl;
   cout << endl;
 
   exit(EXIT_SUCCESS);
@@ -192,6 +197,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-rare")) {
       rare_f = argv[i+1];
       cout << "rare file = " << rare_f << endl;
+    }
+    if (!strcmp(argv[i],"-bdt_fit")) {
+      bdt_fit = true;
+      cout << "2D fit with mass and bdt" << endl;
     }
     if (!strcmp(argv[i],"-h")) help();
   }
