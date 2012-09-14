@@ -68,6 +68,13 @@ double fa_pol1_err(double *x, double *par) {
   return  (fa_err(x, &par[2]) + fa_pol1(x, &par[0]));
 }
 
+// ----------------------------------------------------------------------
+// This is a simplfied "landau" using an analytical formula.
+// I use it because it was easiter for me to understand the integral (area) of this formula,
+double fa_landausimp(double *x, double *par) {  // simplified landau
+  double xx = ( x[0]- par[0] ) / par[1];
+  return par[2] * 0.3989 * TMath::Exp(-0.5 * ( xx + TMath::Exp(-xx) ) );
+} 
 
 // ----------------------------------------------------------------------
 plotClass::plotClass(const char *files, const char *cuts, const char *dir, int mode) { 
@@ -1254,7 +1261,10 @@ void plotClass::loopTree(int mode, int proc) {
       //      normYield(h, mode, 5.10, 5.5);
       TH1D *h = fhNorm[i];
       //      normYield(h, 0, 4.9, 5.9, 5.145);
+
       normYield(h, fChan, 5.0);
+      //normYield2(h, fChan, 5.0);   // Includes the landau for Bu2JpsiPi
+
       aa->fitYield  = fNoSig; 
       aa->fitYieldE = fNoSigE; 
 
@@ -2582,6 +2592,175 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
 }
 
 
+// ----------------------------------------------------------------------
+// A modified fitting class for the normalization channel.
+// Includes the landau peak for Bu2JpsiPi events. The landau has fixed parameters except the amplitude.
+// Tested only outside the plotClass framework.
+void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco) {
+
+//   double pReco = (preco<0? (1 == mode?5.145:5.146): preco);
+  double pReco = (preco<0? 5.145: preco);
+
+  TF1 *lF1(0), *lBg(0);
+
+  TVirtualFitter::SetMaxIterations(20000);
+
+  string name(h->GetName()); 
+  double sigma1(0.03);
+  if (1 == mode) sigma1 = 0.04; 
+  //if (string::npos != name.find("hNormC")) sigma1 = 0.02;
+  double sigma2(0.1); 
+  //if (string::npos != name.find("hNormC")) sigma2 = 0.05;
+  
+  if (0 == mode) { 
+    fpFunc->fLo = lo; 
+    fpFunc->fHi = hi; 
+    cout<<sigma1<<" "<<sigma2<<" "<<pReco<<endl;
+    //    lF1 = fpFunc->expoErrgauss2c(h, 5.27, 0.03, 0.1, pReco); 
+    //lF1 = fpFunc->expoErrgauss2(h, 5.28, sigma1, 5.27, sigma2, pReco); 
+    lF1 = fpFunc->expoErrgauss2Landau(h, 5.28, sigma1, 5.27, sigma2, pReco); 
+    lF1->SetNpx(100000);
+    lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
+
+  } else {
+
+    fpFunc->fLo = lo; //5.0;
+    fpFunc->fHi = hi; //5.5;
+    lF1 = fpFunc->expoErrGaussLandau(h, 5.27, 0.056, pReco); 
+    lF1->SetNpx(100000);
+    lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
+  }
+  h->Fit(lF1, "rem", "", lo, hi); 
+
+  if (0 == mode) {
+    cout << "par i = "; 
+    for (int i = 0; i < lBg->GetNpar(); ++i) {
+      lBg->SetParameter(i, lF1->GetParameter(6+i));
+      cout << " " << lBg->GetParameter(i);
+    }
+    cout << endl;
+  } else {
+    for (int i = 0; i < lBg->GetNpar(); ++i) {
+      lBg->SetParameter(i, lF1->GetParameter(3+i));
+      cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
+    }
+  }
+
+
+  // get the full area of 1 or 2 gaussians
+  double binw  = h->GetBinWidth(1);
+  double area = 0;
+  double cons = lF1->GetParameter(0); 
+  double sig1  = lF1->GetParameter(2);
+  if(mode==0) {  // barrel
+    double frac  = lF1->GetParameter(3);
+    double sig2  = lF1->GetParameter(5);
+    area  = 2.507 * cons * ( sig1 + frac*sig2);
+  } else { // forward
+    area  = cons;
+  }
+  //cout<<" const "<< cons <<" "<<area<<" "<<area/binw<<endl; // this is with full tails 
+
+  // integrals
+  double cf  = lF1->Integral(5.15, 5.45); 
+  double cb  = lBg->Integral(5.15, 5.45); 
+  double cE = lF1->GetParError(0);
+  
+  // landau
+  //double area = 2.507 * cons * (par[2] + par[3]*par[5]); // area of the 2 gaussians
+  double area_landau = 0.049 * area;
+  double mpvl = 0, sigl=0;
+  if(mode==0) {mpvl = lF1->GetParameter(12); sigl = lF1->GetParameter(13);} // bar
+  else        {mpvl = lF1->GetParameter(9);  sigl = lF1->GetParameter(10);} // end
+  double constl = area_landau/sigl;
+  //cout<< mpvl << " " << sigl << " "<<constl<<endl; // landau const = area/sigma
+
+  // area under landau
+  TF1 *fl = new TF1("test", fa_landausimp, 4.5, 6, 3);
+  fl->SetParameters(mpvl,sigl,constl); 
+  double cl  = fl->Integral(5.15, 5.45); // estimate landau contribution 
+
+  double sig = cf - cb - cl; // all - background - landau
+  //cout<<" integrals "<< sig <<" "<< cf <<" "<< cb <<" "<< cl <<endl;
+  //cout<<" integrals "<<sig/binw<<" "<<cf/binw <<" "<<cb/binw<<" "<<cl/binw<<endl;
+
+  double fNoSig = sig/binw;  // convert to counts
+  double fNoSigE = 0;
+
+  if(true) { // skip
+    double ierr = lF1->IntegralError(5.15, 5.45)/binw; // slow
+    if (ierr > TMath::Sqrt(fNoSig)) {
+      fNoSigE = ierr;
+    } else {
+      fNoSigE = cE/sig*fNoSig;
+    }
+  } 
+
+  cout << "N(Sig) = " << fNoSig << " +/- " << fNoSigE << endl;
+  cout << "chi2/dof = " << lF1->GetChisquare() << "/" << lF1->GetNDF() 
+       << " prob = " << TMath::Prob(lF1->GetChisquare(), lF1->GetNDF()) 
+       << endl;
+
+
+  shrinkPad(0.13, 0.2);
+  setHist(h, kBlack, 20, 1.); 
+  setTitles(h, "m_{#mu#muK} [GeV]", Form("Candidates / %3.3f GeV", h->GetBinWidth(1)), 0.05, 1.1, 2.0); 
+  h->SetMinimum(0.01); 
+  //h->SetLineColor(kBlack); 
+  gStyle->SetOptStat(0); 
+  gStyle->SetOptTitle(0); 
+  h->Draw("e");
+
+  //cout<<" after plot histo"<<endl;
+
+  // -- Overlay BG function
+  lBg->SetLineStyle(kDashed);
+  lBg->SetLineColor(kRed);
+  lBg->SetLineWidth(3);
+  lBg->DrawCopy("same");
+
+  //cout<<" after plot bg"<<endl;
+
+  // Plot landau
+  fl->SetLineStyle(kDotted);
+  fl->SetLineColor(kBlue);
+  fl->SetLineWidth(3);
+  fl->DrawCopy("same");
+
+  //cout<<" after plot landau "<<cl<<" "<<cl/binw<<endl;
+
+  tl->SetTextSize(0.07); 
+  tl->SetTextColor(kBlack); 
+  if (0 == fChan) {
+    tl->DrawLatex(0.6, 0.8, "Barrel");   
+  } 
+
+  if (1 == fChan) {
+    tl->DrawLatex(0.6, 0.8, "Endcap");   
+  } 
+  
+  stamp(0.20, fStampString, 0.67, fStampCms); 
+  if (fDoPrint) {
+    
+    string pdfname;
+    string hname(h->GetName());
+    if (string::npos != hname.find("NormC")) {
+      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), fChan);
+    } else {
+      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), fChan);
+    }
+
+   c0->SaveAs(pdfname.c_str());
+  }
+
+  
+  delete lF1; 
+  delete lBg; 
+  delete fl;
+
+}
 // ----------------------------------------------------------------------
 void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
 
