@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-
+#
 # Usage: cd chains/subdir; runAll -t tarfile [-h] [-m] [-n] [-r] [-a] [-d]
 # ------
 #            -d                           printout only, don't do anything
@@ -19,7 +19,8 @@
 use Getopt::Std;
 getopts('Cdhj:r:s:t:v:');
 
-my $job = "2012";
+#my $job = "2012";
+my $job = "2012/new";
 if ($opt_j) {
     $job = $opt_j; 
 }
@@ -37,57 +38,62 @@ if ($opt_v) {
 
 %jobs = (
     "signal Bs2MuMu MC mix"  
-    => "-m,bmm2Reader.mix-Bs2MuMu,cbmm-$version-cms-BsToMuMu_BsFilter_8TeV-START52_V9-v1-*,$version-cms-Bs2MuMu.root"
+    => "-m,bmm2Reader.mix-Bs2MuMu,cbmm-$version-cms-BsToMuMu_BsFilter_8TeV-START53_V7A-v1-*,$version-cms-Bs2MuMu.root"
     , "signal Bd2MuMu MC mix"  
-    => "-m,bmm2Reader.mix-Bd2MuMu,cbmm-$version-cms-BdToMuMu_BdFilter_8TeV-START52_V9-v1-*,$version-cms-Bd2MuMu.root"
+    => "-m,bmm2Reader.mix-Bd2MuMu,cbmm-$version-cms-BdToMuMu_BdFilter_8TeV-START53_V7A-v1-*,$version-cms-Bd2MuMu.root"
     #
     , "norm Bu2JpsiK MC mix V9"  
-    => "-m,bmm2Reader.mix-Bu2JpsiK,cbmm-$version-cms-BuToJPsiK_K2MuFilter_8TeV-START52_V9-v2-*,$version-cms-Bu2JpsiK-V9.root"
+    => "-m,bmm2Reader.mix-Bu2JpsiK,cbmm-$version-cms-BuToJPsiK_K2MuFilter_8TeV-START53_V7A-v1-*,$version-cms-Bu2JpsiK-V9.root"
     #
     , "cs Bs2JpsiPhi MC mix"  
-    => "-m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-$version-cms-BsToJPsiPhi_2K2MuFilter_8TeV-START52_V9-v2-*,$version-cms-Bs2JpsiPhi.root"
+    => "-m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-$version-cms-BsToJPsiPhi_2K2MuFilter_8TeV-START53_V7A-v1-*,$version-cms-Bs2JpsiPhi.root"
     #
-    , "data 2012A"  
-    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012A-PromptReco-v1*,$version-2012A-data.root"
+    
+	, "data 2012A"  
+    > "-b 1,bmm2Reader.2012,cbmm-$version-Run2012A-PromptReco-v1*,$version-2012A-data.root"
     , "data 2012B"  
     => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1*,$version-2012B-data.root"
     , "data 2012C"  
-    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012C-PromptReco-v1*,$version-2012C-data.root"
-    #, "data 2012B1"  
-    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_1*,$version-2012B_1-data.root"
-    #, "data 2012B2"  
-    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_2*,$version-2012B_2-data.root"
-    #, "data 2012B3"  
-    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_3*,$version-2012B_3-data.root"
-    #, "data 2012B4"  
-    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_4*,$version-2012B_4-data.root"
-    #, "data 2012B5"  
-    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_5*,$version-2012B_5-data.root"
-    #, "data 2012B6"  
-    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_6*,$version-2012B_6-data.root"
-    #, "data 2012B7"  
-    #=> "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_7*,$version-2012B_7-data.root"
+    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012C-PromptReco-v1*,$version-2012C-v1-data.root"
+    , "data 2012C"  
+    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012C-PromptReco-v2*,$version-2012C-v2-data.root"
+    , "data 2012B1"  
+    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_1*,$version-2012B_1-data.root"
+    , "data 2012B2"  
+    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_2*,$version-2012B_2-data.root"
+    , "data 2012B3"  
+    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_3*,$version-2012B_3-data.root"
+    , "data 2012B4"  
+    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_4*,$version-2012B_4-data.root"
+    , "data 2012B5"  
+    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_5*,$version-2012B_5-data.root"
+    , "data 2012B6"  
+    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_6*,$version-2012B_6-data.root"
+    , "data 2012B7"  
+    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1_7*,$version-2012B_7-data.root"
     # 
     , "Bs2KMuNu rare MC"  
-    => "-m,bmm2Reader.2e33-Bs2KMuNu,cbmm-$version-cms-BsToKMuNu_KMuNuEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bs2KMuNu.root"
+    => "-m,bmm2Reader.2e33-Bs2KMuNu,cbmm-$version-cms-BsToKMuNu_KMuNuEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-Bs2KMuNu.root"
     , "Bs2PiPi rare MC"  
-    => "-m,bmm2Reader.2e33-Bs2PiPi,cbmm-$version-cms-BsToPiPi_2PiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bs2PiPi.root"
+    => "-m,bmm2Reader.2e33-Bs2PiPi,cbmm-$version-cms-BsToPiPi_2PiPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-Bs2PiPi.root"
     , "Bs2KK rare MC"  
-    => "-m,bmm2Reader.2e33-Bs2KK,cbmm-$version-cms-BsToKK_2KPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bs2KK.root"
+    => "-m,bmm2Reader.2e33-Bs2KK,cbmm-$version-cms-BsToKK_2KPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-Bs2KK.root"
     , "Bs2KPi rare MC"  
-    => "-m,bmm2Reader.2e33-Bs2KPi,cbmm-$version-cms-BsToKPi_KPiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bs2KPi.root"
+    => "-m,bmm2Reader.2e33-Bs2KPi,cbmm-$version-cms-BsToKPi_KPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-Bs2KPi.root"
     , "Bd2KPi rare MC"  
-    => "-m,bmm2Reader.2e33-Bd2KPi,cbmm-$version-cms-BdToKPi_KPiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bd2KPi.root"
+    => "-m,bmm2Reader.2e33-Bd2KPi,cbmm-$version-cms-BdToKPi_KPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-Bd2KPi.root"
     , "Lb2PiP rare MC"  
-    => "-m,bmm2Reader.2e33-Lb2PiP,cbmm-$version-cms-LambdaBToPPi_PPiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-LambdaB2PPi.root"
+    => "-m,bmm2Reader.2e33-Lb2PiP,cbmm-$version-cms-LambdaBToPPi_PPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-LambdaB2PPi.root"
     , "Bd2KK rare MC"  
-    => "-m,bmm2Reader.2e33-Bd2KK,cbmm-$version-cms-BdToKK_2KPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bd2KK.root"
+    => "-m,bmm2Reader.2e33-Bd2KK,cbmm-$version-cms-BdToKK_2KPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-Bd2KK.root"
     , "Bd2PiPi rare MC"  
-    => "-m,bmm2Reader.2e33-Bd2PiPi,cbmm-$version-cms-BdToPiPi_2PiPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bd2PiPi.root"
+    => "-m,bmm2Reader.2e33-Bd2PiPi,cbmm-$version-cms-BdToPiPi_2PiPtEtaFilter_8TeV-START53_V7A-v2*,$version-2e33-Bd2PiPi.root"
     , "Lb2PK rare MC"  
-    => "-m,bmm2Reader.2e33-Lb2KP,cbmm-$version-cms-LambdaBToPK_PKPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-LambdaB2PK.root"
+    => "-m,bmm2Reader.2e33-Lb2KP,cbmm-$version-cms-LambdaBToPK_PKPtEtaFilter_8TeV-START53_V7A-v2*,$version-2e33-LambdaB2PK.root"
+    , "Lb2PMuNu rare MC"  
+    => "-m,bmm2Reader.2e33-Lb2KP,cbmm-$version-cms-LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-LambdaB2PK.root"
     , "Bd2PiMuNu rare MC"  
-    => "-m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-$version-cms-BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-START52_V9-v1*,$version-2e33-Bd2PiMuNu.root"
+    => "-m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-$version-cms-BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-Bd2PiMuNu.root"
     );
 
 #my $user  = $ENV{'USER'};
