@@ -143,13 +143,6 @@ enum bmm_param_tag {
 };
 typedef std::pair<bmm_param_tag,int> bmm_param;
 
-/* Model constants:
- *	Total histogram region [4.8,6.0]
- */
-const std::pair<double,double> bs_range(5.3,5.45);
-const std::pair<double,double> bd_range(5.2,5.3);
-const double low_histo_bound = 4.9;
-const double high_histo_bound = 5.9;
 double compute_tau(std::map<bmm_param,measurement_t> *bsmm, std::map<bmm_param,measurement_t> *bdmm, int channel, bool tau_s);
 
 /* conversion routines */

@@ -26,8 +26,6 @@ HEADERS = external_constants.h ul_estimate.h bplus_estimator.h bmm_estimator.h
 ULCALC_OBJS = ul_main.o ul_estimate.o external_constants.o
 ULEXT_OBJS = ulc_ext.o bplus_estimator.o bmm_estimator.o external_constants.o
 GEN_OBJS = tree_gen.o
-ANA_OBJS = ncAna.o ncCut.o ncFormula.o
-ANA_DICTS = ${ANA_OBJS:.o=Dict.o}
 
 
 #################
@@ -48,7 +46,7 @@ obj/%.o : %.cpp $(HEADERS)
 ulcalc: bin/ulcalc
 	@true
 
-all: ulcalc ulc_ext tree_gen libNCAna
+all: ulcalc ulc_ext tree_gen
 	@true
 
 ulc_ext: bin/ulc_ext
@@ -57,15 +55,9 @@ ulc_ext: bin/ulc_ext
 tree_gen: bin/tree_gen
 	@true
 
-libNCAna: lib/libNCAna.so
-	@true
-
 lib/libNCRootUtils.so:
 	rm -f lib/libNCRootUtils.so
 	cd lib && ln -s ../../rootutils/lib/libNCRootUtils.so && cd -
-
-lib/libNCAna.so: $(addprefix obj/,$(ANA_OBJS)) $(addprefix obj/,$(ANA_DICTS))
-	$(LD) -o $@ $(addprefix obj/,$(ANA_OBJS)) $(addprefix obj/,$(ANA_DICTS)) $(SOFLAGS) $(ROOTLIBS) $(LDFLAGS) lib/libNCRootUtils.so
 
 bin/ulcalc: $(addprefix obj/,$(ULCALC_OBJS))
 	$(LD) -o $@ $(addprefix obj/,$(ULCALC_OBJS)) $(ROOTLIBS) $(LDFLAGS)

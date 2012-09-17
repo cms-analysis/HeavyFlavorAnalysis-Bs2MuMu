@@ -19,6 +19,7 @@
 #include <TCut.h>
 #include <TFile.h>
 #include <TTree.h>
+#include <TROOT.h>
 
 using namespace std;
 
@@ -119,6 +120,8 @@ int main(int argc, const char *argv [])
 	TFile rootfile("ulc.root","recreate");
 	auto_ptr<map<int,triplet<measurement_t> > > rare_effs;
 	
+	// run in batch mode
+	gROOT->SetBatch(kTRUE);
 	
 	// parse the command line options
 	parse_arguments(&argv[1], &argv[argc]);

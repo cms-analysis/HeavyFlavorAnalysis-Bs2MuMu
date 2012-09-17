@@ -21,7 +21,60 @@
 #include <TEfficiency.h>
 #include <TEventList.h>
 
+// RooFit headers
+#include <RooWorkspace.h>
+#include <RooDataSet.h>
+#include <RooRealVar.h>
+#include <RooAbsPdf.h>
+#include <RooPlot.h>
+
 using namespace std;
+
+static measurement_t fitRooStats(TTree *tree, TCut cut, double obs, int channelIx)
+{
+	RooWorkspace *w = new RooWorkspace;
+	RooDataSet *data;
+	TTree *dataTree;
+	RooPlot *p;
+	TCanvas *c = new TCanvas;
+	measurement_t m1,m2;
+	
+	w->factory("mass[4.9,5.9]");
+	w->defineSet("obs","mass");
+	
+	dataTree = tree->CopyTree(cut.GetTitle());
+	data = new RooDataSet("data","norm mass distribution",dataTree,*w->set("obs"));
+	w->import(*data);
+	
+	// create the model...
+	w->factory("Gaussian::sig(mass,mu[5.28,4.9,5.9],sigma[0.03,0,0.05])");
+	w->factory("Gaussian::sig2(mass,mu,sigma2[0.06,0.05,2])");
+	w->factory("Exponential::bkg_comb(mass,c[0,-1e30,1e30])");
+	w->factory(Form("SUM::model(nsig[%f,0,100000]*sig,nsig2[0,0,100000]*sig2,ncomb[0,0,100000]*bkg_comb)",obs));
+	
+	p = w->var("mass")->frame();
+	w->data("data")->plotOn(p,RooFit::Binning(50));
+	p->Draw();
+	
+	w->pdf("model")->fitTo(*w->data("data"), RooFit::Range(5.1,5.5));
+	w->pdf("model")->plotOn(p);
+	
+	// get the result
+	m1.setVal(w->var("nsig")->getVal());
+	m1.setErr(w->var("nsig")->getError());
+	m2.setVal(w->var("nsig2")->getVal());
+	m2.setErr(w->var("nsig2")->getError());
+	
+	p->Draw(); // show for visual checking...
+	c->SaveAs(Form("obs_channel_%d.pdf",channelIx));
+	
+	delete c;
+	delete data;
+	delete p;
+	delete w;
+	
+	return (m1 + m2);
+} // fitRooStats()
 
 void estimate_bplus(std::map<bmm_param,measurement_t> *bplus, TTree *dataTree, TTree *mcTree, TTree *accTree, double minEta, double maxEta, uint32_t channelIx, TCut anaCut, std::map<systematics_t,double> *systematics_table)
 {
@@ -42,10 +95,9 @@ void estimate_bplus(std::map<bmm_param,measurement_t> *bplus, TTree *dataTree, T
 	TCut triggerCut("triggered_jpsi");
 	measurement_t mes;
 	TEfficiency effCalc("eff","",1,0,1); // we only need one bin
-	TH1D *mbplus = new TH1D("mbplus","",40,4.8,6.0);
+	TH1D *mbplus;
 	double obs;
 	TCanvas *can = NULL;
-	static int plot_nbr = 1;
 	map<systematics_t,double>::iterator syst_it;
 	TEventList *elist;
 	TEventList treeList;
@@ -173,19 +225,29 @@ void estimate_bplus(std::map<bmm_param,measurement_t> *bplus, TTree *dataTree, T
 	
 	cout << "\tdone" << endl;
 	
+	/******************************
+	 * Working with the Data Tree *
+	 ******************************/
+	dataTree->GetDirectory()->cd();
+	mbplus = new TH1D("mbplus","",40,4.8,6.0);
 	// get the number of observed Bu -> J/psi Kp
 	cout << "	Measuring number of B+ -> J/Psi K+ decays..." << endl;
 	can = new TCanvas;
 	cut = TCut("candidate == 300521") && acceptanceCutData && channelCut && anaCut && muonCut && triggerCut;
-	dataTree->Draw("mass >> mbplus", cut);
+	dataTree->Draw(">>elist",cut);
+	elist = (TEventList*)gDirectory->Get("elist");
+	dataTree->SetEventList(elist);
+	elist->Write(Form("normChannel_%d",channelIx));
+	dataTree->Draw("mass >> mbplus");
 	init_gauss_linear(&fit, 5.1, 5.5);
 	adjust_parameter_gauss_linear(mbplus, fit.fit_fct);
 	mbplus->Fit(fit.fit_fct,"R"); // for convergence, first chi2 fit
 	mbplus->Fit(fit.fit_fct,"LR"); // Likelihood fit
 	
+	// fit using RooFit
 	obs = signal_events_gauss_linear(fit.fit_fct, mbplus->GetBinWidth(1));
-	fit.fit_fct->SetParameter(0,fit.fit_fct->GetParError(0));
-	(*bplus)[make_pair(kObs_bplus, channelIx)] = measurement_t(obs,signal_events_gauss_linear(fit.fit_fct, mbplus->GetBinWidth(1)));
+	mes = fitRooStats(dataTree,cut,obs,channelIx);
+	(*bplus)[make_pair(kObs_bplus, channelIx)] = mes;
 	
 	// systematic uncertainty on number of observed bplus to jpsi kp
 	if ( (syst_it = systematics_table->find(g_sys_normfit)) != systematics_table->end() ) {
@@ -193,13 +255,11 @@ void estimate_bplus(std::map<bmm_param,measurement_t> *bplus, TTree *dataTree, T
 		mes = measurement_t(0, mes.getVal() * syst_it->second);
 		(*bplus)[make_pair(kObs_bplus, channelIx)] = mes + (*bplus)[make_pair(kObs_bplus, channelIx)];
 	}
-	
-	// save the histogram
-	mbplus->Draw("E1");
-	can->SaveAs(Form("obs_bplus_%d.eps",plot_nbr++));
+	cout << "\tdone" << endl;
 	
 	accTree->SetEventList(0);
 	mcTree->SetEventList(0);
+	dataTree->SetEventList(0);
 	
 	delete can;
 	delete fit.fit_fct;
