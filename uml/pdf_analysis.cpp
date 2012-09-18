@@ -43,7 +43,7 @@ void pdf_analysis::initialize () {
   ws_->import(*m2eta);
   weight = new RooRealVar("weight", "event weight", 0., 1000000.);
   ws_->import(*weight);
-  bdt  = new RooRealVar("bdt", "bdt cut", -100., 100.);
+  bdt  = new RooRealVar("bdt", "bdt cut", -1., 1.);
   ws_->import(*bdt);
 
   channels_cat = new RooCategory("channels", "channels");
@@ -338,7 +338,7 @@ void pdf_analysis::define_comb(int i = 0) {
   else  {
     RooUniform mass_comb(name("mass_comb", i), "N_comb", *ws_->var("Mass"));
     //RooProdPdf pdf_comb (name("pdf_comb",i), "pdf_comb", *ws_->var("MassRes"), Conditional(mass_comb, *ws_->var("Mass")));
-    if (bdt_fit_) {
+    if (!bdt_fit_) {
       RooProdPdf pdf_comb (name("pdf_comb",i), "pdf_comb", *ws_->pdf(name("MassRes_pdf_comb", i)), Conditional(mass_comb, *ws_->var("Mass")));
       ws_->import(pdf_comb);
     }
@@ -504,18 +504,22 @@ void pdf_analysis::print(RooAbsData* data, string output) {
 //  if (pee) subdata_res = ws_->data(Form("MassRes_rdh_%s", output.c_str()))->reduce(Form("channels==channels::channel_%d", channel));
   if (pee) subdata_res = (RooAbsData*)ws_->data(Form("MassRes_rdh_%s", output.c_str()))->Clone();
   RooPlot *rp = ws_->var("Mass")->frame();
+  RooPlot *rp_bdt = ws_->var("bdt")->frame();
   data->plotOn(rp, Binning(20));
+  data->plotOn(rp_bdt, Binning(100));
   if (!pee) {
     ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue), Range(range_.c_str())/*, ProjectionRange("eta_all"), Normalization((rds_->sumEntries(), RooAbsReal::NumEvent))*/);
+    if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue), Range(range_.c_str())/*, ProjectionRange("eta_all"), Normalization((rds_->sumEntries(), RooAbsReal::NumEvent))*/);
   }
   else {
     if (!simul_) {
       ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue)/*, Range(range_.c_str()), Normalization(data->sumEntries(), RooAbsReal::NumEvent)*/, ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE)/*, ProjectionRange(range_.c_str())*/);
+      if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue)/*, Range(range_.c_str()), Normalization(data->sumEntries(), RooAbsReal::NumEvent)*/, ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE)/*, ProjectionRange(range_.c_str())*/);
     }
     else {
       ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE)/*, Range(range_.c_str()), Normalization(data->sumEntries(), RooAbsReal::NumEvent)*//*, ProjWData(*ws_->data(Form("MassRes_rdh_%s_%d", output.c_str(), channel)))*//*, ProjectionRange(range_.c_str())*/);
+      if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE)/*, Range(range_.c_str()), Normalization(data->sumEntries(), RooAbsReal::NumEvent)*//*, ProjWData(*ws_->data(Form("MassRes_rdh_%s_%d", output.c_str(), channel)))*//*, ProjectionRange(range_.c_str())*/);
     }
-
     TH1* mass_eta_h;
     /*if (simul_) mass_eta_h = ws_->pdf(pdf_name.c_str())->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var(Form("eta_channel_%d", channel)), Binning(50))) ;
     else*/ mass_eta_h = ws_->pdf(pdf_name.c_str())->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var("MassRes"), Binning(30))) ;
@@ -548,7 +552,10 @@ void pdf_analysis::print(RooAbsData* data, string output) {
     delete mass_eta_h;
     delete rp_res;
   }
-  if(!no_legend) ws_->pdf(pdf_name.c_str())->paramOn(rp, Layout(0.50, 0.9, 0.9));
+  if(!no_legend) {
+    ws_->pdf(pdf_name.c_str())->paramOn(rp, Layout(0.50, 0.9, 0.9));
+    if (bdt_fit_) ws_->pdf(pdf_name.c_str())->paramOn(rp_bdt, Layout(0.50, 0.9, 0.9));
+  }
   
   //components
   RooArgSet * set = ws_->pdf(pdf_name.c_str())->getComponents();
@@ -574,12 +581,18 @@ void pdf_analysis::print(RooAbsData* data, string output) {
       }
       else {
         if (!pee) {
-          if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_rare" || name=="pdf_comb") ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
+          if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_rare" || name=="pdf_comb") {
+            ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
+            if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
+          }
         }
         else {
           size_t found2 = pdf_name.find("SigmaRes");
           if (found2 == string::npos) {
-            if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_rare" || name=="pdf_comb") ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
+            if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_rare" || name=="pdf_comb") {
+              ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
+              if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
+            }
           }
         }
       }
@@ -600,6 +613,20 @@ void pdf_analysis::print(RooAbsData* data, string output) {
   c->Print( (address_s + ".pdf").c_str());
   delete rp;
   delete c;
+
+  TCanvas* c_bdt = new TCanvas("c_bdt", "c_bdt", 600, 600);
+  rp_bdt->Draw();
+  ostringstream address_bdt;
+  if (simul_) address_bdt << "fig/BDT_" << pdf_name << "_" << meth_ << "_simul_" << channel;
+  else address_bdt << "fig/BDT_" << pdf_name << "_" << meth_ << "_" << ch_s_;
+  if (SM_) address_bdt << "_SM";
+  if (bd_constr_) address_bdt << "_BdConst";
+  if (pee) address_bdt << "_PEE";
+  string address_bdt_s(address_bdt.str());
+  c_bdt->Print( (address_bdt_s + ".gif").c_str());
+  c_bdt->Print( (address_bdt_s + ".pdf").c_str());
+  delete rp_bdt;
+  delete c_bdt;
 
   return;
 }
@@ -760,33 +787,41 @@ void pdf_analysis::gen_and_fit(string pdfname) {
   delete rp0;
   delete canvas0;
 
-  RooDataSet* data = pdf->generate( RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes")), 100);
+  RooDataSet* data = pdf->generate( RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")), 100);
   data->Print();
   RooPlot* rp_31 = ws_->var("Mass")->frame();
   RooPlot* rp_32 = ws_->var("MassRes")->frame();
-  TCanvas* canvas3 = new TCanvas("canvas3", "canvas3", 1200, 600);
-  canvas3->Divide(2,1);
+  RooPlot* rp_33 = ws_->var("bdt")->frame();
+  TCanvas* canvas3 = new TCanvas("canvas3", "canvas3", 1800, 600);
+  canvas3->Divide(3,1);
   data->plotOn(rp_31);
   data->plotOn(rp_32);
+  data->plotOn(rp_33);
   canvas3->cd(1);
   rp_31->Draw();
   canvas3->cd(2);
   rp_32->Draw();
+  canvas3->cd(3);
+  rp_33->Draw();
   canvas3->Print("fig/dataa.gif");
   delete canvas3;
   delete rp_31;
   delete rp_32;
+  delete rp_33;
 
-  pdf->fitTo(*data, ConditionalObservables(*ws_->var("MassRes")));
+  if (pee) pdf->fitTo(*data, ConditionalObservables(*ws_->var("MassRes")));
+  else pdf->fitTo(*data);
 
   RooPlot* rp = ws_->var("Mass")->frame();
   data->plotOn(rp);
   pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), LineColor(kOrange));
-  pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), Components("pdf_bs"), LineColor(kRed));
-  pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), Components("pdf_bd"), LineColor(kBlue));
-  pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), Components("pdf_rare"), LineColor(kGreen));
-  pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), Components("pdf_comb"), LineColor(kCyan));
-
+  pdf->paramOn(rp);
+  if (pee) {
+    pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), Components("pdf_bs"), LineColor(kRed));
+    pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), Components("pdf_bd"), LineColor(kBlue));
+    pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), Components("pdf_rare"), LineColor(kGreen));
+    pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), Components("pdf_comb"), LineColor(kCyan));
+  }
   TCanvas* canvas = new TCanvas("canvas", "canvas", 600, 600);
   rp->Draw();
   canvas->Print( ("fig/sample_" + pdfname + ".gif").c_str());
@@ -794,10 +829,12 @@ void pdf_analysis::gen_and_fit(string pdfname) {
   delete rp;
   delete canvas;
 
-  TH1* mass_eta_h = pdf->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var("MassRes"), Binning(30))) ;
-  TCanvas* canvas1 = new TCanvas("canvas1", "canvas1", 600, 600);
-  mass_eta_h->Draw("surf");
-  canvas1->Print("fig/sample1_signals.gif");
-  canvas1->Print("fig/sample1_signals.pdf");
-  delete canvas1;
+  if (pee) {
+    TH1* mass_eta_h = pdf->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var("MassRes"), Binning(30))) ;
+    TCanvas* canvas1 = new TCanvas("canvas1", "canvas1", 600, 600);
+    mass_eta_h->Draw("surf");
+    canvas1->Print("fig/sample1_signals.gif");
+    canvas1->Print("fig/sample1_signals.pdf");
+    delete canvas1;
+  }
 }

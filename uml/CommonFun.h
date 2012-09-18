@@ -27,7 +27,7 @@ static int NExp = 1;
 static int ch_i = -1;
 static int inputs = 1;
 static int sig_meth = -1;
-static double bdt = 0.0;
+static double bdt = -100.;
 bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};

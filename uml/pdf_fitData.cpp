@@ -457,6 +457,7 @@ void pdf_fitData::make_pdf_input() {
   string tail_s;
   if (SM_) tail_s = "_SM";
   else if (bd_constr_) tail_s = "_BdConst";
+  if (bdt_fit_) tail_s += "_2D";
   if (pee) tail_s += "_PEE";
   tail_s += ".root";
   if (simul_) {
@@ -506,6 +507,7 @@ void pdf_fitData::make_pdf() {
     ws_ = ws_input[0];
 
   }
+  ws_->Print();
 }
 
 void pdf_fitData::save() {
