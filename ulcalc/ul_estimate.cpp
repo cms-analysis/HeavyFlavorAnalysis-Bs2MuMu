@@ -363,7 +363,7 @@ void measure_params(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, 
 	splusbConfig->SetSnapshot(*wspace->set("poi"));
 } // measure_params()
 
-RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, int verbosity, double err, double *ulLimit, double *loLimit, pair<double,double> *rg, uint32_t *inBins, double *cpuUsed, uint32_t nbrProof, int nToys)
+RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit, double *loLimit, std::pair<double,double> *rg, uint32_t *inBins, double *cpuUsed, uint32_t nbrProof, int nToys)
 {
 	using namespace RooStats;
 	ModelConfig *splusbConfig = dynamic_cast<ModelConfig*>(wspace->obj("splusbConfig"));
@@ -452,7 +452,7 @@ RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, set<in
 } // est_ul_bc()
 
 // hybrid approach and ratioofprofiled
-RooStats::ConfInterval *est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, int verbosity, double err, double *ulLimit, pair<double,double> *rg, uint32_t* inBins, double *cpuUsed, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg)
+RooStats::ConfInterval *est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, int verbosity, double *ulLimit, pair<double,double> *rg, uint32_t* inBins, double *cpuUsed, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg)
  {
 	using namespace RooStats;
 	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));
@@ -542,7 +542,7 @@ RooStats::ConfInterval *est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, se
 	return result;
 } // est_ul_hybrid()
 
-RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, int verbosity, double err, double *ulLimit, pair<double,double> *rg, uint32_t *npts, double *cpuUsed, uint32_t nbrProof, int nToys)
+RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit, std::pair<double,double> *rg, uint32_t *npts, double *cpuUsed, uint32_t nbrProof, int nToys)
 {
 	using namespace RooStats;
 	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));
@@ -593,7 +593,7 @@ RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, set<i
 	return result;
 } // est_ul_cls()
 
-RooStats::HypoTestResult *est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double err, double *pvalue, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg)
+RooStats::HypoTestResult *est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double *pvalue, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg)
 {
 	using namespace RooStats;
 	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));
@@ -670,7 +670,7 @@ RooStats::HypoTestResult *est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *da
 	return result;
 } // est_ul_clb_hybrid()
 
-RooStats::HypoTestResult *est_ul_clb(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, int verbosity, double err, double *pvalue, uint32_t nbrProof, int nToys)
+RooStats::HypoTestResult *est_ul_clb(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double *pvalue, uint32_t nbrProof, int nToys)
 {
 	using namespace RooStats;
 	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));

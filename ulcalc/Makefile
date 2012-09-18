@@ -59,21 +59,27 @@ lib/libNCRootUtils.so:
 	rm -f lib/libNCRootUtils.so
 	cd lib && ln -s ../../rootutils/lib/libNCRootUtils.so && cd -
 
-bin/ulcalc: $(addprefix obj/,$(ULCALC_OBJS))
+bin/ulcalc: obj bin $(addprefix obj/,$(ULCALC_OBJS))
 	$(LD) -o $@ $(addprefix obj/,$(ULCALC_OBJS)) $(ROOTLIBS) $(LDFLAGS)
 
-bin/ulc_ext: $(addprefix obj/,$(ULEXT_OBJS)) lib/libNCRootUtils.so
+bin/ulc_ext: obj bin $(addprefix obj/,$(ULEXT_OBJS)) lib/libNCRootUtils.so
 	$(LD) -o $@ $(addprefix obj/,$(ULEXT_OBJS)) $(ROOTLIBS) $(LDFLAGS) lib/libNCRootUtils.so
 
-bin/tree_gen: $(addprefix obj/,$(GEN_OBJS)) lib/libNCRootUtils.so
+bin/tree_gen: obj bin $(addprefix obj/,$(GEN_OBJS)) lib/libNCRootUtils.so
 	$(LD) -o $@ $(addprefix obj/,$(GEN_OBJS)) $(ROOTLIBS) $(LDFLAGS) lib/libNCRootUtils.so
 
+obj:
+	mkdir -p obj
+
+bin:
+	mkdir -p bin
+
 clean:
-	rm -rf obj/*
+	rm -rf obj
 	rm -f *Dict*
 
 cleanall: clean
-	rm -rf bin/*
+	rm -rf bin
 
 distclean: cleanall
 	@true

@@ -40,7 +40,6 @@ static const char *configfile_path = NULL;
 static double gCLLevel = 0.95;
 static pair<double,double> gMuSRange(-1,-1);
 static uint32_t gFCSteps = 20;
-static double gNumErr = 0.0; // additional error in acceptance region
 static algo_t gAlgorithm = kAlgo_Bayesian;
 static bool gDisableErrors = false;
 static int gVerbosity = 1; // 0 = quite, 1 = standard, 2 = verbose
@@ -198,7 +197,7 @@ static void parse_input(const char *path, map<bmm_param,measurement_t> *bsmm, ma
 
 static void usage()
 {
-	cerr << "ulcalc [--float-data] [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--disable-errors] [[-n <nbr steps>] -r x,y ] [-e num_err] [-l cl] [-w workspace_outfile.root] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"clb_hybrid\"|\"zbi\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
+	cerr << "ulcalc [--float-data] [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--disable-errors] [[-n <nbr steps>] -r x,y] [-l cl] [-w workspace_outfile.root] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"clb_hybrid\"|\"zbi\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
 } // usage()
 
 static bool parse_arguments(const char **first, const char **last)
@@ -207,7 +206,6 @@ static bool parse_arguments(const char **first, const char **last)
 	const char *arg;
 	string s;
 	string::iterator col;
-	bool force_error = false;
 	
 	while (first != last) {
 		
@@ -270,13 +268,6 @@ static bool parse_arguments(const char **first, const char **last)
 				}
 			} else if (strcmp(arg, "--disable-errors") == 0) {
 				gDisableErrors = true;
-			} else if (strcmp(arg, "-e") == 0) {
-				if (first == last) {
-					usage();
-					abort();
-				}
-				force_error = true;
-				gNumErr = atof(*first++);
 			} else if (strcmp(arg, "-v") == 0) {
 				gVerbosity = 2; // verbose
 			} else if (strcmp(arg, "-q") == 0) {
@@ -331,9 +322,6 @@ static bool parse_arguments(const char **first, const char **last)
 	if (gAlgorithm == kAlgo_FeldmanCousins) {
 		cout << "mu_s range: (" << gMuSRange.first << ", " << gMuSRange.second << ")." << endl;
 		cout << "Number of Steps " << gFCSteps << endl;
-	}
-	if (gAlgorithm == kAlgo_FeldmanCousins || gAlgorithm == kAlgo_CLs || gAlgorithm == kAlgo_CLb) {
-		cout << "Additional error in acceptance region " << gNumErr << endl;
 	}
 	cout << "Algorithm is " << algo_name(gAlgorithm) << endl;
 	cout << "Errors on Variables are " << (gDisableErrors ? "disabled" : "enabled") << endl;
@@ -395,21 +383,21 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 				inter = est_ul_bc(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, NULL);
 				break;
 			case kAlgo_FeldmanCousins:
-				inter = est_ul_fc(wspace, data, channels, gCLLevel, gVerbosity, gNumErr, upperLimit, lowerLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys);
+				inter = est_ul_fc(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, lowerLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys);
 				break;
 			case kAlgo_CLs:
-				inter = est_ul_cls(wspace, data, channels, gCLLevel, gVerbosity, gNumErr, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys);
+				inter = est_ul_cls(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys);
 				break;
 			case kAlgo_CLb:
 				// note, here upper limit represents p-value of background model.
-				testResult = est_ul_clb(wspace, data, channels, gVerbosity, gNumErr, upperLimit, gProofWorkers, gToys);
+				testResult = est_ul_clb(wspace, data, channels, gVerbosity, upperLimit, gProofWorkers, gToys);
 				break;
 			case kAlgo_Hybrid:
-				inter = est_ul_hybrid(wspace, data, channels, gCLLevel, gVerbosity, gNumErr, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys, gBdToMuMu, gFixBackground);
+				inter = est_ul_hybrid(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys, gBdToMuMu, gFixBackground);
 				break;
 			case kAlgo_CLb_Hybrid:
 				// note, here upper limit represents p-value of background model.
-				testResult = est_ul_clb_hybrid(wspace, data, channels, gVerbosity, gNumErr, upperLimit, gProofWorkers, gToys, gBdToMuMu, gFixBackground);
+				testResult = est_ul_clb_hybrid(wspace, data, channels, gVerbosity, upperLimit, gProofWorkers, gToys, gBdToMuMu, gFixBackground);
 				break;
 			case kAlgo_Zbi:
 				inter = est_ul_zbi(wspace,data,channels,gCLLevel,gBdToMuMu,upperLimit);
