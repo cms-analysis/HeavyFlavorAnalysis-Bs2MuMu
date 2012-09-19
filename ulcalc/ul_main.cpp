@@ -50,6 +50,7 @@ static uint32_t gProofWorkers = 0;
 static int gToys = 50000;
 static bool gFixBackground = false;
 static bool gFloatingData = false;
+static bool gSMExpectation = false;
 
 static const char *algo_name(algo_t a)
 {
@@ -197,7 +198,7 @@ static void parse_input(const char *path, map<bmm_param,measurement_t> *bsmm, ma
 
 static void usage()
 {
-	cerr << "ulcalc [--float-data] [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--disable-errors] [[-n <nbr steps>] -r x,y] [-l cl] [-w workspace_outfile.root] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"clb_hybrid\"|\"zbi\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
+	cerr << "ulcalc [--SM-exp] [--float-data] [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--disable-errors] [[-n <nbr steps>] -r x,y] [-l cl] [-w workspace_outfile.root] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"clb_hybrid\"|\"zbi\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
 } // usage()
 
 static bool parse_arguments(const char **first, const char **last)
@@ -298,6 +299,8 @@ static bool parse_arguments(const char **first, const char **last)
 				gFixBackground = true;
 			} else if (strcmp(arg, "--float-data") == 0) {
 				gFloatingData = true;
+			} else if (strcmp(arg, "--SM-exp") == 0) {
+				gSMExpectation = true;
 			} else {
 				cerr << "Unknown option '" << arg << "'." << endl;
 				usage();
@@ -350,8 +353,6 @@ static void dump_params(pair<bmm_param,measurement_t> p)
 static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *channels, set<int>::iterator a,set<int>::iterator b, map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, double *upperLimit, double *lowerLimit)
 {
 	RooDataSet *data = NULL;
-	RooStats::ConfInterval *inter = NULL;
-	RooStats::HypoTestResult *testResult = NULL;
 	double bkg;
 	double obsBs,obsBd,bbb;
 	set<int>::const_iterator it;
@@ -380,27 +381,27 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 		
 		switch (gAlgorithm) {
 			case kAlgo_Bayesian:
-				inter = est_ul_bc(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, NULL);
+				est_ul_bc(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, NULL);
 				break;
 			case kAlgo_FeldmanCousins:
-				inter = est_ul_fc(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, lowerLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys);
+				est_ul_fc(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, lowerLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys);
 				break;
 			case kAlgo_CLs:
-				inter = est_ul_cls(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys);
+				est_ul_cls(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys);
 				break;
 			case kAlgo_CLb:
 				// note, here upper limit represents p-value of background model.
-				testResult = est_ul_clb(wspace, data, channels, gVerbosity, upperLimit, gProofWorkers, gToys);
+				est_ul_clb(wspace, data, channels, gVerbosity, upperLimit, gProofWorkers, gToys);
 				break;
 			case kAlgo_Hybrid:
-				inter = est_ul_hybrid(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys, gBdToMuMu, gFixBackground);
+				est_ul_hybrid(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys, gBdToMuMu, gFixBackground, gSMExpectation);
 				break;
 			case kAlgo_CLb_Hybrid:
 				// note, here upper limit represents p-value of background model.
-				testResult = est_ul_clb_hybrid(wspace, data, channels, gVerbosity, upperLimit, gProofWorkers, gToys, gBdToMuMu, gFixBackground);
+				est_ul_clb_hybrid(wspace, data, channels, gVerbosity, upperLimit, gProofWorkers, gToys, gBdToMuMu, gFixBackground);
 				break;
 			case kAlgo_Zbi:
-				inter = est_ul_zbi(wspace,data,channels,gCLLevel,gBdToMuMu,upperLimit);
+				est_ul_zbi(wspace,data,channels,gCLLevel,gBdToMuMu,upperLimit);
 				break;
 			case kAlgo_None:
 				measure_params(wspace, data, channels, gVerbosity);
@@ -412,11 +413,6 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 		}
 		wspace->allVars() = *saved_vars; // restore the values
 		
-		if (inter)		wspace->import(*inter);
-		if (testResult)	wspace->import(*testResult);
-		
-		delete inter;
-		delete testResult;
 		delete data;
 		goto bail;
 	}

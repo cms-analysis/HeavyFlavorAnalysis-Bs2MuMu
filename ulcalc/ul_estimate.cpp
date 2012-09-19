@@ -41,6 +41,7 @@ void add_channels(std::map<bmm_param,measurement_t> *bmm, std::set<int> *channel
 RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, bool no_errors, int verbosity, bool compute_bd_ul, bool fixed_bkg, bool floatPoissonians)
 {
 	RooStats::ModelConfig *splusbModel = NULL;
+	RooStats::ModelConfig *smModel = NULL;
 	RooStats::ModelConfig *bModel = NULL;
 	RooWorkspace *wspace = new RooWorkspace("wspace");
 	RooProdPdf *totalPdf = NULL;
@@ -308,6 +309,15 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 	splusbModel->SetPriorPdf(*wspace->pdf("prior_mu"));
 	wspace->import(*splusbModel);
 	
+	smModel = new RooStats::ModelConfig("smConfig");
+	smModel->SetWorkspace(*wspace); // set the workspace
+	smModel->SetPdf(*wspace->pdf("total_pdf"));
+	smModel->SetParametersOfInterest(*wspace->set("poi"));
+	smModel->SetObservables(*wspace->set("obs"));
+	smModel->SetNuisanceParameters(*wspace->set("nui"));
+	smModel->SetPriorPdf(*wspace->pdf("prior_mu"));
+	wspace->import(*smModel);
+	
 	bModel = new RooStats::ModelConfig("bConfig");
 	bModel->SetWorkspace(*wspace); // set the workspace
 	bModel->SetPdf(*wspace->pdf("total_pdf"));
@@ -324,6 +334,9 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 		cout << "-------------------------------------" << endl;
 		cout << "S+B ModelConfig configuration:" << endl;
 		splusbModel->Print();
+		cout << "-------------------------------------" << endl;
+		cout << "SM ModelConfig configuration:" << endl;
+		smModel->Print();
 		cout << "-------------------------------------" << endl;
 		cout << "B ModelConfig configuration:" << endl;
 		bModel->Print();
@@ -349,21 +362,32 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 void measure_params(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, int verbosity)
 {
 	RooStats::ModelConfig *splusbConfig = dynamic_cast<RooStats::ModelConfig*> (wspace->obj("splusbConfig"));
+	RooStats::ModelConfig *smConfig = dynamic_cast<RooStats::ModelConfig*> (wspace->obj("smConfig"));
 	RooStats::ModelConfig *bConfig = dynamic_cast<RooStats::ModelConfig*> (wspace->obj("bConfig"));
+	RooRealVar *poi;
 	wspace->allVars() = *data->get(0);
 	
-	((RooRealVar*)wspace->set("poi")->first())->setVal(0.0);
-	((RooRealVar*)wspace->set("poi")->first())->setConstant(kTRUE);
+	// conditional likelihood fit for background model
+	poi = (RooRealVar*)wspace->set("poi")->first();
+	poi->setVal(0.0);
+	poi->setConstant(kTRUE);
 	wspace->pdf("total_pdf")->fitTo(*data, RooFit::GlobalObservables(*wspace->set("nui")), ((verbosity > 0) ? RooCmdArg::none() : RooFit::PrintLevel(-1)));
-	((RooRealVar*)wspace->set("poi")->first())->setConstant(kFALSE);
+	poi->setConstant(kFALSE);
 	bConfig->SetSnapshot(*wspace->set("poi"));
+	
+	// conditional likelihood fit for SM
+	poi->setVal(1.0);
+	poi->setConstant(kTRUE);
+	wspace->pdf("total_pdf")->fitTo(*data, RooFit::GlobalObservables(*wspace->set("nui")), ((verbosity > 0) ? RooCmdArg::none() : RooFit::PrintLevel(-1)));
+	poi->setConstant(kFALSE);
+	smConfig->SetSnapshot(*wspace->set("poi"));
 	
 	// do a likelihood fit to the data to get the real values...
 	wspace->pdf("total_pdf")->fitTo(*data, RooFit::GlobalObservables(*wspace->set("nui")), ((verbosity > 0) ? RooCmdArg::none() : RooFit::PrintLevel(-1)));
 	splusbConfig->SetSnapshot(*wspace->set("poi"));
 } // measure_params()
 
-RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit, double *loLimit, std::pair<double,double> *rg, uint32_t *inBins, double *cpuUsed, uint32_t nbrProof, int nToys)
+void est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit, double *loLimit, std::pair<double,double> *rg, uint32_t *inBins, double *cpuUsed, uint32_t nbrProof, int nToys)
 {
 	using namespace RooStats;
 	ModelConfig *splusbConfig = dynamic_cast<ModelConfig*>(wspace->obj("splusbConfig"));
@@ -416,12 +440,13 @@ RooStats::ConfInterval *est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::s
 	swatch.Stop();
 	if (cpuUsed) *cpuUsed = swatch.CpuTime();
 	
-	delete pc;
+	wspace->import(*psInterval);
 	
-	return psInterval;
+	delete pc;
+	delete psInterval;
 } // est_ul()
 
-RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, int verbosity, double *ulLimit, double *cpuUsed)
+void est_ul_bc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit, double *cpuUsed)
 {
 	using namespace RooStats;
 	BayesianCalculator bc(*data,*(dynamic_cast<ModelConfig*>(wspace->obj("splusbConfig"))));
@@ -448,21 +473,23 @@ RooStats::ConfInterval *est_ul_bc(RooWorkspace *wspace, RooDataSet *data, set<in
 	swatch.Stop();
 	if (cpuUsed) *cpuUsed = swatch.CpuTime();
 	
-	return simpleInt;
+	wspace->import(*simpleInt);
+	delete simpleInt;
 } // est_ul_bc()
 
 // hybrid approach and ratioofprofiled
-RooStats::ConfInterval *est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, int verbosity, double *ulLimit, pair<double,double> *rg, uint32_t* inBins, double *cpuUsed, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg)
- {
+void est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit, std::pair<double,double> *rg, uint32_t* inBins, double *cpuUsed, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg, bool smExpectation)
+{
 	using namespace RooStats;
 	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));
 	ModelConfig *sbModel = dynamic_cast<ModelConfig*> (wspace->obj("splusbConfig"));
+	ModelConfig *smModel = dynamic_cast<ModelConfig*> (wspace->obj("smConfig"));
 	((RooRealVar*)wspace->set("poi")->first())->setVal(0); // for background
 	RatioOfProfiledLikelihoodsTestStat testStat(*sbModel->GetPdf(),*bModel->GetPdf(),wspace->set("poi"));
 	testStat.SetSubtractMLE(false);
 	testStat.SetGlobalObservables(wspace->set("nui"));
 	ToyMCSampler *mcSampler = new ToyMCSampler(testStat,nToys);
-	HybridCalculator hybCalc(*data,*bModel,*sbModel,mcSampler);
+	HybridCalculator *hybCalc = new HybridCalculator(*data,*bModel,*sbModel,mcSampler);
 	HypoTestInverter *hypoInv = NULL;
 	HypoTestInverterResult *result = NULL;
 	double limitErr = 0.1;
@@ -476,7 +503,7 @@ RooStats::ConfInterval *est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, se
 	double beta = 0;
 	set<int>::const_iterator it;
 	RooProdPdf *nui_sampling = NULL;
-	RooArgList nui_sampling_list;
+	RooArgList *nui_sampling_list = new RooArgList;
 	
 	if (nbrProof > 1) {
 		uint32_t nPackages = (((nToys + 999)/1000+(nbrProof-1))/nbrProof)*nbrProof;
@@ -488,10 +515,12 @@ RooStats::ConfInterval *est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, se
 	measure_params(wspace, data, channels, verbosity);
 	sbModel->LoadSnapshot();
 	
+	mcSampler->SetNEventsPerToy(1);
+	
 	// if we have no bkg gammas include them in the integration prior...
 	for (it = channels->begin(); !fixedBkg && it != channels->end(); ++it) {
 		wspace->factory(Form("Gamma::bkg_prior_%d(bkg_mean_%d,gamma_%d[1],beta,mu)",*it,*it,*it));
-		nui_sampling_list.add(*wspace->pdf(Form("bkg_prior_%d",*it)));
+		nui_sampling_list->add(*wspace->pdf(Form("bkg_prior_%d",*it)));
 		wspace->var(Form("gamma_%d",*it))->setVal( wspace->var(Form("NbObs_%d",*it))->getVal()+1 );
 	}
 	
@@ -503,7 +532,7 @@ RooStats::ConfInterval *est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, se
 		
 		beta = 1./beta; // beta is actually the inverse thereof in RooFit
 		wspace->factory(Form("Gamma::mu_prior_gamma(mu_s,gamma_b[%f],beta_b[%f],mu)",1.0 + obs,beta));
-		nui_sampling_list.add(*wspace->pdf("mu_prior_gamma"));
+		nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
 	} else {
 		for (it = channels->begin(); it != channels->end(); ++it)
 			beta += wspace->var(Form("Pdd_%d",*it))->getVal() * wspace->var(Form("NuD_%d",*it))->getVal();
@@ -511,17 +540,16 @@ RooStats::ConfInterval *est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, se
 		obs = beta * wspace->var("mu_d")->getVal();
 		beta = 1./beta; // beta is actually the inverse thereof in RooFit
 		wspace->factory(Form("Gamma::mu_prior_gamma(mu_d,gamma_b[%f],beta_b[%f],mu)",1.0 + obs, beta));
-		nui_sampling_list.add(*wspace->pdf("mu_prior_gamma"));
+		nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
 	}
-	nui_sampling_list.add(((RooProdPdf*)wspace->pdf("prior_pdf"))->pdfList());
-	nui_sampling = new RooProdPdf("nui_sampling","",nui_sampling_list);
+	nui_sampling_list->add(((RooProdPdf*)wspace->pdf("prior_pdf"))->pdfList());
+	nui_sampling = new RooProdPdf("nui_sampling","",*nui_sampling_list);
 	wspace->import(*nui_sampling, RooFit::Silence(kTRUE));
 	cout << "Nuisance parameter integration through" << endl;
 	wspace->pdf("nui_sampling")->Print();
-	hybCalc.ForcePriorNuisanceAlt(*wspace->pdf("nui_sampling"));
-	hybCalc.ForcePriorNuisanceNull(*wspace->pdf("nui_sampling"));
-	mcSampler->SetNEventsPerToy(1);
-	hypoInv = new HypoTestInverter(hybCalc, (RooRealVar*)sbModel->GetParametersOfInterest()->first(), 1.0 - cLevel);
+	hybCalc->ForcePriorNuisanceAlt(*wspace->pdf("nui_sampling"));
+	hybCalc->ForcePriorNuisanceNull(*wspace->pdf("nui_sampling"));
+	hypoInv = new HypoTestInverter(*hybCalc, (RooRealVar*)sbModel->GetParametersOfInterest()->first(), 1.0 - cLevel);
 	hypoInv->SetAutoScan();
 	hypoInv->UseCLs(true);
 	hypoInv->SetTestSize(1.0 - cLevel);
@@ -535,14 +563,59 @@ RooStats::ConfInterval *est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, se
 	
 	result = hypoInv->GetInterval();
 	*ulLimit = result->UpperLimit();
-	 
+	wspace->import(*result);
+	
+	if (smExpectation) {
+		delete hybCalc;
+		delete hypoInv;
+		
+		// new nuisance-parameter sampling function for sm expectation
+		wspace->factory("sm_mu[1]");
+		wspace->factory("sm_sigma[1e-10]");
+		if (bdmm)
+			wspace->factory("Gaussian::mu_prior_gauss(mu_s,sm_mu,sm_sigma)");
+		else
+			wspace->factory("Gaussian::mu_prior_gauss(mu_d,sm_mu,sm_sigma)");
+		delete nui_sampling_list; nui_sampling_list = new RooArgList;
+		nui_sampling_list->add(*wspace->pdf("mu_prior_gauss"));
+		nui_sampling_list->add( ((RooProdPdf*)wspace->pdf("prior_pdf"))->pdfList() );
+		nui_sampling = new RooProdPdf("nui_sampling_SM","",*nui_sampling_list);
+		wspace->import(*nui_sampling, RooFit::Silence(kTRUE));
+		cout << "Nuisance parameter integration through" << endl;
+		wspace->pdf("nui_sampling_SM")->Print();
+		
+		delete mcSampler; mcSampler = new ToyMCSampler(testStat,nToys);
+		mcSampler->SetNEventsPerToy(1);
+		if(pc) mcSampler->SetProofConfig(pc);
+		
+		hybCalc = new HybridCalculator(*data,*smModel,*sbModel,mcSampler); // now background = SM
+		hybCalc->ForcePriorNuisanceAlt(*wspace->pdf("nui_sampling_SM"));
+		hybCalc->ForcePriorNuisanceNull(*wspace->pdf("nui_sampling_SM"));
+		
+		hypoInv = new HypoTestInverter(*hybCalc, (RooRealVar*)sbModel->GetParametersOfInterest()->first(), 1.0 - cLevel);
+		hypoInv->SetAutoScan();
+		hypoInv->UseCLs(true);
+		hypoInv->SetTestSize(1.0 - cLevel);
+		hypoInv->SetVerbose(verbosity);
+
+		if (rg)	ok = hypoInv->RunFixedScan(nBins, rg->first, rg->second);
+		else	ok = hypoInv->RunLimit(*ulLimit,limitErr);
+		
+		result = hypoInv->GetInterval();
+		string name(result->GetName());
+		result->SetName(Form("%s_SM",name.c_str()));
+		wspace->import(*result);
+	}
+	
+	delete nui_sampling_list;
+	delete hybCalc;
 	delete nui_sampling;
 	delete hypoInv;
 	delete pc;
-	return result;
+	delete result;
 } // est_ul_hybrid()
 
-RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit, std::pair<double,double> *rg, uint32_t *npts, double *cpuUsed, uint32_t nbrProof, int nToys)
+void est_ul_cls(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit, std::pair<double,double> *rg, uint32_t *npts, double *cpuUsed, uint32_t nbrProof, int nToys)
 {
 	using namespace RooStats;
 	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));
@@ -588,12 +661,14 @@ RooStats::ConfInterval *est_ul_cls(RooWorkspace *wspace, RooDataSet *data, std::
 	result = hypoInv->GetInterval();
 	*ulLimit = result->UpperLimit();
 	
+	wspace->import(*result);
+	
 	delete pc;
 	delete hypoInv;
-	return result;
+	delete result;
 } // est_ul_cls()
 
-RooStats::HypoTestResult *est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double *pvalue, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg)
+void est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double *pvalue, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg)
 {
 	using namespace RooStats;
 	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));
@@ -663,14 +738,15 @@ RooStats::HypoTestResult *est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *da
 	
 	*pvalue = result->CLsplusb();
 	
+	wspace->import(*result);
+	
 	delete nui_sampling;
 	delete pc;
 	delete mcSampler;
-	
-	return result;
+	delete result;
 } // est_ul_clb_hybrid()
 
-RooStats::HypoTestResult *est_ul_clb(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double *pvalue, uint32_t nbrProof, int nToys)
+void est_ul_clb(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double *pvalue, uint32_t nbrProof, int nToys)
 {
 	using namespace RooStats;
 	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));
@@ -701,13 +777,14 @@ RooStats::HypoTestResult *est_ul_clb(RooWorkspace *wspace, RooDataSet *data, std
 	result->SetBackgroundAsAlt(kTRUE);
 	*pvalue = result->CLsplusb();
 	
+	wspace->import(*result);
+	
 	delete mcSampler;
 	delete pc;
-	
-	return result;
+	delete result;
 } // est_ul_clb()
 
-RooStats::ConfInterval *est_ul_zbi(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, bool bdlimit, double *ul)
+void est_ul_zbi(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, double cLevel, bool bdlimit, double *ul)
 {
 	RooRealVar *poi = dynamic_cast<RooRealVar*>(wspace->set("poi")->first());
 	RooFormulaVar *formula;
@@ -760,8 +837,6 @@ RooStats::ConfInterval *est_ul_zbi(RooWorkspace *wspace, RooDataSet *data, set<i
 	poi->setConstant(kFALSE);
 	
 	*ul = mu;
-	
-	return 0;
 } // est_ul_zbi()
 
 void compute_vars(map<bmm_param,measurement_t> *bmm, bool bstomumu)
