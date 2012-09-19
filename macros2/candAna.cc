@@ -576,6 +576,7 @@ void candAna::candAnalysis() {
 
   // -- to be consistent with the BDT traning
   fPreselection = preselection(fRTD, fChan, false); 
+  fPreselection = fPreselection && fGoodHLT;
 
 }
 
@@ -2604,9 +2605,13 @@ void candAna::fillRedTreeData() {
   fRTD.pvip      = fCandPvIp; 
   fRTD.pvips     = fCandPvIpS; 
 
+  fRTD.pvlip     = fCandPvLip; 
+  fRTD.pvlips    = fCandPvLipS; 
+
   fRTD.closetrk  = fCandCloseTrk;
   fRTD.iso       = fCandIso;
 
+  fRTD.flsxy     = fCandFLSxy;
   fRTD.fl3d      = fCandFL3d;
   fRTD.fls3d     = fCandFLS3d;
 

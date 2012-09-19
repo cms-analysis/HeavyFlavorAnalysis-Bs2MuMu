@@ -65,16 +65,16 @@ bool preselection(RedTreeData &b, int channel, bool rejectBlindBox) {
   //   if (fTrainAntiMuon && b.gmuid) return false;
   //   if (!fTrainAntiMuon && !b.gmuid) return false;
   //   if (!b.hlt) return false;
-  int verbose(0); 
+  int verbose(1); 
   if (b.pt < PTMIN) return false;
   if (b.pt > PTMAX) return false;
-  if (verbose) cout << "passed pT" << endl;
+  if (verbose > 9) cout << "passed pT" << endl;
 
   if (b.m1pt < M1PTMIN) return false;
   if (b.m1pt > M1PTMAX) return false;
   if (b.m2pt < M2PTMIN) return false;
   if (b.m2pt > M2PTMAX) return false;
-  if (verbose) cout << "passed muon pT" << endl;
+  if (verbose > 9) cout << "passed muon pT" << endl;
 
   if (b.flsxy < FLSXYMIN) return false;
   if (b.fl3d > FL3DMAX) return false;
@@ -82,33 +82,33 @@ bool preselection(RedTreeData &b, int channel, bool rejectBlindBox) {
   if (TMath::IsNaN(b.pvips)) return false;
   if (b.pvips < 0) return false;
   if (b.pvips > PVIPSMAX) return false;
-  if (verbose) cout << "passed vertexing cuts" << endl;
+  if (verbose > 8) cout << "passed vertexing cuts" << endl;
 
-  if (verbose) cout << "pvlip* = " << b.pvlip << " " << b.pvlips << endl;
+  if (verbose > 8) cout << "pvlip* = " << b.pvlip << " " << b.pvlips << endl;
   if (TMath::Abs(b.pvlip) > PVLIPMAX) return false;
   if (TMath::Abs(b.pvlips) > PVLIPSMAX) return false;
-  if (verbose) cout << "passed pvlip* cuts" << endl;
+  if (verbose > 7) cout << "passed pvlip* cuts" << endl;
 
   if (b.closetrk > CLOSETRKMAX) return false;
   if (b.fls3d < FLS3DMIN) return false;
   if (b.fls3d > FLS3DMAX) return false;
   if (b.docatrk > DOCATRKMAX) return false;
   if (b.maxdoca > MAXDOCAMAX) return false;
-  if (verbose) cout << "passed misc cuts" << endl;
+  if (verbose > 6) cout << "passed misc cuts" << endl;
 
   // -- use this to veto the inverted-isolation blinding box events
   //  if (rejectBlindBox && 5.2 < b.m && b.m < 5.45) return false; 
-  if (verbose) cout << "passed inv-isolation cuts" << endl;
+  if (verbose > 5) cout << "passed inv-isolation cuts" << endl;
 
   if (b.m < 4.9) return false;
   if (b.m > 5.9) return false;
-  if (verbose) cout << "passed mass cuts" << endl;
+  if (verbose > 4) cout << "passed mass cuts" << endl;
 
   // -- physics preselection: reduce background by factor 7, signal efficiency >90%
   if (b.chi2/b.dof > CHI2DOFMAX) return false;
   if (b.iso < ISOMIN) return false; 
   if (b.alpha > ALPHAMAX) return false; 
-  if (verbose) cout << "passed physics cuts" << endl;
+  if (verbose > 0) cout << "passed physics cuts" << endl;
 
   if (0 == channel) {
     if (TMath::Abs(b.m1eta) > 1.4) return false;
@@ -117,7 +117,7 @@ bool preselection(RedTreeData &b, int channel, bool rejectBlindBox) {
     if (TMath::Abs(b.m1eta) < 1.4 && TMath::Abs(b.m2eta) < 1.4) return false;
     if (TMath::Abs(b.m1eta) > 2.4 || TMath::Abs(b.m2eta) > 2.4) return false;
   }
-  if (verbose) cout << "passed channel cuts" << endl;
+  if (verbose > 0) cout << "passed channel cuts" << endl;
 
   return true;
 }
