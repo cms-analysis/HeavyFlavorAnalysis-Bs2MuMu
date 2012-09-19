@@ -87,17 +87,20 @@ void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool su
     RooAbsData* subdata = data->reduce(Form("channels==channels::channel_%d", channel));
     rds_ = subdata;
     string rdh_name = subdata->GetName();
-    cout << "fitting " << rdh_name << " in range " << range_ << " with " << pdf_name << ":" << endl;
+    cout << "fitting " << rdh_name << endl;
+    subdata->Print();
+    cout << " in range " << range_ << " with " << pdf_name << ":" << endl;
     ws_->pdf( pdf_name.c_str())->Print();
-    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, Extended(extended), SumW2Error(sumw2error), Range(range_.c_str())/*, SumCoefRange(range_.c_str())*/, NumCPU(2), Hesse(hesse), Save());
+    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, Extended(extended), SumW2Error(sumw2error)/*, Range(range_.c_str())*//*, SumCoefRange(range_.c_str())*/, NumCPU(2), Hesse(hesse), Save());
     if (print_) print(subdata);
   }
   else {
     RooAbsData* subdata = data->reduce(Form("channels==channels::channel_%d", channel));
     rds_ = subdata;
     string rdh_name = subdata->GetName();
-    cout << "fitting " << rdh_name << " in range " << range_ << " with " << pdf_name << ":" << endl;
-    ws_->pdf( pdf_name.c_str())->Print();
+    cout << "fitting " << rdh_name << endl;
+    subdata->Print();
+    cout << " in range " << range_ << " with " << pdf_name << ":" << endl;    ws_->pdf( pdf_name.c_str())->Print();
     cout << "WARNING: range option does not work with pee" << endl;
     RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, ConditionalObservables(*ws_->var("MassRes")), Extended(extended), SumW2Error(sumw2error)/*, Range(range_.c_str())*//*, SumCoefRange(range_.c_str())*/, NumCPU(2), Hesse(hesse), Save());
     if (print_) print(subdata, pdf);
@@ -508,8 +511,8 @@ void pdf_analysis::print(RooAbsData* data, string output) {
   data->plotOn(rp, Binning(20));
   data->plotOn(rp_bdt, Binning(100));
   if (!pee) {
-    ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue), Range(range_.c_str())/*, ProjectionRange("eta_all"), Normalization((rds_->sumEntries(), RooAbsReal::NumEvent))*/);
-    if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue), Range(range_.c_str())/*, ProjectionRange("eta_all"), Normalization((rds_->sumEntries(), RooAbsReal::NumEvent))*/);
+    ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue)/*, Range(range_.c_str())*//*, ProjectionRange("eta_all")*//*, Normalization((data->sumEntries(), RooAbsReal::NumEvent))*/);
+    if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue)/*, Range(range_.c_str())*//*, ProjectionRange("eta_all")*//*, Normalization((data->sumEntries(), RooAbsReal::NumEvent))*/);
   }
   else {
     if (!simul_) {
@@ -614,19 +617,21 @@ void pdf_analysis::print(RooAbsData* data, string output) {
   delete rp;
   delete c;
 
-  TCanvas* c_bdt = new TCanvas("c_bdt", "c_bdt", 600, 600);
-  rp_bdt->Draw();
-  ostringstream address_bdt;
-  if (simul_) address_bdt << "fig/BDT_" << pdf_name << "_" << meth_ << "_simul_" << channel;
-  else address_bdt << "fig/BDT_" << pdf_name << "_" << meth_ << "_" << ch_s_;
-  if (SM_) address_bdt << "_SM";
-  if (bd_constr_) address_bdt << "_BdConst";
-  if (pee) address_bdt << "_PEE";
-  string address_bdt_s(address_bdt.str());
-  c_bdt->Print( (address_bdt_s + ".gif").c_str());
-  c_bdt->Print( (address_bdt_s + ".pdf").c_str());
+  if (bdt_fit_) {
+    TCanvas* c_bdt = new TCanvas("c_bdt", "c_bdt", 600, 600);
+    rp_bdt->Draw();
+    ostringstream address_bdt;
+    if (simul_) address_bdt << "fig/BDT_" << pdf_name << "_" << meth_ << "_simul_" << channel;
+    else address_bdt << "fig/BDT_" << pdf_name << "_" << meth_ << "_" << ch_s_;
+    if (SM_) address_bdt << "_SM";
+    if (bd_constr_) address_bdt << "_BdConst";
+    if (pee) address_bdt << "_PEE";
+    string address_bdt_s(address_bdt.str());
+    c_bdt->Print( (address_bdt_s + ".gif").c_str());
+    c_bdt->Print( (address_bdt_s + ".pdf").c_str());
+    delete c_bdt;
+  }
   delete rp_bdt;
-  delete c_bdt;
 
   return;
 }
@@ -773,7 +778,8 @@ void pdf_analysis::set_rare_normalization(string input, bool extended) {
 }
 
 void pdf_analysis::gen_and_fit(string pdfname) {
-  RooAbsPdf* pdf = ws_->pdf(pdfname.c_str());
+  pdf_name = pdfname;
+  RooAbsPdf* pdf = ws_->pdf(pdf_name.c_str());
   pdf->Print();
 
   RooDataSet* protodata = (RooDataSet*)ws_->data(name("MassRes_rdh_bs", channel));
@@ -782,12 +788,12 @@ void pdf_analysis::gen_and_fit(string pdfname) {
   protodata->plotOn(rp0);
   TCanvas* canvas0 = new TCanvas("canvas0", "canvas0", 600, 600);
   rp0->Draw();
-  canvas0->Print( ("fig/sample0_" + pdfname + ".gif").c_str());
-  canvas0->Print( ("fig/sample0_" + pdfname + ".pdf").c_str());
+  canvas0->Print((get_address_root("sample0") + ".gif").c_str());
+  canvas0->Print((get_address_root("sample0") + ".pdf").c_str());
   delete rp0;
   delete canvas0;
 
-  RooDataSet* data = pdf->generate( RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")), 100);
+  RooDataSet* data = pdf->generate( RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")), 50);
   data->Print();
   RooPlot* rp_31 = ws_->var("Mass")->frame();
   RooPlot* rp_32 = ws_->var("MassRes")->frame();
@@ -803,7 +809,8 @@ void pdf_analysis::gen_and_fit(string pdfname) {
   rp_32->Draw();
   canvas3->cd(3);
   rp_33->Draw();
-  canvas3->Print("fig/dataa.gif");
+  canvas3->Print((get_address_root("dataa") + ".gif").c_str());
+  canvas3->Print((get_address_root("dataa") + ".pdf").c_str());
   delete canvas3;
   delete rp_31;
   delete rp_32;
@@ -814,27 +821,63 @@ void pdf_analysis::gen_and_fit(string pdfname) {
 
   RooPlot* rp = ws_->var("Mass")->frame();
   data->plotOn(rp);
-  pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), LineColor(kOrange));
   pdf->paramOn(rp);
   if (pee) {
+    pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), LineColor(kOrange));
     pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), Components("pdf_bs"), LineColor(kRed));
     pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), Components("pdf_bd"), LineColor(kBlue));
     pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), Components("pdf_rare"), LineColor(kGreen));
     pdf->plotOn(rp, ProjWData(RooArgSet(*ws_->var("MassRes")), *data, kFALSE), Components("pdf_comb"), LineColor(kCyan));
   }
+  else {
+    pdf->plotOn(rp, LineColor(kOrange));
+    pdf->plotOn(rp, Components("pdf_bs"), LineColor(kRed));
+    pdf->plotOn(rp, Components("pdf_bd"), LineColor(kBlue));
+    pdf->plotOn(rp, Components("pdf_rare"), LineColor(kGreen));
+    pdf->plotOn(rp, Components("pdf_comb"), LineColor(kCyan));
+  }
   TCanvas* canvas = new TCanvas("canvas", "canvas", 600, 600);
   rp->Draw();
-  canvas->Print( ("fig/sample_" + pdfname + ".gif").c_str());
-  canvas->Print( ("fig/sample_" + pdfname + ".pdf").c_str());
+  canvas->Print((get_address_root("sample") + ".gif").c_str());
+  canvas->Print((get_address_root("sample") + ".pdf").c_str());
   delete rp;
   delete canvas;
+
+  if (bdt_fit_) {
+    RooPlot* rp_bdt = ws_->var("bdt")->frame();
+    data->plotOn(rp_bdt);
+    pdf->plotOn(rp_bdt, LineColor(kOrange));
+    pdf->plotOn(rp_bdt, Components("pdf_bs"), LineColor(kRed));
+    pdf->plotOn(rp_bdt, Components("pdf_bd"), LineColor(kBlue));
+    pdf->plotOn(rp_bdt, Components("pdf_rare"), LineColor(kGreen));
+    pdf->plotOn(rp_bdt, Components("pdf_comb"), LineColor(kCyan));
+    pdf->paramOn(rp_bdt);
+    TCanvas* canvas_bdt = new TCanvas("canvas_bdt", "canvas_bdt", 600, 600);
+    rp_bdt->Draw();
+    canvas_bdt->Print((get_address_root("BDT_sample") + ".gif").c_str());
+    canvas_bdt->Print((get_address_root("BDT_sample") + ".pdf").c_str());
+    delete rp_bdt;
+    delete canvas_bdt;
+  }
 
   if (pee) {
     TH1* mass_eta_h = pdf->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var("MassRes"), Binning(30))) ;
     TCanvas* canvas1 = new TCanvas("canvas1", "canvas1", 600, 600);
     mass_eta_h->Draw("surf");
-    canvas1->Print("fig/sample1_signals.gif");
-    canvas1->Print("fig/sample1_signals.pdf");
+    canvas1->Print((get_address_root("sample1_signals") + ".gif").c_str());
+    canvas1->Print((get_address_root("sample1_signals") + ".pdf").c_str());
     delete canvas1;
   }
+}
+
+string pdf_analysis::get_address_root(string name) {
+  ostringstream address;
+  address <<  "fig/" << name << "_" << pdf_name << "_" << meth_;
+  if (simul_) address  << "_simul_" << channel;
+  else address  << "_" << ch_s_;
+  if (SM_) address << "_SM";
+  if (bd_constr_) address << "_BdConst";
+  if (pee) address << "_PEE";
+  if (bdt_fit_) address << "_2D";
+  return address.str();
 }

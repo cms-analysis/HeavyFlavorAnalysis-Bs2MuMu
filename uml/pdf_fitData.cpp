@@ -25,15 +25,11 @@ pdf_fitData::pdf_fitData(bool print, int inputs, string input_estimates, string 
   else {
     cout << "no input tree, making random distribution" << endl;
     random = true;
-    //RooRandom::randomGenerator()->SetSeed(0);
   }
-
-  //channel = new RooCategory("channel", "channel categories");
-  //simul_pdf = new RooSimultaneous("simul_pdf", "simultaneous fit for all channels", *channel);
+  RooRandom::randomGenerator()->SetSeed(0);
 
   ws_file_input.resize(channels);
   ws_input.resize(channels);
-//  ws_ = new RooWorkspace("ws", "fit workspace results");
 }
 
 void pdf_fitData::parse_estimate(){
@@ -135,8 +131,9 @@ void pdf_fitData::fit_pdf() {
 
     if (!pee) RFR = ws_->pdf("pdf_ext_total")->fitTo(*global_data, Extended(1), Save(1), Minos());
     else RFR = ws_->pdf("pdf_ext_total")->fitTo(*global_data, Extended(1), Save(1), Minos(), ConditionalObservables(*ws_->var("MassRes")));
-    ws_->import(*ws_->pdf("pdf_ext_total"), kTRUE);
+    //ws_->import(*ws_->pdf("pdf_ext_total"), kTRUE);
   }
+  ws_->import(*global_data);
   RFR->Print();
 }
 
@@ -415,8 +412,14 @@ void pdf_fitData::make_dataset() {
   cout << "making dataset" << endl;
   RooArgList varlist(*Mass, *MassRes, *eta, *m1eta, *m2eta, *channels_cat);
   global_data = new RooDataSet("global_data", "global_data", varlist);
-  FillRooDataSet(global_data, input_cuts_);
-  ws_->import(*global_data, kTRUE);
+  if (!random) FillRooDataSet(global_data, input_cuts_);
+  else {
+    RooRandom::randomGenerator()->SetSeed(12345);
+    if (!simul_) global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("channels")), 100);
+    else global_data = ws_->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")), 100);
+  }
+  global_data->SetName("global_data");
+  //ws_->import(*global_data);
 }
 
 void pdf_fitData::changeName(RooWorkspace *ws, int str) {
@@ -574,6 +577,7 @@ void pdf_fitData::sig_hand() {
 void pdf_fitData::sig_plhc() {
   using namespace RooStats;
   ModelConfig model;
+  model.SetName("model");
   RooArgSet poi;
   RooArgSet CO;
   if (pee) {
@@ -606,19 +610,22 @@ void pdf_fitData::sig_plhc() {
     poi.setRealValue("Bd_over_Bs", 0);
   }
 
-
   ProfileLikelihoodCalculator plc;
-  //plc.SetData(*ws_->data("global_data"));
-  plc.SetData(*global_data);
+  plc.SetData(*ws_->data("global_data"));
+  //plc.SetData(*global_data);
   plc.SetModel(model);
   plc.SetNullParameters(poi);
 //  if (pee) plc.SetNuisanceParameters(CO);
   HypoTestResult* htr = plc.GetHypoTest();
   cout << "ProfileLikelihoodCalculator: The p-value for the null is " << htr->NullPValue() << "; The significance for the null is " << htr->Significance() << endl;
+  {
+    model.SetSnapshot(poi);
+    ws_->import(model);
+    ws_->SaveAs("conditionalws.root");
+  }
 }
 
 void pdf_fitData::sig_plhts() {
-  RooRandom::randomGenerator()->SetSeed(0);
   vector <double> N_bs(channels);
   vector <double> N_bd(channels);
   for (int i = 0; i < channels; i++) {

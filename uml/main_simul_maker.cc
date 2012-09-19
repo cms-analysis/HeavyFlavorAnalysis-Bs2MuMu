@@ -252,7 +252,7 @@ int main(int argc, char* argv[]) {
       rds_signals->append(*rds_smalltree[1]);
       rad_signals[j] = rds_signals;
       ana1.define_MassRes_pdf(rds_signals, "signals");
-      ana1.define_MassRes_pdf(rds_signals, "signals");
+      //ana1.define_MassRes_pdf(rds_signals, "signals");
 
       RooDataSet* rds_semi = (RooDataSet*)rds_smalltree[10]->Clone("rds_semi");
       rds_semi->append(*rds_smalltree[11]);

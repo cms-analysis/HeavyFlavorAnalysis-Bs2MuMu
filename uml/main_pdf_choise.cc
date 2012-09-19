@@ -252,7 +252,6 @@ int main(int argc, char* argv[]) {
   /// FITS
   /// bs
   ana1.fit_pdf("bs", rad_bs, false);
-  rad_bs->Print();
 
   /// bd
   ana1.fit_pdf("bd", rad_bd, false);
@@ -308,10 +307,10 @@ int main(int argc, char* argv[]) {
   ws->pdf("pdf_ext_total")->graphVizTree(Form("exttotal_%s.dot", ch_s.c_str()));
 
   if (pee || true) {
-    ws->var("N_bs")->setVal(20);
+    ws->var("N_bs")->setVal(5);
     ws->var("N_bd")->setVal(2);
-    ws->var("N_rare")->setVal(10);
-    ws->var("N_comb")->setVal(30);
+    ws->var("N_rare")->setVal(18);
+    ws->var("N_comb")->setVal(25);
     ana1.gen_and_fit("pdf_ext_total");
   }
   ws->Print();

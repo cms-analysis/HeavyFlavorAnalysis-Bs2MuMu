@@ -10,8 +10,6 @@
 pdf_toyMC::pdf_toyMC(bool print, int inputs, string input_estimates, string input_cuts, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, string bias, bool simul, bool pee_, bool bdt_fit, string ch_s): pdf_fitData( print,  inputs,  input_estimates, input_cuts,  meth,  range,  SM,  bd_constr,  input_tree, simul, pee_, bdt_fit, ch_s) {
   cout << "pdf_toyMC constructor" << endl;
   bias_ = bias;
-
-  RooRandom::randomGenerator()->SetSeed(0);
 }
 
 void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {

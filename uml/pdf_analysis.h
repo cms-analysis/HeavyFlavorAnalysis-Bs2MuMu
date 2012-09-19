@@ -133,6 +133,8 @@ protected:
 
   RooDataHist getRandom_rdh();
   const char* name(string name, int i);
+  string get_address_root(string name);
+
 private:
 
 };
