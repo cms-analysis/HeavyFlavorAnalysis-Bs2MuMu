@@ -47,8 +47,8 @@ echo "--> End of env testing"
 # ----------------------------------------------------------------------
 echo "--> Setup ulcalc"
 # -- use CN's root version
-setenv ROOTSYS /swshare/ROOT/root_v32.00.patches42593_slc5_amd64
-setenv LD_LIBRARY_PATH /swshare/ROOT/root_v32.00.patches42593_slc5_amd64//lib/root:$LD_LIBRARY_PATH
+setenv ROOTSYS /shome/naegelic/root
+setenv LD_LIBRARY_PATH /shome/naegelic/root/lib:$LD_LIBRARY_PATH
 
 echo "--> Extract tar file"
 date
@@ -67,8 +67,19 @@ pwd
 
 echo "$EXECUTABLE -w $JOB.root -o $JOB.log $JOB"
 $EXECUTABLE -w $JOB.root -o $JOB.log $JOB
-cp $JOB.root $STORAGE1
-cp $JOB.log $STORAGE1
+echo "lcg-del -b -D srmv2 -l $STORAGE1/$JOB.root"
+lcg-del -b -D srmv2 -l "$STORAGE1/$JOB.root"
+echo "lcg-cp -b -D srmv2 $JOB.root $STORAGE1/$JOB.root"
+lcg-cp -b -D srmv2 $JOB.root "$STORAGE1/$JOB.root"
+echo "lcg-ls -b -D srmv2 $STORAGE1/$JOB.root"
+lcg-ls -b -D srmv2 "$STORAGE1/$JOB.root"
+
+echo "lcg-del -b -D srmv2 -l $STORAGE1/$JOB.log"
+lcg-del -b -D srmv2 -l "$STORAGE1/$JOB.log"
+echo "lcg-cp -b -D srmv2 $JOB.log $STORAGE1/$JOB.log"
+lcg-cp -b -D srmv2 $JOB.log "$STORAGE1/$JOB.log"
+echo "lcg-ls -b -D srmv2 $STORAGE1/$JOB.log"
+lcg-ls -b -D srmv2 "$STORAGE1/$JOB.log"
 
 # BATCH END
 
