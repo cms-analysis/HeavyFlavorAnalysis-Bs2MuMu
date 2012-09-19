@@ -65,7 +65,7 @@ bool preselection(RedTreeData &b, int channel, bool rejectBlindBox) {
   //   if (fTrainAntiMuon && b.gmuid) return false;
   //   if (!fTrainAntiMuon && !b.gmuid) return false;
   //   if (!b.hlt) return false;
-  int verbose(1); 
+  int verbose(0); 
   if (b.pt < PTMIN) return false;
   if (b.pt > PTMAX) return false;
   if (verbose > 9) cout << "passed pT" << endl;
