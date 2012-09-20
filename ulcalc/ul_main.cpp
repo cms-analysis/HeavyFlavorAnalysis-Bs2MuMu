@@ -398,7 +398,7 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 				break;
 			case kAlgo_CLb_Hybrid:
 				// note, here upper limit represents p-value of background model.
-				est_ul_clb_hybrid(wspace, data, channels, gVerbosity, upperLimit, gProofWorkers, gToys, gBdToMuMu, gFixBackground);
+				est_ul_clb_hybrid(wspace, data, channels, gVerbosity, upperLimit, gProofWorkers, gToys, gBdToMuMu, gFixBackground, gSMExpectation);
 				break;
 			case kAlgo_Zbi:
 				est_ul_zbi(wspace,data,channels,gCLLevel,gBdToMuMu,upperLimit);

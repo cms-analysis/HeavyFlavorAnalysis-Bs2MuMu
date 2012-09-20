@@ -568,6 +568,7 @@ void est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channe
 	if (smExpectation) {
 		delete hybCalc;
 		delete hypoInv;
+		delete result;
 		
 		// new nuisance-parameter sampling function for sm expectation
 		wspace->factory("sm_mu[1]");
@@ -576,7 +577,11 @@ void est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channe
 			wspace->factory("Gaussian::mu_prior_gauss(mu_s,sm_mu,sm_sigma)");
 		else
 			wspace->factory("Gaussian::mu_prior_gauss(mu_d,sm_mu,sm_sigma)");
+		
 		delete nui_sampling_list; nui_sampling_list = new RooArgList;
+		for (it = channels->begin(); !fixedBkg && it != channels->end(); ++it)
+			nui_sampling_list->add(*wspace->pdf(Form("bkg_prior_%d",*it)));
+		
 		nui_sampling_list->add(*wspace->pdf("mu_prior_gauss"));
 		nui_sampling_list->add( ((RooProdPdf*)wspace->pdf("prior_pdf"))->pdfList() );
 		nui_sampling = new RooProdPdf("nui_sampling_SM","",*nui_sampling_list);
@@ -668,16 +673,17 @@ void est_ul_cls(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels,
 	delete result;
 } // est_ul_cls()
 
-void est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double *pvalue, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg)
+void est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double *pvalue, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg, bool smExpectation)
 {
 	using namespace RooStats;
 	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));
 	ModelConfig *sbModel = dynamic_cast<ModelConfig*> (wspace->obj("splusbConfig"));
+	ModelConfig *smModel = dynamic_cast<ModelConfig*> (wspace->obj("smConfig"));
 	ProfileLikelihoodTestStat testStat(*wspace->pdf("total_pdf"));
 	testStat.SetGlobalObservables(wspace->set("nui"));
 	testStat.SetOneSidedDiscovery(kTRUE);
 	ToyMCSampler *mcSampler = new ToyMCSampler(testStat,nToys);
-	HybridCalculator hybCalc(*data,*sbModel,*bModel,mcSampler); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
+	HybridCalculator *hybCalc = new HybridCalculator(*data,*sbModel,*bModel,mcSampler); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
 	HypoTestResult *result;
 	RooArgSet mu;
 	ProofConfig *pc = NULL;
@@ -685,7 +691,7 @@ void est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *ch
 	double beta = 0;
 	double obs;
 	RooProdPdf *nui_sampling = NULL;
-	RooArgList nui_sampling_list;
+	RooArgList *nui_sampling_list = new RooArgList;
 	set<int>::const_iterator it;
 	
 	if (nbrProof > 1) {
@@ -694,13 +700,15 @@ void est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *ch
 		mcSampler->SetProofConfig(pc);
 	}
 	
+	mcSampler->SetNEventsPerToy(1);
+	
 	measure_params(wspace, data, channels, verbosity);
 	bModel->LoadSnapshot();
 	
 	// if we have no bkg gammas, include them in the integration prior
 	for (it = channels->begin(); !fixedBkg && it != channels->end(); ++it) {
 		wspace->factory(Form("Gamma::bkg_prior_%d(bkg_mean_%d,gamma_%d[1],beta,mu)",*it,*it,*it));
-		nui_sampling_list.add(*wspace->pdf(Form("bkg_prior_%d",*it)));
+		nui_sampling_list->add(*wspace->pdf(Form("bkg_prior_%d",*it)));
 		wspace->var(Form("gamma_%d",*it))->setVal( wspace->var(Form("NbObs_%d",*it))->getVal()+1 );
 	}
 	
@@ -713,7 +721,7 @@ void est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *ch
 		
 		beta = 1./beta; // beta is actually the inverse thereof in RooFit
 		wspace->factory(Form("Gamma::mu_prior_gamma(mu_s,gamma_b[%f],beta_b[%f],mu)",1.0 + obs,beta));
-		nui_sampling_list.add(*wspace->pdf("mu_prior_gamma"));
+		nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
 	} else {
 		for (set<int>::const_iterator it = channels->begin(); it != channels->end(); ++it)
 			beta += wspace->var(Form("Pdd_%d",*it))->getVal() * wspace->var(Form("NuD_%d",*it))->getVal();
@@ -721,29 +729,67 @@ void est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *ch
 		obs = beta * wspace->var("mu_d")->getVal();
 		beta = 1./beta; // beta is actually the inverse thereof in RooFit
 		wspace->factory(Form("Gamma::mu_prior_gamma(mu_d,gamma_b[%f],beta_b[%f],mu)",1.0 + obs, beta));
-		nui_sampling_list.add(*wspace->pdf("mu_prior_gamma"));
+		nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
 	}
-	nui_sampling_list.add( ((RooProdPdf*)wspace->pdf("prior_pdf"))->pdfList() );
-	nui_sampling = new RooProdPdf("nui_sampling","",nui_sampling_list);
+	
+	nui_sampling_list->add( ((RooProdPdf*)wspace->pdf("prior_pdf"))->pdfList() );
+	nui_sampling = new RooProdPdf("nui_sampling","",*nui_sampling_list);
 	wspace->import(*nui_sampling, RooFit::Silence(kTRUE));
 	cout << "Nuisance parameter integration through" << endl;
 	wspace->pdf("nui_sampling")->Print();
-	hybCalc.ForcePriorNuisanceAlt(*wspace->pdf("nui_sampling"));
-	hybCalc.ForcePriorNuisanceNull(*wspace->pdf("nui_sampling"));
-	mcSampler->SetNEventsPerToy(1);
-	hybCalc.SetToys(nToys, nToys);
+	hybCalc->ForcePriorNuisanceAlt(*wspace->pdf("nui_sampling"));
+	hybCalc->ForcePriorNuisanceNull(*wspace->pdf("nui_sampling"));
+	hybCalc->SetToys(nToys, nToys);
 	
-	result = hybCalc.GetHypoTest();
+	result = hybCalc->GetHypoTest();
 	result->SetBackgroundAsAlt(kTRUE);
 	
 	*pvalue = result->CLsplusb();
-	
 	wspace->import(*result);
 	
+	if (smExpectation) {
+		delete hybCalc;
+		delete result;
+		
+		// new nuisance-parameter sampling functionfor sm expectation...
+		wspace->factory("sm_mu[1]");
+		wspace->factory("sm_sigma[1e-10]");
+		if (bdmm)	wspace->factory("Gaussian::mu_prior_gauss(mu_s,sm_mu,sm_sigma)");
+		else		wspace->factory("Gaussian::mu_prior_gauss(mu_d,sm_mu,sm_sigma)");
+		
+		delete nui_sampling_list; nui_sampling_list = new RooArgList;
+		for (it = channels->begin(); !fixedBkg && it != channels->end(); ++it)
+			nui_sampling_list->add(*wspace->pdf(Form("bkg_prior_%d",*it)));
+		nui_sampling_list->add(*wspace->pdf("mu_prior_gauss"));
+		nui_sampling_list->add( ((RooProdPdf*)wspace->pdf("prior_pdf"))->pdfList() );
+		nui_sampling = new RooProdPdf("nui_sampling_SM","",*nui_sampling_list);
+		wspace->import(*nui_sampling, RooFit::Silence(kTRUE));
+		cout << "Nuisance parameter integration through" << endl;
+		wspace->pdf("nui_sampling_SM")->Print();
+		
+		// setup new MC Sampler. This is due to a bug in RooStats. Fixed in dev trunk as of 20120920
+		delete mcSampler; mcSampler = new ToyMCSampler(testStat,nToys);
+		mcSampler->SetNEventsPerToy(1);
+		if(pc) mcSampler->SetProofConfig(pc);
+		
+		hybCalc = new HybridCalculator(*data,*smModel,*bModel,mcSampler); // null = bModel
+		hybCalc->ForcePriorNuisanceAlt(*wspace->pdf("nui_sampling_SM"));
+		hybCalc->ForcePriorNuisanceNull(*wspace->pdf("nui_sampling_SM"));
+		hybCalc->SetToys(nToys, nToys);
+		
+		result = hybCalc->GetHypoTest();
+		string name(result->GetName());
+		result->SetBackgroundAsAlt(kTRUE);
+		result->SetName(Form("%s_SM",name.c_str()));
+		wspace->import(*result);
+	}
+	
+	delete nui_sampling_list;
 	delete nui_sampling;
 	delete pc;
 	delete mcSampler;
 	delete result;
+	delete hybCalc;
 } // est_ul_clb_hybrid()
 
 void est_ul_clb(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double *pvalue, uint32_t nbrProof, int nToys)
