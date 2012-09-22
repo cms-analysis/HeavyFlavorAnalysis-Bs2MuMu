@@ -20,7 +20,8 @@ use Getopt::Std;
 getopts('Cdhj:r:s:t:v:');
 
 #my $job = "2012";
-my $job = "2012/new";
+#my $job = "2012/new";
+my $job = "2012/bdt";
 if ($opt_j) {
     $job = $opt_j; 
 }
@@ -49,7 +50,7 @@ if ($opt_v) {
     => "-m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-$version-cms-BsToJPsiPhi_2K2MuFilter_8TeV-START53_V7A-v1-*,$version-cms-Bs2JpsiPhi.root"
     #
 	, "data 2012A"  
-    > "-b 1,bmm2Reader.2012,cbmm-$version-Run2012A-PromptReco-v1*,$version-2012A-data.root"
+    => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012A-PromptReco-v1*,$version-2012A-data.root"
     , "data 2012B"  
     => "-b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1*,$version-2012B-data.root"
     , "data 2012C"  
