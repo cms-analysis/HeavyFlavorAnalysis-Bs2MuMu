@@ -2,7 +2,7 @@
 
 pdf_fitData::pdf_fitData(bool print, int inputs, string input_estimates, string input_cuts, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, bool simul, bool pee_, bool bdt_fit, string ch_s): pdf_analysis(print, meth, ch_s, range, SM, bd_constr, simul, pee_, bdt_fit) {
   cout << "fitData constructor" << endl;
-  channels = inputs; cout <<"qui" << endl;
+  channels = inputs;
   simul_ = simul;
   input_estimates_ = input_estimates;
   input_cuts_ = input_cuts;
@@ -30,6 +30,10 @@ pdf_fitData::pdf_fitData(bool print, int inputs, string input_estimates, string 
 
   ws_file_input.resize(channels);
   ws_input.resize(channels);
+}
+
+pdf_fitData::~pdf_fitData() {
+  cout << "pdf_fitData destructor" << endl;
 }
 
 void pdf_fitData::parse_estimate(){
@@ -113,7 +117,7 @@ bool pdf_fitData::parse(char *cutName, float cut) {
   return true;
 }
 
-void pdf_fitData::fit_pdf() {
+void pdf_fitData::fit_pdf(bool do_not_import) {
   cout << "making fit" << endl;
   if (simul_) {
     cout << "fitting " << global_data->GetName() << " in range " << range_ << " with pdf_ext_simul:" << endl;
@@ -121,7 +125,6 @@ void pdf_fitData::fit_pdf() {
 
     if (!pee) RFR = ws_->pdf("pdf_ext_simul")->fitTo(*global_data, Extended(1), Save(1), Minos());
     else RFR = ws_->pdf("pdf_ext_simul")->fitTo(*global_data, Extended(1), Save(1), Minos(), ConditionalObservables(*ws_->var("MassRes")));
-    //ws_->import(*simul_pdf, kTRUE);
   }
   else {
     RooAbsData* subdata = global_data->reduce(Form("channels==channels::channel_%d", channel));
@@ -131,9 +134,8 @@ void pdf_fitData::fit_pdf() {
 
     if (!pee) RFR = ws_->pdf("pdf_ext_total")->fitTo(*global_data, Extended(1), Save(1), Minos());
     else RFR = ws_->pdf("pdf_ext_total")->fitTo(*global_data, Extended(1), Save(1), Minos(), ConditionalObservables(*ws_->var("MassRes")));
-    //ws_->import(*ws_->pdf("pdf_ext_total"), kTRUE);
   }
-  ws_->import(*global_data);
+  if (!do_not_import) ws_->import(*global_data);
   RFR->Print();
 }
 
@@ -312,90 +314,13 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, string cuts_f) {
         else channels_cat->setIndex(1);
         RooArgSet varlist_tmp(*Mass, *MassRes, *eta, *m1eta, *m2eta, *channels_cat);
         dataset->add(varlist_tmp);
-//        if (ch_i == -1) {
-//          dataset->add(RooArgSet(*Mass, *eta));
-//          events++;
-//        }
-//        else if (ch_i == 0) {
-//          if (fabs(m1eta) < 1.4 && fabs(m2eta) < 1.4) {
-//            dataset->add(RooArgSet(*Mass, *eta));
-//            events++;
-//          }
-//        }
-//        else if (ch_i == 1) {
-//          if (fabs(m1eta) > 1.4 || fabs(m2eta) > 1.4) {
-//            dataset->add(RooArgSet(*Mass, *eta));
-//            events++;
-//          }
-//        }
-//        else {
-//          cout << "wrong channel: " << ch_i << endl;
-//          exit(EXIT_FAILURE);
-//        }
       }
     }
   }
-//  if (!strcmp(tree->GetName(), "T")) {
-//    float mlp_0_cut = -1, mlp_1_cut = -1;
-//    if (cuts_f.compare("no")) {
-//      FILE *cut_file = fopen(cuts_f.c_str(), "r");
-//      char buffer[1024];
-//      char cutName[1024];
-//      float cut;
-//      while (fgets(buffer, sizeof(buffer), cut_file)) {
-//        if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
-//        if (buffer[0] == '#') continue;
-//        sscanf(buffer, "%s %f", cutName, &cut);
-//        if (!strcmp(cutName, "NN_0")) mlp_0_cut = cut;
-//        if (!strcmp(cutName, "NN_1")) mlp_1_cut = cut;
-//      }
-//      cout << "NN_0 = " <<  mlp_0_cut << "  ";
-//      cout << "NN_1 = " <<  mlp_1_cut << endl;
-//    }
-//    else {
-//      mlp_0_cut = 1.0036;
-//      mlp_1_cut = 1.0041;
-//    }
-//    if (mlp_0_cut == -1 || mlp_1_cut == -1) { cout << "wrong parsing cut file" << endl; exit(EXIT_FAILURE);}
-
-//    Float_t mass, eta, mlp_0, mlp_1;
-//    tree->SetBranchAddress("mass", &mass);
-//    tree->SetBranchAddress("eta", &eta);
-//    tree->SetBranchAddress("mlp_0", &mlp_0);
-//    tree->SetBranchAddress("mlp_1", &mlp_1);
-//    for (int i = 0; i < tree->GetEntries(); i++){
-//      tree->GetEntry(i);
-//      if (mass > 4.9 && mass < 5.9) {
-//        Mass->setVal(mass);
-//        if (ch_i == -1) {
-//          if (mlp_0 > mlp_0_cut && mlp_0 < 2.0) {
-//            dataset->add(*Mass);
-//            events++;
-//          }
-//        }
-//        else if (ch_i == 0) {
-//          if (fabs(eta) < 1.4) {
-//            if (mlp_0 > mlp_0_cut && mlp_0 < 2.0) {
-//              dataset->add(*Mass);
-//              events++;
-//            }
-//          }
-//        }
-//        else if (ch_i == 1) {
-//          if (fabs(eta) > 1.4) {
-//            if (mlp_1 > mlp_1_cut && mlp_1 < 2.0) {
-//              dataset->add(*Mass);
-//              events++;
-//            }
-//          }
-//        }
-//        else {
-//          cout << "wrong channel: " << ch_i << endl;
-//          exit(EXIT_FAILURE);
-//        }
-//      }
-//    }
-//  }
+  else {
+    cout << "tree name is not bdt nor cnc" << endl;
+    exit(1);
+  }
   cout << "total events = " << events << endl;
 }
 
@@ -410,7 +335,8 @@ void pdf_fitData::define_channels() {
 
 void pdf_fitData::make_dataset() {
   cout << "making dataset" << endl;
-  RooArgList varlist(*Mass, *MassRes, *eta, *m1eta, *m2eta, *channels_cat);
+  RooArgList varlist(*Mass, *MassRes, *eta, *m1eta, *m2eta);
+  if (simul_) varlist.add(*channels_cat);
   global_data = new RooDataSet("global_data", "global_data", varlist);
   if (!random) FillRooDataSet(global_data, input_cuts_);
   else {
@@ -484,32 +410,26 @@ void pdf_fitData::make_pdf_input() {
 }
 
 void pdf_fitData::make_pdf() {
-  //total_pdf_i.resize(1);
-  if (simul_) {
-    cout << "making simultaneous pdf" << endl;
-    //simul_pdf = (RooSimultaneous*)ws_input[0]->pdf("pdf_ext_simul");
-    //ws_->import(*simul_pdf);
-//    for (int i = 0; i < channels; i++) {
-//      ws_->import(*ws_input[0]->pdf(name("pdf_ext_total", i)));
-//    }
-//    define_simul();
-    ws_ = ws_input[0];
-  }
-  else {
-    if (random) {
+  cout << "making pdf" << endl;
+  if (random) {
+    if (simul_) {
+      for (int i = 0; i < channels; i++) {
+        ws_input[0]->var(name("N_bs", i))->setVal(estimate_bs[i]);
+        ws_input[0]->var(name("N_bd", i))->setVal(estimate_bd[i]);
+        ws_input[0]->var(name("N_rare", i))->setVal(estimate_rare[i]);
+        ws_input[0]->var(name("N_comb", i))->setVal(estimate_comb[i]);
+      }
+    }
+    else {
       int i = atoi(ch_s_.c_str());
       ws_input[0]->var("N_bs")->setVal(estimate_bs[i]);
       ws_input[0]->var("N_bd")->setVal(estimate_bd[i]);
       ws_input[0]->var("N_rare")->setVal(estimate_rare[i]);
       ws_input[0]->var("N_comb")->setVal(estimate_comb[i]);
-      if (bd_constr_) ws_input[0]->var("Bd_over_Bs")->setVal(estimate_bd[i] / estimate_bs[i]);
     }
-    //ws_->pdf("pdf_ext_total") = (RooAbsPdf*)ws_input[0]->pdf("pdf_ext_total");
-    //ws_->import(*ws_->pdf("pdf_ext_total"));
-//    ws_ = (RooWorkspace*)ws_input[0]->Clone("ws_data");
-    ws_ = ws_input[0];
-
+    if (bd_constr_) ws_input[0]->var("Bd_over_Bs")->setVal(estimate_bd[0] / estimate_bs[0]);
   }
+  ws_ = ws_input[0];
   ws_->Print();
 }
 
@@ -524,7 +444,6 @@ void pdf_fitData::save() {
   if (pee) output_ws << "_PEE";
   output_ws << ".root";
   ws_->SaveAs(output_ws.str().c_str());
-
 }
 
 void pdf_fitData::significance(int meth) {
@@ -563,7 +482,7 @@ void pdf_fitData::sig_hand() {
       }
     }
   }
-  fit_pdf();
+  fit_pdf(true);
   Double_t newNLL = RFR->minNll();
   Double_t deltaLL = newNLL - minNLL;
   Double_t signif = deltaLL>0 ? sqrt(2*deltaLL) : -sqrt(-2*deltaLL) ;
@@ -721,7 +640,6 @@ void pdf_fitData::sig_plhts() {
   string name_of_pdf = "pdf_ext_simul";
   if (!simul_) name_of_pdf = "pdf_ext_total";
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
-//  pl_ts.SetOneSided(true);
 //  pl_ts.SetPrintLevel(3);
 //  pl_ts.EnableDetailedOutput(true, true);
   pl_ts.SetOneSidedDiscovery(true);
@@ -729,9 +647,7 @@ void pdf_fitData::sig_plhts() {
   ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 500);
   if (pee) mcSampler_pl->SetGlobalObservables(CO);
   FrequentistCalculator frequCalc(*global_data, *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
-  //RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();
-  //RooMsgService::instance().cleanup();
   htr_pl->Print();
 //  HypoTestPlot *plot = new HypoTestPlot(*htr_pl);
 //  TCanvas* c_hypotest = new TCanvas("c_hypotest", "c_hypotest", 600, 600);

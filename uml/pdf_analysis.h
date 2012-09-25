@@ -135,6 +135,8 @@ protected:
   const char* name(string name, int i);
   string get_address_root(string name);
 
+  RooArgSet* obs;
+
 private:
 
 };

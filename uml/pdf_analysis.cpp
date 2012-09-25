@@ -54,6 +54,10 @@ void pdf_analysis::initialize () {
 
   MassRes = new RooRealVar("MassRes", "mass resolution", 0.03, 0.12, "GeV/c^{2}");
   ws_->import(*MassRes);
+
+  obs = new RooArgSet(*ws_->var("Mass"), *ws_->var("bdt"), "obs");
+  //ws_->import(*obs, RecycleConflictNodes());
+
 }
 
 void pdf_analysis::define_pdfs () {
@@ -490,7 +494,8 @@ string pdf_analysis::define_pdf_sum(string name, int i) {
   pdf_sum += "(";
   for (unsigned int i = 0; i < pdfs.size(); i++) {
     pdf_sum += "N_";
-    pdf_sum += pdfs[i];
+    if (pdfs[i]=="hist" || pdfs[i]=="expo3") pdf_sum += "rare";
+    else pdf_sum += pdfs[i];
     pdf_sum += "*pdf_";
     pdf_sum += pdfs[i];
     if (i != pdfs.size() -1) pdf_sum += ",";

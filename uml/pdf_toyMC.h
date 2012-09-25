@@ -32,13 +32,13 @@ class pdf_toyMC : public pdf_fitData {
 public:
   
   pdf_toyMC(bool print, int inputs = 1, string input_estimates = "", string input_cuts = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, string bias = "no", bool simul = false, bool pee_ = false, bool bdt_fit = false, string ch_s = "0");
+  ~pdf_toyMC();
 
   void generate(int NExp, string pdf_toy, string test_pdf = "total");
   void mcstudy(int NExp, string pdf_toy);
   RooFitResult* fit_pdf (string pdf, RooAbsData* data, int printlevel = -1, RooWorkspace *ws = 0);
   void fit_pulls();
   void unset_constant();
-  void set_ws(RooWorkspace *ws);
   
   TH1D* pull_h_bs;
   TH1D* pull_h_bd;

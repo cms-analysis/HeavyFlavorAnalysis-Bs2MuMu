@@ -182,6 +182,9 @@ int main(int argc, char* argv[]) {
 
     int decays_n = sizeof(decays)/sizeof(string);
 
+    Double_t p0, p1, p2;
+    Fit_MassRes("input/small-SgMc.root", p0, p1, p2);
+
     for (int j = 0; j < inputs; j++) {
 
       string cut = get_cut(j);
@@ -202,9 +205,6 @@ int main(int argc, char* argv[]) {
       RooRealVar* weight = ws->var("weight");
       RooRealVar* MassRes = ws->var("MassRes");
       RooCategory* channel_cat = ws->cat("channels");
-
-      Double_t p0, p1, p2;
-      Fit_MassRes("input/small-SgMc.root", p0, p1, p2);
 
       for (int i = 0; i < decays_n; i++) {
         decays_filename[i] = "input/small-" + decays[i] + ".root";
