@@ -18,31 +18,68 @@
 #include <RooStats/SamplingDistribution.h>
 #include <RooStats/HypoTestInverterResult.h>
 
+const static double kBFBsmm = 3.2e-9;
+
 using namespace RooStats;
 
 class clsPlotter {
 	
 	public:
-		explicit clsPlotter(const char *filename) : fFilename(filename), fResultName("result_mu_s"), fSMBands(false), fDrawLegend(true) {}
+	explicit clsPlotter(const char *filename) : fFilename(filename), fResultName("result_mu_s"), fSMBands(false), fDrawLegend(true), fObs(NULL), fMgSM(NULL), fG0SM(NULL), fG1SM(NULL), fG2SM(NULL), fMgBkg(NULL), fG0Bkg(NULL), fG1Bkg(NULL), fG2Bkg(NULL) {}
 		
-		void plot(double cl);
+		void plot(double cl = 0.95);
+		void print(double cl = 0.95);
 	
 	public:
 		void setSMBands(bool smBands) { fSMBands = smBands; }
-		
 		bool getSMBands() { return fSMBands; }
 	
 	private:
-		TGraph *makeObs();
-		TMultiGraph *makeSMBands();
-		TMultiGraph *makeBkgBands();
+		void makeObs(bool reload = false);
+		void makeSMBands(bool reload = false);
+		void makeBkgBands(bool reload = false);
 		HypoTestInverterResult *loadResult(TFile *file, const char *name);
+		
+		double ulFromPoints(double testSize, vector<pair<double,double> > *vals);
+		
 	private:
 		std::string fFilename;
 		std::string fResultName;
 		bool fSMBands;
 		bool fDrawLegend;
+		
+		TGraph *fObs;
+		TMultiGraph *fMgSM;
+		TGraph *fG0SM;
+		TGraphAsymmErrors *fG1SM;
+		TGraphAsymmErrors *fG2SM;
+		
+		TMultiGraph *fMgBkg;
+		TGraph *fG0Bkg;
+		TGraphAsymmErrors *fG1Bkg;
+		TGraphAsymmErrors *fG2Bkg;
 };
+
+double clsPlotter::ulFromPoints(double testSize, vector<pair<double,double> > *vals)
+{
+	size_t j;
+	double y1,y0;
+	sort(vals->begin(), vals->end());
+	vector<double> uls;
+	
+	for (j = 1; j < vals->size(); j++) {
+		y1 = (*vals)[j-0].second;
+		y0 = (*vals)[j-1].second;
+		
+		if (y1 < y0) std::swap(y1,y0);
+		if (y0 <= testSize && testSize <= y1)
+			uls.push_back(((*vals)[j].first - (*vals)[j-1].first)/((*vals)[j].second - (*vals)[j-1].second)*(testSize - (*vals)[j-1].second) + (*vals)[j-1].first);
+	}
+	
+	std::sort(uls.begin(),uls.end());
+	
+	return (uls.size() > 0 ? uls.back() : numeric_limits<double>::quiet_NaN());
+} // ulFromPoints()
 
 HypoTestInverterResult *clsPlotter::loadResult(TFile *file, const char *name)
 {
@@ -55,35 +92,92 @@ HypoTestInverterResult *clsPlotter::loadResult(TFile *file, const char *name)
 	return result;
 } // loadResult()
 
-TGraph *clsPlotter::makeObs()
+void clsPlotter::print(double cl)
+{
+	TFile *file = TFile::Open(fFilename.c_str());
+	HypoTestInverterResult *resultBkg = loadResult(file, fResultName.c_str());
+	double ul,x,y;
+	double smPl,smMi;
+	double testSize = 1.0 - cl;
+	vector<pair<double,double> > vals;
+	vector<double> uls;
+	Int_t j;
+	
+	resultBkg->UseCLs();
+	resultBkg->SetTestSize(testSize);
+	
+	ul = resultBkg->UpperLimit();
+	
+	cout << "UL(Bs -> mumu) = " << ul*kBFBsmm << "\t(" << ul << ") @ " << (int)(cl*100.) << " % CL" << endl;
+	
+	makeObs();
+	vals.clear();
+	for(j = 0; j < fObs->GetN(); j++) {
+		if(fObs->GetPoint(j, x, y) >= 0)
+			vals.push_back(make_pair(x,y));
+	}
+	ul = ulFromPoints(testSize,&vals);
+	cout << "UL(Bs -> mumu) = " << ul*kBFBsmm << "\t(" << ul << ") @ " << (int)(cl * 100.) << " % CL" << endl;
+	
+	makeSMBands();
+	vals.clear();
+	for(j = 0; j < fG0SM->GetN(); j++) {
+		if (fG0SM->GetPoint(j,x,y) >= 0) {
+			vals.push_back(make_pair(x, y));
+		}
+	}
+	ul = ulFromPoints(testSize,&vals);
+	
+	vals.clear();
+	for(j = 0; j < fG1SM->GetN(); j++) {
+		if (fG1SM->GetPoint(j,x,y) >= 0)
+			vals.push_back(make_pair(x, y + fG1SM->GetErrorYhigh(j)));
+	}
+	smPl = ulFromPoints(testSize,&vals);
+	
+	vals.clear();
+	for(j = 0; j < fG1SM->GetN(); j++) {
+		if (fG1SM->GetPoint(j,x,y) >= 0)
+			vals.push_back(make_pair(x,y - fG1SM->GetErrorYlow(j)));
+	}
+	smMi = ulFromPoints(testSize,&vals);
+	
+	cout << "EXP[UL(Bs->mumu)] = " << ul << "+" << smPl-ul << "-" << ul-smMi << endl;
+	
+	delete file;
+} // print()
+
+void clsPlotter::makeObs(bool reload)
 {
 	TFile f(fFilename.c_str());
 	HypoTestInverterResult *result = loadResult(&f,fResultName.c_str());
-	TGraph *obs = new TGraph;
 	int j,size = result->ArraySize();
 	std::vector<unsigned int> index(size);
 	
-	obs->SetTitle("CLs observed");
-	obs->SetLineWidth(2);
+	if (fObs && reload) {
+		delete fObs;
+		fObs = NULL;
+	}
 	
-	// sequential access
-	TMath::SortItr(result->fXValues.begin(), result->fXValues.end(), index.begin(), false);
-	
-	for (j = 0; j < size; j++)
-		obs->SetPoint(j, result->GetXValue(index[j]), result->CLs(index[j]));
-	
-	return obs;
+	if (!fObs) {
+		fObs = new TGraph;
+		
+		fObs->SetTitle("CLs observed");
+		fObs->SetLineWidth(2);
+		
+		// sequential access
+		TMath::SortItr(result->fXValues.begin(), result->fXValues.end(), index.begin(), false);
+		
+		for (j = 0; j < size; j++)
+			fObs->SetPoint(j, result->GetXValue(index[j]), result->CLs(index[j]));
+	}
 } // makeObs()
 
-TMultiGraph *clsPlotter::makeSMBands()
+void clsPlotter::makeSMBands(bool reload)
 {
 	TFile f(fFilename.c_str());
 	HypoTestInverterResult *resultBkg = loadResult(&f, fResultName.c_str());
 	HypoTestInverterResult *resultSM = loadResult(&f, Form("%s_SM",fResultName.c_str()));
-	TMultiGraph *mg = new TMultiGraph;
-	TGraph *g0 = new TGraph;
-	TGraphAsymmErrors *g1 = new TGraphAsymmErrors;
-	TGraphAsymmErrors *g2 = new TGraphAsymmErrors;
 	vector<unsigned int> indexBkg(resultBkg->ArraySize());
 	vector<unsigned int> indexSM(resultSM->ArraySize());
 	HypoTestResult *hypoBkg,*hypoSM;
@@ -94,9 +188,38 @@ TMultiGraph *clsPlotter::makeSMBands()
 	unsigned int j,k,ixBkg,ixSM;
 	vector<double> cls;
 	
-	g0->SetTitle("Expected SM CLs - Median");
-	g1->SetTitle("Expected SM CLs #pm 1 #sigma");
-	g2->SetTitle("Expected SM CLs #pm 2 #sigma");
+	if (reload) {
+		if(fMgSM) {
+			delete fMgSM;
+			fMgSM = NULL;
+		}
+		
+		if(fG0SM) {
+			delete fG0SM;
+			fG0SM = NULL;
+		}
+		
+		if(fG1SM) {
+			delete fG1SM;
+			fG1SM = NULL;
+		}
+		
+		if(fG2SM) {
+			delete fG2SM;
+			fG2SM = NULL;
+		}
+	}
+	
+	if(fMgSM) goto bail; // already done
+	
+	fMgSM = new TMultiGraph;
+	fG0SM = new TGraph;
+	fG1SM = new TGraphAsymmErrors;
+	fG2SM = new TGraphAsymmErrors;
+	
+	fG0SM->SetTitle("Expected SM CLs - Median");
+	fG1SM->SetTitle("Expected SM CLs #pm 1 #sigma");
+	fG2SM->SetTitle("Expected SM CLs #pm 2 #sigma");
 	
 	// sequential access
 	TMath::SortItr(resultBkg->fXValues.begin(), resultBkg->fXValues.end(), indexBkg.begin(), false);
@@ -139,46 +262,72 @@ TMultiGraph *clsPlotter::makeSMBands()
 		x = const_cast<double*>(&cls[0]);
 		TMath::Quantiles(cls.size(), 5, x, q, p, false);
 		
-		g0->SetPoint(j, resultBkg->GetXValue(ixBkg), q[2]);
+		fG0SM->SetPoint(j, resultBkg->GetXValue(ixBkg), q[2]);
 		
-		g1->SetPoint(j, resultBkg->GetXValue(ixBkg), q[2]);
-		g1->SetPointEYlow(j, q[2] - q[1]);
-		g1->SetPointEYhigh(j, q[3] - q[2]);
+		fG1SM->SetPoint(j, resultBkg->GetXValue(ixBkg), q[2]);
+		fG1SM->SetPointEYlow(j, q[2] - q[1]);
+		fG1SM->SetPointEYhigh(j, q[3] - q[2]);
 		
-		g2->SetPoint(j, resultBkg->GetXValue(ixBkg), q[2]);
-		g2->SetPointEYlow(j, q[2] - q[0]);
-		g2->SetPointEYhigh(j, q[4] - q[2]);
+		fG2SM->SetPoint(j, resultBkg->GetXValue(ixBkg), q[2]);
+		fG2SM->SetPointEYlow(j, q[2] - q[0]);
+		fG2SM->SetPointEYhigh(j, q[4] - q[2]);
 	}
 	
-	g2->SetFillColor(kYellow);
-	mg->Add(g2,"3");
-	g1->SetFillColor(kGreen);
-	mg->Add(g1,"3");
-	g0->SetLineStyle(2);
-	g0->SetLineWidth(2);
-	mg->Add(g0,"L");
+	fG2SM->SetFillColor(kYellow);
+	fMgSM->Add(fG2SM,"3");
+	fG1SM->SetFillColor(kGreen);
+	fMgSM->Add(fG1SM,"3");
+	fG0SM->SetLineStyle(2);
+	fG0SM->SetLineWidth(2);
+	fMgSM->Add(fG0SM,"L");
 	
-	return mg;
+bail:
+	return;
 } // makeSMBands()
 
-TMultiGraph *clsPlotter::makeBkgBands()
+void clsPlotter::makeBkgBands(bool reload)
 {
 	TFile file(fFilename.c_str());
 	HypoTestInverterResult *result = loadResult(&file, fResultName.c_str());
 	SamplingDistribution *dist;
-	TGraph *g0 = new TGraph;
-	TGraphAsymmErrors *g1 = new TGraphAsymmErrors;
-	TGraphAsymmErrors *g2 = new TGraphAsymmErrors;
-	TMultiGraph *mg = new TMultiGraph;
 	unsigned int j,ix,nbr = result->ArraySize();
 	std::vector<unsigned int> index(nbr);
 	double p[5];
 	double q[5];
 	double *x;
 	
-	g0->SetTitle("Expected CLs - Median");
-	g1->SetTitle("Expected CLs #pm 1 #sigma");
-	g2->SetTitle("Expected CLs #pm 2 #sigma");
+	if (reload) {
+		if(fMgBkg) {
+			delete fMgBkg;
+			fMgBkg = NULL;
+		}
+		
+		if(fG0Bkg) {
+			delete fG0Bkg;
+			fG0Bkg = NULL;
+		}
+		
+		if(fG1Bkg) {
+			delete fG1Bkg;
+			fG1Bkg = NULL;
+		}
+		
+		if(fG2Bkg) {
+			delete fG2Bkg;
+			fG2Bkg = NULL;
+		}
+	}
+	
+	if (fMgBkg) goto bail;
+	
+	fMgBkg = new TMultiGraph;
+	fG0Bkg = new TGraph;
+	fG1Bkg = new TGraphAsymmErrors;
+	fG2Bkg = new TGraphAsymmErrors;
+	
+	fG0Bkg->SetTitle("Expected CLs - Median");
+	fG1Bkg->SetTitle("Expected CLs #pm 1 #sigma");
+	fG2Bkg->SetTitle("Expected CLs #pm 2 #sigma");
 	
 	// seq access
 	TMath::SortItr(result->fXValues.begin(), result->fXValues.end(), index.begin(), false);
@@ -197,42 +346,47 @@ TMultiGraph *clsPlotter::makeBkgBands()
 		
 		TMath::Quantiles(values.size(), 5, x, q, p, false);
 		
-		g0->SetPoint(j, result->GetXValue(ix), q[2]);
+		fG0Bkg->SetPoint(j, result->GetXValue(ix), q[2]);
 		
-		g1->SetPoint(j, result->GetXValue(ix), q[2]);
-		g1->SetPointEYlow(j, q[2] - q[1]); // -1 sigma error
-		g1->SetPointEYhigh(j, q[3] - q[2]); // +1 sigma error
+		fG1Bkg->SetPoint(j, result->GetXValue(ix), q[2]);
+		fG1Bkg->SetPointEYlow(j, q[2] - q[1]); // -1 sigma error
+		fG1Bkg->SetPointEYhigh(j, q[3] - q[2]); // +1 sigma error
 		
-		g2->SetPoint(j, result->GetXValue(ix), q[2]);
-		g2->SetPointEYlow(j, q[2] - q[0]);
-		g2->SetPointEYhigh(j, q[4] - q[2]);
+		fG2Bkg->SetPoint(j, result->GetXValue(ix), q[2]);
+		fG2Bkg->SetPointEYlow(j, q[2] - q[0]);
+		fG2Bkg->SetPointEYhigh(j, q[4] - q[2]);
 		
 		delete dist;
 	}
 	
-	g2->SetFillColor(kYellow);
-	mg->Add(g2,"3");
-	g1->SetFillColor(kGreen);
-	mg->Add(g1,"3");
-	g0->SetLineStyle(2);
-	g0->SetLineWidth(2);
-	mg->Add(g0,"L");
-	
-	return mg;
+	fG2Bkg->SetFillColor(kYellow);
+	fMgBkg->Add(fG2Bkg,"3");
+	fG1Bkg->SetFillColor(kGreen);
+	fMgBkg->Add(fG1Bkg,"3");
+	fG0Bkg->SetLineStyle(2);
+	fG0Bkg->SetLineWidth(2);
+	fMgBkg->Add(fG0Bkg,"L");
+bail:
+	return;
 } // makeBkgBands()
 
 void clsPlotter::plot(double cl)
 {
 	TLegend *leg = NULL;
-	TGraph *gobs = makeObs();
 	TObject *obj;
 	TLine *line;
-	TMultiGraph *mg = fSMBands ? makeSMBands() : makeBkgBands();
 	int j,nbr;
+	TMultiGraph *mg;
+	
+	makeObs();
+	makeSMBands();
+	makeBkgBands();
+	mg = fSMBands ? fMgSM : fMgBkg;
 	
 	if (fDrawLegend) {
 		leg = new TLegend(0.53,0.63,0.83,0.83,"","NDC");
-		leg->AddEntry(gobs,"","L");
+		
+		leg->AddEntry(fObs,"","L");
 		
 		nbr = mg->GetListOfGraphs()->GetSize();
 		for (j = nbr-1; j>=0; j--)
@@ -245,16 +399,16 @@ void clsPlotter::plot(double cl)
 	}
 	
 	// draw the graphs
-	gobs->Draw("AL");
-	gobs->GetXaxis()->SetTitle("BF / BF_{SM}");
-	gobs->GetYaxis()->SetTitle("CL_{s}");
-	gobs->GetYaxis()->SetTitleOffset(1.0);
+	fObs->Draw("AL");
+	fObs->GetXaxis()->SetTitle("BF / BF_{SM}");
+	fObs->GetYaxis()->SetTitle("CL_{s}");
+	fObs->GetYaxis()->SetTitleOffset(1.0);
 	mg->Draw();
-	gobs->Draw("same");
+	fObs->Draw("same");
 	
 	// draw confidence level line
 	double alpha = 1. - cl;
-	line = new TLine(gobs->GetXaxis()->GetXmin(), alpha, gobs->GetXaxis()->GetXmax(), alpha);
+	line = new TLine(fObs->GetXaxis()->GetXmin(), alpha, fObs->GetXaxis()->GetXmax(), alpha);
 	line->SetLineColor(kRed);
 	line->Draw();
 	
@@ -268,4 +422,5 @@ void plotResult(const char *file, bool SMExp, double cl = 0.95)
 	
 	plot.setSMBands(SMExp);
 	plot.plot(cl);
+	plot.print();
 } // plotResult()
