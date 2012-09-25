@@ -3875,7 +3875,7 @@ void plotClass::candAnalysis(int mode) {
   fGoodQ = fGoodPvAveW8 = fGoodMaxDoca = fGoodIp = fGoodIpS = fGoodPt = fGoodEta = fGoodAlpha =  fGoodChi2 = fGoodFLS = false;   
   fGoodCloseTrack = fGoodIso = fGoodDocaTrk = fGoodLastCut = fPreselection = false;
 
-  if (!fIsMC) {
+  if (fIsMC) {
     if (fb.g1pt < 3.5) return;
     if (fb.g2pt < 3.5) return;
     if (TMath::Abs(fb.g1eta) > 2.5) return;
@@ -3976,7 +3976,7 @@ void plotClass::candAnalysis(int mode) {
   //  fPreselection = fPreselection && (fCandPt > 5) && (fCandA < 0.2) && (fCandFLS3d > 5) && (fCandChi2/fCandDof < 5); 
 
   fGoodHLT        = fb.hlt;
-  fPreselection   = ((fBDT > 0.) && fb.hlt && fGoodMuonsID && (fb.flsxy > 3) ); 
+  fPreselection   = ((fBDT > 0.) && fb.hlt && fGoodMuonsID ); 
 
   fAnaCuts.update(); 
 

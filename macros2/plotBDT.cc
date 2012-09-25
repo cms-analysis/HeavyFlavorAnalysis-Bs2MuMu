@@ -1703,9 +1703,12 @@ void plotBDT::loopFunction2() {
   if (fb.m2pt < 4.0) return; 
 
   if (fBDT < -1.) return; 
-
+  
   // -- fill BDT response for hacked MC3 analysis (overlay of three signals with Jpsi X)
-  //  if (fb.flsxy > 3 && fb.pt > 6.9 && fb.alpha < 0.45 && fb.pchi2dof > 0.1 && fb.maxdoca < 0.5) {
+  if (fb.flsxy < 3) return;
+  if (fb.pchi2dof < 0.1) return;
+  if (fb.pt < 6.9) return;
+  if (fb.maxdoca > 0.5) return;
   if (1) {
     fhMcBDT5[fMode]->Fill(fBDT);
   }

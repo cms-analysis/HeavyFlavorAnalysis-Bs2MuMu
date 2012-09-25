@@ -527,6 +527,8 @@ void plotReducedOverlays::loopFunction1() {
 // ----------------------------------------------------------------------
 void plotReducedOverlays::fillDistributions() {
 
+  //  cout << "BDT: " << fBDT << " mass =  " << fb.m << " pt = " << fb.pt << endl;
+
   double mass = fb.cm;
   if (fIsMC) mass = fb.m;
   if (fIsSignal) mass = fb.m;
