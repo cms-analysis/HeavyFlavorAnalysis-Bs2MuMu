@@ -19,7 +19,7 @@ ClassImp(plotResults)
 
 
 // ----------------------------------------------------------------------
-plotResults::plotResults(const char *files, const char *cuts, const char *dir, int mode) : plotClass(files, cuts, dir, mode) { 
+plotResults::plotResults(const char *files, const char *cuts, const char *dir, int mode) : plotClass(files, dir, cuts, mode) { 
 
   fDoPrint = true; 
 
@@ -101,6 +101,11 @@ void plotResults::makeAll(int channels) {
 void plotResults::computeNormUL() {
 
   cout << "--> Normalization" << endl;
+
+  // FIXME
+  //  fNormProcessed = true; 
+  //  setupNorm();
+
   if (false == fNormProcessed) {
     fNormProcessed = true; 
     cout << "--> loopTree: norm MC" << endl;
@@ -110,6 +115,8 @@ void plotResults::computeNormUL() {
     loopTree(15); // data normalization 
     c0->Modified(); c0->Update();
   }
+
+  
 
   cout << "--> rareBg" << endl;
   rareBg();
@@ -795,6 +802,15 @@ void plotResults::printUlcalcNumbers(string fname) {
     OUT << "TAU_BD\t" << i << "\t" << fNumbersBs[i]->tauBd << "\t" << fNumbersBs[i]->tauBdE << endl;
     fTEX << formatTex(fNumbersBs[i]->tauBd, Form("%s:N-TAU-BD%d:val", fSuffix.c_str(), i), 2) << endl;
     fTEX << formatTex(fNumbersBs[i]->tauBdE, Form("%s:N-TAU-BD%d:err", fSuffix.c_str(), i), 2) << endl;
+
+
+    fTEX << formatTex(fNumbersBs[i]->offHi, Form("%s:N-OBS-OFFHI%d:val", fSuffix.c_str(), i), 0) << endl;
+    fTEX << formatTex(fNumbersBs[i]->offLo, Form("%s:N-OBS-OFFLO%d:val", fSuffix.c_str(), i), 0) << endl;
+
+    double sb = fNumbersBs[i]->bsNoScaled/(fNumbersBs[i]->bsRare + fNumbersBs[i]->bgBsExp);
+    fTEX << formatTex(sb, Form("%s:N-EXP-SoverB%d:val", fSuffix.c_str(), i), 0) << endl;
+    double ssb = fNumbersBs[i]->bsNoScaled/(fNumbersBs[i]->bsNoScaled + fNumbersBs[i]->bsRare + fNumbersBs[i]->bgBsExp);
+    fTEX << formatTex(sb, Form("%s:N-EXP-SoverSplusB%d:val", fSuffix.c_str(), i), 0) << endl;
   }
 
   OUT.close();
@@ -911,7 +927,6 @@ void plotResults::rareBg(std::string mode) {
     setupNorm();
   }
 
-
   c0->Clear();
   gStyle->SetOptStat(0);
 
@@ -930,7 +945,7 @@ void plotResults::rareBg(std::string mode) {
   std::map<string, int> colors, hatches;
   std::map<string, double> mscale;  
   std::map<string, double> err;  
-  std::map<string, double> chanbf;  
+  //  std::map<string, double> chanbf;  
 
   // -- 'tight muon' values
   double epsMu(0.75); // FIXME: this should be different for barrel and endcap!
@@ -938,85 +953,89 @@ void plotResults::rareBg(std::string mode) {
   double epsKa(0.001),  errKa2(0.15*0.15); 
   double epsPr(0.0005), errPr2(0.15*0.15);
 
-//   // -- not quite tight muon values
-//   double epsMu(0.8); // FIXME: this should be different for barrel and endcap!
-//   double epsPi(0.0015), errPi2(0.15*0.15); // relative errors on misid rates are statistical error from Danek's fits
-//   double epsKa(0.0017), errKa2(0.15*0.15); 
-//   double epsPr(0.0005), errPr2(0.15*0.15);
+  string cname; 
+  
+  cname = "bgLb2KP";
+  colors.insert(make_pair(cname, 46)); hatches.insert(make_pair(cname, 3004)); mscale.insert(make_pair(cname, epsPi*epsPr)); 
+  //  chanbf.insert(make_pair("bgLb2KP", 5.6e-6)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2 + errPr2))); 
 
-//   // -- ATM values
-//   double epsMu(0.9); // FIXME: this should be different for barrel and endcap!
-//   double epsPi(0.009), errPi2(0.15*0.15); // relative errors on misid rates are statistical error from Danek's fits
-//   double epsKa(0.01),  errKa2(0.15*0.15); 
-//   double epsPr(0.003), errPr2(0.15*0.15);
+  cname = "bgLb2PiP";
+  colors.insert(make_pair(cname, 49)); hatches.insert(make_pair(cname, 3005)); mscale.insert(make_pair(cname, epsKa*epsPr)); 
+  //  chanbf.insert(make_pair("bgLb2PiP", 3.5e-6)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2 + errPr2))); 
 
-
-  colors.insert(make_pair("bgLb2KP", 46)); hatches.insert(make_pair("bgLb2KP", 3004)); mscale.insert(make_pair("bgLb2KP", epsPi*epsPr)); 
-  chanbf.insert(make_pair("bgLb2KP", 5.6e-6)); 
-  err.insert(make_pair("bgLb2KP", TMath::Sqrt(0.3*0.3 + errPi2 + errPr2))); 
-
-  colors.insert(make_pair("bgLb2PiP", 49)); hatches.insert(make_pair("bgLb2PiP", 3005)); mscale.insert(make_pair("bgLb2PiP", epsKa*epsPr)); 
-  chanbf.insert(make_pair("bgLb2PiP", 3.5e-6)); 
-  err.insert(make_pair("bgLb2PiP", TMath::Sqrt(0.31*0.31 + errKa2 + errPr2))); 
-
-  colors.insert(make_pair("bgLb2PMuNu", 48)); hatches.insert(make_pair("bgLb2PMuNu", 3006)); mscale.insert(make_pair("bgLb2PMuNu", epsPr*epsMu)); 
-  chanbf.insert(make_pair("bgLb2PMuNu", 1.3e-4)); 
-  err.insert(make_pair("bgLb2PMuNu", TMath::Sqrt(0.31*0.31 + errPr2))); 
+  cname = "bgLb2PMuNu";
+  colors.insert(make_pair(cname, 48)); hatches.insert(make_pair(cname, 3006)); mscale.insert(make_pair(cname, epsPr*epsMu)); 
+  //  chanbf.insert(make_pair("bgLb2PMuNu", 1.3e-4)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPr2))); 
 
 
-  colors.insert(make_pair("bgBs2KK", 30)); hatches.insert(make_pair("bgBs2KK", 3004)); mscale.insert(make_pair("bgBs2KK", epsKa*epsKa)); 
-  chanbf.insert(make_pair("bgBs2KK", 2.7e-5)); 
-  err.insert(make_pair("bgBs2KK", TMath::Sqrt(0.15*0.15 + errKa2 + errKa2))); 
+  cname = "bgBs2KK";
+  colors.insert(make_pair(cname, 30)); hatches.insert(make_pair(cname, 3004)); mscale.insert(make_pair(cname, epsKa*epsKa)); 
+  //  chanbf.insert(make_pair("bgBs2KK", 2.7e-5)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2 + errKa2))); 
 
-  colors.insert(make_pair("bgBs2KPi", 32)); hatches.insert(make_pair("bgBs2KPi", 3005)); mscale.insert(make_pair("bgBs2KPi", epsPi*epsKa)); 
-  chanbf.insert(make_pair("bgBs2KPi", 5.0e-6)); 
-  err.insert(make_pair("bgBs2KPi", TMath::Sqrt(0.22*0.22 + errPi2 + errKa2))); 
+  cname = "bgBs2KPi";
+  colors.insert(make_pair(cname, 32)); hatches.insert(make_pair(cname, 3005)); mscale.insert(make_pair(cname, epsPi*epsKa)); 
+  //  chanbf.insert(make_pair("bgBs2KPi", 5.0e-6)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2 + errKa2))); 
 
-  colors.insert(make_pair("bgBs2PiPi", 33)); hatches.insert(make_pair("bgBs2PiPi", 3007)); mscale.insert(make_pair("bgBs2PiPi", epsPi*epsPi)); 
-  chanbf.insert(make_pair("bgBs2PiPi", 1.2e-6)); 
-  err.insert(make_pair("bgBs2PiPi", TMath::Sqrt(1.0*1.0 + errPi2 + errPi2))); 
+  cname = "bgBs2PiPi"; 
+  colors.insert(make_pair(cname, 33)); hatches.insert(make_pair(cname, 3007)); mscale.insert(make_pair(cname, epsPi*epsPi)); 
+  //  chanbf.insert(make_pair("bgBs2PiPi", 1.2e-6)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2 + errPi2))); 
 
-  colors.insert(make_pair("bgBs2KMuNu", 34)); hatches.insert(make_pair("bgBs2KMuNu", 3008)); mscale.insert(make_pair("bgBs2KMuNu", epsKa*epsMu)); 
-  chanbf.insert(make_pair("bgBs2KMuNu", 1.3e-4)); 
-  err.insert(make_pair("bgBs2KMuNu", TMath::Sqrt(0.2*0.2 + errKa2))); 
-
-
-  colors.insert(make_pair("bgBd2KK", 40)); hatches.insert(make_pair("bgBd2KK", 3004)); mscale.insert(make_pair("bgBd2KK", epsKa*epsKa)); 
-  chanbf.insert(make_pair("bgBd2KK", 1.5e-7)); 
-  err.insert(make_pair("bgBd2KK", TMath::Sqrt(0.73*0.73 + errKa2 + errKa2))); 
-
-  colors.insert(make_pair("bgBd2KPi", 41)); hatches.insert(make_pair("bgBd2KPi", 3005)); mscale.insert(make_pair("bgBd2KPi", epsKa*epsPi)); 
-  chanbf.insert(make_pair("bgBd2KPi", 1.9e-5)); 
-  err.insert(make_pair("bgBd2KPi", TMath::Sqrt(0.05*0.05 + errKa2 + errPi2))); 
-
-  colors.insert(make_pair("bgBd2PiPi", 42)); hatches.insert(make_pair("bgBd2PiPi", 3007)); mscale.insert(make_pair("bgBd2PiPi", epsPi*epsPi)); 
-  chanbf.insert(make_pair("bgBd2PiPi", 5.2e-6)); 
-  err.insert(make_pair("bgBd2PiPi", TMath::Sqrt(0.04*0.04 + errPi2 + errPi2))); 
-
-  colors.insert(make_pair("bgBd2PiMuNu", 43));hatches.insert(make_pair("bgBd2PiMuNu", 3008));mscale.insert(make_pair("bgBd2PiMuNu", epsPi*epsMu));
-  chanbf.insert(make_pair("bgBd2PiMuNu", 1.3e-4)); 
-  err.insert(make_pair("bgBd2PiMuNu", TMath::Sqrt(0.2*0.2 + errPi2))); 
+  cname = "bgBs2KMuNu";
+  colors.insert(make_pair(cname, 34)); hatches.insert(make_pair(cname, 3008)); mscale.insert(make_pair(cname, epsKa*epsMu)); 
+  //  chanbf.insert(make_pair("bgBs2KMuNu", 1.3e-4)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2))); 
 
 
-  colors.insert(make_pair("bgBu2PiMuMu", 50));hatches.insert(make_pair("bgBu2PiMuMu", 3004));mscale.insert(make_pair("bgBu2PiMuMu", epsMu*epsMu));
-  chanbf.insert(make_pair("bgBu2PiMuMu", 1.0e-8)); 
-  err.insert(make_pair("bgBu2PiMuMu", TMath::Sqrt(0.2*0.2))); 
+  cname = "bgBd2KK";
+  colors.insert(make_pair(cname, 40)); hatches.insert(make_pair(cname, 3004)); mscale.insert(make_pair(cname, epsKa*epsKa)); 
+  //  chanbf.insert(make_pair("bgBd2KK", 1.5e-7)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2 + errKa2))); 
 
-  colors.insert(make_pair("bgBu2KMuMu", 51));hatches.insert(make_pair("bgBu2KMuMu", 3005));mscale.insert(make_pair("bgBu2KMuMu", epsMu*epsMu));
-  chanbf.insert(make_pair("bgBu2KMuMu", 4.3e-7)); 
-  err.insert(make_pair("bgBu2KMuMu", TMath::Sqrt(0.2*0.2))); 
+  cname = "bgBd2KPi";
+  colors.insert(make_pair(cname, 41)); hatches.insert(make_pair(cname, 3005)); mscale.insert(make_pair(cname, epsKa*epsPi)); 
+  //  chanbf.insert(make_pair("bgBd2KPi", 1.9e-5)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2 + errPi2))); 
 
-  colors.insert(make_pair("bgBu2KMuMu", 52));hatches.insert(make_pair("bgBu2KMuMu", 3005));mscale.insert(make_pair("bgBu2KMuMu", epsMu*epsMu));
-  chanbf.insert(make_pair("bgBu2KMuMu", 5.0e-7)); 
-  err.insert(make_pair("bgBu2KMuMu", TMath::Sqrt(0.1*0.1))); 
+  cname = "bgBd2PiPi";
+  colors.insert(make_pair(cname, 42)); hatches.insert(make_pair(cname, 3007)); mscale.insert(make_pair(cname, epsPi*epsPi)); 
+  //  chanbf.insert(make_pair("bgBd2PiPi", 5.2e-6)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2 + errPi2))); 
 
-  colors.insert(make_pair("bgBs2PhiMuMu",53));hatches.insert(make_pair("bgBs2PhiMuMu",3006));mscale.insert(make_pair("bgBs2PhiMuMu",epsMu*epsMu));
-  chanbf.insert(make_pair("bgBs2PhiMuMu", 1.4e-6)); 
-  err.insert(make_pair("bgBs2PhiMuMu", TMath::Sqrt(0.4*0.4))); 
+  cname = "bgBd2PiMuNu";
+  colors.insert(make_pair(cname, 43));hatches.insert(make_pair(cname, 3008));mscale.insert(make_pair(cname, epsPi*epsMu));
+  //  chanbf.insert(make_pair("bgBd2PiMuNu", 1.3e-4)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2))); 
+
+
+  cname = "bgBu2PiMuMu";
+  colors.insert(make_pair(cname, 50));hatches.insert(make_pair(cname, 3004));mscale.insert(make_pair(cname, epsMu*epsMu));
+  //  chanbf.insert(make_pair("bgBu2PiMuMu", 1.0e-8)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
+
+  cname = "bgBu2KMuMu";
+  colors.insert(make_pair(cname, 51));hatches.insert(make_pair(cname, 3005));mscale.insert(make_pair(cname, epsMu*epsMu));
+  //  chanbf.insert(make_pair("bgBu2KMuMu", 4.3e-7)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
+
+  cname = "bgBu2KMuMu";
+  colors.insert(make_pair(cname, 52));hatches.insert(make_pair(cname, 3005));mscale.insert(make_pair(cname, epsMu*epsMu));
+  //  chanbf.insert(make_pair("bgBu2KMuMu", 5.0e-7)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
+
+  cname = "bgBs2PhiMuMu";
+  colors.insert(make_pair(cname,53));hatches.insert(make_pair(cname,3006));mscale.insert(make_pair(cname,epsMu*epsMu));
+  //  chanbf.insert(make_pair("bgBs2PhiMuMu", 1.4e-6)); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
 
   newLegend(0.55, 0.3, 0.80, 0.85); 
 
-  double error(0.), errorInc(0.); 
+  double valInc(0.), error(0.), errorInc(0.); 
   double teff[] = {0.85, 0.68};
   double rareBs[]  = {0., 0.};
   double rareBsE[] = {0., 0.};
@@ -1082,46 +1101,54 @@ void plotResults::rareBg(std::string mode) {
       if (string::npos != imap->first.find("Bd")) pRatio = 1.;
       if (string::npos != imap->first.find("Bu")) pRatio = 1.;
       
-      double yield = scaledYield(fNumbersBla[ichan], fNumbersNo[ichan], chanbf[imap->first], pRatio);
+      // -- yield is the total expectation, based on eff/eff' and N(B+)
+      //    it is used to normalize the rare bg histogram
+      //    the relevant numbers are extracted from the integrals over specific regions
+      double yield = scaledYield(fNumbersBla[ichan], fNumbersNo[ichan], fBF[imap->first], pRatio);
 
-      cout << "====> efftot: " << tot << "/" << ngenfile << "*" << fFilterEff[imap->first] << " = " << efftot << endl;
-      cout << "   misid*trig: " << misid*teff[ichan] << endl;
+      //       cout << "====> efftot: " << tot << "/" << ngenfile << "*" << fFilterEff[imap->first] << " = " << efftot << endl;
+      //       cout << "   misid*trig: " << misid*teff[ichan] << endl;
+
       // -- NB: rareBxE contains the SQUARE of the error
-      rareBs[ichan]  += fNumbersBla[ichan]->bsRare*misid*teff[ichan];
-      error =  misid*teff[ichan]*err[imap->first]*fNumbersBla[ichan]->bsRare;
-      errorInc =  misid*teff[ichan]*misid*teff[ichan]*fNumbersBla[ichan]->bsRareE*fNumbersBla[ichan]->bsRareE + error*error;
-      cout << " ->Bs increment: " << fNumbersBla[ichan]->bsRare*misid*teff[ichan] 
+      valInc = fNumbersBla[ichan]->bsRare*misid*teff[ichan];
+      rareBs[ichan]  += valInc;
+      error =  valInc*err[imap->first];
+      //      error =  misid*teff[ichan]*err[imap->first]*fNumbersBla[ichan]->bsRare;
+      //       errorInc =  misid*teff[ichan]*misid*teff[ichan]*fNumbersBla[ichan]->bsRareE*fNumbersBla[ichan]->bsRareE + error*error;
+      //       rareBsE[ichan] += errorInc; 
+      errorInc = error*error; 
+      rareBsE[ichan] += errorInc; 
+      cout << Form(" ->Bs increment: %7.5f", valInc)   
 	   << " error: " << error << " errorInc: " << errorInc << " err[]: " << err[imap->first]
 	   << endl;
-      rareBsE[ichan] += errorInc; 
-      errorInc = TMath::Sqrt(errorInc); 
-      fTEX <<  Form("\\vdef{%s:%s:bsRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, rareBs[ichan]) << endl;
-      fTEX <<  Form("\\vdef{%s:%s:bsRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, errorInc) << endl;
+      fTEX <<  Form("\\vdef{%s:%s:bsRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, valInc) << endl;
+      fTEX <<  Form("\\vdef{%s:%s:bsRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, error) << endl;
 
-      rareBd[ichan]  += fNumbersBla[ichan]->bdRare*misid*teff[ichan];
-      error =  misid*teff[ichan]*err[imap->first]*fNumbersBla[ichan]->bdRare;
-      errorInc = misid*teff[ichan]*misid*teff[ichan]*fNumbersBla[ichan]->bdRareE*fNumbersBla[ichan]->bdRareE + error*error;
-      cout << " ->Bd increment: " << fNumbersBla[ichan]->bdRare*misid*teff[ichan]
+      //       error =  misid*teff[ichan]*err[imap->first]*fNumbersBla[ichan]->bdRare;
+      //       errorInc = misid*teff[ichan]*misid*teff[ichan]*fNumbersBla[ichan]->bdRareE*fNumbersBla[ichan]->bdRareE + error*error;
+      valInc = fNumbersBla[ichan]->bdRare*misid*teff[ichan];
+      rareBd[ichan]  += valInc;
+      error = valInc*err[imap->first];
+      errorInc = error*error;
+      cout << Form(" ->Bd increment: %7.5f", valInc)
 	   << " error: " << error << " errorInc: " << errorInc << " err[]: " << err[imap->first]
 	   << endl;
       rareBdE[ichan] += errorInc; 
-      errorInc = TMath::Sqrt(errorInc); 
-      fTEX <<  Form("\\vdef{%s:%s:bdRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, rareBd[ichan]) << endl;
-      fTEX <<  Form("\\vdef{%s:%s:bdRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, errorInc) << endl;
+      fTEX <<  Form("\\vdef{%s:%s:bdRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, valInc) << endl;
+      fTEX <<  Form("\\vdef{%s:%s:bdRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, error) << endl;
 
       hRare[ichan]->SetFillColor(colors[imap->first]);
       hRare[ichan]->SetFillStyle(1000);
       hRare[ichan]->Scale(yield*misid*teff[ichan]/tot);
-      cout << "histogram hRareX"
-	   << " total (b/w8): " << tot
-	   << " total (a/w8): " << hRare[ichan]->Integral(0, hRare[ichan]->GetNbinsX()+1)
-	   << " 4.9 - 6.0:    " << hRare[ichan]->Integral(hRare[ichan]->FindBin(4.9001), hRare[ichan]->GetNbinsX()+1)
-	   << endl;
-      cout << "yield:      " << yield << endl;
-      cout << "misid*teff: " << misid*teff[ichan] << endl;
+      //       cout << "histogram hRareX"
+      // 	   << " total (b/w8): " << tot
+      // 	   << " total (a/w8): " << hRare[ichan]->Integral(0, hRare[ichan]->GetNbinsX()+1)
+      // 	   << " 4.9 - 6.0:    " << hRare[ichan]->Integral(hRare[ichan]->FindBin(4.9001), hRare[ichan]->GetNbinsX()+1)
+      // 	   << endl;
+      //       cout << "yield:      " << yield << endl;
+      //       cout << "misid*teff: " << misid*teff[ichan] << endl;
 
       double loSb = hRare[ichan]->Integral(hRare[ichan]->FindBin(4.9001), hRare[ichan]->FindBin(5.199));
-      
       fTEX <<  Form("\\vdef{%s:%s:loSideband%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, 
 		    loSb) << endl;
       fTEX <<  Form("\\vdef{%s:%s:loSideband%d:err}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, 
@@ -1197,27 +1224,31 @@ void plotResults::rareBg(std::string mode) {
     if (c0) c0->SaveAs(pdfname.c_str());
   }
 
-  fNumbersBs[0]->bsRare = rareBs[0]; 
-  fNumbersBs[0]->bsRareE= rareBsE[0]; 
-  fNumbersBs[0]->bdRare = rareBd[0]; 
-  fNumbersBs[0]->bdRareE= rareBdE[0]; 
-  double relErr = (fNumbersBs[0]->bdRareE/fNumbersBs[0]->bdRare); 
 
-  fNumbersBs[0]->offLoRare = bRare->Integral(bRare->FindBin(4.9001), bRare->FindBin(5.199));
-  fNumbersBs[0]->offLoRareE= relErr*fNumbersBs[0]->offLoRare; 
-  fNumbersBs[0]->offHiRare = bRare->Integral(bRare->FindBin(5.451), bRare->FindBin(5.899));
-  fNumbersBs[0]->offHiRareE= relErr*fNumbersBs[0]->offHiRare; 
+  for (int i = 0; i < fNchan; ++i) {
+    fNumbersBs[i]->bsRare = rareBs[i]; 
+    fNumbersBs[i]->bsRareE= rareBsE[i]; 
+    fNumbersBs[i]->bdRare = rareBd[i]; 
+    fNumbersBs[i]->bdRareE= rareBdE[i]; 
+    double relErr = (fNumbersBs[i]->bdRareE/fNumbersBs[i]->bdRare); 
 
-  fNumbersBs[1]->bsRare = rareBs[1]; 
-  fNumbersBs[1]->bsRareE= rareBsE[1]; 
-  fNumbersBs[1]->bdRare = rareBd[1]; 
-  fNumbersBs[1]->bdRareE= rareBdE[1]; 
-  relErr = (fNumbersBs[1]->bdRareE/fNumbersBs[1]->bdRare); 
+    TH1D *hrare = (i==0? bRare : eRare);
+    fNumbersBs[i]->offLoRare = hrare->Integral(hrare->FindBin(4.9001), hrare->FindBin(5.199));
+    fNumbersBs[i]->offLoRareE= relErr*fNumbersBs[i]->offLoRare; 
+    fNumbersBs[i]->offHiRare = hrare->Integral(hrare->FindBin(5.451), hrare->FindBin(5.899));
+    fNumbersBs[i]->offHiRareE= relErr*fNumbersBs[i]->offHiRare; 
+  }
 
-  fNumbersBs[1]->offLoRare = eRare->Integral(eRare->FindBin(4.9001), eRare->FindBin(5.199));
-  fNumbersBs[1]->offLoRareE= relErr*fNumbersBs[1]->offLoRare; 
-  fNumbersBs[1]->offHiRare = eRare->Integral(eRare->FindBin(5.451), eRare->FindBin(5.899));
-  fNumbersBs[1]->offHiRareE= relErr*fNumbersBs[1]->offHiRare; 
+  //   fNumbersBs[1]->bsRare = rareBs[1]; 
+  //   fNumbersBs[1]->bsRareE= rareBsE[1]; 
+  //   fNumbersBs[1]->bdRare = rareBd[1]; 
+  //   fNumbersBs[1]->bdRareE= rareBdE[1]; 
+  //   relErr = (fNumbersBs[1]->bdRareE/fNumbersBs[1]->bdRare); 
+  
+  //   fNumbersBs[1]->offLoRare = eRare->Integral(eRare->FindBin(4.9001), eRare->FindBin(5.199));
+  //   fNumbersBs[1]->offLoRareE= relErr*fNumbersBs[1]->offLoRare; 
+  //   fNumbersBs[1]->offHiRare = eRare->Integral(eRare->FindBin(5.451), eRare->FindBin(5.899));
+  //   fNumbersBs[1]->offHiRareE= relErr*fNumbersBs[1]->offHiRare; 
 
   fTEX << "% ----------------------------------------------------------------------" << endl;
   fTEX << "% --- rare Background summary numbers" << endl;  
@@ -1233,9 +1264,9 @@ void plotResults::rareBg(std::string mode) {
   TDirectory *pD = gFile; 
   fHistFile->cd();
   bRare->SetDirectory(gDirectory);
-  //  bRare->Write(); 
+  bRare->Write(); 
   eRare->SetDirectory(gDirectory);
-  //  eRare->Write(); 
+  eRare->Write(); 
   pD->cd();
 
   fSuffix = cache; 
@@ -2162,9 +2193,9 @@ void plotResults::fls3dVsX(std::string x, std::string cuts, std::string pdfname)
 // ----------------------------------------------------------------------
 void plotResults::setupNorm() {
 
-  fNumbersNo[0]->effTot = 0.0011;
-  fNumbersNo[1]->effTot = 0.00032;
-  fNumbersNo[0]->fitYield = 82712;
-  fNumbersNo[1]->fitYield = 23809;
+  fNumbersNo[0]->effTot = 0.00166;
+  fNumbersNo[1]->effTot = 0.00037;
+  fNumbersNo[0]->fitYield = 129806;
+  fNumbersNo[1]->fitYield = 25578;
 
 }

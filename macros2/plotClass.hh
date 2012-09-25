@@ -114,7 +114,7 @@ class plotClass: public TObject {
 
 public:
 
-  plotClass(const char *files="anaBmm.default.files", const char *cuts = "default", const char *dir = "default", int mode = 11);
+  plotClass(const char *files="anaBmm.default.files", const char *dir = "default", const char *cuts = "default", int mode = 11);
   ~plotClass();
 
   virtual void cd(const char *file) {fF[file]->cd();}
@@ -250,6 +250,7 @@ public:
   std::vector<TH1D*> fh0TNPTrigger, fh1TNPTrigger, fh0TNPMuID, fh1TNPMuID;
   std::vector<TH1D*> fh0TNPMCTrigger, fh1TNPMCTrigger, fh0TNPMCMuID, fh1TNPMCMuID;
   std::vector<TH1D*> fh0MCTrigger, fh1MCTrigger, fh0MCMuID, fh1MCMuID;
+  std::vector<TH2D*> fhBdtMass;
 
   TH1D *hMassPiPi, *hMassKPi, *hMassPiK; 
 
@@ -285,9 +286,12 @@ public:
   virtual void calcBDT(bool rejectInvIso = false);
 
   struct RedTreeData fb; 
-  std::vector<TMVA::Reader*> fReaderEvents0; 
-  std::vector<TMVA::Reader*> fReaderEvents1; 
-  std::vector<TMVA::Reader*> fReaderEvents2; 
+  //  std::vector<TMVA::Reader*> fReaderEvents0; 
+  //  std::vector<TMVA::Reader*> fReaderEvents1; 
+  //  std::vector<TMVA::Reader*> fReaderEvents2; 
+  TMVA::Reader* fReaderEvents0[2]; 
+  TMVA::Reader* fReaderEvents1[2]; 
+  TMVA::Reader* fReaderEvents2[2]; 
   bool fIsMC, fIsSignal;
   double fBDT; 
   readerData frd; 
@@ -304,6 +308,8 @@ public:
     fGoodDocaTrk, fGoodLastCut; 
 
   AnalysisCuts fAnaCuts; 
+
+  std::string fSetup; 
 
   ClassDef(plotClass,1) //Testing plotClass
 };

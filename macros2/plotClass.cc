@@ -77,7 +77,7 @@ double fa_landausimp(double *x, double *par) {  // simplified landau
 } 
 
 // ----------------------------------------------------------------------
-plotClass::plotClass(const char *files, const char *cuts, const char *dir, int mode) { 
+plotClass::plotClass(const char *files, const char *dir, const char *cuts, int mode) { 
 
   fFiles = files; 
 
@@ -116,6 +116,7 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
   double HLO(0.), HHI(45.); 
 
   TH1D *h; 
+  TH2D *h2; 
 
   hMassPiPi = new TH1D("hMassPiPi", "hMassPiPi", 100, 0., 0.6);
   hMassKPi  = new TH1D("hMassKPi",  "hMassKPi", 100, 0.5, 1.0);
@@ -161,6 +162,9 @@ plotClass::plotClass(const char *files, const char *cuts, const char *dir, int m
     a->name  = Form("Bla %i", i); 
     fNumbersBla.push_back(a); 
     
+    
+    h2 = new TH2D(Form("hBdtMass%d", i), Form("hBdtMass%d", i), NBINS, fMassLo, fMassHi, 100, 0., 1.0);
+    fhBdtMass.push_back(h2); 
 
     h = new TH1D(Form("hMassWithMassCuts%d", i), Form("hMassWithMassCuts%d", i), NBINS, fMassLo, fMassHi);
     fhMassWithMassCuts.push_back(h); 
@@ -469,6 +473,8 @@ void plotClass::loopTree(int mode, int proc) {
   hMassPiK->Reset();
 
   for (unsigned int i = 0; i < fNchan; ++i) {
+    fhBdtMass[i]->Reset();
+    
     fhMuId[i]->Reset();
     fhMuTr[i]->Reset();
     fhMuIdMC[i]->Reset();
@@ -647,15 +653,14 @@ void plotClass::loopTree(int mode, int proc) {
 
     if (fDoUseBDT) {
       // -- skip inverted isolation events
-      if (5 == mode && 5.2 < mass && mass < 5.45) continue; 
+      //      if (5 == mode && 5.2 < mass && mass < 5.45) continue; 
       
-      if(5 == mode || 15 == mode || 25 == mode) {
-	if (false == fb.hlt) continue;
-	if (false == fb.gmuid) continue;
-      }
+      //       if(5 == mode || 15 == mode || 25 == mode) {
+      // 	if (false == fb.hlt) continue;
+      // 	if (false == fb.gmuid) continue;
+      //       }
 
-      if (TMath::IsNaN(fb.fls3d)) continue;
-      if (bs2jpsiphi && fb.dr >0.3) continue;
+      if (bs2jpsiphi && fb.dr > 0.25) continue;
       if (bs2jpsiphi && fb.mkk < 0.995) continue;
       if (bs2jpsiphi && fb.mkk > 1.045) continue;
       if (bd2dstarpi && fb.md0 < 1.82) continue;
@@ -678,6 +683,11 @@ void plotClass::loopTree(int mode, int proc) {
       } else {
 	calcBDT(false);
       }
+
+      // -- moved small tree filling here to have more statistics
+      if (fBDT > 0 && fb.hlt && fb.gmuid) {
+	elist->Enter(jentry); 
+      }
       if (bd2dstarpi) {
 	if (fBDT < static_cast<double>(proc)/100.) {
 	  continue;
@@ -697,18 +707,14 @@ void plotClass::loopTree(int mode, int proc) {
       if (fb.pvw8 < 0.6) continue;
       
       if (fb.pt < pCuts->pt) continue; 
-      if (fInvertedIso) {
-	if (fb.iso > 0.7) continue; 
-      } else {
-	if (fb.iso < pCuts->iso) continue; 
-      }
+      if (fb.iso < pCuts->iso) continue; 
       if (fb.chi2/fb.dof > pCuts->chi2dof) continue;
       if (TMath::IsNaN(fb.fls3d)) continue;
       if (fb.fls3d < pCuts->fls3d) continue;
       if (fb.alpha > pCuts->alpha) continue;
       if (fb.docatrk < pCuts->docatrk) continue;
       
-      if (bs2jpsiphi && fb.dr >0.3) continue;
+      if (bs2jpsiphi && fb.dr > 0.25) continue;
       if (bs2jpsiphi && fb.mkk < 0.995) continue;
       if (bs2jpsiphi && fb.mkk > 1.045) continue;
       
@@ -817,7 +823,7 @@ void plotClass::loopTree(int mode, int proc) {
     fhNormC[fChan]->Fill(fb.cm);
     //    fhNorm[fChan]->Fill(mass);
     
-    elist->Enter(jentry); 
+    if (!fDoUseBDT) elist->Enter(jentry); 
 
     if (0 == mode && mass < pCuts->mBsLo) continue;
     if (0 == mode && mass > pCuts->mBsHi) continue;
@@ -830,6 +836,9 @@ void plotClass::loopTree(int mode, int proc) {
 
     fhMassWithMassCuts[fChan]->Fill(mass);
     fhMassWithMassCutsManyBins[fChan]->Fill(mass); 
+
+
+    fhBdtMass[fChan]->Fill(mass, fBDT); 
 
     if (fDoPrint && 5 == mode && mass > 4.9 && mass < 5.9) {
       tlist->Enter(jentry); 
@@ -1241,6 +1250,13 @@ void plotClass::loopTree(int mode, int proc) {
 
       delete dummy1; 
       delete dummy2; 
+      
+      fhBdtMass[i]->Draw("colz");
+      if (fDoPrint) {
+	if (fDoUseBDT) c0->SaveAs(Form("%s/bdt-mass-sig-data-chan%d.pdf", fDirectory.c_str(), i));
+	else c0->SaveAs(Form("%s/bdt-mass-sig-data-chan%d.pdf", fDirectory.c_str(), i));
+      }
+
 
     } else if (10 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
@@ -1364,9 +1380,11 @@ void plotClass::loopTree(int mode, int proc) {
     cout << "fHistFile: " << fHistFile  << endl;
     fHistFile->cd();
     string modifier = (fDoUseBDT?"bdt":"cnc"); 
+    fhBdtMass[i]->SetName(Form("hBdtMass%d_chan%d", mode, i)); fhBdtMass[i]->Write();
+
     fhMassWithMassCutsManyBins[i]->SetName(Form("hMassWithMassCutsManyBins%d_chan%d", mode, i)); fhMassWithMassCutsManyBins[i]->Write();
     fhMassWithMassCuts[i]->SetName(Form("hMassWithMassCuts%d_chan%d", mode, i)); fhMassWithMassCuts[i]->Write();
-    //     fhMassWithAllCutsManyBins[i]->SetName(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i)); 
+    fhMassWithAllCutsManyBins[i]->SetName(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i)); 
     fhMassWithAllCutsManyBins[i]->SetTitle(Form("hMassWithAllCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, pD->GetName())); 
     fhMassWithAllCutsManyBins[i]->Write();
     //     fhMassWithAllCutsManyBins[i]->SetDirectory(fHistFile);
@@ -1801,6 +1819,8 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
 
   printCuts(cout); 
 
+  cout << "hallo" << endl;
+  
   fFont = 42; 
   fMode = mode;  
 
@@ -1834,16 +1854,13 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
   fDirectory = dir; 
   fSuffix    = cuts; 
   if (fMode > 0)  fSuffix += Form("-%d", fMode); 
-  cout << "--> Dumping output into " << fDirectory << endl;
+  cout << "==> Dumping output into " << fDirectory << endl;
   fNumbersFileName = fDirectory + "/anaBmm." + fSuffix + ".txt";
-  // FIXME
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fOUT.open(fNumbersFileName.c_str(), ios::app);
   
   loadFiles(files);
   string hfname  = fDirectory + "/anaBmm." + fSuffix + ".root";
-//   cout << "fHistFile: " << hfname << endl;
-//   fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
 
   printCuts(fOUT); 
 
@@ -1939,6 +1956,7 @@ void plotClass::loadFiles(const char *files) {
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "Jet")); 
       }
+      cout << "open Data file "  << sfile  << " as " << sname << " (" << stype << ") with lumi = " << slumi << endl;
     } else {
       string sfilter = sdset; 
       replaceAll(sfilter, "mc,", ""); 
@@ -2003,6 +2021,36 @@ void plotClass::loadFiles(const char *files) {
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (acc)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }
+      if (string::npos != stype.find("Bx2MuMu") && string::npos != stype.find("sg")) {
+	sname = "SgBx2MuMu"; 
+	fF.insert(make_pair(sname, pF)); 
+	fBF.insert(make_pair(sname, 3.2e-9)); 
+	fBFE.insert(make_pair(sname, 0.06)); 
+	fProdR.insert(make_pair(sname, fsfu)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (5.7GeV)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }
+      if (string::npos != stype.find("By2MuMu") && string::npos != stype.find("sg")) {
+	sname = "SgBy2MuMu"; 
+	fF.insert(make_pair(sname, pF)); 
+	fBF.insert(make_pair(sname, 3.2e-9)); 
+	fBFE.insert(make_pair(sname, 0.06)); 
+	fProdR.insert(make_pair(sname, fsfu)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (5.1GeV)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }
+      if (string::npos != stype.find("Bs2MuMu") && string::npos != stype.find("sg")) {
+	sname = "SgBs2MuMu"; 
+	fF.insert(make_pair(sname, pF)); 
+	fBF.insert(make_pair(sname, 3.2e-9)); 
+	fBFE.insert(make_pair(sname, 0.06)); 
+	fProdR.insert(make_pair(sname, fsfu)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (5.37GeV)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
 
@@ -3378,25 +3426,29 @@ void plotClass::readCuts(const char *filename) {
     if (!strcmp(ctmp.c_str(), "xml")) {
       a->xmlFile = XmlName;
       sXmlName = "weights/" + a->xmlFile + "-Events0_BDT.weights.xml"; 
-      fReaderEvents0.push_back(setupReader(sXmlName, frd)); 
+      //      fReaderEvents0.push_back(setupReader(sXmlName, frd)); 
+      TMVA::Reader *ar = setupReader(sXmlName, frd); 
+      fReaderEvents0[a->index] = ar;
       if (dump) cout << "xml:                   " << sXmlName << endl;
       sXmlName = "weights/" + a->xmlFile + "-Events1_BDT.weights.xml"; 
-      fReaderEvents1.push_back(setupReader(sXmlName, frd)); 
+      //      fReaderEvents1.push_back(setupReader(sXmlName, frd)); 
+      ar = setupReader(sXmlName, frd); 
+      fReaderEvents1[a->index] = ar;
       if (dump) cout << "xml:                   " << sXmlName << endl;
       sXmlName = "weights/" + a->xmlFile + "-Events2_BDT.weights.xml"; 
-      fReaderEvents2.push_back(setupReader(sXmlName, frd)); 
+      //      fReaderEvents2.push_back(setupReader(sXmlName, frd)); 
+      ar = setupReader(sXmlName, frd); 
+      fReaderEvents2[a->index] = ar;
       if (dump) cout << "xml:                   " << sXmlName << endl;
     }
 
-
-
+    if (!ok) cout << "==> what about " << CutName << endl;
   }
 
   if (a) fCuts.push_back(a); 
 
-  if (!ok) cout << "==> what about " << CutName << endl;
+  cout << "==> finished reading cut setting, fCuts.size() =  " << fCuts.size() << endl;
   
-
 }
 
 
@@ -3404,6 +3456,7 @@ void plotClass::readCuts(const char *filename) {
 void plotClass::printCuts(ostream &OUT) {
 
   OUT << "----------------------------------------------------------------------" << endl;
+  cout << "printCuts ... fCuts.size() = " << fCuts.size() << endl;
   for (unsigned int i = 0; i < fCuts.size(); ++i) {
     cuts *a = fCuts[i]; 
     OUT << "# -- channel " << a->index << endl;
@@ -3691,6 +3744,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
 // ----------------------------------------------------------------------
 TTree* plotClass::getTree(string mode) {
   TTree *t(0);
+  cout << "retrieve tree events for mode " << mode << " from file " << fF[mode]->GetName() << endl;
   if (string::npos != mode.find("No")) t = (TTree*)fF[mode]->Get("candAnaBu2JpsiK/events"); 
   if (string::npos != mode.find("Cs")) t = (TTree*)fF[mode]->Get("candAnaBs2JpsiPhi/events"); 
   if (string::npos != mode.find("Sg")) t = (TTree*)fF[mode]->Get("candAnaMuMu/events"); 
@@ -3748,6 +3802,7 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("chi2",&fb.chi2);
   t->SetBranchAddress("dof",&fb.dof);
   t->SetBranchAddress("prob",&fb.pchi2dof);
+  t->SetBranchAddress("flsxy",&fb.flsxy);
   t->SetBranchAddress("fls3d",&fb.fls3d);
   t->SetBranchAddress("fl3d",&fb.fl3d);
   t->SetBranchAddress("fl3dE",&fb.fl3dE);
@@ -3813,7 +3868,7 @@ void plotClass::candAnalysis(int mode) {
   bool bp2jpsikp(false), bs2jpsiphi(false); 
   if (10 == mode)  bp2jpsikp = true; 
   if (20 == mode)  bs2jpsiphi = true; 
-  
+
   // -- reset all
   fBDT = -99.; 
   fGoodHLT = fGoodMuonsID = fGoodMuonsPt = fGoodMuonsEta = fGoodTracks = fGoodTracksPt = fGoodTracksEta = false;
@@ -3821,6 +3876,10 @@ void plotClass::candAnalysis(int mode) {
   fGoodCloseTrack = fGoodIso = fGoodDocaTrk = fGoodLastCut = fPreselection = false;
 
   if (!fIsMC) {
+    if (fb.g1pt < 3.5) return;
+    if (fb.g2pt < 3.5) return;
+    if (TMath::Abs(fb.g1eta) > 2.5) return;
+    if (TMath::Abs(fb.g2eta) > 2.5) return;
     if (!fb.json) {
       return;
     }
@@ -3851,10 +3910,10 @@ void plotClass::candAnalysis(int mode) {
   if (bs2jpsiphi) {
     if (TMath::Abs(fb.k1eta) > 2.4) return;
     if (TMath::Abs(fb.k2eta) > 2.4) return;
-    if (fb.k1pt < 1.) return;
-    if (fb.k2pt < 1.) return;
+    if (fb.k1pt < 0.5) return;
+    if (fb.k2pt < 0.5) return;
     if (fb.dr >0.3) return;
-    if (fb.mkk < 1.005) return;
+    if (fb.mkk < 0.995) return;
     if (fb.mkk > 1.045) return;
   }
 
@@ -3880,15 +3939,8 @@ void plotClass::candAnalysis(int mode) {
   }
 
   if (fDoUseBDT) {
-    // -- skip inverted isolation events
-    if (0 == mode && 5.2 < fb.m && fb.m < 5.45 && fb.iso < 0.7) return; 
-    
     if (TMath::IsNaN(fb.fls3d)) return; 
-    if (5 == mode) {
-      calcBDT(true); 
-    } else {
-      calcBDT(false);
-    }
+    calcBDT(true); 
   }
 
   fGoodMuonsID    = fb.gmuid;
@@ -3917,15 +3969,14 @@ void plotClass::candAnalysis(int mode) {
   fGoodLastCut    = true; 
 
   // -- different preselection cuts used for the plotting of various (sbs) distributions
-  fGoodHLT        = fb.hlt && fGoodMuonsID && (fb.fls3d > 4) && (fb.chi2/fb.dof < 5) && (fBDT > -1.);
-  fPreselection   = ((fBDT > 0.) && fb.hlt && fGoodMuonsID); 
-  if (bs2jpsiphi) {
-    fGoodHLT      = fb.hlt && fGoodMuonsID && fGoodMuonsPt 
-      && (fb.fls3d > 5) && (fb.alpha < 0.1)&& (fb.chi2/fb.dof < 4) 
-      && (fb.iso > 0.5) && (fb.closetrk < 5)
-      && (fBDT > -1.)
-      ;
-  }
+  //  fGoodHLT        = fb.hlt && fGoodMuonsID && (fb.fls3d > 4) && (fb.chi2/fb.dof < 5) && (fBDT > -1.);
+
+  // -- The following is applied for the data tree and MUST be applied offline as well
+  //  fPreselection = fPreselection && fGoodPvLip && fGoodPvLipS && fGoodQ; 
+  //  fPreselection = fPreselection && (fCandPt > 5) && (fCandA < 0.2) && (fCandFLS3d > 5) && (fCandChi2/fCandDof < 5); 
+
+  fGoodHLT        = fb.hlt;
+  fPreselection   = ((fBDT > 0.) && fb.hlt && fGoodMuonsID && (fb.flsxy > 3) ); 
 
   fAnaCuts.update(); 
 
@@ -3939,14 +3990,14 @@ void plotClass::calcBDT(bool rejectInvIso) {
   if (!preselection(fb, fChan, rejectInvIso)) return;
 
   //??  if (5 == mode && 5.2 < mass && mass < 5.45 && fb.iso < 0.7) continue; 
-  if (rejectInvIso && 5.2 < fb.m && fb.m < 5.45 && fb.iso < 0.7) return;
-  if (fb.pt > 100) return;
-  if (fb.pt < 6) return;
-  if (fb.m1pt < 4) return;
-  if (fb.m2pt < 4) return;
-  if (fb.fl3d > 1.5) return;
-  if (fb.m > 5.9) return;
-  if (fb.m < 4.9) return;
+  //  if (rejectInvIso && 5.2 < fb.m && fb.m < 5.45 && fb.iso < 0.7) return;
+  //   if (fb.pt > 100) return;
+  //   if (fb.pt < 6) return;
+  //   if (fb.m1pt < 4) return;
+  //   if (fb.m2pt < 4) return;
+  //   if (fb.fl3d > 1.5) return;
+  //   if (fb.m > 5.9) return;
+  //   if (fb.m < 4.9) return;
   
   //   if (!fb.hlt) return;
   //   if (!fb.gmuid) return;

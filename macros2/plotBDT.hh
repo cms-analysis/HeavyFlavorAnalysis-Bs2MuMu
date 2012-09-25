@@ -2,6 +2,7 @@
 #define PLOTBDT
 
 #include "plotClass.hh"
+#include "preselection.hh"
 
 #include <TFile.h>
 #include <TDirectory.h>
@@ -16,7 +17,7 @@ class plotBDT: public plotClass {
 
 public:
 
-  plotBDT(const char *files="anaBmm.v11.files", const char *cuts = "default", const char *dir = "default", int mode = 11);
+  plotBDT(const char *files="anaBmm.default.files", const char *dir = "default", const char *cuts = "default", int mode = 11);
   ~plotBDT();
   
   void makeAll(int channels = 7); 
@@ -29,6 +30,14 @@ public:
   void ssb();
   void overlap();
   void overlayBdtOutput(); 
+
+  void hackedMC(int chan = 0);
+  void hackedMC1(std::string cuts = "1", double xmin = -0.4, double xmax = 0.5, std::string func = "pol0");
+  void hackedMC2(double bdtCut1 = 0.0, double bdtCut2 = 0.2, std::string func = "pol0");
+  void hackedMC3(int chan = 0);
+
+  void allCorrelationPlots(double bdtcut, std::string fname = "TMVA-0");
+  void correlationPlot(double bdtcut, std::string var, double xmin, double xmax, std::string fname);
 
   void validateAllDistributions(); 
   void validateDistributions(int channel, const char *type, int classID); 
@@ -65,6 +74,10 @@ public:
 
   std::vector<TProfile*> fpMassBDT, fpMassAcBDT, fpNpvBDT, fpNpvAcBDT; 
 
+  // -- hacked MC plots
+  std::vector<TH1D*> fhMcMass, fhMcBDT, fhMcRatio;
+  std::vector<TH1D*> fhMcMass0, fhMcMass1, fhMcMass2, fhMcRatio1, fhMcRatio2;
+  std::vector<TH1D*> fhMcBDT5;
   // -- other histograms
   std::vector<TH1D*> fhBgBDT, fhSgBDT;
 
