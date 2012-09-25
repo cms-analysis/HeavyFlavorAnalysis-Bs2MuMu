@@ -154,6 +154,15 @@ double f_pol1_BsBlind(double *x, double *par) {
   return par[0] + par[1]*x[0]; 
 }
 
+// ----------------------------------------------------------------------
+double f_expo_BsBlind(double *x, double *par) {
+  // FIXME fixed limits!!!
+  if (x[0] >= 5.2 && x[0] <= 5.45) { 
+    TF1::RejectPoint();
+    return 0;
+  }
+  return par[0]*TMath::Exp(x[0]*par[1]);
+}
 
 // ----------------------------------------------------------------------
 // pol1 and gauss 
@@ -520,6 +529,30 @@ TF1* initFunc::pol1BsBlind(TH1 *h) {
 
 
 // ----------------------------------------------------------------------
+TF1* initFunc::expoBsBlind(TH1 *h) {
+  if (0 == h) {
+    cout << "empty histogram pointer" << endl;
+    return 0; 
+  }
+  TF1 *f = new TF1("f1", f_expo_BsBlind, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 2);
+  f->SetParNames("offset", "slope"); 			   
+  
+  int lbin(1), hbin(h->GetNbinsX()), EDG(4), NB(EDG+1); 
+  if (fLo < fHi) {
+    lbin = h->FindBin(fLo); 
+    hbin = h->FindBin(fHi); 
+  }
+
+  double p0, p1; 
+  initExpo(p0, p1, h);
+  
+  f->SetParameters(p0, p1); 
+
+  return f; 
+}
+
+
+// ----------------------------------------------------------------------
 TF1* initFunc::pol0(TH1 *h) {
 
   if (0 == h) {
@@ -650,10 +683,13 @@ TF1* initFunc::expoGauss(TH1 *h, double peak, double sigma) {
   double A   = p0*(TMath::Exp(p1*fHi) - TMath::Exp(p1*fLo));
 
   double g0 = (h->Integral(lbin, hbin)*h->GetBinWidth(1) - A);  
+  g0 = 10.;
 
   cout << "A: " << A << " g0: " << g0 << " p0: " << p0 << " p1: " << p1 << endl;
+  cout << "fLimit = " << fLimit[0] << "  " << fLimit[1] << "  " << fLimit[2] << "  " << fLimit[3] << "  " << fLimit[4] << endl;
 
-  f->SetParameters(g0, peak, sigma, p0, p1); 
+
+  f->SetParameters(g0, peak, sigma, p0, -p1); 
 
   f->ReleaseParameter(0);     
   if (fLimit[0]) {
@@ -680,10 +716,16 @@ TF1* initFunc::expoGauss(TH1 *h, double peak, double sigma) {
   }
 
   f->ReleaseParameter(3);     
-  if (fLimit[3]) f->SetParLimits(3, fLimitLo[3], fLimitHi[3]); 
+  if (fLimit[3]) {
+    cout << "initFunc::expoGauss> limiting par 3 from " << fLimitLo[3] << " .. " << fLimitHi[3] << endl;
+    f->SetParLimits(3, fLimitLo[3], fLimitHi[3]); 
+  }
 
   f->ReleaseParameter(4);     
-  if (fLimit[4]) f->SetParLimits(4, fLimitLo[4], fLimitHi[4]); 
+  if (fLimit[4]) {
+    cout << "initFunc::expoGauss> limiting par 4 from " << fLimitLo[4] << " .. " << fLimitHi[4] << endl;
+    f->SetParLimits(4, fLimitLo[4], fLimitHi[4]); 
+  }
 
   return f; 
 
@@ -1187,19 +1229,27 @@ void initFunc::initExpo(double &p0, double &p1, TH1 *h) {
   double ylo = h->Integral(lbin, lbin+EDG)/NB; 
   double yhi = h->Integral(hbin-EDG, hbin)/NB;
 
-  cout << "fHi: " << fHi << " fLo: " << fLo << endl;
+  cout << "fLo: " << fLo << " fHi: " << fHi << endl;
   cout << "ylo: " << ylo << " yhi: " << yhi << endl;
   
   p1 = (TMath::Log(yhi) - TMath::Log(ylo))/dx; 
   p0 = ylo/TMath::Exp(p1*fLo); 
 
-  cout << "p0: " << p0 << endl;
-  cout << "p1: " << p1 << endl;
 
-  if (p1 > 2) p1 = 1;
-  cout << "p1: " << p1 << " reset" << endl;
-  if (p0 > 1000*h->GetMaximum()) p0 = ylo;
-  cout << "p0: " << p0 << " reset" << endl;
+  cout << "old p0: " << p0 << endl;
+  cout << "old p1: " << p1 << endl;
+
+//   h->Fit("expo", "0q");
+//   p0 = h->GetFunction("expo")->GetParameter(0); 
+//   p1 = h->GetFunction("expo")->GetParameter(1); 
+
+//   cout << "new p0: " << p0 << endl;
+//   cout << "new p1: " << p1 << endl;
+
+//   if (p0 > 1000*h->GetMaximum()) p0 = ylo;
+//   cout << "p0: " << p0 << " reset" << endl;
+//   if (p1 > 2) p1 = 1;
+//   cout << "p1: " << p1 << " reset" << endl;
 
 }
 

@@ -49,6 +49,7 @@ public:
 
   TF1* pol0BsBlind(TH1 *h); 
   TF1* pol1BsBlind(TH1 *h); 
+  TF1* expoBsBlind(TH1 *h); 
 
   // Added to include ladaus
   TF1* land(TH1 *h, double peak=5.3, double sigma=0.04); 

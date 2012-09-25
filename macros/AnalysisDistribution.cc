@@ -477,8 +477,8 @@ TH1D* AnalysisDistribution::sbsDistributionPol1ErrGauss(const char *variable, co
 
 // ----------------------------------------------------------------------  
 TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const char *cut) {
-
-  //  cout << "fVerbose: " << fVerbose << endl;
+  fVerbose = 1; 
+  cout << "fVerbose: " << fVerbose << endl;
 
   TCanvas *c0;
   if (fVerbose > 0) {
@@ -501,6 +501,15 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
     return 0;
   }
 
+  if (0 == h0) {
+    cout << "no histogram " << Form("%sMass%s0", variable, cut) << " found in gDirectory = "; gDirectory->pwd();
+    return 0;
+  }
+
+  if (0 == h1) {
+    cout << "no histogram " << Form("%sMass%s1", variable, cut) << " found in gDirectory = "; gDirectory->pwd();
+    return 0;
+  }
 
   if (fVerbose > 0) {
     c0->cd(1);
@@ -525,21 +534,21 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
   fpIF->fLo = fMassLo;
   fpIF->fHi = fMassHi;
 
-  //  cout << "fMass: " << fMassLo << " .. " << fMassHi << ", fMassPeak = " << fMassPeak << ", fMassSigma = " << fMassSigma << endl;
+  cout << "fMass: " << fMassLo << " .. " << fMassHi << ", fMassPeak = " << fMassPeak << ", fMassSigma = " << fMassSigma << endl;
 
   double peak  = (fMassPeak>0.?fMassPeak:5.3);
   double sigma = (fMassSigma>0.?fMassSigma:0.04);
-  //  TF1 *f1 = fpIF->pol1gauss2c(hm, peak, sigma);
-  //  TF1 *f1 = fpIF->pol1gauss(hm, peak, sigma);
+
+  cout << " peak = " << peak << " sigma = " << sigma << endl;
+  fpIF->resetLimits();
   TF1 *f1 = fpIF->expoGauss(hm, peak, sigma);
   hm->SetMinimum(0.);
 
   TFitResultPtr r;
-  r = hm->Fit(f1, "lsq", "", fMassLo, fMassHi); 
+  string fitstring = (fVerbose>0?"rs":"qrs"); 
+  r = hm->Fit(f1, fitstring.c_str(), "", fMassLo, fMassHi); 
   if (fVerbose > 0) {
-    hm->DrawCopy();
-//     hMassBGL->SetMinimum(0.);
-//     hMassBGL->SetMaximum(hm->GetMaximum());
+    //    hm->DrawCopy();
     hMassBGL->Draw("same");
     hMassBGH->Draw("same");
     hMassSG->Draw("same");
@@ -581,7 +590,7 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
 // ----------------------------------------------------------------------  
 TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cut) {
 //
-  cout << "fVerbose: " << fVerbose << endl;
+//  cout << "fVerbose: " << fVerbose << endl;
 //
   TCanvas *c0;
   if (fVerbose > 0) {
@@ -604,7 +613,6 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
     cout << "no histogram " << Form("%sMass%s", variable, cut) << " found in gDirectory = "; gDirectory->pwd();
     return 0;
   }
-
 
   if (fVerbose > 0) {
     c0->cd(1);
