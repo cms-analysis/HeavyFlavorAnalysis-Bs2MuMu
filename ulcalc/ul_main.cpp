@@ -537,7 +537,7 @@ int main(int argc, const char *argv [])
 	
 	if (output_path) {
 		FILE *outFile = fopen(output_path, "w");
-		if (gAlgorithm == kAlgo_CLb) {
+		if (gAlgorithm == kAlgo_CLb || gAlgorithm == kAlgo_CLb_Hybrid) {
 			fprintf(outFile, "p value of background model: %.3f\n corresponding to %2.1f sigmas\n", upperLimit, sqrt(2.)*TMath::ErfInverse(1 - 2*upperLimit));
 		} else {
 			for (ch = channels.begin(); ch != channels.end(); ++ch) {
