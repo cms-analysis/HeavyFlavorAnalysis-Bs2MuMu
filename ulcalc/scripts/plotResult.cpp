@@ -156,6 +156,7 @@ void clsPlotter::makeObs(bool reload)
 	HypoTestInverterResult *result = loadResult(&f,fResultName.c_str());
 	int j,size = result->ArraySize();
 	std::vector<unsigned int> index(size);
+	double cls;
 	
 	if (fObs && reload) {
 		delete fObs;
@@ -171,8 +172,11 @@ void clsPlotter::makeObs(bool reload)
 		// sequential access
 		TMath::SortItr(result->fXValues.begin(), result->fXValues.end(), index.begin(), false);
 		
-		for (j = 0; j < size; j++)
-			fObs->SetPoint(j, result->GetXValue(index[j]), result->CLs(index[j]));
+		for (j = 0; j < size; j++) {
+		  cls = result->CLs(index[j]);
+		  if (cls < 0) cls = 1.0;
+		  fObs->SetPoint(j, result->GetXValue(index[j]), cls);
+		}
 	}
 } // makeObs()
 
@@ -389,7 +393,8 @@ void clsPlotter::plot(double cl)
 	if (fDrawLegend) {
 		leg = new TLegend(0.53,0.63,0.83,0.83,"","NDC");
 		
-		leg->AddEntry(fObs,"","L");
+		if(fPlotObs)
+		  leg->AddEntry(fObs,"","L");
 		
 		nbr = mg->GetListOfGraphs()->GetSize();
 		for (j = nbr-1; j>=0; j--)
