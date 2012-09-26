@@ -2,6 +2,7 @@
 
 #include "TROOT.h"
 #include "TMath.h"
+#include "TCanvas.h"
 
 #include <iostream>
 #include <iomanip>
@@ -26,6 +27,7 @@ double f_landausimp(double *x, double *par) {  // simplified landau
   double xx = ( x[0]- par[0] ) / par[1];
   return par[2] * 0.3989 * TMath::Exp(-0.5 * ( xx + TMath::Exp(-xx) ) );
 } 
+
 // ----------------------------------------------------------------------
 double f_expo(double *x, double *par) {
   return par[0]*TMath::Exp(x[0]*par[1]);
@@ -559,7 +561,7 @@ TF1* initFunc::pol0(TH1 *h) {
     cout << "empty histogram pointer" << endl;
     return 0; 
   }
-  TF1 *f = new TF1("f1", f_pol0, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 1);
+  TF1 *f = new TF1("f1", f_pol0, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 1);
   f->SetParNames("constant"); 			   
 
   int lbin(1), hbin(h->GetNbinsX()), EDG(4), NB(EDG+1); 
@@ -585,7 +587,7 @@ TF1* initFunc::pol0BsBlind(TH1 *h) {
     cout << "empty histogram pointer" << endl;
     return 0; 
   }
-  TF1 *f = new TF1("f1", f_pol0_BsBlind, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 1);
+  TF1 *f = new TF1("f1", f_pol0_BsBlind, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 1);
   f->SetParNames("constant"); 			   
 
   int lbin(1), hbin(h->GetNbinsX()), EDG(4), NB(EDG+1); 
@@ -607,10 +609,10 @@ TF1* initFunc::pol0BsBlind(TH1 *h) {
 // ----------------------------------------------------------------------
 TF1* initFunc::pol1gauss(TH1 *h, double peak, double sigma) {
 
-  TF1 *f = new TF1("f1", f_pol1_gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 5);
+  TF1 *f = new TF1("f1", f_pol1_gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 5);
   f->SetParNames("normalization", "peak", "sigma", "constant", "slope"); 			   
 
-  int lbin(1), hbin(h->GetNbinsX()); 
+  int lbin(1), hbin(h->GetNbinsX()+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 
@@ -635,7 +637,7 @@ TF1* initFunc::pol1gauss(TH1 *h, double peak, double sigma) {
 // ----------------------------------------------------------------------
 TF1* initFunc::pol1Gauss(TH1 *h, double peak, double sigma) {
 
-  TF1 *f = new TF1("f1", f_pol1_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 5);
+  TF1 *f = new TF1("f1", f_pol1_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 5);
   f->SetParNames("area", "peak", "sigma", "constant", "slope"); 			   
 
   int lbin(1), hbin(h->GetNbinsX()); 
@@ -665,31 +667,30 @@ TF1* initFunc::pol1Gauss(TH1 *h, double peak, double sigma) {
 // ----------------------------------------------------------------------
 TF1* initFunc::expoGauss(TH1 *h, double peak, double sigma) {
 
+  static int cnt(0); 
   TF1 *f = (TF1*)gROOT->FindObject("f1_expo_Gauss"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_Gauss", f_expo_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 5);
+  f = new TF1("f1_expo_Gauss", f_expo_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 5);
   f->SetParNames("area", "peak", "sigma", "const", "exp"); 			   
   //  f->SetLineColor(kBlue); 
   f->SetLineWidth(2); 
 
-  int lbin(1), hbin(h->GetNbinsX()); 
+  int lbin(1), hbin(h->GetNbinsX()+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 
   }
 
-  double p0, p1; 
+  double p0(0.), p1(0.); 
   initExpo(p0, p1, h);
   double A   = p0*(TMath::Exp(p1*fHi) - TMath::Exp(p1*fLo));
 
   double g0 = (h->Integral(lbin, hbin)*h->GetBinWidth(1) - A);  
   g0 = 10.;
 
-  cout << "A: " << A << " g0: " << g0 << " p0: " << p0 << " p1: " << p1 << endl;
-  cout << "fLimit = " << fLimit[0] << "  " << fLimit[1] << "  " << fLimit[2] << "  " << fLimit[3] << "  " << fLimit[4] << endl;
+  cout << "A: " << A << " g0: " << g0 << " peak = " << peak << " sigma = " << sigma << " p0: " << p0 << " p1: " << p1 << endl;
 
-
-  f->SetParameters(g0, peak, sigma, p0, -p1); 
+  f->SetParameters(g0, peak, sigma, p0, p1); 
 
   f->ReleaseParameter(0);     
   if (fLimit[0]) {
@@ -738,12 +739,12 @@ TF1* initFunc::expoErrGauss(TH1 *h, double peak, double sigma, double preco) {
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_Gauss"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_err_Gauss", f_expo_err_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 9);
+  f = new TF1("f1_expo_err_Gauss", f_expo_err_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 9);
   f->SetParNames("area", "peak", "sigma", "const", "exp", "err0", "err1", "err2", "err3"); 			   
   //  f->SetLineColor(kBlue); 
   f->SetLineWidth(2); 
 
-  int lbin(1), hbin(h->GetNbinsX()); 
+  int lbin(1), hbin(h->GetNbinsX()+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 
@@ -787,7 +788,7 @@ TF1* initFunc::expoErrGaussLandau(TH1 *h, double peak, double sigma, double prec
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_Gauss_landau"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_err_Gauss_landau", f_expo_err_Gauss_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 11);
+  f = new TF1("f1_expo_err_Gauss_landau", f_expo_err_Gauss_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 11);
   f->SetParNames("area", "peak", "sigma", "const", "exp", "err0", "err1", "err2", "err3"); 			   
   f->SetParName(9, "mpvl");
   f->SetParName(10, "sigl");
@@ -795,7 +796,7 @@ TF1* initFunc::expoErrGaussLandau(TH1 *h, double peak, double sigma, double prec
  //  f->SetLineColor(kBlue); 
   f->SetLineWidth(2); 
 
-  int lbin(1), hbin(h->GetNbinsX()); 
+  int lbin(1), hbin(h->GetNbinsX()+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 
@@ -845,12 +846,12 @@ TF1* initFunc::expoErrgauss2c(TH1 *h, double peak, double sigma1, double sigma2,
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_gauss2c"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_err_gauss2c", f_expo_err_gauss2c, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 11);
+  f = new TF1("f1_expo_err_gauss2c", f_expo_err_gauss2c, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 11);
   f->SetParNames("const", "peak", "sigma", "f2ndG", "s2ndG", "const", "exp", "err0", "err1", "err2", "err3"); 			   
 
   f->SetLineWidth(2); 
 
-  int lbin(1), hbin(h->GetNbinsX()); 
+  int lbin(1), hbin(h->GetNbinsX()+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 
@@ -984,13 +985,13 @@ TF1* initFunc::expoErrgauss2(TH1 *h, double peak1, double sigma1, double peak2, 
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_gauss2"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_err_gauss2", f_expo_err_gauss2, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 12);
+  f = new TF1("f1_expo_err_gauss2", f_expo_err_gauss2, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 12);
   f->SetParNames("const", "peak", "sigma", "f2ndG", "p2ndG", "s2ndG", "const", "exp", "err0", "err1", "err2");
   f->SetParName(11, "err3");
 
   f->SetLineWidth(2); 
 
-  int lbin(1), hbin(h->GetNbinsX()); 
+  int lbin(1), hbin(h->GetNbinsX()+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 
@@ -1039,7 +1040,7 @@ TF1* initFunc::expoErrgauss2Landau(TH1 *h, double peak1, double sigma1, double p
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_gauss2_landau"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_err_gauss2_landau", f_expo_err_gauss2_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 14);
+  f = new TF1("f1_expo_err_gauss2_landau", f_expo_err_gauss2_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 14);
   f->SetParNames("const", "peak", "sigma", "f2ndG", "p2ndG", "s2ndG", "const", "exp", "err0", "err1", "err2");
   f->SetParName(11, "err3");
   f->SetParName(12, "mpvl");
@@ -1048,7 +1049,7 @@ TF1* initFunc::expoErrgauss2Landau(TH1 *h, double peak1, double sigma1, double p
 
   f->SetLineWidth(2); 
 
-  int lbin(1), hbin(h->GetNbinsX()); 
+  int lbin(1), hbin(h->GetNbinsX()+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 
@@ -1102,12 +1103,12 @@ TF1* initFunc::pol1ErrGauss(TH1 *h, double peak, double sigma, double preco) {
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_pol1_err_Gauss"); 
   if (f) delete f; 
-  f = new TF1("f1_pol1_err_Gauss", f_pol1_err_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 9);
+  f = new TF1("f1_pol1_err_Gauss", f_pol1_err_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 9);
   f->SetParNames("area", "peak", "sigma", "const", "slope", "err0", "err1", "err2", "err3"); 			   
   //  f->SetLineColor(kBlue); 
   f->SetLineWidth(2); 
 
-  int lbin(1), hbin(h->GetNbinsX()); 
+  int lbin(1), hbin(h->GetNbinsX()+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 
@@ -1151,12 +1152,12 @@ TF1* initFunc::pol1gauss2c(TH1 *h, double peak, double sigma) {
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_pol1_gauss2c"); 
   if (f) delete f; 
-  f = new TF1("f1_pol1_gauss2c", f_pol1_gauss2c, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 7);
+  f = new TF1("f1_pol1_gauss2c", f_pol1_gauss2c, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 7);
   f->SetParNames("norm", "peak", "sigma", "fraction", "sigma2", "constant", "slope"); 			   
   //  f->SetLineColor(kBlue); 
   f->SetLineWidth(2); 
 
-  int lbin(1), hbin(h->GetNbinsX()); 
+  int lbin(1), hbin(h->GetNbinsX()+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 
@@ -1197,7 +1198,7 @@ TF1* initFunc::pol1gauss2c(TH1 *h, double peak, double sigma) {
 void initFunc::initPol1(double &p0, double &p1, TH1 *h) {
 
   int EDG(4), NB(EDG+1); 
-  int lbin(1), hbin(h->GetNbinsX()); 
+  int lbin(1), hbin(h->GetNbinsX()+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 
@@ -1219,7 +1220,7 @@ void initFunc::initPol1(double &p0, double &p1, TH1 *h) {
 void initFunc::initExpo(double &p0, double &p1, TH1 *h) {
 
   int EDG(4), NB(EDG+1); 
-  int lbin(1), hbin(h->GetNbinsX()); 
+  int lbin(1), hbin(h->GetNbinsX()+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 
@@ -1234,10 +1235,6 @@ void initFunc::initExpo(double &p0, double &p1, TH1 *h) {
   
   p1 = (TMath::Log(yhi) - TMath::Log(ylo))/dx; 
   p0 = ylo/TMath::Exp(p1*fLo); 
-
-
-  cout << "old p0: " << p0 << endl;
-  cout << "old p1: " << p1 << endl;
 
 //   h->Fit("expo", "0q");
 //   p0 = h->GetFunction("expo")->GetParameter(0); 
@@ -1257,10 +1254,10 @@ void initFunc::initExpo(double &p0, double &p1, TH1 *h) {
 // Uses the usuall Landau from ROOT
 TF1* initFunc::land(TH1 *h, double mpv, double sigma) {
 
-  TF1 *f = new TF1("land", f_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 3);
+  TF1 *f = new TF1("land", f_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 3);
   //f->SetParNames("peak", "sigma", "constant"); 			   
 
-  int lbin(1), hbin(h->GetNbinsX()); 
+  int lbin(1), hbin(h->GetNbinsX()+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 
@@ -1282,10 +1279,10 @@ TF1* initFunc::land(TH1 *h, double mpv, double sigma) {
 // Simpler analytical "landau"
 TF1* initFunc::landsimp(TH1 *h, double mpv, double sigma) {
 
-  TF1 *f = new TF1("land", f_landausimp, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()), 3);
+  TF1 *f = new TF1("land", f_landausimp, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 3);
   //f->SetParNames("area", "peak", "sigma", "constant", "slope"); 			   
 
-  int lbin(1), hbin(h->GetNbinsX()); 
+  int lbin(1), hbin(h->GetNbinsX()+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 

@@ -513,10 +513,10 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
 
   if (fVerbose > 0) {
     c0->cd(1);
+    h0->SetMaximum(1.2*(h0->GetMaximum()>h1->GetMaximum()?h0->GetMaximum():h1->GetMaximum())); 
     h0->Draw();
-    c0->cd(2);
-    h1->Draw();
-    c0->cd(3);
+    h1->SetLineColor(kRed); 
+    h1->Draw("same");
   }
 
   double l0   = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
@@ -542,13 +542,30 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
   cout << " peak = " << peak << " sigma = " << sigma << endl;
   fpIF->resetLimits();
   TF1 *f1 = fpIF->expoGauss(hm, peak, sigma);
+  // -- desperate measures: 
+  f1->SetParameter(4, -1.*f1->GetParameter(4)); 
   hm->SetMinimum(0.);
+  
+  if (fVerbose > 0) {
+    c0->cd(2);
+    hm->Draw();
+    c0->cd(3);  
+    f1->DrawCopy(""); 
+  }
+
+  if (fVerbose > 0) {
+    TString fname = fControlPlotsFileName;
+    cout << "=========> " 
+	 << Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut) 
+	 << endl;
+    c0->SaveAs(Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut));
+  }
 
   TFitResultPtr r;
-  string fitstring = (fVerbose>0?"rs":"qrs"); 
-  r = hm->Fit(f1, fitstring.c_str(), "", fMassLo, fMassHi); 
+  string fitstring = (fVerbose>0?"m":"qm"); 
+  hm->Fit(f1, fitstring.c_str(), "", fMassLo, fMassHi); 
   if (fVerbose > 0) {
-    //    hm->DrawCopy();
+    hm->DrawCopy();
     hMassBGL->Draw("same");
     hMassBGH->Draw("same");
     hMassSG->Draw("same");
