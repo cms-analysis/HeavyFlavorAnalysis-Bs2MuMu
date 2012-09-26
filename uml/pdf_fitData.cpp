@@ -633,13 +633,10 @@ void pdf_fitData::sig_plhts() {
   string name_of_pdf = "pdf_ext_simul";
   if (!simul_) name_of_pdf = "pdf_ext_total";
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
-//  pl_ts.SetPrintLevel(3);
-//  pl_ts.EnableDetailedOutput(true, true);
   pl_ts.SetOneSidedDiscovery(true);
-
+  if (pee) pl_ts.SetConditionalObservables(CO);
   ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 500);
-  if (pee) mcSampler_pl->SetGlobalObservables(CO);
-  FrequentistCalculator frequCalc(*global_data, *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
+  FrequentistCalculator frequCalc(*ws_->data("global_data"), *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();
   htr_pl->Print();
 //  HypoTestPlot *plot = new HypoTestPlot(*htr_pl);
