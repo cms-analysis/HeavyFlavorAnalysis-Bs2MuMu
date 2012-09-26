@@ -134,15 +134,6 @@ void plotBDT::makeAll(int channels) {
     validateAllDistributions();
     allCorrelationPlots(0., "TMVA-0");
     allCorrelationPlots(0., "TMVA-1");
-  }
-
-  if (channels & 2) {
-    hackedMC2(0.0, 0.2); 
-    hackedMC2(0.0, 0.3); 
-    hackedMC1("abs(m1eta)<1.4&&abs(m2eta)<1.4", -0.3, 0.5, "chan0");
-    hackedMC1("!(abs(m1eta)<1.4&&abs(m2eta)<1.4)", -0.3, 0.5, "chan1");
-    hackedMC3(0); 
-    hackedMC3(1); 
     bdtScan();
     plotEffVsBg(0);   
     plotEffVsBg(1);   
@@ -153,6 +144,18 @@ void plotBDT::makeAll(int channels) {
     bdtDependencies("SgData");
     cout << "--> bdtDependencies(\"SgMcPU\")" << endl;
     bdtDependencies("SgMcPU");
+
+    hackedMC(0); 
+    hackedMC(1); 
+  }
+
+  if (channels & 2) {
+    hackedMC2(0.0, 0.2); 
+    hackedMC2(0.0, 0.3); 
+    hackedMC1("abs(m1eta)<1.4&&abs(m2eta)<1.4", -0.3, 0.5, "chan0");
+    hackedMC1("!(abs(m1eta)<1.4&&abs(m2eta)<1.4)", -0.3, 0.5, "chan1");
+    hackedMC3(0); 
+    hackedMC3(1); 
   }
 
   if (channels & 8) {

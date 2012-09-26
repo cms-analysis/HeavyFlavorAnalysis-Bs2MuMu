@@ -7,7 +7,7 @@ class plotResults: public plotClass {
 
 public:
 
-  plotResults(const char *files="anaBmm.default.files", const char *cuts = "default", const char *dir = "default", int mode = 11);
+  plotResults(const char *files="anaBmm.default.files", const char *dir = "default", const char *cuts = "default", int mode = 11);
   ~plotResults();
 
   void makeAll(int channels = 3);

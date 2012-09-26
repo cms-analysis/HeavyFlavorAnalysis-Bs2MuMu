@@ -434,17 +434,13 @@ void plotClass::loopTree(int mode, int proc) {
     smode = "SgData";
   }
 
-  cout << "HALLO 0" << endl;
-
   ptT1 = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo.dat"); 	
   ptT2 = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.dat"); 	
   ptM  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_data_all_histo.dat"); 
-  cout << "HALLO 1" << endl;
 
   ptT1MC = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo.dat"); 	
   ptT2MC = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.dat"); 	
   ptMMC  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_datalike_mc_histo.dat"); 
-  cout << "HALLO 2" << endl;
 
   //   if (isMC) {
   //     delete ptT1; 
@@ -1278,8 +1274,8 @@ void plotClass::loopTree(int mode, int proc) {
       TH1D *h = fhNorm[i];
       //      normYield(h, 0, 4.9, 5.9, 5.145);
 
-      normYield(h, fChan, 5.0);
-      //normYield2(h, fChan, 5.0);   // Includes the landau for Bu2JpsiPi
+      //normYield(h, fChan, 5.0);
+      normYield2(h, fChan, 5.0);   // Includes the landau for Bu2JpsiPi
 
       aa->fitYield  = fNoSig; 
       aa->fitYieldE = fNoSigE; 
@@ -1819,8 +1815,6 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
 
   printCuts(cout); 
 
-  cout << "hallo" << endl;
-  
   fFont = 42; 
   fMode = mode;  
 

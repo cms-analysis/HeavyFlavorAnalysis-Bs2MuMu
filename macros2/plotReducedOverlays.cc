@@ -322,6 +322,7 @@ void plotReducedOverlays::allSystematics() {
     systematics("CsData", "CsMc", i); 
     systematics("NoData", "NoMc", i); 
     systematics("CsData", "SgMc", i); 
+    systematics("SgMc",   "CsMc", i); 
   }
 
 }

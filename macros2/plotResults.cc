@@ -19,7 +19,7 @@ ClassImp(plotResults)
 
 
 // ----------------------------------------------------------------------
-plotResults::plotResults(const char *files, const char *cuts, const char *dir, int mode) : plotClass(files, dir, cuts, mode) { 
+plotResults::plotResults(const char *files, const char *dir, const char *cuts, int mode) : plotClass(files, dir, cuts, mode) { 
 
   fDoPrint = true; 
 
@@ -103,8 +103,8 @@ void plotResults::computeNormUL() {
   cout << "--> Normalization" << endl;
 
   // FIXME
-  //  fNormProcessed = true; 
-  //  setupNorm();
+  fNormProcessed = true; 
+  setupNorm();
 
   if (false == fNormProcessed) {
     fNormProcessed = true; 
@@ -1036,7 +1036,7 @@ void plotResults::rareBg(std::string mode) {
   newLegend(0.55, 0.3, 0.80, 0.85); 
 
   double valInc(0.), error(0.), errorInc(0.); 
-  double teff[] = {0.85, 0.68};
+  double teff[] = {0.83, 0.70}; // new numbers for BDT selection
   double rareBs[]  = {0., 0.};
   double rareBsE[] = {0., 0.};
   double rareBd[]  = {0., 0.};
