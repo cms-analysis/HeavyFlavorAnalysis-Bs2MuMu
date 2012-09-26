@@ -33,7 +33,7 @@ endif
 # TARGETS #
 ###########
 
-all: main_pdf_choise main_simul_maker main_fitData main_toyMC
+all: main_make_pdf main_fitData main_toyMC
 
 main_toyMC: main_toyMC.cc pdf_analysis.o pdf_fitData.o pdf_toyMC.o
 		$(CXX) $(CXXFLAGS) -o main_toyMC.o pdf_analysis.o pdf_fitData.o pdf_toyMC.o $(GLIBS)  $(LDFLAGS)  $<
