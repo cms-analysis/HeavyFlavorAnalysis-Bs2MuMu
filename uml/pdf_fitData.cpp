@@ -336,7 +336,7 @@ void pdf_fitData::define_channels() {
 void pdf_fitData::make_dataset() {
   cout << "making dataset" << endl;
   RooArgList varlist(*Mass, *MassRes, *eta, *m1eta, *m2eta);
-  if (simul_) varlist.add(*channels_cat);
+  /*if (simul_) */varlist.add(*channels_cat);
   global_data = new RooDataSet("global_data", "global_data", varlist);
   if (!random) FillRooDataSet(global_data, input_cuts_);
   else {
@@ -501,7 +501,6 @@ void pdf_fitData::sig_plhc() {
   RooArgSet CO;
   if (pee) {
     CO.add(*ws_->var("MassRes"));
-    model.SetConditionalObservables(CO);
   }
   model.SetWorkspace(*ws_);
   if (simul_) {
@@ -531,17 +530,13 @@ void pdf_fitData::sig_plhc() {
 
   ProfileLikelihoodCalculator plc;
   plc.SetData(*ws_->data("global_data"));
-  //plc.SetData(*global_data);
   plc.SetModel(model);
+  plc.SetConditionalObservables(CO);
   plc.SetNullParameters(poi);
-//  if (pee) plc.SetNuisanceParameters(CO);
   HypoTestResult* htr = plc.GetHypoTest();
   cout << "ProfileLikelihoodCalculator: The p-value for the null is " << htr->NullPValue() << "; The significance for the null is " << htr->Significance() << endl;
-  {
-    model.SetSnapshot(poi);
-    ws_->import(model);
-    ws_->SaveAs("conditionalws.root");
-  }
+  model.SetSnapshot(poi);
+  ws_->import(model);
 }
 
 void pdf_fitData::sig_plhts() {
@@ -577,7 +572,6 @@ void pdf_fitData::sig_plhts() {
   if (pee) {
     CO.add(*ws_->var("MassRes"));
     H0->SetConditionalObservables(CO);
-    H0->SetGlobalObservables(CO);
   }
   if (simul_) H0->SetPdf(*ws_->pdf("pdf_ext_simul"));
   else H0->SetPdf(*ws_->pdf("pdf_ext_total"));
@@ -605,7 +599,6 @@ void pdf_fitData::sig_plhts() {
   ModelConfig* H1 = new ModelConfig("H1", "background + signal hypothesis", ws_);
   if (pee) {
     H1->SetConditionalObservables(CO);
-    H1->SetGlobalObservables(CO);
   }
   if (simul_) H1->SetPdf(*ws_->pdf("pdf_ext_simul"));
   else H1->SetPdf(*ws_->pdf("pdf_ext_total"));
