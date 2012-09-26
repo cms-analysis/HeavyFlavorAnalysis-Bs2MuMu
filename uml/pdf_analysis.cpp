@@ -129,7 +129,7 @@ void pdf_analysis::set_pdf_constant(string name) {
 
 void pdf_analysis::define_bs(int i = 0) {
 
-  RooRealVar N_bs(name("N_bs", i), "N_bs", 0, 1000);
+  RooRealVar N_bs(name("N_bs", i), "N_bs", 0, 10000);
   ws_->import(N_bs);
 
   RooRealVar Mean_bs(name("Mean_bs", i), "Mean_bs", 5.35, 5.32, 5.4);
@@ -224,13 +224,13 @@ void pdf_analysis::define_bd(int i = 0) {
     ws_->import(N_bd_constr);
   }
   else {
-    RooRealVar N_bd(name("N_bd", i), "N_bd", 0, 1000);
+    RooRealVar N_bd(name("N_bd", i), "N_bd", 0, 10000);
     ws_->import(N_bd);
   }
 }
 
 void pdf_analysis::define_peaking(int i = 0) {
-  RooRealVar N_peak(name("N_peak", i), "N_peak", 0, 1000);
+  RooRealVar N_peak(name("N_peak", i), "N_peak", 0, 10000);
   ws_->import(N_peak);
 
   if (old_tree) {
@@ -278,7 +278,7 @@ void pdf_analysis::define_peaking(int i = 0) {
 
 void pdf_analysis::define_nonpeaking(int i = 0) {
 
-  RooRealVar N_semi(name("N_semi", i), "N_semi", 0, 1000);
+  RooRealVar N_semi(name("N_semi", i), "N_semi", 0, 10000);
   ws_->import(N_semi);
 
   if (old_tree) {
@@ -328,7 +328,7 @@ void pdf_analysis::define_nonpeaking(int i = 0) {
 
 void pdf_analysis::define_comb(int i = 0) {
 
-  RooRealVar N_comb(name("N_comb", i), "N_comb", 0, 1000);
+  RooRealVar N_comb(name("N_comb", i), "N_comb", 0, 10000);
   ws_->import(N_comb);
 
   if (!pee) {
@@ -373,7 +373,7 @@ void pdf_analysis::define_signals(int i = 0) {
 
 void pdf_analysis::define_rare(int i = 0) {
   
-  RooRealVar N_rare(name("N_rare", i), "N_rare", 0, 1000);
+  RooRealVar N_rare(name("N_rare", i), "N_rare", 0, 10000);
   ws_->import(N_rare);
 
   RooRealVar peakfrac_rare(name("peakfrac_rare", i), "peakfrac_rare", 0.5, 0.0, 1.0);
@@ -383,13 +383,13 @@ void pdf_analysis::define_rare(int i = 0) {
 }
 
 void pdf_analysis::define_rare2(RooDataHist* data, int i = 0) {
-  ws_->factory("N_hist[0, 1000]");
+  ws_->factory("N_hist[0, 10000]");
   RooHistPdf* pdf_rare = new RooHistPdf("pdf_hist", "pdf_hist", *ws_->var("Mass"), *data, 4);
   ws_->import(*pdf_rare);
 }
 
 void pdf_analysis::define_rare3(int i = 0) {
-  RooRealVar N_expo(name("N_expo3", i), "N_expo3", 0, 1000);
+  RooRealVar N_expo(name("N_expo3", i), "N_expo3", 0, 10000);
   ws_->import(N_expo);
   RooRealVar tau3(name("tau3", i), "tau3", -5, -20., -0.01);
   if (!pee) {
@@ -414,7 +414,7 @@ void pdf_analysis::define_signalsrare(int i = 0) {
 
 void pdf_analysis::define_bkg_fractional(int i = 0) {
   
-  ws_->factory("N_bkg[0, 1000]");
+  ws_->factory("N_bkg[0, 10000]");
   ws_->factory("rarefrac_bkg[0.5, 0.0, 1.0]");
   
   ws_->factory("SUM::pdf_bkg(rarefrac_bkg*pdf_rare, pdf_comb)");
@@ -436,7 +436,7 @@ void pdf_analysis::define_bkg_extended(int i = 0) {
 
 void pdf_analysis::define_total_fractional(int i = 0) {
   
-  ws_->factory("N_all[0, 1000]");
+  ws_->factory("N_all[0, 10000]");
   ws_->factory("signalsfrac_total[0.5, 0.0, 1.0]");
   
   ws_->factory("SUM::pdf_frac_total(signalsfrac_total*pdf_signals, pdf_bkg)");

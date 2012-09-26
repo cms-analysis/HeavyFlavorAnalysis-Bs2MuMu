@@ -66,7 +66,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
 
     for (int j = 0; j < channels; j++) {
       ws_temp->var(name("N_bs", j))->setVal((int)estimate_bs[j]);
-      ws_temp->var(name("N_bd", j))->setVal((int)estimate_bd[j]);
+      if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setVal((int)estimate_bd[j]);
       ws_temp->var(name("N_rare", j))->setVal((int)estimate_rare[j]);
       ws_temp->var(name("N_comb", j))->setVal((int)estimate_comb[j]);
     }
