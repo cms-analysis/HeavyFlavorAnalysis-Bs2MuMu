@@ -25,14 +25,16 @@ using namespace RooStats;
 class clsPlotter {
 	
 	public:
-	explicit clsPlotter(const char *filename) : fFilename(filename), fResultName("result_mu_s"), fSMBands(false), fDrawLegend(true), fObs(NULL), fMgSM(NULL), fG0SM(NULL), fG1SM(NULL), fG2SM(NULL), fMgBkg(NULL), fG0Bkg(NULL), fG1Bkg(NULL), fG2Bkg(NULL) {}
+	explicit clsPlotter(const char *filename) : fFilename(filename), fResultName("result_mu_s"), fSMBands(false), fDrawLegend(true), fPlotObs(true), fObs(NULL), fMgSM(NULL), fG0SM(NULL), fG1SM(NULL), fG2SM(NULL), fMgBkg(NULL), fG0Bkg(NULL), fG1Bkg(NULL), fG2Bkg(NULL) {}
 		
 		void plot(double cl = 0.95);
 		void print(double cl = 0.95);
 	
 	public:
 		void setSMBands(bool smBands) { fSMBands = smBands; }
+		void setPlotObs(bool plotObs) { fPlotObs = plotObs; }
 		bool getSMBands() { return fSMBands; }
+		bool getPlotObs() { return fPlotObs; }
 	
 	private:
 		void makeObs(bool reload = false);
@@ -47,6 +49,7 @@ class clsPlotter {
 		std::string fResultName;
 		bool fSMBands;
 		bool fDrawLegend;
+		bool fPlotObs;
 		
 		TGraph *fObs;
 		TMultiGraph *fMgSM;
@@ -399,12 +402,14 @@ void clsPlotter::plot(double cl)
 	}
 	
 	// draw the graphs
-	fObs->Draw("AL");
-	fObs->GetXaxis()->SetTitle("BF / BF_{SM}");
-	fObs->GetYaxis()->SetTitle("CL_{s}");
-	fObs->GetYaxis()->SetTitleOffset(1.0);
-	mg->Draw();
-	fObs->Draw("same");
+	if (fPlotObs) {
+		fObs->Draw("AL");
+		fObs->GetXaxis()->SetTitle("BF / BF_{SM}");
+		fObs->GetYaxis()->SetTitle("CL_{s}");
+		fObs->GetYaxis()->SetTitleOffset(1.0);
+	}
+	mg->Draw( (fPlotObs ? "" : "A") );
+	if (fPlotObs) fObs->Draw("same");
 	
 	// draw confidence level line
 	double alpha = 1. - cl;
@@ -416,10 +421,11 @@ void clsPlotter::plot(double cl)
 	leg->Draw();
 } // plot()
 
-void plotResult(const char *file, bool SMExp, double cl = 0.95)
+void plotResult(const char *file, bool SMExp, bool plotObs = true, double cl = 0.95)
 {
 	clsPlotter plot(file);
 	
+	plot.setPlotObs(plotObs);
 	plot.setSMBands(SMExp);
 	plot.plot(cl);
 	plot.print();
