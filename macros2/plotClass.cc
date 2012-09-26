@@ -81,6 +81,8 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
 
   fFiles = files; 
 
+  TVirtualFitter::SetMaxIterations(50000);
+
   delete gRandom;
   gRandom = (TRandom*) new TRandom3;
 
@@ -2532,8 +2534,6 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
 
   TF1 *lF1(0), *lBg(0);
 
-  TVirtualFitter::SetMaxIterations(20000);
-
   string name(h->GetName()); 
   double sigma1(0.03);
   if (1 == fChan) sigma1 = 0.04; 
@@ -2726,8 +2726,10 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
   //cout<<" integrals "<< sig <<" "<< cf <<" "<< cb <<" "<< cl <<endl;
   //cout<<" integrals "<<sig/binw<<" "<<cf/binw <<" "<<cb/binw<<" "<<cl/binw<<endl;
 
-  double fNoSig = sig/binw;  // convert to counts
-  double fNoSigE = 0;
+  //   double fNoSig = sig/binw;  // convert to counts
+  //   double fNoSigE = 0;
+  fNoSig = sig/binw;  // convert to counts
+  fNoSigE = 0;
 
   if(true) { // skip
     double ierr = lF1->IntegralError(5.15, 5.45)/binw; // slow
@@ -2803,6 +2805,8 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
   delete fl;
 
 }
+
+
 // ----------------------------------------------------------------------
 void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
 
@@ -2812,17 +2816,23 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
 
   fpFunc->resetLimits();
 
+  fpFunc->fLo = lo; //5.0;
+  fpFunc->fHi = hi; //5.5;
   if (0 == mode) { 
-    fpFunc->fLo = lo; //5.0;
-    fpFunc->fHi = hi; //5.5;
-    lF1 = fpFunc->expoGauss(h, 5.37, 0.030); 
-    lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
+    lF1 = fpFunc->expoGauss(h, 5.37, 0.040); 
+    lBg = fpFunc->expo(fpFunc->fLo, fpFunc->fHi); 
   } else {
-    fpFunc->fLo = lo; //5.0;
-    fpFunc->fHi = hi; //5.5;
-    lF1 = fpFunc->expoGauss(h, 5.37, 0.056); 
-    lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
+    lF1 = fpFunc->expoGauss(h, 5.37, 0.06); 
+    lBg = fpFunc->expo(fpFunc->fLo, fpFunc->fHi); 
   }
+
+  zone(1,2);
+  h->DrawCopy();
+  c0->cd(2);
+  lF1->SetLineColor(kBlue); 
+  lF1->Draw();
+  //  return;
+
   h->Fit(lF1, "rm", "", lo, hi); 
 
 

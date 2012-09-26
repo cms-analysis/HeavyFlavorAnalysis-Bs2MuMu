@@ -23,15 +23,6 @@ plotResults::plotResults(const char *files, const char *dir, const char *cuts, i
 
   fDoPrint = true; 
 
-  string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
-  //  if (fHistFile) fHistFile->Close();
-  cout << "open fHistFile: " << hfname << " RECREATE" << endl;
-  fHistFile = new TFile(hfname.c_str(), "RECREATE");
-
-  fF["SgData"]->cd();
-  TH1D *h1 = new TH1D("hasd", "", 100, 0., 100.); 
-  h1->SetDirectory(fHistFile); 
-  
   fNumbersFileName = fDirectory + "/anaBmm.plotResults." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);
@@ -59,6 +50,10 @@ plotResults::~plotResults() {
 // ----------------------------------------------------------------------
 void plotResults::makeAll(int channels) {
 
+  string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
+  cout << "open fHistFile: " << hfname << " RECREATE" << endl;
+  fHistFile = new TFile(hfname.c_str(), "RECREATE");
+  
   //  return;
 
 //   fls3dVsX("pt", "m1pt>4.5&&m2pt>4.2&&hlt", "fls3d_prof_pt.pdf");
@@ -96,6 +91,28 @@ void plotResults::makeAll(int channels) {
   }
 
 }
+
+
+
+// ----------------------------------------------------------------------
+void plotResults::fitHists(int chan) {
+
+  string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
+  cout << "open fHistFile: " << hfname << " readonly" << endl;
+  fHistFile = new TFile(hfname.c_str());
+
+  string name = Form("hNorm_bdt_15_chan%d", chan);
+  TH1D *h = (TH1D*)fHistFile->Get(name.c_str()); 
+//   normYield2(h, chan, 5.0); 
+//   cout << "fNoSig = " << fNoSig << "+/-" << fNoSigE << endl;
+
+  name = Form("hNorm_bdt_25_chan%d", chan);
+  h = (TH1D*)fHistFile->Get(name.c_str()); 
+  csYield(h, chan, 5.1); 
+
+
+}
+
 
 // ----------------------------------------------------------------------
 void plotResults::computeNormUL() {

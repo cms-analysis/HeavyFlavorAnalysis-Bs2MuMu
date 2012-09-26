@@ -16,6 +16,7 @@ public:
   void computeCsBF();
 
   void setupNorm();
+  void fitHists(int chan = 0);
 
   void acceptancePerProcess();
   void rareBg(std::string mode = "nada");

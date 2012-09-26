@@ -15,7 +15,7 @@ ClassImp(plotReducedOverlays)
 plotReducedOverlays::plotReducedOverlays(const char *files, const char *dir, const char *cuts) : 
 plotClass(files, dir, cuts, 11) { 
 
-  TVirtualFitter::SetMaxIterations(20000);
+  TVirtualFitter::SetMaxIterations(50000);
 
   fNumbersFileName = fDirectory + "/anaBmm.plotReducedOverlays." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
@@ -187,7 +187,7 @@ void plotReducedOverlays::makeSample(string mode, string selection) {
     return;
   }
   setupTree(t, mode); 
-  //  loopOverTree(t, mode, 1, 2000000);
+  //loopOverTree(t, mode, 1, 200000);
   loopOverTree(t, mode, 1);
 
   sbsDistributions(mode, selection);
@@ -289,8 +289,6 @@ void plotReducedOverlays::sbsDistributions(string mode, string selection, string
     } else if (3 == type) {
       cout << "=> sbsDistributionExpoGauss histogram " << Form("%s for selection %s", bla.c_str(), selection.c_str()) << endl;
       h = a.sbsDistributionExpoGauss(bla.c_str(), selection.c_str());
-      //       cout << "=> sbsDistributionPol1ErrGauss histogram " << Form("%s for selection %s", bla.c_str(), selection.c_str()) << endl;
-      //       h = a.sbsDistributionPol1ErrGauss(bla.c_str(), selection.c_str(), preco);
     }
     cout << "  Title: " << h->GetTitle() << " with integral: " << h->GetSumOfWeights() << endl;
     //    h->Write();
