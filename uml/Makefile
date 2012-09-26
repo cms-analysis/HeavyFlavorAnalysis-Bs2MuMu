@@ -41,11 +41,8 @@ main_toyMC: main_toyMC.cc pdf_analysis.o pdf_fitData.o pdf_toyMC.o
 main_fitData: main_fitData.cc pdf_analysis.o pdf_fitData.o
 		$(CXX) $(CXXFLAGS) -o main_fitData.o pdf_analysis.o pdf_fitData.o $(GLIBS)  $(LDFLAGS)  $<
 
-main_simul_maker: main_simul_maker.cc pdf_analysis.o
-		$(CXX) $(CXXFLAGS) -o main_simul_maker.o pdf_analysis.o $(GLIBS)  $(LDFLAGS)  $<
-
-main_pdf_choise: main_pdf_choise.cc pdf_analysis.o
-		$(CXX) $(CXXFLAGS) -o main_pdf_choise.o pdf_analysis.o $(GLIBS)  $(LDFLAGS)  $<
+main_make_pdf: main_make_pdf.cc pdf_analysis.o
+		$(CXX) $(CXXFLAGS) -o main_make_pdf.o pdf_analysis.o $(GLIBS)  $(LDFLAGS)  $<
 
 pdf_analysis.o: pdf_analysis.cpp
 	$(CXX) $(CXXFLAGS) -c pdf_analysis.cpp

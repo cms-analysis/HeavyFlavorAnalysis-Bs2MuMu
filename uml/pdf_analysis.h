@@ -116,6 +116,8 @@ public:
   void gen_and_fit(string pdfname);
   bool print_;
 
+  const char* name(string name, int i);
+
 protected:
   string meth_;
   string ch_s_;
@@ -132,7 +134,6 @@ protected:
   vector <double> estimate_channel;
 
   RooDataHist getRandom_rdh();
-  const char* name(string name, int i);
   string get_address_root(string name);
 
   RooArgSet* obs;
