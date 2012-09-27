@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
   vector <RooAbsData*> rad_uniform(inputs);
   vector <RooAbsData*> rad_total(inputs);
 
-  string decays[] = {"SgMc", "BdMc", "bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgLb2KP", "bgLb2PiP", "bgBd2PiMuNu", "bgBs2KMuNu", "bgLb2PMuNu", "SgData"};
+  static string decays[] = {"SgMc", "BdMc", "bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgLb2KP", "bgLb2PiP", "bgBd2PiMuNu", "bgBs2KMuNu", "bgLb2PMuNu", "SgData"};
   double weight_i[] = { 1,      1,      1./27.6,   1./1.1,     1./1.6,      1./1.0,    1./2.5,     1./2.5,      1./1.3,    1./2.2,     1./1.0,        1./1.1,       1./1.1,    1};
   // misid:
   double pion_misid    = 0.0015;
@@ -171,7 +171,12 @@ int main(int argc, char* argv[]) {
   }
 
   ana1.define_pdfs();
-  if (strcmp(rare_f.c_str(),"no")) ana1.set_rare_normalization(rare_f);
+
+  if (strcmp(rare_f.c_str(),"no")) {
+    get_rare_normalization("./input/anaBmm.plotResults.default-11.tex");
+    ana1.set_rare_normalization(rare_f);
+  }
+
   if (simul) ana1.define_simul();
 
   /// FITS

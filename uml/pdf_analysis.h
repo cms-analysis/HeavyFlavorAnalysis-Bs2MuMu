@@ -81,7 +81,7 @@ public:
   void print(RooAbsData *data, string output = "");
   void set_pdf_constant(string pdf);
   void set_rare_normalization(string input, bool extended = false); //set peak fraction parameter to Bu2JpsiK
-  
+
   string pdf_name;
 
   int channel;

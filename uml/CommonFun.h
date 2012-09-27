@@ -1,5 +1,4 @@
 #include <vector>
-#include <string>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -246,4 +245,70 @@ string get_cut(int channel) {
   //if (channel == 1) cut += " && abs(m1eta)>1.4 || abs(m2eta)>1.4";
   cout << "cut = " << cut << endl;
   return cut;
+}
+
+void get_rare_normalization(string filename) {
+
+  string peakdecays[] = {"bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgLb2KP", "bgLb2PiP"};
+  string semidecays[] = {"bgBd2PiMuNu", "bgBs2KMuNu", "bgLb2PMuNu"};
+
+  FILE *file = fopen(filename.c_str(), "r");
+  if (!file) {cout << "file " << filename << " does not exist"; exit(1);}
+
+  char buffer[1024];
+  char left[1024];
+  float number;
+  int peak_n = sizeof(peakdecays)/sizeof(string);
+  int semi_n = sizeof(semidecays)/sizeof(string);
+  vector <float> peak_exp(2, 0);
+  vector <float> semi_exp(2, 0);
+
+  string end_0[3] = {"bsRare0}", "bdRare0}", "loSideband0:val}"};
+  string end_1[3] = {"bsRare1}", "bdRare1}", "loSideband1:val}"};
+
+  while (fgets(buffer, sizeof(buffer), file)) {
+    if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
+    if (buffer[0] == '\045') continue;
+    sscanf(buffer, "%s   {\\ensuremath{{%f } } }", left, &number);
+    string left_s(left);
+    for (int i = 0; i < peak_n; i++) {
+      size_t found = left_s.find(peakdecays[i]);
+      if (found != string::npos) {
+        for (int j = 0; j < 3; j++) {
+          found = left_s.find(end_0[j]);
+          if (found != string::npos) {
+            peak_exp[0] += number;
+          }
+          found = left_s.find(end_1[j]);
+          if (found != string::npos) {
+            peak_exp[1] += number;
+          }
+        }
+      }
+    }
+    for (int i = 0; i < semi_n; i++) {
+      size_t found = left_s.find(semidecays[i]);
+      if (found != string::npos) {
+        for (int j = 0; j < 3; j++) {
+          found = left_s.find(end_0[j]);
+          if (found != string::npos) {
+            semi_exp[0] += number;
+          }
+          found = left_s.find(end_1[j]);
+          if (found != string::npos) {
+            semi_exp[1] += number;
+          }
+        }
+      }
+    }
+  }
+  fclose(file);
+
+  FILE* file_out = fopen("input/rare_frac.txt", "w");
+  for (int i = 0; i < 2; i++) {
+    fprintf(file_out, "N_rare_%d\t%f\n", i, peak_exp[i]+semi_exp[i]);
+    fprintf(file_out, "peakfrac_rare_%d\t%f\n", i, peak_exp[i]/(peak_exp[i]+semi_exp[i]));
+    fprintf(file_out, "######\n");
+  }
+  fclose(file_out);
 }
