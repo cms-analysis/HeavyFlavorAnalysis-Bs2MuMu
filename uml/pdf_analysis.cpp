@@ -22,6 +22,13 @@ pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, b
 
 void pdf_analysis::initialize () {
   cout << "inizialization" << endl;
+
+  source.resize(4);
+  source[0] = "bs";
+  source[1] = "bd";
+  source[2] = "rare";
+  source[3] = "comb";
+
   ws_ = new RooWorkspace("ws", "ws");
   Mass = new RooRealVar("Mass", "Candidate invariant mass", 4.90, 5.90, "GeV/c^{2}");
   ws_->import(*Mass);
@@ -514,23 +521,22 @@ void pdf_analysis::print(RooAbsData* data, string output) {
   RooPlot *rp = ws_->var("Mass")->frame();
   RooPlot *rp_bdt = ws_->var("bdt")->frame();
   data->plotOn(rp, Binning(20));
-  data->plotOn(rp_bdt, Binning(100));
+  data->plotOn(rp_bdt, Binning(20));
   if (!pee) {
-    ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue)/*, Range(range_.c_str())*//*, ProjectionRange("eta_all")*//*, Normalization((data->sumEntries(), RooAbsReal::NumEvent))*/);
-    if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue)/*, Range(range_.c_str())*//*, ProjectionRange("eta_all")*//*, Normalization((data->sumEntries(), RooAbsReal::NumEvent))*/);
+    ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue));
+    if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue));
   }
   else {
     if (!simul_) {
-      ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue)/*, Range(range_.c_str()), Normalization(data->sumEntries(), RooAbsReal::NumEvent)*/, ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE)/*, ProjectionRange(range_.c_str())*/);
-      if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue)/*, Range(range_.c_str()), Normalization(data->sumEntries(), RooAbsReal::NumEvent)*/, ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE)/*, ProjectionRange(range_.c_str())*/);
+      ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE));
+      if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE));
     }
     else {
-      ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE)/*, Range(range_.c_str()), Normalization(data->sumEntries(), RooAbsReal::NumEvent)*//*, ProjWData(*ws_->data(Form("MassRes_rdh_%s_%d", output.c_str(), channel)))*//*, ProjectionRange(range_.c_str())*/);
-      if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE)/*, Range(range_.c_str()), Normalization(data->sumEntries(), RooAbsReal::NumEvent)*//*, ProjWData(*ws_->data(Form("MassRes_rdh_%s_%d", output.c_str(), channel)))*//*, ProjectionRange(range_.c_str())*/);
+      ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE));
+      if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE));
     }
     TH1* mass_eta_h;
-    /*if (simul_) mass_eta_h = ws_->pdf(pdf_name.c_str())->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var(Form("eta_channel_%d", channel)), Binning(50))) ;
-    else*/ mass_eta_h = ws_->pdf(pdf_name.c_str())->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var("MassRes"), Binning(30))) ;
+    mass_eta_h = ws_->pdf(pdf_name.c_str())->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var("MassRes"), Binning(30))) ;
     mass_eta_h->SetLineColor(kBlue) ;
     mass_eta_h->GetXaxis()->SetTitleOffset(2.) ;
     mass_eta_h->GetYaxis()->SetTitleOffset(2.) ;
@@ -719,18 +725,23 @@ RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name) {
   RooArgList varlist(*bdt, *weight);
   RooDataSet* subdata_bdt = new RooDataSet("subdata_bdt", "subdata_bdt", varlist, "weight");
   const RooArgSet* aRow;
+  TH1D histo(rds->GetTitle(), rds->GetTitle(), 20, -1., 1.);
   for (Int_t j = 0; j < rds->numEntries(); j++) {
     aRow = rds->get(j);
     RooRealVar* BDT = (RooRealVar*)aRow->find("bdt");
     double Weight = rds->weight();
     RooArgSet varlist_tmp_bdt(*BDT);
-    if (aRow->getCatIndex("channels") == channel) subdata_bdt->add(varlist_tmp_bdt, Weight);
+    if (aRow->getCatIndex("channels") == channel) {
+      subdata_bdt->add(varlist_tmp_bdt, Weight);
+      histo.Fill(BDT->getVal(), Weight);
+    }
   }
   cout << "bdt entries = " <<  subdata_bdt->sumEntries() << endl;
   ostringstream name_rdh;
   name_rdh << "bdt_rdh_" << name;
   if (simul_) name_rdh << "_" << channel;
-  RooDataHist *bdt_rdh = subdata_bdt->binnedClone(name_rdh.str().c_str());
+  //RooDataHist *bdt_rdh = subdata_bdt->binnedClone(name_rdh.str().c_str());
+  RooDataHist *bdt_rdh = new RooDataHist(name_rdh.str().c_str(), name_rdh.str().c_str(), *ws_->var("bdt"), &histo);
   ostringstream name_pdf;
   name_pdf << "bdt_pdf_" << name;
   if (simul_) name_pdf << "_" << channel;

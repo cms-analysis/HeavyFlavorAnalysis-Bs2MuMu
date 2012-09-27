@@ -21,20 +21,28 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
   if (!simul_) channels = 1;
   pull_bs.resize(channels);
   pull_bd.resize(channels);
+  pull_rare.resize(channels);
+  pull_comb.resize(channels);
   pull_rds_bs.resize(channels);
   pull_rds_bd.resize(channels);
-  vector <double> p_bs(channels);
-  vector <double> p_bd(channels);
+  pull_rds_rare.resize(channels);
+  pull_rds_comb.resize(channels);
+//  vector <double> p_bs(channels);
+//  vector <double> p_bd(channels);
   vector <TH1D*> correlation_h(channels);
   vector <TH1D*> bs_mean_h(channels);
   vector <TH2D*> corr_Nbs_Nbd_vs_N_bs_h(channels);
   for (int i = 0; i < channels; i++) {
     pull_bs[i] = new RooRealVar("pull_bs", "pull_bs", -8., 8.);
     pull_bd[i] = new RooRealVar("pull_bd", "pull_bd", -8., 8.);
+    pull_rare[i] = new RooRealVar("pull_rare", "pull_rare", -8., 8.);
+    pull_comb[i] = new RooRealVar("pull_comb", "pull_comb", -8., 8.);
     pull_rds_bs[i] = new RooDataSet("pull_rds_bs", "pull_rds_bs", *pull_bs[i]);
     pull_rds_bd[i] = new RooDataSet("pull_rds_bd", "pull_rds_bd", *pull_bd[i]);
-    p_bs[i] = 0;
-    p_bd[i] = 0;
+    pull_rds_rare[i] = new RooDataSet("pull_rds_rare", "pull_rds_rare", *pull_rare[i]);
+    pull_rds_comb[i] = new RooDataSet("pull_rds_comb", "pull_rds_comb", *pull_comb[i]);
+//    p_bs[i] = 0;
+//    p_bd[i] = 0;
     correlation_h[i] = new TH1D(Form("correlation_%d_h", i), "correlation_h", 100, -1., 1.);
     bs_mean_h[i] = new TH1D(Form("bs_mean_%d_h", i), "bs_mean_h", 100, 0., 40.);
     corr_Nbs_Nbd_vs_N_bs_h[i] = new TH2D(Form("corr_Nbs_Nbd_vs_N_bs_%d_h", i), "corr_Nbs_Nbd_vs_N_bs_h", 30, 0., 30., 100, -1., 1.);
@@ -181,8 +189,8 @@ RooFitResult* pdf_toyMC::fit_pdf (string pdf, RooAbsData* data, int printlevel, 
     }
   }
   RooFitResult* result;
-  if (!pee) result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, Extended(true), SumW2Error(0)/*, Range(range_.c_str())*/, PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE));
-  else result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, ConditionalObservables(*ws->var("MassRes")), Extended(true), SumW2Error(0)/*, Range(range_.c_str())*/, PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE));
+  if (!pee) result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, Extended(true), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE));
+  else result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, ConditionalObservables(*ws->var("MassRes")), Extended(true), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE));
   return result;
 }
 
@@ -256,27 +264,34 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
 
     mcstudy->generateAndFit(NExp, 0, kTRUE);
 
-    for (int i = 0; i < channels; i++) {
-      RooPlot* frame1_bs = mcstudy->plotParam(*ws_->var(name("N_bs", i)), Bins(20)) ;
-      RooPlot* frame2_bs = mcstudy->plotError(*ws_->var(name("N_bs", i)), Bins(20), Range(0., 15.)) ;
-      RooPlot* frame3_bs = mcstudy->plotPull(*ws_->var(name("N_bs", i)), Bins(20), FitGauss(kTRUE), Range(-5., 5.)) ;
-      TCanvas* canvas_bs = new TCanvas("canvas_bs", "canvas_bs", 1200, 600) ;
-      canvas_bs->Divide(3,1) ;
-      canvas_bs->cd(1) ; gPad->SetLeftMargin(0.15) ; frame1_bs->GetYaxis()->SetTitleOffset(1.4) ; frame1_bs->Draw() ;
-      canvas_bs->cd(2) ; gPad->SetLeftMargin(0.15) ; frame2_bs->GetYaxis()->SetTitleOffset(1.4) ; frame2_bs->Draw() ;
-      canvas_bs->cd(3) ; gPad->SetLeftMargin(0.15) ; frame3_bs->GetYaxis()->SetTitleOffset(1.4) ; frame3_bs->Draw() ;
-      ostringstream index;
-      index << i;
-      string address = "fig/RooMCStudy_simul_bs_" + index.str() + "_" + meth_;
-      if (SM_) address += "_SM";
-      if (bd_constr_) address += "_bdConstr";
-      canvas_bs->Print((address + ".gif").c_str());
-      canvas_bs->Print((address + ".pdf").c_str());
-      delete frame1_bs;
-      delete frame2_bs;
-      delete frame3_bs;
-      delete canvas_bs;
+    for (int j = 0; j < 4; j++) {
+      if ((SM_ || bd_constr_) && j == 1) continue;
+      for (int i = 0; i < channels; i++) {
+        RooPlot* frame1_bs = mcstudy->plotParam(*ws_->var(name("N_" + source[j], i)), Bins(20)) ;
+        RooPlot* frame2_bs = mcstudy->plotError(*ws_->var(name("N_" + source[j], i)), Bins(20)) ;
+        RooPlot* frame3_bs = mcstudy->plotPull(*ws_->var(name("N_" + source[j], i)), Bins(20), FitGauss(kTRUE)) ;
+        TCanvas* canvas = new TCanvas("canvas", "canvas", 1200, 600) ;
+        canvas->Divide(3,1) ;
+        canvas->cd(1);
+        frame1_bs->Draw();
+        canvas->cd(2);
+        frame2_bs->Draw();
+        canvas->cd(3);
+        frame3_bs->Draw();
+        ostringstream index;
+        index << i;
+        string address = "fig/RooMCStudy_simul_" + source[j] + "_" + index.str() + "_" + meth_;
+        if (SM_) address += "_SM";
+        if (bd_constr_) address += "_bdConstr";
+        canvas->Print((address + ".gif").c_str());
+        canvas->Print((address + ".pdf").c_str());
+        delete frame1_bs;
+        delete frame2_bs;
+        delete frame3_bs;
+        delete canvas;
+      }
     }
+
     TCanvas* sig_c = new TCanvas("sig_c", "sig_c", 600*channels, 600);
     sig_c->Divide(channels);
     for (int i = 0; i < channels; i++) {
@@ -300,14 +315,13 @@ void pdf_toyMC::print(string output, RooWorkspace* ws) {
   rds_->plotOn(rp, Binning(20));
   if (bdt_fit_) rds_->plotOn(rp_bdt, Binning(100));
   if (!pee) {
-    ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue)/*, Range(range_.c_str())*//*, ProjectionRange("eta_all"), Normalization((rds_->sumEntries(), RooAbsReal::NumEvent))*/);
-    if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue)/*, ProjectionRange("eta_all"), Normalization((rds_->sumEntries(), RooAbsReal::NumEvent))*/);
+    ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue));
+    if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue));
   }
   else {
     ws_->pdf(pdf_name.c_str())->Print();
     TH1* mass_eta_h;
-    /*if (simul_) mass_eta_h = ws_->pdf(pdf_name.c_str())->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var(Form("eta_%d", channel)), Binning(50))) ;
-    else*/ mass_eta_h = ws_->pdf(pdf_name.c_str())->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var("eta"), Binning(50))) ;
+    mass_eta_h = ws_->pdf(pdf_name.c_str())->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var("MassRes"), Binning(50))) ;
     mass_eta_h->SetLineColor(kBlue) ;
     mass_eta_h->GetXaxis()->SetTitleOffset(2.) ;
     mass_eta_h->GetYaxis()->SetTitleOffset(2.) ;
@@ -322,8 +336,8 @@ void pdf_toyMC::print(string output, RooWorkspace* ws) {
     cetad->cd(1);
     mass_eta_h->Draw("surf") ;
     cetad->cd(2);
-    ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue)/*, Range(range_.c_str())*//*, Normalization(rds_->sumEntries(), RooAbsReal::NumEvent)*//*, ProjWData(*ws_->data(Form("etardh_%s", pdf_name.c_str())))*//*, ProjectionRange("eta_all")*/);
-    if(bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue)/*, ProjWData(*ws_->data(Form("etardh_%s", pdf_name.c_str())))*/);
+    ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue));
+    if(bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue));
     if(!no_legend) {
       ws_->pdf(pdf_name.c_str())->paramOn(rp, Layout(0.50, 0.9, 0.9));
       if(bdt_fit_) ws_->pdf(pdf_name.c_str())->paramOn(rp_bdt, Layout(0.50, 0.9, 0.9));
@@ -361,12 +375,12 @@ void pdf_toyMC::print(string output, RooWorkspace* ws) {
       if (i > 11) i = 0;
       size_t found1 = pdf_name.find("total");
       if (found1 == string::npos) {
-        ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2)/*, Range(range_.c_str())*/);
+        ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
         if(bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
       }
       else {
         if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_rare" || name=="pdf_comb") {
-          ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2)/*, Range(range_.c_str())*/);
+          ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
           if(bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
         }
       }

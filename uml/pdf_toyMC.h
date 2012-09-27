@@ -51,8 +51,12 @@ private:
   
   vector <RooDataSet*> pull_rds_bs;
   vector <RooDataSet*> pull_rds_bd;
+  vector <RooDataSet*> pull_rds_rare;
+  vector <RooDataSet*> pull_rds_comb;
   vector <RooRealVar*> pull_bd;
   vector <RooRealVar*> pull_bs;
+  vector <RooRealVar*> pull_rare;
+  vector <RooRealVar*> pull_comb;
 
   void print(string output, RooWorkspace* ws);
 

@@ -138,6 +138,8 @@ protected:
 
   RooArgSet* obs;
 
+  vector < string > source;
+
 private:
 
 };

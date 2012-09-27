@@ -223,7 +223,7 @@ int main(int argc, char* argv[]) {
     ws->var("N_comb")->setVal(25);
     ana1.gen_and_fit("pdf_ext_total");
   }
-
+  cout << "workspace saved to " << output_s << endl;
   return EXIT_SUCCESS;
 }
 
