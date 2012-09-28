@@ -138,8 +138,10 @@ public:
   void dpYield(TH1 *h, int mode, double lo=5.1, double hi=5.6, int bdtc=-10);
   void bgBlind(TH1 *h, int mode = 2, double lo = 4.5, double hi = 6.5); 
 
-  // A modified class which includes the landau peak 14/10/12
+  // A modified class which includes the landau peak 14/9/12
   void normYield2(TH1 *h, int mode, double lo = 5.15, double hi=5.5, double preco=-1.);
+  // A modified class which includes 2 related gaussians  28/9/12
+  void csYield2(TH1 *h, int mode, double lo = 5.25, double hi=5.6, double fraction = -1., double preco=-1.);
 
   void singleEventPrintout(std::string suffix, std::string st, int ievt);
   void printNumbers(numbers &a, ostream &OUT);

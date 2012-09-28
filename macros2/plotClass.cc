@@ -1304,7 +1304,9 @@ void plotClass::loopTree(int mode, int proc) {
       //      csYield(h, mode, 5.20, 5.6);
       TH1D *h = fhNorm[i];
       //      csYield(h, i, 5.1, 6.0);
-      csYield(h, fChan, 5.1);
+      csYield(h, fChan, 5.1);  // standard control fit
+      //const double fraction = 0.14; // fix the ratio of the 2 gaussians, -1. will let it float
+      //csYield2(h, fChan, 5.1,5.6,fraction,-1.); // new control fit
       aa->fitYield  = fCsSig; 
       aa->fitYieldE = fCsSigE; 
     } else if (30 == mode) {
@@ -2805,7 +2807,133 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
   delete fl;
 
 }
+// ----------------------------------------------------------------------
 
+
+// ----------------------------------------------------------------------
+// 2 gaussian, 2nd one has a fixed shape and the area related to the area of the 1st gaussian
+// fraction: 
+// -1 fraction of the 2nd gaussian is left free to be fitted, 
+// >=0. the fraction is fixed to the passed value 
+// preco:
+// -1 the step error function is not used in the fit
+// >=0. the step is used with the edge equal to preco
+// 
+void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction, double preco) {
+
+  //const fraction = 0.14; // area fraction of the 2nd gauss
+ 
+  TF1 *lF1(0), *lBg(0);
+
+  fpFunc->resetLimits();
+
+  fpFunc->fLo = lo; //5.0;
+  fpFunc->fHi = hi; //5.5;
+  if (0 == mode) { 
+    lF1 = fpFunc->expoErrgauss2f(h, 5.37, 0.040, 5.425, 0.079,fraction, preco);  // 2 gaussians 
+    lBg = fpFunc->expoErrGauss(h,5.425,0.079); 
+  } else {
+    lF1 = fpFunc->expoErrgauss2f(h, 5.37, 0.040, 5.425, 0.079,fraction, preco); 
+    lBg = fpFunc->expoErrGauss(h,5.425,0.079); 
+  }
+
+  zone(1,2);
+  h->DrawCopy();
+  c0->cd(2);
+  lF1->SetLineColor(kBlue); 
+  lF1->Draw();
+
+  //  return;
+
+  h->Fit(lF1, "rm", "", lo, hi); 
+
+  // 
+  double ratio  = lF1->GetParameter(3); 
+  double area1stGauss = 2.5066 * lF1->GetParameter(0) * lF1->GetParameter(2);
+  double area2ndGauss = ratio * area1stGauss;
+  //cout<<ratio<<" "<<area1stGauss<<" "<<area2ndGauss<<endl;
+
+  // setup the background function
+  lBg->SetParameter(0, area2ndGauss);  // gauss area
+  cout << "par " << 0 << ": " << lBg->GetParName(0) << " = " << lBg->GetParameter(0) << endl;
+  lBg->SetParameter(1, lF1->GetParameter(4));  // gauss peak
+  cout << "par " << 1 << ": " << lBg->GetParName(1) << " = " << lBg->GetParameter(1) << endl;
+  lBg->SetParameter(2, lF1->GetParameter(5));  // gauss sigma
+  cout << "par " << 2 << ": " << lBg->GetParName(2) << " = " << lBg->GetParameter(2) << endl;
+  // test rest
+  for (int i = 3; i < lBg->GetNpar(); ++i) {
+    lBg->SetParameter(i, lF1->GetParameter(3+i));
+    cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
+  }
+
+  double c1 = lF1->Integral(5.25, 5.5); 
+  double c2 = lBg->Integral(5.25, 5.5); 
+  double c = c1 - c2;
+  //cout<<c1<<" "<<c2<<" "<<c<<endl;
+
+  double cE = lF1->GetParError(0)/lF1->GetParameter(0); 
+  if (0 == mode) {
+    cE = (lF1->GetParError(0)/lF1->GetParameter(0))*(lF1->GetParError(0)/lF1->GetParameter(0))
+       + (lF1->GetParError(6)/lF1->GetParameter(6))*(lF1->GetParError(6)/lF1->GetParameter(6));
+    if(fraction<0.) cE += (lF1->GetParError(3)/lF1->GetParameter(3))*(lF1->GetParError(3)/lF1->GetParameter(3));
+    cE = TMath::Sqrt(cE);
+  }
+  double ierr = lF1->IntegralError(5.25, 5.5)/h->GetBinWidth(1); 
+ 
+  fCsSig = c/h->GetBinWidth(1);
+  if (ierr > TMath::Sqrt(fCsSig)) {
+    cout << "chose integral error" << endl;
+    fCsSigE = ierr;
+  } else {
+    cout << "chose parameter error" << endl;
+    fCsSigE = cE*fCsSig;
+  }
+
+  cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
+  cout << "chi2/dof = " << lF1->GetChisquare() << "/" << lF1->GetNDF() 
+       << " prob = " << TMath::Prob(lF1->GetChisquare(), lF1->GetNDF()) 
+       << endl;
+
+  setHist(h, kBlack, 20, 1.); 
+  setTitles(h, "m_{#mu#muKK} [GeV]", Form("Candidates / %3.3f GeV", h->GetBinWidth(1)), 0.05, 1.2, 1.6); 
+  h->SetMinimum(0.01); 
+  gStyle->SetOptStat(0); 
+  gStyle->SetOptTitle(0); 
+  h->Draw("e");
+
+  //lF1->SetLineColor(kBlue); 
+  //lF1->SetLineStyle(kDotted);
+  //lF1->SetLineWidth(3);
+  //lF1->Draw("same");
+
+  // -- Overlay BG function
+  lBg->SetLineStyle(kDashed);
+  lBg->SetLineColor(kRed);
+  lBg->SetLineWidth(3);
+  lBg->Draw("same");
+
+  tl->SetTextSize(0.07); 
+  tl->SetTextColor(kBlack); 
+  if (0 == mode) {
+    tl->DrawLatex(0.22, 0.8, "Barrel");   
+  } 
+
+  if (1 == mode) {
+    tl->DrawLatex(0.22, 0.8, "Endcap");   
+  } 
+
+
+  if (fDoPrint) {
+    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d.pdf", fDirectory.c_str(), mode));
+    else c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), mode));
+  }
+
+  cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
+  
+  delete lF1; 
+  delete lBg; 
+
+}
 
 // ----------------------------------------------------------------------
 void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
