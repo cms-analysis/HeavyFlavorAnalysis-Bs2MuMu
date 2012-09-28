@@ -96,6 +96,30 @@ double f_gauss2(double *x, double *par) {
 }
 
 // ----------------------------------------------------------------------
+double f_gauss2f(double *x, double *par) {
+  // par[0] -> const
+  // par[1] -> mean
+  // par[2] -> sigma
+  // par[3] -> fraction,  area ratio second/first gaussian
+  // par[4] -> mean of second gaussian
+  // par[5] -> sigma of second gaussian
+  Double_t arg1(0.), arg2(0.), fitval1(0.), fitval2(0.); 
+  if (par[2] > 0) {
+    arg1 = (x[0] - par[1]) / par[2];
+    fitval1 =  par[0]*TMath::Exp(-0.5*arg1*arg1);
+  }
+  
+  if (par[5] > 0.) {
+    // relate the area of the 2 gaussians 
+    double fraction = par[0] * par[2]/par[5];
+    arg2 = (x[0] - par[4]) / par[5];
+    fitval2 =  par[3]*fraction*TMath::Exp(-0.5*arg2*arg2);
+  }
+  Double_t fitval = fitval1 + fitval2;
+  return fitval;
+}
+
+// ----------------------------------------------------------------------
 double f_gauss2c(double *x, double *par) {
   // constrained to have the same mean in the second gaussian
   // par[0] -> const
@@ -239,6 +263,26 @@ double f_expo_err_gauss2(double *x, double *par) {
 
 
   return  (f_err(x, &par[8]) + f_expo(x, &par[6]) + f_gauss2(x, &par[0]));
+}
+
+// ----------------------------------------------------------------------
+// expo and err and gauss2f (2 gaussians correlated through the area)
+double f_expo_err_gauss2f(double *x, double *par) {
+  // par[0] -> const
+  // par[1] -> mean
+  // par[2] -> sigma
+  // par[3] -> fraction in second gaussian
+  // par[4] -> mean of second gaussian
+  // par[5] -> sigma of second gaussian
+  //   par[6]  = norm
+  //   par[7]  = exp
+  //   par[8]  = par[0] of err
+  //   par[9]  = par[1] of err
+  //   par[10] = par[2] of err
+  //   par[11] = par[3] of err
+
+
+  return  (f_err(x, &par[8]) + f_expo(x, &par[6]) + f_gauss2f(x, &par[0]));
 }
 
 // ----------------------------------------------------------------------
@@ -1030,6 +1074,83 @@ TF1* initFunc::expoErrgauss2(TH1 *h, double peak1, double sigma1, double peak2, 
   f->ReleaseParameter(11);     //f->SetParLimits(8, 0, 0.05*g0); 
   return f; 
 
+}
+
+// ----------------------------------------------------------------------
+// 2 gaussian, 2nd one has a fixed shape and the area related to the area of the 1st gaussian
+// fraction: 
+// -1 fraction of the 2nd gaussian is left free to be fitted, 
+// >=0. the fraction is fixed to the passed value 
+// preco:
+// -1 the step error function is not used in the fit
+// >=0. the step is used with the edge equal to preco
+// 
+TF1* initFunc::expoErrgauss2f(TH1 *h, double peak1, double sigma1, double peak2, double sigma2, double fraction, double preco) {
+  bool free2ndGauss = true, freeErr=false;
+  if(preco < 0.) {freeErr = false; preco=0.;} // disable the edge error function fitting
+  else           {freeErr = true;} // use the edge fit at edge=preco  
+  if(fraction < 0.) {free2ndGauss = true;} // float the area of the 2nd gaus
+  else              {free2ndGauss = false;} // fix the area to fraction 
+
+  TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_gauss2f"); 
+  if (f) delete f; 
+  f = new TF1("f1_expo_err_gauss2f", f_expo_err_gauss2f, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 12);
+  f->SetParNames("const", "peak", "sigma", "fraction","p2ndG", "s2ndG", "const", "exp", "err0", "err1", "err2");
+  f->SetParName(11, "err3");
+
+  f->SetLineWidth(2); 
+
+  int lbin(1), hbin(h->GetNbinsX()+1); 
+  if (fLo < fHi) {
+    lbin = h->FindBin(fLo); 
+    hbin = h->FindBin(fHi); 
+  }
+
+  double p0(0.), p1(0.); 
+  initExpo(p0, p1, h);
+  double A   = p0*(TMath::Exp(p1*fHi) - TMath::Exp(p1*fLo));
+  double g0 = (h->Integral(lbin, hbin)*h->GetBinWidth(1) - A);  
+  g0 = 10.;
+
+  double e0(preco), e0Min(preco-0.001), e0Max(preco+0.001); 
+  double e1(0.050), e1Min(0.8*e1),      e1Max(1.2*e1);
+  double e2(1.00),  e2Min(0.8*e2),      e2Max(1.2*e2);
+
+  cout << "A: " << A << " g0: " << g0 << " e0: " << e0 << " e1: " << e1 << " e2: " << e2 << " p0: " << p0 << " p1: " << p1 << endl;
+  
+  f->SetParameters(g0, peak1, sigma1, 0.1, peak2, sigma2, p0, p1, e0, e1, e2); 
+  f->SetParameter(11,  0.05*g0); 
+    
+  if(free2ndGauss) { 
+    f->ReleaseParameter(3);     f->SetParLimits(3, 0., 1.); 
+  } else {
+    f->FixParameter(3, fraction);   // fix the 2nd gaus fraction 
+  }
+
+  // for the 2nd gaussian
+  // Fix the 2nd gaussian to the Kstar shape extracted from B0ToJpsiX
+  f->FixParameter(4, peak2);   // 2nd gaus mean  
+  f->FixParameter(5, sigma2);  // 2nd gaus sigma 
+  
+  f->ReleaseParameter(6);     // exp
+  f->ReleaseParameter(7);     // exp 
+  f->ReleaseParameter(8);     f->SetParLimits(8, e0Min, e0Max);  // err() 
+  f->ReleaseParameter(9);     f->SetParLimits(9, e1Min, e1Max); 
+  f->ReleaseParameter(10);     f->SetParLimits(10, e2Min, e2Max); 
+  if(freeErr) {
+    f->ReleaseParameter(8);     f->SetParLimits(8, e0Min, e0Max);  // err() 
+    f->ReleaseParameter(9);     f->SetParLimits(9, e1Min, e1Max); 
+    f->ReleaseParameter(10);     f->SetParLimits(10, e2Min, e2Max); 
+    f->ReleaseParameter(11);   f->SetParLimits(11, 0., 1000.);
+  } else {
+    f->FixParameter(8, e0);
+    f->FixParameter(9, e1);
+    f->FixParameter(10, e2);
+    f->FixParameter(11, 0.0);
+  }  // fix at 0  
+
+  return f; 
+  
 }
 
 
