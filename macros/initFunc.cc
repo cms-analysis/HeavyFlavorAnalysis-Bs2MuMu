@@ -589,8 +589,7 @@ TF1* initFunc::expoBsBlind(TH1 *h) {
     hbin = h->FindBin(fHi); 
   }
 
-  double p0, p1; 
-  initExpo(p0, p1, h);
+  double p0(10), p1(-1.); 
   
   f->SetParameters(p0, p1); 
 
@@ -633,7 +632,7 @@ TF1* initFunc::pol0BsBlind(TH1 *h) {
   }
   TF1 *f = new TF1("f1", f_pol0_BsBlind, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 1);
   f->SetParNames("constant"); 			   
-
+  
   int lbin(1), hbin(h->GetNbinsX()), EDG(4), NB(EDG+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
