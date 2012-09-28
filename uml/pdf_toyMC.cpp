@@ -7,7 +7,7 @@
 
 #include "pdf_toyMC.h"
 
-pdf_toyMC::pdf_toyMC(bool print, int inputs, string input_estimates, string input_cuts, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, string bias, bool simul, bool pee_, bool bdt_fit, string ch_s): pdf_fitData( print,  inputs,  input_estimates, input_cuts,  meth,  range,  SM,  bd_constr,  input_tree, simul, pee_, bdt_fit, ch_s) {
+pdf_toyMC::pdf_toyMC(bool print, int inputs, string input_estimates, string input_cuts, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, string bias, bool simul, bool pee_, bool bdt_fit, string ch_s, int sig): pdf_fitData( print,  inputs,  input_estimates, input_cuts,  meth,  range,  SM,  bd_constr,  input_tree, simul, pee_, bdt_fit, ch_s, sig) {
   cout << "pdf_toyMC constructor" << endl;
   bias_ = bias;
 }
@@ -35,6 +35,8 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
   vector <TH1D*> rare_mean_h(channels);
   vector <TH1D*> comb_mean_h(channels);
   vector <TH2D*> corr_Nbs_Nbd_vs_N_bs_h(channels);
+
+  TH1D * sign_h = new TH1D("sign_h", "sign_h", 100, 0, 10);
 
   for (int i = 0; i < channels; i++) {
     pull_bs[i] = new RooRealVar("pull_bs", "pull_bs", -8., 8.);
@@ -104,6 +106,10 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
     }
     //////
     RFR = pdf_toyMC::fit_pdf(pdf_test_, data, printlevel, ws_temp);
+    if (sign == 0) {
+      sign_h->Fill(sig_hand(data, printlevel, ws_temp));
+    }
+
     //////
     pdf_name = pdf_toy_;
     rds_ = data;
@@ -153,24 +159,9 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
   fit_pulls(pull_comb, pull_rds_comb);
 
   print_mean(bs_mean_h);
-  print_mean(bd_mean_h);
+  if (!(SM_ || bd_constr_)) print_mean(bd_mean_h);
   print_mean(rare_mean_h);
   print_mean(comb_mean_h);
-
-//  for (int j = 0; j < channels; j++) {
-//    cout << "channel " << j << "  N_bs mean = " << bs_mean_h[j]->GetMean() << endl;
-//    TCanvas* N_mean_c = new TCanvas("N_mean_c", "N_mean_c", 600, 600);
-//    bs_mean_h[j]->Draw();
-//    ostringstream address;
-//    if (!simul_) address << "fig/bs_mean_" << meth_ << "_" << ch_s_ << "_" + pdf_toy;
-//    else address << "fig/bs_mean_" << meth_ << "_" << j << "_" + pdf_toy;
-//    if (SM_) address << "_SM";
-//    if (bd_constr_) address << "_bd_const";
-//    if (pee) address << "_pee";
-//    N_mean_c->Print((address.str() + ".gif").c_str());
-//    N_mean_c->Print((address.str() + ".pdf").c_str());
-//    delete N_mean_c;
-//  }
 
   if (!SM_ && bd_b && !simul_) {
     TCanvas* corr_c = new TCanvas("corr_c", "corr_c", 1200, 600);
@@ -183,6 +174,22 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
     corr_c->Print((address + ".gif").c_str());
     corr_c->Print((address + ".pdf").c_str());
     delete corr_c;
+  }
+
+  if (sign == 0) {
+    TCanvas* sign_c = new TCanvas("sign_c", "sign_c", 600, 600);
+    sign_h->Draw();
+    ostringstream address_oss;
+    if (!simul_) address_oss << "fig/sign_" << meth_ << "_" << ch_s_ << "_" << pdf_toy_;
+    else address_oss << "fig/sign" << meth_ << "_simul_" << pdf_toy_;
+    string address = address_oss.str();
+    if (SM_) address += "_SM";
+    if (bd_constr_) address += "_bd_const";
+    if (pee) address += "_pee";
+    if (bdt_fit_) address += "_2D";
+    sign_c->Print( (address + ".gif").c_str());
+    sign_c->Print( (address + ".pdf").c_str());
+    delete sign_c;
   }
   return;
 }
@@ -242,6 +249,9 @@ void pdf_toyMC::fit_pulls(vector <RooRealVar*> pull,  vector <RooDataSet*> rds) 
     else address_oss << "fig/" << pull[0]->GetName() << "_" << meth_ << "_" << i << "_" << pdf_toy_;
     string address = address_oss.str();
     if (SM_) address += "_SM";
+    if (bd_constr_) address += "_bd_const";
+    if (pee) address += "_pee";
+    if (bdt_fit_) address += "_2D";
     canvas_bs->Print( (address + ".gif").c_str());
     canvas_bs->Print( (address + ".pdf").c_str());
     delete rp_bs;
@@ -260,11 +270,44 @@ void pdf_toyMC::print_mean(vector <TH1D*> mean_h) {
     if (SM_) address << "_SM";
     if (bd_constr_) address << "_bd_const";
     if (pee) address << "_pee";
+    if (bdt_fit_) address << "_2D";
     N_mean_c->Print((address.str() + ".gif").c_str());
     N_mean_c->Print((address.str() + ".pdf").c_str());
     delete N_mean_c;
   }
+}
 
+Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_temp) {
+  Double_t minNLL = RFR->minNll();
+  for (int j = 0; j < channels; j++) {
+    ws_temp->var(name("N_bs", j))->setVal(0);
+    ws_temp->var(name("N_bs", j))->setConstant(1);
+    if ( !(SM_ || bd_constr_)) {
+      ws_temp->var(name("N_bd", j))->setVal(0);
+      ws_temp->var(name("N_bd", j))->setConstant(1);
+    }
+    else if (bd_constr_) {
+      ws_temp->var("Bd_over_Bs")->setVal(0);
+      ws_temp->var("Bd_over_Bs")->setConstant(1);
+    }
+  }
+  RooFitResult * rfr_H0 = pdf_toyMC::fit_pdf(pdf_test_, data, printlevel, ws_temp);
+  for (int j = 0; j < channels; j++) {
+    ws_temp->var(name("N_bs", j))->setVal(estimate_bs[j]);
+    ws_temp->var(name("N_bs", j))->setConstant(0);
+    if ( !(SM_ || bd_constr_)) {
+      ws_temp->var(name("N_bd", j))->setVal(estimate_bd[j]);
+      ws_temp->var(name("N_bd", j))->setConstant(0);
+    }
+    else if (bd_constr_) {
+      ws_temp->var("Bd_over_Bs")->setVal(estimate_bd[j]/estimate_bs[j]);
+      ws_temp->var("Bd_over_Bs")->setConstant(0);
+    }
+  }
+  Double_t newNLL = rfr_H0->minNll();
+  Double_t deltaLL = newNLL - minNLL;
+  Double_t signif = deltaLL>0 ? sqrt(2*deltaLL) : -sqrt(-2*deltaLL) ;
+  return signif;
 }
 
 void pdf_toyMC::unset_constant() {

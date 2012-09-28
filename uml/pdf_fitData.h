@@ -24,7 +24,7 @@
 
 class pdf_fitData : public pdf_analysis {
   public:
-    pdf_fitData(bool print, int inputs = 1, string input_estimates = "", string input_cuts = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, bool simul = false, bool pee_ = false , bool bdt_fit = false , string ch_s = "0");
+    pdf_fitData(bool print, int inputs = 1, string input_estimates = "", string input_cuts = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, bool simul = false, bool pee_ = false , bool bdt_fit = false , string ch_s = "0", int sig = -1);
     ~pdf_fitData();
     void print();
     void print_each_channel();
@@ -37,7 +37,7 @@ class pdf_fitData : public pdf_analysis {
     RooSimultaneous* simul_pdf;
 
     void fit_pdf(bool do_not_import = false);
-    void significance(int meth);
+    void significance();
     void save();
 
   protected:
@@ -45,6 +45,7 @@ class pdf_fitData : public pdf_analysis {
     bool parse(char *cutName, float cut);
     string input_cuts_;
     bool random;
+    int sign;
 
   private:
 
@@ -55,8 +56,7 @@ class pdf_fitData : public pdf_analysis {
     void changeName(RooWorkspace *ws, int str);
     TTree* tree;
 
-
-    void sig_hand();
+    Double_t sig_hand();
     void sig_plhc();
     void sig_plhts();
 };

@@ -1,6 +1,6 @@
 #include "pdf_fitData.h"
 
-pdf_fitData::pdf_fitData(bool print, int inputs, string input_estimates, string input_cuts, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, bool simul, bool pee_, bool bdt_fit, string ch_s): pdf_analysis(print, meth, ch_s, range, SM, bd_constr, simul, pee_, bdt_fit) {
+pdf_fitData::pdf_fitData(bool print, int inputs, string input_estimates, string input_cuts, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, bool simul, bool pee_, bool bdt_fit, string ch_s, int sig): pdf_analysis(print, meth, ch_s, range, SM, bd_constr, simul, pee_, bdt_fit) {
   cout << "fitData constructor" << endl;
   channels = inputs;
   simul_ = simul;
@@ -30,6 +30,8 @@ pdf_fitData::pdf_fitData(bool print, int inputs, string input_estimates, string 
 
   ws_file_input.resize(channels);
   ws_input.resize(channels);
+
+  sign = sig;
 }
 
 pdf_fitData::~pdf_fitData() {
@@ -120,7 +122,7 @@ bool pdf_fitData::parse(char *cutName, float cut) {
 void pdf_fitData::fit_pdf(bool do_not_import) {
   cout << "making fit" << endl;
   if (simul_) {
-    cout << "fitting " << global_data->GetName() << " in range " << range_ << " with pdf_ext_simul:" << endl;
+    if (verbosity > 0) cout << "fitting " << global_data->GetName() << " in range " << range_ << " with pdf_ext_simul:" << endl;
     ws_->pdf("pdf_ext_simul")->Print();
 
     if (!pee) RFR = ws_->pdf("pdf_ext_simul")->fitTo(*global_data, Extended(1), Save(1), Minos());
@@ -129,14 +131,14 @@ void pdf_fitData::fit_pdf(bool do_not_import) {
   else {
     RooAbsData* subdata = global_data->reduce(Form("channels==channels::channel_%d", channel));
     global_data = (RooDataSet*)subdata;
-    cout << "fitting " << global_data->GetName() << " in range " << range_ << " with pdf_ext_total:" << endl;
+    if (verbosity > 0) cout << "fitting " << global_data->GetName() << " in range " << range_ << " with pdf_ext_total:" << endl;
     ws_->pdf("pdf_ext_total")->Print();
 
     if (!pee) RFR = ws_->pdf("pdf_ext_total")->fitTo(*global_data, Extended(1), Save(1), Minos());
     else RFR = ws_->pdf("pdf_ext_total")->fitTo(*global_data, Extended(1), Save(1), Minos(), ConditionalObservables(*ws_->var("MassRes")));
   }
   if (!do_not_import) ws_->import(*global_data);
-  RFR->Print();
+  if (verbosity > 0) RFR->Print();
 }
 
 void pdf_fitData::print() {
@@ -445,21 +447,20 @@ void pdf_fitData::save() {
   ws_->SaveAs(output_ws.str().c_str());
 }
 
-void pdf_fitData::significance(int meth) {
-  if (meth == 0) sig_hand();
-  else if (meth == 1) sig_plhc();
-  else if (meth == 2) sig_plhts();
+void pdf_fitData::significance() {
+  if (sign == 0) sig_hand();
+  else if (sign == 1) sig_plhc();
+  else if (sign == 2) sig_plhts();
 }
 
-void pdf_fitData::sig_hand() {
+Double_t pdf_fitData::sig_hand() {
   /// by hand
   Double_t minNLL = RFR->minNll();
-  TIterator* vars_it;
   RooRealVar *arg_var = 0;
   RooArgSet *all_vars;
   if (simul_) all_vars = ws_->pdf("pdf_ext_simul")->getVariables();
   else all_vars = ws_->pdf("pdf_ext_total")->getVariables();
-  vars_it = all_vars->createIterator();
+  TIterator* vars_it = all_vars->createIterator();
   size_t found;
   while ( (arg_var = (RooRealVar*)vars_it->Next())) {
     string name(arg_var->GetName());
@@ -482,6 +483,20 @@ void pdf_fitData::sig_hand() {
     }
   }
   fit_pdf(true);
+
+  TIterator* vars_after = all_vars->createIterator();
+  while ( (arg_var = (RooRealVar*)vars_after->Next())) {
+    string name(arg_var->GetName());
+    found = name.find("N_bs");
+    if (found!=string::npos) arg_var->setConstant(0);
+    found = name.find("N_bd");
+    if (found!=string::npos) arg_var->setConstant(0);
+    if (SM_ || bd_constr_) {
+      found = name.find("Bd_over_Bs");
+      if (found!=string::npos) arg_var->setConstant(0);
+    }
+  }
+
   Double_t newNLL = RFR->minNll();
   Double_t deltaLL = newNLL - minNLL;
   Double_t signif = deltaLL>0 ? sqrt(2*deltaLL) : -sqrt(-2*deltaLL) ;
@@ -490,6 +505,7 @@ void pdf_fitData::sig_hand() {
     cout << "H0 minNLL = " << newNLL << endl;
     cout << "significance (by hand) = " << signif << endl << endl;
   }
+  return signif;
 }
 
 void pdf_fitData::sig_plhc() {

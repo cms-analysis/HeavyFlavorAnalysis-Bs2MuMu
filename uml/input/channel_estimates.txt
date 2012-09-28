@@ -1,25 +1,11 @@
-bs_0	19
-bd_0	2
-rare_0	42
-comb_0  100
+# fit 1D (20 fb-1):
+bs_0   17
+bd_0   2
+rare_0 26
+comb_0  80
 #########
-bs_1	7
-bd_1	1
-rare_1	17
-comb_1	54
-# 30/fb, 3.5E-9 
-#bs_0	26
-#bd_0	3
-#rare_0	30
-#comb_0	72
-#good old:
-#bs_0	9
-#bd_0	1
-#rare_0	10
-#comb_0	24
-##########
-#bs_1	4
-#bd_1	0
-#rare_1	4
-#comb_1	14
-#########
+bs_1   6
+bd_1   0.4
+rare_1 8
+comb_1 24
+

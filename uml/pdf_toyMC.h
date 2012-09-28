@@ -31,12 +31,11 @@
 class pdf_toyMC : public pdf_fitData {
 public:
   
-  pdf_toyMC(bool print, int inputs = 1, string input_estimates = "", string input_cuts = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, string bias = "no", bool simul = false, bool pee_ = false, bool bdt_fit = false, string ch_s = "0");
+  pdf_toyMC(bool print, int inputs = 1, string input_estimates = "", string input_cuts = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, string bias = "no", bool simul = false, bool pee_ = false, bool bdt_fit = false, string ch_s = "0", int sig = -1);
   ~pdf_toyMC();
 
   void generate(int NExp, string pdf_toy, string test_pdf = "total");
   void mcstudy(int NExp, string pdf_toy);
-  RooFitResult* fit_pdf (string pdf, RooAbsData* data, int printlevel = -1, RooWorkspace *ws = 0);
   void unset_constant();
   
   TH1D* pull_h_bs;
@@ -61,6 +60,8 @@ private:
 
   void fit_pulls(vector<RooRealVar *> pull, vector<RooDataSet *> rds);
   void print_mean(vector <TH1D*> mean_h);
+  RooFitResult* fit_pdf (string pdf, RooAbsData* data, int printlevel = -1, RooWorkspace *ws = 0);
+  Double_t sig_hand(RooAbsData *data, int printlevel, RooWorkspace *ws);
 
 };
 
