@@ -267,7 +267,7 @@ void pdf_fitData::print_each_channel() {
     fitresult_tex[2] << setprecision(2) << fixed<< "N(comb. bkg) = " << N_comb->getVal() << " ^{+" << getErrorHigh(N_comb) << "}_{" << getErrorLow(N_comb) << "}";
     fitresult_tex[3] << setprecision(2) << fixed<< "N(rare bkg) = " << N_rare->getVal() << " ^{+" << getErrorHigh(N_rare) << "}_{" << getErrorLow(N_rare) << "}";
 
-   TPaveText* fitresults = new TPaveText(0.57, 0.66, 0.9, 0.9, "NDCR");
+    TPaveText* fitresults = new TPaveText(0.57, 0.66, 0.9, 0.9, "NDCR");
     for (int j = 0; j < 4; j++) {
       if (SM_ && j == 1) continue;
       TText* text =  fitresults->AddText(fitresult_tex[j].str().c_str());
@@ -646,4 +646,3 @@ void pdf_fitData::sig_plhts() {
 //  delete c_hypotest;
   cout << "ProfileLikelihoodTestStat + frequentist: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << endl;
 }
-

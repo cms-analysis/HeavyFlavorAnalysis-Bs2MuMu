@@ -102,7 +102,7 @@ void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool su
     subdata->Print();
     cout << " in range " << range_ << " with " << pdf_name << ":" << endl;
     ws_->pdf( pdf_name.c_str())->Print();
-    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, Extended(extended), SumW2Error(sumw2error)/*, Range(range_.c_str())*//*, SumCoefRange(range_.c_str())*/, NumCPU(2), Hesse(hesse), Save());
+    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save());
     if (print_) print(subdata);
   }
   else {
@@ -113,7 +113,7 @@ void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool su
     subdata->Print();
     cout << " in range " << range_ << " with " << pdf_name << ":" << endl;    ws_->pdf( pdf_name.c_str())->Print();
     cout << "WARNING: range option does not work with pee" << endl;
-    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, ConditionalObservables(*ws_->var("MassRes")), Extended(extended), SumW2Error(sumw2error)/*, Range(range_.c_str())*//*, SumCoefRange(range_.c_str())*/, NumCPU(2), Hesse(hesse), Save());
+    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, ConditionalObservables(*ws_->var("MassRes")), Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save());
     if (print_) print(subdata, pdf);
   }
 

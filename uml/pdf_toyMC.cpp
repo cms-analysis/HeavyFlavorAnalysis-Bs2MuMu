@@ -31,7 +31,11 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
 //  vector <double> p_bd(channels);
   vector <TH1D*> correlation_h(channels);
   vector <TH1D*> bs_mean_h(channels);
+  vector <TH1D*> bd_mean_h(channels);
+  vector <TH1D*> rare_mean_h(channels);
+  vector <TH1D*> comb_mean_h(channels);
   vector <TH2D*> corr_Nbs_Nbd_vs_N_bs_h(channels);
+
   for (int i = 0; i < channels; i++) {
     pull_bs[i] = new RooRealVar("pull_bs", "pull_bs", -8., 8.);
     pull_bd[i] = new RooRealVar("pull_bd", "pull_bd", -8., 8.);
@@ -44,7 +48,10 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
 //    p_bs[i] = 0;
 //    p_bd[i] = 0;
     correlation_h[i] = new TH1D(Form("correlation_%d_h", i), "correlation_h", 100, -1., 1.);
-    bs_mean_h[i] = new TH1D(Form("bs_mean_%d_h", i), "bs_mean_h", 100, 0., 40.);
+    bs_mean_h[i] = new TH1D(name("bs_mean_h", i), name("bs_mean_h", i), 100, 0., max(100., estimate_bs[i]*2));
+    bd_mean_h[i] = new TH1D(name("bd_mean_h", i), name("bd_mean_h", i), 100, 0., max(100., estimate_bd[i]*2));
+    rare_mean_h[i] = new TH1D(name("rare_mean_h", i), name("rare_mean_h", i), 100, 0., max(100., estimate_rare[i]*2));
+    comb_mean_h[i] = new TH1D(name("comb_mean_h", i), name("comb_mean_h", i), 100, 0., max(100., estimate_comb[i]*2));
     corr_Nbs_Nbd_vs_N_bs_h[i] = new TH2D(Form("corr_Nbs_Nbd_vs_N_bs_%d_h", i), "corr_Nbs_Nbd_vs_N_bs_h", 30, 0., 30., 100, -1., 1.);
   }
   if (!simul_) {
@@ -114,10 +121,25 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
     /// pull
     for (int j = 0; j < channels; j++) {
       bs_mean_h[j]->Fill(ws_temp->var(name("N_bs", j))->getVal());
+      if (!(SM_ || bd_constr_)) bd_mean_h[j]->Fill(ws_temp->var(name("N_bd", j))->getVal());
+      rare_mean_h[j]->Fill(ws_temp->var(name("N_rare", j))->getVal());
+      comb_mean_h[j]->Fill(ws_temp->var(name("N_comb", j))->getVal());
       // PULL
       double bs_pull = (ws_temp->var(name("N_bs", j))->getVal() - estimate_bs[j]) / ws_temp->var(name("N_bs", j))->getError();
+      double bd_pull;
+      if (!(SM_ || bd_constr_)) bd_pull = (ws_temp->var(name("N_bd", j))->getVal() - estimate_bd[j]) / ws_temp->var(name("N_bd", j))->getError();
+      double rare_pull = (ws_temp->var(name("N_rare", j))->getVal() - estimate_rare[j]) / ws_temp->var(name("N_rare", j))->getError();
+      double comb_pull = (ws_temp->var(name("N_comb", j))->getVal() - estimate_comb[j]) / ws_temp->var(name("N_comb", j))->getError();
       pull_bs[j]->setVal(bs_pull);
       pull_rds_bs[j]->add(*pull_bs[j]);
+      if (!(SM_ || bd_constr_)) {
+        pull_bd[j]->setVal(bd_pull);
+        pull_rds_bd[j]->add(*pull_bd[j]);
+      }
+      pull_rare[j]->setVal(rare_pull);
+      pull_rds_rare[j]->add(*pull_rare[j]);
+      pull_comb[j]->setVal(comb_pull);
+      pull_rds_comb[j]->add(*pull_comb[j]);
     }
     if (i == NExp) ws_temp->pdf(pdf_toy_.c_str())->Print();
     delete data;
@@ -125,22 +147,30 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
   }
 
   pdf_toy_ = pdf_toy;
-  fit_pulls();
+  fit_pulls(pull_bs, pull_rds_bs);
+  if (!(SM_ || bd_constr_)) fit_pulls(pull_bd, pull_rds_bd);
+  fit_pulls(pull_rare, pull_rds_rare);
+  fit_pulls(pull_comb, pull_rds_comb);
 
-  for (int j = 0; j < channels; j++) {
-    cout << "channel " << j << "  N_bs mean = " << bs_mean_h[j]->GetMean() << endl;
-    TCanvas* N_mean_c = new TCanvas("N_mean_c", "N_mean_c", 600, 600);
-    bs_mean_h[j]->Draw();
-    ostringstream address;
-    if (!simul_) address << "fig/bs_mean_" << meth_ << "_" << ch_s_ << "_" + pdf_toy;
-    else address << "fig/bs_mean_" << meth_ << "_" << j << "_" + pdf_toy;
-    if (SM_) address << "_SM";
-    if (bd_constr_) address << "_bd_const";
-    if (pee) address << "_pee";
-    N_mean_c->Print((address.str() + ".gif").c_str());
-    N_mean_c->Print((address.str() + ".pdf").c_str());
-    delete N_mean_c;
-  }
+  print_mean(bs_mean_h);
+  print_mean(bd_mean_h);
+  print_mean(rare_mean_h);
+  print_mean(comb_mean_h);
+
+//  for (int j = 0; j < channels; j++) {
+//    cout << "channel " << j << "  N_bs mean = " << bs_mean_h[j]->GetMean() << endl;
+//    TCanvas* N_mean_c = new TCanvas("N_mean_c", "N_mean_c", 600, 600);
+//    bs_mean_h[j]->Draw();
+//    ostringstream address;
+//    if (!simul_) address << "fig/bs_mean_" << meth_ << "_" << ch_s_ << "_" + pdf_toy;
+//    else address << "fig/bs_mean_" << meth_ << "_" << j << "_" + pdf_toy;
+//    if (SM_) address << "_SM";
+//    if (bd_constr_) address << "_bd_const";
+//    if (pee) address << "_pee";
+//    N_mean_c->Print((address.str() + ".gif").c_str());
+//    N_mean_c->Print((address.str() + ".pdf").c_str());
+//    delete N_mean_c;
+//  }
 
   if (!SM_ && bd_b && !simul_) {
     TCanvas* corr_c = new TCanvas("corr_c", "corr_c", 1200, 600);
@@ -189,27 +219,27 @@ RooFitResult* pdf_toyMC::fit_pdf (string pdf, RooAbsData* data, int printlevel, 
     }
   }
   RooFitResult* result;
-  if (!pee) result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, Extended(true), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE));
-  else result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, ConditionalObservables(*ws->var("MassRes")), Extended(true), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE));
+  if (!pee) result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, Extended(true), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE), NumCPU(2));
+  else result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, ConditionalObservables(*ws->var("MassRes")), Extended(true), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE), NumCPU(2));
   return result;
 }
 
-void pdf_toyMC::fit_pulls() {
+void pdf_toyMC::fit_pulls(vector <RooRealVar*> pull,  vector <RooDataSet*> rds) {
   for (int i = 0; i < channels; i++) {
     RooRealVar* mean_bs = new RooRealVar("mean_bs", "mean_bs", -5., 5.);
     RooRealVar* sigma_bs = new RooRealVar("sigma_bs", "sigma_bs", 0.001, 5.);
-    RooGaussian* gauss_bs = new RooGaussian("gauss_bs", "gauss_bs", *pull_bs[i], *mean_bs, *sigma_bs);
-    gauss_bs->fitTo(*pull_rds_bs[i]);
+    RooGaussian* gauss_bs = new RooGaussian("gauss_bs", "gauss_bs", *pull[i], *mean_bs, *sigma_bs);
+    gauss_bs->fitTo(*rds[i]);
   
-    RooPlot *rp_bs = pull_bs[i]->frame();
-    pull_rds_bs[i]->plotOn(rp_bs, Binning(40));
+    RooPlot *rp_bs = pull[i]->frame();
+    rds[i]->plotOn(rp_bs, Binning(40));
     gauss_bs->plotOn(rp_bs, LineColor(kBlue));
     gauss_bs->paramOn(rp_bs, Layout(0.66, 0.9, 0.9));
     TCanvas* canvas_bs = new TCanvas("canvas_bs", "canvas_bs", 600, 600);
     rp_bs->Draw();
     ostringstream address_oss;
-    if (!simul_) address_oss << "fig/bs_pull_" << meth_ << "_" << ch_s_ << "_" << pdf_toy_;
-    else address_oss << "fig/bs_pull_" << meth_ << "_" << i << "_" << pdf_toy_;
+    if (!simul_) address_oss << "fig/" << pull[0]->GetName() << "_" << meth_ << "_" << ch_s_ << "_" << pdf_toy_;
+    else address_oss << "fig/" << pull[0]->GetName() << "_" << meth_ << "_" << i << "_" << pdf_toy_;
     string address = address_oss.str();
     if (SM_) address += "_SM";
     canvas_bs->Print( (address + ".gif").c_str());
@@ -217,6 +247,24 @@ void pdf_toyMC::fit_pulls() {
     delete rp_bs;
     delete canvas_bs;
   }
+}
+
+void pdf_toyMC::print_mean(vector <TH1D*> mean_h) {
+  for (int j = 0; j < channels; j++) {
+    cout << "channel " << j << " " << mean_h[j]->GetName() << " mean = " << mean_h[j]->GetMean() << endl;
+    TCanvas* N_mean_c = new TCanvas("N_mean_c", "N_mean_c", 600, 600);
+    mean_h[j]->Draw();
+    ostringstream address;
+    if (!simul_) address << "fig/" << mean_h[j]->GetName() << "_" << meth_ << "_" << ch_s_ << "_" + pdf_toy_;
+    else address << "fig/"<< mean_h[j]->GetName() << "_" << meth_ << "_simul_" + pdf_toy_;
+    if (SM_) address << "_SM";
+    if (bd_constr_) address << "_bd_const";
+    if (pee) address << "_pee";
+    N_mean_c->Print((address.str() + ".gif").c_str());
+    N_mean_c->Print((address.str() + ".pdf").c_str());
+    delete N_mean_c;
+  }
+
 }
 
 void pdf_toyMC::unset_constant() {
@@ -231,81 +279,90 @@ void pdf_toyMC::unset_constant() {
 
 void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
 
+  for (int i = 0; i < channels; i++) {
+    ws_->var(name("N_bs", i))->setVal(estimate_bs[i]);
+    ws_->var(name("N_rare", i))->setVal(estimate_rare[i]);
+    ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
+    if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i))->setVal(estimate_bd[i]);
+  }
+  if (bd_constr_) {
+    double ratio = (double) estimate_bd[0] / estimate_bs[0]; // it's the same in every channel
+    ws_->var("Bd_over_Bs")->setVal(ratio);
+  }
+
+  pdf_name = "pdf_ext_total";
+  if (pdf_toy != "total") {
+    pdf_name = "pdf_ext_" + define_pdf_sum(pdf_toy);
+  }
+  if (simul_) pdf_name = "pdf_ext_simul";
+
+  RooArgSet obsv(*ws_->var("Mass"), *ws_->var("bdt"), "obsv");
+  if (simul_) obsv.add(*ws_->cat("channels"));
+
+  RooMCStudy * mcstudy;
+  if (!pee) mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv,  Binned(kFALSE), Extended(kTRUE), FitOptions(Save(kTRUE)), Silence());
+  else mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv, ConditionalObservables(*ws_->var("MassRes")), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(PrintLevel(-1), Save(kTRUE), PrintEvalErrors(-1)));
+
+  vector <RooDLLSignificanceMCSModule*> sigModule;
+  sigModule.resize(channels);
+  for (int i = 0; i < channels; i++) {
+    sigModule[i] = new RooDLLSignificanceMCSModule(*ws_->var(name("N_bs", i)), 0);
+    mcstudy->addModule(*sigModule[i]) ;
+  }
+
+  mcstudy->generateAndFit(NExp, 0, kTRUE);
+
+  for (int j = 0; j < 4; j++) {
+    if ((SM_ || bd_constr_) && j == 1) continue;
     for (int i = 0; i < channels; i++) {
-      ws_->var(name("N_bs", i))->setVal(estimate_bs[i]);
-      ws_->var(name("N_rare", i))->setVal(estimate_rare[i]);
-      ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
-      if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i))->setVal(estimate_bd[i]);
+      RooPlot* frame1_bs = mcstudy->plotParam(*ws_->var(name("N_" + source[j], i)), Bins(20)) ;
+      RooPlot* frame2_bs = mcstudy->plotError(*ws_->var(name("N_" + source[j], i)), Bins(20)) ;
+      RooPlot* frame3_bs = mcstudy->plotPull(*ws_->var(name("N_" + source[j], i)), Bins(20), FitGauss(kTRUE)) ;
+      TCanvas* canvas = new TCanvas("canvas", "canvas", 1200, 600) ;
+      canvas->Divide(3,1) ;
+      canvas->cd(1);
+      frame1_bs->Draw();
+      TPaveText* stats = new TPaveText(0.57, 0.66, 0.9, 0.9, "NDCR");
+      ostringstream entries;
+      entries << "entries = " << mcstudy->fitParDataSet().sumEntries();
+      ostringstream mean;
+      mean << "mean = " << mcstudy->fitParDataSet().mean(*ws_->var(name("N_" + source[j], i)));
+      ostringstream sigma;
+      sigma << "sigma = " << mcstudy->fitParDataSet().sigma(*ws_->var(name("N_" + source[j], i)));
+      stats->AddText(entries.str().c_str());
+      stats->AddText(mean.str().c_str());
+      stats->AddText(sigma.str().c_str());
+      stats->Draw();
+      canvas->cd(2);
+      frame2_bs->Draw();
+      canvas->cd(3);
+      frame3_bs->Draw();
+      ostringstream index;
+      index << i;
+      string address = "fig/RooMCStudy_simul_" + source[j] + "_" + index.str() + "_" + meth_;
+      if (SM_) address += "_SM";
+      if (bd_constr_) address += "_bdConstr";
+      canvas->Print((address + ".gif").c_str());
+      canvas->Print((address + ".pdf").c_str());
+      delete frame1_bs;
+      delete frame2_bs;
+      delete frame3_bs;
+      delete canvas;
     }
-    if (bd_constr_) {
-       double ratio = (double) estimate_bd[0] / estimate_bs[0]; // it's the same in every channel
-       ws_->var("Bd_over_Bs")->setVal(ratio);
-     }
+  }
 
-    pdf_name = "pdf_ext_total";
-    if (pdf_toy != "total") {
-      pdf_name = "pdf_ext_" + define_pdf_sum(pdf_toy);
-    }
-    if (simul_) pdf_name = "pdf_ext_simul";
-
-    RooArgSet obsv(*ws_->var("Mass"), *ws_->var("bdt"), "obsv");
-    if (simul_) obsv.add(*ws_->cat("channels"));
-
-    RooMCStudy * mcstudy;
-    if (!pee) mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv,  Binned(kFALSE), Extended(kTRUE), FitOptions(Save(kTRUE)), Silence());
-    else mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv, ConditionalObservables(*ws_->var("MassRes")), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(PrintLevel(-1), Save(kTRUE), PrintEvalErrors(-1)));
-
-    vector <RooDLLSignificanceMCSModule*> sigModule;
-    sigModule.resize(channels);
-    for (int i = 0; i < channels; i++) {
-      sigModule[i] = new RooDLLSignificanceMCSModule(*ws_->var(name("N_bs", i)), 0);
-      mcstudy->addModule(*sigModule[i]) ;
-    }
-
-    mcstudy->generateAndFit(NExp, 0, kTRUE);
-
-    for (int j = 0; j < 4; j++) {
-      if ((SM_ || bd_constr_) && j == 1) continue;
-      for (int i = 0; i < channels; i++) {
-        RooPlot* frame1_bs = mcstudy->plotParam(*ws_->var(name("N_" + source[j], i)), Bins(20)) ;
-        RooPlot* frame2_bs = mcstudy->plotError(*ws_->var(name("N_" + source[j], i)), Bins(20)) ;
-        RooPlot* frame3_bs = mcstudy->plotPull(*ws_->var(name("N_" + source[j], i)), Bins(20), FitGauss(kTRUE)) ;
-        TCanvas* canvas = new TCanvas("canvas", "canvas", 1200, 600) ;
-        canvas->Divide(3,1) ;
-        canvas->cd(1);
-        frame1_bs->Draw();
-        canvas->cd(2);
-        frame2_bs->Draw();
-        canvas->cd(3);
-        frame3_bs->Draw();
-        ostringstream index;
-        index << i;
-        string address = "fig/RooMCStudy_simul_" + source[j] + "_" + index.str() + "_" + meth_;
-        if (SM_) address += "_SM";
-        if (bd_constr_) address += "_bdConstr";
-        canvas->Print((address + ".gif").c_str());
-        canvas->Print((address + ".pdf").c_str());
-        delete frame1_bs;
-        delete frame2_bs;
-        delete frame3_bs;
-        delete canvas;
-      }
-    }
-
-    TCanvas* sig_c = new TCanvas("sig_c", "sig_c", 600*channels, 600);
-    sig_c->Divide(channels);
-    for (int i = 0; i < channels; i++) {
-      sig_c->cd(i+1);
-      TH1* sig_h = mcstudy->fitParDataSet().createHistogram(name("significance_nullhypo_N_bs", i));
-      sig_h->Draw();
-    }
-    string address = "fig/RooMCStudy_simul_sig_bs_" + meth_;
-    if (SM_) address += "_SM";
-    sig_c->Print((address + ".gif").c_str());
-    sig_c->Print((address + ".pdf").c_str());
-    delete sig_c;
-
-  return;
+  TCanvas* sig_c = new TCanvas("sig_c", "sig_c", 600*channels, 600);
+  sig_c->Divide(channels);
+  for (int i = 0; i < channels; i++) {
+    sig_c->cd(i+1);
+    TH1* sig_h = mcstudy->fitParDataSet().createHistogram(name("significance_nullhypo_N_bs", i));
+    sig_h->Draw();
+  }
+  string address = "fig/RooMCStudy_simul_sig_bs_" + meth_;
+  if (SM_) address += "_SM";
+  sig_c->Print((address + ".gif").c_str());
+  sig_c->Print((address + ".pdf").c_str());
+  delete sig_c;
 }
 
 void pdf_toyMC::print(string output, RooWorkspace* ws) {

@@ -37,7 +37,6 @@ public:
   void generate(int NExp, string pdf_toy, string test_pdf = "total");
   void mcstudy(int NExp, string pdf_toy);
   RooFitResult* fit_pdf (string pdf, RooAbsData* data, int printlevel = -1, RooWorkspace *ws = 0);
-  void fit_pulls();
   void unset_constant();
   
   TH1D* pull_h_bs;
@@ -59,6 +58,9 @@ private:
   vector <RooRealVar*> pull_comb;
 
   void print(string output, RooWorkspace* ws);
+
+  void fit_pulls(vector<RooRealVar *> pull, vector<RooDataSet *> rds);
+  void print_mean(vector <TH1D*> mean_h);
 
 };
 
