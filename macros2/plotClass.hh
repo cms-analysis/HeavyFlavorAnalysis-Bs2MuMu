@@ -266,7 +266,7 @@ public:
   bool fInvertedIso;
   bool fNormProcessed; 
 
-  double fBgExp, fBgExpE; 
+  double fBsBgExp, fBsBgExpE, fBdBgExp, fBdBgExpE, fBgExpLo, fBgExpHi;
   double fBgHist, fBgHistE, fBgHistLo, fBgHistHi; 
   double fBgHistExp, fBgHistExpE;
 
