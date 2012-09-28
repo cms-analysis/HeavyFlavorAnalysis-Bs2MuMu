@@ -18,6 +18,14 @@
 #include <RooStats/SamplingDistribution.h>
 #include <RooStats/HypoTestInverterResult.h>
 
+#define kVDEF_ulObs			"default-11:ulObs:val"
+#define kVDEF_ulBkgMed		"default-11:ulBkg:val"
+#define kVDEF_ulBkgErrHi	"default-11:ulBkg:errHi"
+#define kVDEF_ulBkgErrLo	"default-11:ulBkg:errLo"
+#define kVDEF_ulSMMed		"default-11:ulSM:val"
+#define kVDEF_ulSMErrHi		"default-11:ulSM:errHi"
+#define kVDEF_ulSMErrLo		"default-11:ulSM:errLo"
+
 const static double kBFBsmm = 3.2e-9;
 
 using namespace RooStats;
@@ -28,7 +36,7 @@ class clsPlotter {
 	explicit clsPlotter(const char *filename) : fFilename(filename), fResultName("result_mu_s"), fSMBands(false), fDrawLegend(true), fPlotObs(true), fObs(NULL), fMgSM(NULL), fG0SM(NULL), fG1SM(NULL), fG2SM(NULL), fMgBkg(NULL), fG0Bkg(NULL), fG1Bkg(NULL), fG2Bkg(NULL) {}
 		
 		void plot(double cl = 0.95);
-		void print(double cl = 0.95);
+		void print(double cl = 0.95, const char *latexName = NULL);
 	
 	public:
 		void setSMBands(bool smBands) { fSMBands = smBands; }
@@ -92,10 +100,12 @@ HypoTestInverterResult *clsPlotter::loadResult(TFile *file, const char *name)
 		result = (HypoTestInverterResult*)wspace->obj(name);
 	}
 	
+	result->UseCLs(); // We are only working with CLs in this script
+	
 	return result;
 } // loadResult()
 
-void clsPlotter::print(double cl)
+void clsPlotter::print(double cl, const char *latexName)
 {
 	TFile *file = TFile::Open(fFilename.c_str());
 	HypoTestInverterResult *resultBkg = loadResult(file, fResultName.c_str());
@@ -105,6 +115,10 @@ void clsPlotter::print(double cl)
 	vector<pair<double,double> > vals;
 	vector<double> uls;
 	Int_t j;
+	FILE *latexFile = NULL;
+	
+	if (latexName)
+		latexFile = fopen(latexName,"w");
 	
 	resultBkg->UseCLs();
 	resultBkg->SetTestSize(testSize);
@@ -147,6 +161,7 @@ void clsPlotter::print(double cl)
 	
 	cout << "EXP[UL(Bs->mumu)] = " << ul << "+" << smPl-ul << "-" << ul-smMi << endl;
 	
+	if (latexFile) fclose(latexFile);
 	delete file;
 } // print()
 
@@ -426,12 +441,12 @@ void clsPlotter::plot(double cl)
 	leg->Draw();
 } // plot()
 
-void plotResult(const char *file, bool SMExp, bool plotObs = true, double cl = 0.95)
+void plotResult(const char *file, bool SMExp, const char *latexName = NULL, bool plotObs = true, double cl = 0.95)
 {
 	clsPlotter plot(file);
 	
 	plot.setPlotObs(plotObs);
 	plot.setSMBands(SMExp);
 	plot.plot(cl);
-	plot.print();
+	plot.print(cl, latexName);
 } // plotResult()
