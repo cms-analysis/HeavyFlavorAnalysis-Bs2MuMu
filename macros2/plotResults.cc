@@ -86,7 +86,7 @@ void plotResults::makeAll(int channels) {
     fDoApplyCowboyVeto = false;   
     fDoApplyCowboyVetoAlsoInSignal = false;   
     computeNormUL();
-    computeCsBF();
+    //    computeCsBF();
     //acceptancePerProcess();
   }
 
@@ -101,15 +101,98 @@ void plotResults::fitHists(int chan) {
   cout << "open fHistFile: " << hfname << " readonly" << endl;
   fHistFile = new TFile(hfname.c_str());
 
-  string name = Form("hNorm_bdt_15_chan%d", chan);
-  TH1D *h = (TH1D*)fHistFile->Get(name.c_str()); 
+  string name; 
+  TH1D *h(0); 
+
+//   // -- normalization sample 
+//   name = Form("hNorm_bdt_15_chan%d", chan);
+//   h =  (TH1D*)fHistFile->Get(name.c_str()); 
 //   normYield2(h, chan, 5.0); 
-//   cout << "fNoSig = " << fNoSig << "+/-" << fNoSigE << endl;
 
-  name = Form("hNorm_bdt_25_chan%d", chan);
+//   // -- control sample 
+//   name = Form("hNorm_bdt_25_chan%d", chan);
+//   h = (TH1D*)fHistFile->Get(name.c_str()); 
+//   csYield(h, chan, 5.1); 
+
+  // -- dimuon background 
+  name = Form("hMassWithAllCuts_bdt_5_chan%d", chan);
   h = (TH1D*)fHistFile->Get(name.c_str()); 
-  csYield(h, chan, 5.1); 
 
+  cout << "fSgLo: " << fSgLo << " fSgHi: " << fSgHi << endl;
+
+  gStyle->SetOptStat(0); 
+  gStyle->SetOptFit(0); 
+  gStyle->SetOptTitle(0); 
+
+  double xt(0.5), yt(0.8), ydec(0.05); 
+
+  zone(1);
+  bgBlind(h, 0, fBgLo, fBgHi); 
+  cout << "==> mode 0: expected bg = " << fBsBgExp << "+/-" << fBsBgExpE 
+       << " Lo: " << fBgHistLo << "/" << fBgExpLo  
+       << " Hi: " << fBgHistHi << "/" << fBgExpHi 
+       << endl;
+  tl->SetTextSize(0.03);
+  tl->DrawLatex(xt, yt,        Form("expected: %4.2f+/-%4.2f", fBsBgExp, fBsBgExpE)); 
+  tl->DrawLatex(xt, yt-ydec,   Form("Lo (obs/exp): %3.0f/%3.1f", fBgHistLo, fBgExpLo)); 
+  tl->DrawLatex(xt, yt-2.*ydec,Form("Hi (obs/exp): %3.0f/%3.1f", fBgHistHi, fBgExpHi)); 
+  c0->SaveAs(Form("%s/bgestimate-mode0-chan%d.pdf", fDirectory.c_str(), chan)); 
+
+  zone(1);
+  bgBlind(h, 1, fBgLo, fBgHi); 
+  cout << "==> mode 1: expected bg = " << fBsBgExp << "+/-" << fBsBgExpE 
+       << " Lo: " << fBgHistLo << "/" << fBgExpLo  
+       << " Hi: " << fBgHistHi << "/" << fBgExpHi  
+       << endl;
+  tl->DrawLatex(xt, yt,        Form("expected: %4.2f+/-%4.2f", fBsBgExp, fBsBgExpE)); 
+  tl->DrawLatex(xt, yt-ydec,   Form("Lo (obs/exp): %3.0f/%3.1f", fBgHistLo, fBgExpLo)); 
+  tl->DrawLatex(xt, yt-2.*ydec,Form("Hi (obs/exp): %3.0f/%3.1f", fBgHistHi, fBgExpHi)); 
+  c0->SaveAs(Form("%s/bgestimate-mode1-chan%d.pdf", fDirectory.c_str(), chan)); 
+
+  zone(1);
+  bgBlind(h, 2, fBgLo, fBgHi); 
+  cout << "==> mode 2: expected bg = " << fBsBgExp << "+/-" << fBsBgExpE 
+       << " Lo: " << fBgHistLo << "/" << fBgExpLo  
+       << " Hi: " << fBgHistHi << "/" << fBgExpHi  
+       << endl;
+  tl->DrawLatex(xt, yt,        Form("expected: %4.2f+/-%4.2f", fBsBgExp, fBsBgExpE)); 
+  tl->DrawLatex(xt, yt-ydec,   Form("Lo (obs/exp): %3.0f/%3.1f", fBgHistLo, fBgExpLo)); 
+  tl->DrawLatex(xt, yt-2.*ydec,Form("Hi (obs/exp): %3.0f/%3.1f", fBgHistHi, fBgExpHi)); 
+  c0->SaveAs(Form("%s/bgestimate-mode2-chan%d.pdf", fDirectory.c_str(), chan)); 
+
+
+  zone(1);
+  bgBlind(h, 3, fBgLo, fBgHi); 
+  cout << "==> mode 3: expected bg = " << fBsBgExp << "+/-" << fBsBgExpE 
+       << " Lo: " << fBgHistLo << "/" << fBgExpLo  
+       << " Hi: " << fBgHistHi << "/" << fBgExpHi  
+       << endl;
+  tl->DrawLatex(xt, yt,        Form("expected: %4.2f+/-%4.2f", fBsBgExp, fBsBgExpE)); 
+  tl->DrawLatex(xt, yt-ydec,   Form("Lo (obs/exp): %3.0f/%3.1f", fBgHistLo, fBgExpLo)); 
+  tl->DrawLatex(xt, yt-2.*ydec,Form("Hi (obs/exp): %3.0f/%3.1f", fBgHistHi, fBgExpHi)); 
+  c0->SaveAs(Form("%s/bgestimate-mode3-chan%d.pdf", fDirectory.c_str(), chan)); 
+
+  zone(1);
+  bgBlind(h, 4, 5.4, 5.9); 
+  cout << "==> mode 4: expected bg = " << fBsBgExp << "+/-" << fBsBgExpE 
+       << " Lo: " << fBgHistLo << "/" << fBgExpLo  
+       << " Hi: " << fBgHistHi << "/" << fBgExpHi  
+       << endl;
+  tl->DrawLatex(xt, yt,        Form("expected: %4.2f+/-%4.2f", fBsBgExp, fBsBgExpE)); 
+  tl->DrawLatex(xt, yt-ydec,   Form("Lo (obs/exp): %3.0f/%3.1f", fBgHistLo, fBgExpLo)); 
+  tl->DrawLatex(xt, yt-2.*ydec,Form("Hi (obs/exp): %3.0f/%3.1f", fBgHistHi, fBgExpHi)); 
+  c0->SaveAs(Form("%s/bgestimate-mode4-chan%d.pdf", fDirectory.c_str(), chan)); 
+
+  zone(1);
+  bgBlind(h, 5, 5.4, 5.9); 
+  cout << "==> mode 5: expected bg = " << fBsBgExp << "+/-" << fBsBgExpE 
+       << " Lo: " << fBgHistLo << "/" << fBgExpLo  
+       << " Hi: " << fBgHistHi << "/" << fBgExpHi  
+       << endl;
+  tl->DrawLatex(xt, yt,        Form("expected: %4.2f+/-%4.2f", fBsBgExp, fBsBgExpE)); 
+  tl->DrawLatex(xt, yt-ydec,   Form("Lo (obs/exp): %3.0f/%3.1f", fBgHistLo, fBgExpLo)); 
+  tl->DrawLatex(xt, yt-2.*ydec,Form("Hi (obs/exp): %3.0f/%3.1f", fBgHistHi, fBgExpHi)); 
+  c0->SaveAs(Form("%s/bgestimate-mode5-chan%d.pdf", fDirectory.c_str(), chan)); 
 
 }
 
@@ -120,8 +203,8 @@ void plotResults::computeNormUL() {
   cout << "--> Normalization" << endl;
 
   // FIXME
-  fNormProcessed = true; 
-  setupNorm();
+  //   fNormProcessed = true; 
+  //   setupNorm();
 
   if (false == fNormProcessed) {
     fNormProcessed = true; 
@@ -154,7 +237,7 @@ void plotResults::computeNormUL() {
   for (int i = 0; i < 2; ++i) {
     yield = scaledYield(fNumbersBs[i], fNumbersNo[i], fBF["SgMc"], fsfu);
     yield = scaledYield(fNumbersBd[i], fNumbersNo[i], fBF["BdMc"], 1.);
-
+    
     fNumbersBs[i]->bsExpObs = fNumbersBs[i]->bgBsExp + fNumbersBs[i]->bsRare + fNumbersBs[i]->bsNoScaled;
   
     fNumbersBs[i]->bsExpObsE = TMath::Sqrt(fNumbersBs[i]->bgBsExpE*fNumbersBs[i]->bgBsExpE //??
@@ -825,9 +908,9 @@ void plotResults::printUlcalcNumbers(string fname) {
     fTEX << formatTex(fNumbersBs[i]->offLo, Form("%s:N-OBS-OFFLO%d:val", fSuffix.c_str(), i), 0) << endl;
 
     double sb = fNumbersBs[i]->bsNoScaled/(fNumbersBs[i]->bsRare + fNumbersBs[i]->bgBsExp);
-    fTEX << formatTex(sb, Form("%s:N-EXP-SoverB%d:val", fSuffix.c_str(), i), 0) << endl;
-    double ssb = fNumbersBs[i]->bsNoScaled/(fNumbersBs[i]->bsNoScaled + fNumbersBs[i]->bsRare + fNumbersBs[i]->bgBsExp);
-    fTEX << formatTex(sb, Form("%s:N-EXP-SoverSplusB%d:val", fSuffix.c_str(), i), 0) << endl;
+    fTEX << formatTex(sb, Form("%s:N-EXP-SoverB%d:val", fSuffix.c_str(), i), 2) << endl;
+    double ssb = fNumbersBs[i]->bsNoScaled/TMath::Sqrt(fNumbersBs[i]->bsNoScaled + fNumbersBs[i]->bsRare + fNumbersBs[i]->bgBsExp);
+    fTEX << formatTex(ssb, Form("%s:N-EXP-SoverSplusB%d:val", fSuffix.c_str(), i), 2) << endl;
   }
 
   OUT.close();
@@ -953,11 +1036,17 @@ void plotResults::rareBg(std::string mode) {
   TH1D *eRare = (TH1D*)(fhMassWithAllCuts[0]->Clone(Form("eRare_%s", cache.c_str())));  eRare->SetLineColor(kBlack); eRare->Reset();
   TH1D *bRare = (TH1D*)(fhMassWithAllCuts[0]->Clone(Form("bRare_%s", cache.c_str())));  bRare->SetLineColor(kBlack); bRare->Reset();
 
+  TH1D *eslRare = (TH1D*)(fhMassWithAllCuts[0]->Clone(Form("eslRare_%s", cache.c_str()))); eslRare->SetLineColor(kBlack); eslRare->Reset();
+  TH1D *bslRare = (TH1D*)(fhMassWithAllCuts[0]->Clone(Form("bslRare_%s", cache.c_str()))); bslRare->SetLineColor(kBlack); bslRare->Reset();
+
   cache = fSuffix; 
   if (fDoUseBDT) fSuffix = "bdt" + fSuffix; 
 
   THStack *hRareBg0 = new THStack("hRareBg0","");
   THStack *hRareBg1 = new THStack("hRareBg1","");
+
+  THStack *hslRareBg0 = new THStack("hslRareBg0","");
+  THStack *hslRareBg1 = new THStack("hslRareBg1","");
 
   std::map<string, int> colors, hatches;
   std::map<string, double> mscale;  
@@ -1123,47 +1212,29 @@ void plotResults::rareBg(std::string mode) {
       //    the relevant numbers are extracted from the integrals over specific regions
       double yield = scaledYield(fNumbersBla[ichan], fNumbersNo[ichan], fBF[imap->first], pRatio);
 
-      //       cout << "====> efftot: " << tot << "/" << ngenfile << "*" << fFilterEff[imap->first] << " = " << efftot << endl;
-      //       cout << "   misid*trig: " << misid*teff[ichan] << endl;
-
       // -- NB: rareBxE contains the SQUARE of the error
       valInc = fNumbersBla[ichan]->bsRare*misid*teff[ichan];
-      rareBs[ichan]  += valInc;
+      // -- NB2: increment count only for peaking/rare bg. sl is included in 'combinatorial' bg
+      if (string::npos == imap->first.find("Nu")) rareBs[ichan]  += valInc;
+
       error =  valInc*err[imap->first];
-      //      error =  misid*teff[ichan]*err[imap->first]*fNumbersBla[ichan]->bsRare;
-      //       errorInc =  misid*teff[ichan]*misid*teff[ichan]*fNumbersBla[ichan]->bsRareE*fNumbersBla[ichan]->bsRareE + error*error;
-      //       rareBsE[ichan] += errorInc; 
       errorInc = error*error; 
-      rareBsE[ichan] += errorInc; 
-      cout << Form(" ->Bs increment: %7.5f", valInc)   
-	   << " error: " << error << " errorInc: " << errorInc << " err[]: " << err[imap->first]
-	   << endl;
+      if (string::npos == imap->first.find("Nu")) rareBsE[ichan] += errorInc; 
       fTEX <<  Form("\\vdef{%s:%s:bsRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, valInc) << endl;
       fTEX <<  Form("\\vdef{%s:%s:bsRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, error) << endl;
 
-      //       error =  misid*teff[ichan]*err[imap->first]*fNumbersBla[ichan]->bdRare;
-      //       errorInc = misid*teff[ichan]*misid*teff[ichan]*fNumbersBla[ichan]->bdRareE*fNumbersBla[ichan]->bdRareE + error*error;
       valInc = fNumbersBla[ichan]->bdRare*misid*teff[ichan];
-      rareBd[ichan]  += valInc;
+      if (string::npos == imap->first.find("Nu")) rareBd[ichan]  += valInc;
+
       error = valInc*err[imap->first];
       errorInc = error*error;
-      cout << Form(" ->Bd increment: %7.5f", valInc)
-	   << " error: " << error << " errorInc: " << errorInc << " err[]: " << err[imap->first]
-	   << endl;
-      rareBdE[ichan] += errorInc; 
+      if (string::npos == imap->first.find("Nu"))  rareBdE[ichan] += errorInc; 
       fTEX <<  Form("\\vdef{%s:%s:bdRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, valInc) << endl;
       fTEX <<  Form("\\vdef{%s:%s:bdRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, error) << endl;
 
       hRare[ichan]->SetFillColor(colors[imap->first]);
       hRare[ichan]->SetFillStyle(1000);
       hRare[ichan]->Scale(yield*misid*teff[ichan]/tot);
-      //       cout << "histogram hRareX"
-      // 	   << " total (b/w8): " << tot
-      // 	   << " total (a/w8): " << hRare[ichan]->Integral(0, hRare[ichan]->GetNbinsX()+1)
-      // 	   << " 4.9 - 6.0:    " << hRare[ichan]->Integral(hRare[ichan]->FindBin(4.9001), hRare[ichan]->GetNbinsX()+1)
-      // 	   << endl;
-      //       cout << "yield:      " << yield << endl;
-      //       cout << "misid*teff: " << misid*teff[ichan] << endl;
 
       double loSb = hRare[ichan]->Integral(hRare[ichan]->FindBin(4.9001), hRare[ichan]->FindBin(5.199));
       fTEX <<  Form("\\vdef{%s:%s:loSideband%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), imap->first.c_str(), ichan, 
@@ -1172,10 +1243,22 @@ void plotResults::rareBg(std::string mode) {
 		    loSb*0.3) << endl;
     }
 
-    bRare->Add(hRare[0]); 
-    eRare->Add(hRare[1]); 
+    if (string::npos != imap->first.find("Nu")) {
+      bslRare->Add(hRare[0]); 
+      eslRare->Add(hRare[1]); 
 
-    legg->AddEntry(hRare[0], fName[imap->first].c_str(), "f"); 
+      hslRareBg0->Add(hRare[0]); 
+      hslRareBg1->Add(hRare[1]); 
+    } else {
+      bRare->Add(hRare[0]); 
+      eRare->Add(hRare[1]); 
+
+      hRareBg0->Add(hRare[0]); 
+      hRareBg1->Add(hRare[1]); 
+
+      legg->AddEntry(hRare[0], fName[imap->first].c_str(), "f"); 
+    }
+
     c0->cd(1); 
     hRare[0]->Draw();
     tl->DrawLatex(0.5, 0.92, imap->first.c_str());
@@ -1184,9 +1267,6 @@ void plotResults::rareBg(std::string mode) {
     c0->Modified();
     c0->Update();
 
-    hRareBg0->Add(hRare[0]); 
-    hRareBg1->Add(hRare[1]); 
-    
   }
 
   c0->Clear();
@@ -1256,17 +1336,6 @@ void plotResults::rareBg(std::string mode) {
     fNumbersBs[i]->offHiRareE= relErr*fNumbersBs[i]->offHiRare; 
   }
 
-  //   fNumbersBs[1]->bsRare = rareBs[1]; 
-  //   fNumbersBs[1]->bsRareE= rareBsE[1]; 
-  //   fNumbersBs[1]->bdRare = rareBd[1]; 
-  //   fNumbersBs[1]->bdRareE= rareBdE[1]; 
-  //   relErr = (fNumbersBs[1]->bdRareE/fNumbersBs[1]->bdRare); 
-  
-  //   fNumbersBs[1]->offLoRare = eRare->Integral(eRare->FindBin(4.9001), eRare->FindBin(5.199));
-  //   fNumbersBs[1]->offLoRareE= relErr*fNumbersBs[1]->offLoRare; 
-  //   fNumbersBs[1]->offHiRare = eRare->Integral(eRare->FindBin(5.451), eRare->FindBin(5.899));
-  //   fNumbersBs[1]->offHiRareE= relErr*fNumbersBs[1]->offHiRare; 
-
   fTEX << "% ----------------------------------------------------------------------" << endl;
   fTEX << "% --- rare Background summary numbers" << endl;  
   fTEX <<  Form("\\vdef{%s:bsRare0}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), rareBs[0]) << endl;
@@ -1284,6 +1353,10 @@ void plotResults::rareBg(std::string mode) {
   bRare->Write(); 
   eRare->SetDirectory(gDirectory);
   eRare->Write(); 
+  bslRare->SetDirectory(gDirectory);
+  bslRare->Write(); 
+  eslRare->SetDirectory(gDirectory);
+  eslRare->Write(); 
   pD->cd();
 
   fSuffix = cache; 

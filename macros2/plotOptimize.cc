@@ -93,10 +93,10 @@ void plotOptimize::optimizeULs(int nruns, int seed) {
 	double signal  = fNumbersBs[ichan]->anaWmcYield*lscale;
 	fBgHistExp     = fNumbersBs[ichan]->bgObs*mFactor;
 	
-	fBgExp = fBgHistExp;
-	fBgExpE = 0.2*fBgExp;
-	nobs = static_cast<int>(fBgExp + 0.5 + signal); 
-	double nulbayes  = blimit(0.95, nobs, 1.0, 0.2, fBgExp, fBgExpE, 1);
+	fBsBgExp = fBgHistExp;
+	fBsBgExpE = 0.2*fBsBgExp;
+	nobs = static_cast<int>(fBsBgExp + 0.5 + signal); 
+	double nulbayes  = blimit(0.95, nobs, 1.0, 0.2, fBsBgExp, fBsBgExpE, 1);
 	double effTot = fNumbersBs[ichan]->effTot*fNumbersBs[0]->pss;
 	double ulbayes  = nulbayes/(effTot*nbs);
 	cout << "==> effTot:     " << effTot << " chan=" << ichan << " version=" << version << endl;
@@ -168,10 +168,10 @@ void plotOptimize::optimizeBdtULs(double minBdt, double maxBdt) {
 	double signal  = fNumbersBs[ichan]->anaWmcYield*lscale;
 	fBgHistExp     = fNumbersBs[ichan]->bgObs*mFactor;
 	
-	fBgExp = fBgHistExp;
-	fBgExpE = 0.2*fBgExp;
-	nobs = static_cast<int>(fBgExp + 0.5 + signal); 
-	double nulbayes  = blimit(0.95, nobs, 1.0, 0.2, fBgExp, fBgExpE, 1);
+	fBsBgExp = fBgHistExp;
+	fBsBgExpE = 0.2*fBsBgExp;
+	nobs = static_cast<int>(fBsBgExp + 0.5 + signal); 
+	double nulbayes  = blimit(0.95, nobs, 1.0, 0.2, fBsBgExp, fBsBgExpE, 1);
 	double effTot = fNumbersBs[ichan]->effTot*fNumbersBs[0]->pss;
 	double ulbayes  = nulbayes/(effTot*nbs);
 	cout << "==> effTot:     " << effTot << " chan=" << ichan << " version=" << version << endl;

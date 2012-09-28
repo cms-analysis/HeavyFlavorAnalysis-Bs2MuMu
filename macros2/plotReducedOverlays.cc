@@ -138,8 +138,9 @@ void plotReducedOverlays::makeSample(string mode, string selection) {
 
   // -- dump histograms
   string hfname  = fDirectory + "/anaBmm.plotReducedOverlays." + fSuffix + ".root";
-  cout << "fHistFile: " << hfname << endl;
+  cout << "fHistFile: " << hfname;
   fHistFile = TFile::Open(hfname.c_str(), "UPDATE");
+  cout << " opened " << endl;
 
   fSample = mode;
 
@@ -203,9 +204,10 @@ void plotReducedOverlays::makeSample(string mode, string selection) {
 // ----------------------------------------------------------------------
 void plotReducedOverlays::bookDistributions(string mode) {
 
-  //  fHistFile->cd();
+  //fHistFile->cd();
   string name = Form("%s_%s_", fSetup.c_str(), mode.c_str());
 
+  cout << "bla " << endl;
   fpMuon1Pt[fOffset]   = bookDistribution(Form("%smuon1pt", name.c_str()), "p_{T, #mu1} [GeV]", "fGoodMuonsPt", 60, 0., 30.); 
   fpMuon2Pt[fOffset]   = bookDistribution(Form("%smuon2pt", name.c_str()), "p_{T, #mu2} [GeV]", "fGoodMuonsPt", 40, 0., 20.); 
   fpMuonsEta[fOffset]  = bookDistribution(Form("%smuonseta", name.c_str()), "#eta_{#mu}", "fGoodMuonsEta", 40, -2.5, 2.5); 

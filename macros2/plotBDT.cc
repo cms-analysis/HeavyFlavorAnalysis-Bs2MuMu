@@ -142,8 +142,8 @@ void plotBDT::makeAll(int channels) {
     plotSSB();
     cout << "--> bdtDependencies(\"SgData\")" << endl;
     bdtDependencies("SgData");
-    cout << "--> bdtDependencies(\"SgMcPU\")" << endl;
-    bdtDependencies("SgMcPU");
+//     cout << "--> bdtDependencies(\"SgMcPU\")" << endl;
+//     bdtDependencies("SgMcPU");
 
     hackedMC(0); 
     hackedMC(1); 
@@ -742,7 +742,7 @@ void plotBDT::validateDistributions(int channel, const char *type, int classID) 
   string fname1 = Form("weights/TMVA-%d-Events1.root", channel);
   string fname2 = Form("weights/TMVA-%d-Events2.root", channel);
 
-  string sname  = Form("tmva-%d-%s-%s", channel, type, (classID == 0?"sg":"bg")); 
+  string sname  = Form("%s-%s-%s", fCuts[channel]->xmlFile.c_str(), type, (classID == 0?"sg":"bg")); 
 
   TFile *fEvt0 = TFile::Open(fname0.c_str()); 
   TFile *fEvt1 = TFile::Open(fname1.c_str()); 
@@ -851,8 +851,7 @@ void plotBDT::validateDistributions(int channel, const char *type, int classID) 
     tl->DrawLatex(0.15, 0.92, Form("mean = %4.3f", sgKS->GetMean())); 
     tl->DrawLatex(0.60, 0.92, Form("RMS = %4.3f",  sgKS->GetRMS())); 
     
-    c0->SaveAs(Form("%s/ks-%s-sg-probs.pdf", 
-		    fDirectory.c_str(), fCuts[channel]->xmlFile.c_str())); 
+    c0->SaveAs(Form("%s/ks-%s-sg-probs.pdf", fDirectory.c_str(), sname.c_str())); 
   }
 
   if (1 == classID) {
@@ -1590,7 +1589,7 @@ void plotBDT::hackedMC(int chan) {
   tl->SetTextColor(kBlack);  
   tl->DrawLatex(0.25, 0.92, Form("#chi^{2}/dof = %3.1f/%d", chi2, ndof)); 
 
-  c0->SaveAs(Form("%s/hackedMC-bdt-for-shiftedSignalMC-%s.pdf", fDirectory.c_str(), fitstring.c_str()));
+  c0->SaveAs(Form("%s/hackedMC-bdt-for-shiftedSignalMC-%s-chan%d.pdf", fDirectory.c_str(), fitstring.c_str(), chan));
 
 
   // ----------------------------------------------------------------------
@@ -1652,7 +1651,7 @@ void plotBDT::hackedMC(int chan) {
     pdfname = "bs"; 
     if (1 == i) pdfname = "bx"; 
     if (2 == i) pdfname = "by"; 
-    c1->SaveAs(Form("%s/hackedMC-massratio-%s.pdf", fDirectory.c_str(), pdfname.c_str()));
+    c1->SaveAs(Form("%s/hackedMC-massratio-%s-chan%d.pdf", fDirectory.c_str(), pdfname.c_str(), chan));
   }
 
 
@@ -1683,7 +1682,7 @@ void plotBDT::hackedMC(int chan) {
   legg->AddEntry(fhMcBDT5[4], "B^{+} #rightarrow J/#psi K", "f"); 
   legg->Draw();
 
-  c0->SaveAs(Form("%s/hackedMC-bdt-overlays-%d.pdf", fDirectory.c_str(), fChan));
+  c0->SaveAs(Form("%s/hackedMC-bdt-overlays-chan%d.pdf", fDirectory.c_str(), chan));
 
 }
 

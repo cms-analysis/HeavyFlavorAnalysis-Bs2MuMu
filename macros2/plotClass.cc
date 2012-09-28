@@ -3,7 +3,6 @@
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/functions.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
 #include "../interface/HFMasses.hh"
-#include "../macros/AnalysisDistribution.hh"
 
 #include "TF1.h"
 #include "THStack.h"
@@ -81,7 +80,7 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
 
   fFiles = files; 
 
-  TVirtualFitter::SetMaxIterations(50000);
+  TVirtualFitter::SetMaxIterations(20000);
 
   delete gRandom;
   gRandom = (TRandom*) new TRandom3;
@@ -540,6 +539,14 @@ void plotClass::loopTree(int mode, int proc) {
     cout << "=============================================================" << endl;
   }
 
+  if (0) {
+    if (10 == mode) nentries = 200000;
+    if (15 == mode) nentries = 1000000;
+    if (0 == mode) nentries = 200000;
+  }
+
+  cout << "loopTree:  mode = " << mode << " nentries = " << nentries << endl;
+  
   for (int jentry = 0; jentry < nentries; jentry++) {
     nb = t->GetEntry(jentry);
     // -- require truth matching when on MC
@@ -911,7 +918,7 @@ void plotClass::loopTree(int mode, int proc) {
   } else {
     tname = smode; 
   }
-  TFile *fLocal = TFile::Open(Form("small-%s.root", tname.c_str()), "RECREATE"); 
+  TFile *fLocal = TFile::Open(Form("%s/small-%s.root", fDirectory.c_str(), tname.c_str()), "RECREATE"); 
   reduceTree(t);
 
   TTree *small = t->CopyTree(""); 
@@ -944,8 +951,6 @@ void plotClass::loopTree(int mode, int proc) {
   }
 
 
-  //   c0->Clear();
-  //   c0->Divide(1,2);
   for (unsigned int i = 0; i < fNchan; ++i) {
     fChan = i; 
     //     c0->cd(i+1);
@@ -1135,28 +1140,50 @@ void plotClass::loopTree(int mode, int proc) {
     } else if (5 == mode) {
       cout << "----------------------------------------------------------------------" << endl;
       cout << "==> loopTree: DATA SIGNAL, channel " << i  << endl;
-      bgBlind(fhMassWithAllCutsBlind[i], 1, fBgLo, fBgHi);
+      if (0)  bgBlind(fhMassWithAllCutsBlind[i], 1, fBgLo, fBgHi);
+      if (1)  {
+	bgBlind(fhMassWithAllCutsBlind[i], 5, 5.4, 5.9);
+	c0->SaveAs(Form("%s/bgestimate-mode5-chan%d.pdf", fDirectory.c_str(), i)); 
+      }
+
       cout << "fBgHist = " << fBgHist << "+/-" << fBgHistE 
 	   << " lo: " << fBgHistLo << " hi: " << fBgHistHi 
 	   << endl;
       aa->bgObs = fBgHist;
       aa->offLo = fBgHistLo;
       aa->offHi = fBgHistHi;
-      double blind = fSgHi - fSgLo; 
-      double scaleBs = (aa->mBsHi-aa->mBsLo)/(fBgHi-fBgLo-blind);
-      double scaleBd = (aa->mBdHi-aa->mBdLo)/(fBgHi-fBgLo-blind);
-      aa->tauBs    = scaleBs; 
-      aa->tauBsE   = 0.04*scaleBs; 
-      aa->tauBd    = scaleBd; 
-      aa->tauBdE   = 0.04*scaleBd; 
-      cout << "CCCCCCCCCCCC  " << scaleBs << " " << aa->tauBs << "+/-" << aa->tauBsE << endl;
-      double combBg  = aa->bgObs - aa->offLoRare - aa->offHiRare;
-      double combBgE = 0.2*0.2*(aa->offLoRare + aa->offHiRare)*(aa->offLoRare + aa->offHiRare)  + aa->bgObs;
-      combBgE        = TMath::Sqrt(combBgE);
-      aa->bgBsExp    = scaleBs*combBg;
-      aa->bgBsExpE   = scaleBs*combBgE;
-      aa->bgBdExp    = scaleBd*combBg;
-      aa->bgBdExpE   = scaleBd*combBgE;
+
+      // -- old way 
+      if (0) {
+	double blind = fSgHi - fSgLo; 
+	double scaleBs = (aa->mBsHi-aa->mBsLo)/(fBgHi-fBgLo-blind);
+	double scaleBd = (aa->mBdHi-aa->mBdLo)/(fBgHi-fBgLo-blind);
+	aa->tauBs    = scaleBs; 
+	aa->tauBsE   = 0.04*scaleBs; 
+	aa->tauBd    = scaleBd; 
+	aa->tauBdE   = 0.04*scaleBd; 
+	cout << "CCCCCCCCCCCC  " << scaleBs << " " << aa->tauBs << "+/-" << aa->tauBsE << endl;
+	double combBg  = aa->bgObs - aa->offLoRare - aa->offHiRare;
+	double combBgE = 0.2*0.2*(aa->offLoRare + aa->offHiRare)*(aa->offLoRare + aa->offHiRare)  + aa->bgObs;
+	combBgE        = TMath::Sqrt(combBgE);
+	aa->bgBsExp    = scaleBs*combBg;
+	aa->bgBsExpE   = scaleBs*combBgE;
+	aa->bgBdExp    = scaleBd*combBg;
+	aa->bgBdExpE   = scaleBd*combBgE;
+      } 
+
+      // -- new method
+      if (1) {
+	aa->tauBs    = fBsBgExp/(fBgExpLo+fBgExpHi); 
+	aa->tauBsE   = 0.1*aa->tauBs; 
+	aa->tauBd    = fBdBgExp/(fBgExpLo+fBgExpHi); 
+	aa->tauBdE   = 0.1*aa->tauBd; 
+	
+	aa->bgBsExp  = fBsBgExp;
+	aa->bgBsExpE = fBsBgExpE;
+	aa->bgBdExp  = fBdBgExp;
+	aa->bgBdExpE = fBdBgExpE;
+      }
 
       double cnt = fhMassWithAllCuts[i]->Integral(fhMassWithAllCuts[i]->FindBin(aa->mBsLo), 
 						  fhMassWithAllCuts[i]->FindBin(aa->mBsHi));
@@ -1276,8 +1303,8 @@ void plotClass::loopTree(int mode, int proc) {
       TH1D *h = fhNorm[i];
       //      normYield(h, 0, 4.9, 5.9, 5.145);
 
-      //normYield(h, fChan, 5.0);
-      normYield2(h, fChan, 5.0);   // Includes the landau for Bu2JpsiPi
+      normYield(h, fChan, 5.0);
+      //      normYield2(h, fChan, 5.0);   // Includes the landau for Bu2JpsiPi
 
       aa->fitYield  = fNoSig; 
       aa->fitYieldE = fNoSigE; 
@@ -2479,17 +2506,22 @@ void plotClass::dumpSamples() {
 
 // ----------------------------------------------------------------------
 void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
+  double eps(0.00001); 
   
   if (0 == h) { 
     cout << "plotClass::bgBlind(...): No histogram passed! mode = " << mode << endl;
     return;
   }
   
-  TF1 *lF1(0);
+  TF1 *lF1(0), *lF2(0);
 
   double histCount = h->Integral(h->FindBin(fBgLo+0.0001), h->FindBin(fBgHi-0.0001)); 
   cout << "bgBlind: histCount = " << histCount 
-       << " starting at " << h->FindBin(fBgLo+0.0001) << " to " << h->FindBin(fBgHi-0.0001) << endl;
+       << " starting at " << fBgLo+0.0001 << " bin(" << h->FindBin(fBgLo+0.0001) << ")"
+       << " to " << fBgHi-0.0001 << " bin(" << h->FindBin(fBgHi-0.0001) << ")" 
+       << " mode: " << mode 
+       << endl;
+
   fBgHist  = histCount; 
   fBgHistE  = TMath::Sqrt(histCount); 
   double delta = fSgHi-fSgLo; 
@@ -2499,32 +2531,139 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
   if (histCount > 0) {
     fBgHistE = TMath::Sqrt(histCount)/histCount*fBgHist;
   } else {
-    fBgHistE = 0.2; // FIXME?!
-    fBgExp = 0.;
-    fBgExpE = 0.2; 
+    fBgHistE  = 0.2; // FIXME?!
+    fBsBgExp  = 0.;
+    fBsBgExpE = 0.2; 
+    fBdBgExp  = 0.;
+    fBdBgExpE = 0.2; 
     return;
   }
+
+  double blind = fSgHi - fSgLo; 
+  double scaleBs = (5.45-5.30)/(fBgHi-fBgLo-blind);
+  double scaleBd = (5.30-5.20)/(fBgHi-fBgLo-blind);
 
   if (0 == mode) {
-    fBgExp = fBgHist;
-    fBgExpE = fBgHistE;
+    fBsBgExp = fBgHist*scaleBs;
+    fBsBgExpE = fBgHistE*scaleBs;
+    fBdBgExp = fBgHist*scaleBs;
+    fBdBgExpE = fBgHistE*scaleBs;
+    h->DrawCopy();
     return;
-  }
-  else if (1 == mode) { 
-    //    lF1 = fpFunc->pol0(h); 
+  } else if (1 == mode) { 
     lF1 = fpFunc->pol0BsBlind(h); 
+    lF2 = fpFunc->pol0(h); 
   } else if (2 == mode) {
     lF1 = fpFunc->pol1BsBlind(h); 
+    lF2 = fpFunc->pol1(h); 
+  } else if (3 == mode) {
+    lF1 = fpFunc->expoBsBlind(h); 
+    lF2 = fpFunc->expo(h); 
+  } else if (4 == mode) {
+    fpFunc->fLo = 5.4;
+    fpFunc->fHi = 5.9;
+    lF1 = fpFunc->pol0BsBlind(h); 
+    lF2 = fpFunc->pol0(h); 
+  } else if (5 == mode) {
+    fpFunc->fLo = 5.4;
+    fpFunc->fHi = 5.9;
+    lF1 = fpFunc->pol0BsBlind(h); 
+    lF2 = fpFunc->pol0(h); 
   }
   
-  //  setErrors(h);
-  h->Fit(lF1, "lr", "", lo, hi); 
+  lF2->SetLineStyle(kDashed);
+  h->Fit(lF1, "rl", "", lo, hi); 
+  cout << "hallo 1" << endl;
+  h->DrawCopy();
+  cout << "hallo 2" << endl;
+  lF2->SetParameters(lF1->GetParameters());
+  lF2->SetLineColor(kBlue);
+  cout << "hallo 3" << endl;
+  lF2->Draw("same");
+  cout << "hallo 4" << endl;
 
-  double c  = h->GetFunction("f1")->GetParameter(0); 
-  double cE = h->GetFunction("f1")->GetParError(0); 
-  fBgExp  = c * (fSgHi - fSgLo)/h->GetBinWidth(1);
-  fBgExpE = cE/c*fBgExp; 
-  cout << "bgBlind: c = " << c << " sig width = " << (fSgHi - fSgLo) << endl;
+  fBsBgExp  = lF2->Integral(5.30, 5.45)/h->GetBinWidth(1); 
+  fBdBgExp  = lF2->Integral(5.20, 5.30)/h->GetBinWidth(1); 
+  fBgExpLo  = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1); 
+  fBgExpHi  = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
+  fBsBgExpE = fBsBgExp*(fBgHistE/fBgHist);
+  fBdBgExpE = fBdBgExp*(fBgHistE/fBgHist);
+
+  if (4 == mode) {
+    string dname = h->GetName();
+    string rname; 
+    if (string::npos != dname.find("chan0")) {
+      rname = "bslRare_bdt";
+    } else {
+      rname = "eslRare_bdt";
+    }
+    TH1D *hr = (TH1D*)fHistFile->Get(rname.c_str()); 
+    hr = (TH1D*)(hr->Clone(Form("%s-mode4", rname.c_str())));
+    setFilledHist(hr, kBlue, kBlue, 3344);
+    hr->DrawCopy("same");
+    
+    // -- build up total bg
+    fBsBgExp   = lF2->Integral(5.30, 5.45)/h->GetBinWidth(1); 
+    fBdBgExp   = lF2->Integral(5.20, 5.30)/h->GetBinWidth(1); 
+    fBgExpLo   = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1); 
+    fBgExpHi   = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
+    cout << "flat combinatorial Expectations Lo: " << fBgExpLo << " Bs: " << fBsBgExp << " Hi: " << fBgExpHi << endl;
+    
+    fBsBgExp  += hr->Integral(hr->FindBin(5.30+eps), hr->FindBin(5.45-eps)); 
+    fBdBgExp  += hr->Integral(hr->FindBin(5.20+eps), hr->FindBin(5.30-eps)); 
+    fBgExpLo  += hr->Integral(hr->FindBin(4.90+eps), hr->FindBin(5.20-eps)); 
+    fBgExpHi  += hr->Integral(hr->FindBin(5.45+eps), hr->FindBin(5.90-eps)); 
+    cout << "+ rare bg Expectations Lo:          " << fBgExpLo << " Bs: " << fBsBgExp << " Hi: " << fBgExpHi << endl;
+  }
+
+
+  if (5 == mode) {
+    cout << "hallo 5" << endl;
+    string dname = h->GetName();
+    string rname; 
+    if (string::npos != dname.find("chan0")) {
+      rname = "bslRare_bdt";
+    } else {
+      rname = "eslRare_bdt";
+    }
+    cout << "hallo 6" << endl;
+    TH1D *hr = (TH1D*)fHistFile->Get(rname.c_str()); 
+    cout << "rare bg histogram: " << rname << " at: " << hr << endl;
+    hr = (TH1D*)(hr->Clone(Form("%s-mode5", rname.c_str())));
+
+    double rareBgLo    = hr->Integral(hr->FindBin(4.90+eps), hr->FindBin(5.20-eps));
+    double flatCombLo  = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1);
+    double scaleRareBg = (fBgHistLo-flatCombLo)/rareBgLo; 
+
+    hr->Scale(scaleRareBg); 
+    setFilledHist(hr, kBlue, kBlue, 3344);
+    hr->DrawCopy("same");
+
+    // -- build up total bg
+    fBsBgExp = lF2->Integral(5.30, 5.45)/h->GetBinWidth(1); 
+    fBdBgExp = lF2->Integral(5.20, 5.30)/h->GetBinWidth(1); 
+    fBgExpLo = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1); 
+    fBgExpHi = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
+    cout << "flat combinatorial Expectations Lo: " << fBgExpLo << " Bs: " << fBsBgExp << " Hi: " << fBgExpHi << endl;
+    
+    fBsBgExp += hr->Integral(hr->FindBin(5.30+eps), hr->FindBin(5.45-eps)); 
+    fBdBgExp += hr->Integral(hr->FindBin(5.20+eps), hr->FindBin(5.30-eps)); 
+    fBgExpLo += hr->Integral(hr->FindBin(4.90+eps), hr->FindBin(5.20-eps)); 
+    fBgExpHi += hr->Integral(hr->FindBin(5.45+eps), hr->FindBin(5.90-eps)); 
+    cout << "+ scaled rare bg Expectations Lo:   " << fBgExpLo << " Bs: " << fBsBgExp << " Hi: " << fBgExpHi << endl;
+
+    fBsBgExpE = 0.2*fBsBgExp;
+    fBdBgExpE = 0.2*fBdBgExp;
+  }
+
+
+
+
+//   double c  = h->GetFunction("f1")->GetParameter(0); 
+//   double cE = h->GetFunction("f1")->GetParError(0); 
+//   fBgExp  = c * (fSgHi - fSgLo)/h->GetBinWidth(1);
+//   fBgExpE = cE/c*fBgExp; 
+
 }
 
 
@@ -2674,7 +2813,8 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
     lF1->SetNpx(100000);
     lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
   }
-  h->Fit(lF1, "rem", "", lo, hi); 
+  //  h->Fit(lF1, "rem", "", lo, hi); 
+  h->Fit(lF1, "r", "", lo, hi); 
 
   if (0 == mode) {
     cout << "par i = "; 
