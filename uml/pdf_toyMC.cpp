@@ -86,6 +86,11 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
       if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setVal((int)estimate_bd[j]);
       ws_temp->var(name("N_rare", j))->setVal((int)estimate_rare[j]);
       ws_temp->var(name("N_comb", j))->setVal((int)estimate_comb[j]);
+
+      ws_temp->var(name("N_bs", j))->setConstant(kFALSE);
+      if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setConstant(kFALSE);
+      ws_temp->var(name("N_rare", j))->setConstant(kFALSE);
+      ws_temp->var(name("N_comb", j))->setConstant(kFALSE);
     }
     if (channels == 1) {
       if (pdf_toy_ == "total") {
@@ -106,10 +111,6 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
     }
     //////
     RFR = pdf_toyMC::fit_pdf(pdf_test_, data, printlevel, ws_temp);
-    if (sign == 0) {
-      sign_h->Fill(sig_hand(data, printlevel, ws_temp));
-    }
-
     //////
     pdf_name = pdf_toy_;
     rds_ = data;
@@ -148,6 +149,11 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
       pull_rds_comb[j]->add(*pull_comb[j]);
     }
     if (i == NExp) ws_temp->pdf(pdf_toy_.c_str())->Print();
+
+    if (sign == 0) {
+      sign_h->Fill(sig_hand(data, printlevel, ws_temp));
+    }
+
     delete data;
     delete RFR;
   }
@@ -163,7 +169,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
   print_mean(rare_mean_h);
   print_mean(comb_mean_h);
 
-  if (!SM_ && bd_b && !simul_) {
+  if (!SM_ && bd_b && !simul_ && false) {
     TCanvas* corr_c = new TCanvas("corr_c", "corr_c", 1200, 600);
     corr_c->Divide(2);
     corr_c->cd(1);
@@ -178,7 +184,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
 
   if (sign == 0) {
     TCanvas* sign_c = new TCanvas("sign_c", "sign_c", 600, 600);
-    sign_h->Draw();
+    sign_h->Draw("e");
     ostringstream address_oss;
     if (!simul_) address_oss << "fig/sign_" << meth_ << "_" << ch_s_ << "_" << pdf_toy_;
     else address_oss << "fig/sign" << meth_ << "_simul_" << pdf_toy_;
