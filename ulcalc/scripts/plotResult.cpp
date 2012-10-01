@@ -26,7 +26,7 @@
 #define kVDEF_ulSMErrHi		"default-11:ulSM:errHi"
 #define kVDEF_ulSMErrLo		"default-11:ulSM:errLo"
 
-const static double kBFBsmm = 3.2e-9;
+const static float kBFBsmm = 3.2e-9;
 
 using namespace RooStats;
 
@@ -109,23 +109,23 @@ void clsPlotter::print(double cl, const char *latexName)
 {
 	TFile *file = TFile::Open(fFilename.c_str());
 	HypoTestInverterResult *resultBkg = loadResult(file, fResultName.c_str());
-	double ul,x,y;
-	double smPl,smMi;
+	double ul, smPl,smMi;
+	double x,y;
 	double testSize = 1.0 - cl;
 	vector<pair<double,double> > vals;
 	vector<double> uls;
 	Int_t j;
 	FILE *latexFile = NULL;
 	
-	if (latexName)
-		latexFile = fopen(latexName,"w");
+	if (latexName) latexFile = fopen(latexName,"w");
 	
 	resultBkg->UseCLs();
 	resultBkg->SetTestSize(testSize);
 	
 	ul = resultBkg->UpperLimit();
-	
 	cout << "UL(Bs -> mumu) = " << ul*kBFBsmm << "\t(" << ul << ") @ " << (int)(cl*100.) << " % CL" << endl;
+	ul *= kBFBsmm;
+	if(latexFile) fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", kVDEF_ulObs, ul);
 	
 	makeObs();
 	vals.clear();
@@ -159,7 +159,47 @@ void clsPlotter::print(double cl, const char *latexName)
 	}
 	smMi = ulFromPoints(testSize,&vals);
 	
-	cout << "EXP[UL(Bs->mumu)] = " << ul << "+" << smPl-ul << "-" << ul-smMi << endl;
+	cout << "EXP_SM[UL(Bs->mumu)] = " << ul*kBFBsmm << "+" << (smPl-ul)*kBFBsmm << "-" << (ul-smMi)*kBFBsmm << "\t(" << ul << "+" << smPl-ul << "-" << (ul-smMi) << ")" << endl;
+	if (latexFile) {
+		smPl = smPl - ul; smMi = ul - smMi;
+		ul *= kBFBsmm; smPl *= kBFBsmm; smMi *= kBFBsmm;
+		fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", kVDEF_ulSMMed, ul);
+		fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", kVDEF_ulSMErrHi, smPl);
+		fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", kVDEF_ulSMErrLo, smMi);
+	}
+	
+	// compute bkg expectation
+	makeBkgBands();
+	vals.clear();
+	for(j = 0; j < fG0Bkg->GetN(); j++) {
+		if (fG0Bkg->GetPoint(j,x,y) >= 0) {
+			vals.push_back(make_pair(x, y));
+		}
+	}
+	ul = ulFromPoints(testSize,&vals);
+	
+	vals.clear();
+	for(j = 0; j < fG1Bkg->GetN(); j++) {
+		if (fG1Bkg->GetPoint(j,x,y) >= 0)
+			vals.push_back(make_pair(x, y + fG1Bkg->GetErrorYhigh(j)));
+	}
+	smPl = ulFromPoints(testSize,&vals);
+	
+	vals.clear();
+	for(j = 0; j < fG1Bkg->GetN(); j++) {
+		if (fG1Bkg->GetPoint(j,x,y) >= 0)
+			vals.push_back(make_pair(x,y - fG1Bkg->GetErrorYlow(j)));
+	}
+	smMi = ulFromPoints(testSize,&vals);
+	
+	cout << "EXP_Bkg[UL(Bs->mumu)] = " << ul*kBFBsmm << "+" << (smPl-ul)*kBFBsmm << "-" << (ul-smMi)*kBFBsmm << "\t(" << ul << "+" << smPl-ul << "-" << (ul-smMi) << ")" << endl;
+	if (latexFile) {
+		smPl = smPl - ul; smMi = ul - smMi;
+		ul *= kBFBsmm; smPl *= kBFBsmm; smMi *= kBFBsmm;
+		fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", kVDEF_ulBkgMed, ul);
+		fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", kVDEF_ulBkgErrHi, smPl);
+		fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", kVDEF_ulBkgErrLo, smMi);
+	}
 	
 	if (latexFile) fclose(latexFile);
 	delete file;
