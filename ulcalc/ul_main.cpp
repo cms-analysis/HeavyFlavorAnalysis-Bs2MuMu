@@ -134,10 +134,23 @@ static bool process_line(string name, vector<double> *values, map<bmm_param,meas
 	if (bsparam)	(*bsmm)[p].setVal((*values)[1]);
 	else			(*bdmm)[p].setVal((*values)[1]);
 	
-	// Error of the variable
-	if (values->size() >= 3) {
-		if (bsparam)	(*bsmm)[p].setErr((*values)[2]);
-		else			(*bdmm)[p].setErr((*values)[2]);
+	// error on variable
+	if (values->size() == 3) {
+		if (bsparam) {
+			(*bsmm)[p].setErrHi((*values)[2]);
+			(*bsmm)[p].setErrLo((*values)[2]);
+		} else {
+			(*bdmm)[p].setErrHi((*values)[2]);
+			(*bdmm)[p].setErrLo((*values)[2]);
+		}
+	} else if (values->size() >= 4) {
+		if (bsparam) {
+			(*bsmm)[p].setErrHi((*values)[2]);
+			(*bsmm)[p].setErrLo((*values)[3]);
+		} else {
+			(*bdmm)[p].setErrHi((*values)[2]);
+			(*bdmm)[p].setErrLo((*values)[3]);
+		}
 	}
 	
 	success = true;
@@ -345,8 +358,9 @@ bail:
 static void dump_params(pair<bmm_param,measurement_t> p)
 {
 	cout << '\t' << find_bmm_name(p.first.first) << '[' << p.first.second << "]: " << p.second.getVal();
-	if (p.second.getErr() > 0)
-		cout << " +/- " << p.second.getErr();
+	if (p.second.getErrHi() > 0 || p.second.getErrLo() > 0) {
+		cout << "+" << p.second.getErrHi() << "-" << p.second.getErrLo();
+	}
 	cout << endl;
 } // dump_params()
 
