@@ -119,10 +119,6 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   TH1D *h; 
   TH2D *h2; 
 
-  hMassPiPi = new TH1D("hMassPiPi", "hMassPiPi", 100, 0., 0.6);
-  hMassKPi  = new TH1D("hMassKPi",  "hMassKPi", 100, 0.5, 1.0);
-  hMassPiK  = new TH1D("hMassPiK",  "hMassPiK", 100, 0.9, 1.4);
-
   numbers *a(0); 
   cout << "----> fNchan = " << fNchan << " fCuts.size() = " << fCuts.size() << endl;
   for (unsigned int i = 0; i < fNchan; ++i) {
@@ -167,6 +163,9 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
     h2 = new TH2D(Form("hBdtMass%d", i), Form("hBdtMass%d", i), NBINS, fMassLo, fMassHi, 100, 0., 1.0);
     fhBdtMass.push_back(h2); 
 
+    h = new TH1D(Form("hGenAndAccNumbers%d", i), Form("hGenAndAccNumbers%d", i), 100, 0., 100.);
+    fhGenAndAccNumbers.push_back(h);
+
     h = new TH1D(Form("hMassWithMassCuts%d", i), Form("hMassWithMassCuts%d", i), NBINS, fMassLo, fMassHi);
     fhMassWithMassCuts.push_back(h); 
     h = new TH1D(Form("fhMassWithMassCutsManyBins%d", i), Form("fhMassWithMassCutsManyBins%d", i), (fMassHi-fMassLo)*1000, fMassLo, fMassHi);
@@ -182,11 +181,12 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
     h = new TH1D(Form("hNorm%d", i), Form("hNorm%d", i), 100, 4.9, 5.9);
     fhNorm.push_back(h); 
 
+    h = new TH1D(Form("hNormC%d", i), Form("hNormC%d", i), 200, 4.9, 5.9);
+    fhNormC.push_back(h); 
+
     h = new TH1D(Form("hDstarPi%d", i), Form("hDstarPi%d", i), 20, 4.9, 5.9);
     fhDstarPi.push_back(h); 
 
-    h = new TH1D(Form("hNormC%d", i), Form("hNormC%d", i), 200, 4.9, 5.9);
-    fhNormC.push_back(h); 
 
 
     h = new TH1D(Form("hMassWithTriggerCuts%d", i), Form("hMassWithTriggerCuts%d", i), NBINS, fMassLo, fMassHi);
@@ -222,33 +222,6 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
     h = new TH1D(Form("hMuTrMC%d", i), Form("hMuTrMC%d", i), 100, 0., 1.);
     fhMuTrMC.push_back(h); 
 
-    h = new TH1D(Form("h0TNPTrigger%d", i), Form("hTNPTrigger%d", i), HBINS, HLO, HHI); h->Sumw2();
-    fh0TNPTrigger.push_back(h); 
-    h = new TH1D(Form("h1TNPTrigger%d", i), Form("hTNPTrigger%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh1TNPTrigger.push_back(h); 
-    h = new TH1D(Form("h0TNPMuID%d", i), Form("hTNPMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh0TNPMuID.push_back(h); 
-    h = new TH1D(Form("h1TNPMuID%d", i), Form("hTNPMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh1TNPMuID.push_back(h); 
-
-    h = new TH1D(Form("h0TNPMCTrigger%d", i), Form("hTNPMCTrigger%d", i), HBINS, HLO, HHI); h->Sumw2();
-    fh0TNPMCTrigger.push_back(h); 
-    h = new TH1D(Form("h1TNPMCTrigger%d", i), Form("hTNPMCTrigger%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh1TNPMCTrigger.push_back(h); 
-    h = new TH1D(Form("h0TNPMCMuID%d", i), Form("hTNPMCMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh0TNPMCMuID.push_back(h); 
-    h = new TH1D(Form("h1TNPMCMuID%d", i), Form("hTNPMCMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh1TNPMCMuID.push_back(h); 
-
-
-    h = new TH1D(Form("h0MCTrigger%d", i), Form("hMCTrigger%d", i), HBINS, HLO, HHI); h->Sumw2();
-    fh0MCTrigger.push_back(h); 
-    h = new TH1D(Form("h1MCTrigger%d", i), Form("hMCTrigger%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh1MCTrigger.push_back(h); 
-    h = new TH1D(Form("h0MCMuID%d", i), Form("hMCMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh0MCMuID.push_back(h); 
-    h = new TH1D(Form("h1MCMuID%d", i), Form("hMCMuID%d", i), HBINS, HLO, HHI);  h->Sumw2();
-    fh1MCMuID.push_back(h); 
   }
 
   fAnaCuts.addCut("fGoodHLT", "HLT", fGoodHLT); 
@@ -273,6 +246,15 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   fAnaCuts.addCut("fGoodCloseTrack", "close track veto", fGoodCloseTrack); 
   fAnaCuts.addCut("fGoodDocaTrk", "d_{ca}(trk)", fGoodDocaTrk); 
   fAnaCuts.addCut("fGoodLastCut", "lastCut", fGoodLastCut); 
+
+
+  fptT1 = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo.dat"); 	
+  fptT2 = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.dat"); 	
+  fptM  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_data_all_histo.dat"); 
+
+  fptT1MC = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo.dat"); 	
+  fptT2MC = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.dat"); 	
+  fptMMC  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_datalike_mc_histo.dat"); 
 
 
   fNumbersFileName = fDirectory + "/anaBmm.plotClass." + fSuffix + ".tex";
@@ -465,9 +447,6 @@ void plotClass::loopTree(int mode, int proc) {
   cout << "    m1pt> " << fCuts[0]->m1pt << " m2pt> " << fCuts[0]->m2pt << endl;
 
   // -- reset all histograms
-  hMassPiPi->Reset();
-  hMassKPi->Reset();
-  hMassPiK->Reset();
 
   for (unsigned int i = 0; i < fNchan; ++i) {
     fhBdtMass[i]->Reset();
@@ -476,21 +455,6 @@ void plotClass::loopTree(int mode, int proc) {
     fhMuTr[i]->Reset();
     fhMuIdMC[i]->Reset();
     fhMuTrMC[i]->Reset();
-
-    fh0TNPTrigger[i]->Reset();
-    fh1TNPTrigger[i]->Reset();
-    fh0TNPMuID[i]->Reset();
-    fh1TNPMuID[i]->Reset();
-
-    fh0TNPMCTrigger[i]->Reset();
-    fh1TNPMCTrigger[i]->Reset();
-    fh0TNPMCMuID[i]->Reset();
-    fh1TNPMCMuID[i]->Reset();
-
-    fh0MCTrigger[i]->Reset();
-    fh1MCTrigger[i]->Reset();
-    fh0MCMuID[i]->Reset();
-    fh1MCMuID[i]->Reset();
 
     fhMassAbsNoCuts[i]->Reset();
     fhMassNoCuts[i]->Reset();
@@ -506,14 +470,12 @@ void plotClass::loopTree(int mode, int proc) {
     fhMassWithTriggerCutsManyBins[i]->Reset();
 
     fhMassWithAllCuts[i]->Reset();
-    fhMassWithAllCuts[i]->SetTitle(Form("hMassWithAllCuts%d", i));
-
     fhMassWithAllCutsBlind[i]->Reset();
     fhMassWithAllCutsManyBins[i]->Reset();
 
-    fhDstarPi[i]->Reset();
     fhNorm[i]->Reset();
     fhNormC[i]->Reset();
+    fhDstarPi[i]->Reset();
 
     fhMassWithMassCutsManyBins[i]->Reset();
     fhMassWithMassCuts[i]->Reset();
@@ -757,8 +719,6 @@ void plotClass::loopTree(int mode, int proc) {
     m2w8 = ptM->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
     mw8  = m1w8*m2w8; 
     fhMuId[fChan]->Fill(mw8); 
-    fh0TNPMuID[fChan]->Fill(fb.pt, mw8); 
-    fh1TNPMuID[fChan]->Fill(fb.pt); 
 
     // -- MC for comparison 
     m1w8 = ptMMC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
@@ -767,8 +727,6 @@ void plotClass::loopTree(int mode, int proc) {
     if (mw8 > 0.) {
       fhMuIdMC[fChan]->Fill(mw8, 1./mw8); 
     }
-    fh0TNPMCMuID[fChan]->Fill(fb.pt, mw8); 
-    fh1TNPMCMuID[fChan]->Fill(fb.pt); 
 
 
     // -- muon trigger: Data PidTables
@@ -782,8 +740,6 @@ void plotClass::loopTree(int mode, int proc) {
       }
     }
     fhMuTr[fChan]->Fill(trw8); 
-    fh0TNPTrigger[fChan]->Fill(fb.pt, trw8); 
-    fh1TNPTrigger[fChan]->Fill(fb.pt); 
 
     // -- MC for comparison 
     tr1w8 = ptT1MC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*ptT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
@@ -796,8 +752,6 @@ void plotClass::loopTree(int mode, int proc) {
       }
     }
     fhMuTrMC[fChan]->Fill(trw8); 
-    fh0TNPMCTrigger[fChan]->Fill(fb.pt, trw8); 
-    fh1TNPMCTrigger[fChan]->Fill(fb.pt); 
 
 
     // ---------------------------
@@ -810,9 +764,7 @@ void plotClass::loopTree(int mode, int proc) {
     fhMassWithMuonCutsManyBins[fChan]->Fill(mass); 
 
     // -- TRIGGER
-    fh0MCTrigger[fChan]->Fill(fb.pt); 
     if (false == fb.hlt) continue;
-    fh1MCTrigger[fChan]->Fill(fb.pt); 
     fhMassWithTriggerCuts[fChan]->Fill(mass); 
     fhMassWithTriggerCutsManyBins[fChan]->Fill(mass); 
 
@@ -824,9 +776,8 @@ void plotClass::loopTree(int mode, int proc) {
     fhMassWithAllCutsManyBins[fChan]->Fill(mass); 
 
     fhNorm[fChan]->Fill(mass);
-    fhDstarPi[fChan]->Fill(mass);
     fhNormC[fChan]->Fill(fb.cm);
-    //    fhNorm[fChan]->Fill(mass);
+    fhDstarPi[fChan]->Fill(mass);
     
     if (!fDoUseBDT) elist->Enter(jentry); 
 
@@ -943,7 +894,6 @@ void plotClass::loopTree(int mode, int proc) {
       fhMassWithAllCuts[i]->SetName(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i)); 
       fhMassWithAllCuts[i]->SetTitle(Form("hMassWithAllCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, pD->GetFile()->GetName())); 
       fhMassWithAllCuts[i]->Write();
-      //      fhMassWithAllCuts[i]->SetDirectory(fHistFile);
     }
     pD->cd();
 
@@ -1412,21 +1362,11 @@ void plotClass::loopTree(int mode, int proc) {
     fhMassWithMassCutsManyBins[i]->SetName(Form("hMassWithMassCutsManyBins%d_chan%d", mode, i)); fhMassWithMassCutsManyBins[i]->Write();
     fhMassWithMassCuts[i]->SetName(Form("hMassWithMassCuts%d_chan%d", mode, i)); fhMassWithMassCuts[i]->Write();
     fhMassWithAllCutsManyBins[i]->SetName(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i)); 
-    fhMassWithAllCutsManyBins[i]->SetTitle(Form("hMassWithAllCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, pD->GetName())); 
-    fhMassWithAllCutsManyBins[i]->Write();
-    //     fhMassWithAllCutsManyBins[i]->SetDirectory(fHistFile);
-    fhMassWithAllCuts[i]->SetName(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i)); 
-    fhMassWithAllCuts[i]->Write();
-    //     fhMassWithAllCuts[i]->SetDirectory(fHistFile);
-    fhNorm[i]->SetName(Form("hNorm_%s_%d_chan%d", modifier.c_str(), mode, i)); 
-    fhNorm[i]->Write();
-    //    fhNorm[i]->SetDirectory(fHistFile);
-    fhNormC[i]->SetName(Form("hNormC_%s_%d_chan%d", modifier.c_str(), mode, i)); 
-    fhNormC[i]->Write();
-    //    fhNormC[i]->SetDirectory(fHistFile);
-    fhDstarPi[i]->SetName(Form("hDstarPi_%s_%d_chan%d", modifier.c_str(), mode, i)); 
-    fhDstarPi[i]->Write();
-    //    fhDstarPi[i]->SetDirectory(fHistFile);
+    fhMassWithAllCutsManyBins[i]->SetTitle(Form("hMassWithAllCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, pD->GetName())); fhMassWithAllCutsManyBins[i]->Write();
+    fhMassWithAllCuts[i]->SetName(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i));  fhMassWithAllCuts[i]->Write();
+    fhNorm[i]->SetName(Form("hNorm_%s_%d_chan%d", modifier.c_str(), mode, i));       fhNorm[i]->Write();
+    fhNormC[i]->SetName(Form("hNormC_%s_%d_chan%d", modifier.c_str(), mode, i));     fhNormC[i]->Write();
+    fhDstarPi[i]->SetName(Form("hDstarPi_%s_%d_chan%d", modifier.c_str(), mode, i)); fhDstarPi[i]->Write();
 
     if (5 == mode) {
       t->SetEventList(tlist);
@@ -1435,13 +1375,7 @@ void plotClass::loopTree(int mode, int proc) {
       t->SetName(Form("%s", (fDoUseBDT?"bdt":"cnc")));
       small->Write(); 
       t->SetBranchStatus("*",1);
-      //      small->SetDirectory(fHistFile); 
     }
-    //    fhMassNoCuts[i]->SetName(Form("hMassNoCuts%d_chan%d", mode, i)); fhMassNoCuts[i]->Write();
-    //    fhMassAbsNoCuts[i]->SetName(Form("hMassAbsNoCuts%d_chan%d", mode, i)); fhMassAbsNoCuts[i]->Write();
-    //    fhMuTr[i]->SetName(Form("hMuTr%d_chan%d", mode, i)); fhMuTr[i]->Write();
-    //    fhMuId[i]->SetName(Form("hMuId%d_chan%d", mode, i)); fhMuId[i]->Write();
-    // -- and get back to it
     pD->cd();
 
   }
@@ -1787,25 +1721,6 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
   cout << "NMUID     = " << nmuid << endl;
   cout << "NHLT      = " << nhlt << endl;
   cout << "NCAND     = " << ncand << endl;
-
-
-//   a.genChanYield  = nchangen; 
-//   a.chanYield     = nchan; // reco'ed in chan, with channel-dependent (pT) cuts
-
-//   if (a.genAccYield > 0) {
-//     a.cFrac  = a.genChanYield/a.genAccYield;
-//     a.cFracE = dEff(static_cast<int>(a.genChanYield), static_cast<int>(a.genAccYield));
-//   }
-
-//   if (a.genChanYield > 0) {
-//     a.accChan = a.recoYield/a.genChanYield;
-//     a.accChanE = dEff(static_cast<int>(a.recoYield), static_cast<int>(a.genChanYield));
-//   }
-  
-//   if (a.recoYield > 0) {
-//     a.effChan = a.chanYield/a.recoYield;
-//     a.effChanE = dEff(static_cast<int>(a.chanYield), static_cast<int>(a.recoYield));
-//   }
 
 }
 
@@ -3978,11 +3893,6 @@ void plotClass::singleEventPrintout(string suffix, string st, int ievt) {
 void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts) {
   int nentries = Int_t(t->GetEntries());
   if (nevts > 0) nentries = nevts;
-  //  nentries = 100000; 
-
-  hMassPiPi->Reset(); hMassPiPi->SetTitle(Form("mPiPi %s", mode.c_str()));
-  hMassKPi->Reset();  hMassKPi->SetTitle(Form("mKPi %s", mode.c_str()));
-  hMassPiK->Reset();  hMassPiK->SetTitle(Form("mPiK %s", mode.c_str()));
 
   int nb(0);
   int step(50000); 
@@ -3996,6 +3906,9 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
   int imode(0); 
   if (string::npos != mode.find("No")) imode = 10; 
   if (string::npos != mode.find("Cs")) imode = 20; 
+  if (string::npos != mode.find("Bs")) imode = 0; 
+  if (string::npos != mode.find("Bd")) imode = 1; 
+  if (string::npos != mode.find("Bg")) imode = 98; 
   cout << "==> plotClass::loopOverTree> looping in mode " << mode << " -> imode = " << imode 
        << " with " << nentries << " entries" 
        << endl;
@@ -4004,13 +3917,9 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     nb = t->GetEntry(jentry);
     if (jentry%step == 0) cout << Form(" .. Event %8d", jentry) << endl;
     candAnalysis(imode);
-    loopFunction(function);
+    loopFunction(function, imode);
   }
 
-  //   hMassPiPi->Write();
-  //   hMassKPi->Write();
-  //   hMassPiK->Write();
-  
 }
 
 // ----------------------------------------------------------------------
@@ -4020,11 +3929,15 @@ TTree* plotClass::getTree(string mode) {
   if (string::npos != mode.find("No")) t = (TTree*)fF[mode]->Get("candAnaBu2JpsiK/events"); 
   if (string::npos != mode.find("Cs")) t = (TTree*)fF[mode]->Get("candAnaBs2JpsiPhi/events"); 
   if (string::npos != mode.find("Sg")) t = (TTree*)fF[mode]->Get("candAnaMuMu/events"); 
+  if (string::npos != mode.find("Bd")) t = (TTree*)fF[mode]->Get("candAnaMuMu/events"); 
   return t; 
 }
 
 // ----------------------------------------------------------------------
 void plotClass::setupTree(TTree *t, string mode) {
+
+  if (string::npos != mode.find("Mc")) fIsMC = true; 
+
   t->SetBranchAddress("pt", &fb.pt);
 
   t->SetBranchAddress("bdt",&fb.bdt);
@@ -4136,6 +4049,8 @@ void plotClass::setupTree(TTree *t, string mode) {
 void plotClass::candAnalysis(int mode) {
   cuts *pCuts(0); 
   fChan = detChan(fb.m1eta, fb.m2eta); 
+  if (fChan < 0) return;
+  pCuts = fCuts[fChan]; 
 
   bool bp2jpsikp(false), bs2jpsiphi(false); 
   if (10 == mode)  bp2jpsikp = true; 
@@ -4143,90 +4058,98 @@ void plotClass::candAnalysis(int mode) {
 
   // -- reset all
   fBDT = -99.; 
-  fGoodHLT = fGoodMuonsID = fGoodMuonsPt = fGoodMuonsEta = fGoodTracks = fGoodTracksPt = fGoodTracksEta = false;
+  fGoodHLT = fGoodMuonsID = false;
   fGoodQ = fGoodPvAveW8 = fGoodMaxDoca = fGoodIp = fGoodIpS = fGoodPt = fGoodEta = fGoodAlpha =  fGoodChi2 = fGoodFLS = false;   
   fGoodCloseTrack = fGoodIso = fGoodDocaTrk = fGoodLastCut = fPreselection = false;
 
+  fGoodAcceptance = true; 
+  fGoodMuonsPt    = true;
+  fGoodMuonsEta   = true;
+  fGoodTracks     = true;
+  fGoodTracksPt   = true;
+  fGoodTracksEta  = true;
+
   if (fIsMC) {
-    if (fb.g1pt < 3.5) return;
-    if (fb.g2pt < 3.5) return;
-    if (TMath::Abs(fb.g1eta) > 2.5) return;
-    if (TMath::Abs(fb.g2eta) > 2.5) return;
+    if (fb.g1pt < 3.5) fGoodAcceptance = false; 
+    if (fb.g2pt < 3.5) fGoodAcceptance = false; 
+    if (TMath::Abs(fb.g1eta) > 2.5) fGoodAcceptance = false; 
+    if (TMath::Abs(fb.g2eta) > 2.5) fGoodAcceptance = false; 
+  } else {
     if (!fb.json) {
       return;
     }
   }
 
-  if (fIsMC && bp2jpsikp) {
-    // gen-level cuts for Bu2JpsiKp
-    if (fb.g1pt < 3.5) return;
-    if (fb.g2pt < 3.5) return;
-    if (TMath::Abs(fb.g3eta) > 2.5) return;
-    if (fb.g3pt < 0.4) return;
+  if (fb.m1pt < pCuts->m1pt) {
+    fGoodMuonsPt = false; 
+    fGoodTracksPt = false; 
   }
-  
-  if (fIsMC && bs2jpsiphi) {
-    if (TMath::Abs(fb.g3eta) > 2.5) return;
-    if (TMath::Abs(fb.g4eta) > 2.5) return;
-    // gen-level cuts for Bs2JpsiPhi
-    if (fb.g1pt < 3.5) return;
-    if (fb.g2pt < 3.5) return;
-    if (fb.g3pt < 0.4) return;
-    if (fb.g4pt < 0.4) return;
+  if (fb.m2pt < pCuts->m2pt) {
+    fGoodMuonsPt = false; 
+    fGoodTracksPt = false; 
+  }
+  if (TMath::Abs(fb.m1eta) > 2.4) {
+      fGoodMuonsEta = false; 
+      fGoodTracksEta = false; 
+    }
+  if (TMath::Abs(fb.m2eta) > 2.4) {
+    fGoodMuonsEta = false; 
+    fGoodTracksEta = false; 
   }
 
   if (bp2jpsikp) {
-    if (TMath::Abs(fb.k1eta) > 2.4) return;
-    if (fb.k1pt < 0.5) return;
+    if (fIsMC) {
+      // gen-level cuts for Bu2JpsiKp
+      if (fb.g1pt < 3.5) fGoodAcceptance = false; 
+      if (fb.g2pt < 3.5) fGoodAcceptance = false; 
+      if (TMath::Abs(fb.g3eta) > 2.5) fGoodAcceptance = false; 
+      if (fb.g3pt < 0.4) fGoodAcceptance = false; 
+    }
+    if (TMath::Abs(fb.k1eta) > 2.4) fGoodTracksEta = false; 
+    if (fb.k1pt < 0.5) fGoodTracksPt = false; 
   }
+  
   if (bs2jpsiphi) {
-    if (TMath::Abs(fb.k1eta) > 2.4) return;
-    if (TMath::Abs(fb.k2eta) > 2.4) return;
-    if (fb.k1pt < 0.5) return;
-    if (fb.k2pt < 0.5) return;
-    if (fb.dr >0.3) return;
-    if (fb.mkk < 0.995) return;
-    if (fb.mkk > 1.045) return;
+    if (fIsMC) {
+      if (TMath::Abs(fb.g3eta) > 2.5) fGoodAcceptance = false; 
+      if (TMath::Abs(fb.g4eta) > 2.5) fGoodAcceptance = false; 
+      // gen-level cuts for Bs2JpsiPhi
+      if (fb.g1pt < 3.5) fGoodAcceptance = false; 
+      if (fb.g2pt < 3.5) fGoodAcceptance = false; 
+      if (fb.g3pt < 0.4) fGoodAcceptance = false; 
+      if (fb.g4pt < 0.4) fGoodAcceptance = false; 
+    }
+    if (TMath::Abs(fb.k1eta) > 2.4) fGoodAcceptance = false; 
+    if (TMath::Abs(fb.k2eta) > 2.4) fGoodAcceptance = false; 
+    if (fb.k1pt < 0.5) fGoodAcceptance = false; 
+    if (fb.k2pt < 0.5) fGoodAcceptance = false; 
+    if (fb.dr >0.3) fGoodAcceptance = false; 
+    if (fb.mkk < 0.995) fGoodAcceptance = false; 
+    if (fb.mkk > 1.045) fGoodAcceptance = false; 
   }
 
   if (bs2jpsiphi || bp2jpsikp) {
-    if (fb.mpsi > 3.2) return;
-    if (fb.mpsi < 3.0) return;
+    if (fb.mpsi > 3.2) fGoodJpsiCuts = false;
+    if (fb.mpsi < 3.0) fGoodJpsiCuts = false;
     // -- cowboy veto 
-    if (fDoApplyCowboyVeto && fb.cb) return;
-    if (fb.psipt < 7) return;
+    if (fb.psipt < 7.0) fGoodJpsiCuts = false;
   } 
 
-  hMassPiPi->Fill(recalcMass(MPION, MPION)); 
-  hMassKPi->Fill(recalcMass(MKAON, MPION)); 
-  hMassPiK->Fill(recalcMass(MKAON, MKAON)); 
-
-  if (fChan > -1) {
-    pCuts = fCuts[fChan]; 
-  } else {
-    //       cout << "event " << jentry << ", fChan = " << fOver << " for eta(B) = " << beta 
-    // 	   << " m1eta = " << bm1eta << " m2eta = " << bm2eta
-    // 	   << endl;
-    return;
-  }
-
   if (fDoUseBDT) {
-    if (TMath::IsNaN(fb.fls3d)) return; 
-    calcBDT(true); 
+    if (fGoodAcceptance) calcBDT(true); 
   }
 
   fGoodMuonsID    = fb.gmuid;
-  fGoodMuonsPt    = ((fb.m1pt > pCuts->m1pt)  && (fb.m2pt > pCuts->m2pt));
-  fGoodMuonsEta   = ((fb.m1eta > -2.4) && (fb.m1eta < 2.4) && (fb.m2eta > -2.4) && (fb.m2eta < 2.4));
   fGoodTracks     = fb.gtqual;
-  fGoodTracksPt   = ((fb.m1pt > 3.0) && (fb.m1pt < 100.0) && (fb.m2pt > 3.0) && (fb.m2pt < 100.));
-  fGoodTracksEta  = ((fb.m1eta > -2.4) && (fb.m1eta < 2.4) && (fb.m2eta > -2.4) && (fb.m2eta < 2.4));
   
   fGoodQ          = (fb.m1q*fb.m2q < 0); 
   fGoodPvAveW8    = (fb.pvw8 > 0.7);
   fGoodMaxDoca    = (TMath::Abs(fb.maxdoca) < pCuts->maxdoca); 
   fGoodIp         = (TMath::Abs(fb.pvip) < pCuts->pvip); 
   fGoodIpS        = (TMath::Abs(fb.pvips) < pCuts->pvips); 
+
+  fGoodLip        = (TMath::Abs(fb.pvlip) < pCuts->pvlip); 
+  fGoodLipS       = (TMath::Abs(fb.pvlips) < pCuts->pvlips); 
   
   fGoodPt         = (fb.pt > pCuts->pt);
   fGoodEta        = ((fb.eta > -24.0) && (fb.eta < 24.0)); 
@@ -4239,13 +4162,6 @@ void plotClass::candAnalysis(int mode) {
   fGoodIso        = (fb.iso > pCuts->iso); 
   fGoodDocaTrk    = (fb.docatrk > pCuts->docatrk);
   fGoodLastCut    = true; 
-
-  // -- different preselection cuts used for the plotting of various (sbs) distributions
-  //  fGoodHLT        = fb.hlt && fGoodMuonsID && (fb.fls3d > 4) && (fb.chi2/fb.dof < 5) && (fBDT > -1.);
-
-  // -- The following is applied for the data tree and MUST be applied offline as well
-  //  fPreselection = fPreselection && fGoodPvLip && fGoodPvLipS && fGoodQ; 
-  //  fPreselection = fPreselection && (fCandPt > 5) && (fCandA < 0.2) && (fCandFLS3d > 5) && (fCandChi2/fCandDof < 5); 
 
   fGoodHLT        = fb.hlt;
   fPreselection   = ((fBDT > 0.) && fb.hlt && fGoodMuonsID ); 

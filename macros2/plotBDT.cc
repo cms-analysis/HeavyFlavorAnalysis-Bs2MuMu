@@ -168,14 +168,14 @@ void plotBDT::makeAll(int channels) {
 
 
 // ----------------------------------------------------------------------
-void plotBDT::loopFunction(int mode) {
-  if (1 == mode) loopFunction1();
-  if (2 == mode) loopFunction2();
+void plotBDT::loopFunction(int function, int mode) {
+  if (1 == function) loopFunction1(mode);
+  if (2 == function) loopFunction2(mode);
 }
 
 
 // ----------------------------------------------------------------------
-void plotBDT::loopFunction1() {
+void plotBDT::loopFunction1(int mode) {
 
   if (fChan < 0) return;
 
@@ -1688,7 +1688,7 @@ void plotBDT::hackedMC(int chan) {
 
 
 // ----------------------------------------------------------------------
-void plotBDT::loopFunction2() {
+void plotBDT::loopFunction2(int mode) {
   if (fChan < 0) return;
 
   if (fSetup == "B" && fChan != 0) return;

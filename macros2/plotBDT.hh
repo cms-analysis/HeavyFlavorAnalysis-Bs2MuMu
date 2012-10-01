@@ -47,9 +47,9 @@ public:
   void illustrateAntiMuonSample(const char *cuts = "hlt&&fls3d>5&&alpha<0.03&&chi2/dof<2&&iso>0.7"); 
 
   void testLoop(std::string mode);
-  virtual void loopFunction(int mode); 
-  virtual void loopFunction1(); 
-  virtual void loopFunction2();
+  virtual void loopFunction(int function, int mode = 0); 
+  virtual void loopFunction1(int mode); 
+  virtual void loopFunction2(int mode);
   void  resetHistograms();
   void plotEffVsBg(int offset);
 

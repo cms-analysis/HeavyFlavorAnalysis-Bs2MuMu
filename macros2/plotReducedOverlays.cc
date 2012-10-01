@@ -493,13 +493,13 @@ void plotReducedOverlays::overlay(string sample1, string sample2, string selecti
 
 
 // ----------------------------------------------------------------------
-void plotReducedOverlays::loopFunction(int mode) {
-  if (1 == mode) loopFunction1();
+void plotReducedOverlays::loopFunction(int function, int mode) {
+  if (1 == function) loopFunction1(mode);
 }
 
 
 // ----------------------------------------------------------------------
-void plotReducedOverlays::loopFunction1() {
+void plotReducedOverlays::loopFunction1(int mode) {
 
   // -- modify here the fGoodHLT to increase S/B for the BDT distribution
   fGoodHLT        = fb.hlt && fGoodMuonsID && (fb.fls3d > 5) && (fb.chi2/fb.dof < 5) && (fBDT > -1.);

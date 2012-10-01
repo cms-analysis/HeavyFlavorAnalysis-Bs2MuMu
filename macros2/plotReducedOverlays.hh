@@ -22,8 +22,8 @@ public:
   plotReducedOverlays(const char *files="anaBmm.default.files", const char *dir = "default", const char *cuts = "default");
   ~plotReducedOverlays();
 
-  virtual void loopFunction(int mode); 
-  virtual void loopFunction1(); 
+  virtual void loopFunction(int function, int mode); 
+  virtual void loopFunction1(int mode); 
 
 
   void makeAll(std::string selection = "Presel"); 

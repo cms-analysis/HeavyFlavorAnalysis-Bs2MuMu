@@ -18,6 +18,19 @@ public:
   void setupNorm();
   void fitHists(int chan = 0);
 
+  void resetHistograms();
+  void fillAndSaveHistograms(int nevents = -1); 
+  void otherNumbers(std::string smode);
+  void saveHists(std::string smode);
+  void calculateNumbers(int mode); 
+  void rareBgHists(std::string mode = "nada");
+  void rareBgFromHist(std::string mode = "nada");
+
+  virtual void loopFunction(int function, int mode = 0); 
+  virtual void loopFunction1(int mode); 
+  virtual void loopFunction2(int mode); 
+
+
   void acceptancePerProcess();
   void rareBg(std::string mode = "nada");
   void scaledHist(int mode = 0);

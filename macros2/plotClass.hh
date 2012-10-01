@@ -30,6 +30,7 @@
 #include <vector>
 #include <map>
 
+#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
 #include "../macros/AnalysisCuts.hh"
 
 #include "../macros2/preselection.hh"
@@ -230,32 +231,25 @@ public:
     ;
 
 
-  std::vector<TH1D*> fhMassAcc;
-  std::vector<TH1D*> fhMassChan;
+  std::vector<TH1D*> fhGenAndAccNumbers;
   std::vector<TH1D*> fhMassAbsNoCuts;
   std::vector<TH1D*> fhMassNoCuts;
   std::vector<TH1D*> fhMassNoCutsManyBins;
   std::vector<TH1D*> fhMassWithAnaCuts;
-  std::vector<TH1D*> fhMassWithMuonCuts; 
-  std::vector<TH1D*> fhMassWithTriggerCuts; 
-  std::vector<TH1D*> fhMassWithAllCuts;
-  std::vector<TH1D*> fhMassWithAllCutsBlind;
-  std::vector<TH1D*> fhNorm, fhNormC, fhDstarPi;
-  std::vector<TH1D*> fhMassWithMassCuts;
   std::vector<TH1D*> fhMassWithAnaCutsManyBins;
+  std::vector<TH1D*> fhMassWithMuonCuts; 
   std::vector<TH1D*> fhMassWithMuonCutsManyBins; 
+  std::vector<TH1D*> fhMassWithTriggerCuts; 
   std::vector<TH1D*> fhMassWithTriggerCutsManyBins; 
+  std::vector<TH1D*> fhMassWithAllCuts;
   std::vector<TH1D*> fhMassWithAllCutsManyBins; 
+  std::vector<TH1D*> fhMassWithAllCutsBlind;
+  std::vector<TH1D*> fhMassWithMassCuts;
   std::vector<TH1D*> fhMassWithMassCutsManyBins; 
+  std::vector<TH1D*> fhNorm, fhNormC, fhDstarPi;
   std::vector<TH1D*> fhMuId, fhMuIdMC;
   std::vector<TH1D*> fhMuTr, fhMuTrMC;
-  std::vector<TH1D*> fh0TNPTrigger, fh1TNPTrigger, fh0TNPMuID, fh1TNPMuID;
-  std::vector<TH1D*> fh0TNPMCTrigger, fh1TNPMCTrigger, fh0TNPMCMuID, fh1TNPMCMuID;
-  std::vector<TH1D*> fh0MCTrigger, fh1MCTrigger, fh0MCMuID, fh1MCMuID;
   std::vector<TH2D*> fhBdtMass;
-
-  TH1D *hMassPiPi, *hMassKPi, *hMassPiK; 
-
 
   std::vector<numbers*> fNumbersBs, fNumbersBd, fNumbersNo, fNumbersCs, fNumbersBla; 
 
@@ -282,11 +276,11 @@ public:
   virtual void setupTree(TTree *t, std::string mode); 
   virtual void loopOverTree(TTree *t, std::string mode, int function, int nevts = -1); 
   virtual void candAnalysis(int mode);
-  virtual void loopFunction(int function) {std::cout << "replace me" << std::endl;} 
+  virtual void loopFunction(int function, int mode = 0) {std::cout << "replace me" << std::endl;} 
   
   virtual TMVA::Reader* setupReader(std::string xmlFile, readerData &rd);
   virtual void calcBDT(bool rejectInvIso = false);
-
+  
   struct RedTreeData fb; 
   //  std::vector<TMVA::Reader*> fReaderEvents0; 
   //  std::vector<TMVA::Reader*> fReaderEvents1; 
@@ -297,21 +291,25 @@ public:
   bool fIsMC, fIsSignal;
   double fBDT; 
   readerData frd; 
-  double MASSMIN, MASSMAX, 
-    SIGBOXMIN, SIGBOXMAX, 
-    BGLBOXMIN, BGLBOXMAX, 
-    BGHBOXMIN, BGHBOXMAX
-    ; 
-
-  bool fPreselection,
-    fWideMass, 
-    fGoodHLT, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta, fGoodTracks, fGoodTracksPt, fGoodTracksEta, fGoodQ,
-    fGoodPvAveW8, fGoodIp, fGoodIpS, fGoodMaxDoca, fGoodPt, fGoodEta, fGoodAlpha, fGoodFLS, fGoodChi2, fGoodIso, fGoodCloseTrack, 
-    fGoodDocaTrk, fGoodLastCut; 
-
+  double MASSMIN, MASSMAX, SIGBOXMIN, SIGBOXMAX, BGLBOXMIN, BGLBOXMAX, BGHBOXMIN, BGHBOXMAX; 
+  
+  bool fGoodAcceptance, fPreselection,	fWideMass, fGoodHLT, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta, fGoodTracks, fGoodTracksPt, fGoodTracksEta, fGoodQ,
+       fGoodPvAveW8, fGoodLip, fGoodLipS, fGoodIp, fGoodIpS, fGoodMaxDoca, fGoodPt, fGoodEta, fGoodAlpha, fGoodFLS, fGoodChi2, fGoodIso, fGoodCloseTrack, 
+       fGoodDocaTrk, fGoodJpsiCuts, fGoodLastCut; 
+  
   AnalysisCuts fAnaCuts; 
-
+  
   std::string fSetup; 
+
+
+  PidTable *fptT1;
+  PidTable *fptT2;
+  PidTable *fptM; 
+
+  PidTable *fptT1MC;
+  PidTable *fptT2MC;
+  PidTable *fptMMC; 
+
 
   ClassDef(plotClass,1) //Testing plotClass
 };

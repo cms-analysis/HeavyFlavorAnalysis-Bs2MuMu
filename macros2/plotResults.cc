@@ -39,21 +39,13 @@ plotResults::plotResults(const char *files, const char *dir, const char *cuts, i
 // ----------------------------------------------------------------------
 plotResults::~plotResults() {
   cout << "plotResults dtor: " << fHistFile << endl;
-  if (fHistFile) {
-    fHistFile->cd();
-    fHistFile->Write();
-    fHistFile->Close();
-  }
 }
 
 
 // ----------------------------------------------------------------------
 void plotResults::makeAll(int channels) {
 
-  string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
-  cout << "open fHistFile: " << hfname << " RECREATE" << endl;
-  fHistFile = new TFile(hfname.c_str(), "RECREATE");
-  
+ 
   //  return;
 
 //   fls3dVsX("pt", "m1pt>4.5&&m2pt>4.2&&hlt", "fls3d_prof_pt.pdf");
@@ -80,6 +72,11 @@ void plotResults::makeAll(int channels) {
 //   }
 
   zone(1);
+  if (channels & 1) {
+    fillAndSaveHistograms(1000000); 
+    //    fillAndSaveHistograms(200000); 
+  }
+
   if (channels & 2) {
     fNormProcessed = false; 
     fDoUseBDT = true; 
@@ -92,6 +89,442 @@ void plotResults::makeAll(int channels) {
 
 }
 
+
+
+// ----------------------------------------------------------------------
+void plotResults::calculateNumbers(int mode) {
+
+  // -- dump histograms
+  //  string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
+  string hfname  = "anaBmm.plotResults." + fSuffix + ".root";
+  cout << "fHistFile: " << hfname;
+  fHistFile = TFile::Open(hfname.c_str());
+  cout << " opened " << endl;
+  
+  TH1D *h1; 
+  string name;
+  zone(1,2);
+  for (int chan = 0; chan < 1; ++chan) {
+    name = Form("hNorm_bdt_15_chan%d", chan);
+    h1 =  (TH1D*)fHistFile->Get(name.c_str()); 
+    h1->DrawCopy(); 
+    c0->cd(2);
+    normYield(h1, chan, 5.0); 
+    rareBgFromHist(); 
+  }
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotResults::fillAndSaveHistograms(int nevents) {
+
+  // -- dump histograms
+  string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
+  cout << "fHistFile: " << hfname;
+  fHistFile = TFile::Open(hfname.c_str(), "UPDATE");
+  cout << " opened " << endl;
+
+  TTree *t(0);
+
+  // -- rare backgrounds
+  fSetup = "BgRare"; 
+  resetHistograms();
+  rareBgHists(); 
+
+
+  // -- normalization
+  resetHistograms();
+  fSetup = "NoData"; 
+  t = getTree(fSetup); 
+  setupTree(t, fSetup); 
+  loopOverTree(t, fSetup, 1, nevents);
+  cout << "fhNorm[0]: " << fhNorm[0]->GetSumOfWeights() << endl;
+  cout << "fhNorm[1]: " << fhNorm[1]->GetSumOfWeights() << endl;
+  saveHists(fSetup);
+  
+  resetHistograms();
+  fSetup = "NoMc";
+  t = getTree(fSetup); 
+  setupTree(t, fSetup); 
+  loopOverTree(t, fSetup, 1, nevents);
+  otherNumbers(fSetup); 
+  saveHists(fSetup);
+
+
+  // -- dimuons
+  resetHistograms();
+  fSetup = "SgData"; 
+  t = getTree(fSetup); 
+  setupTree(t, fSetup); 
+  loopOverTree(t, fSetup, 1, nevents);
+  saveHists(fSetup);
+  
+  resetHistograms();
+  fSetup = "SgMc";
+  t = getTree(fSetup); 
+  setupTree(t, fSetup); 
+  loopOverTree(t, fSetup, 1, nevents);
+  otherNumbers(fSetup); 
+  saveHists(fSetup);
+
+  resetHistograms();
+  fSetup = "BdMc";
+  t = getTree(fSetup); 
+  setupTree(t, fSetup); 
+  loopOverTree(t, fSetup, 1, nevents);
+  otherNumbers(fSetup); 
+  saveHists(fSetup);
+
+
+  // -- control sample
+  resetHistograms();
+  fSetup = "CsData"; 
+  t = getTree(fSetup); 
+  setupTree(t, fSetup); 
+  loopOverTree(t, fSetup, 1, nevents);
+  saveHists(fSetup);
+  
+  resetHistograms();
+  fSetup = "CsMc";
+  t = getTree(fSetup); 
+  setupTree(t, fSetup); 
+  loopOverTree(t, fSetup, 1, nevents);
+  otherNumbers(fSetup); 
+  saveHists(fSetup);
+
+
+  // -- close the file
+  fHistFile->cd();
+  fHistFile->Write(); 
+  fHistFile->Close(); 
+  
+}
+
+
+// ----------------------------------------------------------------------
+void plotResults::otherNumbers(string smode) {
+  int ibin(0); 
+  string accname = smode + "Acc"; 
+  string directory("candAnaMuMu"); 
+  numbers* aa[2]; 
+  if (string::npos != fSetup.find("No"))  {
+    directory = "candAnaBu2JpsiK";
+    aa[0] = fNumbersNo[0]; 
+    aa[1] = fNumbersNo[1]; 
+  }
+
+  if (string::npos != fSetup.find("Cs"))  {
+    directory = "candAnaBs2JpsiPhi";
+    aa[0] = fNumbersCs[0]; 
+    aa[1] = fNumbersCs[1]; 
+  }
+
+  if (string::npos != fSetup.find("Sg"))  {
+    directory = "candAnaMuMu";
+    aa[0] = fNumbersBs[0]; 
+    aa[1] = fNumbersBs[1]; 
+  }
+
+  if (string::npos != fSetup.find("Bd"))  {
+    directory = "candAnaMuMu";
+    aa[0] = fNumbersBd[0]; 
+    aa[1] = fNumbersBd[1]; 
+  }
+
+
+  cout << "accname: " << accname << " directory: " << directory 
+       << " numbers: " << aa[0]->name << " index = " << aa[0]->index 
+       << endl;
+
+  for (int i = 0; i < fNchan; ++i) {
+    fChan = i; 
+    accEffFromEffTree(accname, directory, *aa[i], *fCuts[i], -1);
+    fF[fSetup]->cd(directory.c_str());
+    double effFilter = fFilterEff[fSetup];
+    double genFileYield = ((TTree*)gDirectory->Get("effTree"))->GetEntries();
+    ibin = 1; fhGenAndAccNumbers[i]->SetBinContent(ibin, effFilter); 
+              fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "effFilter");
+    ibin = 2; fhGenAndAccNumbers[i]->SetBinContent(ibin, genFileYield); 
+              fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "genFileYield");
+    ibin = 10;fhGenAndAccNumbers[i]->SetBinContent(ibin, aa[i]->effPtReco); 
+              fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "effPtReco");
+    ibin = 11;fhGenAndAccNumbers[i]->SetBinContent(ibin, aa[i]->effPtRecoE); 
+              fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "effPtRecoE");
+    ibin = 12;fhGenAndAccNumbers[i]->SetBinContent(ibin, aa[i]->genAccFileYield); 
+              fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "genAccFileYield");
+    ibin = 13;fhGenAndAccNumbers[i]->SetBinContent(ibin, aa[i]->genAccYield); 
+              fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "genAccYield");
+    ibin = 14;fhGenAndAccNumbers[i]->SetBinContent(ibin, aa[i]->recoYield); 
+              fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "recoYield");
+    ibin = 15;fhGenAndAccNumbers[i]->SetBinContent(ibin, aa[i]->muidYield); 
+              fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "muidYield");
+    ibin = 16;fhGenAndAccNumbers[i]->SetBinContent(ibin, aa[i]->trigYield); 
+              fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "trigYield");
+    ibin = 17;fhGenAndAccNumbers[i]->SetBinContent(ibin, aa[i]->candYield); 
+              fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "candYield");
+
+    ibin = 20;fhGenAndAccNumbers[i]->SetBinContent(ibin, aa[i]->acc); 
+              fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "acc");
+    ibin = 21;fhGenAndAccNumbers[i]->SetBinContent(ibin, aa[i]->accE); 
+              fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "accE");
+
+    ibin = 30;fhGenAndAccNumbers[i]->SetBinContent(ibin, aa[i]->effCand); 
+              fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "effCand");
+    ibin = 31;fhGenAndAccNumbers[i]->SetBinContent(ibin, aa[i]->effCandE); 
+              fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "effCandE");
+  }
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotResults::saveHists(string smode) {
+
+  fHistFile->cd();
+
+  int mode(0); 
+  if ("SgMc" == smode)   mode = 0; 
+  if ("BdMc" == smode)   mode = 1; 
+  if ("SgData" == smode) mode = 5; 
+
+  if ("NoMc" == smode)   mode = 10; 
+  if ("NoData" == smode) mode = 15; 
+
+  if ("CsMc" == smode)   mode = 20; 
+  if ("CsData" == smode) mode = 25; 
+ 
+  TH1D *h1(0); 
+  TH2D *h2(0); 
+
+  for (unsigned int i = 0; i < fNchan; ++i) {
+    string modifier = (fDoUseBDT?"bdt":"cnc"); 
+    h1 = (TH1D*)(fhGenAndAccNumbers[i]->Clone(Form("hGenAndAccNumbers_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassWithAllCuts[i]->Clone(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassWithAllCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassWithAllCutsManyBins[i]->Clone(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassWithAllCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassWithMassCuts[i]->Clone(Form("hMassWithMassCuts%d_chan%d", mode, i))); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassWithMassCutsManyBins[i]->Clone(Form("hMassWithMassCutsManyBins%d_chan%d", mode, i))); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    if (string::npos != fSetup.find("No") || string::npos != fSetup.find("Cs")) {
+      h1 = (TH1D*)(fhNorm[i]->Clone(Form("hNorm_%s_%d_chan%d", modifier.c_str(), mode, i)));       
+      h1->SetDirectory(fHistFile); 
+      h1->Write();
+
+      h1 = (TH1D*)(fhNormC[i]->Clone(Form("hNormC_%s_%d_chan%d", modifier.c_str(), mode, i)));     
+      h1->SetDirectory(fHistFile); 
+      h1->Write();
+    }
+
+    if (string::npos != fSetup.find("DstarPi")) {
+      h1 = (TH1D*)(fhDstarPi[i]->Clone(Form("hDstarPi_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+      h1->SetDirectory(fHistFile); 
+      h1->Write();
+    }
+    
+    if (fDoUseBDT) {
+      h2 = (TH2D*)(fhBdtMass[i]->Clone(Form("hBdtMass%d_chan%d", mode, i))); 
+      h2->SetDirectory(fHistFile); 
+      h2->Write();
+    }
+
+  }
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotResults::loopFunction(int function, int mode) {
+  if (1 == function) loopFunction1(mode);
+  if (2 == function) loopFunction2(mode);
+}
+
+
+// ----------------------------------------------------------------------
+void plotResults::loopFunction1(int mode) {
+
+  if (fChan < 0) return;
+  
+  double mass = fb.m; 
+
+  bool bp2jpsikp(false), bs2jpsiphi(false); 
+  if (10 == mode) bp2jpsikp = true; 
+  if (15 == mode) bp2jpsikp = true; 
+
+  if (20 == mode) bs2jpsiphi = true; 
+  if (25 == mode) bs2jpsiphi = true; 
+  
+  fhMassAbsNoCuts[fChan]->Fill(mass);
+
+  if (!(fGoodAcceptance && fGoodTracksPt && fGoodTracksEta && fGoodMuonsPt && fGoodMuonsEta)) return;
+
+  // -- this is the base, after the raw acceptance cuts
+  fhMassNoCuts[fChan]->Fill(mass);
+  fhMassNoCutsManyBins[fChan]->Fill(mass); 
+
+  if (fDoUseBDT) {
+    if (fBDT < fCuts[fChan]->bdt) return;
+  } else {
+    if (!fGoodQ) return;
+    if (!fGoodJpsiCuts) return;
+    if (!fGoodPvAveW8) return;
+    if (!fGoodMaxDoca) return;
+    if (!fGoodLip) return;
+    if (!fGoodLipS) return;
+    if (!fGoodIp) return;
+    if (!fGoodIpS) return;
+    if (!fGoodPt) return;
+    if (!fGoodEta) return;
+    if (!fGoodAlpha) return;
+    if (!fGoodChi2) return;
+    if (!fGoodFLS) return;
+    if (!fGoodCloseTrack) return;
+    if (!fGoodIso) return;
+    if (!fGoodDocaTrk) return;
+  }
+
+  fhMassWithAnaCuts[fChan]->Fill(mass); 
+  fhMassWithAnaCutsManyBins[fChan]->Fill(mass); 
+
+  double tr1w8(0.), tr2w8(0.), trw8(0.), m1w8(0.), m2w8(0.), mw8(0.0);
+  // -- muon ID: Data PidTables
+  m1w8 = fptM->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+  m2w8 = fptM->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+  mw8  = m1w8*m2w8; 
+  fhMuId[fChan]->Fill(mw8); 
+  
+  // -- muon ID: MC PidTables
+  m1w8 = fptMMC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+  m2w8 = fptMMC->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+  mw8  = m1w8*m2w8; 
+  if (mw8 > 0.) {
+    fhMuIdMC[fChan]->Fill(mw8, 1./mw8); 
+  }
+
+  // -- muon trigger: Data PidTables
+  tr1w8 = fptT1->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*fptT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+  tr2w8 = fptT1->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.)*fptT2->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+  trw8  = tr1w8*tr2w8; 
+  if (bs2jpsiphi || bp2jpsikp) {
+    if (fb.rr >= 3) {
+      if (TMath::Abs(fb.m1eta) > 2.2) trw8 = 0; 
+      if (TMath::Abs(fb.m2eta) > 2.2) trw8 = 0; 
+    }
+  }
+  fhMuTr[fChan]->Fill(trw8); 
+  
+  // -- muon trigger: MC PidTables
+  tr1w8 = fptT1MC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*fptT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+  tr2w8 = fptT1MC->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.)*fptT2->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+  trw8  = tr1w8*tr2w8; 
+  if (bs2jpsiphi || bp2jpsikp) {
+    if (fb.rr >= 3) {
+      if (TMath::Abs(fb.m1eta) > 2.2) trw8 = 0; 
+      if (TMath::Abs(fb.m2eta) > 2.2) trw8 = 0; 
+    }
+  }
+  fhMuTrMC[fChan]->Fill(trw8); 
+
+
+  // -- MUON ID
+  if (false == fb.gmuid) return;
+  fhMassWithMuonCuts[fChan]->Fill(mass); 
+  fhMassWithMuonCutsManyBins[fChan]->Fill(mass); 
+  
+  // -- TRIGGER
+  if (false == fb.hlt) return;
+  fhMassWithTriggerCuts[fChan]->Fill(mass); 
+  fhMassWithTriggerCutsManyBins[fChan]->Fill(mass); 
+  
+  fhMassWithAllCuts[fChan]->Fill(mass); 
+  if (5 == mode && !(5.2 < mass && mass < 5.45)) {
+    fhMassWithAllCutsBlind[fChan]->Fill(mass); 
+  }
+  
+  fhMassWithAllCutsManyBins[fChan]->Fill(mass); 
+  
+  fhNorm[fChan]->Fill(mass);
+  fhNormC[fChan]->Fill(fb.cm);
+  fhDstarPi[fChan]->Fill(mass);
+  
+  //FIXME  if (!fDoUseBDT) elist->Enter(jentry); 
+  
+  if (0 == mode && mass < fCuts[fChan]->mBsLo) return;
+  if (0 == mode && mass > fCuts[fChan]->mBsHi) return;
+  if (1 == mode && mass < fCuts[fChan]->mBdLo) return;
+  if (1 == mode && mass > fCuts[fChan]->mBdHi) return;
+  if (10 == mode && mass < fNoLo) return;
+  if (10 == mode && mass > fNoHi) return;
+  if (20 == mode && mass < fCsLo) return;
+  if (20 == mode && mass > fCsHi) return;
+  
+  fhMassWithMassCuts[fChan]->Fill(mass);
+  fhMassWithMassCutsManyBins[fChan]->Fill(mass); 
+  
+  fhBdtMass[fChan]->Fill(mass, fBDT); 
+  //  if (fBDT > 0.3) cout << "mass = " << mass << " bdt = " << fBDT << endl;
+}
+
+
+// ----------------------------------------------------------------------
+void plotResults::resetHistograms() {
+
+  for (unsigned int i = 0; i < fNchan; ++i) {
+    fhGenAndAccNumbers[i]->Reset();
+
+    fhBdtMass[i]->Reset();
+    
+    fhMuId[i]->Reset();
+    fhMuTr[i]->Reset();
+    fhMuIdMC[i]->Reset();
+    fhMuTrMC[i]->Reset();
+
+    fhMassAbsNoCuts[i]->Reset();
+    fhMassNoCuts[i]->Reset();
+    fhMassNoCutsManyBins[i]->Reset();
+
+    fhMassWithAnaCuts[i]->Reset();
+    fhMassWithAnaCutsManyBins[i]->Reset();
+
+    fhMassWithMuonCuts[i]->Reset();
+    fhMassWithMuonCutsManyBins[i]->Reset();
+
+    fhMassWithTriggerCuts[i]->Reset();
+    fhMassWithTriggerCutsManyBins[i]->Reset();
+
+    fhMassWithAllCuts[i]->Reset();
+    fhMassWithAllCutsBlind[i]->Reset();
+    fhMassWithAllCutsManyBins[i]->Reset();
+
+    fhNorm[i]->Reset();
+    fhNormC[i]->Reset();
+    fhDstarPi[i]->Reset();
+
+    fhMassWithMassCutsManyBins[i]->Reset();
+    fhMassWithMassCuts[i]->Reset();
+  }
+
+}
+
+// ----------------------------------------------------------------------
+void plotResults::loopFunction2(int mode) {
+  cout << "loopfunction2: " << mode << endl;
+}
 
 
 // ----------------------------------------------------------------------
@@ -1018,6 +1451,94 @@ double  plotResults::scaledYield(numbers *a, numbers *no, double chanbf, double 
 
   return yield; 
 }
+
+
+// ----------------------------------------------------------------------
+void plotResults::rareBgFromHist(std::string mode) {
+  
+
+  TH1D *h1(0), *h2(0); 
+  string smode("cnc"), name(""); 
+  if (fDoUseBDT) smode = "bdt"; 
+
+  zone(1,2);
+  for (map<string, string>::iterator imap = fName.begin(); imap != fName.end(); ++imap) {  
+    if (string::npos == imap->first.find("bg")) {
+      continue;
+    }
+
+    if (mode != "nada" && string::npos == imap->first.find(mode)) {
+      continue;
+    }
+
+    if (0 == fF[imap->first]) {
+      continue; 
+    }
+
+    fRareName = imap->first; 
+
+    for (int ichan = 0; ichan < fNchan; ++ichan) {
+      name = Form("hMassWithAllCuts_%s_%s%d", smode.c_str(), fRareName.c_str(), ichan);
+      h1 = (TH1D*)fHistFile->Get(name.c_str()); 
+      name = Form("hMassWithAllCutsManyBins_%s_%s%d", smode.c_str(), fRareName.c_str(), ichan);
+      h2 = (TH1D*)fHistFile->Get(name.c_str()); 
+
+      c0->cd(1);
+      h1->Draw();
+      c0->cd(2);
+      h2->Draw();
+      c0->Modified(); 
+      c0->Update();
+    }
+
+  }
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotResults::rareBgHists(std::string mode) {
+
+  TH1D *h1(0); 
+  TTree *t(0); 
+  string smode("cnc"); 
+  if (fDoUseBDT) smode = "bdt"; 
+
+  for (map<string, string>::iterator imap = fName.begin(); imap != fName.end(); ++imap) {  
+    if (string::npos == imap->first.find("bg")) {
+      continue;
+    }
+
+    if (mode != "nada" && string::npos == imap->first.find(mode)) {
+      continue;
+    }
+
+    if (0 == fF[imap->first]) {
+      continue; 
+    }
+
+    t = (TTree*)(fF[imap->first]->Get("candAnaMuMu/events"));
+    cout << "======> " << imap->first  << " with the tree at " << t << endl;
+
+    fRareName = imap->first; 
+    setupTree(t, fSetup); 
+    loopOverTree(t, fSetup, 1);
+
+    for (int ichan = 0; ichan < fNchan; ++ichan) {
+      h1 = (TH1D*)(fhMassWithAllCutsManyBins[ichan]->Clone(Form("hMassWithAllCutsManyBins_%s_%s%d", smode.c_str(), fRareName.c_str(), ichan)));  
+      h1->SetTitle(Form("hMassWithAllCutsManyBins_%s_%s%d", smode.c_str(), fRareName.c_str(), ichan));
+      h1->SetDirectory(fHistFile); 
+      h1->Write();
+
+      h1 = (TH1D*)(fhMassWithAllCuts[ichan]->Clone(Form("hMassWithAllCuts_%s_%s%d", smode.c_str(), fRareName.c_str(), ichan)));  
+      h1->SetTitle(Form("hMassWithAllCuts_%s_%s%d", smode.c_str(), fRareName.c_str(), ichan));
+      h1->SetDirectory(fHistFile); 
+      h1->Write();
+    }
+  }
+
+}
+
 
 
 // ----------------------------------------------------------------------
