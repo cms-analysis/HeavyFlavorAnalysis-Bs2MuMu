@@ -19,31 +19,31 @@
 // External constants //
 ////////////////////////
 // NEW LHCb VALUE
-static const measurement_t fs_by_fu(0.267,0.021);
+static const measurement_t fs_by_fu(0.267,0.021,0.021);
 
 // PDG Values
-static const measurement_t f_s(0.113,0.013);
-static const measurement_t f_u(0.401,0.013);
-static const measurement_t f_bbaryon(0.085,0.022);
+static const measurement_t f_s(0.113,0.013,0.013);
+static const measurement_t f_u(0.401,0.013,0.013);
+static const measurement_t f_bbaryon(0.085,0.022,0.022);
 
 // branching fractions
-static const measurement_t sm_bstomumu(3.2e-9,0);
-static const measurement_t sm_bdtomumu(1.0e-10,0);
-static const measurement_t bptojpsik(1.014e-3,0.034e-3);
-static const measurement_t jpsitomumu(0.0593,0.0006);
+static const measurement_t sm_bstomumu(3.2e-9,0,0);
+static const measurement_t sm_bdtomumu(1.0e-10,0,0);
+static const measurement_t bptojpsik(1.014e-3,0.034e-3,0.034e-3);
+static const measurement_t jpsitomumu(0.0593,0.0006,0.0006);
 
 // rare backgrounds
-static const measurement_t BsToKK(2.7e-5,0);
-static const measurement_t BsToKPi(5.0e-6,0);
-static const measurement_t BsToPiPi(1.2e-6,0);
-static const measurement_t BsToKMuNu(1.3e-4,0);
-static const measurement_t BdToPiPi(5.2e-6,0);
-static const measurement_t BdToKPi(1.9e-5,0);
-static const measurement_t BdToKK(1.5e-7,0);
-static const measurement_t BdToPiMuNu(1.3e-4,0);
-static const measurement_t LambdaBToPPi(3.5e-6,0);
-static const measurement_t LambdaBToPK(5.6e-6,0);
-static const measurement_t LambdaBToPMuNu(1.3e-4,0);
+static const measurement_t BsToKK(2.7e-5,0,0);
+static const measurement_t BsToKPi(5.0e-6,0,0);
+static const measurement_t BsToPiPi(1.2e-6,0,0);
+static const measurement_t BsToKMuNu(1.3e-4,0,0);
+static const measurement_t BdToPiPi(5.2e-6,0,0);
+static const measurement_t BdToKPi(1.9e-5,0,0);
+static const measurement_t BdToKK(1.5e-7,0,0);
+static const measurement_t BdToPiMuNu(1.3e-4,0,0);
+static const measurement_t LambdaBToPPi(3.5e-6,0,0);
+static const measurement_t LambdaBToPK(5.6e-6,0,0);
+static const measurement_t LambdaBToPMuNu(1.3e-4,0,0);
 
 using std::map;
 
@@ -224,9 +224,7 @@ bmm_param_tag find_bmm_param_by_name(std::string name, bool *bsparam)
 
 const measurement_t c_s_theory()
 {
-	measurement_t c_s;
-	
-	c_s = sm_bstomumu / (bptojpsik * jpsitomumu);
+	measurement_t c_s = sm_bstomumu / (bptojpsik * jpsitomumu);
 	
 	return c_s;
 } // c_s_theory()
@@ -357,7 +355,7 @@ measurement_t compute_efftot_bplus(map<bmm_param,measurement_t> *bmm, int channe
 measurement_t compute_efftot_bmm(map<bmm_param,measurement_t> *bmm, int channel)
 {
 	using std::make_pair;
-	measurement_t eff;
+	measurement_t eff(0,0,0);
 	
 	if(bmm->count(make_pair(kEff_total_bmm, channel)) > 0)
 		eff = (*bmm)[make_pair(kEff_total_bmm, channel)];

@@ -15,9 +15,11 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <iostream>
 
 // ROOT headers
 #include <TCut.h>
+#include <TMath.h>
 
 // Systematic uncertainties
 enum systematics_t {
@@ -38,30 +40,61 @@ enum systematics_t {
 class measurement_t {
 	
 	public:
-		explicit measurement_t(double theVal = 0.0, double theErr = 0.0) { val = theVal; err = theErr; }
+		measurement_t() : fVal(0), fErrHi(0), fErrLo(0) {
+			setVal(0.0);
+			setErrHi(0.0);
+			setErrLo(0.0);
+		}
+		explicit measurement_t(double val, double errHi, double errLo) : fVal(0.0), fErrHi(0.0), fErrLo(0.0) {
+			setVal(val);
+			setErrHi(errHi);
+			setErrLo(errLo);
+		}
 		
-		double getVal() const { return val; }
-		double getErr() const { return err; }
-		void setVal(double newVal) { val = newVal; }
-		void setErr(double newErr) { err = (newErr < 0.0) ? 0.0 : newErr; }
+		double getVal() const { return fVal; }
+		double getErrHi() const { return fErrHi; }
+		double getErrLo() const { return fErrLo; }
+		void setVal(double val) { fVal = val; }
+		void setErrHi(double errHi) {
+			if(errHi < 0) {
+				std::cerr << "measurement_t::setErrHi() with negative argument. Taking absolute value..." << std::endl;
+				errHi = -errHi;
+			}
+			fErrHi = errHi;
+		}
+		void setErrLo(double errLo) {
+			if (errLo < 0) {
+				std::cerr << "measurement_t::setErrLo() with negative argument. Taking absolute value..." << std::endl;
+				errLo = -errLo;
+			}
+			fErrLo = errLo;
+		}
 		
 		measurement_t multiply(measurement_t m) const {
-			double v = val * m.val;
-			double e = sqrt(m.val*m.val*err*err + val*val*m.err*m.err);
-			return measurement_t(v, e);
+			double val = getVal() * m.getVal();
+			double errHi = TMath::Sqrt(m.getVal()*m.getVal()*getErrHi()*getErrHi() + getVal()*getVal()*m.getErrHi()*m.getErrHi());
+			double errLo = TMath::Sqrt(m.getVal()*m.getVal()*getErrLo()*getErrLo() + getVal()*getVal()*m.getErrLo()*m.getErrLo());
+			return measurement_t(val, errHi, errLo);
 		}
 		measurement_t divide(measurement_t m) const {
-			double v = 0.0, e = 0.0;
-			if (m.val != 0) {
-				v = val / m.val;
-				e = sqrt( err*err/(m.val*m.val) + (val*m.err / (m.val*m.val))*(val*m.err / (m.val*m.val)) );
+			double errHi, errLo, val;
+			
+			val = errHi = errLo = std::numeric_limits<double>::infinity();
+			
+			if (m.getVal() != 0.0) {
+				double mVal2 = m.getVal()*m.getVal();
+				
+				val = getVal() / m.getVal();
+				errHi = TMath::Sqrt( getErrHi()*getErrHi()/mVal2 + (getVal()*m.getErrHi()/mVal2) * (getVal()*m.getErrHi()/mVal2) );
+				errLo = TMath::Sqrt( getErrLo()*getErrLo()/mVal2 + (getVal()*m.getErrLo()/mVal2) * (getVal()*m.getErrLo()/mVal2) );
 			}
-			return measurement_t(v, e);
+			return measurement_t(val, errHi, errLo);
 		}
 		measurement_t add(measurement_t m) const {
-			double v = val + m.val;
-			double e = sqrt(err*err + m.err*m.err);
-			return measurement_t(v, e);
+			double val = getVal() + m.getVal();
+			double errHi = TMath::Sqrt(getErrHi()*getErrHi() + m.getErrHi()*m.getErrHi());
+			double errLo = TMath::Sqrt(getErrLo()*getErrLo() + m.getErrLo()*m.getErrLo());
+			return measurement_t(val, errHi, errLo);
 		}
 		
 		measurement_t operator*(measurement_t m) const { return multiply(m); }
@@ -69,8 +102,9 @@ class measurement_t {
 		measurement_t operator+(measurement_t m) const { return add(m); }
 		
 	private:
-		double val;
-		double err;
+		double fVal;
+		double fErrHi;
+		double fErrLo;
 };
 
 /* external constants */
