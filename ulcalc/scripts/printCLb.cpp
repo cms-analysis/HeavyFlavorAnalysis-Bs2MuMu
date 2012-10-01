@@ -10,6 +10,17 @@
 
 #include <RooStats/HypoTestResult.h>
 
+#define kVDEF_pvalueObs			"default-11:pvalueObs:val"
+#define kVDEF_signObs			"default-11:signObs:val"
+#define kVDEF_pvalueSM_Med		"default-11:pvalueSM:val"
+#define kVDEF_pvalueSM_ErrHi	"default-11:pvalueSM:errHi"
+#define kVDEF_pvalueSM_ErrLo	"default-11:pvalueSM:errLo"
+#define kVDEF_signSM_Med		"default-11:signSM:val"
+#define kVDEF_signSM_ErrHi		"default-11:signSM:errHi"
+#define kVDEF_signSM_ErrLo		"default-11:signSM:errLo"
+#define kVDEF_prob3Sigma		"default-11:prob3Sigma:val"
+#define kVDEF_prob5Sigma		"default-11:prob5Sigma:val"
+
 using namespace RooStats;
 
 static double sigFromP(double pvalue)
@@ -17,7 +28,7 @@ static double sigFromP(double pvalue)
 	return TMath::Sqrt(2.)*TMath::ErfInverse(1.-2.*pvalue);
 } // sigFromP()
 
-void printCLb(const char *filename)
+void printCLb(const char *filename, const char *latexOut = NULL)
 {
 	TFile *file = TFile::Open(filename);
 	RooWorkspace *wspace = (RooWorkspace*)file->Get("wspace");
@@ -27,9 +38,17 @@ void printCLb(const char *filename)
 	double p[5];
 	double q[5];
 	double *x;
+	FILE *latexFile = NULL;
+	
+	if (latexOut)
+		latexFile = fopen(latexOut, "w");
 	
 	if (resultBkg) {
 		cout << "p value for background model: " << resultBkg->CLsplusb() << " corresponding to " << sigFromP(resultBkg->CLsplusb()) << " sigmas." << endl;
+		if (latexFile) {
+			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_pvalueObs, resultBkg->CLsplusb());
+			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_signObs, sigFromP(resultBkg->CLsplusb()));
+		}
 	}
 	if (resultSM) {
 		HypoTestResult tempResult;
@@ -66,7 +85,18 @@ void printCLb(const char *filename)
 		cout << Form("Exp[p_SM] = %f+%f-%f = %f+%f-%f", q[1], q[2] - q[1], q[1] - q[0],sigFromP(q[1]),sigFromP(q[0])-sigFromP(q[1]),sigFromP(q[1])-sigFromP(q[2])) << endl;
 		cout << Form("	P(3 sigma) = %f", q[3]) << endl;
 		cout << Form("	P(5 sigma) = %f", q[4]) << endl;
+		if (latexFile) {
+			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_pvalueSM_Med, q[1]);
+			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_pvalueSM_ErrHi, q[2]-q[1]);
+			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_pvalueSM_ErrLo, q[1]-q[0]);
+			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_signSM_Med, sigFromP(q[1]));
+			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_signSM_ErrHi, sigFromP(q[0])-sigFromP(q[1]));
+			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_signSM_ErrLo, sigFromP(q[1])-sigFromP(q[2]));
+			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_prob3Sigma, q[3]);
+			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_prob5Sigma, q[4]);
+		}
 	}
 	
+	if (latexFile) fclose(latexFile);
 	delete file;
 } // printCLb()
