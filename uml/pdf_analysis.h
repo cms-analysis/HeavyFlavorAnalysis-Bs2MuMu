@@ -121,6 +121,7 @@ public:
 protected:
   string meth_;
   string ch_s_;
+  int ch_i_;
   RooWorkspace* ws_;
   RooAbsData* rds_;
 

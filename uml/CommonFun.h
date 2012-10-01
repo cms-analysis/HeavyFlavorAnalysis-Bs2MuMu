@@ -59,7 +59,7 @@ void help() {
   cout << "-print \t save the fits to gif and pdf --> -no_legend without parameters on canvas" << endl;
   cout << "-cuts #filename \t file with MVA selections" << endl;
   cout << "-SB \t fit side-bands only" << endl; /// test
-  cout << "-sig # \t evaluate significance with method: 0 by hand; 1 ProfileLikelihoodCalculator; 2 ProfileLikelihoodTestStat" << endl;
+  cout << "-sig # \t evaluate significance with method: 0 by hand; 1 ProfileLikelihoodCalculator; 2 frequentist ProfileLikelihoodTestStat; 3 hybrid ProfileLikelihoodTestStat" << endl;
   cout << "-e #filename \t estimates file (useful for significance)" << endl;
   cout << "-pee \t per-event-error" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;
@@ -77,7 +77,7 @@ void help() {
   cout << "if NOT simultaneous" << endl;
   cout << "\t -pdf {bs, bd, rare, comb, total} \t combination of pdf names, for generating" << endl;
   cout << "\t -test {bs, bd, rare, comb, total} \t fitting pdf, if different from pdf" << endl;
-  cout << "-bias [c+,c-,tau+,tau-]\t biasing rare pdf parameters (it works without -roomcs)" << endl;
+  cout << "-bias [c+,c-,tau+,tau-,sig+,sig-]\t biasing rare pdf parameters (it works without -roomcs)" << endl;
   cout << "-pee \t per-event-error" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;
   cout << endl;

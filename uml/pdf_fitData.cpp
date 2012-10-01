@@ -451,6 +451,7 @@ void pdf_fitData::significance() {
   if (sign == 0) sig_hand();
   else if (sign == 1) sig_plhc();
   else if (sign == 2) sig_plhts();
+  else if (sign == 3) sig_hybrid_plhts();
 }
 
 Double_t pdf_fitData::sig_hand() {
@@ -559,6 +560,115 @@ void pdf_fitData::sig_plhts() {
   vector <double> N_bd(channels);
   for (int i = 0; i < channels; i++) {
     N_bs[i] = ws_->var(name("N_bs", i))->getVal();
+    if (!SM_ && !bd_constr_) N_bd[i] = ws_->var(name("N_bd", i))->getVal();
+  }
+  using namespace RooStats;
+
+  if (simul_) ws_->defineSet("obs", "Mass,channels");
+  else ws_->defineSet("obs", "Mass");
+  ostringstream name_poi;
+  if (simul_) {
+    for (int i = 0; i < channels; i++) {
+      if (i != 0) name_poi << ",";
+      name_poi << "N_bs_" << i;
+      if (!bd_constr_ && !SM_) {
+        name_poi << ",N_bd_" << i;
+      }
+    }
+  }
+  else {
+    name_poi << "N_bs";
+    if (!bd_constr_ && !SM_) name_poi << ",N_bd";
+  }
+  if (bd_constr_) name_poi << ",Bd_over_Bs";
+  ws_->defineSet("poi", name_poi.str().c_str());
+
+  ModelConfig* H0 = new ModelConfig("H0", "background only hypothesis", ws_);
+  RooArgSet CO;
+  if (pee) {
+    CO.add(*ws_->var("MassRes"));
+    H0->SetConditionalObservables(CO);
+  }
+  if (simul_) H0->SetPdf(*ws_->pdf("pdf_ext_simul"));
+  else H0->SetPdf(*ws_->pdf("pdf_ext_total"));
+  H0->SetParametersOfInterest(*ws_->set("poi"));
+  H0->SetObservables(*ws_->set("obs"));
+  if (simul_) {
+    for (int i = 0; i < channels; i++) {
+      ostringstream name_oss;
+      name_oss << "N_bs_" << i;
+      ws_->var(name_oss.str().c_str())->setVal(0.0);
+      if (!bd_constr_ && !SM_) {
+        ws_->var(name("N_bd", i))->setVal(0.0);
+      }
+    }
+  }
+  else {
+    ws_->var("N_bs")->setVal(0.0);
+    if (!bd_constr_ && !SM_) ws_->var("N_bd")->setVal(0.0);
+  }
+  if (bd_constr_) {
+    ws_->var("Bd_over_Bs")->setVal(0.0);
+  }
+  H0->SetSnapshot(*ws_->set("poi"));
+
+  ModelConfig* H1 = new ModelConfig("H1", "background + signal hypothesis", ws_);
+  if (pee) {
+    H1->SetConditionalObservables(CO);
+  }
+  if (simul_) H1->SetPdf(*ws_->pdf("pdf_ext_simul"));
+  else H1->SetPdf(*ws_->pdf("pdf_ext_total"));
+  H1->SetParametersOfInterest(*ws_->set("poi"));
+  H1->SetObservables(*ws_->set("obs"));
+  parse_estimate();
+  if (simul_) {
+    for (int i = 0; i < channels; i++) {
+      ostringstream name_oss;
+      name_oss << "N_bs_" << i;
+      ws_->var(name_oss.str().c_str())->setVal(N_bs[i]);
+      if (!bd_constr_ && !SM_) {
+        ws_->var(name("N_bd", i))->setVal(N_bd[i]);
+      }
+    }
+  }
+  else {
+    ws_->var("N_bs")->setVal(N_bs[0]);
+    ws_->var("N_bd")->setVal(N_bd[0]);
+  }
+  if (bd_constr_) {
+    int index = simul_ ? 0 : atoi(ch_s_.c_str());
+    double ratio = (double) estimate_bd[index] / estimate_bs[index];
+    ws_->var("Bd_over_Bs")->setVal(ratio);
+  }
+  H1->SetSnapshot(*ws_->set("poi"));
+
+  ws_->import(*H0);
+  ws_->import(*H1);
+  ws_->Print();
+
+  string name_of_pdf = "pdf_ext_simul";
+  if (!simul_) name_of_pdf = "pdf_ext_total";
+  ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
+  pl_ts.SetOneSidedDiscovery(true);
+  if (pee) pl_ts.SetConditionalObservables(CO);
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 100);
+  FrequentistCalculator frequCalc(*ws_->data("global_data"), *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
+  HypoTestResult *htr_pl = frequCalc.GetHypoTest();
+  htr_pl->Print();
+//  HypoTestPlot *plot = new HypoTestPlot(*htr_pl);
+//  TCanvas* c_hypotest = new TCanvas("c_hypotest", "c_hypotest", 600, 600);
+//  plot->Draw();
+//  c_hypotest->Print("fig/ProfileLikelihoodTestStat.gif");
+//  delete plot;
+//  delete c_hypotest;
+  cout << "ProfileLikelihoodTestStat + frequentist: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << endl;
+}
+
+void pdf_fitData::sig_hybrid_plhts() {
+  vector <double> N_bs(channels);
+  vector <double> N_bd(channels);
+  for (int i = 0; i < channels; i++) {
+    N_bs[i] = ws_->var(name("N_bs", i))->getVal();
     N_bd[i] = ws_->var(name("N_bd", i))->getVal();
   }
   using namespace RooStats;
@@ -650,9 +760,17 @@ void pdf_fitData::sig_plhts() {
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(CO);
-  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 500);
-  FrequentistCalculator frequCalc(*ws_->data("global_data"), *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
-  HypoTestResult *htr_pl = frequCalc.GetHypoTest();
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 100);
+
+  //ws_->factory("Poisson::py(y[100,0,500],prod::taub(tau[1.],b))");
+  //ws_->factory(Form("PROD::model(%s,py)", name_of_pdf.c_str());
+  ws_->factory("Gaussian::gauss_prior(N_comb,y[100,0,500], expr::sqrty('sqrt(y)',y))");
+
+  HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
+  hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("gauss_prior"));
+  hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("gauss_prior"));
+
+  HypoTestResult *htr_pl = hibrCalc.GetHypoTest();
   htr_pl->Print();
 //  HypoTestPlot *plot = new HypoTestPlot(*htr_pl);
 //  TCanvas* c_hypotest = new TCanvas("c_hypotest", "c_hypotest", 600, 600);
@@ -660,5 +778,5 @@ void pdf_fitData::sig_plhts() {
 //  c_hypotest->Print("fig/ProfileLikelihoodTestStat.gif");
 //  delete plot;
 //  delete c_hypotest;
-  cout << "ProfileLikelihoodTestStat + frequentist: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << endl;
+  cout << "ProfileLikelihoodTestStat + hybrid: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << endl;
 }

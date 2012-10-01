@@ -59,6 +59,7 @@ class pdf_fitData : public pdf_analysis {
     Double_t sig_hand();
     void sig_plhc();
     void sig_plhts();
+    void sig_hybrid_plhts();
 };
 
 #endif // PDF_FITDATA_H

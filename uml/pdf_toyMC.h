@@ -59,9 +59,10 @@ private:
   void print(string output, RooWorkspace* ws);
 
   void fit_pulls(vector<RooRealVar *> pull, vector<RooDataSet *> rds);
-  void print_mean(vector <TH1D*> mean_h);
+  void print_histos(vector <TH1D*> histos);
   RooFitResult* fit_pdf (string pdf, RooAbsData* data, int printlevel = -1, RooWorkspace *ws = 0);
   Double_t sig_hand(RooAbsData *data, int printlevel, RooWorkspace *ws);
+  void do_bias(RooWorkspace* ws);
 
 };
 

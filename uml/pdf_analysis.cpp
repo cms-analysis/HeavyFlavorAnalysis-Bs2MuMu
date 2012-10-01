@@ -5,6 +5,7 @@ pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, b
   print_ = print;
   meth_ = meth;
   ch_s_ = ch_s;
+  ch_i_ = atoi(ch_s_.c_str());
   range_ = range;
   SM_ = SM;
   bd_constr_ = bd_constr;
