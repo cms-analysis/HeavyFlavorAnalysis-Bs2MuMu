@@ -103,7 +103,6 @@ const measurement_t bf_Ups1SToMuMu();
 const measurement_t bf_Ups2SToMuMu();
 const measurement_t bf_Ups3SToMuMu();
 
-
 double bstomumu();
 double bdtomumu();
 
@@ -142,8 +141,6 @@ enum bmm_param_tag {
 	kUnknownParam
 };
 typedef std::pair<bmm_param_tag,int> bmm_param;
-
-double compute_tau(std::map<bmm_param,measurement_t> *bsmm, std::map<bmm_param,measurement_t> *bdmm, int channel, bool tau_s);
 
 /* conversion routines */
 std::string find_bmm_name(bmm_param_tag p);

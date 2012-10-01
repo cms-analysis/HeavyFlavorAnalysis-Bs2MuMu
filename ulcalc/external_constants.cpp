@@ -47,46 +47,6 @@ static const measurement_t LambdaBToPMuNu(1.3e-4,0);
 
 using std::map;
 
-// utility routine
-static double compute_bkg_width(map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, int channel, double lo, double hi)
-{
-	using std::make_pair;
-	std::vector<std::pair<double,bool> > v(4); // we need 4 entries
-	double bkg_width;
-	size_t j,interior;
-	double entered;
-	
-	v[0] = make_pair( ((*bsmm)[make_pair(kLow_signal_window_bmm, channel)]).getVal(), true);
-	v[1] = make_pair( ((*bdmm)[make_pair(kLow_signal_window_bmm, channel)]).getVal(), true);
-	v[2] = make_pair( ((*bsmm)[make_pair(kHigh_signal_window_bmm, channel)]).getVal(), false);
-	v[3] = make_pair( ((*bdmm)[make_pair(kHigh_signal_window_bmm, channel)]).getVal(), false);
-	std::sort(v.begin(), v.end()); // sort the vector
-
-	entered = lo;
-	bkg_width = hi - lo;
-	for (j = 0, interior = 0; j < v.size(); j++) {
-		if (v[j].second) {
-			// entering a new interval
-			if (!interior) entered = v[j].first;
-			interior++;
-		} else {
-			interior--;
-			// if not in interior now, then leaving an interval
-			if (!interior)
-				bkg_width -= (v[j].first - entered);
-		}
-	}
-
-	return bkg_width;
-} // compute_bkg_width()
-
-double compute_tau(map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, int channel, bool tau_s)
-{
-	std::map<bmm_param,measurement_t> *bmm = tau_s ? bsmm : bdmm;
-	
-	return ( (*bmm)[std::make_pair(kHigh_signal_window_bmm,channel)].getVal() - (*bmm)[std::make_pair(kLow_signal_window_bmm, channel)].getVal() ) / compute_bkg_width(bsmm, bdmm, channel, 4.9, 5.9); // FIXME: ugly to be hardcoded here
-} // compute_tau()
-
 std::string find_bmm_name(bmm_param_tag p)
 {
 	std::string result;
