@@ -762,13 +762,17 @@ void pdf_fitData::sig_hybrid_plhts() {
   if (pee) pl_ts.SetConditionalObservables(CO);
   ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 100);
 
-  //ws_->factory("Poisson::py(y[100,0,500],prod::taub(tau[1.],b))");
-  //ws_->factory(Form("PROD::model(%s,py)", name_of_pdf.c_str());
-  ws_->factory("Gaussian::gauss_prior(N_comb,y[100,0,500], expr::sqrty('sqrt(y)',y))");
+  RooGaussian prior_bd("prior_bd", "prior_bd", *ws_->var("N_bd"), RooConst(ws_->var("N_bd")->getVal()), RooConst(ws_->var("N_bd")->getError()));
+  RooGaussian prior_rare("prior_rare", "prior_rare", *ws_->var("N_rare"), RooConst(ws_->var("N_rare")->getVal()), RooConst(ws_->var("N_rare")->getError()));
+  RooGaussian prior_comb("prior_comb", "prior_comb", *ws_->var("N_comb"), RooConst(ws_->var("N_comb")->getVal()), RooConst(ws_->var("N_comb")->getError()));
+  RooArgList prior_list(prior_bd, prior_rare, prior_comb, "prior_list");
+  RooProdPdf prior("prior", "prior", prior_list);
+  ws_->import(prior);
+
 
   HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
-  hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("gauss_prior"));
-  hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("gauss_prior"));
+  hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
+  hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("prior"));
 
   HypoTestResult *htr_pl = hibrCalc.GetHypoTest();
   htr_pl->Print();

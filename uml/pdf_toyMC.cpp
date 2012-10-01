@@ -398,7 +398,6 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy) {
   if (bias_.compare("no")) {
     RooWorkspace* fitws = (RooWorkspace*)ws_->Clone("fitws");
     do_bias(fitws);
-
     if (!pee) mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv,  Binned(kFALSE), Extended(kTRUE), FitOptions(Save(kTRUE)), Silence(), FitModel(*fitws->pdf(pdf_name.c_str())));
     else mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv, ConditionalObservables(*ws_->var("MassRes")), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(Save(kTRUE)), FitModel(*fitws->pdf(pdf_name.c_str())));
   }
