@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
   toy1.set_ws(ws);
   ws->Print();
 
-  if (roomcs) toy1.mcstudy(NExp, pdf_toy);
+  if (roomcs) toy1.mcstudy(NExp, pdf_toy, pdf_test);
   if (!roomcs) toy1.generate(NExp, pdf_toy, pdf_test);
   return EXIT_SUCCESS;
 }

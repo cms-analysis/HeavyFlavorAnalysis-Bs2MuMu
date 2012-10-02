@@ -35,7 +35,7 @@ public:
   ~pdf_toyMC();
 
   void generate(int NExp, string pdf_toy, string test_pdf = "total");
-  void mcstudy(int NExp, string pdf_toy);
+  void mcstudy(int NExp, string pdf_toy, string test_pdf = "total");
   void unset_constant();
   
   TH1D* pull_h_bs;
