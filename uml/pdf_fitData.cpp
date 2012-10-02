@@ -341,9 +341,9 @@ void pdf_fitData::make_dataset() {
   global_data = new RooDataSet("global_data", "global_data", varlist);
   if (!random) FillRooDataSet(global_data, input_cuts_);
   else {
-    RooRandom::randomGenerator()->SetSeed(12345);
-    if (!simul_) global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("channels")), 100);
-    else global_data = ws_->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")), 100);
+    //RooRandom::randomGenerator()->SetSeed(12345);
+    if (!simul_) global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")), 100);
+    else global_data = ws_->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("channels")), 100);
   }
   global_data->SetName("global_data");
   //ws_->import(*global_data);
@@ -470,11 +470,11 @@ Double_t pdf_fitData::sig_hand() {
       arg_var->setVal(0.0);
       arg_var->setConstant(1);
     }
-    found = name.find("N_bd");
-    if (found!=string::npos) {
-      arg_var->setVal(0.0);
-      arg_var->setConstant(1);
-    }
+//    found = name.find("N_bd");
+//    if (found!=string::npos) {
+//      arg_var->setVal(0.0);
+//      arg_var->setConstant(1);
+//    }
     if (SM_ || bd_constr_){
       found = name.find("Bd_over_Bs");
       if (found!=string::npos) {
@@ -524,20 +524,20 @@ void pdf_fitData::sig_plhc() {
     for (int i = 0; i < channels; i++) {
       poi.add(*ws_->var(name("N_bs", i)));
       poi.setRealValue(name("N_bs", i), 0);
-      if (!bd_constr_ && !SM_) {
-        poi.add(*ws_->var(name("N_bd", i)));
-        poi.setRealValue(name("N_bd", i), 0);
-      }
+//      if (!bd_constr_ && !SM_) {
+//        poi.add(*ws_->var(name("N_bd", i)));
+//        poi.setRealValue(name("N_bd", i), 0);
+//      }
     }
   }
   else {
     model.SetPdf(*ws_->pdf("pdf_ext_total"));
     poi.add(*ws_->var("N_bs"));
     poi.setRealValue("N_bs", 0);
-    if (!bd_constr_ && !SM_) {
-      poi.add(*ws_->var("N_bd"));
-      poi.setRealValue("N_bd", 0);
-    }
+//    if (!bd_constr_ && !SM_) {
+//      poi.add(*ws_->var("N_bd"));
+//      poi.setRealValue("N_bd", 0);
+//    }
   }
   if (bd_constr_) {
     poi.add(*ws_->var("Bd_over_Bs"));
@@ -571,14 +571,14 @@ void pdf_fitData::sig_plhts() {
     for (int i = 0; i < channels; i++) {
       if (i != 0) name_poi << ",";
       name_poi << "N_bs_" << i;
-      if (!bd_constr_ && !SM_) {
-        name_poi << ",N_bd_" << i;
-      }
+//      if (!bd_constr_ && !SM_) {
+//        name_poi << ",N_bd_" << i;
+//      }
     }
   }
   else {
     name_poi << "N_bs";
-    if (!bd_constr_ && !SM_) name_poi << ",N_bd";
+//    if (!bd_constr_ && !SM_) name_poi << ",N_bd";
   }
   if (bd_constr_) name_poi << ",Bd_over_Bs";
   ws_->defineSet("poi", name_poi.str().c_str());
@@ -598,14 +598,14 @@ void pdf_fitData::sig_plhts() {
       ostringstream name_oss;
       name_oss << "N_bs_" << i;
       ws_->var(name_oss.str().c_str())->setVal(0.0);
-      if (!bd_constr_ && !SM_) {
-        ws_->var(name("N_bd", i))->setVal(0.0);
-      }
+//      if (!bd_constr_ && !SM_) {
+//        ws_->var(name("N_bd", i))->setVal(0.0);
+//      }
     }
   }
   else {
     ws_->var("N_bs")->setVal(0.0);
-    if (!bd_constr_ && !SM_) ws_->var("N_bd")->setVal(0.0);
+//    if (!bd_constr_ && !SM_) ws_->var("N_bd")->setVal(0.0);
   }
   if (bd_constr_) {
     ws_->var("Bd_over_Bs")->setVal(0.0);
@@ -623,17 +623,15 @@ void pdf_fitData::sig_plhts() {
   parse_estimate();
   if (simul_) {
     for (int i = 0; i < channels; i++) {
-      ostringstream name_oss;
-      name_oss << "N_bs_" << i;
-      ws_->var(name_oss.str().c_str())->setVal(N_bs[i]);
-      if (!bd_constr_ && !SM_) {
-        ws_->var(name("N_bd", i))->setVal(N_bd[i]);
-      }
+      ws_->var(name("N_bs", i))->setVal(N_bs[i]);
+//      if (!bd_constr_ && !SM_) {
+//        ws_->var(name("N_bd", i))->setVal(N_bd[i]);
+//      }
     }
   }
   else {
     ws_->var("N_bs")->setVal(N_bs[0]);
-    ws_->var("N_bd")->setVal(N_bd[0]);
+//    ws_->var("N_bd")->setVal(N_bd[0]);
   }
   if (bd_constr_) {
     int index = simul_ ? 0 : atoi(ch_s_.c_str());
@@ -680,14 +678,14 @@ void pdf_fitData::sig_hybrid_plhts() {
     for (int i = 0; i < channels; i++) {
       if (i != 0) name_poi << ",";
       name_poi << "N_bs_" << i;
-      if (!bd_constr_ && !SM_) {
-        name_poi << ",N_bd_" << i;
-      }
+//      if (!bd_constr_ && !SM_) {
+//        name_poi << ",N_bd_" << i;
+//      }
     }
   }
   else {
     name_poi << "N_bs";
-    if (!bd_constr_ && !SM_) name_poi << ",N_bd";
+//    if (!bd_constr_ && !SM_) name_poi << ",N_bd";
   }
   if (bd_constr_) name_poi << ",Bd_over_Bs";
   ws_->defineSet("poi", name_poi.str().c_str());
@@ -707,14 +705,14 @@ void pdf_fitData::sig_hybrid_plhts() {
       ostringstream name_oss;
       name_oss << "N_bs_" << i;
       ws_->var(name_oss.str().c_str())->setVal(0.0);
-      if (!bd_constr_ && !SM_) {
-        ws_->var(name("N_bd", i))->setVal(0.0);
-      }
+//      if (!bd_constr_ && !SM_) {
+//        ws_->var(name("N_bd", i))->setVal(0.0);
+//      }
     }
   }
   else {
     ws_->var("N_bs")->setVal(0.0);
-    if (!bd_constr_ && !SM_) ws_->var("N_bd")->setVal(0.0);
+//    if (!bd_constr_ && !SM_) ws_->var("N_bd")->setVal(0.0);
   }
   if (bd_constr_) {
     ws_->var("Bd_over_Bs")->setVal(0.0);
@@ -735,13 +733,13 @@ void pdf_fitData::sig_hybrid_plhts() {
       ostringstream name_oss;
       name_oss << "N_bs_" << i;
       ws_->var(name_oss.str().c_str())->setVal(N_bs[i]);
-      if (!bd_constr_ && !SM_) {
-        ws_->var(name("N_bd", i))->setVal(N_bd[i]);
-      }
+//      if (!bd_constr_ && !SM_) {
+//        ws_->var(name("N_bd", i))->setVal(N_bd[i]);
+//      }
     }
   }
   else {
-    ws_->var("N_bs")->setVal(N_bs[0]);
+//    ws_->var("N_bs")->setVal(N_bs[0]);
     ws_->var("N_bd")->setVal(N_bd[0]);
   }
   if (bd_constr_) {
@@ -762,6 +760,7 @@ void pdf_fitData::sig_hybrid_plhts() {
   if (pee) pl_ts.SetConditionalObservables(CO);
   ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 100);
 
+  /// does not work with simul still!!!
   RooGaussian prior_bd("prior_bd", "prior_bd", *ws_->var("N_bd"), RooConst(ws_->var("N_bd")->getVal()), RooConst(ws_->var("N_bd")->getError()));
   RooGaussian prior_rare("prior_rare", "prior_rare", *ws_->var("N_rare"), RooConst(ws_->var("N_rare")->getVal()), RooConst(ws_->var("N_rare")->getError()));
   RooGaussian prior_comb("prior_comb", "prior_comb", *ws_->var("N_comb"), RooConst(ws_->var("N_comb")->getVal()), RooConst(ws_->var("N_comb")->getError()));
