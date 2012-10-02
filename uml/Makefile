@@ -21,11 +21,6 @@ GLIBS          = $(filter-out -lNew, $(NGLIBS))
 INCLUDEDIR       = ./
 CXX	         += -I$(INCLUDEDIR)
 
-ifdef ROOFITSYS
-CXX	         += -I$(ROOFITSYS)include
-GLIBS        += -L$(ROOFITSYS)lib
-endif
-
 .SUFFIXES: .cc,.C,.hh,.h
 .PREFIXES: ../../../../../lib/
 

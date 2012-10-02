@@ -439,6 +439,7 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy, string test_pdf) {
   for (int j = 0; j < 4; j++) {
     if ((SM_ || bd_constr_) && j == 1) continue;
     for (int i = 0; i < channels; i++) {
+
       RooPlot* frame1_bs = mcstudy->plotParam(*ws_->var(name("N_" + source[j], i)), Bins(20)) ;
       RooPlot* frame2_bs = mcstudy->plotError(*ws_->var(name("N_" + source[j], i)), Bins(20)) ;
       RooPlot* frame3_bs = mcstudy->plotPull(*ws_->var(name("N_" + source[j], i)), Bins(20), FitGauss(kTRUE)) ;
@@ -456,7 +457,8 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy, string test_pdf) {
       stats1->AddText(sigma.str().c_str());
       stats1->Draw();
       ostringstream index;
-      index << i;
+      if (simul_) index << i;
+      else index << ch_s_;
       string address;
       if (simul_) address = "fig/RooMCStudy_mean_simul_" + source[j] + "_" + meth_;
       else address = "fig/RooMCStudy_mean_" + source[j] + "_" + index.str() + "_" + meth_;
