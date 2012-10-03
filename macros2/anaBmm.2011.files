@@ -6,20 +6,20 @@ type=sg,pu            dset=mc       lumi=1600.0 file=dcap://t3se01.psi.ch:22125/
 type=sg,acc           dset=mc,1.00  lumi=1600.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-mix-Bs2MuMu.root
 type=bd,default       dset=mc       lumi=8200.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-mix-Bd2MuMu.root
 type=bd,acc           dset=mc,1.00  lumi=8200.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-mix-Bd2MuMu.root
-type=sg,Bs2MuMu       dset=mc       lumi=1600.0 file=/shome/ursl/scratch/cbmm-v11-2e33-Bs2MuMu.bmm2Reader.2e33-Bs2MuMu.root
-type=sg,Bx2MuMu       dset=mc       lumi=1600.0 file=/shome/ursl/scratch/cbmm-v11-2e33-Bx2MuMu.bmm2Reader.2e33-Bs2MuMu.root
-type=sg,By2MuMu       dset=mc       lumi=1600.0 file=/shome/ursl/scratch/cbmm-v11-2e33-By2MuMu.bmm2Reader.2e33-Bs2MuMu.root
+type=sg,Bs2MuMu       dset=mc       lumi=1600.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-2e33-Bs2MuMu.root 
+type=sg,Bx2MuMu       dset=mc       lumi=1600.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-2e33-Bx2MuMu.root 
+type=sg,By2MuMu       dset=mc       lumi=1600.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-2e33-By2MuMu.root
 # --------------------------------------------------------------------
 # control sample  data and MC
 type=cs,default       dset=data    lumi=4.9    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/new/v11-2011-data.root
 type=cs,default       dset=mc,0.0162 lumi=5.4  file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/new/v11-mix-Bs2JpsiPhi.root
-type=cs,pu            dset=mc      lumi=5.0    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-cms-Bs2JpsiPhi.root #**Make**
+type=cs,pu            dset=mc      lumi=5.0    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-cms-Bs2JpsiPhi.root 
 type=cs,acc           dset=mc,1.00 lumi=5.4    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/new/v11-2e33-accBs2JpsiPhi.root
 # --------------------------------------------------------------------
 # normalization data and MC
 type=no,default       dset=data    lumi=4.9    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/new/v11-2011-data.root
 type=no,default       dset=mc,0.0181 lumi=5.2  file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/new/v11-mix-Bu2JpsiK.root
-type=no,pu            dset=mc      lumi=5.0    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-cms-Bu2JpsiK.root #**Make**
+type=no,pu            dset=mc      lumi=5.0    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-cms-Bu2JpsiK.root
 type=no,acc           dset=mc,1.00 lumi=5.2    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-2e33-accBu2JpsiK.root
 # ----------------------------------------------------------------------
 # rare background MC
@@ -34,6 +34,6 @@ type=bg,Bd2PiMuNu     dset=mc,0.024 lumi=1.040  file=dcap://t3se01.psi.ch:22125/
 type=bg,Lb2KP         dset=mc,0.06  lumi=1.310  file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-2e33-Lb2KP.root
 type=bg,Lb2PiP        dset=mc,0.06  lumi=2.210  file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-2e33-Lb2PiP.root
 type=bg,Lb2PMuNu      dset=mc,0.024 lumi=1.110  file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-2e33-Lb2PMuNu.root
-type=bg,Bu2PiMuMu     dset=mc,0.029 lumi=1.570  file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-2e33-Bu2PiMuMu.root #**Make**
-type=bg,Bu2KMuMu      dset=mc,0.026 lumi=1.570  file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-2e33-Bu2KMuMu.root #**Make**
-type=bg,Bs2PhiMuMu    dset=mc,0.024 lumi=1.570  file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-2e33-Bs2PhiMuMu.root #**Make**
+type=bg,Bu2PiMuMu     dset=mc,0.029 lumi=1.570  file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-2e33-Bu2PiMuMu.root
+#type=bg,Bu2KMuMu      dset=mc,0.026 lumi=1.570  file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-2e33-Bu2KMuMu.root #**Make**
+type=bg,Bs2PhiMuMu    dset=mc,0.024 lumi=1.570  file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-2e33-Bs2PhiMuMu.root 
