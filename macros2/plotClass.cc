@@ -2592,7 +2592,7 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
 
   string name(h->GetName()); 
   double sigma1(0.03);
-  if (1 == fChan) sigma1 = 0.04; 
+  if (1 == mode) sigma1 = 0.04; 
   if (string::npos != name.find("hNormC")) sigma1 = 0.02;
   double sigma2(0.1); 
   if (string::npos != name.find("hNormC")) sigma2 = 0.05;
@@ -2659,11 +2659,11 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
 
   tl->SetTextSize(0.07); 
   tl->SetTextColor(kBlack); 
-  if (0 == fChan) {
+  if (0 == mode) {
     tl->DrawLatex(0.6, 0.8, "Barrel");   
   } 
 
-  if (1 == fChan) {
+  if (1 == mode) {
     tl->DrawLatex(0.6, 0.8, "Endcap");   
   } 
   
@@ -2673,11 +2673,11 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
     string pdfname;
     string hname(h->GetName());
     if (string::npos != hname.find("NormC")) {
-      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), fChan);
-      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), mode);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), mode);
     } else {
-      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), fChan);
-      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), mode);
     }
 
     c0->SaveAs(pdfname.c_str());
@@ -2832,11 +2832,11 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
 
   tl->SetTextSize(0.07); 
   tl->SetTextColor(kBlack); 
-  if (0 == fChan) {
+  if (0 == mode) {
     tl->DrawLatex(0.6, 0.8, "Barrel");   
   } 
 
-  if (1 == fChan) {
+  if (1 == mode) {
     tl->DrawLatex(0.6, 0.8, "Endcap");   
   } 
   
@@ -2846,11 +2846,11 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
     string pdfname;
     string hname(h->GetName());
     if (string::npos != hname.find("NormC")) {
-      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), fChan);
-      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), mode);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), mode);
     } else {
-      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), fChan);
-      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), mode);
     }
 
    c0->SaveAs(pdfname.c_str());
