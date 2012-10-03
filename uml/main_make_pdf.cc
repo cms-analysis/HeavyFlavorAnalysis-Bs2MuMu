@@ -66,8 +66,7 @@ int main(int argc, char* argv[]) {
 
   int decays_n = sizeof(decays)/sizeof(string);
 
-  Double_t p0, p1, p2;
-  Fit_MassRes("input/small-SgMc.root", p0, p1, p2);
+  TF1* MassRes_h = Fit_MassRes("input/small-SgMc.root", bdt_cut);
 
   for (int j = 0; j < inputs; j++) {
 
@@ -113,11 +112,11 @@ int main(int argc, char* argv[]) {
         m1eta->setVal(m1eta_t);
         m2eta->setVal(m2eta_t);
         bdt->setVal(bdt_t);
-        MassRes->setVal(p2*eta_t*eta_t + p1*eta_t + p0);
+        MassRes->setVal(MassRes_h->Eval(eta_t));
         if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) channel_cat->setIndex(0);
         else channel_cat->setIndex(1);
         RooArgSet varlist_tmp(*m, *MassRes, *eta, *m1eta, *m2eta, *bdt, *channel_cat);
-        rds_smalltree[i]->add(varlist_tmp, weight_i[i]);
+        if (bdt_t > bdt_cut) rds_smalltree[i]->add(varlist_tmp, weight_i[i]);
       }
       cout << rds_smalltree[i]->GetName() << " done: " << reduced_tree->GetEntries() << " / " << smalltree[i]->GetEntries() << endl;
     }

@@ -60,7 +60,7 @@ void pdf_analysis::initialize () {
   }
   ws_->import(*channels_cat);
 
-  MassRes = new RooRealVar("MassRes", "mass resolution", 0.03, 0.12, "GeV/c^{2}");
+  MassRes = new RooRealVar("MassRes", "mass resolution", 0.02, 0.15, "GeV/c^{2}");
   ws_->import(*MassRes);
 
   obs = new RooArgSet(*ws_->var("Mass"), *ws_->var("bdt"), "obs");
@@ -162,8 +162,8 @@ void pdf_analysis::define_bs(int i = 0) {
     }
   }
   else {
-    RooRealVar PESigma_bs(name("PESigma_bs", i), "PESigma_bs", 1., 0.1, 10.);
-    RooFormulaVar SigmaRes_bs(name("SigmaRes_bs", i), "@0*@1", RooArgList(*ws_->var("MassRes"), PESigma_bs));
+    RooRealVar PeeK_bs(name("PeeK_bs", i), "PeeK_bs", 1., 0.1, 10.);
+    RooFormulaVar SigmaRes_bs(name("SigmaRes_bs", i), "@0*@1", RooArgList(*ws_->var("MassRes"), PeeK_bs));
     ws_->import(SigmaRes_bs);
     RooCBShape CB_bs(name("CB_bs", i), "CB_bs", *ws_->var("Mass"), Mean_bs, *ws_->function(name("SigmaRes_bs", i)), Alpha_bs, Enne_bs);
     if (!bdt_fit_) {
@@ -203,8 +203,8 @@ void pdf_analysis::define_bd(int i = 0) {
     }
   }
   else {
-    RooRealVar PESigma_bd(name("PESigma_bd", i), "PESigma_bd", 1., 0.1, 10.);
-    RooFormulaVar SigmaRes_bd(name("SigmaRes_bd", i), "@0*@1", RooArgList(*ws_->var("MassRes"), PESigma_bd));
+    RooRealVar PeeK_bd(name("PeeK_bd", i), "PeeK_bd", 1., 0.1, 10.);
+    RooFormulaVar SigmaRes_bd(name("SigmaRes_bd", i), "@0*@1", RooArgList(*ws_->var("MassRes"), PeeK_bd));
     ws_->import(SigmaRes_bd);
     RooCBShape CB_bd(name("CB_bd", i), "CB_bd", *ws_->var("Mass"), Mean_bd, *ws_->function(name("SigmaRes_bd", i)), Alpha_bd, Enne_bd);
     if (!bdt_fit_) {
@@ -387,7 +387,6 @@ void pdf_analysis::define_rare(int i = 0) {
   RooRealVar peakfrac_rare(name("peakfrac_rare", i), "peakfrac_rare", 0.5, 0.0, 1.0);
   RooAddPdf pdf_rare(name("pdf_rare", i), "pdf_rare", RooArgSet(*ws_->pdf(name("pdf_peak", i)), *ws_->pdf(name("pdf_semi", i)) ), peakfrac_rare);
   ws_->import(pdf_rare);
-
 }
 
 void pdf_analysis::define_rare2(RooDataHist* data, int i = 0) {
@@ -701,18 +700,23 @@ RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
   RooArgList varlist(*MassRes, *weight);
   RooDataSet* subdata_res = new RooDataSet("subdata_res", "subdata_res", varlist, "weight");
   const RooArgSet* aRow;
+  TH1D histo(rds->GetTitle(), rds->GetTitle(), 40, -2.4, 2.4);
   for (Int_t j = 0; j < rds->numEntries(); j++) {
     aRow = rds->get(j);
     RooRealVar* massres = (RooRealVar*)aRow->find("MassRes");
     double Weight = rds->weight();
     RooArgSet varlist_tmp_res(*massres);
-    if (aRow->getCatIndex("channels") == channel) subdata_res->add(varlist_tmp_res, Weight);
+    if (aRow->getCatIndex("channels") == channel) {
+      subdata_res->add(varlist_tmp_res, Weight);
+      histo.Fill(massres->getVal(), Weight);
+    }
   }
   cout << "resolution entries = " <<  subdata_res->sumEntries() << endl;
   ostringstream name_rdh;
   name_rdh << "MassRes_rdh_" << name;
   if (simul_) name_rdh << "_" << channel;
   RooDataHist *MassRes_rdh = subdata_res->binnedClone(name_rdh.str().c_str());
+  //RooDataHist *MassRes_rdh = new RooDataHist(name_rdh.str().c_str(), name_rdh.str().c_str(), *ws_->var("MassRes"), &histo);
   ostringstream name_pdf;
   name_pdf << "MassRes_pdf_" << name;
   if (simul_) name_pdf << "_" << channel;

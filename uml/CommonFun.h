@@ -26,7 +26,7 @@ static int NExp = 1;
 static int ch_i = -1;
 static int inputs = 1;
 static int sig_meth = -1;
-static double bdt = -100.;
+static double bdt_cut = -10.;
 bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
@@ -43,7 +43,7 @@ void help() {
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
   cout << "-print \t save the fits to gif and pdf if -no_legend without parameters on canvas" << endl;
-  cout << "-bdt # \t bdt cut, default is " << bdt << endl;
+  cout << "-bdt # \t bdt cut, default is " << bdt_cut << endl;
   cout << "-pee \t per-event-error" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;
   cout << "-rare #filename \t file with rare event estimations (for normalizing to B -> JpsiK)" << endl;
@@ -172,8 +172,8 @@ void parse_options(int argc, char* argv[]){
       cout << "significance with method " << sig_meth << endl;
     }
     if (!strcmp(argv[i],"-bdt")) {
-      bdt = atof(argv[i+1]);
-      cout << "bdt cut = " << bdt << endl;
+      bdt_cut = atof(argv[i+1]);
+      cout << "bdt cut = " << bdt_cut << endl;
     }
     if (!strcmp(argv[i],"-pee")) {
       pee = true;
@@ -237,10 +237,10 @@ void parse_input (string input) {
 
 string get_cut(int channel) {
   string cut = "";
-  ostringstream bdt_cut;
-  bdt_cut << bdt;
+  ostringstream bdt_cut_oss;
+  bdt_cut_oss << bdt_cut;
   cut += "bdt>";
-  cut += bdt_cut.str();
+  cut += bdt_cut_oss.str();
   //if (channel == 0) cut += " && abs(m1eta)<1.4 && abs(m2eta)<1.4";
   //if (channel == 1) cut += " && abs(m1eta)>1.4 || abs(m2eta)>1.4";
   cout << "cut = " << cut << endl;
