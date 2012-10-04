@@ -12,6 +12,7 @@
 #include "RooCategory.h"
 #include "RooSimultaneous.h"
 #include "RooRandom.h"
+#include "RooGamma.h"
 
 #include "RooStats/ModelConfig.h"
 #include "RooStats/ProfileLikelihoodCalculator.h"
@@ -33,12 +34,22 @@ class pdf_fitData : public pdf_analysis {
     void make_dataset();
     void make_pdf_input();
     void make_pdf();
+
+    void BF(string eff_filename, string numbers_filename);
+
     RooDataSet* global_data;
     RooSimultaneous* simul_pdf;
 
     void fit_pdf(bool do_not_import = false);
     void significance();
     void save();
+
+    vector <pair <double, double> > eff_bd;
+    vector <pair <double, double> > eff_bs;
+    vector <pair <double, double> > eff_bu;
+    vector <pair <double, double> > N_bu;
+    vector <pair <double, double> > BF_bs;
+    vector <pair <double, double> > BF_bd;
 
   protected:
     void parse_estimate();
@@ -60,6 +71,16 @@ class pdf_fitData : public pdf_analysis {
     void sig_plhc();
     void sig_plhts();
     void sig_hybrid_plhts();
+    void make_prior();
+
+    void parse_external_numbers(string filename);
+    void parse_efficiency_numbers(string filename);
+
+    pair <double, double> fs_over_fu;
+    pair <double, double> Jpsi2MuMu_BF;
+    pair <double, double> Bu2JpsiK_BF;
+
+
 };
 
 #endif // PDF_FITDATA_H

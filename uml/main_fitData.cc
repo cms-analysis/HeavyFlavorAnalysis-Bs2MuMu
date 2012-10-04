@@ -49,6 +49,7 @@ int main(int argc, char** argv) {
     else fitdata->print();
   }
   fitdata->significance();
+  fitdata->BF("./input/anaBmm.plotResults.default-11.tex", "input/external_numbers.txt");
   fitdata->save();
   return EXIT_SUCCESS;
 }

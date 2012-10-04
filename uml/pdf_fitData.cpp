@@ -32,6 +32,13 @@ pdf_fitData::pdf_fitData(bool print, int inputs, string input_estimates, string 
   ws_input.resize(channels);
 
   sign = sig;
+
+  eff_bd.resize(channels);
+  eff_bs.resize(channels);
+  eff_bu.resize(channels);
+  N_bu.resize(channels);
+  BF_bd.resize(channels);
+  BF_bs.resize(channels);
 }
 
 pdf_fitData::~pdf_fitData() {
@@ -342,8 +349,8 @@ void pdf_fitData::make_dataset() {
   if (!random) FillRooDataSet(global_data, input_cuts_);
   else {
     //RooRandom::randomGenerator()->SetSeed(12345);
-    if (!simul_) global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")), 100);
-    else global_data = ws_->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("channels")), 100);
+    if (!simul_) global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("channels")), 250);
+    else global_data = ws_->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("channels")), 143);
   }
   global_data->SetName("global_data");
   //ws_->import(*global_data);
@@ -583,7 +590,7 @@ void pdf_fitData::sig_plhts() {
   if (bd_constr_) name_poi << ",Bd_over_Bs";
   ws_->defineSet("poi", name_poi.str().c_str());
 
-  ModelConfig* H0 = new ModelConfig("H0", "background only hypothesis", ws_);
+  ModelConfig* H0 = new ModelConfig("H0", "null hypothesis", ws_);
   RooArgSet CO;
   if (pee) {
     CO.add(*ws_->var("MassRes"));
@@ -649,7 +656,7 @@ void pdf_fitData::sig_plhts() {
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(CO);
-  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 100);
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 500);
   FrequentistCalculator frequCalc(*ws_->data("global_data"), *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();
   htr_pl->Print();
@@ -751,6 +758,7 @@ void pdf_fitData::sig_hybrid_plhts() {
 
   ws_->import(*H0);
   ws_->import(*H1);
+  make_prior();
   ws_->Print();
 
   string name_of_pdf = "pdf_ext_simul";
@@ -758,15 +766,7 @@ void pdf_fitData::sig_hybrid_plhts() {
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(CO);
-  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 100);
-
-  /// does not work with simul still!!!
-  RooGaussian prior_bd("prior_bd", "prior_bd", *ws_->var("N_bd"), RooConst(ws_->var("N_bd")->getVal()), RooConst(ws_->var("N_bd")->getError()));
-  RooGaussian prior_rare("prior_rare", "prior_rare", *ws_->var("N_rare"), RooConst(ws_->var("N_rare")->getVal()), RooConst(ws_->var("N_rare")->getError()));
-  RooGaussian prior_comb("prior_comb", "prior_comb", *ws_->var("N_comb"), RooConst(ws_->var("N_comb")->getVal()), RooConst(ws_->var("N_comb")->getError()));
-  RooArgList prior_list(prior_bd, prior_rare, prior_comb, "prior_list");
-  RooProdPdf prior("prior", "prior", prior_list);
-  ws_->import(prior);
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 500);
 
 
   HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
@@ -782,4 +782,125 @@ void pdf_fitData::sig_hybrid_plhts() {
 //  delete plot;
 //  delete c_hypotest;
   cout << "ProfileLikelihoodTestStat + hybrid: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << endl;
+}
+
+void pdf_fitData::make_prior() {
+  vector <RooGaussian*> prior_bd(channels);
+  vector <RooGaussian*> prior_rare(channels);
+  vector <RooGaussian*> prior_comb(channels);
+
+//  vector <RooGamma*> prior_bd1(channels)
+
+  RooArgList prior_list("prior_list");
+
+  for (int i = 0; i < channels; i++) {
+    prior_bd[i] = new RooGaussian(name("prior_bd", i), name("prior_bd", i), *ws_->var(name("N_bd", i)), RooConst(ws_->var(name("N_bd", i))->getVal()), RooConst(ws_->var(name("N_bd", i))->getError()));
+    prior_rare[i] = new RooGaussian(name("prior_rare", i), name("prior_rare", i), *ws_->var(name("N_rare", i)), RooConst(ws_->var(name("N_rare", i))->getVal()), RooConst(ws_->var(name("N_rare", i))->getError()));
+    prior_comb[i] = new RooGaussian(name("prior_comb", i), name("prior_comb", i), *ws_->var(name("N_comb", i)), RooConst(ws_->var(name("N_comb", i))->getVal()), RooConst(ws_->var(name("N_comb", i))->getError()));
+    //prior_bd1[i] = new RooGamma(name("prior_bd", i), name("prior_bd", i), *ws_->var(name("N_bd", i)), RooConst(1), )
+
+    prior_list.add(*prior_bd[i]);
+    prior_list.add(*prior_rare[i]);
+    prior_list.add(*prior_comb[i]);
+  }
+
+  RooProdPdf prior("prior", "prior", prior_list);
+  ws_->import(prior);
+}
+
+void pdf_fitData::BF(string eff_filename, string numbers_filename) {
+  parse_external_numbers(numbers_filename);
+  parse_efficiency_numbers(eff_filename);
+
+  cout << "=========== Branching Fractions ==========" << endl;
+  int ii = -1;
+  for (int i = 0; i < channels; i++) {
+    BF_bs.at(i).first = ws_->var(name("N_bs", i))->getVal() / N_bu.at(i).first * fs_over_fu.first * (eff_bu.at(i).first / eff_bs.at(i).first) * Bu2JpsiK_BF.first * Jpsi2MuMu_BF.first;
+    BF_bd.at(i).first = ws_->var(name("N_bd", i))->getVal() / N_bu.at(i).first * (eff_bu.at(i).first / eff_bd.at(i).first) * Bu2JpsiK_BF.first * Jpsi2MuMu_BF.first;
+    if (simul_) ii = i;
+    else ii = ch_i_;
+    cout << "channel " << ii << endl;
+    cout << "Bs2MuMu BF = " << BF_bs.at(i).first << " \\pm " << BF_bs.at(i).second << endl;
+    cout << "Bd2MuMu BF = " << BF_bd.at(i).first << " \\pm " << BF_bd.at(i).second << endl;
+  }
+
+}
+
+void pdf_fitData::parse_efficiency_numbers(string filename) {
+  cout << "parsing " << filename << endl;
+
+  FILE *file = fopen(filename.c_str(), "r");
+  if (!file) {cout << "file " << filename << " does not exist"; exit(1);}
+
+  char buffer[1024];
+  char left[1024];
+  double number;
+
+  vector < pair<string, string> > end_bd(channels);
+  vector < pair<string, string> > end_bs(channels);
+  vector < pair<string, string> > end_bu(channels);
+  vector < pair<string, string> > end_Nbu(channels);
+  int ii = -1;
+  for (int i = 0; i < channels; i++) {
+    if (simul_) ii = i;
+    else ii = ch_i_;
+    end_bd[i] = make_pair(Form("N-EFF-TOT-BDMM%d:val", ii), Form("N-EFF-TOT-BDMM%d:tot", ii));
+    end_bs[i] = make_pair(Form("N-EFF-TOT-BSMM%d:val", ii), Form("N-EFF-TOT-BSMM%d:tot", ii));
+    end_bu[i] = make_pair(Form("N-EFF-TOT-BPLUS%d:val", ii), Form("N-EFF-TOT-BPLUS%d:tot", ii));
+    end_Nbu[i] = make_pair(Form("N-OBS-BPLUS%d:val", ii), Form("N-OBS-BPLUS%d:tot", ii));
+  }
+
+  while (fgets(buffer, sizeof(buffer), file)) {
+    if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
+    if (buffer[0] == '\045') continue;
+    sscanf(buffer, "%s   {\\ensuremath{{%lf } } }", left, &number);
+    string left_s(left);
+    for (int i = 0; i < channels; i++) {
+      size_t found;
+      found = left_s.find(end_bd.at(i).first);
+      if (found != string::npos) eff_bd.at(i).first = number;
+      found = left_s.find(end_bd.at(i).second);
+      if (found != string::npos) eff_bd.at(i).second = number;
+      found = left_s.find(end_bs.at(i).first);
+      if (found != string::npos) eff_bs.at(i).first = number;
+      found = left_s.find(end_bs.at(i).second);
+      if (found != string::npos) eff_bs.at(i).second = number;
+      found = left_s.find(end_bu.at(i).first);
+      if (found != string::npos) eff_bu.at(i).first = number;
+      found = left_s.find(end_bu.at(i).second);
+      if (found != string::npos) eff_bu.at(i).second = number;
+      found = left_s.find(end_Nbu.at(i).first);
+      if (found != string::npos) N_bu.at(i).first = number;
+      found = left_s.find(end_Nbu.at(i).second);
+      if (found != string::npos) N_bu.at(i).second = number;
+    }
+  }
+
+  for (int i = 0; i < channels; i++) {
+    if (simul_) ii = i;
+    else ii = ch_i_;
+    cout << "channel " << ii << endl;
+    cout << "bd eff = " << eff_bd.at(i).first << " \\pm " << eff_bd.at(i).second << endl;
+    cout << "bs eff = " << eff_bs.at(i).first << " \\pm " << eff_bs.at(i).second << endl;
+    cout << "bu eff = " << eff_bu.at(i).first << " \\pm " << eff_bu.at(i).second << endl;
+    cout << "N bu   = " << N_bu.at(i).first << " \\pm " << N_bu.at(i).second << endl;
+    cout << endl;
+  }
+}
+
+void pdf_fitData::parse_external_numbers(string filename) {
+  cout << "parsing " << filename << endl;
+  FILE *file = fopen(filename.c_str(), "r");
+  if (!file) {cout << "file " << filename << " does not exist"; exit(1);}
+  char buffer[1024];
+  while (fgets(buffer, sizeof(buffer), file)) {
+    if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
+    if (buffer[0] == '\045') continue;
+    sscanf(buffer, "fsfu\t%lf\t%lf", &fs_over_fu.first, &fs_over_fu.second);
+    sscanf(buffer, "BuToKpsiK\t%lf\t%lf", &Bu2JpsiK_BF.first, &Bu2JpsiK_BF.second);
+    sscanf(buffer, "JpsiToMuMu\t%lf\t%lf", &Jpsi2MuMu_BF.first, &Jpsi2MuMu_BF.second);
+  }
+  cout << "fs/fu        " <<  fs_over_fu.first << " \\pm " << fs_over_fu.second << endl;
+  cout << "Bu2JpsiK_BF  " <<  Bu2JpsiK_BF.first << " \\pm " << Bu2JpsiK_BF.second << endl;
+  cout << "Jpsi2MuMu_BF " <<  Jpsi2MuMu_BF.first << " \\pm " << Jpsi2MuMu_BF.second << endl;
 }

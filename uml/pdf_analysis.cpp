@@ -708,7 +708,7 @@ RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
     RooArgSet varlist_tmp_res(*massres);
     if (aRow->getCatIndex("channels") == channel) {
       subdata_res->add(varlist_tmp_res, Weight);
-      histo.Fill(massres->getVal(), Weight);
+//      histo.Fill(massres->getVal(), Weight);
     }
   }
   cout << "resolution entries = " <<  subdata_res->sumEntries() << endl;
@@ -737,11 +737,12 @@ RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name) {
     double Weight = rds->weight();
     RooArgSet varlist_tmp_bdt(*BDT);
     if (aRow->getCatIndex("channels") == channel) {
-      subdata_bdt->add(varlist_tmp_bdt, Weight);
+//      subdata_bdt->add(varlist_tmp_bdt, Weight);
       histo.Fill(BDT->getVal(), Weight);
     }
   }
-  cout << "bdt entries = " <<  subdata_bdt->sumEntries() << endl;
+//  cout << "bdt entries = " <<  subdata_bdt->sumEntries() << endl;
+  cout << "bdt entries = " <<  histo.GetEntries() << endl;
   ostringstream name_rdh;
   name_rdh << "bdt_rdh_" << name;
   if (simul_) name_rdh << "_" << channel;
