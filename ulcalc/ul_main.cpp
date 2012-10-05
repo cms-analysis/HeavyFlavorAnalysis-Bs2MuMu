@@ -32,6 +32,7 @@ enum algo_t {
 	kAlgo_Hybrid,
 	kAlgo_CLb_Hybrid,
 	kAlgo_Zbi,
+	kAlgo_Interval_Hybrid,
 	kAlgo_None
 };
 
@@ -74,6 +75,9 @@ static const char *algo_name(algo_t a)
 			break;
 		case kAlgo_CLb_Hybrid:
 			result = "CLb using Hybrid";
+			break;
+		case kAlgo_Interval_Hybrid:
+			result = "Hybrid Two Sided Interval";
 			break;
 		case kAlgo_Zbi:
 			result = "Zbi";
@@ -211,7 +215,7 @@ static void parse_input(const char *path, map<bmm_param,measurement_t> *bsmm, ma
 
 static void usage()
 {
-	cerr << "ulcalc [--SM-exp] [--float-data] [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--disable-errors] [[-n <nbr steps>] -r x,y] [-l cl] [-w workspace_outfile.root] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"clb_hybrid\"|\"zbi\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
+	cerr << "ulcalc [--SM-exp] [--float-data] [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--disable-errors] [[-n <nbr steps>] -r x,y] [-l cl] [-w workspace_outfile.root] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"int_hybrid\"|\"clb_hybrid\"|\"zbi\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
 } // usage()
 
 static bool parse_arguments(const char **first, const char **last)
@@ -272,6 +276,8 @@ static bool parse_arguments(const char **first, const char **last)
 					gAlgorithm = kAlgo_Hybrid;
 				} else if (s.compare("clb_hybrid") == 0) {
 					gAlgorithm = kAlgo_CLb_Hybrid;
+				} else if (s.compare("int_hybrid") == 0) {
+					gAlgorithm = kAlgo_Interval_Hybrid;
 				} else if (s.compare("zbi") == 0) {
 					gAlgorithm = kAlgo_Zbi;
 				} else if (s.compare("none") == 0) {
@@ -335,7 +341,7 @@ static bool parse_arguments(const char **first, const char **last)
 		cout << "Output File: " << output_path << endl;
 	if (workspace_path)
 		cout << "Output Workspace into: " << workspace_path << endl;
-	if (gAlgorithm == kAlgo_FeldmanCousins) {
+	if (gAlgorithm == kAlgo_FeldmanCousins || gAlgorithm == kAlgo_CLs || gAlgorithm == kAlgo_Hybrid || gAlgorithm == kAlgo_Interval_Hybrid) {
 		cout << "mu_s range: (" << gMuSRange.first << ", " << gMuSRange.second << ")." << endl;
 		cout << "Number of Steps " << gFCSteps << endl;
 	}
@@ -409,6 +415,9 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 				break;
 			case kAlgo_Hybrid:
 				est_ul_hybrid(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys, gBdToMuMu, gFixBackground, gSMExpectation);
+				break;
+			case kAlgo_Interval_Hybrid:
+				est_int_hybrid(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys, gBdToMuMu, gFixBackground, gSMExpectation);
 				break;
 			case kAlgo_CLb_Hybrid:
 				// note, here upper limit represents p-value of background model.
