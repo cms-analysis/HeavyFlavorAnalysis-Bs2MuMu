@@ -335,7 +335,7 @@ double f_expo_err_Gauss_landau(double *x, double *par) {
   double area = 2.507 * par[0] * (par[2]); // area of the gaussian
   double area_landau = branchingRatio * area;  // expected area of the landau
   par[11] = area_landau/par[10];  // landau const = area/sigma, feed it to the function
-
+  
   return  (f_err(x, &par[5]) + f_expo(x, &par[3]) + f_Gauss(x, &par[0]) + f_landausimp(x, &par[9]) );
 }
 
@@ -826,16 +826,17 @@ TF1* initFunc::expoErrGauss(TH1 *h, double peak, double sigma, double preco) {
 
 }
 
+
 // ----------------------------------------------------------------------
 TF1* initFunc::expoErrGaussLandau(TH1 *h, double peak, double sigma, double preco) {
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_Gauss_landau"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_err_Gauss_landau", f_expo_err_Gauss_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 11);
+  f = new TF1("f1_expo_err_Gauss_landau", f_expo_err_Gauss_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 12);
   f->SetParNames("area", "peak", "sigma", "const", "exp", "err0", "err1", "err2", "err3"); 			   
   f->SetParName(9, "mpvl");
   f->SetParName(10, "sigl");
-
+  //f->SetParName(11, "consl");
  //  f->SetLineColor(kBlue); 
   f->SetLineWidth(2); 
 
@@ -847,6 +848,7 @@ TF1* initFunc::expoErrGaussLandau(TH1 *h, double peak, double sigma, double prec
 
   double p0, p1; 
   initExpo(p0, p1, h);
+  if (p0 > 1.e7) p0 = 1.e7;
   double A   = p0*(TMath::Exp(p1*fHi) - TMath::Exp(p1*fLo));
 
   double g0 = (h->Integral(lbin, hbin)*h->GetBinWidth(1) - A);  
@@ -876,13 +878,11 @@ TF1* initFunc::expoErrGaussLandau(TH1 *h, double peak, double sigma, double prec
   f->ReleaseParameter(7);     f->SetParLimits(7, e2Min, e2Max); 
   f->ReleaseParameter(8);     //f->SetParLimits(8, 0, 0.05*g0); 
 
-  //        RooRealVar a1("a1","a1",5.14,5.13,5.15);
-  //        RooRealVar a2("a2","a2",0.07,0.06,0.075);
-  //        RooRealVar a3("a3","a3",1.112,1.,1.2);
-
   return f; 
 
 }
+
+
 
 // ----------------------------------------------------------------------
 TF1* initFunc::expoErrgauss2c(TH1 *h, double peak, double sigma1, double sigma2, double preco) {
@@ -1213,8 +1213,8 @@ TF1* initFunc::expoErrgauss2Landau(TH1 *h, double peak1, double sigma1, double p
   f->ReleaseParameter(9);     f->SetParLimits(9, e1Min, e1Max); 
   f->ReleaseParameter(10);     f->SetParLimits(10, e2Min, e2Max); 
   f->ReleaseParameter(11);     //f->SetParLimits(8, 0, 0.05*g0); 
-  return f; 
 
+  return f; 
 
 }
 
