@@ -815,7 +815,7 @@ void pdf_fitData::BF(string eff_filename, string numbers_filename) {
   cout << "=========== Branching Fractions ==========" << endl;
   int ii = -1;
   for (int i = 0; i < channels; i++) {
-    BF_bs.at(i).first = ws_->var(name("N_bs", i))->getVal() / N_bu.at(i).first * fs_over_fu.first * (eff_bu.at(i).first / eff_bs.at(i).first) * Bu2JpsiK_BF.first * Jpsi2MuMu_BF.first;
+    BF_bs.at(i).first = ws_->var(name("N_bs", i))->getVal() / N_bu.at(i).first / fs_over_fu.first * (eff_bu.at(i).first / eff_bs.at(i).first) * Bu2JpsiK_BF.first * Jpsi2MuMu_BF.first;
     BF_bd.at(i).first = ws_->var(name("N_bd", i))->getVal() / N_bu.at(i).first * (eff_bu.at(i).first / eff_bd.at(i).first) * Bu2JpsiK_BF.first * Jpsi2MuMu_BF.first;
     if (simul_) ii = i;
     else ii = ch_i_;
