@@ -457,8 +457,12 @@ void pdf_fitData::save() {
 void pdf_fitData::significance() {
   if (sign == 0) sig_hand();
   else if (sign == 1) sig_plhc();
-  else if (sign == 2) sig_plhts();
-  else if (sign == 3) sig_hybrid_plhts();
+  else if (sign >= 1) {
+    make_models();
+    if (sign == 2) sig_plhts();
+    if (sign == 3) sig_hybrid_plhts();
+    if (sign == 4) sig_hybrid_roplhts();
+  }
 }
 
 Double_t pdf_fitData::sig_hand() {
@@ -517,7 +521,6 @@ Double_t pdf_fitData::sig_hand() {
 }
 
 void pdf_fitData::sig_plhc() {
-  using namespace RooStats;
   ModelConfig model;
   model.SetName("model");
   RooArgSet poi;
@@ -562,14 +565,13 @@ void pdf_fitData::sig_plhc() {
   ws_->import(model);
 }
 
-void pdf_fitData::sig_plhts() {
+void pdf_fitData::make_models() {
   vector <double> N_bs(channels);
   vector <double> N_bd(channels);
   for (int i = 0; i < channels; i++) {
     N_bs[i] = ws_->var(name("N_bs", i))->getVal();
     if (!SM_ && !bd_constr_) N_bd[i] = ws_->var(name("N_bd", i))->getVal();
   }
-  using namespace RooStats;
 
   if (simul_) ws_->defineSet("obs", "Mass,channels");
   else ws_->defineSet("obs", "Mass");
@@ -595,6 +597,7 @@ void pdf_fitData::sig_plhts() {
   if (pee) {
     CO.add(*ws_->var("MassRes"));
     H0->SetConditionalObservables(CO);
+    ws_->defineSet("CO", "MassRes");
   }
   if (simul_) H0->SetPdf(*ws_->pdf("pdf_ext_simul"));
   else H0->SetPdf(*ws_->pdf("pdf_ext_total"));
@@ -649,13 +652,20 @@ void pdf_fitData::sig_plhts() {
 
   ws_->import(*H0);
   ws_->import(*H1);
+}
+
+void pdf_fitData::sig_plhts() {
+
+  RooStats::ModelConfig *H0 = dynamic_cast<ModelConfig*> (ws_->obj("H0"));
+  RooStats::ModelConfig *H1 = dynamic_cast<ModelConfig*> (ws_->obj("H1"));
+
   ws_->Print();
 
   string name_of_pdf = "pdf_ext_simul";
   if (!simul_) name_of_pdf = "pdf_ext_total";
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
   pl_ts.SetOneSidedDiscovery(true);
-  if (pee) pl_ts.SetConditionalObservables(CO);
+  if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
   ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 500);
   FrequentistCalculator frequCalc(*ws_->data("global_data"), *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();
@@ -670,94 +680,10 @@ void pdf_fitData::sig_plhts() {
 }
 
 void pdf_fitData::sig_hybrid_plhts() {
-  vector <double> N_bs(channels);
-  vector <double> N_bd(channels);
-  for (int i = 0; i < channels; i++) {
-    N_bs[i] = ws_->var(name("N_bs", i))->getVal();
-    N_bd[i] = ws_->var(name("N_bd", i))->getVal();
-  }
-  using namespace RooStats;
 
-  if (simul_) ws_->defineSet("obs", "Mass,channels");
-  else ws_->defineSet("obs", "Mass");
-  ostringstream name_poi;
-  if (simul_) {
-    for (int i = 0; i < channels; i++) {
-      if (i != 0) name_poi << ",";
-      name_poi << "N_bs_" << i;
-//      if (!bd_constr_ && !SM_) {
-//        name_poi << ",N_bd_" << i;
-//      }
-    }
-  }
-  else {
-    name_poi << "N_bs";
-//    if (!bd_constr_ && !SM_) name_poi << ",N_bd";
-  }
-  if (bd_constr_) name_poi << ",Bd_over_Bs";
-  ws_->defineSet("poi", name_poi.str().c_str());
+  RooStats::ModelConfig *H0 = dynamic_cast<ModelConfig*> (ws_->obj("H0"));
+  RooStats::ModelConfig *H1 = dynamic_cast<ModelConfig*> (ws_->obj("H1"));
 
-  ModelConfig* H0 = new ModelConfig("H0", "background only hypothesis", ws_);
-  RooArgSet CO;
-  if (pee) {
-    CO.add(*ws_->var("MassRes"));
-    H0->SetConditionalObservables(CO);
-  }
-  if (simul_) H0->SetPdf(*ws_->pdf("pdf_ext_simul"));
-  else H0->SetPdf(*ws_->pdf("pdf_ext_total"));
-  H0->SetParametersOfInterest(*ws_->set("poi"));
-  H0->SetObservables(*ws_->set("obs"));
-  if (simul_) {
-    for (int i = 0; i < channels; i++) {
-      ostringstream name_oss;
-      name_oss << "N_bs_" << i;
-      ws_->var(name_oss.str().c_str())->setVal(0.0);
-//      if (!bd_constr_ && !SM_) {
-//        ws_->var(name("N_bd", i))->setVal(0.0);
-//      }
-    }
-  }
-  else {
-    ws_->var("N_bs")->setVal(0.0);
-//    if (!bd_constr_ && !SM_) ws_->var("N_bd")->setVal(0.0);
-  }
-  if (bd_constr_) {
-    ws_->var("Bd_over_Bs")->setVal(0.0);
-  }
-  H0->SetSnapshot(*ws_->set("poi"));
-
-  ModelConfig* H1 = new ModelConfig("H1", "background + signal hypothesis", ws_);
-  if (pee) {
-    H1->SetConditionalObservables(CO);
-  }
-  if (simul_) H1->SetPdf(*ws_->pdf("pdf_ext_simul"));
-  else H1->SetPdf(*ws_->pdf("pdf_ext_total"));
-  H1->SetParametersOfInterest(*ws_->set("poi"));
-  H1->SetObservables(*ws_->set("obs"));
-  parse_estimate();
-  if (simul_) {
-    for (int i = 0; i < channels; i++) {
-      ostringstream name_oss;
-      name_oss << "N_bs_" << i;
-      ws_->var(name_oss.str().c_str())->setVal(N_bs[i]);
-//      if (!bd_constr_ && !SM_) {
-//        ws_->var(name("N_bd", i))->setVal(N_bd[i]);
-//      }
-    }
-  }
-  else {
-//    ws_->var("N_bs")->setVal(N_bs[0]);
-    ws_->var("N_bd")->setVal(N_bd[0]);
-  }
-  if (bd_constr_) {
-    int index = simul_ ? 0 : atoi(ch_s_.c_str());
-    double ratio = (double) estimate_bd[index] / estimate_bs[index];
-    ws_->var("Bd_over_Bs")->setVal(ratio);
-  }
-  H1->SetSnapshot(*ws_->set("poi"));
-
-  ws_->import(*H0);
-  ws_->import(*H1);
   make_prior();
   ws_->Print();
 
@@ -765,9 +691,8 @@ void pdf_fitData::sig_hybrid_plhts() {
   if (!simul_) name_of_pdf = "pdf_ext_total";
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
   pl_ts.SetOneSidedDiscovery(true);
-  if (pee) pl_ts.SetConditionalObservables(CO);
+  if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
   ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 500);
-
 
   HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
   hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
@@ -775,13 +700,31 @@ void pdf_fitData::sig_hybrid_plhts() {
 
   HypoTestResult *htr_pl = hibrCalc.GetHypoTest();
   htr_pl->Print();
-//  HypoTestPlot *plot = new HypoTestPlot(*htr_pl);
-//  TCanvas* c_hypotest = new TCanvas("c_hypotest", "c_hypotest", 600, 600);
-//  plot->Draw();
-//  c_hypotest->Print("fig/ProfileLikelihoodTestStat.gif");
-//  delete plot;
-//  delete c_hypotest;
   cout << "ProfileLikelihoodTestStat + hybrid: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << endl;
+}
+
+void pdf_fitData::sig_hybrid_roplhts() {
+
+  RooStats::ModelConfig *H0 = dynamic_cast<ModelConfig*> (ws_->obj("H0"));
+  RooStats::ModelConfig *H1 = dynamic_cast<ModelConfig*> (ws_->obj("H1"));
+
+  make_prior();
+  ws_->Print();
+
+  string name_of_pdf = "pdf_ext_simul";
+  if (!simul_) name_of_pdf = "pdf_ext_total";
+  RatioOfProfiledLikelihoodsTestStat ropl_ts(*H1->GetPdf(),*H0->GetPdf(), ws_->set("poi"));
+  ropl_ts.SetSubtractMLE(false);
+  if (pee) ropl_ts.SetConditionalObservables(*ws_->set("CO"));
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(ropl_ts, 500);
+
+  HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
+  hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
+  hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("prior"));
+
+  HypoTestResult *htr_pl = hibrCalc.GetHypoTest();
+  htr_pl->Print();
+  cout << "RatioOfProfiledLikelihoodsTestStat + hybrid: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << endl;
 }
 
 void pdf_fitData::make_prior() {
@@ -812,18 +755,51 @@ void pdf_fitData::BF(string eff_filename, string numbers_filename) {
   parse_external_numbers(numbers_filename);
   parse_efficiency_numbers(eff_filename);
 
+  /// well, all this assuming uncorrelated varables...
   cout << "=========== Branching Fractions ==========" << endl;
   int ii = -1;
   for (int i = 0; i < channels; i++) {
     BF_bs.at(i).first = ws_->var(name("N_bs", i))->getVal() / N_bu.at(i).first / fs_over_fu.first * (eff_bu.at(i).first / eff_bs.at(i).first) * Bu2JpsiK_BF.first * Jpsi2MuMu_BF.first;
+    BF_bs.at(i).second = BF_bs.at(i).first * sqrt(pow(ws_->var(name("N_bs", i))->getError() / ws_->var(name("N_bs", i))->getVal(), 2) +
+                                                  pow(N_bu.at(i).second / N_bu.at(i).first, 2) +
+                                                  pow(fs_over_fu.second / fs_over_fu.first, 2) +
+                                                  pow(eff_bu.at(i).second / eff_bu.at(i).first, 2) +
+                                                  pow(eff_bs.at(i).second / eff_bs.at(i).first, 2) +
+                                                  pow(Bu2JpsiK_BF.second / Bu2JpsiK_BF.first, 2) +
+                                                  pow(Jpsi2MuMu_BF.second / Jpsi2MuMu_BF.first, 2));
+
     BF_bd.at(i).first = ws_->var(name("N_bd", i))->getVal() / N_bu.at(i).first * (eff_bu.at(i).first / eff_bd.at(i).first) * Bu2JpsiK_BF.first * Jpsi2MuMu_BF.first;
+    BF_bd.at(i).second = BF_bd.at(i).first * sqrt(pow(ws_->var(name("N_bd", i))->getError() / ws_->var(name("N_bd", i))->getVal(), 2) +
+                                                  pow(N_bu.at(i).second / N_bu.at(i).first, 2) +
+                                                  pow(eff_bu.at(i).second / eff_bu.at(i).first, 2) +
+                                                  pow(eff_bd.at(i).second / eff_bd.at(i).first, 2) +
+                                                  pow(Bu2JpsiK_BF.second / Bu2JpsiK_BF.first, 2) +
+                                                  pow(Jpsi2MuMu_BF.second / Jpsi2MuMu_BF.first, 2));
+
     if (simul_) ii = i;
     else ii = ch_i_;
-    cout << "channel " << ii << endl;
-    cout << "Bs2MuMu BF = " << BF_bs.at(i).first << " \\pm " << BF_bs.at(i).second << endl;
-    cout << "Bd2MuMu BF = " << BF_bd.at(i).first << " \\pm " << BF_bd.at(i).second << endl;
+    cout << "channel " << ii << ":" << endl;
+    cout << "Bs2MuMu BF = " << BF_bs.at(i).first << " \\pm " << BF_bs.at(i).second << "  channel " << ii <<  endl;
+    cout << "Bd2MuMu BF = " << BF_bd.at(i).first << " \\pm " << BF_bd.at(i).second << "  channel " << ii << endl;
   }
 
+  double bs_num = 0, bd_num = 0;
+  double bs_den = 0, bd_den = 0;
+  for (int i = 0; i < channels; i++) {
+    bs_num += BF_bs.at(i).first / pow(BF_bs.at(i).second, 2);
+    bs_den += 1. / pow(BF_bs.at(i).second, 2);
+    bd_num += BF_bd.at(i).first / pow(BF_bd.at(i).second, 2);
+    bd_den += 1. / pow(BF_bd.at(i).second, 2);
+  }
+  double bs_final_bf = bs_num / bs_den;
+  double bs_error_bf = sqrt(1. / bs_den);
+  double bd_final_bf = bd_num / bd_den;
+  double bd_error_bf = sqrt(1. / bs_den);
+
+  cout << "============= final numbers =============" << endl;
+  cout << "Bs2MuMu BF = " << bs_final_bf << " \\pm " << bs_error_bf << endl;
+  cout << "Bd2MuMu BF = " << bd_final_bf << " \\pm " << bd_error_bf << endl;
+  cout << "============= ============= =============" << endl;
 }
 
 void pdf_fitData::parse_efficiency_numbers(string filename) {

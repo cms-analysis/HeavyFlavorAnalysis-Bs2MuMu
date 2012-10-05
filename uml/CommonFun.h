@@ -59,7 +59,7 @@ void help() {
   cout << "-print \t save the fits to gif and pdf --> -no_legend without parameters on canvas" << endl;
   cout << "-cuts #filename \t file with MVA selections" << endl;
   cout << "-SB \t fit side-bands only" << endl; /// test
-  cout << "-sig # \t evaluate significance with method: 0 by hand; 1 ProfileLikelihoodCalculator; 2 frequentist ProfileLikelihoodTestStat; 3 hybrid ProfileLikelihoodTestStat" << endl;
+  cout << "-sig # \t evaluate significance with method:" << endl << "\t\t 0 by hand; " << endl << "\t\t 1 ProfileLikelihoodCalculator; " << endl << "\t\t 2 frequentist ProfileLikelihoodTestStat; " << endl << "\t\t 3 hybrid ProfileLikelihoodTestStat" << endl << "\t\t 4 hybrid RatioOfProfiledLikelihoodsTestStat" << endl;
   cout << "-e #filename \t estimates file (useful for significance)" << endl;
   cout << "-pee \t per-event-error" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;

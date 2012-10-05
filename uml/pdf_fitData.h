@@ -22,6 +22,9 @@
 #include "RooStats/FrequentistCalculator.h"
 #include "RooStats/HybridCalculator.h"
 #include "RooStats/HypoTestPlot.h"
+#include "RooStats/RatioOfProfiledLikelihoodsTestStat.h"
+
+using namespace RooStats;
 
 class pdf_fitData : public pdf_analysis {
   public:
@@ -71,7 +74,9 @@ class pdf_fitData : public pdf_analysis {
     void sig_plhc();
     void sig_plhts();
     void sig_hybrid_plhts();
+    void sig_hybrid_roplhts();
     void make_prior();
+    void make_models();
 
     void parse_external_numbers(string filename);
     void parse_efficiency_numbers(string filename);
