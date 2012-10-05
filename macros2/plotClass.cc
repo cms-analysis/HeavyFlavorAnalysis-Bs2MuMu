@@ -2715,16 +2715,15 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
     fpFunc->fHi = hi; 
     cout<<sigma1<<" "<<sigma2<<" "<<pReco<<endl;
     //    lF1 = fpFunc->expoErrgauss2c(h, 5.27, 0.03, 0.1, pReco); 
-    //lF1 = fpFunc->expoErrgauss2(h, 5.28, sigma1, 5.27, sigma2, pReco); 
     lF1 = fpFunc->expoErrgauss2Landau(h, 5.28, sigma1, 5.27, sigma2, pReco); 
     lF1->SetNpx(100000);
     lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
 
   } else {
-
     fpFunc->fLo = lo; //5.0;
     fpFunc->fHi = hi; //5.5;
     lF1 = fpFunc->expoErrGaussLandau(h, 5.27, 0.056, pReco); 
+    //lF1 = fpFunc->expoErrGauss(h, 5.27, 0.056, pReco); 
     lF1->SetNpx(100000);
     lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
   }
@@ -2842,15 +2841,19 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
   
   stamp(0.20, fStampString, 0.67, fStampCms); 
   if (fDoPrint) {
-    
+   
     string pdfname;
     string hname(h->GetName());
     if (string::npos != hname.find("NormC")) {
       pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), mode);
       if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), mode);
+      //pdfname = Form("%s/normC-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
+      //if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
     } else {
       pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode);
       if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), mode);
+      //pdfname = Form("%s/norm-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
+      //if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
     }
 
    c0->SaveAs(pdfname.c_str());
@@ -2892,9 +2895,9 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
     lBg = fpFunc->expoErrGauss(h,5.425,0.079); 
   }
 
-  zone(1,2);
-  h->DrawCopy();
-  c0->cd(2);
+  //zone(1,2);
+  //h->DrawCopy();
+  //c0->cd(2);
   lF1->SetLineColor(kBlue); 
   lF1->Draw();
 
@@ -2920,6 +2923,7 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
     lBg->SetParameter(i, lF1->GetParameter(3+i));
     cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
   }
+
 
   double c1 = lF1->Integral(5.25, 5.5); 
   double c2 = lBg->Integral(5.25, 5.5); 
@@ -2956,16 +2960,31 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
   gStyle->SetOptTitle(0); 
   h->Draw("e");
 
-  //lF1->SetLineColor(kBlue); 
-  //lF1->SetLineStyle(kDotted);
-  //lF1->SetLineWidth(3);
-  //lF1->Draw("same");
+  lF1->SetRange(lo, hi);
+  lF1->SetLineColor(kBlack); 
+  lF1->SetLineStyle(kSolid);
+  lF1->SetLineWidth(3);
+  lF1->Draw("same");
 
   // -- Overlay BG function
+  lBg->SetRange(lo, hi);
   lBg->SetLineStyle(kDashed);
   lBg->SetLineColor(kRed);
   lBg->SetLineWidth(3);
   lBg->Draw("same");
+
+  // also overlay 2nd Gaussian
+  TF1 *lgauss2 = new TF1("gaussian","gaus",lo,hi);
+  float gaussmean = area2ndGauss/(lF1->GetParameter(5)*2.5066);
+  lgauss2->SetParameter(0, gaussmean ); //const
+  lgauss2->SetParameter(1, lF1->GetParameter(4)); //mean 
+  lgauss2->SetParameter(2, lF1->GetParameter(5)); //sigma
+
+  lgauss2->SetLineStyle(kDotted);
+  lgauss2->SetLineColor(kBlue);
+  lgauss2->SetLineWidth(3);
+  lgauss2->Draw("same");
+
 
   tl->SetTextSize(0.07); 
   tl->SetTextColor(kBlack); 
@@ -2977,10 +2996,12 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
     tl->DrawLatex(0.22, 0.8, "Endcap");   
   } 
 
-
+  string hname(h->GetName());
   if (fDoPrint) {
     if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d.pdf", fDirectory.c_str(), mode));
     else c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), mode));
+    //if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
+    //else c0->SaveAs(Form("%s/cs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
   }
 
   cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
@@ -3009,9 +3030,9 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
     lBg = fpFunc->expo(fpFunc->fLo, fpFunc->fHi); 
   }
 
-  zone(1,2);
-  h->DrawCopy();
-  c0->cd(2);
+  //zone(1,2);
+  //h->DrawCopy();
+  //c0->cd(2);
   lF1->SetLineColor(kBlue); 
   lF1->Draw();
   //  return;
@@ -3079,8 +3100,10 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
     tl->DrawLatex(0.22, 0.8, "Endcap");   
   } 
 
-
+  string hname(h->GetName());
   if (fDoPrint) {
+    //if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
+    //else c0->SaveAs(Form("%s/cs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
     if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d.pdf", fDirectory.c_str(), mode));
     else c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), mode));
   }
