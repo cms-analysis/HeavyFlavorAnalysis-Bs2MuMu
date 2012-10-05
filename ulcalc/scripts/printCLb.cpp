@@ -6,6 +6,7 @@
  */
 
 #include <TFile.h>
+#include <TEfficiency.h>
 #include <RooWorkspace.h>
 
 #include <RooStats/HypoTestResult.h>
@@ -23,6 +24,18 @@
 
 using namespace RooStats;
 
+static HypoTestResult *loadResult(TFile *file, const char *name)
+{
+	RooWorkspace *wspace;
+	HypoTestResult *result = dynamic_cast<HypoTestResult*> (file->Get(name));
+	if(!result) {
+		wspace = dynamic_cast<RooWorkspace*> (file->Get("wspace"));
+		if (wspace) result = dynamic_cast<HypoTestResult*> (wspace->obj(name));
+	}
+	
+	return result;
+} // loadResult()
+
 static double sigFromP(double pvalue)
 {
 	return TMath::Sqrt(2.)*TMath::ErfInverse(1.-2.*pvalue);
@@ -31,9 +44,8 @@ static double sigFromP(double pvalue)
 void printCLb(const char *filename, const char *latexOut = NULL)
 {
 	TFile *file = TFile::Open(filename);
-	RooWorkspace *wspace = (RooWorkspace*)file->Get("wspace");
-	HypoTestResult *resultBkg = (RooStats::HypoTestResult*)wspace->obj("HypoTestCalculator_result");
-	HypoTestResult *resultSM = (RooStats::HypoTestResult*)wspace->obj("HypoTestCalculator_result_SM");
+	HypoTestResult *resultBkg = loadResult(file,"Hybrid_CLb_mu_s");
+	HypoTestResult *resultSM = loadResult(file,"Hybrid_CLb_mu_s_SM");
 	size_t j;
 	double p[5];
 	double q[5];
@@ -44,9 +56,15 @@ void printCLb(const char *filename, const char *latexOut = NULL)
 		latexFile = fopen(latexOut, "w");
 	
 	if (resultBkg) {
-		cout << "p value for background model: " << resultBkg->CLsplusb() << " corresponding to " << sigFromP(resultBkg->CLsplusb()) << " sigmas." << endl;
+		TEfficiency effCalc("calc", "", 1, 0.0, 1.0);
+		effCalc.SetStatisticOption(TEfficiency::kFCP);
+		effCalc.SetConfidenceLevel(0.68);
+		effCalc.SetTotalEvents(1, resultBkg->GetNullDistribution()->GetSize());
+		effCalc.SetPassedEvents(1, round(resultBkg->CLsplusb()*(double)resultBkg->GetNullDistribution()->GetSize()));
+		cout << Form("p value for background model: (%e)+(%e)-(%e) corresponding to (%f)+(%f)-(%f) sigmas.", resultBkg->CLsplusb(), effCalc.GetEfficiencyErrorUp(1), effCalc.GetEfficiencyErrorLow(1),sigFromP(resultBkg->CLsplusb()),sigFromP(resultBkg->CLsplusb()-effCalc.GetEfficiencyErrorLow(1)) - sigFromP(resultBkg->CLsplusb()), sigFromP(resultBkg->CLsplusb())-sigFromP(resultBkg->CLsplusb() + effCalc.GetEfficiencyErrorUp(1))) << endl;
+		
 		if (latexFile) {
-			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_pvalueObs, resultBkg->CLsplusb());
+			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", kVDEF_pvalueObs, resultBkg->CLsplusb());
 			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_signObs, sigFromP(resultBkg->CLsplusb()));
 		}
 	}
@@ -82,13 +100,13 @@ void printCLb(const char *filename, const char *latexOut = NULL)
 		q[4] = pValueDist->Integral(-RooNumber::infinity(), p[4], kTRUE, kTRUE, kTRUE);
 		delete pValueDist;
 		
-		cout << Form("Exp[p_SM] = %f+%f-%f = %f+%f-%f", q[1], q[2] - q[1], q[1] - q[0],sigFromP(q[1]),sigFromP(q[0])-sigFromP(q[1]),sigFromP(q[1])-sigFromP(q[2])) << endl;
+		cout << Form("Exp[p_SM] = %e+%e-%e = %f+%f-%f", q[1], q[2] - q[1], q[1] - q[0],sigFromP(q[1]),sigFromP(q[0])-sigFromP(q[1]),sigFromP(q[1])-sigFromP(q[2])) << endl;
 		cout << Form("	P(3 sigma) = %f", q[3]) << endl;
 		cout << Form("	P(5 sigma) = %f", q[4]) << endl;
 		if (latexFile) {
-			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_pvalueSM_Med, q[1]);
-			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_pvalueSM_ErrHi, q[2]-q[1]);
-			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_pvalueSM_ErrLo, q[1]-q[0]);
+			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", kVDEF_pvalueSM_Med, q[1]);
+			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}\n", kVDEF_pvalueSM_ErrHi, q[2]-q[1]);
+			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", kVDEF_pvalueSM_ErrLo, q[1]-q[0]);
 			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_signSM_Med, sigFromP(q[1]));
 			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_signSM_ErrHi, sigFromP(q[0])-sigFromP(q[1]));
 			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%f}}}\n", kVDEF_signSM_ErrLo, sigFromP(q[1])-sigFromP(q[2]));
