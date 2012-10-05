@@ -50,7 +50,7 @@ static measurement_t fitRooStats(TTree *tree, TCut cut, double obs, int channelI
 	w->factory("Gaussian::sig(mass,mu[5.28,4.9,5.9],sigma[0.03,0,0.05])");
 	w->factory("Gaussian::sig2(mass,mu,sigma2[0.06,0.05,2])");
 	w->factory("Exponential::bkg_comb(mass,c[0,-1e30,1e30])");
-	w->factory(Form("SUM::model(nsig[%f,0,100000]*sig,nsig2[0,0,100000]*sig2,ncomb[0,0,100000]*bkg_comb)",obs));
+	w->factory(Form("SUM::model(nsig[%e,0,100000]*sig,nsig2[0,0,100000]*sig2,ncomb[0,0,100000]*bkg_comb)",obs));
 	
 	p = w->var("mass")->frame();
 	w->data("data")->plotOn(p,RooFit::Binning(50));
