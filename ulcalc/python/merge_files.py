@@ -10,47 +10,102 @@ if len(sys.argv) < 3:
 
 rootfilename="merge.C"
 rootfilecontent='''
+#include <TROOT.h>
 #include <TFile.h>
+#include <RooWorkspace.h>
+#include <RooStats/HypoTestResult.h>
 #include <RooStats/HypoTestInverterResult.h>
 
-using namespace RooStats;
+const char* result_names[] = {
+	"Hybrid_CLb",
+	"Hybrid_Ul",
+	"Hybrid_Int"
+};
 
-void merge(const char *filename, const char *resultname, const char *fromfile)
+void mergeSpaces(RooWorkspace *targetSpace, RooWorkspace *addSpace, std::string resultName)
 {
-	TFile theFile(filename,"update");
-	TFile *fromF = TFile::Open(fromfile);
-	std::string resultnameSM(Form("%s_SM",resultname));
+	TObject *obj;
+	RooStats::HypoTestResult *targetResult = NULL;
+	RooStats::HypoTestResult *addResult = NULL;
+	RooStats::HypoTestInverterResult *targetInverter = NULL;
+	RooStats::HypoTestInverterResult *addInverter = NULL;
 	
-	RooStats::HypoTestInverterResult *result = dynamic_cast<RooStats::HypoTestInverterResult*>(theFile.Get(resultname));
-	if(!result) // not yet loaded
-	  result = new RooStats::HypoTestInverterResult(resultname);          
-        RooStats::HypoTestInverterResult *resultSM = dynamic_cast<RooStats::HypoTestInverterResult*>(theFile.Get(resultnameSM.c_str()));
-	if(!resultSM)
-	  resultSM = new RooStats::HypoTestInverterResult(resultnameSM.c_str());
+	// load the target Result
+	obj = targetSpace->obj(resultName.c_str());
+	if (obj) {
+		if (obj->InheritsFrom("RooStats::HypoTestResult"))
+			targetResult = (RooStats::HypoTestResult*)obj;
+		if (obj->InheritsFrom("RooStats::HypoTestInverterResult"))
+			targetInverter = (RooStats::HypoTestInverterResult*)obj;
+	}
+	
+	obj = addSpace->obj(resultName.c_str());
+	if (obj) {
+		if (obj->InheritsFrom("RooStats::HypoTestResult"))
+			addResult = (RooStats::HypoTestResult*)obj;
+		if (obj->InheritsFrom("RooStats::HypoTestInverterResult"))
+			addInverter = (RooStats::HypoTestInverterResult*)obj;
+	}
+	
+	if (addResult) {
+		if (targetResult)	targetResult->Append(addResult);
+		else				targetResult = addResult;
+		
+		cout << resultName << " size = " << targetResult->GetNullDistribution()->GetSize() << endl;
+		targetSpace->import(*targetResult, kTRUE);
+	}
+	
+	if (addInverter) {
+		if (targetInverter)	targetInverter->Add(*addInverter);
+		else				targetInverter = addInverter;
+		
+		targetSpace->import(*targetInverter, kTRUE);
+	}
+} // mergeSpaces()
 
-	RooWorkspace *wspace = dynamic_cast<RooWorkspace*> (fromF->Get("wspace"));
-
-	RooStats::HypoTestInverterResult *toadd = dynamic_cast<RooStats::HypoTestInverterResult*> (wspace->obj(resultname));	
-	result->Add(*toadd);
-
-	toadd = dynamic_cast<RooStats::HypoTestInverterResult*>(wspace->obj(resultnameSM.c_str()));
-	resultSM->Add(*toadd);
-
-	theFile.cd();
-	result->Write(resultname,TObject::kOverwrite);
-	resultSM->Write(resultnameSM.c_str(),TObject::kOverwrite);
-	theFile.Close();
-
-        delete fromF;
-} // merge_result()
+// void merge(const char *filename, const char *resultname, const char *fromfile)
+void merge(const char *targetName, const char *addName)
+{
+	TFile *targetFile = new TFile(targetName, "update");
+	TFile *addFile = TFile::Open(addName);
+	const char *wname = "tmp-wspace-merge";
+	unsigned j;
+	
+	// load the workspace
+	RooWorkspace *targetSpace = (RooWorkspace*)targetFile->Get("wspace");
+	RooWorkspace *addSpace = (RooWorkspace*)addFile->Get("wspace");
+	
+	if (addSpace) {
+		if (targetSpace) {
+			for (j = 0; j < sizeof(result_names)/sizeof(const char *); j++) {
+				mergeSpaces(targetSpace, addSpace, std::string(Form("%s_mu_s",result_names[j])));
+				mergeSpaces(targetSpace, addSpace, std::string(Form("%s_mu_s_SM",result_names[j])));
+				mergeSpaces(targetSpace, addSpace, std::string(Form("%s_mu_d",result_names[j])));
+				mergeSpaces(targetSpace, addSpace, std::string(Form("%s_mu_d_SM",result_names[j])));
+			}
+		} else {
+			cout << Form("No target workspace found, copying from '%s'",addName) << endl;
+			targetSpace = addSpace;
+		}
+	}
+	
+	if (targetSpace)
+		targetSpace->writeToFile(wname, kTRUE);
+	
+	// close the files
+	delete targetFile;
+	delete addFile;
+	
+	// move the workspace in place
+	if (targetSpace)
+		gROOT->ProcessLine(Form(".!mv %s %s", wname, targetName));
+} // merge()
 '''
 
 targetfile=sys.argv[1]
-name=sys.argv[2]
-sources=sys.argv[3:len(sys.argv)]
+sources=sys.argv[2:len(sys.argv)]
 
 print "Targetfile: " + targetfile
-print "Name: " + name
 print "Sources: " + str(sources)
 
 # create the temporary root file
@@ -59,7 +114,7 @@ rfile.write(rootfilecontent)
 rfile.close()
 
 for src in sources:
-    cmd = 'root -l -b -q \'' + rootfilename + '("' + targetfile + '","' + name + '","' + src + '")\''
+    cmd = 'root -l -b -q \'' + rootfilename + '("' + targetfile + '","' + src + '")\''
     print cmd
     os.system(cmd)
 
