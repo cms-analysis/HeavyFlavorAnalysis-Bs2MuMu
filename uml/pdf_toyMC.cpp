@@ -560,13 +560,8 @@ void pdf_toyMC::print(string output, RooWorkspace* ws) {
     mass_eta_h->GetXaxis()->SetTitleOffset(2.) ;
     mass_eta_h->GetYaxis()->SetTitleOffset(2.) ;
     mass_eta_h->GetZaxis()->SetTitleOffset(2.5) ;
-    RooPlot* frame = Mass->frame() ;
-    for (Int_t ibin=0 ; ibin<100; ibin+=20) {
-      ws_->var("eta")->setBin(ibin) ;
-      ws_->pdf(pdf_name.c_str())->plotOn(frame, Normalization(5)) ;
-    }
     TCanvas* cetad = new TCanvas("cetad", "cetad", 1200, 600);
-    cetad->Divide(3);
+    cetad->Divide(bdt_fit_ ? 3 : 2);
     cetad->cd(1);
     mass_eta_h->Draw("surf") ;
     cetad->cd(2);
@@ -590,32 +585,31 @@ void pdf_toyMC::print(string output, RooWorkspace* ws) {
     cetad->Print( (address + ".gif").c_str());
     cetad->Print( (address + ".pdf").c_str());
     delete cetad;
-    delete frame;
     delete mass_eta_h;
-    cout << pdf_name << endl;
   }
   if(!no_legend) {
     ws_->pdf(pdf_name.c_str())->paramOn(rp, Layout(0.50, 0.9, 0.9));
     if(bdt_fit_) ws_->pdf(pdf_name.c_str())->paramOn(rp_bdt, Layout(0.50, 0.9, 0.9));
   }
 
+  /// components
   RooArgSet * set = ws_->pdf(pdf_name.c_str())->getComponents();
   TIterator* it = set->createIterator();
   TObject* var_Obj = 0;
   int i = 0;
-  while((var_Obj = it->Next()) && !pee){
+  while((var_Obj = it->Next())/* && !pee*/){
     string name = var_Obj->GetName();
     if (name != pdf_name) {
       if (i > 11) i = 0;
       size_t found1 = pdf_name.find("total");
       if (found1 == string::npos) {
         ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
-        if(bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
+        if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
       }
       else {
         if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_rare" || name=="pdf_comb") {
           ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
-          if(bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
+          if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
         }
       }
       i++;

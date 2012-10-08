@@ -4,8 +4,14 @@
 #include <stdlib.h>
 #include <cstring>
 #include <sstream>
+#include <cmath>
 
-#include "root_funcs.h"
+#include "TH1.h"
+#include "TH2D.h"
+#include "TTree.h"
+#include "TCanvas.h"
+#include "TF1.h"
+#include "TFile.h"
 
 using namespace std;
 
@@ -29,7 +35,7 @@ static int inputs = 1;
 static int inputs_bdt = 1;
 static int sig_meth = -1;
 static string cuts = "bdt>-10.";
-bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false;
+bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
 
@@ -46,6 +52,7 @@ void help() {
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
   cout << "-print \t save the fits to gif and pdf if -no_legend without parameters on canvas" << endl;
   cout << "-cuts #cutstring \t string cut for small tree: i.e. \"bdt>0.&&bdt<0.18\"; default is \"" << cuts << "\"" << endl;
+  cout << "-cuts_file \t file containing bdt cuts for small tree" << endl;
   cout << "-pee \t per-event-error" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;
   cout << "-rare #filename \t file with rare event estimations (for normalizing to B -> JpsiK)" << endl;
@@ -64,6 +71,8 @@ void help() {
   cout << "-e #filename \t estimates file (useful for significance)" << endl;
   cout << "-pee \t per-event-error" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;
+  cout << "-cuts #cutstring \t string cut for small tree: i.e. \"bdt>0.&&bdt<0.18\"; default is \"" << cuts << "\"" << endl;
+  cout << "-cuts_file \t file containing bdt cuts for small tree" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -174,8 +183,14 @@ void parse_options(int argc, char* argv[]){
       cout << "significance with method " << sig_meth << endl;
     }
     if (!strcmp(argv[i],"-cuts")) {
+      cuts_b = true;
       cuts = argv[i+1];
       cout << "cut string = " << cuts << endl;
+    }
+    if (!strcmp(argv[i],"-cuts_file")) {
+      cuts_f_b = true;
+      cuts_f = argv[i+1];
+      cout << "cuts file = " << cuts_f << endl;
     }
     if (!strcmp(argv[i],"-pee")) {
       pee = true;
@@ -302,3 +317,63 @@ void get_rare_normalization(string filename) {
   }
   fclose(file_out);
 }
+
+vector <double> cut_bdt_file() {
+  FILE *file = fopen(cuts_f.c_str(), "r");
+  if (!file) {cout << "file " << cuts_f << " does not exist"; exit(1);}
+  char buffer[1024];
+  vector <double> bdt_(2);
+  while (fgets(buffer, sizeof(buffer), file)) {
+    if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
+    if (buffer[0] == '#') continue;
+    sscanf(buffer, "bdt_0\t%lf", &bdt_[0]);
+    sscanf(buffer, "bdt_1\t%lf", &bdt_[1]);
+  }
+  cout << "bdt_0 cut = " << bdt_[0] << "; bdt_1 cut = " << bdt_[1] << endl;
+  return bdt_;
+}
+
+TObjArray Create_MassRes(TTree* tree, std::string cuts, vector <double> cuts_v) {
+  TH2D* MassRes_hh = new TH2D("MassRes_hh", "MassRes_hh", 100, 4.9, 5.9, 40, -2.4, 2.4);
+  TTree* reduced_tree = tree->CopyTree(cuts.c_str());
+  Double_t m_t, eta_t, bdt_t, m1eta_t, m2eta_t;
+  reduced_tree->SetBranchAddress("m",     &m_t);
+  reduced_tree->SetBranchAddress("eta",   &eta_t);
+  reduced_tree->SetBranchAddress("bdt",   &bdt_t);
+  reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
+  reduced_tree->SetBranchAddress("m2eta", &m2eta_t);
+  for (int j = 0; j < reduced_tree->GetEntries(); j++) {
+    reduced_tree->GetEntry(j);
+    if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) {
+      if (cuts_f_b && bdt_t < cuts_v[0]) continue;
+    }
+    else {
+      if (cuts_f_b && bdt_t < cuts_v[1]) continue;
+    }
+    MassRes_hh->Fill(m_t, eta_t);
+  }
+  TObjArray aSlices;
+  MassRes_hh->FitSlicesX(0, 0, -1, 0, "Q", &aSlices);
+  return aSlices;
+}
+
+TF1* Fit_MassRes(std::string file, std::string cuts, vector <double> cuts_v) {
+  std::cout << "Mass resolution fit" << std::endl;
+  TFile* MassRes_f = new TFile(file.c_str(), "UPDATE");
+  TTree* MassRes_t = (TTree*)MassRes_f->Get("SgMc_bdt");
+  TObjArray MassRes_toa = Create_MassRes(MassRes_t, cuts, cuts_v);
+  TH1D* MassRes_h = (TH1D*)MassRes_toa[2];
+  MassRes_h->Fit("pol6");
+  TF1* MassRes_fit = MassRes_h->GetFunction("pol6");
+  TCanvas c("c", "c", 600, 600);
+  MassRes_h->SetYTitle("Resolution [GeV]");
+  MassRes_h->SetXTitle("Candidate #eta");
+  MassRes_h->SetStats(0);
+  MassRes_h->Draw();
+  c.Print("fig/width_fit.gif");
+  c.Print("fig/width_fit.pdf");
+  TF1* MassRes2_fit = (TF1*)MassRes_fit->Clone();
+  return MassRes2_fit;
+}
+
+

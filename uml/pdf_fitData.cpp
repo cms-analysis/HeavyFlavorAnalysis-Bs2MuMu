@@ -300,26 +300,38 @@ void pdf_fitData::print_each_channel() {
   }
 }
 
-void pdf_fitData::FillRooDataSet(RooDataSet* dataset) {
+void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double> cut_, TF1 *MassRes_f, string cuts) {
   int events = 0;
   if (!strcmp(tree->GetName(), "bdt") || !strcmp(tree->GetName(), "cnc")) {
-    double m1eta_t, m2eta_t, m_t, eta_B_t;
-    tree->SetBranchAddress("m1eta", &m1eta_t);
-    tree->SetBranchAddress("m2eta", &m2eta_t);
-    tree->SetBranchAddress("m", &m_t);
-    tree->SetBranchAddress("eta", &eta_B_t);
+    TTree* reduced_tree = tree->CopyTree(cuts.c_str());
+    Double_t m1eta_t, m2eta_t, m_t, eta_B_t, bdt_t;
+    reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
+    reduced_tree->SetBranchAddress("m2eta", &m2eta_t);
+    reduced_tree->SetBranchAddress("m", &m_t);
+    reduced_tree->SetBranchAddress("eta", &eta_B_t);
+    reduced_tree->SetBranchAddress("bdt", &bdt_t);
     for (int i = 0; i < tree->GetEntries(); i++){
-      tree->GetEntry(i);
+      reduced_tree->GetEntry(i);
       if (m_t > 4.9 && m_t < 5.9) {
         events++;
         Mass->setVal(m_t);
         eta->setVal(eta_B_t);
         m1eta->setVal(m1eta_t);
         m2eta->setVal(m2eta_t);
-        MassRes->setVal(0.0078*eta_B_t*eta_B_t + 0.035);
-        if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) channels_cat->setIndex(0);
-        else channels_cat->setIndex(1);
-        RooArgSet varlist_tmp(*Mass, *MassRes, *eta, *m1eta, *m2eta, *channels_cat);
+        bdt->setVal(bdt_t);
+        MassRes->setVal(MassRes_f->Eval(eta_B_t));
+        if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) {
+          if (cut_b && bdt_t < cut_[0]) continue;
+          channels_cat->setIndex(0);
+        }
+        else {
+          if (cut_b && bdt_t < cut_[1]) continue;
+          channels_cat->setIndex(1);
+        }
+        if (bdt_t < 0.1) bdt_cat->setIndex(0);
+        else if (bdt_t < 0.18) bdt_cat->setIndex(1);
+        else bdt_cat->setIndex(2);
+        RooArgSet varlist_tmp(*Mass, *MassRes, *eta, *m1eta, *m2eta, *bdt, *channels_cat, *bdt_cat);
         dataset->add(varlist_tmp);
       }
     }
@@ -340,16 +352,32 @@ void pdf_fitData::define_channels() {
   }
 }
 
-void pdf_fitData::make_dataset() {
+void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, TF1 *MassRes_f, string cuts) {
   cout << "making dataset" << endl;
-  RooArgList varlist(*Mass, *MassRes, *eta, *m1eta, *m2eta);
-  /*if (simul_) */varlist.add(*channels_cat);
+  RooArgList varlist(*Mass, *MassRes, *eta, *m1eta, *m2eta, *bdt);
+  varlist.add(*channels_cat);
   global_data = new RooDataSet("global_data", "global_data", varlist);
-  if (!random) FillRooDataSet(global_data);
+  if (!random) FillRooDataSet(global_data, cut_b, cut_, MassRes_f, cuts);
   else {
     //RooRandom::randomGenerator()->SetSeed(12345);
-    if (!simul_) global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("channels")), 250);
-    else global_data = ws_->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("channels")), 143);
+    if (!simul_) {
+      ws_->var("N_bs")->setVal(estimate_bs[ch_i_]);
+      if (!SM_ && !bd_constr_) ws_->var("N_bd")->setVal(estimate_bd[ch_i_]);
+      else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate_bd[ch_i_]/estimate_bd[ch_i_]);
+      ws_->var("N_rare")->setVal(estimate_rare[ch_i_]);
+      ws_->var("N_comb")->setVal(estimate_comb[ch_i_]);
+      global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("channels")));
+    }
+    else {
+      for (int i = 0; i < channels; i++) {
+        ws_->var(name("N_bs", i))->setVal(estimate_bs[i]);
+        if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i))->setVal(estimate_bd[i]);
+        else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate_bd[i]/estimate_bd[i]);
+        ws_->var(name("N_rare", i))->setVal(estimate_rare[i]);
+        ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
+      }
+      global_data = ws_->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("channels")));
+    }
   }
   global_data->SetName("global_data");
   //ws_->import(*global_data);

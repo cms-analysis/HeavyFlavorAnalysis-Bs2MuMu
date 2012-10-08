@@ -38,6 +38,7 @@
 #include "RooProduct.h"
 #include "RooGaussModel.h"
 #include "RooFFTConvPdf.h"
+#include "RooSimWSTool.h"
 
 using namespace std;
 using namespace RooFit;
@@ -75,7 +76,7 @@ public:
   void define_total_fractional(int i); // final pdf with fractional components, and also extended
   void define_total_extended(int i); // final pdf with all extended components
 
-  void define_simul();
+  void define_simul(bool simulbdt);
 
   void fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error = true, bool hesse = true);
   void print(RooAbsData *data, string output = "");

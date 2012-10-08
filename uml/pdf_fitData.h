@@ -34,7 +34,7 @@ class pdf_fitData : public pdf_analysis {
     void print_each_channel();
 
     void define_channels();
-    void make_dataset();
+    void make_dataset(bool cut_b, vector<double> cut_, TF1* MassRes_f, string cuts);
     void make_pdf_input();
     void make_pdf();
 
@@ -66,7 +66,7 @@ class pdf_fitData : public pdf_analysis {
     vector < TFile*> ws_file_input;
     vector < RooWorkspace*> ws_input;
 
-    void FillRooDataSet(RooDataSet* dataset);
+    void FillRooDataSet(RooDataSet* dataset, bool cut_b, vector<double> cut_, TF1* MassRes_f, string cuts);
     void changeName(RooWorkspace *ws, int str);
     TTree* tree;
 

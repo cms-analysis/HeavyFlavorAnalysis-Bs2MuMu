@@ -467,12 +467,18 @@ void pdf_analysis::define_total_extended(int i = 0) {
   return; 
 }
 
-void pdf_analysis::define_simul() {
-  RooSimultaneous pdf_sim("pdf_ext_simul", "simultaneous pdf", *ws_->cat("channels"));
-  for (int i = 0; i < channels; i++) {
-    pdf_sim.addPdf(*ws_->pdf(name("pdf_ext_total", i)), name("channel", i));
+void pdf_analysis::define_simul(bool simulbdt) {
+  if (!simulbdt) {
+    RooSimultaneous pdf_sim("pdf_ext_simul", "simultaneous pdf", *ws_->cat("channels"));
+    for (int i = 0; i < channels; i++) {
+      pdf_sim.addPdf(*ws_->pdf(name("pdf_ext_total", i)), name("channel", i));
+    }
+    ws_->import(pdf_sim);
   }
-  ws_->import(pdf_sim);
+  else {
+
+  }
+
 }
 
 string pdf_analysis::define_pdf_sum(string name, int i) {
@@ -658,7 +664,7 @@ void pdf_analysis::simsplit() {
   int cont = 0;
   while ( (var_Obj = (RooRealVar*)it->Next()) ) {
     string name = var_Obj->GetName();
-    if ( !(name == "Mass") /*&& !(name == "eta")*/ && !(name == "Bd_over_Bs") && !(name == "SM_Bd_over_Bs")) {
+    if ( !(name == "Mass") && !(name == "Bd_over_Bs") && !(name == "SM_Bd_over_Bs")) {
       if (cont != 0) splitter << ", ";
       splitter << name;
       cont++;

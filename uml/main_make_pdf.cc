@@ -39,13 +39,9 @@ int main(int argc, char* argv[]) {
   /// INPUTS
   vector <RooAbsData*> rad_bs(inputs);
   vector <RooAbsData*> rad_bd(inputs);
-  vector <RooAbsData*> rad_signals(inputs);
   vector <RooAbsData*> rad_peak(inputs);
   vector <RooAbsData*> rad_semi(inputs);
   vector <RooAbsData*> rad_rare(inputs);
-  vector <RooAbsData*> rad_signalsrare(inputs);
-  vector <RooAbsData*> rad_uniform(inputs);
-  vector <RooAbsData*> rad_total(inputs);
 
   static string decays[] = {"SgMc", "BdMc", "bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgLb2KP", "bgLb2PiP", "bgBd2PiMuNu", "bgBs2KMuNu", "bgLb2PMuNu", "SgData"};
   double weight_i[] = { 1,      1,      1./27.6,   1./1.1,     1./1.6,      1./1.0,    1./2.5,     1./2.5,      1./1.3,    1./2.2,     1./1.0,        1./1.1,       1./1.1,    1};
@@ -67,7 +63,9 @@ int main(int argc, char* argv[]) {
 
   int decays_n = sizeof(decays)/sizeof(string);
 
-  TF1* MassRes_h = Fit_MassRes("input/small-SgMc.root", cuts);
+  vector <double> cuts_v(2, -10);
+  if (cuts_f_b) cuts_v = cut_bdt_file();
+  TF1* MassRes_h = Fit_MassRes("input/small-SgMc.root", cuts_b ? cuts : "", cuts_v);
 
   for (int j = 0; j < inputs; j++) {
 
@@ -96,7 +94,7 @@ int main(int argc, char* argv[]) {
 
       smalltree_f[i] = new TFile(decays_filename[i].c_str(), "UPDATE");
       smalltree[i] = (TTree*)smalltree_f[i]->Get(decays_treename[i].c_str());
-      TTree* reduced_tree = smalltree[i]->CopyTree(cuts.c_str());
+      TTree* reduced_tree = smalltree[i]->CopyTree(cuts_b ? cuts.c_str() : "");
       Double_t m_t, eta_t, m1eta_t, m2eta_t, bdt_t;
       reduced_tree->SetBranchAddress("m",     &m_t);
       reduced_tree->SetBranchAddress("bdt",   &bdt_t);
@@ -112,16 +110,26 @@ int main(int argc, char* argv[]) {
         m1eta->setVal(m1eta_t);
         m2eta->setVal(m2eta_t);
         bdt->setVal(bdt_t);
+        /// mass resolution
         MassRes->setVal(MassRes_h->Eval(eta_t));
-        if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) channel_cat->setIndex(0);
-        else channel_cat->setIndex(1);
-        if (bdt_t < 0) bdt_cat->setIndex(0);
+        /// eta channels
+        if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) {
+          channel_cat->setIndex(0);
+          if (cuts_f_b && bdt_t < cuts_v[0]) continue;
+        }
+        else {
+          channel_cat->setIndex(1);
+          if (cuts_f_b && bdt_t < cuts_v[1]) continue;
+        }
+        /// bdt channels
+        if (bdt_t < 0.1) bdt_cat->setIndex(0);
         else if (bdt_t < 0.18) bdt_cat->setIndex(1);
-        else bdt_cat->setIndex(1);
+        else bdt_cat->setIndex(2);
+
         RooArgSet varlist_tmp(*m, *MassRes, *eta, *m1eta, *m2eta, *bdt, *channel_cat, *bdt_cat);
         rds_smalltree[i]->add(varlist_tmp, weight_i[i]);
       }
-      cout << rds_smalltree[i]->GetName() << " done: " << reduced_tree->GetEntries() << " / " << smalltree[i]->GetEntries() << endl;
+      cout << rds_smalltree[i]->GetName() << " done: " << rds_smalltree[i]->sumEntries() << " / " << smalltree[i]->GetEntries() << endl;
     }
 
     ana1.channel = simul ? j : ch_i;
@@ -132,11 +140,6 @@ int main(int argc, char* argv[]) {
     rad_bd[j] = rds_smalltree[1];
     ana1.define_MassRes_pdf(rds_smalltree[1], "bd");
     ana1.define_bdt_pdf(rds_smalltree[1], "bd");
-
-//    RooDataSet* rds_signals = (RooDataSet*)rds_smalltree[0]->Clone("rds_signals");
-//    rds_signals->append(*rds_smalltree[1]);
-//    rad_signals[j] = rds_signals;
-//    ana1.define_MassRes_pdf(rds_signals, "signals");
 
     RooDataSet* rds_semi = (RooDataSet*)rds_smalltree[10]->Clone("rds_semi");
     rds_semi->append(*rds_smalltree[11]);
@@ -163,11 +166,6 @@ int main(int argc, char* argv[]) {
     ana1.define_MassRes_pdf(rds_rare, "rare");
     ana1.define_bdt_pdf(rds_rare, "rare");
 
-//    RooDataSet* rds_signalsrare = (RooDataSet*)rds_signals->Clone("rds_signalsrare");
-//    rds_signalsrare->append(*rds_rare);
-//    rad_signalsrare[j] = rds_signalsrare;
-//    ana1.define_MassRes_pdf(rds_signalsrare, "signalsrare");
-
     ana1.define_MassRes_pdf(rds_smalltree[13], "comb");
     ana1.define_bdt_pdf(rds_smalltree[13], "comb");
   }
@@ -179,7 +177,7 @@ int main(int argc, char* argv[]) {
     ana1.set_rare_normalization(rare_f);
   }
 
-  if (simul) ana1.define_simul();
+  if (simul) ana1.define_simul(simulbdt);
 
   /// FITS
   for (int j = 0; j < inputs; j++) {

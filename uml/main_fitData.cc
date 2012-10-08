@@ -42,7 +42,10 @@ int main(int argc, char** argv) {
   fitdata->make_pdf();
   if (strcmp(rare_f.c_str(),"no")) fitdata->set_rare_normalization(rare_f, true);
 
-  fitdata->make_dataset();
+  vector <double> cuts_v(2, -10);
+  if (cuts_f_b) cuts_v = cut_bdt_file();
+  TF1* MassRes_h = Fit_MassRes("input/small-SgMc.root", cuts_b ? cuts : "", cuts_v);
+  fitdata->make_dataset(cuts_f_b, cuts_v, MassRes_h, cuts_b ? cuts : "");
   fitdata->fit_pdf();
   if (print) {
     if (simul) fitdata->print_each_channel();
