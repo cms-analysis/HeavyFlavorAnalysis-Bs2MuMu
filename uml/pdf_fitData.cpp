@@ -135,7 +135,7 @@ void pdf_fitData::fit_pdf(bool do_not_import) {
     else RFR = ws_->pdf("pdf_ext_simul")->fitTo(*global_data, Extended(1), Save(1), Minos(), ConditionalObservables(*ws_->var("MassRes")));
   }
   else {
-    RooAbsData* subdata = global_data->reduce(Form("channels==channels::channel_%d", channel));
+    RooAbsData* subdata = global_data->reduce(Form("etacat==etacat::etacat_%d", channel));
     global_data = (RooDataSet*)subdata;
     if (verbosity > 0) cout << "fitting " << global_data->GetName() << " in range " << range_ << " with pdf_ext_total:" << endl;
     ws_->pdf("pdf_ext_total")->Print();
@@ -150,7 +150,7 @@ void pdf_fitData::fit_pdf(bool do_not_import) {
 void pdf_fitData::print() {
   cout << "printing" << endl;
   RooPlot *rp = ws_->var("Mass")->frame();
-  //RooAbsData* subdata_res = global_data->reduce(Form("channels==channels::channel_%d", channel));
+  //RooAbsData* subdata_res = global_data->reduce(Form("etacat==etacat::etacat_%d", channel));
   global_data->plotOn(rp, Binning(40));
 
   if (!pee) {
@@ -197,11 +197,8 @@ void pdf_fitData::print() {
   }
   TCanvas* c = new TCanvas("c", "c", 600, 600);
   rp->Draw();
-  string address = "fig/data_fitData_" + (string)ws_->pdf("pdf_ext_total")->GetName() + "_" + meth_ + "_" + ch_s_;
-  if (SM_) address += "_SM";
-  if (pee)  address += "_PEE";
-  c->Print( (address + ".gif").c_str());
-  c->Print( (address + ".pdf").c_str());
+  c->Print((get_address("data_fitData_", "pdf_ext_total") + ".gif").c_str());
+  c->Print((get_address("data_fitData_", "pdf_ext_total") + ".pdf").c_str());
   delete rp;
   delete c;
 }
@@ -210,14 +207,14 @@ void pdf_fitData::print_each_channel() {
   cout <<"printing"<< endl;
   for (int i = 0; i < channels; i++) {
 
-    RooPlot* final_p = ws_->var("Mass")->frame(Bins(40), Title(Form("Candidate invariant mass for channel %d", i)));
-    global_data->plotOn(final_p, Cut(Form("channels==channels::channel_%d", i)));
+    RooPlot* final_p = ws_->var("Mass")->frame(Bins(40), Title(Form("Candidate invariant mass for etacat %d", i)));
+    global_data->plotOn(final_p, Cut(Form("etacat==etacat::etacat_%d", i)));
     if (!pee) {
-      ws_->pdf("pdf_ext_simul")->plotOn(final_p, VisualizeError(*RFR, 1), FillColor(kYellow), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data), Range(range_.c_str()), MoveToBack()) ;
-      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data), LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, VisualizeError(*RFR, 1), FillColor(kYellow), Slice(*ws_->cat("etacat"), Form("etacat_%d", i)), ProjWData(*ws_->cat("etacat"), *global_data), Range(range_.c_str()), MoveToBack()) ;
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(*ws_->cat("etacat"), Form("etacat_%d", i)), ProjWData(*ws_->cat("etacat"), *global_data), LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
     }
     else {
-      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(RooArgSet(*ws_->cat("channels"), *ws_->var("MassRes")), *global_data, kFALSE), LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(*ws_->cat("etacat"), Form("etacat_%d", i)), ProjWData(RooArgSet(*ws_->cat("etacat"), *ws_->var("MassRes")), *global_data, kFALSE), LineColor(kBlue), Range(range_.c_str()), LineWidth(3));
     }
     //ws_->pdf("pdf_ext_simul")->paramOn(final_p, Layout(0.30, 0.95, 0.95), Format("NEAU")/*, Parameters(*param)*/);
 
@@ -231,28 +228,28 @@ void pdf_fitData::print_each_channel() {
         if (!pee) {
           size_t found;
           found = name.find(Form("pdf_bs_%d", i));
-          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kRed),        LineStyle(1), DrawOption("F"), FillColor(kRed),        FillStyle(3001)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kRed),        LineStyle(1), DrawOption("F"), FillColor(kRed),        FillStyle(3001)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("etacat"), Form("etacat_%d", i)), ProjWData(*ws_->cat("etacat"), *global_data));
           found = name.find(Form("pdf_bd_%d", i));
-          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kViolet - 4), LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kViolet - 4), LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("etacat"), Form("etacat_%d", i)), ProjWData(*ws_->cat("etacat"), *global_data));
           found = name.find(Form("pdf_comb_%d", i));
-          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Range(range_.c_str()), Slice(*ws_->cat("etacat"), Form("etacat_%d", i)), ProjWData(*ws_->cat("etacat"), *global_data));
           found = name.find(Form("pdf_rare_%d", i));
-          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kGreen - 7),  LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(*ws_->cat("channels"), *global_data));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kGreen - 7),  LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Range(range_.c_str()), Slice(*ws_->cat("etacat"), Form("etacat_%d", i)), ProjWData(*ws_->cat("etacat"), *global_data));
         }
         else {
           size_t found;
           found = name.find(Form("pdf_bs_%d", i));
-          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kRed),        LineStyle(1), DrawOption("F"), FillColor(kRed),        FillStyle(3001)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(RooArgSet(*ws_->cat("channels"), *ws_->var("MassRes")), *global_data, kFALSE));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kRed),        LineStyle(1), DrawOption("F"), FillColor(kRed),        FillStyle(3001)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("etacat"), Form("etacat_%d", i)), ProjWData(RooArgSet(*ws_->cat("etacat"), *ws_->var("MassRes")), *global_data, kFALSE));
           found = name.find(Form("pdf_bd_%d", i));
-          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kViolet - 4), LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(RooArgSet(*ws_->cat("channels"), *ws_->var("MassRes")), *global_data, kFALSE));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kViolet - 4), LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144)/*, LineWidth(3)*/, Range(range_.c_str()), Slice(*ws_->cat("etacat"), Form("etacat_%d", i)), ProjWData(RooArgSet(*ws_->cat("etacat"), *ws_->var("MassRes")), *global_data, kFALSE));
           found = name.find(Form("pdf_comb_%d", i));
-          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(RooArgSet(*ws_->cat("channels"), *ws_->var("MassRes")), *global_data, kFALSE));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Range(range_.c_str()), Slice(*ws_->cat("etacat"), Form("etacat_%d", i)), ProjWData(RooArgSet(*ws_->cat("etacat"), *ws_->var("MassRes")), *global_data, kFALSE));
           found = name.find(Form("pdf_rare_%d", i));
-          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kGreen - 7),  LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Range(range_.c_str()), Slice(*ws_->cat("channels"), Form("channel_%d", i)), ProjWData(RooArgSet(*ws_->cat("channels"), *ws_->var("MassRes")), *global_data, kFALSE));
+          if (found != string::npos) ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name.c_str()), LineColor(kGreen - 7),  LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Range(range_.c_str()), Slice(*ws_->cat("etacat"), Form("etacat_%d", i)), ProjWData(RooArgSet(*ws_->cat("etacat"), *ws_->var("MassRes")), *global_data, kFALSE));
         }
       }
     }
-    //global_data->plotOn(final_p, Cut( Form("channels==channels::channel_%d", i)));
+    //global_data->plotOn(final_p, Cut( Form("etacat==etacat::etacat_%d", i)));
 
     TCanvas* final_c = new TCanvas("final_c", "final_c", 600, 600);
     final_p->Draw();
@@ -287,13 +284,9 @@ void pdf_fitData::print_each_channel() {
     fitresults->SetTextAlign(11);
     fitresults->Draw();
 
-    ostringstream output;
-    output << "fig/data_simul_" << meth_ << "_" << i;
-    if (SM_) output << "_SM";
-    if (bd_constr_) output << "_bdConst";
-    if (pee)  output << "_PEE";
-    final_c->Print( (output.str() + ".gif").c_str() );
-    final_c->Print( (output.str() + ".pdf").c_str() );
+    channel = i;
+    final_c->Print( (get_address("data") + ".gif").c_str() );
+    final_c->Print( (get_address("data") + ".pdf").c_str() );
     delete final_p;
     delete final_c;
 
@@ -347,7 +340,7 @@ void pdf_fitData::define_channels() {
   cout << "making channels" << endl;
   for (int i = 0; i < channels; i++) {
     ostringstream channelName;
-    channelName << "channel_" << i;
+    channelName << "etacat_" << i;
     channels_cat->defineType(channelName.str().c_str(), i);
   }
 }
@@ -366,7 +359,7 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, TF1 *MassRes_f,
       else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate_bd[ch_i_]/estimate_bd[ch_i_]);
       ws_->var("N_rare")->setVal(estimate_rare[ch_i_]);
       ws_->var("N_comb")->setVal(estimate_comb[ch_i_]);
-      global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("channels")));
+      global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")));
     }
     else {
       for (int i = 0; i < channels; i++) {
@@ -376,7 +369,7 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, TF1 *MassRes_f,
         ws_->var(name("N_rare", i))->setVal(estimate_rare[i]);
         ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
       }
-      global_data = ws_->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("channels")));
+      global_data = ws_->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")));
     }
   }
   global_data->SetName("global_data");
@@ -600,7 +593,7 @@ void pdf_fitData::make_models() {
     if (!SM_ && !bd_constr_) N_bd[i] = ws_->var(name("N_bd", i))->getVal();
   }
 
-  if (simul_) ws_->defineSet("obs", "Mass,channels");
+  if (simul_) ws_->defineSet("obs", "Mass,etacat");
   else ws_->defineSet("obs", "Mass");
   ostringstream name_poi;
   if (simul_) {
@@ -805,9 +798,9 @@ void pdf_fitData::BF(string eff_filename, string numbers_filename) {
 
     if (simul_) ii = i;
     else ii = ch_i_;
-    cout << "channel " << ii << ":" << endl;
-    cout << "Bs2MuMu BF = " << BF_bs.at(i).first << " \\pm " << BF_bs.at(i).second << "  channel " << ii <<  endl;
-    cout << "Bd2MuMu BF = " << BF_bd.at(i).first << " \\pm " << BF_bd.at(i).second << "  channel " << ii << endl;
+    cout << "etacat " << ii << ":" << endl;
+    cout << "Bs2MuMu BF = " << BF_bs.at(i).first << " \\pm " << BF_bs.at(i).second << "  etacat " << ii <<  endl;
+    cout << "Bd2MuMu BF = " << BF_bd.at(i).first << " \\pm " << BF_bd.at(i).second << "  etacat " << ii << endl;
   }
 
   double bs_num = 0, bd_num = 0;
@@ -882,7 +875,7 @@ void pdf_fitData::parse_efficiency_numbers(string filename) {
   for (int i = 0; i < channels; i++) {
     if (simul_) ii = i;
     else ii = ch_i_;
-    cout << "channel " << ii << endl;
+    cout << "etacat " << ii << endl;
     cout << "bd eff = " << eff_bd.at(i).first << " \\pm " << eff_bd.at(i).second << endl;
     cout << "bs eff = " << eff_bs.at(i).first << " \\pm " << eff_bs.at(i).second << endl;
     cout << "bu eff = " << eff_bu.at(i).first << " \\pm " << eff_bu.at(i).second << endl;

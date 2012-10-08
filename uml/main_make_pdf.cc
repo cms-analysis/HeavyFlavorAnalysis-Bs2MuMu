@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
     RooRealVar* m2eta = ws->var("m2eta");
     RooRealVar* weight = ws->var("weight");
     RooRealVar* MassRes = ws->var("MassRes");
-    RooCategory* channel_cat = ws->cat("channels");
+    RooCategory* channel_cat = ws->cat("etacat");
     RooCategory* bdt_cat = ws->cat("bdtcat");
 
     for (int i = 0; i < decays_n; i++) {
@@ -133,6 +133,7 @@ int main(int argc, char* argv[]) {
     }
 
     ana1.channel = simul ? j : ch_i;
+
     rad_bs[j] = rds_smalltree[0];
     ana1.define_MassRes_pdf(rds_smalltree[0], "bs");
     ana1.define_bdt_pdf(rds_smalltree[0], "bs");

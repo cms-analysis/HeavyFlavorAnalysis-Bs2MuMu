@@ -114,7 +114,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
     }
     else {
       bd_b = true;
-      RooCategory* cat =  (RooCategory*)ws_temp->obj("channels");
+      RooCategory* cat =  (RooCategory*)ws_temp->obj("etacat");
       data->addColumn(*cat);
       data = ws_temp->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("bdt"), *ws_temp->var("MassRes"), *cat), Extended(1));
     }
@@ -199,27 +199,16 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
       corr_c->cd(j + 1);
       correlation_h[j]->Draw();
     }
-    string address;
-    if (!simul_) address = "fig/corr_" + meth_ + "_" + ch_s_ + "_" + pdf_toy;
-    else address = "fig/corr_" + meth_ + "_simul_" + pdf_toy;
-    corr_c->Print((address + ".gif").c_str());
-    corr_c->Print((address + ".pdf").c_str());
+    corr_c->Print((get_address("corr") + ".gif").c_str());
+    corr_c->Print((get_address("corr") + ".pdf").c_str());
     delete corr_c;
   }
 
   if (sign == 0) {
     TCanvas* sign_c = new TCanvas("sign_c", "sign_c", 600, 600);
     sign_h->Draw("e");
-    ostringstream address_oss;
-    if (!simul_) address_oss << "fig/sign_" << meth_ << "_" << ch_s_ << "_" << pdf_toy_;
-    else address_oss << "fig/sign" << meth_ << "_simul_" << pdf_toy_;
-    string address = address_oss.str();
-    if (SM_) address += "_SM";
-    if (bd_constr_) address += "_bd_const";
-    if (pee) address += "_pee";
-    if (bdt_fit_) address += "_2D";
-    sign_c->Print( (address + ".gif").c_str());
-    sign_c->Print( (address + ".pdf").c_str());
+    sign_c->Print((get_address("sign", "", false) + ".gif").c_str());
+    sign_c->Print((get_address("sign", "", false) + ".pdf").c_str());
     delete sign_c;
   }
   return;
@@ -302,16 +291,9 @@ void pdf_toyMC::fit_pulls(vector <RooRealVar*> pull,  vector <RooDataSet*> rds) 
     gauss_bs->paramOn(rp_bs, Layout(0.66, 0.9, 0.9));
     TCanvas* canvas_bs = new TCanvas("canvas_bs", "canvas_bs", 600, 600);
     rp_bs->Draw();
-    ostringstream address_oss;
-    if (!simul_) address_oss << "fig/" << pull[0]->GetName() << "_" << meth_ << "_" << ch_s_ << "_" << pdf_toy_;
-    else address_oss << "fig/" << pull[0]->GetName() << "_" << meth_ << "_" << i << "_" << pdf_toy_;
-    string address = address_oss.str();
-    if (SM_) address += "_SM";
-    if (bd_constr_) address += "_bd_const";
-    if (pee) address += "_pee";
-    if (bdt_fit_) address += "_2D";
-    canvas_bs->Print( (address + ".gif").c_str());
-    canvas_bs->Print( (address + ".pdf").c_str());
+    channel = simul_ ? i : ch_i_;
+    canvas_bs->Print((get_address(pull[0]->GetName(), pdf_toy_) + ".gif").c_str());
+    canvas_bs->Print((get_address(pull[0]->GetName(), pdf_toy_) + ".pdf").c_str());
     delete rp_bs;
     delete canvas_bs;
   }
@@ -319,18 +301,12 @@ void pdf_toyMC::fit_pulls(vector <RooRealVar*> pull,  vector <RooDataSet*> rds) 
 
 void pdf_toyMC::print_histos(vector <TH1D*> histos) {
   for (int j = 0; j < channels; j++) {
-    cout << "channel " << j << " " << histos[j]->GetName() << " mean = " << histos[j]->GetMean() << endl;
+    cout << "etacat " << j << " " << histos[j]->GetName() << " mean = " << histos[j]->GetMean() << endl;
     TCanvas* N_mean_c = new TCanvas("N_mean_c", "N_mean_c", 600, 600);
     histos[j]->Draw("e");
-    ostringstream address;
-    if (!simul_) address << "fig/" << histos[j]->GetName() << "_" << meth_ << "_" << ch_s_ << "_" + pdf_toy_;
-    else address << "fig/"<< histos[j]->GetName() << "_" << meth_ << "_simul_" + pdf_toy_;
-    if (SM_) address << "_SM";
-    if (bd_constr_) address << "_bd_const";
-    if (pee) address << "_pee";
-    if (bdt_fit_) address << "_2D";
-    N_mean_c->Print((address.str() + ".gif").c_str());
-    N_mean_c->Print((address.str() + ".pdf").c_str());
+    channel = simul_ ? j : ch_i_;
+    N_mean_c->Print((get_address(histos[j]->GetName(), pdf_toy_) + ".gif").c_str());
+    N_mean_c->Print((get_address(histos[j]->GetName(), pdf_toy_) + ".pdf").c_str());
     delete N_mean_c;
   }
 }
@@ -406,7 +382,7 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy, string test_pdf) {
   if (simul_) pdf_test_ = "pdf_ext_simul";
 
   RooArgSet obsv(*ws_->var("Mass"), *ws_->var("bdt"), "obsv");
-  if (simul_) obsv.add(*ws_->cat("channels"));
+  if (simul_) obsv.add(*ws_->cat("etacat"));
   if (pee) obsv.add(*ws_->var("MassRes"));
 
   RooMCStudy * mcstudy;
@@ -459,16 +435,9 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy, string test_pdf) {
       stats1->AddText(mean.str().c_str());
       stats1->AddText(sigma.str().c_str());
       stats1->Draw();
-      ostringstream index;
-      if (simul_) index << i;
-      else index << ch_s_;
-      string address;
-      if (simul_) address = "fig/RooMCStudy_mean_simul_" + source[j] + "_" + meth_;
-      else address = "fig/RooMCStudy_mean_" + source[j] + "_" + index.str() + "_" + meth_;
-      if (SM_) address += "_SM";
-      if (bd_constr_) address += "_bdConstr";
-      canvas1->Print((address + ".gif").c_str());
-      canvas1->Print((address + ".pdf").c_str());
+      channel = simul_ ? i : ch_i_;
+      canvas1->Print((get_address("RooMCStudy_mean", source[j]) + ".gif").c_str());
+      canvas1->Print((get_address("RooMCStudy_mean", source[j]) + ".pdf").c_str());
       delete frame1_bs;
       delete canvas1;
       TCanvas* canvas2 = new TCanvas("canvas2", "canvas2", 600, 600);
@@ -484,22 +453,14 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy, string test_pdf) {
       stats2->AddText(mean.str().c_str());
       stats2->AddText(sigma.str().c_str());
       stats2->Draw();
-      if (simul_) address = "fig/RooMCStudy_sigma_simul_" + source[j] + "_" + meth_;
-      else address = "fig/RooMCStudy_sigma_" + source[j] + "_" + index.str() + "_" + meth_;
-      if (SM_) address += "_SM";
-      if (bd_constr_) address += "_bdConstr";
-      canvas2->Print((address + ".gif").c_str());
-      canvas2->Print((address + ".pdf").c_str());
+      canvas2->Print((get_address("RooMCStudy_sigma", source[j]) + ".gif").c_str());
+      canvas2->Print((get_address("RooMCStudy_sigma", source[j]) + ".pdf").c_str());
       delete frame2_bs;
       delete canvas2;
       TCanvas* canvas3 = new TCanvas("canvas3", "canvas3", 600, 600);
       frame3_bs->Draw();
-      if (simul_) address = "fig/RooMCStudy_pull_simul_" + source[j] + "_" + meth_;
-      else address = "fig/RooMCStudy_pull_" + source[j] + "_" + index.str() + "_" + meth_;
-      if (SM_) address += "_SM";
-      if (bd_constr_) address += "_bdConstr";
-      canvas3->Print((address + ".gif").c_str());
-      canvas3->Print((address + ".pdf").c_str());
+      canvas3->Print((get_address("RooMCStudy_pull", source[j]) + ".gif").c_str());
+      canvas3->Print((get_address("RooMCStudy_pull", source[j]) + ".pdf").c_str());
       delete frame3_bs;
       delete canvas3;
     }
@@ -532,13 +493,8 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy, string test_pdf) {
     sprintf(leg, "|#eta_{#mu}|<1.4");
     t->DrawLatex(0.7, 0.75, leg);
   }
-  string address;
-  if (simul_) address = "fig/RooMCStudy_sig_simul_bs_" + meth_;
-  else address = "fig/RooMCStudy_sig_bs_" + meth_ + "_" + ch_s_;
-  if (SM_) address += "_SM";
-  if (bd_constr_) address += "_bdConstr";
-  sig_c->Print((address + ".gif").c_str());
-  sig_c->Print((address + ".pdf").c_str());
+  sig_c->Print((get_address("RooMCStudy_sig", "bs") + ".gif").c_str());
+  sig_c->Print((get_address("RooMCStudy_sig", "bs") + ".pdf").c_str());
   delete sig_c;
 }
 
@@ -576,14 +532,8 @@ void pdf_toyMC::print(string output, RooWorkspace* ws) {
       cetad->cd(3);
       rp_bdt->Draw();
     }
-    string address;
-    if (simul_) address = "fig/" + pdf_name + "_MassEta_" + meth_ + "_simul" + output;
-    else address = "fig/" + pdf_name + "_MassEta_" + meth_ + "_" + ch_s_ + output;
-    if (SM_) address += "_SM";
-    if (bd_constr_) address += "_BdConst";
-    if (bdt_fit_) address += "_2D";
-    cetad->Print( (address + ".gif").c_str());
-    cetad->Print( (address + ".pdf").c_str());
+    cetad->Print((get_address(pdf_name, (string)("MassEta"+output)) + ".gif").c_str());
+    cetad->Print((get_address(pdf_name, (string)("MassEta"+output)) + ".pdf").c_str());
     delete cetad;
     delete mass_eta_h;
   }
@@ -618,30 +568,16 @@ void pdf_toyMC::print(string output, RooWorkspace* ws) {
 
   TCanvas* c = new TCanvas("c", "c", 600, 600);
   rp->Draw();
-  string address;
-  if (simul_) address = "fig/" + pdf_name + "_" + meth_ + "_simul" + output;
-  else address = "fig/" + pdf_name + "_" + meth_ + "_" + ch_s_ + output;
-  if (SM_) address += "_SM";
-  if (bd_constr_) address += "_BdConst";
-  if (bdt_fit_) address += "_2D";
-  if (pee) address += "_PEE";
-  c->Print( (address + ".gif").c_str());
-  c->Print( (address + ".pdf").c_str());
+  c->Print((get_address(pdf_name, output) + ".gif").c_str());
+  c->Print((get_address(pdf_name, output) + ".pdf").c_str());
   delete rp;
   delete c;
 
   if (bdt_fit_) {
     TCanvas* d = new TCanvas("d", "d", 600, 600);
     rp_bdt->Draw();
-    string address_b;
-    if (simul_) address_b = "fig/BDT_" + pdf_name + "_" + meth_ + "_simul" + output;
-    else address_b = "fig/BDT_" + pdf_name + "_" + meth_ + "_" + ch_s_ + output;
-    if (SM_) address_b += "_SM";
-    if (bd_constr_) address_b += "_BdConst";
-    if (bdt_fit_) address_b += "_2D";
-    if (pee) address_b += "_PEE";
-    d->Print( (address_b + ".gif").c_str());
-    d->Print( (address_b + ".pdf").c_str());
+    d->Print((get_address("BDT", (string)(pdf_name+output)) + ".gif").c_str());
+    d->Print((get_address("BDT", (string)(pdf_name+output)) + ".pdf").c_str());
     delete d;
   }
   delete rp_bdt;

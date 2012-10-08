@@ -19,6 +19,7 @@ pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, b
 
   pee = pee_;
   simul_ = simul;
+  simul_bdt_ = false;
   bdt_fit_ = bdt_fit;
 }
 
@@ -55,9 +56,9 @@ void pdf_analysis::initialize () {
   bdt  = new RooRealVar("bdt", "bdt cut", -1., 1.);
   ws_->import(*bdt);
 
-  channels_cat = new RooCategory("channels", "eta channels");
+  channels_cat = new RooCategory("etacat", "eta channels");
   for (int i = 0; i < 2; i++) {
-    channels_cat->defineType(Form("channel_%d", i), i);
+    channels_cat->defineType(Form("etacat_%d", i), i);
   }
   ws_->import(*channels_cat);
 
@@ -96,7 +97,7 @@ void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool su
   if (extended) pdf_name = "pdf_ext_" + pdf;
   
   if (!pee) {
-    RooAbsData* subdata = data->reduce(Form("channels==channels::channel_%d", channel));
+    RooAbsData* subdata = data->reduce(Form("etacat==etacat::etacat_%d", channel));
     rds_ = subdata;
     string rdh_name = subdata->GetName();
     cout << "fitting " << rdh_name << endl;
@@ -107,7 +108,7 @@ void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool su
     if (print_) print(subdata);
   }
   else {
-    RooAbsData* subdata = data->reduce(Form("channels==channels::channel_%d", channel));
+    RooAbsData* subdata = data->reduce(Form("etacat==etacat::etacat_%d", channel));
     rds_ = subdata;
     string rdh_name = subdata->GetName();
     cout << "fitting " << rdh_name << endl;
@@ -127,7 +128,7 @@ void pdf_analysis::set_pdf_constant(string name) {
   TObject* var_Obj = 0;
   while((var_Obj = it->Next())){
     string name = var_Obj->GetName();
-    if (!(name == "Mass") && !(name == "Bd_over_Bs") && !(name == "MassRes") && !(name == "channels")) {
+    if (!(name == "Mass") && !(name == "Bd_over_Bs") && !(name == "MassRes") && !(name == "etacat")) {
       size_t found;
       found = name.find("N");
       if (found == string::npos) ws_->var(var_Obj->GetName())->setConstant(1);
@@ -469,9 +470,9 @@ void pdf_analysis::define_total_extended(int i = 0) {
 
 void pdf_analysis::define_simul(bool simulbdt) {
   if (!simulbdt) {
-    RooSimultaneous pdf_sim("pdf_ext_simul", "simultaneous pdf", *ws_->cat("channels"));
+    RooSimultaneous pdf_sim("pdf_ext_simul", "simultaneous pdf", *ws_->cat("etacat"));
     for (int i = 0; i < channels; i++) {
-      pdf_sim.addPdf(*ws_->pdf(name("pdf_ext_total", i)), name("channel", i));
+      pdf_sim.addPdf(*ws_->pdf(name("pdf_ext_total", i)), name("etacat", i));
     }
     ws_->import(pdf_sim);
   }
@@ -522,7 +523,7 @@ string pdf_analysis::define_pdf_sum(string name, int i) {
 void pdf_analysis::print(RooAbsData* data, string output) {
   int colors[11] = {632, 400, 616, 432, 800, 416, 820, 840, 860, 880, 900};
   RooAbsData* subdata_res;
-//  if (pee) subdata_res = ws_->data(Form("MassRes_rdh_%s", output.c_str()))->reduce(Form("channels==channels::channel_%d", channel));
+//  if (pee) subdata_res = ws_->data(Form("MassRes_rdh_%s", output.c_str()))->reduce(Form("etacat==etacat::etacat_%d", channel));
   if (pee) subdata_res = (RooAbsData*)ws_->data(Form("MassRes_rdh_%s", output.c_str()))->Clone();
   RooPlot *rp = ws_->var("Mass")->frame();
   RooPlot *rp_bdt = ws_->var("bdt")->frame();
@@ -560,13 +561,9 @@ void pdf_analysis::print(RooAbsData* data, string output) {
     RooPlot *rp_res = ws_->var("MassRes")->frame();
     *ws_->data(Form("MassRes_rdh_%s", output.c_str()))->plotOn(rp_res);
     rp_res->Draw();
-    string address;
-    if (simul_) address = "fig/" + pdf_name + "_MassEta_" + meth_ + "_simul";
-    else address = "fig/" + pdf_name + "_MassEta_" + meth_ + "_" + ch_s_;
-    if (SM_) address += "_SM";
-    if (bd_constr_) address += "_BdConst";
-    cetad->Print( (address + ".gif").c_str());
-    cetad->Print( (address + ".pdf").c_str());
+    cetad->Print( (get_address("MassEta", pdf_name) + ".gif").c_str());
+    cetad->Print( (get_address("MassEta", pdf_name) + ".pdf").c_str());
+
     delete cetad;
     delete frame;
     delete mass_eta_h;
@@ -622,30 +619,16 @@ void pdf_analysis::print(RooAbsData* data, string output) {
   
   TCanvas* c = new TCanvas("c", "c", 600, 600);
   rp->Draw();
-  ostringstream address;
-  if (simul_) address << "fig/" << pdf_name << "_" << meth_ << "_simul_" << channel;
-  else address << "fig/" << pdf_name << "_" << meth_ << "_" << ch_s_;
-  if (SM_) address << "_SM";
-  if (bd_constr_) address << "_BdConst";
-  if (pee) address << "_PEE";
-  string address_s(address.str());
-  c->Print( (address_s + ".gif").c_str());
-  c->Print( (address_s + ".pdf").c_str());
+  c->Print((get_address(pdf_name, "") + ".pdf").c_str());
+  c->Print((get_address(pdf_name, "") + ".gif").c_str());
   delete rp;
   delete c;
 
   if (bdt_fit_) {
     TCanvas* c_bdt = new TCanvas("c_bdt", "c_bdt", 600, 600);
     rp_bdt->Draw();
-    ostringstream address_bdt;
-    if (simul_) address_bdt << "fig/BDT_" << pdf_name << "_" << meth_ << "_simul_" << channel;
-    else address_bdt << "fig/BDT_" << pdf_name << "_" << meth_ << "_" << ch_s_;
-    if (SM_) address_bdt << "_SM";
-    if (bd_constr_) address_bdt << "_BdConst";
-    if (pee) address_bdt << "_PEE";
-    string address_bdt_s(address_bdt.str());
-    c_bdt->Print( (address_bdt_s + ".gif").c_str());
-    c_bdt->Print( (address_bdt_s + ".pdf").c_str());
+    c->Print((get_address("BDT", pdf_name) + ".pdf").c_str());
+    c->Print((get_address("BDT", pdf_name) + ".gif").c_str());
     delete c_bdt;
   }
   delete rp_bdt;
@@ -671,10 +654,10 @@ void pdf_analysis::simsplit() {
     }
   }
   /// splitter << ",etapdf_bs"; /// warning
-  splitter << "}, channel[";
+  splitter << "}, etacat[";
   for (int i = 0; i < channels; i++) {
     if (i != 0) splitter << ",";
-    splitter << "channel_" << i ;
+    splitter << "etacat_" << i ;
   }
   splitter << "]))";
   cout << splitter.str() << endl;
@@ -712,7 +695,7 @@ RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
     RooRealVar* massres = (RooRealVar*)aRow->find("MassRes");
     double Weight = rds->weight();
     RooArgSet varlist_tmp_res(*massres);
-    if (aRow->getCatIndex("channels") == channel) {
+    if (aRow->getCatIndex("etacat") == channel) {
       subdata_res->add(varlist_tmp_res, Weight);
 //      histo.Fill(massres->getVal(), Weight);
     }
@@ -742,7 +725,7 @@ RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name) {
     RooRealVar* BDT = (RooRealVar*)aRow->find("bdt");
     double Weight = rds->weight();
     RooArgSet varlist_tmp_bdt(*BDT);
-    if (aRow->getCatIndex("channels") == channel) {
+    if (aRow->getCatIndex("etacat") == channel) {
 //      subdata_bdt->add(varlist_tmp_bdt, Weight);
       histo.Fill(BDT->getVal(), Weight);
     }
@@ -816,8 +799,9 @@ void pdf_analysis::gen_and_fit(string pdfname) {
   protodata->plotOn(rp0);
   TCanvas* canvas0 = new TCanvas("canvas0", "canvas0", 600, 600);
   rp0->Draw();
-  canvas0->Print((get_address_root("sample0") + ".gif").c_str());
-  canvas0->Print((get_address_root("sample0") + ".pdf").c_str());
+  canvas0->Print((get_address("sample0") + ".gif").c_str());
+  canvas0->Print((get_address("sample0") + ".pdf").c_str());
+
   delete rp0;
   delete canvas0;
 
@@ -837,8 +821,8 @@ void pdf_analysis::gen_and_fit(string pdfname) {
   rp_32->Draw();
   canvas3->cd(3);
   rp_33->Draw();
-  canvas3->Print((get_address_root("dataa") + ".gif").c_str());
-  canvas3->Print((get_address_root("dataa") + ".pdf").c_str());
+  canvas3->Print((get_address("dataa") + ".gif").c_str());
+  canvas3->Print((get_address("dataa") + ".pdf").c_str());
   delete canvas3;
   delete rp_31;
   delete rp_32;
@@ -866,8 +850,8 @@ void pdf_analysis::gen_and_fit(string pdfname) {
   }
   TCanvas* canvas = new TCanvas("canvas", "canvas", 600, 600);
   rp->Draw();
-  canvas->Print((get_address_root("sample") + ".gif").c_str());
-  canvas->Print((get_address_root("sample") + ".pdf").c_str());
+  canvas->Print((get_address("sample") + ".gif").c_str());
+  canvas->Print((get_address("sample") + ".pdf").c_str());
   delete rp;
   delete canvas;
 
@@ -882,8 +866,8 @@ void pdf_analysis::gen_and_fit(string pdfname) {
     pdf->paramOn(rp_bdt);
     TCanvas* canvas_bdt = new TCanvas("canvas_bdt", "canvas_bdt", 600, 600);
     rp_bdt->Draw();
-    canvas_bdt->Print((get_address_root("BDT_sample") + ".gif").c_str());
-    canvas_bdt->Print((get_address_root("BDT_sample") + ".pdf").c_str());
+    canvas_bdt->Print((get_address("BDT_sample") + ".gif").c_str());
+    canvas_bdt->Print((get_address("BDT_sample") + ".pdf").c_str());
     delete rp_bdt;
     delete canvas_bdt;
   }
@@ -892,17 +876,23 @@ void pdf_analysis::gen_and_fit(string pdfname) {
     TH1* mass_eta_h = pdf->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var("MassRes"), Binning(30))) ;
     TCanvas* canvas1 = new TCanvas("canvas1", "canvas1", 600, 600);
     mass_eta_h->Draw("surf");
-    canvas1->Print((get_address_root("sample1_signals") + ".gif").c_str());
-    canvas1->Print((get_address_root("sample1_signals") + ".pdf").c_str());
+    canvas1->Print((get_address("sample1_signals") + ".gif").c_str());
+    canvas1->Print((get_address("sample1_signals") + ".pdf").c_str());
     delete canvas1;
   }
 }
 
-string pdf_analysis::get_address_root(string name) {
+string pdf_analysis::get_address(string name, string pdf, bool channeling) {
   ostringstream address;
-  address <<  "fig/" << name << "_" << pdf_name << "_" << meth_;
-  if (simul_) address  << "_simul_" << channel;
-  else address  << "_" << ch_s_;
+  address <<  "fig/" << name;
+  if (pdf == "") address << "_" << meth_;
+  else address << "_" << pdf << "_" << meth_;
+  if (simul_) {
+    address  << "_simul_";
+    if (channeling) address << channel;
+  }
+  if (!simul_) address  << "_" << ch_s_;
+  if (simul_ && simul_bdt_) address << "_simulBdt";
   if (SM_) address << "_SM";
   if (bd_constr_) address << "_BdConst";
   if (pee) address << "_PEE";

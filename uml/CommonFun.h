@@ -90,6 +90,7 @@ void help() {
   cout << "-bias [c+,c-,tau+,tau-,sig+,sig-]\t biasing rare pdf parameters (it works without -roomcs)" << endl;
   cout << "-pee \t per-event-error" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;
+  cout << "-sig # \t evaluate significance with method:" << endl << "\t\t 0 by hand; " << endl;
   cout << endl;
 
   exit(EXIT_SUCCESS);

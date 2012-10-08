@@ -89,6 +89,7 @@ public:
   bool SM_;
   bool bd_constr_;
   bool simul_;
+  bool simul_bdt_;
   RooRealVar* Mass;
   RooRealVar* MassRes;
   RooRealVar* bdt;
@@ -138,7 +139,7 @@ protected:
   vector <double> estimate_channel;
 
   RooDataHist getRandom_rdh();
-  string get_address_root(string name);
+  string get_address(string name, string pdf = "", bool channeling = true);
 
   RooArgSet* obs;
 
