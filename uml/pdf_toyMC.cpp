@@ -115,6 +115,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
     else {
       bd_b = true;
       RooCategory* cat =  (RooCategory*)ws_temp->obj("channels");
+      data->addColumn(*cat);
       data = ws_temp->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("bdt"), *ws_temp->var("MassRes"), *cat), Extended(1));
     }
     do_bias(ws_temp);
@@ -168,7 +169,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
     if (i == NExp) ws_temp->pdf(pdf_toy_.c_str())->Print();
 
     if (sign == 0) {
-      sign_h->Fill(sig_hand(data, printlevel, ws_temp));
+      sign_h->Fill(pdf_toyMC::sig_hand(data, printlevel, ws_temp));
     }
 
     delete data;
@@ -348,7 +349,9 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
       ws_temp->var("Bd_over_Bs")->setConstant(1);
     }
   }
+
   RooFitResult * rfr_H0 = pdf_toyMC::fit_pdf(pdf_test_, data, printlevel, ws_temp);
+
   for (int j = 0; j < channels; j++) {
     ws_temp->var(name("N_bs", j))->setVal(estimate_bs[j]);
     ws_temp->var(name("N_bs", j))->setConstant(0);
