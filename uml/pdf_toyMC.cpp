@@ -7,7 +7,7 @@
 
 #include "pdf_toyMC.h"
 
-pdf_toyMC::pdf_toyMC(bool print, int inputs, string input_estimates, string input_cuts, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, string bias, bool simul, bool pee_, bool bdt_fit, string ch_s, int sig): pdf_fitData( print,  inputs,  input_estimates, input_cuts,  meth,  range,  SM,  bd_constr,  input_tree, simul, pee_, bdt_fit, ch_s, sig) {
+pdf_toyMC::pdf_toyMC(bool print, int inputs, string input_estimates, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, string bias, bool simul, bool pee_, bool bdt_fit, string ch_s, int sig): pdf_fitData( print,  inputs,  input_estimates,  meth,  range,  SM,  bd_constr,  input_tree, simul, pee_, bdt_fit, ch_s, sig) {
   cout << "pdf_toyMC constructor" << endl;
   bias_ = bias;
 }

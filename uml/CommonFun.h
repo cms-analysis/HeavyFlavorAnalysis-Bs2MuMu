@@ -22,11 +22,13 @@ static string cuts_f = "no";
 static string rare_f = "no";
 static bool print = false;
 static bool simul = false;
+static bool simulbdt = false;
 static int NExp = 1;
 static int ch_i = -1;
 static int inputs = 1;
+static int inputs_bdt = 1;
 static int sig_meth = -1;
-static double bdt_cut = -10.;
+static string cuts = "bdt>-10.";
 bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
@@ -43,7 +45,7 @@ void help() {
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
   cout << "-print \t save the fits to gif and pdf if -no_legend without parameters on canvas" << endl;
-  cout << "-bdt # \t bdt cut, default is " << bdt_cut << endl;
+  cout << "-cuts #cutstring \t string cut for small tree: i.e. \"bdt>0.&&bdt<0.18\"; default is \"" << cuts << "\"" << endl;
   cout << "-pee \t per-event-error" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;
   cout << "-rare #filename \t file with rare event estimations (for normalizing to B -> JpsiK)" << endl;
@@ -57,7 +59,6 @@ void help() {
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
   cout << "-print \t save the fits to gif and pdf --> -no_legend without parameters on canvas" << endl;
-  cout << "-cuts #filename \t file with MVA selections" << endl;
   cout << "-SB \t fit side-bands only" << endl; /// test
   cout << "-sig # \t evaluate significance with method:" << endl << "\t\t 0 by hand; " << endl << "\t\t 1 ProfileLikelihoodCalculator; " << endl << "\t\t 2 frequentist ProfileLikelihoodTestStat; " << endl << "\t\t 3 hybrid ProfileLikelihoodTestStat" << endl << "\t\t 4 hybrid RatioOfProfiledLikelihoodsTestStat" << endl;
   cout << "-e #filename \t estimates file (useful for significance)" << endl;
@@ -123,10 +124,6 @@ void parse_options(int argc, char* argv[]){
       cout << "estimate file = " << input_estimates << endl;
       estimate = true;
     }
-    if (!strcmp(argv[i],"-cuts")) {
-      cuts_f = argv[i+1];
-      cout << "cuts file = " << cuts_f << endl;
-    }
     if (!strcmp(argv[i],"-pdf")) {
       pdf_toy = argv[i+1];
       cout << "pdf = " << pdf_toy << endl;
@@ -159,6 +156,11 @@ void parse_options(int argc, char* argv[]){
       cout << "simultaneous fits of " << inputs << " channels" << endl;
       simul = true;
     }
+    if (!strcmp(argv[i],"-simulbdt")) {
+      inputs_bdt = atoi(argv[i+1]);
+      cout << "simultaneous fits of " << inputs << " bdt channels" << endl;
+      simulbdt = true;
+    }
     if (!strcmp(argv[i],"-t")) {
       tree_name = argv[i+1];
       cout << "tree name = " << tree_name << endl;
@@ -171,9 +173,9 @@ void parse_options(int argc, char* argv[]){
       sig_meth = atoi(argv[i+1]);
       cout << "significance with method " << sig_meth << endl;
     }
-    if (!strcmp(argv[i],"-bdt")) {
-      bdt_cut = atof(argv[i+1]);
-      cout << "bdt cut = " << bdt_cut << endl;
+    if (!strcmp(argv[i],"-cuts")) {
+      cuts = argv[i+1];
+      cout << "cut string = " << cuts << endl;
     }
     if (!strcmp(argv[i],"-pee")) {
       pee = true;
@@ -233,18 +235,6 @@ void parse_input (string input) {
     inputs = atoi(number.str().c_str());
     cout << "simultaneous " << inputs << endl;
   }
-}
-
-string get_cut(int channel) {
-  string cut = "";
-  ostringstream bdt_cut_oss;
-  bdt_cut_oss << bdt_cut;
-  cut += "bdt>";
-  cut += bdt_cut_oss.str();
-  //if (channel == 0) cut += " && abs(m1eta)<1.4 && abs(m2eta)<1.4";
-  //if (channel == 1) cut += " && abs(m1eta)>1.4 || abs(m2eta)>1.4";
-  cout << "cut = " << cut << endl;
-  return cut;
 }
 
 void get_rare_normalization(string filename) {

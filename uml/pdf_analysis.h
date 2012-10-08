@@ -96,8 +96,10 @@ public:
   RooRealVar* m2eta;
   RooRealVar* weight;
   RooCategory* channels_cat;
+  RooCategory* bdt_cat;
 
   int channels;
+  int channels_bdt;
   string range_;
   RooFitResult* RFR;
 

@@ -34,6 +34,7 @@ int main(int argc, char* argv[]) {
   RooWorkspace *ws = ana1.get_ws();
 
   ana1.channels = inputs;
+  ana1.channels_bdt = inputs_bdt;
 
   /// INPUTS
   vector <RooAbsData*> rad_bs(inputs);
@@ -66,11 +67,9 @@ int main(int argc, char* argv[]) {
 
   int decays_n = sizeof(decays)/sizeof(string);
 
-  TF1* MassRes_h = Fit_MassRes("input/small-SgMc.root", bdt_cut);
+  TF1* MassRes_h = Fit_MassRes("input/small-SgMc.root", cuts);
 
   for (int j = 0; j < inputs; j++) {
-
-    string cut = simul ? get_cut(j) : get_cut(ch_i);
 
     vector <string> decays_filename(decays_n);
     vector <string> decays_treename(decays_n);
@@ -88,6 +87,7 @@ int main(int argc, char* argv[]) {
     RooRealVar* weight = ws->var("weight");
     RooRealVar* MassRes = ws->var("MassRes");
     RooCategory* channel_cat = ws->cat("channels");
+    RooCategory* bdt_cat = ws->cat("bdtcat");
 
     for (int i = 0; i < decays_n; i++) {
       decays_filename[i] = "input/small-" + decays[i] + ".root";
@@ -96,14 +96,14 @@ int main(int argc, char* argv[]) {
 
       smalltree_f[i] = new TFile(decays_filename[i].c_str(), "UPDATE");
       smalltree[i] = (TTree*)smalltree_f[i]->Get(decays_treename[i].c_str());
-      TTree* reduced_tree = smalltree[i]->CopyTree(cut.c_str());
+      TTree* reduced_tree = smalltree[i]->CopyTree(cuts.c_str());
       Double_t m_t, eta_t, m1eta_t, m2eta_t, bdt_t;
       reduced_tree->SetBranchAddress("m",     &m_t);
       reduced_tree->SetBranchAddress("bdt",   &bdt_t);
       reduced_tree->SetBranchAddress("eta",   &eta_t);
       reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
       reduced_tree->SetBranchAddress("m2eta", &m2eta_t);
-      RooArgList varlist(*m, *MassRes, *eta, *m1eta, *m2eta, *bdt, *channel_cat, *weight);
+      RooArgList varlist(*m, *MassRes, *eta, *m1eta, *m2eta, *bdt, *channel_cat, *bdt_cat, *weight);
       rds_smalltree[i] = new RooDataSet(decays_rdsname[i].c_str(), decays_rdsname[i].c_str(), varlist, "weight");
       for (int j = 0; j<reduced_tree->GetEntries(); j++) {
         reduced_tree->GetEntry(j);
@@ -115,8 +115,11 @@ int main(int argc, char* argv[]) {
         MassRes->setVal(MassRes_h->Eval(eta_t));
         if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) channel_cat->setIndex(0);
         else channel_cat->setIndex(1);
-        RooArgSet varlist_tmp(*m, *MassRes, *eta, *m1eta, *m2eta, *bdt, *channel_cat);
-        if (bdt_t > bdt_cut) rds_smalltree[i]->add(varlist_tmp, weight_i[i]);
+        if (bdt_t < 0) bdt_cat->setIndex(0);
+        else if (bdt_t < 0.18) bdt_cat->setIndex(1);
+        else bdt_cat->setIndex(1);
+        RooArgSet varlist_tmp(*m, *MassRes, *eta, *m1eta, *m2eta, *bdt, *channel_cat, *bdt_cat);
+        rds_smalltree[i]->add(varlist_tmp, weight_i[i]);
       }
       cout << rds_smalltree[i]->GetName() << " done: " << reduced_tree->GetEntries() << " / " << smalltree[i]->GetEntries() << endl;
     }
@@ -130,10 +133,10 @@ int main(int argc, char* argv[]) {
     ana1.define_MassRes_pdf(rds_smalltree[1], "bd");
     ana1.define_bdt_pdf(rds_smalltree[1], "bd");
 
-    RooDataSet* rds_signals = (RooDataSet*)rds_smalltree[0]->Clone("rds_signals");
-    rds_signals->append(*rds_smalltree[1]);
-    rad_signals[j] = rds_signals;
-    ana1.define_MassRes_pdf(rds_signals, "signals");
+//    RooDataSet* rds_signals = (RooDataSet*)rds_smalltree[0]->Clone("rds_signals");
+//    rds_signals->append(*rds_smalltree[1]);
+//    rad_signals[j] = rds_signals;
+//    ana1.define_MassRes_pdf(rds_signals, "signals");
 
     RooDataSet* rds_semi = (RooDataSet*)rds_smalltree[10]->Clone("rds_semi");
     rds_semi->append(*rds_smalltree[11]);
@@ -160,10 +163,10 @@ int main(int argc, char* argv[]) {
     ana1.define_MassRes_pdf(rds_rare, "rare");
     ana1.define_bdt_pdf(rds_rare, "rare");
 
-    RooDataSet* rds_signalsrare = (RooDataSet*)rds_signals->Clone("rds_signalsrare");
-    rds_signalsrare->append(*rds_rare);
-    rad_signalsrare[j] = rds_signalsrare;
-    ana1.define_MassRes_pdf(rds_signalsrare, "signalsrare");
+//    RooDataSet* rds_signalsrare = (RooDataSet*)rds_signals->Clone("rds_signalsrare");
+//    rds_signalsrare->append(*rds_rare);
+//    rad_signalsrare[j] = rds_signalsrare;
+//    ana1.define_MassRes_pdf(rds_signalsrare, "signalsrare");
 
     ana1.define_MassRes_pdf(rds_smalltree[13], "comb");
     ana1.define_bdt_pdf(rds_smalltree[13], "comb");

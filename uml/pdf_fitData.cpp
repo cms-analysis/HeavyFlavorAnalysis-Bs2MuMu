@@ -1,11 +1,10 @@
 #include "pdf_fitData.h"
 
-pdf_fitData::pdf_fitData(bool print, int inputs, string input_estimates, string input_cuts, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, bool simul, bool pee_, bool bdt_fit, string ch_s, int sig): pdf_analysis(print, meth, ch_s, range, SM, bd_constr, simul, pee_, bdt_fit) {
+pdf_fitData::pdf_fitData(bool print, int inputs, string input_estimates, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, bool simul, bool pee_, bool bdt_fit, string ch_s, int sig): pdf_analysis(print, meth, ch_s, range, SM, bd_constr, simul, pee_, bdt_fit) {
   cout << "fitData constructor" << endl;
   channels = inputs;
   simul_ = simul;
   input_estimates_ = input_estimates;
-  input_cuts_ = input_cuts;
   if (simul_) channels = inputs;
   estimate_channel.resize(channels);
   estimate_bs.resize(channels);
@@ -301,7 +300,7 @@ void pdf_fitData::print_each_channel() {
   }
 }
 
-void pdf_fitData::FillRooDataSet(RooDataSet* dataset, string cuts_f) {
+void pdf_fitData::FillRooDataSet(RooDataSet* dataset) {
   int events = 0;
   if (!strcmp(tree->GetName(), "bdt") || !strcmp(tree->GetName(), "cnc")) {
     double m1eta_t, m2eta_t, m_t, eta_B_t;
@@ -346,7 +345,7 @@ void pdf_fitData::make_dataset() {
   RooArgList varlist(*Mass, *MassRes, *eta, *m1eta, *m2eta);
   /*if (simul_) */varlist.add(*channels_cat);
   global_data = new RooDataSet("global_data", "global_data", varlist);
-  if (!random) FillRooDataSet(global_data, input_cuts_);
+  if (!random) FillRooDataSet(global_data);
   else {
     //RooRandom::randomGenerator()->SetSeed(12345);
     if (!simul_) global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("channels")), 250);

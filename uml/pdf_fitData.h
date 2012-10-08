@@ -28,7 +28,7 @@ using namespace RooStats;
 
 class pdf_fitData : public pdf_analysis {
   public:
-    pdf_fitData(bool print, int inputs = 1, string input_estimates = "", string input_cuts = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, bool simul = false, bool pee_ = false , bool bdt_fit = false , string ch_s = "0", int sig = -1);
+    pdf_fitData(bool print, int inputs = 1, string input_estimates = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, bool simul = false, bool pee_ = false , bool bdt_fit = false , string ch_s = "0", int sig = -1);
     ~pdf_fitData();
     void print();
     void print_each_channel();
@@ -66,7 +66,7 @@ class pdf_fitData : public pdf_analysis {
     vector < TFile*> ws_file_input;
     vector < RooWorkspace*> ws_input;
 
-    void FillRooDataSet(RooDataSet* dataset, string cuts_f);
+    void FillRooDataSet(RooDataSet* dataset);
     void changeName(RooWorkspace *ws, int str);
     TTree* tree;
 

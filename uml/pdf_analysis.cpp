@@ -10,6 +10,7 @@ pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, b
   SM_ = SM;
   bd_constr_ = bd_constr;
   channels = 1;
+  channels_bdt = 1;
   verbosity = 1;
   old_tree = false;
 
@@ -54,11 +55,17 @@ void pdf_analysis::initialize () {
   bdt  = new RooRealVar("bdt", "bdt cut", -1., 1.);
   ws_->import(*bdt);
 
-  channels_cat = new RooCategory("channels", "channels");
+  channels_cat = new RooCategory("channels", "eta channels");
   for (int i = 0; i < 2; i++) {
     channels_cat->defineType(Form("channel_%d", i), i);
   }
   ws_->import(*channels_cat);
+
+  bdt_cat = new RooCategory("bdtcat", "bdt channels");
+  for (int i = 0; i < 3; i++) {
+    bdt_cat->defineType(Form("bdtcat_%d", i), i);
+  }
+  ws_->import(*bdt_cat);
 
   MassRes = new RooRealVar("MassRes", "mass resolution", 0.02, 0.15, "GeV/c^{2}");
   ws_->import(*MassRes);
@@ -78,14 +85,7 @@ void pdf_analysis::define_pdfs () {
     define_rare(i);
     define_comb(i);
 
-    define_signals(i);
-
-    //define_bkg_fractional(i);
-    //define_bkg_extended(i);
-    //define_signalsrare(i);
-    //define_bscomb();
-
-    //define_total_fractional(i);
+//    define_signals(i);
     define_total_extended(i);
   }
 }

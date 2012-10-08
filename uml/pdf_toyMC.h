@@ -31,7 +31,7 @@
 class pdf_toyMC : public pdf_fitData {
 public:
   
-  pdf_toyMC(bool print, int inputs = 1, string input_estimates = "", string input_cuts = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, string bias = "no", bool simul = false, bool pee_ = false, bool bdt_fit = false, string ch_s = "0", int sig = -1);
+  pdf_toyMC(bool print, int inputs = 1, string input_estimates = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, string bias = "no", bool simul = false, bool pee_ = false, bool bdt_fit = false, string ch_s = "0", int sig = -1);
   ~pdf_toyMC();
 
   void generate(int NExp, string pdf_toy, string test_pdf = "total");
