@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
     if (!data_t) {cout << "no tree called " << tree_name.c_str() << endl; return EXIT_FAILURE;}
   }
 
-  pdf_fitData* fitdata = new pdf_fitData(false,  inputs, input_estimates, meth, "all", SM, bd_const, data_t, simul, pee, bdt_fit, ch_s, sig_meth);
+  pdf_fitData* fitdata = new pdf_fitData(false, inputs, inputs_bdt, input_estimates, meth, "all", SM, bd_const, data_t, simul, simul_bdt, pee, bdt_fit, ch_s, sig_meth);
   fitdata->initialize();
   fitdata->make_pdf_input();
   fitdata->make_pdf();
@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
   fitdata->make_dataset(cuts_f_b, cuts_v, MassRes_h, cuts_b ? cuts : "");
   fitdata->fit_pdf();
   if (print) {
-    if (simul) fitdata->print_each_channel();
+    if (simul || simul_bdt) fitdata->print_each_channel();
     else fitdata->print();
   }
   fitdata->BF("./input/anaBmm.plotResults.default-11.tex", "input/external_numbers.txt");

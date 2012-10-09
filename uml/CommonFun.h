@@ -20,6 +20,7 @@ static string input_name;
 static string input_estimates;
 static string meth;
 static string ch_s = "-1";
+static string ch_bdt_s = "-1";
 static string pdf_toy = "total";
 static string pdf_test;
 static string tree_name = "bdt";
@@ -28,14 +29,15 @@ static string cuts_f = "no";
 static string rare_f = "no";
 static bool print = false;
 static bool simul = false;
-static bool simulbdt = false;
+static bool simul_bdt = false;
 static int NExp = 1;
 static int ch_i = -1;
+static int ch_bdt_i = -1;
 static int inputs = 1;
 static int inputs_bdt = 1;
 static int sig_meth = -1;
 static string cuts = "bdt>-10.";
-bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false;
+bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
 
@@ -47,7 +49,8 @@ void help() {
   cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (MANDATORY)" << endl;
   cout << "choose one between:" << endl;
   cout << "\t -cha {0, 1} \t barrel OR endcap input" << endl;
-  cout << "\t -simul # \t number of channels" << endl;
+  cout << "\t -simul # \t simultaneous fit of # eta channels" << endl;
+  cout << "\t -simul_bdt # \t simultaneous fit of # bdt channels" << endl;
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
   cout << "-print \t save the fits to gif and pdf if -no_legend without parameters on canvas" << endl;
@@ -62,7 +65,8 @@ void help() {
   cout << "-t treename (default bdt)" << endl;
   cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (MANDATORY)" << endl;
   cout << "-cha {0, 1} \t barrel OR endcap input, incompatible with -simul" << endl;
-  cout << "-simul # \t simultaneous fit of # channels (default 1), incompatible with -cha" << endl;
+  cout << "\t -simul # \t simultaneous fit of # eta channels" << endl;
+  cout << "\t -simul_bdt # \t simultaneous fit of # bdt channels" << endl;
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
   cout << "-print \t save the fits to gif and pdf --> -no_legend without parameters on canvas" << endl;
@@ -83,7 +87,8 @@ void help() {
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
   cout << "if simultaneous: " << endl;
-  cout << "\t -simul # \t simultaneous fit of # channels (default 1)" << endl;
+  cout << "\t -simul # \t simultaneous fit of # eta channels" << endl;
+  cout << "\t -simul_bdt # \t simultaneous fit of # bdt channels" << endl;
   cout << "if NOT simultaneous" << endl;
   cout << "\t -pdf {bs, bd, rare, comb, total} \t combination of pdf names, for generating" << endl;
   cout << "\t -test {bs, bd, rare, comb, total} \t fitting pdf, if different from pdf" << endl;
@@ -116,6 +121,12 @@ void parse_options(int argc, char* argv[]){
       channel = true;
       cout << "channel: " << ch_s << endl;
     }
+//    if (!strcmp(argv[i],"-cha_bdt")) {
+//      ch_bdt_s = argv[i+1];
+//      ch_bdt_i = atoi(ch_bdt_s.c_str());
+//      channel_bdt = true;
+//      cout << "channel bdt: " << ch_s << endl;
+//    }
     if (!strcmp(argv[i],"-print")) {
       cout << "print plots" << endl;
       print = true;
@@ -163,13 +174,13 @@ void parse_options(int argc, char* argv[]){
     }
     if (!strcmp(argv[i],"-simul")) {
       inputs = atoi(argv[i+1]);
-      cout << "simultaneous fits of " << inputs << " channels" << endl;
+      cout << "simultaneous fits of " << inputs << " eta channels" << endl;
       simul = true;
     }
-    if (!strcmp(argv[i],"-simulbdt")) {
+    if (!strcmp(argv[i],"-simul_bdt")) {
       inputs_bdt = atoi(argv[i+1]);
-      cout << "simultaneous fits of " << inputs << " bdt channels" << endl;
-      simulbdt = true;
+      cout << "simultaneous fits of " << inputs_bdt << " bdt channels" << endl;
+      simul_bdt = true;
     }
     if (!strcmp(argv[i],"-t")) {
       tree_name = argv[i+1];

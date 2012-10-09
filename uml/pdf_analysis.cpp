@@ -1,6 +1,6 @@
 #include "pdf_analysis.h"
 
-pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, bool SM, bool bd_constr, bool simul, bool pee_, bool bdt_fit) {
+pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit) {
   cout << "analysis constructor" << endl;
   print_ = print;
   meth_ = meth;
@@ -19,7 +19,7 @@ pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, b
 
   pee = pee_;
   simul_ = simul;
-  simul_bdt_ = false;
+  simul_bdt_ = simulbdt;
   bdt_fit_ = bdt_fit;
 }
 
@@ -61,12 +61,14 @@ void pdf_analysis::initialize () {
     channels_cat->defineType(Form("etacat_%d", i), i);
   }
   ws_->import(*channels_cat);
-
   bdt_cat = new RooCategory("bdtcat", "bdt channels");
   for (int i = 0; i < 3; i++) {
     bdt_cat->defineType(Form("bdtcat_%d", i), i);
   }
   ws_->import(*bdt_cat);
+  RooArgSet cat_set(*ws_->cat("etacat"), *ws_->cat("bdtcat"));
+  super_cat = new RooSuperCategory("super_cat", "super_cat", cat_set);
+  ws_->import(*super_cat);
 
   MassRes = new RooRealVar("MassRes", "mass resolution", 0.02, 0.15, "GeV/c^{2}");
   ws_->import(*MassRes);
@@ -79,15 +81,16 @@ void pdf_analysis::initialize () {
 void pdf_analysis::define_pdfs () {
 
   for (int i = 0; i < channels; i++) {
-    define_bs(i);
-    define_bd(i);
-    define_peaking(i);
-    define_nonpeaking(i);
-    define_rare(i);
-    define_comb(i);
+    for (int j = 0; j < channels_bdt; j++) {
+      define_bs(i, j);
+      define_bd(i, j);
+      define_peaking(i, j);
+      define_nonpeaking(i, j);
+      define_rare(i, j);
+      define_comb(i, j);
 
-//    define_signals(i);
-    define_total_extended(i);
+      define_total_extended(i, j);
+    }
   }
 }
 
@@ -96,29 +99,24 @@ void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool su
   pdf_name = "pdf_" + pdf;
   if (extended) pdf_name = "pdf_ext_" + pdf;
   
+  RooAbsData* subdata;
+  if (!simul_bdt_) subdata = data->reduce(Form("etacat==etacat::etacat_%d", channel));
+  else subdata = data->reduce(Form("etacat==etacat::etacat_%d&&bdtcat==bdtcat::bdtcat_%d", channel, channel_bdt));
+  rds_ = subdata;
+  string rdh_name = subdata->GetName();
+  cout << "fitting " << rdh_name << endl;
+  subdata->Print();
+  cout << " in range " << range_ << " with " << pdf_name << ":" << endl;
+  ws_->pdf( pdf_name.c_str())->Print();
   if (!pee) {
-    RooAbsData* subdata = data->reduce(Form("etacat==etacat::etacat_%d", channel));
-    rds_ = subdata;
-    string rdh_name = subdata->GetName();
-    cout << "fitting " << rdh_name << endl;
-    subdata->Print();
-    cout << " in range " << range_ << " with " << pdf_name << ":" << endl;
-    ws_->pdf( pdf_name.c_str())->Print();
     RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save());
     if (print_) print(subdata);
   }
   else {
-    RooAbsData* subdata = data->reduce(Form("etacat==etacat::etacat_%d", channel));
-    rds_ = subdata;
-    string rdh_name = subdata->GetName();
-    cout << "fitting " << rdh_name << endl;
-    subdata->Print();
-    cout << " in range " << range_ << " with " << pdf_name << ":" << endl;    ws_->pdf( pdf_name.c_str())->Print();
     cout << "WARNING: range option does not work with pee" << endl;
     RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, ConditionalObservables(*ws_->var("MassRes")), Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save());
     if (print_) print(subdata, pdf);
   }
-
   set_pdf_constant(pdf_name);
 }
 
@@ -136,86 +134,86 @@ void pdf_analysis::set_pdf_constant(string name) {
   }
 }
 
-void pdf_analysis::define_bs(int i = 0) {
+void pdf_analysis::define_bs(int i, int j) {
 
-  RooRealVar N_bs(name("N_bs", i), "N_bs", 0, 10000);
+  RooRealVar N_bs(name("N_bs", i, j), "N_bs", 0, 10000);
   ws_->import(N_bs);
 
-  RooRealVar Mean_bs(name("Mean_bs", i), "Mean_bs", 5.35, 5.32, 5.4);
-  RooRealVar Sigma_bs(name("Sigma_bs", i), "Sigma_bs", 0.02, 0.005, 0.2);
-  RooRealVar Alpha_bs(name("Alpha_bs", i), "Alpha_bs", 2.8, 0.1, 3.0);
-  RooRealVar Enne_bs(name("Enne_bs", i), "Enne_bs", 1., 0., 10.);
+  RooRealVar Mean_bs(name("Mean_bs", i, j), "Mean_bs", 5.35, 5.32, 5.4);
+  RooRealVar Sigma_bs(name("Sigma_bs", i, j), "Sigma_bs", 0.02, 0.005, 0.2);
+  RooRealVar Alpha_bs(name("Alpha_bs", i, j), "Alpha_bs", 2.8, 0.1, 3.0);
+  RooRealVar Enne_bs(name("Enne_bs", i, j), "Enne_bs", 1., 0., 10.);
 
   if (!pee) {
-    RooRealVar Sigma2_bs(name("Sigma2_bs", i), "Sigma2_bs", 0.04, 0.005, 0.2);
-    RooRealVar CoeffGauss_bs(name("CoeffGauss_bs", i), "CoeffGauss_bs", 0.5, 0., 1.);
+    RooRealVar Sigma2_bs(name("Sigma2_bs", i, j), "Sigma2_bs", 0.04, 0.005, 0.2);
+    RooRealVar CoeffGauss_bs(name("CoeffGauss_bs", i, j), "CoeffGauss_bs", 0.5, 0., 1.);
 
-    RooGaussian Gau_bs(name("Gau_bs", i), "Gau_bs", *ws_->var("Mass"), Mean_bs, Sigma_bs);
-    RooCBShape CB_bs(name("CB_bs", i), "CB_bs", *ws_->var("Mass"), Mean_bs, Sigma2_bs, Alpha_bs, Enne_bs);
+    RooGaussian Gau_bs(name("Gau_bs", i, j), "Gau_bs", *ws_->var("Mass"), Mean_bs, Sigma_bs);
+    RooCBShape CB_bs(name("CB_bs", i, j), "CB_bs", *ws_->var("Mass"), Mean_bs, Sigma2_bs, Alpha_bs, Enne_bs);
     if (!bdt_fit_) {
-      RooAddPdf pdf_bs(name("pdf_bs", i), "pdf_bs", RooArgList(Gau_bs, CB_bs),  CoeffGauss_bs);
+      RooAddPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", RooArgList(Gau_bs, CB_bs),  CoeffGauss_bs);
       ws_->import(pdf_bs);
     }
     else {
-      RooAddPdf pdf_bs_mass(name("pdf_bs_mass", i), "pdf_bs_mass", RooArgList(Gau_bs, CB_bs),  CoeffGauss_bs);
-      RooProdPdf pdf_bs(name("pdf_bs",i), "pdf_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs",i)));
+      RooAddPdf pdf_bs_mass(name("pdf_bs_mass", i, j), "pdf_bs_mass", RooArgList(Gau_bs, CB_bs),  CoeffGauss_bs);
+      RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
       ws_->import(pdf_bs);
     }
   }
   else {
-    RooRealVar PeeK_bs(name("PeeK_bs", i), "PeeK_bs", 1., 0.1, 10.);
-    RooFormulaVar SigmaRes_bs(name("SigmaRes_bs", i), "@0*@1", RooArgList(*ws_->var("MassRes"), PeeK_bs));
+    RooRealVar PeeK_bs(name("PeeK_bs", i, j), "PeeK_bs", 1., 0.1, 10.);
+    RooFormulaVar SigmaRes_bs(name("SigmaRes_bs", i, j), "@0*@1", RooArgList(*ws_->var("MassRes"), PeeK_bs));
     ws_->import(SigmaRes_bs);
-    RooCBShape CB_bs(name("CB_bs", i), "CB_bs", *ws_->var("Mass"), Mean_bs, *ws_->function(name("SigmaRes_bs", i)), Alpha_bs, Enne_bs);
+    RooCBShape CB_bs(name("CB_bs", i, j), "CB_bs", *ws_->var("Mass"), Mean_bs, *ws_->function(name("SigmaRes_bs", i, j)), Alpha_bs, Enne_bs);
     if (!bdt_fit_) {
-      RooProdPdf pdf_bs (name("pdf_bs",i), "pdf_bs", *ws_->pdf(name("MassRes_pdf_bs",i)), Conditional(CB_bs, *ws_->var("Mass")));
-      //    RooProdPdf pdf_bs (name("pdf_bs",i), "pdf_bs", *ws_->var("MassRes"), Conditional(CB_bs, *ws_->var("Mass")));
+      RooProdPdf pdf_bs (name("pdf_bs", i, j), "pdf_bs", *ws_->pdf(name("MassRes_pdf_bs", i, j)), Conditional(CB_bs, *ws_->var("Mass")));
+      //    RooProdPdf pdf_bs (name("pdf_bs", i, j), "pdf_bs", *ws_->var("MassRes"), Conditional(CB_bs, *ws_->var("Mass")));
       ws_->import(pdf_bs);
     }
     else {
-      RooProdPdf pdf_bs_mass(name("pdf_bs_mass",i), "pdf_bs_mass", *ws_->pdf(name("MassRes_pdf_bs",i)), Conditional(CB_bs, *ws_->var("Mass")));
-      RooProdPdf pdf_bs(name("pdf_bs",i), "pdf_bs", pdf_bs_mass,*ws_->pdf(name("bdt_pdf_bs",i)));
+      RooProdPdf pdf_bs_mass(name("pdf_bs_mass", i, j), "pdf_bs_mass", *ws_->pdf(name("MassRes_pdf_bs", i, j)), Conditional(CB_bs, *ws_->var("Mass")));
+      RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
       ws_->import(pdf_bs);
     }
   }
 }
 
-void pdf_analysis::define_bd(int i = 0) {
+void pdf_analysis::define_bd(int i, int j) {
 
-  RooRealVar Mean_bd(name("Mean_bd", i), "Mean_bd", 5.25, 5.20, 5.29);
-  RooRealVar Sigma_bd(name("Sigma_bd", i), "Sigma_bd", 0.02, 0.005, 0.2);
-  RooRealVar Alpha_bd(name("Alpha_bd", i), "Alpha_bd", 2.8, 0.1, 3.0);
-  RooRealVar Enne_bd(name("Enne_bd", i), "Enne_bd", 1., 0., 10.);
+  RooRealVar Mean_bd(name("Mean_bd", i, j), "Mean_bd", 5.25, 5.20, 5.29);
+  RooRealVar Sigma_bd(name("Sigma_bd", i, j), "Sigma_bd", 0.02, 0.005, 0.2);
+  RooRealVar Alpha_bd(name("Alpha_bd", i, j), "Alpha_bd", 2.8, 0.1, 3.0);
+  RooRealVar Enne_bd(name("Enne_bd", i, j), "Enne_bd", 1., 0., 10.);
 
   if (!pee) {
-    RooRealVar Sigma2_bd(name("Sigma2_bd", i), "Sigma2_bd", 0.04, 0.005, 0.2);
-    RooRealVar CoeffGauss_bd(name("CoeffGauss_bd", i), "CoeffGauss_bd", 0.5, 0., 1.);
+    RooRealVar Sigma2_bd(name("Sigma2_bd", i, j), "Sigma2_bd", 0.04, 0.005, 0.2);
+    RooRealVar CoeffGauss_bd(name("CoeffGauss_bd", i, j), "CoeffGauss_bd", 0.5, 0., 1.);
 
-    RooGaussian Gau_bd(name("Gau_bd", i), "Gau_bd", *ws_->var("Mass"), Mean_bd, Sigma_bd);
-    RooCBShape CB_bd(name("CB_bd", i), "CB_bd", *ws_->var("Mass"), Mean_bd, Sigma2_bd, Alpha_bd, Enne_bd);
+    RooGaussian Gau_bd(name("Gau_bd", i, j), "Gau_bd", *ws_->var("Mass"), Mean_bd, Sigma_bd);
+    RooCBShape CB_bd(name("CB_bd", i, j), "CB_bd", *ws_->var("Mass"), Mean_bd, Sigma2_bd, Alpha_bd, Enne_bd);
     if (!bdt_fit_) {
-      RooAddPdf pdf_bd(name("pdf_bd", i), "pdf_bd", RooArgList(Gau_bd, CB_bd),  CoeffGauss_bd);
+      RooAddPdf pdf_bd(name("pdf_bd", i, j), "pdf_bd", RooArgList(Gau_bd, CB_bd),  CoeffGauss_bd);
       ws_->import(pdf_bd);
     }
     else {
-      RooAddPdf pdf_bd_mass(name("pdf_bd_mass", i), "pdf_bd_mass", RooArgList(Gau_bd, CB_bd),  CoeffGauss_bd);
-      RooProdPdf pdf_bd(name("pdf_bd",i), "pdf_bd", pdf_bd_mass, *ws_->pdf(name("bdt_pdf_bd",i)));
+      RooAddPdf pdf_bd_mass(name("pdf_bd_mass", i, j), "pdf_bd_mass", RooArgList(Gau_bd, CB_bd),  CoeffGauss_bd);
+      RooProdPdf pdf_bd(name("pdf_bd", i, j), "pdf_bd", pdf_bd_mass, *ws_->pdf(name("bdt_pdf_bd", i, j)));
       ws_->import(pdf_bd);
     }
   }
   else {
-    RooRealVar PeeK_bd(name("PeeK_bd", i), "PeeK_bd", 1., 0.1, 10.);
-    RooFormulaVar SigmaRes_bd(name("SigmaRes_bd", i), "@0*@1", RooArgList(*ws_->var("MassRes"), PeeK_bd));
+    RooRealVar PeeK_bd(name("PeeK_bd", i, j), "PeeK_bd", 1., 0.1, 10.);
+    RooFormulaVar SigmaRes_bd(name("SigmaRes_bd", i, j), "@0*@1", RooArgList(*ws_->var("MassRes"), PeeK_bd));
     ws_->import(SigmaRes_bd);
-    RooCBShape CB_bd(name("CB_bd", i), "CB_bd", *ws_->var("Mass"), Mean_bd, *ws_->function(name("SigmaRes_bd", i)), Alpha_bd, Enne_bd);
+    RooCBShape CB_bd(name("CB_bd", i, j), "CB_bd", *ws_->var("Mass"), Mean_bd, *ws_->function(name("SigmaRes_bd", i, j)), Alpha_bd, Enne_bd);
     if (!bdt_fit_) {
-      RooProdPdf pdf_bd (name("pdf_bd",i), "pdf_bd", *ws_->pdf(name("MassRes_pdf_bd",i)), Conditional(CB_bd, *ws_->var("Mass")));
-      //    RooProdPdf pdf_bd (name("pdf_bd",i), "pdf_bd", *ws_->var("MassRes"), Conditional(CB_bd, *ws_->var("Mass")));
+      RooProdPdf pdf_bd (name("pdf_bd", i, j), "pdf_bd", *ws_->pdf(name("MassRes_pdf_bd", i, j)), Conditional(CB_bd, *ws_->var("Mass")));
+      //    RooProdPdf pdf_bd (name("pdf_bd", i, j), "pdf_bd", *ws_->var("MassRes"), Conditional(CB_bd, *ws_->var("Mass")));
       ws_->import(pdf_bd);
     }
     else {
-      RooProdPdf pdf_bd_mass(name("pdf_bd_mass",i), "pdf_bd_mass", *ws_->pdf(name("MassRes_pdf_bd",i)), Conditional(CB_bd, *ws_->var("Mass")));
-      RooProdPdf pdf_bd(name("pdf_bd",i), "pdf_bd", pdf_bd_mass,*ws_->pdf(name("bdt_pdf_bd",i)));
+      RooProdPdf pdf_bd_mass(name("pdf_bd_mass", i, j), "pdf_bd_mass", *ws_->pdf(name("MassRes_pdf_bd", i, j)), Conditional(CB_bd, *ws_->var("Mass")));
+      RooProdPdf pdf_bd(name("pdf_bd", i, j), "pdf_bd", pdf_bd_mass,*ws_->pdf(name("bdt_pdf_bd", i, j)));
       ws_->import(pdf_bd);
     }
   }
@@ -223,156 +221,156 @@ void pdf_analysis::define_bd(int i = 0) {
   if (SM_) {
     RooConstVar SM_Bd_over_Bs("SM_Bd_over_Bs", "SM_Bd_over_Bs", ratio_);
     ws_->import(SM_Bd_over_Bs);
-    RooFormulaVar N_bd_constr(name("N_bd_constr", i), "@0*@1", RooArgList(*ws_->var(name("N_bs",i)), *(RooConstVar*)ws_->obj("SM_Bd_over_Bs")));
+    RooFormulaVar N_bd_constr(name("N_bd_constr", i, j), "@0*@1", RooArgList(*ws_->var(name("N_bs", i, j)), *(RooConstVar*)ws_->obj("SM_Bd_over_Bs")));
     ws_->import(N_bd_constr);
   }
   else if (bd_constr_) {
     RooRealVar Bd_over_Bs("Bd_over_Bs", "Bd_over_Bs", 0., 10., "");
     ws_->import(Bd_over_Bs);
-    RooFormulaVar N_bd_constr(name("N_bd_constr", i), "@0*@1", RooArgList(*ws_->var(name("N_bs",i)), *ws_->var("Bd_over_Bs")));
+    RooFormulaVar N_bd_constr(name("N_bd_constr", i, j), "@0*@1", RooArgList(*ws_->var(name("N_bs", i, j)), *ws_->var("Bd_over_Bs")));
     ws_->import(N_bd_constr);
   }
   else {
-    RooRealVar N_bd(name("N_bd", i), "N_bd", 0, 10000);
+    RooRealVar N_bd(name("N_bd", i, j), "N_bd", 0, 10000);
     ws_->import(N_bd);
   }
 }
 
-void pdf_analysis::define_peaking(int i = 0) {
-  RooRealVar N_peak(name("N_peak", i), "N_peak", 0, 10000);
+void pdf_analysis::define_peaking(int i, int j) {
+  RooRealVar N_peak(name("N_peak", i, j), "N_peak", 0, 10000);
   ws_->import(N_peak);
 
   if (old_tree) {
-    RooRealVar Mean_peak(name("Mean_peak", i), "Mean_peak", 5.25, 5.20, 5.3);
-    RooRealVar Sigma_peak(name("Sigma_peak", i), "Sigma_peak", 0.050, 0.01, 0.20);
-    RooGaussian pdf_peak(name("pdf_peak", i), "pdf_peak", *ws_->var("Mass"), Mean_peak, Sigma_peak);
+    RooRealVar Mean_peak(name("Mean_peak", i, j), "Mean_peak", 5.25, 5.20, 5.3);
+    RooRealVar Sigma_peak(name("Sigma_peak", i, j), "Sigma_peak", 0.050, 0.01, 0.20);
+    RooGaussian pdf_peak(name("pdf_peak", i, j), "pdf_peak", *ws_->var("Mass"), Mean_peak, Sigma_peak);
     ws_->import(pdf_peak);
   }
   else {
-    RooRealVar Mean_peak(name("Mean_peak", i), "Mean_peak", 5.1, 4.9, 5.4);
-    RooRealVar Sigma_peak(name("Sigma_peak", i), "Sigma_peak", 0.02, 0.005, 0.2);
-    RooRealVar Sigma2_peak(name("Sigma2_peak", i), "Sigma2_peak", 0.04, 0.005, 0.2);
-    RooRealVar Alpha_peak(name("Alpha_peak", i), "Alpha_peak", 2.8, 0., 100.0);
-    RooRealVar Enne_peak(name("Enne_peak", i), "Enne_peak", 1., 0., 10.);
-    RooRealVar CoeffGauss_peak(name("CoeffGauss_peak", i), "CoeffGauss_peak", 0.5, 0., 1.);
-    RooGaussian Gau_peak(name("Gau_peak", i), "Gau_peak", *ws_->var("Mass"), Mean_peak, Sigma_peak);
-    RooCBShape CB_peak(name("CB_peak", i), "CB_peak", *ws_->var("Mass"), Mean_peak, Sigma2_peak, Alpha_peak, Enne_peak);
+    RooRealVar Mean_peak(name("Mean_peak", i, j), "Mean_peak", 5.1, 4.9, 5.4);
+    RooRealVar Sigma_peak(name("Sigma_peak", i, j), "Sigma_peak", 0.02, 0.005, 0.2);
+    RooRealVar Sigma2_peak(name("Sigma2_peak", i, j), "Sigma2_peak", 0.04, 0.005, 0.2);
+    RooRealVar Alpha_peak(name("Alpha_peak", i, j), "Alpha_peak", 2.8, 0., 100.0);
+    RooRealVar Enne_peak(name("Enne_peak", i, j), "Enne_peak", 1., 0., 10.);
+    RooRealVar CoeffGauss_peak(name("CoeffGauss_peak", i, j), "CoeffGauss_peak", 0.5, 0., 1.);
+    RooGaussian Gau_peak(name("Gau_peak", i, j), "Gau_peak", *ws_->var("Mass"), Mean_peak, Sigma_peak);
+    RooCBShape CB_peak(name("CB_peak", i, j), "CB_peak", *ws_->var("Mass"), Mean_peak, Sigma2_peak, Alpha_peak, Enne_peak);
 
     if (!pee) {
       if (!bdt_fit_) {
-        RooAddPdf pdf_peak(name("pdf_peak", i), "pdf_peak", RooArgList(Gau_peak, CB_peak),  CoeffGauss_peak);
+        RooAddPdf pdf_peak(name("pdf_peak", i, j), "pdf_peak", RooArgList(Gau_peak, CB_peak),  CoeffGauss_peak);
         ws_->import(pdf_peak);
       }
       else {
-        RooAddPdf pdf_peak_mass(name("pdf_peak_mass", i), "pdf_peak_mass", RooArgList(Gau_peak, CB_peak),  CoeffGauss_peak);
-        RooProdPdf pdf_peak(name("pdf_peak",i),"pdf_peak",pdf_peak_mass,*ws_->pdf(name("bdt_pdf_peak",i)));
+        RooAddPdf pdf_peak_mass(name("pdf_peak_mass", i, j), "pdf_peak_mass", RooArgList(Gau_peak, CB_peak),  CoeffGauss_peak);
+        RooProdPdf pdf_peak(name("pdf_peak", i, j),"pdf_peak",pdf_peak_mass,*ws_->pdf(name("bdt_pdf_peak", i, j)));
         ws_->import(pdf_peak);
       }
     }
     else {
-      RooAddPdf mass_peak(name("mass_peak", i), "mass_peak", RooArgList(Gau_peak, CB_peak),  CoeffGauss_peak);
-      //RooProdPdf pdf_peak (name("pdf_peak",i), "pdf_peak", *ws_->var("MassRes"), Conditional(mass_peak, *ws_->var("Mass")));
+      RooAddPdf mass_peak(name("mass_peak", i, j), "mass_peak", RooArgList(Gau_peak, CB_peak),  CoeffGauss_peak);
+      //RooProdPdf pdf_peak (name("pdf_peak", i, j), "pdf_peak", *ws_->var("MassRes"), Conditional(mass_peak, *ws_->var("Mass")));
       if (!bdt_fit_) {
-        RooProdPdf pdf_peak (name("pdf_peak",i), "pdf_peak", *ws_->pdf(name("MassRes_pdf_peak", i)), Conditional(mass_peak, *ws_->var("Mass")));
+        RooProdPdf pdf_peak (name("pdf_peak", i, j), "pdf_peak", *ws_->pdf(name("MassRes_pdf_peak", i, j)), Conditional(mass_peak, *ws_->var("Mass")));
         ws_->import(pdf_peak);
       }
       else {
-        RooProdPdf pdf_peak_mass (name("pdf_peak_mass",i), "pdf_peak_mass", *ws_->pdf(name("MassRes_pdf_peak", i)), Conditional(mass_peak, *ws_->var("Mass")));
-        RooProdPdf pdf_peak(name("pdf_peak",i),"pdf_peak",pdf_peak_mass,*ws_->pdf(name("bdt_pdf_peak",i)));
+        RooProdPdf pdf_peak_mass (name("pdf_peak_mass", i, j), "pdf_peak_mass", *ws_->pdf(name("MassRes_pdf_peak", i, j)), Conditional(mass_peak, *ws_->var("Mass")));
+        RooProdPdf pdf_peak(name("pdf_peak", i, j),"pdf_peak",pdf_peak_mass,*ws_->pdf(name("bdt_pdf_peak", i, j)));
         ws_->import(pdf_peak);
       }
     }
   }
 }
 
-void pdf_analysis::define_nonpeaking(int i = 0) {
+void pdf_analysis::define_nonpeaking(int i, int j) {
 
-  RooRealVar N_semi(name("N_semi", i), "N_semi", 0, 10000);
+  RooRealVar N_semi(name("N_semi", i, j), "N_semi", 0, 10000);
   ws_->import(N_semi);
 
   if (old_tree) {
-    RooRealVar m0_semi(name("m0_semi", i), "m0_semi", 5., 6.);
-    RooRealVar c_semi(name("c_semi", i), "c_semi", 1., 0.1, 20);
-    RooRealVar p_semi(name("p_semi", i), "p_semi", 0.5, 0.1, 5.);
-    RooArgusBG ArgusBG(name("pdf_semi", i), "pdf_semi", *ws_->var("Mass"), m0_semi, c_semi, p_semi);
+    RooRealVar m0_semi(name("m0_semi", i, j), "m0_semi", 5., 6.);
+    RooRealVar c_semi(name("c_semi", i, j), "c_semi", 1., 0.1, 20);
+    RooRealVar p_semi(name("p_semi", i, j), "p_semi", 0.5, 0.1, 5.);
+    RooArgusBG ArgusBG(name("pdf_semi", i, j), "pdf_semi", *ws_->var("Mass"), m0_semi, c_semi, p_semi);
     ws_->import(ArgusBG);
   }
   else {
-    RooRealVar C0(name("C0", i), "C0", 0.1, 0.001, 10., "");
-    RooRealVar C1(name("C1", i), "C1", 0.1, 0.001, 10., "");
-    RooRealVar C2(name("C2", i), "C2", 0., -2., 2., "");
-    RooRealVar C3(name("C3", i), "C3", 0., -2., 2., "");
-    RooRealVar C4(name("C4", i), "C4", 0., -2., 2., "");
-    RooRealVar tau(name("tau", i), "tau", -5,-20.,-0.01, "");
+    RooRealVar C0(name("C0", i, j), "C0", 0.1, 0.001, 10., "");
+    RooRealVar C1(name("C1", i, j), "C1", 0.1, 0.001, 10., "");
+    RooRealVar C2(name("C2", i, j), "C2", 0., -2., 2., "");
+    RooRealVar C3(name("C3", i, j), "C3", 0., -2., 2., "");
+    RooRealVar C4(name("C4", i, j), "C4", 0., -2., 2., "");
+    RooRealVar tau(name("tau", i, j), "tau", -5,-20.,-0.01, "");
     RooArgList poly_coeffs(C0, C1, C2, C3);
-    RooChebychev poly(name("poly", i), "poly", *ws_->var("Mass"), poly_coeffs);
-    RooExponential expo(name("expo", i), "expo", *ws_->var("Mass"), tau);
+    RooChebychev poly(name("poly", i, j), "poly", *ws_->var("Mass"), poly_coeffs);
+    RooExponential expo(name("expo", i, j), "expo", *ws_->var("Mass"), tau);
     if (!pee) {
       if (!bdt_fit_) {
-        RooProdPdf pdf_semi(name("pdf_semi", i), "pdf_semi", expo, poly);
+        RooProdPdf pdf_semi(name("pdf_semi", i, j), "pdf_semi", expo, poly);
         ws_->import(pdf_semi);
       }
       else {
-        RooProdPdf pdf_semi_mass(name("pdf_semi_mass", i), "pdf_semi_mass", expo, poly);
-        RooProdPdf pdf_semi(name("pdf_semi",i),"pdf_semi",pdf_semi_mass,*ws_->pdf(name("bdt_pdf_semi",i)));
+        RooProdPdf pdf_semi_mass(name("pdf_semi_mass", i, j), "pdf_semi_mass", expo, poly);
+        RooProdPdf pdf_semi(name("pdf_semi", i, j),"pdf_semi",pdf_semi_mass,*ws_->pdf(name("bdt_pdf_semi", i, j)));
         ws_->import(pdf_semi);
       }
 ///////////////////
     }
     else {
-      RooProdPdf mass_semi(name("mass_semi", i), "pdf_semi", expo, poly);
-      //RooProdPdf pdf_semi (name("pdf_semi",i), "pdf_semi", *ws_->var("MassRes"), Conditional(mass_semi, *ws_->var("Mass")));
+      RooProdPdf mass_semi(name("mass_semi", i, j), "pdf_semi", expo, poly);
+      //RooProdPdf pdf_semi (name("pdf_semi", i, j), "pdf_semi", *ws_->var("MassRes"), Conditional(mass_semi, *ws_->var("Mass")));
       if (!bdt_fit_) {
-        RooProdPdf pdf_semi (name("pdf_semi",i), "pdf_semi", *ws_->pdf(name("MassRes_pdf_semi", i)), Conditional(mass_semi, *ws_->var("Mass")));
+        RooProdPdf pdf_semi (name("pdf_semi", i, j), "pdf_semi", *ws_->pdf(name("MassRes_pdf_semi", i, j)), Conditional(mass_semi, *ws_->var("Mass")));
         ws_->import(pdf_semi);
       }
       else {
-        RooProdPdf pdf_semi_mass (name("pdf_semi_mass",i), "pdf_semi_mass", *ws_->pdf(name("MassRes_pdf_semi", i)), Conditional(mass_semi, *ws_->var("Mass")));
-        RooProdPdf pdf_semi(name("pdf_semi",i),"pdf_semi",pdf_semi_mass,*ws_->pdf(name("bdt_pdf_semi",i)));
+        RooProdPdf pdf_semi_mass (name("pdf_semi_mass", i, j), "pdf_semi_mass", *ws_->pdf(name("MassRes_pdf_semi", i, j)), Conditional(mass_semi, *ws_->var("Mass")));
+        RooProdPdf pdf_semi(name("pdf_semi", i, j),"pdf_semi",pdf_semi_mass,*ws_->pdf(name("bdt_pdf_semi", i, j)));
         ws_->import(pdf_semi);
       }
     }
   }
 }
 
-void pdf_analysis::define_comb(int i = 0) {
+void pdf_analysis::define_comb(int i, int j) {
 
-  RooRealVar N_comb(name("N_comb", i), "N_comb", 0, 10000);
+  RooRealVar N_comb(name("N_comb", i, j), "N_comb", 0, 10000);
   ws_->import(N_comb);
 
   if (!pee) {
     if (!bdt_fit_) {
-      RooUniform pdf_comb(name("pdf_comb", i), "N_comb", *ws_->var("Mass"));
+      RooUniform pdf_comb(name("pdf_comb", i, j), "N_comb", *ws_->var("Mass"));
       ws_->import(pdf_comb);
     }
     else {
-      RooUniform pdf_comb_mass(name("pdf_comb_mass", i), "N_comb", *ws_->var("Mass"));
-      RooProdPdf pdf_comb(name("pdf_comb",i),"pdf_comb",pdf_comb_mass,*ws_->pdf(name("bdt_pdf_comb",i)));
+      RooUniform pdf_comb_mass(name("pdf_comb_mass", i, j), "N_comb", *ws_->var("Mass"));
+      RooProdPdf pdf_comb(name("pdf_comb", i, j),"pdf_comb",pdf_comb_mass,*ws_->pdf(name("bdt_pdf_comb", i, j)));
       ws_->import(pdf_comb);
     }
   }
   else  {
-    RooUniform mass_comb(name("mass_comb", i), "N_comb", *ws_->var("Mass"));
-    //RooProdPdf pdf_comb (name("pdf_comb",i), "pdf_comb", *ws_->var("MassRes"), Conditional(mass_comb, *ws_->var("Mass")));
+    RooUniform mass_comb(name("mass_comb", i, j), "N_comb", *ws_->var("Mass"));
+    //RooProdPdf pdf_comb (name("pdf_comb", i, j), "pdf_comb", *ws_->var("MassRes"), Conditional(mass_comb, *ws_->var("Mass")));
     if (!bdt_fit_) {
-      RooProdPdf pdf_comb (name("pdf_comb",i), "pdf_comb", *ws_->pdf(name("MassRes_pdf_comb", i)), Conditional(mass_comb, *ws_->var("Mass")));
+      RooProdPdf pdf_comb (name("pdf_comb", i, j), "pdf_comb", *ws_->pdf(name("MassRes_pdf_comb", i, j)), Conditional(mass_comb, *ws_->var("Mass")));
       ws_->import(pdf_comb);
     }
     else {
-      RooProdPdf pdf_comb_mass (name("pdf_comb_mass",i), "pdf_comb_mass", *ws_->pdf(name("MassRes_pdf_comb", i)), Conditional(mass_comb, *ws_->var("Mass")));
-      RooProdPdf pdf_comb(name("pdf_comb",i),"pdf_comb",pdf_comb_mass,*ws_->pdf(name("bdt_pdf_comb",i)));
+      RooProdPdf pdf_comb_mass (name("pdf_comb_mass", i, j), "pdf_comb_mass", *ws_->pdf(name("MassRes_pdf_comb", i, j)), Conditional(mass_comb, *ws_->var("Mass")));
+      RooProdPdf pdf_comb(name("pdf_comb", i, j),"pdf_comb", pdf_comb_mass, *ws_->pdf(name("bdt_pdf_comb", i, j)));
       ws_->import(pdf_comb);
     }
   }
 }
 
-void pdf_analysis::define_signals(int i = 0) {
+void pdf_analysis::define_signals(int i, int j) {
 
-  RooRealVar N_signals(name("N_signals", i), "N_signals", 0., 1000);
+  RooRealVar N_signals(name("N_signals", i, j), "N_signals", 0., 1000);
   ws_->import(N_signals);
 
-  RooRealVar bsfrac_signals(name("bsfrac_signals", i), "bsfrac_signals", 0.5, 0.0, 1.0);
-  RooAddPdf pdf_signals(name("pdf_signals", i), "pdf_signals", RooArgSet(*ws_->pdf(name("pdf_bs", i)), *ws_->pdf(name("pdf_bd", i)) ), bsfrac_signals);
+  RooRealVar bsfrac_signals(name("bsfrac_signals", i, j), "bsfrac_signals", 0.5, 0.0, 1.0);
+  RooAddPdf pdf_signals(name("pdf_signals", i, j), "pdf_signals", RooArgSet(*ws_->pdf(name("pdf_bs", i, j)), *ws_->pdf(name("pdf_bd", i, j)) ), bsfrac_signals);
   ws_->import(pdf_signals);
 
 //  if (!SM_ && !bd_constr_) {
@@ -380,39 +378,39 @@ void pdf_analysis::define_signals(int i = 0) {
 //  }
 }
 
-void pdf_analysis::define_rare(int i = 0) {
+void pdf_analysis::define_rare(int i, int j) {
   
-  RooRealVar N_rare(name("N_rare", i), "N_rare", 0, 10000);
+  RooRealVar N_rare(name("N_rare", i, j), "N_rare", 0, 10000);
   ws_->import(N_rare);
 
-  RooRealVar peakfrac_rare(name("peakfrac_rare", i), "peakfrac_rare", 0.5, 0.0, 1.0);
-  RooAddPdf pdf_rare(name("pdf_rare", i), "pdf_rare", RooArgSet(*ws_->pdf(name("pdf_peak", i)), *ws_->pdf(name("pdf_semi", i)) ), peakfrac_rare);
+  RooRealVar peakfrac_rare(name("peakfrac_rare", i, j), "peakfrac_rare", 0.5, 0.0, 1.0);
+  RooAddPdf pdf_rare(name("pdf_rare", i, j), "pdf_rare", RooArgSet(*ws_->pdf(name("pdf_peak", i, j)), *ws_->pdf(name("pdf_semi", i, j)) ), peakfrac_rare);
   ws_->import(pdf_rare);
 }
 
-void pdf_analysis::define_rare2(RooDataHist* data, int i = 0) {
+void pdf_analysis::define_rare2(RooDataHist* data, int i, int j) {
   ws_->factory("N_hist[0, 10000]");
   RooHistPdf* pdf_rare = new RooHistPdf("pdf_hist", "pdf_hist", *ws_->var("Mass"), *data, 4);
   ws_->import(*pdf_rare);
 }
 
-void pdf_analysis::define_rare3(int i = 0) {
-  RooRealVar N_expo(name("N_expo3", i), "N_expo3", 0, 10000);
+void pdf_analysis::define_rare3(int i, int j) {
+  RooRealVar N_expo(name("N_expo3", i, j), "N_expo3", 0, 10000);
   ws_->import(N_expo);
-  RooRealVar tau3(name("tau3", i), "tau3", -5, -20., -0.01);
+  RooRealVar tau3(name("tau3", i, j), "tau3", -5, -20., -0.01);
   if (!pee) {
-    RooExponential pdf_expo(name("pdf_expo3", i), "pdf_expo3", *ws_->var("Mass"), tau3);
+    RooExponential pdf_expo(name("pdf_expo3", i, j), "pdf_expo3", *ws_->var("Mass"), tau3);
     ws_->import(pdf_expo);
   }
   else {
-    RooExponential expo3(name("expo3", i), "expo3", *ws_->var("Mass"), tau3);
-    RooProdPdf pdf_expo(name("pdf_expo3",i), "pdf_expo3", *ws_->pdf(name("MassRes_pdf_rare", i)), Conditional(expo3, *ws_->var("Mass")));
+    RooExponential expo3(name("expo3", i, j), "expo3", *ws_->var("Mass"), tau3);
+    RooProdPdf pdf_expo(name("pdf_expo3", i, j), "pdf_expo3", *ws_->pdf(name("MassRes_pdf_rare", i, j)), Conditional(expo3, *ws_->var("Mass")));
     ws_->import(pdf_expo);
   }
   //ws_->factory("SUM::pdf_expo(expo1frac_rare[0.,1.]*Exponential::expo1(Mass,Alpha1[-10.,10.]),Exponential::expo2(Mass,Alpha2[-10.,10.]))");
 }
 
-void pdf_analysis::define_signalsrare(int i = 0) {
+void pdf_analysis::define_signalsrare(int i, int j) {
   
   ws_->factory("signalfrac_signalsrare[0.5, 0.0, 1.0]");
   ws_->factory("SUM::pdf_signalsrare(signalfrac_signalsrare*pdf_signals, pdf_rare)");
@@ -420,7 +418,7 @@ void pdf_analysis::define_signalsrare(int i = 0) {
   if (!SM_ && !bd_constr_) ws_->factory("SUM::pdf_ext_signalsrare(N_bs*pdf_bs, N_bd*pdf_bd, N_rare*pdf_rare)");
 }
 
-void pdf_analysis::define_bkg_fractional(int i = 0) {
+void pdf_analysis::define_bkg_fractional(int i, int j) {
   
   ws_->factory("N_bkg[0, 10000]");
   ws_->factory("rarefrac_bkg[0.5, 0.0, 1.0]");
@@ -431,7 +429,7 @@ void pdf_analysis::define_bkg_fractional(int i = 0) {
   ws_->import(*bkgExt);
 }
 
-void pdf_analysis::define_bkg_extended(int i = 0) {
+void pdf_analysis::define_bkg_extended(int i, int j) {
 
 //  RooExtendPdf rare_ext("pdf_ext_rare", "rare_ext", *ws_->pdf("pdf_rare"), *ws_->var("N_rare"), "sb_lo,sb_hi");
 //  RooExtendPdf comb_ext("pdf_ext_comb", "comb_ext", *ws_->pdf("pdf_comb"), *ws_->var("N_comb"), "sb_lo,sb_hi");
@@ -442,7 +440,7 @@ void pdf_analysis::define_bkg_extended(int i = 0) {
 }
 
 
-void pdf_analysis::define_total_fractional(int i = 0) {
+void pdf_analysis::define_total_fractional(int i, int j) {
   
   ws_->factory("N_all[0, 10000]");
   ws_->factory("signalsfrac_total[0.5, 0.0, 1.0]");
@@ -453,16 +451,16 @@ void pdf_analysis::define_total_fractional(int i = 0) {
   ws_->import(*allExt);
 }
 
-void pdf_analysis::define_total_extended(int i = 0) {
-  RooArgList pdf_list(*ws_->pdf(name("pdf_bs", i)), *ws_->pdf(name("pdf_bd", i)), *ws_->pdf(name("pdf_rare", i)), *ws_->pdf(name("pdf_comb", i)));
+void pdf_analysis::define_total_extended(int i, int j) {
+  RooArgList pdf_list(*ws_->pdf(name("pdf_bs", i, j)), *ws_->pdf(name("pdf_bd", i, j)), *ws_->pdf(name("pdf_rare", i, j)), *ws_->pdf(name("pdf_comb", i, j)));
   if (SM_ || bd_constr_) {
-    RooArgList N_list(*ws_->var(name("N_bs", i)), *ws_->function(name("N_bd_constr", i)), *ws_->var(name("N_rare", i)), *ws_->var(name("N_comb", i)));
-    RooAddPdf pdf_ext_total(name("pdf_ext_total", i), "pdf_ext_total", pdf_list, N_list);
+    RooArgList N_list(*ws_->var(name("N_bs", i, j)), *ws_->function(name("N_bd_constr", i, j)), *ws_->var(name("N_rare", i, j)), *ws_->var(name("N_comb", i, j)));
+    RooAddPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", pdf_list, N_list);
     ws_->import(pdf_ext_total);
   }
   else {
-    RooArgList N_list(*ws_->var(name("N_bs", i)), *ws_->var(name("N_bd", i)), *ws_->var(name("N_rare", i)), *ws_->var(name("N_comb", i)));
-    RooAddPdf pdf_ext_total(name("pdf_ext_total", i), "pdf_ext_total", pdf_list, N_list);
+    RooArgList N_list(*ws_->var(name("N_bs", i, j)), *ws_->var(name("N_bd", i, j)), *ws_->var(name("N_rare", i, j)), *ws_->var(name("N_comb", i, j)));
+    RooAddPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", pdf_list, N_list);
     ws_->import(pdf_ext_total);
   }
   return; 
@@ -477,9 +475,25 @@ void pdf_analysis::define_simul(bool simulbdt) {
     ws_->import(pdf_sim);
   }
   else {
-
+    RooSuperCategory* rsc = dynamic_cast<RooSuperCategory*> (ws_->obj("super_cat"));
+    RooSimultaneous pdf_sim("pdf_ext_simul", "simultaneous pdf", *rsc);
+    for (int g = 0; g< channels*channels_bdt ;g++) {
+      rsc->setIndex(g);
+      RooArgSet icl = rsc->inputCatList();
+      RooCategory* eta_c = (RooCategory*)icl.find("etacat");
+      RooCategory* bdt_c = (RooCategory*)icl.find("bdtcat");
+      Int_t eta_i = eta_c->getIndex();
+      Int_t bdt_i = bdt_c->getIndex();
+      cout << rsc->getLabel() << " " <<  eta_i << " " <<  bdt_i<< endl;
+      pdf_sim.addPdf(*ws_->pdf(Form("pdf_ext_total_%d_%d", eta_i, bdt_i)), rsc->getLabel());
+    }
+//    for (int i = 0; i < channels; i++) {
+//      for (int j = 0; j < channels_bdt; j++) {
+//        pdf_sim.addPdf(*ws_->pdf(name("pdf_ext_total", i, j)), Form("{etacat_%d;bdtcat_%d}", i, j));
+//      }
+//    }
+    ws_->import(pdf_sim/*, RecycleConflictNodes()*/);
   }
-
 }
 
 string pdf_analysis::define_pdf_sum(string name, int i) {
@@ -640,6 +654,7 @@ void pdf_analysis::simsplit() {
   cout << "simsplitting" << endl;
   simul_ = true;
   ostringstream splitter;
+  ostringstream splitted;
   splitter << "SIMCLONE::pdf_ext_simul(pdf_ext_total, $SplitParam({";
   RooArgSet* allvars = ws_->pdf("pdf_ext_total")->getVariables();
   TIterator* it = allvars->createIterator();
@@ -647,23 +662,38 @@ void pdf_analysis::simsplit() {
   int cont = 0;
   while ( (var_Obj = (RooRealVar*)it->Next()) ) {
     string name = var_Obj->GetName();
-    if ( !(name == "Mass") && !(name == "Bd_over_Bs") && !(name == "SM_Bd_over_Bs")) {
-      if (cont != 0) splitter << ", ";
+    if ( !(name == "Mass") && !(name == "Bd_over_Bs") && !(name == "SM_Bd_over_Bs") && !(name == "bdt") && !(name == "MassRes")) {
+      if (cont != 0) {
+        splitter << ", ";
+        splitted << ", ";
+      }
       splitter << name;
+      splitted << name;
       cont++;
     }
   }
   /// splitter << ",etapdf_bs"; /// warning
-  splitter << "}, etacat[";
-  for (int i = 0; i < channels; i++) {
+  splitter << "}, {etacat[";
+  for (int i = 0; i < 2; i++) {
     if (i != 0) splitter << ",";
     splitter << "etacat_" << i ;
   }
-  splitter << "]))";
+  splitter << "],bdtcat[";
+  for (int i = 0; i < 3; i++) {
+    if (i != 0) splitter << ",";
+    splitter << "bdtcat_" << i ;
+  }
+  splitter << "]}))";
   cout << splitter.str() << endl;
   ws_->factory(splitter.str().c_str());
+  //RooSimWSTool sct(*ws_);
 
   ws_->Print();
+  cout << splitted.str() << endl;
+  //RooSimultaneous* model_sim2 = sct.build("pdf_ext_simul", "pdf_ext_total", SplitParam(splitted.str().c_str(), "etacat,bdtcat"));
+  //model_sim2->Print();
+
+
 }
 
 double pdf_analysis::getErrorHigh(RooRealVar *var) {
@@ -696,19 +726,23 @@ RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
     double Weight = rds->weight();
     RooArgSet varlist_tmp_res(*massres);
     if (aRow->getCatIndex("etacat") == channel) {
-      subdata_res->add(varlist_tmp_res, Weight);
-//      histo.Fill(massres->getVal(), Weight);
+      if (!simul_bdt_ || aRow->getCatIndex("bdtcat") == channel_bdt) {
+        subdata_res->add(varlist_tmp_res, Weight);
+        //      histo.Fill(massres->getVal(), Weight);
+      }
     }
   }
   cout << "resolution entries = " <<  subdata_res->sumEntries() << endl;
   ostringstream name_rdh;
   name_rdh << "MassRes_rdh_" << name;
   if (simul_) name_rdh << "_" << channel;
+  if (simul_bdt_) name_rdh << "_" << channel_bdt;
   RooDataHist *MassRes_rdh = subdata_res->binnedClone(name_rdh.str().c_str());
   //RooDataHist *MassRes_rdh = new RooDataHist(name_rdh.str().c_str(), name_rdh.str().c_str(), *ws_->var("MassRes"), &histo);
   ostringstream name_pdf;
   name_pdf << "MassRes_pdf_" << name;
   if (simul_) name_pdf << "_" << channel;
+  if (simul_bdt_) name_pdf << "_" << channel_bdt;
   RooHistPdf * MassRes_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), RooArgList(*ws_->var("MassRes")), *MassRes_rdh);
   ws_->import(*MassRes_rhpdf);
 
@@ -726,8 +760,10 @@ RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name) {
     double Weight = rds->weight();
     RooArgSet varlist_tmp_bdt(*BDT);
     if (aRow->getCatIndex("etacat") == channel) {
-//      subdata_bdt->add(varlist_tmp_bdt, Weight);
-      histo.Fill(BDT->getVal(), Weight);
+      if (!simul_bdt_ || aRow->getCatIndex("bdtcat") == channel_bdt) {
+        //      subdata_bdt->add(varlist_tmp_bdt, Weight);
+        histo.Fill(BDT->getVal(), Weight);
+      }
     }
   }
 //  cout << "bdt entries = " <<  subdata_bdt->sumEntries() << endl;
@@ -735,11 +771,13 @@ RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name) {
   ostringstream name_rdh;
   name_rdh << "bdt_rdh_" << name;
   if (simul_) name_rdh << "_" << channel;
+  if (simul_bdt_) name_rdh << "_" << channel_bdt;
   //RooDataHist *bdt_rdh = subdata_bdt->binnedClone(name_rdh.str().c_str());
   RooDataHist *bdt_rdh = new RooDataHist(name_rdh.str().c_str(), name_rdh.str().c_str(), *ws_->var("bdt"), &histo);
   ostringstream name_pdf;
   name_pdf << "bdt_pdf_" << name;
   if (simul_) name_pdf << "_" << channel;
+  if (simul_bdt_) name_pdf << "_" << channel_bdt;
   RooHistPdf * bdt_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), RooArgList(*ws_->var("bdt")), *bdt_rdh);
   ws_->import(*bdt_rhpdf);
 
@@ -753,37 +791,42 @@ RooDataHist pdf_analysis::getRandom_rdh() {
   return temp_rdh;
 }
 
-const char* pdf_analysis::name(string name, int i) {
+const char* pdf_analysis::name(string name, int i, int j) {
   if (!simul_) return name.c_str();
-  return Form("%s_%d", name.c_str(), i);
+  else {
+    if (!simul_bdt_) return Form("%s_%d", name.c_str(), i);
+    else return Form("%s_%d_%d", name.c_str(), i, j);
+  }
 }
 
 void pdf_analysis::set_rare_normalization(string input, bool extended) {
   FILE *estimate_file = fopen(input.c_str(), "r");
   for (int i = 0; i < channels; i++) {
-    char buffer[1024];
-    char cutName[128];
-    float cut;
-    while (fgets(buffer, sizeof(buffer), estimate_file)) {
-      if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
-      if (buffer[0] == '#') continue;
-      sscanf(buffer, "%s %f", cutName, &cut);
-      if ( (simul_ && !strcmp(cutName, name("peakfrac_rare", i))) || (!simul_ && !strcmp(cutName, Form("peakfrac_rare_%d", channel))) ) {
-        ws_->var(name("peakfrac_rare", i))->setConstant(kFALSE);
-        ws_->var(name("peakfrac_rare", i))->setVal(cut);
-        ws_->var(name("peakfrac_rare", i))->setConstant(kTRUE);
-        cout << name("peakfrac_rare", i) << " set val to " << cut << endl;
-      }
-      if (extended) {
-        if ( (simul_ && !strcmp(cutName, name("N_rare", i))) || (!simul_ && !strcmp(cutName, Form("N_rare_%d", channel))) ) {
-          ws_->var(name("N_rare", i))->setConstant(kFALSE);
-          ws_->var(name("N_rare", i))->setVal(cut);
-          ws_->var(name("N_rare", i))->setConstant(kTRUE);
-          cout << name("N_rare", i) << " set val to " << cut << endl;
+    for (int j = 0; j < channels_bdt; j++) {
+      char buffer[1024];
+      char cutName[128];
+      float cut;
+      while (fgets(buffer, sizeof(buffer), estimate_file)) {
+        if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
+        if (buffer[0] == '#') continue;
+        sscanf(buffer, "%s %f", cutName, &cut);
+        if ( (simul_ && !strcmp(cutName, Form("peakfrac_rare_%d", i))) || (!simul_ && !strcmp(cutName, Form("peakfrac_rare_%d", channel))) ) {
+          ws_->var(name("peakfrac_rare", i, j))->setConstant(kFALSE);
+          ws_->var(name("peakfrac_rare", i, j))->setVal(cut);
+          ws_->var(name("peakfrac_rare", i, j))->setConstant(kTRUE);
+          cout << name("peakfrac_rare", i, j) << " set val to " << cut << endl;
+        }
+        if (extended) {
+          if ( (simul_ && !strcmp(cutName, Form("N_rare_%d", i))) || (!simul_ && !strcmp(cutName, Form("N_rare_%d", channel))) ) {
+            ws_->var(name("N_rare", i, j))->setConstant(kFALSE);
+            ws_->var(name("N_rare", i, j))->setVal(cut);
+            ws_->var(name("N_rare", i, j))->setConstant(kTRUE);
+            cout << name("N_rare", i, j) << " set val to " << cut << endl;
+          }
         }
       }
+      rewind(estimate_file);
     }
-    rewind(estimate_file);
   }
   if (estimate_file) fclose(estimate_file);
 }
@@ -892,7 +935,10 @@ string pdf_analysis::get_address(string name, string pdf, bool channeling) {
     if (channeling) address << channel;
   }
   if (!simul_) address  << "_" << ch_s_;
-  if (simul_ && simul_bdt_) address << "_simulBdt";
+  if (simul_ && simul_bdt_) {
+    address << "_simulBdt_";
+    if (channeling) address << channels_bdt;
+  }
   if (SM_) address << "_SM";
   if (bd_constr_) address << "_BdConst";
   if (pee) address << "_PEE";

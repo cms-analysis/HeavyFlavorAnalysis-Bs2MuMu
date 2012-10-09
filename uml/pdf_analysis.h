@@ -39,13 +39,15 @@
 #include "RooGaussModel.h"
 #include "RooFFTConvPdf.h"
 #include "RooSimWSTool.h"
+#include "RooSuperCategory.h"
+#include "RooMultiCategory.h"
 
 using namespace std;
 using namespace RooFit;
 
 class pdf_analysis {
 public:
-  pdf_analysis(bool print, string meth = "bdt", string ch_s = "0", string range = "all", bool SM = false, bool bd_constr = false, bool simul = false, bool pee_ = false, bool bdt_fit = false);
+  pdf_analysis(bool print, string meth = "bdt", string ch_s = "0", string range = "all", bool SM = false, bool bd_constr = false, bool simul = false, bool simulbdt = false, bool pee_ = false, bool bdt_fit = false);
   void set_ws(RooWorkspace *ws) {ws_ = ws;}
   RooWorkspace* get_ws() {return ws_;}
 
@@ -57,24 +59,24 @@ public:
   RooHistPdf* define_bdt_pdf(RooDataSet *rds, string name);
 
   void define_pdfs();
-  void define_bs(int i);
-  void define_bd(int i);
-  void define_peaking(int i);
-  void define_nonpeaking(int i);
-  void define_comb(int i);
-  void define_signals(int i);
-  void define_rare(int i);
-  void define_rare2(RooDataHist *data, int i);
-  void define_rare3(int i);
-  void define_bkg_fractional(int i);
-  void define_bkg_extended(int i);
-  void define_signalsrare(int i);
+  void define_bs(int i, int j);
+  void define_bd(int i, int j);
+  void define_peaking(int i, int j);
+  void define_nonpeaking(int i, int j);
+  void define_comb(int i, int j);
+  void define_signals(int i, int j);
+  void define_rare(int i, int j);
+  void define_rare2(RooDataHist *data, int i, int j);
+  void define_rare3(int i, int j);
+  void define_bkg_fractional(int i, int j);
+  void define_bkg_extended(int i, int j);
+  void define_signalsrare(int i, int j);
 
   void set_SMratio(double ratio) {ratio_ = ratio;}
   
   string define_pdf_sum(string name, int i = 0);
-  void define_total_fractional(int i); // final pdf with fractional components, and also extended
-  void define_total_extended(int i); // final pdf with all extended components
+  void define_total_fractional(int i, int j); // final pdf with fractional components, and also extended
+  void define_total_extended(int i, int j); // final pdf with all extended components
 
   void define_simul(bool simulbdt);
 
@@ -86,6 +88,7 @@ public:
   string pdf_name;
 
   int channel;
+  int channel_bdt;
   bool SM_;
   bool bd_constr_;
   bool simul_;
@@ -97,8 +100,10 @@ public:
   RooRealVar* m1eta;
   RooRealVar* m2eta;
   RooRealVar* weight;
+
   RooCategory* channels_cat;
   RooCategory* bdt_cat;
+  RooSuperCategory* super_cat;
 
   int channels;
   int channels_bdt;
@@ -120,7 +125,7 @@ public:
   void gen_and_fit(string pdfname);
   bool print_;
 
-  const char* name(string name, int i);
+  const char* name(string name, int i, int j = -1);
 
 protected:
   string meth_;
@@ -130,13 +135,6 @@ protected:
   RooAbsData* rds_;
 
   double ratio_;
-
-  string input_estimates_;
-  vector <double> estimate_bs;
-  vector <double> estimate_bd;
-  vector <double> estimate_rare;
-  vector <double> estimate_comb;
-  vector <double> estimate_channel;
 
   RooDataHist getRandom_rdh();
   string get_address(string name, string pdf = "", bool channeling = true);
