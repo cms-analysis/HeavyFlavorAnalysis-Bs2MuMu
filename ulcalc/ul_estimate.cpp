@@ -38,7 +38,7 @@ void add_channels(std::map<bmm_param,measurement_t> *bmm, std::set<int> *channel
 		channels->insert(it->first.second);
 } // add_channels()
 
-RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_param,measurement_t> *bdmm, bool no_errors, int verbosity, bool compute_bd_ul, bool fixed_bkg, bool floatPoissonians)
+RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std::map<bmm_param,measurement_t> *bdmm, bool no_errors, int verbosity, bool compute_bd_ul, bool fixed_bkg, bool floatPoissonians, bool smCrossFeed)
 {
 	RooStats::ModelConfig *splusbModel = NULL;
 	RooStats::ModelConfig *smModel = NULL;
@@ -292,10 +292,35 @@ RooWorkspace *build_model_nchannel(map<bmm_param,measurement_t> *bsmm, map<bmm_p
 	nuisanceParams.remove(*wspace->set("obs"), kTRUE, kTRUE);
 	nuisanceParams.remove(*wspace->set("poi"), kTRUE, kTRUE);
 	RooStats::RemoveConstantParameters(&nuisanceParams);
+	if (smCrossFeed) {
+		// remove cross feed from nuisance parameters...
+		nuisanceParams.remove(*wspace->var("mu_s"), kTRUE, kTRUE);
+		nuisanceParams.remove(*wspace->var("mu_d"), kTRUE, kTRUE);
+	}
 	wspace->defineSet("nui", nuisanceParams);
 	
 	wspace->factory("beta[1]");
 	wspace->factory("mu[0]");
+	
+	if (smCrossFeed) {
+		RooArgSet nonPoi(*wspace->var("mu_s"), *wspace->var("mu_d"));
+		RooRealVar *var;
+		TObject *obj;
+		TIterator *it;
+		
+		nonPoi.remove(*wspace->set("poi"));
+		
+		it = nonPoi.createIterator();
+		while ( (obj = it->Next()) != NULL) {
+			var = dynamic_cast<RooRealVar*> (obj);
+			if (var) {
+				var->setVal(1.0);
+				var->setConstant(kTRUE);
+			}
+		}
+		
+		delete it;
+	}
 	
 	// build the prior
 	priorList.add(wspace->allPdfs());
@@ -492,7 +517,7 @@ void est_ul_bc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, 
 } // est_ul_bc()
 
 // two sided interval using the hybrid approach...
-void est_int_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit, std::pair<double,double> *rg, uint32_t* inBins, double *cpuUsed, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg, bool smExpectation)
+void est_int_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit, std::pair<double,double> *rg, uint32_t* inBins, double *cpuUsed, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg, bool smExpectation, bool smCrossFeed)
 {
 	using namespace RooStats;
 	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));
@@ -535,23 +560,25 @@ void est_int_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *chann
 		wspace->var(Form("gamma_%d",*it))->setVal( wspace->var(Form("NbObs_%d",*it))->getVal()+1 );
 	}
 	
-	if (bdmm) {
-		for (it = channels->begin(); it != channels->end(); ++it)
-			beta += wspace->var(Form("Pss_%d",*it))->getVal() * wspace->function(Form("NuS_%d",*it))->getVal();
-		
-		obs = beta * wspace->var("mu_s")->getVal();
-		
-		beta = 1./beta; // beta is actually the inverse thereof in RooFit
-		wspace->factory(Form("Gamma::mu_prior_gamma(mu_s,gamma_b[%e],beta_b[%e],mu)",1.0 + obs,beta));
-		nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
-	} else {
-		for (it = channels->begin(); it != channels->end(); ++it)
-			beta += wspace->var(Form("Pdd_%d",*it))->getVal() * wspace->var(Form("NuD_%d",*it))->getVal();
-		
-		obs = beta * wspace->var("mu_d")->getVal();
-		beta = 1./beta; // beta is actually the inverse thereof in RooFit
-		wspace->factory(Form("Gamma::mu_prior_gamma(mu_d,gamma_b[%e],beta_b[%e],mu)",1.0 + obs, beta));
-		nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
+	if (!smCrossFeed) {
+		if (bdmm) {
+			for (it = channels->begin(); it != channels->end(); ++it)
+				beta += wspace->var(Form("Pss_%d",*it))->getVal() * wspace->function(Form("NuS_%d",*it))->getVal();
+			
+			obs = beta * wspace->var("mu_s")->getVal();
+			
+			beta = 1./beta; // beta is actually the inverse thereof in RooFit
+			wspace->factory(Form("Gamma::mu_prior_gamma(mu_s,gamma_b[%e],beta_b[%e],mu)",1.0 + obs,beta));
+			nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
+		} else {
+			for (it = channels->begin(); it != channels->end(); ++it)
+				beta += wspace->var(Form("Pdd_%d",*it))->getVal() * wspace->var(Form("NuD_%d",*it))->getVal();
+			
+			obs = beta * wspace->var("mu_d")->getVal();
+			beta = 1./beta; // beta is actually the inverse thereof in RooFit
+			wspace->factory(Form("Gamma::mu_prior_gamma(mu_d,gamma_b[%e],beta_b[%e],mu)",1.0 + obs, beta));
+			nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
+		}
 	}
 	nui_sampling_list->add(((RooProdPdf*)wspace->pdf("prior_pdf"))->pdfList());
 	nui_sampling = new RooProdPdf("nui_sampling","",*nui_sampling_list);
@@ -628,7 +655,7 @@ void est_int_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *chann
 } // est_int_hybrid()
 
 // hybrid approach and ratioofprofiled
-void est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit, std::pair<double,double> *rg, uint32_t* inBins, double *cpuUsed, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg, bool smExpectation)
+void est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit, std::pair<double,double> *rg, uint32_t* inBins, double *cpuUsed, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg, bool smExpectation, bool smCrossFeed)
 {
 	using namespace RooStats;
 	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));
@@ -675,23 +702,25 @@ void est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channe
 		wspace->var(Form("gamma_%d",*it))->setVal( wspace->var(Form("NbObs_%d",*it))->getVal()+1 );
 	}
 	
-	if (bdmm) {
-		for (it = channels->begin(); it != channels->end(); ++it)
-			beta += wspace->var(Form("Pss_%d",*it))->getVal() * wspace->function(Form("NuS_%d",*it))->getVal();
-		
-		obs = beta * wspace->var("mu_s")->getVal();
-		
-		beta = 1./beta; // beta is actually the inverse thereof in RooFit
-		wspace->factory(Form("Gamma::mu_prior_gamma(mu_s,gamma_b[%e],beta_b[%e],mu)",1.0 + obs,beta));
-		nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
-	} else {
-		for (it = channels->begin(); it != channels->end(); ++it)
-			beta += wspace->var(Form("Pdd_%d",*it))->getVal() * wspace->var(Form("NuD_%d",*it))->getVal();
-		
-		obs = beta * wspace->var("mu_d")->getVal();
-		beta = 1./beta; // beta is actually the inverse thereof in RooFit
-		wspace->factory(Form("Gamma::mu_prior_gamma(mu_d,gamma_b[%e],beta_b[%e],mu)",1.0 + obs, beta));
-		nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
+	if (!smCrossFeed) {
+		if (bdmm) {
+			for (it = channels->begin(); it != channels->end(); ++it)
+				beta += wspace->var(Form("Pss_%d",*it))->getVal() * wspace->function(Form("NuS_%d",*it))->getVal();
+			
+			obs = beta * wspace->var("mu_s")->getVal();
+			
+			beta = 1./beta; // beta is actually the inverse thereof in RooFit
+			wspace->factory(Form("Gamma::mu_prior_gamma(mu_s,gamma_b[%e],beta_b[%e],mu)",1.0 + obs,beta));
+			nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
+		} else {
+			for (it = channels->begin(); it != channels->end(); ++it)
+				beta += wspace->var(Form("Pdd_%d",*it))->getVal() * wspace->var(Form("NuD_%d",*it))->getVal();
+			
+			obs = beta * wspace->var("mu_d")->getVal();
+			beta = 1./beta; // beta is actually the inverse thereof in RooFit
+			wspace->factory(Form("Gamma::mu_prior_gamma(mu_d,gamma_b[%e],beta_b[%e],mu)",1.0 + obs, beta));
+			nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
+		}
 	}
 	nui_sampling_list->add(((RooProdPdf*)wspace->pdf("prior_pdf"))->pdfList());
 	nui_sampling = new RooProdPdf("nui_sampling","",*nui_sampling_list);
@@ -825,7 +854,7 @@ void est_ul_cls(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels,
 	delete result;
 } // est_ul_cls()
 
-void est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double *pvalue, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg, bool smExpectation)
+void est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double *pvalue, uint32_t nbrProof, int nToys, bool bdmm, bool fixedBkg, bool smExpectation, bool smCrossFeed)
 {
 	using namespace RooStats;
 	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));
@@ -865,23 +894,25 @@ void est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *ch
 	}
 	
 	// nuisance signal
-	if (bdmm) {
-		for (set<int>::const_iterator it = channels->begin(); it != channels->end(); ++it)
-			beta += wspace->var(Form("Pss_%d",*it))->getVal() * wspace->function(Form("NuS_%d",*it))->getVal();
-		
-		obs = beta * wspace->var("mu_s")->getVal();
-		
-		beta = 1./beta; // beta is actually the inverse thereof in RooFit
-		wspace->factory(Form("Gamma::mu_prior_gamma(mu_s,gamma_b[%e],beta_b[%e],mu)",1.0 + obs,beta));
-		nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
-	} else {
-		for (set<int>::const_iterator it = channels->begin(); it != channels->end(); ++it)
-			beta += wspace->var(Form("Pdd_%d",*it))->getVal() * wspace->var(Form("NuD_%d",*it))->getVal();
-		
-		obs = beta * wspace->var("mu_d")->getVal();
-		beta = 1./beta; // beta is actually the inverse thereof in RooFit
-		wspace->factory(Form("Gamma::mu_prior_gamma(mu_d,gamma_b[%e],beta_b[%e],mu)",1.0 + obs, beta));
-		nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
+	if (!smCrossFeed) {
+		if (bdmm) {
+			for (set<int>::const_iterator it = channels->begin(); it != channels->end(); ++it)
+				beta += wspace->var(Form("Pss_%d",*it))->getVal() * wspace->function(Form("NuS_%d",*it))->getVal();
+			
+			obs = beta * wspace->var("mu_s")->getVal();
+			
+			beta = 1./beta; // beta is actually the inverse thereof in RooFit
+			wspace->factory(Form("Gamma::mu_prior_gamma(mu_s,gamma_b[%e],beta_b[%e],mu)",1.0 + obs,beta));
+			nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
+		} else {
+			for (set<int>::const_iterator it = channels->begin(); it != channels->end(); ++it)
+				beta += wspace->var(Form("Pdd_%d",*it))->getVal() * wspace->var(Form("NuD_%d",*it))->getVal();
+			
+			obs = beta * wspace->var("mu_d")->getVal();
+			beta = 1./beta; // beta is actually the inverse thereof in RooFit
+			wspace->factory(Form("Gamma::mu_prior_gamma(mu_d,gamma_b[%e],beta_b[%e],mu)",1.0 + obs, beta));
+			nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
+		}
 	}
 	
 	nui_sampling_list->add( ((RooProdPdf*)wspace->pdf("prior_pdf"))->pdfList() );

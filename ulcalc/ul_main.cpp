@@ -52,6 +52,7 @@ static int gToys = 50000;
 static bool gFixBackground = false;
 static bool gFloatingData = false;
 static bool gSMExpectation = false;
+static bool gSMCrossFeed = false;
 
 static const char *algo_name(algo_t a)
 {
@@ -215,7 +216,7 @@ static void parse_input(const char *path, map<bmm_param,measurement_t> *bsmm, ma
 
 static void usage()
 {
-	cerr << "ulcalc [--SM-exp] [--float-data] [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--disable-errors] [[-n <nbr steps>] -r x,y] [-l cl] [-w workspace_outfile.root] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"int_hybrid\"|\"clb_hybrid\"|\"zbi\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
+	cerr << "ulcalc [--SM-crossfeed][--SM-exp] [--float-data] [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--disable-errors] [[-n <nbr steps>] -r x,y] [-l cl] [-w workspace_outfile.root] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"int_hybrid\"|\"clb_hybrid\"|\"zbi\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
 } // usage()
 
 static bool parse_arguments(const char **first, const char **last)
@@ -320,6 +321,8 @@ static bool parse_arguments(const char **first, const char **last)
 				gFloatingData = true;
 			} else if (strcmp(arg, "--SM-exp") == 0) {
 				gSMExpectation = true;
+			} else if (strcmp(arg, "--SM-crossfeed") == 0) {
+				gSMCrossFeed = true;
 			} else {
 				cerr << "Unknown option '" << arg << "'." << endl;
 				usage();
@@ -353,6 +356,7 @@ static bool parse_arguments(const char **first, const char **last)
 	cout << "Number of MC Toys used: " << gToys << endl;
 	if (gProofWorkers > 0) cout << "Number of Proof Workers: " << gProofWorkers << endl;
 	if (gFloatingData) cout << "Non Integer Observation allowed" << endl;
+	if (gSMCrossFeed) cout << "Cross Feed fixed to SM" << endl;
 	cout << "-------------------------------------" << endl;
 	if (gFixBackground)	cout << "Toys with fixed sideband window" << endl;
 	else				cout << "Toys with floating sideband window" << endl;
@@ -414,14 +418,14 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 				est_ul_clb(wspace, data, channels, gVerbosity, upperLimit, gProofWorkers, gToys);
 				break;
 			case kAlgo_Hybrid:
-				est_ul_hybrid(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys, gBdToMuMu, gFixBackground, gSMExpectation);
+				est_ul_hybrid(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys, gBdToMuMu, gFixBackground, gSMExpectation, gSMCrossFeed);
 				break;
 			case kAlgo_Interval_Hybrid:
-				est_int_hybrid(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys, gBdToMuMu, gFixBackground, gSMExpectation);
+				est_int_hybrid(wspace, data, channels, gCLLevel, gVerbosity, upperLimit, ((gMuSRange.first >= 0) ? &gMuSRange : NULL), &gFCSteps, NULL, gProofWorkers, gToys, gBdToMuMu, gFixBackground, gSMExpectation, gSMCrossFeed);
 				break;
 			case kAlgo_CLb_Hybrid:
 				// note, here upper limit represents p-value of background model.
-				est_ul_clb_hybrid(wspace, data, channels, gVerbosity, upperLimit, gProofWorkers, gToys, gBdToMuMu, gFixBackground, gSMExpectation);
+				est_ul_clb_hybrid(wspace, data, channels, gVerbosity, upperLimit, gProofWorkers, gToys, gBdToMuMu, gFixBackground, gSMExpectation, gSMCrossFeed);
 				break;
 			case kAlgo_Zbi:
 				est_ul_zbi(wspace,data,channels,gCLLevel,gBdToMuMu,upperLimit);
@@ -540,7 +544,7 @@ int main(int argc, const char *argv [])
 	
 	compute_vars(&bsmm,true);
 	compute_vars(&bdmm,false);
-	wspace = build_model_nchannel(&bsmm, &bdmm, gDisableErrors, gVerbosity, gBdToMuMu, gFixBackground, gFloatingData);
+	wspace = build_model_nchannel(&bsmm, &bdmm, gDisableErrors, gVerbosity, gBdToMuMu, gFixBackground, gFloatingData, gSMCrossFeed);
 	
 	// initialize random number generator seed
 	if (gSeed) RooRandom::randomGenerator()->SetSeed(0);
