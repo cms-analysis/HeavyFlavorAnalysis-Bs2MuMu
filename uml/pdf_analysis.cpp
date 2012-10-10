@@ -315,7 +315,6 @@ void pdf_analysis::define_nonpeaking(int i, int j) {
         RooProdPdf pdf_semi(name("pdf_semi", i, j),"pdf_semi",pdf_semi_mass,*ws_->pdf(name("bdt_pdf_semi", i, j)));
         ws_->import(pdf_semi);
       }
-///////////////////
     }
     else {
       RooProdPdf mass_semi(name("mass_semi", i, j), "pdf_semi", expo, poly);
@@ -372,10 +371,6 @@ void pdf_analysis::define_signals(int i, int j) {
   RooRealVar bsfrac_signals(name("bsfrac_signals", i, j), "bsfrac_signals", 0.5, 0.0, 1.0);
   RooAddPdf pdf_signals(name("pdf_signals", i, j), "pdf_signals", RooArgSet(*ws_->pdf(name("pdf_bs", i, j)), *ws_->pdf(name("pdf_bd", i, j)) ), bsfrac_signals);
   ws_->import(pdf_signals);
-
-//  if (!SM_ && !bd_constr_) {
-//    ws_->factory("SUM::pdf_ext_signals(N_bs*pdf_bs, N_bd*pdf_bd)");
-//  }
 }
 
 void pdf_analysis::define_rare(int i, int j) {

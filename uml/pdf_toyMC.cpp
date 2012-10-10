@@ -343,8 +343,10 @@ RooFitResult* pdf_toyMC::fit_pdf(string pdf, RooAbsData* data, int printlevel, R
 
   pdf_toy_ = "pdf_ext_" + pdf;
   RooFitResult* result;
+  if (printlevel < 0) RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
   if (!pee) result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, Extended(true), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE), NumCPU(2));
   else result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, ConditionalObservables(*ws->var("MassRes")), Extended(true), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE), NumCPU(2));
+  if (printlevel < 0) RooMsgService::instance().cleanup();
   return result;
 }
 
@@ -393,11 +395,11 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
     for (int j = 0; j < channels_bdt; j++) {
       ws_temp->var(name("N_bs", i, j))->setVal(0);
       ws_temp->var(name("N_bs", i, j))->setConstant(1);
-      if ( !(SM_ || bd_constr_)) {
+/*      if ( !(SM_ || bd_constr_)) {
         ws_temp->var(name("N_bd", i, j))->setVal(0);
         ws_temp->var(name("N_bd", i, j))->setConstant(1);
       }
-      else if (bd_constr_) {
+      else */if (bd_constr_) {
         ws_temp->var("Bd_over_Bs")->setVal(0);
         ws_temp->var("Bd_over_Bs")->setConstant(1);
       }
@@ -410,11 +412,11 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
     for (int j = 0; j < channels; j++) {
       ws_temp->var(name("N_bs", j))->setVal(estimate_bs[j]);
       ws_temp->var(name("N_bs", j))->setConstant(0);
-      if ( !(SM_ || bd_constr_)) {
+/*      if ( !(SM_ || bd_constr_)) {
         ws_temp->var(name("N_bd", j))->setVal(estimate_bd[j]);
         ws_temp->var(name("N_bd", j))->setConstant(0);
       }
-      else if (bd_constr_) {
+      else */if (bd_constr_) {
         ws_temp->var("Bd_over_Bs")->setVal(estimate_bd[j]/estimate_bs[j]);
         ws_temp->var("Bd_over_Bs")->setConstant(0);
       }
@@ -425,11 +427,11 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
       for (int j = 0; j < channels_bdt; j++) {
         ws_temp->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
         ws_temp->var(name("N_bs", i, j))->setConstant(0);
-        if ( !(SM_ || bd_constr_)) {
+/*        if ( !(SM_ || bd_constr_)) {
           ws_temp->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
           ws_temp->var(name("N_bd", i, j))->setConstant(0);
         }
-        else if (bd_constr_) {
+        else */if (bd_constr_) {
           ws_temp->var("Bd_over_Bs")->setVal(estimate2D_bd[i][j]/estimate2D_bs[i][j]);
           ws_temp->var("Bd_over_Bs")->setConstant(0);
         }
