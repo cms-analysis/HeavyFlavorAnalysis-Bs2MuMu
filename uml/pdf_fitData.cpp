@@ -19,6 +19,7 @@ pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_es
 
   lumi = -1;
   parse_estimate();
+
   if (input_tree) {
     tree = input_tree;
     random = false;
@@ -408,7 +409,6 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, TF1 *MassRes_f,
       else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate_bd[ch_i_]/estimate_bd[ch_i_]);
       ws_->var("N_rare")->setVal(estimate_rare[ch_i_]);
       ws_->var("N_comb")->setVal(estimate_comb[ch_i_]);
-      if (BF_) ws_->var("N_bu")->setVal(lumi / 5. *  ws_->var("N_bu")->getVal());
       /*if (!BF_)*/ global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")));
 //      else global_data = ws_->pdf("pdf_ext_total_test")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")));
     }
@@ -421,7 +421,6 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, TF1 *MassRes_f,
         else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate_bd[i]/estimate_bd[i]);
         ws_->var(name("N_rare", i))->setVal(estimate_rare[i]);
         ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
-        if (BF_) ws_->var(name("N_bu", i))->setVal(lumi / 5. *  ws_->var(name("N_bu", i))->getVal());
         /*if (!BF_) */data_i[i] = ws_->pdf(name("pdf_ext_total", i))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")));
 //        else data_i[i] = ws_->pdf(name("pdf_ext_total_test", i))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")));
         data_map.insert(make_pair(name("etacat", i), data_i[i]));
@@ -440,7 +439,6 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, TF1 *MassRes_f,
           else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate2D_bd[i][j]/estimate2D_bd[i][j]);
           ws_->var(name("N_rare", i, j))->setVal(estimate2D_rare[i][j]);
           ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
-          if (BF_) ws_->var(name("N_bu", i, j))->setVal(lumi / 5. *  ws_->var(name("N_bu", i, j))->getVal());
           /*if (!BF_) */data_i[i][j] = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")));
 //          else data_i[i][j] = ws_->pdf(name("pdf_ext_total_test", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")));
           channels_cat->setIndex(i);
@@ -955,3 +953,11 @@ void pdf_fitData::BF(string eff_filename, string numbers_filename) {
   cout << "============= ============= =============" << endl;
 }
 
+void pdf_fitData::setnewlumi() {
+  for (int i = 0; i < channels; i++) {
+    Double_t N_bu_new = lumi / 5. * N_bu_val[i];
+    ws_->var(name("N_bu", i))->setVal(N_bu_new);
+    cout << N_bu_new << " new Bu expectations: " << ws_->var(name("N_bu", i))->getVal() << " (channel " << i << ")" << endl;
+    ws_->var(name("N_bu", i))->Print();
+  }
+}

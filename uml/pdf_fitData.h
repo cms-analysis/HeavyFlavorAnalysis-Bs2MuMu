@@ -47,6 +47,7 @@ class pdf_fitData : public pdf_analysis {
     void save();
 
     double lumi;
+    void setnewlumi();
 
   protected:
 

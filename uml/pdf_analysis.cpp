@@ -59,7 +59,7 @@ void pdf_analysis::initialize () {
   ws_->import(*bdt);
 
   channels_cat = new RooCategory("etacat", "eta channels");
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 4; i++) {
     channels_cat->defineType(Form("etacat_%d", i), i);
   }
   ws_->import(*channels_cat);
@@ -489,7 +489,7 @@ void pdf_analysis::define_total_extended(int i, int j) {
 
 void pdf_analysis::define_bf(int i, int j) {
 
-  RooRealVar N_bu_var(name("N_bu", i, j), "N_bu", N_bu_val[i], N_bu_val[i]-N_bu_err[i], N_bu_val[i]+N_bu_err[i], "");
+  RooRealVar N_bu_var(name("N_bu", i, j), "N_bu", N_bu_val[i], 1, 10000000, "");
 
   RooRealVar eff_bu_var(name("eff_bu", i, j), "eff_bu", eff_bu_val[i], eff_bu_val[i]-eff_bu_err[i], eff_bu_val[i]+eff_bu_err[i], "");
   RooRealVar eff_bs_var(name("eff_bs", i, j), "eff_bs", eff_bs_val[i], eff_bs_val[i]-eff_bs_err[i], eff_bs_val[i]+eff_bs_err[i], "");

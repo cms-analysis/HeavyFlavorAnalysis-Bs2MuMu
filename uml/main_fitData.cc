@@ -38,6 +38,7 @@ int main(int argc, char** argv) {
 
   pdf_fitData* fitdata = new pdf_fitData(false, inputs, inputs_bdt, input_estimates, meth, "all", BF, SM, bd_const, data_t, simul, simul_bdt, pee, bdt_fit, ch_s, sig_meth);
   fitdata->initialize();
+  fitdata->setnewlumi();
   fitdata->make_pdf_input();
   fitdata->make_pdf();
   if (strcmp(rare_f.c_str(),"no")) fitdata->set_rare_normalization(rare_f, true);

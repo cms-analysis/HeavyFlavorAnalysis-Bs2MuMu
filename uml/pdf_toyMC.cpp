@@ -62,7 +62,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
   pull_rds_BF = new RooDataSet("pull_rds_BF", "pull_rds_BF", *pull_BF);
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < channels_bdt; j++) {
-      residual_bs[i][j] = new RooRealVar("residual_bs", "residual_bs", -8., 8.);
+      residual_bs[i][j] = new RooRealVar("residual_bs", "residual_bs", -20., 20.);
       pull_bs[i][j] = new RooRealVar("pull_bs", "pull_bs", -8., 8.);
       pull_bd[i][j] = new RooRealVar("pull_bd", "pull_bd", -8., 8.);
       pull_rare[i][j] = new RooRealVar("pull_rare", "pull_rare", -8., 8.);
@@ -118,7 +118,6 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
         if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setVal((int)estimate_bd[j]);
         ws_temp->var(name("N_rare", j))->setVal((int)estimate_rare[j]);
         ws_temp->var(name("N_comb", j))->setVal((int)estimate_comb[j]);
-        ws_->var(name("N_bu", j))->setVal(lumi / 5. *  ws_->var(name("N_bu", j))->getVal());
 
         ws_temp->var(name("N_bs", j))->setConstant(kFALSE);
         if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setConstant(kFALSE);
@@ -133,8 +132,6 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
           if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setVal((int)estimate2D_bd[i][j]);
           ws_temp->var(name("N_rare", i, j))->setVal((int)estimate2D_rare[i][j]);
           ws_temp->var(name("N_comb", i, j))->setVal((int)estimate2D_comb[i][j]);
-          ws_->var(name("N_bu", i, j))->setVal(lumi / 5. *  ws_->var(name("N_bu", i, j))->getVal());
-
           ws_temp->var(name("N_bs", i, j))->setConstant(kFALSE);
           if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setConstant(kFALSE);
           ws_temp->var(name("N_rare", i, j))->setConstant(kFALSE);
@@ -174,7 +171,6 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
           else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate2D_bd[i][j]/estimate2D_bd[i][j]);
           ws_->var(name("N_rare", i, j))->setVal(estimate2D_rare[i][j]);
           ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
-          ws_->var(name("N_bu", i, j))->setVal(lumi / 5. *  ws_->var(name("N_bu", i, j))->getVal());
           data_i[i][j] = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")));
           channels_cat->setIndex(i);
           bdt_cat->setIndex(j);
@@ -220,7 +216,10 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
         double bs_pull, bd_pull, rare_pull, comb_pull, bs_residual;
         if (!simul_bdt_) {
           if (!BF_) bs_pull = (ws_temp->var(name("N_bs", i, j))->getVal() - estimate_bs[i]) / ws_temp->var(name("N_bs", i, j))->getError();
-          else bs_residual = (ws_temp->function(name("N_bs_formula", i, j))->getVal() - estimate_bs[i]);
+          else {
+            bs_residual = (ws_temp->function(name("N_bs_formula", i, j))->getVal() - estimate_bs[i]);
+            cout << ws_temp->function(name("N_bs_formula", i, j))->getVal()  << "  " << estimate_bs[i] << endl;
+          }
           if (!(SM_ || bd_constr_)) bd_pull = (ws_temp->var(name("N_bd", i, j))->getVal() - estimate_bd[i]) / ws_temp->var(name("N_bd", i, j))->getError();
           rare_pull = (ws_temp->var(name("N_rare", i, j))->getVal() - estimate_rare[i]) / ws_temp->var(name("N_rare", i, j))->getError();
           comb_pull = (ws_temp->var(name("N_comb", i, j))->getVal() - estimate_comb[i]) / ws_temp->var(name("N_comb", i, j))->getError();
@@ -508,7 +507,6 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy, string test_pdf) {
       ws_->var(name("N_rare", i))->setVal(estimate_rare[i]);
       ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
       if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i))->setVal(estimate_bd[i]);
-      if (BF_) ws_->var(name("N_bu", i))->setVal(lumi / 5. *  ws_->var(name("N_bu", i))->getVal());
     }
     if (bd_constr_) {
       double ratio = (double) estimate_bd[0] / estimate_bs[0]; // it's the same in every channel
@@ -522,7 +520,6 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy, string test_pdf) {
         ws_->var(name("N_rare", i, j))->setVal(estimate2D_rare[i][j]);
         ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
         if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
-        if (BF_) ws_->var(name("N_bu", i, j))->setVal(lumi / 5. *  ws_->var(name("N_bu", i, j))->getVal());
       }
     }
     if (bd_constr_) {
