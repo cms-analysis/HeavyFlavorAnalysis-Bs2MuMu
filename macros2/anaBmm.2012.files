@@ -14,7 +14,7 @@ type=cs,acc           dset=mc,1.00   lumi=0.36   file=dcap://t3se01.psi.ch:22125
 # normalization data and MC
 type=no,default       dset=data      lumi=12.8   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-2012-data.root
 # Making the no default tree, now points to acc
-type=no,default       dset=mc,0.0181 lumi=10.3   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-accBuToJpsiK.root 
+type=no,default       dset=mc,0.0181 lumi=10.3   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-BuToJpsiK.root 
 type=no,acc           dset=mc,1.00   lumi=0.22   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-accBuToJpsiK.root
 # ----------------------------------------------------------------------
 # rare background MC
