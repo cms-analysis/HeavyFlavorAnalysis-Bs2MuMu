@@ -1,9 +1,7 @@
 /*
  *  ul_estimate.cpp
- *  final_calculator
  *
  *  Created by Christoph Nägeli <christoph.naegeli@psi.ch> on 17.03.11.
- *  Copyright 2011 Christoph Nägeli. All rights reserved.
  *
  */
 
@@ -62,7 +60,7 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 	wspace->factory("mu_d[1,0,200]");	// initialize to standard model
 	
 	// global correlated variables of all channels
-	m = f_ratio();
+	m = f_ratio(); // the ratio
 	if ((m.getErrHi() > 0 || m.getErrLo() > 0) && !no_errors) {
 		wspace->factory(Form("fratio0[%e]",m.getVal()));
 		wspace->factory(Form("fratio[%e,0,10]",m.getVal()));
@@ -73,6 +71,19 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 		wspace->factory(Form("fratio[%e,0,10]",m.getVal()));
 		wspace->var("fratio")->setConstant(kTRUE);
 	}
+	// global correlated, branching ratio of normalization channel
+	m = bf_Bu2JpsiKp() * bf_PsiToMuMu();
+	if ((m.getErrHi() > 0 || m.getErrLo() > 0) && !no_errors) {
+		wspace->factory(Form("bfNorm0[%e]",m.getVal()));
+		wspace->factory(Form("bfNorm[%e,%e,%e]",m.getVal(),m.getVal()-10*m.getErrLo(),m.getVal()+10*m.getErrHi()));
+		wspace->factory(Form("bfNormErrHi[%e]",m.getErrHi()));
+		wspace->factory(Form("bfNormErrLo[%e]",m.getErrLo()));
+		wspace->factory("BifurGauss::bfNorm_Gauss(bfNorm,bfNorm0,bfNormErrLo,bfNormErrHi)");
+	} else {
+		wspace->factory(Form("bfNorm[%e,%e,%e]",m.getVal(),m.getVal()-10*m.getErrLo(),m.getVal()+10*m.getErrHi()));
+		wspace->var("bfNorm")->setConstant(kTRUE);
+	}
+
 	
 	// Create channel specific variables
 	for (chan = channels.begin(); chan != channels.end(); ++chan) {
@@ -100,7 +111,7 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 			wspace->factory(Form("TauSErrHi_%d[%e]",*chan,m.getErrHi()));
 			wspace->factory(Form("TauSErrLo_%d[%e]",*chan,m.getErrLo()));
 			wspace->factory(Form("TauS_%d[%e,%e,%e]",*chan,m.getVal(),0.0,1.0));
-			wspace->factory(Form("RooBifurGauss::TauS_Gauss_%d(TauS_%d,TauS0_%d,TauSErrLo_%d,TauSErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
+			wspace->factory(Form("BifurGauss::TauS_Gauss_%d(TauS_%d,TauS0_%d,TauSErrLo_%d,TauSErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
 		}
 		else {
 			wspace->factory(Form("TauS_%d[%e,0,10]",*chan, ((*bsmm)[make_pair(kTau_bmm, *chan)]).getVal()));
@@ -116,7 +127,7 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 			wspace->factory(Form("TauDErrHi_%d[%e]",*chan,m.getErrHi()));
 			wspace->factory(Form("TauDErrLo_%d[%e]",*chan,m.getErrLo()));
 			wspace->factory(Form("TauD_%d[%e,%e,%e]",*chan,m.getVal(),0.0,1.0));
-			wspace->factory(Form("RooBifurGauss::TauD_Gauss_%d(TauD_%d,TauD0_%d,TauDErrLo_%d,TauDErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
+			wspace->factory(Form("BifurGauss::TauD_Gauss_%d(TauD_%d,TauD0_%d,TauDErrLo_%d,TauDErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
 		} else {
 			wspace->factory(Form("TauD_%d[%e,0,10]",*chan,((*bdmm)[make_pair(kTau_bmm, *chan)]).getVal()));
 			wspace->var(Form("TauD_%d",*chan))->setConstant(kTRUE);
@@ -131,7 +142,7 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 			wspace->factory(Form("NuSUncorErrHi_%d[%e]", *chan, m.getErrHi())); // fixed error variable
 			wspace->factory(Form("NuSUncorErrLo_%d[%e]", *chan, m.getErrLo())); // fixed error variable
 			wspace->factory(Form("NuSUncor_%d[%e,%e,%e]", *chan, m.getVal(), 0.0, m.getVal() + 100*m.getErrHi()));
-			wspace->factory(Form("RooBifurGauss::NuSUncor_Gauss_%d(NuSUncor_%d,NuSUncor0_%d,NuSUncorErrLo_%d,NuSUncorErrHi_%d)",*chan,*chan,*chan,*chan,*chan)); // error gaussian
+			wspace->factory(Form("BifurGauss::NuSUncor_Gauss_%d(NuSUncor_%d,NuSUncor0_%d,NuSUncorErrLo_%d,NuSUncorErrHi_%d)",*chan,*chan,*chan,*chan,*chan)); // error gaussian
 		} else { // no error associated to this variable
 			wspace->factory(Form("NuSUncor_%d[%e,0,100]", *chan, ((*bsmm)[make_pair(kExpUncor_bmm, *chan)]).getVal()));
 			wspace->var(Form("NuSUncor_%d", *chan))->setConstant(kTRUE);
@@ -140,17 +151,17 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 		/////////////////////////
 		// Construction of NuD //
 		/////////////////////////
-		if ( (((*bdmm)[make_pair(kExp_bmm, *chan)]).getErrHi() > 0 || ((*bdmm)[make_pair(kExp_bmm, *chan)]).getErrLo() > 0) && !no_errors ) {
-			m = (*bdmm)[make_pair(kExp_bmm, *chan)];
-			wspace->factory(Form("NuD0_%d[%e]", *chan, m.getVal())); // fixed mean variable
-			wspace->factory(Form("NuDErrHi_%d[%e]", *chan, m.getErrHi())); // fixed error variable
-			wspace->factory(Form("NuDErrLo_%d[%e]", *chan, m.getErrLo())); // fixed error variable
-			wspace->factory(Form("NuD_%d[%e,%e,%e]", *chan, m.getVal(), 0.0, m.getVal() + 100*m.getErrHi()));
-			wspace->factory(Form("RooBifurGauss::NuD_Gauss_%d(NuD_%d,NuD0_%d,NuDErrLo_%d,NuDErrHi_%d)",*chan,*chan,*chan,*chan,*chan)); // error gaussian
+		if ( (((*bdmm)[make_pair(kExpUncor_bmm, *chan)]).getErrHi() > 0 || ((*bdmm)[make_pair(kExpUncor_bmm, *chan)]).getErrLo() > 0) && !no_errors ) {
+			m = (*bdmm)[make_pair(kExpUncor_bmm, *chan)];
+			wspace->factory(Form("NuDUncor0_%d[%e]", *chan, m.getVal())); // fixed mean variable
+			wspace->factory(Form("NuDUncorErrHi_%d[%e]", *chan, m.getErrHi())); // fixed error variable
+			wspace->factory(Form("NuDUncorErrLo_%d[%e]", *chan, m.getErrLo())); // fixed error variable
+			wspace->factory(Form("NuDUncor_%d[%e,%e,%e]", *chan, m.getVal(), 0.0, m.getVal() + 100*m.getErrHi()));
+			wspace->factory(Form("BifurGauss::NuDUncor_Gauss_%d(NuDUncor_%d,NuDUncor0_%d,NuDUncorErrLo_%d,NuDUncorErrHi_%d)",*chan,*chan,*chan,*chan,*chan)); // error gaussian
 		} else {
 			// no error assigned, just make a constant
-			wspace->factory(Form("NuD_%d[%e,0,100]", *chan, ((*bdmm)[make_pair(kExp_bmm, *chan)]).getVal()));
-			wspace->var(Form("NuD_%d",*chan))->setConstant(kTRUE);
+			wspace->factory(Form("NuDUncor_%d[%e,0,100]", *chan, ((*bdmm)[make_pair(kExpUncor_bmm, *chan)]).getVal()));
+			wspace->var(Form("NuDUncor_%d",*chan))->setConstant(kTRUE);
 		}
 		
 		/////////////////////////
@@ -162,7 +173,7 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 			wspace->factory(Form("PssErrHi_%d[%e]", *chan, m.getErrHi()));
 			wspace->factory(Form("PssErrLo_%d[%e]", *chan, m.getErrLo()));
 			wspace->factory(Form("Pss_%d[%e,%e,%e]", *chan, m.getVal(), 0.0, 1.0));
-			wspace->factory(Form("RooBifurGauss::Pss_Gauss_%d(Pss_%d,Pss0_%d,PssErrLo_%d,PssErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
+			wspace->factory(Form("BifurGauss::Pss_Gauss_%d(Pss_%d,Pss0_%d,PssErrLo_%d,PssErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
 		} else {
 			// no error assigned, just make a constant.
 			wspace->factory(Form("Pss_%d[%e,0,1]", *chan, ((*bsmm)[make_pair(kProb_swind_bmm, *chan)]).getVal()));
@@ -178,7 +189,7 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 			wspace->factory(Form("PsdErrHi_%d[%e]",*chan,m.getErrHi()));
 			wspace->factory(Form("PsdErrLo_%d[%e]",*chan,m.getErrLo()));
 			wspace->factory(Form("Psd_%d[%e,%e,%e]", *chan, m.getVal(), 0.0, 1.0));
-			wspace->factory(Form("RooBifurGauss::Psd_Gauss_%d(Psd_%d,Psd0_%d,PsdErrLo_%d,PsdErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
+			wspace->factory(Form("BifurGauss::Psd_Gauss_%d(Psd_%d,Psd0_%d,PsdErrLo_%d,PsdErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
 		} else {
 			// no error assigned, just make a constant.
 			wspace->factory(Form("Psd_%d[%e,0,1]", *chan, ((*bdmm)[make_pair(kProb_swind_bmm, *chan)]).getVal()));
@@ -194,7 +205,7 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 			wspace->factory(Form("PdsErrHi_%d[%e]",*chan,m.getErrHi()));
 			wspace->factory(Form("PdsErrLo_%d[%e]",*chan,m.getErrLo()));
 			wspace->factory(Form("Pds_%d[%e,%e,%e]",*chan,m.getVal(),0.0,1.0));
-			wspace->factory(Form("RooBifurGauss::Pds_Gauss_%d(Pds_%d,Pds0_%d,PdsErrLo_%d,PdsErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
+			wspace->factory(Form("BifurGauss::Pds_Gauss_%d(Pds_%d,Pds0_%d,PdsErrLo_%d,PdsErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
 		} else {
 			// no error assigned, just make a constant.
 			wspace->factory(Form("Pds_%d[%e,0,1]", *chan, ((*bsmm)[make_pair(kProb_dwind_bmm, *chan)]).getVal()));
@@ -210,7 +221,7 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 			wspace->factory(Form("PddErrHi_%d[%e]",*chan,m.getErrHi()));
 			wspace->factory(Form("PddErrLo_%d[%e]",*chan,m.getErrLo()));
 			wspace->factory(Form("Pdd_%d[%e,%e,%e]",*chan,m.getVal(),0.0,1.0));
-			wspace->factory(Form("RooBifurGauss::Pdd_Gauss_%d(Pdd_%d,Pdd0_%d,PddErrLo_%d,PddErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
+			wspace->factory(Form("BifurGauss::Pdd_Gauss_%d(Pdd_%d,Pdd0_%d,PddErrLo_%d,PddErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
 		} else {
 			wspace->factory(Form("Pdd_%d[%e,0,1]", *chan, ((*bdmm)[make_pair(kProb_dwind_bmm, *chan)]).getVal()));
 			wspace->var(Form("Pdd_%d",*chan))->setConstant(kTRUE);
@@ -225,7 +236,7 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 			wspace->factory(Form("PeakBkgSBErrHi_%d[%e]",*chan,m.getErrHi()));
 			wspace->factory(Form("PeakBkgSBErrLo_%d[%e]",*chan,m.getErrLo()));
 			wspace->factory(Form("PeakBkgSB_%d[%e,%e,%e]",*chan,m.getVal(),0.0,m.getVal() + 10*m.getErrHi()));
-			wspace->factory(Form("RooBifurGauss::PeakBkgSB_Gauss_%d(PeakBkgSB_%d,PeakBkgSB0_%d,PeakBkgSBErrLo_%d,PeakBkgSBErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
+			wspace->factory(Form("BifurGauss::PeakBkgSB_Gauss_%d(PeakBkgSB_%d,PeakBkgSB0_%d,PeakBkgSBErrLo_%d,PeakBkgSBErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
 		} else {
 			wspace->factory(Form("PeakBkgSB_%d[%e,0,50]", *chan, ((*bsmm)[make_pair(kPeakBkgOff_bmm, *chan)]).getVal()));
 			wspace->var(Form("PeakBkgSB_%d",*chan))->setConstant(kTRUE);
@@ -237,7 +248,7 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 			wspace->factory(Form("PeakBkgBsErrHi_%d[%e]",*chan,m.getErrHi()));
 			wspace->factory(Form("PeakBkgBsErrLo_%d[%e]",*chan,m.getErrLo()));
 			wspace->factory(Form("PeakBkgBs_%d[%e,%e,%e]",*chan,m.getVal(),0.0,m.getVal() + 10*m.getErrHi()));
-			wspace->factory(Form("RooBifurGauss::PeakBkgBs_Gauss_%d(PeakBkgBs_%d,PeakBkgBs0_%d,PeakBkgBsErrLo_%d,PeakBkgBsErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
+			wspace->factory(Form("BifurGauss::PeakBkgBs_Gauss_%d(PeakBkgBs_%d,PeakBkgBs0_%d,PeakBkgBsErrLo_%d,PeakBkgBsErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
 		} else {
 			wspace->factory(Form("PeakBkgBs_%d[%e,0,50]",*chan,((*bsmm)[make_pair(kPeakBkgOn_bmm, *chan)]).getVal()));
 			wspace->var(Form("PeakBkgBs_%d",*chan))->setConstant(kTRUE);
@@ -249,7 +260,7 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 			wspace->factory(Form("PeakBkgBdErrHi_%d[%e]",*chan,m.getErrHi()));
 			wspace->factory(Form("PeakBkgBdErrLo_%d[%e]",*chan,m.getErrLo()));
 			wspace->factory(Form("PeakBkgBd_%d[%e,%e,%e]",*chan, m.getVal(), 0.0 ,m.getVal() + 10*m.getErrHi()));
-			wspace->factory(Form("RooBifurGauss::PeakBkgBd_Gauss_%d(PeakBkgBd_%d,PeakBkgBd0_%d,PeakBkgBdErrLo_%d,PeakBkgBdErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
+			wspace->factory(Form("BifurGauss::PeakBkgBd_Gauss_%d(PeakBkgBd_%d,PeakBkgBd0_%d,PeakBkgBdErrLo_%d,PeakBkgBdErrHi_%d)",*chan,*chan,*chan,*chan,*chan));
 		} else {
 			wspace->factory(Form("PeakBkgBd_%d[%e,0,50]",*chan,((*bdmm)[make_pair(kPeakBkgOn_bmm, *chan)]).getVal()));
 			wspace->var(Form("PeakBkgBd_%d",*chan))->setConstant(kTRUE);
@@ -258,7 +269,8 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 		//////////////////////////////
 		// Construction of formulas //
 		//////////////////////////////
-		wspace->factory(Form("FormulaVar::NuS_%d(\"fratio*NuSUncor_%d\",{fratio,NuSUncor_%d})",*chan,*chan,*chan));
+		wspace->factory(Form("FormulaVar::NuS_%d(\"fratio*NuSUncor_%d/bfNorm\",{fratio,NuSUncor_%d,bfNorm})",*chan,*chan,*chan));
+		wspace->factory(Form("FormulaVar::NuD_%d(\"NuDUncor_%d/bfNorm\",{NuDUncor_%d,bfNorm})",*chan,*chan,*chan));
 		wspace->factory(Form("FormulaVar::bkg_mean_%d(\"nu_b_%d + PeakBkgSB_%d\",{nu_b_%d,PeakBkgSB_%d})",*chan,*chan,*chan,*chan,*chan));
 		wspace->factory(Form("FormulaVar::bs_mean_%d(\"TauS_%d*nu_b_%d + PeakBkgBs_%d + Pss_%d*NuS_%d*mu_s + Psd_%d*NuD_%d*mu_d\",{TauS_%d,nu_b_%d,PeakBkgBs_%d,Pss_%d,NuS_%d,mu_s,Psd_%d,NuD_%d,mu_d})",*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan));
 		wspace->factory(Form("FormulaVar::bd_mean_%d(\"TauD_%d*nu_b_%d + PeakBkgBd_%d + Pds_%d*NuS_%d*mu_s + Pdd_%d*NuD_%d*mu_d\",{TauD_%d,nu_b_%d,PeakBkgBd_%d,Pds_%d,NuS_%d,mu_s,Pdd_%d,NuD_%d,mu_d})",*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan,*chan));
@@ -572,7 +584,7 @@ void est_int_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *chann
 			nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
 		} else {
 			for (it = channels->begin(); it != channels->end(); ++it)
-				beta += wspace->var(Form("Pdd_%d",*it))->getVal() * wspace->var(Form("NuD_%d",*it))->getVal();
+				beta += wspace->var(Form("Pdd_%d",*it))->getVal() * wspace->function(Form("NuD_%d",*it))->getVal();
 			
 			obs = beta * wspace->var("mu_d")->getVal();
 			beta = 1./beta; // beta is actually the inverse thereof in RooFit
@@ -714,7 +726,7 @@ void est_ul_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channe
 			nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
 		} else {
 			for (it = channels->begin(); it != channels->end(); ++it)
-				beta += wspace->var(Form("Pdd_%d",*it))->getVal() * wspace->var(Form("NuD_%d",*it))->getVal();
+				beta += wspace->var(Form("Pdd_%d",*it))->getVal() * wspace->function(Form("NuD_%d",*it))->getVal();
 			
 			obs = beta * wspace->var("mu_d")->getVal();
 			beta = 1./beta; // beta is actually the inverse thereof in RooFit
@@ -906,7 +918,7 @@ void est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *ch
 			nui_sampling_list->add(*wspace->pdf("mu_prior_gamma"));
 		} else {
 			for (set<int>::const_iterator it = channels->begin(); it != channels->end(); ++it)
-				beta += wspace->var(Form("Pdd_%d",*it))->getVal() * wspace->var(Form("NuD_%d",*it))->getVal();
+				beta += wspace->var(Form("Pdd_%d",*it))->getVal() * wspace->function(Form("NuD_%d",*it))->getVal();
 			
 			obs = beta * wspace->var("mu_d")->getVal();
 			beta = 1./beta; // beta is actually the inverse thereof in RooFit
@@ -1073,7 +1085,8 @@ void compute_vars(map<bmm_param,measurement_t> *bmm, bool bstomumu)
 	set<int> channels;
 	set<int>::const_iterator it;
 	measurement_t tot_bplus(0,0,0),nu(0,0,0);
-	measurement_t c = bstomumu ? c_s_theory() : c_d_theory();
+	measurement_t bf_signal = bstomumu ? bf_BsToMuMu() : bf_BdToMuMu();
+	measurement_t bf_norm = bf_Bu2JpsiKp() * bf_PsiToMuMu();
 	measurement_t f_rat = f_ratio();
 	
 	add_channels(bmm, &channels);
@@ -1085,8 +1098,10 @@ void compute_vars(map<bmm_param,measurement_t> *bmm, bool bstomumu)
 		else
 			tot_bplus = (*bmm)[make_pair(kObs_bplus, *it)] / compute_efftot_bplus(bmm,*it);
 		
-		nu = c * compute_efftot_bmm(bmm,*it) * tot_bplus;
+		nu = compute_efftot_bmm(bmm,*it) * tot_bplus * bf_signal;
 		(*bmm)[make_pair(kExpUncor_bmm, *it)] = nu; // uncorrelated error from measurements
+		
+		nu = nu / bf_norm;
 		
 		if (bstomumu) nu = nu * f_rat;
 		(*bmm)[make_pair(kExp_bmm, *it)] = nu; // for convenience compute expectation as well.

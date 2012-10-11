@@ -222,14 +222,14 @@ bmm_param_tag find_bmm_param_by_name(std::string name, bool *bsparam)
 	return result;
 } // find_bmm_param_by_name()
 
-const measurement_t c_s_theory()
+const measurement_t bf_ratio_bsmm()
 {
 	measurement_t c_s = sm_bstomumu / (bptojpsik * jpsitomumu);
 	
 	return c_s;
 } // c_s_theory()
 
-const measurement_t c_d_theory()
+const measurement_t bf_ratio_bdmm()
 {
 	measurement_t c_d = sm_bdtomumu / (bptojpsik * jpsitomumu);
 	return c_d;

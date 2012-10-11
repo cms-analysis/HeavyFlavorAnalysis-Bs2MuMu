@@ -108,8 +108,8 @@ class measurement_t {
 };
 
 /* external constants */
-const measurement_t c_s_theory();
-const measurement_t c_d_theory();
+const measurement_t bf_ratio_bsmm();
+const measurement_t bf_ratio_bdmm();
 const measurement_t f_ratio();
 const measurement_t f_ratio_lb();
 
