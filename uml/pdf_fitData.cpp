@@ -309,7 +309,7 @@ void pdf_fitData::print_each_channel() {
         fitresult_tex << setprecision(4) << scientific << "BF = " << N_bs->getVal() << " ^{+" << getErrorHigh(N_bs) << "}_{" << getErrorLow(N_bs) << "}";
         fitresult_tex_vec.push_back(fitresult_tex.str());
         ostringstream fitresult_tex2;
-        fitresult_tex2 << "(N_(B_{s} = " << setprecision(2) << fixed << ws_->function(name("N_bs_formula", i, j))->getVal() << ")";
+        fitresult_tex2 << "(N_(B_{s} = " << setprecision(2) << fixed << ws_->function(name("N_bs_formula", i, j))->getVal() << "))";
         fitresult_tex_vec.push_back(fitresult_tex2.str());
       }
       if (!bd_constr_ && !SM_) {
@@ -487,7 +487,8 @@ void pdf_fitData::changeName(RooWorkspace *ws, int str) {
 void pdf_fitData::make_pdf_input() {
   cout << "making inputs of pdf" << endl;
   string root_s = "output/ws_pdf_" + meth_ + "_";
-  if (simul_) root_s = "output/ws_simul_" + meth_;
+  ostringstream inputs_oss; inputs_oss << channels;
+  if (simul_) root_s = "output/ws_simul" + inputs_oss.str() + "_" + meth_;
   if (simul_bdt_) root_s += "_simulBdt";
   string tail_s;
   if (BF_) tail_s = "_BF";

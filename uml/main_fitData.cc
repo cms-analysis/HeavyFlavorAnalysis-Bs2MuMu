@@ -38,12 +38,12 @@ int main(int argc, char** argv) {
 
   pdf_fitData* fitdata = new pdf_fitData(false, inputs, inputs_bdt, input_estimates, meth, "all", BF, SM, bd_const, data_t, simul, simul_bdt, pee, bdt_fit, ch_s, sig_meth);
   fitdata->initialize();
-  fitdata->setnewlumi();
   fitdata->make_pdf_input();
   fitdata->make_pdf();
-  if (strcmp(rare_f.c_str(),"no")) fitdata->set_rare_normalization(rare_f, true);
+  fitdata->setnewlumi();
+  //if (strcmp(rare_f.c_str(),"no")) fitdata->set_rare_normalization(rare_f, true);
 
-  vector <double> cuts_v(2, -10);
+  vector <double> cuts_v(inputs, -10);
   if (cuts_f_b) cuts_v = cut_bdt_file();
   TF1* MassRes_h = Fit_MassRes("input/small-SgMc.root", cuts_b ? cuts : "", cuts_v);
   fitdata->make_dataset(cuts_f_b, cuts_v, MassRes_h, cuts_b ? cuts : "");

@@ -148,7 +148,7 @@ protected:
   vector < string > source;
 
   void parse_external_numbers(string filename);
-  void parse_efficiency_numbers(string filename);
+  void parse_efficiency_numbers(string filename, int offset = 0);
 
   double Bs2MuMu_SM_BF_val;
   double Bs2MuMu_SM_BF_err;

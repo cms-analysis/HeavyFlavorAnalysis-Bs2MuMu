@@ -78,7 +78,7 @@ void pdf_analysis::initialize () {
   obs = new RooArgSet(*ws_->var("Mass"), *ws_->var("bdt"), "obs");
   //ws_->import(*obs, RecycleConflictNodes());
 
-  getBFnumbers("./input/anaBmm.plotResults.default-11.tex", "input/external_numbers.txt");
+  getBFnumbers("anaBmm.plotResults.default-11.tex", "input/external_numbers.txt");
 
 }
 
@@ -597,7 +597,7 @@ void pdf_analysis::print(RooAbsData* data, string output) {
   RooPlot *rp = ws_->var("Mass")->frame();
   RooPlot *rp_bdt = ws_->var("bdt")->frame();
   data->plotOn(rp, Binning(20));
-  data->plotOn(rp_bdt, Binning(20));
+  if (bdt_fit_) data->plotOn(rp_bdt, Binning(20));
   if (!pee) {
     ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue));
     if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue));
@@ -1019,24 +1019,39 @@ void pdf_analysis::getBFnumbers(string eff_filename, string numbers_filename) {
   parse_external_numbers(numbers_filename);
   if (simul_bdt_) { cout << "I don't have efficiencies for the bdt channels..." << endl; return;}
   parse_efficiency_numbers(eff_filename);
+  if (channels == 4) parse_efficiency_numbers(eff_filename, 2);
 }
 
-void pdf_analysis::parse_efficiency_numbers(string filename) {
-  cout << "parsing " << filename << endl;
+void pdf_analysis::parse_efficiency_numbers(string filename, int offset) {
 
-  FILE *file = fopen(filename.c_str(), "r");
-  if (!file) {cout << "file " << filename << " does not exist"; exit(1);}
+  string file_address = "./input/";
+  int channels_;
+  if (offset == 0) {
+    file_address += "2011/" + filename;
+    channels_ = channels;
+  }
+  else if (offset == 2) {
+    file_address += "2012/" + filename;
+    channels_ = channels / 2;
+  }
+  else {
+    cout << "not ready " << endl;
+    exit(1);
+  }
+  cout << "parsing " << file_address << endl;
+  FILE *file = fopen(file_address.c_str(), "r");
+  if (!file) {cout << "file " << file_address << " does not exist"; exit(1);}
 
   char buffer[2048];
   char left[1024];
   double number;
 
-  vector < pair<string, string> > end_bd(channels);
-  vector < pair<string, string> > end_bs(channels);
-  vector < pair<string, string> > end_bu(channels);
-  vector < pair<string, string> > end_Nbu(channels);
+  vector < pair<string, string> > end_bd(channels_);
+  vector < pair<string, string> > end_bs(channels_);
+  vector < pair<string, string> > end_bu(channels_);
+  vector < pair<string, string> > end_Nbu(channels_);
   int ii = -1;
-  for (int i = 0; i < channels; i++) {
+  for (int i = 0; i < channels_; i++) {
     if (simul_) ii = i;
     else ii = ch_i_;
     end_bd[i] = make_pair(Form("N-EFF-TOT-BDMM%d:val", ii), Form("N-EFF-TOT-BDMM%d:tot", ii));
@@ -1051,34 +1066,34 @@ void pdf_analysis::parse_efficiency_numbers(string filename) {
     if (buffer[0] == '\040') continue;
     sscanf(buffer, "%s   {\\ensuremath{{%lf } } }", left, &number);
     string left_s(left);
-    for (int i = 0; i < channels; i++) {
+    for (int i = 0; i < channels_; i++) {
       size_t found;
       found = left_s.find(end_bd[i].first);
-      if (found != string::npos) eff_bd_val[i] = number;
+      if (found != string::npos) eff_bd_val[i+offset] = number;
       found = left_s.find(end_bd[i].second);
-      if (found != string::npos)eff_bd_err[i] = number;
+      if (found != string::npos)eff_bd_err[i+offset] = number;
       found = left_s.find(end_bs[i].first);
-      if (found != string::npos) eff_bs_val[i] = number;
+      if (found != string::npos) eff_bs_val[i+offset] = number;
       found = left_s.find(end_bs[i].second);
-      if (found != string::npos) eff_bs_err[i] = number;
+      if (found != string::npos) eff_bs_err[i+offset] = number;
       found = left_s.find(end_bu[i].first);
-      if (found != string::npos) eff_bu_val[i] = number;
+      if (found != string::npos) eff_bu_val[i+offset] = number;
       found = left_s.find(end_bu[i].second);
-      if (found != string::npos) eff_bu_err[i] = number;
+      if (found != string::npos) eff_bu_err[i+offset] = number;
       found = left_s.find(end_Nbu[i].first);
-      if (found != string::npos) N_bu_val[i] = number;
+      if (found != string::npos) N_bu_val[i+offset] = number;
       found = left_s.find(end_Nbu[i].second);
-      if (found != string::npos) N_bu_err[i] = number;
+      if (found != string::npos) N_bu_err[i+offset] = number;
     }
   }
-  for (int i = 0; i < channels; i++) {
+  for (int i = 0; i < channels_ && i < 2; i++) {
     if (simul_) ii = i;
     else ii = ch_i_;
-    cout << "etacat " << ii << endl;
-    cout << "bd eff = " << eff_bd_val[i] << " \\pm " << eff_bd_err[i] << endl;
-    cout << "bs eff = " << eff_bs_val[i] << " \\pm " << eff_bs_err[i] << endl;
-    cout << "bu eff = " << eff_bu_val[i] << " \\pm " << eff_bu_err[i] << endl;
-    cout << "N bu   = " << N_bu_val[i] << " \\pm " << N_bu_err[i] << endl;
+    cout << "etacat " << ii + offset << endl;
+    cout << "bd eff = " << eff_bd_val[i+offset] << " \\pm " << eff_bd_err[i+offset] << endl;
+    cout << "bs eff = " << eff_bs_val[i+offset] << " \\pm " << eff_bs_err[i+offset] << endl;
+    cout << "bu eff = " << eff_bu_val[i+offset] << " \\pm " << eff_bu_err[i+offset] << endl;
+    cout << "N bu   = " << N_bu_val[i+offset] << " \\pm " << N_bu_err[i+offset] << endl;
     cout << endl;
   }
 }

@@ -38,6 +38,7 @@ static int inputs = 1;
 static int inputs_bdt = 1;
 static int sig_meth = -1;
 static string cuts = "bdt>-10.";
+static string years_opt = "0";
 bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
@@ -61,6 +62,7 @@ void help() {
   cout << "-pee \t per-event-error" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;
   cout << "-rare #filename \t file with rare event estimations (for normalizing to B -> JpsiK)" << endl;
+  cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_fitData.o: fits events with pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-i #filename \t input for fitting events (MANDATORY)" << endl;
@@ -80,6 +82,7 @@ void help() {
   cout << "-bdt_fit \t bdt_fit" << endl;
   cout << "-cuts #cutstring \t string cut for small tree: i.e. \"bdt>0.&&bdt<0.18\"; default is \"" << cuts << "\"" << endl;
   cout << "-cuts_file \t file containing bdt cuts for small tree" << endl;
+  cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -100,6 +103,7 @@ void help() {
   cout << "-pee \t per-event-error" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;
   cout << "-sig # \t evaluate significance with method:" << endl << "\t\t 0 by hand; " << endl;
+  cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << endl;
 
   exit(EXIT_SUCCESS);
@@ -228,6 +232,10 @@ void parse_options(int argc, char* argv[]){
       bdt_fit = true;
       cout << "2D fit with mass and bdt" << endl;
     }
+    if (!strcmp(argv[i],"-y")) {
+      years_opt = argv[i+1];
+      cout << "years: " << years_opt << endl;
+    }
     if (!strcmp(argv[i],"-h")) help();
   }
 }
@@ -272,13 +280,14 @@ void parse_input (string input) {
   }
 }
 
-void get_rare_normalization(string filename) {
+void get_rare_normalization(string filename, string dir, int offset = 0) {
 
   string peakdecays[] = {"bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgLb2KP", "bgLb2PiP"};
   string semidecays[] = {"bgBd2PiMuNu", "bgBs2KMuNu", "bgLb2PMuNu"};
 
-  FILE *file = fopen(filename.c_str(), "r");
-  if (!file) {cout << "file " << filename << " does not exist"; exit(1);}
+  string full_address = dir + filename;
+  FILE *file = fopen(full_address.c_str(), "r");
+  if (!file) {cout << "file " << full_address << " does not exist"; exit(1);}
 
   char buffer[1024];
   char left[1024];
@@ -329,10 +338,11 @@ void get_rare_normalization(string filename) {
   }
   fclose(file);
 
-  FILE* file_out = fopen("input/rare_frac.txt", "w");
+  string full_output = dir + "/rare_frac.txt";
+  FILE* file_out = fopen(full_output.c_str(), "w");
   for (int i = 0; i < 2; i++) {
-    fprintf(file_out, "N_rare_%d\t%f\n", i, peak_exp[i]+semi_exp[i]);
-    fprintf(file_out, "peakfrac_rare_%d\t%f\n", i, peak_exp[i]/(peak_exp[i]+semi_exp[i]));
+    fprintf(file_out, "N_rare_%d\t%f\n", i+offset, peak_exp[i]+semi_exp[i]);
+    fprintf(file_out, "peakfrac_rare_%d\t%f\n", i+offset, peak_exp[i]/(peak_exp[i]+semi_exp[i]));
     fprintf(file_out, "######\n");
   }
   fclose(file_out);
@@ -342,18 +352,21 @@ vector <double> cut_bdt_file() {
   FILE *file = fopen(cuts_f.c_str(), "r");
   if (!file) {cout << "file " << cuts_f << " does not exist"; exit(1);}
   char buffer[1024];
-  vector <double> bdt_(2);
+  vector <double> bdt_(4);
   while (fgets(buffer, sizeof(buffer), file)) {
     if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
     if (buffer[0] == '#') continue;
     sscanf(buffer, "bdt_0\t%lf", &bdt_[0]);
     sscanf(buffer, "bdt_1\t%lf", &bdt_[1]);
+    sscanf(buffer, "bdt_2\t%lf", &bdt_[2]);
+    sscanf(buffer, "bdt_3\t%lf", &bdt_[3]);
   }
   cout << "bdt_0 cut = " << bdt_[0] << "; bdt_1 cut = " << bdt_[1] << endl;
+  cout << "bdt_2 cut = " << bdt_[2] << "; bdt_3 cut = " << bdt_[3] << endl;
   return bdt_;
 }
 
-TObjArray Create_MassRes(TTree* tree, std::string cuts, vector <double> cuts_v) {
+TObjArray Create_MassRes(TTree* tree, std::string cuts, vector <double> cuts_v, int year = 0) {
   TH2D* MassRes_hh = new TH2D("MassRes_hh", "MassRes_hh", 100, 4.9, 5.9, 40, -2.4, 2.4);
   TTree* reduced_tree = tree->CopyTree(cuts.c_str());
   Double_t m_t, eta_t, bdt_t, m1eta_t, m2eta_t;
@@ -365,10 +378,10 @@ TObjArray Create_MassRes(TTree* tree, std::string cuts, vector <double> cuts_v) 
   for (int j = 0; j < reduced_tree->GetEntries(); j++) {
     reduced_tree->GetEntry(j);
     if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) {
-      if (cuts_f_b && bdt_t < cuts_v[0]) continue;
+      if (cuts_f_b && bdt_t < cuts_v[0 + 2*year]) continue;
     }
     else {
-      if (cuts_f_b && bdt_t < cuts_v[1]) continue;
+      if (cuts_f_b && bdt_t < cuts_v[1 + 2*year]) continue;
     }
     MassRes_hh->Fill(m_t, eta_t);
   }
@@ -377,11 +390,11 @@ TObjArray Create_MassRes(TTree* tree, std::string cuts, vector <double> cuts_v) 
   return aSlices;
 }
 
-TF1* Fit_MassRes(std::string file, std::string cuts, vector <double> cuts_v) {
+TF1* Fit_MassRes(std::string file, std::string cuts, vector <double> cuts_v, int year = 0) {
   std::cout << "Mass resolution fit" << std::endl;
   TFile* MassRes_f = new TFile(file.c_str(), "UPDATE");
   TTree* MassRes_t = (TTree*)MassRes_f->Get("SgMc_bdt");
-  TObjArray MassRes_toa = Create_MassRes(MassRes_t, cuts, cuts_v);
+  TObjArray MassRes_toa = Create_MassRes(MassRes_t, cuts, cuts_v, year);
   TH1D* MassRes_h = (TH1D*)MassRes_toa[2];
   MassRes_h->Fit("pol6");
   TF1* MassRes_fit = MassRes_h->GetFunction("pol6");
