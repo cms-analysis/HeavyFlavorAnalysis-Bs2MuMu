@@ -1,4 +1,5 @@
 # fit 2D (20fb-1)
+lumi    20
 bs_0    72
 bd_0    8
 rare_0  104

@@ -28,7 +28,7 @@ using namespace RooStats;
 
 class pdf_fitData : public pdf_analysis {
   public:
-    pdf_fitData(bool print, int inputs = 1, int inputs_bdt = 1, string input_estimates = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, bool simul = false, bool simulbdt = false, bool pee_ = false , bool bdt_fit = false , string ch_s = "0", int sig = -1);
+    pdf_fitData(bool print, int inputs = 1, int inputs_bdt = 1, string input_estimates = "", string meth = "bdt", string range = "all", bool BF = false, bool SM = false, bool bd_constr = false, TTree *input_tree = 0, bool simul = false, bool simulbdt = false, bool pee_ = false , bool bdt_fit = false , string ch_s = "0", int sig = -1);
     ~pdf_fitData();
     void print();
     void print_each_channel();
@@ -46,12 +46,7 @@ class pdf_fitData : public pdf_analysis {
     void significance();
     void save();
 
-    vector <pair <double, double> > eff_bd;
-    vector <pair <double, double> > eff_bs;
-    vector <pair <double, double> > eff_bu;
-    vector <pair <double, double> > N_bu;
-    vector <pair <double, double> > BF_bs;
-    vector <pair <double, double> > BF_bd;
+    double lumi;
 
   protected:
 
@@ -90,14 +85,6 @@ class pdf_fitData : public pdf_analysis {
     void sig_hybrid_roplhts();
     void make_prior();
     void make_models();
-
-    void parse_external_numbers(string filename);
-    void parse_efficiency_numbers(string filename);
-
-    pair <double, double> fs_over_fu;
-    pair <double, double> Jpsi2MuMu_BF;
-    pair <double, double> Bu2JpsiK_BF;
-
 
 };
 

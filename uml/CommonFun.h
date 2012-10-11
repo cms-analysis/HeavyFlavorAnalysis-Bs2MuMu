@@ -30,6 +30,7 @@ static string rare_f = "no";
 static bool print = false;
 static bool simul = false;
 static bool simul_bdt = false;
+static bool BF = false;
 static int NExp = 1;
 static int ch_i = -1;
 static int ch_bdt_i = -1;
@@ -51,6 +52,7 @@ void help() {
   cout << "\t -cha {0, 1} \t barrel OR endcap input" << endl;
   cout << "\t -simul # \t simultaneous fit of # eta channels" << endl;
   cout << "\t -simul_bdt # \t simultaneous fit of # bdt channels" << endl;
+  cout << "-BF \t imposing the same BF in each channel" << endl;
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
   cout << "-print \t save the fits to gif and pdf if -no_legend without parameters on canvas" << endl;
@@ -67,6 +69,7 @@ void help() {
   cout << "-cha {0, 1} \t barrel OR endcap input, incompatible with -simul" << endl;
   cout << "\t -simul # \t simultaneous fit of # eta channels" << endl;
   cout << "\t -simul_bdt # \t simultaneous fit of # bdt channels" << endl;
+  cout << "-BF \t imposing the same BF in each channel" << endl;
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
   cout << "-print \t save the fits to gif and pdf --> -no_legend without parameters on canvas" << endl;
@@ -84,6 +87,7 @@ void help() {
   cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (MANDATORY)" << endl;
   cout << "-roomcs \t toy mc with RooMCStudy, otherwise by hand" << endl;
   cout << "-nexp # \t number of experiments (default 1)" << endl;
+  cout << "-BF \t imposing the same BF in each channel" << endl;
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
   cout << "if simultaneous: " << endl;
@@ -163,6 +167,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-roomcs")) {
       cout << "using RooMCStudy" << endl;
       roomcs = true;
+    }
+    if (!strcmp(argv[i],"-BF")) {
+      cout << "Branching fraction" << endl;
+      BF = true;
     }
     if (!strcmp(argv[i],"-SM")) {
       cout << "SM constraints" << endl;

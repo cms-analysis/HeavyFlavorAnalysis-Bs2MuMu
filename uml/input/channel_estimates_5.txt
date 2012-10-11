@@ -1,0 +1,12 @@
+# fit 1D (5 fb-1):
+lumi   5
+bs_0   4
+bd_0   0
+rare_0 6
+comb_0  20
+#########
+bs_1   2
+bd_1   0
+rare_1 2
+comb_1 6
+

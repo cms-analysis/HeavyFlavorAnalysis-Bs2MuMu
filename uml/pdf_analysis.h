@@ -47,7 +47,7 @@ using namespace RooFit;
 
 class pdf_analysis {
 public:
-  pdf_analysis(bool print, string meth = "bdt", string ch_s = "0", string range = "all", bool SM = false, bool bd_constr = false, bool simul = false, bool simulbdt = false, bool pee_ = false, bool bdt_fit = false);
+  pdf_analysis(bool print, string meth = "bdt", string ch_s = "0", string range = "all", bool BF = false, bool SM = false, bool bd_constr = false, bool simul = false, bool simulbdt = false, bool pee_ = false, bool bdt_fit = false);
   void set_ws(RooWorkspace *ws) {ws_ = ws;}
   RooWorkspace* get_ws() {return ws_;}
 
@@ -80,6 +80,9 @@ public:
 
   void define_simul(bool simulbdt);
 
+  void getBFnumbers(string eff_filename, string numbers_filename);
+  void define_bf(int i, int j);
+
   void fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error = true, bool hesse = true);
   void print(RooAbsData *data, string output = "");
   void set_pdf_constant(string pdf);
@@ -93,6 +96,7 @@ public:
   bool bd_constr_;
   bool simul_;
   bool simul_bdt_;
+  bool BF_;
   RooRealVar* Mass;
   RooRealVar* MassRes;
   RooRealVar* bdt;
@@ -142,6 +146,32 @@ protected:
   RooArgSet* obs;
 
   vector < string > source;
+
+  void parse_external_numbers(string filename);
+  void parse_efficiency_numbers(string filename);
+
+  double Bs2MuMu_SM_BF_val;
+  double Bs2MuMu_SM_BF_err;
+  double fs_over_fu_val;
+  double Jpsi2MuMu_BF_val;
+  double Bu2JpsiK_BF_val;
+  double fs_over_fu_err;
+  double Jpsi2MuMu_BF_err;
+  double Bu2JpsiK_BF_err;
+
+  vector <double> eff_bd_val;
+  vector <double> eff_bs_val;
+  vector <double> eff_bu_val;
+  vector <double> N_bu_val;
+  vector <double> eff_bd_err;
+  vector <double> eff_bs_err;
+  vector <double> eff_bu_err;
+  vector <double> N_bu_err;
+
+  vector <double> BF_bs_val;
+  vector <double> BF_bd_val;
+  vector <double> BF_bs_err;
+  vector <double> BF_bd_err;
 
 private:
 

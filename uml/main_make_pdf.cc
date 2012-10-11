@@ -26,15 +26,15 @@ int main(int argc, char* argv[]) {
   if (SM && bd_const) {cout << "please select SM OR bd_const, not both" << endl; return (EXIT_FAILURE);}
   if (pee && strcmp(input_name.c_str(), "new")) {cout << "per event error only with new trees, select -i new" << endl; return EXIT_FAILURE;}
 
-  pdf_analysis ana1(print, meth, ch_s, "all", SM, bd_const, simul, simul_bdt, pee, bdt_fit);
+  pdf_analysis ana1(print, meth, ch_s, "all", BF, SM, bd_const, simul, simul_bdt, pee, bdt_fit);
   if (strcmp(input_name.c_str(), "new")) ana1.old_tree = true;
   if (no_legend) ana1.no_legend = true;
   ana1.set_SMratio(0.09);
-  ana1.initialize();
-  RooWorkspace *ws = ana1.get_ws();
 
   ana1.channels = inputs;
   ana1.channels_bdt = inputs_bdt;
+  ana1.initialize();
+  RooWorkspace *ws = ana1.get_ws();
 
   /// INPUTS
 
@@ -212,6 +212,7 @@ int main(int argc, char* argv[]) {
   if (simul) output_s += "simul_" + meth;
   else output_s += "pdf_" + meth + "_" + ch_s;
   if (simul_bdt) output_s += "_simulBdt";
+  if (BF) output_s += "_BF";
   if (SM) output_s += "_SM";
   if (bd_const) output_s += "_BdConst";
   if (bdt_fit) output_s += "_2D";

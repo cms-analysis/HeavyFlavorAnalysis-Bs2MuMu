@@ -1,11 +1,12 @@
 # fit 1D (20 fb-1):
+lumi   20
 bs_0   17
 bd_0   2
 rare_0 26
 comb_0  80
 #########
 bs_1   6
-bd_1   0.4
+bd_1   0
 rare_1 8
 comb_1 24
 

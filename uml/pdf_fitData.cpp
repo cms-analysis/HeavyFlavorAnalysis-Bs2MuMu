@@ -1,6 +1,6 @@
 #include "pdf_fitData.h"
 
-pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, bool SM, bool bd_constr, TTree *input_tree, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig): pdf_analysis(print, meth, ch_s, range, SM, bd_constr, simul, simulbdt, pee_, bdt_fit) {
+pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, bool BF, bool SM, bool bd_constr, TTree *input_tree, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig): pdf_analysis(print, meth, ch_s, range, BF, SM, bd_constr, simul, simulbdt, pee_, bdt_fit) {
   cout << "fitData constructor" << endl;
   channels = inputs;
   channels_bdt = inputs_bdt;
@@ -17,6 +17,7 @@ pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_es
   estimate2D_rare.resize(channels, vector<double> (channels_bdt));
   estimate2D_comb.resize(channels, vector<double> (channels_bdt));
 
+  lumi = -1;
   parse_estimate();
   if (input_tree) {
     tree = input_tree;
@@ -29,13 +30,6 @@ pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_es
   RooRandom::randomGenerator()->SetSeed(0);
 
   sign = sig;
-
-  eff_bd.resize(channels);
-  eff_bs.resize(channels);
-  eff_bu.resize(channels);
-  N_bu.resize(channels);
-  BF_bd.resize(channels);
-  BF_bs.resize(channels);
 }
 
 pdf_fitData::~pdf_fitData() {
@@ -62,6 +56,15 @@ void pdf_fitData::parse_estimate(){
 }
 
 bool pdf_fitData::parse(char *cutName, float cut) {
+  if (lumi == -1) {
+    char test_cut[128];
+    sprintf(test_cut, "lumi");
+    if (!strcmp(cutName, test_cut)) {
+      lumi = (double)cut;
+      cout << "lumi: " << lumi << endl;
+      return true;
+    }
+  }
   if (simul_ && !simul_bdt_) {
     for (int i = 0; i < channels; i++) {
       char test_cut[128];
@@ -283,7 +286,9 @@ void pdf_fitData::print_each_channel() {
 
       // legend
       RooArgSet* vars =  ws_->pdf("pdf_ext_simul")->getVariables();
-      RooRealVar* N_bs = (RooRealVar*)vars->find(pdf_analysis::name("N_bs", i, j));
+      RooRealVar* N_bs;
+      if (!BF_) N_bs = (RooRealVar*)vars->find(pdf_analysis::name("N_bs", i, j));
+      else N_bs = (RooRealVar*)vars->find("BF");
       RooRealVar* N_bd;
       if (!bd_constr_ && !SM_) {
         N_bd = (RooRealVar*)vars->find(pdf_analysis::name("N_bd", i, j));
@@ -292,18 +297,41 @@ void pdf_fitData::print_each_channel() {
       else N_bd = 0;
       RooRealVar* N_comb = (RooRealVar*)vars->find(pdf_analysis::name("N_comb", i, j));
       RooRealVar* N_rare = (RooRealVar*)vars->find(pdf_analysis::name("N_rare", i, j));
-      ostringstream fitresult_tex[4];
-      fitresult_tex[0] << setprecision(2) << fixed << "N(B_{s}) = " << N_bs->getVal() << " ^{+" << getErrorHigh(N_bs) << "}_{" << getErrorLow(N_bs) << "}";
-      if (!bd_constr_ && !SM_) fitresult_tex[1] <<setprecision(2) << fixed << "N(B_{d}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
-      else if (bd_constr_) fitresult_tex[1] << setprecision(2) << fixed << "N(B_{d}) / N(B_{s}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
-      else fitresult_tex[1] << setprecision(2) << fixed << "";
-      fitresult_tex[2] << setprecision(2) << fixed<< "N(comb. bkg) = " << N_comb->getVal() << " ^{+" << getErrorHigh(N_comb) << "}_{" << getErrorLow(N_comb) << "}";
-      fitresult_tex[3] << setprecision(2) << fixed<< "N(rare bkg) = " << N_rare->getVal() << " ^{+" << getErrorHigh(N_rare) << "}_{" << getErrorLow(N_rare) << "}";
+      vector <string> fitresult_tex_vec;
+      if (!BF_) {
+        ostringstream fitresult_tex;
+        fitresult_tex << setprecision(2) << fixed << "N(B_{s}) = " << N_bs->getVal() << " ^{+" << getErrorHigh(N_bs) << "}_{" << getErrorLow(N_bs) << "}";
+        fitresult_tex_vec.push_back(fitresult_tex.str());
+      }
+      else {
+        ostringstream fitresult_tex;
+        fitresult_tex << setprecision(4) << scientific << "BF = " << N_bs->getVal() << " ^{+" << getErrorHigh(N_bs) << "}_{" << getErrorLow(N_bs) << "}";
+        fitresult_tex_vec.push_back(fitresult_tex.str());
+        ostringstream fitresult_tex2;
+        fitresult_tex2 << "(N_(B_{s} = " << setprecision(2) << fixed << ws_->function(name("N_bs_formula", i, j))->getVal() << ")";
+        fitresult_tex_vec.push_back(fitresult_tex2.str());
+      }
+      if (!bd_constr_ && !SM_) {
+        ostringstream fitresult_tex;
+        fitresult_tex <<setprecision(2) << fixed << "N(B_{d}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
+        fitresult_tex_vec.push_back(fitresult_tex.str());
+      }
+      else if (bd_constr_) {
+        ostringstream fitresult_tex;
+        fitresult_tex << setprecision(2) << fixed << "N(B_{d}) / N(B_{s}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
+        fitresult_tex_vec.push_back(fitresult_tex.str());
+      }
+      ostringstream fitresult_tex;
+      fitresult_tex << setprecision(2) << fixed<< "N(comb. bkg) = " << N_comb->getVal() << " ^{+" << getErrorHigh(N_comb) << "}_{" << getErrorLow(N_comb) << "}";
+      fitresult_tex_vec.push_back(fitresult_tex.str());
+      ostringstream fitresult_tex2;
+      fitresult_tex2 << setprecision(2) << fixed<< "N(rare bkg) = " << N_rare->getVal() << " ^{+" << getErrorHigh(N_rare) << "}_{" << getErrorLow(N_rare) << "}";
+      fitresult_tex_vec.push_back(fitresult_tex2.str());
 
       TPaveText* fitresults = new TPaveText(0.57, 0.66, 0.9, 0.9, "NDCR");
-      for (int jj = 0; jj < 4; jj++) {
-        if (SM_ && jj == 1) continue;
-        fitresults->AddText(fitresult_tex[jj].str().c_str());
+      for (unsigned int jj = 0; jj < fitresult_tex_vec.size(); jj++) {
+        //if (SM_ && jj == 1) continue;
+        fitresults->AddText(fitresult_tex_vec[jj].c_str());
       }
       fitresults->SetFillColor(0);
       fitresults->SetShadowColor(0);
@@ -380,7 +408,9 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, TF1 *MassRes_f,
       else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate_bd[ch_i_]/estimate_bd[ch_i_]);
       ws_->var("N_rare")->setVal(estimate_rare[ch_i_]);
       ws_->var("N_comb")->setVal(estimate_comb[ch_i_]);
-      global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")));
+      if (BF_) ws_->var("N_bu")->setVal(lumi / 5. *  ws_->var("N_bu")->getVal());
+      /*if (!BF_)*/ global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")));
+//      else global_data = ws_->pdf("pdf_ext_total_test")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")));
     }
     else if (simul_ && !simul_bdt_) {
       vector <RooDataSet*> data_i(channels);
@@ -391,7 +421,9 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, TF1 *MassRes_f,
         else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate_bd[i]/estimate_bd[i]);
         ws_->var(name("N_rare", i))->setVal(estimate_rare[i]);
         ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
-        data_i[i] = ws_->pdf(name("pdf_ext_total", i))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")));
+        if (BF_) ws_->var(name("N_bu", i))->setVal(lumi / 5. *  ws_->var(name("N_bu", i))->getVal());
+        /*if (!BF_) */data_i[i] = ws_->pdf(name("pdf_ext_total", i))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")));
+//        else data_i[i] = ws_->pdf(name("pdf_ext_total_test", i))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")));
         data_map.insert(make_pair(name("etacat", i), data_i[i]));
 
       }
@@ -408,7 +440,9 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, TF1 *MassRes_f,
           else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate2D_bd[i][j]/estimate2D_bd[i][j]);
           ws_->var(name("N_rare", i, j))->setVal(estimate2D_rare[i][j]);
           ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
-          data_i[i][j] = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")));
+          if (BF_) ws_->var(name("N_bu", i, j))->setVal(lumi / 5. *  ws_->var(name("N_bu", i, j))->getVal());
+          /*if (!BF_) */data_i[i][j] = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")));
+//          else data_i[i][j] = ws_->pdf(name("pdf_ext_total_test", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")));
           channels_cat->setIndex(i);
           bdt_cat->setIndex(j);
           data_i[i][j]->addColumn(*channels_cat);
@@ -458,6 +492,7 @@ void pdf_fitData::make_pdf_input() {
   if (simul_) root_s = "output/ws_simul_" + meth_;
   if (simul_bdt_) root_s += "_simulBdt";
   string tail_s;
+  if (BF_) tail_s = "_BF";
   if (SM_) tail_s = "_SM";
   else if (bd_constr_) tail_s = "_BdConst";
   if (bdt_fit_) tail_s += "_2D";
@@ -488,14 +523,16 @@ void pdf_fitData::make_pdf() {
   if (random) {
     if (simul_ && !simul_bdt_) {
       for (int i = 0; i < channels; i++) {
-        ws_input->var(name("N_bs", i))->setVal(estimate_bs[i]);
+        /*if (!BF_)*/ ws_input->var(name("N_bs", i))->setVal(estimate_bs[i]);
+//        else ws_input->var("BF")->setVal(3.e-8);
         ws_input->var(name("N_bd", i))->setVal(estimate_bd[i]);
         ws_input->var(name("N_rare", i))->setVal(estimate_rare[i]);
         ws_input->var(name("N_comb", i))->setVal(estimate_comb[i]);
       }
     }
-    else if (simul_ && !simul_bdt_) {
-      ws_input->var("N_bs")->setVal(estimate_bs[ch_i_]);
+    else if (!simul_ && !simul_bdt_) {
+      /*if (!BF_) */ws_input->var("N_bs")->setVal(estimate_bs[ch_i_]);
+//      else ws_input->var("BF")->setVal(3.e-7);
       ws_input->var("N_bd")->setVal(estimate_bd[ch_i_]);
       ws_input->var("N_rare")->setVal(estimate_rare[ch_i_]);
       ws_input->var("N_comb")->setVal(estimate_comb[ch_i_]);
@@ -551,8 +588,9 @@ Double_t pdf_fitData::sig_hand() {
   size_t found;
   while ( (arg_var = (RooRealVar*)vars_it->Next())) {
     string name(arg_var->GetName());
-    found = name.find("N_bs");
-    if (found!=string::npos) {
+    if (!BF_) found = name.find("N_bs");
+    else found = name.find("BF");
+    if (found != string::npos) {
       arg_var->setVal(0.0);
       arg_var->setConstant(1);
     }
@@ -574,10 +612,11 @@ Double_t pdf_fitData::sig_hand() {
   TIterator* vars_after = all_vars->createIterator();
   while ( (arg_var = (RooRealVar*)vars_after->Next())) {
     string name(arg_var->GetName());
-    found = name.find("N_bs");
-    if (found!=string::npos) arg_var->setConstant(0);
-    found = name.find("N_bd");
-    if (found!=string::npos) arg_var->setConstant(0);
+    if (!BF_) found = name.find("N_bs");
+    else found = name.find("BF");
+    if (found != string::npos) arg_var->setConstant(0);
+//    found = name.find("N_bd");
+//    if (found!=string::npos) arg_var->setConstant(0);
     if (SM_ || bd_constr_) {
       found = name.find("Bd_over_Bs");
       if (found!=string::npos) arg_var->setConstant(0);
@@ -606,25 +645,37 @@ void pdf_fitData::sig_plhc() {
   model.SetWorkspace(*ws_);
   if (simul_) {
     model.SetPdf(*ws_->pdf("pdf_ext_simul"));
-    for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
-        poi.add(*ws_->var(name("N_bs", i, j)));
-        poi.setRealValue(name("N_bs", i, j), 0);
-//      if (!bd_constr_ && !SM_) {
-//        poi.add(*ws_->var(name("N_bd", i)));
-//        poi.setRealValue(name("N_bd", i), 0);
-//      }
+    if (!BF_) {
+      for (int i = 0; i < channels; i++) {
+        for (int j = 0; j < channels_bdt; j++) {
+          poi.add(*ws_->var(name("N_bs", i, j)));
+          poi.setRealValue(name("N_bs", i, j), 0);
+          //      if (!bd_constr_ && !SM_) {
+          //        poi.add(*ws_->var(name("N_bd", i)));
+          //        poi.setRealValue(name("N_bd", i), 0);
+          //      }
+        }
       }
+    }
+    else {
+      poi.add(*ws_->var("BF"));
+      poi.setRealValue("BF", 0);
     }
   }
   else {
     model.SetPdf(*ws_->pdf("pdf_ext_total"));
-    poi.add(*ws_->var("N_bs"));
-    poi.setRealValue("N_bs", 0);
-//    if (!bd_constr_ && !SM_) {
-//      poi.add(*ws_->var("N_bd"));
-//      poi.setRealValue("N_bd", 0);
-//    }
+    if (!BF_) {
+      poi.add(*ws_->var("N_bs"));
+      poi.setRealValue("N_bs", 0);
+      //    if (!bd_constr_ && !SM_) {
+      //      poi.add(*ws_->var("N_bd"));
+      //      poi.setRealValue("N_bd", 0);
+      //    }
+    }
+    else {
+      poi.add(*ws_->var("BF"));
+      poi.setRealValue("BF", 0);
+    }
   }
   if (bd_constr_) {
     poi.add(*ws_->var("Bd_over_Bs"));
@@ -647,7 +698,8 @@ void pdf_fitData::make_models() {
   vector <vector <double> > N_bd(channels, vector <double> (channels_bdt) );
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < channels_bdt; j++) {
-      N_bs[i][j] = ws_->var(name("N_bs", i, j))->getVal();
+      if (!BF_) N_bs[i][j] = ws_->var(name("N_bs", i, j))->getVal();
+      else N_bs[i][j] = ws_->function(name("N_bs", i, j))->getVal(); cout << N_bs[i][j] << endl;
       if (!SM_ && !bd_constr_) N_bd[i][j] = ws_->var(name("N_bd", i, j))->getVal();
     }
   }
@@ -655,21 +707,26 @@ void pdf_fitData::make_models() {
   else if (!simul_ && !simul_bdt_) ws_->defineSet("obs", "Mass");
   else ws_->defineSet("obs", "Mass,etacat,bdtcat");
   ostringstream name_poi;
-  if (simul_) {
-    for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
-        if (i != 0 || j != 0) name_poi << ",";
-        name_poi << name("N_bs", i, j);
-//        name_poi << "N_bs_" << i;
-//      if (!bd_constr_ && !SM_) {
-//        name_poi << ",N_bd_" << i;
-//      }
+  if (!BF_) {
+    if (simul_) {
+      for (int i = 0; i < channels; i++) {
+        for (int j = 0; j < channels_bdt; j++) {
+          if (i != 0 || j != 0) name_poi << ",";
+          name_poi << name("N_bs", i, j);
+          //        name_poi << "N_bs_" << i;
+          //      if (!bd_constr_ && !SM_) {
+          //        name_poi << ",N_bd_" << i;
+          //      }
+        }
       }
+    }
+    else {
+      name_poi << "N_bs";
+      //    if (!bd_constr_ && !SM_) name_poi << ",N_bd";
     }
   }
   else {
-    name_poi << "N_bs";
-//    if (!bd_constr_ && !SM_) name_poi << ",N_bd";
+    name_poi << "BF";
   }
   if (bd_constr_) name_poi << ",Bd_over_Bs";
   ws_->defineSet("poi", name_poi.str().c_str());
@@ -685,19 +742,24 @@ void pdf_fitData::make_models() {
   else H0->SetPdf(*ws_->pdf("pdf_ext_total"));
   H0->SetParametersOfInterest(*ws_->set("poi"));
   H0->SetObservables(*ws_->set("obs"));
-  if (simul_) {
-    for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
-        ws_->var(name("N_bs", i, j))->setVal(0.0);
-//      if (!bd_constr_ && !SM_) {
-//        ws_->var(name("N_bd", i))->setVal(0.0);
-//      }
+  if (!BF_) {
+    if (simul_) {
+      for (int i = 0; i < channels; i++) {
+        for (int j = 0; j < channels_bdt; j++) {
+          ws_->var(name("N_bs", i, j))->setVal(0.0);
+          //      if (!bd_constr_ && !SM_) {
+          //        ws_->var(name("N_bd", i))->setVal(0.0);
+          //      }
+        }
       }
+    }
+    else {
+      ws_->var("N_bs")->setVal(0.0);
+      //    if (!bd_constr_ && !SM_) ws_->var("N_bd")->setVal(0.0);
     }
   }
   else {
-    ws_->var("N_bs")->setVal(0.0);
-//    if (!bd_constr_ && !SM_) ws_->var("N_bd")->setVal(0.0);
+    ws_->var("BF")->setVal(0.0);
   }
   if (bd_constr_) {
     ws_->var("Bd_over_Bs")->setVal(0.0);
@@ -713,19 +775,24 @@ void pdf_fitData::make_models() {
   H1->SetParametersOfInterest(*ws_->set("poi"));
   H1->SetObservables(*ws_->set("obs"));
   parse_estimate();
-  if (simul_) {
-    for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
-        ws_->var(name("N_bs", i, j))->setVal(N_bs[i][j]);
-//      if (!bd_constr_ && !SM_) {
-//        ws_->var(name("N_bd", i))->setVal(N_bd[i]);
-//      }
+  if (!BF_) {
+    if (simul_) {
+      for (int i = 0; i < channels; i++) {
+        for (int j = 0; j < channels_bdt; j++) {
+          ws_->var(name("N_bs", i, j))->setVal(N_bs[i][j]);
+          //      if (!bd_constr_ && !SM_) {
+          //        ws_->var(name("N_bd", i))->setVal(N_bd[i]);
+          //      }
+        }
       }
+    }
+    else {
+      ws_->var("N_bs")->setVal(N_bs[0][0]);
+      //    ws_->var("N_bd")->setVal(N_bd[0]);
     }
   }
   else {
-    ws_->var("N_bs")->setVal(N_bs[0][0]);
-//    ws_->var("N_bd")->setVal(N_bd[0]);
+    ws_->var("BF")->setVal(Bs2MuMu_SM_BF_val);
   }
   if (bd_constr_) {
     int index = simul_ ? 0 : atoi(ch_s_.c_str());
@@ -752,7 +819,7 @@ void pdf_fitData::sig_plhts() {
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
-  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 500);
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 100);
   FrequentistCalculator frequCalc(*ws_->data("global_data"), *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();
   htr_pl->Print();
@@ -778,7 +845,7 @@ void pdf_fitData::sig_hybrid_plhts() {
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
-  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 500);
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 100);
 
   HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
   hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
@@ -802,7 +869,7 @@ void pdf_fitData::sig_hybrid_roplhts() {
   RatioOfProfiledLikelihoodsTestStat ropl_ts(*H1->GetPdf(),*H0->GetPdf(), ws_->set("poi"));
   ropl_ts.SetSubtractMLE(false);
   if (pee) ropl_ts.SetConditionalObservables(*ws_->set("CO"));
-  ToyMCSampler *mcSampler_pl = new ToyMCSampler(ropl_ts, 500);
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(ropl_ts, 100);
 
   HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
   hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
@@ -840,45 +907,42 @@ void pdf_fitData::make_prior() {
 }
 
 void pdf_fitData::BF(string eff_filename, string numbers_filename) {
-  parse_external_numbers(numbers_filename);
-  if (simul_bdt_) { cout << "I don't have efficiencies for the bdt channels..." << endl; return;}
-  parse_efficiency_numbers(eff_filename);
 
   /// well, all this assuming uncorrelated varables...
   cout << "=========== Branching Fractions ==========" << endl;
   int ii = -1;
   for (int i = 0; i < channels; i++) {
-    BF_bs.at(i).first = ws_->var(name("N_bs", i))->getVal() / N_bu.at(i).first / fs_over_fu.first * (eff_bu.at(i).first / eff_bs.at(i).first) * Bu2JpsiK_BF.first * Jpsi2MuMu_BF.first;
-    BF_bs.at(i).second = BF_bs.at(i).first * sqrt(pow(ws_->var(name("N_bs", i))->getError() / ws_->var(name("N_bs", i))->getVal(), 2) +
-                                                  pow(N_bu.at(i).second / N_bu.at(i).first, 2) +
-                                                  pow(fs_over_fu.second / fs_over_fu.first, 2) +
-                                                  pow(eff_bu.at(i).second / eff_bu.at(i).first, 2) +
-                                                  pow(eff_bs.at(i).second / eff_bs.at(i).first, 2) +
-                                                  pow(Bu2JpsiK_BF.second / Bu2JpsiK_BF.first, 2) +
-                                                  pow(Jpsi2MuMu_BF.second / Jpsi2MuMu_BF.first, 2));
+    BF_bs_val[i] = ws_->var(name("N_bs", i))->getVal() / N_bu_val[i] / fs_over_fu_val * (eff_bu_val[i] / eff_bs_val[i]) * Bu2JpsiK_BF_val * Jpsi2MuMu_BF_val;
+    BF_bs_err[i] = BF_bs_val[i] * sqrt(pow(ws_->var(name("N_bs", i))->getError() / ws_->var(name("N_bs", i))->getVal(), 2) +
+                                                  pow(N_bu_err[i] / N_bu_val[i], 2) +
+                                                  pow(fs_over_fu_err / fs_over_fu_val, 2) +
+                                                  pow(eff_bu_err[i] / eff_bu_val[i], 2) +
+                                                  pow(eff_bs_err[i] / eff_bs_val[i], 2) +
+                                                  pow(Bu2JpsiK_BF_err / Bu2JpsiK_BF_val, 2) +
+                                                  pow(Jpsi2MuMu_BF_err / Jpsi2MuMu_BF_val, 2));
 
-    BF_bd.at(i).first = ws_->var(name("N_bd", i))->getVal() / N_bu.at(i).first * (eff_bu.at(i).first / eff_bd.at(i).first) * Bu2JpsiK_BF.first * Jpsi2MuMu_BF.first;
-    BF_bd.at(i).second = BF_bd.at(i).first * sqrt(pow(ws_->var(name("N_bd", i))->getError() / ws_->var(name("N_bd", i))->getVal(), 2) +
-                                                  pow(N_bu.at(i).second / N_bu.at(i).first, 2) +
-                                                  pow(eff_bu.at(i).second / eff_bu.at(i).first, 2) +
-                                                  pow(eff_bd.at(i).second / eff_bd.at(i).first, 2) +
-                                                  pow(Bu2JpsiK_BF.second / Bu2JpsiK_BF.first, 2) +
-                                                  pow(Jpsi2MuMu_BF.second / Jpsi2MuMu_BF.first, 2));
+    BF_bd_val[i] = ws_->var(name("N_bd", i))->getVal() / N_bu_val[i] * (eff_bu_val[i] / eff_bd_val[i]) * Bu2JpsiK_BF_val * Jpsi2MuMu_BF_val;
+    BF_bd_err[i] = BF_bd_val[i] * sqrt(pow(ws_->var(name("N_bd", i))->getError() / ws_->var(name("N_bd", i))->getVal(), 2) +
+                                                  pow(N_bu_err[i] / N_bu_val[i], 2) +
+                                                  pow(eff_bu_err[i] / eff_bu_val[i], 2) +
+                                                  pow(eff_bd_err[i] / eff_bd_val[i], 2) +
+                                                  pow(Bu2JpsiK_BF_err / Bu2JpsiK_BF_val, 2) +
+                                                  pow(Jpsi2MuMu_BF_err / Jpsi2MuMu_BF_val, 2));
 
     if (simul_) ii = i;
     else ii = ch_i_;
     cout << "etacat " << ii << ":" << endl;
-    cout << "Bs2MuMu BF = " << BF_bs.at(i).first << " \\pm " << BF_bs.at(i).second << "  etacat " << ii <<  endl;
-    cout << "Bd2MuMu BF = " << BF_bd.at(i).first << " \\pm " << BF_bd.at(i).second << "  etacat " << ii << endl;
+    cout << "Bs2MuMu BF = " << BF_bs_val[i] << " \\pm " << BF_bs_err[i] << "  etacat " << ii <<  endl;
+    cout << "Bd2MuMu BF = " << BF_bd_val[i] << " \\pm " << BF_bd_err[i] << "  etacat " << ii << endl;
   }
 
   double bs_num = 0, bd_num = 0;
   double bs_den = 0, bd_den = 0;
   for (int i = 0; i < channels; i++) {
-    bs_num += BF_bs.at(i).first / pow(BF_bs.at(i).second, 2);
-    bs_den += 1. / pow(BF_bs.at(i).second, 2);
-    bd_num += BF_bd.at(i).first / pow(BF_bd.at(i).second, 2);
-    bd_den += 1. / pow(BF_bd.at(i).second, 2);
+    bs_num += BF_bs_val[i] / pow(BF_bs_err[i], 2);
+    bs_den += 1. / pow(BF_bs_err[i], 2);
+    bd_num += BF_bd_val[i] / pow(BF_bd_err[i], 2);
+    bd_den += 1. / pow(BF_bd_err[i], 2);
   }
   double bs_final_bf = bs_num / bs_den;
   double bs_error_bf = sqrt(1. / bs_den);
@@ -891,81 +955,3 @@ void pdf_fitData::BF(string eff_filename, string numbers_filename) {
   cout << "============= ============= =============" << endl;
 }
 
-void pdf_fitData::parse_efficiency_numbers(string filename) {
-  cout << "parsing " << filename << endl;
-
-  FILE *file = fopen(filename.c_str(), "r");
-  if (!file) {cout << "file " << filename << " does not exist"; exit(1);}
-
-  char buffer[1024];
-  char left[1024];
-  double number;
-
-  vector < pair<string, string> > end_bd(channels);
-  vector < pair<string, string> > end_bs(channels);
-  vector < pair<string, string> > end_bu(channels);
-  vector < pair<string, string> > end_Nbu(channels);
-  int ii = -1;
-  for (int i = 0; i < channels; i++) {
-    if (simul_) ii = i;
-    else ii = ch_i_;
-    end_bd[i] = make_pair(Form("N-EFF-TOT-BDMM%d:val", ii), Form("N-EFF-TOT-BDMM%d:tot", ii));
-    end_bs[i] = make_pair(Form("N-EFF-TOT-BSMM%d:val", ii), Form("N-EFF-TOT-BSMM%d:tot", ii));
-    end_bu[i] = make_pair(Form("N-EFF-TOT-BPLUS%d:val", ii), Form("N-EFF-TOT-BPLUS%d:tot", ii));
-    end_Nbu[i] = make_pair(Form("N-OBS-BPLUS%d:val", ii), Form("N-OBS-BPLUS%d:tot", ii));
-  }
-
-  while (fgets(buffer, sizeof(buffer), file)) {
-    if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
-    if (buffer[0] == '\045') continue;
-    sscanf(buffer, "%s   {\\ensuremath{{%lf } } }", left, &number);
-    string left_s(left);
-    for (int i = 0; i < channels; i++) {
-      size_t found;
-      found = left_s.find(end_bd.at(i).first);
-      if (found != string::npos) eff_bd.at(i).first = number;
-      found = left_s.find(end_bd.at(i).second);
-      if (found != string::npos) eff_bd.at(i).second = number;
-      found = left_s.find(end_bs.at(i).first);
-      if (found != string::npos) eff_bs.at(i).first = number;
-      found = left_s.find(end_bs.at(i).second);
-      if (found != string::npos) eff_bs.at(i).second = number;
-      found = left_s.find(end_bu.at(i).first);
-      if (found != string::npos) eff_bu.at(i).first = number;
-      found = left_s.find(end_bu.at(i).second);
-      if (found != string::npos) eff_bu.at(i).second = number;
-      found = left_s.find(end_Nbu.at(i).first);
-      if (found != string::npos) N_bu.at(i).first = number;
-      found = left_s.find(end_Nbu.at(i).second);
-      if (found != string::npos) N_bu.at(i).second = number;
-    }
-  }
-
-  for (int i = 0; i < channels; i++) {
-    if (simul_) ii = i;
-    else ii = ch_i_;
-    cout << "etacat " << ii << endl;
-    cout << "bd eff = " << eff_bd.at(i).first << " \\pm " << eff_bd.at(i).second << endl;
-    cout << "bs eff = " << eff_bs.at(i).first << " \\pm " << eff_bs.at(i).second << endl;
-    cout << "bu eff = " << eff_bu.at(i).first << " \\pm " << eff_bu.at(i).second << endl;
-    cout << "N bu   = " << N_bu.at(i).first << " \\pm " << N_bu.at(i).second << endl;
-    cout << endl;
-  }
-}
-
-void pdf_fitData::parse_external_numbers(string filename) {
-  cout << "parsing " << filename << endl;
-  FILE *file = fopen(filename.c_str(), "r");
-  if (!file) {cout << "file " << filename << " does not exist"; exit(1);}
-  char buffer[1024];
-  while (fgets(buffer, sizeof(buffer), file)) {
-    if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
-    if (buffer[0] == '\045') continue;
-    sscanf(buffer, "fsfu\t%lf\t%lf", &fs_over_fu.first, &fs_over_fu.second);
-    sscanf(buffer, "BuToKpsiK\t%lf\t%lf", &Bu2JpsiK_BF.first, &Bu2JpsiK_BF.second);
-    sscanf(buffer, "JpsiToMuMu\t%lf\t%lf", &Jpsi2MuMu_BF.first, &Jpsi2MuMu_BF.second);
-  }
-  cout << "fs/fu        " <<  fs_over_fu.first << " \\pm " << fs_over_fu.second << endl;
-  cout << "Bu2JpsiK_BF  " <<  Bu2JpsiK_BF.first << " \\pm " << Bu2JpsiK_BF.second << endl;
-  cout << "Jpsi2MuMu_BF " <<  Jpsi2MuMu_BF.first << " \\pm " << Jpsi2MuMu_BF.second << endl;
-}

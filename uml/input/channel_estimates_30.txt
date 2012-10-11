@@ -1,0 +1,12 @@
+# fit 1D (30 fb-1):
+lumi   30
+bs_0   18
+bd_0   1
+rare_0 15
+comb_0 24
+#########
+bs_1   6
+bd_1   0.4
+rare_1 8
+comb_1 24
+

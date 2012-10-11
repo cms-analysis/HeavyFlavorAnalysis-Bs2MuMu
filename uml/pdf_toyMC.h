@@ -30,7 +30,7 @@
 
 class pdf_toyMC : public pdf_fitData {
 public:
-  pdf_toyMC(bool print, int inputs = 1, int inputs_bdt = 1, string input_estimates = "", string meth = "bdt", string range = "all", bool SM = false, bool bd_constr = false, TTree *input_tree = 0, bool simul = false, bool simulbdt = false, bool pee_ = false, bool bdt_fit = false, string ch_s = "0", int sig = -1, string bias = "no");
+  pdf_toyMC(bool print, int inputs = 1, int inputs_bdt = 1, string input_estimates = "", string meth = "bdt", string range = "all", bool BF = false, bool SM = false, bool bd_constr = false, TTree *input_tree = 0, bool simul = false, bool simulbdt = false, bool pee_ = false, bool bdt_fit = false, string ch_s = "0", int sig = -1, string bias = "no");
   ~pdf_toyMC();
 
   void generate(int NExp, string pdf_toy, string test_pdf = "total");
@@ -46,19 +46,23 @@ private:
   string pdf_toy_;
   string pdf_test_;
   
+  vector <vector <RooDataSet*> > residual_rds_bs;
   vector <vector <RooDataSet*> > pull_rds_bs;
   vector <vector <RooDataSet*> >pull_rds_bd;
   vector <vector <RooDataSet*> >pull_rds_rare;
   vector <vector <RooDataSet*> >pull_rds_comb;
+  vector <vector <RooRealVar*> > residual_bs;
   vector <vector <RooRealVar*> >pull_bd;
   vector <vector <RooRealVar*> >pull_bs;
   vector <vector <RooRealVar*> >pull_rare;
   vector <vector <RooRealVar*> >pull_comb;
+  RooRealVar* pull_BF;
+  RooDataSet* pull_rds_BF;
 
   void print(string output, RooWorkspace* ws);
 
-  void fit_pulls(vector<vector<RooRealVar *> > pull, vector<vector<RooDataSet *> > rds);
-  void print_histos(vector<vector<TH1D *> > histos);
+  void fit_pulls(RooRealVar *pull, RooDataSet *rds, int i, int j);
+  void print_histos(TH1D* histos, int i, int j);
   RooFitResult* fit_pdf (string pdf, RooAbsData* data, int printlevel = -1, RooWorkspace *ws = 0);
   Double_t sig_hand(RooAbsData *data, int printlevel, RooWorkspace *ws);
   void do_bias(RooWorkspace* ws);
