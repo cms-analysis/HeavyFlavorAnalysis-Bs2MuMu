@@ -80,7 +80,7 @@ public:
 
   void define_simul(bool simulbdt);
 
-  void getBFnumbers(string eff_filename, string numbers_filename);
+  void getBFnumbers(string numbers_filename);
   void define_bf(int i, int j);
 
   void fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error = true, bool hesse = true);
@@ -148,7 +148,7 @@ protected:
   vector < string > source;
 
   void parse_external_numbers(string filename);
-  void parse_efficiency_numbers(string filename, int offset = 0);
+  void parse_efficiency_numbers(int offset = 0);
 
   double Bs2MuMu_SM_BF_val;
   double Bs2MuMu_SM_BF_err;

@@ -78,7 +78,7 @@ void pdf_analysis::initialize () {
   obs = new RooArgSet(*ws_->var("Mass"), *ws_->var("bdt"), "obs");
   //ws_->import(*obs, RecycleConflictNodes());
 
-  getBFnumbers("anaBmm.plotResults.default-11.tex", "input/external_numbers.txt");
+  getBFnumbers("input/external_numbers.txt");
 
 }
 
@@ -1002,7 +1002,7 @@ string pdf_analysis::get_address(string name, string pdf, bool channeling) {
   return address.str();
 }
 
-void pdf_analysis::getBFnumbers(string eff_filename, string numbers_filename) {
+void pdf_analysis::getBFnumbers(string numbers_filename) {
   eff_bd_val.resize(channels);
   eff_bs_val.resize(channels);
   eff_bu_val.resize(channels);
@@ -1018,12 +1018,14 @@ void pdf_analysis::getBFnumbers(string eff_filename, string numbers_filename) {
 
   parse_external_numbers(numbers_filename);
   if (simul_bdt_) { cout << "I don't have efficiencies for the bdt channels..." << endl; return;}
-  parse_efficiency_numbers(eff_filename);
-  if (channels == 4) parse_efficiency_numbers(eff_filename, 2);
+  parse_efficiency_numbers();
+  if (channels == 4) parse_efficiency_numbers(2);
 }
 
-void pdf_analysis::parse_efficiency_numbers(string filename, int offset) {
+void pdf_analysis::parse_efficiency_numbers(int offset) {
 
+  string filename = "anaBmm.plotResults.2011.tex";
+  if (offset == 2) filename = "anaBmm.plotResults.2012.tex";
   string file_address = "./input/";
   int channels_;
   if (offset == 0) {

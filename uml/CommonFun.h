@@ -282,8 +282,8 @@ void parse_input (string input) {
 
 void get_rare_normalization(string filename, string dir, int offset = 0) {
 
-  string peakdecays[] = {"bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgLb2KP", "bgLb2PiP"};
-  string semidecays[] = {"bgBd2PiMuNu", "bgBs2KMuNu", "bgLb2PMuNu"};
+  string peakdecays[] = {"BgPeakLo", "BgPeakBd", "BgPeakBs", "BgPeakHi"};
+  string semidecays[] = {"BgRslLo", "BgRslBd", "BgRslBs", "BgRslHi"};
 
   string full_address = dir + filename;
   FILE *file = fopen(full_address.c_str(), "r");
@@ -297,8 +297,8 @@ void get_rare_normalization(string filename, string dir, int offset = 0) {
   vector <float> peak_exp(2, 0);
   vector <float> semi_exp(2, 0);
 
-  string end_0[3] = {"bsRare0}", "bdRare0}", "loSideband0:val}"};
-  string end_1[3] = {"bsRare1}", "bdRare1}", "loSideband1:val}"};
+  string end_0 = {"0:val}"};
+  string end_1 = {"1:val}"};
 
   while (fgets(buffer, sizeof(buffer), file)) {
     if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
@@ -308,30 +308,26 @@ void get_rare_normalization(string filename, string dir, int offset = 0) {
     for (int i = 0; i < peak_n; i++) {
       size_t found = left_s.find(peakdecays[i]);
       if (found != string::npos) {
-        for (int j = 0; j < 3; j++) {
-          found = left_s.find(end_0[j]);
-          if (found != string::npos) {
-            peak_exp[0] += number;
-          }
-          found = left_s.find(end_1[j]);
-          if (found != string::npos) {
-            peak_exp[1] += number;
-          }
+        found = left_s.find(end_0);
+        if (found != string::npos) {
+          peak_exp[0] += number;
+        }
+        found = left_s.find(end_1);
+        if (found != string::npos) {
+          peak_exp[1] += number;
         }
       }
     }
     for (int i = 0; i < semi_n; i++) {
       size_t found = left_s.find(semidecays[i]);
       if (found != string::npos) {
-        for (int j = 0; j < 3; j++) {
-          found = left_s.find(end_0[j]);
-          if (found != string::npos) {
-            semi_exp[0] += number;
-          }
-          found = left_s.find(end_1[j]);
-          if (found != string::npos) {
-            semi_exp[1] += number;
-          }
+        found = left_s.find(end_0);
+        if (found != string::npos) {
+          semi_exp[0] += number;
+        }
+        found = left_s.find(end_1);
+        if (found != string::npos) {
+          semi_exp[1] += number;
         }
       }
     }
@@ -346,6 +342,7 @@ void get_rare_normalization(string filename, string dir, int offset = 0) {
     fprintf(file_out, "######\n");
   }
   fclose(file_out);
+  system(Form("cat %s", full_output.c_str()));
 }
 
 vector <double> cut_bdt_file() {
@@ -403,8 +400,8 @@ TF1* Fit_MassRes(std::string file, std::string cuts, vector <double> cuts_v, int
   MassRes_h->SetXTitle("Candidate #eta");
   MassRes_h->SetStats(0);
   MassRes_h->Draw();
-  c.Print("fig/width_fit.gif");
-  c.Print("fig/width_fit.pdf");
+  c.Print(Form("fig/width_fit_%d.gif", year));
+  c.Print(Form("fig/width_fit_%d.pdf", year));
   TF1* MassRes2_fit = (TF1*)MassRes_fit->Clone();
   return MassRes2_fit;
 }

@@ -188,12 +188,10 @@ int main(int argc, char* argv[]) {
 
   if (simul) ana1.define_simul(simul_bdt);
 
-  //  if (strcmp(rare_f.c_str(),"no")) {
-      get_rare_normalization("anaBmm.plotResults.default-11.tex", "./input/2011/");
-      get_rare_normalization("anaBmm.plotResults.default-11.tex", "./input/2012/", 2);
-      system("rm input/rare_frac.txt; cat input/2011/rare_frac.txt >> input/rare_frac.txt; cat input/2012/rare_frac.txt >> input/rare_frac.txt;");
-      ana1.set_rare_normalization("input/rare_frac.txt");
-  //  }
+  get_rare_normalization("anaBmm.plotResults.2011.tex", "./input/2011/");
+  get_rare_normalization("anaBmm.plotResults.2012.tex", "./input/2012/", 2);
+  system("rm input/rare_frac.txt; cat input/2011/rare_frac.txt >> input/rare_frac.txt; cat input/2012/rare_frac.txt >> input/rare_frac.txt;");
+  ana1.set_rare_normalization("input/rare_frac.txt");
 
   /// FITS
   for (int j = 0; j < inputs; j++) {
