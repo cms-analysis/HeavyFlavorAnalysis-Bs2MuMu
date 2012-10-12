@@ -533,9 +533,9 @@ void candAna::candAnalysis() {
   fillRedTreeData();
   
   if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX  && fCandIso < 0.7) {
-    calcBDT(true);
+    calcBDT();
   } else {
-    calcBDT(false);
+    calcBDT();
   }  
 
   fWideMass       = ((fpCand->fMass > MASSMIN) && (fpCand->fMass < MASSMAX)); 
@@ -575,7 +575,7 @@ void candAna::candAnalysis() {
   //   fPreselection = fPreselection && (fCandPt > 5) && (fCandA < 0.3) && (fCandChi2/fCandDof < 10) && (fCandFL3d < 2); 
 
   // -- to be consistent with the BDT traning
-  fPreselection = preselection(fRTD, fChan, false); 
+  fPreselection = preselection(fRTD, fChan); 
   fPreselection = fPreselection && fGoodHLT;
 
 }
@@ -2385,7 +2385,7 @@ void candAna::getSigTracks(vector<int> &v, TAnaCand *pC) {
 
 
 // ----------------------------------------------------------------------
-void candAna::calcBDT(bool rejectInvIso) {
+void candAna::calcBDT() {
   fBDT = -99.;
   //??  if (5 == mode && 5.2 < mass && mass < 5.45 && fb.iso < 0.7) continue; 
   if (fChan < 0) return;
@@ -2393,9 +2393,8 @@ void candAna::calcBDT(bool rejectInvIso) {
     cout << "no BDT defined" << endl;
     return;
   }
-  if (rejectInvIso && 5.2 < fCandM && fCandM < 5.45 && fCandIso < 0.7) return;
 
-  if (!preselection(fRTD, fChan, false)) return;
+  if (!preselection(fRTD, fChan)) return;
 
   //   if (fCandPt > 100) return;
   //   if (fCandPt < 6) return;

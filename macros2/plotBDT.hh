@@ -12,20 +12,33 @@
 #include <TKey.h>
 
 
+struct dt {
+  std::vector<int> vars;
+  std::vector<int> cuts;
+};
+
+
 // ----------------------------------------------------------------------
 class plotBDT: public plotClass {
 
 public:
 
-  plotBDT(const char *files="anaBmm.default.files", const char *dir = "default", const char *cuts = "default", int mode = 11);
+  plotBDT(const char *files="anaBmm.default.files", const char *dir = "default", const char *cuts = "default", int mode = 0);
   ~plotBDT();
   
-  void makeAll(int channels = 7); 
+  void makeAll(int channels = 1); 
 
+  void npvSpecial(std::string smode);
   void tmvaControlPlots();
   void dumpParameters();
   void tmvaPlots(std::string type);
   void variableRanking(); 
+
+  void xmlParsing(); 
+  void xmlParsingVariables(std::string xmlfile); 
+  void xmlParsingReadTree(std::string xmlfile); 
+  void xmlResetHists(); 
+
   void plotSSB();
   void ssb();
   void overlap();
@@ -72,7 +85,10 @@ public:
   std::vector<TH1D*> fhMass, fhMassNoCuts;
   std::vector<TH1D*> fhBDT, fhLoBDT, fhInBDT, fhHiBDT; 
 
-  std::vector<TProfile*> fpMassBDT, fpMassAcBDT, fpNpvBDT, fpNpvAcBDT; 
+  std::vector<TProfile*> fpMassBDT, fpMassAcBDT, fpMassAdBDT, fpNpvBDT, fpNpvAcBDT, fpNpvAdBDT; 
+  std::vector<TH1D*> fhNpvBDTchan0, fhNpvBDTchan1, fhNpvAcBDTchan0, fhNpvAcBDTchan1, fhNpvAdBDTchan0, fhNpvAdBDTchan1; 
+  TH1D *fmeanNpvBDTchan0, *fmeanNpvBDTchan1, *fmeanNpvAcBDTchan0, *fmeanNpvAcBDTchan1, *fmeanNpvAdBDTchan0, *fmeanNpvAdBDTchan1;
+  TH1D *frmsNpvBDTchan0, *frmsNpvBDTchan1, *frmsNpvAcBDTchan0, *frmsNpvAcBDTchan1, *frmsNpvAdBDTchan0, *frmsNpvAdBDTchan1;
 
   // -- hacked MC plots
   std::vector<TH1D*> fhMcMass, fhMcBDT, fhMcRatio;
@@ -81,6 +97,13 @@ public:
   // -- other histograms
   std::vector<TH1D*> fhBgBDT, fhSgBDT;
 
+  // -- XML parsing
+  std::map<int, std::string> fVariableMap; 
+  TH1D *fhBdtVariables, *fhBdtVariablesW8, *fhBdtNodes, *fhBdtNodesW8;
+  std::vector<TH1D*> fhBdtVariableCuts;
+  std::vector<TH1D*> fhBdtVariableCutsW8;
+
+  
   ClassDef(plotBDT,1) //Testing plotBDT
 
 };

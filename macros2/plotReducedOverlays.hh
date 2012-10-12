@@ -19,7 +19,7 @@ class plotReducedOverlays: public plotClass {
 
 public:
 
-  plotReducedOverlays(const char *files="anaBmm.default.files", const char *dir = "default", const char *cuts = "default");
+  plotReducedOverlays(const char *files="anaBmm.default.files", const char *dir = "default", const char *cuts = "default", int mode = 0);
   ~plotReducedOverlays();
 
   virtual void loopFunction(int function, int mode); 
@@ -28,11 +28,13 @@ public:
 
   void makeAll(std::string selection = "Presel"); 
   void makeSampleOverlay(std::string sample1, std::string sample2, std::string channel, std::string selection);
-  void makeSample(std::string sample1, std::string selection);
+  void makeSample(std::string sample1, std::string selection, std::string = "B");
+
   void makeOverlay(std::string sample1, std::string sample2, std::string channel, std::string selection);
   void allSystematics();
-
   void systematics(std::string sample1, std::string selection, int chan = 0);
+
+  // -- 
   void bookDistributions(std::string sample);
   void fillDistributions();
   void sbsDistributions(std::string sample, std::string selection = "Presel", std::string what = "");

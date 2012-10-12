@@ -11,7 +11,7 @@ std::string preselection();
 TH1D* getPreselectionNumbers();
 
 // ----------------------------------------------------------------------
-bool preselection(RedTreeData &b, int channel, bool rejectInvIso);
+bool preselection(RedTreeData &b, int channel);
 
 #endif
 

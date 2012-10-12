@@ -97,16 +97,22 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   
 
   fDoUseBDT = false; 
+  fDoApplyMuonPtCuts = false; 
   fDoPrintSingleEvent = false;
 
   fDoApplyCowboyVeto = false;   
   fDoApplyCowboyVetoAlsoInSignal = false; 
   fInvertedIso = false; 
   fNormProcessed = false; 
+  fSaveSmallTree = false;
 
   fStampString = "CMS, 5fb^{-1}"; 
-  fStampString = "BDT preliminary"; 
-  fStampCms = "#sqrt{s} = 7 TeV";
+  if (fDoUseBDT) {
+    fStampString = "BDT preliminary"; 
+  } else {
+    fStampString = "CNC preliminary"; 
+  }
+  fStampCms = "fill me";
 
   fCutsFileName = cuts; 
   init(files, cuts, dir, mode);
@@ -271,13 +277,18 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
 // ----------------------------------------------------------------------
 plotClass::~plotClass() {
   cout << "plotClass dtor" << endl;
+  for (map<string, TFile*>::iterator imap = fF.begin(); imap != fF.end(); ++imap) {  
+    cout << "    => closing " << imap->first;
+    cout << ": " << fF[imap->first]->GetName() << endl;
+    imap->second->Close();
+  }
 }
 
 
 // ----------------------------------------------------------------------
-void plotClass::initNumbers(numbers *a) {
+void plotClass::initNumbers(numbers *a, bool initAll) {
 
-  a->name = "";
+  if (initAll) a->name = "";
   a->genAccYield  = a->genAccFileYield = 0; 
   a->effGenFilter = a->effGenFilterE = 1.;
   a->genFileYield = a->genYield = 0.;
@@ -313,6 +324,36 @@ void plotClass::initNumbers(numbers *a) {
   a->offLoRare = a->offLoRareE = a->offHiRare = a->offHiRareE = a->bsRare = a->bsRareE = a->bdRare = a->bdRareE = 0.; 
   a->bsNoScaled = a->bsNoScaledE = a->bdNoScaled = a->bdNoScaledE = 0.;
   a->mBdLo = a->mBdHi = a->mBsLo = a->mBsHi = 0.;
+
+  // -- new numbers
+  a->fBgPeakLo   = a->fBgPeakHi   = a->fBgPeakBs   = a->fBgPeakBd   = 0.;
+  a->fBgPeakLoE1 = a->fBgPeakHiE1 = a->fBgPeakBsE1 = a->fBgPeakBdE1 = 0.;
+  a->fBgPeakLoE2 = a->fBgPeakHiE2 = a->fBgPeakBsE2 = a->fBgPeakBdE2 = 0.;
+
+  a->fFitSg      = a->fFitBd      = a->fFitNo      = a->fFitNoC     = a->fFitCs     = a->fFitCsC   = 0.;
+  a->fFitSgE1    = a->fFitBdE1    = a->fFitNoE1    = a->fFitNoCE1   = a->fFitCsE1   = a->fFitCsCE1 = 0.;
+  a->fFitSgE2    = a->fFitBdE2    = a->fFitNoE2    = a->fFitNoCE2   = a->fFitCsE2   = a->fFitCsCE2 = 0.;
+
+  a->fBgNonpLo   = a->fBgNonpHi   = a->fBgNonpBs   = a->fBgNonpBd   = 0.; 
+  a->fBgNonpLoE1 = a->fBgNonpHiE1 = a->fBgNonpBsE1 = a->fBgNonpBdE1 = 0.;
+  a->fBgNonpLoE2 = a->fBgNonpHiE2 = a->fBgNonpBsE2 = a->fBgNonpBdE2 = 0.;
+
+  a->fBgTotLo    = a->fBgTotHi    = a->fBgTotBs    = a->fBgTotBd    = 0.;
+  a->fBgTotLoE1  = a->fBgTotHiE1  = a->fBgTotBsE1  = a->fBgTotBdE1  = 0.; 
+  a->fBgTotLoE2  = a->fBgTotHiE2  = a->fBgTotBsE2  = a->fBgTotBdE2  = 0.; 
+
+  a->fSgLo       = a->fSgHi       = a->fSgBs       = a->fSgBd    = 0.;
+  a->fSgLoE1     = a->fSgHiE1     = a->fSgBsE1     = a->fSgBdE1  = 0.; 
+  a->fSgLoE2     = a->fSgHiE2     = a->fSgBsE2     = a->fSgBdE2  = 0.; 
+
+  a->fBdLo       = a->fBdHi       = a->fBdBs       = a->fBdBd    = 0.;
+  a->fBdLoE1     = a->fBdHiE1     = a->fBdBsE1     = a->fBdBdE1  = 0.; 
+  a->fBdLoE2     = a->fBdHiE2     = a->fBdBsE2     = a->fBdBdE2  = 0.; 
+
+  a->fSgAndBgLo  = a->fSgAndBgHi  = a->fSgAndBgBs  = a->fSgAndBgBd   = 0.;
+  a->fSgAndBgLoE1= a->fSgAndBgHiE1= a->fSgAndBgBsE1= a->fSgAndBgBdE1 = 0.;
+  a->fSgAndBgLoE2= a->fSgAndBgHiE2= a->fSgAndBgBsE2= a->fSgAndBgBdE2 = 0.;
+
 
 }
 
@@ -645,11 +686,7 @@ void plotClass::loopTree(int mode, int proc) {
 	if (fb.psipt < 7) continue;
       } 
 
-      if (5 == mode) {
-	calcBDT(true); 
-      } else {
-	calcBDT(false);
-      }
+      calcBDT(); 
 
       // -- moved small tree filling here to have more statistics
       if (fBDT > 0 && fb.hlt && fb.gmuid) {
@@ -871,7 +908,6 @@ void plotClass::loopTree(int mode, int proc) {
   }
   TFile *fLocal = TFile::Open(Form("%s/small-%s.root", fDirectory.c_str(), tname.c_str()), "RECREATE"); 
   reduceTree(t);
-
   TTree *small = t->CopyTree(""); 
   cout << "--> Writing small tree with name " << Form("%s_%s", tname.c_str(), (fDoUseBDT?"bdt":"cnc")) << endl;
   small->SetName(Form("%s_%s", tname.c_str(), (fDoUseBDT?"bdt":"cnc")));
@@ -886,16 +922,16 @@ void plotClass::loopTree(int mode, int proc) {
        << endl;
 
   if (99 == mode) {
-    // -- Cache the pwd...
-    TDirectory *pD = gDirectory; 
-    fHistFile->cd();
-    for (unsigned int i = 0; i < fNchan; ++i) {
-      string modifier = (fDoUseBDT?"bdt":"cnc"); 
-      fhMassWithAllCuts[i]->SetName(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i)); 
-      fhMassWithAllCuts[i]->SetTitle(Form("hMassWithAllCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, pD->GetFile()->GetName())); 
-      fhMassWithAllCuts[i]->Write();
-    }
-    pD->cd();
+//     // -- Cache the pwd...
+//     TDirectory *pD = gDirectory; 
+//     fHistFile->cd();
+//     for (unsigned int i = 0; i < fNchan; ++i) {
+//       string modifier = (fDoUseBDT?"bdt":"cnc"); 
+//       fhMassWithAllCuts[i]->SetName(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i)); 
+//       fhMassWithAllCuts[i]->SetTitle(Form("hMassWithAllCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, pD->GetFile()->GetName())); 
+//       fhMassWithAllCuts[i]->Write();
+//     }
+//     pD->cd();
 
     return;
   }
@@ -1800,6 +1836,15 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
   fOUT.open(fNumbersFileName.c_str(), ios::app);
   
   loadFiles(files);
+
+  string sfiles(files);
+  if (string::npos != sfiles.find("2011")) {
+    fStampCms = "#sqrt{s} = 7 TeV";
+  } 
+  if (string::npos != sfiles.find("2012")) {
+    fStampCms = "#sqrt{s} = 8 TeV";
+  } 
+
   string hfname  = fDirectory + "/anaBmm." + fSuffix + ".root";
 
   printCuts(fOUT); 
@@ -1836,6 +1881,7 @@ void plotClass::loadFiles(const char *files) {
     TFile *pF(0); 
     if (string::npos != sdset.find("data")) {
       pF = loadFile(sfile); 
+      cout << "open Data file "  << sfile  << " as " << sname << " (" << stype << ") with lumi = " << slumi << endl;
       if (string::npos != stype.find("default") && string::npos != stype.find("sg")) {
 	sname = "SgData"; 
 	fF.insert(make_pair(sname, pF)); 
@@ -1896,12 +1942,14 @@ void plotClass::loadFiles(const char *files) {
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "Jet")); 
       }
-      cout << "open Data file "  << sfile  << " as " << sname << " (" << stype << ") with lumi = " << slumi << endl;
     } else {
       string sfilter = sdset; 
       replaceAll(sfilter, "mc,", ""); 
       double effFilter = atof(sfilter.c_str());
       // -- MC
+      cout << "open MC file "  << sfile  << " as " << sname << " (" << stype << ") with lumi = " << slumi 
+	   << " filter eff = " << effFilter 
+	   << endl;
       pF = loadFile(sfile); 
       if (string::npos != stype.find("default") && string::npos != stype.find("sg")) {
 	sname = "SgMc"; 
@@ -2294,8 +2342,9 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Lb2PMuNu")) {
 	sname = "bgLb2PMuNu"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 1.36e-4)); 
-	fBFE.insert(make_pair(sname, 0.05)); 
+	//	fBF.insert(make_pair(sname, 1.36e-4)); 
+	fBF.insert(make_pair(sname, 3.0e-4)); 
+	fBFE.insert(make_pair(sname, 0.33)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#Lambda^{0}_{b} #rightarrow p#mu^{-}#bar{#nu}")); 
@@ -2335,7 +2384,6 @@ void plotClass::loadFiles(const char *files) {
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
 
-      cout << "open MC file "  << sfile  << " as " << sname << " (" << stype << ") with lumi = " << slumi << endl;
     }
   }
 
@@ -2390,6 +2438,7 @@ void plotClass::dumpSamples() {
     cout << "===> " << imap->first;
     cout << ": " << fF[imap->first]->GetName();
     cout << " -> " << imap->second << endl;
+
     name = imap->second; 
     lumi = fLumi[imap->first];
     n = fNgen[imap->first];
@@ -2429,6 +2478,8 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
   }
   
   TF1 *lF1(0), *lF2(0);
+
+  string modifier = (fDoUseBDT?"bdt":"cnc"); 
 
   double histCount = h->Integral(h->FindBin(fBgLo+0.0001), h->FindBin(fBgHi-0.0001)); 
   cout << "bgBlind: histCount = " << histCount 
@@ -2488,30 +2539,33 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
   
   lF2->SetLineStyle(kDashed);
   h->Fit(lF1, "rl", "", lo, hi); 
-  cout << "hallo 1" << endl;
   h->DrawCopy();
-  cout << "hallo 2" << endl;
   lF2->SetParameters(lF1->GetParameters());
   lF2->SetLineColor(kBlue);
-  cout << "hallo 3" << endl;
   lF2->Draw("same");
-  cout << "hallo 4" << endl;
 
-  fBsBgExp  = lF2->Integral(5.30, 5.45)/h->GetBinWidth(1); 
-  fBdBgExp  = lF2->Integral(5.20, 5.30)/h->GetBinWidth(1); 
-  fBgExpLo  = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1); 
-  fBgExpHi  = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
-  fBsBgExpE = fBsBgExp*(fBgHistE/fBgHist);
-  fBdBgExpE = fBdBgExp*(fBgHistE/fBgHist);
+  if (!strcmp(gMinuit->fCstatu.Data(), "CONVERGED ")) {
+    fBsBgExp  = lF2->Integral(5.30, 5.45)/h->GetBinWidth(1); 
+    fBdBgExp  = lF2->Integral(5.20, 5.30)/h->GetBinWidth(1); 
+    fBgExpLo  = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1); 
+    fBgExpHi  = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
+    fBsBgExpE = fBsBgExp*(fBgHistE/fBgHist);
+    fBdBgExpE = fBdBgExp*(fBgHistE/fBgHist);
+  } else {
+    cout << "+++ Fit did not converge, take flat bg interpretation, fCstatu = ->" << gMinuit->fCstatu.Data() << "<-" << endl;
+    fBsBgExp  = (5.45-5.30)/(5.9-4.9-0.25)*fBgHist;
+    fBdBgExp  = (5.30-5.20)/(5.9-4.9-0.25)*fBgHist;
+    fBgExpLo  = (5.20-4.90)/(5.9-4.9-0.25)*fBgHist;
+    fBgExpHi  = (5.90-5.45)/(5.9-4.9-0.25)*fBgHist;
+    fBsBgExpE = fBsBgExp*(fBgHistE/fBgHist);
+    fBdBgExpE = fBdBgExp*(fBgHistE/fBgHist);
+  }
+
+  
 
   if (4 == mode) {
     string dname = h->GetName();
-    string rname; 
-    if (string::npos != dname.find("chan0")) {
-      rname = "bslRare_bdt";
-    } else {
-      rname = "eslRare_bdt";
-    }
+    string rname =  Form("bslRare_%s", modifier.c_str());
     TH1D *hr = (TH1D*)fHistFile->Get(rname.c_str()); 
     hr = (TH1D*)(hr->Clone(Form("%s-mode4", rname.c_str())));
     setFilledHist(hr, kBlue, kBlue, 3344);
@@ -2533,15 +2587,8 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
 
 
   if (5 == mode) {
-    cout << "hallo 5" << endl;
     string dname = h->GetName();
-    string rname; 
-    if (string::npos != dname.find("chan0")) {
-      rname = "bslRare_bdt";
-    } else {
-      rname = "eslRare_bdt";
-    }
-    cout << "hallo 6" << endl;
+    string rname =  Form("bslRare_%s", modifier.c_str());
     TH1D *hr = (TH1D*)fHistFile->Get(rname.c_str()); 
     cout << "rare bg histogram: " << rname << " at: " << hr << endl;
     hr = (TH1D*)(hr->Clone(Form("%s-mode5", rname.c_str())));
@@ -2567,17 +2614,9 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
     fBgExpHi += hr->Integral(hr->FindBin(5.45+eps), hr->FindBin(5.90-eps)); 
     cout << "+ scaled rare bg Expectations Lo:   " << fBgExpLo << " Bs: " << fBsBgExp << " Hi: " << fBgExpHi << endl;
 
-    fBsBgExpE = 0.2*fBsBgExp;
-    fBdBgExpE = 0.2*fBdBgExp;
+    fBsBgExpE = 0.5*fBsBgExp;
+    fBdBgExpE = 0.5*fBdBgExp;
   }
-
-
-
-
-//   double c  = h->GetFunction("f1")->GetParameter(0); 
-//   double cE = h->GetFunction("f1")->GetParError(0); 
-//   fBgExp  = c * (fSgHi - fSgLo)/h->GetBinWidth(1);
-//   fBgExpE = cE/c*fBgExp; 
 
 }
 
@@ -2588,11 +2627,13 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
 //   double pReco = (preco<0? (1 == mode?5.145:5.146): preco);
   double pReco = (preco<0? 5.145: preco);
 
+  h->SetAxisRange(5.0, 5.8);
+
   TF1 *lF1(0), *lBg(0);
 
   string name(h->GetName()); 
   double sigma1(0.03);
-  if (1 == mode) sigma1 = 0.04; 
+  if (1 == fChan) sigma1 = 0.04; 
   if (string::npos != name.find("hNormC")) sigma1 = 0.02;
   double sigma2(0.1); 
   if (string::npos != name.find("hNormC")) sigma2 = 0.05;
@@ -2659,11 +2700,11 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
 
   tl->SetTextSize(0.07); 
   tl->SetTextColor(kBlack); 
-  if (0 == mode) {
+  if (0 == fChan) {
     tl->DrawLatex(0.6, 0.8, "Barrel");   
   } 
 
-  if (1 == mode) {
+  if (1 == fChan) {
     tl->DrawLatex(0.6, 0.8, "Endcap");   
   } 
   
@@ -2673,11 +2714,11 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
     string pdfname;
     string hname(h->GetName());
     if (string::npos != hname.find("NormC")) {
-      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), mode);
-      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), mode);
+      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), fChan);
     } else {
-      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode);
-      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), mode);
+      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), fChan);
     }
 
     c0->SaveAs(pdfname.c_str());
@@ -2699,6 +2740,8 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
 //   double pReco = (preco<0? (1 == mode?5.145:5.146): preco);
   double pReco = (preco<0? 5.145: preco);
 
+  h->SetAxisRange(5.0, 5.8);
+
   TF1 *lF1(0), *lBg(0);
 
   TVirtualFitter::SetMaxIterations(20000);
@@ -2715,15 +2758,16 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
     fpFunc->fHi = hi; 
     cout<<sigma1<<" "<<sigma2<<" "<<pReco<<endl;
     //    lF1 = fpFunc->expoErrgauss2c(h, 5.27, 0.03, 0.1, pReco); 
+    //lF1 = fpFunc->expoErrgauss2(h, 5.28, sigma1, 5.27, sigma2, pReco); 
     lF1 = fpFunc->expoErrgauss2Landau(h, 5.28, sigma1, 5.27, sigma2, pReco); 
     lF1->SetNpx(100000);
     lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
 
   } else {
+
     fpFunc->fLo = lo; //5.0;
     fpFunc->fHi = hi; //5.5;
     lF1 = fpFunc->expoErrGaussLandau(h, 5.27, 0.056, pReco); 
-    //lF1 = fpFunc->expoErrGauss(h, 5.27, 0.056, pReco); 
     lF1->SetNpx(100000);
     lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
   }
@@ -2831,29 +2875,25 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
 
   tl->SetTextSize(0.07); 
   tl->SetTextColor(kBlack); 
-  if (0 == mode) {
+  if (0 == fChan) {
     tl->DrawLatex(0.6, 0.8, "Barrel");   
   } 
 
-  if (1 == mode) {
+  if (1 == fChan) {
     tl->DrawLatex(0.6, 0.8, "Endcap");   
   } 
   
   stamp(0.20, fStampString, 0.67, fStampCms); 
   if (fDoPrint) {
-   
+    
     string pdfname;
     string hname(h->GetName());
     if (string::npos != hname.find("NormC")) {
-      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), mode);
-      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), mode);
-      //pdfname = Form("%s/normC-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
-      //if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
+      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), fChan);
     } else {
-      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode);
-      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), mode);
-      //pdfname = Form("%s/norm-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
-      //if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
+      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), fChan);
     }
 
    c0->SaveAs(pdfname.c_str());
@@ -2880,6 +2920,8 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
 void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction, double preco) {
 
   //const fraction = 0.14; // area fraction of the 2nd gauss
+
+  h->SetAxisRange(5.0, 5.8);
  
   TF1 *lF1(0), *lBg(0);
 
@@ -2894,12 +2936,6 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
     lF1 = fpFunc->expoErrgauss2f(h, 5.37, 0.040, 5.425, 0.079,fraction, preco); 
     lBg = fpFunc->expoErrGauss(h,5.425,0.079); 
   }
-
-  //zone(1,2);
-  //h->DrawCopy();
-  //c0->cd(2);
-  lF1->SetLineColor(kBlue); 
-  lF1->Draw();
 
   //  return;
 
@@ -2923,7 +2959,6 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
     lBg->SetParameter(i, lF1->GetParameter(3+i));
     cout << "par " << i << ": " << lBg->GetParName(i) << " = " << lBg->GetParameter(i) << endl;
   }
-
 
   double c1 = lF1->Integral(5.25, 5.5); 
   double c2 = lBg->Integral(5.25, 5.5); 
@@ -2960,31 +2995,16 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
   gStyle->SetOptTitle(0); 
   h->Draw("e");
 
-  lF1->SetRange(lo, hi);
-  lF1->SetLineColor(kBlack); 
-  lF1->SetLineStyle(kSolid);
-  lF1->SetLineWidth(3);
-  lF1->Draw("same");
+  //lF1->SetLineColor(kBlue); 
+  //lF1->SetLineStyle(kDotted);
+  //lF1->SetLineWidth(3);
+  //lF1->Draw("same");
 
   // -- Overlay BG function
-  lBg->SetRange(lo, hi);
   lBg->SetLineStyle(kDashed);
   lBg->SetLineColor(kRed);
   lBg->SetLineWidth(3);
   lBg->Draw("same");
-
-  // also overlay 2nd Gaussian
-  TF1 *lgauss2 = new TF1("gaussian","gaus",lo,hi);
-  float gaussmean = area2ndGauss/(lF1->GetParameter(5)*2.5066);
-  lgauss2->SetParameter(0, gaussmean ); //const
-  lgauss2->SetParameter(1, lF1->GetParameter(4)); //mean 
-  lgauss2->SetParameter(2, lF1->GetParameter(5)); //sigma
-
-  lgauss2->SetLineStyle(kDotted);
-  lgauss2->SetLineColor(kBlue);
-  lgauss2->SetLineWidth(3);
-  lgauss2->Draw("same");
-
 
   tl->SetTextSize(0.07); 
   tl->SetTextColor(kBlack); 
@@ -2996,12 +3016,10 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
     tl->DrawLatex(0.22, 0.8, "Endcap");   
   } 
 
-  string hname(h->GetName());
+
   if (fDoPrint) {
     if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d.pdf", fDirectory.c_str(), mode));
     else c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), mode));
-    //if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
-    //else c0->SaveAs(Form("%s/cs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
   }
 
   cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
@@ -3015,6 +3033,8 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
 void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
 
   double pReco = (preco<0? 5.2: preco);
+
+  h->SetAxisRange(5.0, 5.8);
 
   TF1 *lF1(0), *lBg(0);
 
@@ -3030,9 +3050,6 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
     lBg = fpFunc->expo(fpFunc->fLo, fpFunc->fHi); 
   }
 
-  //zone(1,2);
-  //h->DrawCopy();
-  //c0->cd(2);
   lF1->SetLineColor(kBlue); 
   lF1->Draw();
   //  return;
@@ -3100,10 +3117,8 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
     tl->DrawLatex(0.22, 0.8, "Endcap");   
   } 
 
-  string hname(h->GetName());
+
   if (fDoPrint) {
-    //if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
-    //else c0->SaveAs(Form("%s/cs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
     if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d.pdf", fDirectory.c_str(), mode));
     else c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), mode));
   }
@@ -3915,7 +3930,7 @@ void plotClass::singleEventPrintout(string suffix, string st, int ievt) {
 // ----------------------------------------------------------------------
 void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts) {
   int nentries = Int_t(t->GetEntries());
-  if (nevts > 0) nentries = nevts;
+  if (nevts > 0 && nentries > nevts) nentries = nevts;
 
   int nb(0);
   int step(50000); 
@@ -3933,17 +3948,65 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
   if (string::npos != mode.find("Bd")) imode = 1; 
   if (string::npos != mode.find("Bg")) imode = 98; 
   cout << "==> plotClass::loopOverTree> looping in mode " << mode << " -> imode = " << imode 
+       << " fDoUseBDT = " << fDoUseBDT
        << " with " << nentries << " entries" 
        << endl;
+
+  string tname; 
+  if (98 == imode) {
+    tname = fRareName;
+  } else {
+    tname = mode; 
+  }
+
+  TDirectory *dir(0); 
+  TTree *small(0); 
+  TFile *fLocal(0); 
+  if (fSaveSmallTree) {
+    dir = gDirectory; 
+    fLocal = TFile::Open(Form("%s/small-%s.root", fDirectory.c_str(), tname.c_str()), "RECREATE"); 
+    small = new TTree(Form("%s_%s", tname.c_str(), (fDoUseBDT?"bdt":"cnc")), Form("%s_%s", tname.c_str(), (fDoUseBDT?"bdt":"cnc")));
+    small->SetDirectory(fLocal);
+    int run, evt; 
+    float bdt, m, m1eta, m2eta, eta; 
+    small->Branch("run", &fb.run,"run/I");
+    small->Branch("evt", &fb.evt,"evt/I");
+    
+    small->Branch("bdt", &fBDT ,"bdt/D");
+    
+    small->Branch("m", &fb.m,"m/D");
+    small->Branch("m1eta", &fb.m1eta,"m1eta/D");
+    small->Branch("m2eta", &fb.m2eta,"m2eta/D");
+    small->Branch("eta", &fb.eta,"eta/D");
+  }
 
   for (int jentry = 0; jentry < nentries; jentry++) {
     nb = t->GetEntry(jentry);
     if (jentry%step == 0) cout << Form(" .. Event %8d", jentry) << endl;
     candAnalysis(imode);
     loopFunction(function, imode);
+    if (fSaveSmallTree
+	&& fGoodAcceptance 
+	&& fGoodTracks 
+	&& fGoodTracksPt 
+	&& fGoodTracksEta 
+	&& fGoodMuonsPt
+	&& fGoodMuonsEta
+	&& fGoodJpsiCuts
+	&& fGoodMuonsID
+	&& fGoodHLT) {
+      small->Fill();
+    }
   }
 
+  if (fSaveSmallTree) {
+    small->Write();
+    fLocal->Close();
+    dir->cd();
+  }
 }
+
+
 
 // ----------------------------------------------------------------------
 TTree* plotClass::getTree(string mode) {
@@ -3959,7 +4022,11 @@ TTree* plotClass::getTree(string mode) {
 // ----------------------------------------------------------------------
 void plotClass::setupTree(TTree *t, string mode) {
 
-  if (string::npos != mode.find("Mc")) fIsMC = true; 
+  if (string::npos != mode.find("Mc")) {
+    fIsMC = true; 
+  } else {
+    fIsMC = false; 
+  }
 
   t->SetBranchAddress("pt", &fb.pt);
 
@@ -4085,6 +4152,8 @@ void plotClass::candAnalysis(int mode) {
   fGoodQ = fGoodPvAveW8 = fGoodMaxDoca = fGoodIp = fGoodIpS = fGoodPt = fGoodEta = fGoodAlpha =  fGoodChi2 = fGoodFLS = false;   
   fGoodCloseTrack = fGoodIso = fGoodDocaTrk = fGoodLastCut = fPreselection = false;
 
+  fGoodJpsiCuts = true;
+
   fGoodAcceptance = true; 
   fGoodMuonsPt    = true;
   fGoodMuonsEta   = true;
@@ -4093,8 +4162,8 @@ void plotClass::candAnalysis(int mode) {
   fGoodTracksEta  = true;
 
   if (fIsMC) {
-    if (fb.g1pt < 3.5) fGoodAcceptance = false; 
-    if (fb.g2pt < 3.5) fGoodAcceptance = false; 
+    if (fb.g1pt < 1.0) fGoodAcceptance = false; 
+    if (fb.g2pt < 1.0) fGoodAcceptance = false; 
     if (TMath::Abs(fb.g1eta) > 2.5) fGoodAcceptance = false; 
     if (TMath::Abs(fb.g2eta) > 2.5) fGoodAcceptance = false; 
   } else {
@@ -4103,21 +4172,23 @@ void plotClass::candAnalysis(int mode) {
     }
   }
 
+  if (fb.m1pt < 1.0) fGoodAcceptance = false; 
+  if (fb.m2pt < 1.0) fGoodAcceptance = false; 
+
+
   if (fb.m1pt < pCuts->m1pt) {
     fGoodMuonsPt = false; 
-    fGoodTracksPt = false; 
   }
   if (fb.m2pt < pCuts->m2pt) {
     fGoodMuonsPt = false; 
-    fGoodTracksPt = false; 
   }
   if (TMath::Abs(fb.m1eta) > 2.4) {
-      fGoodMuonsEta = false; 
-      fGoodTracksEta = false; 
-    }
-  if (TMath::Abs(fb.m2eta) > 2.4) {
+    fGoodAcceptance = false; 
     fGoodMuonsEta = false; 
-    fGoodTracksEta = false; 
+  }
+  if (TMath::Abs(fb.m2eta) > 2.4) {
+    fGoodAcceptance = false; 
+    fGoodMuonsEta = false; 
   }
 
   if (bp2jpsikp) {
@@ -4128,8 +4199,14 @@ void plotClass::candAnalysis(int mode) {
       if (TMath::Abs(fb.g3eta) > 2.5) fGoodAcceptance = false; 
       if (fb.g3pt < 0.4) fGoodAcceptance = false; 
     }
-    if (TMath::Abs(fb.k1eta) > 2.4) fGoodTracksEta = false; 
-    if (fb.k1pt < 0.5) fGoodTracksPt = false; 
+    if (TMath::Abs(fb.k1eta) > 2.4) {
+      fGoodAcceptance = false; 
+      fGoodTracksEta = false; 
+    }
+    if (fb.k1pt < 0.5) {
+      fGoodAcceptance = false; 
+      fGoodTracksPt = false; 
+    }
   }
   
   if (bs2jpsiphi) {
@@ -4142,13 +4219,25 @@ void plotClass::candAnalysis(int mode) {
       if (fb.g3pt < 0.4) fGoodAcceptance = false; 
       if (fb.g4pt < 0.4) fGoodAcceptance = false; 
     }
-    if (TMath::Abs(fb.k1eta) > 2.4) fGoodAcceptance = false; 
-    if (TMath::Abs(fb.k2eta) > 2.4) fGoodAcceptance = false; 
-    if (fb.k1pt < 0.5) fGoodAcceptance = false; 
-    if (fb.k2pt < 0.5) fGoodAcceptance = false; 
-    if (fb.dr >0.3) fGoodAcceptance = false; 
-    if (fb.mkk < 0.995) fGoodAcceptance = false; 
-    if (fb.mkk > 1.045) fGoodAcceptance = false; 
+    if (TMath::Abs(fb.k1eta) > 2.4) {
+      fGoodAcceptance = false; 
+      fGoodTracksEta = false; 
+    }
+    if (TMath::Abs(fb.k2eta) > 2.4) {
+      fGoodAcceptance = false; 
+      fGoodTracksEta = false; 
+    }
+    if (fb.k1pt < 0.5) {
+      fGoodAcceptance = false; 
+      fGoodTracksPt = false; 
+    }
+    if (fb.k2pt < 0.5) {
+      fGoodAcceptance = false; 
+      fGoodTracksPt = false; 
+    }
+    if (fb.dr   > 0.3) fGoodJpsiCuts = false; 
+    if (fb.mkk  < 0.995) fGoodJpsiCuts = false; 
+    if (fb.mkk  > 1.045) fGoodJpsiCuts = false; 
   }
 
   if (bs2jpsiphi || bp2jpsikp) {
@@ -4156,10 +4245,21 @@ void plotClass::candAnalysis(int mode) {
     if (fb.mpsi < 3.0) fGoodJpsiCuts = false;
     // -- cowboy veto 
     if (fb.psipt < 7.0) fGoodJpsiCuts = false;
-  } 
+  } else {
+    fGoodJpsiCuts = true; 
+  }
 
   if (fDoUseBDT) {
-    if (fGoodAcceptance) calcBDT(true); 
+    if (fGoodAcceptance 
+	&& fGoodJpsiCuts
+	&& fGoodTracksEta
+	&& fGoodTracksPt
+	// -- the following cus are ensured by preselection() invoked in calcBDT
+	// 	&& fGoodMuonsEta
+	// 	&& fGoodMuonsPt
+	) {
+      calcBDT(); 
+    }
   }
 
   fGoodMuonsID    = fb.gmuid;
@@ -4195,10 +4295,15 @@ void plotClass::candAnalysis(int mode) {
 
 
 // ----------------------------------------------------------------------
-void plotClass::calcBDT(bool rejectInvIso) {
+void plotClass::calcBDT() {
   fBDT = -99.;
 
-  if (!preselection(fb, fChan, rejectInvIso)) return;
+  if (!preselection(fb, fChan)) return;
+
+  if (fDoApplyMuonPtCuts) {
+    if (fb.m1pt < fCuts[fChan]->m1pt) return;
+    if (fb.m2pt < fCuts[fChan]->m2pt) return;
+  }
 
   //??  if (5 == mode && 5.2 < mass && mass < 5.45 && fb.iso < 0.7) continue; 
   //  if (rejectInvIso && 5.2 < fb.m && fb.m < 5.45 && fb.iso < 0.7) return;
@@ -4404,4 +4509,23 @@ int plotClass::detChan(double m1eta, double m2eta) {
   if (TMath::Abs(m1eta) < fCuts[0]->etaMax && TMath::Abs(m2eta) < fCuts[0]->etaMax) return 0; 
   if (TMath::Abs(m1eta) < 2.4 && TMath::Abs(m2eta) < 2.4) return 1; 
   return -1; 
+}
+
+
+// ----------------------------------------------------------------------
+double plotClass::getValueByLabel(TH1D *h, string label) {
+  string axislabel; 
+  for (int i = 1; i <= h->GetNbinsX(); ++i) {
+    axislabel = h->GetXaxis()->GetBinLabel(i);
+    if (string::npos != axislabel.find(label)) return h->GetBinContent(i);
+  }
+  
+  return -999.; 
+}
+
+
+// ----------------------------------------------------------------------=
+void plotClass::rmSubString(string &sInput, const string &sub) {
+  string::size_type foundpos = sInput.find(sub);
+  if (foundpos != string::npos)  sInput.erase(sInput.begin() + foundpos, sInput.begin() + foundpos + sub.length());
 }

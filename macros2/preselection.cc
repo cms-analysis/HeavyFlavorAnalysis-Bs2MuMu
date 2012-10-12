@@ -61,7 +61,7 @@ std::string preselection() {
 }
 
 // ----------------------------------------------------------------------
-bool preselection(RedTreeData &b, int channel, bool rejectBlindBox) {
+bool preselection(RedTreeData &b, int channel) {
   //   if (fTrainAntiMuon && b.gmuid) return false;
   //   if (!fTrainAntiMuon && !b.gmuid) return false;
   //   if (!b.hlt) return false;
@@ -95,10 +95,6 @@ bool preselection(RedTreeData &b, int channel, bool rejectBlindBox) {
   if (b.docatrk > DOCATRKMAX) return false;
   if (b.maxdoca > MAXDOCAMAX) return false;
   //  if (verbose > 6) cout << "passed misc cuts" << endl;
-
-  // -- use this to veto the inverted-isolation blinding box events
-  //  if (rejectBlindBox && 5.2 < b.m && b.m < 5.45) return false; 
-  //  if (verbose > 5) cout << "passed inv-isolation cuts" << endl;
 
   if (b.m < 4.9) return false;
   if (b.m > 5.9) return false;

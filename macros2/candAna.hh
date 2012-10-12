@@ -76,7 +76,7 @@ public:
   virtual void        replaceAll(std::string &s, std::string a, std::string b);
 
   virtual TMVA::Reader* setupReader(std::string xmlFile, readerData &rd);
-  virtual void        calcBDT(bool rejectInvIso = false);
+  virtual void        calcBDT();
   virtual int         detChan(double m1eta, double m2eta);
     
   virtual void        bookHist();

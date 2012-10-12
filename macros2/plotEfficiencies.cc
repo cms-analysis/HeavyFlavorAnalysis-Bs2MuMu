@@ -15,28 +15,17 @@ ClassImp(plotEfficiencies)
 
 
 // ----------------------------------------------------------------------
-plotEfficiencies::plotEfficiencies(const char *files, const char *cuts, const char *dir, int mode) : plotClass(files, cuts, dir, mode) { 
+plotEfficiencies::plotEfficiencies(const char *files, const char *dir, const char *cuts, int mode) : plotClass(files, dir, cuts, mode) { 
 
   fDoPrint = true; 
 
-  fDoUseBDT = false; 
+  fDoUseBDT = true; 
   fDoApplyCowboyVeto = false;   
   fDoApplyCowboyVetoAlsoInSignal = false; 
-
-  string hfname  = fDirectory + "/anaBmm.plotEfficiencies." + fSuffix + ".root";
-  cout << "fHistFile: " << hfname << endl;
-  //  if (fHistFile) fHistFile->Close();
-  fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
 
   fNumbersFileName = fDirectory + "/anaBmm.plotEfficiencies." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);
-
-  int NBINS = (fMassHi - fMassLo)/0.025;
-
-  int HBINS(15); 
-  double HLO(0.), HHI(45.); 
-
 
 }
 
@@ -46,41 +35,46 @@ plotEfficiencies::~plotEfficiencies() {
   fHistFile->Close();
 }
 
-
 // ----------------------------------------------------------------------
 void plotEfficiencies::makeAll(int channel) {
   if (channel &1) {
-    fDoUseBDT = false;   
-    fDoApplyCowboyVeto = false;   
-    fDoApplyCowboyVetoAlsoInSignal = false; 
-    // -- the analysis version
-    tnpVsMC(fCuts[0]->m1pt, fCuts[0]->m2pt, 1, "anaBarrel");
-    tnpVsMC(fCuts[1]->m1pt, fCuts[1]->m2pt, 1, "anaEndcap");
+
+    // -- dump histograms
+    string hfname  = fDirectory + "/anaBmm.plotEfficiencies." + fSuffix + ".root";
+    //  string hfname  = "anaBmm.plotResults." + fSuffix + ".root";
+    cout << "fHistFile: " << hfname;
+    fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
+    cout << " opened " << endl;
+
+    fDoApplyMuonPtCuts = false; 
+    tnpVsMC(fCuts[0]->m1pt, fCuts[0]->m2pt, "analysis");
+
+    fDoApplyMuonPtCuts = true; 
+    
+    for (int i = 0; i < 6; ++i) {
+      double pt = 4.0 + i*1; 
+      cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
+      tnpVsMC(pt, pt, "study");
+    }
+
+  }
+
+  if (channel &2) {
+
+    // -- read histograms
+    string hfname  = fDirectory + "/anaBmm.plotEfficiencies." + fSuffix + ".root";
+    //  string hfname  = "anaBmm.plotResults." + fSuffix + ".root";
+    cout << "fHistFile: " << hfname;
+    fHistFile = TFile::Open(hfname.c_str());
+    cout << " opened " << endl;
+
+    texNumbers(fCuts[0]->m1pt, fCuts[0]->m2pt, "analysis"); 
 
     for (int i = 0; i < 6; ++i) {
       double pt = 4.0 + i*1; 
       cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
-      tnpVsMC(pt, pt, 1, "woCowboyVeto");
+      texNumbers(pt, pt, "woCowboyVeto");
     }
-    // -- efficiency ratios
-    fDoApplyCowboyVeto = true;   
-    fDoApplyCowboyVetoAlsoInSignal = false;   
-    for (int i = 0; i < 6; ++i) {
-      double pt = 4.0 + i*1.0; 
-      cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
-      tnpVsMC(pt, pt, 1, "wCowboyVeto");
-    }
-    
-    // -- reset to normal
-    fDoUseBDT = false;   
-    fDoApplyCowboyVeto = false;   
-    fDoApplyCowboyVetoAlsoInSignal = false; 
-  }
-
-  if (channel &2) {
-    // -- BMT results
-    triggerSignal(); 
-    triggerNormalization(); 
   }
 
   if (channel &4) {
@@ -186,29 +180,223 @@ void plotEfficiencies::mcTriggerEffs() {
 
 
 // ----------------------------------------------------------------------
-void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) {
+void plotEfficiencies::resetHistograms() {
   
   for (unsigned int i = 0; i < fNchan; ++i) {
-    fCuts[i]->m1pt = m1pt; 
-    fCuts[i]->m2pt = m2pt; 
+
+    fhMuId[i]->Reset();
+    fhMuTr[i]->Reset();
+    fhMuIdMC[i]->Reset();
+    fhMuTrMC[i]->Reset();
+    
+    fhMassAbsNoCuts[i]->Reset();
+    fhMassNoCuts[i]->Reset();
+    fhMassNoCutsManyBins[i]->Reset();
+
+    fhMassWithAnaCuts[i]->Reset();
+    fhMassWithAnaCutsManyBins[i]->Reset();
+
+    fhMassWithMuonCuts[i]->Reset();
+    fhMassWithMuonCutsManyBins[i]->Reset();
+
+    fhMassWithTriggerCuts[i]->Reset();
+    fhMassWithTriggerCutsManyBins[i]->Reset();
+
+    fhMassWithAllCuts[i]->Reset();
+    fhMassWithAllCutsBlind[i]->Reset();
+    fhMassWithAllCutsManyBins[i]->Reset();
+
+    fhNorm[i]->Reset();
+    fhNormC[i]->Reset();
+
+    fhMassWithMassCutsManyBins[i]->Reset();
+    fhMassWithMassCuts[i]->Reset();
   }
 
-//   printCuts(cout);
+}
+
+
+// ----------------------------------------------------------------------
+void plotEfficiencies::loopFunction(int function, int mode) {
+  if (1 == function) loopFunction1(mode);
+}
+
+
+
+// ----------------------------------------------------------------------
+// FIXME: This function (together with the identical version in plotClass) should migrate into plotClass
+void plotEfficiencies::loopFunction1(int mode) {
+
+  if (fChan < 0) return;
   
-  loopTree(0); 
-  loopTree(10); 
+  double mass = fb.m; 
+
+  bool bp2jpsikp(false), bs2jpsiphi(false); 
+  if (10 == mode) bp2jpsikp = true; 
+  if (15 == mode) bp2jpsikp = true; 
+
+  if (20 == mode) bs2jpsiphi = true; 
+  if (25 == mode) bs2jpsiphi = true; 
+  
+  fhMassAbsNoCuts[fChan]->Fill(mass);
+
+  if (!fGoodAcceptance) return;
+
+  // -- this is the base, after the raw acceptance cuts
+  fhMassNoCuts[fChan]->Fill(mass);
+  fhMassNoCutsManyBins[fChan]->Fill(mass); 
+
+  if (fDoUseBDT) {
+    if (fBDT < fCuts[fChan]->bdt) return;
+  } else {
+    if (!fGoodQ) return;
+    if (!fGoodJpsiCuts) return;
+    if (!fGoodPvAveW8) return;
+    if (!fGoodMaxDoca) return;
+    if (!fGoodLip) return;
+    if (!fGoodLipS) return;
+    if (!fGoodIp) return;
+    if (!fGoodIpS) return;
+    if (!fGoodPt) return;
+    if (!fGoodEta) return;
+    if (!fGoodAlpha) return;
+    if (!fGoodChi2) return;
+    if (!fGoodFLS) return;
+    if (!fGoodCloseTrack) return;
+    if (!fGoodIso) return;
+    if (!fGoodDocaTrk) return;
+  }
+
+  fhMassWithAnaCuts[fChan]->Fill(mass); 
+  fhMassWithAnaCutsManyBins[fChan]->Fill(mass); 
+
+  double tr1w8(0.), tr2w8(0.), trw8(0.), m1w8(0.), m2w8(0.), mw8(0.0);
+  // -- muon ID: Data PidTables
+  m1w8 = fptM->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+  m2w8 = fptM->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+  mw8  = m1w8*m2w8; 
+  fhMuId[fChan]->Fill(mw8); 
+  
+  // -- muon ID: MC PidTables
+  m1w8 = fptMMC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+  m2w8 = fptMMC->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+  mw8  = m1w8*m2w8; 
+  if (mw8 > 0.) {
+    fhMuIdMC[fChan]->Fill(mw8, 1./mw8); 
+  }
+
+  // -- muon trigger: Data PidTables
+  tr1w8 = fptT1->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*fptT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+  tr2w8 = fptT1->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.)*fptT2->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+  trw8  = tr1w8*tr2w8; 
+  if (bs2jpsiphi || bp2jpsikp) {
+    if (fb.rr >= 3) {
+      if (TMath::Abs(fb.m1eta) > 2.2) trw8 = 0; 
+      if (TMath::Abs(fb.m2eta) > 2.2) trw8 = 0; 
+    }
+  }
+  fhMuTr[fChan]->Fill(trw8); 
+  
+  // -- muon trigger: MC PidTables
+  tr1w8 = fptT1MC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*fptT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+  tr2w8 = fptT1MC->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.)*fptT2->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+  trw8  = tr1w8*tr2w8; 
+  if (bs2jpsiphi || bp2jpsikp) {
+    if (fb.rr >= 3) {
+      if (TMath::Abs(fb.m1eta) > 2.2) trw8 = 0; 
+      if (TMath::Abs(fb.m2eta) > 2.2) trw8 = 0; 
+    }
+  }
+  fhMuTrMC[fChan]->Fill(trw8); 
+
+
+  // -- MUON ID
+  if (false == fb.gmuid) return;
+  fhMassWithMuonCuts[fChan]->Fill(mass); 
+  fhMassWithMuonCutsManyBins[fChan]->Fill(mass); 
+  
+  // -- TRIGGER
+  if (false == fb.hlt) return;
+  fhMassWithTriggerCuts[fChan]->Fill(mass); 
+  fhMassWithTriggerCutsManyBins[fChan]->Fill(mass); 
+  
+  fhMassWithAllCuts[fChan]->Fill(mass); 
+  if (5 == mode && !(5.2 < mass && mass < 5.45)) {
+    fhMassWithAllCutsBlind[fChan]->Fill(mass); 
+  }
+  
+  fhMassWithAllCutsManyBins[fChan]->Fill(mass); 
+  
+  fhNorm[fChan]->Fill(mass);
+  fhNormC[fChan]->Fill(fb.cm);
+  fhDstarPi[fChan]->Fill(mass);
+  
+  //FIXME  if (!fDoUseBDT) elist->Enter(jentry); 
+  
+  if (0 == mode && mass < fCuts[fChan]->mBsLo) return;
+  if (0 == mode && mass > fCuts[fChan]->mBsHi) return;
+  if (1 == mode && mass < fCuts[fChan]->mBdLo) return;
+  if (1 == mode && mass > fCuts[fChan]->mBdHi) return;
+  if (10 == mode && mass < fNoLo) return;
+  if (10 == mode && mass > fNoHi) return;
+  if (20 == mode && mass < fCsLo) return;
+  if (20 == mode && mass > fCsHi) return;
+  
+  fhMassWithMassCuts[fChan]->Fill(mass);
+  fhMassWithMassCutsManyBins[fChan]->Fill(mass); 
+  
+  fhBdtMass[fChan]->Fill(mass, fBDT); 
+  //  if (fBDT > 0.3) cout << "mass = " << mass << " bdt = " << fBDT << endl;
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, string what) {
+
+  if (string::npos != what.find("study")) {
+    for (unsigned int i = 0; i < fNchan; ++i) {
+      fCuts[i]->m1pt = m1pt; 
+      fCuts[i]->m2pt = m2pt; 
+    }
+  }
+
+  TTree *t(0); 
+  resetHistograms();
+  fSetup = "SgMc"; 
+  t = getTree(fSetup); 
+  setupTree(t, fSetup); 
+  loopOverTree(t, fSetup, 1);
+  saveHists(fSetup, m1pt, m2pt, what);
+
+
+  resetHistograms();
+  fSetup = "NoMc"; 
+  t = getTree(fSetup); 
+  setupTree(t, fSetup); 
+  loopOverTree(t, fSetup, 1);
+  saveHists(fSetup, m1pt, m2pt, what);
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotEfficiencies::texNumbers(double m1pt, double m2pt, string what) {
 
   fTEX << "% -- tnpVsMC for pt = " << m1pt << " and " << m2pt << " and what = " << what << endl;
 
   string Suffix = fSuffix + what; 
   // -- reset to have constant name for the default analysis setup
-  if (what == "anaBarrel" || what == "anaEndcap") {
+  if (what == "analysis") {
     m1pt = 1.1; 
     m2pt = 1.1; 
   }
 
   double r(0.), rs(1.), rp(1.); 
   for (int i = 0; i < fNchan; ++i) {
+    numbersFromHist(i,  0, m1pt, m2pt, fNumbersBs[i]);
+    numbersFromHist(i, 10, m1pt, m2pt, fNumbersNo[i]);
+
     // -------
     // -- muid
     // -------
@@ -332,7 +520,7 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) 
   }
 
   // -- muid 
-  if (chan&1) {
+  if (1) {
     cout << "            SG 0 Eff  TNP  1 Eff  TNP  NO 0 Eff  TNP  1 Eff  TNP  0 rEff rTNP 1 rEff rTNP  SG rho0 rho1  NO rho0 rho1 " << endl;
     cout << Form("pT > %3.1f muid:   ", m2pt) 
 	 << Form("%3.2f %3.2f   %3.2f %3.2f", 
@@ -350,7 +538,7 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) 
   }
 
   // -- trig
-  if (chan&2) {
+  if (1) {
     cout << Form("pT > %3.1f trig: ", m2pt) 
 	 << Form("%3.2f %3.2f %3.2f %3.2f", 
 		 fNumbersBs[0]->effTrigMC, fNumbersBs[0]->effTrigTNPMC, 
@@ -373,6 +561,194 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, int chan, string what) 
 		 )
 	 << endl;
   }
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotEfficiencies::saveHists(string smode, double m1pt, double m2pt, string what) {
+
+
+  if (what != "study") {
+    m1pt = 1.1; 
+    m2pt = 1.1; 
+  }
+
+  fHistFile->cd();
+
+  int mode(0); 
+  if ("SgMc" == smode)   mode = 0; 
+  if ("BdMc" == smode)   mode = 1; 
+  if ("SgData" == smode) mode = 5; 
+
+  if ("NoMc" == smode)   mode = 10; 
+  if ("NoData" == smode) mode = 15; 
+
+  if ("CsMc" == smode)   mode = 20; 
+  if ("CsData" == smode) mode = 25; 
+ 
+  TH1D *h1(0); 
+  TH2D *h2(0); 
+
+  for (unsigned int i = 0; i < fNchan; ++i) {
+    string modifier = (fDoUseBDT?"bdt":"cnc"); 
+    modifier = Form("%s:%2.1f:%2.1f", modifier.c_str(), m1pt, m2pt); 
+    h1 = (TH1D*)(fhGenAndAccNumbers[i]->Clone(Form("hGenAndAccNumbers_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMuId[i]->Clone(Form("hMuId_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMuIdMC[i]->Clone(Form("hMuIdMC_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMuTr[i]->Clone(Form("hMuTr_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMuTrMC[i]->Clone(Form("hMuTrMC_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassAbsNoCuts[i]->Clone(Form("hMassAbsNoCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassAbsNoCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassNoCuts[i]->Clone(Form("hMassNoCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassNoCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassNoCuts[i]->Clone(Form("hMassNoCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassNoCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassWithAnaCuts[i]->Clone(Form("hMassWithAnaCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassWithAnaCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassWithMuonCuts[i]->Clone(Form("hMassWithMuonCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassWithMuonCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassWithTriggerCuts[i]->Clone(Form("hMassWithTriggerCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassWithTriggerCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassWithAllCuts[i]->Clone(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassWithAllCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassWithAllCutsManyBins[i]->Clone(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassWithAllCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassWithMassCuts[i]->Clone(Form("hMassWithMassCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassWithMassCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassWithMassCutsManyBins[i]->Clone(Form("hMassWithMassCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassWithMassCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    if (string::npos != fSetup.find("No") || string::npos != fSetup.find("Cs")) {
+      h1 = (TH1D*)(fhNorm[i]->Clone(Form("hNorm_%s_%d_chan%d", modifier.c_str(), mode, i)));       
+      h1->SetTitle(Form("hNorm_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+      h1->SetDirectory(fHistFile); 
+      h1->Write();
+
+      h1 = (TH1D*)(fhNormC[i]->Clone(Form("hNormC_%s_%d_chan%d", modifier.c_str(), mode, i)));     
+      h1->SetTitle(Form("hNormC_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+      h1->SetDirectory(fHistFile); 
+      h1->Write();
+    }
+
+    if (string::npos != fSetup.find("DstarPi")) {
+      h1 = (TH1D*)(fhDstarPi[i]->Clone(Form("hDstarPi_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+      h1->SetTitle(Form("hDstarPi_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+      h1->SetDirectory(fHistFile); 
+      h1->Write();
+    }
+    
+    if (fDoUseBDT) {
+      h2 = (TH2D*)(fhBdtMass[i]->Clone(Form("hBdtMass_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+      h2->SetDirectory(fHistFile); 
+      h2->Write();
+    }
+
+  }
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotEfficiencies::numbersFromHist(int chan, int mode, double m1pt, double m2pt, numbers *aa) {
+  TH1D *h1(0); 
+
+  // -- efficiency and acceptance
+  string modifier = (fDoUseBDT?"bdt":"cnc");
+  modifier = Form("%s:%2.1f:%2.1f", modifier.c_str(), m1pt, m2pt); 
+
+  cout << Form("hMassNoCuts_%s_%d_chan%d", modifier.c_str(), mode, chan) << endl;
+  TH1D *hMassNoCuts              = (TH1D*)fHistFile->Get(Form("hMassNoCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMassWithAnaCuts         = (TH1D*)fHistFile->Get(Form("hMassWithAnaCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMassWithMuonCuts        = (TH1D*)fHistFile->Get(Form("hMassWithMuonCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMassWithTriggerCuts     = (TH1D*)fHistFile->Get(Form("hMassWithTriggerCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMassWithAllCuts         = (TH1D*)fHistFile->Get(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMassWithMassCuts        = (TH1D*)fHistFile->Get(Form("hMassWithMassCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMassWithAllCutsManyBins = (TH1D*)fHistFile->Get(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, chan));
+
+  TH1D *hMuId                    = (TH1D*)fHistFile->Get(Form("hMuId_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMuIdMC                  = (TH1D*)fHistFile->Get(Form("hMuIdMC_%s_%d_chan%d", modifier.c_str(), mode, chan));
+
+  TH1D *hMuTr                    = (TH1D*)fHistFile->Get(Form("hMuTr_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMuTrMC                  = (TH1D*)fHistFile->Get(Form("hMuTrMC_%s_%d_chan%d", modifier.c_str(), mode, chan));
+
+  double a = hMassNoCuts->GetSumOfWeights(); 
+  double b = hMassWithAnaCuts->GetSumOfWeights();
+  double c = hMassWithMuonCuts->GetSumOfWeights();
+  double d = hMassWithTriggerCuts->GetSumOfWeights();
+  double e = hMassWithAllCuts->GetSumOfWeights();
+  double f = hMassWithMassCuts->GetSumOfWeights();
+  aa->ana0Yield        = a;
+  aa->ana0YieldE       = TMath::Sqrt(a);
+  aa->anaYield         = b; 
+  aa->anaYieldE        = TMath::Sqrt(b); 
+  aa->anaMuonYield     = c; 
+  aa->anaMuonYieldE    = TMath::Sqrt(c); 
+  aa->anaTriggerYield  = d; 
+  aa->anaTriggerYieldE = TMath::Sqrt(d); 
+  aa->anaWmcYield      = f; 
+  aa->anaWmcYieldE     = TMath::Sqrt(f);
+  aa->effAna           = b/a*aa->effPtReco;
+  aa->effAnaE          = dEff(static_cast<int>(b), static_cast<int>(a)); // FIXME add error from effPtReco
+  aa->effMuidMC        = c/b;
+  aa->effMuidMCE       = dEff(static_cast<int>(c), static_cast<int>(b));
+  aa->effMuidTNP       = hMuId->GetMean();
+  aa->effMuidTNPE      = hMuId->GetMeanError();
+  aa->effMuidTNPMC     = hMuIdMC->GetMean();
+  aa->effMuidTNPMCE    = hMuIdMC->GetMeanError();
+  aa->effTrigMC        = d/c;
+  aa->effTrigMCE       = dEff(static_cast<int>(d), static_cast<int>(c));
+  aa->effTrigTNP       = hMuTr->GetMean();
+  aa->effTrigTNPE      = hMuTr->GetMeanError();
+  aa->effTrigTNPMC     = hMuTrMC->GetMean();
+  aa->effTrigTNPMCE    = hMuTrMC->GetMeanError();
+
+  printNumbers(*aa, cout); 
+    
 }
 
 // ----------------------------------------------------------------------

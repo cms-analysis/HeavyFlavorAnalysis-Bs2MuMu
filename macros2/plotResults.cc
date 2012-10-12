@@ -23,6 +23,8 @@ plotResults::plotResults(const char *files, const char *dir, const char *cuts, i
 
   fDoPrint = true; 
 
+  cout << "==> plotResults files: " << files << " dir: " << dir << " cuts: " << cuts << endl;
+
   fNumbersFileName = fDirectory + "/anaBmm.plotResults." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);
@@ -34,6 +36,15 @@ plotResults::plotResults(const char *files, const char *dir, const char *cuts, i
   fDoApplyCowboyVetoAlsoInSignal = false; 
   fInvertedIso = false; 
   fNormProcessed = false; 
+  fSaveSmallTree = false;
+
+  //  fStampString = "CMS, 5fb^{-1}"; 
+  if (fDoUseBDT) {
+    fStampString = "BDT preliminary"; 
+  } else {
+    fStampString = "CNC preliminary"; 
+  }
+  
 }
 
 // ----------------------------------------------------------------------
@@ -46,7 +57,21 @@ plotResults::~plotResults() {
 void plotResults::makeAll(int channels) {
 
  
-  //  return;
+  zone(1);
+  if (channels & 1) {
+    fillAndSaveHistograms(); 
+  }
+
+  if (channels & 2) {
+    fNormProcessed = false; 
+    fDoUseBDT = true; 
+    fDoApplyCowboyVeto = false;   
+    fDoApplyCowboyVetoAlsoInSignal = false;   
+    computeNormUL();
+    computeCsBF();
+    //acceptancePerProcess();
+  }
+
 
 //   fls3dVsX("pt", "m1pt>4.5&&m2pt>4.2&&hlt", "fls3d_prof_pt.pdf");
 //   fls3dVsX("pt", "m1pt>4.5&&m2pt>4.2&&hlt&&docatrk>0.015", "fls3d_prof_docatrk_pt.pdf");
@@ -71,22 +96,6 @@ void plotResults::makeAll(int channels) {
 //     acceptancePerProcess();
 //   }
 
-  zone(1);
-  if (channels & 1) {
-    fillAndSaveHistograms(1000000); 
-    //    fillAndSaveHistograms(200000); 
-  }
-
-  if (channels & 2) {
-    fNormProcessed = false; 
-    fDoUseBDT = true; 
-    fDoApplyCowboyVeto = false;   
-    fDoApplyCowboyVetoAlsoInSignal = false;   
-    computeNormUL();
-    //    computeCsBF();
-    //acceptancePerProcess();
-  }
-
 }
 
 
@@ -95,24 +104,714 @@ void plotResults::makeAll(int channels) {
 void plotResults::calculateNumbers(int mode) {
 
   // -- dump histograms
-  //  string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
-  string hfname  = "anaBmm.plotResults." + fSuffix + ".root";
+  string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
+  //  string hfname  = "anaBmm.plotResults." + fSuffix + ".root";
   cout << "fHistFile: " << hfname;
   fHistFile = TFile::Open(hfname.c_str());
   cout << " opened " << endl;
   
-  TH1D *h1; 
-  string name;
-  zone(1,2);
-  for (int chan = 0; chan < 1; ++chan) {
-    name = Form("hNorm_bdt_15_chan%d", chan);
-    h1 =  (TH1D*)fHistFile->Get(name.c_str()); 
-    h1->DrawCopy(); 
-    c0->cd(2);
-    normYield(h1, chan, 5.0); 
-    rareBgFromHist(); 
+  for (int chan = 0; chan < fNchan; ++chan) {
+    fChan = chan; 
+    initNumbers(fNumbersNo[chan], false); 
+    initNumbers(fNumbersBs[chan], false); 
+    initNumbers(fNumbersBd[chan], false); 
+    calculateNoNumbers(chan, mode);
+    calculateCsNumbers(chan, mode);
+    calculateRareBgNumbers(chan);
+    calculateSgNumbers(chan);
   }
 
+  string bla = fDirectory + "/anaBmm.plotResults." + fSuffix + ".ulc";
+
+  cout << "===> Storing ULC numbers in file " << bla << endl;
+  system(Form("/bin/rm -f %s", bla.c_str()));
+  printUlcalcNumbers(bla);
+  createAllCfgFiles(bla); 
+
+  cout << "printing fNumbersBs[0]" << endl;
+  printNumbers(*fNumbersBs[0], cout); 
+  printNumbers(*fNumbersBs[0], fOUT); 
+
+  cout << "printing fNumbersBd[0]" << endl;
+  printNumbers(*fNumbersBd[0], cout); 
+  printNumbers(*fNumbersBd[0], fOUT); 
+
+  cout << "printing fNumbersNorm[0]" << endl;
+  printNumbers(*fNumbersNo[0], cout); 
+  printNumbers(*fNumbersNo[0], fOUT); 
+
+
+  fHistFile->Close();
+
+}
+    
+// ----------------------------------------------------------------------
+void plotResults::calculateNoNumbers(int chan, int mode) {
+
+  c0->Clear();
+
+  // -- efficiency and acceptance
+  fSetup = "NoMc"; 
+  numbersFromHist(chan, 10, fNumbersNo[chan]); 
+
+  TH1D *h1(0); 
+  // -- default mass
+  string modifier = fDoUseBDT?"bdt":"cnc"; 
+  string  name = Form("hNorm_%s_15_chan%d", modifier.c_str(), chan);
+  h1 =  (TH1D*)fHistFile->Get(name.c_str()); 
+  h1->DrawCopy(); 
+  c0->cd(2);
+  if (1 == mode) {
+    normYield(h1, chan, 5.0); 
+  } else if (2 == mode) {
+    normYield2(h1, chan, 5.0); 
+  }
+  fNumbersNo[chan]->fitYield  = fNoSig; 
+  fNumbersNo[chan]->fitYieldE = fNoSigE; 
+
+  // -- new numbers
+  fNumbersNo[chan]->fFitNo = fNoSig; 
+  fNumbersNo[chan]->fFitNoE1 = fNoSigE; 
+  fNumbersNo[chan]->fFitNoE2 = 0.05*fNoSig; 
+
+  // -- J/psi mass constrained
+  name = Form("hNormC_%s_15_chan%d", modifier.c_str(), chan);
+  h1 =  (TH1D*)fHistFile->Get(name.c_str()); 
+  c0->cd(3);
+  h1->DrawCopy(); 
+  c0->cd(4);
+  if (1 == mode) {
+    normYield(h1, chan, 5.0); 
+  } else if (2 == mode) {
+    normYield2(h1, chan, 5.0); 
+  }
+  fNumbersNo[chan]->fitYieldC  = fNoSig; 
+  fNumbersNo[chan]->fitYieldCE = fNoSigE; 
+
+  // -- new numbers
+  fNumbersNo[chan]->fFitNoC = fNoSig; 
+  fNumbersNo[chan]->fFitNoCE1 = fNoSigE; 
+  fNumbersNo[chan]->fFitNoCE2 = 0.05*fNoSig; 
+
+  computeErrors(fNumbersNo); 
+
+   
+}
+
+
+// ----------------------------------------------------------------------
+void plotResults::calculateCsNumbers(int chan, int mode) {
+
+  // -- efficiency and acceptance
+  fSetup = "CsMc"; 
+  numbersFromHist(chan, 20, fNumbersCs[chan]); 
+
+  TH1D *h1(0); 
+  // -- default mass
+  string modifier = fDoUseBDT?"bdt":"cnc"; 
+  string  name = Form("hNorm_%s_25_chan%d", modifier.c_str(), chan);
+  h1 =  (TH1D*)fHistFile->Get(name.c_str()); 
+  h1->DrawCopy(); 
+  c0->cd(2);
+  if (1 == mode) {
+    csYield(h1, chan, 5.0); 
+  } else if (2 == mode) {
+    csYield2(h1, chan, 5.0); 
+  }
+  fNumbersCs[chan]->fitYield  = fCsSig; 
+  fNumbersCs[chan]->fitYieldE = fCsSigE; 
+
+  // -- new numbers
+  fNumbersCs[chan]->fFitCs   = fCsSig; 
+  fNumbersCs[chan]->fFitCsE1 = fCsSigE; 
+  fNumbersCs[chan]->fFitCsE2 = 0.05*fCsSig; 
+
+  // -- J/psi mass constrained
+  name = Form("hNormC_%s_25_chan%d", modifier.c_str(), chan);
+  h1 =  (TH1D*)fHistFile->Get(name.c_str()); 
+  c0->cd(3);
+  h1->DrawCopy(); 
+  c0->cd(4);
+  if (1 == mode) {
+    csYield(h1, chan, 5.0); 
+  } else if (2 == mode) {
+    csYield2(h1, chan, 5.0); 
+  }
+  fNumbersCs[chan]->fitYieldC  = fCsSig; 
+  fNumbersCs[chan]->fitYieldCE = fCsSigE; 
+
+  // -- new numbers
+  fNumbersCs[chan]->fFitCsC   = fCsSig; 
+  fNumbersCs[chan]->fFitCsCE1 = fCsSigE; 
+  fNumbersCs[chan]->fFitCsCE2 = 0.05*fCsSig; 
+
+  fTEX << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;    
+  fTEX << "% -- Control sample branching fraction" << endl;
+  fTEX << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;    
+
+  string cache = fSuffix; 
+  fSuffix = (fDoUseBDT? "bdt":"cnc") + fSuffix; 
+  
+  double result, resultE; 
+  for (int i = 0; i < 2; ++i) {
+    result = (fNumbersCs[i]->fitYield/fNumbersNo[i]->fitYield)
+      *(fu/fs)
+      *(fNumbersNo[i]->acc/fNumbersCs[i]->acc)
+      *(fNumbersNo[i]->effCand/fNumbersCs[i]->effCand)     
+      *(fNumbersNo[i]->effAna/fNumbersCs[i]->effAna)
+      *(fNumbersNo[i]->effMuidTNP/fNumbersCs[i]->effMuidTNP)
+      *(fNumbersNo[i]->effTrigTNP/fNumbersCs[i]->effTrigTNP)
+      * fBF["NoMc"];
+
+    
+    resultE = dRatio(fNumbersCs[i]->fitYield, fNumbersCs[i]->fitYieldE, fNumbersNo[i]->fitYield, fNumbersNo[i]->fitYieldE)
+      *(fu/fs)
+      *(fNumbersNo[i]->acc/fNumbersCs[i]->acc)
+      *(fNumbersNo[i]->effCand/fNumbersCs[i]->effCand)     
+      *(fNumbersNo[i]->effMuidTNP/fNumbersCs[i]->effMuidTNP)
+      *(fNumbersNo[i]->effTrigTNP/fNumbersCs[i]->effTrigTNP)
+      *(fNumbersNo[i]->effAna/fNumbersCs[i]->effAna)
+      * fBF["NoMc"];
+
+    cout << "chan " << i << ": PID fact branching fraction: " << result << "+/-" << resultE << endl;
+    fTEX << formatTex(result, Form("%s:N-CSBF-TNP-BS%i:val", fSuffix.c_str(), i), 6) << endl;
+    fTEX << formatTex(resultE, Form("%s:N-CSBF-TNP-BS%i:err", fSuffix.c_str(), i), 6) << endl;
+
+    result = (fNumbersCs[i]->fitYield/fNumbersNo[i]->fitYield)
+      *(fu/fs)
+      *(fNumbersNo[i]->acc/fNumbersCs[i]->acc)
+      *(fNumbersNo[i]->effCand/fNumbersCs[i]->effCand)     
+      *(fNumbersNo[i]->effAna/fNumbersCs[i]->effAna)
+      *(fNumbersNo[i]->effMuidMC/fNumbersCs[i]->effMuidMC)
+      *(fNumbersNo[i]->effTrigMC/fNumbersCs[i]->effTrigMC)
+      * fBF["NoMc"];
+
+    
+    resultE = dRatio(fNumbersCs[i]->fitYield, fNumbersCs[i]->fitYieldE, fNumbersNo[i]->fitYield, fNumbersNo[i]->fitYieldE)
+      *(fu/fs)
+      *(fNumbersNo[i]->acc/fNumbersCs[i]->acc)
+      *(fNumbersNo[i]->effCand/fNumbersCs[i]->effCand)     
+      *(fNumbersNo[i]->effMuidMC/fNumbersCs[i]->effMuidMC)
+      *(fNumbersNo[i]->effTrigMC/fNumbersCs[i]->effTrigMC)
+      *(fNumbersNo[i]->effAna/fNumbersCs[i]->effAna)
+      * fBF["NoMc"];
+
+    // -- for adding some systematical errors
+    double resultE2 = resultE*resultE; 
+    resultE2 += 0.05*0.05*result*result + 0.05*0.05*result*result;
+    double resultEsys = TMath::Sqrt(resultE2); 
+
+    cout << "chan " << i << ": MC fact branching fraction: " << result << "+/-" << resultE << endl;
+    fTEX << formatTex(result, Form("%s:N-CSBF-MC-BS%i:val", fSuffix.c_str(), i), 6) << endl;
+    fTEX << formatTex(resultE, Form("%s:N-CSBF-MC-BS%i:err", fSuffix.c_str(), i), 6) << endl;
+    fTEX << formatTex(resultEsys, Form("%s:N-CSBF-MC-BS%i:syst", fSuffix.c_str(), i), 6) << endl;
+    
+    result = (fNumbersCs[i]->fitYield/fNumbersNo[i]->fitYield)
+      *(fu/fs)
+      *(fNumbersNo[i]->effTot/fNumbersCs[i]->effTot)
+      * fBF["NoMc"];
+
+    cout << "chan " << i << ": branching fraction: " << result << "+/-" << resultE << endl;
+
+    fTEX << formatTex(result, Form("%s:N-CSBF-BS%i:val", fSuffix.c_str(), i), 6) << endl;
+    fTEX << formatTex(resultE, Form("%s:N-CSBF-BS%i:err", fSuffix.c_str(), i), 6) << endl;
+    fTEX << formatTex(resultEsys, Form("%s:N-CSBF-BS%i:syst", fSuffix.c_str(), i), 6) << endl;
+
+  }
+
+  fSuffix = cache; 
+
+  printCsBFNumbers();
+
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotResults::calculateRareBgNumbers(int chan) {
+
+  string cache = fSuffix; 
+  fSuffix = (fDoUseBDT? "bdt":"cnc") + fSuffix; 
+  string modifier = (fDoUseBDT?"bdt":"cnc"); 
+
+  TH1D *h1(0), *h2(0); 
+  string name(""); 
+
+  // -- 'tight muon' values
+  double epsMu[]  = {0.75, 0.75}; 
+  double epsPi[]  = {0.001, 0.001}; 
+  double errPi2[] = {0.25*0.25, 0.25*0.25}; // changed to 25% uncertainty, relative errors on misid rates are statistical error from Danek's fits
+  double epsKa[]  = {0.001, 0.001}; 
+  double errKa2[] = {0.25*0.25, 0.25*0.25}; 
+  double epsPr[]  = {0.0005, 0.0005};
+  double errPr2[] = {0.25*0.25, 0.25*0.25};
+
+  double teff[] = {0.83, 0.70}; // new numbers for BDT selection
+
+  c0->Clear();
+  gStyle->SetOptStat(0);
+
+  std::map<string, int> colors, hatches;
+  std::map<string, double> mscale;  
+  std::map<string, double> err;  
+
+  string cname; 
+  
+  cname = "bgLb2KP";
+  colors.insert(make_pair(cname, 46)); hatches.insert(make_pair(cname, 3004)); mscale.insert(make_pair(cname, epsPi[chan]*epsPr[chan])); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan] + errPr2[chan]))); 
+
+  cname = "bgLb2PiP";
+  colors.insert(make_pair(cname, 49)); hatches.insert(make_pair(cname, 3005)); mscale.insert(make_pair(cname, epsKa[chan]*epsPr[chan])); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2[chan] + errPr2[chan]))); 
+
+  cname = "bgLb2PMuNu";
+  colors.insert(make_pair(cname, 48)); hatches.insert(make_pair(cname, 3006)); mscale.insert(make_pair(cname, epsPr[chan]*epsMu[chan])); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPr2[chan]))); 
+
+
+  cname = "bgBs2KK";
+  colors.insert(make_pair(cname, 30)); hatches.insert(make_pair(cname, 3004)); mscale.insert(make_pair(cname, epsKa[chan]*epsKa[chan])); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2[chan] + errKa2[chan]))); 
+
+  cname = "bgBs2KPi";
+  colors.insert(make_pair(cname, 32)); hatches.insert(make_pair(cname, 3005)); mscale.insert(make_pair(cname, epsPi[chan]*epsKa[chan])); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan] + errKa2[chan]))); 
+
+  cname = "bgBs2PiPi"; 
+  colors.insert(make_pair(cname, 33)); hatches.insert(make_pair(cname, 3007)); mscale.insert(make_pair(cname, epsPi[chan]*epsPi[chan])); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan] + errPi2[chan]))); 
+
+  cname = "bgBs2KMuNu";
+  colors.insert(make_pair(cname, 34)); hatches.insert(make_pair(cname, 3008)); mscale.insert(make_pair(cname, epsKa[chan]*epsMu[chan])); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2[chan]))); 
+
+
+  cname = "bgBd2KK";
+  colors.insert(make_pair(cname, 40)); hatches.insert(make_pair(cname, 3004)); mscale.insert(make_pair(cname, epsKa[chan]*epsKa[chan])); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2[chan] + errKa2[chan]))); 
+
+  cname = "bgBd2KPi";
+  colors.insert(make_pair(cname, 41)); hatches.insert(make_pair(cname, 3005)); mscale.insert(make_pair(cname, epsKa[chan]*epsPi[chan])); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2[chan] + errPi2[chan]))); 
+
+  cname = "bgBd2PiPi";
+  colors.insert(make_pair(cname, 42)); hatches.insert(make_pair(cname, 3007)); mscale.insert(make_pair(cname, epsPi[chan]*epsPi[chan])); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan] + errPi2[chan]))); 
+
+  cname = "bgBd2PiMuNu";
+  colors.insert(make_pair(cname, 43));hatches.insert(make_pair(cname, 3008));mscale.insert(make_pair(cname, epsPi[chan]*epsMu[chan]));
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan]))); 
+
+
+  cname = "bgBu2PiMuMu";
+  colors.insert(make_pair(cname, 50));hatches.insert(make_pair(cname, 3004));mscale.insert(make_pair(cname, epsMu[chan]*epsMu[chan]));
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
+
+  cname = "bgBu2KMuMu";
+  colors.insert(make_pair(cname, 51));hatches.insert(make_pair(cname, 3005));mscale.insert(make_pair(cname, epsMu[chan]*epsMu[chan]));
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
+
+  cname = "bgBu2KMuMu";
+  colors.insert(make_pair(cname, 52));hatches.insert(make_pair(cname, 3005));mscale.insert(make_pair(cname, epsMu[chan]*epsMu[chan]));
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
+
+  cname = "bgBs2PhiMuMu";
+  colors.insert(make_pair(cname,53));hatches.insert(make_pair(cname,3006));mscale.insert(make_pair(cname,epsMu[chan]*epsMu[chan]));
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
+
+  newLegend(0.55, 0.3, 0.80, 0.85); 
+  TLegend *leggsl = new TLegend(0.55, 0.3, 0.80, 0.85); 
+  leggsl->SetFillStyle(0); 
+  leggsl->SetBorderSize(0); 
+  leggsl->SetTextSize(0.04);  
+  leggsl->SetFillColor(0); 
+  leggsl->SetTextFont(42); 
+
+  double valInc(0.), error(0.), errorInc(0.); 
+  double rareBs  = 0.;
+  double rareBsE = 0.;
+  double rareBd  = 0.;
+  double rareBdE = 0.;
+
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << "% --- rare Background per-channel numbers" << endl;  
+
+  zone(1,2);
+
+  TH1D *hMassWithAllCuts = (TH1D*)fHistFile->Get(Form("hMassWithAllCuts_%s_5_chan%d", modifier.c_str(),  chan)); 
+  TH1D *bRare   = (TH1D*)(hMassWithAllCuts->Clone(Form("bRare_%s", modifier.c_str())));  bRare->SetLineColor(kBlack); bRare->Reset();
+  TH1D *bslRare = (TH1D*)(hMassWithAllCuts->Clone(Form("bslRare_%s", modifier.c_str()))); bslRare->SetLineColor(kBlack); bslRare->Reset();
+
+  THStack *hRareBg   = new THStack("hRareBg","");
+  THStack *hslRareBg = new THStack("hslRareBg","");
+
+
+  TH1D *hRare; 
+  double tot0, tot, bd, bs, efftot, pss, pdd;
+  for (map<string, string>::iterator imap = fName.begin(); imap != fName.end(); ++imap) {  
+    fRareName = imap->first; 
+    cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << fRareName << endl;
+    if (string::npos == fRareName.find("bg")) continue;
+    if (0 == fF[fRareName])   continue; 
+
+
+    double misid = mscale[fRareName];
+    double ngenfile = ((TH1D*)fF[fRareName]->Get("monEvents"))->GetBinContent(1); 
+    cout << "======> " << fRareName << " with misid: " << misid << endl;
+
+    name = Form("hMassWithAllCuts_%s_%s_chan%d", modifier.c_str(), fRareName.c_str(), chan);
+    h1 = (TH1D*)fHistFile->Get(name.c_str()); 
+    name = Form("hMassWithAllCutsManyBins_%s_%s_chan%d", modifier.c_str(), fRareName.c_str(), chan);
+    h2 = (TH1D*)fHistFile->Get(name.c_str()); 
+    hRare = h1;
+
+    tot  = h2->Integral(0, h2->GetNbinsX()+1); 
+    tot0 = h2->GetSumOfWeights(); 
+    cout << "DBX DBX: tot = " << tot << " tot0 = " << tot0 << endl;
+    bd   = h2->Integral(h2->FindBin(fCuts[chan]->mBdLo), h2->FindBin(fCuts[chan]->mBdHi));
+    bs   = h2->Integral(h2->FindBin(fCuts[chan]->mBsLo), h2->FindBin(fCuts[chan]->mBsHi));
+    
+    efftot = tot/static_cast<double>(ngenfile)*fFilterEff[fRareName];
+    
+    pss = bs/tot; 
+    pdd = bd/tot;
+    
+    fNumbersBla[chan]->effTot = efftot;
+    fNumbersBla[chan]->pss = pss;
+    fNumbersBla[chan]->pdd = pdd;
+    double pRatio(0.);
+    if (string::npos != fRareName.find("Bs")) pRatio = fsfu;
+    if (string::npos != fRareName.find("Lb")) pRatio = fsfu;
+    if (string::npos != fRareName.find("Bd")) pRatio = 1.;
+    if (string::npos != fRareName.find("Bu")) pRatio = 1.;
+    
+    // -- yield is the total expectation, based on eff/eff' and N(B+)
+    //    it is used to normalize the rare bg histogram
+    //    the relevant numbers are extracted from the integrals over specific regions
+    double yield = scaledYield(fNumbersBla[chan], fNumbersNo[chan], fBF[fRareName], pRatio);
+    
+    // -- NB: rareBxE contains the SQUARE of the error
+    valInc = fNumbersBla[chan]->bsRare*misid*teff[chan];
+    // -- NB2: increment count only for peaking/rare bg. sl is included in 'combinatorial' bg
+    if (string::npos == fRareName.find("Nu")) rareBs  += valInc;
+    
+    error =  valInc*err[fRareName];
+    errorInc = error*error; 
+    if (string::npos == fRareName.find("Nu")) rareBsE += errorInc; 
+    fTEX <<  Form("\\vdef{%s:%s:bsRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
+    fTEX <<  Form("\\vdef{%s:%s:bsRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
+    
+    valInc = fNumbersBla[chan]->bdRare*misid*teff[chan];
+    if (string::npos == fRareName.find("Nu")) rareBd  += valInc;
+    
+    error = valInc*err[fRareName];
+    errorInc = error*error;
+    if (string::npos == fRareName.find("Nu"))  rareBdE += errorInc; 
+    fTEX <<  Form("\\vdef{%s:%s:bdRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
+    fTEX <<  Form("\\vdef{%s:%s:bdRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
+    
+    hRare->SetFillColor(colors[fRareName]);
+    hRare->SetFillStyle(1000);
+    cout << "DBX DBX scale factor = " << yield*misid*teff[chan]/tot << endl;
+    hRare->Scale(yield*misid*teff[chan]/tot);
+    
+    double loSb = hRare->Integral(hRare->FindBin(4.9001), hRare->FindBin(5.199));
+    fTEX <<  Form("\\vdef{%s:%s:loSideband%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, 
+		  loSb) << endl;
+    fTEX <<  Form("\\vdef{%s:%s:loSideband%d:err}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, 
+		  loSb*0.3) << endl;
+
+    if (string::npos != fRareName.find("Nu")) {
+      cout << "&&&&&&&&&&&&&&&&& adding to bslRare: " << fRareName << endl;
+      bslRare->Add(hRare); 
+      hslRareBg->Add(hRare); 
+      leggsl->AddEntry(hRare, fName[fRareName].c_str(), "f"); 
+    } else {
+      cout << "&&&&&&&&&&&&&&&&& adding to bRare: " << fRareName << endl;
+      bRare->Add(hRare); 
+      hRareBg->Add(hRare); 
+      legg->AddEntry(hRare, fName[fRareName].c_str(), "f"); 
+    }
+
+    c0->cd(1); 
+    hRare->Draw();
+    tl->DrawLatex(0.5, 0.92, fRareName.c_str());
+    c0->cd(2); 
+    hRare->Draw();
+    c0->Modified();
+    c0->Update();
+    c0->SaveAs(Form("%s/%s_%s_chan%d.pdf", fDirectory.c_str(), (fDoUseBDT?"bdt":"cnc"), fRareName.c_str(), chan));
+  }
+
+
+
+  c0->Clear();
+
+  rareBsE = TMath::Sqrt(rareBsE);
+  rareBdE = TMath::Sqrt(rareBdE);
+							 
+  //  gStyle->SetOptStat(0);
+
+  shrinkPad(0.12, 0.18); 
+
+  hRareBg->SetMaximum(1.3*hRareBg->GetMaximum()); 
+  hRareBg->Draw();
+  TH1D *hhRareBg = (TH1D*)hRareBg->GetHistogram(); 
+  hhRareBg->SetAxisRange(4.9, 5.9, "X"); 
+  setTitles(hhRareBg, "m_{#mu #mu} [GeV]", Form("Candidates/%4.3f GeV", hhRareBg->GetBinWidth(1)), 0.06, 0.9, 1.5);
+  legg->SetHeader("CMS simulation"); 
+  legg->Draw(); 
+  hhRareBg->Draw("same");
+  stamp(0.18, fStampString, 0.67, fStampCms); 
+  double size = tl->GetTextSize();
+  tl->SetTextSize(0.07); 
+  tl->DrawLatex(0.25, 0.8, (chan == 0?"Barrel":"Endcap"));   
+  tl->SetTextSize(size); 
+
+  string pdfname;
+  c0->SaveAs(Form("%s/%s_rare_chan%d.pdf", fDirectory.c_str(), (fDoUseBDT?"bdt":"cnc"), chan));
+  //   if (fDoUseBDT) pdfname = Form("%s/%s_bdt_rare%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan);
+  //   else  pdfname = Form("%s/%s_cnc_rare%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan);
+  //   if (fDoPrint) {
+  //     if (c0) c0->SaveAs(pdfname.c_str());
+  //   }
+
+
+  hslRareBg->SetMaximum(1.3*hslRareBg->GetMaximum()); 
+  hslRareBg->Draw();
+  TH1D *hhslRareBg = (TH1D*)hslRareBg->GetHistogram(); 
+  hhslRareBg->SetAxisRange(4.9, 5.9, "X"); 
+  setTitles(hhslRareBg, "m_{#mu #mu} [GeV]", Form("Candidates/%4.3f GeV", hhslRareBg->GetBinWidth(1)), 0.06, 0.9, 1.5);
+  leggsl->SetHeader("CMS simulation"); 
+  leggsl->Draw(); 
+  hhslRareBg->Draw("same");
+  stamp(0.18, fStampString, 0.67, fStampCms); 
+  size = tl->GetTextSize();
+  tl->SetTextSize(0.07); 
+  tl->DrawLatex(0.25, 0.8, "Barrel");   
+  tl->SetTextSize(size); 
+
+  c0->SaveAs(Form("%s/%s_slrare_chan%d.pdf", fDirectory.c_str(), (fDoUseBDT?"bdt":"cnc"), chan));
+  //   if (fDoUseBDT) pdfname = Form("%s/%s_bdt_slrare%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan);
+  //   else  pdfname = Form("%s/%s_cnc_slrare%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan);
+  //   if (fDoPrint) {
+  //     if (c0) c0->SaveAs(pdfname.c_str());
+  //   }
+  
+  
+  fNumbersBs[chan]->bsRare = rareBs; 
+  fNumbersBs[chan]->bsRareE= rareBsE; 
+  fNumbersBs[chan]->bdRare = rareBd; 
+  fNumbersBs[chan]->bdRareE= rareBdE; 
+
+  double relErr = (fNumbersBs[chan]->bdRareE/fNumbersBs[chan]->bdRare); 
+  fNumbersBs[chan]->offLoRare = bRare->Integral(bRare->FindBin(4.9001), bRare->FindBin(5.199));
+  fNumbersBs[chan]->offLoRareE= relErr*fNumbersBs[chan]->offLoRare; 
+  fNumbersBs[chan]->offHiRare = bRare->Integral(bRare->FindBin(5.4501), bRare->FindBin(5.899));
+  fNumbersBs[chan]->offHiRareE= relErr*fNumbersBs[chan]->offHiRare; 
+
+  // -- new numbers
+  relErr = (fNumbersBs[chan]->bdRareE/fNumbersBs[chan]->bdRare); 
+  fNumbersBs[chan]->fBgPeakLo   = bRare->Integral(bRare->FindBin(4.9001), bRare->FindBin(5.1999));
+  fNumbersBs[chan]->fBgPeakLoE1 = 0.01 * fNumbersBs[chan]->fBgPeakLo; // FIXME
+  fNumbersBs[chan]->fBgPeakLoE2 = relErr * fNumbersBs[chan]->fBgPeakLo; 
+  fNumbersBs[chan]->fBgPeakBd   = bRare->Integral(bRare->FindBin(5.2001), bRare->FindBin(5.2999));
+  fNumbersBs[chan]->fBgPeakBdE1 = 0.01 * fNumbersBs[chan]->fBgPeakBd;  // FIXME
+  fNumbersBs[chan]->fBgPeakBdE2 = relErr * fNumbersBs[chan]->fBgPeakBd; 
+
+  relErr = (fNumbersBs[chan]->bsRareE/fNumbersBs[chan]->bsRare); 
+  fNumbersBs[chan]->fBgPeakBs   = bRare->Integral(bRare->FindBin(5.3001), bRare->FindBin(5.4499));
+  fNumbersBs[chan]->fBgPeakBsE1 = 0.01 * fNumbersBs[chan]->fBgPeakBs; // FIXME
+  fNumbersBs[chan]->fBgPeakBsE2 = relErr * fNumbersBs[chan]->fBgPeakBs;
+  fNumbersBs[chan]->fBgPeakHi   = bRare->Integral(bRare->FindBin(5.4501), bRare->FindBin(5.1999));
+  fNumbersBs[chan]->fBgPeakHiE1 = 0.01 * fNumbersBs[chan]->fBgPeakHi; // FIXME
+  fNumbersBs[chan]->fBgPeakHiE2 = relErr * fNumbersBs[chan]->fBgPeakHi;
+
+ 
+  relErr = (fNumbersBs[chan]->bdRareE/fNumbersBs[chan]->bdRare); 
+  fNumbersBs[chan]->fBgRslLo   = bslRare->Integral(bslRare->FindBin(4.9001), bslRare->FindBin(5.1999));
+  fNumbersBs[chan]->fBgRslLoE1 = 0.01 * fNumbersBs[chan]->fBgRslLo; // FIXME
+  fNumbersBs[chan]->fBgRslLoE2 = relErr * fNumbersBs[chan]->fBgRslLo; 
+  fNumbersBs[chan]->fBgRslBd   = bslRare->Integral(bslRare->FindBin(5.2001), bslRare->FindBin(5.2999));
+  fNumbersBs[chan]->fBgRslBdE1 = 0.01 * fNumbersBs[chan]->fBgRslBd;  // FIXME
+  fNumbersBs[chan]->fBgRslBdE2 = relErr * fNumbersBs[chan]->fBgRslBd; 
+
+  relErr = (fNumbersBs[chan]->bsRareE/fNumbersBs[chan]->bsRare); 
+  fNumbersBs[chan]->fBgRslBs   = bslRare->Integral(bslRare->FindBin(5.3001), bslRare->FindBin(5.4499));
+  fNumbersBs[chan]->fBgRslBsE1 = 0.01 * fNumbersBs[chan]->fBgRslBs; // FIXME
+  fNumbersBs[chan]->fBgRslBsE2 = relErr * fNumbersBs[chan]->fBgRslBs;
+  fNumbersBs[chan]->fBgRslHi   = bslRare->Integral(bslRare->FindBin(5.4501), bslRare->FindBin(5.1999));
+  fNumbersBs[chan]->fBgRslHiE1 = 0.01 * fNumbersBs[chan]->fBgRslHi; // FIXME
+  fNumbersBs[chan]->fBgRslHiE2 = relErr * fNumbersBs[chan]->fBgRslHi;
+
+  fNumbersBs[chan]->fBgRareLo   = fNumbersBs[chan]->fBgRslLo + fNumbersBs[chan]->fBgPeakLo;
+  fNumbersBs[chan]->fBgRareLoE1 = TMath::Sqrt(fNumbersBs[chan]->fBgRslLoE1*fNumbersBs[chan]->fBgRslLoE1 + fNumbersBs[chan]->fBgPeakLoE1*fNumbersBs[chan]->fBgPeakLoE1);
+  fNumbersBs[chan]->fBgRareLoE2 = TMath::Sqrt(fNumbersBs[chan]->fBgRslLoE2*fNumbersBs[chan]->fBgRslLoE2 + fNumbersBs[chan]->fBgPeakLoE2*fNumbersBs[chan]->fBgPeakLoE2);
+
+  fNumbersBs[chan]->fBgRareBs   = fNumbersBs[chan]->fBgRslBs + fNumbersBs[chan]->fBgPeakBs;
+  fNumbersBs[chan]->fBgRareBsE1 = TMath::Sqrt(fNumbersBs[chan]->fBgRslBsE1*fNumbersBs[chan]->fBgRslBsE1 + fNumbersBs[chan]->fBgPeakBsE1*fNumbersBs[chan]->fBgPeakBsE1);
+  fNumbersBs[chan]->fBgRareBsE2 = TMath::Sqrt(fNumbersBs[chan]->fBgRslBsE2*fNumbersBs[chan]->fBgRslBsE2 + fNumbersBs[chan]->fBgPeakBsE2*fNumbersBs[chan]->fBgPeakBsE2);
+
+  fNumbersBs[chan]->fBgRareBd   = fNumbersBs[chan]->fBgRslBd + fNumbersBs[chan]->fBgPeakBd;
+  fNumbersBs[chan]->fBgRareBdE1 = TMath::Sqrt(fNumbersBs[chan]->fBgRslBdE1*fNumbersBs[chan]->fBgRslBdE1 + fNumbersBs[chan]->fBgPeakBdE1*fNumbersBs[chan]->fBgPeakBdE1);
+  fNumbersBs[chan]->fBgRareBdE2 = TMath::Sqrt(fNumbersBs[chan]->fBgRslBdE2*fNumbersBs[chan]->fBgRslBdE2 + fNumbersBs[chan]->fBgPeakBdE2*fNumbersBs[chan]->fBgPeakBdE2);
+
+  fNumbersBs[chan]->fBgRareHi   = fNumbersBs[chan]->fBgRslHi + fNumbersBs[chan]->fBgPeakHi;
+  fNumbersBs[chan]->fBgRareHiE1 = TMath::Sqrt(fNumbersBs[chan]->fBgRslHiE1*fNumbersBs[chan]->fBgRslHiE1 + fNumbersBs[chan]->fBgPeakHiE1*fNumbersBs[chan]->fBgPeakHiE1);
+  fNumbersBs[chan]->fBgRareHiE2 = TMath::Sqrt(fNumbersBs[chan]->fBgRslHiE2*fNumbersBs[chan]->fBgRslHiE2 + fNumbersBs[chan]->fBgPeakHiE2*fNumbersBs[chan]->fBgPeakHiE2);
+
+
+  fTEX << "% ----------------------------------------------------------------------" << endl;
+  fTEX << "% --- rare Background summary numbers" << endl;  
+  fTEX <<  Form("\\vdef{%s:bsRare%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, rareBs) << endl;
+  fTEX <<  Form("\\vdef{%s:bsRare%dE}  {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, rareBsE) << endl;
+  fTEX <<  Form("\\vdef{%s:bdRare%d}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, rareBd) << endl;
+  fTEX <<  Form("\\vdef{%s:bdRare%dE}  {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, rareBdE) << endl;
+
+  fSuffix = cache; 
+
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotResults::calculateSgNumbers(int chan) {
+
+  // -- efficiency and acceptance
+  fSetup = "SgMc"; 
+  numbersFromHist(chan, 0, fNumbersBs[chan]); 
+  numbersFromHist(chan, 1, fNumbersBd[chan]); 
+
+  fSetup = "SgData"; 
+  string name(""); 
+  
+  string modifier = (fDoUseBDT?"bdt":"cnc"); 
+  name = Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), 5, chan);
+  TH1D *h1 = (TH1D*)fHistFile->Get(name.c_str());
+  name = Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), 5, 1-chan);
+  TH1D *ho = (TH1D*)fHistFile->Get(name.c_str());
+
+  // -- blinded version
+  setHist(h1, kBlack, 20, 1.); 
+  setTitles(h1, "m_{#mu#mu} [GeV]", Form("Candidates / %3.3f GeV", h1->GetBinWidth(1)), 0.05, 1.2, 1.3); 
+  h1->SetMinimum(0.01); 
+  gStyle->SetOptStat(0); 
+  gStyle->SetOptTitle(0); 
+  h1->SetAxisRange(4.9, 5.9, "X"); 
+  h1->SetMaximum(h1->GetBinContent(h1->GetMaximumBin())+2); 
+
+  double ymax0 = (h1->GetBinContent(h1->GetMaximumBin()) > ho->GetBinContent(ho->GetMaximumBin()) ? 
+		  h1->GetBinContent(h1->GetMaximumBin())+2:ho->GetBinContent(ho->GetMaximumBin())+2);
+  h1->SetMaximum(ymax0); 
+  //  h1->Draw();
+  //       drawArrow(0.5, 2); 
+  //       drawArrow(0.5, 1); 
+  bgBlind(h1, 5, 5.4, 5.9);
+  drawBox(2, 0.5); 
+  drawBox(1, 0.5); 
+
+  fNumbersBs[chan]->offHi = fBgHistHi;
+  fNumbersBs[chan]->offLo = fBgHistLo; 
+  fNumbersBs[chan]->bgObs = fBgHistHi + fBgHistLo;
+
+  fNumbersBs[chan]->bgBsExp    = fBsBgExp;	
+  fNumbersBs[chan]->bgBsExpE   = fBsBgExpE;
+  fNumbersBs[chan]->bgBdExp    = fBdBgExp; 
+  fNumbersBs[chan]->bgBdExpE   = fBdBgExpE;
+  
+  fNumbersBs[chan]->tauBs  = fBsBgExp/(fBgExpLo + fBgExpHi); 
+  fNumbersBs[chan]->tauBsE = 0.2*fNumbersBs[chan]->tauBs; //FIXME
+
+  fNumbersBs[chan]->tauBd = fBdBgExp/(fBgExpLo + fBgExpHi); 
+  fNumbersBs[chan]->tauBdE = 0.2*fNumbersBs[chan]->tauBd; //FIXME
+
+  // -- new numbers
+  fNumbersBs[chan]->fBgNonpLo   = fBgExpLo;
+  fNumbersBs[chan]->fBgNonpLoE1 = fBgExpLo*(fBdBgExpE/fBdBgExp);
+  fNumbersBs[chan]->fBgNonpLoE2 = fBgExpLo*(fBdBgExpE/fBdBgExp);
+
+  cout << "DBX DBX fNumbersBs[chan]->fBgNonpLo = " << fNumbersBs[chan]->fBgNonpLo << endl;
+
+  fNumbersBs[chan]->fBgNonpBd   = fBdBgExp;
+  fNumbersBs[chan]->fBgNonpBdE1 = fBdBgExpE;
+  fNumbersBs[chan]->fBgNonpBdE2 = fBdBgExpE;
+
+  fNumbersBs[chan]->fBgNonpBs   = fBsBgExp;
+  fNumbersBs[chan]->fBgNonpBsE1 = fBsBgExpE;
+  fNumbersBs[chan]->fBgNonpBsE2 = fBsBgExpE;
+
+  fNumbersBs[chan]->fBgNonpHi   = fBgExpHi;
+  fNumbersBs[chan]->fBgNonpHiE1 = fBgExpLo*(fBsBgExpE/fBsBgExp);
+  fNumbersBs[chan]->fBgNonpHiE2 = fBgExpLo*(fBsBgExpE/fBsBgExp);
+
+  fNumbersBs[chan]->fBgTotLo   = fNumbersBs[chan]->fBgNonpLo + fNumbersBs[chan]->fBgPeakLo;
+  fNumbersBs[chan]->fBgTotBd   = fNumbersBs[chan]->fBgNonpBd + fNumbersBs[chan]->fBgPeakBd;
+  fNumbersBs[chan]->fBgTotBs   = fNumbersBs[chan]->fBgNonpBs + fNumbersBs[chan]->fBgPeakBs;
+  fNumbersBs[chan]->fBgTotHi   = fNumbersBs[chan]->fBgNonpHi + fNumbersBs[chan]->fBgPeakHi;
+
+
+  TH1D *dummy1 = new TH1D("dummy1", "", 10, 0., 10.); setFilledHist(dummy1, kBlue, kBlue, 3356); 
+  TH1D *dummy2 = new TH1D("dummy2", "", 10, 0., 10.); setFilledHist(dummy2, kRed, kRed, 3365); 
+      
+  newLegend(0.4, 0.65, 0.8, 0.8); 
+  legg->SetTextSize(0.04);  
+  
+  legg->AddEntry(dummy1, "B_{s}^{0} signal window", "f"); 
+  legg->AddEntry(dummy2, "B^{0} signal window", "f"); 
+  if (0 == chan) {
+    legg->SetHeader("Barrel");   
+  } else {
+    legg->SetHeader("Endcap");   
+  }      
+  
+  legg->Draw();
+  
+  
+  stamp(0.18, fStampString, 0.67, fStampCms); 
+  if (fDoPrint)  {
+    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtsig-data-chan%d.pdf", fDirectory.c_str(), chan));
+    else c0->SaveAs(Form("%s/sig-data-chan%d.pdf", fDirectory.c_str(), chan));
+  }
+
+
+  // -- scale SM expectation to normalization and compute total signal boxes contents
+  double tot(0.), yield(0.); 
+  for (int i = 0; i < fNchan; ++i) {
+    
+    fNumbersBs[i]->mBdHi = fCuts[i]->mBdHi;
+    fNumbersBs[i]->mBdLo = fCuts[i]->mBdLo;
+    fNumbersBs[i]->mBsHi = fCuts[i]->mBsHi;
+    fNumbersBs[i]->mBsLo = fCuts[i]->mBsLo;
+
+    // -- Bs -> mu mu 
+    name  = Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), 0, chan);
+    h1    = (TH1D*)fHistFile->Get(name.c_str()); 
+    tot   = h1->Integral(0, h1->GetNbinsX()+1); 
+    yield = scaledYield(fNumbersBs[i], fNumbersNo[i], fBF["SgMc"], fsfu);
+
+    // -- B0 -> mu mu 
+    name  = Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), 1, chan);
+    h1    = (TH1D*)fHistFile->Get(name.c_str()); 
+    tot   = h1->Integral(0, h1->GetNbinsX()+1);  
+    yield = scaledYield(fNumbersBd[i], fNumbersNo[i], fBF["BdMc"], 1.);
+
+    // -- contents in boxes 
+    fNumbersBs[i]->bsExpObs = fNumbersBs[i]->bgBsExp + fNumbersBs[i]->bsRare + fNumbersBs[i]->bsNoScaled;
+  
+    fNumbersBs[i]->bsExpObsE = TMath::Sqrt(fNumbersBs[i]->bgBsExpE*fNumbersBs[i]->bgBsExpE //??
+					   + fNumbersBs[i]->bsRareE*fNumbersBs[i]->bsRareE
+					   + fNumbersBs[i]->bsNoScaledE*fNumbersBs[i]->bsNoScaledE);
+    
+    fNumbersBs[i]->bdExpObs = fNumbersBs[i]->bgBdExp + fNumbersBs[i]->bdRare + fNumbersBd[i]->bdNoScaled;
+    
+    fNumbersBs[i]->bdExpObsE = TMath::Sqrt(fNumbersBs[i]->bgBdExpE*fNumbersBs[i]->bgBdExpE //??
+					   + fNumbersBs[i]->bdRareE*fNumbersBs[i]->bdRareE
+					   + fNumbersBd[i]->bdNoScaledE*fNumbersBd[i]->bdNoScaledE);
+  }
+
+  computeErrors(fNumbersBs); 
+  computeErrors(fNumbersBd); 
 }
 
 
@@ -127,11 +826,13 @@ void plotResults::fillAndSaveHistograms(int nevents) {
 
   TTree *t(0);
 
+  fSaveSmallTree = true; 
+
+
   // -- rare backgrounds
   fSetup = "BgRare"; 
   resetHistograms();
   rareBgHists(); 
-
 
   // -- normalization
   resetHistograms();
@@ -139,8 +840,6 @@ void plotResults::fillAndSaveHistograms(int nevents) {
   t = getTree(fSetup); 
   setupTree(t, fSetup); 
   loopOverTree(t, fSetup, 1, nevents);
-  cout << "fhNorm[0]: " << fhNorm[0]->GetSumOfWeights() << endl;
-  cout << "fhNorm[1]: " << fhNorm[1]->GetSumOfWeights() << endl;
   saveHists(fSetup);
   
   resetHistograms();
@@ -196,9 +895,10 @@ void plotResults::fillAndSaveHistograms(int nevents) {
 
   // -- close the file
   fHistFile->cd();
-  fHistFile->Write(); 
   fHistFile->Close(); 
   
+  fSaveSmallTree = false; 
+
 }
 
 
@@ -236,12 +936,13 @@ void plotResults::otherNumbers(string smode) {
   cout << "accname: " << accname << " directory: " << directory 
        << " numbers: " << aa[0]->name << " index = " << aa[0]->index 
        << endl;
-
-  for (int i = 0; i < fNchan; ++i) {
+  
+  for (unsigned int i = 0; i < fNchan; ++i) {
     fChan = i; 
     accEffFromEffTree(accname, directory, *aa[i], *fCuts[i], -1);
     fF[fSetup]->cd(directory.c_str());
     double effFilter = fFilterEff[fSetup];
+    if (effFilter < 1e-6) effFilter = 1.0;
     double genFileYield = ((TTree*)gDirectory->Get("effTree"))->GetEntries();
     ibin = 1; fhGenAndAccNumbers[i]->SetBinContent(ibin, effFilter); 
               fhGenAndAccNumbers[i]->GetXaxis()->SetBinLabel(ibin, "effFilter");
@@ -303,6 +1004,52 @@ void plotResults::saveHists(string smode) {
     h1->SetDirectory(fHistFile); 
     h1->Write();
 
+    h1 = (TH1D*)(fhMuId[i]->Clone(Form("hMuId_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMuIdMC[i]->Clone(Form("hMuIdMC_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMuTr[i]->Clone(Form("hMuTr_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMuTrMC[i]->Clone(Form("hMuTrMC_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassAbsNoCuts[i]->Clone(Form("hMassAbsNoCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassAbsNoCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassNoCuts[i]->Clone(Form("hMassNoCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassNoCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassNoCuts[i]->Clone(Form("hMassNoCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassNoCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassWithAnaCuts[i]->Clone(Form("hMassWithAnaCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassWithAnaCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassWithMuonCuts[i]->Clone(Form("hMassWithMuonCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassWithMuonCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
+    h1 = (TH1D*)(fhMassWithTriggerCuts[i]->Clone(Form("hMassWithTriggerCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassWithTriggerCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
+
     h1 = (TH1D*)(fhMassWithAllCuts[i]->Clone(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithAllCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
     h1->SetDirectory(fHistFile); 
@@ -313,32 +1060,37 @@ void plotResults::saveHists(string smode) {
     h1->SetDirectory(fHistFile); 
     h1->Write();
 
-    h1 = (TH1D*)(fhMassWithMassCuts[i]->Clone(Form("hMassWithMassCuts%d_chan%d", mode, i))); 
+    h1 = (TH1D*)(fhMassWithMassCuts[i]->Clone(Form("hMassWithMassCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassWithMassCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
     h1->SetDirectory(fHistFile); 
     h1->Write();
 
-    h1 = (TH1D*)(fhMassWithMassCutsManyBins[i]->Clone(Form("hMassWithMassCutsManyBins%d_chan%d", mode, i))); 
+    h1 = (TH1D*)(fhMassWithMassCutsManyBins[i]->Clone(Form("hMassWithMassCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+    h1->SetTitle(Form("hMassWithMassCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
     h1->SetDirectory(fHistFile); 
     h1->Write();
 
     if (string::npos != fSetup.find("No") || string::npos != fSetup.find("Cs")) {
       h1 = (TH1D*)(fhNorm[i]->Clone(Form("hNorm_%s_%d_chan%d", modifier.c_str(), mode, i)));       
+      h1->SetTitle(Form("hNorm_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
       h1->SetDirectory(fHistFile); 
       h1->Write();
 
       h1 = (TH1D*)(fhNormC[i]->Clone(Form("hNormC_%s_%d_chan%d", modifier.c_str(), mode, i)));     
+      h1->SetTitle(Form("hNormC_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
       h1->SetDirectory(fHistFile); 
       h1->Write();
     }
 
     if (string::npos != fSetup.find("DstarPi")) {
       h1 = (TH1D*)(fhDstarPi[i]->Clone(Form("hDstarPi_%s_%d_chan%d", modifier.c_str(), mode, i))); 
+      h1->SetTitle(Form("hDstarPi_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
       h1->SetDirectory(fHistFile); 
       h1->Write();
     }
     
     if (fDoUseBDT) {
-      h2 = (TH2D*)(fhBdtMass[i]->Clone(Form("hBdtMass%d_chan%d", mode, i))); 
+      h2 = (TH2D*)(fhBdtMass[i]->Clone(Form("hBdtMass_%s_%d_chan%d", modifier.c_str(), mode, i))); 
       h2->SetDirectory(fHistFile); 
       h2->Write();
     }
@@ -371,7 +1123,7 @@ void plotResults::loopFunction1(int mode) {
   
   fhMassAbsNoCuts[fChan]->Fill(mass);
 
-  if (!(fGoodAcceptance && fGoodTracksPt && fGoodTracksEta && fGoodMuonsPt && fGoodMuonsEta)) return;
+  if (!fGoodAcceptance) return;
 
   // -- this is the base, after the raw acceptance cuts
   fhMassNoCuts[fChan]->Fill(mass);
@@ -381,6 +1133,8 @@ void plotResults::loopFunction1(int mode) {
     if (fBDT < fCuts[fChan]->bdt) return;
   } else {
     if (!fGoodQ) return;
+    if (!fGoodMuonsPt) return;
+    if (!fGoodMuonsEta) return;
     if (!fGoodJpsiCuts) return;
     if (!fGoodPvAveW8) return;
     if (!fGoodMaxDoca) return;
@@ -636,8 +1390,8 @@ void plotResults::computeNormUL() {
   cout << "--> Normalization" << endl;
 
   // FIXME
-  //   fNormProcessed = true; 
-  //   setupNorm();
+  fNormProcessed = true; 
+  setupNorm();
 
   if (false == fNormProcessed) {
     fNormProcessed = true; 
@@ -1010,8 +1764,8 @@ void plotResults::printUlcalcNumbers(string fname) {
   double totE, err1, err2; 
 
   string cache = fSuffix; 
-  if (fDoUseBDT) fSuffix = "bdt" + fSuffix; 
-  
+  fSuffix = (fDoUseBDT?"bdt":"cnc") + fSuffix;
+
   if (1) {
     sysTot = 0.05*0.05 + 0.02*0.02 + sysAna*sysAna + sysCand*sysCand + sysAcc*sysAcc;
     sysTot = TMath::Sqrt(sysTot); 
@@ -1346,9 +2100,103 @@ void plotResults::printUlcalcNumbers(string fname) {
     fTEX << formatTex(ssb, Form("%s:N-EXP-SoverSplusB%d:val", fSuffix.c_str(), i), 2) << endl;
   }
 
+
+  for (int chan = 0; chan < fNchan; ++chan) {
+
+    fTEX << "% ----------------------------------------------------------------------" << endl;
+    fTEX << "% --- rare Background summary numbers (new numbers)" << endl;  
+
+    fTEX <<  Form("\\vdef{%s:BgPeakLo%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakLo) << endl;
+    fTEX <<  Form("\\vdef{%s:BgPeakLo%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakLoE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgPeakLo%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakLoE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgPeakBd%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakBd) << endl;
+    fTEX <<  Form("\\vdef{%s:BgPeakBd%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakBdE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgPeakBd%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakBdE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgPeakBs%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakBs) << endl;
+    fTEX <<  Form("\\vdef{%s:BgPeakBs%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakBsE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgPeakBs%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakBsE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgPeakHi%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakHi) << endl;
+    fTEX <<  Form("\\vdef{%s:BgPeakHi%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakHiE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgPeakHi%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakHiE2) << endl;
+
+
+    fTEX <<  Form("\\vdef{%s:BgRslLo%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRslLo) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRslLo%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRslLoE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRslLo%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRslLoE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgRslBd%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRslBd) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRslBd%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRslBdE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRslBd%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRslBdE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgRslBs%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRslBs) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRslBs%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRslBsE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRslBs%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRslBsE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgRslHi%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRslHi) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRslHi%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRslHiE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRslHi%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRslHiE2) << endl;
+
+
+    fTEX <<  Form("\\vdef{%s:BgRareLo%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRareLo) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRareLo%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRareLoE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRareLo%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRareLoE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgRareBd%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRareBd) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRareBd%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRareBdE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRareBd%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRareBdE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgRareBs%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRareBs) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRareBs%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRareBsE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRareBs%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRareBsE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgRareHi%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRareHi) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRareHi%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRareHiE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgRareHi%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgRareHiE2) << endl;
+
+
+    fTEX <<  Form("\\vdef{%s:BgNonpLo%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgNonpLo) << endl;
+    fTEX <<  Form("\\vdef{%s:BgNonpLo%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgNonpLoE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgNonpLo%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgNonpLoE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgNonpBd%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgNonpBd) << endl;
+    fTEX <<  Form("\\vdef{%s:BgNonpBd%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgNonpBdE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgNonpBd%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgNonpBdE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgNonpBs%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgNonpBs) << endl;
+    fTEX <<  Form("\\vdef{%s:BgNonpBs%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgNonpBsE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgNonpBs%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgNonpBsE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgNonpHi%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgNonpHi) << endl;
+    fTEX <<  Form("\\vdef{%s:BgNonpHi%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgNonpHiE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgNonpHi%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgNonpHiE2) << endl;
+
+
+    fTEX <<  Form("\\vdef{%s:BgTotLo%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgTotLo) << endl;
+    fTEX <<  Form("\\vdef{%s:BgTotLo%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgTotLoE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgTotLo%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgTotLoE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgTotBd%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgTotBd) << endl;
+    fTEX <<  Form("\\vdef{%s:BgTotBd%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgTotBdE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgTotBd%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgTotBdE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgTotBs%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgTotBs) << endl;
+    fTEX <<  Form("\\vdef{%s:BgTotBs%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgTotBsE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgTotBs%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgTotBsE2) << endl;
+
+    fTEX <<  Form("\\vdef{%s:BgTotHi%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgTotHi) << endl;
+    fTEX <<  Form("\\vdef{%s:BgTotHi%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgTotHiE1) << endl;
+    fTEX <<  Form("\\vdef{%s:BgTotHi%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgTotHiE2) << endl;
+
+  }
+
+
   OUT.close();
 
   fSuffix = cache; 
+
 }
 
 
@@ -1356,7 +2204,7 @@ void plotResults::printUlcalcNumbers(string fname) {
 void plotResults::printCsBFNumbers() {
 
   string cache = fSuffix; 
-  if (fDoUseBDT) fSuffix = "bdt" + fSuffix; 
+  fSuffix = (fDoUseBDT? "bdt":"cnc") + fSuffix; 
   
   fTEX << " %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;
   for (unsigned int i = 0; i < fNchan; ++i) {
@@ -1428,10 +2276,44 @@ double  plotResults::scaledYield(numbers *a, numbers *no, double chanbf, double 
     cout << "SCALING SIGNAL BS2MUMU" << endl;
     a->bsNoScaled  = a->pss * yield;
     a->bsNoScaledE = relError*a->bsNoScaled; 
+
+    // -- new numbers
+    a->fSgLo   = a->pls * yield;
+    a->fSgLoE1 = TMath::Sqrt(a->fSgLo); 
+    a->fSgLoE2 = relError*a->fSgLo; 
+
+    a->fSgBd   = a->pds * yield;
+    a->fSgBdE1 = TMath::Sqrt(a->fSgBd); 
+    a->fSgBdE2 = relError*a->fSgBd; 
+
+    a->fSgBs   = a->pss * yield;
+    a->fSgBsE1 = TMath::Sqrt(a->fSgBs); 
+    a->fSgBsE2 = relError*a->fSgBs; 
+
+    a->fSgHi   = a->phs * yield;
+    a->fSgHiE1 = TMath::Sqrt(a->fSgHi); 
+    a->fSgHiE2 = relError*a->fSgHi; 
   } else if (string::npos != a->name.find("signal Bd2MuMu")) {
     cout << "SCALING SIGNAL BD2MUMU" << endl;
     a->bdNoScaled  = a->pdd * yield;
     a->bdNoScaledE = relError*a->bdNoScaled; 
+
+    // -- new numbers
+    a->fBdLo   = a->pls * yield;
+    a->fBdLoE1 = TMath::Sqrt(a->fBdLo); 
+    a->fBdLoE2 = relError*a->fBdLo; 
+
+    a->fBdBd   = a->pds * yield;
+    a->fBdBdE1 = TMath::Sqrt(a->fBdBd); 
+    a->fBdBdE2 = relError*a->fBdBd; 
+
+    a->fBdBs   = a->pss * yield;
+    a->fBdBsE1 = TMath::Sqrt(a->fBdBs); 
+    a->fBdBsE2 = relError*a->fBdBs; 
+
+    a->fBdHi   = a->phs * yield;
+    a->fBdHiE1 = TMath::Sqrt(a->fBdHi); 
+    a->fBdHiE2 = relError*a->fBdHi; 
   } else if (string::npos != a->name.find("Bla")) {
     cout << "SCALING RARE BACKGROUND" << endl;
     a->bsRare  = a->pss * yield;
@@ -1454,50 +2336,145 @@ double  plotResults::scaledYield(numbers *a, numbers *no, double chanbf, double 
 
 
 // ----------------------------------------------------------------------
-void plotResults::rareBgFromHist(std::string mode) {
-  
+void plotResults::numbersFromHist(int chan, int mode, numbers *aa) {
+  TH1D *h1(0); 
 
-  TH1D *h1(0), *h2(0); 
-  string smode("cnc"), name(""); 
-  if (fDoUseBDT) smode = "bdt"; 
+  // -- efficiency and acceptance
+  string modifier = (fDoUseBDT?"bdt":"cnc");
+  TH1D *hAcceptance              = (TH1D*)fHistFile->Get(Form("hGenAndAccNumbers_%s_%d_chan%d", modifier.c_str(), mode, chan)); 
 
-  zone(1,2);
-  for (map<string, string>::iterator imap = fName.begin(); imap != fName.end(); ++imap) {  
-    if (string::npos == imap->first.find("bg")) {
-      continue;
-    }
+  TH1D *hMassNoCuts              = (TH1D*)fHistFile->Get(Form("hMassNoCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMassWithAnaCuts         = (TH1D*)fHistFile->Get(Form("hMassWithAnaCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMassWithMuonCuts        = (TH1D*)fHistFile->Get(Form("hMassWithMuonCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMassWithTriggerCuts     = (TH1D*)fHistFile->Get(Form("hMassWithTriggerCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMassWithAllCuts         = (TH1D*)fHistFile->Get(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMassWithMassCuts        = (TH1D*)fHistFile->Get(Form("hMassWithMassCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMassWithAllCutsManyBins = (TH1D*)fHistFile->Get(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, chan));
 
-    if (mode != "nada" && string::npos == imap->first.find(mode)) {
-      continue;
-    }
+  TH1D *hMuId                    = (TH1D*)fHistFile->Get(Form("hMuId_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMuIdMC                  = (TH1D*)fHistFile->Get(Form("hMuIdMC_%s_%d_chan%d", modifier.c_str(), mode, chan));
 
-    if (0 == fF[imap->first]) {
-      continue; 
-    }
+  TH1D *hMuTr                    = (TH1D*)fHistFile->Get(Form("hMuTr_%s_%d_chan%d", modifier.c_str(), mode, chan));
+  TH1D *hMuTrMC                  = (TH1D*)fHistFile->Get(Form("hMuTrMC_%s_%d_chan%d", modifier.c_str(), mode, chan));
 
-    fRareName = imap->first; 
-
-    for (int ichan = 0; ichan < fNchan; ++ichan) {
-      name = Form("hMassWithAllCuts_%s_%s%d", smode.c_str(), fRareName.c_str(), ichan);
-      h1 = (TH1D*)fHistFile->Get(name.c_str()); 
-      name = Form("hMassWithAllCutsManyBins_%s_%s%d", smode.c_str(), fRareName.c_str(), ichan);
-      h2 = (TH1D*)fHistFile->Get(name.c_str()); 
-
-      c0->cd(1);
-      h1->Draw();
-      c0->cd(2);
-      h2->Draw();
-      c0->Modified(); 
-      c0->Update();
-    }
-
+  double effFilter    = getValueByLabel(hAcceptance, "effFilter");
+  if (effFilter < 1e-6) {
+    cout << "resetting effFilter to 1" << endl;
+    effFilter = 1.0;
   }
+  double genFileYield = getValueByLabel(hAcceptance, "genFileYield");
 
+  aa->effPtReco       = getValueByLabel(hAcceptance, "effPtReco");
+  aa->effPtRecoE      = getValueByLabel(hAcceptance, "effPtRecoE");
+
+  aa->genAccFileYield = getValueByLabel(hAcceptance, "genAccFileYield");
+  aa->genAccYield     = getValueByLabel(hAcceptance, "genAccYield");
+  aa->recoYield       = getValueByLabel(hAcceptance, "recoYield");
+  aa->muidYield       = getValueByLabel(hAcceptance, "muidYield");
+  aa->trigYield       = getValueByLabel(hAcceptance, "trigYield");
+  aa->candYield       = getValueByLabel(hAcceptance, "candYield");
+
+  aa->acc             = getValueByLabel(hAcceptance, "acc");
+  aa->accE            = getValueByLabel(hAcceptance, "accE");
+
+  aa->effCand         = getValueByLabel(hAcceptance, "effCand");
+  aa->effCandE        = getValueByLabel(hAcceptance, "effCandE");
+
+
+  double a = hMassNoCuts->GetSumOfWeights(); 
+  double b = hMassWithAnaCuts->GetSumOfWeights();
+  double c = hMassWithMuonCuts->GetSumOfWeights();
+  double d = hMassWithTriggerCuts->GetSumOfWeights();
+  double e = hMassWithAllCuts->GetSumOfWeights();
+  double f = hMassWithMassCuts->GetSumOfWeights();
+  aa->ana0Yield        = a;
+  aa->ana0YieldE       = TMath::Sqrt(a);
+  aa->anaYield         = b; 
+  aa->anaYieldE        = TMath::Sqrt(b); 
+  aa->anaMuonYield     = c; 
+  aa->anaMuonYieldE    = TMath::Sqrt(c); 
+  aa->anaTriggerYield  = d; 
+  aa->anaTriggerYieldE = TMath::Sqrt(d); 
+  aa->anaWmcYield      = f; 
+  aa->anaWmcYieldE     = TMath::Sqrt(f);
+  aa->effAna           = b/a*aa->effPtReco;
+  aa->effAnaE          = dEff(static_cast<int>(b), static_cast<int>(a)); // FIXME add error from effPtReco
+  aa->effMuidMC        = c/b;
+  aa->effMuidMCE       = dEff(static_cast<int>(c), static_cast<int>(b));
+  aa->effMuidTNP       = hMuId->GetMean();
+  aa->effMuidTNPE      = hMuId->GetMeanError();
+  aa->effMuidTNPMC     = hMuIdMC->GetMean();
+  aa->effMuidTNPMCE    = hMuIdMC->GetMeanError();
+  aa->effTrigMC        = d/c;
+  aa->effTrigMCE       = dEff(static_cast<int>(d), static_cast<int>(c));
+  aa->effTrigTNP       = hMuTr->GetMean();
+  aa->effTrigTNPE      = hMuTr->GetMeanError();
+  aa->effTrigTNPMC     = hMuTrMC->GetMean();
+  aa->effTrigTNPMCE    = hMuTrMC->GetMeanError();
+  aa->genFileYield     = genFileYield;
+  aa->effGenFilter     = effFilter; 
+  aa->genYield         = aa->genFileYield/aa->effGenFilter;
+  aa->effTot           = e/aa->genYield;
+  aa->effTotE          = dEff(static_cast<int>(e), static_cast<int>(aa->genYield));
+  aa->effProdMC        = aa->effCand * aa->effAna * aa->effMuidMC * aa->effTrigMC;
+  aa->effProdMCE       = 0.;
+  aa->effProdTNP       = aa->effCand * aa->effAna * aa->effMuidTNP * aa->effTrigTNP;
+  aa->effProdTNPE      = 0.;
+
+  aa->combGenYield     = e/(aa->acc * aa->effProdMC);
+  aa->prodGenYield     = e/(aa->effTot); 
+
+
+  if (0 == mode) {
+    double tot   = hMassWithAllCutsManyBins->GetSumOfWeights();
+    double lo    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(4.9), 
+						      hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdLo));
+    double hi    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdHi), 
+						      hMassWithAllCutsManyBins->FindBin(5.9));
+    double bd    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdLo), 
+						      hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdHi));
+    double bs    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBsLo), 
+						      hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBsHi));
+    
+    aa->pss = bs/tot;
+    aa->pssE = dEff(static_cast<int>(bs), static_cast<int>(tot)); 
+    aa->pds = bd/tot;
+    aa->pdsE = dEff(static_cast<int>(bd), static_cast<int>(tot)); 
+    aa->pls = lo/tot;
+    aa->plsE = dEff(static_cast<int>(lo), static_cast<int>(tot)); 
+    aa->phs = hi/tot;
+    aa->phsE = dEff(static_cast<int>(hi), static_cast<int>(tot)); 
+  } 
+    
+  if (1 == mode) {
+    double tot   = hMassWithAllCutsManyBins->GetSumOfWeights();
+    double lo    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(4.9), 
+						      hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdLo));
+    double hi    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdHi), 
+						      hMassWithAllCutsManyBins->FindBin(5.9));
+    double bd    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdLo), 
+						      hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdHi));
+    double bs    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBsLo), 
+						      hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBsHi));
+    
+    aa->pdd  = bd/tot;
+    aa->pddE = dEff(static_cast<int>(bd), static_cast<int>(tot)); 
+    aa->psd  = bs/tot;
+    aa->psdE = dEff(static_cast<int>(bs), static_cast<int>(tot)); 
+    aa->pld  = lo/tot;
+    aa->pldE = dEff(static_cast<int>(lo), static_cast<int>(tot)); 
+    aa->phd  = hi/tot;
+    aa->phdE = dEff(static_cast<int>(hi), static_cast<int>(tot)); 
+  } 
+
+  printNumbers(*aa, cout); 
+    
 }
 
 
+
 // ----------------------------------------------------------------------
-void plotResults::rareBgHists(std::string mode) {
+void plotResults::rareBgHists(std::string mode, int nevents) {
 
   TH1D *h1(0); 
   TTree *t(0); 
@@ -1521,17 +2498,19 @@ void plotResults::rareBgHists(std::string mode) {
     cout << "======> " << imap->first  << " with the tree at " << t << endl;
 
     fRareName = imap->first; 
+    resetHistograms();
     setupTree(t, fSetup); 
-    loopOverTree(t, fSetup, 1);
+    loopOverTree(t, fSetup, 1, nevents);
 
     for (int ichan = 0; ichan < fNchan; ++ichan) {
-      h1 = (TH1D*)(fhMassWithAllCutsManyBins[ichan]->Clone(Form("hMassWithAllCutsManyBins_%s_%s%d", smode.c_str(), fRareName.c_str(), ichan)));  
-      h1->SetTitle(Form("hMassWithAllCutsManyBins_%s_%s%d", smode.c_str(), fRareName.c_str(), ichan));
+      h1 = (TH1D*)(fhMassWithAllCutsManyBins[ichan]->Clone(Form("hMassWithAllCutsManyBins_%s_%s_chan%d", 
+								smode.c_str(), fRareName.c_str(), ichan)));  
+      h1->SetTitle(Form("hMassWithAllCutsManyBins_%s_%s_chan%d", smode.c_str(), fRareName.c_str(), ichan));
       h1->SetDirectory(fHistFile); 
       h1->Write();
 
-      h1 = (TH1D*)(fhMassWithAllCuts[ichan]->Clone(Form("hMassWithAllCuts_%s_%s%d", smode.c_str(), fRareName.c_str(), ichan)));  
-      h1->SetTitle(Form("hMassWithAllCuts_%s_%s%d", smode.c_str(), fRareName.c_str(), ichan));
+      h1 = (TH1D*)(fhMassWithAllCuts[ichan]->Clone(Form("hMassWithAllCuts_%s_%s_chan%d", smode.c_str(), fRareName.c_str(), ichan)));  
+      h1->SetTitle(Form("hMassWithAllCuts_%s_%s_chan%d", smode.c_str(), fRareName.c_str(), ichan));
       h1->SetDirectory(fHistFile); 
       h1->Write();
     }

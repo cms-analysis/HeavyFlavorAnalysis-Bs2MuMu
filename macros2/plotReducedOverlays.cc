@@ -12,21 +12,26 @@ using namespace std;
 ClassImp(plotReducedOverlays)
 
 // ----------------------------------------------------------------------
-plotReducedOverlays::plotReducedOverlays(const char *files, const char *dir, const char *cuts) : 
-plotClass(files, dir, cuts, 11) { 
+plotReducedOverlays::plotReducedOverlays(const char *files, const char *dir, const char *cuts, int mode) : 
+plotClass(files, dir, cuts, mode) { 
 
   TVirtualFitter::SetMaxIterations(50000);
+
+  cout << "==> plotReducedOverlays files: " << files << " dir: " << dir << " cuts: " << cuts << endl;
 
   fNumbersFileName = fDirectory + "/anaBmm.plotReducedOverlays." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);
 
+  fOffset = 0; 
+  
   fIsMC = false; 
   fIsSignal = false; 
   fSetup = "A";
   fDoUseBDT = true; 
   fDoApplyCowboyVeto = false;   
   fDoApplyCowboyVetoAlsoInSignal = false; 
+  fSaveSmallTree = false; 
 
   fDoList.push_back("muon1pt");
   fDoList.push_back("muon2pt");
@@ -100,9 +105,9 @@ void plotReducedOverlays::makeSampleOverlay(string sample1, string sample2, stri
   fSetup = channel;
 
   fOffset = 1; 
-  makeSample(sample2, selection);   
+  makeSample(sample2, selection, channel);   
   fOffset = 0; 
-  makeSample(sample1, selection);   
+  makeSample(sample1, selection, channel);   
 
   overlay(sample1, sample2, selection); 
   overlay(sample1, sample2, "HLT", "bdt"); 
@@ -111,30 +116,44 @@ void plotReducedOverlays::makeSampleOverlay(string sample1, string sample2, stri
 // ----------------------------------------------------------------------
 void plotReducedOverlays::makeOverlay(string sample1, string sample2, string channel, string selection) {
   
+  string hfname  = fDirectory + "/anaBmm.plotReducedOverlays." + fSuffix + ".root";
+  cout << "fHistFile: " << hfname;
+  fHistFile = TFile::Open(hfname.c_str());
+  cout << " opened " << endl;
+
+
   fSetup = channel; 
 
-  string hfname  = fDirectory + "/anaBmm.plotReducedOverlays." + fSuffix + ".root";
-  cout << "fHistFile: " << hfname << endl;
-  fHistFile = TFile::Open(hfname.c_str(), "UPDATE");
+  sbsDistributions(sample1, selection);
+  sbsDistributions(sample1, "HLT", "bdt");
 
-  // -- debug problems
-  //   sbsDistributions(sample1, selection);
-  //   sbsDistributions(sample1, "HLT", "bdt");
-  //   sbsDistributions(sample2, selection);
-  //   sbsDistributions(sample2, "HLT", "bdt");
-  // -- debug problems
+  sbsDistributions(sample2, selection);
+  sbsDistributions(sample2, "HLT", "bdt");
 
   overlay(sample1, sample2, selection); 
   overlay(sample1, sample2, "HLT", "bdt"); 
 
-  fHistFile->Write();
+
+  // -- save histograms into separate file for systematics sbs_E_NoMc_bdtHLT
+  TH1D *h1  = (TH1D*)gDirectory->Get(Form("sbs_%s_%s_bdtHLT", fSetup.c_str(), sample1.c_str())); 
+  TH1D *h2  = (TH1D*)gDirectory->Get(Form("sbs_%s_%s_bdtHLT", fSetup.c_str(), sample2.c_str()));
+
+  hfname  = fDirectory + "/anaBmm.plotReducedOverlaysSystematics." + fSuffix + ".root";
+  TFile *fl = TFile::Open(hfname.c_str(), "UPDATE");
+  h1->SetDirectory(fl);
+  h1->Write();
+  h2->SetDirectory(fl);
+  h2->Write();
+  fl->Close();
+
   fHistFile->Close();
 }
 
 
 // ----------------------------------------------------------------------
-void plotReducedOverlays::makeSample(string mode, string selection) {
+void plotReducedOverlays::makeSample(string mode, string selection, string channel) {
 
+  fSetup = channel;
 
   // -- dump histograms
   string hfname  = fDirectory + "/anaBmm.plotReducedOverlays." + fSuffix + ".root";
@@ -165,8 +184,13 @@ void plotReducedOverlays::makeSample(string mode, string selection) {
   if (string::npos != mode.find("No")) {
     BGLBOXMIN = 5.00;
     BGLBOXMAX = 5.18;
-    SIGBOXMIN = 5.20;
-    SIGBOXMAX = 5.35;
+    if (fSetup == "B") {
+      SIGBOXMIN = 5.23;
+      SIGBOXMAX = 5.33;
+    } else {
+      SIGBOXMIN = 5.21;
+      SIGBOXMAX = 5.34;
+    }
     BGHBOXMIN = 5.40;
     BGHBOXMAX = 5.50;
   }
@@ -174,8 +198,13 @@ void plotReducedOverlays::makeSample(string mode, string selection) {
   if (string::npos != mode.find("Cs")) {
     BGLBOXMIN = 5.10;
     BGLBOXMAX = 5.29;
-    SIGBOXMIN = 5.30;
-    SIGBOXMAX = 5.43;
+    if (fSetup == "B") {
+      SIGBOXMIN = 5.34;
+      SIGBOXMAX = 5.40;
+    } else {
+      SIGBOXMIN = 5.32;
+      SIGBOXMAX = 5.41;
+    }
     BGHBOXMIN = 5.45;
     BGHBOXMAX = 5.70;
   }
@@ -188,15 +217,11 @@ void plotReducedOverlays::makeSample(string mode, string selection) {
     return;
   }
   setupTree(t, mode); 
-  //loopOverTree(t, mode, 1, 200000);
+  //  loopOverTree(t, mode, 1, 100000);
   loopOverTree(t, mode, 1);
-
-  sbsDistributions(mode, selection);
-  sbsDistributions(mode, "HLT", "bdt");
 
   fHistFile->Write();
   fHistFile->Close();
-  //  gROOT->cd();
 }
 
 
@@ -207,7 +232,7 @@ void plotReducedOverlays::bookDistributions(string mode) {
   //fHistFile->cd();
   string name = Form("%s_%s_", fSetup.c_str(), mode.c_str());
 
-  cout << "bla " << endl;
+  cout << "fOffset: " << fOffset << " name = " << name << endl;
   fpMuon1Pt[fOffset]   = bookDistribution(Form("%smuon1pt", name.c_str()), "p_{T, #mu1} [GeV]", "fGoodMuonsPt", 60, 0., 30.); 
   fpMuon2Pt[fOffset]   = bookDistribution(Form("%smuon2pt", name.c_str()), "p_{T, #mu2} [GeV]", "fGoodMuonsPt", 40, 0., 20.); 
   fpMuonsEta[fOffset]  = bookDistribution(Form("%smuonseta", name.c_str()), "#eta_{#mu}", "fGoodMuonsEta", 40, -2.5, 2.5); 
@@ -260,8 +285,12 @@ void plotReducedOverlays::sbsDistributions(string mode, string selection, string
     a.fMassPeak = 5.37;
     a.fMassSigma = 0.06;
   } else {
-    a.fMassPeak = -1.;
-    a.fMassSigma = -1.;
+    a.fMassPeak = 5.27;
+    if (fSetup == "B") {
+      a.fMassSigma = 0.02;
+    } else {
+      a.fMassSigma = 0.03;
+    }
   }
 
   cout << "gDIRECTORY: "; gDirectory->pwd();
@@ -297,21 +326,21 @@ void plotReducedOverlays::sbsDistributions(string mode, string selection, string
   }
 
 
-  for (unsigned int i = 0; i < fDoList.size(); ++i) {
-    if (restricted) {
-      if (string::npos == fDoList[i].find(what)) continue;
-    }
-    bla =  Form("sbs_%s_%s_%s%s", fSetup.c_str(), mode.c_str(), fDoList[i].c_str(), selection.c_str());
-    cout << bla << "  " ; 
-    h = (TH1D*)gDirectory->Get(bla.c_str());
-    //    h->SetDirectory(fHistFile); 
-    if (h) {
-      cout << "writing to " << fHistFile->GetName() << " " << h << "  " << (h==0? " nada": h->GetName()) << endl;
-      h->Write();
-    } else {
-      cout << "histogram " << bla << " not found" << endl;
-    }
-  }
+//   for (unsigned int i = 0; i < fDoList.size(); ++i) {
+//     if (restricted) {
+//       if (string::npos == fDoList[i].find(what)) continue;
+//     }
+//     bla =  Form("sbs_%s_%s_%s%s", fSetup.c_str(), mode.c_str(), fDoList[i].c_str(), selection.c_str());
+//     cout << bla << "  " ; 
+//     h = (TH1D*)gDirectory->Get(bla.c_str());
+//     //    h->SetDirectory(fHistFile); 
+//     if (h) {
+//       cout << "writing to " << fHistFile->GetName() << " " << h << "  " << (h==0? " nada": h->GetName()) << endl;
+//       h->Write();
+//     } else {
+//       cout << "histogram " << bla << " not found" << endl;
+//     }
+//   }
 
 }
 
@@ -338,7 +367,7 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
   double bdtCut = fCuts[chan]->bdt;
   cout << "bdtCut = " << bdtCut << endl;
 
-  string hfname  = fDirectory + "/anaBmm.plotReducedOverlays." + fSuffix + ".root";
+  string hfname  = fDirectory + "/anaBmm.plotReducedOverlaysSystematics." + fSuffix + ".root";
   cout << "fHistFile: " << hfname << endl;
   fHistFile = TFile::Open(hfname.c_str(), "");
 
@@ -360,6 +389,7 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
   double adeltaEps = TMath::Abs(eps1-eps2); 
   double rdeltaEps = 2.*TMath::Abs(eps1-eps2)/(eps1+eps2); 
 
+  fTEX << formatTex(fCuts[chan]->bdt, Form("%s:sysCutOnBdtchan%i:val", fSuffix.c_str(), chan), 3) << endl;
   fTEX << formatTex(deltaEps, Form("%s:deltaEps%s%schan%i:val", fSuffix.c_str(), sample1.c_str(), sample2.c_str(), chan), 3) << endl;
   fTEX << formatTex(adeltaEps, Form("%s:absDeltaEps%s%schan%i:val", fSuffix.c_str(), sample1.c_str(), sample2.c_str(), chan), 3) << endl;
   fTEX << formatTex(rdeltaEps, Form("%s:relDeltaEps%s%schan%i:val", fSuffix.c_str(), sample1.c_str(), sample2.c_str(), chan), 3) << endl;
@@ -441,8 +471,8 @@ void plotReducedOverlays::overlay(string sample1, string sample2, string selecti
 
   string hfname  = fDirectory + "/anaBmm.plotReducedOverlays." + fSuffix + ".root";
   //  string hfname  = fDirectory + "/test.root";
-  cout << "fHistFile: " << hfname << endl;
-  fHistFile = TFile::Open(hfname.c_str());
+//   cout << "fHistFile: " << hfname << endl;
+//   fHistFile = TFile::Open(hfname.c_str());
 
   gStyle->SetOptTitle(0); 
   c0->cd();
@@ -455,9 +485,9 @@ void plotReducedOverlays::overlay(string sample1, string sample2, string selecti
     }
     n1 =  Form("sbs_%s_%s_%s%s", fSetup.c_str(), sample1.c_str(), fDoList[i].c_str(), selection.c_str());
     n2 =  Form("sbs_%s_%s_%s%s", fSetup.c_str(), sample2.c_str(), fDoList[i].c_str(), selection.c_str());
-    h1 = (TH1D*)fHistFile->Get(n1.c_str());
+    h1 = (TH1D*)gDirectory->Get(n1.c_str());
     cout << "n1: " << n1 << " -> " << h1 << endl;
-    h2 = (TH1D*)fHistFile->Get(n2.c_str());
+    h2 = (TH1D*)gDirectory->Get(n2.c_str());
     cout << "n2: " << n2 << " -> " << h2 << endl;
     if (0 == h1 || 0 == h2) {
       cout << "  histograms not found" << endl;
@@ -502,18 +532,18 @@ void plotReducedOverlays::loopFunction(int function, int mode) {
 void plotReducedOverlays::loopFunction1(int mode) {
 
   // -- modify here the fGoodHLT to increase S/B for the BDT distribution
-  fGoodHLT        = fb.hlt && fGoodMuonsID && (fb.fls3d > 5) && (fb.chi2/fb.dof < 5) && (fBDT > -1.);
+  //  fGoodHLT        = fb.hlt && fGoodMuonsID && (fb.fls3d > 5) && (fb.chi2/fb.dof < 5) && (fBDT > -1.);
   fGoodHLT        = fb.hlt && fGoodMuonsID && (fBDT > -1.);
 
   // -- modify even more for the control sample
-  if (string::npos != fSample.find("Cs")) {
-    fGoodHLT      = fb.hlt && fGoodMuonsID && fGoodMuonsPt 
-      && (fb.fls3d > 5) && (fb.alpha < 0.1)&& (fb.chi2/fb.dof < 4) 
-      && (fb.iso > 0.5) && (fb.closetrk < 5)
-      && (fBDT > -1.)
-      ;
-    fGoodHLT      = fb.hlt && fGoodMuonsID && (fBDT > -1.);
-  }
+  //   if (string::npos != fSample.find("Cs")) {
+  //     fGoodHLT      = fb.hlt && fGoodMuonsID && fGoodMuonsPt 
+  //       && (fb.fls3d > 5) && (fb.alpha < 0.1)&& (fb.chi2/fb.dof < 4) 
+  //       && (fb.iso > 0.5) && (fb.closetrk < 5)
+  //       && (fBDT > -1.)
+  //       ;
+  //     fGoodHLT      = fb.hlt && fGoodMuonsID && (fBDT > -1.);
+  //   }
 
   // -- update ana cuts!
   fAnaCuts.update(); 

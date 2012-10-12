@@ -101,6 +101,8 @@ struct numbers {
   double offHi, offLo;
   double bsNoScaled, bsNoScaledE, bdNoScaled, bdNoScaledE;
   double pss, pssE, pssTE, pdd, pddE, pddTE;
+  double pls, plsE, plsTE, pld, pldE, pldTE;
+  double phs, phsE, phsTE, phd, phdE, phdTE;
   double psd, psdE, psdTE, pds, pdsE, pdsTE;
   double mBdLo, mBdHi, mBsLo, mBsHi;
   // -- total errors: quad sum of stat and syst errors
@@ -108,6 +110,39 @@ struct numbers {
   double tauTE; 
   double fitYieldTE;
   double effMuidTE, effMuidTNPTE, effMuidMCTE, effMuidTNPMCTE, effTrigTE, effTrigMCTE, effTrigTNPTE, effTrigTNPMCTE; 
+  // -- new numbers
+  double fBgPeakLo,   fBgPeakHi,   fBgPeakBs,   fBgPeakBd;   // (peaking background)    //OK:init/fill
+  double fBgPeakLoE1, fBgPeakHiE1, fBgPeakBsE1, fBgPeakBdE1; // statistical error       //OK:init/fill
+  double fBgPeakLoE2, fBgPeakHiE2, fBgPeakBsE2, fBgPeakBdE2; // systematic error        //OK:init/fill
+  double fBgRslLo,    fBgRslHi,    fBgRslBs,    fBgRslBd;    // (rare sl background)    //OK:init/fill
+  double fBgRslLoE1,  fBgRslHiE1,  fBgRslBsE1,  fBgRslBdE1;  // statistical error       //OK:init/fill
+  double fBgRslLoE2,  fBgRslHiE2,  fBgRslBsE2,  fBgRslBdE2;  // systematic error        //OK:init/fill
+  double fBgRareLo,   fBgRareHi,   fBgRareBs,   fBgRareBd;    // (rare sl background)    //OK:init/fill
+  double fBgRareLoE1, fBgRareHiE1, fBgRareBsE1, fBgRareBdE1;  // statistical error       //OK:init/fill
+  double fBgRareLoE2, fBgRareHiE2, fBgRareBsE2, fBgRareBdE2;  // systematic error        //OK:init/fill
+  double fBgNonpLo,   fBgNonpHi,   fBgNonpBs,   fBgNonpBd;   // (scaled non-peaking background)//OK:init/fill
+  double fBgNonpLoE1, fBgNonpHiE1, fBgNonpBsE1, fBgNonpBdE1;                            //OK:init/fill
+  double fBgNonpLoE2, fBgNonpHiE2, fBgNonpBsE2, fBgNonpBdE2;                            //OK:init/fill
+  double fBgTotLo,    fBgTotHi,    fBgTotBs,    fBgTotBd;    // (sum of the above)      //OK:init/fill
+  double fBgTotLoE1,  fBgTotHiE1,  fBgTotBsE1,  fBgTotBdE1;                             //OK:init/fill
+  double fBgTotLoE2,  fBgTotHiE2,  fBgTotBsE2,  fBgTotBdE2;                             //OK:init/fill
+  double fSgLo,       fSgHi,       fSgBs,       fSgBd;       // (Bs signal yield)       //OK:init/fill
+  double fSgLoE1,     fSgHiE1,     fSgBsE1,     fSgBdE1;                                //OK:init/fill
+  double fSgLoE2,     fSgHiE2,     fSgBsE2,     fSgBdE2;                                //OK:init/fill
+  double fBdLo,       fBdHi,       fBdBs,       fBdBd;       // (Bd signal yield)       //OK:init/fill
+  double fBdLoE1,     fBdHiE1,     fBdBsE1,     fBdBdE1;                                //OK:init/fill
+  double fBdLoE2,     fBdHiE2,     fBdBsE2,     fBdBdE2;                                //OK:init/fill
+  double fSgTot,      fBdTot,      fNoTot,      fCsTot;      // (total yields)
+  double fSgTotE1,    fBdTotE1,    fNoTotE1,    fCsTotE1; 
+  double fSgTotE2,    fBdTotE2,    fNoTotE2,    fCsTotE2; 
+  double fFitSg,      fFitBd,      fFitNo,      fFitNoC,     fFitCs,    fFitCsC;   // (fitted yields) //OK:init/fill
+  double fFitSgE1,    fFitBdE1,    fFitNoE1,    fFitNoCE1,   fFitCsE1,  fFitCsCE1;                    // OK:init/fill
+  double fFitSgE2,    fFitBdE2,    fFitNoE2,    fFitNoCE2,   fFitCsE2,  fFitCsCE2;                    // OK:init/fill
+  double fSgAndBgLo,  fSgAndBgHi,  fSgAndBgBs,  fSgAndBgBd;  // (sum of signal and backgrounds)       // OK:init/fill
+  double fSgAndBgLoE1,fSgAndBgHiE1,fSgAndBgBsE1,fSgAndBgBdE1;                                         // OK:init/fill
+  double fSgAndBgLoE2,fSgAndBgHiE2,fSgAndBgBsE2,fSgAndBgBdE2;                                         // OK:init/fill
+  double fObsLo,      fObsHi,      fObsBs,      fObsBd;      // (observed counts)
+
 };
 
 // ----------------------------------------------------------------------
@@ -115,7 +150,7 @@ class plotClass: public TObject {
 
 public:
 
-  plotClass(const char *files="anaBmm.default.files", const char *dir = "default", const char *cuts = "default", int mode = 11);
+  plotClass(const char *files="anaBmm.default.files", const char *dir = "default", const char *cuts = "default", int mode = 0);
   ~plotClass();
 
   virtual void cd(const char *file) {fF[file]->cd();}
@@ -146,7 +181,7 @@ public:
 
   void singleEventPrintout(std::string suffix, std::string st, int ievt);
   void printNumbers(numbers &a, ostream &OUT);
-  void initNumbers(numbers *a); 
+  void initNumbers(numbers *a, bool initAll = true); 
   int  detChan(double m1eta, double m2eta);
   void reduceTree(TTree *t);
 
@@ -167,7 +202,8 @@ public:
   virtual void replaceAll(std::string &s, std::string a, std::string b);
   virtual void makeCanvas(int i = 3);
   virtual void newLegend(double x1, double y1, double x2, double y2, std::string title = "");
-
+  virtual double getValueByLabel(TH1D *h, std::string label); 
+  virtual void rmSubString(std::string &sinput, const std::string &remove);
 
   std::string fFiles; 
   // -- Files for Signal and Normalization modes in data and MC
@@ -255,7 +291,7 @@ public:
 
   bool fDoPrintSingleEvent;
   int  fPrintSingleEvt, fPrintSingleRun;
-  bool fDoUseBDT;
+  bool fDoUseBDT, fDoApplyMuonPtCuts;
   bool fDoApplyCowboyVeto, fDoApplyCowboyVetoAlsoInSignal; 
   bool fInvertedIso;
   bool fNormProcessed; 
@@ -279,7 +315,7 @@ public:
   virtual void loopFunction(int function, int mode = 0) {std::cout << "replace me" << std::endl;} 
   
   virtual TMVA::Reader* setupReader(std::string xmlFile, readerData &rd);
-  virtual void calcBDT(bool rejectInvIso = false);
+  virtual void calcBDT();
   
   struct RedTreeData fb; 
   //  std::vector<TMVA::Reader*> fReaderEvents0; 
@@ -300,7 +336,7 @@ public:
   AnalysisCuts fAnaCuts; 
   
   std::string fSetup; 
-
+  bool fSaveSmallTree; 
 
   PidTable *fptT1;
   PidTable *fptT2;

@@ -7,10 +7,10 @@ class plotResults: public plotClass {
 
 public:
 
-  plotResults(const char *files="anaBmm.default.files", const char *dir = "default", const char *cuts = "default", int mode = 11);
+  plotResults(const char *files="anaBmm.default.files", const char *dir = "default", const char *cuts = "default", int mode = 0);
   ~plotResults();
 
-  void makeAll(int channels = 3);
+  void makeAll(int channels = 1);
 
   void computeNormUL();
   void computeCsBF();
@@ -20,16 +20,20 @@ public:
 
   void resetHistograms();
   void fillAndSaveHistograms(int nevents = -1); 
+  void rareBgHists(std::string smode = "nada", int nevents = -1);
   void otherNumbers(std::string smode);
   void saveHists(std::string smode);
+
+  void calculateNoNumbers(int chan, int mode = 1);
+  void calculateCsNumbers(int chan, int mode = 1);
   void calculateNumbers(int mode); 
-  void rareBgHists(std::string mode = "nada");
-  void rareBgFromHist(std::string mode = "nada");
+  void calculateRareBgNumbers(int chan);
+  void calculateSgNumbers(int chan);
+  void numbersFromHist(int chan, int mode, numbers *aa); 
 
   virtual void loopFunction(int function, int mode = 0); 
   virtual void loopFunction1(int mode); 
   virtual void loopFunction2(int mode); 
-
 
   void acceptancePerProcess();
   void rareBg(std::string mode = "nada");
