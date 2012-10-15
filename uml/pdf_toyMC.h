@@ -36,10 +36,7 @@ public:
   void generate(int NExp, string pdf_toy, string test_pdf = "total");
   void mcstudy(int NExp, string pdf_toy, string test_pdf = "total");
   void unset_constant();
-  
-  TH1D* pull_h_bs;
-  TH1D* pull_h_bd;
-  
+
 private:
   string bias_;
 
@@ -47,17 +44,21 @@ private:
   string pdf_test_;
   
   vector <vector <RooDataSet*> > residual_rds_bs;
+  vector <vector <RooDataSet*> > residual_rds_bd;
   vector <vector <RooDataSet*> > pull_rds_bs;
-  vector <vector <RooDataSet*> >pull_rds_bd;
-  vector <vector <RooDataSet*> >pull_rds_rare;
-  vector <vector <RooDataSet*> >pull_rds_comb;
+  vector <vector <RooDataSet*> > pull_rds_bd;
+  vector <vector <RooDataSet*> > pull_rds_rare;
+  vector <vector <RooDataSet*> > pull_rds_comb;
   vector <vector <RooRealVar*> > residual_bs;
-  vector <vector <RooRealVar*> >pull_bd;
-  vector <vector <RooRealVar*> >pull_bs;
-  vector <vector <RooRealVar*> >pull_rare;
-  vector <vector <RooRealVar*> >pull_comb;
-  RooRealVar* pull_BF;
-  RooDataSet* pull_rds_BF;
+  vector <vector <RooRealVar*> > residual_bd;
+  vector <vector <RooRealVar*> > pull_bd;
+  vector <vector <RooRealVar*> > pull_bs;
+  vector <vector <RooRealVar*> > pull_rare;
+  vector <vector <RooRealVar*> > pull_comb;
+  RooRealVar* pull_BF_bs;
+  RooDataSet* pull_rds_BF_bs;
+  RooRealVar* pull_BF_bd;
+  RooDataSet* pull_rds_BF_bd;
 
   void print(string output, RooWorkspace* ws);
 

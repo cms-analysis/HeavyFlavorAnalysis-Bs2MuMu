@@ -225,7 +225,7 @@ int main(int argc, char* argv[]) {
   if (simul) output_s += "simul" + inputs_oss.str() + "_" + meth;
   else output_s += "pdf_" + meth + "_" + ch_s;
   if (simul_bdt) output_s += "_simulBdt";
-  if (BF) output_s += "_BF";
+  if (BF) output_s += Form("_BF%d", BF);
   if (SM) output_s += "_SM";
   if (bd_const) output_s += "_BdConst";
   if (bdt_fit) output_s += "_2D";

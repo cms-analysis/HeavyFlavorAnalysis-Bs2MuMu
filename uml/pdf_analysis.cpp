@@ -795,7 +795,7 @@ double pdf_analysis::getErrorHigh(RooRealVar *var) {
 
 double pdf_analysis::getErrorLow(RooRealVar *var) {
   double value = var->getVal();
-  if (value == var->getMin() || (strcmp(var->GetName(),"BF") && (value <= 0.0001 && value >= -0.0001))) return 0;
+  if (value == var->getMin() || (strcmp(var->GetName(),"BF_bs") && (value <= 0.0001 && value >= -0.0001))) return 0;
   double error = var->getErrorLo();
   if (error == 0) {
     if (value - var->getError() < 0.0) return (-1 * value);
