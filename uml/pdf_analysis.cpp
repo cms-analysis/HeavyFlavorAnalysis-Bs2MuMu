@@ -1,6 +1,6 @@
 #include "pdf_analysis.h"
 
-pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, bool BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit) {
+pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit) {
   cout << "analysis constructor" << endl;
   print_ = print;
   meth_ = meth;
@@ -454,36 +454,59 @@ void pdf_analysis::define_total_fractional(int i, int j) {
 
 void pdf_analysis::define_total_extended(int i, int j) {
   RooArgList pdf_list(*ws_->pdf(name("pdf_bs", i, j)), *ws_->pdf(name("pdf_bd", i, j)), *ws_->pdf(name("pdf_rare", i, j)), *ws_->pdf(name("pdf_comb", i, j)));
-  if (!BF_) {
-    if (SM_ || bd_constr_) {
-      RooArgList N_list(*ws_->var(name("N_bs", i, j)), *ws_->function(name("N_bd_constr", i, j)), *ws_->var(name("N_rare", i, j)), *ws_->var(name("N_comb", i, j)));
-      RooAddPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", pdf_list, N_list);
-      ws_->import(pdf_ext_total);
-    }
-    else {
-      RooArgList N_list(*ws_->var(name("N_bs", i, j)), *ws_->var(name("N_bd", i, j)), *ws_->var(name("N_rare", i, j)), *ws_->var(name("N_comb", i, j)));
-      RooAddPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", pdf_list, N_list);
-      ws_->import(pdf_ext_total);
-    }
+  RooArgList N_list("varlist");
+
+  if (BF_) N_list.add(*ws_->function(name("N_bs_formula", i, j)));
+  else N_list.add(*ws_->var(name("N_bs", i, j)));
+  if (SM_ || bd_constr_) N_list.add(*ws_->function(name("N_bd_constr", i, j)));
+  else if (BF_ == 2) N_list.add(*ws_->function(name("N_bd_formula", i, j)));
+  else N_list.add(*ws_->var(name("N_bd", i, j)));
+  N_list.add(*ws_->var(name("N_rare", i, j)));
+  N_list.add(*ws_->var(name("N_comb", i, j)));
+
+  RooAddPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", pdf_list, N_list);
+  ws_->import(pdf_ext_total);
+
+  if (BF_) {
+    RooArgList N_list_test(*ws_->function(name("N_bs", i, j)));
+    if (SM_ || bd_constr_) N_list_test.add(*ws_->function(name("N_bd_constr", i, j)));
+    else N_list_test.add(*ws_->var(name("N_bd", i, j)));
+    N_list_test.add(*ws_->var(name("N_rare", i, j)));
+    N_list_test.add(*ws_->var(name("N_comb", i, j)));
+    RooAddPdf pdf_ext_total_test(name("pdf_ext_total_test", i, j), "pdf_ext_total", pdf_list, N_list_test);
+    ws_->import(pdf_ext_total_test);
   }
-  else {
-    if (SM_ || bd_constr_) {
-      RooArgList N_list(*ws_->function(name("N_bs_formula", i, j)), *ws_->function(name("N_bd_constr", i, j)), *ws_->var(name("N_rare", i, j)), *ws_->var(name("N_comb", i, j)));
-      RooAddPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", pdf_list, N_list);
-      ws_->import(pdf_ext_total);
-      RooArgList N_list_test(*ws_->function(name("N_bs", i, j)), *ws_->var(name("N_bd_constr", i, j)), *ws_->var(name("N_rare", i, j)), *ws_->var(name("N_comb", i, j)));
-      RooAddPdf pdf_ext_total_test(name("pdf_ext_total_test", i, j), "pdf_ext_total", pdf_list, N_list_test);
-      ws_->import(pdf_ext_total_test);
-    }
-    else {
-      RooArgList N_list(*ws_->function(name("N_bs_formula", i, j)), *ws_->var(name("N_bd", i, j)), *ws_->var(name("N_rare", i, j)), *ws_->var(name("N_comb", i, j)));
-      RooAddPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", pdf_list, N_list);
-      ws_->import(pdf_ext_total);
-      RooArgList N_list_test(*ws_->function(name("N_bs", i, j)), *ws_->var(name("N_bd", i, j)), *ws_->var(name("N_rare", i, j)), *ws_->var(name("N_comb", i, j)));
-      RooAddPdf pdf_ext_total_test(name("pdf_ext_total_test", i, j), "pdf_ext_total", pdf_list, N_list_test);
-      ws_->import(pdf_ext_total_test);
-    }
-  }
+
+//  if (!BF_) {
+//    if (SM_ || bd_constr_) {
+//      RooArgList N_list(*ws_->var(name("N_bs", i, j)), *ws_->function(name("N_bd_constr", i, j)), *ws_->var(name("N_rare", i, j)), *ws_->var(name("N_comb", i, j)));
+//      RooAddPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", pdf_list, N_list);
+//      ws_->import(pdf_ext_total);
+//    }
+//    else {
+//      RooArgList N_list(*ws_->var(name("N_bs", i, j)), *ws_->var(name("N_bd", i, j)), *ws_->var(name("N_rare", i, j)), *ws_->var(name("N_comb", i, j)));
+//      RooAddPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", pdf_list, N_list);
+//      ws_->import(pdf_ext_total);
+//    }
+//  }
+//  else {
+//    if (SM_ || bd_constr_) {
+//      RooArgList N_list(*ws_->function(name("N_bs_formula", i, j)), *ws_->function(name("N_bd_constr", i, j)), *ws_->var(name("N_rare", i, j)), *ws_->var(name("N_comb", i, j)));
+//      RooAddPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", pdf_list, N_list);
+//      ws_->import(pdf_ext_total);
+//      RooArgList N_list_test(*ws_->function(name("N_bs", i, j)), *ws_->function(name("N_bd_constr", i, j)), *ws_->var(name("N_rare", i, j)), *ws_->var(name("N_comb", i, j)));
+//      RooAddPdf pdf_ext_total_test(name("pdf_ext_total_test", i, j), "pdf_ext_total", pdf_list, N_list_test);
+//      ws_->import(pdf_ext_total_test);
+//    }
+//    else {
+//      RooArgList N_list(*ws_->function(name("N_bs_formula", i, j)), *ws_->var(name("N_bd", i, j)), *ws_->var(name("N_rare", i, j)), *ws_->var(name("N_comb", i, j)));
+//      RooAddPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", pdf_list, N_list);
+//      ws_->import(pdf_ext_total);
+//      RooArgList N_list_test(*ws_->function(name("N_bs", i, j)), *ws_->var(name("N_bd", i, j)), *ws_->var(name("N_rare", i, j)), *ws_->var(name("N_comb", i, j)));
+//      RooAddPdf pdf_ext_total_test(name("pdf_ext_total_test", i, j), "pdf_ext_total", pdf_list, N_list_test);
+//      ws_->import(pdf_ext_total_test);
+//    }
+//  }
   return; 
 }
 
@@ -493,6 +516,7 @@ void pdf_analysis::define_bf(int i, int j) {
 
   RooRealVar eff_bu_var(name("eff_bu", i, j), "eff_bu", eff_bu_val[i], eff_bu_val[i]-eff_bu_err[i], eff_bu_val[i]+eff_bu_err[i], "");
   RooRealVar eff_bs_var(name("eff_bs", i, j), "eff_bs", eff_bs_val[i], eff_bs_val[i]-eff_bs_err[i], eff_bs_val[i]+eff_bs_err[i], "");
+  RooRealVar eff_bd_var(name("eff_bd", i, j), "eff_bs", eff_bd_val[i], eff_bd_val[i]-eff_bd_err[i], eff_bd_val[i]+eff_bd_err[i], "");
 
   RooRealVar fs_over_fu_var("fs_over_fu", "fs_over_fu", fs_over_fu_val, fs_over_fu_val-fs_over_fu_err, fs_over_fu_val+fs_over_fu_err, "");
   RooRealVar Bu2JpsiK_BF_var("Bu2JpsiK_BF", "Bu2JpsiK_BF", Bu2JpsiK_BF_val, Bu2JpsiK_BF_val-Bu2JpsiK_BF_err, Bu2JpsiK_BF_val+Bu2JpsiK_BF_err, "");
@@ -501,17 +525,27 @@ void pdf_analysis::define_bf(int i, int j) {
   N_bu_var.setConstant(1);
   eff_bu_var.setConstant(1);
   eff_bs_var.setConstant(1);
+  eff_bd_var.setConstant(1);
   fs_over_fu_var.setConstant(1);
   Bu2JpsiK_BF_var.setConstant(1);
   Jpsi2MuMu_BF_var.setConstant(1);
 
-  RooRealVar BF("BF", "Bs2MuMu branching fraction", Bs2MuMu_SM_BF_val, 1.0e-11, 1e-8);
-  if (i == 0 && j == 0) ws_->import(BF);
+  if (i == 0 && j == 0) {
+    RooRealVar BF_bs("BF_bs", "Bs2MuMu branching fraction", Bs2MuMu_SM_BF_val, 1.0e-11, 1e-8);
+    RooRealVar BF_bd("BF_bd", "Bd2MuMu branching fraction", Bd2MuMu_SM_BF_val, 1.0e-11, 1e-8);
+    ws_->import(BF_bs);
+    ws_->import(BF_bd);
+  }
+  RooFormulaVar K_bs(name("K_bs", i, j), "K(i) * N_bs(i) / N_bu(i) = BF_bs",  "@0*@1*@2/@3/@4", RooArgList(Bu2JpsiK_BF_var, Jpsi2MuMu_BF_var, eff_bu_var, eff_bs_var, fs_over_fu_var));
+  RooFormulaVar K_bd(name("K_bd", i, j), "K(i) * N_bd(i) / N_bu(i) = BF_bs",  "@0*@1*@2/@3", RooArgList(Bu2JpsiK_BF_var, Jpsi2MuMu_BF_var, eff_bu_var, eff_bd_var));
 
-  RooFormulaVar K(name("K", i, j), "K(i) * N_bs(i) / N_bu(i) = BF",  "@0*@1*@2/@3/@4", RooArgList(Bu2JpsiK_BF_var, Jpsi2MuMu_BF_var, eff_bu_var, eff_bs_var, fs_over_fu_var));
-  RooFormulaVar N_bs_constr(name("N_bs_formula", i, j), "N_bs(i) = BF / K(i) * N_Bu = ",  "@0/@1*@2", RooArgList( *ws_->var("BF"), K, N_bu_var));
+  RooFormulaVar N_bs_constr(name("N_bs_formula", i, j), "N_bs(i) = BF / K(i) * N_Bu",  "@0/@1*@2", RooArgList( *ws_->var("BF_bs"), K_bs, N_bu_var));
+  RooFormulaVar N_bd_constr(name("N_bd_formula", i, j), "N_bs(i) = BF / K(i) * N_Bu",  "@0/@1*@2", RooArgList( *ws_->var("BF_bd"), K_bd, N_bu_var));
+
   cout << "channel: " << i << ";" << j << " expected Bs = " << N_bs_constr.getVal() << endl;
+  cout << "channel: " << i << ";" << j << " expected Bd = " << N_bd_constr.getVal() << endl;
   ws_->import(N_bs_constr);
+  ws_->import(N_bd_constr);
 }
 
 void pdf_analysis::define_simul(bool simulbdt) {
@@ -1112,8 +1146,10 @@ void pdf_analysis::parse_external_numbers(string filename) {
     sscanf(buffer, "BuToKpsiK\t%lf\t%lf", &Bu2JpsiK_BF_val, &Bu2JpsiK_BF_err);
     sscanf(buffer, "JpsiToMuMu\t%lf\t%lf", &Jpsi2MuMu_BF_val, &Jpsi2MuMu_BF_err);
     sscanf(buffer, "Bs2MuMu_BF\t%lf\t%lf", &Bs2MuMu_SM_BF_val, &Bs2MuMu_SM_BF_err);
+    sscanf(buffer, "Bd2MuMu_BF\t%lf\t%lf", &Bd2MuMu_SM_BF_val, &Bd2MuMu_SM_BF_err);
   }
-  cout << "Jpsi2MuMu_SM_BF " <<  Bs2MuMu_SM_BF_val << " \\pm " << Bs2MuMu_SM_BF_err << endl;
+  cout << "Bs2MuMu_SM_BF " <<  Bs2MuMu_SM_BF_val << " \\pm " << Bs2MuMu_SM_BF_err << endl;
+  cout << "Bd2MuMu_SM_BF " <<  Bd2MuMu_SM_BF_val << " \\pm " << Bd2MuMu_SM_BF_err << endl;
   cout << "fs/fu        " <<  fs_over_fu_val << " \\pm " << fs_over_fu_err << endl;
   cout << "Bu2JpsiK_BF  " <<  Bu2JpsiK_BF_val << " \\pm " << Bu2JpsiK_BF_err << endl;
   cout << "Jpsi2MuMu_BF " <<  Jpsi2MuMu_BF_val << " \\pm " << Jpsi2MuMu_BF_err << endl;

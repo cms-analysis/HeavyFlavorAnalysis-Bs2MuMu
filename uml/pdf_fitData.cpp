@@ -1,6 +1,6 @@
 #include "pdf_fitData.h"
 
-pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, bool BF, bool SM, bool bd_constr, TTree *input_tree, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig): pdf_analysis(print, meth, ch_s, range, BF, SM, bd_constr, simul, simulbdt, pee_, bdt_fit) {
+pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, int BF, bool SM, bool bd_constr, TTree *input_tree, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig): pdf_analysis(print, meth, ch_s, range, BF, SM, bd_constr, simul, simulbdt, pee_, bdt_fit) {
   cout << "fitData constructor" << endl;
   channels = inputs;
   channels_bdt = inputs_bdt;
@@ -62,7 +62,7 @@ bool pdf_fitData::parse(char *cutName, float cut) {
     sprintf(test_cut, "lumi");
     if (!strcmp(cutName, test_cut)) {
       lumi = (double)cut;
-      cout << "lumi: " << lumi << endl;
+      cout << "lumi is: " << lumi << " times the true luminosity" << endl;
       return true;
     }
   }
@@ -289,7 +289,7 @@ void pdf_fitData::print_each_channel() {
       RooArgSet* vars =  ws_->pdf("pdf_ext_simul")->getVariables();
       RooRealVar* N_bs;
       if (!BF_) N_bs = (RooRealVar*)vars->find(pdf_analysis::name("N_bs", i, j));
-      else N_bs = (RooRealVar*)vars->find("BF");
+      else N_bs = (RooRealVar*)vars->find("BF_bs");
       RooRealVar* N_bd;
       if (!bd_constr_ && !SM_) {
         N_bd = (RooRealVar*)vars->find(pdf_analysis::name("N_bd", i, j));
@@ -523,7 +523,7 @@ void pdf_fitData::make_pdf() {
     if (simul_ && !simul_bdt_) {
       for (int i = 0; i < channels; i++) {
         /*if (!BF_)*/ ws_input->var(name("N_bs", i))->setVal(estimate_bs[i]);
-//        else ws_input->var("BF")->setVal(3.e-8);
+//        else ws_input->var("BF_bs")->setVal(3.e-8);
         ws_input->var(name("N_bd", i))->setVal(estimate_bd[i]);
         ws_input->var(name("N_rare", i))->setVal(estimate_rare[i]);
         ws_input->var(name("N_comb", i))->setVal(estimate_comb[i]);
@@ -531,7 +531,7 @@ void pdf_fitData::make_pdf() {
     }
     else if (!simul_ && !simul_bdt_) {
       /*if (!BF_) */ws_input->var("N_bs")->setVal(estimate_bs[ch_i_]);
-//      else ws_input->var("BF")->setVal(3.e-7);
+//      else ws_input->var("BF_bs")->setVal(3.e-7);
       ws_input->var("N_bd")->setVal(estimate_bd[ch_i_]);
       ws_input->var("N_rare")->setVal(estimate_rare[ch_i_]);
       ws_input->var("N_comb")->setVal(estimate_comb[ch_i_]);
@@ -588,7 +588,7 @@ Double_t pdf_fitData::sig_hand() {
   while ( (arg_var = (RooRealVar*)vars_it->Next())) {
     string name(arg_var->GetName());
     if (!BF_) found = name.find("N_bs");
-    else found = name.find("BF");
+    else found = name.find("BF_bs");
     if (found != string::npos) {
       arg_var->setVal(0.0);
       arg_var->setConstant(1);
@@ -612,7 +612,7 @@ Double_t pdf_fitData::sig_hand() {
   while ( (arg_var = (RooRealVar*)vars_after->Next())) {
     string name(arg_var->GetName());
     if (!BF_) found = name.find("N_bs");
-    else found = name.find("BF");
+    else found = name.find("BF_bs");
     if (found != string::npos) arg_var->setConstant(0);
 //    found = name.find("N_bd");
 //    if (found!=string::npos) arg_var->setConstant(0);
@@ -657,8 +657,8 @@ void pdf_fitData::sig_plhc() {
       }
     }
     else {
-      poi.add(*ws_->var("BF"));
-      poi.setRealValue("BF", 0);
+      poi.add(*ws_->var("BF_bs"));
+      poi.setRealValue("BF_bs", 0);
     }
   }
   else {
@@ -672,8 +672,8 @@ void pdf_fitData::sig_plhc() {
       //    }
     }
     else {
-      poi.add(*ws_->var("BF"));
-      poi.setRealValue("BF", 0);
+      poi.add(*ws_->var("BF_bs"));
+      poi.setRealValue("BF_bs", 0);
     }
   }
   if (bd_constr_) {
@@ -725,7 +725,7 @@ void pdf_fitData::make_models() {
     }
   }
   else {
-    name_poi << "BF";
+    name_poi << "BF_bs";
   }
   if (bd_constr_) name_poi << ",Bd_over_Bs";
   ws_->defineSet("poi", name_poi.str().c_str());
@@ -758,7 +758,7 @@ void pdf_fitData::make_models() {
     }
   }
   else {
-    ws_->var("BF")->setVal(0.0);
+    ws_->var("BF_bs")->setVal(0.0);
   }
   if (bd_constr_) {
     ws_->var("Bd_over_Bs")->setVal(0.0);
@@ -791,7 +791,7 @@ void pdf_fitData::make_models() {
     }
   }
   else {
-    ws_->var("BF")->setVal(Bs2MuMu_SM_BF_val);
+    ws_->var("BF_bs")->setVal(Bs2MuMu_SM_BF_val);
   }
   if (bd_constr_) {
     int index = simul_ ? 0 : atoi(ch_s_.c_str());
@@ -956,7 +956,7 @@ void pdf_fitData::BF(string eff_filename, string numbers_filename) {
 
 void pdf_fitData::setnewlumi() {
   for (int i = 0; i < channels; i++) {
-    Double_t N_bu_new = lumi / 5. * N_bu_val[i];
+    Double_t N_bu_new = lumi / 1. * N_bu_val[i];
     ws_->var(name("N_bu", i))->setVal(N_bu_new);
     cout << N_bu_new << " new Bu expectations: " << ws_->var(name("N_bu", i))->getVal() << " (channel " << i << ")" << endl;
     ws_->var(name("N_bu", i))->Print();

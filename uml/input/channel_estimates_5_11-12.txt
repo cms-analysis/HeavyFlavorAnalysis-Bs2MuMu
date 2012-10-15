@@ -1,21 +1,21 @@
-# fit 1D (5 fb-1):
-lumi   5
+# fit 1D (2011 + 2012):
+lumi 1
 bs_0   4
 bd_0   0
-rare_0 6
-comb_0  20
+rare_0 10
+comb_0  17
 #########
 bs_1   2
 bd_1   0
-rare_1 2
-comb_1 6
+rare_1 3
+comb_1 13
 #########
-bs_2   4
-bd_2   0
-rare_2 6
-comb_2  20
+bs_2   18
+bd_2   2
+rare_2 36
+comb_2  65
 #########
-bs_3   2
+bs_3   6
 bd_3   0
-rare_3 2
-comb_3 6
+rare_3 11
+comb_3 19

@@ -47,7 +47,7 @@ using namespace RooFit;
 
 class pdf_analysis {
 public:
-  pdf_analysis(bool print, string meth = "bdt", string ch_s = "0", string range = "all", bool BF = false, bool SM = false, bool bd_constr = false, bool simul = false, bool simulbdt = false, bool pee_ = false, bool bdt_fit = false);
+  pdf_analysis(bool print, string meth = "bdt", string ch_s = "0", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, bool simul = false, bool simulbdt = false, bool pee_ = false, bool bdt_fit = false);
   void set_ws(RooWorkspace *ws) {ws_ = ws;}
   RooWorkspace* get_ws() {return ws_;}
 
@@ -96,7 +96,7 @@ public:
   bool bd_constr_;
   bool simul_;
   bool simul_bdt_;
-  bool BF_;
+  int BF_;
   RooRealVar* Mass;
   RooRealVar* MassRes;
   RooRealVar* bdt;
@@ -152,6 +152,8 @@ protected:
 
   double Bs2MuMu_SM_BF_val;
   double Bs2MuMu_SM_BF_err;
+  double Bd2MuMu_SM_BF_val;
+  double Bd2MuMu_SM_BF_err;
   double fs_over_fu_val;
   double Jpsi2MuMu_BF_val;
   double Bu2JpsiK_BF_val;

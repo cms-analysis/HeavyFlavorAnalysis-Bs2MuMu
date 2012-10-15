@@ -7,7 +7,7 @@
 
 #include "pdf_toyMC.h"
 
-pdf_toyMC::pdf_toyMC(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, bool BF, bool SM, bool bd_constr, TTree* input_tree, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, string bias): pdf_fitData( print,  inputs,  inputs_bdt,  input_estimates,  meth,  range, BF, SM,  bd_constr,  input_tree,  simul,  simulbdt,  pee_,  bdt_fit,  ch_s,  sig) {
+pdf_toyMC::pdf_toyMC(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, int BF, bool SM, bool bd_constr, TTree* input_tree, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, string bias): pdf_fitData( print,  inputs,  inputs_bdt,  input_estimates,  meth,  range, BF, SM,  bd_constr,  input_tree,  simul,  simulbdt,  pee_,  bdt_fit,  ch_s,  sig) {
   cout << "pdf_toyMC constructor" << endl;
   bias_ = bias;
 }
@@ -249,13 +249,13 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
         pull_comb[i][j]->setVal(comb_pull);
         pull_rds_comb[i][j]->add(*pull_comb[i][j]);
         if (!BF_) correlation_h[i][j]->Fill(RFR->correlation(*ws_temp->var(name("N_bs", i, j)), *ws_temp->var(name("N_bd", i, j))));
-        else correlation_h[i][j]->Fill(RFR->correlation(*ws_temp->var("BF"), *ws_temp->var(name("N_bd", i, j))));
+        else correlation_h[i][j]->Fill(RFR->correlation(*ws_temp->var("BF_bs"), *ws_temp->var(name("N_bd", i, j))));
       }
     }
     if (BF_) {
-      BF_mean_h->Fill(ws_temp->var("BF")->getVal());
-      BF_sigma_h->Fill(ws_temp->var("BF")->getError());
-      double BF_pull = (ws_temp->var("BF")->getVal() - Bs2MuMu_SM_BF_val) / ws_temp->var("BF")->getError();
+      BF_mean_h->Fill(ws_temp->var("BF_bs")->getVal());
+      BF_sigma_h->Fill(ws_temp->var("BF_bs")->getError());
+      double BF_pull = (ws_temp->var("BF_bs")->getVal() - Bs2MuMu_SM_BF_val) / ws_temp->var("BF_bs")->getError();
       pull_BF->setVal(BF_pull);
       pull_rds_BF->add(*pull_BF);
     }
@@ -441,8 +441,8 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
     }
   }
   else {
-    ws_temp->var("BF")->setVal(0);
-    ws_temp->var("BF")->setConstant(1);
+    ws_temp->var("BF_bs")->setVal(0);
+    ws_temp->var("BF_bs")->setConstant(1);
   }
 
   RooFitResult * rfr_H0 = pdf_toyMC::fit_pdf(pdf_test_, data, printlevel, ws_temp);
@@ -480,8 +480,8 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
     }
   }
   else {
-    ws_temp->var("BF")->setVal(Bs2MuMu_SM_BF_val);
-    ws_temp->var("BF")->setConstant(0);
+    ws_temp->var("BF_bs")->setVal(Bs2MuMu_SM_BF_val);
+    ws_temp->var("BF_bs")->setConstant(0);
   }
   Double_t newNLL = rfr_H0->minNll();
   Double_t deltaLL = newNLL - minNLL;
@@ -575,7 +575,7 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy, string test_pdf) {
     }
   }
   else {
-    sigModule[0][0] = new RooDLLSignificanceMCSModule(*ws_->var("BF"), 0);
+    sigModule[0][0] = new RooDLLSignificanceMCSModule(*ws_->var("BF_bs"), 0);
     mcstudy->addModule(*sigModule[0][0]);
   }
 
@@ -592,8 +592,8 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy, string test_pdf) {
         if (k == 0 && BF_ && (i > 0 || j > 0)) continue;
         string name_;
         if (k == 0 && BF_) {
-          name_ = "BF";
-          source[0] = "BF";
+          name_ = "BF_bs";
+          source[0] = "BF_bs";
         }
         else name_ = name("N_" + source[k], i, j);
         RooPlot* frame1_bs = mcstudy->plotParam(*ws_->var(name_.c_str()), Bins(20)) ;
