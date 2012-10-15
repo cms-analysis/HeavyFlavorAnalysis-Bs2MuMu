@@ -297,8 +297,8 @@ void get_rare_normalization(string filename, string dir, int offset = 0) {
   vector <float> peak_exp(2, 0);
   vector <float> semi_exp(2, 0);
 
-  string end_0 = {"0:val}"};
-  string end_1 = {"1:val}"};
+  string end_0("0:val}");
+  string end_1("1:val}");
 
   while (fgets(buffer, sizeof(buffer), file)) {
     if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
