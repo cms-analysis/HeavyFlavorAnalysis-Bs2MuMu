@@ -323,7 +323,6 @@ void pdf_fitData::print_each_channel() {
         fitresult_tex2 << "}_{-" << N_bs_error_down << "}" << ")";
         ws_->var("BF_bs")->setVal(BF_bs_val);
         fitresult_tex_vec.push_back(fitresult_tex2.str());
-        cout << endl <<"MMMMMMMMMMMMMMMMMMMMMMMMMMMMM" <<  N_bs_up << "    " << N_bs_error_up << "   " << N_bs_down << "   " << N_bs_error_down << endl;
       }
       if (!bd_constr_ && !SM_) {
         ostringstream fitresult_tex;
@@ -973,6 +972,8 @@ void pdf_fitData::setnewlumi() {
     Double_t N_bu_new = lumi / 1. * N_bu_val[i];
     ws_->var(name("N_bu", i))->setVal(N_bu_new);
     cout << "new Bu expectations: " << ws_->var(name("N_bu", i))->getVal() << " (channel " << i << "); ";
-    if (BF_>0) cout << "Bs expected: " << ws_->function(name("N_bs_formula", i))->getVal() << endl;
+    if (BF_>0) cout << "Bs expected: " << ws_->function(name("N_bs_formula", i))->getVal();
+    if (BF_>1) cout << ";  Bd expected: " << ws_->function(name("N_bd_formula", i))->getVal();
+    cout << endl;
   }
 }

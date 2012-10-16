@@ -68,8 +68,8 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
   TH1D * BF_bd_sigma_h = new TH1D("BF_bd_sigma_h", "BF_bd_sigma_h", 100, 1.e-10, 1.e-8);
   pull_BF_bd = new RooRealVar("pull_BF_bd", "pull_BF_bd", -8., 8.);
   pull_rds_BF_bd = new RooDataSet("pull_rds_BF_bd", "pull_rds_BF_bd", *pull_BF_bd);
-  for (int i = 0; i < channels; i++) { cout << i << endl;
-    for (int j = 0; j < channels_bdt; j++) { cout << j << endl;
+  for (int i = 0; i < channels; i++) {
+    for (int j = 0; j < channels_bdt; j++) {
       residual_bs[i][j] = new RooRealVar(name("residual_bs", i, j), "residual_bs", -20., 20.);
       residual_bd[i][j] = new RooRealVar(name("residual_bd", i, j), "residual_bd", -20., 20.);
       pull_bs[i][j] = new RooRealVar(name("pull_bs", i, j), "pull_bs", -8., 8.);
@@ -441,7 +441,7 @@ void pdf_toyMC::fit_pulls(RooRealVar* pull, RooDataSet* rds, int i, int j) {
   RooPlot *rp_bs = pull->frame();
   rds->plotOn(rp_bs, Binning(40));
   gauss_bs->plotOn(rp_bs, LineColor(kBlue));
-  gauss_bs->paramOn(rp_bs, Layout(0.66, 0.9, 0.9));
+  gauss_bs->paramOn(rp_bs, Layout(0.55, 0.9, 0.9));
   TCanvas* canvas_bs = new TCanvas("canvas_bs", "canvas_bs", 600, 600);
   rp_bs->Draw();
   channel = simul_ ? i : ch_i_;
