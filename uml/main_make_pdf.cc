@@ -231,7 +231,12 @@ int main(int argc, char* argv[]) {
   if (bdt_fit) output_s += "_2D";
   if (pee) output_s += "_PEE";
   output_s += ".root";
-  ws->SaveAs(output_s.c_str());
+  TFile * output_f = new TFile(output_s.c_str(), "RECREATE");
+  ws->Write();
+  MassRes_0_h->Write();
+  MassRes_2_h->Write();
+  output_f->Close();
+//  ws->SaveAs(output_s.c_str());
   if (simul && !simul_bdt) ws->pdf("pdf_ext_simul")->graphVizTree(Form("sim_%d_pdf.dot", inputs));
   else if (!simul && !simul_bdt) ws->pdf("pdf_ext_total")->graphVizTree(Form("ext_%s.dot", ch_s.c_str()));
   else ws->pdf("pdf_ext_simul")->graphVizTree(Form("prodext_%s.dot", ch_s.c_str()));

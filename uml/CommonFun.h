@@ -408,6 +408,7 @@ TF1* Fit_MassRes(std::string file, std::string cuts, vector <double> cuts_v, int
   c.Print(Form("fig/width_fit_%d.gif", year));
   c.Print(Form("fig/width_fit_%d.pdf", year));
   TF1* MassRes2_fit = (TF1*)MassRes_fit->Clone();
+  MassRes2_fit->SetName(Form("MassRes_%d_f", year));
   return MassRes2_fit;
 }
 

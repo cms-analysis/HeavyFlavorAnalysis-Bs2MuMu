@@ -340,7 +340,7 @@ void pdf_analysis::define_nonpeaking(int i, int j) {
 
 void pdf_analysis::define_comb(int i, int j) {
 
-  RooRealVar N_comb(name("N_comb", i, j), "N_comb", 0, 10000);
+  RooRealVar N_comb(name("N_comb", i, j), "N_comb", 0, 1000000);
   ws_->import(N_comb);
 
   if (!pee) {
@@ -674,7 +674,7 @@ void pdf_analysis::print(RooAbsData* data, string output) {
   }
   if(!no_legend) {
     ws_->pdf(pdf_name.c_str())->paramOn(rp, Layout(0.50, 0.9, 0.9));
-    if (bdt_fit_) ws_->pdf(pdf_name.c_str())->paramOn(rp_bdt, Layout(0.50, 0.9, 0.9));
+    //if (bdt_fit_) ws_->pdf(pdf_name.c_str())->paramOn(rp_bdt, Layout(0.50, 0.9, 0.9));
   }
   
   //components
