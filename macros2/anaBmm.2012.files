@@ -7,13 +7,11 @@ type=bd,default       dset=mc       lumi=14767.2 file=dcap://t3se01.psi.ch:22125
 # --------------------------------------------------------------------
 # control sample  data and MC
 type=cs,default       dset=data      lumi=12.8   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-2012-data.root
-# Making the cs default tree, now points to acc
-type=cs,default       dset=mc,0.0162 lumi=17.5   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-accBsToJpsiPhi.root 
+type=cs,default       dset=mc,0.0162 lumi=17.5   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-BsToJpsiPhi.root 
 type=cs,acc           dset=mc,1.00   lumi=0.36   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-accBsToJpsiPhi.root
 # --------------------------------------------------------------------
 # normalization data and MC
 type=no,default       dset=data      lumi=12.8   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-2012-data.root
-# Making the no default tree, now points to acc
 type=no,default       dset=mc,0.0181 lumi=10.3   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-BuToJpsiK.root 
 type=no,acc           dset=mc,1.00   lumi=0.22   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-accBuToJpsiK.root
 # ----------------------------------------------------------------------
