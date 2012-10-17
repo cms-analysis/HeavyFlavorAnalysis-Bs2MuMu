@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < decays_n; i++) {
     decays_treename[i] = decays[i] + "_bdt";
     decays_rdsname[i] = decays[i] + "_rds";
-    RooArgList varlist(*m, *MassRes/*, *eta, *m1eta, *m2eta*//*, *bdt*/, *channel_cat/*, *bdt_cat*/, *weight);
+    RooArgList varlist(*m, *MassRes, /*, *eta, *m1eta, *m2eta*/ *bdt, *channel_cat/*, bdt_cat*/, *weight);
     rds_smalltree[i] = new RooDataSet(decays_rdsname[i].c_str(), decays_rdsname[i].c_str(), varlist, "weight");
 
     for (int yy = 0; yy < years; yy++) {
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
         eta->setVal(eta_t);
         m1eta->setVal(m1eta_t);
         m2eta->setVal(m2eta_t);
-//        bdt->setVal(bdt_t);
+        bdt->setVal(bdt_t);
         /// mass resolution
         if (y == 0) MassRes->setVal(MassRes_0_h->Eval(eta_t));
         else if (y == 1) MassRes->setVal(MassRes_2_h->Eval(eta_t));
@@ -125,12 +125,12 @@ int main(int argc, char* argv[]) {
           channel_cat->setIndex(1 + 2*yy);
           if (cuts_f_b && bdt_t < cuts_v[1 + 2*yy]) continue;
         }
-//        /// bdt channels
-//        if (bdt_t < 0.1) bdt_cat->setIndex(0);
-//        else if (bdt_t < 0.18) bdt_cat->setIndex(1);
-//        else bdt_cat->setIndex(2);
+        /// bdt channels
+        if (bdt_t < 0.1) bdt_cat->setIndex(0);
+        else if (bdt_t < 0.18) bdt_cat->setIndex(1);
+        else bdt_cat->setIndex(2);
 
-        RooArgSet varlist_tmp(*m, *MassRes/*, *eta, *m1eta, *m2eta*//*, *bdt*/, *channel_cat/*, *bdt_cat*/);
+        RooArgSet varlist_tmp(*m, *MassRes,/*, *eta, *m1eta, *m2eta*/ *bdt, *channel_cat/*, *bdt_cat*/);
         rds_smalltree[i]->add(varlist_tmp, weight_i[i]);
       }
       cout << rds_smalltree[i]->GetName() << " done: " << rds_smalltree[i]->sumEntries() << " <--- " << smalltree->GetEntries() << endl;

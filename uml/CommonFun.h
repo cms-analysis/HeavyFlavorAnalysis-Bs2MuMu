@@ -39,7 +39,7 @@ static int inputs_bdt = 1;
 static int sig_meth = -1;
 static string cuts = "bdt>-10.";
 static string years_opt = "0";
-bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false;
+bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false, asimov = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
 
@@ -83,6 +83,7 @@ void help() {
   cout << "-cuts #cutstring \t string cut for small tree: i.e. \"bdt>0.&&bdt<0.18\"; default is \"" << cuts << "\"" << endl;
   cout << "-cuts_file \t file containing bdt cuts for small tree" << endl;
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
+  cout << "-asimov \t asimov dataset for significance estimation" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -235,6 +236,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-y")) {
       years_opt = argv[i+1];
       cout << "years: " << years_opt << endl;
+    }
+    if (!strcmp(argv[i],"-asimov")) {
+      asimov = true;
+      cout << "Asimov dataset" << endl;
     }
     if (!strcmp(argv[i],"-h")) help();
   }

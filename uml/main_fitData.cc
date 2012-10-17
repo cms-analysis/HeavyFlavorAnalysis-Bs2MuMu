@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
     if (!data_t) {cout << "no tree called " << tree_name.c_str() << endl; return EXIT_FAILURE;}
   }
 
-  pdf_fitData* fitdata = new pdf_fitData(false, inputs, inputs_bdt, input_estimates, meth, "all", BF, SM, bd_const, data_t, simul, simul_bdt, pee, bdt_fit, ch_s, sig_meth);
+  pdf_fitData* fitdata = new pdf_fitData(false, inputs, inputs_bdt, input_estimates, meth, "all", BF, SM, bd_const, data_t, simul, simul_bdt, pee, bdt_fit, ch_s, sig_meth, asimov);
   fitdata->initialize();
   fitdata->make_pdf_input();
   fitdata->make_pdf();
