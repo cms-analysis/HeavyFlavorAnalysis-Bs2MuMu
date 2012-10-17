@@ -45,11 +45,11 @@ bspsiphiDump = cms.EDAnalyzer(
     muonPt             = cms.untracked.double(3.5),
     psiMuons           = cms.untracked.int32(2),
     psiWindow          = cms.untracked.double(0.2),
-    phiWindow          = cms.untracked.double(0.2),
-    BsWindow           = cms.untracked.double(1.0),
+    phiWindow          = cms.untracked.double(0.1),
+    BsWindow           = cms.untracked.double(0.7),
     trackPt            = cms.untracked.double(0.5),
     deltaR             = cms.untracked.double(99.0),
-    maxDoca            = cms.untracked.double(0.1),
+    maxDoca            = cms.untracked.double(0.06),
     maxD0              = cms.untracked.double(99.0),
     maxDz              = cms.untracked.double(99.0)
     )
