@@ -303,7 +303,10 @@ public:
   double fNoSig, fNoSigE; 
   double fCsSig, fCsSigE; 
   double fDpSig, fDpSigE; 
-
+  
+  double fCsKstFrac;
+  double fNoErrTurnon;
+  
   double fu, fs, fsfu, fsfuE;
 
 

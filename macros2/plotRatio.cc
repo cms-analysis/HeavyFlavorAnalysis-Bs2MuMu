@@ -57,10 +57,16 @@ plotRatio::plotRatio(const char *files, const char *dir, const char *cuts, int m
   effCsDenBin.resize(fNchan);
   hNoSignalBin.resize(fNchan);
   hCsSignalBin.resize(fNchan);
+  hNoSignalCBin.resize(fNchan);
+  hCsSignalCBin.resize(fNchan);
   fitNoYieldBin.resize(fNchan);
   fitNoYieldEBin.resize(fNchan);
   fitCsYieldBin.resize(fNchan);
   fitCsYieldEBin.resize(fNchan);
+  fitNoYieldCBin.resize(fNchan);
+  fitNoYieldCEBin.resize(fNchan);
+  fitCsYieldCBin.resize(fNchan);
+  fitCsYieldCEBin.resize(fNchan);
 
   TH1D *h(0); 
   for (unsigned int i = 0; i < fNchan; ++i) {
@@ -74,6 +80,8 @@ plotRatio::plotRatio(const char *files, const char *dir, const char *cuts, int m
     effCsDenBin[i].resize(fNPtbins);  
     hNoSignalBin[i].resize(fNPtbins);  
     hCsSignalBin[i].resize(fNPtbins);  
+    hNoSignalCBin[i].resize(fNPtbins);  
+    hCsSignalCBin[i].resize(fNPtbins);  
     
     for (unsigned int j = 0; j < fNPtbins; j++) {
       effNoNumBin[i][j] = 0;
@@ -98,6 +106,19 @@ plotRatio::plotRatio(const char *files, const char *dir, const char *cuts, int m
   h5->SetDirectory(fHistFile); 
   hCsSignal.push_back(h5);
   
+  TH1D *hC2 = new TH1D("hNoSignalC0", "hNoSignalC0", NBINS, 4.9, 5.9);
+  hC2->SetDirectory(fHistFile); 
+  hNoSignalC.push_back(hC2);
+  TH1D *hC3 = new TH1D("hNoSignalC1", "hNoSignalC1", NBINS, 4.9, 5.9);
+  hC3->SetDirectory(fHistFile); 
+  hNoSignalC.push_back(hC3);
+  TH1D *hC4 = new TH1D("hCsSignalC0", "hCsSignalC0", NBINS, 4.9, 5.9);
+  hC4->SetDirectory(fHistFile); 
+  hCsSignalC.push_back(hC4);
+  TH1D *hC5 = new TH1D("hCsSignalC1", "hCsSignalC1", NBINS, 4.9, 5.9);
+  hC5->SetDirectory(fHistFile); 
+  hCsSignalC.push_back(hC5);
+
   TH1D *hNo00 = new TH1D(Form("hNoSignalBin00"), Form("hNoSignalBin00"), NBINS, 4.9, 5.9);
   hNoSignalBin[0][0] = hNo00;
   TH1D *hNo01 = new TH1D(Form("hNoSignalBin01"), Form("hNoSignalBin01"), NBINS, 4.9, 5.9);
@@ -131,6 +152,40 @@ plotRatio::plotRatio(const char *files, const char *dir, const char *cuts, int m
   hCsSignalBin[1][2] = hCs12;
   TH1D *hCs13 = new TH1D(Form("hCsSignalBin13"), Form("hCsSignalBin13"), NBINS, 4.9, 5.9);
   hCsSignalBin[1][3] = hCs13;
+
+  TH1D *hNoC00 = new TH1D(Form("hNoSignalCBin00"), Form("hNoSignalCBin00"), NBINS, 4.9, 5.9);
+  hNoSignalCBin[0][0] = hNoC00;
+  TH1D *hNoC01 = new TH1D(Form("hNoSignalCBin01"), Form("hNoSignalCBin01"), NBINS, 4.9, 5.9);
+  hNoSignalCBin[0][1] = hNoC01;
+  TH1D *hNoC02 = new TH1D(Form("hNoSignalCBin02"), Form("hNoSignalCBin02"), NBINS, 4.9, 5.9);
+  hNoSignalCBin[0][2] = hNoC02;
+  TH1D *hNoC03 = new TH1D(Form("hNoSignalCBin03"), Form("hNoSignalCBin03"), NBINS, 4.9, 5.9);
+  hNoSignalCBin[0][3] = hNoC03;
+  TH1D *hNoC10 = new TH1D(Form("hNoSignalCBin10"), Form("hNoSignalCBin10"), NBINS, 4.9, 5.9);
+  hNoSignalCBin[1][0] = hNoC10;
+  TH1D *hNoC11 = new TH1D(Form("hNoSignalCBin11"), Form("hNoSignalCBin11"), NBINS, 4.9, 5.9);
+  hNoSignalCBin[1][1] = hNoC11;
+  TH1D *hNoC12 = new TH1D(Form("hNoSignalCBin12"), Form("hNoSignalCBin12"), NBINS, 4.9, 5.9);
+  hNoSignalCBin[1][2] = hNoC12;
+  TH1D *hNoC13 = new TH1D(Form("hNoSignalCBin13"), Form("hNoSignalCBin13"), NBINS, 4.9, 5.9);
+  hNoSignalCBin[1][3] = hNoC13;
+
+  TH1D *hCsC00 = new TH1D(Form("hCsSignalCBin00"), Form("hCsSignalCBin00"), NBINS, 4.9, 5.9);
+  hCsSignalCBin[0][0] = hCsC00;
+  TH1D *hCsC01 = new TH1D(Form("hCsSignalCBin01"), Form("hCsSignalCBin01"), NBINS, 4.9, 5.9);
+  hCsSignalCBin[0][1] = hCsC01;
+  TH1D *hCsC02 = new TH1D(Form("hCsSignalCBin02"), Form("hCsSignalCBin02"), NBINS, 4.9, 5.9);
+  hCsSignalCBin[0][2] = hCsC02;
+  TH1D *hCsC03 = new TH1D(Form("hCsSignalCBin03"), Form("hCsSignalCBin03"), NBINS, 4.9, 5.9);
+  hCsSignalCBin[0][3] = hCsC03;
+  TH1D *hCsC10 = new TH1D(Form("hCsSignalCBin10"), Form("hCsSignalCBin10"), NBINS, 4.9, 5.9);
+  hCsSignalCBin[1][0] = hCsC10;
+  TH1D *hCsC11 = new TH1D(Form("hCsSignalCBin11"), Form("hCsSignalCBin11"), NBINS, 4.9, 5.9);
+  hCsSignalCBin[1][1] = hCsC11;
+  TH1D *hCsC12 = new TH1D(Form("hCsSignalCBin12"), Form("hCsSignalCBin12"), NBINS, 4.9, 5.9);
+  hCsSignalCBin[1][2] = hCsC12;
+  TH1D *hCsC13 = new TH1D(Form("hCsSignalCBin13"), Form("hCsSignalCBin13"), NBINS, 4.9, 5.9);
+  hCsSignalCBin[1][3] = hCsC13;
 
 
   TH1D *h6 = new TH1D("hNoPt0", "hNoPt0", 50, 0, 50.);
@@ -168,7 +223,7 @@ void plotRatio::makeAll(int channels) {
   zone(1);
   if (channels & 2) {
     fNormProcessed = false; 
-    fDoUseBDT = false; 
+    fDoUseBDT = true; 
 //    computeCsNoRatio();
     computeCsNoRatioNew();
   }
@@ -329,13 +384,15 @@ void plotRatio::computeCsNoRatioNew() {
 
 cout << "just to test. bdt barrel cut = " << fCuts[0]->bdt << "  and endcap = " << fCuts[1]->bdt << endl;
 
-  int eventsToLoop = 1000;
+  int eventsToLoop = -1;
 
 // I don't understand where these values come from
 // they are supplied externally in the input file...
   float effFilterCs = 0.0162;
   float effFilterNo = 0.0181;
-
+  float fracCsKst[2];
+  float effTurnon[2];
+  
   fIsMC=true;
  
   // genFileYield actually comes from the NoMc or CsMc file effTree->GetEntries(). Now sure what Acc trees are used for....
@@ -390,40 +447,61 @@ cout << "just to test. bdt barrel cut = " << fCuts[0]->bdt << "  and endcap = " 
   //now fit the mass histograms for yields
   
   for (unsigned int i = 0; i < fNchan; ++i) {
-    cout << "before normyield2 call" << endl;
-    normYield2(hNoSignal[i],i,5.0, 5.5);
-cout << "after normyield2 call" << endl;
+//first do fits to mass constrained distributions
+    normYield2(hNoSignalC[i],i,5.0, 5.6);
+    fitNoYieldC.push_back(fNoSig);
+    fitNoYieldCE.push_back(fNoSigE);
+              
+    effTurnon[i] = fNoErrTurnon;
+    cout << "turn on value for mode " << i << " " << fNoErrTurnon << endl;
+	                                                           
+    csYield2(hCsSignalC[i],i,5.1, 5.60);
+    fitCsYieldC.push_back(fCsSig);
+    fitCsYieldCE.push_back(fCsSigE);
+
+//second do fits to unconstrainted distributions
+    normYield2(hNoSignal[i],i,4.9, 5.6, effTurnon[0]);
     fitNoYield.push_back(fNoSig);
     fitNoYieldE.push_back(fNoSigE);
     
-    csYield2(hCsSignal[i],i,5.1, 5.6);
+    csYield2(hCsSignal[i],i,5.1, 5.60); //defaults fraction = -1 (floating), preco = -1 (no step function)
     fitCsYield.push_back(fCsSig);
     fitCsYieldE.push_back(fCsSigE);
+    //get fraction of K* from integrated fits here
+    fracCsKst[i] = fCsKstFrac;
+    cout << "K*0 fraction for mode " << i << " " << fCsKstFrac << endl;
+
 
     for (unsigned int j = 0; j < 4; j++){
-    cout << "before normyield2 call" << endl;
-      normYield2(hNoSignalBin[i][j],i,5.0,5.5);
-cout << "after normyield2 call" << endl; 
+      normYield2(hNoSignalBin[i][j],i,4.9,5.6, effTurnon[0]);
       fitNoYieldBin[i].push_back(fNoSig);
       fitNoYieldEBin[i].push_back(fNoSigE);
 
-      csYield2(hCsSignalBin[i][j],i,5.1,5.6);
+      csYield2(hCsSignalBin[i][j],i,5.1,5.65, fracCsKst[i]);
       fitCsYieldBin[i].push_back(fCsSig);
       fitCsYieldEBin[i].push_back(fCsSigE);
+
+      normYield2(hNoSignalCBin[i][j],i,5.0,5.6);
+      fitNoYieldCBin[i].push_back(fNoSig);
+      fitNoYieldCEBin[i].push_back(fNoSigE);
+
+      csYield2(hCsSignalCBin[i][j],i,5.1,5.65);
+      fitCsYieldCBin[i].push_back(fCsSig);
+      fitCsYieldCEBin[i].push_back(fCsSigE);
     }
 
   }
     
   fHistFile->cd();
   
-  ((TH1D*)gDirectory->Get("hNoSignal0"))->Write();
-  ((TH1D*)gDirectory->Get("hCsSignal0"))->Write();
-  ((TH1D*)gDirectory->Get("hNoSignal1"))->Write();
-  ((TH1D*)gDirectory->Get("hCsSignal1"))->Write();
-  ((TH1D*)gDirectory->Get("hNoPt0"))->Write();
-  ((TH1D*)gDirectory->Get("hCsPt0"))->Write();
-  ((TH1D*)gDirectory->Get("hNoPt1"))->Write();
-  ((TH1D*)gDirectory->Get("hCsPt1"))->Write();
+  //((TH1D*)gDirectory->Get("hNoSignal0"))->Write();
+  //((TH1D*)gDirectory->Get("hCsSignal0"))->Write();
+  //((TH1D*)gDirectory->Get("hNoSignal1"))->Write();
+  //((TH1D*)gDirectory->Get("hCsSignal1"))->Write();
+  //((TH1D*)gDirectory->Get("hNoPt0"))->Write();
+  //((TH1D*)gDirectory->Get("hCsPt0"))->Write();
+  //((TH1D*)gDirectory->Get("hNoPt1"))->Write();
+  //((TH1D*)gDirectory->Get("hCsPt1"))->Write();
 
 
 
@@ -436,6 +514,9 @@ cout << "after normyield2 call" << endl;
   cout << "got some data yields: " << endl;
   cout << "yield normalization barrel = " << fitNoYield[0] << " +- " << fitNoYieldE[0] << "   endcap = " << fitNoYield[1] << " +- " << fitNoYieldE[1] << endl;
   cout << "yield control barrel       = " << fitCsYield[0] << " +- " << fitCsYieldE[0] << "   endcap = " << fitCsYield[1] << " +- " << fitCsYieldE[1] << endl;
+  cout << "or yields with JPsi mass constraints:" << endl;
+  cout << "yield normalization barrel = " << fitNoYieldC[0] << " +- " << fitNoYieldCE[0] << "   endcap = " << fitNoYieldC[1] << " +- " << fitNoYieldCE[1] << endl;
+  cout << "yield control barrel       = " << fitCsYieldC[0] << " +- " << fitCsYieldCE[0] << "   endcap = " << fitCsYieldC[1] << " +- " << fitCsYieldCE[1] << endl;
 
 cout << "    ================================== " << endl;
 
@@ -477,6 +558,8 @@ cout << "  Or our value of fs/fu: barrel = " << barrelfsfu << "  endcap = " << e
     cout << "==========  starting bin " << ib << " ===========" << endl;
     cout << " Fit yields: No barrel = " << fitNoYieldBin[0][ib] << " +- " << fitNoYieldEBin[0][ib] << "  endcap = " << fitNoYieldBin[1][ib] << " +- " << fitNoYieldEBin[1][ib] <<
                    "      Cs barrel = " << fitCsYieldBin[0][ib] << " +- " << fitCsYieldEBin[0][ib] << "  endcap = " << fitCsYieldBin[1][ib] << " +- " << fitCsYieldEBin[1][ib] << endl;
+    cout << " Fit yields with JPsi mass constraint: No barrel = " << fitNoYieldCBin[0][ib] << " +- " << fitNoYieldCEBin[0][ib] << "  endcap = " << fitNoYieldCBin[1][ib] << " +- " << fitNoYieldCEBin[1][ib] <<
+                   "                                Cs barrel = " << fitCsYieldCBin[0][ib] << " +- " << fitCsYieldCEBin[0][ib] << "  endcap = " << fitCsYieldCBin[1][ib] << " +- " << fitCsYieldCEBin[1][ib] << endl;
     cout << " Eff nums: No barrel = " << effNoNumBin[0][ib] << "  endcap = " << effNoNumBin[1][ib] << 
                     "   Cs barrel = " << effCsNumBin[0][ib] << "  endcap = " << effCsNumBin[1][ib] <<  endl;
     cout << " Eff: No barrel = " << (float)(effNoNumBin[0][ib])/(float)(effNoDenBin[0][ib]) << "  endcap = " << (float)(effNoNumBin[1][ib])/(float)(effNoDenBin[1][ib]) << 
@@ -588,12 +671,16 @@ void plotRatio::loopFunction1(int mode) {
       } else {  							
       // fill mass plots for data					
     	if(bs2jpsiphi) {
-    	  hCsSignal[fChan]->Fill(fb.m); //or is it fb.cm?   constrained mass?
+    	  hCsSignal[fChan]->Fill(fb.m); //fb.cm is constrained mass instead
+    	  hCsSignalC[fChan]->Fill(fb.cm); //fb.cm is constrained mass instead
     	  hCsSignalBin[fChan][ptbin]->Fill(fb.m);
+	  hCsSignalCBin[fChan][ptbin]->Fill(fb.cm);
     	}
     	if(bp2jpsikp) {
     	  hNoSignal[fChan]->Fill(fb.m); 		
+    	  hNoSignalC[fChan]->Fill(fb.cm); 		
     	  hNoSignalBin[fChan][ptbin]->Fill(fb.m);
+	  hNoSignalCBin[fChan][ptbin]->Fill(fb.cm);
     	}
       } 								
     } // end passing BDT cuts

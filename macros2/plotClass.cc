@@ -2633,7 +2633,7 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
 
   string name(h->GetName()); 
   double sigma1(0.03);
-  if (1 == fChan) sigma1 = 0.04; 
+  if (1 == mode) sigma1 = 0.04; 
   if (string::npos != name.find("hNormC")) sigma1 = 0.02;
   double sigma2(0.1); 
   if (string::npos != name.find("hNormC")) sigma2 = 0.05;
@@ -2700,11 +2700,11 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
 
   tl->SetTextSize(0.07); 
   tl->SetTextColor(kBlack); 
-  if (0 == fChan) {
+  if (0 == mode) {
     tl->DrawLatex(0.6, 0.8, "Barrel");   
   } 
 
-  if (1 == fChan) {
+  if (1 == mode) {
     tl->DrawLatex(0.6, 0.8, "Endcap");   
   } 
   
@@ -2714,11 +2714,11 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
     string pdfname;
     string hname(h->GetName());
     if (string::npos != hname.find("NormC")) {
-      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), fChan);
-      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), mode);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), mode);
     } else {
-      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), fChan);
-      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), mode);
     }
 
     c0->SaveAs(pdfname.c_str());
@@ -2788,6 +2788,12 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
     }
   }
 
+  //get the turnon point for the error func
+  if (0 == mode) {
+    fNoErrTurnon = lF1->GetParameter(8);
+  } else {
+    fNoErrTurnon = lF1->GetParameter(5);
+  }
 
   // get the full area of 1 or 2 gaussians
   double binw  = h->GetBinWidth(1);
@@ -2875,11 +2881,11 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
 
   tl->SetTextSize(0.07); 
   tl->SetTextColor(kBlack); 
-  if (0 == fChan) {
+  if (0 == mode) {
     tl->DrawLatex(0.6, 0.8, "Barrel");   
   } 
 
-  if (1 == fChan) {
+  if (1 == mode) {
     tl->DrawLatex(0.6, 0.8, "Endcap");   
   } 
   
@@ -2889,11 +2895,15 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
     string pdfname;
     string hname(h->GetName());
     if (string::npos != hname.find("NormC")) {
-      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), fChan);
-      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), mode);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), mode);
+      //pdfname = Form("%s/normC-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
+      //if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
     } else {
-      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), fChan);
-      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), fChan);
+      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode);
+      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), mode);
+      //pdfname = Form("%s/norm-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
+      //if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
     }
 
    c0->SaveAs(pdfname.c_str());
@@ -2937,6 +2947,9 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
     lBg = fpFunc->expoErrGauss(h,5.425,0.079); 
   }
 
+  lF1->SetLineColor(kBlue); 
+  lF1->Draw();
+
   //  return;
 
   h->Fit(lF1, "rm", "", lo, hi); 
@@ -2975,6 +2988,7 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
   double ierr = lF1->IntegralError(5.25, 5.5)/h->GetBinWidth(1); 
  
   fCsSig = c/h->GetBinWidth(1);
+  fCsKstFrac = lF1->GetParameter(3);
   if (ierr > TMath::Sqrt(fCsSig)) {
     cout << "chose integral error" << endl;
     fCsSigE = ierr;
@@ -2995,16 +3009,31 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
   gStyle->SetOptTitle(0); 
   h->Draw("e");
 
-  //lF1->SetLineColor(kBlue); 
-  //lF1->SetLineStyle(kDotted);
-  //lF1->SetLineWidth(3);
-  //lF1->Draw("same");
+  lF1->SetRange(lo, hi);
+  lF1->SetLineColor(kBlack); 
+  lF1->SetLineStyle(kSolid);
+  lF1->SetLineWidth(3);
+  lF1->Draw("same");
 
   // -- Overlay BG function
+  lBg->SetRange(lo, hi);
   lBg->SetLineStyle(kDashed);
   lBg->SetLineColor(kRed);
   lBg->SetLineWidth(3);
   lBg->Draw("same");
+  
+  // also overlay 2nd Gaussian
+  TF1 *lgauss2 = new TF1("gaussian","gaus",lo,hi);
+  float gaussmean = area2ndGauss/(lF1->GetParameter(5)*2.5066);
+  lgauss2->SetParameter(0, gaussmean ); //const
+  lgauss2->SetParameter(1, lF1->GetParameter(4)); //mean 
+  lgauss2->SetParameter(2, lF1->GetParameter(5)); //sigma
+
+  lgauss2->SetLineStyle(kDotted);
+  lgauss2->SetLineColor(kBlue);
+  lgauss2->SetLineWidth(3);
+  lgauss2->Draw("same");
+
 
   tl->SetTextSize(0.07); 
   tl->SetTextColor(kBlack); 
@@ -3016,10 +3045,12 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
     tl->DrawLatex(0.22, 0.8, "Endcap");   
   } 
 
-
+  string hname(h->GetName());
   if (fDoPrint) {
     if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d.pdf", fDirectory.c_str(), mode));
     else c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), mode));
+    //if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
+    //else c0->SaveAs(Form("%s/cs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
   }
 
   cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
@@ -3117,8 +3148,10 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
     tl->DrawLatex(0.22, 0.8, "Endcap");   
   } 
 
-
+  string hname(h->GetName());
   if (fDoPrint) {
+    //if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
+    //else c0->SaveAs(Form("%s/cs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
     if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d.pdf", fDirectory.c_str(), mode));
     else c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), mode));
   }
