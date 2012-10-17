@@ -68,8 +68,8 @@ int main(int argc, char* argv[]) {
 
   vector <double> cuts_v(2*years, -10);
   if (cuts_f_b) cuts_v = cut_bdt_file();
-  TF1* MassRes_0_h = Fit_MassRes("input/2011/small-SgMc.root", cuts_b ? cuts : "", cuts_v, 0);
-  TF1* MassRes_2_h = Fit_MassRes("input/2012/small-SgMc.root", cuts_b ? cuts : "", cuts_v, 1);
+  TF1* MassRes_0_h = Fit_MassRes("input/2011/small-SgMc.root", cuts, cuts_v, 0);
+  TF1* MassRes_2_h = Fit_MassRes("input/2012/small-SgMc.root", cuts, cuts_v, 1);
 
   vector <string> decays_filename(decays_n);
   vector <string> decays_treename(decays_n);
@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
       cout << decays_filename[i] << endl;
       TFile* smalltree_f = new TFile(decays_filename[i].c_str(), "UPDATE");
       TTree* smalltree = (TTree*)smalltree_f->Get(decays_treename[i].c_str());
-      TTree* reduced_tree = smalltree->CopyTree(cuts_b ? cuts.c_str() : "");
+      TTree* reduced_tree = smalltree->CopyTree(cuts.c_str());
       Double_t m_t, eta_t, m1eta_t, m2eta_t, bdt_t;
       reduced_tree->SetBranchAddress("m",     &m_t);
       reduced_tree->SetBranchAddress("bdt",   &bdt_t);

@@ -730,8 +730,8 @@ void pdf_analysis::print(RooAbsData* data, string output) {
   if (bdt_fit_) {
     TCanvas* c_bdt = new TCanvas("c_bdt", "c_bdt", 600, 600);
     rp_bdt->Draw();
-    c->Print((get_address("BDT", pdf_name) + ".pdf").c_str());
-    c->Print((get_address("BDT", pdf_name) + ".gif").c_str());
+    c_bdt->Print((get_address("BDT", pdf_name) + ".pdf").c_str());
+    c_bdt->Print((get_address("BDT", pdf_name) + ".gif").c_str());
     delete c_bdt;
   }
   delete rp_bdt;
