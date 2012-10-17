@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
 //      ana1.define_MassRes_pdf(rds_rare, "rare");
       ana1.define_MassRes_pdf(rds_smalltree[13], "comb");
 
-      if (simul_bdt) {
+      if (bdt_fit) {
         ana1.define_bdt_pdf(rds_smalltree[0], "bs");
         ana1.define_bdt_pdf(rds_smalltree[1], "bd");
         ana1.define_bdt_pdf(rds_semi, "semi");
