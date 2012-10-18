@@ -316,25 +316,20 @@ void pdf_analysis::define_nonpeaking(int i, int j) {
     RooRealVar Mean_semi(name("Mean_semi", i, j), "Mean_semi", 5.1, 4.9, 5.5);
     RooRealVar Sigma_semi(name("Sigma_semi", i, j), "Sigma_semi", 0.050, 0.01, 0.50);
     RooGaussian gauss(name("gauss", i, j), "gauss", *ws_->var("Mass"), Mean_semi, Sigma_semi);
-    RooRealVar CoeffGauss_semi(name("CoeffGauss_semi", i, j), "CoeffGauss_semi", 1./*, 0., 1.*/);
-    //RooAddPdf pdf_semi(name("pdf_semi", i, j), "pdf_semi2", RooArgSet(pdf_semi2, pdf_semi0), RooArgSet(CoeffGauss_semi));
 
     if (!pee) {
       if (!bdt_fit_) {
         RooProdPdf pdf_semi(name("pdf_semi", i, j), "pdf_semi", gauss, poly);
-
-
-
         ws_->import(pdf_semi);
       }
       else {
-        RooProdPdf pdf_semi_mass(name("pdf_semi_mass", i, j), "pdf_semi_mass", expo, poly);
+        RooProdPdf pdf_semi_mass(name("pdf_semi_mass", i, j), "pdf_semi_mass", gauss, poly);
         RooProdPdf pdf_semi(name("pdf_semi", i, j),"pdf_semi",pdf_semi_mass,*ws_->pdf(name("bdt_pdf_semi", i, j)));
         ws_->import(pdf_semi);
       }
     }
     else {
-      RooProdPdf mass_semi(name("mass_semi", i, j), "pdf_semi", expo, poly);
+      RooProdPdf mass_semi(name("mass_semi", i, j), "pdf_semi", gauss, poly);
       //RooProdPdf pdf_semi (name("pdf_semi", i, j), "pdf_semi", *ws_->var("MassRes"), Conditional(mass_semi, *ws_->var("Mass")));
       if (!bdt_fit_) {
         RooProdPdf pdf_semi (name("pdf_semi", i, j), "pdf_semi", *ws_->pdf(name("MassRes_pdf_semi", i, j)), Conditional(mass_semi, *ws_->var("Mass")));
