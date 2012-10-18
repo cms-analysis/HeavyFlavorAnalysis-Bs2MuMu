@@ -40,21 +40,6 @@ int main(int argc, char* argv[]) {
 
   static string decays[] = {"SgMc", "BdMc", "bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgLb2KP", "bgLb2PiP", "bgBd2PiMuNu", "bgBs2KMuNu", "bgLb2PMuNu", "SgData"};
   double weight_i[] = { 1,      1,      1./27.6,   1./1.1,     1./1.6,      1./1.0,    1./2.5,     1./2.5,      1./1.3,    1./2.2,     1./1.0,        1./1.1,       1./1.1,    1};
-  // misid:
-  double pion_misid    = 0.0015;
-  double kaons_misid   = 0.0017;
-  double protons_misid = 0.0005;
-  weight_i[2]  *= kaons_misid*kaons_misid;
-  weight_i[3]  *= kaons_misid*pion_misid;
-  weight_i[4]  *= pion_misid*pion_misid;
-  weight_i[5]  *= kaons_misid*kaons_misid;
-  weight_i[6]  *= kaons_misid*pion_misid;
-  weight_i[7]  *= pion_misid*pion_misid;
-  weight_i[8]  *= kaons_misid*protons_misid;
-  weight_i[9]  *= pion_misid*protons_misid;
-  weight_i[10] *= pion_misid;
-  weight_i[11] *= kaons_misid;
-  weight_i[12] *= protons_misid;
 
   int decays_n = sizeof(decays)/sizeof(string);
 
@@ -87,7 +72,29 @@ int main(int argc, char* argv[]) {
   RooCategory* channel_cat = ws->cat("etacat");
   RooCategory* bdt_cat = ws->cat("bdtcat");
 
+  // misid:
+  double pion_misid    = 0.0015;
+  double kaons_misid   = 0.0017;
+  double protons_misid = 0.0005;
+  weight_i[2]  *= kaons_misid*kaons_misid;
+  weight_i[3]  *= kaons_misid*pion_misid;
+  weight_i[4]  *= pion_misid*pion_misid;
+  weight_i[5]  *= kaons_misid*kaons_misid;
+  weight_i[6]  *= kaons_misid*pion_misid;
+  weight_i[7]  *= pion_misid*pion_misid;
+  weight_i[8]  *= kaons_misid*protons_misid;
+  weight_i[9]  *= pion_misid*protons_misid;
+  weight_i[10] *= pion_misid;
+  weight_i[11] *= kaons_misid;
+  weight_i[12] *= protons_misid;
+
+  vector < double > exp_v_0(get_singlerare_normalization("input/2011/anaBmm.plotResults.2011.tex", 0, decays_n));
+  vector < double > exp_v_1(get_singlerare_normalization("input/2011/anaBmm.plotResults.2011.tex", 1, decays_n));
+  vector < double > exp_v_2(get_singlerare_normalization("input/2012/anaBmm.plotResults.2012.tex", 0, decays_n));
+  vector < double > exp_v_3(get_singlerare_normalization("input/2012/anaBmm.plotResults.2012.tex", 1, decays_n));
+
   for (int i = 0; i < decays_n; i++) {
+
     decays_treename[i] = decays[i] + "_bdt";
     decays_rdsname[i] = decays[i] + "_rds";
     RooArgList varlist(*m, *MassRes, /*, *eta, *m1eta, *m2eta*/ *bdt, *channel_cat/*, bdt_cat*/, *weight);
@@ -106,7 +113,20 @@ int main(int argc, char* argv[]) {
       reduced_tree->SetBranchAddress("eta",   &eta_t);
       reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
       reduced_tree->SetBranchAddress("m2eta", &m2eta_t);
-      for (int j = 0; j < reduced_tree->GetEntries(); j++) {
+      double entries = reduced_tree->GetEntries();
+      double events_0 = 0, events_1 = 0, events_2 = 0, events_3 = 0;
+      for (int j = 0; j < entries; j++) {
+        reduced_tree->GetEntry(j);
+        if (y == 0) {
+          if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) events_0++;
+          else events_1++;
+        }
+        else {
+          if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) events_2++;
+          else events_3++;
+        }
+      }
+      for (int j = 0; j < entries; j++) {
         reduced_tree->GetEntry(j);
         m->setVal(m_t);
         eta->setVal(eta_t);
@@ -130,8 +150,20 @@ int main(int argc, char* argv[]) {
         else if (bdt_t < 0.18) bdt_cat->setIndex(1);
         else bdt_cat->setIndex(2);
 
+        double weight = 1;
+        if (i > 2 && i < 12) {
+          if (y == 0) {
+            if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) weight = exp_v_0[i] / events_0;
+            else weight = exp_v_1[i] / events_1;
+          }
+          else {
+            if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) weight = exp_v_2[i] / events_2;
+            else weight = exp_v_3[i] / events_3;
+          }
+        }
         RooArgSet varlist_tmp(*m, *MassRes,/*, *eta, *m1eta, *m2eta*/ *bdt, *channel_cat/*, *bdt_cat*/);
-        rds_smalltree[i]->add(varlist_tmp, weight_i[i]);
+        //weight = weight/1000;
+        rds_smalltree[i]->add(varlist_tmp, weight);
       }
       cout << rds_smalltree[i]->GetName() << " done: " << rds_smalltree[i]->sumEntries() << " <--- " << smalltree->GetEntries() << endl;
     }
@@ -209,9 +241,6 @@ int main(int argc, char* argv[]) {
 
       /// semi
       ana1.fit_pdf(ana1.name("semi", j, k), rad_semi, false);
-
-//      /// rare
-//      if (!strcmp(rare_f.c_str(),"no")) ana1.fit_pdf(ana1.name("rare", j, k), rad_rare, false);
 
       ana1.print_ = false;
       ana1.define_rare3(j, k);

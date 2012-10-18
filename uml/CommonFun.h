@@ -37,6 +37,7 @@ static int ch_bdt_i = -1;
 static int inputs = 1;
 static int inputs_bdt = 1;
 static int sig_meth = -1;
+static string systname("");
 static string cuts = "bdt>-10.";
 static string years_opt = "0";
 bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false, asimov = false;
@@ -84,6 +85,7 @@ void help() {
   cout << "-cuts_file \t file containing bdt cuts for small tree" << endl;
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << "-asimov \t asimov dataset for significance estimation" << endl;
+  cout << "-syst #filename\t systematic uncertainty from filename" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -241,6 +243,10 @@ void parse_options(int argc, char* argv[]){
       asimov = true;
       cout << "Asimov dataset" << endl;
     }
+    if (!strcmp(argv[i],"-syst")) {
+      systname = argv[i+1];
+      cout << "systematic uncertainty from " << systname << endl;
+    }
     if (!strcmp(argv[i],"-h")) help();
   }
 }
@@ -366,6 +372,64 @@ vector <double> cut_bdt_file() {
   cout << "bdt_0 cut = " << bdt_[0] << "; bdt_1 cut = " << bdt_[1] << endl;
   cout << "bdt_2 cut = " << bdt_[2] << "; bdt_3 cut = " << bdt_[3] << endl;
   return bdt_;
+}
+
+vector < double > get_singlerare_normalization(string filename, int endcap, int size) {
+
+  string peakdecays[] = {"bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgLb2KP", "bgLb2PiP"};
+  string semidecays[] = {"bgBd2PiMuNu", "bgBs2KMuNu", "bgLb2PMuNu"};
+
+  FILE *file = fopen(filename.c_str(), "r");
+  if (!file) {cout << "file " << filename << " does not exist"; exit(1);}
+
+  char buffer[1024];
+  char left[1024];
+  double number;
+  int peak_n = sizeof(peakdecays)/sizeof(string);
+  int semi_n = sizeof(semidecays)/sizeof(string);
+
+  string end[3] = {Form("bsRare%d}", endcap), Form("bdRare%d}", endcap), Form("loSideband%d:val}", endcap)};
+
+  vector <double> output(size, 0.);
+
+  while (fgets(buffer, sizeof(buffer), file)) {
+    if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
+    if (buffer[0] == '\045') continue;
+    sscanf(buffer, "%s   {\\ensuremath{{%lf } } }", left, &number);
+    string left_s(left);
+    for (int i = 0; i < peak_n; i++) {
+      size_t found = left_s.find(peakdecays[i]);
+      if (found != string::npos) {
+        for (int j = 0; j < 3; j++) {
+          found = left_s.find(end[j]);
+          if (found != string::npos) {
+            output[i+2] += number;
+          }
+        }
+      }
+    }
+    for (int i = 0; i < semi_n; i++) {
+      size_t found = left_s.find(semidecays[i]);
+      if (found != string::npos) {
+        for (int j = 0; j < 3; j++) {
+          found = left_s.find(end[j]);
+          if (found != string::npos) {
+            output[i+10] += number;
+          }
+        }
+      }
+    }
+  }
+  fclose(file);
+
+  output[0] = 1.;
+  output[1] = 1.;
+  output[size-1] = 1.;
+  cout << "expected = ";
+  for (int i = 0; i < size; i++) cout << output[i] << " ";
+  cout << endl;
+  return output;
+
 }
 
 TObjArray Create_MassRes(TTree* tree, std::string cuts, vector <double> cuts_v, int year = 0) {

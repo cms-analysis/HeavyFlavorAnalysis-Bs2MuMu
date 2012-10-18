@@ -28,18 +28,21 @@ using namespace RooStats;
 
 class pdf_fitData : public pdf_analysis {
   public:
-    pdf_fitData(bool print, int inputs = 1, int inputs_bdt = 1, string input_estimates = "", string meth = "bdt", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, TTree *input_tree = 0, bool simul = false, bool simulbdt = false, bool pee_ = false , bool bdt_fit = false , string ch_s = "0", int sig = -1, bool asimov = false);
+    pdf_fitData(bool print, int inputs = 1, int inputs_bdt = 1, string input_estimates = "", string meth = "bdt", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, bool simul = false, bool simulbdt = false, bool pee_ = false , bool bdt_fit = false , string ch_s = "0", int sig = -1, bool asimov = false);
     ~pdf_fitData();
     void print();
     void print_each_channel();
 
-    void make_dataset(bool cut_b, vector<double> cut_, TF1* MassRes_f, string cuts);
+    void make_dataset(bool cut_b, vector<double> cut_, string cuts, TTree *tree, int offset = 0);
     void make_pdf_input();
     void make_pdf();
+
+    void parse_systematics(string filename);
 
     void BF(string eff_filename, string numbers_filename);
 
     RooDataSet* global_data;
+    RooDataHist* global_datahist;
     RooSimultaneous* simul_pdf;
 
     void fit_pdf(bool do_not_import = false);
@@ -47,6 +50,7 @@ class pdf_fitData : public pdf_analysis {
     void save();
 
     double lumi;
+    bool random;
     void setnewlumi();
 
   protected:
@@ -56,7 +60,6 @@ class pdf_fitData : public pdf_analysis {
     vector <double> estimate_bd;
     vector <double> estimate_rare;
     vector <double> estimate_comb;
-    vector <double> estimate_channel;
 
     vector <vector <double> > estimate2D_bs;
     vector <vector <double> > estimate2D_bd;
@@ -67,18 +70,32 @@ class pdf_fitData : public pdf_analysis {
     void parse_estimate();
     bool parse(char *cutName, float cut);
     string input_cuts_;
-    bool random;
     bool asimov_;
     int sign;
+
+    void addsyst();
+    bool parse_sys(char *cutName, double cut);
+
+    string input_systematics_;
+    vector <double> systematics_bs;
+    vector <double> systematics_bd;
+    vector <double> systematics_rare;
+    vector <double> systematics_comb;
+    vector <double> systematics_channel;
+
+    vector <vector <double> > systematics2D_bs;
+    vector <vector <double> > systematics2D_bd;
+    vector <vector <double> > systematics2D_rare;
+    vector <vector <double> > systematics2D_comb;
+    vector <vector <double> > systematics2D_channel;
 
   private:
 
     TFile* ws_file_input;
     RooWorkspace* ws_input;
 
-    void FillRooDataSet(RooDataSet* dataset, bool cut_b, vector<double> cut_, TF1* MassRes_f, string cuts);
+    void FillRooDataSet(RooDataSet* dataset, bool cut_b, vector<double> cut_, string cuts, TTree *tree, int offset);
     void changeName(RooWorkspace *ws, int str);
-    TTree* tree;
 
     Double_t sig_hand();
     void sig_plhc();

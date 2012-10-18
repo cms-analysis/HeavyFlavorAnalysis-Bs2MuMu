@@ -302,18 +302,29 @@ void pdf_analysis::define_nonpeaking(int i, int j) {
     ws_->import(ArgusBG);
   }
   else {
-    RooRealVar C0(name("C0", i, j), "C0", 0.1, 0.001, 10., "");
-    RooRealVar C1(name("C1", i, j), "C1", 0.1, 0.001, 10., "");
-    RooRealVar C2(name("C2", i, j), "C2", 0., -2., 2., "");
-    RooRealVar C3(name("C3", i, j), "C3", 0., -2., 2., "");
-    RooRealVar C4(name("C4", i, j), "C4", 0., -2., 2., "");
-    RooRealVar tau(name("tau", i, j), "tau", -5,-20.,-0.01, "");
-    RooArgList poly_coeffs(C0, C1, C2, C3);
+    RooRealVar C0(name("C0", i, j), "C0", -0.1, -5., 5., "");
+    RooRealVar C1(name("C1", i, j), "C1", 0.1, -5., 5., "");
+    RooRealVar C2(name("C2", i, j), "C2", -0.1, -5., 5., "");
+    RooRealVar C3(name("C3", i, j), "C3", 0.1, -5., 5., "");
+    RooRealVar C4(name("C4", i, j), "C4", -0.1, -5., 5., "");
+    RooRealVar C5(name("C5", i, j), "C5", 0.1, -5., 5., "");
+    RooArgList poly_coeffs(C0, C1, C2, C3/*, C4, C5*/);
     RooChebychev poly(name("poly", i, j), "poly", *ws_->var("Mass"), poly_coeffs);
+    RooRealVar tau(name("tau", i, j), "tau", -7,-20.,-0.1, "");
     RooExponential expo(name("expo", i, j), "expo", *ws_->var("Mass"), tau);
+
+    RooRealVar Mean_semi(name("Mean_semi", i, j), "Mean_semi", 5.1, 4.9, 5.5);
+    RooRealVar Sigma_semi(name("Sigma_semi", i, j), "Sigma_semi", 0.050, 0.01, 0.50);
+    RooGaussian gauss(name("gauss", i, j), "gauss", *ws_->var("Mass"), Mean_semi, Sigma_semi);
+    RooRealVar CoeffGauss_semi(name("CoeffGauss_semi", i, j), "CoeffGauss_semi", 1./*, 0., 1.*/);
+    //RooAddPdf pdf_semi(name("pdf_semi", i, j), "pdf_semi2", RooArgSet(pdf_semi2, pdf_semi0), RooArgSet(CoeffGauss_semi));
+
     if (!pee) {
       if (!bdt_fit_) {
-        RooProdPdf pdf_semi(name("pdf_semi", i, j), "pdf_semi", expo, poly);
+        RooProdPdf pdf_semi(name("pdf_semi", i, j), "pdf_semi", gauss, poly);
+
+
+
         ws_->import(pdf_semi);
       }
       else {
