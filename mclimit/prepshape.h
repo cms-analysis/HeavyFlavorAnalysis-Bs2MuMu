@@ -1,3 +1,5 @@
+// By: Jose Lazo-Flores
+// Modified on: Oct 18, 2012
 // common source for preparing t-channel likelihood function
 // limit inputs -- using SM with SM single top
 // as the null hypothesis and SM with SM single top and extra anomalous

@@ -12,6 +12,9 @@
 #include "TCanvas.h"
 #include "TArrow.h"
 #include "TStopwatch.h"
+// Modified on Oct 18, 2012
+// Notes: Upgrading for the new analysis. (more to come)
+//
 
 using namespace std;
 
