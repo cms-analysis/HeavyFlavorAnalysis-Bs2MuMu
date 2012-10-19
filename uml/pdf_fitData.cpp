@@ -591,7 +591,7 @@ void pdf_fitData::save() {
 }
 
 void pdf_fitData::significance() {
-
+/// set negative errors to zero
   for (int k = BF_; k < 4; k++) {
     for (int i = 0; i < channels; i++) {
       for (int j = 0; j < channels_bdt; j++) {
@@ -619,6 +619,7 @@ void pdf_fitData::significance() {
       cout << name_k << " low error reset" << endl;
     }
   }
+///
 
   if (sign == 0) sig_hand();
   else if (sign == 1) sig_plhc();
@@ -944,7 +945,7 @@ void pdf_fitData::make_prior() {
 
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < channels_bdt; j++) {
-      prior_bd[i][j] = new RooGaussian(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal()), RooConst(ws_->var(name("N_bd", i, j))->getError()));
+      if (!SM_ && !bd_constr_ && !BF_==2) prior_bd[i][j] = new RooGaussian(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal()), RooConst(ws_->var(name("N_bd", i, j))->getError()));
       prior_rare[i][j] = new RooGaussian(name("prior_rare", i, j), name("prior_rare", i, j), *ws_->var(name("N_rare", i, j)), RooConst(ws_->var(name("N_rare", i, j))->getVal()), RooConst(ws_->var(name("N_rare", i, j))->getError()));
       prior_comb[i][j] = new RooGaussian(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal()), RooConst(ws_->var(name("N_comb", i, j))->getError()));
     //prior_bd1[i] = new RooGamma(name("prior_bd", i), name("prior_bd", i), *ws_->var(name("N_bd", i)), RooConst(1), )
@@ -953,6 +954,10 @@ void pdf_fitData::make_prior() {
       prior_list.add(*prior_rare[i][j]);
       prior_list.add(*prior_comb[i][j]);
     }
+  }
+  if (BF_==2) {
+    RooGaussian* prior_bf_bd = new RooGaussian("prior_bf_bd", "prior_bf_bd", *ws_->var("BF_bd"), RooConst(ws_->var("BF_bd")->getVal()), RooConst(ws_->var("BF_bd")->getError()));
+    prior_list.add(*prior_bf_bd);
   }
 
   RooProdPdf prior("prior", "prior", prior_list);

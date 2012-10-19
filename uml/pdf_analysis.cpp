@@ -1034,7 +1034,7 @@ string pdf_analysis::get_address(string name, string pdf, bool channeling) {
     address << "_simulBdt_";
     if (channeling) address << channels_bdt;
   }
-  if (BF_) address << "_BF";
+  if (BF_>0) address << "_BF" << BF_;
   if (SM_) address << "_SM";
   if (bd_constr_) address << "_BdConst";
   if (pee) address << "_PEE";
