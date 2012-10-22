@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
     }
     //  fitdata->BF("./input/anaBmm.plotResults.default-11.tex", "input/external_numbers.txt");
   }
-  if (systname!="") fitdata->parse_systematics(systname);
+  //if (systname!="") fitdata->parse_systematics(systname);
   fitdata->significance();
   fitdata->save();
   return EXIT_SUCCESS;

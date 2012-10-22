@@ -34,10 +34,6 @@ pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_es
 
   sign = sig;
 
-  RooArgList varlist(*Mass, *MassRes, *eta, *m1eta, *m2eta, *bdt);
-  varlist.add(*channels_cat);
-  varlist.add(*bdt_cat);
-  global_data = new RooDataSet("global_data", "global_data", varlist);
 }
 
 pdf_fitData::~pdf_fitData() {
@@ -431,6 +427,12 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
 
 void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TTree* tree, int offset) {
   cout << "making dataset" << endl;
+
+  RooArgList varlist(*Mass, *MassRes, *eta, *m1eta, *m2eta, *bdt);
+  varlist.add(*channels_cat);
+  varlist.add(*bdt_cat);
+  global_data = new RooDataSet("global_data", "global_data", varlist);
+
   if (!random) FillRooDataSet(global_data, cut_b, cut_, cuts, tree, offset);
   else {
    // RooRandom::randomGenerator()->SetSeed(12345);
