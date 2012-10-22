@@ -309,11 +309,11 @@ void pdf_fitData::print_each_channel() {
       if (BF_==0) N_bs = (RooRealVar*)vars->find(pdf_analysis::name("N_bs", i, j));
       else N_bs = (RooRealVar*)vars->find("BF_bs");
       RooRealVar* N_bd;
-      if (!bd_constr_ && !SM_) {
+      if (!bd_constr_ && !SM_ && BF_ < 2) {
         N_bd = (RooRealVar*)vars->find(pdf_analysis::name("N_bd", i, j));
       }
       else if (bd_constr_) N_bd = (RooRealVar*)vars->find("Bd_over_Bs");
-      else N_bd = 0;
+      else if (BF_ > 1) N_bd = (RooRealVar*)vars->find("BF_bd");
       RooRealVar* N_comb = (RooRealVar*)vars->find(pdf_analysis::name("N_comb", i, j));
       RooRealVar* N_rare = (RooRealVar*)vars->find(pdf_analysis::name("N_rare", i, j));
       vector <string> fitresult_tex_vec;
@@ -324,10 +324,10 @@ void pdf_fitData::print_each_channel() {
       }
       else {
         ostringstream fitresult_tex;
-        fitresult_tex << setprecision(4) << scientific << "BF = " << N_bs->getVal() << " ^{+" << getErrorHigh(N_bs) << "}_{" << getErrorLow(N_bs) << "}";
+        fitresult_tex << setprecision(4) << scientific << "BF(B^{0}_{s}) = " << N_bs->getVal() << " ^{+" << getErrorHigh(N_bs) << "}_{" << getErrorLow(N_bs) << "}";
         fitresult_tex_vec.push_back(fitresult_tex.str());
         ostringstream fitresult_tex2;
-        fitresult_tex2 << "(N(B_{s}) = " << setprecision(2) << fixed << ws_->function(name("N_bs_formula", i, j))->getVal();
+        fitresult_tex2 << "(N(B^{0}_{s}) = " << setprecision(2) << fixed << ws_->function(name("N_bs_formula", i, j))->getVal();
         Double_t BF_bs_val = ws_->var("BF_bs")->getVal();
         Double_t N_bs_ = ws_->function(name("N_bs_formula", i, j))->getVal();
         ws_->var("BF_bs")->setVal(BF_bs_val + getErrorHigh(N_bs));
@@ -342,7 +342,7 @@ void pdf_fitData::print_each_channel() {
         ws_->var("BF_bs")->setVal(BF_bs_val);
         fitresult_tex_vec.push_back(fitresult_tex2.str());
       }
-      if (!bd_constr_ && !SM_) {
+      if (!bd_constr_ && !SM_ && BF_ < 2) {
         ostringstream fitresult_tex;
         fitresult_tex <<setprecision(2) << fixed << "N(B_{d}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
         fitresult_tex_vec.push_back(fitresult_tex.str());
@@ -351,6 +351,26 @@ void pdf_fitData::print_each_channel() {
         ostringstream fitresult_tex;
         fitresult_tex << setprecision(2) << fixed << "N(B_{d}) / N(B_{s}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
         fitresult_tex_vec.push_back(fitresult_tex.str());
+      }
+      else if (BF_ == 2) {
+        ostringstream fitresult_tex;
+        fitresult_tex << setprecision(4) << scientific << "BF(B^{0}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
+        fitresult_tex_vec.push_back(fitresult_tex.str());
+        ostringstream fitresult_tex2;
+        fitresult_tex2 << "(N(B^{0}) = " << setprecision(2) << fixed << ws_->function(name("N_bd_formula", i, j))->getVal();
+        Double_t BF_bd_val = ws_->var("BF_bd")->getVal();
+        Double_t N_bd_ = ws_->function(name("N_bd_formula", i, j))->getVal();
+        ws_->var("BF_bd")->setVal(BF_bd_val + getErrorHigh(N_bd));
+        Double_t N_bd_up = ws_->function(name("N_bd_formula", i, j))->getVal();
+        Double_t N_bd_error_up = N_bd_up - N_bd_;
+        fitresult_tex2 << " ^{+" << N_bd_error_up;
+        ws_->var("BF_bd")->setVal(BF_bd_val);
+        ws_->var("BF_bd")->setVal(BF_bd_val + getErrorLow(N_bd));
+        Double_t N_bd_down = ws_->function(name("N_bd_formula", i, j))->getVal();
+        Double_t N_bd_error_down = N_bd_ - N_bd_down;
+        fitresult_tex2 << "}_{-" << N_bd_error_down << "}" << ")";
+        ws_->var("BF_bd")->setVal(BF_bd_val);
+        fitresult_tex_vec.push_back(fitresult_tex2.str());
       }
       ostringstream fitresult_tex;
       fitresult_tex << setprecision(2) << fixed<< "N(comb. bkg) = " << N_comb->getVal() << " ^{+" << getErrorHigh(N_comb) << "}_{" << getErrorLow(N_comb) << "}";

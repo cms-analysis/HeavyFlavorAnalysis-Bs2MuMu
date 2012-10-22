@@ -537,8 +537,8 @@ void pdf_analysis::define_bf(int i, int j) {
   Jpsi2MuMu_BF_var.setConstant(1);
 
   if (i == 0 && j == 0) {
-    RooRealVar BF_bs("BF_bs", "Bs2MuMu branching fraction", Bs2MuMu_SM_BF_val, 1.0e-11, 1e-8);
-    RooRealVar BF_bd("BF_bd", "Bd2MuMu branching fraction", Bd2MuMu_SM_BF_val, 1.0e-11, 1e-8);
+    RooRealVar BF_bs("BF_bs", "Bs2MuMu branching fraction", Bs2MuMu_SM_BF_val, 0., 1e-8);
+    RooRealVar BF_bd("BF_bd", "Bd2MuMu branching fraction", Bd2MuMu_SM_BF_val, 0., 1e-8);
     ws_->import(BF_bs);
     ws_->import(BF_bd);
   }
@@ -801,7 +801,7 @@ double pdf_analysis::getErrorHigh(RooRealVar *var) {
 
 double pdf_analysis::getErrorLow(RooRealVar *var) {
   double value = var->getVal();
-  if (value == var->getMin() || (strcmp(var->GetName(),"BF_bs") && (value <= 0.0001 && value >= -0.0001))) return 0;
+  if (value == var->getMin() && var->getMin() == 0) return 0;
   double error = var->getErrorLo();
   if (error == 0) {
     if (value - var->getError() < 0.0) return (-1 * value);
