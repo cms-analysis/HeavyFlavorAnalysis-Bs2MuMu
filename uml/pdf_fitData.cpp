@@ -162,20 +162,32 @@ bool pdf_fitData::parse(char *cutName, float cut) {
 }
 
 void pdf_fitData::fit_pdf(bool do_not_import) {
-  cout << "making fit" << endl;
+  cout << "fitting fit" << endl;
+  string pdfname;
   if (simul_ || simul_bdt_) {
-    if (verbosity > 0) cout << "fitting " << global_data->GetName() << " in range " << range_ << " with pdf_ext_simul:" << endl;
-    if (!pee) RFR = ws_->pdf("pdf_ext_simul")->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true));
-    else RFR = ws_->pdf("pdf_ext_simul")->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), ConditionalObservables(*ws_->var("MassRes")));
+    pdfname = "pdf_ext_simul";
   }
   else {
+    pdfname = "pdf_ext_total";
     RooAbsData* subdata = global_data->reduce(Form("etacat==etacat::etacat_%d", channel));
     global_data = (RooDataSet*)subdata;
-    if (verbosity > 0) cout << "fitting " << global_data->GetName() << " in range " << range_ << " with pdf_ext_total:" << endl;
-    ws_->pdf("pdf_ext_total")->Print();
-
-    if (!pee) RFR = ws_->pdf("pdf_ext_total")->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true));
-    else RFR = ws_->pdf("pdf_ext_total")->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), ConditionalObservables(*ws_->var("MassRes")));
+  }
+  cout << "fitting " << global_data->GetName() << " in range " << range_ << " with " << pdfname << endl;
+  if (BF_ == 0) {
+    if (!pee) RFR = ws_->pdf(pdfname.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true));
+    else RFR = ws_->pdf(pdfname.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), ConditionalObservables(*ws_->var("MassRes")));
+  }
+  else {
+    RooArgSet constraints(*ws_->var("K_cor_var_bs"));
+    if (BF_ > 1) constraints.add(*ws_->var("K_cor_var_bd"));
+    for (int i = 0; i < channels; i++) {
+      for (int j = 0; j < channels; j++) {
+        constraints.add(*ws_->var(name("K_unc_var_bs", i, j)));
+        if (BF_ > 1) constraints.add(*ws_->var(name("K_unc_var_bd", i, j)));
+      }
+    }
+    if (!pee) RFR = ws_->pdf(pdfname.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), Constrain(constraints));
+    else RFR = ws_->pdf(pdfname.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), ConditionalObservables(*ws_->var("MassRes")), Constrain(constraints));
   }
   if (!do_not_import) ws_->import(*global_data);
   if (verbosity > 0) RFR->Print();
@@ -306,7 +318,7 @@ void pdf_fitData::print_each_channel() {
       // legend
       RooArgSet* vars =  ws_->pdf("pdf_ext_simul")->getVariables();
       RooRealVar* N_bs;
-      if (BF_==0) N_bs = (RooRealVar*)vars->find(pdf_analysis::name("N_bs", i, j));
+      if (BF_ == 0) N_bs = (RooRealVar*)vars->find(pdf_analysis::name("N_bs", i, j));
       else N_bs = (RooRealVar*)vars->find("BF_bs");
       RooRealVar* N_bd;
       if (!bd_constr_ && !SM_ && BF_ < 2) {
@@ -403,7 +415,7 @@ void pdf_fitData::print_each_channel() {
 
 void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double> cut_, string cuts, TTree* tree, int offset) {
   int events = 0;
-  if (!strcmp(tree->GetName(), "bdt") || !strcmp(tree->GetName(), "cnc")) {
+  if (!strcmp(tree->GetName(), "SgData_bdt")) {
     TTree* reduced_tree = tree->CopyTree(cuts.c_str());
     Double_t m1eta_t, m2eta_t, m_t, eta_B_t, bdt_t;
     reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
@@ -779,9 +791,12 @@ void pdf_fitData::make_models() {
       if (!SM_ && !bd_constr_) N_bd[i][j] = ws_->var(name("N_bd", i, j))->getVal();
     }
   }
+  /// obs
   if (simul_ && !simul_bdt_) ws_->defineSet("obs", "Mass,etacat");
   else if (!simul_ && !simul_bdt_) ws_->defineSet("obs", "Mass");
   else ws_->defineSet("obs", "Mass,etacat,bdtcat");
+
+  /// poi
   ostringstream name_poi;
   if (BF_==0) {
     if (simul_) {
@@ -807,6 +822,50 @@ void pdf_fitData::make_models() {
   if (bd_constr_) name_poi << ",Bd_over_Bs";
   ws_->defineSet("poi", name_poi.str().c_str());
 
+  /// nui
+  RooArgSet nuisanceParams;
+  for (int i = 0; i < channels; i++) {
+    for (int j = 0; j < channels_bdt; j++) {
+      nuisanceParams.add(*ws_->var(name("N_comb", i, j)));
+      nuisanceParams.add(*ws_->var(name("N_rare", i, j)));
+      if (!SM_ && !bd_constr_ && BF_ < 2) nuisanceParams.add(*ws_->var(name("N_bd", i, j)));
+      if (BF_ > 0) {
+        nuisanceParams.add(*ws_->var(name("K_unc_var_bs", i, j)));
+        if (BF_ > 1) {
+          nuisanceParams.add(*ws_->var(name("K_unc_var_bd", i, j)));
+        }
+      }
+    }
+  }
+  if (BF_ > 0) {
+    nuisanceParams.add(*ws_->var("K_cor_var_bs"));
+    if (BF_ > 1) {
+      nuisanceParams.add(*ws_->var("K_cor_var_bd"));
+      nuisanceParams.add(*ws_->var("BF_bd"));
+    }
+  }
+  ws_->defineSet("nui", nuisanceParams);
+
+  /// constrpar
+  RooArgSet constrpar;
+  for (int i = 0; i < channels; i++) {
+    for (int j = 0; j < channels_bdt; j++) {
+      if (BF_ > 0) {
+        constrpar.add(*ws_->var(name("K_unc_var_bs", i, j)));
+        if (BF_ > 1) {
+          constrpar.add(*ws_->var(name("K_unc_var_bd", i, j)));
+        }
+      }
+    }
+  }
+  if (BF_ > 0) {
+    nuisanceParams.add(*ws_->var("K_cor_var_bs"));
+    if (BF_ > 1) {
+      nuisanceParams.add(*ws_->var("K_cor_var_bd"));
+    }
+  }
+  ws_->defineSet("constrpar", constrpar);
+
   ModelConfig* H0 = new ModelConfig("H0", "null hypothesis", ws_);
   RooArgSet CO;
   if (pee) {
@@ -814,10 +873,12 @@ void pdf_fitData::make_models() {
     H0->SetConditionalObservables(CO);
     ws_->defineSet("CO", "MassRes");
   }
-  if (simul_) H0->SetPdf(*ws_->pdf("pdf_ext_simul"));
+  if (simul_) H0->SetPdf(*(RooSimultaneous*)ws_->pdf("pdf_ext_simul"));
   else H0->SetPdf(*ws_->pdf("pdf_ext_total"));
   H0->SetParametersOfInterest(*ws_->set("poi"));
   H0->SetObservables(*ws_->set("obs"));
+  H0->SetNuisanceParameters(*ws_->set("nui"));
+  if (BF_ > 0) H0->SetConstraintParameters(*ws_->set("constrpar"));
   if (BF_==0) {
     if (simul_) {
       for (int i = 0; i < channels; i++) {
@@ -850,6 +911,8 @@ void pdf_fitData::make_models() {
   else H1->SetPdf(*ws_->pdf("pdf_ext_total"));
   H1->SetParametersOfInterest(*ws_->set("poi"));
   H1->SetObservables(*ws_->set("obs"));
+  H1->SetNuisanceParameters(*ws_->set("nui"));
+  if (BF_ > 0) H1->SetConstraintParameters(*ws_->set("constrpar"));
   parse_estimate();
   if (BF_==0) {
     if (simul_) {
@@ -895,7 +958,7 @@ void pdf_fitData::sig_plhts() {
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
-  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 100);
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 1000);
   FrequentistCalculator frequCalc(*ws_->data("global_data"), *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();
   htr_pl->Print();
@@ -921,7 +984,7 @@ void pdf_fitData::sig_hybrid_plhts() {
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
-  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 500);
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 1000);
 
   HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
   hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
@@ -957,20 +1020,25 @@ void pdf_fitData::sig_hybrid_roplhts() {
 }
 
 void pdf_fitData::make_prior() {
-  vector <vector <RooGaussian*> > prior_bd(channels, vector <RooGaussian*> (channels_bdt));
-  vector <vector <RooGaussian*> > prior_rare(channels, vector <RooGaussian*> (channels_bdt));
-  vector <vector <RooGaussian*> > prior_comb(channels, vector <RooGaussian*> (channels_bdt));
+//  vector <vector <RooGaussian*> > prior_bd(channels, vector <RooGaussian*> (channels_bdt));
+//  vector <vector <RooGaussian*> > prior_rare(channels, vector <RooGaussian*> (channels_bdt));
+//  vector <vector <RooGaussian*> > prior_comb(channels, vector <RooGaussian*> (channels_bdt));
 
-//  vector <RooGamma*> prior_bd1(channels)
+  vector <vector <RooGamma*> > prior_bd(channels, vector <RooGamma*> (channels_bdt));
+  vector <vector <RooGamma*> > prior_rare(channels, vector <RooGamma*> (channels_bdt));
+  vector <vector <RooGamma*> > prior_comb(channels, vector <RooGamma*> (channels_bdt));
 
   RooArgList prior_list("prior_list");
 
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < channels_bdt; j++) {
-      if (!SM_ && !bd_constr_ && !BF_==2) prior_bd[i][j] = new RooGaussian(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal()), RooConst(ws_->var(name("N_bd", i, j))->getError()));
-      prior_rare[i][j] = new RooGaussian(name("prior_rare", i, j), name("prior_rare", i, j), *ws_->var(name("N_rare", i, j)), RooConst(ws_->var(name("N_rare", i, j))->getVal()), RooConst(ws_->var(name("N_rare", i, j))->getError()));
-      prior_comb[i][j] = new RooGaussian(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal()), RooConst(ws_->var(name("N_comb", i, j))->getError()));
-    //prior_bd1[i] = new RooGamma(name("prior_bd", i), name("prior_bd", i), *ws_->var(name("N_bd", i)), RooConst(1), )
+//      if (!SM_ && !bd_constr_ && !BF_==2) prior_bd[i][j] = new RooGaussian(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal()), RooConst(ws_->var(name("N_bd", i, j))->getError()));
+//      prior_rare[i][j] = new RooGaussian(name("prior_rare", i, j), name("prior_rare", i, j), *ws_->var(name("N_rare", i, j)), RooConst(ws_->var(name("N_rare", i, j))->getVal()), RooConst(ws_->var(name("N_rare", i, j))->getError()));
+//      prior_comb[i][j] = new RooGaussian(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal()), RooConst(ws_->var(name("N_comb", i, j))->getError()));
+
+      if (!SM_ && !bd_constr_ && !BF_==2) prior_bd[i][j] = new RooGamma(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
+      prior_rare[i][j] = new RooGamma(name("prior_rare", i, j), name("prior_rare", i, j), *ws_->var(name("N_rare", i, j)), RooConst(ws_->var(name("N_rare", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
+      prior_comb[i][j] = new RooGamma(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
 
       prior_list.add(*prior_bd[i][j]);
       prior_list.add(*prior_rare[i][j]);
@@ -978,7 +1046,8 @@ void pdf_fitData::make_prior() {
     }
   }
   if (BF_==2) {
-    RooGaussian* prior_bf_bd = new RooGaussian("prior_bf_bd", "prior_bf_bd", *ws_->var("BF_bd"), RooConst(ws_->var("BF_bd")->getVal()), RooConst(ws_->var("BF_bd")->getError()));
+    //RooGaussian* prior_bf_bd = new RooGaussian("prior_bf_bd", "prior_bf_bd", *ws_->var("BF_bd"), RooConst(ws_->var("BF_bd")->getVal()), RooConst(ws_->var("BF_bd")->getError()));
+    RooGamma* prior_bf_bd = new RooGamma("prior_bf_bd", "prior_bf_bd", *ws_->var("BF_bd"), RooConst(ws_->var("BF_bd")->getVal() + 1), RooConst(1.), RooConst(0.));
     prior_list.add(*prior_bf_bd);
   }
 
@@ -1036,13 +1105,20 @@ void pdf_fitData::BF(string eff_filename, string numbers_filename) {
 }
 
 void pdf_fitData::setnewlumi() {
-  for (int i = 0; i < channels; i++) {
-    Double_t N_bu_new = lumi / 1. * N_bu_val[i];
-    ws_->var(name("N_bu", i))->setVal(N_bu_new);
-    cout << "new Bu expectations: " << ws_->var(name("N_bu", i))->getVal() << " (channel " << i << "); ";
-    if (BF_>0) cout << "Bs expected: " << ws_->function(name("N_bs_formula", i))->getVal();
-    if (BF_>1) cout << ";  Bd expected: " << ws_->function(name("N_bd_formula", i))->getVal();
-    cout << endl;
+  if (BF_ > 0) {
+    for (int i = 0; i < channels; i++) {
+      for (int j = 0; j < channels_bdt; j++) {
+        double old_val = ws_->var(name("K_unc_var_bs", i, j))->getVal();
+        ws_->var(name("K_unc_var_bs", i, j))->setVal(old_val / lumi);
+//        cout << "new " << name("K_unc_var_bs", i, j) << " expectations: " << ws_->var(name("K_unc_var_bs", i, j))->getVal() << " (channel " << i << "); ";
+        cout << "channel " << i << "; Bs expected: " << ws_->function(name("N_bs_formula", i, j))->getVal();
+        if (BF_>1) {
+          old_val = ws_->var(name("K_unc_var_bd", i, j))->getVal();
+          ws_->var(name("K_unc_var_bd", i, j))->setVal(old_val / lumi);
+          cout << ";  Bd expected: " << ws_->function(name("N_bd_formula", i, j))->getVal() << endl;
+        }
+      }
+    }
   }
 }
 

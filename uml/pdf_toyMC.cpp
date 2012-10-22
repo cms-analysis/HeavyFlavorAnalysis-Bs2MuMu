@@ -188,7 +188,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
           else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate2D_bd[i][j]/estimate2D_bd[i][j]);
           ws_->var(name("N_rare", i, j))->setVal(estimate2D_rare[i][j]);
           ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
-          data_i[i][j] = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")));
+          data_i[i][j] = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")), Extended(1));
           channels_cat->setIndex(i);
           bdt_cat->setIndex(j);
           data_i[i][j]->addColumn(*channels_cat);

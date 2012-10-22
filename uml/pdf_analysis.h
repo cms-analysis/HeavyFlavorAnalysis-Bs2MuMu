@@ -71,8 +71,12 @@ public:
   void define_bkg_fractional(int i, int j);
   void define_bkg_extended(int i, int j);
   void define_signalsrare(int i, int j);
+  void define_bf(int i, int j);
+  void define_constraints(int i, int j);
 
   void set_SMratio(double ratio) {ratio_ = ratio;}
+
+  double getformulaerror(RooFormulaVar* formula, int vars);
   
   string define_pdf_sum(string name, int i = 0);
   void define_total_fractional(int i, int j); // final pdf with fractional components, and also extended
@@ -81,7 +85,6 @@ public:
   void define_simul(bool simulbdt);
 
   void getBFnumbers(string numbers_filename);
-  void define_bf(int i, int j);
 
   void fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error = true, bool hesse = true);
   void print(RooAbsData *data, string output = "");

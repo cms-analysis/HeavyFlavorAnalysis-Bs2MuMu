@@ -55,10 +55,11 @@ int main(int argc, char** argv) {
       char inputname[1024];
       sscanf(buffer, "%s", inputname);
       string inputname_s(inputname);
+      cout << "opening " << inputname << endl;
       inputnamess.push_back(inputname_s);
     }
     for (unsigned int i = 0; i < inputnamess.size(); i++) {
-      TFile* input_data_f = new TFile(inputnamess[i].c_str());
+      TFile* input_data_f = new TFile(inputnamess[i].c_str(), "UPDATE");
       TTree* data_t = 0;
       if (input_data_f) {
         data_t = (TTree*)input_data_f->Get(tree_name.c_str());

@@ -23,7 +23,7 @@ static string ch_s = "-1";
 static string ch_bdt_s = "-1";
 static string pdf_toy = "total";
 static string pdf_test;
-static string tree_name = "bdt";
+static string tree_name = "SgData_bdt";
 static string bias_s = "no";
 static string cuts_f = "no";
 static string rare_f = "no";
