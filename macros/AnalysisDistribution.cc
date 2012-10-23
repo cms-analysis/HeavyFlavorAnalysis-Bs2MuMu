@@ -375,6 +375,7 @@ TH1D* AnalysisDistribution::sbsDistributionPol1ErrGauss(const char *variable, co
   TCanvas *c0;
   if (fVerbose > 0) {
     gStyle->SetOptTitle(1);
+    gStyle->SetOptFit(11111);
     c0 = (TCanvas*)gROOT->FindObject("c1"); 
     if (c0) {
       delete c0; 
@@ -424,10 +425,10 @@ TH1D* AnalysisDistribution::sbsDistributionPol1ErrGauss(const char *variable, co
   TF1 *f1 = fpIF->pol1ErrGauss(hm, peak, sigma, preco); 
   hm->SetMinimum(0.);
 
-  cout << "====> PRECO: " << preco << " in the function: " << f1->GetParameter(5);
+  cout << "====> PRECO: " << preco << " in the function: " << f1->GetParameter(5) << endl;
 
   TFitResultPtr r;
-  r = hm->Fit(f1, "lsq", "", fMassLo, fMassHi); 
+  r = hm->Fit(f1, "ls", "", fMassLo, fMassHi); 
   if (fVerbose > 0) {
     hm->DrawCopy();
 //     hMassBGL->SetMinimum(0.);

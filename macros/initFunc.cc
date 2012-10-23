@@ -589,8 +589,21 @@ TF1* initFunc::expoBsBlind(TH1 *h) {
     hbin = h->FindBin(fHi); 
   }
 
-  double p0(10), p1(-1.); 
-  
+  double p0(3.), p1(-1.); 
+
+  double dx  = fHi - fLo;
+  double ylo = h->Integral(lbin, lbin+EDG)/NB; 
+  double yhi = h->Integral(hbin-EDG, hbin)/NB;
+
+  if (yhi > 0) {
+    p1 = (TMath::Log(yhi) - TMath::Log(ylo))/dx; 
+    p0 = ylo/TMath::Exp(p1*fLo); 
+  } 
+    
+  cout << "fLo: " << fLo << " fHi: " << fHi << endl;
+  cout << "ylo: " << ylo << " yhi: " << yhi << endl;
+  cout << "p0:  " << p0  << " p1:  " << p1 << endl;
+
   f->SetParameters(p0, p1); 
 
   return f; 

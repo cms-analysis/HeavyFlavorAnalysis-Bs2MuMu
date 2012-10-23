@@ -47,13 +47,18 @@ public:
   virtual void fillHist();
   virtual bool goodRun();
   virtual void setVerbosity(int f) {std::cout << Form("setVerbosity(%d)", f) << std::endl;  fVerbose = f;}
+  virtual void setYear(int f) {std::cout << Form("setYear(%d)", f) << std::endl;  fYear = f;}
   virtual void setMC(int f) {std::cout << Form("setMC(%d)", f) << std::endl; fIsMC = f;}
   virtual void runBlind() {std::cout << "running blinded" << std::endl; BLIND = 1;}
   virtual int  numberOfBPixLayers(TAnaTrack *t);
   virtual int  numberOfPixLayers(TAnaTrack *t);
   virtual int  numberOfBPixLayer1Hits(TAnaTrack *t);
+  virtual int  numberOfTrackerLayers(TAnaTrack *t);
   virtual void setJSONFile(const char *name) {JSONFILE = name;}
   virtual void forceJSON() {fForceJson = true;}
+
+  int fVerbose;
+  int fYear;
 
 protected:
 
@@ -90,7 +95,6 @@ protected:
   std::string JSONFILE;
   bool fForceJson;
 
-  int fVerbose;
   int fIsMC;
 };
 
