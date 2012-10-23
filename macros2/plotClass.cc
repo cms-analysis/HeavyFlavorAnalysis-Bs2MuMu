@@ -2448,6 +2448,21 @@ void plotClass::dumpSamples() {
     fTEX <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
     //    cout <<  Form("\\vdef{%s:lumi:%s}   {\\ensuremath{{%4.1f } } }", fSuffix.c_str(), imap->first.c_str(), lumi) << endl;
     fTEX <<  Form("\\vdef{%s:lumi:%s}   {\\ensuremath{{%4.1f } } }", fSuffix.c_str(), imap->first.c_str(), lumi) << endl;
+
+    double base(1.); 
+    double bf = fBF[imap->first]; 
+    for (int i = 0; i < 12; ++i) {
+      if (bf < TMath::Power(10., -i)) {
+	base = TMath::Power(10., -i);
+      } else {
+	base = TMath::Power(10., -i);
+	break;
+      }
+    }
+    //    cout << "xxxx: bf = " << bf << " +/- " << bf*fBFE[imap->first] << " base = " << base << endl;
+    fTEX << scientificTex(bf, bf*fBFE[imap->first], 
+			  Form("%s:bf:%s", fSuffix.c_str(), imap->first.c_str(), name.c_str()), base, 2);
+
     if (n>0) {
       //      cout <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{%4.0f } } }", fSuffix.c_str(), imap->first.c_str(), n) << endl;
       fTEX <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{%4.0f} } }", fSuffix.c_str(), imap->first.c_str(), n) << endl;
@@ -3812,6 +3827,8 @@ void plotClass::drawArrow(double height, int mode, double ylegend) {
   
   double d(0.08), y(0.80), x(5.25); 
   
+  double yoffset(0.2); 
+
   if (1 == mode) {
     pl->SetLineColor(kBlue); 
     pl->SetLineColor(kBlue); 
@@ -3832,7 +3849,7 @@ void plotClass::drawArrow(double height, int mode, double ylegend) {
       pl->DrawLine(x+0.1, y+d, x+0.1, y-d); 
       tl->SetNDC(kFALSE);
       tl->SetTextSize(0.05); 
-      tl->DrawLatex(x+0.15, y-0.05, "B_{s}^{0} signal window");
+      tl->DrawLatex(x+0.15, y-yoffset, "B_{s}^{0} signal window");
     }
 
   } else if (2 == mode) {
@@ -3858,7 +3875,7 @@ void plotClass::drawArrow(double height, int mode, double ylegend) {
       pl->DrawLine(x+0.1, y+d, x+0.1, y-d); 
       tl->SetNDC(kFALSE);
       tl->SetTextSize(0.05); 
-      tl->DrawLatex(x+0.15, y-0.05, "B^{0} signal window");
+      tl->DrawLatex(x+0.15, y-yoffset, "B^{0} signal window");
     }
 
   } else if (3 == mode) {
@@ -4284,12 +4301,12 @@ void plotClass::candAnalysis(int mode) {
 
   if (fDoUseBDT) {
     if (fGoodAcceptance 
-	&& fGoodJpsiCuts
-	&& fGoodTracksEta
+	&& fGoodTracks
 	&& fGoodTracksPt
-	// -- the following cus are ensured by preselection() invoked in calcBDT
-	// 	&& fGoodMuonsEta
-	// 	&& fGoodMuonsPt
+	&& fGoodTracksEta
+	&& fGoodMuonsPt
+	&& fGoodMuonsEta
+	&& fGoodJpsiCuts
 	) {
       calcBDT(); 
     }

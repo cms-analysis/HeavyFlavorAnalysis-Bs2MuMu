@@ -38,6 +38,7 @@ int main(int argc, char *argv[]) {
   int verbose(-99); 
   int blind(1); 
   int isMC(0);
+  int year(0); 
 
   // Change the MaxTreeSize to 100 GB (default since root v5.26)
   TTree::SetMaxTreeSize(100000000000ll); // 100 GB
@@ -69,6 +70,7 @@ int main(int argc, char *argv[]) {
 	cout << "-S start     starting event number" << endl;
 	cout << "-o filename   set output file" << endl;
 	cout << "-v level      set verbosity level" << endl;
+	cout << "-y year       set year" << endl;
 	cout << "-h            prints this message and exits" << endl;
 	return 0;
     }
@@ -85,6 +87,7 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i],"-S"))  {start = atoi(argv[++i]); }                      // set start event number
     if (!strcmp(argv[i],"-o"))  {histfile   = TString(argv[++i]); }              // set output file
     if (!strcmp(argv[i],"-v"))  {verbose    = atoi(argv[++i]); }                 // set verbosity level
+    if (!strcmp(argv[i],"-y"))  {year       = atoi(argv[++i]); }                 // set year
   }
 
 
@@ -191,6 +194,7 @@ int main(int argc, char *argv[]) {
   
   
   if (a) {
+    a->setYear(year); 
     if (verbose > -99) a->setVerbosity(verbose); 
     a->openHistFile(histfile); 
 

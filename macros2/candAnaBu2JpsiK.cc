@@ -357,10 +357,6 @@ void candAnaBu2JpsiK::fillCandidateHistograms(int offset) {
 void candAnaBu2JpsiK::efficiencyCalculation() {
   fGoodEffCand = false;
 
-//   ((TH1D*)fpHistFile->Get("efficiency"))->Fill(0); 
-//   ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(1, "all events"); 
-
-
   // -- gen level 
   TGenCand *pB(0), *pM1(0), *pM2(0), *pK(0); 
   if (-1 == fGenM1Tmi || -1 == fGenM2Tmi || -1 == fGenK1Tmi) {
@@ -371,10 +367,6 @@ void candAnaBu2JpsiK::efficiencyCalculation() {
   pM1 = fpEvt->getGenCand(fGenM1Tmi); 
   pM2 = fpEvt->getGenCand(fGenM2Tmi); 
   pK  = fpEvt->getGenCand(fGenK1Tmi); 
-
-//   ((TH1D*)fpHistFile->Get("efficiency"))->Fill(1); 
-//   ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(2, "gen signal decays"); 
-
 
   // -- reco level
   TAnaTrack *prM1(0), *prM2(0), *prK(0); 
@@ -469,51 +461,7 @@ void candAnaBu2JpsiK::efficiencyCalculation() {
     fETcandMass = -99.;
   }
 
-  //   cout << Form("%4d", fEvent) << " bmmNormalizationReader: m = " << fETcandMass << " from cand " << pCand 
-  //        << " mu gen: " << fGenM1Tmi << " " << fGenM2Tmi 
-  //        << " mu gen: " << fETg1pt << " " << fETg2pt 
-  //        << endl;
-
   fEffTree->Fill(); 
-
-
-//   // -- results...
-//   if ((TMath::Abs(pM1->fP.Eta()) < 2.5) && (TMath::Abs(pM2->fP.Eta()) < 2.5) && (TMath::Abs(pK->fP.Eta()) < 2.5)) {
-//     ((TH1D*)fpHistFile->Get("efficiency"))->Fill(2); 
-//     ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(3, "+ eta cuts"); 
-    
-//     if ((pM1->fP.Perp() > 1.) && (pM2->fP.Perp() > 1.) && (pK->fP.Perp() > 0.4)) {
-//       ((TH1D*)fpHistFile->Get("efficiency"))->Fill(3); 
-//       ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(4, "+ pT cuts"); 
-      
-//       if (m1Matched && m2Matched && kMatched
-// 	  && (prM1->fPlab.Perp() > 3.0) && (prM2->fPlab.Perp() > 3.0) && (prK->fPlab.Perp() > 0.5)
-// 	  && (TMath::Abs(prM1->fPlab.Eta()) < 2.4) && (TMath::Abs(prM2->fPlab.Eta()) < 2.4) && (TMath::Abs(prK->fPlab.Eta()) < 2.4)
-// 	  && (prM1->fQ*prM2->fQ < 0)
-// 	  && m1GT && m2GT && kGT
-// 	  ) {
-// 	((TH1D*)fpHistFile->Get("efficiency"))->Fill(4); 
-// 	((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(5, "+ reco tracks/cuts"); 
-	
-// 	if (m1ID && m2ID) {
-// 	  ((TH1D*)fpHistFile->Get("efficiency"))->Fill(5); 
-// 	  ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(6, "+ muon ID"); 
-	  
-// 	  if (fGoodHLT) {
-// 	    ((TH1D*)fpHistFile->Get("efficiency"))->Fill(6); 
-// 	    ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(7, "+ trigger"); 
-
-// 	    if (pCand) {
-// 	      ((TH1D*)fpHistFile->Get("efficiency"))->Fill(7); 
-// 	      ((TH1D*)fpHistFile->Get("efficiency"))->GetXaxis()->SetBinLabel(8, "+ candidate"); 
-// 	      fGoodEffCand = true;
-// 	      ((TH1D*)fpHistFile->Get("effMass"))->Fill(pCand->fMass);
-// 	    }
-// 	  }
-// 	} 
-//       }
-//     }
-//   }
 
 }
 

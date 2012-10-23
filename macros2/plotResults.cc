@@ -73,29 +73,40 @@ void plotResults::makeAll(int channels) {
   }
 
 
-//   fls3dVsX("pt", "m1pt>4.5&&m2pt>4.2&&hlt", "fls3d_prof_pt.pdf");
-//   fls3dVsX("pt", "m1pt>4.5&&m2pt>4.2&&hlt&&docatrk>0.015", "fls3d_prof_docatrk_pt.pdf");
-  
-//   fls3dVsX("abs(eta)", "m1pt>4.5&&m2pt>4.2&&hlt&&docatrk>0.015", "fls3d_prof_docatrk_eta.pdf");
-//   fls3dVsX("abs(eta)", "m1pt>4.5&&m2pt>4.2&&hlt", "fls3d_prof_eta.pdf");
+  // -- dimuons unblinded
+  if (channels & 4) {
+    TTree *t(0);
+    string modifier("bdt"); 
+    resetHistograms();
+    fSaveSmallTree = true; 
+    fSetup = "SgData"; 
+    t = getTree(fSetup); 
+    setupTree(t, fSetup); 
+    loopOverTree(t, fSetup, 1);
 
-//   fls3dEfficiency("1", "fls3dStudy_muoncuts.pdf");
-//   fls3dEfficiency("alpha<0.05", "fls3dStudy_alpha_muoncuts.pdf");
-//   fls3dEfficiency("alpha<0.05&&docatrk>0.015", "fls3dStudy_docatrk_alpha_muoncuts.pdf");
-
-//   if (channels & 4) invertedIsolationStudy();
-
-//   zone(1);
-//   if (channels & 1) {
-//     fNormProcessed = false; 
-//     fDoUseBDT = false; 
-//     fDoApplyCowboyVeto = false;   
-//     fDoApplyCowboyVetoAlsoInSignal = false;   
-//     computeNormUL();
-//     computeCsBF();
-//     acceptancePerProcess();
-//   }
-
+    zone(1,2);
+    gStyle->SetOptStat(0); 
+    gStyle->SetOptTitle(0); 
+    TH1D *h1(0); 
+    for (int i = 0; i < fNchan; ++i) {
+      c0->cd(i+1); 
+      h1 = (TH1D*)(fhMassWithAllCutsManyBins[i]->Clone(Form("hMassWithAllCutsManyBins_%s_5_chan%d", modifier.c_str(), i))); 
+      h1->SetAxisRange(4.9, 5.9, "X"); 
+      h1->Draw();
+      double ymax0 = 3; 
+      double yleg = ymax0 - 0.3;
+      h1->SetMaximum(ymax0); 
+      double b0  = h1->Integral(5.2, 5.3); 
+      double bs  = h1->Integral(5.3, 5.45); 
+    
+      drawArrow(0.6, 1, yleg); 
+      drawArrow(0.4, 2, yleg-0.35); 
+      tl->DrawLatex(0.4, yleg, Form("obs: %3.0f", bs));
+      tl->DrawLatex(0.4, yleg-0.35, Form("obs: %3.0f", b0));
+      tl->DrawLatex(0.2, 0.92, (0 == i?"Barrel":"Endcap"));
+    }
+  }
+  c0->SaveAs(Form("%s/unblinding.pdf", fDirectory.c_str())); 
 }
 
 
@@ -683,6 +694,10 @@ void plotResults::calculateSgNumbers(int chan) {
   numbersFromHist(chan, 0, fNumbersBs[chan]); 
   numbersFromHist(chan, 1, fNumbersBd[chan]); 
 
+//   // -- patch the wrong acceptance FIXME
+//   fNumbersBs[chan]->acc  =   fNumbersBd[chan]->acc; 
+//   fNumbersBs[chan]->accE =   fNumbersBd[chan]->accE; 
+
   fSetup = "SgData"; 
   string name(""); 
   
@@ -691,6 +706,9 @@ void plotResults::calculateSgNumbers(int chan) {
   TH1D *h1 = (TH1D*)fHistFile->Get(name.c_str());
   name = Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), 5, 1-chan);
   TH1D *ho = (TH1D*)fHistFile->Get(name.c_str());
+
+  name = Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), 5, chan);
+  TH1D *h = (TH1D*)fHistFile->Get(name.c_str());
 
   // -- blinded version
   setHist(h1, kBlack, 20, 1.); 
@@ -702,7 +720,7 @@ void plotResults::calculateSgNumbers(int chan) {
   h1->SetMaximum(h1->GetBinContent(h1->GetMaximumBin())+2); 
 
   double ymax0 = (h1->GetBinContent(h1->GetMaximumBin()) > ho->GetBinContent(ho->GetMaximumBin()) ? 
-		  h1->GetBinContent(h1->GetMaximumBin())+2:ho->GetBinContent(ho->GetMaximumBin())+2);
+		  h1->GetBinContent(h1->GetMaximumBin())+3:ho->GetBinContent(ho->GetMaximumBin())+3);
   h1->SetMaximum(ymax0); 
   //  h1->Draw();
   //       drawArrow(0.5, 2); 
@@ -710,6 +728,68 @@ void plotResults::calculateSgNumbers(int chan) {
   bgBlind(h1, 5, 5.4, 5.9);
   drawBox(2, 0.5); 
   drawBox(1, 0.5); 
+
+  TH1D *dummy1 = new TH1D("dummy1", "", 10, 0., 10.); setFilledHist(dummy1, kBlue, kBlue, 3356); 
+  TH1D *dummy2 = new TH1D("dummy2", "", 10, 0., 10.); setFilledHist(dummy2, kRed, kRed, 3365); 
+      
+  newLegend(0.4, 0.65, 0.8, 0.8); 
+  legg->SetTextSize(0.04);  
+  
+  legg->AddEntry(dummy1, "B_{s}^{0} signal window", "f"); 
+  legg->AddEntry(dummy2, "B^{0} signal window", "f"); 
+  if (0 == chan) {
+    legg->SetHeader("Barrel");   
+  } else {
+    legg->SetHeader("Endcap");   
+  }      
+  
+  legg->Draw();
+  
+  
+  stamp(0.18, fStampString, 0.67, fStampCms); 
+  if (fDoPrint)  {
+    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtsig-data-chan%d.pdf", fDirectory.c_str(), chan));
+    else c0->SaveAs(Form("%s/sig-data-chan%d.pdf", fDirectory.c_str(), chan));
+  }
+
+
+
+  // -- unblinded version
+  h1->SetAxisRange(4.9, 5.9, "X"); 
+  h1->Draw();
+  double yleg = ymax0 - 0.3;
+  h1->SetMaximum(ymax0); 
+  
+  drawArrow(0.6, 1, yleg); 
+  drawArrow(0.4, 2, yleg-0.5); 
+  //   tl->DrawLatex(0.4, yleg, Form("obs: %3.0f", bs));
+  //   tl->DrawLatex(0.4, yleg-0.35, Form("obs: %3.0f", b0));
+  //   tl->DrawLatex(0.2, 0.92, (0 == i?"Barrel":"Endcap"));
+
+  stamp(0.18, fStampString, 0.67, fStampCms); 
+  if (fDoPrint)  {
+    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtunblinded-sig-data-chan%d.pdf", fDirectory.c_str(), chan));
+    else c0->SaveAs(Form("%s/unblinded-sig-data-chan%d.pdf", fDirectory.c_str(), chan));
+  }
+  
+
+  // -- unblinded version
+  h->SetAxisRange(4.9, 5.9, "X"); 
+  h->Draw();
+  
+  drawArrow(0.6, 1, yleg); 
+  drawArrow(0.4, 2, yleg-0.5); 
+
+  stamp(0.18, fStampString, 0.67, fStampCms); 
+  if (fDoPrint)  {
+    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtunblinded-manybins-sig-data-chan%d.pdf", fDirectory.c_str(), chan));
+    else c0->SaveAs(Form("%s/unblinded-manybins-sig-data-chan%d.pdf", fDirectory.c_str(), chan));
+  }
+  
+
+  double eps(0.00001);
+  fNumbersBs[chan]->bsObs = h->Integral(h->FindBin(fCuts[chan]->mBsLo+eps), h->FindBin(fCuts[chan]->mBsHi-eps)); 
+  fNumbersBs[chan]->bdObs = h->Integral(h->FindBin(fCuts[chan]->mBdLo+eps), h->FindBin(fCuts[chan]->mBdHi-eps)); 
 
   fNumbersBs[chan]->offHi = fBgHistHi;
   fNumbersBs[chan]->offLo = fBgHistLo; 
@@ -749,30 +829,6 @@ void plotResults::calculateSgNumbers(int chan) {
   fNumbersBs[chan]->fBgTotBd   = fNumbersBs[chan]->fBgNonpBd + fNumbersBs[chan]->fBgPeakBd;
   fNumbersBs[chan]->fBgTotBs   = fNumbersBs[chan]->fBgNonpBs + fNumbersBs[chan]->fBgPeakBs;
   fNumbersBs[chan]->fBgTotHi   = fNumbersBs[chan]->fBgNonpHi + fNumbersBs[chan]->fBgPeakHi;
-
-
-  TH1D *dummy1 = new TH1D("dummy1", "", 10, 0., 10.); setFilledHist(dummy1, kBlue, kBlue, 3356); 
-  TH1D *dummy2 = new TH1D("dummy2", "", 10, 0., 10.); setFilledHist(dummy2, kRed, kRed, 3365); 
-      
-  newLegend(0.4, 0.65, 0.8, 0.8); 
-  legg->SetTextSize(0.04);  
-  
-  legg->AddEntry(dummy1, "B_{s}^{0} signal window", "f"); 
-  legg->AddEntry(dummy2, "B^{0} signal window", "f"); 
-  if (0 == chan) {
-    legg->SetHeader("Barrel");   
-  } else {
-    legg->SetHeader("Endcap");   
-  }      
-  
-  legg->Draw();
-  
-  
-  stamp(0.18, fStampString, 0.67, fStampCms); 
-  if (fDoPrint)  {
-    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtsig-data-chan%d.pdf", fDirectory.c_str(), chan));
-    else c0->SaveAs(Form("%s/sig-data-chan%d.pdf", fDirectory.c_str(), chan));
-  }
 
 
   // -- scale SM expectation to normalization and compute total signal boxes contents
@@ -827,7 +883,6 @@ void plotResults::fillAndSaveHistograms(int nevents) {
   TTree *t(0);
 
   fSaveSmallTree = true; 
-
 
   // -- rare backgrounds
   fSetup = "BgRare"; 

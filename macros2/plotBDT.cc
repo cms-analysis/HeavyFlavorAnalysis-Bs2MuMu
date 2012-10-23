@@ -184,6 +184,9 @@ void plotBDT::makeAll(int channels) {
   if (channels & 1) {
     //    npvSpecial("SgData");
     //    npvSpecial("NoData");
+    cout << "--> plotSSB()" << endl;
+    plotSSB();
+
     cout << "--> tmvaControlPlots()" << endl;
     tmvaControlPlots();
     cout << "--> overlayBdtOutput()" << endl;
@@ -199,8 +202,6 @@ void plotBDT::makeAll(int channels) {
     plotEffVsBg(0);   
     plotEffVsBg(1);   
 
-    cout << "--> plotSSB()" << endl;
-    plotSSB();
     cout << "--> bdtDependencies(\"SgData\")" << endl;
     bdtDependencies("SgData");
 
@@ -601,7 +602,7 @@ void plotBDT::bdtDependencies(string mode) {
   }
 
 
-  double npvmax(50.); 
+  double npvmax(30.); 
   gStyle->SetOptStat(0); 
   gStyle->SetOptFit(0); 
   gStyle->SetOptTitle(0); 

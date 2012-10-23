@@ -41,6 +41,7 @@ public:
   void overlay(std::string sample1, std::string sample2, std::string selection = "Presel", std::string what = ""); 
   
   AnalysisDistribution* bookDistribution(std::string hn, std::string ht, std::string hc, int nbins, double lo, double hi); 
+  AnalysisDistribution* bookSpecialDistribution(string hn, string ht, string hc, int nbins, double lo, double hi, bool *presel);
 
   //  void loop(TTree *t, string mode, int offset);
 
@@ -56,12 +57,16 @@ public:
     , *fpFLS3d[NAD], *fpFL3d[NAD], *fpFL3dE[NAD] 
     , *fpMaxDoca[NAD], *fpIp[NAD], *fpIpS[NAD]
     , *fpBDT[NAD]   
+    , *fpBDTSel0[NAD], *fpBDTSel1[NAD], *fpBDTSel2[NAD]
     , *fpPvZ[NAD], *fpPvN[NAD], *fpPvAveW8[NAD]
     ;
   int fOffset;
   int fMode;
 
   vector<std::string> fDoList; 
+
+
+  bool fSel0, fSel1, fSel2; 
 
   ClassDef(plotReducedOverlays,1) //Testing plotReducedOverlays
 

@@ -16,6 +16,7 @@
 #include "plotBDT.hh"
 #include "plotResults.hh"
 #include "plotReducedOverlays.hh"
+#include "plotEfficiencies.hh"
 
 using namespace std;
 
@@ -161,6 +162,14 @@ int main(int argc, char *argv[]) {
     plotReducedOverlays *a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
     if (!doUseBDT) a->fDoUseBDT = false; 
     a->allSystematics(); 
+    delete a;
+  }
+
+  // -- muon id/trigger efficiency numbers
+  if (mode & 32) {
+    plotEfficiencies *a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+    if (!doUseBDT) a->fDoUseBDT = false; 
+    a->makeAll(1); 
     delete a;
   }
 

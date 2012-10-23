@@ -120,6 +120,7 @@ public:
   int fLS;
   int fEvent; 
   int fRunRange;
+  int fYear; 
 
   double       MASSMIN,   MASSMAX; 
   double       SIGBOXMIN, SIGBOXMAX; 
@@ -174,7 +175,7 @@ public:
   double  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
   double  fMu1PtGen, fMu2PtGen, fMu1EtaGen, fMu2EtaGen, fMu1PhiGen, fMu2PhiGen;
   double  fMu1PtNrf, fMu2PtNrf, fMu1EtaNrf, fMu2EtaNrf; // "now refitted"
-  int     fMu1Pix, fMu1BPix, fMu1BPixL1, fMu2Pix, fMu2BPix, fMu2BPixL1;
+  int     fMu1TrkLayer, fMu1Pix, fMu1BPix, fMu1BPixL1, fMu2TrkLayer, fMu2Pix, fMu2BPix, fMu2BPixL1;
   double  fMu1W8Mu, fMu1W8Tr, fMu2W8Mu, fMu2W8Tr; 
   double  fPvX, fPvY, fPvZ, fPvNtrk, fPvNdof, fPvAveW8; 
   int     fPvN;

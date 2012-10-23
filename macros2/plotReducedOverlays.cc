@@ -33,6 +33,10 @@ plotClass(files, dir, cuts, mode) {
   fDoApplyCowboyVetoAlsoInSignal = false; 
   fSaveSmallTree = false; 
 
+  fSel0 = false; 
+  fSel1 = false; 
+  fSel2 = false; 
+
   fDoList.push_back("muon1pt");
   fDoList.push_back("muon2pt");
 
@@ -59,6 +63,9 @@ plotClass(files, dir, cuts, mode) {
   fDoList.push_back("pvavew8");
 
   fDoList.push_back("bdt");
+  fDoList.push_back("bdtsel0");
+  fDoList.push_back("bdtsel1");
+  fDoList.push_back("bdtsel2");
 
   //  gROOT->cd();
 
@@ -217,7 +224,7 @@ void plotReducedOverlays::makeSample(string mode, string selection, string chann
     return;
   }
   setupTree(t, mode); 
-  //  loopOverTree(t, mode, 1, 100000);
+  //  loopOverTree(t, mode, 1, 1000000);
   loopOverTree(t, mode, 1);
 
   fHistFile->Write();
@@ -259,6 +266,10 @@ void plotReducedOverlays::bookDistributions(string mode) {
   fpPvAveW8[fOffset]   = bookDistribution(Form("%spvavew8", name.c_str()), "<w^{PV}>", "fGoodPvAveW8", 50, 0.5, 1.);           
 
   fpBDT[fOffset]       = bookDistribution(Form("%sbdt", name.c_str()), "BDT", "fGoodHLT", 200, -1.0, 1.0);   
+
+  fpBDTSel0[fOffset]   = bookSpecialDistribution(Form("%sbdtsel0", name.c_str()), "BDTsel0", "fGoodHLT", 200, -1.0, 1.0, &fSel0);   
+  fpBDTSel1[fOffset]   = bookSpecialDistribution(Form("%sbdtsel1", name.c_str()), "BDTsel1", "fGoodHLT", 200, -1.0, 1.0, &fSel1);   
+  fpBDTSel2[fOffset]   = bookSpecialDistribution(Form("%sbdtsel2", name.c_str()), "BDTsel2", "fGoodHLT", 200, -1.0, 1.0, &fSel2);   
   
 }
 
@@ -431,6 +442,8 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
   legg->AddEntry(h2, Form("#varepsilon = %4.3f#pm%4.3f, %s", eps2, eps2E, text2.c_str()), "f");
   legg->Draw();
 
+  tl->DrawLatex(0.2, 0.92, Form("rel difference: %4.3f", rdeltaEps)); 
+
   double yhi = 0.3*h1->GetMaximum();
   double ylo = 0.;
   pa->DrawArrow(bdtCut, yhi, bdtCut, ylo); 
@@ -532,24 +545,32 @@ void plotReducedOverlays::loopFunction(int function, int mode) {
 void plotReducedOverlays::loopFunction1(int mode) {
 
   // -- modify here the fGoodHLT to increase S/B for the BDT distribution
-  //  fGoodHLT        = fb.hlt && fGoodMuonsID && (fb.fls3d > 5) && (fb.chi2/fb.dof < 5) && (fBDT > -1.);
   fGoodHLT        = fb.hlt && fGoodMuonsID && (fBDT > -1.);
-
-  // -- modify even more for the control sample
-  //   if (string::npos != fSample.find("Cs")) {
-  //     fGoodHLT      = fb.hlt && fGoodMuonsID && fGoodMuonsPt 
-  //       && (fb.fls3d > 5) && (fb.alpha < 0.1)&& (fb.chi2/fb.dof < 4) 
-  //       && (fb.iso > 0.5) && (fb.closetrk < 5)
-  //       && (fBDT > -1.)
-  //       ;
-  //     fGoodHLT      = fb.hlt && fGoodMuonsID && (fBDT > -1.);
-  //   }
 
   // -- update ana cuts!
   fAnaCuts.update(); 
 
   if (fSetup == "B" && fChan != 0) return;
   if (fSetup == "E" && fChan != 1) return;
+
+  if (fb.hlt && fGoodMuonsID && (fBDT > -1.) && fb.fls3d > 10) {
+    fSel0 = true;
+  } else {
+    fSel0 = false; 
+  }
+
+  if (fb.hlt && fGoodMuonsID && (fBDT > -1.) && fb.fls3d > 15) {
+    fSel1 = true;
+  } else {
+    fSel1 = false; 
+  }
+
+  if (fb.hlt && fGoodMuonsID && (fBDT > -1.) && fb.fls3d > 20) {
+    fSel2 = true;
+  } else {
+    fSel2 = false; 
+  }
+
   fillDistributions();
 
 }
@@ -597,7 +618,9 @@ void plotReducedOverlays::fillDistributions() {
 
   fpBDT[fOffset]->fill(fBDT, mass);
 	      
-
+  fpBDTSel0[fOffset]->fill(fBDT, mass);
+  fpBDTSel1[fOffset]->fill(fBDT, mass);
+  fpBDTSel2[fOffset]->fill(fBDT, mass);
 }
 
 
@@ -616,4 +639,15 @@ AnalysisDistribution* plotReducedOverlays::bookDistribution(string hn, string ht
 }
 
 
+// ----------------------------------------------------------------------
+AnalysisDistribution* plotReducedOverlays::bookSpecialDistribution(string hn, string ht, string hc, int nbins, double lo, double hi, bool *presel) {
+  AnalysisDistribution *p = new AnalysisDistribution(hn.c_str(), ht.c_str(), nbins, lo, hi); 
+  p->setSigWindow(SIGBOXMIN, SIGBOXMAX); 
+  p->setBg1Window(BGLBOXMIN, BGLBOXMAX); 
+  p->setBg2Window(BGHBOXMIN, BGHBOXMAX); 
+  p->setAnalysisCuts(&fAnaCuts, hc.c_str()); 
+  p->setPreselCut(presel); 
+
+  return p; 
+}
 

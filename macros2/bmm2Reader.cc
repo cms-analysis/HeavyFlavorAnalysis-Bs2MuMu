@@ -116,50 +116,42 @@ void bmm2Reader::readCuts(TString filename, int dump) {
     // -- set up candidate analyzer classes
     if (!strcmp(className, "candAnaMuMu")) {
       candAna *a = new candAnaMuMu(this, "candAnaMuMu", cutFile); 
-      a->fVerbose = fVerbose; 
       a->BLIND = BLIND; 
       lCandAnalysis.push_back(a); 
     }
 
     if (!strcmp(className, "candAnaMuMu1301")) {
       candAna *a = new candAnaMuMu(this, "candAnaMuMu1301", cutFile); 
-      a->fVerbose = fVerbose; 
       lCandAnalysis.push_back(a); 
     }
 
     if (!strcmp(className, "candAnaMuMu1302")) {
       candAna *a = new candAnaMuMu(this, "candAnaMuMu1302", cutFile); 
-      a->fVerbose = fVerbose; 
       lCandAnalysis.push_back(a); 
     }
 
     if (!strcmp(className, "candAnaMuMu1313")) {
       candAna *a = new candAnaMuMu(this, "candAnaMuMu1313", cutFile); 
-      a->fVerbose = fVerbose; 
       lCandAnalysis.push_back(a); 
     }
 
     if (!strcmp(className, "candAnaBu2JpsiK")) {
       candAna *a = new candAnaBu2JpsiK(this, "candAnaBu2JpsiK", cutFile); 
-      a->fVerbose = fVerbose; 
       lCandAnalysis.push_back(a); 
     }
 
     if (!strcmp(className, "candAnaBs2JpsiPhi")) {
       candAna *a = new candAnaBs2JpsiPhi(this, "candAnaBs2JpsiPhi", cutFile); 
-      a->fVerbose = fVerbose; 
       lCandAnalysis.push_back(a); 
     }
 
     if (!strcmp(className, "candAnaDstar")) {
       candAna *a = new candAnaDstar(this, "candAnaDstar", cutFile); 
-      a->fVerbose = fVerbose; 
       lCandAnalysis.push_back(a); 
     }
 
     if (!strcmp(className, "candAnaHh")) {
       candAna *a = new candAnaHh(this, "candAnaHh", cutFile); 
-      a->fVerbose = fVerbose; 
       lCandAnalysis.push_back(a); 
     }
 

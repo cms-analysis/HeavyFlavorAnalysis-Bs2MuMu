@@ -45,6 +45,7 @@ public:
   virtual void   bookHist();
 
   virtual void   processType();
+  virtual void   setYear(int year) {fYear = year;}
 
   std::vector<candAna*> lCandAnalysis;
 
@@ -57,6 +58,7 @@ public:
   PidTable *ptSgMUT2, *ptCbMUT2; 
 
   int fProcessType; 
+  int fYear; 
 };
 
 #endif
