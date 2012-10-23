@@ -1,6 +1,6 @@
 #include "pdf_fitData.h"
 
-pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov): pdf_analysis(print, meth, ch_s, range, BF, SM, bd_constr, simul, simulbdt, pee_, bdt_fit) {
+pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste): pdf_analysis(print, meth, ch_s, range, BF, SM, bd_constr, simul, simulbdt, pee_, bdt_fit) {
   cout << "fitData constructor" << endl;
   channels = inputs;
   channels_bdt = inputs_bdt;
@@ -33,6 +33,8 @@ pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_es
   RooRandom::randomGenerator()->SetSeed(0);
 
   sign = sig;
+
+  syst = syste;
 
 }
 
@@ -611,6 +613,17 @@ void pdf_fitData::make_pdf() {
   ws_->Print();
 }
 
+void pdf_fitData::setsyst() {
+  if (BF_ > 0) {
+    ws_->var("K_cor_var_bs")->setConstant(!syst);
+    for (int i = 0; i < channels; i++) {
+      for (int j = 0; j < channels_bdt; j++) {
+        ws_->var(name("K_unc_var_bs", i, j))->setConstant(!syst);
+      }
+    }
+  }
+}
+
 void pdf_fitData::save() {
   ostringstream output_ws;
   output_ws << "./output/ws_fitData_" << meth_;
@@ -829,7 +842,7 @@ void pdf_fitData::make_models() {
       nuisanceParams.add(*ws_->var(name("N_comb", i, j)));
       nuisanceParams.add(*ws_->var(name("N_rare", i, j)));
       if (!SM_ && !bd_constr_ && BF_ < 2) nuisanceParams.add(*ws_->var(name("N_bd", i, j)));
-      if (BF_ > 0) {
+      if (BF_ > 0 && syst) {
         nuisanceParams.add(*ws_->var(name("K_unc_var_bs", i, j)));
         if (BF_ > 1) {
           nuisanceParams.add(*ws_->var(name("K_unc_var_bd", i, j)));
@@ -837,13 +850,13 @@ void pdf_fitData::make_models() {
       }
     }
   }
-  if (BF_ > 0) {
+  if (BF_ > 0 && syst) {
     nuisanceParams.add(*ws_->var("K_cor_var_bs"));
     if (BF_ > 1) {
       nuisanceParams.add(*ws_->var("K_cor_var_bd"));
-      nuisanceParams.add(*ws_->var("BF_bd"));
     }
   }
+  if (BF_ > 1) nuisanceParams.add(*ws_->var("BF_bd"));
   ws_->defineSet("nui", nuisanceParams);
 
   /// constrpar
@@ -878,7 +891,7 @@ void pdf_fitData::make_models() {
   H0->SetParametersOfInterest(*ws_->set("poi"));
   H0->SetObservables(*ws_->set("obs"));
   H0->SetNuisanceParameters(*ws_->set("nui"));
-  if (BF_ > 0) H0->SetConstraintParameters(*ws_->set("constrpar"));
+  if (BF_ > 0 && syst) H0->SetConstraintParameters(*ws_->set("constrpar"));
   if (BF_==0) {
     if (simul_) {
       for (int i = 0; i < channels; i++) {
@@ -912,7 +925,7 @@ void pdf_fitData::make_models() {
   H1->SetParametersOfInterest(*ws_->set("poi"));
   H1->SetObservables(*ws_->set("obs"));
   H1->SetNuisanceParameters(*ws_->set("nui"));
-  if (BF_ > 0) H1->SetConstraintParameters(*ws_->set("constrpar"));
+  if (BF_ > 0 && syst) H1->SetConstraintParameters(*ws_->set("constrpar"));
   parse_estimate();
   if (BF_==0) {
     if (simul_) {

@@ -37,10 +37,11 @@ static int ch_bdt_i = -1;
 static int inputs = 1;
 static int inputs_bdt = 1;
 static int sig_meth = -1;
-static string systname("");
+bool syst = false;
 static string cuts = "bdt>-10.";
 static string years_opt = "0";
 bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false, asimov = false;
+static bool newcomb = false;
 
 static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
 
@@ -64,6 +65,7 @@ void help() {
   cout << "-bdt_fit \t bdt_fit" << endl;
   cout << "-rare #filename \t file with rare event estimations (for normalizing to B -> JpsiK)" << endl;
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
+  cout << "-newcomb \t new exponential combinatorial bkg" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_fitData.o: fits events with pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-i #filename \t input for fitting events (MANDATORY)" << endl;
@@ -85,7 +87,7 @@ void help() {
   cout << "-cuts_file \t file containing bdt cuts for small tree" << endl;
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << "-asimov \t asimov dataset for significance estimation" << endl;
-  cout << "-syst #filename\t systematic uncertainty from filename" << endl;
+  cout << "-syst \t adding syst constraints" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -107,6 +109,7 @@ void help() {
   cout << "-bdt_fit \t bdt_fit" << endl;
   cout << "-sig # \t evaluate significance with method:" << endl << "\t\t 0 by hand; " << endl;
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
+  cout << "-syst \t adding syst constraints" << endl;
   cout << endl;
 
   exit(EXIT_SUCCESS);
@@ -244,8 +247,12 @@ void parse_options(int argc, char* argv[]){
       cout << "Asimov dataset" << endl;
     }
     if (!strcmp(argv[i],"-syst")) {
-      systname = argv[i+1];
-      cout << "systematic uncertainty from " << systname << endl;
+      syst = true;
+      cout << "systematic constraints" << endl;
+    }
+    if (!strcmp(argv[i],"-newcomb")) {
+      newcomb = true;
+      cout << "new combinatorial bkg" << endl;
     }
     if (!strcmp(argv[i],"-h")) help();
   }

@@ -133,17 +133,28 @@ int main(int argc, char* argv[]) {
         m1eta->setVal(m1eta_t);
         m2eta->setVal(m2eta_t);
         bdt->setVal(bdt_t);
+        if (m_t > 5.20 && m_t < 5.45 && i == 13) continue; // skip signal windows for comb bkg
         /// mass resolution
         if (y == 0) MassRes->setVal(MassRes_0_h->Eval(eta_t));
         else if (y == 1) MassRes->setVal(MassRes_2_h->Eval(eta_t));
         /// eta channels
         if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) {
           channel_cat->setIndex(0 + 2*yy);
-          if (cuts_f_b && bdt_t < cuts_v[0 + 2*yy]) continue;
+          if (i != 13 || newcomb) {
+            if (cuts_f_b && bdt_t < cuts_v[0 + 2*yy]) continue;
+          }
+          else {
+            if (cuts_f_b && bdt_t < 0.1) continue;
+          }
         }
         else {
           channel_cat->setIndex(1 + 2*yy);
-          if (cuts_f_b && bdt_t < cuts_v[1 + 2*yy]) continue;
+          if (i != 13 || newcomb ) {
+            if (cuts_f_b && bdt_t < cuts_v[1 + 2*yy]) continue;
+          }
+          else {
+            if (cuts_f_b && bdt_t < 0.1) continue;
+          }
         }
         /// bdt channels
         if (bdt_t < 0.1) bdt_cat->setIndex(0);
@@ -193,6 +204,8 @@ int main(int argc, char* argv[]) {
   rds_rare->append(*rds_semi);
   RooAbsData* rad_rare = rds_rare;
 
+  RooAbsData* rad_comb = rds_smalltree[13];
+
   for (int j = 0; j < inputs; j++) {
     for (int k = 0; k < inputs_bdt; k++) {
       ana1.channel = simul ? j : ch_i;
@@ -215,8 +228,11 @@ int main(int argc, char* argv[]) {
       }
     }
   }
+  if (newcomb) {
+    ana1.newcomb_ = true;
+    ana1.setSBslope(rad_comb);
+  }
   ana1.define_pdfs();
-
 
   if (simul) ana1.define_simul(simul_bdt);
 
@@ -242,6 +258,9 @@ int main(int argc, char* argv[]) {
       /// semi
       ana1.fit_pdf(ana1.name("semi", j, k), rad_semi, false);
 
+      /// comb
+//      ana1.fit_pdf(ana1.name("comb", j, k), rad_comb, false);
+
       ana1.print_ = false;
       ana1.define_rare3(j, k);
       ana1.fit_pdf(ana1.name("expo3", j, k), rad_rare, false);
@@ -265,7 +284,6 @@ int main(int argc, char* argv[]) {
   MassRes_0_h->Write();
   MassRes_2_h->Write();
   output_f->Close();
-//  ws->SaveAs(output_s.c_str());
   if (simul && !simul_bdt) ws->pdf("pdf_ext_simul")->graphVizTree(Form("sim_%d_pdf.dot", inputs));
   else if (!simul && !simul_bdt) ws->pdf("pdf_ext_total")->graphVizTree(Form("ext_%s.dot", ch_s.c_str()));
   else ws->pdf("pdf_ext_simul")->graphVizTree(Form("prodext_%s.dot", ch_s.c_str()));

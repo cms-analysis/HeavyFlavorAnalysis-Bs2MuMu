@@ -134,6 +134,9 @@ public:
 
   const char* name(string name, int i, int j = -1);
 
+  bool newcomb_;
+  void setSBslope(RooAbsData* sb_data);
+
 protected:
   string meth_;
   string ch_s_;

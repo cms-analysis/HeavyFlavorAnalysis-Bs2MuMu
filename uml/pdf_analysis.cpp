@@ -22,6 +22,7 @@ pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, i
   simul_bdt_ = simulbdt;
   bdt_fit_ = bdt_fit;
   BF_ = BF;
+  newcomb_ = false;
 
 }
 
@@ -553,12 +554,10 @@ void pdf_analysis::define_bf(int i, int j) {
   cout << "channel: " << i << ";" << j << " expected Bs = " << N_bs_constr.getVal() << endl;
   cout << "channel: " << i << ";" << j << " expected Bd = " << N_bd_constr.getVal() << endl;
 
-
-  K_cor_var_bs.setConstant();
-  K_unc_var_bs.setConstant();
+//  K_cor_var_bs.setConstant();
+//  K_unc_var_bs.setConstant();
   K_cor_var_bd.setConstant();
   K_unc_var_bd.setConstant();
-
 
   ws_->import(N_bs_constr);
   ws_->import(N_bd_constr);
@@ -1202,4 +1201,29 @@ void pdf_analysis::parse_external_numbers(string filename) {
   cout << "fs/fu        " <<  fs_over_fu_val << " \\pm " << fs_over_fu_err << endl;
   cout << "Bu2JpsiK_BF  " <<  Bu2JpsiK_BF_val << " \\pm " << Bu2JpsiK_BF_err << endl;
   cout << "Jpsi2MuMu_BF " <<  Jpsi2MuMu_BF_val << " \\pm " << Jpsi2MuMu_BF_err << endl;
+}
+
+void pdf_analysis::setSBslope(RooAbsData *sb_data) {
+  for (int i = 0; i < channels; i++) {
+    for (int j = 0; j < channels_bdt; j++) {
+      RooAbsData* sb_data_i = sb_data->reduce(Form("etacat==etacat::etacat_%d", i));
+      RooRealVar slope_comb(name("slope_comb", i, j), "slope_comb", -6., -20., 20.);
+      RooExponential expo_temp("expo_temp", "expo_temp", *ws_->var("Mass"), slope_comb);
+      RooRealVar C0("C0", "C0", 0., -100, 100);
+      RooRealVar C1("C1", "C1", 0., -100, 100);
+      RooArgList list(C0/*, C1*/);
+      RooChebychev pol("pol", "pol", *ws_->var("Mass"), list);
+      sb_data_i->Print();
+      pol.fitTo(*sb_data_i, Range("sb_lo,sb_hi"));
+      ws_->import(slope_comb);
+      TCanvas c("c", "c", 600, 600);
+      RooPlot* rp = ws_->var("Mass")->frame();
+      sb_data_i->plotOn(rp, Binning(20));
+      pol.plotOn(rp);
+      pol.paramOn(rp);
+      rp->Draw();
+      c.Print((get_address("bkg_slope", Form("%d", i)) + ".gif").c_str());
+      delete rp;
+    }
+  }
 }
