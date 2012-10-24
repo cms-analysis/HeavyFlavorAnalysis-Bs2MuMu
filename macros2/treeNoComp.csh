@@ -92,12 +92,12 @@ echo $SRMCP
 set FILES=`ls $JOB*.root`
 echo "Found the following output root files: $FILES"
 foreach f ($FILES)
-  echo lcg-del "$STORAGE1/$f"
+  echo lcg-del -b -D srmv2 -l "$STORAGE1/$f"
   lcg-del -b -D srmv2 -l "$STORAGE1/$f"
   echo lcg-cp    file:///`pwd`/$f "$STORAGE1/$f"
-  lcg-cp -b -D srmv2  file:///`pwd`/$f "$STORAGE1/$f"
+  lcg-cp -b -D srmv2 -l file:///`pwd`/$f "$STORAGE1/$f"
   echo lcg-ls     "$STORAGE1/$f"
-  lcg-ls -b -D srmv2  "$STORAGE1/$f"
+  lcg-ls -b -D srmv2 -l "$STORAGE1/$f"
 end
 
 # copy the log file.
