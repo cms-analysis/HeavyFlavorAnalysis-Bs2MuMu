@@ -59,12 +59,12 @@ class pdf_fitData : public pdf_analysis {
     string input_estimates_;
     vector <double> estimate_bs;
     vector <double> estimate_bd;
-    vector <double> estimate_rare;
+    vector <double> estimate_semi;
     vector <double> estimate_comb;
 
     vector <vector <double> > estimate2D_bs;
     vector <vector <double> > estimate2D_bd;
-    vector <vector <double> > estimate2D_rare;
+    vector <vector <double> > estimate2D_semi;
     vector <vector <double> > estimate2D_comb;
     vector <vector <double> > estimate2D_channel;
 
@@ -80,13 +80,13 @@ class pdf_fitData : public pdf_analysis {
     string input_systematics_;
     vector <double> systematics_bs;
     vector <double> systematics_bd;
-    vector <double> systematics_rare;
+    vector <double> systematics_semi;
     vector <double> systematics_comb;
     vector <double> systematics_channel;
 
     vector <vector <double> > systematics2D_bs;
     vector <vector <double> > systematics2D_bd;
-    vector <vector <double> > systematics2D_rare;
+    vector <vector <double> > systematics2D_semi;
     vector <vector <double> > systematics2D_comb;
     vector <vector <double> > systematics2D_channel;
 

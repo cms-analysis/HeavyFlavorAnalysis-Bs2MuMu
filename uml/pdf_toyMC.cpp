@@ -24,13 +24,13 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
   residual_bd.resize(channels);
   pull_bs.resize(channels);
   pull_bd.resize(channels);
-  pull_rare.resize(channels);
+  pull_semi.resize(channels);
   pull_comb.resize(channels);
   residual_rds_bs.resize(channels);
   residual_rds_bd.resize(channels);
   pull_rds_bs.resize(channels);
   pull_rds_bd.resize(channels);
-  pull_rds_rare.resize(channels);
+  pull_rds_semi.resize(channels);
   pull_rds_comb.resize(channels);
 
   for (int k = 0; k < channels; k++) {
@@ -38,24 +38,24 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
     residual_bd[k].resize(channels);
     pull_bs[k].resize(channels_bdt);
     pull_bd[k].resize(channels_bdt);
-    pull_rare[k].resize(channels_bdt);
+    pull_semi[k].resize(channels_bdt);
     pull_comb[k].resize(channels_bdt);
     residual_rds_bs[k].resize(channels);
     residual_rds_bd[k].resize(channels);
     pull_rds_bs[k].resize(channels_bdt);
     pull_rds_bd[k].resize(channels_bdt);
-    pull_rds_rare[k].resize(channels_bdt);
+    pull_rds_semi[k].resize(channels_bdt);
     pull_rds_comb[k].resize(channels_bdt);
   }
 
   vector < vector  <TH1D*> > correlation_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > bs_mean_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > bd_mean_h(channels, vector <TH1D*> (channels_bdt));
-  vector < vector  <TH1D*> > rare_mean_h(channels, vector <TH1D*> (channels_bdt));
+  vector < vector  <TH1D*> > semi_mean_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > comb_mean_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > bs_sigma_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > bd_sigma_h(channels, vector <TH1D*> (channels_bdt));
-  vector < vector  <TH1D*> > rare_sigma_h(channels, vector <TH1D*> (channels_bdt));
+  vector < vector  <TH1D*> > semi_sigma_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > comb_sigma_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH2D*> > corr_Nbs_Nbd_vs_N_bs_h(channels, vector <TH2D*> (channels_bdt));
 
@@ -74,22 +74,22 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
       residual_bd[i][j] = new RooRealVar(name("residual_bd", i, j), "residual_bd", -20., 20.);
       pull_bs[i][j] = new RooRealVar(name("pull_bs", i, j), "pull_bs", -8., 8.);
       pull_bd[i][j] = new RooRealVar(name("pull_bd", i, j), "pull_bd", -8., 8.);
-      pull_rare[i][j] = new RooRealVar(name("pull_rare", i, j), "pull_rare", -8., 8.);
+      pull_semi[i][j] = new RooRealVar(name("pull_semi", i, j), "pull_semi", -8., 8.);
       pull_comb[i][j] = new RooRealVar(name("pull_comb", i, j), "pull_comb", -8., 8.);
       residual_rds_bs[i][j] = new RooDataSet(name("residual_rds_bs", i, j), "residual_rds_bs", *residual_bs[i][j]);
       residual_rds_bd[i][j] = new RooDataSet(name("residual_rds_bd", i, j), "residual_rds_bd", *residual_bd[i][j]);
       pull_rds_bs[i][j] = new RooDataSet(name("pull_rds_bs", i, j), "pull_rds_bs", *pull_bs[i][j]);
       pull_rds_bd[i][j] = new RooDataSet(name("pull_rds_bd", i, j), "pull_rds_bd", *pull_bd[i][j]);
-      pull_rds_rare[i][j] = new RooDataSet(name("pull_rds_rare", i, j), "pull_rds_rare", *pull_rare[i][j]);
+      pull_rds_semi[i][j] = new RooDataSet(name("pull_rds_semi", i, j), "pull_rds_semi", *pull_semi[i][j]);
       pull_rds_comb[i][j] = new RooDataSet(name("pull_rds_comb", i, j), "pull_rds_comb", *pull_comb[i][j]);
       correlation_h[i][j] = new TH1D(name("correlation_h", i, j), name("correlation_h", i, j), 100, -1., 1.);
       bs_mean_h[i][j] = new TH1D(name("bs_mean_h", i, j), name("bs_mean_h", i, j), 100, 0., 100);
       bs_sigma_h[i][j] = new TH1D(name("bs_sigma_h", i, j), name("bs_sigma_h", i, j), 100, 0., 100);
       bd_mean_h[i][j] = new TH1D(name("bd_mean_h", i, j), name("bd_mean_h", i, j), 100, 0., 100);
       bd_sigma_h[i][j] = new TH1D(name("bd_sigma_h", i, j), name("bd_sigma_h", i, j), 100, 0., 100);
-      rare_mean_h[i][j] = new TH1D(name("rare_mean_h", i, j), name("rare_mean_h", i, j), 100, 0., 100);
+      semi_mean_h[i][j] = new TH1D(name("semi_mean_h", i, j), name("semi_mean_h", i, j), 100, 0., 100);
       comb_mean_h[i][j] = new TH1D(name("comb_mean_h", i, j), name("comb_mean_h", i, j), 100, 0., 100);
-      rare_sigma_h[i][j] = new TH1D(name("rare_sigma_h", i, j), name("rare_sigma_h", i, j), 100, 0., 100);
+      semi_sigma_h[i][j] = new TH1D(name("semi_sigma_h", i, j), name("semi_sigma_h", i, j), 100, 0., 100);
       comb_sigma_h[i][j] = new TH1D(name("comb_sigma_h", i, j), name("comb_sigma_h", i, j), 100, 0., 100);
       corr_Nbs_Nbd_vs_N_bs_h[i][j] = new TH2D(Form("corr_Nbs_Nbd_vs_N_bs_%d_%d_h", i, j), "corr_Nbs_Nbd_vs_N_bs_h", 30, 0., 30., 100, -1., 1.);
     }
@@ -133,12 +133,12 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
       for (int j = 0; j < channels; j++) {
         ws_temp->var(name("N_bs", j))->setVal((int)estimate_bs[j]);
         if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setVal((int)estimate_bd[j]);
-        ws_temp->var(name("N_rare", j))->setVal((int)estimate_rare[j]);
+        ws_temp->var(name("N_semi", j))->setVal((int)estimate_semi[j]);
         ws_temp->var(name("N_comb", j))->setVal((int)estimate_comb[j]);
 
         ws_temp->var(name("N_bs", j))->setConstant(kFALSE);
         if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setConstant(kFALSE);
-        ws_temp->var(name("N_rare", j))->setConstant(kFALSE);
+        ws_temp->var(name("N_semi", j))->setConstant(kFALSE);
         ws_temp->var(name("N_comb", j))->setConstant(kFALSE);
       }
     }
@@ -147,11 +147,11 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
         for (int j = 0; j < channels_bdt; j++) {
           ws_temp->var(name("N_bs", i, j))->setVal((int)estimate2D_bs[i][j]);
           if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setVal((int)estimate2D_bd[i][j]);
-          ws_temp->var(name("N_rare", i, j))->setVal((int)estimate2D_rare[i][j]);
+          ws_temp->var(name("N_semi", i, j))->setVal((int)estimate2D_semi[i][j]);
           ws_temp->var(name("N_comb", i, j))->setVal((int)estimate2D_comb[i][j]);
           ws_temp->var(name("N_bs", i, j))->setConstant(kFALSE);
           if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setConstant(kFALSE);
-          ws_temp->var(name("N_rare", i, j))->setConstant(kFALSE);
+          ws_temp->var(name("N_semi", i, j))->setConstant(kFALSE);
           ws_temp->var(name("N_comb", i, j))->setConstant(kFALSE);
         }
       }
@@ -186,7 +186,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
           ws_->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
           if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
           else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate2D_bd[i][j]/estimate2D_bd[i][j]);
-          ws_->var(name("N_rare", i, j))->setVal(estimate2D_rare[i][j]);
+          ws_->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
           ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
           data_i[i][j] = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")), Extended(1));
           channels_cat->setIndex(i);
@@ -224,14 +224,14 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
         else bs_mean_h[i][j]->Fill(ws_temp->function(name("N_bs_formula", i, j))->getVal());
         if (!(SM_ || bd_constr_ || BF_ == 2)) bd_mean_h[i][j]->Fill(ws_temp->var(name("N_bd", i, j))->getVal());
         else if (BF_ == 2) bd_mean_h[i][j]->Fill(ws_temp->function(name("N_bd_formula", i, j))->getVal());
-        rare_mean_h[i][j]->Fill(ws_temp->var(name("N_rare", i, j))->getVal());
+        semi_mean_h[i][j]->Fill(ws_temp->var(name("N_semi", i, j))->getVal());
         comb_mean_h[i][j]->Fill(ws_temp->var(name("N_comb", i, j))->getVal());
         if (BF_==0) bs_sigma_h[i][j]->Fill(ws_temp->var(name("N_bs", i, j))->getError());
         if (!(SM_ || bd_constr_ || BF_ == 2)) bd_sigma_h[i][j]->Fill(ws_temp->var(name("N_bd", i, j))->getError());
-        rare_sigma_h[i][j]->Fill(ws_temp->var(name("N_rare", i, j))->getError());
+        semi_sigma_h[i][j]->Fill(ws_temp->var(name("N_semi", i, j))->getError());
         comb_sigma_h[i][j]->Fill(ws_temp->var(name("N_comb", i, j))->getError());
         // PULL
-        double bs_pull, bd_pull, rare_pull, comb_pull, bs_residual, bd_residual;
+        double bs_pull, bd_pull, semi_pull, comb_pull, bs_residual, bd_residual;
         if (!simul_bdt_) {
           if (BF_==0) bs_pull = (ws_temp->var(name("N_bs", i, j))->getVal() - estimate_bs[i]) / ws_temp->var(name("N_bs", i, j))->getError();
           else {
@@ -240,7 +240,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
           }
           if (!(SM_ || bd_constr_ || BF_ == 2)) bd_pull = (ws_temp->var(name("N_bd", i, j))->getVal() - estimate_bd[i]) / ws_temp->var(name("N_bd", i, j))->getError();
           else if (BF_ == 2) bd_residual = (ws_temp->function(name("N_bd_formula", i, j))->getVal() - estimate_bd_formula[i][0]);
-          rare_pull = (ws_temp->var(name("N_rare", i, j))->getVal() - estimate_rare[i]) / ws_temp->var(name("N_rare", i, j))->getError();
+          semi_pull = (ws_temp->var(name("N_semi", i, j))->getVal() - estimate_semi[i]) / ws_temp->var(name("N_semi", i, j))->getError();
           comb_pull = (ws_temp->var(name("N_comb", i, j))->getVal() - estimate_comb[i]) / ws_temp->var(name("N_comb", i, j))->getError();
         }
         else {
@@ -248,7 +248,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
           else bs_residual = (ws_temp->function(name("N_bs_formula", i, j))->getVal() - estimate_bs_formula[i][j]);
           if (!(SM_ || bd_constr_|| BF_ == 2)) bd_pull = (ws_temp->var(name("N_bd", i, j))->getVal() - estimate2D_bd[i][j]) / ws_temp->var(name("N_bd", i, j))->getError();
           else if (BF_ == 2) bd_residual = (ws_temp->function(name("N_bd_formula", i, j))->getVal() - estimate_bd_formula[i][j]);
-          rare_pull = (ws_temp->var(name("N_rare", i, j))->getVal() - estimate2D_rare[i][j]) / ws_temp->var(name("N_rare", i, j))->getError();
+          semi_pull = (ws_temp->var(name("N_semi", i, j))->getVal() - estimate2D_semi[i][j]) / ws_temp->var(name("N_semi", i, j))->getError();
           comb_pull = (ws_temp->var(name("N_comb", i, j))->getVal() - estimate2D_comb[i][j]) / ws_temp->var(name("N_comb", i, j))->getError();
         }
 
@@ -268,8 +268,8 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
           residual_bd[i][j]->setVal(bd_residual);
           residual_rds_bd[i][j]->add(*residual_bd[i][j]);
         }
-        pull_rare[i][j]->setVal(rare_pull);
-        pull_rds_rare[i][j]->add(*pull_rare[i][j]);
+        pull_semi[i][j]->setVal(semi_pull);
+        pull_rds_semi[i][j]->add(*pull_semi[i][j]);
         pull_comb[i][j]->setVal(comb_pull);
         pull_rds_comb[i][j]->add(*pull_comb[i][j]);
         if (BF_==0) correlation_h[i][j]->Fill(RFR->correlation(*ws_temp->var(name("N_bs", i, j)), *ws_temp->var(name("N_bd", i, j))));
@@ -309,17 +309,17 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
       if (BF_>0) fit_pulls(residual_bs[i][j], residual_rds_bs[i][j], i, j);
       if (!(SM_ || bd_constr_ || BF_==2)) fit_pulls(pull_bd[i][j], pull_rds_bd[i][j], i, j);
       else if (BF_==2) fit_pulls(residual_bd[i][j], residual_rds_bd[i][j], i, j);
-      fit_pulls(pull_rare[i][j], pull_rds_rare[i][j], i, j);
+      fit_pulls(pull_semi[i][j], pull_rds_semi[i][j], i, j);
       fit_pulls(pull_comb[i][j], pull_rds_comb[i][j], i, j);
 
       print_histos(bs_mean_h[i][j], i, j);
       if (!(SM_ || bd_constr_)) print_histos(bd_mean_h[i][j], i, j);
-      print_histos(rare_mean_h[i][j], i, j);
+      print_histos(semi_mean_h[i][j], i, j);
       print_histos(comb_mean_h[i][j], i, j);
 
       if (BF_==0) print_histos(bs_sigma_h[i][j], i, j);
       if (!(SM_ || bd_constr_)) print_histos(bd_sigma_h[i][j], i, j);
-      print_histos(rare_sigma_h[i][j], i, j);
+      print_histos(semi_sigma_h[i][j], i, j);
       print_histos(comb_sigma_h[i][j], i, j);
     }
   }
@@ -546,7 +546,7 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy, string test_pdf) {
   if (!simul_bdt_) {
     for (int i = 0; i < channels; i++) {
       ws_->var(name("N_bs", i))->setVal(estimate_bs[i]);
-      ws_->var(name("N_rare", i))->setVal(estimate_rare[i]);
+      ws_->var(name("N_semi", i))->setVal(estimate_semi[i]);
       ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
       if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i))->setVal(estimate_bd[i]);
     }
@@ -559,7 +559,7 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy, string test_pdf) {
     for (int i = 0; i < channels; i++) {
       for (int j = 0; j < channels_bdt; j++) {
         ws_->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
-        ws_->var(name("N_rare", i, j))->setVal(estimate2D_rare[i][j]);
+        ws_->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
         ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
         if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
       }
@@ -788,7 +788,7 @@ void pdf_toyMC::print(string output, RooWorkspace* ws) {
         if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
       }
       else {
-        if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_rare" || name=="pdf_comb") {
+        if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_semi" || name=="pdf_comb") {
           ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
           if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
         }

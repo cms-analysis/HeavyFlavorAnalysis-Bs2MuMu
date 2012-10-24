@@ -7,23 +7,23 @@ pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_es
   input_estimates_ = input_estimates;
   estimate_bs.resize(channels);
   estimate_bd.resize(channels);
-  estimate_rare.resize(channels);
+  estimate_semi.resize(channels);
   estimate_comb.resize(channels);
 
   systematics_bs.resize(channels);
   systematics_bd.resize(channels);
-  systematics_rare.resize(channels);
+  systematics_semi.resize(channels);
   systematics_comb.resize(channels);
 
   estimate2D_channel.resize(channels, vector<double> (channels_bdt));
   estimate2D_bs.resize(channels, vector<double> (channels_bdt));
   estimate2D_bd.resize(channels, vector<double> (channels_bdt));
-  estimate2D_rare.resize(channels, vector<double> (channels_bdt));
+  estimate2D_semi.resize(channels, vector<double> (channels_bdt));
   estimate2D_comb.resize(channels, vector<double> (channels_bdt));
   systematics2D_channel.resize(channels, vector<double> (channels_bdt));
   systematics2D_bs.resize(channels, vector<double> (channels_bdt));
   systematics2D_bd.resize(channels, vector<double> (channels_bdt));
-  systematics2D_rare.resize(channels, vector<double> (channels_bdt));
+  systematics2D_semi.resize(channels, vector<double> (channels_bdt));
   systematics2D_comb.resize(channels, vector<double> (channels_bdt));
 
   lumi = -1;
@@ -86,10 +86,10 @@ bool pdf_fitData::parse(char *cutName, float cut) {
         cout << "bd[" << i <<"]: " << estimate_bd[i] << endl;
         return true;
       }
-      sprintf(test_cut, "rare_%d", i);
+      sprintf(test_cut, "semi_%d", i);
       if (!strcmp(cutName, test_cut)) {
-        estimate_rare[i] = (int)cut;
-        cout << "rare[" << i <<"]: " << estimate_rare[i] << endl;
+        estimate_semi[i] = (int)cut;
+        cout << "semi[" << i <<"]: " << estimate_semi[i] << endl;
         return true;
       }
       sprintf(test_cut, "comb_%d", i);
@@ -115,10 +115,10 @@ bool pdf_fitData::parse(char *cutName, float cut) {
       cout << "bd[" << i <<"]: " << estimate_bd[0] << endl;
       return true;
     }
-    sprintf(test_cut, "rare_%d", i);
+    sprintf(test_cut, "semi_%d", i);
     if (!strcmp(cutName, test_cut)) {
-      estimate_rare[0] = (int)cut;
-      cout << "rare[" << i <<"]: " << estimate_rare[0] << endl;
+      estimate_semi[0] = (int)cut;
+      cout << "semi[" << i <<"]: " << estimate_semi[0] << endl;
       return true;
     }
     sprintf(test_cut, "comb_%d", i);
@@ -145,10 +145,10 @@ bool pdf_fitData::parse(char *cutName, float cut) {
           cout << "bd[" << i <<"][" << j << "]: " << estimate2D_bd[i][j] << endl;
           return true;
         }
-        sprintf(test_cut, "rare_%d_%d", i, j);
+        sprintf(test_cut, "semi_%d_%d", i, j);
         if (!strcmp(cutName, test_cut)) {
-          estimate2D_rare[i][j] = (int)cut;
-          cout << "rare[" << i <<"][" << j << "]: " << estimate2D_rare[i][j] << endl;
+          estimate2D_semi[i][j] = (int)cut;
+          cout << "semi[" << i <<"][" << j << "]: " << estimate2D_semi[i][j] << endl;
           return true;
         }
         sprintf(test_cut, "comb_%d_%d", i, j);
@@ -224,8 +224,10 @@ void pdf_fitData::print() {
         if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kViolet - 4),   LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144), LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str()));
         found = name.find("pdf_comb");
         if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kBlue - 5),   LineStyle(2), LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str()));
-        found = name.find("pdf_rare");
+        found = name.find("pdf_semi");
         if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kGreen - 7), LineStyle(1), LineWidth(2), Range(range_.c_str()), NormRange(range_.c_str()));
+        found = name.find("pdf_peak");
+        if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(kCyan - 7), LineStyle(1), LineWidth(2), Range(range_.c_str()), NormRange(range_.c_str()));
       }
       else {
         size_t found;
@@ -235,8 +237,10 @@ void pdf_fitData::print() {
         if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *global_data, kFALSE), LineColor(kViolet - 4),   LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144), LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str()));
         found = name.find("pdf_comb");
         if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *global_data, kFALSE), LineColor(kBlue - 5),   LineStyle(2), LineWidth(3), Range(range_.c_str()), NormRange(range_.c_str()));
-        found = name.find("pdf_rare");
+        found = name.find("pdf_semi");
         if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *global_data, kFALSE), LineColor(kGreen - 7), LineStyle(1), LineWidth(2), Range(range_.c_str()), NormRange(range_.c_str()));
+        found = name.find("pdf_peak");
+        if (found!=string::npos) ws_->pdf("pdf_ext_total")->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *global_data, kFALSE), LineColor(kCyan - 7), LineStyle(1), LineWidth(2), Range(range_.c_str()), NormRange(range_.c_str()));
       }
     }
   }
@@ -279,40 +283,11 @@ void pdf_fitData::print_each_channel() {
       ws_->pdf("pdf_ext_simul")->plotOn(final_p, VisualizeError(*RFR, 1), FillColor(kYellow), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_), MoveToBack());
       ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_), LineColor(kBlue), LineWidth(3));
 
-      // components
-      RooArgSet* set = ws_->pdf("pdf_ext_simul")->getComponents();
-      TIterator* it = set->createIterator();
-      TObject* var_Obj = 0;
-      while((var_Obj = it->Next())) {
-        string name_s = var_Obj->GetName();
-        if (name_s != ws_->pdf("pdf_ext_simul")->GetName()) {
-          size_t found;
-          found = name_s.find("MassRes");
-          if (found != string::npos) continue;
-          found = name_s.find("bdt_");
-          if (found != string::npos) continue;
-          found = name_s.find(pdf_analysis::name("pdf_bs", i, j));
-          if (found != string::npos) {
-            cout << endl << "====> plotting component " << name_s << endl;
-            ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name_s.c_str()), LineColor(kRed),        LineStyle(1), DrawOption("F"), FillColor(kRed),        FillStyle(3001)/*, LineWidth(3)*/, Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
-          }
-          found = name_s.find(pdf_analysis::name("pdf_bd", i, j));
-          if (found != string::npos) {
-            cout << endl << "====> plotting component " << name_s << endl;
-            ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name_s.c_str()), LineColor(kViolet - 4), LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144)/*, LineWidth(3)*/, Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
-          }
-          found = name_s.find(pdf_analysis::name("pdf_comb", i, j));
-          if (found != string::npos) {
-            cout << endl << "====> plotting component " << name_s << endl;
-            ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name_s.c_str()), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
-          }
-          found = name_s.find(pdf_analysis::name("pdf_rare", i, j));
-          if (found != string::npos) {
-            cout << endl << "====> plotting component " << name_s << endl;
-            ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name_s.c_str()), LineColor(kGreen - 7),  LineStyle(1)/*, DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001)*/, LineWidth(2), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
-          }
-        }
-      }
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_comb", i, j)), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_semi", i, j)), LineColor(kGreen - 7),  LineStyle(1), DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_bs", i, j)), LineColor(kRed),        LineStyle(1), DrawOption("F"), FillColor(kRed),        FillStyle(3001)/*, LineWidth(3)*/, Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_bd", i, j)), LineColor(kViolet - 4), LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144)/*, LineWidth(3)*/, Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_peak", i, j)), LineColor(kCyan - 7),  LineStyle(1), DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
 
       TCanvas* final_c = new TCanvas("final_c", "final_c", 600, 600);
       final_p->Draw();
@@ -329,7 +304,7 @@ void pdf_fitData::print_each_channel() {
       else if (bd_constr_) N_bd = (RooRealVar*)vars->find("Bd_over_Bs");
       else if (BF_ > 1) N_bd = (RooRealVar*)vars->find("BF_bd");
       RooRealVar* N_comb = (RooRealVar*)vars->find(pdf_analysis::name("N_comb", i, j));
-      RooRealVar* N_rare = (RooRealVar*)vars->find(pdf_analysis::name("N_rare", i, j));
+      RooRealVar* N_semi = (RooRealVar*)vars->find(pdf_analysis::name("N_semi", i, j));
       vector <string> fitresult_tex_vec;
       if (BF_==0) {
         ostringstream fitresult_tex;
@@ -390,7 +365,7 @@ void pdf_fitData::print_each_channel() {
       fitresult_tex << setprecision(2) << fixed<< "N(comb. bkg) = " << N_comb->getVal() << " ^{+" << getErrorHigh(N_comb) << "}_{" << getErrorLow(N_comb) << "}";
       fitresult_tex_vec.push_back(fitresult_tex.str());
       ostringstream fitresult_tex2;
-      fitresult_tex2 << setprecision(2) << fixed<< "N(rare bkg) = " << N_rare->getVal() << " ^{+" << getErrorHigh(N_rare) << "}_{" << getErrorLow(N_rare) << "}";
+      fitresult_tex2 << setprecision(2) << fixed<< "N(semi bkg) = " << N_semi->getVal() << " ^{+" << getErrorHigh(N_semi) << "}_{" << getErrorLow(N_semi) << "}";
       fitresult_tex_vec.push_back(fitresult_tex2.str());
 
       TPaveText* fitresults = new TPaveText(0.57, 0.66, 0.9, 0.9, "NDCR");
@@ -474,7 +449,7 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TT
       ws_->var("N_bs")->setVal(estimate_bs[ch_i_]);
       if (!SM_ && !bd_constr_) ws_->var("N_bd")->setVal(estimate_bd[ch_i_]);
       else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate_bd[ch_i_]/estimate_bd[ch_i_]);
-      ws_->var("N_rare")->setVal(estimate_rare[ch_i_]);
+      ws_->var("N_semi")->setVal(estimate_semi[ch_i_]);
       ws_->var("N_comb")->setVal(estimate_comb[ch_i_]);
       global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")), Extended());
     }
@@ -483,7 +458,7 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TT
         ws_->var(name("N_bs", i))->setVal(estimate_bs[i]);
         if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i))->setVal(estimate_bd[i]);
         else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate_bd[i]/estimate_bd[i]);
-        ws_->var(name("N_rare", i))->setVal(estimate_rare[i]);
+        ws_->var(name("N_semi", i))->setVal(estimate_semi[i]);
         ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
       }
       /// global_data = new RooDataSet("global_data", "global_data", RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")), Index(*ws_->cat("etacat")), Import(data_map), ExpectedData(asimov_ ? true : false));
@@ -498,7 +473,7 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TT
           ws_->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
           if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
           else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate2D_bd[i][j]/estimate2D_bd[i][j]);
-          ws_->var(name("N_rare", i, j))->setVal(estimate2D_rare[i][j]);
+          ws_->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
           ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
           data_i[i][j] = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")), Extended());
           channels_cat->setIndex(i);
@@ -586,7 +561,7 @@ void pdf_fitData::make_pdf() {
         /*if (!BF_)*/ ws_input->var(name("N_bs", i))->setVal(estimate_bs[i]);
 //        else ws_input->var("BF_bs")->setVal(3.e-8);
         ws_input->var(name("N_bd", i))->setVal(estimate_bd[i]);
-        ws_input->var(name("N_rare", i))->setVal(estimate_rare[i]);
+        ws_input->var(name("N_semi", i))->setVal(estimate_semi[i]);
         ws_input->var(name("N_comb", i))->setVal(estimate_comb[i]);
       }
     }
@@ -594,7 +569,7 @@ void pdf_fitData::make_pdf() {
       /*if (!BF_) */ws_input->var("N_bs")->setVal(estimate_bs[ch_i_]);
 //      else ws_input->var("BF_bs")->setVal(3.e-7);
       ws_input->var("N_bd")->setVal(estimate_bd[ch_i_]);
-      ws_input->var("N_rare")->setVal(estimate_rare[ch_i_]);
+      ws_input->var("N_semi")->setVal(estimate_semi[ch_i_]);
       ws_input->var("N_comb")->setVal(estimate_comb[ch_i_]);
     }
     else {
@@ -602,7 +577,7 @@ void pdf_fitData::make_pdf() {
         for (int j = 0; j < channels_bdt; j++) {
           ws_input->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
           ws_input->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
-          ws_input->var(name("N_rare", i, j))->setVal(estimate2D_rare[i][j]);
+          ws_input->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
           ws_input->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
         }
       }
@@ -840,7 +815,7 @@ void pdf_fitData::make_models() {
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < channels_bdt; j++) {
       nuisanceParams.add(*ws_->var(name("N_comb", i, j)));
-      nuisanceParams.add(*ws_->var(name("N_rare", i, j)));
+      nuisanceParams.add(*ws_->var(name("N_semi", i, j)));
       if (!SM_ && !bd_constr_ && BF_ < 2) nuisanceParams.add(*ws_->var(name("N_bd", i, j)));
       if (BF_ > 0 && syst) {
         nuisanceParams.add(*ws_->var(name("K_unc_var_bs", i, j)));
@@ -971,7 +946,13 @@ void pdf_fitData::sig_plhts() {
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
+
+  ProofConfig* pc = NULL;
+  pc = new ProofConfig(*ws_, 2, "workers=2", kTRUE); // machine with 4 cores
+
   ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 1000);
+  //if(pc) mcSampler_pl->SetProofConfig(pc);
+
   FrequentistCalculator frequCalc(*ws_->data("global_data"), *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();
   htr_pl->Print();
@@ -1034,11 +1015,11 @@ void pdf_fitData::sig_hybrid_roplhts() {
 
 void pdf_fitData::make_prior() {
 //  vector <vector <RooGaussian*> > prior_bd(channels, vector <RooGaussian*> (channels_bdt));
-//  vector <vector <RooGaussian*> > prior_rare(channels, vector <RooGaussian*> (channels_bdt));
+//  vector <vector <RooGaussian*> > prior_semi(channels, vector <RooGaussian*> (channels_bdt));
 //  vector <vector <RooGaussian*> > prior_comb(channels, vector <RooGaussian*> (channels_bdt));
 
   vector <vector <RooGamma*> > prior_bd(channels, vector <RooGamma*> (channels_bdt));
-  vector <vector <RooGamma*> > prior_rare(channels, vector <RooGamma*> (channels_bdt));
+  vector <vector <RooGamma*> > prior_semi(channels, vector <RooGamma*> (channels_bdt));
   vector <vector <RooGamma*> > prior_comb(channels, vector <RooGamma*> (channels_bdt));
 
   RooArgList prior_list("prior_list");
@@ -1046,15 +1027,15 @@ void pdf_fitData::make_prior() {
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < channels_bdt; j++) {
 //      if (!SM_ && !bd_constr_ && !BF_==2) prior_bd[i][j] = new RooGaussian(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal()), RooConst(ws_->var(name("N_bd", i, j))->getError()));
-//      prior_rare[i][j] = new RooGaussian(name("prior_rare", i, j), name("prior_rare", i, j), *ws_->var(name("N_rare", i, j)), RooConst(ws_->var(name("N_rare", i, j))->getVal()), RooConst(ws_->var(name("N_rare", i, j))->getError()));
+//      prior_semi[i][j] = new RooGaussian(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
 //      prior_comb[i][j] = new RooGaussian(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal()), RooConst(ws_->var(name("N_comb", i, j))->getError()));
 
       if (!SM_ && !bd_constr_ && !BF_==2) prior_bd[i][j] = new RooGamma(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
-      prior_rare[i][j] = new RooGamma(name("prior_rare", i, j), name("prior_rare", i, j), *ws_->var(name("N_rare", i, j)), RooConst(ws_->var(name("N_rare", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
+      prior_semi[i][j] = new RooGamma(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
       prior_comb[i][j] = new RooGamma(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
 
       prior_list.add(*prior_bd[i][j]);
-      prior_list.add(*prior_rare[i][j]);
+      prior_list.add(*prior_semi[i][j]);
       prior_list.add(*prior_comb[i][j]);
     }
   }
@@ -1142,7 +1123,7 @@ void pdf_fitData::addsyst() {
         double rel_sys_err;
         if (k == 0) rel_sys_err = systematics_bs[i];
         if (k == 1) rel_sys_err = systematics_bd[i];
-        if (k == 2) rel_sys_err = systematics_rare[i];
+        if (k == 2) rel_sys_err = systematics_semi[i];
         if (k == 3) rel_sys_err = systematics_comb[i];
         string name_k(name("N_" + source[k], i));
         double val = ws_->var(name_k.c_str())->getVal();
@@ -1211,10 +1192,10 @@ bool pdf_fitData::parse_sys(char *cutName, double cut) {
         cout << "bd[" << i <<"]: " << systematics_bd[i] << endl;
         return true;
       }
-      sprintf(test_cut, "rare_%d", i);
+      sprintf(test_cut, "semi_%d", i);
       if (!strcmp(cutName, test_cut)) {
-        systematics_rare[i] = cut;
-        cout << "rare[" << i <<"]: " << systematics_rare[i] << endl;
+        systematics_semi[i] = cut;
+        cout << "semi[" << i <<"]: " << systematics_semi[i] << endl;
         return true;
       }
       sprintf(test_cut, "comb_%d", i);
@@ -1240,10 +1221,10 @@ bool pdf_fitData::parse_sys(char *cutName, double cut) {
       cout << "bd[" << i <<"]: " << systematics_bd[0] << endl;
       return true;
     }
-    sprintf(test_cut, "rare_%d", i);
+    sprintf(test_cut, "semi_%d", i);
     if (!strcmp(cutName, test_cut)) {
-      systematics_rare[0] = cut;
-      cout << "rare[" << i <<"]: " << systematics_rare[0] << endl;
+      systematics_semi[0] = cut;
+      cout << "semi[" << i <<"]: " << systematics_semi[0] << endl;
       return true;
     }
     sprintf(test_cut, "comb_%d", i);
@@ -1270,10 +1251,10 @@ bool pdf_fitData::parse_sys(char *cutName, double cut) {
           cout << "bd[" << i <<"][" << j << "]: " << systematics2D_bd[i][j] << endl;
           return true;
         }
-        sprintf(test_cut, "rare_%d_%d", i, j);
+        sprintf(test_cut, "semi_%d_%d", i, j);
         if (!strcmp(cutName, test_cut)) {
-          systematics2D_rare[i][j] = cut;
-          cout << "rare[" << i <<"][" << j << "]: " << systematics2D_rare[i][j] << endl;
+          systematics2D_semi[i][j] = cut;
+          cout << "semi[" << i <<"][" << j << "]: " << systematics2D_semi[i][j] << endl;
           return true;
         }
         sprintf(test_cut, "comb_%d_%d", i, j);

@@ -29,11 +29,12 @@ pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, i
 void pdf_analysis::initialize () {
   cout << "inizialization" << endl;
 
-  source.resize(4);
+  source.resize(5);
   source[0] = "bs";
   source[1] = "bd";
-  source[2] = "rare";
-  source[3] = "comb";
+  source[2] = "comb";
+  source[3] = "semi";
+  source[4] = "peak";
 
   ws_ = new RooWorkspace("ws", "ws");
   Mass = new RooRealVar("Mass", "Candidate invariant mass", 4.90, 5.90, "GeV/c^{2}");
@@ -91,7 +92,7 @@ void pdf_analysis::define_pdfs () {
       define_bd(i, j);
       define_peaking(i, j);
       define_nonpeaking(i, j);
-      define_rare(i, j);
+//      define_rare(i, j);
       define_comb(i, j);
 
       if (BF_ > 0) {
@@ -462,7 +463,7 @@ void pdf_analysis::define_total_fractional(int i, int j) {
 }
 
 void pdf_analysis::define_total_extended(int i, int j) {
-  RooArgList pdf_list(*ws_->pdf(name("pdf_bs", i, j)), *ws_->pdf(name("pdf_bd", i, j)), *ws_->pdf(name("pdf_rare", i, j)), *ws_->pdf(name("pdf_comb", i, j)));
+  RooArgList pdf_list(*ws_->pdf(name("pdf_bs", i, j)), *ws_->pdf(name("pdf_bd", i, j)), *ws_->pdf(name("pdf_comb", i, j)), *ws_->pdf(name("pdf_semi", i, j)), *ws_->pdf(name("pdf_peak", i, j)));
   RooArgList N_list("varlist");
 
   if (BF_ > 0) N_list.add(*ws_->function(name("N_bs_formula", i, j)));
@@ -470,8 +471,9 @@ void pdf_analysis::define_total_extended(int i, int j) {
   if ((SM_ || bd_constr_) && BF_ < 2) N_list.add(*ws_->function(name("N_bd_constr", i, j)));
   else if (BF_ > 1) N_list.add(*ws_->function(name("N_bd_formula", i, j)));
   else N_list.add(*ws_->var(name("N_bd", i, j)));
-  N_list.add(*ws_->var(name("N_rare", i, j)));
   N_list.add(*ws_->var(name("N_comb", i, j)));
+  N_list.add(*ws_->var(name("N_semi", i, j)));
+  N_list.add(*ws_->var(name("N_peak", i, j)));
 
   if (BF_ == 0) {
     RooAddPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", pdf_list, N_list);
@@ -493,8 +495,9 @@ void pdf_analysis::define_total_extended(int i, int j) {
     RooArgList N_list_test(*ws_->function(name("N_bs", i, j)));
     if (SM_ || bd_constr_) N_list_test.add(*ws_->function(name("N_bd_constr", i, j)));
     else N_list_test.add(*ws_->var(name("N_bd", i, j)));
-    N_list_test.add(*ws_->var(name("N_rare", i, j)));
     N_list_test.add(*ws_->var(name("N_comb", i, j)));
+    N_list_test.add(*ws_->var(name("N_semi", i, j)));
+    N_list_test.add(*ws_->var(name("N_peak", i, j)));
     RooAddPdf pdf_ext_total_test(name("pdf_ext_total_test", i, j), "pdf_ext_total", pdf_list, N_list_test);
     ws_->import(pdf_ext_total_test);
   }
@@ -640,12 +643,16 @@ string pdf_analysis::define_pdf_sum(string name, int i) {
   if (found != string::npos) pdfs.push_back("bd");
   found = name.find("rare");
   if (found != string::npos) pdfs.push_back("rare");
+  found = name.find("comb");
+  if (found != string::npos) pdfs.push_back("comb");
+  found = name.find("semi");
+  if (found != string::npos) pdfs.push_back("semi");
   found = name.find("hist");
   if (found != string::npos) pdfs.push_back("hist");
   found = name.find("expo3");
   if (found != string::npos) pdfs.push_back("expo3");
-  found = name.find("comb");
-  if (found != string::npos) pdfs.push_back("comb");
+  found = name.find("peak");
+  if (found != string::npos) pdfs.push_back("peak");
 
   string pdf_sum = "SUM::pdf_ext_";
   string title;
@@ -746,7 +753,7 @@ void pdf_analysis::print(RooAbsData* data, string output) {
       }
       else {
         if (!pee) {
-          if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_rare" || name=="pdf_comb") {
+          if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_comb" || name=="pdf_semi" || name=="pdf_peak") {
             ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
             if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
           }
@@ -754,7 +761,7 @@ void pdf_analysis::print(RooAbsData* data, string output) {
         else {
           size_t found2 = pdf_name.find("SigmaRes");
           if (found2 == string::npos) {
-            if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_rare" || name=="pdf_comb") {
+            if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_comb" || name=="pdf_semi" || name=="pdf_peak") {
               ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
               if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE), LineColor(colors[i]),  LineStyle(1), LineWidth(2), Range(range_.c_str()));
             }
@@ -960,6 +967,12 @@ void pdf_analysis::set_rare_normalization(string input, bool extended) {
             ws_->var(name("N_rare", i, j))->setConstant(kTRUE);
             cout << name("N_rare", i, j) << " set val to " << cut << endl;
           }
+          if ( (simul_ && !strcmp(cutName, Form("N_peak_%d", i))) || (!simul_ && !strcmp(cutName, Form("N_peak_%d", channel))) ) {
+            ws_->var(name("N_peak", i, j))->setConstant(kFALSE);
+            ws_->var(name("N_peak", i, j))->setVal(cut);
+            ws_->var(name("N_peak", i, j))->setConstant(kTRUE);
+            cout << name("N_peak", i, j) << " set val to " << cut << endl;
+          }
         }
       }
       rewind(estimate_file);
@@ -1025,8 +1038,9 @@ void pdf_analysis::gen_and_fit(string pdfname) {
     pdf->plotOn(rp, LineColor(kOrange));
     pdf->plotOn(rp, Components("pdf_bs"), LineColor(kRed));
     pdf->plotOn(rp, Components("pdf_bd"), LineColor(kBlue));
-    pdf->plotOn(rp, Components("pdf_rare"), LineColor(kGreen));
     pdf->plotOn(rp, Components("pdf_comb"), LineColor(kCyan));
+    pdf->plotOn(rp, Components("pdf_semi"), LineColor(kGreen));
+    pdf->plotOn(rp, Components("pdf_peak"), LineColor(kGreen));
   }
   TCanvas* canvas = new TCanvas("canvas", "canvas", 600, 600);
   rp->Draw();
@@ -1041,8 +1055,9 @@ void pdf_analysis::gen_and_fit(string pdfname) {
     pdf->plotOn(rp_bdt, LineColor(kOrange));
     pdf->plotOn(rp_bdt, Components("pdf_bs"), LineColor(kRed));
     pdf->plotOn(rp_bdt, Components("pdf_bd"), LineColor(kBlue));
-    pdf->plotOn(rp_bdt, Components("pdf_rare"), LineColor(kGreen));
     pdf->plotOn(rp_bdt, Components("pdf_comb"), LineColor(kCyan));
+    pdf->plotOn(rp_bdt, Components("pdf_semi"), LineColor(kGreen));
+    pdf->plotOn(rp_bdt, Components("pdf_peak"), LineColor(kGreen));
     pdf->paramOn(rp_bdt);
     TCanvas* canvas_bdt = new TCanvas("canvas_bdt", "canvas_bdt", 600, 600);
     rp_bdt->Draw();

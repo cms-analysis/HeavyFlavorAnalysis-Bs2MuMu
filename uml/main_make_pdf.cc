@@ -200,9 +200,9 @@ int main(int argc, char* argv[]) {
   rds_peak->append(*rds_smalltree[9]);
   RooAbsData* rad_peak = rds_peak;
 
-  RooDataSet* rds_rare = (RooDataSet*)rds_peak->Clone("rds_rare");
-  rds_rare->append(*rds_semi);
-  RooAbsData* rad_rare = rds_rare;
+//  RooDataSet* rds_rare = (RooDataSet*)rds_peak->Clone("rds_rare");
+//  rds_rare->append(*rds_semi);
+//  RooAbsData* rad_rare = rds_rare;
 
   RooAbsData* rad_comb = rds_smalltree[13];
 
@@ -239,7 +239,7 @@ int main(int argc, char* argv[]) {
   get_rare_normalization("anaBmm.plotResults.2011.tex", "./input/2011/");
   get_rare_normalization("anaBmm.plotResults.2012.tex", "./input/2012/", 2);
   system("rm input/rare_frac.txt; cat input/2011/rare_frac.txt >> input/rare_frac.txt; cat input/2012/rare_frac.txt >> input/rare_frac.txt;");
-  ana1.set_rare_normalization("input/rare_frac.txt");
+  ana1.set_rare_normalization("input/rare_frac.txt", true);
 
   /// FITS
   for (int j = 0; j < inputs; j++) {
@@ -263,7 +263,7 @@ int main(int argc, char* argv[]) {
 
       ana1.print_ = false;
       ana1.define_rare3(j, k);
-      ana1.fit_pdf(ana1.name("expo3", j, k), rad_rare, false);
+      ana1.fit_pdf(ana1.name("expo3", j, k), rad_semi, false);
       ana1.print_ = print;
     }
   }
@@ -292,7 +292,8 @@ int main(int argc, char* argv[]) {
   if (!simul && !SM && !bd_const) {
     ws->var("N_bs")->setVal(5);
     ws->var("N_bd")->setVal(2);
-    ws->var("N_rare")->setVal(18);
+    ws->var("N_peak")->setVal(1);
+    ws->var("N_semi")->setVal(1);
     ws->var("N_comb")->setVal(25);
     ana1.gen_and_fit("pdf_ext_total");
   }

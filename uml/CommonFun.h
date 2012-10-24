@@ -18,7 +18,7 @@ using namespace std;
 /// options
 static string input_name;
 static string input_estimates;
-static string meth;
+static string meth = "bdt";
 static string ch_s = "-1";
 static string ch_bdt_s = "-1";
 static string pdf_toy = "total";
@@ -40,10 +40,9 @@ static int sig_meth = -1;
 bool syst = false;
 static string cuts = "bdt>-10.";
 static string years_opt = "0";
-bool input = false, output = false, method = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false, asimov = false;
+bool input = false, output = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false, asimov = false;
 static bool newcomb = false;
-
-static string channels[5] = {"bs", "bd", "rare", "comb", "total"};
+static bool method = true;
 
 void help() {
 
@@ -355,8 +354,9 @@ void get_rare_normalization(string filename, string dir, int offset = 0) {
   string full_output = dir + "/rare_frac.txt";
   FILE* file_out = fopen(full_output.c_str(), "w");
   for (int i = 0; i < 2; i++) {
-    fprintf(file_out, "N_rare_%d\t%f\n", i+offset, peak_exp[i]+semi_exp[i]);
-    fprintf(file_out, "peakfrac_rare_%d\t%f\n", i+offset, peak_exp[i]/(peak_exp[i]+semi_exp[i]));
+  //  fprintf(file_out, "N_rare_%d\t%f\n", i+offset, peak_exp[i]+semi_exp[i]);
+  //  fprintf(file_out, "peakfrac_rare_%d\t%f\n", i+offset, peak_exp[i]/(peak_exp[i]+semi_exp[i]));
+    fprintf(file_out, "N_peak_%d\t%f\n", i+offset, peak_exp[i]);
     fprintf(file_out, "######\n");
   }
   fclose(file_out);
