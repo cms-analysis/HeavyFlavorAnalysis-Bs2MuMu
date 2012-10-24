@@ -115,7 +115,7 @@ if ($opt_t) {
 my $crash = ""; 
 if ($opt_C) {$crash = "-C";}
 
-my $srmcmd  = "lcg-cp -y 2012 -b -D srmv2";
+my $srmcmd  = "lcg-cp -b -D srmv2";
 my $dcap    = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
 my $scratch = "/shome/lazo-flores/scratch"; # /scratch is likely too small
 my $srm     = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store";
@@ -177,18 +177,12 @@ if ($opt_h) {
 		foreach $f (@rootfiles) {print "  $f\n";}
 		print "hadd $scratch/v12-2012B-data.root \n";#
 		foreach $f (@rootfiles12b) {print " $f\n";}#
-		#print "hadd $scratch/v12-2012B-data.root $scratch/v12-2012A-data.root $scratch/v12-2012B_1-data.root 
-		#		$scratch/v12-2012B_2-data.root $scratch/v12-2012B_3-data.root $scratch/v12-2012B_4-data.root\n";
 	    } else {
 		print "hadd $scratch/$output @rootfiles\n";
 		if (-e "$scratch/$output") {unlink("$scratch/$output"); }
 		system("hadd $scratch/$output @rootfiles");
 		system("srmrm $storage/$class/$output");
 		system("$srmcmd $scratch/$output $storage/$class/$output");
-		#@rootfiles12b = `ls $scratch | grep v12-2012B`;
-		#system("rm $scratch/v12-2012-data.root");
-		#system("hadd $scratch/v12-2012-data.root $scratch/v12-2012A-data.root $scratch/v12-2012B_1-data.root 
-		#		$scratch/v12-2012B_2-data.root $scratch/v12-2012B_3-data.root $scratch/v12-2012B_4-data.root");
 	    }
 	}
     }
