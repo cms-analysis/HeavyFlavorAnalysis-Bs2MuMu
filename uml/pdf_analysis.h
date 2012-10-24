@@ -167,6 +167,12 @@ protected:
   double Jpsi2MuMu_BF_err;
   double Bu2JpsiK_BF_err;
 
+  double K_cor_bs;
+  double K_cor_bd;
+
+  vector <double> k_unc_bs;
+  vector <double> k_unc_bd;
+
   vector <double> eff_bd_val;
   vector <double> eff_bs_val;
   vector <double> eff_bu_val;

@@ -49,7 +49,6 @@ void help() {
   cout << endl;
   cout << ">>>>>>>>> main_make_pdf.o: makes pdf workspace" << endl;
   cout << "-i #filename \t input for making pdf shapes (MANDATORY); if filename==new the inputs will be the new small trees" << endl;
-  cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (MANDATORY)" << endl;
   cout << "choose one between:" << endl;
   cout << "\t -cha {0, 1} \t barrel OR endcap input" << endl;
   cout << "\t -simul # \t simultaneous fit of # eta channels" << endl;
@@ -69,7 +68,6 @@ void help() {
   cout << ">>>>>>>>> main_fitData.o: fits events with pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-i #filename \t input for fitting events (MANDATORY)" << endl;
   cout << "-t treename (default bdt)" << endl;
-  cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (MANDATORY)" << endl;
   cout << "-cha {0, 1} \t barrel OR endcap input, incompatible with -simul" << endl;
   cout << "\t -simul # \t simultaneous fit of # eta channels" << endl;
   cout << "\t -simul_bdt # \t simultaneous fit of # bdt channels" << endl;
@@ -91,7 +89,6 @@ void help() {
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
   cout << "-i #filename \t workspace input" << endl;
-  cout << "-meth {cnc, bdt} \t cut and count OR boosted decision tree input (MANDATORY)" << endl;
   cout << "-roomcs \t toy mc with RooMCStudy, otherwise by hand" << endl;
   cout << "-nexp # \t number of experiments (default 1)" << endl;
   cout << "-BF {1,2} \t imposing the same BF in each channel for bs only (1) or for bs and bd (2)" << endl;

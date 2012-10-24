@@ -175,22 +175,7 @@ void pdf_fitData::fit_pdf(bool do_not_import) {
     global_data = (RooDataSet*)subdata;
   }
   cout << "fitting " << global_data->GetName() << " in range " << range_ << " with " << pdfname << endl;
-  if (BF_ == 0) {
-    if (!pee) RFR = ws_->pdf(pdfname.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true));
-    else RFR = ws_->pdf(pdfname.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), ConditionalObservables(*ws_->var("MassRes")));
-  }
-  else {
-    RooArgSet constraints(*ws_->var("K_cor_var_bs"));
-    if (BF_ > 1) constraints.add(*ws_->var("K_cor_var_bd"));
-    for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels; j++) {
-        constraints.add(*ws_->var(name("K_unc_var_bs", i, j)));
-        if (BF_ > 1) constraints.add(*ws_->var(name("K_unc_var_bd", i, j)));
-      }
-    }
-    if (!pee) RFR = ws_->pdf(pdfname.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), Constrain(constraints));
-    else RFR = ws_->pdf(pdfname.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), ConditionalObservables(*ws_->var("MassRes")), Constrain(constraints));
-  }
+  RFR = ws_->pdf(pdfname.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none()/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
   if (!do_not_import) ws_->import(*global_data);
   if (verbosity > 0) RFR->Print();
 }
@@ -278,7 +263,7 @@ void pdf_fitData::print_each_channel() {
       }
       if (pee) projw_set.add(*ws_->var("MassRes"));
 
-      RooPlot* final_p = ws_->var("Mass")->frame(Bins(40), Title(title.c_str()));
+      RooPlot* final_p = ws_->var("Mass")->frame(Bins(20), Title(title.c_str()));
       global_data->plotOn(final_p, Cut(cut.c_str()));
       ws_->pdf("pdf_ext_simul")->plotOn(final_p, VisualizeError(*RFR, 1), FillColor(kYellow), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_), MoveToBack());
       ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_), LineColor(kBlue), LineWidth(3));
@@ -287,7 +272,7 @@ void pdf_fitData::print_each_channel() {
       ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_semi", i, j)), LineColor(kGreen - 7),  LineStyle(1), DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
       ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_bs", i, j)), LineColor(kRed),        LineStyle(1), DrawOption("F"), FillColor(kRed),        FillStyle(3001)/*, LineWidth(3)*/, Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
       ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_bd", i, j)), LineColor(kViolet - 4), LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144)/*, LineWidth(3)*/, Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
-      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_peak", i, j)), LineColor(kCyan - 7),  LineStyle(1), DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_peak", i, j)), LineColor(kBlack),  LineStyle(1), DrawOption("F"), FillColor(kBlack)/*, FillStyle(3001)*/, LineWidth(2), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
 
       TCanvas* final_c = new TCanvas("final_c", "final_c", 600, 600);
       final_p->Draw();
@@ -444,7 +429,18 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TT
 
   if (!random) FillRooDataSet(global_data, cut_b, cut_, cuts, tree, offset);
   else {
-   // RooRandom::randomGenerator()->SetSeed(12345);
+ //   RooRandom::randomGenerator()->SetSeed(3456);
+    if (syst) { //generating random constrains
+      RooDataSet* cor_ds = ws_->pdf("k_cor_gau_bs")->generate(RooArgSet(*ws_->var("K_cor_var_bs")), 1);
+      ws_->var("K_cor_var_bs")->setVal(cor_ds->get(0)->getRealValue("K_cor_var_bs"));
+      for (int i = 0; i < channels; i++) {
+        for (int j = 0; j < channels_bdt; j++) {
+          RooDataSet* unc_ds =  ws_->pdf(name("k_unc_gau_bs", i, j))->generate(RooArgSet(*ws_->var(name("K_unc_var_bs", i, j))), 1);
+          ws_->var(name("K_unc_var_bs", i, j))->setVal(unc_ds->get(0)->getRealValue(name("K_unc_var_bs", i, j)));
+        }
+      }
+    }
+
     if (!simul_ && !simul_bdt_) {
       ws_->var("N_bs")->setVal(estimate_bs[ch_i_]);
       if (!SM_ && !bd_constr_) ws_->var("N_bd")->setVal(estimate_bd[ch_i_]);
@@ -596,6 +592,19 @@ void pdf_fitData::setsyst() {
         ws_->var(name("K_unc_var_bs", i, j))->setConstant(!syst);
       }
     }
+    RooArgSet constraints("constr");
+    if (syst) {
+      constraints.add(*ws_->var("K_cor_var_bs"));
+      //   if (BF_ > 1) constraints.add(*ws_->var("K_cor_var_bd"));
+      for (int i = 0; i < channels; i++) {
+        for (int j = 0; j < channels; j++) {
+          constraints.add(*ws_->var(name("K_unc_var_bs", i, j)));
+          //       if (BF_ > 1) constraints.add(*ws_->var(name("K_unc_var_bd", i, j)));
+        }
+      }
+    }
+    ws_->defineSet("constr", constraints);
+    ws_->set("constr")->Print();
   }
 }
 
@@ -642,7 +651,6 @@ void pdf_fitData::significance() {
     }
   }
 ///
-
   if (sign == 0) sig_hand();
   else if (sign == 1) sig_plhc();
   else if (sign >= 1) {
@@ -664,11 +672,15 @@ Double_t pdf_fitData::sig_hand() {
   size_t found;
   while ( (arg_var = (RooRealVar*)vars_it->Next())) {
     string name(arg_var->GetName());
-    if (BF_==0) found = name.find("N_bs");
+    if (BF_ == 0) found = name.find("N_bs");
     else found = name.find("BF_bs");
     if (found != string::npos) {
       arg_var->setVal(0.0);
       arg_var->setConstant(1);
+    }
+    if (BF_ > 0) {
+      found = name.find("var_bs");
+      if (found != string::npos) arg_var->setConstant(1);
     }
 //    found = name.find("N_bd");
 //    if (found!=string::npos) {
@@ -691,6 +703,10 @@ Double_t pdf_fitData::sig_hand() {
     if (BF_==0) found = name.find("N_bs");
     else found = name.find("BF_bs");
     if (found != string::npos) arg_var->setConstant(0);
+    if (BF_ > 0) {
+      found = name.find("var_bs");
+      if (found != string::npos) arg_var->setConstant(1);
+    }
 //    found = name.find("N_bd");
 //    if (found!=string::npos) arg_var->setConstant(0);
     if (SM_ || bd_constr_) {
@@ -719,38 +735,28 @@ void pdf_fitData::sig_plhc() {
     CO.add(*ws_->var("MassRes"));
   }
   model.SetWorkspace(*ws_);
-  if (simul_) {
-    model.SetPdf(*ws_->pdf("pdf_ext_simul"));
-    if (BF_==0) {
-      for (int i = 0; i < channels; i++) {
-        for (int j = 0; j < channels_bdt; j++) {
-          poi.add(*ws_->var(name("N_bs", i, j)));
-          poi.setRealValue(name("N_bs", i, j), 0);
-          //      if (!bd_constr_ && !SM_) {
-          //        poi.add(*ws_->var(name("N_bd", i)));
-          //        poi.setRealValue(name("N_bd", i), 0);
-          //      }
-        }
+  if (simul_) model.SetPdf(*ws_->pdf("pdf_ext_simul"));
+  else model.SetPdf(*ws_->pdf("pdf_ext_total"));
+  if (BF_==0) {
+    for (int i = 0; i < channels; i++) {
+      for (int j = 0; j < channels_bdt; j++) {
+        poi.add(*ws_->var(name("N_bs", i, j)));
+        poi.setRealValue(name("N_bs", i, j), 0);
+        //      if (!bd_constr_ && !SM_) {
+        //        poi.add(*ws_->var(name("N_bd", i)));
+        //        poi.setRealValue(name("N_bd", i), 0);
+        //      }
       }
-    }
-    else {
-      poi.add(*ws_->var("BF_bs"));
-      poi.setRealValue("BF_bs", 0);
     }
   }
   else {
-    model.SetPdf(*ws_->pdf("pdf_ext_total"));
-    if (BF_==0) {
-      poi.add(*ws_->var("N_bs"));
-      poi.setRealValue("N_bs", 0);
-      //    if (!bd_constr_ && !SM_) {
-      //      poi.add(*ws_->var("N_bd"));
-      //      poi.setRealValue("N_bd", 0);
-      //    }
-    }
-    else {
-      poi.add(*ws_->var("BF_bs"));
-      poi.setRealValue("BF_bs", 0);
+    poi.add(*ws_->var("BF_bs"));
+    poi.setRealValue("BF_bs", 0);
+    poi.add(*ws_->var("K_cor_var_bs"));
+//    poi.setRealValue("K_cor_var_bs", 1.);
+    for (int i = 0; i < channels; i++) {
+      poi.add(*ws_->var(name("K_unc_var_bs", i)));
+//      poi.setRealValue(name("K_unc_var_bs", i), 1.);
     }
   }
   if (bd_constr_) {
@@ -840,7 +846,7 @@ void pdf_fitData::make_models() {
     for (int j = 0; j < channels_bdt; j++) {
       if (BF_ > 0) {
         constrpar.add(*ws_->var(name("K_unc_var_bs", i, j)));
-        if (BF_ > 1) {
+        if (BF_ > 1 && false) {
           constrpar.add(*ws_->var(name("K_unc_var_bd", i, j)));
         }
       }
@@ -848,7 +854,7 @@ void pdf_fitData::make_models() {
   }
   if (BF_ > 0) {
     nuisanceParams.add(*ws_->var("K_cor_var_bs"));
-    if (BF_ > 1) {
+    if (BF_ > 1 && false) {
       nuisanceParams.add(*ws_->var("K_cor_var_bd"));
     }
   }
@@ -867,7 +873,7 @@ void pdf_fitData::make_models() {
   H0->SetObservables(*ws_->set("obs"));
   H0->SetNuisanceParameters(*ws_->set("nui"));
   if (BF_ > 0 && syst) H0->SetConstraintParameters(*ws_->set("constrpar"));
-  if (BF_==0) {
+  if (BF_ == 0) {
     if (simul_) {
       for (int i = 0; i < channels; i++) {
         for (int j = 0; j < channels_bdt; j++) {

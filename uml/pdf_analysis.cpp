@@ -119,12 +119,12 @@ void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool su
   cout << " in range " << range_ << " with " << pdf_name << ":" << endl;
   ws_->pdf( pdf_name.c_str())->Print();
   if (!pee) {
-    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save());
+    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save(), Constrain(*ws_->set("constr")));
     if (print_) print(subdata);
   }
   else {
     cout << "WARNING: range option does not work with pee" << endl;
-    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, ConditionalObservables(*ws_->var("MassRes")), Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save());
+    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, ConditionalObservables(*ws_->var("MassRes")), Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save(), Constrain(*ws_->set("constr")));
     if (print_) print(subdata, pdf);
   }
   set_pdf_constant(pdf_name);
@@ -506,59 +506,30 @@ void pdf_analysis::define_total_extended(int i, int j) {
 
 void pdf_analysis::define_bf(int i, int j) {
 
-//  RooRealVar N_bu_var(name("N_bu", i, j), "N_bu", N_bu_val[i], 1, 10000000, "");
-
-//  RooRealVar eff_bu_var(name("eff_bu", i, j), "eff_bu", eff_bu_val[i], eff_bu_val[i]-eff_bu_err[i], eff_bu_val[i]+eff_bu_err[i], "");
-//  RooRealVar eff_bs_var(name("eff_bs", i, j), "eff_bs", eff_bs_val[i], eff_bs_val[i]-eff_bs_err[i], eff_bs_val[i]+eff_bs_err[i], "");
-//  RooRealVar eff_bd_var(name("eff_bd", i, j), "eff_bs", eff_bd_val[i], eff_bd_val[i]-eff_bd_err[i], eff_bd_val[i]+eff_bd_err[i], "");
-
-//  N_bu_var.setConstant(1);
-//  eff_bu_var.setConstant(1);
-//  eff_bs_var.setConstant(1);
-//  eff_bd_var.setConstant(1);
-
   if (i == 0 && j == 0) {
-
-//    RooRealVar fs_over_fu_var("fs_over_fu", "fs_over_fu", fs_over_fu_val, fs_over_fu_val-fs_over_fu_err, fs_over_fu_val+fs_over_fu_err, "");
-//    RooRealVar Bu2JpsiK_BF_var("Bu2JpsiK_BF", "Bu2JpsiK_BF", Bu2JpsiK_BF_val, Bu2JpsiK_BF_val-Bu2JpsiK_BF_err, Bu2JpsiK_BF_val+Bu2JpsiK_BF_err, "");
-//    RooRealVar Jpsi2MuMu_BF_var("Jpsi2MuMu_BF", "Jpsi2MuMu_BF", Jpsi2MuMu_BF_val, Jpsi2MuMu_BF_val-Jpsi2MuMu_BF_err, Jpsi2MuMu_BF_val+Jpsi2MuMu_BF_err, "");
-
-//    fs_over_fu_var.setConstant(1);
-//    Bu2JpsiK_BF_var.setConstant(1);
-//    Jpsi2MuMu_BF_var.setConstant(1);
-
     RooRealVar BF_bs("BF_bs", "Bs2MuMu branching fraction", Bs2MuMu_SM_BF_val, 0., 1e-8);
     RooRealVar BF_bd("BF_bd", "Bd2MuMu branching fraction", Bd2MuMu_SM_BF_val, 0., 1e-8);
-//    RooFormulaVar K_cor_bs("K_cor_bs", "K = BR * BR / (fs/fu)",  "@0*@1/@2", RooArgList(Bu2JpsiK_BF_var, Jpsi2MuMu_BF_var, fs_over_fu_var));
-//    RooFormulaVar K_cor_bd("K_cor_bd", "K = BR * BR",  "@1*@2", RooArgList(Bu2JpsiK_BF_var, Jpsi2MuMu_BF_var));
     ws_->import(BF_bs);
     ws_->import(BF_bd);
-//    ws_->import(K_cor_bs);
-//    ws_->import(K_cor_bd);
   }
 
-  double K_cor_bs = Bu2JpsiK_BF_val * Jpsi2MuMu_BF_val / fs_over_fu_val;
-  double k_unc_bs = eff_bu_val[i] / eff_bs_val[i] / N_bu_val[i];  cout << K_cor_bs << "  " << k_unc_bs << endl;
-  RooRealVar K_cor_var_bs("K_cor_var_bs", "K_cor_var_bs", K_cor_bs, K_cor_bs/2, K_cor_bs*2);
-  RooRealVar K_unc_var_bs(name("K_unc_var_bs", i, j), "K_unc_var_bs", k_unc_bs, k_unc_bs/2, k_unc_bs*2);
+  double K_cor_err_bs = K_cor_bs * sqrt(pow(fs_over_fu_err/fs_over_fu_val, 2) + pow(Bu2JpsiK_BF_err/Bu2JpsiK_BF_val, 2) + pow(Jpsi2MuMu_BF_err / Jpsi2MuMu_BF_val, 2));
+  double K_unc_err_bs =  k_unc_bs[i] * sqrt(pow(eff_bu_err[i]/eff_bu_val[i], 2)*0 /* eff ratio */ + pow(eff_bs_err[i]/eff_bs_val[i], 2)*0 /* eff ratio */ + pow(N_bu_err[i] / N_bu_val[i], 2));
+  RooRealVar K_cor_var_bs("K_cor_var_bs", "K_cor_var_bs", K_cor_bs, K_cor_bs - 3*K_cor_err_bs, K_cor_bs + 3*K_cor_err_bs);
+  RooRealVar K_unc_var_bs(name("K_unc_var_bs", i, j), "K_unc_var_bs", k_unc_bs[i], k_unc_bs[i] - 3*K_unc_err_bs, k_unc_bs[i] + 3*K_unc_err_bs);
 
-//  RooFormulaVar K_bs(name("K_bs", i, j), "K(i) * N_bs(i) / N_bu(i) = BF_bs",  "@0*@1*@2/@3/@4", RooArgList(Bu2JpsiK_BF_var, Jpsi2MuMu_BF_var, eff_bu_var, eff_bs_var, fs_over_fu_var));
-//  RooFormulaVar K_bd(name("K_bd", i, j), "K(i) * N_bd(i) / N_bu(i) = BF_bs",  "@0*@1*@2/@3", RooArgList(Bu2JpsiK_BF_var, Jpsi2MuMu_BF_var, eff_bu_var, eff_bd_var));
+  RooFormulaVar N_bs_constr(name("N_bs_formula", i, j), "N_bs(i) = BF * K(i)",  "@0*@1*@2", RooArgList( *ws_->var("BF_bs"), K_cor_var_bs, K_unc_var_bs));
 
-  RooFormulaVar N_bs_constr(name("N_bs_formula", i, j), "N_bs(i) = BF / K(i)",  "@0/@1/@2", RooArgList( *ws_->var("BF_bs"), K_cor_var_bs, K_unc_var_bs));
+  double K_cor_err_bd = K_cor_bd * sqrt(pow(Bu2JpsiK_BF_err/Bu2JpsiK_BF_val, 2) + pow(Jpsi2MuMu_BF_err / Jpsi2MuMu_BF_val, 2));
+  double K_unc_err_bd = k_unc_bd[i] * sqrt(pow(eff_bu_err[i]/eff_bu_val[i], 2)*0 /* eff ratio */ + pow(eff_bd_err[i]/eff_bd_val[i], 2)*0 /* eff ratio */ + pow(N_bu_err[i] / N_bu_val[i], 2));
+  RooRealVar K_cor_var_bd("K_cor_var_bd", "K_cor_var_bd", K_cor_bd, K_cor_bd - 3*K_cor_err_bd, K_cor_bd + 3*K_cor_err_bd);
+  RooRealVar K_unc_var_bd(name("K_unc_var_bd", i, j), "K_unc_var_bd", k_unc_bd[i], k_unc_bd[i] - 3*K_unc_err_bd, k_unc_bd[i] + 3*K_unc_err_bd);
 
-  double K_cor_bd = Bu2JpsiK_BF_val * Jpsi2MuMu_BF_val;
-  double k_unc_bd = eff_bu_val[i] / eff_bd_val[i] / N_bu_val[i];
-  RooRealVar K_cor_var_bd("K_cor_var_bd", "K_cor_var_bd", K_cor_bd, K_cor_bd/2, K_cor_bd*2); cout << K_cor_bd << "  " << k_unc_bd << endl;
-  RooRealVar K_unc_var_bd(name("K_unc_var_bd", i, j), "K_unc_var_bd", k_unc_bd, k_unc_bd/2, k_unc_bd*2);
-
-  RooFormulaVar N_bd_constr(name("N_bd_formula", i, j), "N_bd(i) = BF / K(i)",  "@0/@1/@2", RooArgList( *ws_->var("BF_bd"), K_cor_var_bd, K_unc_var_bd));
+  RooFormulaVar N_bd_constr(name("N_bd_formula", i, j), "N_bd(i) = BF * K(i)",  "@0*@1*@2", RooArgList( *ws_->var("BF_bd"), K_cor_var_bd, K_unc_var_bd));
 
   cout << "channel: " << i << ";" << j << " expected Bs = " << N_bs_constr.getVal() << endl;
   cout << "channel: " << i << ";" << j << " expected Bd = " << N_bd_constr.getVal() << endl;
 
-//  K_cor_var_bs.setConstant();
-//  K_unc_var_bs.setConstant();
   K_cor_var_bd.setConstant();
   K_unc_var_bd.setConstant();
 
@@ -568,15 +539,14 @@ void pdf_analysis::define_bf(int i, int j) {
 
 void pdf_analysis::define_constraints(int i, int j) {
 
-  double K_cor_bs = Bu2JpsiK_BF_val * Jpsi2MuMu_BF_val / fs_over_fu_val;
-  double K_cor_err_bs = sqrt(pow(fs_over_fu_err/fs_over_fu_val, 2) + pow(Bu2JpsiK_BF_err/Bu2JpsiK_BF_val, 2) + pow(Jpsi2MuMu_BF_err / Jpsi2MuMu_BF_val, 2));
-  cout << "K_cor_bs rel err " <<  K_cor_err_bs << endl;
-  K_cor_err_bs = K_cor_bs * K_cor_err_bs;
+  double K_cor_rel_err_bs = sqrt(pow(fs_over_fu_err/fs_over_fu_val, 2) + pow(Bu2JpsiK_BF_err/Bu2JpsiK_BF_val, 2) + pow(Jpsi2MuMu_BF_err / Jpsi2MuMu_BF_val, 2));
+  cout << "K_cor_bs = " << K_cor_bs << "; K_cor_bs rel_err = " <<  K_cor_rel_err_bs;
+  double K_cor_err_bs = K_cor_bs * K_cor_rel_err_bs;
+  cout << "; K_cor_bs err = " <<  K_cor_err_bs << endl;
 
-  double K_cor_bd = Bu2JpsiK_BF_val * Jpsi2MuMu_BF_val;
-  double K_cor_err_bd = sqrt(pow(Bu2JpsiK_BF_err/Bu2JpsiK_BF_val, 2) + pow(Jpsi2MuMu_BF_err / Jpsi2MuMu_BF_val, 2));
-  cout << "K_cor_bd rel err " <<  K_cor_err_bd << endl;
-  K_cor_err_bd = K_cor_bd * K_cor_err_bd;
+  double K_cor_rel_err_bd = sqrt(pow(Bu2JpsiK_BF_err/Bu2JpsiK_BF_val, 2) + pow(Jpsi2MuMu_BF_err / Jpsi2MuMu_BF_val, 2));
+//  cout << "K_cor_bd rel err " <<  K_cor_err_bd << endl;
+  double K_cor_err_bd = K_cor_bd * K_cor_rel_err_bd;
 
   if (i == 0 & j == 0) {
     RooGaussian k_cor_gau_bs("k_cor_gau_bs", "k_cor_gau_bs", *ws_->var("K_cor_var_bs"), RooConst(K_cor_bs), RooConst(K_cor_err_bs));
@@ -586,18 +556,17 @@ void pdf_analysis::define_constraints(int i, int j) {
     ws_->import(k_cor_gau_bd);
   }
 
-  double k_unc_bs = eff_bu_val[i] / eff_bs_val[i] / N_bu_val[i];
-  double K_unc_err_bs =  sqrt(pow(eff_bu_err[i]/eff_bu_val[i], 2)*0 /* eff ratio */ + pow(eff_bs_err[i]/eff_bs_val[i], 2)*0 /* eff ratio */ + pow(N_bu_err[i] / N_bu_val[i], 2));
-  cout << "K_unc_err_bs " << i << " " << j << " rel err" << K_unc_err_bs << endl;
-  K_unc_err_bs = k_unc_bs * K_unc_err_bs;
-  RooGaussian k_unc_gau_bs(name("k_unc_gau_bs", i, j), "k_unc_gau_bs", *ws_->var(name("K_unc_var_bs", i, j)), RooConst(k_unc_bs), RooConst(K_unc_err_bs));
+  double K_unc_rel_err_bs =  sqrt(pow(eff_bu_err[i]/eff_bu_val[i], 2)*0 /* eff ratio */ + pow(eff_bs_err[i]/eff_bs_val[i], 2)*0 /* eff ratio */ + pow(N_bu_err[i] / N_bu_val[i], 2));
+  cout << "k_unc_bs " << i << " " << j << " = " << k_unc_bs[i] <<  "; K_unc_err_bs rel_err = " << K_unc_rel_err_bs;
+  double K_unc_err_bs = k_unc_bs[i] * K_unc_rel_err_bs;
+  cout << "; K_unc_err_bs = " << K_unc_err_bs << endl;
+  RooGaussian k_unc_gau_bs(name("k_unc_gau_bs", i, j), "k_unc_gau_bs", *ws_->var(name("K_unc_var_bs", i, j)), RooConst(k_unc_bs[i]), RooConst(K_unc_err_bs));
   ws_->import(k_unc_gau_bs);
 
-  double k_unc_bd = eff_bu_val[i] / eff_bd_val[i] / N_bu_val[i];
-  double K_unc_err_bd = sqrt(pow(eff_bu_err[i]/eff_bu_val[i], 2)*0 /* eff ratio */ + pow(eff_bd_err[i]/eff_bd_val[i], 2)*0 /* eff ratio */ + pow(N_bu_err[i] / N_bu_val[i], 2));
-  cout << "K_unc_err_bd " << i << " " << j << " rel err " << K_unc_err_bd << endl;
-  K_unc_err_bd = k_unc_bd * K_unc_err_bd;
-  RooGaussian k_unc_gau_bd(name("k_unc_gau_bd", i, j), "k_unc_gau_bd", *ws_->var(name("K_unc_var_bd", i, j)), RooConst(k_unc_bd), RooConst(K_unc_err_bd));
+  double K_unc_rel_err_bd = sqrt(pow(eff_bu_err[i]/eff_bu_val[i], 2)*0 /* eff ratio */ + pow(eff_bd_err[i]/eff_bd_val[i], 2)*0 /* eff ratio */ + pow(N_bu_err[i] / N_bu_val[i], 2));
+//  cout << "K_unc_err_bd " << i << " " << j << " rel err " << K_unc_err_bd << endl;
+  double K_unc_err_bd = k_unc_bd[i] * K_unc_rel_err_bd;
+  RooGaussian k_unc_gau_bd(name("k_unc_gau_bd", i, j), "k_unc_gau_bd", *ws_->var(name("K_unc_var_bd", i, j)), RooConst(k_unc_bd[i]), RooConst(K_unc_err_bd));
   ws_->import(k_unc_gau_bd);
 }
 
@@ -1117,6 +1086,18 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
   if (simul_bdt_) { cout << "I don't have efficiencies for the bdt channels..." << endl; return;}
   parse_efficiency_numbers();
   if (channels == 4) parse_efficiency_numbers(2);
+
+  K_cor_bs = fs_over_fu_val / (Bu2JpsiK_BF_val * Jpsi2MuMu_BF_val);
+  K_cor_bd = 1. / (Bu2JpsiK_BF_val * Jpsi2MuMu_BF_val);
+  cout << "K_cor_bs = " << K_cor_bs << "; K_cor_bd = " << K_cor_bd << endl;
+  k_unc_bs.resize(channels);
+  k_unc_bd.resize(channels);
+  for (int i = 0; i < channels; i++) {
+    k_unc_bs[i] = (eff_bs_val[i] * N_bu_val[i]) / eff_bu_val[i];
+    k_unc_bd[i] = (eff_bd_val[i] * N_bu_val[i]) / eff_bu_val[i];
+    cout << "k_unc_bs ("<< i << ") = " << k_unc_bs[i] << "; k_unc_bd = " << k_unc_bd[i] << endl;
+  }
+
 }
 
 void pdf_analysis::parse_efficiency_numbers(int offset) {
