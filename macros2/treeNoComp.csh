@@ -48,26 +48,34 @@ echo "--> Setup TreeReader"
 pwd
 date
 cmsrel $CMSSW
-#echo "--> Unsetting SCRAM_ARC"
-#unsetenv SCRAM_ARCH
+# -- use special root version
+setenv ROOTSYS /shome/naegelic/root
+setenv LD_LIBRARY_PATH ${ROOTSYS}/lib:${LD_LIBRARY_PATH}
+setenv PATH ${ROOTSYS}/bin:${PATH}
+echo "--> Unsetting SCRAM_ARC"
+unsetenv SCRAM_ARCH
 #echo "--> Sourcing Christophs script"
 #source /shome/naegelic/root/bin/thisroot.csh
 #echo "--> Sourced Christophs script"
 cd $CMSSW/src
-eval `scramv1 runtime -csh`
+#eval `scramv1 runtime -csh`
 setenv LD_LIBRARY_PATH /swshare/glite/d-cache/dcap/lib/:${LD_LIBRARY_PATH}
 pwd
 
 echo "--> Extract tar file"
 date
 tar zxf ../../$JOB.tar.gz
-####echo "--> Building HeavyFlavorObjects"
-####cd AnalysisDataFormats/HeavyFlavorObjects
-####make 
-####cd - 
-####echo "--> Building TreeReader"
+echo "--> Building HeavyFlavorObjects"
+cd AnalysisDataFormats/HeavyFlavorObjects
+make clean; make
+cd - 
+echo "--> Building TreeReader"
+cd HeavyFlavorAnalysis/Bs2MuMu/macros
+make clean; make
+cd -
+echo "--> Building TreeReader2"
 cd HeavyFlavorAnalysis/Bs2MuMu/macros2
-####make
+make clean; make
 mkdir -p chains
 mv ../../../../../$JOB chains/
 cd -
