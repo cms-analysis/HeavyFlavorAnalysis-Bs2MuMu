@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
   if (!(!bias_s.compare("no") || !bias_s.compare("c+") || !bias_s.compare("c-") || !bias_s.compare("tau+") || !bias_s.compare("tau-") || !bias_s.compare("sig+") || !bias_s.compare("sig-"))) { cout << "I don't understand what to bias: please enter -bias c+, c-, tau+, tau-, sig+, sig-" << endl; exit(EXIT_FAILURE);}
   if (!pdf_test_b) pdf_test = pdf_toy;
 
-  pdf_toyMC toy1(print, inputs, inputs_bdt, input_estimates, meth, "all", BF, SM, bd_const, simul, simul_bdt, pee, bdt_fit, ch_s, sig_meth, asimov, syst, bias_s);
+  pdf_toyMC toy1(print, inputs, inputs_bdt, input_estimates, meth, "all", BF, SM, bd_const, simul, simul_bdt, pee, bdt_fit, ch_s, sig_meth, asimov, syst, NExp, bias_s);
   toy1.initialize();
   TFile* input_f = new TFile(input_name.c_str());
   RooWorkspace* ws = (RooWorkspace*)input_f->Get("ws");
@@ -39,8 +39,8 @@ int main(int argc, char** argv) {
   ws->Print();
   toy1.setnewlumi();
   toy1.setsyst();
-  if (roomcs) toy1.mcstudy(NExp, pdf_toy, pdf_test);
-  if (!roomcs) toy1.generate(NExp, pdf_toy, pdf_test);
+  if (roomcs) toy1.mcstudy(pdf_toy, pdf_test);
+  if (!roomcs) toy1.generate(pdf_toy, pdf_test);
   return EXIT_SUCCESS;
 }
 

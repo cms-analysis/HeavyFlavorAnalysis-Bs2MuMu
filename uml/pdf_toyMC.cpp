@@ -7,7 +7,7 @@
 
 #include "pdf_toyMC.h"
 
-pdf_toyMC::pdf_toyMC(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, string bias): pdf_fitData( print,  inputs,  inputs_bdt,  input_estimates,  meth,  range, BF, SM,  bd_constr,  simul,  simulbdt,  pee_,  bdt_fit,  ch_s,  sig, asimov, syste) {
+pdf_toyMC::pdf_toyMC(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, int nexp, string bias): pdf_fitData( print,  inputs,  inputs_bdt,  input_estimates,  meth,  range, BF, SM,  bd_constr,  simul,  simulbdt,  pee_,  bdt_fit,  ch_s,  sig, asimov, syste, nexp) {
   cout << "pdf_toyMC constructor" << endl;
   bias_ = bias;
 }
@@ -16,7 +16,7 @@ pdf_toyMC::~pdf_toyMC() {
   cout << "pdf_toyMC destructor" << endl;
 }
 
-void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
+void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
 
   if (!simul_) channels = 1;
   if (!simul_bdt_) channels_bdt = 1;
@@ -557,7 +557,7 @@ void pdf_toyMC::unset_constant() {
   }
 }
 
-void pdf_toyMC::mcstudy(int NExp, string pdf_toy, string test_pdf) {
+void pdf_toyMC::mcstudy(string pdf_toy, string test_pdf) {
 
   if (!simul_bdt_) {
     for (int i = 0; i < channels; i++) {

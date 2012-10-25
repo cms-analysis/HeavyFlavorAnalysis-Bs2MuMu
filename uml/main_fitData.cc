@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
   if (SM && bd_const) help();
   if (simul && channel) help();
 
-  pdf_fitData* fitdata = new pdf_fitData(false, inputs, inputs_bdt, input_estimates, meth, "all", BF, SM, bd_const, simul, simul_bdt, pee, bdt_fit, ch_s, sig_meth, asimov, syst);
+  pdf_fitData* fitdata = new pdf_fitData(false, inputs, inputs_bdt, input_estimates, meth, "all", BF, SM, bd_const, simul, simul_bdt, pee, bdt_fit, ch_s, sig_meth, asimov, syst, NExp);
   fitdata->initialize();
   fitdata->make_pdf_input();
   fitdata->make_pdf();
@@ -79,6 +79,7 @@ int main(int argc, char** argv) {
     //  fitdata->BF("./input/anaBmm.plotResults.default-11.tex", "input/external_numbers.txt");
   }
   //if (systname!="") fitdata->parse_systematics(systname);
+  fitdata->proof = proof;
   fitdata->significance();
   fitdata->save();
   return EXIT_SUCCESS;

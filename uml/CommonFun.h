@@ -37,6 +37,7 @@ static int ch_bdt_i = -1;
 static int inputs = 1;
 static int inputs_bdt = 1;
 static int sig_meth = -1;
+static int proof = 1;
 bool syst = false;
 static string cuts = "bdt>-10.";
 static string years_opt = "0";
@@ -85,6 +86,8 @@ void help() {
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << "-asimov \t asimov dataset for significance estimation" << endl;
   cout << "-syst \t adding syst constraints" << endl;
+  cout << "-proof # \t enable PROOF with # workers" << endl;
+  cout << "-nexp # \t number of experiments (default 1)" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -249,6 +252,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-newcomb")) {
       newcomb = true;
       cout << "new combinatorial bkg" << endl;
+    }
+    if (!strcmp(argv[i],"-proof")) {
+      proof = atoi(argv[i+1]);
+      cout << "PROOF with " << proof << " workers" << endl;
     }
     if (!strcmp(argv[i],"-h")) help();
   }

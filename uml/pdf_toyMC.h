@@ -30,11 +30,11 @@
 
 class pdf_toyMC : public pdf_fitData {
 public:
-  pdf_toyMC(bool print, int inputs = 1, int inputs_bdt = 1, string input_estimates = "", string meth = "bdt", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, bool simul = false, bool simulbdt = false, bool pee_ = false, bool bdt_fit = false, string ch_s = "0", int sig = -1, bool asimov = false, bool syste = false, string bias = "no");
+  pdf_toyMC(bool print, int inputs = 1, int inputs_bdt = 1, string input_estimates = "", string meth = "bdt", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, bool simul = false, bool simulbdt = false, bool pee_ = false, bool bdt_fit = false, string ch_s = "0", int sig = -1, bool asimov = false, bool syste = false, int nexp = 10, string bias = "no");
   ~pdf_toyMC();
 
-  void generate(int NExp, string pdf_toy, string test_pdf = "total");
-  void mcstudy(int NExp, string pdf_toy, string test_pdf = "total");
+  void generate(string pdf_toy, string test_pdf = "total");
+  void mcstudy(string pdf_toy, string test_pdf = "total");
   void unset_constant();
 
 private:

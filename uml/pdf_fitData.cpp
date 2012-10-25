@@ -1,6 +1,6 @@
 #include "pdf_fitData.h"
 
-pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste): pdf_analysis(print, meth, ch_s, range, BF, SM, bd_constr, simul, simulbdt, pee_, bdt_fit) {
+pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, int nexp): pdf_analysis(print, meth, ch_s, range, BF, SM, bd_constr, simul, simulbdt, pee_, bdt_fit) {
   cout << "fitData constructor" << endl;
   channels = inputs;
   channels_bdt = inputs_bdt;
@@ -40,6 +40,8 @@ pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_es
   if (simul_ && BF_ == 0) pdfname = "pdf_ext_simul_simple";
   if (simul_ && BF_ > 0 && !syst) pdfname = "pdf_ext_simul_noconstr";
   if (simul_ && BF_ > 0 && syst) pdfname = "pdf_ext_simul";
+
+  NExp = nexp;
 
 }
 
@@ -944,10 +946,10 @@ void pdf_fitData::sig_plhts() {
   if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
 
   ProofConfig* pc = NULL;
-  pc = new ProofConfig(*ws_, 2, "workers=2", kTRUE); // machine with 4 cores
+  pc = new ProofConfig(*ws_, proof, Form("workers=%d", proof), kTRUE); // machine with 4 cores
 
-  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 1000);
-  //if(pc) mcSampler_pl->SetProofConfig(pc);
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, NExp);
+  if(pc && proof > 1) mcSampler_pl->SetProofConfig(pc);
 
   FrequentistCalculator frequCalc(*ws_->data("global_data"), *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();
@@ -972,7 +974,12 @@ void pdf_fitData::sig_hybrid_plhts() {
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(pdfname.c_str()));
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
-  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 1000);
+
+  ProofConfig* pc = NULL;
+  pc = new ProofConfig(*ws_, proof, Form("workers=%d", proof), kTRUE); // machine with 4 cores
+
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, NExp);
+  if(pc && proof > 1) mcSampler_pl->SetProofConfig(pc);
 
   HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
   hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
@@ -994,7 +1001,12 @@ void pdf_fitData::sig_hybrid_roplhts() {
   RatioOfProfiledLikelihoodsTestStat ropl_ts(*H1->GetPdf(),*H0->GetPdf(), ws_->set("poi"));
   ropl_ts.SetSubtractMLE(false);
   if (pee) ropl_ts.SetConditionalObservables(*ws_->set("CO"));
-  ToyMCSampler *mcSampler_pl = new ToyMCSampler(ropl_ts, 100);
+
+  ProofConfig* pc = NULL;
+  pc = new ProofConfig(*ws_, proof, Form("workers=%d", proof), kTRUE); // machine with 4 cores
+
+  ToyMCSampler *mcSampler_pl = new ToyMCSampler(ropl_ts, NExp);
+  if(pc && proof > 1) mcSampler_pl->SetProofConfig(pc);
 
   HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
   hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
