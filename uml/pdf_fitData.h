@@ -56,6 +56,8 @@ class pdf_fitData : public pdf_analysis {
 
   protected:
 
+    void randomize_constraints(RooWorkspace* ws);
+
     string input_estimates_;
     vector <double> estimate_bs;
     vector <double> estimate_bd;
@@ -90,7 +92,8 @@ class pdf_fitData : public pdf_analysis {
     vector <vector <double> > systematics2D_comb;
     vector <vector <double> > systematics2D_channel;
 
-    bool syst;
+
+    string pdfname;
 
   private:
 

@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
             if (cuts_f_b && bdt_t < cuts_v[0 + 2*yy]) continue;
           }
           else {
-            if (cuts_f_b && bdt_t < 0.1) continue;
+            if (cuts_f_b && bdt_t < 0.1) continue; // give some statistics to comb!
           }
         }
         else {
@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
             if (cuts_f_b && bdt_t < cuts_v[1 + 2*yy]) continue;
           }
           else {
-            if (cuts_f_b && bdt_t < 0.1) continue;
+            if (cuts_f_b && bdt_t < 0.1) continue; // give some statistics to comb!
           }
         }
         /// bdt channels

@@ -108,6 +108,14 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
   else {
     pdf_name = "simul";
     pdf_test_= "simul";
+    if (BF_ == 0) {
+      pdf_name = "simul_simple";
+      pdf_test_= "simul_simple";
+    }
+    else if (!syst) {
+      pdf_name = "simul_noconstr";
+      pdf_test_= "simul_noconstr";
+    }
   }
   bool bd_b = false, corr0 = false, corrneg = false;
   vector < vector < Double_t > > estimate_bs_formula(channels, vector < Double_t > (channels_bdt, 0.));
@@ -142,12 +150,8 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
         ws_temp->var(name("N_comb", j))->setConstant(kFALSE);
         if (BF_ > 0) {
           ws_temp->var("BF_bs")->setVal(Bs2MuMu_SM_BF_val);
-          ws_temp->var("K_cor_var_bs")->setVal(K_cor_bs);
-          ws_temp->var(name("K_unc_var_bs", j))->setVal(k_unc_bs[j]);
           if (BF_ > 1) {
             ws_temp->var("BF_bd")->setVal(Bs2MuMu_SM_BF_val);
-            ws_temp->var("K_cor_var_bd")->setVal(K_cor_bs);
-            ws_temp->var(name("K_unc_var_bd", j))->setVal(k_unc_bs[j]);
           }
         }
       }
@@ -167,16 +171,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
       }
     }
 /// generation
-    if (syst) { //generating random constrains
-      RooDataSet* cor_ds = ws_temp->pdf("k_cor_gau_bs")->generate(RooArgSet(*ws_temp->var("K_cor_var_bs")), 1);
-      ws_temp->var("K_cor_var_bs")->setVal(cor_ds->get(0)->getRealValue("K_cor_var_bs"));
-      for (int i = 0; i < channels; i++) {
-        for (int j = 0; j < channels_bdt; j++) {
-          RooDataSet* unc_ds =  ws_temp->pdf(name("k_unc_gau_bs", i, j))->generate(RooArgSet(*ws_temp->var(name("K_unc_var_bs", i, j))), 1);
-          ws_temp->var(name("K_unc_var_bs", i, j))->setVal(unc_ds->get(0)->getRealValue(name("K_unc_var_bs", i, j)));
-        }
-      }
-    }
+    if (syst) randomize_constraints(ws_temp);
 
     if (channels == 1) { /// 1D non simul 1 channel
       if (pdf_toy_ == "total") { /// 1D non simul total channel
@@ -196,7 +191,7 @@ void pdf_toyMC::generate(int NExp, string pdf_toy, string test_pdf) {
       RooCategory* cat = (RooCategory*)ws_temp->obj("etacat");
       data->addColumn(*cat);
       RooArgSet vars(*ws_temp->var("Mass"), *ws_temp->var("bdt"), *ws_temp->var("MassRes"), *cat);
-      /*if (BF_==0) */data = ws_temp->pdf("pdf_ext_simul")->generate(vars, Extended(1));
+      /*if (BF_==0) */data = ws_temp->pdf(pdfname.c_str())->generate(vars, Extended(1));
 //      else data = ws_temp->pdf("pdf_ext_simul_test")->generate(vars, Extended(1));
     }
     else { /// 2D
@@ -595,13 +590,21 @@ void pdf_toyMC::mcstudy(int NExp, string pdf_toy, string test_pdf) {
   if (pdf_toy != "total") {
     pdf_name = "pdf_ext_" + define_pdf_sum(pdf_toy);
   }
-  if (simul_) pdf_name = "pdf_ext_simul";
+  if (simul_) {
+    pdf_name = "pdf_ext_simul";
+    if (BF_ == 0) pdf_name = "pdf_ext_simul_simple";
+    else if (!syst) pdf_name = "pdf_ext_simul_noconstr";
+  }
 
   pdf_test_= "pdf_ext_total";
   if (test_pdf != "total") {
     pdf_test_ = "pdf_ext_" + define_pdf_sum(test_pdf);
   }
-  if (simul_) pdf_test_ = "pdf_ext_simul";
+  if (simul_) {
+    pdf_test_ = "pdf_ext_simul";
+    if (BF_ == 0) pdf_test_ = "pdf_ext_simul_simple";
+    else if (!syst) pdf_test_ = "pdf_ext_simul_noconstr";
+  }
 
   RooArgSet obsv(*ws_->var("Mass"), *ws_->var("bdt"), "obsv");
   if (simul_ && !simul_bdt_) obsv.add(*ws_->cat("etacat"));
@@ -806,7 +809,7 @@ void pdf_toyMC::print(string output, RooWorkspace* ws) {
         if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
       }
       else {
-        if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_semi" || name=="pdf_comb") {
+        if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_semi" || name=="pdf_comb" || name=="pdf_peak") {
           ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
           if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
         }

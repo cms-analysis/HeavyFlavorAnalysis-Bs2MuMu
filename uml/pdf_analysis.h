@@ -167,11 +167,13 @@ protected:
   double Jpsi2MuMu_BF_err;
   double Bu2JpsiK_BF_err;
 
-  double K_cor_bs;
-  double K_cor_bd;
+  double one_over_BRBR_val;
+  double one_over_BRBR_err;
 
-  vector <double> k_unc_bs;
-  vector <double> k_unc_bd;
+  vector <double> effratio_bs_val;
+  vector <double> effratio_bd_val;
+  vector <double> effratio_bs_err;
+  vector <double> effratio_bd_err;
 
   vector <double> eff_bd_val;
   vector <double> eff_bs_val;
@@ -187,6 +189,7 @@ protected:
   vector <double> BF_bs_err;
   vector <double> BF_bd_err;
 
+  bool syst;
 private:
 
 };

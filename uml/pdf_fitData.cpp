@@ -36,6 +36,11 @@ pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_es
 
   syst = syste;
 
+  pdfname = "pdf_ext_total";
+  if (simul_ && BF_ == 0) pdfname = "pdf_ext_simul_simple";
+  if (simul_ && BF_ > 0 && !syst) pdfname = "pdf_ext_simul_noconstr";
+  if (simul_ && BF_ > 0 && syst) pdfname = "pdf_ext_simul";
+
 }
 
 pdf_fitData::~pdf_fitData() {
@@ -165,11 +170,7 @@ bool pdf_fitData::parse(char *cutName, float cut) {
 
 void pdf_fitData::fit_pdf(bool do_not_import) {
   cout << "fitting fit" << endl;
-  string pdfname;
-  if (simul_ || simul_bdt_) {
-    pdfname = "pdf_ext_simul";
-  }
-  else {
+  if (!(simul_ || simul_bdt_)) {
     pdfname = "pdf_ext_total";
     RooAbsData* subdata = global_data->reduce(Form("etacat==etacat::etacat_%d", channel));
     global_data = (RooDataSet*)subdata;
@@ -263,7 +264,7 @@ void pdf_fitData::print_each_channel() {
       }
       if (pee) projw_set.add(*ws_->var("MassRes"));
 
-      RooPlot* final_p = ws_->var("Mass")->frame(Bins(20), Title(title.c_str()));
+      RooPlot* final_p = ws_->var("Mass")->frame(Bins(40), Title(title.c_str()));
       global_data->plotOn(final_p, Cut(cut.c_str()));
       ws_->pdf("pdf_ext_simul")->plotOn(final_p, VisualizeError(*RFR, 1), FillColor(kYellow), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_), MoveToBack());
       ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_), LineColor(kBlue), LineWidth(3));
@@ -430,16 +431,7 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TT
   if (!random) FillRooDataSet(global_data, cut_b, cut_, cuts, tree, offset);
   else {
  //   RooRandom::randomGenerator()->SetSeed(3456);
-    if (syst) { //generating random constrains
-      RooDataSet* cor_ds = ws_->pdf("k_cor_gau_bs")->generate(RooArgSet(*ws_->var("K_cor_var_bs")), 1);
-      ws_->var("K_cor_var_bs")->setVal(cor_ds->get(0)->getRealValue("K_cor_var_bs"));
-      for (int i = 0; i < channels; i++) {
-        for (int j = 0; j < channels_bdt; j++) {
-          RooDataSet* unc_ds =  ws_->pdf(name("k_unc_gau_bs", i, j))->generate(RooArgSet(*ws_->var(name("K_unc_var_bs", i, j))), 1);
-          ws_->var(name("K_unc_var_bs", i, j))->setVal(unc_ds->get(0)->getRealValue(name("K_unc_var_bs", i, j)));
-        }
-      }
-    }
+    if (syst) randomize_constraints(ws_);
 
     if (!simul_ && !simul_bdt_) {
       ws_->var("N_bs")->setVal(estimate_bs[ch_i_]);
@@ -523,7 +515,8 @@ void pdf_fitData::make_pdf_input() {
   if (simul_) root_s = "output/ws_simul" + inputs_oss.str() + "_" + meth_;
   if (simul_bdt_) root_s += "_simulBdt";
   string tail_s;
-  if (BF_) tail_s = Form("_BF%d", BF_);
+//  if (BF_) tail_s = Form("_BF%d", BF_);
+  tail_s = "_BF2";
   if (SM_) tail_s = "_SM";
   else if (bd_constr_) tail_s = "_BdConst";
   if (bdt_fit_) tail_s += "_2D";
@@ -586,20 +579,24 @@ void pdf_fitData::make_pdf() {
 
 void pdf_fitData::setsyst() {
   if (BF_ > 0) {
-    ws_->var("K_cor_var_bs")->setConstant(!syst);
+    ws_->var("fs_over_fu")->setConstant(!syst);
+    ws_->var("one_over_BRBR")->setConstant(!syst);
     for (int i = 0; i < channels; i++) {
       for (int j = 0; j < channels_bdt; j++) {
-        ws_->var(name("K_unc_var_bs", i, j))->setConstant(!syst);
+        ws_->var(name("N_bu", i, j))->setConstant(!syst);
+        ws_->var(name("effratio_bs", i, j))->setConstant(!syst);
+        if (BF_ > 1) ws_->var(name("effratio_bd", i, j))->setConstant(!syst);
       }
     }
     RooArgSet constraints("constr");
     if (syst) {
-      constraints.add(*ws_->var("K_cor_var_bs"));
-      //   if (BF_ > 1) constraints.add(*ws_->var("K_cor_var_bd"));
+      constraints.add(*ws_->var("fs_over_fu"));
+      constraints.add(*ws_->var("one_over_BRBR"));
       for (int i = 0; i < channels; i++) {
         for (int j = 0; j < channels; j++) {
-          constraints.add(*ws_->var(name("K_unc_var_bs", i, j)));
-          //       if (BF_ > 1) constraints.add(*ws_->var(name("K_unc_var_bd", i, j)));
+          constraints.add(*ws_->var(name("N_bu", i, j)));
+          constraints.add(*ws_->var(name("effratio_bs", i, j)));
+          if (BF_ > 1) constraints.add(*ws_->var(name("effratio_bd", i, j)));
         }
       }
     }
@@ -665,9 +662,7 @@ Double_t pdf_fitData::sig_hand() {
   /// by hand
   Double_t minNLL = RFR->minNll();
   RooRealVar *arg_var = 0;
-  RooArgSet *all_vars;
-  if (simul_) all_vars = ws_->pdf("pdf_ext_simul")->getVariables();
-  else all_vars = ws_->pdf("pdf_ext_total")->getVariables();
+  RooArgSet *all_vars = ws_->pdf(pdfname.c_str())->getVariables();
   TIterator* vars_it = all_vars->createIterator();
   size_t found;
   while ( (arg_var = (RooRealVar*)vars_it->Next())) {
@@ -678,10 +673,10 @@ Double_t pdf_fitData::sig_hand() {
       arg_var->setVal(0.0);
       arg_var->setConstant(1);
     }
-    if (BF_ > 0) {
-      found = name.find("var_bs");
-      if (found != string::npos) arg_var->setConstant(1);
-    }
+//    if (BF_ > 0) {
+//      found = name.find("var_bs");
+//      if (found != string::npos) arg_var->setConstant(1);
+//    }
 //    found = name.find("N_bd");
 //    if (found!=string::npos) {
 //      arg_var->setVal(0.0);
@@ -703,10 +698,10 @@ Double_t pdf_fitData::sig_hand() {
     if (BF_==0) found = name.find("N_bs");
     else found = name.find("BF_bs");
     if (found != string::npos) arg_var->setConstant(0);
-    if (BF_ > 0) {
-      found = name.find("var_bs");
-      if (found != string::npos) arg_var->setConstant(1);
-    }
+//    if (BF_ > 0) {
+//      found = name.find("var_bs");
+//      if (found != string::npos) arg_var->setConstant(0);
+//    }
 //    found = name.find("N_bd");
 //    if (found!=string::npos) arg_var->setConstant(0);
     if (SM_ || bd_constr_) {
@@ -735,8 +730,8 @@ void pdf_fitData::sig_plhc() {
     CO.add(*ws_->var("MassRes"));
   }
   model.SetWorkspace(*ws_);
-  if (simul_) model.SetPdf(*ws_->pdf("pdf_ext_simul"));
-  else model.SetPdf(*ws_->pdf("pdf_ext_total"));
+  model.SetPdf(*ws_->pdf(pdfname.c_str()));
+
   if (BF_==0) {
     for (int i = 0; i < channels; i++) {
       for (int j = 0; j < channels_bdt; j++) {
@@ -752,12 +747,12 @@ void pdf_fitData::sig_plhc() {
   else {
     poi.add(*ws_->var("BF_bs"));
     poi.setRealValue("BF_bs", 0);
-    poi.add(*ws_->var("K_cor_var_bs"));
+//    poi.add(*ws_->var("K_cor_var_bs"));
 //    poi.setRealValue("K_cor_var_bs", 1.);
-    for (int i = 0; i < channels; i++) {
-      poi.add(*ws_->var(name("K_unc_var_bs", i)));
+//    for (int i = 0; i < channels; i++) {
+//      poi.add(*ws_->var(name("K_unc_var_bs", i)));
 //      poi.setRealValue(name("K_unc_var_bs", i), 1.);
-    }
+//    }
   }
   if (bd_constr_) {
     poi.add(*ws_->var("Bd_over_Bs"));
@@ -780,9 +775,10 @@ void pdf_fitData::make_models() {
   vector <vector <double> > N_bd(channels, vector <double> (channels_bdt) );
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < channels_bdt; j++) {
-      if (BF_==0) N_bs[i][j] = ws_->var(name("N_bs", i, j))->getVal();
-      else N_bs[i][j] = ws_->function(name("N_bs", i, j))->getVal();
-      if (!SM_ && !bd_constr_) N_bd[i][j] = ws_->var(name("N_bd", i, j))->getVal();
+      if (BF_ == 0) N_bs[i][j] = ws_->var(name("N_bs", i, j))->getVal();
+      else N_bs[i][j] = ws_->function(name("N_bs_formula", i, j))->getVal();
+      if (!SM_ && !bd_constr_ && BF_ < 2) N_bd[i][j] = ws_->var(name("N_bd", i, j))->getVal();
+      else if (BF_ > 1) N_bd[i][j] = ws_->function(name("N_bd_formula", i, j))->getVal();
     }
   }
   /// obs
@@ -792,7 +788,7 @@ void pdf_fitData::make_models() {
 
   /// poi
   ostringstream name_poi;
-  if (BF_==0) {
+  if (BF_ == 0) {
     if (simul_) {
       for (int i = 0; i < channels; i++) {
         for (int j = 0; j < channels_bdt; j++) {
@@ -824,55 +820,52 @@ void pdf_fitData::make_models() {
       nuisanceParams.add(*ws_->var(name("N_semi", i, j)));
       if (!SM_ && !bd_constr_ && BF_ < 2) nuisanceParams.add(*ws_->var(name("N_bd", i, j)));
       if (BF_ > 0 && syst) {
-        nuisanceParams.add(*ws_->var(name("K_unc_var_bs", i, j)));
+        nuisanceParams.add(*ws_->var(name("effratio_bs", i, j)));
         if (BF_ > 1) {
-          nuisanceParams.add(*ws_->var(name("K_unc_var_bd", i, j)));
-        }
-      }
-    }
-  }
-  if (BF_ > 0 && syst) {
-    nuisanceParams.add(*ws_->var("K_cor_var_bs"));
-    if (BF_ > 1) {
-      nuisanceParams.add(*ws_->var("K_cor_var_bd"));
-    }
-  }
-  if (BF_ > 1) nuisanceParams.add(*ws_->var("BF_bd"));
-  ws_->defineSet("nui", nuisanceParams);
-
-  /// constrpar
-  RooArgSet constrpar;
-  for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < channels_bdt; j++) {
-      if (BF_ > 0) {
-        constrpar.add(*ws_->var(name("K_unc_var_bs", i, j)));
-        if (BF_ > 1 && false) {
-          constrpar.add(*ws_->var(name("K_unc_var_bd", i, j)));
+          nuisanceParams.add(*ws_->var(name("effratio_bd", i, j)));
         }
       }
     }
   }
   if (BF_ > 0) {
-    nuisanceParams.add(*ws_->var("K_cor_var_bs"));
-    if (BF_ > 1 && false) {
-      nuisanceParams.add(*ws_->var("K_cor_var_bd"));
-    }
+    nuisanceParams.add(*ws_->var("fs_over_fu"));
+    nuisanceParams.add(*ws_->var("one_over_BRBR"));
   }
-  ws_->defineSet("constrpar", constrpar);
+  if (BF_ > 1) nuisanceParams.add(*ws_->var("BF_bd"));
+  ws_->defineSet("nui", nuisanceParams);
+
+  /// constrpar is constr
+//  RooArgSet constrpar;
+//  if (syst) {
+//    for (int i = 0; i < channels; i++) {
+//      for (int j = 0; j < channels_bdt; j++) {
+//        if (BF_ > 0) {
+//          constrpar.add(*ws_->var(name("effratio_bs", i, j)));
+//          if (BF_ > 1) {
+//            constrpar.add(*ws_->var(name("effratio_bd", i, j)));
+//          }
+//        }
+//      }
+//    }
+//    if (BF_ > 0) {
+//      constrpar.add(*ws_->var("fs_over_fu"));
+//      constrpar.add(*ws_->var("one_over_BRBR"));
+//    }
+//  }
+//  ws_->defineSet("constrpar", constrpar);
 
   ModelConfig* H0 = new ModelConfig("H0", "null hypothesis", ws_);
   RooArgSet CO;
   if (pee) {
     CO.add(*ws_->var("MassRes"));
-    H0->SetConditionalObservables(CO);
     ws_->defineSet("CO", "MassRes");
+    H0->SetConditionalObservables(*ws_->set("CO"));
   }
-  if (simul_) H0->SetPdf(*(RooSimultaneous*)ws_->pdf("pdf_ext_simul"));
-  else H0->SetPdf(*ws_->pdf("pdf_ext_total"));
+  H0->SetPdf(*(RooSimultaneous*)ws_->pdf(pdfname.c_str()));
   H0->SetParametersOfInterest(*ws_->set("poi"));
   H0->SetObservables(*ws_->set("obs"));
   H0->SetNuisanceParameters(*ws_->set("nui"));
-  if (BF_ > 0 && syst) H0->SetConstraintParameters(*ws_->set("constrpar"));
+  if (BF_ > 0 && syst) H0->SetConstraintParameters(*ws_->set("constr"));
   if (BF_ == 0) {
     if (simul_) {
       for (int i = 0; i < channels; i++) {
@@ -899,16 +892,15 @@ void pdf_fitData::make_models() {
 
   ModelConfig* H1 = new ModelConfig("H1", "background + signal hypothesis", ws_);
   if (pee) {
-    H1->SetConditionalObservables(CO);
+    H1->SetConditionalObservables(*ws_->set("CO"));
   }
-  if (simul_) H1->SetPdf(*ws_->pdf("pdf_ext_simul"));
-  else H1->SetPdf(*ws_->pdf("pdf_ext_total"));
+  H1->SetPdf(*ws_->pdf(pdfname.c_str()));
   H1->SetParametersOfInterest(*ws_->set("poi"));
   H1->SetObservables(*ws_->set("obs"));
   H1->SetNuisanceParameters(*ws_->set("nui"));
-  if (BF_ > 0 && syst) H1->SetConstraintParameters(*ws_->set("constrpar"));
+  if (BF_ > 0 && syst) H1->SetConstraintParameters(*ws_->set("constr"));
   parse_estimate();
-  if (BF_==0) {
+  if (BF_ == 0) {
     if (simul_) {
       for (int i = 0; i < channels; i++) {
         for (int j = 0; j < channels_bdt; j++) {
@@ -947,9 +939,7 @@ void pdf_fitData::sig_plhts() {
 
   ws_->Print();
 
-  string name_of_pdf = "pdf_ext_simul";
-  if (!simul_) name_of_pdf = "pdf_ext_total";
-  ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
+  ProfileLikelihoodTestStat pl_ts(*ws_->pdf(pdfname.c_str()));
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
 
@@ -979,9 +969,7 @@ void pdf_fitData::sig_hybrid_plhts() {
   make_prior();
   ws_->Print();
 
-  string name_of_pdf = "pdf_ext_simul";
-  if (!simul_) name_of_pdf = "pdf_ext_total";
-  ProfileLikelihoodTestStat pl_ts(*ws_->pdf(name_of_pdf.c_str()));
+  ProfileLikelihoodTestStat pl_ts(*ws_->pdf(pdfname.c_str()));
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
   ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, 1000);
@@ -1003,8 +991,6 @@ void pdf_fitData::sig_hybrid_roplhts() {
   make_prior();
   ws_->Print();
 
-  string name_of_pdf = "pdf_ext_simul";
-  if (!simul_) name_of_pdf = "pdf_ext_total";
   RatioOfProfiledLikelihoodsTestStat ropl_ts(*H1->GetPdf(),*H0->GetPdf(), ws_->set("poi"));
   ropl_ts.SetSubtractMLE(false);
   if (pee) ropl_ts.SetConditionalObservables(*ws_->set("CO"));
@@ -1036,7 +1022,7 @@ void pdf_fitData::make_prior() {
 //      prior_semi[i][j] = new RooGaussian(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
 //      prior_comb[i][j] = new RooGaussian(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal()), RooConst(ws_->var(name("N_comb", i, j))->getError()));
 
-      if (!SM_ && !bd_constr_ && !BF_==2) prior_bd[i][j] = new RooGamma(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
+      if (!SM_ && !bd_constr_ && BF_ < 2) prior_bd[i][j] = new RooGamma(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
       prior_semi[i][j] = new RooGamma(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
       prior_comb[i][j] = new RooGamma(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
 
@@ -1045,7 +1031,7 @@ void pdf_fitData::make_prior() {
       prior_list.add(*prior_comb[i][j]);
     }
   }
-  if (BF_==2) {
+  if (BF_ == 2) {
     //RooGaussian* prior_bf_bd = new RooGaussian("prior_bf_bd", "prior_bf_bd", *ws_->var("BF_bd"), RooConst(ws_->var("BF_bd")->getVal()), RooConst(ws_->var("BF_bd")->getError()));
     RooGamma* prior_bf_bd = new RooGamma("prior_bf_bd", "prior_bf_bd", *ws_->var("BF_bd"), RooConst(ws_->var("BF_bd")->getVal() + 1), RooConst(1.), RooConst(0.));
     prior_list.add(*prior_bf_bd);
@@ -1108,15 +1094,9 @@ void pdf_fitData::setnewlumi() {
   if (BF_ > 0) {
     for (int i = 0; i < channels; i++) {
       for (int j = 0; j < channels_bdt; j++) {
-        double old_val = ws_->var(name("K_unc_var_bs", i, j))->getVal();
-        ws_->var(name("K_unc_var_bs", i, j))->setVal(old_val / lumi);
-//        cout << "new " << name("K_unc_var_bs", i, j) << " expectations: " << ws_->var(name("K_unc_var_bs", i, j))->getVal() << " (channel " << i << "); ";
-        cout << "channel " << i << "; Bs expected: " << ws_->function(name("N_bs_formula", i, j))->getVal();
-        if (BF_>1) {
-          old_val = ws_->var(name("K_unc_var_bd", i, j))->getVal();
-          ws_->var(name("K_unc_var_bd", i, j))->setVal(old_val / lumi);
-          cout << ";  Bd expected: " << ws_->function(name("N_bd_formula", i, j))->getVal() << endl;
-        }
+        double old_val = ws_->var(name("N_bu", i, j))->getVal();
+        ws_->var(name("N_bu", i, j))->setVal(old_val * lumi);
+        cout << "channel " << i << "; Bs expected: " << ws_->function(name("N_bs_formula", i, j))->getVal() << "; Bd expected: " << ws_->function(name("N_bd_formula", i, j))->getVal() ;
       }
     }
   }
@@ -1273,4 +1253,31 @@ bool pdf_fitData::parse_sys(char *cutName, double cut) {
     }
   }
   return true;
+}
+
+void pdf_fitData::randomize_constraints(RooWorkspace* ws) {
+   //generating random constrains
+  if (BF_ == 0) {
+    cout << "no BF!" << endl;
+    return;
+  }
+
+  RooDataSet* fs_over_fu_ds = ws->pdf("fs_over_fu_gau")->generate(RooArgSet(*ws->var("fs_over_fu")), 1);
+  ws->var("fs_over_fu")->setVal(fs_over_fu_ds->get(0)->getRealValue("fs_over_fu"));
+
+  RooDataSet* one_over_BRBR_ds = ws->pdf("one_over_BRBR_gau")->generate(RooArgSet(*ws->var("one_over_BRBR")), 1);
+  ws->var("one_over_BRBR")->setVal(one_over_BRBR_ds->get(0)->getRealValue("one_over_BRBR"));
+
+  for (int i = 0; i < channels; i++) {
+    for (int j = 0; j < channels_bdt; j++) {
+      RooDataSet* B_bu_ds = ws->pdf(name("N_bu_gau_bs", i, j))->generate(RooArgSet(*ws->var(name("N_bu", i, j))), 1);
+      RooDataSet* effratio_bs_ds = ws->pdf(name("effratio_gau_bs", i, j))->generate(RooArgSet(*ws->var(name("effratio_bs", i, j))), 1);
+      ws->var(name("N_bu", i, j))->setVal(B_bu_ds->get(0)->getRealValue(name("N_bu", i, j)));
+      ws->var(name("effratio_bs", i, j))->setVal(effratio_bs_ds->get(0)->getRealValue(name("effratio_bs", i, j)));
+      if (BF_ > 1) {
+        RooDataSet* effratio_bd_ds = ws->pdf(name("effratio_gau_bd", i, j))->generate(RooArgSet(*ws->var(name("effratio_bd", i, j))), 1);
+        ws->var(name("effratio_bd", i, j))->setVal(effratio_bd_ds->get(0)->getRealValue(name("effratio_bd", i, j)));
+      }
+    }
+  }
 }
