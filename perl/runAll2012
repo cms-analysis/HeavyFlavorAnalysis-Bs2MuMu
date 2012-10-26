@@ -43,13 +43,17 @@ if ($opt_v) {
     , "signal Bd2MuMu MC mix"  
     => "-y 2012 -m,bmm2Reader.mix-Bd2MuMu,cbmm-$version-cms-BdToMuMu_BdFilter_8TeV-START53_V7A-v1-*,$version-cms-BdToMuMu.root"
     #
-    , "norm Bu2JpsiK MC mix V9"  
-    => "-y 2012 -m,bmm2Reader.mix-Bu2JpsiK,cbmm-$version-cms-BuToJPsiK_K2MuFilter_8TeV-START53_V7A-v1-*,$version-cms-BuToJpsiK-V9.root"
+    , "norm Bu2JpsiK MC mix acc"  
+    => "-y 2012 -m,bmm2Reader.mix-Bu2JpsiK,cbmm-$version-cms-BuToJPsiK_K2MuFilter_8TeV-START53_V7A-v1-*,$version-cms-accBuToJpsiK.root"
+    , "norm Bu2JpsiK MC mix overl"  
+    => "-y 2012 -m,bmm2Reader.mix-Bu2JpsiK,cbmm-$version-cms-BuToJPsiK_K2MuPtEtaEtaFilter-START53_V7A-v2-*,$version-cms-BuToJpsiK.root"
     #, "norm Bu2JpsiK MC mix 52X"  
     #=> "-y 2012 -m,bmm2Reader.mix-Bu2JpsiK,cbmm-$version-cms-BuToJPsiK_K2MuPtEtaEtaFilter-8TeV-START52_V9-v2-*,$version-cms-BuToJpsiK-52X.root"
     #
-    , "cs Bs2JpsiPhi MC mix"  
-    => "-y 2012 -m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-$version-cms-BsToJPsiPhi_2K2MuFilter_8TeV-START53_V7A-v1-*,$version-cms-BsToJpsiPhi.root"
+    , "cs Bs2JpsiPhi MC mix acc"  
+    => "-y 2012 -m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-$version-cms-BsToJPsiPhi_2K2MuFilter_8TeV-START53_V7A-v1-*,$version-cms-accBsToJpsiPhi.root"
+    , "cs Bs2JpsiPhi MC mix overl"  
+    => "-y 2012 -m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-$version-cms-BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-START53_V7A-v1-*,$version-cms-BsToJpsiPhi.root"
     #
 	, "data 2012"  
     => "-y 2012 -b 1,bmm2Reader.2012,cbmm-$version-Run2012*-PromptReco-v*,$version-2012-data.root"
