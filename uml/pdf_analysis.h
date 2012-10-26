@@ -190,6 +190,7 @@ protected:
   vector <double> BF_bd_err;
 
   bool syst;
+  bool randomsyst;
 private:
 
 };

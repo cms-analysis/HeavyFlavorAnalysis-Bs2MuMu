@@ -7,7 +7,7 @@
 
 #include "pdf_toyMC.h"
 
-pdf_toyMC::pdf_toyMC(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, int nexp, string bias): pdf_fitData( print,  inputs,  inputs_bdt,  input_estimates,  meth,  range, BF, SM,  bd_constr,  simul,  simulbdt,  pee_,  bdt_fit,  ch_s,  sig, asimov, syste, nexp) {
+pdf_toyMC::pdf_toyMC(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, bool randomsyste, int nexp, string bias): pdf_fitData( print,  inputs,  inputs_bdt,  input_estimates,  meth,  range, BF, SM,  bd_constr,  simul,  simulbdt,  pee_,  bdt_fit,  ch_s,  sig, asimov, syste, randomsyste, nexp) {
   cout << "pdf_toyMC constructor" << endl;
   bias_ = bias;
 }
@@ -151,7 +151,7 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
         if (BF_ > 0) {
           ws_temp->var("BF_bs")->setVal(Bs2MuMu_SM_BF_val);
           if (BF_ > 1) {
-            ws_temp->var("BF_bd")->setVal(Bs2MuMu_SM_BF_val);
+            ws_temp->var("BF_bd")->setVal(Bd2MuMu_SM_BF_val);
           }
         }
       }
@@ -250,7 +250,7 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
         // PULL
         double bs_pull, bd_pull, semi_pull, comb_pull, bs_residual, bd_residual;
         if (!simul_bdt_) {
-          if (BF_==0) bs_pull = (ws_temp->var(name("N_bs", i, j))->getVal() - estimate_bs[i]) / ws_temp->var(name("N_bs", i, j))->getError();
+          if (BF_ == 0) bs_pull = (ws_temp->var(name("N_bs", i, j))->getVal() - estimate_bs[i]) / ws_temp->var(name("N_bs", i, j))->getError();
           else {
             bs_residual = (ws_temp->function(name("N_bs_formula", i, j))->getVal() - estimate_bs_formula[i][0]);
 //            cout << ws_temp->function(name("N_bs_formula", i, j))->getVal()  << "  " << estimate_bs[i] << endl;
@@ -261,7 +261,7 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
           comb_pull = (ws_temp->var(name("N_comb", i, j))->getVal() - estimate_comb[i]) / ws_temp->var(name("N_comb", i, j))->getError();
         }
         else {
-          if (BF_==0) bs_pull = (ws_temp->var(name("N_bs", i, j))->getVal() - estimate2D_bs[i][j]) / ws_temp->var(name("N_bs", i, j))->getError();
+          if (BF_ == 0) bs_pull = (ws_temp->var(name("N_bs", i, j))->getVal() - estimate2D_bs[i][j]) / ws_temp->var(name("N_bs", i, j))->getError();
           else bs_residual = (ws_temp->function(name("N_bs_formula", i, j))->getVal() - estimate_bs_formula[i][j]);
           if (!(SM_ || bd_constr_|| BF_ == 2)) bd_pull = (ws_temp->var(name("N_bd", i, j))->getVal() - estimate2D_bd[i][j]) / ws_temp->var(name("N_bd", i, j))->getError();
           else if (BF_ == 2) bd_residual = (ws_temp->function(name("N_bd_formula", i, j))->getVal() - estimate_bd_formula[i][j]);
@@ -269,7 +269,7 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
           comb_pull = (ws_temp->var(name("N_comb", i, j))->getVal() - estimate2D_comb[i][j]) / ws_temp->var(name("N_comb", i, j))->getError();
         }
 
-        if (BF_==0) {
+        if (BF_ == 0) {
           pull_bs[i][j]->setVal(bs_pull);
           pull_rds_bs[i][j]->add(*pull_bs[i][j]);
         }
@@ -294,14 +294,14 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
         else correlation_h[i][j]->Fill(RFR->correlation(*ws_temp->var("BF_bs"), *ws_temp->var("BF_bd")));
       }
     }
-    if (BF_>0) {
+    if (BF_ > 0) {
       BF_bs_mean_h->Fill(ws_temp->var("BF_bs")->getVal());
       BF_bs_sigma_h->Fill(ws_temp->var("BF_bs")->getError());
       double BF_pull = (ws_temp->var("BF_bs")->getVal() - Bs2MuMu_SM_BF_val) / ws_temp->var("BF_bs")->getError();
       pull_BF_bs->setVal(BF_pull);
       pull_rds_BF_bs->add(*pull_BF_bs);
     }
-    if (BF_>1) {
+    if (BF_ > 1) {
       BF_bd_mean_h->Fill(ws_temp->var("BF_bd")->getVal());
       BF_bd_sigma_h->Fill(ws_temp->var("BF_bd")->getError());
       double BF_pull = (ws_temp->var("BF_bd")->getVal() - Bd2MuMu_SM_BF_val) / ws_temp->var("BF_bd")->getError();
@@ -322,10 +322,10 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
 
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < channels_bdt; j++) {
-      if (BF_==0) fit_pulls(pull_bs[i][j], pull_rds_bs[i][j], i, j);
-      if (BF_>0) fit_pulls(residual_bs[i][j], residual_rds_bs[i][j], i, j);
-      if (!(SM_ || bd_constr_ || BF_==2)) fit_pulls(pull_bd[i][j], pull_rds_bd[i][j], i, j);
-      else if (BF_==2) fit_pulls(residual_bd[i][j], residual_rds_bd[i][j], i, j);
+      if (BF_ == 0) fit_pulls(pull_bs[i][j], pull_rds_bs[i][j], i, j);
+      if (BF_ > 0) fit_pulls(residual_bs[i][j], residual_rds_bs[i][j], i, j);
+      if (!(SM_ || bd_constr_ || BF_ == 2)) fit_pulls(pull_bd[i][j], pull_rds_bd[i][j], i, j);
+      else if (BF_ == 2) fit_pulls(residual_bd[i][j], residual_rds_bd[i][j], i, j);
       fit_pulls(pull_semi[i][j], pull_rds_semi[i][j], i, j);
       fit_pulls(pull_comb[i][j], pull_rds_comb[i][j], i, j);
 
@@ -334,7 +334,7 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
       print_histos(semi_mean_h[i][j], i, j);
       print_histos(comb_mean_h[i][j], i, j);
 
-      if (BF_==0) print_histos(bs_sigma_h[i][j], i, j);
+      if (BF_ == 0) print_histos(bs_sigma_h[i][j], i, j);
       if (!(SM_ || bd_constr_)) print_histos(bd_sigma_h[i][j], i, j);
       print_histos(semi_sigma_h[i][j], i, j);
       print_histos(comb_sigma_h[i][j], i, j);
@@ -606,7 +606,8 @@ void pdf_toyMC::mcstudy(string pdf_toy, string test_pdf) {
     else if (!syst) pdf_test_ = "pdf_ext_simul_noconstr";
   }
 
-  RooArgSet obsv(*ws_->var("Mass"), *ws_->var("bdt"), "obsv");
+  RooArgSet obsv(*ws_->var("Mass"), "obsv");
+  if (bdt_fit_) obsv.add(*ws_->var("bdt"));
   if (simul_ && !simul_bdt_) obsv.add(*ws_->cat("etacat"));
   if (simul_bdt_) {
     cout << "RooMCStudy seems not to work with RooSuperCategory" << endl;
@@ -619,13 +620,13 @@ void pdf_toyMC::mcstudy(string pdf_toy, string test_pdf) {
   if (bias_.compare("no")) { /// bias
     RooWorkspace* fitws = (RooWorkspace*)ws_->Clone("fitws");
     do_bias(fitws);
-    mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv, FitModel(*fitws->pdf(pdf_name.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none()), syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none());
+    mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv, FitModel(*fitws->pdf(pdf_name.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), NumCPU(2))/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
   }
   else if (pdf_test_ == pdf_name) { /// same pdf
-    mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv, Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none()), syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none());
+    mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv, Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), NumCPU(2))/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
   }
   else { /// different pdf
-    mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv, FitModel(*ws_->pdf(pdf_test_.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none()), syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none());
+    mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv, FitModel(*ws_->pdf(pdf_test_.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), NumCPU(2))/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
   }
 
   vector <vector <RooDLLSignificanceMCSModule*> > sigModule(channels, vector <RooDLLSignificanceMCSModule*> (channels_bdt));

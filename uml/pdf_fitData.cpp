@@ -1,6 +1,6 @@
 #include "pdf_fitData.h"
 
-pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, int nexp): pdf_analysis(print, meth, ch_s, range, BF, SM, bd_constr, simul, simulbdt, pee_, bdt_fit) {
+pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, bool randomsyste, int nexp): pdf_analysis(print, meth, ch_s, range, BF, SM, bd_constr, simul, simulbdt, pee_, bdt_fit) {
   cout << "fitData constructor" << endl;
   channels = inputs;
   channels_bdt = inputs_bdt;
@@ -35,6 +35,7 @@ pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_es
   sign = sig;
 
   syst = syste;
+  randomsyst = randomsyste;
 
   pdfname = "pdf_ext_total";
   if (simul_ && BF_ == 0) pdfname = "pdf_ext_simul_simple";
@@ -178,7 +179,7 @@ void pdf_fitData::fit_pdf(bool do_not_import) {
     global_data = (RooDataSet*)subdata;
   }
   cout << "fitting " << global_data->GetName() << " in range " << range_ << " with " << pdfname << endl;
-  RFR = ws_->pdf(pdfname.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none()/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
+  RFR = ws_->pdf(pdfname.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none());
   if (!do_not_import) ws_->import(*global_data);
   if (verbosity > 0) RFR->Print();
 }
@@ -281,7 +282,7 @@ void pdf_fitData::print_each_channel() {
       final_p->Draw();
 
       // legend
-      RooArgSet* vars =  ws_->pdf("pdf_ext_simul")->getVariables();
+      RooArgSet* vars =  ws_->pdf(pdfname.c_str())->getVariables();
       RooRealVar* N_bs;
       if (BF_ == 0) N_bs = (RooRealVar*)vars->find(pdf_analysis::name("N_bs", i, j));
       else N_bs = (RooRealVar*)vars->find("BF_bs");
@@ -294,7 +295,7 @@ void pdf_fitData::print_each_channel() {
       RooRealVar* N_comb = (RooRealVar*)vars->find(pdf_analysis::name("N_comb", i, j));
       RooRealVar* N_semi = (RooRealVar*)vars->find(pdf_analysis::name("N_semi", i, j));
       vector <string> fitresult_tex_vec;
-      if (BF_==0) {
+      if (BF_ == 0) {
         ostringstream fitresult_tex;
         fitresult_tex << setprecision(2) << fixed << "N(B_{s}) = " << N_bs->getVal() << " ^{+" << getErrorHigh(N_bs) << "}_{" << getErrorLow(N_bs) << "}";
         fitresult_tex_vec.push_back(fitresult_tex.str());
@@ -329,7 +330,7 @@ void pdf_fitData::print_each_channel() {
         fitresult_tex << setprecision(2) << fixed << "N(B_{d}) / N(B_{s}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
         fitresult_tex_vec.push_back(fitresult_tex.str());
       }
-      else if (BF_ == 2) {
+      else if (BF_ > 1) {
         ostringstream fitresult_tex;
         fitresult_tex << setprecision(4) << scientific << "BF(B^{0}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
         fitresult_tex_vec.push_back(fitresult_tex.str());
@@ -358,7 +359,6 @@ void pdf_fitData::print_each_channel() {
 
       TPaveText* fitresults = new TPaveText(0.57, 0.66, 0.9, 0.9, "NDCR");
       for (unsigned int jj = 0; jj < fitresult_tex_vec.size(); jj++) {
-        //if (SM_ && jj == 1) continue;
         fitresults->AddText(fitresult_tex_vec[jj].c_str());
       }
       fitresults->SetFillColor(0);
@@ -960,7 +960,7 @@ void pdf_fitData::sig_plhts() {
 //  c_hypotest->Print("fig/ProfileLikelihoodTestStat.gif");
 //  delete plot;
 //  delete c_hypotest;
-  cout << "ProfileLikelihoodTestStat + frequentist: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << endl;
+  cout << "ProfileLikelihoodTestStat + frequentist: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << " \\pm " << htr_pl->SignificanceError() << endl;
 }
 
 void pdf_fitData::sig_hybrid_plhts() {
@@ -970,6 +970,9 @@ void pdf_fitData::sig_hybrid_plhts() {
 
   make_prior();
   ws_->Print();
+
+  H0->SetPriorPdf(*ws_->pdf("prior"));
+  H1->SetPriorPdf(*ws_->pdf("prior"));
 
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(pdfname.c_str()));
   pl_ts.SetOneSidedDiscovery(true);
@@ -987,7 +990,7 @@ void pdf_fitData::sig_hybrid_plhts() {
 
   HypoTestResult *htr_pl = hibrCalc.GetHypoTest();
   htr_pl->Print();
-  cout << "ProfileLikelihoodTestStat + hybrid: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << endl;
+  cout << "ProfileLikelihoodTestStat + hybrid: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << " \\pm " << htr_pl->SignificanceError() << endl;
 }
 
 void pdf_fitData::sig_hybrid_roplhts() {
@@ -997,6 +1000,9 @@ void pdf_fitData::sig_hybrid_roplhts() {
 
   make_prior();
   ws_->Print();
+
+  H0->SetPriorPdf(*ws_->pdf("prior"));
+  H1->SetPriorPdf(*ws_->pdf("prior"));
 
   RatioOfProfiledLikelihoodsTestStat ropl_ts(*H1->GetPdf(),*H0->GetPdf(), ws_->set("poi"));
   ropl_ts.SetSubtractMLE(false);
@@ -1014,29 +1020,29 @@ void pdf_fitData::sig_hybrid_roplhts() {
 
   HypoTestResult *htr_pl = hibrCalc.GetHypoTest();
   htr_pl->Print();
-  cout << "RatioOfProfiledLikelihoodsTestStat + hybrid: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << endl;
+  cout << "RatioOfProfiledLikelihoodsTestStat + hybrid: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << " \\pm " << htr_pl->SignificanceError() << endl;
 }
 
 void pdf_fitData::make_prior() {
-//  vector <vector <RooGaussian*> > prior_bd(channels, vector <RooGaussian*> (channels_bdt));
-//  vector <vector <RooGaussian*> > prior_semi(channels, vector <RooGaussian*> (channels_bdt));
-//  vector <vector <RooGaussian*> > prior_comb(channels, vector <RooGaussian*> (channels_bdt));
+  vector <vector <RooGaussian*> > prior_bd(channels, vector <RooGaussian*> (channels_bdt));
+  vector <vector <RooGaussian*> > prior_semi(channels, vector <RooGaussian*> (channels_bdt));
+  vector <vector <RooGaussian*> > prior_comb(channels, vector <RooGaussian*> (channels_bdt));
 
-  vector <vector <RooGamma*> > prior_bd(channels, vector <RooGamma*> (channels_bdt));
-  vector <vector <RooGamma*> > prior_semi(channels, vector <RooGamma*> (channels_bdt));
-  vector <vector <RooGamma*> > prior_comb(channels, vector <RooGamma*> (channels_bdt));
+//  vector <vector <RooGamma*> > prior_bd(channels, vector <RooGamma*> (channels_bdt));
+//  vector <vector <RooGamma*> > prior_semi(channels, vector <RooGamma*> (channels_bdt));
+//  vector <vector <RooGamma*> > prior_comb(channels, vector <RooGamma*> (channels_bdt));
 
   RooArgList prior_list("prior_list");
 
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < channels_bdt; j++) {
-//      if (!SM_ && !bd_constr_ && !BF_==2) prior_bd[i][j] = new RooGaussian(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal()), RooConst(ws_->var(name("N_bd", i, j))->getError()));
-//      prior_semi[i][j] = new RooGaussian(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
-//      prior_comb[i][j] = new RooGaussian(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal()), RooConst(ws_->var(name("N_comb", i, j))->getError()));
+      if (!SM_ && !bd_constr_ && !BF_==2) prior_bd[i][j] = new RooGaussian(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal()), RooConst(ws_->var(name("N_bd", i, j))->getError()));
+      prior_semi[i][j] = new RooGaussian(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
+      prior_comb[i][j] = new RooGaussian(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal()), RooConst(ws_->var(name("N_comb", i, j))->getError()));
 
-      if (!SM_ && !bd_constr_ && BF_ < 2) prior_bd[i][j] = new RooGamma(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
-      prior_semi[i][j] = new RooGamma(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
-      prior_comb[i][j] = new RooGamma(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
+//      if (!SM_ && !bd_constr_ && BF_ < 2) prior_bd[i][j] = new RooGamma(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
+//      prior_semi[i][j] = new RooGamma(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
+//      prior_comb[i][j] = new RooGamma(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
 
       prior_list.add(*prior_bd[i][j]);
       prior_list.add(*prior_semi[i][j]);
@@ -1044,8 +1050,8 @@ void pdf_fitData::make_prior() {
     }
   }
   if (BF_ == 2) {
-    //RooGaussian* prior_bf_bd = new RooGaussian("prior_bf_bd", "prior_bf_bd", *ws_->var("BF_bd"), RooConst(ws_->var("BF_bd")->getVal()), RooConst(ws_->var("BF_bd")->getError()));
-    RooGamma* prior_bf_bd = new RooGamma("prior_bf_bd", "prior_bf_bd", *ws_->var("BF_bd"), RooConst(ws_->var("BF_bd")->getVal() + 1), RooConst(1.), RooConst(0.));
+    RooGaussian* prior_bf_bd = new RooGaussian("prior_bf_bd", "prior_bf_bd", *ws_->var("BF_bd"), RooConst(ws_->var("BF_bd")->getVal()), RooConst(ws_->var("BF_bd")->getError()));
+//    RooGamma* prior_bf_bd = new RooGamma("prior_bf_bd", "prior_bf_bd", *ws_->var("BF_bd"), RooConst(ws_->var("BF_bd")->getVal() + 1), RooConst(1.), RooConst(0.));
     prior_list.add(*prior_bf_bd);
   }
 
@@ -1273,6 +1279,7 @@ void pdf_fitData::randomize_constraints(RooWorkspace* ws) {
     cout << "no BF!" << endl;
     return;
   }
+  if (!randomsyst) return;
 
   RooDataSet* fs_over_fu_ds = ws->pdf("fs_over_fu_gau")->generate(RooArgSet(*ws->var("fs_over_fu")), 1);
   ws->var("fs_over_fu")->setVal(fs_over_fu_ds->get(0)->getRealValue("fs_over_fu"));

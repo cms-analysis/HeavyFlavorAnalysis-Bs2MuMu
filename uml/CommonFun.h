@@ -39,6 +39,7 @@ static int inputs_bdt = 1;
 static int sig_meth = -1;
 static int proof = 1;
 bool syst = false;
+bool randomsyst = false;
 static string cuts = "bdt>-10.";
 static string years_opt = "0";
 bool input = false, output = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false, asimov = false;
@@ -86,6 +87,7 @@ void help() {
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << "-asimov \t asimov dataset for significance estimation" << endl;
   cout << "-syst \t adding syst constraints" << endl;
+  cout << "-randomsyst \t syst constraints are randomized" << endl;
   cout << "-proof # \t enable PROOF with # workers" << endl;
   cout << "-nexp # \t number of experiments (default 1)" << endl;
   cout << endl;
@@ -109,6 +111,7 @@ void help() {
   cout << "-sig # \t evaluate significance with method:" << endl << "\t\t 0 by hand; " << endl;
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << "-syst \t adding syst constraints" << endl;
+  cout << "-randomsyst \t syst constraints are randomized" << endl;
   cout << endl;
 
   exit(EXIT_SUCCESS);
@@ -248,6 +251,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-syst")) {
       syst = true;
       cout << "systematic constraints" << endl;
+    }
+    if (!strcmp(argv[i],"-randomsyst")) {
+      randomsyst = true;
+      cout << "constraints are randomized" << endl;
     }
     if (!strcmp(argv[i],"-newcomb")) {
       newcomb = true;

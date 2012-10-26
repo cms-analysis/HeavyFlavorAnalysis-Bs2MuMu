@@ -24,6 +24,9 @@ pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, i
   BF_ = BF;
   newcomb_ = false;
 
+  syst = false;
+  randomsyst = false;
+
 }
 
 void pdf_analysis::initialize () {
@@ -119,12 +122,12 @@ void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool su
   cout << " in range " << range_ << " with " << pdf_name << ":" << endl;
   ws_->pdf( pdf_name.c_str())->Print();
   if (!pee) {
-    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save(), Constrain(*ws_->set("constr")));
+    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save()/*, Constrain(*ws_->set("constr"))*/);
     if (print_) print(subdata);
   }
   else {
     cout << "WARNING: range option does not work with pee" << endl;
-    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, ConditionalObservables(*ws_->var("MassRes")), Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save(), Constrain(*ws_->set("constr")));
+    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, ConditionalObservables(*ws_->var("MassRes")), Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save()/*, Constrain(*ws_->set("constr"))*/);
     if (print_) print(subdata, pdf);
   }
   set_pdf_constant(pdf_name);
@@ -509,8 +512,8 @@ void pdf_analysis::define_bf(int i, int j) {
     RooRealVar BF_bs("BF_bs", "Bs2MuMu branching fraction", Bs2MuMu_SM_BF_val, 0., 1e-8);
     RooRealVar BF_bd("BF_bd", "Bd2MuMu branching fraction", Bd2MuMu_SM_BF_val, 0., 1e-8);
 
-    RooRealVar fs_over_fu("fs_over_fu", "fs_over_fu", fs_over_fu_val, fs_over_fu_val - 3*fs_over_fu_err, fs_over_fu_val + 3*fs_over_fu_err);
-    RooRealVar one_over_BRBR("one_over_BRBR", "one_over_BRBR", one_over_BRBR_val, one_over_BRBR_val - 3*one_over_BRBR_err, one_over_BRBR_val + 3*one_over_BRBR_err);
+    RooRealVar fs_over_fu("fs_over_fu", "fs_over_fu", fs_over_fu_val, fs_over_fu_val - 5*fs_over_fu_err, fs_over_fu_val + 5*fs_over_fu_err);
+    RooRealVar one_over_BRBR("one_over_BRBR", "one_over_BRBR", one_over_BRBR_val, one_over_BRBR_val - 5*one_over_BRBR_err, one_over_BRBR_val + 5*one_over_BRBR_err);
 
     ws_->import(BF_bs);
     ws_->import(BF_bd);
@@ -518,11 +521,11 @@ void pdf_analysis::define_bf(int i, int j) {
     ws_->import(one_over_BRBR);
   }
 
-  RooRealVar N_bu(name("N_bu", i, j), "N_bu", N_bu_val[i], N_bu_val[i] - 3*N_bu_err[i], N_bu_val[i] + 3*N_bu_err[i]);
+  RooRealVar N_bu(name("N_bu", i, j), "N_bu", N_bu_val[i], N_bu_val[i] - 5*N_bu_err[i], N_bu_val[i] + 5*N_bu_err[i]);
   ws_->import(N_bu);
 
-  RooRealVar effratio_bs(name("effratio_bs", i, j), "effratio_bs", effratio_bs_val[i], effratio_bs_val[i] - 3*effratio_bs_err[i], effratio_bs_val[i] + 3*effratio_bs_err[i]);
-  RooRealVar effratio_bd(name("effratio_bd", i, j), "effratio_bd", effratio_bd_val[i], effratio_bd_val[i] - 3*effratio_bd_err[i], effratio_bd_val[i] + 3*effratio_bd_err[i]);
+  RooRealVar effratio_bs(name("effratio_bs", i, j), "effratio_bs", effratio_bs_val[i], effratio_bs_val[i] - 5*effratio_bs_err[i], effratio_bs_val[i] + 5*effratio_bs_err[i]);
+  RooRealVar effratio_bd(name("effratio_bd", i, j), "effratio_bd", effratio_bd_val[i], effratio_bd_val[i] - 5*effratio_bd_err[i], effratio_bd_val[i] + 5*effratio_bd_err[i]);
 
   RooFormulaVar N_bs_constr(name("N_bs_formula", i, j), "N_bs(i) = BF * K(i)",  "@0*@1*@2*@3*@4", RooArgList( *ws_->var("BF_bs"), *ws_->var(name("N_bu", i, j)), *ws_->var("fs_over_fu"), effratio_bs, *ws_->var("one_over_BRBR")));
 
@@ -1055,7 +1058,8 @@ string pdf_analysis::get_address(string name, string pdf, bool channeling) {
   if (bd_constr_) address << "_BdConst";
   if (pee) address << "_PEE";
   if (bdt_fit_) address << "_2D";
-  if (syst) address << "_syst";
+  if (syst && !randomsyst) address << "_syst";
+  else if (syst && randomsyst) address << "_randomsyst";
   return address.str();
 }
 
