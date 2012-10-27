@@ -26,6 +26,7 @@ pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, i
 
   syst = false;
   randomsyst = false;
+  shapesyst = false;
 
 }
 
@@ -42,9 +43,16 @@ void pdf_analysis::initialize () {
   ws_ = new RooWorkspace("ws", "ws");
   Mass = new RooRealVar("Mass", "Candidate invariant mass", 4.90, 5.90, "GeV/c^{2}");
   ws_->import(*Mass);
-  ws_->var("Mass")->setRange("sb_lo", 4.90, 5.20);
+  massrange_names.resize(4);
+  massrange_names[0] = "sb_lo";
+  massrange_names[1] = "bd";
+  massrange_names[2] = "bs";
+  massrange_names[3] = "sb_hi";
+  ws_->var("Mass")->setRange(massrange_names[0].c_str(), 4.90, 5.20);
   ws_->var("Mass")->setRange("blind", 5.20, 5.45);
-  ws_->var("Mass")->setRange("sb_hi", 5.45, 5.90);
+  ws_->var("Mass")->setRange(massrange_names[1].c_str(), 5.20, 5.30);
+  ws_->var("Mass")->setRange(massrange_names[2].c_str(), 5.30, 5.45);
+  ws_->var("Mass")->setRange(massrange_names[3].c_str(), 5.45, 5.90);
   ws_->var("Mass")->setRange("overall", 4.90, 5.90);
 
   eta = new RooRealVar("eta", "Candidate pseudorapidity", -2.4, 2.4, "");
@@ -157,20 +165,43 @@ void pdf_analysis::define_bs(int i, int j) {
   RooRealVar Alpha_bs(name("Alpha_bs", i, j), "Alpha_bs", 2.8, 0.1, 3.0);
   RooRealVar Enne_bs(name("Enne_bs", i, j), "Enne_bs", 1., 0., 10.);
 
+  /// systematics
+  RooRealVar epsilon(name("epsilon_bs", i, j), "epsilon", -1., 1.);
+  RooUniform one("one", "one", *ws_->var("Mass"));
+  RooRealVar S0(name("S0", i, j), "S0", -5., 5.);
+  RooRealVar S1(name("S1", i, j), "S1", -5., 5.);
+  RooRealVar S2(name("S2", i, j), "S2", -5., 5.);
+  RooArgList poly_sys_coeffs(S0, S1, S2);
+  RooChebychev poly_sys_bs(name("poly_sys_bs", i, j), "poly_sys_bs", *ws_->var("Mass"), poly_sys_coeffs);
+  RooAddPdf pdf_sys_bs(name("pdf_sys_bs", i, j), "pdf_sys_bs", poly_sys_bs, one, epsilon);
+
   if (!pee) {
     RooRealVar Sigma2_bs(name("Sigma2_bs", i, j), "Sigma2_bs", 0.04, 0.005, 0.2);
     RooRealVar CoeffGauss_bs(name("CoeffGauss_bs", i, j), "CoeffGauss_bs", 0.5, 0., 1.);
 
     RooGaussian Gau_bs(name("Gau_bs", i, j), "Gau_bs", *ws_->var("Mass"), Mean_bs, Sigma_bs);
     RooCBShape CB_bs(name("CB_bs", i, j), "CB_bs", *ws_->var("Mass"), Mean_bs, Sigma2_bs, Alpha_bs, Enne_bs);
+    RooAddPdf pdf_bs_mass(name("pdf_bs_mass", i, j), "pdf_bs_mass", RooArgList(Gau_bs, CB_bs),  CoeffGauss_bs);
     if (!bdt_fit_) {
-      RooAddPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", RooArgList(Gau_bs, CB_bs),  CoeffGauss_bs);
-      ws_->import(pdf_bs);
+      if (!shapesyst) {
+        RooAddPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", RooArgList(Gau_bs, CB_bs),  CoeffGauss_bs);
+        ws_->import(pdf_bs);
+      }
+      else {
+        RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, pdf_sys_bs);
+        ws_->import(pdf_bs);
+      }
     }
     else {
-      RooAddPdf pdf_bs_mass(name("pdf_bs_mass", i, j), "pdf_bs_mass", RooArgList(Gau_bs, CB_bs),  CoeffGauss_bs);
-      RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
-      ws_->import(pdf_bs);
+      if (!shapesyst) {
+        RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
+        ws_->import(pdf_bs);
+      }
+      else {
+        RooProdPdf pdf_2D_bs(name("pdf_2D_bs", i, j), "pdf_2D_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
+        RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_2D_bs, pdf_sys_bs);
+        ws_->import(pdf_bs);
+      }
     }
   }
   else {
@@ -178,15 +209,27 @@ void pdf_analysis::define_bs(int i, int j) {
     RooFormulaVar SigmaRes_bs(name("SigmaRes_bs", i, j), "@0*@1", RooArgList(*ws_->var("MassRes"), PeeK_bs));
     ws_->import(SigmaRes_bs);
     RooCBShape CB_bs(name("CB_bs", i, j), "CB_bs", *ws_->var("Mass"), Mean_bs, *ws_->function(name("SigmaRes_bs", i, j)), Alpha_bs, Enne_bs);
+    RooProdPdf pdf_bs_mass(name("pdf_bs_mass", i, j), "pdf_bs_mass", *ws_->pdf(name("MassRes_pdf_bs", i, j)), Conditional(CB_bs, *ws_->var("Mass")));
     if (!bdt_fit_) {
-      RooProdPdf pdf_bs (name("pdf_bs", i, j), "pdf_bs", *ws_->pdf(name("MassRes_pdf_bs", i, j)), Conditional(CB_bs, *ws_->var("Mass")));
-      //    RooProdPdf pdf_bs (name("pdf_bs", i, j), "pdf_bs", *ws_->var("MassRes"), Conditional(CB_bs, *ws_->var("Mass")));
-      ws_->import(pdf_bs);
+      if (!shapesyst) {
+        RooProdPdf pdf_bs (name("pdf_bs", i, j), "pdf_bs", *ws_->pdf(name("MassRes_pdf_bs", i, j)), Conditional(CB_bs, *ws_->var("Mass")));
+        ws_->import(pdf_bs);
+      }
+      else {
+        RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, pdf_sys_bs);
+        ws_->import(pdf_bs);
+      }
     }
     else {
-      RooProdPdf pdf_bs_mass(name("pdf_bs_mass", i, j), "pdf_bs_mass", *ws_->pdf(name("MassRes_pdf_bs", i, j)), Conditional(CB_bs, *ws_->var("Mass")));
-      RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
-      ws_->import(pdf_bs);
+      if (!shapesyst) {
+        RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
+        ws_->import(pdf_bs);
+      }
+      else {
+        RooProdPdf pdf_2D_bs(name("pdf_2D_bs", i, j), "pdf_2D_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
+        RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_2D_bs, pdf_sys_bs);
+        ws_->import(pdf_bs);
+      }
     }
   }
 }
@@ -221,7 +264,6 @@ void pdf_analysis::define_bd(int i, int j) {
     RooCBShape CB_bd(name("CB_bd", i, j), "CB_bd", *ws_->var("Mass"), Mean_bd, *ws_->function(name("SigmaRes_bd", i, j)), Alpha_bd, Enne_bd);
     if (!bdt_fit_) {
       RooProdPdf pdf_bd (name("pdf_bd", i, j), "pdf_bd", *ws_->pdf(name("MassRes_pdf_bd", i, j)), Conditional(CB_bd, *ws_->var("Mass")));
-      //    RooProdPdf pdf_bd (name("pdf_bd", i, j), "pdf_bd", *ws_->var("MassRes"), Conditional(CB_bd, *ws_->var("Mass")));
       ws_->import(pdf_bd);
     }
     else {
@@ -485,6 +527,7 @@ void pdf_analysis::define_total_extended(int i, int j) {
   else {
     RooAddPdf pdf_ext_sum(name("pdf_ext_sum", i, j), "pdf_ext_sum", pdf_list, N_list);
     RooArgList constraints_list(*ws_->pdf(name("N_bu_gau_bs", i, j)), *ws_->pdf("fs_over_fu_gau"), *ws_->pdf(name("effratio_gau_bs", i, j)), *ws_->pdf("one_over_BRBR_gau"));
+    if (shapesyst) constraints_list.add(*ws_->pdf(name("shape_gau_bs", i, j)));
     if (BF_ > 1) {
       constraints_list.add(*ws_->pdf(name("effratio_gau_bd", i, j)));
     }
@@ -500,7 +543,7 @@ void pdf_analysis::define_total_extended(int i, int j) {
     N_list_test.add(*ws_->var(name("N_comb", i, j)));
     N_list_test.add(*ws_->var(name("N_semi", i, j)));
     N_list_test.add(*ws_->var(name("N_peak", i, j)));
-    RooAddPdf pdf_ext_total_test(name("pdf_ext_total_simple", i, j), "pdf_ext_total", pdf_list, N_list_test);
+    RooAddPdf pdf_ext_total_test(name("pdf_ext_total_simple", i, j), "pdf_ext_total_simple", pdf_list, N_list_test);
     ws_->import(pdf_ext_total_test);
   }
   return; 
@@ -556,6 +599,12 @@ void pdf_analysis::define_constraints(int i, int j) {
   ws_->import(effratio_gau_bs);
   RooGaussian effratio_gau_bd(name("effratio_gau_bd", i, j), "effratio_gau_bd", *ws_->var(name("effratio_bd", i, j)), RooConst(effratio_bd_val[i]), RooConst(effratio_bd_err[i]));
   ws_->import(effratio_gau_bd);
+
+  if (shapesyst) {
+    RooGaussian shape_gau_bs(name("shape_gau_bs", i, j), "shape_gau_bs", *ws_->var(name("epsilon_bs", i, j)), RooConst(0), RooConst(i%2==0? 0.016 : 0.079));
+  }
+
+
 }
 
 void pdf_analysis::define_simul(bool simulbdt) {
@@ -1210,16 +1259,17 @@ void pdf_analysis::setSBslope(RooAbsData *sb_data) {
       RooArgList list(C0/*, C1*/);
       RooChebychev pol("pol", "pol", *ws_->var("Mass"), list);
       sb_data_i->Print();
-      pol.fitTo(*sb_data_i, Range("sb_lo,sb_hi"));
+      expo_temp.fitTo(*sb_data_i, Range("sb_lo,sb_hi"));
       ws_->import(slope_comb);
       TCanvas c("c", "c", 600, 600);
       RooPlot* rp = ws_->var("Mass")->frame();
       sb_data_i->plotOn(rp, Binning(20));
-      pol.plotOn(rp);
-      pol.paramOn(rp);
+      expo_temp.plotOn(rp);
+      expo_temp.paramOn(rp);
       rp->Draw();
       c.Print((get_address("bkg_slope", Form("%d", i)) + ".gif").c_str());
       delete rp;
     }
   }
+  exit(0);
 }

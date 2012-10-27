@@ -191,6 +191,10 @@ protected:
 
   bool syst;
   bool randomsyst;
+  bool shapesyst;
+
+  vector <string> massrange_names;
+
 private:
 
 };

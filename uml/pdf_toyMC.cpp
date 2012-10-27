@@ -630,7 +630,7 @@ void pdf_toyMC::mcstudy(string pdf_toy, string test_pdf) {
   }
 
   vector <vector <RooDLLSignificanceMCSModule*> > sigModule(channels, vector <RooDLLSignificanceMCSModule*> (channels_bdt));
-  if (BF_==0) {
+  if (BF_ == 0) {
     for (int i = 0; i < channels; i++) {
       for (int j = 0; j < channels_bdt; j++) {
         sigModule[i][j] = new RooDLLSignificanceMCSModule(*ws_->var(name("N_bs", i, j)), 0);

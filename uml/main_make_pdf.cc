@@ -205,6 +205,10 @@ int main(int argc, char* argv[]) {
 //  RooAbsData* rad_rare = rds_rare;
 
   RooAbsData* rad_comb = rds_smalltree[13];
+  if (newcomb) {
+    ana1.newcomb_ = true;
+    ana1.setSBslope(rad_comb);
+  }
 
   for (int j = 0; j < inputs; j++) {
     for (int k = 0; k < inputs_bdt; k++) {
@@ -228,10 +232,7 @@ int main(int argc, char* argv[]) {
       }
     }
   }
-  if (newcomb) {
-    ana1.newcomb_ = true;
-    ana1.setSBslope(rad_comb);
-  }
+
   ana1.define_pdfs();
 
   if (simul) ana1.define_simul(simul_bdt);

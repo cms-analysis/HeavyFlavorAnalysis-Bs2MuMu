@@ -1300,3 +1300,72 @@ void pdf_fitData::randomize_constraints(RooWorkspace* ws) {
     }
   }
 }
+
+void pdf_fitData::extract_N_inRanges() {
+  if (BF_ < 2) return;
+  cout << "extracting events in ranges..." << endl;
+  string full_output = "output/yields.tex";
+  FILE* file_out = fopen(full_output.c_str(), "w");
+
+  string title_i[5] = {"$N_{B_s^0}$", "$N_{B^0}$", "$N_{\\mathrm{peak}}$", "$N_{\\mathrm{semi}}$", "$N_{\\mathrm{comb}}$"};
+  string N_i[5] = {"N_bs_formula", "N_bd_formula", "N_peak", "N_semi", "N_comb"};
+  string pdf_i[5] = {"pdf_bs", "pdf_bd", "pdf_peak", "pdf_semi", "pdf_comb"};
+
+  //fprintf(file_out, "N_peak_%d\t%f\n", i+offset, peak_exp[i]);
+  fprintf(file_out, "\\begin{table}\n");
+  fprintf(file_out, "\\centering\n");
+  fprintf(file_out, "\\caption{Final invariant mass yields evaluated with the UML}\n");
+  fprintf(file_out, "\\label{tab:UMLfinalyields}\n");
+  fprintf(file_out, "\\begin{tabular}{|l|c|c|c|c|c|}\n");
+  fprintf(file_out, "\\hline \n");
+
+  for (int i = 0; i < channels; i++) {
+    fprintf(file_out, "\\hline \n");
+    fprintf(file_out, " \\multicolumn{6}{|c|}{Channel: %s} \\\\ \n", i%2==0? "barrel" : "endcap");
+    fprintf(file_out, "\\hline \n");
+    fprintf(file_out, "Variable  & low SB & $B^0$ window & $B_s^0$ window & high SB & \\textbf{all} \\\\ \n");
+    fprintf(file_out, "\\hline \n");
+    for (int j = 0; j < channels_bdt; j++) {
+      vector < Double_t> total(5, 0.);
+      for (int l = 0; l < 5; l++) {
+        fprintf(file_out, "%s ", title_i[l].c_str());
+        for (unsigned int k = 0; k < massrange_names.size(); k++) {
+          RooAbsReal* rar = ws_->pdf(name(pdf_i[l].c_str(), i, j))->createIntegral(RooArgSet(*ws_->var("Mass")), RooArgSet(*ws_->var("Mass")), massrange_names[k].c_str());
+          Double_t N;
+          if (l < 2) {
+            RooAbsReal* rrv = ws_->function(name(N_i[l].c_str(), i, j));
+            N = rrv->getVal() * rar->getVal();
+          }
+          else {
+            RooRealVar* rrv = ws_->var(name(N_i[l].c_str(), i, j));
+            N = rrv->getVal() * rar->getVal();
+          }
+          fprintf(file_out, "& %.2f ", N);
+          total[k] += N;
+        }
+        Double_t N_all;
+        if (l < 2) {
+          N_all = ws_->function(name(N_i[l].c_str(), i, j))->getVal();
+        }
+        else {
+          N_all = ws_->var(name(N_i[l].c_str(), i, j))->getVal();
+        }
+        fprintf(file_out, "& %.2f ", N_all);
+        fprintf(file_out, " \\\\ \n");
+        total[4] += N_all;
+      }
+      fprintf(file_out, "\\hline \n");
+      fprintf(file_out, "$N_{\\mathrm{all}}$ ");
+      for (unsigned int k = 0; k < massrange_names.size() + 1; k++) {
+        fprintf(file_out, "& %.2f ", total[k]);
+      }
+      fprintf(file_out, " \\\\ \n");
+    }
+    fprintf(file_out, "\\hline \n");
+  }
+  fprintf(file_out, "\\end{tabular} \n");
+  fprintf(file_out, "\\end{table} \n");
+  fclose(file_out);
+//  system(Form("cat %s", full_output.c_str()));
+  cout << "tex file saved in " << full_output << endl;
+}

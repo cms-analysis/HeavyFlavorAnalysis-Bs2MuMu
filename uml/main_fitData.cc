@@ -75,9 +75,8 @@ int main(int argc, char** argv) {
       if (simul || simul_bdt) fitdata->print_each_channel();
       else fitdata->print();
     }
-    //  fitdata->BF("./input/anaBmm.plotResults.default-11.tex", "input/external_numbers.txt");
+    fitdata->extract_N_inRanges();
   }
-  //if (systname!="") fitdata->parse_systematics(systname);
   fitdata->proof = proof;
   fitdata->significance();
   fitdata->save();

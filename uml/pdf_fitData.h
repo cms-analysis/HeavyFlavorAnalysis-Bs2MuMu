@@ -56,6 +56,8 @@ class pdf_fitData : public pdf_analysis {
 
     int proof;
 
+    void extract_N_inRanges();
+
   protected:
 
     void randomize_constraints(RooWorkspace* ws);
