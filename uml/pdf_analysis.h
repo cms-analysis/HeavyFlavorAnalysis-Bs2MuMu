@@ -172,6 +172,7 @@ protected:
 
   vector <double> effratio_bs_val;
   vector <double> effratio_bd_val;
+  vector <double> eff_rel_err;
   vector <double> effratio_bs_err;
   vector <double> effratio_bd_err;
 
