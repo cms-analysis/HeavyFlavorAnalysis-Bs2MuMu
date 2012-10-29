@@ -1148,7 +1148,6 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
     cout << "effratio_bs ("<< i << ") = " << effratio_bs_val[i] << "; +/- " << effratio_bs_err[i] << endl;
     cout << "effratio_bd ("<< i << ") = " << effratio_bd_val[i] << "; +/- " << effratio_bd_err[i] << endl;
   }
-  abort();
 }
 
 void pdf_analysis::parse_efficiency_numbers(int offset) {
