@@ -98,7 +98,7 @@ if ($opt_v) {
     , "Lb2PK rare MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Lb2KP,cbmm-$version-cms-LambdaBToPK_PKPtEtaFilter_8TeV-START53_V7A-v2*,$version-2e33-LambdaBToPK.root"
     , "Lb2PMuNu rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Lb2KPMuNu,cbmm-$version-cms-LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-LambdaBToPMuNu.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Lb2PMuNu,cbmm-$version-cms-LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-LambdaBToPMuNu.root"
     , "Bd2PiMuNu rare MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-$version-cms-BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-BdToPiMuNu.root"
     );
