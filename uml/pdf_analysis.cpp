@@ -166,12 +166,13 @@ void pdf_analysis::define_bs(int i, int j) {
   RooRealVar Enne_bs(name("Enne_bs", i, j), "Enne_bs", 1., 0., 10.);
 
   /// systematics
-  RooRealVar epsilon(name("epsilon_bs", i, j), "epsilon", -1., 1.);
-  RooUniform one("one", "one", *ws_->var("Mass"));
+  RooRealVar epsilon(name("epsilon_bs", i, j), "epsilon", 0., -1., 1.);
+  //epsilon.setConstant();
+  RooUniform one(name("one", i, j), "one", *ws_->var("Mass"));
   RooRealVar S0(name("S0", i, j), "S0", -5., 5.);
   RooRealVar S1(name("S1", i, j), "S1", -5., 5.);
   RooRealVar S2(name("S2", i, j), "S2", -5., 5.);
-  RooArgList poly_sys_coeffs(S0, S1, S2);
+  RooArgList poly_sys_coeffs(S0/*, S1, S2*/);
   RooChebychev poly_sys_bs(name("poly_sys_bs", i, j), "poly_sys_bs", *ws_->var("Mass"), poly_sys_coeffs);
   RooAddPdf pdf_sys_bs(name("pdf_sys_bs", i, j), "pdf_sys_bs", poly_sys_bs, one, epsilon);
 
@@ -368,17 +369,17 @@ void pdf_analysis::define_nonpeaking(int i, int j) {
 
     if (!pee) {
       if (!bdt_fit_) {
-        RooProdPdf pdf_semi(name("pdf_semi", i, j), "pdf_semi", gauss, poly);
+        RooProdPdf pdf_semi(name("pdf_semi", i, j), "pdf_semi", expo, poly);
         ws_->import(pdf_semi);
       }
       else {
-        RooProdPdf pdf_semi_mass(name("pdf_semi_mass", i, j), "pdf_semi_mass", gauss, poly);
+        RooProdPdf pdf_semi_mass(name("pdf_semi_mass", i, j), "pdf_semi_mass", expo, poly);
         RooProdPdf pdf_semi(name("pdf_semi", i, j),"pdf_semi",pdf_semi_mass,*ws_->pdf(name("bdt_pdf_semi", i, j)));
         ws_->import(pdf_semi);
       }
     }
     else {
-      RooProdPdf mass_semi(name("mass_semi", i, j), "pdf_semi", gauss, poly);
+      RooProdPdf mass_semi(name("mass_semi", i, j), "pdf_semi", expo, poly);
       //RooProdPdf pdf_semi (name("pdf_semi", i, j), "pdf_semi", *ws_->var("MassRes"), Conditional(mass_semi, *ws_->var("Mass")));
       if (!bdt_fit_) {
         RooProdPdf pdf_semi (name("pdf_semi", i, j), "pdf_semi", *ws_->pdf(name("MassRes_pdf_semi", i, j)), Conditional(mass_semi, *ws_->var("Mass")));
@@ -602,8 +603,8 @@ void pdf_analysis::define_constraints(int i, int j) {
 
   if (shapesyst) {
     RooGaussian shape_gau_bs(name("shape_gau_bs", i, j), "shape_gau_bs", *ws_->var(name("epsilon_bs", i, j)), RooConst(0), RooConst(i%2==0? 0.016 : 0.079));
+    ws_->import(shape_gau_bs);
   }
-
 
 }
 
@@ -689,7 +690,6 @@ string pdf_analysis::define_pdf_sum(string name, int i) {
 void pdf_analysis::print(RooAbsData* data, string output) {
   int colors[11] = {632, 400, 616, 432, 800, 416, 820, 840, 860, 880, 900};
   RooAbsData* subdata_res;
-//  if (pee) subdata_res = ws_->data(Form("MassRes_rdh_%s", output.c_str()))->reduce(Form("etacat==etacat::etacat_%d", channel));
   if (pee) subdata_res = (RooAbsData*)ws_->data(Form("MassRes_rdh_%s", output.c_str()))->Clone();
   RooPlot *rp = ws_->var("Mass")->frame();
   RooPlot *rp_bdt = ws_->var("bdt")->frame();
@@ -782,9 +782,21 @@ void pdf_analysis::print(RooAbsData* data, string output) {
       i++;
     }
   }
-  
-  TCanvas* c = new TCanvas("c", "c", 600, 600);
+
+  TCanvas* c = new TCanvas("c", "c", 600, 600);  
   rp->Draw();
+//  size_t found = pdf_name.find("pdf_semi");
+//  if (found != string::npos) {
+//    TFile* file = new TFile("input/2011/hist.root");
+//    TH1D* histo = (TH1D*)file->Get(Form("bslRare_chan%d",channel));
+//    histo->DrawNormalized("same", data->sumEntries());
+//  }
+//  found = pdf_name.find("pdf_peak");
+//  if (found != string::npos) {
+//    TFile* file = new TFile("input/2011/hist.root");
+//    TH1D* histo = (TH1D*)file->Get(Form("bRare_chan%d",channel));
+//    histo->DrawNormalized("same", data->sumEntries());
+//  }
   c->Print((get_address(pdf_name, "") + ".pdf").c_str());
   c->Print((get_address(pdf_name, "") + ".gif").c_str());
   delete rp;

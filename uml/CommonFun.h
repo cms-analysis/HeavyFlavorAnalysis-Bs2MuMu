@@ -40,6 +40,7 @@ static int sig_meth = -1;
 static int proof = 1;
 bool syst = false;
 bool randomsyst = false;
+bool shapesyst = false;
 static string cuts = "bdt>-10.";
 static string years_opt = "0";
 bool input = false, output = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false, asimov = false;
@@ -65,7 +66,8 @@ void help() {
   cout << "-bdt_fit \t bdt_fit" << endl;
   cout << "-rare #filename \t file with rare event estimations (for normalizing to B -> JpsiK)" << endl;
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
-  cout << "-newcomb \t new exponential combinatorial bkg" << endl;
+  cout << "-newcomb \t exponential combinatorial bkg study" << endl;
+  cout << "-shapesyst \t adds pdf shape systematics" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_fitData.o: fits events with pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-i #filename \t input for fitting events (MANDATORY)" << endl;
@@ -259,6 +261,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-newcomb")) {
       newcomb = true;
       cout << "new combinatorial bkg" << endl;
+    }
+    if (!strcmp(argv[i],"-shapesyst")) {
+      shapesyst = true;
+      cout << "adding shape systematics" << endl;
     }
     if (!strcmp(argv[i],"-proof")) {
       proof = atoi(argv[i+1]);

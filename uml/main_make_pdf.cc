@@ -93,6 +93,13 @@ int main(int argc, char* argv[]) {
   vector < double > exp_v_2(get_singlerare_normalization("input/2012/anaBmm.plotResults.2012.tex", 0, decays_n));
   vector < double > exp_v_3(get_singlerare_normalization("input/2012/anaBmm.plotResults.2012.tex", 1, decays_n));
 
+//  TH1D* semi[2];
+//  TH1D* peak[2];
+//  semi[0] = new TH1D("semi_0", "semi_0", 80, 4.5, 6.5);
+//  semi[1] = new TH1D("semi_1", "semi_1", 80, 4.5, 6.5);
+//  peak[0] = new TH1D("peak_0", "peak_0", 80, 4.5, 6.5);
+//  peak[1] = new TH1D("peak_1", "peak_1", 80, 4.5, 6.5);
+
   for (int i = 0; i < decays_n; i++) {
 
     decays_treename[i] = decays[i] + "_bdt";
@@ -162,7 +169,7 @@ int main(int argc, char* argv[]) {
         else bdt_cat->setIndex(2);
 
         double weight = 1;
-        if (i > 2 && i < 12) {
+        if (i > 1 && i < 13) {
           if (y == 0) {
             if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) weight = exp_v_0[i] / events_0;
             else weight = exp_v_1[i] / events_1;
@@ -173,7 +180,6 @@ int main(int argc, char* argv[]) {
           }
         }
         RooArgSet varlist_tmp(*m, *MassRes,/*, *eta, *m1eta, *m2eta*/ *bdt, *channel_cat/*, *bdt_cat*/);
-        //weight = weight/1000;
         rds_smalltree[i]->add(varlist_tmp, weight);
       }
       cout << rds_smalltree[i]->GetName() << " done: " << rds_smalltree[i]->sumEntries() << " <--- " << smalltree->GetEntries() << endl;
@@ -233,6 +239,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  if (shapesyst) ana1.shapesyst = true;
   ana1.define_pdfs();
 
   if (simul) ana1.define_simul(simul_bdt);
@@ -248,7 +255,8 @@ int main(int argc, char* argv[]) {
       ana1.channel = simul ? j : ch_i;
       ana1.channel_bdt = simul_bdt ? k : ch_bdt_i;
       /// bs
-      ana1.fit_pdf(ana1.name("bs", j, k), rad_bs, false);
+      if (!shapesyst) ana1.fit_pdf(ana1.name("bs", j, k), rad_bs, false);
+      else ana1.fit_pdf(ana1.name("bs_mass", j, k), rad_bs, false);
 
       /// bd
       ana1.fit_pdf(ana1.name("bd", j, k), rad_bd, false);

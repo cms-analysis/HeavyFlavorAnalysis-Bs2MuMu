@@ -136,6 +136,7 @@ public:
 
   bool newcomb_;
   void setSBslope(RooAbsData* sb_data);
+  bool shapesyst;
 
 protected:
   string meth_;
@@ -192,7 +193,6 @@ protected:
 
   bool syst;
   bool randomsyst;
-  bool shapesyst;
 
   vector <string> massrange_names;
 
