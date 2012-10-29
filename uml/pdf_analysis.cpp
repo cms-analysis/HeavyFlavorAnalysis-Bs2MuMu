@@ -1170,7 +1170,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
   }
   cout << "parsing " << file_address << endl;
   FILE *file = fopen(file_address.c_str(), "r");
-  if (!file) {cout << "file " << file_address << " does not exist"; exit(1);}
+  if (!file) {cout << "file " << file_address << " does not exist" << endl; exit(1);}
 
   char buffer[2048];
   char left[1024];
@@ -1216,17 +1216,16 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
       if (found != string::npos) N_bu_err[i+offset] = number;
     }
   }
+//  fclose(file);
 
   filename = "anaBmm.plotEfficiencies.2011.tex";
   if (offset == 2) filename = "anaBmm.plotEfficiencies.2012.tex";
   file_address = "./input/";
   if (offset == 0) {
     file_address += "2011/" + filename;
-    channels_ = channels;
   }
   else if (offset == 2) {
     file_address += "2012/" + filename;
-    channels_ = channels / 2;
   }
   else {
     cout << "not ready " << endl;
@@ -1234,7 +1233,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
   }
   cout << "parsing " << file_address << endl;
   FILE *file_ef = fopen(file_address.c_str(), "r");
-  if (!file_ef) {cout << "file " << file_address << " does not exist"; exit(1);}
+  if (!file_ef) {cout << "file " << file_address << " does not exist" << endl; exit(1);}
 
   vector < string > trig_eff_ratio_val(channels_);
   vector < string > trig_eff_ratio_err(channels_);
@@ -1264,31 +1263,30 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
     for (int i = 0; i < channels_; i++) {
       size_t found;
       found = left_s.find(trig_eff_ratio_val[i]);
-      if (found != string::npos) trig_eff_ratio_val_d[i+offset] = number;
+      if (found != string::npos) trig_eff_ratio_val_d[i] = number;
       found = left_s.find(trig_eff_ratio_err[i]);
-      if (found != string::npos) trig_eff_ratio_err_d[i+offset] = number;
+      if (found != string::npos) trig_eff_ratio_err_d[i] = number;
 
       found = left_s.find(reco_eff_ratio_val[i]);
-      if (found != string::npos) reco_eff_ratio_val_d[i+offset] = number;
+      if (found != string::npos) reco_eff_ratio_val_d[i] = number;
       found = left_s.find(reco_eff_ratio_err[i]);
-      if (found != string::npos) reco_eff_ratio_err_d[i+offset] = number;
+      if (found != string::npos) reco_eff_ratio_err_d[i] = number;
     }
   }
   vector<double> eff_rel_err_sq(channels_);
   for (int i = 0; i < channels_; i++) {
-    eff_rel_err_sq[i+offset] = pow(trig_eff_ratio_err_d[i+offset] / trig_eff_ratio_val_d[i+offset], 2) + pow(reco_eff_ratio_err_d[i+offset] / reco_eff_ratio_val_d[i+offset], 2);
+    eff_rel_err_sq[i] = pow(trig_eff_ratio_err_d[i] / trig_eff_ratio_val_d[i], 2) + pow(reco_eff_ratio_err_d[i] / reco_eff_ratio_val_d[i], 2);
   }
+//  fclose(file_ef);
 
   filename = "anaBmm.plotReducedOverlays.2011.tex";
   if (offset == 2) filename = "anaBmm.plotReducedOverlays.2012.tex";
   file_address = "./input/";
   if (offset == 0) {
     file_address += "2011/" + filename;
-    channels_ = channels;
   }
   else if (offset == 2) {
     file_address += "2012/" + filename;
-    channels_ = channels / 2;
   }
   else {
     cout << "not ready " << endl;
@@ -1296,7 +1294,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
   }
   cout << "parsing " << file_address << endl;
   FILE *file_bdt = fopen(file_address.c_str(), "r");
-  if (!file_bdt) {cout << "file " << file_address << " does not exist"; exit(1);}
+  if (!file_bdt) {cout << "file " << file_address << " does not exist" << endl; exit(1);}
 
   vector < string > NO_err(channels_);
   vector < string > CS_err(channels_);
@@ -1323,21 +1321,23 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
     for (int i = 0; i < channels_; i++) {
       size_t found;
       found = left_s.find(NO_err[i]);
-      if (found != string::npos) NO_err_d[i+offset] = number;
+      if (found != string::npos) NO_err_d[i] = number;
 
       found = left_s.find(CS_err[i]);
-      if (found != string::npos) CS_err_d[i+offset] = number;
+      if (found != string::npos) CS_err_d[i] = number;
 
       found = left_s.find(MC_err[i]);
-      if (found != string::npos) MC_err_d[i+offset] = number;
+      if (found != string::npos) MC_err_d[i] = number;
     }
   }
   for (int i = 0; i < channels_; i++) {
-    eff_rel_err_sq[i+offset] += pow(NO_err_d[i+offset], 2) + pow(CS_err_d[i+offset], 2) + pow(MC_err_d[i+offset], 2);
+    eff_rel_err_sq[i] += pow(NO_err_d[i], 2) + pow(CS_err_d[i], 2) + pow(MC_err_d[i], 2);
   }
+
   for (int i = 0; i < channels_; i++) {
-    eff_rel_err[i+offset] = sqrt(eff_rel_err_sq[i+offset]);
+    eff_rel_err[i+offset] = sqrt(eff_rel_err_sq[i]);
   }
+
 
   for (int i = 0; i < channels_ && i < 2; i++) {
     if (simul_) ii = i;
@@ -1349,7 +1349,8 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
     cout << "N bu   = " << N_bu_val[i+offset] << " \\pm " << N_bu_err[i+offset] << endl;
     cout << "eff ratio relative error " << eff_rel_err[i+offset] << endl;
     cout << endl;
-  }
+  }  
+
 }
 
 void pdf_analysis::parse_external_numbers(string filename) {
