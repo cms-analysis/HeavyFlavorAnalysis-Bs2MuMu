@@ -94,7 +94,8 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   // -- CMS with LHCb input
   fsfu = 0.267;
   fsfuE = 0.021;
-  
+
+  fYear = 0; 
 
   fDoUseBDT = false; 
   fDoApplyMuonPtCuts = false; 
@@ -292,7 +293,7 @@ void plotClass::initNumbers(numbers *a, bool initAll) {
   a->genAccYield  = a->genAccFileYield = 0; 
   a->effGenFilter = a->effGenFilterE = 1.;
   a->genFileYield = a->genYield = 0.;
-  a->recoYield    = a->muidYield = a->trigYield = a->candYield = a->ana0Yield = a->anaYield = a->anaWmcYield = 0; 
+  a->recoYield    = a->muidYield = a->trigYield = a->candYield = a->ana0Yield = a->anaYield = a->anaWmcYield = a-> chanYield = 0; 
   a->ana0YieldE   = a->anaYieldE = a->anaMuonYieldE = a->anaTriggerYieldE = a->anaWmcYieldE = 0.;
   a->anaMuonYield = a->anaTriggerYield = 0.;
   a->fitYield     = a->fitYieldE = 0.;
@@ -337,6 +338,18 @@ void plotClass::initNumbers(numbers *a, bool initAll) {
   a->fBgNonpLo   = a->fBgNonpHi   = a->fBgNonpBs   = a->fBgNonpBd   = 0.; 
   a->fBgNonpLoE1 = a->fBgNonpHiE1 = a->fBgNonpBsE1 = a->fBgNonpBdE1 = 0.;
   a->fBgNonpLoE2 = a->fBgNonpHiE2 = a->fBgNonpBsE2 = a->fBgNonpBdE2 = 0.;
+
+  a->fBgCombLo   = a->fBgCombHi   = a->fBgCombBs   = a->fBgCombBd   = 0.; 
+  a->fBgCombLoE1 = a->fBgCombHiE1 = a->fBgCombBsE1 = a->fBgCombBdE1 = 0.;
+  a->fBgCombLoE2 = a->fBgCombHiE2 = a->fBgCombBsE2 = a->fBgCombBdE2 = 0.;
+
+  a->fBgRslsLo   = a->fBgRslsHi   = a->fBgRslsBs   = a->fBgRslsBd   = 0.; 
+  a->fBgRslsLoE1 = a->fBgRslsHiE1 = a->fBgRslsBsE1 = a->fBgRslsBdE1 = 0.;
+  a->fBgRslsLoE2 = a->fBgRslsHiE2 = a->fBgRslsBsE2 = a->fBgRslsBdE2 = 0.;
+
+  a->fBgRareLo   = a->fBgRareHi   = a->fBgRareBs   = a->fBgRareBd   = 0.; 
+  a->fBgRareLoE1 = a->fBgRareHiE1 = a->fBgRareBsE1 = a->fBgRareBdE1 = 0.;
+  a->fBgRareLoE2 = a->fBgRareHiE2 = a->fBgRareBsE2 = a->fBgRareBdE2 = 0.;
 
   a->fBgTotLo    = a->fBgTotHi    = a->fBgTotBs    = a->fBgTotBd    = 0.;
   a->fBgTotLoE1  = a->fBgTotHiE1  = a->fBgTotBsE1  = a->fBgTotBdE1  = 0.; 
@@ -1160,9 +1173,9 @@ void plotClass::loopTree(int mode, int proc) {
 
       // -- new method
       if (1) {
-	aa->tauBs    = fBsBgExp/(fBgExpLo+fBgExpHi); 
+	aa->tauBs    = fBsBgExp/(fLoBgExp+fHiBgExp); 
 	aa->tauBsE   = 0.1*aa->tauBs; 
-	aa->tauBd    = fBdBgExp/(fBgExpLo+fBgExpHi); 
+	aa->tauBd    = fBdBgExp/(fLoBgExp+fHiBgExp); 
 	aa->tauBdE   = 0.1*aa->tauBd; 
 	
 	aa->bgBsExp  = fBsBgExp;
@@ -1613,7 +1626,7 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
 
   int nentries = Int_t(t->GetEntries());
   int nb(0); 
-  int ngen(0), nchangen(0), nreco(0), nchan(0), nmuid(0), nhlt(0), ncand(0); 
+  int ngen(0), nchangen(0), nreco(0), nchan(0), nmuid(0), nhlt(0), ncand(0), ncand2(0); 
   int chan(-1); 
   int recoPtA(0), recoPtB(0); 
   cout << "channel = " << a.index << endl;
@@ -1636,16 +1649,19 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
 	      chan = detChan(bm1eta, bm2eta); 
 	      if (chan == a.index) {
 		++nreco;
-		if (bm1pt > b.m1pt && bm2pt > b.m2pt 
-		    ) {
+		if (bm > 0) {
+		  ++ncand2;
+		}
+		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
+		if (bm1pt > 3.5 && bm2pt > 3.5) {
 		  ++nchan; 
+		  if (bm > 0) {
+		    ++ncand;
+		  }
 		  if (bm1id && bm2id) {
 		    ++nmuid;
 		    if (bhlt) {
 		      ++nhlt;
-		      if (bm > 0) {
-			++ncand;
-		      }
 		    }
 		  }
 		}
@@ -1670,8 +1686,11 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
 	      chan = detChan(bm1eta, bm2eta); 
 	      if (chan == a.index) {
 		++nreco;
-		if (bm1pt > b.m1pt && bm2pt > b.m2pt
-		    ) {
+		if (bm > 0) {
+		  ++ncand2;
+		}
+		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
+		if (bm1pt > 3.5 && bm2pt > 3.5) {
 		  ++nchan; 
 		  if (bm > 0) {
 		    ++ncand;
@@ -1704,7 +1723,11 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
 	      chan = detChan(bm1eta, bm2eta); 
 	      if (chan == a.index) {
 		++nreco;
-		if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
+		if (bm > 0) {
+		  ++ncand2;
+		}
+		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
+		if (bm1pt > 3.5 && bm2pt > 3.5) {
 		  ++nchan; 
 		  if (bm > 0) {
 		    ++ncand;
@@ -1732,10 +1755,12 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
   }
   a.genAccFileYield = ngen;
   a.genAccYield     = a.genAccFileYield/effFilter; 
-  a.recoYield     = nreco; // reco'ed in chan, basic global reconstruction cuts 
-  a.muidYield     = nmuid;
-  a.trigYield     = nhlt;
-  a.candYield     = ncand;
+  a.recoYield       = nreco; // reco'ed in chan, basic global reconstruction cuts 
+  a.muidYield       = nmuid;
+  a.trigYield       = nhlt;
+  a.chanYield       = nchan;
+  a.candYield       = ncand2;
+  a.candYield       = ncand;
 
   if (a.genAccYield > 0) {
     a.acc = a.recoYield/a.genAccYield;
@@ -1745,9 +1770,13 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
   if (a.trigYield > 0) {
     a.effCand  = a.candYield/a.trigYield;
     a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.trigYield));
+    a.effCand  = 0.98; // estimate
+
+    a.effCand  = a.candYield/a.recoYield;
+    a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.recoYield));
+
     a.effCand  = a.candYield/nchan;
     a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(nchan));
-    a.effCand  = 0.98; // estimate
   } 
 
   cout << "NGEN      = " << ngen << endl;
@@ -1756,6 +1785,7 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
   cout << "NRECOCHAN = " << nchan << endl;
   cout << "NMUID     = " << nmuid << endl;
   cout << "NHLT      = " << nhlt << endl;
+  cout << "NCHAN     = " << nchan << endl;
   cout << "NCAND     = " << ncand << endl;
 
 }
@@ -1839,9 +1869,11 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
 
   string sfiles(files);
   if (string::npos != sfiles.find("2011")) {
+    fYear = 2011; 
     fStampCms = "#sqrt{s} = 7 TeV";
   } 
   if (string::npos != sfiles.find("2012")) {
+    fYear = 2012; 
     fStampCms = "#sqrt{s} = 8 TeV";
   } 
 
@@ -2168,7 +2200,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("default") && string::npos != stype.find("cs")) {
 	sname = "CsMc"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.8e-5)); 
+	fBF.insert(make_pair(sname, 3.2e-5)); 
 	fBFE.insert(make_pair(sname, 0.32)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2179,7 +2211,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("1e33") && string::npos != stype.find("cs")) {
 	sname = "CsMc1e33"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.8e-5)); 
+	fBF.insert(make_pair(sname, 3.2e-5)); 
 	fBFE.insert(make_pair(sname, 0.32)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2189,7 +2221,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("2e33") && string::npos != stype.find("cs")) {
 	sname = "CsMc2e33"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.8e-5)); 
+	fBF.insert(make_pair(sname, 3.2e-5)); 
 	fBFE.insert(make_pair(sname, 0.32)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2199,7 +2231,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("3e33") && string::npos != stype.find("cs")) {
 	sname = "CsMc3e33"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.8e-5)); 
+	fBF.insert(make_pair(sname, 3.2e-5)); 
 	fBFE.insert(make_pair(sname, 0.32)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2209,7 +2241,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("acc") && string::npos != stype.find("cs")) {
 	sname = "CsMcAcc"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.8e-5)); 
+	fBF.insert(make_pair(sname, 3.2e-5)); 
 	fBFE.insert(make_pair(sname, 0.32)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2241,7 +2273,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bs2KK")) {
 	sname = "bgBs2KK"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 23.e-6)); 
+	fBF.insert(make_pair(sname, 25.4e-6)); 
 	fBFE.insert(make_pair(sname, 0.15)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2251,7 +2283,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bs2KPi")) {
 	sname = "bgBs2KPi"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 5.4e-6)); 
+	fBF.insert(make_pair(sname, 5.0e-6)); 
 	fBFE.insert(make_pair(sname, 0.22)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2261,8 +2293,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bs2PiPi")) {
 	sname = "bgBs2PiPi"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 0.95e-6)); 
-	fBFE.insert(make_pair(sname, 0.9)); 
+	fBF.insert(make_pair(sname, 0.73e-6)); 
+	fBFE.insert(make_pair(sname, 0.19)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #pi^{+}#pi^{-}")); 
@@ -2271,7 +2303,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bs2KMuNu")) {
 	sname = "bgBs2KMuNu"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 1.36e-4)); 
+	fBF.insert(make_pair(sname, 1.4e-4)); 
 	fBFE.insert(make_pair(sname, 0.05)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2282,7 +2314,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bd2PiMuNu")) {
 	sname = "bgBd2PiMuNu"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 1.36e-4)); 
+	fBF.insert(make_pair(sname, 1.4e-4)); 
 	fBFE.insert(make_pair(sname, 0.05)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2292,8 +2324,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bd2KK")) {
 	sname = "bgBd2KK"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 0.11e-6)); 
-	fBFE.insert(make_pair(sname, 0.73)); 
+	fBF.insert(make_pair(sname, 0.13e-6)); 
+	fBFE.insert(make_pair(sname, 0.77)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow K^{+}K^{-}")); 
@@ -2302,8 +2334,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bd2KPi")) {
 	sname = "bgBd2KPi"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 19.4e-6)); 
-	fBFE.insert(make_pair(sname, 0.05)); 
+	fBF.insert(make_pair(sname, 19.55e-6)); 
+	fBFE.insert(make_pair(sname, 0.03)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow K^{+}#pi^{-}")); 
@@ -2312,7 +2344,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bd2PiPi")) {
 	sname = "bgBd2PiPi"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 5.1e-6)); 
+	fBF.insert(make_pair(sname, 5.11e-6)); 
 	fBFE.insert(make_pair(sname, 0.04)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -2322,8 +2354,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Lb2KP")) {
 	sname = "bgLb2KP"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 5.6e-6)); 
-	fBFE.insert(make_pair(sname, 0.3)); 
+	fBF.insert(make_pair(sname, 5.5e-6)); 
+	fBFE.insert(make_pair(sname, 0.25)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#Lambda_{b}^{0} #rightarrow p K^{-}")); 
@@ -2333,7 +2365,7 @@ void plotClass::loadFiles(const char *files) {
 	sname = "bgLb2PiP"; 
 	fF.insert(make_pair(sname, pF)); 
 	fBF.insert(make_pair(sname, 3.5e-6)); 
-	fBFE.insert(make_pair(sname, 0.31)); 
+	fBFE.insert(make_pair(sname, 0.29)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#Lambda_{b}^{0} #rightarrow p #pi^{-}")); 
@@ -2562,16 +2594,16 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
   if (!strcmp(gMinuit->fCstatu.Data(), "CONVERGED ")) {
     fBsBgExp  = lF2->Integral(5.30, 5.45)/h->GetBinWidth(1); 
     fBdBgExp  = lF2->Integral(5.20, 5.30)/h->GetBinWidth(1); 
-    fBgExpLo  = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1); 
-    fBgExpHi  = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
+    fLoBgExp  = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1); 
+    fHiBgExp  = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
     fBsBgExpE = fBsBgExp*(fBgHistE/fBgHist);
     fBdBgExpE = fBdBgExp*(fBgHistE/fBgHist);
   } else {
     cout << "+++ Fit did not converge, take flat bg interpretation, fCstatu = ->" << gMinuit->fCstatu.Data() << "<-" << endl;
     fBsBgExp  = (5.45-5.30)/(5.9-4.9-0.25)*fBgHist;
     fBdBgExp  = (5.30-5.20)/(5.9-4.9-0.25)*fBgHist;
-    fBgExpLo  = (5.20-4.90)/(5.9-4.9-0.25)*fBgHist;
-    fBgExpHi  = (5.90-5.45)/(5.9-4.9-0.25)*fBgHist;
+    fLoBgExp  = (5.20-4.90)/(5.9-4.9-0.25)*fBgHist;
+    fHiBgExp  = (5.90-5.45)/(5.9-4.9-0.25)*fBgHist;
     fBsBgExpE = fBsBgExp*(fBgHistE/fBgHist);
     fBdBgExpE = fBdBgExp*(fBgHistE/fBgHist);
   }
@@ -2589,15 +2621,15 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
     // -- build up total bg
     fBsBgExp   = lF2->Integral(5.30, 5.45)/h->GetBinWidth(1); 
     fBdBgExp   = lF2->Integral(5.20, 5.30)/h->GetBinWidth(1); 
-    fBgExpLo   = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1); 
-    fBgExpHi   = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
-    cout << "flat combinatorial Expectations Lo: " << fBgExpLo << " Bs: " << fBsBgExp << " Hi: " << fBgExpHi << endl;
+    fLoBgExp   = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1); 
+    fHiBgExp   = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
+    cout << "flat combinatorial Expectations Lo: " << fLoBgExp << " Bs: " << fBsBgExp << " Hi: " << fHiBgExp << endl;
     
     fBsBgExp  += hr->Integral(hr->FindBin(5.30+eps), hr->FindBin(5.45-eps)); 
     fBdBgExp  += hr->Integral(hr->FindBin(5.20+eps), hr->FindBin(5.30-eps)); 
-    fBgExpLo  += hr->Integral(hr->FindBin(4.90+eps), hr->FindBin(5.20-eps)); 
-    fBgExpHi  += hr->Integral(hr->FindBin(5.45+eps), hr->FindBin(5.90-eps)); 
-    cout << "+ rare bg Expectations Lo:          " << fBgExpLo << " Bs: " << fBsBgExp << " Hi: " << fBgExpHi << endl;
+    fLoBgExp  += hr->Integral(hr->FindBin(4.90+eps), hr->FindBin(5.20-eps)); 
+    fHiBgExp  += hr->Integral(hr->FindBin(5.45+eps), hr->FindBin(5.90-eps)); 
+    cout << "+ rare bg Expectations Lo:          " << fLoBgExp << " Bs: " << fBsBgExp << " Hi: " << fHiBgExp << endl;
   }
 
 
@@ -2616,19 +2648,30 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
     setFilledHist(hr, kBlue, kBlue, 3344);
     hr->DrawCopy("same");
 
-    // -- build up total bg
-    fBsBgExp = lF2->Integral(5.30, 5.45)/h->GetBinWidth(1); 
-    fBdBgExp = lF2->Integral(5.20, 5.30)/h->GetBinWidth(1); 
-    fBgExpLo = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1); 
-    fBgExpHi = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
-    cout << "flat combinatorial Expectations Lo: " << fBgExpLo << " Bs: " << fBsBgExp << " Hi: " << fBgExpHi << endl;
-    
-    fBsBgExp += hr->Integral(hr->FindBin(5.30+eps), hr->FindBin(5.45-eps)); 
-    fBdBgExp += hr->Integral(hr->FindBin(5.20+eps), hr->FindBin(5.30-eps)); 
-    fBgExpLo += hr->Integral(hr->FindBin(4.90+eps), hr->FindBin(5.20-eps)); 
-    fBgExpHi += hr->Integral(hr->FindBin(5.45+eps), hr->FindBin(5.90-eps)); 
-    cout << "+ scaled rare bg Expectations Lo:   " << fBgExpLo << " Bs: " << fBsBgExp << " Hi: " << fBgExpHi << endl;
+    fBsCoBgExp = lF2->Integral(5.30, 5.45)/h->GetBinWidth(1); 
+    fBdCoBgExp = lF2->Integral(5.20, 5.30)/h->GetBinWidth(1); 
+    fLoCoBgExp = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1);
+    fHiCoBgExp = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
 
+    fBsSlBgExp = hr->Integral(hr->FindBin(5.30+eps), hr->FindBin(5.45-eps)); 
+    fBdSlBgExp = hr->Integral(hr->FindBin(5.20+eps), hr->FindBin(5.30-eps)); 
+    fLoSlBgExp = hr->Integral(hr->FindBin(4.90+eps), hr->FindBin(5.20-eps));
+    fHiSlBgExp = hr->Integral(hr->FindBin(5.45+eps), hr->FindBin(5.90-eps)); 
+
+    // -- build up total bg
+    fBsBgExp = fBsCoBgExp;
+    fBdBgExp = fBdCoBgExp;
+    fLoBgExp = fLoCoBgExp;
+    fHiBgExp = fHiCoBgExp;
+    cout << "flat combinatorial Expectations Lo: " << fLoBgExp << " Bs: " << fBsBgExp << " Hi: " << fHiBgExp << endl;
+    
+    fBsBgExp += fBsSlBgExp; 
+    fBdBgExp += fBdSlBgExp; 
+    fLoBgExp += fLoSlBgExp; 
+    fHiBgExp += fHiSlBgExp; 
+    cout << "+ scaled rare bg Expectations Lo:   " << fLoBgExp << " Bs: " << fBsBgExp << " Hi: " << fHiBgExp << endl;
+
+    // FIXME
     fBsBgExpE = 0.5*fBsBgExp;
     fBdBgExpE = 0.5*fBdBgExp;
   }
@@ -2894,6 +2937,7 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
 
   //cout<<" after plot landau "<<cl<<" "<<cl/binw<<endl;
 
+  tl->SetNDC(kTRUE); 
   tl->SetTextSize(0.07); 
   tl->SetTextColor(kBlack); 
   if (0 == mode) {
@@ -2901,6 +2945,7 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
   } 
 
   if (1 == mode) {
+    cout << "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[ printing endcap: " << tl->GetTextSize() << endl;
     tl->DrawLatex(0.6, 0.8, "Endcap");   
   } 
   
@@ -3299,7 +3344,9 @@ void plotClass::printNumbers(numbers &a, ostream &OUT) {
   OUT << "recoYield       = " << a.recoYield << endl;
   OUT << "muidYield       = " << a.muidYield << endl;
   OUT << "trigYield       = " << a.trigYield << endl;
+  OUT << "chanYield       = " << a.chanYield << endl;
   OUT << "candYield       = " << a.candYield << endl;
+  OUT << "absNoCutsYield  = " << a.absNoCutsYield << endl;
   OUT << "ana0Yield       = " << a.ana0Yield << endl;
   OUT << "anaYield        = " << a.anaYield << endl;
   OUT << "anaMuYield      = " << a.anaMuonYield << endl;
@@ -3810,6 +3857,8 @@ void plotClass::printCuts(ostream &OUT) {
 
 // ----------------------------------------------------------------------
 void plotClass::stamp(double x1, string text1, double x2, string text2) {
+  cout << "stamp() > " << x1 << " " << text1 << " " << x2 << " " << text2 << endl;
+  tl->SetNDC(kTRUE); 
   tl->SetTextSize(fSize); 
   tl->DrawLatex(x1, 0.91, text1.c_str());   
   tl->DrawLatex(x2, 0.91, text2.c_str()); 
@@ -4023,8 +4072,38 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     small->Branch("evt", &fb.evt,"evt/I");
     
     small->Branch("bdt", &fBDT ,"bdt/D");
-    
+    // -- debug HLT
+    if (0) {
+      small->Branch("hlt", &fb.hlt ,"hlt/O");
+      small->Branch("muid", &fb.gmuid ,"muid/O");
+      small->Branch("pt",   &fb.pt ,"hlt/D");
+      small->Branch("eta",  &fb.eta ,"eta/D");
+      small->Branch("m1pt", &fb.m1pt ,"hlt/D");
+      small->Branch("m2pt", &fb.m2pt ,"hlt/D");
+      small->Branch("pchi2dof", &fb.pchi2dof ,"pchi2dof/D");
+      small->Branch("chi2", &fb.chi2 ,"chi2/D");
+      small->Branch("dof",  &fb.dof ,"dof/D");
+      small->Branch("fls3d", &fb.fls3d ,"fls3d/D");
+      small->Branch("pvlip", &fb.pvlip ,"pvlip/D");
+      small->Branch("pvlips", &fb.pvlips ,"pvlips/D");
+      small->Branch("pvip", &fb.pvip ,"pvip/D");
+      small->Branch("pvips", &fb.pvips ,"pvips/D");
+      small->Branch("pvn", &fb.pvn ,"pvn/I");
+      small->Branch("pvw8", &fb.pvw8 ,"pvw8/D");
+      small->Branch("gtqual", &fb.gtqual ,"gtqual/O");
+      small->Branch("q", &fb.q ,"q/I");
+      small->Branch("iso", &fb.iso ,"iso/D");
+      small->Branch("alpha", &fb.alpha ,"alpha/D");
+      small->Branch("closetrk", &fb.closetrk ,"closetrk/I");
+      small->Branch("docatrk", &fb.docatrk ,"docatrk/D");
+      small->Branch("maxdoca", &fb.maxdoca ,"maxdoca/D");
+      small->Branch("lip", &fb.lip ,"lip/D");
+      small->Branch("tip", &fb.tip ,"tip/D");
+      // -- debug HLT
+    }
     small->Branch("m", &fb.m,"m/D");
+    small->Branch("tau",   &fb.tau ,"tau/D");
+    small->Branch("gtau",  &fb.gtau ,"gtau/D");
     small->Branch("m1eta", &fb.m1eta,"m1eta/D");
     small->Branch("m2eta", &fb.m2eta,"m2eta/D");
     small->Branch("eta", &fb.eta,"eta/D");
@@ -4037,14 +4116,17 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     loopFunction(function, imode);
     if (fSaveSmallTree
 	&& fGoodAcceptance 
+	&& fGoodQ
+	&& fGoodPvAveW8
 	&& fGoodTracks 
 	&& fGoodTracksPt 
 	&& fGoodTracksEta 
 	&& fGoodMuonsPt
 	&& fGoodMuonsEta
 	&& fGoodJpsiCuts
-	&& fGoodMuonsID
-	&& fGoodHLT) {
+ 	&& fGoodMuonsID
+ 	&& fGoodHLT
+	) {
       small->Fill();
     }
   }
@@ -4079,6 +4161,10 @@ void plotClass::setupTree(TTree *t, string mode) {
   }
 
   t->SetBranchAddress("pt", &fb.pt);
+  t->SetBranchAddress("q", &fb.q);
+
+  t->SetBranchAddress("tau", &fb.tau);
+  t->SetBranchAddress("gtau", &fb.gtau);
 
   t->SetBranchAddress("bdt",&fb.bdt);
   t->SetBranchAddress("bdt",&fBDT);
@@ -4299,6 +4385,11 @@ void plotClass::candAnalysis(int mode) {
     fGoodJpsiCuts = true; 
   }
 
+  fGoodTracks     = fb.gtqual;
+  if (!fGoodTracks) {
+    fGoodAcceptance = false; 
+  }
+
   if (fDoUseBDT) {
     if (fGoodAcceptance 
 	&& fGoodTracks
@@ -4313,7 +4404,6 @@ void plotClass::candAnalysis(int mode) {
   }
 
   fGoodMuonsID    = fb.gmuid;
-  fGoodTracks     = fb.gtqual;
   
   fGoodQ          = (fb.m1q*fb.m2q < 0); 
   fGoodPvAveW8    = (fb.pvw8 > 0.7);
@@ -4578,4 +4668,19 @@ double plotClass::getValueByLabel(TH1D *h, string label) {
 void plotClass::rmSubString(string &sInput, const string &sub) {
   string::size_type foundpos = sInput.find(sub);
   if (foundpos != string::npos)  sInput.erase(sInput.begin() + foundpos, sInput.begin() + foundpos + sub.length());
+}
+
+
+// ----------------------------------------------------------------------
+double plotClass::quadraticSum(int n, ...) {
+  va_list vl;
+  va_start(vl, n);
+  double a(0.), sum(0.); 
+  for (int i = 0; i < n; ++i) {
+    a = va_arg(vl, double);
+    sum += a*a;
+  }
+
+  va_end(vl);
+  return TMath::Sqrt(sum); 
 }

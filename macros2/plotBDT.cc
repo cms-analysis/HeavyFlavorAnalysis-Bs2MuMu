@@ -184,6 +184,7 @@ void plotBDT::makeAll(int channels) {
   if (channels & 1) {
     //    npvSpecial("SgData");
     //    npvSpecial("NoData");
+
     cout << "--> plotSSB()" << endl;
     plotSSB();
 
@@ -676,63 +677,63 @@ void plotBDT::bdtDependencies(string mode) {
     // -- RMS
     frmsNpvBDTchan0->SetAxisRange(0., npvmax, "X");
     frmsNpvBDTchan0->Fit(Form("pol%d", j));  
-    if (fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
-				  fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
+    if (frmsNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+				  frmsNpvBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
+				  frmsNpvBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
+    if (frmsNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
+				  frmsNpvBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
+				  frmsNpvBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
     c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-nocuts-pol%d-chan0.pdf", fDirectory.c_str(), mode.c_str(), j));
 
     frmsNpvAcBDTchan0->SetAxisRange(0., npvmax, "X");
     frmsNpvAcBDTchan0->Fit(Form("pol%d", j));  
-    if (fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
-				  fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
+    if (frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+				  frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
+				  frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
+    if (frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
+				  frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
+				  frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
     c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-accuts-pol%d-chan0.pdf", fDirectory.c_str(), mode.c_str(), j));
 
     frmsNpvAdBDTchan0->SetAxisRange(0., npvmax, "X");
     frmsNpvAdBDTchan0->Fit(Form("pol%d", j));  
-    if (fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
-				  fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
+    if (frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+				  frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
+				  frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
+    if (frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
+				  frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
+				  frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
     c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-adcuts-pol%d-chan0.pdf", fDirectory.c_str(), mode.c_str(), j));
 
     
     frmsNpvBDTchan1->SetAxisRange(0., npvmax, "X");
     frmsNpvBDTchan1->Fit(Form("pol%d", j));  
-    if (fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
-				  fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
+    if (frmsNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+				  frmsNpvBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
+				  frmsNpvBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
+    if (frmsNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
+				  frmsNpvBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
+				  frmsNpvBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
     c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-nocuts-pol%d-chan1.pdf", fDirectory.c_str(), mode.c_str(), j));
 
     frmsNpvAcBDTchan1->SetAxisRange(0., npvmax, "X");
     frmsNpvAcBDTchan1->Fit(Form("pol%d", j));  
-    if (fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
-				  fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
+    if (frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+				  frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
+				  frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
+    if (frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
+				  frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
+				  frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
     c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-accuts-pol%d-chan1.pdf", fDirectory.c_str(), mode.c_str(), j));
 
     frmsNpvAdBDTchan1->SetAxisRange(0., npvmax, "X");
     frmsNpvAdBDTchan1->Fit(Form("pol%d", j));  
-    if (fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
-				  fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
+    if (frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+				  frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
+				  frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
+    if (frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
+				  frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
+				  frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
     c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-adcuts-pol%d-chan1.pdf", fDirectory.c_str(), mode.c_str(), j));
   }
   
@@ -1030,6 +1031,7 @@ void plotBDT::plotSSB() {
     cout << "fBdtString: " << fBdtString << endl;
     
     ssb();
+    fRootFile->Close();
   }
 }
 
@@ -1097,9 +1099,9 @@ void plotBDT::validateAllDistributions() {
 // ----------------------------------------------------------------------
 void plotBDT::validateDistributions(int channel, const char *type, int classID) {
 
-  string fname0 = Form("weights/TMVA-%d-Events0.root", channel); 
-  string fname1 = Form("weights/TMVA-%d-Events1.root", channel);
-  string fname2 = Form("weights/TMVA-%d-Events2.root", channel);
+  string fname0 = Form("weights/%s-Events0.root", fCuts[channel]->xmlFile.c_str()); 
+  string fname1 = Form("weights/%s-Events1.root", fCuts[channel]->xmlFile.c_str());
+  string fname2 = Form("weights/%s-Events2.root", fCuts[channel]->xmlFile.c_str());
 
   //  string sname  = Form("%s-%s-%s", fCuts[channel]->xmlFile.c_str(), type, (classID == 0?"sg":"bg")); 
   string sname  = Form("TMVA-%d-%s-%s", channel, type, (classID == 0?"sg":"bg")); 
@@ -1917,7 +1919,11 @@ void plotBDT::ssb() {
       if (1 == classID && 5.2<m&&m<5.45) continue;
 
       if (0 == classID) {
-	sm->Fill(m, w8); 
+	if (fYear == 2012) {
+	  sm->Fill(m, w8*0.6); // FIXME
+	} else {
+	  sm->Fill(m, w8); // FIXME
+	}	  
       } else {
 	dm->Fill(m, w8); 
       }
@@ -1977,6 +1983,31 @@ void plotBDT::ssb() {
   tl->DrawLatex(0.25, 0.75, Form("S_{max} = %4.3f", maxSSB));
   tl->DrawLatex(0.25, 0.68, Form("B_{max} = %4.3f", maxBDT));
   c0->SaveAs(Form("%s/%s-ssb.pdf", fDirectory.c_str(), fBdtString.c_str())); 
+
+  double xmax(0.), xmin(0.); 
+  int nbins(0); 
+  double maxVal = h->GetMaximum(); 
+  for (int i = 1; i < h->GetNbinsX(); ++i) {
+    if (h->GetBinContent(i) > 0.4*maxVal) {
+      xmax = h->GetBinCenter(i); 
+      nbins = i - h->GetMaximumBin(); 
+    }
+    h->SetBinError(i, 0.03*h->GetBinContent(i)); 
+  }
+  xmin = h->GetBinCenter(h->GetMaximumBin() - TMath::Abs(nbins) + 1); 
+  
+  TF1 *f1 = fpFunc->pol2local(h, 0.05); 
+  h->Fit(f1, "r", "", xmin, xmax); 
+  double maxfitssbX = h->GetFunction("f_pol2local")->GetParameter(2); 
+  double maxfitssbY = h->GetFunction("f_pol2local")->GetParameter(0); 
+
+  fTEX << formatTex(maxfitssbX, Form("%s:%s:maxfitSSB:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+  fTEX << formatTex(maxfitssbY, Form("%s:%s:maxfitSSB:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+
+  c0->SaveAs(Form("%s/%s-fit-ssb.pdf", fDirectory.c_str(), fBdtString.c_str())); 
+
+
+  cout << "FIXME FIXME: patched MC weight with 0.6 to account for gen-level filters" << endl;
 
 }
 
@@ -2201,8 +2232,8 @@ void plotBDT::hackedMC(int chan) {
     
     newLegend(0.25, 0.7, 0.45, 0.85); 
     legg->AddEntry(fhMcMass0[i], Form("b>%3.1f", 0.0), "l"); 
-    legg->AddEntry(fhMcMass1[i], Form("b>%3.1f", 0.2), "p"); 
-    legg->AddEntry(fhMcMass2[i], Form("b>%3.1f", 0.3), "p"); 
+    legg->AddEntry(fhMcMass1[i], Form("b>%3.1f", 0.1), "p"); 
+    legg->AddEntry(fhMcMass2[i], Form("b>%3.1f", 0.2), "p"); 
     legg->Draw();
     
     if (1 == i ) color = kRed;
@@ -2302,8 +2333,8 @@ void plotBDT::loopFunction2(int mode) {
     }
     
     if (fBDT>0) fhMcMass0[fMode]->Fill(fb.m);
-    if (fBDT>0.2) fhMcMass1[fMode]->Fill(fb.m);
-    if (fBDT>0.3) fhMcMass2[fMode]->Fill(fb.m);
+    if (fBDT>0.1) fhMcMass1[fMode]->Fill(fb.m);
+    if (fBDT>0.2) fhMcMass2[fMode]->Fill(fb.m);
   }
   
   // -- fill BDT response for hacked MC3 analysis (overlay of three signals with Jpsi X)

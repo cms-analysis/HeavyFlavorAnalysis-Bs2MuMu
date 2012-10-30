@@ -86,6 +86,10 @@ int main(int argc, char *argv[]) {
     plotResults a(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
     if (!doUseBDT) a.fDoUseBDT = false; 
     a.makeAll(1);
+
+    //     plotResults b(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+    //     if (!doUseBDT) b.fDoUseBDT = false; 
+    //     b.calculateNumbers(2);
   } 
 
   // -- overlays histogram filling

@@ -43,6 +43,7 @@ plotClass(files, dir, cuts, mode) {
   fDoList.push_back("muonseta");
   fDoList.push_back("pt");
   fDoList.push_back("p");
+  fDoList.push_back("pz");
   fDoList.push_back("eta");
   fDoList.push_back("alpha");
 
@@ -144,6 +145,7 @@ void plotReducedOverlays::makeOverlay(string sample1, string sample2, string cha
   // -- save histograms into separate file for systematics sbs_E_NoMc_bdtHLT
   TH1D *h1  = (TH1D*)gDirectory->Get(Form("sbs_%s_%s_bdtHLT", fSetup.c_str(), sample1.c_str())); 
   TH1D *h2  = (TH1D*)gDirectory->Get(Form("sbs_%s_%s_bdtHLT", fSetup.c_str(), sample2.c_str()));
+  TDirectory *pD = gDirectory; 
 
   hfname  = fDirectory + "/anaBmm.plotReducedOverlaysSystematics." + fSuffix + ".root";
   TFile *fl = TFile::Open(hfname.c_str(), "UPDATE");
@@ -151,6 +153,17 @@ void plotReducedOverlays::makeOverlay(string sample1, string sample2, string cha
   h1->Write();
   h2->SetDirectory(fl);
   h2->Write();
+
+  // -- and now all histograms as well
+  for (unsigned int i = 0; i < fDoList.size(); ++i) {
+    h1 = (TH1D*)pD->Get(Form("sbs_%s_%s_%s%s", fSetup.c_str(), sample1.c_str(), fDoList[i].c_str(), selection.c_str())); 
+    h1->SetDirectory(fl); 
+    h1->Write();
+    h2 = (TH1D*)pD->Get(Form("sbs_%s_%s_%s%s", fSetup.c_str(), sample2.c_str(), fDoList[i].c_str(), selection.c_str())); 
+    h2->SetDirectory(fl); 
+    h2->Write();
+  }
+
   fl->Close();
 
   fHistFile->Close();
@@ -245,6 +258,7 @@ void plotReducedOverlays::bookDistributions(string mode) {
   fpMuonsEta[fOffset]  = bookDistribution(Form("%smuonseta", name.c_str()), "#eta_{#mu}", "fGoodMuonsEta", 40, -2.5, 2.5); 
   fpPt[fOffset]        = bookDistribution(Form("%spt", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 60, 0., 60.); 
   fpP[fOffset]         = bookDistribution(Form("%sp", name.c_str()), "p(B) [GeV]", "fGoodPt", 50, 0., 100.); 
+  fpPz[fOffset]        = bookDistribution(Form("%spz", name.c_str()), "p_{z}(B) [GeV]", "fGoodPt", 50, 0., 100.); 
   fpEta[fOffset]       = bookDistribution(Form("%seta", name.c_str()), "#eta(B)", "fGoodEta", 40, -2.5, 2.5); 
   fpAlpha[fOffset]     = bookDistribution(Form("%salpha", name.c_str()), "#alpha_{3D}", "fGoodAlpha", 50, 0., 0.1); 
   fpIso[fOffset]       = bookDistribution(Form("%siso", name.c_str()),  "isolation", "fGoodIso", 52, 0., 1.04); 
@@ -371,6 +385,7 @@ void plotReducedOverlays::allSystematics() {
 // ----------------------------------------------------------------------
 void plotReducedOverlays::systematics(string sample1, string sample2, int chan) {
   gStyle->SetOptTitle(0); 
+  zone(1);
   c0->cd();
 
   string sChan = (chan == 0? "B": "E"); 
@@ -381,6 +396,30 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
   string hfname  = fDirectory + "/anaBmm.plotReducedOverlaysSystematics." + fSuffix + ".root";
   cout << "fHistFile: " << hfname << endl;
   fHistFile = TFile::Open(hfname.c_str(), "");
+
+  // -- extract here the means of the NPV distributions  
+  TH1D *hpv1 = (TH1D*)fHistFile->Get(Form("sbs_%s_%s_pvnPresel", sChan.c_str(), sample1.c_str()));
+  TH1D *hpv2 = (TH1D*)fHistFile->Get(Form("sbs_%s_%s_pvnPresel", sChan.c_str(), sample2.c_str()));
+
+  if (string::npos != sample2.find("CsMc")) {
+    setHist(hpv2, kRed, 20, 1.5); 
+    setFilledHist(hpv2, kRed, kRed, 3365); 
+  } else if (string::npos != sample2.find("SgMc")) {
+    setHist(hpv2, kRed, 20, 1.5); 
+    setFilledHist(hpv2, kRed, kRed, 3344); 
+  } else {
+    setHist(hpv2, kBlue, 20, 1.5); 
+    setFilledHist(hpv2, kBlue, kBlue, 3365); 
+  }
+
+  hpv1->SetMinimum(0.); 
+  hpv1->Draw();
+  hpv2->Scale(hpv1->GetSumOfWeights()/hpv2->GetSumOfWeights()); 
+  hpv2->Draw("samehist"); 
+  tl->DrawLatex(0.15, 0.92, Form("Data: %3.2f#pm%3.2f", hpv1->GetMean(), hpv1->GetMeanError())); 
+  tl->DrawLatex(0.6, 0.92, Form("MC: %3.2f#pm%3.2f", hpv2->GetMean(), hpv2->GetMeanError())); 
+  c0->SaveAs(Form("%s/systematics-npv_%s_%s_chan%d.pdf", fDirectory.c_str(), sample1.c_str(), sample2.c_str(), chan)); 
+
 
   TH1D *h1 = (TH1D*)fHistFile->Get(Form("sbs_%s_%s_bdtHLT", sChan.c_str(), sample1.c_str()));
   for (int i = 1; i <= h1->GetNbinsX(); ++i) if (h1->GetBinContent(i) < 0) h1->SetBinContent(i, -0.0001); 
@@ -404,8 +443,6 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
   fTEX << formatTex(deltaEps, Form("%s:deltaEps%s%schan%i:val", fSuffix.c_str(), sample1.c_str(), sample2.c_str(), chan), 3) << endl;
   fTEX << formatTex(adeltaEps, Form("%s:absDeltaEps%s%schan%i:val", fSuffix.c_str(), sample1.c_str(), sample2.c_str(), chan), 3) << endl;
   fTEX << formatTex(rdeltaEps, Form("%s:relDeltaEps%s%schan%i:val", fSuffix.c_str(), sample1.c_str(), sample2.c_str(), chan), 3) << endl;
-
-  zone(1);
 
   if (string::npos != sample2.find("CsMc")) {
     setHist(h2, kRed, 20, 1.5); 
@@ -450,33 +487,6 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
 
   c0->SaveAs(Form("%s/systematics_%s_%s_chan%d.pdf", fDirectory.c_str(), sample1.c_str(), sample2.c_str(), chan)); 
   
-
-// -- This is the old cumulative distribution approach from Gemma
-//   TH1D *i1 = new TH1D("i1", "", h1->GetNbinsX(), h1->GetBinLowEdge(1), h1->GetBinLowEdge(h1->GetNbinsX()+1)); setHist(i1, kBlack); 
-//   for (int i = 1; i <= h1->GetNbinsX(); ++i) i1->SetBinContent(i, h1->Integral(1, i)); 
-//   i1->Scale(1./i1->GetBinContent(h1->GetNbinsX()));
-//   int bin1 = i1->FindBin(bdtCut)-1; 
-//   double eff1 = i1->GetBinContent(bin1);
-//   double frac1 = i1->GetBinContent(bin1); 
-//   cout << "eff1 = " << eff1 << endl;
-
-//   TH1D *i2 = new TH1D("i2", "", h2->GetNbinsX(), h2->GetBinLowEdge(1), h2->GetBinLowEdge(h2->GetNbinsX()+1)); setHist(i2, kRed); 
-//   for (int i = 1; i <= h2->GetNbinsX(); ++i) i2->SetBinContent(i, h2->Integral(1, i)); 
-//   i2->Scale(1./i2->GetBinContent(h1->GetNbinsX()));
-//   int bin2 = i2->FindFirstBinAbove(frac1)-1; 
-//   double bdt2 = i2->GetBinCenter(bin2); 
-//   double eff2 = i2->GetBinContent(bin2);
-//   cout << "bin1 = " << bin1 << " frac1 = " << frac1 << " -> bdt2 = " << bdt2 << " frac = " << eff2 << " at bin " << bin2 << endl;
-//   cout << "eff2 = " << eff2 << endl;
-
-//   cout << "sys1 = " << 2.*((eps1-eps2)/(eps1+eps2)) << endl;
-//   cout << "sys2 = " << 2.*((1-eff1) - (1-eff2))/((1-eff1) + (1-eff2)) << endl;
-//   i1->Draw("hist");
-//   i2->Draw("histsame");
-
-//   c0->SaveAs(Form("%s/cumulative_%s_%s_%s_chan%d.pdf", 
-// 		  fDirectory.c_str(), fSetup.c_str(), sample1.c_str(), sample2.c_str(), chan)); 
-
 }
 
 // ----------------------------------------------------------------------
@@ -484,9 +494,11 @@ void plotReducedOverlays::overlay(string sample1, string sample2, string selecti
 
   string hfname  = fDirectory + "/anaBmm.plotReducedOverlays." + fSuffix + ".root";
   //  string hfname  = fDirectory + "/test.root";
-//   cout << "fHistFile: " << hfname << endl;
-//   fHistFile = TFile::Open(hfname.c_str());
+  //   cout << "fHistFile: " << hfname << endl;
+  //   fHistFile = TFile::Open(hfname.c_str());
 
+
+  
   gStyle->SetOptTitle(0); 
   c0->cd();
   TH1D *h1(0), *h2(0); 
@@ -525,6 +537,11 @@ void plotReducedOverlays::overlay(string sample1, string sample2, string selecti
     h1->Draw("e");
     h2->Draw("samehist");
 
+
+    if (string::npos != fDoList[i].find("npv")) {
+      tl->DrawLatex(0.2, 0.92, Form("means: MC(%4.3f) Data(%4.3f)", h1->GetMean(), h2->GetMean()));
+    }
+    
     c0->Modified();
     c0->Update();
     c0->SaveAs(Form("%s/overlay_%s_%s_%s_%s_%s.pdf", 
@@ -595,6 +612,7 @@ void plotReducedOverlays::fillDistributions() {
   fpMuonsEta[fOffset]->fill(fb.m2eta, mass);
   fpPt[fOffset]->fill(fb.pt, mass);
   fpP[fOffset]->fill(a.P(), mass);
+  fpPz[fOffset]->fill(a.Pz(), mass);
   fpEta[fOffset]->fill(fb.eta, mass);
   fpAlpha[fOffset]->fill(fb.alpha, mass);
 

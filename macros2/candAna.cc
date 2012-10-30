@@ -137,8 +137,11 @@ void candAna::evtAnalysis(TAna01Event *evt) {
       } else {
 	if (fPreselection) {
 	  ((TH1D*)fHistDir->Get("../monEvents"))->Fill(12); 
+	  if (fVerbose > 5) cout << " filling this cand into the tree" << endl;
 	  fTree->Fill(); 
-	}         
+	} else {
+	  if (fVerbose > 5) cout << " failed preselection" << endl;
+	}
       }
     }
 
@@ -1010,13 +1013,13 @@ void candAna::triggerSelection() {
 	if (!a.CompareTo(imap->first.c_str())) {
  	  fGoodHLT = true; 
 	  fHLTPath = a.Data();
-	  if (fVerbose > 0) cout << "exact match: " << imap->first.c_str() << " HLT: " << a << " result: " << result << endl;
+	  if (fVerbose > 80) cout << "exact match: " << imap->first.c_str() << " HLT: " << a << " result: " << result << endl;
 	}
 
  	if (a.Contains(spath.c_str()) && (rmin <= fRun) && (fRun <= rmax)) {
 	  fHLTPath = a.Data();
  	  fGoodHLT = true; 
-	  if (fVerbose > 0) cout << "close match: " << imap->first.c_str() << " HLT: " << a 
+	  if (fVerbose > 80) cout << "close match: " << imap->first.c_str() << " HLT: " << a 
 				 << " result: " << result 
 				 << " in run " << fRun 
 				 << endl;

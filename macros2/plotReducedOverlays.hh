@@ -50,7 +50,7 @@ public:
 #define NAD 2
   AnalysisDistribution   
   *fpMuonsEta[NAD], *fpMuon1Pt[NAD], *fpMuon2Pt[NAD]
-    , *fpPt[NAD], *fpP[NAD], *fpEta[NAD] 
+    , *fpPt[NAD], *fpP[NAD], *fpPz[NAD], *fpEta[NAD] 
     , *fpAlpha[NAD]
     , *fpIso[NAD], *fpCloseTrk[NAD], *fpDocaTrk[NAD]   
     , *fpChi2Dof[NAD], *fpPChi2Dof[NAD] 

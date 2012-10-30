@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <cstdarg>
 
 #include "TLatex.h"
 #include "TLegend.h"
@@ -75,10 +76,10 @@ struct numbers {
   //  double genFileYield, genYield, genChanYield, recoYield, chanYield, muidYield, trigYield, candYield;
   double genAccFileYield, genYield, genFileYield, genAccYield;
   double effGenFilter, effGenFilterE; // only for the non-genAccFileYield!
-  double recoYield, muidYield, trigYield, candYield;
+  double recoYield, muidYield, trigYield, chanYield, candYield;
   //  double genFileYieldE, genYieldE, genChanYieldE, recoYieldE, chanYieldE, muidYieldE, trigYieldE, candYieldE;
-  double genFileYieldE, genYieldE, recoYieldE, muidYieldE, trigYieldE, candYieldE;
-  double ana0Yield,  anaYield,  anaMuonYield,  anaTriggerYield,  anaWmcYield;
+  double genFileYieldE, genYieldE, recoYieldE, chanYieldE, muidYieldE, trigYieldE, candYieldE;
+  double absNoCutsYield, ana0Yield,  anaYield,  anaMuonYield,  anaTriggerYield,  anaWmcYield;
   double ana0YieldE, anaYieldE, anaMuonYieldE, anaTriggerYieldE, anaWmcYieldE;
   //  double cFrac, cFracE, acc, accE, accChan, accChanE;
   double acc, accE;
@@ -111,36 +112,42 @@ struct numbers {
   double fitYieldTE;
   double effMuidTE, effMuidTNPTE, effMuidMCTE, effMuidTNPMCTE, effTrigTE, effTrigMCTE, effTrigTNPTE, effTrigTNPMCTE; 
   // -- new numbers
-  double fBgPeakLo,   fBgPeakHi,   fBgPeakBs,   fBgPeakBd;   // (peaking background)    //OK:init/fill
-  double fBgPeakLoE1, fBgPeakHiE1, fBgPeakBsE1, fBgPeakBdE1; // statistical error       //OK:init/fill
-  double fBgPeakLoE2, fBgPeakHiE2, fBgPeakBsE2, fBgPeakBdE2; // systematic error        //OK:init/fill
-  double fBgRslLo,    fBgRslHi,    fBgRslBs,    fBgRslBd;    // (rare sl background)    //OK:init/fill
-  double fBgRslLoE1,  fBgRslHiE1,  fBgRslBsE1,  fBgRslBdE1;  // statistical error       //OK:init/fill
-  double fBgRslLoE2,  fBgRslHiE2,  fBgRslBsE2,  fBgRslBdE2;  // systematic error        //OK:init/fill
-  double fBgRareLo,   fBgRareHi,   fBgRareBs,   fBgRareBd;    // (rare sl background)    //OK:init/fill
-  double fBgRareLoE1, fBgRareHiE1, fBgRareBsE1, fBgRareBdE1;  // statistical error       //OK:init/fill
-  double fBgRareLoE2, fBgRareHiE2, fBgRareBsE2, fBgRareBdE2;  // systematic error        //OK:init/fill
-  double fBgNonpLo,   fBgNonpHi,   fBgNonpBs,   fBgNonpBd;   // (scaled non-peaking background)//OK:init/fill
-  double fBgNonpLoE1, fBgNonpHiE1, fBgNonpBsE1, fBgNonpBdE1;                            //OK:init/fill
-  double fBgNonpLoE2, fBgNonpHiE2, fBgNonpBsE2, fBgNonpBdE2;                            //OK:init/fill
-  double fBgTotLo,    fBgTotHi,    fBgTotBs,    fBgTotBd;    // (sum of the above)      //OK:init/fill
-  double fBgTotLoE1,  fBgTotHiE1,  fBgTotBsE1,  fBgTotBdE1;                             //OK:init/fill
-  double fBgTotLoE2,  fBgTotHiE2,  fBgTotBsE2,  fBgTotBdE2;                             //OK:init/fill
-  double fSgLo,       fSgHi,       fSgBs,       fSgBd;       // (Bs signal yield)       //OK:init/fill
-  double fSgLoE1,     fSgHiE1,     fSgBsE1,     fSgBdE1;                                //OK:init/fill
-  double fSgLoE2,     fSgHiE2,     fSgBsE2,     fSgBdE2;                                //OK:init/fill
-  double fBdLo,       fBdHi,       fBdBs,       fBdBd;       // (Bd signal yield)       //OK:init/fill
-  double fBdLoE1,     fBdHiE1,     fBdBsE1,     fBdBdE1;                                //OK:init/fill
-  double fBdLoE2,     fBdHiE2,     fBdBsE2,     fBdBdE2;                                //OK:init/fill
+  double fBgPeakLo,   fBgPeakHi,   fBgPeakBs,   fBgPeakBd;    // (B+ normalized peaking background)    
+  double fBgPeakLoE1, fBgPeakHiE1, fBgPeakBsE1, fBgPeakBdE1;  
+  double fBgPeakLoE2, fBgPeakHiE2, fBgPeakBsE2, fBgPeakBdE2;  
+  double fBgRslLo,    fBgRslHi,    fBgRslBs,    fBgRslBd;     // (B+ normalized rare sl background)    
+  double fBgRslLoE1,  fBgRslHiE1,  fBgRslBsE1,  fBgRslBdE1;   
+  double fBgRslLoE2,  fBgRslHiE2,  fBgRslBsE2,  fBgRslBdE2;   
+  double fBgRareLo,   fBgRareHi,   fBgRareBs,   fBgRareBd;    // (B+ normalzied rare sl plus peaking background)   
+  double fBgRareLoE1, fBgRareHiE1, fBgRareBsE1, fBgRareBdE1;  
+  double fBgRareLoE2, fBgRareHiE2, fBgRareBsE2, fBgRareBdE2;  
+  double fBgRslsLo,   fBgRslsHi,   fBgRslsBs,   fBgRslsBd;    // (scaled rare sl background)    
+  double fBgRslsLoE1, fBgRslsHiE1, fBgRslsBsE1, fBgRslsBdE1;  
+  double fBgRslsLoE2, fBgRslsHiE2, fBgRslsBsE2, fBgRslsBdE2;  
+  double fBgCombLo,   fBgCombHi,   fBgCombBs,   fBgCombBd;    // combinatorial background
+  double fBgCombLoE1, fBgCombHiE1, fBgCombBsE1, fBgCombBdE1;                            
+  double fBgCombLoE2, fBgCombHiE2, fBgCombBsE2, fBgCombBdE2;                            
+  double fBgNonpLo,   fBgNonpHi,   fBgNonpBs,   fBgNonpBd;    // (scaled non-peaking background)
+  double fBgNonpLoE1, fBgNonpHiE1, fBgNonpBsE1, fBgNonpBdE1;                            
+  double fBgNonpLoE2, fBgNonpHiE2, fBgNonpBsE2, fBgNonpBdE2;                            
+  double fBgTotLo,    fBgTotHi,    fBgTotBs,    fBgTotBd;    // (sum of the above)      
+  double fBgTotLoE1,  fBgTotHiE1,  fBgTotBsE1,  fBgTotBdE1;                             
+  double fBgTotLoE2,  fBgTotHiE2,  fBgTotBsE2,  fBgTotBdE2;                             
+  double fSgLo,       fSgHi,       fSgBs,       fSgBd;       // (Bs signal yield)       
+  double fSgLoE1,     fSgHiE1,     fSgBsE1,     fSgBdE1;                                
+  double fSgLoE2,     fSgHiE2,     fSgBsE2,     fSgBdE2;                                
+  double fBdLo,       fBdHi,       fBdBs,       fBdBd;       // (Bd signal yield)       
+  double fBdLoE1,     fBdHiE1,     fBdBsE1,     fBdBdE1;                                
+  double fBdLoE2,     fBdHiE2,     fBdBsE2,     fBdBdE2;                                
   double fSgTot,      fBdTot,      fNoTot,      fCsTot;      // (total yields)
   double fSgTotE1,    fBdTotE1,    fNoTotE1,    fCsTotE1; 
   double fSgTotE2,    fBdTotE2,    fNoTotE2,    fCsTotE2; 
-  double fFitSg,      fFitBd,      fFitNo,      fFitNoC,     fFitCs,    fFitCsC;   // (fitted yields) //OK:init/fill
-  double fFitSgE1,    fFitBdE1,    fFitNoE1,    fFitNoCE1,   fFitCsE1,  fFitCsCE1;                    // OK:init/fill
-  double fFitSgE2,    fFitBdE2,    fFitNoE2,    fFitNoCE2,   fFitCsE2,  fFitCsCE2;                    // OK:init/fill
-  double fSgAndBgLo,  fSgAndBgHi,  fSgAndBgBs,  fSgAndBgBd;  // (sum of signal and backgrounds)       // OK:init/fill
-  double fSgAndBgLoE1,fSgAndBgHiE1,fSgAndBgBsE1,fSgAndBgBdE1;                                         // OK:init/fill
-  double fSgAndBgLoE2,fSgAndBgHiE2,fSgAndBgBsE2,fSgAndBgBdE2;                                         // OK:init/fill
+  double fFitSg,      fFitBd,      fFitNo,      fFitNoC,     fFitCs,    fFitCsC;   // (fitted yields) 
+  double fFitSgE1,    fFitBdE1,    fFitNoE1,    fFitNoCE1,   fFitCsE1,  fFitCsCE1;                    
+  double fFitSgE2,    fFitBdE2,    fFitNoE2,    fFitNoCE2,   fFitCsE2,  fFitCsCE2;                    
+  double fSgAndBgLo,  fSgAndBgHi,  fSgAndBgBs,  fSgAndBgBd;  // (sum of signal and backgrounds)       
+  double fSgAndBgLoE1,fSgAndBgHiE1,fSgAndBgBsE1,fSgAndBgBdE1;                                         
+  double fSgAndBgLoE2,fSgAndBgHiE2,fSgAndBgBsE2,fSgAndBgBdE2;                                         
   double fObsLo,      fObsHi,      fObsBs,      fObsBd;      // (observed counts)
 
 };
@@ -184,7 +191,7 @@ public:
   void initNumbers(numbers *a, bool initAll = true); 
   int  detChan(double m1eta, double m2eta);
   void reduceTree(TTree *t);
-
+  double quadraticSum(int n, ...); 
 
   virtual void dumpSamples();
   virtual void dumpCutNames(const char *h);
@@ -213,7 +220,7 @@ public:
 
   std::map<std::string, double> fNgen;
 
-  int fShow; 
+  int fShow, fYear; 
   std::string fFile; 
   std::string fStampString, fStampCms;
 
@@ -296,7 +303,9 @@ public:
   bool fInvertedIso;
   bool fNormProcessed; 
 
-  double fBsBgExp, fBsBgExpE, fBdBgExp, fBdBgExpE, fBgExpLo, fBgExpHi;
+  double fBsBgExp, fBsBgExpE, fBdBgExp, fBdBgExpE, fLoBgExp, fHiBgExp; // total expected bg
+  double fBsSlBgExp, fBsSlBgExpE, fBdSlBgExp, fBdSlBgExpE, fLoSlBgExp, fHiSlBgExp; // (scaled) rare semileptonic bg
+  double fBsCoBgExp, fBsCoBgExpE, fBdCoBgExp, fBdCoBgExpE, fLoCoBgExp, fHiCoBgExp; // combinatorial bg
   double fBgHist, fBgHistE, fBgHistLo, fBgHistHi; 
   double fBgHistExp, fBgHistExpE;
 
