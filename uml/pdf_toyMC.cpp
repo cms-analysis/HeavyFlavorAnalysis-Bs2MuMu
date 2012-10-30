@@ -456,8 +456,9 @@ void pdf_toyMC::fit_pulls(RooRealVar* pull, RooDataSet* rds, int i, int j) {
   
   RooPlot *rp_bs = pull->frame();
   rds->plotOn(rp_bs, Binning(40));
+  rds->statOn(rp_bs, Layout(0.55, 0.9, 0.9));
   gauss_bs->plotOn(rp_bs, LineColor(kBlue));
-  gauss_bs->paramOn(rp_bs, Layout(0.55, 0.9, 0.9));
+  gauss_bs->paramOn(rp_bs, Layout(0.55, 0.9, 0.7));
   TCanvas* canvas_bs = new TCanvas("canvas_bs", "canvas_bs", 600, 600);
   rp_bs->Draw();
   channel = simul_ ? i : ch_i_;
