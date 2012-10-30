@@ -27,6 +27,8 @@ public:
   TF1* pol1(TH1 *h); 
   TF1* pol1(TH1 *h, double lo, double hi); 
 
+  TF1* pol2local(TH1 *h, double width = 0.1); 
+
   TF1* expo(double lo, double hi); 
   TF1* expo(TH1 *h); 
   TF1* expo(TH1 *h, double lo, double hi); 

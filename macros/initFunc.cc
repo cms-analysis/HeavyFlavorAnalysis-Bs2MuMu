@@ -158,6 +158,11 @@ double f_pol2(double *x, double *par) {
   return par[0] + par[1]*x[0] + par[2]*x[0]*x[0]; 
 }
 
+// ----------------------------------------------------------------------
+double f_pol2local(double *x, double *par) {
+  return par[0] + par[1]*(x[0]-par[2])*(x[0]-par[2]); 
+}
+
 
 // ----------------------------------------------------------------------
 double f_pol0_BsBlind(double *x, double *par) {
@@ -718,6 +723,27 @@ TF1* initFunc::pol1Gauss(TH1 *h, double peak, double sigma) {
   return f; 
 
 }
+
+
+// ----------------------------------------------------------------------
+TF1* initFunc::pol2local(TH1 *h, double width) {
+
+  TF1 *f = (TF1*)gROOT->FindObject("f_pol2local"); 
+  if (f) delete f; 
+
+  f = new TF1("f_pol2local", f_pol2local, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX())+1, 3);
+  f->SetParNames("p0", "p1", "max"); 			   
+  
+  double maxVal   = h->GetMaximum(); 
+  double maxPlace = h->GetBinCenter(h->GetMaximumBin()); 
+  double ytop     = h->GetBinContent(h->GetMaximumBin() + width*h->GetNbinsX()); 
+  double slope    = (ytop-maxVal);
+  f->SetParameters(maxVal, slope, maxPlace); 
+  f->SetLineWidth(2);
+
+  return f; 
+}
+
 
 
 // ----------------------------------------------------------------------
