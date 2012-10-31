@@ -30,6 +30,9 @@ CXX	         += -I$(INCLUDEDIR)
 
 all: main_make_pdf main_fitData main_toyMC
 
+mass_vs_bdt: mass_vs_bdt.cc
+		$(CXX) $(CXXFLAGS) -o mass_vs_bdt.o $(GLIBS)  $(LDFLAGS)  $<
+
 main_toyMC: main_toyMC.cc pdf_analysis.o pdf_fitData.o pdf_toyMC.o
 		$(CXX) $(CXXFLAGS) -o main_toyMC.o pdf_analysis.o pdf_fitData.o pdf_toyMC.o $(GLIBS)  $(LDFLAGS)  $<
 
