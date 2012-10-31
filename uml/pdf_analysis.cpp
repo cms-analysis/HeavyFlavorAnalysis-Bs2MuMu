@@ -675,7 +675,7 @@ string pdf_analysis::define_pdf_sum(string name, int i) {
   pdf_sum += "(";
   for (unsigned int i = 0; i < pdfs.size(); i++) {
     pdf_sum += "N_";
-    if (pdfs[i]=="hist" || pdfs[i]=="expo3") pdf_sum += "rare";
+    if (pdfs[i]=="hist" || pdfs[i]=="expo3") pdf_sum += "semi";
     else pdf_sum += pdfs[i];
     pdf_sum += "*pdf_";
     pdf_sum += pdfs[i];
