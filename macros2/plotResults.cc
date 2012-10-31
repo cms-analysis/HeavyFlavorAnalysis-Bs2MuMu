@@ -362,15 +362,15 @@ void plotResults::calculateRareBgNumbers(int chan) {
   string name(""); 
 
   // -- 'tight muon' values
-  double epsMu[]  = {0.75, 0.75}; 
+  double epsMu[]  = {0.83, 0.90}; 
   double epsPi[]  = {0.001, 0.001}; 
-  double errPi2[] = {0.25*0.25, 0.25*0.25}; // changed to 25% uncertainty, relative errors on misid rates are statistical error from Danek's fits
+  double errPi2[] = {0.40*0.40, 0.40*0.40}; // changed to 40% uncertainty to be consistent with Michael's central value
   double epsKa[]  = {0.001, 0.001}; 
-  double errKa2[] = {0.25*0.25, 0.25*0.25}; 
-  double epsPr[]  = {0.0005, 0.0005};
-  double errPr2[] = {0.25*0.25, 0.25*0.25};
+  double errKa2[] = {0.40*0.40, 0.40*0.40}; 
+  double epsPr[]  = {0.00015, 0.00015};
+  double errPr2[] = {1.00*1.00, 1.00*1.00};
 
-  double teff[] = {0.83, 0.70}; // new numbers for BDT selection
+  double teff[] = {0.62, 0.44}; // new numbers for BDT selection
 
   c0->Clear();
   gStyle->SetOptStat(0);
@@ -453,10 +453,17 @@ void plotResults::calculateRareBgNumbers(int chan) {
   leggsl->SetTextFont(42); 
 
   double valInc(0.), error(0.), errorInc(0.); 
-  double rareBs  = 0.;
-  double rareBsE = 0.;
-  double rareBd  = 0.;
-  double rareBdE = 0.;
+  double vRare[4], vRareSl[4], vRareE[4], vRareSlE[4]; 
+  for (int i = 0; i < 4; ++i) {
+    vRare[i] = vRareSl[i] = vRareE[i] = vRareSlE[i] = 0.;
+  }
+
+  double rareBs    = 0.;
+  double rareBsE   = 0.;
+  double rareSlBs  = 0.;
+  double rareSlBsE = 0.;
+  double rareBd    = 0.;
+  double rareBdE   = 0.;
 
   fTEX << "% ----------------------------------------------------------------------" << endl;
   fTEX << "% --- rare Background per-channel numbers" << endl;  
@@ -473,9 +480,9 @@ void plotResults::calculateRareBgNumbers(int chan) {
 
   TH1D *hRare; 
   double tot0, tot, bd, bs, efftot, pss, pdd;
+  double eps(0.00001);
   for (map<string, string>::iterator imap = fName.begin(); imap != fName.end(); ++imap) {  
     fRareName = imap->first; 
-    cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << fRareName << endl;
     if (string::npos == fRareName.find("bg")) continue;
     if (0 == fF[fRareName])   continue; 
 
@@ -492,7 +499,6 @@ void plotResults::calculateRareBgNumbers(int chan) {
 
     tot  = h2->Integral(0, h2->GetNbinsX()+1); 
     tot0 = h2->GetSumOfWeights(); 
-    cout << "DBX DBX: tot = " << tot << " tot0 = " << tot0 << endl;
     bd   = h2->Integral(h2->FindBin(fCuts[chan]->mBdLo), h2->FindBin(fCuts[chan]->mBdHi));
     bs   = h2->Integral(h2->FindBin(fCuts[chan]->mBsLo), h2->FindBin(fCuts[chan]->mBsHi));
     
@@ -514,37 +520,60 @@ void plotResults::calculateRareBgNumbers(int chan) {
     //    it is used to normalize the rare bg histogram
     //    the relevant numbers are extracted from the integrals over specific regions
     double yield = scaledYield(fNumbersBla[chan], fNumbersNo[chan], fRareName, pRatio);
-    
-    // -- NB: rareBxE contains the SQUARE of the error
-    valInc = fNumbersBla[chan]->bsRare*misid*teff[chan];
-    // -- NB2: increment count only for peaking/rare bg. sl is included in 'combinatorial' bg
-    if (string::npos == fRareName.find("Nu")) rareBs  += valInc;
-    
-    error =  valInc*err[fRareName];
-    errorInc = error*error; 
-    if (string::npos == fRareName.find("Nu")) rareBsE += errorInc; 
-    fTEX <<  Form("\\vdef{%s:%s:bsRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
-    fTEX <<  Form("\\vdef{%s:%s:bsRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
-    
-    valInc = fNumbersBla[chan]->bdRare*misid*teff[chan];
-    if (string::npos == fRareName.find("Nu")) rareBd  += valInc;
-    
-    error = valInc*err[fRareName];
-    errorInc = error*error;
-    if (string::npos == fRareName.find("Nu"))  rareBdE += errorInc; 
-    fTEX <<  Form("\\vdef{%s:%s:bdRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
-    fTEX <<  Form("\\vdef{%s:%s:bdRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
-    
-    hRare->SetFillColor(colors[fRareName]);
-    hRare->SetFillStyle(1000);
-    cout << "DBX DBX scale factor = " << yield*misid*teff[chan]/tot << endl;
     hRare->Scale(yield*misid*teff[chan]/tot);
     
+    valInc = hRare->Integral(hRare->FindBin(4.9), hRare->FindBin(fCuts[chan]->mBdLo-eps));
+    error  = valInc*err[fRareName];
+    fTEX <<  Form("\\vdef{%s:%s:loSideband%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
+    fTEX <<  Form("\\vdef{%s:%s:loSideband%d:err}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
+    if (string::npos == fRareName.find("Nu")) {
+      vRare[0]    += valInc; 
+      vRareE[0]   += error*error; 
+    } else {
+      vRareSl[0]  += valInc; 
+      vRareSlE[0] += error*error; 
+    }
+
+    valInc = hRare->Integral(hRare->FindBin(fCuts[chan]->mBdLo+eps), hRare->FindBin(fCuts[chan]->mBsLo-eps));
+    error  = valInc*err[fRareName];
+    fTEX <<  Form("\\vdef{%s:%s:bdRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
+    fTEX <<  Form("\\vdef{%s:%s:bdRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
+    if (string::npos == fRareName.find("Nu")) {
+      vRare[1]    += valInc; 
+      vRareE[1]   += error*error; 
+    } else {
+      vRareSl[1]  += valInc; 
+      vRareSlE[1] += error*error; 
+    }
+
+    valInc = hRare->Integral(hRare->FindBin(fCuts[chan]->mBsLo+eps), hRare->FindBin(fCuts[chan]->mBsHi-eps));
+    error  = valInc*err[fRareName];
+    fTEX <<  Form("\\vdef{%s:%s:bsRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
+    fTEX <<  Form("\\vdef{%s:%s:bsRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
+    if (string::npos == fRareName.find("Nu")) {
+      vRare[2]    += valInc; 
+      vRareE[2]   += error*error; 
+    } else {
+      vRareSl[2]  += valInc; 
+      vRareSlE[2] += error*error; 
+    }
+
+    valInc = hRare->Integral(hRare->FindBin(fCuts[chan]->mBsHi+eps), hRare->FindBin(5.9));
+    error  = valInc*err[fRareName];
+    fTEX <<  Form("\\vdef{%s:%s:hiSideband%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
+    fTEX <<  Form("\\vdef{%s:%s:hiSideband%d:err}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
+    if (string::npos == fRareName.find("Nu")) {
+      vRare[3]    += valInc; 
+      vRareE[3]   += error*error; 
+    } else {
+      vRareSl[3]  += valInc; 
+      vRareSlE[3] += error*error; 
+    }
+
+    hRare->SetFillColor(colors[fRareName]);
+    hRare->SetFillStyle(1000);
+    
     double loSb = hRare->Integral(hRare->FindBin(4.9001), hRare->FindBin(5.199));
-    fTEX <<  Form("\\vdef{%s:%s:loSideband%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, 
-		  loSb) << endl;
-    fTEX <<  Form("\\vdef{%s:%s:loSideband%d:err}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, 
-		  loSb*0.3) << endl;
 
     if (string::npos != fRareName.find("Nu")) {
       cout << "&&&&&&&&&&&&&&&&& adding to bslRare: " << fRareName << endl;
@@ -574,7 +603,13 @@ void plotResults::calculateRareBgNumbers(int chan) {
 
   rareBsE = TMath::Sqrt(rareBsE);
   rareBdE = TMath::Sqrt(rareBdE);
-							 
+  rareSlBsE = TMath::Sqrt(rareSlBsE); 
+
+  for (int i = 0; i < 4; ++i) {
+    vRareE[i]   = TMath::Sqrt(vRareE[i]); 
+    vRareSlE[i] = TMath::Sqrt(vRareSlE[i]); 
+  }
+	 
   //  gStyle->SetOptStat(0);
 
   shrinkPad(0.12, 0.18); 
@@ -628,61 +663,52 @@ void plotResults::calculateRareBgNumbers(int chan) {
   fNumbersBs[chan]->bdRare = rareBd; 
   fNumbersBs[chan]->bdRareE= rareBdE; 
 
-  double relErr = (fNumbersBs[chan]->bdRareE/fNumbersBs[chan]->bdRare); 
+  double relErr(0.05); 
+
   fNumbersBs[chan]->offLoRare = bRare->Integral(bRare->FindBin(4.9001), bRare->FindBin(5.1999));
-  fNumbersBs[chan]->offLoRareE= relErr*fNumbersBs[chan]->offLoRare; 
+  fNumbersBs[chan]->offLoRareE= (vRareE[0]/vRare[0])*fNumbersBs[chan]->offLoRare; 
   fNumbersBs[chan]->offHiRare = bRare->Integral(bRare->FindBin(5.4501), bRare->FindBin(5.8999));
-  fNumbersBs[chan]->offHiRareE= relErr*fNumbersBs[chan]->offHiRare; 
+  fNumbersBs[chan]->offHiRareE= (vRareE[3]/vRare[3])*fNumbersBs[chan]->offHiRare; 
 
   // -- new numbers
-  relErr = (fNumbersBs[chan]->bdRareE/fNumbersBs[chan]->bdRare); 
   fNumbersBs[chan]->fBgPeakLo   = bRare->Integral(bRare->FindBin(4.9001), bRare->FindBin(5.1999));
-  fNumbersBs[chan]->fBgPeakLoE1 = 0.01 * fNumbersBs[chan]->fBgPeakLo; // FIXME
-  fNumbersBs[chan]->fBgPeakLoE2 = relErr * fNumbersBs[chan]->fBgPeakLo; 
+  fNumbersBs[chan]->fBgPeakLoE1 = relErr * fNumbersBs[chan]->fBgPeakLo; 
+  fNumbersBs[chan]->fBgPeakLoE2 = (vRareE[0]/vRare[0]) * fNumbersBs[chan]->fBgPeakLo; 
   fNumbersBs[chan]->fBgPeakBd   = bRare->Integral(bRare->FindBin(5.2001), bRare->FindBin(5.2999));
-  fNumbersBs[chan]->fBgPeakBdE1 = 0.01 * fNumbersBs[chan]->fBgPeakBd;  // FIXME
-  fNumbersBs[chan]->fBgPeakBdE2 = relErr * fNumbersBs[chan]->fBgPeakBd; 
-
-  relErr = (fNumbersBs[chan]->bsRareE/fNumbersBs[chan]->bsRare); 
+  fNumbersBs[chan]->fBgPeakBdE1 = relErr * fNumbersBs[chan]->fBgPeakBd; 
+  fNumbersBs[chan]->fBgPeakBdE2 = (vRareE[1]/vRare[1]) * fNumbersBs[chan]->fBgPeakBd; 
   fNumbersBs[chan]->fBgPeakBs   = bRare->Integral(bRare->FindBin(5.3001), bRare->FindBin(5.4499));
-  fNumbersBs[chan]->fBgPeakBsE1 = 0.01 * fNumbersBs[chan]->fBgPeakBs; // FIXME
-  fNumbersBs[chan]->fBgPeakBsE2 = relErr * fNumbersBs[chan]->fBgPeakBs;
+  fNumbersBs[chan]->fBgPeakBsE1 = relErr * fNumbersBs[chan]->fBgPeakBs; 
+  fNumbersBs[chan]->fBgPeakBsE2 = (vRareE[2]/vRare[2]) * fNumbersBs[chan]->fBgPeakBs;
   fNumbersBs[chan]->fBgPeakHi   = bRare->Integral(bRare->FindBin(5.4501), bRare->FindBin(5.8999));
-  fNumbersBs[chan]->fBgPeakHiE1 = 0.01 * fNumbersBs[chan]->fBgPeakHi; // FIXME
-  fNumbersBs[chan]->fBgPeakHiE2 = relErr * fNumbersBs[chan]->fBgPeakHi;
+  fNumbersBs[chan]->fBgPeakHiE1 = relErr * fNumbersBs[chan]->fBgPeakHi; 
+  fNumbersBs[chan]->fBgPeakHiE2 = (vRareE[3]/vRare[3]) * fNumbersBs[chan]->fBgPeakHi;
 
- 
-  relErr = (fNumbersBs[chan]->bdRareE/fNumbersBs[chan]->bdRare); 
   fNumbersBs[chan]->fBgRslLo   = bslRare->Integral(bslRare->FindBin(4.9001), bslRare->FindBin(5.1999));
-  fNumbersBs[chan]->fBgRslLoE1 = 0.01 * fNumbersBs[chan]->fBgRslLo; // FIXME
-  fNumbersBs[chan]->fBgRslLoE2 = relErr * fNumbersBs[chan]->fBgRslLo; 
+  fNumbersBs[chan]->fBgRslLoE1 = relErr * fNumbersBs[chan]->fBgRslLo; 
+  fNumbersBs[chan]->fBgRslLoE2 = (vRareSlE[0]/vRareSl[0]) * fNumbersBs[chan]->fBgRslLo; 
   fNumbersBs[chan]->fBgRslBd   = bslRare->Integral(bslRare->FindBin(5.2001), bslRare->FindBin(5.2999));
-  fNumbersBs[chan]->fBgRslBdE1 = 0.01 * fNumbersBs[chan]->fBgRslBd;  // FIXME
-  fNumbersBs[chan]->fBgRslBdE2 = relErr * fNumbersBs[chan]->fBgRslBd; 
-
-  relErr = (fNumbersBs[chan]->bsRareE/fNumbersBs[chan]->bsRare); 
+  fNumbersBs[chan]->fBgRslBdE1 = relErr * fNumbersBs[chan]->fBgRslBd; 
+  fNumbersBs[chan]->fBgRslBdE2 = (vRareSlE[1]/vRareSl[1]) * fNumbersBs[chan]->fBgRslBd; 
   fNumbersBs[chan]->fBgRslBs   = bslRare->Integral(bslRare->FindBin(5.3001), bslRare->FindBin(5.4499));
-  fNumbersBs[chan]->fBgRslBsE1 = 0.01 * fNumbersBs[chan]->fBgRslBs; // FIXME
-  fNumbersBs[chan]->fBgRslBsE2 = relErr * fNumbersBs[chan]->fBgRslBs;
+  fNumbersBs[chan]->fBgRslBsE1 = relErr * fNumbersBs[chan]->fBgRslBs; 
+  fNumbersBs[chan]->fBgRslBsE2 = (vRareSlE[2]/vRareSl[2]) * fNumbersBs[chan]->fBgRslBs;
   fNumbersBs[chan]->fBgRslHi   = bslRare->Integral(bslRare->FindBin(5.4501), bslRare->FindBin(5.8999));
-  fNumbersBs[chan]->fBgRslHiE1 = 0.01 * fNumbersBs[chan]->fBgRslHi; // FIXME
-  fNumbersBs[chan]->fBgRslHiE2 = relErr * fNumbersBs[chan]->fBgRslHi;
+  fNumbersBs[chan]->fBgRslHiE1 = relErr * fNumbersBs[chan]->fBgRslHi; 
+  fNumbersBs[chan]->fBgRslHiE2 = (vRareSlE[3]/vRareSl[3]) * fNumbersBs[chan]->fBgRslHi;
 
   fNumbersBs[chan]->fBgRareLo   = fNumbersBs[chan]->fBgRslLo + fNumbersBs[chan]->fBgPeakLo;
-  fNumbersBs[chan]->fBgRareLoE1 = TMath::Sqrt(fNumbersBs[chan]->fBgRslLoE1*fNumbersBs[chan]->fBgRslLoE1 + fNumbersBs[chan]->fBgPeakLoE1*fNumbersBs[chan]->fBgPeakLoE1);
-  fNumbersBs[chan]->fBgRareLoE2 = TMath::Sqrt(fNumbersBs[chan]->fBgRslLoE2*fNumbersBs[chan]->fBgRslLoE2 + fNumbersBs[chan]->fBgPeakLoE2*fNumbersBs[chan]->fBgPeakLoE2);
-
+  fNumbersBs[chan]->fBgRareLoE1 = quadraticSum(2, fNumbersBs[chan]->fBgRslLoE1, fNumbersBs[chan]->fBgPeakLoE1);
+  fNumbersBs[chan]->fBgRareLoE2 = quadraticSum(2, fNumbersBs[chan]->fBgRslLoE2, fNumbersBs[chan]->fBgPeakLoE2);
   fNumbersBs[chan]->fBgRareBs   = fNumbersBs[chan]->fBgRslBs + fNumbersBs[chan]->fBgPeakBs;
-  fNumbersBs[chan]->fBgRareBsE1 = TMath::Sqrt(fNumbersBs[chan]->fBgRslBsE1*fNumbersBs[chan]->fBgRslBsE1 + fNumbersBs[chan]->fBgPeakBsE1*fNumbersBs[chan]->fBgPeakBsE1);
-  fNumbersBs[chan]->fBgRareBsE2 = TMath::Sqrt(fNumbersBs[chan]->fBgRslBsE2*fNumbersBs[chan]->fBgRslBsE2 + fNumbersBs[chan]->fBgPeakBsE2*fNumbersBs[chan]->fBgPeakBsE2);
-
+  fNumbersBs[chan]->fBgRareBsE1 = quadraticSum(2, fNumbersBs[chan]->fBgRslBsE1, fNumbersBs[chan]->fBgPeakBsE1);
+  fNumbersBs[chan]->fBgRareBsE2 = quadraticSum(2, fNumbersBs[chan]->fBgRslBsE2, fNumbersBs[chan]->fBgPeakBsE2);
   fNumbersBs[chan]->fBgRareBd   = fNumbersBs[chan]->fBgRslBd + fNumbersBs[chan]->fBgPeakBd;
-  fNumbersBs[chan]->fBgRareBdE1 = TMath::Sqrt(fNumbersBs[chan]->fBgRslBdE1*fNumbersBs[chan]->fBgRslBdE1 + fNumbersBs[chan]->fBgPeakBdE1*fNumbersBs[chan]->fBgPeakBdE1);
-  fNumbersBs[chan]->fBgRareBdE2 = TMath::Sqrt(fNumbersBs[chan]->fBgRslBdE2*fNumbersBs[chan]->fBgRslBdE2 + fNumbersBs[chan]->fBgPeakBdE2*fNumbersBs[chan]->fBgPeakBdE2);
-
+  fNumbersBs[chan]->fBgRareBdE1 = quadraticSum(2, fNumbersBs[chan]->fBgRslBdE1, fNumbersBs[chan]->fBgPeakBdE1);
+  fNumbersBs[chan]->fBgRareBdE2 = quadraticSum(2, fNumbersBs[chan]->fBgRslBdE2, fNumbersBs[chan]->fBgPeakBdE2);
   fNumbersBs[chan]->fBgRareHi   = fNumbersBs[chan]->fBgRslHi + fNumbersBs[chan]->fBgPeakHi;
-  fNumbersBs[chan]->fBgRareHiE1 = TMath::Sqrt(fNumbersBs[chan]->fBgRslHiE1*fNumbersBs[chan]->fBgRslHiE1 + fNumbersBs[chan]->fBgPeakHiE1*fNumbersBs[chan]->fBgPeakHiE1);
-  fNumbersBs[chan]->fBgRareHiE2 = TMath::Sqrt(fNumbersBs[chan]->fBgRslHiE2*fNumbersBs[chan]->fBgRslHiE2 + fNumbersBs[chan]->fBgPeakHiE2*fNumbersBs[chan]->fBgPeakHiE2);
+  fNumbersBs[chan]->fBgRareHiE1 = quadraticSum(2, fNumbersBs[chan]->fBgRslHiE1, fNumbersBs[chan]->fBgPeakHiE1);
+  fNumbersBs[chan]->fBgRareHiE2 = quadraticSum(2, fNumbersBs[chan]->fBgRslHiE2, fNumbersBs[chan]->fBgPeakHiE2);
 
 
   fTEX << "% ----------------------------------------------------------------------" << endl;
@@ -821,56 +847,59 @@ void plotResults::calculateSgNumbers(int chan) {
   fNumbersBs[chan]->tauBd = fBdBgExp/(fLoBgExp + fHiBgExp); 
   fNumbersBs[chan]->tauBdE = 0.2*fNumbersBs[chan]->tauBd; //FIXME
 
-  // -- new numbers: combined combinatorial and scaled rare sl bg
+  double relCombError = 1./TMath::Sqrt(fBgHistHi); 
+  cout << "^^^^^^^^^^^ relative statistical error on combinatorial bg: " << relCombError << " from " << fBgHistHi << endl;
+
+  // -- new numbers: combined combinatorial and scaled rare sl bg  (E2 means stat + syst here!)
   fNumbersBs[chan]->fBgNonpLo   = fLoBgExp;
-  fNumbersBs[chan]->fBgNonpLoE1 = fLoBgExp*(fBdBgExpE/fBdBgExp);
-  fNumbersBs[chan]->fBgNonpLoE2 = 0.2*fLoBgExp;
+  fNumbersBs[chan]->fBgNonpLoE1 = quadraticSum(2, fLoBgExp*relCombError, fNumbersBs[chan]->fBgRslLoE1);
+  fNumbersBs[chan]->fBgNonpLoE2 = quadraticSum(2, fLoBgExp*relCombError, fNumbersBs[chan]->fBgRslLoE2);
 
   fNumbersBs[chan]->fBgNonpBd   = fBdBgExp;
-  fNumbersBs[chan]->fBgNonpBdE1 = fBdBgExpE;
-  fNumbersBs[chan]->fBgNonpBdE2 = 0.2*fBdBgExp;
+  fNumbersBs[chan]->fBgNonpBdE1 = quadraticSum(2, fBdBgExp*relCombError, fNumbersBs[chan]->fBgRslBdE1);
+  fNumbersBs[chan]->fBgNonpBdE2 = quadraticSum(2, fBdBgExp*relCombError, fNumbersBs[chan]->fBgRslBdE2);
 
   fNumbersBs[chan]->fBgNonpBs   = fBsBgExp;
-  fNumbersBs[chan]->fBgNonpBsE1 = fBsBgExpE;
-  fNumbersBs[chan]->fBgNonpBsE2 = 0.2*fBsBgExp;
+  fNumbersBs[chan]->fBgNonpBsE1 = quadraticSum(2, fBsBgExp*relCombError, fNumbersBs[chan]->fBgRslBsE1);
+  fNumbersBs[chan]->fBgNonpBsE2 = quadraticSum(2, fBsBgExp*relCombError, fNumbersBs[chan]->fBgRslBsE2);
 
   fNumbersBs[chan]->fBgNonpHi   = fHiBgExp;
-  fNumbersBs[chan]->fBgNonpHiE1 = fHiBgExp*(fBsBgExpE/fBsBgExp);
-  fNumbersBs[chan]->fBgNonpHiE2 = 0.2*fHiBgExp;
+  fNumbersBs[chan]->fBgNonpHiE1 = quadraticSum(2, fHiBgExp*relCombError, fNumbersBs[chan]->fBgRslHiE1);
+  fNumbersBs[chan]->fBgNonpHiE2 = quadraticSum(2, fHiBgExp*relCombError, fNumbersBs[chan]->fBgRslHiE2);
 
   // -- scaled sl rare bg
   fNumbersBs[chan]->fBgRslsLo   = fLoSlBgExp;
-  fNumbersBs[chan]->fBgRslsLoE1 = 0.1*fLoSlBgExp;
-  fNumbersBs[chan]->fBgRslsLoE2 = 0.2*fLoSlBgExp;
+  fNumbersBs[chan]->fBgRslsLoE1 = fNumbersBs[chan]->fBgRslLoE1;
+  fNumbersBs[chan]->fBgRslsLoE2 = fNumbersBs[chan]->fBgRslLoE2;
 
   fNumbersBs[chan]->fBgRslsBd   = fBdSlBgExp;
-  fNumbersBs[chan]->fBgRslsBdE1 = 0.1*fBdSlBgExp;
-  fNumbersBs[chan]->fBgRslsBdE2 = 0.2*fBdSlBgExp;
+  fNumbersBs[chan]->fBgRslsBdE1 = fNumbersBs[chan]->fBgRslBdE1;
+  fNumbersBs[chan]->fBgRslsBdE2 = fNumbersBs[chan]->fBgRslBdE2;
 
   fNumbersBs[chan]->fBgRslsBs   = fBsSlBgExp;
-  fNumbersBs[chan]->fBgRslsBsE1 = 0.1*fBsSlBgExp;
-  fNumbersBs[chan]->fBgRslsBsE2 = 0.2*fBsSlBgExp;
+  fNumbersBs[chan]->fBgRslsBsE1 = fNumbersBs[chan]->fBgRslBsE1;
+  fNumbersBs[chan]->fBgRslsBsE2 = fNumbersBs[chan]->fBgRslBsE2;
 
   fNumbersBs[chan]->fBgRslsHi   = fBsSlBgExp;
-  fNumbersBs[chan]->fBgRslsHiE1 = 0.1*fBsSlBgExp;
-  fNumbersBs[chan]->fBgRslsHiE2 = 0.2*fBsSlBgExp;
+  fNumbersBs[chan]->fBgRslsHiE1 = fNumbersBs[chan]->fBgRslHiE1;
+  fNumbersBs[chan]->fBgRslsHiE2 = fNumbersBs[chan]->fBgRslHiE2;
 
-  // -- combinatorial bg 
+  // -- combinatorial bg: E2 means stat + syst here!
   fNumbersBs[chan]->fBgCombLo   = fLoCoBgExp;
-  fNumbersBs[chan]->fBgCombLoE1 = 0.1*fLoCoBgExp;
-  fNumbersBs[chan]->fBgCombLoE2 = 0.2*fLoCoBgExp;
+  fNumbersBs[chan]->fBgCombLoE1 = relCombError*fLoCoBgExp;
+  fNumbersBs[chan]->fBgCombLoE2 = quadraticSum(2, relCombError*fLoCoBgExp, 0.05*fLoCoBgExp); 
 
   fNumbersBs[chan]->fBgCombBd   = fBdCoBgExp;
-  fNumbersBs[chan]->fBgCombBdE1 = 0.1*fBdCoBgExp;
-  fNumbersBs[chan]->fBgCombBdE2 = 0.2*fBdCoBgExp;
+  fNumbersBs[chan]->fBgCombBdE1 = relCombError*fBdCoBgExp;
+  fNumbersBs[chan]->fBgCombBdE2 = quadraticSum(2, relCombError*fBdCoBgExp, 0.05*fBdCoBgExp);
 
   fNumbersBs[chan]->fBgCombBs   = fBsCoBgExp;
-  fNumbersBs[chan]->fBgCombBsE1 = 0.1*fBsCoBgExp;
-  fNumbersBs[chan]->fBgCombBsE2 = 0.2*fBsCoBgExp;
+  fNumbersBs[chan]->fBgCombBsE1 = relCombError*fBsCoBgExp;
+  fNumbersBs[chan]->fBgCombBsE2 = quadraticSum(2, relCombError*fBsCoBgExp, 0.05*fBsCoBgExp);
 
   fNumbersBs[chan]->fBgCombHi   = fHiCoBgExp;
-  fNumbersBs[chan]->fBgCombHiE1 = 0.1*fHiCoBgExp;
-  fNumbersBs[chan]->fBgCombHiE2 = 0.2*fHiCoBgExp;
+  fNumbersBs[chan]->fBgCombHiE1 = relCombError*fHiCoBgExp;
+  fNumbersBs[chan]->fBgCombHiE2 = quadraticSum(2, relCombError*fHiCoBgExp, 0.05*fHiCoBgExp);
 
   // -- all backgrounds
   fNumbersBs[chan]->fBgTotLo   = fNumbersBs[chan]->fBgNonpLo + fNumbersBs[chan]->fBgPeakLo;

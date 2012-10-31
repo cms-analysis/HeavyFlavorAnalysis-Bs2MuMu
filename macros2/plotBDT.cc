@@ -1920,6 +1920,7 @@ void plotBDT::ssb() {
 
       if (0 == classID) {
 	if (fYear == 2012) {
+	  //	  sm->Fill(m, w8); // FIXME
 	  sm->Fill(m, w8*0.6); // FIXME
 	} else {
 	  sm->Fill(m, w8); // FIXME
@@ -1986,15 +1987,24 @@ void plotBDT::ssb() {
 
   double xmax(0.), xmin(0.); 
   int nbins(0); 
-  double maxVal = h->GetMaximum(); 
+  double maxVal = -1.;
+  for (int i = 1; i < h->GetNbinsX(); ++i) 
+    if (h->GetBinContent(i) > maxVal) maxVal = h->GetBinContent(i);
+
   for (int i = 1; i < h->GetNbinsX(); ++i) {
-    if (h->GetBinContent(i) > 0.4*maxVal) {
+    if (h->GetBinContent(i) > 0.7*maxVal) {
       xmax = h->GetBinCenter(i); 
       nbins = i - h->GetMaximumBin(); 
     }
     h->SetBinError(i, 0.03*h->GetBinContent(i)); 
   }
-  xmin = h->GetBinCenter(h->GetMaximumBin() - TMath::Abs(nbins) + 1); 
+  xmin = h->GetBinCenter(h->GetMaximumBin() - TMath::Abs(nbins)); 
+
+  cout << "maxval: " << h->GetMaximum() << endl;
+  cout << "maxbin: " << h->GetMaximumBin() << endl;
+  cout << "xmax: " << xmax << endl;
+  cout << "xmin: " << xmin << endl;
+  cout << "nbins: " << nbins << endl;
   
   TF1 *f1 = fpFunc->pol2local(h, 0.05); 
   h->Fit(f1, "r", "", xmin, xmax); 
@@ -2007,8 +2017,9 @@ void plotBDT::ssb() {
   c0->SaveAs(Form("%s/%s-fit-ssb.pdf", fDirectory.c_str(), fBdtString.c_str())); 
 
 
-  cout << "FIXME FIXME: patched MC weight with 0.6 to account for gen-level filters" << endl;
-
+  if (fYear == 2012) {
+    cout << "FIXME FIXME: patched MC weight with 0.6 to account for gen-level filters" << endl;
+  }
 }
 
 

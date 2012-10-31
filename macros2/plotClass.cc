@@ -1671,41 +1671,79 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
 	}
       }
     } else if (no) {
-      // -- Normalization
+//       // -- Normalization
+//       chan = detChan(bg1eta, bg2eta); 
+//       if (chan == a.index) {
+// 	++nchangen;
+
+// 	++recoPtA; 
+// 	if (bg1pt > 3.5 && bg2pt > 3.5) ++recoPtB;
+
+// 	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5) {
+// 	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4) {
+// 	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.5
+// 		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4
+// 		&& bm1gt && bm2gt && bk1gt
+// 		) {
+// 	      chan = detChan(bm1eta, bm2eta); 
+// 	      if (chan == a.index) {
+// 		++nreco;
+// 		if (bm > 0) {
+// 		  ++ncand2;
+// 		}
+// 		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
+// 		if (bm1pt > 3.5 && bm2pt > 3.5) {
+// 		  ++nchan; 
+// 		  if (bm > 0) {
+// 		    ++ncand;
+// 		  }
+// 		  if (bm1id && bm2id) {
+// 		    ++nmuid;
+// 		    if (bhlt) {
+// 		      ++nhlt;
+// 		    }
+// 		  }
+// 		}
+// 	      }
+// 	    }
+// 	  }
+// 	}
+//       }
+            // -- Normalization
       chan = detChan(bg1eta, bg2eta); 
       if (chan == a.index) {
-	++nchangen;
-	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5) {
-	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4) {
-	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.5
-		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4
-		&& bm1gt && bm2gt && bk1gt
-		) {
-	      ++recoPtA; 
-	      if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
-	      chan = detChan(bm1eta, bm2eta); 
-	      if (chan == a.index) {
-		++nreco;
-		if (bm > 0) {
-		  ++ncand2;
-		}
-		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
-		if (bm1pt > 3.5 && bm2pt > 3.5) {
-		  ++nchan; 
-		  if (bm > 0) {
-		    ++ncand;
-		  }
-		  if (bm1id && bm2id) {
-		    ++nmuid;
-		    if (bhlt) {
-		      ++nhlt;
-		    }
-		  }
-		}
-	      }
-	    }
-	  }
-	}
+      	++nchangen;
+      	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5) {
+      	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4) {
+      	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.5
+      		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4
+      		&& bm1gt && bm2gt && bk1gt
+      		) {
+      	      ++recoPtA; // this may be at the wrong place.
+      	      if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
+      	      chan = detChan(bm1eta, bm2eta); 
+      	      if (chan == a.index) {
+      		++nreco;
+      		if (bm > 0) {
+      		  ++ncand2;
+      		}
+      		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
+      		if (bm1pt > 3.5 && bm2pt > 3.5) {
+      		  ++nchan; 
+      		  if (bm > 0) {
+      		    ++ncand;
+      		  }
+      		  if (bm1id && bm2id) {
+      		    ++nmuid;
+      		    if (bhlt) {
+      		      ++nhlt;
+      		    }
+      		  }
+      		}
+      	      }
+      	    }
+      	  }
+      	}
       }
     } else if (cs) {
       // -- Control sample
@@ -1759,8 +1797,8 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
   a.muidYield       = nmuid;
   a.trigYield       = nhlt;
   a.chanYield       = nchan;
-  a.candYield       = ncand2;
   a.candYield       = ncand;
+  a.candYield       = ncand2;
 
   if (a.genAccYield > 0) {
     a.acc = a.recoYield/a.genAccYield;
@@ -1775,18 +1813,19 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
     a.effCand  = a.candYield/a.recoYield;
     a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.recoYield));
 
-    a.effCand  = a.candYield/nchan;
-    a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(nchan));
+    a.effCand  = a.candYield/a.recoYield;
+    a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.recoYield));
+
+    //     a.effCand  = 0.98; 
+    //     a.effCandE = 0.04; 
   } 
 
-  cout << "NGEN      = " << ngen << endl;
-  cout << "NGENCHAN  = " << nchangen << endl;
-  cout << "NRECO     = " << nreco << endl;
-  cout << "NRECOCHAN = " << nchan << endl;
-  cout << "NMUID     = " << nmuid << endl;
-  cout << "NHLT      = " << nhlt << endl;
-  cout << "NCHAN     = " << nchan << endl;
-  cout << "NCAND     = " << ncand << endl;
+  cout << "genAccFileYield:  " << a.genAccFileYield << endl;
+  cout << "genAccYield:      " << a.genAccYield << endl;
+  cout << "recoYield:        " << a.recoYield << endl;
+  cout << "candYield:        " << a.candYield << endl;
+  cout << "recoPtB:          " << recoPtB << endl;
+  cout << "recoPtA:          " << recoPtA << endl;
 
 }
 
@@ -2493,7 +2532,7 @@ void plotClass::dumpSamples() {
     }
     //    cout << "xxxx: bf = " << bf << " +/- " << bf*fBFE[imap->first] << " base = " << base << endl;
     fTEX << scientificTex(bf, bf*fBFE[imap->first], 
-			  Form("%s:bf:%s", fSuffix.c_str(), imap->first.c_str(), name.c_str()), base, 2);
+			  Form("%s:bf:%s", fSuffix.c_str(), imap->first.c_str(), name.c_str()), base, 2) << endl;
 
     if (n>0) {
       //      cout <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{%4.0f } } }", fSuffix.c_str(), imap->first.c_str(), n) << endl;
@@ -2648,15 +2687,15 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
     setFilledHist(hr, kBlue, kBlue, 3344);
     hr->DrawCopy("same");
 
-    fBsCoBgExp = lF2->Integral(5.30, 5.45)/h->GetBinWidth(1); 
-    fBdCoBgExp = lF2->Integral(5.20, 5.30)/h->GetBinWidth(1); 
-    fLoCoBgExp = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1);
-    fHiCoBgExp = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
+    fBsCoBgExp  = lF2->Integral(5.30, 5.45)/h->GetBinWidth(1); 
+    fBdCoBgExp  = lF2->Integral(5.20, 5.30)/h->GetBinWidth(1); 
+    fLoCoBgExp  = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1);
+    fHiCoBgExp  = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
 
-    fBsSlBgExp = hr->Integral(hr->FindBin(5.30+eps), hr->FindBin(5.45-eps)); 
-    fBdSlBgExp = hr->Integral(hr->FindBin(5.20+eps), hr->FindBin(5.30-eps)); 
-    fLoSlBgExp = hr->Integral(hr->FindBin(4.90+eps), hr->FindBin(5.20-eps));
-    fHiSlBgExp = hr->Integral(hr->FindBin(5.45+eps), hr->FindBin(5.90-eps)); 
+    fBsSlBgExp  = hr->Integral(hr->FindBin(5.30+eps), hr->FindBin(5.45-eps)); 
+    fBdSlBgExp  = hr->Integral(hr->FindBin(5.20+eps), hr->FindBin(5.30-eps)); 
+    fLoSlBgExp  = hr->Integral(hr->FindBin(4.90+eps), hr->FindBin(5.20-eps));
+    fHiSlBgExp  = hr->Integral(hr->FindBin(5.45+eps), hr->FindBin(5.90-eps)); 
 
     // -- build up total bg
     fBsBgExp = fBsCoBgExp;
