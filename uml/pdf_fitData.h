@@ -8,6 +8,7 @@
 #include "pdf_analysis.h"
 
 #include "TTree.h"
+#include "TH2D.h"
 
 #include "RooCategory.h"
 #include "RooSimultaneous.h"

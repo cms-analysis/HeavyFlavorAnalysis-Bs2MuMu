@@ -381,6 +381,8 @@ void pdf_fitData::print_each_channel() {
 void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double> cut_, string cuts, TTree* tree, int offset) {
   int events = 0;
   if (!strcmp(tree->GetName(), "SgData_bdt")) {
+    vector <TH2D*> mass_vs_bdt(channels);
+    for (int i = 0; i < channels; i ++) mass_vs_bdt[i] = new TH2D(name("mass_vs_bdt", i), "mass_vs_bdt", 100, 4.9, 5.9, 100, 0., 1.);
     TTree* reduced_tree = tree->CopyTree(cuts.c_str());
     Double_t m1eta_t, m2eta_t, m_t, eta_B_t, bdt_t;
     reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
@@ -402,10 +404,12 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
         if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) {
           if (cut_b && bdt_t < cut_[0 + offset*2]) continue;
           channels_cat->setIndex(0 + offset*2);
+          mass_vs_bdt[0 + offset]->Fill(m_t, bdt_t);
         }
         else {
           if (cut_b && bdt_t < cut_[1 + offset*2]) continue;
           channels_cat->setIndex(1 + offset*2);
+          mass_vs_bdt[1 + offset]->Fill(m_t, bdt_t);
         }
         if (bdt_t < 0.1) bdt_cat->setIndex(0);
         else if (bdt_t < 0.18) bdt_cat->setIndex(1);
@@ -413,6 +417,13 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
         RooArgSet varlist_tmp(*Mass, *MassRes, *eta, *m1eta, *m2eta, *bdt, *channels_cat, *bdt_cat);
         dataset->add(varlist_tmp);
       }
+    }
+    for (int i = 0; i < channels; i ++) {
+      TCanvas * mass_vs_bdt_c = new TCanvas("mass_vs_bdt_c", "mass_vs_bdt_c", 600, 600);
+      mass_vs_bdt[i]->SetStats(0);
+      mass_vs_bdt[i]->Draw("COLZ");
+      mass_vs_bdt_c->Print((get_address("mass_vs_bdt", Form("%d", i), false) + ".gif").c_str());
+      mass_vs_bdt_c->Print((get_address("mass_vs_bdt", Form("%d", i), false) + ".pdf").c_str());
     }
   }
   else {
