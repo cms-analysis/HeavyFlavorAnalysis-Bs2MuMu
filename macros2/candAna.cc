@@ -46,21 +46,21 @@ candAna::~candAna() {
 void candAna::evtAnalysis(TAna01Event *evt) {
 
   fpEvt = evt; 
+  fBadEvent = false; 
+
   //   cout << fEvt << "  " << (fEvt>0? " >0" : "<0") << endl;
   //   return;
-
-  //  cout << "----------------------------------------------------------------------" << endl;
 
   if (fIsMC) {
     genMatch(); 
     recoMatch(); 
     candMatch(); 
+    if (fBadEvent) return;
     efficiencyCalculation();
   } 
 
   triggerSelection();
   runRange(); 
-
 
   TAnaCand *pCand(0);
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {

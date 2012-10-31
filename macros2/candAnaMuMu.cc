@@ -81,14 +81,6 @@ void candAnaMuMu::genMatch() {
     if (531 != TMath::Abs(pM->fID)) pM = pB;
     double x = (pM1->fV - pM->fV).Mag(); 
     fGenLifeTime = x*m/p/TMath::Ccgs();
-    //     if (fGenLifeTime < 0.0004) {
-    //       cout << "idx = " << pB->fNumber << " t: " << fGenLifeTime << " p: " << p  << " x: " << x 
-    // 	   << " ID: " << pB->fID 
-    // 	   << " m: " << pM1->fV.X() << ", " << pM1->fV.Y()  << ", " << pM1->fV.Z()
-    // 	   << " B: " << pB->fV.X() << ", " << pB->fV.Y()  << ", " << pB->fV.Z()
-    // 	   << endl;
-    //       fpEvt->dumpGenBlock();
-    //     }
 
     if (pM1->fP.Perp() > pM2->fP.Perp()) {
       fGenM1Tmi = pM1->fNumber; 
@@ -105,6 +97,26 @@ void candAnaMuMu::genMatch() {
   if (fVerbose > 10) {
     cout << "fGenM1Tmi = " << fGenM1Tmi << endl;
     cout << "fGenM2Tmi = " << fGenM2Tmi << endl;
+  }
+
+  // -- check that only one reco track is matched to each gen particle
+  //    else skip the *event*!
+  if (fGenM1Tmi > -1 && fGenM2Tmi > -1) {
+    TAnaTrack *pT(0);
+    int cntM1(0), cntM2(0); 
+    for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+      pT = fpEvt->getRecTrack(i); 
+      if (fGenM1Tmi == pT->fGenIndex) ++cntM1;
+      if (fGenM2Tmi == pT->fGenIndex) ++cntM2;
+    }
+    
+    static int cntBadEvents = 0; 
+    if (cntM1 > 1 || cntM2 > 1) {
+      if (fVerbose > 1) cout << "BAD BAD event: multiple reco tracks matched to the same gen particle! " << ++cntBadEvents 
+			     << ": " << cntM1 << " .. " << cntM2
+			     << " (gen-reco matches) " << endl;
+      fBadEvent = true; 
+    }
   }
 
 }
@@ -148,9 +160,11 @@ void candAnaMuMu::candMatch() {
   int idx(-1); 
   int d1Matched(0), d2Matched(0); 
   TAnaCand *pCand(0);
+  if (fRecM1Tmi < 0 ||  fRecM2Tmi < 0) return; 
+  
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
     pCand = fpEvt->getCand(iC); 
-    if (TYPE != pCand->fType) continue;
+    if (TYPE != pCand->fType)  continue;
     
     d1Matched = d2Matched = 0; 
     for (int i = pCand->fSig1; i <= pCand->fSig2; ++i) {

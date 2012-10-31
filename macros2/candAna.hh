@@ -222,6 +222,8 @@ public:
 
   bool    fPreselection; 
 
+  bool    fBadEvent; 
+  
   struct RedTreeData fRTD;
 
   // -- Analysis distributions

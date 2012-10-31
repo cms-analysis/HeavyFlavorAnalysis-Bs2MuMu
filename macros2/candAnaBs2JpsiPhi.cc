@@ -246,6 +246,27 @@ void candAnaBs2JpsiPhi::genMatch() {
     fGenK2Tmi = -1;  
   }
 
+
+  // -- check that only one reco track is matched to each gen particle
+  //    else skip the *event*!
+  TAnaTrack *pT(0);
+  int cntM1(0), cntM2(0), cntK1(0), cntK2(0); 
+  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+    pT = fpEvt->getRecTrack(i); 
+    if (fGenM1Tmi > -1 && fGenM1Tmi == pT->fGenIndex) ++cntM1;
+    if (fGenM2Tmi > -1 && fGenM2Tmi == pT->fGenIndex) ++cntM2;
+    if (fGenK1Tmi > -1 && fGenK1Tmi == pT->fGenIndex) ++cntK1;
+    if (fGenK2Tmi > -1 && fGenK2Tmi == pT->fGenIndex) ++cntK2;
+  }
+
+  static int cntBadEvents = 0; 
+  if (cntM1 > 1 || cntM2 > 1 || cntK1 > 1 || cntK2 > 1) {
+    if (fVerbose > 1) cout << "BAD BAD event: multiple reco tracks matched to the same gen particle! " << ++cntBadEvents 
+			   << ": " << cntM1 << " .. " << cntM2 << " .. " << cntK1 << " .. " << cntK2
+			   << " (gen-reco matches) " << endl;
+    fBadEvent = true; 
+  }
+
 }
 
 
