@@ -96,7 +96,13 @@ class ncAna {
 	private:
 		// Private datatypes
 		typedef std::map<bmm_param,measurement_t> ulc_t;
-		
+	
+	public:
+		void setMCFileName(const char *filename) { fMCFileName = std::string(filename); }
+		void setAccFileName(const char *filename) { fAccFileName = std::string(filename); }
+		const char *getMCFileName() { return fMCFileName.c_str(); }
+		const char *getAccFileName() { return fAccFileName.c_str(); }
+	
 	private:
 		// filenames
 		std::string fDataFileName;
