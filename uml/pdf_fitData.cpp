@@ -382,7 +382,7 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
   int events = 0;
   if (!strcmp(tree->GetName(), "SgData_bdt")) {
     vector <TH2D*> mass_vs_bdt(channels);
-    for (int i = 0; i < channels; i ++) mass_vs_bdt[i] = new TH2D(name("mass_vs_bdt", i), "mass_vs_bdt", 100, 4.9, 5.9, 100, 0., 1.);
+    for (int i = 0; i < channels; i ++) mass_vs_bdt[i] = new TH2D(name("mass_vs_bdt", i), "mass_vs_bdt;mass[GeV];bdt", 100, 4.9, 5.9, 100, 0., 1.);
     TTree* reduced_tree = tree->CopyTree(cuts.c_str());
     Double_t m1eta_t, m2eta_t, m_t, eta_B_t, bdt_t;
     reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
@@ -424,6 +424,7 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
       mass_vs_bdt[i]->Draw("COLZ");
       mass_vs_bdt_c->Print((get_address("mass_vs_bdt", Form("%d", i), false) + ".gif").c_str());
       mass_vs_bdt_c->Print((get_address("mass_vs_bdt", Form("%d", i), false) + ".pdf").c_str());
+      delete mass_vs_bdt_c;
     }
   }
   else {
@@ -1125,7 +1126,7 @@ void pdf_fitData::setnewlumi() {
       for (int j = 0; j < channels_bdt; j++) {
         double old_val = ws_->var(name("N_bu", i, j))->getVal();
         ws_->var(name("N_bu", i, j))->setVal(old_val * lumi);
-        cout << "channel " << i << "; Bs expected: " << ws_->function(name("N_bs_formula", i, j))->getVal() << "; Bd expected: " << ws_->function(name("N_bd_formula", i, j))->getVal() ;
+        cout << "channel " << i << "; Bs expected: " << ws_->function(name("N_bs_formula", i, j))->getVal() << "; Bd expected: " << ws_->function(name("N_bd_formula", i, j))->getVal() << endl;
       }
     }
   }
