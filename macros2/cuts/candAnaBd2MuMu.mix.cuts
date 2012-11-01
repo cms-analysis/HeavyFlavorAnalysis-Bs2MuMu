@@ -6,6 +6,14 @@ TRIGRANGE   HLT_Dimuon6_Bs_v6_Bs2E33v1p2V4(1:99999999)
 TRIGRANGE   HLT_Dimuon4_Bs_Barrel_v7_Bs2E33v1p2V4(1:99999999)
 TRIGRANGE   HLT_DoubleMu4_Dimuon4_Bs_Barrel_v1(1:99999999)
 TRIGRANGE   HLT_DoubleMu4_Dimuon6_Bs_v1(1:99999999)
+TRIGRANGE   HLT_DoubleMu4_Dimuon6_Bs_Barrel_v1(1:99999999)
+TRIGRANGE   HLT_DoubleMu4_Dimuon7p5_Bs_v1(1:99999999)
+TRIGRANGE   HLT_DoubleMu3_4_Dimuon5_Bs_Central_v2(1:99999999)
+TRIGRANGE   HLT_DoubleMu3p5_4_Dimuon5_Bs_Central_v2(1:99999999)
+TRIGRANGE   HLT_DoubleMu4_Dimuon7_Bs_Forward_v2(1:99999999)
+TRIGRANGE   HLT_DoubleMu4_Dimuon4_Bs_Barrel_v6(1:99999999)
+TRIGRANGE   HLT_DoubleMu4_Dimuon6_Bs_v6(1:99999999)
+#TRIGRANGE   HLT_DoubleMu4_Dimuon7_Bs_Forward_v2(190707:99999999)
 # -- boxes
 +input cuts/boxes.cuts
 # -- tracks
