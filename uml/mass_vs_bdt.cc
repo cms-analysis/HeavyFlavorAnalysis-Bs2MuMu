@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
     mass_vs_bdt_data_h[i]->SetMaximum(10);
 
     mass_vs_bdt_mc_h[i]->Draw("");
-    mass_vs_bdt_data_h[i]->Draw("same");
+//    mass_vs_bdt_data_h[i]->Draw("same");
 
     TLine *line;
     if (i == 0)   {

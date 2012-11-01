@@ -267,16 +267,24 @@ void pdf_fitData::print_each_channel() {
       }
       if (pee) projw_set.add(*ws_->var("MassRes"));
 
-      RooPlot* final_p = ws_->var("Mass")->frame(Bins(40), Title(title.c_str()));
+      RooPlot* final_p = ws_->var("Mass")->frame(Bins(25), Title(title.c_str()));
       global_data->plotOn(final_p, Cut(cut.c_str()));
-      ws_->pdf("pdf_ext_simul")->plotOn(final_p, VisualizeError(*RFR, 1), FillColor(kYellow), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_), MoveToBack());
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, VisualizeError(*RFR, 1, 1), FillColor(kYellow), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_), MoveToBack());
       ws_->pdf("pdf_ext_simul")->plotOn(final_p, Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_), LineColor(kBlue), LineWidth(3));
 
-      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_comb", i, j)), LineColor(kBlue - 5),   LineStyle(2)/*, DrawOption("F"), FillColor(kBlue - 5), FillStyle(3001)*/, LineWidth(3), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
-      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_semi", i, j)), LineColor(kGreen - 7),  LineStyle(1), DrawOption("F"), FillColor(kGreen - 7), FillStyle(3001), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
-      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_bs", i, j)), LineColor(kRed),        LineStyle(1), DrawOption("F"), FillColor(kRed),        FillStyle(3001)/*, LineWidth(3)*/, Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
-      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_bd", i, j)), LineColor(kViolet - 4), LineStyle(1), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3144)/*, LineWidth(3)*/, Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
-      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_peak", i, j)), LineColor(kBlack),  LineStyle(1), DrawOption("F"), FillColor(kBlack)/*, FillStyle(3001)*/, LineWidth(2), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_semi", i, j)), DrawOption("F"), FillColor(kGreen - 3), FillStyle(3001), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_bs", i, j)), DrawOption("F"), FillColor(kRed),        FillStyle(3001), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_bd", i, j)), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3001), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_peak", i, j)), DrawOption("F"), FillColor(kBlack), FillStyle(3001), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_comb", i, j)), LineColor(kBlue - 1),   LineStyle(2), LineWidth(3), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_semi", i, j)), LineColor(kBlack),  LineStyle(1), DrawOption("L"), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_bs", i, j)), LineColor(kBlack),        LineStyle(1), DrawOption("L"), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_bd", i, j)), LineColor(kBlack), LineStyle(1), DrawOption("L"), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+      ws_->pdf("pdf_ext_simul")->plotOn(final_p, Components(name("pdf_peak", i, j)), LineColor(kBlack),  LineStyle(1), DrawOption("L"), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *global_data, bdt_fit_));
+
+      global_data->plotOn(final_p, Cut(cut.c_str()));
+      final_p->SetMinimum(0);
 
       TCanvas* final_c = new TCanvas("final_c", "final_c", 600, 600);
       final_p->Draw();
@@ -302,7 +310,7 @@ void pdf_fitData::print_each_channel() {
       }
       else {
         ostringstream fitresult_tex;
-        fitresult_tex << setprecision(4) << scientific << "BF(B^{0}_{s}) = " << N_bs->getVal() << " ^{+" << getErrorHigh(N_bs) << "}_{" << getErrorLow(N_bs) << "}";
+        fitresult_tex << setprecision(2) << scientific << "BF(B^{0}_{s}) = " << N_bs->getVal() << " ^{+" << getErrorHigh(N_bs) << "}_{" << getErrorLow(N_bs) << "}";
         fitresult_tex_vec.push_back(fitresult_tex.str());
         ostringstream fitresult_tex2;
         fitresult_tex2 << "(N(B^{0}_{s}) = " << setprecision(2) << fixed << ws_->function(name("N_bs_formula", i, j))->getVal();
@@ -322,7 +330,7 @@ void pdf_fitData::print_each_channel() {
       }
       if (!bd_constr_ && !SM_ && BF_ < 2) {
         ostringstream fitresult_tex;
-        fitresult_tex <<setprecision(2) << fixed << "N(B_{d}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
+        fitresult_tex << setprecision(2) << fixed << "N(B_{d}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
         fitresult_tex_vec.push_back(fitresult_tex.str());
       }
       else if (bd_constr_) {
@@ -332,7 +340,7 @@ void pdf_fitData::print_each_channel() {
       }
       else if (BF_ > 1) {
         ostringstream fitresult_tex;
-        fitresult_tex << setprecision(4) << scientific << "BF(B^{0}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
+        fitresult_tex << setprecision(2) << scientific << "BF(B^{0}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
         fitresult_tex_vec.push_back(fitresult_tex.str());
         ostringstream fitresult_tex2;
         fitresult_tex2 << "(N(B^{0}) = " << setprecision(2) << fixed << ws_->function(name("N_bd_formula", i, j))->getVal();
@@ -357,7 +365,7 @@ void pdf_fitData::print_each_channel() {
       fitresult_tex2 << setprecision(2) << fixed<< "N(semi bkg) = " << N_semi->getVal() << " ^{+" << getErrorHigh(N_semi) << "}_{" << getErrorLow(N_semi) << "}";
       fitresult_tex_vec.push_back(fitresult_tex2.str());
 
-      TPaveText* fitresults = new TPaveText(0.57, 0.66, 0.9, 0.9, "NDCR");
+      TPaveText* fitresults = new TPaveText(0.57, 0.64, 0.89, 0.89, "NDCR");
       for (unsigned int jj = 0; jj < fitresult_tex_vec.size(); jj++) {
         fitresults->AddText(fitresult_tex_vec[jj].c_str());
       }
@@ -365,6 +373,7 @@ void pdf_fitData::print_each_channel() {
       fitresults->SetShadowColor(0);
       fitresults->SetTextSize(0.03);
       fitresults->SetTextAlign(11);
+      fitresults->SetLineColor(0);
       fitresults->Draw();
 
       channel = i;
@@ -416,7 +425,7 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
     }
   }
   else {
-    cout << "tree name is not bdt nor cnc" << endl;
+    cout << "tree name is not SgData_bdt" << endl;
     exit(1);
   }
   cout << "total events = " << events << endl;
