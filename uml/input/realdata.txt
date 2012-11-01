@@ -1,1 +1,2 @@
 input/2011/small-SgData.root
+input/2012/small-SgData.root
