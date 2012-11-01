@@ -431,13 +431,16 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
   cout << "total events = " << events << endl;
 }
 
-void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TTree* tree, int offset) {
-  cout << "making dataset" << endl;
-
+void pdf_fitData::define_dataset() {
+  cout << "defining dataset" << endl;
   RooArgList varlist(*Mass, *MassRes, *eta, *m1eta, *m2eta, *bdt);
   varlist.add(*channels_cat);
   varlist.add(*bdt_cat);
   global_data = new RooDataSet("global_data", "global_data", varlist);
+}
+
+void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TTree* tree, int offset) {
+  cout << "making dataset" << endl;
 
   if (!random) FillRooDataSet(global_data, cut_b, cut_, cuts, tree, offset);
   else {

@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
   fitdata->make_pdf();
   fitdata->setnewlumi();
   fitdata->setsyst();
+  fitdata->define_dataset();
 
   vector <double> cuts_v(inputs, -10);
   if (cuts_f_b) cuts_v = cut_bdt_file();

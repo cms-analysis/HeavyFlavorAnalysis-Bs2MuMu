@@ -34,6 +34,7 @@ class pdf_fitData : public pdf_analysis {
     void print();
     void print_each_channel();
 
+    void define_dataset();
     void make_dataset(bool cut_b, vector<double> cut_, string cuts, TTree *tree, int offset = 0);
     void make_pdf_input();
     void make_pdf();
