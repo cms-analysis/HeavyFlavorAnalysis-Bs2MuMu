@@ -585,7 +585,7 @@ void pdf_analysis::define_bf(int i, int j) {
 
 void pdf_analysis::define_constraints(int i, int j) {
 
-  if (i == 0 & j == 0) {
+  if (i == 0 && j == 0) {
     RooGaussian fs_over_fu_gau("fs_over_fu_gau", "fs_over_fu_gau", *ws_->var("fs_over_fu"), RooConst(fs_over_fu_val), RooConst(fs_over_fu_err));
     ws_->import(fs_over_fu_gau);
 
