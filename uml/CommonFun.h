@@ -46,6 +46,7 @@ static string years_opt = "0";
 bool input = false, output = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false, asimov = false;
 static bool newcomb = false;
 static bool method = true;
+static bool Bd = false;
 
 void help() {
 
@@ -92,6 +93,7 @@ void help() {
   cout << "-randomsyst \t syst constraints are randomized" << endl;
   cout << "-proof # \t enable PROOF with # workers" << endl;
   cout << "-nexp # \t number of experiments (default 1)" << endl;
+  cout << "-Bd # \t significance for Bd" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -269,6 +271,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-proof")) {
       proof = atoi(argv[i+1]);
       cout << "PROOF with " << proof << " workers" << endl;
+    }
+    if (!strcmp(argv[i],"-Bd")) {
+      Bd = true;
+      cout << "significance for Bd hypothesis" << endl;
     }
     if (!strcmp(argv[i],"-h")) help();
   }
