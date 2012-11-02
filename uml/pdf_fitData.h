@@ -100,6 +100,7 @@ class pdf_fitData : public pdf_analysis {
 
     string pdfname;
     int NExp;
+    bool Bd;
 
   private:
 
@@ -116,9 +117,6 @@ class pdf_fitData : public pdf_analysis {
     void sig_hybrid_roplhts();
     void make_prior();
     void make_models();
-
-    bool Bd;
-
 };
 
 #endif // PDF_FITDATA_H

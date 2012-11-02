@@ -113,6 +113,7 @@ void help() {
   cout << "-pee \t per-event-error" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;
   cout << "-sig # \t evaluate significance with method:" << endl << "\t\t 0 by hand; " << endl;
+  cout << "\t -Bd # \t significance for Bd" << endl;
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << "-syst \t adding syst constraints" << endl;
   cout << "-randomsyst \t syst constraints are randomized" << endl;
