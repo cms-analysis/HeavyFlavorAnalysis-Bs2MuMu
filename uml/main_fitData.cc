@@ -79,7 +79,9 @@ int main(int argc, char** argv) {
     fitdata->extract_N_inRanges();
   }
   fitdata->proof = proof;
+  if (SMIsNull) fitdata->SMIsNull = true;
   fitdata->significance();
+  if (LLprofile) fitdata->profile_NLL();
   fitdata->save();
   return EXIT_SUCCESS;
 }

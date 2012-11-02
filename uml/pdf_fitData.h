@@ -14,6 +14,7 @@
 #include "RooSimultaneous.h"
 #include "RooRandom.h"
 #include "RooGamma.h"
+#include "RooMinuit.h"
 
 #include "RooStats/ModelConfig.h"
 #include "RooStats/ProfileLikelihoodCalculator.h"
@@ -59,6 +60,9 @@ class pdf_fitData : public pdf_analysis {
     int proof;
 
     void extract_N_inRanges();
+    void profile_NLL();
+
+    bool SMIsNull;
 
   protected:
 

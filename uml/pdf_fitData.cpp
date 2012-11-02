@@ -44,6 +44,7 @@ pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_es
 
   NExp = nexp;
   Bd = bd;
+  SMIsNull = false;
 }
 
 pdf_fitData::~pdf_fitData() {
@@ -588,6 +589,8 @@ void pdf_fitData::make_pdf() {
     if (bd_constr_) ws_input->var("Bd_over_Bs")->setVal(estimate_bd[0] / estimate_bs[0]);
   }
   ws_ = ws_input;
+//  ws_->var("BF_bd")->setConstant(); ///
+//  for (int i = 0; i < channels; i++) ws_input->var(name("N_peak", i))->setConstant(0); ///
   ws_->Print();
 }
 
@@ -683,17 +686,26 @@ Double_t pdf_fitData::sig_hand() {
   if (BF_ > 0) alt_name = "BF_bs";
   if (Bd && BF_ == 0) alt_name = "N_bd";
   if (Bd && BF_ > 0) alt_name = "BF_bd";
+  double null = 0.;
+  if (SMIsNull && BF_ > 1) {
+    if (Bd) null = Bd2MuMu_SM_BF_val;
+    else null = Bs2MuMu_SM_BF_val;
+  }
+  else if (SMIsNull) {
+    cout << "SMIsNull works only with BF = 2" << endl;
+    exit(1);
+  }
   while ( (arg_var = (RooRealVar*)vars_it->Next())) {
     string name(arg_var->GetName());
     found = name.find(alt_name);
     if (found != string::npos) {
-      arg_var->setVal(0.0);
+      arg_var->setVal(null);
       arg_var->setConstant(1);
     }
     if (SM_ || bd_constr_){
       found = name.find("Bd_over_Bs");
       if (found!=string::npos) {
-        arg_var->setVal(0.0);
+        arg_var->setVal(0);
         arg_var->setConstant(1);
       }
     }
@@ -737,6 +749,15 @@ void pdf_fitData::sig_plhc() {
   if (BF_ > 0) alt_name = "BF_bs";
   if (Bd && BF_ == 0) alt_name = "N_bd";
   if (Bd && BF_ > 0) alt_name = "BF_bd";
+  double null = 0.;
+  if (SMIsNull && BF_ > 1) {
+    if (Bd) null = Bd2MuMu_SM_BF_val;
+    else null = Bs2MuMu_SM_BF_val;
+  }
+  else if (SMIsNull) {
+    cout << "SMIsNull works only with BF = 2" << endl;
+    exit(1);
+  }
 
   if (BF_==0) {
     for (int i = 0; i < channels; i++) {
@@ -748,7 +769,7 @@ void pdf_fitData::sig_plhc() {
   }
   else {
     poi.add(*ws_->var(alt_name.c_str()));
-    poi.setRealValue(alt_name.c_str(), 0);
+    poi.setRealValue(alt_name.c_str(), null);
   }
   if (bd_constr_) {
     poi.add(*ws_->var("Bd_over_Bs"));
@@ -853,6 +874,16 @@ void pdf_fitData::make_models() {
 //  }
 //  ws_->defineSet("constrpar", constrpar);
 
+  double null = 0.;
+  if (SMIsNull && BF_ > 1) {
+    if (Bd) null = Bd2MuMu_SM_BF_val;
+    else null = Bs2MuMu_SM_BF_val;
+  }
+  else if (SMIsNull) {
+    cout << "SMIsNull works only with BF = 2" << endl;
+    exit(1);
+  }
+
   ModelConfig* H0 = new ModelConfig("H0", "null hypothesis", ws_);
   RooArgSet CO;
   if (pee) {
@@ -878,7 +909,7 @@ void pdf_fitData::make_models() {
     }
   }
   else {
-    ws_->var(alt_name.c_str())->setVal(0.0);
+    ws_->var(alt_name.c_str())->setVal(null);
   }
   if (bd_constr_) {
     ws_->var("Bd_over_Bs")->setVal(0.0);
@@ -1317,7 +1348,7 @@ void pdf_fitData::extract_N_inRanges() {
 
   for (int i = 0; i < channels; i++) {
     fprintf(file_out, "\\hline \n");
-    fprintf(file_out, " \\multicolumn{6}{|c|}{Channel: %s} \\\\ \n", i%2==0? "barrel" : "endcap");
+    fprintf(file_out, " \\multicolumn{6}{|c|}{Channel: %s %s} \\\\ \n", i%2==0? "barrel" : "endcap", i < 2 ? "2011" : "2012");
     fprintf(file_out, "\\hline \n");
     fprintf(file_out, "Variable  & low SB & $B^0$ window & $B_s^0$ window & high SB & \\textbf{all} \\\\ \n");
     fprintf(file_out, "\\hline \n");
@@ -1364,4 +1395,25 @@ void pdf_fitData::extract_N_inRanges() {
   fclose(file_out);
 //  system(Form("cat %s", full_output.c_str()));
   cout << "tex file saved in " << full_output << endl;
+}
+
+void pdf_fitData::profile_NLL() {
+  if (BF_ < 2) return;
+  // Construct unbinned likelihood
+  RooAbsReal* nll = ws_->pdf(pdfname.c_str())->createNLL(*global_data, NumCPU(2), Extended(), pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()) ;
+
+  // Minimize likelihood w.r.t all parameters before making plots
+  RooMinuit(*nll).migrad() ;
+
+  string var_alt("BF_bs");
+  if (Bd) var_alt = "BF_bd";
+  RooAbsReal* pll_frac = nll->createProfile(*ws_->var(var_alt.c_str())) ;
+
+  // Plot the profile likelihood in frac
+  RooPlot* frame = ws_->var(var_alt.c_str())->frame(Bins(10), Range(0, Bd ? 1.4e-9 : 4e-9), Title(Form("profileLL in %s", var_alt.c_str()))) ;
+  pll_frac->plotOn(frame, LineColor(kRed)) ;
+  TCanvas *c = new TCanvas("c","c",600, 600);
+  frame->Draw();
+  c->Print((get_address("profileLL", var_alt, false) + ".gif").c_str());
+  c->Print((get_address("profileLL", var_alt, false) + ".pdf").c_str());
 }
