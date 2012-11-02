@@ -367,8 +367,8 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
   if (sign == 0) {
     TCanvas* sign_c = new TCanvas("sign_c", "sign_c", 600, 600);
     sign_h->Draw("e");
-    sign_c->Print((get_address("sign", "", false) + ".gif").c_str());
-    sign_c->Print((get_address("sign", "", false) + ".pdf").c_str());
+    sign_c->Print((get_address("sign", Bd ? "Bd" : "Bs", false) + ".gif").c_str());
+    sign_c->Print((get_address("sign", Bd ? "Bd" : "Bs", false) + ".pdf").c_str());
     delete sign_c;
   }
   return;
@@ -483,16 +483,16 @@ void pdf_toyMC::print_histos(TH1D* histos, int i, int j) {
 
 Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_temp) {
   Double_t minNLL = RFR->minNll();
-  if (BF_==0) {
+  string alt_name("N_bs");
+  if (BF_ > 0) alt_name = "BF_bs";
+  if (Bd) alt_name = "N_bd";
+  if (Bd && BF_ > 0) alt_name = "BF_bd";
+  if (BF_ == 0) {
     for (int i = 0; i < channels; i++) {
       for (int j = 0; j < channels_bdt; j++) {
-        ws_temp->var(name("N_bs", i, j))->setVal(0);
-        ws_temp->var(name("N_bs", i, j))->setConstant(1);
-        /*      if ( !(SM_ || bd_constr_)) {
-        ws_temp->var(name("N_bd", i, j))->setVal(0);
-        ws_temp->var(name("N_bd", i, j))->setConstant(1);
-      }
-      else */if (bd_constr_) {
+        ws_temp->var(name(alt_name.c_str(), i, j))->setVal(0);
+        ws_temp->var(name(alt_name.c_str(), i, j))->setConstant(1);
+        if (bd_constr_) {
           ws_temp->var("Bd_over_Bs")->setVal(0);
           ws_temp->var("Bd_over_Bs")->setConstant(1);
         }
@@ -500,8 +500,8 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
     }
   }
   else {
-    ws_temp->var("BF_bs")->setVal(0);
-    ws_temp->var("BF_bs")->setConstant(1);
+    ws_temp->var(alt_name.c_str())->setVal(0);
+    ws_temp->var(alt_name.c_str())->setConstant(1);
   }
 
   RooFitResult * rfr_H0 = pdf_toyMC::fit_pdf(pdf_test_, data, printlevel, ws_temp);
@@ -509,13 +509,9 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
   if (BF_==0) {
     if (!simul_bdt_) {
       for (int j = 0; j < channels; j++) {
-        ws_temp->var(name("N_bs", j))->setVal(estimate_bs[j]);
-        ws_temp->var(name("N_bs", j))->setConstant(0);
-        /*      if ( !(SM_ || bd_constr_)) {
-        ws_temp->var(name("N_bd", j))->setVal(estimate_bd[j]);
-        ws_temp->var(name("N_bd", j))->setConstant(0);
-      }
-      else */if (bd_constr_) {
+        ws_temp->var(name(alt_name.c_str(), j))->setVal(estimate_bs[j]);
+        ws_temp->var(name(alt_name.c_str(), j))->setConstant(0);
+        if (bd_constr_) {
           ws_temp->var("Bd_over_Bs")->setVal(estimate_bd[j]/estimate_bs[j]);
           ws_temp->var("Bd_over_Bs")->setConstant(0);
         }
@@ -524,13 +520,9 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
     else {
       for (int i = 0; i < channels; i++) {
         for (int j = 0; j < channels_bdt; j++) {
-          ws_temp->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
-          ws_temp->var(name("N_bs", i, j))->setConstant(0);
-          /*        if ( !(SM_ || bd_constr_)) {
-          ws_temp->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
-          ws_temp->var(name("N_bd", i, j))->setConstant(0);
-        }
-        else */if (bd_constr_) {
+          ws_temp->var(name(alt_name.c_str(), i, j))->setVal(estimate2D_bs[i][j]);
+          ws_temp->var(name(alt_name.c_str(), i, j))->setConstant(0);
+          if (bd_constr_) {
             ws_temp->var("Bd_over_Bs")->setVal(estimate2D_bd[i][j]/estimate2D_bs[i][j]);
             ws_temp->var("Bd_over_Bs")->setConstant(0);
           }
@@ -539,12 +531,14 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
     }
   }
   else {
-    ws_temp->var("BF_bs")->setVal(Bs2MuMu_SM_BF_val);
-    ws_temp->var("BF_bs")->setConstant(0);
+    if (!Bd) ws_temp->var("BF_bs")->setVal(Bs2MuMu_SM_BF_val);
+    else ws_temp->var("BF_bd")->setVal(Bd2MuMu_SM_BF_val);
+    ws_temp->var(alt_name.c_str())->setConstant(0);
   }
   Double_t newNLL = rfr_H0->minNll();
   Double_t deltaLL = newNLL - minNLL;
-  Double_t signif = deltaLL>0 ? sqrt(2*deltaLL) : -sqrt(-2*deltaLL) ;
+//  Double_t signif = deltaLL>0 ? sqrt(2*deltaLL) : -sqrt(-2*deltaLL) ;
+  Double_t signif = deltaLL>0 ? sqrt(2*deltaLL) : 0;
   return signif;
 }
 

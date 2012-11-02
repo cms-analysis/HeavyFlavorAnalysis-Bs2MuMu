@@ -44,7 +44,6 @@ pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_es
 
   NExp = nexp;
   Bd = bd;
-
 }
 
 pdf_fitData::~pdf_fitData() {
