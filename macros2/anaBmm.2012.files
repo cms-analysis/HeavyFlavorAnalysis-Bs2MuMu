@@ -2,8 +2,8 @@
 # signal data and MC
 type=sg,default       dset=data     lumi=12.8    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-2012-data.root
 type=sg,2012          dset=data     lumi=12.8    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-2012-data.root
-type=sg,default       dset=mc,0.560 lumi=7405.3  file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-BsToMuMu.root
-type=sg,acc           dset=mc,1.00   lumi=7405.3 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-BdToMuMu.root
+type=sg,default       dset=mc,0.583 lumi=7405.3  file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-BsToMuMu.root
+type=sg,acc           dset=mc,1.00  lumi=7405.3 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-BdToMuMu.root
 # -- note the changed filename for the signal acceptance MC!!!
 type=bd,default       dset=mc       lumi=14767.2 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-BdToMuMu.root
 type=bd,acc           dset=mc,1.0   lumi=14767.2 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-BdToMuMu.root

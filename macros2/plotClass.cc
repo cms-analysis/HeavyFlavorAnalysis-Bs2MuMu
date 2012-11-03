@@ -85,6 +85,8 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   delete gRandom;
   gRandom = (TRandom*) new TRandom3;
 
+  fAccPt = 1.0;
+
   // PDG 2010:
   fu  = 0.401;
   fs  = 0.113;
@@ -106,6 +108,7 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   fInvertedIso = false; 
   fNormProcessed = false; 
   fSaveSmallTree = false;
+  fSaveLargerTree = false;
 
   fStampString = "CMS, 5fb^{-1}"; 
   if (fDoUseBDT) {
@@ -303,7 +306,6 @@ void plotClass::initNumbers(numbers *a, bool initAll) {
   a->effMuidTNP   = a->effMuidTNPE = a->effTrigTNP = a->effTrigTNPE = 0; 
   a->effMuidTNPMC = a->effMuidTNPMCE = a->effTrigTNPMC = a->effTrigTNPMCE = 0.;
   a->effCand      = a->effCandE = 0; 
-  a->effPtReco    = a->effPtRecoE = 0.;
   a->effAna       = a->effAnaE = 0; 
   a->effPtReco    = a->effPtRecoE = 0;
   a->effTot       = a->effTotE = a->aEffProdMC = a->aEffProdMCE = a->effProdMC = a->effProdMCE = a->effProdTNP = a->effProdTNPE = 0.; 
@@ -1533,6 +1535,263 @@ void plotClass::filterEfficiency(string fname, string name) {
 
 
 // ----------------------------------------------------------------------
+void plotClass::accEffFromEffTreeBac(string fname, string dname, numbers &a, cuts &b, int proc) {
+
+  TFile *f = fF[fname];
+  if (0 == f) {
+    cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): no file " << fname << " found " << endl;
+    return;
+  }
+  TTree *t  = (TTree*)(f->Get(Form("%s/effTree", dname.c_str())));
+  double effFilter(1.); 
+  if (!t) {
+    cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): no tree `effTree' found in " 
+	 << f->GetName() << " and dir = " << Form("%s/effTree", dname.c_str()) 
+	 << endl;
+    
+    return;
+  } else {
+    effFilter = fFilterEff[fname]; 
+    cout << "anaBmm::accEffFromEffTreeBac(" << a.name << ")" << endl
+	 << " get acceptance from file " << f->GetName() << " and dir = " << Form("%s/effTree", dname.c_str()) 
+	 << " with filterEff = " << effFilter
+	 << endl;
+  }
+
+  bool sg(false), no(false), cs(false); 
+
+  int   bprocid, bidx; 
+  bool  bhlt;
+  float bg1pt, bg2pt, bg1eta, bg2eta;
+  float bm1pt, bm1eta, bm2pt, bm2eta;
+  bool  bm1gt, bm2gt; 
+  bool  bm1id, bm2id; 
+  float bm;
+
+  float bg3pt, bg4pt, bg3eta, bg4eta; 
+  float bk1pt, bk2pt, bk1eta, bk2eta; 
+  bool  bk1gt, bk2gt; 
+
+  t->SetBranchAddress("hlt",&bhlt);
+  t->SetBranchAddress("procid",&bprocid);
+  t->SetBranchAddress("bidx",&bidx);
+
+  t->SetBranchAddress("g1pt",&bg1pt);
+  t->SetBranchAddress("g2pt",&bg2pt);
+  t->SetBranchAddress("g1eta",&bg1eta);
+  t->SetBranchAddress("g2eta",&bg2eta);
+
+  t->SetBranchAddress("m1pt",&bm1pt);
+  t->SetBranchAddress("m2pt",&bm2pt);
+  t->SetBranchAddress("m1eta",&bm1eta);
+  t->SetBranchAddress("m2eta",&bm2eta);
+
+  t->SetBranchAddress("m1gt",&bm1gt);
+  t->SetBranchAddress("m2gt",&bm2gt);
+  t->SetBranchAddress("m1id",&bm1id);
+  t->SetBranchAddress("m2id",&bm2id);
+
+
+  if (string::npos != a.name.find("signal")) {
+    cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): SIGNAL " << endl;
+    sg = true; 
+  }
+
+  if (string::npos != a.name.find("normalization")) {
+    cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): NORMALIZATION " << endl;
+    no = true; 
+    t->SetBranchAddress("g3pt", &bg3pt);
+    t->SetBranchAddress("g3eta",&bg3eta);
+    t->SetBranchAddress("k1pt", &bk1pt);
+    t->SetBranchAddress("k1eta",&bk1eta);
+    t->SetBranchAddress("k1gt", &bk1gt);
+  }
+
+  if (string::npos != a.name.find("control sample")) {
+    cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): CONTROL SAMPLE " << endl;
+    cs = true; 
+    t->SetBranchAddress("g3pt", &bg3pt);
+    t->SetBranchAddress("g3eta",&bg3eta);
+    t->SetBranchAddress("k1pt", &bk1pt);
+    t->SetBranchAddress("k1eta",&bk1eta);
+    t->SetBranchAddress("k1gt", &bk1gt);
+
+    t->SetBranchAddress("g4pt", &bg4pt);
+    t->SetBranchAddress("g4eta",&bg4eta);
+    t->SetBranchAddress("k2pt", &bk2pt);
+    t->SetBranchAddress("k2eta",&bk2eta);
+    t->SetBranchAddress("k2gt", &bk2gt);
+  }
+
+  t->SetBranchAddress("m",&bm);
+
+
+  int nentries = Int_t(t->GetEntries());
+  int nb(0); 
+  int ngen(0), nchangen(0), nreco(0), nchan(0), nmuid(0), nhlt(0), ncand(0), ncand2(0); 
+  int chan(-1); 
+  int recoPtA(0), recoPtB(0); 
+  cout << "channel = " << a.index << endl;
+  for (int jentry = 0; jentry < nentries; jentry++) {
+    nb = t->GetEntry(jentry);
+    if (bidx < 0) continue;
+    ++ngen;
+    if (proc > 0 && bprocid != proc) continue;
+    if (sg) {
+      // -- Signal
+      chan = detChan(bg1eta, bg2eta); 
+      if (chan == a.index) {
+	++nchangen;
+	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5) {
+	  if (bg1pt > 1. && bg2pt > 1.) {
+	    if (bm1pt > 1. && bm2pt > 1.
+		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4
+		&& bm1gt && bm2gt
+		) {
+	      chan = detChan(bm1eta, bm2eta); 
+	      if (chan == a.index) {
+		++nreco;
+		if (bm > 0) {
+		  ++ncand2;
+		}
+		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
+		if (bm1pt > 3.5 && bm2pt > 3.5) {
+		  ++nchan; 
+		  if (bm > 0) {
+		    ++ncand;
+		  }
+		  if (bm1id && bm2id) {
+		    ++nmuid;
+		    if (bhlt) {
+		      ++nhlt;
+		    }
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    } else if (no) {
+      // -- Normalization
+      chan = detChan(bg1eta, bg2eta); 
+      if (chan == a.index) {
+	++nchangen;
+	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5) {
+	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4) {
+	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.5
+		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4
+		&& bm1gt && bm2gt && bk1gt
+		) {
+	      ++recoPtA; 
+	      if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
+	      chan = detChan(bm1eta, bm2eta); 
+	      if (chan == a.index) {
+		++nreco;
+		if (bm1pt > b.m1pt && bm2pt > b.m2pt
+		    ) {
+		  ++nchan; 
+		  if (bm > 0) {
+		    ++ncand;
+		  }
+		  if (bm1id && bm2id) {
+		    ++nmuid;
+		    if (bhlt) {
+		      ++nhlt;
+		    }
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    } else if (cs) {
+      // -- Control sample
+      chan = detChan(bg1eta, bg2eta); 
+      if (chan == a.index) {
+	++nchangen;
+	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5 && TMath::Abs(bg4eta) < 2.5) {
+	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4 && bg4pt > 0.4) {
+	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.5 && bk2pt > 0.5
+		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4 && TMath::Abs(bk2eta) < 2.4
+		&& bm1gt && bm2gt && bk1gt && bk2gt
+		) {
+	      ++recoPtA; 
+	      if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
+	      chan = detChan(bm1eta, bm2eta); 
+	      if (chan == a.index) {
+		++nreco;
+		if (bm > 0) {
+		  ++ncand2;
+		}
+		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
+		if (bm1pt > 3.5 && bm2pt > 3.5) {
+		  ++nchan; 
+		  if (bm > 0) {
+		    ++ncand;
+		  }
+		  if (bm1id && bm2id) {
+		    ++nmuid;
+		    if (bhlt) {
+		      ++nhlt;
+		    }
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
+  if (recoPtA > 0) {
+    a.effPtReco     = static_cast<double>(recoPtB)/static_cast<double>(recoPtA); 
+    a.effPtRecoE    = dEff(recoPtB, recoPtA);
+  } else {
+    a.effPtReco     = 1.; 
+    a.effPtRecoE    = 0.;
+  }
+  a.genAccFileYield = ngen;
+  a.genAccYield     = a.genAccFileYield/effFilter; 
+  a.recoYield       = nreco; // reco'ed in chan, basic global reconstruction cuts 
+  a.muidYield       = nmuid;
+  a.trigYield       = nhlt;
+  a.chanYield       = nchan;
+  a.candYield       = ncand;
+  a.candYield       = ncand2;
+
+  if (a.genAccYield > 0) {
+    a.acc = a.recoYield/a.genAccYield;
+    a.accE = dEff(static_cast<int>(a.recoYield), static_cast<int>(a.genAccYield));
+  }  
+
+  if (a.trigYield > 0) {
+    a.effCand  = a.candYield/a.trigYield;
+    a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.trigYield));
+    a.effCand  = 0.98; // estimate
+
+    a.effCand  = a.candYield/a.recoYield;
+    a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.recoYield));
+
+    a.effCand  = a.candYield/a.recoYield;
+    a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.recoYield));
+
+    //     a.effCand  = 0.98; 
+    //     a.effCandE = 0.04; 
+  } 
+
+  cout << "genAccFileYield:  " << a.genAccFileYield << endl;
+  cout << "genAccYield:      " << a.genAccYield << endl;
+  cout << "recoYield:        " << a.recoYield << endl;
+  cout << "candYield:        " << a.candYield << endl;
+  cout << "recoPtB:          " << recoPtB << endl;
+  cout << "recoPtA:          " << recoPtA << endl;
+
+}
+
+
+// ----------------------------------------------------------------------
 void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &b, int proc) {
 
   TFile *f = fF[fname];
@@ -1637,153 +1896,58 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
     if (proc > 0 && bprocid != proc) continue;
     if (sg) {
       // -- Signal
-      chan = detChan(bg1eta, bg2eta); 
-      if (chan == a.index) {
-	++nchangen;
-	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5) {
-	  if (bg1pt > 1. && bg2pt > 1.) {
-	    if (bm1pt > 1. && bm2pt > 1.
-		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4
-		&& bm1gt && bm2gt
-		) {
-	      chan = detChan(bm1eta, bm2eta); 
-	      if (chan == a.index) {
-		++nreco;
-		if (bm > 0) {
-		  ++ncand2;
-		}
-		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
-		if (bm1pt > 3.5 && bm2pt > 3.5) {
-		  ++nchan; 
-		  if (bm > 0) {
-		    ++ncand;
-		  }
-		  if (bm1id && bm2id) {
-		    ++nmuid;
-		    if (bhlt) {
-		      ++nhlt;
-		    }
-		  }
-		}
-	      }
-	    }
+      if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 
+	  && bg1pt > fAccPt && bg2pt > fAccPt 
+	  && bm1pt > fAccPt && bm2pt > fAccPt 
+	  && TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4
+	  && bm1gt && bm2gt
+	  ) {
+	chan = detChan(bm1eta, bm2eta); 
+	if (chan == a.index) {
+	  ++nreco; // for acceptance
+	  if (bm > 0) {
+	    ++ncand; // for cand efficiency
 	  }
 	}
       }
     } else if (no) {
-//       // -- Normalization
-//       chan = detChan(bg1eta, bg2eta); 
-//       if (chan == a.index) {
-// 	++nchangen;
-
-// 	++recoPtA; 
-// 	if (bg1pt > 3.5 && bg2pt > 3.5) ++recoPtB;
-
-// 	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5) {
-// 	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4) {
-// 	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.5
-// 		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4
-// 		&& bm1gt && bm2gt && bk1gt
-// 		) {
-// 	      chan = detChan(bm1eta, bm2eta); 
-// 	      if (chan == a.index) {
-// 		++nreco;
-// 		if (bm > 0) {
-// 		  ++ncand2;
-// 		}
-// 		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
-// 		if (bm1pt > 3.5 && bm2pt > 3.5) {
-// 		  ++nchan; 
-// 		  if (bm > 0) {
-// 		    ++ncand;
-// 		  }
-// 		  if (bm1id && bm2id) {
-// 		    ++nmuid;
-// 		    if (bhlt) {
-// 		      ++nhlt;
-// 		    }
-// 		  }
-// 		}
-// 	      }
-// 	    }
-// 	  }
-// 	}
-//       }
-            // -- Normalization
-      chan = detChan(bg1eta, bg2eta); 
-      if (chan == a.index) {
-      	++nchangen;
-      	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5) {
-      	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4) {
-      	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.5
-      		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4
-      		&& bm1gt && bm2gt && bk1gt
-      		) {
-      	      ++recoPtA; // this may be at the wrong place.
-      	      if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
-      	      chan = detChan(bm1eta, bm2eta); 
-      	      if (chan == a.index) {
-      		++nreco;
-      		if (bm > 0) {
-      		  ++ncand2;
-      		}
-      		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
-      		if (bm1pt > 3.5 && bm2pt > 3.5) {
-      		  ++nchan; 
-      		  if (bm > 0) {
-      		    ++ncand;
-      		  }
-      		  if (bm1id && bm2id) {
-      		    ++nmuid;
-      		    if (bhlt) {
-      		      ++nhlt;
-      		    }
-      		  }
-      		}
-      	      }
-      	    }
-      	  }
-      	}
+      // -- Normalization
+      if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5  && TMath::Abs(bg3eta) < 2.5 
+	  && bg1pt > fAccPt && bg2pt > fAccPt && bg3pt > 0.4
+	  && bm1pt > fAccPt && bm2pt > fAccPt && bk1pt > 0.5
+	  && TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4
+	  && bm1gt && bm2gt && bk1gt
+	  ) {
+	chan = detChan(bm1eta, bm2eta); 
+	if (chan == a.index) {
+	  ++nreco; // for acceptance
+	  ++recoPtA; 
+	  if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
+	  if (bm > 0) {
+	    ++ncand; // for cand efficiency
+	  }
+	}
       }
     } else if (cs) {
-      // -- Control sample
-      chan = detChan(bg1eta, bg2eta); 
-      if (chan == a.index) {
-	++nchangen;
-	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5 && TMath::Abs(bg4eta) < 2.5) {
-	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4 && bg4pt > 0.4) {
-	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.5 && bk2pt > 0.5
-		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4 && TMath::Abs(bk2eta) < 2.4
-		&& bm1gt && bm2gt && bk1gt && bk2gt
-		) {
-	      ++recoPtA; 
-	      if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
-	      chan = detChan(bm1eta, bm2eta); 
-	      if (chan == a.index) {
-		++nreco;
-		if (bm > 0) {
-		  ++ncand2;
-		}
-		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
-		if (bm1pt > 3.5 && bm2pt > 3.5) {
-		  ++nchan; 
-		  if (bm > 0) {
-		    ++ncand;
-		  }
-		  if (bm1id && bm2id) {
-		    ++nmuid;
-		    if (bhlt) {
-		      ++nhlt;
-		    }
-		  }
-		}
-	      }
-	    }
+      // -- control sample
+      if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5 && TMath::Abs(bg4eta) < 2.5 
+	  && bg1pt > fAccPt && bg2pt > fAccPt && bg3pt > 0.4 && bg4pt > 0.4
+	  && bm1pt > fAccPt && bm2pt > fAccPt && bk1pt > 0.5 && bk2pt > 0.5
+	  && bm1gt && bm2gt && bk1gt && bk2gt
+	  ) {
+	chan = detChan(bm1eta, bm2eta); 
+	if (chan == a.index) {
+	  ++nreco; // for acceptance
+	  ++recoPtA; 
+	  if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
+	  if (bm > 0) {
+	    ++ncand; // for cand efficiency
 	  }
 	}
       }
     }
   }
+
   if (recoPtA > 0) {
     a.effPtReco     = static_cast<double>(recoPtB)/static_cast<double>(recoPtA); 
     a.effPtRecoE    = dEff(recoPtB, recoPtA);
@@ -1793,31 +1957,17 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
   }
   a.genAccFileYield = ngen;
   a.genAccYield     = a.genAccFileYield/effFilter; 
-  a.recoYield       = nreco; // reco'ed in chan, basic global reconstruction cuts 
-  a.muidYield       = nmuid;
-  a.trigYield       = nhlt;
-  a.chanYield       = nchan;
+  a.recoYield       = nreco; 
   a.candYield       = ncand;
-  a.candYield       = ncand2;
 
   if (a.genAccYield > 0) {
     a.acc = a.recoYield/a.genAccYield;
     a.accE = dEff(static_cast<int>(a.recoYield), static_cast<int>(a.genAccYield));
   }  
 
-  if (a.trigYield > 0) {
-    a.effCand  = a.candYield/a.trigYield;
-    a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.trigYield));
-    a.effCand  = 0.98; // estimate
-
+  if (a.recoYield > 0) {
     a.effCand  = a.candYield/a.recoYield;
     a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.recoYield));
-
-    a.effCand  = a.candYield/a.recoYield;
-    a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.recoYield));
-
-    //     a.effCand  = 0.98; 
-    //     a.effCandE = 0.04; 
   } 
 
   cout << "genAccFileYield:  " << a.genAccFileYield << endl;
@@ -1826,7 +1976,9 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
   cout << "candYield:        " << a.candYield << endl;
   cout << "recoPtB:          " << recoPtB << endl;
   cout << "recoPtA:          " << recoPtA << endl;
-
+  cout << "acc:              " << a.acc << endl;
+  cout << "effCand:          " << a.effCand << endl;
+  cout << "effPtReco:        " << a.effPtReco << endl;
 }
 
 
@@ -1981,8 +2133,36 @@ void plotClass::loadFiles(const char *files) {
 	fName.insert(make_pair(sname, "Data")); 
       }
 
+     if (string::npos != stype.find("2012") && string::npos != stype.find("no")) {
+	sname = "NoData2012";
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "Data")); 
+      }
+
+     if (string::npos != stype.find("2011") && string::npos != stype.find("no")) {
+	sname = "NoData2011";
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "Data")); 
+      }
+
       if (string::npos != stype.find("default") && string::npos != stype.find("cs")) {
 	sname = "CsData"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "Data")); 
+      }
+
+      if (string::npos != stype.find("2012") && string::npos != stype.find("cs")) {
+	sname = "CsData2012"; 
+	fF.insert(make_pair(sname, pF)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "Data")); 
+      }
+
+      if (string::npos != stype.find("2011") && string::npos != stype.find("cs")) {
+	sname = "CsData2011"; 
 	fF.insert(make_pair(sname, pF)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "Data")); 
@@ -4102,8 +4282,13 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
   TFile *fLocal(0); 
   if (fSaveSmallTree) {
     dir = gDirectory; 
-    fLocal = TFile::Open(Form("%s/small-%s.root", fDirectory.c_str(), tname.c_str()), "RECREATE"); 
-    small = new TTree(Form("%s_%s", tname.c_str(), (fDoUseBDT?"bdt":"cnc")), Form("%s_%s", tname.c_str(), (fDoUseBDT?"bdt":"cnc")));
+    if (fSaveLargerTree) {
+      fLocal = TFile::Open(Form("%s/larger-%s.root", fDirectory.c_str(), tname.c_str()), "RECREATE"); 
+      small = new TTree("t", "t");
+    } else {
+      fLocal = TFile::Open(Form("%s/small-%s.root", fDirectory.c_str(), tname.c_str()), "RECREATE"); 
+      small = new TTree(Form("%s_%s", tname.c_str(), (fDoUseBDT?"bdt":"cnc")), Form("%s_%s", tname.c_str(), (fDoUseBDT?"bdt":"cnc")));
+    }
     small->SetDirectory(fLocal);
     int run, evt; 
     float bdt, m, m1eta, m2eta, eta; 
@@ -4112,7 +4297,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     
     small->Branch("bdt", &fBDT ,"bdt/D");
     // -- debug HLT
-    if (0) {
+    if (fSaveLargerTree) {
       small->Branch("hlt", &fb.hlt ,"hlt/O");
       small->Branch("muid", &fb.gmuid ,"muid/O");
       small->Branch("pt",   &fb.pt ,"hlt/D");
@@ -4163,8 +4348,8 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
 	&& fGoodMuonsPt
 	&& fGoodMuonsEta
 	&& fGoodJpsiCuts
- 	&& fGoodMuonsID
- 	&& fGoodHLT
+ 	&& (fSaveLargerTree || fGoodMuonsID)
+	&& (fSaveLargerTree || fGoodHLT)
 	) {
       small->Fill();
     }
@@ -4189,6 +4374,59 @@ TTree* plotClass::getTree(string mode) {
   if (string::npos != mode.find("Bd")) t = (TTree*)fF[mode]->Get("candAnaMuMu/events"); 
   return t; 
 }
+
+// ----------------------------------------------------------------------
+void plotClass::checkAgainstDuplicates(string mode) {
+
+  TTree *t = getTree(mode); 
+  t->SetBranchStatus("*", 0);
+  t->SetBranchStatus("run",1);
+  t->SetBranchStatus("evt",1);
+  t->SetBranchStatus("m1pt",1);
+  t->SetBranchStatus("m2pt",1);
+
+  Long64_t lrun,  levt; 
+  double   lm1pt, lm2pt; 
+
+
+  t->SetBranchAddress("run",&lrun);
+  t->SetBranchAddress("evt",&levt);
+  t->SetBranchAddress("m1pt",&lm1pt);
+  t->SetBranchAddress("m2pt",&lm2pt);
+
+  std::map<string, int> aMap; 
+  string ckey; 
+
+  int nentries = Int_t(t->GetEntries());
+  cout << "looking at " << nentries << " events" << endl;
+
+  int nb(0);
+  int step(50000); 
+  if (nentries < 50000000) step = 5000000; 
+  if (nentries < 10000000) step = 1000000; 
+  if (nentries < 5000000)  step = 500000; 
+  if (nentries < 1000000)  step = 100000; 
+  if (nentries < 100000)   step = 10000; 
+  if (nentries < 10000)    step = 1000; 
+  if (nentries < 1000)     step = 100; 
+
+  for (int jentry = 0; jentry < nentries; jentry++) {
+    nb = t->GetEntry(jentry);
+    if (jentry%step == 0) cout << Form(" .. Event %8d", jentry) << endl;
+    
+    ckey = Form("%lld:%lld:%5.4f:%5.4f", lrun, levt, lm1pt, lm2pt); 
+    aMap.insert(make_pair(ckey, 1));
+  }
+
+  
+  for (map<string, int>::iterator imap = aMap.begin(); imap != aMap.end(); ++imap) {  
+    if (imap->second > 1) {
+      cout << "duplicate event: n = " << imap->second << " info: " << imap->first << endl;
+    }
+  }
+
+}
+
 
 // ----------------------------------------------------------------------
 void plotClass::setupTree(TTree *t, string mode) {
@@ -4257,10 +4495,12 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("fl3d",&fb.fl3d);
   t->SetBranchAddress("fl3dE",&fb.fl3dE);
   t->SetBranchAddress("m1pt",&fb.m1pt);
+  t->SetBranchAddress("m1gt",&fb.m1gt);
   t->SetBranchAddress("m1eta",&fb.m1eta);
   t->SetBranchAddress("m1phi",&fb.m1phi);
   t->SetBranchAddress("m1q",&fb.m1q);
   t->SetBranchAddress("m2pt",&fb.m2pt);
+  t->SetBranchAddress("m2gt",&fb.m2gt);
   t->SetBranchAddress("m2eta",&fb.m2eta);
   t->SetBranchAddress("m2phi",&fb.m2phi);
   t->SetBranchAddress("m2q",&fb.m2q);
@@ -4276,6 +4516,7 @@ void plotClass::setupTree(TTree *t, string mode) {
       t->SetBranchAddress("g3eta",&fb.g3eta);
     }
     t->SetBranchAddress("kpt",&fb.k1pt);
+    t->SetBranchAddress("kgt",&fb.k1gt);
     t->SetBranchAddress("keta",&fb.k1eta);
     t->SetBranchAddress("mpsi",&fb.mpsi);
     t->SetBranchAddress("psipt",&fb.psipt); //FIXME
@@ -4293,8 +4534,10 @@ void plotClass::setupTree(TTree *t, string mode) {
     t->SetBranchAddress("mkk",&fb.mkk);
     t->SetBranchAddress("dr",&fb.dr);
     t->SetBranchAddress("k1pt",&fb.k1pt);
+    t->SetBranchAddress("k1gt",&fb.k1gt);
     t->SetBranchAddress("k1eta",&fb.k1eta);
     t->SetBranchAddress("k2pt",&fb.k2pt);
+    t->SetBranchAddress("k2gt",&fb.k2gt);
     t->SetBranchAddress("k2eta",&fb.k2eta);
   } else {
     fb.mkk = 999.;
@@ -4314,7 +4557,10 @@ void plotClass::setupTree(TTree *t, string mode) {
 void plotClass::candAnalysis(int mode) {
   cuts *pCuts(0); 
   fChan = detChan(fb.m1eta, fb.m2eta); 
-  if (fChan < 0) return;
+  if (fChan < 0) {
+    //    cout << "plotClass::candAnalysis: could not determine channel: " << fb.m1eta << " " << fb.m2eta << endl;
+    return;
+  }
   pCuts = fCuts[fChan]; 
 
   bool bp2jpsikp(false), bs2jpsiphi(false); 
@@ -4337,8 +4583,8 @@ void plotClass::candAnalysis(int mode) {
   fGoodTracksEta  = true;
 
   if (fIsMC) {
-    if (fb.g1pt < 1.0) fGoodAcceptance = false; 
-    if (fb.g2pt < 1.0) fGoodAcceptance = false; 
+    if (fb.g1pt < fAccPt) fGoodAcceptance = false; 
+    if (fb.g2pt < fAccPt) fGoodAcceptance = false; 
     if (TMath::Abs(fb.g1eta) > 2.5) fGoodAcceptance = false; 
     if (TMath::Abs(fb.g2eta) > 2.5) fGoodAcceptance = false; 
   } else {
@@ -4347,9 +4593,10 @@ void plotClass::candAnalysis(int mode) {
     }
   }
 
-  if (fb.m1pt < 1.0) fGoodAcceptance = false; 
-  if (fb.m2pt < 1.0) fGoodAcceptance = false; 
-
+  if (fb.m1pt < fAccPt) fGoodAcceptance = false; 
+  if (fb.m2pt < fAccPt) fGoodAcceptance = false; 
+  if (0 == fb.m1gt)  fGoodAcceptance = false; 
+  if (0 == fb.m2gt)  fGoodAcceptance = false; 
 
   if (fb.m1pt < pCuts->m1pt) {
     fGoodMuonsPt = false; 
@@ -4369,8 +4616,8 @@ void plotClass::candAnalysis(int mode) {
   if (bp2jpsikp) {
     if (fIsMC) {
       // gen-level cuts for Bu2JpsiKp
-      if (fb.g1pt < 3.5) fGoodAcceptance = false; 
-      if (fb.g2pt < 3.5) fGoodAcceptance = false; 
+      if (fb.g1pt < fAccPt) fGoodAcceptance = false; // FIXME?
+      if (fb.g2pt < fAccPt) fGoodAcceptance = false; // FIXME?
       if (TMath::Abs(fb.g3eta) > 2.5) fGoodAcceptance = false; 
       if (fb.g3pt < 0.4) fGoodAcceptance = false; 
     }
@@ -4382,6 +4629,7 @@ void plotClass::candAnalysis(int mode) {
       fGoodAcceptance = false; 
       fGoodTracksPt = false; 
     }
+    if (0 == fb.k1gt)  fGoodAcceptance = false; 
   }
   
   if (bs2jpsiphi) {
@@ -4389,8 +4637,8 @@ void plotClass::candAnalysis(int mode) {
       if (TMath::Abs(fb.g3eta) > 2.5) fGoodAcceptance = false; 
       if (TMath::Abs(fb.g4eta) > 2.5) fGoodAcceptance = false; 
       // gen-level cuts for Bs2JpsiPhi
-      if (fb.g1pt < 3.5) fGoodAcceptance = false; 
-      if (fb.g2pt < 3.5) fGoodAcceptance = false; 
+      if (fb.g1pt < fAccPt) fGoodAcceptance = false; // FIXME?
+      if (fb.g2pt < fAccPt) fGoodAcceptance = false; // FIXME?
       if (fb.g3pt < 0.4) fGoodAcceptance = false; 
       if (fb.g4pt < 0.4) fGoodAcceptance = false; 
     }
@@ -4410,6 +4658,9 @@ void plotClass::candAnalysis(int mode) {
       fGoodAcceptance = false; 
       fGoodTracksPt = false; 
     }
+    if (0 == fb.k1gt)  fGoodAcceptance = false; 
+    if (0 == fb.k2gt)  fGoodAcceptance = false; 
+
     if (fb.dr   > 0.3) fGoodJpsiCuts = false; 
     if (fb.mkk  < 0.995) fGoodJpsiCuts = false; 
     if (fb.mkk  > 1.045) fGoodJpsiCuts = false; 
@@ -4422,11 +4673,6 @@ void plotClass::candAnalysis(int mode) {
     if (fb.psipt < 7.0) fGoodJpsiCuts = false;
   } else {
     fGoodJpsiCuts = true; 
-  }
-
-  fGoodTracks     = fb.gtqual;
-  if (!fGoodTracks) {
-    fGoodAcceptance = false; 
   }
 
   if (fDoUseBDT) {

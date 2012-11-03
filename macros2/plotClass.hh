@@ -52,7 +52,6 @@ struct readerData {
 #include "../macros/initFunc.hh"
 #include "RedTreeData.hh"
 
-
 struct cuts {
   int index; 
   std::string xmlFile;
@@ -175,6 +174,7 @@ public:
 
   void loopTree(int mode, int proc = -1);
   void accEffFromEffTree(std::string fname, std::string dname, numbers &a, cuts &b, int proc);
+  void accEffFromEffTreeBac(std::string fname, std::string dname, numbers &a, cuts &b, int proc);
   void filterEfficiency(std::string fname, std::string name);
   void normYield(TH1 *h, int mode, double lo = 5.15, double hi=5.5, double preco=-1.);
   void csYield(TH1 *h, int mode, double lo = 5.25, double hi=5.6, double preco=-1.);
@@ -190,6 +190,7 @@ public:
   void printNumbers(numbers &a, ostream &OUT);
   void initNumbers(numbers *a, bool initAll = true); 
   int  detChan(double m1eta, double m2eta);
+  void checkAgainstDuplicates(std::string mode); 
   void reduceTree(TTree *t);
   double quadraticSum(int n, ...); 
 
@@ -234,6 +235,8 @@ public:
   // -- cuts 
   std::string fCutsFileName;
   std::vector<cuts*> fCuts; 
+
+  double fAccPt; 
 
   // -- functions
   TF1 *f0, *f1, *f2, *f3, *f4, *f5, *f6, *f7, *f8, *f9; 
@@ -348,7 +351,7 @@ public:
   AnalysisCuts fAnaCuts; 
   
   std::string fSetup; 
-  bool fSaveSmallTree; 
+  bool fSaveSmallTree, fSaveLargerTree; 
 
   PidTable *fptT1;
   PidTable *fptT2;

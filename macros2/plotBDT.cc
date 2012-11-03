@@ -1019,10 +1019,11 @@ void plotBDT::tmvaControlPlots() {
 
 // ----------------------------------------------------------------------
 void plotBDT::plotSSB() {
+  cout << "fNchan: " << fNchan << "   " << fCuts[1]->xmlFile << endl;
   for (int i = 0; i < fNchan; ++i) {
     string rootfile = "weights/" + fCuts[i]->xmlFile + "-combined.root";
-    fRootFile = TFile::Open(rootfile.c_str());
     cout << "fRootFile: " << rootfile << endl;
+    fRootFile = TFile::Open(rootfile.c_str());
     
     fBdtString = fRootFile->GetName(); 
     fBdtString = fBdtString.substr(0, fBdtString.find(".root"));

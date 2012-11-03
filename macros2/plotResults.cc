@@ -39,12 +39,7 @@ plotResults::plotResults(const char *files, const char *dir, const char *cuts, i
   fSaveSmallTree = false;
 
   //  fStampString = "CMS, 5fb^{-1}"; 
-  if (fDoUseBDT) {
-    fStampString = "BDT preliminary"; 
-  } else {
-    fStampString = "CNC preliminary"; 
-  }
-  
+
 }
 
 // ----------------------------------------------------------------------
@@ -112,7 +107,98 @@ void plotResults::makeAll(int channels) {
 
 
 // ----------------------------------------------------------------------
+void plotResults::play1(int mode) {
+
+  double bdtmin = 0.; 
+
+  int NBINS = 40;
+  
+  TFile *f1 = TFile::Open("2012/small-SgData.root"); 
+  TFile *f2 = TFile::Open("2012/small-BdMc.root"); 
+
+  TTree *t1 = (TTree*)f1->Get("SgData_bdt"); 
+  TTree *t2 = (TTree*)f2->Get("BdMc_bdt"); 
+
+  TH2D *h1 = new TH2D("h1", "", NBINS, 4.9, 5.9, 40, 0., 0.4);   h1->SetLineWidth(2);
+  TH2D *h2 = new TH2D("h2", "", NBINS, 4.9, 5.9, 40, 0., 0.4); 
+  
+  string cuts; 
+
+  makeCanvas(1);
+  zone(2, 1, c1);
+
+  for (int i = 0; i < 2; ++i) {
+    c1->cd(i+1); 
+    if (0 == i) {
+      cuts = "(abs(m1eta)<1.4&&abs(m2eta)<1.4)"; 
+    } else {
+      cuts = "!(abs(m1eta)<1.4&&abs(m2eta)<1.4)"; 
+    }
+    
+    t1->Draw("bdt:m>>h1", Form("%s&&bdt>%f", cuts.c_str(), bdtmin), "goff");
+    t2->Draw("bdt:m>>h2", Form("%s&&bdt>%f", cuts.c_str(), bdtmin), "goff");
+    
+    h2->DrawCopy("col");
+    h1->DrawCopy("boxsame");
+
+    tl->DrawLatex(0.2, 0.92, (0==i? "Barrel": "Endcap")); 
+  }
+
+  
+  newLegend(0.60, 0.6, 0.80, 0.85); 
+  TLegend *legg = new TLegend(0.55, 0.6, 0.80, 0.85); 
+  legg->SetFillStyle(0); 
+  legg->SetBorderSize(0); 
+  legg->SetTextSize(0.04);  
+  legg->SetFillColor(0); 
+  legg->SetTextFont(42); 
+  legg->AddEntry(h1, "Data", "f"); 
+  legg->AddEntry(h2, "B0 MC", "f"); 
+  legg->Draw();
+
+
+  c1->SaveAs(Form("%s/play1.pdf", fDirectory.c_str())); 
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotResults::play2(int year) {
+
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotResults::play3(int mode) {
+
+
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotResults::play4(int mode) {
+
+
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotResults::play5(int mode) {
+
+
+}
+
+// ----------------------------------------------------------------------
 void plotResults::calculateNumbers(int mode) {
+
+  if (fDoUseBDT) {
+    fStampString = "BDT preliminary"; 
+  } else {
+    fStampString = "CNC preliminary"; 
+  }
 
   // -- dump histograms
   string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
@@ -841,12 +927,6 @@ void plotResults::calculateSgNumbers(int chan) {
   fNumbersBs[chan]->bgBdExp    = fBdBgExp; 
   fNumbersBs[chan]->bgBdExpE   = fBdBgExpE;
   
-  fNumbersBs[chan]->tauBs  = fBsBgExp/(fLoBgExp + fHiBgExp); 
-  fNumbersBs[chan]->tauBsE = 0.2*fNumbersBs[chan]->tauBs; //FIXME
-
-  fNumbersBs[chan]->tauBd = fBdBgExp/(fLoBgExp + fHiBgExp); 
-  fNumbersBs[chan]->tauBdE = 0.2*fNumbersBs[chan]->tauBd; //FIXME
-
   double relCombError = 1./TMath::Sqrt(fBgHistHi); 
   cout << "^^^^^^^^^^^ relative statistical error on combinatorial bg: " << relCombError << " from " << fBgHistHi << endl;
 
@@ -866,6 +946,12 @@ void plotResults::calculateSgNumbers(int chan) {
   fNumbersBs[chan]->fBgNonpHi   = fHiBgExp;
   fNumbersBs[chan]->fBgNonpHiE1 = quadraticSum(2, fHiBgExp*relCombError, fNumbersBs[chan]->fBgRslHiE1);
   fNumbersBs[chan]->fBgNonpHiE2 = quadraticSum(2, fHiBgExp*relCombError, fNumbersBs[chan]->fBgRslHiE2);
+
+  fNumbersBs[chan]->tauBs  = fBsBgExp/(fLoBgExp + fHiBgExp); 
+  fNumbersBs[chan]->tauBsE = (fNumbersBs[chan]->fBgNonpBsE2/fNumbersBs[chan]->fBgNonpBs)*fNumbersBs[chan]->tauBs; 
+
+  fNumbersBs[chan]->tauBd = fBdBgExp/(fLoBgExp + fHiBgExp); 
+  fNumbersBs[chan]->tauBdE = (fNumbersBs[chan]->fBgNonpBdE2/fNumbersBs[chan]->fBgNonpBd)*fNumbersBs[chan]->tauBd;
 
   // -- scaled sl rare bg
   fNumbersBs[chan]->fBgRslsLo   = fLoSlBgExp;
@@ -1101,6 +1187,81 @@ void plotResults::fillAndSaveHistograms(int nevents) {
 
 }
 
+
+// ----------------------------------------------------------------------
+void plotResults::saveLargerTree(string mode) {
+
+  TTree *t(0); 
+  
+  fSaveLargerTree = true; 
+  fSaveSmallTree = true; 
+  
+  t = getTree(mode); 
+  setupTree(t, mode); 
+  loopOverTree(t, mode, 1);
+  
+  
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotResults::testAccEff(string smode) {
+  int ibin(0), ichan(0); 
+  fSetup = smode;
+
+  string accname = smode + "Acc"; 
+  string directory("candAnaMuMu"); 
+  numbers* aa[2]; 
+  if (string::npos != fSetup.find("No"))  {
+    ichan = 10; 
+    directory = "candAnaBu2JpsiK";
+    aa[0] = fNumbersNo[0]; 
+    aa[1] = fNumbersNo[1]; 
+  }
+
+  if (string::npos != fSetup.find("Cs"))  {
+    ichan = 20; 
+    directory = "candAnaBs2JpsiPhi";
+    aa[0] = fNumbersCs[0]; 
+    aa[1] = fNumbersCs[1]; 
+  }
+
+  if (string::npos != fSetup.find("Sg"))  {
+    ichan = 0; 
+    directory = "candAnaMuMu";
+    aa[0] = fNumbersBs[0]; 
+    aa[1] = fNumbersBs[1]; 
+  }
+
+  if (string::npos != fSetup.find("Bd"))  {
+    ichan = 1; 
+    directory = "candAnaMuMu";
+    aa[0] = fNumbersBd[0]; 
+    aa[1] = fNumbersBd[1]; 
+  }
+
+
+  cout << "accname: " << accname << " directory: " << directory 
+       << " numbers: " << aa[0]->name << " index = " << aa[0]->index 
+       << endl;
+
+  TTree *t(0);
+  fSaveSmallTree = false; 
+  resetHistograms();
+  t = getTree(fSetup); 
+  setupTree(t, fSetup); 
+  loopOverTree(t, fSetup, 1);
+  for (unsigned int i = 0; i < fNchan; ++i) {
+    fChan = i; 
+    accEffFromEffTree(accname, directory, *aa[i], *fCuts[i], -1);
+    numbersAfterLoopOverTree(i, ichan, aa[i], directory); 
+
+  }
+  printNumbers(*aa[0], cout); 
+  printNumbers(*aa[1], cout); 
+
+}
 
 // ----------------------------------------------------------------------
 void plotResults::otherNumbers(string smode) {
@@ -2284,13 +2445,16 @@ void plotResults::printUlcalcNumbers(string fname) {
     fTEX << formatTex(fNumbersBs[i]->offHiRare, Form("%s:N-OFFHI-RARE%d:val", fSuffix.c_str(), i), 2) << endl;
     fTEX << formatTex(fNumbersBs[i]->offHiRareE,Form("%s:N-OFFHI-RARE%d:err", fSuffix.c_str(), i), 2) << endl;
 
-    OUT << "PEAK_BKG_BS\t" << i << "\t" << fNumbersBs[i]->bsRare << "\t" << fNumbersBs[i]->bsRareE << endl;
-    fTEX << formatTex(fNumbersBs[i]->bsRare, Form("%s:N-PEAK-BKG-BS%d:val", fSuffix.c_str(), i), 2) << endl;
-    fTEX << formatTex(fNumbersBs[i]->bsRareE,Form("%s:N-PEAK-BKG-BS%d:err", fSuffix.c_str(), i), 2) << endl;
+    cout << "=====================> fBgPeakBs[" << i << "] = " << fNumbersBs[i]->fBgPeakBs << endl;
+    cout << "=====================> fBgPeakBs[" << i << "] = " 
+	 << formatTex(fNumbersBs[i]->fBgPeakBs, Form("%s:N-PEAK-BKG-BS%d:val", fSuffix.c_str(), i), 2) << endl;
+    OUT << "PEAK_BKG_BS\t" << i << "\t" << fNumbersBs[i]->fBgPeakBs << "\t" << fNumbersBs[i]->fBgPeakBsE2 << endl;
+    fTEX << formatTex(fNumbersBs[i]->fBgPeakBs, Form("%s:N-PEAK-BKG-BS%d:val", fSuffix.c_str(), i), 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->fBgPeakBsE2,Form("%s:N-PEAK-BKG-BS%d:err", fSuffix.c_str(), i), 2) << endl;
 
-    OUT << "PEAK_BKG_BD\t" << i << "\t"	<< fNumbersBs[i]->bdRare << "\t" << fNumbersBs[i]->bdRareE << endl;
-    fTEX << formatTex(fNumbersBs[i]->bdRare, Form("%s:N-PEAK-BKG-BD%d:val", fSuffix.c_str(), i), 2) << endl;
-    fTEX << formatTex(fNumbersBs[i]->bdRareE,Form("%s:N-PEAK-BKG-BD%d:err", fSuffix.c_str(), i), 2) << endl;
+    OUT << "PEAK_BKG_BD\t" << i << "\t"	<< fNumbersBs[i]->fBgPeakBd << "\t" << fNumbersBs[i]->fBgPeakBdE2 << endl;
+    fTEX << formatTex(fNumbersBs[i]->fBgPeakBd, Form("%s:N-PEAK-BKG-BD%d:val", fSuffix.c_str(), i), 2) << endl;
+    fTEX << formatTex(fNumbersBs[i]->fBgPeakBdE2,Form("%s:N-PEAK-BKG-BD%d:err", fSuffix.c_str(), i), 2) << endl;
 
     OUT << "TAU_BS\t" << i << "\t" << fNumbersBs[i]->tauBs << "\t" << fNumbersBs[i]->tauBsE << endl;
     fTEX << formatTex(fNumbersBs[i]->tauBs, Form("%s:N-TAU-BS%d:val", fSuffix.c_str(), i), 2) << endl;
@@ -2360,7 +2524,10 @@ void plotResults::printUlcalcNumbers(string fname) {
     fTEX <<  Form("\\vdef{%s:BgPeakBd%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakBdE1) << endl;
     fTEX <<  Form("\\vdef{%s:BgPeakBd%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakBdE2) << endl;
 
+    cout << "=====================> fBgPeakBs[" << chan << "] = " << fNumbersBs[chan]->fBgPeakBs << endl;
     fTEX <<  Form("\\vdef{%s:BgPeakBs%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakBs) << endl;
+    cout << "=====================> fBgPeakBs[" << chan << "] = " 
+	 << Form("\\vdef{%s:BgPeakBs%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakBs) << endl;
     fTEX <<  Form("\\vdef{%s:BgPeakBs%d:e1}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakBsE1) << endl;
     fTEX <<  Form("\\vdef{%s:BgPeakBs%d:e2}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), chan, fNumbersBs[chan]->fBgPeakBsE2) << endl;
 
@@ -2691,13 +2858,13 @@ void plotResults::numbersFromHist(int chan, int mode, numbers *aa) {
   aa->effCandE        = getValueByLabel(hAcceptance, "effCandE");
 
 
-  double a = hMassNoCuts->GetSumOfWeights(); 
-  double b = hMassWithAnaCuts->GetSumOfWeights();
-  double c = hMassWithMuonCuts->GetSumOfWeights();
-  double d = hMassWithTriggerCuts->GetSumOfWeights();
-  double e = hMassWithAllCuts->GetSumOfWeights();
-  double f = hMassWithMassCuts->GetSumOfWeights();
-  aa->absNoCutsYield   = hMassAbsNoCuts->GetSumOfWeights(); 
+  double a = hMassNoCuts->Integral(0, hMassNoCuts->GetNbinsX()+1); 
+  double b = hMassWithAnaCuts->Integral(0, hMassWithAnaCuts->GetNbinsX()+1);
+  double c = hMassWithMuonCuts->Integral(0, hMassWithMuonCuts->GetNbinsX()+1);
+  double d = hMassWithTriggerCuts->Integral(0, hMassWithTriggerCuts->GetNbinsX()+1);
+  double e = hMassWithAllCuts->Integral(0, hMassWithAllCuts->GetNbinsX()+1);
+  double f = hMassWithMassCuts->Integral(0, hMassWithMassCuts->GetNbinsX()+1);
+  aa->absNoCutsYield   = hMassAbsNoCuts->Integral(0, hMassAbsNoCuts->GetNbinsX()+1); 
   aa->ana0Yield        = a;
   aa->ana0YieldE       = TMath::Sqrt(a);
   aa->anaYield         = b; 
@@ -2737,7 +2904,7 @@ void plotResults::numbersFromHist(int chan, int mode, numbers *aa) {
 
 
   if (0 == mode) {
-    double tot   = hMassWithAllCutsManyBins->GetSumOfWeights();
+    double tot   = hMassWithAllCutsManyBins->Integral(0, hMassWithAllCutsManyBins->GetNbinsX()+1);
     double lo    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(4.9), 
 						      hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdLo));
     double hi    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBsHi), 
@@ -2758,7 +2925,7 @@ void plotResults::numbersFromHist(int chan, int mode, numbers *aa) {
   } 
     
   if (1 == mode) {
-    double tot   = hMassWithAllCutsManyBins->GetSumOfWeights();
+    double tot   = hMassWithAllCutsManyBins->Integral(0, hMassWithAllCutsManyBins->GetNbinsX()+1);
     double lo    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(4.9), 
 						      hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdLo));
     double hi    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBsHi), 
@@ -2780,6 +2947,120 @@ void plotResults::numbersFromHist(int chan, int mode, numbers *aa) {
 
   printNumbers(*aa, cout); 
     
+}
+
+
+// ----------------------------------------------------------------------
+void plotResults::numbersAfterLoopOverTree(int chan, int mode, numbers *aa, string directory) {
+  TH1D *h1(0); 
+
+  // -- efficiency and acceptance
+  TH1D *hMassAbsNoCuts           = fhMassAbsNoCuts[chan];
+  TH1D *hMassNoCuts              = fhMassNoCuts[chan];
+  TH1D *hMassWithAnaCuts         = fhMassWithAnaCuts[chan];
+  TH1D *hMassWithMuonCuts        = fhMassWithMuonCuts[chan];
+  TH1D *hMassWithTriggerCuts     = fhMassWithTriggerCuts[chan];
+  TH1D *hMassWithAllCuts         = fhMassWithAllCuts[chan];
+  TH1D *hMassWithMassCuts        = fhMassWithMassCuts[chan];
+  TH1D *hMassWithAllCutsManyBins = fhMassWithMassCutsManyBins[chan];
+
+  TH1D *hMuId                    = fhMuId[chan];
+  TH1D *hMuIdMC                  = fhMuIdMC[chan];
+
+  TH1D *hMuTr                    = fhMuTr[chan];
+  TH1D *hMuTrMC                  = fhMuTrMC[chan];
+
+  double effFilter = fFilterEff[fSetup];
+  double genFileYield = ((TTree*)fF[fSetup]->Get(Form("%s/effTree", directory.c_str())))->GetEntries();
+
+  double a = hMassNoCuts->Integral(0, hMassNoCuts->GetNbinsX()+1); 
+  double b = hMassWithAnaCuts->Integral(0, hMassWithAnaCuts->GetNbinsX()+1);
+  double c = hMassWithMuonCuts->Integral(0, hMassWithMuonCuts->GetNbinsX()+1);
+  double d = hMassWithTriggerCuts->Integral(0, hMassWithTriggerCuts->GetNbinsX()+1);
+  double e = hMassWithAllCuts->Integral(0, hMassWithAllCuts->GetNbinsX()+1);
+  double f = hMassWithMassCuts->Integral(0, hMassWithMassCuts->GetNbinsX()+1);
+  aa->absNoCutsYield   = hMassAbsNoCuts->Integral(0, hMassAbsNoCuts->GetNbinsX()+1); 
+  aa->ana0Yield        = a;
+  aa->ana0YieldE       = TMath::Sqrt(a);
+  aa->anaYield         = b; 
+  aa->anaYieldE        = TMath::Sqrt(b); 
+  aa->anaMuonYield     = c; 
+  aa->anaMuonYieldE    = TMath::Sqrt(c); 
+  aa->anaTriggerYield  = d; 
+  aa->anaTriggerYieldE = TMath::Sqrt(d); 
+  aa->anaWmcYield      = f; 
+  aa->anaWmcYieldE     = TMath::Sqrt(f);
+  aa->effAna           = b/a*aa->effPtReco;
+  aa->effAnaE          = dEff(static_cast<int>(b), static_cast<int>(a)); // FIXME add error from effPtReco
+  aa->effMuidMC        = c/b;
+  aa->effMuidMCE       = dEff(static_cast<int>(c), static_cast<int>(b));
+  aa->effMuidTNP       = hMuId->GetMean();
+  aa->effMuidTNPE      = hMuId->GetMeanError();
+  aa->effMuidTNPMC     = hMuIdMC->GetMean();
+  aa->effMuidTNPMCE    = hMuIdMC->GetMeanError();
+  aa->effTrigMC        = d/c;
+  aa->effTrigMCE       = dEff(static_cast<int>(d), static_cast<int>(c));
+  aa->effTrigTNP       = hMuTr->GetMean();
+  aa->effTrigTNPE      = hMuTr->GetMeanError();
+  aa->effTrigTNPMC     = hMuTrMC->GetMean();
+  aa->effTrigTNPMCE    = hMuTrMC->GetMeanError();
+  aa->genFileYield     = genFileYield;
+  aa->effGenFilter     = effFilter; 
+  aa->genYield         = aa->genFileYield/aa->effGenFilter;
+  aa->effTot           = e/aa->genYield;
+  aa->effTotE          = dEff(static_cast<int>(e), static_cast<int>(aa->genYield));
+  aa->effProdMC        = aa->effCand * aa->effAna * aa->effMuidMC * aa->effTrigMC;
+  aa->effProdMCE       = 0.;
+  aa->effProdTNP       = aa->effCand * aa->effAna * aa->effMuidTNP * aa->effTrigTNP;
+  aa->effProdTNPE      = 0.;
+
+  aa->combGenYield     = e/(aa->acc * aa->effProdMC);
+  aa->prodGenYield     = e/(aa->effTot); 
+
+
+  if (0 == mode) {
+    double tot   = hMassWithAllCutsManyBins->Integral(0, hMassWithAllCutsManyBins->GetNbinsX()+1);
+    double lo    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(4.9), 
+						      hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdLo));
+    double hi    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBsHi), 
+						      hMassWithAllCutsManyBins->FindBin(5.9));
+    double bd    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdLo), 
+						      hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdHi));
+    double bs    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBsLo), 
+						      hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBsHi));
+    
+    aa->pss = bs/tot;
+    aa->pssE = dEff(static_cast<int>(bs), static_cast<int>(tot)); 
+    aa->pds = bd/tot;
+    aa->pdsE = dEff(static_cast<int>(bd), static_cast<int>(tot)); 
+    aa->pls = lo/tot;
+    aa->plsE = dEff(static_cast<int>(lo), static_cast<int>(tot)); 
+    aa->phs = hi/tot;
+    aa->phsE = dEff(static_cast<int>(hi), static_cast<int>(tot)); 
+  } 
+    
+  if (1 == mode) {
+    double tot   = hMassWithAllCutsManyBins->Integral(0, hMassWithAllCutsManyBins->GetNbinsX()+1);
+    double lo    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(4.9), 
+						      hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdLo));
+    double hi    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBsHi), 
+						      hMassWithAllCutsManyBins->FindBin(5.9));
+    double bd    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdLo), 
+						      hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBdHi));
+    double bs    = hMassWithAllCutsManyBins->Integral(hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBsLo), 
+						      hMassWithAllCutsManyBins->FindBin(fCuts[chan]->mBsHi));
+    
+    aa->pdd  = bd/tot;
+    aa->pddE = dEff(static_cast<int>(bd), static_cast<int>(tot)); 
+    aa->psd  = bs/tot;
+    aa->psdE = dEff(static_cast<int>(bs), static_cast<int>(tot)); 
+    aa->pld  = lo/tot;
+    aa->pldE = dEff(static_cast<int>(lo), static_cast<int>(tot)); 
+    aa->phd  = hi/tot;
+    aa->phdE = dEff(static_cast<int>(hi), static_cast<int>(tot)); 
+  } 
+
+
 }
 
 

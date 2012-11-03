@@ -33,6 +33,7 @@ public:
   void makeOverlay(std::string sample1, std::string sample2, std::string channel, std::string selection);
   void allSystematics();
   void systematics(std::string sample1, std::string selection, int chan = 0);
+  void massScale(int year = 2012);
 
   // -- 
   void bookDistributions(std::string sample);

@@ -23,6 +23,15 @@ public:
   void rareBgHists(std::string smode = "nada", int nevents = -1);
   void otherNumbers(std::string smode);
   void saveHists(std::string smode);
+  
+  void testAccEff(string smode);
+  void numbersAfterLoopOverTree(int chan, int mode, numbers *aa, std::string directory);
+
+  void play1(int mode); 
+  void play2(int mode); 
+  void play3(int mode); 
+  void play4(int mode); 
+  void play5(int mode); 
 
   void calculateNoNumbers(int chan, int mode = 1);
   void calculateCsNumbers(int chan, int mode = 1);
@@ -30,6 +39,8 @@ public:
   void calculateRareBgNumbers(int chan);
   void calculateSgNumbers(int chan);
   void numbersFromHist(int chan, int mode, numbers *aa); 
+
+  void saveLargerTree(std::string mode); 
 
   virtual void loopFunction(int function, int mode = 0); 
   virtual void loopFunction1(int mode); 

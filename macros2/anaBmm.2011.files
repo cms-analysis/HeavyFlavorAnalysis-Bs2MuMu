@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------
 # signal data and MC
 type=sg,default       dset=data     lumi=4.9    file=/scratch/ursl/v11-2011-data.root
-type=sg,default       dset=mc       lumi=1600.0 file=/scratch/ursl/v11-mix-Bs2MuMu-newSignalMC.root
+type=sg,default       dset=mc       lumi=16000.0 file=/scratch/ursl/v11-mix-Bs2MuMu-newSignalMC.root
 type=sg,acc           dset=mc,1.00  lumi=1600.0 file=/scratch/ursl/v11-mix-Bs2MuMu-newSignalMC.root
 type=bd,default       dset=mc       lumi=8200.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-mix-Bd2MuMu.root
 type=bd,acc           dset=mc,1.00  lumi=8200.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-mix-Bd2MuMu.root
