@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
   TFile* input_f = new TFile(input_name.c_str());
   RooWorkspace* ws = (RooWorkspace*)input_f->Get("ws");
   toy1.set_ws(ws);
+  if (hack_semi2011) toy1.hack_ws("output/frozen/ws_simul4_bdt_BF2_PEE.root");
   ws->Print();
   toy1.setnewlumi();
   toy1.setsyst();

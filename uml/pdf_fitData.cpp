@@ -1410,10 +1410,25 @@ void pdf_fitData::profile_NLL() {
   RooAbsReal* pll_frac = nll->createProfile(*ws_->var(var_alt.c_str())) ;
 
   // Plot the profile likelihood in frac
-  RooPlot* frame = ws_->var(var_alt.c_str())->frame(Bins(10), Range(0, Bd ? 1.4e-9 : 4e-9), Title(Form("profileLL in %s", var_alt.c_str()))) ;
+  RooPlot* frame = ws_->var(var_alt.c_str())->frame(Bins(20), Range(0, Bd ? 1.4e-9 : 4e-9), Title(Form("profileLL in %s", var_alt.c_str()))) ;
+//  nll->plotOn(frame, ShiftToZero()) ;
   pll_frac->plotOn(frame, LineColor(kRed)) ;
+//  frame->SetMinimum(0) ;
   TCanvas *c = new TCanvas("c","c",600, 600);
   frame->Draw();
   c->Print((get_address("profileLL", var_alt, false) + ".gif").c_str());
   c->Print((get_address("profileLL", var_alt, false) + ".pdf").c_str());
+}
+
+void pdf_fitData::hack_ws(string frozen_ws_address) {
+  cout << "hackering 2011 shape with 2012 shape from " << frozen_ws_address << endl;
+  TFile * frozen_f = new TFile(frozen_ws_address.c_str());
+  RooWorkspace * frozen_ws = (RooWorkspace*)frozen_f->Get("ws");
+  for (int i = 2; i < 4; i++) {
+    ws_->var(name("C0", i-2))->setVal(frozen_ws->var(name("C0", i))->getVal());
+    ws_->var(name("C1", i-2))->setVal(frozen_ws->var(name("C1", i))->getVal());
+    ws_->var(name("C2", i-2))->setVal(frozen_ws->var(name("C2", i))->getVal());
+    ws_->var(name("C3", i-2))->setVal(frozen_ws->var(name("C3", i))->getVal());
+    ws_->var(name("tau", i-2))->setVal(frozen_ws->var(name("tau", i))->getVal());
+  }
 }

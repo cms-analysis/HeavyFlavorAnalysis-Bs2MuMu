@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
   fitdata->initialize();
   fitdata->make_pdf_input();
   fitdata->make_pdf();
+  if (hack_semi2011) fitdata->hack_ws("output/frozen/ws_simul4_bdt_BF2_PEE.root");
   fitdata->setnewlumi();
   fitdata->setsyst();
   fitdata->define_dataset();

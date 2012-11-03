@@ -49,6 +49,7 @@ static bool method = true;
 static bool Bd = false;
 static bool SMIsNull = false;
 static bool LLprofile = false;
+static bool hack_semi2011 = false;
 
 void help() {
 
@@ -98,6 +99,7 @@ void help() {
   cout << "-Bd # \t significance for Bd" << endl;
   cout << "-SMIsNull # \t significance against SM (and not against 0)" << endl;
   cout << "-LLprofile" << endl;
+  cout << "-hack2011 \t hack 2011 semi to 2012" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -121,6 +123,7 @@ void help() {
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << "-syst \t adding syst constraints" << endl;
   cout << "-randomsyst \t syst constraints are randomized" << endl;
+  cout << "-hack2011 \t hack 2011 semi to 2012" << endl;
   cout << endl;
 
   exit(EXIT_SUCCESS);
@@ -288,6 +291,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-LLprofile")) {
       LLprofile = true;
       cout << "LLprofile" << endl;
+    }
+    if (!strcmp(argv[i],"-hack2011")) {
+      hack_semi2011 = true;
+      cout << "hack2011" << endl;
     }
     if (!strcmp(argv[i],"-h")) help();
   }
