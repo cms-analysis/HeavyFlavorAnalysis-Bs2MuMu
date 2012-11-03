@@ -25,8 +25,6 @@
 
 #include<vector>
 
-#define noHFL_FIXMEMPROBLEM // this is a nasty fix for memory leak problems by restricting to just candidates 705122 and 905122
-
 extern TAna01Event *gHFEvent;
 
 using std::cout;
@@ -106,6 +104,9 @@ HFLambdas::HFLambdas(const ParameterSet& iConfig) :
     fEffMin3d(iConfig.getUntrackedParameter<double>("EffMin3d",.5)),
     fEffMaxDoca(iConfig.getUntrackedParameter<double>("EffMaxDoca",.05)),
     fDeltaR(iConfig.getUntrackedParameter<double>("deltaR",99.0)),
+    fMuonEtaMax(iConfig.getUntrackedParameter<double>("muonEtaMax", 99)),
+    fDoB0(iConfig.getUntrackedParameter<bool>("doB0",true)),
+    fDoLb(iConfig.getUntrackedParameter<bool>("doLb",true)),
     fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.2)),
     fMaxVtxChi2(iConfig.getUntrackedParameter<double>("maxVtxChi2", 10000.0)),
     fPAngle(iConfig.getUntrackedParameter<double>("pAngle",0.1)),
@@ -138,6 +139,9 @@ HFLambdas::HFLambdas(const ParameterSet& iConfig) :
     cout << "---  EffMin3d:                                 " << fEffMin3d << endl;
     cout << "---  EffMaxDoca:                               " << fEffMaxDoca << endl;
     cout << "---  deltaR:                                   " << fDeltaR << endl;
+    cout << "---  muonEtaMax:                               " << fMuonEtaMax << endl;
+    cout << "---  doB0                                      " << fDoB0 << endl;
+    cout << "---  doLb                                      " << fDoLb << endl;
     cout << "---  maxDoca:                                  " << fMaxDoca << endl;
     cout << "---  pAngle:                                   " << fPAngle << endl;
     cout << "---  maxVtxCut                                 " << fMaxVtxChi2 << endl;
@@ -257,6 +261,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
 
         tlv.SetXYZM(tTrack.px(),tTrack.py(),tTrack.pz(),MMUON);
         if(tTrack.pt() < fMuonPt) continue;
+        if(TMath::Abs(tTrack.eta()) > fMuonEtaMax) continue;
         if(2 == fPsiMuons)
         {
             for (unsigned int im = 0; im < muonIndices.size(); ++im)
@@ -398,7 +403,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
         }
 
         // create Lambda_B candidates
-        for(unsigned int j = 0; j < l0List.size(); j++)
+        if (fDoLb) for(unsigned int j = 0; j < l0List.size(); j++)
         {
 
             unsigned int iPion = l0List[j].id1;
@@ -417,8 +422,8 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
 
 	    //cout << "-----------------------------------------------------" << endl;
             // without J/Psi mass constraint
+	    /*
             HFDecayTreeIterator iterator;
-#ifndef HFL_FIXMEMPROBLEM
             HFDecayTree theTree(605122+V0Cand, true, MLAMBDA_B, false);
             iterator = theTree.addDecayTree(600443+V0Cand, false, MJPSI, false); // no vertexing & no mass constraint
             iterator->addTrack(iMuon1,13);
@@ -433,12 +438,12 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
             theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
             aSeq.doFit(&theTree);
+	    */
 
             // without J/Psi mass constraint, but with an own J/Psi vertex
-            theTree.clear(705122+V0Cand, true, MLAMBDA_B, false);
-#else
-	    HFDecayTree theTree(705122+V0Cand, true, MLAMBDA_B, false);
-#endif
+            HFDecayTreeIterator iterator;
+            HFDecayTree theTree(705122+V0Cand, true, MLAMBDA_B, false);
+            //theTree.clear(705122+V0Cand, true, MLAMBDA_B, false);
 
             iterator = theTree.addDecayTree(700443+V0Cand, true, MJPSI, false); // vertexing but no mass constraint...
             iterator->addTrack(iMuon1,13);
@@ -455,7 +460,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
             aSeq.doFit(&theTree);
 
             // with J/Psi mass constraint
-#ifndef HFL_FIXMEMPROBLEM
+	    /*
             theTree.clear(805122+V0Cand, true, MLAMBDA_B, false);
 
             iterator = theTree.addDecayTree(800443+V0Cand, true, MJPSI, true); // J/Psi needs an own vertex!!
@@ -470,9 +475,10 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
             theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
             aSeq.doFit(&theTree);
-#endif
+	    */
 
             // with mass constraint for J/Psi and Lambda0
+	    /*
             theTree.clear(905122+V0Cand, true, MLAMBDA_B, false);
 
             iterator = theTree.addDecayTree(900443+V0Cand, true, MJPSI, true);
@@ -487,6 +493,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
             theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
             aSeq.doFit(&theTree);
+	    */
 
             // with mass constraint for J/Psi and Lambda0 and non-living J/Psi candidate
             theTree.clear(925122+V0Cand, true, MLAMBDA_B, false);
@@ -511,7 +518,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
         if(!fUseV0producer)
         {
             // create B0 candidates
-            for(unsigned int j = 0; j < K0List.size(); j++)
+            if (fDoB0) for(unsigned int j = 0; j < K0List.size(); j++)
             {
 
                 unsigned int iPion1 = K0List[j].id1;
@@ -526,6 +533,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
                 if (TMath::Abs(tlvB0.M() - MB_0) > fB0Window) continue;
 
                 // without J/Psi mass constraint
+		/*
                 HFDecayTree theTree(600511, true, MB_0, false);
 
                 HFDecayTreeIterator iterator = theTree.addDecayTree(600443, false, MJPSI, false); // no vertexing & no mass constraint
@@ -541,9 +549,12 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
                 theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
                 aSeq.doFit(&theTree);
+		*/
 
                 // without J/Psi mass constraint, but with an own J/Psi vertex
-                theTree.clear(700511, true, MB_0, false);
+                HFDecayTreeIterator iterator; // no vertexing & no mass constraint
+                HFDecayTree theTree(700511, true, MB_0, false);
+                //theTree.clear(700511, true, MB_0, false);
 
                 iterator = theTree.addDecayTree(700443, true, MJPSI, false); // vertexing but no mass constraint...
                 iterator->addTrack(iMuon1,13);
@@ -560,6 +571,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
                 aSeq.doFit(&theTree);
 
                 // with J/Psi mass constraint
+		/*
                 theTree.clear(800511, true, MB_0, false);
 
                 iterator = theTree.addDecayTree(800443, true, MJPSI, true); // J/Psi needs an own vertex!!
@@ -574,8 +586,10 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
                 theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
                 aSeq.doFit(&theTree);
+		*/
 
                 // with mass constraint for J/Psi and Kshort
+		/*
                 theTree.clear(900511, true, MB_0, false);
 
                 iterator = theTree.addDecayTree(900443, true, MJPSI, true);
@@ -590,6 +604,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
                 theTree.setNodeCut(RefCountedHFNodeCut(new HFLambdaCut(fPAngle, &(*iterator->getNodeCut()), fMaxDoca, fMaxVtxChi2)));
 
                 aSeq.doFit(&theTree);
+		*/
 
                 // with mass constraint for J/Psi and Kshort and non-living J/Psi
                 theTree.clear(920511, true, MB_0, false);

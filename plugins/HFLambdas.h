@@ -35,6 +35,8 @@ private:
     double fPsiEffWindow,fL0EffWindow; // windows for efficiencies of J/Psi and Lambda0
     double fEffMaxChi2, fEffMin3d, fEffMaxDoca; // cuts for efficiencies of J/Psi and Lambda0
     double fDeltaR;
+    double fMuonEtaMax;
+    bool fDoB0, fDoLb;
     //int fVertexing;
 
     double fMaxDoca; // for LambdaCut
