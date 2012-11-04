@@ -294,7 +294,8 @@ void pdf_fitData::print_each_channel() {
       RooArgSet* vars =  ws_->pdf(pdfname.c_str())->getVariables();
       RooRealVar* N_bs;
       if (BF_ == 0) N_bs = (RooRealVar*)vars->find(pdf_analysis::name("N_bs", i, j));
-      else N_bs = (RooRealVar*)vars->find("BF_bs");
+      else if (BF_ < 3) N_bs = (RooRealVar*)vars->find("BF_bs");
+      else if (BF_ == 3) N_bs = (RooRealVar*)vars->find("BF_bsbd");
       RooRealVar* N_bd;
       if (!bd_constr_ && !SM_ && BF_ < 2) {
         N_bd = (RooRealVar*)vars->find(pdf_analysis::name("N_bd", i, j));
@@ -311,22 +312,28 @@ void pdf_fitData::print_each_channel() {
       }
       else {
         ostringstream fitresult_tex;
-        fitresult_tex << setprecision(2) << scientific << "BF(B^{0}_{s}) = " << N_bs->getVal() << " ^{+" << getErrorHigh(N_bs) << "}_{" << getErrorLow(N_bs) << "}";
+        string title("BF(B^{0}_{s})");
+        string name("BF_bs");
+        if (BF_ == 3) {
+          title = "BF(B^{0}_{s})/BF(B^{0})";
+          name = "BF_bsbd";
+        }
+        fitresult_tex << setprecision(2) << scientific << title << " = " << N_bs->getVal() << " ^{+" << getErrorHigh(N_bs) << "}_{" << getErrorLow(N_bs) << "}";
         fitresult_tex_vec.push_back(fitresult_tex.str());
         ostringstream fitresult_tex2;
-        fitresult_tex2 << "(N(B^{0}_{s}) = " << setprecision(2) << fixed << ws_->function(name("N_bs_formula", i, j))->getVal();
-        Double_t BF_bs_val = ws_->var("BF_bs")->getVal();
-        Double_t N_bs_ = ws_->function(name("N_bs_formula", i, j))->getVal();
-        ws_->var("BF_bs")->setVal(BF_bs_val + getErrorHigh(N_bs));
-        Double_t N_bs_up = ws_->function(name("N_bs_formula", i, j))->getVal();
+        fitresult_tex2 << "(N(B^{0}_{s}) = " << setprecision(2) << fixed << ws_->function(pdf_analysis::name("N_bs_formula", i, j))->getVal();
+        Double_t BF_bs_val = ws_->var(name.c_str())->getVal();
+        Double_t N_bs_ = ws_->function(pdf_analysis::name("N_bs_formula", i, j))->getVal();
+        ws_->var(name.c_str())->setVal(BF_bs_val + getErrorHigh(N_bs));
+        Double_t N_bs_up = ws_->function(pdf_analysis::name("N_bs_formula", i, j))->getVal();
         Double_t N_bs_error_up = N_bs_up - N_bs_;
         fitresult_tex2 << " ^{+" << N_bs_error_up;
-        ws_->var("BF_bs")->setVal(BF_bs_val);
-        ws_->var("BF_bs")->setVal(BF_bs_val + getErrorLow(N_bs));
-        Double_t N_bs_down = ws_->function(name("N_bs_formula", i, j))->getVal();
+        ws_->var(name.c_str())->setVal(BF_bs_val);
+        ws_->var(name.c_str())->setVal(BF_bs_val + getErrorLow(N_bs));
+        Double_t N_bs_down = ws_->function(pdf_analysis::name("N_bs_formula", i, j))->getVal();
         Double_t N_bs_error_down = N_bs_ - N_bs_down;
         fitresult_tex2 << "}_{-" << N_bs_error_down << "}" << ")";
-        ws_->var("BF_bs")->setVal(BF_bs_val);
+        ws_->var(name.c_str())->setVal(BF_bs_val);
         fitresult_tex_vec.push_back(fitresult_tex2.str());
       }
       if (!bd_constr_ && !SM_ && BF_ < 2) {
@@ -529,9 +536,8 @@ void pdf_fitData::make_pdf_input() {
   ostringstream inputs_oss; inputs_oss << channels;
   if (simul_) root_s = "output/ws_simul" + inputs_oss.str() + "_" + meth_;
   if (simul_bdt_) root_s += "_simulBdt";
-  string tail_s;
-//  if (BF_) tail_s = Form("_BF%d", BF_);
-  tail_s = "_BF2";
+  string tail_s("");
+  if (BF_>0) tail_s = Form("_BF%d", BF_);
   if (SM_) tail_s = "_SM";
   else if (bd_constr_) tail_s = "_BdConst";
   if (bdt_fit_) tail_s += "_2D";
@@ -637,7 +643,9 @@ void pdf_fitData::save() {
 
 void pdf_fitData::significance() {
 /// set negative errors to zero
-  for (int k = BF_; k < 4; k++) {
+  for (int k = 0; k < 4; k++) {
+    if (BF_ > 0 && k == 0) continue;
+    if (BF_ > 1 && k == 1) continue;
     for (int i = 0; i < channels; i++) {
       for (int j = 0; j < channels_bdt; j++) {
         string name_k(name("N_" + source[k], i));
@@ -653,7 +661,7 @@ void pdf_fitData::significance() {
     }
   }
   string BFs[2] = {"BF_bs", "BF_bd"};
-  for (int k = 0; k < BF_; k++) {
+  for (int k = 0; k < 2; k++) {
     string name_k(BFs[k]);
     double val = ws_->var(name_k.c_str())->getVal();
     double err_lo = ws_->var(name_k.c_str())->getErrorLo();

@@ -555,12 +555,14 @@ void pdf_analysis::define_bf(int i, int j) {
   if (i == 0 && j == 0) {
     RooRealVar BF_bs("BF_bs", "Bs2MuMu branching fraction", Bs2MuMu_SM_BF_val, 0., 1e-8);
     RooRealVar BF_bd("BF_bd", "Bd2MuMu branching fraction", Bd2MuMu_SM_BF_val, 0., 1e-8);
+    RooRealVar BF_bsbd("BF_bsbd", "Bs2MuMu / Bd2MuMu branching fraction ratio", Bd2MuMu_SM_BF_val/Bs2MuMu_SM_BF_val, 0., 20.);
 
     RooRealVar fs_over_fu("fs_over_fu", "fs_over_fu", fs_over_fu_val, fs_over_fu_val - 5*fs_over_fu_err, fs_over_fu_val + 5*fs_over_fu_err);
     RooRealVar one_over_BRBR("one_over_BRBR", "one_over_BRBR", one_over_BRBR_val, one_over_BRBR_val - 5*one_over_BRBR_err, one_over_BRBR_val + 5*one_over_BRBR_err);
 
     ws_->import(BF_bs);
     ws_->import(BF_bd);
+    if (BF_ == 3) ws_->import(BF_bsbd);
     ws_->import(fs_over_fu);
     ws_->import(one_over_BRBR);
   }
@@ -572,13 +574,15 @@ void pdf_analysis::define_bf(int i, int j) {
   RooRealVar effratio_bd(name("effratio_bd", i, j), "effratio_bd", effratio_bd_val[i], effratio_bd_val[i] - 5*effratio_bd_err[i], effratio_bd_val[i] + 5*effratio_bd_err[i]);
 
   RooFormulaVar N_bs_constr(name("N_bs_formula", i, j), "N_bs(i) = BF * K(i)",  "@0*@1*@2*@3*@4", RooArgList( *ws_->var("BF_bs"), *ws_->var(name("N_bu", i, j)), *ws_->var("fs_over_fu"), effratio_bs, *ws_->var("one_over_BRBR")));
+  RooFormulaVar N_bsbd_constr(name("N_bs_formula", i, j), "N_bs(i) = BF * K(i)",  "@0*@1*@2*@3*@4*@5", RooArgList( *ws_->var("BF_bd"), *ws_->var("BF_bsbd"), *ws_->var(name("N_bu", i, j)), *ws_->var("fs_over_fu"), effratio_bs, *ws_->var("one_over_BRBR")));
 
   RooFormulaVar N_bd_constr(name("N_bd_formula", i, j), "N_bd(i) = BF * K(i)",  "@0*@1*@2*@3", RooArgList( *ws_->var("BF_bd"), *ws_->var(name("N_bu", i, j)), effratio_bd, *ws_->var("one_over_BRBR")));
 
   cout << "channel: " << i << ";" << j << " expected Bs = " << N_bs_constr.getVal() << endl;
   cout << "channel: " << i << ";" << j << " expected Bd = " << N_bd_constr.getVal() << endl;
 
-  ws_->import(N_bs_constr);
+  if (BF_ != 3) ws_->import(N_bs_constr);
+  else ws_->import(N_bsbd_constr);
   ws_->import(N_bd_constr);
 
 }

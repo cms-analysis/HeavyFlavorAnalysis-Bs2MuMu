@@ -60,7 +60,7 @@ void help() {
   cout << "\t -cha {0, 1} \t barrel OR endcap input" << endl;
   cout << "\t -simul # \t simultaneous fit of # eta channels" << endl;
   cout << "\t -simul_bdt # \t simultaneous fit of # bdt channels" << endl;
-  cout << "-BF {1,2} \t imposing the same BF in each channel for bs only (1) or for bs and bd (2)" << endl;
+  cout << "-BF {1,2,3} \t imposing the same BF in each channel for bs only (1) or for bs and bd (2) or for bs/bd and bd (3)" << endl;
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
   cout << "-print \t save the fits to gif and pdf if -no_legend without parameters on canvas" << endl;
@@ -79,7 +79,7 @@ void help() {
   cout << "-cha {0, 1} \t barrel OR endcap input, incompatible with -simul" << endl;
   cout << "\t -simul # \t simultaneous fit of # eta channels" << endl;
   cout << "\t -simul_bdt # \t simultaneous fit of # bdt channels" << endl;
-  cout << "-BF {1,2} \t imposing the same BF in each channel for bs only (1) or for bs and bd (2)" << endl;
+  cout << "-BF {1,2,3} \t imposing the same BF in each channel for bs only (1) or for bs and bd (2) or for bs/bd and bd (3)" << endl;
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
   cout << "-print \t save the fits to gif and pdf --> -no_legend without parameters on canvas" << endl;
@@ -106,7 +106,7 @@ void help() {
   cout << "-i #filename \t workspace input" << endl;
   cout << "-roomcs \t toy mc with RooMCStudy, otherwise by hand" << endl;
   cout << "-nexp # \t number of experiments (default 1)" << endl;
-  cout << "-BF {1,2} \t imposing the same BF in each channel for bs only (1) or for bs and bd (2)" << endl;
+  cout << "-BF {1,2,3} \t imposing the same BF in each channel for bs only (1) or for bs and bd (2) or for bs/bd and bd (3)" << endl;
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
   cout << "if simultaneous: " << endl;
