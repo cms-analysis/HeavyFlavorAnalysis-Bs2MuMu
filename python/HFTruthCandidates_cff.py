@@ -153,6 +153,27 @@ truthBdToPiMuNuDump = cms.EDAnalyzer(
     daughtersID  = cms.untracked.vint32(211, -13, 14)
     )
 
+# ----------------------------------------------------------------------
+truthBdToMuMuGaDump = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(511),
+    type         = cms.untracked.int32(96),
+    GenType      = cms.untracked.int32(-96),
+    daughtersID  = cms.untracked.vint32(13, -13, 22)
+    )
+
+# ----------------------------------------------------------------------
+truthBdToMuMuK0Dump = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(511),
+    type         = cms.untracked.int32(97),
+    GenType      = cms.untracked.int32(-97),
+    daughtersID  = cms.untracked.vint32(13, -13, 310, 211, 211)
+    )
+
+
 
 # ######################################################################
 # Bu modes
@@ -175,7 +196,7 @@ truthBuToMuMuKDump = cms.EDAnalyzer(
     motherID     = cms.untracked.int32(521),
     type         = cms.untracked.int32(77),
     GenType      = cms.untracked.int32(-77),
-    daughtersID  = cms.untracked.vint32(13, -13),
+    daughtersID  = cms.untracked.vint32(13, -13, 321),
     partialDecayMatching = cms.untracked.bool(True)
     )
 
@@ -275,8 +296,8 @@ truthBd2JpsiKsDump = cms.EDAnalyzer(
     "HFTruthCandidate",
     tracksLabel  = cms.untracked.InputTag(trackList),
     motherID     = cms.untracked.int32(511),
-    type         = cms.untracked.int32(66),
-    GenType      = cms.untracked.int32(-66),
+    type         = cms.untracked.int32(64),
+    GenType      = cms.untracked.int32(-64),
     daughtersID  = cms.untracked.vint32(443, 13, -13, 310, 211, 211)
     )
 
@@ -439,6 +460,8 @@ truthRareBdSequence      = cms.Sequence(truthBdToPiPiDump
                                         *truthBdToKKDump
                                         *truthBdToMuMuPi0Dump
                                         *truthBdToPiMuNuDump
+                                        *truthBdToMuMuGaDump
+                                        *truthBdToMuMuK0Dump
                                         )
 
 truthRareBuSequence      = cms.Sequence(truthBuTo3MuNuDump
