@@ -217,35 +217,50 @@ void clsPlotter::print(double cl)
 		// print the numbers for the table
 		if (fPOI.compare("mu_s") == 0) {
 			double nbr;
+			int k;
 			
 			for (j = 0; j <= 1; j++) {
 				const char *channelName = j == 0 ? "barrel" : "endcap";
+				RooRealVar *var;
+				
 				nbr = wspace->var(Form("TauD_%d",j))->getVal() * wspace->var(Form("nu_b_%d",j))->getVal();
+				for (k = j+2; (var = wspace->var(Form("nu_b_%d",k))) != NULL; k+=2)
+					nbr += wspace->var(Form("TauD_%d",k))->getVal() * wspace->var(Form("nu_b_%d",k))->getVal();
 				cout << Form("Ncomb(%s,Bdmm) = ", channelName) << nbr << endl;
 				if (latexFile)
 					fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.3f}}}\n", Form("%s:%s",kVDEF_tblCombBdmm,channelName), nbr);
 				
 				nbr = wspace->var(Form("PeakBkgBd_%d",j))->getVal();
+				for (k = j+2; (var = wspace->var(Form("PeakBkgBd_%d",k))) != NULL; k+=2)
+					nbr += wspace->var(Form("PeakBkgBd_%d",k))->getVal();
 				cout << Form("Npeak(%s,Bdmm) = ", channelName) << nbr << endl;
 				if (latexFile)
 					fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.3f}}}\n", Form("%s:%s",kVDEF_tblPeakBdmm,channelName), nbr);
 				
 				nbr = wspace->var(Form("Pdd_%d",j))->getVal() * wspace->function(Form("NuD_%d",j))->getVal() * wspace->var("mu_d")->getVal();
+				for (k = j+2; (var = wspace->var(Form("NuD_%d",k))) != NULL; k+=2)
+					nbr += wspace->var(Form("Pdd_%d",k))->getVal() * wspace->function(Form("NuD_%d",k))->getVal() * wspace->var("mu_d")->getVal();
 				cout << Form("Nsig(%s,Bdmm) = ",channelName) << nbr << endl;
 				if (latexFile)
 					fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.3f}}}\n", Form("%s:%s",kVDEF_tblSigBdmm,channelName), nbr);
 				
 				nbr = wspace->var(Form("TauS_%d",j))->getVal() * wspace->var(Form("nu_b_%d",j))->getVal();
+				for (k = j+2; (var = wspace->var(Form("nu_b_%d",k))) != NULL; k+=2)
+					nbr += wspace->var(Form("TauS_%d",k))->getVal() * wspace->var(Form("nu_b_%d",k))->getVal();
 				cout << Form("Ncomb(%s,Bsmm) = ",channelName) << nbr << endl;
 				if (latexFile)
 					fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.3f}}}\n", Form("%s:%s",kVDEF_tblCombBsmm,channelName), nbr);
 				
 				nbr = wspace->var(Form("PeakBkgBs_%d",j))->getVal();
+				for (k = j+2; (var = wspace->var(Form("PeakBkgBs_%d",k))) != NULL; k+=2)
+					nbr += wspace->var(Form("PeakBkgBs_%d",k))->getVal();
 				cout << Form("Npeak(%s,Bsmm) = ",channelName) << nbr << endl;
 				if (latexFile)
 					fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.3f}}}\n", Form("%s:%s",kVDEF_tblPeakBsmm,channelName), nbr);
 				
 				nbr = wspace->var(Form("Pss_%d",j))->getVal() * wspace->function(Form("NuS_%d",j))->getVal() * wspace->var("mu_s")->getVal();
+				for (k = j+2; (var = wspace->var(Form("NuS_%d",k))) != NULL; k+=2)
+					nbr += wspace->var(Form("Pss_%d",k))->getVal() * wspace->function(Form("NuS_%d",k))->getVal() * wspace->var("mu_s")->getVal();
 				cout << Form("Nsig(%s,Bsmm) = ",channelName) << nbr << endl;
 				if (latexFile)
 					fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.3f}}}\n", Form("%s:%s",kVDEF_tblSigBsmm,channelName), nbr);
