@@ -21,6 +21,7 @@ getopts('Cdhj:r:s:t:v:');
 
 my $job = "2012";
 #my $job = "2012/new";
+#my $job = "2012/unblind/new";
 
 if ($opt_j) {
     $job = $opt_j; 
@@ -101,6 +102,17 @@ if ($opt_v) {
     => "-y 2012 -m,bmm2Reader.2e33-Lb2PMuNu,cbmm-$version-cms-LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-LambdaBToPMuNu.root"
     , "Bd2PiMuNu rare MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-$version-cms-BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-BdToPiMuNu.root"
+	#
+    , "Bu2MuMuK rare MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Bu2MuMuK,cbmm-$version-cms-BuToMuMuK_8TeV-START53_V7A-v1*,$version-2e33-BuToMuMuK.root"
+    , "Bu2MuMuPi rare MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Bu2MuMuPi,cbmm-$version-cms-BuToMuMuPi_8TeV-START53_V7A-v1*,$version-2e33-BuToMuMuPi.root"
+    , "Bd2MuMuPi0 rare MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuPi0,cbmm-$version-cms-BdToMuMuPi0_8TeV-START53_V7A-v1*,$version-2e33-BdToMuMuPi0.root"
+    , "Bd2MuMuGamma rare MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuGamma,cbmm-$version-cms-BdToMuMuGamma_8TeV-START53_V7A-v1*,$version-2e33-BdToMuMuGamma.root"
+    , "Bs2MuMuGamma rare MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Bs2MuMuGamma,cbmm-$version-cms-BsToMuMuGamma_8TeV-START53_V7A-v1*,$version-2e33-BsToMuMuGamma.root"
     );
 
 #my $user  = $ENV{'USER'};
