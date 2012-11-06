@@ -2636,5 +2636,8 @@ void candAna::fillRedTreeData() {
   fRTD.dof       = fCandDof;
 
   fRTD.alpha     = fCandA;
+	
+  fRTD.docatrk   = fCandDocaTrk;
+  fRTD.maxdoca   = fCandDoca;
 
 }
