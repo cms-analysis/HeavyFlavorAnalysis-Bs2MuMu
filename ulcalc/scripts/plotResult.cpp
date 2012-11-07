@@ -238,7 +238,7 @@ void clsPlotter::print(double cl)
 					fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.3f}}}\n", Form("%s:%s",kVDEF_tblPeakBdmm,channelName), nbr);
 				
 				nbr = wspace->var(Form("Pdd_%d",j))->getVal() * wspace->function(Form("NuD_%d",j))->getVal() * wspace->var("mu_d")->getVal();
-				for (k = j+2; (var = wspace->var(Form("NuD_%d",k))) != NULL; k+=2)
+				for (k = j+2; (var = wspace->var(Form("Pdd_%d",k))) != NULL; k+=2)
 					nbr += wspace->var(Form("Pdd_%d",k))->getVal() * wspace->function(Form("NuD_%d",k))->getVal() * wspace->var("mu_d")->getVal();
 				cout << Form("Nsig(%s,Bdmm) = ",channelName) << nbr << endl;
 				if (latexFile)
@@ -259,7 +259,7 @@ void clsPlotter::print(double cl)
 					fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.3f}}}\n", Form("%s:%s",kVDEF_tblPeakBsmm,channelName), nbr);
 				
 				nbr = wspace->var(Form("Pss_%d",j))->getVal() * wspace->function(Form("NuS_%d",j))->getVal() * wspace->var("mu_s")->getVal();
-				for (k = j+2; (var = wspace->var(Form("NuS_%d",k))) != NULL; k+=2)
+				for (k = j+2; (var = wspace->var(Form("Pss_%d",k))) != NULL; k+=2)
 					nbr += wspace->var(Form("Pss_%d",k))->getVal() * wspace->function(Form("NuS_%d",k))->getVal() * wspace->var("mu_s")->getVal();
 				cout << Form("Nsig(%s,Bsmm) = ",channelName) << nbr << endl;
 				if (latexFile)
