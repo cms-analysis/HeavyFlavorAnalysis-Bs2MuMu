@@ -33,6 +33,7 @@ enum algo_t {
 	kAlgo_CLb_Hybrid,
 	kAlgo_Zbi,
 	kAlgo_Interval_Hybrid,
+	kAlgo_Bkg_Hybrid,
 	kAlgo_None
 };
 
@@ -85,6 +86,9 @@ static const char *algo_name(algo_t a)
 			break;
 		case kAlgo_None:
 			result = "None";
+			break;
+		case kAlgo_Bkg_Hybrid:
+			result = "Bkg using Hybrid";
 			break;
 		default:
 			cerr << "Unknown algorithm selected: " << a << endl;
@@ -216,7 +220,7 @@ static void parse_input(const char *path, map<bmm_param,measurement_t> *bsmm, ma
 
 static void usage()
 {
-	cerr << "ulcalc [--SM-crossfeed][--SM-exp] [--float-data] [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--disable-errors] [[-n <nbr steps>] -r x,y] [-l cl] [-w workspace_outfile.root] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"int_hybrid\"|\"clb_hybrid\"|\"zbi\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
+	cerr << "ulcalc [--SM-crossfeed][--SM-exp] [--float-data] [--fixed-bkg] [--toys <NbrMCToys>] [--proof <nbr_workers>] [--seed] [--bdtomumu] [--disable-errors] [[-n <nbr steps>] -r x,y] [-l cl] [-w workspace_outfile.root] [-a <\"bayes\"|\"fc\"|\"cls\"|\"clb\"|\"hybrid\"|\"int_hybrid\"|\"clb_hybrid\"|\"zbi\"|\"bkg\"|\"none\">] [-q] [-v] [-o <outputfile>] <configfile>" << endl;
 } // usage()
 
 static bool parse_arguments(const char **first, const char **last)
@@ -281,6 +285,8 @@ static bool parse_arguments(const char **first, const char **last)
 					gAlgorithm = kAlgo_Interval_Hybrid;
 				} else if (s.compare("zbi") == 0) {
 					gAlgorithm = kAlgo_Zbi;
+				} else if (s.compare("bkg") == 0) {
+					gAlgorithm = kAlgo_Bkg_Hybrid;
 				} else if (s.compare("none") == 0) {
 					gAlgorithm = kAlgo_None;
 				} else {
@@ -430,6 +436,9 @@ static void recursive_calc(RooWorkspace *wspace, RooArgSet *obs, set<int> *chann
 			case kAlgo_Zbi:
 				est_ul_zbi(wspace,data,channels,gCLLevel,gBdToMuMu,upperLimit);
 				break;
+			case kAlgo_Bkg_Hybrid:
+				est_sign_bkg(wspace, data, channels, gVerbosity, upperLimit, gProofWorkers, gToys, gFixBackground);
+				break;
 			case kAlgo_None:
 				measure_params(wspace, data, channels, gVerbosity);
 				break;
@@ -544,7 +553,7 @@ int main(int argc, const char *argv [])
 	
 	compute_vars(&bsmm,true);
 	compute_vars(&bdmm,false);
-	wspace = build_model_nchannel(&bsmm, &bdmm, gDisableErrors, gVerbosity, gBdToMuMu, gFixBackground, gFloatingData, gSMCrossFeed);
+	wspace = build_model_nchannel(&bsmm, &bdmm, gDisableErrors, gVerbosity, gBdToMuMu, gFixBackground, gFloatingData, gSMCrossFeed, (gAlgorithm == kAlgo_Bkg_Hybrid));
 	
 	// initialize random number generator seed
 	if (gSeed) RooRandom::randomGenerator()->SetSeed(0);

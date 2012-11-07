@@ -36,7 +36,7 @@ void add_channels(std::map<bmm_param,measurement_t> *bmm, std::set<int> *channel
 		channels->insert(it->first.second);
 } // add_channels()
 
-RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std::map<bmm_param,measurement_t> *bdmm, bool no_errors, int verbosity, bool compute_bd_ul, bool fixed_bkg, bool floatPoissonians, bool smCrossFeed)
+RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std::map<bmm_param,measurement_t> *bdmm, bool no_errors, int verbosity, bool compute_bd_ul, bool fixed_bkg, bool floatPoissonians, bool smCrossFeed, bool bothPoi)
 {
 	RooStats::ModelConfig *splusbModel = NULL;
 	RooStats::ModelConfig *smModel = NULL;
@@ -296,11 +296,13 @@ RooWorkspace *build_model_nchannel(std::map<bmm_param,measurement_t> *bsmm, std:
 	
 	// define the sets
 	wspace->defineSet("obs", observables);
-	nuisanceParams.addClone(wspace->allVars());
-	if (compute_bd_ul)
+	if (bothPoi)
+		wspace->defineSet("poi", "mu_d,mu_s");
+	else if (compute_bd_ul)
 		wspace->defineSet("poi", "mu_d");
 	else
 		wspace->defineSet("poi", "mu_s");
+	nuisanceParams.addClone(wspace->allVars());
 	nuisanceParams.remove(*wspace->set("obs"), kTRUE, kTRUE);
 	nuisanceParams.remove(*wspace->set("poi"), kTRUE, kTRUE);
 	RooStats::RemoveConstantParameters(&nuisanceParams);
@@ -413,27 +415,40 @@ void measure_params(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, 
 	RooStats::ModelConfig *splusbConfig = dynamic_cast<RooStats::ModelConfig*> (wspace->obj("splusbConfig"));
 	RooStats::ModelConfig *smConfig = dynamic_cast<RooStats::ModelConfig*> (wspace->obj("smConfig"));
 	RooStats::ModelConfig *bConfig = dynamic_cast<RooStats::ModelConfig*> (wspace->obj("bConfig"));
-	RooRealVar *poi;
+	const RooArgSet *pois = wspace->set("poi");
+	RooRealVar *var;
+	TIterator *it = pois->createIterator();
 	wspace->allVars() = *data->get(0);
 	
 	// conditional likelihood fit for background model
-	poi = (RooRealVar*)wspace->set("poi")->first();
-	poi->setVal(0.0);
-	poi->setConstant(kTRUE);
+	it->Reset();
+	while ( (var = (RooRealVar*)it->Next()) != NULL ) {
+		var->setVal(0.0);
+		var->setConstant(kTRUE);
+	}
 	wspace->pdf("total_pdf")->fitTo(*data, RooFit::GlobalObservables(*wspace->set("nui")), ((verbosity > 0) ? RooCmdArg::none() : RooFit::PrintLevel(-1)));
-	poi->setConstant(kFALSE);
+	it->Reset();
+	while ( (var = (RooRealVar*)it->Next()) != NULL )
+		var->setConstant(kFALSE);
 	bConfig->SetSnapshot(*wspace->set("poi"));
 	
 	// conditional likelihood fit for SM
-	poi->setVal(1.0);
-	poi->setConstant(kTRUE);
+	it->Reset();
+	while ( (var = (RooRealVar*)it->Next()) != NULL ) {
+		var->setVal(1.0);
+		var->setConstant(kTRUE);
+	}
 	wspace->pdf("total_pdf")->fitTo(*data, RooFit::GlobalObservables(*wspace->set("nui")), ((verbosity > 0) ? RooCmdArg::none() : RooFit::PrintLevel(-1)));
-	poi->setConstant(kFALSE);
+	it->Reset();
+	while ( (var = (RooRealVar*)it->Next()) != NULL )
+		var->setConstant(kFALSE);
 	smConfig->SetSnapshot(*wspace->set("poi"));
 	
 	// do a likelihood fit to the data to get the real values...
 	wspace->pdf("total_pdf")->fitTo(*data, RooFit::GlobalObservables(*wspace->set("nui")), ((verbosity > 0) ? RooCmdArg::none() : RooFit::PrintLevel(-1)));
 	splusbConfig->SetSnapshot(*wspace->set("poi"));
+	
+	delete it;
 } // measure_params()
 
 void est_ul_fc(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, double cLevel, int verbosity, double *ulLimit, double *loLimit, std::pair<double,double> *rg, uint32_t *inBins, double *cpuUsed, uint32_t nbrProof, int nToys)
@@ -947,7 +962,7 @@ void est_ul_clb_hybrid(RooWorkspace *wspace, RooDataSet *data, std::set<int> *ch
 		delete hybCalc;
 		delete result;
 		
-		// new nuisance-parameter sampling functionfor sm expectation...
+		// new nuisance-parameter sampling function for sm expectation...
 		wspace->factory("sm_mu[1]");
 		wspace->factory("sm_sigma[1e-10]");
 		if (bdmm)	wspace->factory("Gaussian::mu_prior_gauss(mu_s,sm_mu,sm_sigma)");
@@ -1079,6 +1094,63 @@ void est_ul_zbi(RooWorkspace *wspace, RooDataSet *data, set<int> *channels, doub
 	
 	*ul = mu;
 } // est_ul_zbi()
+
+void est_sign_bkg(RooWorkspace *wspace, RooDataSet *data, std::set<int> *channels, int verbosity, double *pvalue, uint32_t nbrProof, int nToys, bool fixedBkg)
+{
+	using namespace RooStats;
+	ModelConfig *bModel = dynamic_cast<ModelConfig*> (wspace->obj("bConfig"));
+	ModelConfig *smModel = dynamic_cast<ModelConfig*> (wspace->obj("smConfig"));
+	ProfileLikelihoodTestStat testStat(*wspace->pdf("total_pdf"));
+	testStat.SetGlobalObservables(wspace->set("nui"));
+	ToyMCSampler *mcSampler = new ToyMCSampler(testStat,nToys);
+	HybridCalculator *hybCalc = new HybridCalculator(*data,*smModel,*bModel,mcSampler); // null = bModel interpreted as signal, alt = sm interpreted as bkg
+	HypoTestResult *result;
+	ProofConfig *pc = NULL;
+	string proofString = Form("workers=%u",nbrProof);
+	set<int>::const_iterator it;
+	RooArgList *nui_sampling_list = new RooArgList;
+	RooProdPdf *nui_sampling;
+	std::string resultName("Hybrid_Bkg");
+	
+	if (nbrProof > 1) {
+		uint32_t nPackages = (((nToys + 999)/1000+(nbrProof-1))/nbrProof)*nbrProof;
+		pc = new ProofConfig(*wspace,nPackages,proofString.c_str(),kFALSE);
+		mcSampler->SetProofConfig(pc);
+	}
+	
+	mcSampler->SetNEventsPerToy(1);
+	measure_params(wspace, data, channels, verbosity);
+	bModel->LoadSnapshot();
+	
+	// if not fixed bkg, include background priors in the integration prior
+	for (it = channels->begin(); !fixedBkg && it != channels->end(); ++it) {
+		wspace->factory(Form("Gamma::bkg_prior_%d(bkg_mean_%d,gamma_%d[1],beta,mu)",*it,*it,*it));
+		nui_sampling_list->add(*wspace->pdf(Form("bkg_prior_%d",*it)));
+		wspace->var(Form("gamma_%d",*it))->setVal( wspace->var(Form("NbObs_%d",*it))->getVal()+1 );
+	}
+	
+	nui_sampling_list->add( ((RooProdPdf*)wspace->pdf("prior_pdf"))->pdfList() );
+	nui_sampling = new RooProdPdf("nui_sampling","",*nui_sampling_list);
+	wspace->import(*nui_sampling, RooFit::Silence(kTRUE));
+	cout << "Nuisance parameter integration through" << endl;
+	wspace->pdf("nui_sampling")->Print();
+	hybCalc->ForcePriorNuisanceAlt(*wspace->pdf("nui_sampling"));
+	hybCalc->ForcePriorNuisanceNull(*wspace->pdf("nui_sampling"));
+	hybCalc->SetToys(nToys, nToys);
+	
+	result = hybCalc->GetHypoTest();
+	result->SetBackgroundAsAlt(kTRUE);
+	result->SetName(resultName.c_str());
+	wspace->import(*result);
+	*pvalue = result->CLsplusb();
+	
+	delete nui_sampling_list;
+	delete nui_sampling;
+	delete pc;
+	delete mcSampler;
+	delete result;
+	delete hybCalc;
+} // est_sign_bkg()
 
 void compute_vars(map<bmm_param,measurement_t> *bmm, bool bstomumu)
 {
