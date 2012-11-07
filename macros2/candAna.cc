@@ -8,9 +8,9 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
+  cout << "======================================================================" << endl;
+  cout << "==> candAna: name = " << name << ", reading cutsfile " << cutsFile << endl;
   fpReader = pReader; 
-  fVerbose = fpReader->fVerbose; 
-  fYear    = fpReader->fYear; 
   fName = name; 
 
   MASSMIN = 4.5;
@@ -28,10 +28,6 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   fRegion.insert(make_pair("APV0", 3));  // low-NPV events
   fRegion.insert(make_pair("APV1", 4)); // large-NPV events
 
-  cout << "======================================================================" << endl;
-  cout << "==> candAna: name = " << name << ", reading cutsfile " << cutsFile << " setup for year " << fYear << endl;
-
-
 }
 
 
@@ -46,7 +42,7 @@ candAna::~candAna() {
 void candAna::evtAnalysis(TAna01Event *evt) {
 
   fpEvt = evt; 
-  fBadEvent = false; 
+  fBadEvent = false;
 
   //   cout << fEvt << "  " << (fEvt>0? " >0" : "<0") << endl;
   //   return;
@@ -55,12 +51,13 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     genMatch(); 
     recoMatch(); 
     candMatch(); 
-    if (fBadEvent) return;
+    if(fBadEvent) return;
     efficiencyCalculation();
   } 
 
   triggerSelection();
   runRange(); 
+
 
   TAnaCand *pCand(0);
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
@@ -101,6 +98,10 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     // -- call derived functions
     candAnalysis();
 
+    //cout<<" Muons "<<fMu1Pt<<" "<<fMu2Pt<<endl; // d.k.-debug
+    fHLTmatch = doTriggerMatching();
+
+
     if (0 && fCandM > 4.99 && fCandM < 5.02 && fCandFLS3d > 13 && fCandA < 0.05 && fMu1Pt > 4.5 && fMu2Pt > 4.5) {
       cout << "----------------------------------------------------------------------" << endl;
       int gen1(-1), gen2(-1), gen0(-1);
@@ -135,16 +136,31 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 	// do nothing
 	//cout<<" blinded "<<BLIND<<" "<<fpCand->fMass<<" "<<fCandM<<" "<<SIGBOXMIN<<" "<<SIGBOXMAX<<" "<<fCandIso<<" "<<fPreselection<<endl;;
       } else {
-	if (fPreselection) {
+
+	if (fVerbose > 1)
+	  cout<<" select "<<fRun<<" "<<fLS<<" "<<fEvt<<" "<<fJSON<<" "<<fGoodHLT<<" "<<fpCand->fType<<" "<<fPreselection<<" "<<fHLTmatch<<endl;
+
+	if (fPreselection) { 
 	  ((TH1D*)fHistDir->Get("../monEvents"))->Fill(12); 
-	  if (fVerbose > 5) cout << " filling this cand into the tree" << endl;
+
+	  if (fVerbose > 0)
+	    cout<<" write "<<fRun<<" "<<fLS<<" "<<fEvt<<" "<<fJSON<<" "<<fGoodHLT<<" "<<fpCand->fType<<endl;
+	  ((TH1D*)fHistDir->Get("run1"))->Fill(fRun); 
+	  if(fJSON) ((TH1D*)fHistDir->Get("run2"))->Fill(fRun);
+	  if(fJSON&&fGoodHLT) ((TH1D*)fHistDir->Get("run3"))->Fill(fRun);
+	  if(fJSON&&fGoodHLT&&fHLTmatch) {
+	    ((TH1D*)fHistDir->Get("run4"))->Fill(fRun); 
+	    if(     (fpCand->fType == 300521)) ((TH1D*)fHistDir->Get("run5"))->Fill(fRun); 
+	    else if((fpCand->fType == 300531)) ((TH1D*)fHistDir->Get("run6"))->Fill(fRun); 
+	    else if((fpCand->fType == 301313)) ((TH1D*)fHistDir->Get("run7"))->Fill(fRun); 
+	  }
 	  fTree->Fill(); 
-	} else {
-	  if (fVerbose > 5) cout << " failed preselection" << endl;
-	}
+	}         
       }
     }
 
+
+    return; // WARNING d.k.
 
     // -- fill histograms
     fillCandidateHistograms(fRegion["A"]);
@@ -300,7 +316,6 @@ void candAna::candAnalysis() {
   fpMuon2 = p2; 
 
   //  fMu1Id        = goodMuon(p1); 
-  fMu1TrkLayer  = fpReader->numberOfTrackerLayers(p1);
   fMu1Id        = tightMuon(p1); 
   fMu1Pt        = p1->fPlab.Perp(); 
   fMu1Eta       = p1->fPlab.Eta(); 
@@ -309,7 +324,6 @@ void candAna::candAnalysis() {
   fMu1EtaNrf    = ps1->fPlab.Eta();
   fMu1TkQuality = p1->fTrackQuality & TRACKQUALITY;
   fMu1Q         = p1->fQ;
-  //  cout << "tracker layers with hits: " << fMu1TrkLayer << " and " << fMu2TrkLayer << endl;
   fMu1Pix       = fpReader->numberOfPixLayers(p1);
   fMu1BPix      = fpReader->numberOfBPixLayers(p1);
   fMu1BPixL1    = fpReader->numberOfBPixLayer1Hits(p1);
@@ -338,7 +352,6 @@ void candAna::candAnalysis() {
   }
   
   //  fMu2Id        = goodMuon(p2); 
-  fMu2TrkLayer  = fpReader->numberOfTrackerLayers(p2);
   fMu2Id        = tightMuon(p2); 
   fMu2Pt        = p2->fPlab.Perp(); 
   fMu2Eta       = p2->fPlab.Eta(); 
@@ -586,6 +599,7 @@ void candAna::candAnalysis() {
 
   // -- to be consistent with the BDT traning
   fPreselection = preselection(fRTD, fChan); 
+  //cout<<" pres "<<fPreselection<<" hlt "<<fGoodHLT<<endl;
   fPreselection = fPreselection && fGoodHLT;
 
 }
@@ -1013,13 +1027,13 @@ void candAna::triggerSelection() {
 	if (!a.CompareTo(imap->first.c_str())) {
  	  fGoodHLT = true; 
 	  fHLTPath = a.Data();
-	  if (fVerbose > 80) cout << "exact match: " << imap->first.c_str() << " HLT: " << a << " result: " << result << endl;
+	  if (fVerbose > 1) cout << "exact match: " << imap->first.c_str() << " HLT: " << a << " result: " << result << endl;
 	}
 
  	if (a.Contains(spath.c_str()) && (rmin <= fRun) && (fRun <= rmax)) {
 	  fHLTPath = a.Data();
  	  fGoodHLT = true; 
-	  if (fVerbose > 80) cout << "close match: " << imap->first.c_str() << " HLT: " << a 
+	  if (fVerbose > 1) cout << "close match: " << imap->first.c_str() << " HLT: " << a 
 				 << " result: " << result 
 				 << " in run " << fRun 
 				 << endl;
@@ -1045,6 +1059,21 @@ void candAna::bookHist() {
   h11 = new TH1D("L1_4", "hltDimuonL2PreFiltered0", 50, -2.5, 2.5); 
   h11 = new TH1D("L1_5", "hltDoubleDisplacedMu4L3PreFiltered", 50, -2.5, 2.5); 
   h11 = new TH1D("L1_6", "hltDoubleMu3p5LowMassDisplacedL3Filtered", 50, -2.5, 2.5); 
+
+  const double firstRun = 190400.5, lastRun = 210400.5; const int numRuns = 20000;
+  h11 = new TH1D("run1", "runs all", numRuns, firstRun, lastRun); 
+  h11 = new TH1D("run2", "runs json", numRuns, firstRun, lastRun); 
+  h11 = new TH1D("run3", "runs json&hlt", numRuns, firstRun, lastRun); 
+  h11 = new TH1D("run4", "runs json&hltmatched", numRuns, firstRun, lastRun); 
+  h11 = new TH1D("run5", "runs jpsik", numRuns, firstRun, lastRun); 
+  h11 = new TH1D("run6", "runs jpsiphi", numRuns, firstRun, lastRun); 
+  h11 = new TH1D("run7", "runs mumu", numRuns, firstRun, lastRun); 
+  h11 = new TH1D("test1", "test1",100, 0., 50.); 
+  h11 = new TH1D("test2", "test2",100, 0., 50.); 
+  h11 = new TH1D("test3", "test3",100, 0., 0.2); 
+  h11 = new TH1D("test4", "test4",100, 0., 0.2); 
+  h11 = new TH1D("test5", "test5",100, 0., 0.2); 
+  h11 = new TH1D("test6", "test6",100, 0., 0.2); 
 
   // -- Reduced Tree
   fTree = new TTree("events", "events");
@@ -1144,6 +1173,7 @@ void candAna::bookHist() {
 
   fTree->Branch("mudist",  &fMuDist,            "mudist/D");
   fTree->Branch("mudeltar",&fMuDeltaR,          "mudeltar/D");
+  fTree->Branch("hltm",    &fHLTmatch,          "hltm/O");
 
   fTree->Branch("g1pt",    &fMu1PtGen,          "g1pt/D");
   fTree->Branch("g2pt",    &fMu2PtGen,          "g2pt/D");
@@ -1892,15 +1922,7 @@ bool candAna::tightMuon(TAnaTrack *pT) {
 
   if (TMath::Abs(pT->fBsTip) > 0.2) trackcuts = false;
   if (fpReader->numberOfPixLayers(pT) < 1) trackcuts = false;
-
-  if (fYear == 2011) {
-    if (pT->fValidHits < 11) trackcuts = false; 
-  } else if (fYear == 2012) {
-    int trkHits = fpReader->numberOfTrackerLayers(pT);
-    if (trkHits < 6) trackcuts = false; 
-  } else {
-    if (pT->fValidHits < 11) trackcuts = false; 
-  }
+  if (pT->fValidHits < 11) trackcuts = false; 
 
   if (muflag && mucuts && trackcuts) {
     return true; 
@@ -2639,5 +2661,90 @@ void candAna::fillRedTreeData() {
 	
   fRTD.docatrk   = fCandDocaTrk;
   fRTD.maxdoca   = fCandDoca;
+
+}
+
+// ----------------------------------------------------------------------
+// a simple trigger matcher based on deltaR
+bool candAna::doTriggerMatching() {
+  bool HLTmatch = false;
+  const double deltaRthrsh0(0.2); // 
+  const double deltaRthrsh(0.02); // Frank had 0.5, change 0.020
+  int mu1match(-1), mu2match(-1);
+  double deltaRminMu1(100), deltaRminMu2(100);
+  TTrgObj *tto;
+  TLorentzVector tlvMu1, tlvMu2;
+  
+  if (fVerbose > 5) {
+    cout << "dump trigger objects ----------------------" << endl;
+    cout << "mu1: pt,eta,phi: " << fMu1Pt << " " << fMu1Eta << " " << fMu1Phi << " q: " << fMu1Q << endl;
+    cout << "mu2: pt,eta,phi: " << fMu2Pt << " " << fMu2Eta << " " << fMu2Phi << " q: " << fMu2Q << endl;
+    //cout << "HLT: fHLTMu0TkMu0jp: " << fHLTMu0TkMu0jp << " fHLTMu0jp: " << fHLTMu0jp
+    cout << endl;
+  }
+  
+  tlvMu1.SetPtEtaPhiM(fMu1Pt,fMu1Eta,fMu1Phi,MMUON);
+  tlvMu2.SetPtEtaPhiM(fMu2Pt,fMu2Eta,fMu2Phi,MMUON);
+  ((TH1D*)fHistDir->Get("test1"))->Fill(fMu1Pt); 
+  ((TH1D*)fHistDir->Get("test1"))->Fill(fMu2Pt); 
+
+
+  
+  //cout << "-----" << endl;
+  for(int i=0; i!=fpEvt->nTrgObj(); i++) {
+    tto = fpEvt->getTrgObj(i);
+
+    if (fVerbose > 7) {
+      cout << "i: " << i << " "; 
+      tto->dump();
+      cout << fRun << " " << fEvt << ": " << tto->fLabel << tto->fP.DeltaR(tlvMu1) << ":" << tto->fP.DeltaR(tlvMu2) << endl;
+    }
+
+    // 	if (doTriggerLabelSet) triggerlabels.insert(tto->fLabel.Data());
+    
+    // the label changes according to datataking era, so we need to distinguish them
+    if ( (   fRun >  190000 && tto->fLabel == "hltDisplacedmumuFilterDoubleMu4Jpsi:HLT::") // 2012 data, psik&psiphi
+	 || (fRun >  190000 && tto->fLabel == "hltVertexmumuFilterBs345:HLT::") // 2012 data, mumu, central 34
+	 || (fRun >  190000 && tto->fLabel == "hltVertexmumuFilterBs3p545:HLT:HLT::") // 2012 data, mumu, central 3p54
+	 || (fRun >  190000 && tto->fLabel == "hltVertexmumuFilterBs47:HLT:HLT::") ) { // 2012 data, mumu, forward
+      
+      //|| (fIsMC && (tto->fLabel.BeginsWith("hltDisplacedmumuFilter") || tto->fLabel.BeginsWith("hltVertexmumuFilterDimuon"))) // MC selection needs adjustment according to sample used
+      
+      const double deltaR1 = tto->fP.DeltaR(tlvMu1);
+      const double deltaR2 = tto->fP.DeltaR(tlvMu2);
+      if (fVerbose > 6) cout << fRun << " " << fEvt << ": " << tto->fLabel << deltaR1 << ":" << deltaR2 << endl;
+      if (deltaR1<deltaRthrsh0 && deltaR1<deltaRminMu1)
+	{
+	  deltaRminMu1 = deltaR1;
+	  mu1match = i;
+	}
+      if (deltaR2<deltaRthrsh0 && deltaR2<deltaRminMu2)
+	{
+	  deltaRminMu2 = deltaR2;
+	  mu2match = i;
+	}
+    }
+    
+    
+  } // end for loop 
+  
+  HLTmatch = (mu1match>=0 && mu2match >=0 && deltaRminMu1<deltaRthrsh && deltaRminMu2<deltaRthrsh);
+
+  if (fVerbose > 5) cout << "trigger matched: " << HLTmatch
+			 << " - result Mu1: " << mu1match << " dR: " << deltaRminMu1
+			 << " Mu2: " << mu2match << " dR: " << deltaRminMu2 << endl;
+
+
+  ((TH1D*)fHistDir->Get("test5"))->Fill(deltaRminMu1); 
+  ((TH1D*)fHistDir->Get("test6"))->Fill(deltaRminMu2); 
+  if(deltaRminMu1<deltaRthrsh) ((TH1D*)fHistDir->Get("test3"))->Fill(deltaRminMu1); 
+  if(deltaRminMu2<deltaRthrsh) ((TH1D*)fHistDir->Get("test4"))->Fill(deltaRminMu2); 
+
+  if(HLTmatch) {
+    ((TH1D*)fHistDir->Get("test2"))->Fill(fMu1Pt); 
+    ((TH1D*)fHistDir->Get("test2"))->Fill(fMu2Pt); 
+  }
+
+  return HLTmatch;
 
 }

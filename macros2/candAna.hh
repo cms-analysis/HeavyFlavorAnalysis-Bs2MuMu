@@ -102,6 +102,7 @@ public:
   virtual TAnaCand*   osCand(TAnaCand *pC);
   virtual double      osIsolation(TAnaCand *pC, double r = 1.0, double ptmin = 0.9); 
   virtual int         osMuon(TAnaCand *pC, double r = 1.0); 
+  virtual bool        doTriggerMatching();
 
 
   std::string fName; 
@@ -120,7 +121,6 @@ public:
   int fLS;
   int fEvent; 
   int fRunRange;
-  int fYear; 
 
   double       MASSMIN,   MASSMAX; 
   double       SIGBOXMIN, SIGBOXMAX; 
@@ -169,13 +169,13 @@ public:
   bool    fJSON, fCowboy;
   int     fCandTM, fCandType; 
   int     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fMu1Chi2, fMu2Chi2, fCandQ, fMu1PV, fMu2PV;
-  bool    fMu1Id, fMu2Id;  
+  bool    fMu1Id, fMu2Id, fHLTmatch;  
   double  fMuDist, fMuDeltaR;
   double  fHltMu1Pt, fHltMu1Eta, fHltMu1Phi, fHltMu2Pt, fHltMu2Eta, fHltMu2Phi;
   double  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
   double  fMu1PtGen, fMu2PtGen, fMu1EtaGen, fMu2EtaGen, fMu1PhiGen, fMu2PhiGen;
   double  fMu1PtNrf, fMu2PtNrf, fMu1EtaNrf, fMu2EtaNrf; // "now refitted"
-  int     fMu1TrkLayer, fMu1Pix, fMu1BPix, fMu1BPixL1, fMu2TrkLayer, fMu2Pix, fMu2BPix, fMu2BPixL1;
+  int     fMu1Pix, fMu1BPix, fMu1BPixL1, fMu2Pix, fMu2BPix, fMu2BPixL1;
   double  fMu1W8Mu, fMu1W8Tr, fMu2W8Mu, fMu2W8Tr; 
   double  fPvX, fPvY, fPvZ, fPvNtrk, fPvNdof, fPvAveW8; 
   int     fPvN;
@@ -222,8 +222,8 @@ public:
 
   bool    fPreselection; 
 
-  bool    fBadEvent; 
-  
+  bool    fBadEvent;
+
   struct RedTreeData fRTD;
 
   // -- Analysis distributions
