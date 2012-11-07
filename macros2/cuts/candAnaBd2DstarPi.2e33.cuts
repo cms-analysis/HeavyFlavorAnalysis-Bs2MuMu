@@ -1,0 +1,18 @@
+#TYPE         3000030
+TYPE          300030
+TRUTHCAND         511
+TRIGRANGE    NOTRIGGER
+# -- special cuts
+DSTARTYPE 300031
+D0TYPE    300032
+MD0LO     1.815
+MD0HI     1.915
+DELTAM    0.01
+# -- boxes
++input cuts/boxes.cuts
+# -- tracks
++input cuts/tracks.cuts
+# -- muons
++input cuts/muons.cuts
+# -- candidate
++input cuts/candidate.cuts

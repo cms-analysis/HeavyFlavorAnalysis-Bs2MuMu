@@ -10,6 +10,7 @@
 #include "candAnaBs2JpsiPhi.hh"
 #include "candAnaDstar.hh"
 #include "candAnaHh.hh"
+#include "candAnaBd2DstarPi.hh"
 
 using namespace std;
 
@@ -152,6 +153,11 @@ void bmm2Reader::readCuts(TString filename, int dump) {
 
     if (!strcmp(className, "candAnaHh")) {
       candAna *a = new candAnaHh(this, "candAnaHh", cutFile); 
+      lCandAnalysis.push_back(a); 
+    }
+
+    if (!strcmp(className, "candAnaBd2DstarPi")) {
+      candAna *a = new candAnaBd2DstarPi(this, "candAnaBd2DstarPi", cutFile); 
       lCandAnalysis.push_back(a); 
     }
 

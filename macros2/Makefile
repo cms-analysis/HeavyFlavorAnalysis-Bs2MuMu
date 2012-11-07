@@ -26,12 +26,12 @@ else
   endif
 endif
 
-CXXFLAGS      = -g -O3 -Wall -fPIC -pipe
-#CXXFLAGS      = -g -O0 -Wall -fPIC -pipe
+#CXXFLAGS      = -g -O3 -Wall -fPIC -pipe
+CXXFLAGS      = -g -O0 -Wall -fPIC -pipe
 #CXXFLAGS      = -g -Wall -fPIC -pipe
 LD            = $(CXX)
-LDFLAGS       = -g
-SOFLAGS       = -shared
+LDFLAGS       = -g 
+SOFLAGS       = -g -shared
 
 CXXFLAGS     += $(ROOTCFLAGS)
 LIBS          = $(ROOTLIBS) 
@@ -41,8 +41,8 @@ RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 #########
 # FILES #
 #########
-READER_HEADERS = bmm2Reader.hh lmtreeReader.hh candAna.hh candAnaMuMu.hh candAnaBu2JpsiK.hh candAnaBs2JpsiPhi.hh candAnaDstar.hh candAnaHh.hh plotClass.hh plotPU.hh plotOverlays.hh plotEfficiencies.hh plotIso.hh plotResults.hh plotRatio.hh plotOptimize.hh plotBDT.hh plotReducedOverlays.hh 
-READER = bmm2Reader.o lmtreeReader.o candAna.o candAnaMuMu.o candAnaBu2JpsiK.o candAnaBs2JpsiPhi.o candAnaDstar.o candAnaHh.o plotClass.o plotPU.o plotOverlays.o plotEfficiencies.o plotIso.o plotResults.o plotRatio.o plotOptimize.o plotBDT.o plotReducedOverlays.o 
+READER_HEADERS = bmm2Reader.hh lmtreeReader.hh candAna.hh candAnaMuMu.hh candAnaBu2JpsiK.hh candAnaBs2JpsiPhi.hh candAnaDstar.hh candAnaHh.hh candAnaBd2DstarPi.hh plotClass.hh plotPU.hh plotOverlays.hh plotEfficiencies.hh plotIso.hh plotResults.hh plotOptimize.hh plotBDT.hh plotReducedOverlays.hh 
+READER = bmm2Reader.o lmtreeReader.o candAna.o candAnaMuMu.o candAnaBu2JpsiK.o candAnaBs2JpsiPhi.o candAnaDstar.o candAnaHh.o candAnaBd2DstarPi.o plotClass.o plotPU.o plotOverlays.o plotEfficiencies.o plotIso.o plotResults.o plotOptimize.o plotBDT.o plotReducedOverlays.o 
 
 CSTUFF = preselection.o
 
@@ -73,6 +73,7 @@ obj/%.o : %.C $(CSTUFF)
 
 all:
 	@$(MAKE) bin/runBmm2
+	@$(MAKE) bin/runPlot
 
 lib/libBmm2Classes.so: $(addprefix obj/,$(CSTUFF) $(READER) $(SUPPORTCLASSES) $(READERDICT)) lib/libAna00.so lib/libUtil.so lib/libAnaClasses.so
 	$(CXX) $(SOFLAGS) $(addprefix obj/,$(CSTUFF) $(READER) $(READERDICT) $(SUPPORTCLASSES)) -o lib/libBmm2Classes.so $(GLIBS) -lMinuit lib/libAna00.so lib/libUtil.so lib/libAnaClasses.so
@@ -89,11 +90,14 @@ lib/libAnaClasses.so:
 bin/runBmm2: lib/libBmm2Classes.so obj/runBmm2.o lib/libBmm2Classes.so
 	$(LD) $(LDFLAGS) -o bin/runBmm2 $(GLIBS) obj/runBmm2.o lib/libAna00.so lib/libUtil.so lib/libAnaClasses.so lib/libBmm2Classes.so
 
+bin/runPlot: lib/libBmm2Classes.so obj/runPlot.o lib/libBmm2Classes.so
+	$(LD) $(LDFLAGS) -o bin/runPlot $(GLIBS) obj/runPlot.o lib/libAna00.so lib/libUtil.so lib/libAnaClasses.so lib/libBmm2Classes.so
+
 clean:
 	rm -f obj/*.o *Dict.* lib/libBmm2Classes.so
 
 cleanall: clean
-	rm -f bin/runBmm2
+	rm -f bin/runBmm2 bin/runPlot
 	rm -f lib/lib*.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libAna00.so
 	rm -f ../../../lib/$(SCRAM_ARCH)/libUtil.so
