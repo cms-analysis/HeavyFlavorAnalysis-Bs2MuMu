@@ -11,7 +11,9 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   cout << "======================================================================" << endl;
   cout << "==> candAna: name = " << name << ", reading cutsfile " << cutsFile << endl;
   fpReader = pReader; 
-  fName = name; 
+  fVerbose = fpReader->fVerbose;	 
+  fYear    = fpReader->fYear; 
+  fName    = name; 
 
   MASSMIN = 4.5;
   MASSMAX = 6.5; 
@@ -27,6 +29,9 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
 
   fRegion.insert(make_pair("APV0", 3));  // low-NPV events
   fRegion.insert(make_pair("APV1", 4)); // large-NPV events
+
+  cout << "======================================================================" << endl;	 
+  cout << "==> candAna: name = " << name << ", reading cutsfile " << cutsFile << " setup for year " << fYear << endl;
 
 }
 
@@ -141,6 +146,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 	  cout<<" select "<<fRun<<" "<<fLS<<" "<<fEvt<<" "<<fJSON<<" "<<fGoodHLT<<" "<<fpCand->fType<<" "<<fPreselection<<" "<<fHLTmatch<<endl;
 
 	if (fPreselection) { 
+	  if (fVerbose > 5) cout << " filling this cand into the tree" << endl;	  
 	  ((TH1D*)fHistDir->Get("../monEvents"))->Fill(12); 
 
 	  if (fVerbose > 0)
@@ -155,7 +161,9 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 	    else if((fpCand->fType == 301313)) ((TH1D*)fHistDir->Get("run7"))->Fill(fRun); 
 	  }
 	  fTree->Fill(); 
-	}         
+	} else {	 
+           if (fVerbose > 5) cout << " failed preselection" << endl;        
+	}  
       }
     }
 
@@ -316,6 +324,7 @@ void candAna::candAnalysis() {
   fpMuon2 = p2; 
 
   //  fMu1Id        = goodMuon(p1); 
+  fMu1TrkLayer  = fpReader->numberOfTrackerLayers(p1);
   fMu1Id        = tightMuon(p1); 
   fMu1Pt        = p1->fPlab.Perp(); 
   fMu1Eta       = p1->fPlab.Eta(); 
@@ -352,6 +361,7 @@ void candAna::candAnalysis() {
   }
   
   //  fMu2Id        = goodMuon(p2); 
+  fMu2TrkLayer  = fpReader->numberOfTrackerLayers(p2);
   fMu2Id        = tightMuon(p2); 
   fMu2Pt        = p2->fPlab.Perp(); 
   fMu2Eta       = p2->fPlab.Eta(); 
@@ -1922,7 +1932,15 @@ bool candAna::tightMuon(TAnaTrack *pT) {
 
   if (TMath::Abs(pT->fBsTip) > 0.2) trackcuts = false;
   if (fpReader->numberOfPixLayers(pT) < 1) trackcuts = false;
-  if (pT->fValidHits < 11) trackcuts = false; 
+
+  if (fYear == 2011) {
+    if (pT->fValidHits < 11) trackcuts = false; 
+  } else if (fYear == 2012) {
+    int trkHits = fpReader->numberOfTrackerLayers(pT);
+    if (trkHits < 6) trackcuts = false; 
+  } else {
+    if (pT->fValidHits < 11) trackcuts = false; 
+  }
 
   if (muflag && mucuts && trackcuts) {
     return true; 
