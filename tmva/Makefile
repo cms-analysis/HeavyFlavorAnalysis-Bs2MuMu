@@ -70,7 +70,7 @@ obj/%.o : %.C $(CSTUFF)
 ###########
 
 lib/libTmvaClasses.so: $(addprefix obj/,$(CSTUFF) $(READER) $(SUPPORTCLASSES) $(READERDICT)) lib/libBmm2Classes.so lib/libAna00.so lib/libUtil.so lib/libAnaClasses.so
-	$(CXX) $(SOFLAGS) $(addprefix obj/,$(CSTUFF) $(READER) $(READERDICT) $(SUPPORTCLASSES)) -o lib/libTmvaClasses.so lib/libBmm2Classes.so $(GLIBS) -lMinuit 
+	$(CXX) $(SOFLAGS) $(addprefix obj/,$(CSTUFF) $(READER) $(READERDICT) $(SUPPORTCLASSES)) -o lib/libTmvaClasses.so lib/libAna00.so lib/libAnaClasses.so lib/libBmm2Classes.so $(GLIBS) -lMinuit 
 
 lib/libAna00.so:
 	cd lib && rm -f libAna00.so && ln -s $(RELLIBPATH)/libAna00.so libAna00.so && cd -

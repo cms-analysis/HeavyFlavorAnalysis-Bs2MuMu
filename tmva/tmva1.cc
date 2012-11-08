@@ -29,7 +29,11 @@
 #include "TMVA/Tools.h"
 #endif
 
-#define LUMISCALE 2.01e-4
+//2011
+//#define LUMISCALE 2.01e-4
+
+//2012  12/7405 = 0.00162
+#define LUMISCALE 0.00162
 
 ClassImp(tmva1)
 
@@ -52,16 +56,22 @@ tmva1::tmva1() {
   tl->SetTextSize(0.03);
   tl->SetNDC(kTRUE); 
 
+  // -- 2012 change lumi scale!!!
+  fInputFiles.sname = "/shome/ursl/scratch/v12-mctruth-cms-BsToMuMu.root"; 
+  fInputFiles.dname = "/shome/ursl/scratch/v12-2012-data-bdt.root";
+
 //   fInputFiles.sname = "/scratch/ursl/120509/v11-mix-newSignalMC-Bs2MuMu.root"; 
 //   fInputFiles.dname = "/scratch/ursl/120509/v11-2011-data-looseBmm.root";
-//   fInputFiles.rname = "/scratch/ursl/120509/v11-2e33-Bd2PiMuNu.root";
 
-//   fInputFiles.sname = "/shome/ursl/scratch/v11-mix-newSignalMC-Bs2MuMu.root"; 
-//   fInputFiles.dname = "/shome/ursl/scratch/v11-2011-data-looseBmm.root";
+//   fInputFiles.sname = "/shome/ursl/scratch/oldschema/v11-mix-newSignalMC-Bs2MuMu.root"; 
+//   fInputFiles.dname = "/shome/ursl/scratch/oldschema/v11-2011-data-looseBmm.root";
 
+//   // -- 2011 change lumi scale!!!
+//   fInputFiles.sname = "/shome/ursl/scratch/v11-mix-Bs2MuMu-newSignalMC.root"; 
+//   fInputFiles.dname = "/shome/ursl/scratch/v11-2011-data-bdt.root";
                                                   
-  fInputFiles.sname = "/shome/lazo-flores/scratch/v11-mix-Bs2MuMu-newSignalMC.root"; 
-  fInputFiles.dname = "/shome/lazo-flores/scratch/v11-2011-data.root";
+//   fInputFiles.sname = "/shome/lazo-flores/scratch/v11-mix-Bs2MuMu-newSignalMC.root"; 
+//   fInputFiles.dname = "/shome/lazo-flores/scratch/v11-2011-data.root";
 
   // -- BDT setup 108/109
   fBdtSetup.NTrees = 800;
@@ -106,8 +116,11 @@ void tmva1::setupTree(TTree *t, RedTreeData &b) {
   t->SetBranchAddress("m2eta", &b.m2eta);
   t->SetBranchAddress("pt", &b.pt);
   t->SetBranchAddress("eta", &b.eta);
+  t->SetBranchAddress("pvlip", &b.pvlip);
+  t->SetBranchAddress("pvlips", &b.pvlips);
   t->SetBranchAddress("fl3d", &b.fl3d);
   t->SetBranchAddress("fls3d", &b.fls3d);
+  t->SetBranchAddress("flsxy", &b.flsxy);
   t->SetBranchAddress("alpha", &b.alpha);
   t->SetBranchAddress("maxdoca", &b.maxdoca);
   t->SetBranchAddress("pvip", &b.pvip);
@@ -156,10 +169,10 @@ void tmva1::train(string oname, string filename) {
    cout << "==> Factory: " << optstring << endl;
    TMVA::Factory *factory = new TMVA::Factory(Form("%s", oname.c_str()), outputFile,  optstring.c_str());
 
-   factory->AddVariable("m1pt",       'F' );
-   factory->AddVariable("m1eta",      'F' );
-   factory->AddVariable("m2pt",       'F' );
-   factory->AddVariable("m2eta",      'F' );
+//    factory->AddVariable("m1pt",       'F' );
+//    factory->AddVariable("m1eta",      'F' );
+//    factory->AddVariable("m2pt",       'F' );
+//    factory->AddVariable("m2eta",      'F' );
    factory->AddVariable("pt",         'F' );
    factory->AddVariable("eta",        'F' );
    factory->AddVariable("fls3d",      'F' );
@@ -249,11 +262,18 @@ void tmva1::train(string oname, string filename) {
      optstring = Form("!H:V:NTrees=%d:nEventsMin=%d", fBdtSetup.NTrees, fBdtSetup.nEventsMin);
      optstring += Form(":BoostType=AdaBoost:AdaBoostBeta=%f:SeparationType=GiniIndex:nCuts=%d:PruneMethod=NoPruning", 
 		       fBdtSetup.AdaBoostBeta, fBdtSetup.nCuts);
-     
+
+     //      fBdtSetup.MaxDepth  = 10;
+     //      fBdtSetup.NNodesMax = 10;
      optstring += Form(":MaxDepth=%d:NNodesMax=%d", fBdtSetup.MaxDepth, fBdtSetup.NNodesMax);
    } else {
      optstring = "";
    }
+
+// -- Josh's (modified) proposal
+//    optstring = "!H:!V:NTrees=2000::BoostType=Grad:Shrinkage=0.1";
+//    optstring += ":UseBaggedGrad=F:nCuts=200:MaxDepth=3:NNodesMax=100000:UseYesNoLeaf=F:nEventsMin=1000:";
+
    cout << "==> BookMethod: " << optstring << endl;
    factory->BookMethod( TMVA::Types::kBDT, "BDT", optstring);
 
@@ -324,6 +344,9 @@ void tmva1::apply(const char *fname) {
   tt->Branch("hlt",     &ftd.hlt,   "hlt/O");
   tt->Branch("gmuid",   &ftd.gmuid, "gmuid/O");
   tt->Branch("evt",     &ftd.evt,   "evt/I");
+
+  TH1D *hd = new TH1D("bdtTreeData", "", 20, 0., 20.);
+  TH1D *hs = new TH1D("bdtTreeSignal", "", 20, 0., 20.);
  
 
   // -- data processing
@@ -333,24 +356,24 @@ void tmva1::apply(const char *fname) {
   classID = 1;
   cout << "--- Processing data: " << t->GetEntries() << " events" << endl;
   int nEvent = t->GetEntries();
-  int cnt0(0), cnt1(0), cnt2(0);
+  double lostEvents(0); 
+  double totalEvents(0); 
   for (Long64_t ievt=0; ievt<nEvent; ievt++) {
     if (ievt%1000000 == 0) std::cout << "--- ... Processing data event: " << ievt << std::endl;
     t->GetEntry(ievt);
-
-    if (preselection(ftd, fChannel, true)) {
+    fBDT = fBDT0 = fBDT1 =  fBDT2 = -99.;
+    totalEvents += w8; 
+    if (ftd.gmuid && ftd.hlt && preselection(ftd, fChannel)) {
       calcBDT();
       tt->Fill();
-      if (!ftd.gmuid) continue;
-      if (ftd.evt%3 == 0) ++cnt0;
-      if (ftd.evt%3 == 1) ++cnt1;
-      if (ftd.evt%3 == 2) ++cnt2;
+    } else {
+      lostEvents += w8;
+      hd->Fill(TMath::Abs(ftd.evt%3), w8); 
+      hd->Fill(9, w8); 
     }
   }
-
-  cout << "=========> cnt0 = " << cnt0 << endl;
-  cout << "=========> cnt1 = " << cnt1 << endl;
-  cout << "=========> cnt2 = " << cnt2 << endl;
+  hd->SetBinContent(10, lostEvents); 
+  cout << "lost events: " << lostEvents << " out of " << totalEvents << " events in total" << endl;
 
   // -- signal MC processing
   t = (TTree*)sfile->Get("candAnaMuMu/events");
@@ -359,27 +382,43 @@ void tmva1::apply(const char *fname) {
   w8 = LUMISCALE;
   cout << "--- Processing signal: " << t->GetEntries() << " events" << endl;
   nEvent = t->GetEntries();
-  cnt0 = cnt1 = cnt2 = 0; 
+  lostEvents = 0; 
+  totalEvents = 0; 
   for (Long64_t ievt=0; ievt<nEvent; ievt++) {
     if (ievt%1000000 == 0) std::cout << "--- ... Processing signal event: " << ievt << std::endl;
     t->GetEntry(ievt);
 
-    if (preselection(ftd, fChannel, false)) {
+    fBDT = fBDT0 = fBDT1 =  fBDT2 = -99.;
+    totalEvents += w8; 
+    if (ftd.gmuid && ftd.hlt && preselection(ftd, fChannel)) {
       calcBDT();
       tt->Fill();
-      if (!ftd.gmuid) continue;
-      if (ftd.evt%3 == 0) ++cnt0;
-      if (ftd.evt%3 == 1) ++cnt1;
-      if (ftd.evt%3 == 2) ++cnt2;
+    } else {
+      lostEvents += w8;
+      hs->Fill(TMath::Abs(ftd.evt%3), w8); 
+      hs->Fill(9, w8); 
     }
   }
+  hs->SetBinContent(10, lostEvents); 
+  cout << "lost events: " << lostEvents << " out of " << totalEvents << " events in total" << endl;
 
-  cout << "=========> cnt0 = " << cnt0 << endl;
-  cout << "=========> cnt1 = " << cnt1 << endl;
-  cout << "=========> cnt2 = " << cnt2 << endl;
-
+  hd->Write();
+  hs->Write();
   f.Write();
   f.Close();
+
+}
+
+
+// ----------------------------------------------------------------------
+void tmva1::reAnalyze(int imin, int imax) {
+
+  string name;
+  for (int i = imin; i <= imax; ++i) {
+    name = Form("TMVA-%d", i);
+    cout << name << endl;
+    analyze(name.c_str()); 
+  }
 
 }
 
@@ -396,13 +435,42 @@ void tmva1::analyze(const char *fname) {
   TH1D *sm = new TH1D("sm", "m(signal)", 100, 4.9, 5.9); sm->Sumw2();
   TH1D *dm = new TH1D("dm", "m(data)", 100, 4.9, 5.9); dm->Sumw2();
 
+  TH1D *sm0 = new TH1D("sm0", "m(signal)", 100, 4.9, 5.9); sm0->Sumw2();
+  TH1D *dm0 = new TH1D("dm0", "m(data)", 100, 4.9, 5.9); dm0->Sumw2();
+
+  TH1D *sm1 = new TH1D("sm1", "m(signal)", 100, 4.9, 5.9); sm1->Sumw2();
+  TH1D *dm1 = new TH1D("dm1", "m(data)", 100, 4.9, 5.9); dm1->Sumw2();
+
+  TH1D *sm2 = new TH1D("sm2", "m(signal)", 100, 4.9, 5.9); sm2->Sumw2();
+  TH1D *dm2 = new TH1D("dm2", "m(data)", 100, 4.9, 5.9); dm2->Sumw2();
+
   cout << "Open " << Form("%s-combined.root", fname) << endl;
   TFile *f = TFile::Open(Form("%s-combined.root", fname), "UPDATE"); 
+  TH1D *hd = (TH1D*)f->Get("bdtTreeData"); 
+  double dLostEvents  = hd->GetBinContent(10); 
+  double dLostEvents0 = hd->GetBinContent(1); 
+  double dLostEvents1 = hd->GetBinContent(2); 
+  double dLostEvents2 = hd->GetBinContent(3); 
+  TH1D *hs = (TH1D*)f->Get("bdtTreeSignal"); 
+  double sLostEvents  = hs->GetBinContent(10); 
+  double sLostEvents0 = hs->GetBinContent(1); 
+  double sLostEvents1 = hs->GetBinContent(2); 
+  double sLostEvents2 = hs->GetBinContent(3); 
+
   TH1D *h = new TH1D("s1", "S/Sqrt(S+B)", bdtBins, bdtMin, bdtMax); h->Sumw2();
   setTitles(h, "b > ", "S/#sqrt{S+B}"); 
-  TGraph *groc = new TGraph(bdtBins); 
+  TH1D *hs2 = new TH1D("s2", "S/Sqrt(S+B)", bdtBins, bdtMin, bdtMax); hs2->Sumw2();
+  setTitles(hs2, "b > ", "S/#sqrt{S+B'}"); 
+  TGraph *grocop = new TGraph(1); grocop->SetMarkerStyle(34); grocop->SetMarkerSize(3.); grocop->SetMarkerColor(kBlack);
+  TGraph *groc   = new TGraph(bdtBins);   groc->SetMarkerStyle(24);  groc->SetMarkerSize(1.5);    groc->SetMarkerColor(kBlack); 
+  TGraph *groc0  = new TGraph(bdtBins);   groc0->SetMarkerStyle(20); groc0->SetMarkerSize(0.8);   groc0->SetMarkerColor(kMagenta); 
+  TGraph *groc1  = new TGraph(bdtBins);   groc1->SetMarkerStyle(20); groc1->SetMarkerSize(0.8);   groc1->SetMarkerColor(kRed); 
+  TGraph *groc2  = new TGraph(bdtBins);   groc2->SetMarkerStyle(20); groc2->SetMarkerSize(0.8);   groc2->SetMarkerColor(kBlue); 
 
   TH1D *hroc = new TH1D("hroc", "", 200, 0., 1.); 
+  TH1D *hroc0 = new TH1D("hroc0", "", 200, 0., 1.); 
+  TH1D *hroc1 = new TH1D("hroc1", "", 200, 0., 1.); 
+  TH1D *hroc2 = new TH1D("hroc2", "", 200, 0., 1.); 
   TFile *f0 = TFile::Open(Form("%s-Events0.root", fname)); 
   TFile *f1 = TFile::Open(Form("%s-Events1.root", fname)); 
   TFile *f2 = TFile::Open(Form("%s-Events2.root", fname)); 
@@ -504,7 +572,6 @@ void tmva1::analyze(const char *fname) {
       if (hlt && gmuid) bBDT->Fill(bdt);
       if (hlt && !gmuid) cBDT->Fill(bdt);
 
-      if (0 == classID) continue;
       if (!hlt) continue;
       if (!gmuid) continue;
 
@@ -664,58 +731,127 @@ void tmva1::analyze(const char *fname) {
   writeOut(f, tr2sgBDT); 
   writeOut(f, te2sgBDT); 
 
-  // -- compute S and B
+  // -- compute S and B, SSB
   double bdtCut, maxSSB(-1.), maxBDT(-1.), sCnt(0.), dCnt(0.); 
-  int ibin(0), gbin(0); 
+  double maxSSBsimple(-1.), maxBDTsimple(-1.);
+  double sCnt0(0.), dCnt0(0.), sCnt1(0.), dCnt1(0.), sCnt2(0.), dCnt2(0.);
+  double seffTot(0.), seffMax(0.), deffMax(0.); 
+  double seffBinD99(0.), sMax(-1.), bMax(-1);
+  int ibin(0), gbin(0), dMax(-1), dhiMax(-1); 
   for (ibin = bdtBins; ibin >=0; --ibin) {
     bdtCut = bdtMin + ibin*(bdtMax-bdtMin)/bdtBins;
     if (0 == ibin%10) cout << " bin " << ibin << " cutting at bdt > " << bdtCut << endl;
     nEvent = t->GetEntries();
-    sm->Reset();
-    dm->Reset();
+    sm->Reset();    dm->Reset();
+    sm0->Reset();   dm0->Reset();
+    sm1->Reset();   dm1->Reset();
+    sm2->Reset();   dm2->Reset();
     sCnt = dCnt = 0.;
+    sCnt0 = dCnt0 = sCnt1 = dCnt1 = sCnt2 = dCnt2 = 0.;
     for (Long64_t ievt=0; ievt<nEvent; ievt++) {
       t->GetEntry(ievt);
 
       if (false == hlt) continue;
       if (false == gmuid) continue;
-      if (bdt < -0.999) continue;
       if (0 == classID) {
 	sCnt += w8; 
+	if (0 == TMath::Abs(evt%3)) sCnt0 += w8;
+	if (1 == TMath::Abs(evt%3)) sCnt1 += w8;
+	if (2 == TMath::Abs(evt%3)) sCnt2 += w8;
       } else {
 	dCnt += w8; 
+	if (0 == TMath::Abs(evt%3)) dCnt0 += w8;
+	if (1 == TMath::Abs(evt%3)) dCnt1 += w8;
+	if (2 == TMath::Abs(evt%3)) dCnt2 += w8;
       }
 
       if (bdt <= bdtCut) continue;
 
       if (0 == classID) {
 	sm->Fill(m, w8); 
+	if (0 == TMath::Abs(evt%3)) sm0->Fill(m, w8); 
+	if (1 == TMath::Abs(evt%3)) sm1->Fill(m, w8); 
+	if (2 == TMath::Abs(evt%3)) sm2->Fill(m, w8); 
       } else {
 	dm->Fill(m, w8); 
+	if (0 == TMath::Abs(evt%3)) dm0->Fill(m, w8); 
+	if (1 == TMath::Abs(evt%3)) dm1->Fill(m, w8); 
+	if (2 == TMath::Abs(evt%3)) dm2->Fill(m, w8); 
       }
-      //      cout << "classID = " <<  classID << " m = " << m << " w8 = " << w8 << endl;
     }
 
+    //    cout << "dcnt = " << dCnt << "/" << dCnt0+dCnt1+dCnt2 << " 0 = " << dCnt0 << " 1 = " << dCnt1 << " 2 = " << dCnt2 << endl;
+
     double s = sm->Integral(sm->FindBin(5.3), sm->FindBin(5.45));
-    double d = dm->Integral(0, h->GetNbinsX());
-    double b = d*(5.45-5.30)/(5.9-4.9-0.25);
+    double d = dm->Integral(0, dm->GetNbinsX());
     double seff = s/sCnt;
-    double deff = b/dCnt;
+    double bsimple = d*(5.45-5.30)/(5.9-4.9-0.25);
+    double deff = bsimple/(dLostEvents + dCnt);
+
+    double dhi = dm->Integral(dm->FindBin(5.45), dm->GetNbinsX());
+    double pbg = 0.07*s;
+    double b = dhi*(5.45-5.30)/(5.9-5.45);
+
+    if ((1.-deff) > 0.999998) seffBinD99 = seff;
+
     groc->SetPoint(gbin, seff, 1.-deff); 
     hroc->SetBinContent(hroc->FindBin(seff), 1.-deff); 
-    //     cout << "integral 0 .. " << gbin << ": " 
-    // 	 << "s/1-b: " << seff << "/" << 1.-deff << " integral: " 
-    // 	 << groc->Integral(0, ibin) << endl;
+
+    double s0 = sm0->Integral(sm0->FindBin(5.3), sm0->FindBin(5.45));
+    double d0 = dm0->Integral(0, dm0->GetNbinsX());
+    double b0 = d0*(5.45-5.30)/(5.9-4.9-0.25);
+    double seff0 = s0/sCnt0;
+    double deff0 = b0/(dLostEvents0 + dCnt0);
+
+    groc0->SetPoint(gbin, seff0, 1.-deff0); 
+    hroc0->SetBinContent(hroc0->FindBin(seff0), 1.-deff0); 
+
+    double s1 = sm1->Integral(sm1->FindBin(5.3), sm1->FindBin(5.45));
+    double d1 = dm1->Integral(1, dm1->GetNbinsX());
+    double b1 = d1*(5.45-5.30)/(5.9-4.9-0.25);
+    double seff1 = s1/sCnt1;
+    double deff1 = b1/(dLostEvents1 + dCnt1);
+
+    groc1->SetPoint(gbin, seff1, 1.-deff1); 
+    hroc1->SetBinContent(hroc1->FindBin(seff1), 1.-deff1); 
+
+    double s2 = sm2->Integral(sm2->FindBin(5.3), sm2->FindBin(5.45));
+    double d2 = dm2->Integral(1, dm2->GetNbinsX());
+    double b2 = d2*(5.45-5.30)/(5.9-4.9-0.25);
+    double seff2 = s2/sCnt2;
+    double deff2 = b2/(dLostEvents2 + dCnt2);
+
+    groc2->SetPoint(gbin, seff2, 1.-deff2); 
+    hroc2->SetBinContent(hroc2->FindBin(seff2), 1.-deff2); 
+    //    cout << "roc2: " << seff2 << " " << 1.-deff2 << endl;
+
     ++gbin;
-    if (s+b >0) {
-      double ssb = s/TMath::Sqrt(s+b);
+    if (s+b+pbg >0) {
+      double ssb = s/TMath::Sqrt(s+b+pbg);
       if (ssb > maxSSB) {
+	sMax = s;
+	dMax = d; 
+	dhiMax = dhi; 
+	bMax = b+pbg; 
 	maxSSB = ssb; 
 	maxBDT = bdtCut;
+	seffMax = seff;
+	deffMax = deff;
+	seffTot = s/(sLostEvents + sCnt); 
       }
       h->SetBinContent(ibin, ssb); 
     } else {
       h->SetBinContent(ibin, 0); 
+    }
+    if (s+bsimple >0) {
+      double ssb = s/TMath::Sqrt(s+bsimple);
+      if (ssb > maxSSBsimple) {
+	maxSSBsimple = ssb; 
+	maxBDTsimple = bdtCut;
+      }
+      hs2->SetBinContent(ibin, ssb); 
+    } else {
+      hs2->SetBinContent(ibin, 0); 
     }
     //    cout << "S = " << s << " B = " << b << " => S/sqrt(S+B) = " << s/TMath::Sqrt(s+b) << endl;
     c0->Clear();
@@ -726,6 +862,8 @@ void tmva1::analyze(const char *fname) {
     c0->Update();
   }
 
+  grocop->SetPoint(0, seffMax, 1.-deffMax); 
+
   // -- patch hroc for empty bins
   double okVal(1.); 
   for (int i = 1; i< hroc->GetNbinsX(); ++i) {
@@ -733,10 +871,51 @@ void tmva1::analyze(const char *fname) {
     okVal = hroc->GetBinContent(i);
   }
 
+  okVal = 1.;
+  for (int i = 1; i< hroc0->GetNbinsX(); ++i) {
+    if (hroc0->GetBinContent(i) < 1.e-5) hroc0->SetBinContent(i, okVal); 
+    okVal = hroc0->GetBinContent(i);
+  }
+
+  okVal = 1.;
+  for (int i = 1; i< hroc1->GetNbinsX(); ++i) {
+    if (hroc1->GetBinContent(i) < 1.e-5) hroc1->SetBinContent(i, okVal); 
+    okVal = hroc1->GetBinContent(i);
+  }
+
+  okVal = 1.;
+  for (int i = 1; i< hroc2->GetNbinsX(); ++i) {
+    if (hroc2->GetBinContent(i) < 1.e-5) hroc2->SetBinContent(i, okVal); 
+    okVal = hroc2->GetBinContent(i);
+  }
+
   for (int i = hroc->GetNbinsX()-1; i > 0; --i) {
-    //    cout << i << " " << hroc->GetBinContent(i) << " " << hroc->GetBinContent(i-1) << endl;
     if (!(hroc->GetBinContent(i) < hroc->GetBinContent(i-1))) {
       hroc->SetBinContent(i, 0); 
+    } else {
+      break;
+    }
+  }
+
+  for (int i = hroc0->GetNbinsX()-1; i > 0; --i) {
+    if (!(hroc0->GetBinContent(i) < hroc0->GetBinContent(i-1))) {
+      hroc0->SetBinContent(i, 0); 
+    } else {
+      break;
+    }
+  }
+
+  for (int i = hroc1->GetNbinsX()-1; i > 0; --i) {
+    if (!(hroc1->GetBinContent(i) < hroc1->GetBinContent(i-1))) {
+      hroc1->SetBinContent(i, 0); 
+    } else {
+      break;
+    }
+  }
+
+  for (int i = hroc2->GetNbinsX()-1; i > 0; --i) {
+    if (!(hroc2->GetBinContent(i) < hroc2->GetBinContent(i-1))) {
+      hroc2->SetBinContent(i, 0); 
     } else {
       break;
     }
@@ -824,16 +1003,70 @@ void tmva1::analyze(const char *fname) {
   c0->SaveAs(Form("plots/%s-tmva-overlays.pdf", fname)); 
 
   c0->Clear();
+  TH2F* frame(0); 
+  frame = new TH2F("frame", "BDT output distributions", 100, 0., 0.65, 100, 0.99999, 1.000001);
+  frame->GetXaxis()->SetTitle(" #epsilon_{S}");
+  frame->GetYaxis()->SetTitle(" 1 - #epsilon_{B}");
+  frame->Draw();  
+
   gPad->SetLogy(0);
-  groc->SetMinimum(0.8); 
-  groc->Draw("ap"); 
+  gPad->SetLeftMargin(0.15);
+  groc->Draw("p"); 
   groc->GetXaxis()->SetTitle("#epsilon_{ S}"); 
   groc->GetYaxis()->SetTitle("1 - #epsilon_{ B}"); 
-  double rocInt = hroc->Integral(0, hroc->GetNbinsX())*hroc->GetBinWidth(1); 
+  double rocInt = hroc->Integral(1, hroc->GetNbinsX())*hroc->GetBinWidth(1); 
+  double rocInt2= hroc->Integral(1, hroc->FindBin(seffBinD99))*hroc->GetBinWidth(1); 
+  cout << " ==> seffBinD99 " << seffBinD99 << " in bin " << hroc->FindBin(seffBinD99) << endl;
   groc->SetName("groc"); 
   groc->SetTitle(Form("integral = %5.3f", rocInt));
+
+  grocop->SetName("grocop"); 
+  groc0->SetName("groc0"); 
+  groc1->SetName("groc1"); 
+  groc2->SetName("groc2"); 
+
+  groc0->Draw("p");
+  groc1->Draw("p");
+  groc2->Draw("p");
+  grocop->Draw("p");
   
-  tl->DrawLatex(0.25, 0.4, Form("integral = %5.3f", rocInt)); 
+  tl->DrawLatex(0.25, 0.44, Form("D/B/S = %d/%2.1f/%2.1f", dMax, bMax, sMax)); 
+  tl->DrawLatex(0.25, 0.40, Form("S/#sqrt{S+B}(MC) = %4.3f (%4.3f)", maxSSB, maxSSBsimple)); 
+  tl->DrawLatex(0.25, 0.36, Form("b_{max}(MC) = %4.3f (%4.3f)", maxBDT, maxBDTsimple)); 
+  tl->DrawLatex(0.25, 0.32, Form("#epsilon_{BDT} = %4.3f", seffMax)); 
+  tl->DrawLatex(0.25, 0.28, Form("#epsilon_{tot} = %6.5f", seffTot)); 
+  tl->DrawLatex(0.25, 0.24, Form("I_{tot} = %6.5f", rocInt)); 
+  tl->DrawLatex(0.25, 0.20, Form("I_{part} = %6.5f", rocInt2)); 
+
+  string texname = string(fname) + ".tex";
+  ofstream TEX(texname.c_str());
+  
+  TEX << Form("\\vdef{s%s:string}       {%s}", fname, fname) << endl;
+  TEX << Form("\\vdef{s%s:ssb}          {%4.3f}", fname, maxSSB) << endl;
+  TEX << Form("\\vdef{s%s:maxbdt}       {%4.3f}", fname, maxBDT) << endl;
+  TEX << Form("\\vdef{s%s:ssbsimple}    {%4.3f}", fname, maxSSBsimple) << endl;
+  TEX << Form("\\vdef{s%s:maxbdtsimple} {%4.3f}", fname, maxBDTsimple) << endl;
+  TEX << Form("\\vdef{s%s:Smc}          {%4.3f}", fname, sMax) << endl;
+  TEX << Form("\\vdef{s%s:D}            {%d}", fname, dMax) << endl;
+  TEX << Form("\\vdef{s%s:Dhi}          {%d}", fname, dhiMax) << endl;
+  TEX << Form("\\vdef{s%s:B}            {%4.3f}", fname, bMax) << endl;
+  TEX << Form("\\vdef{s%s:ipart}        {%6.5f}", fname, rocInt2) << endl;
+  TEX << Form("\\vdef{s%s:itot}         {%6.5f}", fname, rocInt) << endl;
+  TEX << Form("\\vdef{s%s:epstot}       {%6.5f}", fname, seffTot) << endl;
+  TEX << Form("\\vdef{s%s:epsbdt}       {%6.5f}", fname, seffMax) << endl;
+  TEX.close();
+
+  newLegend(0.22, 0.47, 0.55, 0.67); 
+
+  legg->SetTextSize(0.035);  
+  legg->AddEntry(grocop, "operating point", "p"); 
+  legg->AddEntry(groc,  "combined", "p"); 
+  legg->AddEntry(groc0,  "BDT 0", "p"); 
+  legg->AddEntry(groc1,  "BDT 1", "p"); 
+  legg->AddEntry(groc2,  "BDT 2", "p"); 
+  legg->Draw();
+
+  
   c0->SaveAs(Form("plots/%s-roc0.pdf", fname)); 
   //   gPad->SetLogy(1);
   //   groc->SetMinimum(1.e-6); 
@@ -842,8 +1075,9 @@ void tmva1::analyze(const char *fname) {
 
   c0->Clear();
   h->Draw();
-  tl->DrawLatex(0.2, 0.85, Form("SSB_{max} = %4.3f", maxSSB)); 
-  tl->DrawLatex(0.2, 0.80, Form("BDT_{max} > %4.3f", maxBDT)); 
+  hs2->Draw("same");
+  tl->DrawLatex(0.2, 0.85, Form("SSB_{max} = %4.3f (%4.3f)", maxSSB, maxSSBsimple)); 
+  tl->DrawLatex(0.2, 0.80, Form("BDT_{max} > %4.3f (%4.3f)", maxBDT, maxBDTsimple)); 
   tl->DrawLatex(0.2, 0.75, Form("ROC_{int} = %4.3f", rocInt)); 
   c0->SaveAs(Form("plots/%s-ssb.pdf", fname)); 
 
@@ -856,7 +1090,11 @@ void tmva1::analyze(const char *fname) {
   h2->SetBinContent(3, rocInt);  h2->GetXaxis()->SetBinLabel(2, "rocInt");
 
   f->cd();
+  grocop->Write();
   groc->Write();
+  groc0->Write();
+  groc1->Write();
+  groc2->Write();
 
   f->Write();
   f->Close();
@@ -1378,8 +1616,8 @@ void tmva1::createInputFile(string filename) {
 
 // ----------------------------------------------------------------------
 void tmva1::calcBDT() {
-  fBDT = -99.;
-  
+  fBDT = fBDT0 = fBDT1 =  fBDT2 = -99.;
+
   frd.pt = ftd.pt; 
   frd.eta = ftd.eta; 
   frd.m1eta = ftd.m1eta; 

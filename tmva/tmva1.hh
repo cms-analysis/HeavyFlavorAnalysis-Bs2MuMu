@@ -60,6 +60,7 @@ class tmva1: public TObject {
   void makeAll(int offset, std::string filename = "/scratch/ursl/tmva-trees.root", int clean = 1);
   void make(int offset, std::string filename, int evt, int clean);
 
+  void reAnalyze(int imin, int imax);
   void createInputFile(std::string fname);
   void cleanup(std::string fname);
   TH1D* getRanking(std::string fname, std::string prefix, std::string after);
