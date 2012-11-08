@@ -560,6 +560,11 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
     const double pyE = kinParticle->currentState().kinematicParametersError().matrix()(4,4);
     const double pzE = kinParticle->currentState().kinematicParametersError().matrix()(5,5);
     pCand->fTau3dE = TMath::Sqrt(anaVtx.fD3dE*anaVtx.fD3dE + pxE*pxE + pyE*pyE + pzE*pzE ) / TMath::Ccgs();
+    // from Keith: 
+    //" b mass = " << b_vFit->currentState().mass() << " +- " << sqrt(b_vFit->currentState().kinematicParametersError().matrix()(6,6)) << endl;
+    // mass error 
+    pCand->fVar1 = TMath::Sqrt(kinParticle->currentState().kinematicParametersError().matrix()(6,6));
+    //    cout << " cand  with mass " << pCand->fMass << " +/- " << pCand->fVar1 << endl;
   }
 
   for (j = 0; j < allTreeTracks.size(); j++) {
