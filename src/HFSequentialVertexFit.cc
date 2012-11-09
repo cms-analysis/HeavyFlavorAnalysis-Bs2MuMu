@@ -47,13 +47,16 @@ struct ImpactParameters {
 	ImpactParameters() {
 		lip = Measurement1D();
 		tip = Measurement1D();
+		ip3d = Measurement1D();
 	}
-	ImpactParameters(Measurement1D plip, Measurement1D ptip) {
+	ImpactParameters(Measurement1D plip, Measurement1D ptip, Measurement1D pip3d) {
 	    lip = plip;
 	    tip = ptip;
+		ip3d = pip3d;
 	}
 	Measurement1D lip;
 	Measurement1D tip;
+	Measurement1D ip3d;
 };
 
 using namespace std;
@@ -298,7 +301,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   unsigned int j;
   int pvIx = -1, pvIx2 = -1; // PV index of this candidate
   ImpactParameters pvImpParams;
-  ImpactParameters pvImpParams2nd(Measurement1D(9999.,9999.),Measurement1D(9999.,9999.)); // stores just tip of second best PV to detect pile-up problems
+  ImpactParameters pvImpParams2nd(Measurement1D(9999.,9999.),Measurement1D(9999.,9999.),Measurement1D(9999.,9999.)); // stores just tip of second best PV to detect pile-up problems
   AnalyticalImpactPointExtrapolator extrapolator(magneticField);
   TransverseImpactPointExtrapolator transverseExtrapolator(magneticField);
   TrajectoryStateOnSurface tsos;
@@ -348,13 +351,15 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  for (vertexIt = fPVCollection->begin(), j = 0, nGoodVtx = 0; vertexIt != fPVCollection->end(); ++vertexIt,++j) {
 		  
 		  std::pair<bool,Measurement1D> currentIp;
+		  std::pair<bool,Measurement1D> cur3DIP;
 		  
 		  // extrapolate to PCA
 		  tsos = extrapolator.extrapolate(kinParticle->currentState().freeTrajectoryState(),RecoVertex::convertPos(vertexIt->position()));
 		  
 		  // compute with iptools
 		  currentIp = IPTools::signedDecayLength3D(tsos,GlobalVector(0,0,1),*vertexIt);
-
+		  cur3DIP = IPTools::absoluteImpactParameter(tsos,*vertexIt,a3d);
+		  
 		  // Compute the PV weight
 		  double weight = (vertexIt->ndof()+2.)/(2.*vertexIt->tracksSize());
 		  //cout<<j<<" "<<nGoodVtx<<" "<<vertexIt->position()<<" "<<vertexIt->chi2()<<" "
@@ -377,32 +382,44 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 		  {
 		      pvIx = j;
 		      pvImpParams.lip = currentIp.second;
+			  pvImpParams.ip3d = cur3DIP.second;
 		  }
 		  else if (nGoodVtx == 1) // now the second PV
 		  {
-		    if (fabs(currentIp.second.value()) >= fabs(pvImpParams.lip.value()))  // not the best but the second best
-		      {pvImpParams2nd.lip = currentIp.second; pvIx2 = j;}
-		      else // the best, the previous one is the current 2nd best
-		      {
+		    if (fabs(currentIp.second.value()) >= fabs(pvImpParams.lip.value())) {// not the best but the second best
+			  pvImpParams2nd.lip = currentIp.second;
+			  pvImpParams2nd.ip3d = cur3DIP.second;
+			  pvIx2 = j;
+			}
+			else {
+			  // the best, the previous one is the current 2nd best
 			  pvIx2 = pvIx;
 			  pvIx = j;
 			  pvImpParams2nd.lip = pvImpParams.lip;
+			  pvImpParams2nd.ip3d = pvImpParams.ip3d;
 			  pvImpParams.lip = currentIp.second;
-		      }
+			  pvImpParams.ip3d = cur3DIP.second;
+			}
 		  }
 		  else // we have more than 2 PV
 		  {
-		      if (fabs(currentIp.second.value()) >= fabs(pvImpParams.lip.value())) // not the best
-		      {
-			  if (fabs(currentIp.second.value()) < fabs(pvImpParams2nd.lip.value())) // but the second best
-			    {pvImpParams2nd.lip = currentIp.second; pvIx2 = j; }
+		      if (fabs(currentIp.second.value()) >= fabs(pvImpParams.lip.value())) {
+				  // not the best
+				  if (fabs(currentIp.second.value()) < fabs(pvImpParams2nd.lip.value())) {
+					  // but the second best
+					  pvImpParams2nd.lip = currentIp.second;
+					  pvImpParams2nd.ip3d = cur3DIP.second;
+					  pvIx2 = j;
+				  }
 		      }
-		      else // this is currently the best one, keep it and put the old best one to 2nd best
-		      {
-			  pvIx2 = pvIx;
-			  pvIx = j;
-			  pvImpParams2nd.lip = pvImpParams.lip;
-			  pvImpParams.lip = currentIp.second;
+		      else {
+				  // this is currently the best one, keep it and put the old best one to 2nd best
+				  pvIx2 = pvIx;
+				  pvIx = j;
+				  pvImpParams2nd.lip = pvImpParams.lip;
+				  pvImpParams2nd.ip3d = pvImpParams.ip3d;
+				  pvImpParams.lip = currentIp.second;
+				  pvImpParams.ip3d = cur3DIP.second;
 		      }
 		  }
 		  nGoodVtx++; // Count the no. of good vertices
@@ -530,6 +547,8 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   pCand->fPvLipE2 = pvImpParams2nd.lip.error();
   pCand->fPvTip2 = pvImpParams2nd.tip.value();
   pCand->fPvTipE2 = pvImpParams2nd.tip.error();
+  pCand->fVar2 = pvImpParams.ip3d.value();
+  pCand->fVar3 = pvImpParams.ip3d.error();
   
   // -- calculate lifetime
   {
