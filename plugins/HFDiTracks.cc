@@ -159,7 +159,7 @@ void HFDiTracks::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
     // Select opposite charge pairs (or same)
     if(fSameSign) {if( tT1.charge() != tT2.charge() ) continue;}  // select track pairs with same charge
-    else          {if( tT1.charge() == tT2.charge() ) continue;}  // select track pairs with opposite charge
+    //else          {if( tT1.charge() == tT2.charge() ) continue;}  // ACCEPT ALL SIGN IF fSameSign is NOT set
 
     ditrack = t1 + t2; 
     if (ditrack.M() < fMassLow || ditrack.M() > fMassHigh) continue;
