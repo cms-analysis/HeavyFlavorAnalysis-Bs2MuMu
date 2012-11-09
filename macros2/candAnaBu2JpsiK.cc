@@ -61,6 +61,9 @@ void candAnaBu2JpsiK::candAnalysis() {
     fKEtaGen    = -99.;
   }
   
+  fKa1Missid = tightMuon(pk);  // true for tight  muons 
+  fKa1MuMatch = doTriggerMatching(pk); // see if it matches HLT muon 
+  //if(fKa1Missid) cout<<"missid "<<fKa1Missid<<" "<<fKa1MuMatch<<endl;
 
   // -- Check for J/psi mass
   //cout<<" check jpsi "<<endl;
@@ -327,6 +330,7 @@ void candAnaBu2JpsiK::bookHist() {
   fTree->Branch("t3eta",&fKaonEtaNrf,"t3eta/D");
   fTree->Branch("g3pt", &fKPtGen,    "g3pt/D");
   fTree->Branch("g3eta",&fKEtaGen,   "g3eta/D");
+  fTree->Branch("k1missid",  &fKa1Missid,    "k1missid/O");
 
   // -- Additional effTree variables
   fEffTree->Branch("k1pt",   &fETk1pt,            "k1pt/F");

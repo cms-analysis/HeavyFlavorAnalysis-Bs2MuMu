@@ -57,6 +57,7 @@ public:
   double       fJpsiMass, fJpsiPt, fJpsiEta, fJpsiPhi;
 
   bool         fGoodJpsiMass;
+  bool         fKa1Missid, fKa1MuMatch;
 
   // -- TM
   int          fGenK1Tmi; 

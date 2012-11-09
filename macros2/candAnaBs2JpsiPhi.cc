@@ -100,6 +100,13 @@ void candAnaBs2JpsiPhi::candAnalysis() {
   fKa2PtNrf     = ps2->fPlab.Perp();
   fKa2EtaNrf    = ps2->fPlab.Eta();
 
+  fKa1Missid = tightMuon(p1);  // true for tight  muons 
+  fKa2Missid = tightMuon(p2);
+  fKa1MuMatch = doTriggerMatching(p1); // see if it matches HLT muon 
+  fKa2MuMatch = doTriggerMatching(p2); // see if it matches HLT muon 
+
+  //if(fKa1Missid || fKa2Missid) cout<<"missid "<<fKa1Missid<<" "<<fKa2Missid<<" "<<fKa1MuMatch<<" "<<fKa2MuMatch<<endl;
+
   if (fCandTmi > -1) {
     TGenCand *pg1 = fpEvt->getGenCand(fpEvt->getRecTrack(p1->fIndex)->fGenIndex);
     fKa1PtGen     = pg1->fP.Perp();
@@ -129,9 +136,10 @@ void candAnaBs2JpsiPhi::candAnalysis() {
   fGoodDeltaR = (fDeltaR < DELTAR);
   fGoodMKK    = ((MKKLO < fMKK ) && (fMKK < MKKHI)); 
   
+  candAna::candAnalysis();
+
   fPreselection = fPreselection && fGoodJpsiMass && fGoodMKK && fGoodDeltaR; 
 
-  candAna::candAnalysis();
   // -- overwrite specific variables
   fCandTau   = fCandFL3d*MBPLUS/fCandP/TMath::Ccgs();
   fCandChi2  = chi2; 
@@ -384,6 +392,9 @@ void candAnaBs2JpsiPhi::bookHist() {
   fTree->Branch("k2eta", &fKa2Eta,   "k2eta/D");
   fTree->Branch("k2phi", &fKa2Phi,   "k2phi/D");
   fTree->Branch("k2gt",  &fKa2TkQuality,"k2gt/I");
+  fTree->Branch("k1missid",  &fKa1Missid,    "k1missid/O");
+  fTree->Branch("k2missid",  &fKa2Missid,    "k2missid/O");
+
 
   fTree->Branch("t3pt",  &fKa1PtNrf, "t3pt/D");
   fTree->Branch("t3eta", &fKa1EtaNrf,"t3eta/D");

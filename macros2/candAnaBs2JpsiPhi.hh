@@ -63,6 +63,7 @@ public:
   double       fKa1Pt, fKa1Eta, fKa1Phi;
   double       fKa2Pt, fKa2Eta, fKa2Phi;
   double       fPhiPt, fPhiEta, fPhiPhi; 
+  bool         fKa1Missid, fKa2Missid, fKa1MuMatch, fKa2MuMatch;
 
   double       fKa1PtNrf, fKa1EtaNrf;
   double       fKa2PtNrf, fKa2EtaNrf;
