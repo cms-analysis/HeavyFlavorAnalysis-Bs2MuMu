@@ -553,16 +553,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
     {
 	pCand->fTau3d = pCand->fTauxy = -99.;
     }
-    // just for convenience extract the error from cov into const variables (will be optimized away by the compiler)
-    // covariance matrix has order (x,y,z,p_x,p_y,p_z,m)
-    // see RecoVertex/KinematicFitPrimitives/interface/KinematicParametersError.h
-    const double pxE = kinParticle->currentState().kinematicParametersError().matrix()(3,3);
-    const double pyE = kinParticle->currentState().kinematicParametersError().matrix()(4,4);
-    const double pzE = kinParticle->currentState().kinematicParametersError().matrix()(5,5);
-    pCand->fTau3dE = TMath::Sqrt(anaVtx.fD3dE*anaVtx.fD3dE + pxE*pxE + pyE*pyE + pzE*pzE ) / TMath::Ccgs();
-    // from Keith: 
-    //" b mass = " << b_vFit->currentState().mass() << " +- " << sqrt(b_vFit->currentState().kinematicParametersError().matrix()(6,6)) << endl;
-    // mass error 
+    // -- mass error from Keith: 
     pCand->fVar1 = TMath::Sqrt(kinParticle->currentState().kinematicParametersError().matrix()(6,6));
     //    cout << " cand  with mass " << pCand->fMass << " +/- " << pCand->fVar1 << endl;
   }
