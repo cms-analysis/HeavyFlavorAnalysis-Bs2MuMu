@@ -394,6 +394,8 @@ void candAnaBs2JpsiPhi::bookHist() {
   fTree->Branch("k2gt",  &fKa2TkQuality,"k2gt/I");
   fTree->Branch("k1missid",  &fKa1Missid,    "k1missid/O");
   fTree->Branch("k2missid",  &fKa2Missid,    "k2missid/O");
+  fTree->Branch("k1mumatch", &fKa1MuMatch,  "k1mumatch/O");
+  fTree->Branch("k2mumatch", &fKa2MuMatch,  "k2mumatch/O");
 
 
   fTree->Branch("t3pt",  &fKa1PtNrf, "t3pt/D");

@@ -331,6 +331,7 @@ void candAnaBu2JpsiK::bookHist() {
   fTree->Branch("g3pt", &fKPtGen,    "g3pt/D");
   fTree->Branch("g3eta",&fKEtaGen,   "g3eta/D");
   fTree->Branch("k1missid",  &fKa1Missid,    "k1missid/O");
+  fTree->Branch("k1mumatch", &fKa1MuMatch,    "k1mumatch/O");
 
   // -- Additional effTree variables
   fEffTree->Branch("k1pt",   &fETk1pt,            "k1pt/F");
