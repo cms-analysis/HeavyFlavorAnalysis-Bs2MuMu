@@ -65,8 +65,8 @@ echo "--> Building ulcalc"
 make
 pwd
 
-echo "$EXECUTABLE -w $JOB.root -o $JOB.log $JOB"
-$EXECUTABLE -w $JOB.root -o $JOB.log $JOB
+echo "$EXECUTABLE -w $JOB.root $JOB |& tee $JOB.log"
+$EXECUTABLE -w $JOB.root $JOB |& tee $JOB.log
 echo "lcg-del -b -D srmv2 -l $STORAGE1/$JOB.root"
 lcg-del -b -D srmv2 -l "$STORAGE1/$JOB.root"
 echo "lcg-cp -b -D srmv2 $JOB.root $STORAGE1/$JOB.root"
