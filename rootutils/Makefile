@@ -20,7 +20,7 @@ endif
 # FILES #
 #########
 
-UTILS = NCRootUtils.o NCFunctions.o
+UTILS = NCRootUtils.o NCFunctions.o NCMatrix.o
 UTILS_HEADER = ${UTILS:.o=.h}
 UTILS_DICTS = ${UTILS:.o=Dict.o}
 
@@ -32,7 +32,7 @@ UTILS_DICTS = ${UTILS:.o=Dict.o}
 	$(ROOTCINT) -f $@ -c $^
 
 %Dict.cpp : %.h
-	$(ROOTCINT) -f $@ -c %<
+	$(ROOTCINT) -f $@ -c $^
 
 obj/%.o: %.cpp $(UTILS_HEADER) obj
 	$(CXX) -c $(ROOTCFLAGS) $(CXXFLAGS) $< -o $@
