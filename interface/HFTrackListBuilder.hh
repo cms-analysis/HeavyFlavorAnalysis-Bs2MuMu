@@ -14,15 +14,18 @@
 #include <TLorentzVector.h>
 
 #include "FWCore/Framework/interface/Event.h"
+
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/Common/interface/View.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 
+#include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
+
 class HFTrackListBuilder {
 	
 	public:
-		HFTrackListBuilder(edm::Handle<edm::View<reco::Track> > &hTracks, edm::Handle<reco::MuonCollection> &hMuons, int verbose);
+		HFTrackListBuilder(edm::Handle<edm::View<reco::Track> > &hTracks, edm::Handle<reco::MuonCollection> &hMuons, const TransientTrackBuilder *ttb, int verbose);
 		
 		std::vector<int> getMuonList();
 		std::vector<int> getTrackList();
@@ -31,6 +34,8 @@ class HFTrackListBuilder {
 		void setMaxD0(double maxD0) { fMaxD0 = maxD0; }
 		void setMaxDz(double maxDz) { fMaxDz = maxDz; }
 		void setMinPt(double minPt) { fMinPt = minPt; }
+		void setMaxDocaToTracks(double docaToTrks) { fMaxDocaToTrks = docaToTrks; }
+		void setCloseTracks(std::vector<int> *closeTracks) { fCloseTracks = closeTracks; }
 		void setCallerName(const char *callerName) { fCallerName = std::string(callerName); }
 		
 	public:
@@ -40,6 +45,7 @@ class HFTrackListBuilder {
 	private:
 		edm::Handle<edm::View<reco::Track> > &fhTracks;
 		edm::Handle<reco::MuonCollection> &fhMuons;
+		const TransientTrackBuilder *fTTB;
 		
 		int fVerbose;
 	
@@ -49,6 +55,9 @@ class HFTrackListBuilder {
 		double fMaxD0;
 		double fMaxDz;
 		double fMinPt;
+		double fMaxDocaToTrks;
+		
+		std::vector<int> *fCloseTracks;
 };
 
 #endif

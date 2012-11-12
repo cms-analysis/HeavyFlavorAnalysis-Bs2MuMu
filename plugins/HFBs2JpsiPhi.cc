@@ -132,12 +132,14 @@ void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup)
 		return;
 	}
 
-	HFTrackListBuilder listBuilder(hTracks,hMuons,fVerbose);
+	HFTrackListBuilder listBuilder(hTracks,hMuons,fTTB.product(),fVerbose);
 	listBuilder.setMaxD0(fMaxD0);
 	listBuilder.setMaxDz(fMaxDz);
 	listBuilder.setMinPt(fMuonPt);
 	vector<int> muonList = listBuilder.getMuonList();
 	listBuilder.setMinPt(fTrackPt);
+	listBuilder.setMaxDocaToTracks(fMaxDoca);
+	listBuilder.setCloseTracks(&muonList);
 	vector<int> trkList = listBuilder.getTrackList();
 	
 	if (muonList.size() < static_cast<unsigned int>(fPsiMuons)) return; // not enough muons
