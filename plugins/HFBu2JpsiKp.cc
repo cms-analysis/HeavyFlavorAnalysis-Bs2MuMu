@@ -12,9 +12,10 @@
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKalmanVertexFit.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKinematicVertexFit.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFSequentialVertexFit.h"
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTwoParticleCombinatorics.hh"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTwoParticleCombinatoricsNew.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFMasses.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFDecayTree.h"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTrackListBuilder.hh"
 
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
@@ -85,193 +86,150 @@ HFBu2JpsiKp::~HFBu2JpsiKp() {
 // ----------------------------------------------------------------------
 void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup)
 {
-  // -- get the magnetic field
-  ESHandle<MagneticField> magfield;
-  iSetup.get<IdealMagneticFieldRecord>().get(magfield);
-  const MagneticField *field = magfield.product();
-  
-  // -- get the primary vertex
-  Handle<VertexCollection> recoPrimaryVertexCollection;
-  iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
-  if(!recoPrimaryVertexCollection.isValid()) {
-    cout << "==>HFBu2JpsiKp> No primary vertex collection found, skipping" << endl;
-    return;
-  }
-  const VertexCollection vertices = *(recoPrimaryVertexCollection.product());
-  if (vertices.size() == 0) {
-    cout << "==>HFBu2JpsiKp> No primary vertex found, skipping" << endl;
-    return;
-  }
-  fPV = vertices[gHFEvent->fBestPV]; 
-  if (fVerbose > 0) {
-    cout << "HFDimuons: Taking vertex " << gHFEvent->fBestPV << " with ntracks = " << fPV.tracksSize() << endl;
-  }
-  
-  // -- get the collection of muons
-  Handle<MuonCollection> hMuons;
-  iEvent.getByLabel(fMuonsLabel, hMuons);
-  if (!hMuons.isValid()) {
-  cout << "==>HFBu2JpsiKp> No valid MuonCollection with label "<< fMuonsLabel <<" found, skipping" << endl;
-    return;
-  }
+	typedef HFTwoParticleCombinatoricsNew::HFTwoParticleCombinatoricsSet HFTwoParticleCombinatoricsSet;
+	
+	// -- get the magnetic field
+	ESHandle<MagneticField> magfield;
+	iSetup.get<IdealMagneticFieldRecord>().get(magfield);
+	const MagneticField *field = magfield.product();
 
-  // -- get the collection of tracks
-  Handle<View<Track> > hTracks;
-  iEvent.getByLabel(fTracksLabel, hTracks);
-  if(!hTracks.isValid()) {
-    cout << "==>HFBu2JpsiKp> No valid TrackCollection with label "<<fTracksLabel <<" found, skipping" << endl;
-    return;
-  }
+	// -- get the primary vertex
+	Handle<VertexCollection> recoPrimaryVertexCollection;
+	iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
+	if(!recoPrimaryVertexCollection.isValid()) {
+		cout << "==>HFBu2JpsiKp> No primary vertex collection found, skipping" << endl;
+		return;
+	}
+	const VertexCollection vertices = *(recoPrimaryVertexCollection.product());
+	if (vertices.size() == 0) {
+		cout << "==>HFBu2JpsiKp> No primary vertex found, skipping" << endl;
+		return;
+	}
+	fPV = vertices[gHFEvent->fBestPV]; 
+	if (fVerbose > 0) {
+		cout << "HFDimuons: Taking vertex " << gHFEvent->fBestPV << " with ntracks = " << fPV.tracksSize() << endl;
+	}
 
-  // -- Transient track builder for vertexing
-  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", fTTB);
-  if (!fTTB.isValid()) {
-    cout << " -->HFBu2JpsiKp: Error: no TransientTrackBuilder found."<<endl;
-    return;
-  }
+	// -- get the collection of muons
+	Handle<MuonCollection> hMuons;
+	iEvent.getByLabel(fMuonsLabel, hMuons);
+	if (!hMuons.isValid()) {
+		cout << "==>HFBu2JpsiKp> No valid MuonCollection with label "<< fMuonsLabel <<" found, skipping" << endl;
+		return;
+	}
 
-  // -- get the collection of muons and store their corresponding track indices
-  vector<unsigned int> muonIndices;
-  for (MuonCollection::const_iterator muon = hMuons->begin(); muon != hMuons->end(); ++muon) {
-    int im = muon->track().index(); 
-    if (im >= 0) muonIndices.push_back(im);
-  }
-  if (fVerbose > 0) {
-    cout << "==>HFBu2JpsiKp> nMuons = " << hMuons->size() << endl;
-    cout << "==>HFBu2JpsiKp> nMuonIndices = " << muonIndices.size() << endl;
-  }
-  if (muonIndices.size() < static_cast<unsigned int>(fPsiMuons)) return;
+	// -- get the collection of tracks
+	Handle<View<Track> > hTracks;
+	iEvent.getByLabel(fTracksLabel, hTracks);
+	if(!hTracks.isValid()) {
+		cout << "==>HFBu2JpsiKp> No valid TrackCollection with label "<<fTracksLabel <<" found, skipping" << endl;
+		return;
+	}
 
+	// -- Transient track builder for vertexing
+	iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", fTTB);
+	if (!fTTB.isValid()) {
+		cout << " -->HFBu2JpsiKp: Error: no TransientTrackBuilder found."<<endl;
+		return;
+	}
+	
+	HFTrackListBuilder listBuilder(hTracks,hMuons,fTTB.product(),fVerbose);
+	listBuilder.setMaxD0(fMaxD0);
+	listBuilder.setMaxDz(fMaxDz);
+	listBuilder.setMinPt(fMuonPt);
+	vector<int> muonList = listBuilder.getMuonList();
+	listBuilder.setMinPt(fTrackPt);
+	listBuilder.setMaxDocaToTracks(fMaxDoca);
+	listBuilder.setCloseTracks(&muonList);
+	vector<int> trkList = listBuilder.getTrackList();
 
-  // -- Build muon lists
-  TLorentzVector tlv; 
-  vector<pair<int, TLorentzVector> > tlist1, tlist2; 
-  if (2 == fPsiMuons) {
-    tlist1.reserve(10); 
-    tlist2.reserve(10); 
-  } else {
-    tlist1.reserve(100); 
-    tlist2.reserve(100); 
-  }    
-  int isMuon(0); 
-  for (unsigned int itrack = 0; itrack < hTracks->size(); ++itrack){    
-    TrackBaseRef rTrackView(hTracks, itrack);
-    Track tTrack(*rTrackView);
-    if (tTrack.d0() > fMaxD0) continue;
-    if (tTrack.dz() > fMaxDz) continue;
-    tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MMUON); 
-    if (2 == fPsiMuons) {
-      for (unsigned int im = 0; im < muonIndices.size(); ++im) {
-		  if (muonIndices[im] == itrack) {
-			  ++isMuon; 
-			  tlist1.push_back(make_pair(itrack, tlv)); 
-			  tlist2.push_back(make_pair(itrack, tlv)); 
-		  }
-      } 
-    } else if (1 == fPsiMuons) {
-      for (unsigned int im = 0; im < muonIndices.size(); ++im) {
-		  if (muonIndices[im] == itrack) {
-			  ++isMuon;
-			  tlist1.push_back(make_pair(itrack, tlv)); 
-		  }
-      }
-      tlist2.push_back(make_pair(itrack, tlv)); 
-    } else {
-      tlist1.push_back(make_pair(itrack, tlv)); 
-      tlist2.push_back(make_pair(itrack, tlv)); 
-    }
-  }
+	if (muonList.size() < static_cast<unsigned int>(fPsiMuons)) return; // not enough muons
+	
+	HFTwoParticleCombinatoricsNew a(hTracks,fVerbose);
+	HFTwoParticleCombinatoricsSet psiList = a.combine( (fPsiMuons < 1 ? trkList : muonList), MMUON,
+													  (fPsiMuons < 2 ? trkList : muonList), MMUON,
+													  MJPSI - fPsiWindow, MJPSI + fPsiWindow, 1 );
 
-  if (isMuon < fPsiMuons) {
-    if (fVerbose > 0) cout << "==>HFBu2JpsiKp> Not enough muons found for J/psi candidates combinatorics: isMuon =" 
-			   << isMuon << ", required: " << fPsiMuons 
-			   << endl;
-    return;
-  }
+	if (fVerbose > 0) cout << "==>HFBu2JpsiKp> J/psi list size: " << psiList.size() << endl;
 
-  HFTwoParticleCombinatorics a(fVerbose); 
-  vector<pair<int, int> > psiList; 
-  a.combine(psiList, tlist1, tlist2, MJPSI-fPsiWindow, MJPSI+fPsiWindow, 1); 
-  if (fVerbose > 0) cout << "==>HFBu2JpsiKp> J/psi list size: " << psiList.size() << endl;
-   
-  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
+	HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
 
-  // -- Build J/psi + track
-  TLorentzVector psi, cpsi, m1, m2, ka, bu;
-  for (unsigned int i = 0; i < psiList.size(); ++i) {
-    unsigned int iMuon1 = psiList[i].first; 
-    unsigned int iMuon2 = psiList[i].second; 
-    
-    TrackBaseRef mu1TrackView(hTracks, iMuon1);
-    Track tMuon1(*mu1TrackView);
-    if (tMuon1.pt() < fMuonPt)  continue;
-    m1.SetPtEtaPhiM(tMuon1.pt(), tMuon1.eta(), tMuon1.phi(), MMUON); 
+	// -- Build J/psi + track
+	TLorentzVector psi, cpsi, m1, m2, ka, bu;
+	for (HFTwoParticleCombinatoricsNew::iterator psiIt = psiList.begin(); psiIt != psiList.end(); ++psiIt) {
+		int iMuon1 = psiIt->first; 
+		int iMuon2 = psiIt->second; 
 
-    TrackBaseRef mu2TrackView(hTracks, iMuon2);
-    Track tMuon2(*mu2TrackView);
-    if (tMuon2.pt() < fMuonPt)  continue;
-    m2.SetPtEtaPhiM(tMuon2.pt(), tMuon2.eta(), tMuon2.phi(), MMUON); 
+		TrackBaseRef mu1TrackView(hTracks, iMuon1);
+		Track tMuon1(*mu1TrackView);
+		if (tMuon1.pt() < fMuonPt)  continue;
+		m1.SetPtEtaPhiM(tMuon1.pt(), tMuon1.eta(), tMuon1.phi(), MMUON); 
 
-    psi = m1 + m2; 
-    if ((TMath::Abs(psi.M() - MJPSI) > fPsiWindow)) continue;
-    
-    for (unsigned int iTrack = 0; iTrack < hTracks->size(); ++iTrack){    
-      if (iTrack == iMuon1 || iTrack == iMuon2) continue; 
-      TrackBaseRef rTrackView(hTracks, iTrack);
-      Track tKaon(*rTrackView);
-      if (tKaon.d0() > fMaxD0) continue;
-      if (tKaon.dz() > fMaxDz) continue;
-      if (tKaon.pt() < fTrackPt) continue;
-      ka.SetXYZM(tKaon.px(), tKaon.py(), tKaon.pz(), MKAON); 
-      if (psi.DeltaR(ka) > fDeltaR) continue; 
-      
-      bu = ka + psi; 
-      if (TMath::Abs(bu.M() - MBPLUS) > fBuWindow) continue;
-	        
-      // -- sequential fit: J/Psi kaon
-      if (fVerbose > 5) cout << "==>HFBu2JpsiKp> going to sequential fit" << endl;
-      HFDecayTree theTree(300521, true, MBPLUS, false, -1.0, true);
-      
-      HFDecayTreeIterator iterator = theTree.addDecayTree(300443, false, MJPSI, false);
-      iterator->addTrack(iMuon1,13);
-      iterator->addTrack(iMuon2,13);
-      iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-      
-      theTree.addTrack(iTrack,321);
-      theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-      
-      if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit without mass constraint" << endl;
-      aSeq.doFit(&theTree);
-      
-      // -- sequential fit: J/Psi kaon
-      theTree.clear(400521, true, MBPLUS, false, -1.0, true);
-      
-      iterator = theTree.addDecayTree(400443, true, MJPSI, true);
-      iterator->addTrack(iMuon1,13);
-      iterator->addTrack(iMuon2,13);
-      iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-      if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit with mass constraint" << endl;
-      
-      theTree.addTrack(iTrack,321);
-      theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-      
-      aSeq.doFit(&theTree);
-      if (fVerbose > 5) cout << "==>HFBu2JpsiKp> done with fitting for track " << iTrack << endl;
-	  
-	  // -- global fit: J/Psi kaon
-	  theTree.clear(500521, true, MBPLUS, false, -1.0, true);
-	  iterator = theTree.addDecayTree(500443, false, MJPSI, false);
-	  iterator->addTrack(iMuon1,13,true);
-	  iterator->addTrack(iMuon2,13,true);
-	  iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-	  
-	  theTree.addTrack(iTrack,321,false);
-	  theTree.set_mass_tracks(MJPSI);
-	  theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-	  
-	  aSeq.doFit(&theTree);
-    }
-  }
+		TrackBaseRef mu2TrackView(hTracks, iMuon2);
+		Track tMuon2(*mu2TrackView);
+		if (tMuon2.pt() < fMuonPt)  continue;
+		m2.SetPtEtaPhiM(tMuon2.pt(), tMuon2.eta(), tMuon2.phi(), MMUON); 
+
+		psi = m1 + m2; 
+		if ((TMath::Abs(psi.M() - MJPSI) > fPsiWindow)) continue;
+		
+		for (vector<int>::const_iterator trkIt = trkList.begin(); trkIt != trkList.end(); ++trkIt) {
+			if (*trkIt == iMuon1 || *trkIt == iMuon2) continue; 
+			TrackBaseRef rTrackView(hTracks, *trkIt);
+			Track tKaon(*rTrackView);
+			if (tKaon.d0() > fMaxD0) continue;
+			if (tKaon.dz() > fMaxDz) continue;
+			if (tKaon.pt() < fTrackPt) continue;
+			ka.SetXYZM(tKaon.px(), tKaon.py(), tKaon.pz(), MKAON); 
+			if (psi.DeltaR(ka) > fDeltaR) continue; 
+
+			bu = ka + psi; 
+			if (TMath::Abs(bu.M() - MBPLUS) > fBuWindow) continue;
+
+			// -- sequential fit: J/Psi kaon
+			if (fVerbose > 5) cout << "==>HFBu2JpsiKp> going to sequential fit" << endl;
+			HFDecayTree theTree(300521, true, MBPLUS, false, -1.0, true);
+
+			HFDecayTreeIterator iterator = theTree.addDecayTree(300443, false, MJPSI, false);
+			iterator->addTrack(iMuon1,13);
+			iterator->addTrack(iMuon2,13);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+			theTree.addTrack(*trkIt,321);
+			theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+			if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit without mass constraint" << endl;
+			aSeq.doFit(&theTree);
+
+			// -- sequential fit: J/Psi kaon
+			theTree.clear(400521, true, MBPLUS, false, -1.0, true);
+
+			iterator = theTree.addDecayTree(400443, true, MJPSI, true);
+			iterator->addTrack(iMuon1,13);
+			iterator->addTrack(iMuon2,13);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+			if (fVerbose > 5) cout << "==>HFBu2JpsiKp> sequential fit with mass constraint" << endl;
+
+			theTree.addTrack(*trkIt,321);
+			theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+			aSeq.doFit(&theTree);
+			if (fVerbose > 5) cout << "==>HFBu2JpsiKp> done with fitting for track " << *trkIt << endl;
+
+			// -- global fit: J/Psi kaon
+			theTree.clear(500521, true, MBPLUS, false, -1.0, true);
+			iterator = theTree.addDecayTree(500443, false, MJPSI, false);
+			iterator->addTrack(iMuon1,13,true);
+			iterator->addTrack(iMuon2,13,true);
+			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+			theTree.addTrack(*trkIt,321,false);
+			theTree.set_mass_tracks(MJPSI);
+			theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+			aSeq.doFit(&theTree);
+		}
+	}
 }
 
 // ------------ method called once each job just before starting event loop  ------------
