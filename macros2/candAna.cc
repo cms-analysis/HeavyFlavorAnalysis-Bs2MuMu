@@ -49,7 +49,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   fpEvt = evt; 
   fBadEvent = false;
 
-  //   cout << fEvt << "  " << (fEvt>0? " >0" : "<0") << endl;
+  //cout << fEvt << endl;
   //   return;
 
   if (fIsMC) {
@@ -67,9 +67,10 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   TAnaCand *pCand(0);
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
     pCand = fpEvt->getCand(iC);
+
     if (fVerbose > 29) cout << "candidate at " << iC << " which is of type " << pCand->fType << endl;
     if (TYPE != pCand->fType) {
-      if (fVerbose > 19) cout << "Skipping candidate at " << iC << " which is of type " << pCand->fType << endl;
+      if (fVerbose > 19) cout << "Skipping candidate at " << iC << " which is of type " << pCand->fType <<endl;
       continue;
     }
 
@@ -83,7 +84,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 	gen0 = fpEvt->getGenCand(fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fMom1)->fID;
       }
 
-      cout << "Analyzing candidate at " << iC << " which is of type " << TYPE 
+      cout << "Analyzing candidate at " << iC << " which is of type " << TYPE << " mass "<< pCand->fMass
 	   << " with sig tracks: " << pCand->fSig1 << " .. " << pCand->fSig2
 	   << " and rec tracks: " 
 	   << fpEvt->getSigTrack(pCand->fSig1)->fIndex
@@ -96,6 +97,9 @@ void candAna::evtAnalysis(TAna01Event *evt) {
       if (TMath::Abs(gen1) != 13 || TMath::Abs(gen2) != 13) fpEvt->dumpGenBlock();
 
     }
+
+
+
     fpCand = pCand;
     fCandIdx = iC; 
 
@@ -119,7 +123,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 	   << " and rec tracks: " 
 	   << fpEvt->getSigTrack(pCand->fSig1)->fIndex
 	   << " .. " 
-	   << fpEvt->getSigTrack(pCand->fSig2)->fIndex << endl
+	   << fpEvt->getSigTrack(pCand->fSig2)->fIndex 
 	   << " gen IDs =  " << gen1 << " " << gen2 << " from " << gen0
 	   << " tm = " << fGenM1Tmi << " " << fGenM2Tmi 
 	   << " ctm " << fCandTmi 
@@ -145,7 +149,9 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 	if (fVerbose > 1)
 	  cout<<" select "<<fRun<<" "<<fLS<<" "<<fEvt<<" "<<fJSON<<" "<<fGoodHLT<<" "<<fpCand->fType<<" "<<fPreselection<<" "<<fHLTmatch<<endl;
 
+
 	if (fPreselection) { 
+	  ((TH1D*)fHistDir->Get("test3"))->Fill(6.); 
 	  if (fVerbose > 5) cout << " filling this cand into the tree" << endl;	  
 	  ((TH1D*)fHistDir->Get("../monEvents"))->Fill(12); 
 
@@ -163,18 +169,17 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     }
 
 
-    return; // WARNING d.k.
+//     // -- fill histograms
+//     fillCandidateHistograms(fRegion["A"]);
+//     if (fBarrel) {
+//       fillCandidateHistograms(fRegion["B"]);
+//     } else {
+//       fillCandidateHistograms(fRegion["E"]);
+//     }
 
-    // -- fill histograms
-    fillCandidateHistograms(fRegion["A"]);
-    if (fBarrel) {
-      fillCandidateHistograms(fRegion["B"]);
-    } else {
-      fillCandidateHistograms(fRegion["E"]);
-    }
+//     if (fPvN <  6) fillCandidateHistograms(fRegion["APV0"]);
+//     if (fPvN > 10) fillCandidateHistograms(fRegion["APV1"]);
 
-    if (fPvN <  6) fillCandidateHistograms(fRegion["APV0"]);
-    if (fPvN > 10) fillCandidateHistograms(fRegion["APV1"]);
     
   }
 
@@ -603,186 +608,194 @@ void candAna::candAnalysis() {
   //   fPreselection = fPreselection && (fCandPt > 5) && (fCandA < 0.3) && (fCandChi2/fCandDof < 10) && (fCandFL3d < 2); 
 
   // -- to be consistent with the BDT traning
-  fPreselection = preselection(fRTD, fChan); 
+  ((TH1D*)fHistDir->Get("test3"))->Fill(1.); 
+
+  fPreselection = preselection(fRTD, fChan);
+  //fPreselection = preselection(fRTD, fChan, ((TH1D*)fHistDir->Get("test3")) );
+  if(fPreselection) ((TH1D*)fHistDir->Get("test3"))->Fill(2.); 
+
   fPreselection = fPreselection && fGoodHLT;
+  if(fPreselection) ((TH1D*)fHistDir->Get("test3"))->Fill(3.); 
 
 }
 
 // ----------------------------------------------------------------------
 void candAna::fillCandidateHistograms(int offset) {
  
-  //cout<<" 11 "<<fpCand<<" "<<offset<<endl;
-
   // -- only candidate histograms below
   if (0 == fpCand) return;
 
-  // -- Fill distributions
-  fpTracksPt[offset]->fill(fMu1Pt, fCandM);
-  fpTracksPt[offset]->fill(fMu2Pt, fCandM);
-  fpTracksEta[offset]->fill(fMu1Eta, fCandM);
-  fpTracksEta[offset]->fill(fMu2Eta, fCandM);
-  fpTracksQual[offset]->fill((fGoodTracks?1:0), fCandM);
+//   // -- Fill distributions
+//   fpTracksPt[offset]->fill(fMu1Pt, fCandM);
+//   fpTracksPt[offset]->fill(fMu2Pt, fCandM);
+//   fpTracksEta[offset]->fill(fMu1Eta, fCandM);
+//   fpTracksEta[offset]->fill(fMu2Eta, fCandM);
+//   fpTracksQual[offset]->fill((fGoodTracks?1:0), fCandM);
 
-  fpMuonsPt[offset]->fill(fMu1Pt, fCandM);
-  fpMuonsPt[offset]->fill(fMu2Pt, fCandM);
-  fpMuonsEta[offset]->fill(fMu1Eta, fCandM);
-  fpMuonsEta[offset]->fill(fMu2Eta, fCandM);
-  fpMuon1Eta[offset]->fill(fMu1Eta, fCandM);
-  fpMuon2Eta[offset]->fill(fMu2Eta, fCandM);
-  fpMuon1Pt[offset]->fill(fMu1Pt, fCandM);
-  fpMuon2Pt[offset]->fill(fMu2Pt, fCandM);
+//   fpMuonsPt[offset]->fill(fMu1Pt, fCandM);
+//   fpMuonsPt[offset]->fill(fMu2Pt, fCandM);
+//   fpMuonsEta[offset]->fill(fMu1Eta, fCandM);
+//   fpMuonsEta[offset]->fill(fMu2Eta, fCandM);
+//   fpMuon1Eta[offset]->fill(fMu1Eta, fCandM);
+//   fpMuon2Eta[offset]->fill(fMu2Eta, fCandM);
+//   fpMuon1Pt[offset]->fill(fMu1Pt, fCandM);
+//   fpMuon2Pt[offset]->fill(fMu2Pt, fCandM);
 
-  fpHLT[offset]->fill((fGoodHLT?1:0), fCandM); 
-  fpMuonsID[offset]->fill((fGoodMuonsID?1:0), fCandM); 
-  fpPvZ[offset]->fill(fPvZ, fCandM); 
-  fpPvN[offset]->fill(fPvN, fCandM); 
-  fpPvNtrk[offset]->fill(fPvNtrk, fCandM); 
-  fpPvAveW8[offset]->fill(fPvAveW8, fCandM); 
-  fpPt[offset]->fill(fCandPt, fCandM); 
-  fpP[offset]->fill(fCandP, fCandM);
-  fpEta[offset]->fill(fCandEta, fCandM); 
-  fpAlpha[offset]->fill(fCandA, fCandM);
-  fpCosA[offset]->fill(fCandCosA, fCandM);
-  fpIsoTrk[offset]->fill(fCandIsoTrk, fCandM);
-
-  fpPt[offset]->fill(fCandPt, fCandM); 
-  if (40 == fProcessType) fpPtGGF[offset]->fill(fCandPt, fCandM); 
-  if (41 == fProcessType) fpPtFEX[offset]->fill(fCandPt, fCandM); 
-  if (42 == fProcessType) fpPtGSP[offset]->fill(fCandPt, fCandM); 
-
-  fpIso[offset]->fill(fCandIso, fCandM);
-  if (40 == fProcessType) fpIsoGGF[offset]->fill(fCandIso, fCandM); 
-  if (41 == fProcessType) fpIsoFEX[offset]->fill(fCandIso, fCandM); 
-  if (42 == fProcessType) fpIsoGSP[offset]->fill(fCandIso, fCandM); 
-
-  fpCloseTrk[offset]->fill(fCandCloseTrk, fCandM); 
-  if (40 == fProcessType) fpCloseTrkGGF[offset]->fill(fCandCloseTrk, fCandM); 
-  if (41 == fProcessType) fpCloseTrkFEX[offset]->fill(fCandCloseTrk, fCandM); 
-  if (42 == fProcessType) fpCloseTrkGSP[offset]->fill(fCandCloseTrk, fCandM); 
-
-  fpOsIso[offset]->fill(fOsIso, fCandM); 
-  if (40 == fProcessType) fpOsIsoGGF[offset]->fill(fOsIso, fCandM); 
-  if (41 == fProcessType) fpOsIsoFEX[offset]->fill(fOsIso, fCandM); 
-  if (42 == fProcessType) fpOsIsoGSP[offset]->fill(fOsIso, fCandM); 
-
-  fpOsRelIso[offset]->fill(fOsRelIso, fCandM); 
-  if (40 == fProcessType) fpOsRelIsoGGF[offset]->fill(fOsRelIso, fCandM); 
-  if (41 == fProcessType) fpOsRelIsoFEX[offset]->fill(fOsRelIso, fCandM); 
-  if (42 == fProcessType) fpOsRelIsoGSP[offset]->fill(fOsRelIso, fCandM); 
-
-  fpOsMuonPt[offset]->fill(fOsMuonPt, fCandM);
-  if (40 == fProcessType) fpOsMuonPtGGF[offset]->fill(fOsMuonPt, fCandM); 
-  if (41 == fProcessType) fpOsMuonPtFEX[offset]->fill(fOsMuonPt, fCandM); 
-  if (42 == fProcessType) fpOsMuonPtGSP[offset]->fill(fOsMuonPt, fCandM); 
-
-  fpOsMuonPtRel[offset]->fill(fOsMuonPtRel, fCandM);
-  if (40 == fProcessType) fpOsMuonPtRelGGF[offset]->fill(fOsMuonPtRel, fCandM); 
-  if (41 == fProcessType) fpOsMuonPtRelFEX[offset]->fill(fOsMuonPtRel, fCandM); 
-  if (42 == fProcessType) fpOsMuonPtRelGSP[offset]->fill(fOsMuonPtRel, fCandM); 
-
-  fpOsMuonDeltaR[offset]->fill(fOsMuonDeltaR, fCandM); 
-  if (40 == fProcessType) fpOsMuonDeltaRGGF[offset]->fill(fOsMuonDeltaR, fCandM); 
-  if (41 == fProcessType) fpOsMuonDeltaRFEX[offset]->fill(fOsMuonDeltaR, fCandM); 
-  if (42 == fProcessType) fpOsMuonDeltaRGSP[offset]->fill(fOsMuonDeltaR, fCandM); 
-
-  fpDocaTrk[offset]->fill(fCandDocaTrk, fCandM); 
-  if (40 == fProcessType) fpDocaTrkGGF[offset]->fill(fCandDocaTrk, fCandM); 
-  if (41 == fProcessType) fpDocaTrkFEX[offset]->fill(fCandDocaTrk, fCandM); 
-  if (42 == fProcessType) fpDocaTrkGSP[offset]->fill(fCandDocaTrk, fCandM); 
-
-  fpChi2[offset]->fill(fCandChi2, fCandM);
-  fpChi2Dof[offset]->fill(fCandChi2/fCandDof, fCandM); 
-  fpProb[offset]->fill(fCandProb, fCandM);   
-  fpFLS3d[offset]->fill(fCandFLS3d, fCandM); 
-  fpFL3d[offset]->fill(fCandFL3d, fCandM); 
-  fpFL3dE[offset]->fill(fCandFL3dE, fCandM); 
-  fpFLSxy[offset]->fill(fCandFLSxy, fCandM); 
-  fpBDT[offset]->fill(fBDT, fCandM);    
-
-  fpLip[offset]->fill(fCandPvLip, fCandM); 
-  fpLipE[offset]->fill(fCandPvLipE, fCandM); 
-  fpLipS[offset]->fill(fCandPvLipS, fCandM); 
-
-  fpTip[offset]->fill(fCandPvTip, fCandM); 
-  fpTipE[offset]->fill(fCandPvTipE, fCandM); 
-  fpTipS[offset]->fill(fCandPvTipS, fCandM); 
-
-  fpLip12[offset]->fill(fCandPvLip12, fCandM); 
-  fpLipE12[offset]->fill(fCandPvLipE12, fCandM); 
-  fpLipS12[offset]->fill(fCandPvLipS12, fCandM); 
-
-  fpLip2[offset]->fill(fCandPvLip2, fCandM); 
-  fpLipS2[offset]->fill(fCandPvLipS2, fCandM); 
-
-  fpMaxDoca[offset]->fill(fCandDoca, fCandM); 
-  fpIp[offset]->fill(fCandPvIp, fCandM); 
-  fpIpS[offset]->fill(fCandPvIpS, fCandM); 
-
-  fp2MChi2[offset]->fill(f2MChi2, fCandM);
-  fp2MChi2Dof[offset]->fill(f2MChi2/f2MDof, fCandM); 
-  fp2MProb[offset]->fill(f2MProb, fCandM);   
-  fp2MFLS3d[offset]->fill(f2MFLS3d, fCandM); 
-  fp2MFL3d[offset]->fill(f2MFL3d, fCandM); 
-  fp2MFL3dE[offset]->fill(f2MFL3dE, fCandM); 
-  fp2MFLSxy[offset]->fill(f2MFLSxy, fCandM); 
-
-  // -- eta profiles
-  int ieta = ((fCandEta+2.4)/5.)*NADPV;
-  if (ieta < 0) ieta = 0; 
-  if (ieta > 14) ieta = 14; 
-
-  //  cout << "ieta = " << ieta << " offset = " << offset << endl;
-  if (0 == offset && fpEtaFLS3d[ieta][offset]) 
-    fpEtaFLS3d[ieta][offset]->fill(fCandFLS3d, fCandM); 
-  //  else 
-  //    cout << "missing fpEtaFLS3d: " << ieta << "  " << offset << endl;
-
-  // -- NPV analysis distributions
-  int ipv = 0; 
-  if (fPvN < 50) {
-    ipv = fPvN/2; 
-  } else {
-    ipv = NADPV-1; 
-  }
-
-  if (fpNpvPvN[ipv][offset]) {
-    if (fpNpvPvN[ipv][offset]) fpNpvPvN[ipv][offset]->fill(fPvN, fCandM);  else cout << "missing fpNpvPvN" << endl;
-    if (fpNpvChi2Dof[ipv][offset])  fpNpvChi2Dof[ipv][offset]->fill(fCandChi2/fCandDof, fCandM);  else cout << "missing fpNpvChi2Dof" << endl;
-    if (fpNpvProb[ipv][offset]) fpNpvProb[ipv][offset]->fill(fCandProb, fCandM); else cout << "missing fpNpvProb" << endl;
-    if (fpNpvAlpha[ipv][offset]) fpNpvAlpha[ipv][offset]->fill(fCandA, fCandM); else cout << "missing fpNpvAlpha" << endl;
-    if (fpNpvFLS3d[ipv][offset]) fpNpvFLS3d[ipv][offset]->fill(fCandFLS3d, fCandM); else cout << "missing fpNpvFLS3d" << endl;
-    if (fpNpvFLSxy[ipv][offset]) fpNpvFLSxy[ipv][offset]->fill(fCandFLSxy, fCandM); else cout << "missing fpNpvFLSxy" << endl;
-    if (fpNpvDocaTrk[ipv][offset]) fpNpvDocaTrk[ipv][offset]->fill(fCandDocaTrk, fCandM); else cout << "missing fpNpvDocaTrk" << endl;
-    if (fpNpvIso[ipv][offset]) fpNpvIso[ipv][offset]->fill(fCandIso, fCandM); else cout << "missing fpNpvIso" << endl;
-    if (fpNpvIsoTrk[ipv][offset]) fpNpvIsoTrk[ipv][offset]->fill(fCandIsoTrk, fCandM); else cout << "missing fpNpvIsoTrk" << endl;
-    if (fpNpvLip[ipv][offset]) fpNpvLip[ipv][offset]->fill(fCandPvLip, fCandM); else cout << "missing fpNpvLip" << endl;
-    if (fpNpvLipS[ipv][offset]) fpNpvLipS[ipv][offset]->fill(fCandPvLipS, fCandM); else cout << "missing fpNpvLipS" << endl;
-    if (fpNpvLip2[ipv][offset]) fpNpvLip2[ipv][offset]->fill(fCandPvLip2, fCandM); else cout << "missing fpNpvLip2" << endl;
-    if (fpNpvLipS2[ipv][offset]) fpNpvLipS2[ipv][offset]->fill(fCandPvLipS2, fCandM); else cout << "missing fpNpvLipS2" << endl;
-    if (fpNpvMaxDoca[ipv][offset]) fpNpvLipS2[ipv][offset]->fill(fCandDoca, fCandM); else cout << "missing fpNpvMaxDoca" << endl;
-    if (fpNpvIp[ipv][offset]) fpNpvIp[ipv][offset]->fill(fCandPvIp, fCandM); else cout << "missing fpNpvIp" << endl;
-    if (fpNpvIpS[ipv][offset]) fpNpvIpS[ipv][offset]->fill(fCandPvIpS, fCandM); else cout << "missing fpNpvIpS" << endl;
-    if (fpNpvAveW8[ipv][offset]) fpNpvAveW8[ipv][offset]->fill(fPvAveW8, fCandM); else  cout << " fpNpvAveW8 missing! " << endl;
-    if (fpNpvCloseTrk[ipv][offset]) fpNpvCloseTrk[ipv][offset]->fill(fCandCloseTrk, fCandM); else cout << "missing fpNpvCloseTrk" << endl;
+//   fpHLT[offset]->fill((fGoodHLT?1:0), fCandM); 
+//   fpMuonsID[offset]->fill((fGoodMuonsID?1:0), fCandM); 
+//   fpPvZ[offset]->fill(fPvZ, fCandM); 
+//   fpPvN[offset]->fill(fPvN, fCandM); 
+//   fpPvNtrk[offset]->fill(fPvNtrk, fCandM); 
+//   fpPvAveW8[offset]->fill(fPvAveW8, fCandM); 
+//   fpPt[offset]->fill(fCandPt, fCandM); 
+//   fpP[offset]->fill(fCandP, fCandM);
+//   fpEta[offset]->fill(fCandEta, fCandM); 
+//   fpAlpha[offset]->fill(fCandA, fCandM);
+//   fpCosA[offset]->fill(fCandCosA, fCandM);
+//   fpIsoTrk[offset]->fill(fCandIsoTrk, fCandM);
 
 
-    //   //  virtual double      isoClassicWithDOCA(TAnaCand*, double dca, double r = 1.0, double ptmin = 0.9); 
-    //   double iso = isoClassicWithDOCA(fpCand, 0.05, 0.9, 0.7); // 500um DOCA cut
+//   fpPt[offset]->fill(fCandPt, fCandM); 
+//   if (40 == fProcessType) fpPtGGF[offset]->fill(fCandPt, fCandM); 
+//   if (41 == fProcessType) fpPtFEX[offset]->fill(fCandPt, fCandM); 
+//   if (42 == fProcessType) fpPtGSP[offset]->fill(fCandPt, fCandM); 
 
-    double iso = isoClassicWithDOCA(fpCand, 0.05, 1.0, 0.9);
-    if (fpNpvIso0[ipv][offset]) fpNpvIso0[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso0" << endl;
-    iso = isoClassicWithDOCA(fpCand, 0.05, 0.5, 0.5);
-    if (fpNpvIso1[ipv][offset]) fpNpvIso1[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso1" << endl;
-    iso = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.5);
-    if (fpNpvIso2[ipv][offset]) fpNpvIso2[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso2" << endl;
-    iso = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.9);
-    if (fpNpvIso3[ipv][offset]) fpNpvIso3[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso3" << endl;
-    iso = isoClassicWithDOCA(fpCand, 0.04, 0.7, 0.5);
-    if (fpNpvIso4[ipv][offset]) fpNpvIso4[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso4" << endl;
-    iso = isoClassicWithDOCA(fpCand, 0.03, 0.7, 0.7);
-    if (fpNpvIso5[ipv][offset]) fpNpvIso5[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso5" << endl;
+//   fpIso[offset]->fill(fCandIso, fCandM);
+//   if (40 == fProcessType) fpIsoGGF[offset]->fill(fCandIso, fCandM); 
+//   if (41 == fProcessType) fpIsoFEX[offset]->fill(fCandIso, fCandM); 
+//   if (42 == fProcessType) fpIsoGSP[offset]->fill(fCandIso, fCandM); 
 
-  }
+//   fpCloseTrk[offset]->fill(fCandCloseTrk, fCandM); 
+//   if (40 == fProcessType) fpCloseTrkGGF[offset]->fill(fCandCloseTrk, fCandM); 
+//   if (41 == fProcessType) fpCloseTrkFEX[offset]->fill(fCandCloseTrk, fCandM); 
+//   if (42 == fProcessType) fpCloseTrkGSP[offset]->fill(fCandCloseTrk, fCandM); 
+
+//   fpOsIso[offset]->fill(fOsIso, fCandM); 
+//   if (40 == fProcessType) fpOsIsoGGF[offset]->fill(fOsIso, fCandM); 
+//   if (41 == fProcessType) fpOsIsoFEX[offset]->fill(fOsIso, fCandM); 
+//   if (42 == fProcessType) fpOsIsoGSP[offset]->fill(fOsIso, fCandM); 
+
+//   fpOsRelIso[offset]->fill(fOsRelIso, fCandM); 
+//   if (40 == fProcessType) fpOsRelIsoGGF[offset]->fill(fOsRelIso, fCandM); 
+//   if (41 == fProcessType) fpOsRelIsoFEX[offset]->fill(fOsRelIso, fCandM); 
+//   if (42 == fProcessType) fpOsRelIsoGSP[offset]->fill(fOsRelIso, fCandM); 
+
+//   fpOsMuonPt[offset]->fill(fOsMuonPt, fCandM);
+//   if (40 == fProcessType) fpOsMuonPtGGF[offset]->fill(fOsMuonPt, fCandM); 
+//   if (41 == fProcessType) fpOsMuonPtFEX[offset]->fill(fOsMuonPt, fCandM); 
+//   if (42 == fProcessType) fpOsMuonPtGSP[offset]->fill(fOsMuonPt, fCandM); 
+
+//   fpOsMuonPtRel[offset]->fill(fOsMuonPtRel, fCandM);
+//   if (40 == fProcessType) fpOsMuonPtRelGGF[offset]->fill(fOsMuonPtRel, fCandM); 
+//   if (41 == fProcessType) fpOsMuonPtRelFEX[offset]->fill(fOsMuonPtRel, fCandM); 
+//   if (42 == fProcessType) fpOsMuonPtRelGSP[offset]->fill(fOsMuonPtRel, fCandM); 
+
+//   fpOsMuonDeltaR[offset]->fill(fOsMuonDeltaR, fCandM); 
+//   if (40 == fProcessType) fpOsMuonDeltaRGGF[offset]->fill(fOsMuonDeltaR, fCandM); 
+//   if (41 == fProcessType) fpOsMuonDeltaRFEX[offset]->fill(fOsMuonDeltaR, fCandM); 
+//   if (42 == fProcessType) fpOsMuonDeltaRGSP[offset]->fill(fOsMuonDeltaR, fCandM); 
+
+//   fpDocaTrk[offset]->fill(fCandDocaTrk, fCandM); 
+//   if (40 == fProcessType) fpDocaTrkGGF[offset]->fill(fCandDocaTrk, fCandM); 
+//   if (41 == fProcessType) fpDocaTrkFEX[offset]->fill(fCandDocaTrk, fCandM); 
+//   if (42 == fProcessType) fpDocaTrkGSP[offset]->fill(fCandDocaTrk, fCandM); 
+
+
+//   fpChi2[offset]->fill(fCandChi2, fCandM);
+//   fpChi2Dof[offset]->fill(fCandChi2/fCandDof, fCandM); 
+//   fpProb[offset]->fill(fCandProb, fCandM);   
+//   fpFLS3d[offset]->fill(fCandFLS3d, fCandM); 
+//   fpFL3d[offset]->fill(fCandFL3d, fCandM); 
+//   fpFL3dE[offset]->fill(fCandFL3dE, fCandM); 
+//   fpFLSxy[offset]->fill(fCandFLSxy, fCandM); 
+//   fpBDT[offset]->fill(fBDT, fCandM);    
+
+//   fpLip[offset]->fill(fCandPvLip, fCandM); 
+//   fpLipE[offset]->fill(fCandPvLipE, fCandM); 
+//   fpLipS[offset]->fill(fCandPvLipS, fCandM); 
+
+//   fpTip[offset]->fill(fCandPvTip, fCandM); 
+//   fpTipE[offset]->fill(fCandPvTipE, fCandM); 
+//   fpTipS[offset]->fill(fCandPvTipS, fCandM); 
+
+//   fpLip12[offset]->fill(fCandPvLip12, fCandM); 
+//   fpLipE12[offset]->fill(fCandPvLipE12, fCandM); 
+//   fpLipS12[offset]->fill(fCandPvLipS12, fCandM); 
+
+//   fpLip2[offset]->fill(fCandPvLip2, fCandM); 
+//   fpLipS2[offset]->fill(fCandPvLipS2, fCandM); 
+
+//   fpMaxDoca[offset]->fill(fCandDoca, fCandM); 
+//   fpIp[offset]->fill(fCandPvIp, fCandM); 
+//   fpIpS[offset]->fill(fCandPvIpS, fCandM); 
+
+//   fp2MChi2[offset]->fill(f2MChi2, fCandM);
+//   fp2MChi2Dof[offset]->fill(f2MChi2/f2MDof, fCandM); 
+//   fp2MProb[offset]->fill(f2MProb, fCandM);   
+//   fp2MFLS3d[offset]->fill(f2MFLS3d, fCandM); 
+//   fp2MFL3d[offset]->fill(f2MFL3d, fCandM); 
+//   fp2MFL3dE[offset]->fill(f2MFL3dE, fCandM); 
+//   fp2MFLSxy[offset]->fill(f2MFLSxy, fCandM); 
+
+//   // -- eta profiles
+//   int ieta = ((fCandEta+2.4)/5.)*NADPV;
+//   if (ieta < 0) ieta = 0; 
+//   if (ieta > 14) ieta = 14; 
+
+//   //  cout << "ieta = " << ieta << " offset = " << offset << endl;
+//   if (0 == offset && fpEtaFLS3d[ieta][offset]) 
+//     fpEtaFLS3d[ieta][offset]->fill(fCandFLS3d, fCandM); 
+//   //  else 
+//   //    cout << "missing fpEtaFLS3d: " << ieta << "  " << offset << endl;
+
+//   // -- NPV analysis distributions
+//   int ipv = 0; 
+//   if (fPvN < 50) {
+//     ipv = fPvN/2; 
+//   } else {
+//     ipv = NADPV-1; 
+//   }
+
+
+//   if (fpNpvPvN[ipv][offset]) {
+//     if (fpNpvPvN[ipv][offset]) fpNpvPvN[ipv][offset]->fill(fPvN, fCandM);  else cout << "missing fpNpvPvN" << endl;
+//     if (fpNpvChi2Dof[ipv][offset])  fpNpvChi2Dof[ipv][offset]->fill(fCandChi2/fCandDof, fCandM);  else cout << "missing fpNpvChi2Dof" << endl;
+//     if (fpNpvProb[ipv][offset]) fpNpvProb[ipv][offset]->fill(fCandProb, fCandM); else cout << "missing fpNpvProb" << endl;
+//     if (fpNpvAlpha[ipv][offset]) fpNpvAlpha[ipv][offset]->fill(fCandA, fCandM); else cout << "missing fpNpvAlpha" << endl;
+//     if (fpNpvFLS3d[ipv][offset]) fpNpvFLS3d[ipv][offset]->fill(fCandFLS3d, fCandM); else cout << "missing fpNpvFLS3d" << endl;
+//     if (fpNpvFLSxy[ipv][offset]) fpNpvFLSxy[ipv][offset]->fill(fCandFLSxy, fCandM); else cout << "missing fpNpvFLSxy" << endl;
+//     if (fpNpvDocaTrk[ipv][offset]) fpNpvDocaTrk[ipv][offset]->fill(fCandDocaTrk, fCandM); else cout << "missing fpNpvDocaTrk" << endl;
+//     if (fpNpvIso[ipv][offset]) fpNpvIso[ipv][offset]->fill(fCandIso, fCandM); else cout << "missing fpNpvIso" << endl;
+//     if (fpNpvIsoTrk[ipv][offset]) fpNpvIsoTrk[ipv][offset]->fill(fCandIsoTrk, fCandM); else cout << "missing fpNpvIsoTrk" << endl;
+//     if (fpNpvLip[ipv][offset]) fpNpvLip[ipv][offset]->fill(fCandPvLip, fCandM); else cout << "missing fpNpvLip" << endl;
+//     if (fpNpvLipS[ipv][offset]) fpNpvLipS[ipv][offset]->fill(fCandPvLipS, fCandM); else cout << "missing fpNpvLipS" << endl;
+//     if (fpNpvLip2[ipv][offset]) fpNpvLip2[ipv][offset]->fill(fCandPvLip2, fCandM); else cout << "missing fpNpvLip2" << endl;
+//     if (fpNpvLipS2[ipv][offset]) fpNpvLipS2[ipv][offset]->fill(fCandPvLipS2, fCandM); else cout << "missing fpNpvLipS2" << endl;
+//     if (fpNpvMaxDoca[ipv][offset]) fpNpvLipS2[ipv][offset]->fill(fCandDoca, fCandM); else cout << "missing fpNpvMaxDoca" << endl;
+//     if (fpNpvIp[ipv][offset]) fpNpvIp[ipv][offset]->fill(fCandPvIp, fCandM); else cout << "missing fpNpvIp" << endl;
+//     if (fpNpvIpS[ipv][offset]) fpNpvIpS[ipv][offset]->fill(fCandPvIpS, fCandM); else cout << "missing fpNpvIpS" << endl;
+//     if (fpNpvAveW8[ipv][offset]) fpNpvAveW8[ipv][offset]->fill(fPvAveW8, fCandM); else  cout << " fpNpvAveW8 missing! " << endl;
+//     if (fpNpvCloseTrk[ipv][offset]) fpNpvCloseTrk[ipv][offset]->fill(fCandCloseTrk, fCandM); else cout << "missing fpNpvCloseTrk" << endl;
+
+
+
+//     //   //  virtual double      isoClassicWithDOCA(TAnaCand*, double dca, double r = 1.0, double ptmin = 0.9); 
+//     //   double iso = isoClassicWithDOCA(fpCand, 0.05, 0.9, 0.7); // 500um DOCA cut
+
+//     double iso = isoClassicWithDOCA(fpCand, 0.05, 1.0, 0.9);
+//     if (fpNpvIso0[ipv][offset]) fpNpvIso0[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso0" << endl;
+//     iso = isoClassicWithDOCA(fpCand, 0.05, 0.5, 0.5);
+//     if (fpNpvIso1[ipv][offset]) fpNpvIso1[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso1" << endl;
+//     iso = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.5);
+//     if (fpNpvIso2[ipv][offset]) fpNpvIso2[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso2" << endl;
+//     iso = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.9);
+//     if (fpNpvIso3[ipv][offset]) fpNpvIso3[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso3" << endl;
+//     iso = isoClassicWithDOCA(fpCand, 0.04, 0.7, 0.5);
+//     if (fpNpvIso4[ipv][offset]) fpNpvIso4[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso4" << endl;
+//     iso = isoClassicWithDOCA(fpCand, 0.03, 0.7, 0.7);
+//     if (fpNpvIso5[ipv][offset]) fpNpvIso5[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso5" << endl;
+
+//  }
 } 
 
 // ----------------------------------------------------------------------
@@ -1072,9 +1085,9 @@ void candAna::bookHist() {
   //h11 = new TH1D("run5", "runs jpsik", numRuns, firstRun, lastRun); 
   //h11 = new TH1D("run6", "runs jpsiphi", numRuns, firstRun, lastRun); 
   //h11 = new TH1D("run7", "runs mumu", numRuns, firstRun, lastRun); 
-  h11 = new TH1D("test1", "test1",100, 0., 50.); 
+  h11 = new TH1D("test1", "test1",50, 0., 50.); 
   h11 = new TH1D("test2", "test2",100, 0., 0.2); 
-  //h11 = new TH1D("test3", "test3",100, 0., 0.2); 
+  h11 = new TH1D("test3", "test3",50, 0., 50.); 
   //h11 = new TH1D("test4", "test4",100, 0., 0.2); 
   h11 = new TH1D("test5", "test5",100, 0., 0.2); 
   h11 = new TH1D("test6", "test6",100, 0., 0.2); 
@@ -1240,15 +1253,15 @@ void candAna::bookHist() {
 //  for (map<string, int>::iterator imap = fRegion.begin(); imap != fRegion.end(); ++imap) {  
 //    i    = imap->second; 
 //    name = imap->first + "_";
-//
+
 //    //    cout << "  booking analysis distributions for " << name << " at offset i = " << i << endl;
-//
+
 //    fpHLT[i]       = bookDistribution(Form("%shlt", name.c_str()), "hlt", "fGoodHLT", 10, 0., 10.);           
 //    fpPvZ[i]       = bookDistribution(Form("%spvz", name.c_str()), "z_{PV} [cm]", "fGoodHLT", 40, -20., 20.);           
 //    fpPvN[i]       = bookDistribution(Form("%spvn", name.c_str()), "N(PV) ", "fGoodHLT", 50, 0., 50.);           
 //    fpPvNtrk[i]    = bookDistribution(Form("%spvntrk", name.c_str()), "N_{trk}^{PV} ", "fGoodHLT", 20, 0., 200.);           
 //    fpPvAveW8[i]   = bookDistribution(Form("%spvavew8", name.c_str()), "<w^{PV}>", "fGoodPvAveW8", 25, 0.5, 1.);           
-//
+
 //    fpTracksPt[i]  = bookDistribution(Form("%strackspt", name.c_str()), "p_{T} [GeV]", "fGoodTracksPt", 25, 0., 25.);
 //    fpTracksEta[i] = bookDistribution(Form("%strackseta", name.c_str()), "#eta_{T}", "fGoodTracksEta", 25, -2.5, 2.5);
 //    fpTracksQual[i]= bookDistribution(Form("%stracksqual", name.c_str()), "track quality", "fGoodTracks", 10, 0., 10.); 
@@ -1267,50 +1280,50 @@ void candAna::bookHist() {
 //    fpIso[i]       = bookDistribution(Form("%siso", name.c_str()),  "isolation", "fGoodIso", 52, 0., 1.04); 
 //    fpIsoTrk[i]    = bookDistribution(Form("%sisotrk", name.c_str()),  "N_{trk}^{I}", "fGoodIso", 20, 0., 20.); 
 //    fpCloseTrk[i]  = bookDistribution(Form("%sclosetrk", name.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 10, 0., 10.); 
-//    
+   
 //    fpOsIso[i]        = bookDistribution(Form("%sosiso", name.c_str()),  "F_{OS} [GeV]", "fGoodIso", 100, 0., 100.);              
 //    fpOsRelIso[i]     = bookDistribution(Form("%sosreliso", name.c_str()),  "I_{OS}^{rel}", "fGoodIso", 60, 0., 6.);              
 //    fpOsMuonPt[i]     = bookDistribution(Form("%sosmuonpt", name.c_str()),  "p_{T,#mu}^{OS} [GeV]", "fGoodMuonsPt", 40, 0., 20.);              
 //    fpOsMuonPtRel[i]  = bookDistribution(Form("%sosmuonptrel", name.c_str()),  "p_{T,#mu}^{OS, rel} [GeV]", "fGoodMuonsPt", 40, 0., 20.); 
 //    fpOsMuonDeltaR[i] = bookDistribution(Form("%sosmuondr", name.c_str()),  "#Delta R(C, #mu^{OS})", "fGoodMuonsPt", 60, 0., 6.);              
-//
+
 //    // -- mode dependent plots
 //    fpPtGGF[i]        = bookDistribution(Form("%sptggf", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 30, 0., 60.); 
 //    fpPtGSP[i]        = bookDistribution(Form("%sptgsp", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 30, 0., 60.); 
 //    fpPtFEX[i]        = bookDistribution(Form("%sptfex", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 30, 0., 60.); 
-//
+
 //    fpIsoGGF[i]       = bookDistribution(Form("%sisoggf", name.c_str()),  "isolation", "fGoodIso", 52, 0., 1.04); 
 //    fpIsoGSP[i]       = bookDistribution(Form("%sisogsp", name.c_str()),  "isolation", "fGoodIso", 52, 0., 1.04); 
 //    fpIsoFEX[i]       = bookDistribution(Form("%sisofex", name.c_str()),  "isolation", "fGoodIso", 52, 0., 1.04); 
-//
+
 //    fpCloseTrkGGF[i]  = bookDistribution(Form("%sclosetrkggf", name.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 10, 0., 10.); 
 //    fpCloseTrkGSP[i]  = bookDistribution(Form("%sclosetrkgsp", name.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 10, 0., 10.); 
 //    fpCloseTrkFEX[i]  = bookDistribution(Form("%sclosetrkfex", name.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 10, 0., 10.); 
-//
+
 //    fpDocaTrkGGF[i]   = bookDistribution(Form("%sdocatrkggf", name.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 40, 0., 0.20);   
 //    fpDocaTrkGSP[i]   = bookDistribution(Form("%sdocatrkgsp", name.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 40, 0., 0.20);   
 //    fpDocaTrkFEX[i]   = bookDistribution(Form("%sdocatrkfex", name.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 40, 0., 0.20);   
-//
+
 //    fpOsIsoGGF[i]     = bookDistribution(Form("%sosisoggf", name.c_str()),  "F_{OS} [GeV]", "fGoodIso", 100, 0., 100.);              
 //    fpOsIsoGSP[i]     = bookDistribution(Form("%sosisogsp", name.c_str()),  "F_{OS} [GeV]", "fGoodIso", 100, 0., 100.);              
 //    fpOsIsoFEX[i]     = bookDistribution(Form("%sosisofex", name.c_str()),  "F_{OS} [GeV]", "fGoodIso", 100, 0., 100.);              
-//    
+   
 //    fpOsRelIsoGGF[i]  = bookDistribution(Form("%sosrelisoggf", name.c_str()),  "I_{OS}^{rel}", "fGoodIso", 60, 0., 6.);              
 //    fpOsRelIsoGSP[i]  = bookDistribution(Form("%sosrelisogsp", name.c_str()),  "I_{OS}^{rel}", "fGoodIso", 60, 0., 6.);              
 //    fpOsRelIsoFEX[i]  = bookDistribution(Form("%sosrelisofex", name.c_str()),  "I_{OS}^{rel}", "fGoodIso", 60, 0., 6.);              
-//
+
 //    fpOsMuonPtGGF[i]  = bookDistribution(Form("%sosmuonptggf", name.c_str()),  "p_{T,#mu}^{OS} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
 //    fpOsMuonPtGSP[i]  = bookDistribution(Form("%sosmuonptgsp", name.c_str()),  "p_{T,#mu}^{OS} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
 //    fpOsMuonPtFEX[i]  = bookDistribution(Form("%sosmuonptfex", name.c_str()),  "p_{T,#mu}^{OS} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
-//
+
 //    fpOsMuonPtRelGGF[i]  = bookDistribution(Form("%sosmuonptrelggf", name.c_str()),  "p_{T,#mu}^{OS, rel} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
 //    fpOsMuonPtRelGSP[i]  = bookDistribution(Form("%sosmuonptrelgsp", name.c_str()),  "p_{T,#mu}^{OS, rel} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
 //    fpOsMuonPtRelFEX[i]  = bookDistribution(Form("%sosmuonptrelfex", name.c_str()),  "p_{T,#mu}^{OS, rel} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
-//
+
 //    fpOsMuonDeltaRGGF[i] = bookDistribution(Form("%sosmuondrggf", name.c_str()),  "#Delta R(C, #mu^{OS})", "fGoodMuonsPt", 60, 0., 6.);
 //    fpOsMuonDeltaRGSP[i] = bookDistribution(Form("%sosmuondrgsp", name.c_str()),  "#Delta R(C, #mu^{OS})", "fGoodMuonsPt", 60, 0., 6.);
 //    fpOsMuonDeltaRFEX[i] = bookDistribution(Form("%sosmuondrfex", name.c_str()),  "#Delta R(C, #mu^{OS})", "fGoodMuonsPt", 60, 0., 6.);
-//
+
 //    fpChi2[i]      = bookDistribution(Form("%schi2", name.c_str()),  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
 //    fpChi2Dof[i]   = bookDistribution(Form("%schi2dof", name.c_str()),  "#chi^{2}/dof", "fGoodChi2", 40, 0., 4.);
 //    fpProb[i]      = bookDistribution(Form("%spchi2dof", name.c_str()),  "P(#chi^{2},dof)", "fGoodChi2", 26, 0., 1.04);    
@@ -1320,26 +1333,26 @@ void candAna::bookHist() {
 //    fpFLSxy[i]     = bookDistribution(Form("%sflsxy", name.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 30, 0., 120.);  
 //    fpDocaTrk[i]   = bookDistribution(Form("%sdocatrk", name.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 40, 0., 0.20);   
 //    fpBDT[i]       = bookDistribution(Form("%sbdt", name.c_str()), "BDT", "fGoodHLT", 40, -1.0, 1.0);   
-//
+
 //    fpLip[i]       = bookDistribution(Form("%slip", name.c_str()), "l_{z} [cm]", "fGoodPvLip", 32, -0.02, 0.02);   
 //    fpLipE[i]      = bookDistribution(Form("%slipe", name.c_str()), "#sigma(l_{z}) [cm]", "fGoodPvLip", 50, 0., 0.05);   
 //    fpLipS[i]      = bookDistribution(Form("%slips", name.c_str()), "l_{z}/#sigma(l_{z})", "fGoodPvLipS", 40, -5., 5.);   
-//
+
 //    fpTip[i]       = bookDistribution(Form("%stip", name.c_str()), "l_{T} [cm]", "fGoodPvLip", 50, 0., 0.5);   
 //    fpTipE[i]      = bookDistribution(Form("%stipe", name.c_str()), "#sigma(l_{T}) [cm]", "fGoodPvLip", 50, 0., 0.05);   
 //    fpTipS[i]      = bookDistribution(Form("%stips", name.c_str()), "l_{T}/#sigma(l_{T})", "fGoodPvLipS", 25, 0., 20.);   
-//
+
 //    fpLip12[i]     = bookDistribution(Form("%slip12", name.c_str()), "ratio l_{z} ", "fGoodPvLip", 50, -0.5, 0.5);   
 //    fpLipE12[i]    = bookDistribution(Form("%slipe12", name.c_str()), "ratio #sigma(l_{z})", "fGoodPvLip", 50, 0., 2.);   
 //    fpLipS12[i]    = bookDistribution(Form("%slips12", name.c_str()), "ratio l_{z}/#sigma(l_{z})", "fGoodPvLipS", 50, -1., 1.);   
-//
+
 //    fpLip2[i]      = bookDistribution(Form("%slip2", name.c_str()), "l_{z}^{2nd} [cm]", "fGoodPvLip2", 100, -1.0, 1.0);   
 //    fpLipS2[i]     = bookDistribution(Form("%slips2", name.c_str()), "l_{z}^{2nd}/#sigma(l_{z}^{2nd})", "fGoodPvLipS2", 100, -25., 25.);   
-//
+
 //    fpMaxDoca[i]   = bookDistribution(Form("%smaxdoca", name.c_str()), "d^{max}", "fGoodMaxDoca", 60, 0., 0.03);   
 //    fpIp[i]        = bookDistribution(Form("%sip", name.c_str()), "#delta_{3D}", "fGoodIp", 50, 0., 0.05);   
 //    fpIpS[i]       = bookDistribution(Form("%sips", name.c_str()), "#delta_{3D}/#sigma(#delta_{3D})", "fGoodIpS", 50, 0., 5);   
-//
+
 //    fp2MChi2[i]    = bookDistribution(Form("%s2mchi2", name.c_str()),  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
 //    fp2MChi2Dof[i] = bookDistribution(Form("%s2mchi2dof", name.c_str()),  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
 //    fp2MProb[i]    = bookDistribution(Form("%s2mpchi2dof", name.c_str()),  "P(#chi^{2},dof)", "fGoodChi2", 26, 0., 1.04);    
@@ -1347,58 +1360,58 @@ void candAna::bookHist() {
 //    fp2MFL3d[i]    = bookDistribution(Form("%s2mfl3d", name.c_str()),  "l_{3D} [cm]", "fGoodFLS", 25, 0., 5.);  
 //    fp2MFL3dE[i]   = bookDistribution(Form("%s2mfl3de", name.c_str()), "#sigma(l_{3D}) [cm]", "fGoodFLS", 25, 0., 0.5);  
 //    fp2MFLSxy[i]   = bookDistribution(Form("%s2mflsxy", name.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 30, 0., 120.);  
-//
+
 //    if (name == "A_") {
 //      //      cout << "  booking NPV distributions for " << name << endl;
-//
+
 //      // -- eta 'profiles'
 //      for (int ipv = 0; ipv < NADPV; ++ipv) {
-//	pD = fHistDir->mkdir(Form("%sEta%i", name.c_str(), ipv));
-//	pD->cd();
-//	dname = Form("%seta%i_", name.c_str(), ipv);
-//	//	cout << "ipv = " << ipv << " i = " << i << endl;
-//	fpEtaFLS3d[ipv][i] =  bookDistribution(Form("%sfls3d", dname.c_str()), "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
+// 	pD = fHistDir->mkdir(Form("%sEta%i", name.c_str(), ipv));
+// 	pD->cd();
+// 	dname = Form("%seta%i_", name.c_str(), ipv);
+// 	//	cout << "ipv = " << ipv << " i = " << i << endl;
+// 	fpEtaFLS3d[ipv][i] =  bookDistribution(Form("%sfls3d", dname.c_str()), "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
 //      }
-//
+
 //      // -- NPV analysis distributions
 //      for (int ipv = 0; ipv < NADPV; ++ipv) {
-//	pD = fHistDir->mkdir(Form("%sNpv%i", name.c_str(), ipv));
-//	pD->cd();
-//	dname = Form("%snpv%i_", name.c_str(), ipv);
-//	fpNpvPvN[ipv][i]     = bookDistribution(Form("%spvn", dname.c_str()), "N(PV) ", "fGoodHLT", 60, 0., 60.);           
-//        fpNpvAveW8[ipv][i]   = bookDistribution(Form("%spvavew8", dname.c_str()),  "<w^{PV}>", "fGoodPvAveW8", 25, 0.5, 1.0); 
-//	fpNpvChi2Dof[ipv][i] = bookDistribution(Form("%schi2dof", dname.c_str()), "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
-//	fpNpvProb[ipv][i]    = bookDistribution(Form("%spchi2dof", dname.c_str()), "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
-//	fpNpvAlpha[ipv][i]   = bookDistribution(Form("%salpha", dname.c_str()),  "#alpha_{3D}", "fGoodAlpha", 30, 0., 0.15); 
-//	fpNpvFLS3d[ipv][i]   = bookDistribution(Form("%sfls3d", dname.c_str()), "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
-//	fpNpvFLSxy[ipv][i]   = bookDistribution(Form("%sflsxy", dname.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
-//	//	fpNpvDocaTrk[ipv][i] = bookDistribution(Form("%sdocatrk", dname.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 35, 0., 0.14);   
-//	fpNpvDocaTrk[ipv][i] = bookDistribution(Form("%sdocatrk", dname.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 100, 0., 0.20);   
-//	fpNpvIso[ipv][i]     = bookDistribution(Form("%siso", dname.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
-//	fpNpvIsoTrk[ipv][i]  = bookDistribution(Form("%sisotrk", dname.c_str()),  "N_{trk}^{I}", "fGoodIso", 20, 0., 20.); 
-//	fpNpvCloseTrk[ipv][i]= bookDistribution(Form("%sclosetrk", dname.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 20, 0., 20.); 
-//	fpNpvLip[ipv][i]     = bookDistribution(Form("%slip", dname.c_str()),  "l_{z}", "fGoodPvLip", 25, -0.05, 0.05); 
-//	fpNpvLipS[ipv][i]    = bookDistribution(Form("%slips", dname.c_str()),  "l_{z}/#sigma(l_{z})", "fGoodPvLipS", 25, -10., 10.); 
-//
-//	fpNpvLip2[ipv][i]    = bookDistribution(Form("%slip2", dname.c_str()),  "l_{z,2}", "fGoodPvLip2", 100, -1.0, 1.0); 
-//	fpNpvLipS2[ipv][i]   = bookDistribution(Form("%slips2", dname.c_str()),  "l_{z,2}/#sigma(l_{z,2})", "fGoodPvLipS2", 100, -25., 25.); 
-//
-//	fpNpvMaxDoca[ipv][i] = bookDistribution(Form("%smaxdoca", dname.c_str()), "d^{max}", "fGoodMaxDoca", 60, 0., 0.03);   
-//	fpNpvIp[ipv][i]      = bookDistribution(Form("%sip", dname.c_str()), "#delta_{3D}", "fGoodIp", 50, 0., 0.1);   
-//	fpNpvIpS[ipv][i]     = bookDistribution(Form("%sips", dname.c_str()), "#delta_{3D}/#sigma(#delta_{3D})", "fGoodIpS", 50, 0., 10);   
-//
-//	fpNpvIso0[ipv][i]     = bookDistribution(Form("%siso0", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
-//	fpNpvIso1[ipv][i]     = bookDistribution(Form("%siso1", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
-//	fpNpvIso2[ipv][i]     = bookDistribution(Form("%siso2", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
-//	fpNpvIso3[ipv][i]     = bookDistribution(Form("%siso3", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
-//	fpNpvIso4[ipv][i]     = bookDistribution(Form("%siso4", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
-//	fpNpvIso5[ipv][i]     = bookDistribution(Form("%siso5", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
-//
-//	fHistDir->cd();	
+// 	pD = fHistDir->mkdir(Form("%sNpv%i", name.c_str(), ipv));
+// 	pD->cd();
+// 	dname = Form("%snpv%i_", name.c_str(), ipv);
+// 	fpNpvPvN[ipv][i]     = bookDistribution(Form("%spvn", dname.c_str()), "N(PV) ", "fGoodHLT", 60, 0., 60.);           
+// 	fpNpvAveW8[ipv][i]   = bookDistribution(Form("%spvavew8", dname.c_str()),  "<w^{PV}>", "fGoodPvAveW8", 25, 0.5, 1.0); 
+// 	fpNpvChi2Dof[ipv][i] = bookDistribution(Form("%schi2dof", dname.c_str()), "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
+// 	fpNpvProb[ipv][i]    = bookDistribution(Form("%spchi2dof", dname.c_str()), "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
+// 	fpNpvAlpha[ipv][i]   = bookDistribution(Form("%salpha", dname.c_str()),  "#alpha_{3D}", "fGoodAlpha", 30, 0., 0.15); 
+// 	fpNpvFLS3d[ipv][i]   = bookDistribution(Form("%sfls3d", dname.c_str()), "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
+// 	fpNpvFLSxy[ipv][i]   = bookDistribution(Form("%sflsxy", dname.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
+// 	//	fpNpvDocaTrk[ipv][i] = bookDistribution(Form("%sdocatrk", dname.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 35, 0., 0.14);   
+// 	fpNpvDocaTrk[ipv][i] = bookDistribution(Form("%sdocatrk", dname.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 100, 0., 0.20);   
+// 	fpNpvIso[ipv][i]     = bookDistribution(Form("%siso", dname.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
+// 	fpNpvIsoTrk[ipv][i]  = bookDistribution(Form("%sisotrk", dname.c_str()),  "N_{trk}^{I}", "fGoodIso", 20, 0., 20.); 
+// 	fpNpvCloseTrk[ipv][i]= bookDistribution(Form("%sclosetrk", dname.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 20, 0., 20.); 
+// 	fpNpvLip[ipv][i]     = bookDistribution(Form("%slip", dname.c_str()),  "l_{z}", "fGoodPvLip", 25, -0.05, 0.05); 
+// 	fpNpvLipS[ipv][i]    = bookDistribution(Form("%slips", dname.c_str()),  "l_{z}/#sigma(l_{z})", "fGoodPvLipS", 25, -10., 10.); 
+
+// 	fpNpvLip2[ipv][i]    = bookDistribution(Form("%slip2", dname.c_str()),  "l_{z,2}", "fGoodPvLip2", 100, -1.0, 1.0); 
+// 	fpNpvLipS2[ipv][i]   = bookDistribution(Form("%slips2", dname.c_str()),  "l_{z,2}/#sigma(l_{z,2})", "fGoodPvLipS2", 100, -25., 25.); 
+
+// 	fpNpvMaxDoca[ipv][i] = bookDistribution(Form("%smaxdoca", dname.c_str()), "d^{max}", "fGoodMaxDoca", 60, 0., 0.03);   
+// 	fpNpvIp[ipv][i]      = bookDistribution(Form("%sip", dname.c_str()), "#delta_{3D}", "fGoodIp", 50, 0., 0.1);   
+// 	fpNpvIpS[ipv][i]     = bookDistribution(Form("%sips", dname.c_str()), "#delta_{3D}/#sigma(#delta_{3D})", "fGoodIpS", 50, 0., 10);   
+
+// 	fpNpvIso0[ipv][i]     = bookDistribution(Form("%siso0", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
+// 	fpNpvIso1[ipv][i]     = bookDistribution(Form("%siso1", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
+// 	fpNpvIso2[ipv][i]     = bookDistribution(Form("%siso2", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
+// 	fpNpvIso3[ipv][i]     = bookDistribution(Form("%siso3", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
+// 	fpNpvIso4[ipv][i]     = bookDistribution(Form("%siso4", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
+// 	fpNpvIso5[ipv][i]     = bookDistribution(Form("%siso5", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
+
+// 	fHistDir->cd();	
 //      }
 //    } else {
 //      for (int ipv = 0; ipv < NADPV; ++ipv) {
-//	fpNpvPvN[ipv][i]     = 0; 
+// 	fpNpvPvN[ipv][i]     = 0; 
 //      }
 //    }
 //  }
