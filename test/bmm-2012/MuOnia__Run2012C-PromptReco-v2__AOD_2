@@ -1,3 +1,7 @@
+Using DBS instance at: http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet
+-------------------------------------------------------
+file    file.numevents  
+
 /store/data/Run2012C/MuOnia/AOD/PromptReco-v2/000/200/379/6C46FD77-CCE1-E111-ADCA-003048D3C980.root   0
 /store/data/Run2012C/MuOnia/AOD/PromptReco-v2/000/200/375/BE0CB960-C4E1-E111-8E67-001D09F2932B.root   0
 /store/data/Run2012C/MuOnia/AOD/PromptReco-v2/000/200/360/44047A0B-6DE1-E111-AFA5-003048D2BB58.root   0
