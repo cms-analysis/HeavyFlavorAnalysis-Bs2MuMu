@@ -400,11 +400,13 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
   if (!strcmp(tree->GetName(), "SgData_bdt")) {
     TTree* reduced_tree = tree->CopyTree(cuts.c_str());
     Double_t m1eta_t, m2eta_t, m_t, eta_B_t, bdt_t;
+    Int_t evt_t;
     reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
     reduced_tree->SetBranchAddress("m2eta", &m2eta_t);
     reduced_tree->SetBranchAddress("m", &m_t);
     reduced_tree->SetBranchAddress("eta", &eta_B_t);
     reduced_tree->SetBranchAddress("bdt", &bdt_t);
+    reduced_tree->SetBranchAddress("evt", &evt_t);
     TF1* mass_res_f =  (TF1*)ws_file_input->Get(Form("MassRes_%d_f", offset));
     for (int i = 0; i < reduced_tree->GetEntries(); i++) {
       reduced_tree->GetEntry(i);
@@ -429,6 +431,7 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
         else bdt_cat->setIndex(2);
         RooArgSet varlist_tmp(*Mass, *MassRes, *eta, *m1eta, *m2eta, *bdt, *channels_cat, *bdt_cat);
         dataset->add(varlist_tmp);
+//        if (bdt_t > 0.20) cout << "evt = " << evt_t << ";  MassRes = " << mass_res_f->Eval(eta_B_t) << endl;
       }
     }
   }
@@ -530,37 +533,12 @@ void pdf_fitData::changeName(RooWorkspace *ws, int str) {
   return;
 }
 
-void pdf_fitData::make_pdf_input() {
-  cout << "making inputs of pdf" << endl;
-  string root_s = "output/ws_pdf_" + meth_ + "_";
-  ostringstream inputs_oss; inputs_oss << channels;
-  if (simul_) root_s = "output/ws_simul" + inputs_oss.str() + "_" + meth_;
-  if (simul_bdt_) root_s += "_simulBdt";
-  string tail_s("");
-  if (BF_>0) tail_s = Form("_BF%d", BF_);
-  if (SM_) tail_s = "_SM";
-  else if (bd_constr_) tail_s = "_BdConst";
-  if (bdt_fit_) tail_s += "_2D";
-  if (pee) tail_s += "_PEE";
-  tail_s += ".root";
-  if (simul_) {
-    root_s += tail_s;
-    ws_file_input = new TFile(root_s.c_str());
-    if (!ws_file_input) {cout << root_s.c_str() << " does not exist" << endl; exit(EXIT_FAILURE);}
-    ws_input = (RooWorkspace*)ws_file_input->Get("ws");
-    if (!ws_input) {cout << "ws does not exist" << endl; exit(EXIT_FAILURE);}
-    cout << "ws file: " << root_s << endl;
-  }
-  else {
-    ostringstream input_oss;
-    input_oss << root_s << ch_s_ << tail_s;
-    ws_file_input = new TFile(input_oss.str().c_str());
-    if (!ws_file_input) {cout << input_oss.str().c_str() << " does not exist" << endl; exit(EXIT_FAILURE);}
-    ws_input = (RooWorkspace*)ws_file_input->Get("ws");
-    if (!ws_input) {cout << "ws does not exist" << endl; exit(EXIT_FAILURE);}
-    cout << "ws file: " << input_oss.str() << endl;
-  }
-
+void pdf_fitData::make_pdf_input(string root_s) {
+  ws_file_input = new TFile(root_s.c_str());
+  if (!ws_file_input) {cout << root_s.c_str() << " does not exist" << endl; exit(EXIT_FAILURE);}
+  ws_input = (RooWorkspace*)ws_file_input->Get("ws");
+  if (!ws_input) {cout << "ws does not exist" << endl; exit(EXIT_FAILURE);}
+  cout << "ws file: " << root_s << endl;
 }
 
 void pdf_fitData::make_pdf() {
@@ -1415,14 +1393,16 @@ void pdf_fitData::profile_NLL() {
 
   string var_alt("BF_bs");
   if (Bd) var_alt = "BF_bd";
-  RooAbsReal* pll_frac = nll->createProfile(*ws_->var(var_alt.c_str())) ;
-
-  // Plot the profile likelihood in frac
+  RooAbsReal* pll = nll->createProfile(*ws_->var(var_alt.c_str())) ;
+  RooFormulaVar* double_pll = new RooFormulaVar("double_pll", "double_pll", "2*@0", RooArgList(*pll));
+  // Plot the profile likelihood
   RooPlot* frame = ws_->var(var_alt.c_str())->frame(Bins(20), Range(0, Bd ? 1.4e-9 : 4e-9), Title(Form("profileLL in %s", var_alt.c_str()))) ;
 //  nll->plotOn(frame, ShiftToZero()) ;
-  pll_frac->plotOn(frame, LineColor(kRed)) ;
+  double_pll->plotOn(frame, LineColor(kRed)) ;
 //  frame->SetMinimum(0) ;
   TCanvas *c = new TCanvas("c","c",600, 600);
+  frame->GetYaxis()->SetTitleOffset(1.4);
+  frame->SetYTitle("- 2 ln L");
   frame->Draw();
   c->Print((get_address("profileLL", var_alt, false) + ".gif").c_str());
   c->Print((get_address("profileLL", var_alt, false) + ".pdf").c_str());

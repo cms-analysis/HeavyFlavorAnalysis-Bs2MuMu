@@ -26,13 +26,13 @@ int main(int argc, char** argv) {
   if (!estimate) help();
   if (!simul) {
     if (!input || !pdf) help();
-    parse_input(input_name);
+    parse_input(input_ws);
   }
   if (!(!bias_s.compare("no") || !bias_s.compare("c+") || !bias_s.compare("c-") || !bias_s.compare("tau+") || !bias_s.compare("tau-") || !bias_s.compare("sig+") || !bias_s.compare("sig-"))) { cout << "I don't understand what to bias: please enter -bias c+, c-, tau+, tau-, sig+, sig-" << endl; exit(EXIT_FAILURE);}
   if (!pdf_test_b) pdf_test = pdf_toy;
   pdf_toyMC toy1(print, inputs, inputs_bdt, input_estimates, meth, "all", BF, SM, bd_const, simul, simul_bdt, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, NExp, Bd, bias_s);
   toy1.initialize();
-  TFile* input_f = new TFile(input_name.c_str());
+  TFile* input_f = new TFile(input_ws.c_str());
   RooWorkspace* ws = (RooWorkspace*)input_f->Get("ws");
   toy1.set_ws(ws);
   if (hack_semi2011) toy1.hack_ws("output/frozen/ws_simul4_bdt_BF2_PEE.root");

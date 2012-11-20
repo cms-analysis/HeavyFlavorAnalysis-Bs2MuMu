@@ -18,6 +18,7 @@ using namespace std;
 /// options
 static string input_name;
 static string input_estimates;
+static string input_ws;
 static string meth = "bdt";
 static string ch_s = "-1";
 static string ch_bdt_s = "-1";
@@ -100,6 +101,7 @@ void help() {
   cout << "-SMIsNull # \t significance against SM (and not against 0)" << endl;
   cout << "-LLprofile" << endl;
   cout << "-hack2011 \t hack 2011 semi to 2012" << endl;
+  cout << "-ws \t input workspace" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -124,6 +126,7 @@ void help() {
   cout << "-syst \t adding syst constraints" << endl;
   cout << "-randomsyst \t syst constraints are randomized" << endl;
   cout << "-hack2011 \t hack 2011 semi to 2012" << endl;
+  cout << "-ws \t input workspace" << endl;
   cout << endl;
 
   exit(EXIT_SUCCESS);
@@ -167,6 +170,10 @@ void parse_options(int argc, char* argv[]){
       input_name = argv[i+1];
       cout << "input = " << input_name << endl;
       input = true;
+    }
+    if (!strcmp(argv[i],"-ws")) {
+      input_ws = argv[i+1];
+      cout << "workspace = " << input_ws << endl;
     }
     if (!strcmp(argv[i],"-e")) {
       input_estimates = argv[i+1];

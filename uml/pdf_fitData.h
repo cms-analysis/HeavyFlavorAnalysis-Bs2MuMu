@@ -37,7 +37,7 @@ class pdf_fitData : public pdf_analysis {
 
     void define_dataset();
     void make_dataset(bool cut_b, vector<double> cut_, string cuts, TTree *tree, int offset = 0);
-    void make_pdf_input();
+    void make_pdf_input(string root_s);
     void make_pdf();
     void hack_ws(string frozen_ws_address);
 

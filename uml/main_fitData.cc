@@ -31,7 +31,12 @@ int main(int argc, char** argv) {
 
   pdf_fitData* fitdata = new pdf_fitData(false, inputs, inputs_bdt, input_estimates, meth, "all", BF, SM, bd_const, simul, simul_bdt, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, NExp, Bd);
   fitdata->initialize();
-  fitdata->make_pdf_input();
+//  TFile* input_f = new TFile(input_ws.c_str());
+//  RooWorkspace* ws = (RooWorkspace*)input_f->Get("ws");
+//  fitdata->set_ws(ws);
+//  ws->Print();
+//  fitdata->ws_file_input = input_f;
+  fitdata->make_pdf_input(input_ws);
   fitdata->make_pdf();
   if (hack_semi2011) fitdata->hack_ws("output/frozen/ws_simul4_bdt_BF2_PEE.root");
   fitdata->setnewlumi();

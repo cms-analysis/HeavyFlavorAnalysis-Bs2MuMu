@@ -924,7 +924,7 @@ RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name) {
   RooArgList varlist(*bdt, *weight);
   RooDataSet* subdata_bdt = new RooDataSet("subdata_bdt", "subdata_bdt", varlist, "weight");
   const RooArgSet* aRow;
-  TH1D histo(rds->GetTitle(), rds->GetTitle(), 20, -1., 1.);
+  TH1D histo(rds->GetTitle(), rds->GetTitle(), 100, -1., 1.);
   for (Int_t j = 0; j < rds->numEntries(); j++) {
     aRow = rds->get(j);
     RooRealVar* BDT = (RooRealVar*)aRow->find("bdt");
