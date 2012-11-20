@@ -542,16 +542,6 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
   return signif;
 }
 
-void pdf_toyMC::unset_constant() {
-  cout << "unset constants" << endl;
-  RooArgSet set = ws_->allVars();
-  TIterator* it = set.createIterator();
-  TObject* var_Obj = 0;
-  while((var_Obj = it->Next())){
-    ws_->var(var_Obj->GetName())->setConstant(0);
-  }
-}
-
 void pdf_toyMC::mcstudy(string pdf_toy, string test_pdf) {
 
   if (!simul_bdt_) {

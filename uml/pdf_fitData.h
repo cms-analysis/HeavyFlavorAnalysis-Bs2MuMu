@@ -41,10 +41,6 @@ class pdf_fitData : public pdf_analysis {
     void make_pdf();
     void hack_ws(string frozen_ws_address);
 
-    void parse_systematics(string filename);
-
-    void BF(string eff_filename, string numbers_filename);
-
     RooDataSet* global_data;
     RooDataHist* global_datahist;
     RooSimultaneous* simul_pdf;
@@ -86,9 +82,6 @@ class pdf_fitData : public pdf_analysis {
     string input_cuts_;
     bool asimov_;
     int sign;
-
-    void addsyst();
-    bool parse_sys(char *cutName, double cut);
 
     string input_systematics_;
     vector <double> systematics_bs;

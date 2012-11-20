@@ -152,12 +152,12 @@ void parse_options(int argc, char* argv[]){
       channel = true;
       cout << "channel: " << ch_s << endl;
     }
-//    if (!strcmp(argv[i],"-cha_bdt")) {
-//      ch_bdt_s = argv[i+1];
-//      ch_bdt_i = atoi(ch_bdt_s.c_str());
-//      channel_bdt = true;
-//      cout << "channel bdt: " << ch_s << endl;
-//    }
+    if (!strcmp(argv[i],"-cha_bdt")) {
+      ch_bdt_s = argv[i+1];
+      ch_bdt_i = atoi(ch_bdt_s.c_str());
+      channel_bdt = true;
+      cout << "channel bdt: " << ch_s << endl;
+    }
     if (!strcmp(argv[i],"-print")) {
       cout << "print plots" << endl;
       print = true;

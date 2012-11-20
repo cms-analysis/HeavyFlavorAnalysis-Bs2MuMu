@@ -35,7 +35,6 @@ public:
 
   void generate(string pdf_toy, string test_pdf = "total");
   void mcstudy(string pdf_toy, string test_pdf = "total");
-  void unset_constant();
 
 private:
   string bias_;

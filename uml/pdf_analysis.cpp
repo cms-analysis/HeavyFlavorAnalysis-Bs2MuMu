@@ -445,12 +445,6 @@ void pdf_analysis::define_rare(int i, int j) {
   ws_->import(pdf_rare);
 }
 
-void pdf_analysis::define_rare2(RooDataHist* data, int i, int j) {
-  ws_->factory("N_hist[0, 10000]");
-  RooHistPdf* pdf_rare = new RooHistPdf("pdf_hist", "pdf_hist", *ws_->var("Mass"), *data, 4);
-  ws_->import(*pdf_rare);
-}
-
 void pdf_analysis::define_rare3(int i, int j) {
   RooRealVar N_expo(name("N_expo3", i, j), "N_expo3", 0, 10000);
   ws_->import(N_expo);
@@ -465,47 +459,6 @@ void pdf_analysis::define_rare3(int i, int j) {
     ws_->import(pdf_expo);
   }
   //ws_->factory("SUM::pdf_expo(expo1frac_rare[0.,1.]*Exponential::expo1(Mass,Alpha1[-10.,10.]),Exponential::expo2(Mass,Alpha2[-10.,10.]))");
-}
-
-void pdf_analysis::define_signalsrare(int i, int j) {
-  
-  ws_->factory("signalfrac_signalsrare[0.5, 0.0, 1.0]");
-  ws_->factory("SUM::pdf_signalsrare(signalfrac_signalsrare*pdf_signals, pdf_rare)");
-
-  if (!SM_ && !bd_constr_) ws_->factory("SUM::pdf_ext_signalsrare(N_bs*pdf_bs, N_bd*pdf_bd, N_rare*pdf_rare)");
-}
-
-void pdf_analysis::define_bkg_fractional(int i, int j) {
-  
-  ws_->factory("N_bkg[0, 10000]");
-  ws_->factory("rarefrac_bkg[0.5, 0.0, 1.0]");
-  
-  ws_->factory("SUM::pdf_bkg(rarefrac_bkg*pdf_rare, pdf_comb)");
-  
-  RooExtendPdf* bkgExt = new RooExtendPdf("pdf_fract_ext_bkg", "bkgExt", *ws_->pdf("pdf_bkg"), *ws_->var("N_bkg"), /* range_.c_str()*/ "sb_lo,sb_hi"); /// WARNING
-  ws_->import(*bkgExt);
-}
-
-void pdf_analysis::define_bkg_extended(int i, int j) {
-
-//  RooExtendPdf rare_ext("pdf_ext_rare", "rare_ext", *ws_->pdf("pdf_rare"), *ws_->var("N_rare"), "sb_lo,sb_hi");
-//  RooExtendPdf comb_ext("pdf_ext_comb", "comb_ext", *ws_->pdf("pdf_comb"), *ws_->var("N_comb"), "sb_lo,sb_hi");
-//  RooAddPdf bkg_ext("pdf_ext_bkg", "pdf_ext_bkg", RooArgList(rare_ext, comb_ext));
-//  ws_->import(bkg_ext);
-  ws_->factory("SUM::pdf_ext_bkg(N_rare*pdf_rare, N_comb*pdf_comb)");
-
-}
-
-
-void pdf_analysis::define_total_fractional(int i, int j) {
-  
-  ws_->factory("N_all[0, 10000]");
-  ws_->factory("signalsfrac_total[0.5, 0.0, 1.0]");
-  
-  ws_->factory("SUM::pdf_frac_total(signalsfrac_total*pdf_signals, pdf_bkg)");
-  
-  RooExtendPdf* allExt = new RooExtendPdf("pdf_frac_ext_total", "allExt", *ws_->pdf("pdf_frac_total"), *ws_->var("N_all"), range_.c_str());
-  ws_->import(*allExt);
 }
 
 void pdf_analysis::define_total_extended(int i, int j) {

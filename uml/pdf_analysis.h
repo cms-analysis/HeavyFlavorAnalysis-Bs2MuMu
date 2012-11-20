@@ -66,11 +66,7 @@ public:
   void define_comb(int i, int j);
   void define_signals(int i, int j);
   void define_rare(int i, int j);
-  void define_rare2(RooDataHist *data, int i, int j);
   void define_rare3(int i, int j);
-  void define_bkg_fractional(int i, int j);
-  void define_bkg_extended(int i, int j);
-  void define_signalsrare(int i, int j);
   void define_bf(int i, int j);
   void define_constraints(int i, int j);
 
