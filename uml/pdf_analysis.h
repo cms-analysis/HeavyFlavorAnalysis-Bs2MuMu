@@ -47,12 +47,12 @@ using namespace RooFit;
 
 class pdf_analysis {
 public:
-  pdf_analysis(bool print, string meth = "bdt", string ch_s = "0", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, bool simul = false, bool simulbdt = false, bool pee_ = false, bool bdt_fit = false);
+  pdf_analysis(bool print, string ch_s = "0", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, bool simul = false, bool simulbdt = false, bool pee_ = false, bool bdt_fit = false);
   void set_ws(RooWorkspace *ws) {ws_ = ws;}
   RooWorkspace* get_ws() {return ws_;}
 
-  void set_rad(RooAbsData* rad) {rds_ = rad;}
-  RooAbsData* get_rad() {return rds_;}
+//  void set_rad(RooAbsData* rad) {rds_ = rad;}
+//  RooAbsData* get_rad() {return rds_;}
   
   void initialize();
   RooHistPdf* define_MassRes_pdf(RooDataSet *rds, string name);
@@ -134,12 +134,17 @@ public:
   void setSBslope(RooAbsData* sb_data);
   bool shapesyst;
 
+  int bdt_index(int eta_ch, double bdt);
+  int bdt_index_max(int eta_ch) ;
+  int super_index(int eta_ch, int bdt_ch);
+  int supercatdim;
+
 protected:
   string meth_;
   string ch_s_;
   int ch_i_;
   RooWorkspace* ws_;
-  RooAbsData* rds_;
+//  RooAbsData* rds_;
 
   double ratio_;
 
@@ -152,6 +157,7 @@ protected:
 
   void parse_external_numbers(string filename);
   void parse_efficiency_numbers(int offset = 0);
+  void bdt_bins_effs();
 
   double Bs2MuMu_SM_BF_val;
   double Bs2MuMu_SM_BF_err;
@@ -167,25 +173,20 @@ protected:
   double one_over_BRBR_val;
   double one_over_BRBR_err;
 
-  vector <double> effratio_bs_val;
-  vector <double> effratio_bd_val;
-  vector <double> eff_rel_err;
-  vector <double> effratio_bs_err;
-  vector <double> effratio_bd_err;
+  vector <vector <double> > effratio_bs_val;
+  vector <vector <double> > effratio_bd_val;
+  vector <vector <double> > eff_rel_err;
+  vector <vector <double> > effratio_bs_err;
+  vector <vector <double> > effratio_bd_err;
 
-  vector <double> eff_bd_val;
-  vector <double> eff_bs_val;
-  vector <double> eff_bu_val;
-  vector <double> N_bu_val;
-  vector <double> eff_bd_err;
-  vector <double> eff_bs_err;
-  vector <double> eff_bu_err;
-  vector <double> N_bu_err;
-
-  vector <double> BF_bs_val;
-  vector <double> BF_bd_val;
-  vector <double> BF_bs_err;
-  vector <double> BF_bd_err;
+  vector <vector <double> > eff_bd_val;
+  vector <vector <double> > eff_bs_val;
+  vector <vector <double> > eff_bu_val;
+  vector <vector <double> > N_bu_val;
+  vector <vector <double> > eff_bd_err;
+  vector <vector <double> > eff_bs_err;
+  vector <vector <double> > eff_bu_err;
+  vector <vector <double> > N_bu_err;
 
   bool syst;
   bool randomsyst;

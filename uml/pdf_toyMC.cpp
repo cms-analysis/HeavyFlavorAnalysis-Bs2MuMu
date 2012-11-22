@@ -7,7 +7,7 @@
 
 #include "pdf_toyMC.h"
 
-pdf_toyMC::pdf_toyMC(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, bool randomsyste, int nexp, bool bd, string bias): pdf_fitData( print,  inputs,  inputs_bdt,  input_estimates,  meth,  range, BF, SM,  bd_constr,  simul,  simulbdt,  pee_,  bdt_fit,  ch_s,  sig, asimov, syste, randomsyste, nexp, bd) {
+pdf_toyMC::pdf_toyMC(bool print, int inputs, int inputs_bdt, string input_estimates, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, bool randomsyste, int nexp, bool bd, string bias): pdf_fitData( print,  inputs,  inputs_bdt,  input_estimates,  range, BF, SM,  bd_constr,  simul,  simulbdt,  pee_,  bdt_fit,  ch_s,  sig, asimov, syste, randomsyste, nexp, bd) {
   cout << "pdf_toyMC constructor" << endl;
   bias_ = bias;
 }
@@ -16,7 +16,7 @@ pdf_toyMC::~pdf_toyMC() {
   cout << "pdf_toyMC destructor" << endl;
 }
 
-void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
+void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
 
   if (!simul_) channels = 1;
   if (!simul_bdt_) channels_bdt = 1;
@@ -34,14 +34,14 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
   pull_rds_comb.resize(channels);
 
   for (int k = 0; k < channels; k++) {
-    residual_bs[k].resize(channels);
-    residual_bd[k].resize(channels);
+    residual_bs[k].resize(channels_bdt);
+    residual_bd[k].resize(channels_bdt);
     pull_bs[k].resize(channels_bdt);
     pull_bd[k].resize(channels_bdt);
     pull_semi[k].resize(channels_bdt);
     pull_comb[k].resize(channels_bdt);
-    residual_rds_bs[k].resize(channels);
-    residual_rds_bd[k].resize(channels);
+    residual_rds_bs[k].resize(channels_bdt);
+    residual_rds_bd[k].resize(channels_bdt);
     pull_rds_bs[k].resize(channels_bdt);
     pull_rds_bd[k].resize(channels_bdt);
     pull_rds_semi[k].resize(channels_bdt);
@@ -69,7 +69,7 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
   pull_BF_bd = new RooRealVar("pull_BF_bd", "pull_BF_bd", -8., 8.);
   pull_rds_BF_bd = new RooDataSet("pull_rds_BF_bd", "pull_rds_BF_bd", *pull_BF_bd);
   for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < channels_bdt; j++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       residual_bs[i][j] = new RooRealVar(name("residual_bs", i, j), "residual_bs", -20., 20.);
       residual_bd[i][j] = new RooRealVar(name("residual_bd", i, j), "residual_bd", -20., 20.);
       pull_bs[i][j] = new RooRealVar(name("pull_bs", i, j), "pull_bs", -8., 8.);
@@ -94,46 +94,26 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
       corr_Nbs_Nbd_vs_N_bs_h[i][j] = new TH2D(Form("corr_Nbs_Nbd_vs_N_bs_%d_%d_h", i, j), "corr_Nbs_Nbd_vs_N_bs_h", 30, 0., 30., 100, -1., 1.);
     }
   }
-
-  if (!simul_) {
-    pdf_name = "total";
-    if (pdf_toy != "total") {
-      pdf_name = define_pdf_sum(pdf_toy);
-    }
-    pdf_test_= "total";
-    if (test_pdf != "total") {
-      pdf_test_ = define_pdf_sum(test_pdf);
-    }
-  }
-  else {
-    pdf_name = "simul";
-    pdf_test_= "simul";
-    if (BF_ == 0) {
-      pdf_name = "simul_simple";
-      pdf_test_= "simul_simple";
-    }
-    else if (!syst) {
-      pdf_name = "simul_noconstr";
-      pdf_test_= "simul_noconstr";
-    }
-  }
   bool bd_b = false, corr0 = false, corrneg = false;
   vector < vector < Double_t > > estimate_bs_formula(channels, vector < Double_t > (channels_bdt, 0.));
   vector < vector < Double_t > > estimate_bd_formula(channels, vector < Double_t > (channels_bdt, 0.));
   if (BF_ > 0) {
     for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         estimate_bs_formula[i][j] = ws_->function(name("N_bs_formula", i, j))->getVal();
         if (BF_ > 1) estimate_bd_formula[i][j] = ws_->function(name("N_bd_formula", i, j))->getVal();
       }
     }
   }
-
   for (int k = 1; k <= NExp; k++) {
     if (k%100 == 0) cout << "Exp # " << k << " / " << NExp << endl;
-    pdf_toy_ = pdf_toy;
     RooWorkspace* ws_temp = (RooWorkspace*)ws_->Clone("ws_temp");
-    RooDataSet* data = new RooDataSet("data", "data", RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("bdt"), *ws_temp->var("MassRes")));
+/// vars
+    RooArgSet vars(*ws_temp->var("Mass"), *ws_temp->var("MassRes"), "vars");
+    if (simul_) vars.add(*ws_->cat("etacat"));
+    if (simul_bdt_) vars.add(*ws_->cat("bdtcat"));
+    if (bdt_fit_) vars.add(*ws_temp->var("bdt"));
+    RooDataSet* data = new RooDataSet("data", "data", vars);
     double printlevel = -1;
     if (k == 1) printlevel = 1;
 /// setup
@@ -148,17 +128,11 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
         if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setConstant(kFALSE);
         ws_temp->var(name("N_semi", j))->setConstant(kFALSE);
         ws_temp->var(name("N_comb", j))->setConstant(kFALSE);
-        if (BF_ > 0) {
-          ws_temp->var("BF_bs")->setVal(Bs2MuMu_SM_BF_val);
-          if (BF_ > 1) {
-            ws_temp->var("BF_bd")->setVal(Bd2MuMu_SM_BF_val);
-          }
-        }
       }
     }
     else { /// 1D with 2 categories
       for (int i = 0; i < channels; i++) {
-        for (int j = 0; j < channels_bdt; j++) {
+        for (int j = 0; j < bdt_index_max(i); j++) {
           ws_temp->var(name("N_bs", i, j))->setVal((int)estimate2D_bs[i][j]);
           if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setVal((int)estimate2D_bd[i][j]);
           ws_temp->var(name("N_semi", i, j))->setVal((int)estimate2D_semi[i][j]);
@@ -170,47 +144,32 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
         }
       }
     }
+    if (BF_ > 0) {
+      ws_temp->var("BF_bs")->setVal(Bs2MuMu_SM_BF_val);
+      if (BF_ > 1) {
+        ws_temp->var("BF_bd")->setVal(Bd2MuMu_SM_BF_val);
+      }
+    }
 /// generation
     if (syst) randomize_constraints(ws_temp);
-
-    if (channels == 1) { /// 1D non simul 1 channel
-      if (pdf_toy_ == "total") { /// 1D non simul total channel
-        bd_b = true;
-        /*if (BF_==0) */data = ws_temp->pdf("pdf_ext_total")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("bdt"), *ws_temp->var("MassRes")), Extended(1));
-//        data = ws_temp->pdf("pdf_ext_total_test")->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("bdt"), *ws_temp->var("MassRes")), Extended(1));
-      }
-      else { /// /// 1D non simul non-total channel
-        size_t found;
-        found = pdf_toy_.find("bd");
-        if (found != string::npos) bd_b = true;
-        data = ws_temp->pdf( ("pdf_ext_" + pdf_toy_).c_str())->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("bdt"), *ws_temp->var("MassRes")), Extended(1));
-      }
-    }
-    else if (!simul_bdt_) { /// 1D simul
+    if (!simul_bdt_) { /// 2D fit
       bd_b = true;
-      RooCategory* cat = (RooCategory*)ws_temp->obj("etacat");
-      data->addColumn(*cat);
-      RooArgSet vars(*ws_temp->var("Mass"), *ws_temp->var("bdt"), *ws_temp->var("MassRes"), *cat);
-      /*if (BF_==0) */data = ws_temp->pdf(pdfname.c_str())->generate(vars, Extended(1));
-//      else data = ws_temp->pdf("pdf_ext_simul_test")->generate(vars, Extended(1));
+      data = ws_temp->pdf(pdfname.c_str())->generate(vars, Extended(1));
     }
-    else { /// 2D
-      data->addColumn(*channels_cat);
-      data->addColumn(*bdt_cat);
-      vector < vector <RooDataSet*> > data_i(channels, vector <RooDataSet* > (channels_bdt));
+    else { /// 1D simul bdt
       for (int i = 0; i < channels; i++) {
-        for (int j = 0; j < channels_bdt; j++) {
+        for (int j = 0; j < bdt_index_max(i); j++) {
           ws_->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
           if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
           else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate2D_bd[i][j]/estimate2D_bd[i][j]);
           ws_->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
           ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
-          data_i[i][j] = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")), Extended(1));
+          RooDataSet* data_i = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes")), Extended(1));
           channels_cat->setIndex(i);
           bdt_cat->setIndex(j);
-          data_i[i][j]->addColumn(*channels_cat);
-          data_i[i][j]->addColumn(*bdt_cat);
-          data->append(*data_i[i][j]);
+          data_i->addColumn(*channels_cat);
+          data_i->addColumn(*bdt_cat);
+          data->append(*data_i);
         }
       }
       data->SetName("global_data");
@@ -218,25 +177,21 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
     do_bias(ws_temp);
     ///////////
     //////
-    RFR = pdf_toyMC::fit_pdf(pdf_test_, data, printlevel, ws_temp);
+    RFR = pdf_toyMC::fit_pdf(data, printlevel, ws_temp);
     //////
     //////////
-    pdf_name = pdf_toy_;
-    rds_ = data;
 
-    if (!simul_) {
+    if (!simul_ || true) {
       if (k == 1) {
-        ws_ = ws_temp;
-        print("_first", ws_temp);
+        print("_first", ws_temp, data);
       }
       if (k == NExp) {
-        ws_ = ws_temp;
-        print("_last", ws_temp);
+        print("_last", ws_temp, data);
       }
     }
     /// pull
     for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         if (BF_==0) bs_mean_h[i][j]->Fill(ws_temp->var(name("N_bs", i, j))->getVal());
         else bs_mean_h[i][j]->Fill(ws_temp->function(name("N_bs_formula", i, j))->getVal());
         if (!(SM_ || bd_constr_ || BF_ == 2)) bd_mean_h[i][j]->Fill(ws_temp->var(name("N_bd", i, j))->getVal());
@@ -308,7 +263,7 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
       pull_BF_bd->setVal(BF_pull);
       pull_rds_BF_bd->add(*pull_BF_bd);
     }
-    if (k == NExp) ws_temp->pdf(pdf_toy_.c_str())->Print();
+    if (k == NExp) ws_temp->pdf(pdfname.c_str())->Print();
 
     if (sign == 0) {
       sign_h->Fill(pdf_toyMC::sig_hand(data, printlevel, ws_temp));
@@ -318,10 +273,8 @@ void pdf_toyMC::generate(string pdf_toy, string test_pdf) {
     delete RFR;
   }
 
-  pdf_toy_ = pdf_toy;
-
   for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < channels_bdt; j++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       if (BF_ == 0) fit_pulls(pull_bs[i][j], pull_rds_bs[i][j], i, j);
       if (BF_ > 0) fit_pulls(residual_bs[i][j], residual_rds_bs[i][j], i, j);
       if (!(SM_ || bd_constr_ || BF_ == 2)) fit_pulls(pull_bd[i][j], pull_rds_bd[i][j], i, j);
@@ -378,7 +331,7 @@ void pdf_toyMC::do_bias(RooWorkspace* ws) {
 
   if (bias_.compare("no")) {
     for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         if (!simul_ && !simul_bdt_) i = ch_i_;
         size_t found;
         found = bias_.find("tau");
@@ -437,12 +390,10 @@ void pdf_toyMC::do_bias(RooWorkspace* ws) {
   }
 }
 
-RooFitResult* pdf_toyMC::fit_pdf(string pdf, RooAbsData* data, int printlevel, RooWorkspace* ws) {
-
-  pdf_toy_ = "pdf_ext_" + pdf;
+RooFitResult* pdf_toyMC::fit_pdf(RooAbsData* data, int printlevel, RooWorkspace* ws) {
   RooFitResult* result;
   if (printlevel < 0) RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
-  result = ws->pdf(pdf_toy_.c_str())->fitTo(*data, pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none()/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/,  Extended(true), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE), NumCPU(2));
+  result = ws->pdf(pdfname.c_str())->fitTo(*data, pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), Extended(true), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(-1), Save(kTRUE), NumCPU(2));
   if (printlevel < 0) RooMsgService::instance().cleanup();
   return result;
 }
@@ -463,8 +414,8 @@ void pdf_toyMC::fit_pulls(RooRealVar* pull, RooDataSet* rds, int i, int j) {
   rp_bs->Draw();
   channel = simul_ ? i : ch_i_;
   channel_bdt = simul_bdt_ ? j : 0;
-  canvas_bs->Print((get_address(pull->GetName(), pdf_toy_) + ".gif").c_str());
-  canvas_bs->Print((get_address(pull->GetName(), pdf_toy_) + ".pdf").c_str());
+  canvas_bs->Print((get_address(pull->GetName(), pdfname) + ".gif").c_str());
+  canvas_bs->Print((get_address(pull->GetName(), pdfname) + ".pdf").c_str());
   delete rp_bs;
   delete canvas_bs;
 }
@@ -476,8 +427,8 @@ void pdf_toyMC::print_histos(TH1D* histos, int i, int j) {
   histos->Draw("e");
   channel = simul_ ? i : ch_i_;
   channel_bdt = simul_bdt_ ? j : 0;
-  N_mean_c->Print((get_address(histos->GetName(), pdf_toy_) + ".gif").c_str());
-  N_mean_c->Print((get_address(histos->GetName(), pdf_toy_) + ".pdf").c_str());
+  N_mean_c->Print((get_address(histos->GetName(), pdfname) + ".gif").c_str());
+  N_mean_c->Print((get_address(histos->GetName(), pdfname) + ".pdf").c_str());
   delete N_mean_c;
 }
 
@@ -489,7 +440,7 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
   if (Bd && BF_ > 0) alt_name = "BF_bd";
   if (BF_ == 0) {
     for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         ws_temp->var(name(alt_name.c_str(), i, j))->setVal(0);
         ws_temp->var(name(alt_name.c_str(), i, j))->setConstant(1);
         if (bd_constr_) {
@@ -504,9 +455,9 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
     ws_temp->var(alt_name.c_str())->setConstant(1);
   }
 
-  RooFitResult * rfr_H0 = pdf_toyMC::fit_pdf(pdf_test_, data, printlevel, ws_temp);
+  RooFitResult * rfr_H0 = pdf_toyMC::fit_pdf(data, printlevel, ws_temp);
 
-  if (BF_==0) {
+  if (BF_ == 0) {
     if (!simul_bdt_) {
       for (int j = 0; j < channels; j++) {
         ws_temp->var(name(alt_name.c_str(), j))->setVal(estimate_bs[j]);
@@ -519,7 +470,7 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
     }
     else {
       for (int i = 0; i < channels; i++) {
-        for (int j = 0; j < channels_bdt; j++) {
+        for (int j = 0; j < bdt_index_max(i); j++) {
           ws_temp->var(name(alt_name.c_str(), i, j))->setVal(estimate2D_bs[i][j]);
           ws_temp->var(name(alt_name.c_str(), i, j))->setConstant(0);
           if (bd_constr_) {
@@ -542,7 +493,7 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
   return signif;
 }
 
-void pdf_toyMC::mcstudy(string pdf_toy, string test_pdf) {
+void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
 
   if (!simul_bdt_) {
     for (int i = 0; i < channels; i++) {
@@ -558,7 +509,7 @@ void pdf_toyMC::mcstudy(string pdf_toy, string test_pdf) {
   }
   else {
     for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         ws_->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
         ws_->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
         ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
@@ -569,26 +520,6 @@ void pdf_toyMC::mcstudy(string pdf_toy, string test_pdf) {
       double ratio = (double) estimate2D_bd[0][0] / estimate2D_bs[0][0]; // it's the same in every channel
       ws_->var("Bd_over_Bs")->setVal(ratio);
     }
-  }
-
-  pdf_name = "pdf_ext_total";
-  if (pdf_toy != "total") {
-    pdf_name = "pdf_ext_" + define_pdf_sum(pdf_toy);
-  }
-  if (simul_) {
-    pdf_name = "pdf_ext_simul";
-    if (BF_ == 0) pdf_name = "pdf_ext_simul_simple";
-    else if (!syst) pdf_name = "pdf_ext_simul_noconstr";
-  }
-
-  pdf_test_= "pdf_ext_total";
-  if (test_pdf != "total") {
-    pdf_test_ = "pdf_ext_" + define_pdf_sum(test_pdf);
-  }
-  if (simul_) {
-    pdf_test_ = "pdf_ext_simul";
-    if (BF_ == 0) pdf_test_ = "pdf_ext_simul_simple";
-    else if (!syst) pdf_test_ = "pdf_ext_simul_noconstr";
   }
 
   RooArgSet obsv(*ws_->var("Mass"), "obsv");
@@ -605,19 +536,19 @@ void pdf_toyMC::mcstudy(string pdf_toy, string test_pdf) {
   if (bias_.compare("no")) { /// bias
     RooWorkspace* fitws = (RooWorkspace*)ws_->Clone("fitws");
     do_bias(fitws);
-    mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv, FitModel(*fitws->pdf(pdf_name.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), NumCPU(2))/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
+    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, FitModel(*fitws->pdf(pdfname.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), NumCPU(2))/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
   }
-  else if (pdf_test_ == pdf_name) { /// same pdf
-    mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv, Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), NumCPU(2))/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
+  else if (pdf_test == pdfname) { /// same pdf
+    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), NumCPU(2))/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
   }
   else { /// different pdf
-    mcstudy = new RooMCStudy( *ws_->pdf(pdf_name.c_str()), obsv, FitModel(*ws_->pdf(pdf_test_.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), NumCPU(2))/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
+    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, FitModel(*ws_->pdf(pdf_test.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), NumCPU(2))/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
   }
 
   vector <vector <RooDLLSignificanceMCSModule*> > sigModule(channels, vector <RooDLLSignificanceMCSModule*> (channels_bdt));
   if (BF_ == 0) {
     for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         sigModule[i][j] = new RooDLLSignificanceMCSModule(*ws_->var(name("N_bs", i, j)), 0);
         mcstudy->addModule(*sigModule[i][j]);
       }
@@ -637,7 +568,7 @@ void pdf_toyMC::mcstudy(string pdf_toy, string test_pdf) {
   for (int k = 0; k < 4; k++) {
     if ((SM_ || bd_constr_) && k == 1) continue;
     for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         if (k == 0 && BF_ > 0 && (i > 0 || j > 0)) continue;
         if (k == 1 && BF_ > 1 && (i > 0 || j > 0)) continue;
         string name_;
@@ -702,7 +633,7 @@ void pdf_toyMC::mcstudy(string pdf_toy, string test_pdf) {
   if (BF_) sig_c->SetCanvasSize(600, 600);
   else sig_c->Divide(channels, channels_bdt);
   for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < channels_bdt; j++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       if (BF_ > 0 && (i > 0 || j > 0)) continue;
       string name_(name("significance_nullhypo_N_bs", i, j));
       if (BF_ > 0) name_ = "significance_nullhypo_BF_bs";
@@ -736,88 +667,58 @@ void pdf_toyMC::mcstudy(string pdf_toy, string test_pdf) {
   delete sig_c;
 }
 
-void pdf_toyMC::print(string output, RooWorkspace* ws) {
-  int colors[] = {632, 400, 616, 432, 800, 416, 820, 840, 860, 880, 900};
-  RooPlot *rp = ws_->var("Mass")->frame();
-  RooPlot *rp_bdt = ws_->var("bdt")->frame();
-  rds_->plotOn(rp, Binning(20));
-  if (bdt_fit_) rds_->plotOn(rp_bdt, Binning(100));
-  if (!pee) {
-    ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue));
-    if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue));
-  }
-  else {
-    ws_->pdf(pdf_name.c_str())->Print();
-    TH1* mass_eta_h;
-    mass_eta_h = ws_->pdf(pdf_name.c_str())->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var("MassRes"), Binning(50))) ;
-    mass_eta_h->SetLineColor(kBlue) ;
-    mass_eta_h->GetXaxis()->SetTitleOffset(2.) ;
-    mass_eta_h->GetYaxis()->SetTitleOffset(2.) ;
-    mass_eta_h->GetZaxis()->SetTitleOffset(2.5) ;
-    TCanvas* cetad = new TCanvas("cetad", "cetad", 1200, 600);
-    cetad->Divide(bdt_fit_ ? 3 : 2);
-    cetad->cd(1);
-    mass_eta_h->Draw("surf") ;
-    cetad->cd(2);
-    ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue));
-    if(bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue));
-    if(!no_legend) {
-      ws_->pdf(pdf_name.c_str())->paramOn(rp, Layout(0.50, 0.9, 0.9));
-      if(bdt_fit_) ws_->pdf(pdf_name.c_str())->paramOn(rp_bdt, Layout(0.50, 0.9, 0.9));
-    }
-    rp->Draw();
-    if(bdt_fit_) {
-      cetad->cd(3);
-      rp_bdt->Draw();
-    }
-    cetad->Print((get_address(pdf_name, (string)("MassEta"+output)) + ".gif").c_str());
-    cetad->Print((get_address(pdf_name, (string)("MassEta"+output)) + ".pdf").c_str());
-    delete cetad;
-    delete mass_eta_h;
-  }
-  if(!no_legend) {
-    ws_->pdf(pdf_name.c_str())->paramOn(rp, Layout(0.50, 0.9, 0.9));
-    if(bdt_fit_) ws_->pdf(pdf_name.c_str())->paramOn(rp_bdt, Layout(0.50, 0.9, 0.9));
-  }
-
-  /// components
-  RooArgSet * set = ws_->pdf(pdf_name.c_str())->getComponents();
-  TIterator* it = set->createIterator();
-  TObject* var_Obj = 0;
-  int i = 0;
-  while((var_Obj = it->Next())/* && !pee*/){
-    string name = var_Obj->GetName();
-    if (name != pdf_name) {
-      if (i > 11) i = 0;
-      size_t found1 = pdf_name.find("total");
-      if (found1 == string::npos) {
-        ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
-        if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
+void pdf_toyMC::print(string output, RooWorkspace* ws, RooDataSet* rds_) {
+  for (int i = 0; i < channels; i++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
+      string cut = "";
+      string title;
+      RooArgSet slice_set;
+      RooArgSet projw_set;
+      ws->cat("etacat")->setIndex(i);
+      ws->cat("bdtcat")->setIndex(j);
+      slice_set.add(*ws->cat("etacat"));
+      projw_set.add(*ws->cat("etacat"));
+      if (simul_) {
+        cut = Form("etacat==etacat::etacat_%d", i);
+        title = Form("Candidate invariant mass for etacat %d", i);
       }
-      else {
-        if (name=="pdf_bs" || name=="pdf_bd" || name=="pdf_semi" || name=="pdf_comb" || name=="pdf_peak") {
-          ws_->pdf(pdf_name.c_str())->plotOn(rp, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
-          if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, Components(*ws_->pdf(var_Obj->GetName())), LineColor(colors[i]),  LineStyle(1), LineWidth(2));
-        }
+      if (simul_bdt_) {
+        cut = Form("etacat==etacat::etacat_%d&&bdtcat==bdtcat::bdtcat_%d", i, j);
+        title = Form("Candidate invariant mass for etacat %d and bdtcat %d", i, j);
+        slice_set.add(*ws->cat("bdtcat"));
+        projw_set.add(*ws->cat("bdtcat"));
       }
-      i++;
+      if (pee) projw_set.add(*ws->var("MassRes"));
+
+      RooPlot* final_p = ws->var("Mass")->frame(Bins(25), Title(title.c_str()));
+      rds_->plotOn(final_p, Cut(cut.c_str()));
+//      ws->pdf(pdfname.c_str())->plotOn(final_p, VisualizeError(*RFR, 1, 1), FillColor(kYellow), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_), MoveToBack());
+      ws->pdf(pdfname.c_str())->plotOn(final_p, Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_), LineColor(kBlue), LineWidth(3));
+
+      ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_semi", i, j)), DrawOption("F"), FillColor(kGreen - 3), FillStyle(3001), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
+      ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_bs", i, j)), DrawOption("F"), FillColor(kRed),        FillStyle(3001), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
+      ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_bd", i, j)), DrawOption("F"), FillColor(kViolet - 4), FillStyle(3001), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
+      ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_peak", i, j)), DrawOption("F"), FillColor(kBlack), FillStyle(3001), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
+
+      ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_comb", i, j)), LineColor(kBlue - 1),   LineStyle(2), LineWidth(3), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
+//      ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_semi", i, j)), LineColor(kBlack),  LineStyle(1), DrawOption("L"), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
+//      ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_bs", i, j)), LineColor(kBlack),        LineStyle(1), DrawOption("L"), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
+//      ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_bd", i, j)), LineColor(kBlack), LineStyle(1), DrawOption("L"), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
+//      ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_peak", i, j)), LineColor(kBlack),  LineStyle(1), DrawOption("L"), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
+
+      rds_->plotOn(final_p, Cut(cut.c_str()));
+      final_p->SetMinimum(0);
+
+      TCanvas* final_c = new TCanvas("final_c", "final_c", 600, 600);
+      final_p->Draw();
+
+      channel = i;
+      channel_bdt = j;
+      final_c->Print((get_address(pdfname, output, true) + ".gif").c_str());
+      final_c->Print((get_address(pdfname, output, true) + ".pdf").c_str());
+      delete final_p;
+      delete final_c;
     }
   }
-
-  TCanvas* c = new TCanvas("c", "c", 600, 600);
-  rp->Draw();
-  c->Print((get_address(pdf_name, output) + ".gif").c_str());
-  c->Print((get_address(pdf_name, output) + ".pdf").c_str());
-  delete rp;
-  delete c;
-
-  if (bdt_fit_) {
-    TCanvas* d = new TCanvas("d", "d", 600, 600);
-    rp_bdt->Draw();
-    d->Print((get_address("BDT", (string)(pdf_name+output)) + ".gif").c_str());
-    d->Print((get_address("BDT", (string)(pdf_name+output)) + ".pdf").c_str());
-    delete d;
-  }
-  delete rp_bdt;
   return;
 }

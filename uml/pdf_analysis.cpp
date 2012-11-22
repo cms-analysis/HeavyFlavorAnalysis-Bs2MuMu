@@ -1,9 +1,9 @@
 #include "pdf_analysis.h"
 
-pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit) {
+pdf_analysis::pdf_analysis(bool print, string ch_s, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit) {
   cout << "analysis constructor" << endl;
   print_ = print;
-  meth_ = meth;
+  meth_ = "bdt";
   ch_s_ = ch_s;
   ch_i_ = atoi(ch_s_.c_str());
   range_ = range;
@@ -11,6 +11,7 @@ pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, i
   bd_constr_ = bd_constr;
   channels = 1;
   channels_bdt = 1;
+  supercatdim = 12;
   verbosity = 1;
   old_tree = false;
 
@@ -26,7 +27,7 @@ pdf_analysis::pdf_analysis(bool print, string meth, string ch_s, string range, i
 
   syst = false;
   randomsyst = false;
-  shapesyst = false;
+//  shapesyst = false;
 
 }
 
@@ -77,7 +78,7 @@ void pdf_analysis::initialize () {
   }
   ws_->import(*channels_cat);
   bdt_cat = new RooCategory("bdtcat", "bdt channels");
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 4; i++) {
     bdt_cat->defineType(Form("bdtcat_%d", i), i);
   }
   ws_->import(*bdt_cat);
@@ -98,7 +99,7 @@ void pdf_analysis::initialize () {
 void pdf_analysis::define_pdfs () {
 
   for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < channels_bdt; j++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       define_bs(i, j);
       define_bd(i, j);
       define_peaking(i, j);
@@ -123,18 +124,18 @@ void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool su
   RooAbsData* subdata;
   if (!simul_bdt_) subdata = data->reduce(Form("etacat==etacat::etacat_%d", channel));
   else subdata = data->reduce(Form("etacat==etacat::etacat_%d&&bdtcat==bdtcat::bdtcat_%d", channel, channel_bdt));
-  rds_ = subdata;
+//  rds_ = subdata;
   string rdh_name = subdata->GetName();
+  cout << "**************************" << endl;
   cout << "fitting " << rdh_name << endl;
   subdata->Print();
-  cout << " in range " << range_ << " with " << pdf_name << ":" << endl;
+  cout << " with " << pdf_name << ":" << endl;
   ws_->pdf( pdf_name.c_str())->Print();
   if (!pee) {
     RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save()/*, Constrain(*ws_->set("constr"))*/);
     if (print_) print(subdata);
   }
   else {
-    cout << "WARNING: range option does not work with pee" << endl;
     RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, ConditionalObservables(*ws_->var("MassRes")), Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save()/*, Constrain(*ws_->set("constr"))*/);
     if (print_) print(subdata, pdf);
   }
@@ -165,17 +166,6 @@ void pdf_analysis::define_bs(int i, int j) {
   RooRealVar Alpha_bs(name("Alpha_bs", i, j), "Alpha_bs", 2.8, 0.1, 3.0);
   RooRealVar Enne_bs(name("Enne_bs", i, j), "Enne_bs", 1., 0., 10.);
 
-  /// systematics
-  RooRealVar epsilon(name("epsilon_bs", i, j), "epsilon", 0., -1., 1.);
-  //epsilon.setConstant();
-  RooUniform one(name("one", i, j), "one", *ws_->var("Mass"));
-  RooRealVar S0(name("S0", i, j), "S0", -5., 5.);
-  RooRealVar S1(name("S1", i, j), "S1", -5., 5.);
-  RooRealVar S2(name("S2", i, j), "S2", -5., 5.);
-  RooArgList poly_sys_coeffs(S0/*, S1, S2*/);
-  RooChebychev poly_sys_bs(name("poly_sys_bs", i, j), "poly_sys_bs", *ws_->var("Mass"), poly_sys_coeffs);
-  RooAddPdf pdf_sys_bs(name("pdf_sys_bs", i, j), "pdf_sys_bs", poly_sys_bs, one, epsilon);
-
   if (!pee) {
     RooRealVar Sigma2_bs(name("Sigma2_bs", i, j), "Sigma2_bs", 0.04, 0.005, 0.2);
     RooRealVar CoeffGauss_bs(name("CoeffGauss_bs", i, j), "CoeffGauss_bs", 0.5, 0., 1.);
@@ -184,25 +174,13 @@ void pdf_analysis::define_bs(int i, int j) {
     RooCBShape CB_bs(name("CB_bs", i, j), "CB_bs", *ws_->var("Mass"), Mean_bs, Sigma2_bs, Alpha_bs, Enne_bs);
     RooAddPdf pdf_bs_mass(name("pdf_bs_mass", i, j), "pdf_bs_mass", RooArgList(Gau_bs, CB_bs),  CoeffGauss_bs);
     if (!bdt_fit_) {
-      if (!shapesyst) {
-        RooAddPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", RooArgList(Gau_bs, CB_bs),  CoeffGauss_bs);
-        ws_->import(pdf_bs);
-      }
-      else {
-        RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, pdf_sys_bs);
-        ws_->import(pdf_bs);
-      }
+      RooAddPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", RooArgList(Gau_bs, CB_bs),  CoeffGauss_bs);
+      ws_->import(pdf_bs);
     }
     else {
-      if (!shapesyst) {
-        RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
-        ws_->import(pdf_bs);
-      }
-      else {
-        RooProdPdf pdf_2D_bs(name("pdf_2D_bs", i, j), "pdf_2D_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
-        RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_2D_bs, pdf_sys_bs);
-        ws_->import(pdf_bs);
-      }
+      RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
+      ws_->import(pdf_bs);
+
     }
   }
   else {
@@ -212,25 +190,12 @@ void pdf_analysis::define_bs(int i, int j) {
     RooCBShape CB_bs(name("CB_bs", i, j), "CB_bs", *ws_->var("Mass"), Mean_bs, *ws_->function(name("SigmaRes_bs", i, j)), Alpha_bs, Enne_bs);
     RooProdPdf pdf_bs_mass(name("pdf_bs_mass", i, j), "pdf_bs_mass", *ws_->pdf(name("MassRes_pdf_bs", i, j)), Conditional(CB_bs, *ws_->var("Mass")));
     if (!bdt_fit_) {
-      if (!shapesyst) {
-        RooProdPdf pdf_bs (name("pdf_bs", i, j), "pdf_bs", *ws_->pdf(name("MassRes_pdf_bs", i, j)), Conditional(CB_bs, *ws_->var("Mass")));
-        ws_->import(pdf_bs);
-      }
-      else {
-        RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, pdf_sys_bs);
-        ws_->import(pdf_bs);
-      }
+      RooProdPdf pdf_bs (name("pdf_bs", i, j), "pdf_bs", *ws_->pdf(name("MassRes_pdf_bs", i, j)), Conditional(CB_bs, *ws_->var("Mass")));
+      ws_->import(pdf_bs);
     }
     else {
-      if (!shapesyst) {
-        RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
-        ws_->import(pdf_bs);
-      }
-      else {
-        RooProdPdf pdf_2D_bs(name("pdf_2D_bs", i, j), "pdf_2D_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
-        RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_2D_bs, pdf_sys_bs);
-        ws_->import(pdf_bs);
-      }
+      RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
+      ws_->import(pdf_bs);
     }
   }
 }
@@ -481,7 +446,7 @@ void pdf_analysis::define_total_extended(int i, int j) {
   else {
     RooAddPdf pdf_ext_sum(name("pdf_ext_sum", i, j), "pdf_ext_sum", pdf_list, N_list);
     RooArgList constraints_list(*ws_->pdf(name("N_bu_gau_bs", i, j)), *ws_->pdf("fs_over_fu_gau"), *ws_->pdf(name("effratio_gau_bs", i, j)), *ws_->pdf("one_over_BRBR_gau"));
-    if (shapesyst) constraints_list.add(*ws_->pdf(name("shape_gau_bs", i, j)));
+//    if (shapesyst) constraints_list.add(*ws_->pdf(name("shape_gau_bs", i, j)));
     if (BF_ > 1) {
       constraints_list.add(*ws_->pdf(name("effratio_gau_bd", i, j)));
     }
@@ -490,7 +455,7 @@ void pdf_analysis::define_total_extended(int i, int j) {
     ws_->import(pdf_ext_total);
   }
 
-  if (BF_) {
+  if (BF_ > 0) {
     RooArgList N_list_test(*ws_->function(name("N_bs", i, j)));
     if (SM_ || bd_constr_) N_list_test.add(*ws_->function(name("N_bd_constr", i, j)));
     else N_list_test.add(*ws_->var(name("N_bd", i, j)));
@@ -520,11 +485,11 @@ void pdf_analysis::define_bf(int i, int j) {
     ws_->import(one_over_BRBR);
   }
 
-  RooRealVar N_bu(name("N_bu", i, j), "N_bu", N_bu_val[i], N_bu_val[i] - 5*N_bu_err[i], N_bu_val[i] + 5*N_bu_err[i]);
+  RooRealVar N_bu(name("N_bu", i, j), "N_bu", N_bu_val[i][j], N_bu_val[i][j] - 5*N_bu_err[i][j], N_bu_val[i][j] + 5*N_bu_err[i][j]);
   ws_->import(N_bu);
 
-  RooRealVar effratio_bs(name("effratio_bs", i, j), "effratio_bs", effratio_bs_val[i], effratio_bs_val[i] - 5*effratio_bs_err[i], effratio_bs_val[i] + 5*effratio_bs_err[i]);
-  RooRealVar effratio_bd(name("effratio_bd", i, j), "effratio_bd", effratio_bd_val[i], effratio_bd_val[i] - 5*effratio_bd_err[i], effratio_bd_val[i] + 5*effratio_bd_err[i]);
+  RooRealVar effratio_bs(name("effratio_bs", i, j), "effratio_bs", effratio_bs_val[i][j], effratio_bs_val[i][j] - 5*effratio_bs_err[i][j], effratio_bs_val[i][j] + 5*effratio_bs_err[i][j]);
+  RooRealVar effratio_bd(name("effratio_bd", i, j), "effratio_bd", effratio_bd_val[i][j], effratio_bd_val[i][j] - 5*effratio_bd_err[i][j], effratio_bd_val[i][j] + 5*effratio_bd_err[i][j]);
 
   RooFormulaVar N_bs_constr(name("N_bs_formula", i, j), "N_bs(i) = BF * K(i)",  "@0*@1*@2*@3*@4", RooArgList( *ws_->var("BF_bs"), *ws_->var(name("N_bu", i, j)), *ws_->var("fs_over_fu"), effratio_bs, *ws_->var("one_over_BRBR")));
   RooFormulaVar N_bsbd_constr(name("N_bs_formula", i, j), "N_bs(i) = BF * K(i)",  "@0*@1*@2*@3*@4*@5", RooArgList( *ws_->var("BF_bd"), *ws_->var("BF_bsbd"), *ws_->var(name("N_bu", i, j)), *ws_->var("fs_over_fu"), effratio_bs, *ws_->var("one_over_BRBR")));
@@ -550,18 +515,18 @@ void pdf_analysis::define_constraints(int i, int j) {
     ws_->import(one_over_BRBR_gau);
   }
 
-  RooGaussian N_bu_gau_bs(name("N_bu_gau_bs", i, j), "N_bu_gau_bs", *ws_->var(name("N_bu", i, j)), RooConst(N_bu_val[i]), RooConst(N_bu_err[i]));
+  RooGaussian N_bu_gau_bs(name("N_bu_gau_bs", i, j), "N_bu_gau_bs", *ws_->var(name("N_bu", i, j)), RooConst(N_bu_val[i][j]), RooConst(N_bu_err[i][j]));
   ws_->import(N_bu_gau_bs);
 
-  RooGaussian effratio_gau_bs(name("effratio_gau_bs", i, j), "effratio_gau_bs", *ws_->var(name("effratio_bs", i, j)), RooConst(effratio_bs_val[i]), RooConst(effratio_bs_err[i]));
+  RooGaussian effratio_gau_bs(name("effratio_gau_bs", i, j), "effratio_gau_bs", *ws_->var(name("effratio_bs", i, j)), RooConst(effratio_bs_val[i][j]), RooConst(effratio_bs_err[i][j]));
   ws_->import(effratio_gau_bs);
-  RooGaussian effratio_gau_bd(name("effratio_gau_bd", i, j), "effratio_gau_bd", *ws_->var(name("effratio_bd", i, j)), RooConst(effratio_bd_val[i]), RooConst(effratio_bd_err[i]));
+  RooGaussian effratio_gau_bd(name("effratio_gau_bd", i, j), "effratio_gau_bd", *ws_->var(name("effratio_bd", i, j)), RooConst(effratio_bd_val[i][j]), RooConst(effratio_bd_err[i][j]));
   ws_->import(effratio_gau_bd);
 
-  if (shapesyst) {
-    RooGaussian shape_gau_bs(name("shape_gau_bs", i, j), "shape_gau_bs", *ws_->var(name("epsilon_bs", i, j)), RooConst(0), RooConst(i%2==0? 0.016 : 0.079));
-    ws_->import(shape_gau_bs);
-  }
+//  if (shapesyst) {
+//    RooGaussian shape_gau_bs(name("shape_gau_bs", i, j), "shape_gau_bs", *ws_->var(name("epsilon_bs", i, j)), RooConst(0), RooConst(i%2==0? 0.016 : 0.079));
+//    ws_->import(shape_gau_bs);
+//  }
 
 }
 
@@ -588,17 +553,36 @@ void pdf_analysis::define_simul(bool simulbdt) {
   else {
     RooSuperCategory* rsc = dynamic_cast<RooSuperCategory*> (ws_->obj("super_cat"));
     RooSimultaneous pdf_sim("pdf_ext_simul", "simultaneous pdf", *rsc);
-    for (int g = 0; g< channels*channels_bdt ;g++) {
-      rsc->setIndex(g);
-      RooArgSet icl = rsc->inputCatList();
-      RooCategory* eta_c = (RooCategory*)icl.find("etacat");
-      RooCategory* bdt_c = (RooCategory*)icl.find("bdtcat");
-      Int_t eta_i = eta_c->getIndex();
-      Int_t bdt_i = bdt_c->getIndex();
-      cout << rsc->getLabel() << " " <<  eta_i << " " <<  bdt_i<< endl;
-      pdf_sim.addPdf(*ws_->pdf(Form("pdf_ext_total_%d_%d", eta_i, bdt_i)), rsc->getLabel());
+    RooSimultaneous pdf_sim_test("pdf_ext_simul_simple", "simultaneous pdf without BF", *rsc);
+    RooSimultaneous pdf_sim_noconstr("pdf_ext_simul_noconstr", "simultaneous pdf without constraints", *rsc);
+    for (int i = 0; i < channels; i++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
+        RooArgSet icl = rsc->inputCatList();
+        RooCategory* eta_c = (RooCategory*)icl.find("etacat");
+        RooCategory* bdt_c = (RooCategory*)icl.find("bdtcat");
+        eta_c->setIndex(i);
+        bdt_c->setIndex(j);
+        cout << rsc->getLabel() << " (" << rsc->getIndex() << ") " <<  i << " " << j << endl;
+        pdf_sim.addPdf(*ws_->pdf(Form("pdf_ext_total_%d_%d", i, j)), rsc->getLabel());
+        pdf_sim_test.addPdf(*ws_->pdf(Form("pdf_ext_total_simple_%d_%d", i, j)), rsc->getLabel());
+        pdf_sim_noconstr.addPdf(*ws_->pdf(Form("pdf_ext_sum_%d_%d", i, j)), rsc->getLabel());
+      }
     }
-    ws_->import(pdf_sim/*, RecycleConflictNodes()*/);
+//    for (int g = 0; g < channels*channels_bdt ;g++) {
+//      rsc->setIndex(g);
+//      RooArgSet icl = rsc->inputCatList();
+//      RooCategory* eta_c = (RooCategory*)icl.find("etacat");
+//      RooCategory* bdt_c = (RooCategory*)icl.find("bdtcat");
+//      Int_t eta_i = eta_c->getIndex();
+//      Int_t bdt_i = bdt_c->getIndex();
+//      cout << rsc->getLabel() << " " <<  eta_i << " " <<  bdt_i<< endl;
+//      pdf_sim.addPdf(*ws_->pdf(Form("pdf_ext_total_%d_%d", eta_i, bdt_i)), rsc->getLabel());
+//    }
+    ws_->import(pdf_sim);
+    if (BF_ > 0) {
+      ws_->import(pdf_sim_test);
+      ws_->import(pdf_sim_noconstr);
+    }
   }
 }
 
@@ -926,7 +910,7 @@ const char* pdf_analysis::name(string name, int i, int j) {
 void pdf_analysis::set_rare_normalization(string input, bool extended) {
   FILE *estimate_file = fopen(input.c_str(), "r");
   for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < channels_bdt; j++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       char buffer[1024];
       char cutName[128];
       float cut;
@@ -1069,7 +1053,7 @@ string pdf_analysis::get_address(string name, string pdf, bool channeling) {
   if (!simul_) address  << "_" << ch_s_;
   if (simul_ && simul_bdt_) {
     address << "_simulBdt_";
-    if (channeling) address << channels_bdt;
+    if (channeling) address << channel_bdt;
   }
   if (BF_>0) address << "_BF" << BF_;
   if (SM_) address << "_SM";
@@ -1090,32 +1074,46 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
   eff_bs_err.resize(channels);
   eff_bu_err.resize(channels);
   N_bu_err.resize(channels);
-  BF_bs_val.resize(channels);
-  BF_bd_val.resize(channels);
-  BF_bs_err.resize(channels);
-  BF_bd_err.resize(channels);
-
   eff_rel_err.resize(channels);
+  for (int i = 0; i < channels; i++) {
+    eff_bd_val[i].resize(channels_bdt);
+    eff_bs_val[i].resize(channels_bdt);
+    eff_bu_val[i].resize(channels_bdt);
+    N_bu_val[i].resize(channels_bdt);
+    eff_bd_err[i].resize(channels_bdt);
+    eff_bs_err[i].resize(channels_bdt);
+    eff_bu_err[i].resize(channels_bdt);
+    N_bu_err[i].resize(channels_bdt);
+    eff_rel_err[i].resize(channels_bdt);
+  }
 
   parse_external_numbers(numbers_filename);
-  if (simul_bdt_) { cout << "I don't have efficiencies for the bdt channels..." << endl; return;}
   parse_efficiency_numbers();
   if (channels == 4) parse_efficiency_numbers(2);
+  if (simul_bdt_) bdt_bins_effs();
 
   one_over_BRBR_val = 1./ (Bu2JpsiK_BF_val * Jpsi2MuMu_BF_val);
   one_over_BRBR_err = one_over_BRBR_val * sqrt(pow(Bu2JpsiK_BF_err/Bu2JpsiK_BF_val, 2) + pow(Jpsi2MuMu_BF_err/Jpsi2MuMu_BF_val, 2));
   cout << "one_over_BRBR = " << one_over_BRBR_val << " +/- " << one_over_BRBR_err << endl;
   effratio_bs_val.resize(channels);
-  effratio_bd_val.reserve(channels);
+  effratio_bd_val.resize(channels);
   effratio_bs_err.resize(channels);
-  effratio_bd_err.reserve(channels);
+  effratio_bd_err.resize(channels);
   for (int i = 0; i < channels; i++) {
-    effratio_bs_val[i] = eff_bs_val[i] / eff_bu_val[i];
-    effratio_bd_val[i] = eff_bd_val[i] / eff_bu_val[i];
-    effratio_bs_err[i] = eff_rel_err[i] * effratio_bs_val[i]; // to be updated
-    effratio_bd_err[i] = eff_rel_err[i] * effratio_bd_val[i]; // to be updated
-    cout << "effratio_bs ("<< i << ") = " << effratio_bs_val[i] << "; +/- " << effratio_bs_err[i] << endl;
-    cout << "effratio_bd ("<< i << ") = " << effratio_bd_val[i] << "; +/- " << effratio_bd_err[i] << endl;
+    effratio_bs_val[i].resize(channels_bdt);
+    effratio_bd_val[i].resize(channels_bdt);
+    effratio_bs_err[i].resize(channels_bdt);
+    effratio_bd_err[i].resize(channels_bdt);
+  }
+  for (int i = 0; i < channels; i++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
+      effratio_bs_val[i][j] = eff_bs_val[i][j] / eff_bu_val[i][j];
+      effratio_bd_val[i][j] = eff_bd_val[i][j] / eff_bu_val[i][j];
+      effratio_bs_err[i][j] = eff_rel_err[i][j] * effratio_bs_val[i][j];
+      effratio_bd_err[i][j] = eff_rel_err[i][j] * effratio_bd_val[i][j];
+      cout << "effratio_bs ("<< i << "," << j << ") = " << effratio_bs_val[i][j] << "; +/- " << effratio_bs_err[i][j] << endl;
+      cout << "effratio_bd ("<< i << "," << j << ") = " << effratio_bd_val[i][j] << "; +/- " << effratio_bd_err[i][j] << endl;
+    }
   }
 }
 
@@ -1168,21 +1166,33 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
     for (int i = 0; i < channels_; i++) {
       size_t found;
       found = left_s.find(end_bd[i].first);
-      if (found != string::npos) eff_bd_val[i+offset] = number;
+      if (found != string::npos) eff_bd_val[i+offset][0] = number;
       found = left_s.find(end_bd[i].second);
-      if (found != string::npos)eff_bd_err[i+offset] = number;
+      if (found != string::npos)eff_bd_err[i+offset][0] = number;
       found = left_s.find(end_bs[i].first);
-      if (found != string::npos) eff_bs_val[i+offset] = number;
+      if (found != string::npos) eff_bs_val[i+offset][0] = number;
       found = left_s.find(end_bs[i].second);
-      if (found != string::npos) eff_bs_err[i+offset] = number;
+      if (found != string::npos) eff_bs_err[i+offset][0] = number;
       found = left_s.find(end_bu[i].first);
-      if (found != string::npos) eff_bu_val[i+offset] = number;
+      if (found != string::npos) eff_bu_val[i+offset][0] = number;
       found = left_s.find(end_bu[i].second);
-      if (found != string::npos) eff_bu_err[i+offset] = number;
+      if (found != string::npos) eff_bu_err[i+offset][0] = number;
       found = left_s.find(end_Nbu[i].first);
-      if (found != string::npos) N_bu_val[i+offset] = number;
+      if (found != string::npos) N_bu_val[i+offset][0] = number;
       found = left_s.find(end_Nbu[i].second);
-      if (found != string::npos) N_bu_err[i+offset] = number;
+      if (found != string::npos) N_bu_err[i+offset][0] = number;
+    }
+  }
+  for (int i = 0; i < channels_; i++) {
+    for (int j = 1; j < bdt_index_max(i+offset); j++) {
+      eff_bd_val[i+offset][j] = eff_bd_val[i+offset][0];
+      eff_bd_err[i+offset][j] = eff_bd_err[i+offset][0];
+      eff_bs_val[i+offset][j] = eff_bs_val[i+offset][0];
+      eff_bs_err[i+offset][j] = eff_bs_err[i+offset][0];
+      eff_bu_val[i+offset][j] = eff_bu_val[i+offset][0];
+      eff_bu_err[i+offset][j] = eff_bu_err[i+offset][0];
+      N_bu_val[i+offset][j] = N_bu_val[i+offset][0];
+      N_bu_err[i+offset][j] = N_bu_err[i+offset][0];
     }
   }
 //  fclose(file);
@@ -1304,28 +1314,31 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
   }
 
   for (int i = 0; i < channels_; i++) {
-    eff_rel_err[i+offset] = sqrt(eff_rel_err_sq[i]);
+    eff_rel_err[i+offset][0] = sqrt(eff_rel_err_sq[i]);
   }
-
+  for (int i = 0; i < channels_; i++) {
+    for (int j = 1; j < bdt_index_max(i+offset); j++) {
+      eff_rel_err[i+offset][j] = eff_rel_err[i+offset][0];
+    }
+  }
 
   for (int i = 0; i < channels_ && i < 2; i++) {
     if (simul_) ii = i;
     else ii = ch_i_;
     cout << "etacat " << ii + offset << endl;
-    cout << "bd eff = " << eff_bd_val[i+offset] << " \\pm " << eff_bd_err[i+offset] << endl;
-    cout << "bs eff = " << eff_bs_val[i+offset] << " \\pm " << eff_bs_err[i+offset] << endl;
-    cout << "bu eff = " << eff_bu_val[i+offset] << " \\pm " << eff_bu_err[i+offset] << endl;
-    cout << "N bu   = " << N_bu_val[i+offset] << " \\pm " << N_bu_err[i+offset] << endl;
-    cout << "eff ratio relative error " << eff_rel_err[i+offset] << endl;
+    cout << "bd eff = " << eff_bd_val[i+offset][0] << " \\pm " << eff_bd_err[i+offset][0] << endl;
+    cout << "bs eff = " << eff_bs_val[i+offset][0] << " \\pm " << eff_bs_err[i+offset][0] << endl;
+    cout << "bu eff = " << eff_bu_val[i+offset][0] << " \\pm " << eff_bu_err[i+offset][0] << endl;
+    cout << "N bu   = " << N_bu_val[i+offset][0] << " \\pm " << N_bu_err[i+offset][0] << endl;
+    cout << "eff ratio relative error " << eff_rel_err[i+offset][0] << endl;
     cout << endl;
   }  
-
 }
 
 void pdf_analysis::parse_external_numbers(string filename) {
   cout << "parsing " << filename << endl;
   FILE *file = fopen(filename.c_str(), "r");
-  if (!file) {cout << "file " << filename << " does not exist"; exit(1);}
+  if (!file) {cout << "file " << filename << " does not exist" << endl; exit(1);}
   char buffer[1024];
   while (fgets(buffer, sizeof(buffer), file)) {
     if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
@@ -1343,9 +1356,40 @@ void pdf_analysis::parse_external_numbers(string filename) {
   cout << "Jpsi2MuMu_BF " <<  Jpsi2MuMu_BF_val << " \\pm " << Jpsi2MuMu_BF_err << endl;
 }
 
+void pdf_analysis::bdt_bins_effs() {
+  cout << "parsing bdt_effs.txt to change eff in each bdt and eta bin" << endl;
+  FILE *file = fopen("input/bdt_effs.txt", "r");
+  if (!file) {cout << "file bdt_effs.txt does not exist" << endl; exit(1);}
+  vector < vector < double > > eff_bs_mult(channels, vector < double > (channels_bdt));
+  vector < vector < double > > eff_bd_mult(channels, vector < double > (channels_bdt));
+  char buffer[1024];
+  while (fgets(buffer, sizeof(buffer), file)) {
+    if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
+    if (buffer[0] == '\045') continue;
+    for (int i = 0; i < channels; i++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
+        ostringstream bs_oss, bd_oss;
+        bs_oss << "eff_bs_" << i << "_" << j << " %lf";
+        bd_oss << "eff_bd_" << i << "_" << j << " %lf";
+        sscanf(buffer, bs_oss.str().c_str(), &eff_bs_mult[i][j]);
+        sscanf(buffer, bd_oss.str().c_str(), &eff_bd_mult[i][j]);
+      }
+    }
+  }
+  for (int i = 0; i < channels; i++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
+      eff_bs_val[i][j] *= eff_bs_mult[i][j];
+      eff_bs_err[i][j] *= eff_bs_mult[i][j];
+      eff_bd_val[i][j] *= eff_bd_mult[i][j];
+      eff_bd_err[i][j] *= eff_bd_mult[i][j];
+      cout << i << "," << j << "  bs eff = " <<  eff_bs_val[i][j] << " bd eff = " << eff_bd_val[i][j] << endl;
+    }
+  }
+}
+
 void pdf_analysis::setSBslope(RooAbsData *sb_data) {
   for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < channels_bdt; j++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       RooAbsData* sb_data_i = sb_data->reduce(Form("etacat==etacat::etacat_%d", i));
       RooRealVar slope_comb(name("slope_comb", i, j), "slope_comb", -6., -20., 20.);
       RooExponential expo_temp("expo_temp", "expo_temp", *ws_->var("Mass"), slope_comb);
@@ -1367,4 +1411,62 @@ void pdf_analysis::setSBslope(RooAbsData *sb_data) {
     }
   }
   exit(0);
+}
+
+int pdf_analysis::bdt_index(int eta_ch, double bdt) {
+  if (bdt < 0.1) return -1;
+  if (eta_ch == 0) {
+    if (bdt < 0.17) return 0;
+    if (bdt < 0.24) return 1;
+    return 2;
+  }
+  if (eta_ch == 1) {
+    if (bdt < 0.19) return 0;
+    return 1;
+  }
+  if (eta_ch == 2) {
+    if (bdt < 0.14) return 0;
+    if (bdt < 0.18) return 1;
+    if (bdt < 0.22) return 2;
+    return 3;
+  }
+  if (eta_ch == 3) {
+    if (bdt < 0.14) return 0;
+    if (bdt < 0.18) return 1;
+    return 2;
+  }
+  return -1;
+}
+
+int pdf_analysis::bdt_index_max(int eta_ch) {
+  if (!simul_bdt_) return 1;
+  if (eta_ch == 0) return 3;
+  if (eta_ch == 1) return 2;
+  if (eta_ch == 2) return 4;
+  if (eta_ch == 3) return 3;
+  return -1;
+}
+
+int pdf_analysis::super_index(int eta_ch, int bdt_ch) {
+  if (eta_ch == 0) {
+    if (bdt_ch == 0) return 0;
+    if (bdt_ch == 1) return 1;
+    if (bdt_ch == 2) return 2;
+  }
+  if (eta_ch == 1) {
+    if (bdt_ch == 0) return 3;
+    if (bdt_ch == 1) return 4;
+  }
+  if (eta_ch == 2) {
+    if (bdt_ch == 0) return 5;
+    if (bdt_ch == 1) return 6;
+    if (bdt_ch == 2) return 7;
+    if (bdt_ch == 3) return 8;
+  }
+  if (eta_ch == 3) {
+    if (bdt_ch == 0) return 9;
+    if (bdt_ch == 1) return 10;
+    if (bdt_ch == 2) return 11;
+  }
+  return -1;
 }

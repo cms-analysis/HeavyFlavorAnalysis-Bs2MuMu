@@ -30,17 +30,14 @@
 
 class pdf_toyMC : public pdf_fitData {
 public:
-  pdf_toyMC(bool print, int inputs = 1, int inputs_bdt = 1, string input_estimates = "", string meth = "bdt", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, bool simul = false, bool simulbdt = false, bool pee_ = false, bool bdt_fit = false, string ch_s = "0", int sig = -1, bool asimov = false, bool syste = false, bool randomsyste = false, int nexp = 10, bool bd = false, string bias = "no");
+  pdf_toyMC(bool print, int inputs = 1, int inputs_bdt = 1, string input_estimates = "", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, bool simul = false, bool simulbdt = false, bool pee_ = false, bool bdt_fit = false, string ch_s = "0", int sig = -1, bool asimov = false, bool syste = false, bool randomsyste = false, int nexp = 10, bool bd = false, string bias = "no");
   ~pdf_toyMC();
 
-  void generate(string pdf_toy, string test_pdf = "total");
-  void mcstudy(string pdf_toy, string test_pdf = "total");
+  void generate(string pdf_toy, string pdf_test = "total");
+  void mcstudy(string pdf_toy, string pdf_test = "total");
 
 private:
   string bias_;
-
-  string pdf_toy_;
-  string pdf_test_;
   
   vector <vector <RooDataSet*> > residual_rds_bs;
   vector <vector <RooDataSet*> > residual_rds_bd;
@@ -59,11 +56,11 @@ private:
   RooRealVar* pull_BF_bd;
   RooDataSet* pull_rds_BF_bd;
 
-  void print(string output, RooWorkspace* ws);
+  void print(string output, RooWorkspace* ws, RooDataSet *rds_);
 
   void fit_pulls(RooRealVar *pull, RooDataSet *rds, int i, int j);
   void print_histos(TH1D* histos, int i, int j);
-  RooFitResult* fit_pdf (string pdf, RooAbsData* data, int printlevel = -1, RooWorkspace *ws = 0);
+  RooFitResult* fit_pdf (RooAbsData* data, int printlevel = -1, RooWorkspace *ws = 0);
   Double_t sig_hand(RooAbsData *data, int printlevel, RooWorkspace *ws);
   void do_bias(RooWorkspace* ws);
 

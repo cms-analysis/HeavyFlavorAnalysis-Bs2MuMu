@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
   if (SM && bd_const) help();
   if (simul && channel) help();
 
-  pdf_fitData* fitdata = new pdf_fitData(false, inputs, inputs_bdt, input_estimates, meth, "all", BF, SM, bd_const, simul, simul_bdt, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, NExp, Bd);
+  pdf_fitData* fitdata = new pdf_fitData(false, inputs, inputs_bdt, input_estimates, "all", BF, SM, bd_const, simul, simul_bdt, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, NExp, Bd);
   fitdata->initialize();
   fitdata->make_pdf_input(input_ws);
   fitdata->make_pdf();

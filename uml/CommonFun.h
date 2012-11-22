@@ -31,7 +31,7 @@ static string rare_f = "no";
 static bool print = false;
 static bool simul = false;
 static bool simul_bdt = false;
-static int BF = 2;
+static int BF = 0;
 static int NExp = 1;
 static int ch_i = -1;
 static int ch_bdt_i = -1;
@@ -56,10 +56,10 @@ void help() {
 
   cout << endl;
   cout << ">>>>>>>>> main_make_pdf.o: makes pdf workspace" << endl;
-  cout << "-i #filename \t input for making pdf shapes (MANDATORY); if filename==new the inputs will be the new small trees" << endl;
   cout << "choose one between:" << endl;
   cout << "\t -cha {0, 1} \t barrel OR endcap input" << endl;
   cout << "\t -simul # \t simultaneous fit of # eta channels" << endl;
+  cout << "-bdt_fit \t bdt_fit" << endl;
   cout << "\t -simul_bdt # \t simultaneous fit of # bdt channels" << endl;
   cout << "-BF {1,2,3} \t imposing the same BF in each channel for bs only (1) or for bs and bd (2) or for bs/bd and bd (3)" << endl;
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
@@ -68,11 +68,8 @@ void help() {
   cout << "-cuts #cutstring \t string cut for small tree: i.e. \"bdt>0.&&bdt<0.18\"; default is \"" << cuts << "\"" << endl;
   cout << "-cuts_file \t file containing bdt cuts for small tree" << endl;
   cout << "-pee \t per-event-error" << endl;
-  cout << "-bdt_fit \t bdt_fit" << endl;
-  cout << "-rare #filename \t file with rare event estimations (for normalizing to B -> JpsiK)" << endl;
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << "-newcomb \t exponential combinatorial bkg study" << endl;
-  cout << "-shapesyst \t adds pdf shape systematics" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_fitData.o: fits events with pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-i #filename \t input for fitting events (MANDATORY)" << endl;
@@ -105,7 +102,7 @@ void help() {
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
-  cout << "-i #filename \t workspace input" << endl;
+  cout << "-ws \t input workspace" << endl;
   cout << "-roomcs \t toy mc with RooMCStudy, otherwise by hand" << endl;
   cout << "-nexp # \t number of experiments (default 1)" << endl;
   cout << "-BF {1,2,3} \t imposing the same BF in each channel for bs only (1) or for bs and bd (2) or for bs/bd and bd (3)" << endl;
@@ -126,7 +123,6 @@ void help() {
   cout << "-syst \t adding syst constraints" << endl;
   cout << "-randomsyst \t syst constraints are randomized" << endl;
   cout << "-hack2011 \t hack 2011 semi to 2012" << endl;
-  cout << "-ws \t input workspace" << endl;
   cout << endl;
 
   exit(EXIT_SUCCESS);

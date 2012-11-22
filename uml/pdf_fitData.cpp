@@ -1,6 +1,6 @@
 #include "pdf_fitData.h"
 
-pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_estimates, string meth, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, bool randomsyste, int nexp, bool bd): pdf_analysis(print, meth, ch_s, range, BF, SM, bd_constr, simul, simulbdt, pee_, bdt_fit) {
+pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_estimates, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, bool randomsyste, int nexp, bool bd): pdf_analysis(print, ch_s, range, BF, SM, bd_constr, simul, simulbdt, pee_, bdt_fit) {
   cout << "fitData constructor" << endl;
   channels = inputs;
   channels_bdt = inputs_bdt;
@@ -37,10 +37,12 @@ pdf_fitData::pdf_fitData(bool print, int inputs, int inputs_bdt, string input_es
   syst = syste;
   randomsyst = randomsyste;
 
+  /// the pdf
   pdfname = "pdf_ext_total";
   if (simul_ && BF_ == 0) pdfname = "pdf_ext_simul_simple";
   if (simul_ && BF_ > 0 && !syst) pdfname = "pdf_ext_simul_noconstr";
   if (simul_ && BF_ > 0 && syst) pdfname = "pdf_ext_simul";
+  cout << ">>>>>>>>>>>>>>> the name of the fitting pdf is " << pdfname << " <<<<<<<<<<<<<<<<<<<" << endl;
 
   NExp = nexp;
   Bd = bd;
@@ -140,7 +142,7 @@ bool pdf_fitData::parse(char *cutName, float cut) {
   }
   else {
     for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         char test_cut[128];
         sprintf(test_cut, "bs_%d_%d", i, j);
         if (!strcmp(cutName, test_cut)) {
@@ -243,10 +245,9 @@ void pdf_fitData::print() {
 }
 
 void pdf_fitData::print_each_channel() {
-
   cout <<"printing"<< endl;
   for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < channels_bdt; j++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       /// all texts
       string cut;
       string title;
@@ -385,10 +386,9 @@ void pdf_fitData::print_each_channel() {
       fitresults->Draw();
 
       channel = i;
-      ostringstream second;
-      second << j;
-      final_c->Print( (get_address("data", second.str()) + ".gif").c_str() );
-      final_c->Print( (get_address("data", second.str()) + ".pdf").c_str() );
+      channel_bdt = j;
+      final_c->Print( (get_address("data", "", true) + ".gif").c_str() );
+      final_c->Print( (get_address("data", "", true) + ".pdf").c_str() );
       delete final_p;
       delete final_c;
     }
@@ -413,23 +413,27 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
       if (m_t > 4.9 && m_t < 5.9) {
         events++;
         Mass->setVal(m_t);
-        eta->setVal(eta_B_t);
-        m1eta->setVal(m1eta_t);
-        m2eta->setVal(m2eta_t);
         bdt->setVal(bdt_t);
         MassRes->setVal(mass_res_f->Eval(eta_B_t));
+        int eta_channel = -1;
         if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) {
-          if (cut_b && bdt_t < cut_[0 + offset*2]) continue;
-          channels_cat->setIndex(0 + offset*2);
+          eta_channel = 0 + offset*2;
+          if (cut_b && bdt_t < cut_[eta_channel]) continue;
+          channels_cat->setIndex(eta_channel);
         }
         else {
-          if (cut_b && bdt_t < cut_[1 + offset*2]) continue;
-          channels_cat->setIndex(1 + offset*2);
+          eta_channel = 1 + offset*2;
+          if (cut_b && bdt_t < cut_[eta_channel]) continue;
+          channels_cat->setIndex(eta_channel);
         }
-        if (bdt_t < 0.1) bdt_cat->setIndex(0);
-        else if (bdt_t < 0.18) bdt_cat->setIndex(1);
-        else bdt_cat->setIndex(2);
-        RooArgSet varlist_tmp(*Mass, *MassRes, *eta, *m1eta, *m2eta, *bdt, *channels_cat, *bdt_cat);
+        if (simul_bdt_) {
+          int bdt_channel = bdt_index(eta_channel, bdt_t);
+          if (bdt_channel == -1) continue; /// bdt < 0.1
+          bdt_cat->setIndex(bdt_channel);
+        }
+        RooArgSet varlist_tmp(*Mass, *MassRes, *channels_cat);
+        if (bdt_fit_) varlist_tmp.add(*bdt);
+        if (simul_bdt_) varlist_tmp.add(*bdt_cat);
         dataset->add(varlist_tmp);
 //        if (bdt_t > 0.20) cout << "evt = " << evt_t << ";  MassRes = " << mass_res_f->Eval(eta_B_t) << endl;
       }
@@ -444,9 +448,9 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
 
 void pdf_fitData::define_dataset() {
   cout << "defining dataset" << endl;
-  RooArgList varlist(*Mass, *MassRes, *eta, *m1eta, *m2eta, *bdt);
-  varlist.add(*channels_cat);
-  varlist.add(*bdt_cat);
+  RooArgSet varlist(*Mass, *MassRes, *channels_cat);
+  if (bdt_fit_) varlist.add(*bdt);
+  if (simul_bdt_) varlist.add(*bdt_cat);
   global_data = new RooDataSet("global_data", "global_data", varlist);
 }
 
@@ -474,26 +478,24 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TT
         ws_->var(name("N_semi", i))->setVal(estimate_semi[i]);
         ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
       }
-      /// global_data = new RooDataSet("global_data", "global_data", RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")), Index(*ws_->cat("etacat")), Import(data_map), ExpectedData(asimov_ ? true : false));
       if (!asimov_) global_data = ws_->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")), Extended());
       else global_datahist = ws_->pdf("pdf_ext_simul")->generateBinned(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")), ExpectedData());
     }
     else {
-      vector < vector <RooDataSet*> > data_i(channels, vector <RooDataSet* > (channels_bdt));
-      global_data = new RooDataSet("global_data", "global_data", RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat"), *ws_->cat("bdtcat")), Extended());
+      global_data = new RooDataSet("global_data", "global_data", RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->cat("etacat"), *ws_->cat("bdtcat")));
       for (int i = 0; i < channels; i++) {
-        for (int j = 0; j < channels_bdt; j++) {
+        for (int j = 0; j < bdt_index_max(i); j++) {
           ws_->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
           if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
           else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate2D_bd[i][j]/estimate2D_bd[i][j]);
           ws_->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
           ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
-          data_i[i][j] = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt")), Extended());
+          RooDataSet* data_i = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes")), Extended());
           channels_cat->setIndex(i);
           bdt_cat->setIndex(j);
-          data_i[i][j]->addColumn(*channels_cat);
-          data_i[i][j]->addColumn(*bdt_cat);
-          global_data->append(*data_i[i][j]);
+          data_i->addColumn(*channels_cat);
+          data_i->addColumn(*bdt_cat);
+          global_data->append(*data_i);
         }
       }
     }
@@ -531,7 +533,7 @@ void pdf_fitData::make_pdf() {
     }
     else {
       for (int i = 0; i < channels; i++) {
-        for (int j = 0; j < channels_bdt; j++) {
+        for (int j = 0; j < bdt_index_max(i); j++) {
           ws_input->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
           ws_input->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
           ws_input->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
@@ -552,7 +554,7 @@ void pdf_fitData::setsyst() {
     ws_->var("fs_over_fu")->setConstant(!syst);
     ws_->var("one_over_BRBR")->setConstant(!syst);
     for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         ws_->var(name("N_bu", i, j))->setConstant(!syst);
         ws_->var(name("effratio_bs", i, j))->setConstant(!syst);
         if (BF_ > 1) ws_->var(name("effratio_bd", i, j))->setConstant(!syst);
@@ -563,7 +565,7 @@ void pdf_fitData::setsyst() {
       constraints.add(*ws_->var("fs_over_fu"));
       constraints.add(*ws_->var("one_over_BRBR"));
       for (int i = 0; i < channels; i++) {
-        for (int j = 0; j < channels; j++) {
+        for (int j = 0; j < bdt_index_max(i); j++) {
           constraints.add(*ws_->var(name("N_bu", i, j)));
           constraints.add(*ws_->var(name("effratio_bs", i, j)));
           if (BF_ > 1) constraints.add(*ws_->var(name("effratio_bd", i, j)));
@@ -594,8 +596,8 @@ void pdf_fitData::significance() {
     if (BF_ > 0 && k == 0) continue;
     if (BF_ > 1 && k == 1) continue;
     for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
-        string name_k(name("N_" + source[k], i));
+      for (int j = 0; j < bdt_index_max(i); j++) {
+        string name_k(name("N_" + source[k], i, j));
         double val = ws_->var(name_k.c_str())->getVal();
         double err_lo = ws_->var(name_k.c_str())->getErrorLo();
         double err_hi = ws_->var(name_k.c_str())->getErrorHi();
@@ -608,7 +610,7 @@ void pdf_fitData::significance() {
     }
   }
   string BFs[2] = {"BF_bs", "BF_bd"};
-  for (int k = 0; k < 2; k++) {
+  for (int k = 0; k < BF_ && k < 3; k++) {
     string name_k(BFs[k]);
     double val = ws_->var(name_k.c_str())->getVal();
     double err_lo = ws_->var(name_k.c_str())->getErrorLo();
@@ -714,9 +716,9 @@ void pdf_fitData::sig_plhc() {
     exit(1);
   }
 
-  if (BF_==0) {
+  if (BF_ == 0) {
     for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         poi.add(*ws_->var(name(alt_name.c_str(), i, j)));
         poi.setRealValue(name(alt_name.c_str(), i, j), 0);
       }
@@ -746,7 +748,7 @@ void pdf_fitData::make_models() {
   vector <vector <double> > N_bs(channels, vector <double> (channels_bdt) );
   vector <vector <double> > N_bd(channels, vector <double> (channels_bdt) );
   for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < channels_bdt; j++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       if (BF_ == 0) N_bs[i][j] = ws_->var(name("N_bs", i, j))->getVal();
       else N_bs[i][j] = ws_->function(name("N_bs_formula", i, j))->getVal();
       if (!SM_ && !bd_constr_ && BF_ < 2) N_bd[i][j] = ws_->var(name("N_bd", i, j))->getVal();
@@ -769,7 +771,7 @@ void pdf_fitData::make_models() {
   if (BF_ == 0) {
     if (simul_) {
       for (int i = 0; i < channels; i++) {
-        for (int j = 0; j < channels_bdt; j++) {
+        for (int j = 0; j < bdt_index_max(i); j++) {
           if (i != 0 || j != 0) name_poi << ",";
           name_poi << name(alt_name.c_str(), i, j);
         }
@@ -788,7 +790,7 @@ void pdf_fitData::make_models() {
   /// nui
   RooArgSet nuisanceParams;
   for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < channels_bdt; j++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       nuisanceParams.add(*ws_->var(name("N_comb", i, j)));
       nuisanceParams.add(*ws_->var(name("N_semi", i, j)));
       if (!SM_ && !bd_constr_ && BF_ < 2 && !Bd) nuisanceParams.add(*ws_->var(name("N_bd", i, j)));
@@ -854,7 +856,7 @@ void pdf_fitData::make_models() {
   if (BF_ == 0) {
     if (simul_) {
       for (int i = 0; i < channels; i++) {
-        for (int j = 0; j < channels_bdt; j++) {
+        for (int j = 0; j < bdt_index_max(i); j++) {
           ws_->var(name(alt_name.c_str(), i, j))->setVal(0.0);
         }
       }
@@ -884,7 +886,7 @@ void pdf_fitData::make_models() {
   if (BF_ == 0) {
     if (simul_) {
       for (int i = 0; i < channels; i++) {
-        for (int j = 0; j < channels_bdt; j++) {
+        for (int j = 0; j < bdt_index_max(i); j++) {
           if (!Bd) ws_->var(name("N_bs", i, j))->setVal(N_bs[i][j]);
           else ws_->var(name("N_bd", i, j))->setVal(N_bd[i][j]);
         }
@@ -1013,7 +1015,7 @@ void pdf_fitData::make_prior() {
   RooArgList prior_list("prior_list");
 
   for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < channels_bdt; j++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       if (!SM_ && !bd_constr_ && BF_ < 2 && !Bd) prior_bd[i][j] = new RooGaussian(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal()), RooConst(ws_->var(name("N_bd", i, j))->getError()));
       else if (BF_ < 2 && Bd) prior_bd[i][j] = new RooGaussian(name("prior_bs", i, j), name("prior_bs", i, j), *ws_->var(name("N_bs", i, j)), RooConst(ws_->var(name("N_bs", i, j))->getVal()), RooConst(ws_->var(name("N_bs", i, j))->getError()));
       prior_semi[i][j] = new RooGaussian(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
@@ -1045,10 +1047,10 @@ void pdf_fitData::make_prior() {
 void pdf_fitData::setnewlumi() {
   if (BF_ > 0) {
     for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < channels_bdt; j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         double old_val = ws_->var(name("N_bu", i, j))->getVal();
         ws_->var(name("N_bu", i, j))->setVal(old_val * lumi);
-        cout << "channel " << i << "; Bs expected: " << ws_->function(name("N_bs_formula", i, j))->getVal() << "; Bd expected: " << ws_->function(name("N_bd_formula", i, j))->getVal() << endl;
+        cout << "channel " << i << " " << j << "; Bs expected: " << ws_->function(name("N_bs_formula", i, j))->getVal() << "; Bd expected: " << ws_->function(name("N_bd_formula", i, j))->getVal() << endl;
       }
     }
   }
@@ -1069,7 +1071,7 @@ void pdf_fitData::randomize_constraints(RooWorkspace* ws) {
   ws->var("one_over_BRBR")->setVal(one_over_BRBR_ds->get(0)->getRealValue("one_over_BRBR"));
 
   for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < channels_bdt; j++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       RooDataSet* B_bu_ds = ws->pdf(name("N_bu_gau_bs", i, j))->generate(RooArgSet(*ws->var(name("N_bu", i, j))), 1);
       RooDataSet* effratio_bs_ds = ws->pdf(name("effratio_gau_bs", i, j))->generate(RooArgSet(*ws->var(name("effratio_bs", i, j))), 1);
       ws->var(name("N_bu", i, j))->setVal(B_bu_ds->get(0)->getRealValue(name("N_bu", i, j)));
@@ -1105,7 +1107,7 @@ void pdf_fitData::extract_N_inRanges() {
     fprintf(file_out, "\\hline \n");
     fprintf(file_out, "Variable  & low SB & $B^0$ window & $B_s^0$ window & high SB & \\textbf{all} \\\\ \n");
     fprintf(file_out, "\\hline \n");
-    for (int j = 0; j < channels_bdt; j++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       vector < Double_t> total(5, 0.);
       for (int l = 0; l < 5; l++) {
         fprintf(file_out, "%s ", title_i[l].c_str());
