@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------
 # signal data and MC
-type=sg,default       dset=data     lumi=12.8    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-2012-data.root
-type=sg,2012          dset=data     lumi=12.8    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-2012-data.root
+type=sg,default       dset=data     lumi=12.8    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/new/v12-2012-data.root
+type=sg,2012          dset=data     lumi=12.8    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/new/v12-2012-data.root
 type=sg,default       dset=mc,0.583 lumi=7405.3  file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-BsToMuMu.root
 type=sg,acc           dset=mc,1.00  lumi=7405.3 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-BdToMuMu.root
 # -- note the changed filename for the signal acceptance MC!!!
@@ -12,12 +12,12 @@ type=sg,Bx2MuMu       dset=mc       lumi=1600.0 file=dcap://t3se01.psi.ch:22125/
 type=sg,By2MuMu       dset=mc       lumi=1600.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2011/v11-2e33-By2MuMu.root
 # --------------------------------------------------------------------
 # control sample  data and MC
-type=cs,default       dset=data      lumi=12.8   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-2012-data.root
+type=cs,default       dset=data      lumi=12.8   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/new/v12-2012-data.root
 type=cs,default       dset=mc,0.0168 lumi=17.5   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-BsToJpsiPhi.root 
 type=cs,acc           dset=mc,1.00   lumi=0.36   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-accBsToJpsiPhi.root
 # --------------------------------------------------------------------
 # normalization data and MC
-type=no,default       dset=data      lumi=12.8   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-2012-data.root
+type=no,default       dset=data      lumi=12.8   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/new/v12-2012-data.root
 type=no,default       dset=mc,0.0207 lumi=10.3   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-BuToJpsiK.root 
 type=no,acc           dset=mc,1.00   lumi=0.22   file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/2012/v12-cms-accBuToJpsiK.root
 # ----------------------------------------------------------------------
