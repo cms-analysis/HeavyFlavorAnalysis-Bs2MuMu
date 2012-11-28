@@ -582,7 +582,7 @@ void pdf_analysis::define_simul() {
       ws_->import(pdf_sim_noconstr);
     }
   }
-  else if (simul_bdt_ && !simul_all_) {
+  if (simul_bdt_ && !simul_all_) {
     RooSuperCategory* rsc = dynamic_cast<RooSuperCategory*> (ws_->obj("super_cat"));
     RooSimultaneous pdf_sim("pdf_ext_simul", "simultaneous pdf", *rsc);
     RooSimultaneous pdf_sim_test("pdf_ext_simul_simple", "simultaneous pdf without BF", *rsc);
@@ -606,13 +606,13 @@ void pdf_analysis::define_simul() {
       ws_->import(pdf_sim_noconstr);
     }
   }
-  else {
+  if (simul_bdt_ && simul_all_) {
     cout << "simul_bdt_ can't be with simul_all_" << endl;
     exit(1);
   }
 }
 
-string pdf_analysis::define_pdf_sum(string name, int i) {
+string pdf_analysis::define_pdf_sum(string name, int j) {
 
   vector <string> pdfs;
   size_t found;

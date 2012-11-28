@@ -54,13 +54,13 @@ pdf_fitData::~pdf_fitData() {
 void pdf_fitData::parse_estimate(){
   char buffer[1024];
   char cutName[128];
-  float cut;
+  double cut;
   FILE *estimate_file = fopen(input_estimates_.c_str(), "r");
   cout << "event estimates in " << input_estimates_ << " :" << endl;
   while (fgets(buffer, sizeof(buffer), estimate_file)) {
     if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
     if (buffer[0] == '#') continue;
-    sscanf(buffer, "%s %f", cutName, &cut);
+    sscanf(buffer, "%s %lf", cutName, &cut);
     if (!parse(cutName, cut)) {
       cout << "==> Error parsing variable " << cutName << endl;
       exit(EXIT_FAILURE);
@@ -960,7 +960,7 @@ void pdf_fitData::sig_plhts() {
   pc = new ProofConfig(*ws_, proof, Form("workers=%d", proof), kTRUE); // machine with 4 cores
 
   ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, NExp);
-  if(pc && proof > 1) mcSampler_pl->SetProofConfig(pc);
+  if (pc && proof > 1) mcSampler_pl->SetProofConfig(pc);
 
   FrequentistCalculator frequCalc(*ws_->data("global_data"), *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();
@@ -993,7 +993,7 @@ void pdf_fitData::sig_hybrid_plhts() {
   pc = new ProofConfig(*ws_, proof, Form("workers=%d", proof), kTRUE); // machine with 4 cores
 
   ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, NExp);
-  if(pc && proof > 1) mcSampler_pl->SetProofConfig(pc);
+  if (pc && proof > 1) mcSampler_pl->SetProofConfig(pc);
 
 //  RooSimultaneous *sim  = dynamic_cast<RooSimultaneous *>(ws_->pdf("pdf_ext_simul"));
 //  RooAbsCategoryLValue *cat = (RooAbsCategoryLValue *) sim->indexCat().clone(sim->indexCat().GetName());
@@ -1049,8 +1049,6 @@ void pdf_fitData::make_prior() {
   vector <vector <RooGaussian*> > prior_semi(channels, vector <RooGaussian*> (channels_bdt));
   vector <vector <RooGaussian*> > prior_comb(channels, vector <RooGaussian*> (channels_bdt));
 
-//  vector <vector <RooGamma*> > prior_bd(channels, vector <RooGamma*> (channels_bdt));
-//  vector <vector <RooGamma*> > prior_semi(channels, vector <RooGamma*> (channels_bdt));
 //  vector <vector <RooGamma*> > prior_comb(channels, vector <RooGamma*> (channels_bdt));
 
   RooArgList prior_list("prior_list");
@@ -1062,8 +1060,6 @@ void pdf_fitData::make_prior() {
       prior_semi[i][j] = new RooGaussian(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
       prior_comb[i][j] = new RooGaussian(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal()), RooConst(ws_->var(name("N_comb", i, j))->getError()));
 
-//      if (!SM_ && !bd_constr_ && BF_ < 2) prior_bd[i][j] = new RooGamma(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
-//      prior_semi[i][j] = new RooGamma(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
 //      prior_comb[i][j] = new RooGamma(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
 
       prior_list.add(*prior_bd[i][j]);
@@ -1073,7 +1069,6 @@ void pdf_fitData::make_prior() {
   }
   if (BF_ > 1 && !Bd) {
     RooGaussian* prior_bf_bd = new RooGaussian("prior_bf_bd", "prior_bf_bd", *ws_->var("BF_bd"), RooConst(ws_->var("BF_bd")->getVal()), RooConst(ws_->var("BF_bd")->getError()));
-//    RooGamma* prior_bf_bd = new RooGamma("prior_bf_bd", "prior_bf_bd", *ws_->var("BF_bd"), RooConst(ws_->var("BF_bd")->getVal() + 1), RooConst(1.), RooConst(0.));
     prior_list.add(*prior_bf_bd);
   }
   else if (BF_ > 1 && Bd) {
