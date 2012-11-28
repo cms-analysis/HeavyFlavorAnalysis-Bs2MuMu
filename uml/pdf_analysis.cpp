@@ -1,6 +1,6 @@
 #include "pdf_analysis.h"
 
-pdf_analysis::pdf_analysis(bool print, string ch_s, string range, int BF, bool SM, bool bd_constr, bool simul, bool simulbdt, bool pee_, bool bdt_fit) {
+pdf_analysis::pdf_analysis(bool print, string ch_s, string range, int BF, bool SM, bool bd_constr, int simul, int simulbdt, int simulall, bool pee_, bool bdt_fit) {
   cout << "analysis constructor" << endl;
   print_ = print;
   meth_ = "bdt";
@@ -9,9 +9,6 @@ pdf_analysis::pdf_analysis(bool print, string ch_s, string range, int BF, bool S
   range_ = range;
   SM_ = SM;
   bd_constr_ = bd_constr;
-  channels = 1;
-  channels_bdt = 1;
-  supercatdim = 12;
   verbosity = 1;
   old_tree = false;
 
@@ -19,16 +16,24 @@ pdf_analysis::pdf_analysis(bool print, string ch_s, string range, int BF, bool S
   channel = atoi(ch_s.c_str());
 
   pee = pee_;
-  simul_ = simul;
-  simul_bdt_ = simulbdt;
+
+  channels = simul;
+  channels_bdt = simulbdt;
+  channels_all = simulall;
+  supercatdim = 12;
+
+  simul_ = simul > 1 ? true : false;
+  simul_bdt_ = simulbdt > 1 ? true: false;
+  simul_all_ = simulall > 1 ? true: false;
+
   bdt_fit_ = bdt_fit;
   BF_ = BF;
   newcomb_ = false;
 
   syst = false;
   randomsyst = false;
-//  shapesyst = false;
 
+  if (simul_all_) channels_bdt = 4;
 }
 
 void pdf_analysis::initialize () {
@@ -78,10 +83,15 @@ void pdf_analysis::initialize () {
   }
   ws_->import(*channels_cat);
   bdt_cat = new RooCategory("bdtcat", "bdt channels");
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < channels_bdt; i++) {
     bdt_cat->defineType(Form("bdtcat_%d", i), i);
   }
   ws_->import(*bdt_cat);
+  all_cat = new RooCategory("allcat", "channels");
+  for (int i = 0; i < channels_all; i++) {
+    all_cat->defineType(Form("allcat_%d", i), i);
+  }
+  ws_->import(*all_cat);
   RooArgSet cat_set(*ws_->cat("etacat"), *ws_->cat("bdtcat"));
   super_cat = new RooSuperCategory("super_cat", "super_cat", cat_set);
   ws_->import(*super_cat);
@@ -530,8 +540,8 @@ void pdf_analysis::define_constraints(int i, int j) {
 
 }
 
-void pdf_analysis::define_simul(bool simulbdt) {
-  if (!simulbdt) {
+void pdf_analysis::define_simul() {
+  if (!simul_bdt_ && !simul_all_) {
     RooSimultaneous pdf_sim("pdf_ext_simul", "simultaneous pdf", *ws_->cat("etacat"));
     for (int i = 0; i < channels; i++) {
       pdf_sim.addPdf(*ws_->pdf(name("pdf_ext_total", i)), name("etacat", i));
@@ -550,7 +560,29 @@ void pdf_analysis::define_simul(bool simulbdt) {
       ws_->import(pdf_sim_noconstr);
     }
   }
-  else {
+  if (!simul_bdt_ && simul_all_) {
+    RooSimultaneous pdf_sim("pdf_ext_simul", "simultaneous pdf", *ws_->cat("allcat"));
+    for (int i = 0; i < channels_all; i++) {
+      vector <int> indexes(get_EtaBdt_bins(i));
+      pdf_sim.addPdf(*ws_->pdf(name("pdf_ext_total", indexes[0], indexes[1])), Form("allcat_%d", i));
+    }
+    ws_->import(pdf_sim);
+    if (BF_ > 0) {
+      RooSimultaneous pdf_sim_test("pdf_ext_simul_simple", "simultaneous pdf without BF", *ws_->cat("allcat"));
+      for (int i = 0; i < channels_all; i++) {
+        vector <int> indexes(get_EtaBdt_bins(i));
+        pdf_sim_test.addPdf(*ws_->pdf(name("pdf_ext_total_simple", indexes[0], indexes[1])), Form("allcat_%d", i));
+      }
+      ws_->import(pdf_sim_test);
+      RooSimultaneous pdf_sim_noconstr("pdf_ext_simul_noconstr", "simultaneous pdf without constraints", *ws_->cat("allcat"));
+      for (int i = 0; i < channels_all; i++) {
+        vector <int> indexes(get_EtaBdt_bins(i));
+        pdf_sim_noconstr.addPdf(*ws_->pdf(name("pdf_ext_sum", indexes[0], indexes[1])), Form("allcat_%d", i));
+      }
+      ws_->import(pdf_sim_noconstr);
+    }
+  }
+  else if (simul_bdt_ && !simul_all_) {
     RooSuperCategory* rsc = dynamic_cast<RooSuperCategory*> (ws_->obj("super_cat"));
     RooSimultaneous pdf_sim("pdf_ext_simul", "simultaneous pdf", *rsc);
     RooSimultaneous pdf_sim_test("pdf_ext_simul_simple", "simultaneous pdf without BF", *rsc);
@@ -568,21 +600,15 @@ void pdf_analysis::define_simul(bool simulbdt) {
         pdf_sim_noconstr.addPdf(*ws_->pdf(Form("pdf_ext_sum_%d_%d", i, j)), rsc->getLabel());
       }
     }
-//    for (int g = 0; g < channels*channels_bdt ;g++) {
-//      rsc->setIndex(g);
-//      RooArgSet icl = rsc->inputCatList();
-//      RooCategory* eta_c = (RooCategory*)icl.find("etacat");
-//      RooCategory* bdt_c = (RooCategory*)icl.find("bdtcat");
-//      Int_t eta_i = eta_c->getIndex();
-//      Int_t bdt_i = bdt_c->getIndex();
-//      cout << rsc->getLabel() << " " <<  eta_i << " " <<  bdt_i<< endl;
-//      pdf_sim.addPdf(*ws_->pdf(Form("pdf_ext_total_%d_%d", eta_i, bdt_i)), rsc->getLabel());
-//    }
     ws_->import(pdf_sim);
     if (BF_ > 0) {
       ws_->import(pdf_sim_test);
       ws_->import(pdf_sim_noconstr);
     }
+  }
+  else {
+    cout << "simul_bdt_ can't be with simul_all_" << endl;
+    exit(1);
   }
 }
 
@@ -834,7 +860,7 @@ RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
     double Weight = rds->weight();
     RooArgSet varlist_tmp_res(*massres);
     if (aRow->getCatIndex("etacat") == channel) {
-      if (!simul_bdt_ || aRow->getCatIndex("bdtcat") == channel_bdt) {
+      if ((!simul_bdt_ && !simul_all_) || aRow->getCatIndex("bdtcat") == channel_bdt) {
         subdata_res->add(varlist_tmp_res, Weight);
         //      histo.Fill(massres->getVal(), Weight);
       }
@@ -844,13 +870,13 @@ RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
   ostringstream name_rdh;
   name_rdh << "MassRes_rdh_" << name;
   if (simul_) name_rdh << "_" << channel;
-  if (simul_bdt_) name_rdh << "_" << channel_bdt;
+  if (simul_bdt_ || simul_all_) name_rdh << "_" << channel_bdt;
   RooDataHist *MassRes_rdh = subdata_res->binnedClone(name_rdh.str().c_str());
   //RooDataHist *MassRes_rdh = new RooDataHist(name_rdh.str().c_str(), name_rdh.str().c_str(), *ws_->var("MassRes"), &histo);
   ostringstream name_pdf;
   name_pdf << "MassRes_pdf_" << name;
   if (simul_) name_pdf << "_" << channel;
-  if (simul_bdt_) name_pdf << "_" << channel_bdt;
+  if (simul_bdt_ || simul_all_) name_pdf << "_" << channel_bdt;
   RooHistPdf * MassRes_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), RooArgList(*ws_->var("MassRes")), *MassRes_rdh);
   ws_->import(*MassRes_rhpdf);
 
@@ -868,7 +894,7 @@ RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name) {
     double Weight = rds->weight();
     RooArgSet varlist_tmp_bdt(*BDT);
     if (aRow->getCatIndex("etacat") == channel) {
-      if (!simul_bdt_ || aRow->getCatIndex("bdtcat") == channel_bdt) {
+      if ((!simul_bdt_ && !simul_all_) || aRow->getCatIndex("bdtcat") == channel_bdt) {
         //      subdata_bdt->add(varlist_tmp_bdt, Weight);
         histo.Fill(BDT->getVal(), Weight);
       }
@@ -879,13 +905,13 @@ RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name) {
   ostringstream name_rdh;
   name_rdh << "bdt_rdh_" << name;
   if (simul_) name_rdh << "_" << channel;
-  if (simul_bdt_) name_rdh << "_" << channel_bdt;
+  if (simul_bdt_ || simul_all_) name_rdh << "_" << channel_bdt;
   //RooDataHist *bdt_rdh = subdata_bdt->binnedClone(name_rdh.str().c_str());
   RooDataHist *bdt_rdh = new RooDataHist(name_rdh.str().c_str(), name_rdh.str().c_str(), *ws_->var("bdt"), &histo);
   ostringstream name_pdf;
   name_pdf << "bdt_pdf_" << name;
   if (simul_) name_pdf << "_" << channel;
-  if (simul_bdt_) name_pdf << "_" << channel_bdt;
+  if (simul_bdt_ || simul_all_) name_pdf << "_" << channel_bdt;
   RooHistPdf * bdt_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), RooArgList(*ws_->var("bdt")), *bdt_rdh);
   ws_->import(*bdt_rhpdf);
 
@@ -902,7 +928,7 @@ RooDataHist pdf_analysis::getRandom_rdh() {
 const char* pdf_analysis::name(string name, int i, int j) {
   if (!simul_) return name.c_str();
   else {
-    if (!simul_bdt_) return Form("%s_%d", name.c_str(), i);
+    if (!simul_bdt_ && !simul_all_) return Form("%s_%d", name.c_str(), i);
     else return Form("%s_%d_%d", name.c_str(), i, j);
   }
 }
@@ -1051,7 +1077,7 @@ string pdf_analysis::get_address(string name, string pdf, bool channeling) {
     if (channeling) address << channel;
   }
   if (!simul_) address  << "_" << ch_s_;
-  if (simul_ && simul_bdt_) {
+  if (simul_ && (simul_bdt_ || simul_all_)) {
     address << "_simulBdt_";
     if (channeling) address << channel_bdt;
   }
@@ -1086,11 +1112,11 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
     N_bu_err[i].resize(channels_bdt);
     eff_rel_err[i].resize(channels_bdt);
   }
-
+  cout << "channels = " << channels << "; channels_bdt = " << channels_bdt << "; channels_all = " << channels_all << endl;
   parse_external_numbers(numbers_filename);
   parse_efficiency_numbers();
   if (channels == 4) parse_efficiency_numbers(2);
-  if (simul_bdt_) bdt_bins_effs();
+  if (simul_bdt_ || simul_all_) bdt_bins_effs();
 
   one_over_BRBR_val = 1./ (Bu2JpsiK_BF_val * Jpsi2MuMu_BF_val);
   one_over_BRBR_err = one_over_BRBR_val * sqrt(pow(Bu2JpsiK_BF_err/Bu2JpsiK_BF_val, 2) + pow(Jpsi2MuMu_BF_err/Jpsi2MuMu_BF_val, 2));
@@ -1439,7 +1465,7 @@ int pdf_analysis::bdt_index(int eta_ch, double bdt) {
 }
 
 int pdf_analysis::bdt_index_max(int eta_ch) {
-  if (!simul_bdt_) return 1;
+  if (!simul_bdt_ && !simul_all_) return 1;
   if (eta_ch == 0) return 3;
   if (eta_ch == 1) return 2;
   if (eta_ch == 2) return 4;
@@ -1469,4 +1495,57 @@ int pdf_analysis::super_index(int eta_ch, int bdt_ch) {
     if (bdt_ch == 2) return 11;
   }
   return -1;
+}
+
+vector <int> pdf_analysis::get_EtaBdt_bins(int index) {
+  vector <int> indexes(2, -1);
+  if (index == 0) {
+    indexes[0] = 0;
+    indexes[1] = 0;
+  }
+  if (index == 1) {
+    indexes[0] = 0;
+    indexes[1] = 1;
+  }
+  if (index == 2) {
+    indexes[0] = 0;
+    indexes[1] = 2;
+  }
+  if (index == 3) {
+    indexes[0] = 1;
+    indexes[1] = 0;
+  }
+  if (index == 4) {
+    indexes[0] = 1;
+    indexes[1] = 1;
+  }
+  if (index == 5) {
+    indexes[0] = 2;
+    indexes[1] = 0;
+  }
+  if (index == 6) {
+    indexes[0] = 2;
+    indexes[1] = 1;
+  }
+  if (index == 7) {
+    indexes[0] = 2;
+    indexes[1] = 2;
+  }
+  if (index == 8) {
+    indexes[0] = 2;
+    indexes[1] = 3;
+  }
+  if (index == 9) {
+    indexes[0] = 3;
+    indexes[1] = 0;
+  }
+  if (index == 10) {
+    indexes[0] = 3;
+    indexes[1] = 1;
+  }
+  if (index == 11) {
+    indexes[0] = 3;
+    indexes[1] = 2;
+  }
+  return indexes;
 }

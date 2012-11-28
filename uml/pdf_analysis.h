@@ -47,12 +47,9 @@ using namespace RooFit;
 
 class pdf_analysis {
 public:
-  pdf_analysis(bool print, string ch_s = "0", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, bool simul = false, bool simulbdt = false, bool pee_ = false, bool bdt_fit = false);
+  pdf_analysis(bool print, string ch_s = "0", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, int simul = 1, int simulbdt = 1, int simulall = 1, bool pee_ = false, bool bdt_fit = false);
   void set_ws(RooWorkspace *ws) {ws_ = ws;}
   RooWorkspace* get_ws() {return ws_;}
-
-//  void set_rad(RooAbsData* rad) {rds_ = rad;}
-//  RooAbsData* get_rad() {return rds_;}
   
   void initialize();
   RooHistPdf* define_MassRes_pdf(RooDataSet *rds, string name);
@@ -78,7 +75,7 @@ public:
   void define_total_fractional(int i, int j); // final pdf with fractional components, and also extended
   void define_total_extended(int i, int j); // final pdf with all extended components
 
-  void define_simul(bool simulbdt);
+  void define_simul();
 
   void getBFnumbers(string numbers_filename);
 
@@ -95,6 +92,8 @@ public:
   bool bd_constr_;
   bool simul_;
   bool simul_bdt_;
+  bool simul_all_;
+
   int BF_;
   RooRealVar* Mass;
   RooRealVar* MassRes;
@@ -106,10 +105,12 @@ public:
 
   RooCategory* channels_cat;
   RooCategory* bdt_cat;
+  RooCategory* all_cat;
   RooSuperCategory* super_cat;
 
   int channels;
   int channels_bdt;
+  int channels_all;
   string range_;
   RooFitResult* RFR;
 
@@ -192,6 +193,7 @@ protected:
   bool randomsyst;
 
   vector <string> massrange_names;
+  vector <int> get_EtaBdt_bins(int index);
 
 private:
 

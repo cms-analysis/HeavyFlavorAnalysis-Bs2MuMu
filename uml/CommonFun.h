@@ -37,6 +37,7 @@ static int ch_i = -1;
 static int ch_bdt_i = -1;
 static int inputs = 1;
 static int inputs_bdt = 1;
+static int inputs_all = 1;
 static int sig_meth = -1;
 static int proof = 1;
 bool syst = false;
@@ -51,6 +52,7 @@ static bool Bd = false;
 static bool SMIsNull = false;
 static bool LLprofile = false;
 static bool hack_semi2011 = false;
+bool simul_all = false;
 
 void help() {
 
@@ -60,7 +62,8 @@ void help() {
   cout << "\t -cha {0, 1} \t barrel OR endcap input" << endl;
   cout << "\t -simul # \t simultaneous fit of # eta channels" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;
-  cout << "\t -simul_bdt # \t simultaneous fit of # bdt channels" << endl;
+  cout << "-simul_bdt # \t simultaneous fit of # bdt channels" << endl;
+  cout << "-simul_all # \t simultaneous fit of # eta and bdt channels" << endl;
   cout << "-BF {1,2,3} \t imposing the same BF in each channel for bs only (1) or for bs and bd (2) or for bs/bd and bd (3)" << endl;
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
@@ -77,6 +80,7 @@ void help() {
   cout << "-cha {0, 1} \t barrel OR endcap input, incompatible with -simul" << endl;
   cout << "\t -simul # \t simultaneous fit of # eta channels" << endl;
   cout << "\t -simul_bdt # \t simultaneous fit of # bdt channels" << endl;
+  cout << "-simul_all # \t simultaneous fit of # eta and bdt channels" << endl;
   cout << "-BF {1,2,3} \t imposing the same BF in each channel for bs only (1) or for bs and bd (2) or for bs/bd and bd (3)" << endl;
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
@@ -211,6 +215,11 @@ void parse_options(int argc, char* argv[]){
       inputs = atoi(argv[i+1]);
       cout << "simultaneous fits of " << inputs << " eta channels" << endl;
       simul = true;
+    }
+    if (!strcmp(argv[i],"-simul_all")) {
+      inputs_all = atoi(argv[i+1]);
+      cout << "simultaneous fits of " << inputs_all << " eta and bdt channels" << endl;
+      simul_all = true;
     }
     if (!strcmp(argv[i],"-simul_bdt")) {
       inputs_bdt = atoi(argv[i+1]);

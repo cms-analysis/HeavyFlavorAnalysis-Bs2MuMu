@@ -30,10 +30,10 @@ using namespace RooStats;
 
 class pdf_fitData : public pdf_analysis {
   public:
-    pdf_fitData(bool print, int inputs = 1, int inputs_bdt = 1, string input_estimates = "", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, bool simul = false, bool simulbdt = false, bool pee_ = false , bool bdt_fit = false , string ch_s = "0", int sig = -1, bool asimov = false, bool syste = false, bool randomsyste = false, int nexp = 10, bool bd = false);
+    pdf_fitData(bool print, string input_estimates = "", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, int simul = 1, int simulbdt = 1, int simulall = 1, bool pee_ = false , bool bdt_fit = false , string ch_s = "0", int sig = -1, bool asimov = false, bool syste = false, bool randomsyste = false, int nexp = 10, bool bd = false);
     ~pdf_fitData();
     void print();
-    void print_each_channel();
+    void print_each_channel(string output = "", RooWorkspace *ws = 0, RooDataSet *rds_ = 0);
 
     void define_dataset();
     void make_dataset(bool cut_b, vector<double> cut_, string cuts, TTree *tree, int offset = 0);

@@ -23,14 +23,16 @@ int main(int argc, char* argv[]) {
   if (simul && channel) help();
 
   /// MC shapes
-  if (SM && bd_const) {cout << "please select SM OR bd_const, not both" << endl; return (EXIT_FAILURE);}
+  if (SM && bd_const) {cout << "please select SM OR bd_const, not both" << endl; return EXIT_FAILURE;}
 
-  pdf_analysis ana1(print, ch_s, "all", BF, SM, bd_const, simul, simul_bdt, pee, bdt_fit);
+  pdf_analysis ana1(print, ch_s, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit);
+  if (simul_all) ana1.simul_all_ = true;
   if (no_legend) ana1.no_legend = true;
   ana1.set_SMratio(0.09);
 
-  ana1.channels = inputs;
-  ana1.channels_bdt = inputs_bdt;
+//  ana1.channels = inputs;
+//  if (!simul_all) ana1.channels_bdt = inputs_bdt;
+//  ana1.channels_all = inputs_all;
   ana1.initialize();
   RooWorkspace *ws = ana1.get_ws();
 
@@ -67,6 +69,7 @@ int main(int argc, char* argv[]) {
   RooRealVar* MassRes = ws->var("MassRes");
   RooCategory* channel_cat = ws->cat("etacat");
   RooCategory* bdt_cat = ws->cat("bdtcat");
+  RooCategory* all_cat = ws->cat("allcat");
 
   vector < double > exp_v_0(get_singlerare_normalization("input/2011/anaBmm.plotResults.2011.tex", 0, decays_n));
   vector < double > exp_v_1(get_singlerare_normalization("input/2011/anaBmm.plotResults.2011.tex", 1, decays_n));
@@ -79,7 +82,8 @@ int main(int argc, char* argv[]) {
     decays_rdsname[i] = decays[i] + "_rds";
     RooArgList varlist(*m, *MassRes, *channel_cat);
     if (bdt_fit) varlist.add(*bdt);
-    if (simul_bdt) varlist.add(*bdt_cat);
+    if (simul_bdt || simul_all) varlist.add(*bdt_cat);
+    if (simul_all) varlist.add(*all_cat);
     varlist.add(*weight);
     rds_smalltree[i] = new RooDataSet(decays_rdsname[i].c_str(), decays_rdsname[i].c_str(), varlist, "weight");
 
@@ -143,11 +147,12 @@ int main(int argc, char* argv[]) {
           }
         }
         /// bdt channels
-        if (simul_bdt) {
-          int bdt_channel = ana1.bdt_index(eta_channel, bdt_t);
+        int bdt_channel = ana1.bdt_index(eta_channel, bdt_t);
+        if (simul_bdt || simul_all) {
           if (bdt_channel == -1) continue; /// bdt < 0.1
           bdt_cat->setIndex(bdt_channel);
         }
+        if (simul_all) all_cat->setIndex(ana1.super_index(eta_channel, bdt_channel));
 
         double weight = 1;
         if (i > 1 && i < 13) {
@@ -162,7 +167,8 @@ int main(int argc, char* argv[]) {
         }
         RooArgList varlist_tmp(*m, *MassRes, *channel_cat);
         if (bdt_fit) varlist_tmp.add(*bdt);
-        if (simul_bdt) varlist_tmp.add(*bdt_cat);
+        if (simul_bdt || simul_all) varlist_tmp.add(*bdt_cat);
+        if (simul_all) varlist_tmp.add(*all_cat);
         rds_smalltree[i]->add(varlist_tmp, weight);
       }
       cout << rds_smalltree[i]->GetName() << " done: " << rds_smalltree[i]->sumEntries() << " <--- " << smalltree->GetEntries() << endl;
@@ -199,7 +205,7 @@ int main(int argc, char* argv[]) {
     ana1.channel = simul ? j : ch_i;
     /// 1D
     for (int k = 0; k < ana1.bdt_index_max(j); k++) {
-      ana1.channel_bdt = simul_bdt ? k : ch_bdt_i;
+      ana1.channel_bdt = (simul_bdt || simul_all) ? k : ch_bdt_i;
       ana1.define_MassRes_pdf(rds_smalltree[0], "bs");
       ana1.define_MassRes_pdf(rds_smalltree[1], "bd");
       ana1.define_MassRes_pdf(rds_semi, "semi");
@@ -219,7 +225,7 @@ int main(int argc, char* argv[]) {
 //  if (shapesyst) ana1.shapesyst = true;
   ana1.define_pdfs();
 
-  if (simul) ana1.define_simul(simul_bdt);
+  if (simul) ana1.define_simul();
 
   get_rare_normalization("anaBmm.plotResults.2011.tex", "./input/2011/");
   get_rare_normalization("anaBmm.plotResults.2012.tex", "./input/2012/", 2);
@@ -230,7 +236,7 @@ int main(int argc, char* argv[]) {
   for (int j = 0; j < inputs; j++) {
     for (int k = 0; k < ana1.bdt_index_max(j); k++) {
       ana1.channel = simul ? j : ch_i;
-      ana1.channel_bdt = simul_bdt ? k : ch_bdt_i;
+      ana1.channel_bdt = (simul_bdt || simul_all) ? k : ch_bdt_i;
       /// bs
       ana1.fit_pdf(ana1.name("bs", j, k), rad_bs, false);
 
@@ -258,6 +264,7 @@ int main(int argc, char* argv[]) {
   if (simul) output_s += "simul" + inputs_oss.str() + "_" + meth;
   else output_s += "pdf_" + meth + "_" + ch_s;
   if (simul_bdt) output_s += "_simulBdt";
+  if (simul_all) output_s += "_simulAll";
   if (BF > 0) output_s += Form("_BF%d", BF);
   if (SM) output_s += "_SM";
   if (bd_const) output_s += "_BdConst";
@@ -269,7 +276,7 @@ int main(int argc, char* argv[]) {
   MassRes_0_h->Write();
   MassRes_2_h->Write();
   output_f->Close();
-  if (simul && !simul_bdt) ws->pdf("pdf_ext_simul")->graphVizTree(Form("sim_%d_pdf.dot", inputs));
+  if (simul) ws->pdf("pdf_ext_simul")->graphVizTree(Form("sim_%d_pdf.dot", inputs));
   else if (!simul && !simul_bdt) ws->pdf("pdf_ext_total")->graphVizTree(Form("ext_%s.dot", ch_s.c_str()));
   else ws->pdf("pdf_ext_simul")->graphVizTree(Form("sim_%d_%d.dot", inputs, inputs_bdt));
   ws->Print();
