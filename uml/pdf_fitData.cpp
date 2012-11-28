@@ -827,6 +827,7 @@ void pdf_fitData::make_models() {
       else if (Bd && BF_ < 1) nuisanceParams.add(*ws_->var(name("N_bs", i, j)));
       if (BF_ > 0 && syst) {
         nuisanceParams.add(*ws_->var(name("effratio_bs", i, j)));
+        nuisanceParams.add(*ws_->var(name("N_bu", i, j)));
         if (BF_ > 1) {
           nuisanceParams.add(*ws_->var(name("effratio_bd", i, j)));
         }
@@ -939,8 +940,6 @@ void pdf_fitData::make_models() {
   }
   H0->SetSnapshot(*ws_->set("poi"));
 
-
-
   ws_->import(*H0);
   ws_->import(*H1);
 }
@@ -953,6 +952,7 @@ void pdf_fitData::sig_plhts() {
   ws_->Print();
 
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(pdfname.c_str()));
+//  pl_ts.SetPrintLevel(2);
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
 
@@ -986,6 +986,7 @@ void pdf_fitData::sig_hybrid_plhts() {
   H1->SetPriorPdf(*ws_->pdf("prior"));
 
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(pdfname.c_str()));
+//  pl_ts.SetPrintLevel(2);
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
 
