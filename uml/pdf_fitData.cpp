@@ -244,7 +244,7 @@ void pdf_fitData::print() {
   delete c;
 }
 
-void pdf_fitData::print_each_channel(string output, RooWorkspace* ws, RooDataSet* rds_) {
+void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws, RooDataSet* rds_) {
   if (ws == 0) ws = ws_;
   if (rds_ == 0) rds_ = global_data;
   cout <<"printing"<< endl;
@@ -280,7 +280,7 @@ void pdf_fitData::print_each_channel(string output, RooWorkspace* ws, RooDataSet
       }
       if (pee) projw_set.add(*ws->var("MassRes"));
 
-      RooPlot* final_p = ws->var("Mass")->frame(Bins(25), Title(title.c_str()));
+      RooPlot* final_p = ws->var(var.c_str())->frame((var == "bdt") ? Bins(20) : Bins(25), Title(title.c_str()), (var == "bdt") ? Range(0.1, 0.5) : RooCmdArg::none());
       rds_->plotOn(final_p, Cut(cut.c_str()));
 
       ws->pdf(pdfname.c_str())->plotOn(final_p, Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_), LineColor(kBlue), LineWidth(3));
@@ -403,7 +403,7 @@ void pdf_fitData::print_each_channel(string output, RooWorkspace* ws, RooDataSet
       channel = i;
       channel_bdt = j;
       string output_name;
-      if (output == "") output_name = get_address("data", "", true);
+      if (output == "") output_name = get_address("data_" + var, "", true);
       else output_name = get_address(pdfname, output, true);
       final_c->Print( (output_name + ".gif").c_str() );
       final_c->Print( (output_name + ".pdf").c_str() );
@@ -786,10 +786,12 @@ void pdf_fitData::make_models() {
   }
 
   /// obs
-  if (!simul_) ws_->defineSet("obs", "Mass");
-  else if (simul_ && !simul_bdt_ && !simul_all_) ws_->defineSet("obs", "Mass,etacat");
-  else if (simul_ && simul_bdt_ && !simul_all_) ws_->defineSet("obs", "Mass,etacat,bdtcat");
-  else if (simul_ && !simul_bdt_ && simul_all_) ws_->defineSet("obs", "Mass,allcat");
+  string observables("Mass");
+  if (simul_) observables += ",etacat";
+  if (bdt_fit_) observables += ",bdt";
+  if (simul_bdt_) observables += ",bdtcat";
+  if (simul_all_) observables += ",allcat";
+  ws_->defineSet("obs", observables.c_str());
 
   string alt_name("N_bs");
   if (BF_ > 0) alt_name = "BF_bs";

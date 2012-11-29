@@ -74,7 +74,10 @@ int main(int argc, char** argv) {
   if (!asimov) {
     fitdata->fit_pdf();
     if (print) {
-      if (simul) fitdata->print_each_channel();
+      if (simul) {
+        fitdata->print_each_channel();
+        if (bdt_fit) fitdata->print_each_channel("bdt");
+      }
       else fitdata->print();
     }
     fitdata->extract_N_inRanges();
