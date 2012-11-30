@@ -621,36 +621,39 @@ void pdf_fitData::save() {
 
 void pdf_fitData::significance() {
 /// set negative errors to zero
-  for (int k = 0; k < 4; k++) {
-    if (BF_ > 0 && k == 0) continue;
-    if (BF_ > 1 && k == 1) continue;
-    for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < bdt_index_max(i); j++) {
-        string name_k(name("N_" + source[k], i, j));
-        double val = ws_->var(name_k.c_str())->getVal();
-        double err_lo = ws_->var(name_k.c_str())->getErrorLo();
-        double err_hi = ws_->var(name_k.c_str())->getErrorHi();
-        if (val + err_lo < 0) {
-          err_lo = -val;
-          ws_->var(name_k.c_str())->setAsymError(err_lo, err_hi);
-          cout << name_k << " low error reset" << endl;
-        }
-      }
-    }
-  }
-  string BFs[2] = {"BF_bs", "BF_bd"};
-  for (int k = 0; k < BF_ && k < 3; k++) {
-    string name_k(BFs[k]);
-    double val = ws_->var(name_k.c_str())->getVal();
-    double err_lo = ws_->var(name_k.c_str())->getErrorLo();
-    double err_hi = ws_->var(name_k.c_str())->getErrorHi();
-    if (val + err_lo < 0) {
-      err_lo = -val;
-      ws_->var(name_k.c_str())->setAsymError(err_lo, err_hi);
-      cout << name_k << " low error reset" << endl;
-    }
-  }
+//  for (int k = 0; k < 4; k++) {
+//    if (BF_ > 0 && k == 0) continue;
+//    if (BF_ > 1 && k == 1) continue;
+//    for (int i = 0; i < channels; i++) {
+//      for (int j = 0; j < bdt_index_max(i); j++) {
+//        string name_k(name("N_" + source[k], i, j));
+//        double val = ws_->var(name_k.c_str())->getVal();
+//        double err_lo = ws_->var(name_k.c_str())->getErrorLo();
+//        double err_hi = ws_->var(name_k.c_str())->getErrorHi();
+//        if (val + err_lo < 0) {
+//          err_lo = -val;
+//          ws_->var(name_k.c_str())->setAsymError(err_lo, err_hi);
+//          cout << name_k << " low error reset" << endl;
+//        }
+//      }
+//    }
+//  }
+//  string BFs[2] = {"BF_bs", "BF_bd"};
+//  for (int k = 0; k < BF_ && k < 3; k++) {
+//    string name_k(BFs[k]);
+//    double val = ws_->var(name_k.c_str())->getVal();
+//    double err_lo = ws_->var(name_k.c_str())->getErrorLo();
+//    double err_hi = ws_->var(name_k.c_str())->getErrorHi();
+//    if (val + err_lo < 0) {
+//      err_lo = -val;
+//      ws_->var(name_k.c_str())->setAsymError(err_lo, err_hi);
+//      cout << name_k << " low error reset" << endl;
+//    }
+//  }
 ///
+  ProfileLikelihoodTestStat::SetAlwaysReuseNLL(true);
+  RatioOfProfiledLikelihoodsTestStat::SetAlwaysReuseNLL(true);
+
   if (sign == 0) sig_hand();
   else if (sign == 1) sig_plhc();
   else if (sign >= 1) {
@@ -965,8 +968,9 @@ void pdf_fitData::sig_plhts() {
   if (pc && proof > 1) mcSampler_pl->SetProofConfig(pc);
 
   FrequentistCalculator frequCalc(*ws_->data("global_data"), *H1,*H0, mcSampler_pl); // null = bModel interpreted as signal, alt = s+b interpreted as bkg
+  frequCalc.SetToys(NExp, NExp/4.);
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();
-  htr_pl->Print();
+  plot_hypotest(htr_pl);
 //  HypoTestPlot *plot = new HypoTestPlot(*htr_pl);
 //  TCanvas* c_hypotest = new TCanvas("c_hypotest", "c_hypotest", 600, 600);
 //  plot->Draw();
@@ -1010,9 +1014,10 @@ void pdf_fitData::sig_hybrid_plhts() {
   HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
   hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
   hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("prior"));
+  hibrCalc.SetToys(NExp, NExp/4.);
 
   HypoTestResult *htr_pl = hibrCalc.GetHypoTest();
-  htr_pl->Print();
+  plot_hypotest(htr_pl);
   cout << "ProfileLikelihoodTestStat + hybrid: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << " \\pm " << htr_pl->SignificanceError() << endl;
 }
 
@@ -1040,10 +1045,21 @@ void pdf_fitData::sig_hybrid_roplhts() {
   HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
   hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
   hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("prior"));
+  hibrCalc.SetToys(NExp, NExp/4.);
 
   HypoTestResult *htr_pl = hibrCalc.GetHypoTest();
-  htr_pl->Print();
+  plot_hypotest(htr_pl);
   cout << "RatioOfProfiledLikelihoodsTestStat + hybrid: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << " \\pm " << htr_pl->SignificanceError() << endl;
+}
+
+void pdf_fitData::plot_hypotest(HypoTestResult *hts) {
+  hts->Print();
+  TCanvas c_plot("c_plot", "c_plot", 600, 600);
+  HypoTestPlot * plot = new HypoTestPlot(*hts,100);
+  plot->SetLogYaxis(true);
+  plot->Draw();
+  c_plot.Print( (get_address("hypotest")+".gif").c_str());
+  c_plot.Print( (get_address("hypotest")+".pdf").c_str());
 }
 
 void pdf_fitData::make_prior() {

@@ -196,10 +196,6 @@ int main(int argc, char* argv[]) {
   RooAbsData* rad_peak = rds_peak;
 
   RooAbsData* rad_comb = rds_smalltree[13];
-  if (newcomb) {
-    ana1.newcomb_ = true;
-    ana1.setSBslope(rad_comb);
-  }
 
   for (int j = 0; j < inputs; j++) {
     ana1.channel = simul ? j : ch_i;
@@ -238,23 +234,24 @@ int main(int argc, char* argv[]) {
       ana1.channel = simul ? j : ch_i;
       ana1.channel_bdt = (simul_bdt || simul_all) ? k : ch_bdt_i;
       /// bs
-      ana1.fit_pdf(ana1.name("bs", j, k), rad_bs, false);
+      ana1.fit_pdf(ana1.name("bs", j, k), rad_bs, false, true, false);
 
       /// bd
-      ana1.fit_pdf(ana1.name("bd", j, k), rad_bd, false);
+      ana1.fit_pdf(ana1.name("bd", j, k), rad_bd, false, true, false);
 
       /// peak
-      ana1.fit_pdf(ana1.name("peak", j, k), rad_peak, false);
+      ana1.fit_pdf(ana1.name("peak", j, k), rad_peak, false, true, false);
 
       /// semi
-      ana1.fit_pdf(ana1.name("semi", j, k), rad_semi, false);
+      ana1.fit_pdf(ana1.name("semi", j, k), rad_semi, false, true, false);
 
       /// comb
-//      ana1.fit_pdf(ana1.name("comb", j, k), rad_comb, false);
+      ana1.setSBslope(ana1.name("comb", j, k), rad_comb);
+//        ana1.fit_pdf(ana1.name("comb", j, k), rad_comb, false, true, false, false);
 
       ana1.print_ = false;
       ana1.define_rare3(j, k);
-      ana1.fit_pdf(ana1.name("expo3", j, k), rad_semi, false);
+      ana1.fit_pdf(ana1.name("expo3", j, k), rad_semi, false, true, false);
       ana1.print_ = print;
     }
   }

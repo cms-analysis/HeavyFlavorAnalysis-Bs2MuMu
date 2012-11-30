@@ -115,6 +115,8 @@ class pdf_fitData : public pdf_analysis {
     void sig_hybrid_roplhts();
     void make_prior();
     void make_models();
+
+    void plot_hypotest(HypoTestResult * hts);
 };
 
 #endif // PDF_FITDATA_H

@@ -79,7 +79,7 @@ public:
 
   void getBFnumbers(string numbers_filename);
 
-  void fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error = true, bool hesse = true);
+  void fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error = true, bool hesse = true, bool setconstant = true);
   void print(RooAbsData *data, string output = "");
   void set_pdf_constant(string pdf);
   void set_rare_normalization(string input, bool extended = false); //set peak fraction parameter to Bu2JpsiK
@@ -132,7 +132,7 @@ public:
   const char* name(string name, int i, int j = -1);
 
   bool newcomb_;
-  void setSBslope(RooAbsData* sb_data);
+  void setSBslope(string pdf, RooAbsData* sb_data);
   bool shapesyst;
 
   int bdt_index(int eta_ch, double bdt);
@@ -196,7 +196,7 @@ protected:
   vector <int> get_EtaBdt_bins(int index);
 
 private:
-
+  void print_pdf(RooAbsPdf* pdf, RooRealVar * var);
 };
 
 #endif // PDF_ANALYSIS_H

@@ -126,13 +126,13 @@ void pdf_analysis::define_pdfs () {
   }
 }
 
-void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error, bool hesse) {
+void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error, bool hesse, bool setconstant) {
 
   pdf_name = "pdf_" + pdf;
   if (extended) pdf_name = "pdf_ext_" + pdf;
   
   RooAbsData* subdata;
-  if (!simul_bdt_) subdata = data->reduce(Form("etacat==etacat::etacat_%d", channel));
+  if (!simul_bdt_ && !simul_all_) subdata = data->reduce(Form("etacat==etacat::etacat_%d", channel));
   else subdata = data->reduce(Form("etacat==etacat::etacat_%d&&bdtcat==bdtcat::bdtcat_%d", channel, channel_bdt));
 //  rds_ = subdata;
   string rdh_name = subdata->GetName();
@@ -149,7 +149,7 @@ void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool su
     RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, ConditionalObservables(*ws_->var("MassRes")), Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save()/*, Constrain(*ws_->set("constr"))*/);
     if (print_) print(subdata, pdf);
   }
-  set_pdf_constant(pdf_name);
+  if (setconstant) set_pdf_constant(pdf_name);
 }
 
 void pdf_analysis::set_pdf_constant(string name) {
@@ -158,9 +158,9 @@ void pdf_analysis::set_pdf_constant(string name) {
   TObject* var_Obj = 0;
   while((var_Obj = it->Next())){
     string name = var_Obj->GetName();
-    if (!(name == "Mass") && !(name == "Bd_over_Bs") && !(name == "MassRes") && !(name == "etacat")) {
+    if (!(name == "Mass") && !(name == "Bd_over_Bs") && !(name == "MassRes") && !(name == "bdt") && !(name == "etacat") && !(name == "bdtcat") && !(name == "allcat")) {
       size_t found;
-      found = name.find("N");
+      found = name.find("N_");
       if (found == string::npos) ws_->var(var_Obj->GetName())->setConstant(1);
     }
   }
@@ -374,20 +374,21 @@ void pdf_analysis::define_comb(int i, int j) {
   RooRealVar N_comb(name("N_comb", i, j), "N_comb", 0, 1000000);
   ws_->import(N_comb);
 
+  RooRealVar exp(name("exp", i, j), "exp", 0., -10., 10.);
+
   if (!pee) {
     if (!bdt_fit_) {
-      RooUniform pdf_comb(name("pdf_comb", i, j), "N_comb", *ws_->var("Mass"));
+      RooExponential pdf_comb(name("pdf_comb", i, j), "N_comb", *ws_->var("Mass"), exp);
       ws_->import(pdf_comb);
     }
     else {
-      RooUniform pdf_comb_mass(name("pdf_comb_mass", i, j), "N_comb", *ws_->var("Mass"));
-      RooProdPdf pdf_comb(name("pdf_comb", i, j),"pdf_comb",pdf_comb_mass,*ws_->pdf(name("bdt_pdf_comb", i, j)));
+      RooExponential pdf_comb_mass(name("pdf_comb_mass", i, j), "N_comb", *ws_->var("Mass"), exp);
+      RooProdPdf pdf_comb(name("pdf_comb", i, j), "pdf_comb", pdf_comb_mass, *ws_->pdf(name("bdt_pdf_comb", i, j)));
       ws_->import(pdf_comb);
     }
   }
   else  {
-    RooUniform mass_comb(name("mass_comb", i, j), "N_comb", *ws_->var("Mass"));
-    //RooProdPdf pdf_comb (name("pdf_comb", i, j), "pdf_comb", *ws_->var("MassRes"), Conditional(mass_comb, *ws_->var("Mass")));
+    RooExponential mass_comb(name("mass_comb", i, j), "N_comb", *ws_->var("Mass"), exp);
     if (!bdt_fit_) {
       RooProdPdf pdf_comb (name("pdf_comb", i, j), "pdf_comb", *ws_->pdf(name("MassRes_pdf_comb", i, j)), Conditional(mass_comb, *ws_->var("Mass")));
       ws_->import(pdf_comb);
@@ -880,6 +881,8 @@ RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
   RooHistPdf * MassRes_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), RooArgList(*ws_->var("MassRes")), *MassRes_rdh);
   ws_->import(*MassRes_rhpdf);
 
+  if (name == "comb") print_pdf(MassRes_rhpdf, ws_->var("MassRes"));
+
   return MassRes_rhpdf;
 }
 
@@ -915,7 +918,20 @@ RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name) {
   RooHistPdf * bdt_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), RooArgList(*ws_->var("bdt")), *bdt_rdh);
   ws_->import(*bdt_rhpdf);
 
+  if (name == "comb") print_pdf(bdt_rhpdf, ws_->var("bdt"));
+
   return bdt_rhpdf;
+}
+
+void pdf_analysis::print_pdf(RooAbsPdf* pdf, RooRealVar * var) {
+  RooPlot *rp = var->frame();
+  pdf->plotOn(rp);
+  pdf->paramOn(rp, ShowConstants(kTRUE));
+  TCanvas canvas("canvas", "canvas", 600, 600);
+  rp->Draw();
+  canvas.Print((get_address("pdf", pdf->GetName(), kTRUE) + ".gif").c_str());
+  canvas.Print((get_address("pdf", pdf->GetName(), kTRUE) + ".pdf").c_str());
+  delete rp;
 }
 
 RooDataHist pdf_analysis::getRandom_rdh() {
@@ -1413,30 +1429,25 @@ void pdf_analysis::bdt_bins_effs() {
   }
 }
 
-void pdf_analysis::setSBslope(RooAbsData *sb_data) {
-  for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < bdt_index_max(i); j++) {
-      RooAbsData* sb_data_i = sb_data->reduce(Form("etacat==etacat::etacat_%d", i));
-      RooRealVar slope_comb(name("slope_comb", i, j), "slope_comb", -6., -20., 20.);
-      RooExponential expo_temp("expo_temp", "expo_temp", *ws_->var("Mass"), slope_comb);
-      RooRealVar C0("C0", "C0", 0., -100, 100);
-      RooRealVar C1("C1", "C1", 0., -100, 100);
-      RooArgList list(C0/*, C1*/);
-      RooChebychev pol("pol", "pol", *ws_->var("Mass"), list);
-      sb_data_i->Print();
-      expo_temp.fitTo(*sb_data_i, Range("sb_lo,sb_hi"));
-      ws_->import(slope_comb);
-      TCanvas c("c", "c", 600, 600);
-      RooPlot* rp = ws_->var("Mass")->frame();
-      sb_data_i->plotOn(rp, Binning(20));
-      expo_temp.plotOn(rp);
-      expo_temp.paramOn(rp);
-      rp->Draw();
-      c.Print((get_address("bkg_slope", Form("%d", i)) + ".gif").c_str());
-      delete rp;
-    }
+void pdf_analysis::setSBslope(string pdf, RooAbsData *sb_data) {
+
+  RooAbsData* subdata;
+  if (!simul_bdt_ && !simul_all_) subdata = sb_data->reduce(Form("etacat==etacat::etacat_%d", channel));
+  else subdata = sb_data->reduce(Form("etacat==etacat::etacat_%d&&bdtcat==bdtcat::bdtcat_%d", channel, channel_bdt));
+
+  RooExponential expo_temp("expo_temp", "expo_temp", *ws_->var("Mass"), *ws_->var(name("exp", channel, channel_bdt)));
+  expo_temp.fitTo(*subdata, Range("sb_lo,sb_hi"));
+  if (print_) {
+    TCanvas c("c", "c", 600, 600);
+    RooPlot* rp = ws_->var("Mass")->frame();
+    subdata->plotOn(rp, Binning(20));
+    expo_temp.plotOn(rp);
+    expo_temp.paramOn(rp);
+    rp->Draw();
+    c.Print((get_address(pdf, "", true) + ".gif").c_str());
+    c.Print((get_address(pdf, "", true) + ".pdf").c_str());
+    delete rp;
   }
-  exit(0);
 }
 
 int pdf_analysis::bdt_index(int eta_ch, double bdt) {
