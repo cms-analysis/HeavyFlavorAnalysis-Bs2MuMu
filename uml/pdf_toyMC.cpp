@@ -188,10 +188,10 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
 
     if (!simul_ || true) {
       if (k == 1) {
-        print_each_channel("_first", ws_temp, data);
+        print_each_channel("Mass", "_first", ws_temp, data);
       }
       if (k == NExp) {
-        print_each_channel("_last", ws_temp, data);
+        print_each_channel("Mass", "_last", ws_temp, data);
       }
     }
     /// pull
