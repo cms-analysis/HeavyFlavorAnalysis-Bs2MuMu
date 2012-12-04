@@ -1,0 +1,32 @@
+# Force Decay B0 -> D0 mu and B+ -> D0 mu
+# as well as D0 -> K Pi
+
+Alias		MyB0		B0
+Alias		MyB0bar		anti-B0
+ChargeConj	MyB0		MyB0bar
+
+Alias           MyD0            D0
+Alias           MyD0bar         anti-D0
+ChargeConj      MyD0            MyD0bar
+
+Alias           MyD*+           D*+
+Alias           MyD*-           D*-
+ChargeConj      MyD*+           MyD*-
+
+
+Decay MyB0
+0.0027   MyD*- pi+                        SVS;
+Enddecay
+CDecay MyB0bar
+
+Decay MyD0
+ 1.0      K-  pi+                        PHSP;
+Enddecay
+CDecay MyD0bar
+
+Decay MyD*+
+0.6830    MyD0  pi+                        VSS;
+Enddecay
+CDecay MyD*-
+
+End
