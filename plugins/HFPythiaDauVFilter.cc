@@ -1,4 +1,4 @@
-#include "PythiaDauVFilter.h"
+#include "HFPythiaDauVFilter.h"
 
 
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
@@ -11,7 +11,7 @@ using namespace edm;
 using namespace std;
 
 
-PythiaDauVFilter::PythiaDauVFilter(const edm::ParameterSet& iConfig) :
+HFPythiaDauVFilter::HFPythiaDauVFilter(const edm::ParameterSet& iConfig) :
   fVerbose(iConfig.getUntrackedParameter("verbose",0)),
   label_(iConfig.getUntrackedParameter("moduleLabel",std::string("generator"))),
   particleID(iConfig.getUntrackedParameter("ParticleID", 0)),
@@ -38,7 +38,7 @@ PythiaDauVFilter::PythiaDauVFilter(const edm::ParameterSet& iConfig) :
   maxetacut = iConfig.getUntrackedParameter< vector<double> >("MaxEta",defmaxetacut);
 
   cout << "----------------------------------------------------------------------" << endl;
-  cout << "--- PythiaDauVFilter" << endl;
+  cout << "--- HFPythiaDauVFilter" << endl;
   for (unsigned int i=0; i<dauIDs.size(); ++i) {
     cout << "ID: " <<  dauIDs[i] << " pT > " << minptcut[i] << " " << minetacut[i] << " eta < " << maxetacut[i] << endl;
   }
@@ -50,7 +50,7 @@ PythiaDauVFilter::PythiaDauVFilter(const edm::ParameterSet& iConfig) :
 }
 
 
-PythiaDauVFilter::~PythiaDauVFilter()
+HFPythiaDauVFilter::~HFPythiaDauVFilter()
 {
  
    // do anything here that needs to be done at desctruction time
@@ -64,7 +64,7 @@ PythiaDauVFilter::~PythiaDauVFilter()
 //
 
 // ------------ method called to produce the data  ------------
-bool PythiaDauVFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup) {
+bool HFPythiaDauVFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   using namespace edm;
   bool accepted = false;
   Handle<HepMCProduct> evt;
@@ -238,4 +238,4 @@ bool PythiaDauVFilter::filter(edm::Event& iEvent, const edm::EventSetup& iSetup)
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(PythiaDauVFilter);
+DEFINE_FWK_MODULE(HFPythiaDauVFilter);

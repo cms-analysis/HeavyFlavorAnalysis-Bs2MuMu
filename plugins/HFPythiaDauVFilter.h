@@ -1,11 +1,11 @@
-#ifndef PYTHIADAUVFILTER_h
-#define PYTHIADAUVFILTER_h
+#ifndef HFPYTHIADAUVFILTER_h
+#define HFPYTHIADAUVFILTER_h
 // -*- C++ -*-
 //
-// Package:    PythiaDauVFilter
-// Class:      PythiaDauVFilter
+// Package:    HFPythiaDauVFilter
+// Class:      HFPythiaDauVFilter
 // 
-/**\class PythiaDauVFilter PythiaDauVFilter.cc 
+/**\class HFPythiaDauVFilter HFPythiaDauVFilter.cc 
 
  Description: Filter events using MotherId and ChildrenIds infos
 
@@ -15,7 +15,7 @@
 //
 // Original Author:  Daniele Pedrini
 //         Created:  Apr 29 2008
-// $Id: PythiaDauVFilter.h,v 1.3 2011/09/05 14:18:52 ursl Exp $
+// $Id: PythiaDauVFilter.h,v 1.4 2011/09/12 12:39:54 ursl Exp $
 //
 //
 
@@ -37,10 +37,10 @@
 // class decleration
 //
 
-class PythiaDauVFilter : public edm::EDFilter {
+class HFPythiaDauVFilter : public edm::EDFilter {
  public:
-  explicit PythiaDauVFilter(const edm::ParameterSet&);
-  ~PythiaDauVFilter();
+  explicit HFPythiaDauVFilter(const edm::ParameterSet&);
+  ~HFPythiaDauVFilter();
   
   
   virtual bool filter(edm::Event&, const edm::EventSetup&);
