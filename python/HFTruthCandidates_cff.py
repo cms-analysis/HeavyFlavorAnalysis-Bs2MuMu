@@ -301,6 +301,16 @@ truthBd2JpsiKsDump = cms.EDAnalyzer(
     daughtersID  = cms.untracked.vint32(443, 13, -13, 310, 211, 211)
     )
 
+# ----------------------------------------------------------------------
+truthBd2DstarPiDump = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    verbose      = cms.untracked.int32(0),
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(511),
+    type         = cms.untracked.int32(30),
+    GenType      = cms.untracked.int32(-30),
+    daughtersID  = cms.untracked.vint32(-413, 211, -421, 321, -211, 211)
+    )
 
 
 # ######################################################################
@@ -473,6 +483,8 @@ truthRareLambdaBSequence = cms.Sequence(truthLambdaBToPPiDump
                                         *truthLambdaBToPKDump
                                         *truthLambdaBToKMuNuDump)
 
+truthB2DstarSequence     = cms.Sequence(truthBd2DstarPiDump)
+
 truthB2JpsiSequence      = cms.Sequence(truthBs2JpsiPhiDump
                                         *truthBd2JpsiKsDump
                                         *truthBd2JpsiKstarDump
@@ -515,4 +527,5 @@ truthAllSequence         = cms.Sequence(truthSignalsSequence
                                         *truthRareLambdaBSequence
                                         *truthB2JpsiSequence
                                         *truthOniaSequence
-                                        *truthCharmSequence)
+                                        *truthCharmSequence
+                                        *truthB2DstarSequence)
