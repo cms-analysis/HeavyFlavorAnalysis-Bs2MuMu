@@ -28,7 +28,7 @@ process.GlobalTag.globaltag = "GR_R_44_V15::All"
 POOLSOURCE
 
 # ----------------------------------------------------------------------
-rootFileName = "bmm-XXXX.root"
+rootFileName = "bmm-2011-XXXX.root"
 
 
 process.tree = cms.EDAnalyzer(
