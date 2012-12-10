@@ -12,9 +12,10 @@
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKalmanVertexFit.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFKinematicVertexFit.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFSequentialVertexFit.h"
-#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTwoParticleCombinatorics.hh"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTwoParticleCombinatoricsNew.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFMasses.hh"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFDecayTree.h"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFTrackListBuilder.hh"
 
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
@@ -79,6 +80,8 @@ HFBd2DstarPi::~HFBd2DstarPi() {
 // ----------------------------------------------------------------------
 void HFBd2DstarPi::analyze(const Event& iEvent, const EventSetup& iSetup)
 {
+  typedef HFTwoParticleCombinatoricsNew::HFTwoParticleCombinatoricsSet HFTwoParticleCombinatoricsSet;
+  
   // -- get the magnetic field
   ESHandle<MagneticField> magfield;
   iSetup.get<IdealMagneticFieldRecord>().get(magfield);
@@ -137,138 +140,102 @@ void HFBd2DstarPi::analyze(const Event& iEvent, const EventSetup& iSetup)
     return;
   }
 
-
   // -- Build lists
-  TLorentzVector muon, lambdac, dzero, dplus, kaon, pion, track, kaon1, kaon2, pion1, pion2, pion3;
-  TLorentzVector tlv; 
-  vector<pair<int, TLorentzVector> > kalist, pilist; 
-  pilist.reserve(10000); 
-  kalist.reserve(10000); 
-
-  for (unsigned int itrack = 0; itrack < hTracks->size(); ++itrack){    
-    TrackBaseRef rTrackView(hTracks, itrack);
-    Track tTrack(*rTrackView);
-
-    if (tTrack.d0() > fMaxD0) continue;
-    if (tTrack.dz() > fMaxDz) continue;
-
-    if (tTrack.pt() > fTrackPt)  {
-      tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MPION); 
-      pilist.push_back(make_pair(itrack, tlv));
-    }
-
-    if (tTrack.pt() > fTrackPt) {
-      tlv.SetXYZM(tTrack.px(), tTrack.py(), tTrack.pz(), MKAON); 
-      kalist.push_back(make_pair(itrack, tlv));
-    }
-  }
-
-  HFTwoParticleCombinatorics a(fVerbose); 
-  vector<pair<int, int> > kapiList; 
-  kapiList.reserve(100000); 
-  a.combine(kapiList, kalist, pilist, MD0-fD0Window, MD0+fD0Window, 0); 
+  HFTrackListBuilder listBuilder(hTracks,NULL,fTTB.product(),fVerbose);
+  listBuilder.setMaxD0(fMaxD0);
+  listBuilder.setMaxDz(fMaxDz);
+  listBuilder.setMinPt(fTrackPt);
+  vector<int> trkHighList = listBuilder.getTrackList(); // to be used for pion, kaon of D0 and fast pion of B0
+  listBuilder.setMaxD0(999.0);
+  listBuilder.setMaxDz(999.0);
+  listBuilder.setMinPt(fSlowPionPt); // reduce minimum pt requirement for slow pion
+  listBuilder.setMaxDocaToTracks(fMaxDoca);
+  listBuilder.setCloseTracks(&trkHighList);
+  vector<int> trkLowList = listBuilder.getTrackList();
   
-  vector<pair<int, int> > phiList; 
-  a.combine(phiList, pilist, pilist, 0., 6., 1); 
-  if (fVerbose > 0) cout << "==>HFBd2DstarPi> phi (haha) list size: " << phiList.size() << endl;
+  HFTwoParticleCombinatoricsNew a(hTracks,fVerbose);
+  HFTwoParticleCombinatoricsSet d0Set = a.combine(trkHighList, MKAON, trkHighList, MPION, MD0-fD0Window, MD0+fD0Window, 0);
+  if (fVerbose > 0) cout << "==>HFBd2DstarPi> d0 set size: " << d0Set.size() << endl;
+  if (d0Set.size() == 0)
+	  return;
+  
+  HFTwoParticleCombinatoricsSet piSet = a.combine(trkLowList, MPION, trkHighList, MPION, 0.0, 6.0, 0);
+  if (fVerbose > 0) cout << "==>HFBd2DstarPi> pion set size: " << piSet.size() << endl;
   
   HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
-
-  // -- Build D0 + track
-  TLorentzVector b0, dstar, d0, ka, pi, pis, pif;
-  for (unsigned int i = 0; i < kapiList.size(); ++i) {
-    unsigned int iKaon = kapiList[i].first; 
-    unsigned int iPion = kapiList[i].second; 
-    
-    TrackBaseRef kaonTrackView(hTracks, iKaon);
-    Track tKaon(*kaonTrackView);
-    if (tKaon.pt() < fTrackPt)  continue;
-    ka.SetPtEtaPhiM(tKaon.pt(), tKaon.eta(), tKaon.phi(), MKAON); 
-
-    TrackBaseRef pionTrackView(hTracks, iPion);
-    Track tPion(*pionTrackView);
-    if (tPion.pt() < fTrackPt)  continue;
-    pi.SetPtEtaPhiM(tPion.pt(), tPion.eta(), tPion.phi(), MPION); 
-
-    d0 = ka + pi; 
-    if ((TMath::Abs(d0.M() - MD0) > fD0Window)) continue;
-
-    for (unsigned int j = 0; j < phiList.size(); ++j){    
-      unsigned int iPion1 = phiList[j].first; // slow pion!
-      unsigned int iPion2 = phiList[j].second; 
-      if (iPion1 == iKaon || iPion2 == iKaon) continue; 
-      if (iPion1 == iPion || iPion2 == iPion) continue; 
-
-      TrackBaseRef rTrackView1(hTracks, iPion1);
-      Track tPion1(*rTrackView1);
-      if (tPion1.pt() < fSlowPionPt) continue;
-      pis.SetXYZM(tPion1.px(), tPion1.py(), tPion1.pz(), MPION); 
-
-      TrackBaseRef rTrackView2(hTracks, iPion2);
-      Track tPion2(*rTrackView2);
-      if (tPion2.pt() < fTrackPt) continue;
-      pif.SetXYZM(tPion2.px(), tPion2.py(), tPion2.pz(), MPION); 
-
-
-      // -- the slow D* pion has the same charge like the fast D0 pion, and other charge correlations
-      if (tPion1.charge()*tPion.charge() < 0) continue;       
-      if (tPion1.charge()*tPion2.charge() > 0) continue; 
-      if (tKaon.charge()*tPion.charge() > 0) continue; 
-
-      if (tPion2.d0() > fMaxD0) continue;
-      if (tPion2.dz() > fMaxDz) continue;
-
-      if (d0.DeltaR(pis) > fDeltaR) continue; 
-      
-      dstar = d0 + pis; 
-      double dm = dstar.M() - d0.M();
-      if (TMath::Abs(0.145 - dm) > fDeltaM) continue;  // keep 0.135 .. 0.155 
-      if (dstar.DeltaR(pif) > fDeltaR) continue; 
-
-      b0 = dstar + pif; 
-      if (TMath::Abs(b0.M() - MB_0) > 0.6) continue; 
-      if (b0.DeltaR(pif) > fDeltaR) continue; 
-      if (b0.DeltaR(d0) > fDeltaR) continue; 
-      
-      // -- sequential fit: D0 pi_slow pi_fast
-      if (fVerbose > 5) {
-	cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
-	cout << "==>HFBd2DstarPi> going to sequential fit with track indices: " 
-	     << iKaon << " " << iPion << " " << iPion1 << " " << iPion2
-	     << endl;
-      }
-
-//       HFDecayTree theTree(300030, true, MB_0, false, -1.0, true);
-//       theTree.addTrack(iPion2,211); // add the fast pion to the B0 candidate
-//       theTree.addTrack(iPion1,211); // add the slow pion to the D*+ candidate
-//       theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-      
-//       HFDecayTreeIterator iterator = theTree.addDecayTree(300032, true, MD0, false); // D0
-//       iterator->addTrack(iKaon,321);
-//       iterator->addTrack(iPion,211);
-//       iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-      
-//       aSeq.doFit(&theTree);
-      
-      HFDecayTree theTree(300030, true, MB_0, false, -1.0, true);
-      theTree.addTrack(iPion2,211); // add the fast pion to the B0 candidate
-      theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-      
-      HFDecayTreeIterator iterator = theTree.addDecayTree(300031, false, MDSTARPLUS, false); // D*-
-      iterator->addTrack(iPion1,211); // add the slow pion to the D*+ candidate
-      iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-      
-      iterator = iterator->addDecayTree(300032, true, MD0, false); // D0
-      iterator->addTrack(iKaon,321);
-      iterator->addTrack(iPion,211);
-      iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
-      
-      aSeq.doFit(&theTree);
-      
-    }
+  
+  TLorentzVector ka,pi,d0,pis,pif,dstar,b0;
+  for (HFTwoParticleCombinatoricsNew::iterator d0It = d0Set.begin(); d0It != d0Set.end(); ++d0It) {
+	  unsigned int iKaon = d0It->first;
+	  unsigned int iPion = d0It->second;
+	  
+	  TrackBaseRef kaonTrackView(hTracks, iKaon);
+	  Track tKaon(*kaonTrackView);
+	  ka.SetPtEtaPhiM(tKaon.pt(), tKaon.eta(), tKaon.phi(), MKAON);
+	  
+	  TrackBaseRef pionTrackView(hTracks, iPion);
+	  Track tPion(*pionTrackView);
+	  if (tPion.pt() < fTrackPt)  continue;
+	  pi.SetPtEtaPhiM(tPion.pt(), tPion.eta(), tPion.phi(), MPION);
+	  
+	  d0 = ka + pi;
+	  for (HFTwoParticleCombinatoricsNew::iterator piIt = piSet.begin(); piIt != piSet.end(); ++piIt) {
+		  unsigned int iPionSlow = piIt->first;
+		  unsigned int iPionFast = piIt->second;
+		  
+		  if (iPionSlow == iKaon || iPionFast == iKaon) continue;
+		  if (iPionSlow == iPion || iPionFast == iPion) continue;
+		  
+		  TrackBaseRef rTrackView1(hTracks, iPionSlow);
+		  Track tPionSlow(*rTrackView1);
+		  pis.SetXYZM(tPionSlow.px(), tPionSlow.py(), tPionSlow.pz(), MPION);		  
+		  
+		  TrackBaseRef rTrackView2(hTracks, iPionFast);
+		  Track tPionFast(*rTrackView2);
+		  pif.SetXYZM(tPionFast.px(), tPionFast.py(), tPionFast.pz(), MPION);
+		  
+		  // -- the slow D* pion has the same charge like the fast D0 pion, and other charge correlations
+		  if (tPionSlow.charge()*tPion.charge() < 0) continue;
+		  if (tPionSlow.charge()*tPionFast.charge() > 0) continue;
+		  if (tKaon.charge()*tPion.charge() > 0) continue;
+		  
+		  if (d0.DeltaR(pis) > fDeltaR) continue;
+		  
+		  dstar = d0 + pis; 
+		  double dm = dstar.M() - d0.M();
+		  if (TMath::Abs(0.145 - dm) > fDeltaM) continue;  // keep 0.135 .. 0.155 
+		  if (dstar.DeltaR(pif) > fDeltaR) continue;
+		  
+		  b0 = dstar + pif;
+		  if (TMath::Abs(b0.M() - MB_0) > 0.6) continue;
+		  if (b0.DeltaR(pif) > fDeltaR) continue;
+		  if (b0.DeltaR(d0) > fDeltaR) continue;
+		  
+		  // -- sequential fit: D0 pi_slow pi_fast
+		  if (fVerbose > 5) {
+			  cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+			  cout << "==>HFBd2DstarPi> going to sequential fit with track indices: " 
+			  << iKaon << " " << iPion << " " << iPionSlow << " " << iPionFast
+			  << endl;
+		  }
+		  
+		  HFDecayTree theTree(300030, true, MB_0, false, -1.0, true);
+		  theTree.addTrack(iPionFast,211); // add the fast pion to the B0 candidate
+		  theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+		  
+		  HFDecayTreeIterator iterator = theTree.addDecayTree(300031, false, MDSTARPLUS, false); // D*-
+		  iterator->addTrack(iPionSlow,211); // add the slow pion to the D*+ candidate
+		  iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+		  
+		  iterator = iterator->addDecayTree(300032, true, MD0, false); // D0
+		  iterator->addTrack(iKaon,321);
+		  iterator->addTrack(iPion,211);
+		  iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+		  
+		  aSeq.doFit(&theTree);
+	  }
   }
 }
-
 
 // ------------ method called once each job just before starting event loop  ------------
 void  HFBd2DstarPi::beginJob() {
