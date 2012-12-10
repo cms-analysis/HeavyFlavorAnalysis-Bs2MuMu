@@ -25,7 +25,7 @@
 class HFTrackListBuilder {
 	
 	public:
-		HFTrackListBuilder(edm::Handle<edm::View<reco::Track> > &hTracks, edm::Handle<reco::MuonCollection> &hMuons, const TransientTrackBuilder *ttb, int verbose);
+		HFTrackListBuilder(edm::Handle<edm::View<reco::Track> > &hTracks, const reco::MuonCollection *muons, const TransientTrackBuilder *ttb, int verbose);
 		
 		std::vector<int> getMuonList();
 		std::vector<int> getTrackList();
@@ -44,7 +44,7 @@ class HFTrackListBuilder {
 		
 	private:
 		edm::Handle<edm::View<reco::Track> > &fhTracks;
-		edm::Handle<reco::MuonCollection> &fhMuons;
+		const reco::MuonCollection *fMuons;
 		const TransientTrackBuilder *fTTB;
 		
 		int fVerbose;

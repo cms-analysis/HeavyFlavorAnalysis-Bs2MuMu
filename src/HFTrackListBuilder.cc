@@ -16,9 +16,9 @@
 
 using namespace std;
 
-HFTrackListBuilder::HFTrackListBuilder(edm::Handle<edm::View<reco::Track> > &hTracks, edm::Handle<reco::MuonCollection> &hMuons, const TransientTrackBuilder *ttb, int verbose) :
+HFTrackListBuilder::HFTrackListBuilder(edm::Handle<edm::View<reco::Track> > &hTracks, const reco::MuonCollection *muons, const TransientTrackBuilder *ttb, int verbose) :
 	fhTracks(hTracks),
-	fhMuons(hMuons),
+	fMuons(muons),
 	fTTB(ttb),
 	fVerbose(verbose),
 	fCallerName("HFTrackListBuilder"),
@@ -37,13 +37,13 @@ std::vector<int> HFTrackListBuilder::getMuonList()
 	
 	trackList.reserve(20); // 20 muons should be enough
 	
-	for (muonIt = fhMuons->begin(); muonIt != fhMuons->end(); ++muonIt) {
+	for (muonIt = fMuons->begin(); muonIt != fMuons->end(); ++muonIt) {
 		int ixMu = muonIt->track().index();
 		if (ixMu >= 0) trackList.push_back(ixMu);
 	}
 	
 	if (fVerbose > 0) {
-		cout << "==>" << fCallerName << "> nMuons = " << fhMuons->size() << endl;
+		cout << "==>" << fCallerName << "> nMuons = " << fMuons->size() << endl;
 		cout << "==>" << fCallerName << "> nMuonIndices = " << trackList.size() << endl;
 	}
 	

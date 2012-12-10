@@ -116,6 +116,7 @@ void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup)
 		cout << "==>HFBs2JpsiPhi> No valid MuonCollection with label "<< fMuonsLabel <<" found, skipping" << endl;
 		return;
 	}
+	const MuonCollection *muonColl = hMuons.product();
 
 	// -- get the collection of tracks
 	Handle<View<Track> > hTracks;
@@ -132,7 +133,7 @@ void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup)
 		return;
 	}
 
-	HFTrackListBuilder listBuilder(hTracks,hMuons,fTTB.product(),fVerbose);
+	HFTrackListBuilder listBuilder(hTracks,muonColl,fTTB.product(),fVerbose);
 	listBuilder.setMaxD0(fMaxD0);
 	listBuilder.setMaxDz(fMaxDz);
 	listBuilder.setMinPt(fMuonPt);
