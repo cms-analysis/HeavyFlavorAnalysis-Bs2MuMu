@@ -491,174 +491,6 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
 
 
 // ----------------------------------------------------------------------
-void plotReducedOverlays::massScale(int year) {
-  TH1D *h(0); 
-  vector<string> dolist, titlist; 
-  dolist.push_back("B"); titlist.push_back("Barrel"); 
-  dolist.push_back("E"); titlist.push_back("Endcap"); 
-  dolist.push_back("APV0"); titlist.push_back("N_{PV} < 6"); 
-  dolist.push_back("APV1"); titlist.push_back("N_{PV} > 10"); 
-
-  double hm, hmE, hr, hrE; 
-  double fm, fmE, fr, frE; 
-  string dset; 
-
-  gStyle->SetOptStat(0); 
-  gStyle->SetOptFit(0); 
-  gStyle->SetOptTitle(0); 
-
-  // -- J/psi peak
-  TH1D *h1 = new TH1D("h1", "", 100, -0.1, 0.1); 
-  double mpsiPdg(3.0969); 
-  double mpv0, mpv1; 
-  for (int year = 2011; year <= 2012; ++year) {
-    dset = (year == 2012?"NoData": "NoData2011"); 
-    fF[dset]->cd("candAnaBu2JpsiK"); 
-    for (int i = 0; i < dolist.size(); ++i) {
-      h   = (TH1D*)gDirectory->Get(Form("%s_mpsiSi0", dolist[i].c_str())); 
-      hm  = h->GetMean(); 
-      hmE = h->GetMeanError(); 
-      hr  = h->GetRMS(); 
-      hrE = h->GetRMSError(); 
-      h->Fit("gaus"); 
-      fm  = h->GetFunction("gaus")->GetParameter(1); 
-      fmE = h->GetFunction("gaus")->GetParError(1); 
-      fr  = h->GetFunction("gaus")->GetParameter(2); 
-      frE = h->GetFunction("gaus")->GetParError(2); 
-      
-      if ("APV0" == dolist[i]) mpv0 = hm;
-      if ("APV1" == dolist[i]) mpv1 = hm;
-      h1->Fill((hm-mpsiPdg)/mpsiPdg); 
-
-      h->SetMaximum(1.4*h->GetMaximum()); 
-      h->SetAxisRange(2.9, 3.21, "X"); 
-      h->SetLineWidth(2); 
-      h->Draw("");
-      pl->SetLineColor(kRed); 
-      pl->DrawLine(mpsiPdg, 0., mpsiPdg, h->GetMaximum()); 
-      
-      tl->SetTextSize(0.03); 
-      tl->DrawLatex(0.2, 0.86, Form("hist mean: %5.4f#pm%5.4f", hm, hmE)); 
-      tl->DrawLatex(0.2, 0.80, Form("hist rms:  %5.4f#pm%5.4f", hr, hrE)); 
-      
-      tl->DrawLatex(0.2, 0.74, Form("fit mean: %5.4f#pm%5.4f", fm, fmE)); 
-      tl->DrawLatex(0.2, 0.68, Form("fit #sigma:       %5.4f#pm%5.4f", fr, frE)); 
-      
-      fTEX << formatTex(hm,  Form("%s:ms-mean-jpsi-%d-%s:val", fSuffix.c_str(), year, dolist[i].c_str()), 5) << endl;
-      fTEX << formatTex(hmE, Form("%s:ms-mean-jpsi-%d-%s:err", fSuffix.c_str(), year, dolist[i].c_str()), 5) << endl;
-      fTEX << formatTex(hr,  Form("%s:ms-rms-jpsi-%d-%s:val", fSuffix.c_str(), year, dolist[i].c_str()), 5) << endl;
-      fTEX << formatTex(hrE, Form("%s:ms-rms-jpsi-%d-%s:err", fSuffix.c_str(), year, dolist[i].c_str()), 5) << endl;
-      
-      tl->SetTextSize(0.05); 
-      tl->DrawLatex(0.7, 0.92, titlist[i].c_str()); 
-      c0->SaveAs(Form("%s/syst-ms-jpsi-%s-%s.pdf", fDirectory.c_str(), dset.c_str(), dolist[i].c_str())); 
-    }
-    fTEX << formatTex(mpv1-mpv0, Form("%s:ms-scale-jpsi-%d:diff", fSuffix.c_str(), year), 5) << endl;
-  }
-
-  fTEX << formatTex(mpv1-mpv0, Form("%s:ms-scale-jpsi:diff", fSuffix.c_str()), 5) << endl;
-  fTEX << formatTex(h1->GetRMS(), Form("%s:ms-scale-jpsi:val", fSuffix.c_str()), 5) << endl;
-  fTEX << formatTex(h1->GetRMSError(), Form("%s:ms-scale-jpsi:err", fSuffix.c_str()), 5) << endl;
-  h1->Reset();
-
-
-  // -- B+ peak
-  double mbuPdg(5.27925); 
-  for (int year = 2011; year <= 2012; ++year) {
-    dset = (year == 2012?"NoData": "NoData2011"); 
-    fF[dset]->cd("candAnaBu2JpsiK"); 
-    for (int i = 0; i < dolist.size(); ++i) {
-      h   = (TH1D*)gDirectory->Get(Form("%s_mpsiMassAo", dolist[i].c_str())); 
-      normYield2(h, 0, 5.0); 
-      fm  = h->GetFunction("f1_expo_err_gauss2_landau")->GetParameter(1); 
-      fmE = h->GetFunction("f1_expo_err_gauss2_landau")->GetParError(1); 
-      fr  = h->GetFunction("f1_expo_err_gauss2_landau")->GetParameter(2); 
-      frE = h->GetFunction("f1_expo_err_gauss2_landau")->GetParError(2); 
-      
-      if ("APV0" == dolist[i]) mpv0 = fm;
-      if ("APV1" == dolist[i]) mpv1 = fm;
-
-      h->SetMaximum(1.4*h->GetMaximum()); 
-      h->SetAxisRange(2.9, 3.21, "X"); 
-      h->SetLineWidth(2); 
-      h->Draw("");
-      pl->SetLineColor(kRed); 
-      pl->DrawLine(mbuPdg, 0., mbuPdg, h->GetMaximum()); 
-
-      h1->Fill((fm-mbuPdg)/mbuPdg); 
-      
-      tl->SetTextSize(0.04); 
-      tl->DrawLatex(0.2, 0.92, Form("fit mean: %5.4f#pm%5.4f", fm, fmE)); 
-      
-      fTEX << formatTex(fm,  Form("%s:ms-mean-Bu-%d-%s:val", fSuffix.c_str(), year, dolist[i].c_str()), 3) << endl;
-      fTEX << formatTex(fmE, Form("%s:ms-mean-Bu-%d-%s:err", fSuffix.c_str(), year, dolist[i].c_str()), 3) << endl;
-      fTEX << formatTex(hr,  Form("%s:ms-rms-Bu-%d-%s:val", fSuffix.c_str(), year, dolist[i].c_str()), 3) << endl;
-      fTEX << formatTex(hrE, Form("%s:ms-rms-Bu-%d-%s:err", fSuffix.c_str(), year, dolist[i].c_str()), 3) << endl;
-      
-      tl->SetTextSize(0.05); 
-      tl->DrawLatex(0.7, 0.92, titlist[i].c_str()); 
-      c0->SaveAs(Form("%s/syst-massscale-Bu-%s-%s.pdf", fDirectory.c_str(), dset.c_str(), dolist[i].c_str())); 
-    }
-    fTEX << formatTex(mpv1-mpv0, Form("%s:ms-scale-Bu-%d:diff", fSuffix.c_str(), year), 5) << endl;
-  }
-
-  fTEX << formatTex(h1->GetRMS(), Form("%s:ms-scale-bu:val", fSuffix.c_str()), 5) << endl;
-  fTEX << formatTex(h1->GetRMSError(), Form("%s:ms-scale-bu:err", fSuffix.c_str()), 5) << endl;
-  h1->Reset();
-
-  // -- Bs peak
-  double mbsPdg(5.36677); 
-  for (int year = 2011; year <= 2012; ++year) {
-    dset = (year == 2012?"CsData": "CsData2011"); 
-    fF[dset]->cd("candAnaBs2JpsiPhi"); 
-
-    for (int i = 0; i < dolist.size(); ++i) {
-      h   = (TH1D*)gDirectory->Get(Form("%s_mpsiMassAo", dolist[i].c_str())); 
-      if (dolist[i] == "E") {
-	csYield2(h, 1, 5.0); 
-      } else {
-	csYield2(h, 0, 5.0); 
-      }	
-      fm  = h->GetFunction("f1_expo_err_gauss2f")->GetParameter(1); 
-      fmE = h->GetFunction("f1_expo_err_gauss2f")->GetParError(1); 
-      fr  = h->GetFunction("f1_expo_err_gauss2f")->GetParameter(2); 
-      frE = h->GetFunction("f1_expo_err_gauss2f")->GetParError(2); 
-
-      if ("APV0" == dolist[i]) mpv0 = fm;
-      if ("APV1" == dolist[i]) mpv1 = fm;
-
-      h1->Fill((fm-mbsPdg)/mbsPdg); 
-      
-      h->SetMaximum(1.4*h->GetMaximum()); 
-      h->SetAxisRange(2.9, 3.21, "X"); 
-      h->SetLineWidth(2); 
-      h->Draw("");
-      pl->SetLineColor(kRed); 
-      pl->DrawLine(mbsPdg, 0., mbsPdg, h->GetMaximum()); 
-      
-      tl->SetTextSize(0.04); 
-      tl->DrawLatex(0.2, 0.92, Form("fit mean: %5.4f#pm%5.4f", fm, fmE)); 
-
-      fTEX << formatTex(fm,  Form("%s:ms-mean-Bs-%d-%s:val", fSuffix.c_str(), year, dolist[i].c_str()), 3) << endl;
-      fTEX << formatTex(fmE, Form("%s:ms-mean-Bs-%d-%s:err", fSuffix.c_str(), year, dolist[i].c_str()), 3) << endl;
-      fTEX << formatTex(hr,  Form("%s:ms-rms-Bs-%d-%s:val", fSuffix.c_str(), year, dolist[i].c_str()), 3) << endl;
-      fTEX << formatTex(hrE, Form("%s:ms-rms-Bs-%d-%s:err", fSuffix.c_str(), year, dolist[i].c_str()), 3) << endl;   
-
-      tl->SetTextSize(0.05); 
-      tl->DrawLatex(0.7, 0.92, titlist[i].c_str()); 
-      c0->SaveAs(Form("%s/play2-Bs-%s-%s.pdf", fDirectory.c_str(), dset.c_str(), dolist[i].c_str())); 
-    }
-    fTEX << formatTex(mpv1-mpv0, Form("%s:ms-scale-Bs-%d:diff", fSuffix.c_str(), year), 5) << endl;
-  }
-
-  fTEX << formatTex(h1->GetRMS(), Form("%s:ms-scale-bs:val", fSuffix.c_str()), 5) << endl;
-  fTEX << formatTex(h1->GetRMSError(), Form("%s:ms-scale-bs:err", fSuffix.c_str()), 5) << endl;
-  h1->Reset();
-
-}
-
-
-// ----------------------------------------------------------------------
 void plotReducedOverlays::overlay(string sample1, string sample2, string selection, string what) {
 
   string hfname  = fDirectory + "/anaBmm.plotReducedOverlays." + fSuffix + ".root";
@@ -724,6 +556,7 @@ void plotReducedOverlays::overlay(string sample1, string sample2, string selecti
 // ----------------------------------------------------------------------
 void plotReducedOverlays::loopFunction(int function, int mode) {
   if (1 == function) loopFunction1(mode);
+  if (2 == function) loopFunction2(mode);
 }
 
 
@@ -758,6 +591,12 @@ void plotReducedOverlays::loopFunction1(int mode) {
   }
 
   fillDistributions();
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotReducedOverlays::loopFunction2(int mode) {
 
 }
 

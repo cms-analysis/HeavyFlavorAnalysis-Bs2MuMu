@@ -1,5 +1,5 @@
-#TYPE         3000030
-TYPE          300030
+TYPE         3000030
+#TYPE          300030
 TRUTHCAND         511
 TRIGRANGE    NOTRIGGER
 # -- special cuts

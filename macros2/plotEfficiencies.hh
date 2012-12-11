@@ -18,6 +18,11 @@ public:
   void triggerSignal(std::string cuts = "fls3d>8&&chi2/dof<2");
   void triggerNormalization(std::string cuts = "fls3d>8&&chi2/dof<2&&alpha<0.05&&iso>0.5");
 
+  // -- works only on specific large small trees
+  void allOverlayStudy();
+  void hltOverlayStudy(std::string mode, bool barrel);
+  TH1D* hltHist(const char *var, double xmin, double xmax, const char *treename, bool barrel);
+
   virtual void loopFunction(int function, int mode = 0); 
   virtual void loopFunction1(int mode); 
 

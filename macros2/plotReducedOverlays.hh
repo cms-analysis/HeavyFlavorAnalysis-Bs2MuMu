@@ -24,6 +24,7 @@ public:
 
   virtual void loopFunction(int function, int mode); 
   virtual void loopFunction1(int mode); 
+  virtual void loopFunction2(int mode); 
 
 
   void makeAll(std::string selection = "Presel"); 
@@ -33,7 +34,6 @@ public:
   void makeOverlay(std::string sample1, std::string sample2, std::string channel, std::string selection);
   void allSystematics();
   void systematics(std::string sample1, std::string selection, int chan = 0);
-  void massScale(int year = 2012);
 
   // -- 
   void bookDistributions(std::string sample);
@@ -65,7 +65,6 @@ public:
   int fMode;
 
   vector<std::string> fDoList; 
-
 
   bool fSel0, fSel1, fSel2; 
 

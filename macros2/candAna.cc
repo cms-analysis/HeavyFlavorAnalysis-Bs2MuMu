@@ -292,7 +292,7 @@ void candAna::candAnalysis() {
     p2 = fpEvt->getSigTrack(fpCand->fSig2); 
   }
 
-  if (fpCand->fType == 300030) {
+  if (fpCand->fType == 3000030) {
     if (fpCand->fDau1 < 0 || fpCand->fDau1 > fpEvt->nCands()) return;
     TAnaCand *pD = fpEvt->getCand(fpCand->fDau1); 
     pD = fpEvt->getCand(pD->fDau1); 
@@ -616,6 +616,8 @@ void candAna::candAnalysis() {
 
   fPreselection = fPreselection && fGoodHLT;
   if(fPreselection) ((TH1D*)fHistDir->Get("test3"))->Fill(3.); 
+
+  //  fPreselection = true; 
 
 }
 

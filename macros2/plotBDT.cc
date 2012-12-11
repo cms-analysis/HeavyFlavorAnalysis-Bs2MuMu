@@ -185,8 +185,8 @@ void plotBDT::makeAll(int channels) {
     //    npvSpecial("SgData");
     //    npvSpecial("NoData");
 
-    cout << "--> plotSSB()" << endl;
-    plotSSB();
+//     cout << "--> plotSSB()" << endl;
+//     plotSSB();
 
     cout << "--> tmvaControlPlots()" << endl;
     tmvaControlPlots();
@@ -195,8 +195,8 @@ void plotBDT::makeAll(int channels) {
     cout << "--> validateAllDistributions()" << endl;
     validateAllDistributions();
     cout << "--> allCorrelationPlots(...)" << endl;
-    allCorrelationPlots(0., "TMVA-0");
-    allCorrelationPlots(0., "TMVA-1");
+    allCorrelationPlots(0., fCuts[0]->xmlFile.c_str());
+    allCorrelationPlots(0., fCuts[1]->xmlFile.c_str());
     cout << "--> bdtScan()" << endl;
     bdtScan();
     cout << "--> plotEffVsBg(...)" << endl;

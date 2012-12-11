@@ -163,8 +163,79 @@ void plotResults::play1(int mode) {
 
 
 // ----------------------------------------------------------------------
-void plotResults::play2(int year) {
+void plotResults::play2(int chan) {
 
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+
+  string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
+  TFile *f = TFile::Open(hfname.c_str()); 
+  
+  // -- data
+  TH1D *hd = (TH1D*)f->Get(Form("hMassWithAllCuts_bdt_5_chan%d", chan)); 
+
+  // -- peaking backgrounds
+  TH1D *hm1 = (TH1D*)f->Get(Form("hMassWithAllCuts_bdt_bgBd2KPi_chan%d", chan));  hm1->SetLineColor(41);  hm1->SetLineWidth(2);  
+  TH1D *hm2 = (TH1D*)f->Get(Form("hMassWithAllCuts_bdt_bgBd2PiPi_chan%d", chan)); hm2->SetLineColor(42);  hm2->SetLineWidth(2); 
+  TH1D *hm3 = (TH1D*)f->Get(Form("hMassWithAllCuts_bdt_bgBs2KK_chan%d", chan));   hm3->SetLineColor(30);  hm3->SetLineWidth(2); 
+
+  TH1D *hs = (TH1D*)f->Get(Form("hMassWithAllCuts_bdt_1_chan%d", chan));   hs->SetLineColor(kBlue); 
+
+  hd->SetLineWidth(2); 
+  hd->SetAxisRange(4.9, 5.9, "X"); 
+  hd->Draw();
+
+  double peak(20.), base(1.36);
+  if (1 == chan) {
+    base = 0.77; 
+    peak = 15.;
+  }
+
+  hm1->Scale(peak/hm1->GetSumOfWeights());
+  hm2->Scale(peak/hm2->GetSumOfWeights()); 
+  hm3->Scale(peak/hm3->GetSumOfWeights()); 
+
+  hs->SetLineWidth(2); 
+  hs->Scale(peak/hs->GetSumOfWeights()); 
+
+  for (int i = 1; i < hm1->GetNbinsX(); ++i) {
+    double x = hm1->GetBinCenter(i); 
+    hm1->Fill(x, base);
+    hm2->Fill(x, base);
+    hm3->Fill(x, base);
+    hs->Fill(x, base);
+  }
+  
+//   hm1->Draw("same"); 
+//   hm2->Draw("same"); 
+//   hm3->Draw("same"); 
+//   hs->Draw("same"); 
+
+
+
+  zone(1,4);
+  hd->Draw("e");
+  hs->Draw("same"); 
+  tl->SetTextSize(0.13); 
+  tl->DrawLatex(0.6, 0.7, "B^{0} #rightarrow #mu #mu");
+
+  c0->cd(2);
+  hd->Draw("e");
+  hm1->Draw("same"); 
+  tl->DrawLatex(0.6, 0.7, "B^{0} #rightarrow K #pi");
+
+  c0->cd(3);
+  hd->Draw("e");
+  hm2->Draw("same"); 
+  tl->DrawLatex(0.6, 0.7, "B^{0} #rightarrow #pi #pi");
+
+  c0->cd(4);
+  hd->Draw("e");
+  hm3->Draw("same"); 
+  tl->DrawLatex(0.6, 0.7, "B^{0}_{s} #rightarrow K K");
+
+  c0->SaveAs(Form("%s/data-withBgOverlayed-chan%d.pdf", fDirectory.c_str(), chan)); 
+  
 }
 
 
@@ -214,7 +285,7 @@ void plotResults::calculateNumbers(int mode) {
     initNumbers(fNumbersBs[chan], false); 
     initNumbers(fNumbersBd[chan], false); 
     calculateNoNumbers(chan, mode);
-    calculateCsNumbers(chan, mode);
+    //remove    calculateCsNumbers(chan, mode);
     calculateRareBgNumbers(chan);
     calculateSgNumbers(chan);
   }
@@ -226,7 +297,7 @@ void plotResults::calculateNumbers(int mode) {
   printUlcalcNumbers(bla);
   createAllCfgFiles(bla); 
 
-  printCsBFNumbers();
+  //remove  printCsBFNumbers();
 
 
   cout << "printing fNumbersBs" << endl;
@@ -247,11 +318,13 @@ void plotResults::calculateNumbers(int mode) {
   printNumbers(*fNumbersNo[0], fOUT); 
   printNumbers(*fNumbersNo[1], fOUT); 
 
+  /*    //remove
   cout << "printing fNumbersCs" << endl;
   printNumbers(*fNumbersCs[0], cout); 
   printNumbers(*fNumbersCs[1], cout); 
   printNumbers(*fNumbersCs[0], fOUT); 
   printNumbers(*fNumbersCs[1], fOUT); 
+  */
 
 
   fHistFile->Close();
@@ -448,7 +521,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
   string name(""); 
 
   // -- 'tight muon' values
-  double epsMu[]  = {0.83, 0.90}; 
+  double epsMu[]  = {0.83, 0.90}; // this is the square of the muon ID efficiency
   double epsPi[]  = {0.001, 0.001}; 
   double errPi2[] = {0.40*0.40, 0.40*0.40}; // changed to 40% uncertainty to be consistent with Michael's central value
   double epsKa[]  = {0.001, 0.001}; 
@@ -1089,6 +1162,53 @@ void plotResults::fillAndSaveHistograms(int nevents) {
 
 
 
+  // -- study efficiencies for Paola/Luca
+  {
+  fHistFile->Close();
+  fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
+
+  // -- normalization
+  resetHistograms();
+  fSetup = "NoData"; 
+  t = getTree(fSetup); 
+  setupTree(t, fSetup); 
+  loopOverTree(t, fSetup, 1, nevents);
+  saveHists(fSetup);
+
+  resetHistograms();
+  fSetup = "NoMc";
+  t = getTree(fSetup); 
+  setupTree(t, fSetup); 
+  loopOverTree(t, fSetup, 1, nevents);
+  otherNumbers(fSetup); 
+  saveHists(fSetup);
+
+  fHistFile->Close();
+
+  // -- dump histograms
+  string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
+  cout << "fHistFile: " << hfname;
+  fHistFile = TFile::Open(hfname.c_str());
+  cout << " opened " << endl;
+
+ 
+  for (int chan = 0; chan < fNchan; ++chan) {
+    fChan = chan; 
+    initNumbers(fNumbersNo[chan], false); 
+
+    // -- efficiency and acceptance
+    fSetup = "NoMc"; 
+    calculateNoNumbers(chan, 2);
+  }
+
+  cout << "printing fNumbersNo" << endl;
+  printNumbers(*fNumbersNo[0], cout); 
+  printNumbers(*fNumbersNo[1], cout); 
+
+  }
+  return;
+
+
   if (0) { 
     resetHistograms();
     fSetup = "SgMc3e33"; 
@@ -1161,7 +1281,7 @@ void plotResults::fillAndSaveHistograms(int nevents) {
   }
 
 
-  if (1) {
+  if (0) {
     // -- control sample
     resetHistograms();
     fSetup = "CsData"; 
@@ -1502,6 +1622,7 @@ void plotResults::loopFunction1(int mode) {
     if (!fGoodMuonsEta) return;
     if (!fGoodJpsiCuts) return;
     if (fBDT < fCuts[fChan]->bdt) return;
+    if (fBDT > fCuts[fChan]->bdtMax) return;
   } else {
     if (!fGoodQ) return;
     if (!fGoodMuonsPt) return;

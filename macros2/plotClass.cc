@@ -3843,6 +3843,11 @@ void plotClass::readCuts(const char *filename) {
       if (dump) cout << "bdt:              " << CutValue << endl;
     }
 
+    if (!strcmp(CutName, "bdtMax")) {
+      a->bdtMax = CutValue; ok = 1;
+      if (dump) cout << "bdtMax:           " << CutValue << endl;
+    }
+
     if (!strcmp(CutName, "mBdHi")) {
       a->mBdHi = CutValue; ok = 1;
       if (dump) cout << "mBdHi:            " << CutValue << endl;
@@ -4005,7 +4010,9 @@ void plotClass::printCuts(ostream &OUT) {
 
     OUT << "xml      " << Form("%s", a->xmlFile.c_str()) << endl;
     OUT << "bdt      " << Form("%4.3f", a->bdt) << endl;
+    OUT << "bdtMax   " << Form("%4.3f", a->bdtMax) << endl;
     fTEX <<  Form("\\vdef{%s:bdt:%d}     {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->bdt) << endl;
+    fTEX <<  Form("\\vdef{%s:bdtMax:%d}  {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), a->index, a->bdtMax) << endl;
 
     OUT << "mBdLo    " << Form("%4.3f", a->mBdLo) << endl;
     OUT << "mBdHi    " << Form("%4.3f", a->mBdHi) << endl;
@@ -4251,9 +4258,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
   if (nevts > 0 && nentries > nevts) nentries = nevts;
 
   int nb(0);
-  int step(50000); 
-  if (nentries < 50000000) step = 5000000; 
-  if (nentries < 10000000) step = 1000000; 
+  int step(1000000); 
   if (nentries < 5000000)  step = 500000; 
   if (nentries < 1000000)  step = 100000; 
   if (nentries < 100000)   step = 10000; 
@@ -4294,6 +4299,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     float bdt, m, m1eta, m2eta, eta; 
     small->Branch("run", &fb.run,"run/I");
     small->Branch("evt", &fb.evt,"evt/I");
+    small->Branch("ls", &fb.ls,"ls/I");
     
     small->Branch("bdt", &fBDT ,"bdt/D");
     // -- debug HLT

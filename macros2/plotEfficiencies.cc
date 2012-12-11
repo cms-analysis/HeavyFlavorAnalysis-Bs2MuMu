@@ -1178,3 +1178,120 @@ void plotEfficiencies::read2Files(PidTable &a, const char *f1name, const char *f
 }
 
 
+// ----------------------------------------------------------------------
+void plotEfficiencies::allOverlayStudy() {
+  hltOverlayStudy("Sg", true); 
+  hltOverlayStudy("Sg", false); 
+
+  hltOverlayStudy("No", true); 
+  hltOverlayStudy("No", false); 
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotEfficiencies::hltOverlayStudy(std::string type, bool barrel) {
+
+  TFile *f11(0), *f12(0); 
+  string t11, t12; 
+  if (type == "Sg") {
+    t11 = "t";
+    f11 = TFile::Open("2011/hlt/larger-SgMc3e33.root"); 
+    t12 = "t";
+    f12 = TFile::Open("2012b/hlt/larger-SgMc.root"); 
+  } else {
+    t11 = "t";
+    f11 = TFile::Open("2011/hlt/larger-NoMc3e33.root"); 
+    t12 = "t";
+    f12 = TFile::Open("2012b/hlt/larger-NoMc.root"); 
+  }
+    
+  std::vector<string> dolist; 
+  std::vector<double> doxmin; 
+  std::vector<double> doxmax; 
+
+  dolist.push_back("bdt"); doxmin.push_back(0.1); doxmax.push_back(0.3); 
+  dolist.push_back("fls3d"); doxmin.push_back(0.); doxmax.push_back(120.); 
+  dolist.push_back("alpha"); doxmin.push_back(0.); doxmax.push_back(0.15);
+  dolist.push_back("iso"); doxmin.push_back(0.5); doxmax.push_back(1.01);
+  dolist.push_back("closetrk"); doxmin.push_back(0.); doxmax.push_back(20);
+  dolist.push_back("maxdoca"); doxmin.push_back(0.); doxmax.push_back(0.03);
+  dolist.push_back("docatrk"); doxmin.push_back(0.); doxmax.push_back(0.1);
+
+  dolist.push_back("pvn"); doxmin.push_back(0.); doxmax.push_back(50.);
+
+  dolist.push_back("pt"); doxmin.push_back(0.); doxmax.push_back(50.);
+  dolist.push_back("eta"); doxmin.push_back(-2.4); doxmax.push_back(2.4);
+  dolist.push_back("m1pt"); doxmin.push_back(0.); doxmax.push_back(30.);
+  dolist.push_back("m2pt"); doxmin.push_back(0.); doxmax.push_back(20.);
+
+  dolist.push_back("pchi2dof"); doxmin.push_back(0.); doxmax.push_back(1.);
+  dolist.push_back("pvlip"); doxmin.push_back(-0.015); doxmax.push_back(0.015);
+  dolist.push_back("pvlips"); doxmin.push_back(-4.); doxmax.push_back(4.);
+
+  dolist.push_back("pvip"); doxmin.push_back(0.); doxmax.push_back(0.02);
+  dolist.push_back("pvips"); doxmin.push_back(0.); doxmax.push_back(5.0);
+
+  dolist.push_back("lip"); doxmin.push_back(0.); doxmax.push_back(0.02);
+  dolist.push_back("tip"); doxmin.push_back(0.); doxmax.push_back(0.02);
+
+  TH1D *h11(0), *h12(0); 
+  
+  for (int i = 0; i < dolist.size(); ++i) {
+    cout << dolist[i] << " : " << t11 << endl;
+    f11->cd(); 
+    f11->ls();
+    h11 = hltHist(dolist[i].c_str(), doxmin[i], doxmax[i], t11.c_str(), barrel);
+    setHist(h11, kBlack); setTitles(h11, dolist[i].c_str(), "efficiency"); 
+    h11->SetMinimum(0.); 
+    h11->SetMaximum(1.02); 
+    f12->cd(); 
+    h12 = hltHist(dolist[i].c_str(), doxmin[i], doxmax[i], t12.c_str(), barrel);
+    setHist(h12, kRed); h12->SetLineStyle(kDashed); 
+
+    h11->Draw();
+    h12->Draw("same");
+
+    tl->SetTextColor(kBlack); 
+    tl->DrawLatex(0.2, 0.92, Form("%s (%s)", type.c_str(), (barrel? "barrel":"endcap"))); 
+
+    tl->DrawLatex(0.8, 0.92, "2011"); 
+
+    tl->SetTextColor(kRed); 
+    tl->DrawLatex(0.5, 0.92, "2012"); 
+
+    c0->SaveAs(Form("%s/hlt/hlt-%s-%s-chan%d.pdf", fDirectory.c_str(), type.c_str(), dolist[i].c_str(), (barrel?0:1))); 
+  }
+
+
+
+}
+
+
+// ----------------------------------------------------------------------
+TH1D* plotEfficiencies::hltHist(const char *var, double xmin, double xmax, const char *treename, bool barrel) {
+
+  string cuts; 
+  if (barrel) {
+    cuts = "(abs(m1eta)<1.4 && abs(m2eta)<1.4) && bdt>0.13 && muid"; 
+  } else {
+    cuts = "!(abs(m1eta)<1.4 && abs(m2eta)<1.4) && bdt>0.14 && muid"; 
+  }
+
+  TH1D *h1 = new TH1D("h1", "", 50, xmin, xmax); 
+  TH1D *h2 = new TH1D("h2", "", 50, xmin, xmax); 
+  TH1D *h3 = new TH1D("h3", "", 50, xmin, xmax); 
+  TH1D *h4 = new TH1D("h4", "", 50, xmin, xmax); h4->Sumw2();
+
+  TTree *t = (TTree*)gFile->Get(treename); 
+  TCanvas *c1 = (TCanvas*)gROOT->FindObject("c1"); 
+  double n1 = t->Draw(Form("%s>>h1", var), Form("%s && hlt", cuts.c_str()), "goff"); 
+  double n2 = t->Draw(Form("%s>>h2", var), Form("%s && !hlt", cuts.c_str()), "goff"); 
+  h3->Add(h1, h2); 
+  h4->Divide(h1, h3, 1., 1., "b"); 
+  h4->SetMinimum(0.); 
+  h4->SetMaximum(1.02); 
+  return h4; 
+
+
+}

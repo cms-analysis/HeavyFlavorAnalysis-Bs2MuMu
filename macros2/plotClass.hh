@@ -61,7 +61,7 @@ struct cuts {
   double iso, chi2dof, alpha, fls3d, docatrk; 
   // -- new variables
   double closetrk, pvlip, pvlips; 
-  double bdt; 
+  double bdt, bdtMax; 
   double maxdoca, pvlip2, pvlips2;
   double pvip, pvips; 
 };
