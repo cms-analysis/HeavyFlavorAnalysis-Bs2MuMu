@@ -686,9 +686,28 @@ TF1* initFunc::pol1gauss(TH1 *h, double peak, double sigma) {
   double g0 = (h->Integral(lbin, hbin) - A/h->GetBinWidth(1))*h->GetBinWidth(1);  
 
   f->SetParameters(g0, peak, sigma, p0, p1); 
-  f->ReleaseParameter(0);     f->SetParLimits(0, 0., 1.e7); 
-  f->ReleaseParameter(1);     f->SetParLimits(1, 5.2, 5.45); 
-  f->ReleaseParameter(2);     f->SetParLimits(2, 0.010, 0.080); 
+
+  f->ReleaseParameter(0);     
+  if (fLimit[0]) {
+    cout << "initFunc::pol1Gauss> limiting par 0 from " << fLimitLo[0] << " .. " << fLimitHi[0] << endl;
+    f->SetParLimits(0, fLimitLo[0], fLimitHi[0]); 
+  } else {
+    f->SetParLimits(0, 0., 1.e7); 
+  }
+
+  if (fLimit[1]) {
+    cout << "initFunc::pol1Gauss> limiting par 1 from " << fLimitLo[1] << " .. " << fLimitHi[1] << endl;
+    f->SetParLimits(1, fLimitLo[1], fLimitHi[1]); 
+  } else {
+    f->ReleaseParameter(1);     
+  }
+
+  if (fLimit[2]) {
+    cout << "initFunc::pol1Gauss> limiting par 2 from " << fLimitLo[2] << " .. " << fLimitHi[2] << endl;
+    f->SetParLimits(2, fLimitLo[2], fLimitHi[2]); 
+  } else {
+    f->ReleaseParameter(2);     
+  }
 
   return f; 
 
