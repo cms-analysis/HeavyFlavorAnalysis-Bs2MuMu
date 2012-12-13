@@ -456,7 +456,7 @@ void pdf_analysis::define_total_extended(int i, int j) {
   }
   else {
     RooAddPdf pdf_ext_sum(name("pdf_ext_sum", i, j), "pdf_ext_sum", pdf_list, N_list);
-    RooArgList constraints_list(*ws_->pdf(name("N_bu_gau_bs", i, j)), *ws_->pdf("fs_over_fu_gau"), *ws_->pdf(name("effratio_gau_bs", i, j)), *ws_->pdf("one_over_BRBR_gau"));
+    RooArgList constraints_list(*ws_->pdf(name("N_bu_gau_bs", i, j)), *ws_->pdf("fs_over_fu_gau"), *ws_->pdf(name("effratio_gau_bs", i, j)), *ws_->pdf("one_over_BRBR_gau"), *ws_->pdf(name("N_peak_gau_bs", i, j)));
 //    if (shapesyst) constraints_list.add(*ws_->pdf(name("shape_gau_bs", i, j)));
     if (BF_ > 1) {
       constraints_list.add(*ws_->pdf(name("effratio_gau_bd", i, j)));
@@ -533,6 +533,9 @@ void pdf_analysis::define_constraints(int i, int j) {
   ws_->import(effratio_gau_bs);
   RooGaussian effratio_gau_bd(name("effratio_gau_bd", i, j), "effratio_gau_bd", *ws_->var(name("effratio_bd", i, j)), RooConst(effratio_bd_val[i][j]), RooConst(effratio_bd_err[i][j]));
   ws_->import(effratio_gau_bd);
+
+  RooGaussian N_peak_gau(name("N_peak_gau", i, j), "N_peak_gau", *ws_->var(name("N_peak", i, j)), RooConst(ws_->var(name("N_peak", i, j))->getVal()), RooConst(sqrt(ws_->var(name("N_peak", i, j))->getVal())));
+  ws_->import(N_peak_gau);
 
 //  if (shapesyst) {
 //    RooGaussian shape_gau_bs(name("shape_gau_bs", i, j), "shape_gau_bs", *ws_->var(name("epsilon_bs", i, j)), RooConst(0), RooConst(i%2==0? 0.016 : 0.079));
@@ -613,7 +616,7 @@ void pdf_analysis::define_simul() {
   }
 }
 
-string pdf_analysis::define_pdf_sum(string name, int j) {
+string pdf_analysis::define_pdf_sum(string name) {
 
   vector <string> pdfs;
   size_t found;

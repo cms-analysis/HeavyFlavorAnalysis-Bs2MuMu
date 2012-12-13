@@ -586,6 +586,7 @@ void pdf_fitData::setsyst() {
       for (int j = 0; j < bdt_index_max(i); j++) {
         ws_->var(name("N_bu", i, j))->setConstant(!syst);
         ws_->var(name("effratio_bs", i, j))->setConstant(!syst);
+        ws_->var(name("N_peak", i, j))->setConstant(!syst);
         if (BF_ > 1) ws_->var(name("effratio_bd", i, j))->setConstant(!syst);
       }
     }
@@ -597,6 +598,7 @@ void pdf_fitData::setsyst() {
         for (int j = 0; j < bdt_index_max(i); j++) {
           constraints.add(*ws_->var(name("N_bu", i, j)));
           constraints.add(*ws_->var(name("effratio_bs", i, j)));
+          constraints.add(*ws_->var(name("N_peak", i, j)));
           if (BF_ > 1) constraints.add(*ws_->var(name("effratio_bd", i, j)));
         }
       }
@@ -620,37 +622,7 @@ void pdf_fitData::save() {
 }
 
 void pdf_fitData::significance() {
-/// set negative errors to zero
-//  for (int k = 0; k < 4; k++) {
-//    if (BF_ > 0 && k == 0) continue;
-//    if (BF_ > 1 && k == 1) continue;
-//    for (int i = 0; i < channels; i++) {
-//      for (int j = 0; j < bdt_index_max(i); j++) {
-//        string name_k(name("N_" + source[k], i, j));
-//        double val = ws_->var(name_k.c_str())->getVal();
-//        double err_lo = ws_->var(name_k.c_str())->getErrorLo();
-//        double err_hi = ws_->var(name_k.c_str())->getErrorHi();
-//        if (val + err_lo < 0) {
-//          err_lo = -val;
-//          ws_->var(name_k.c_str())->setAsymError(err_lo, err_hi);
-//          cout << name_k << " low error reset" << endl;
-//        }
-//      }
-//    }
-//  }
-//  string BFs[2] = {"BF_bs", "BF_bd"};
-//  for (int k = 0; k < BF_ && k < 3; k++) {
-//    string name_k(BFs[k]);
-//    double val = ws_->var(name_k.c_str())->getVal();
-//    double err_lo = ws_->var(name_k.c_str())->getErrorLo();
-//    double err_hi = ws_->var(name_k.c_str())->getErrorHi();
-//    if (val + err_lo < 0) {
-//      err_lo = -val;
-//      ws_->var(name_k.c_str())->setAsymError(err_lo, err_hi);
-//      cout << name_k << " low error reset" << endl;
-//    }
-//  }
-///
+
   ProfileLikelihoodTestStat::SetAlwaysReuseNLL(true);
   RatioOfProfiledLikelihoodsTestStat::SetAlwaysReuseNLL(true);
 
@@ -828,6 +800,7 @@ void pdf_fitData::make_models() {
     for (int j = 0; j < bdt_index_max(i); j++) {
       nuisanceParams.add(*ws_->var(name("N_comb", i, j)));
       nuisanceParams.add(*ws_->var(name("N_semi", i, j)));
+      nuisanceParams.add(*ws_->var(name("N_peak", i, j)));
       if (!SM_ && !bd_constr_ && BF_ < 2 && !Bd) nuisanceParams.add(*ws_->var(name("N_bd", i, j)));
       else if (Bd && BF_ < 1) nuisanceParams.add(*ws_->var(name("N_bs", i, j)));
       if (BF_ > 0 && syst) {
@@ -846,26 +819,6 @@ void pdf_fitData::make_models() {
   if (BF_ > 1 && !Bd) nuisanceParams.add(*ws_->var("BF_bd"));
   else if (BF_ > 1 && Bd) nuisanceParams.add(*ws_->var("BF_bs"));
   ws_->defineSet("nui", nuisanceParams);
-
-  /// constrpar is constr
-//  RooArgSet constrpar;
-//  if (syst) {
-//    for (int i = 0; i < channels; i++) {
-//      for (int j = 0; j < channels_bdt; j++) {
-//        if (BF_ > 0) {
-//          constrpar.add(*ws_->var(name("effratio_bs", i, j)));
-//          if (BF_ > 1) {
-//            constrpar.add(*ws_->var(name("effratio_bd", i, j)));
-//          }
-//        }
-//      }
-//    }
-//    if (BF_ > 0) {
-//      constrpar.add(*ws_->var("fs_over_fu"));
-//      constrpar.add(*ws_->var("one_over_BRBR"));
-//    }
-//  }
-//  ws_->defineSet("constrpar", constrpar);
 
   double null = 0.;
   if (SMIsNull && BF_ > 1) {
@@ -1127,10 +1080,12 @@ void pdf_fitData::randomize_constraints(RooWorkspace* ws) {
 
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < bdt_index_max(i); j++) {
-      RooDataSet* B_bu_ds = ws->pdf(name("N_bu_gau_bs", i, j))->generate(RooArgSet(*ws->var(name("N_bu", i, j))), 1);
+      RooDataSet* N_bu_ds = ws->pdf(name("N_bu_gau_bs", i, j))->generate(RooArgSet(*ws->var(name("N_bu", i, j))), 1);
       RooDataSet* effratio_bs_ds = ws->pdf(name("effratio_gau_bs", i, j))->generate(RooArgSet(*ws->var(name("effratio_bs", i, j))), 1);
-      ws->var(name("N_bu", i, j))->setVal(B_bu_ds->get(0)->getRealValue(name("N_bu", i, j)));
+      RooDataSet* N_peak_ds = ws->pdf(name("N_peak_gau", i, j))->generate(RooArgSet(*ws->var(name("N_peak", i, j))), 1);
+      ws->var(name("N_bu", i, j))->setVal(N_bu_ds->get(0)->getRealValue(name("N_bu", i, j)));
       ws->var(name("effratio_bs", i, j))->setVal(effratio_bs_ds->get(0)->getRealValue(name("effratio_bs", i, j)));
+      ws->var(name("N_peak", i, j))->setVal(N_peak_ds->get(0)->getRealValue(name("N_peak", i, j)));
       if (BF_ > 1) {
         RooDataSet* effratio_bd_ds = ws->pdf(name("effratio_gau_bd", i, j))->generate(RooArgSet(*ws->var(name("effratio_bd", i, j))), 1);
         ws->var(name("effratio_bd", i, j))->setVal(effratio_bd_ds->get(0)->getRealValue(name("effratio_bd", i, j)));
