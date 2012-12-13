@@ -768,10 +768,12 @@ void pdf_fitData::make_models() {
 
   /// obs
   string observables("Mass");
-  if (simul_) observables += ",etacat";
   if (bdt_fit_) observables += ",bdt";
-  if (simul_bdt_) observables += ",bdtcat";
-  if (simul_all_) observables += ",allcat";
+  if (simul_) {
+  	if (!simul_bdt_ && !simul_all_) observables += ",etacat";
+  	else if (simul_bdt_) observables += ",bdtcat";
+  	else if (simul_all_) observables += ",allcat";
+  }
   ws_->defineSet("obs", observables.c_str());
 
   string alt_name("N_bs");
@@ -807,6 +809,7 @@ void pdf_fitData::make_models() {
       nuisanceParams.add(*ws_->var(name("N_comb", i, j)));
       nuisanceParams.add(*ws_->var(name("N_semi", i, j)));
       nuisanceParams.add(*ws_->var(name("N_peak", i, j)));
+      nuisanceParams.add(*ws_->var(name("exp", i, j)));
       if (!SM_ && !bd_constr_ && BF_ < 2 && !Bd) nuisanceParams.add(*ws_->var(name("N_bd", i, j)));
       else if (Bd && BF_ < 1) nuisanceParams.add(*ws_->var(name("N_bs", i, j)));
       if (BF_ > 0 && syst) {
@@ -1000,6 +1003,7 @@ void pdf_fitData::make_prior() {
   vector <vector <RooGaussian*> > prior_bd(channels, vector <RooGaussian*> (channels_bdt));
 //  vector <vector <RooGaussian*> > prior_semi(channels, vector <RooGaussian*> (channels_bdt));
   vector <vector <RooGaussian*> > prior_comb(channels, vector <RooGaussian*> (channels_bdt));
+  vector <vector <RooGaussian*> > prior_exp(channels, vector <RooGaussian*> (channels_bdt));
 
 //  vector <vector <RooGamma*> > prior_comb(channels, vector <RooGamma*> (channels_bdt));
 
@@ -1011,9 +1015,11 @@ void pdf_fitData::make_prior() {
       else if (BF_ < 2 && Bd) prior_bd[i][j] = new RooGaussian(name("prior_bs", i, j), name("prior_bs", i, j), *ws_->var(name("N_bs", i, j)), RooConst(ws_->var(name("N_bs", i, j))->getVal()), RooConst(ws_->var(name("N_bs", i, j))->getError()));
 //      prior_semi[i][j] = new RooGaussian(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
       prior_comb[i][j] = new RooGaussian(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal()), RooConst(ws_->var(name("N_comb", i, j))->getError()));
+      prior_exp[i][j] = new RooGaussian(name("prior_exp", i, j), name("prior_exp", i, j), *ws_->var(name("exp", i, j)), RooConst(ws_->var(name("exp", i, j))->getVal()), RooConst(ws_->var(name("exp", i, j))->getError()));
       prior_list.add(*prior_bd[i][j]);
 //      prior_list.add(*prior_semi[i][j]);
       prior_list.add(*prior_comb[i][j]);
+      prior_list.add(*prior_exp[i][j]);
 
       //      prior_comb[i][j] = new RooGamma(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
     }
