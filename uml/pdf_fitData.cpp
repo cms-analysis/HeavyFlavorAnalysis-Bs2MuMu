@@ -319,6 +319,7 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
         else if (BF_ > 1) N_bd = (RooRealVar*)vars->find("BF_bd");
         RooRealVar* N_comb = (RooRealVar*)vars->find(pdf_analysis::name("N_comb", i, j));
         RooRealVar* N_semi = (RooRealVar*)vars->find(pdf_analysis::name("N_semi", i, j));
+        RooRealVar* N_peak = (RooRealVar*)vars->find(pdf_analysis::name("N_peak", i, j));
         vector <string> fitresult_tex_vec;
         if (BF_ == 0) {
           ostringstream fitresult_tex;
@@ -382,13 +383,16 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
           fitresult_tex_vec.push_back(fitresult_tex2.str());
         }
         ostringstream fitresult_tex;
-        fitresult_tex << setprecision(2) << fixed<< "N(comb. bkg) = " << N_comb->getVal() << " ^{+" << getErrorHigh(N_comb) << "}_{" << getErrorLow(N_comb) << "}";
+        fitresult_tex << setprecision(2) << fixed << "N(comb. bkg) = " << N_comb->getVal() << " ^{+" << getErrorHigh(N_comb) << "}_{" << getErrorLow(N_comb) << "}";
         fitresult_tex_vec.push_back(fitresult_tex.str());
         ostringstream fitresult_tex2;
-        fitresult_tex2 << setprecision(2) << fixed<< "N(semi bkg) = " << N_semi->getVal() << " ^{+" << getErrorHigh(N_semi) << "}_{" << getErrorLow(N_semi) << "}";
+        fitresult_tex2 << setprecision(2) << fixed << "N(semi bkg) = " << N_semi->getVal() << " ^{+" << getErrorHigh(N_semi) << "}_{" << getErrorLow(N_semi) << "}";
         fitresult_tex_vec.push_back(fitresult_tex2.str());
+        ostringstream fitresult_tex3;
+        fitresult_tex3 << setprecision(2) << fixed << "N(peak bkg) = " << N_peak->getVal() << " ^{+" << getErrorHigh(N_peak) << "}_{" << getErrorLow(N_peak) << "}";
+        fitresult_tex_vec.push_back(fitresult_tex3.str());
 
-        TPaveText* fitresults = new TPaveText(0.57, 0.64, 0.89, 0.89, "NDCR");
+        TPaveText* fitresults = new TPaveText(0.57, 0.54, 0.89, 0.89, "NDCR");
         for (unsigned int jj = 0; jj < fitresult_tex_vec.size(); jj++) {
           fitresults->AddText(fitresult_tex_vec[jj].c_str());
         }
@@ -587,6 +591,7 @@ void pdf_fitData::setsyst() {
         ws_->var(name("N_bu", i, j))->setConstant(!syst);
         ws_->var(name("effratio_bs", i, j))->setConstant(!syst);
         ws_->var(name("N_peak", i, j))->setConstant(!syst);
+        ws_->var(name("N_semi", i, j))->setConstant(!syst);
         if (BF_ > 1) ws_->var(name("effratio_bd", i, j))->setConstant(!syst);
       }
     }
@@ -599,6 +604,7 @@ void pdf_fitData::setsyst() {
           constraints.add(*ws_->var(name("N_bu", i, j)));
           constraints.add(*ws_->var(name("effratio_bs", i, j)));
           constraints.add(*ws_->var(name("N_peak", i, j)));
+          constraints.add(*ws_->var(name("N_semi", i, j)));
           if (BF_ > 1) constraints.add(*ws_->var(name("effratio_bd", i, j)));
         }
       }
@@ -843,32 +849,6 @@ void pdf_fitData::make_models() {
   H1->SetObservables(*ws_->set("obs"));
   H1->SetNuisanceParameters(*ws_->set("nui"));
   if (BF_ > 0 && syst) H1->SetConstraintParameters(*ws_->set("constr"));
-//  parse_estimate();
-//  if (BF_ == 0) {
-//    if (simul_) {
-//      for (int i = 0; i < channels; i++) {
-//        for (int j = 0; j < bdt_index_max(i); j++) {
-//          if (!Bd) ws_->var(name("N_bs", i, j))->setVal(N_bs[i][j]);
-//          else ws_->var(name("N_bd", i, j))->setVal(N_bd[i][j]);
-//        }
-//      }
-//    }
-//    else {
-//      if (!Bd) ws_->var("N_bs")->setVal(N_bs[0][0]);
-//      else ws_->var("N_bd")->setVal(N_bd[0][0]);
-//    }
-//  }
-//  else {
-//    if (!Bd) ws_->var("BF_bs")->setVal(Bs2MuMu_SM_BF_val);
-//    else ws_->var("BF_bd")->setVal(Bd2MuMu_SM_BF_val);
-//  }
-//  if (bd_constr_) {
-//    int index = simul_ ? 0 : atoi(ch_s_.c_str());
-//    double ratio;
-//    if (!simul_bdt_) ratio = (double) estimate_bd[index] / estimate_bs[index];
-//    else ratio = (double) estimate2D_bd[0][0] / estimate2D_bs[0][0];
-//    ws_->var("Bd_over_Bs")->setVal(ratio);
-//  }
   H1->SetSnapshot(*ws_->set("poi"));
 
   ModelConfig* H0 = new ModelConfig("H0", "null hypothesis", ws_);
@@ -1018,7 +998,7 @@ void pdf_fitData::plot_hypotest(HypoTestResult *hts) {
 void pdf_fitData::make_prior() {
   cout << "making prior" << endl;
   vector <vector <RooGaussian*> > prior_bd(channels, vector <RooGaussian*> (channels_bdt));
-  vector <vector <RooGaussian*> > prior_semi(channels, vector <RooGaussian*> (channels_bdt));
+//  vector <vector <RooGaussian*> > prior_semi(channels, vector <RooGaussian*> (channels_bdt));
   vector <vector <RooGaussian*> > prior_comb(channels, vector <RooGaussian*> (channels_bdt));
 
 //  vector <vector <RooGamma*> > prior_comb(channels, vector <RooGamma*> (channels_bdt));
@@ -1029,14 +1009,13 @@ void pdf_fitData::make_prior() {
     for (int j = 0; j < bdt_index_max(i); j++) {
       if (!SM_ && !bd_constr_ && BF_ < 2 && !Bd) prior_bd[i][j] = new RooGaussian(name("prior_bd", i, j), name("prior_bd", i, j), *ws_->var(name("N_bd", i, j)), RooConst(ws_->var(name("N_bd", i, j))->getVal()), RooConst(ws_->var(name("N_bd", i, j))->getError()));
       else if (BF_ < 2 && Bd) prior_bd[i][j] = new RooGaussian(name("prior_bs", i, j), name("prior_bs", i, j), *ws_->var(name("N_bs", i, j)), RooConst(ws_->var(name("N_bs", i, j))->getVal()), RooConst(ws_->var(name("N_bs", i, j))->getError()));
-      prior_semi[i][j] = new RooGaussian(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
+//      prior_semi[i][j] = new RooGaussian(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
       prior_comb[i][j] = new RooGaussian(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal()), RooConst(ws_->var(name("N_comb", i, j))->getError()));
-
-//      prior_comb[i][j] = new RooGamma(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
-
       prior_list.add(*prior_bd[i][j]);
-      prior_list.add(*prior_semi[i][j]);
+//      prior_list.add(*prior_semi[i][j]);
       prior_list.add(*prior_comb[i][j]);
+
+      //      prior_comb[i][j] = new RooGamma(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
     }
   }
   if (BF_ > 1 && !Bd) {
@@ -1083,9 +1062,11 @@ void pdf_fitData::randomize_constraints(RooWorkspace* ws) {
       RooDataSet* N_bu_ds = ws->pdf(name("N_bu_gau_bs", i, j))->generate(RooArgSet(*ws->var(name("N_bu", i, j))), 1);
       RooDataSet* effratio_bs_ds = ws->pdf(name("effratio_gau_bs", i, j))->generate(RooArgSet(*ws->var(name("effratio_bs", i, j))), 1);
       RooDataSet* N_peak_ds = ws->pdf(name("N_peak_gau", i, j))->generate(RooArgSet(*ws->var(name("N_peak", i, j))), 1);
+      RooDataSet* N_semi_ds = ws->pdf(name("N_semi_gau", i, j))->generate(RooArgSet(*ws->var(name("N_semi", i, j))), 1);
       ws->var(name("N_bu", i, j))->setVal(N_bu_ds->get(0)->getRealValue(name("N_bu", i, j)));
       ws->var(name("effratio_bs", i, j))->setVal(effratio_bs_ds->get(0)->getRealValue(name("effratio_bs", i, j)));
       ws->var(name("N_peak", i, j))->setVal(N_peak_ds->get(0)->getRealValue(name("N_peak", i, j)));
+      ws->var(name("N_semi", i, j))->setVal(N_semi_ds->get(0)->getRealValue(name("N_semi", i, j)));
       if (BF_ > 1) {
         RooDataSet* effratio_bd_ds = ws->pdf(name("effratio_gau_bd", i, j))->generate(RooArgSet(*ws->var(name("effratio_bd", i, j))), 1);
         ws->var(name("effratio_bd", i, j))->setVal(effratio_bd_ds->get(0)->getRealValue(name("effratio_bd", i, j)));

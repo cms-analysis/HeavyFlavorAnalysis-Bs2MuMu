@@ -2,6 +2,7 @@
 
 pdf_analysis::pdf_analysis(bool print, string ch_s, string range, int BF, bool SM, bool bd_constr, int simul, int simulbdt, int simulall, bool pee_, bool bdt_fit) {
   cout << "analysis constructor" << endl;
+
   print_ = print;
   meth_ = "bdt";
   ch_s_ = ch_s;
@@ -102,9 +103,29 @@ void pdf_analysis::initialize () {
   obs = new RooArgSet(*ws_->var("Mass"), *ws_->var("bdt"), "obs");
   //ws_->import(*obs, RecycleConflictNodes());
 
+  ////////////
   getBFnumbers("input/external_numbers.txt");
-
+  ////////////
 }
+
+void pdf_analysis::define_N () {
+
+  for (int i = 0; i < channels; i++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
+    	RooRealVar N_bs(name("N_bs", i, j), "N_bs", 0, 10000);
+    	ws_->import(N_bs);
+      RooRealVar N_bd(name("N_bd", i, j), "N_bd", 0, 10000);
+      ws_->import(N_bd);
+      RooRealVar N_peak(name("N_peak", i, j), "N_peak", 0, 10000);
+      ws_->import(N_peak);
+      RooRealVar N_semi(name("N_semi", i, j), "N_semi", 0, 10000);
+      ws_->import(N_semi);
+      RooRealVar N_comb(name("N_comb", i, j), "N_comb", 0, 1000000);
+      ws_->import(N_comb);
+    }
+  }
+}
+
 
 void pdf_analysis::define_pdfs () {
 
@@ -167,9 +188,6 @@ void pdf_analysis::set_pdf_constant(string name) {
 }
 
 void pdf_analysis::define_bs(int i, int j) {
-
-  RooRealVar N_bs(name("N_bs", i, j), "N_bs", 0, 10000);
-  ws_->import(N_bs);
 
   RooRealVar Mean_bs(name("Mean_bs", i, j), "Mean_bs", 5.35, 5.32, 5.4);
   RooRealVar Sigma_bs(name("Sigma_bs", i, j), "Sigma_bs", 0.02, 0.005, 0.2);
@@ -261,15 +279,9 @@ void pdf_analysis::define_bd(int i, int j) {
     RooFormulaVar N_bd_constr(name("N_bd_constr", i, j), "N_bd_constr", "@0*@1", RooArgList(*ws_->var(name("N_bs", i, j)), *ws_->var("Bd_over_Bs")));
     ws_->import(N_bd_constr);
   }
-  else {
-    RooRealVar N_bd(name("N_bd", i, j), "N_bd", 0, 10000);
-    ws_->import(N_bd);
-  }
 }
 
 void pdf_analysis::define_peaking(int i, int j) {
-  RooRealVar N_peak(name("N_peak", i, j), "N_peak", 0, 10000);
-  ws_->import(N_peak);
 
   if (old_tree) {
     RooRealVar Mean_peak(name("Mean_peak", i, j), "Mean_peak", 5.25, 5.20, 5.3);
@@ -315,9 +327,6 @@ void pdf_analysis::define_peaking(int i, int j) {
 }
 
 void pdf_analysis::define_nonpeaking(int i, int j) {
-
-  RooRealVar N_semi(name("N_semi", i, j), "N_semi", 0, 10000);
-  ws_->import(N_semi);
 
   if (old_tree) {
     RooRealVar m0_semi(name("m0_semi", i, j), "m0_semi", 5., 6.);
@@ -370,9 +379,6 @@ void pdf_analysis::define_nonpeaking(int i, int j) {
 }
 
 void pdf_analysis::define_comb(int i, int j) {
-
-  RooRealVar N_comb(name("N_comb", i, j), "N_comb", 0, 1000000);
-  ws_->import(N_comb);
 
   RooRealVar exp(name("exp", i, j), "exp", 0., -10., 10.);
 
@@ -456,7 +462,7 @@ void pdf_analysis::define_total_extended(int i, int j) {
   }
   else {
     RooAddPdf pdf_ext_sum(name("pdf_ext_sum", i, j), "pdf_ext_sum", pdf_list, N_list);
-    RooArgList constraints_list(*ws_->pdf(name("N_bu_gau_bs", i, j)), *ws_->pdf("fs_over_fu_gau"), *ws_->pdf(name("effratio_gau_bs", i, j)), *ws_->pdf("one_over_BRBR_gau"), *ws_->pdf(name("N_peak_gau_bs", i, j)));
+    RooArgList constraints_list(*ws_->pdf(name("N_bu_gau_bs", i, j)), *ws_->pdf("fs_over_fu_gau"), *ws_->pdf(name("effratio_gau_bs", i, j)), *ws_->pdf("one_over_BRBR_gau"), *ws_->pdf(name("N_peak_gau", i, j)), *ws_->pdf(name("N_semi_gau", i, j)));
 //    if (shapesyst) constraints_list.add(*ws_->pdf(name("shape_gau_bs", i, j)));
     if (BF_ > 1) {
       constraints_list.add(*ws_->pdf(name("effratio_gau_bd", i, j)));
@@ -534,8 +540,10 @@ void pdf_analysis::define_constraints(int i, int j) {
   RooGaussian effratio_gau_bd(name("effratio_gau_bd", i, j), "effratio_gau_bd", *ws_->var(name("effratio_bd", i, j)), RooConst(effratio_bd_val[i][j]), RooConst(effratio_bd_err[i][j]));
   ws_->import(effratio_gau_bd);
 
-  RooGaussian N_peak_gau(name("N_peak_gau", i, j), "N_peak_gau", *ws_->var(name("N_peak", i, j)), RooConst(ws_->var(name("N_peak", i, j))->getVal()), RooConst(sqrt(ws_->var(name("N_peak", i, j))->getVal())));
+  RooGaussian N_peak_gau(name("N_peak_gau", i, j), "N_peak_gau", *ws_->var(name("N_peak", i, j)), RooConst(ws_->var(name("N_peak", i, j))->getVal()), RooConst(ws_->var(name("N_peak", i, j))->getError()));
   ws_->import(N_peak_gau);
+  RooGaussian N_semi_gau(name("N_semi_gau", i, j), "N_semi_gau", *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
+  ws_->import(N_semi_gau);
 
 //  if (shapesyst) {
 //    RooGaussian shape_gau_bs(name("shape_gau_bs", i, j), "shape_gau_bs", *ws_->var(name("epsilon_bs", i, j)), RooConst(0), RooConst(i%2==0? 0.016 : 0.079));
@@ -696,7 +704,7 @@ void pdf_analysis::print(RooAbsData* data, string output) {
     mass_eta_h->Draw("surf") ;
     cetad->cd(2);
     RooPlot *rp_res = ws_->var("MassRes")->frame();
-    *ws_->data(Form("MassRes_rdh_%s", output.c_str()))->plotOn(rp_res);
+    ws_->data(Form("MassRes_rdh_%s", output.c_str()))->plotOn(rp_res);
     rp_res->Draw();
     cetad->Print( (get_address("MassEta", pdf_name) + ".gif").c_str());
     cetad->Print( (get_address("MassEta", pdf_name) + ".pdf").c_str());
@@ -937,13 +945,6 @@ void pdf_analysis::print_pdf(RooAbsPdf* pdf, RooRealVar * var) {
   delete rp;
 }
 
-RooDataHist pdf_analysis::getRandom_rdh() {
-  TH1D* temp_h = new TH1D("temp_h", "temp_h", 100, -2.4, 2.4);
-  temp_h->FillRandom("gaus", 1000);
-  RooDataHist temp_rdh("temp_rdh", "temp_rdh", *ws_->var("eta"), temp_h);
-  return temp_rdh;
-}
-
 const char* pdf_analysis::name(string name, int i, int j) {
   if (!simul_) return name.c_str();
   else {
@@ -952,36 +953,32 @@ const char* pdf_analysis::name(string name, int i, int j) {
   }
 }
 
-void pdf_analysis::set_rare_normalization(string input, bool extended) {
+void pdf_analysis::set_rare_normalization(string input) {
   FILE *estimate_file = fopen(input.c_str(), "r");
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < bdt_index_max(i); j++) {
       char buffer[1024];
       char cutName[128];
-      float cut;
+      double cut, error;
       while (fgets(buffer, sizeof(buffer), estimate_file)) {
         if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
         if (buffer[0] == '#') continue;
-        sscanf(buffer, "%s %f", cutName, &cut);
-        if ( (simul_ && !strcmp(cutName, Form("peakfrac_rare_%d", i))) || (!simul_ && !strcmp(cutName, Form("peakfrac_rare_%d", channel))) ) {
-          ws_->var(name("peakfrac_rare", i, j))->setConstant(kFALSE);
-          ws_->var(name("peakfrac_rare", i, j))->setVal(cut);
-          ws_->var(name("peakfrac_rare", i, j))->setConstant(kTRUE);
-          cout << name("peakfrac_rare", i, j) << " set val to " << cut << endl;
+        sscanf(buffer, "%s\t%lf\t%lf", cutName, &cut, &error);
+        if ( (simul_ && !strcmp(cutName, Form("N_peak_%d", i))) || (!simul_ && !strcmp(cutName, Form("N_peak_%d", channel))) ) {
+        	ws_->var(name("N_peak", i, j))->setConstant(kFALSE);
+        	if (simul_bdt_ || simul_all_) cut *= bs_bdt_factor[i][j]; /// factor from bs bdt
+        	ws_->var(name("N_peak", i, j))->setVal(cut);
+        	ws_->var(name("N_peak", i, j))->setError(error);
+          // ws_->var(name("N_peak", i, j))->setConstant(kTRUE);
+        	cout << name("N_peak", i, j) << " set val to " << cut << "; set error to " << error << endl;
         }
-        if (extended) {
-          if ( (simul_ && !strcmp(cutName, Form("N_rare_%d", i))) || (!simul_ && !strcmp(cutName, Form("N_rare_%d", channel))) ) {
-            ws_->var(name("N_rare", i, j))->setConstant(kFALSE);
-            ws_->var(name("N_rare", i, j))->setVal(cut);
-            ws_->var(name("N_rare", i, j))->setConstant(kTRUE);
-            cout << name("N_rare", i, j) << " set val to " << cut << endl;
-          }
-          if ( (simul_ && !strcmp(cutName, Form("N_peak_%d", i))) || (!simul_ && !strcmp(cutName, Form("N_peak_%d", channel))) ) {
-            ws_->var(name("N_peak", i, j))->setConstant(kFALSE);
-            ws_->var(name("N_peak", i, j))->setVal(cut);
-            ws_->var(name("N_peak", i, j))->setConstant(kTRUE);
-            cout << name("N_peak", i, j) << " set val to " << cut << endl;
-          }
+        if ( (simul_ && !strcmp(cutName, Form("N_semi_%d", i))) || (!simul_ && !strcmp(cutName, Form("N_semi_%d", channel))) ) {
+          ws_->var(name("N_semi", i, j))->setConstant(kFALSE);
+          if (simul_bdt_ || simul_all_) cut *= bs_bdt_factor[i][j]; /// factor from bs bdt
+          ws_->var(name("N_semi", i, j))->setVal(cut);
+          ws_->var(name("N_semi", i, j))->setError(error);
+          	// ws_->var(name("N_semi", i, j))->setConstant(kTRUE);
+          cout << name("N_semi", i, j) << " set val to " << cut << "; set error to " << error << endl;
         }
       }
       rewind(estimate_file);
@@ -1405,8 +1402,12 @@ void pdf_analysis::bdt_bins_effs() {
   cout << "parsing bdt_effs.txt to change eff in each bdt and eta bin" << endl;
   FILE *file = fopen("input/bdt_effs.txt", "r");
   if (!file) {cout << "file bdt_effs.txt does not exist" << endl; exit(1);}
-  vector < vector < double > > eff_bs_mult(channels, vector < double > (channels_bdt));
-  vector < vector < double > > eff_bd_mult(channels, vector < double > (channels_bdt));
+  bs_bdt_factor.resize(channels);
+  bd_bdt_factor.resize(channels);
+  for (int i = 0; i < channels; i++) {
+	  bs_bdt_factor[i].resize(channels_bdt);
+	  bd_bdt_factor[i].resize(channels_bdt);
+  }
   char buffer[1024];
   while (fgets(buffer, sizeof(buffer), file)) {
     if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
@@ -1416,17 +1417,17 @@ void pdf_analysis::bdt_bins_effs() {
         ostringstream bs_oss, bd_oss;
         bs_oss << "eff_bs_" << i << "_" << j << " %lf";
         bd_oss << "eff_bd_" << i << "_" << j << " %lf";
-        sscanf(buffer, bs_oss.str().c_str(), &eff_bs_mult[i][j]);
-        sscanf(buffer, bd_oss.str().c_str(), &eff_bd_mult[i][j]);
+        sscanf(buffer, bs_oss.str().c_str(), &bs_bdt_factor[i][j]);
+        sscanf(buffer, bd_oss.str().c_str(), &bd_bdt_factor[i][j]);
       }
     }
   }
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < bdt_index_max(i); j++) {
-      eff_bs_val[i][j] *= eff_bs_mult[i][j];
-      eff_bs_err[i][j] *= eff_bs_mult[i][j];
-      eff_bd_val[i][j] *= eff_bd_mult[i][j];
-      eff_bd_err[i][j] *= eff_bd_mult[i][j];
+      eff_bs_val[i][j] *= bs_bdt_factor[i][j];
+      eff_bs_err[i][j] *= bs_bdt_factor[i][j];
+      eff_bd_val[i][j] *= bd_bdt_factor[i][j];
+      eff_bd_err[i][j] *= bd_bdt_factor[i][j];
       cout << i << "," << j << "  bs eff = " <<  eff_bs_val[i][j] << " bd eff = " << eff_bd_val[i][j] << endl;
     }
   }

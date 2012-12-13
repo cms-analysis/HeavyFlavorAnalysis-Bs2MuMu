@@ -55,6 +55,7 @@ public:
   RooHistPdf* define_MassRes_pdf(RooDataSet *rds, string name);
   RooHistPdf* define_bdt_pdf(RooDataSet *rds, string name);
 
+  void define_N();
   void define_pdfs();
   void define_bs(int i, int j);
   void define_bd(int i, int j);
@@ -82,7 +83,7 @@ public:
   void fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error = true, bool hesse = true, bool setconstant = true);
   void print(RooAbsData *data, string output = "");
   void set_pdf_constant(string pdf);
-  void set_rare_normalization(string input, bool extended = false); //set peak fraction parameter to Bu2JpsiK
+  void set_rare_normalization(string input); //set peak fraction parameter to Bu2JpsiK
 
   string pdf_name;
 
@@ -149,7 +150,6 @@ protected:
 
   double ratio_;
 
-  RooDataHist getRandom_rdh();
   string get_address(string name, string pdf = "", bool channeling = true);
 
   RooArgSet* obs;
@@ -188,6 +188,9 @@ protected:
   vector <vector <double> > eff_bs_err;
   vector <vector <double> > eff_bu_err;
   vector <vector <double> > N_bu_err;
+
+  vector < vector < double > > bs_bdt_factor;
+  vector < vector < double > > bd_bdt_factor;
 
   bool syst;
   bool randomsyst;

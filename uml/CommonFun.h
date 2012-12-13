@@ -363,19 +363,23 @@ void get_rare_normalization(string filename, string dir, int offset = 0) {
 
   char buffer[1024];
   char left[1024];
-  float number;
+  double number;
   int peak_n = sizeof(peakdecays)/sizeof(string);
   int semi_n = sizeof(semidecays)/sizeof(string);
-  vector <float> peak_exp(2, 0);
-  vector <float> semi_exp(2, 0);
+  vector <double> peak_exp(2, 0);
+  vector <double> semi_exp(2, 0);
+  vector <double> peak_err(2, 0);
+  vector <double> semi_err(2, 0);
 
   string end_0("0:val}");
   string end_1("1:val}");
+  string err_0("0:e2}");
+  string err_1("1:e2}");
 
   while (fgets(buffer, sizeof(buffer), file)) {
     if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
     if (buffer[0] == '\045') continue;
-    sscanf(buffer, "%s   {\\ensuremath{{%f } } }", left, &number);
+    sscanf(buffer, "%s   {\\ensuremath{{%lf } } }", left, &number);
     string left_s(left);
     for (int i = 0; i < peak_n; i++) {
       size_t found = left_s.find(peakdecays[i]);
@@ -387,6 +391,14 @@ void get_rare_normalization(string filename, string dir, int offset = 0) {
         found = left_s.find(end_1);
         if (found != string::npos) {
           peak_exp[1] += number;
+        }
+        found = left_s.find(err_0);
+        if (found != string::npos) {
+          peak_err[0] += number;
+        }
+        found = left_s.find(err_1);
+        if (found != string::npos) {
+          peak_err[1] += number;
         }
       }
     }
@@ -401,6 +413,14 @@ void get_rare_normalization(string filename, string dir, int offset = 0) {
         if (found != string::npos) {
           semi_exp[1] += number;
         }
+        found = left_s.find(err_0);
+        if (found != string::npos) {
+        	semi_err[0] += number;
+        }
+        found = left_s.find(err_1);
+        if (found != string::npos) {
+        	semi_err[1] += number;
+        }
       }
     }
   }
@@ -409,11 +429,10 @@ void get_rare_normalization(string filename, string dir, int offset = 0) {
   string full_output = dir + "/rare_frac.txt";
   FILE* file_out = fopen(full_output.c_str(), "w");
   for (int i = 0; i < 2; i++) {
-  //  fprintf(file_out, "N_rare_%d\t%f\n", i+offset, peak_exp[i]+semi_exp[i]);
-  //  fprintf(file_out, "peakfrac_rare_%d\t%f\n", i+offset, peak_exp[i]/(peak_exp[i]+semi_exp[i]));
-    fprintf(file_out, "N_peak_%d\t%f\n", i+offset, peak_exp[i]);
-    fprintf(file_out, "######\n");
+    fprintf(file_out, "N_peak_%d\t%lf\t%lf\n", i+offset, peak_exp[i], peak_err[i]);
+    fprintf(file_out, "N_semi_%d\t%lf\t%lf\n", i+offset, semi_exp[i], semi_err[i]);
   }
+  fprintf(file_out, "######\n");
   fclose(file_out);
   system(Form("cat %s", full_output.c_str()));
 }
