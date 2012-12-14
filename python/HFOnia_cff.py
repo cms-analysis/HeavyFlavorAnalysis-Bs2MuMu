@@ -11,8 +11,8 @@ psiDump = cms.EDAnalyzer(
     type               = cms.untracked.int32(1313), 
     vertexing          = cms.untracked.int32(1), 
     maxDoca            = cms.untracked.double(0.1), 
-    massLow            = cms.untracked.double(2.8), 
-    massHigh           = cms.untracked.double(3.9)
+    massLow            = cms.untracked.double(2.7), 
+    massHigh           = cms.untracked.double(4.2)
     )
 
 # ----------------------------------------------------------------------
@@ -27,7 +27,7 @@ upsDump = cms.EDAnalyzer(
     vertexing          = cms.untracked.int32(1), 
     maxDoca            = cms.untracked.double(0.1), 
     massLow            = cms.untracked.double(8.9), 
-    massHigh           = cms.untracked.double(10.6)
+    massHigh           = cms.untracked.double(11.0)
     )
 
 
