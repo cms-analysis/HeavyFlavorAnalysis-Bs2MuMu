@@ -57,16 +57,6 @@ public:
 
   void define_N();
   void define_pdfs();
-  void define_bs(int i, int j);
-  void define_bd(int i, int j);
-  void define_peaking(int i, int j);
-  void define_nonpeaking(int i, int j);
-  void define_comb(int i, int j);
-  void define_signals(int i, int j);
-  void define_rare(int i, int j);
-  void define_rare3(int i, int j);
-  void define_bf(int i, int j);
-  void define_constraints(int i, int j);
 
   void set_SMratio(double ratio) {ratio_ = ratio;}
 
@@ -76,12 +66,9 @@ public:
   void define_total_fractional(int i, int j); // final pdf with fractional components, and also extended
   void define_total_extended(int i, int j); // final pdf with all extended components
 
-  void define_simul();
-
   void getBFnumbers(string numbers_filename);
 
   void fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error = true, bool hesse = true, bool setconstant = true);
-  void print(RooAbsData *data, string output = "");
   void set_pdf_constant(string pdf);
   void set_rare_normalization(string input); //set peak fraction parameter to Bu2JpsiK
 
@@ -134,7 +121,7 @@ public:
 
   bool newcomb_;
   void setSBslope(string pdf, RooAbsData* sb_data);
-  bool shapesyst;
+  bool rare_constr_;
 
   int bdt_index(int eta_ch, double bdt);
   int bdt_index_max(int eta_ch) ;
@@ -158,7 +145,6 @@ protected:
 
   void parse_external_numbers(string filename);
   void parse_efficiency_numbers(int offset = 0);
-  void bdt_bins_effs();
 
   double Bs2MuMu_SM_BF_val;
   double Bs2MuMu_SM_BF_err;
@@ -199,7 +185,20 @@ protected:
   vector <int> get_EtaBdt_bins(int index);
 
 private:
+  void define_bs(int i, int j);
+  void define_bd(int i, int j);
+  void define_peak(int i, int j);
+  void define_semi(int i, int j);
+  void define_comb(int i, int j);
+  void define_signals(int i, int j);
+  void define_rare(int i, int j);
+  void define_rare3(int i, int j);
+  void define_bf(int i, int j);
   void print_pdf(RooAbsPdf* pdf, RooRealVar * var);
+  void simulBdt_effs();
+  void bdt_fit_effs();
+
+  void print(RooAbsData *data, string output = "");
 };
 
 #endif // PDF_ANALYSIS_H

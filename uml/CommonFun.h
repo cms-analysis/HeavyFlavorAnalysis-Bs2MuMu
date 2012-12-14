@@ -45,7 +45,7 @@ bool randomsyst = false;
 bool shapesyst = false;
 static string cuts = "bdt>-10.";
 static string years_opt = "0";
-bool input = false, output = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false, asimov = false;
+bool input = false, output = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false, asimov = false, rare_constr = false;
 static bool newcomb = false;
 static bool method = true;
 static bool Bd = false;
@@ -96,6 +96,7 @@ void help() {
   cout << "-asimov \t asimov dataset for significance estimation" << endl;
   cout << "-syst \t adding syst constraints" << endl;
   cout << "-randomsyst \t syst constraints are randomized" << endl;
+  cout << "-rare_constr \t rare yield is constraint" << endl;
   cout << "-proof # \t enable PROOF with # workers" << endl;
   cout << "-nexp # \t number of experiments (default 1)" << endl;
   cout << "-Bd # \t significance for Bd" << endl;
@@ -126,6 +127,7 @@ void help() {
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << "-syst \t adding syst constraints" << endl;
   cout << "-randomsyst \t syst constraints are randomized" << endl;
+  cout << "-rare_constr \t rare yield is constraint" << endl;
   cout << "-hack2011 \t hack 2011 semi to 2012" << endl;
   cout << endl;
 
@@ -308,6 +310,10 @@ void parse_options(int argc, char* argv[]){
       hack_semi2011 = true;
       cout << "hack2011" << endl;
     }
+    if (!strcmp(argv[i],"-rare_constr")) {
+    	rare_constr = true;
+      cout << "rare yield is constrained" << endl;
+    }
     if (!strcmp(argv[i],"-h")) help();
   }
 }
@@ -368,13 +374,16 @@ void get_rare_normalization(string filename, string dir, int offset = 0) {
   int semi_n = sizeof(semidecays)/sizeof(string);
   vector <double> peak_exp(2, 0);
   vector <double> semi_exp(2, 0);
-  vector <double> peak_err(2, 0);
-  vector <double> semi_err(2, 0);
-
+  vector <double> peak_syst_err(2, 0);
+  vector <double> semi_syst_err(2, 0);
+  vector <double> peak_stat_err(2, 0);
+  vector <double> semi_stat_err(2, 0);
   string end_0("0:val}");
   string end_1("1:val}");
-  string err_0("0:e2}");
-  string err_1("1:e2}");
+  string err_stat_0("0:e1}");
+  string err_stat_1("1:e1}");
+  string err_syst_0("0:e2}");
+  string err_syst_1("1:e2}");
 
   while (fgets(buffer, sizeof(buffer), file)) {
     if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
@@ -392,13 +401,21 @@ void get_rare_normalization(string filename, string dir, int offset = 0) {
         if (found != string::npos) {
           peak_exp[1] += number;
         }
-        found = left_s.find(err_0);
+        found = left_s.find(err_syst_0);
         if (found != string::npos) {
-          peak_err[0] += number;
+          peak_syst_err[0] += number;
         }
-        found = left_s.find(err_1);
+        found = left_s.find(err_syst_1);
         if (found != string::npos) {
-          peak_err[1] += number;
+          peak_syst_err[1] += number;
+        }
+        found = left_s.find(err_stat_0);
+        if (found != string::npos) {
+        	peak_stat_err[0] += number;
+        }
+        found = left_s.find(err_stat_1);
+        if (found != string::npos) {
+        	peak_stat_err[1] += number;
         }
       }
     }
@@ -413,18 +430,33 @@ void get_rare_normalization(string filename, string dir, int offset = 0) {
         if (found != string::npos) {
           semi_exp[1] += number;
         }
-        found = left_s.find(err_0);
+        found = left_s.find(err_syst_0);
         if (found != string::npos) {
-        	semi_err[0] += number;
+        	semi_syst_err[0] += number;
         }
-        found = left_s.find(err_1);
+        found = left_s.find(err_syst_1);
         if (found != string::npos) {
-        	semi_err[1] += number;
+        	semi_syst_err[1] += number;
+        }
+        found = left_s.find(err_stat_0);
+        if (found != string::npos) {
+        	semi_stat_err[0] += number;
+        }
+        found = left_s.find(err_stat_1);
+        if (found != string::npos) {
+        	semi_stat_err[1] += number;
         }
       }
     }
   }
   fclose(file);
+
+  vector <double> peak_err(2, 0);
+  vector <double> semi_err(2, 0);
+  for (int i = 0; i < 2; i++) {
+  	peak_err[i] = sqrt(pow(peak_stat_err[i], 2) + pow(peak_syst_err[i], 2));
+  	semi_err[i] = sqrt(pow(semi_stat_err[i], 2) + pow(semi_syst_err[i], 2));
+  }
 
   string full_output = dir + "/rare_frac.txt";
   FILE* file_out = fopen(full_output.c_str(), "w");

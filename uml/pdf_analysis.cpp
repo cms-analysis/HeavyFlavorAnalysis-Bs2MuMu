@@ -133,16 +133,13 @@ void pdf_analysis::define_pdfs () {
     for (int j = 0; j < bdt_index_max(i); j++) {
       define_bs(i, j);
       define_bd(i, j);
-      define_peaking(i, j);
-      define_nonpeaking(i, j);
+      define_peak(i, j);
+      define_semi(i, j);
 //      define_rare(i, j);
       define_comb(i, j);
-
       if (BF_ > 0) {
         define_bf(i, j);
-        define_constraints(i, j);
       }
-      define_total_extended(i, j);
     }
   }
 }
@@ -281,7 +278,7 @@ void pdf_analysis::define_bd(int i, int j) {
   }
 }
 
-void pdf_analysis::define_peaking(int i, int j) {
+void pdf_analysis::define_peak(int i, int j) {
 
   if (old_tree) {
     RooRealVar Mean_peak(name("Mean_peak", i, j), "Mean_peak", 5.25, 5.20, 5.3);
@@ -326,7 +323,7 @@ void pdf_analysis::define_peaking(int i, int j) {
   }
 }
 
-void pdf_analysis::define_nonpeaking(int i, int j) {
+void pdf_analysis::define_semi(int i, int j) {
 
   if (old_tree) {
     RooRealVar m0_semi(name("m0_semi", i, j), "m0_semi", 5., 6.);
@@ -380,7 +377,7 @@ void pdf_analysis::define_nonpeaking(int i, int j) {
 
 void pdf_analysis::define_comb(int i, int j) {
 
-  RooRealVar exp(name("exp", i, j), "exp", 0., -10., 10.);
+  RooRealVar exp(name("exp_comb", i, j), "exp_comb", 0., -10., 10.);
 
   if (!pee) {
     if (!bdt_fit_) {
@@ -462,8 +459,12 @@ void pdf_analysis::define_total_extended(int i, int j) {
   }
   else {
     RooAddPdf pdf_ext_sum(name("pdf_ext_sum", i, j), "pdf_ext_sum", pdf_list, N_list);
-    RooArgList constraints_list(*ws_->pdf(name("N_bu_gau_bs", i, j)), *ws_->pdf("fs_over_fu_gau"), *ws_->pdf(name("effratio_gau_bs", i, j)), *ws_->pdf("one_over_BRBR_gau"), *ws_->pdf(name("N_peak_gau", i, j)), *ws_->pdf(name("N_semi_gau", i, j)));
-//    if (shapesyst) constraints_list.add(*ws_->pdf(name("shape_gau_bs", i, j)));
+    RooArgList constraints_list(*ws_->pdf(name("N_bu_gau_bs", i, j)), *ws_->pdf("fs_over_fu_gau"), *ws_->pdf(name("effratio_gau_bs", i, j)), *ws_->pdf("one_over_BRBR_gau"));
+    if (rare_constr_) {
+    	constraints_list.add(*ws_->pdf(name("N_peak_gau", i, j)));
+    	constraints_list.add(*ws_->pdf(name("N_semi_gau", i, j)));
+    }
+    //    if (shapesyst) constraints_list.add(*ws_->pdf(name("shape_gau_bs", i, j)));
     if (BF_ > 1) {
       constraints_list.add(*ws_->pdf(name("effratio_gau_bd", i, j)));
     }
@@ -519,109 +520,6 @@ void pdf_analysis::define_bf(int i, int j) {
   if (BF_ != 3) ws_->import(N_bs_constr);
   else ws_->import(N_bsbd_constr);
   ws_->import(N_bd_constr);
-
-}
-
-void pdf_analysis::define_constraints(int i, int j) {
-
-  if (i == 0 && j == 0) {
-    RooGaussian fs_over_fu_gau("fs_over_fu_gau", "fs_over_fu_gau", *ws_->var("fs_over_fu"), RooConst(fs_over_fu_val), RooConst(fs_over_fu_err));
-    ws_->import(fs_over_fu_gau);
-
-    RooGaussian one_over_BRBR_gau("one_over_BRBR_gau", "one_over_BRBR_gau", *ws_->var("one_over_BRBR"), RooConst(one_over_BRBR_val), RooConst(one_over_BRBR_err));
-    ws_->import(one_over_BRBR_gau);
-  }
-
-  RooGaussian N_bu_gau_bs(name("N_bu_gau_bs", i, j), "N_bu_gau_bs", *ws_->var(name("N_bu", i, j)), RooConst(N_bu_val[i][j]), RooConst(N_bu_err[i][j]));
-  ws_->import(N_bu_gau_bs);
-
-  RooGaussian effratio_gau_bs(name("effratio_gau_bs", i, j), "effratio_gau_bs", *ws_->var(name("effratio_bs", i, j)), RooConst(effratio_bs_val[i][j]), RooConst(effratio_bs_err[i][j]));
-  ws_->import(effratio_gau_bs);
-  RooGaussian effratio_gau_bd(name("effratio_gau_bd", i, j), "effratio_gau_bd", *ws_->var(name("effratio_bd", i, j)), RooConst(effratio_bd_val[i][j]), RooConst(effratio_bd_err[i][j]));
-  ws_->import(effratio_gau_bd);
-
-  RooGaussian N_peak_gau(name("N_peak_gau", i, j), "N_peak_gau", *ws_->var(name("N_peak", i, j)), RooConst(ws_->var(name("N_peak", i, j))->getVal()), RooConst(ws_->var(name("N_peak", i, j))->getError()));
-  ws_->import(N_peak_gau);
-  RooGaussian N_semi_gau(name("N_semi_gau", i, j), "N_semi_gau", *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
-  ws_->import(N_semi_gau);
-
-//  if (shapesyst) {
-//    RooGaussian shape_gau_bs(name("shape_gau_bs", i, j), "shape_gau_bs", *ws_->var(name("epsilon_bs", i, j)), RooConst(0), RooConst(i%2==0? 0.016 : 0.079));
-//    ws_->import(shape_gau_bs);
-//  }
-
-}
-
-void pdf_analysis::define_simul() {
-  if (!simul_bdt_ && !simul_all_) {
-    RooSimultaneous pdf_sim("pdf_ext_simul", "simultaneous pdf", *ws_->cat("etacat"));
-    for (int i = 0; i < channels; i++) {
-      pdf_sim.addPdf(*ws_->pdf(name("pdf_ext_total", i)), name("etacat", i));
-    }
-    ws_->import(pdf_sim);
-    if (BF_ > 0) {
-      RooSimultaneous pdf_sim_test("pdf_ext_simul_simple", "simultaneous pdf without BF", *ws_->cat("etacat"));
-      for (int i = 0; i < channels; i++) {
-        pdf_sim_test.addPdf(*ws_->pdf(name("pdf_ext_total_simple", i)), name("etacat", i));
-      }
-      ws_->import(pdf_sim_test);
-      RooSimultaneous pdf_sim_noconstr("pdf_ext_simul_noconstr", "simultaneous pdf without constraints", *ws_->cat("etacat"));
-      for (int i = 0; i < channels; i++) {
-        pdf_sim_noconstr.addPdf(*ws_->pdf(name("pdf_ext_sum", i)), name("etacat", i));
-      }
-      ws_->import(pdf_sim_noconstr);
-    }
-  }
-  if (!simul_bdt_ && simul_all_) {
-    RooSimultaneous pdf_sim("pdf_ext_simul", "simultaneous pdf", *ws_->cat("allcat"));
-    for (int i = 0; i < channels_all; i++) {
-      vector <int> indexes(get_EtaBdt_bins(i));
-      pdf_sim.addPdf(*ws_->pdf(name("pdf_ext_total", indexes[0], indexes[1])), Form("allcat_%d", i));
-    }
-    ws_->import(pdf_sim);
-    if (BF_ > 0) {
-      RooSimultaneous pdf_sim_test("pdf_ext_simul_simple", "simultaneous pdf without BF", *ws_->cat("allcat"));
-      for (int i = 0; i < channels_all; i++) {
-        vector <int> indexes(get_EtaBdt_bins(i));
-        pdf_sim_test.addPdf(*ws_->pdf(name("pdf_ext_total_simple", indexes[0], indexes[1])), Form("allcat_%d", i));
-      }
-      ws_->import(pdf_sim_test);
-      RooSimultaneous pdf_sim_noconstr("pdf_ext_simul_noconstr", "simultaneous pdf without constraints", *ws_->cat("allcat"));
-      for (int i = 0; i < channels_all; i++) {
-        vector <int> indexes(get_EtaBdt_bins(i));
-        pdf_sim_noconstr.addPdf(*ws_->pdf(name("pdf_ext_sum", indexes[0], indexes[1])), Form("allcat_%d", i));
-      }
-      ws_->import(pdf_sim_noconstr);
-    }
-  }
-  if (simul_bdt_ && !simul_all_) {
-    RooSuperCategory* rsc = dynamic_cast<RooSuperCategory*> (ws_->obj("super_cat"));
-    RooSimultaneous pdf_sim("pdf_ext_simul", "simultaneous pdf", *rsc);
-    RooSimultaneous pdf_sim_test("pdf_ext_simul_simple", "simultaneous pdf without BF", *rsc);
-    RooSimultaneous pdf_sim_noconstr("pdf_ext_simul_noconstr", "simultaneous pdf without constraints", *rsc);
-    for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < bdt_index_max(i); j++) {
-        RooArgSet icl = rsc->inputCatList();
-        RooCategory* eta_c = (RooCategory*)icl.find("etacat");
-        RooCategory* bdt_c = (RooCategory*)icl.find("bdtcat");
-        eta_c->setIndex(i);
-        bdt_c->setIndex(j);
-        cout << rsc->getLabel() << " (" << rsc->getIndex() << ") " <<  i << " " << j << endl;
-        pdf_sim.addPdf(*ws_->pdf(Form("pdf_ext_total_%d_%d", i, j)), rsc->getLabel());
-        pdf_sim_test.addPdf(*ws_->pdf(Form("pdf_ext_total_simple_%d_%d", i, j)), rsc->getLabel());
-        pdf_sim_noconstr.addPdf(*ws_->pdf(Form("pdf_ext_sum_%d_%d", i, j)), rsc->getLabel());
-      }
-    }
-    ws_->import(pdf_sim);
-    if (BF_ > 0) {
-      ws_->import(pdf_sim_test);
-      ws_->import(pdf_sim_noconstr);
-    }
-  }
-  if (simul_bdt_ && simul_all_) {
-    cout << "simul_bdt_ can't be with simul_all_" << endl;
-    exit(1);
-  }
 }
 
 string pdf_analysis::define_pdf_sum(string name) {
@@ -1132,7 +1030,8 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
   parse_external_numbers(numbers_filename);
   parse_efficiency_numbers();
   if (channels == 4) parse_efficiency_numbers(2);
-  if (simul_bdt_ || simul_all_) bdt_bins_effs();
+  if (simul_bdt_ || simul_all_) simulBdt_effs();
+  if (bdt_fit_) bdt_fit_effs();
 
   one_over_BRBR_val = 1./ (Bu2JpsiK_BF_val * Jpsi2MuMu_BF_val);
   one_over_BRBR_err = one_over_BRBR_val * sqrt(pow(Bu2JpsiK_BF_err/Bu2JpsiK_BF_val, 2) + pow(Jpsi2MuMu_BF_err/Jpsi2MuMu_BF_val, 2));
@@ -1398,10 +1297,10 @@ void pdf_analysis::parse_external_numbers(string filename) {
   cout << "Jpsi2MuMu_BF " <<  Jpsi2MuMu_BF_val << " \\pm " << Jpsi2MuMu_BF_err << endl;
 }
 
-void pdf_analysis::bdt_bins_effs() {
+void pdf_analysis::simulBdt_effs() {
   cout << "parsing bdt_effs.txt to change eff in each bdt and eta bin" << endl;
-  FILE *file = fopen("input/bdt_effs.txt", "r");
-  if (!file) {cout << "file bdt_effs.txt does not exist" << endl; exit(1);}
+  FILE *file = fopen("input/simulBdt_effs.txt", "r");
+  if (!file) {cout << "file simulBdt_effs.txt does not exist" << endl; exit(1);}
   bs_bdt_factor.resize(channels);
   bd_bdt_factor.resize(channels);
   for (int i = 0; i < channels; i++) {
@@ -1430,6 +1329,25 @@ void pdf_analysis::bdt_bins_effs() {
       eff_bd_err[i][j] *= bd_bdt_factor[i][j];
       cout << i << "," << j << "  bs eff = " <<  eff_bs_val[i][j] << " bd eff = " << eff_bd_val[i][j] << endl;
     }
+  }
+}
+
+void pdf_analysis::bdt_fit_effs() {
+  vector <double> eff_Bs_bdt01;
+  vector <double> eff_Bd_bdt01;
+  eff_Bs_bdt01.push_back(37547./24029.);
+  eff_Bs_bdt01.push_back(21375./11095.);
+  eff_Bs_bdt01.push_back(19498./15225.);
+  eff_Bs_bdt01.push_back(9336./6590.);
+  eff_Bd_bdt01.push_back(1960./1241.);
+  eff_Bd_bdt01.push_back(1039./563.);
+  eff_Bd_bdt01.push_back(2007./1597.);
+  eff_Bd_bdt01.push_back(889./629.);
+  for (int i = 0; i < channels; i++) {
+  	eff_bs_val[i][0] *= eff_Bs_bdt01[i];
+  	eff_bs_err[i][0] *= eff_Bs_bdt01[i];
+  	eff_bd_val[i][0] *= eff_Bd_bdt01[i];
+  	eff_bd_err[i][0] *= eff_Bd_bdt01[i];
   }
 }
 

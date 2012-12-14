@@ -226,7 +226,7 @@ int main(int argc, char* argv[]) {
   ana1.set_rare_normalization("input/rare_frac.txt");
 
   ana1.define_pdfs();
-  if (simul) ana1.define_simul();
+//  if (simul) ana1.define_simul();
 
   /// FITS
   for (int j = 0; j < inputs; j++) {
@@ -249,10 +249,10 @@ int main(int argc, char* argv[]) {
       ana1.setSBslope(ana1.name("comb", j, k), rad_comb);
 //        ana1.fit_pdf(ana1.name("comb", j, k), rad_comb, false, true, false, false);
 
-      ana1.print_ = false;
-      ana1.define_rare3(j, k);
-      ana1.fit_pdf(ana1.name("expo3", j, k), rad_semi, false, true, false);
-      ana1.print_ = print;
+//      ana1.print_ = false;
+//      ana1.define_rare3(j, k);
+//      ana1.fit_pdf(ana1.name("expo3", j, k), rad_semi, false, true, false);
+//      ana1.print_ = print;
     }
   }
 
@@ -273,19 +273,17 @@ int main(int argc, char* argv[]) {
   MassRes_0_h->Write();
   MassRes_2_h->Write();
   output_f->Close();
-  if (simul) ws->pdf("pdf_ext_simul")->graphVizTree(Form("sim_%d_pdf.dot", inputs));
-  else if (!simul && !simul_bdt) ws->pdf("pdf_ext_total")->graphVizTree(Form("ext_%s.dot", ch_s.c_str()));
-  else ws->pdf("pdf_ext_simul")->graphVizTree(Form("sim_%d_%d.dot", inputs, inputs_bdt));
+  if (!simul && !simul_bdt) ws->pdf("pdf_ext_total")->graphVizTree(Form("ext_%s.dot", ch_s.c_str()));
   ws->Print();
 
-  if (!simul && !SM && !bd_const) {
-    ws->var("N_bs")->setVal(5);
-    ws->var("N_bd")->setVal(2);
-    ws->var("N_peak")->setVal(1);
-    ws->var("N_semi")->setVal(1);
-    ws->var("N_comb")->setVal(25);
-    ana1.gen_and_fit("pdf_ext_total");
-  }
+//  if (!simul && !SM && !bd_const) {
+//    ws->var("N_bs")->setVal(5);
+//    ws->var("N_bd")->setVal(2);
+//    ws->var("N_peak")->setVal(1);
+//    ws->var("N_semi")->setVal(1);
+//    ws->var("N_comb")->setVal(25);
+//    ana1.gen_and_fit("pdf_ext_total");
+//  }
   cout << "workspace saved to " << output_s << endl;
   return EXIT_SUCCESS;
 }

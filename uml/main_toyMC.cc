@@ -30,11 +30,12 @@ int main(int argc, char** argv) {
   }
   if (!(!bias_s.compare("no") || !bias_s.compare("c+") || !bias_s.compare("c-") || !bias_s.compare("tau+") || !bias_s.compare("tau-") || !bias_s.compare("sig+") || !bias_s.compare("sig-"))) { cout << "I don't understand what to bias: please enter -bias c+, c-, tau+, tau-, sig+, sig-" << endl; exit(EXIT_FAILURE);}
   if (!pdf_test_b) pdf_test = pdf_toy;
-  pdf_toyMC toy1(print, input_estimates, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, NExp, Bd, bias_s);
+  pdf_toyMC toy1(print, input_estimates, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, rare_constr, NExp, Bd, bias_s);
   toy1.initialize();
   TFile* input_f = new TFile(input_ws.c_str());
   RooWorkspace* ws = (RooWorkspace*)input_f->Get("ws");
   toy1.set_ws(ws);
+  toy1.set_final_pdf();
   if (hack_semi2011) toy1.hack_ws("output/frozen/ws_simul4_bdt_BF2_PEE.root");
   ws->Print();
   toy1.setnewlumi();

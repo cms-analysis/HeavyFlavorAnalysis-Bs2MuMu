@@ -30,7 +30,7 @@ using namespace RooStats;
 
 class pdf_fitData : public pdf_analysis {
   public:
-    pdf_fitData(bool print, string input_estimates = "", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, int simul = 1, int simulbdt = 1, int simulall = 1, bool pee_ = false , bool bdt_fit = false , string ch_s = "0", int sig = -1, bool asimov = false, bool syste = false, bool randomsyste = false, int nexp = 10, bool bd = false);
+    pdf_fitData(bool print, string input_estimates = "", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, int simul = 1, int simulbdt = 1, int simulall = 1, bool pee_ = false , bool bdt_fit = false , string ch_s = "0", int sig = -1, bool asimov = false, bool syste = false, bool randomsyste = false, bool rare_constr = false, int nexp = 10, bool bd = false);
     ~pdf_fitData();
     void print();
     void print_each_channel(string var = "Mass", string output = "", RooWorkspace *ws = 0, RooDataSet *rds_ = 0);
@@ -61,8 +61,13 @@ class pdf_fitData : public pdf_analysis {
 
     bool SMIsNull;
 
+    void set_final_pdf();
+
   protected:
 
+    void define_constraints(int i, int j);
+    void define_simul();
+    void define_perchannel_pdf();
     void randomize_constraints(RooWorkspace* ws);
 
     string input_estimates_;

@@ -29,10 +29,11 @@ int main(int argc, char** argv) {
   if (SM && bd_const) help();
   if (simul && channel) help();
 
-  pdf_fitData* fitdata = new pdf_fitData(false, input_estimates, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, NExp, Bd);
+  pdf_fitData* fitdata = new pdf_fitData(false, input_estimates, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, rare_constr, NExp, Bd);
   fitdata->initialize();
   fitdata->make_pdf_input(input_ws);
   fitdata->make_pdf();
+  fitdata->set_final_pdf();
   if (hack_semi2011) fitdata->hack_ws("output/frozen/ws_simul4_bdt_BF2_PEE.root");
   fitdata->setnewlumi();
   fitdata->setsyst();
