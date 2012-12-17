@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
   if (simul && channel) help();
 
   pdf_fitData* fitdata = new pdf_fitData(false, input_estimates, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, rare_constr, NExp, Bd);
-  fitdata->initialize();
+//  fitdata->initialize();
   fitdata->make_pdf_input(input_ws);
   fitdata->make_pdf();
   fitdata->set_final_pdf();
@@ -85,9 +85,10 @@ int main(int argc, char** argv) {
   }
   fitdata->proof = proof;
   if (SMIsNull) fitdata->SMIsNull = true;
+  fitdata->reset_minmax();
   fitdata->significance();
   if (LLprofile) fitdata->profile_NLL();
-  fitdata->save();
+  //fitdata->save();
   return EXIT_SUCCESS;
 }
 

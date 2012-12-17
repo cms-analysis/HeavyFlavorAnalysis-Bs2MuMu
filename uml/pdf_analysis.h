@@ -64,7 +64,6 @@ public:
   
   string define_pdf_sum(string name);
   void define_total_fractional(int i, int j); // final pdf with fractional components, and also extended
-  void define_total_extended(int i, int j); // final pdf with all extended components
 
   void getBFnumbers(string numbers_filename);
 

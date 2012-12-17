@@ -46,6 +46,8 @@ pdf_fitData::pdf_fitData(bool print, string input_estimates, string range, int B
   NExp = nexp;
   Bd = bd;
   SMIsNull = false;
+
+  asimov_ = asimov;
 }
 
 pdf_fitData::~pdf_fitData() {
@@ -173,19 +175,21 @@ bool pdf_fitData::parse(char *cutName, float cut) {
   return true;
 }
 
-void pdf_fitData::fit_pdf(bool do_not_import) {
+RooFitResult* pdf_fitData::fit_pdf(bool do_not_import, string pdf_name) {
+	if (pdf_name == "") pdf_name = pdfname;
   cout << "fitting fit" << endl;
   if (!simul_) {
-    pdfname = "pdf_ext_total";
+  	pdf_name = "pdf_ext_total";
     RooAbsData* subdata = global_data->reduce(Form("etacat==etacat::etacat_%d", channel));
     global_data = (RooDataSet*)subdata;
   }
-  cout << ">>>>>>>>>>>>>>>>> fitting " << global_data->GetName() << " in range " << range_ << " with " << pdfname << endl;
+  cout << ">>>>>>>>>>>>>>>>> fitting " << global_data->GetName() << " in range " << range_ << " with " << pdf_name << endl;
   global_data->Print();
-  ws_->pdf(pdfname.c_str())->Print();
-  RFR = ws_->pdf(pdfname.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none());
+  ws_->pdf(pdf_name.c_str())->Print();
+  RFR = ws_->pdf(pdf_name.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none());
   if (!do_not_import) ws_->import(*global_data);
   if (verbosity > 0) RFR->Print();
+  return RFR;
 }
 
 void pdf_fitData::print() {
@@ -608,8 +612,8 @@ void pdf_fitData::define_constraints(int i, int j) {
     ws_->import(one_over_BRBR_gau);
   }
 
-  RooGaussian N_bu_gau_bs(name("N_bu_gau_bs", i, j), "N_bu_gau_bs", *ws_->var(name("N_bu", i, j)), RooConst(N_bu_val[i][j]), RooConst(N_bu_err[i][j]));
-  ws_->import(N_bu_gau_bs);
+  RooGaussian N_bu_gau(name("N_bu_gau", i, j), "N_bu_gau", *ws_->var(name("N_bu", i, j)), RooConst(N_bu_val[i][j]), RooConst(N_bu_err[i][j]));
+  ws_->import(N_bu_gau);
 
   RooGaussian effratio_gau_bs(name("effratio_gau_bs", i, j), "effratio_gau_bs", *ws_->var(name("effratio_bs", i, j)), RooConst(effratio_bs_val[i][j]), RooConst(effratio_bs_err[i][j]));
   ws_->import(effratio_gau_bs);
@@ -622,12 +626,52 @@ void pdf_fitData::define_constraints(int i, int j) {
   	RooGaussian N_semi_gau(name("N_semi_gau", i, j), "N_semi_gau", *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
   	ws_->import(N_semi_gau);
   }
+}
 
-//  if (shapesyst) {
-//    RooGaussian shape_gau_bs(name("shape_gau_bs", i, j), "shape_gau_bs", *ws_->var(name("epsilon_bs", i, j)), RooConst(0), RooConst(i%2==0? 0.016 : 0.079));
-//    ws_->import(shape_gau_bs);
-//  }
+void pdf_fitData::define_total_extended(int i, int j) {
+  RooArgList pdf_list(*ws_->pdf(name("pdf_bs", i, j)), *ws_->pdf(name("pdf_bd", i, j)), *ws_->pdf(name("pdf_comb", i, j)), *ws_->pdf(name("pdf_semi", i, j)), *ws_->pdf(name("pdf_peak", i, j)));
+  RooArgList N_list("varlist");
 
+  if (BF_ > 0) N_list.add(*ws_->function(name("N_bs_formula", i, j)));
+  else N_list.add(*ws_->var(name("N_bs", i, j)));
+  if ((SM_ || bd_constr_) && BF_ < 2) N_list.add(*ws_->function(name("N_bd_constr", i, j)));
+  else if (BF_ > 1) N_list.add(*ws_->function(name("N_bd_formula", i, j)));
+  else N_list.add(*ws_->var(name("N_bd", i, j)));
+  N_list.add(*ws_->var(name("N_comb", i, j)));
+  N_list.add(*ws_->var(name("N_semi", i, j)));
+  N_list.add(*ws_->var(name("N_peak", i, j)));
+
+  if (BF_ == 0) {
+    RooAddPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", pdf_list, N_list);
+    ws_->import(pdf_ext_total);
+  }
+  else {
+    RooAddPdf pdf_ext_sum(name("pdf_ext_sum", i, j), "pdf_ext_sum", pdf_list, N_list);
+    RooArgList constraints_list(*ws_->pdf(name("N_bu_gau", i, j)), *ws_->pdf("fs_over_fu_gau"), *ws_->pdf(name("effratio_gau_bs", i, j)), *ws_->pdf("one_over_BRBR_gau"));
+    if (rare_constr_) {
+    	constraints_list.add(*ws_->pdf(name("N_peak_gau", i, j)));
+    	constraints_list.add(*ws_->pdf(name("N_semi_gau", i, j)));
+    }
+    //    if (shapesyst) constraints_list.add(*ws_->pdf(name("shape_gau_bs", i, j)));
+    if (BF_ > 1) {
+      constraints_list.add(*ws_->pdf(name("effratio_gau_bd", i, j)));
+    }
+    RooProdPdf constraints_pdfs(name("pdf_constraints", i, j), "pdf_constraints", constraints_list);
+    RooProdPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", RooArgList(pdf_ext_sum, constraints_pdfs));
+    ws_->import(pdf_ext_total);
+  }
+
+  if (BF_ > 0) {
+    RooArgList N_list_test(*ws_->function(name("N_bs", i, j)));
+    if (SM_ || bd_constr_) N_list_test.add(*ws_->function(name("N_bd_constr", i, j)));
+    else N_list_test.add(*ws_->var(name("N_bd", i, j)));
+    N_list_test.add(*ws_->var(name("N_comb", i, j)));
+    N_list_test.add(*ws_->var(name("N_semi", i, j)));
+    N_list_test.add(*ws_->var(name("N_peak", i, j)));
+    RooAddPdf pdf_ext_total_test(name("pdf_ext_total_simple", i, j), "pdf_ext_total_simple", pdf_list, N_list_test);
+    ws_->import(pdf_ext_total_test);
+  }
+  return;
 }
 
 void pdf_fitData::define_simul() {
@@ -761,11 +805,11 @@ void pdf_fitData::significance() {
 
 //  ProfileLikelihoodTestStat::SetAlwaysReuseNLL(true);
 //  RatioOfProfiledLikelihoodsTestStat::SetAlwaysReuseNLL(true);
-
+	make_prior();
   if (sign == 0) sig_hand();
-  else if (sign == 1) sig_plhc();
-  else if (sign >= 1) {
+  else {
     make_models();
+    if (sign == 1) sig_plhc();
     if (sign == 2) sig_plhts();
     if (sign == 3) sig_hybrid_plhts();
     if (sign == 4) sig_hybrid_roplhts();
@@ -774,9 +818,12 @@ void pdf_fitData::significance() {
 
 Double_t pdf_fitData::sig_hand() {
   /// by hand
-  Double_t minNLL = RFR->minNll();
+//  RooProdPdf* modelpdf = new RooProdPdf("model_pdf", "model_pdf", *ws_->pdf(pdfname.c_str()), *ws_->pdf("prior") );
+//	ws_->import(*modelpdf);
+	RooAbsPdf* modelpdf = ws_->pdf(pdfname.c_str());
+  Double_t minNLL = fit_pdf(true, modelpdf->GetName())->minNll();
   RooRealVar *arg_var = 0;
-  RooArgSet *all_vars = ws_->pdf(pdfname.c_str())->getVariables();
+  RooArgSet *all_vars = ws_->pdf(modelpdf->GetName())->getVariables();
   TIterator* vars_it = all_vars->createIterator();
   size_t found;
   string alt_name("N_bs");
@@ -807,7 +854,7 @@ Double_t pdf_fitData::sig_hand() {
       }
     }
   }
-  fit_pdf(true);
+  Double_t newNLL = fit_pdf(true, modelpdf->GetName())->minNll();
 
   TIterator* vars_after = all_vars->createIterator();
   while ( (arg_var = (RooRealVar*)vars_after->Next())) {
@@ -820,7 +867,6 @@ Double_t pdf_fitData::sig_hand() {
     }
   }
 
-  Double_t newNLL = RFR->minNll();
   Double_t deltaLL = newNLL - minNLL;
   Double_t signif = deltaLL>0 ? sqrt(2*deltaLL) : -sqrt(-2*deltaLL) ;
   if (verbosity > 0) {
@@ -840,7 +886,9 @@ void pdf_fitData::sig_plhc() {
     CO.add(*ws_->var("MassRes"));
   }
   model.SetWorkspace(*ws_);
+//  RooProdPdf* modelpdf = new RooProdPdf("model_pdf", "model_pdf", *ws_->pdf(pdfname.c_str()), *ws_->pdf("prior") );
   model.SetPdf(*ws_->pdf(pdfname.c_str()));
+//  model.SetPdf(*modelpdf);
 
   string alt_name("N_bs");
   if (BF_ > 0) alt_name = "BF_bs";
@@ -939,7 +987,7 @@ void pdf_fitData::make_models() {
       nuisanceParams.add(*ws_->var(name("N_comb", i, j)));
       nuisanceParams.add(*ws_->var(name("N_semi", i, j)));
       if (rare_constr_) nuisanceParams.add(*ws_->var(name("N_peak", i, j)));
-      nuisanceParams.add(*ws_->var(name("exp", i, j)));
+      nuisanceParams.add(*ws_->var(name("exp_comb", i, j)));
       if (!SM_ && !bd_constr_ && BF_ < 2 && !Bd) nuisanceParams.add(*ws_->var(name("N_bd", i, j)));
       else if (Bd && BF_ < 1) nuisanceParams.add(*ws_->var(name("N_bs", i, j)));
       if (BF_ > 0 && syst) {
@@ -975,6 +1023,9 @@ void pdf_fitData::make_models() {
     ws_->defineSet("CO", "MassRes");
   }
 
+  RooProdPdf* modelpdf = new RooProdPdf("model_pdf", "model_pdf", *ws_->pdf(pdfname.c_str()), *ws_->pdf("prior") );
+//  ws_->import(*modelpdf);
+
   ModelConfig* H1 = new ModelConfig("H1", "background + signal hypothesis", ws_);
   if (pee) H1->SetConditionalObservables(*ws_->set("CO"));
   H1->SetPdf(*ws_->pdf(pdfname.c_str()));
@@ -986,7 +1037,7 @@ void pdf_fitData::make_models() {
 
   ModelConfig* H0 = new ModelConfig("H0", "null hypothesis", ws_);
   if (pee) H0->SetConditionalObservables(*ws_->set("CO"));
-  H0->SetPdf(*(RooSimultaneous*)ws_->pdf(pdfname.c_str()));
+  H0->SetPdf(*ws_->pdf(pdfname.c_str()));
   H0->SetParametersOfInterest(*ws_->set("poi"));
   H0->SetObservables(*ws_->set("obs"));
   H0->SetNuisanceParameters(*ws_->set("nui"));
@@ -1013,6 +1064,9 @@ void pdf_fitData::make_models() {
 
   ws_->import(*H0);
   ws_->import(*H1);
+
+  RooAbsPdf* nuisPdf = RooStats::MakeNuisancePdf(*H0,"nui_pdf");
+//  ws_->import(*nuisPdf);
 }
 
 void pdf_fitData::sig_plhts() {
@@ -1023,7 +1077,7 @@ void pdf_fitData::sig_plhts() {
   ws_->Print();
 
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(pdfname.c_str()));
-//  pl_ts.SetPrintLevel(2);
+  pl_ts.SetPrintLevel(2);
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
 
@@ -1037,12 +1091,6 @@ void pdf_fitData::sig_plhts() {
   frequCalc.SetToys(NExp, NExp/4.);
   HypoTestResult *htr_pl = frequCalc.GetHypoTest();
   plot_hypotest(htr_pl);
-//  HypoTestPlot *plot = new HypoTestPlot(*htr_pl);
-//  TCanvas* c_hypotest = new TCanvas("c_hypotest", "c_hypotest", 600, 600);
-//  plot->Draw();
-//  c_hypotest->Print("fig/ProfileLikelihoodTestStat.gif");
-//  delete plot;
-//  delete c_hypotest;
   cout << "ProfileLikelihoodTestStat + frequentist: The p-value for the null is " << htr_pl->NullPValue() << "; The significance for the null is " << htr_pl->Significance() << " \\pm " << htr_pl->SignificanceError() << endl;
 }
 
@@ -1051,9 +1099,9 @@ void pdf_fitData::sig_hybrid_plhts() {
   RooStats::ModelConfig *H0 = dynamic_cast<ModelConfig*> (ws_->obj("H0"));
   RooStats::ModelConfig *H1 = dynamic_cast<ModelConfig*> (ws_->obj("H1"));
 
-  make_prior();
   ws_->Print();
-
+//  H0->SetPriorPdf(*ws_->pdf("nui_pdf"));
+//  H1->SetPriorPdf(*ws_->pdf("nui_pdf"));
   H0->SetPriorPdf(*ws_->pdf("prior"));
   H1->SetPriorPdf(*ws_->pdf("prior"));
 
@@ -1063,7 +1111,7 @@ void pdf_fitData::sig_hybrid_plhts() {
   if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
 
   ProofConfig* pc = NULL;
-  pc = new ProofConfig(*ws_, proof, Form("workers=%d", proof), kTRUE); // machine with 4 cores
+  pc = new ProofConfig(*ws_, proof, Form("workers=%d", proof), kTRUE); // machine with "proof" cores
 
   ToyMCSampler *mcSampler_pl = new ToyMCSampler(pl_ts, NExp);
   if (pc && proof > 1) mcSampler_pl->SetProofConfig(pc);
@@ -1078,9 +1126,11 @@ void pdf_fitData::sig_hybrid_plhts() {
 //  }
 
   HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
+//  hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("nui_pdf"));
+//  hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("nui_pdf"));
   hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
   hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("prior"));
-  hibrCalc.SetToys(NExp, NExp/4.);
+  hibrCalc.SetToys(NExp, NExp/4);
 
   HypoTestResult *htr_pl = hibrCalc.GetHypoTest();
   plot_hypotest(htr_pl);
@@ -1092,11 +1142,9 @@ void pdf_fitData::sig_hybrid_roplhts() {
   RooStats::ModelConfig *H0 = dynamic_cast<ModelConfig*> (ws_->obj("H0"));
   RooStats::ModelConfig *H1 = dynamic_cast<ModelConfig*> (ws_->obj("H1"));
 
-  make_prior();
   ws_->Print();
-
-  H0->SetPriorPdf(*ws_->pdf("prior"));
-  H1->SetPriorPdf(*ws_->pdf("prior"));
+//  H0->SetPriorPdf(*ws_->pdf("nui_pdf"));
+//  H1->SetPriorPdf(*ws_->pdf("nui_pdf"));
 
   RatioOfProfiledLikelihoodsTestStat ropl_ts(*H1->GetPdf(),*H0->GetPdf(), ws_->set("poi"));
   ropl_ts.SetSubtractMLE(false);
@@ -1109,6 +1157,8 @@ void pdf_fitData::sig_hybrid_roplhts() {
   if(pc && proof > 1) mcSampler_pl->SetProofConfig(pc);
 
   HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
+//  hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("nui_pdf"));
+//  hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("nui_pdf"));
   hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
   hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("prior"));
   hibrCalc.SetToys(NExp, NExp/4.);
@@ -1135,7 +1185,7 @@ void pdf_fitData::make_prior() {
   vector <vector <RooGaussian*> > prior_comb(channels, vector <RooGaussian*> (channels_bdt));
   vector <vector <RooGaussian*> > prior_exp(channels, vector <RooGaussian*> (channels_bdt));
 
-//  vector <vector <RooGamma*> > prior_comb(channels, vector <RooGamma*> (channels_bdt));
+  vector <vector <RooGamma*> > prior_comb2(channels, vector <RooGamma*> (channels_bdt));
 
   RooArgList prior_list("prior_list");
 
@@ -1145,7 +1195,7 @@ void pdf_fitData::make_prior() {
       else if (BF_ < 2 && Bd) prior_bd[i][j] = new RooGaussian(name("prior_bs", i, j), name("prior_bs", i, j), *ws_->var(name("N_bs", i, j)), RooConst(ws_->var(name("N_bs", i, j))->getVal()), RooConst(ws_->var(name("N_bs", i, j))->getError()));
       prior_semi[i][j] = new RooGaussian(name("prior_semi", i, j), name("prior_semi", i, j), *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
       prior_comb[i][j] = new RooGaussian(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal()), RooConst(ws_->var(name("N_comb", i, j))->getError()));
-      prior_exp[i][j] = new RooGaussian(name("prior_exp", i, j), name("prior_exp", i, j), *ws_->var(name("exp", i, j)), RooConst(ws_->var(name("exp", i, j))->getVal()), RooConst(ws_->var(name("exp", i, j))->getError()));
+      prior_exp[i][j] = new RooGaussian(name("prior_exp", i, j), name("prior_exp", i, j), *ws_->var(name("exp_comb", i, j)), RooConst(ws_->var(name("exp_comb", i, j))->getVal()), RooConst(ws_->var(name("exp_comb", i, j))->getError()));
       prior_list.add(*prior_bd[i][j]);
       if (!rare_constr_) {
       	prior_list.add(*prior_semi[i][j]);
@@ -1153,7 +1203,8 @@ void pdf_fitData::make_prior() {
       prior_list.add(*prior_comb[i][j]);
       prior_list.add(*prior_exp[i][j]);
 
-      //      prior_comb[i][j] = new RooGamma(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
+//      prior_comb2[i][j] = new RooGamma(name("prior_comb", i, j), name("prior_comb", i, j), *ws_->var(name("N_comb", i, j)), RooConst(ws_->var(name("N_comb", i, j))->getVal() + 1), RooConst(1.), RooConst(0.));
+//      prior_list.add(*prior_comb2[i][j]);
     }
   }
   if (BF_ > 1 && !Bd) {
@@ -1197,7 +1248,7 @@ void pdf_fitData::randomize_constraints(RooWorkspace* ws) {
 
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < bdt_index_max(i); j++) {
-      RooDataSet* N_bu_ds = ws->pdf(name("N_bu_gau_bs", i, j))->generate(RooArgSet(*ws->var(name("N_bu", i, j))), 1);
+      RooDataSet* N_bu_ds = ws->pdf(name("N_bu_gau", i, j))->generate(RooArgSet(*ws->var(name("N_bu", i, j))), 1);
       RooDataSet* effratio_bs_ds = ws->pdf(name("effratio_gau_bs", i, j))->generate(RooArgSet(*ws->var(name("effratio_bs", i, j))), 1);
       RooDataSet* N_peak_ds = ws->pdf(name("N_peak_gau", i, j))->generate(RooArgSet(*ws->var(name("N_peak", i, j))), 1);
       RooDataSet* N_semi_ds = ws->pdf(name("N_semi_gau", i, j))->generate(RooArgSet(*ws->var(name("N_semi", i, j))), 1);
@@ -1316,5 +1367,15 @@ void pdf_fitData::hack_ws(string frozen_ws_address) {
     ws_->var(name("C2", i-2))->setVal(frozen_ws->var(name("C2", i))->getVal());
     ws_->var(name("C3", i-2))->setVal(frozen_ws->var(name("C3", i))->getVal());
     ws_->var(name("tau", i-2))->setVal(frozen_ws->var(name("tau", i))->getVal());
+  }
+}
+
+void pdf_fitData::reset_minmax() {
+  for (int i = 0; i < channels; i++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
+      ws_->var(name("N_peak", i, j))->setMax(ws_->var(name("N_peak", i, j))->getVal() + 5 * ws_->var(name("N_peak", i, j))->getError());
+      ws_->var(name("N_semi", i, j))->setMax(ws_->var(name("N_semi", i, j))->getVal() + 5 * ws_->var(name("N_semi", i, j))->getError());
+      ws_->var(name("N_comb", i, j))->setMax(ws_->var(name("N_comb", i, j))->getVal() + 5 * ws_->var(name("N_comb", i, j))->getError());
+    }
   }
 }

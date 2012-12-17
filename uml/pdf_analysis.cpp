@@ -35,6 +35,7 @@ pdf_analysis::pdf_analysis(bool print, string ch_s, string range, int BF, bool S
   randomsyst = false;
 
   if (simul_all_) channels_bdt = 4;
+  initialize();
 }
 
 void pdf_analysis::initialize () {
@@ -438,52 +439,6 @@ void pdf_analysis::define_rare3(int i, int j) {
     ws_->import(pdf_expo);
   }
   //ws_->factory("SUM::pdf_expo(expo1frac_rare[0.,1.]*Exponential::expo1(Mass,Alpha1[-10.,10.]),Exponential::expo2(Mass,Alpha2[-10.,10.]))");
-}
-
-void pdf_analysis::define_total_extended(int i, int j) {
-  RooArgList pdf_list(*ws_->pdf(name("pdf_bs", i, j)), *ws_->pdf(name("pdf_bd", i, j)), *ws_->pdf(name("pdf_comb", i, j)), *ws_->pdf(name("pdf_semi", i, j)), *ws_->pdf(name("pdf_peak", i, j)));
-  RooArgList N_list("varlist");
-
-  if (BF_ > 0) N_list.add(*ws_->function(name("N_bs_formula", i, j)));
-  else N_list.add(*ws_->var(name("N_bs", i, j)));
-  if ((SM_ || bd_constr_) && BF_ < 2) N_list.add(*ws_->function(name("N_bd_constr", i, j)));
-  else if (BF_ > 1) N_list.add(*ws_->function(name("N_bd_formula", i, j)));
-  else N_list.add(*ws_->var(name("N_bd", i, j)));
-  N_list.add(*ws_->var(name("N_comb", i, j)));
-  N_list.add(*ws_->var(name("N_semi", i, j)));
-  N_list.add(*ws_->var(name("N_peak", i, j)));
-
-  if (BF_ == 0) {
-    RooAddPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", pdf_list, N_list);
-    ws_->import(pdf_ext_total);
-  }
-  else {
-    RooAddPdf pdf_ext_sum(name("pdf_ext_sum", i, j), "pdf_ext_sum", pdf_list, N_list);
-    RooArgList constraints_list(*ws_->pdf(name("N_bu_gau_bs", i, j)), *ws_->pdf("fs_over_fu_gau"), *ws_->pdf(name("effratio_gau_bs", i, j)), *ws_->pdf("one_over_BRBR_gau"));
-    if (rare_constr_) {
-    	constraints_list.add(*ws_->pdf(name("N_peak_gau", i, j)));
-    	constraints_list.add(*ws_->pdf(name("N_semi_gau", i, j)));
-    }
-    //    if (shapesyst) constraints_list.add(*ws_->pdf(name("shape_gau_bs", i, j)));
-    if (BF_ > 1) {
-      constraints_list.add(*ws_->pdf(name("effratio_gau_bd", i, j)));
-    }
-    RooProdPdf constraints_pdfs(name("pdf_constraints", i, j), "pdf_constraints", constraints_list);
-    RooProdPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", RooArgList(pdf_ext_sum, constraints_pdfs));
-    ws_->import(pdf_ext_total);
-  }
-
-  if (BF_ > 0) {
-    RooArgList N_list_test(*ws_->function(name("N_bs", i, j)));
-    if (SM_ || bd_constr_) N_list_test.add(*ws_->function(name("N_bd_constr", i, j)));
-    else N_list_test.add(*ws_->var(name("N_bd", i, j)));
-    N_list_test.add(*ws_->var(name("N_comb", i, j)));
-    N_list_test.add(*ws_->var(name("N_semi", i, j)));
-    N_list_test.add(*ws_->var(name("N_peak", i, j)));
-    RooAddPdf pdf_ext_total_test(name("pdf_ext_total_simple", i, j), "pdf_ext_total_simple", pdf_list, N_list_test);
-    ws_->import(pdf_ext_total_test);
-  }
-  return; 
 }
 
 void pdf_analysis::define_bf(int i, int j) {
@@ -1357,7 +1312,7 @@ void pdf_analysis::setSBslope(string pdf, RooAbsData *sb_data) {
   if (!simul_bdt_ && !simul_all_) subdata = sb_data->reduce(Form("etacat==etacat::etacat_%d", channel));
   else subdata = sb_data->reduce(Form("etacat==etacat::etacat_%d&&bdtcat==bdtcat::bdtcat_%d", channel, channel_bdt));
 
-  RooExponential expo_temp("expo_temp", "expo_temp", *ws_->var("Mass"), *ws_->var(name("exp", channel, channel_bdt)));
+  RooExponential expo_temp("expo_temp", "expo_temp", *ws_->var("Mass"), *ws_->var(name("exp_comb", channel, channel_bdt)));
   expo_temp.fitTo(*subdata, Range("sb_lo,sb_hi"));
   if (print_) {
     TCanvas c("c", "c", 600, 600);

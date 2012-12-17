@@ -45,7 +45,7 @@ class pdf_fitData : public pdf_analysis {
     RooDataHist* global_datahist;
     RooSimultaneous* simul_pdf;
 
-    void fit_pdf(bool do_not_import = false);
+    RooFitResult* fit_pdf(bool do_not_import = false, string pdf_name = "");
     void significance();
     void save();
 
@@ -62,6 +62,7 @@ class pdf_fitData : public pdf_analysis {
     bool SMIsNull;
 
     void set_final_pdf();
+    void reset_minmax();
 
   protected:
 
@@ -69,6 +70,7 @@ class pdf_fitData : public pdf_analysis {
     void define_simul();
     void define_perchannel_pdf();
     void randomize_constraints(RooWorkspace* ws);
+    void define_total_extended(int i, int j); // final pdf with all extended components
 
     string input_estimates_;
     vector <double> estimate_bs;

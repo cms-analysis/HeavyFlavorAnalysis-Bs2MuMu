@@ -10,13 +10,6 @@
 pdf_toyMC::pdf_toyMC(bool print, string input_estimates, string range, int BF, bool SM, bool bd_constr, int simul, int simulbdt, int simulall, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, bool randomsyste, bool rare_constr, int nexp, bool bd, string bias): pdf_fitData( print, input_estimates, range, BF, SM, bd_constr, simul, simulbdt, simulall, pee_, bdt_fit, ch_s, sig, asimov, syste, randomsyste, rare_constr, nexp, bd) {
   cout << "pdf_toyMC constructor" << endl;
   bias_ = bias;
-}
-
-pdf_toyMC::~pdf_toyMC() {
-  cout << "pdf_toyMC destructor" << endl;
-}
-
-void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
 
   residual_bs.resize(channels);
   residual_bd.resize(channels);
@@ -46,6 +39,19 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     pull_rds_comb[k].resize(channels_bdt);
   }
 
+  pull_BF_bs = new RooRealVar("pull_BF_bs", "pull_BF_bs", -8., 8.);
+  pull_rds_BF_bs = new RooDataSet("pull_rds_BF_bs", "pull_rds_BF_bs", *pull_BF_bs);
+  pull_BF_bd = new RooRealVar("pull_BF_bd", "pull_BF_bd", -8., 8.);
+  pull_rds_BF_bd = new RooDataSet("pull_rds_BF_bd", "pull_rds_BF_bd", *pull_BF_bd);
+
+}
+
+pdf_toyMC::~pdf_toyMC() {
+  cout << "pdf_toyMC destructor" << endl;
+}
+
+void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
+
   vector < vector  <TH1D*> > correlation_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > bs_mean_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > bd_mean_h(channels, vector <TH1D*> (channels_bdt));
@@ -60,12 +66,8 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
   TH1D * sign_h = new TH1D("sign_h", "sign_h", 100, 0, 10);
   TH1D * BF_bs_mean_h = new TH1D("BF_bs_mean_h", "BF_bs_mean_h", 100, 1.e-10, 1.e-8);
   TH1D * BF_bs_sigma_h = new TH1D("BF_bs_sigma_h", "BF_bs_sigma_h", 100, 1.e-10, 1.e-8);
-  pull_BF_bs = new RooRealVar("pull_BF_bs", "pull_BF_bs", -8., 8.);
-  pull_rds_BF_bs = new RooDataSet("pull_rds_BF_bs", "pull_rds_BF_bs", *pull_BF_bs);
   TH1D * BF_bd_mean_h = new TH1D("BF_bd_mean_h", "BF_bd_mean_h", 100, 1.e-10, 1.e-8);
   TH1D * BF_bd_sigma_h = new TH1D("BF_bd_sigma_h", "BF_bd_sigma_h", 100, 1.e-10, 1.e-8);
-  pull_BF_bd = new RooRealVar("pull_BF_bd", "pull_BF_bd", -8., 8.);
-  pull_rds_BF_bd = new RooDataSet("pull_rds_BF_bd", "pull_rds_BF_bd", *pull_BF_bd);
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < bdt_index_max(i); j++) {
       residual_bs[i][j] = new RooRealVar(name("residual_bs", i, j), "residual_bs", -20., 20.);

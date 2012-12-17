@@ -312,7 +312,8 @@ void parse_options(int argc, char* argv[]){
     }
     if (!strcmp(argv[i],"-rare_constr")) {
     	rare_constr = true;
-      cout << "rare yield is constrained" << endl;
+      cout << "rare yield is constrained, so it is with systematics" << endl;
+      syst = true;
     }
     if (!strcmp(argv[i],"-h")) help();
   }
