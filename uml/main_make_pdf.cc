@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
   if (SM && bd_const) {cout << "please select SM OR bd_const, not both" << endl; return EXIT_FAILURE;}
 
   pdf_analysis ana1(print, ch_s, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit);
-  ana1.initialize();
+//  ana1.initialize();
   ana1.set_SMratio(0.09);
   if (no_legend) ana1.no_legend = true;
   RooWorkspace *ws = ana1.get_ws();
