@@ -96,8 +96,9 @@ bool preselection(RedTreeData &b, int channel) {
   if (b.maxdoca > MAXDOCAMAX) return false;
   if (verbose > 6) cout << "passed misc cuts" << endl;
 
-  if (b.m < 4.9) return false;
-  if (b.m > 5.9) return false;
+  // NONONO if we want to use the onia for any x-checks!
+  //   if (b.m < 4.9) return false;
+  //   if (b.m > 5.9) return false;
   if (verbose > 4) cout << "passed mass cuts" << endl;
 
   // -- physics preselection: reduce background by factor 7, signal efficiency >90%
