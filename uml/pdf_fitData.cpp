@@ -186,7 +186,7 @@ RooFitResult* pdf_fitData::fit_pdf(bool do_not_import, string pdf_name) {
   cout << ">>>>>>>>>>>>>>>>> fitting " << global_data->GetName() << " in range " << range_ << " with " << pdf_name << endl;
   global_data->Print();
   ws_->pdf(pdf_name.c_str())->Print();
-  RFR = ws_->pdf(pdf_name.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none());
+  RFR = ws_->pdf(pdf_name.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none()/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
   if (!do_not_import) ws_->import(*global_data);
   if (verbosity > 0) RFR->Print();
   return RFR;
@@ -489,6 +489,7 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TT
   cout << "making dataset" << endl;
 
   if (!random) FillRooDataSet(global_data, cut_b, cut_, cuts, tree, offset);
+
   else {
  //   RooRandom::randomGenerator()->SetSeed(3456);
     if (syst) randomize_constraints(ws_);
@@ -521,7 +522,7 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TT
           ws_->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
           if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
           else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate2D_bd[i][j]/estimate2D_bd[i][j]);
-          ws_->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
+          if (!rare_constr_) ws_->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
           ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
           RooDataSet* data_i = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes")), Extended());
           channels_cat->setIndex(i);
@@ -671,7 +672,6 @@ void pdf_fitData::define_total_extended(int i, int j) {
     RooAddPdf pdf_ext_total_test(name("pdf_ext_total_simple", i, j), "pdf_ext_total_simple", pdf_list, N_list_test);
     ws_->import(pdf_ext_total_test);
   }
-  return;
 }
 
 void pdf_fitData::define_simul() {
@@ -767,23 +767,22 @@ void pdf_fitData::setsyst() {
         if (BF_ > 1) ws_->var(name("effratio_bd", i, j))->setConstant(!syst);
       }
     }
-    RooArgSet constraints("constr");
+    string constraints("");
     if (syst) {
-      constraints.add(*ws_->var("fs_over_fu"));
-      constraints.add(*ws_->var("one_over_BRBR"));
+      constraints += "fs_over_fu,one_over_BRBR";
       for (int i = 0; i < channels; i++) {
         for (int j = 0; j < bdt_index_max(i); j++) {
-          constraints.add(*ws_->var(name("N_bu", i, j)));
-          constraints.add(*ws_->var(name("effratio_bs", i, j)));
+          constraints += "," + (string)name("N_bu", i, j);
+          constraints += "," + (string)name("effratio_bs", i, j);
           if (rare_constr_) {
-          	constraints.add(*ws_->var(name("N_peak", i, j)));
-          	constraints.add(*ws_->var(name("N_semi", i, j)));
+          	constraints += "," + (string)name("N_peak", i, j);
+          	constraints += "," + (string)name("N_semi", i, j);
           }
-          if (BF_ > 1) constraints.add(*ws_->var(name("effratio_bd", i, j)));
+          if (BF_ > 1) constraints += "," + (string)name("effratio_bd", i, j);
         }
       }
     }
-    ws_->defineSet("constr", constraints);
+    ws_->defineSet("constr", constraints.c_str());
     ws_->set("constr")->Print();
   }
 }
@@ -805,6 +804,7 @@ void pdf_fitData::significance() {
 
 //  ProfileLikelihoodTestStat::SetAlwaysReuseNLL(true);
 //  RatioOfProfiledLikelihoodsTestStat::SetAlwaysReuseNLL(true);
+	if (sign < 0) return;
 	make_prior();
   if (sign == 0) sig_hand();
   else {
@@ -1171,11 +1171,12 @@ void pdf_fitData::sig_hybrid_roplhts() {
 void pdf_fitData::plot_hypotest(HypoTestResult *hts) {
   hts->Print();
   TCanvas c_plot("c_plot", "c_plot", 600, 600);
-  HypoTestPlot * plot = new HypoTestPlot(*hts,100);
+  HypoTestPlot * plot = new HypoTestPlot(*hts, 100);
   plot->SetLogYaxis(true);
   plot->Draw();
-  c_plot.Print( (get_address("hypotest")+".gif").c_str());
-  c_plot.Print( (get_address("hypotest")+".pdf").c_str());
+  c_plot.Print( (get_address("hypotest") + ".gif").c_str());
+  c_plot.Print( (get_address("hypotest") + ".pdf").c_str());
+  c_plot.Print( (get_address("hypotest") + ".root").c_str());
 }
 
 void pdf_fitData::make_prior() {
@@ -1250,12 +1251,14 @@ void pdf_fitData::randomize_constraints(RooWorkspace* ws) {
     for (int j = 0; j < bdt_index_max(i); j++) {
       RooDataSet* N_bu_ds = ws->pdf(name("N_bu_gau", i, j))->generate(RooArgSet(*ws->var(name("N_bu", i, j))), 1);
       RooDataSet* effratio_bs_ds = ws->pdf(name("effratio_gau_bs", i, j))->generate(RooArgSet(*ws->var(name("effratio_bs", i, j))), 1);
-      RooDataSet* N_peak_ds = ws->pdf(name("N_peak_gau", i, j))->generate(RooArgSet(*ws->var(name("N_peak", i, j))), 1);
-      RooDataSet* N_semi_ds = ws->pdf(name("N_semi_gau", i, j))->generate(RooArgSet(*ws->var(name("N_semi", i, j))), 1);
+      if (rare_constr_) {
+      	RooDataSet* N_peak_ds = ws->pdf(name("N_peak_gau", i, j))->generate(RooArgSet(*ws->var(name("N_peak", i, j))), 1);
+      	RooDataSet* N_semi_ds = ws->pdf(name("N_semi_gau", i, j))->generate(RooArgSet(*ws->var(name("N_semi", i, j))), 1);
+      	ws->var(name("N_peak", i, j))->setVal(N_peak_ds->get(0)->getRealValue(name("N_peak", i, j)));
+      	ws->var(name("N_semi", i, j))->setVal(N_semi_ds->get(0)->getRealValue(name("N_semi", i, j)));
+      }
       ws->var(name("N_bu", i, j))->setVal(N_bu_ds->get(0)->getRealValue(name("N_bu", i, j)));
       ws->var(name("effratio_bs", i, j))->setVal(effratio_bs_ds->get(0)->getRealValue(name("effratio_bs", i, j)));
-      ws->var(name("N_peak", i, j))->setVal(N_peak_ds->get(0)->getRealValue(name("N_peak", i, j)));
-      ws->var(name("N_semi", i, j))->setVal(N_semi_ds->get(0)->getRealValue(name("N_semi", i, j)));
       if (BF_ > 1) {
         RooDataSet* effratio_bd_ds = ws->pdf(name("effratio_gau_bd", i, j))->generate(RooArgSet(*ws->var(name("effratio_bd", i, j))), 1);
         ws->var(name("effratio_bd", i, j))->setVal(effratio_bd_ds->get(0)->getRealValue(name("effratio_bd", i, j)));
@@ -1358,7 +1361,7 @@ void pdf_fitData::profile_NLL() {
 }
 
 void pdf_fitData::hack_ws(string frozen_ws_address) {
-  cout << "hackering 2011 shape with 2012 shape from " << frozen_ws_address << endl;
+  cout << "hacking 2011 shape with 2012 shape from " << frozen_ws_address << endl;
   TFile * frozen_f = new TFile(frozen_ws_address.c_str());
   RooWorkspace * frozen_ws = (RooWorkspace*)frozen_f->Get("ws");
   for (int i = 2; i < 4; i++) {
@@ -1373,9 +1376,9 @@ void pdf_fitData::hack_ws(string frozen_ws_address) {
 void pdf_fitData::reset_minmax() {
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < bdt_index_max(i); j++) {
-      ws_->var(name("N_peak", i, j))->setMax(ws_->var(name("N_peak", i, j))->getVal() + 5 * ws_->var(name("N_peak", i, j))->getError());
-      ws_->var(name("N_semi", i, j))->setMax(ws_->var(name("N_semi", i, j))->getVal() + 5 * ws_->var(name("N_semi", i, j))->getError());
-      ws_->var(name("N_comb", i, j))->setMax(ws_->var(name("N_comb", i, j))->getVal() + 5 * ws_->var(name("N_comb", i, j))->getError());
+      ws_->var(name("N_peak", i, j))->setMax(ws_->var(name("N_peak", i, j))->getVal() + 10 * ws_->var(name("N_peak", i, j))->getError());
+      ws_->var(name("N_semi", i, j))->setMax(ws_->var(name("N_semi", i, j))->getVal() + 10 * ws_->var(name("N_semi", i, j))->getError());
+      ws_->var(name("N_comb", i, j))->setMax(ws_->var(name("N_comb", i, j))->getVal() + 10 * ws_->var(name("N_comb", i, j))->getError());
     }
   }
 }

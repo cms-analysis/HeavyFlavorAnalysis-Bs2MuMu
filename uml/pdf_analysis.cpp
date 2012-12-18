@@ -161,11 +161,11 @@ void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool su
   cout << " with " << pdf_name << ":" << endl;
   ws_->pdf( pdf_name.c_str())->Print();
   if (!pee) {
-    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save()/*, Constrain(*ws_->set("constr"))*/);
+    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save());
     if (print_) print(subdata);
   }
   else {
-    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, ConditionalObservables(*ws_->var("MassRes")), Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save()/*, Constrain(*ws_->set("constr"))*/);
+    RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, ConditionalObservables(*ws_->var("MassRes")), Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save());
     if (print_) print(subdata, pdf);
   }
   if (setconstant) set_pdf_constant(pdf_name);
@@ -448,8 +448,8 @@ void pdf_analysis::define_bf(int i, int j) {
     RooRealVar BF_bd("BF_bd", "Bd2MuMu branching fraction", Bd2MuMu_SM_BF_val, 0., 1e-8);
     RooRealVar BF_bsbd("BF_bsbd", "Bs2MuMu / Bd2MuMu branching fraction ratio", Bd2MuMu_SM_BF_val/Bs2MuMu_SM_BF_val, 0., 20.);
 
-    RooRealVar fs_over_fu("fs_over_fu", "fs_over_fu", fs_over_fu_val, fs_over_fu_val - 5*fs_over_fu_err, fs_over_fu_val + 5*fs_over_fu_err);
-    RooRealVar one_over_BRBR("one_over_BRBR", "one_over_BRBR", one_over_BRBR_val, one_over_BRBR_val - 5*one_over_BRBR_err, one_over_BRBR_val + 5*one_over_BRBR_err);
+    RooRealVar fs_over_fu("fs_over_fu", "fs_over_fu", fs_over_fu_val, fs_over_fu_val - 10*fs_over_fu_err, fs_over_fu_val + 10*fs_over_fu_err);
+    RooRealVar one_over_BRBR("one_over_BRBR", "one_over_BRBR", one_over_BRBR_val, one_over_BRBR_val - 10*one_over_BRBR_err, one_over_BRBR_val + 10*one_over_BRBR_err);
 
     ws_->import(BF_bs);
     ws_->import(BF_bd);
@@ -458,11 +458,11 @@ void pdf_analysis::define_bf(int i, int j) {
     ws_->import(one_over_BRBR);
   }
 
-  RooRealVar N_bu(name("N_bu", i, j), "N_bu", N_bu_val[i][j], N_bu_val[i][j] - 5*N_bu_err[i][j], N_bu_val[i][j] + 5*N_bu_err[i][j]);
+  RooRealVar N_bu(name("N_bu", i, j), "N_bu", N_bu_val[i][j], N_bu_val[i][j] - 10*N_bu_err[i][j], N_bu_val[i][j] + 10*N_bu_err[i][j]);
   ws_->import(N_bu);
 
-  RooRealVar effratio_bs(name("effratio_bs", i, j), "effratio_bs", effratio_bs_val[i][j], effratio_bs_val[i][j] - 5*effratio_bs_err[i][j], effratio_bs_val[i][j] + 5*effratio_bs_err[i][j]);
-  RooRealVar effratio_bd(name("effratio_bd", i, j), "effratio_bd", effratio_bd_val[i][j], effratio_bd_val[i][j] - 5*effratio_bd_err[i][j], effratio_bd_val[i][j] + 5*effratio_bd_err[i][j]);
+  RooRealVar effratio_bs(name("effratio_bs", i, j), "effratio_bs", effratio_bs_val[i][j], effratio_bs_val[i][j] - 10*effratio_bs_err[i][j], effratio_bs_val[i][j] + 10*effratio_bs_err[i][j]);
+  RooRealVar effratio_bd(name("effratio_bd", i, j), "effratio_bd", effratio_bd_val[i][j], effratio_bd_val[i][j] - 10*effratio_bd_err[i][j], effratio_bd_val[i][j] + 10*effratio_bd_err[i][j]);
 
   RooFormulaVar N_bs_constr(name("N_bs_formula", i, j), "N_bs(i) = BF * K(i)",  "@0*@1*@2*@3*@4", RooArgList( *ws_->var("BF_bs"), *ws_->var(name("N_bu", i, j)), *ws_->var("fs_over_fu"), effratio_bs, *ws_->var("one_over_BRBR")));
   RooFormulaVar N_bsbd_constr(name("N_bs_formula", i, j), "N_bs(i) = BF * K(i)",  "@0*@1*@2*@3*@4*@5", RooArgList( *ws_->var("BF_bd"), *ws_->var("BF_bsbd"), *ws_->var(name("N_bu", i, j)), *ws_->var("fs_over_fu"), effratio_bs, *ws_->var("one_over_BRBR")));
@@ -1253,7 +1253,7 @@ void pdf_analysis::parse_external_numbers(string filename) {
 }
 
 void pdf_analysis::simulBdt_effs() {
-  cout << "parsing bdt_effs.txt to change eff in each bdt and eta bin" << endl;
+  cout << "parsing simulBdt_effs.txt to change eff in each bdt and eta bin" << endl;
   FILE *file = fopen("input/simulBdt_effs.txt", "r");
   if (!file) {cout << "file simulBdt_effs.txt does not exist" << endl; exit(1);}
   bs_bdt_factor.resize(channels);
