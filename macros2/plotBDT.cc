@@ -185,11 +185,11 @@ void plotBDT::makeAll(int channels) {
     //    npvSpecial("SgData");
     //    npvSpecial("NoData");
 
-//     cout << "--> plotSSB()" << endl;
-//     plotSSB();
 
     cout << "--> tmvaControlPlots()" << endl;
     tmvaControlPlots();
+    cout << "--> plotSSB()" << endl;
+    plotSSB();
     cout << "--> overlayBdtOutput()" << endl;
     overlayBdtOutput(); 
     cout << "--> validateAllDistributions()" << endl;

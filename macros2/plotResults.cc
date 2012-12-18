@@ -58,15 +58,8 @@ void plotResults::makeAll(int channels) {
   }
 
   if (channels & 2) {
-    fNormProcessed = false; 
-    fDoUseBDT = true; 
-    fDoApplyCowboyVeto = false;   
-    fDoApplyCowboyVetoAlsoInSignal = false;   
-    computeNormUL();
-    computeCsBF();
-    //acceptancePerProcess();
+    calculateNumbers(2);
   }
-
 
   // -- dimuons unblinded
   if (channels & 4) {
@@ -1162,51 +1155,51 @@ void plotResults::fillAndSaveHistograms(int nevents) {
 
 
 
-  // -- study efficiencies for Paola/Luca
-  {
-  fHistFile->Close();
-  fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
+//   // -- study efficiencies for Paola/Luca
+//   {
+//   fHistFile->Close();
+//   fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
 
-  // -- normalization
-  resetHistograms();
-  fSetup = "NoData"; 
-  t = getTree(fSetup); 
-  setupTree(t, fSetup); 
-  loopOverTree(t, fSetup, 1, nevents);
-  saveHists(fSetup);
+//   // -- normalization
+//   resetHistograms();
+//   fSetup = "NoData"; 
+//   t = getTree(fSetup); 
+//   setupTree(t, fSetup); 
+//   loopOverTree(t, fSetup, 1, nevents);
+//   saveHists(fSetup);
 
-  resetHistograms();
-  fSetup = "NoMc";
-  t = getTree(fSetup); 
-  setupTree(t, fSetup); 
-  loopOverTree(t, fSetup, 1, nevents);
-  otherNumbers(fSetup); 
-  saveHists(fSetup);
+//   resetHistograms();
+//   fSetup = "NoMc";
+//   t = getTree(fSetup); 
+//   setupTree(t, fSetup); 
+//   loopOverTree(t, fSetup, 1, nevents);
+//   otherNumbers(fSetup); 
+//   saveHists(fSetup);
 
-  fHistFile->Close();
+//   fHistFile->Close();
 
-  // -- dump histograms
-  string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
-  cout << "fHistFile: " << hfname;
-  fHistFile = TFile::Open(hfname.c_str());
-  cout << " opened " << endl;
+//   // -- dump histograms
+//   string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
+//   cout << "fHistFile: " << hfname;
+//   fHistFile = TFile::Open(hfname.c_str());
+//   cout << " opened " << endl;
 
  
-  for (int chan = 0; chan < fNchan; ++chan) {
-    fChan = chan; 
-    initNumbers(fNumbersNo[chan], false); 
+//   for (int chan = 0; chan < fNchan; ++chan) {
+//     fChan = chan; 
+//     initNumbers(fNumbersNo[chan], false); 
 
-    // -- efficiency and acceptance
-    fSetup = "NoMc"; 
-    calculateNoNumbers(chan, 2);
-  }
+//     // -- efficiency and acceptance
+//     fSetup = "NoMc"; 
+//     calculateNoNumbers(chan, 2);
+//   }
 
-  cout << "printing fNumbersNo" << endl;
-  printNumbers(*fNumbersNo[0], cout); 
-  printNumbers(*fNumbersNo[1], cout); 
+//   cout << "printing fNumbersNo" << endl;
+//   printNumbers(*fNumbersNo[0], cout); 
+//   printNumbers(*fNumbersNo[1], cout); 
 
-  }
-  return;
+//   }
+//   return;
 
 
   if (0) { 
