@@ -11,7 +11,6 @@
 
 setenv CMSSW
 setenv SCRAM_ARCH
-setenv SRMCP
 
 setenv JOB
 setenv EXECUTABLE
@@ -98,23 +97,24 @@ echo "--> Save output to SE: $STORAGE1/$FILE1"
 set FILES=`ls $JOB*.root`
 echo "Found the following output root files: $FILES"
 foreach f ($FILES)
-    echo srmrm "$STORAGE1/$f"
-    srmrm      "$STORAGE1/$f"
-    echo $SRMCP    file:///`pwd`/$f "$STORAGE1/$f"
-    $SRMCP         file:///`pwd`/$f "$STORAGE1/$f"
-    echo srmls     "$STORAGE1/$f"
-    srmls          "$STORAGE1/$f"
+    echo lcg-del -b -D srmv2 -l "$STORAGE1/$f"
+    lcg-del -b -D srmv2 -l "$STORAGE1/$f"
+    echo lcg-cp -b -D srmv2 $f "$STORAGE1/$f"
+    lcg-cp -b -D srmv2 $f "$STORAGE1/$f"
+    echo lcg-ls -b -D srmv2 "$STORAGE1/$f"
+    lcg-ls -b -D srmv2 "$STORAGE1/$f"
 end
 
 # copy the log file.
-echo srmrm  "$STORAGE1/$JOB.log"
-srmrm       "$STORAGE1/$JOB.log"
-echo $SRMCP file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
-$SRMCP      file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
-echo        srmls     "$STORAGE1/$JOB.log"
-srmls       "$STORAGE1/$JOB.log"
+echo lcg-del -b -D srmv2 -l "$STORAGE1/$JOB.log"
+lcg-del -b -D srmv2 -l "$STORAGE1/$JOB.log"
+echo lcg-cp -b -D srmv2 $JOB.log "$STORAGE1/$JOB.log"
+lcg-cp -b -D srmv2 $JOB.log "$STORAGE1/$JOB.log"
+echo lcg-ls -b -D srmv2 "$STORAGE1/$JOB.log"
+lcg-ls -b -D srmv2 "$STORAGE1/$JOB.log"
 
 date
+
 
 # BATCH END
 
