@@ -6,15 +6,14 @@ struct RedTreeData {
   int ls, tm, pr, procid, pvn, rr;
   bool json, hlt, cb;
   double bdt, bdt2, pvw8;
-  //  npv
 
   bool gmuid, gmupt, gmueta, gtqual, gtpt, gteta;
   double w8mu, w8tr;
 
-  double pvlip, pvlips, pvlip2, pvlips2, pvip, pvips;
+  double pvlip, pvlips, pvlip2, pvlips2, pvip, pvips, pvip3d, pvips3d;
 
   int q, type;
-  double pt, eta, phi, tau, m, cm, cosa, alpha, iso;
+  double pt, eta, phi, tau, m, me, cm, cosa, alpha, iso;
   int isotrk, closetrk; 
   double chi2, dof, pchi2dof, fls3d, fl3d, flxy, fl3dE, flsxy, docatrk, docatrkbdt, maxdoca, lip, lipE, tip, tipE;
   

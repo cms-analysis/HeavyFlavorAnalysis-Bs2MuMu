@@ -56,7 +56,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     genMatch(); 
     recoMatch(); 
     candMatch(); 
-    if(fBadEvent) return;
+    if (fBadEvent) return;
     efficiencyCalculation();
   } 
 
@@ -106,6 +106,9 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     //cout<<" call analysis "<<fpCand<<" "<<iC<<endl;
     // -- call derived functions
     candAnalysis();
+
+    boostGames(); 
+    
 
     //cout<<" Muons "<<fMu1Pt<<" "<<fMu2Pt<<endl; // d.k.-debug
     fHLTmatch = doTriggerMatching();
@@ -244,6 +247,7 @@ void candAna::candAnalysis() {
   fCandEta      = fpCand->fPlab.Eta();
   fCandPhi      = fpCand->fPlab.Phi();
   fCandM        = fpCand->fMass;
+  fCandME       = fpCand->fVar1;
   fCandDoca     = fpCand->fMaxDoca;
 
   // -- values of cand wrt PV
@@ -266,6 +270,11 @@ void candAna::candAnalysis() {
   fCandPvIpE    = TMath::Sqrt(fCandPvIpE); 
   fCandPvIpS    = fCandPvIp/fCandPvIpE;
   if (TMath::IsNaN(fCandPvIpS)) fCandPvIpS = -1.;
+
+  fCandPvIp3D   = fpCand->fVar2; 
+  fCandPvIpE3D  = fpCand->fVar3; 
+  fCandPvIpS3D  = fpCand->fVar2/fpCand->fVar3; 
+  if (TMath::IsNaN(fCandPvIpS3D)) fCandPvIpS3D = -1.;
 
   fCandM2 = constrainedMass();
   
@@ -1094,6 +1103,33 @@ void candAna::bookHist() {
   h11 = new TH1D("test5", "test5",100, 0., 0.2); 
   h11 = new TH1D("test6", "test6",100, 0., 0.2); 
 
+
+  h11 = new TH1D("gp1cms", "p1cms", 50, 0, 10.); 
+  h11 = new TH1D("gp2cms", "p2cms", 50, 0, 10.); 
+  h11 = new TH1D("gt1cms", "t1cms", 50, -1, 1.); 
+  h11 = new TH1D("gt2cms", "t2cms", 50, -1, 1.); 
+
+  h11 = new TH1D("gp1cmsg", "p1cms (with photons)", 50, 0, 10.); 
+  h11 = new TH1D("gp2cmsg", "p2cms (with photons)", 50, 0, 10.); 
+  h11 = new TH1D("gt1cmsg", "t1cms (with photons)", 50, 0, 1.); 
+  h11 = new TH1D("gt2cmsg", "t2cms (with photons)", 50, 0, 1.); 
+
+  h11 = new TH1D("rp1cms", "p1cms", 50, 0, 10.); 
+  h11 = new TH1D("rp2cms", "p2cms", 50, 0, 10.); 
+  h11 = new TH1D("rt1cms", "t1cms", 50, -1, 1.); 
+  h11 = new TH1D("rt2cms", "t2cms", 50, -1, 1.); 
+  h11 = new TH1D("rt3cms", "t3cms", 50, -1, 1.); 
+  TH2D *h22 = new TH2D("tvsm",   "tvsm", 50, 4.9, 5.9, 50, -1., 1.); 
+
+  h11 = new TH1D("rp1cmsg", "p1cms (with photons)", 50, 0, 10.); 
+  h11 = new TH1D("rp2cmsg", "p2cms (with photons)", 50, 0, 10.); 
+  h11 = new TH1D("rt1cmsg", "t1cms (with photons)", 50, 0, 1.); 
+  h11 = new TH1D("rt2cmsg", "t2cms (with photons)", 50, 0, 1.); 
+  h11 = new TH1D("rt3cmsg", "t2cms (with photons)", 50, 0, 1.); 
+
+  h11 = new TH1D("gt1", "gt1", 50, -1, 1.);   
+  h11 = new TH1D("gt2", "gt2", 50, -1, 1.); 
+
   // -- Reduced Tree
   fTree = new TTree("events", "events");
   fTree->Branch("run",     &fRun,               "run/L");
@@ -1128,6 +1164,8 @@ void candAna::bookHist() {
   fTree->Branch("pvlips2",  &fCandPvLipS2,      "pvlips2/D");
   fTree->Branch("pvip",     &fCandPvIp,         "pvip/D");
   fTree->Branch("pvips",    &fCandPvIpS,        "pvips/D");
+  fTree->Branch("pvip3d",   &fCandPvIp3D,       "pvip3d/D");
+  fTree->Branch("pvips3d",  &fCandPvIpS3D,      "pvips3d/D");
 
   // -- cand
   fTree->Branch("q",       &fCandQ,             "q/I");
@@ -1137,6 +1175,7 @@ void candAna::bookHist() {
   fTree->Branch("phi",     &fCandPhi,           "phi/D");
   fTree->Branch("tau",     &fCandTau,           "tau/D");
   fTree->Branch("m",       &fCandM,             "m/D");
+  fTree->Branch("me",      &fCandME,            "me/D");
   fTree->Branch("cm",      &fCandM2,            "cm/D");
   fTree->Branch("cosa",    &fCandCosA,          "cosa/D");
   fTree->Branch("alpha",   &fCandA,             "alpha/D");
@@ -2859,5 +2898,103 @@ bool candAna::doTriggerMatching(TAnaTrack *pt) {
   ((TH1D*)fHistDir->Get("test2"))->Fill(deltaRminMu1); 
 
   return HLTmatch;
+
+}
+
+// ----------------------------------------------------------------------
+void candAna::boostGames() {
+
+  double gt1, gcosTheta, gcosTheta2, rcosTheta, rcosTheta2;
+  TVector3 pvec = TVector3(0., 0., 1.);
+  if ((fGenBTmi > -1) && (fGenM1Tmi > -1) && (fGenM2Tmi > -1 )) {
+    TGenCand *pB(0), *pM1(0), *pM2(0); 
+
+    pB  = fpEvt->getGenCand(fGenBTmi); 
+    pM1 = fpEvt->getGenCand(fGenM1Tmi); 
+    pM2 = fpEvt->getGenCand(fGenM2Tmi); 
+    
+    TVector3 boost = pB->fP.Vect();
+    boost.SetMag(boost.Mag()/pB->fP.E());
+    TLorentzVector pM1Cms = pM1->fP; 
+    pM1Cms.Boost(-boost);
+    TLorentzVector pM2Cms = pM2->fP; 
+    pM2Cms.Boost(-boost);
+
+    //    N = P_{beam} x P_b / | P_{beam} x P_b |
+    TVector3 bvec = pB->fP.Vect();
+    TVector3 nvec = pvec.Cross(bvec);     
+    TLorentzVector nvec4; nvec4.SetXYZM(nvec.X(), nvec.Y(), nvec.Z(), 0); 
+    nvec4.Boost(-boost); 
+
+    if (pM1->fQ > 0) {
+      gcosTheta = pM1Cms.CosTheta();
+      gcosTheta2 = TMath::Cos(nvec4.Vect().Angle(pM1Cms.Vect()));
+      
+    } else {
+      gcosTheta = pM2Cms.CosTheta();
+      gcosTheta2 = TMath::Cos(nvec4.Vect().Angle(pM2Cms.Vect()));
+    }
+
+    if (0 == fNGenPhotons) {
+      ((TH1D*)fHistDir->Get("gp1cms"))->Fill(pM1Cms.Rho()); 
+      ((TH1D*)fHistDir->Get("gp2cms"))->Fill(pM2Cms.Rho()); 
+      ((TH1D*)fHistDir->Get("gt1cms"))->Fill(gcosTheta); 
+      ((TH1D*)fHistDir->Get("gt2cms"))->Fill(gcosTheta2); 
+    } else {
+      ((TH1D*)fHistDir->Get("gp1cmsg"))->Fill(pM1Cms.Rho()); 
+      ((TH1D*)fHistDir->Get("gp2cmsg"))->Fill(pM2Cms.Rho()); 
+      
+      ((TH1D*)fHistDir->Get("gt1cmsg"))->Fill(gcosTheta); 
+      ((TH1D*)fHistDir->Get("gt2cmsg"))->Fill(gcosTheta2); 
+    }
+  }
+
+  // -- reco version
+  TVector3 boost = fpCand->fPlab;
+  double eboost  = TMath::Sqrt(fpCand->fPlab*fpCand->fPlab + fpCand->fMass*fpCand->fMass); 
+  boost.SetMag(boost.Mag()/eboost); 
+  TLorentzVector pM1Cms; pM1Cms.SetXYZM(fpMuon1->fPlab.X(), fpMuon1->fPlab.Y(), fpMuon1->fPlab.Z(), MMUON);
+  pM1Cms.Boost(-boost);
+  TLorentzVector pM2Cms; pM2Cms.SetXYZM(fpMuon2->fPlab.X(), fpMuon2->fPlab.Y(), fpMuon2->fPlab.Z(), MMUON);
+  pM2Cms.Boost(-boost);
+
+  //    N = P_{beam} x P_b / | P_{beam} x P_b |
+  TVector3 bvec = fpCand->fPlab;
+  TVector3 nvec = pvec.Cross(bvec);     
+  TLorentzVector nvec4; 
+  //  nvec4.SetXYZM(nvec.X(), nvec.Y(), nvec.Z(), 0); 
+  nvec4.SetXYZT(nvec.X(), nvec.Y(), nvec.Z(), 0); 
+  nvec4.Boost(-boost); 
+
+  
+  if (fMu1Q > 0) {
+    rcosTheta  = pM1Cms.CosTheta();
+    rcosTheta2 = TMath::Cos(nvec4.Vect().Angle(pM1Cms.Vect()));
+  } else {
+    rcosTheta = pM2Cms.CosTheta();
+    rcosTheta2 = TMath::Cos(nvec4.Vect().Angle(pM2Cms.Vect()));
+  }
+
+
+  
+  ((TH2D*)fHistDir->Get("tvsm"))->Fill(fpCand->fMass, rcosTheta2); 
+
+  ((TH1D*)fHistDir->Get("rp1cms"))->Fill(pM1Cms.Rho()); 
+  ((TH1D*)fHistDir->Get("rp2cms"))->Fill(pM2Cms.Rho()); 
+  
+  ((TH1D*)fHistDir->Get("rt1cms"))->Fill(rcosTheta); 
+  ((TH1D*)fHistDir->Get("rt2cms"))->Fill(rcosTheta2); 
+  if (fGoodHLT) {
+    ((TH1D*)fHistDir->Get("rt3cms"))->Fill(rcosTheta2); 
+  }
+  ((TH1D*)fHistDir->Get("gt1"))->Fill(rcosTheta-gcosTheta); 
+  ((TH1D*)fHistDir->Get("gt2"))->Fill(rcosTheta2-gcosTheta2); 
+
+  if (0)  cout << "muon 1:  p = " << fpMuon1->fPlab.Mag() << " " << pM1Cms.Rho()
+	       << " muon 2: p = " << fpMuon2->fPlab.Mag() << " " << pM2Cms.Rho()  
+	       << " theta g = " << gcosTheta  << " r = " << rcosTheta 
+	       << " theta g2 = " << gcosTheta2  << " r = " << rcosTheta2 
+	       << endl;
+  
 
 }
