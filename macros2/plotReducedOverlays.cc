@@ -347,25 +347,7 @@ void plotReducedOverlays::sbsDistributions(string mode, string selection, string
       h = a.sbsDistributionExpoGauss(bla.c_str(), selection.c_str());
     }
     cout << "  Title: " << h->GetTitle() << " with integral: " << h->GetSumOfWeights() << endl;
-    //    h->Write();
   }
-
-
-//   for (unsigned int i = 0; i < fDoList.size(); ++i) {
-//     if (restricted) {
-//       if (string::npos == fDoList[i].find(what)) continue;
-//     }
-//     bla =  Form("sbs_%s_%s_%s%s", fSetup.c_str(), mode.c_str(), fDoList[i].c_str(), selection.c_str());
-//     cout << bla << "  " ; 
-//     h = (TH1D*)gDirectory->Get(bla.c_str());
-//     //    h->SetDirectory(fHistFile); 
-//     if (h) {
-//       cout << "writing to " << fHistFile->GetName() << " " << h << "  " << (h==0? " nada": h->GetName()) << endl;
-//       h->Write();
-//     } else {
-//       cout << "histogram " << bla << " not found" << endl;
-//     }
-//   }
 
 }
 
@@ -494,11 +476,6 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
 void plotReducedOverlays::overlay(string sample1, string sample2, string selection, string what) {
 
   string hfname  = fDirectory + "/anaBmm.plotReducedOverlays." + fSuffix + ".root";
-  //  string hfname  = fDirectory + "/test.root";
-  //   cout << "fHistFile: " << hfname << endl;
-  //   fHistFile = TFile::Open(hfname.c_str());
-
-
   
   gStyle->SetOptTitle(0); 
   c0->cd();
@@ -551,6 +528,95 @@ void plotReducedOverlays::overlay(string sample1, string sample2, string selecti
 
 
 }
+
+
+// ----------------------------------------------------------------------
+void plotReducedOverlays::overlay2Files(std::string file1, std::string sample1, 
+					std::string file2, std::string sample2, 
+					std::string chan, std::string selection, std::string what) {
+  
+  TFile *f1 =  TFile::Open(file1.c_str(), "");
+  string fn1 = file1;   
+  rmPath(fn1); 
+  rmSubString(fn1, ".root"); 
+  cout << "fn1: " << fn1 << endl;
+  TFile *f2 =  TFile::Open(file2.c_str(), "");
+  string fn2 = file2;   
+  rmPath(fn2); 
+  rmSubString(fn2, ".root"); 
+  cout << "fn2: " << fn2 << endl;
+
+  gStyle->SetOptTitle(0); 
+  c0->cd();
+  TH1D *h1(0), *h2(0); 
+  string n1, n2; 
+  for (unsigned int i = 0; i < fDoList.size(); ++i) {
+    n1 =  Form("sbs_%s_%s_%s%s", chan.c_str(), sample1.c_str(), fDoList[i].c_str(), selection.c_str());
+    n2 =  Form("sbs_%s_%s_%s%s", chan.c_str(), sample2.c_str(), fDoList[i].c_str(), selection.c_str());
+    h1 = (TH1D*)f1->Get(n1.c_str());
+    cout << "n1: " << n1 << " -> " << h1 << endl;
+    h2 = (TH1D*)f2->Get(n2.c_str());
+    cout << "n2: " << n2 << " -> " << h2 << endl;
+    if (0 == h1 || 0 == h2) {
+      cout << "  histograms not found" << endl;
+      continue;
+    }
+    if (h2->GetSumOfWeights() > 0) h2->Scale(h1->GetSumOfWeights()/h2->GetSumOfWeights());
+    
+    h1->Draw();
+    h2->Draw("samehist");
+    setHist(h1, kBlack, 20, 1.5); 
+    if (string::npos != sample1.find("Mc")) {
+      setFilledHist(h1, kBlack, kBlack, 3356); 
+    }
+
+    if (string::npos != sample2.find("CsMc")) {
+      setHist(h2, kRed, 20, 1.5); 
+      setFilledHist(h2, kRed, kRed, 3365); 
+    } else {
+      setHist(h2, kBlue, 20, 1.5); 
+      setFilledHist(h2, kBlue, kBlue, 3365); 
+    }
+
+    double ymax = (h1->GetMaximum() > h2->GetMaximum()? 1.2*h1->GetMaximum() : 1.2*h2->GetMaximum());
+    h1->SetMinimum(0.01);
+    h1->SetMaximum(ymax);
+    if (string::npos != sample1.find("Mc")) {
+      h1->Draw("hist");
+    } else {
+      h1->Draw("e");
+    }
+    h2->Draw("samehist");
+    double ks = h1->KolmogorovTest(h2);
+    tl->DrawLatex(0.2, 0.85, Form("P(KS)= %4.3f", ks)); 
+
+    newLegend(0.2, 0.91, 0.75, 0.98); 
+    legg->SetTextSize(0.025);  
+    string text1, text2;
+   
+    
+    if (string::npos != sample1.find("Mc")) {
+      legg->AddEntry(h1, Form("%s", fn1.c_str()), "f");
+    } else {
+      legg->AddEntry(h1, Form("%s", fn1.c_str()), "p");
+    }
+    legg->AddEntry(h2, Form("%s", fn2.c_str()), "f");
+    legg->Draw();
+
+
+
+    c0->Modified();
+    c0->Update();
+    c0->SaveAs(Form("%s/overlay2files_%s-%s_%s-%s_%s.pdf", 
+		    fDirectory.c_str(), what.c_str(), sample1.c_str(), sample2.c_str(), 
+		    fDoList[i].c_str(), selection.c_str())); 
+  }
+
+
+
+}
+
+
 
 
 // ----------------------------------------------------------------------

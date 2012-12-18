@@ -40,6 +40,9 @@ public:
   void fillDistributions();
   void sbsDistributions(std::string sample, std::string selection = "Presel", std::string what = "");
   void overlay(std::string sample1, std::string sample2, std::string selection = "Presel", std::string what = ""); 
+  void overlay2Files(std::string file1, std::string sample1, 
+		     std::string file2, std::string sample2, 
+		     std::string chan = "B", std::string selection = "Presel", std::string what = ""); 
   
   AnalysisDistribution* bookDistribution(std::string hn, std::string ht, std::string hc, int nbins, double lo, double hi); 
   AnalysisDistribution* bookSpecialDistribution(string hn, string ht, string hc, int nbins, double lo, double hi, bool *presel);
