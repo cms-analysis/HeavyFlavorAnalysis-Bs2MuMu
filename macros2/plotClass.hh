@@ -157,7 +157,7 @@ class plotClass: public TObject {
 public:
 
   plotClass(const char *files="anaBmm.default.files", const char *dir = "default", const char *cuts = "default", int mode = 0);
-  ~plotClass();
+  virtual ~plotClass();
 
   virtual void cd(const char *file) {fF[file]->cd();}
   virtual numbers* getNumbersNo(int i) {return fNumbersNo[i];}
@@ -206,12 +206,13 @@ public:
   virtual std::string formatTex(double n, std::string name, int digits, int sgn = 0);
   virtual std::string formatTex(double n, std::string name, std::string tag);
   virtual void drawArrow(double height, int mode = 0, double y = 0.1);
-  virtual void drawBox(int mode, double hi = 0.5, int ylo = 0.01);
+  virtual void drawBox(int mode, double hi = 0.5, double ylo = 0.01);
   virtual void replaceAll(std::string &s, std::string a, std::string b);
   virtual void makeCanvas(int i = 3);
   virtual void newLegend(double x1, double y1, double x2, double y2, std::string title = "");
   virtual double getValueByLabel(TH1D *h, std::string label); 
   virtual void rmSubString(std::string &sinput, const std::string &remove);
+  virtual void rmPath(string &sInput);
 
   std::string fFiles; 
   // -- Files for Signal and Normalization modes in data and MC
