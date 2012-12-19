@@ -20,14 +20,14 @@ process.load("Configuration.StandardSequences.MagneticField_38T_cff")
 process.load("Configuration.StandardSequences.Geometry_cff")
 process.load("RecoVertex.BeamSpotProducer.BeamSpot_cfi")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = "START42_V13::All"
+process.GlobalTag.globaltag = "START53_V15::All"
 
 
 # ----------------------------------------------------------------------
 process.source = cms.Source(
     "PoolSource", 
     fileNames = cms.untracked.vstring(
-        "file:test.root"
+        "file:PYTHIA6_Bd2MuX_EtaPtMassFilter_TuneZ2star_8TeV_cff_py_GEN.root"
         )
     )
 
@@ -49,11 +49,8 @@ process.tree = cms.EDAnalyzer(
 
 
 # ----------------------------------------------------------------------
-process.load("HeavyFlavorAnalysis.Bs2MuMu.HFRecoStuff_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFBmm_cff")
-
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFMCTruth_cff")
-process.load("HeavyFlavorAnalysis.Bs2MuMu.HFTruthCandidates_cff")
 
 # ----------------------------------------------------------------------
 process.p = cms.Path(
