@@ -28,7 +28,6 @@ public:
   
   void makeAll(int channels = 1); 
 
-  void npvSpecial(std::string smode);
   void tmvaControlPlots();
   void dumpParameters();
   void tmvaPlots(std::string type);

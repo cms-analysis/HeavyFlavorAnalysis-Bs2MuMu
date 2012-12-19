@@ -197,7 +197,6 @@ void candAna::candAnalysis() {
 
   ((TH1D*)fHistDir->Get("../monEvents"))->Fill(1); 
 
-  int goodSV(0); 
   TAnaVertex *pVtx; 
   fPvN = 0; 
   for (int i = 0; i < fpEvt->nPV(); ++i) {
@@ -212,7 +211,6 @@ void candAna::candAnalysis() {
   //cout << "fPvN = " << fPvN << " "<<fpCand->fPvIdx <<" "<<fpCand->fPvIdx2 <<" "<<fpEvt->nPV()<<endl;
 
   if (fpCand->fPvIdx > -1 && fpCand->fPvIdx < fpEvt->nPV()) {
-    goodSV = 1; 
     TAnaVertex *pv = fpEvt->getPV(fpCand->fPvIdx); 
     fPvX = pv->fPoint.X(); 
     fPvY = pv->fPoint.Y(); 
@@ -940,7 +938,6 @@ void candAna::triggerSelection() {
   //  cout << " ----------------------------------------------------------------------" << endl;
 
   if (1) {
-    TTrgObj *pM1(0), *pM2(0), *pM(0); 
     TTrgObj *p; 
     
     for (int i = 0; i < fpEvt->nTrgObj(); ++i) {
@@ -948,11 +945,6 @@ void candAna::triggerSelection() {
       //      cout << p->fLabel << endl;
       //      if (!p->fLabel.CompareTo("hltL1sL1DoubleMu33HighQ:HLT::")) cout << "= " << p->fLabel << endl;
       if (!p->fLabel.CompareTo("hltL1sL1DoubleMuOpen:HLT::")) {
-        if (0 == pM1) {
-          pM1 = p; 
-        } else {
-          pM2 = p; 
-        }
         if (0) cout << p->fLabel << " pT = " << p->fP.Perp() << " eta = " << p->fP.Eta() << " phi = " << p->fP.Phi() <<  endl;
       }
       
@@ -1080,7 +1072,9 @@ void candAna::bookHist() {
 
   fHistDir->cd();
 
-  TH1D *h11 = new TH1D("L1_0", "hltL1sL1DoubleMu33HighQ", 50, -2.5, 2.5); 
+  TH1D *h11(0); 
+  (void)h11; 
+  h11 = new TH1D("L1_0", "hltL1sL1DoubleMu33HighQ", 50, -2.5, 2.5); 
   h11 = new TH1D("L1_1", "hltL1sL1DoubleMu0or33HighQ", 50, -2.5, 2.5); 
   h11 = new TH1D("L1_2", "hltDimuon33L1Filtered0", 50, -2.5, 2.5); 
   h11 = new TH1D("L1_3", "hltDimuon33L2PreFiltered0", 50, -2.5, 2.5); 
@@ -1119,7 +1113,9 @@ void candAna::bookHist() {
   h11 = new TH1D("rt1cms", "t1cms", 50, -1, 1.); 
   h11 = new TH1D("rt2cms", "t2cms", 50, -1, 1.); 
   h11 = new TH1D("rt3cms", "t3cms", 50, -1, 1.); 
-  TH2D *h22 = new TH2D("tvsm",   "tvsm", 50, 4.9, 5.9, 50, -1., 1.); 
+  TH2D *h22(0); 
+  (void)h22; 
+  h22 = new TH2D("tvsm",   "tvsm", 50, 4.9, 5.9, 50, -1., 1.); 
 
   h11 = new TH1D("rp1cmsg", "p1cms (with photons)", 50, 0, 10.); 
   h11 = new TH1D("rp2cmsg", "p2cms (with photons)", 50, 0, 10.); 
@@ -1286,7 +1282,7 @@ void candAna::bookHist() {
 
   // -- Analysis distributions
   TH1D *h = new TH1D("analysisDistributions", "analysisDistributions", 10000, 0., 10000.); 
-  h = 0; 
+  (void)h;
 
 //  TDirectory *pD;
 //  string name, dname; 
@@ -1478,7 +1474,6 @@ void candAna::readCuts(string fileName, int dump) {
 
   char CutName[100];
   float CutValue;
-  int ok(0);
 
   char  buffer[1000], XmlName[1000];
   fHistDir->cd();
@@ -1491,13 +1486,12 @@ void candAna::readCuts(string fileName, int dump) {
   for (unsigned int i = 0; i < cutLines.size(); ++i) {
     sprintf(buffer, "%s", cutLines[i].c_str()); 
     
-    ok = 0;
     if (buffer[0] == '#') {continue;}
     if (buffer[0] == '/') {continue;}
     sscanf(buffer, "%s %f", CutName, &CutValue);
 
     if (!strcmp(CutName, "TYPE")) {
-      TYPE = int(CutValue); ok = 1;
+      TYPE = int(CutValue); 
       if (dump) cout << "TYPE:           " << TYPE << endl;
       if (1313 == TYPE) cstring = "#mu^{+}#mu^{-}";
       if (301313 == TYPE) cstring = "#mu^{+}#mu^{-}";
@@ -1509,7 +1503,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "SELMODE")) {
-      SELMODE = int(CutValue); ok = 1;
+      SELMODE = int(CutValue); 
       if (dump) cout << "SELMODE:           " << SELMODE << endl;
       ibin = 2;
       hcuts->SetBinContent(ibin, SELMODE);
@@ -1517,7 +1511,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "TRIGRANGE")) {
-      char triggerlist[1000]; ok = 1; 
+      char triggerlist[1000]; 
       sscanf(buffer, "%s %s", CutName, triggerlist);
       string tl(triggerlist); 
       int r1(0), r2(0); 
@@ -1533,7 +1527,7 @@ void candAna::readCuts(string fileName, int dump) {
 
 
     if (!strcmp(CutName, "TRUTHCAND")) {
-      TRUTHCAND = int(CutValue); ok = 1;
+      TRUTHCAND = int(CutValue); 
       if (dump) cout << "TRUTHCAND:           " << TRUTHCAND << endl;
       ibin = 4;
       hcuts->SetBinContent(ibin, TYPE);
@@ -1541,7 +1535,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "IGNORETRIGGER")) {
-      IGNORETRIGGER = int(CutValue); ok = 1;
+      IGNORETRIGGER = int(CutValue); 
       if (dump) cout << "IGNORETRIGGER      " << IGNORETRIGGER << endl;
       ibin = 5;
       hcuts->SetBinContent(ibin, IGNORETRIGGER);
@@ -1549,7 +1543,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDPTLO")) {
-      CANDPTLO = CutValue; ok = 1;
+      CANDPTLO = CutValue; 
       if (dump) cout << "CANDPTLO:           " << CANDPTLO << " GeV" << endl;
       ibin = 11;
       hcuts->SetBinContent(ibin, CANDPTLO);
@@ -1557,7 +1551,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDETALO")) {
-      CANDETALO = CutValue; ok = 1;
+      CANDETALO = CutValue; 
       if (dump) cout << "CANDETALO:           " << CANDETALO << endl;
       ibin = 12;
       hcuts->SetBinContent(ibin, CANDETALO);
@@ -1565,7 +1559,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDETAHI")) {
-      CANDETAHI = CutValue; ok = 1;
+      CANDETAHI = CutValue; 
       if (dump) cout << "CANDETAHI:           " << CANDETAHI << endl;
       ibin = 13;
       hcuts->SetBinContent(ibin, CANDETAHI);
@@ -1573,7 +1567,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDCOSALPHA")) {
-      CANDCOSALPHA = CutValue; ok = 1;
+      CANDCOSALPHA = CutValue; 
       if (dump) cout << "CANDCOSALPHA:           " << CANDCOSALPHA << endl;
       ibin = 20;
       hcuts->SetBinContent(ibin, CANDCOSALPHA);
@@ -1581,7 +1575,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDALPHA")) {
-      CANDALPHA = CutValue; ok = 1;
+      CANDALPHA = CutValue; 
       if (dump) cout << "CANDALPHA:           " << CANDALPHA << endl;
       ibin = 21;
       hcuts->SetBinContent(ibin, CANDALPHA);
@@ -1589,7 +1583,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDFLS3D")) {
-      CANDFLS3D = CutValue; ok = 1;
+      CANDFLS3D = CutValue; 
       if (dump) cout << "CANDFLS3D:           " << CANDFLS3D << endl;
       ibin = 22;
       hcuts->SetBinContent(ibin, CANDFLS3D);
@@ -1597,7 +1591,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDFLSXY")) {
-      CANDFLSXY = CutValue; ok = 1;
+      CANDFLSXY = CutValue; 
       if (dump) cout << "CANDFLSXY:           " << CANDFLSXY << endl;
       ibin = 23;
       hcuts->SetBinContent(ibin, CANDFLSXY);
@@ -1605,7 +1599,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDVTXCHI2")) {
-      CANDVTXCHI2 = CutValue; ok = 1;
+      CANDVTXCHI2 = CutValue; 
       if (dump) cout << "CANDVTXCHI2:           " << CANDVTXCHI2 << endl;
       ibin = 24;
       hcuts->SetBinContent(ibin, CANDVTXCHI2);
@@ -1613,7 +1607,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDISOLATION")) {
-      CANDISOLATION = CutValue; ok = 1;
+      CANDISOLATION = CutValue; 
       if (dump) cout << "CANDISOLATION:           " << CANDISOLATION << endl;
       ibin = 25;
       hcuts->SetBinContent(ibin, CANDISOLATION);
@@ -1621,7 +1615,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDDOCATRK")) {
-      CANDDOCATRK = CutValue; ok = 1;
+      CANDDOCATRK = CutValue; 
       if (dump) cout << "CANDDOCATRK:           " << CANDDOCATRK << endl;
       ibin = 26;
       hcuts->SetBinContent(ibin, CANDDOCATRK);
@@ -1629,7 +1623,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDCLOSETRK")) {
-      CANDCLOSETRK = CutValue; ok = 1;
+      CANDCLOSETRK = CutValue; 
       if (dump) cout << "CANDCLOSETRK:           " << CANDCLOSETRK << endl;
       ibin = 27;
       hcuts->SetBinContent(ibin, CANDCLOSETRK);
@@ -1637,7 +1631,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "PVAVEW8")) {
-      PVAVEW8 = CutValue; ok = 1;
+      PVAVEW8 = CutValue; 
       if (dump) cout << "PVAVEW8:           " << PVAVEW8 << endl;
       ibin = 28;
       hcuts->SetBinContent(ibin, PVAVEW8);
@@ -1645,7 +1639,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDLIP")) {
-      CANDLIP = CutValue; ok = 1;
+      CANDLIP = CutValue; 
       if (dump) cout << "CANDLIP:           " << CANDLIP << endl;
       ibin = 40;
       hcuts->SetBinContent(ibin, CANDLIP);
@@ -1653,7 +1647,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDLIPS")) {
-      CANDLIPS = CutValue; ok = 1;
+      CANDLIPS = CutValue; 
       if (dump) cout << "CANDLIPS:          " << CANDLIPS << endl;
       ibin = 41;
       hcuts->SetBinContent(ibin, CANDLIPS);
@@ -1661,7 +1655,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CAND2LIP")) {
-      CANDLIP2 = CutValue; ok = 1;
+      CANDLIP2 = CutValue; 
       if (dump) cout << "CAND2LIP:           " << CANDLIP2 << endl;
       ibin = 42;
       hcuts->SetBinContent(ibin, CANDLIP2);
@@ -1669,7 +1663,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CAND2LIPS")) {
-      CANDLIPS2 = CutValue; ok = 1;
+      CANDLIPS2 = CutValue; 
       if (dump) cout << "CAND2LIPS:          " << CANDLIPS2 << endl;
       ibin = 43;
       hcuts->SetBinContent(ibin, CANDLIPS2);
@@ -1677,7 +1671,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDIP")) {
-      CANDIP = CutValue; ok = 1;
+      CANDIP = CutValue; 
       if (dump) cout << "CANDIP:          " << CANDIP << endl;
       ibin = 44;
       hcuts->SetBinContent(ibin, CANDIP);
@@ -1685,7 +1679,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "CANDIPS")) {
-      CANDIPS = CutValue; ok = 1;
+      CANDIPS = CutValue; 
       if (dump) cout << "CANDIPS:          " << CANDIPS << endl;
       ibin = 45;
       hcuts->SetBinContent(ibin, CANDIPS);
@@ -1693,7 +1687,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "MAXDOCA")) {
-      CANDDOCA = CutValue; ok = 1;
+      CANDDOCA = CutValue; 
       if (dump) cout << "MAXDOCA:         " << CANDDOCA << endl;
       ibin = 46;
       hcuts->SetBinContent(ibin, CANDDOCA);
@@ -1702,7 +1696,7 @@ void candAna::readCuts(string fileName, int dump) {
 
 
     if (!strcmp(CutName, "SIGBOXMIN")) {
-      SIGBOXMIN = CutValue; ok = 1;
+      SIGBOXMIN = CutValue; 
       if (dump) cout << "SIGBOXMIN:           " << SIGBOXMIN << endl;
       ibin = 90;
       hcuts->SetBinContent(ibin, SIGBOXMIN);
@@ -1710,7 +1704,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "SIGBOXMAX")) {
-      SIGBOXMAX = CutValue; ok = 1;
+      SIGBOXMAX = CutValue; 
       if (dump) cout << "SIGBOXMAX:           " << SIGBOXMAX << endl;
       ibin = 91;
       hcuts->SetBinContent(ibin, SIGBOXMAX);
@@ -1718,7 +1712,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "BGLBOXMIN")) {
-      BGLBOXMIN = CutValue; ok = 1;
+      BGLBOXMIN = CutValue; 
       if (dump) cout << "BGLBOXMIN:           " << BGLBOXMIN << endl;
       ibin = 92;
       hcuts->SetBinContent(ibin, BGLBOXMIN);
@@ -1726,7 +1720,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "BGLBOXMAX")) {
-      BGLBOXMAX = CutValue; ok = 1;
+      BGLBOXMAX = CutValue; 
       if (dump) cout << "BGLBOXMAX:           " << BGLBOXMAX << endl;
       ibin = 93;
       hcuts->SetBinContent(ibin, BGLBOXMAX);
@@ -1734,7 +1728,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "BGHBOXMIN")) {
-      BGHBOXMIN = CutValue; ok = 1;
+      BGHBOXMIN = CutValue; 
       if (dump) cout << "BGHBOXMIN:           " << BGHBOXMIN << endl;
       ibin = 94;
       hcuts->SetBinContent(ibin, BGHBOXMIN);
@@ -1742,7 +1736,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "BGHBOXMAX")) {
-      BGHBOXMAX = CutValue; ok = 1;
+      BGHBOXMAX = CutValue; 
       if (dump) cout << "BGHBOXMAX:           " << BGHBOXMAX << endl;
       ibin = 95;
       hcuts->SetBinContent(ibin, BGHBOXMAX);
@@ -1751,7 +1745,7 @@ void candAna::readCuts(string fileName, int dump) {
 
     // -- Tracks
     if (!strcmp(CutName, "TRACKQUALITY")) {
-      TRACKQUALITY = CutValue; ok = 1;
+      TRACKQUALITY = static_cast<int>(CutValue); 
       if (dump) cout << "TRACKQUALITY:           " << TRACKQUALITY << " " << endl;
       ibin = 100;
       hcuts->SetBinContent(ibin, TRACKQUALITY);
@@ -1759,7 +1753,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "TRACKPTLO")) {
-      TRACKPTLO = CutValue; ok = 1;
+      TRACKPTLO = CutValue; 
       if (dump) cout << "TRACKPTLO:           " << TRACKPTLO << " GeV" << endl;
       ibin = 101;
       hcuts->SetBinContent(ibin, TRACKPTLO);
@@ -1767,7 +1761,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "TRACKPTHI")) {
-      TRACKPTHI = CutValue; ok = 1;
+      TRACKPTHI = CutValue; 
       if (dump) cout << "TRACKPTHI:           " << TRACKPTHI << " GeV" << endl;
       ibin = 102;
       hcuts->SetBinContent(ibin, TRACKPTHI);
@@ -1775,7 +1769,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "TRACKTIP")) {
-      TRACKTIP = CutValue; ok = 1;
+      TRACKTIP = CutValue; 
       if (dump) cout << "TRACKTIP:           " << TRACKTIP << " cm" << endl;
       ibin = 103;
       hcuts->SetBinContent(ibin, TRACKTIP);
@@ -1783,7 +1777,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "TRACKLIP")) {
-      TRACKLIP = CutValue; ok = 1;
+      TRACKLIP = CutValue; 
       if (dump) cout << "TRACKLIP:           " << TRACKLIP << " cm" << endl;
       ibin = 104;
       hcuts->SetBinContent(ibin, TRACKLIP);
@@ -1791,7 +1785,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "TRACKETALO")) {
-      TRACKETALO = CutValue; ok = 1;
+      TRACKETALO = CutValue; 
       if (dump) cout << "TRACKETALO:           " << TRACKETALO << " " << endl;
       ibin = 105;
       hcuts->SetBinContent(ibin, TRACKETALO);
@@ -1799,7 +1793,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "TRACKETAHI")) {
-      TRACKETAHI = CutValue; ok = 1;
+      TRACKETAHI = CutValue; 
       if (dump) cout << "TRACKETAHI:           " << TRACKETAHI << " " << endl;
       ibin = 106;
       hcuts->SetBinContent(ibin, TRACKETAHI);
@@ -1808,7 +1802,7 @@ void candAna::readCuts(string fileName, int dump) {
 
     // -- Muons
     if (!strcmp(CutName, "MUIDMASK")) {
-      MUIDMASK = int(CutValue); ok = 1;
+      MUIDMASK = int(CutValue); 
       if (dump) cout << "MUIDMASK:           " << MUIDMASK << endl;
       ibin = 200;
       hcuts->SetBinContent(ibin, MUIDMASK);
@@ -1818,7 +1812,7 @@ void candAna::readCuts(string fileName, int dump) {
     if (!strcmp(CutName, "MUIDRESULT")) {
       // MUIDRESULT == 0: compare result of & with ">=0"
       // MUIDRESULT != 0: compare result of & with "==MUIDRESULT"
-      MUIDRESULT = int(CutValue); ok = 1;
+      MUIDRESULT = int(CutValue); 
       if (dump) cout << "MUIDRESULT:           " << MUIDRESULT << endl;
       ibin = 201;
       hcuts->SetBinContent(ibin, MUIDRESULT);
@@ -1826,7 +1820,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "MUPTLO")) {
-      MUPTLO = CutValue; ok = 1;
+      MUPTLO = CutValue; 
       if (dump) cout << "MUPTLO:           " << MUPTLO << " GeV" << endl;
       ibin = 202;
       hcuts->SetBinContent(ibin, MUPTLO);
@@ -1834,7 +1828,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "MUPTHI")) {
-      MUPTHI = CutValue; ok = 1;
+      MUPTHI = CutValue; 
       if (dump) cout << "MUPTHI:           " << MUPTHI << " GeV" << endl;
       ibin = 203;
       hcuts->SetBinContent(ibin, MUPTHI);
@@ -1842,7 +1836,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "MUETALO")) {
-      MUETALO = CutValue; ok = 1;
+      MUETALO = CutValue; 
       if (dump) cout << "MUETALO:           " << MUETALO << endl;
       ibin = 204;
       hcuts->SetBinContent(ibin, MUETALO);
@@ -1850,7 +1844,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "MUETAHI")) {
-      MUETAHI = CutValue; ok = 1;
+      MUETAHI = CutValue; 
       if (dump) cout << "MUETAHI:           " << MUETAHI << endl;
       ibin = 205;
       hcuts->SetBinContent(ibin, MUETAHI);
@@ -1858,7 +1852,7 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
     if (!strcmp(CutName, "MUIP")) {
-      MUIP = CutValue; ok = 1;
+      MUIP = CutValue; 
       if (dump) cout << "MUIP:           " << MUIP << endl;
       ibin = 206;
       hcuts->SetBinContent(ibin, MUIP);
@@ -1897,7 +1891,6 @@ void candAna::readCuts(string fileName, int dump) {
     }
 
 
-    //    if (!ok) cout << "==> candAna: error? nothing done with " << CutName << "!!" << endl;
   }
 
   if (dump)  cout << "------------------------------------" << endl;
@@ -2028,8 +2021,6 @@ int candAna::nCloseTracks(TAnaCand *pC, double dcaCut, double ptCut) {
   int pvIdx2= nearestPV(pvIdx, 0.1);
   if (TMath::Abs(fCandPvLipS2) > 2) pvIdx2 = -1;
   
-  bool sameOrCloseVertex(false);
-  
   if (0) {
     if (TMath::Abs(pC->fPvLip2) < 3 || TMath::Abs(pC->fPvLip2/pC->fPvLipE2) < 3) {
       cout << "XXXXXXXX " << fEvt << " XXX this cand (" << pC->fType << ") from PVidx = " << pvIdx 
@@ -2066,10 +2057,6 @@ int candAna::nCloseTracks(TAnaCand *pC, double dcaCut, double ptCut) {
       pT = fpEvt->getRecTrack(trkId);
       // -- check that any track associated with a definitive vertex is from the same or the closest (compatible) other PV
       if ((pT->fPvIdx > -1) && (pT->fPvIdx != pvIdx)) continue;
-//       if (pT->fPvIdx > -1) {
-// 	sameOrCloseVertex = (pT->fPvIdx == pvIdx) || (pT->fPvIdx == pvIdx2);
-// 	if (!sameOrCloseVertex) continue;
-//       }
 
       //      if ((pT->fPvIdx > -1) && (pT->fPvIdx != pvIdx)) continue;
       
@@ -2222,11 +2209,7 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
   TAnaTrack *pT; 
   vector<int> cIdx, pIdx; 
   int pvIdx = pC->fPvIdx;
-  int pvIdx2= nearestPV(pvIdx, 0.1);
-  if (TMath::Abs(fCandPvLipS2) > 2) pvIdx2 = -1;
   
-  bool sameOrCloseVertex(false);
-
   fCandI0trk = 0; 
   fCandI1trk = 0; 
   fCandI2trk = 0; 
@@ -2257,12 +2240,6 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
      	   << " pointing at PV " << pT->fPvIdx;
     }
     
-//     // -- check that any track associated with a definitive vertex is from the same PV
-//     if (pT->fPvIdx > -1) {
-//       sameOrCloseVertex = (pT->fPvIdx == pvIdx);
-//       //       sameOrCloseVertex = (pT->fPvIdx == pvIdx) || (pT->fPvIdx == pvIdx2);
-//       if (!sameOrCloseVertex) continue;
-//     }
 
     if (pT->fPvIdx != pvIdx) { 	 
       if (verbose) cout << " skipped because of PV index mismatch" << endl; 	     //FIXME
@@ -2302,12 +2279,6 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
 
       pT = fpEvt->getRecTrack(trkId);
 
-//       // -- check that any track associated with a definitive vertex is from the same or the closest other PV
-//       if (pT->fPvIdx > -1) {
-// 	sameOrCloseVertex = (pT->fPvIdx == pvIdx);
-// 	//	sameOrCloseVertex = (pT->fPvIdx == pvIdx) || (pT->fPvIdx == pvIdx2);
-// 	if (!sameOrCloseVertex) continue;
-//       }
 
       if ((pT->fPvIdx > -1) && (pT->fPvIdx != pvIdx)) { 	 
 	if (verbose) cout << " doca track " << trkId << " skipped because it is from a different PV " << pT->fPvIdx <<endl; 	 
@@ -2904,7 +2875,7 @@ bool candAna::doTriggerMatching(TAnaTrack *pt) {
 // ----------------------------------------------------------------------
 void candAna::boostGames() {
 
-  double gt1, gcosTheta, gcosTheta2, rcosTheta, rcosTheta2;
+  double gcosTheta, gcosTheta2, rcosTheta, rcosTheta2;
   TVector3 pvec = TVector3(0., 0., 1.);
   if ((fGenBTmi > -1) && (fGenM1Tmi > -1) && (fGenM2Tmi > -1 )) {
     TGenCand *pB(0), *pM1(0), *pM2(0); 

@@ -34,7 +34,7 @@ class candAnaMuMu : public candAna {
   
 public:
   candAnaMuMu(bmm2Reader *pReader, std::string name, std::string cutsFile);
-  ~candAnaMuMu();
+  virtual ~candAnaMuMu();
 
   void        candAnalysis();
   void        efficiencyCalculation();

@@ -551,7 +551,7 @@ void plotClass::loopTree(int mode, int proc) {
   double tr1w8(0.), tr2w8(0.), trw8(0.), m1w8(0.), m2w8(0.), mw8(0.0);
 
   int nentries = Int_t(t->GetEntries());
-  int nb(0), ievt(0), bsevt0(0), bdevt0(0), bsevt1(0), bdevt1(0), bgevt0(0), bgevt1(0); 
+  int ievt(0), bsevt0(0), bdevt0(0), bsevt1(0), bdevt1(0), bgevt0(0), bgevt1(0); 
   cuts *pCuts(0); 
 
   if (bd2dstarpi) {
@@ -569,7 +569,7 @@ void plotClass::loopTree(int mode, int proc) {
   cout << "loopTree:  mode = " << mode << " nentries = " << nentries << endl;
   
   for (int jentry = 0; jentry < nentries; jentry++) {
-    nb = t->GetEntry(jentry);
+    t->GetEntry(jentry);
     // -- require truth matching when on MC
     if (0 == mode && 0 == fb.tm) continue;
     if (1 == mode && 0 == fb.tm) continue;
@@ -1489,11 +1489,10 @@ void plotClass::filterEfficiency(string fname, string name) {
     t->SetBranchAddress("g4eta",&bg4eta);
   }
 
-  int nb(0); 
   int ngen(0), ngenlevel(0); 
   int nentries = Int_t(t->GetEntries());
   for (int jentry = 0; jentry < nentries; jentry++) {
-    nb = t->GetEntry(jentry);
+    t->GetEntry(jentry);
 
     ++ngen;
 
@@ -1630,13 +1629,12 @@ void plotClass::accEffFromEffTreeBac(string fname, string dname, numbers &a, cut
 
 
   int nentries = Int_t(t->GetEntries());
-  int nb(0); 
   int ngen(0), nchangen(0), nreco(0), nchan(0), nmuid(0), nhlt(0), ncand(0), ncand2(0); 
   int chan(-1); 
   int recoPtA(0), recoPtB(0); 
   cout << "channel = " << a.index << endl;
   for (int jentry = 0; jentry < nentries; jentry++) {
-    nb = t->GetEntry(jentry);
+    t->GetEntry(jentry);
     if (bidx < 0) continue;
     ++ngen;
     if (proc > 0 && bprocid != proc) continue;
@@ -1887,13 +1885,12 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
 
 
   int nentries = Int_t(t->GetEntries());
-  int nb(0); 
   int ngen(0), nreco(0), ncand(0); 
   int chan(-1); 
   int recoPtA(0), recoPtB(0); 
   cout << "channel = " << a.index << endl;
   for (int jentry = 0; jentry < nentries; jentry++) {
-    nb = t->GetEntry(jentry);
+    t->GetEntry(jentry);
     if (bidx < 0) continue;
     ++ngen;
     if (proc > 0 && bprocid != proc) continue;
@@ -2703,20 +2700,20 @@ void plotClass::dumpSamples() {
     //    cout <<  Form("\\vdef{%s:lumi:%s}   {\\ensuremath{{%4.1f } } }", fSuffix.c_str(), imap->first.c_str(), lumi) << endl;
     fTEX <<  Form("\\vdef{%s:lumi:%s}   {\\ensuremath{{%4.1f } } }", fSuffix.c_str(), imap->first.c_str(), lumi) << endl;
 
-    double base(1.); 
-    double bf = fBF[imap->first]; 
-    for (int i = 0; i < 12; ++i) {
-      if (bf < TMath::Power(10., -i)) {
-	base = TMath::Power(10., -i);
-      } else {
-	base = TMath::Power(10., -i);
-	break;
-      }
-    }
-    //    cout << "xxxx: bf = " << bf << " +/- " << bf*fBFE[imap->first] << " base = " << base << endl;
+//     double base(1.); 
+//     double bf = fBF[imap->first]; 
+//     for (int i = 0; i < 12; ++i) {
+//       if (bf < TMath::Power(10., -i)) {
+// 	base = TMath::Power(10., -i);
+//       } else {
+// 	base = TMath::Power(10., -i);
+// 	break;
+//       }
+//     }
+//     //    cout << "xxxx: bf = " << bf << " +/- " << bf*fBFE[imap->first] << " base = " << base << endl;
 
-//     fTEX << scientificTex(bf, bf*fBFE[imap->first], 
-// 			  Form("%s:bf:%s", fSuffix.c_str(), imap->first.c_str(), name.c_str()), base, 2) << endl;
+// //     fTEX << scientificTex(bf, bf*fBFE[imap->first], 
+// // 			  Form("%s:bf:%s", fSuffix.c_str(), imap->first.c_str(), name.c_str()), base, 2) << endl;
 
     if (n>0) {
       //      cout <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{%4.0f } } }", fSuffix.c_str(), imap->first.c_str(), n) << endl;
@@ -3611,10 +3608,8 @@ void plotClass::dumpCutNames(const char *hname) {
   
   TH1D *h = (TH1D*)gFile->Get(hname); 
   string cut, empty(""), cutstring, cutline, cutvalue; 
-  double value; 
   for (int i = 1; i <= h->GetNbinsX(); ++i) {
     cut = string(h->GetXaxis()->GetBinLabel(i));
-    value = h->GetBinContent(i);
     if (cut == empty) continue;
     string::size_type n1 = cut.find_first_of(":"); 
     string::size_type n2 = cut.find_last_of(":")-1; 
@@ -4258,7 +4253,6 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
   int nentries = Int_t(t->GetEntries());
   if (nevts > 0 && nentries > nevts) nentries = nevts;
 
-  int nb(0);
   int step(1000000); 
   if (nentries < 5000000)  step = 500000; 
   if (nentries < 1000000)  step = 100000; 
@@ -4342,7 +4336,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
   }
 
   for (int jentry = 0; jentry < nentries; jentry++) {
-    nb = t->GetEntry(jentry);
+    t->GetEntry(jentry);
     if (jentry%step == 0) cout << Form(" .. Event %8d", jentry) << endl;
     candAnalysis(imode);
     loopFunction(function, imode);
@@ -4408,7 +4402,6 @@ void plotClass::checkAgainstDuplicates(string mode) {
   int nentries = Int_t(t->GetEntries());
   cout << "looking at " << nentries << " events" << endl;
 
-  int nb(0);
   int step(50000); 
   if (nentries < 50000000) step = 5000000; 
   if (nentries < 10000000) step = 1000000; 
@@ -4419,7 +4412,7 @@ void plotClass::checkAgainstDuplicates(string mode) {
   if (nentries < 1000)     step = 100; 
 
   for (int jentry = 0; jentry < nentries; jentry++) {
-    nb = t->GetEntry(jentry);
+    t->GetEntry(jentry);
     if (jentry%step == 0) cout << Form(" .. Event %8d", jentry) << endl;
     
     ckey = Form("%lld:%lld:%5.4f:%5.4f", lrun, levt, lm1pt, lm2pt); 

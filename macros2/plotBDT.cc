@@ -25,7 +25,7 @@ plotBDT::plotBDT(const char *files, const char *dir, const char *cuts, int mode)
   fDoUseBDT = true; 
   fSaveSmallTree = false; 
 
-  int NBINS = (fMassHi - fMassLo)/0.025;
+  int NBINS = static_cast<int>((fMassHi - fMassLo)/0.025);
   TH1D *h(0); 
   TProfile *p(0); 
   for (unsigned int i = 0; i < fNchan; ++i) {
@@ -116,7 +116,7 @@ plotBDT::plotBDT(const char *files, const char *dir, const char *cuts, int mode)
   string htitle;
   for (unsigned int i = 0; i < 3; ++i) {
     // -- hackedMC1
-    nbins = (xmax - xmin)/0.025;
+    nbins = static_cast<int>((xmax - xmin)/0.025);
 
     h = new TH1D(Form("hMcBDT%d", i), Form("hMcBDT%d", i), nbins, xmin, xmax);
     if (0 == i) setHist(h, kBlack, 24); 
@@ -159,7 +159,7 @@ plotBDT::plotBDT(const char *files, const char *dir, const char *cuts, int mode)
   }
 
 
-  nbins = (xmax - xmin)/0.025;
+  nbins = static_cast<int>((xmax - xmin)/0.025);
   h = new TH1D("hMcBdt0", "Bs2MuMu", nbins, xmin, xmax);     h->Sumw2();  setHist(h, kBlack);               fhMcBDT5.push_back(h); 
   h = new TH1D("hMcBdt1", "Bx2MuMu", nbins, xmin, xmax);     h->Sumw2();  setHist(h, kBlue);                fhMcBDT5.push_back(h); 
   h = new TH1D("hMcBdt2", "By2MuMu", nbins, xmin, xmax);     h->Sumw2();  setHist(h, kRed);                 fhMcBDT5.push_back(h); 
@@ -380,51 +380,6 @@ void plotBDT::testLoop(string mode) {
 }
 
 
-// ----------------------------------------------------------------------
-void plotBDT::npvSpecial(string smode) {
-
-  TTree *t = getTree(smode);
-  TH1D *h0npv = new TH1D("h0npv", "", 50, 0., 50.); setTitles(h0npv, "N_{PV}", "events", 0.05, 1.2, 1.5); 
-  TH1D *h1npv = new TH1D("h1npv", "", 50, 0., 50.); 
-  TH1D *h2npv = new TH1D("h2npv", "", 50, 0., 50.); 
-  SetSignalAndBackgroundStyle(h0npv, h1npv, h2npv);            
-
-  vector<string> cuts;
-  cuts.push_back("(abs(m1eta)<1.4&&abs(m2eta)<1.4)");
-  cuts.push_back("!(abs(m1eta)<1.4&&abs(m2eta)<1.4)");
-  
-  gStyle->SetOptStat(0); 
-
-  zone(1);
-  shrinkPad(0.15, 0.15, 0.15); 
-  
-  for (int i = 0; i < fNchan; ++i) {
-    h0npv->Reset();
-    h1npv->Reset();
-    h2npv->Reset();
-    
-    cout << "npv>>h0npv for " << Form("(evt%3==0) && %s", cuts[i].c_str()) << endl;
-    t->Draw("npv>>h0npv", Form("(evt%3==0) && %s", cuts[i].c_str()), "goff");
-
-    cout << "npv>>h1npv for " << Form("(evt%3==1) && %s", cuts[i].c_str()) << endl;
-    t->Draw("npv>>h1npv", Form("(evt%3==1) && %s", cuts[i].c_str()), "goff");
-
-    cout << "npv>>h2npv for " << Form("(evt%3==2) && %s", cuts[i].c_str()) << endl;
-    t->Draw("npv>>h2npv", Form("(evt%3==2) && %s", cuts[i].c_str()), "goff");
-
-    h0npv->Draw();
-    h1npv->Draw("same");
-    h2npv->Draw("same");
-    double ks01 = h0npv->KolmogorovTest(h1npv);
-    double ks12 = h1npv->KolmogorovTest(h2npv);
-    double ks20 = h2npv->KolmogorovTest(h0npv);
-    tl->DrawLatex(0.15, 0.92, Form("P(KS)= %4.3f/%4.3f/%4.3f", ks01, ks12, ks20)); 
-    
-    c0->SaveAs(Form("%s/TMVA-%s-npvSpecial-chan%d.pdf", fDirectory.c_str(), smode.c_str(), i)); 
-  }
-
-}
-
 
 // ----------------------------------------------------------------------
 void  plotBDT::overlayBdtOutput() {
@@ -614,7 +569,7 @@ void plotBDT::bdtDependencies(string mode) {
     // -- mean 
     fmeanNpvBDTchan0->SetAxisRange(0., npvmax, "X");
     fmeanNpvBDTchan0->Fit(Form("pol%d", j));  
-    if (fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+    if (fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
 				  fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
 				  fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
     if (fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
@@ -624,7 +579,7 @@ void plotBDT::bdtDependencies(string mode) {
 
     fmeanNpvAcBDTchan0->SetAxisRange(0., npvmax, "X");
     fmeanNpvAcBDTchan0->Fit(Form("pol%d", j));  
-    if (fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+    if (fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
 				  fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
 				  fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
     if (fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
@@ -634,7 +589,7 @@ void plotBDT::bdtDependencies(string mode) {
 
     fmeanNpvAdBDTchan0->SetAxisRange(0., npvmax, "X");
     fmeanNpvAdBDTchan0->Fit(Form("pol%d", j));  
-    if (fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+    if (fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
 				  fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
 				  fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
     if (fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
@@ -645,7 +600,7 @@ void plotBDT::bdtDependencies(string mode) {
   
     fmeanNpvBDTchan1->SetAxisRange(0., npvmax, "X");
     fmeanNpvBDTchan1->Fit(Form("pol%d", j));  
-    if (fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+    if (fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
 				  fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
 				  fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
     if (fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
@@ -655,7 +610,7 @@ void plotBDT::bdtDependencies(string mode) {
 
     fmeanNpvAcBDTchan1->SetAxisRange(0., npvmax, "X");
     fmeanNpvAcBDTchan1->Fit(Form("pol%d", j));  
-    if (fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+    if (fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
 				  fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
 				  fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
     if (fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
@@ -665,7 +620,7 @@ void plotBDT::bdtDependencies(string mode) {
 
     fmeanNpvAdBDTchan1->SetAxisRange(0., npvmax, "X");
     fmeanNpvAdBDTchan1->Fit(Form("pol%d", j));  
-    if (fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+    if (fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
 				  fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
 				  fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
     if (fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
@@ -677,7 +632,7 @@ void plotBDT::bdtDependencies(string mode) {
     // -- RMS
     frmsNpvBDTchan0->SetAxisRange(0., npvmax, "X");
     frmsNpvBDTchan0->Fit(Form("pol%d", j));  
-    if (frmsNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+    if (frmsNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
 				  frmsNpvBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
 				  frmsNpvBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
     if (frmsNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
@@ -687,7 +642,7 @@ void plotBDT::bdtDependencies(string mode) {
 
     frmsNpvAcBDTchan0->SetAxisRange(0., npvmax, "X");
     frmsNpvAcBDTchan0->Fit(Form("pol%d", j));  
-    if (frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+    if (frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
 				  frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
 				  frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
     if (frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
@@ -697,7 +652,7 @@ void plotBDT::bdtDependencies(string mode) {
 
     frmsNpvAdBDTchan0->SetAxisRange(0., npvmax, "X");
     frmsNpvAdBDTchan0->Fit(Form("pol%d", j));  
-    if (frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+    if (frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
 				  frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
 				  frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
     if (frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
@@ -708,7 +663,7 @@ void plotBDT::bdtDependencies(string mode) {
     
     frmsNpvBDTchan1->SetAxisRange(0., npvmax, "X");
     frmsNpvBDTchan1->Fit(Form("pol%d", j));  
-    if (frmsNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+    if (frmsNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
 				  frmsNpvBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
 				  frmsNpvBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
     if (frmsNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
@@ -718,7 +673,7 @@ void plotBDT::bdtDependencies(string mode) {
 
     frmsNpvAcBDTchan1->SetAxisRange(0., npvmax, "X");
     frmsNpvAcBDTchan1->Fit(Form("pol%d", j));  
-    if (frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+    if (frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
 				  frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
 				  frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
     if (frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
@@ -728,7 +683,7 @@ void plotBDT::bdtDependencies(string mode) {
 
     frmsNpvAdBDTchan1->SetAxisRange(0., npvmax, "X");
     frmsNpvAdBDTchan1->Fit(Form("pol%d", j));  
-    if (frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", 
+    if (frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
 				  frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
 				  frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
     if (frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
@@ -928,7 +883,7 @@ void plotBDT::tmvaControlPlots() {
   string XmlName;
   for (int j = 0; j < 3; ++j) {
 
-    for (int i = 0; i < fNchan; ++i) {
+    for (unsigned int i = 0; i < fNchan; ++i) {
       
       XmlName = "weights/" + fCuts[i]->xmlFile + Form("-%s_BDT.weights.xml", type[j].c_str()); 
       string rootfile = XmlName; 
@@ -1020,7 +975,7 @@ void plotBDT::tmvaControlPlots() {
 // ----------------------------------------------------------------------
 void plotBDT::plotSSB() {
   cout << "fNchan: " << fNchan << "   " << fCuts[1]->xmlFile << endl;
-  for (int i = 0; i < fNchan; ++i) {
+  for (unsigned int i = 0; i < fNchan; ++i) {
     string rootfile = "weights/" + fCuts[i]->xmlFile + "-combined.root";
     cout << "fRootFile: " << rootfile << endl;
     fRootFile = TFile::Open(rootfile.c_str());
@@ -1152,7 +1107,7 @@ void plotBDT::validateDistributions(int channel, const char *type, int classID) 
   
   gStyle->SetOptTitle(0); 
   gStyle->SetOptStat(0); 
-  for (int i = 0; i < vNames.size(); ++i) {
+  for (unsigned int i = 0; i < vNames.size(); ++i) {
     
     if (fReaderVariables.end() == find(fReaderVariables.begin(), fReaderVariables.end(), vNames[i]))  {
       cout << " =====> " << vNames[i] << " not found in fReaderVariables" << endl;
@@ -1247,13 +1202,10 @@ void plotBDT::tmvaPlots(string type) {
 
   // -- from "mvas"
   // --------------
-  Int_t xPad = 1; // no of plots in x
-  Int_t yPad = 1; // no of plots in y
-  Int_t noPad = xPad * yPad ; 
   Int_t width = 600;   // size of canvas
   
   // this defines how many canvases we need
-  TCanvas *c = new TCanvas( Form("canvas%d", 1), "canvas1",  200, 20, width, (Int_t)width*0.78 ); 
+  TCanvas *c = new TCanvas( Form("canvas%d", 1), "canvas1",  200, 20, width, static_cast<int>(width*0.78) ); 
 
 
   // search for the right histograms in full list of keys
@@ -1463,7 +1415,6 @@ void plotBDT::tmvaPlots(string type) {
 
 
   // loop over all objects in directory
-  Bool_t   createNewFig = kFALSE;
   TIter next1(dir->GetListOfKeys());
   while ((key = (TKey*)next1())) {
     // make sure, that we only look at histograms
@@ -1487,7 +1438,7 @@ void plotBDT::tmvaPlots(string type) {
     TH1 *bgd = (TH1*)dir->Get(bgname);
     if (bgd == NULL) {
       cout << "ERROR!!! couldn't find background histo for" << hname << endl;
-      exit;
+      return;
     }
 
     // this is set but not stored during plot creation in MVA_Factory
@@ -1626,8 +1577,8 @@ void plotBDT::xmlParsing() {
   string xmlfile = "weights/" + fCuts[0]->xmlFile + etype[0] + "_BDT.weights.xml";
   xmlParsingVariables(xmlfile);
   
-  for (int ichan = 0; ichan < fNchan; ++ichan) {
-    for (int i = 0; i < etype.size(); ++i) {
+  for (unsigned int ichan = 0; ichan < fNchan; ++ichan) {
+    for (unsigned int i = 0; i < etype.size(); ++i) {
       xmlfile = "weights/" + fCuts[ichan]->xmlFile + etype[i] + "_BDT.weights.xml";
       fBdtString = Form("TMVA-%d", ichan); 
       cout << xmlfile << endl;
@@ -1732,7 +1683,7 @@ void plotBDT::xmlParsingReadTree(string xmlfile) {
   while (is.getline(buffer, 2000, '\n')) allLines.push_back(string(buffer));
   float w8(0.), cut(0.); 
   int ivar(-1), nnodes(0); 
-  string::size_type m0, m1, m2;
+  string::size_type m0, m1;
   string stype, varidx; 
   for (unsigned int i = 0; i < allLines.size(); ++i) {
     // -- parse and add variables
@@ -1937,10 +1888,7 @@ void plotBDT::ssb() {
     double d0 = dm->Integral(dm->FindBin(4.9), dm->FindBin(5.3));
     double d1 = dm->Integral(dm->FindBin(5.45), dm->GetNbinsX());
     double d = dm->Integral(0, dm->GetNbinsX());
-    double sd0 = (5.45-5.3)*d0/(5.2-4.9);
-    double sd1 = (5.45-5.3)*d1/(5.9-5.45);
     double bsimple = d*(5.45-5.30)/(5.9-4.9-0.25);
-    double bsimple2= d1*(5.45-5.30)/(5.9-5.45);
 
     bgBlind(dm, 3, 4.9, 5.9);
     double b = fBsBgExp;
@@ -2230,7 +2178,6 @@ void plotBDT::hackedMC(int chan) {
   string func("pol0"); 
   makeCanvas(1);
   
-  int i = 0; 
   string pdfname; 
   int color(kBlack); 
   for (int i = 0; i < 3; ++i) {
@@ -2591,7 +2538,7 @@ void plotBDT::hackedMC1(string cuts, double xmin, double xmax, string func) {
 
   string defaultCuts = "hlt&&gmuid&&m1pt>4&&m2pt>4&&abs(m1eta)<2.4&&abs(m2eta)<2.4";
 
-  int nbins = (xmax - xmin)/0.05;
+  int nbins = static_cast<int>((xmax - xmin)/0.05);
 
   TH1D *hsr1 = new TH1D("hsr1", "ratio 1/0", nbins, xmin, xmax); hsr1->Sumw2(); hsr1->SetMarkerColor(kRed); 
   TH1D *hsr2 = new TH1D("hsr2", "ratio 2/0", nbins, xmin, xmax); hsr2->Sumw2(); hsr2->SetMarkerColor(kBlue);
@@ -2920,16 +2867,10 @@ void plotBDT::SetSignalAndBackgroundStyle( TH1* sig, TH1* bkg, TH1* all )    {
       //signal
       // const Int_t FillColor__S = 38 + 150; // change of Color Scheme in ROOT-5.16.
       // convince yourself with gROOT->GetListOfColors()->Print()
-  static Int_t c_Canvas         = kWhite; //TColor::GetColor( "#f0f0f0" );
-  static Int_t c_FrameFill      = kWhite; //TColor::GetColor( "#fffffd" );
-  static Int_t c_TitleBox       = kWhite; //TColor::GetColor( "#5D6B7D" );
-  static Int_t c_TitleBorder     = kWhite; //TColor::GetColor( "#7D8B9D" );
-  static Int_t c_TitleText      = TColor::GetColor( "#FFFFFF" );
   static Int_t c_SignalLine     = TColor::GetColor( "#0000ee" );
   static Int_t c_SignalFill     = TColor::GetColor( "#7d99d1" );
   static Int_t c_BackgroundLine = TColor::GetColor( "#ff0000" );
   static Int_t c_BackgroundFill = TColor::GetColor( "#ff0000" );
-  static Int_t c_NovelBlue      = TColor::GetColor( "#2244a5" );
 
       Int_t FillColor__S = c_SignalFill;
       Int_t FillStyle__S = 3356; //1001;

@@ -57,7 +57,7 @@ class candAna {
   
 public:
   candAna(bmm2Reader *pReader, std::string name, std::string cutsFile);
-  ~candAna();
+  virtual ~candAna();
 
   virtual void        evtAnalysis(TAna01Event *evt);
   virtual void        candAnalysis();
@@ -171,9 +171,9 @@ public:
   // -- variables for reduced tree, they are from fpCand
   bool    fJSON, fCowboy;
   int     fCandTM, fCandType; 
-  int     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fMu1Chi2, fMu2Chi2, fCandQ, fMu1PV, fMu2PV;
+  int     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fCandQ, fMu1PV, fMu2PV;
   bool    fMu1Id, fMu2Id, fHLTmatch;  
-  double  fMuDist, fMuDeltaR;
+  double  fMuDist, fMuDeltaR, fMu1Chi2, fMu2Chi2;
   double  fHltMu1Pt, fHltMu1Eta, fHltMu1Phi, fHltMu2Pt, fHltMu2Eta, fHltMu2Phi;
   double  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
   double  fMu1PtGen, fMu2PtGen, fMu1EtaGen, fMu2EtaGen, fMu1PhiGen, fMu2PhiGen;

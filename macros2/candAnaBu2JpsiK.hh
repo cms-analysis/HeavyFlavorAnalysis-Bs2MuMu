@@ -32,7 +32,7 @@ class candAnaBu2JpsiK : public candAna {
   
 public:
   candAnaBu2JpsiK(bmm2Reader *pReader, std::string name, std::string cutsFile);
-  ~candAnaBu2JpsiK();
+  virtual ~candAnaBu2JpsiK();
 
   void        candAnalysis();
   void        efficiencyCalculation();

@@ -88,7 +88,7 @@ void bmm2Reader::eventProcessing() {
 // ----------------------------------------------------------------------
 void bmm2Reader::bookHist() {
   fpHistFile->cd();
-  TH1D *h;
+  TH1D *h(0);
   h = new TH1D("monEvents", "monEvents", 20, 0., 20.);
   h = new TH1D("ntracks", "ntracks", 100, 0., 1000.);
   h = new TH1D("pt0", "pt(tracks)", 100, 0., 10.);
@@ -96,8 +96,9 @@ void bmm2Reader::bookHist() {
   h = new TH1D("eta", "eta(tracks)", 60, -3.0, 3.0);
   h = new TH1D("phi", "phi(tracks)", 50, -3.15, 3.15);
 
+  (void)h; // make compiler warning go away
+
   for (unsigned int i = 0; i < lCandAnalysis.size(); ++i) {
-    //    cout << "  calling " << lCandAnalysis[i]->fName << " bookHist()" << endl;
     lCandAnalysis[i]->bookHist();
   }
 

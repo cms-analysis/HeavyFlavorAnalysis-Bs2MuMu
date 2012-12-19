@@ -133,7 +133,7 @@ void plotOptimize::optimizeBdtULs(double minBdt, double maxBdt) {
 
   string cutline; 
   double cut; 
-  int nruns = (maxBdt - minBdt)/0.01;
+  int nruns = static_cast<int>((maxBdt - minBdt)/0.01);
   for (int j = 0; j < nruns; ++j) {
     ++version; 
     cut = minBdt + j*0.01;
@@ -280,11 +280,10 @@ void plotOptimize::bestUL(const char *fname, int mode) {
   ini.sig = 2.0;
   list<bla> bestList1(1, ini) ;
 
-  int nb(0); 
   int nentries = Int_t(t->GetEntries());
   cout << "Searching for best fom in " << nentries << " cut settings" << endl;
   for (int jentry = 0; jentry < nentries; jentry++) {
-    nb = t->GetEntry(jentry);
+    t->GetEntry(jentry);
 
     if (jentry %20000 == 0) cout << "setting " << jentry 
 				 << " bestList0.size() = " << bestList0.size()
@@ -605,7 +604,7 @@ void plotOptimize::displayCuts(const char *fname) {
   vars.push_back("docatrk"); 
   vars.push_back("maxdoca"); 
 
-  for (int j = 0; j < vars.size(); ++j) {
+  for (unsigned int j = 0; j < vars.size(); ++j) {
     for (int i = 0; i < 2; ++i) {
       cout << Form("ulcp:%s", vars[j].c_str()) << ", " <<  cuts[i].c_str() << endl;
       t->Draw(Form("ulcp:%s", vars[j].c_str()), cuts[i].c_str(), "colz");

@@ -30,7 +30,6 @@ void candAnaBd2DstarPi::candAnalysis() {
   TAnaCand *pD = 0; 
   fGoodMD0 = fGoodDeltaM = fGoodMDs = false; 
   TLorentzVector ppi, ppipi, ppislow, pd0, pdstar; 
-  int qPion(0); 
   if (fpCand->fDau1 < 0 || fpCand->fDau1 > fpEvt->nCands()) return;
   pD = fpEvt->getCand(fpCand->fDau1); 
   if (0 == pD) return;
@@ -127,6 +126,7 @@ void candAnaBd2DstarPi::bookHist() {
   hdm = new TH1D("chmdz", "mdz", 50, 1.75, 1.95); 
   hdm = new TH1D("chmds", "mds", 50, 1.9, 2.1); 
   hdm = new TH1D("chmb0", "mb0", 50, 4.9, 5.9); 
+  (void)hdm; // remove compiler warning
 
   // -- Additional reduced tree variables
   fTree->Branch("ptd0", &fPTD0, "ptd0/D");
@@ -166,7 +166,6 @@ void candAnaBd2DstarPi::readCuts(string filename, int dump) {
 
   char CutName[100];
   float CutValue;
-  int ok(0);
 
   char  buffer[200];
   fHistDir->cd();
@@ -178,13 +177,12 @@ void candAnaBd2DstarPi::readCuts(string filename, int dump) {
   for (unsigned int i = 0; i < cutLines.size(); ++i) {
     sprintf(buffer, "%s", cutLines[i].c_str()); 
     
-    ok = 0;
     if (buffer[0] == '#') {continue;}
     if (buffer[0] == '/') {continue;}
     sscanf(buffer, "%s %f", CutName, &CutValue);
 
     if (!strcmp(CutName, "D0TYPE")) {
-      D0TYPE = CutValue; ok = 1;
+      D0TYPE = static_cast<int>(CutValue); 
       if (dump) cout << "D0TYPE:      " << D0TYPE << endl;
       ibin = 210;
       hcuts->SetBinContent(ibin, D0TYPE);
@@ -192,7 +190,7 @@ void candAnaBd2DstarPi::readCuts(string filename, int dump) {
     }
 
     if (!strcmp(CutName, "DSTARTYPE")) {
-      DSTARTYPE = CutValue; ok = 1;
+      DSTARTYPE = static_cast<int>(CutValue); 
       if (dump) cout << "DSTARTYPE:      " << DSTARTYPE << endl;
       ibin = 211;
       hcuts->SetBinContent(ibin, DSTARTYPE);
@@ -200,7 +198,7 @@ void candAnaBd2DstarPi::readCuts(string filename, int dump) {
     }
 
     if (!strcmp(CutName, "MD0LO")) {
-      MD0LO = CutValue; ok = 1;
+      MD0LO = CutValue; 
       if (dump) cout << "MD0LO:      " << MD0LO << endl;
       ibin = 212;
       hcuts->SetBinContent(ibin, MD0LO);
@@ -208,7 +206,7 @@ void candAnaBd2DstarPi::readCuts(string filename, int dump) {
     }
 
     if (!strcmp(CutName, "MD0HI")) {
-      MD0HI = CutValue; ok = 1;
+      MD0HI = CutValue; 
       if (dump) cout << "MD0HI:      " << MD0HI << endl;
       ibin = 213;
       hcuts->SetBinContent(ibin, MD0HI);
@@ -216,7 +214,7 @@ void candAnaBd2DstarPi::readCuts(string filename, int dump) {
     }
 
     if (!strcmp(CutName, "DELTAM")) {
-      DELTAM = CutValue; ok = 1;
+      DELTAM = CutValue; 
       if (dump) cout << "DELTAM:      " << DELTAM << endl;
       ibin = 214;
       hcuts->SetBinContent(ibin, DELTAM);
@@ -224,7 +222,7 @@ void candAnaBd2DstarPi::readCuts(string filename, int dump) {
     }
 
     if (!strcmp(CutName, "DELTAR")) {
-      DELTAR = CutValue; ok = 1;
+      DELTAR = CutValue; 
       if (dump) cout << "DELTAR:           " << DELTAR << endl;
       ibin = 301;
       hcuts->SetBinContent(ibin, DELTAR);

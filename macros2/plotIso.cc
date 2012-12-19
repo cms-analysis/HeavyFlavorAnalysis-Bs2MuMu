@@ -328,7 +328,7 @@ void plotIso::dataVsMc(string file1, string dir1, string file2, string dir2, str
   //  ofstream OUT("testUL.txt", ios::app);
 
   fF[file1]->cd(Form("%s", dir1.c_str())); 
-  TH1D *h(0), *h1(0), *h2(0);
+  TH1D *h1(0), *h2(0);
 
   AnalysisDistribution a("A_pvz"); 
 
@@ -454,6 +454,7 @@ int plotIso::ptBin(double pt) {
   if (pt > 0.85 && pt < 0.95) return 4; 
   if (pt > 1.05 && pt < 1.15) return 5; 
   cout << "don't know what to do with pt = " << pt << endl;
+  return -1;
 }
 
 
@@ -466,6 +467,7 @@ int plotIso::rBin(double r) {
   if (r > 0.95 && r < 1.05) return 5; 
   if (r > 1.05 && r < 1.15) return 6; 
   cout << "don't know what to do with r = " << r << endl;
+  return -1;
 }
 
 

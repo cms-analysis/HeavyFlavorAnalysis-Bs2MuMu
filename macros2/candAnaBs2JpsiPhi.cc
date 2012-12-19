@@ -29,8 +29,7 @@ void candAnaBs2JpsiPhi::candAnalysis() {
   // -- Check for J/psi mass
   TAnaCand *pD = 0; 
   fGoodJpsiMass = false; 
-  double chi2(0.);
-  int ndof(0); 
+  double chi2(0.), ndof(0.); 
   for (int i = fpCand->fDau1; i <= fpCand->fDau2; ++i) {
     if (i < 0) break;
     pD = fpEvt->getCand(i); 
@@ -163,7 +162,7 @@ void candAnaBs2JpsiPhi::genMatch() {
   fNGenPhotons = 0; 
 
   TGenCand *pC(0), *pB(0), *pPsi(0), *pPhi(0), *pM1(0), *pM2(0), *pK1(0), *pK2(0); 
-  int npsi(0), nphi(0), nb(0), ngamma(0); 
+  int nb(0), ngamma(0); 
   bool goodMatch(false); 
   for (int i = 0; i < fpEvt->nGenCands(); ++i) {
     pC = fpEvt->getGenCand(i); 
@@ -177,7 +176,6 @@ void candAnaBs2JpsiPhi::genMatch() {
 	if (22 == TMath::Abs(pC->fID)) ++ngamma;
 	if (443 == TMath::Abs(pC->fID)) {
 	  pPsi = pC; 
-	  npsi = pPsi->fDau2 - pPsi->fDau1 + 1; 
 	  pM1 = pM2 = 0;
 	  for (int idd = pPsi->fDau1; idd <= pPsi->fDau2; ++idd) {
 	    pC = fpEvt->getGenCand(idd); 
@@ -192,7 +190,6 @@ void candAnaBs2JpsiPhi::genMatch() {
 	  }
 	} else if (333 == TMath::Abs(pC->fID)) {
 	  pPhi = fpEvt->getGenCand(id); 
-	  nphi = pPhi->fDau2 - pPhi->fDau1 + 1; 
 	  pK1 = pK2 = 0;
 	  for (int idd = pPhi->fDau1; idd <= pPhi->fDau2; ++idd) {
 	    pC = fpEvt->getGenCand(idd); 
@@ -630,7 +627,6 @@ void candAnaBs2JpsiPhi::readCuts(string filename, int dump) {
 
   char CutName[100];
   float CutValue;
-  int ok(0);
 
   char  buffer[200];
   fHistDir->cd();
@@ -642,13 +638,12 @@ void candAnaBs2JpsiPhi::readCuts(string filename, int dump) {
   for (unsigned int i = 0; i < cutLines.size(); ++i) {
     sprintf(buffer, "%s", cutLines[i].c_str()); 
     
-    ok = 0;
     if (buffer[0] == '#') {continue;}
     if (buffer[0] == '/') {continue;}
     sscanf(buffer, "%s %f", CutName, &CutValue);
 
     if (!strcmp(CutName, "JPSITYPE")) {
-      JPSITYPE = CutValue; ok = 1;
+      JPSITYPE = static_cast<int>(CutValue);
       if (dump) cout << "JPSITYPE:      " << JPSITYPE << endl;
       ibin = 210;
       hcuts->SetBinContent(ibin, JPSITYPE);
@@ -656,7 +651,7 @@ void candAnaBs2JpsiPhi::readCuts(string filename, int dump) {
     }
 
     if (!strcmp(CutName, "JPSIMASSLO")) {
-      JPSIMASSLO = CutValue; ok = 1;
+      JPSIMASSLO = CutValue; 
       if (dump) cout << "JPSIMASSLO:      " << JPSIMASSLO << endl;
       ibin = 211;
       hcuts->SetBinContent(ibin, JPSIMASSLO);
@@ -664,7 +659,7 @@ void candAnaBs2JpsiPhi::readCuts(string filename, int dump) {
     }
 
     if (!strcmp(CutName, "JPSIMASSHI")) {
-      JPSIMASSHI = CutValue; ok = 1;
+      JPSIMASSHI = CutValue; 
       if (dump) cout << "JPSIMASSLO:      " << JPSIMASSHI << endl;
       ibin = 212;
       hcuts->SetBinContent(ibin, JPSIMASSHI);
@@ -672,7 +667,7 @@ void candAnaBs2JpsiPhi::readCuts(string filename, int dump) {
     }
 
     if (!strcmp(CutName, "PHITYPE")) {
-      PHITYPE = CutValue; ok = 1;
+      PHITYPE = static_cast<int>(CutValue); 
       if (dump) cout << "PHITYPE:      " << PHITYPE << endl;
       ibin = 213;
       hcuts->SetBinContent(ibin, PHITYPE);
@@ -680,7 +675,7 @@ void candAnaBs2JpsiPhi::readCuts(string filename, int dump) {
     }
 
     if (!strcmp(CutName, "MKKLO")) {
-      MKKLO = CutValue; ok = 1;
+      MKKLO = CutValue; 
       if (dump) cout << "MKKLO:           " << MKKLO << endl;
       ibin = 300;
       hcuts->SetBinContent(ibin, MKKLO);
@@ -688,7 +683,7 @@ void candAnaBs2JpsiPhi::readCuts(string filename, int dump) {
     }
 
     if (!strcmp(CutName, "MKKHI")) {
-      MKKHI = CutValue; ok = 1;
+      MKKHI = CutValue; 
       if (dump) cout << "MKKHI:           " << MKKHI << endl;
       ibin = 300;
       hcuts->SetBinContent(ibin, MKKHI);
@@ -696,7 +691,7 @@ void candAnaBs2JpsiPhi::readCuts(string filename, int dump) {
     }
 
     if (!strcmp(CutName, "DELTAR")) {
-      DELTAR = CutValue; ok = 1;
+      DELTAR = CutValue;
       if (dump) cout << "DELTAR:           " << DELTAR << endl;
       ibin = 301;
       hcuts->SetBinContent(ibin, DELTAR);

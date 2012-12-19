@@ -393,7 +393,7 @@ void plotEfficiencies::texNumbers(double m1pt, double m2pt, string what) {
   }
 
   double r(0.), rs(1.), rp(1.); 
-  for (int i = 0; i < fNchan; ++i) {
+  for (unsigned int i = 0; i < fNchan; ++i) {
     numbersFromHist(i,  0, m1pt, m2pt, fNumbersBs[i]);
     numbersFromHist(i, 10, m1pt, m2pt, fNumbersNo[i]);
 
@@ -695,8 +695,6 @@ void plotEfficiencies::saveHists(string smode, double m1pt, double m2pt, string 
 
 // ----------------------------------------------------------------------
 void plotEfficiencies::numbersFromHist(int chan, int mode, double m1pt, double m2pt, numbers *aa) {
-  TH1D *h1(0); 
-
   // -- efficiency and acceptance
   string modifier = (fDoUseBDT?"bdt":"cnc");
   modifier = Form("%s:%2.1f:%2.1f", modifier.c_str(), m1pt, m2pt); 
@@ -706,9 +704,7 @@ void plotEfficiencies::numbersFromHist(int chan, int mode, double m1pt, double m
   TH1D *hMassWithAnaCuts         = (TH1D*)fHistFile->Get(Form("hMassWithAnaCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
   TH1D *hMassWithMuonCuts        = (TH1D*)fHistFile->Get(Form("hMassWithMuonCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
   TH1D *hMassWithTriggerCuts     = (TH1D*)fHistFile->Get(Form("hMassWithTriggerCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
-  TH1D *hMassWithAllCuts         = (TH1D*)fHistFile->Get(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
   TH1D *hMassWithMassCuts        = (TH1D*)fHistFile->Get(Form("hMassWithMassCuts_%s_%d_chan%d", modifier.c_str(), mode, chan));
-  TH1D *hMassWithAllCutsManyBins = (TH1D*)fHistFile->Get(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, chan));
 
   TH1D *hMuId                    = (TH1D*)fHistFile->Get(Form("hMuId_%s_%d_chan%d", modifier.c_str(), mode, chan));
   TH1D *hMuIdMC                  = (TH1D*)fHistFile->Get(Form("hMuIdMC_%s_%d_chan%d", modifier.c_str(), mode, chan));
@@ -720,7 +716,6 @@ void plotEfficiencies::numbersFromHist(int chan, int mode, double m1pt, double m
   double b = hMassWithAnaCuts->GetSumOfWeights();
   double c = hMassWithMuonCuts->GetSumOfWeights();
   double d = hMassWithTriggerCuts->GetSumOfWeights();
-  double e = hMassWithAllCuts->GetSumOfWeights();
   double f = hMassWithMassCuts->GetSumOfWeights();
   aa->ana0Yield        = a;
   aa->ana0YieldE       = TMath::Sqrt(a);
@@ -804,7 +799,7 @@ void plotEfficiencies::triggerSignal(string cuts) {
     t->Draw("m>>m0", allCuts.c_str(), "goff");
     double n0   = t->Draw("pt>>h0", allCuts.c_str(), "goff");
     double n1   = t->Draw("pt>>h1", hltCuts.c_str(), "goff");
-    double n2   = t->Draw("run>>runs", hltCuts.c_str(), "goff");
+    t->Draw("run>>runs", hltCuts.c_str(), "goff");
     t->Draw("eta>>y0", allCuts.c_str(), "goff");
     t->Draw("eta>>y1", hltCuts.c_str(), "goff");
     n0 = h0->Integral(1, h0->GetNbinsX()); 
@@ -940,7 +935,7 @@ void plotEfficiencies::triggerNormalization(string cuts) {
     //    t->Draw("m>>m0", allCuts.c_str(), "goff");
     double n0   = t->Draw("pt>>h0", allCuts.c_str(), "goff");
     double n1   = t->Draw("pt>>h1", hltCuts.c_str(), "goff");
-    double n2   = t->Draw("run>>runs", hltCuts.c_str(), "goff");
+    t->Draw("run>>runs", hltCuts.c_str(), "goff");
     n0 = h0->Integral(1, h0->GetNbinsX()); 
     n1 = h1->Integral(1, h1->GetNbinsX()); 
     t->Draw("eta>>y0", allCuts.c_str(), "goff");
@@ -1094,7 +1089,7 @@ void plotEfficiencies::convertLucasHistograms() {
   tables.push_back("../macros/pidtables/111210/MuonID_VBTF_datalike_mc_histo");
   tables.push_back("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo");
   tables.push_back("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo");
-  for (int i = 0; i < tables.size(); ++i) {
+  for (unsigned int i = 0; i < tables.size(); ++i) {
     aTemplate.clear();
     bTemplate.clear();
     aTemplate.readFromFile(Form("%s_cb.dat", tables[i].c_str()));
@@ -1237,7 +1232,7 @@ void plotEfficiencies::hltOverlayStudy(std::string type, bool barrel) {
 
   TH1D *h11(0), *h12(0); 
   
-  for (int i = 0; i < dolist.size(); ++i) {
+  for (unsigned int i = 0; i < dolist.size(); ++i) {
     cout << dolist[i] << " : " << t11 << endl;
     f11->cd(); 
     f11->ls();
@@ -1284,9 +1279,9 @@ TH1D* plotEfficiencies::hltHist(const char *var, double xmin, double xmax, const
   TH1D *h4 = new TH1D("h4", "", 50, xmin, xmax); h4->Sumw2();
 
   TTree *t = (TTree*)gFile->Get(treename); 
-  TCanvas *c1 = (TCanvas*)gROOT->FindObject("c1"); 
-  double n1 = t->Draw(Form("%s>>h1", var), Form("%s && hlt", cuts.c_str()), "goff"); 
-  double n2 = t->Draw(Form("%s>>h2", var), Form("%s && !hlt", cuts.c_str()), "goff"); 
+  //  TCanvas *c1 = (TCanvas*)gROOT->FindObject("c1"); 
+  t->Draw(Form("%s>>h1", var), Form("%s && hlt", cuts.c_str()), "goff"); 
+  t->Draw(Form("%s>>h2", var), Form("%s && !hlt", cuts.c_str()), "goff"); 
   h3->Add(h1, h2); 
   h4->Divide(h1, h3, 1., 1., "b"); 
   h4->SetMinimum(0.); 

@@ -71,7 +71,7 @@ void candAnaBu2JpsiK::candAnalysis() {
   TAnaCand *pD = 0; 
   fGoodJpsiMass = false; 
   double chi2(0.);
-  int ndof(0); 
+  double ndof(0.); 
   for (int i = fpCand->fDau1; i <= fpCand->fDau2; ++i) {
     if (i < 0) break;
     pD = fpEvt->getCand(i); 
@@ -116,7 +116,7 @@ void candAnaBu2JpsiK::genMatch() {
   fNGenPhotons = 0; 
 
   TGenCand *pC(0), *pM1(0), *pM2(0), *pK(0), *pB(0), *pPsi(0); 
-  int nb(0), npsi(0), nphotons(0); 
+  int nb(0), nphotons(0); 
   bool goodMatch(false); 
   for (int i = 0; i < fpEvt->nGenCands(); ++i) {
     pC = fpEvt->getGenCand(i); 
@@ -130,7 +130,6 @@ void candAnaBu2JpsiK::genMatch() {
 	  // cout<<" found JPsi "<<endl;
 	  ++nb;
 	  pPsi = pC; 
-	  npsi = pPsi->fDau2 - pPsi->fDau1 + 1; 
 	  pM1 = pM2 = 0; 
 	  for (int idd = pPsi->fDau1; idd <= pPsi->fDau2; ++idd) {
 	    pC = fpEvt->getGenCand(idd); 
@@ -504,7 +503,6 @@ void candAnaBu2JpsiK::readCuts(string filename, int dump) {
 
   char CutName[100];
   float CutValue;
-  int ok(0);
 
   char  buffer[200];
   fHistDir->cd();
@@ -516,13 +514,12 @@ void candAnaBu2JpsiK::readCuts(string filename, int dump) {
   for (unsigned int i = 0; i < cutLines.size(); ++i) {
     sprintf(buffer, "%s", cutLines[i].c_str()); 
     
-    ok = 0;
     if (buffer[0] == '#') {continue;}
     if (buffer[0] == '/') {continue;}
     sscanf(buffer, "%s %f", CutName, &CutValue);
 
     if (!strcmp(CutName, "JPSITYPE")) {
-      JPSITYPE = CutValue; ok = 1;
+      JPSITYPE = static_cast<int>(CutValue); 
       if (dump) cout << "JPSITYPE:      " << JPSITYPE << endl;
       ibin = 210;
       hcuts->SetBinContent(ibin, JPSITYPE);
@@ -530,7 +527,7 @@ void candAnaBu2JpsiK::readCuts(string filename, int dump) {
     }
 
     if (!strcmp(CutName, "JPSIMASSLO")) {
-      JPSIMASSLO = CutValue; ok = 1;
+      JPSIMASSLO = CutValue;
       if (dump) cout << "JPSIMASSLO:      " << JPSIMASSLO << endl;
       ibin = 211;
       hcuts->SetBinContent(ibin, JPSIMASSLO);
@@ -538,7 +535,7 @@ void candAnaBu2JpsiK::readCuts(string filename, int dump) {
     }
 
     if (!strcmp(CutName, "JPSIMASSHI")) {
-      JPSIMASSHI = CutValue; ok = 1;
+      JPSIMASSHI = CutValue;
       if (dump) cout << "JPSIMASSLO:      " << JPSIMASSHI << endl;
       ibin = 212;
       hcuts->SetBinContent(ibin, JPSIMASSHI);

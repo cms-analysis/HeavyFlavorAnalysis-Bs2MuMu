@@ -626,8 +626,6 @@ void plotOverlays::profileVsEta(const char *var, const char *chan, const char *d
   TH1D *meff = new TH1D("meff", "", 15, -2.41, 2.41);
   gStyle->SetOptTitle(0); 
   gStyle->SetOptStat(0); 
-  double eff(0.); 
-  double stat(0.); 
   for (int i = 0; i < 15; ++i) {
     heff->SetBinContent(i+1, h[i]->GetMean()); 
     heff->SetBinError(i+1, h[i]->GetMeanError()); 
@@ -677,7 +675,7 @@ void plotOverlays::productionMechanism(string dsample, string msample, string re
 
   //  doList.push_back("docatrk");
   //  doList.push_back("closetrk");
-  for (int i = 0; i < doList.size(); ++i) {
+  for (unsigned int i = 0; i < doList.size(); ++i) {
     fitDistribution(Form("%s_%s", region.c_str(), doList[i].c_str()), dsample, msample, "Ao");
   }
 }
@@ -699,7 +697,6 @@ Double_t ftotal(Double_t *x, Double_t *par) {
 void fithist(double p0, double p1, double p2) {
 
   TF1 *ftot = new TF1("ftot",ftotal,0,100,2);
-  Double_t norm = h0->GetMaximum();
   ftot->SetParameters(p0, p1);
   ftot->SetParLimits(0,0.6*p0,1.4*p0);
   ftot->SetParLimits(1,0.6*p1,1.4*p1);
@@ -737,31 +734,25 @@ void plotOverlays::fitDistribution(string var, string sample, string mcsample, s
   if (0 == h0) return;
   
   double eps(1.e-5);
-  int nmax(-1), nmin(1); 
+  int nmax(-1); 
   if (string::npos != var.find("docatrk")) nmax = h0->FindBin(0.15+eps);
   if (string::npos != var.find("closetrk")) nmax = h0->FindBin(3+eps);
   if (string::npos != var.find("osmuondr")) {
-    nmin = h0->FindBin(0.5+eps);
     nmax = h0->FindBin(4.5+eps);
   }
   if (string::npos != var.find("pt")) {
-    nmin = h0->FindBin(8.+eps);
     nmax = h0->FindBin(45.+eps);
   }
   if (string::npos != var.find("osmuonpt")) {
-    nmin = h0->FindBin(1.+eps);
     nmax = h0->FindBin(15.+eps);
   }
   if (string::npos != var.find("iso")) {
-    nmin = h0->FindBin(0.4+eps);
     nmax = h0->FindBin(1.0+eps);
   }
   if (string::npos != var.find("osiso")) {
-    nmin = h0->FindBin(0.0+eps);
     nmax = h0->FindBin(60.0+eps);
   }
   if (string::npos != var.find("osreliso")) {
-    nmin = h0->FindBin(0.0+eps);
     nmax = h0->FindBin(3.0+eps);
   }
   cout << "Fitting " << var << " up to bin " << nmax << " -> " << h0->GetBinLowEdge(nmax) << endl;
@@ -850,40 +841,6 @@ void plotOverlays::fitDistribution(string var, string sample, string mcsample, s
   c0->SaveAs(Form("%s/prodMechanism-%s-%s-%s.pdf", fDirectory.c_str(), var.c_str(), sample.c_str(), mcsample.c_str()));
 
   return;
-
-//   TObjArray *mc = new TObjArray(3);      
-//   mc->Add(hggf);
-//   mc->Add(hfex);
-//   mc->Add(hgsp);
-//   TFractionFitter *fit = new TFractionFitter(h0, mc);
-//   fit->Constrain(0, 0.1, 0.5);              
-//   fit->Constrain(1, 0.2, 0.8);              
-//   fit->Constrain(2, 0.1, 0.5);              
-
-//   fit->ReleaseRangeX();
-//   if (nmax > 0) fit->SetRangeX(nmin, nmax);
-//   //  TVirtualFitter* vFit = fit->GetFitter();
-//   //  vFit->SetMaxIterations(20000);
-//   int status = fit->Fit();               
-//   cout << "fit status: " << status << endl;
-//   c0->cd(5); 
-//   if (0 == status) {                     
-//     TH1D* h1 = (TH1D*)fit->GetPlot();
-//     h0->Draw("Ep");
-//     h1->Draw("same");
-//     c0->cd(6);
-//     for (int i = 0; i < 3; ++i) {
-//       fit->GetResult(i, fractions[i], errors[i]); 
-//       cout << "fraction " << i << ": " << fractions[i] << " +/- " << errors[i] << "(MC: " << mcfractions[i] << ")" << endl;
-//       tl->DrawLatex(0.2, 0.8-i*0.1, Form("%s: %4.3f+/-%4.3f (MC: %4.3f)", name[i].c_str(), fractions[i], errors[i], mcfractions[i]));      
-//     }
-//     tl->DrawLatex(0.2, 0.4, Form("#chi^{2}/dof: %4.3f/%d", fit->GetChisquare(), fit->GetNDF()));      
-//     tl->DrawLatex(0.2, 0.3, Form("Fitrange: %4.3f - %4.3f", h0->GetBinLowEdge(nmin), h0->GetBinLowEdge(nmax)));      
-//   }
-  
-//   c0->SaveAs(Form("%s/prodMechanism-%s-%s-%s.pdf", fDirectory.c_str(), var.c_str(), sample.c_str(), mcsample.c_str()));
-//   delete fit;
-//   delete mc;
 }
 
 
