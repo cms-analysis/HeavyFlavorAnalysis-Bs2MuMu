@@ -119,12 +119,12 @@ foreach f ($FILES)
 end
 
 # copy the log file.
-echo lcg-del  "$STORAGE1/$JOB.log"
-lcg-del -b -D srmv2 -l "$STORAGE1/$JOB.log"
-echo lcg-cp file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
-lcg-cp -b -D srmv2     file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
-echo lcg-ls     "$STORAGE1/$JOB.log"
-lcg-ls -b -D srmv2 -l  "$STORAGE1/$JOB.log"
+# echo lcg-del  "$STORAGE1/$JOB.log"
+# lcg-del -b -D srmv2 -l "$STORAGE1/$JOB.log"
+# echo lcg-cp file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
+# lcg-cp -b -D srmv2     file:///`pwd`/$JOB.log "$STORAGE1/$JOB.log"
+# echo lcg-ls     "$STORAGE1/$JOB.log"
+# lcg-ls -b -D srmv2 -l  "$STORAGE1/$JOB.log"
 
 date
 
