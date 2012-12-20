@@ -445,9 +445,10 @@ cout << "just to test. bdt barrel cut = " << fCuts[0]->bdt << "  and endcap = " 
   loopOverTree(t, mode, 1, eventsToLoop);
 
   //now fit the mass histograms for yields
-  
+  cout << "before integrated fits" << endl;
   for (unsigned int i = 0; i < fNchan; ++i) {
 //first do fits to mass constrained distributions
+cout << "before normyield2 integrated fit i = " << i << endl;
     normYield2(hNoSignalC[i],i,5.0, 5.6);
     fitNoYieldC.push_back(fNoSig);
     fitNoYieldCE.push_back(fNoSigE);
@@ -455,22 +456,24 @@ cout << "just to test. bdt barrel cut = " << fCuts[0]->bdt << "  and endcap = " 
     effTurnon[i] = fNoErrTurnon;
     cout << "turn on value for mode " << i << " " << fNoErrTurnon << endl;
 	                                                           
+cout << "before csyield2 integrated fit i = " << i << endl;
     csYield2(hCsSignalC[i],i,5.1, 5.60);
     fitCsYieldC.push_back(fCsSig);
     fitCsYieldCE.push_back(fCsSigE);
+cout << "before normyield2 integrated unconstrainted fit i = " << i << endl;
 
 //second do fits to unconstrainted distributions
     normYield2(hNoSignal[i],i,4.9, 5.6, effTurnon[0]);
     fitNoYield.push_back(fNoSig);
     fitNoYieldE.push_back(fNoSigE);
     
+cout << "before csyield2 integrated unconstrained fit i = " << i << endl;
     csYield2(hCsSignal[i],i,5.1, 5.60); //defaults fraction = -1 (floating), preco = -1 (no step function)
     fitCsYield.push_back(fCsSig);
     fitCsYieldE.push_back(fCsSigE);
     //get fraction of K* from integrated fits here
     fracCsKst[i] = fCsKstFrac;
     cout << "K*0 fraction for mode " << i << " " << fCsKstFrac << endl;
-
 
     for (unsigned int j = 0; j < 4; j++){
       normYield2(hNoSignalBin[i][j],i,4.9,5.6, effTurnon[0]);
@@ -491,18 +494,9 @@ cout << "just to test. bdt barrel cut = " << fCuts[0]->bdt << "  and endcap = " 
     }
 
   }
-    
+
   fHistFile->cd();
   
-  //((TH1D*)gDirectory->Get("hNoSignal0"))->Write();
-  //((TH1D*)gDirectory->Get("hCsSignal0"))->Write();
-  //((TH1D*)gDirectory->Get("hNoSignal1"))->Write();
-  //((TH1D*)gDirectory->Get("hCsSignal1"))->Write();
-  //((TH1D*)gDirectory->Get("hNoPt0"))->Write();
-  //((TH1D*)gDirectory->Get("hCsPt0"))->Write();
-  //((TH1D*)gDirectory->Get("hNoPt1"))->Write();
-  //((TH1D*)gDirectory->Get("hCsPt1"))->Write();
-
 
 
   cout << "got some efficiency results: " << endl;
@@ -533,6 +527,17 @@ cout << "  Or our value of fs/fu: barrel = " << barrelfsfu << "  endcap = " << e
   cout << "==============================" << endl;
   cout << "Next let's get some binned results" << endl;
   
+  //2011 values
+  //float noEffSyst0 = 0.071;
+  //float csEffSyst0 = 0.071;
+  //float noEffSyst1 = 0.108;
+  //float csEffSyst1 = 0.105;
+  //2012 values
+  float noEffSyst0 = 0.040;
+  float csEffSyst0 = 0.040;
+  float noEffSyst1 = 0.040;
+  float csEffSyst1 = 0.040;
+
   float effNo[2];
   effNo[0] = ((float)effNoNum[0]/(float)effNoDen[0]);
   effNo[1] = ((float)effNoNum[1]/(float)effNoDen[1]);
@@ -550,10 +555,20 @@ cout << "  Or our value of fs/fu: barrel = " << barrelfsfu << "  endcap = " << e
   float effNoEBin[2][4];
   float effCsEBin[2][4];
   float fsfu[2];
+  float fsfuEStat[2];
+  float fsfuESyst[2];
   fsfu[0] = barrelfsfu;
   fsfu[1] = endcapfsfu;
+  fsfuEStat[0] = fsfu[0]*sqrt( (fitNoYieldE[0]/fitNoYield[0])*(fitNoYieldE[0]/fitNoYield[0]) + (fitCsYieldE[0]/fitCsYield[0])*(fitCsYieldE[0]/fitCsYield[0]) + (effNoE[0]/effNo[0])*(effNoE[0]/effNo[0]) + (effCsE[0]/effCs[0])*(effCsE[0]/effCs[0]) );
+  fsfuEStat[1] = fsfu[1]*sqrt( (fitNoYieldE[1]/fitNoYield[1])*(fitNoYieldE[1]/fitNoYield[1]) + (fitCsYieldE[1]/fitCsYield[1])*(fitCsYieldE[1]/fitCsYield[1]) + (effNoE[1]/effNo[1])*(effNoE[1]/effNo[1]) + (effCsE[1]/effCs[1])*(effCsE[1]/effCs[1]) );
+  fsfuESyst[0] = fsfu[0]*sqrt(0.05*0.05 + 0.05*0.05 + noEffSyst0*noEffSyst0 + csEffSyst0*csEffSyst0);
+  fsfuESyst[1] = fsfu[1]*sqrt(0.05*0.05 + 0.05*0.05 + noEffSyst1*noEffSyst1 + csEffSyst1*csEffSyst1);
   float fsfuBin[2][4];
+  float fsfuBinEStat[2][4];
+  float fsfuBinESyst[2][4];
+  float fsfuBinETot[2][4];
 
+  
   for (int ib=0; ib<4; ib++){
     cout << "==========  starting bin " << ib << " ===========" << endl;
     cout << " Fit yields: No barrel = " << fitNoYieldBin[0][ib] << " +- " << fitNoYieldEBin[0][ib] << "  endcap = " << fitNoYieldBin[1][ib] << " +- " << fitNoYieldEBin[1][ib] <<
@@ -574,10 +589,6 @@ cout << "  Or our value of fs/fu: barrel = " << barrelfsfu << "  endcap = " << e
     cout << "or can quote it as calculated value of fs/fu" << endl;
     fsfuBin[0][ib] = (fitCsYieldBin[0][ib]/fitNoYieldBin[0][ib])*(((float)(effNoNumBin[0][ib])/(float)(effNoDenBin[0][ib]))/((float)(effCsNumBin[0][ib])/(float)(effCsDenBin[0][ib])))*((0.001016)/(0.00109*0.489));
     fsfuBin[1][ib] = (fitCsYieldBin[1][ib]/fitNoYieldBin[1][ib])*(((float)(effNoNumBin[1][ib])/(float)(effNoDenBin[1][ib]))/((float)(effCsNumBin[1][ib])/(float)(effCsDenBin[1][ib])))*((0.001016)/(0.00109*0.489));
-    cout << "  fs/fu : barrel = " << fsfuBin[0][ib] <<
-                     " endcap = " << fsfuBin[1][ib] << endl;
-    cout << endl;
-    cout << endl;
     effNoBin[0][ib] = ((float)(effNoNumBin[0][ib])/(float)(effNoDenBin[0][ib]));
     effCsBin[0][ib] = ((float)(effCsNumBin[0][ib])/(float)(effCsDenBin[0][ib]));
     effNoEBin[0][ib] = sqrt((float)effNoNumBin[0][ib])/(float)effNoDenBin[0][ib];
@@ -587,28 +598,111 @@ cout << "  Or our value of fs/fu: barrel = " << barrelfsfu << "  endcap = " << e
     effNoEBin[1][ib] = sqrt((float)effNoNumBin[1][ib])/(float)effNoDenBin[1][ib];
     effCsEBin[1][ib] =  sqrt((float)effCsNumBin[1][ib])/(float)effCsDenBin[1][ib];
 
+    fsfuBinEStat[0][ib] = fsfuBin[0][ib]*sqrt( ((fitNoYieldEBin[0][ib]/fitNoYieldBin[0][ib])*(fitNoYieldEBin[0][ib]/fitNoYieldBin[0][ib])) + ((fitCsYieldEBin[0][ib]/fitCsYieldBin[0][ib])*(fitCsYieldEBin[0][ib]/fitCsYieldBin[0][ib])) + ((effNoEBin[0][ib]/effNoBin[0][ib])*(effNoEBin[0][ib]/effNoBin[0][ib])) + ((effCsEBin[0][ib]/effCsBin[0][ib])*(effCsEBin[0][ib]/effCsBin[0][ib])) );
+cout << "the pieces of the stat error are: " << fsfuBin[0][ib] << "  " << (fitNoYieldEBin[0][ib]/fitNoYieldBin[0][ib]) << "   " << (fitCsYieldEBin[0][ib]/fitCsYieldBin[0][ib]) << "  " << (effNoEBin[0][ib]/effNoBin[0][ib]) << "  " <<  (effCsEBin[0][ib]/effCsBin[0][ib]) << endl;
+    fsfuBinEStat[1][ib] = fsfuBin[1][ib]*sqrt( (fitNoYieldEBin[1][ib]/fitNoYieldBin[1][ib])*(fitNoYieldEBin[1][ib]/fitNoYieldBin[1][ib]) + (fitCsYieldEBin[1][ib]/fitCsYieldBin[1][ib])*(fitCsYieldEBin[1][ib]/fitCsYieldBin[1][ib]) + (effNoEBin[1][ib]/effNoBin[1][ib])*(effNoEBin[1][ib]/effNoBin[1][ib]) + (effCsEBin[1][ib]/effCsBin[1][ib])*(effCsEBin[1][ib]/effCsBin[1][ib]) );
+    fsfuBinESyst[0][ib] = fsfuBin[0][ib]*sqrt(0.05*0.05 + 0.05*0.05 + noEffSyst0*noEffSyst0 + csEffSyst0*csEffSyst0);
+    fsfuBinESyst[1][ib] = fsfuBin[1][ib]*sqrt(0.05*0.05 + 0.05*0.05 + noEffSyst1*noEffSyst1 + csEffSyst1*csEffSyst1);
+    fsfuBinETot[0][ib] = sqrt( fsfuBinEStat[0][ib]*fsfuBinEStat[0][ib] + fsfuBinESyst[0][ib]*fsfuBinESyst[0][ib] );
+    fsfuBinETot[1][ib] = sqrt( fsfuBinEStat[1][ib]*fsfuBinEStat[1][ib] + fsfuBinESyst[1][ib]*fsfuBinESyst[1][ib] );
+    cout << "  fs/fu : barrel = " << fsfuBin[0][ib] << " +- " << fsfuBinEStat[0][ib] << " +- " << fsfuBinESyst[0][ib] << 
+                     " endcap = " << fsfuBin[1][ib] << " +- " << fsfuBinEStat[1][ib] << " +- " << fsfuBinESyst[1][ib] <<endl;
+    cout << endl;
+    cout << endl;
   }
 
 
 cout << endl;
 cout << "putting it all in a nicer format" << endl;
 cout << "Barrel\t\t Total\t\t\t\t Bin1\t\t\t\t Bin2\t\t\t\t Bin3\t\t\t\t Bin4" << endl;
-cout << "No yield\t" << fitNoYield[0] << " +- " << fitNoYieldE[0] << "\t\t" << fitNoYieldBin[0][0] << " +- " << fitNoYieldEBin[0][0] <<  "\t\t" << fitNoYieldBin[0][1] << " +- " << fitNoYieldEBin[0][1] <<  "\t\t" << fitNoYieldBin[0][2] << " +- " << fitNoYieldEBin[0][2] << "\t\t" << fitNoYieldBin[0][3] << " +- " << fitNoYieldEBin[0][3] << endl;
-cout << "Cs yield\t" << fitCsYield[0] << " +- " << fitCsYieldE[0] << "\t\t" << fitCsYieldBin[0][0] << " +- " << fitCsYieldEBin[0][0] <<  "\t\t" << fitCsYieldBin[0][1] << " +- " << fitCsYieldEBin[0][1] <<  "\t\t" << fitCsYieldBin[0][2] << " +- " << fitCsYieldEBin[0][2] << "\t\t" << fitCsYieldBin[0][3] << " +- " << fitCsYieldEBin[0][3] << endl;
-cout << "No eff.\t\t" << effNo[0] << " +- " << effNoE[0] << "\t" << effNoBin[0][0] << " +- " << effNoEBin[0][0] <<  "\t" << effNoBin[0][1] << " +- " << effNoEBin[0][1] <<  "\t" << effNoBin[0][2] << " +- " << effNoEBin[0][2] << "\t" << effNoBin[0][3] << " +- " << effNoEBin[0][3] << endl;
-cout << "Cs eff.\t\t" << effCs[0] << " +- " << effCsE[0] << "\t" << effCsBin[0][0] << " +- " << effCsEBin[0][0] <<  "\t" << effCsBin[0][1] << " +- " << effCsEBin[0][1] <<  "\t" << effCsBin[0][2] << " +- " << effCsEBin[0][2] << "\t" << effCsBin[0][3] << " +- " << effCsEBin[0][3] << endl;
-cout << "fs/fu\t\t" << fsfu[0] << "\t\t\t\t" << fsfuBin[0][0] << "\t\t\t" << fsfuBin[0][1] << "\t\t\t" << fsfuBin[0][2] << "\t\t\t" << fsfuBin[0][3] << endl;
+cout << "No yield\t" << fitNoYield[0] << " +- " << fitNoYieldE[0] << " +- " << 0.05*fitNoYield[0]<< "\t\t" << fitNoYieldBin[0][0] << " +- " << fitNoYieldEBin[0][0] << " +- " << 0.05*fitNoYieldBin[0][0]<<  "\t\t" << fitNoYieldBin[0][1] << " +- " << fitNoYieldEBin[0][1] << " +- " << 0.05*fitNoYieldBin[0][1]<<  "\t\t" << fitNoYieldBin[0][2] << " +- " << fitNoYieldEBin[0][2] << " +- " << 0.05*fitNoYieldBin[0][2]<< "\t\t" << fitNoYieldBin[0][3] << " +- " << fitNoYieldEBin[0][3] << " +- " << 0.05*fitNoYieldBin[0][3]<< endl;
+cout << "Cs yield\t" << fitCsYield[0] << " +- " << fitCsYieldE[0] << " +- " << 0.05*fitNoYield[0]<< "\t\t" << fitCsYieldBin[0][0] << " +- " << fitCsYieldEBin[0][0] << " +- " << 0.05*fitCsYieldBin[0][0]<<  "\t\t" << fitCsYieldBin[0][1] << " +- " << fitCsYieldEBin[0][1] << " +- " << 0.05*fitCsYieldBin[0][1]<<  "\t\t" << fitCsYieldBin[0][2] << " +- " << fitCsYieldEBin[0][2] << " +- " << 0.05*fitCsYieldBin[0][2]<< "\t\t" << fitCsYieldBin[0][3] << " +- " << fitCsYieldEBin[0][3] << " +- " << 0.05*fitCsYieldBin[0][3]<< endl;
+cout << "No eff.\t\t" << effNo[0] << " +- " << effNoE[0] << " +- " << noEffSyst0*effNo[0] << "\t" << effNoBin[0][0] << " +- " << effNoEBin[0][0] << " +- " << noEffSyst0*effNoBin[0][0] <<  "\t" << effNoBin[0][1] << " +- " << effNoEBin[0][1] << " +- " << noEffSyst0*effNoBin[0][1] <<  "\t" << effNoBin[0][2] << " +- " << effNoEBin[0][2] << " +- " << noEffSyst0*effNoBin[0][2]<< "\t" << effNoBin[0][3] << " +- " << effNoEBin[0][3] << " +- " << noEffSyst0*effNoBin[0][3]<< endl;
+cout << "Cs eff.\t\t" << effCs[0] << " +- " << effCsE[0] << " +- " << csEffSyst0*effCs[0] << "\t" << effCsBin[0][0] << " +- " << effCsEBin[0][0] << " +- " << csEffSyst0*effCsBin[0][0] <<  "\t" << effCsBin[0][1] << " +- " << effCsEBin[0][1] << " +- " << csEffSyst0*effCsBin[0][1] <<  "\t" << effCsBin[0][2] << " +- " << effCsEBin[0][2] << " +- " << csEffSyst0*effCsBin[0][2]<< "\t" << effCsBin[0][3] << " +- " << effCsEBin[0][3] << " +- " << csEffSyst0*effCsBin[0][3]<< endl;
+cout << "fs/fu\t\t" << fsfu[0] << " +- " << fsfuEStat[0] << " +- " << fsfuESyst[0] << "\t\t\t\t" << fsfuBin[0][0] << " +- " << fsfuBinEStat[0][0] << " +- " << fsfuBinESyst[0][0]<< "\t\t\t" << fsfuBin[0][1]<< " +- " << fsfuBinEStat[0][1] << " +- " << fsfuBinESyst[0][1] << "\t\t\t" << fsfuBin[0][2]<< " +- " << fsfuBinEStat[0][2] << " +- " << fsfuBinESyst[0][2] << "\t\t\t" << fsfuBin[0][3]<< " +- " << fsfuBinEStat[0][3] << " +- " << fsfuBinESyst[0][3] << endl;
 cout << endl;
 cout << endl;
 cout << "Endcap\t\t Total\t\t\t\t Bin1\t\t\t\t Bin2\t\t\t\t Bin3\t\t\t\t Bin4" << endl;
-cout << "No yield\t" << fitNoYield[1] << " +- " << fitNoYieldE[1] << "\t\t" << fitNoYieldBin[1][0] << " +- " << fitNoYieldEBin[1][0] <<  "\t\t" << fitNoYieldBin[1][1] << " +- " << fitNoYieldEBin[1][1] <<  "\t\t\t" << fitNoYieldBin[1][2] << " +- " << fitNoYieldEBin[1][2] << "\t\t" << fitNoYieldBin[1][3] << " +- " << fitNoYieldEBin[1][3] << endl;
-cout << "Cs yield\t" << fitCsYield[1] << " +- " << fitCsYieldE[1] << "\t\t" << fitCsYieldBin[1][0] << " +- " << fitCsYieldEBin[1][0] <<  "\t\t" << fitCsYieldBin[1][1] << " +- " << fitCsYieldEBin[1][1] <<  "\t\t" << fitCsYieldBin[1][2] << " +- " << fitCsYieldEBin[1][2] << "\t\t" << fitCsYieldBin[1][3] << " +- " << fitCsYieldEBin[1][3] << endl;
-cout << "No eff.\t\t" << effNo[1] << " +- " << effNoE[1] << "\t" << effNoBin[1][0] << " +- " << effNoEBin[1][0] <<  "\t\t" << effNoBin[1][1] << " +- " << effNoEBin[1][1] <<  "\t" << effNoBin[1][2] << " +- " << effNoEBin[1][2] << "\t" << effNoBin[1][3] << " +- " << effNoEBin[1][3] << endl;
-cout << "Cs eff.\t\t" << effCs[1] << " +- " << effCsE[1] << "\t" << effCsBin[1][0] << " +- " << effCsEBin[1][0] <<  "\t" << effCsBin[1][1] << " +- " << effCsEBin[1][1] <<  "\t" << effCsBin[1][2] << " +- " << effCsEBin[1][2] << "\t" << effCsBin[1][3] << " +- " << effCsEBin[1][3] << endl;
-cout << "fs/fu\t\t" << fsfu[1] << "\t\t\t\t" << fsfuBin[1][0] << "\t\t\t" << fsfuBin[1][1] << "\t\t\t" << fsfuBin[1][2] << "\t\t\t" << fsfuBin[1][3] << endl;
+cout << "No yield\t" << fitNoYield[1] << " +- " << fitNoYieldE[1] << " +- " << 0.05*fitNoYield[1]<< "\t\t" << fitNoYieldBin[1][0] << " +- " << fitNoYieldEBin[1][0] << " +- " << 0.05*fitNoYieldBin[1][0]<<  "\t\t" << fitNoYieldBin[1][1] << " +- " << fitNoYieldEBin[1][1] << " +- " << 0.05*fitNoYieldBin[1][1]<<  "\t\t\t" << fitNoYieldBin[1][2] << " +- " << fitNoYieldEBin[1][2] << " +- " << 0.05*fitNoYieldBin[1][2]<< "\t\t" << fitNoYieldBin[1][3] << " +- " << fitNoYieldEBin[1][3] << " +- " << 0.05*fitNoYieldBin[1][3]<< endl;
+cout << "Cs yield\t" << fitCsYield[1] << " +- " << fitCsYieldE[1] << " +- " << 0.05*fitNoYield[1]<< "\t\t" << fitCsYieldBin[1][0] << " +- " << fitCsYieldEBin[1][0] << " +- " << 0.05*fitCsYieldBin[1][0]<<  "\t\t" << fitCsYieldBin[1][1] << " +- " << fitCsYieldEBin[1][1] << " +- " << 0.05*fitCsYieldBin[1][1]<<  "\t\t"   << fitCsYieldBin[1][2] << " +- " << fitCsYieldEBin[1][2] << " +- " << 0.05*fitCsYieldBin[1][2]<< "\t\t" << fitCsYieldBin[1][3] << " +- " << fitCsYieldEBin[1][3] << " +- " << 0.05*fitCsYieldBin[1][3]<< endl;
+cout << "No eff.\t\t" << effNo[1] << " +- " << effNoE[1] << " +- " << noEffSyst1*effNo[1] << "\t" << effNoBin[1][0] << " +- " << effNoEBin[1][0] << " +- " << noEffSyst1*effNoBin[1][0] <<  "\t\t" << effNoBin[1][1] << " +- " << effNoEBin[1][1] << " +- " << noEffSyst1*effNoBin[1][1] <<  "\t" << effNoBin[1][2] << " +- " << effNoEBin[1][2] << " +- " << noEffSyst1*effNoBin[1][2]<< "\t" << effNoBin[1][3] << " +- " << effNoEBin[1][3] << " +- " << noEffSyst1*effNoBin[1][3]<< endl;
+cout << "Cs eff.\t\t" << effCs[1] << " +- " << effCsE[1] << " +- " << csEffSyst1*effCs[1] << "\t" << effCsBin[1][0] << " +- " << effCsEBin[1][0] << " +- " << csEffSyst1*effCsBin[1][0] <<  "\t"   << effCsBin[1][1] << " +- " << effCsEBin[1][1] << " +- " << csEffSyst1*effCsBin[1][1] <<  "\t" << effCsBin[1][2] << " +- " << effCsEBin[1][2] << " +- " << csEffSyst1*effCsBin[1][2]<< "\t" << effCsBin[1][3] << " +- " << effCsEBin[1][3] << " +- " << csEffSyst1*effCsBin[1][3]<< endl;
+cout << "fs/fu\t\t" << fsfu[1] << " +- " << fsfuEStat[1] << " +- " << fsfuESyst[1]<< "\t\t\t\t" << fsfuBin[1][0] << " +- " << fsfuBinEStat[1][0] << " +- " << fsfuBinESyst[1][0]<< "\t\t\t" << fsfuBin[1][1] << " +- " << fsfuBinEStat[1][1] << " +- " << fsfuBinESyst[1][1]<< "\t\t\t" << fsfuBin[1][2] << " +- " << fsfuBinEStat[1][2] << " +- " << fsfuBinESyst[1][2]<< "\t\t\t" << fsfuBin[1][3] << " +- " << fsfuBinEStat[1][3] << " +- " << fsfuBinESyst[1][3]<< endl;
 cout << endl;
 cout << endl;
 
+//then let's make some plots.
+   TCanvas c1;
+   const int nbins = 4;
+   float xbins[5] = {12.,16.,20.,25.,30.};
+    TH1F *ratio0 = new TH1F("ratio0","ratio0",nbins,xbins);
+    ratio0->SetBinContent(1,fsfuBin[0][0]);
+    ratio0->SetBinError(1,fsfuBinETot[0][0]);
+    cout << " bin 1 error = " << fsfuBinETot[0][0] << endl;
+    ratio0->SetBinContent(2,fsfuBin[0][1]);
+    ratio0->SetBinError(2,fsfuBinETot[0][1]);
+    cout << " bin 1 error = " << fsfuBinETot[0][1] << endl;
+    ratio0->SetBinContent(3,fsfuBin[0][2]);
+    ratio0->SetBinError(3,fsfuBinETot[0][2]);
+    cout << " bin 1 error = " << fsfuBinETot[0][2] << endl;
+    ratio0->SetBinContent(4,fsfuBin[0][3]);
+    ratio0->SetBinError(4,fsfuBinETot[0][3]);
+    cout << " bin 1 error = " << fsfuBinETot[0][3] << endl;
+    ratio0->GetXaxis()->SetTitle("B p_{T} (GeV)");
+    ratio0->GetYaxis()->SetTitle("fs/fu");
+    TH1F *ratio0b = (TH1F*) ratio0->Clone("ratio0b");
+    TF1 *fitpol0 = new TF1("fitpol0","[0]", 0, 100);
+    ratio0->Fit("fitpol0");
+    ratio0->Draw();
+    //stamp(0.18, fStampString, 0.67, fStampCms); 
+    cout << "Barrel fits" << endl;
+    cout << "pol0 fit = " << fitpol0->GetParameter(0) << " +- " << fitpol0->GetParError(0) << endl;
+
+    c1.SaveAs("default/ratio0_pol0.pdf");
+    TCanvas c2;
+
+
+    TF1 *fitpol1 = new TF1("fitpol1","[0]+(x-22.)*[1]", 0, 100);
+    
+    ratio0b->Fit("fitpol1");
+    cout << "pol1 fit = " << fitpol1->GetParameter(0) << " +- " << fitpol1->GetParError(0) << "   " <<
+       fitpol1->GetParameter(1) << " +- " << fitpol1->GetParError(1) <<endl;
+    //stamp(0.18, fStampString, 0.67, fStampCms); 
+    c2.SaveAs("default/ratio0_pol1.pdf");
+
+    TCanvas c3;
+
+    TH1F *ratio1 = new TH1F("ratio1","ratio1",nbins,xbins);
+    ratio1->SetBinContent(1,fsfuBin[1][0]);
+    ratio1->SetBinError(1,fsfuBinETot[1][0]);
+    ratio1->SetBinContent(2,fsfuBin[1][1]);
+    ratio1->SetBinError(2,fsfuBinETot[1][1]);
+    ratio1->SetBinContent(3,fsfuBin[1][2]);
+    ratio1->SetBinError(3,fsfuBinETot[1][2]);
+    ratio1->SetBinContent(4,fsfuBin[1][3]);
+    ratio1->SetBinError(4,fsfuBinETot[1][3]);
+    ratio1->GetXaxis()->SetTitle("B p_{T} (GeV)");
+    ratio1->GetYaxis()->SetTitle("fs/fu");
+    TH1F *ratio1b = (TH1F*) ratio1->Clone("ratio1b");
+
+
+
+
+
+    ratio1->Fit("fitpol0");
+    ratio1->Draw();
+
+    cout << "Endcap fits" << endl;
+    cout << "pol0 fit = " << fitpol0->GetParameter(0) << " +- " << fitpol0->GetParError(0) << endl;
+    //stamp(0.18, fStampString, 0.67, fStampCms); 
+    c3.SaveAs("default/ratio1_pol0.pdf");
+
+    TCanvas c4;
+    ratio1b->Fit("fitpol1");
+    cout << "pol1 fit = " << fitpol1->GetParameter(0) << " +- " << fitpol1->GetParError(0) << "   " <<
+       fitpol1->GetParameter(1) << " +- " << fitpol1->GetParError(1) <<endl;
+    //stamp(0.18, fStampString, 0.67, fStampCms); 
+    c4.SaveAs("default/ratio1_pol1.pdf");
 
 }
 
