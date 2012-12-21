@@ -340,6 +340,8 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     sign_h->Draw("e");
     sign_c->Print((get_address("sign", Bd ? "Bd" : "Bs", false) + ".gif").c_str());
     sign_c->Print((get_address("sign", Bd ? "Bd" : "Bs", false) + ".pdf").c_str());
+    sign_c->Print((get_address("sign", Bd ? "Bd" : "Bs", false) + ".root").c_str());
+    sign_c->Print((get_address("sign", Bd ? "Bd" : "Bs", false) + ".C").c_str());
     delete sign_c;
   }
   return;

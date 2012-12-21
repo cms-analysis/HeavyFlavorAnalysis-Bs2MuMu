@@ -1081,7 +1081,7 @@ void pdf_fitData::sig_plhts() {
   ws_->Print();
 
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(pdfname.c_str()));
-  pl_ts.SetPrintLevel(2);
+//  pl_ts.SetPrintLevel(2);
   pl_ts.SetOneSidedDiscovery(true);
   if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
 
@@ -1172,9 +1172,10 @@ void pdf_fitData::plot_hypotest(HypoTestResult *hts) {
   HypoTestPlot * plot = new HypoTestPlot(*hts, 100);
   plot->SetLogYaxis(true);
   plot->Draw();
-  c_plot.Print( (get_address("hypotest") + ".gif").c_str());
-  c_plot.Print( (get_address("hypotest") + ".pdf").c_str());
-  c_plot.Print( (get_address("hypotest") + ".root").c_str());
+  c_plot.Print( (get_address(Form("hypotest%d", sign), Bd ? "Bd" : "") + ".gif").c_str());
+  c_plot.Print( (get_address(Form("hypotest%d", sign), Bd ? "Bd" : "") + ".pdf").c_str());
+  c_plot.Print( (get_address(Form("hypotest%d", sign), Bd ? "Bd" : "") + ".root").c_str());
+  c_plot.Print( (get_address(Form("hypotest%d", sign), Bd ? "Bd" : "") + ".C").c_str());
 }
 
 void pdf_fitData::make_prior() {
