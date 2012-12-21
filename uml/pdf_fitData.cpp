@@ -1363,11 +1363,11 @@ void pdf_fitData::hack_ws(string frozen_ws_address) {
   TFile * frozen_f = new TFile(frozen_ws_address.c_str());
   RooWorkspace * frozen_ws = (RooWorkspace*)frozen_f->Get("ws");
   for (int i = 2; i < 4; i++) {
-    ws_->var(name("C0", i-2))->setVal(frozen_ws->var(name("C0", i))->getVal());
-    ws_->var(name("C1", i-2))->setVal(frozen_ws->var(name("C1", i))->getVal());
-    ws_->var(name("C2", i-2))->setVal(frozen_ws->var(name("C2", i))->getVal());
-    ws_->var(name("C3", i-2))->setVal(frozen_ws->var(name("C3", i))->getVal());
-    ws_->var(name("tau", i-2))->setVal(frozen_ws->var(name("tau", i))->getVal());
+    ws_->var(name("C0_semi", i-2))->setVal(frozen_ws->var(name("C0_semi", i))->getVal());
+    ws_->var(name("C1_semi", i-2))->setVal(frozen_ws->var(name("C1_semi", i))->getVal());
+    ws_->var(name("C2_semi", i-2))->setVal(frozen_ws->var(name("C2_semi", i))->getVal());
+    ws_->var(name("C3_semi", i-2))->setVal(frozen_ws->var(name("C3_semi", i))->getVal());
+    ws_->var(name("tau_semi", i-2))->setVal(frozen_ws->var(name("tau_semi", i))->getVal());
   }
 }
 
