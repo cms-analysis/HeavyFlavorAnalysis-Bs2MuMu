@@ -587,9 +587,11 @@ void pdf_fitData::make_pdf() {
 }
 
 void pdf_fitData::set_final_pdf() {
+	cout << "setting final pdf" << endl;
 	define_perchannel_pdf();
 	if (simul_) define_simul();
 	ws_->Print();
+	cout << "done" << endl;
 }
 
 void pdf_fitData::define_perchannel_pdf () {
@@ -805,7 +807,7 @@ void pdf_fitData::significance() {
 //  ProfileLikelihoodTestStat::SetAlwaysReuseNLL(true);
 //  RatioOfProfiledLikelihoodsTestStat::SetAlwaysReuseNLL(true);
 	if (sign < 0) return;
-	make_prior();
+//	make_prior();
   if (sign == 0) sig_hand();
   else {
     make_models();
@@ -1023,7 +1025,7 @@ void pdf_fitData::make_models() {
     ws_->defineSet("CO", "MassRes");
   }
 
-  RooProdPdf* modelpdf = new RooProdPdf("model_pdf", "model_pdf", *ws_->pdf(pdfname.c_str()), *ws_->pdf("prior") );
+//  RooProdPdf* modelpdf = new RooProdPdf("model_pdf", "model_pdf", *ws_->pdf(pdfname.c_str()), *ws_->pdf("prior") );
 //  ws_->import(*modelpdf);
 
   ModelConfig* H1 = new ModelConfig("H1", "background + signal hypothesis", ws_);
@@ -1066,7 +1068,9 @@ void pdf_fitData::make_models() {
   ws_->import(*H1);
 
   RooAbsPdf* nuisPdf = RooStats::MakeNuisancePdf(*H0,"nui_pdf");
-//  ws_->import(*nuisPdf);
+  cout <<"nuisance pdf = " << endl;
+  nuisPdf->Print();
+  ws_->import(*nuisPdf);
 }
 
 void pdf_fitData::sig_plhts() {
@@ -1100,10 +1104,6 @@ void pdf_fitData::sig_hybrid_plhts() {
   RooStats::ModelConfig *H1 = dynamic_cast<ModelConfig*> (ws_->obj("H1"));
 
   ws_->Print();
-//  H0->SetPriorPdf(*ws_->pdf("nui_pdf"));
-//  H1->SetPriorPdf(*ws_->pdf("nui_pdf"));
-  H0->SetPriorPdf(*ws_->pdf("prior"));
-  H1->SetPriorPdf(*ws_->pdf("prior"));
 
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(pdfname.c_str()));
 //  pl_ts.SetPrintLevel(2);
@@ -1126,10 +1126,10 @@ void pdf_fitData::sig_hybrid_plhts() {
 //  }
 
   HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
-//  hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("nui_pdf"));
-//  hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("nui_pdf"));
-  hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
-  hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("prior"));
+  hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("nui_pdf"));
+  hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("nui_pdf"));
+//  hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
+//  hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("prior"));
   hibrCalc.SetToys(NExp, NExp/4);
 
   HypoTestResult *htr_pl = hibrCalc.GetHypoTest();
@@ -1143,8 +1143,6 @@ void pdf_fitData::sig_hybrid_roplhts() {
   RooStats::ModelConfig *H1 = dynamic_cast<ModelConfig*> (ws_->obj("H1"));
 
   ws_->Print();
-//  H0->SetPriorPdf(*ws_->pdf("nui_pdf"));
-//  H1->SetPriorPdf(*ws_->pdf("nui_pdf"));
 
   RatioOfProfiledLikelihoodsTestStat ropl_ts(*H1->GetPdf(),*H0->GetPdf(), ws_->set("poi"));
   ropl_ts.SetSubtractMLE(false);
@@ -1157,10 +1155,10 @@ void pdf_fitData::sig_hybrid_roplhts() {
   if(pc && proof > 1) mcSampler_pl->SetProofConfig(pc);
 
   HybridCalculator hibrCalc(*ws_->data("global_data"), *H1, *H0, mcSampler_pl);
-//  hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("nui_pdf"));
-//  hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("nui_pdf"));
-  hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
-  hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("prior"));
+  hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("nui_pdf"));
+  hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("nui_pdf"));
+//  hibrCalc.ForcePriorNuisanceAlt(*ws_->pdf("prior"));
+//  hibrCalc.ForcePriorNuisanceNull(*ws_->pdf("prior"));
   hibrCalc.SetToys(NExp, NExp/4.);
 
   HypoTestResult *htr_pl = hibrCalc.GetHypoTest();

@@ -310,7 +310,6 @@ void pdf_analysis::define_peak(int i, int j) {
     }
     else {
       RooAddPdf mass_peak(name("mass_peak", i, j), "mass_peak", RooArgList(Gau_peak, CB_peak),  CoeffGauss_peak);
-      //RooProdPdf pdf_peak (name("pdf_peak", i, j), "pdf_peak", *ws_->var("MassRes"), Conditional(mass_peak, *ws_->var("Mass")));
       if (!bdt_fit_) {
         RooProdPdf pdf_peak (name("pdf_peak", i, j), "pdf_peak", *ws_->pdf(name("MassRes_pdf_peak", i, j)), Conditional(mass_peak, *ws_->var("Mass")));
         ws_->import(pdf_peak);
@@ -334,16 +333,16 @@ void pdf_analysis::define_semi(int i, int j) {
     ws_->import(ArgusBG);
   }
   else {
-    RooRealVar C0(name("C0", i, j), "C0", -0.1, -5., 5., "");
-    RooRealVar C1(name("C1", i, j), "C1", 0.1, -5., 5., "");
-    RooRealVar C2(name("C2", i, j), "C2", -0.1, -5., 5., "");
-    RooRealVar C3(name("C3", i, j), "C3", 0.1, -5., 5., "");
-    RooRealVar C4(name("C4", i, j), "C4", -0.1, -5., 5., "");
-    RooRealVar C5(name("C5", i, j), "C5", 0.1, -5., 5., "");
+    RooRealVar C0(name("C0_semi", i, j), "C0", -0.1, -5., 5., "");
+    RooRealVar C1(name("C1_semi", i, j), "C1", 0.1, -5., 5., "");
+    RooRealVar C2(name("C2_semi", i, j), "C2", -0.1, -5., 5., "");
+    RooRealVar C3(name("C3_semi", i, j), "C3", 0.1, -5., 5., "");
+    RooRealVar C4(name("C4_semi", i, j), "C4", -0.1, -5., 5., "");
+    RooRealVar C5(name("C5_semi", i, j), "C5", 0.1, -5., 5., "");
     RooArgList poly_coeffs(C0, C1, C2, C3/*, C4, C5*/);
-    RooChebychev poly(name("poly", i, j), "poly", *ws_->var("Mass"), poly_coeffs);
-    RooRealVar tau(name("tau", i, j), "tau", -7,-20.,-0.1, "");
-    RooExponential expo(name("expo", i, j), "expo", *ws_->var("Mass"), tau);
+    RooChebychev poly(name("poly_semi", i, j), "poly", *ws_->var("Mass"), poly_coeffs);
+    RooRealVar tau(name("tau_semi", i, j), "tau", -7,-20.,-0.1, "");
+    RooExponential expo(name("expo_semi", i, j), "expo", *ws_->var("Mass"), tau);
 
     RooRealVar Mean_semi(name("Mean_semi", i, j), "Mean_semi", 5.1, 4.9, 5.5);
     RooRealVar Sigma_semi(name("Sigma_semi", i, j), "Sigma_semi", 0.050, 0.01, 0.50);
@@ -688,8 +687,6 @@ void pdf_analysis::simsplit() {
   cout << splitted.str() << endl;
   //RooSimultaneous* model_sim2 = sct.build("pdf_ext_simul", "pdf_ext_total", SplitParam(splitted.str().c_str(), "etacat,bdtcat"));
   //model_sim2->Print();
-
-
 }
 
 double pdf_analysis::getErrorHigh(RooRealVar *var) {
@@ -752,7 +749,7 @@ RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
 
 RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name) {
   RooArgList varlist(*bdt, *weight);
-  RooDataSet* subdata_bdt = new RooDataSet("subdata_bdt", "subdata_bdt", varlist, "weight");
+//  RooDataSet* subdata_bdt = new RooDataSet("subdata_bdt", "subdata_bdt", varlist, "weight");
   const RooArgSet* aRow;
   TH1D histo(rds->GetTitle(), rds->GetTitle(), 100, -1., 1.);
   for (Int_t j = 0; j < rds->numEntries(); j++) {
