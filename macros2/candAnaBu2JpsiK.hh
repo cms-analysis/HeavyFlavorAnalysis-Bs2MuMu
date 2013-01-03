@@ -37,6 +37,7 @@ public:
   void        candAnalysis();
   void        efficiencyCalculation();
   void        moreBasicCuts();
+  void        moreReducedTree(TTree *);
 
   void        genMatch(); 
   void        recoMatch(); 

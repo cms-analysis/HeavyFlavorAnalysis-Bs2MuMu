@@ -62,6 +62,7 @@ public:
   virtual void        evtAnalysis(TAna01Event *evt);
   virtual void        candAnalysis();
   virtual void        efficiencyCalculation();
+  virtual void        setupReducedTree(TTree *);
   
   virtual int         nearestPV(int pvIdx, double maxDist = 99.);
   virtual void        getSigTracks(std::vector<int> &v, TAnaCand *pC);
@@ -111,7 +112,7 @@ public:
   std::string fCutFile; 
   TDirectory *fHistDir; 
   bmm2Reader *fpReader; 
-  TTree *fTree; 
+  TTree *fTree, *fAmsTree; 
   TAna01Event *fpEvt;
   TAnaCand *fpCand, *fpOsCand;
   int fCandIdx; 

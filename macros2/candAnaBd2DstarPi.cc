@@ -128,17 +128,23 @@ void candAnaBd2DstarPi::bookHist() {
   hdm = new TH1D("chmb0", "mb0", 50, 4.9, 5.9); 
   (void)hdm; // remove compiler warning
 
-  // -- Additional reduced tree variables
-  fTree->Branch("ptd0", &fPTD0, "ptd0/D");
-  fTree->Branch("ptpis", &fPTPiS, "ptpis/D");
-  fTree->Branch("ptpi2", &fPTPi2, "ptpi2/D");
-  fTree->Branch("ptpi",  &fPTPi,  "ptpi/D");
-  fTree->Branch("ptka",  &fPTKa,  "ptka/D");
-  fTree->Branch("md0", &fMD0, "md0/D");
-  fTree->Branch("dm",  &fDeltaM, "dm/D");
+  moreReducedTree(fTree);
+  moreReducedTree(fAmsTree);
 
 }
 
+
+// ----------------------------------------------------------------------
+void candAnaBd2DstarPi::moreReducedTree(TTree *t) {
+  // -- Additional reduced tree variables
+  t->Branch("ptd0", &fPTD0, "ptd0/D");
+  t->Branch("ptpis", &fPTPiS, "ptpis/D");
+  t->Branch("ptpi2", &fPTPi2, "ptpi2/D");
+  t->Branch("ptpi",  &fPTPi,  "ptpi/D");
+  t->Branch("ptka",  &fPTKa,  "ptka/D");
+  t->Branch("md0", &fMD0, "md0/D");
+  t->Branch("dm",  &fDeltaM, "dm/D");
+}
 
 // ----------------------------------------------------------------------
 void candAnaBd2DstarPi::fillCandidateHistograms(int offset) {

@@ -143,8 +143,10 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     
     if (fIsMC) {
       fTree->Fill(); 
+      if (!fGoodMuonsID) fAmsTree->Fill();
     } else {
       if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX) {
+	if (!fGoodMuonsID) fAmsTree->Fill();
 	// do nothing
 	//cout<<" blinded "<<BLIND<<" "<<fpCand->fMass<<" "<<fCandM<<" "<<SIGBOXMIN<<" "<<SIGBOXMAX<<" "<<fCandIso<<" "<<fPreselection<<endl;;
       } else {
@@ -165,6 +167,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 	  if(fJSON&&fGoodHLT) ((TH1D*)fHistDir->Get("run3"))->Fill(fRun);
 	  if(fJSON&&fGoodHLT&&fHLTmatch) ((TH1D*)fHistDir->Get("run4"))->Fill(fRun); 
 	  fTree->Fill(); 
+	  if (!fGoodMuonsID) fAmsTree->Fill();
 	} else {	 
            if (fVerbose > 5) cout << " failed preselection" << endl;        
 	}  
@@ -1128,127 +1131,11 @@ void candAna::bookHist() {
 
   // -- Reduced Tree
   fTree = new TTree("events", "events");
-  fTree->Branch("run",     &fRun,               "run/L");
-  fTree->Branch("json",    &fJSON,              "json/O");
-  fTree->Branch("evt",     &fEvt,               "evt/L");
-  fTree->Branch("ls",      &fLS,                "ls/I");
-  fTree->Branch("tm",      &fCandTM,            "tm/I");
-  fTree->Branch("pr",      &fGenBpartial,       "pr/I"); 
-  fTree->Branch("procid",  &fProcessType,       "procid/I");
-  fTree->Branch("hlt",     &fGoodHLT,           "hlt/O");
-  fTree->Branch("pvn",     &fPvN,               "pvn/I");
-  fTree->Branch("cb",      &fCowboy,            "cb/O");
-  fTree->Branch("rr",      &fRunRange,          "rr/I");
-  fTree->Branch("bdt",     &fBDT,               "bdt/D");
-  fTree->Branch("npv",     &fPvN,               "npv/I");
-  fTree->Branch("pvw8",    &fPvAveW8,           "pvw8/D");
-
-  // -- global cuts and weights
-  fTree->Branch("gmuid",   &fGoodMuonsID,       "gmuid/O");
-  fTree->Branch("gmupt",   &fGoodMuonsPt,       "gmupt/O");
-  fTree->Branch("gmueta",  &fGoodMuonsEta,      "gmueta/O");
-  fTree->Branch("gtqual",  &fGoodTracks,        "gtqual/O");
-  fTree->Branch("gtpt",    &fGoodTracksPt,      "gtpt/O");
-  fTree->Branch("gteta",   &fGoodTracksEta,     "gteta/O");
-  fTree->Branch("w8mu",    &fCandW8Mu,          "w8mu/D");
-  fTree->Branch("w8tr",    &fCandW8Tr,          "w8tr/D");
-
-  // -- PV
-  fTree->Branch("pvlip",    &fCandPvLip,        "pvlip/D");
-  fTree->Branch("pvlips",   &fCandPvLipS,       "pvlips/D");
-  fTree->Branch("pvlip2",   &fCandPvLip2,       "pvlip2/D");
-  fTree->Branch("pvlips2",  &fCandPvLipS2,      "pvlips2/D");
-  fTree->Branch("pvip",     &fCandPvIp,         "pvip/D");
-  fTree->Branch("pvips",    &fCandPvIpS,        "pvips/D");
-  fTree->Branch("pvip3d",   &fCandPvIp3D,       "pvip3d/D");
-  fTree->Branch("pvips3d",  &fCandPvIpS3D,      "pvips3d/D");
-
-  // -- cand
-  fTree->Branch("q",       &fCandQ,             "q/I");
-  fTree->Branch("type",    &fCandType,          "type/I");
-  fTree->Branch("pt",      &fCandPt,            "pt/D");
-  fTree->Branch("eta",     &fCandEta,           "eta/D");
-  fTree->Branch("phi",     &fCandPhi,           "phi/D");
-  fTree->Branch("tau",     &fCandTau,           "tau/D");
-  fTree->Branch("m",       &fCandM,             "m/D");
-  fTree->Branch("me",      &fCandME,            "me/D");
-  fTree->Branch("cm",      &fCandM2,            "cm/D");
-  fTree->Branch("cosa",    &fCandCosA,          "cosa/D");
-  fTree->Branch("alpha",   &fCandA,             "alpha/D");
-  fTree->Branch("iso",     &fCandIso,           "iso/D");
-  fTree->Branch("isotrk",  &fCandIsoTrk,        "isotrk/I");
-  fTree->Branch("closetrk",&fCandCloseTrk,      "closetrk/I");
-  fTree->Branch("chi2",    &fCandChi2,          "chi2/D");
-  fTree->Branch("dof",     &fCandDof,           "dof/D");
-  fTree->Branch("prob",    &fCandProb,          "prob/D");
-  fTree->Branch("fls3d",   &fCandFLS3d,         "fls3d/D");
-  fTree->Branch("fl3d",    &fCandFL3d,          "fl3d/D");
-  fTree->Branch("flxy",    &fCandFLxy,          "flxy/D");
-  fTree->Branch("fl3dE",   &fCandFL3dE,         "fl3dE/D");
-  fTree->Branch("flsxy",   &fCandFLSxy,         "flsxy/D");
-  fTree->Branch("docatrk", &fCandDocaTrk,       "docatrk/D");  
-  fTree->Branch("docatrkbdt", &fCandDocaTrkBdt, "docatrkbdt/D");  
-  fTree->Branch("maxdoca", &fCandDoca,          "maxdoca/D");
-  fTree->Branch("lip",     &fCandPvLip,         "lip/D");
-  fTree->Branch("lipE",    &fCandPvLipE,        "lipE/D");
-  fTree->Branch("tip",     &fCandPvTip,         "tip/D");
-  fTree->Branch("tipE",    &fCandPvTipE,        "tipE/D");
-  fTree->Branch("osiso",   &fOsIso,             "osiso/D");
-  fTree->Branch("osreliso",&fOsRelIso,          "osreliso/D");
-  fTree->Branch("osmpt",   &fOsMuonPt,          "osmpt/D");
-  fTree->Branch("osmptrel",&fOsMuonPtRel,       "osmptrel/D");
-  fTree->Branch("osmdr",   &fOsMuonDeltaR,      "osmdr/D");
-
-  // -- muons
-  fTree->Branch("m1q",     &fMu1Q,              "m1q/I");
-  fTree->Branch("m1id",    &fMu1Id,             "m1id/O");
-  fTree->Branch("m1pt",    &fMu1Pt,             "m1pt/D");
-  fTree->Branch("m1eta",   &fMu1Eta,            "m1eta/D");
-  fTree->Branch("m1phi",   &fMu1Phi,            "m1phi/D");
-  fTree->Branch("m1ip",    &fMu1IP,             "m1ip/D");
-  fTree->Branch("m1gt",    &fMu1TkQuality,      "m1gt/I");
-  fTree->Branch("m1pix",   &fMu1Pix,            "m1pix/I");
-  fTree->Branch("m1bpix",  &fMu1BPix,           "m1bpix/I");
-  fTree->Branch("m1bpixl1",&fMu1BPixL1,         "m1bpixl1/I");
-  fTree->Branch("m1chi2",  &fMu1Chi2,           "m1chi2/D");
-  fTree->Branch("m1pv",    &fMu1PV,             "m1pv/I");
-  fTree->Branch("m2q",     &fMu2Q,              "m2q/I");
-  fTree->Branch("m2id",    &fMu2Id,             "m2id/O");
-  fTree->Branch("m2pt",    &fMu2Pt,             "m2pt/D");
-  fTree->Branch("m2eta",   &fMu2Eta,            "m2eta/D");
-  fTree->Branch("m2phi",   &fMu2Phi,            "m2phi/D");
-  fTree->Branch("m2ip",    &fMu2IP,             "m2ip/D");
-  fTree->Branch("m2gt",    &fMu2TkQuality,      "m2gt/I");
-  fTree->Branch("m2pix",   &fMu2Pix,            "m2pix/I");
-  fTree->Branch("m2bpix",  &fMu2BPix,           "m2bpix/I");
-  fTree->Branch("m2bpixl1",&fMu2BPixL1,         "m2bpixl1/I");
-  fTree->Branch("m2chi2",  &fMu2Chi2,           "m2chi2/D");
-  fTree->Branch("m2pv",    &fMu2PV,             "m2pv/I");
-
-  fTree->Branch("mudist",  &fMuDist,            "mudist/D");
-  fTree->Branch("mudeltar",&fMuDeltaR,          "mudeltar/D");
-  fTree->Branch("hltm",    &fHLTmatch,          "hltm/O");
-
-  fTree->Branch("g1pt",    &fMu1PtGen,          "g1pt/D");
-  fTree->Branch("g2pt",    &fMu2PtGen,          "g2pt/D");
-  fTree->Branch("g1eta",   &fMu1EtaGen,         "g1eta/D");
-  fTree->Branch("g2eta",   &fMu2EtaGen,         "g2eta/D");
-  fTree->Branch("g1phi",   &fMu1PhiGen,         "g1phi/D");
-  fTree->Branch("g2phi",   &fMu2PhiGen,         "g2phi/D");
-  fTree->Branch("gmass",   &fGenMass,           "gmass/D");
-  fTree->Branch("gtau",    &fGenLifeTime,       "gtau/D");
-
-  fTree->Branch("t1pt",    &fMu1PtNrf,          "t1pt/D");
-  fTree->Branch("t1eta",   &fMu1EtaNrf,         "t1eta/D");
-  fTree->Branch("t2pt",    &fMu2PtNrf,          "t2pt/D");
-  fTree->Branch("t2eta",   &fMu2EtaNrf,         "t2eta/D");
-
-  fTree->Branch("hm1pt",  &fHltMu1Pt,  "hm1pt/D");    
-  fTree->Branch("hm1eta", &fHltMu1Eta, "hm1eta/D");  
-  fTree->Branch("hm1phi", &fHltMu1Phi, "hm1phi/D");  
-  fTree->Branch("hm2pt",  &fHltMu2Pt,  "hm2pt/D");    
-  fTree->Branch("hm2eta", &fHltMu2Eta, "hm2eta/D");  
-  fTree->Branch("hm2phi", &fHltMu2Phi, "hm2phi/D");  
+  setupReducedTree(fTree); 
+  
+  // -- tree for AMS
+  fAmsTree = new TTree("amsevents", "amsevents");
+  setupReducedTree(fAmsTree); 
 
   // -- Efficiency/Acceptance Tree
   fEffTree = new TTree("effTree", "effTree");
@@ -1284,177 +1171,136 @@ void candAna::bookHist() {
   TH1D *h = new TH1D("analysisDistributions", "analysisDistributions", 10000, 0., 10000.); 
   (void)h;
 
-//  TDirectory *pD;
-//  string name, dname; 
-//  int i(0); 
-//  for (map<string, int>::iterator imap = fRegion.begin(); imap != fRegion.end(); ++imap) {  
-//    i    = imap->second; 
-//    name = imap->first + "_";
-
-//    //    cout << "  booking analysis distributions for " << name << " at offset i = " << i << endl;
-
-//    fpHLT[i]       = bookDistribution(Form("%shlt", name.c_str()), "hlt", "fGoodHLT", 10, 0., 10.);           
-//    fpPvZ[i]       = bookDistribution(Form("%spvz", name.c_str()), "z_{PV} [cm]", "fGoodHLT", 40, -20., 20.);           
-//    fpPvN[i]       = bookDistribution(Form("%spvn", name.c_str()), "N(PV) ", "fGoodHLT", 50, 0., 50.);           
-//    fpPvNtrk[i]    = bookDistribution(Form("%spvntrk", name.c_str()), "N_{trk}^{PV} ", "fGoodHLT", 20, 0., 200.);           
-//    fpPvAveW8[i]   = bookDistribution(Form("%spvavew8", name.c_str()), "<w^{PV}>", "fGoodPvAveW8", 25, 0.5, 1.);           
-
-//    fpTracksPt[i]  = bookDistribution(Form("%strackspt", name.c_str()), "p_{T} [GeV]", "fGoodTracksPt", 25, 0., 25.);
-//    fpTracksEta[i] = bookDistribution(Form("%strackseta", name.c_str()), "#eta_{T}", "fGoodTracksEta", 25, -2.5, 2.5);
-//    fpTracksQual[i]= bookDistribution(Form("%stracksqual", name.c_str()), "track quality", "fGoodTracks", 10, 0., 10.); 
-//    fpMuonsID[i]   = bookDistribution(Form("%smuonsid", name.c_str()), "muon ID", "fGoodMuonsID", 10, 0., 10.); 
-//    fpMuonsPt[i]   = bookDistribution(Form("%smuonspt", name.c_str()), "p_{T, #mu} [GeV]", "fGoodMuonsPt", 25, 0., 25.); 
-//    fpMuon1Pt[i]   = bookDistribution(Form("%smuon1pt", name.c_str()), "p_{T, #mu1} [GeV]", "fGoodMuonsPt", 30, 0., 30.); 
-//    fpMuon2Pt[i]   = bookDistribution(Form("%smuon2pt", name.c_str()), "p_{T, #mu2} [GeV]", "fGoodMuonsPt", 40, 0., 20.); 
-//    fpMuonsEta[i]  = bookDistribution(Form("%smuonseta", name.c_str()), "#eta_{#mu}", "fGoodMuonsEta", 20, -2.5, 2.5); 
-//    fpMuon1Eta[i]  = bookDistribution(Form("%smuon1eta", name.c_str()), "#eta_{#mu1}", "fGoodMuonsEta", 20, -2.5, 2.5); 
-//    fpMuon2Eta[i]  = bookDistribution(Form("%smuon2eta", name.c_str()), "#eta_{#mu2}", "fGoodMuonsEta", 20, -2.5, 2.5); 
-//    fpPt[i]        = bookDistribution(Form("%spt", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 30, 0., 60.); 
-//    fpP[i]         = bookDistribution(Form("%sp", name.c_str()), "p(B) [GeV]", "fGoodPt", 50, 0., 100.); 
-//    fpEta[i]       = bookDistribution(Form("%seta", name.c_str()), "#eta(B)", "fGoodEta", 20, -2.5, 2.5); 
-//    fpCosA[i]      = bookDistribution(Form("%scosa", name.c_str()), "cos(#alpha_{3D})", "fGoodAlpha", 30, 0.97, 1.); 
-//    fpAlpha[i]     = bookDistribution(Form("%salpha", name.c_str()), "#alpha_{3D}", "fGoodAlpha", 40, 0., 0.1); 
-//    fpIso[i]       = bookDistribution(Form("%siso", name.c_str()),  "isolation", "fGoodIso", 52, 0., 1.04); 
-//    fpIsoTrk[i]    = bookDistribution(Form("%sisotrk", name.c_str()),  "N_{trk}^{I}", "fGoodIso", 20, 0., 20.); 
-//    fpCloseTrk[i]  = bookDistribution(Form("%sclosetrk", name.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 10, 0., 10.); 
-   
-//    fpOsIso[i]        = bookDistribution(Form("%sosiso", name.c_str()),  "F_{OS} [GeV]", "fGoodIso", 100, 0., 100.);              
-//    fpOsRelIso[i]     = bookDistribution(Form("%sosreliso", name.c_str()),  "I_{OS}^{rel}", "fGoodIso", 60, 0., 6.);              
-//    fpOsMuonPt[i]     = bookDistribution(Form("%sosmuonpt", name.c_str()),  "p_{T,#mu}^{OS} [GeV]", "fGoodMuonsPt", 40, 0., 20.);              
-//    fpOsMuonPtRel[i]  = bookDistribution(Form("%sosmuonptrel", name.c_str()),  "p_{T,#mu}^{OS, rel} [GeV]", "fGoodMuonsPt", 40, 0., 20.); 
-//    fpOsMuonDeltaR[i] = bookDistribution(Form("%sosmuondr", name.c_str()),  "#Delta R(C, #mu^{OS})", "fGoodMuonsPt", 60, 0., 6.);              
-
-//    // -- mode dependent plots
-//    fpPtGGF[i]        = bookDistribution(Form("%sptggf", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 30, 0., 60.); 
-//    fpPtGSP[i]        = bookDistribution(Form("%sptgsp", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 30, 0., 60.); 
-//    fpPtFEX[i]        = bookDistribution(Form("%sptfex", name.c_str()), "p_{T}(B) [GeV]", "fGoodPt", 30, 0., 60.); 
-
-//    fpIsoGGF[i]       = bookDistribution(Form("%sisoggf", name.c_str()),  "isolation", "fGoodIso", 52, 0., 1.04); 
-//    fpIsoGSP[i]       = bookDistribution(Form("%sisogsp", name.c_str()),  "isolation", "fGoodIso", 52, 0., 1.04); 
-//    fpIsoFEX[i]       = bookDistribution(Form("%sisofex", name.c_str()),  "isolation", "fGoodIso", 52, 0., 1.04); 
-
-//    fpCloseTrkGGF[i]  = bookDistribution(Form("%sclosetrkggf", name.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 10, 0., 10.); 
-//    fpCloseTrkGSP[i]  = bookDistribution(Form("%sclosetrkgsp", name.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 10, 0., 10.); 
-//    fpCloseTrkFEX[i]  = bookDistribution(Form("%sclosetrkfex", name.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 10, 0., 10.); 
-
-//    fpDocaTrkGGF[i]   = bookDistribution(Form("%sdocatrkggf", name.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 40, 0., 0.20);   
-//    fpDocaTrkGSP[i]   = bookDistribution(Form("%sdocatrkgsp", name.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 40, 0., 0.20);   
-//    fpDocaTrkFEX[i]   = bookDistribution(Form("%sdocatrkfex", name.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 40, 0., 0.20);   
-
-//    fpOsIsoGGF[i]     = bookDistribution(Form("%sosisoggf", name.c_str()),  "F_{OS} [GeV]", "fGoodIso", 100, 0., 100.);              
-//    fpOsIsoGSP[i]     = bookDistribution(Form("%sosisogsp", name.c_str()),  "F_{OS} [GeV]", "fGoodIso", 100, 0., 100.);              
-//    fpOsIsoFEX[i]     = bookDistribution(Form("%sosisofex", name.c_str()),  "F_{OS} [GeV]", "fGoodIso", 100, 0., 100.);              
-   
-//    fpOsRelIsoGGF[i]  = bookDistribution(Form("%sosrelisoggf", name.c_str()),  "I_{OS}^{rel}", "fGoodIso", 60, 0., 6.);              
-//    fpOsRelIsoGSP[i]  = bookDistribution(Form("%sosrelisogsp", name.c_str()),  "I_{OS}^{rel}", "fGoodIso", 60, 0., 6.);              
-//    fpOsRelIsoFEX[i]  = bookDistribution(Form("%sosrelisofex", name.c_str()),  "I_{OS}^{rel}", "fGoodIso", 60, 0., 6.);              
-
-//    fpOsMuonPtGGF[i]  = bookDistribution(Form("%sosmuonptggf", name.c_str()),  "p_{T,#mu}^{OS} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
-//    fpOsMuonPtGSP[i]  = bookDistribution(Form("%sosmuonptgsp", name.c_str()),  "p_{T,#mu}^{OS} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
-//    fpOsMuonPtFEX[i]  = bookDistribution(Form("%sosmuonptfex", name.c_str()),  "p_{T,#mu}^{OS} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
-
-//    fpOsMuonPtRelGGF[i]  = bookDistribution(Form("%sosmuonptrelggf", name.c_str()),  "p_{T,#mu}^{OS, rel} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
-//    fpOsMuonPtRelGSP[i]  = bookDistribution(Form("%sosmuonptrelgsp", name.c_str()),  "p_{T,#mu}^{OS, rel} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
-//    fpOsMuonPtRelFEX[i]  = bookDistribution(Form("%sosmuonptrelfex", name.c_str()),  "p_{T,#mu}^{OS, rel} [GeV]", "fGoodMuonsPt", 40, 0., 20.);
-
-//    fpOsMuonDeltaRGGF[i] = bookDistribution(Form("%sosmuondrggf", name.c_str()),  "#Delta R(C, #mu^{OS})", "fGoodMuonsPt", 60, 0., 6.);
-//    fpOsMuonDeltaRGSP[i] = bookDistribution(Form("%sosmuondrgsp", name.c_str()),  "#Delta R(C, #mu^{OS})", "fGoodMuonsPt", 60, 0., 6.);
-//    fpOsMuonDeltaRFEX[i] = bookDistribution(Form("%sosmuondrfex", name.c_str()),  "#Delta R(C, #mu^{OS})", "fGoodMuonsPt", 60, 0., 6.);
-
-//    fpChi2[i]      = bookDistribution(Form("%schi2", name.c_str()),  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
-//    fpChi2Dof[i]   = bookDistribution(Form("%schi2dof", name.c_str()),  "#chi^{2}/dof", "fGoodChi2", 40, 0., 4.);
-//    fpProb[i]      = bookDistribution(Form("%spchi2dof", name.c_str()),  "P(#chi^{2},dof)", "fGoodChi2", 26, 0., 1.04);    
-//    fpFLS3d[i]     = bookDistribution(Form("%sfls3d", name.c_str()), "l_{3D}/#sigma(l_{3D})", "fGoodFLS", 30, 0., 120.);  
-//    fpFL3d[i]      = bookDistribution(Form("%sfl3d", name.c_str()),  "l_{3D} [cm]", "fGoodFLS", 30, 0., 3.);  
-//    fpFL3dE[i]     = bookDistribution(Form("%sfl3de", name.c_str()), "#sigma(l_{3D}) [cm]", "fGoodFLS", 25, 0., 0.1);  
-//    fpFLSxy[i]     = bookDistribution(Form("%sflsxy", name.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 30, 0., 120.);  
-//    fpDocaTrk[i]   = bookDistribution(Form("%sdocatrk", name.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 40, 0., 0.20);   
-//    fpBDT[i]       = bookDistribution(Form("%sbdt", name.c_str()), "BDT", "fGoodHLT", 40, -1.0, 1.0);   
-
-//    fpLip[i]       = bookDistribution(Form("%slip", name.c_str()), "l_{z} [cm]", "fGoodPvLip", 32, -0.02, 0.02);   
-//    fpLipE[i]      = bookDistribution(Form("%slipe", name.c_str()), "#sigma(l_{z}) [cm]", "fGoodPvLip", 50, 0., 0.05);   
-//    fpLipS[i]      = bookDistribution(Form("%slips", name.c_str()), "l_{z}/#sigma(l_{z})", "fGoodPvLipS", 40, -5., 5.);   
-
-//    fpTip[i]       = bookDistribution(Form("%stip", name.c_str()), "l_{T} [cm]", "fGoodPvLip", 50, 0., 0.5);   
-//    fpTipE[i]      = bookDistribution(Form("%stipe", name.c_str()), "#sigma(l_{T}) [cm]", "fGoodPvLip", 50, 0., 0.05);   
-//    fpTipS[i]      = bookDistribution(Form("%stips", name.c_str()), "l_{T}/#sigma(l_{T})", "fGoodPvLipS", 25, 0., 20.);   
-
-//    fpLip12[i]     = bookDistribution(Form("%slip12", name.c_str()), "ratio l_{z} ", "fGoodPvLip", 50, -0.5, 0.5);   
-//    fpLipE12[i]    = bookDistribution(Form("%slipe12", name.c_str()), "ratio #sigma(l_{z})", "fGoodPvLip", 50, 0., 2.);   
-//    fpLipS12[i]    = bookDistribution(Form("%slips12", name.c_str()), "ratio l_{z}/#sigma(l_{z})", "fGoodPvLipS", 50, -1., 1.);   
-
-//    fpLip2[i]      = bookDistribution(Form("%slip2", name.c_str()), "l_{z}^{2nd} [cm]", "fGoodPvLip2", 100, -1.0, 1.0);   
-//    fpLipS2[i]     = bookDistribution(Form("%slips2", name.c_str()), "l_{z}^{2nd}/#sigma(l_{z}^{2nd})", "fGoodPvLipS2", 100, -25., 25.);   
-
-//    fpMaxDoca[i]   = bookDistribution(Form("%smaxdoca", name.c_str()), "d^{max}", "fGoodMaxDoca", 60, 0., 0.03);   
-//    fpIp[i]        = bookDistribution(Form("%sip", name.c_str()), "#delta_{3D}", "fGoodIp", 50, 0., 0.05);   
-//    fpIpS[i]       = bookDistribution(Form("%sips", name.c_str()), "#delta_{3D}/#sigma(#delta_{3D})", "fGoodIpS", 50, 0., 5);   
-
-//    fp2MChi2[i]    = bookDistribution(Form("%s2mchi2", name.c_str()),  "#chi^{2}", "fGoodChi2", 30, 0., 30.);              
-//    fp2MChi2Dof[i] = bookDistribution(Form("%s2mchi2dof", name.c_str()),  "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
-//    fp2MProb[i]    = bookDistribution(Form("%s2mpchi2dof", name.c_str()),  "P(#chi^{2},dof)", "fGoodChi2", 26, 0., 1.04);    
-//    fp2MFLS3d[i]   = bookDistribution(Form("%s2mfls3d", name.c_str()), "l_{3D}/#sigma(l_{3D})", "fGoodFLS", 30, 0., 120.);  
-//    fp2MFL3d[i]    = bookDistribution(Form("%s2mfl3d", name.c_str()),  "l_{3D} [cm]", "fGoodFLS", 25, 0., 5.);  
-//    fp2MFL3dE[i]   = bookDistribution(Form("%s2mfl3de", name.c_str()), "#sigma(l_{3D}) [cm]", "fGoodFLS", 25, 0., 0.5);  
-//    fp2MFLSxy[i]   = bookDistribution(Form("%s2mflsxy", name.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 30, 0., 120.);  
-
-//    if (name == "A_") {
-//      //      cout << "  booking NPV distributions for " << name << endl;
-
-//      // -- eta 'profiles'
-//      for (int ipv = 0; ipv < NADPV; ++ipv) {
-// 	pD = fHistDir->mkdir(Form("%sEta%i", name.c_str(), ipv));
-// 	pD->cd();
-// 	dname = Form("%seta%i_", name.c_str(), ipv);
-// 	//	cout << "ipv = " << ipv << " i = " << i << endl;
-// 	fpEtaFLS3d[ipv][i] =  bookDistribution(Form("%sfls3d", dname.c_str()), "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
-//      }
-
-//      // -- NPV analysis distributions
-//      for (int ipv = 0; ipv < NADPV; ++ipv) {
-// 	pD = fHistDir->mkdir(Form("%sNpv%i", name.c_str(), ipv));
-// 	pD->cd();
-// 	dname = Form("%snpv%i_", name.c_str(), ipv);
-// 	fpNpvPvN[ipv][i]     = bookDistribution(Form("%spvn", dname.c_str()), "N(PV) ", "fGoodHLT", 60, 0., 60.);           
-// 	fpNpvAveW8[ipv][i]   = bookDistribution(Form("%spvavew8", dname.c_str()),  "<w^{PV}>", "fGoodPvAveW8", 25, 0.5, 1.0); 
-// 	fpNpvChi2Dof[ipv][i] = bookDistribution(Form("%schi2dof", dname.c_str()), "#chi^{2}/dof", "fGoodChi2", 30, 0., 3.);       
-// 	fpNpvProb[ipv][i]    = bookDistribution(Form("%spchi2dof", dname.c_str()), "P(#chi^{2},dof)", "fGoodChi2", 25, 0., 1.);    
-// 	fpNpvAlpha[ipv][i]   = bookDistribution(Form("%salpha", dname.c_str()),  "#alpha_{3D}", "fGoodAlpha", 30, 0., 0.15); 
-// 	fpNpvFLS3d[ipv][i]   = bookDistribution(Form("%sfls3d", dname.c_str()), "l_{3d}/#sigma(l_{3d})", "fGoodFLS", 25, 0., 100.);  
-// 	fpNpvFLSxy[ipv][i]   = bookDistribution(Form("%sflsxy", dname.c_str()), "l_{xy}/#sigma(l_{xy})", "fGoodFLS", 25, 0., 100.);  
-// 	//	fpNpvDocaTrk[ipv][i] = bookDistribution(Form("%sdocatrk", dname.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 35, 0., 0.14);   
-// 	fpNpvDocaTrk[ipv][i] = bookDistribution(Form("%sdocatrk", dname.c_str()), "d_{ca}^{0} [cm]", "fGoodDocaTrk", 100, 0., 0.20);   
-// 	fpNpvIso[ipv][i]     = bookDistribution(Form("%siso", dname.c_str()),  "I", "fGoodIso", 22, 0., 1.1); 
-// 	fpNpvIsoTrk[ipv][i]  = bookDistribution(Form("%sisotrk", dname.c_str()),  "N_{trk}^{I}", "fGoodIso", 20, 0., 20.); 
-// 	fpNpvCloseTrk[ipv][i]= bookDistribution(Form("%sclosetrk", dname.c_str()),  "N_{trk}^{close}", "fGoodCloseTrack", 20, 0., 20.); 
-// 	fpNpvLip[ipv][i]     = bookDistribution(Form("%slip", dname.c_str()),  "l_{z}", "fGoodPvLip", 25, -0.05, 0.05); 
-// 	fpNpvLipS[ipv][i]    = bookDistribution(Form("%slips", dname.c_str()),  "l_{z}/#sigma(l_{z})", "fGoodPvLipS", 25, -10., 10.); 
-
-// 	fpNpvLip2[ipv][i]    = bookDistribution(Form("%slip2", dname.c_str()),  "l_{z,2}", "fGoodPvLip2", 100, -1.0, 1.0); 
-// 	fpNpvLipS2[ipv][i]   = bookDistribution(Form("%slips2", dname.c_str()),  "l_{z,2}/#sigma(l_{z,2})", "fGoodPvLipS2", 100, -25., 25.); 
-
-// 	fpNpvMaxDoca[ipv][i] = bookDistribution(Form("%smaxdoca", dname.c_str()), "d^{max}", "fGoodMaxDoca", 60, 0., 0.03);   
-// 	fpNpvIp[ipv][i]      = bookDistribution(Form("%sip", dname.c_str()), "#delta_{3D}", "fGoodIp", 50, 0., 0.1);   
-// 	fpNpvIpS[ipv][i]     = bookDistribution(Form("%sips", dname.c_str()), "#delta_{3D}/#sigma(#delta_{3D})", "fGoodIpS", 50, 0., 10);   
-
-// 	fpNpvIso0[ipv][i]     = bookDistribution(Form("%siso0", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
-// 	fpNpvIso1[ipv][i]     = bookDistribution(Form("%siso1", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
-// 	fpNpvIso2[ipv][i]     = bookDistribution(Form("%siso2", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
-// 	fpNpvIso3[ipv][i]     = bookDistribution(Form("%siso3", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
-// 	fpNpvIso4[ipv][i]     = bookDistribution(Form("%siso4", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
-// 	fpNpvIso5[ipv][i]     = bookDistribution(Form("%siso5", dname.c_str()),  "I0", "fGoodIso", 22, 0., 1.1); 
-
-// 	fHistDir->cd();	
-//      }
-//    } else {
-//      for (int ipv = 0; ipv < NADPV; ++ipv) {
-// 	fpNpvPvN[ipv][i]     = 0; 
-//      }
-//    }
-//  }
-
 }
 
+
+
+// ----------------------------------------------------------------------
+void candAna::setupReducedTree(TTree *t) {
+
+  t->Branch("run",     &fRun,               "run/L");
+  t->Branch("json",    &fJSON,              "json/O");
+  t->Branch("evt",     &fEvt,               "evt/L");
+  t->Branch("ls",      &fLS,                "ls/I");
+  t->Branch("tm",      &fCandTM,            "tm/I");
+  t->Branch("pr",      &fGenBpartial,       "pr/I"); 
+  t->Branch("procid",  &fProcessType,       "procid/I");
+  t->Branch("hlt",     &fGoodHLT,           "hlt/O");
+  t->Branch("pvn",     &fPvN,               "pvn/I");
+  t->Branch("cb",      &fCowboy,            "cb/O");
+  t->Branch("rr",      &fRunRange,          "rr/I");
+  t->Branch("bdt",     &fBDT,               "bdt/D");
+  t->Branch("npv",     &fPvN,               "npv/I");
+  t->Branch("pvw8",    &fPvAveW8,           "pvw8/D");
+
+  // -- global cuts and weights
+  t->Branch("gmuid",   &fGoodMuonsID,       "gmuid/O");
+  t->Branch("gmupt",   &fGoodMuonsPt,       "gmupt/O");
+  t->Branch("gmueta",  &fGoodMuonsEta,      "gmueta/O");
+  t->Branch("gtqual",  &fGoodTracks,        "gtqual/O");
+  t->Branch("gtpt",    &fGoodTracksPt,      "gtpt/O");
+  t->Branch("gteta",   &fGoodTracksEta,     "gteta/O");
+  t->Branch("w8mu",    &fCandW8Mu,          "w8mu/D");
+  t->Branch("w8tr",    &fCandW8Tr,          "w8tr/D");
+
+  // -- PV
+  t->Branch("pvlip",    &fCandPvLip,        "pvlip/D");
+  t->Branch("pvlips",   &fCandPvLipS,       "pvlips/D");
+  t->Branch("pvlip2",   &fCandPvLip2,       "pvlip2/D");
+  t->Branch("pvlips2",  &fCandPvLipS2,      "pvlips2/D");
+  t->Branch("pvip",     &fCandPvIp,         "pvip/D");
+  t->Branch("pvips",    &fCandPvIpS,        "pvips/D");
+  t->Branch("pvip3d",   &fCandPvIp3D,       "pvip3d/D");
+  t->Branch("pvips3d",  &fCandPvIpS3D,      "pvips3d/D");
+
+  // -- cand
+  t->Branch("q",       &fCandQ,             "q/I");
+  t->Branch("type",    &fCandType,          "type/I");
+  t->Branch("pt",      &fCandPt,            "pt/D");
+  t->Branch("eta",     &fCandEta,           "eta/D");
+  t->Branch("phi",     &fCandPhi,           "phi/D");
+  t->Branch("tau",     &fCandTau,           "tau/D");
+  t->Branch("m",       &fCandM,             "m/D");
+  t->Branch("me",      &fCandME,            "me/D");
+  t->Branch("cm",      &fCandM2,            "cm/D");
+  t->Branch("cosa",    &fCandCosA,          "cosa/D");
+  t->Branch("alpha",   &fCandA,             "alpha/D");
+  t->Branch("iso",     &fCandIso,           "iso/D");
+  t->Branch("isotrk",  &fCandIsoTrk,        "isotrk/I");
+  t->Branch("closetrk",&fCandCloseTrk,      "closetrk/I");
+  t->Branch("chi2",    &fCandChi2,          "chi2/D");
+  t->Branch("dof",     &fCandDof,           "dof/D");
+  t->Branch("prob",    &fCandProb,          "prob/D");
+  t->Branch("fls3d",   &fCandFLS3d,         "fls3d/D");
+  t->Branch("fl3d",    &fCandFL3d,          "fl3d/D");
+  t->Branch("flxy",    &fCandFLxy,          "flxy/D");
+  t->Branch("fl3dE",   &fCandFL3dE,         "fl3dE/D");
+  t->Branch("flsxy",   &fCandFLSxy,         "flsxy/D");
+  t->Branch("docatrk", &fCandDocaTrk,       "docatrk/D");  
+  t->Branch("docatrkbdt", &fCandDocaTrkBdt, "docatrkbdt/D");  
+  t->Branch("maxdoca", &fCandDoca,          "maxdoca/D");
+  t->Branch("lip",     &fCandPvLip,         "lip/D");
+  t->Branch("lipE",    &fCandPvLipE,        "lipE/D");
+  t->Branch("tip",     &fCandPvTip,         "tip/D");
+  t->Branch("tipE",    &fCandPvTipE,        "tipE/D");
+  t->Branch("osiso",   &fOsIso,             "osiso/D");
+  t->Branch("osreliso",&fOsRelIso,          "osreliso/D");
+  t->Branch("osmpt",   &fOsMuonPt,          "osmpt/D");
+  t->Branch("osmptrel",&fOsMuonPtRel,       "osmptrel/D");
+  t->Branch("osmdr",   &fOsMuonDeltaR,      "osmdr/D");
+
+  // -- muons
+  t->Branch("m1q",     &fMu1Q,              "m1q/I");
+  t->Branch("m1id",    &fMu1Id,             "m1id/O");
+  t->Branch("m1pt",    &fMu1Pt,             "m1pt/D");
+  t->Branch("m1eta",   &fMu1Eta,            "m1eta/D");
+  t->Branch("m1phi",   &fMu1Phi,            "m1phi/D");
+  t->Branch("m1ip",    &fMu1IP,             "m1ip/D");
+  t->Branch("m1gt",    &fMu1TkQuality,      "m1gt/I");
+  t->Branch("m1pix",   &fMu1Pix,            "m1pix/I");
+  t->Branch("m1bpix",  &fMu1BPix,           "m1bpix/I");
+  t->Branch("m1bpixl1",&fMu1BPixL1,         "m1bpixl1/I");
+  t->Branch("m1chi2",  &fMu1Chi2,           "m1chi2/D");
+  t->Branch("m1pv",    &fMu1PV,             "m1pv/I");
+  t->Branch("m2q",     &fMu2Q,              "m2q/I");
+  t->Branch("m2id",    &fMu2Id,             "m2id/O");
+  t->Branch("m2pt",    &fMu2Pt,             "m2pt/D");
+  t->Branch("m2eta",   &fMu2Eta,            "m2eta/D");
+  t->Branch("m2phi",   &fMu2Phi,            "m2phi/D");
+  t->Branch("m2ip",    &fMu2IP,             "m2ip/D");
+  t->Branch("m2gt",    &fMu2TkQuality,      "m2gt/I");
+  t->Branch("m2pix",   &fMu2Pix,            "m2pix/I");
+  t->Branch("m2bpix",  &fMu2BPix,           "m2bpix/I");
+  t->Branch("m2bpixl1",&fMu2BPixL1,         "m2bpixl1/I");
+  t->Branch("m2chi2",  &fMu2Chi2,           "m2chi2/D");
+  t->Branch("m2pv",    &fMu2PV,             "m2pv/I");
+
+  t->Branch("mudist",  &fMuDist,            "mudist/D");
+  t->Branch("mudeltar",&fMuDeltaR,          "mudeltar/D");
+  t->Branch("hltm",    &fHLTmatch,          "hltm/O");
+
+  t->Branch("g1pt",    &fMu1PtGen,          "g1pt/D");
+  t->Branch("g2pt",    &fMu2PtGen,          "g2pt/D");
+  t->Branch("g1eta",   &fMu1EtaGen,         "g1eta/D");
+  t->Branch("g2eta",   &fMu2EtaGen,         "g2eta/D");
+  t->Branch("g1phi",   &fMu1PhiGen,         "g1phi/D");
+  t->Branch("g2phi",   &fMu2PhiGen,         "g2phi/D");
+  t->Branch("gmass",   &fGenMass,           "gmass/D");
+  t->Branch("gtau",    &fGenLifeTime,       "gtau/D");
+
+  t->Branch("t1pt",    &fMu1PtNrf,          "t1pt/D");
+  t->Branch("t1eta",   &fMu1EtaNrf,         "t1eta/D");
+  t->Branch("t2pt",    &fMu2PtNrf,          "t2pt/D");
+  t->Branch("t2eta",   &fMu2EtaNrf,         "t2eta/D");
+
+  t->Branch("hm1pt",  &fHltMu1Pt,  "hm1pt/D");    
+  t->Branch("hm1eta", &fHltMu1Eta, "hm1eta/D");  
+  t->Branch("hm1phi", &fHltMu1Phi, "hm1phi/D");  
+  t->Branch("hm2pt",  &fHltMu2Pt,  "hm2pt/D");    
+  t->Branch("hm2eta", &fHltMu2Eta, "hm2eta/D");  
+  t->Branch("hm2phi", &fHltMu2Phi, "hm2phi/D");  
+
+}
 
 
 // ----------------------------------------------------------------------

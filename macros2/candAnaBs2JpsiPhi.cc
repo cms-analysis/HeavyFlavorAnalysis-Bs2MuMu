@@ -370,41 +370,8 @@ void candAnaBs2JpsiPhi::bookHist() {
   cout << "==>candAnaBs2JpsiPhi: bookHist" << endl;
   candAna::bookHist();
 
-  // -- Additional reduced tree variables
-  fTree->Branch("mpsi",  &fJpsiMass, "mpsi/D");
-  fTree->Branch("psipt", &fJpsiPt,   "psipt/D");
-  fTree->Branch("psieta",&fJpsiEta,  "psieta/D");
-  fTree->Branch("psiphi",&fJpsiPhi,  "psiphi/D");
-  fTree->Branch("mkk",   &fMKK,      "mkk/D");
-  fTree->Branch("phipt", &fPhiPt,    "phipt/D");
-  fTree->Branch("phieta",&fPhiEta,   "phieta/D");
-  fTree->Branch("phiphi",&fPhiPhi,   "phiphi/D");
-  fTree->Branch("dr",    &fDeltaR,   "dr/D");
-
-  fTree->Branch("k1pt",  &fKa1Pt,    "k1pt/D");
-  fTree->Branch("k1eta", &fKa1Eta,   "k1eta/D");
-  fTree->Branch("k1phi", &fKa1Phi,   "k1phi/D");
-  fTree->Branch("k1gt",  &fKa1TkQuality,"k1gt/I");
-  fTree->Branch("k2pt",  &fKa2Pt,    "k2pt/D");
-  fTree->Branch("k2eta", &fKa2Eta,   "k2eta/D");
-  fTree->Branch("k2phi", &fKa2Phi,   "k2phi/D");
-  fTree->Branch("k2gt",  &fKa2TkQuality,"k2gt/I");
-  fTree->Branch("k1missid",  &fKa1Missid,    "k1missid/O");
-  fTree->Branch("k2missid",  &fKa2Missid,    "k2missid/O");
-  fTree->Branch("k1mumatch", &fKa1MuMatch,  "k1mumatch/O");
-  fTree->Branch("k2mumatch", &fKa2MuMatch,  "k2mumatch/O");
-
-
-  fTree->Branch("t3pt",  &fKa1PtNrf, "t3pt/D");
-  fTree->Branch("t3eta", &fKa1EtaNrf,"t3eta/D");
-
-  fTree->Branch("t4pt",  &fKa2PtNrf, "t4pt/D");
-  fTree->Branch("t4eta", &fKa2EtaNrf,"t4eta/D");
-
-  fTree->Branch("g3pt", &fKa1PtGen,  "g3pt/D");
-  fTree->Branch("g3eta",&fKa1EtaGen, "g3eta/D");
-  fTree->Branch("g4pt", &fKa2PtGen,  "g4pt/D");
-  fTree->Branch("g4eta",&fKa2EtaGen, "g4eta/D");
+  moreReducedTree(fTree);
+  moreReducedTree(fAmsTree);
 
   // -- Additional effTree variables
   fEffTree->Branch("k1pt",   &fETk1pt,            "k1pt/F");
@@ -442,6 +409,47 @@ void candAnaBs2JpsiPhi::bookHist() {
 //    fpPhiEta[i]  = bookDistribution(Form("%sphieta", name.c_str()), "#eta_{#phi}", "fGoodTracksEta", 25, -2.5, 2.5);  
 //  }
 
+}
+
+
+// ----------------------------------------------------------------------
+void candAnaBs2JpsiPhi::moreReducedTree(TTree *t) {
+
+  // -- Additional reduced tree variables
+  t->Branch("mpsi",  &fJpsiMass, "mpsi/D");
+  t->Branch("psipt", &fJpsiPt,   "psipt/D");
+  t->Branch("psieta",&fJpsiEta,  "psieta/D");
+  t->Branch("psiphi",&fJpsiPhi,  "psiphi/D");
+  t->Branch("mkk",   &fMKK,      "mkk/D");
+  t->Branch("phipt", &fPhiPt,    "phipt/D");
+  t->Branch("phieta",&fPhiEta,   "phieta/D");
+  t->Branch("phiphi",&fPhiPhi,   "phiphi/D");
+  t->Branch("dr",    &fDeltaR,   "dr/D");
+
+  t->Branch("k1pt",  &fKa1Pt,    "k1pt/D");
+  t->Branch("k1eta", &fKa1Eta,   "k1eta/D");
+  t->Branch("k1phi", &fKa1Phi,   "k1phi/D");
+  t->Branch("k1gt",  &fKa1TkQuality,"k1gt/I");
+  t->Branch("k2pt",  &fKa2Pt,    "k2pt/D");
+  t->Branch("k2eta", &fKa2Eta,   "k2eta/D");
+  t->Branch("k2phi", &fKa2Phi,   "k2phi/D");
+  t->Branch("k2gt",  &fKa2TkQuality,"k2gt/I");
+  t->Branch("k1missid",  &fKa1Missid,    "k1missid/O");
+  t->Branch("k2missid",  &fKa2Missid,    "k2missid/O");
+  t->Branch("k1mumatch", &fKa1MuMatch,  "k1mumatch/O");
+  t->Branch("k2mumatch", &fKa2MuMatch,  "k2mumatch/O");
+
+
+  t->Branch("t3pt",  &fKa1PtNrf, "t3pt/D");
+  t->Branch("t3eta", &fKa1EtaNrf,"t3eta/D");
+
+  t->Branch("t4pt",  &fKa2PtNrf, "t4pt/D");
+  t->Branch("t4eta", &fKa2EtaNrf,"t4eta/D");
+
+  t->Branch("g3pt", &fKa1PtGen,  "g3pt/D");
+  t->Branch("g3eta",&fKa1EtaGen, "g3eta/D");
+  t->Branch("g4pt", &fKa2PtGen,  "g4pt/D");
+  t->Branch("g4eta",&fKa2EtaGen, "g4eta/D");
 }
 
 
