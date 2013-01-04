@@ -10,4 +10,4 @@ TRIGRANGE   NOTRIGGER
 # -- candidate
 +input cuts/candidate.cuts
 # -- bdt input
-+input cuts/bdt.cuts
++input cuts/bdt.2011.cuts

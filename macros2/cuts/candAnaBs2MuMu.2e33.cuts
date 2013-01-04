@@ -11,4 +11,4 @@ TRIGRANGE   HLT_Dimuon4_Bs_Barrel_v7_Bs2E33v1p2V4(1:99999999)
 # -- candidate
 +input cuts/candidate.cuts
 # -- bdt input
-+input cuts/bdt.cuts
++input cuts/bdt.2011.cuts

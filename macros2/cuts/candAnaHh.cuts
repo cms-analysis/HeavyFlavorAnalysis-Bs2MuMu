@@ -14,4 +14,4 @@ HH_MHI 7.
 # -- candidate
 +input cuts/candidate.cuts
 # -- bdt input
-+input cuts/bdt.cuts
++input cuts/bdt.2011.cuts
