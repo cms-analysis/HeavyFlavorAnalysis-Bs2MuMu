@@ -1,0 +1,59 @@
+#!/usr/bin/env perl
+
+# ----------------------------------------------------------------------
+#
+# Usage: srmHadd -x URI -p pattern [-d] [-a "-count=900"] -o output.root
+# -----
+#
+# Examples:  srmRemove -d -x srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/v06-data -p \\.root -s 13362 
+# Examples:  srmRemove -d -x srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/v06-data -p '.\\*' 
+#
+#
+# ----------------------------------------------------------------------
+
+# -- Get arguments
+use Getopt::Std;
+getopts('a:do:p:x:');
+
+# -- arguments for srmls
+if ($opt_a) {
+    ($arg = $opt_a) =~ s/\"//g;
+    print "--> srmHadd $arg $opt_x\n";
+}
+
+my $output = "merged.root"; 
+if ($opt_o) {$output = $opt_o;}
+
+my $pattern = "\\.root\$"; 
+if ($opt_p) {$pattern = $opt_p;}
+
+my $dcap    = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
+
+$prefix = substr($opt_x, 0, index($opt_x, '/store')); 
+@merges = `srmls $arg $opt_x`; 
+
+# -- prepare list
+foreach $f (@merges) {
+    chop($f);
+    $f =~ s/^\ *//g;
+    if ($f =~ /$pattern/) {
+	print "pattern found: $f\n";
+	($size, $file) = split(/ /, $f, 2); 
+	($rfile = $file) =~ s/.*\/trivcat/$dcap/;
+	push(@urootfiles, $rfile); 
+    }
+}
+@rootfiles = sort(@urootfiles); 
+
+# -- now do it
+if ($opt_d) {
+    print "hadd $output \n";
+    foreach $f (@rootfiles) {print "  $f\n";}
+    exit(0); 
+} else {
+    print "hadd $output @rootfiles\n";
+    if (-e "$output") {unlink("$output"); }
+    system("hadd $output @rootfiles");
+}
+
+    
