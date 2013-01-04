@@ -19,7 +19,7 @@
 use Getopt::Std;
 getopts('Cdhj:r:s:t:v:');
 
-my $job = "2013";
+my $job = "v13/2012";
 #my $job = "2012";
 #my $job = "2012/new";
 #my $job = "2012/danek";
@@ -37,7 +37,7 @@ if ($opt_r) {
 if ($opt_v) {
     $version = $opt_v; 
 } else {
-    $version = "v12";
+    $version = "v13";
 }
 
 %jobs = (
@@ -59,8 +59,7 @@ if ($opt_v) {
     => "-y 2012 -m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-$version-cms-BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-START53_V7A-v1-*,$version-cms-BsToJpsiPhi.root"
     #
 	, "data 2012"  
-    => "-y 2012 -b 1,bmm2Reader.2012,cbmm-v13-Run2012*,v13-2012-data.root"
-    #=> "-y 2012 -b 1,bmm2Reader.2012,cbmm-$version-Run2012*,$version-2012-data.root"
+    => "-y 2012 -b 1,bmm2Reader.2012,cbmm-$version-Run2012*,$version-2012-data.root"
 	#, "data 2012A"  
     #=> "-y 2012 -b 1,bmm2Reader.2012,cbmm-$version-Run2012A-PromptReco-v1*,$version-2012A-data.root"
     #, "data 2012B"  
@@ -69,38 +68,38 @@ if ($opt_v) {
     #=> "-y 2012 -b 1,bmm2Reader.2012,cbmm-$version-Run2012C-PromptReco-v*,$version-2012C-data.root"
 	#
     , "Bs2PiPi rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bs2PiPi,cbmm-$version-cms-BsToPiPi_2PiPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-BsToPiPi.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bs2PiPi,cbmm-$version-cms-BsToPiPi_2PiPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToPiPi.root"
     , "Bs2KMuNu rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bs2KMuNu,cbmm-$version-cms-BsToKMuNu_KMuNuEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-BsToKMuNu.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bs2KMuNu,cbmm-$version-cms-BsToKMuNu_KMuNuEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToKMuNu.root"
     , "Bs2KPi rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bs2KPi,cbmm-$version-cms-BsToKPi_KPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-BsToKPi.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bs2KPi,cbmm-$version-cms-BsToKPi_KPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToKPi.root"
     , "Bs2KK rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bs2KK,cbmm-$version-cms-BsToKK_2KPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-BsToKK.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bs2KK,cbmm-$version-cms-BsToKK_2KPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToKK.root"
     , "Bd2KPi rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bd2KPi,cbmm-$version-cms-BdToKPi_KPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-BdToKPi.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2KPi,cbmm-$version-cms-BdToKPi_KPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BdToKPi.root"
     , "Lb2PiP rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Lb2PiP,cbmm-$version-cms-LambdaBToPPi_PPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-LambdaBToPPi.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Lb2PiP,cbmm-$version-cms-LambdaBToPPi_PPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-LambdaBToPPi.root"
     , "Bd2KK rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bd2KK,cbmm-$version-cms-BdToKK_2KPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-BdToKK.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2KK,cbmm-$version-cms-BdToKK_2KPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BdToKK.root"
     , "Bd2PiPi rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bd2PiPi,cbmm-$version-cms-BdToPiPi_2PiPtEtaFilter_8TeV-START53_V7A-v2-*,$version-2e33-BdToPiPi.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2PiPi,cbmm-$version-cms-BdToPiPi_2PiPtEtaFilter_8TeV-START53_V7A-v2-*,$version-cms-BdToPiPi.root"
     , "Lb2PK rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Lb2KP,cbmm-$version-cms-LambdaBToPK_PKPtEtaFilter_8TeV-START53_V7A-v2*,$version-2e33-LambdaBToPK.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Lb2KP,cbmm-$version-cms-LambdaBToPK_PKPtEtaFilter_8TeV-START53_V7A-v2*,$version-cms-LambdaBToPK.root"
     , "Lb2PMuNu rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Lb2PMuNu,cbmm-$version-cms-LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-LambdaBToPMuNu.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Lb2PMuNu,cbmm-$version-cms-LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-LambdaBToPMuNu.root"
     , "Bd2PiMuNu rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-$version-cms-BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-2e33-BdToPiMuNu.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-$version-cms-BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BdToPiMuNu.root"
 	#
     , "Bu2MuMuK rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bu2MuMuK,cbmm-$version-cms-BuToMuMuK_MuMuKEtaPtFilter_8TeV-START53_V7A-v1*,$version-2e33-BuToMuMuK.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bu2MuMuK,cbmm-$version-cms-BuToMuMuK_MuMuKEtaPtFilter_8TeV-START53_V7A-v1*,$version-cms-BuToMuMuK.root"
     , "Bu2MuMuPi rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bu2MuMuPi,cbmm-$version-cms-BuToMuMuPi_MuMuPiEtaPtFilter_8TeV-START53_V7A-v1*,$version-2e33-BuToMuMuPi.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bu2MuMuPi,cbmm-$version-cms-BuToMuMuPi_MuMuPiEtaPtFilter_8TeV-START53_V7A-v1*,$version-cms-BuToMuMuPi.root"
     , "Bd2MuMuPi0 rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuPi0,cbmm-$version-cms-BdToMuMuPi0_MuMuPi0EtaPtFilter_8TeV-START53_V7A-v1*,$version-2e33-BdToMuMuPi0.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuPi0,cbmm-$version-cms-BdToMuMuPi0_MuMuPi0EtaPtFilter_8TeV-START53_V7A-v1*,$version-cms-BdToMuMuPi0.root"
     , "Bd2MuMuGamma rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuGamma,cbmm-$version-cms-BdToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-START53_V7A-v1*,$version-2e33-BdToMuMuGamma.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuGamma,cbmm-$version-cms-BdToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-START53_V7A-v1*,$version-cms-BdToMuMuGamma.root"
     , "Bs2MuMuGamma rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bs2MuMuGamma,cbmm-$version-cms-BsToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-START53_V7A-v1*,$version-2e33-BsToMuMuGamma.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bs2MuMuGamma,cbmm-$version-cms-BsToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToMuMuGamma.root"
     );
 
 #my $user  = $ENV{'USER'};
