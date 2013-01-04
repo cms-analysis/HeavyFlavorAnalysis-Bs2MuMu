@@ -11,7 +11,7 @@ TRUTHCAND         531
 # -- candidate
 +input cuts/candidate.cuts
 # -- bdt input
-+input cuts/bdt.cuts
++input cuts/bdt.2011.cuts
 # -- J/psi cuts
 +input cuts/jpsi.cuts
 # -- phi cuts
