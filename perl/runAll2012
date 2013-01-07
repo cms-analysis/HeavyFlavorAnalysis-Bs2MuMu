@@ -20,10 +20,6 @@ use Getopt::Std;
 getopts('Cdhj:r:s:t:v:');
 
 my $job = "v13/2012";
-#my $job = "2012";
-#my $job = "2012/new";
-#my $job = "2012/danek";
-#my $job = "2012/unblind/new";
 
 if ($opt_j) {
     $job = $opt_j; 
@@ -60,13 +56,6 @@ if ($opt_v) {
     #
 	, "data 2012"  
     => "-y 2012 -b 1,bmm2Reader.2012,cbmm-$version-Run2012*,$version-2012-data.root"
-	#, "data 2012A"  
-    #=> "-y 2012 -b 1,bmm2Reader.2012,cbmm-$version-Run2012A-PromptReco-v1*,$version-2012A-data.root"
-    #, "data 2012B"  
-    #=> "-y 2012 -b 1,bmm2Reader.2012,cbmm-$version-Run2012B-PromptReco-v1*,$version-2012B-data.root"
-    #, "data 2012C"  
-    #=> "-y 2012 -b 1,bmm2Reader.2012,cbmm-$version-Run2012C-PromptReco-v*,$version-2012C-data.root"
-	#
     , "Bs2PiPi rare MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bs2PiPi,cbmm-v12-cms-BsToPiPi_2PiPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToPiPi.root"
     , "Bs2KMuNu rare MC"  
@@ -93,7 +82,7 @@ if ($opt_v) {
     , "Bu2MuMuK rare MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bu2MuMuK,cbmm-v12-cms-BuToMuMuK_MuMuKEtaPtFilter_8TeV-START53_V7A-v1*,$version-cms-BuToMuMuK.root"
     , "Bu2MuMuPi rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bu2MuMuPi,cbmm-v12-cms-BuToMuMuPi_MuMuPiEtaPtFilter_8TeV-START53_V7A-v1*,$version-cms-BuToMuMuPi.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bu2PiMuMu,cbmm-v12-cms-BuToMuMuPi_MuMuPiEtaPtFilter_8TeV-START53_V7A-v1*,$version-cms-BuToMuMuPi.root"
     , "Bd2MuMuPi0 rare MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuPi0,cbmm-v12-cms-BdToMuMuPi0_MuMuPi0EtaPtFilter_8TeV-START53_V7A-v1*,$version-cms-BdToMuMuPi0.root"
     , "Bd2MuMuGamma rare MC"  

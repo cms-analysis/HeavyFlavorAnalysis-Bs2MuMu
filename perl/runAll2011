@@ -24,9 +24,6 @@ use Getopt::Std;
 getopts('Cdhj:r:s:t:v:');
 
 my $job = "v13/2011";
-#my $job = "2011";
-#my $job = "2011/new";
-#my $job = "2011/oldjson";
 if ($opt_j) {
     $job = $opt_j; 
 }
@@ -116,16 +113,22 @@ if ($opt_v) {
     => "-y 2011 -m,bmm2Reader.2e33-Lb2KP,cbmm-v11-2e33-Lb2KP-*,$version-2e33-Lb2KP.root"
     , "Lb2PiP rare MC"  
     => "-y 2011 -m,bmm2Reader.2e33-Lb2PiP,cbmm-v11-2e33-Lb2PiP-*,$version-2e33-Lb2PiP.root"
+    , "Bu2PiMuMu rare MC"  
+    => "-y 2011 -m,bmm2Reader.2e33-Bu2PiMuMu,cbmm-v11-2e33-Bu2PiMuMu-*,$version-2e33-Bu2PiMuMu.root"
+    , "Bu2MuMuK rare MC"  
+    => "-y 2011 -m,bmm2Reader.2e33-Bu2MuMuK,cbmm-v11-2e33-Bu2KMuMu-*,$version-2e33-Bu2MuMuK.root"
+    , "Bs2PhiMuMu rare MC"  
+    => "-y 2011 -m,bmm2Reader.2e33-Bs2PhiMuMu,cbmm-v11-2e33-Bs2PhiMuMu-*,$version-2e33-Bs2PhiMuMu.root"
     #
     , "data 2011"  
     => "-y 2011 -b 1,bmm2Reader.data,cbmm-$version-Run2011*,$version-2011-data.root"
     # 
-    , "bmt jet"  
-    => "-y 2011 -b 1,bmt2Reader.data,cbmt-v11-Jet-*,$version-bmt-Jet.root"
-    , "bmt ht"  
-    => "-y 2011 -b 1,bmt2Reader.data,cbmt-v11-HT-*,$version-bmt-HT.root"
-    , "bmt photon"  
-    => "-y 2011 -b 1,bmt2Reader.data,cbmt-v11-Photon-*,$version-bmt-Photon.root"
+    #, "bmt jet"  
+    #=> "-y 2011 -b 1,bmt2Reader.data,cbmt-v11-Jet-*,$version-bmt-Jet.root"
+    #, "bmt ht"  
+    #=> "-y 2011 -b 1,bmt2Reader.data,cbmt-v11-HT-*,$version-bmt-HT.root"
+    #, "bmt photon"  
+    #=> "-y 2011 -b 1,bmt2Reader.data,cbmt-v11-Photon-*,$version-bmt-Photon.root"
     );
 
 my $scrtuser  = $ENV{'USER'};
