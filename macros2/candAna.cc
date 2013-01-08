@@ -146,7 +146,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
       if (!fGoodMuonsID) fAmsTree->Fill();
     } else {
       if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX) {
-	if (!fGoodMuonsID) fAmsTree->Fill();
+	if (fPreselection && !fGoodMuonsID) fAmsTree->Fill();
 	// do nothing
 	//cout<<" blinded "<<BLIND<<" "<<fpCand->fMass<<" "<<fCandM<<" "<<SIGBOXMIN<<" "<<SIGBOXMAX<<" "<<fCandIso<<" "<<fPreselection<<endl;;
       } else {
@@ -302,7 +302,7 @@ void candAna::candAnalysis() {
     p2 = fpEvt->getSigTrack(fpCand->fSig2); 
   }
 
-  if (fpCand->fType == 3000030) {
+  if (fpCand->fType == 300030) {
     if (fpCand->fDau1 < 0 || fpCand->fDau1 > fpEvt->nCands()) return;
     TAnaCand *pD = fpEvt->getCand(fpCand->fDau1); 
     pD = fpEvt->getCand(pD->fDau1); 
