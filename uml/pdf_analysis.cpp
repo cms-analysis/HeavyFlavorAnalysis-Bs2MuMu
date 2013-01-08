@@ -187,7 +187,7 @@ void pdf_analysis::set_pdf_constant(string name) {
 
 void pdf_analysis::define_bs(int i, int j) {
 
-  RooRealVar Mean_bs(name("Mean_bs", i, j), "Mean_bs", 5.35, 5.32, 5.4);
+  RooRealVar Mean_bs(name("Mean_bs", i, j), "Mean_bs", 5.35, 5.30, 5.4);
   RooRealVar Sigma_bs(name("Sigma_bs", i, j), "Sigma_bs", 0.02, 0.005, 0.2);
   RooRealVar Alpha_bs(name("Alpha_bs", i, j), "Alpha_bs", 2.8, 0.1, 3.0);
   RooRealVar Enne_bs(name("Enne_bs", i, j), "Enne_bs", 1., 0., 10.);
@@ -228,7 +228,7 @@ void pdf_analysis::define_bs(int i, int j) {
 
 void pdf_analysis::define_bd(int i, int j) {
 
-  RooRealVar Mean_bd(name("Mean_bd", i, j), "Mean_bd", 5.25, 5.20, 5.29);
+  RooRealVar Mean_bd(name("Mean_bd", i, j), "Mean_bd", 5.25, 5.20, 5.30);
   RooRealVar Sigma_bd(name("Sigma_bd", i, j), "Sigma_bd", 0.02, 0.005, 0.2);
   RooRealVar Alpha_bd(name("Alpha_bd", i, j), "Alpha_bd", 2.8, 0.1, 3.0);
   RooRealVar Enne_bd(name("Enne_bd", i, j), "Enne_bd", 1., 0., 10.);
@@ -978,6 +978,7 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
     N_bu_err[i].resize(channels_bdt);
     eff_rel_err[i].resize(channels_bdt);
   }
+  mass_scale_sys.resize(2);
   cout << "channels = " << channels << "; channels_bdt = " << channels_bdt << "; channels_all = " << channels_all << endl;
   parse_external_numbers(numbers_filename);
   parse_efficiency_numbers();
@@ -1241,12 +1242,18 @@ void pdf_analysis::parse_external_numbers(string filename) {
     sscanf(buffer, "JpsiToMuMu\t%lf\t%lf", &Jpsi2MuMu_BF_val, &Jpsi2MuMu_BF_err);
     sscanf(buffer, "Bs2MuMu_BF\t%lf\t%lf", &Bs2MuMu_SM_BF_val, &Bs2MuMu_SM_BF_err);
     sscanf(buffer, "Bd2MuMu_BF\t%lf\t%lf", &Bd2MuMu_SM_BF_val, &Bd2MuMu_SM_BF_err);
+
+    sscanf(buffer, "MassScale_0\t%lf\t0.", &mass_scale_sys[0]);
+    sscanf(buffer, "MassScale_1\t%lf\t0.", &mass_scale_sys[1]);
   }
   cout << "Bs2MuMu_SM_BF " <<  Bs2MuMu_SM_BF_val << " \\pm " << Bs2MuMu_SM_BF_err << endl;
   cout << "Bd2MuMu_SM_BF " <<  Bd2MuMu_SM_BF_val << " \\pm " << Bd2MuMu_SM_BF_err << endl;
   cout << "fs/fu        " <<  fs_over_fu_val << " \\pm " << fs_over_fu_err << endl;
   cout << "Bu2JpsiK_BF  " <<  Bu2JpsiK_BF_val << " \\pm " << Bu2JpsiK_BF_err << endl;
   cout << "Jpsi2MuMu_BF " <<  Jpsi2MuMu_BF_val << " \\pm " << Jpsi2MuMu_BF_err << endl;
+  for (int i = 0; i < 2; i++) {
+  	cout << "Mass scale " << i << " = " <<  mass_scale_sys[i] << " MeV" << endl;
+  }
 }
 
 void pdf_analysis::simulBdt_effs() {

@@ -52,7 +52,7 @@ class pdf_fitData : public pdf_analysis {
     double lumi;
     bool random;
     void setnewlumi();
-    void setsyst();
+    void set_syst();
 
     int proof;
 

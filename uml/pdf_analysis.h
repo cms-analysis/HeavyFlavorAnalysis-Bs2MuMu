@@ -174,8 +174,10 @@ protected:
   vector <vector <double> > eff_bu_err;
   vector <vector <double> > N_bu_err;
 
-  vector < vector < double > > bs_bdt_factor;
-  vector < vector < double > > bd_bdt_factor;
+  vector <vector <double> > bs_bdt_factor;
+  vector <vector <double> > bd_bdt_factor;
+
+  vector <double> mass_scale_sys;
 
   bool syst;
   bool randomsyst;

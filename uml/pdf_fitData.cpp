@@ -619,8 +619,8 @@ void pdf_fitData::define_constraints(int i, int j) {
   ws_->import(N_bu_gau);
 
   RooGaussian effratio_gau_bs(name("effratio_gau_bs", i, j), "effratio_gau_bs", *ws_->var(name("effratio_bs", i, j)), RooConst(effratio_bs_val[i][j]), RooConst(effratio_bs_err[i][j]));
-  ws_->import(effratio_gau_bs);
   RooGaussian effratio_gau_bd(name("effratio_gau_bd", i, j), "effratio_gau_bd", *ws_->var(name("effratio_bd", i, j)), RooConst(effratio_bd_val[i][j]), RooConst(effratio_bd_err[i][j]));
+  ws_->import(effratio_gau_bs);
   ws_->import(effratio_gau_bd);
 
   if (rare_constr_) {
@@ -629,6 +629,26 @@ void pdf_fitData::define_constraints(int i, int j) {
   	RooGaussian N_semi_gau(name("N_semi_gau", i, j), "N_semi_gau", *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
   	ws_->import(N_semi_gau);
   }
+  int eta = -1;
+  if (!simul_all_) eta = i / 2;
+  else {
+  	vector <int> indexes(get_EtaBdt_bins(i));
+  	eta = indexes[0] / 2;
+  }
+  RooGaussian Mean_gau_bs(name("Mean_gau_bs", i, j), "Mean_gau_bs", *ws_->var(name("Mean_bs", i, j)), RooConst(ws_->var(name("Mean_bs", i, j))->getVal()), RooConst(mass_scale_sys[eta]));
+  RooGaussian Mean_gau_bd(name("Mean_gau_bd", i, j), "Mean_gau_bd", *ws_->var(name("Mean_bd", i, j)), RooConst(ws_->var(name("Mean_bd", i, j))->getVal()), RooConst(mass_scale_sys[eta]));
+  ws_->import(Mean_gau_bs);
+  ws_->import(Mean_gau_bd);
+
+  RooGaussian Enne_gau_bs(name("Enne_gau_bs", i, j), "Enne_gau_bs", *ws_->var(name("Enne_bs", i, j)), RooConst(ws_->var(name("Enne_bs", i, j))->getVal()), RooConst(ws_->var(name("Enne_bs", i, j))->getError()));
+  RooGaussian Alpha_gau_bs(name("Alpha_gau_bs", i, j), "Alpha_gau_bs", *ws_->var(name("Alpha_bs", i, j)), RooConst(ws_->var(name("Alpha_bs", i, j))->getVal()), RooConst(ws_->var(name("Alpha_bs", i, j))->getError()));
+  RooGaussian Enne_gau_bd(name("Enne_gau_bd", i, j), "Enne_gau_bd", *ws_->var(name("Enne_bd", i, j)), RooConst(ws_->var(name("Enne_bd", i, j))->getVal()), RooConst(ws_->var(name("Enne_bd", i, j))->getError()));
+  RooGaussian Alpha_gau_bd(name("Alpha_gau_bd", i, j), "Alpha_gau_bd", *ws_->var(name("Alpha_bd", i, j)), RooConst(ws_->var(name("Alpha_bd", i, j))->getVal()), RooConst(ws_->var(name("Alpha_bd", i, j))->getError()));
+  ws_->import(Enne_gau_bs);
+  ws_->import(Alpha_gau_bs);
+  ws_->import(Enne_gau_bd);
+  ws_->import(Alpha_gau_bd);
+
 }
 
 void pdf_fitData::define_total_extended(int i, int j) {
@@ -655,10 +675,16 @@ void pdf_fitData::define_total_extended(int i, int j) {
     	constraints_list.add(*ws_->pdf(name("N_peak_gau", i, j)));
     	constraints_list.add(*ws_->pdf(name("N_semi_gau", i, j)));
     }
-    //    if (shapesyst) constraints_list.add(*ws_->pdf(name("shape_gau_bs", i, j)));
     if (BF_ > 1) {
       constraints_list.add(*ws_->pdf(name("effratio_gau_bd", i, j)));
     }
+    constraints_list.add(*ws_->pdf(name("Mean_gau_bs", i, j)));
+    constraints_list.add(*ws_->pdf(name("Mean_gau_bd", i, j)));
+
+    constraints_list.add(*ws_->pdf(name("Alpha_gau_bs", i, j)));
+    constraints_list.add(*ws_->pdf(name("Enne_gau_bs", i, j)));
+    constraints_list.add(*ws_->pdf(name("Alpha_gau_bd", i, j)));
+    constraints_list.add(*ws_->pdf(name("Enne_gau_bd", i, j)));
     RooProdPdf constraints_pdfs(name("pdf_constraints", i, j), "pdf_constraints", constraints_list);
     RooProdPdf pdf_ext_total(name("pdf_ext_total", i, j), "pdf_ext_total", RooArgList(pdf_ext_sum, constraints_pdfs));
     ws_->import(pdf_ext_total);
@@ -751,7 +777,7 @@ void pdf_fitData::define_simul() {
   }
 }
 
-void pdf_fitData::setsyst() {
+void pdf_fitData::set_syst() {
   if (BF_ > 0) {
     ws_->var("fs_over_fu")->setConstant(!syst);
     ws_->var("one_over_BRBR")->setConstant(!syst);
@@ -767,6 +793,12 @@ void pdf_fitData::setsyst() {
         	ws_->var(name("N_peak", i, j))->setConstant(true);
         }
         if (BF_ > 1) ws_->var(name("effratio_bd", i, j))->setConstant(!syst);
+        ws_->var(name("Mean_bs", i, j))->setConstant(!syst);
+        ws_->var(name("Mean_bd", i, j))->setConstant(!syst);
+        ws_->var(name("Enne_bs", i, j))->setConstant(!syst);
+        ws_->var(name("Alpha_bs", i, j))->setConstant(!syst);
+        ws_->var(name("Enne_bd", i, j))->setConstant(!syst);
+        ws_->var(name("Alpha_bd", i, j))->setConstant(!syst);
       }
     }
     string constraints("");
@@ -781,6 +813,13 @@ void pdf_fitData::setsyst() {
           	constraints += "," + (string)name("N_semi", i, j);
           }
           if (BF_ > 1) constraints += "," + (string)name("effratio_bd", i, j);
+          constraints += "," + (string)name("Mean_bs", i, j);
+          constraints += "," + (string)name("Mean_bd", i, j);
+
+          constraints += "," + (string)name("Enne_bs", i, j);
+          constraints += "," + (string)name("Alpha_bs", i, j);
+          constraints += "," + (string)name("Enne_bd", i, j);
+          constraints += "," + (string)name("Alpha_bd", i, j);
         }
       }
     }
@@ -1025,7 +1064,7 @@ void pdf_fitData::make_models() {
     ws_->defineSet("CO", "MassRes");
   }
 
-//  RooProdPdf* modelpdf = new RooProdPdf("model_pdf", "model_pdf", *ws_->pdf(pdfname.c_str()), *ws_->pdf("prior") );
+// RooProdPdf* modelpdf = new RooProdPdf("model_pdf", "model_pdf", *ws_->pdf(pdfname.c_str()), *ws_->pdf("prior") );
 //  ws_->import(*modelpdf);
 
   ModelConfig* H1 = new ModelConfig("H1", "background + signal hypothesis", ws_);

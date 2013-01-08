@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
   fitdata->set_final_pdf();
   if (hack_semi2011) fitdata->hack_ws("output/frozen/ws_simul4_bdt_BF2_PEE.root");
   fitdata->setnewlumi();
-  fitdata->setsyst();
+  fitdata->set_syst();
   fitdata->define_dataset();
 
   vector <double> cuts_v(inputs, -10);
