@@ -15,8 +15,8 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   fYear    = fpReader->fYear; 
   fName    = name; 
 
-  MASSMIN = 4.5;
-  MASSMAX = 6.5; 
+  MASSMIN = 4.9;
+  MASSMAX = 5.9; 
   BLIND = 0;
 
   fGenBTmi = fGenM1Tmi = fGenM2Tmi = fNGenPhotons = fRecM1Tmi = fRecM2Tmi = fCandTmi = -1; 
@@ -1805,6 +1805,8 @@ bool candAna::tightMuon(TAnaTrack *pT) {
     return true;
   }
 
+  //             654 3210
+  //80 = 0x50 = 0101 0000
   bool muflag = ((pT->fMuID & 80) == 80);
   //  bool muflag = ((pT->fMuID & 16) == 16);
 

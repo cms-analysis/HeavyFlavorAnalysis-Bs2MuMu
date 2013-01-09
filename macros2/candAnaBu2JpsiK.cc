@@ -97,6 +97,7 @@ void candAnaBu2JpsiK::candAnalysis() {
   fCandDof   = ndof;
 
   fPreselection = fPreselection && fGoodJpsiMass;
+  fPreselection = fPreselection && fWideMass;
 
   ((TH1D*)fHistDir->Get("../monEvents"))->Fill(3); 
 
