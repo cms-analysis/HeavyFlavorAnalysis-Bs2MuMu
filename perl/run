@@ -229,11 +229,11 @@ foreach $jobfile (@ARGV) {
 sub makeTarLink {
     ($ljob) = @_;
     if ($opt_t =~ /^\//) {
-	#system("/bin/ln -s $opt_t $ljob.tar.gz"); 
-	system("/bin/cp $opt_t $ljob.tar.gz"); 
+	system("/bin/ln -s $opt_t $ljob.tar.gz"); 
+	#system("/bin/cp $opt_t $ljob.tar.gz"); 
     } else {
-	#system("/bin/ln -s ../$tarDirectory/$tarFile $ljob.tar.gz"); 
-	system("/bin/cp ../$tarDirectory/$tarFile $ljob.tar.gz"); 
+	system("/bin/ln -s ../$tarDirectory/$tarFile $ljob.tar.gz"); 
+	#system("/bin/cp ../$tarDirectory/$tarFile $ljob.tar.gz"); 
     }
 }
 
