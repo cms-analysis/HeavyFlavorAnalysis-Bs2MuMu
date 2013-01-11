@@ -27,6 +27,7 @@
 #include "TrackingTools/IPTools/interface/IPTools.h"
 
 #include "DataFormats/GeometryCommonDetAlgo/interface/Measurement1D.h"
+#include "DataFormats/MuonReco/interface/MuonSelectors.h"
 
 #include "CommonTools/Statistics/interface/ChiSquared.h"
 
@@ -63,12 +64,13 @@ using namespace std;
 using namespace edm;
 using namespace reco;
 
-HFSequentialVertexFit::HFSequentialVertexFit(Handle<View<Track> > hTracks, const TransientTrackBuilder *TTB, Handle<VertexCollection> pvCollection, const MagneticField *field, int verbose, bool removeCandTracksFromVtx) :
+HFSequentialVertexFit::HFSequentialVertexFit(Handle<View<Track> > hTracks, const MuonCollection* muons, const TransientTrackBuilder *TTB, Handle<VertexCollection> pvCollection, const MagneticField *field, int verbose, bool removeCandTracksFromVtx) :
 
 	fVerbose(verbose),
 	fpTTB(TTB),
 	fhTracks(hTracks),
 	fPVCollection(pvCollection),
+	fMuons(muons),
 	magneticField(field),
 	removeCandTracksFromVtx_(removeCandTracksFromVtx)
 {} // HFSequentialVertexFit()
@@ -589,6 +591,26 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
     pTrack->fValidHits = fitTrack.numberOfValidHits();
     pTrack->fChi2 = fitTrack.chi2();
     pTrack->fQ = fitTrack.charge();
+	pTrack->fInt1 = 0; // FIXME: for next schema migration, use own variable. CMSSW tight muon w.r.t. PV
+	pTrack->fInt2 = 0; // FIXME: for next schema migration, use own variable. CMSSW tight muon w.r.t. SV
+	// get the reco muon if available
+	if (fMuons) {
+		for (MuonCollection::const_iterator muonIt = fMuons->begin(); muonIt != fMuons->end(); ++muonIt) {
+			if ((int)muonIt->track().index() == allTreeTracks[j].trackIx) {
+				Vertex secVertex(RecoVertex::convertPos(kinVertex->vertexState().position()),
+								 kinVertex->vertexState().error().matrix_new(),
+								 kinVertex->chiSquared(),
+								 kinVertex->degreesOfFreedom(),
+								 daughterParticles.size());
+				
+				if (pvIx >= 0)
+					pTrack->fInt1 = muon::isTightMuon(*muonIt, (*fPVCollection)[pvIx]);
+				
+				pTrack->fInt2 = muon::isTightMuon(*muonIt, secVertex);
+				break;
+			}
+		}
+	}
   }
   
   // fill the closest approaching tracks -- only if this is supposed to be a SV

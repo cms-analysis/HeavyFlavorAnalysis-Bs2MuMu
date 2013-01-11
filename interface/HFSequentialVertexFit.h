@@ -14,6 +14,8 @@
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/MuonReco/interface/MuonFwd.h"
 
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 
@@ -28,7 +30,7 @@ class HFSequentialVertexFit
 {
  public:
   
-  HFSequentialVertexFit(edm::Handle<edm::View<reco::Track> > hTracks, const TransientTrackBuilder *TTB, edm::Handle<reco::VertexCollection> pvCollection, const MagneticField *field, int verbose = 0, bool removeCandTracksFromVtx = true);
+  HFSequentialVertexFit(edm::Handle<edm::View<reco::Track> > hTracks, const reco::MuonCollection* muons, const TransientTrackBuilder *TTB, edm::Handle<reco::VertexCollection> pvCollection, const MagneticField *field, int verbose = 0, bool removeCandTracksFromVtx = true);
   virtual ~HFSequentialVertexFit();
   
   void doFit(HFDecayTree *tree);
@@ -71,6 +73,7 @@ class HFSequentialVertexFit
 	const TransientTrackBuilder* fpTTB;
 	edm::Handle<edm::View<reco::Track> > fhTracks;
 	edm::Handle<reco::VertexCollection> fPVCollection;
+	const reco::MuonCollection *fMuons;
 	const MagneticField* magneticField;
 	bool removeCandTracksFromVtx_;
 	//RefCountedHFNodeCut nodeCut;
