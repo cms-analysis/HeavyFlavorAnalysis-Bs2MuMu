@@ -2,7 +2,7 @@
 # signal data and MC
 type=sg,default       dset=data      lumi=4.9    file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/v13/2011/v13-2011-data.root
 #type=sg,default      dset=mc        lumi=1600.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/v13/2011/v13-mix-Bs2MuMu.root
-type=sg,default       dset=mc        lumi=1600.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/v13/2011/v13-mix-newSignalMC-Bs2MuMu.root
+type=sg,default       dset=mc        lumi=1600.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/v13/2011/v13-mix-Bs2MuMu-newSignalMC.root
 type=sg,1e33          dset=mc        lumi=1600.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/v13/2011/v13-1e33-Bs2MuMu.root
 type=sg,2e33          dset=mc        lumi=1600.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/v13/2011/v13-2e33-Bs2MuMu.root
 type=sg,3e33          dset=mc        lumi=1600.0 file=dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/bmm/v13/2011/v13-3e33-Bs2MuMu.root 
