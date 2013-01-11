@@ -30,10 +30,6 @@ bool operator<(const track_entry_t &t1, const track_entry_t &t2)
 	return result;
 } // operator<
 
-int trackIx;
-int particleID;
-bool massFit;
-
 HFNodeCut::HFNodeCut() : fMaxDoca(0.0), fVtxChi2(0.0), fVtxPos(), fPtCand()
 {} // HFNodeCut()
 
