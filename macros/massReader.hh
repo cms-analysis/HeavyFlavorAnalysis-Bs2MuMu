@@ -53,20 +53,23 @@ typedef std::multiset<int> decay_t;
 // When adding one, be sure to update the code in massReader::loadTrigger()
 enum trigger_bits
 {
-	kHLT_DoubleMu3_Bit						= 1 << 0,
-	kHLT_DoubleMu0_Bit						= 1 << 1,
-	kHLT_DoubleMu0_Quarkonium_Bit			= 1 << 2,
-	kHLT_DoubleMu3_Jpsi_Bit					= 1 << 3,
-	kHLT_DoubleMu3_Bs_Bit					= 1 << 4,
-	kHLT_DoubleMu2_Bs_Bit					= 1 << 5,
-	kHLT_Dimuon6p5_Jpsi_Displaced_Bit		= 1 << 6,
-	kHLT_Dimuon7_Jpsi_Displaced_Bit			= 1 << 7,
-	kHLT_Dimuon6_Bs_Bit						= 1 << 8,
-	kHLT_Dimuon4_Bs_Barrel_Bit				= 1 << 9,
-	kHLT_DoubleMu4_Dimuon6_Bs_Bit			= 1 << 10,
-	kHLT_DoubleMu4_Dimuon4_Bs_Barrel_Bit	= 1 << 11,
-	kHLT_DoubleMu3p5_Jpsi_Displaced_Bit		= 1 << 12,
-	kHLT_DoubleMu4_Jpsi_Displaced_Bit		= 1 << 13
+	kHLT_DoubleMu3_Bit							= 1 << 0,
+	kHLT_DoubleMu0_Bit							= 1 << 1,
+	kHLT_DoubleMu0_Quarkonium_Bit				= 1 << 2,
+	kHLT_DoubleMu3_Jpsi_Bit						= 1 << 3,
+	kHLT_DoubleMu3_Bs_Bit						= 1 << 4,
+	kHLT_DoubleMu2_Bs_Bit						= 1 << 5,
+	kHLT_Dimuon6p5_Jpsi_Displaced_Bit			= 1 << 6,
+	kHLT_Dimuon7_Jpsi_Displaced_Bit				= 1 << 7,
+	kHLT_Dimuon6_Bs_Bit							= 1 << 8,
+	kHLT_Dimuon4_Bs_Barrel_Bit					= 1 << 9,
+	kHLT_DoubleMu4_Dimuon6_Bs_Bit				= 1 << 10,
+	kHLT_DoubleMu4_Dimuon4_Bs_Barrel_Bit		= 1 << 11,
+	kHLT_DoubleMu3p5_Jpsi_Displaced_Bit			= 1 << 12,
+	kHLT_DoubleMu4_Jpsi_Displaced_Bit			= 1 << 13,
+	kHLT_DoubleMu3_4_Dimuon5_Bs_Central_Bit		= 1 << 14,
+	kHLT_DoubleMu3p5_4_Dimuon5_Bs_Central_Bit	= 1 << 15,
+	kHLT_DoubleMu4_Dimuon7_Bs_Forward_Bit		= 1 << 16
 };
 
 struct trigger_table_t {
@@ -107,7 +110,7 @@ class massReader : public treeReader01 {
 		int loadTrigger(int *errTriggerOut = NULL, int *triggersFoundOut = NULL);
 		int isMuonTight(TAnaTrack *sigTrack);
 		int hasTriggeredNorm();
-		int hasTriggeredSignal();
+		int hasTriggeredSignal(bool barrel);
 		int hasTriggered(int triggers,trigger_table_t *table, unsigned size);
 
 		// other utility routines
@@ -131,6 +134,9 @@ class massReader : public treeReader01 {
 		float fEta; // eta of the candidate
 		float fIPCand;
 		float fIPCandE;
+		float fThetaStar;
+		float fThetaStar2;
+		float fThetaStar3;
 		// SV Vertex Variables
 		float fD3;
 		float fD3E;
@@ -154,6 +160,8 @@ class massReader : public treeReader01 {
 		// muon properties
 		float fPtMu1,fPtMu2;
 		int fMuTight1,fMuTight2;
+		int fMuTight1_PV,fMuTight2_PV;
+		int fMuTight1_SV,fMuTight2_SV;
 		float fEtaMu1,fEtaMu2;
 		float fDeltaPhiMu; // mu1.Phi(mu2)
 		float fDeltaR; // deltaR of the muons
@@ -192,11 +200,18 @@ class massReader : public treeReader01 {
 		int fTriggersError; // error information of trigger
 		int fTriggersFound; // what triggers were available
 		int fTriggeredJPsi;
-		int fTriggeredBs;
+		int fTriggeredBsBarrel;
+		int fTriggeredBsEndcap;
+		
 		// PV
 		int fNbrPV; // nbr of PV in this event
 		float fPVTrkWeight;
-	
+		
+		float fNearMu1;
+		float fNearMu2;
+		float fIsoMu1;
+		float fIsoMu2;
+		
 	// Cut variables
 	protected:
 		bool fCutFileParsed;
