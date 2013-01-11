@@ -154,7 +154,7 @@ void HFBs2JpsiPhi::analyze(const Event& iEvent, const EventSetup& iSetup)
 	if (fVerbose > 0) cout << "==>HFBs2JpsiKp> J/psi list size: " << psiList.size() << endl;
 	if (fVerbose > 0) cout << "==>HFBs2JpsiKp> phi list size: " << phiList.size() << endl;
 
-	HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
+	HFSequentialVertexFit aSeq(hTracks, hMuons.product(), fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
 
 	// -- Build J/psi + phi
 	TLorentzVector psi, phi, m1, m2, ka1, ka2, bs;

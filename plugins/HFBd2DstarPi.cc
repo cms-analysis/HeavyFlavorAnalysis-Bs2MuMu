@@ -23,8 +23,6 @@
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/Wrapper.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
-#include "DataFormats/MuonReco/interface/MuonFwd.h"
-#include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/TrackReco/interface/TrackExtraFwd.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/TrackReco/interface/Track.h"
@@ -162,7 +160,7 @@ void HFBd2DstarPi::analyze(const Event& iEvent, const EventSetup& iSetup)
   HFTwoParticleCombinatoricsSet piSet = a.combine(trkLowList, MPION, trkHighList, MPION, 0.0, 6.0, 0);
   if (fVerbose > 0) cout << "==>HFBd2DstarPi> pion set size: " << piSet.size() << endl;
   
-  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
+  HFSequentialVertexFit aSeq(hTracks, NULL, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
   
   TLorentzVector ka,pi,d0,pis,pif,dstar,b0;
   for (HFTwoParticleCombinatoricsNew::iterator d0It = d0Set.begin(); d0It != d0Set.end(); ++d0It) {

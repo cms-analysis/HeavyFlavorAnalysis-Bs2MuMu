@@ -361,7 +361,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	return;
       }
 
-      HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
+      HFSequentialVertexFit aSeq(hTracks, NULL, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
       // -- setup with (relevant) muon hypothesis
       HFDecayTree theTree(1000000+fType, true, 0, false); 
       int ID(0), IDX(0); 

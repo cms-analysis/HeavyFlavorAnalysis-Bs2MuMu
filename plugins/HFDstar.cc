@@ -22,8 +22,6 @@
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Common/interface/Wrapper.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
-#include "DataFormats/MuonReco/interface/MuonFwd.h"
-#include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/TrackReco/interface/TrackExtraFwd.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/TrackReco/interface/Track.h"
@@ -115,7 +113,7 @@ void HFDstar::analyze(const Event& iEvent, const EventSetup& iSetup)
 
 
   // -- Build lists
-  TLorentzVector muon, lambdac, dzero, dplus, kaon, pion, track, kaon1, kaon2, pion1, pion2, pion3;
+  TLorentzVector lambdac, dzero, dplus, kaon, pion, track, kaon1, kaon2, pion1, pion2, pion3;
   TLorentzVector tlv; 
   vector<pair<int, TLorentzVector> > kalist, pilist; 
   pilist.reserve(10000); 
@@ -145,7 +143,7 @@ void HFDstar::analyze(const Event& iEvent, const EventSetup& iSetup)
   kapiList.reserve(100000); 
   a.combine(kapiList, kalist, pilist, MD0-fD0Window, MD0+fD0Window, 0); 
   
-  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
+  HFSequentialVertexFit aSeq(hTracks, NULL, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
 
   // -- Build D0 + track
   TLorentzVector d0, dstar, ka, pi, pis;

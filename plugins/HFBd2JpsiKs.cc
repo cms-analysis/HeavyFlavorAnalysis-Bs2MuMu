@@ -216,7 +216,7 @@ void HFBd2JpsiKs::analyze(const Event& iEvent, const EventSetup& iSetup)
 	if (fVerbose > 0) cout << "==>HFBd2JpsiKs> Ks list size: " << ksList.size() << endl;
 	
 	// do the vertex fitting...
-	HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
+	HFSequentialVertexFit aSeq(hTracks, (MuonCollection*)hMuons.product(), fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
 	TLorentzVector psi,m1,m2,pi1,pi2,ks,bd;
 
 	for (unsigned int i = 0; i < psiList.size(); i++) {

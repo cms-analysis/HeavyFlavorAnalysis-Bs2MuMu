@@ -204,7 +204,7 @@ void HFBd2JpsiKstar::analyze(const Event& iEvent, const EventSetup& iSetup)
   if (fVerbose > 0) cout << "==>HFBs2JpsiKp> kstar list size: " << kstarList.size() << endl;
   
   HFKalmanVertexFit    aKal(fTTB.product(), fPV, 100511, fVerbose);   aKal.fMaxDoca     = fMaxDoca; 
-  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
+  HFSequentialVertexFit aSeq(hTracks, (MuonCollection*)hMuons.product(), fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
   vector<Track> trackList; 
   vector<int> trackIndices;
   vector<double> trackMasses;

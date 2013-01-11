@@ -17,6 +17,7 @@
 #include "RecoVertex/VertexTools/interface/VertexDistanceXY.h"
 #include "RecoVertex/KalmanVertexFit/interface/KalmanVertexFitter.h"
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
+#include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
 #include "CommonTools/Statistics/interface/ChiSquared.h"
 
 #include "RecoVertex/KinematicFitPrimitives/interface/ParticleMass.h"
@@ -88,7 +89,7 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
   ESHandle<MagneticField> magfield;
   iSetup.get<IdealMagneticFieldRecord>().get(magfield);
   const MagneticField *field = magfield.product();
- 
+  
   // -- get the primary vertex
   Handle<VertexCollection> recoPrimaryVertexCollection;
   iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
@@ -143,7 +144,7 @@ void HFDimuons::analyze(const Event& iEvent, const EventSetup& iSetup) {
   }
 
   // -- set up vertex fitter 
-  HFSequentialVertexFit aSeq(hTracks,fTTB.product(),recoPrimaryVertexCollection, field, fVerbose);
+  HFSequentialVertexFit aSeq(hTracks,hMuons.product(),fTTB.product(),recoPrimaryVertexCollection, field, fVerbose);
   //   HFKalmanVertexFit a(fTTB.product(), fPV, 1313, 0);
   //   a.setNoCuts();
   //   a.fMaxDoca = fMaxDoca;

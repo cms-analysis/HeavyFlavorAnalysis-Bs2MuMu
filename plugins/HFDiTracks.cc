@@ -138,7 +138,7 @@ void HFDiTracks::analyze(const Event& iEvent, const EventSetup& iSetup) {
   }
 
   // -- set up vertex fitter 
-  HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
+  HFSequentialVertexFit aSeq(hTracks, NULL, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
 
   TLorentzVector ditrack, t1, t2;
   int n1=0, n2=0;

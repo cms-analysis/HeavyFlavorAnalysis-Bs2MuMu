@@ -164,7 +164,7 @@ void HFMuonAndTrack::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
   vector<double> trackMasses;
 
   // -- set up vertex fitter 
-  HFSequentialVertexFit aSeq(hTracks,fTTB.product(),recoPrimaryVertexCollection, field, fVerbose);
+  HFSequentialVertexFit aSeq(hTracks, hMuons.product(), fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
 
   TLorentzVector dimuon, m1, m2;
   int iMuon1(-1); 

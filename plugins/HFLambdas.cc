@@ -366,7 +366,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
 
     const int V0Cand = fUseV0producer ? 10000 : 0;
     // do the vertex fitting...
-    HFSequentialVertexFit aSeq(hTracks, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose, fRemoveCandTracksFromVertex);
+    HFSequentialVertexFit aSeq(hTracks, hMuons.product(), fTTB.product(), recoPrimaryVertexCollection, field, fVerbose, fRemoveCandTracksFromVertex);
     //TLorentzVector tlvPsi, tlvMu1, tlvMu2, tlvPion, tlvProton, tlvLambda0, tlvLambdaB;
 
     for (unsigned int i = 0; i < psiList.size(); i++)
