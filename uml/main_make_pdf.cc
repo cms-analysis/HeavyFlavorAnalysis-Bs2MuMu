@@ -116,6 +116,7 @@ int main(int argc, char* argv[]) {
         m2eta->setVal(m2eta_t);
         bdt->setVal(bdt_t);
         if (m_t > 5.20 && m_t < 5.45 && i == 13) continue; // skip signal windows for comb bkg
+        if (m_t < 4.90 || m_t > 5.90) continue; // skip outside range
         /// mass resolution
         if (y == 0) MassRes->setVal(MassRes_0_h->Eval(eta_t));
         else if (y == 1) MassRes->setVal(MassRes_2_h->Eval(eta_t));
