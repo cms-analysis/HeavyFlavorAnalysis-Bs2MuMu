@@ -51,7 +51,7 @@ if ($opt_v) {
     , "signal Bx2MuMu MC 2e33"  
     => "-y 2011 -m,bmm2Reader.2e33-Bs2MuMu,cbmm-v11-2e33-Bx2MuMu-0*,$version-2e33-Bx2MuMu.root"
     , "signal By2MuMu MC 2e33"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bd2MuMu,cbmm-v11-2e33-By2MuMu-0*,$version-2e33-By2MuMu.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bs2MuMu,cbmm-v11-2e33-By2MuMu-0*,$version-2e33-By2MuMu.root"
     , "signal Bs2MuMu MC 3e33"  
     => "-y 2011 -m,bmm2Reader.3e33-Bs2MuMu,cbmm-v11-3e33-Bs2MuMu-0*,$version-3e33-Bs2MuMu.root"
     , "signal Bs2MuMu MC 3e33"  
