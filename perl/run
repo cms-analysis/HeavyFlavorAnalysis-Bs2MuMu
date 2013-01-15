@@ -16,7 +16,7 @@
 #              100414.v05.data
 #
 #
-# Destination examples: any  cscs.ch  rl.ac.uk  ic.ac.uk  in2p3.fr  oeaw.ac.at  ciemat.es
+# Destination examples: any  cscs.ch  rl.ac.uk  ic.ac.uk  in2p3.fr  oeaw.ac.at  ciemat.es unl.edu pi.infn.it
 #
 #
 #
@@ -100,6 +100,8 @@ my $tarFile, $tarDirectory;
 ($tarDirectory, $tarFile) = fileAndDirectory($opt_t); 
 my $cshFile, $cshDirectory; 
 ($cshDirectory, $cshFile) = fileAndDirectory($opt_c); 
+
+#print "***===> Name of csh file $cshDirectory $cshFile \n";
 
 my $pwd = `pwd`; 
 chop($pwd); 
