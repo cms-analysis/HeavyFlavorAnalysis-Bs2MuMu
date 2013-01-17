@@ -440,17 +440,17 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		if (anaMuon) {
 			uVector = recTrack->fPlab.Unit();
 			nearTracks.clear();
-			for (it = anaMuon->fNstTracks.begin(); it != anaMuon->fNstTracks.end(); ++it) {
-				if (cand_tracks.count(it->first) > 0)
-					continue; // this track belongs to the candidate
+// 			for (it = anaMuon->fNstTracks.begin(); it != anaMuon->fNstTracks.end(); ++it) {
+// 				if (cand_tracks.count(it->first) > 0)
+// 					continue; // this track belongs to the candidate
 				
-				recTrack = fpEvt->getRecTrack(it->first);
-				nt.ix = it->first;
-				nt.doca = it->second;
-				nt.pt = recTrack->fPlab.Perp();
-				nt.pt_rel = (recTrack->fPlab - (recTrack->fPlab * uVector) * uVector).Mag();
-				nearTracks.push_back(nt);
-			}
+// 				recTrack = fpEvt->getRecTrack(it->first);
+// 				nt.ix = it->first;
+// 				nt.doca = it->second;
+// 				nt.pt = recTrack->fPlab.Perp();
+// 				nt.pt_rel = (recTrack->fPlab - (recTrack->fPlab * uVector) * uVector).Mag();
+// 				nearTracks.push_back(nt);
+// 			}
 			
 			std::sort(nearTracks.begin(), nearTracks.end()); // sort for doca
 			
@@ -482,16 +482,16 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		if (anaMuon) {
 			uVector = recTrack->fPlab.Unit();
 			nearTracks.clear();
-			for (it = anaMuon->fNstTracks.begin(); it != anaMuon->fNstTracks.end(); ++it) {
-				if (cand_tracks.count(it->first) > 0)
-					continue; // this track belongs to the candidate
-				recTrack = fpEvt->getRecTrack(it->first);
-				nt.ix = it->first;
-				nt.doca = it->second;
-				nt.pt = recTrack->fPlab.Perp();
-				nt.pt_rel = (recTrack->fPlab - (recTrack->fPlab * uVector) * uVector).Mag();
-				nearTracks.push_back(nt);
-			}
+// 			for (it = anaMuon->fNstTracks.begin(); it != anaMuon->fNstTracks.end(); ++it) {
+// 				if (cand_tracks.count(it->first) > 0)
+// 					continue; // this track belongs to the candidate
+// 				recTrack = fpEvt->getRecTrack(it->first);
+// 				nt.ix = it->first;
+// 				nt.doca = it->second;
+// 				nt.pt = recTrack->fPlab.Perp();
+// 				nt.pt_rel = (recTrack->fPlab - (recTrack->fPlab * uVector) * uVector).Mag();
+// 				nearTracks.push_back(nt);
+// 			}
 			
 			std::sort(nearTracks.begin(), nearTracks.end()); // sort for doca
 			
