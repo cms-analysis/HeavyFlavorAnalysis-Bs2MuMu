@@ -10,407 +10,409 @@
 
 ClassImp(initFunc)
 
-using std::string;
-using std::cout;
-using std::endl;
+using namespace std;
 
-//-------------------------------------------------------------------------
-// This is the usual Landau from root
-double f_landau(double *x, double *par) {
-  //     const                        mpv   sigma
-  return par[2] * TMath::Landau(x[0],par[0],par[1]);
-}
-// ----------------------------------------------------------------------
-// This is a simplfied "landau" using an analytical formula.
-// I use it because it was easiter for me to understand the integral (area) of this formula,
-double f_landausimp(double *x, double *par) {  // simplified landau
-  double xx = ( x[0]- par[0] ) / par[1];
-  return par[2] * 0.3989 * TMath::Exp(-0.5 * ( xx + TMath::Exp(-xx) ) );
-} 
+namespace {
 
-// ----------------------------------------------------------------------
-double f_expo(double *x, double *par) {
-  return par[0]*TMath::Exp(x[0]*par[1]);
-} 
+  //-------------------------------------------------------------------------
+  // This is the usual Landau from root
+  double iF_landau(double *x, double *par) {
+    //     const                        mpv   sigma
+    return par[2] * TMath::Landau(x[0],par[0],par[1]);
+  }
+  // ----------------------------------------------------------------------
+  // This is a simplfied "landau" using an analytical formula.
+  // I use it because it was easiter for me to understand the integral (area) of this formula,
+  double iF_landausimp(double *x, double *par) {  // simplified landau
+    double xx = ( x[0]- par[0] ) / par[1];
+    return par[2] * 0.3989 * TMath::Exp(-0.5 * ( xx + TMath::Exp(-xx) ) );
+  } 
 
-// ----------------------------------------------------------------------
-double f_err(double *x, double *par) {
-  // from DK: TMath::Erf((a1-x)/a2))+a3
-  return par[3]*(TMath::Erf((par[0]-x[0])/par[1])+par[2]); 
-} 
+  // ----------------------------------------------------------------------
+  double iF_expo(double *x, double *par) {
+    return par[0]*TMath::Exp(x[0]*par[1]);
+  } 
+
+  // ----------------------------------------------------------------------
+  double iF_err(double *x, double *par) {
+    // from DK: TMath::Erf((a1-x)/a2))+a3
+    return par[3]*(TMath::Erf((par[0]-x[0])/par[1])+par[2]); 
+  } 
 
 
-// ----------------------------------------------------------------------
-double f_gauss(double *x, double *par) {
-  // par[0] -> const
-  // par[1] -> mean
-  // par[2] -> sigma
+  // ----------------------------------------------------------------------
+  double iF_gauss(double *x, double *par) {
+    // par[0] -> const
+    // par[1] -> mean
+    // par[2] -> sigma
 
-  if (par[2] > 0.) {
-    Double_t arg = (x[0] - par[1]) / par[2];
-    Double_t fitval =  par[0]*TMath::Exp(-0.5*arg*arg);
+    if (par[2] > 0.) {
+      Double_t arg = (x[0] - par[1]) / par[2];
+      Double_t fitval =  par[0]*TMath::Exp(-0.5*arg*arg);
+      return fitval;
+    }
+    else {
+      return -1.;
+    }
+  }
+
+  // ----------------------------------------------------------------------
+  double iF_Gauss(double *x, double *par) {
+    // par[0] -> area
+    // par[1] -> mean
+    // par[2] -> sigma
+
+    double sqrt2pi = 2.506628275;
+
+    if (par[2] > 0.) {
+      Double_t arg = (x[0] - par[1]) / par[2];
+      Double_t fitval =  (par[0]/(sqrt2pi*par[2])) * TMath::Exp(-0.5*arg*arg);
+      return fitval;
+    }
+    else {
+      return -1.;
+    }
+  }
+
+  // ----------------------------------------------------------------------
+  double iF_gauss2(double *x, double *par) {
+    // par[0] -> const
+    // par[1] -> mean
+    // par[2] -> sigma
+    // par[3] -> fraction in second gaussian
+    // par[4] -> mean of second gaussian
+    // par[5] -> sigma of second gaussian
+    Double_t arg1(0.), arg2(0.), fitval1(0.), fitval2(0.); 
+    if (par[2] > 0) {
+      arg1 = (x[0] - par[1]) / par[2];
+      fitval1 =  par[0]*TMath::Exp(-0.5*arg1*arg1);
+    }
+    if (par[5] > 0.) {
+      arg2 = (x[0] - par[4]) / par[5];
+      fitval2 =  par[3]*par[0]*TMath::Exp(-0.5*arg2*arg2);
+    }
+    Double_t fitval = fitval1 + fitval2;
     return fitval;
   }
-  else {
-    return -1.;
-  }
-}
 
-// ----------------------------------------------------------------------
-double f_Gauss(double *x, double *par) {
-  // par[0] -> area
-  // par[1] -> mean
-  // par[2] -> sigma
-
-  double sqrt2pi = 2.506628275;
-
-  if (par[2] > 0.) {
-    Double_t arg = (x[0] - par[1]) / par[2];
-    Double_t fitval =  (par[0]/(sqrt2pi*par[2])) * TMath::Exp(-0.5*arg*arg);
+  // ----------------------------------------------------------------------
+  double iF_gauss2f(double *x, double *par) {
+    // par[0] -> const
+    // par[1] -> mean
+    // par[2] -> sigma
+    // par[3] -> fraction,  area ratio second/first gaussian
+    // par[4] -> mean of second gaussian
+    // par[5] -> sigma of second gaussian
+    Double_t arg1(0.), arg2(0.), fitval1(0.), fitval2(0.); 
+    if (par[2] > 0) {
+      arg1 = (x[0] - par[1]) / par[2];
+      fitval1 =  par[0]*TMath::Exp(-0.5*arg1*arg1);
+    }
+  
+    if (par[5] > 0.) {
+      // relate the area of the 2 gaussians 
+      double fraction = par[0] * par[2]/par[5];
+      arg2 = (x[0] - par[4]) / par[5];
+      fitval2 =  par[3]*fraction*TMath::Exp(-0.5*arg2*arg2);
+    }
+    Double_t fitval = fitval1 + fitval2;
     return fitval;
   }
-  else {
-    return -1.;
-  }
-}
 
-// ----------------------------------------------------------------------
-double f_gauss2(double *x, double *par) {
-  // par[0] -> const
-  // par[1] -> mean
-  // par[2] -> sigma
-  // par[3] -> fraction in second gaussian
-  // par[4] -> mean of second gaussian
-  // par[5] -> sigma of second gaussian
-  Double_t arg1(0.), arg2(0.), fitval1(0.), fitval2(0.); 
-  if (par[2] > 0) {
-    arg1 = (x[0] - par[1]) / par[2];
-    fitval1 =  par[0]*TMath::Exp(-0.5*arg1*arg1);
+  // ----------------------------------------------------------------------
+  double iF_gauss2c(double *x, double *par) {
+    // constrained to have the same mean in the second gaussian
+    // par[0] -> const
+    // par[1] -> mean
+    // par[2] -> sigma
+    // par[3] -> fraction in second gaussian
+    // par[4] -> sigma of second gaussian
+    Double_t arg1(0.), arg2(0.), fitval1(0.), fitval2(0.); 
+    if (par[2] > 0) {
+      arg1 = (x[0] - par[1]) / par[2];
+      fitval1 =  par[0]*TMath::Exp(-0.5*arg1*arg1);
+    }
+    if (par[4] > 0.) {
+      arg2 = (x[0] - par[1]) / par[4];
+      fitval2 =  par[3]*par[0]*TMath::Exp(-0.5*arg2*arg2);
+    }
+    Double_t fitval = fitval1 + fitval2;
+    return fitval;
   }
-  if (par[5] > 0.) {
-    arg2 = (x[0] - par[4]) / par[5];
-    fitval2 =  par[3]*par[0]*TMath::Exp(-0.5*arg2*arg2);
-  }
-  Double_t fitval = fitval1 + fitval2;
-  return fitval;
-}
 
-// ----------------------------------------------------------------------
-double f_gauss2f(double *x, double *par) {
-  // par[0] -> const
-  // par[1] -> mean
-  // par[2] -> sigma
-  // par[3] -> fraction,  area ratio second/first gaussian
-  // par[4] -> mean of second gaussian
-  // par[5] -> sigma of second gaussian
-  Double_t arg1(0.), arg2(0.), fitval1(0.), fitval2(0.); 
-  if (par[2] > 0) {
-    arg1 = (x[0] - par[1]) / par[2];
-    fitval1 =  par[0]*TMath::Exp(-0.5*arg1*arg1);
+
+  // ----------------------------------------------------------------------
+  double iF_pol0(double *x, double *par) {
+    return par[0]; 
   }
+
+
+  // ----------------------------------------------------------------------
+  double iF_pol1(double *x, double *par) {
+    return par[0] + par[1]*x[0]; 
+  }
+
+
+  // ----------------------------------------------------------------------
+  double iF_pol2(double *x, double *par) {
+    return par[0] + par[1]*x[0] + par[2]*x[0]*x[0]; 
+  }
+
+  // ----------------------------------------------------------------------
+  double iF_pol2local(double *x, double *par) {
+    return par[0] + par[1]*(x[0]-par[2])*(x[0]-par[2]); 
+  }
+
+
+  // ----------------------------------------------------------------------
+  double iF_pol0_BsBlind(double *x, double *par) {
+    // FIXME fixed limits!!!
+    if (x[0] >= 5.2 && x[0] <= 5.45) { 
+      TF1::RejectPoint();
+      return 0;
+    }
+    return par[0]; 
+  }
+
+
+  // ----------------------------------------------------------------------
+  double iF_pol1_BsBlind(double *x, double *par) {
+    // FIXME fixed limits!!!
+    if (x[0] >= 5.2 && x[0] <= 5.45) {
+      TF1::RejectPoint();
+      return 0;
+    }
+    return par[0] + par[1]*x[0]; 
+  }
+
+  // ----------------------------------------------------------------------
+  double iF_expo_BsBlind(double *x, double *par) {
+    // FIXME fixed limits!!!
+    if (x[0] >= 5.2 && x[0] <= 5.45) { 
+      TF1::RejectPoint();
+      return 0;
+    }
+    return par[0]*TMath::Exp(x[0]*par[1]);
+  }
+
+  // ----------------------------------------------------------------------
+  // pol1 and gauss 
+  double iF_pol1_gauss(double *x, double *par) {
+    //   par[0] = normalization of gaussian
+    //   par[1] = mean of gaussian
+    //   par[2] = sigma of gaussian
+    //   par[3] = par 0 of pol1
+    //   par[4] = par 1 of pol1
+    return  (iF_pol1(x, &par[3]) + iF_gauss(x, &par[0]));
+  }
+
+
+  // ----------------------------------------------------------------------
+  // expo and gauss 
+  double iF_expo_Gauss(double *x, double *par) {
+    //   par[0] = normalization of gaussian
+    //   par[1] = mean of gaussian
+    //   par[2] = sigma of gaussian
+    //   par[3] = par 0 of expo
+    //   par[4] = par 1 of expo
+    return  (iF_expo(x, &par[3]) + iF_Gauss(x, &par[0]));
+  }
+
+  // ----------------------------------------------------------------------
+  // expo and err and gauss 
+  double iF_expo_err_Gauss(double *x, double *par) {
+    //   par[0] = normalization of gaussian
+    //   par[1] = mean of gaussian
+    //   par[2] = sigma of gaussian
+    //   par[3] = norm
+    //   par[4] = exp
+    //   par[5] = par[0] of err
+    //   par[6] = par[1] of err
+    //   par[7] = par[2] of err
+    //   par[8] = par[3] of err
+    return  (iF_err(x, &par[5]) + iF_expo(x, &par[3]) + iF_Gauss(x, &par[0]));
+  }
+
+  // ----------------------------------------------------------------------
+  // expo and err and gauss2c 
+  double iF_expo_err_gauss2c(double *x, double *par) {
+    // par[0] -> const
+    // par[1] -> mean
+    // par[2] -> sigma
+    // par[3] -> fraction in second gaussian
+    // par[4] -> sigma of second gaussian
+    //   par[5]  = norm
+    //   par[6]  = exp
+    //   par[7]  = par[0] of err
+    //   par[8]  = par[1] of err
+    //   par[9]  = par[2] of err
+    //   par[10] = par[3] of err
+    return  (iF_err(x, &par[7]) + iF_expo(x, &par[5]) + iF_gauss2c(x, &par[0]));
+  }
+
+  // ----------------------------------------------------------------------
+  // expo and err and gauss2c
+  double iF_expo_err_gauss2(double *x, double *par) {
+    // par[0] -> const
+    // par[1] -> mean
+    // par[2] -> sigma
+    // par[3] -> fraction in second gaussian
+    // par[4] -> mean of second gaussian
+    // par[5] -> sigma of second gaussian
+    //   par[6]  = norm
+    //   par[7]  = exp
+    //   par[8]  = par[0] of err
+    //   par[9]  = par[1] of err
+    //   par[10] = par[2] of err
+    //   par[11] = par[3] of err
+
+
+    return  (iF_err(x, &par[8]) + iF_expo(x, &par[6]) + iF_gauss2(x, &par[0]));
+  }
+
+  // ----------------------------------------------------------------------
+  // expo and err and gauss2f (2 gaussians correlated through the area)
+  double iF_expo_err_gauss2f(double *x, double *par) {
+    // par[0] -> const
+    // par[1] -> mean
+    // par[2] -> sigma
+    // par[3] -> fraction in second gaussian
+    // par[4] -> mean of second gaussian
+    // par[5] -> sigma of second gaussian
+    //   par[6]  = norm
+    //   par[7]  = exp
+    //   par[8]  = par[0] of err
+    //   par[9]  = par[1] of err
+    //   par[10] = par[2] of err
+    //   par[11] = par[3] of err
+
+
+    return  (iF_err(x, &par[8]) + iF_expo(x, &par[6]) + iF_gauss2f(x, &par[0]));
+  }
+
+  // ----------------------------------------------------------------------
+  // expo and err and gauss2 and landau
+  double iF_expo_err_gauss2_landau(double *x, double *par) {
+    // par[0] -> const
+    // par[1] -> mean
+    // par[2] -> sigma
+    // par[3] -> fraction in second gaussian
+    // par[4] -> mean of second gaussian
+    // par[5] -> sigma of second gaussian
+    //   par[6]  = norm
+    //   par[7]  = exp
+    //   par[8]  = par[0] of err
+    //   par[9]  = par[1] of err
+    //   par[10] = par[2] of err
+    //   par[11] = par[3] of err
+    //   par[12] = par[0] of landau (mpv)
+    //   par[13] = par[1] of landau (sigma)
+    //   par[14] = par[2] of landau (const) WILL BE FIXED BY THE AREA RATIO
+
+    // paramter 3 of the landau, the constant, has to be fixed by the BuJpsiPi / BuJpsiK ratio
+    const double branchingRatio = 0.049;
+    double area = 2.507 * par[0] * (par[2] + par[3]*par[5]); // area of the 2 gaussians
+    double area_landau = branchingRatio * area;  // expected area of the landau
+    par[14] = area_landau/par[13];  // landau const = area/sigma, feed it to the function
+    //cout<<par[14]<<" "<<par[13]<<" "<<par[12]<<endl;
+
+    return  ( iF_err(x, &par[8]) + iF_expo(x, &par[6]) + iF_gauss2(x, &par[0]) + iF_landausimp(x, &par[12]) );
+  }
+
+  // ----------------------------------------------------------------------
+  // expo and err and gauss and landau
+  double iF_expo_err_Gauss_landau(double *x, double *par) {
+    // par[0] -> const
+    // par[1] -> mean
+    // par[2] -> sigma
+    //   par[3]  = norm
+    //   par[4]  = exp
+    //   par[5]  = par[0] of err
+    //   par[6]  = par[1] of err
+    //   par[7] = par[2] of err
+    //   par[8] = par[3] of err
+    //   par[9] = par[0] of landau (mpv)
+    //   par[10] = par[1] of landau (sigma)
+    //   par[11] = par[2] of landau (const) WILL BE FIXED BY THE AREA RATIO
+
+    // paramter 3 of the landau, the constant, has to be fixed by the BuJpsiPi / BuJpsiK ratio
+    const double branchingRatio = 0.049;
+    double area = 2.507 * par[0] * (par[2]); // area of the gaussian
+    double area_landau = branchingRatio * area;  // expected area of the landau
+    par[11] = area_landau/par[10];  // landau const = area/sigma, feed it to the function
   
-  if (par[5] > 0.) {
-    // relate the area of the 2 gaussians 
-    double fraction = par[0] * par[2]/par[5];
-    arg2 = (x[0] - par[4]) / par[5];
-    fitval2 =  par[3]*fraction*TMath::Exp(-0.5*arg2*arg2);
+    return  (iF_err(x, &par[5]) + iF_expo(x, &par[3]) + iF_Gauss(x, &par[0]) + iF_landausimp(x, &par[9]) );
   }
-  Double_t fitval = fitval1 + fitval2;
-  return fitval;
-}
 
-// ----------------------------------------------------------------------
-double f_gauss2c(double *x, double *par) {
-  // constrained to have the same mean in the second gaussian
-  // par[0] -> const
-  // par[1] -> mean
-  // par[2] -> sigma
-  // par[3] -> fraction in second gaussian
-  // par[4] -> sigma of second gaussian
-  Double_t arg1(0.), arg2(0.), fitval1(0.), fitval2(0.); 
-  if (par[2] > 0) {
-    arg1 = (x[0] - par[1]) / par[2];
-    fitval1 =  par[0]*TMath::Exp(-0.5*arg1*arg1);
+
+  // ----------------------------------------------------------------------
+  // expo and err and gauss 
+  double iF_expo_err(double *x, double *par) {
+    //   par[0] = norm
+    //   par[1] = exp
+    //   par[2] = par[0] of err
+    //   par[3] = par[1] of err
+    //   par[4] = par[2] of err
+    //   par[5] = par[3] of err
+    return  (iF_err(x, &par[2]) + iF_expo(x, &par[0]));
   }
-  if (par[4] > 0.) {
-    arg2 = (x[0] - par[1]) / par[4];
-    fitval2 =  par[3]*par[0]*TMath::Exp(-0.5*arg2*arg2);
+
+
+  // ----------------------------------------------------------------------
+  // expo and err and gauss 
+  double iF_pol1_err_Gauss(double *x, double *par) {
+    //   par[0] = normalization of gaussian
+    //   par[1] = mean of gaussian
+    //   par[2] = sigma of gaussian
+    //   par[3] = const 
+    //   par[4] = slope
+    //   par[5] = par[0] of err
+    //   par[6] = par[1] of err
+    //   par[7] = par[2] of err
+    //   par[8] = par[3] of err
+    return  (iF_err(x, &par[5]) + iF_pol1(x, &par[3]) + iF_Gauss(x, &par[0]));
   }
-  Double_t fitval = fitval1 + fitval2;
-  return fitval;
-}
 
 
-// ----------------------------------------------------------------------
-double f_pol0(double *x, double *par) {
-  return par[0]; 
-}
-
-
-// ----------------------------------------------------------------------
-double f_pol1(double *x, double *par) {
-  return par[0] + par[1]*x[0]; 
-}
-
-
-// ----------------------------------------------------------------------
-double f_pol2(double *x, double *par) {
-  return par[0] + par[1]*x[0] + par[2]*x[0]*x[0]; 
-}
-
-// ----------------------------------------------------------------------
-double f_pol2local(double *x, double *par) {
-  return par[0] + par[1]*(x[0]-par[2])*(x[0]-par[2]); 
-}
-
-
-// ----------------------------------------------------------------------
-double f_pol0_BsBlind(double *x, double *par) {
-  // FIXME fixed limits!!!
-  if (x[0] >= 5.2 && x[0] <= 5.45) { 
-    TF1::RejectPoint();
-    return 0;
+  // ----------------------------------------------------------------------
+  // expo and err and gauss 
+  double iF_pol1_err(double *x, double *par) {
+    //   par[0] = const 
+    //   par[1] = slope
+    //   par[2] = par[0] of err
+    //   par[3] = par[1] of err
+    //   par[4] = par[2] of err
+    //   par[5] = par[3] of err
+    return  (iF_err(x, &par[2]) + iF_pol1(x, &par[0]));
   }
-  return par[0]; 
-}
 
 
-// ----------------------------------------------------------------------
-double f_pol1_BsBlind(double *x, double *par) {
-  // FIXME fixed limits!!!
-  if (x[0] >= 5.2 && x[0] <= 5.45) {
-    TF1::RejectPoint();
-    return 0;
+  // ----------------------------------------------------------------------
+  // pol1 and Gauss 
+  double iF_pol1_Gauss(double *x, double *par) {
+    //   par[0] = area of gaussian
+    //   par[1] = mean of gaussian
+    //   par[2] = sigma of gaussian
+    //   par[3] = par 0 of pol1
+    //   par[4] = par 1 of pol1
+    return  (iF_pol1(x, &par[3]) + iF_Gauss(x, &par[0]));
   }
-  return par[0] + par[1]*x[0]; 
-}
 
-// ----------------------------------------------------------------------
-double f_expo_BsBlind(double *x, double *par) {
-  // FIXME fixed limits!!!
-  if (x[0] >= 5.2 && x[0] <= 5.45) { 
-    TF1::RejectPoint();
-    return 0;
+  // ----------------------------------------------------------------------
+  // pol1 and gauss2 
+  double iF_pol1_gauss2c(double *x, double *par) {
+    //   par[0] = norm of gaussian
+    //   par[1] = mean of gaussian
+    //   par[2] = sigma of gaussian
+    //   par[3] = fraction in second gaussian
+    //   par[4] = sigma of gaussian
+    //   par[5] = par 0 of pol1
+    //   par[6] = par 1 of pol1
+    return  (iF_pol1(x, &par[5]) + iF_gauss2c(x, &par[0]));
   }
-  return par[0]*TMath::Exp(x[0]*par[1]);
+
+
 }
-
-// ----------------------------------------------------------------------
-// pol1 and gauss 
-double f_pol1_gauss(double *x, double *par) {
-  //   par[0] = normalization of gaussian
-  //   par[1] = mean of gaussian
-  //   par[2] = sigma of gaussian
-  //   par[3] = par 0 of pol1
-  //   par[4] = par 1 of pol1
-  return  (f_pol1(x, &par[3]) + f_gauss(x, &par[0]));
-}
-
-
-// ----------------------------------------------------------------------
-// expo and gauss 
-double f_expo_Gauss(double *x, double *par) {
-  //   par[0] = normalization of gaussian
-  //   par[1] = mean of gaussian
-  //   par[2] = sigma of gaussian
-  //   par[3] = par 0 of expo
-  //   par[4] = par 1 of expo
-  return  (f_expo(x, &par[3]) + f_Gauss(x, &par[0]));
-}
-
-// ----------------------------------------------------------------------
-// expo and err and gauss 
-double f_expo_err_Gauss(double *x, double *par) {
-  //   par[0] = normalization of gaussian
-  //   par[1] = mean of gaussian
-  //   par[2] = sigma of gaussian
-  //   par[3] = norm
-  //   par[4] = exp
-  //   par[5] = par[0] of err
-  //   par[6] = par[1] of err
-  //   par[7] = par[2] of err
-  //   par[8] = par[3] of err
-  return  (f_err(x, &par[5]) + f_expo(x, &par[3]) + f_Gauss(x, &par[0]));
-}
-
-// ----------------------------------------------------------------------
-// expo and err and gauss2c 
-double f_expo_err_gauss2c(double *x, double *par) {
-  // par[0] -> const
-  // par[1] -> mean
-  // par[2] -> sigma
-  // par[3] -> fraction in second gaussian
-  // par[4] -> sigma of second gaussian
-  //   par[5]  = norm
-  //   par[6]  = exp
-  //   par[7]  = par[0] of err
-  //   par[8]  = par[1] of err
-  //   par[9]  = par[2] of err
-  //   par[10] = par[3] of err
-  return  (f_err(x, &par[7]) + f_expo(x, &par[5]) + f_gauss2c(x, &par[0]));
-}
-
-// ----------------------------------------------------------------------
-// expo and err and gauss2c
-double f_expo_err_gauss2(double *x, double *par) {
-  // par[0] -> const
-  // par[1] -> mean
-  // par[2] -> sigma
-  // par[3] -> fraction in second gaussian
-  // par[4] -> mean of second gaussian
-  // par[5] -> sigma of second gaussian
-  //   par[6]  = norm
-  //   par[7]  = exp
-  //   par[8]  = par[0] of err
-  //   par[9]  = par[1] of err
-  //   par[10] = par[2] of err
-  //   par[11] = par[3] of err
-
-
-  return  (f_err(x, &par[8]) + f_expo(x, &par[6]) + f_gauss2(x, &par[0]));
-}
-
-// ----------------------------------------------------------------------
-// expo and err and gauss2f (2 gaussians correlated through the area)
-double f_expo_err_gauss2f(double *x, double *par) {
-  // par[0] -> const
-  // par[1] -> mean
-  // par[2] -> sigma
-  // par[3] -> fraction in second gaussian
-  // par[4] -> mean of second gaussian
-  // par[5] -> sigma of second gaussian
-  //   par[6]  = norm
-  //   par[7]  = exp
-  //   par[8]  = par[0] of err
-  //   par[9]  = par[1] of err
-  //   par[10] = par[2] of err
-  //   par[11] = par[3] of err
-
-
-  return  (f_err(x, &par[8]) + f_expo(x, &par[6]) + f_gauss2f(x, &par[0]));
-}
-
-// ----------------------------------------------------------------------
-// expo and err and gauss2 and landau
-double f_expo_err_gauss2_landau(double *x, double *par) {
-  // par[0] -> const
-  // par[1] -> mean
-  // par[2] -> sigma
-  // par[3] -> fraction in second gaussian
-  // par[4] -> mean of second gaussian
-  // par[5] -> sigma of second gaussian
-  //   par[6]  = norm
-  //   par[7]  = exp
-  //   par[8]  = par[0] of err
-  //   par[9]  = par[1] of err
-  //   par[10] = par[2] of err
-  //   par[11] = par[3] of err
-  //   par[12] = par[0] of landau (mpv)
-  //   par[13] = par[1] of landau (sigma)
-  //   par[14] = par[2] of landau (const) WILL BE FIXED BY THE AREA RATIO
-
-  // paramter 3 of the landau, the constant, has to be fixed by the BuJpsiPi / BuJpsiK ratio
-  const double branchingRatio = 0.049;
-  double area = 2.507 * par[0] * (par[2] + par[3]*par[5]); // area of the 2 gaussians
-  double area_landau = branchingRatio * area;  // expected area of the landau
-  par[14] = area_landau/par[13];  // landau const = area/sigma, feed it to the function
-  //cout<<par[14]<<" "<<par[13]<<" "<<par[12]<<endl;
-
-  return  ( f_err(x, &par[8]) + f_expo(x, &par[6]) + f_gauss2(x, &par[0]) + f_landausimp(x, &par[12]) );
-}
-
-// ----------------------------------------------------------------------
-// expo and err and gauss and landau
-double f_expo_err_Gauss_landau(double *x, double *par) {
-  // par[0] -> const
-  // par[1] -> mean
-  // par[2] -> sigma
-  //   par[3]  = norm
-  //   par[4]  = exp
-  //   par[5]  = par[0] of err
-  //   par[6]  = par[1] of err
-  //   par[7] = par[2] of err
-  //   par[8] = par[3] of err
-  //   par[9] = par[0] of landau (mpv)
-  //   par[10] = par[1] of landau (sigma)
-  //   par[11] = par[2] of landau (const) WILL BE FIXED BY THE AREA RATIO
-
-  // paramter 3 of the landau, the constant, has to be fixed by the BuJpsiPi / BuJpsiK ratio
-  const double branchingRatio = 0.049;
-  double area = 2.507 * par[0] * (par[2]); // area of the gaussian
-  double area_landau = branchingRatio * area;  // expected area of the landau
-  par[11] = area_landau/par[10];  // landau const = area/sigma, feed it to the function
-  
-  return  (f_err(x, &par[5]) + f_expo(x, &par[3]) + f_Gauss(x, &par[0]) + f_landausimp(x, &par[9]) );
-}
-
-
-// ----------------------------------------------------------------------
-// expo and err and gauss 
-double f_expo_err(double *x, double *par) {
-  //   par[0] = norm
-  //   par[1] = exp
-  //   par[2] = par[0] of err
-  //   par[3] = par[1] of err
-  //   par[4] = par[2] of err
-  //   par[5] = par[3] of err
-  return  (f_err(x, &par[2]) + f_expo(x, &par[0]));
-}
-
-
-// ----------------------------------------------------------------------
-// expo and err and gauss 
-double f_pol1_err_Gauss(double *x, double *par) {
-  //   par[0] = normalization of gaussian
-  //   par[1] = mean of gaussian
-  //   par[2] = sigma of gaussian
-  //   par[3] = const 
-  //   par[4] = slope
-  //   par[5] = par[0] of err
-  //   par[6] = par[1] of err
-  //   par[7] = par[2] of err
-  //   par[8] = par[3] of err
-  return  (f_err(x, &par[5]) + f_pol1(x, &par[3]) + f_Gauss(x, &par[0]));
-}
-
-
-// ----------------------------------------------------------------------
-// expo and err and gauss 
-double f_pol1_err(double *x, double *par) {
-  //   par[0] = const 
-  //   par[1] = slope
-  //   par[2] = par[0] of err
-  //   par[3] = par[1] of err
-  //   par[4] = par[2] of err
-  //   par[5] = par[3] of err
-  return  (f_err(x, &par[2]) + f_pol1(x, &par[0]));
-}
-
-
-// ----------------------------------------------------------------------
-// pol1 and Gauss 
-double f_pol1_Gauss(double *x, double *par) {
-  //   par[0] = area of gaussian
-  //   par[1] = mean of gaussian
-  //   par[2] = sigma of gaussian
-  //   par[3] = par 0 of pol1
-  //   par[4] = par 1 of pol1
-  return  (f_pol1(x, &par[3]) + f_Gauss(x, &par[0]));
-}
-
-// ----------------------------------------------------------------------
-// pol1 and gauss2 
-double f_pol1_gauss2c(double *x, double *par) {
-  //   par[0] = norm of gaussian
-  //   par[1] = mean of gaussian
-  //   par[2] = sigma of gaussian
-  //   par[3] = fraction in second gaussian
-  //   par[4] = sigma of gaussian
-  //   par[5] = par 0 of pol1
-  //   par[6] = par 1 of pol1
-  return  (f_pol1(x, &par[5]) + f_gauss2c(x, &par[0]));
-}
-
 
 
 // ----------------------------------------------------------------------
@@ -449,32 +451,32 @@ void initFunc::resetLimits() {
 
 // ----------------------------------------------------------------------
 TF1* initFunc::pol0(double lo, double hi) {
-  TF1 *f = new TF1("f1", f_pol0, lo, hi, 1);
+  TF1 *f = new TF1("f1", iF_pol0, lo, hi, 1);
   return f; 
 }
 
 // ----------------------------------------------------------------------
 TF1* initFunc::pol1(double lo, double hi) {
-  TF1 *f = new TF1("f1", f_pol1, lo, hi, 2);
+  TF1 *f = new TF1("f1", iF_pol1, lo, hi, 2);
   return f; 
 }
 
 // ----------------------------------------------------------------------
 TF1* initFunc::pol1Err(double lo, double hi) {
-  TF1 *f = new TF1("f1", f_pol1_err, lo, hi, 6);
+  TF1 *f = new TF1("f1", iF_pol1_err, lo, hi, 6);
   return f; 
 }
 
 // ----------------------------------------------------------------------
 TF1* initFunc::expo(double lo, double hi) {
-  TF1 *f = new TF1("f1", f_expo, lo, hi, 2);
+  TF1 *f = new TF1("f1", iF_expo, lo, hi, 2);
   f->SetParNames("norm", "expo"); 
   return f; 
 }
 
 // ----------------------------------------------------------------------
 TF1* initFunc::expoErr(double lo, double hi) {
-  TF1 *f = new TF1("f1", f_expo_err, lo, hi, 6);
+  TF1 *f = new TF1("f1", iF_expo_err, lo, hi, 6);
   return f; 
 }
 
@@ -485,7 +487,7 @@ TF1* initFunc::pol1(TH1 *h) {
     cout << "empty histogram pointer" << endl;
     return 0; 
   }
-  TF1 *f = new TF1("f1", f_pol1, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 2);
+  TF1 *f = new TF1("f1", iF_pol1, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 2);
   f->SetParNames("offset", "slope"); 			   
   //   cout << "Created f1 from " << h->GetBinLowEdge(1) << " to " << h->GetBinLowEdge(h->GetNbinsX()+1) << endl;
 
@@ -517,19 +519,24 @@ TF1* initFunc::expo(TH1 *h) {
     cout << "empty histogram pointer" << endl;
     return 0; 
   }
-  TF1 *f = new TF1("f1", f_expo, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 2);
+  TF1 *f(0); 
+  while ((f = (TF1*)gROOT->FindObject("iF_expo"))) if (f) delete f; 
+  f = new TF1("iF_expo", iF_expo, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 2);
   f->SetParNames("norm", "exp"); 			   
-  //   cout << "Created f1 from " << h->GetBinLowEdge(1) << " to " << h->GetBinLowEdge(h->GetNbinsX()+1) << endl;
+  cout << "Created f1 from " << h->GetBinLowEdge(1) << " to " << h->GetBinLowEdge(h->GetNbinsX()+1) << endl;
   
   double p1(0.), p0(0.); 
   initExpo(p0, p1, h); 
   f->SetParameters(p0, p1); 
-  //   cout << "  initialized to " << p0 << " and " << p1 << endl;
-  //   cout << "  -> Integrals:  func = " 
-  //        << f->Integral(h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1))/h->GetBinWidth(1)
-  //        << " histogram = " 
-  //        << h->GetSumOfWeights() 
-  //        << endl;
+  f->Update();
+  if (1) {
+    cout << Form("  initialized to %f and %f", p0,  p1) << endl;
+    cout << "  -> Integrals:  func = " 
+	 << f->Integral(h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1))/h->GetBinWidth(1)
+	 << " histogram = " 
+	 << h->GetSumOfWeights() 
+	 << endl;
+  }
   return f; 
 }
 
@@ -548,7 +555,7 @@ TF1* initFunc::pol1BsBlind(TH1 *h) {
     cout << "empty histogram pointer" << endl;
     return 0; 
   }
-  TF1 *f = new TF1("f1", f_pol1_BsBlind, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 2);
+  TF1 *f = new TF1("f1", iF_pol1_BsBlind, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 2);
   f->SetParNames("offset", "slope"); 			   
   //   cout << "Created f1 from " << h->GetBinLowEdge(1) << " to " << h->GetBinLowEdge(h->GetNbinsX()+1) << endl;
   
@@ -585,7 +592,9 @@ TF1* initFunc::expoBsBlind(TH1 *h) {
     cout << "empty histogram pointer" << endl;
     return 0; 
   }
-  TF1 *f = new TF1("f1", f_expo_BsBlind, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 2);
+  TF1 *f = (TF1*)gROOT->FindObject("iF_expobsblind"); 
+  if (f) delete f; 
+  f = new TF1("iF_expobsblind", iF_expo_BsBlind, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 2);
   f->SetParNames("offset", "slope"); 			   
   
   int lbin(1), hbin(h->GetNbinsX()), EDG(4), NB(EDG+1); 
@@ -622,7 +631,7 @@ TF1* initFunc::pol0(TH1 *h) {
     cout << "empty histogram pointer" << endl;
     return 0; 
   }
-  TF1 *f = new TF1("f1", f_pol0, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 1);
+  TF1 *f = new TF1("f1", iF_pol0, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 1);
   f->SetParNames("constant"); 			   
 
   int lbin(1), hbin(h->GetNbinsX()), EDG(4), NB(EDG+1); 
@@ -648,7 +657,7 @@ TF1* initFunc::pol0BsBlind(TH1 *h) {
     cout << "empty histogram pointer" << endl;
     return 0; 
   }
-  TF1 *f = new TF1("f1", f_pol0_BsBlind, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 1);
+  TF1 *f = new TF1("f1", iF_pol0_BsBlind, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 1);
   f->SetParNames("constant"); 			   
   
   int lbin(1), hbin(h->GetNbinsX()), EDG(4), NB(EDG+1); 
@@ -670,7 +679,7 @@ TF1* initFunc::pol0BsBlind(TH1 *h) {
 // ----------------------------------------------------------------------
 TF1* initFunc::pol1gauss(TH1 *h, double peak, double sigma) {
 
-  TF1 *f = new TF1("f1", f_pol1_gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 5);
+  TF1 *f = new TF1("f1", iF_pol1_gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 5);
   f->SetParNames("normalization", "peak", "sigma", "constant", "slope"); 			   
 
   int lbin(1), hbin(h->GetNbinsX()+1); 
@@ -717,7 +726,7 @@ TF1* initFunc::pol1gauss(TH1 *h, double peak, double sigma) {
 // ----------------------------------------------------------------------
 TF1* initFunc::pol1Gauss(TH1 *h, double peak, double sigma) {
 
-  TF1 *f = new TF1("f1", f_pol1_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 5);
+  TF1 *f = new TF1("f1", iF_pol1_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 5);
   f->SetParNames("area", "peak", "sigma", "constant", "slope"); 			   
 
   int lbin(1), hbin(h->GetNbinsX()); 
@@ -747,15 +756,15 @@ TF1* initFunc::pol1Gauss(TH1 *h, double peak, double sigma) {
 // ----------------------------------------------------------------------
 TF1* initFunc::pol2local(TH1 *h, double width) {
 
-  TF1 *f = (TF1*)gROOT->FindObject("f_pol2local"); 
+  TF1 *f = (TF1*)gROOT->FindObject("iF_pol2local"); 
   if (f) delete f; 
 
-  f = new TF1("f_pol2local", f_pol2local, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX())+1, 3);
+  f = new TF1("iF_pol2local", iF_pol2local, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX())+1, 3);
   f->SetParNames("p0", "p1", "max"); 			   
   
   double maxVal   = h->GetMaximum(); 
   double maxPlace = h->GetBinCenter(h->GetMaximumBin()); 
-  double ytop     = h->GetBinContent(h->GetMaximumBin() + width*h->GetNbinsX()); 
+  double ytop     = h->GetBinContent(h->GetMaximumBin() + width*h->GetNbinsX()); //FIXME!
   double slope    = (ytop-maxVal);
   f->SetParameters(maxVal, slope, maxPlace); 
   f->SetLineWidth(2);
@@ -768,10 +777,9 @@ TF1* initFunc::pol2local(TH1 *h, double width) {
 // ----------------------------------------------------------------------
 TF1* initFunc::expoGauss(TH1 *h, double peak, double sigma) {
 
-  static int cnt(0); 
-  TF1 *f = (TF1*)gROOT->FindObject("f1_expo_Gauss"); 
+  TF1 *f = (TF1*)gROOT->FindObject("iF_expo_Gauss"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_Gauss", f_expo_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 5);
+  f = new TF1("iF_expo_Gauss", iF_expo_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 5);
   f->SetParNames("area", "peak", "sigma", "const", "exp"); 			   
   //  f->SetLineColor(kBlue); 
   f->SetLineWidth(2); 
@@ -838,9 +846,9 @@ TF1* initFunc::expoGauss(TH1 *h, double peak, double sigma) {
 // ----------------------------------------------------------------------
 TF1* initFunc::expoErrGauss(TH1 *h, double peak, double sigma, double preco) {
 
-  TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_Gauss"); 
+  TF1 *f = (TF1*)gROOT->FindObject("iF_expo_err_Gauss"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_err_Gauss", f_expo_err_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 9);
+  f = new TF1("iF_expo_err_Gauss", iF_expo_err_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 9);
   f->SetParNames("area", "peak", "sigma", "const", "exp", "err0", "err1", "err2", "err3"); 			   
   //  f->SetLineColor(kBlue); 
   f->SetLineWidth(2); 
@@ -890,7 +898,7 @@ TF1* initFunc::expoErrGaussLandau(TH1 *h, double peak, double sigma, double prec
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_Gauss_landau"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_err_Gauss_landau", f_expo_err_Gauss_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 12);
+  f = new TF1("f1_expo_err_Gauss_landau", iF_expo_err_Gauss_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 12);
   f->SetParNames("area", "peak", "sigma", "const", "exp", "err0", "err1", "err2", "err3"); 			   
   f->SetParName(9, "mpvl");
   f->SetParName(10, "sigl");
@@ -947,7 +955,7 @@ TF1* initFunc::expoErrgauss2c(TH1 *h, double peak, double sigma1, double sigma2,
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_gauss2c"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_err_gauss2c", f_expo_err_gauss2c, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 11);
+  f = new TF1("f1_expo_err_gauss2c", iF_expo_err_gauss2c, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 11);
   f->SetParNames("const", "peak", "sigma", "f2ndG", "s2ndG", "const", "exp", "err0", "err1", "err2", "err3"); 			   
 
   f->SetLineWidth(2); 
@@ -1086,7 +1094,7 @@ TF1* initFunc::expoErrgauss2(TH1 *h, double peak1, double sigma1, double peak2, 
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_gauss2"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_err_gauss2", f_expo_err_gauss2, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 12);
+  f = new TF1("f1_expo_err_gauss2", iF_expo_err_gauss2, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 12);
   f->SetParNames("const", "peak", "sigma", "f2ndG", "p2ndG", "s2ndG", "const", "exp", "err0", "err1", "err2");
   f->SetParName(11, "err3");
 
@@ -1151,7 +1159,7 @@ TF1* initFunc::expoErrgauss2f(TH1 *h, double peak1, double sigma1, double peak2,
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_gauss2f"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_err_gauss2f", f_expo_err_gauss2f, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 12);
+  f = new TF1("f1_expo_err_gauss2f", iF_expo_err_gauss2f, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 12);
   f->SetParNames("const", "peak", "sigma", "fraction","p2ndG", "s2ndG", "const", "exp", "err0", "err1", "err2");
   f->SetParName(11, "err3");
 
@@ -1218,7 +1226,7 @@ TF1* initFunc::expoErrgauss2Landau(TH1 *h, double peak1, double sigma1, double p
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_expo_err_gauss2_landau"); 
   if (f) delete f; 
-  f = new TF1("f1_expo_err_gauss2_landau", f_expo_err_gauss2_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 14);
+  f = new TF1("f1_expo_err_gauss2_landau", iF_expo_err_gauss2_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 14);
   f->SetParNames("const", "peak", "sigma", "f2ndG", "p2ndG", "s2ndG", "const", "exp", "err0", "err1", "err2");
   f->SetParName(11, "err3");
   f->SetParName(12, "mpvl");
@@ -1281,7 +1289,7 @@ TF1* initFunc::pol1ErrGauss(TH1 *h, double peak, double sigma, double preco) {
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_pol1_err_Gauss"); 
   if (f) delete f; 
-  f = new TF1("f1_pol1_err_Gauss", f_pol1_err_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 9);
+  f = new TF1("f1_pol1_err_Gauss", iF_pol1_err_Gauss, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 9);
   f->SetParNames("area", "peak", "sigma", "const", "slope", "err0", "err1", "err2", "err3"); 			   
   //  f->SetLineColor(kBlue); 
   f->SetLineWidth(2); 
@@ -1330,7 +1338,7 @@ TF1* initFunc::pol1gauss2c(TH1 *h, double peak, double sigma) {
 
   TF1 *f = (TF1*)gROOT->FindObject("f1_pol1_gauss2c"); 
   if (f) delete f; 
-  f = new TF1("f1_pol1_gauss2c", f_pol1_gauss2c, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 7);
+  f = new TF1("f1_pol1_gauss2c", iF_pol1_gauss2c, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 7);
   f->SetParNames("norm", "peak", "sigma", "fraction", "sigma2", "constant", "slope"); 			   
   //  f->SetLineColor(kBlue); 
   f->SetLineWidth(2); 
@@ -1432,7 +1440,7 @@ void initFunc::initExpo(double &p0, double &p1, TH1 *h) {
 // Uses the usuall Landau from ROOT
 TF1* initFunc::land(TH1 *h, double mpv, double sigma) {
 
-  TF1 *f = new TF1("land", f_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 3);
+  TF1 *f = new TF1("land", iF_landau, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 3);
   //f->SetParNames("peak", "sigma", "constant"); 			   
 
   int lbin(1), hbin(h->GetNbinsX()+1); 
@@ -1457,7 +1465,7 @@ TF1* initFunc::land(TH1 *h, double mpv, double sigma) {
 // Simpler analytical "landau"
 TF1* initFunc::landsimp(TH1 *h, double mpv, double sigma) {
 
-  TF1 *f = new TF1("land", f_landausimp, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 3);
+  TF1 *f = new TF1("land", iF_landausimp, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 3);
   //f->SetParNames("area", "peak", "sigma", "constant", "slope"); 			   
 
   int lbin(1), hbin(h->GetNbinsX()+1); 
