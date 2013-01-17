@@ -89,12 +89,13 @@ int main(int argc, char* argv[]) {
       TFile* smalltree_f = new TFile(decays_filename[i].c_str(), "UPDATE");
       TTree* smalltree = (TTree*)smalltree_f->Get(decays_treename[i].c_str());
       TTree* reduced_tree = smalltree->CopyTree(cuts.c_str());
-      Double_t m_t, eta_t, m1eta_t, m2eta_t, bdt_t;
+      Double_t m_t, eta_t, m1eta_t, m2eta_t, bdt_t, me_t;
       reduced_tree->SetBranchAddress("m",     &m_t);
       reduced_tree->SetBranchAddress("bdt",   &bdt_t);
       reduced_tree->SetBranchAddress("eta",   &eta_t);
       reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
       reduced_tree->SetBranchAddress("m2eta", &m2eta_t);
+      reduced_tree->SetBranchAddress("me",    &me_t);
       double entries = reduced_tree->GetEntries();
       double events_0 = 0, events_1 = 0, events_2 = 0, events_3 = 0;
       for (int j = 0; j < entries; j++) {
@@ -118,8 +119,9 @@ int main(int argc, char* argv[]) {
         if (m_t > 5.20 && m_t < 5.45 && i == 13) continue; // skip signal windows for comb bkg
         if (m_t < 4.90 || m_t > 5.90) continue; // skip outside range
         /// mass resolution
-        if (y == 0) MassRes->setVal(MassRes_0_h->Eval(eta_t));
-        else if (y == 1) MassRes->setVal(MassRes_2_h->Eval(eta_t));
+//        if (y == 0) MassRes->setVal(MassRes_0_h->Eval(eta_t));
+//        else if (y == 1) MassRes->setVal(MassRes_2_h->Eval(eta_t));
+        MassRes->setVal(me_t);
         /// eta channels
         int eta_channel = -1;
         if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) {

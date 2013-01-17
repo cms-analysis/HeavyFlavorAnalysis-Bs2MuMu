@@ -426,11 +426,12 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
   int events = 0;
   if (!strcmp(tree->GetName(), "SgData_bdt")) {
     TTree* reduced_tree = tree->CopyTree(cuts.c_str());
-    Double_t m1eta_t, m2eta_t, m_t, eta_B_t, bdt_t;
+    Double_t m1eta_t, m2eta_t, m_t, eta_B_t, bdt_t, me_t;
     Int_t evt_t;
     reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
     reduced_tree->SetBranchAddress("m2eta", &m2eta_t);
     reduced_tree->SetBranchAddress("m", &m_t);
+    reduced_tree->SetBranchAddress("me", &me_t);
     reduced_tree->SetBranchAddress("eta", &eta_B_t);
     reduced_tree->SetBranchAddress("bdt", &bdt_t);
     reduced_tree->SetBranchAddress("evt", &evt_t);
@@ -441,7 +442,8 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
         events++;
         Mass->setVal(m_t);
         bdt->setVal(bdt_t);
-        MassRes->setVal(mass_res_f->Eval(eta_B_t));
+//        MassRes->setVal(mass_res_f->Eval(eta_B_t));
+        MassRes->setVal(me_t);
         int eta_channel = -1;
         if (fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4) {
           eta_channel = 0 + offset*2;
