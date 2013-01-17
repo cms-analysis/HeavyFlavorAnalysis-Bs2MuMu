@@ -213,8 +213,10 @@ void plotBDT::makeAll(int channels) {
 //     bdtDependencies("SgMcPU");
 
     cout << "--> hackedMC(...)" << endl;
-    hackedMC(0); 
-    hackedMC(1); 
+    if (0) {
+      hackedMC(0); 
+      hackedMC(1); 
+    }
   }
 
   if (channels & 2) {
@@ -1110,7 +1112,7 @@ void plotBDT::validateDistributions(int channel, const char *type, int classID) 
   for (unsigned int i = 0; i < vNames.size(); ++i) {
     
     if (fReaderVariables.end() == find(fReaderVariables.begin(), fReaderVariables.end(), vNames[i]))  {
-      cout << " =====> " << vNames[i] << " not found in fReaderVariables" << endl;
+      //      cout << " =====> " << vNames[i] << " not found in fReaderVariables" << endl;
       continue;
     }
 
@@ -1856,6 +1858,7 @@ void plotBDT::ssb() {
   // -- compute S and B
   double bdtCut, maxSSB(-1.), maxBDT(-1.), maxSSBsimple(-1.); 
   int nEvent(0); 
+  //    for (int ibin = 80; ibin < 82; ++ibin) {
   for (int ibin = 0; ibin < bdtBins; ++ibin) {
     bdtCut = bdtMin + ibin*(bdtMax-bdtMin)/bdtBins;
     nEvent = t->GetEntries();
@@ -1872,7 +1875,6 @@ void plotBDT::ssb() {
 
       if (0 == classID) {
 	if (fYear == 2012) {
-	  //	  sm->Fill(m, w8); // FIXME
 	  sm->Fill(m, w8*0.6); // FIXME
 	} else {
 	  sm->Fill(m, w8); // FIXME
@@ -1892,7 +1894,6 @@ void plotBDT::ssb() {
 
     bgBlind(dm, 3, 4.9, 5.9);
     double b = fBsBgExp;
-    
     if (s+b >0) {
       double ssb = s/TMath::Sqrt(s+b+pbg);
       double ssbsimple = s/TMath::Sqrt(s+bsimple);
@@ -1905,8 +1906,6 @@ void plotBDT::ssb() {
       }
       h->SetBinContent(ibin, ssb); 
       //      h->SetBinError(ibin, TMath::Abs(ssb-ssbsimple)); 
-      cout << "data bg:  low = " << d0 << " high = " << d1 << " s: " << s << " b: " << b 
-	   << " ssb = " << ssb << " ssbsimple = " << ssbsimple << endl;
     } else {
       h->SetBinContent(ibin, 0); 
     }
@@ -1957,8 +1956,8 @@ void plotBDT::ssb() {
   
   TF1 *f1 = fpFunc->pol2local(h, 0.05); 
   h->Fit(f1, "r", "", xmin, xmax); 
-  double maxfitssbX = h->GetFunction("f_pol2local")->GetParameter(2); 
-  double maxfitssbY = h->GetFunction("f_pol2local")->GetParameter(0); 
+  double maxfitssbX = h->GetFunction("iF_pol2local")->GetParameter(2); 
+  double maxfitssbY = h->GetFunction("iF_pol2local")->GetParameter(0); 
 
   fTEX << formatTex(maxfitssbX, Form("%s:%s:maxfitSSB:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
   fTEX << formatTex(maxfitssbY, Form("%s:%s:maxfitSSB:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
@@ -2631,8 +2630,8 @@ void plotBDT::allCorrelationPlots(double bdtcut, std::string fname) {
   correlationPlot(bdtcut, "pvips", 0., 5., fname);
   correlationPlot(bdtcut, "pvip", 0., 0.02, fname);
 
-  correlationPlot(bdtcut, "m1pt", 4., 40., fname);
-  correlationPlot(bdtcut, "m2pt", 4., 30., fname);
+//   correlationPlot(bdtcut, "m1pt", 4., 40., fname);
+//   correlationPlot(bdtcut, "m2pt", 4., 30., fname);
 
   correlationPlot(bdtcut, "pt", 6., 40., fname);
   correlationPlot(bdtcut, "eta", -2.4, 2.4, fname);

@@ -12,9 +12,6 @@ public:
 
   void makeAll(int channels = 1);
 
-  void computeNormUL();
-  void computeCsBF();
-
   void setupNorm();
   void fitHists(int chan = 0);
 
@@ -47,28 +44,15 @@ public:
   virtual void loopFunction2(int mode); 
 
   void acceptancePerProcess();
-  void rareBg(std::string mode = "nada");
   void scaledHist(int mode = 0);
 
   void fls3dEfficiency(std::string cuts, std::string pdfname);
   void fls3dVsX(std::string x, std::string cuts, std::string pdfname);
 
-  // -- new:
-  void invertedIsolationStudy();
-  void determineInvertedIsolationYield(int print = 0);
-  void plotInvertedIsolationScan(std::string pdfname, TH1D *h0, TH1D *h1, TH1D *x0, TH1D *x1);
-  // -- old:
-  void allInvertedIso();
-  void histInvertedIso(const char *var, int n, double lo, double hi);
-  TH1D* invertedIso(int chan, const char *cuts);
-  void invertedIsoPrediction();
-  std::pair<TH1D*, TH1D*> singleRelativeYield(std::string fstring);
-
   void computeErrors(std::vector<numbers*>); 
   void printUlcalcNumbers(std::string fname);
   void createAllCfgFiles(std::string fname);
   void printCsBFNumbers();
-  double barlow(int nobs, double bg, double bgE, double sE);
   double scaledYield(numbers *a, numbers *no, std::string chan, double fsfu); 
   
   double fBlExp, fBlExpE, fBlObs, fBlObsE;

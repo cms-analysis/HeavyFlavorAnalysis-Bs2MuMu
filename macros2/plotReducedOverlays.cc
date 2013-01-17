@@ -400,7 +400,7 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
   hpv2->Draw("samehist"); 
   tl->DrawLatex(0.15, 0.92, Form("Data: %3.2f#pm%3.2f", hpv1->GetMean(), hpv1->GetMeanError())); 
   tl->DrawLatex(0.6, 0.92, Form("MC: %3.2f#pm%3.2f", hpv2->GetMean(), hpv2->GetMeanError())); 
-  c0->SaveAs(Form("%s/systematics-npv_%s_%s_chan%d.pdf", fDirectory.c_str(), sample1.c_str(), sample2.c_str(), chan)); 
+  c0->SaveAs(Form("%s/%s-systematics-npv_%s_%s_chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), sample1.c_str(), sample2.c_str(), chan)); 
 
 
   TH1D *h1 = (TH1D*)fHistFile->Get(Form("sbs_%s_%s_bdtHLT", sChan.c_str(), sample1.c_str()));
@@ -467,7 +467,7 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
   double ylo = 0.;
   pa->DrawArrow(bdtCut, yhi, bdtCut, ylo); 
 
-  c0->SaveAs(Form("%s/systematics_%s_%s_chan%d.pdf", fDirectory.c_str(), sample1.c_str(), sample2.c_str(), chan)); 
+  c0->SaveAs(Form("%s/%s-systematics_%s_%s_chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), sample1.c_str(), sample2.c_str(), chan)); 
   
 }
 
@@ -475,19 +475,29 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
 // ----------------------------------------------------------------------
 void plotReducedOverlays::overlay(string sample1, string sample2, string selection, string what) {
 
+  if (fDoUseBDT) {
+    fStampString = "BDT preliminary"; 
+  } else {
+    fStampString = "CNC preliminary"; 
+  }
+
   string hfname  = fDirectory + "/anaBmm.plotReducedOverlays." + fSuffix + ".root";
   
   gStyle->SetOptTitle(0); 
   c0->cd();
+  shrinkPad(0.15, 0.18); 
+
   TH1D *h1(0), *h2(0); 
   string n1, n2; 
   bool restricted = (what != ""); 
+  bool doLegend(true); 
   for (unsigned int i = 0; i < fDoList.size(); ++i) {
     if (restricted) {
       if (string::npos == fDoList[i].find(what)) continue;
     }
     n1 =  Form("sbs_%s_%s_%s%s", fSetup.c_str(), sample1.c_str(), fDoList[i].c_str(), selection.c_str());
     n2 =  Form("sbs_%s_%s_%s%s", fSetup.c_str(), sample2.c_str(), fDoList[i].c_str(), selection.c_str());
+    if (string::npos != fDoList[i].find("eta")) doLegend = false; else doLegend = true; 
     h1 = (TH1D*)gDirectory->Get(n1.c_str());
     cout << "n1: " << n1 << " -> " << h1 << endl;
     h2 = (TH1D*)gDirectory->Get(n2.c_str());
@@ -510,20 +520,92 @@ void plotReducedOverlays::overlay(string sample1, string sample2, string selecti
     }
 
     double ymax = (h1->GetMaximum() > h2->GetMaximum()? 1.2*h1->GetMaximum() : 1.2*h2->GetMaximum());
+    h1->SetMinimum(0);
+
+    //    h1->SetNdivisions(504, "Y");
+    h1->SetTitleOffset(1.0, "Y");
+    h1->SetTitleSize(0.06, "Y");
+    h1->SetLabelSize(0.055, "Y");
+
+    h1->SetNdivisions(504, "X");
+    h1->SetTitleOffset(1.0, "X");
+    h1->SetTitleSize(0.06, "X");
+    h1->SetLabelSize(0.055, "X");
     h1->SetMinimum(0.01);
     h1->SetMaximum(ymax);
     h1->Draw("e");
     h2->Draw("samehist");
 
+//     if (leftList.end() != find(leftList.begin(), leftList.end(), doList[i])) {
+//       newLegend(0.25, 0.7, 0.50, 0.85); 
+//     } else {
+//       newLegend(0.50, 0.7, 0.75, 0.85); 
+//     }
 
+    if (doLegend) {
+      newLegend(0.50, 0.7, 0.75, 0.85); 
+      
+      char loption1[100], loption2[100]; 
+      string header, h1string, h2string;
+      if (string::npos != sample1.find("Cs") && string::npos != sample2.find("Cs")) header = "B_{s} #rightarrow J/#psi #phi";
+      else if (string::npos != sample1.find("No") && string::npos != sample2.find("No")) header = "B^{+} #rightarrow J/#psi K^{+}";
+      else if (string::npos != sample1.find("Sg") && string::npos != sample2.find("Sg")) header = "Dimuon";
+      else header = "Zoge am Boge";
+      
+      if (string::npos != sample1.find("Mc")) {
+	sprintf(loption1, "f"); 
+	if (string::npos != sample1.find("Sg")) {
+	  h1string = "B_{s} #rightarrow #mu^{+} #mu^{-} (MC)";
+      } else {
+	  h1string = "MC simulation";
+	}
+      } else if (string::npos != sample1.find("Data")) {
+	sprintf(loption1, "p"); 
+	if (string::npos != sample1.find("Sg")) {
+	  h1string = "data sidebands";
+	} else {
+	  h1string = "data";
+	}
+      } else {
+	h1string = "??";
+      }
+      
+      if (string::npos != sample2.find("Mc")) {
+	sprintf(loption2, "f"); 
+	if (string::npos != sample2.find("Sg")) {
+	  h2string = "B_{s} #rightarrow #mu^{+} #mu^{-}";
+	} else {
+	  h2string = "MC simulation";
+	}
+      } else if (string::npos != sample2.find("Data")) {
+	sprintf(loption2, "p"); 
+	if (string::npos != sample2.find("Sg")) {
+	  h2string = "data sidebands";
+	} else {
+	  h2string = "data";
+	}
+      } else {
+	h2string = "??";
+      }
+      
+      legg->SetHeader(header.c_str());
+      legg->AddEntry(h1, h1string.c_str(), loption1); 
+      legg->AddEntry(h2, h2string.c_str(), loption2); 
+      
+      legg->Draw(); 
+    }
+
+    stamp(0.18, fStampString, 0.67, fStampCms); 
+    
+    
     if (string::npos != fDoList[i].find("npv")) {
       tl->DrawLatex(0.2, 0.92, Form("means: MC(%4.3f) Data(%4.3f)", h1->GetMean(), h2->GetMean()));
     }
     
     c0->Modified();
     c0->Update();
-    c0->SaveAs(Form("%s/overlay_%s_%s_%s_%s_%s.pdf", 
-		    fDirectory.c_str(), fSetup.c_str(), sample1.c_str(), sample2.c_str(), fDoList[i].c_str(), selection.c_str())); 
+    c0->SaveAs(Form("%s/%s-overlay_%s_%s_%s_%s_%s.pdf", 
+		    fDirectory.c_str(), fSuffix.c_str(), fSetup.c_str(), sample1.c_str(), sample2.c_str(), fDoList[i].c_str(), selection.c_str())); 
   }
 
 
@@ -607,8 +689,8 @@ void plotReducedOverlays::overlay2Files(std::string file1, std::string sample1,
 
     c0->Modified();
     c0->Update();
-    c0->SaveAs(Form("%s/overlay2files_%s-%s_%s-%s_%s.pdf", 
-		    fDirectory.c_str(), what.c_str(), sample1.c_str(), sample2.c_str(), 
+    c0->SaveAs(Form("%s/%s-overlay2files_%s-%s_%s-%s_%s.pdf", 
+		    fDirectory.c_str(), fSuffix.c_str(), what.c_str(), sample1.c_str(), sample2.c_str(), 
 		    fDoList[i].c_str(), selection.c_str())); 
   }
 

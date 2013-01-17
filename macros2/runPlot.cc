@@ -45,13 +45,13 @@ int main(int argc, char *argv[]) {
   }
 
   if (2012 == year) {
-    if ("nada" == files) files = "ul-anaBmm.2012.files";
+    if ("nada" == files) files = "anaBmm.ulv13-2012.files";
     if ("nada" == cuts)  cuts  = "2012";    
     if ("nada" == dir)   dir   = "2012";
   }
 
   if (2011 == year) {
-    if ("nada" == files) files = "ul-anaBmm.2011.files";
+    if ("nada" == files) files = "anaBmm.ulv13-2011.files";
     if ("nada" == cuts)  cuts  = "2011";    
     if ("nada" == dir)   dir   = "2011";
   }
@@ -93,10 +93,16 @@ int main(int argc, char *argv[]) {
       cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
       system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
     }
+    if (mode & 32) {
+      rootfile = Form("anaBmm.plotEfficiencies.%s.root", cuts.c_str()); 
+      cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
+      system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
+    }
   }
 
   // -- BDT plots
   if (mode & 1 && doUseBDT) {
+    gROOT->Clear();  gROOT->DeleteAll();
     plotBDT a(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
     a.makeAll(1);
   } 
@@ -195,6 +201,11 @@ int main(int argc, char *argv[]) {
     plotEfficiencies *a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
     if (!doUseBDT) a->fDoUseBDT = false; 
     a->makeAll(1); 
+    delete a;
+
+    a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+    if (!doUseBDT) a->fDoUseBDT = false; 
+    a->makeAll(2); 
     delete a;
   }
 

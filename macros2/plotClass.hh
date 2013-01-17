@@ -172,7 +172,6 @@ public:
   // --------------
   virtual void makeAll(int verbose);
 
-  void loopTree(int mode, int proc = -1);
   void accEffFromEffTree(std::string fname, std::string dname, numbers &a, cuts &b, int proc);
   void accEffFromEffTreeBac(std::string fname, std::string dname, numbers &a, cuts &b, int proc);
   void filterEfficiency(std::string fname, std::string name);

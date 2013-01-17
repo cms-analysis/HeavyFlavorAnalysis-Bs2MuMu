@@ -88,10 +88,10 @@ lib/libAnaClasses.so:
 	cd lib && rm -f libAnaClasses.so && ln -s ../../macros/lib/libAnaClasses.so libAnaClasses.so && cd -
 
 bin/runBmm2: lib/libBmm2Classes.so obj/runBmm2.o lib/libBmm2Classes.so
-	$(LD) $(LDFLAGS) -o bin/runBmm2 $(GLIBS) obj/runBmm2.o lib/libAna00.so lib/libUtil.so lib/libAnaClasses.so lib/libBmm2Classes.so
+	$(LD) $(LDFLAGS) -o bin/runBmm2 $(GLIBS) obj/runBmm2.o lib/libBmm2Classes.so lib/libAna00.so lib/libAnaClasses.so lib/libUtil.so 
 
-bin/runPlot: lib/libBmm2Classes.so obj/runPlot.o lib/libBmm2Classes.so
-	$(LD) $(LDFLAGS) -o bin/runPlot $(GLIBS) obj/runPlot.o lib/libAna00.so lib/libUtil.so lib/libAnaClasses.so lib/libBmm2Classes.so
+bin/runPlot: lib/libBmm2Classes.so obj/runPlot.o
+	$(LD) $(LDFLAGS) -o bin/runPlot $(GLIBS) obj/runPlot.o lib/libBmm2Classes.so lib/libAna00.so lib/libAnaClasses.so lib/libUtil.so 
 
 clean:
 	rm -f obj/*.o *Dict.* lib/libBmm2Classes.so

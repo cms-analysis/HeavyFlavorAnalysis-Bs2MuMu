@@ -69,12 +69,12 @@ void plotOptimize::optimizeULs(int nruns, int seed) {
     printCuts(OUT); 
 
     cout << "--> loopTree: signal MC" << endl;
-    loopTree(0);  // signal eff
+    //FIXME    loopTree(0);  // signal eff
     c0->Modified(); c0->Update();
-    loopTree(1);  // Bd2MuMu eff
+    //FIXME    loopTree(1);  // Bd2MuMu eff
     c0->Modified(); c0->Update();
     cout << "--> loopTree: signal data" << endl;
-    loopTree(5);  // data signal
+    //FIXME    loopTree(5);  // data signal
     c0->Modified(); c0->Update();
     
     
@@ -144,12 +144,12 @@ void plotOptimize::optimizeBdtULs(double minBdt, double maxBdt) {
     printCuts(OUT); 
 
     cout << "--> loopTree: signal MC" << endl;
-    loopTree(0);  // signal eff
+    //FIXME    loopTree(0);  // signal eff
     c0->Modified(); c0->Update();
-    loopTree(1);  // Bd2MuMu eff
+    //FIXME    loopTree(1);  // Bd2MuMu eff
     c0->Modified(); c0->Update();
     cout << "--> loopTree: signal data" << endl;
-    loopTree(5);  // data signal
+    //FIXME    loopTree(5);  // data signal
     c0->Modified(); c0->Update();
     
     
