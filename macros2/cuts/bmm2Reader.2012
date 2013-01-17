@@ -8,11 +8,9 @@ candAnaBs2JpsiPhi cuts/candAnaBs2JpsiPhi.2012.cuts
 #JSON             cuts/Cert_190456-196531_8TeV_13Jul2012ReReco_Collisions12_JSON_MuonPhys
 JSON             cuts/Cert_AllRuns_7TeV-8TeV_ReReco_PromptReco_Collisions11-12_JSON_MuonPhys.txt
 #JSON             cuts/Cert_AllRuns_7TeV-8TeV_Collisions11-12_JSON_MuonPhys.txt
-ptSgMUID         ../macros/pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat
-ptCbMUID         ../macros/pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat
-ptSgMUT1         ../macros/pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.dat
-ptCbMUT1         ../macros/pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.dat
-ptSgMUT2         ../macros/pidtables/110606/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_data_all.dat
-ptCbMUT2         ../macros/pidtables/110606/H2D_L3Efficiency_GlbTM_ProbeTrackMatched_data_all.dat
-
-
+ptSgMUID         ../macros/pidtables/130104/MuonID_data_seagulls.dat
+ptCbMUID         ../macros/pidtables/130104/MuonID_data_cowboys.dat
+ptSgMUT1         ../macros/pidtables/130104/L1L2_data_seagulls.dat
+ptCbMUT1         ../macros/pidtables/130104/L1L2_data_cowboys.dat
+ptSgMUT2         ../macros/pidtables/130104/L3_data_seagulls.dat
+ptCbMUT2         ../macros/pidtables/130104/L3_data_cowboys.dat
