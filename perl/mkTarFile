@@ -33,6 +33,7 @@ $exclude .= " --exclude \\*.root";
 $exclude .= " --exclude \\*.pdf";
 $exclude .= " --exclude \\*.ps";
 $exclude .= " --exclude \\*.eps";
+$exclude .= " --exclude \\*~";
 $exclude .= " --exclude \\*Dict\\*";
 
 system("tar zcvf $name $include $exclude"); 

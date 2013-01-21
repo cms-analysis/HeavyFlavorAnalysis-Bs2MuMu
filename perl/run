@@ -23,6 +23,7 @@
 # Assumptions: jobs are serialized a la asd_asd-asd-10000.py, the numbering is at the end, separated with -
 # ------------ is run in directory where the py files reside! ??? IS THIS TRUE ???
 #
+# 2013/01/21   changed default transfer method from srmcp to lcg-cp also for grid jobs
 # 2010/12/10   bug fix: remove $https from jobs.list only for grid jobs
 # 2010/06/18   added new option to control the CMSSW version
 # 2010/06/15   added 'rm -rf $JOB' to start of batch job (in case the previously running job had been killed)
@@ -60,7 +61,8 @@ if ($opt_v) {
 #my $SCRAM = "slc5_ia32_gcc434";
 my $SCRAM = $ENV{'SCRAM_ARCH'};
 
-my $SRMCP = "\"srmcp -2\"";          
+#my $SRMCP = "\"srmcp -2\"";          
+my $SRMCP = "\"lcg-cp -b -D srmv2\"";
 if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 -globus_tcp_port_range 20000,25000\"";}
 if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 --streams_num=1\"";}
 if ($opt_m eq "batch") {$SRMCP = "\"lcg-cp -b -D srmv2\"";}
