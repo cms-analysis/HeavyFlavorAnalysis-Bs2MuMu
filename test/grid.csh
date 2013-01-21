@@ -56,7 +56,7 @@ tar zxf ../../$JOB.tar.gz
 cd AnalysisDataFormats/HeavyFlavorObjects
 make 
 cd - 
-scramv1 b -j4
+scramv1 b
 mv ../../$JOB.py .
 
 
