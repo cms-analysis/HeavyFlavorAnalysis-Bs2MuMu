@@ -170,7 +170,18 @@ truthBdToMuMuK0Dump = cms.EDAnalyzer(
     motherID     = cms.untracked.int32(511),
     type         = cms.untracked.int32(97),
     GenType      = cms.untracked.int32(-97),
-    daughtersID  = cms.untracked.vint32(13, -13, 310, 211, 211)
+#    daughtersID  = cms.untracked.vint32(13, -13, 310, 211, 211)
+    daughtersID  = cms.untracked.vint32(13, -13, 311)
+    )
+    
+# ----------------------------------0000------------------------------------
+truthBdToRhoPiDump = cms.EDAnalyzer(
+    "HFTruthCandidate",
+    tracksLabel  = cms.untracked.InputTag(trackList),
+    motherID     = cms.untracked.int32(511),
+    type         = cms.untracked.int32(98),
+    GenType      = cms.untracked.int32(-98),
+    daughtersID  = cms.untracked.vint32(113, 111)
     )
 
 
@@ -472,6 +483,7 @@ truthRareBdSequence      = cms.Sequence(truthBdToPiPiDump
                                         *truthBdToPiMuNuDump
                                         *truthBdToMuMuGaDump
                                         *truthBdToMuMuK0Dump
+                                        *truthBdToRhoPiDump
                                         )
 
 truthRareBuSequence      = cms.Sequence(truthBuTo3MuNuDump
