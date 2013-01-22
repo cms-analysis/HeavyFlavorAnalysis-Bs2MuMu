@@ -36,7 +36,7 @@ public:
   candAnaDstar(bmm2Reader *pReader, std::string name, std::string cutsFile);
   ~candAnaDstar();
 
-  void        evtAnalysis(TAna01Event *evt);
+  //void        evtAnalysis(TAna01Event *evt);
   bool        anaMC(TAna01Event *evt);
   void        candAnalysis();
   void        moreBasicCuts();
@@ -49,12 +49,19 @@ public:
   
   void        bookHist();
 
+ 
+
 private:
   TTree * tree;
-  int fcands, ftm[10], fmu[10];
-  float fmds[10], fmdz[10];
-  float ffls3d[10],fchi2[10],falpha[10],fqpis[10],fdr[10];
-  float fpt[10],fptdz[10],fptpis[10],fptpi[10],fptk[10];
+  int ftm, fnclose;
+  bool fmuid1, fmuid2, fmumat1, fmumat2;
+  float fmds, fmdz;
+  float ffls3d,fchi2,falpha,falpha2,fqpis,fdr;
+  float fpt,fptdz,fptpis,fptpi,fptk;
+  float fpvd, fiso;
+  float feta, fetapi, fetak;
+  float fchipi, fchik;
+  float mudr1, mudr2;
 };
 
 #endif
