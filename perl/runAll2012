@@ -56,38 +56,39 @@ if ($opt_v) {
     #
 	, "data 2012"  
     => "-y 2012 -b 1,bmm2Reader.2012,cbmm-$version-Run2012*,$version-2012-data.root"
-    , "Bs2PiPi rare MC"  
+	#
+    , "rare Bs2PiPi MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bs2PiPi,cbmm-v12-cms-BsToPiPi_2PiPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToPiPi.root"
-    , "Bs2KMuNu rare MC"  
+    , "rare Bs2KMuNu MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bs2KMuNu,cbmm-v12-cms-BsToKMuNu_KMuNuEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToKMuNu.root"
-    , "Bs2KPi rare MC"  
+    , "rare Bs2KPi MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bs2KPi,cbmm-v12-cms-BsToKPi_KPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToKPi.root"
-    , "Bs2KK rare MC"  
+    , "rare Bs2KK MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bs2KK,cbmm-v12-cms-BsToKK_2KPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToKK.root"
-    , "Bd2KPi rare MC"  
+    , "rare Bd2KPi MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bd2KPi,cbmm-v12-cms-BdToKPi_KPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BdToKPi.root"
-    , "Lb2PiP rare MC"  
+    , "rare Lb2PiP MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Lb2PiP,cbmm-v12-cms-LambdaBToPPi_PPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-LambdaBToPPi.root"
-    , "Bd2KK rare MC"  
+    , "rare Bd2KK MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bd2KK,cbmm-v12-cms-BdToKK_2KPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BdToKK.root"
-    , "Bd2PiPi rare MC"  
+    , "rare Bd2PiPi MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bd2PiPi,cbmm-v12-cms-BdToPiPi_2PiPtEtaFilter_8TeV-START53_V7A-v2-*,$version-cms-BdToPiPi.root"
-    , "Lb2PK rare MC"  
+    , "rare Lb2PK MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Lb2KP,cbmm-v12-cms-LambdaBToPK_PKPtEtaFilter_8TeV-START53_V7A-v2*,$version-cms-LambdaBToPK.root"
-    , "Lb2PMuNu rare MC"  
+    , "rare Lb2PMuNu MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Lb2PMuNu,cbmm-v12-cms-LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-LambdaBToPMuNu.root"
-    , "Bd2PiMuNu rare MC"  
+    , "rare Bd2PiMuNu MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-v12-cms-BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BdToPiMuNu.root"
 	#
-    , "Bu2MuMuK rare MC"  
+    , "rare Bu2MuMuK MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bu2MuMuK,cbmm-v12-cms-BuToMuMuK_MuMuKEtaPtFilter_8TeV-START53_V7A-v1*,$version-cms-BuToMuMuK.root"
-    , "Bu2MuMuPi rare MC"  
+    , "rare Bu2MuMuPi MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bu2PiMuMu,cbmm-v12-cms-BuToMuMuPi_MuMuPiEtaPtFilter_8TeV-START53_V7A-v1*,$version-cms-BuToMuMuPi.root"
-    , "Bd2MuMuPi0 rare MC"  
+    , "rare Bd2MuMuPi0 MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuPi0,cbmm-v12-cms-BdToMuMuPi0_MuMuPi0EtaPtFilter_8TeV-START53_V7A-v1*,$version-cms-BdToMuMuPi0.root"
-    , "Bd2MuMuGamma rare MC"  
+    , "rare Bd2MuMuGamma MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuGamma,cbmm-v12-cms-BdToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-START53_V7A-v1*,$version-cms-BdToMuMuGamma.root"
-    , "Bs2MuMuGamma rare MC"  
+    , "rare Bs2MuMuGamma MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bs2MuMuGamma,cbmm-v12-cms-BsToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToMuMuGamma.root"
     );
 
@@ -114,7 +115,8 @@ my $srm     = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/tri
 my $storage = "$srm/user/$user/$rootdir";
 
 #my $runCommand = "run $queue $crash -c ../../treeNoCompNoSE.csh -t $tarfile -m batch";
-my $runCommand = "run $crash -c ../../treeNoComp.csh -t $tarfile -m batch";
+#my $runCommand = "run $crash -c ../../treeNoComp.csh -t $tarfile -m batch";
+my $runCommand = "run $crash -c ../../treeNoCompSpecialRoot.csh -t $tarfile -m batch";
 
 
 # ----------------------------------------------------------------------

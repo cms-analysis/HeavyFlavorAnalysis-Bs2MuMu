@@ -111,6 +111,8 @@ if ($opt_v) {
     => "-y 2011 -m,bmm2Reader.2e33-Bd2KPi,cbmm-v11-2e33-Bd2KPi-*,$version-2e33-Bd2KPi.root"
     , "rare Bd2PiPi MC"  
     => "-y 2011 -m,bmm2Reader.2e33-Bd2PiPi,cbmm-v11-2e33-Bd2PiPi-*,$version-2e33-Bd2PiPi.root"
+    , "rare Bd2RhoPi MC"  
+    => "-y 2011 -m,bmm2Reader.2e33-Bd2RhoPi,cbmm-v11-2e33-Bd2RhoPi-*,$version-2e33-Bd2RhoPi.root"
     , "rare Lb2KP MC"  
     => "-y 2011 -m,bmm2Reader.2e33-Lb2KP,cbmm-v11-2e33-Lb2KP-*,$version-2e33-Lb2KP.root"
     , "rare Lb2PiP MC"  
@@ -126,8 +128,8 @@ if ($opt_v) {
     , "rare Bd2DstarPi MC"  
     => "-y 2011 -m,bmm2Reader.Bd2DstarPi.2011,cbmm-v11-2e33-Bd2DstarPi-*,$version-2e33-Bd2DstarPi.root"
     #
-    #, "data 2011"  
-    #=> "-y 2011 -b 1,bmm2Reader.data,cbmm-$version-Run2011*,$version-2011-data.root"
+    , "data 2011"  
+    => "-y 2011 -b 1,bmm2Reader.data,cbmm-$version-Run2011*,$version-2011-data.root"
     # 
     #, "bmt jet"  
     #=> "-y 2011 -b 1,bmt2Reader.data,cbmt-v11-Jet-*,$version-bmt-Jet.root"
@@ -161,7 +163,8 @@ my $srm     = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/tri
 my $storage = "$srm/user/$user/$rootdir";
 
 #my $runCommand = "run $queue $crash -c ../../treeNoCompNoSE.csh -t $tarfile -m batch";
-my $runCommand = "run $crash -c ../../treeNoComp.csh -t $tarfile -m batch";
+#my $runCommand = "run $crash -c ../../treeNoComp.csh -t $tarfile -m batch";
+my $runCommand = "run $crash -c ../../treeNoCompSpecialRoot.csh -t $tarfile -m batch";
 
 
 # ----------------------------------------------------------------------
