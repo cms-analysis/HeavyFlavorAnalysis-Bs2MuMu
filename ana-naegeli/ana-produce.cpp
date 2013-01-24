@@ -18,6 +18,7 @@ using namespace std;
 
 static string output_dir(".");
 static string configfile("");
+static bool gFastCopy = false;
 
 struct table_entry_t {
 	string filename;
@@ -31,7 +32,7 @@ struct table_entry_t {
 	}
 };
 
-static void usage() {cout << "ana-produce [-D <output_dir>] <configfile>" << endl;}
+static void usage() {cout << "ana-produce [-f] [-D <output_dir>] <configfile>" << endl;}
 
 static bool parse_arguments(const char **first, const char **last)
 {
@@ -42,17 +43,19 @@ static bool parse_arguments(const char **first, const char **last)
 		
 		arg = *first++;
 		if (arg[0] == '-') {
-			if (strcmp(arg, "-D") == 0) {
-				if (first == last) {
-					usage();
-					goto bail;
-				}
-				output_dir = string(*first++);
-			} else {
-				cout << "unknown option: " << arg << endl;
-				usage();
-				goto bail;
-			}
+		  if (strcmp(arg, "-f") == 0) {
+		    gFastCopy = true;
+		  } else if (strcmp(arg, "-D") == 0) {
+		    if (first == last) {
+		      usage();
+		      goto bail;
+		    }
+		    output_dir = string(*first++);
+		  } else {
+		    cout << "unknown option: " << arg << endl;
+		    usage();
+		    goto bail;
+		  }
 		} else
 			configfile = string(arg);
 	}
@@ -160,7 +163,7 @@ static void process_entry(table_entry_t e)
 	TFile *rFile = NULL;
 	TTree *copyTree = NULL;
 	TTreeFormula *cutFormula = NULL;
-	Long64_t j,local,diff = -1;
+	Long64_t j,local;
 	
 	cout << "====> Processing entry:" << endl;
 	e.Print();
@@ -193,11 +196,9 @@ static void process_entry(table_entry_t e)
 		chain.GetEntry(j); // load the entry
 		local = chain.LoadTree(j); // get the local entry nbr
 		if (!cutFormula || cutFormula->GetTree() != chain.GetTree() || j - local > 0) {
-		  diff = j - local;
 		  if(cutFormula) delete cutFormula;
 		  cutFormula = new TTreeFormula("cutForm",e.cut.GetTitle(),chain.GetTree());
 		}
-		// cout << "DEBUG: j = " << j << ", local = " << chain.LoadTree(j) << ", tree = " << chain.GetTree() << ", diff = " << diff  << endl;
 		if (cutFormula->EvalInstance() > 0)
 			copyTree->Fill();
 		
@@ -225,6 +226,50 @@ static void process_entry(table_entry_t e)
 	cout << "===> Entry done." << endl;
 } // process_entry()
 
+static void process_entry_fast(table_entry_t e)
+{
+	FILE *chainfile = fopen(e.chainname.c_str(),"r");
+	char buffer[1024];
+	char chain_entry[1024];
+	unsigned size;
+	int parsed;
+	TChain chain("T");
+	TFile *rFile = NULL;
+	TTree *copyTree = NULL;
+	
+	cout << "====> Processing entry:" << endl;
+	e.Print();
+	
+	// open the chain
+	while ( fgets(buffer, sizeof(buffer), chainfile) ) {
+		
+		if(buffer[0] == '#') continue;
+		if(buffer[strlen(buffer)-1] == '\n' || buffer[strlen(buffer)-1] == '\r') buffer[strlen(buffer)-1] = '\0';
+		if(!strlen(buffer)) continue;
+		
+		parsed = sscanf(buffer, "%s %u", chain_entry, &size);
+		if (parsed > 1) {
+		  cout << "\tAdding " << chain_entry << endl;
+		  chain.Add(chain_entry,size);
+		} else if(parsed > 0) {
+		  cout << "\tAdding " << chain_entry << endl;
+		  chain.Add(chain_entry);
+		}
+	}
+	
+	// open the root file
+	rFile = new TFile(Form("%s/%s",output_dir.c_str(),e.filename.c_str()),"recreate");
+	copyTree = chain.CopyTree(e.cut,"",chain.GetEntries());
+	
+	copyTree->Write();
+	if(chainfile)
+		fclose(chainfile);
+
+	delete rFile;
+
+	cout << "===> Entry done." << endl;
+} // process_entry_fast()
+
 int main(int argc, const char *argv[])
 {
 	vector<table_entry_t> entries;
@@ -239,8 +284,8 @@ int main(int argc, const char *argv[])
 	if(!read_config(configfile.c_str(),&entries)) goto bail;
 	
 	// process each entry
-	for_each(entries.begin(), entries.end(), process_entry);
-		
+	if (gFastCopy) for_each(entries.begin(), entries.end(), process_entry_fast);
+	else for_each(entries.begin(), entries.end(), process_entry);
 bail:
 	return 0;
 } // main()
