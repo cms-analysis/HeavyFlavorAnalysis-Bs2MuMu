@@ -98,7 +98,7 @@ void pdf_analysis::initialize () {
   super_cat = new RooSuperCategory("super_cat", "super_cat", cat_set);
   ws_->import(*super_cat);
 
-  MassRes = new RooRealVar("MassRes", "mass resolution", 0.02, 0.15, "GeV/c^{2}");
+  MassRes = new RooRealVar("MassRes", "mass resolution", 0.0, 0.2, "GeV/c^{2}");
   ws_->import(*MassRes);
 
   obs = new RooArgSet(*ws_->var("Mass"), *ws_->var("bdt"), "obs");

@@ -107,7 +107,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
   }
   cout << "BEGINNING EXPERIMENTS!" << endl;
   for (int k = 1; k <= NExp; k++) {
-    if (k%100 == 0) cout << "Exp # " << k << " / " << NExp << endl;
+    if (k % 100 == 0) cout << "Exp # " << k << " / " << NExp << endl;
     double printlevel = -1;
     if (k == 1) printlevel = 1;
     RooWorkspace* ws_temp = (RooWorkspace*)ws_->Clone("ws_temp");
@@ -161,35 +161,29 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
 
 /// generation
 //    if (syst) randomize_constraints(ws_temp);
-    if (!simul_) { /// simple 1D or 2D fit
+    if (!simul_bdt_ && !simul_all_) { /// simple 1D or 2D fit
       bd_b = true;
       data = ws_temp->pdf(pdfname.c_str())->generate(vars, Extended());
     }
-    else { /// 1D simul bdt
+    else {
+      RooArgSet set(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->cat("etacat"), *ws_->cat("bdtcat"));
+      if (simul_all_) set.add(*ws_->cat("allcat"));
       for (int i = 0; i < channels; i++) {
-        for (int j = 0; j < bdt_index_max(i); j++) {
-          ws_temp->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
-          if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
-          else if (bd_constr_) ws_temp->var("bd_over_bs")->setVal(estimate2D_bd[i][j]/estimate2D_bd[i][j]);
-          if (!rare_constr_) ws_temp->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
-          ws_temp->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
-          RooDataSet* data_i = ws_temp->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_temp->var("Mass"), *ws_temp->var("MassRes")), Extended());
+      	for (int j = 0; j < bdt_index_max(i); j++) {
+          RooDataSet* data_i = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes")), Extended());
           channels_cat->setIndex(i);
           bdt_cat->setIndex(j);
-          if (!simul_bdt_ && !simul_all_) data_i->addColumn(*channels_cat);
-          if (simul_bdt_ && !simul_all_) {
-          	data_i->addColumn(*bdt_cat);
-            data_i->addColumn(*channels_cat);
-          }
-          if (!simul_bdt_ && simul_all_) {
-            all_cat->setIndex(super_index(i, j));
-            data_i->addColumn(*all_cat);
+          data_i->addColumn(*channels_cat);
+          data_i->addColumn(*bdt_cat);
+          if (simul_all_) {
+          	all_cat->setIndex(super_index(i, j));
+          	data_i->addColumn(*all_cat);
           }
           data->append(*data_i);
-        }
+      	}
       }
-      data->SetName("global_data");
     }
+    data->SetName("global_data");
 
     do_bias(ws_temp);
     ///////////
