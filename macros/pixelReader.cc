@@ -123,10 +123,6 @@ void pixelReader::bookHist()
 			}
 		}
 	}
-	
-	hXres = new TH1D("hXres","",100,-0.015,0.015);
-	hYres = new TH1D("hYres","",100,-0.015,0.015);
-	hZres = new TH1D("hZres","",100,-0.03,0.03);
 } // bookHist()
 
 void pixelReader::eventProcessing()
@@ -476,10 +472,6 @@ void pixelReader::smearTrack(TVector3 *v, TVector3 *p)
 		*v = smearD0(*v,findResolution(*p, fResVecXY), *p);
 		*v = smearZ(*v, findResolution(*p, fResVecZ));
 	}
-	
-	hXres->Fill(v->X() - save.X());
-	hYres->Fill(v->Y() - save.Y());
-	hZres->Fill(v->Z() - save.Z());
 	
 	// smear momentum
 	pt = p->Perp();

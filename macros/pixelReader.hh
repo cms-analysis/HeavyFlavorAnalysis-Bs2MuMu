@@ -119,12 +119,6 @@ class pixelReader : public treeReader01 {
 	private:
 		unsigned fNumCands;
 		unsigned fResMode; // resolution mode
-	
-	private:
-		// DEBUG. Remove again afterwards
-		TH1D *hXres;
-		TH1D *hYres;
-		TH1D *hZres;
 };
 
 #endif
