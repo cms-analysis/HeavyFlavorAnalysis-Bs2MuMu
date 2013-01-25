@@ -14,6 +14,8 @@
 
 #include "DataFormats/VertexReco/interface/Vertex.h"
 
+#include "MuonAnalysis/MuonAssociators/interface/PropagateToMuon.h"
+
 #define HFMAXTRACK 10000
 
 class TFile;
@@ -30,6 +32,7 @@ class HFDumpTracks : public edm::EDAnalyzer {
   
  private:
   virtual void beginJob() ;
+  virtual void beginRun(const edm::Run& iRun, const edm::EventSetup& iSetup);
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   virtual void endJob() ;
 
@@ -48,6 +51,7 @@ class HFDumpTracks : public edm::EDAnalyzer {
   reco::Vertex         fPV;
 
   const TrackAssociatorBase *fAssociator;
+  PropagateToMuon fPropMuon;
 };
 
 #endif

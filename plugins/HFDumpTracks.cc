@@ -69,7 +69,8 @@ HFDumpTracks::HFDumpTracks(const edm::ParameterSet& iConfig):
   fCaloMuonsLabel(iConfig.getUntrackedParameter<InputTag>("calomuonsLabel")),
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1)),
-  fLoadCalomuons(iConfig.getUntrackedParameter<bool>("loadCalomuons",true))
+  fLoadCalomuons(iConfig.getUntrackedParameter<bool>("loadCalomuons",true)),
+  fPropMuon(iConfig.getParameter<edm::ParameterSet>("propMuon"))
     {
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFDumpTracks constructor  " << endl;
@@ -278,8 +279,15 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     pTrack->fAlgorithm = trackView.algo(); 
 
     // -- see https://indico.cern.ch/getFile.py/access?contribId=2&resId=1&materialId=slides&confId=123067
-    pTrack->fValidHitFraction = trackView.validFraction(); 
-
+    pTrack->fValidHitFraction = trackView.validFraction();
+	
+	// store entrance to muon chamber
+	TrajectoryStateOnSurface tsos = fPropMuon.extrapolate(trackView);
+	if (tsos.isValid()) {
+		pTrack->fPosMuonChamber.SetXYZ(tsos.globalPosition().x(),tsos.globalPosition().y(),tsos.globalPosition().z());
+		pTrack->fPlabMuonChamber.SetXYZ(tsos.globalMomentum().x(),tsos.globalMomentum().y(),tsos.globalMomentum().z());
+	}
+	
     // -- from: RecoBTag/TrackProbability/src/TrackClassFilter.cc
     reco::TrackBase::TrackQuality trackQualityUndef               =  reco::TrackBase::qualityByName("undefQuality");
     reco::TrackBase::TrackQuality trackQualityLoose               =  reco::TrackBase::qualityByName("loose");
@@ -436,6 +444,10 @@ void  HFDumpTracks::beginJob() {
 void  HFDumpTracks::endJob() {
 }
 
+void HFDumpTracks::beginRun(const edm::Run& iRun, const edm::EventSetup& iSetup)
+{
+	fPropMuon.init(iSetup);
+} // beginRun()
 
 // ----------------------------------------------------------------------
 void HFDumpTracks::tracksAndPv(const edm::Event& iEvent) {
