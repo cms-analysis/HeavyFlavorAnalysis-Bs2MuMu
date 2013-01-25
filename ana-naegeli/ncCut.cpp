@@ -7,6 +7,13 @@
 
 #include "ncCut.h"
 
+#include <iostream>
+
+bool operator<(ncCut c1, ncCut c2)
+{
+	return (strcmp(c1.getName(), c2.getName()) < 0);
+} // operator<()
+
 ncCut::ncCut()
 {
 	init("",ncCutRange(-1e30,1e30),ncCutRange(-1e30,1e30),"");
@@ -24,3 +31,13 @@ void ncCut::init(const char *formula, ncCutRange domain, ncCutRange cut, const c
 	fDomain = domain;	// Adapt RooFit convention for infinity
 	fCut = cut;
 } // init()
+
+void ncCut::dump() const
+{
+	using std::cout; using std::endl;
+	cout << "ncCut()" << endl;
+	cout << "	fName = " << fName << endl;
+	cout << "	fFormula = " << fFormula << endl;
+	cout << "	fDomain = (" << fDomain.first << ", " << fDomain.second << ")" << endl;
+	cout << "	fCut = (" << fCut.first << ", " << fCut.second << ")" << endl;
+} // dump()

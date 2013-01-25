@@ -21,15 +21,17 @@ class ncCut {
 		ncCut();
 		ncCut(const char *formula, ncCutRange domain, ncCutRange cut, const char *name = NULL);
 		
-		const char *getName() { return fName.c_str(); }
-		const char *getFormula() { return fFormula.c_str(); }
-		ncCutRange getDomain() { return fDomain; }
-		ncCutRange getCut() { return fCut; }
+		const char *getName() const { return fName.c_str(); }
+		const char *getFormula() const { return fFormula.c_str(); }
+		ncCutRange getDomain() const { return fDomain; }
+		ncCutRange getCut() const { return fCut; }
 		
 		void setName(const char *name) { fName = std::string(name); }
 		void setFormula(const char *formula) { fFormula = std::string(formula); }
 		void setDomain(ncCutRange domain) { fDomain = domain; }
 		void setCut(ncCutRange cut) { fCut = cut; }
+		
+		void dump() const;
 	
 	private:
 		
@@ -40,5 +42,7 @@ class ncCut {
 		ncCutRange fDomain;	// meaningful region
 		ncCutRange fCut;	// cut on this variable
 };
+
+bool operator<(ncCut c1, ncCut c2);
 
 #endif
