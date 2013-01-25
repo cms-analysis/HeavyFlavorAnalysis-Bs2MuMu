@@ -9,6 +9,7 @@
 #include "ncAna.h"
 #include "ncTree.h"
 #include "ncFormula.h"
+#include "ncVarReader.h";
 
 #include "../rootutils/NCRootUtils.h"
 
@@ -22,6 +23,7 @@
 #include <TTree.h>
 #include <TEfficiency.h>
 #include <TEventList.h>
+#include <TTreeFormula.h>
 
 // RooFit
 #include <RooDataSet.h>
@@ -29,11 +31,13 @@
 #include <RooRealVar.h>
 #include <RooPlot.h>
 
+// TMVA
+#include <TMVA/Factory.h>
+
 using std::cout;
 using std::endl;
 
-
-ncAna::ncAna() : fDataFileName("/Users/cn/CMSData/Reduced/data-2011.root"), fMCFileName("/Users/cn/CMSData/Reduced/production-mix-general.root"), fPeakFileName("/Users/cn/CMSData/Reduced/production-2e33-general.root"), fAccFileName("/Users/cn/CMSData/Reduced/production-2e33-acceptance.root"), fNbrMassBins(50), fMassRange(4.9,5.9), fNbrSidebandBins(50), fLowSidebandRange(5.05,5.15), fHighSidebandRange(5.4,5.5), fBlindedRegion(5.2,5.45), fBsWindowRegion(5.3,5.45),fBdWindowRegion(5.2,5.3), fFitRangeNorm(4.95,5.6), fPlotDir("plots"), fSystematicsTable(NULL), fMisIDKaonPion(0.001,0.0002,0.0002), fMisIDProton(0.0005,0.0001,0.0001)
+ncAna::ncAna() : fNormFileName(""), fDataFileName("/Users/cn/CMSData/Reduced/data-newvars.root"), fMCFileName("/Users/cn/CMSData/Reduced/mc-newvars.root"), fPeakFileName("/Users/cn/CMSData/Reduced/production-2e33-general.root"), fAccFileName("/Users/cn/CMSData/Reduced/production-2e33-acceptance.root"), fNbrMassBins(50), fMassRange(4.9,5.9), fNbrSidebandBins(50), fLowNoSidebandRange(5.05,5.15), fHighNoSidebandRange(5.4,5.5), fLowCoSidebandRange(5.1,5.2), fHighCoSidebandRange(5.5,5.6), fBlindedRegion(5.2,5.45), fBsWindowRegion(5.3,5.45),fBdWindowRegion(5.2,5.3), fNoSignalRegion(5.2,5.35), fFitRangeNorm(4.95,5.6), fPlotDir("plots"), fSystematicsTable(NULL), fMisIDKaonPion(0.001,0.0002,0.0002), fMisIDProton(0.0005,0.0001,0.0001), fVarFileName("cuts/newvars.def")
 {
 	using std::string;
 	using std::make_pair;
@@ -69,7 +73,7 @@ TH1D *ncAna::getDefaultMassHistogram(const char *name)
 	return new TH1D(name,"",fNbrMassBins,fMassRange.first, fMassRange.second);
 } // getDefaultMassHistogram()
 
-void ncAna::showSidebandSubtraction(bool massConstraint)
+void ncAna::showSidebandSubtraction(bool massConstraint, bool cs)
 {
 	TFile dataFile(fDataFileName.c_str());
 	TFile mcFile(fMCFileName.c_str());
@@ -153,8 +157,10 @@ void ncAna::showSidebandSubtraction(bool massConstraint)
 		
 		// histogram einteilen
 		signalCut = TCut(Form("%f < mass && mass < %f",mu - 2*res, mu + 2*res));
-		lowSBCut = TCut(Form("%f < mass && mass < %f",fLowSidebandRange.first, fLowSidebandRange.second));
-		highSBCut = TCut(Form("%f < mass && mass < %f",fHighSidebandRange.first, fHighSidebandRange.second));
+		lowSBCut = (cs ? TCut(Form("%f < mass && mass < %f",fLowCoSidebandRange.first, fLowCoSidebandRange.second))
+					: TCut(Form("%f < mass && mass < %f",fLowNoSidebandRange.first, fLowNoSidebandRange.second)));
+		highSBCut = (cs ? TCut(Form("%f < mass && mass < %f",fHighCoSidebandRange.first, fHighCoSidebandRange.second))
+					 : TCut(Form("%f < mass && mass < %f",fHighNoSidebandRange.first, fHighNoSidebandRange.second)));
 		
 		// variable zeichnen und speichern
 		dataTree->Draw(Form("%s >> hsg",fSidebandCuts[j].getFormula()),cut && signalCut);
@@ -329,7 +335,175 @@ void ncAna::loadSystematics(bool def)
 	fSystematicsTable->insert(make_pair(g_sys_shapecombbkg, 0.04));
 } // loadSystematics()
 
+void ncAna::varAna()
+{
+	using std::cout; using std::endl;
+	std::set<ncCut> *varSet;
+	std::set<ncCut>::const_iterator it;
+	std::string name;
+	ncVarReader reader;
+	size_t j;
+	
+	try {
+		reader.loadFile(fVarFileName.c_str());
+	} catch (std::string err) {
+		cout << "Error loading the Variables..." << endl;
+		cout << "Caught string '" << err << "'" << endl;
+	}
+	
+	for (j = 0; j < reader.getNbr(); j++) {
+		varSet = reader.getVars(j);
+		
+		cout << "====================" << endl;
+		cout << "set[j] = " << j << endl;
+		for (it = varSet->begin(); it != varSet->end(); ++it) it->dump();
+		cout << "====================" << endl;
+		
+		// process the files...
+		name = std::string(Form("variable-%d",(int)j));
+		processVarSet(varSet,name.c_str());
+	}
+} // varAna()
+
+void ncAna::processVarSet(std::set<ncCut> *varSet, const char *name)
+{
+	std::set<ncCut>::iterator it;
+	TFile *mcFile = TFile::Open(fMCFileName.c_str());
+	TFile *dataFile = TFile::Open(fDataFileName.c_str());
+	TFile tmvaFile(Form("TMVA-%s.root",name),"recreate");
+	TTree *mcTree = (TTree*)mcFile->Get("T");
+	TTree *dataTree = (TTree*)dataFile->Get("T");
+	TString factOptions("Transformations=I");
+	TString prepOptions("");
+	TMVA::Factory *factory;
+	TFile *tmpFile;
+	char *tmp = tempnam(".","training-");
+	string *trainFilename;
+	TCut cutPresel,cut;
+	std::vector<std::pair<double,std::string> > ranking;
+	size_t j;
+	
+	// build the cut
+	for (it = varSet->begin(); it != varSet->end(); ++it) {
+		ncCut c = *it;
+		cutPresel = cutPresel && TCut(Form("%e < %s && %s < %e", c.getCut().first, c.getFormula(), c.getFormula(), c.getCut().second));
+	}
+	
+	trainFilename = new string(Form("%s.root",tmp));
+	tmpFile = new TFile(trainFilename->c_str(),"recreate");
+	tmpFile->cd();
+	
+	// extracting signal
+	cut = cutPresel && TCut("candidate == 301313") && cutSigTruth(true) && cutTrigger(true);
+	cout << "Selecting signal..." << flush;
+	mcTree = mcTree->CopyTree(cut.GetTitle());
+	cout << "	done" << endl;
+	
+	// extracting background
+	cut = cutPresel && TCut("candidate == 301313") && (TCut(Form("%e < mass && mass < %e", fLowNoSidebandRange.first, fLowNoSidebandRange.second)) || TCut(Form("%e < mass && mass < %e", fHighCoSidebandRange.first, fHighCoSidebandRange.second))) && cutTrigger(true);
+	cout << "Selecting background..." << flush;
+	dataTree = dataTree->CopyTree(cut.GetTitle());
+	cout << "	done" << endl;
+	
+	mcTree->Write("sigT");
+	dataTree->Write("bkgT");
+	
+	factory = new TMVA::Factory("varAna",&tmvaFile,factOptions);
+	factory->AddSignalTree(mcTree,1.0);
+	factory->AddBackgroundTree(dataTree,1.0);
+	
+	for (it = varSet->begin(); it != varSet->end(); ++it) {
+		ncCut c = *it;
+		factory->AddVariable(Form("%s := %s", c.getName(), c.getFormula()), 'F');
+		ranking.push_back(make_pair(computeRanking(&c, mcTree, dataTree), std::string(c.getName())));
+	}
+	
+	factory->PrepareTrainingAndTestTree("",prepOptions);
+	factory->BookMethod(TMVA::Types::kCuts,"cuts","FitMethod=MC:SampleSize=100");
+	factory->TrainAllMethods();
+	factory->TestAllMethods();
+	factory->EvaluateAllMethods();
+	
+	// sort the variable ranking
+	std::sort(ranking.begin(),ranking.end());
+	cout << "Ranking of Variables" << endl;
+	for (j = 0; j < ranking.size(); j++)
+		cout << '\t' << ranking[j].second << ":		" << ranking[j].first << endl;
+	
+	unlink(trainFilename->c_str());
+	free(tmp);
+	delete tmpFile;
+	delete trainFilename;
+	delete factory;
+	delete mcFile;
+	delete dataFile;
+} // processVarSet()
+
+double ncAna::computeRanking(ncCut *nc, TTree *sigTree, TTree *bkgTree)
+{
+	TTreeFormula sigForm("sigForm",nc->getFormula(),sigTree);
+	TTreeFormula bkgForm("bkgForm",nc->getFormula(),bkgTree);
+	Long64_t j;
+	double value;
+	double sigMean = 0,sigSigma = 0;
+	double bkgMean = 0,bkgSigma = 0;
+	double nsig,nbkg;
+	
+	// process signal tree
+	for (j = 0; j < sigTree->GetEntries(); j++) {
+		
+		sigTree->GetEntry(j);
+		value = sigForm.EvalInstance();
+		sigMean += value;
+		sigSigma += value*value;
+	}
+	
+	// process bkg tree
+	for (j = 0; j < bkgTree->GetEntries(); j++) {
+		
+		bkgTree->GetEntry(j);
+		value = bkgForm.EvalInstance();
+		bkgMean += value;
+		bkgSigma += value*value;
+	}
+	
+	// compute mean and std dev
+	nsig = (double)sigTree->GetEntries();
+	nbkg = (double)bkgTree->GetEntries();
+	sigMean /= nsig;
+	bkgMean /= nbkg;
+	
+	sigSigma = sigSigma/(nsig-1.) - nsig/(nsig-1.)*(sigMean*sigMean); // sigma^2
+	bkgSigma = bkgSigma/(nbkg-1.) - nbkg/(nbkg-1.)*(bkgMean*bkgMean); // sigma^2
+	
+	// add quadratically the sigmas
+	sigSigma = TMath::Sqrt(sigSigma + bkgSigma);
+	
+	value = TMath::Abs(sigMean-bkgMean)/sigSigma;
+	
+	return value;
+} // computeRanking()
+
 #pragma mark -
+
+
+TCut ncAna::cutPreselection(int nKaons)
+{
+	TCut result = TCut("d3 < 2.0 && d3e > 0 && ipe > 0") && cutHisto() && cutAcceptanceData(nKaons);
+	
+	switch (nKaons) {
+		case 2:
+			result = result && TCut("0.995 < mass_dikaon && mass_dikaon < 1.045 && deltaR_kaons < 0.25");
+		case 1:
+			result = result && TCut("pt > 7.0 && 3.0 < fMassJPsi && fMassJPsi < 3.2");
+			break;
+		default:
+			result = TCut("pt > 7.5");
+			break;
+	}
+	
+	return result;
+}
 
 TCut ncAna::cutAcceptanceMC(int nKaons)
 {
@@ -364,11 +538,6 @@ TCut ncAna::cutSigCandGen(bool bsmm, bool reco)
 	if (!reco) cand = -cand;
 	return TCut(Form("candidate == %d",cand));
 } // cutSigCandGen()
-
-TCut ncAna::cutMVAPresel()
-{
-	return TCut("4 < pt_mu1 && pt_mu1 < 40 && 4.0 < pt_mu2 && pt_mu2 < 20 && pt < 60 && ip < 0.03 && ipe > 0 && ip/ipe < 6 && d3/d3e < 100 && d3 < 2 && alpha < 0.2 && chi2/Ndof < 4 && iso_mor12 > .6 && ntrk < 15 && doca0 < .1 && TMath::Abs(eta) < 2.5 && 0 < d3e && 4.9 < mass && mass < 5.9 && TMath::Abs(eta_mu1) < 2.4 && TMath::Abs(eta_mu2) < 2.4 && (track_qual_mu1 & 4) && (track_qual_mu2 & 4)");
-} // cutMVAPresel()
 
 TCut ncAna::cutChannel(unsigned ix)
 {
@@ -943,7 +1112,6 @@ void ncAna::appendPeakingChannel(int trueCand, measurement_t muMis1, measurement
 		elist->Write(listName.c_str(), TObject::kOverwrite);
 	}
 	nbr_reco = (double)elist->GetN();
-	cout << "DEBUG: nbr_reco = " << nbr_reco << endl;
 	
 	// fix this as base
 	tree->SetEventList(elist);
@@ -952,10 +1120,6 @@ void ncAna::appendPeakingChannel(int trueCand, measurement_t muMis1, measurement
 	nbr_off = (double)tree->Draw("", cut && !cutSigWindow(true) && !cutSigWindow(false));
 	nbr_bd = (double)tree->Draw("", cut && cutSigWindow(false));
 	nbr_bs = (double)tree->Draw("", cut && cutSigWindow(true));
-	
-	cout << "DEBUG: nbr_off = " << nbr_off << endl;
-	cout << "DEBUG: nbr_bd = " << nbr_bd << endl;
-	cout << "DEBUG: nbr_bs = " << nbr_bs << endl;
 	
 	if (nbr_reco > 0) {
 		
@@ -1257,3 +1421,87 @@ void ncAna::writeULC(const char *ulcname, bool reload)
 	
 	fclose(outputFile);
 } // writeULC()
+
+void ncAna::showBsmmPlots()
+{
+	TFile *mcFile = TFile::Open(fSignalFileName.c_str());
+	TFile *dataFile = TFile::Open(fDataFileName.c_str());
+	TTree *mcTree = (TTree*)mcFile->Get("T");
+	TTree *dataTree = (TTree*)dataFile->Get("T");
+	set<ncCut> variables;
+	set<ncCut>::const_iterator it;
+	ncVarReader reader;
+	TCut presel = cutSigCand() && cutAcceptanceData(0) && (cutTrigger(true, true) || cutTrigger(true, false)) && cutMuon() && cutHisto();
+	TCut mcCut = cutSigTruth(true) && cutAcceptanceMC(0);
+	TCanvas *c;
+	
+	try {
+		reader.loadFile(fVarFileName.c_str());
+	}
+	catch (std::string err) {
+		cout << Form("ncAna::showBsmmPlots(): error reading variable file. '%s'",err.c_str()) << endl;
+		goto bail;;
+	}
+	
+	if (reader.getNbr() == 0)
+		goto bail;
+	
+	variables = *reader.getVars(0);
+	
+	// show the histograms.
+	for (it = variables.begin(); it != variables.end(); ++it) {
+		TH1D *histoMC = new TH1D(Form("%s_mc",it->getName()),"",50,it->getCut().first,it->getCut().second);
+		TH1D *histoData = new TH1D(Form("%s_data",it->getName()),"",50,it->getCut().first,it->getCut().second);
+		
+		setHistoStyle(histoMC, kHistoStyle_Norm); // same as normalization
+		
+		dataTree->Draw(Form("%s >> %s_data",it->getFormula(),it->getName()), presel);
+		mcTree->Draw(Form("%s >> %s_mc",it->getFormula(),it->getName()), presel && mcCut);
+		
+		c = new TCanvas;
+		histoMC->Draw();
+		histoData->Draw("sameE1");
+	}
+	
+bail:
+	delete mcFile;
+	delete dataFile;
+} // showVarPlots()
+
+void ncAna::showNormPlots()
+{
+	// load the production mc
+	TFile *mcFile = TFile::Open(fNormFileName.c_str());
+	TFile *dataFile = TFile::Open(fDataFileName.c_str());
+	TTree *mcTree = (TTree*)mcFile->Get("T");
+	TTree *dataTree = (TTree*)dataFile->Get("T");
+	TH1D *nPVData = new TH1D("nPVData","",50,0,40);
+	TH1D *nPVMC = new TH1D("nPVMC","",50,0,40);
+	TCanvas *c = new TCanvas("pvCan","Nbr of PV");
+	TCut presel = cutNormCand() && cutAcceptanceData(1) && cutTrigger(false) && cutMuon() && cutHisto();
+	TCut mcCut = cutNormTruth() && cutAcceptanceMC(1);
+	int j;
+	
+	setHistoStyle(nPVMC, kHistoStyle_Norm);
+	
+	for (j = 0; j <= 1; j++) { // iterate through channels
+		// FIXME: choose correct cut here
+		dataTree->Draw("nbr_pv >> nPVData", presel && cutChannel(j));
+		mcTree->Draw("nbr_pv >> nPVMC", presel && mcCut && cutChannel(j));
+		c->cd();
+		nPVMC->Draw();
+		nPVData->Draw("sameE1");
+		
+		c->SaveAs(Form("plots/systematics-npv_NoData_NoMc_chan%d.pdf",j));
+	}
+	
+	delete mcFile;
+	delete dataFile;
+} // showNormPlots()
+
+void ncAna::setHistoStyle(TH1D *h, nc_histostyle style)
+{
+	h->SetLineColor(kBlue);
+	h->SetFillColor(kBlue);
+	h->SetFillStyle(3005);
+} // setHistoStyle()

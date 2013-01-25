@@ -28,14 +28,22 @@
 // RooFit
 #include <RooWorkspace.h>
 
+enum nc_histostyle {
+	kHistoStyle_Norm
+};
+
 class ncAna {
 	
 	public:
 		ncAna();
 		~ncAna();
 		
+		// show plots
+		void showNormPlots();
+		void showBsmmPlots();
+		
 		// Possible 'analysis'
-		void showSidebandSubtraction(bool massConstraint = true);
+		void showSidebandSubtraction(bool massConstraint = true, bool cs = false);
 		double getSystematicsEffAna(TCut cut, bool massConstraint = false);
 		double getSystematicsEffAna(std::set<std::string> cuts, bool massConstraint = false);
 		
@@ -49,9 +57,12 @@ class ncAna {
 		
 		// load systematics
 		void loadSystematics(bool def = true);
+		
+		// Variable analysis
+		void varAna();
 	public:
 		// Standard cuts (static)
-		static TCut cutTrigger(bool signal = true) { return signal ? TCut("triggered_bs") : TCut("triggered_jpsi"); }
+		static TCut cutTrigger(bool signal = true, bool barrel = true) { return signal ? TCut(Form("triggered_bs_%s", (barrel ? "barrel" : "endcap"))) : TCut("triggered_jpsi"); }
 		static TCut cutMuon() { return TCut("tight_mu1 && tight_mu2"); } 
 		static TCut cutAcceptanceMC(int nKaons = 0);
 		static TCut cutAcceptanceMCHard(int nKaons = 0);
@@ -62,10 +73,9 @@ class ncAna {
 		static TCut cutSigCand() { return TCut("candidate == 301313"); }
 		static TCut cutSigCandGen(bool bsmm, bool reco);
 		static TCut cutSigTruth(bool bsmm = true) { return TCut(Form("true_decay == %d", (bsmm ? kDecay_BsToMuMu : kDecay_BdToMuMu))); }
-		static TCut cutSanity() { return TCut("d3e > 0 && ipe > 0"); }
-		static TCut cutMVAPresel();
 		
 		// non-static cuts
+		TCut cutPreselection(int nKaons = 0);
 		TCut cutSigWindow(bool bsmm) { return (bsmm ? TCut(Form("%f < mass && mass < %f",fBsWindowRegion.first, fBsWindowRegion.second)) : TCut(Form("%f < mass && mass < %f",fBdWindowRegion.first, fBdWindowRegion.second))); }
 		TCut cutHisto() {return TCut(Form("%f < mass && mass < %f", fMassRange.first, fMassRange.second));}
 		TCut cutBlindRegion() {return TCut(Form("%f < mass && mass < %f", fBlindedRegion.first, fBlindedRegion.second));}
@@ -80,16 +90,16 @@ class ncAna {
 		void setNbrMassBins(int32_t massBins) { fNbrMassBins = massBins; }
 		void setMassRange(std::pair<double,double> massRange) { fMassRange = massRange; }
 		void setNbrSidebandBins(int32_t nbrBins) { fNbrSidebandBins = nbrBins; }
-		void setLowSidebandRange(std::pair<double,double> lowRange) { fLowSidebandRange = lowRange; }
-		void setHighSidebandRange(std::pair<double,double> highRange) { fHighSidebandRange = highRange; }
+		void setLowNoSidebandRange(std::pair<double,double> lowRange) { fLowNoSidebandRange = lowRange; }
+		void setHighNoSidebandRange(std::pair<double,double> highRange) { fHighNoSidebandRange = highRange; }
 		void setPlotDir(const char *pDir) { fPlotDir = std::string(pDir); }
 		void setChannels(std::vector<std::pair<ncCut::ncCutRange,std::string> > channels) { fChannels = channels; }
 		
 		int32_t getNbrMassBins() { return fNbrMassBins;}
 		std::pair<double,double> getMassRange() { return fMassRange; }
 		int32_t getNbrSidebandBins() { return fNbrSidebandBins; }
-		std::pair<double,double> getLowSidebandRange() { return fLowSidebandRange; }
-		std::pair<double,double> getHighSidebandRange() { return fHighSidebandRange; }
+		std::pair<double,double> getLowSidebandRange() { return fLowNoSidebandRange; }
+		std::pair<double,double> getHighSidebandRange() { return fHighNoSidebandRange; }
 		const char *getPlotDir() { return fPlotDir.c_str(); }
 		std::vector<std::pair<ncCut::ncCutRange,std::string> > getChannels() { return fChannels; }
 	
@@ -104,8 +114,16 @@ class ncAna {
 		const char *getAccFileName() { return fAccFileName.c_str(); }
 	
 	private:
-		// filenames
+		// Displaying
+		void setHistoStyle(TH1D *h, nc_histostyle style);
+	
+	private:
+		
+		std::string fNormFileName;
+		std::string fSignalFileName;
 		std::string fDataFileName;
+	
+		// FIXME: deprecated
 		std::string fMCFileName;
 		std::string fPeakFileName;
 		std::string fAccFileName;
@@ -114,12 +132,15 @@ class ncAna {
 		int32_t fNbrMassBins;
 		std::pair<double,double> fMassRange;
 		int32_t fNbrSidebandBins;
-		std::pair<double,double> fLowSidebandRange;
-		std::pair<double,double> fHighSidebandRange;
+		std::pair<double,double> fLowNoSidebandRange;
+		std::pair<double,double> fHighNoSidebandRange;
+		std::pair<double,double> fLowCoSidebandRange;
+		std::pair<double,double> fHighCoSidebandRange;
 		// regions
 		std::pair<double,double> fBlindedRegion;
 		std::pair<double,double> fBsWindowRegion;
 		std::pair<double,double> fBdWindowRegion;
+		std::pair<double,double> fNoSignalRegion;
 		std::pair<double,double> fFitRangeNorm;
 		// saving plots
 		std::string fPlotDir;
@@ -140,6 +161,12 @@ class ncAna {
 	private:
 		// for sideband subtraction
 		std::vector<ncCut> fSidebandCuts;
+	
+	private:
+		// for new variable analysis
+		std::string fVarFileName;
+		void processVarSet(std::set<ncCut> *varSet, const char *name);
+		double computeRanking(ncCut *nc, TTree *sigTree, TTree *bkgTree);
 };
 
 #endif
