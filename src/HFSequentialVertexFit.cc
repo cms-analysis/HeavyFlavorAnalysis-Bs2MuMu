@@ -582,6 +582,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   for (j = 0; j < allTreeTracks.size(); j++) {
     
     TransientTrack fitTrack = daughterParticles[(*kinParticleMap)[allTreeTracks[j].trackIx]]->refittedTransientTrack();
+	TAnaTrack *recTrack = gHFEvent->getRecTrack(allTreeTracks[j].trackIx);
     
     pTrack = gHFEvent->addSigTrack();
     pTrack->fIndex = allTreeTracks[j].trackIx;
@@ -591,8 +592,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
     pTrack->fValidHits = fitTrack.numberOfValidHits();
     pTrack->fChi2 = fitTrack.chi2();
     pTrack->fQ = fitTrack.charge();
-	pTrack->fInt1 = 0; // FIXME: for next schema migration, use own variable. CMSSW tight muon w.r.t. PV
-	pTrack->fInt2 = 0; // FIXME: for next schema migration, use own variable. CMSSW tight muon w.r.t. SV
+	pTrack->fMuID = recTrack->fMuID;
 	// get the reco muon if available
 	if (fMuons) {
 		for (MuonCollection::const_iterator muonIt = fMuons->begin(); muonIt != fMuons->end(); ++muonIt) {
@@ -603,10 +603,12 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 								 kinVertex->degreesOfFreedom(),
 								 daughterParticles.size());
 				
-				if (pvIx >= 0)
-					pTrack->fInt1 = muon::isTightMuon(*muonIt, (*fPVCollection)[pvIx]);
+				if (pvIx >= 0 && muon::isTightMuon(*muonIt, (*fPVCollection)[pvIx]))
+					pTrack->fMuID |= 0x1<<15;
 				
-				pTrack->fInt2 = muon::isTightMuon(*muonIt, secVertex);
+				if (muon::isTightMuon(*muonIt, secVertex))
+					pTrack->fMuID |= 0x1<<16;
+				
 				break;
 			}
 		}
