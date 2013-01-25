@@ -37,7 +37,7 @@ LD            = $(CXX)
 ################
 
 OBJS = ana-produce.o
-LIB_OBJS = ncMVA.o ncAna.o ncCut.o ncFormula.o ncEvaluate.o
+LIB_OBJS = ncMVA.o ncAna.o ncCut.o ncFormula.o ncEvaluate.o ncVarReader.o
 LIB_OBJSDICT = ${LIB_OBJS:.o=Dict.o}
 
 #################
