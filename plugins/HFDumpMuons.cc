@@ -3,7 +3,6 @@
 
 #include <iostream>
 
-
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "DataFormats/Common/interface/Handle.h"
 
@@ -32,6 +31,10 @@
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaMuon.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TTrgObj.hh"
 
+#include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
+#include "TrackingTools/TransientTrack/interface/TransientTrack.h"
+#include "TrackingTools/Records/interface/TransientTrackRecord.h"
+
 #include <TFile.h>
 #include <TH1.h>
 
@@ -46,8 +49,10 @@ using namespace reco;
 
 // ----------------------------------------------------------------------
 HFDumpMuons::HFDumpMuons(const edm::ParameterSet& iConfig):
+  fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("ctfWithMaterialTracks"))),
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
   fCaloMuonsLabel(iConfig.getUntrackedParameter<InputTag>("calomuonsLabel")),
+  fMaxTrackDistToStore(iConfig.getUntrackedParameter<double>("maxTrackDist",0.2)),
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1)),
   fRunOnAOD(iConfig.getUntrackedParameter<bool>("runOnAOD",false)),
@@ -56,11 +61,13 @@ HFDumpMuons::HFDumpMuons(const edm::ParameterSet& iConfig):
 {
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFDumpMuons constructor" << endl;
+  cout << "---  fTracksLabel             " << fTracksLabel.encode() << endl;
   cout << "---  fMuonsLabel:             " << fMuonsLabel.encode() << endl;
   cout << "---  fCaloMuonsLabel:         " << fCaloMuonsLabel.encode() << endl;
   cout << "---  fDoTruthMatching:        " << fDoTruthMatching << endl;  // 0 = nothing, 1 = TrackingParticles, 2 = FAMOS
   cout << "---  fVerbose:                " << fVerbose << endl;
   cout << "---  fRunOnAOD:               " << fRunOnAOD << endl;
+  cout << "---  fMaxTrackDistToStore:    " << fMaxTrackDistToStore << endl;
   cout << "----------------------------------------------------------------------" << endl;
 }
 
@@ -77,7 +84,25 @@ void HFDumpMuons::beginRun(const edm::Run& iRun, const edm::EventSetup& iSetup) 
 
 // ----------------------------------------------------------------------
 void HFDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
-
+  
+  // -- tracks
+  Handle<View<Track> > hTracks;
+  iEvent.getByLabel(fTracksLabel, hTracks);
+  if (hTracks.isValid()) {
+	  fhTracks = &hTracks; // to be used in fillMuon()
+  } else {
+	  cerr << "==> HFDumpMuons> ERROR loading the tracks" << endl;
+	  throw std::string("==> HFDumpMuons> ERROR loading the tracks");
+	  fhTracks = NULL;
+  }
+  
+  // Load the transient track builder
+  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", fTTB);
+  if (!fTTB.isValid()) {
+    cerr << "==> HFDumpMuons> ERROR loading the transient track builder" << endl;
+	throw std::string("==> HFDumpMuons> ERROR loading the transient track builder");
+  }
+  
   // -- global muons
   Handle<MuonCollection> hMuons;
   if (fVerbose > 0) cout << "==> HFDumpMuons> " << fMuonsLabel << endl;
@@ -107,6 +132,10 @@ void HFDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       gHFEvent->getMuon(im)->dump();
     }
   }
+  
+  // make sure the pointer does not point to
+  // invalid location
+  fhTracks = NULL;
 }
 
 
@@ -173,7 +202,31 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   if (prop_M2.isValid()) {
     pM->fPositionAtM2.SetXYZ(prop_M2.globalPosition().x(), prop_M2.globalPosition().y(), prop_M2.globalPosition().z());
   }
-
+  
+  if (oTrack.isNonnull()) {
+	  TrajectoryStateOnSurface propOuter = fpropM1.extrapolate(*oTrack);
+	  pM->fMuonTrackPosAtM1.SetXYZ(propOuter.globalPosition().x(),propOuter.globalPosition().y(),propOuter.globalPosition().z());
+	  pM->fMuonTrackPlabAtM1.SetXYZ(propOuter.globalMomentum().x(),propOuter.globalMomentum().y(),propOuter.globalMomentum().z());
+  }
+  
+  if (iTrack.isNonnull() && fTTB.isValid()) {
+	  TwoTrackMinimumDistance md(TwoTrackMinimumDistance::SlowMode);
+	  Track trkMuon(*iTrack);
+	  TransientTrack transTrkMuon = fTTB->build(trkMuon);
+	  
+	  for (size_t k = 0; k < (*fhTracks)->size(); k++) {
+		  if (k == iTrack.index()) continue; // own track
+		  
+		  TrackBaseRef bRefTrk(*fhTracks,k);
+		  Track trk(*bRefTrk);
+		  TransientTrack transTrk = fTTB->build(trk);
+		  
+		  md.calculate(transTrkMuon.initialFreeState(),transTrk.initialFreeState());
+		  if (md.distance() < fMaxTrackDistToStore) {
+			  pM->fNstTracks.insert(std::make_pair(k,md.distance()));
+		  }
+	  }
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -222,6 +275,8 @@ int HFDumpMuons::muonID(const Muon &rm) {
   if (muon::isGoodMuon(rm, muon::TMOneStationTight))                MuID |= 0x1<<12; 
   if (muon::isGoodMuon(rm, muon::TMLastStationOptimizedLowPtLoose)) MuID |= 0x1<<13; 
   if (muon::isGoodMuon(rm, muon::TMLastStationOptimizedLowPtTight)) MuID |= 0x1<<14;
+  //																MuID |= 0x1<<15; // used in sigtrack for tightmu selection w.r.t. selected PV
+  //																MuID |= 0x1<<16; // used in sigtrack for tightmu selection w.r.t. SV
   return MuID; 
 }
 

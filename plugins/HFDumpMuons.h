@@ -16,6 +16,8 @@
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 
+#include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
+
 #include "MuonAnalysis/MuonAssociators/interface/PropagateToMuon.h"
 
 
@@ -41,8 +43,14 @@ class HFDumpMuons : public edm::EDAnalyzer {
   void                      fillMuon(const reco::Muon& tr, int type);
   void                      fillCaloMuon(const reco::CaloMuon& tr, int type);
   std::vector<unsigned int> muonStatHits(const reco::Track& tr);
+  edm::InputTag             fTracksLabel;
   edm::InputTag             fMuonsLabel;
   edm::InputTag             fCaloMuonsLabel;
+  
+  edm::Handle<edm::View<reco::Track> > *fhTracks;
+  edm::ESHandle<TransientTrackBuilder> fTTB;
+  
+  double                    fMaxTrackDistToStore;
 
   int                       fVerbose, fDoTruthMatching; 
   bool                      fRunOnAOD;
