@@ -8,9 +8,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-// we store the first four tracks  
-#define NBR_TRACKS_STORE 4
-
 const static double MMUON = 0.1057;
 const static double MPION = 0.1396;
 const static double MKAON = 0.4937;
@@ -105,6 +102,7 @@ class massReader : public treeReader01 {
 		int sameMother(TAnaCand *cand); // check if all are originating from the same mother
 		int loadDecay(TAnaCand *anaCand);
 		float calculateIsolation(TAnaCand *pCand);
+		float calculateMuonIsolation(TAnaCand *pCand, int muonIx);
 		float calculateDoca0(TAnaCand *pCand);
 		int countTracksNearby(TAnaCand *pCand);
 		int loadTrigger(int *errTriggerOut = NULL, int *triggersFoundOut = NULL);
@@ -134,9 +132,6 @@ class massReader : public treeReader01 {
 		float fEta; // eta of the candidate
 		float fIPCand;
 		float fIPCandE;
-		float fThetaStar;
-		float fThetaStar2;
-		float fThetaStar3;
 		// SV Vertex Variables
 		float fD3;
 		float fD3E;
@@ -148,11 +143,6 @@ class massReader : public treeReader01 {
 		float fAlphaXY; // Angle between momentum and dist(vertex, motherVertex) in xy-plane
 		float fChi2; // chi2 of the vertex
 		float fNdof; // number of degrees of freedom of vertex
-		int fTracksIx[NBR_TRACKS_STORE];
-		float fTracksIP[NBR_TRACKS_STORE];
-		float fTracksIPE[NBR_TRACKS_STORE];
-		float fTracksPT[NBR_TRACKS_STORE];
-		float fTracksPTRel[NBR_TRACKS_STORE];
 		// Isolation variables
 		float fIsoMoriond12; // isolation variable defined as for moriond 12
 		float fDoca0;
@@ -207,8 +197,7 @@ class massReader : public treeReader01 {
 		int fNbrPV; // nbr of PV in this event
 		float fPVTrkWeight;
 		
-		float fNearMu1;
-		float fNearMu2;
+		// muon isolation
 		float fIsoMu1;
 		float fIsoMu2;
 		

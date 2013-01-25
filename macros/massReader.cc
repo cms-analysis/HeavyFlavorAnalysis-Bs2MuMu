@@ -11,8 +11,10 @@ using namespace std;
 struct near_track_t {
 	int ix;
 	float doca;
+	float p;
 	float pt;
 	float pt_rel;
+	float deltaR;
 };
 
 bool operator<(near_track_t a, near_track_t b)
@@ -201,10 +203,7 @@ void massReader::clearVariables()
 	fDeltaPhiMu = 0;
 	fIPCand = 0.0f;
 	fIPCandE = 0.0f;
-	fThetaStar = -99.f;
-	fThetaStar2 = -99.f;
-	fThetaStar3 = -99.f;
-		
+	
 	// jpsi
 	fPtJPsi = 0.0;
 	fMassJPsi = 0.0;
@@ -222,30 +221,20 @@ void massReader::clearVariables()
 	fQ_kp1 = fQ_kp2 = 0;
 	fDeltaR_Kaons = 0.0f;
 	
-	memset(fTracksIx,0,sizeof(fTracksIx));
-	memset(fTracksIP,0,sizeof(fTracksIP));
-	memset(fTracksIPE,0,sizeof(fTracksIPE));
-	memset(fTracksPT,0,sizeof(fTracksPT));
-	memset(fTracksPTRel,0,sizeof(fTracksPTRel));
-	
-	fNearMu1 = -99.0;
-	fNearMu2 = -99.0;
-	
 	fIsoMu1 = -99.0;
 	fIsoMu2 = -99.0;
 } // clearVariables()
 
 int massReader::loadCandidateVariables(TAnaCand *pCand)
 {
-	TAnaTrack *pTrack;
 	TAnaTrack *sigTrack;
 	TAnaTrack *recTrack;
 	TAnaCand *momCand;
 	TAnaCand *dauCand;
 	TGenCand *dauGen;
-	TVector3 v1,v2,uVector;
+	TVector3 v1,v2;
 	TAnaVertex *candPV;
-	int j,k;
+	int j;
 	bool firstMu = true;
 	bool firstKaon = true;
 	map<int,int> aTracks;
@@ -399,144 +388,11 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		swap(fEtaKp_Gen1,fEtaKp_Gen2);
 	}
 	
-	// compute cos theta star
-	{
-		TVector3 perpV(0,0,1); // to become vector perpendicular to production plane
-		TLorentzRotation lorBoost;
-		TLorentzVector pB;
-		TLorentzVector pvL;
-		
-		pMu1.SetVectM(plabMu1,MMUON);
-		pMu2.SetVectM(plabMu2,MMUON);
-		
-		pB = pMu1 + pMu2;
-		perpV = perpV.Cross(pB.Vect());
-		pvL.SetXYZT(perpV.X(),perpV.Y(),perpV.Z(),0);
-		
-		
-		// boost
-		lorBoost = TLorentzRotation(-pB.BoostVector());
-		pMu1 = lorBoost * ( (fQ_mu2 < 0) ? pMu2 : pMu1 );
-		pvL = lorBoost * pvL;
-		
-		fThetaStar = TMath::Cos(pMu1.Vect().Angle(pvL.Vect()));
-	}
-	
 	// compute new close muon variables
-	{
-		TAnaMuon *anaMuon;
-		std::vector<near_track_t> nearTracks;
-		std::map<int,float>::const_iterator it;
-		near_track_t nt;
-		
-		// first muon
-		anaMuon = NULL;
-		if (0 <= ixMu1 && ixMu1 < fpEvt->nRecTracks()) {
-			recTrack = fpEvt->getRecTrack(ixMu1);
-			if (0 <= recTrack->fMuIndex && recTrack->fMuIndex < fpEvt->nMuons())
-				anaMuon = fpEvt->getMuon(recTrack->fMuIndex);
-		}
-		
-		if (anaMuon) {
-			uVector = recTrack->fPlab.Unit();
-			nearTracks.clear();
-// 			for (it = anaMuon->fNstTracks.begin(); it != anaMuon->fNstTracks.end(); ++it) {
-// 				if (cand_tracks.count(it->first) > 0)
-// 					continue; // this track belongs to the candidate
-				
-// 				recTrack = fpEvt->getRecTrack(it->first);
-// 				nt.ix = it->first;
-// 				nt.doca = it->second;
-// 				nt.pt = recTrack->fPlab.Perp();
-// 				nt.pt_rel = (recTrack->fPlab - (recTrack->fPlab * uVector) * uVector).Mag();
-// 				nearTracks.push_back(nt);
-// 			}
-			
-			std::sort(nearTracks.begin(), nearTracks.end()); // sort for doca
-			
-			// add to the variables
-			fNearMu1 = 0;
-			for (k = 0; k < (int)nearTracks.size(); k++) {
-				if (nearTracks[k].doca < 5.e-3 && nearTracks[k].pt_rel > 1.25) // 50um and relative pt > 1.25
-					fNearMu1++;
-			}
-			
-			fIsoMu1 = 0;
-			for (k = 0; k < (int)nearTracks.size(); k++) {
-				recTrack = fpEvt->getRecTrack(nearTracks[k].ix);
-				if (plabMu1.DeltaR(recTrack->fPlab) < 0.5 && nearTracks[k].pt_rel > 0.0)
-					fIsoMu1 += recTrack->fPlab.Mag();
-			}
-			
-			fIsoMu1 = plabMu1.Mag()/(plabMu1.Mag() + fIsoMu1);
-		}
-		
-		// second muon
-		anaMuon = NULL;
-		if (0 <= ixMu2 && ixMu2 < fpEvt->nRecTracks()) {
-			recTrack = fpEvt->getRecTrack(ixMu2);
-			if (0 <= recTrack->fMuIndex && recTrack->fMuIndex < fpEvt->nMuons())
-				anaMuon = fpEvt->getMuon(recTrack->fMuIndex);
-		}
-		
-		if (anaMuon) {
-			uVector = recTrack->fPlab.Unit();
-			nearTracks.clear();
-// 			for (it = anaMuon->fNstTracks.begin(); it != anaMuon->fNstTracks.end(); ++it) {
-// 				if (cand_tracks.count(it->first) > 0)
-// 					continue; // this track belongs to the candidate
-// 				recTrack = fpEvt->getRecTrack(it->first);
-// 				nt.ix = it->first;
-// 				nt.doca = it->second;
-// 				nt.pt = recTrack->fPlab.Perp();
-// 				nt.pt_rel = (recTrack->fPlab - (recTrack->fPlab * uVector) * uVector).Mag();
-// 				nearTracks.push_back(nt);
-// 			}
-			
-			std::sort(nearTracks.begin(), nearTracks.end()); // sort for doca
-			
-			// add to the variables
-			fNearMu2 = 0;
-			for (k = 0; k < (int)nearTracks.size(); k++) {
-				if (nearTracks[k].doca < 5.e-3 && nearTracks[k].pt_rel > 1.25)
-					fNearMu2++;
-			}
-			
-			fIsoMu2 = 0;
-			for (k = 0; k < (int)nearTracks.size(); k++) {
-				recTrack = fpEvt->getRecTrack(nearTracks[k].ix);
-				if (plabMu2.DeltaR(recTrack->fPlab) < 0.5 && nearTracks[k].pt_rel > 0.0)
-					fIsoMu2 += recTrack->fPlab.Mag();
-			}
-			
-			fIsoMu2 = plabMu2.Mag()/(plabMu2.Mag() + fIsoMu2);
-		}
-	}
+	fIsoMu1 = calculateMuonIsolation(pCand, ixMu1);
+	fIsoMu2 = calculateMuonIsolation(pCand, ixMu2);
 	
 	fDeltaPhiMu = plabMu1.DeltaPhi(plabMu2);
-	
-	// Clean entries of nearest tracks
-	for (j = 0; j < NBR_TRACKS_STORE; j++) fTracksIx[j] = -1;
-	memset(fTracksIP,0,sizeof(fTracksIP));
-	memset(fTracksIPE,0,sizeof(fTracksIPE));
-	memset(fTracksPT,0,sizeof(fTracksPT));
-	memset(fTracksPTRel,0,sizeof(fTracksPTRel));
-	
-	// fill the histogramms...
-	for (j = 0, k = 0; j < (int)pCand->fNstTracks.size(); j++) {
-		
-		pTrack = fpEvt->getRecTrack(pCand->fNstTracks[j].first);
-		uVector = pCand->fPlab.Unit();
-		
-		if (k < NBR_TRACKS_STORE) {
-			fTracksIx[k] = pCand->fNstTracks[j].first;
-			fTracksIP[k] = pCand->fNstTracks[j].second.first;
-			fTracksIPE[k] = pCand->fNstTracks[j].second.second;
-			fTracksPT[k] = pTrack->fPlab.Perp();
-			fTracksPTRel[k] = (pTrack->fPlab - (pTrack->fPlab * uVector) * uVector).Mag();
-			k++;
-		}
-	}
 	
 	if (pCand->fMom >= 0) {
 		momCand = fpEvt->getCand(pCand->fMom);
@@ -681,19 +537,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("nbr_pv",&fNbrPV,"nbr_pv/I");
 	reduced_tree->Branch("ip",&fIPCand,"ip/F");
 	reduced_tree->Branch("ipe",&fIPCandE,"ipe/F");
-	reduced_tree->Branch("theta_star",&fThetaStar,"theta_star/F");
-	reduced_tree->Branch("theta_star2",&fThetaStar2,"theta_star2/F");
-	reduced_tree->Branch("theta_star3",&fThetaStar3,"theta_star3/F");
-	reduced_tree->Branch("tracks_ix",fTracksIx,Form("tracks_ix[%d]/I",NBR_TRACKS_STORE));
-	reduced_tree->Branch("tracks_ip",fTracksIP,Form("tracks_ip[%d]/F",NBR_TRACKS_STORE));
-	reduced_tree->Branch("tracks_ipe",fTracksIPE,Form("tracks_ipe[%d]/F",NBR_TRACKS_STORE));
-	reduced_tree->Branch("tracks_pt",fTracksPT,Form("tracks_pt[%d]/F",NBR_TRACKS_STORE));
-	reduced_tree->Branch("tracks_ptrel",fTracksPTRel,Form("tracks_ptrel[%d]/F",NBR_TRACKS_STORE));
-	
-	// NEW VARIABLES
-	reduced_tree->Branch("nbr_close_mu1",&fNearMu1,"nbr_close_mu1/F");
 	reduced_tree->Branch("iso_mu1",&fIsoMu1,"iso_mu1/F");
-	reduced_tree->Branch("nbr_close_mu2",&fNearMu2,"nbr_close_mu2/F");
 	reduced_tree->Branch("iso_mu2",&fIsoMu2,"iso_mu2/F");
 } // massReader::bookHist()
 
@@ -920,6 +764,65 @@ float massReader::calculateDoca0(TAnaCand *pCand)
 	return doca0;
 } // calculateDoca0()
 
+float massReader::calculateMuonIsolation(TAnaCand *pCand, int muonIx)
+{
+	TAnaTrack *recTrack;
+	TAnaMuon *anaMuon = NULL;
+	TVector3 plabMu;
+	std::vector<near_track_t> nearTracks;
+	std::map<int,float>::const_iterator it;
+	std::map<int,int> cand_tracks;
+	near_track_t nt;
+	double result = -99.0;
+	size_t k;
+	
+	// get the muon
+	if (0 <= muonIx && muonIx < fpEvt->nRecTracks()) {
+		recTrack = fpEvt->getRecTrack(muonIx);
+		if (0 <= recTrack->fMuIndex && recTrack->fMuIndex < fpEvt->nMuons())
+			anaMuon = fpEvt->getMuon(recTrack->fMuIndex);
+	}
+	
+	if (!anaMuon)
+		goto bail;
+	
+	// get the candidate structure
+	findAllTrackIndices(pCand, &cand_tracks);
+	
+	plabMu = recTrack->fPlab;
+	for (it = anaMuon->fNstTracks.begin(); it != anaMuon->fNstTracks.end(); ++it) {
+		
+		// no tracks from candidate...
+		if (cand_tracks.count(it->first) > 0)
+			continue;
+		
+		recTrack = fpEvt->getRecTrack(it->first);
+		
+		// no tracks from foreign primary vertex
+		if (recTrack->fPvIdx >= 0 && recTrack->fPvIdx != pCand->fPvIdx)
+			continue;
+		
+		nt.ix = it->first;
+		nt.doca = it->second;
+		nt.p = recTrack->fPlab.Mag();
+		nt.pt = recTrack->fPlab.Perp();
+		nt.pt_rel = (recTrack->fPlab - (recTrack->fPlab * plabMu) * plabMu).Mag() / plabMu.Mag2();
+		nt.deltaR = plabMu.DeltaR(recTrack->fPlab);
+		nearTracks.push_back(nt);
+	}
+	
+	// compute isolation variable
+	result = 0;
+	for (k = 0; k < nearTracks.size(); k++) {
+		if (nearTracks[k].deltaR < 0.5 && nearTracks[k].pt > 0.5 && nearTracks[k].doca < 0.1) // 1 mm
+			result += nearTracks[k].p;
+	}
+	result = plabMu.Mag()/(plabMu.Mag() + result);
+	
+bail:
+	return (float)result;
+} // calculateMuonIsolation()
+
 int massReader::countTracksNearby(TAnaCand *pCand)
 {
 	int result = 0;
@@ -938,8 +841,8 @@ int massReader::countTracksNearby(TAnaCand *pCand)
 		if (pTrack->fPvIdx > -1 && pTrack->fPvIdx != pCand->fPvIdx)
 			continue; // track from a different PV
 		
-		if (pCand->fNstTracks[j].second.first < maxDocaSV)
-			result++;
+		// count absolute distance
+		if (pCand->fNstTracks[j].second.first < maxDocaSV) result++;
 	}
 	
 	return result;
