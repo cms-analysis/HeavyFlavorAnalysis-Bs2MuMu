@@ -8,6 +8,7 @@
 #include "ncMVA.h"
 #include "ncAna.h"
 #include "ncEvaluate.h"
+#include "ncVarReader.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,6 +18,8 @@
 #include <TFile.h>
 #include <TEventList.h>
 #include <TMVA/Factory.h>
+
+#define NBR_SPLITS 3
 
 using namespace std;
 
@@ -31,6 +34,7 @@ using namespace std;
 ncMVA::ncMVA() :
 	fMCPath("/Users/cn/CMSData/Reduced/production-mix-general.root"),
 	fDataPath("/Users/cn/CMSData/Reduced/data-2011.root"),
+	fVarPath("cuts/mvavars.def"),
 	fSigWeight(0.000156),
 	fBkgWeight(0.2),
 	fTrainFilename(NULL)
@@ -47,31 +51,24 @@ ncMVA::~ncMVA()
 	}
 } // ~ncMVA()
 
-map<string,string>* ncMVA::getMVAVariables()
+std::set<ncCut> ncMVA::getMVAVariables()
 {
-	static map<string,string> *mvaVars = NULL;
+	using std::cout; using std::endl;
+	std::set<ncCut> result;
+	ncVarReader reader;
 	
-	if (!mvaVars) {
-		mvaVars = new map<string,string>;
-		
-		mvaVars->insert(pair<string,string>("pt","pt"));
-		mvaVars->insert(pair<string,string>("pt_mu1","pt_mu1"));
-		mvaVars->insert(pair<string,string>("pt_mu2","pt_mu2"));
-		mvaVars->insert(pair<string,string>("eta","eta"));
-		
-		mvaVars->insert(pair<string,string>("sig3d","d3 / d3e"));
-		mvaVars->insert(pair<string,string>("d3","d3"));
-		mvaVars->insert(pair<string,string>("alpha","alpha"));
-		mvaVars->insert(pair<string,string>("normChi2","chi2/Ndof"));
-		mvaVars->insert(pair<string,string>("ip","ip"));
-		mvaVars->insert(pair<string,string>("sigip","ip / ipe"));
-		
-		mvaVars->insert(pair<string,string>("iso_mor12","iso_mor12"));
-		mvaVars->insert(pair<string,string>("doca0","doca0"));
-		mvaVars->insert(pair<string,string>("ntrk","ntrk"));
+	try {
+		reader.loadFile(fVarPath.c_str());
+	} catch (std::string err) {
+		cout << "==> ncMVA::getMVAVariables(): ERROR '" << err << "'" << endl;
+		goto bail;
 	}
 	
-	return mvaVars;
+	if (reader.getNbr() > 0)
+		result = *reader.getVars(0);
+	
+bail:
+	return result;
 } // getMVAVariables()
 
 void ncMVA::splitTree(TTree *tree, bool save)
@@ -82,15 +79,15 @@ void ncMVA::splitTree(TTree *tree, bool save)
 	Long64_t j;
 	TLeaf *runLeaf = tree->FindLeaf("run");
 	TLeaf *evtLeaf = tree->FindLeaf("event");
-	TTree *theTrees[2];
+	TTree *theTrees[NBR_SPLITS];
 	uint32_t e;
 	
 	cout << "splitting the tree()" << endl;
 	
-	theTrees[0] = tree->CloneTree(0);
-	theTrees[0]->SetName("Even");	
-	theTrees[1] = tree->CloneTree(0);
-	theTrees[1]->SetName("Odd");
+	for (j = 0; j < NBR_SPLITS; j++) {
+		theTrees[j] = tree->CloneTree(0);
+		theTrees[j]->SetName(Form("Split_%d",(int)j));
+	}
 	
 	tree->SetBranchStatus("*",0);
 	tree->SetBranchStatus("run",1);
@@ -117,20 +114,19 @@ void ncMVA::splitTree(TTree *tree, bool save)
 			
 			// load and save the corresponding entry
 			tree->GetEntry(it->second.first + j);
-			e = (uint32_t)TMath::Abs(evtLeaf->GetValue()) % 2;
+			e = (uint32_t)TMath::Abs(evtLeaf->GetValue()) % NBR_SPLITS;
 			theTrees[e]->Fill();
 		}
 	}
 	
 	// save the split trees to the (temp) file
-	if (save) {
-		theTrees[0]->Write();
-		theTrees[1]->Write();
-	}
+	for (j = 0; j < NBR_SPLITS && save; j++)
+		theTrees[j]->Write();
 } // splitTree()
 
-void ncMVA::prepTraining(unsigned channelIx)
+void ncMVA::prepTraining(unsigned channelIx, std::set<ncCut> *vars)
 {
+	std::set<ncCut>::const_iterator it;
 	char *tmp = tempnam(".", "training-");
 	TFile *tmpFile;
 	TFile *sigFile = TFile::Open(fMCPath.c_str());
@@ -139,7 +135,11 @@ void ncMVA::prepTraining(unsigned channelIx)
 	ncAna a; // default ncAna object to get default cuts
 	TTree *sigTree;
 	TTree *bkgTree;
-	TCut preselCut = a.cutMVAPresel() && a.cutMuon() && a.cutTrigger(true) && a.cutChannel(channelIx);
+	TCut preselCut = a.cutSigCand() && a.cutMuon() && a.cutTrigger(true, channelIx == 0) && a.cutChannel(channelIx) && a.cutPreselection();
+	
+	for (it = vars->begin(); it != vars->end(); ++it) {
+		preselCut = preselCut && TCut(Form("%e < %s && %s < %e",it->getCut().first,it->getFormula(),it->getFormula(),it->getCut().second));
+	}
 	
 	if (fTrainFilename) {
 		unlink(fTrainFilename->c_str());
@@ -157,14 +157,14 @@ void ncMVA::prepTraining(unsigned channelIx)
 	
 	// extract the signal
 	cout << "Truth matching signal..." << flush;
-	cut = a.cutSigCand() && a.cutSanity() && a.cutSigTruth() && preselCut;
+	cut = preselCut && a.cutSigTruth();
 	sigTree = sigTree->CopyTree(cut.GetTitle());
 	sigTree->Write("Sig");
 	cout << "\tdone" << endl;
 	
 	// extract the sidebands
 	cout << "Extracting sidebands..." << flush;
-	cut = a.cutSigCand() && a.cutSanity() && a.cutHisto() && !a.cutBlindRegion() && preselCut;
+	cut = preselCut && !a.cutBlindRegion();
 	bkgTree = bkgTree->CopyTree(cut.GetTitle());
 	bkgTree->Write("Bkg");
 	cout << "\tdone" << endl;
@@ -185,39 +185,40 @@ void ncMVA::runTraining(unsigned split, unsigned channelIx, bool prep)
 	TString factOptions("Transformations=I;G;D;G,D;D,G");
 	TString prepOptions("");
 	TString methodTitle(Form("MLP_s%u_c%u",split,channelIx));
-	map<string,string> *variables = getMVAVariables();
-	map<string,string>::const_iterator it;
+	set<ncCut> variables = getMVAVariables();
+	set<ncCut>::const_iterator it;
 	TMVA::Factory *factory;
 	const char *c;
 	TTree *sigTree;
-	TTree *bkgTree[2];
+	TTree *bkgTree[NBR_SPLITS];
+	int j;
 	
 	cout << "==> ncMVA: Running training for split=" << split << " and channel=" << channelIx << endl;
-	if(prep) prepTraining(channelIx);
+	if(prep) prepTraining(channelIx,&variables);
 	
 	// reload the trees from the train file
 	trainFile = new TFile(fTrainFilename->c_str());
 	tmvaFile = new TFile(Form("TMVA_s%u_c%u.root",split,channelIx),"recreate");
 	
 	sigTree = (TTree*)trainFile->Get("Sig");
-	bkgTree[0] = (TTree*)trainFile->Get("Even");
-	bkgTree[1] = (TTree*)trainFile->Get("Odd");
+	for (j = 0; j < NBR_SPLITS; j++)
+		bkgTree[j] = (TTree*)trainFile->Get(Form("Split_%d",j));
 	
 	factory = new TMVA::Factory("ncMVA",tmvaFile,factOptions);
 	factory->AddSignalTree(sigTree,fSigWeight);
-	factory->AddBackgroundTree(bkgTree[(split+0) % 2],fBkgWeight);
-	factory->AddBackgroundTree(bkgTree[(split+1) % 2],fBkgWeight);
+	factory->AddBackgroundTree(bkgTree[(split+0) % NBR_SPLITS],fBkgWeight);
+	factory->AddBackgroundTree(bkgTree[(split+1) % NBR_SPLITS],fBkgWeight);
 	
-	for (it = variables->begin(); it != variables->end(); ++it) {
+	for (it = variables.begin(); it != variables.end(); ++it) {
 		
-		if (it->first.compare(it->second) == 0)	c = it->first.c_str();
-		else									c = Form("%s := %s", it->first.c_str(), it->second.c_str());
+		if (strcmp(it->getName(), it->getFormula()) == 0)	c = it->getName();
+		else												c = Form("%s := %s", it->getName(), it->getFormula());
 		
 		factory->AddVariable(c, 'F');
 	}
 	
 	// prepare training and test
-	prepOptions = Form("nTrain_Background=%lld:SplitMode=Block",bkgTree[split%2]->GetEntries());
+	prepOptions = Form("nTrain_Background=%lld:SplitMode=Block",bkgTree[split%NBR_SPLITS]->GetEntries());
 	factory->PrepareTrainingAndTestTree("",prepOptions);
 	
 	// book neural network
@@ -241,8 +242,10 @@ void ncMVA::runAllTrainings()
 {
 	runTraining(0, 0, true);
 	runTraining(1, 0, false);
+	runTraining(2, 0, false);
 	runTraining(0, 1, true); // reload the trees for other channel
 	runTraining(1, 1, false);
+	runTraining(2, 1, false);
 } // runTraining()
 
 void ncMVA::evalFile(const char *filename, bool progressReport)
@@ -299,8 +302,9 @@ TTree *ncMVA::evalTree(TTree *tree, set<pair<unsigned,unsigned> > *mvas, bool pr
 	int32_t completed = 0, old = 0;
 	int written = 0;
 	Long64_t j,k;
+	ncAna a;
 	
-	tree->Draw(">>elist",ncAna::cutMVAPresel() && ncAna::cutSanity());
+	tree->Draw(">>elist",a.cutPreselection(0));
 	elist.Sort();
 	
 	outTree = tree->CloneTree(0);

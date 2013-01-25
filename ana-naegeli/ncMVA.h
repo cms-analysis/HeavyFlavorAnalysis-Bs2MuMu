@@ -1,11 +1,13 @@
 /*
- *  ncMVA.hh
+ *  ncMVA.h
  *
  *  Created by Christoph Nägeli <christoph.naegeli@psi.ch> on 11.04.12.
  */
 
 #ifndef __NCMVA__
 #define __NCMVA__
+
+#include "ncCut.h"
 
 #include <set>
 #include <map>
@@ -20,7 +22,7 @@ class ncMVA {
 		~ncMVA();
 		
 		void splitTree(TTree *tree, bool save = true);
-		void prepTraining(unsigned channelIx);
+		void prepTraining(unsigned channelIx, std::set<ncCut> *vars);
 		void runTraining(unsigned split, unsigned channelIx, bool prep = true);
 		void runAllTrainings();
 		
@@ -29,7 +31,7 @@ class ncMVA {
 		void evalFile(const char *filename, std::set<std::pair<unsigned,unsigned> >*mvas, bool progressReport = true);
 		TTree *evalTree(TTree *tree, std::set<std::pair<unsigned,unsigned> > *mvas, bool progressReport = true);
 		
-		static std::map<std::string,std::string>* getMVAVariables();
+		std::set<ncCut> getMVAVariables();
 	public:
 		// Accessor / Settor functions
 		std::string getMVAOpts(unsigned channelIx) { return fMVAOpts[channelIx]; }
@@ -47,6 +49,7 @@ class ncMVA {
 		
 		std::string fMCPath;
 		std::string fDataPath;
+		std::string fVarPath;
 		
 		double fSigWeight;
 		double fBkgWeight;
