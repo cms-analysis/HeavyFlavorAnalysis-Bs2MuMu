@@ -143,6 +143,7 @@ class massReader : public treeReader01 {
 		float fAlphaXY; // Angle between momentum and dist(vertex, motherVertex) in xy-plane
 		float fChi2; // chi2 of the vertex
 		float fNdof; // number of degrees of freedom of vertex
+		float fDeltaChi2; // diff of chi2 of pv with / without signal tracks
 		// Isolation variables
 		float fIsoMoriond12; // isolation variable defined as for moriond 12
 		float fDoca0;

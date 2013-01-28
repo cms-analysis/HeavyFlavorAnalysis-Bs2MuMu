@@ -171,6 +171,7 @@ void massReader::clearVariables()
 	fAlphaXY = 0.0;
 	fChi2 = 0.0;
 	fNdof = 0.0;
+	fDeltaChi2 = 9999;
 	fMaxDoca = 0.0;
 	fIsoMoriond12 = 0.0;
 	fDoca0 = FLT_MAX;
@@ -259,6 +260,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fDxyE = pCand->fVtx.fDxyE;
 	fChi2 = pCand->fVtx.fChi2;
 	fNdof = pCand->fVtx.fNdof;
+	fDeltaChi2 = pCand->fDeltaChi2;
 	fMaxDoca = pCand->fMaxDoca;
 	fNbrPV = fpEvt->nPV();
 	fIPCand = TMath::Sqrt(pCand->fPvLip*pCand->fPvLip + pCand->fPvTip*pCand->fPvTip);
@@ -498,6 +500,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("alpha_xy",&fAlphaXY,"alpha_xy/F");
 	reduced_tree->Branch("chi2",&fChi2,"chi2/F");
 	reduced_tree->Branch("Ndof",&fNdof,"Ndof/F");
+	reduced_tree->Branch("diff_chi2",&fDeltaChi2,"diff_chi2/F");
 	reduced_tree->Branch("max_doca",&fMaxDoca,"max_doca/F");
 	reduced_tree->Branch("pt_mu1_gen",&fPtMu1_Gen,"pt_mu1_gen/F");
 	reduced_tree->Branch("pt_mu2_gen",&fPtMu2_Gen,"pt_mu2_gen/F");
