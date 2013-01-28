@@ -43,6 +43,9 @@ struct EmptyTreeError {
 struct MassNotFoundException {
   MassNotFoundException() {}
 };
+struct PVRefitException {
+	PVRefitException() {}
+};
 
 struct ImpactParameters {
 	ImpactParameters() {
@@ -487,7 +490,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  }
 	  newVtx = avf.vertex(vrtxRefit);
 	  if (newVtx.isValid()) currentPV = reco::Vertex(newVtx);
-	  else					throw std::string("ERROR: HFSequentialVertexFit::addCandidate(). Unable to refit PV");
+	  else					throw PVRefitException();
 	  
 	  // add the signal tracks to the vertex
 	  completeTrackList = tree->getAllTracks(0);
@@ -503,7 +506,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  }
 	  newVtx = avf.vertex(vrtxRefit);
 	  if (newVtx.isValid()) currentPVWithSignal = reco::Vertex(newVtx);
-	  else					throw std::string("ERROR: HFSequentialVertexFit::addCandidate(). Unable to refit PV with signal tracks");
+	  else					throw PVRefitException();
 	  
 	  diffChi2 = currentPVWithSignal.normalizedChi2() - currentPV.normalizedChi2();
 	  
@@ -675,6 +678,8 @@ void HFSequentialVertexFit::doFit(HFDecayTree *tree)
     if (fVerbose > 0) cout << "==> HFSequentialVertexFit: vertex exception caught: " << ex.what() << endl;
   } catch (EmptyTreeError& ex) {
     if (fVerbose > 0) cout << "==> HFSequentialVertexFit: empty tree." << endl;
+  } catch (PVRefitException& ex) {
+    if (fVerbose > 0) cout << "==> HFSequentialVertexFit: unable to refit PV." << endl;
   }
 } // doFit()
 
