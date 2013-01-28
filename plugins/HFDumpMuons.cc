@@ -205,8 +205,10 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   
   if (oTrack.isNonnull()) {
 	  TrajectoryStateOnSurface propOuter = fpropM1.extrapolate(*oTrack);
-	  pM->fMuonTrackPosAtM1.SetXYZ(propOuter.globalPosition().x(),propOuter.globalPosition().y(),propOuter.globalPosition().z());
-	  pM->fMuonTrackPlabAtM1.SetXYZ(propOuter.globalMomentum().x(),propOuter.globalMomentum().y(),propOuter.globalMomentum().z());
+	  if (propOuter.isValid()) {
+		  pM->fMuonTrackPosAtM1.SetXYZ(propOuter.globalPosition().x(),propOuter.globalPosition().y(),propOuter.globalPosition().z());
+		  pM->fMuonTrackPlabAtM1.SetXYZ(propOuter.globalMomentum().x(),propOuter.globalMomentum().y(),propOuter.globalMomentum().z());
+	  }
   }
   
   if (iTrack.isNonnull() && fTTB.isValid()) {
