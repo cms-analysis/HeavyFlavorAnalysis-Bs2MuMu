@@ -121,6 +121,7 @@ int main(int argc, char* argv[]) {
         /// mass resolution
 //        if (y == 0) MassRes->setVal(MassRes_0_h->Eval(eta_t));
 //        else if (y == 1) MassRes->setVal(MassRes_2_h->Eval(eta_t));
+        if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass scale
         MassRes->setVal(me_t);
         /// eta channels
         int eta_channel = -1;

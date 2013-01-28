@@ -439,6 +439,7 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
     for (int i = 0; i < reduced_tree->GetEntries(); i++) {
       reduced_tree->GetEntry(i);
       if (m_t > 4.9 && m_t < 5.9) {
+      	if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass scale
         events++;
         Mass->setVal(m_t);
         bdt->setVal(bdt_t);
