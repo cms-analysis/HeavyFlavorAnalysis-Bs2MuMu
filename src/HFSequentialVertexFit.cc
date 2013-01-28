@@ -300,6 +300,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   TVector3 plab;
   double cov[9];
   double mass;
+  double diffChi2 = 9999;
   unsigned int j;
   int pvIx = -1, pvIx2 = -1; // PV index of this candidate
   ImpactParameters pvImpParams;
@@ -454,42 +455,58 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  vtxDistanceCosAlphaPlab = plab.Dot(tv3diff) / (plab.Mag() * tv3diff.Mag());
   } else if (pvIx >= 0) {
 	  // -- Distance w.r.t primary vertex
+	  TransientVertex newVtx;
+	  AdaptiveVertexFitter avf;
 	  Vertex currentPV = (*fPVCollection)[pvIx];
-
-	  // refit the vertex without the tracks of the candidate
-	  if (removeCandTracksFromVtx_)
-	  {
-	      vector<TransientTrack> vrtxRefit;
-	      vector<track_entry_t> completeTrackList = tree->getAllTracks(0);
-	      bool removedTracks(false); // to check if we really need to perform the refit
-	      for (std::vector<TrackBaseRef>::const_iterator itTBR = currentPV.tracks_begin();  itTBR != currentPV.tracks_end(); itTBR++)
-	      {   // loop over all tracks in the PV to check if tracks from the candidate were used for fittingthe PV
+	  Vertex currentPVWithSignal;
+	  set<TrackRef> pvTracks;
+	  vector<TransientTrack> vrtxRefit;
+	  set<TrackRef>::const_iterator itSet;
+	  vector<TrackBaseRef>::const_iterator itTBR;
+	  vector<track_entry_t>::const_iterator trackIt;
+	  vector<track_entry_t> completeTrackList = tree->getAllTracks(0);
+	  
+	  for (itTBR = currentPV.tracks_begin(); itTBR != currentPV.tracks_end(); ++itTBR) {
 		  TrackRef tref = itTBR->castTo<TrackRef>();
-		  bool trkFound(false);
-		  for (vector<track_entry_t>::const_iterator trackIt = completeTrackList.begin(); trackIt != completeTrackList.end(); ++trackIt) 
-		  {
-		      TrackBaseRef curTr(fhTracks,trackIt->trackIx);
-		      TrackRef curTref = curTr.castTo<TrackRef>();
-		      if (tref == curTref) trkFound = true;
+		  for (trackIt = completeTrackList.begin(); removeCandTracksFromVtx_ && trackIt != completeTrackList.end(); ++trackIt) {
+			  TrackBaseRef curTr(fhTracks,trackIt->trackIx);
+			  TrackRef curTref = curTr.castTo<TrackRef>();
+			  if (tref == curTref)
+				  break;
 		  }
-		  if (!trkFound)
-		  {
-		      TransientTrack tTrk = fpTTB->build(*(*itTBR));
-		      vrtxRefit.push_back(tTrk);
-		  }
-		  else
-		  { // track contained in PV, don't add to list
-		      removedTracks = true;
-		  }
-	      }
-	      if (removedTracks)
-	      { // so we need to fit a new PV
-		  AdaptiveVertexFitter avf;
-		  TransientVertex newVtx = avf.vertex(vrtxRefit);
-		  if (newVtx.isValid()) currentPV = reco::Vertex(newVtx);
-	      }
+		  // removeCandTracksFromVtx_
+		  if (!removeCandTracksFromVtx_ || trackIt == completeTrackList.end())
+			  pvTracks.insert(tref);
 	  }
-
+	  
+	  // refit the PV
+	  vrtxRefit.clear(); // safety
+	  for (itSet = pvTracks.begin(); itSet != pvTracks.end(); ++itSet) {
+		  TransientTrack tTrk = fpTTB->build( *(*itSet) );
+		  vrtxRefit.push_back(tTrk);
+	  }
+	  newVtx = avf.vertex(vrtxRefit);
+	  if (newVtx.isValid()) currentPV = reco::Vertex(newVtx);
+	  else					throw std::string("ERROR: HFSequentialVertexFit::addCandidate(). Unable to refit PV");
+	  
+	  // add the signal tracks to the vertex
+	  completeTrackList = tree->getAllTracks(0);
+	  for (trackIt = completeTrackList.begin(); trackIt != completeTrackList.end(); ++trackIt) {
+		  TrackBaseRef curTr(fhTracks,trackIt->trackIx);
+		  TrackRef curTref = curTr.castTo<TrackRef>();
+		  pvTracks.insert(curTref);
+	  }
+	  vrtxRefit.clear(); // start from scratch not to incude some tracks twice
+	  for (itSet = pvTracks.begin(); itSet != pvTracks.end(); ++itSet) {
+		  TransientTrack tTrk = fpTTB->build( *(*itSet) );
+		  vrtxRefit.push_back(tTrk);
+	  }
+	  newVtx = avf.vertex(vrtxRefit);
+	  if (newVtx.isValid()) currentPVWithSignal = reco::Vertex(newVtx);
+	  else					throw std::string("ERROR: HFSequentialVertexFit::addCandidate(). Unable to refit PV with signal tracks");
+	  
+	  diffChi2 = currentPVWithSignal.normalizedChi2() - currentPV.normalizedChi2();
+	  
 	  anaVtx.fDxy = axy.distance(currentPV,kinVertex->vertexState()).value();
 	  anaVtx.fDxyE = axy.distance(currentPV,kinVertex->vertexState()).error();
 	  
@@ -551,6 +568,8 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   pCand->fPvTipE2 = pvImpParams2nd.tip.error();
   pCand->fVar2 = pvImpParams.ip3d.value();
   pCand->fVar3 = pvImpParams.ip3d.error();
+  
+  pCand->fDeltaChi2 = diffChi2;
   
   // -- calculate lifetime
   {
