@@ -47,7 +47,7 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('Cc:dD:j:m:q:r:t:v:x:');
+getopts('Cc:dD:j:m:q:r:R:t:v:x:');
 
 # -- User setup
 my $user  = $ENV{'USER'};
@@ -87,6 +87,12 @@ foreach $repl (@replaces) {
 if ($opt_m eq "grid" && !$opt_D) {
     $opt_D = "ce01.lcg.cscs.ch"; 
     print " no destination provided, sending to CSCS: $opt_D\n";
+}
+
+# -- resource broker
+my $rb = " ";
+if ($opt_R) {
+    $rb = "-r $opt_R";
 }
 
 # -- queues at PSI: all.q short.q
@@ -215,9 +221,15 @@ foreach $jobfile (@ARGV) {
     } elsif ($opt_m eq "grid") {
 	if ($opt_d) {
 	    print "grid running: $job.jdl\n";
-	    print("glite-wms-job-submit -o jobs.list -a --config $glite $job.jdl\n"); 
+	    print("glite-wms-job-submit -o jobs.list $rb -a --config $glite $job.jdl\n"); 
 	} else {
-	    system("glite-wms-job-submit -o jobs.list -a --config $glite $job.jdl"); 
+	    if ($opt_D eq "unl.edu") {
+		 print("glite-wms-job-submit -o jobs.list -a $rb --config $glite $job.jdl\n"); 
+		system("glite-wms-job-submit -o jobs.list -a $rb --config $glite $job.jdl"); 
+	    } else {
+  		 print("glite-wms-job-submit -o jobs.list -a $rb --config $glite $job.jdl\n"); 
+		system("glite-wms-job-submit -o jobs.list -a $rb --config $glite $job.jdl"); 
+	    }
 	    open(IN, ">>jobs.list") || die "Cannot open jobs.list\n";
 	    print IN "\# $timeStamp $pwd/$tdir $job.jdl\n"; 
 	    close(IN); 
@@ -245,6 +257,9 @@ sub makeTarLink {
 	    system("/bin/ln -s ../$tarDirectory/$tarFile $ljob.tar.gz"); 
 	}
     }
+    if ($opt_m eq "grid") {
+	system("/bin/cp `which data_replica.py` data_replica.py"); 
+    }
 }
 
 # ----------------------------------------------------------------------
@@ -257,7 +272,7 @@ sub makeJdlFile {
     print OUT "Executable    = \"$ljob.csh\";\n";
     print OUT "StdOutput     = \"$ljob.log\";\n";
     print OUT "StdError      = \"$ljob.err\";\n";
-    print OUT "InputSandbox  ={\"$ljob.csh\", \"$ljob.jdl\", \"$lpyfile\", \"$ljob.tar.gz\"};\n";
+    print OUT "InputSandbox  ={\"$ljob.csh\", \"$ljob.jdl\", \"$lpyfile\", \"$ljob.tar.gz\", \"data_replica.py\"};\n";
     print OUT "OutputSandbox ={\"$ljob.csh\", \"$ljob.jdl\", \"$lpyfile\", \"$ljob.log\", \"$ljob.err\"};\n";
     print OUT "VirtualOrganisation = \"cms\";\n";
     print OUT "PerusalFileEnable = true;\n";
