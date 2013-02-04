@@ -37,7 +37,7 @@
 using std::cout;
 using std::endl;
 
-ncAna::ncAna() : fNormFileName(""), fDataFileName("/Users/cn/CMSData/Reduced/data-newvars.root"), fMCFileName("/Users/cn/CMSData/Reduced/mc-newvars.root"), fPeakFileName("/Users/cn/CMSData/Reduced/production-2e33-general.root"), fAccFileName("/Users/cn/CMSData/Reduced/production-2e33-acceptance.root"), fNbrMassBins(50), fMassRange(4.9,5.9), fNbrSidebandBins(50), fLowNoSidebandRange(5.05,5.15), fHighNoSidebandRange(5.4,5.5), fLowCoSidebandRange(5.1,5.2), fHighCoSidebandRange(5.5,5.6), fBlindedRegion(5.2,5.45), fBsWindowRegion(5.3,5.45),fBdWindowRegion(5.2,5.3), fNoSignalRegion(5.2,5.35), fFitRangeNorm(4.95,5.6), fPlotDir("plots"), fSystematicsTable(NULL), fMisIDKaonPion(0.001,0.0002,0.0002), fMisIDProton(0.0005,0.0001,0.0001), fVarFileName("cuts/newvars.def")
+ncAna::ncAna() : fNormFileName(""), fSignalDataFileName("/Users/cn/CMSData/Reduced/cms-Run2012-sig.root"), fMCFileName("/Users/cn/CMSData/Reduced/mc-newvars.root"), fPeakFileName("/Users/cn/CMSData/Reduced/production-2e33-general.root"), fAccFileName("/Users/cn/CMSData/Reduced/production-2e33-acceptance.root"), fNbrMassBins(50), fMassRange(4.9,5.9), fNbrSidebandBins(50), fLowNoSidebandRange(5.05,5.15), fHighNoSidebandRange(5.4,5.5), fLowCoSidebandRange(5.1,5.2), fHighCoSidebandRange(5.5,5.6), fBlindedRegion(5.2,5.45), fBsWindowRegion(5.3,5.45),fBdWindowRegion(5.2,5.3), fNoSignalRegion(5.2,5.35), fFitRangeNorm(4.95,5.6), fPlotDir("plots"), fSystematicsTable(NULL), fMisIDKaonPion(0.001,0.0002,0.0002), fMisIDProton(0.0005,0.0001,0.0001), fVarFileName("cuts/newvars.def")
 {
 	using std::string;
 	using std::make_pair;
@@ -75,7 +75,7 @@ TH1D *ncAna::getDefaultMassHistogram(const char *name)
 
 void ncAna::showSidebandSubtraction(bool massConstraint, bool cs)
 {
-	TFile dataFile(fDataFileName.c_str());
+	TFile dataFile(fSignalDataFileName.c_str());
 	TFile mcFile(fMCFileName.c_str());
 	TTree *dataTree = (TTree*)dataFile.Get("T");
 	TTree *mcTree = (TTree*)mcFile.Get("T");
@@ -1424,7 +1424,7 @@ void ncAna::writeULC(const char *ulcname, bool reload)
 
 void ncAna::showBsmmPlots()
 {
-	TFile *mcFile = TFile::Open(fSignalFileName.c_str());
+	TFile *mcFile = TFile::Open(fSignalMCFileName.c_str());
 	TFile *dataFile = TFile::Open(fDataFileName.c_str());
 	TTree *mcTree = (TTree*)mcFile->Get("T");
 	TTree *dataTree = (TTree*)dataFile->Get("T");

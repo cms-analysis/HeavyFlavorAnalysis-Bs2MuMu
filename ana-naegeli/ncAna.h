@@ -120,10 +120,11 @@ class ncAna {
 	private:
 		
 		std::string fNormFileName;
-		std::string fSignalFileName;
-		std::string fDataFileName;
+		std::string fSignalMCFileName;
+		std::string fSignalDataFileName;
 	
 		// FIXME: deprecated
+		std::string fDataFileName;
 		std::string fMCFileName;
 		std::string fPeakFileName;
 		std::string fAccFileName;
