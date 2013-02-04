@@ -129,15 +129,15 @@ void HFBd2DstarPi::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 				<< endl;
 			}
 			
-			HFDecayTree theTree(300030, true, MB_0, false, -1.0, true);
+			HFDecayTree theTree(300000 + fType, true, MB_0, false, -1.0, true);
 			theTree.addTrack(iPionFast,211); // add the fast pion to the B0 candidate
 			theTree.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 			
-			HFDecayTreeIterator iterator = theTree.addDecayTree(300031, false, MDSTARPLUS, false); // D*-
+			HFDecayTreeIterator iterator = theTree.addDecayTree(300001 + fType, false, MDSTARPLUS, false); // D*-
 			iterator->addTrack(iPionSlow,211); // add the slow pion to the D*+ candidate
 			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 			
-			iterator = iterator->addDecayTree(300032, true, MD0, false); // D0
+			iterator = iterator->addDecayTree(300002 + fType, true, MD0, false); // D0
 			iterator->addTrack(iKaon,321);
 			iterator->addTrack(iPion,211);
 			iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
