@@ -95,7 +95,7 @@ void HFDstar::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 				<< endl;
 			}
 			
-			HFDecayTree theTree(300054, true, MDSTARPLUS, false, -1.0, true);
+			HFDecayTree theTree(fType, true, MDSTARPLUS, false, -1.0, true);
 			HFDecayTreeIterator iterator = theTree.addDecayTree(300050, true, MD0, false);
 			iterator->addTrack(iKaon,321);
 			iterator->addTrack(iPion,211);
