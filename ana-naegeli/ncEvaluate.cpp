@@ -7,6 +7,7 @@
 
 #include "ncEvaluate.h"
 #include "ncMVA.h"
+#include "ncCut.h"
 
 #include <TCut.h>
 
@@ -15,21 +16,22 @@ using namespace std;
 ncEvaluate::ncEvaluate(const char *inFile, TTree *inTree, const char *title) : tree(inTree), weight_file(inFile), methodTitle(title)
 {
 	reader = new TMVA::Reader("v");
-	map<string,string> *names = ncMVA::getMVAVariables();
-	map<string,string>::const_iterator it;
+	ncMVA mva;
+	set<ncCut> names = mva.getMVAVariables();
+	set<ncCut>::const_iterator it;
 	const char *c;
 	
-	for (it = names->begin(); it != names->end(); ++it) {
+	for (it = names.begin(); it != names.end(); ++it) {
 		
-		if (it->first.compare(it->second) == 0)
-			c = it->first.c_str();
+		if (strcmp(it->getName(),it->getFormula()) == 0)
+			c = it->getName();
 		else
-			c = Form("%s := %s", it->first.c_str(), it->second.c_str());
+			c = Form("%s := %s", it->getName(), it->getFormula());
 		
-		reader->AddVariable(c,&vals[it->first.c_str()]); // implicitly creates the entry in vals
+		reader->AddVariable(c,&vals[it->getName()]); // implicitly creates the entry in vals
 		
 		// associated treeformula
-		formulas[it->first] = new TTreeFormula("",it->second.c_str(),tree);
+		formulas[it->getName()] = new TTreeFormula("",it->getFormula(),tree);
 	}
 	
 	reader->BookMVA(methodTitle,weight_file);
