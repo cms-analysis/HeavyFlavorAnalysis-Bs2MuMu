@@ -67,14 +67,14 @@ using namespace std;
 using namespace edm;
 using namespace reco;
 
-HFSequentialVertexFit::HFSequentialVertexFit(Handle<View<Track> > hTracks, const MuonCollection* muons, const TransientTrackBuilder *TTB, Handle<VertexCollection> pvCollection, const MagneticField *field, int verbose, bool removeCandTracksFromVtx) :
-
+HFSequentialVertexFit::HFSequentialVertexFit(Handle<View<Track> > hTracks, const MuonCollection* muons, const TransientTrackBuilder *TTB, Handle<VertexCollection> pvCollection, const MagneticField *field, BeamSpot beamSpot, int verbose, bool removeCandTracksFromVtx) : 
 	fVerbose(verbose),
 	fpTTB(TTB),
 	fhTracks(hTracks),
 	fPVCollection(pvCollection),
 	fMuons(muons),
 	magneticField(field),
+	fBeamSpot(beamSpot),
 	removeCandTracksFromVtx_(removeCandTracksFromVtx)
 {} // HFSequentialVertexFit()
 
@@ -488,7 +488,9 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 		  TransientTrack tTrk = fpTTB->build( *(*itSet) );
 		  vrtxRefit.push_back(tTrk);
 	  }
-	  newVtx = avf.vertex(vrtxRefit);
+	  if (vrtxRefit.size() < 2) throw PVRefitException(); // do not try to fit with less than two tracks
+	  
+	  newVtx = avf.vertex(vrtxRefit,fBeamSpot);
 	  if (newVtx.isValid()) currentPV = reco::Vertex(newVtx);
 	  else					throw PVRefitException();
 	  

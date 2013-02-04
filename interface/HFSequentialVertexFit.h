@@ -30,7 +30,7 @@ class HFSequentialVertexFit
 {
  public:
   
-  HFSequentialVertexFit(edm::Handle<edm::View<reco::Track> > hTracks, const reco::MuonCollection* muons, const TransientTrackBuilder *TTB, edm::Handle<reco::VertexCollection> pvCollection, const MagneticField *field, int verbose = 0, bool removeCandTracksFromVtx = true);
+  HFSequentialVertexFit(edm::Handle<edm::View<reco::Track> > hTracks, const reco::MuonCollection* muons, const TransientTrackBuilder *TTB, edm::Handle<reco::VertexCollection> pvCollection, const MagneticField *field, reco::BeamSpot beamSpot, int verbose = 0, bool removeCandTracksFromVtx = true);
   virtual ~HFSequentialVertexFit();
   
   void doFit(HFDecayTree *tree);
@@ -75,6 +75,7 @@ class HFSequentialVertexFit
 	edm::Handle<reco::VertexCollection> fPVCollection;
 	const reco::MuonCollection *fMuons;
 	const MagneticField* magneticField;
+	reco::BeamSpot fBeamSpot;
 	bool removeCandTracksFromVtx_;
 	//RefCountedHFNodeCut nodeCut;
 
