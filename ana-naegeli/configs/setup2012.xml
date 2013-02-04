@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ana>
+	<ana-decay name=bsmm>
+		<datafile>datafile</datafile>
+		<acceptance>acceptancefile</acceptance>
+		<mcfile>themcpath</mcfile>
+		<variables>cuts/mvavars</variables>
+	</ana-decay>
+</ana>
