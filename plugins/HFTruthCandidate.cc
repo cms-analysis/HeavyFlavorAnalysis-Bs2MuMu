@@ -25,7 +25,7 @@
 
 #include "RecoVertex/KinematicFitPrimitives/interface/ParticleMass.h"
 #include "RecoVertex/KinematicFitPrimitives/interface/MultiTrackKinematicConstraint.h"
-#include <RecoVertex/KinematicFitPrimitives/interface/KinematicParticleFactoryFromTransientTrack.h>
+#include "RecoVertex/KinematicFitPrimitives/interface/KinematicParticleFactoryFromTransientTrack.h"
 #include "RecoVertex/KinematicFit/interface/KinematicConstrainedVertexFitter.h"
 #include "RecoVertex/KinematicFit/interface/TwoTrackMassKinematicConstraint.h"
 #include "RecoVertex/KinematicFit/interface/KinematicParticleVertexFitter.h"
@@ -65,6 +65,7 @@ using namespace reco;
 HFTruthCandidate::HFTruthCandidate(const edm::ParameterSet& iConfig):
   fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", string("goodTracks"))), 
   fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexLabel", InputTag("offlinePrimaryVertices"))),
+  fBeamSpotLabel(iConfig.getUntrackedParameter<InputTag>("BeamSpotLabel", InputTag("offlineBeamSpot"))),
   fPartialDecayMatching(iConfig.getUntrackedParameter<bool>("partialDecayMatching", false)), 
   fMotherID(iConfig.getUntrackedParameter("motherID", 0)), 
   fType(iConfig.getUntrackedParameter("type", 67)),
@@ -80,6 +81,7 @@ HFTruthCandidate::HFTruthCandidate(const edm::ParameterSet& iConfig):
   cout << "--- HFTruthCandidate constructor" << endl;
   cout << "--- verbose:               " << fVerbose << endl;
   cout << "--- tracksLabel:           " << fTracksLabel << endl;
+  cout << "--- BeamSpotLabel:         " << fBeamSpotLabel << endl;
   cout << "--- motherID:              " << fMotherID << endl;
   cout << "--- type:                  " << fType << endl;
   cout << "--- GenType:               " << fGenType << endl;
@@ -360,8 +362,17 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	cout << "==>HFTruthCandidate> No primary vertex found, skipping" << endl;
 	return;
       }
+	  
+		// -- get the beamspot
+		Handle<BeamSpot> bspotHandle;
+		iEvent.getByLabel(fBeamSpotLabel, bspotHandle);
+		if (!bspotHandle.isValid()) {
+			cout << "==>HFbs2JpsiPhi> No beamspot found, skipping" << endl;
+			return;
+		}
+		BeamSpot bspot = *bspotHandle;		
 
-      HFSequentialVertexFit aSeq(hTracks, NULL, fTTB.product(), recoPrimaryVertexCollection, field, fVerbose);
+      HFSequentialVertexFit aSeq(hTracks, NULL, fTTB.product(), recoPrimaryVertexCollection, field, bspot, fVerbose);
       // -- setup with (relevant) muon hypothesis
       HFDecayTree theTree(1000000+fType, true, 0, false); 
       int ID(0), IDX(0); 

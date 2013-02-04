@@ -30,7 +30,7 @@ public:
 
 private:
   
-  edm::InputTag      fTracksLabel, fPrimaryVertexLabel;
+  edm::InputTag      fTracksLabel, fPrimaryVertexLabel, fBeamSpotLabel;
 
   bool               fPartialDecayMatching;
   int                fMotherID, fType, fGenType;
