@@ -85,6 +85,7 @@ HFLambdas::HFLambdas(const ParameterSet& iConfig) :
     fVerbose(iConfig.getUntrackedParameter<int>("verbose",0)),
     fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("goodTracks"))),
     fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexLabel", InputTag("offlinePrimaryVertices"))),
+	fBeamSpotLabel(iConfig.getUntrackedParameter<InputTag>("BeamSpotLabel", InputTag("offlineBeamSpot"))),
     fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
     fMuonType(iConfig.getUntrackedParameter<InputTag>("muonType")),
     fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 1.0)),
@@ -121,6 +122,7 @@ HFLambdas::HFLambdas(const ParameterSet& iConfig) :
     cout << "---  tracksLabel:                              " << fTracksLabel << endl;
     cout << "---  PrimaryVertexLabel:                       " << fPrimaryVertexLabel << endl;
     cout << "---  muonsLabel:                               " << fMuonsLabel << endl;
+	cout << "---  BeamSpotLabel:                            " << fBeamSpotLabel << endl;
     cout << "---  muonPt:                                   " << fMuonPt << endl;
     cout << "---  muonType:                                 " << fMuonType << endl;
     cout << "---  pionPt:                                   " << fPionPt << endl;
@@ -164,7 +166,16 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
     ESHandle<MagneticField> magfield;
     iSetup.get<IdealMagneticFieldRecord>().get(magfield);
     const MagneticField *field = magfield.product();
-
+	
+	// -- get the beamspot
+	Handle<BeamSpot> bspotHandle;
+	iEvent.getByLabel(fBeamSpotLabel, bspotHandle);
+	if (!bspotHandle.isValid()) {
+		cout << "==>HFbs2JpsiPhi> No beamspot found, skipping" << endl;
+		return;
+	}
+	BeamSpot bspot = *bspotHandle;
+	
     // -- get the primary vertex
     Handle<VertexCollection> recoPrimaryVertexCollection;
     iEvent.getByLabel(fPrimaryVertexLabel, recoPrimaryVertexCollection);
@@ -366,7 +377,7 @@ void HFLambdas::analyze(const Event& iEvent, const EventSetup& iSetup)
 
     const int V0Cand = fUseV0producer ? 10000 : 0;
     // do the vertex fitting...
-    HFSequentialVertexFit aSeq(hTracks, hMuons.product(), fTTB.product(), recoPrimaryVertexCollection, field, fVerbose, fRemoveCandTracksFromVertex);
+    HFSequentialVertexFit aSeq(hTracks, hMuons.product(), fTTB.product(), recoPrimaryVertexCollection, field, bspot, fVerbose, fRemoveCandTracksFromVertex);
     //TLorentzVector tlvPsi, tlvMu1, tlvMu2, tlvPion, tlvProton, tlvLambda0, tlvLambdaB;
 
     for (unsigned int i = 0; i < psiList.size(); i++)

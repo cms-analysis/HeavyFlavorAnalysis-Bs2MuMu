@@ -23,7 +23,7 @@ private:
 
     int fVerbose;
     edm::InputTag	fTracksLabel,fPrimaryVertexLabel;
-    edm::InputTag	fMuonsLabel;
+    edm::InputTag	fMuonsLabel, fBeamSpotLabel;
     edm::InputTag       fMuonType;
 
     double fMuonPt,fPionPt,fProtonPt;
