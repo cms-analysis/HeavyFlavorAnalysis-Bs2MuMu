@@ -25,9 +25,12 @@ else
   endif
 endif
 
-CXXFLAGS      = -g -O3 -Wall -fPIC -pipe $(ROOTCFLAGS)
-LIBS          = $(ROOTLIBS) -lTreePlayer
-GLIBS		  = $(ROOTGLIBS) -lTreePlayer
+XMLCFLAGS     = $(shell pkg-config --cflags libxml-2.0)
+XMLLIBS       = $(shell pkg-config --libs libxml-2.0)
+
+CXXFLAGS      = -g -O3 -Wall -fPIC -pipe $(ROOTCFLAGS) $(XMLCFLAGS)
+LIBS          = $(ROOTLIBS) -lTreePlayer $(XMLLIBS)
+GLIBS		  = $(ROOTGLIBS) -lTreePlayer $(XMLLIBS)
 LDFLAGS       = -g
 SOFLAGS       = -shared
 LD            = $(CXX)
@@ -37,7 +40,7 @@ LD            = $(CXX)
 ################
 
 OBJS = ana-produce.o
-LIB_OBJS = ncMVA.o ncAna.o ncCut.o ncFormula.o ncEvaluate.o ncVarReader.o
+LIB_OBJS = ncMVA.o ncAna.o ncAna2.o ncCut.o ncFormula.o ncEvaluate.o ncVarReader.o ncConfig.o
 LIB_OBJSDICT = ${LIB_OBJS:.o=Dict.o}
 
 #################
