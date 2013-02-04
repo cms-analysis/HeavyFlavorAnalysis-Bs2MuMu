@@ -6,6 +6,7 @@ hhDump = cms.EDAnalyzer(
     verbose            = cms.untracked.int32(0), 
     tracksLabel        = cms.untracked.InputTag("generalTracks"),
     PrimaryVertexLabel = cms.untracked.InputTag("offlinePrimaryVertices"),
+	BeamSpotLabel      = cms.untracked.InputTag("offlineBeamSpot"),
     trackPt            = cms.untracked.double(4.0),
     track1Mass         = cms.untracked.double(0.1057),
     track2Mass         = cms.untracked.double(0.1057),
@@ -14,9 +15,10 @@ hhDump = cms.EDAnalyzer(
     maxDoca            = cms.untracked.double(0.025),
     pvWeight           = cms.untracked.double(0.70),
     type               = cms.untracked.int32(211211),
-    sameSign           = cms.untracked.bool( False )
+	nbrMuons           = cms.untracked.int32(0),
+	closeToMuons       = cms.untracked.bool(False)
     )
-   
+
 # ######################################################################
 # Sequences
 # ######################################################################

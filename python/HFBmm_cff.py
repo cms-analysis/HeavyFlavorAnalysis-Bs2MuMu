@@ -2,20 +2,21 @@ import FWCore.ParameterSet.Config as cms
 
 # ----------------------------------------------------------------------
 bmmDump = cms.EDAnalyzer(
-    "HFDimuons",
+    "HFDiTracks",
     verbose            = cms.untracked.int32(0), 
     muonsLabel         = cms.untracked.InputTag("muons"),
-    tracksLabel        = cms.untracked.InputTag('generalTracks'),
+    tracksLabel        = cms.untracked.InputTag("generalTracks"),
     PrimaryVertexLabel = cms.untracked.InputTag("offlinePrimaryVertices"),
+	BeamSpotLabel      = cms.untracked.InputTag("offlineBeamSpot"),
     muonPt             = cms.untracked.double(3.5),
     type               = cms.untracked.int32(1313), 
     massLow            = cms.untracked.double(4.2), 
     massHigh           = cms.untracked.double(6.7),
     maxDoca            = cms.untracked.double(0.1),
-    vertexing          = cms.untracked.int32(1), 
-    pvWeight           = cms.untracked.double(0.6)
+    pvWeight           = cms.untracked.double(0.6),
+	nbrMuons           = cms.untracked.int32(2),
+	closeToMuons       = cms.untracked.bool(False)
     )
-
 
 # ----------------------------------------------------------------------
 bupsikpDump = cms.EDAnalyzer(
@@ -24,6 +25,7 @@ bupsikpDump = cms.EDAnalyzer(
     muonsLabel         = cms.untracked.InputTag("muons"),
     tracksLabel        = cms.untracked.InputTag('generalTracks'),
     PrimaryVertexLabel = cms.untracked.InputTag("offlinePrimaryVertices"),
+	BeamSpotLabel      = cms.untracked.InputTag("offlineBeamSpot"),
     muonPt             = cms.untracked.double(3.5),
     psiMuons           = cms.untracked.int32(2),
     psiWindow          = cms.untracked.double(0.2),
@@ -32,7 +34,8 @@ bupsikpDump = cms.EDAnalyzer(
     deltaR             = cms.untracked.double(99.0),
     maxDoca            = cms.untracked.double(0.1),
     maxD0              = cms.untracked.double(99.0),
-    maxDz              = cms.untracked.double(99.0)
+    maxDz              = cms.untracked.double(99.0),
+	pvWeight           = cms.untracked.double(0.6)
     )
 
 # ----------------------------------------------------------------------
@@ -42,6 +45,7 @@ bspsiphiDump = cms.EDAnalyzer(
     muonsLabel         = cms.untracked.InputTag("muons"),
     tracksLabel        = cms.untracked.InputTag('generalTracks'),
     PrimaryVertexLabel = cms.untracked.InputTag("offlinePrimaryVertices"),
+	BeamSpotLabel      = cms.untracked.InputTag("offlineBeamSpot"),
     muonPt             = cms.untracked.double(3.5),
     psiMuons           = cms.untracked.int32(2),
     psiWindow          = cms.untracked.double(0.2),
@@ -51,7 +55,8 @@ bspsiphiDump = cms.EDAnalyzer(
     deltaR             = cms.untracked.double(99.0),
     maxDoca            = cms.untracked.double(0.06),
     maxD0              = cms.untracked.double(99.0),
-    maxDz              = cms.untracked.double(99.0)
+    maxDz              = cms.untracked.double(99.0),
+	pvWeight           = cms.untracked.double(0.6)
     )
 
 # ----------------------------------------------------------------------
@@ -60,6 +65,7 @@ hhDump = cms.EDAnalyzer(
     verbose            = cms.untracked.int32(0), 
     tracksLabel        = cms.untracked.InputTag("generalTracks"),
     PrimaryVertexLabel = cms.untracked.InputTag("offlinePrimaryVertices"),
+	BeamSpotLabel      = cms.untracked.InputTag("offlineBeamSpot"),
     trackPt            = cms.untracked.double(4.0),
     track1Mass         = cms.untracked.double(0.1057),
     track2Mass         = cms.untracked.double(0.1057),
@@ -68,12 +74,13 @@ hhDump = cms.EDAnalyzer(
     maxDoca            = cms.untracked.double(0.025),
     pvWeight           = cms.untracked.double(0.70),
     type              = cms.untracked.int32(211211),
-    sameSign           = cms.untracked.bool( False )
+	nbrMuons           = cms.untracked.int32(0),
+	closeToMuons       = cms.untracked.bool(False)
     )
+
 
 
 # ######################################################################
 # Sequences
 # ######################################################################
-#bmmSequence_old     = cms.Sequence(bmmDump*bupsikpDump*bspsiphiDump)
 bmmSequence     = cms.Sequence(bmmDump*bupsikpDump*bspsiphiDump*hhDump)
