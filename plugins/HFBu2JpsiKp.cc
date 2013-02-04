@@ -64,6 +64,13 @@ void HFBu2JpsiKp::analyze(const Event& iEvent, const EventSetup& iSetup)
 {
 	typedef HFTwoParticleCombinatoricsNew::HFTwoParticleCombinatoricsSet HFTwoParticleCombinatoricsSet;
 	
+	try {
+	  HFVirtualDecay::analyze(iEvent,iSetup);
+	} catch(HFSetupException e) {
+	  cout << "==>HFBu2JpsiKp> " << e.fMsg << endl;
+	  return;
+	}
+
 	fListBuilder->setMinPt(fMuonPt); // work with muon pt
 	vector<int> muonList = fListBuilder->getMuonList();
 	if (muonList.size() < static_cast<unsigned int>(fPsiMuons)) return; // not enough muons
