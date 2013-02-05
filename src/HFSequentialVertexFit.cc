@@ -20,6 +20,7 @@
 #include "RecoVertex/VertexPrimitives/interface/ConvertToFromReco.h"
 #include "RecoVertex/AdaptiveVertexFit/interface/AdaptiveVertexFitter.h"
 #include "RecoVertex/VertexPrimitives/interface/TransientVertex.h"
+#include "RecoVertex/KalmanVertexFit/interface/KalmanVertexFitter.h"
 
 #include "TrackingTools/GeomPropagators/interface/AnalyticalImpactPointExtrapolator.h"
 #include "TrackingTools/PatternTools/interface/TwoTrackMinimumDistance.h"
@@ -459,16 +460,16 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   } else if (pvIx >= 0) {
 	  // -- Distance w.r.t primary vertex
 	  TransientVertex newVtx;
-	  AdaptiveVertexFitter avf;
+	  AdaptiveVertexFitter avf; // PV refit
+	  KalmanVertexFitter kvf; // delta chi2
 	  Vertex currentPV = (*fPVCollection)[pvIx];
 	  Vertex currentPVWithSignal;
-	  set<TrackRef> pvTracks;
 	  vector<TransientTrack> vrtxRefit;
-	  set<TrackRef>::const_iterator itSet;
 	  vector<TrackBaseRef>::const_iterator itTBR;
 	  vector<track_entry_t>::const_iterator trackIt;
 	  vector<track_entry_t> completeTrackList = tree->getAllTracks(0);
 	  
+	  if (fVerbose > 5) cout << "HFSequentialVertexFit::addCandidate(): currentPV.tracksSize() = " << currentPV.tracksSize() << endl;
 	  for (itTBR = currentPV.tracks_begin(); itTBR != currentPV.tracks_end(); ++itTBR) {
 		  TrackRef tref = itTBR->castTo<TrackRef>();
 		  for (trackIt = completeTrackList.begin(); removeCandTracksFromVtx_ && trackIt != completeTrackList.end(); ++trackIt) {
@@ -477,40 +478,17 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 			  if (tref == curTref)
 				  break;
 		  }
-		  // removeCandTracksFromVtx_
-		  if (!removeCandTracksFromVtx_ || trackIt == completeTrackList.end())
-			  pvTracks.insert(tref);
-	  }
-	  
-	  // refit the PV
-	  vrtxRefit.clear(); // safety
-	  for (itSet = pvTracks.begin(); itSet != pvTracks.end(); ++itSet) {
-		  TransientTrack tTrk = fpTTB->build( *(*itSet) );
-		  vrtxRefit.push_back(tTrk);
+		  
+		  if (!removeCandTracksFromVtx_ || trackIt == completeTrackList.end()) {
+			  TransientTrack tTrk = fpTTB->build(*(*itTBR));
+			  vrtxRefit.push_back(tTrk);
+		  }
 	  }
 	  if (vrtxRefit.size() < 2) throw PVRefitException(); // do not try to fit with less than two tracks
-	  
+	  if (fVerbose > 5) cout << "==> HFSequentialVertexFit::addCandidate(): refitting with vrtxRefit.size() = " << vrtxRefit.size() << endl;
 	  newVtx = avf.vertex(vrtxRefit,fBeamSpot);
 	  if (newVtx.isValid()) currentPV = reco::Vertex(newVtx);
 	  else					throw PVRefitException();
-	  
-	  // add the signal tracks to the vertex
-	  completeTrackList = tree->getAllTracks(0);
-	  for (trackIt = completeTrackList.begin(); trackIt != completeTrackList.end(); ++trackIt) {
-		  TrackBaseRef curTr(fhTracks,trackIt->trackIx);
-		  TrackRef curTref = curTr.castTo<TrackRef>();
-		  pvTracks.insert(curTref);
-	  }
-	  vrtxRefit.clear(); // start from scratch not to incude some tracks twice
-	  for (itSet = pvTracks.begin(); itSet != pvTracks.end(); ++itSet) {
-		  TransientTrack tTrk = fpTTB->build( *(*itSet) );
-		  vrtxRefit.push_back(tTrk);
-	  }
-	  newVtx = avf.vertex(vrtxRefit);
-	  if (newVtx.isValid()) currentPVWithSignal = reco::Vertex(newVtx);
-	  else					throw PVRefitException();
-	  
-	  diffChi2 = currentPVWithSignal.normalizedChi2() - currentPV.normalizedChi2();
 	  
 	  anaVtx.fDxy = axy.distance(currentPV,kinVertex->vertexState()).value();
 	  anaVtx.fDxyE = axy.distance(currentPV,kinVertex->vertexState()).error();
@@ -529,6 +507,39 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  const TVector3 pDiff = p2-p1;
 	  vtxDistanceCosAlphaPlab = plab.Dot(pDiff) / (plab.Mag() * pDiff.Mag());
 	  
+	  // compute the delta chi2 using the Kalman vertex fitter and only tracks with weight > 0.5
+	  vrtxRefit.clear();
+	  currentPV = (*fPVCollection)[pvIx];
+	  for (itTBR = currentPV.tracks_begin(); itTBR != currentPV.tracks_end(); ++itTBR) {
+		  if (currentPV.trackWeight(*itTBR) <= 0.5)
+			  continue;
+		  
+		  TrackRef tref = itTBR->castTo<TrackRef>();
+		  for (trackIt = completeTrackList.begin(); trackIt != completeTrackList.end(); ++trackIt) {
+			  TrackBaseRef curTr(fhTracks,trackIt->trackIx);
+			  TrackRef curTref = curTr.castTo<TrackRef>();
+			  if (tref == curTref) {
+				  break;
+			  }
+		  }
+		  if (trackIt == completeTrackList.end()) {
+			  TransientTrack tTrk = fpTTB->build( *(*itTBR) );
+			  vrtxRefit.push_back(tTrk);
+		  }
+	  }
+	  newVtx = kvf.vertex(vrtxRefit);
+	  if (newVtx.isValid())	currentPV = reco::Vertex(newVtx);
+	  else					throw PVRefitException();
+	  
+	  for (trackIt = completeTrackList.begin(); trackIt != completeTrackList.end(); ++trackIt) {
+		  TrackBaseRef curTr(fhTracks,trackIt->trackIx);
+		  vrtxRefit.push_back(fpTTB->build(*curTr));
+	  }
+	  newVtx = kvf.vertex(vrtxRefit);
+	  if (newVtx.isValid())	currentPVWithSignal = reco::Vertex(newVtx);
+	  else					throw PVRefitException();
+	  
+	  diffChi2 = currentPVWithSignal.chi2() - currentPV.chi2();
   } else if (fVerbose > 0)
 	  cout << "==> HFSequentialVertexFit: No idea what distance to compute in TAnaVertex.fDxy and TAnaVertex.fD3d" << endl;
 
