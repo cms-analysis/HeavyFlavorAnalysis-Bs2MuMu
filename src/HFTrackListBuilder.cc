@@ -26,6 +26,7 @@ HFTrackListBuilder::HFTrackListBuilder(edm::Handle<edm::View<reco::Track> > &hTr
 	fMaxDz(999.),
 	fMinPt(-1.),
 	fMaxDocaToTrks(999.),
+	fMuonQuality(muon::AllGlobalMuons), 
 	fCloseTracks(NULL)
 {} // HFTrackListBuilder()
 
@@ -38,6 +39,7 @@ std::vector<int> HFTrackListBuilder::getMuonList()
 	trackList.reserve(20); // 20 muons should be enough
 	
 	for (muonIt = fMuons->begin(); muonIt != fMuons->end(); ++muonIt) {
+	  if (!muon::isGoodMuon(*muonIt, fMuonQuality)) continue;
 		int ixMu = muonIt->track().index();
 		if (ixMu >= 0) trackList.push_back(ixMu);
 	}

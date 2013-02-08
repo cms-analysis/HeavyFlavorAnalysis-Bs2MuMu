@@ -19,6 +19,7 @@
 #include "DataFormats/Common/interface/View.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
+#include "DataFormats/MuonReco/interface/MuonSelectors.h"
 
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 
@@ -34,6 +35,7 @@ class HFTrackListBuilder {
 		void setMaxD0(double maxD0) { fMaxD0 = maxD0; }
 		void setMaxDz(double maxDz) { fMaxDz = maxDz; }
 		void setMinPt(double minPt) { fMinPt = minPt; }
+                void setMuonQuality(muon::SelectionType t) { fMuonQuality = t; }
 		void setMaxDocaToTracks(double docaToTrks) { fMaxDocaToTrks = docaToTrks; }
 		void setCloseTracks(std::vector<int> *closeTracks) { fCloseTracks = closeTracks; }
 		void setCallerName(const char *callerName) { fCallerName = std::string(callerName); }
@@ -56,7 +58,7 @@ class HFTrackListBuilder {
 		double fMaxDz;
 		double fMinPt;
 		double fMaxDocaToTrks;
-		
+		muon::SelectionType fMuonQuality; 
 		std::vector<int> *fCloseTracks;
 };
 
