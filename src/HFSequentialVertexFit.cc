@@ -6,6 +6,7 @@
 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFSequentialVertexFit.h"
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFMasses.hh"
+#include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFDumpUtilities.hh"
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
 
@@ -582,8 +583,12 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   pCand->fPvLipE2 = pvImpParams2nd.lip.error();
   pCand->fPvTip2 = pvImpParams2nd.tip.value();
   pCand->fPvTipE2 = pvImpParams2nd.tip.error();
-  pCand->fVar2 = pvImpParams.ip3d.value();
-  pCand->fVar3 = pvImpParams.ip3d.error();
+
+  pCand->fPvIP3d  = pvImpParams.ip3d.value();
+  pCand->fPvIP3dE = pvImpParams.ip3d.error();
+
+  pCand->fPv2IP3d  = pvImpParams2nd.ip3d.value();
+  pCand->fPv2IP3dE = pvImpParams2nd.ip3d.error();
   
   pCand->fDeltaChi2 = diffChi2;
   
@@ -610,44 +615,56 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	pCand->fTau3d = pCand->fTauxy = -99.;
     }
     // -- mass error from Keith: 
-    pCand->fVar1 = TMath::Sqrt(kinParticle->currentState().kinematicParametersError().matrix()(6,6));
-    //    cout << " cand  with mass " << pCand->fMass << " +/- " << pCand->fVar1 << endl;
+    pCand->fMassE = TMath::Sqrt(kinParticle->currentState().kinematicParametersError().matrix()(6,6));
   }
 
   for (j = 0; j < allTreeTracks.size(); j++) {
     
     TransientTrack fitTrack = daughterParticles[(*kinParticleMap)[allTreeTracks[j].trackIx]]->refittedTransientTrack();
-	TAnaTrack *recTrack = gHFEvent->getRecTrack(allTreeTracks[j].trackIx);
-    
+    //    TAnaTrack *recTrack = gHFEvent->getRecTrack(allTreeTracks[j].trackIx);
+
+    TSimpleTrack *sTrack = gHFEvent->getSimpleTrack(allTreeTracks[j].trackIx);
     pTrack = gHFEvent->addSigTrack();
+
+    TrackBaseRef baseRef(fhTracks, allTreeTracks[j].trackIx);
+    Track trackView(*baseRef);
+
+    fillAnaTrack(pTrack, trackView, allTreeTracks[j].trackIx, -1, fPVCollection.product(), fMuons, 0); 
+    
     pTrack->fIndex = allTreeTracks[j].trackIx;
     pTrack->fMCID = allTreeTracks[j].particleID; // Here, we use the MCID of the sigTrack to store the assumed particle ID for the mass hypothesis
-    pTrack->fPlab = TVector3(fitTrack.track().px(),fitTrack.track().py(),fitTrack.track().pz());
-    pTrack->fDof = fitTrack.ndof();
-    pTrack->fValidHits = fitTrack.numberOfValidHits();
-    pTrack->fChi2 = fitTrack.chi2();
-    pTrack->fQ = fitTrack.charge();
-	pTrack->fMuID = recTrack->fMuID;
-	// get the reco muon if available
-	if (fMuons) {
-		for (MuonCollection::const_iterator muonIt = fMuons->begin(); muonIt != fMuons->end(); ++muonIt) {
-			if ((int)muonIt->track().index() == allTreeTracks[j].trackIx) {
-				Vertex secVertex(RecoVertex::convertPos(kinVertex->vertexState().position()),
-								 kinVertex->vertexState().error().matrix_new(),
-								 kinVertex->chiSquared(),
-								 kinVertex->degreesOfFreedom(),
-								 daughterParticles.size());
-				
-				if (pvIx >= 0 && muon::isTightMuon(*muonIt, (*fPVCollection)[pvIx]))
-					pTrack->fMuID |= 0x1<<15;
-				
-				if (muon::isTightMuon(*muonIt, secVertex))
-					pTrack->fMuID |= 0x1<<16;
-				
-				break;
-			}
-		}
+    pTrack->fRefPlab = TVector3(fitTrack.track().px(),fitTrack.track().py(),fitTrack.track().pz());
+    pTrack->fRefDof = fitTrack.ndof();
+    pTrack->fRefValidHits = fitTrack.numberOfValidHits();
+    pTrack->fRefChi2 = fitTrack.chi2();
+    //    pTrack->fQ = fitTrack.charge();
+    //    pTrack->fMuID = recTrack->fMuID;
+    TAnaMuon *pM = gHFEvent->getSimpleTrackMuon(allTreeTracks[j].trackIx); 
+    if (pM) {
+      pTrack->fMuID = pM->fMuID;
+    } else {
+      pTrack->fMuID = 0;
+    }
+    // get the reco muon if available
+    if (fMuons) {
+      for (MuonCollection::const_iterator muonIt = fMuons->begin(); muonIt != fMuons->end(); ++muonIt) {
+	if ((int)muonIt->track().index() == allTreeTracks[j].trackIx) {
+	  Vertex secVertex(RecoVertex::convertPos(kinVertex->vertexState().position()),
+			   kinVertex->vertexState().error().matrix_new(),
+			   kinVertex->chiSquared(),
+			   kinVertex->degreesOfFreedom(),
+			   daughterParticles.size());
+	  
+	  if (pvIx >= 0 && muon::isTightMuon(*muonIt, (*fPVCollection)[pvIx]))
+	    pTrack->fMuID |= 0x1<<15;
+	  
+	  if (muon::isTightMuon(*muonIt, secVertex))
+	    pTrack->fMuID |= 0x1<<16;
+	  
+	  break;
 	}
+      }
+    }
   }
   
   // fill the closest approaching tracks -- only if this is supposed to be a SV

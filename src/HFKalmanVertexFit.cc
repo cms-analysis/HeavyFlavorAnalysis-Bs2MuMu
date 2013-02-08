@@ -257,7 +257,6 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
 
   pCand->fMinDoca = minDist;
   pCand->fMaxDoca = maxDist;
-  pCand->fVar1    = comp2.M();
   
   // -- fill refitted sig tracks
   Track trk; 
@@ -374,7 +373,6 @@ void HFKalmanVertexFit::doNotFit(vector<Track>  &trackList,
 
   pCand->fMinDoca = minDist;
   pCand->fMaxDoca = maxDist;
-  pCand->fVar1    = comp2.M();
   
   // -- fill original tracks for sig tracks
   for (unsigned int i = 0; i < trackList.size(); ++i) {
