@@ -21,7 +21,7 @@ HFVirtualDecay::HFVirtualDecay(const edm::ParameterSet& iConfig) :
 	fPrimaryVertexLabel(iConfig.getUntrackedParameter<edm::InputTag>("PrimaryVertexLabel", edm::InputTag("offlinePrimaryVertices"))),
 	fBeamSpotLabel(iConfig.getUntrackedParameter<edm::InputTag>("BeamSpotLabel", edm::InputTag("offlineBeamSpot"))),
 	fMuonsLabel(iConfig.getUntrackedParameter<edm::InputTag>("muonsLabel", edm::InputTag("muons"))),
-	fMuonQualityString(iConfig.getUntrackedParameter("muonQualityString",std::string("AllGlobalMuons"))),
+	fMuonQualityString(iConfig.getUntrackedParameter<std::string>("muonQualityString",std::string("AllGlobalMuons"))),
 	fTrackPt(iConfig.getUntrackedParameter<double>("trackPt", 3.0)),
 	fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 1.0)),
 	fDeltaR(iConfig.getUntrackedParameter<double>("deltaR", 99.0)),
