@@ -1837,7 +1837,8 @@ bool candAna::tightMuon(TAnaTrack *pT) {
   bool mucuts(false); 
   if (pT->fMuIndex > -1) {
     TAnaMuon *pM = fpEvt->getMuon(pT->fMuIndex);
-    if (pM->fTimeNdof > 1) mucuts = true; 
+    //fixme    if (pM->fTimeNdof > 1) mucuts = true; 
+    if (pM->fNmatchedStations > 1) mucuts = true; 
     //    if (!muflag) cout << "matched muon stations: " << pM->fTimeNdof << endl;
   }
 
