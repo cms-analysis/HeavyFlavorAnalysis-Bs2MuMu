@@ -25,9 +25,11 @@ trkDump = cms.EDAnalyzer(
     associatorLabel                = cms.untracked.InputTag('TrackAssociatorByHits'),
     doTruthMatching                = cms.untracked.int32(3),
     simTracksLabel                 = cms.untracked.InputTag('allLayer1TrackCands'),
+    dumpSimpleTracks               = cms.untracked.bool(True), 
+    dumpRecTracks                  = cms.untracked.bool(False), 
     loadCalomuons                  = cms.untracked.bool(False),
-	propMuon					   = cms.PSet(
-		useStation2 = cms.bool(False), 
+    propMuon                       = cms.PSet(
+        useStation2 = cms.bool(False), 
         useTrack = cms.string("tracker"),
         useState = cms.string("atVertex"),  # in AOD
         useSimpleGeometry = cms.bool(True), # use just one cylinder and two planes, not all the fancy chambers
@@ -38,25 +40,25 @@ trkDump = cms.EDAnalyzer(
 muonDump = cms.EDAnalyzer(
     "HFDumpMuons",
     verbose         = cms.untracked.int32(0),
-	tracksLabel     = cms.untracked.InputTag("generalTracks"),
+    tracksLabel     = cms.untracked.InputTag("generalTracks"),
     muonsLabel      = cms.untracked.InputTag("muons"),
     calomuonsLabel  = cms.untracked.InputTag("calomuons"),
     doTruthMatching = cms.untracked.int32(0),
     runOnAOD        = cms.untracked.bool(True),
-	maxTrackDist    = cms.untracked.double(0.2),
+    maxTrackDist    = cms.untracked.double(0.2),
     # Configuration for the extrapolation at the muon system 
     propM1 = cms.PSet(
-                      useStation2 = cms.bool(False), 
-                      useTrack = cms.string("tracker"),
-                      useState = cms.string("atVertex"),  # in AOD
-                      useSimpleGeometry = cms.bool(True), # use just one cylinder and two planes, not all the fancy chambers
-                      ),
+        useStation2 = cms.bool(False), 
+        useTrack = cms.string("tracker"),
+        useState = cms.string("atVertex"),  # in AOD
+        useSimpleGeometry = cms.bool(True), # use just one cylinder and two planes, not all the fancy chambers
+        ),
     propM2 = cms.PSet(
-                      useStation2 = cms.bool(True), 
-                      useTrack = cms.string("tracker"),
-                      useState = cms.string("atVertex"),  # in AOD
-                      useSimpleGeometry = cms.bool(True), # use just one cylinder and two planes, not all the fancy chambers
-                      )
+        useStation2 = cms.bool(True), 
+        useTrack = cms.string("tracker"),
+        useState = cms.string("atVertex"),  # in AOD
+        useSimpleGeometry = cms.bool(True), # use just one cylinder and two planes, not all the fancy chambers
+        )
     )
 
 # ----------------------------------------------------------------------
