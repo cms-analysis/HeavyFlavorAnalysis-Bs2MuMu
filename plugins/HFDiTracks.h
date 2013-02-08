@@ -1,6 +1,8 @@
 #ifndef _HFDITRACKS_h_
 #define _HFDITRACKS_h_
 
+#include <string>
+
 #include "HeavyFlavorAnalysis/Bs2MuMu/plugins/HFVirtualDecay.h"
 
 class HFDiTracks : public HFVirtualDecay {
@@ -19,7 +21,6 @@ class HFDiTracks : public HFVirtualDecay {
 		double fMassHigh;
 		
 		int fNbrMuons;
-		
 		bool fCloseToMuons;
 };
 

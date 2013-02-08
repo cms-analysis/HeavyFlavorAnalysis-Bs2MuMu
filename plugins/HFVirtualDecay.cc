@@ -21,6 +21,7 @@ HFVirtualDecay::HFVirtualDecay(const edm::ParameterSet& iConfig) :
 	fPrimaryVertexLabel(iConfig.getUntrackedParameter<edm::InputTag>("PrimaryVertexLabel", edm::InputTag("offlinePrimaryVertices"))),
 	fBeamSpotLabel(iConfig.getUntrackedParameter<edm::InputTag>("BeamSpotLabel", edm::InputTag("offlineBeamSpot"))),
 	fMuonsLabel(iConfig.getUntrackedParameter<edm::InputTag>("muonsLabel", edm::InputTag("muons"))),
+	fMuonQualityString(iConfig.getUntrackedParameter("muonQualityString",std::string("AllGlobalMuons"))),
 	fTrackPt(iConfig.getUntrackedParameter<double>("trackPt", 3.0)),
 	fMuonPt(iConfig.getUntrackedParameter<double>("muonPt", 1.0)),
 	fDeltaR(iConfig.getUntrackedParameter<double>("deltaR", 99.0)),
@@ -40,6 +41,7 @@ void HFVirtualDecay::dumpConfiguration()
 	cout << "---  PrimaryVertexLabel          " << fPrimaryVertexLabel << endl;
 	cout << "---  BeamSpotLabel               " << fBeamSpotLabel << endl;
 	cout << "---  muonsLabel                  " << fMuonsLabel << endl;
+	cout << "---  muonQuality:                " << fMuonQualityString << endl;
 	
 	cout << "---  trackPt                     " << fTrackPt << endl;
 	cout << "---  muonPt                      " << fMuonPt << endl;
@@ -93,6 +95,9 @@ void HFVirtualDecay::analyze(const edm::Event &iEvent, const edm::EventSetup &iS
 	fListBuilder->setMaxD0(fMaxD0);
 	fListBuilder->setMaxDz(fMaxDz);
 	fListBuilder->setMinPt(fTrackPt);
+
+	muon::SelectionType muonType = muon::selectionTypeFromString(fMuonQualityString);
+	fListBuilder->setMuonQuality(muonType); 
 	
 	// -- construct the sequential vertex fitter
 	fSequentialFitter.reset(new HFSequentialVertexFit(fTracksHandle, NULL, fTTB.product(), vertexHandle, fMagneticField, fBeamSpot, fVerbose));
