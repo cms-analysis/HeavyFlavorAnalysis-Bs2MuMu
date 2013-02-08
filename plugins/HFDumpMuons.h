@@ -20,6 +20,8 @@
 
 #include "MuonAnalysis/MuonAssociators/interface/PropagateToMuon.h"
 
+#include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaMuon.hh"
+
 
 class TFile;
 class TTree;
@@ -30,10 +32,6 @@ class HFDumpMuons : public edm::EDAnalyzer {
  public:
   explicit HFDumpMuons(const edm::ParameterSet&);
   ~HFDumpMuons();
-
-  
-  
-  static int                muonID(const reco::Muon &);
   
  private:
   virtual void              beginJob();
@@ -42,6 +40,7 @@ class HFDumpMuons : public edm::EDAnalyzer {
   virtual void              endJob();
   void                      fillMuon(const reco::Muon& tr, int type);
   void                      fillCaloMuon(const reco::CaloMuon& tr, int type);
+  void                      extrapolateTracks(); 
   std::vector<unsigned int> muonStatHits(const reco::Track& tr);
   edm::InputTag             fTracksLabel;
   edm::InputTag             fMuonsLabel;
@@ -54,9 +53,9 @@ class HFDumpMuons : public edm::EDAnalyzer {
 
   int                       fVerbose, fDoTruthMatching; 
   bool                      fRunOnAOD;
-  
-  PropagateToMuon           fpropM1, fpropM2;
 
+  PropagateToMuon           fpropM1, fpropM2;
+  std::vector<xpTrack>     fXpTracks;
 };
 
 #endif
