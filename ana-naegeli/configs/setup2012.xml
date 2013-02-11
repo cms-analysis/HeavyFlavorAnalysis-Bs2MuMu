@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ana>
-	<ana-decay name=bsmm>
-		<datafile>datafile</datafile>
-		<acceptance>acceptancefile</acceptance>
-		<mcfile>themcpath</mcfile>
-		<variables>cuts/mvavars</variables>
+	<ana-decay name="bsmm">
+		<datafile>/Users/cn/CMSData/Reduced/cms-Run2012-sig.root</datafile>
+		<acceptance>/Users/cn/CMSData/Reduced/cms-BsToMuMu_BsFilter.root</acceptance>
+		<mcfile>/Users/cn/CMSData/Reduced/cms-BsToMuMu_BsFilter.root</mcfile>
+		<variables>cuts/mvavars.def</variables>
+		<style>blue</style>
+		<preselection>candidate == 301313</preselection>
+		<mcselection>true_decay == 1</mcselection>
+		<dataselection>5.05 &lt; mass &amp;&amp; mass &lt; 5.15 || 5.5 &lt; mass &amp;&amp; mass &lt; 5.6</dataselection>
 	</ana-decay>
 </ana>
