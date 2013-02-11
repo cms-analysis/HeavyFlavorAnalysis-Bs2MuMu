@@ -1,6 +1,7 @@
 #ifndef PDF_ANALYSIS_H
 #define PDF_ANALYSIS_H
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <sstream>
@@ -128,6 +129,8 @@ public:
   int supercatdim;
 
 protected:
+  string default_console_color;
+  string red_color_bold;
   string meth_;
   string ch_s_;
   int ch_i_;

@@ -41,7 +41,7 @@ pdf_fitData::pdf_fitData(bool print, string input_estimates, string range, int B
   if (simul_ && BF_ == 0) pdfname = "pdf_ext_simul_simple";
   if (simul_ && BF_ > 0 && !syst) pdfname = "pdf_ext_simul_noconstr";
   if (simul_ && BF_ > 0 && syst) pdfname = "pdf_ext_simul";
-  cout << ">>>>>>>>>>>>>>> the name of the fitting pdf is " << pdfname << " <<<<<<<<<<<<<<<<<<<" << endl;
+  cout << red_color_bold << ">>>>>>>>>>>>>>> the name of the fitting pdf is " << pdfname << " <<<<<<<<<<<<<<<<<<<" << default_console_color << endl;
 
   NExp = nexp;
   Bd = bd;
@@ -177,13 +177,12 @@ bool pdf_fitData::parse(char *cutName, float cut) {
 
 RooFitResult* pdf_fitData::fit_pdf(bool do_not_import, string pdf_name) {
 	if (pdf_name == "") pdf_name = pdfname;
-  cout << "fitting fit" << endl;
   if (!simul_) {
   	pdf_name = "pdf_ext_total";
     RooAbsData* subdata = global_data->reduce(Form("etacat==etacat::etacat_%d", channel));
     global_data = (RooDataSet*)subdata;
   }
-  cout << ">>>>>>>>>>>>>>>>> fitting " << global_data->GetName() << " in range " << range_ << " with " << pdf_name << endl;
+  cout << red_color_bold << ">>>>>>>>>>>>>>>>> fitting " << global_data->GetName() << " in range " << range_ << " with " << pdf_name << default_console_color << endl;
   global_data->Print();
   ws_->pdf(pdf_name.c_str())->Print();
   RFR = ws_->pdf(pdf_name.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none()/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
@@ -252,7 +251,7 @@ void pdf_fitData::print() {
 void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws, RooDataSet* rds_) {
   if (ws == 0) ws = ws_;
   if (rds_ == 0) rds_ = global_data;
-  cout <<"printing"<< endl;
+  cout << red_color_bold << "printing" << default_console_color << endl;
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < bdt_index_max(i); j++) {
       /// all texts
@@ -480,7 +479,7 @@ void pdf_fitData::FillRooDataSet(RooDataSet* dataset, bool cut_b, vector <double
 }
 
 void pdf_fitData::define_dataset() {
-  cout << "defining dataset" << endl;
+  cout << red_color_bold << "defining dataset" << default_console_color << endl;
   RooArgSet varlist(*Mass, *MassRes, *channels_cat);
   if (bdt_fit_) varlist.add(*bdt);
   if (simul_bdt_ || simul_all_) varlist.add(*bdt_cat);
@@ -489,7 +488,7 @@ void pdf_fitData::define_dataset() {
 }
 
 void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TTree* tree, int offset) {
-  cout << "making dataset" << endl;
+  cout << red_color_bold << "making dataset" << default_console_color << endl;
 
   if (!random) FillRooDataSet(global_data, cut_b, cut_, cuts, tree, offset);
 
@@ -555,7 +554,7 @@ void pdf_fitData::make_pdf_input(string root_s) {
 }
 
 void pdf_fitData::make_pdf() {
-  cout << "making pdf" << endl;
+  cout << red_color_bold << "making pdf" << default_console_color << endl;
   if (random) {
     if (simul_ && !simul_bdt_ && !simul_all_) {
       for (int i = 0; i < channels; i++) {
@@ -590,7 +589,7 @@ void pdf_fitData::make_pdf() {
 }
 
 void pdf_fitData::set_final_pdf() {
-	cout << "setting final pdf" << endl;
+	cout << red_color_bold << "setting final pdf" << default_console_color << endl;
 	define_perchannel_pdf();
 	if (simul_) define_simul();
 	ws_->Print();
@@ -845,7 +844,7 @@ void pdf_fitData::save() {
 }
 
 void pdf_fitData::significance() {
-
+	cout << red_color_bold << "significance" << default_console_color << endl;
 //  ProfileLikelihoodTestStat::SetAlwaysReuseNLL(true);
 //  RatioOfProfiledLikelihoodsTestStat::SetAlwaysReuseNLL(true);
 	if (sign < 0) return;
@@ -1310,7 +1309,7 @@ void pdf_fitData::randomize_constraints(RooWorkspace* ws) {
 
 void pdf_fitData::extract_N_inRanges() {
   if (BF_ < 2) return;
-  cout << "extracting events in ranges..." << endl;
+  cout << red_color_bold << "extracting events in ranges..." << default_console_color << endl;
   string full_output = "output/yields.tex";
   FILE* file_out = fopen(full_output.c_str(), "w");
 

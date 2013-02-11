@@ -35,11 +35,14 @@ pdf_analysis::pdf_analysis(bool print, string ch_s, string range, int BF, bool S
   randomsyst = false;
 
   if (simul_all_) channels_bdt = 4;
+  default_console_color = "\033[0m";
+  red_color_bold = "\033[1;31m";
+
   initialize();
 }
 
 void pdf_analysis::initialize () {
-  cout << "inizialization" << endl;
+  cout << red_color_bold << "initialization" << default_console_color << endl;
 
   source.resize(5);
   source[0] = "bs";
@@ -156,7 +159,7 @@ void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool su
 //  rds_ = subdata;
   string rdh_name = subdata->GetName();
   cout << "**************************" << endl;
-  cout << "fitting " << rdh_name << endl;
+  cout << red_color_bold << "fitting " << rdh_name << default_console_color << endl;
   subdata->Print();
   cout << " with " << pdf_name << ":" << endl;
   ws_->pdf( pdf_name.c_str())->Print();
@@ -531,40 +534,30 @@ void pdf_analysis::print(RooAbsData* data, string output) {
     if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue));
   }
   else {
-    if (!simul_) {
-      ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE));
-      if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE));
-    }
-    else {
-      ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE));
-      if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE));
-    }
+    ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE));
+    if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue), ProjWData(RooArgSet(*ws_->var("MassRes")), *subdata_res, kFALSE));
     TH1* mass_eta_h;
     mass_eta_h = ws_->pdf(pdf_name.c_str())->createHistogram("fit", *ws_->var("Mass"), Binning(50), YVar(*ws_->var("MassRes"), Binning(30))) ;
     mass_eta_h->SetLineColor(kBlue) ;
     mass_eta_h->GetXaxis()->SetTitleOffset(2.) ;
     mass_eta_h->GetYaxis()->SetTitleOffset(2.) ;
     mass_eta_h->GetZaxis()->SetTitleOffset(2.5) ;
-    RooPlot* frame = Mass->frame() ;
-    for (Int_t ibin=0 ; ibin<100; ibin+=20) {
-      ws_->var("eta")->setBin(ibin) ;
-      ws_->pdf(pdf_name.c_str())->plotOn(frame, Normalization(5)) ;
-    }
-    TCanvas* cetad = new TCanvas("cetad", "cetad", 1200, 600);
-    cetad->Divide(2);
-    cetad->cd(1);
-    mass_eta_h->Draw("surf") ;
-    cetad->cd(2);
+    TCanvas* cetad_surf = new TCanvas("cetad_surf", "cetad_surf", 600, 600);
+    mass_eta_h->Draw("surf");
+    cetad_surf->Print( (get_address("Mass_MassEta", pdf_name) + ".gif").c_str());
+    cetad_surf->Print( (get_address("Mass_MassEta", pdf_name) + ".pdf").c_str());
+
+    TCanvas* cetad_mres = new TCanvas("cetad_mres", "cetad_mres", 600, 600);
     RooPlot *rp_res = ws_->var("MassRes")->frame();
     ws_->data(Form("MassRes_rdh_%s", output.c_str()))->plotOn(rp_res);
-    rp_res->Draw();
-    cetad->Print( (get_address("MassEta", pdf_name) + ".gif").c_str());
-    cetad->Print( (get_address("MassEta", pdf_name) + ".pdf").c_str());
+    cetad_mres->Draw();
+    cetad_mres->Print( (get_address("MassEta", pdf_name) + ".gif").c_str());
+    cetad_mres->Print( (get_address("MassEta", pdf_name) + ".pdf").c_str());
 
-    delete cetad;
-    delete frame;
+    delete cetad_surf;
     delete mass_eta_h;
     delete rp_res;
+    delete cetad_mres;
   }
   if(!no_legend) {
     ws_->pdf(pdf_name.c_str())->paramOn(rp, Layout(0.50, 0.9, 0.9));
@@ -979,7 +972,7 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
     eff_rel_err[i].resize(channels_bdt);
   }
   mass_scale_sys.resize(2);
-  cout << "channels = " << channels << "; channels_bdt = " << channels_bdt << "; channels_all = " << channels_all << endl;
+  cout << red_color_bold << "channels = " << channels << "; channels_bdt = " << channels_bdt << "; channels_all = " << channels_all << default_console_color << endl;
   parse_external_numbers(numbers_filename);
   parse_efficiency_numbers();
   if (channels == 4) parse_efficiency_numbers(2);
@@ -1077,6 +1070,8 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
       if (found != string::npos) N_bu_err[i+offset][0] = number;
     }
   }
+
+  /// HACK!!!!! we do not know eff and yields for the different bdt categories for the normalization channel
   for (int i = 0; i < channels_; i++) {
     for (int j = 1; j < bdt_index_max(i+offset); j++) {
       eff_bd_val[i+offset][j] = eff_bd_val[i+offset][0];

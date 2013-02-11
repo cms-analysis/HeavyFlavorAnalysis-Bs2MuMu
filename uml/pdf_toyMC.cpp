@@ -105,7 +105,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
       }
     }
   }
-  cout << "BEGINNING EXPERIMENTS!" << endl;
+  cout << red_color_bold << "BEGINNING EXPERIMENTS!" << default_console_color << endl;
   for (int k = 1; k <= NExp; k++) {
     if (k % 100 == 0) cout << "Exp # " << k << " / " << NExp << endl;
     double printlevel = -1;
@@ -284,7 +284,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
 //    delete RFR;
     delete ws_temp;
   }
-  cout << "END OF EXPERIMENTS!" << endl;
+  cout << red_color_bold << "END OF EXPERIMENTS!" << default_console_color << endl;
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < bdt_index_max(i); j++) {
       if (BF_ == 0) fit_pulls(pull_bs[i][j], pull_rds_bs[i][j], i, j);
