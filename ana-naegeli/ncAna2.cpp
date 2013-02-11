@@ -6,14 +6,11 @@
  */
 
 #include "ncAna2.h"
-#include "ncCut.h"
 #include "ncVarReader.h"
 
-#include <set>
 #include <iostream>
 #include <libxml/parser.h>
 
-#include <TFile.h>
 #include <TTree.h>
 #include <TString.h>
 #include <TCanvas.h>
@@ -22,7 +19,7 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
-ncAna2::ncAna2() : fConfigFile("configs/setup2012.xml"), fDefaultBinning(50)
+ncAna2::ncAna2() : fConfigFile("configs/setup2012.xml"), fDefaultBinning(50), fWorkFile("ANA.root","update")
 {
 } // ncAna2()
 
@@ -32,7 +29,7 @@ void ncAna2::readConfig()
 	xmlNodePtr node;
 	
 	// remove the old configuration
-	fAnalyses.empty();
+	fAnalyses.clear();
 	
 	if (!doc) {
 		cerr << Form("Unable to open xml file '%s'",fConfigFile.c_str()) << endl;
@@ -43,6 +40,14 @@ void ncAna2::readConfig()
 	if (xmlStrcmp(node->name, (const xmlChar*)"ana") != 0) {
 		cerr << Form("No 'ana' topnode found in '%s'",fConfigFile.c_str()) << endl;
 		goto bail;
+	}
+	
+	for (node = node->xmlChildrenNode; node != NULL; node = node->next) {
+		if (xmlStrcmp(node->name, (const xmlChar*)"ana-decay") == 0) {
+			ncConfig conf(node);
+			conf.dump();
+			fAnalyses.push_back(conf);
+		}
 	}
 	
 bail:
@@ -71,6 +76,9 @@ void ncAna2::showVarPlots(ncConfig *conf)
 	TTree *dataTree = (TTree*)dataFile->Get("T");
 	TTree *mcTree = (TTree*)mcFile->Get("T");
 	TCut presel = conf->getPreselection();
+	TCut mcCut = conf->getMCSelection();
+	TCut dataCut = conf->getDataSelection();
+	TCut cut;
 	TCanvas *c;
 	
 	try {
@@ -88,24 +96,40 @@ void ncAna2::showVarPlots(ncConfig *conf)
 	
 	vars = *reader.getVars(0);
 	
+	fWorkFile.cd();
 	// show the histogram
 	for (it = vars.begin(); it != vars.end(); ++it) {
+		cout << "======================" << endl;
+		cout << "Processing:" << endl;
+		it->dump();
+		cout << "======================" << endl;
+		
+		// build the additional cut
+		cut = buildCut(&vars, it->getName());
 		TH1D* histoMC = new TH1D(Form("%s_mc",it->getName()),"",fDefaultBinning,it->getDomain().first,it->getDomain().second);
 		TH1D* histoData = new TH1D(Form("%s_data",it->getName()),"",fDefaultBinning,it->getDomain().first,it->getDomain().second);
 		
 		setHistoStyle(histoMC,conf->getStyle());
 		
-		dataTree->Draw(Form("%s >> %s_data",it->getFormula(),it->getName()), presel);
-		mcTree->Draw(Form("%s >> %s_mc",it->getFormula(),it->getName()), presel);
+		dataTree->Draw(Form("%s >> %s_data",it->getFormula(),it->getName()), presel && cut && dataCut);
+		mcTree->Draw(Form("%s >> %s_mc",it->getFormula(),it->getName()), presel && cut && mcCut);
+		
+		// normalize to unity
+		histoMC->Scale(1./histoMC->Integral());
+		histoData->Scale(1./histoData->Integral());
 		
 		c = new TCanvas;
 		histoMC->Draw();
 		histoData->Draw("sameE1");
+		
+		histoMC->Write(histoMC->GetName(),TObject::kOverwrite);
+		histoData->Write(histoData->GetName(), TObject::kOverwrite);
 	}
 	
 bail:
 	if (dataFile) delete dataFile;
 	if (mcFile) delete mcFile;
+	return;
 } // showVarPlots()
 
 void ncAna2::setHistoStyle(TH1D *h, const char *style)
@@ -114,3 +138,18 @@ void ncAna2::setHistoStyle(TH1D *h, const char *style)
 	h->SetFillColor(kBlue);
 	h->SetFillStyle(3005);
 } // setHistoStyle()
+
+TCut ncAna2::buildCut(std::set<ncCut> *vars, const char *exclude)
+{
+	TCut cut;
+	std::set<ncCut>::const_iterator it;
+	
+	for (it = vars->begin(); it != vars->end(); ++it) {
+		if (strcmp(it->getName(),exclude) == 0)
+			continue;
+		
+		cut = cut && TCut(Form("%e < %s && %s < %e",it->getCut().first,it->getFormula(),it->getFormula(),it->getCut().second));
+	}
+	
+	return cut;
+} // buildCut()

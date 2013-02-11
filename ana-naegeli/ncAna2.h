@@ -9,11 +9,14 @@
 #define NCANA2_H
 
 #include "ncConfig.h"
+#include "ncCut.h"
 
+#include <set>
 #include <string>
 #include <vector>
 
 #include <TH1D.h>
+#include <TFile.h>
 
 class ncAna2 {
 	
@@ -24,17 +27,21 @@ class ncAna2 {
 		void showAllVarPlots();
 		void showVarPlots(ncConfig *conf);
 	
+	public:
+		// static routines
+		static void setHistoStyle(TH1D *h, const char *style);
+	
 	private:
 		std::string fConfigFile;
 	
 	private:
 		void readConfig();
+		TCut buildCut(std::set<ncCut> *vars, const char *exclude);
 		std::vector<ncConfig> fAnalyses;
 	
 	private:
 		int fDefaultBinning;
-		
-		void setHistoStyle(TH1D *h, const char *style);
+		TFile fWorkFile;
 };
 
 #endif
