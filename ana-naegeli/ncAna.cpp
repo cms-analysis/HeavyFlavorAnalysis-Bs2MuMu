@@ -37,7 +37,7 @@
 using std::cout;
 using std::endl;
 
-ncAna::ncAna() : fNormFileName(""), fSignalDataFileName("/Users/cn/CMSData/Reduced/cms-Run2012-sig.root"), fMCFileName("/Users/cn/CMSData/Reduced/mc-newvars.root"), fPeakFileName("/Users/cn/CMSData/Reduced/production-2e33-general.root"), fAccFileName("/Users/cn/CMSData/Reduced/production-2e33-acceptance.root"), fNbrMassBins(50), fMassRange(4.9,5.9), fNbrSidebandBins(50), fLowNoSidebandRange(5.05,5.15), fHighNoSidebandRange(5.4,5.5), fLowCoSidebandRange(5.1,5.2), fHighCoSidebandRange(5.5,5.6), fBlindedRegion(5.2,5.45), fBsWindowRegion(5.3,5.45),fBdWindowRegion(5.2,5.3), fNoSignalRegion(5.2,5.35), fFitRangeNorm(4.95,5.6), fPlotDir("plots"), fSystematicsTable(NULL), fMisIDKaonPion(0.001,0.0002,0.0002), fMisIDProton(0.0005,0.0001,0.0001), fVarFileName("cuts/newvars.def")
+ncAna::ncAna() : fNormFileName(""), fSignalDataFileName("/Users/cn/CMSData/Reduced/cms-Run2012-sig.root"), fDataFileName("/Users/cn/CMSData/Reduced/data-newvars.root"), fMCFileName("/Users/cn/CMSData/Reduced/mc-newvars.root"), fPeakFileName("/Users/cn/CMSData/Reduced/production-2e33-general.root"), fAccFileName("/Users/cn/CMSData/Reduced/production-2e33-acceptance.root"), fNbrMassBins(50), fMassRange(4.9,5.9), fNbrSidebandBins(50), fLowNoSidebandRange(5.05,5.15), fHighNoSidebandRange(5.4,5.5), fLowCoSidebandRange(5.1,5.2), fHighCoSidebandRange(5.5,5.8), fBlindedRegion(5.2,5.45), fBsWindowRegion(5.3,5.45),fBdWindowRegion(5.2,5.3), fNoSignalRegion(5.2,5.35), fFitRangeNorm(4.95,5.6), fPlotDir("plots"), fSystematicsTable(NULL), fMisIDKaonPion(0.001,0.0002,0.0002), fMisIDProton(0.0005,0.0001,0.0001), fVarFileName("cuts/newvars.def")
 {
 	using std::string;
 	using std::make_pair;
@@ -394,13 +394,13 @@ void ncAna::processVarSet(std::set<ncCut> *varSet, const char *name)
 	tmpFile->cd();
 	
 	// extracting signal
-	cut = cutPresel && TCut("candidate == 301313") && cutSigTruth(true) && cutTrigger(true);
+	cut = cutPresel && TCut("candidate == 1313") && cutSigTruth(true) && (cutTrigger(true, true) || cutTrigger(true, false));
 	cout << "Selecting signal..." << flush;
 	mcTree = mcTree->CopyTree(cut.GetTitle());
 	cout << "	done" << endl;
 	
 	// extracting background
-	cut = cutPresel && TCut("candidate == 301313") && (TCut(Form("%e < mass && mass < %e", fLowNoSidebandRange.first, fLowNoSidebandRange.second)) || TCut(Form("%e < mass && mass < %e", fHighCoSidebandRange.first, fHighCoSidebandRange.second))) && cutTrigger(true);
+	cut = cutPresel && TCut("candidate == 1313") && (TCut(Form("%e < mass && mass < %e", fLowNoSidebandRange.first, fLowNoSidebandRange.second)) || TCut(Form("%e < mass && mass < %e", fHighCoSidebandRange.first, fHighCoSidebandRange.second))) && (cutTrigger(true, true) || cutTrigger(true, false));
 	cout << "Selecting background..." << flush;
 	dataTree = dataTree->CopyTree(cut.GetTitle());
 	cout << "	done" << endl;
