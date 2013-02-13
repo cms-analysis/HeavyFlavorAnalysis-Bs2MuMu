@@ -1,5 +1,10 @@
 import FWCore.ParameterSet.Config as cms
 
+HFHighPurityTracks = cms.EDFilter("TrackSelector",
+                                  src = cms.InputTag("generalTracks"),
+                                  cut = cms.string('quality("highPurity") && pt > 0.5 ')
+                                  )
+
 # ----------------------------------------------------------------------
 stuffDump = cms.EDAnalyzer(
     "HFDumpStuff",
@@ -95,5 +100,6 @@ l1trep = cms.EDAnalyzer(
 # Sequences
 # ######################################################################
 #recoStuffSequence     = cms.Sequence(stuffDump*trkDump*muonDump*triggerDump*hltrep*l1trep)
-recoStuffSequence     = cms.Sequence(stuffDump*trkDump*muonDump*triggerDump)
+#recoStuffSequence     = cms.Sequence(stuffDump*trkDump*muonDump*triggerDump)
+recoStuffSequence     = cms.Sequence(HFHighPurityTracks*stuffDump*trkDump*muonDump*triggerDump)
 
