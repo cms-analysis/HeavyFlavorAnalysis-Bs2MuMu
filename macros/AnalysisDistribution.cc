@@ -269,7 +269,7 @@ TH1D* AnalysisDistribution::sbsDistributionExpoErrGauss(const char *variable, co
 
   //  cout << "fVerbose: " << fVerbose << endl;
 
-  TCanvas *c0;
+  TCanvas *c0(0);
   if (fVerbose > 0) {
     gStyle->SetOptTitle(1);
     c0 = (TCanvas*)gROOT->FindObject("c1"); 
@@ -372,7 +372,7 @@ TH1D* AnalysisDistribution::sbsDistributionPol1ErrGauss(const char *variable, co
   
   //  cout << "fVerbose: " << fVerbose << endl;
 
-  TCanvas *c0;
+  TCanvas *c0(0);
   if (fVerbose > 0) {
     gStyle->SetOptTitle(1);
     gStyle->SetOptFit(11111);
@@ -481,7 +481,7 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
   fVerbose = 1; 
   cout << "fVerbose: " << fVerbose << endl;
 
-  TCanvas *c0;
+  TCanvas *c0(0);
   if (fVerbose > 0) {
     gStyle->SetOptTitle(1);
     c0 = (TCanvas*)gROOT->FindObject("c1"); 
@@ -610,7 +610,7 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
 //
 //  cout << "fVerbose: " << fVerbose << endl;
 //
-  TCanvas *c0;
+  TCanvas *c0(0);
   if (fVerbose > 0) {
     gStyle->SetOptTitle(1);
     c0 = (TCanvas*)gROOT->FindObject("c1");

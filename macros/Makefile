@@ -40,7 +40,7 @@ RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 #########
 # FILES #
 #########
-READER = treeReader01.o bmmReader.o bmmSignalReader.o bmmNormalizationReader.o bmmBs2JpsiPhiReader.o massReader.o copyReader.o muCharmReader.o dpReader.o d0Reader.o triggerValidation.o ksReader.o genLevel.o impactReader.o anaBmm.o AnalysisCuts.o AnalysisDistribution.o initFunc.o HistCutEfficiency.o pixelReader.o
+READER = treeReader01.o massReader.o ksReader.o copyReader.o  genLevel.o impactReader.o AnalysisCuts.o AnalysisDistribution.o initFunc.o HistCutEfficiency.o pixelReader.o
 READERDICT = ${READER:.o=Dict.o}
 
 SUPPORTCLASSES = mclimit_csm.o
@@ -92,7 +92,7 @@ bin/cls: lib/libAnaClasses.so obj/cls.o lib/libAna00.so
 	$(LD) $(LDFLAGS) -o bin/cls $(GLIBS) obj/cls.o lib/libAnaClasses.so lib/libAna00.so lib/libUtil.so
 
 clean:
-	rm -f obj/*.o obj/*.d *Dict.* lib/libAna00.so lib/libUtil.so lib/libNCMVA.so
+	rm -f obj/*.o obj/*.d *Dict.* lib/libAna00.so lib/libUtil.so lib/libNCMVA.so lib/libAnaClasses.so
 
 cleanall: clean
 	rm -f bin/runTreeReaders bin/runMergeTrees 

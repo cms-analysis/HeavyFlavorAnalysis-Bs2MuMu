@@ -13,17 +13,9 @@
 #include "TRandom.h"
 #include "TUnixSystem.h"
 
-#include "bmmReader.hh"
-#include "bmmSignalReader.hh"
-#include "bmmNormalizationReader.hh"
-#include "bmmBs2JpsiPhiReader.hh"
-#include "dpReader.hh"
-#include "d0Reader.hh"
 #include "massReader.hh"
 #include "ksReader.hh"
 #include "copyReader.hh"
-#include "muCharmReader.hh"
-#include "triggerValidation.hh"
 #include "genLevel.hh"
 #include "impactReader.hh"
 #include "pixelReader.hh"
@@ -193,17 +185,9 @@ int main(int argc, char *argv[]) {
 
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
   treeReader01 *a = NULL;
-  if (readerName == "bmmReader") a = new bmmReader(chain, TString(evtClassName));
-  else if (readerName == "bmmSignalReader") a = new bmmSignalReader(chain,TString(evtClassName));
-  else if (readerName == "bmmNormalizationReader") a = new bmmNormalizationReader(chain,TString(evtClassName));
-  else if (readerName == "bmmBs2JpsiPhiReader") a = new bmmBs2JpsiPhiReader(chain,TString(evtClassName));
-  else if (readerName == "massReader") a = new massReader(chain,TString(evtClassName));
+  if (readerName == "massReader") a = new massReader(chain,TString(evtClassName));
   else if (readerName == "ksReader") a = new ksReader(chain,TString(evtClassName));
-  else if (readerName == "dpReader") a = new dpReader(chain,TString(evtClassName));
-  else if (readerName == "d0Reader") a = new d0Reader(chain,TString(evtClassName));
   else if (readerName == "copyReader") a = new copyReader(chain,TString(evtClassName));
-  else if (readerName == "muCharmReader") a = new muCharmReader(chain,TString(evtClassName));
-  else if (readerName == "triggerValidation") a = new triggerValidation(chain,TString(evtClassName));
   else if (readerName == "genLevel") a = new genLevel(chain,TString(evtClassName));
   else if (readerName == "impactReader") a = new impactReader(chain,TString(evtClassName));
   else if (readerName == "pixelReader") a = new pixelReader(chain,TString(evtClassName));
