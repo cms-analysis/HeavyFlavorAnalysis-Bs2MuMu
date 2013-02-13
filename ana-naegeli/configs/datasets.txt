@@ -1,0 +1,9 @@
+# folder   name   globaltag   dataset
+signal   Bs2MuMu   START53_V7F   /BsToMuMu_BsFilter_8TeV-pythia6-evtgen/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+signal   Bd2MuMu   START53_V7F   /BdToMuMu_BdFilter_8TeV-pythia6-evtgen/Summer12_DR53X-PU_S10_START53_V7A-v1/AODSIM
+collisions   Run2012A-13Jul2012-v1   FT_53_V6_AN3   /MuOnia/Run2012A-13Jul2012-v1/AOD
+collisions   Run2012A-recover-06Aug2012-v1   FT_53_V6C_AN3   /MuOnia/Run2012A-recover-06Aug2012-v1/AOD
+collisions   Run2012B-13Jul2012-v1   FT_53_V6_AN3   /MuOnia/Run2012B-13Jul2012-v1/AOD
+collisions   Run2012C-24Aug2012-v1   FT_53_V10_AN3   /MuOnia/Run2012C-24Aug2012-v1/AOD
+collisions   Run2012C-PromptReco-v2   GR_P_V41_AN3   /MuOnia/Run2012C-PromptReco-v2/AOD
+collisions   Run2012D-PromptReco-v1   GR_P_V42_AN3   /MuOnia/Run2012D-PromptReco-v1/AOD
