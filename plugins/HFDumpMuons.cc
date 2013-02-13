@@ -2,6 +2,7 @@
 #include "HFDumpMuons.h"
 
 #include <iostream>
+#include <cmath>
 
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "DataFormats/Common/interface/Handle.h"
@@ -36,6 +37,9 @@
 
 #include "HeavyFlavorAnalysis/Bs2MuMu/interface/HFDumpUtilities.hh"
 
+#include "RecoVertex/KalmanVertexFit/interface/KalmanVertexFitter.h"
+#include "CommonTools/Statistics/interface/ChiSquared.h"
+
 #include <TFile.h>
 #include <TH1.h>
 
@@ -59,6 +63,9 @@ HFDumpMuons::HFDumpMuons(const edm::ParameterSet& iConfig):
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
   fCaloMuonsLabel(iConfig.getUntrackedParameter<InputTag>("calomuonsLabel")),
   fMaxTrackDistToStore(iConfig.getUntrackedParameter<double>("maxTrackDist",0.2)),
+  fDocaVertex(iConfig.getUntrackedParameter<double>("docaVertex",0.05)),
+  fKeepBest(iConfig.getUntrackedParameter<int>("keepBest",3)),
+  fMaxCandTracks(iConfig.getUntrackedParameter<int>("maxCandTracks",3)),
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1)),
   fRunOnAOD(iConfig.getUntrackedParameter<bool>("runOnAOD",false)),
@@ -74,6 +81,9 @@ HFDumpMuons::HFDumpMuons(const edm::ParameterSet& iConfig):
   cout << "---  fVerbose:                " << fVerbose << endl;
   cout << "---  fRunOnAOD:               " << fRunOnAOD << endl;
   cout << "---  fMaxTrackDistToStore:    " << fMaxTrackDistToStore << endl;
+  cout << "---  docaVertex:              " << fDocaVertex << endl;
+  cout << "---  keepBest:                " << fKeepBest << endl;
+  cout << "---  maxCandTracks:           " << fMaxCandTracks << endl;
   cout << "----------------------------------------------------------------------" << endl;
 }
 
@@ -282,6 +292,15 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
     }
   }
   
+  // do the muon vertex analysis
+  std::set<unsigned> trks;
+  double prob = -1.0;
+  if (iTrack.isNonnull()) {
+	  trks.insert(iTrack.index());
+	  findVertex(pM,&trks,&prob);
+	  pM->fVtxProb = prob;
+	  pM->fVtxTracks = trks;
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -313,6 +332,77 @@ void HFDumpMuons::fillCaloMuon(const reco::CaloMuon& rm, int im) {
   } 
 
 }
+
+void HFDumpMuons::findVertex(TAnaMuon *anaMu, std::set<unsigned> *trkIcs, double *prob)
+{
+	std::vector<TransientTrack> transTracks;
+	std::vector<std::pair<double,unsigned> > bestTracks;
+	std::map<int,float>::const_iterator mapIt;
+	std::set<unsigned>::const_iterator it;
+	std::set<unsigned> resultIcs;
+	KalmanVertexFitter kvf;
+	double best;
+	unsigned ix;
+	
+	// build the transient tracks with 'trkIcs'
+	for (it = trkIcs->begin(); it != trkIcs->end(); ++it) {
+		TrackBaseRef baseRef(*fhTracks,*it);
+		Track trk(*baseRef);
+		TransientTrack ttrack = fTTB->build(trk);
+		transTracks.push_back(ttrack);
+	}
+	
+	for (mapIt = anaMu->fNstTracks.begin(); mapIt != anaMu->fNstTracks.end(); ++mapIt) {
+		
+		if (mapIt->second >= fDocaVertex)
+			continue;
+		
+		if (trkIcs->count(mapIt->first) > 0)
+			continue; // already included
+		
+		trkIcs->insert(mapIt->first);
+		
+		TrackBaseRef baseRef(*fhTracks,mapIt->first);
+		Track trk(*baseRef);
+		TransientTrack ttrack = fTTB->build(trk);
+		transTracks.push_back(ttrack);
+		
+		TransientVertex vtx = kvf.vertex(transTracks);
+		ChiSquared chi(vtx.totalChiSquared(), vtx.degreesOfFreedom());
+		best = chi.probability();
+		if (!std::isnan(best))
+			bestTracks.push_back(make_pair(chi.probability(),mapIt->first));
+		
+		trkIcs->erase(mapIt->first);
+		transTracks.pop_back();
+	}
+	
+	// only iterate the most promosing 'keep'
+	std::sort(bestTracks.begin(),bestTracks.end());
+	if (bestTracks.size() > fKeepBest) bestTracks.erase(bestTracks.begin(),bestTracks.end()-fKeepBest);
+	
+	best = *prob;
+	resultIcs = *trkIcs;
+	for (ix = 0; ix < bestTracks.size(); ix++) {
+		
+		std::set<unsigned> curTracks = *trkIcs;
+		double result = bestTracks[ix].first;
+		
+		curTracks.insert(bestTracks[ix].second);
+		
+		if (curTracks.size() < fMaxCandTracks)
+			findVertex(anaMu,&curTracks,&result);
+		
+		if (best < result) {
+			best = result;
+			resultIcs = curTracks;
+		}
+	}
+	
+	// save
+	*prob = best;
+	*trkIcs = resultIcs;
+} // findVertex()
 
 // ----------------------------------------------------------------------
 vector<unsigned int> HFDumpMuons::muonStatHits(const reco::Track& tr) {
