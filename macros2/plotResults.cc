@@ -99,7 +99,7 @@ void plotResults::makeAll(int channels) {
       tl->DrawLatex(0.2, 0.92, (0 == i?"Barrel":"Endcap"));
     }
   }
-  c0->SaveAs(Form("%s/unblinding.pdf", fDirectory.c_str())); 
+  c0->SaveAs(Form("%s/%s-unblinding.pdf", fDirectory.c_str(), fSuffix.c_str())); 
 }
 
 
@@ -232,7 +232,7 @@ void plotResults::play2(int chan) {
   hm3->Draw("same"); 
   tl->DrawLatex(0.6, 0.7, "B^{0}_{s} #rightarrow K K");
 
-  c0->SaveAs(Form("%s/data-withBgOverlayed-chan%d.pdf", fDirectory.c_str(), chan)); 
+  c0->SaveAs(Form("%s/%s-data-withBgOverlayed-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan)); 
   
 }
 
@@ -277,7 +277,7 @@ void plotResults::calculateNumbers(int mode) {
     initNumbers(fNumbersBs[chan], false); 
     initNumbers(fNumbersBd[chan], false); 
     calculateNoNumbers(chan, mode);
-    //remove    calculateCsNumbers(chan, mode);
+    //    calculateCsNumbers(chan, mode);
     calculateRareBgNumbers(chan);
     calculateSgNumbers(chan);
   }
@@ -288,8 +288,6 @@ void plotResults::calculateNumbers(int mode) {
   system(Form("/bin/rm -f %s", bla.c_str()));
   printUlcalcNumbers(bla);
   createAllCfgFiles(bla); 
-
-  //remove  printCsBFNumbers();
 
 
   cout << "printing fNumbersBs" << endl;
@@ -309,15 +307,6 @@ void plotResults::calculateNumbers(int mode) {
   printNumbers(*fNumbersNo[1], cout); 
   printNumbers(*fNumbersNo[0], fOUT); 
   printNumbers(*fNumbersNo[1], fOUT); 
-
-  /*    //remove
-  cout << "printing fNumbersCs" << endl;
-  printNumbers(*fNumbersCs[0], cout); 
-  printNumbers(*fNumbersCs[1], cout); 
-  printNumbers(*fNumbersCs[0], fOUT); 
-  printNumbers(*fNumbersCs[1], fOUT); 
-  */
-
 
   fHistFile->Close();
 
@@ -740,7 +729,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
     hRare->Draw();
     c0->Modified();
     c0->Update();
-    c0->SaveAs(Form("%s/%s_%s_chan%d.pdf", fDirectory.c_str(), (fDoUseBDT?"bdt":"cnc"), fRareName.c_str(), chan));
+    c0->SaveAs(Form("%s/%s-%s_%s_chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), (fDoUseBDT?"bdt":"cnc"), fRareName.c_str(), chan));
   }
 
 
@@ -772,7 +761,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
   tl->SetTextSize(size); 
 
   string pdfname;
-  c0->SaveAs(Form("%s/%s_rare_chan%d.pdf", fDirectory.c_str(), (fDoUseBDT?"bdt":"cnc"), chan));
+  c0->SaveAs(Form("%s/%s-%s_rare_chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), (fDoUseBDT?"bdt":"cnc"), chan));
 
   hslRareBg->SetMaximum(1.3*hslRareBg->GetMaximum()); 
   hslRareBg->Draw();
@@ -788,7 +777,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
   tl->DrawLatex(0.25, 0.8, (chan == 0?"Barrel":"Endcap"));   
   tl->SetTextSize(size); 
 
-  c0->SaveAs(Form("%s/%s_slrare_chan%d.pdf", fDirectory.c_str(), (fDoUseBDT?"bdt":"cnc"), chan));
+  c0->SaveAs(Form("%s/%s-%s_slrare_chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), (fDoUseBDT?"bdt":"cnc"), chan));
 
   TDirectory *pD = gDirectory;
   TFile *f = TFile::Open("hist.root", "UPDATE"); 
@@ -875,10 +864,6 @@ void plotResults::calculateSgNumbers(int chan) {
   numbersFromHist(chan, 0, fNumbersBs[chan]); 
   numbersFromHist(chan, 1, fNumbersBd[chan]); 
 
-//   // -- patch the wrong acceptance FIXME
-//   fNumbersBs[chan]->acc  =   fNumbersBd[chan]->acc; 
-//   fNumbersBs[chan]->accE =   fNumbersBd[chan]->accE; 
-
   fSetup = "SgData"; 
   string name(""); 
   
@@ -931,8 +916,8 @@ void plotResults::calculateSgNumbers(int chan) {
   
   stamp(0.18, fStampString, 0.67, fStampCms); 
   if (fDoPrint)  {
-    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtsig-data-chan%d.pdf", fDirectory.c_str(), chan));
-    else c0->SaveAs(Form("%s/sig-data-chan%d.pdf", fDirectory.c_str(), chan));
+    if (fDoUseBDT) c0->SaveAs(Form("%s/%s-bdtsig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
+    else c0->SaveAs(Form("%s/%s-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
   }
 
 
@@ -951,8 +936,8 @@ void plotResults::calculateSgNumbers(int chan) {
 
   stamp(0.18, fStampString, 0.67, fStampCms); 
   if (fDoPrint)  {
-    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtunblinded-sig-data-chan%d.pdf", fDirectory.c_str(), chan));
-    else c0->SaveAs(Form("%s/unblinded-sig-data-chan%d.pdf", fDirectory.c_str(), chan));
+    if (fDoUseBDT) c0->SaveAs(Form("%s/%s-bdtunblinded-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
+    else c0->SaveAs(Form("%s/%s-unblinded-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
   }
   
 
@@ -965,8 +950,8 @@ void plotResults::calculateSgNumbers(int chan) {
 
   stamp(0.18, fStampString, 0.67, fStampCms); 
   if (fDoPrint)  {
-    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtunblinded-manybins-sig-data-chan%d.pdf", fDirectory.c_str(), chan));
-    else c0->SaveAs(Form("%s/unblinded-manybins-sig-data-chan%d.pdf", fDirectory.c_str(), chan));
+    if (fDoUseBDT) c0->SaveAs(Form("%s/%s-bdtunblinded-manybins-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
+    else c0->SaveAs(Form("%s/%s-unblinded-manybins-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
   }
   
 
@@ -1796,7 +1781,7 @@ void plotResults::fitHists(int chan) {
   tl->DrawLatex(xt, yt,        Form("expected: %4.2f+/-%4.2f", fBsBgExp, fBsBgExpE)); 
   tl->DrawLatex(xt, yt-ydec,   Form("Lo (obs/exp): %3.0f/%3.1f", fBgHistLo, fLoBgExp)); 
   tl->DrawLatex(xt, yt-2.*ydec,Form("Hi (obs/exp): %3.0f/%3.1f", fBgHistHi, fHiBgExp)); 
-  c0->SaveAs(Form("%s/bgestimate-mode0-chan%d.pdf", fDirectory.c_str(), chan)); 
+  c0->SaveAs(Form("%s/%s-bgestimate-mode0-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan)); 
 
   zone(1);
   bgBlind(h, 1, fBgLo, fBgHi); 
@@ -1807,7 +1792,7 @@ void plotResults::fitHists(int chan) {
   tl->DrawLatex(xt, yt,        Form("expected: %4.2f+/-%4.2f", fBsBgExp, fBsBgExpE)); 
   tl->DrawLatex(xt, yt-ydec,   Form("Lo (obs/exp): %3.0f/%3.1f", fBgHistLo, fLoBgExp)); 
   tl->DrawLatex(xt, yt-2.*ydec,Form("Hi (obs/exp): %3.0f/%3.1f", fBgHistHi, fHiBgExp)); 
-  c0->SaveAs(Form("%s/bgestimate-mode1-chan%d.pdf", fDirectory.c_str(), chan)); 
+  c0->SaveAs(Form("%s/%s-bgestimate-mode1-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan)); 
 
   zone(1);
   bgBlind(h, 2, fBgLo, fBgHi); 
@@ -1818,7 +1803,7 @@ void plotResults::fitHists(int chan) {
   tl->DrawLatex(xt, yt,        Form("expected: %4.2f+/-%4.2f", fBsBgExp, fBsBgExpE)); 
   tl->DrawLatex(xt, yt-ydec,   Form("Lo (obs/exp): %3.0f/%3.1f", fBgHistLo, fLoBgExp)); 
   tl->DrawLatex(xt, yt-2.*ydec,Form("Hi (obs/exp): %3.0f/%3.1f", fBgHistHi, fHiBgExp)); 
-  c0->SaveAs(Form("%s/bgestimate-mode2-chan%d.pdf", fDirectory.c_str(), chan)); 
+  c0->SaveAs(Form("%s/%s-bgestimate-mode2-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan)); 
 
 
   zone(1);
@@ -1830,7 +1815,7 @@ void plotResults::fitHists(int chan) {
   tl->DrawLatex(xt, yt,        Form("expected: %4.2f+/-%4.2f", fBsBgExp, fBsBgExpE)); 
   tl->DrawLatex(xt, yt-ydec,   Form("Lo (obs/exp): %3.0f/%3.1f", fBgHistLo, fLoBgExp)); 
   tl->DrawLatex(xt, yt-2.*ydec,Form("Hi (obs/exp): %3.0f/%3.1f", fBgHistHi, fHiBgExp)); 
-  c0->SaveAs(Form("%s/bgestimate-mode3-chan%d.pdf", fDirectory.c_str(), chan)); 
+  c0->SaveAs(Form("%s/%s-bgestimate-mode3-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan)); 
 
   zone(1);
   bgBlind(h, 4, 5.4, 5.9); 
@@ -1841,7 +1826,7 @@ void plotResults::fitHists(int chan) {
   tl->DrawLatex(xt, yt,        Form("expected: %4.2f+/-%4.2f", fBsBgExp, fBsBgExpE)); 
   tl->DrawLatex(xt, yt-ydec,   Form("Lo (obs/exp): %3.0f/%3.1f", fBgHistLo, fLoBgExp)); 
   tl->DrawLatex(xt, yt-2.*ydec,Form("Hi (obs/exp): %3.0f/%3.1f", fBgHistHi, fHiBgExp)); 
-  c0->SaveAs(Form("%s/bgestimate-mode4-chan%d.pdf", fDirectory.c_str(), chan)); 
+  c0->SaveAs(Form("%s/%s-bgestimate-mode4-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan)); 
 
   zone(1);
   bgBlind(h, 5, 5.4, 5.9); 
@@ -1852,7 +1837,7 @@ void plotResults::fitHists(int chan) {
   tl->DrawLatex(xt, yt,        Form("expected: %4.2f+/-%4.2f", fBsBgExp, fBsBgExpE)); 
   tl->DrawLatex(xt, yt-ydec,   Form("Lo (obs/exp): %3.0f/%3.1f", fBgHistLo, fLoBgExp)); 
   tl->DrawLatex(xt, yt-2.*ydec,Form("Hi (obs/exp): %3.0f/%3.1f", fBgHistHi, fHiBgExp)); 
-  c0->SaveAs(Form("%s/bgestimate-mode5-chan%d.pdf", fDirectory.c_str(), chan)); 
+  c0->SaveAs(Form("%s/%s-bgestimate-mode5-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan)); 
 
 }
 

@@ -19,6 +19,8 @@ plotEfficiencies::plotEfficiencies(const char *files, const char *dir, const cha
 
   fDoPrint = true; 
 
+  fSplitSeagullsFromCowboys = false; 
+
   fDoUseBDT = true; 
   fDoApplyCowboyVeto = false;   
   fDoApplyCowboyVetoAlsoInSignal = false; 
@@ -46,6 +48,7 @@ void plotEfficiencies::makeAll(int channel) {
     fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
     cout << " opened " << endl;
 
+    fSplitSeagullsFromCowboys = false; 
     fDoApplyMuonPtCuts = false; 
     tnpVsMC(fCuts[0]->m1pt, fCuts[0]->m2pt, "analysis");
 
@@ -56,7 +59,10 @@ void plotEfficiencies::makeAll(int channel) {
       cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
       tnpVsMC(pt, pt, "study");
     }
-
+    
+    fDoApplyMuonPtCuts = false; 
+    fSplitSeagullsFromCowboys = true; 
+    tnpVsMC(fCuts[0]->m1pt, fCuts[0]->m2pt, "splitSeagullsFromCowboys");
   }
 
   if (channel &2) {
@@ -75,6 +81,8 @@ void plotEfficiencies::makeAll(int channel) {
       cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
       texNumbers(pt, pt, "woCowboyVeto");
     }
+
+    texNumbers(fCuts[0]->m1pt, fCuts[0]->m2pt, "splitSeagullsFromCowboys"); 
   }
 
   if (channel &4) {
@@ -135,7 +143,6 @@ void plotEfficiencies::loopFunction(int function, int mode) {
 
 
 // ----------------------------------------------------------------------
-// FIXME: This function (together with the identical version in plotClass) should migrate into plotClass
 void plotEfficiencies::loopFunction1(int mode) {
 
   if (fChan < 0) return;
@@ -185,12 +192,32 @@ void plotEfficiencies::loopFunction1(int mode) {
   // -- muon ID: Data PidTables
   m1w8 = fptM->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
   m2w8 = fptM->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+  if (fSplitSeagullsFromCowboys) {
+    if (fIsCowboy) {
+      m1w8 = fptCbM->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+      m2w8 = fptCbM->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+    } else {
+      m1w8 = fptSgM->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+      m2w8 = fptSgM->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+    }
+  }
+
   mw8  = m1w8*m2w8; 
   fhMuId[fChan]->Fill(mw8); 
   
   // -- muon ID: MC PidTables
   m1w8 = fptMMC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
   m2w8 = fptMMC->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+  if (fSplitSeagullsFromCowboys) {
+    if (fIsCowboy) {
+      m1w8 = fptCbMMC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+      m2w8 = fptCbMMC->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+    } else {
+      m1w8 = fptSgMMC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+      m2w8 = fptSgMMC->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+    }
+  }
+
   mw8  = m1w8*m2w8; 
   if (mw8 > 0.) {
     fhMuIdMC[fChan]->Fill(mw8, 1./mw8); 
@@ -199,6 +226,16 @@ void plotEfficiencies::loopFunction1(int mode) {
   // -- muon trigger: Data PidTables
   tr1w8 = fptT1->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*fptT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
   tr2w8 = fptT1->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.)*fptT2->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+  if (fSplitSeagullsFromCowboys) {
+    if (fIsCowboy) {
+      tr1w8 = fptCbT1->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*fptCbT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+      tr2w8 = fptCbT1->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.)*fptCbT2->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+    } else {
+      tr1w8 = fptSgT1->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*fptSgT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+      tr2w8 = fptSgT1->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.)*fptSgT2->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+    }
+  }
+
   trw8  = tr1w8*tr2w8; 
   if (bs2jpsiphi || bp2jpsikp) {
     if (fb.rr >= 3) {
@@ -211,6 +248,16 @@ void plotEfficiencies::loopFunction1(int mode) {
   // -- muon trigger: MC PidTables
   tr1w8 = fptT1MC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*fptT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
   tr2w8 = fptT1MC->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.)*fptT2->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+  if (fSplitSeagullsFromCowboys) {
+    if (fIsCowboy) {
+      tr1w8 = fptCbT1MC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*fptCbT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+      tr2w8 = fptCbT1MC->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.)*fptCbT2->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+    } else {
+      tr1w8 = fptSgT1MC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*fptSgT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
+      tr2w8 = fptSgT1MC->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.)*fptSgT2->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
+    }
+  }
+
   trw8  = tr1w8*tr2w8; 
   if (bs2jpsiphi || bp2jpsikp) {
     if (fb.rr >= 3) {

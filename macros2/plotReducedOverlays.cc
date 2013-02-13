@@ -121,6 +121,38 @@ void plotReducedOverlays::makeSampleOverlay(string sample1, string sample2, stri
   overlay(sample1, sample2, "HLT", "bdt"); 
 }
 
+
+// ----------------------------------------------------------------------
+void plotReducedOverlays::sbsSingleFile(string file1, string sample1, string channel, string selection) {
+
+  string hfname  = file1;
+  cout << "fHistFile: " << hfname;
+  fHistFile = TFile::Open(hfname.c_str());
+  cout << " opened " << endl;
+
+  fSetup = channel; 
+
+  sbsDistributions(sample1, selection);
+  sbsDistributions(sample1, "HLT", "bdt");
+
+  TDirectory *pD = gDirectory; 
+
+  hfname  = fDirectory + "/anaBmm.plotReducedOverlaysSbs." + fSuffix + ".root";
+  TFile *fl = TFile::Open(hfname.c_str(), "UPDATE");
+  TH1D *h1(0); 
+
+  // -- and now all histograms as well
+  for (unsigned int i = 0; i < fDoList.size(); ++i) {
+    h1 = (TH1D*)pD->Get(Form("sbs_%s_%s_%s%s", fSetup.c_str(), sample1.c_str(), fDoList[i].c_str(), selection.c_str())); 
+    h1->SetDirectory(fl); 
+    h1->Write();
+  }
+
+  fl->Close();
+
+  fHistFile->Close();
+}
+
 // ----------------------------------------------------------------------
 void plotReducedOverlays::makeOverlay(string sample1, string sample2, string channel, string selection) {
   
@@ -171,7 +203,7 @@ void plotReducedOverlays::makeOverlay(string sample1, string sample2, string cha
 
 
 // ----------------------------------------------------------------------
-void plotReducedOverlays::makeSample(string mode, string selection, string channel) {
+void plotReducedOverlays::makeSample(string mode, string selection, string channel, int nevents, int nstart) {
 
   fSetup = channel;
 
@@ -238,7 +270,7 @@ void plotReducedOverlays::makeSample(string mode, string selection, string chann
   }
   setupTree(t, mode); 
   //  loopOverTree(t, mode, 1, 1000000);
-  loopOverTree(t, mode, 1);
+  loopOverTree(t, mode, 1, nevents, nstart);
 
   fHistFile->Write();
   fHistFile->Close();

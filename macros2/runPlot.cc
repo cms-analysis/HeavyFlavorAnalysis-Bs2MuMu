@@ -109,11 +109,13 @@ int main(int argc, char *argv[]) {
 
   // -- results
   if (mode & 2) {
+    gROOT->Clear();  gROOT->DeleteAll();
     plotResults a(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
     if (!doUseBDT) a.fDoUseBDT = false; 
     a.makeAll(1);
   }
   if (mode & 2) {
+    gROOT->Clear();  gROOT->DeleteAll();
     plotResults b(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
     if (!doUseBDT) b.fDoUseBDT = false; 
     b.makeAll(2);
@@ -121,6 +123,7 @@ int main(int argc, char *argv[]) {
 
   // -- overlays histogram filling
   if (mode & 4) {
+    gROOT->Clear();  gROOT->DeleteAll();
     plotReducedOverlays *a;
     
     vector<string> chanlist; 
@@ -142,6 +145,7 @@ int main(int argc, char *argv[]) {
       for (unsigned int i = 0; i < dolist.size(); ++i) {
 	mode1 = dolist[i] + string("Data");
 	mode2 = dolist[i] + string("Mc");
+	gROOT->Clear();  gROOT->DeleteAll();
 	a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
 	if (!doUseBDT) a->fDoUseBDT = false; 
     
@@ -155,6 +159,7 @@ int main(int argc, char *argv[]) {
 
   // -- overlays histogram: sbs and overlay
   if (mode & 8) {
+    gROOT->Clear();  gROOT->DeleteAll();
     plotReducedOverlays *a;
     
     vector<string> chanlist; 
@@ -176,6 +181,7 @@ int main(int argc, char *argv[]) {
       for (unsigned int i = 0; i < dolist.size(); ++i) {
 	mode1 = dolist[i] + string("Data");
 	mode2 = dolist[i] + string("Mc");
+	gROOT->Clear();  gROOT->DeleteAll();
 	a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
 	if (!doUseBDT) a->fDoUseBDT = false; 
 
@@ -190,6 +196,7 @@ int main(int argc, char *argv[]) {
 
   // -- systematics
   if (mode & 16) {
+    gROOT->Clear();  gROOT->DeleteAll();
     plotReducedOverlays *a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
     if (!doUseBDT) a->fDoUseBDT = false; 
     a->allSystematics(); 
@@ -198,11 +205,13 @@ int main(int argc, char *argv[]) {
 
   // -- muon id/trigger efficiency numbers
   if (mode & 32) {
+    gROOT->Clear();  gROOT->DeleteAll();
     plotEfficiencies *a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
     if (!doUseBDT) a->fDoUseBDT = false; 
     a->makeAll(1); 
     delete a;
 
+    gROOT->Clear();  gROOT->DeleteAll();
     a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
     if (!doUseBDT) a->fDoUseBDT = false; 
     a->makeAll(2); 

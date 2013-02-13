@@ -87,6 +87,9 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
 
   fAccPt = 1.0;
 
+  fRunMin = -1; 
+  fRunMax = -2; 
+
   // PDG 2010:
   fu  = 0.401;
   fs  = 0.113;
@@ -254,21 +257,54 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
 
 
   if (2012 == fYear) {
-    fptT1 = new PidTable("../macros/pidtables/130104/L1L2_data_all.dat"); 	
-    fptT2 = new PidTable("../macros/pidtables/130104/L3_data_all.dat"); 
-    fptM  = new PidTable("../macros/pidtables/130104/MuonID_data_all.dat"); 
+    fptT1     = new PidTable("../macros/pidtables/130104/L1L2_data_all.dat"); 	
+    fptT2     = new PidTable("../macros/pidtables/130104/L3_data_all.dat"); 
+    fptM      = new PidTable("../macros/pidtables/130104/MuonID_data_all.dat");
     
-    fptT1MC = new PidTable("../macros/pidtables/130104/L1L2_mc_all.dat"); 	
-    fptT2MC = new PidTable("../macros/pidtables/130104/L3_mc_all.dat"); 	
-    fptMMC  = new PidTable("../macros/pidtables/130104/MuonID_mc_all.dat"); 
+    fptT1MC   = new PidTable("../macros/pidtables/130104/L1L2_mc_all.dat"); 	
+    fptT2MC   = new PidTable("../macros/pidtables/130104/L3_mc_all.dat"); 	
+    fptMMC    = new PidTable("../macros/pidtables/130104/MuonID_mc_all.dat");  
+
+    fptSgT1   = new PidTable("../macros/pidtables/130104/L1L2_data_seagulls.dat");  
+    fptSgT2   = new PidTable("../macros/pidtables/130104/L3_data_seagulls.dat");    
+    fptSgM    = new PidTable("../macros/pidtables/130104/MuonID_data_seagulls.dat");
+    
+    fptSgT1MC = new PidTable("../macros/pidtables/130104/L1L2_mc_seagulls.dat");    
+    fptSgT2MC = new PidTable("../macros/pidtables/130104/L3_mc_seagulls.dat");      
+    fptSgMMC  = new PidTable("../macros/pidtables/130104/MuonID_mc_seagulls.dat");  
+
+    fptCbT1   = new PidTable("../macros/pidtables/130104/L1L2_data_cowboys.dat");  
+    fptCbT2   = new PidTable("../macros/pidtables/130104/L3_data_cowboys.dat");    
+    fptCbM    = new PidTable("../macros/pidtables/130104/MuonID_data_cowboys.dat");
+    
+    fptCbT1MC = new PidTable("../macros/pidtables/130104/L1L2_mc_cowboys.dat");    
+    fptCbT2MC = new PidTable("../macros/pidtables/130104/L3_mc_cowboys.dat");      
+    fptCbMMC  = new PidTable("../macros/pidtables/130104/MuonID_mc_cowboys.dat");  
+
   } else {
-    fptT1 = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo.dat"); 	
-    fptT2 = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.dat"); 	
-    fptM  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_data_all_histo.dat"); 
+    fptT1     = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo.dat"); 	
+    fptT2     = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.dat"); 	
+    fptM      = new PidTable("../macros/pidtables/111210/MuonID_VBTF_data_all_histo.dat"); 
     
-    fptT1MC = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo.dat"); 	
-    fptT2MC = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.dat"); 	
-    fptMMC  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_datalike_mc_histo.dat"); 
+    fptT1MC   = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo.dat"); 	
+    fptT2MC   = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.dat"); 	
+    fptMMC    = new PidTable("../macros/pidtables/111210/MuonID_VBTF_datalike_mc_histo.dat"); 
+
+    fptSgT1   = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo_sg.dat");  
+    fptSgT2   = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.dat");    
+    fptSgM    = new PidTable("../macros/pidtables/111210/MuonID_VBTF_data_all_histo_sg.dat");
+    
+    fptSgT1MC = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo_sg.dat");    
+    fptSgT2MC = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.dat");      
+    fptSgMMC  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_datalike_mc_histo_sg.dat");  
+
+    fptCbT1   = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo_cb.dat");  
+    fptCbT2   = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.dat");    
+    fptCbM    = new PidTable("../macros/pidtables/111210/MuonID_VBTF_data_all_histo_cb.dat");
+    
+    fptCbT1MC = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo_cb.dat");    
+    fptCbT2MC = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.dat");      
+    fptCbMMC  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_datalike_mc_histo_cb.dat");  
   }
 
   fNumbersFileName = fDirectory + "/anaBmm.plotClass." + fSuffix + ".tex";
@@ -1934,10 +1970,10 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
     string pdfname;
     string hname(h->GetName());
     if (string::npos != hname.find("NormC")) {
-      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), mode);
+      pdfname = Form("%s/%s-normC-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
       if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), mode);
     } else {
-      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode);
+      pdfname = Form("%s/%s-norm-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
       if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), mode);
     }
 
@@ -2117,15 +2153,11 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
     string pdfname;
     string hname(h->GetName());
     if (string::npos != hname.find("NormC")) {
-      pdfname = Form("%s/normC-data-chan%d.pdf", fDirectory.c_str(), mode);
-      if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), mode);
-      //pdfname = Form("%s/normC-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
-      //if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
+      pdfname = Form("%s/%s-normC-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
+      if (fDoUseBDT)  pdfname = Form("%s/%s-bdtnormC-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
     } else {
-      pdfname = Form("%s/norm-data-chan%d.pdf", fDirectory.c_str(), mode);
-      if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), mode);
-      //pdfname = Form("%s/norm-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
-      //if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str());
+      pdfname = Form("%s/%s-norm-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
+      if (fDoUseBDT)  pdfname = Form("%s/%s-bdtnorm-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
     }
 
    c0->SaveAs(pdfname.c_str());
@@ -2269,10 +2301,8 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
 
   string hname(h->GetName());
   if (fDoPrint) {
-    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d.pdf", fDirectory.c_str(), mode));
-    else c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), mode));
-    //if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
-    //else c0->SaveAs(Form("%s/cs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
+    if (fDoUseBDT) c0->SaveAs(Form("%s/%s-bdtcs-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode));
+    else c0->SaveAs(Form("%s/%s-cs-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode));
   }
 
   cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
@@ -2370,10 +2400,8 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
 
   string hname(h->GetName());
   if (fDoPrint) {
-    //if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
-    //else c0->SaveAs(Form("%s/cs-data-chan%d-%s.pdf", fDirectory.c_str(), mode, hname.c_str()));
-    if (fDoUseBDT) c0->SaveAs(Form("%s/bdtcs-data-chan%d.pdf", fDirectory.c_str(), mode));
-    else c0->SaveAs(Form("%s/cs-data-chan%d.pdf", fDirectory.c_str(), mode));
+    if (fDoUseBDT) c0->SaveAs(Form("%s/%s-bdtcs-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode));
+    else c0->SaveAs(Form("%s/%s-cs-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode));
   }
 
   cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
@@ -3192,9 +3220,25 @@ void plotClass::singleEventPrintout(string suffix, string st, int ievt) {
 
 
 // ----------------------------------------------------------------------
-void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts) {
+void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts, int nstart) {
   int nentries = Int_t(t->GetEntries());
-  if (nevts > 0 && nentries > nevts) nentries = nevts;
+  int nbegin(0), nend(nentries); 
+  if (nevts > 0 && nentries > nevts) {
+    nentries = nevts;
+    nbegin = 0; 
+    nend = nevts;
+  }
+  if (nevts > 0 && nstart > 0) {
+    nentries = nstart + nevts;
+    nbegin = nstart; 
+    if (nstart + nevts < t->GetEntries()) {
+      nend = nstart + nevts; 
+    } else {
+      nend = t->GetEntries();
+    }
+  }
+
+  nentries = nend - nstart; 
 
   int step(1000000); 
   if (nentries < 5000000)  step = 500000; 
@@ -3202,6 +3246,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
   if (nentries < 100000)   step = 10000; 
   if (nentries < 10000)    step = 1000; 
   if (nentries < 1000)     step = 100; 
+  step = 500000; 
   int imode(0); 
   if (string::npos != mode.find("No")) imode = 10; 
   if (string::npos != mode.find("Cs")) imode = 20; 
@@ -3278,9 +3323,14 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     small->Branch("eta",   &fb.eta,"eta/D");
   }
 
-  for (int jentry = 0; jentry < nentries; jentry++) {
+  cout << "loopOverTree: nevts = " << nentries << " nstart = " << nstart << endl;
+  for (int jentry = nbegin; jentry < nend; jentry++) {
     t->GetEntry(jentry);
-    if (jentry%step == 0) cout << Form(" .. Event %8d", jentry) << endl;
+    if (jentry%step == 0) cout << Form(" .. Event %8d, run = %6ld evt = %10ld", jentry, fb.run, fb.evt) << endl;
+    if (fRunMax > fRunMin) {
+      if (fb.run < fRunMin) continue; 
+      if (fb.run > fRunMax) continue; 
+    }
     candAnalysis(imode);
     loopFunction(function, imode);
     if (fSaveSmallTree
@@ -3529,6 +3579,12 @@ void plotClass::candAnalysis(int mode) {
   fGoodTracksPt   = true;
   fGoodTracksEta  = true;
 
+  TLorentzVector vm1, vm2;
+  vm1.SetPtEtaPhiM(fb.m1pt, fb.m1eta, fb.m1phi, MMUON);
+  vm2.SetPtEtaPhiM(fb.m2pt, fb.m2eta, fb.m2phi, MMUON);
+  double dphi = vm1.DeltaPhi(vm2); 
+  fIsCowboy = (fb.m1q*dphi > 0); 
+
   if (fIsMC) {
     if (fb.g1pt < fAccPt) fGoodAcceptance = false; 
     if (fb.g2pt < fAccPt) fGoodAcceptance = false; 
@@ -3616,7 +3672,6 @@ void plotClass::candAnalysis(int mode) {
   if (bs2jpsiphi || bp2jpsikp) {
     if (fb.mpsi > 3.2) fGoodJpsiCuts = false;
     if (fb.mpsi < 3.0) fGoodJpsiCuts = false;
-    // -- cowboy veto 
     if (fb.psipt < 7.0) fGoodJpsiCuts = false;
   } else {
     fGoodJpsiCuts = true; 
@@ -3660,6 +3715,7 @@ void plotClass::candAnalysis(int mode) {
 
   fGoodHLT        = fb.hlt;
   fPreselection   = ((fBDT > 0.) && fb.hlt && fGoodMuonsID ); 
+  //  fPreselection   = ((fBDT > -0.5) && fb.hlt && fGoodMuonsID ); 
 
   fAnaCuts.update(); 
 

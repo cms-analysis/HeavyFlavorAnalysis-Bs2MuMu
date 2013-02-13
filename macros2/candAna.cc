@@ -81,9 +81,9 @@ void candAna::evtAnalysis(TAna01Event *evt) {
       int gen1(-1), gen2(-1), gen0(-1);
  
       if (fIsMC) {
-	gen1 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fID;
-	gen2 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig2)->fIndex)->fGenIndex)->fID;
-	gen0 = fpEvt->getGenCand(fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fMom1)->fID;
+	gen1 = fpEvt->getGenCand(fpEvt->getSimpleTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->getGenIndex())->fID;
+	gen2 = fpEvt->getGenCand(fpEvt->getSimpleTrack(fpEvt->getSigTrack(pCand->fSig2)->fIndex)->getGenIndex())->fID;
+	gen0 = fpEvt->getGenCand(fpEvt->getGenCand(fpEvt->getSimpleTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->getGenIndex())->fMom1)->fID;
       }
 
       cout << "Analyzing candidate at " << iC << " which is of type " << TYPE << " mass "<< pCand->fMass
@@ -108,6 +108,8 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     //cout<<" call analysis "<<fpCand<<" "<<iC<<endl;
     // -- call derived functions
     candAnalysis();
+
+    cout << fMu1Q << " " << fMu2Q << endl;
 
     boostGames(); 
     
@@ -305,7 +307,7 @@ void candAna::candAnalysis() {
 
   for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
     p0 = fpEvt->getSigTrack(it);     
-    fCandQ += fpEvt->getRecTrack(p0->fIndex)->fQ;
+    fCandQ += p0->fQ;
     if (TMath::Abs(p0->fMCID) != 13) continue;
     if (0 == p1) {
       p1 = p0; 
@@ -334,11 +336,11 @@ void candAna::candAnalysis() {
   }
 
 
-  // -- switch to RecTracks!
+  // -- switch to RecTracks! NOT ANY MORE !!!
   ps1= p1; 
-  p1 = fpEvt->getRecTrack(ps1->fIndex);
+  //  p1 = fpEvt->getRecTrack(ps1->fIndex);
   ps2= p2; 
-  p2 = fpEvt->getRecTrack(ps2->fIndex);
+  //  p2 = fpEvt->getRecTrack(ps2->fIndex);
 
   if (1301 == fpCand->fType ||1302 == fpCand->fType || 1313 == fpCand->fType) {
     // do nothing, these types are for efficiency/TNP studies
@@ -586,11 +588,12 @@ void candAna::candAnalysis() {
     fCandDocaTrkBdt = fpCand->fNstTracks[0].second.first;
     
     int nsize(fpCand->fNstTracks.size());
+    TSimpleTrack *ps; 
     for (int i = 0; i<nsize; ++i) {
       int trkId = fpCand->fNstTracks[i].first;
-      p0 = fpEvt->getRecTrack(trkId);
+      ps = fpEvt->getSimpleTrack(trkId);
       // -- check that any track associated with a definitive vertex is from the same or the closest (compatible) other PV
-      if ((p0->fPvIdx > -1) && (p0->fPvIdx != pvidx)) continue;
+      if ((ps->getPvIndex() > -1) && (ps->getPvIndex() != pvidx)) continue;
       
       fCandDocaTrk = fpCand->fNstTracks[i].second.first;
       break;
@@ -1924,7 +1927,7 @@ int candAna::nCloseTracks(TAnaCand *pC, double dcaCut, double ptCut) {
     }
   }
 
-  TAnaTrack *pT; 
+  TSimpleTrack *pT; 
   double pt(0.); 
   if (nsize > 0) {
     for (int i = 0; i<nsize; ++i) {
@@ -1933,13 +1936,11 @@ int candAna::nCloseTracks(TAnaCand *pC, double dcaCut, double ptCut) {
       
       if (doca > dcaCut) continue; // check the doca cut
       
-      pT = fpEvt->getRecTrack(trkId);
+      pT = fpEvt->getSimpleTrack(trkId);
       // -- check that any track associated with a definitive vertex is from the same or the closest (compatible) other PV
-      if ((pT->fPvIdx > -1) && (pT->fPvIdx != pvIdx)) continue;
+      if ((pT->getPvIndex() > -1) && (pT->getPvIndex() != pvIdx)) continue;
 
-      //      if ((pT->fPvIdx > -1) && (pT->fPvIdx != pvIdx)) continue;
-      
-      pt = pT->fPlab.Perp();  
+      pt = pT->getP().Perp();  
       if (pt < ptCut) continue;
       
       ++cnt;
@@ -2085,7 +2086,7 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
   const bool verbose(false);
 
   double iso(-1.), pt(0.), sumPt(0.), candPt(0.), candPtScalar(0.); 
-  TAnaTrack *pT; 
+  TSimpleTrack *ps; 
   vector<int> cIdx, pIdx; 
   int pvIdx = pC->fPvIdx;
   
@@ -2095,12 +2096,12 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
 
   getSigTracks(cIdx, pC); 
   for (unsigned int i = 0; i < cIdx.size(); ++i) {
-    pT = fpEvt->getRecTrack(i); 
+    ps = fpEvt->getSimpleTrack(i); 
  
-    if (verbose) cout << " track idx = " << pT->fIndex << " with ID = " << pT->fMCID << endl;
-    candPtScalar += pT->fPlab.Perp(); 
+    if (verbose) cout << " track idx = " << ps->getIndex() << " with ID = " << fpEvt->getSimpleTrackMCID(ps->getIndex()) << endl;
+    candPtScalar += ps->getP().Perp(); 
     if (verbose) {
-      int tIdx = fpEvt->getRecTrack(pT->fIndex)->fPvIdx;
+      int tIdx = fpEvt->getSimpleTrack(ps->getIndex())->getPvIndex();
       if (pvIdx != tIdx) {
     	cout << "Signal track pointing to PV " << tIdx << " instead of " << pvIdx << endl;
       }
@@ -2111,22 +2112,22 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
   
   // -- look at all tracks that are associated to the same vertex
   for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
-    pT = fpEvt->getRecTrack(i); 
+    ps = fpEvt->getSimpleTrack(i); 
     if (verbose) {
       cout << "   track " << i 
-     	   << " with pT = " << pT->fPlab.Perp()
-     	   << " eta = " << pT->fPlab.Eta()
-     	   << " pointing at PV " << pT->fPvIdx;
+     	   << " with pT = " << ps->getP().Perp()
+     	   << " eta = " << ps->getP().Eta()
+     	   << " pointing at PV " << ps->getPvIndex();
     }
     
 
-    if (pT->fPvIdx != pvIdx) { 	 
+    if (ps->getPvIndex() != pvIdx) { 	 
       if (verbose) cout << " skipped because of PV index mismatch" << endl; 	     //FIXME
       continue;
     }
     
 
-    pt = pT->fPlab.Perp(); 
+    pt = ps->getP().Perp(); 
     if (pt < ptCut) {
       if (verbose) cout << " skipped because of pt = " << pt << endl;
       continue;
@@ -2135,14 +2136,14 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
       if (verbose) cout << " skipped because it is a sig track " << endl;
       continue;
     }
-    if (pT->fPlab.DeltaR(pC->fPlab) < coneSize) {
+    if (ps->getP().DeltaR(pC->fPlab) < coneSize) {
       pIdx.push_back(i); 
       ++fCandI0trk;
       sumPt += pt; 
       if (verbose) cout << endl;
     } 
     else {
-      if (verbose) cout << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+      if (verbose) cout << " skipped because of deltaR = " << ps->getP().DeltaR(pC->fPlab) << endl;
     }
   }
 
@@ -2156,22 +2157,22 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
 
       if(doca > docaCut) continue; // check the doca cut
 
-      pT = fpEvt->getRecTrack(trkId);
+      ps = fpEvt->getSimpleTrack(trkId);
 
 
-      if ((pT->fPvIdx > -1) && (pT->fPvIdx != pvIdx)) { 	 
-	if (verbose) cout << " doca track " << trkId << " skipped because it is from a different PV " << pT->fPvIdx <<endl; 	 
+      if ((ps->getPvIndex() > -1) && (ps->getPvIndex() != pvIdx)) { 	 
+	if (verbose) cout << " doca track " << trkId << " skipped because it is from a different PV " << ps->getPvIndex() <<endl; 	 
 	continue; 	 
       }
 
-      pt = pT->fPlab.Perp();  
+      pt = ps->getP().Perp();  
       if (pt < ptCut) {
 	if (verbose) cout << " doca track " << trkId << " skipped because of pt = " << pt << endl;
 	continue;
       }
 
-      if (pT->fPlab.DeltaR(pC->fPlab) > coneSize) {
-	if (verbose) cout << " doca track " << trkId << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+      if (ps->getP().DeltaR(pC->fPlab) > coneSize) {
+	if (verbose) cout << " doca track " << trkId << " skipped because of deltaR = " << ps->getP().DeltaR(pC->fPlab) << endl;
 	continue;
       }
 

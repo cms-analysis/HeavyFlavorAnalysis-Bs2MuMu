@@ -325,7 +325,7 @@ public:
   // -- stuff to run over the tree from any derived class (using loopFunction() to hook in specifics)
   virtual TTree* getTree(std::string mode);
   virtual void setupTree(TTree *t, std::string mode); 
-  virtual void loopOverTree(TTree *t, std::string mode, int function, int nevts = -1); 
+  virtual void loopOverTree(TTree *t, std::string mode, int function, int nevts = -1, int nstart = 0); 
   virtual void candAnalysis(int mode);
   virtual void loopFunction(int function, int mode = 0) {std::cout << "replace me" << std::endl;} 
   
@@ -347,11 +347,14 @@ public:
   bool fGoodAcceptance, fPreselection,	fWideMass, fGoodHLT, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta, fGoodTracks, fGoodTracksPt, fGoodTracksEta, fGoodQ,
        fGoodPvAveW8, fGoodLip, fGoodLipS, fGoodIp, fGoodIpS, fGoodMaxDoca, fGoodPt, fGoodEta, fGoodAlpha, fGoodFLS, fGoodChi2, fGoodIso, fGoodCloseTrack, 
        fGoodDocaTrk, fGoodJpsiCuts, fGoodLastCut; 
+
+  int fRunMin, fRunMax; // if you want to look at a specific run range
   
   AnalysisCuts fAnaCuts; 
   
   std::string fSetup; 
   bool fSaveSmallTree, fSaveLargerTree; 
+  bool fIsCowboy;
 
   PidTable *fptT1;
   PidTable *fptT2;
@@ -360,6 +363,23 @@ public:
   PidTable *fptT1MC;
   PidTable *fptT2MC;
   PidTable *fptMMC; 
+
+  // -- split into seagull and cowboys
+  PidTable *fptSgT1;
+  PidTable *fptSgT2;
+  PidTable *fptSgM; 
+
+  PidTable *fptSgT1MC;
+  PidTable *fptSgT2MC;
+  PidTable *fptSgMMC; 
+
+  PidTable *fptCbT1;
+  PidTable *fptCbT2;
+  PidTable *fptCbM; 
+
+  PidTable *fptCbT1MC;
+  PidTable *fptCbT2MC;
+  PidTable *fptCbMMC; 
 
 
   ClassDef(plotClass,1) //Testing plotClass

@@ -36,6 +36,8 @@ public:
 				  const char *pfix = "DATA");
   void read2Files(PidTable &a, const char *f1name, const char *f2name, const char *hname);
 
+  bool fSplitSeagullsFromCowboys; 
+
   ClassDef(plotEfficiencies,1) //Testing plotEfficiencies
 
 };
