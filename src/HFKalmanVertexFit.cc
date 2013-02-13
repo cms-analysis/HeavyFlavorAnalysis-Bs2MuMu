@@ -163,15 +163,15 @@ void HFKalmanVertexFit::doFit(vector<Track>  &trackList,
   }
 
 
-//   // -- Build a kinematic particle to determine the best PV (?)
-//   float sigma = 0.00001*mass;
-//   kinParticles.push_back(pFactory.particle(refT[0],trackMasses[0],0.0f,0.0f,sigma)); 
-//   kinParticles.push_back(pFactory.particle(refT[1],trackMasses[1],0.0f,0.0f,sigma)); 
+  //   // -- Build a kinematic particle to determine the best PV (?)
+  //   float sigma = 0.00001*mass;
+  //   kinParticles.push_back(pFactory.particle(refT[0],trackMasses[0],0.0f,0.0f,sigma)); 
+  //   kinParticles.push_back(pFactory.particle(refT[1],trackMasses[1],0.0f,0.0f,sigma)); 
 		
-//   md.calculate(RecoTransientTrack[i].initialFreeState(), RecoTransientTrack[j].initialFreeState());
-//   if (md.status()) {
-//     dist = md.distance();
-//   }
+  //   md.calculate(RecoTransientTrack[i].initialFreeState(), RecoTransientTrack[j].initialFreeState());
+  //   if (md.status()) {
+  //     dist = md.distance();
+  //   }
 
 
   // -- Build "rootio" vertex 
@@ -377,10 +377,11 @@ void HFKalmanVertexFit::doNotFit(vector<Track>  &trackList,
   // -- fill original tracks for sig tracks
   for (unsigned int i = 0; i < trackList.size(); ++i) {
     TAnaTrack *pTrack = gHFEvent->addSigTrack();
-    //  pTrack->fMCID     = trackList[i].charge()*13;  //??? FIXME ???
-    pTrack->fMCID     = gHFEvent->getRecTrack(trackIndices[i])->fMCID;
-    pTrack->fMuID     = gHFEvent->getRecTrack(trackIndices[i])->fMuID;
-    pTrack->fGenIndex = gHFEvent->getRecTrack(trackIndices[i])->fGenIndex; 
+    int mcid          =  gHFEvent->getSimpleTrackMCID(trackIndices[i]);
+    TAnaMuon *pM      =  gHFEvent->getSimpleTrackMuon(trackIndices[i]);
+    pTrack->fMCID     = mcid;
+    pTrack->fMuID     = (pM == 0? 0 : pM->fMuID);
+    pTrack->fGenIndex = gHFEvent->getSimpleTrack(trackIndices[i])->getGenIndex(); 
     pTrack->fQ        = trackList[i].charge();
     pTrack->fPlab.SetXYZ(trackList[i].px(),
 			 trackList[i].py(),

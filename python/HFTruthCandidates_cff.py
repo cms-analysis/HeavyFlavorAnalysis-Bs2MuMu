@@ -85,7 +85,7 @@ truthBsToPhiMuMuDump = cms.EDAnalyzer(
     motherID     = cms.untracked.int32(531),
     type         = cms.untracked.int32(87),
     GenType      = cms.untracked.int32(-87),
-    daughtersID  = cms.untracked.vint32(13, -13),
+    daughtersID  = cms.untracked.vint32(333, 13, -13),
     partialDecayMatching = cms.untracked.bool(True)
     )
 

@@ -7,7 +7,7 @@
 #include "FWCore/Framework/interface/ESHandle.h"
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
-#include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
+#include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TSimpleTrack.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaCand.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TGenCand.hh"
 
@@ -70,7 +70,7 @@ HFTruthCandidate::HFTruthCandidate(const edm::ParameterSet& iConfig):
   fMotherID(iConfig.getUntrackedParameter("motherID", 0)), 
   fType(iConfig.getUntrackedParameter("type", 67)),
   fGenType(iConfig.getUntrackedParameter("GenType", -67)),
-  fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 0.05)),
+  fMaxDoca(iConfig.getUntrackedParameter<double>("maxDoca", 99.)),
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)) {
 
   vector<int> defaultIDs;
@@ -81,10 +81,13 @@ HFTruthCandidate::HFTruthCandidate(const edm::ParameterSet& iConfig):
   cout << "--- HFTruthCandidate constructor" << endl;
   cout << "--- verbose:               " << fVerbose << endl;
   cout << "--- tracksLabel:           " << fTracksLabel << endl;
+  cout << "--- PrimaryVertexLabel:    " << fPrimaryVertexLabel << endl;
   cout << "--- BeamSpotLabel:         " << fBeamSpotLabel << endl;
   cout << "--- motherID:              " << fMotherID << endl;
   cout << "--- type:                  " << fType << endl;
   cout << "--- GenType:               " << fGenType << endl;
+  cout << "--- partialDecayMatching:  " << fPartialDecayMatching << endl;
+  cout << "--- maxDoca:               " << fMaxDoca << endl;
   fDaughtersSet.clear(); 
   fStableDaughters = 0; 
   for (unsigned int i = 0; i < fDaughtersID.size(); ++i) {
@@ -257,23 +260,25 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
   map<int,int> trackIxMap; // map: genIx -> trkIx
   map<int,double> trackMassesMap; // map: genIx -> mass
 
-  TAnaTrack *pTrack; 
+  TSimpleTrack *pTrack; 
   if (matchedDecay > 0) {
-    for (int it = 0; it < gHFEvent->nRecTracks(); ++it) {
-      pTrack = gHFEvent->getRecTrack(it); 
-      if (genIndices.find(pTrack->fGenIndex) != genIndices.end()) {
+    for (int it = 0; it < gHFEvent->nSimpleTracks(); ++it) {
+      pTrack = gHFEvent->getSimpleTrack(it); 
+      int gidx = pTrack->getGenIndex(); 
+      if (genIndices.find(gidx) != genIndices.end()) {
 	if (fVerbose > 2) {
-	  cout << "Found rec track: " << it; 
+	  cout << "Found simple track: " << it; 
 	  pTrack->dump(); 
 	}
-				
+	
 	double mass = MMUON; 
-	if (321  == TMath::Abs(pTrack->fMCID)) mass = MKAON;
-	if (211  == TMath::Abs(pTrack->fMCID)) mass = MPION;
-	if (13   == TMath::Abs(pTrack->fMCID)) mass = MMUON;
-	if (2212 == TMath::Abs(pTrack->fMCID)) mass = MPROTON;
+	int mcid = TMath::Abs(gHFEvent->getGenCand(gidx)->fID); 
+	if (321  == mcid) mass = MKAON;
+	if (211  == mcid) mass = MPION;
+	if (13   == mcid) mass = MMUON;
+	if (2212 == mcid) mass = MPROTON;
 				
-	if (trackIxMap.count(pTrack->fGenIndex) > 0) {
+	if (trackIxMap.count(gidx) > 0) {
 	  ESHandle<MagneticField> magfield;
 	  iSetup.get<IdealMagneticFieldRecord>().get(magfield);
 	  AnalyticalImpactPointExtrapolator ipExt(magfield.product());
@@ -284,7 +289,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	  TVector3 ipGen,ipThis,ipOld;
 					
 	  // GENERATOR IMPACT POINT
-	  pGen = gHFEvent->getGenCand(pTrack->fGenIndex);
+	  pGen = gHFEvent->getGenCand(gidx);
 	  fts = FreeTrajectoryState(GlobalPoint(pGen->fV.X(),pGen->fV.Y(),pGen->fV.Z()),
 				    GlobalVector(pGen->fP.X(),pGen->fP.Y(),pGen->fP.Z()),
 				    TrackCharge(pGen->fQ),
@@ -302,7 +307,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	  ipThis.SetXYZ(tsof.globalPosition().x(), tsof.globalPosition().y(), tsof.globalPosition().z());
 					
 	  // OLD TRACK IMPACT POINT
-	  trackView = TrackBaseRef(hTracks,trackIxMap[pTrack->fGenIndex]);
+	  trackView = TrackBaseRef(hTracks,trackIxMap[gidx]);
 	  fts = FreeTrajectoryState(GlobalPoint(trackView->vx(),trackView->vy(),trackView->vz()),
 				    GlobalVector(trackView->px(),trackView->py(),trackView->pz()),
 				    trackView->charge(),
@@ -312,19 +317,22 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 					
 	  // compare the better tracks
 	  if ( (ipGen - ipThis).Mag() < (ipGen - ipOld).Mag() ) {
-	    trackIxMap[pTrack->fGenIndex] = it;
-	    trackMassesMap[pTrack->fGenIndex] = mass;
-	    if (fVerbose > 0) cout << "-> overwriting to trackList: " << it << " with ID = " << pTrack->fMCID << endl;
+	    trackIxMap[gidx] = it;
+	    trackMassesMap[gidx] = mass;
+	    if (fVerbose > 0) cout << "-> overwriting to trackList: " << it << " with ID = " << mcid << endl;
 	  } else {
-	    if (fVerbose > 2) cout << "-> rejecting to trackList: " << it << " with ID = " << pTrack->fMCID << endl;
+	    if (fVerbose > 2) cout << "-> rejecting to trackList: " << it << " with ID = " << mcid << endl;
 	  }
 	} else {
-	  trackIxMap.insert(make_pair(pTrack->fGenIndex,it));
-	  trackMassesMap.insert(make_pair(pTrack->fGenIndex,mass));
-	  if (fVerbose > 2) cout << "-> adding to trackList: " << it << " with ID = " << pTrack->fMCID << endl;
+	  trackIxMap.insert(make_pair(gidx, it));
+	  trackMassesMap.insert(make_pair(gidx, mass));
+	  if (fVerbose > 2) cout << "-> adding to trackList: " << it << " with ID = " << mcid << endl;
 	}
       }
     }
+
+
+    cout << "--> trackIxMap.size() = " << trackIxMap.size() << endl;
 
     if (static_cast<int>(trackIxMap.size()) == fStableDaughters) {
 			
@@ -363,14 +371,14 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	return;
       }
 	  
-		// -- get the beamspot
-		Handle<BeamSpot> bspotHandle;
-		iEvent.getByLabel(fBeamSpotLabel, bspotHandle);
-		if (!bspotHandle.isValid()) {
-			cout << "==>HFbs2JpsiPhi> No beamspot found, skipping" << endl;
-			return;
-		}
-		BeamSpot bspot = *bspotHandle;		
+      // -- get the beamspot
+      Handle<BeamSpot> bspotHandle;
+      iEvent.getByLabel(fBeamSpotLabel, bspotHandle);
+      if (!bspotHandle.isValid()) {
+	cout << "==>HFbs2JpsiPhi> No beamspot found, skipping" << endl;
+	return;
+      }
+      BeamSpot bspot = *bspotHandle;		
 
       HFSequentialVertexFit aSeq(hTracks, NULL, fTTB.product(), recoPrimaryVertexCollection, field, bspot, fVerbose);
       // -- setup with (relevant) muon hypothesis
@@ -390,7 +398,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
       HFDecayTree theTree2(2000000+fType, true, 0, false);
       for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
 	IDX = trackIndices[ii];
-	ID  = gHFEvent->getRecTrack(IDX)->fMCID;
+	ID  = gHFEvent->getSimpleTrackMCID(IDX);
 	if (fVerbose > 2) cout << "-> adding track " << IDX << " with ID = " << ID << " to the tree" << endl; 
 	theTree2.addTrack(IDX, ID);
       }
@@ -404,7 +412,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	HFDecayTreeIterator iterator = theTree3.addDecayTree(300443, false, MJPSI, false);
 	for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
 	  IDX = trackIndices[ii];
-	  ID  = gHFEvent->getRecTrack(IDX)->fMCID;
+	  ID  =  gHFEvent->getSimpleTrackMCID(IDX);
 	  if (13 == TMath::Abs(ID)) {
 	    iterator->addTrack(IDX, 13);
 	  }
@@ -413,7 +421,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
 	for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
 	  IDX = trackIndices[ii];
-	  ID  = gHFEvent->getRecTrack(IDX)->fMCID;
+	  ID  = gHFEvent->getSimpleTrackMCID(IDX);
 	  if (321 == TMath::Abs(ID)) {
 	    theTree3.addTrack(IDX, 321);
 	  }
@@ -434,7 +442,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	HFDecayTreeIterator iterator = theTree4.addDecayTree(300443, false, MJPSI, false);
 	for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
 	  IDX = trackIndices[ii];
-	  ID  = gHFEvent->getRecTrack(IDX)->fMCID;
+	  ID  = gHFEvent->getSimpleTrackMCID(IDX);
 	  if (13 == TMath::Abs(ID)) {
 	    iterator->addTrack(IDX, 13);
 	  }
@@ -444,7 +452,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	iterator = theTree4.addDecayTree(300333, false, MPHI, false);
 	for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
 	  IDX = trackIndices[ii];
-	  ID  = gHFEvent->getRecTrack(IDX)->fMCID;
+	  ID  = gHFEvent->getSimpleTrackMCID(IDX);
 	  if (321 == TMath::Abs(ID)) {
 	    iterator->addTrack(IDX, 321);
 	  }
@@ -465,7 +473,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
         for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
           IDX = trackIndices[ii];
           ID  = gHFEvent->getRecTrack(IDX)->fMCID;
-          int mcidx   = gHFEvent->getRecTrack(IDX)->fGenIndex;
+          int mcidx   = gHFEvent->getSimpleTrack(IDX)->getGenIndex();
           int mcmoidx = gHFEvent->getGenCand(mcidx)->fMom1;
           int mcmoID  = gHFEvent->getGenCand(mcmoidx)->fID;
           //      cout << "IDX = " << IDX << " ID = " << ID << " mcmoID = " << mcmoID << endl;
