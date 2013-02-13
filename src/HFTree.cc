@@ -61,7 +61,7 @@ HFTree::~HFTree() {
   
   // -- Save output
   fFile->cd();
-  fTree->Write();
+  //  fTree->Write();
   fFile->Write();
   fFile->Close();
   delete fFile;
