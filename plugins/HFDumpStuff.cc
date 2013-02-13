@@ -184,9 +184,13 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 	       << endl;
 	}
 	TrackBaseRef rTrackView(tracksView, v1TrackIter->key());
-	Track track(*rTrackView);
-	if (fVerbose > 10) {cout << " -> track " << "  " << track.pt() << "  " << track.phi() << endl;}
-	pVtx->addTrack(v1TrackIter->key()); 
+	if (rTrackView.isNonnull()) {
+	  Track track(*rTrackView);
+	  if (fVerbose > 10) {cout << " -> track " << "  " << track.pt() << "  " << track.phi() << endl;}
+	  pVtx->addTrack(v1TrackIter->key()); 
+	} else {
+	  if (fVerbose > 10) {cout << " -> track not part of reduced track list " << endl;}
+	}
       }
       ++cnt; 
     }
