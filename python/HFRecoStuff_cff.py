@@ -46,6 +46,9 @@ muonDump = cms.EDAnalyzer(
     doTruthMatching = cms.untracked.int32(0),
     runOnAOD        = cms.untracked.bool(True),
     maxTrackDist    = cms.untracked.double(0.2),
+	docaVertex      = cms.untracked.double(0.05),
+	keepBest        = cms.untracked.int32(3),
+	maxCandTracks   = cms.untracked.int32(3),
     # Configuration for the extrapolation at the muon system 
     propM1 = cms.PSet(
         useStation2 = cms.bool(False), 
