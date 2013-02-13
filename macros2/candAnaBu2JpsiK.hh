@@ -17,15 +17,6 @@
 #include <TH2.h>
 #include <TTree.h>
 
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TGenCand.hh"
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaCand.hh"
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaJet.hh"
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
-
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
-
 #include "candAna.hh"
 
 class candAnaBu2JpsiK : public candAna {

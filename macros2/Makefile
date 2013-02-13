@@ -41,12 +41,13 @@ RELLIBPATH    = ../../../../AnalysisDataFormats/HeavyFlavorObjects/lib
 #########
 # FILES #
 #########
-READER_HEADERS = bmm2Reader.hh lmtreeReader.hh candAna.hh candAnaMuMu.hh candAnaBu2JpsiK.hh candAnaBs2JpsiPhi.hh candAnaDstar.hh candAnaHh.hh candAnaBd2DstarPi.hh plotClass.hh plotPU.hh plotOverlays.hh plotEfficiencies.hh plotIso.hh plotResults.hh plotOptimize.hh plotBDT.hh plotReducedOverlays.hh 
-READER = bmm2Reader.o lmtreeReader.o candAna.o candAnaMuMu.o candAnaBu2JpsiK.o candAnaBs2JpsiPhi.o candAnaDstar.o candAnaHh.o candAnaBd2DstarPi.o plotClass.o plotPU.o plotOverlays.o plotEfficiencies.o plotIso.o plotResults.o plotOptimize.o plotBDT.o plotReducedOverlays.o 
+READER_HEADERS = lmtreeReader.hh bmm2Reader.hh candAna.hh candAnaMuMu.hh candAnaBu2JpsiK.hh candAnaBs2JpsiPhi.hh candAnaDstar.hh candAnaHh.hh candAnaBd2DstarPi.hh plotClass.hh plotPU.hh plotOverlays.hh plotEfficiencies.hh plotIso.hh plotResults.hh plotOptimize.hh plotBDT.hh plotReducedOverlays.hh 
+READER = lmtreeReader.o bmm2Reader.o candAna.o candAnaMuMu.o candAnaBu2JpsiK.o candAnaBs2JpsiPhi.o candAnaDstar.o candAnaHh.o candAnaBd2DstarPi.o plotClass.o plotPU.o plotOverlays.o plotEfficiencies.o plotIso.o plotResults.o plotOptimize.o plotBDT.o plotReducedOverlays.o 
+
 
 CSTUFF = preselection.o
 
-READERDICT = ${READER:.o=Dict.o}
+READERDICT := ${READER:.o=Dict.o}
 
 #################
 # PATTERN RULES #

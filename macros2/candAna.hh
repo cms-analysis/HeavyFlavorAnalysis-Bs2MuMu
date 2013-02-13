@@ -1,39 +1,18 @@
 #ifndef CANDANA_H
 #define CANDANA_H
 
-#include <iostream>
 #include <string>
-#include <utility>
 #include <vector>
 #include <map>
 
-#include <TROOT.h>
-#include <TString.h>
-#include <TVector3.h>
-#include <TLorentzVector.h>
-#include <TChain.h>
-#include <TFile.h>
-#include <TDirectory.h>
 #include <TH1.h>
 #include <TH2.h>
-#include <TTree.h>
-
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAna01Event.hh"
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TGenCand.hh"
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaCand.hh"
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaJet.hh"
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
-
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
-
-#include "../macros/AnalysisCuts.hh"
-#include "../macros/AnalysisDistribution.hh"
-
-#include "RedTreeData.hh"
-#include "preselection.hh"
 
 #include "bmm2Reader.hh"
+#include "RedTreeData.hh"
+#include "preselection.hh"
+#include "../macros/AnalysisCuts.hh"
+
 
 struct isoNumbers {
   double iso; 
@@ -43,14 +22,16 @@ struct isoNumbers {
 };
 
 // -- TMVA related
-#include "TMVA/Factory.h"
 #include "TMVA/Reader.h"
-#include "TMVA/Tools.h"
 struct readerData {
   float pt, eta, m1eta, m2eta, m1pt, m2pt;
   float fls3d, alpha, maxdoca, pvip, pvips, iso, docatrk, chi2dof, closetrk; 
   float m;
 };
+
+class AnalysisDistribution; 
+class TTree; 
+class TDirectory; 
 
 // ----------------------------------------------------------------------
 class candAna {
@@ -234,7 +215,7 @@ public:
 
   // -- Analysis distributions
   std::map<std::string, int> fRegion;
-#define NAD 5
+  static const int NAD = 5;
   AnalysisDistribution   *fpHLT[NAD], *fpPvZ[NAD], *fpPvN[NAD], *fpPvNtrk[NAD], *fpPvAveW8[NAD]  
     , *fpTracksQual[NAD], *fpTracksPt[NAD],  *fpTracksEta[NAD] 
     , *fpMuonsID[NAD], *fpMuonsPt[NAD], *fpMuonsEta[NAD], *fpMuon1Pt[NAD], *fpMuon2Pt[NAD], *fpMuon1Eta[NAD], *fpMuon2Eta[NAD]
@@ -269,7 +250,7 @@ public:
     ;
   
   // -- Analysis distributions in bins of n(PV)
-#define NADPV 25
+  static const int NADPV = 25; 
   AnalysisDistribution   *fpNpvPvN[NADPV][NAD];
   AnalysisDistribution   *fpNpvAveW8[NADPV][NAD];
   AnalysisDistribution   *fpNpvChi2Dof[NADPV][NAD];
@@ -299,4 +280,4 @@ public:
 
 };
 
-#endif
+#endif //  CANDANA_H

@@ -4,6 +4,8 @@
 
 #include "../interface/HFMasses.hh"
 
+#include "../macros/AnalysisDistribution.hh"
+
 using namespace std;
 
 // ----------------------------------------------------------------------

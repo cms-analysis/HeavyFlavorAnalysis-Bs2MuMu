@@ -24,13 +24,13 @@
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaJet.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaVertex.hh"
 
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/JSON.hh"
 
 #include "../macros/treeReader01.hh"
 
 #define DR      57.29577951
 
+class PidTable; 
 class candAna;
 
 class bmm2Reader : public treeReader01 {

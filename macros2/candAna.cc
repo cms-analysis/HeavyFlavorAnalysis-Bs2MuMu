@@ -1,8 +1,9 @@
 #include "candAna.hh"
-#include <cmath>
-#include <string>
 
 #include "../interface/HFMasses.hh"
+#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
+#include "../macros/AnalysisDistribution.hh"
+
 
 using namespace std;
 
@@ -265,7 +266,7 @@ void candAna::candAnalysis() {
   fCandEta      = fpCand->fPlab.Eta();
   fCandPhi      = fpCand->fPlab.Phi();
   fCandM        = fpCand->fMass;
-  fCandME       = fpCand->fVar1;
+  fCandME       = fpCand->fMassE;
   fCandDoca     = fpCand->fMaxDoca;
 
   // -- values of cand wrt PV
@@ -289,9 +290,9 @@ void candAna::candAnalysis() {
   fCandPvIpS    = fCandPvIp/fCandPvIpE;
   if (TMath::IsNaN(fCandPvIpS)) fCandPvIpS = -1.;
 
-  fCandPvIp3D   = fpCand->fVar2; 
-  fCandPvIpE3D  = fpCand->fVar3; 
-  fCandPvIpS3D  = fpCand->fVar2/fpCand->fVar3; 
+  fCandPvIp3D   = fpCand->fPvIP3d; 
+  fCandPvIpE3D  = fpCand->fPvIP3dE; 
+  fCandPvIpS3D  = fpCand->fPvIP3d/fpCand->fPvIP3dE; 
   if (TMath::IsNaN(fCandPvIpS3D)) fCandPvIpS3D = -1.;
 
   fCandM2 = constrainedMass();
