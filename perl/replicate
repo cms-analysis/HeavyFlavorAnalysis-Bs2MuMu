@@ -1,0 +1,83 @@
+#!/usr/bin/env perl
+
+#
+# replicate -t file.template -f 01000 -l 02000 -p 'run set',reportFile,histFileName
+#
+# This is useful for the generation of many files, which are built 
+# according to the following scheme: 
+#
+#    bla-1000.py    py file containing the runnumber 1000 in the name
+# 
+# Inside the py file, there are names that contain the runnumber and need to be changed: 
+#
+#    rootFileName  = cms.untracked.string("pixelTree-01000.root"),
+#
+# The given usage example is taylored to these cases and will replace the runnumber
+# of the template file with the new runnumber for all lines containing a word of the 
+# 'pattern' argument. 
+#
+# History   09/010/27  Modified documentation for CMS 
+# -------
+#
+# ----------------------------------------------------------------------
+# Send all questions, wishes and complaints to the 
+#
+# Author    Urs Langenegger <urs.langenegger@psi.ch>
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+getopts('t:f:l:p:');
+
+
+if ($opt_t) {
+    $template = $opt_t;
+} else {
+    die "need a template!\n";
+}
+
+if ($opt_f) {
+    $firstNum = $opt_f;
+} else {
+#    $firstNum = 0; 
+    die "need starting number\n";
+}
+
+if ($opt_l) {
+    $lastNum = $opt_l;
+} else {
+    die "need ending number\n";
+}
+
+if ($opt_p) {$replace = $opt_p; }
+
+@replaces = split(/,/, $replace); 
+
+open(IN, "$template") || die "cannot open $template\n";
+@in = <IN>;
+close IN; 
+
+grep(s/\n//, @in); 
+
+foreach $patt (@replaces) {
+    print "Replacing in lines with $patt\n";
+} 
+
+for ($i =  $firstNum+1; $i <= $lastNum; $i++) {
+    $augm = $i;
+    while (length(opt_f) > length($augm)+1) {$augm = '0'.$augm;}
+    ($filename = $template) =~ s/$firstNum/$augm/;
+    open(OUT, ">$filename") || die "cannot open $filename\n";
+    print "$filename\n";
+    foreach $bla (@in) {
+	$line = $bla;
+	foreach $patt (@replaces) {
+	    if ($line =~ /$patt/) {
+		$line =~ s/$firstNum/$augm/g;
+		last;
+	    }
+	}
+	print OUT "$line\n"; 
+    }
+    close OUT; 
+}
+
