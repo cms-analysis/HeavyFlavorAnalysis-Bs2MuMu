@@ -166,6 +166,7 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   //     }
   //   }
   
+  int genIdx(-1); 
   for (unsigned int i = 0; i < tracksView->size(); ++i){    
 
     TrackBaseRef rTrackView(tracksView,i);
@@ -181,7 +182,7 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     }
     
     // -- truth matching with deltaR comparision
-    int genIdx(-1); 
+    genIdx = -1; 
     if (3 == fDoTruthMatching) {    
       genIdx  = gHFEvent->getGenIndexWithDeltaR(trackView.pt(), trackView.eta(), trackView.phi(), trackView.charge()); 
     }
@@ -197,6 +198,11 @@ void HFDumpTracks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       fillAnaTrack(at, trackView, i, genIdx, vc, mc, bs); 
     }
   }
+
+
+  ESHandle<MagneticField> magfield;
+  iSetup.get<IdealMagneticFieldRecord>().get(magfield);
+  cleanupTruthMatching(tracksView, magfield);
 
 
   if (fVerbose > 0) {

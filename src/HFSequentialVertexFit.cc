@@ -621,7 +621,6 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   for (j = 0; j < allTreeTracks.size(); j++) {
     
     TransientTrack fitTrack = daughterParticles[(*kinParticleMap)[allTreeTracks[j].trackIx]]->refittedTransientTrack();
-    //    TAnaTrack *recTrack = gHFEvent->getRecTrack(allTreeTracks[j].trackIx);
 
     TSimpleTrack *sTrack = gHFEvent->getSimpleTrack(allTreeTracks[j].trackIx);
     pTrack = gHFEvent->addSigTrack();
@@ -629,10 +628,11 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
     TrackBaseRef baseRef(fhTracks, allTreeTracks[j].trackIx);
     Track trackView(*baseRef);
 
-    fillAnaTrack(pTrack, trackView, allTreeTracks[j].trackIx, -1, fPVCollection.product(), fMuons, 0); 
+    int gidx = sTrack->getGenIndex();
+    fillAnaTrack(pTrack, trackView, allTreeTracks[j].trackIx, gidx, fPVCollection.product(), fMuons, 0); 
     
     pTrack->fIndex = allTreeTracks[j].trackIx;
-    pTrack->fMCID = allTreeTracks[j].particleID; // Here, we use the MCID of the sigTrack to store the assumed particle ID for the mass hypothesis
+    pTrack->fMCID = allTreeTracks[j].particleID; // use the sigTrack MCID to store the assumed particle ID for the mass hypothesis
     pTrack->fRefPlab = TVector3(fitTrack.track().px(),fitTrack.track().py(),fitTrack.track().pz());
     pTrack->fRefDof = fitTrack.ndof();
     pTrack->fRefValidHits = fitTrack.numberOfValidHits();

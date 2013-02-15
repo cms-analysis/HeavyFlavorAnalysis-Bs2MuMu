@@ -279,6 +279,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	if (2212 == mcid) mass = MPROTON;
 				
 	if (trackIxMap.count(gidx) > 0) {
+	  // -- this code is not longer called since the introduction of the truth matching cleanup
 	  ESHandle<MagneticField> magfield;
 	  iSetup.get<IdealMagneticFieldRecord>().get(magfield);
 	  AnalyticalImpactPointExtrapolator ipExt(magfield.product());
@@ -331,8 +332,6 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
       }
     }
 
-
-    cout << "--> trackIxMap.size() = " << trackIxMap.size() << endl;
 
     if (static_cast<int>(trackIxMap.size()) == fStableDaughters) {
 			

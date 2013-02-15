@@ -1,6 +1,9 @@
 #ifndef HFDUMPUTILITIES_H
 #define HFDUMPUTILITIES_H
 
+#include "FWCore/Framework/interface/ESHandle.h"
+#include "DataFormats/Common/interface/Handle.h"
+
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 
@@ -18,6 +21,8 @@
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaTrack.hh"
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TSimpleTrack.hh"
 
+#include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
+#include "MagneticField/Engine/interface/MagneticField.h"
 
 void fillSimpleTrack(TSimpleTrack *pTrack, const reco::Track &trackView, 
 		     int tidx, int mid, int gidx, const reco::VertexCollection *vc);
@@ -28,5 +33,8 @@ void fillAnaTrack(TAnaTrack *pTrack, const reco::Track &trackView, int tidx, int
 int getPv(int tidx, const reco::VertexCollection *vc);
 
 int muonID(const reco::Muon &rm);
+
+//void cleanupTruthMatching();
+void cleanupTruthMatching(edm::Handle<edm::View<reco::Track> > &hTracks, edm::ESHandle<MagneticField> &magfield);
 
 #endif

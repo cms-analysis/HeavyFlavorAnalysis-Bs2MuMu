@@ -1,8 +1,5 @@
 #include <iostream>
 
-#include "FWCore/Framework/interface/ESHandle.h"
-#include "DataFormats/Common/interface/Handle.h"
-
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 #include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
 #include "SimTracker/TrackAssociation/interface/TrackAssociatorBase.h" 
@@ -12,7 +9,13 @@
 #include "SimDataFormats/Track/interface/SimTrack.h"
 #include "SimDataFormats/Track/interface/SimTrackContainer.h"
 
+#include "TrackingTools/GeomPropagators/interface/AnalyticalImpactPointExtrapolator.h"
+
 #include "DataFormats/TrackerRecHit2D/interface/SiTrackerGSRecHit2D.h" 
+
+#include "DataFormats/TrackReco/interface/TrackExtraFwd.h"
+#include "DataFormats/TrackReco/interface/TrackFwd.h"
+#include "DataFormats/TrackReco/interface/Track.h"
 
 #include "DataFormats/TrackReco/interface/DeDxData.h"
 #include "DataFormats/TrackReco/interface/HitPattern.h"
@@ -235,3 +238,119 @@ int muonID(const Muon &rm) {
   //MuID |= 0x1<<16; // used in sigtrack for tightmu selection w.r.t. SV
   return MuID; 
 }
+
+
+// ----------------------------------------------------------------------
+void cleanupTruthMatching(Handle<View<Track> > &hTracks, ESHandle<MagneticField> &magfield) {
+  const int verbose(0); 
+
+  // -- Determine which gen Tracks are mapped to more than one simple track
+  map<int, vector<int> > genIdxTracks; 
+  TSimpleTrack *pTrack(0); 
+  for (int it = 0; it < gHFEvent->nSimpleTracks(); ++it) {
+    pTrack = gHFEvent->getSimpleTrack(it); 
+    int gIdx = pTrack->getGenIndex(); 
+    if (gIdx > -1) genIdxTracks[gIdx].push_back(it);
+  }
+
+
+  if (verbose) cout << "--------------------------------------------------------------------------------" << endl;
+  map<int, vector<int> >::iterator ii; 
+  int bestChoice(-1); 
+  for (ii = genIdxTracks.begin(); ii != genIdxTracks.end(); ++ii) {
+    if (ii->second.size() > 1) {
+      if (verbose) {
+	gHFEvent->getGenCand(ii->first)->dump(0); 
+      }
+      
+      TGenCand *pGen = gHFEvent->getGenCand(ii->first);
+      
+      AnalyticalImpactPointExtrapolator ipExt(magfield.product());
+      GlobalPoint vtx(0,0,0);
+      FreeTrajectoryState fts;
+      TrajectoryStateOnSurface tsof;
+      TrackBaseRef trackView;
+      TVector3 ipGen, ipThis, ipOld;
+      
+      
+      // -- generator impact point
+      fts = FreeTrajectoryState(GlobalPoint(pGen->fV.X(),pGen->fV.Y(),pGen->fV.Z()),
+				GlobalVector(pGen->fP.X(),pGen->fP.Y(),pGen->fP.Z()),
+				TrackCharge(pGen->fQ),
+				magfield.product());
+      tsof = ipExt.extrapolate(fts,vtx);
+      ipGen.SetXYZ(tsof.globalPosition().x(), tsof.globalPosition().y(), tsof.globalPosition().z());
+      
+      double dIP(99.), dIPmin(99.); 
+      int imin(-1); 
+      
+      double dR(99.), dRmin(99.); 
+      int rmin(-1); 
+      
+      double dP(99.), dPmin(99.); 
+      int pmin(-1); 
+      for (unsigned int iv = 0; iv < ii->second.size(); ++iv) {
+	// -- track delta R
+	dR = gHFEvent->getGenCand(ii->first)->fP.Vect().DeltaR(gHFEvent->getSimpleTrack(ii->second[iv])->getP());
+	if (dR < dRmin) {
+	  rmin = ii->second[iv];
+	  dRmin = dR;
+	}
+	
+	// -- track delta P
+	dP = TMath::Abs(gHFEvent->getGenCand(ii->first)->fP.Mag() - gHFEvent->getSimpleTrack(ii->second[iv])->getP().Mag());
+	dP = dP/gHFEvent->getSimpleTrack(ii->second[iv])->getP().Mag();
+	if (dP < dPmin) {
+	  pmin = ii->second[iv];
+	  dPmin = dP;
+	}
+	
+	// -- track impact point
+	trackView = TrackBaseRef(hTracks, ii->second[iv]);
+	fts = FreeTrajectoryState(GlobalPoint(trackView->vx(),trackView->vy(),trackView->vz()),
+				  GlobalVector(trackView->px(),trackView->py(),trackView->pz()),
+				  trackView->charge(),
+				  magfield.product());
+	tsof = ipExt.extrapolate(fts,vtx);
+	ipThis.SetXYZ(tsof.globalPosition().x(), tsof.globalPosition().y(), tsof.globalPosition().z());
+	
+	dIP = (ipGen - ipThis).Mag();
+	
+	if (dIP < dIPmin) {
+	  dIPmin = dIP; 
+	  imin = ii->second[iv];
+	} 
+	if (verbose) {
+	  cout << "dR = " << dR << " dIP = " << dIP << " dP = " << dP; 
+	  gHFEvent->getSimpleTrack(ii->second[iv])->dump(); 
+	}
+	
+      }
+      
+      // -- if the choices disagree, look for a majority
+      bestChoice = -1; 
+      if (rmin == imin) bestChoice = rmin; 
+      if (imin == pmin) bestChoice = imin;
+      if (rmin == pmin) bestChoice = rmin;
+      if (bestChoice < 0) {
+	// -- this is possible e.g. for three tracks matched to the same gen particle
+	bestChoice = rmin;
+      }
+      if (verbose) {
+	cout << "selected track " << bestChoice << " for this gen particle" << endl;
+      }
+      
+      for (unsigned int iv = 0; iv < ii->second.size(); ++iv) {
+	if (ii->second[iv] == bestChoice) {
+	  if (verbose) cout << " keeping gen index or track " << ii->second[iv] << endl;
+	} else {
+	  gHFEvent->getSimpleTrack(ii->second[iv])->setGenIndex(-1) ; 
+	  if (verbose) cout << " resetting gen index for track " << ii->second[iv] << endl;
+	}
+      }
+      
+    }
+  }
+ 
+}
+
