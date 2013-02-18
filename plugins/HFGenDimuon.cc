@@ -66,7 +66,7 @@ void HFGenDimuon::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 		gen = gHFEvent->getGenCand(ix);
 		if (gen->fMom1 == 0) {
 			vtx = gHFEvent->addPV();
-			vtx->fPoint = vtx->fSimPoint = gen->fV;
+			vtx->fPoint = gen->fV;
 			break;
 		}
 	}
