@@ -173,25 +173,25 @@ void HFDumpStuff::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       }
       pVtx->setCovXX(cov);
 
-      Vertex::trackRef_iterator v1TrackIter;
-      Vertex::trackRef_iterator v1TrackBegin = iv->tracks_begin();
-      Vertex::trackRef_iterator v1TrackEnd   = iv->tracks_end();
-      for (v1TrackIter = v1TrackBegin; v1TrackIter != v1TrackEnd; v1TrackIter++) {
-	if (fVerbose > 10) {
-	  cout << "vtx trk: " << " " << v1TrackIter->key()
-	       << "  " << (**v1TrackIter).pt() 
-	       << "  " << (**v1TrackIter).phi() 
-	       << endl;
-	}
-	TrackBaseRef rTrackView(tracksView, v1TrackIter->key());
-	if (rTrackView.isNonnull()) {
-	  Track track(*rTrackView);
-	  if (fVerbose > 10) {cout << " -> track " << "  " << track.pt() << "  " << track.phi() << endl;}
-	  pVtx->addTrack(v1TrackIter->key()); 
-	} else {
-	  if (fVerbose > 10) {cout << " -> track not part of reduced track list " << endl;}
-	}
-      }
+//       Vertex::trackRef_iterator v1TrackIter;
+//       Vertex::trackRef_iterator v1TrackBegin = iv->tracks_begin();
+//       Vertex::trackRef_iterator v1TrackEnd   = iv->tracks_end();
+//       for (v1TrackIter = v1TrackBegin; v1TrackIter != v1TrackEnd; v1TrackIter++) {
+// 	if (fVerbose > 10) {
+// 	  cout << "vtx trk: " << " " << v1TrackIter->key()
+// 	       << "  " << (**v1TrackIter).pt() 
+// 	       << "  " << (**v1TrackIter).phi() 
+// 	       << endl;
+// 	}
+// 	TrackBaseRef rTrackView(tracksView, v1TrackIter->key());
+// 	if (rTrackView.isNonnull()) {
+// 	  Track track(*rTrackView);
+// 	  if (fVerbose > 10) {cout << " -> track " << "  " << track.pt() << "  " << track.phi() << endl;}
+// 	  pVtx->addTrack(v1TrackIter->key()); 
+// 	} else {
+// 	  if (fVerbose > 10) {cout << " -> track not part of reduced track list " << endl;}
+// 	}
+//       }
       ++cnt; 
     }
   } catch (cms::Exception &ex) {
