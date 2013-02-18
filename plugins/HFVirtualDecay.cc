@@ -18,6 +18,7 @@
 HFVirtualDecay::HFVirtualDecay(const edm::ParameterSet& iConfig) :
 	fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
 	fTracksLabel(iConfig.getUntrackedParameter<edm::InputTag>("tracksLabel", edm::InputTag("generalTracks"))),
+	fTrackQualityString(iConfig.getUntrackedParameter<std::string>("trackQualityString",std::string("highPurity"))),
 	fPrimaryVertexLabel(iConfig.getUntrackedParameter<edm::InputTag>("PrimaryVertexLabel", edm::InputTag("offlinePrimaryVertices"))),
 	fBeamSpotLabel(iConfig.getUntrackedParameter<edm::InputTag>("BeamSpotLabel", edm::InputTag("offlineBeamSpot"))),
 	fMuonsLabel(iConfig.getUntrackedParameter<edm::InputTag>("muonsLabel", edm::InputTag("muons"))),
@@ -38,6 +39,7 @@ void HFVirtualDecay::dumpConfiguration()
 	using namespace std;
 	cout << "---  verbose                     " << fVerbose << endl;
 	cout << "---  tracksLabel                 " << fTracksLabel << endl;
+	cout << "---  trackQualityString          " << fTrackQualityString << endl;
 	cout << "---  PrimaryVertexLabel          " << fPrimaryVertexLabel << endl;
 	cout << "---  BeamSpotLabel               " << fBeamSpotLabel << endl;
 	cout << "---  muonsLabel                  " << fMuonsLabel << endl;
@@ -95,6 +97,7 @@ void HFVirtualDecay::analyze(const edm::Event &iEvent, const edm::EventSetup &iS
 	fListBuilder->setMaxD0(fMaxD0);
 	fListBuilder->setMaxDz(fMaxDz);
 	fListBuilder->setMinPt(fTrackPt);
+	fListBuilder->setTrackQuality(fTrackQualityString);
 
 	muon::SelectionType muonType = muon::selectionTypeFromString(fMuonQualityString);
 	fListBuilder->setMuonQuality(muonType); 

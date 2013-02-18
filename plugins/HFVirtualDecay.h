@@ -45,6 +45,7 @@ class HFVirtualDecay : public edm::EDAnalyzer {
 		int fVerbose;
 		
 		edm::InputTag fTracksLabel;
+		std::string fTrackQualityString;
 		edm::InputTag fPrimaryVertexLabel;
 		edm::InputTag fBeamSpotLabel;
 		edm::InputTag fMuonsLabel;
