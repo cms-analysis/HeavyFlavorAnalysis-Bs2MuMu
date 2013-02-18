@@ -1,10 +1,5 @@
 import FWCore.ParameterSet.Config as cms
 
-HFHighPurityTracks = cms.EDFilter("TrackSelector",
-                                  src = cms.InputTag("generalTracks"),
-                                  cut = cms.string('quality("highPurity") && pt > 0.5 ')
-                                  )
-
 # ----------------------------------------------------------------------
 stuffDump = cms.EDAnalyzer(
     "HFDumpStuff",
@@ -50,10 +45,10 @@ muonDump = cms.EDAnalyzer(
     calomuonsLabel  = cms.untracked.InputTag("calomuons"),
     doTruthMatching = cms.untracked.int32(0),
     runOnAOD        = cms.untracked.bool(True),
-    maxTrackDist    = cms.untracked.double(0.2),
-	docaVertex      = cms.untracked.double(0.05),
-	keepBest        = cms.untracked.int32(3),
-	maxCandTracks   = cms.untracked.int32(3),
+    maxTrackDist    = cms.untracked.double(0.1),
+    docaVertex      = cms.untracked.double(0.05),
+    keepBest        = cms.untracked.int32(3),
+    maxCandTracks   = cms.untracked.int32(3),
     # Configuration for the extrapolation at the muon system 
     propM1 = cms.PSet(
         useStation2 = cms.bool(False), 
@@ -101,5 +96,5 @@ l1trep = cms.EDAnalyzer(
 # ######################################################################
 #recoStuffSequence     = cms.Sequence(stuffDump*trkDump*muonDump*triggerDump*hltrep*l1trep)
 #recoStuffSequence     = cms.Sequence(stuffDump*trkDump*muonDump*triggerDump)
-recoStuffSequence     = cms.Sequence(HFHighPurityTracks*stuffDump*trkDump*muonDump*triggerDump)
+recoStuffSequence     = cms.Sequence(stuffDump*trkDump*muonDump*triggerDump)
 
