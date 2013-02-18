@@ -67,10 +67,10 @@ HFDumpTracks::HFDumpTracks(const edm::ParameterSet& iConfig):
   fAssociatorLabel(iConfig.getUntrackedParameter<InputTag>("associatorLabel", InputTag("TrackAssociatorByChi2"))), 
   fTrackingParticlesLabel(iConfig.getUntrackedParameter<InputTag>("trackingParticlesLabel", InputTag("trackingParticles"))),
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
-  fDumpSimpleTracks(iConfig.getUntrackedParameter<bool>("dumpSimpleTracks", true)),
-  fDumpRecTracks(iConfig.getUntrackedParameter<bool>("dumpRecTracks", false)),
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 0)),
   fDoTruthMatching(iConfig.getUntrackedParameter<int>("doTruthMatching", 1)),
+  fDumpSimpleTracks(iConfig.getUntrackedParameter<bool>("dumpSimpleTracks", true)),
+  fDumpRecTracks(iConfig.getUntrackedParameter<bool>("dumpRecTracks", false)),
   fPropMuon(iConfig.getParameter<edm::ParameterSet>("propMuon"))
     {
   cout << "----------------------------------------------------------------------" << endl;
