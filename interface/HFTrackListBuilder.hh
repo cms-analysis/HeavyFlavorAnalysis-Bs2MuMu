@@ -36,6 +36,7 @@ class HFTrackListBuilder {
 		void setMaxDz(double maxDz) { fMaxDz = maxDz; }
 		void setMinPt(double minPt) { fMinPt = minPt; }
                 void setMuonQuality(muon::SelectionType t) { fMuonQuality = t; }
+                void setTrackQuality(std::string t) { fTrackQuality = t; }
 		void setMaxDocaToTracks(double docaToTrks) { fMaxDocaToTrks = docaToTrks; }
 		void setCloseTracks(std::vector<int> *closeTracks) { fCloseTracks = closeTracks; }
 		void setCallerName(const char *callerName) { fCallerName = std::string(callerName); }
@@ -58,6 +59,7 @@ class HFTrackListBuilder {
 		double fMaxDz;
 		double fMinPt;
 		double fMaxDocaToTrks;
+                std::string fTrackQuality; 
 		muon::SelectionType fMuonQuality; 
 		std::vector<int> *fCloseTracks;
 };
