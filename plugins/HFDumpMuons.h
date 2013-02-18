@@ -41,6 +41,7 @@ class HFDumpMuons : public edm::EDAnalyzer {
   void                      fillMuon(const reco::Muon& tr, int type);
   void                      fillCaloMuon(const reco::CaloMuon& tr, int type);
   void                      extrapolateTracks(); 
+  bool                      doExtrapolate(double pt, double eta);
   void                      findVertex(TAnaMuon *anaMu, std::set<unsigned> *trkIcs, double *prob);
   std::vector<unsigned int> muonStatHits(const reco::Track& tr);
   edm::InputTag             fTracksLabel;

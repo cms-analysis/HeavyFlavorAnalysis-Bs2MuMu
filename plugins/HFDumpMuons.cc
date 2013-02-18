@@ -62,7 +62,7 @@ HFDumpMuons::HFDumpMuons(const edm::ParameterSet& iConfig):
   fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("ctfWithMaterialTracks"))),
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
   fCaloMuonsLabel(iConfig.getUntrackedParameter<InputTag>("calomuonsLabel")),
-  fMaxTrackDistToStore(iConfig.getUntrackedParameter<double>("maxTrackDist",0.2)),
+  fMaxTrackDistToStore(iConfig.getUntrackedParameter<double>("maxTrackDist",0.1)),
   fDocaVertex(iConfig.getUntrackedParameter<double>("docaVertex",0.05)),
   fKeepBest(iConfig.getUntrackedParameter<int>("keepBest",3)),
   fMaxCandTracks(iConfig.getUntrackedParameter<int>("maxCandTracks",3)),
@@ -177,13 +177,13 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   pM->fTimeOutIn        = rm.time().timeAtIpOutIn; 
   pM->fTimeOutInE       = rm.time().timeAtIpOutInErr; 
   pM->fTimeNdof         = rm.time().nDof;
-  //  pM->fTimeNdof         = rm.numberOfMatchedStations(); //FIXME!!!
   pM->fNmatchedStations = rm.numberOfMatchedStations();
 
   TrackRef gTrack = rm.globalTrack();
   TrackRef iTrack = rm.innerTrack();
   TrackRef oTrack = rm.outerTrack();
 
+  bool isGlobalMuon = muon::isGoodMuon(rm, muon::AllGlobalMuons);
 
   // -- variables for MVA muon ID
   if (gTrack.isNonnull() && iTrack.isNonnull()) {
@@ -205,8 +205,6 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   if (gTrack.isNonnull()) {
     Track trk(*gTrack);
     pM->fGlobalPlab.SetPtEtaPhi(trk.pt(), trk.eta(), trk.phi());
-    //    cout << " gpt = " << trk.pt() << " " <<  trk.eta() << " "  <<  trk.phi() << endl;
-
 
     if (!fRunOnAOD) {
       vector<unsigned int> hits = muonStatHits(trk);
@@ -232,29 +230,33 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   }
 
   // -- propagate muons to muon system to get their impact point
-  TrajectoryStateOnSurface prop_M1 = fpropM1.extrapolate(rm);
-  TrajectoryStateOnSurface prop_M2 = fpropM2.extrapolate(rm);
   TVector3 muPosM1; 
   bool validM1(false); 
-  if (prop_M1.isValid()) {
-    pM->fPositionAtM1.SetXYZ(prop_M1.globalPosition().x(), prop_M1.globalPosition().y(), prop_M1.globalPosition().z());
-  }
-  if (prop_M2.isValid()) {
-    pM->fPositionAtM2.SetXYZ(prop_M2.globalPosition().x(), prop_M2.globalPosition().y(), prop_M2.globalPosition().z());
-  }
-  
-  if (oTrack.isNonnull()) {
-    TrajectoryStateOnSurface propOuter = fpropM1.extrapolate(*oTrack);
-    if (propOuter.isValid()) {
-      validM1 = true; 
-      muPosM1.SetXYZ(propOuter.globalPosition().x(),propOuter.globalPosition().y(),propOuter.globalPosition().z());
-      pM->fMuonTrackPosAtM1.SetXYZ(propOuter.globalPosition().x(),propOuter.globalPosition().y(),propOuter.globalPosition().z());
-      pM->fMuonTrackPlabAtM1.SetXYZ(propOuter.globalMomentum().x(),propOuter.globalMomentum().y(),propOuter.globalMomentum().z());
+
+  if (isGlobalMuon && doExtrapolate(rm.pt(), rm.eta())) {
+    TrajectoryStateOnSurface prop_M1 = fpropM1.extrapolate(rm);
+    TrajectoryStateOnSurface prop_M2 = fpropM2.extrapolate(rm);
+    
+    if (prop_M1.isValid()) {
+      pM->fPositionAtM1.SetXYZ(prop_M1.globalPosition().x(), prop_M1.globalPosition().y(), prop_M1.globalPosition().z());
+    }
+    if (prop_M2.isValid()) {
+      pM->fPositionAtM2.SetXYZ(prop_M2.globalPosition().x(), prop_M2.globalPosition().y(), prop_M2.globalPosition().z());
+    }
+    
+    if (oTrack.isNonnull()) {
+      TrajectoryStateOnSurface propOuter = fpropM1.extrapolate(*oTrack);
+      if (propOuter.isValid()) {
+	validM1 = true; 
+	muPosM1.SetXYZ(propOuter.globalPosition().x(),propOuter.globalPosition().y(),propOuter.globalPosition().z());
+	pM->fMuonTrackPosAtM1.SetXYZ(propOuter.globalPosition().x(),propOuter.globalPosition().y(),propOuter.globalPosition().z());
+	pM->fMuonTrackPlabAtM1.SetXYZ(propOuter.globalMomentum().x(),propOuter.globalMomentum().y(),propOuter.globalMomentum().z());
+      }
     }
   }
-  
+
   // -- doca of close tracks to muon
-  if (iTrack.isNonnull() && fTTB.isValid()) {
+  if (isGlobalMuon && iTrack.isNonnull() && fTTB.isValid()) {
     TwoTrackMinimumDistance md(TwoTrackMinimumDistance::SlowMode);
     Track trkMuon(*iTrack);
     TransientTrack transTrkMuon = fTTB->build(trkMuon);
@@ -274,7 +276,7 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   }
 
 
-  if (validM1) {
+  if (isGlobalMuon && validM1) {
     vector<xpTrack> xvec; 
     for (unsigned int i = 0; i < fXpTracks.size(); ++i) {
       xpTrack x = fXpTracks[i]; 
@@ -291,15 +293,15 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
       for (unsigned int ii = 0; ii < xvec.size(); ++ii) pM->fXpTracks[ii] = xvec[ii]; 
     }
   }
-  
+
   // do the muon vertex analysis
-  std::set<unsigned> trks;
-  double prob = -1.0;
-  if (iTrack.isNonnull()) {
-	  trks.insert(iTrack.index());
-	  findVertex(pM,&trks,&prob);
-	  pM->fVtxProb = prob;
-	  pM->fVtxTracks = trks;
+  if (isGlobalMuon && iTrack.isNonnull()) {
+    std::set<unsigned> trks;
+    double prob = -1.0;
+    trks.insert(iTrack.index());
+    findVertex(pM,&trks,&prob);
+    pM->fVtxProb = prob;
+    pM->fVtxTracks = trks;
   }
 }
 
@@ -434,6 +436,12 @@ void HFDumpMuons::extrapolateTracks() {
     TrackBaseRef bRefTrk(*fhTracks, k);
     Track trk(*bRefTrk);
 
+    double eta = TMath::Abs(trk.eta()); 
+    double pt  = trk.pt();
+    
+    // -- skip regions where extrapolation is futile
+    if (!doExtrapolate(pt, eta)) continue;
+
     TrajectoryStateOnSurface tsos = fpropM1.extrapolate(trk);
     if (tsos.isValid()) {
       xpTrack x; 
@@ -447,6 +455,16 @@ void HFDumpMuons::extrapolateTracks() {
 
 }
 
+
+// ----------------------------------------------------------------------
+bool HFDumpMuons::doExtrapolate(double pt, double eta) { 
+  if (pt < 0.8) return false;
+  if (eta > 2.4) return false;
+  if (eta < 0.8 && pt < 3.4) return false;
+  if (eta > 0.8 && eta < 1.4 && (pt < -eta + 4.2)) return false;
+  if (eta > 1.4 && eta < 2.4 && (pt < -eta + 2.8)) return false;
+  return true;
+}
 
 // ------------ method called once each job just before starting event loop  ------------
 void  HFDumpMuons::beginJob() {
