@@ -26,6 +26,7 @@ HFTrackListBuilder::HFTrackListBuilder(edm::Handle<edm::View<reco::Track> > &hTr
 	fMaxDz(999.),
 	fMinPt(-1.),
 	fMaxDocaToTrks(999.),
+	fTrackQuality("highPurity"),
 	fMuonQuality(muon::AllGlobalMuons), 
 	fCloseTracks(NULL)
 {} // HFTrackListBuilder()
@@ -62,8 +63,12 @@ std::vector<int> HFTrackListBuilder::getTrackList()
 	
 	trackList.reserve(300);
 	for (ix = 0; (unsigned)ix < fhTracks->size(); ix++) {
-		if ( !(*this)(ix))
-			trackList.push_back(ix);
+	  reco::TrackBaseRef rTrackView(fhTracks, ix);
+	  const reco::Track trackView(*rTrackView);
+	  if (!trackView.quality(reco::TrackBase::qualityByName(fTrackQuality))) continue;
+	  
+	  if ( !(*this)(ix)) 
+	    trackList.push_back(ix);
 	}
 	
 	return trackList;
