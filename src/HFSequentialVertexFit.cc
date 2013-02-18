@@ -337,7 +337,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   ChiSquared chi(kinParticle->chiSquared(),kinParticle->degreesOfFreedom());
 
   // dump some information if in verbose mode...
-  if (fVerbose > 0) {
+  if (fVerbose > 2) {
     cout << "-----------------------------------------" << endl;
     cout << "==> HFSequentialVertexFit: Filling candidate with mass = " << mass << endl;
     cout << "-----------------------------------------" << endl;
@@ -350,7 +350,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  
 	  VertexCollection::const_iterator vertexIt;
 	  // calculate the impact parameters for all primary vertices
-	  if (fVerbose > 0)
+	  if (fVerbose > 2)
 		  cout << "==> HFSequentialVertexFit: Number of PV vertices to compare is " << fPVCollection->size() << endl;
 	  double pvWeightCut = tree->getNodeCut()->getPvWeightCut();
 	  
@@ -381,7 +381,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 		  }
 
 		  if (!currentIp.first) {
-			  if (fVerbose > 0) cout << "==>HFSequentialVertexFit: Unable to compute lip to vertex at index " << j << endl;
+			  if (fVerbose > 2) cout << "==>HFSequentialVertexFit: Unable to compute lip to vertex at index " << j << endl;
 			  continue;
 		  }
 		  
@@ -541,7 +541,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  else					throw PVRefitException();
 	  
 	  diffChi2 = currentPVWithSignal.chi2() - currentPV.chi2();
-  } else if (fVerbose > 0)
+  } else if (fVerbose > 2)
 	  cout << "==> HFSequentialVertexFit: No idea what distance to compute in TAnaVertex.fDxy and TAnaVertex.fD3d" << endl;
 
   // -- set covariance matrix
