@@ -77,9 +77,9 @@ void HFKalmanVertexFit::doNotFit(vector<Track>  &trackList,
   anaVtx.setInfo(-99., -99., -99., -99, -99);
   anaVtx.fPoint.SetXYZ(-9999., -9999., -9999.);
   
-  for (unsigned int i = 0; i < trackList.size(); ++i) {
-    anaVtx.addTrack(trackIndices[i]);
-  }
+//   for (unsigned int i = 0; i < trackList.size(); ++i) {
+//     anaVtx.addTrack(trackIndices[i]);
+//   }
   
   anaVtx.fDxy     = -99.;
   anaVtx.fDxyE    = -99.;
