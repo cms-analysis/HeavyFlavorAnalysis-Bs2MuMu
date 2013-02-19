@@ -506,7 +506,14 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
       }
 
     }
+
+    // -- now copy reduced part of gen block and clear the original
+    gHFEvent->fillGenT(motherIndex); 
   }
+
+  
+
+
 }
 
 //define this as a plug-in

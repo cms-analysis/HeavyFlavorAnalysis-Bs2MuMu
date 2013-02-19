@@ -43,18 +43,19 @@ void candAnaMuMu::genMatch() {
 
   TGenCand *pC(0), *pM1(0), *pM2(0), *pB(0); 
   bool goodMatch(false); 
-  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
-    pC = fpEvt->getGenCand(i); 
+  //  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
+  for (int i = 0; i < fpEvt->nGenT(); ++i) {
+    pC = fpEvt->getGenT(i); 
     if (TRUTHCAND == TMath::Abs(pC->fID)) {
       pM1 = pM2 = 0; 
       pB = pC;
       for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
-	pC = fpEvt->getGenCand(id); 
+	pC = fpEvt->getGenTWithIndex(id); 
 	if (id1 == TMath::Abs(pC->fID) || id2 == TMath::Abs(pC->fID)) {
 	  if (0 == pM1) {
-	    pM1 = fpEvt->getGenCand(id); 
+	    pM1 = fpEvt->getGenTWithIndex(id); 
 	  } else {
-	    pM2 = fpEvt->getGenCand(id); 
+	    pM2 = fpEvt->getGenTWithIndex(id); 
 	  }
 	}
       }
@@ -76,7 +77,8 @@ void candAnaMuMu::genMatch() {
     double m = pB->fP.Mag();
     double p = pB->fP.P();
     // Meson pointer
-    TGenCand *pM = fpEvt->getGenCand(pB->fMom1); 
+    //    TGenCand *pM = fpEvt->getGenCand(pB->fMom1); 
+    TGenCand *pM = fpEvt->getGenTWithIndex(pB->fMom1); 
     // the meson is the original except if it oscillated
     if (531 != TMath::Abs(pM->fID)) pM = pB;
     double x = (pM1->fV - pM->fV).Mag(); 

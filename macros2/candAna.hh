@@ -89,6 +89,7 @@ public:
   virtual bool        doTriggerMatching(TAnaTrack *pt, bool anyTrig = false); // match a single track to HLT
   virtual void        boostGames();
   virtual double      matchToMuon(TAnaTrack *pt); // match a single track to ALL muons
+  virtual void        play(); 
 
   std::string fName; 
   std::string fCutFile; 

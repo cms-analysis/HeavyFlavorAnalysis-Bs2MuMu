@@ -53,6 +53,9 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   //cout << fEvt << " " << fpEvt->nCands()<<endl;
   //   return;
 
+  //  play(); 
+  //  return;
+
   if (fIsMC) {
     genMatch(); 
     recoMatch(); 
@@ -3231,3 +3234,113 @@ double candAna::matchToMuon(TAnaTrack *pt) {
   return dRMin;
 }
 
+
+
+// ----------------------------------------------------------------------
+void candAna::play() {
+
+  fGenM1Tmi = fGenM2Tmi = -1; 
+  fNGenPhotons = 0; 
+
+  int id1(13), id2(13); 
+
+  cout << "-------------------------" << endl;
+  TGenCand *pC(0), *pM1(0), *pM2(0), *pB(0); 
+  bool goodMatch(false); 
+  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
+    pC = fpEvt->getGenCand(i); 
+    if (TRUTHCAND == TMath::Abs(pC->fID)) {
+      pM1 = pM2 = 0; 
+      pB = pC;
+      for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
+	pC = fpEvt->getGenCand(id); 
+	if (id1 == TMath::Abs(pC->fID) || id2 == TMath::Abs(pC->fID)) {
+	  if (0 == pM1) {
+	    pM1 = fpEvt->getGenCand(id); 
+	  } else {
+	    pM2 = fpEvt->getGenCand(id); 
+	  }
+	}
+      }
+      if (0 != pM1 && 0 != pM2) {
+	goodMatch = true; 
+	fNGenPhotons = pB->fDau2 - pB->fDau1 - 1; 
+	//	cout << "found gen match for B gen idx = " << pB->fNumber << endl;
+	//	pB->dump();
+	break;
+      }
+    }
+  }
+  
+  fGenBTmi = -1; 
+  if (goodMatch) {
+    fGenBTmi = pB->fNumber; 
+  }
+
+  set<int> daughters, mothers;
+  TGenCand *pDau, *pTmp, *pMom; 
+  int iMom; 
+
+  // -- daughters
+  for (int id = fGenBTmi+1; id < fpEvt->nGenCands(); ++id) {
+    pDau = fpEvt->getGenCand(id);
+    iMom = pDau->fMom1;
+    while (iMom > fGenBTmi) {
+      pTmp = fpEvt->getGenCand(iMom);
+      iMom = pTmp->fMom1;
+    }
+    if (iMom == fGenBTmi) {
+      //      cout << "d: "; pDau->dump();
+      daughters.insert(id); 
+    }
+  }
+  
+  mothers.insert(fGenBTmi); 
+  int cnt(0); 
+  while (1) {
+    ++cnt;
+    //    cout << cnt << " ----------------------- mothers size: " << mothers.size() << endl;
+    for (set<int>::iterator i = mothers.begin(); i != mothers.end(); ++i) {
+      pTmp = fpEvt->getGenCand(*i); 
+      //      pTmp->dump();
+      for (int id = pTmp->fMom1; id <= pTmp->fMom2; ++id) {
+	mothers.insert(id);
+      }
+    }
+    if (mothers.end() != find(mothers.begin(), mothers.end(), 0)) break;
+    if (mothers.end() != find(mothers.begin(), mothers.end(), 1)) break;
+    if (mothers.end() != find(mothers.begin(), mothers.end(), -1)) break;
+  }
+
+  // -- add documentation block
+  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
+    pTmp = fpEvt->getGenCand(i); 
+    if (pTmp->fStatus == 3) mothers.insert(i); 
+  }
+
+  cout << "mothers: " << mothers.size() << endl;
+  for (set<int>::iterator i = mothers.begin(); i != mothers.end(); ++i) {
+    cout << "m: "; fpEvt->getGenCand(*i)->dump(); 
+  }
+
+  cout << "daughters: " << daughters.size() << endl;
+  for (set<int>::iterator i = daughters.begin(); i != daughters.end(); ++i) {
+    cout << "d: "; fpEvt->getGenCand(*i)->dump(); 
+  }
+  
+
+  set<int> allParticles;
+  for (set<int>::iterator i = mothers.begin(); i != mothers.end(); ++i) {
+    allParticles.insert(*i); 
+  }
+
+  for (set<int>::iterator i = daughters.begin(); i != daughters.end(); ++i) {
+    allParticles.insert(*i); 
+  }
+
+  cout << "all: " << allParticles.size() << endl;
+  for (set<int>::iterator i = allParticles.begin(); i != allParticles.end(); ++i) {
+    cout << "a: "; fpEvt->getGenCand(*i)->dump(); 
+  }
+
+}

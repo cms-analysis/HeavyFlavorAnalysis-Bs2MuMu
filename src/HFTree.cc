@@ -31,6 +31,7 @@ using namespace::std;
 // ----------------------------------------------------------------------
 HFTree::HFTree(const edm::ParameterSet& iConfig) :
   fRequireCand(iConfig.getUntrackedParameter<bool>("requireCand", true)), 
+  fFullGenBlock(iConfig.getUntrackedParameter<bool>("fullGenBlock", false)), 
   fFileName(iConfig.getUntrackedParameter<string>("fileName", string("hfa.root"))), 
   fTreeName(iConfig.getUntrackedParameter<string>("treeName", string("T1"))), 
   fVerbose(iConfig.getUntrackedParameter<int>("verbose", 1)) {
@@ -41,6 +42,7 @@ HFTree::HFTree(const edm::ParameterSet& iConfig) :
   cout << "---  fileName:                        " << fFileName << endl; 
   cout << "---  treeName:                        " << fTreeName << endl; 
   cout << "---  requireCand:                     " << (fRequireCand?"true":"false") << endl; 
+  cout << "---  fullGenBlock:                    " << (fFullGenBlock?"true":"false") << endl; 
   cout << "----------------------------------------------------------------------" << endl;
   fFile = TFile::Open(fFileName.c_str(), "RECREATE");
   fTree = new TTree(fTreeName.c_str(), "CMSSW HF tree");
@@ -83,6 +85,10 @@ void HFTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 	   << endl;
       system(line); 
     }
+  }
+
+  if (false == fFullGenBlock) {
+    gHFEvent->clearGenBlock();
   }
 
   if (fRequireCand){

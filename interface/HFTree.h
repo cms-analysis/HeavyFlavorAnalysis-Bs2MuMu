@@ -31,7 +31,7 @@ class HFTree : public edm::EDAnalyzer {
   TTree        *fTree;
   TAna01Event  *fEvent;
 
-  bool         fRequireCand; 
+  bool         fRequireCand, fFullGenBlock;
 
   std::string  fFileName;
   std::string  fTreeName;
