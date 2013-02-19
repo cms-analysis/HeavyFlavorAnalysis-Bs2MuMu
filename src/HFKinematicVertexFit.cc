@@ -163,7 +163,7 @@ void HFKinematicVertexFit::doJpsiFit(vector<Track> &trackList,
       cout << "----------------------------------------" << endl;
     }
 		
-    anaVt.setInfo(buParticle->chiSquared(), buParticle->degreesOfFreedom(), chi.probability(), 0, 0);
+    anaVt.setInfo(buParticle->chiSquared(), buParticle->degreesOfFreedom(), chi.probability(), 0, -1);
     anaVt.fPoint.SetXYZ(buVertex->position().x(), buVertex->position().y(), buVertex->position().z() );
 		
     // -- Distance to primary vertex
