@@ -413,8 +413,8 @@ void candAnaHh::hhAnalysis() {
     ((TH1D*)fHistDir->Get("status"))->Fill(11.);
     if(tm==1) ((TH1D*)fHistDir->Get("status"))->Fill(21.);
 
-    bool t1 = goodTrack(pPi1);
-    bool t2 = goodTrack(pPi2);
+    bool t1 = highPurity(pPi1);
+    bool t2 = highPurity(pPi2);
     //cout<<t1<<" "<<t2<<endl;
     if( !t1 || !t2) continue; // skip bad tracks
 

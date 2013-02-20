@@ -24,13 +24,6 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
 
   fHistDir = gFile->mkdir(fName.c_str());
 
-  fRegion.insert(make_pair("A", 0)); // all
-  fRegion.insert(make_pair("B", 1)); // barrel
-  fRegion.insert(make_pair("E", 2)); // endcap
-
-  fRegion.insert(make_pair("APV0", 3));  // low-NPV events
-  fRegion.insert(make_pair("APV1", 4)); // large-NPV events
-
   cout << "======================================================================" << endl;	 
   cout << "==> candAna: name = " << name << ", reading cutsfile " << cutsFile << " setup for year " << fYear << endl;
 
@@ -111,8 +104,6 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     //cout<<" call analysis "<<fpCand<<" "<<iC<<endl;
     // -- call derived functions
     candAnalysis();
-
-    cout << fMu1Q << " " << fMu2Q << endl;
 
     boostGames(); 
     
@@ -195,21 +186,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
            if (fVerbose > 5) cout << " failed preselection" << endl;        
 	}  
       }
-    }
-
-
-//     // -- fill histograms
-//     fillCandidateHistograms(fRegion["A"]);
-//     if (fBarrel) {
-//       fillCandidateHistograms(fRegion["B"]);
-//     } else {
-//       fillCandidateHistograms(fRegion["E"]);
-//     }
-
-//     if (fPvN <  6) fillCandidateHistograms(fRegion["APV0"]);
-//     if (fPvN > 10) fillCandidateHistograms(fRegion["APV1"]);
-
-    
+    }   
   }
 
 }
@@ -303,8 +280,8 @@ void candAna::candAnalysis() {
   fCandM2 = constrainedMass();
   
   TAnaTrack *p0; 
-  TAnaTrack *p1(0), *ps1(0);
-  TAnaTrack *p2(0), *ps2(0); 
+  TAnaTrack *p1(0);
+  TAnaTrack *p2(0); 
   
   fCandQ    = 0;
 
@@ -339,12 +316,6 @@ void candAna::candAnalysis() {
   }
 
 
-  // -- switch to RecTracks! NOT ANY MORE !!!
-  ps1= p1; 
-  //  p1 = fpEvt->getRecTrack(ps1->fIndex);
-  ps2= p2; 
-  //  p2 = fpEvt->getRecTrack(ps2->fIndex);
-
   if (1301 == fpCand->fType ||1302 == fpCand->fType || 1313 == fpCand->fType) {
     // do nothing, these types are for efficiency/TNP studies
   } else {
@@ -352,25 +323,20 @@ void candAna::candAnalysis() {
       p0 = p1; 
       p1 = p2; 
       p2 = p0; 
-      
-      p0  = ps1; 
-      ps1 = ps2; 
-      ps2 = p0;
     }
   }
 
   fpMuon1 = p1; 
   fpMuon2 = p2; 
 
-  //  fMu1Id        = goodMuon(p1); 
   fMu1TrkLayer  = fpReader->numberOfTrackerLayers(p1);
   fMu1Id        = tightMuon(p1); 
-  fMu1Pt        = p1->fPlab.Perp(); 
-  fMu1Eta       = p1->fPlab.Eta(); 
-  fMu1Phi       = p1->fPlab.Phi(); 
-  fMu1PtNrf     = ps1->fPlab.Perp();
-  fMu1EtaNrf    = ps1->fPlab.Eta();
-  fMu1TkQuality = p1->fTrackQuality & TRACKQUALITY;
+  fMu1Pt        = p1->fRefPlab.Perp(); 
+  fMu1Eta       = p1->fRefPlab.Eta(); 
+  fMu1Phi       = p1->fRefPlab.Phi(); 
+  fMu1PtNrf     = p1->fPlab.Perp();
+  fMu1EtaNrf    = p1->fPlab.Eta();
+  fMu1TkQuality = highPurity(p1); 
   fMu1Q         = p1->fQ;
   fMu1Pix       = fpReader->numberOfPixLayers(p1);
   fMu1BPix      = fpReader->numberOfBPixLayers(p1);
@@ -402,12 +368,12 @@ void candAna::candAnalysis() {
   //  fMu2Id        = goodMuon(p2); 
   fMu2TrkLayer  = fpReader->numberOfTrackerLayers(p2);
   fMu2Id        = tightMuon(p2); 
-  fMu2Pt        = p2->fPlab.Perp(); 
-  fMu2Eta       = p2->fPlab.Eta(); 
-  fMu2Phi       = p2->fPlab.Phi(); 
-  fMu2PtNrf     = ps2->fPlab.Perp();
-  fMu2EtaNrf    = ps2->fPlab.Eta();
-  fMu2TkQuality = p2->fTrackQuality & TRACKQUALITY;
+  fMu2Pt        = p2->fRefPlab.Perp(); 
+  fMu2Eta       = p2->fRefPlab.Eta(); 
+  fMu2Phi       = p2->fRefPlab.Phi(); 
+  fMu2PtNrf     = p2->fPlab.Perp();
+  fMu2EtaNrf    = p2->fPlab.Eta();
+  fMu2TkQuality = highPurity(p2);
   fMu2Q         = p2->fQ;
   fMu2Pix       = fpReader->numberOfPixLayers(p2);
   fMu2BPix      = fpReader->numberOfBPixLayers(p2);
@@ -617,7 +583,7 @@ void candAna::candAnalysis() {
   fGoodMuonsID    = (fMu1Id && fMu2Id);
   fGoodMuonsPt    = ((fMu1Pt > MUPTLO) && (fMu1Pt < MUPTHI) && (fMu2Pt > MUPTLO) && (fMu2Pt < MUPTHI));
   fGoodMuonsEta   = ((fMu1Eta > MUETALO) && (fMu1Eta < MUETAHI) && (fMu2Eta > MUETALO) && (fMu2Eta < MUETAHI));
-  fGoodTracks     = (goodTrack(p1) && goodTrack(p2));
+  fGoodTracks     = (highPurity(p1) && highPurity(p2));
   fGoodTracksPt   = ((fMu1Pt > TRACKPTLO) && (fMu1Pt < TRACKPTHI) && (fMu2Pt > TRACKPTLO) && (fMu2Pt < TRACKPTHI));
   fGoodTracksEta  = ((fMu1Eta > TRACKETALO) && (fMu1Eta < TRACKETAHI) && (fMu2Eta > TRACKETALO) && (fMu2Eta < TRACKETAHI));
 
@@ -664,181 +630,6 @@ void candAna::candAnalysis() {
 
 // ----------------------------------------------------------------------
 void candAna::fillCandidateHistograms(int offset) {
- 
-  // -- only candidate histograms below
-  if (0 == fpCand) return;
-
-//   // -- Fill distributions
-//   fpTracksPt[offset]->fill(fMu1Pt, fCandM);
-//   fpTracksPt[offset]->fill(fMu2Pt, fCandM);
-//   fpTracksEta[offset]->fill(fMu1Eta, fCandM);
-//   fpTracksEta[offset]->fill(fMu2Eta, fCandM);
-//   fpTracksQual[offset]->fill((fGoodTracks?1:0), fCandM);
-
-//   fpMuonsPt[offset]->fill(fMu1Pt, fCandM);
-//   fpMuonsPt[offset]->fill(fMu2Pt, fCandM);
-//   fpMuonsEta[offset]->fill(fMu1Eta, fCandM);
-//   fpMuonsEta[offset]->fill(fMu2Eta, fCandM);
-//   fpMuon1Eta[offset]->fill(fMu1Eta, fCandM);
-//   fpMuon2Eta[offset]->fill(fMu2Eta, fCandM);
-//   fpMuon1Pt[offset]->fill(fMu1Pt, fCandM);
-//   fpMuon2Pt[offset]->fill(fMu2Pt, fCandM);
-
-//   fpHLT[offset]->fill((fGoodHLT?1:0), fCandM); 
-//   fpMuonsID[offset]->fill((fGoodMuonsID?1:0), fCandM); 
-//   fpPvZ[offset]->fill(fPvZ, fCandM); 
-//   fpPvN[offset]->fill(fPvN, fCandM); 
-//   fpPvNtrk[offset]->fill(fPvNtrk, fCandM); 
-//   fpPvAveW8[offset]->fill(fPvAveW8, fCandM); 
-//   fpPt[offset]->fill(fCandPt, fCandM); 
-//   fpP[offset]->fill(fCandP, fCandM);
-//   fpEta[offset]->fill(fCandEta, fCandM); 
-//   fpAlpha[offset]->fill(fCandA, fCandM);
-//   fpCosA[offset]->fill(fCandCosA, fCandM);
-//   fpIsoTrk[offset]->fill(fCandIsoTrk, fCandM);
-
-
-//   fpPt[offset]->fill(fCandPt, fCandM); 
-//   if (40 == fProcessType) fpPtGGF[offset]->fill(fCandPt, fCandM); 
-//   if (41 == fProcessType) fpPtFEX[offset]->fill(fCandPt, fCandM); 
-//   if (42 == fProcessType) fpPtGSP[offset]->fill(fCandPt, fCandM); 
-
-//   fpIso[offset]->fill(fCandIso, fCandM);
-//   if (40 == fProcessType) fpIsoGGF[offset]->fill(fCandIso, fCandM); 
-//   if (41 == fProcessType) fpIsoFEX[offset]->fill(fCandIso, fCandM); 
-//   if (42 == fProcessType) fpIsoGSP[offset]->fill(fCandIso, fCandM); 
-
-//   fpCloseTrk[offset]->fill(fCandCloseTrk, fCandM); 
-//   if (40 == fProcessType) fpCloseTrkGGF[offset]->fill(fCandCloseTrk, fCandM); 
-//   if (41 == fProcessType) fpCloseTrkFEX[offset]->fill(fCandCloseTrk, fCandM); 
-//   if (42 == fProcessType) fpCloseTrkGSP[offset]->fill(fCandCloseTrk, fCandM); 
-
-//   fpOsIso[offset]->fill(fOsIso, fCandM); 
-//   if (40 == fProcessType) fpOsIsoGGF[offset]->fill(fOsIso, fCandM); 
-//   if (41 == fProcessType) fpOsIsoFEX[offset]->fill(fOsIso, fCandM); 
-//   if (42 == fProcessType) fpOsIsoGSP[offset]->fill(fOsIso, fCandM); 
-
-//   fpOsRelIso[offset]->fill(fOsRelIso, fCandM); 
-//   if (40 == fProcessType) fpOsRelIsoGGF[offset]->fill(fOsRelIso, fCandM); 
-//   if (41 == fProcessType) fpOsRelIsoFEX[offset]->fill(fOsRelIso, fCandM); 
-//   if (42 == fProcessType) fpOsRelIsoGSP[offset]->fill(fOsRelIso, fCandM); 
-
-//   fpOsMuonPt[offset]->fill(fOsMuonPt, fCandM);
-//   if (40 == fProcessType) fpOsMuonPtGGF[offset]->fill(fOsMuonPt, fCandM); 
-//   if (41 == fProcessType) fpOsMuonPtFEX[offset]->fill(fOsMuonPt, fCandM); 
-//   if (42 == fProcessType) fpOsMuonPtGSP[offset]->fill(fOsMuonPt, fCandM); 
-
-//   fpOsMuonPtRel[offset]->fill(fOsMuonPtRel, fCandM);
-//   if (40 == fProcessType) fpOsMuonPtRelGGF[offset]->fill(fOsMuonPtRel, fCandM); 
-//   if (41 == fProcessType) fpOsMuonPtRelFEX[offset]->fill(fOsMuonPtRel, fCandM); 
-//   if (42 == fProcessType) fpOsMuonPtRelGSP[offset]->fill(fOsMuonPtRel, fCandM); 
-
-//   fpOsMuonDeltaR[offset]->fill(fOsMuonDeltaR, fCandM); 
-//   if (40 == fProcessType) fpOsMuonDeltaRGGF[offset]->fill(fOsMuonDeltaR, fCandM); 
-//   if (41 == fProcessType) fpOsMuonDeltaRFEX[offset]->fill(fOsMuonDeltaR, fCandM); 
-//   if (42 == fProcessType) fpOsMuonDeltaRGSP[offset]->fill(fOsMuonDeltaR, fCandM); 
-
-//   fpDocaTrk[offset]->fill(fCandDocaTrk, fCandM); 
-//   if (40 == fProcessType) fpDocaTrkGGF[offset]->fill(fCandDocaTrk, fCandM); 
-//   if (41 == fProcessType) fpDocaTrkFEX[offset]->fill(fCandDocaTrk, fCandM); 
-//   if (42 == fProcessType) fpDocaTrkGSP[offset]->fill(fCandDocaTrk, fCandM); 
-
-
-//   fpChi2[offset]->fill(fCandChi2, fCandM);
-//   fpChi2Dof[offset]->fill(fCandChi2/fCandDof, fCandM); 
-//   fpProb[offset]->fill(fCandProb, fCandM);   
-//   fpFLS3d[offset]->fill(fCandFLS3d, fCandM); 
-//   fpFL3d[offset]->fill(fCandFL3d, fCandM); 
-//   fpFL3dE[offset]->fill(fCandFL3dE, fCandM); 
-//   fpFLSxy[offset]->fill(fCandFLSxy, fCandM); 
-//   fpBDT[offset]->fill(fBDT, fCandM);    
-
-//   fpLip[offset]->fill(fCandPvLip, fCandM); 
-//   fpLipE[offset]->fill(fCandPvLipE, fCandM); 
-//   fpLipS[offset]->fill(fCandPvLipS, fCandM); 
-
-//   fpTip[offset]->fill(fCandPvTip, fCandM); 
-//   fpTipE[offset]->fill(fCandPvTipE, fCandM); 
-//   fpTipS[offset]->fill(fCandPvTipS, fCandM); 
-
-//   fpLip12[offset]->fill(fCandPvLip12, fCandM); 
-//   fpLipE12[offset]->fill(fCandPvLipE12, fCandM); 
-//   fpLipS12[offset]->fill(fCandPvLipS12, fCandM); 
-
-//   fpLip2[offset]->fill(fCandPvLip2, fCandM); 
-//   fpLipS2[offset]->fill(fCandPvLipS2, fCandM); 
-
-//   fpMaxDoca[offset]->fill(fCandDoca, fCandM); 
-//   fpIp[offset]->fill(fCandPvIp, fCandM); 
-//   fpIpS[offset]->fill(fCandPvIpS, fCandM); 
-
-//   fp2MChi2[offset]->fill(f2MChi2, fCandM);
-//   fp2MChi2Dof[offset]->fill(f2MChi2/f2MDof, fCandM); 
-//   fp2MProb[offset]->fill(f2MProb, fCandM);   
-//   fp2MFLS3d[offset]->fill(f2MFLS3d, fCandM); 
-//   fp2MFL3d[offset]->fill(f2MFL3d, fCandM); 
-//   fp2MFL3dE[offset]->fill(f2MFL3dE, fCandM); 
-//   fp2MFLSxy[offset]->fill(f2MFLSxy, fCandM); 
-
-//   // -- eta profiles
-//   int ieta = ((fCandEta+2.4)/5.)*NADPV;
-//   if (ieta < 0) ieta = 0; 
-//   if (ieta > 14) ieta = 14; 
-
-//   //  cout << "ieta = " << ieta << " offset = " << offset << endl;
-//   if (0 == offset && fpEtaFLS3d[ieta][offset]) 
-//     fpEtaFLS3d[ieta][offset]->fill(fCandFLS3d, fCandM); 
-//   //  else 
-//   //    cout << "missing fpEtaFLS3d: " << ieta << "  " << offset << endl;
-
-//   // -- NPV analysis distributions
-//   int ipv = 0; 
-//   if (fPvN < 50) {
-//     ipv = fPvN/2; 
-//   } else {
-//     ipv = NADPV-1; 
-//   }
-
-
-//   if (fpNpvPvN[ipv][offset]) {
-//     if (fpNpvPvN[ipv][offset]) fpNpvPvN[ipv][offset]->fill(fPvN, fCandM);  else cout << "missing fpNpvPvN" << endl;
-//     if (fpNpvChi2Dof[ipv][offset])  fpNpvChi2Dof[ipv][offset]->fill(fCandChi2/fCandDof, fCandM);  else cout << "missing fpNpvChi2Dof" << endl;
-//     if (fpNpvProb[ipv][offset]) fpNpvProb[ipv][offset]->fill(fCandProb, fCandM); else cout << "missing fpNpvProb" << endl;
-//     if (fpNpvAlpha[ipv][offset]) fpNpvAlpha[ipv][offset]->fill(fCandA, fCandM); else cout << "missing fpNpvAlpha" << endl;
-//     if (fpNpvFLS3d[ipv][offset]) fpNpvFLS3d[ipv][offset]->fill(fCandFLS3d, fCandM); else cout << "missing fpNpvFLS3d" << endl;
-//     if (fpNpvFLSxy[ipv][offset]) fpNpvFLSxy[ipv][offset]->fill(fCandFLSxy, fCandM); else cout << "missing fpNpvFLSxy" << endl;
-//     if (fpNpvDocaTrk[ipv][offset]) fpNpvDocaTrk[ipv][offset]->fill(fCandDocaTrk, fCandM); else cout << "missing fpNpvDocaTrk" << endl;
-//     if (fpNpvIso[ipv][offset]) fpNpvIso[ipv][offset]->fill(fCandIso, fCandM); else cout << "missing fpNpvIso" << endl;
-//     if (fpNpvIsoTrk[ipv][offset]) fpNpvIsoTrk[ipv][offset]->fill(fCandIsoTrk, fCandM); else cout << "missing fpNpvIsoTrk" << endl;
-//     if (fpNpvLip[ipv][offset]) fpNpvLip[ipv][offset]->fill(fCandPvLip, fCandM); else cout << "missing fpNpvLip" << endl;
-//     if (fpNpvLipS[ipv][offset]) fpNpvLipS[ipv][offset]->fill(fCandPvLipS, fCandM); else cout << "missing fpNpvLipS" << endl;
-//     if (fpNpvLip2[ipv][offset]) fpNpvLip2[ipv][offset]->fill(fCandPvLip2, fCandM); else cout << "missing fpNpvLip2" << endl;
-//     if (fpNpvLipS2[ipv][offset]) fpNpvLipS2[ipv][offset]->fill(fCandPvLipS2, fCandM); else cout << "missing fpNpvLipS2" << endl;
-//     if (fpNpvMaxDoca[ipv][offset]) fpNpvLipS2[ipv][offset]->fill(fCandDoca, fCandM); else cout << "missing fpNpvMaxDoca" << endl;
-//     if (fpNpvIp[ipv][offset]) fpNpvIp[ipv][offset]->fill(fCandPvIp, fCandM); else cout << "missing fpNpvIp" << endl;
-//     if (fpNpvIpS[ipv][offset]) fpNpvIpS[ipv][offset]->fill(fCandPvIpS, fCandM); else cout << "missing fpNpvIpS" << endl;
-//     if (fpNpvAveW8[ipv][offset]) fpNpvAveW8[ipv][offset]->fill(fPvAveW8, fCandM); else  cout << " fpNpvAveW8 missing! " << endl;
-//     if (fpNpvCloseTrk[ipv][offset]) fpNpvCloseTrk[ipv][offset]->fill(fCandCloseTrk, fCandM); else cout << "missing fpNpvCloseTrk" << endl;
-
-
-
-//     //   //  virtual double      isoClassicWithDOCA(TAnaCand*, double dca, double r = 1.0, double ptmin = 0.9); 
-//     //   double iso = isoClassicWithDOCA(fpCand, 0.05, 0.9, 0.7); // 500um DOCA cut
-
-//     double iso = isoClassicWithDOCA(fpCand, 0.05, 1.0, 0.9);
-//     if (fpNpvIso0[ipv][offset]) fpNpvIso0[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso0" << endl;
-//     iso = isoClassicWithDOCA(fpCand, 0.05, 0.5, 0.5);
-//     if (fpNpvIso1[ipv][offset]) fpNpvIso1[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso1" << endl;
-//     iso = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.5);
-//     if (fpNpvIso2[ipv][offset]) fpNpvIso2[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso2" << endl;
-//     iso = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.9);
-//     if (fpNpvIso3[ipv][offset]) fpNpvIso3[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso3" << endl;
-//     iso = isoClassicWithDOCA(fpCand, 0.04, 0.7, 0.5);
-//     if (fpNpvIso4[ipv][offset]) fpNpvIso4[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso4" << endl;
-//     iso = isoClassicWithDOCA(fpCand, 0.03, 0.7, 0.7);
-//     if (fpNpvIso5[ipv][offset]) fpNpvIso5[ipv][offset]->fill(iso, fCandM); else cout << "missing fpNpvIso5" << endl;
-
-//  }
 } 
 
 // ----------------------------------------------------------------------
@@ -893,47 +684,29 @@ void candAna::moreCandidateCuts() {
 }
 
 
-// ---------------------------------------------------------------------- 
-AnalysisDistribution* candAna::bookDistribution(const char *hn, const char *ht, const char *hc, int nbins, double lo, double hi) {
-  AnalysisDistribution *p = new AnalysisDistribution(hn, ht, nbins, lo, hi); 
-  p->setSigWindow(SIGBOXMIN, SIGBOXMAX); 
-  p->setBg1Window(BGLBOXMIN, BGLBOXMAX); 
-  p->setBg2Window(BGHBOXMIN, BGHBOXMAX); 
-  p->setAnalysisCuts(&fAnaCuts, hc); 
-  p->setPreselCut(&fPreselection); 
-
-  TH1 *h = (TH1D*)fHistDir->Get("analysisDistributions"); 
-  for (int i = 1; i < h->GetNbinsX(); ++i) {
-    if (!strcmp(h->GetXaxis()->GetBinLabel(i), "")) {
-      // cout << "adding at bin " << i << " the label " << hn << endl;
-      h->GetXaxis()->SetBinLabel(i, hn);
-      break;
-    }
-  }
-  return p; 
-}
-
-
 
 // ----------------------------------------------------------------------
-bool candAna::goodTrack(TAnaTrack *pt) {
+bool candAna::highPurity(TAnaTrack *pt) {
 
-  if (TRACKQUALITY > 0 && (0 == (pt->fTrackQuality & TRACKQUALITY))) {
-    if (fVerbose > 5) cout << "track " << pt->fIndex << " failed track quality: " << pt->fTrackQuality << endl;
-    return false; 
-  }
+  if (pt->fTrackQuality & 4) return true; 
+  return false;
+
+//   if (TRACKQUALITY > 0 && (0 == (pt->fTrackQuality & TRACKQUALITY))) {
+//     if (fVerbose > 5) cout << "track " << pt->fIndex << " failed track quality: " << pt->fTrackQuality << endl;
+//     return false; 
+//   }
   
-  if (TMath::Abs(pt->fTip) > TRACKTIP) {
-    if (fVerbose > 5) cout << "track " << pt->fIndex << " failed tip: " << pt->fTip
-			   << " pointing to PV = "  << pt->fPvIdx  << endl;
-    return false; 
-  }
+//   if (TMath::Abs(pt->fTip) > TRACKTIP) {
+//     if (fVerbose > 5) cout << "track " << pt->fIndex << " failed tip: " << pt->fTip
+// 			   << " pointing to PV = "  << pt->fPvIdx  << endl;
+//     return false; 
+//   }
   
-  if (TMath::Abs(pt->fLip) > TRACKLIP) { 
-    if (fVerbose > 5) cout << "track " << pt->fIndex << " failed lip: " << pt->fLip 
-			   << " pointing to PV = "  << pt->fPvIdx  << endl;          
-    return false; 
-  }
+//   if (TMath::Abs(pt->fLip) > TRACKLIP) { 
+//     if (fVerbose > 5) cout << "track " << pt->fIndex << " failed lip: " << pt->fLip 
+// 			   << " pointing to PV = "  << pt->fPvIdx  << endl;          
+//     return false; 
+//   }
 
   return true; 
 }
@@ -1796,39 +1569,6 @@ void candAna::readFile(string filename, vector<string> &lines) {
 
 
 // ----------------------------------------------------------------------
-bool candAna::goodMuon(TAnaTrack *pT, int mask) {
-  int result(0); 
-  result = pT->fMuID & MUIDMASK;
-  if (mask > 0) {
-    result = pT->fMuID & mask;
-  }
-
-  if (HLTRANGE.begin()->first == "NOTRIGGER") {
-    //    cout << "NOTRIGGER requested... " << endl;
-    return true;
-  }
-
-  if (0 == MUIDRESULT ) {
-    // -- result must be larger than zero for successful muon ID, i.e., the OR of the bits
-    if (0 == result){
-      if (fVerbose > 4) cout << "muon " << pT->fIndex << " failed MUID: " << hex << pT->fMuID << dec << endl;          
-      return false; 
-    } else {
-      return true; 
-    }
-  } else {
-    // -- result must be equal to the mask for successful muon ID, i.e., the AND of the bits
-    if (MUIDRESULT != result){
-      if (fVerbose > 4) cout << "muon " << pT->fIndex << " failed MUID: " << hex << pT->fMuID << dec << endl;          
-      return false; 
-    } else {
-      return true;
-    }
-  }
-}
-
-
-// ----------------------------------------------------------------------
 bool candAna::tightMuon(TAnaTrack *pT) {
 
   if (HLTRANGE.begin()->first == "NOTRIGGER") {
@@ -1872,6 +1612,26 @@ bool candAna::tightMuon(TAnaTrack *pT) {
   }
 
 
+
+}
+
+
+// ----------------------------------------------------------------------
+bool candAna::tightMuon(TSimpleTrack *pT) {
+
+  if (HLTRANGE.begin()->first == "NOTRIGGER") {
+    //cout << "NOTRIGGER requested... " << endl;
+    return true;
+  }
+
+  if (0 == pT->getMuonID()) return false; 
+
+  TAnaMuon *pM(0); 
+  int idx = pT->getIndex(); 
+  for (int i = 0; i < fpEvt->nMuons(); ++i) {
+    pM = fpEvt->getMuon(i);
+    return tightMuon(pM); 
+  }
 
 }
 

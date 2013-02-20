@@ -60,10 +60,6 @@ public:
   int   fETk1q; 
   bool  fETk1gt;
 
-
-  // -- AnalysisDistributionsa
-  AnalysisDistribution *fpKaonPt[NAD], *fpKaonEta[NAD], *fpMpsi[NAD], *fpPsiPt[NAD], *fpPsiEta[NAD];
-
 };
 
 #endif

@@ -28,34 +28,31 @@ void candAnaBu2JpsiK::candAnalysis() {
 
   if (0 == fpCand) return;
 
-  TAnaTrack *p0, *pk(0), *pks(0); 
+  TAnaTrack *p0, *pk(0); 
   for (int it = fpCand->fSig1; it <= fpCand->fSig2; ++it) {
     p0 = fpEvt->getSigTrack(it);     
-    //    cout << it << " " << p0->fMCID << endl;
     if (321 == TMath::Abs(p0->fMCID)) {
-      pks = p0; 
+      pk = p0; 
     }
     if (211 == TMath::Abs(p0->fMCID)) {
-      pks = p0; 
+      pk = p0; 
     }
   }
-
-  if (0 == pks) {
+  
+  if (0 == pk) {
     cout << "candAnaBu2JpsiK::candAnalysis:  no kaon found " << endl;
     return;
   }
 
-  pk = fpEvt->getRecTrack(pks->fIndex);
-
-  fKaonPt        = pk->fPlab.Perp(); 
-  fKaonEta       = pk->fPlab.Eta();  
-  fKaonPhi       = pk->fPlab.Phi(); 
-  fKaonTkQuality = pk->fTrackQuality & TRACKQUALITY;
-  fKaonPtNrf     = pks->fPlab.Perp();
-  fKaonEtaNrf    = pks->fPlab.Eta();
+  fKaonPt        = pk->fRefPlab.Perp(); 
+  fKaonEta       = pk->fRefPlab.Eta();  
+  fKaonPhi       = pk->fRefPlab.Phi(); 
+  fKaonTkQuality = highPurity(pk);
+  fKaonPtNrf     = pk->fPlab.Perp();
+  fKaonEtaNrf    = pk->fPlab.Eta();
 
   if (fCandTmi > -1) {
-    TGenCand *pg1 = fpEvt->getGenCand(fpEvt->getRecTrack(pk->fIndex)->fGenIndex);
+    TGenCand *pg1 = fpEvt->getGenCand(fpEvt->getSimpleTrack(pk->fIndex)->getGenIndex());
     fKPtGen     = pg1->fP.Perp();
     fKEtaGen    = pg1->fP.Eta();
   } else {
@@ -207,19 +204,19 @@ void candAnaBu2JpsiK::genMatch() {
   //    else skip the *event*!
   static int cntBadEvents = 0; 
   if (fGenM1Tmi > -1 && fGenM2Tmi > -1 && fGenK1Tmi > -1) {
-    TAnaTrack *pT(0);
+    TSimpleTrack *pT(0);
     int cntM1(0), cntM2(0), cntK1(0); 
-    for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
-      pT = fpEvt->getRecTrack(i); 
-      if (fGenM1Tmi == pT->fGenIndex) ++cntM1;
-      if (fGenM2Tmi == pT->fGenIndex) ++cntM2;
-      if (fGenK1Tmi == pT->fGenIndex) ++cntK1;
+    for (int i = 0; i < fpEvt->nSimpleTracks(); ++i) {
+      pT = fpEvt->getSimpleTrack(i); 
+      if (fGenM1Tmi == pT->getGenIndex()) ++cntM1;
+      if (fGenM2Tmi == pT->getGenIndex()) ++cntM2;
+      if (fGenK1Tmi == pT->getGenIndex()) ++cntK1;
     }
     
     if (cntM1 > 1 || cntM2 > 1 || cntK1 > 1) {
-      if (fVerbose > 1) cout << "BAD BAD event: multiple reco tracks matched to the same gen particle! " << ++cntBadEvents 
-			     << ": " << cntM1 << " .. " << cntM2 << " .. " << cntK1
-			     << " (gen-reco matches) " << endl;
+      cout << "BAD BAD event: multiple reco tracks matched to the same gen particle! " << ++cntBadEvents 
+	   << ": " << cntM1 << " .. " << cntM2 << " .. " << cntK1
+	   << " (gen-reco matches) " << endl;
       fBadEvent = true; 
     }
   }
@@ -230,22 +227,22 @@ void candAnaBu2JpsiK::genMatch() {
 void candAnaBu2JpsiK::recoMatch() {
 
   fRecM1Tmi = fRecM2Tmi = fRecK1Tmi = -1; 
-  TAnaTrack *pT(0);
-  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
-    pT = fpEvt->getRecTrack(i); 
-    if (pT->fGenIndex < 0) continue;
+  TSimpleTrack *pT(0);
+  for (int i = 0; i < fpEvt->nSimpleTracks(); ++i) {
+    pT = fpEvt->getSimpleTrack(i); 
+    if (pT->getGenIndex() < 0) continue;
     // -- muon 1
-    if (fGenM1Tmi > -1 && pT->fGenIndex == fGenM1Tmi) {
+    if (fGenM1Tmi > -1 && pT->getGenIndex() == fGenM1Tmi) {
       fRecM1Tmi = i; 
     }
 
     // -- muon 2
-    if (fGenM2Tmi > -1 && pT->fGenIndex == fGenM2Tmi) {
+    if (fGenM2Tmi > -1 && pT->getGenIndex() == fGenM2Tmi) {
       fRecM2Tmi = i; 
     }
 
     // -- kaon
-    if (fGenK1Tmi > -1 && pT->fGenIndex == fGenK1Tmi) {
+    if (fGenK1Tmi > -1 && pT->getGenIndex() == fGenK1Tmi) {
       fRecK1Tmi = i; 
     }
 
@@ -355,19 +352,7 @@ void candAnaBu2JpsiK::moreReducedTree(TTree *t) {
 
 // ----------------------------------------------------------------------
 void candAnaBu2JpsiK::fillCandidateHistograms(int offset) {
-
-  fpMpsi[offset]->fill(fJpsiMass, fCandM); 
-  fpTracksPt[offset]->fill(fKaonPt, fCandM);
-  fpTracksEta[offset]->fill(fKaonEta, fCandM);
-
-  fpKaonPt[offset]->fill(fKaonPt, fCandM);
-  fpKaonEta[offset]->fill(fKaonEta, fCandM);
-
-  fpPsiPt[offset]->fill(fJpsiPt, fCandM); 
-  fpPsiEta[offset]->fill(fJpsiEta, fCandM); 
-
   candAna::fillCandidateHistograms(offset); 
-
 }
 
 
@@ -388,37 +373,37 @@ void candAnaBu2JpsiK::efficiencyCalculation() {
   pK  = fpEvt->getGenCand(fGenK1Tmi); 
 
   // -- reco level
-  TAnaTrack *prM1(0), *prM2(0), *prK(0); 
+  TSimpleTrack *prM1(0), *prM2(0), *prK(0); 
   int m1Matched(0), m2Matched(0), kMatched(0), m1ID(0), m2ID(0), m1GT(0), m2GT(0), kGT(0);
   if (fRecM1Tmi > -1) {
     m1Matched = 1; 
-    prM1 = fpEvt->getRecTrack(fRecM1Tmi); 
-    if (goodMuon(prM1)) m1ID = 1; 
-    if (TRACKQUALITY > 0 && (0 == (prM1->fTrackQuality & TRACKQUALITY))) {
-      m1GT = 0; 
+    prM1 = fpEvt->getSimpleTrack(fRecM1Tmi); 
+    if (tightMuon(prM1)) m1ID = 1; 
+    if (prM1->getHighPurity()) {
+      m1GT = 1; 
     } else {
-      m1GT = 1;
+      m1GT = 0;
     }
   }
 
   if (fRecM2Tmi > -1) {
     m2Matched = 1; 
-    prM2 = fpEvt->getRecTrack(fRecM2Tmi); 
-    if (goodMuon(prM2)) m2ID = 1; 
-    if (TRACKQUALITY > 0 && (0 == (prM2->fTrackQuality & TRACKQUALITY))) {
-      m2GT = 0; 
+    prM2 = fpEvt->getSimpleTrack(fRecM2Tmi); 
+    if (tightMuon(prM2)) m2ID = 1; 
+    if (prM2->getHighPurity()) {
+      m2GT = 1; 
     } else {
-      m2GT = 1;
+      m2GT = 0;
     }
   } 
 
   if (fRecK1Tmi > -1) {
     kMatched = 1; 
-    prK = fpEvt->getRecTrack(fRecK1Tmi); 
-    if (TRACKQUALITY > 0 && (0 == (prK->fTrackQuality & TRACKQUALITY))) {
-      kGT = 0; 
+    prK = fpEvt->getSimpleTrack(fRecK1Tmi); 
+    if (prM2->getHighPurity()) {
+      kGT = 1; 
     } else {
-      kGT = 1;
+      kGT = 0;
     }
   } 
 
@@ -438,9 +423,9 @@ void candAnaBu2JpsiK::efficiencyCalculation() {
   fETg3pt  = pK->fP.Perp(); 
   fETg3eta = pK->fP.Eta(); 
   if (m1Matched) {
-    fETm1pt  = prM1->fPlab.Perp(); 
-    fETm1eta = prM1->fPlab.Eta(); 
-    fETm1q   = prM1->fQ;
+    fETm1pt  = prM1->getP().Perp(); 
+    fETm1eta = prM1->getP().Eta(); 
+    fETm1q   = prM1->getCharge();
     fETm1gt  = (m1GT>0?true:false); 
     fETm1id  = (m1ID>0?true:false);
   } else {
@@ -451,9 +436,9 @@ void candAnaBu2JpsiK::efficiencyCalculation() {
     fETm1id  = false;
   }
   if (m2Matched) {
-    fETm2pt  = prM2->fPlab.Perp(); 
-    fETm2eta = prM2->fPlab.Eta(); 
-    fETm2q   = prM2->fQ;
+    fETm2pt  = prM2->getP().Perp(); 
+    fETm2eta = prM2->getP().Eta(); 
+    fETm2q   = prM2->getCharge();
     fETm2gt  = (m2GT>0?true:false); 
     fETm2id  = (m2ID>0?true:false);
   } else {
@@ -464,9 +449,9 @@ void candAnaBu2JpsiK::efficiencyCalculation() {
     fETm2id  = false;
   }
   if (kMatched) {
-    fETk1pt  = prK->fPlab.Perp(); 
-    fETk1eta = prK->fPlab.Eta(); 
-    fETk1q   = prK->fQ;
+    fETk1pt  = prK->getP().Perp(); 
+    fETk1eta = prK->getP().Eta(); 
+    fETk1q   = prK->getCharge();
     fETk1gt  = (kGT>0?true:false); 
   } else {
     fETk1pt  = -99.; 

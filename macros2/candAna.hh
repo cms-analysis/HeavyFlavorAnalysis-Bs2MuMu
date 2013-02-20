@@ -29,7 +29,6 @@ struct readerData {
   float m;
 };
 
-class AnalysisDistribution; 
 class TTree; 
 class TDirectory; 
 
@@ -62,7 +61,6 @@ public:
   virtual int         detChan(double m1eta, double m2eta);
     
   virtual void        bookHist();
-  virtual AnalysisDistribution* bookDistribution(const char *hn, const char *ht, const char *hc, int nbins, double lo, double hi);
 
   virtual void        basicCuts();
   virtual void        moreBasicCuts();
@@ -72,9 +70,9 @@ public:
   virtual void        readCuts(std::string fileName, int dump = 1);
   virtual void        readFile(std::string fileName, std::vector<std::string> &lines);
 
-  virtual bool        goodTrack(TAnaTrack *pt);
-  virtual bool        goodMuon(TAnaTrack *pt, int mask = 0);
+  virtual bool        highPurity(TAnaTrack *pt);
   virtual bool        tightMuon(TAnaTrack *pt);
+  virtual bool        tightMuon(TSimpleTrack *pt);
 
   virtual std::string splitTrigRange(std::string tl, int &r1, int &r2);
 
@@ -213,71 +211,6 @@ public:
   bool    fBadEvent;
 
   struct RedTreeData fRTD;
-
-  // -- Analysis distributions
-  std::map<std::string, int> fRegion;
-  static const int NAD = 5;
-  AnalysisDistribution   *fpHLT[NAD], *fpPvZ[NAD], *fpPvN[NAD], *fpPvNtrk[NAD], *fpPvAveW8[NAD]  
-    , *fpTracksQual[NAD], *fpTracksPt[NAD],  *fpTracksEta[NAD] 
-    , *fpMuonsID[NAD], *fpMuonsPt[NAD], *fpMuonsEta[NAD], *fpMuon1Pt[NAD], *fpMuon2Pt[NAD], *fpMuon1Eta[NAD], *fpMuon2Eta[NAD]
-    , *fpPt[NAD], *fpP[NAD], *fpEta[NAD] 
-    , *fpCosA[NAD], *fpAlpha[NAD]
-    , *fpIso[NAD], *fpIsoTrk[NAD], *fpCloseTrk[NAD]
-    , *fpChi2[NAD], *fpChi2Dof[NAD], *fpProb[NAD] 
-    , *fpFLS3d[NAD], *fpFLSxy[NAD] 
-    , *fpFL3d[NAD], *fpFL3dE[NAD] 
-    , *fpDocaTrk[NAD]   
-    , *fpBDT[NAD]   
-    , *fpLip[NAD], *fpLipE[NAD], *fpLipS[NAD] 
-    , *fpTip[NAD], *fpTipE[NAD], *fpTipS[NAD] 
-    , *fpLip12[NAD], *fpLipE12[NAD], *fpLipS12[NAD] 
-    , *fpLip2[NAD], *fpLipS2[NAD]
-    , *fpMaxDoca[NAD], *fpIp[NAD], *fpIpS[NAD]
-    , *fp2MChi2[NAD],  *fp2MChi2Dof[NAD], *fp2MProb[NAD] 
-    , *fp2MFLS3d[NAD], *fp2MFLSxy[NAD] 
-    , *fp2MFL3d[NAD],  *fp2MFL3dE[NAD] 
-    , *fpOsIso[NAD],  *fpOsRelIso[NAD] 
-    , *fpOsMuonPt[NAD],  *fpOsMuonDeltaR[NAD], *fpOsMuonPtRel[NAD]
-
-    , *fpOsIsoGGF[NAD], *fpOsIsoGSP[NAD], *fpOsIsoFEX[NAD]  
-    , *fpOsRelIsoGGF[NAD], *fpOsRelIsoGSP[NAD], *fpOsRelIsoFEX[NAD] 
-    , *fpOsMuonPtGGF[NAD], *fpOsMuonPtGSP[NAD], *fpOsMuonPtFEX[NAD]
-    , *fpOsMuonPtRelGGF[NAD], *fpOsMuonPtRelGSP[NAD], *fpOsMuonPtRelFEX[NAD]
-    , *fpOsMuonDeltaRGGF[NAD], *fpOsMuonDeltaRGSP[NAD], *fpOsMuonDeltaRFEX[NAD] 
-    , *fpIsoGGF[NAD], *fpIsoGSP[NAD], *fpIsoFEX[NAD]
-    , *fpCloseTrkGGF[NAD], *fpCloseTrkGSP[NAD], *fpCloseTrkFEX[NAD]
-    , *fpDocaTrkGGF[NAD], *fpDocaTrkGSP[NAD], *fpDocaTrkFEX[NAD]   
-    , *fpPtGGF[NAD], *fpPtGSP[NAD], *fpPtFEX[NAD]   
-    ;
-  
-  // -- Analysis distributions in bins of n(PV)
-  static const int NADPV = 25; 
-  AnalysisDistribution   *fpNpvPvN[NADPV][NAD];
-  AnalysisDistribution   *fpNpvAveW8[NADPV][NAD];
-  AnalysisDistribution   *fpNpvChi2Dof[NADPV][NAD];
-  AnalysisDistribution   *fpNpvProb[NADPV][NAD];
-  AnalysisDistribution   *fpNpvFLS3d[NADPV][NAD];
-  AnalysisDistribution   *fpNpvFLSxy[NADPV][NAD];
-  AnalysisDistribution   *fpNpvAlpha[NADPV][NAD];
-  AnalysisDistribution   *fpNpvDocaTrk[NADPV][NAD];
-  AnalysisDistribution   *fpNpvIso[NADPV][NAD];
-  AnalysisDistribution   *fpNpvIsoTrk[NADPV][NAD];
-  AnalysisDistribution   *fpNpvCloseTrk[NADPV][NAD];
-  AnalysisDistribution   *fpNpvLip[NADPV][NAD];
-  AnalysisDistribution   *fpNpvLipS[NADPV][NAD];
-  AnalysisDistribution   *fpNpvLip2[NADPV][NAD];
-  AnalysisDistribution   *fpNpvLipS2[NADPV][NAD];
-  AnalysisDistribution   *fpNpvMaxDoca[NADPV][NAD];
-  AnalysisDistribution   *fpNpvIp[NADPV][NAD];
-  AnalysisDistribution   *fpNpvIpS[NADPV][NAD];
-  AnalysisDistribution   *fpNpvIso0[NADPV][NAD];
-  AnalysisDistribution   *fpNpvIso1[NADPV][NAD];
-  AnalysisDistribution   *fpNpvIso2[NADPV][NAD];
-  AnalysisDistribution   *fpNpvIso3[NADPV][NAD];
-  AnalysisDistribution   *fpNpvIso4[NADPV][NAD];
-  AnalysisDistribution   *fpNpvIso5[NADPV][NAD];
-
-  AnalysisDistribution   *fpEtaFLS3d[NADPV][NAD];
 
 };
 

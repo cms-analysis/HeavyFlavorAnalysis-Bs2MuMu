@@ -78,11 +78,6 @@ public:
   double            fDeltaR, fMKK;
   bool              fGoodDeltaR, fGoodMKK;
 
-  // -- AnalysisDistributions
-  AnalysisDistribution *fpMpsi[NAD], *fpMKK[NAD], *fpDeltaR[NAD], 
-    *fpKaonsPt[NAD], *fpKaonsEta[NAD], 
-    *fpPsiPt[NAD], *fpPsiEta[NAD],  
-    *fpPhiPt[NAD], *fpPhiEta[NAD];
 
 };
 

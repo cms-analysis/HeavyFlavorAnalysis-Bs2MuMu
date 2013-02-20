@@ -3326,7 +3326,8 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
   cout << "loopOverTree: nevts = " << nentries << " nstart = " << nstart << endl;
   for (int jentry = nbegin; jentry < nend; jentry++) {
     t->GetEntry(jentry);
-    if (jentry%step == 0) cout << Form(" .. Event %8d, run = %6ld evt = %10ld", jentry, fb.run, fb.evt) << endl;
+    if (jentry%step == 0) cout << Form(" .. Event %8d, run = %6ld evt = %10ld", jentry, 
+				       static_cast<Long64_t>(fb.run), static_cast<Long64_t>(fb.evt)) << endl;
     if (fRunMax > fRunMin) {
       if (fb.run < fRunMin) continue; 
       if (fb.run > fRunMax) continue; 
