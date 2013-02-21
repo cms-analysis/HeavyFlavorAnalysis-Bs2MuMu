@@ -125,7 +125,8 @@ void HFDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   Handle<MuonCollection> hMuons;
   if (fVerbose > 0) cout << "==> HFDumpMuons> " << fMuonsLabel << endl;
   iEvent.getByLabel(fMuonsLabel, hMuons);
-  
+  fMuonCollection = hMuons.product();
+
   int im(0);
   for (reco::MuonCollection::const_iterator iMuon = hMuons->begin(); iMuon != hMuons->end();  iMuon++) {
     fillMuon(*iMuon, im); 
@@ -160,9 +161,16 @@ void HFDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 // ----------------------------------------------------------------------
 void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
 
+  TrackRef gTrack = rm.globalTrack();
+  TrackRef iTrack = rm.innerTrack();
+  TrackRef oTrack = rm.outerTrack();
+
   TAnaMuon *pM = gHFEvent->addMuon();    
-  pM->clear(); 
+
+  
   if (rm.innerTrack().isNonnull()) {
+    Track trk(*iTrack);
+    fillAnaTrack(pM, trk, rm.innerTrack().index(), -2, 0, fMuonCollection, 0); 
     pM->fIndex = rm.innerTrack().index();
   } else {
     pM->fIndex = -23;
@@ -178,10 +186,6 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   pM->fTimeOutInE       = rm.time().timeAtIpOutInErr; 
   pM->fTimeNdof         = rm.time().nDof;
   pM->fNmatchedStations = rm.numberOfMatchedStations();
-
-  TrackRef gTrack = rm.globalTrack();
-  TrackRef iTrack = rm.innerTrack();
-  TrackRef oTrack = rm.outerTrack();
 
   bool isGlobalMuon = muon::isGoodMuon(rm, muon::AllGlobalMuons);
 

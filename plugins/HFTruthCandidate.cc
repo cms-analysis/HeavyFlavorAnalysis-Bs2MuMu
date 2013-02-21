@@ -66,6 +66,7 @@ HFTruthCandidate::HFTruthCandidate(const edm::ParameterSet& iConfig):
   fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", string("goodTracks"))), 
   fPrimaryVertexLabel(iConfig.getUntrackedParameter<InputTag>("PrimaryVertexLabel", InputTag("offlinePrimaryVertices"))),
   fBeamSpotLabel(iConfig.getUntrackedParameter<InputTag>("BeamSpotLabel", InputTag("offlineBeamSpot"))),
+  fMuonsLabel(iConfig.getUntrackedParameter<edm::InputTag>("muonsLabel", edm::InputTag("muons"))),
   fPartialDecayMatching(iConfig.getUntrackedParameter<bool>("partialDecayMatching", false)), 
   fMotherID(iConfig.getUntrackedParameter("motherID", 0)), 
   fType(iConfig.getUntrackedParameter("type", 67)),
@@ -83,6 +84,7 @@ HFTruthCandidate::HFTruthCandidate(const edm::ParameterSet& iConfig):
   cout << "--- tracksLabel:           " << fTracksLabel << endl;
   cout << "--- PrimaryVertexLabel:    " << fPrimaryVertexLabel << endl;
   cout << "--- BeamSpotLabel:         " << fBeamSpotLabel << endl;
+  cout << "---  muonsLabel            " << fMuonsLabel << endl;
   cout << "--- motherID:              " << fMotherID << endl;
   cout << "--- type:                  " << fType << endl;
   cout << "--- GenType:               " << fGenType << endl;
@@ -124,6 +126,14 @@ void HFTruthCandidate::endJob() {
 
 // ----------------------------------------------------------------------
 void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
+
+  // -- load the muons
+  edm::Handle<reco::MuonCollection> muonHandle;
+  iEvent.getByLabel(fMuonsLabel, muonHandle);
+  const reco::MuonCollection *muonCollection(0);
+  if (muonHandle.isValid()) {
+    muonCollection = muonHandle.product();
+  }
 
   // -- In generator block, find mother with declared decay channel
   multiset<int> genDaughters; 
@@ -379,7 +389,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
       }
       BeamSpot bspot = *bspotHandle;		
 
-      HFSequentialVertexFit aSeq(hTracks, NULL, fTTB.product(), recoPrimaryVertexCollection, field, bspot, fVerbose);
+      HFSequentialVertexFit aSeq(hTracks, muonCollection, fTTB.product(), recoPrimaryVertexCollection, field, bspot, fVerbose);
       // -- setup with (relevant) muon hypothesis
       HFDecayTree theTree(1000000+fType, true, 0, false); 
       int ID(0), IDX(0); 

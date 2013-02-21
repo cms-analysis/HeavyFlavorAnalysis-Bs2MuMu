@@ -18,6 +18,8 @@
 
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 
+#include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/MuonReco/interface/MuonFwd.h"
 #include "MuonAnalysis/MuonAssociators/interface/PropagateToMuon.h"
 
 #include "AnalysisDataFormats/HeavyFlavorObjects/rootio/TAnaMuon.hh"
@@ -50,6 +52,7 @@ class HFDumpMuons : public edm::EDAnalyzer {
   
   edm::Handle<edm::View<reco::Track> > *fhTracks;
   edm::ESHandle<TransientTrackBuilder> fTTB;
+  const reco::MuonCollection *fMuonCollection;
   
   double                    fMaxTrackDistToStore;
   double                    fDocaVertex; // try vertexing only with tracks closer than this

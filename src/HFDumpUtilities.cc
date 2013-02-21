@@ -174,20 +174,20 @@ void fillAnaTrack(TAnaTrack *pTrack, const reco::Track &trackView, int tidx, int
   pTrack->fTrackQuality = trakQuality; 
   
   // -- Muon ID
-  pTrack->fMuIndex = -1; 
+  pTrack->fMuIndex = -4; 
   pTrack->fMuID    = 0; 
   if (mc) {
-    for (unsigned int i = 0; i < mc->size(); ++i) {
-      const reco::Muon muon = mc->at(i); 
-      TrackRef track = muon.innerTrack();
-      if (static_cast<unsigned int>(tidx) == track.index()) {
-	pTrack->fMuIndex = i; 
-	pTrack->fMuID    = muonID(muon);
+    int cnt(0); 
+    for (MuonCollection::const_iterator muonIt = mc->begin(); muonIt != mc->end(); ++muonIt) {
+      if ((int)muonIt->innerTrack().index() == tidx) {
+	pTrack->fMuIndex = cnt; 
+	pTrack->fMuID    = muonID(*muonIt);
 	break;
       }
+      ++cnt;
     }
   }
-  
+
   // -- hits of the track
   const reco::HitPattern& p = trackView.hitPattern();
   for (int i=0; i<p.numberOfHits(); i++) {

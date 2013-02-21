@@ -91,6 +91,7 @@ void HFTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
     gHFEvent->clearGenBlock();
   }
 
+
   if (fRequireCand){
     if (gHFEvent->nCands() > 0) {
       if (fVerbose > 1) {

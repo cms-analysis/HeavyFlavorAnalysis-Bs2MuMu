@@ -629,7 +629,8 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
     Track trackView(*baseRef);
 
     int gidx = sTrack->getGenIndex();
-    fillAnaTrack(pTrack, trackView, allTreeTracks[j].trackIx, gidx, fPVCollection.product(), fMuons, 0); 
+    const reco::BeamSpot *pBeamSpot = &fBeamSpot; 
+    fillAnaTrack(pTrack, trackView, allTreeTracks[j].trackIx, gidx, fPVCollection.product(), fMuons, pBeamSpot); 
     
     pTrack->fIndex = allTreeTracks[j].trackIx;
     pTrack->fMCID = allTreeTracks[j].particleID; // use the sigTrack MCID to store the assumed particle ID for the mass hypothesis
