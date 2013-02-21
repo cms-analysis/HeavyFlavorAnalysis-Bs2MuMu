@@ -203,9 +203,9 @@ void candAnaMuMu::efficiencyCalculation() {
     if (fVerbose > 2 ) cout << "--------------------> No matched signal decay found" << endl;
     return;
   }
-  pB  = fpEvt->getGenCand(fGenBTmi); 
-  pM1 = fpEvt->getGenCand(fGenM1Tmi); 
-  pM2 = fpEvt->getGenCand(fGenM2Tmi); 
+  pB  = fpEvt->getGenTWithIndex(fGenBTmi); 
+  pM1 = fpEvt->getGenTWithIndex(fGenM1Tmi); 
+  pM2 = fpEvt->getGenTWithIndex(fGenM2Tmi); 
 
   // -- reco level
   TSimpleTrack *prM1(0), *prM2(0); 

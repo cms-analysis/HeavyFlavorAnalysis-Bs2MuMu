@@ -10,7 +10,7 @@ using namespace std;
 // ----------------------------------------------------------------------
 candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   cout << "======================================================================" << endl;
-  cout << "==> candAna: name = " << name << ", reading cutsfile " << cutsFile << endl;
+  cout << "==> candAna: name = " << name << ", reading cutsfile " << cutsFile << " setup for year " << fYear << endl;
   fpReader = pReader; 
   fVerbose = fpReader->fVerbose;	 
   fYear    = fpReader->fYear; 
@@ -25,7 +25,6 @@ candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   fHistDir = gFile->mkdir(fName.c_str());
 
   cout << "======================================================================" << endl;	 
-  cout << "==> candAna: name = " << name << ", reading cutsfile " << cutsFile << " setup for year " << fYear << endl;
 
 }
 
@@ -43,8 +42,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   fpEvt = evt; 
   fBadEvent = false;
 
-  //cout << fEvt << " " << fpEvt->nCands()<<endl;
-  //   return;
+  cout << "====================================================================== event: " << fEvent << endl;
 
   //  play(); 
   //  return;
@@ -53,7 +51,10 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     genMatch(); 
     recoMatch(); 
     candMatch(); 
-    if (fBadEvent) return;
+    if (fBadEvent) {
+      cout << "XXXXXXX BAD EVENT XXXXXX SKIPPING XXXXX" << endl;
+      return;
+    }
     efficiencyCalculation();
   } 
 
@@ -77,9 +78,9 @@ void candAna::evtAnalysis(TAna01Event *evt) {
       int gen1(-1), gen2(-1), gen0(-1);
  
       if (fIsMC) {
-	gen1 = fpEvt->getGenCand(fpEvt->getSimpleTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->getGenIndex())->fID;
-	gen2 = fpEvt->getGenCand(fpEvt->getSimpleTrack(fpEvt->getSigTrack(pCand->fSig2)->fIndex)->getGenIndex())->fID;
-	gen0 = fpEvt->getGenCand(fpEvt->getGenCand(fpEvt->getSimpleTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->getGenIndex())->fMom1)->fID;
+	gen1 = fpEvt->getGenTWithIndex(fpEvt->getSimpleTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->getGenIndex())->fID;
+	gen2 = fpEvt->getGenTWithIndex(fpEvt->getSimpleTrack(fpEvt->getSigTrack(pCand->fSig2)->fIndex)->getGenIndex())->fID;
+	gen0 = fpEvt->getGenTWithIndex(fpEvt->getGenTWithIndex(fpEvt->getSimpleTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->getGenIndex())->fMom1)->fID;
       }
 
       cout << "Analyzing candidate at " << iC << " which is of type " << TYPE << " mass "<< pCand->fMass
@@ -105,16 +106,14 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     // -- call derived functions
     candAnalysis();
 
-    boostGames(); 
-    
     if(fpMuon1 != NULL && fpMuon2 != NULL) fHLTmatch = doTriggerMatching(); // do only when 2 muons exist
 
     if (0 && fCandM > 4.99 && fCandM < 5.02 && fCandFLS3d > 13 && fCandA < 0.05 && fMu1Pt > 4.5 && fMu2Pt > 4.5) {
       cout << "----------------------------------------------------------------------" << endl;
       int gen1(-1), gen2(-1), gen0(-1);
-      gen1 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fID;
-      gen2 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig2)->fIndex)->fGenIndex)->fID;
-      gen0 = fpEvt->getGenCand(fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fMom1)->fID;
+      gen1 = fpEvt->getGenTWithIndex(fpEvt->getSimpleTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->getGenIndex())->fID;
+      gen2 = fpEvt->getGenTWithIndex(fpEvt->getSimpleTrack(fpEvt->getSigTrack(pCand->fSig2)->fIndex)->getGenIndex())->fID;
+      gen0 = fpEvt->getGenTWithIndex(fpEvt->getGenTWithIndex(fpEvt->getSimpleTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->getGenIndex())->fMom1)->fID;
 
       cout << "Analyzing candidate at " << iC << " which is of type " << TYPE 
 	   << " with sig tracks: " << pCand->fSig1 << " .. " << pCand->fSig2
@@ -128,8 +127,8 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 	   << endl;
       cout << fpCand->fMass << endl;
 
-      TLorentzVector gm1 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->fGenIndex)->fP;
-      TLorentzVector gm2 = fpEvt->getGenCand(fpEvt->getRecTrack(fpEvt->getSigTrack(pCand->fSig2)->fIndex)->fGenIndex)->fP;
+      TLorentzVector gm1 = fpEvt->getGenTWithIndex(fpEvt->getSimpleTrack(fpEvt->getSigTrack(pCand->fSig1)->fIndex)->getGenIndex())->fP;
+      TLorentzVector gm2 = fpEvt->getGenTWithIndex(fpEvt->getSimpleTrack(fpEvt->getSigTrack(pCand->fSig2)->fIndex)->getGenIndex())->fP;
       cout << "gen level mass: " << (gm1+gm2).M() << endl;
       cout << "----------------------------------------------------------------------" << endl;
       fpEvt->dumpGenBlock();
@@ -355,7 +354,7 @@ void candAna::candAnalysis() {
   
   TGenCand *pg1(0), *pg2(0);   
   if (fCandTmi > -1) {
-    pg1           = fpEvt->getGenCand(p1->fGenIndex);
+    pg1           = fpEvt->getGenTWithIndex(p1->fGenIndex);
     fMu1PtGen     = pg1->fP.Perp();
     fMu1EtaGen    = pg1->fP.Eta();
     fMu1PhiGen    = pg1->fP.Phi();
@@ -441,7 +440,7 @@ void candAna::candAnalysis() {
   fMu2W8Tr      = pT1->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi)*pT2->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi);
 
   if (fCandTmi > -1) {
-    pg2           = fpEvt->getGenCand(p2->fGenIndex);
+    pg2           = fpEvt->getGenTWithIndex(p2->fGenIndex);
     fMu2PtGen     = pg2->fP.Perp();
     fMu2EtaGen    = pg2->fP.Eta();
     fMu2PhiGen    = pg2->fP.Phi(); 
@@ -517,9 +516,9 @@ void candAna::candAnalysis() {
   fOsIso        = osIsolation(fpCand, 1.0, 0.9); 
   fOsRelIso     = fOsIso/fCandPt; 
   int osm       = osMuon(fpCand, 0.);
-  fOsMuonPt     = (osm > -1? fpEvt->getRecTrack(osm)->fPlab.Perp():-1.);
-  fOsMuonPtRel  = (osm > -1? fpEvt->getRecTrack(osm)->fPlab.Perp(fpCand->fPlab):-1);
-  fOsMuonDeltaR =  (osm > -1? fpCand->fPlab.DeltaR(fpEvt->getRecTrack(osm)->fPlab):-1.);
+  fOsMuonPt     = (osm > -1? fpEvt->getSimpleTrack(osm)->getP().Perp():-1.);
+  fOsMuonPtRel  = (osm > -1? fpEvt->getSimpleTrack(osm)->getP().Perp(fpCand->fPlab):-1);
+  fOsMuonDeltaR =  (osm > -1? fpCand->fPlab.DeltaR(fpEvt->getSimpleTrack(osm)->getP()):-1.);
 
 //   if (301313 == fCandType) 
 //     cout << fRun << " " << fEvt 
@@ -1571,6 +1570,10 @@ void candAna::readFile(string filename, vector<string> &lines) {
 // ----------------------------------------------------------------------
 bool candAna::tightMuon(TAnaTrack *pT) {
 
+  const int verbose(0); 
+
+  if (verbose) cout << fYear << " --------- pT = " << pT->fPlab.Perp() << endl;
+
   if (HLTRANGE.begin()->first == "NOTRIGGER") {
     //cout << "NOTRIGGER requested... " << endl;
     return true;
@@ -1580,31 +1583,37 @@ bool candAna::tightMuon(TAnaTrack *pT) {
   //80 = 0x50 = 0101 0000
   bool muflag = ((pT->fMuID & 80) == 80);
   //  bool muflag = ((pT->fMuID & 16) == 16);
+  if (verbose) cout << "muflag: " << hex << pT->fMuID << dec << " -> " << muflag << endl;
 
   bool mucuts(false); 
+  if (verbose) cout << "mu index: " << pT->fMuIndex << " track index: " << pT->fIndex << endl;
   if (pT->fMuIndex > -1) {
     TAnaMuon *pM = fpEvt->getMuon(pT->fMuIndex);
-    //fixme    if (pM->fTimeNdof > 1) mucuts = true; 
     if (pM->fNmatchedStations > 1) mucuts = true; 
-    //    if (!muflag) cout << "matched muon stations: " << pM->fTimeNdof << endl;
+    if (verbose) cout << "matched muon stations: " << pM->fNmatchedStations << " -> " << mucuts << endl;
   }
 
   bool trackcuts(true); 
 
   if (TMath::Abs(pT->fBsTip) > 0.2) trackcuts = false;
+  if (verbose)  cout << "fBsTip: " << pT->fBsTip << " -> " << trackcuts << endl;
   if (fpReader->numberOfPixLayers(pT) < 1) trackcuts = false;
+  if (verbose)  cout << "pixel layers: " << fpReader->numberOfPixLayers(pT) << " -> " << trackcuts << endl;
 
   if (fYear == 2011) {
     if (pT->fValidHits < 11) trackcuts = false; 
+    if (verbose)  cout << "valid hits: " << pT->fValidHits << " -> " << trackcuts << endl;
   } else if (fYear == 2012) {
     int trkHits = fpReader->numberOfTrackerLayers(pT);
     if (trkHits < 6) trackcuts = false; 
+    if (verbose)  cout << "number of tracker layers: " << trkHits << " -> " << trackcuts << endl;
   } else {
     if (pT->fValidHits < 11) trackcuts = false; 
+    if (verbose)  cout << "valid hits: " << pT->fValidHits << " -> " << trackcuts << endl;
   }
 
   if (muflag && mucuts && trackcuts) {
-    //cout<<" passed "<<endl;
+    if (verbose) cout << " +++ passed "<<endl;
     return true; 
   } else {
     //cout<<" failed "<<endl;
@@ -1619,20 +1628,26 @@ bool candAna::tightMuon(TAnaTrack *pT) {
 // ----------------------------------------------------------------------
 bool candAna::tightMuon(TSimpleTrack *pT) {
 
+  const int verbose(1); 
+
   if (HLTRANGE.begin()->first == "NOTRIGGER") {
     //cout << "NOTRIGGER requested... " << endl;
     return true;
   }
 
-  if (0 == pT->getMuonID()) return false; 
+  if (0 == pT->getMuonID()) {
+    return false; 
+  }
 
   TAnaMuon *pM(0); 
   int idx = pT->getIndex(); 
   for (int i = 0; i < fpEvt->nMuons(); ++i) {
     pM = fpEvt->getMuon(i);
-    return tightMuon(pM); 
+    if (idx == pM->fIndex) {
+      return tightMuon(pM); 
+    }
   }
-
+  return false; 
 }
 
 
@@ -2801,9 +2816,9 @@ void candAna::boostGames() {
   if ((fGenBTmi > -1) && (fGenM1Tmi > -1) && (fGenM2Tmi > -1 )) {
     TGenCand *pB(0), *pM1(0), *pM2(0); 
 
-    pB  = fpEvt->getGenCand(fGenBTmi); 
-    pM1 = fpEvt->getGenCand(fGenM1Tmi); 
-    pM2 = fpEvt->getGenCand(fGenM2Tmi); 
+    pB  = fpEvt->getGenTWithIndex(fGenBTmi); 
+    pM1 = fpEvt->getGenTWithIndex(fGenM1Tmi); 
+    pM2 = fpEvt->getGenTWithIndex(fGenM2Tmi); 
     
     TVector3 boost = pB->fP.Vect();
     boost.SetMag(boost.Mag()/pB->fP.E());
@@ -2998,109 +3013,5 @@ double candAna::matchToMuon(TAnaTrack *pt) {
 
 // ----------------------------------------------------------------------
 void candAna::play() {
-
-  fGenM1Tmi = fGenM2Tmi = -1; 
-  fNGenPhotons = 0; 
-
-  int id1(13), id2(13); 
-
-  cout << "-------------------------" << endl;
-  TGenCand *pC(0), *pM1(0), *pM2(0), *pB(0); 
-  bool goodMatch(false); 
-  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
-    pC = fpEvt->getGenCand(i); 
-    if (TRUTHCAND == TMath::Abs(pC->fID)) {
-      pM1 = pM2 = 0; 
-      pB = pC;
-      for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
-	pC = fpEvt->getGenCand(id); 
-	if (id1 == TMath::Abs(pC->fID) || id2 == TMath::Abs(pC->fID)) {
-	  if (0 == pM1) {
-	    pM1 = fpEvt->getGenCand(id); 
-	  } else {
-	    pM2 = fpEvt->getGenCand(id); 
-	  }
-	}
-      }
-      if (0 != pM1 && 0 != pM2) {
-	goodMatch = true; 
-	fNGenPhotons = pB->fDau2 - pB->fDau1 - 1; 
-	//	cout << "found gen match for B gen idx = " << pB->fNumber << endl;
-	//	pB->dump();
-	break;
-      }
-    }
-  }
-  
-  fGenBTmi = -1; 
-  if (goodMatch) {
-    fGenBTmi = pB->fNumber; 
-  }
-
-  set<int> daughters, mothers;
-  TGenCand *pDau, *pTmp, *pMom; 
-  int iMom; 
-
-  // -- daughters
-  for (int id = fGenBTmi+1; id < fpEvt->nGenCands(); ++id) {
-    pDau = fpEvt->getGenCand(id);
-    iMom = pDau->fMom1;
-    while (iMom > fGenBTmi) {
-      pTmp = fpEvt->getGenCand(iMom);
-      iMom = pTmp->fMom1;
-    }
-    if (iMom == fGenBTmi) {
-      //      cout << "d: "; pDau->dump();
-      daughters.insert(id); 
-    }
-  }
-  
-  mothers.insert(fGenBTmi); 
-  int cnt(0); 
-  while (1) {
-    ++cnt;
-    //    cout << cnt << " ----------------------- mothers size: " << mothers.size() << endl;
-    for (set<int>::iterator i = mothers.begin(); i != mothers.end(); ++i) {
-      pTmp = fpEvt->getGenCand(*i); 
-      //      pTmp->dump();
-      for (int id = pTmp->fMom1; id <= pTmp->fMom2; ++id) {
-	mothers.insert(id);
-      }
-    }
-    if (mothers.end() != find(mothers.begin(), mothers.end(), 0)) break;
-    if (mothers.end() != find(mothers.begin(), mothers.end(), 1)) break;
-    if (mothers.end() != find(mothers.begin(), mothers.end(), -1)) break;
-  }
-
-  // -- add documentation block
-  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
-    pTmp = fpEvt->getGenCand(i); 
-    if (pTmp->fStatus == 3) mothers.insert(i); 
-  }
-
-  cout << "mothers: " << mothers.size() << endl;
-  for (set<int>::iterator i = mothers.begin(); i != mothers.end(); ++i) {
-    cout << "m: "; fpEvt->getGenCand(*i)->dump(); 
-  }
-
-  cout << "daughters: " << daughters.size() << endl;
-  for (set<int>::iterator i = daughters.begin(); i != daughters.end(); ++i) {
-    cout << "d: "; fpEvt->getGenCand(*i)->dump(); 
-  }
-  
-
-  set<int> allParticles;
-  for (set<int>::iterator i = mothers.begin(); i != mothers.end(); ++i) {
-    allParticles.insert(*i); 
-  }
-
-  for (set<int>::iterator i = daughters.begin(); i != daughters.end(); ++i) {
-    allParticles.insert(*i); 
-  }
-
-  cout << "all: " << allParticles.size() << endl;
-  for (set<int>::iterator i = allParticles.begin(); i != allParticles.end(); ++i) {
-    cout << "a: "; fpEvt->getGenCand(*i)->dump(); 
-  }
 
 }
