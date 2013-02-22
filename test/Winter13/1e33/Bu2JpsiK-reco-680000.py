@@ -2,7 +2,7 @@
 # using: 
 # Revision: 1.341 
 # Source: /cvs_server/repositories/CMSSW/CMSSW/Configuration/PyReleaseValidation/python/ConfigBuilder.py,v 
-# Replicate this file for 2e33 Bs2MuMu reco jobs. Replicate from 800000 - 801000
+# Replicate this file for 1e33 Bu2JpsiK reco jobs. Replicate from 680000 - 681821
 import FWCore.ParameterSet.Config as cms
 
 process = cms.Process('HLT')
@@ -33,7 +33,7 @@ process.maxEvents = cms.untracked.PSet(
 process.source = cms.Source("PoolSource",
     secondaryFileNames = cms.untracked.vstring(),
     fileNames = cms.untracked.vstring(
-                '/store/user/ursl/production/Fall11/Bs2MuMu0/Bs2MuMu-gen-800000.root'
+                '/store/user/ursl/production/Fall11/Bu2JpsiK0/Bu2JpsiK-gen-680000.root'
 	)
 )
 
@@ -43,8 +43,8 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.1 $'),
-    annotation = cms.untracked.string('Bs2MuMu-reco-800000 nevts:10'),
+    version = cms.untracked.string('$Revision: 1.341 $'),
+    annotation = cms.untracked.string('Bu2JpsiK-reco-680000 nevts:10'),
     name = cms.untracked.string('PyReleaseValidation')
 )
 
@@ -54,7 +54,7 @@ process.FEVTDEBUGHLToutput = cms.OutputModule("PoolOutputModule",
     splitLevel = cms.untracked.int32(0),
     eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
     outputCommands = process.FEVTDEBUGHLTEventContent.outputCommands,
-    fileName = cms.untracked.string('Bs2MuMu-reco-800000.root'),
+    fileName = cms.untracked.string('Bu2JpsiK-reco-680000.root'),
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string(''),
         dataTier = cms.untracked.string('GEN-SIM-DIGI-RAW-HLTDEBUG')
