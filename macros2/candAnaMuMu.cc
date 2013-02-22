@@ -43,7 +43,6 @@ void candAnaMuMu::genMatch() {
 
   TGenCand *pC(0), *pM1(0), *pM2(0), *pB(0); 
   bool goodMatch(false); 
-  //  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
   for (int i = 0; i < fpEvt->nGenT(); ++i) {
     pC = fpEvt->getGenT(i); 
     if (TRUTHCAND == TMath::Abs(pC->fID)) {

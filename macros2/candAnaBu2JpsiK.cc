@@ -52,7 +52,7 @@ void candAnaBu2JpsiK::candAnalysis() {
   fKaonEtaNrf    = pk->fPlab.Eta();
 
   if (fCandTmi > -1) {
-    TGenCand *pg1 = fpEvt->getGenCand(fpEvt->getSimpleTrack(pk->fIndex)->getGenIndex());
+    TGenCand *pg1 = fpEvt->getGenTWithIndex(fpEvt->getSimpleTrack(pk->fIndex)->getGenIndex());
     fKPtGen     = pg1->fP.Perp();
     fKEtaGen    = pg1->fP.Eta();
   } else {
@@ -118,38 +118,38 @@ void candAnaBu2JpsiK::genMatch() {
   TGenCand *pC(0), *pM1(0), *pM2(0), *pK(0), *pB(0), *pPsi(0); 
   int nb(0), nphotons(0); 
   bool goodMatch(false); 
-  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
-    pC = fpEvt->getGenCand(i); 
+  for (int i = 0; i < fpEvt->nGenT(); ++i) {
+    pC = fpEvt->getGenT(i); 
     if (521 == TMath::Abs(pC->fID)) {
       //cout<<" found B0 "<<TYPE<<endl;
       pB = pC;
       nb = 0; 
       for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
-	pC = fpEvt->getGenCand(id); 
+	pC = fpEvt->getGenTWithIndex(id); 
 	if (443 == TMath::Abs(pC->fID)) {
 	  // cout<<" found JPsi "<<endl;
 	  ++nb;
 	  pPsi = pC; 
 	  pM1 = pM2 = 0; 
 	  for (int idd = pPsi->fDau1; idd <= pPsi->fDau2; ++idd) {
-	    pC = fpEvt->getGenCand(idd); 
+	    pC = fpEvt->getGenTWithIndex(idd); 
 	    if (22 == TMath::Abs(pC->fID)) ++nphotons;
 	    if (13 == TMath::Abs(pC->fID)) {
 	      if (0 == pM1) {
-		pM1 = fpEvt->getGenCand(idd); 
+		pM1 = fpEvt->getGenTWithIndex(idd); 
 	      } else {
-		pM2 = fpEvt->getGenCand(idd); 
+		pM2 = fpEvt->getGenTWithIndex(idd); 
 	      }
 	      //cout<<" mu "<<pM1<<" "<<pM2<<endl;
 	    }
 	  }
 	} else if ( (TYPE%1000)==66 && 211 == TMath::Abs(pC->fID)) { // get Bu2JpsiPi
 	  ++nb;
-	  pK = fpEvt->getGenCand(id); 
+	  pK = fpEvt->getGenTWithIndex(id); 
 	  //cout<<" pi "<<pK<<" "<<nb<<endl;
 	} else if (321 == TMath::Abs(pC->fID)) {
 	  ++nb;
-	  pK = fpEvt->getGenCand(id); 
+	  pK = fpEvt->getGenTWithIndex(id); 
 	  //cout<<" K "<<pK<<" "<<nb<<endl;
 	} else 	if (22 == TMath::Abs(pC->fID)) {
 	  ++nphotons;
@@ -200,26 +200,26 @@ void candAnaBu2JpsiK::genMatch() {
   }
 
 
-  // -- check that only one reco track is matched to each gen particle
-  //    else skip the *event*!
-  static int cntBadEvents = 0; 
-  if (fGenM1Tmi > -1 && fGenM2Tmi > -1 && fGenK1Tmi > -1) {
-    TSimpleTrack *pT(0);
-    int cntM1(0), cntM2(0), cntK1(0); 
-    for (int i = 0; i < fpEvt->nSimpleTracks(); ++i) {
-      pT = fpEvt->getSimpleTrack(i); 
-      if (fGenM1Tmi == pT->getGenIndex()) ++cntM1;
-      if (fGenM2Tmi == pT->getGenIndex()) ++cntM2;
-      if (fGenK1Tmi == pT->getGenIndex()) ++cntK1;
-    }
+//   // -- check that only one reco track is matched to each gen particle
+//   //    else skip the *event*!
+//   static int cntBadEvents = 0; 
+//   if (fGenM1Tmi > -1 && fGenM2Tmi > -1 && fGenK1Tmi > -1) {
+//     TSimpleTrack *pT(0);
+//     int cntM1(0), cntM2(0), cntK1(0); 
+//     for (int i = 0; i < fpEvt->nSimpleTracks(); ++i) {
+//       pT = fpEvt->getSimpleTrack(i); 
+//       if (fGenM1Tmi == pT->getGenIndex()) ++cntM1;
+//       if (fGenM2Tmi == pT->getGenIndex()) ++cntM2;
+//       if (fGenK1Tmi == pT->getGenIndex()) ++cntK1;
+//     }
     
-    if (cntM1 > 1 || cntM2 > 1 || cntK1 > 1) {
-      cout << "BAD BAD event: multiple reco tracks matched to the same gen particle! " << ++cntBadEvents 
-	   << ": " << cntM1 << " .. " << cntM2 << " .. " << cntK1
-	   << " (gen-reco matches) " << endl;
-      fBadEvent = true; 
-    }
-  }
+//     if (cntM1 > 1 || cntM2 > 1 || cntK1 > 1) {
+//       cout << "BAD BAD event: multiple reco tracks matched to the same gen particle! " << ++cntBadEvents 
+// 	   << ": " << cntM1 << " .. " << cntM2 << " .. " << cntK1
+// 	   << " (gen-reco matches) " << endl;
+//       fBadEvent = true; 
+//     }
+//   }
 }
 
 
@@ -367,10 +367,10 @@ void candAnaBu2JpsiK::efficiencyCalculation() {
     if (fVerbose > 2 ) cout << "--------------------> No matched signal decay found" << endl;
     return;
   }
-  pB  = fpEvt->getGenCand(fGenBTmi); 
-  pM1 = fpEvt->getGenCand(fGenM1Tmi); 
-  pM2 = fpEvt->getGenCand(fGenM2Tmi); 
-  pK  = fpEvt->getGenCand(fGenK1Tmi); 
+  pB  = fpEvt->getGenTWithIndex(fGenBTmi); 
+  pM1 = fpEvt->getGenTWithIndex(fGenM1Tmi); 
+  pM2 = fpEvt->getGenTWithIndex(fGenM2Tmi); 
+  pK  = fpEvt->getGenTWithIndex(fGenK1Tmi); 
 
   // -- reco level
   TSimpleTrack *prM1(0), *prM2(0), *prK(0); 
@@ -400,7 +400,7 @@ void candAnaBu2JpsiK::efficiencyCalculation() {
   if (fRecK1Tmi > -1) {
     kMatched = 1; 
     prK = fpEvt->getSimpleTrack(fRecK1Tmi); 
-    if (prM2->getHighPurity()) {
+    if (prK->getHighPurity()) {
       kGT = 1; 
     } else {
       kGT = 0;
