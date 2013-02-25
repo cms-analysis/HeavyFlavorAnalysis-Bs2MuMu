@@ -20,21 +20,21 @@ process.load("Configuration.StandardSequences.MagneticField_38T_cff")
 process.load("Configuration.StandardSequences.Geometry_cff")
 process.load("RecoVertex.BeamSpotProducer.BeamSpot_cfi")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = "GR_R_44_V15::All"
+process.GlobalTag.globaltag = "FT53_V10A_AN3::All"
 
 # ----------------------------------------------------------------------
 # -- Input files
 POOLSOURCE
 
 # ----------------------------------------------------------------------
-rootFileName = "onia-2011-XXXX.root"
+rootFileName = "onia-2012-rereco-XXXX.root"
 
 
 process.tree = cms.EDAnalyzer(
     "HFTree",
-    verbose      = cms.untracked.int32(1),
-    printFrequency = cms.untracked.int32(1000), 
-    requireCand  =  cms.untracked.bool(True),
+    verbose         = cms.untracked.int32(1),
+    printFrequency = cms.untracked.int32(1000),
+    requireCand     =  cms.untracked.bool(True),
     fileName     = cms.untracked.string(rootFileName)
     )
 

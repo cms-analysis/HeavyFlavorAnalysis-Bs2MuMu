@@ -20,20 +20,20 @@ process.load("Configuration.StandardSequences.MagneticField_38T_cff")
 process.load("Configuration.StandardSequences.Geometry_cff")
 process.load("RecoVertex.BeamSpotProducer.BeamSpot_cfi")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = "GR_P_V40::All"
+process.GlobalTag.globaltag = "GR_P_V43::All"
 
 # ----------------------------------------------------------------------
 # -- Input files
 POOLSOURCE
 
 # ----------------------------------------------------------------------
-rootFileName = "onia-2012-XXXX.root"
+rootFileName = "onia-2012-prompt-XXXX.root"
 
 
 process.tree = cms.EDAnalyzer(
     "HFTree",
     verbose      = cms.untracked.int32(1),
-    printFrequency = cms.untracked.int32(1000), 
+    printFrequency = cms.untracked.int32(1000),
     requireCand  =  cms.untracked.bool(True),
     fileName     = cms.untracked.string(rootFileName)
     )
@@ -46,6 +46,7 @@ process.load("HeavyFlavorAnalysis.Bs2MuMu.HFPhysicsDeclared_cff")
 
 # ----------------------------------------------------------------------
 process.p = cms.Path(
+#    process.skipEvents*
     process.recoStuffSequence*
     process.oniaSequence*
     process.tree
