@@ -21,7 +21,7 @@ process.load("Configuration.StandardSequences.Geometry_cff")
 process.load("RecoVertex.BeamSpotProducer.BeamSpot_cfi")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 #process.GlobalTag.globaltag = "GR_P_V22A::All"
-process.GlobalTag.globaltag = "GR_R_44_V15::All"
+process.GlobalTag.globaltag = "FT_R_44_V9::All"
 
 # ----------------------------------------------------------------------
 # -- Input files
