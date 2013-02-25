@@ -1,5 +1,12 @@
 #! /bin/csh -f
 
+
+# ----------------------------------------------------------------------
+# example submission: 
+# -------------------
+#  run -t ../../../../130131.tar.gz -m grid -D unl.edu -c ../osg.csh -r 'PFNS srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat%STORAGE1 /store/user/ursl/test%SITE T3_CH_PSI' osgtest.py
+# ----------------------------------------------------------------------
+
 setenv CMSSW       
 setenv SCRAM_ARCH  
 setenv SRMCP       
@@ -7,6 +14,8 @@ setenv SRMCP
 setenv JOB      
 setenv FILE1    $JOB.root
 setenv STORAGE1 
+setenv PFNS 
+setenv SITE
 
 echo "========================"
 echo "====> grid wrapper <===="
@@ -58,7 +67,8 @@ make
 cd - 
 scramv1 b
 mv ../../$JOB.py .
-
+mv ../../data_replica.py .
+chmod 755 data_replica.py
 
 # ----------------------------------------------------------------------
 # -- Run cmsRun
@@ -79,24 +89,26 @@ setenv ROOTFILE `ls *.root`
 # ----------------------------------------------------------------------
 # -- Save Output to SE
 # ----------------------------------------------------------------------
-echo "--> Save output to SE: $STORAGE1/$FILE1"
+echo "--> Save output to SE: $PFNS/$STORAGE1/$FILE1"
 echo " local rootfile: $ROOTFILE"
 echo " job   rootfile: $FILE1"
 
 
-echo lcg-del -b -D srmv2 -l  "$STORAGE1/$FILE1"
-lcg-del -b -D srmv2 -l "$STORAGE1/$FILE1"
-echo $SRMCP    `pwd`/$FILE1 "$STORAGE1/$FILE1"
-$SRMCP         `pwd`/$FILE1 "$STORAGE1/$FILE1"
-echo lcg-ls -b -D srmv2 -l  "$STORAGE1/$FILE1"
-lcg-ls -b -D srmv2 -l  "$STORAGE1/$FILE1"
+echo lcg-del -b -D srmv2 -l  "$PFNS/$STORAGE1/$FILE1"
+lcg-del -b -D srmv2 -l "$PFNS/$STORAGE1/$FILE1"
+# -- ignore this altogether
+echo $SRMCP    `pwd`/$FILE1 "$PFNS/$STORAGE1/$FILE1.old"
+$SRMCP         `pwd`/$FILE1 "$PFNS/$STORAGE1/$FILE1.old"
+# -- switch to data_replica.py
+ls `pwd`/$FILE1 > dr.list
+echo "--> cat dr.list: " 
+cat dr.list
+echo "--> AM running data_replica.py: " 
+./data_replica.py --from-site LOCAL --to-site $SITE dr.list  "$STORAGE1"
 
-#echo srmrm     "$STORAGE1/$FILE1"
-#srmrm          "$STORAGE1/$FILE1"
-#echo $SRMCP    file:///`pwd`/$FILE1 "$STORAGE1/$FILE1"
-#$SRMCP         file:///`pwd`/$FILE1 "$STORAGE1/$FILE1"
-#echo srmls     "$STORAGE1/$FILE1"
-#srmls          "$STORAGE1/$FILE1"
+echo "--> lcg-ls : $PFNS/$STORAGE1/$FILE1" 
+echo lcg-ls -b -D srmv2 -l  "$PFNS/$STORAGE1/$FILE1"
+lcg-ls -b -D srmv2 -l  "$PFNS/$STORAGE1/$FILE1"
 
 date
 
