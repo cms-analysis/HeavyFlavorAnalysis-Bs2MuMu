@@ -376,7 +376,7 @@ void HFDumpMuons::findVertex(TAnaMuon *anaMu, std::set<unsigned> *trkIcs, double
 		TransientVertex vtx = kvf.vertex(transTracks);
 		ChiSquared chi(vtx.totalChiSquared(), vtx.degreesOfFreedom());
 		best = chi.probability();
-		if (!std::isnan(best))
+		if (!TMath::IsNaN(best))
 			bestTracks.push_back(make_pair(chi.probability(),mapIt->first));
 		
 		trkIcs->erase(mapIt->first);
