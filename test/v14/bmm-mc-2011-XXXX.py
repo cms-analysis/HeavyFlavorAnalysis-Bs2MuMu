@@ -20,7 +20,7 @@ process.load("Configuration.StandardSequences.MagneticField_38T_cff")
 process.load("Configuration.StandardSequences.Geometry_cff")
 process.load("RecoVertex.BeamSpotProducer.BeamSpot_cfi")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = "START53_V7A::All"
+process.GlobalTag.globaltag = "START44_V11::All"
 
 # ----------------------------------------------------------------------
 # POOLSOURCE
