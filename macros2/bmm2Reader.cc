@@ -53,17 +53,17 @@ void bmm2Reader::eventProcessing() {
   }
   
   // -- fill a few basic histograms
-  TAnaTrack *pT(0); 
+  TSimpleTrack *pT(0); 
   double x(0.);
-  ((TH1D*)fpHistFile->Get("ntracks"))->Fill(fpEvt->nRecTracks()); 
-  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
-    pT = fpEvt->getRecTrack(i); 
-    x = pT->fPlab.Perp();
+  ((TH1D*)fpHistFile->Get("ntracks"))->Fill(fpEvt->nSimpleTracks()); 
+  for (int i = 0; i < fpEvt->nSimpleTracks(); ++i) {
+    pT = fpEvt->getSimpleTrack(i); 
+    x = pT->getP().Perp();
     ((TH1D*)fpHistFile->Get("pt0"))->Fill(x); 
     ((TH1D*)fpHistFile->Get("pt1"))->Fill(x); 
-    x = pT->fPlab.Eta();
+    x = pT->getP().Eta();
     ((TH1D*)fpHistFile->Get("eta"))->Fill(x); 
-    x = pT->fPlab.Phi();
+    x = pT->getP().Phi();
     ((TH1D*)fpHistFile->Get("phi"))->Fill(x); 
   }
   

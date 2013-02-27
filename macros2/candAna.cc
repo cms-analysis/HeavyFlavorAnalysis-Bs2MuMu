@@ -42,8 +42,6 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   fpEvt = evt; 
   fBadEvent = false;
 
-  cout << "====================================================================== event: " << fEvent << endl;
-
   //  play(); 
   //  return;
 
@@ -1628,8 +1626,6 @@ bool candAna::tightMuon(TAnaTrack *pT) {
 // ----------------------------------------------------------------------
 bool candAna::tightMuon(TSimpleTrack *pT) {
 
-  const int verbose(1); 
-
   if (HLTRANGE.begin()->first == "NOTRIGGER") {
     //cout << "NOTRIGGER requested... " << endl;
     return true;
@@ -1742,17 +1738,17 @@ TAnaCand* candAna::osCand(TAnaCand *pC) {
 // ----------------------------------------------------------------------
 double candAna::osIsolation(TAnaCand *pC, double r, double ptmin) {
   double iso(0.); 
-  TAnaTrack *pT(0); 
+  TSimpleTrack *pT(0); 
   int overlap(0), verbose(0); 
 
   // -- look at all tracks that are associated to the same vertex
-  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
-    pT = fpEvt->getRecTrack(i); 
+  for (int i = 0; i < fpEvt->nSimpleTracks(); ++i) {
+    pT = fpEvt->getSimpleTrack(i); 
     if (verbose) {
       cout << "   track " << i 
-     	   << " with pT = " << pT->fPlab.Perp()
-     	   << " eta = " << pT->fPlab.Eta()
-     	   << " pointing at PV " << pT->fPvIdx;
+     	   << " with pT = " << pT->getP().Perp()
+     	   << " eta = " << pT->getP().Eta()
+     	   << " pointing at PV " << pT->getPvIndex();
     }
 
     // -- check against overlap to primary candidate
@@ -1773,23 +1769,23 @@ double candAna::osIsolation(TAnaCand *pC, double r, double ptmin) {
 //     }
 
 
-    if (pT->fPvIdx != pC->fPvIdx) { 	 
+    if (pT->getPvIndex() != pC->fPvIdx) { 	 
       if (verbose) cout << " skipped because of PV index mismatch" << endl; 	     //FIXME
       continue;
     }
     
-    double pt = pT->fPlab.Perp(); 
+    double pt = pT->getP().Perp(); 
     if (pt < ptmin) {
       if (verbose) cout << " skipped because of pt = " << pt << endl;
       continue;
     }
 
-    if (pT->fPlab.DeltaR(pC->fPlab) > r) {
+    if (pT->getP().DeltaR(pC->fPlab) > r) {
       iso += pt; 
       if (verbose) cout << endl;
     } 
     else {
-      if (verbose) cout << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+      if (verbose) cout << " skipped because of deltaR = " << pT->getP().DeltaR(pC->fPlab) << endl;
     }
   }
   
@@ -1802,12 +1798,12 @@ int candAna::osMuon(TAnaCand *pC, double r) {
 
   double mpt(-1.); 
   int idx (-1); 
-  TAnaTrack *pT(0); 
+  TSimpleTrack *pT(0); 
   int overlap(0), verbose(0); 
   
   // -- look at all tracks that are associated to the same vertex
-  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
-    pT = fpEvt->getRecTrack(i); 
+  for (int i = 0; i < fpEvt->nSimpleTracks(); ++i) {
+    pT = fpEvt->getSimpleTrack(i); 
     if (!tightMuon(pT)) continue;
 
     // -- check against overlap to primary candidate
@@ -1822,9 +1818,9 @@ int candAna::osMuon(TAnaCand *pC, double r) {
 
     if (verbose) {
       cout << "   track " << i 
-     	   << " with pT = " << pT->fPlab.Perp()
-     	   << " eta = " << pT->fPlab.Eta()
-     	   << " pointing at PV " << pT->fPvIdx;
+     	   << " with pT = " << pT->getP().Perp()
+     	   << " eta = " << pT->getP().Eta()
+     	   << " pointing at PV " << pT->getPvIndex();
     }
     
     // ???
@@ -1833,20 +1829,20 @@ int candAna::osMuon(TAnaCand *pC, double r) {
     //       continue;
     //     }
     
-    if ((pT->fPvIdx > -1) && (pT->fPvIdx != pC->fPvIdx)) { 	 
-      if (verbose) cout << " track " << i << " skipped because it is from a different PV " << pT->fPvIdx <<endl; 	 
+    if ((pT->getPvIndex() > -1) && (pT->getPvIndex() != pC->fPvIdx)) { 	 
+      if (verbose) cout << " track " << i << " skipped because it is from a different PV " << pT->getPvIndex() <<endl; 	 
       continue; 	 
     }
     
-    if (pT->fPlab.DeltaR(pC->fPlab) > r) {
-      if (pT->fPlab.Perp() > mpt) {
-	mpt = pT->fPlab.Perp(); 
+    if (pT->getP().DeltaR(pC->fPlab) > r) {
+      if (pT->getP().Perp() > mpt) {
+	mpt = pT->getP().Perp(); 
 	idx = i; 
       }
       if (verbose) cout << endl;
     } 
     else {
-      if (verbose) cout << " skipped because of deltaR = " << pT->fPlab.DeltaR(pC->fPlab) << endl;
+      if (verbose) cout << " skipped because of deltaR = " << pT->getP().DeltaR(pC->fPlab) << endl;
     }
   }
   
@@ -1889,7 +1885,7 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
   candPt = pC->fPlab.Perp(); 
   
   // -- look at all tracks that are associated to the same vertex
-  for (int i = 0; i < fpEvt->nRecTracks(); ++i) {
+  for (int i = 0; i < fpEvt->nSimpleTracks(); ++i) {
     ps = fpEvt->getSimpleTrack(i); 
     if (verbose) {
       cout << "   track " << i 

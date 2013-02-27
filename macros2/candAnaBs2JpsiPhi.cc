@@ -102,10 +102,10 @@ void candAnaBs2JpsiPhi::candAnalysis() {
   //if(fKa1Missid || fKa2Missid) cout<<"missid "<<fKa1Missid<<" "<<fKa2Missid<<" "<<fKa1MuMatch<<" "<<fKa2MuMatch<<endl;
 
   if (fCandTmi > -1) {
-    TGenCand *pg1 = fpEvt->getGenCand(fpEvt->getSimpleTrack(p1->fIndex)->getGenIndex());
+    TGenCand *pg1 = fpEvt->getGenTWithIndex(fpEvt->getSimpleTrack(p1->fIndex)->getGenIndex());
     fKa1PtGen     = pg1->fP.Perp();
     fKa1EtaGen    = pg1->fP.Eta();
-    TGenCand *pg2 = fpEvt->getGenCand(fpEvt->getSimpleTrack(p2->fIndex)->getGenIndex());
+    TGenCand *pg2 = fpEvt->getGenTWithIndex(fpEvt->getSimpleTrack(p2->fIndex)->getGenIndex());
     fKa2PtGen     = pg2->fP.Perp();
     fKa2EtaGen    = pg2->fP.Eta();
   } else {
@@ -161,41 +161,41 @@ void candAnaBs2JpsiPhi::genMatch() {
   TGenCand *pC(0), *pB(0), *pPsi(0), *pPhi(0), *pM1(0), *pM2(0), *pK1(0), *pK2(0); 
   int nb(0), ngamma(0); 
   bool goodMatch(false); 
-  for (int i = 0; i < fpEvt->nGenCands(); ++i) {
-    pC = fpEvt->getGenCand(i); 
+  for (int i = 0; i < fpEvt->nGenT(); ++i) {
+    pC = fpEvt->getGenT(i); 
     if (531 == TMath::Abs(pC->fID)) {
       pB = pC;
       nb = pB->fDau2 - pB->fDau1 + 1; 
       if (nb > 2) continue; // skip B decays where more than J/psi and phi came from B
       ngamma = 0; 
       for (int id = pB->fDau1; id <= pB->fDau2; ++id) {
-	pC = fpEvt->getGenCand(id); 
+	pC = fpEvt->getGenTWithIndex(id); 
 	if (22 == TMath::Abs(pC->fID)) ++ngamma;
 	if (443 == TMath::Abs(pC->fID)) {
 	  pPsi = pC; 
 	  pM1 = pM2 = 0;
 	  for (int idd = pPsi->fDau1; idd <= pPsi->fDau2; ++idd) {
-	    pC = fpEvt->getGenCand(idd); 
+	    pC = fpEvt->getGenTWithIndex(idd); 
 	    if (22 == TMath::Abs(pC->fID)) ++ngamma;
 	    if (13 == TMath::Abs(pC->fID)) {
 	      if (0 == pM1) {
-		pM1 = fpEvt->getGenCand(idd); 
+		pM1 = fpEvt->getGenTWithIndex(idd); 
 	      } else {
-		pM2 = fpEvt->getGenCand(idd); 
+		pM2 = fpEvt->getGenTWithIndex(idd); 
 	      }
 	    }
 	  }
 	} else if (333 == TMath::Abs(pC->fID)) {
-	  pPhi = fpEvt->getGenCand(id); 
+	  pPhi = fpEvt->getGenTWithIndex(id); 
 	  pK1 = pK2 = 0;
 	  for (int idd = pPhi->fDau1; idd <= pPhi->fDau2; ++idd) {
-	    pC = fpEvt->getGenCand(idd); 
+	    pC = fpEvt->getGenTWithIndex(idd); 
 	    if (22 == TMath::Abs(pC->fID)) ++ngamma;
 	    if (321 == TMath::Abs(pC->fID)) {
 	      if (0 == pK1) {
-		pK1 = fpEvt->getGenCand(idd); 
+		pK1 = fpEvt->getGenTWithIndex(idd); 
 	      } else {
-		pK2 = fpEvt->getGenCand(idd); 
+		pK2 = fpEvt->getGenTWithIndex(idd); 
 	      }
 	    }
 	  }
@@ -222,7 +222,7 @@ void candAnaBs2JpsiPhi::genMatch() {
     double m = pB->fP.Mag();
     double p = pB->fP.P();
     // Meson pointer
-    TGenCand *pM = fpEvt->getGenCand(pB->fMom1); 
+    TGenCand *pM = fpEvt->getGenTWithIndex(pB->fMom1); 
     // the meson is the original except if it oscillated
     if (531 != TMath::Abs(pM->fID)) pM = pB;
     double x = (pM1->fV - pM->fV).Mag(); 
@@ -446,11 +446,11 @@ void candAnaBs2JpsiPhi::efficiencyCalculation() {
     if (fVerbose > 2 ) cout << "--------------------> No matched signal decay found" << endl;
     return;
   }
-  pB  = fpEvt->getGenCand(fGenBTmi); 
-  pM1 = fpEvt->getGenCand(fGenM1Tmi); 
-  pM2 = fpEvt->getGenCand(fGenM2Tmi); 
-  pK1 = fpEvt->getGenCand(fGenK1Tmi); 
-  pK2 = fpEvt->getGenCand(fGenK2Tmi); 
+  pB  = fpEvt->getGenTWithIndex(fGenBTmi); 
+  pM1 = fpEvt->getGenTWithIndex(fGenM1Tmi); 
+  pM2 = fpEvt->getGenTWithIndex(fGenM2Tmi); 
+  pK1 = fpEvt->getGenTWithIndex(fGenK1Tmi); 
+  pK2 = fpEvt->getGenTWithIndex(fGenK2Tmi); 
 
   // -- reco level
   TSimpleTrack *prM1(0), *prM2(0), *prK1(0), *prK2(0); 
