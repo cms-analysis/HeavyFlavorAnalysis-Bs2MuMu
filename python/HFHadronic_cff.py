@@ -16,7 +16,7 @@ dstarpiDump = cms.EDAnalyzer(
     maxD0              = cms.untracked.double(2.0),
     maxDz              = cms.untracked.double(99.0),
     pvWeight           = cms.untracked.double(0.6),
-    type               = cms.untracked.int32(30)
+    type               = cms.untracked.int32(300030)
     )
 
 # ----------------------------------------------------------------------
@@ -35,7 +35,7 @@ dstarDump = cms.EDAnalyzer(
     maxD0              = cms.untracked.double(2.0),
     maxDz              = cms.untracked.double(99.0),
     pvWeight           = cms.untracked.double(0.6),
-    type               = cms.untracked.int32(54)
+    type               = cms.untracked.int32(300054)
     )
 
 # ----------------------------------------------------------------------
