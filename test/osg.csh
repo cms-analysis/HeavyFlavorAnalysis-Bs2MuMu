@@ -98,9 +98,7 @@ echo " job   rootfile: $FILE1"
 
 echo lcg-del -b -D srmv2 -l  "$PFNS/$STORAGE1/$FILE1"
 lcg-del -b -D srmv2 -l "$PFNS/$STORAGE1/$FILE1"
-# -- ignore this altogether
-echo $SRMCP    `pwd`/$FILE1 "$PFNS/$STORAGE1/$FILE1.old"
-$SRMCP         `pwd`/$FILE1 "$PFNS/$STORAGE1/$FILE1.old"
+
 # -- switch to data_replica.py
 ls `pwd`/$FILE1 > dr.list
 echo "--> cat dr.list: " 
@@ -111,6 +109,10 @@ echo "--> AM running data_replica.py: "
 echo "--> lcg-ls : $PFNS/$STORAGE1/$FILE1" 
 echo lcg-ls -b -D srmv2 -l  "$PFNS/$STORAGE1/$FILE1"
 lcg-ls -b -D srmv2 -l  "$PFNS/$STORAGE1/$FILE1"
+
+echo "--> lcg-ls : $PFNS/$STORAGE1/$FILE1.old" 
+lcg-del -b -D srmv2 -l "$PFNS/$STORAGE1/$FILE1.old"
+lcg-ls -b -D srmv2 -l  "$PFNS/$STORAGE1/$FILE1.old"
 
 date
 

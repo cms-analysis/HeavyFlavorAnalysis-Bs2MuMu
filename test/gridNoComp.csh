@@ -55,17 +55,14 @@ echo "--> Setup CMSSW"
 pwd
 date
 cmsrel $CMSSW
-cd $CMSSW/src
+cd $CMSSW
 eval `scramv1 runtime -csh`
 pwd
 
 echo "--> Extract tar file"
 date
-tar zxf ../../$JOB.tar.gz
-cd AnalysisDataFormats/HeavyFlavorObjects
-make 
-cd - 
-scramv1 b
+tar zxf ../$JOB.tar.gz
+cd src
 mv ../../$JOB.py .
 mv ../../data_replica.py .
 chmod 755 data_replica.py
@@ -107,10 +104,6 @@ echo "--> AM running data_replica.py: "
 echo "--> lcg-ls : $PFNS/$STORAGE1/$FILE1" 
 echo lcg-ls -b -D srmv2 -l  "$PFNS/$STORAGE1/$FILE1"
 lcg-ls -b -D srmv2 -l  "$PFNS/$STORAGE1/$FILE1"
-
-echo "--> lcg-ls : $PFNS/$STORAGE1/$FILE1.old" 
-lcg-del -b -D srmv2 -l "$PFNS/$STORAGE1/$FILE1.old"
-lcg-ls -b -D srmv2 -l  "$PFNS/$STORAGE1/$FILE1.old"
 
 date
 
