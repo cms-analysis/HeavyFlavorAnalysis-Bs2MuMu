@@ -221,7 +221,13 @@ void candAnaDstar::candAnalysis() {
 
   if (0 == fpCand) return;
 
-  candAna::candAnalysis();
+  //dumpHFTruthCand(fpCand); // testing
+  //return;
+
+
+  candAna::candAnalysis();  // call the main analysis 
+
+  // now do Dstar specific
 
   count0++;
 
@@ -250,24 +256,29 @@ void candAnaDstar::candAnalysis() {
   pK = 0;
   pPi =0; 
 
-  int pPisId = fpEvt->getSigTrack(fpCand->fSig1)->fIndex; // slow pion index
-  pPis = fpEvt->getRecTrack(pPisId); // slow pi from D*
+  //int pPisId = fpEvt->getSigTrack(fpCand->fSig1)->fIndex; // slow pion index
+  //pPis = fpEvt->getRecTrack(pPisId); // slow pi from D*
+  int pPisId = fpCand->fSig1; // slow pion index
+  pPis = fpEvt->getSigTrack(pPisId); // slow pi from D*
   TVector3 piSlowMom = pPis->fPlab; // slow pi momentum vector 
 
-//       if (fVerbose>0 && tm) cout<<" slow pi "<<pPisId<<" "<< pPis->fPlab.Perp()  << " "<<pPis->fMCID<<endl;
-//       if (fVerbose>0 && tm) cout<<" D0 "<<pC->fType<<endl;
+  if (fVerbose>10 ) cout<<" slow pi "<<pPisId<<" "<< pPis->fPlab.Perp()  << " "<<pPis->fMCID<<endl;
+  if (fVerbose>10 ) cout<<" D0 "<<pC->fType<<endl;
 
   // loop over D0 tracks 
   for (int id = pC->fSig1; id <= pC->fSig2; ++id) {
-    int index = fpEvt->getSigTrack(id)->fIndex;
+    //int index = fpEvt->getSigTrack(id)->fIndex;
+    int index = id;
     // 	if (fVerbose>0 && tm) cout<<id<<" "<<index<<" ";
 
     if (211 == fpEvt->getSigTrack(id)->fMCID) {  // pion 
-      pPi = fpEvt->getRecTrack(index);
+      //pPi = fpEvt->getRecTrack(index);
+      pPi = fpEvt->getSigTrack(index);
       //indexPi = index;
       //if (fVerbose>0 && tm) cout<< pPi->fMCID<<" "<<pPi->fPlab.Perp() << endl;
     } else {  // kaon
-      pK = fpEvt->getRecTrack(index);
+      //pK = fpEvt->getRecTrack(index);
+      pK = fpEvt->getSigTrack(index);
       //indexK = index;
       // 	  if (fVerbose>0 && tm) cout<< pK->fMCID<<" "<<pK->fPlab.Perp() << endl;
     }
@@ -344,248 +355,294 @@ void candAnaDstar::candAnalysis() {
   TVector3 t1(sv1-pv), t2(sv2-pv), t3(sv2-sv1);
   //cout<<t1.Z()<<" "<<t2.Z()<<" "<<t3.Z()<<endl;
 
-  // direction vector from PV to D0 decay vertex 
-  //TVector3 svpv1(sv.fPoint - fpEvt->getPV(pvidx)->fPoint); 
-  //TVector3 svpv(sv1 - pv1); 
-  //cout<<svpv.Z()<<" "<<svpv1.Z()<<endl;
-
-//  ONLY FOR MC
-//       if(ok) {  // Do here comparison between RECO and GEN quantities
-// 	double c1 = (PV-pv1).Mag();
-// 	double c2 = (DSVertex-sv1).Mag();
-// 	double c3 = (DZVertex-sv2).Mag();
-
-// 	//cout<<" RECO-MV vertex distance "<<c1<<" "<<c2<<" "<<c3<<endl;
-// 	((TH1D*)fHistDir->Get("h31"))->Fill(c1);
-// 	((TH1D*)fHistDir->Get("h32"))->Fill(c2);
-// 	((TH1D*)fHistDir->Get("h33"))->Fill(c3);
-
-// 	((TH1D*)fHistDir->Get("h60"))->Fill( float(qpi+qpis));
-
-// 	double a10 = PiSlowMom.Angle(pPis->fPlab);
-// 	double a11 = PiMom.Angle(pPi->fPlab);
-// 	double a12 = KMom.Angle(pK->fPlab);
-// 	double a13 = DSMom.Angle(pCand->fPlab);
-// 	double a14 = DZMom.Angle(pC->fPlab);
-
-// 	((TH1D*)fHistDir->Get("h34"))->Fill(a10);
-// 	((TH1D*)fHistDir->Get("h35"))->Fill(a11);
-// 	((TH1D*)fHistDir->Get("h36"))->Fill(a12);
-// 	((TH1D*)fHistDir->Get("h37"))->Fill(a13);
-// 	((TH1D*)fHistDir->Get("h38"))->Fill(a14);
-
-// 	double t1len = t1.Mag();
-// 	double t2len = t2.Mag();
-// 	double t1lenMC = (DSVertex-PV).Mag();
-// 	double t2lenMC = (DZVertex-PV).Mag();
-// 	((TH1D*)fHistDir->Get("h26"))->Fill( abs(t1len-t1lenMC) );
-// 	((TH1D*)fHistDir->Get("h27"))->Fill( abs(t2len-t2lenMC) );
-
-//       } // if OK
-
-
       
-      //fls3d = sv.fD3d/sv.fD3dE; // D*
-      //flsxy = sv.fDxy/sv.fDxyE; 
-      fls3d = svD0.fD3d/svD0.fD3dE; //  use D0
-      flsxy = svD0.fDxy/svD0.fDxyE; 
-      prob  = svD0.fProb;
-      chi2  = svD0.fChi2;
+  //fls3d = sv.fD3d/sv.fD3dE; // D*
+  //flsxy = sv.fDxy/sv.fDxyE; 
+  fls3d = svD0.fD3d/svD0.fD3dE; //  use D0
+  flsxy = svD0.fDxy/svD0.fDxyE; 
+  prob  = svD0.fProb;
+  chi2  = svD0.fChi2;
       
-      //alpha = t1.Angle(pCand->fPlab);  // D* pointing angle
-      alpha  = t2.Angle(pC->fPlab); // D0 angle
-      falpha2 = t3.Angle(pC->fPlab); // D0 angle versus SV2-SV1
-      dr = piSlowMom.Angle(fpCand->fPlab); // pislow openinig
+  //alpha = t1.Angle(pCand->fPlab);  // D* pointing angle
+  alpha  = t2.Angle(pC->fPlab); // D0 angle
+  falpha2 = t3.Angle(pC->fPlab); // D0 angle versus SV2-SV1
+  dr = piSlowMom.Angle(fpCand->fPlab); // pislow openinig
+  
+  if(fVerbose>9 ) {
+    cout<<" PVs "<<pvidx<<" "
+	<<pv.X()<<" "<<pv.Y()<<" "<<pv.Z()<<" "
+	<<sv1.X()<<" "<<sv1.Y()<<" "<<sv1.Z()<<" "
+	<<sv2.X()<<" "<<sv2.Y()<<" "<<sv2.Z()<<" "
+	<<t1.Mag()<<" "<<t2.Mag()<<" "<<t3.Mag()<<endl;
+    cout<<sv.fD3d<<" "<<sv.fDxy<<" "<<svD0.fD3d<<" "<<svD0.fDxy<<endl;
+    cout<<alpha<<" "<<t2.Angle(pC->fPlab)<<" "<<t3.Angle(pC->fPlab)<<" "<<t1.Angle(t3)<<endl;
+  }
 
-      if(fVerbose>9 ) {
-	cout<<" PVs "<<pvidx<<" "
-	    <<pv.X()<<" "<<pv.Y()<<" "<<pv.Z()<<" "
-	    <<sv1.X()<<" "<<sv1.Y()<<" "<<sv1.Z()<<" "
-	    <<sv2.X()<<" "<<sv2.Y()<<" "<<sv2.Z()<<" "
-	    <<t1.Mag()<<" "<<t2.Mag()<<" "<<t3.Mag()<<endl;
-	cout<<sv.fD3d<<" "<<sv.fDxy<<" "<<svD0.fD3d<<" "<<svD0.fDxy<<endl;
-	cout<<alpha<<" "<<t2.Angle(pC->fPlab)<<" "<<t3.Angle(pC->fPlab)<<" "<<t1.Angle(t3)<<endl;
-      }
+  const bool doHisto = true;
+  if(doHisto) {  // Do for all data and for matched MC
+    
+    //((TH1D*)fHistDir->Get("h61"))->Fill( float(qpi+qpis));
+    
+    ((TH1D*)fHistDir->Get("h1"))->Fill(t1.Mag());
+    ((TH1D*)fHistDir->Get("h2"))->Fill(t2.Mag());
+    ((TH1D*)fHistDir->Get("h3"))->Fill(t3.Mag());
+    
+    ((TH1D*)fHistDir->Get("h4"))->Fill( (pC->fPlab).Angle(fpCand->fPlab) );
+    ((TH1D*)fHistDir->Get("h5"))->Fill(sv.fD3d);
+    ((TH1D*)fHistDir->Get("h6"))->Fill(svD0.fD3d);
+    
+    ((TH1D*)fHistDir->Get("h7"))->Fill(t2.Angle(pC->fPlab));
+    ((TH1D*)fHistDir->Get("h8"))->Fill(t3.Angle(pC->fPlab));
+    ((TH1D*)fHistDir->Get("h9"))->Fill(t1.Angle(t3));
+    ((TH1D*)fHistDir->Get("h10"))->Fill(t1.Angle(fpCand->fPlab));
+    
+    
+    ((TH1D*)fHistDir->Get("mds"))->Fill(mdstar);
+    ((TH1D*)fHistDir->Get("mdz"))->Fill(mdz);
+    ((TH2D*)fHistDir->Get("h2d"))->Fill(mdz, dm);
+    ((TH1D*)fHistDir->Get("dm"))->Fill(dm);
+    ((TH1D*)fHistDir->Get("fls3d"))->Fill(fls3d);
+    ((TH1D*)fHistDir->Get("flsxy"))->Fill(flsxy);
+    ((TH1D*)fHistDir->Get("prob"))->Fill(prob);
+    ((TH1D*)fHistDir->Get("chi2"))->Fill(chi2);
+    ((TH1D*)fHistDir->Get("alpha"))->Fill(alpha);
+    ((TH1D*)fHistDir->Get("alpha2"))->Fill(falpha2);
+    ((TH1D*)fHistDir->Get("pt"))->Fill(pt);
+    ((TH1D*)fHistDir->Get("dr"))->Fill(dr);
+    
+    ((TH1D*)fHistDir->Get("ptdz"))->Fill(ptdz);
+    ((TH1D*)fHistDir->Get("ptPis"))->Fill(ptPis);
+    ((TH1D*)fHistDir->Get("ptPi"))->Fill(ptPi);
+    ((TH1D*)fHistDir->Get("ptK"))->Fill(ptK);
+    
+  }  // if 
+  
+  
+  ((TH1D*)fHistDir->Get("Status"))->Fill(10.);
+  
+  // Now the selection cuts cut 
+  if(ptPi<4. || ptK<4.) return;  //  does not do aything for data, cand reco is already with 4
+  ((TH1D*)fHistDir->Get("Status"))->Fill(11.);
+  
+  if( (qpi+qpis)==0 ) return; // skip wrong sign decys 
+  ((TH1D*)fHistDir->Get("Status"))->Fill(12.);
+  
+  //if (prob < 0.05) return;
+  ((TH1D*)fHistDir->Get("Status"))->Fill(13.);
+  
+  if (ptPis < 0.4) return;
+  ((TH1D*)fHistDir->Get("Status"))->Fill(14.);
+  
+  if (dr > 0.25) return;
+  ((TH1D*)fHistDir->Get("Status"))->Fill(15.);
+  
+  if (chi2 > 2.0) return;
+  ((TH1D*)fHistDir->Get("Status"))->Fill(16.);
+  
+  if (pt < 2) return;
+  ((TH1D*)fHistDir->Get("Status"))->Fill(17.);
+  
+  if (alpha > 0.4) return;
+  ((TH1D*)fHistDir->Get("Status"))->Fill(18.);
+  
+  if (fls3d < 2) return;
+  ((TH1D*)fHistDir->Get("Status"))->Fill(19.);
+  
+  if( dm<0.130 || dm>0.160 ) return; 
+  ((TH1D*)fHistDir->Get("Status"))->Fill(20.);
+  
+  if( (qk+qpi)!=0 ) return; 
+  ((TH1D*)fHistDir->Get("Status"))->Fill(21.);
+  
+  count1++;
+  
+  // Look at muid
+  //bool muid1 = goodMuon(pPi);  // true for good  muons 
+  //bool muid2 = goodMuon(pK);
+  bool muid1 = tightMuon(pPi);  // true for good/tight  muons 
+  bool muid2 = tightMuon(pK);
+  
+  bool mumatch1old = doTriggerMatching(pPi,true); // see if it matches HLT muon
+  bool mumatch2old = doTriggerMatching(pK,true); // see if it matches HLT muon
+  
+  match1dr = doTriggerMatchingR(pPi,true); // see if it matches HLT muon
+  match2dr = doTriggerMatchingR(pK,true);  // see if it matches HLT muon
+  bool mumatch1 = (match1dr<0.02); // see if it matches HLT muon
+  bool mumatch2 = (match2dr<0.02); // see if it matches HLT muon
 
-      const bool doHisto = true;
-      if(doHisto) {  // Do for all data and for matched MC
+  ((TH1D*)fHistDir->Get("dr7"))->Fill(match1dr);
+  ((TH1D*)fHistDir->Get("dr7"))->Fill(match2dr);
+  if(muid1) ((TH1D*)fHistDir->Get("dr8"))->Fill(match1dr);
+  if(muid2) ((TH1D*)fHistDir->Get("dr8"))->Fill(match2dr);
 
-	//((TH1D*)fHistDir->Get("h61"))->Fill( float(qpi+qpis));
+  if(mumatch1 != mumatch1old) cout<<" ERROR "<<muid1<<" "<<mumatch1<<" "<<mumatch1old<<" "<<match1dr<<endl;
+  if(mumatch2 != mumatch2old) cout<<" ERROR "<<muid2<<" "<<mumatch2<<" "<<mumatch2old<<" "<<match2dr<<endl;
 
-	((TH1D*)fHistDir->Get("h1"))->Fill(t1.Mag());
-	((TH1D*)fHistDir->Get("h2"))->Fill(t2.Mag());
-	((TH1D*)fHistDir->Get("h3"))->Fill(t3.Mag());
+  // kink finder 
+  double chiPi = -99.; // pPi->fChi2;
+  double chiK = -99.; // pK->fChi2;
+  //int mid1 = 0, mid2= 0;
+  if (pPi->fMuIndex > -1) {
+    chiPi= fpEvt->getMuon(pPi->fMuIndex)->fMuonChi2;
+    //mid1 = fpEvt->getMuon(pPi->fMuIndex)->fMuID;
+  }
+  if (pK->fMuIndex > -1)  {
+    chiK = fpEvt->getMuon(pK->fMuIndex)->fMuonChi2;
+    //mid2 = fpEvt->getMuon(pK->fMuIndex)->fMuID;
+  }
+  
+  //cout<<fRun<<" "<<fEvt<<" "<<fLS<<" "<<fJSON<<" "<<fGoodHLT<<" "<<fHLTmatch<<endl;
+  double dr1 = matchToMuon(pPi);
+  double dr2 = matchToMuon(pK);
 
-	((TH1D*)fHistDir->Get("h4"))->Fill( (pC->fPlab).Angle(fpCand->fPlab) );
-	((TH1D*)fHistDir->Get("h5"))->Fill(sv.fD3d);
-	((TH1D*)fHistDir->Get("h6"))->Fill(svD0.fD3d);
+  if( muid1 || muid2) {
+    cout<<"fake muon "<<muid1<<" "<<muid2<<" "<<mumatch1<<" "<<mumatch2<<" "<<match1dr<<" "<<match2dr<<" "<<dr1<<" "<<dr2<<endl;
+    
+    if(muid1) { // pi misid 
+      count2++; if(!mumatch1) count4++;
+    }
+    if(muid2) { // Kmisid
+      count3++; if(!mumatch2) count5++;
+    }
+  } // if muid
+  
+  if(muid1) ((TH1D*)fHistDir->Get("dr5"))->Fill(dr1);
+  else      ((TH1D*)fHistDir->Get("dr6"))->Fill(dr1);
+  if(muid2) ((TH1D*)fHistDir->Get("dr5"))->Fill(dr2);
+  else      ((TH1D*)fHistDir->Get("dr6"))->Fill(dr2);
+  
+  //cout<<" pi mis-id "<<muid1<<" "<<match1dr<<" "<<mumatch1<<" "<<dr1<<" "<<fhltType<<endl;
+  //cout<<" k  mis-id "<<muid2<<" "<<match2dr<<" "<<mumatch2<<" "<<dr2<<" "<<fhltType<<endl;
 
-	((TH1D*)fHistDir->Get("h7"))->Fill(t2.Angle(pC->fPlab));
-	((TH1D*)fHistDir->Get("h8"))->Fill(t3.Angle(pC->fPlab));
-	((TH1D*)fHistDir->Get("h9"))->Fill(t1.Angle(t3));
-	((TH1D*)fHistDir->Get("h10"))->Fill(t1.Angle(fpCand->fPlab));
-
-
-	((TH1D*)fHistDir->Get("mds"))->Fill(mdstar);
-	((TH1D*)fHistDir->Get("mdz"))->Fill(mdz);
-	((TH2D*)fHistDir->Get("h2d"))->Fill(mdz, dm);
-	((TH1D*)fHistDir->Get("dm"))->Fill(dm);
-	((TH1D*)fHistDir->Get("fls3d"))->Fill(fls3d);
-	((TH1D*)fHistDir->Get("flsxy"))->Fill(flsxy);
-	((TH1D*)fHistDir->Get("prob"))->Fill(prob);
-	((TH1D*)fHistDir->Get("chi2"))->Fill(chi2);
-	((TH1D*)fHistDir->Get("alpha"))->Fill(alpha);
-	((TH1D*)fHistDir->Get("alpha2"))->Fill(falpha2);
-	((TH1D*)fHistDir->Get("pt"))->Fill(pt);
-	((TH1D*)fHistDir->Get("dr"))->Fill(dr);
-		
-	((TH1D*)fHistDir->Get("ptdz"))->Fill(ptdz);
-	((TH1D*)fHistDir->Get("ptPis"))->Fill(ptPis);
-	((TH1D*)fHistDir->Get("ptPi"))->Fill(ptPi);
-	((TH1D*)fHistDir->Get("ptK"))->Fill(ptK);
-	
-      }  // if 
-
-
-      ((TH1D*)fHistDir->Get("Status"))->Fill(10.);
-
-      // Now the selection cuts cut 
-      if(ptPi<4. || ptK<4.) return;  //  does not do aything for data, cand reco is already with 4
-      ((TH1D*)fHistDir->Get("Status"))->Fill(11.);
-
-      if( (qpi+qpis)==0 ) return; // skip wrong sign decys 
-      ((TH1D*)fHistDir->Get("Status"))->Fill(12.);
-
-      //if (prob < 0.05) return;
-      ((TH1D*)fHistDir->Get("Status"))->Fill(13.);
-
-      if (ptPis < 0.4) return;
-      ((TH1D*)fHistDir->Get("Status"))->Fill(14.);
-
-      if (dr > 0.25) return;
-      ((TH1D*)fHistDir->Get("Status"))->Fill(15.);
-
-      if (chi2 > 2.0) return;
-      ((TH1D*)fHistDir->Get("Status"))->Fill(16.);
-
-      if (pt < 2) return;
-      ((TH1D*)fHistDir->Get("Status"))->Fill(17.);
-
-      if (alpha > 0.4) return;
-      ((TH1D*)fHistDir->Get("Status"))->Fill(18.);
-
-      if (fls3d < 2) return;
-      ((TH1D*)fHistDir->Get("Status"))->Fill(19.);
-
-      if( dm<0.130 || dm>0.160 ) return; 
-      ((TH1D*)fHistDir->Get("Status"))->Fill(20.);
-
-      if( (qk+qpi)!=0 ) return; 
-      ((TH1D*)fHistDir->Get("Status"))->Fill(21.);
-
-      count1++;
-
-      // Look at muid
-      //bool muid1 = goodMuon(pPi);  // true for good  muons 
-      //bool muid2 = goodMuon(pK);
-      bool muid1 = tightMuon(pPi);  // true for good/tight  muons 
-      bool muid2 = tightMuon(pK);
-
-      bool mumatch1 = doTriggerMatching(pPi,true); // see if it matches HLT muon
-      bool mumatch2 = doTriggerMatching(pK,true); // see if it matches HLT muon
-
-       // kink finder 
-      double chiPi = -99.; // pPi->fChi2;
-      double chiK = -99.; // pK->fChi2;
-      //int mid1 = 0, mid2= 0;
-      if (pPi->fMuIndex > -1) {
-        chiPi= fpEvt->getMuon(pPi->fMuIndex)->fMuonChi2;
-        //mid1 = fpEvt->getMuon(pPi->fMuIndex)->fMuID;
-      }
-      if (pK->fMuIndex > -1)  {
-        chiK = fpEvt->getMuon(pK->fMuIndex)->fMuonChi2;
-        //mid2 = fpEvt->getMuon(pK->fMuIndex)->fMuID;
-      }
-
-      //cout<<fRun<<" "<<fEvt<<" "<<fLS<<" "<<fJSON<<" "<<fGoodHLT<<" "<<fHLTmatch<<endl;
-      if( muid1 || muid2) {
-	//cout<<"fake muon "<<muid1<<" "<<muid2<<" "<<mumatch1<<" "<<mumatch2<<" "<<mid1<<" "<<mid2
-	//  <<" "<<indexPi<<" "<<indexK<<endl;
-	if(muid1) { // pi misid 
-	  count2++; if(!mumatch1) count4++;
-	}
-	if(muid2) { // Kmisid
-	  count3++; if(!mumatch2) count5++;
-	}
-      } // if muid
-
-      double dr1 = matchToMuon(pPi);
-      double dr2 = matchToMuon(pK);
-      ((TH1D*)fHistDir->Get("mu_match_dr1"))->Fill(dr1);
-      ((TH1D*)fHistDir->Get("mu_match_dr1"))->Fill(dr2);
-      if(muid1) ((TH1D*)fHistDir->Get("mu_match_dr2"))->Fill(dr1);
-      if(muid2) ((TH1D*)fHistDir->Get("mu_match_dr2"))->Fill(dr2);
-
-      // Isolation 
-      //                       dcaCut(cm) ptCut(GeV)         
-      //int close1 = nCloseTracks(fpCand,0.03, 0.5); // around D*
-      int close2 = nCloseTracks(pC,    0.03, 0.5); // around D0
-      //                                      dca   R    Pt
-      //double iso1 = isoClassicWithDOCA(fpCand, 0.05,0.7, 0.9); // D*
-      double iso2 = isoClassicWithDOCA(pC,     0.05,0.7, 0.9); // D0
-
-
-      ftm= 0; // tm;
-      fmds=mdstar;
-      fmdz=mdz;
-      fchi2=chi2;
-      falpha=alpha;
-      // falpha2 = 
-      ffls3d=fls3d;
-      fqpis=qpis;
-      fdr=dr;
-
-      feta=eta;
-      fetapi=etaPi;
-      fetak=etaK;
-
-      fpt=pt;
-      fptdz=ptdz;
-      fptpis=ptPis;
-      fptpi=ptPi;
-      fptk=ptK;
-      
-      fmuid1 = muid1;
-      fmuid2 = muid2;
-      fmumat1 = mumatch1;
-      fmumat2 = mumatch2;
-
-      mudr1 = dr1;
-      mudr2 = dr2;
-
-      fchipi = chiPi;
-      fchik = chiK;
-
-      fiso = iso2;
-      fnclose = close2;
-
-      fpvd = pv.Z();
-
-      if(count0%100 == 0) 
-	cout<<count0<<" "<<count1<<" "<<count2<<" "<<count3<<" "<<count4<<" "<<count5<<endl;
-
-      tree->Fill();
-
+  // Isolation 
+  //                       dcaCut(cm) ptCut(GeV)         
+  //int close1 = nCloseTracks(fpCand,0.03, 0.5); // around D*
+  int close2 = nCloseTracks(pC,    0.03, 0.5); // around D0
+  //                                      dca   R    Pt
+  //double iso1 = isoClassicWithDOCA(fpCand, 0.05,0.7, 0.9); // D*
+  double iso2 = isoClassicWithDOCA(pC,     0.05,0.7, 0.9); // D0
+  
+  
+  ftm= 0; // tm;
+  fmds=mdstar;
+  fmdz=mdz;
+  fchi2=chi2;
+  falpha=alpha;
+  // falpha2 = 
+  ffls3d=fls3d;
+  fqpis=qpis;
+  fdr=dr;
+  
+  feta=eta;
+  fetapi=etaPi;
+  fetak=etaK;
+  
+  fpt=pt;
+  fptdz=ptdz;
+  fptpis=ptPis;
+  fptpi=ptPi;
+  fptk=ptK;
+  
+  fmuid1 = muid1;
+  fmuid2 = muid2;
+  fmumat1 = mumatch1;
+  fmumat2 = mumatch2;
+  
+  mudr1 = dr1;
+  mudr2 = dr2;
+  
+  fchipi = chiPi;
+  fchik = chiK;
+  
+  fiso = iso2;
+  fnclose = close2;
+  
+  fpvd = pv.Z();
+  
+  if(count0%10 == 0) 
+    cout<<count0<<" "<<count1<<" "<<count2<<" "<<count3<<" "<<count4<<" "<<count5<<endl;
+  
+  tree->Fill();
+  
 }
 
 // ----------------------------------------------------------------------
 void candAnaDstar::dumpHFTruthCand(TAnaCand *pC) {
-  TAnaTrack *pT(0); 
-  if( pC->fSig1 == -1 && pC->fSig2==-1 ) return;
-  for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
-    pT = fpEvt->getRecTrack(fpEvt->getSigTrack(i)->fIndex); 
-    pT->dump(); 
+  //TAnaTrack *pT(0);  // needs work 
+  //if( pC->fSig1 == -1 && pC->fSig2==-1 ) return;
+  //for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
+  //pT = fpEvt->getRecTrack(fpEvt->getSigTrack(i)->fIndex); 
+  //pT->dump(); 
+  //}
+
+
+  cout<<" tracks "<<fpEvt->nRecTracks()<<"  "<<fpEvt->nSimpleTracks()<<endl;
+  // loop over simple tracks  
+  for(int itrk=0; itrk<(fpEvt->nSimpleTracks()); itrk++ ) {  // if the simple track exists 
+    TSimpleTrack *pTrack = fpEvt->getSimpleTrack(itrk);
+    //cout<<itrk<<" "<<pTrack<<endl;
+    if(pTrack == 0) continue;
+
+    //pTrack->dump();
+
+    TVector3 mom = pTrack->getP(); // momentum 
+    int index = pTrack->getIndex(); // same as itrk
+    int q     = pTrack->getCharge();
+    int qual  = pTrack->getHighPurity();
+    int muonId= pTrack->getMuonID();
+    int pvidx = pTrack->getPvIndex();
+    int genidx=pTrack->getGenIndex();
+    int inds  = pTrack->getIndices();
+    int bits  = pTrack->getBits();
+
+    cout<<itrk<<" "<<index<<" "<<q<<" "<<qual<<" "<<muonId<<" "<<pvidx<<" "<<genidx<<" "<<hex<<inds<<" "<<bits<<dec<<" ";
+    cout<<mom.Perp()<<" "<<mom.Phi()<<" "<<mom.Eta()<<endl;
+      
   }
+
+
+  cout<<" signal tracks "<<pC->fSig1<<" "<<pC->fSig2<<endl;
+  for(int it = pC->fSig1; it<=pC->fSig2; it++) {  // loop over index of signal tracka
+    TAnaTrack *pT = fpEvt->getSigTrack(it); // this gives TAnaTrack
+    //pT->dump(); // so all normal TAnaTracks work 
+    cout <<it<<" "<<pT->fIndex <<" "<<pT->fMCID<<" "<<pT->fGenIndex<<" "<<pT->fPlab.Perp()<<" "<<pT->fQ<<" "
+	 <<pT->fChi2 <<" "<<pT->fDof<<" "<<pT->fTrackQuality<<" "<<pT->fAlgorithm<<" "<<pT->fMuID<<" "
+	 <<pT->fMuIndex << " "<<pT->fPvIdx<<endl; 
+    int itrk = pT->fIndex; // index of the SimpleTrack
+
+  }
+
+
+  cout<<" muon tracks "<< fpEvt->nMuons()<<endl;
+  for (int it = 0; it< fpEvt->nMuons(); ++it) { // loop over muons
+    TAnaMuon *muon = fpEvt->getMuon(it); // get muon
+
+    // some direct muon methods
+    //muon->dump();
+
+    // some direct muon methods
+    int muonId = muon->fMuID; // muon ID bits
+    int muonIdx = muon->fMuIndex;  // index in the muon list = it
+ 
+    // get track index
+    int itrk = muon->fIndex; // index of the SimpleTrack
+
+    TVector3 muonMom = muon->fPlab;
+    double ptMuon  = muonMom.Perp();
+
+    cout<<it<<" "<<itrk<<" "<<muon->fQ<<" "<<muon->fGlobalPlab.Perp()<<" "<<muon->fPlab.Perp()<<" "<<muon->fValidHits
+	<<" "<<muon->fMuonChi2<<" m-id "<<hex<<muonId<<dec<<" "<<muonIdx<<endl;
+ 
+    // Going through the SimpleTrack gives the same info
+    //TSimpleTrack *pTrack = fpEvt->getSimpleTrack(itrk);
+    //cout<<it<<" "<<itrk<<" "<<pTrack->getP().Perp()<<endl; // same as direct muon
+
+
+  } // END MUON LOOP 
+
+
+
+
 }
 
 
@@ -605,12 +662,14 @@ void candAnaDstar::dumpHFDstarCand(TAnaCand *pC) {
   //  if (fVerbose > -1) cout << "   mdz = " << pD->fMass << endl;
 
   // -- slow pion
-  pT = fpEvt->getRecTrack(fpEvt->getSigTrack(pC->fSig1)->fIndex); 
+  //pT = fpEvt->getRecTrack(fpEvt->getSigTrack(pC->fSig1)->fIndex); 
+  //cout<<" simpler way "<<endl;
+  int it = pC->fSig1;  // index of the signal track
+  pT = fpEvt->getSigTrack(it); // this give TAnaTrack
   cout << fpEvt->getSigTrack(pC->fSig1)->fMCID << " " ; 
   pT->dump(); 
 
 }
-
 
 // ----------------------------------------------------------------------
 // -- works ONLY for this dedicated decay mode with the seq vtx fitter!
@@ -806,11 +865,16 @@ void candAnaDstar::bookHist() {
   h = new TH1D("ptPis", "pT", 50, 0., 5);
   TH2D *h2 = new TH2D("h2d", "m(d0) vs dm", 60, 1.8, 1.92, 60, 0.13, 0.16);
 
-  h = new TH1D("mu_match_dr", "mu_match_dr", 100, 0., 1.);
-  h = new TH1D("mu_match_pt", "mu_match_pt", 100, 0., 20.);
+  h = new TH1D("dr1", "dr1", 400, 0., 2.);
+  h = new TH1D("dr2", "dr2", 400, 0., 2.);
+  h = new TH1D("dr3", "dr3", 400, 0., 2.);
+  h = new TH1D("dr4", "dr4", 400, 0., 2.);
+  h = new TH1D("dr5", "dr5", 400, 0., 2.);
+  h = new TH1D("dr6", "dr6", 400, 0., 2.);
+  h = new TH1D("dr7", "dr7", 400, 0., 2.);
+  h = new TH1D("dr8", "dr8", 400, 0., 2.);
+  h = new TH1D("dr9", "dr9", 400, 0., 2.);
 
-  h = new TH1D("mu_match_dr1", "mu_match_dr1", 100, 0., 1.);
-  h = new TH1D("mu_match_dr2", "mu_match_dr2", 100, 0., 1.);
 
 //   h = new TH1D("all_mds", "m(dstar)", 70, 1.8, 2.5);
 //   h = new TH1D("all_mdz", "m(d0)", 70, 1.8, 2.5);
@@ -964,6 +1028,9 @@ void candAnaDstar::bookHist() {
   //t->Branch("npv",     &fPvN,               "npv/I");
   //t->Branch("pvw8",    &fPvAveW8,           "pvw8/D");
   tree->Branch("hltm",    &fHLTmatch,          "hltm/O");
+  tree->Branch("hltdr1",    &match1dr,      "hltdr1/F");
+  tree->Branch("hltdr2",    &match2dr,      "hltdr2/F");
+  tree->Branch("hlttype",   &fhltType,        "hltype/I");
 
 }
 

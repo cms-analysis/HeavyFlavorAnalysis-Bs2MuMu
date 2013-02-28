@@ -50,7 +50,8 @@ private:
   float fpvd, fiso;
   float feta, fetapi, fetak;
   float fchipi, fchik;
-  float mudr1, mudr2;
+  float mudr1, mudr2;  
+  float match1dr, match2dr;
 };
 
 #endif

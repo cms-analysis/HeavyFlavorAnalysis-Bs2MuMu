@@ -83,11 +83,12 @@ public:
   virtual double      osIsolation(TAnaCand *pC, double r = 1.0, double ptmin = 0.9); 
   virtual int         osMuon(TAnaCand *pC, double r = 1.0); 
   virtual bool        doTriggerMatching(); // match the 2 muons from the dimuon to HLT
-  //virtual bool        doTriggerMatching(TAnaTrack *pt); // match a single track to HLT 
   virtual bool        doTriggerMatching(TAnaTrack *pt, bool anyTrig = false); // match a single track to HLT
   virtual void        boostGames();
   virtual double      matchToMuon(TAnaTrack *pt); // match a single track to ALL muons
   virtual void        play(); 
+  // To return the full deltaR not just a bool
+  virtual double      doTriggerMatchingR(TAnaTrack *pt, bool anyTrig = false); // match a single track to HLT
 
   std::string fName; 
   std::string fCutFile; 
@@ -209,7 +210,8 @@ public:
   bool    fPreselection; 
 
   bool    fBadEvent;
-
+  int     fhltType; // to hold the HLT information d.k.
+ 
   struct RedTreeData fRTD;
 
 };
