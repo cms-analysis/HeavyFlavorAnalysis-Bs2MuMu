@@ -4,6 +4,7 @@
 # ------
 #              check status of SGE jobs
 #
+# 2013/02/28   fix again for the root file size and check that the file exists on the SE
 # 2012/08/23   adapt to changed sge output at the end
 # 2012/08/13   -k adds NOK file for terminated waiting/running jobs
 # 2011/11/29   find terminated jobs
@@ -80,9 +81,13 @@ while(<IN>) {
 	}
     }
 
+   
     if ($ok eq "running" || $ok eq "waiting") {
 	printf("%7i %10s %30s; %s\n", $sgeNumber, $jname, $mdir, $ok);
     } else {
+	if ($rsize < 1) { 
+	    $ok = "rootfile empty  ";
+	}
 	printf("%7i %10s; %s/root: %10i, log: %7i %30s (%s)\n", $sgeNumber, $jname, $ok, $rsize, $lsize, $mdir, $workerNode);
     }
 
@@ -174,8 +179,7 @@ sub rootFileSize {
     my $result  = 0; 
     my $logsize = 0; 
 
-#   284306076 /pnfs/psi.ch/cms/trivcat/store/user/ursl/production/Fall11/Bd2KPi2/Bd2KPi-gen-922000.root
-# -rw-r--r--   1     2     2 2698346               ONLINE /pnfs/psi.ch/cms/trivcat/store/user/ursl/test.root
+#  -rw-rw-r--   1     2     2 791816255               ONLINE /pnfs/psi.ch/cms/trivcat/store/user/bstomumu/v14/cmsRun/2012/data-bmm-MuOnia/A/bmm-2012-rereco-v14-MuOnia__Run2012A-13Jul2012-v1-0000.root
 
     open(LIN, "$llogfile") || die "Cannot open $llogfile\n";
     my $lfn = ""; 
@@ -192,17 +196,7 @@ sub rootFileSize {
 	    ($logn = $lfn) =~ s/root$/log/;
 	}
 
-
-	if ($logn ne "" && /([0-9]*) *$logn/) {
-	    if ($1 > 0) {
-		$logsize = $1; 
-		# print "-> $logsize\n";
-		$gotLog = 1; 
-		if ($gotRoot) {last; }
-	    }
-	}
-
-	if ($lfn ne "" && /ONLINE $lfn/) {
+	if (/ONLINE/) {
 	    ($stuff, $junk) = split(/ONLINE/); 
 	    $stuff =~ s/\s{1,99}/\ /g;
 	    my @tmpstuff = split(/\ /, $stuff);
@@ -212,18 +206,14 @@ sub rootFileSize {
 	    if ($gotLog) {last; }
 	}
 
-	if ($lfn ne "" && /([0-9]*) *$lfn/) {
-	    if ($1 > 0) {
-		$result = $1; 
-		# print "-> $result\n";
-		$gotRoot = 1; 
-		if ($gotLog) {last; }
-	    }
-	}
-
-
     }
     close(LIN); 
+
+    # -- check that the rootfile really exists on the SE
+    if (-e "$lfn") {
+    } else {
+	$result = 0; 
+    }
 
     return ($result, $logsize, "$STORAGE1$lfn"); 
 }
