@@ -23,7 +23,13 @@
 use Getopt::Std;
 getopts('Cdhj:r:s:t:v:');
 
-my $job = "v13/2011";
+if ($opt_v) {
+    $version = $opt_v; 
+} else {
+    $version = "v14";
+}
+
+my $job = "$version/2011";
 if ($opt_j) {
     $job = $opt_j; 
 }
@@ -33,110 +39,73 @@ if ($opt_r) {
     $rootdir = $opt_r; 
 }
 
-if ($opt_v) {
-    $version = $opt_v; 
-} else {
-    $version = "v13";
-}
 
 %jobs = (
-    "signal Bs2MuMu MC 1e33"  
-    => "-y 2011 -m,bmm2Reader.1e33-Bs2MuMu,cbmm-v11-1e33-Bs2MuMu-0*,$version-1e33-Bs2MuMu.root"
-    , "signal Bs2MuMu-newSignal MC 1e33"  
-    => "-y 2011 -m,bmm2Reader.1e33-Bs2MuMu,cbmm-v11-1e33-Bs2MuMu-new*,$version-1e33-Bs2MuMu-newSignalMC.root"
-    , "signal Bs2MuMu MC 2e33"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bs2MuMu,cbmm-v11-2e33-Bs2MuMu-0*,$version-2e33-Bs2MuMu.root"
-    , "signal Bs2MuMu-newSignal MC 2e33"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bs2MuMu,cbmm-v11-2e33-Bs2MuMu-new*,$version-2e33-Bs2MuMu-newSignalMC.root"
-    , "signal Bx2MuMu MC 2e33"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bs2MuMu,cbmm-v11-2e33-Bx2MuMu-0*,$version-2e33-Bx2MuMu.root"
-    , "signal By2MuMu MC 2e33"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bs2MuMu,cbmm-v11-2e33-By2MuMu-0*,$version-2e33-By2MuMu.root"
-    , "signal Bs2MuMu MC 3e33"  
-    => "-y 2011 -m,bmm2Reader.3e33-Bs2MuMu,cbmm-v11-3e33-Bs2MuMu-0*,$version-3e33-Bs2MuMu.root"
-    , "signal Bs2MuMu-newSignal MC 3e33"  
-    => "-y 2011 -m,bmm2Reader.3e33-Bs2MuMu,cbmm-v11-3e33-Bs2MuMu-new*,$version-3e33-Bs2MuMu-newSignalMC.root"
-    , "signal Bs2MuMu MC mix"  
-    => "-y 2011 -m,bmm2Reader.mix-Bs2MuMu,cbmm-v11-mix-Bs2MuMu-0*,$version-mix-Bs2MuMu.root"
-    , "signal Bs2MuMu-newSignal MC cms"  
-    => "-y 2011 -m,bmm2Reader.mix-Bs2MuMu,cbmm-v11-mix-Bs2MuMu-new*,$version-mix-Bs2MuMu-newSignalMC.root"
-    , "signal Bd2MuMu MC 1e33"  
-    => "-y 2011 -m,bmm2Reader.1e33-Bd2MuMu,cbmm-v11-1e33-Bd2MuMu-*,$version-1e33-Bd2MuMu.root"
-    , "signal Bd2MuMu MC 2e33"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bd2MuMu,cbmm-v11-2e33-Bd2MuMu-*,$version-2e33-Bd2MuMu.root"
-    , "signal Bd2MuMu MC 3e33"  
-    => "-y 2011 -m,bmm2Reader.3e33-Bd2MuMu,cbmm-v11-3e33-Bd2MuMu-*,$version-3e33-Bd2MuMu.root"
+    "signal Bs2MuMu MC mix"  
+    => "-y 2011 -m,bmm2Reader.mix-Bs2MuMu,cbmm-2011-$version-mix-Bs2MuMu-0*,$version-mix-Bs2MuMu.root"
     , "signal Bd2MuMu MC mix"  
-    => "-y 2011 -m,bmm2Reader.mix-Bd2MuMu,cbmm-v11-mix-Bd2MuMu-*,$version-mix-Bd2MuMu.root"
+    => "-y 2011 -m,bmm2Reader.mix-Bd2MuMu,cbmm-2011-$version-mix-Bd2MuMu-0*,$version-mix-Bd2MuMu.root"
+    , "signal Bx2MuMu MC 2e33"  
+    => "-y 2011 -m,bmm2Reader.2e33-Bs2MuMu,cbmm-2011-$version-2e33-Bx2MuMu-0*,$version-2e33-Bx2MuMu.root"
+    , "signal By2MuMu MC 2e33"  
+    => "-y 2011 -m,bmm2Reader.2e33-Bs2MuMu,cbmm-2011-$version-2e33-By2MuMu-0*,$version-2e33-By2MuMu.root"
     #
-    , "norm Bu2JpsiK MC 1e33"  
-    => "-y 2011 -m,bmm2Reader.1e33-Bu2JpsiK,cbmm-v11-1e33-Bu2JpsiK-*,$version-1e33-Bu2JpsiK.root"
-    , "norm Bu2JpsiK MC 2e33"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bu2JpsiK,cbmm-v11-2e33-Bu2JpsiK-*,$version-2e33-Bu2JpsiK.root"
-    , "norm Bu2JpsiK MC 3e33"  
-    => "-y 2011 -m,bmm2Reader.3e33-Bu2JpsiK,cbmm-v11-3e33-Bu2JpsiK-*,$version-3e33-Bu2JpsiK.root"
     , "norm Bu2JpsiK MC mix"  
-    => "-y 2011 -m,bmm2Reader.mix-Bu2JpsiK,cbmm-v11-mix-Bu2JpsiK-*,$version-mix-Bu2JpsiK.root"
+    => "-y 2011 -m,bmm2Reader.mix-Bu2JpsiK,cbmm-2011-$version-mix-Bu2JpsiK-*,$version-mix-Bu2JpsiK.root"
     , "norm Bu2JpsiK MC acc"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bu2JpsiK,cbmm-v11-2e33-accBu2JpsiK-*,$version-2e33-accBu2JpsiK.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bu2JpsiK,cbmm-2011-$version-2e33-accBu2JpsiK-*,$version-2e33-accBu2JpsiK.root"
     #
-    , "cs Bs2JpsiPhi MC 1e33"  
-    => "-y 2011 -m,bmm2Reader.1e33-Bs2JpsiPhi,cbmm-v11-1e33-Bs2JpsiPhi-*,$version-1e33-Bs2JpsiPhi.root"
-    , "cs Bs2JpsiPhi MC 2e33"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bs2JpsiPhi,cbmm-v11-2e33-Bs2JpsiPhi-*,$version-2e33-Bs2JpsiPhi.root"
-    , "cs Bs2JpsiPhi MC 3e33"  
-    => "-y 2011 -m,bmm2Reader.3e33-Bs2JpsiPhi,cbmm-v11-3e33-Bs2JpsiPhi-*,$version-3e33-Bs2JpsiPhi.root"
     , "cs Bs2JpsiPhi MC mix"  
-    => "-y 2011 -m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-v11-mix-Bs2JpsiPhi-*,$version-mix-Bs2JpsiPhi.root"
+    => "-y 2011 -m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-2011-$version-mix-Bs2JpsiPhi-*,$version-mix-Bs2JpsiPhi.root"
     , "cs Bs2JpsiPhi MC acc"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bs2JpsiPhi,cbmm-v11-2e33-accBs2JpsiPhi-*,$version-2e33-accBs2JpsiPhi.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bs2JpsiPhi,cbmm-2011-$version-2e33-accBs2JpsiPhi-*,$version-2e33-accBs2JpsiPhi.root"
     #
     , "rare Bs2KMuNu MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bs2KMuNu,cbmm-v11-2e33-Bs2KMuNu-*,$version-2e33-Bs2KMuNu.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bs2KMuNu,cbmm-2011-$version-2e33-Bs2KMuNu-*,$version-2e33-Bs2KMuNu.root"
     , "rare Bd2PiMuNu MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-v11-2e33-Bd2PiMuNu-*,$version-2e33-Bd2PiMuNu.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-2011-$version-2e33-Bd2PiMuNu-*,$version-2e33-Bd2PiMuNu.root"
     , "rare Bd2PiMuNu MC acc"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-v11-2e33-accBd2PiMuNu-*,$version-2e33-accBd2PiMuNu.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-2011-$version-2e33-accBd2PiMuNu-*,$version-2e33-accBd2PiMuNu.root"
     , "rare Lb2PMuNu MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Lb2PMuNu,cbmm-v11-2e33-Lb2PMuNu-*,$version-2e33-Lb2PMuNu.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Lb2PMuNu,cbmm-2011-$version-2e33-Lb2PMuNu-*,$version-2e33-Lb2PMuNu.root"
     , "rare Bs2KK MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bs2KK,cbmm-v11-2e33-Bs2KK-*,$version-2e33-Bs2KK.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bs2KK,cbmm-2011-$version-2e33-Bs2KK-*,$version-2e33-Bs2KK.root"
     , "rare Bs2KPi MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bs2KPi,cbmm-v11-2e33-Bs2KPi-*,$version-2e33-Bs2KPi.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bs2KPi,cbmm-2011-$version-2e33-Bs2KPi-*,$version-2e33-Bs2KPi.root"
     , "rare Bs2PiPi MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bs2PiPi,cbmm-v11-2e33-Bs2PiPi-*,$version-2e33-Bs2PiPi.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bs2PiPi,cbmm-2011-$version-2e33-Bs2PiPi-*,$version-2e33-Bs2PiPi.root"
     , "rare Bd2KK MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bd2KK,cbmm-v11-2e33-Bd2KK-*,$version-2e33-Bd2KK.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bd2KK,cbmm-2011-$version-2e33-Bd2KK-*,$version-2e33-Bd2KK.root"
     , "rare Bd2KPi MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bd2KPi,cbmm-v11-2e33-Bd2KPi-*,$version-2e33-Bd2KPi.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bd2KPi,cbmm-2011-$version-2e33-Bd2KPi-*,$version-2e33-Bd2KPi.root"
     , "rare Bd2PiPi MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bd2PiPi,cbmm-v11-2e33-Bd2PiPi-*,$version-2e33-Bd2PiPi.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bd2PiPi,cbmm-2011-$version-2e33-Bd2PiPi-*,$version-2e33-Bd2PiPi.root"
     , "rare Bd2RhoPi MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bd2RhoPi,cbmm-v11-2e33-Bd2RhoPi-*,$version-2e33-Bd2RhoPi.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bd2RhoPi,cbmm-2011-$version-2e33-Bd2RhoPi-*,$version-2e33-Bd2RhoPi.root"
     , "rare Lb2KP MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Lb2KP,cbmm-v11-2e33-Lb2KP-*,$version-2e33-Lb2KP.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Lb2KP,cbmm-2011-$version-2e33-Lb2KP-*,$version-2e33-Lb2KP.root"
     , "rare Lb2PiP MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Lb2PiP,cbmm-v11-2e33-Lb2PiP-*,$version-2e33-Lb2PiP.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Lb2PiP,cbmm-2011-$version-2e33-Lb2PiP-*,$version-2e33-Lb2PiP.root"
     , "rare Bu2PiMuMu MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bu2PiMuMu,cbmm-v11-2e33-Bu2PiMuMu-*,$version-2e33-Bu2PiMuMu.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bu2PiMuMu,cbmm-2011-$version-2e33-Bu2PiMuMu-*,$version-2e33-Bu2PiMuMu.root"
     , "rare Bu2JpsiPi MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bu2JpsiPi,cbmm-v11-2e33-Bu2JpsiPi-*,$version-2e33-Bu2JpsiPi.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bu2JpsiPi,cbmm-2011-$version-2e33-Bu2JpsiPi-*,$version-2e33-Bu2JpsiPi.root"
     , "rare Bu2MuMuK MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bu2MuMuK,cbmm-v11-2e33-Bu2KMuMu-*,$version-2e33-Bu2MuMuK.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bu2MuMuK,cbmm-2011-$version-2e33-Bu2KMuMu-*,$version-2e33-Bu2MuMuK.root"
     , "rare Bs2PhiMuMu MC"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bs2PhiMuMu,cbmm-v11-2e33-Bs2PhiMuMu-*,$version-2e33-Bs2PhiMuMu.root"
+    => "-y 2011 -m,bmm2Reader.2e33-Bs2PhiMuMu,cbmm-2011-$version-2e33-Bs2PhiMuMu-*,$version-2e33-Bs2PhiMuMu.root"
     , "rare Bd2DstarPi MC"  
-    => "-y 2011 -m,bmm2Reader.Bd2DstarPi.2011,cbmm-v11-2e33-Bd2DstarPi-*,$version-2e33-Bd2DstarPi.root"
+    => "-y 2011 -m,bmm2Reader.Bd2DstarPi.2011,cbmm-2011-$version-2e33-Bd2DstarPi-*,$version-2e33-Bd2DstarPi.root"
     #
     , "data 2011"  
-    => "-y 2011 -b 1,bmm2Reader.data,cbmm-$version-Run2011*,$version-2011-data.root"
+    => "-y 2011 -b 1,bmm2Reader.data,cbmm-2011-$version-Run2011*,$version-2011-data.root"
     # 
     #, "bmt jet"  
-    #=> "-y 2011 -b 1,bmt2Reader.data,cbmt-v11-Jet-*,$version-bmt-Jet.root"
+    #=> "-y 2011 -b 1,bmt2Reader.data,cbmt-$version-Jet-*,$version-bmt-Jet.root"
     #, "bmt ht"  
-    #=> "-y 2011 -b 1,bmt2Reader.data,cbmt-v11-HT-*,$version-bmt-HT.root"
+    #=> "-y 2011 -b 1,bmt2Reader.data,cbmt-$version-HT-*,$version-bmt-HT.root"
     #, "bmt photon"  
-    #=> "-y 2011 -b 1,bmt2Reader.data,cbmt-v11-Photon-*,$version-bmt-Photon.root"
+    #=> "-y 2011 -b 1,bmt2Reader.data,cbmt-$version-Photon-*,$version-bmt-Photon.root"
     );
 
 my $scrtuser  = $ENV{'USER'};
