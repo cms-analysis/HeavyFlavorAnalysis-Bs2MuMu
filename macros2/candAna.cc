@@ -59,6 +59,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   triggerSelection();
   runRange(); 
 
+  //cout<<fpEvt->nCands()<<" "<<fVerbose<<endl;
 
   TAnaCand *pCand(0);
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
@@ -91,7 +92,8 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 	   << " tm = " << fGenM1Tmi << " " << fGenM2Tmi 
 	   << " ctm " << fCandTmi 
 	   << endl;
-      if (TMath::Abs(gen1) != 13 || TMath::Abs(gen2) != 13) fpEvt->dumpGenBlock();
+
+      if (TMath::Abs(gen1) != 13 || TMath::Abs(gen2) != 13) fpEvt->dumpGenBlock(); 
 
     }
 
@@ -132,9 +134,6 @@ void candAna::evtAnalysis(TAna01Event *evt) {
       fpEvt->dumpGenBlock();
     }
 
-    // special test (delet)
-    //static int count=0, count1=0, count2=0, count3=0;
-    
     if (fIsMC) {
       fTree->Fill(); 
       if (!fGoodMuonsID) fAmsTree->Fill();
@@ -160,14 +159,6 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 	  ((TH1D*)fHistDir->Get("test3"))->Fill(6.); 
 	  if (fVerbose > 5) cout << " filling this cand into the tree" << endl;	  
 	  ((TH1D*)fHistDir->Get("../monEvents"))->Fill(12); 
-
-	  // special test (delete later)
-	  //count++;
-          //if(fJSON) count1++;
-          //if(fGoodHLT) count2++;
-          //if(fGoodHLT&&fHLTmatch) count3++;
-	  //cout<<count<<" "<<count1<<" "<<count2<<" "<<count3;
-	  // end 
 
 	  if (fVerbose > 10)
 	    cout<<" write "<<fpCand->fType<<" "<<fRun<<" "<<fLS<<" "<<fEvt<<" "<<fJSON<<" "<<fGoodHLT<<" "
@@ -300,7 +291,7 @@ void candAna::candAnalysis() {
   }
 
   // Special case for Dstar (prompt and from Bd)
-  if ( fpCand->fType == 300054 ||fpCand->fType == 300031 ) {
+  if ( fpCand->fType == 54 || fpCand->fType == 300054 || fpCand->fType == 300031 ) {
     return;
   }
 
@@ -900,6 +891,9 @@ void candAna::bookHist() {
   //h11 = new TH1D("test4", "test4",100, 0., 0.2); 
   h11 = new TH1D("test5", "test5",100, 0., 0.2); 
   h11 = new TH1D("test6", "test6",100, 0., 0.2); 
+  h11 = new TH1D("test7", "test7", 400, 0., 4.);
+  h11 = new TH1D("test8", "test8",1000, 0., 2.); 
+  h11 = new TH1D("test9", "test9",10, -0.5, 9.5); 
 
 
   h11 = new TH1D("gp1cms", "p1cms", 50, 0, 10.); 
@@ -2909,7 +2903,6 @@ void candAna::boostGames() {
 // Loops over all muons, returns dR of the closests muon, excluding the 
 // same track muon (if exists)
 double candAna::matchToMuon(TAnaTrack *pt) {
-  //bool match = false;
   //bool print = true;
   bool print = false;
 
@@ -2922,85 +2915,51 @@ double candAna::matchToMuon(TAnaTrack *pt) {
 
   TVector3 muonMom;
   TAnaMuon * muon = 0;
-  TAnaTrack * pTrack = 0;
+  TSimpleTrack * pTrack = 0;
   double ptMuon=0., dRMin=9999.;
   int select = -1;
-  for (int it = 0; it<numMuons; ++it) {
+  for (int it = 0; it<numMuons; ++it) { // loop over muons
     muon = fpEvt->getMuon(it);
-    if(print) muon->dump();
+    //if(print) muon->dump();
 
     // check if this is a nice  muon, accept only global and tracker muons
     //     int muonId = muon->fMuID;
-    //     //cout<<it<<" "<<muonId<<endl;
     //     if ( (muonId & 0x6) == 0 ) continue;  // skip muons which are not global/tracker
  
     int itrk = muon->fIndex;
     if(itrk == it0) {if(print) cout<<"skip "<<endl; continue;} // skip same track comparion
 
-//     if(print) {
-//       if(dump) muon->dump();
-//       cout<<"Muon "<<it<<" "<<itrk<<" ";
-//       // numbers below are wrong for calo muons
-//       if(itrk>0) cout<<muon->fQ<<" "<<muon->fGlobalPlab.Perp()<<" "<<muon->fNhitsDT<<" "<<muon->fNhitsCSC
-// 		     <<" "<<muon->fNhitsRPC<<" ";
-//       if(muonId>0) cout<<" m-id "<<hex<<muonId<<dec;
-//     }
+    // Use direct access, withour going through SimpleTracks
+    muonMom = muon->fPlab;
+    double dR = muonMom.DeltaR(trackMom);
+    ptMuon  = muonMom.Perp();
+    //double etaMuon = muonMom.Eta();
+    //double phiMuon = muonMom.Phi();
+    if(print) cout<<it<<" "<<ptMuon<<" "<<dR<<endl;
+   
+    // Go through reco track, Find the reco track  NOT NEEDED 
+//     if(itrk>=0 && itrk< (fpEvt->nSimpleTracks()) ) {  // if the simple track exists 
+//       //pTrack = fpEvt->getRecTrack(itrk);
+//       pTrack = fpEvt->getSimpleTrack(itrk);
+//       //cout<<it<<" "<<itrk<<" "<<pTrack<<endl;
+//       if(pTrack != 0) {
+// 	muonMom = pTrack->getP();
+//  	ptMuon  = muonMom.Perp();
+// 	dR = muonMom.DeltaR(trackMom);
+// 	if(print) cout<<it<<" "<<ptMuon<<" "<<dR<<endl;
+//       } //if ptrack
+//     } // if track
 
-    // Find the reco track 
-    if(itrk>=0 && itrk< (fpEvt->nRecTracks()) ) {
-      pTrack = fpEvt->getRecTrack(itrk);
-      //cout<<it<<" "<<itrk<<" "<<pTrack<<endl;
-      if(pTrack != 0) {
+    if(dR<dRMin) {dRMin=dR; select=it;} // select the best fit
 
- 	// Look again at muoin id becouse of calomuons
- 	//muonId = pTrack->fMuID;
-	// 	if ( (muonId & 0x6) == 0 ) {cout<<endl; continue;}   // skip muons which are not global/tracker
-
-	muonMom = pTrack->fPlab;
- 	ptMuon  = muonMom.Perp();
-	//double etaMuon = muonMom.Eta();
-	//double phiMuon = muonMom.Phi();
-
-
-	double dR = muonMom.DeltaR(trackMom);
-
-	if(print) cout<<it<<" "<<ptMuon<<" "<<dR<<endl;
-
-	if(dR<dRMin) {dRMin=dR; select=it;}
-      } //if ptrack
-    } // if track
   } // loop over muons
 
   if(select>-1) {
-    int idx =  (fpEvt->getMuon(select))->fIndex;
-    pTrack = fpEvt->getRecTrack(idx);
-    ptMuon = pTrack->fPlab.Perp();
-    //cout<<"final muon match "<<dRMin<<" "<<select<<" "<<idx<<" "<<ptMuon<<endl;
+    int idx =  (fpEvt->getMuon(select))->fIndex;  // find the track index 
+    cout<<"final muon match "<<dRMin<<" "<<select<<" "<<idx<<endl;
     
-    ((TH1D*)fHistDir->Get("mu_match_dr"))->Fill(dRMin);
-    ((TH1D*)fHistDir->Get("mu_match_pt"))->Fill(ptMuon);
+    ((TH1D*)fHistDir->Get("test7"))->Fill(dRMin);
   }
-
-
-// 	double z = pTrack->fdz;
-// 	int pVindex = pTrack->fPvIdx;	
-// 	//TAnaVertex * pV = 0;
-// 	//if(pVindex>-1) pV = fpEvt->getPV(pVindex);
-// 	//if(pV!=0) float zpv = pV->fPoint.Z();
-// 	//if(test) cout<<"Muon "<<it<<"/"<<itrk<<"/"<<pt<<" ";
-// 	if(print && pt>1.) { 
-// 	  cout<<"  track muon "<<itrk<<" "<<pt<<" "
-// 	      <<hex<<pTrack->fTrackQuality<<dec
-// 	    //<<" "<<pTrack->fQ<<" "
-// 	      <<pTrack->fdz<<" "<<pTrack->fd0<<" "<<pTrack->fAlgorithm;
-// 	  //<<pTrack->fMCID<<" "<<pTrack->fGenIndex<<" "
-// 	  if(pTrack->fMuID > -1) cout<<" muon "<<hex<<pTrack->fMuID<<dec<<" "<<pTrack->fMuIndex<<" ";
-// 	  cout<<endl;
-// 	  //if(dump) pTrack->dump();
-// 	} // if print 
-
-
-  //if(dRMin<0.1) match = true;
 
   return dRMin;
 }
