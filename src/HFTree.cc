@@ -34,11 +34,13 @@ HFTree::HFTree(const edm::ParameterSet& iConfig) :
   fFullGenBlock(iConfig.getUntrackedParameter<bool>("fullGenBlock", false)), 
   fFileName(iConfig.getUntrackedParameter<string>("fileName", string("hfa.root"))), 
   fTreeName(iConfig.getUntrackedParameter<string>("treeName", string("T1"))), 
-  fVerbose(iConfig.getUntrackedParameter<int>("verbose", 1)) {
+  fVerbose(iConfig.getUntrackedParameter<int>("verbose", 1)),
+  fPrintFrequency(iConfig.getUntrackedParameter<int>("printFrequency", 1000)) {
   using namespace std;
   cout << "----------------------------------------------------------------------" << endl;
   cout << "--- HFTree constructor" << endl;
   cout << "---  verbose:                         " << fVerbose << endl;
+  cout << "---  printFrequency:                  " << fPrintFrequency << endl;
   cout << "---  fileName:                        " << fFileName << endl; 
   cout << "---  treeName:                        " << fTreeName << endl; 
   cout << "---  requireCand:                     " << (fRequireCand?"true":"false") << endl; 
@@ -75,7 +77,7 @@ void HFTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   ++fEventCounter; 
   if (fVerbose > 0) {
-    if (fEventCounter%1000 == 0) {
+    if (fEventCounter%fPrintFrequency == 0) {
       pid_t pid = getpid();
       char line[100]; 
       sprintf(line, "ps -F %i", pid); 
@@ -91,7 +93,7 @@ void HFTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
     gHFEvent->clearGenBlock();
   }
 
-
+ 
   if (fRequireCand){
     if (gHFEvent->nCands() > 0) {
       if (fVerbose > 1) {

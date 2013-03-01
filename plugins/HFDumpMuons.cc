@@ -61,6 +61,8 @@ static bool dist_less(const xpTrack &x, const xpTrack &y) {
 HFDumpMuons::HFDumpMuons(const edm::ParameterSet& iConfig):
   fTracksLabel(iConfig.getUntrackedParameter<InputTag>("tracksLabel", InputTag("ctfWithMaterialTracks"))),
   fMuonsLabel(iConfig.getUntrackedParameter<InputTag>("muonsLabel")),
+  fBeamSpotLabel(iConfig.getUntrackedParameter<edm::InputTag>("BeamSpotLabel", edm::InputTag("offlineBeamSpot"))),
+  fPrimaryVertexLabel(iConfig.getUntrackedParameter<edm::InputTag>("PrimaryVertexLabel", edm::InputTag("offlinePrimaryVertices"))),
   fCaloMuonsLabel(iConfig.getUntrackedParameter<InputTag>("calomuonsLabel")),
   fMaxTrackDistToStore(iConfig.getUntrackedParameter<double>("maxTrackDist",0.1)),
   fDocaVertex(iConfig.getUntrackedParameter<double>("docaVertex",0.05)),
@@ -76,6 +78,8 @@ HFDumpMuons::HFDumpMuons(const edm::ParameterSet& iConfig):
   cout << "--- HFDumpMuons constructor" << endl;
   cout << "---  fTracksLabel             " << fTracksLabel.encode() << endl;
   cout << "---  fMuonsLabel:             " << fMuonsLabel.encode() << endl;
+  cout << "---  BeamSpotLabel            " << fBeamSpotLabel << endl;
+  cout << "---  PrimaryVertexLabel       " << fPrimaryVertexLabel << endl;
   cout << "---  fCaloMuonsLabel:         " << fCaloMuonsLabel.encode() << endl;
   cout << "---  fDoTruthMatching:        " << fDoTruthMatching << endl;  // 0 = nothing, 1 = TrackingParticles, 2 = FAMOS
   cout << "---  fVerbose:                " << fVerbose << endl;
@@ -101,6 +105,21 @@ void HFDumpMuons::beginRun(const edm::Run& iRun, const edm::EventSetup& iSetup) 
 // ----------------------------------------------------------------------
 void HFDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   
+  // -- load the beam spot
+  edm::Handle<reco::BeamSpot> bspotHandle;
+  iEvent.getByLabel(fBeamSpotLabel, bspotHandle);
+  fBeamSpot = 0; 
+  if (bspotHandle.isValid()) fBeamSpot = bspotHandle.product();
+  
+  // -- load the primary vertices
+  edm::Handle<reco::VertexCollection> vertexHandle;
+  iEvent.getByLabel(fPrimaryVertexLabel, vertexHandle);
+  fVertexCollection = 0; 
+  if (vertexHandle.isValid()) {
+    fVertexCollection = vertexHandle.product();
+  }
+
+
   // -- tracks
   Handle<View<Track> > hTracks;
   iEvent.getByLabel(fTracksLabel, hTracks);
@@ -145,7 +164,6 @@ void HFDumpMuons::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     }
   }
 
-
   if (fVerbose > 0) {
     for (int im = 0; im < gHFEvent->nMuons(); ++im) {
       gHFEvent->getMuon(im)->dump();
@@ -170,8 +188,7 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   
   if (rm.innerTrack().isNonnull()) {
     Track trk(*iTrack);
-    fillAnaTrack(pM, trk, rm.innerTrack().index(), -2, 0, fMuonCollection, 0); 
-    pM->fIndex = rm.innerTrack().index();
+    fillAnaTrack(pM, trk, rm.innerTrack().index(), -2, fVertexCollection, fMuonCollection, fBeamSpot); 
   } else {
     pM->fIndex = -23;
   }

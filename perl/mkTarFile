@@ -1,8 +1,10 @@
 #!/usr/bin/env perl
 
 # -s slim
+# -c complete (to be invoked from CMSSW_X_Y_Z, allows to be used w/o compilation)
+
 use Getopt::Std;
-getopts('i:s');
+getopts('ci:s');
 
 if ($ARGV[0]) {
     $name = $ARGV[0];
@@ -11,7 +13,10 @@ if ($ARGV[0]) {
 }
 
 $include  = "AnalysisDataFormats/HeavyFlavorObjects HeavyFlavorAnalysis/Bs2MuMu MuonAnalysis/MuonAssociators";
-#$include  = "AnalysisDataFormats/HeavyFlavorObjects HeavyFlavorAnalysis/Bs2MuMu ";
+if ($opt_c) {
+    $include  = "src/AnalysisDataFormats/HeavyFlavorObjects src/HeavyFlavorAnalysis/Bs2MuMu src/MuonAnalysis/MuonAssociators lib config python";
+}    
+#$include  = $opt_i;
 if ($opt_i) {
     $include .= " $opt_i";
 }
@@ -23,7 +28,11 @@ $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/obj/\\*.o";
 if ($opt_s) {$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/lib/\\*.so";}
 if ($opt_s) {$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/bin/\\*";}
 $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/chains/\\*";
-$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/test";
+$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/test/test-\\*";
+$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/test/bmm-\\*";
+$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/test/Winter\\*";
+$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/test/Fall11";
+$exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/test/v\\*";
 $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/crab";
 $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/macros/batchruns";
 $exclude .= " --exclude HeavyFlavorAnalysis/Bs2MuMu/ulcalc";

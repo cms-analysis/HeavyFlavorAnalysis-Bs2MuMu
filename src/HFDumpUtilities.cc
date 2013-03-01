@@ -186,7 +186,11 @@ void fillAnaTrack(TAnaTrack *pTrack, const reco::Track &trackView, int tidx, int
       }
       ++cnt;
     }
+  } else {
+    cout << "--> HFDumpUtilities::fillAnaTrack no muon collection provided!!" << endl;
   }
+  //  cout << "    pTrack->fMuIndex = " <<   pTrack->fMuIndex  << endl; 
+
 
   // -- hits of the track
   const reco::HitPattern& p = trackView.hitPattern();

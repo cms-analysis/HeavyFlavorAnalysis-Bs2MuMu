@@ -35,8 +35,9 @@ class HFTree : public edm::EDAnalyzer {
 
   std::string  fFileName;
   std::string  fTreeName;
-
+  
   int          fVerbose; 
+  int          fPrintFrequency;
   int          fEventCounter; 
 
 };

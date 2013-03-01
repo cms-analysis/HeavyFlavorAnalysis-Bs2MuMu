@@ -1,0 +1,40 @@
+#!/usr/bin/env perl
+
+# t3ui08>srmLs -x "$CSCS"/store/user/bstomumu/v14/cmsRun/2012/data-hadronic-nonMuon/A -C | grep -v old > ~/dr/130227.A
+# t3ui08>data_replica.py --from-site T2_CH_CSCS --to-site T3_CH_PSI ~/dr/130227.A /store/user/bstomumu/v14/cmsRun/2012/data-hadronic-nonMuon/A
+
+
+use Getopt::Std;
+getopts('d:p:s:t:');
+
+if ($opt_s eq "T2_CH_CSCS") {
+    $sPrefix  = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2\\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat";
+}
+
+if ($opt_s eq "T3_CH_PSI") {
+    $sPrefix  = "srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat";
+}
+
+if ($opt_t eq "T3_CH_PSI") {
+    $tPrefix  = "srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat";
+    $tMount   = "/pnfs/psi.ch/cms/trivcat";
+}
+
+my $srmLsOptions = "\\.root\$";
+if ($opt_p) {
+    $srmLsOptions .= " $opt_p";
+}
+my $dr = "dr.$$";
+my $cmd = "srmLs -x $sPrefix/$opt_d -C -p $srmLsOptions |sort";
+system("$cmd > $dr");
+
+# -- check that target directory exists
+if (!-d "$tMount/$opt_d") {
+    print "SE directory $tMount/$opt_d does not yet exist .. create it now\n";
+    system("srmmkdir $tPrefix/$opt_d");
+}
+
+# -- now transfer
+$cmd = "data_replica.py --from-site $opt_s --to-site $opt_t $dr $opt_d";
+system("$cmd");
+

@@ -103,5 +103,5 @@ void HFVirtualDecay::analyze(const edm::Event &iEvent, const edm::EventSetup &iS
 	fListBuilder->setMuonQuality(muonType); 
 	
 	// -- construct the sequential vertex fitter
-	fSequentialFitter.reset(new HFSequentialVertexFit(fTracksHandle, NULL, fTTB.product(), vertexHandle, fMagneticField, fBeamSpot, fVerbose));
+	fSequentialFitter.reset(new HFSequentialVertexFit(fTracksHandle, fMuonCollection, fTTB.product(), vertexHandle, fMagneticField, fBeamSpot, fVerbose));
 } // analyze()

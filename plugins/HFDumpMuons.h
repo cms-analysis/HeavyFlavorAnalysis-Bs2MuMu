@@ -13,8 +13,13 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
+
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
+
+#include "DataFormats/VertexReco/interface/Vertex.h"
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
 
 #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 
@@ -48,6 +53,8 @@ class HFDumpMuons : public edm::EDAnalyzer {
   std::vector<unsigned int> muonStatHits(const reco::Track& tr);
   edm::InputTag             fTracksLabel;
   edm::InputTag             fMuonsLabel;
+  edm::InputTag             fBeamSpotLabel;
+  edm::InputTag             fPrimaryVertexLabel;
   edm::InputTag             fCaloMuonsLabel;
   
   edm::Handle<edm::View<reco::Track> > *fhTracks;
@@ -62,8 +69,10 @@ class HFDumpMuons : public edm::EDAnalyzer {
   int                       fVerbose, fDoTruthMatching; 
   bool                      fRunOnAOD;
 
+  const reco::BeamSpot         *fBeamSpot;
+  const reco::VertexCollection *fVertexCollection;
   PropagateToMuon           fpropM1, fpropM2;
-  std::vector<xpTrack>     fXpTracks;
+  std::vector<xpTrack>      fXpTracks;
 };
 
 #endif
