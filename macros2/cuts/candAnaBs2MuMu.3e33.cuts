@@ -1,5 +1,6 @@
 TYPE          1000080
 TRUTHCAND         531
+# old and new
 TRIGRANGE   HLT_DoubleMu4_Dimuon4_Bs_Barrel_v1(1:99999999)
 TRIGRANGE   HLT_DoubleMu4_Dimuon6_Bs_v1(1:99999999)
 # -- boxes
