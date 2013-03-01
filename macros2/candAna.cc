@@ -154,7 +154,6 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 	//if (fVerbose > 1)
 	//cout<<" select "<<fRun<<" "<<fLS<<" "<<fEvt<<" "<<fJSON<<" "<<fGoodHLT<<" "<<fpCand->fType<<" "<<fPreselection<<" "<<fHLTmatch<<endl;
 
-
 	if (fPreselection) { 
 	  ((TH1D*)fHistDir->Get("test3"))->Fill(6.); 
 	  if (fVerbose > 5) cout << " filling this cand into the tree" << endl;	  
@@ -1105,6 +1104,7 @@ void candAna::setupReducedTree(TTree *t) {
   t->Branch("mudist",  &fMuDist,            "mudist/D");
   t->Branch("mudeltar",&fMuDeltaR,          "mudeltar/D");
   t->Branch("hltm",    &fHLTmatch,          "hltm/O");
+  t->Branch("hltt",    &fhltType,           "hltt/I");
 
   t->Branch("g1pt",    &fMu1PtGen,          "g1pt/D");
   t->Branch("g2pt",    &fMu2PtGen,          "g2pt/D");
@@ -2879,7 +2879,7 @@ void candAna::boostGames() {
 //-----------------------------------------------------------------------------------
 // Loops over all muons, returns dR of the closests muon, excluding the 
 // same track muon (if exists)
-double candAna::matchToMuon(TAnaTrack *pt) {
+double candAna::matchToMuon(TAnaTrack *pt, bool skipSame) {
   //bool print = true;
   bool print = false;
 
@@ -2892,7 +2892,7 @@ double candAna::matchToMuon(TAnaTrack *pt) {
 
   TVector3 muonMom;
   TAnaMuon * muon = 0;
-  TSimpleTrack * pTrack = 0;
+  //TSimpleTrack * pTrack = 0;
   double ptMuon=0., dRMin=9999.;
   int select = -1;
   for (int it = 0; it<numMuons; ++it) { // loop over muons
@@ -2900,16 +2900,25 @@ double candAna::matchToMuon(TAnaTrack *pt) {
     //if(print) muon->dump();
 
     // check if this is a nice  muon, accept only global and tracker muons
-    //     int muonId = muon->fMuID;
+    int muonId = muon->fMuID;
     //     if ( (muonId & 0x6) == 0 ) continue;  // skip muons which are not global/tracker
  
     int itrk = muon->fIndex;
-    if(itrk == it0) {if(print) cout<<"skip "<<endl; continue;} // skip same track comparion
+    // Eliminate pure standalone muons and calo muons. Skip same track comparion (only of skipSame=true) 
+    if(itrk<0 || (skipSame && itrk == it0)) {
+      if(print) {
+	if(itrk<0) cout<<"standalone only or calo muon? "<<hex<<muonId<<dec<<" "<<(muon->fPlab).Perp()<<endl;
+	else       cout<<"skip, same track "<<endl;
+      }
+      continue;  // skip same track comparion and standalone/calo muons
+    }
 
+    //if(itrk>0) cout<<" tracker muon? "<<hex<<(muonId&0x6)<<dec<<" "<<(muon->fPlab).Perp()<<endl;
+  
     // Use direct access, withour going through SimpleTracks
     muonMom = muon->fPlab;
-    double dR = muonMom.DeltaR(trackMom);
     ptMuon  = muonMom.Perp();
+    double dR = muonMom.DeltaR(trackMom);
     //double etaMuon = muonMom.Eta();
     //double phiMuon = muonMom.Phi();
     if(print) cout<<it<<" "<<ptMuon<<" "<<dR<<endl;
