@@ -85,7 +85,7 @@ public:
   virtual bool        doTriggerMatching(); // match the 2 muons from the dimuon to HLT
   virtual bool        doTriggerMatching(TAnaTrack *pt, bool anyTrig = false); // match a single track to HLT
   virtual void        boostGames();
-  virtual double      matchToMuon(TAnaTrack *pt); // match a single track to ALL muons
+  virtual double      matchToMuon(TAnaTrack *pt, bool skipSame = false); // match a single track to ALL muons
   virtual void        play(); 
   // To return the full deltaR not just a bool
   virtual double      doTriggerMatchingR(TAnaTrack *pt, bool anyTrig = false); // match a single track to HLT
