@@ -1,7 +1,11 @@
 TYPE          3000068
 TRUTHCAND         521
+# old
 TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v1_Bs1E33v1p3V13(1:99999999)
 TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v1_Bs1E33v2p3V1(1:99999999)
+# new
+TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v1(1:99999999)
+TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v2(1:99999999)
 # -- boxes
 +input cuts/boxes.Bu2JpsiK.cuts
 # -- tracks

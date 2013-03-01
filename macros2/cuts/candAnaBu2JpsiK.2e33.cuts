@@ -1,6 +1,9 @@
 TYPE          3000068
 TRUTHCAND         521
+# old
 TRIGRANGE    HLT_DoubleMu3p5_Jpsi_Displaced_v2_Bs2E33v1p2V4(1:99999999)
+# new
+TRIGRANGE    HLT_DoubleMu3p5_Jpsi_Displaced_v2(1:99999999)
 # -- boxes
 +input cuts/boxes.Bu2JpsiK.cuts
 # -- tracks
