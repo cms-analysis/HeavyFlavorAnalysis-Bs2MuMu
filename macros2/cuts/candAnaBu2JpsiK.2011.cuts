@@ -1,0 +1,16 @@
+TYPE           300521
+TRUTHCAND         521
+# -- trigger
++input cuts/triggerDisplacedJpsi.cuts
+# -- boxes
++input cuts/boxes.Bu2JpsiK.cuts
+# -- tracks
++input cuts/tracks.cuts
+# -- muons
++input cuts/jpsimuons.cuts
+# -- candidate
++input cuts/candidate.cuts
+# -- bdt input
++input cuts/bdt.2012.cuts
+# -- J/psi cuts
++input cuts/jpsi.cuts
