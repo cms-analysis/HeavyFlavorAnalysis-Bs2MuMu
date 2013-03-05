@@ -17,81 +17,89 @@
 # Modified by	Jose Lazo-Flores <Jose.Lazo-Flores@cern.ch>
 # ----------------------------------------------------------------------
 use Getopt::Std;
-getopts('Cdhj:r:s:t:v:');
+getopts('Cdhj:r:s:t:v:l:');
 
-my $job = "v13/2012";
-
-if ($opt_j) {
-    $job = $opt_j; 
+if ($opt_l) {
+    $location = $opt_l; 
+} else {
+    die "===> Provide a directory name where output root file should go! Example: mc, data...\n";
 }
 
-my $rootdir = "bmm/$job"; 
-if ($opt_r) {
-    $rootdir = $opt_r; 
+my $job = "2012/$location";
+if ($opt_j) {
+    $job = $opt_j; 
 }
 
 if ($opt_v) {
     $version = $opt_v; 
 } else {
-    $version = "v13";
+    $version = "v14";
 }
+
+my $rootdir = "$version/bmm/$job"; 
+if ($opt_r) {
+    $rootdir = $opt_r; 
+}
+
 
 %jobs = (
     "signal Bs2MuMu MC mix"  
-    => "-y 2012 -m,bmm2Reader.mix-Bs2MuMu,cbmm-v12-cms-BsToMuMu_BsFilter_8TeV-START53_V7A-v1-*,$version-cms-BsToMuMu.root"
+    => "-y 2012 -m,bmm2Reader.mix-Bs2MuMu,cbmm-mc-2012-v14-BsToMuMu_BsFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BsToMuMu.root"
     , "signal Bd2MuMu MC mix"  
-    => "-y 2012 -m,bmm2Reader.mix-Bd2MuMu,cbmm-v12-cms-BdToMuMu_BdFilter_8TeV-START53_V7A-v1-*,$version-cms-BdToMuMu.root"
+    => "-y 2012 -m,bmm2Reader.mix-Bd2MuMu,cbmm-mc-2012-v14-BdToMuMu_BdFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BdToMuMu.root"
     #
     , "norm Bu2JpsiK MC mix acc"  
-    => "-y 2012 -m,bmm2Reader.mix-Bu2JpsiK,cbmm-v12-cms-BuToJPsiK_K2MuFilter_8TeV-START53_V7A-v1-*,$version-cms-accBuToJpsiK.root"
+    => "-y 2012 -m,bmm2Reader.mix-Bu2JpsiK,cbmm-mc-2012-v14-BuToJPsiK_K2MuFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-accBuToJpsiK.root"
     , "norm Bu2JpsiK MC mix overl"  
-    => "-y 2012 -m,bmm2Reader.mix-Bu2JpsiK,cbmm-v12-cms-BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-START53_V7A-v2-*,$version-cms-BuToJpsiK.root"
+    => "-y 2012 -m,bmm2Reader.mix-Bu2JpsiK,cbmm-mc-2012-v14-BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2-*,$version-cms-BuToJpsiK.root"
     #, "norm Bu2JpsiK MC mix 52X"  
     #=> "-y 2012 -m,bmm2Reader.mix-Bu2JpsiK,cbmm-$version-cms-BuToJPsiK_K2MuPtEtaEtaFilter-8TeV-START52_V9-v2-*,$version-cms-BuToJpsiK-52X.root"
     #
     , "cs Bs2JpsiPhi MC mix acc"  
-    => "-y 2012 -m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-v12-cms-BsToJPsiPhi_2K2MuFilter_8TeV-START53_V7A-v1-*,$version-cms-accBsToJpsiPhi.root"
+    => "-y 2012 -m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-mc-2012-v14-BsToJPsiPhi_2K2MuFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-accBsToJpsiPhi.root"
     , "cs Bs2JpsiPhi MC mix overl"  
-    => "-y 2012 -m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-v12-cms-BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-START53_V7A-v1-*,$version-cms-BsToJpsiPhi.root"
+    => "-y 2012 -m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-mc-2012-v14-BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BsToJpsiPhi.root"
     #
 	, "data 2012"  
     => "-y 2012 -b 1,bmm2Reader.2012,cbmm-$version-Run2012*,$version-2012-data.root"
 	#
-    , "rare Bs2PiPi MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bs2PiPi,cbmm-v12-cms-BsToPiPi_2PiPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToPiPi.root"
-    , "rare Bs2KMuNu MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bs2KMuNu,cbmm-v12-cms-BsToKMuNu_KMuNuEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToKMuNu.root"
-    , "rare Bs2KPi MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bs2KPi,cbmm-v12-cms-BsToKPi_KPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToKPi.root"
     , "rare Bs2KK MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bs2KK,cbmm-v12-cms-BsToKK_2KPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToKK.root"
-    , "rare Bd2KPi MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bd2KPi,cbmm-v12-cms-BdToKPi_KPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BdToKPi.root"
-    , "rare Lb2PiP MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Lb2PiP,cbmm-v12-cms-LambdaBToPPi_PPiPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-LambdaBToPPi.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bs2KK,cbmm-mc-2012-v14-BsToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BsToKK.root"
+    , "rare Bs2KMuNu MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Bs2KMuNu,cbmm-mc-2012-v14-BsToKMuNu_KMuNuEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BsToKMuNu.root"
+    , "rare Bs2KPi MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Bs2KPi,cbmm-mc-2012-v14-BsToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BsToKPi.root"
+    , "rare Bs2MuMuGamma MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Bs2MuMuGamma,cbmm-mc-2012-v14-BsToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BsToMuMuGamma.root"
+    , "rare Bs2PiPi MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Bs2PiPi,cbmm-mc-2012-v14-BsToPiPi_2PiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BsToPiPi.root"
+	#
     , "rare Bd2KK MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bd2KK,cbmm-v12-cms-BdToKK_2KPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BdToKK.root"
-    , "rare Bd2PiPi MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bd2PiPi,cbmm-v12-cms-BdToPiPi_2PiPtEtaFilter_8TeV-START53_V7A-v2-*,$version-cms-BdToPiPi.root"
-    , "rare Lb2PK MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Lb2KP,cbmm-v12-cms-LambdaBToPK_PKPtEtaFilter_8TeV-START53_V7A-v2*,$version-cms-LambdaBToPK.root"
-    , "rare Lb2PMuNu MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Lb2PMuNu,cbmm-v12-cms-LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-LambdaBToPMuNu.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2KK,cbmm-mc-2012-v14-BdToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BdToKK.root"
+    , "rare Bd2KPi MC"  	
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2KPi,cbmm-mc-2012-v14-BdToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BdToKPi.root"
     , "rare Bd2PiMuNu MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-v12-cms-BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-START53_V7A-v1*,$version-cms-BdToPiMuNu.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-mc-2012-v14-BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BdToPiMuNu.root"
+    , "rare Bd2PiPi MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2PiPi,cbmm-mc-2012-v14-BdToPiPi_2PiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2-*,$version-cms-BdToPiPi.root"
+    , "rare Bd2MuMuGamma MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuGamma,cbmm-mc-2012-v14-BdToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BdToMuMuGamma.root"
+    , "rare Bd2MuMuPi0 MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuPi0,cbmm-mc-2012-v14-BdToMuMuPi0_MuMuPi0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BdToMuMuPi0.root"
+    , "rare Bd2MuMuK0 MC"  ###?
+    => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuK0,cbmm-mc-2012-v14-BuToMuMuK0_MuMuK0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BuToMuMuK0.root"
 	#
     , "rare Bu2MuMuK MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bu2MuMuK,cbmm-v12-cms-BuToMuMuK_MuMuKEtaPtFilter_8TeV-START53_V7A-v1*,$version-cms-BuToMuMuK.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bu2MuMuK,cbmm-mc-2012-v14-BuToMuMuK_MuMuKEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BuToMuMuK.root"
     , "rare Bu2MuMuPi MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bu2PiMuMu,cbmm-v12-cms-BuToMuMuPi_MuMuPiEtaPtFilter_8TeV-START53_V7A-v1*,$version-cms-BuToMuMuPi.root"
-    , "Bd2MuMuK0 rare MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuK0,cbmm-v12-cms-BdToMuMuK0_MuMuKEtaPtFilter_8TeV-START53_V7A-v1*,$version-cms-BdToMuMuK0.root"
-    , "rare Bd2MuMuPi0 MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuPi0,cbmm-v12-cms-BdToMuMuPi0_MuMuPi0EtaPtFilter_8TeV-START53_V7A-v1*,$version-cms-BdToMuMuPi0.root"
-    , "rare Bd2MuMuGamma MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuGamma,cbmm-v12-cms-BdToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-START53_V7A-v1*,$version-cms-BdToMuMuGamma.root"
-    , "rare Bs2MuMuGamma MC"  
-    => "-y 2012 -m,bmm2Reader.2e33-Bs2MuMuGamma,cbmm-v12-cms-BsToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-START53_V7A-v1*,$version-cms-BsToMuMuGamma.root"
+    => "-y 2012 -m,bmm2Reader.2e33-Bu2PiMuMu,cbmm-mc-2012-v14-BuToMuMuPi_MuMuPiEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BuToMuMuPi.root"
+	#
+    , "rare Lb2PK MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Lb2KP,cbmm-mc-2012-v14-LambdaBToPK_PKPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2-*,$version-cms-LambdaBToPK.root"
+    , "rare Lb2PiP MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Lb2PiP,cbmm-mc-2012-v14-LambdaBToPPi_PPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-LambdaBToPPi.root"
+    , "rare Lb2PMuNu MC"  
+    => "-y 2012 -m,bmm2Reader.2e33-Lb2PMuNu,cbmm-mc-2012-v14-LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-LambdaBToPMuNu.root"
     );
 
 #my $user  = $ENV{'USER'};
