@@ -1,8 +1,10 @@
 candAnaMuMu       cuts/candAnaMuMu.2011.cuts
-candAnaBu2JpsiK   cuts/candAnaBu2JpsiK.mix.cuts
-candAnaBs2JpsiPhi cuts/candAnaBs2JpsiPhi.mix.cuts
+candAnaBu2JpsiK   cuts/candAnaBu2JpsiK.2011.cuts
+candAnaBs2JpsiPhi cuts/candAnaBs2JpsiPhi.2011.cuts
 #
-JSON             cuts/Cert_160404-180252_7TeV_PromptReco_May10ReReco_Collisions11_JSON_MuonPhys.txt
+#JSON             cuts/Cert_160404-180252_7TeV_PromptReco_May10ReReco_Collisions11_JSON_MuonPhys.txt
+#JSON             cuts/Cert_160404-180252_7TeV_May10ReReco_PromptReco_Collisions11_JSON_MuonPhys.txt
+JSON             cuts/Cert_AllRuns_7TeV-8TeV_ReReco_PromptReco_Collisions11-12_JSON_MuonPhys.txt
 ptSgMUID         ../macros/pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat
 ptCbMUID         ../macros/pidtables/110606/H2D_MuonIDEfficiency_GlbTM_ProbeTrackMatched_data_all.dat
 ptSgMUT1         ../macros/pidtables/110606/H2D_L1L2Efficiency_GlbTM_ProbeTrackMatched_data_all.dat
