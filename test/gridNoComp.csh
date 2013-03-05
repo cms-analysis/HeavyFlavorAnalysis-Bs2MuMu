@@ -80,6 +80,7 @@ date
 pwd
 ls -rtl 
 
+setenv LD_LIBRARY_PATH /lib64:${LD_LIBRARY_PATH}
 
 setenv ROOTFILE `ls *.root`
 
