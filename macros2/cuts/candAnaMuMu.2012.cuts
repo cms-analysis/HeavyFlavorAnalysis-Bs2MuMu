@@ -1,4 +1,4 @@
-TYPE           301313
+TYPE             1313
 TRUTHCAND         531
 # -- trigger
 +input cuts/triggerBs.cuts
