@@ -12,7 +12,10 @@ if ($ARGV[0]) {
     die "need a name for the tarfile\n";
 }
 
-$include  = "AnalysisDataFormats/HeavyFlavorObjects HeavyFlavorAnalysis/Bs2MuMu MuonAnalysis/MuonAssociators";
+$include  = "AnalysisDataFormats/HeavyFlavorObjects HeavyFlavorAnalysis/Bs2MuMu ";
+if (-d "MuonAnalysis/MuonAssociators") { $include .= " MuonAnalysis/MuonAssociators ";}
+if (-d "DataFormats/MuonReco") { $include .= " DataFormats/MuonReco ";}
+
 if ($opt_c) {
     $include  = "src/AnalysisDataFormats/HeavyFlavorObjects src/HeavyFlavorAnalysis/Bs2MuMu src/MuonAnalysis/MuonAssociators lib config python";
 }    
