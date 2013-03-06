@@ -1,8 +1,6 @@
 #!/usr/bin/env perl
 
-# t3ui08>srmLs -x "$CSCS"/store/user/bstomumu/v14/cmsRun/2012/data-hadronic-nonMuon/A -C | grep -v old > ~/dr/130227.A
-# t3ui08>data_replica.py --from-site T2_CH_CSCS --to-site T3_CH_PSI ~/dr/130227.A /store/user/bstomumu/v14/cmsRun/2012/data-hadronic-nonMuon/A
-
+# usage: se2se -s T2_CH_CSCS -t T3_CH_PSI -d /store/user/bstomumu/v14/cmsRun/2012/data-hadronic-nonMuon/B
 
 use Getopt::Std;
 getopts('d:p:s:t:');
