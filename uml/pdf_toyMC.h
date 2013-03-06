@@ -30,7 +30,7 @@
 
 class pdf_toyMC : public pdf_fitData {
 public:
-  pdf_toyMC(bool print, string input_estimates = "", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, int simul = 1, int simulbdt = 1, int simulall = 1, bool pee_ = false, bool bdt_fit = false, string ch_s = "0", int sig = -1, bool asimov = false, bool syste = false, bool randomsyste = false, bool rare_constr = false, int nexp = 10, bool bd = false, string bias = "no");
+  pdf_toyMC(bool print, string input_estimates = "", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, int simul = 1, int simulbdt = 1, int simulall = 1, bool pee_ = false, bool bdt_fit = false, string ch_s = "0", int sig = -1, bool asimov = false, bool syste = false, bool randomsyste = false, bool rare_constr = false, int nexp = 10, bool bd = false, string years = "0", string bias = "no");
   ~pdf_toyMC();
 
   void generate(string pdf_toy, string pdf_test = "total");

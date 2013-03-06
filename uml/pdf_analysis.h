@@ -131,6 +131,7 @@ public:
 protected:
   string default_console_color;
   string red_color_bold;
+  string purple_color_bold;
   string meth_;
   string ch_s_;
   int ch_i_;

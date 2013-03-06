@@ -46,8 +46,8 @@ int main(int argc, char* argv[]) {
 
   vector <double> cuts_v(2*years, -10);
   if (cuts_f_b) cuts_v = cut_bdt_file();
-  TF1* MassRes_0_h = Fit_MassRes("input/2011/small-SgMc.root", cuts, cuts_v, 0);
-  TF1* MassRes_2_h = Fit_MassRes("input/2012/small-SgMc.root", cuts, cuts_v, 1);
+//  TF1* MassRes_0_h = Fit_MassRes("input/2011/small-SgMc.root", cuts, cuts_v, 0);
+//  TF1* MassRes_2_h = Fit_MassRes("input/2012/small-SgMc.root", cuts, cuts_v, 1);
 
   vector <string> decays_filename(decays_n);
   vector <string> decays_treename(decays_n);
@@ -269,8 +269,8 @@ int main(int argc, char* argv[]) {
   output_s += ".root";
   TFile * output_f = new TFile(output_s.c_str(), "RECREATE");
   ws->Write();
-  MassRes_0_h->Write();
-  MassRes_2_h->Write();
+//  MassRes_0_h->Write();
+//  MassRes_2_h->Write();
   output_f->Close();
   if (!simul && !simul_bdt) ws->pdf("pdf_ext_total")->graphVizTree(Form("ext_%s.dot", ch_s.c_str()));
   ws->Print();

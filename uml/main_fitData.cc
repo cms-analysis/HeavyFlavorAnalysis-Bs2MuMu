@@ -29,8 +29,7 @@ int main(int argc, char** argv) {
   if (SM && bd_const) help();
   if (simul && channel) help();
 
-  pdf_fitData* fitdata = new pdf_fitData(false, input_estimates, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, rare_constr, NExp, Bd);
-//  fitdata->initialize();
+  pdf_fitData* fitdata = new pdf_fitData(false, input_estimates, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, rare_constr, NExp, Bd, years_opt);
   fitdata->make_pdf_input(input_ws);
   fitdata->make_pdf();
   fitdata->set_final_pdf();
@@ -61,14 +60,25 @@ int main(int argc, char** argv) {
       cout << "opening " << inputname << endl;
       inputnamess.push_back(inputname_s);
     }
+    int years, years_i;
+    if (years_opt == "all") years = 2;
+    else {
+    	years = 1;
+    	years_i = atoi(years_opt.c_str());
+    }
+    if (inputnamess.size() == 1 && years == 2) {
+    	cout << "years = " << years << " but there is only one file in " << input_name << endl;
+    	return 1;
+    }
     for (unsigned int i = 0; i < inputnamess.size(); i++) {
+    	int y = (years == 2) ? i : years_i;
       TFile* input_data_f = new TFile(inputnamess[i].c_str(), "UPDATE");
       TTree* data_t = 0;
       if (input_data_f) {
         data_t = (TTree*)input_data_f->Get(tree_name.c_str());
         if (!data_t) {cout << "no tree called " << tree_name.c_str() << endl; return EXIT_FAILURE;}
       }
-      fitdata->make_dataset(cuts_f_b, cuts_v, cuts, data_t, i);
+      fitdata->make_dataset(cuts_f_b, cuts_v, cuts, data_t, y);
     }
   }
 

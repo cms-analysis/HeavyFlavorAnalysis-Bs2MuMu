@@ -7,7 +7,7 @@
 
 #include "pdf_toyMC.h"
 
-pdf_toyMC::pdf_toyMC(bool print, string input_estimates, string range, int BF, bool SM, bool bd_constr, int simul, int simulbdt, int simulall, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, bool randomsyste, bool rare_constr_, int nexp, bool bd, string bias): pdf_fitData( print, input_estimates, range, BF, SM, bd_constr, simul, simulbdt, simulall, pee_, bdt_fit, ch_s, sig, asimov, syste, randomsyste, rare_constr_, nexp, bd) {
+pdf_toyMC::pdf_toyMC(bool print, string input_estimates, string range, int BF, bool SM, bool bd_constr, int simul, int simulbdt, int simulall, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, bool randomsyste, bool rare_constr_, int nexp, bool bd, string years, string bias): pdf_fitData( print, input_estimates, range, BF, SM, bd_constr, simul, simulbdt, simulall, pee_, bdt_fit, ch_s, sig, asimov, syste, randomsyste, rare_constr_, nexp, bd, years) {
   cout << "pdf_toyMC constructor" << endl;
   bias_ = bias;
 
@@ -105,7 +105,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
       }
     }
   }
-  cout << red_color_bold << "BEGINNING EXPERIMENTS!" << default_console_color << endl;
+  cout << red_color_bold << "START OF EXPERIMENTS!" << default_console_color << endl;
   for (int k = 1; k <= NExp; k++) {
     if (k % 100 == 0) cout << "Exp # " << k << " / " << NExp << endl;
     double printlevel = -1;
@@ -169,6 +169,8 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
       RooArgSet set(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->cat("etacat"), *ws_->cat("bdtcat"));
       if (simul_all_) set.add(*ws_->cat("allcat"));
       for (int i = 0; i < channels; i++) {
+      	if (years_=="0" && i > 1) continue;
+      	if (years_=="1" && i < 2) continue;
       	for (int j = 0; j < bdt_index_max(i); j++) {
           RooDataSet* data_i = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes")), Extended());
           channels_cat->setIndex(i);
@@ -202,6 +204,8 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     }
     /// pull
     for (int i = 0; i < channels; i++) {
+    	if (years_=="0" && i > 1) continue;
+    	if (years_=="1" && i < 2) continue;
       for (int j = 0; j < bdt_index_max(i); j++) {
         if (BF_ == 0) bs_mean_h[i][j]->Fill(ws_temp->var(name("N_bs", i, j))->getVal());
         else bs_mean_h[i][j]->Fill(ws_temp->function(name("N_bs_formula", i, j))->getVal());
@@ -286,6 +290,8 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
   }
   cout << red_color_bold << "END OF EXPERIMENTS!" << default_console_color << endl;
   for (int i = 0; i < channels; i++) {
+  	if (years_=="0" && i > 1) continue;
+  	if (years_=="1" && i < 2) continue;
     for (int j = 0; j < bdt_index_max(i); j++) {
       if (BF_ == 0) fit_pulls(pull_bs[i][j], pull_rds_bs[i][j], i, j);
       if (BF_ > 0) fit_pulls(residual_bs[i][j], residual_rds_bs[i][j], i, j);
@@ -319,6 +325,8 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     TCanvas* corr_c = new TCanvas("corr_c", "corr_c", 600*channels, 600*channels_bdt);
     corr_c->Divide(channels, channels_bdt);
     for (int i = 0; i < channels; i++) {
+    	if (years_=="0" && i > 1) continue;
+    	if (years_=="1" && i < 2) continue;
       for (int j = 0; j < channels_bdt; j++) {
         corr_c->cd(j + 1);
         correlation_h[i][j]->Draw();
@@ -345,6 +353,8 @@ void pdf_toyMC::do_bias(RooWorkspace* ws) {
 
   if (bias_.compare("no")) {
     for (int i = 0; i < channels; i++) {
+    	if (years_=="0" && i > 1) continue;
+    	if (years_=="1" && i < 2) continue;
       for (int j = 0; j < bdt_index_max(i); j++) {
         if (!simul_ && !simul_bdt_) i = ch_i_;
         size_t found;
@@ -454,6 +464,8 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
   if (Bd && BF_ > 0) alt_name = "BF_bd";
   if (BF_ == 0) {
     for (int i = 0; i < channels; i++) {
+    	if (years_=="0" && i > 1) continue;
+    	if (years_=="1" && i < 2) continue;
       for (int j = 0; j < bdt_index_max(i); j++) {
         ws_temp->var(name(alt_name.c_str(), i, j))->setVal(0);
         ws_temp->var(name(alt_name.c_str(), i, j))->setConstant(1);
@@ -473,17 +485,21 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
 
   if (BF_ == 0) {
     if (!simul_bdt_) {
-      for (int j = 0; j < channels; j++) {
-        ws_temp->var(name(alt_name.c_str(), j))->setVal(estimate_bs[j]);
-        ws_temp->var(name(alt_name.c_str(), j))->setConstant(0);
+      for (int i = 0; i < channels; i++) {
+      	if (years_=="0" && i > 1) continue;
+      	if (years_=="1" && i < 2) continue;
+        ws_temp->var(name(alt_name.c_str(), i))->setVal(estimate_bs[i]);
+        ws_temp->var(name(alt_name.c_str(), i))->setConstant(0);
         if (bd_constr_) {
-          ws_temp->var("Bd_over_Bs")->setVal(estimate_bd[j]/estimate_bs[j]);
+          ws_temp->var("Bd_over_Bs")->setVal(estimate_bd[i]/estimate_bs[i]);
           ws_temp->var("Bd_over_Bs")->setConstant(0);
         }
       }
     }
     else {
       for (int i = 0; i < channels; i++) {
+      	if (years_=="0" && i > 1) continue;
+      	if (years_=="1" && i < 2) continue;
         for (int j = 0; j < bdt_index_max(i); j++) {
           ws_temp->var(name(alt_name.c_str(), i, j))->setVal(estimate2D_bs[i][j]);
           ws_temp->var(name(alt_name.c_str(), i, j))->setConstant(0);
@@ -582,6 +598,8 @@ void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
     if ((SM_ || bd_constr_) && k == 1) continue;
     if (rare_constr_ && k == 3) continue;
     for (int i = 0; i < channels; i++) {
+    	if (years_=="0" && i > 1) continue;
+    	if (years_=="1" && i < 2) continue;
       for (int j = 0; j < bdt_index_max(i); j++) {
         if (k == 0 && BF_ > 0 && (i > 0 || j > 0)) continue;
         if (k == 1 && BF_ > 1 && (i > 0 || j > 0)) continue;
@@ -647,6 +665,8 @@ void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
   if (BF_) sig_c->SetCanvasSize(600, 600);
   else sig_c->Divide(channels, channels_bdt);
   for (int i = 0; i < channels; i++) {
+  	if (years_=="0" && i > 1) continue;
+  	if (years_=="1" && i < 2) continue;
     for (int j = 0; j < bdt_index_max(i); j++) {
       if (BF_ > 0 && (i > 0 || j > 0)) continue;
       string name_(name("significance_nullhypo_N_bs", i, j));

@@ -37,6 +37,7 @@ pdf_analysis::pdf_analysis(bool print, string ch_s, string range, int BF, bool S
   if (simul_all_) channels_bdt = 4;
   default_console_color = "\033[0m";
   red_color_bold = "\033[1;31m";
+  purple_color_bold = "\033[1;31m";
 
   initialize();
 }
@@ -83,17 +84,17 @@ void pdf_analysis::initialize () {
   ws_->import(*bdt);
 
   channels_cat = new RooCategory("etacat", "eta channels");
-  for (int i = 0; i < channels; i++) {
+  for (int i = 0; i < 4; i++) {
     channels_cat->defineType(Form("etacat_%d", i), i);
   }
   ws_->import(*channels_cat);
   bdt_cat = new RooCategory("bdtcat", "bdt channels");
-  for (int i = 0; i < channels_bdt; i++) {
+  for (int i = 0; i < 4; i++) {
     bdt_cat->defineType(Form("bdtcat_%d", i), i);
   }
   ws_->import(*bdt_cat);
   all_cat = new RooCategory("allcat", "channels");
-  for (int i = 0; i < channels_all; i++) {
+  for (int i = 0; i < 12; i++) {
     all_cat->defineType(Form("allcat_%d", i), i);
   }
   ws_->import(*all_cat);
@@ -732,7 +733,7 @@ RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
   name_pdf << "MassRes_pdf_" << name;
   if (simul_) name_pdf << "_" << channel;
   if (simul_bdt_ || simul_all_) name_pdf << "_" << channel_bdt;
-  RooHistPdf * MassRes_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), RooArgList(*ws_->var("MassRes")), *MassRes_rdh);
+  RooHistPdf * MassRes_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), RooArgList(*ws_->var("MassRes")), *MassRes_rdh, 2);
   ws_->import(*MassRes_rhpdf);
 
   if (name == "comb") print_pdf(MassRes_rhpdf, ws_->var("MassRes"));
