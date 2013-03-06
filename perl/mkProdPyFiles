@@ -1,7 +1,15 @@
 #!/usr/bin/env perl
 
+# ----------------------------------------------------------------------
+# usage: 
+#         cd v14/bmm-mc-V7A
+#         mkProdFiles -s V7A [-x BdToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1]
+#
+#
+# ----------------------------------------------------------------------
+
 use Getopt::Std;
-getopts('d:n:s:v:');
+getopts('d:n:s:v:x:');
 
 if (!$opt_d) {
     $opt_d = "../../bla";
@@ -109,6 +117,8 @@ if ($opt_s eq "V7C") {
 	=> "BsToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
 	"BsToKMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
 	=> "BsToKMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BsToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"
+	=> "BsToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM",
 	"BsToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
 	=> "BsToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
 	"BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
@@ -142,10 +152,28 @@ if ($opt_s eq "V7C") {
 	); 
 }	
 
+if ($opt_s eq "onia") {
+    $mkdir = 1; 
+    $opt_d = "../../bmm-2013";
+    $soptions = "-t ../../onia-mc-2012-XXXX.py -e 50000";
 
+    %catalog = (
+	"JPsiToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2" 
+	=> "JPsiToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2__AODSIM", 
+	"Psi2SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1"
+	=> "Psi2SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"Upsilon1SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1"
+	=> "Upsilon1SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"Upsilon2SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1"
+	=> "Upsilon2SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"Upsilon3SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6__Summer12_DR53X-PU_S10_START53_V7A-v1"
+	=> "Upsilon3SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM"
+    ); 
+} 
 
 # -- produce the py files
 foreach $i (keys %catalog) {
+    if ($opt_x && !($opt_x =~ /$i/)) {next;}
     print "$catalog{$i}\n";
     if (1 == $mkdir) {
 	mkdir($i); 
