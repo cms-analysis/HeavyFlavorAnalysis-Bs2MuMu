@@ -33,7 +33,7 @@ rootFileName = "hadronic-2011-XXXX.root"
 process.tree = cms.EDAnalyzer(
     "HFTree",
     verbose        = cms.untracked.int32(1),
-    printFrequency = cms.untracked.int32(0),
+    printFrequency = cms.untracked.int32(1000),
     requireCand    =  cms.untracked.bool(True),
     fileName       = cms.untracked.string(rootFileName)
     )
