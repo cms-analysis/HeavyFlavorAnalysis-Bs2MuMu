@@ -15,13 +15,26 @@
 # 2010/11/25 remove inclusion of old merged file in dataset-* list ...
 # 2010/11/23 first shot
 # 2010/12/14 bug fix to allow really n wildcards (in addition to the trailing -*)
+# 2013/03/01 added -l option: used to add the last directory name to where to save the output files
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
 # Author    Urs Langenegger <urs.langenegger@psi.ch>
+# Modified by	Jose Lazo-Flores <Jose.Lazo-Flores@cern.ch>
 # ----------------------------------------------------------------------
 use Getopt::Std;
-getopts('Cdhj:r:s:t:v:');
+getopts('Cdhj:r:s:t:v:l:');
+
+if ($opt_l) {
+    $location = $opt_l; 
+} else {
+    die "===> Provide a directory name where output root file should go! Example: mc, data...\n";
+}
+
+my $job = "2011/$location";
+if ($opt_j) {
+    $job = $opt_j; 
+}
 
 if ($opt_v) {
     $version = $opt_v; 
@@ -29,12 +42,7 @@ if ($opt_v) {
     $version = "v14";
 }
 
-my $job = "$version/2011";
-if ($opt_j) {
-    $job = $opt_j; 
-}
-
-my $rootdir = "bmm/$job"; 
+my $rootdir = "$version/bmm/$job"; 
 if ($opt_r) {
     $rootdir = $opt_r; 
 }
@@ -45,27 +53,29 @@ if ($opt_r) {
     => "-y 2011 -m,bmm2Reader.mix-Bs2MuMu,cbmm-2011-$version-mix-Bs2MuMu-0*,$version-mix-Bs2MuMu.root"
     , "signal Bd2MuMu MC mix"  
     => "-y 2011 -m,bmm2Reader.mix-Bd2MuMu,cbmm-2011-$version-mix-Bd2MuMu-0*,$version-mix-Bd2MuMu.root"
-    , "signal Bx2MuMu MC 2e33"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bs2MuMu,cbmm-2011-$version-2e33-Bx2MuMu-0*,$version-2e33-Bx2MuMu.root"
-    , "signal By2MuMu MC 2e33"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bs2MuMu,cbmm-2011-$version-2e33-By2MuMu-0*,$version-2e33-By2MuMu.root"
+	#
+    #, "signal Bx2MuMu MC 2e33"  
+    #=> "-y 2011 -m,bmm2Reader.2e33-Bs2MuMu,cbmm-2011-$version-2e33-Bx2MuMu-0*,$version-2e33-Bx2MuMu.root"
+    #, "signal By2MuMu MC 2e33"  
+    #=> "-y 2011 -m,bmm2Reader.2e33-Bs2MuMu,cbmm-2011-$version-2e33-By2MuMu-0*,$version-2e33-By2MuMu.root"
     #
     , "norm Bu2JpsiK MC mix"  
     => "-y 2011 -m,bmm2Reader.mix-Bu2JpsiK,cbmm-2011-$version-mix-Bu2JpsiK-*,$version-mix-Bu2JpsiK.root"
-    , "norm Bu2JpsiK MC acc"  
+    , "acc Bu2JpsiK MC"  
     => "-y 2011 -m,bmm2Reader.2e33-Bu2JpsiK,cbmm-2011-$version-2e33-accBu2JpsiK-*,$version-2e33-accBu2JpsiK.root"
     #
     , "cs Bs2JpsiPhi MC mix"  
     => "-y 2011 -m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-2011-$version-mix-Bs2JpsiPhi-*,$version-mix-Bs2JpsiPhi.root"
-    , "cs Bs2JpsiPhi MC acc"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bs2JpsiPhi,cbmm-2011-$version-2e33-accBs2JpsiPhi-*,$version-2e33-accBs2JpsiPhi.root"
+    , "acc Bs2JpsiPhi MC"  
+    => "-y 2011 -m,bmm2Reader.mix-Bs2JpsiPhi,cbmm-2011-$version-2e33-accBs2JpsiPhi-*,$version-2e33-accBs2JpsiPhi.root"
     #
+    , "acc Bd2PiMuNu MC"  
+    => "-y 2011 -m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-2011-$version-2e33-accBd2PiMuNu-*,$version-2e33-accBd2PiMuNu.root"
+	#
     , "rare Bs2KMuNu MC"  
     => "-y 2011 -m,bmm2Reader.2e33-Bs2KMuNu,cbmm-2011-$version-2e33-Bs2KMuNu-*,$version-2e33-Bs2KMuNu.root"
     , "rare Bd2PiMuNu MC"  
     => "-y 2011 -m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-2011-$version-2e33-Bd2PiMuNu-*,$version-2e33-Bd2PiMuNu.root"
-    , "rare Bd2PiMuNu MC acc"  
-    => "-y 2011 -m,bmm2Reader.2e33-Bd2PiMuNu,cbmm-2011-$version-2e33-accBd2PiMuNu-*,$version-2e33-accBd2PiMuNu.root"
     , "rare Lb2PMuNu MC"  
     => "-y 2011 -m,bmm2Reader.2e33-Lb2PMuNu,cbmm-2011-$version-2e33-Lb2PMuNu-*,$version-2e33-Lb2PMuNu.root"
     , "rare Bs2KK MC"  
@@ -97,8 +107,10 @@ if ($opt_r) {
     , "rare Bd2DstarPi MC"  
     => "-y 2011 -m,bmm2Reader.Bd2DstarPi.2011,cbmm-2011-$version-2e33-Bd2DstarPi-*,$version-2e33-Bd2DstarPi.root"
     #
-    , "data 2011"  
-    => "-y 2011 -b 1,bmm2Reader.data,cbmm-2011-$version-Run2011*,$version-2011-data.root"
+    , "data 2011 bmm"  
+    => "-y 2011 -b 1,bmm2Reader.2011,cbmm-2011-$version-MuOnia__Run2011*,$version-2011-bmm-data.root"
+    #, "data 2011 onia"  
+    #=> "-y 2011 -b 1,bmm2Reader.2011,conia-2011-$version-MuOnia__Run2011*,$version-2011-onia-data.root"
     # 
     #, "bmt jet"  
     #=> "-y 2011 -b 1,bmt2Reader.data,cbmt-$version-Jet-*,$version-bmt-Jet.root"
@@ -111,7 +123,7 @@ if ($opt_r) {
 my $scrtuser  = $ENV{'USER'};
 my $user  = bstomumu;
 
-my $tarfile = "../../../../../111027.tar.gz";
+my $tarfile = "../../../../../130301.tar.gz";
 if ($opt_t) {
     $tarfile = $opt_t; 
 } else {
@@ -171,14 +183,15 @@ if ($opt_h) {
 	    @rootfiles = grep(s/.*$user\/$rootdir\///, @rootfiles); 
 	    if ($opt_d) {
 		# print "cp $rootfiles[0] $scratch/$output \n";
-		# print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";		
+		print "===> In here!! \n";
+		print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";		
 		print "$srmcmd $storage/$rootfiles[0] file:///$scratch/$output \n";
 	    } else {
 		# print "cp $rootfiles[0] $scratch/$output \n";
 		# system("/bin/cp $rootfiles[0] $scratch/$output");
-                # print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";
-                # system("$srmcmd $storage/$rootfiles[0] $storage/$output");
-		print "$srmcmd $storage/$rootfiles[0] $scratch/$output \n";
+		print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";
+		system("$srmcmd $storage/$rootfiles[0] $storage/$output");
+		print "$srmcmd $storage/$rootfiles[0] file:///$scratch/$output \n";
 		system("$srmcmd $storage/$rootfiles[0] file:///$scratch/$output");
 	    }	    
 	} elsif ($#rootfiles > 0) {
@@ -186,6 +199,8 @@ if ($opt_h) {
 	    if ($opt_d) {
 		print "hadd $scratch/$output \n";
 		foreach $f (@rootfiles) {print "  $f\n";}
+		print "hadd $scratch/$output @rootfiles \n";
+		print "$srmcmd file:///$scratch/$output $storage/$class/$output \n";
 	    } else {
 		print "hadd $scratch/$output @rootfiles\n";
 		if (-e "$scratch/$output") {unlink("$scratch/$output"); }

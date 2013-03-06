@@ -161,15 +161,16 @@ if ($opt_h) {
 	    @rootfiles = grep(s/.*$user\/$rootdir\///, @rootfiles); 
 	    if ($opt_d) {
 		# print "cp $rootfiles[0] $scratch/$output \n";
-		# print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";		
+		print "===> In here!! \n";
 		print "$srmcmd $storage/$rootfiles[0] $scratch/$output \n";
+		print "$srmcmd $storage/$rootfiles[0] file:///$scratch/$output \n";
 	    } else {
 		# print "cp $rootfiles[0] $scratch/$output \n";
 		# system("/bin/cp $rootfiles[0] $scratch/$output");
-                # print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";
-                # system("$srmcmd $storage/$rootfiles[0] $storage/$output");
 		print "$srmcmd $storage/$rootfiles[0] $scratch/$output \n";
 		system("$srmcmd $storage/$rootfiles[0] $scratch/$output");
+		print "$srmcmd $storage/$rootfiles[0] file:///$scratch/$output \n";
+		system("$srmcmd $storage/$rootfiles[0] file:///$scratch/$output");
 	    }	    
 	} elsif ($#rootfiles > 0) {
 	    @rootfiles = grep(s/.*\/trivcat/$dcap/, @rootfiles); 
