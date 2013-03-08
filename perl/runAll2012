@@ -102,7 +102,7 @@ if ($opt_r) {
     => "-y 2012 -m,bmm2Reader.2e33-Lb2PMuNu,cbmm-mc-2012-v14-LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-LambdaBToPMuNu.root"
     );
 
-#my $user  = $ENV{'USER'};
+my $scrtuser  = $ENV{'USER'};
 my $user  = bstomumu;
 
 my $tarfile = "../../../../../120416.tar.gz";
@@ -120,7 +120,7 @@ if ($opt_C) {$crash = "-C";}
 
 my $srmcmd  = "lcg-cp -b -D srmv2";
 my $dcap    = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
-my $scratch = "/shome/lazo-flores/scratch"; # /scratch is likely too small
+my $scratch = "/shome/$scrtuser/scratch"; # /scratch is likely too small
 my $srm     = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store";
 my $storage = "$srm/user/$user/$rootdir";
 
@@ -160,13 +160,10 @@ if ($opt_h) {
 	if ($#rootfiles == 0) {
 	    @rootfiles = grep(s/.*$user\/$rootdir\///, @rootfiles); 
 	    if ($opt_d) {
-		# print "cp $rootfiles[0] $scratch/$output \n";
 		print "===> In here!! \n";
 		print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";
 		print "$srmcmd $storage/$rootfiles[0] file:///$scratch/$output \n";
 	    } else {
-		# print "cp $rootfiles[0] $scratch/$output \n";
-		# system("/bin/cp $rootfiles[0] $scratch/$output");
 		print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";
 		system("$srmcmd $storage/$rootfiles[0] $storage/$output");
 		print "$srmcmd $storage/$rootfiles[0] file:///$scratch/$output \n";
@@ -174,20 +171,19 @@ if ($opt_h) {
 	    }	    
 	} elsif ($#rootfiles > 0) {
 	    @rootfiles = grep(s/.*\/trivcat/$dcap/, @rootfiles); 
-		@files12b = `ls $scratch | grep v12-2012B`;#
-		@rootfiles12b = grep($scratch, @files12b);#
 
 	    if ($opt_d) {
 		print "hadd $scratch/$output \n";
 		foreach $f (@rootfiles) {print "  $f\n";}
-		print "hadd $scratch/v12-2012B-data.root \n";#
-		foreach $f (@rootfiles12b) {print " $f\n";}#
+		print "srmrm $storage/$class/$output \n";
+		#print "srmrm $storage/$class/$output \n";
+		print "$srmcmd file:///$scratch/$output $storage/$class/$output \n";
 	    } else {
 		print "hadd $scratch/$output @rootfiles\n";
 		if (-e "$scratch/$output") {unlink("$scratch/$output"); }
 		system("hadd $scratch/$output @rootfiles");
 		system("srmrm $storage/$class/$output");
-		system("$srmcmd $scratch/$output $storage/$class/$output");
+		system("$srmcmd file:///$scratch/$output $storage/$class/$output");
 	    }
 	}
     }
