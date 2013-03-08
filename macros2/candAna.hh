@@ -83,6 +83,7 @@ public:
   virtual double      osIsolation(TAnaCand *pC, double r = 1.0, double ptmin = 0.9); 
   virtual int         osMuon(TAnaCand *pC, double r = 1.0); 
   virtual bool        doTriggerMatching(); // match the 2 muons from the dimuon to HLT
+  virtual bool        doTriggerMatching(bool anyTrig); // match the 2 muons from the dimuon to HLT
   virtual bool        doTriggerMatching(TAnaTrack *pt, bool anyTrig = false); // match a single track to HLT
   virtual void        boostGames();
   virtual double      matchToMuon(TAnaTrack *pt, bool skipSame = false); // match a single track to ALL muons
@@ -211,7 +212,8 @@ public:
 
   bool    fBadEvent;
   int     fhltType; // to hold the HLT information d.k.
- 
+  bool    fHLTmatch2; // test anothe matching method, for tesing only 
+
   struct RedTreeData fRTD;
 
 };

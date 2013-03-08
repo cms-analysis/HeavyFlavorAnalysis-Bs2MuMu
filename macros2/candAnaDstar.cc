@@ -216,28 +216,33 @@ bool candAnaDstar::anaMC(TAna01Event *evt) {
 }
 
 //---------------------------------------------------------------------------------------------------------------
+// Main candidate processing for Dstar
 void candAnaDstar::candAnalysis() {
-  static int count0=0, count1=0, count2=0, count3=0, count4=0, count5=0;
+  static int count0=0, count1=0, count2=0, count3=0, count4=0, count5=0, count6=0;
+  const bool useMyTrees = false;
+
+  fPreselection = false;  //  reset
 
   if (0 == fpCand) return;
 
-  //dumpHFTruthCand(fpCand); // testing
-  //return;
+  dumpHFTruthCand(fpCand); // testing
 
 
+  //cout<<" Call canAna::candAnalysis "<<endl;
   candAna::candAnalysis();  // call the main analysis 
+  //cout<<" Call canAnaDstar::candAnalysis "<<endl;
 
   // now do Dstar specific
 
   count0++;
 
   ((TH1D*)fHistDir->Get("Status"))->Fill(0.);
-  //cout<<" Dstar candidate "<<fpCand->fType<<" in event "<<fEvt<<endl;
+  //cout<<" Dstar candidate "<<fpCand->fType<<" in event "<<fEvt<<" "<<fVerbose<<endl;
 
   if (fVerbose>10) {
-    cout << "DUMP HFDstarCandidate with mass = " << fpCand->fMass << endl;
-    //dumpHFTruthCand(pCand); 
+    cout << "DUMP HFDstarCandidate with mass = " << fpCand->fMass <<" in event "<<fEvt<<" cand num "<<count0<<endl;
     dumpHFDstarCand(fpCand); 
+    //dumpHFTruthCand(pCand); 
   }
 
 
@@ -275,12 +280,12 @@ void candAnaDstar::candAnalysis() {
       //pPi = fpEvt->getRecTrack(index);
       pPi = fpEvt->getSigTrack(index);
       //indexPi = index;
-      //if (fVerbose>0 && tm) cout<< pPi->fMCID<<" "<<pPi->fPlab.Perp() << endl;
+      if (fVerbose>10) cout<< pPi->fMCID<<" "<<pPi->fPlab.Perp() << endl;
     } else {  // kaon
       //pK = fpEvt->getRecTrack(index);
       pK = fpEvt->getSigTrack(index);
       //indexK = index;
-      // 	  if (fVerbose>0 && tm) cout<< pK->fMCID<<" "<<pK->fPlab.Perp() << endl;
+      if (fVerbose>10 ) cout<< pK->fMCID<<" "<<pK->fPlab.Perp() << endl;
     }
   }
 	
@@ -368,7 +373,7 @@ void candAnaDstar::candAnalysis() {
   falpha2 = t3.Angle(pC->fPlab); // D0 angle versus SV2-SV1
   dr = piSlowMom.Angle(fpCand->fPlab); // pislow openinig
   
-  if(fVerbose>9 ) {
+  if(fVerbose>10 ) {
     cout<<" PVs "<<pvidx<<" "
 	<<pv.X()<<" "<<pv.Y()<<" "<<pv.Z()<<" "
 	<<sv1.X()<<" "<<sv1.Y()<<" "<<sv1.Z()<<" "
@@ -419,8 +424,10 @@ void candAnaDstar::candAnalysis() {
   
   
   ((TH1D*)fHistDir->Get("Status"))->Fill(10.);
-  
+  count1++;
+
   // Now the selection cuts cut 
+  if(fVerbose>10 ) cout<<"Check pre-cuts "<<endl;
   if(ptPi<4. || ptK<4.) return;  //  does not do aything for data, cand reco is already with 4
   ((TH1D*)fHistDir->Get("Status"))->Fill(11.);
   
@@ -454,16 +461,19 @@ void candAnaDstar::candAnalysis() {
   if( (qk+qpi)!=0 ) return; 
   ((TH1D*)fHistDir->Get("Status"))->Fill(21.);
   
-  count1++;
+  if(fVerbose>10 ) cout<<"Passed pre-cuts "<<endl;
+  count2++;
   
   // Look at muid
   //bool muid1 = goodMuon(pPi);  // true for good  muons 
   //bool muid2 = goodMuon(pK);
+  //cout<<" call tight for pion "<<endl;
   bool muid1 = tightMuon(pPi);  // true for good/tight  muons 
+  //cout<<" call tight for kaon "<<endl;
   bool muid2 = tightMuon(pK);
   
-  bool mumatch1old = doTriggerMatching(pPi,true); // see if it matches HLT muon
-  bool mumatch2old = doTriggerMatching(pK,true); // see if it matches HLT muon
+  //bool mumatch1old = doTriggerMatching(pPi,true); // see if it matches HLT muon
+  //bool mumatch2old = doTriggerMatching(pK,true); // see if it matches HLT muon
   
   match1dr = doTriggerMatchingR(pPi,true); // see if it matches HLT muon
   match2dr = doTriggerMatchingR(pK,true);  // see if it matches HLT muon
@@ -474,10 +484,18 @@ void candAnaDstar::candAnalysis() {
   ((TH1D*)fHistDir->Get("dr7"))->Fill(match2dr);
   if(muid1) ((TH1D*)fHistDir->Get("dr8"))->Fill(match1dr);
   if(muid2) ((TH1D*)fHistDir->Get("dr8"))->Fill(match2dr);
+  if(mumatch1) ((TH1D*)fHistDir->Get("dr1"))->Fill(match1dr);
+  if(mumatch2) ((TH1D*)fHistDir->Get("dr1"))->Fill(match2dr);
+  if(muid1&&mumatch1) ((TH1D*)fHistDir->Get("dr2"))->Fill(match1dr);
+  if(muid2&&mumatch2) ((TH1D*)fHistDir->Get("dr2"))->Fill(match2dr);
 
-  if(mumatch1 != mumatch1old) cout<<" ERROR "<<muid1<<" "<<mumatch1<<" "<<mumatch1old<<" "<<match1dr<<endl;
-  if(mumatch2 != mumatch2old) cout<<" ERROR "<<muid2<<" "<<mumatch2<<" "<<mumatch2old<<" "<<match2dr<<endl;
+  //if(mumatch1 != mumatch1old) cout<<" ERROR "<<muid1<<" "<<mumatch1<<" "<<mumatch1old<<" "<<match1dr<<endl;
+  //if(mumatch2 != mumatch2old) cout<<" ERROR "<<muid2<<" "<<mumatch2<<" "<<mumatch2old<<" "<<match2dr<<endl;
 
+
+  if(!useMyTrees) fPreselection = true;  // select this event for the standrad redtree
+  //cout<<fPreselection<<" "<<fGoodHLT<<endl;
+  
   // kink finder 
   double chiPi = -99.; // pPi->fChi2;
   double chiK = -99.; // pK->fChi2;
@@ -492,17 +510,17 @@ void candAnaDstar::candAnalysis() {
   }
   
   //cout<<fRun<<" "<<fEvt<<" "<<fLS<<" "<<fJSON<<" "<<fGoodHLT<<" "<<fHLTmatch<<endl;
-  double dr1 = matchToMuon(pPi);
-  double dr2 = matchToMuon(pK);
+  double dr1 = matchToMuon(pPi,true); // skip same track muons
+  double dr2 = matchToMuon(pK,true);
 
-  if( muid1 || muid2) {
-    cout<<"fake muon "<<muid1<<" "<<muid2<<" "<<mumatch1<<" "<<mumatch2<<" "<<match1dr<<" "<<match2dr<<" "<<dr1<<" "<<dr2<<endl;
+  if( (muid1 || muid2) ) {
+    if(fVerbose>0) cout<<"fake muon "<<muid1<<" "<<muid2<<" "<<mumatch1<<" "<<mumatch2<<" "<<match1dr<<" "<<match2dr<<" "<<dr1<<" "<<dr2<<endl;
     
     if(muid1) { // pi misid 
-      count2++; if(!mumatch1) count4++;
+      count3++; if(!mumatch1) count5++;
     }
     if(muid2) { // Kmisid
-      count3++; if(!mumatch2) count5++;
+      count4++; if(!mumatch2) count6++;
     }
   } // if muid
   
@@ -528,7 +546,7 @@ void candAnaDstar::candAnalysis() {
   fmdz=mdz;
   fchi2=chi2;
   falpha=alpha;
-  // falpha2 = 
+  // falpha2 = // not used 
   ffls3d=fls3d;
   fqpis=qpis;
   fdr=dr;
@@ -559,15 +577,17 @@ void candAnaDstar::candAnalysis() {
   
   fpvd = pv.Z();
   
-  if(count0%10 == 0) 
-    cout<<count0<<" "<<count1<<" "<<count2<<" "<<count3<<" "<<count4<<" "<<count5<<endl;
+  if(fVerbose>0) if(count0%10 == 0) cout<<count0<<" "<<count1<<" "<<count2<<" "<<count3<<" "<<count4<<" "<<count5<<" "<<count6<<endl;
+  else           if(count0%100 == 0) cout<<count0<<" "<<count1<<" "<<count2<<" "<<count3<<" "<<count4<<" "<<count5<<" "<<count6<<endl;
   
-  tree->Fill();
+  if(useMyTrees) tree->Fill();
   
 }
 
 // ----------------------------------------------------------------------
 void candAnaDstar::dumpHFTruthCand(TAnaCand *pC) {
+  const bool PRINT = false;
+
   //TAnaTrack *pT(0);  // needs work 
   //if( pC->fSig1 == -1 && pC->fSig2==-1 ) return;
   //for (int i = pC->fSig1; i <= pC->fSig2; ++i) {
@@ -575,8 +595,8 @@ void candAnaDstar::dumpHFTruthCand(TAnaCand *pC) {
   //pT->dump(); 
   //}
 
-
-  cout<<" tracks "<<fpEvt->nRecTracks()<<"  "<<fpEvt->nSimpleTracks()<<endl;
+  // Check simple tracks 
+  if(PRINT) cout<<"List all tracks "<<fpEvt->nRecTracks()<<"  "<<fpEvt->nSimpleTracks()<<endl;
   // loop over simple tracks  
   for(int itrk=0; itrk<(fpEvt->nSimpleTracks()); itrk++ ) {  // if the simple track exists 
     TSimpleTrack *pTrack = fpEvt->getSimpleTrack(itrk);
@@ -589,31 +609,65 @@ void candAnaDstar::dumpHFTruthCand(TAnaCand *pC) {
     int index = pTrack->getIndex(); // same as itrk
     int q     = pTrack->getCharge();
     int qual  = pTrack->getHighPurity();
-    int muonId= pTrack->getMuonID();
+    int muonId= pTrack->getMuonID(); // muon id 
     int pvidx = pTrack->getPvIndex();
     int genidx=pTrack->getGenIndex();
     int inds  = pTrack->getIndices();
     int bits  = pTrack->getBits();
+    double pt = mom.Perp();
 
-    cout<<itrk<<" "<<index<<" "<<q<<" "<<qual<<" "<<muonId<<" "<<pvidx<<" "<<genidx<<" "<<hex<<inds<<" "<<bits<<dec<<" ";
-    cout<<mom.Perp()<<" "<<mom.Phi()<<" "<<mom.Eta()<<endl;
-      
-  }
+    if(PRINT) cout<<" track "<<itrk<<" "<<index<<" "<<q<<" "<<qual<<" "<<muonId<<" "<<pvidx<<" "<<genidx<<" "
+		  <<hex<<inds<<" "<<bits<<dec<<" "<<pt<<" "<<mom.Phi()<<" "<<mom.Eta()<<endl;
+ 
+    ((TH1D*)fHistDir->Get("htrackpt1"))->Fill(pt);
+
+    if(muonId>0) {
+      ((TH1D*)fHistDir->Get("htrackpt2"))->Fill(pt);
+      if(PRINT) cout<<" muon "<<muonId;
+      bool muid  = tightMuon(pTrack);  // does this work on simpleTracks?
+      if(muid) {
+	if(PRINT) cout<<", tight muon"; 
+	((TH1D*)fHistDir->Get("htrackpt3"))->Fill(pt);
+      }
+      if(PRINT) cout<<endl;
+    } // muon 
+    
+  } // end track loop 
 
 
-  cout<<" signal tracks "<<pC->fSig1<<" "<<pC->fSig2<<endl;
+  // Check signal tracks
+  if(PRINT) cout<<"List signal tracks "<<pC->fSig1<<" "<<pC->fSig2<<endl;
   for(int it = pC->fSig1; it<=pC->fSig2; it++) {  // loop over index of signal tracka
     TAnaTrack *pT = fpEvt->getSigTrack(it); // this gives TAnaTrack
     //pT->dump(); // so all normal TAnaTracks work 
-    cout <<it<<" "<<pT->fIndex <<" "<<pT->fMCID<<" "<<pT->fGenIndex<<" "<<pT->fPlab.Perp()<<" "<<pT->fQ<<" "
-	 <<pT->fChi2 <<" "<<pT->fDof<<" "<<pT->fTrackQuality<<" "<<pT->fAlgorithm<<" "<<pT->fMuID<<" "
-	 <<pT->fMuIndex << " "<<pT->fPvIdx<<endl; 
     int itrk = pT->fIndex; // index of the SimpleTrack
+    double pt=pT->fPlab.Perp();
+    int muonId = pT->fMuID; // muon id
+    if(PRINT)cout <<" signal "<<it<<" "<<itrk <<" "<<pT->fMCID<<" "<<pT->fGenIndex<<" "<<pt<<" "<<pT->fQ<<" "
+		  <<pT->fChi2 <<" "<<pT->fDof<<" "<<pT->fTrackQuality<<" "<<pT->fAlgorithm<<" "<<muonId<<" "
+		  <<pT->fMuIndex << " "<<pT->fPvIdx<<endl; 
 
-  }
+    ((TH1D*)fHistDir->Get("hsigpt1"))->Fill(pt);
+
+    // Check tight muon only if muonId>0
+    if(muonId>0) {
+      if(PRINT) cout<<" muon "<<muonId;
+      ((TH1D*)fHistDir->Get("hsigpt2"))->Fill(pt);
+
+      bool muid  = tightMuon(pT);  // 
+      if(muid) {
+	if(PRINT) cout<<", tight muon"; 
+	((TH1D*)fHistDir->Get("hsigpt3"))->Fill(pt);
+      }
+      if(PRINT) cout<<endl;
+    } // if muon 
+  }  // end signal loop 
 
 
-  cout<<" muon tracks "<< fpEvt->nMuons()<<endl;
+  // Check muons 
+  if(PRINT) cout<<"List muon tracks "<< fpEvt->nMuons()<<endl;
+  const float dRMin = 0.1;
+  int muHlt = 0, muTightHlt = 0;
   for (int it = 0; it< fpEvt->nMuons(); ++it) { // loop over muons
     TAnaMuon *muon = fpEvt->getMuon(it); // get muon
 
@@ -630,21 +684,41 @@ void candAnaDstar::dumpHFTruthCand(TAnaCand *pC) {
     TVector3 muonMom = muon->fPlab;
     double ptMuon  = muonMom.Perp();
 
-    cout<<it<<" "<<itrk<<" "<<muon->fQ<<" "<<muon->fGlobalPlab.Perp()<<" "<<muon->fPlab.Perp()<<" "<<muon->fValidHits
-	<<" "<<muon->fMuonChi2<<" m-id "<<hex<<muonId<<dec<<" "<<muonIdx<<endl;
+    ((TH1D*)fHistDir->Get("hmupt1"))->Fill(ptMuon);
+
+    if(itrk<0) continue; // skip muons without inner tracker info
+    ((TH1D*)fHistDir->Get("hmupt2"))->Fill(ptMuon);
+
+    if(PRINT) cout<<" muon "<<it<<" index "<<itrk<<" "<<muon->fQ<<" "<<muon->fGlobalPlab.Perp()<<" "<<ptMuon<<" "<<muon->fValidHits
+		  <<" "<<muon->fMuonChi2<<" m-id "<<hex<<muonId<<dec<<" "<<muonIdx<<endl;
  
+    bool muid  = tightMuon(muon);  // does it work on muons? 
+    if(muid) {
+      if(PRINT) cout<<" A tight muon"<<endl;  
+      ((TH1D*)fHistDir->Get("hmupt3"))->Fill(ptMuon);
+    }
+
+    // Not do the rigger matching
+    double dR = 0.; // doTriggerMatchingR(muon,true); // see if it matches HLT muon
+    ((TH1D*)fHistDir->Get("dr3"))->Fill(dR);
+    if(muid) ((TH1D*)fHistDir->Get("dr4"))->Fill(dR);
+
+    if(dR<dRMin) {
+      muHlt++;
+      if(muid) muTightHlt++;
+      if(PRINT) cout<<" Matched to HLT "<<dR<<endl;
+    }
     // Going through the SimpleTrack gives the same info
     //TSimpleTrack *pTrack = fpEvt->getSimpleTrack(itrk);
     //cout<<it<<" "<<itrk<<" "<<pTrack->getP().Perp()<<endl; // same as direct muon
 
-
   } // END MUON LOOP 
 
-
-
+  if(PRINT) cout<<" HLT matched muons in this event "<<muHlt<<" tight "<<muTightHlt<<endl;
+  ((TH1D*)fHistDir->Get("h11"))->Fill(float(muHlt));
+  ((TH1D*)fHistDir->Get("h12"))->Fill(float(muTightHlt));
 
 }
-
 
 // ----------------------------------------------------------------------
 void candAnaDstar::dumpHFDstarCand(TAnaCand *pC) {
@@ -656,17 +730,35 @@ void candAnaDstar::dumpHFDstarCand(TAnaCand *pC) {
     cout << "XXXXXXXXX cannot get daughter cand of " << pC->fType << endl;
     return;
   }
+
   TAnaCand *pD = fpEvt->getCand(pC->fDau1); 
   cout << "HFDstarCand: idx = " << pC->fIndex << " type = " << pC->fType
        << " m* = " << pC->fMass << " m0 = " << pD->fMass << " dm = " << pC->fMass-pD->fMass << endl;
-  //  if (fVerbose > -1) cout << "   mdz = " << pD->fMass << endl;
+
+  // Check D0 tracks
+  cout<<" loop over D0 tracks "<<endl; 
+  for (int id = pD->fSig1; id <= pD->fSig2; ++id) {
+
+    pT = fpEvt->getSigTrack(id); // this gives TAnaTrack
+    //pT->dump(); // so all normal TAnaTracks work 
+    //cout <<id<<" "<<pT->fIndex <<" "<<pT->fMCID<<" "<<pT->fGenIndex<<" "<<pT->fPlab.Perp()<<" "<<pT->fQ<<" "
+    // <<pT->fChi2 <<" "<<pT->fDof<<" "<<pT->fTrackQuality<<" "<<pT->fAlgorithm<<" "<<pT->fMuID<<" "
+    // <<pT->fMuIndex << " "<<pT->fPvIdx<<endl; 
+
+    int index = pT->fIndex; // index of the SimpleTrack
+    if (211 == pT->fMCID) {  // pion 
+      cout<<" pion index "<<index<<" id "<< pT->fMCID<<" pt "<<pT->fPlab.Perp() << endl;
+    } else {  // kaon
+      cout<<" kaon index "<<index<<" id "<< pT->fMCID<<" pt "<<pT->fPlab.Perp() << endl;
+    }
+  }
+
 
   // -- slow pion
-  //pT = fpEvt->getRecTrack(fpEvt->getSigTrack(pC->fSig1)->fIndex); 
   //cout<<" simpler way "<<endl;
   int it = pC->fSig1;  // index of the signal track
   pT = fpEvt->getSigTrack(it); // this give TAnaTrack
-  cout << fpEvt->getSigTrack(pC->fSig1)->fMCID << " " ; 
+  cout << " slow pion index "<<it<<" id "<<fpEvt->getSigTrack(pC->fSig1)->fMCID << " pt "<<pT->fPlab.Perp()<<endl; 
   pT->dump(); 
 
 }
@@ -830,23 +922,8 @@ void candAnaDstar::bookHist() {
   //fHistDir->cd();
 
   TH1 *h = new TH1D("Status", "Status", 50, -0.5, 49.5);
-//   h = new TH1D("full_mds", "m(dstar)", 50, 1.8, 2.5);
-//   h = new TH1D("full_mdz", "m(d0)", 50, 1.8, 2.5);
-//   h = new TH1D("full_dm", "delta(m)", 60, 0.13, 0.16);
-//   h = new TH1D("full_ncand", "ncand", 200, 0., 200);
-//   h = new TH1D("full_fls3d", "fls3d", 60, 0., 20);
-//   h = new TH1D("full_flsxy", "flsxy", 60, 0., 20);
-//   h = new TH1D("full_prob", "prob(chi2/dof)", 100, 0., 1.);
-//   h = new TH1D("full_chi2", "chi2", 100, 0., 10.);
-//   h = new TH1D("full_alpha", "alpha", 350, 0., 3.5);
-//   h = new TH1D("full_dr","dr",100, 0., 1);
-//   h = new TH1D("full_pt", "pT", 50, 0., 25); 
-//   h = new TH1D("full_ptdz", "pT", 50, 0., 25);
-//   h = new TH1D("full_ptK",   "pT", 50, 0., 10);
-//   h = new TH1D("full_ptPi",  "pT", 50, 0., 10);
-//   h = new TH1D("full_ptPis", "pT", 50, 0., 5);
-//   TH2D *h2 = new TH2D("full_h2d", "m(d0) vs dm", 60, 1.8, 1.92, 60, 0.13, 0.16);
 
+  // Dstar histos
   h = new TH1D("mds", "m(dstar)", 50, 1.8, 2.5);
   h = new TH1D("mdz", "m(d0)", 70, 1.8, 2.5);
   h = new TH1D("dm", "delta(m)", 60, 0.13, 0.16);
@@ -865,6 +942,19 @@ void candAnaDstar::bookHist() {
   h = new TH1D("ptPis", "pT", 50, 0., 5);
   TH2D *h2 = new TH2D("h2d", "m(d0) vs dm", 60, 1.8, 1.92, 60, 0.13, 0.16);
 
+
+  // overview histos 
+  h = new TH1D("htrackpt1","all track pT", 100, 0., 100);
+  h = new TH1D("htrackpt2","muon track pT", 100, 0., 100);
+  h = new TH1D("htrackpt3","tight muon track pT", 100, 0., 100);
+  h = new TH1D("hsigpt1","all signal pT", 100, 0., 100);
+  h = new TH1D("hsigpt2","muon signal pT", 100, 0., 100);
+  h = new TH1D("hsigpt3","tight muon signal pT", 100, 0., 100);
+  h = new TH1D("hmupt1","all muon pT", 100, 0., 100);
+  h = new TH1D("hmupt2","tracker muon pT", 100, 0., 100);
+  h = new TH1D("hmupt3","tight muon pT", 100, 0., 100);
+
+  // test histos 
   h = new TH1D("dr1", "dr1", 400, 0., 2.);
   h = new TH1D("dr2", "dr2", 400, 0., 2.);
   h = new TH1D("dr3", "dr3", 400, 0., 2.);
@@ -875,28 +965,7 @@ void candAnaDstar::bookHist() {
   h = new TH1D("dr8", "dr8", 400, 0., 2.);
   h = new TH1D("dr9", "dr9", 400, 0., 2.);
 
-
-//   h = new TH1D("all_mds", "m(dstar)", 70, 1.8, 2.5);
-//   h = new TH1D("all_mdz", "m(d0)", 70, 1.8, 2.5);
-//   h = new TH1D("all_dm", "delta(m)", 60, 0.13, 0.16);
-//   h = new TH1D("all_ncand", "ncand", 200, 0., 200);
-//   h = new TH1D("all_fls3d", "fls3d", 60, 0., 20);
-//   h = new TH1D("all_flsxy", "flsxy", 60, 0., 20);
-//   h = new TH1D("all_prob", "prob(chi2/dof)", 100, 0., 1.);
-//   h = new TH1D("all_chi2", "chi2", 100, 0., 10.);
-//   h = new TH1D("all_alpha", "alpha", 50, 0., 1.0);
-//   h = new TH1D("all_dr","dr",100, 0., 1);
-//   h = new TH1D("all_pt", "pT", 50, 0., 25);
-//   h = new TH1D("all_ptdz", "pT", 50, 0., 25);
-//   h = new TH1D("all_ptK",   "pT", 50, 0., 10);
-//   h = new TH1D("all_ptPi",  "pT", 50, 0., 10);
-//   h = new TH1D("all_ptPis", "pT", 50, 0., 5);
-
-//   h2 = new TH2D("all_h2d", "m(d0) vs dm", 60, 1.8, 1.92, 60, 0.13, 0.16);
-
-
   h = new TH1D("pvidx", "PVidx", 50, 0., 50.);
-
   h = new TH1D("h1", "h1", 100, 0., 1);
   h = new TH1D("h2", "h2", 100, 0., 1);
   h = new TH1D("h3", "h3", 100, 0., 1);
@@ -907,77 +976,12 @@ void candAnaDstar::bookHist() {
   h = new TH1D("h8", "h8", 350, 0., 3.5);
   h = new TH1D("h9", "h9", 350, 0., 3.5);
   h = new TH1D("h10","h10",100, 0., 1);
+  h = new TH1D("h11", "h11", 10, 0., 10);
+  h = new TH1D("h12", "h12", 10, 0., 10);
 
-//   h = new TH1D("h11", "h11", 100, 0., 1);
-//   h = new TH1D("h12", "h12", 100, 0., 1);
-//   h = new TH1D("h13", "h13", 100, 0., 1);
-//   h = new TH1D("h14", "h14", 100, 0., 10);
-//   h = new TH1D("h15", "h15", 100, 0., 1);
-//   h = new TH1D("h16", "h16", 100, 0., 1);
-//   h = new TH1D("h17", "h17", 350, 0., 3.5);
-//   h = new TH1D("h18", "h18", 350, 0., 3.5);
-//   h = new TH1D("h19", "h19", 350, 0., 3.5);
-//   h = new TH1D("h20", "h20", 350, 0., 3.5);
-//   h = new TH1D("h21", "h21", 350, 0., 3.5);
-//   h = new TH1D("h22", "h22", 350, 0., 3.5);
-//   h = new TH1D("h23", "h23",   5,-2.5, 2.5);
-//   h = new TH1D("h24", "h24", 350, 0., 3.5);
-//   h = new TH1D("h25", "h25", 350, 0., 3.5);
-//   h = new TH1D("h26", "h26", 100, 0., 1);
-//   h = new TH1D("h27", "h27", 100, 0., 1);
-//   h = new TH1D("h28", "h28", 50, 0., 20);
-//   h = new TH1D("h29", "h29", 50, 0., 20);
-//   h = new TH1D("h30", "h30", 50, 0., 10);
-
-//   h = new TH1D("h31", "h31", 100, 0., 1);
-//   h = new TH1D("h32", "h32", 100, 0., 1);
-//   h = new TH1D("h33", "h33", 100, 0., 1);
-//   h = new TH1D("h34", "h34", 350, 0., 0.35);
-//   h = new TH1D("h35", "h35", 350, 0., 0.35);
-//   h = new TH1D("h36", "h36", 350, 0., 0.35);
-//   h = new TH1D("h37", "h37", 350, 0., 0.35);
-//   h = new TH1D("h38", "h38", 350, 0., 0.35);
-
-//   h = new TH1D("h39", "h39", 50, 0., 10);
-
-//   h = new TH1D("h41", "h41",50, 0.0, 20.);
-//   h = new TH1D("h42", "h42",100, 1.0, 2.5);
-//   h = new TH1D("h43", "h43",50, 0.0, 20.);
-//   h = new TH1D("h44", "h44",100, 1.0, 2.5);
-
-//   h = new TH1D("h45", "h45",100,  1.,2.5);
-//   h = new TH1D("h46", "h46",100,  1.,2.5);
-//   h = new TH1D("h47", "h47",100,  0., 1.0);
-//   h = new TH1D("h48", "h48",50,  0., 20.);
-//   h = new TH1D("h49", "h49",200,  0.13, 0.18);
-//   h = new TH1D("h50", "h50",200,  0.13, 0.18);
-
-//   h2 = new TH2D("h51", "h51", 40, 0., 20., 80, 1.5, 2.3);
-//   h2 = new TH2D("h52", "h52", 35, 0., 3.5, 80, 1.5, 2.3);
-//   h2 = new TH2D("h53", "h53", 40, 0., 20., 80, 1.5, 2.3);
-//   h2 = new TH2D("h54", "h53", 40, 0., 10., 80, 1.5, 2.3);
-//   h2 = new TH2D("h55", "h55", 40, 0., 10., 80, 1.5, 2.3);
-//   h2 = new TH2D("h56", "h56", 40, 0.,  2., 80, 1.5, 2.3);
-//   h2 = new TH2D("h57", "h57", 40, 0.,0.4,  80, 1.5, 2.3);
-
-//   h = new TH1D("h60", "h60", 5,-2.5,2.5);
-  //h = new TH1D("h61", "h61", 5,-2.5,2.5);
-//   h = new TH1D("h62", "h62", 5,-2.5,2.5);
-//   //h = new TH1D("h63", "h63", 5,-2.5,2.5);
-//   //h = new TH1D("h64", "h64", 5,-2.5,2.5);
-//   //h = new TH1D("h65", "h65", 5,-2.5,2.5);
-//   //h = new TH1D("h66", "h66", 5,-2.5,2.5);
-//   //h = new TH1D("h67", "h67", 5,-2.5,2.5);
-
-//   h = new TH1D("h71", "dm",40,0.135,0.155);
-//   h = new TH1D("h72", "dm",40,0.135,0.155);
-//   h = new TH1D("h73", "dm",40,0.135,0.155);
-//   h = new TH1D("h74", "dm",40,0.135,0.155);
-//   h = new TH1D("h75", "dm",40,0.135,0.155);
-//   h = new TH1D("h76", "dm",40,0.135,0.155);
-//   h = new TH1D("h77", "dm",40,0.135,0.155);
-
+  // Ntuples 
   tree = new TTree("dstar","dstar");
+  // special to dstar
   tree->Branch("ftm",&ftm,"ftm/I");
   tree->Branch("fmuid1",&fmuid1,"fmuid1/O");
   tree->Branch("fmuid2",&fmuid2,"fmuid2/O");
@@ -1004,7 +1008,6 @@ void candAnaDstar::bookHist() {
   tree->Branch("fetak",&fetak,"fetak/F");
 
 
-  tree->Branch("fpvd",&fpvd,"fpvd/F");
   tree->Branch("fchipi",&fchipi,"fchipi/F");
   tree->Branch("fchik",&fchik,"fchik/F");
   tree->Branch("fiso",&fiso,"fiso/F");
@@ -1013,6 +1016,12 @@ void candAnaDstar::bookHist() {
   tree->Branch("mudr1",&mudr1,"fmudr1/F");
   tree->Branch("mudr2",&mudr2,"fmudr2/F");
 
+  tree->Branch("hltdr1",    &match1dr,      "hltdr1/F");
+  tree->Branch("hltdr2",    &match2dr,      "hltdr2/F");
+
+
+  // general 
+  tree->Branch("fpvd",&fpvd,"fpvd/F");
   tree->Branch("run",     &fRun,               "run/L");
   tree->Branch("json",    &fJSON,              "json/O");
   tree->Branch("evt",     &fEvt,               "evt/L");
@@ -1028,9 +1037,44 @@ void candAnaDstar::bookHist() {
   //t->Branch("npv",     &fPvN,               "npv/I");
   //t->Branch("pvw8",    &fPvAveW8,           "pvw8/D");
   tree->Branch("hltm",    &fHLTmatch,          "hltm/O");
-  tree->Branch("hltdr1",    &match1dr,      "hltdr1/F");
-  tree->Branch("hltdr2",    &match2dr,      "hltdr2/F");
   tree->Branch("hlttype",   &fhltType,        "hltype/I");
+
+  // Add variables to the standard redtrees 
+  fTree->Branch("ftm",&ftm,"ftm/I");
+  fTree->Branch("fmuid1",&fmuid1,"fmuid1/O");
+  fTree->Branch("fmuid2",&fmuid2,"fmuid2/O");
+  fTree->Branch("fmumat1",&fmumat1,"fmumat1/O");
+  fTree->Branch("fmumat2",&fmumat2,"fmumat2/O");
+  fTree->Branch("fmds",&fmds,"fmds/F");
+  fTree->Branch("fmdz",&fmdz,"fmdz/F");
+
+  fTree->Branch("ffls3d",&ffls3d,"ffls3d/F");
+  fTree->Branch("fchi2",&fchi2,"fchi2/F");
+  fTree->Branch("falpha",&falpha,"falpha/F");
+  //fTree->Branch("falpha2",&falpha2,"falpha2/F");
+  fTree->Branch("fqpis",&fqpis,"fqpis/F");
+  fTree->Branch("fdr",&fdr,"fdr/F");
+
+  fTree->Branch("fpt",&fpt,"fpt/F");
+  fTree->Branch("fptdz",&fptdz,"fptdz/F");
+  fTree->Branch("fptpis",&fptpis,"fptpis/F");
+  fTree->Branch("fptpi",&fptpi,"fptpi/F");
+  fTree->Branch("fptk",&fptk,"fptk/F");
+
+  fTree->Branch("feta",&feta,"feta/F");
+  fTree->Branch("fetapi",&fetapi,"fetapi/F");
+  fTree->Branch("fetak",&fetak,"fetak/F");
+
+  fTree->Branch("fchipi",&fchipi,"fchipi/F");
+  fTree->Branch("fchik",&fchik,"fchik/F");
+  fTree->Branch("fiso",&fiso,"fiso/F");
+  fTree->Branch("fnclose",&fnclose,"fnclose/I");
+
+  fTree->Branch("mudr1",&mudr1,"fmudr1/F");
+  fTree->Branch("mudr2",&mudr2,"fmudr2/F");
+
+  fTree->Branch("hltdr1",    &match1dr,      "hltdr1/F");
+  fTree->Branch("hltdr2",    &match2dr,      "hltdr2/F");
 
 }
 
