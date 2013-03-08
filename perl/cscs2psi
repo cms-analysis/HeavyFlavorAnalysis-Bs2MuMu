@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # ----------------------------------------------------------------------
-# usage:  cscs2psi
+# usage:  cscs2psi [-d] [-p /store/user/bstomumu/v14] [-x bmmMCBg]
 #
 # ----------------------------------------------------------------------
 
@@ -32,33 +32,34 @@ my %syncDirectories = (
     "/cmsRun/2012/mc-cms/Psi2SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" => "oniaMC",
 
     # -- bmm MC
-    "/cmsRun/2012/mc-cms/BsToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BdToJpsiKstar_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BdToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BdToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BdToMuMuK0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BdToMuMuPi0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BdToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BdToRohPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BsToJPsiPhi_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BsToJPsiPhi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BsToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BsToKMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BsToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BsToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BuToJPsiK_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BuToJpsiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BuToMuMuK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BuToMuMuPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/LambdaBToPK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/LambdaBToPMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BdToPiMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BdToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BsToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/LambdaBToPPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
-    "/cmsRun/2012/mc-cms/BdToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMC",
+    "/cmsRun/2012/mc-cms/BsToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BdToJpsiKstar_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmBgMCBg",
+    "/cmsRun/2012/mc-cms/BdToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BdToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BdToMuMuK0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BdToMuMuPi0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BdToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BdToRohPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BsToJPsiPhi_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCCs",
+    "/cmsRun/2012/mc-cms/BsToJPsiPhi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCCs",
+    "/cmsRun/2012/mc-cms/BsToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BsToKMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BsToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCSg",
+    "/cmsRun/2012/mc-cms/BsToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BuToJPsiK_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCNo",
+    "/cmsRun/2012/mc-cms/BuToJpsiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BuToMuMuK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BuToMuMuK_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMcBg", 
+    "/cmsRun/2012/mc-cms/BuToMuMuPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/LambdaBToPK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/LambdaBToPMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BdToPiMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCNo",
+    "/cmsRun/2012/mc-cms/BdToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCSg",
+    "/cmsRun/2012/mc-cms/BsToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCSg",
+    "/cmsRun/2012/mc-cms/LambdaBToPPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BdToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
     );
 
 

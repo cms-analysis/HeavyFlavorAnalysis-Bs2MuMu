@@ -1,9 +1,13 @@
 #!/usr/bin/env perl
 
-# usage: se2se -s T2_CH_CSCS -t T3_CH_PSI -d /store/user/bstomumu/v14/cmsRun/2012/data-hadronic-nonMuon/B
+# usage: se2se [-s T2_CH_CSCS] [-t T3_CH_PSI] -d /store/user/bstomumu/v14/cmsRun/2012/data-hadronic-nonMuon/B
 
 use Getopt::Std;
 getopts('d:p:s:t:');
+
+if (!$opt_s) { 
+    $opt_s = "T2_CH_CSCS";
+}
 
 if ($opt_s eq "T2_CH_CSCS") {
     $sPrefix  = "srm://storage01.lcg.cscs.ch:8443/srm/managerv2\\?SFN=/pnfs/lcg.cscs.ch/cms/trivcat";
@@ -11,6 +15,10 @@ if ($opt_s eq "T2_CH_CSCS") {
 
 if ($opt_s eq "T3_CH_PSI") {
     $sPrefix  = "srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat";
+}
+
+if (!$opt_t) {
+    $opt_t = "T3_CH_PSI";
 }
 
 if ($opt_t eq "T3_CH_PSI") {

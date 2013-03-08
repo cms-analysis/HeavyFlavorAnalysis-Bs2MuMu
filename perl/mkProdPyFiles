@@ -36,6 +36,8 @@ if ($opt_s eq "V7A") {
 	=> "BdToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM",
 	"BdToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
 	=> "BdToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BdToMuMu_BdFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1"
+	=> "BdToMuMu_BdFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM",
 	"BdToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
 	=> "BdToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
 	"BdToMuMuPi0_MuMuPi0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
