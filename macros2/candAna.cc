@@ -39,14 +39,16 @@ candAna::~candAna() {
 
 // ----------------------------------------------------------------------
 void candAna::evtAnalysis(TAna01Event *evt) {
-  //static int count = 0; //dk
-  //count++; //dk
-  //select_print = false; //dk
   
   fpEvt = evt; 
   fBadEvent = false;
 
-  //if(fEvt==1809580) select_print = true; //dk
+  //static int count = 0; //dk
+  //select_print = false; //dk
+  //if(fRun==173198 && fEvt==1158911779) select_print = true; //dk
+  //if(fRun==208686) select_print = true; //dk
+  //select_print = true; //dk
+  //if(!select_print) return;
 
   //  play(); 
   //  return;
@@ -65,7 +67,8 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   triggerSelection();
   runRange(); 
 
-  //cout<<" event "<<fEvt<<" cands "<<fpEvt->nCands()<<" "<<fVerbose<<" "<<fGoodHLT<<" "<<fIsMC<<endl;
+  //if(select_print) cout<<" event "<<fEvt<<" run "<<fRun<<" cands "<<fpEvt->nCands()<<" "<<fVerbose<<" "<<fGoodHLT<<" "<<fIsMC<<" "<<count<<endl;
+  //return;
 
   // Skip data events where there was no valid trigger
   if(!fIsMC && !fGoodHLT) {return;}  
@@ -119,8 +122,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     // -- call derived functions
     candAnalysis();
 
-    //if(select_print) cout << "Analyzing candidate at " << iC << " which is of type " << TYPE << " mass "<< pCand->fMass<<" "
-    //		  <<fpMuon1->fPlab.Perp() << " "<<fpMuon2->fPlab.Perp()<<endl;
+    //if(select_print) cout << " candidate at " << iC << " which is of type " << TYPE << " mass "<< pCand->fMass<<endl;
 
     if(fpMuon1 != NULL && fpMuon2 != NULL) { // do only when 2 muons exist
       fHLTmatch = doTriggerMatching();      // match only with the inclusive objects 
@@ -191,7 +193,8 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 
 	  //if(fHLTmatch != fHLTmatch2) cout<<" match wrong "<<fHLTmatch<<" "<<fHLTmatch2<<" "<<fEvt<<" "<<fRun<<" "<<iC<<endl;
 	  //if(!fHLTmatch2) cout<<" hlt not matched "<<fHLTmatch<<" "<<fHLTmatch2<<" "<<fEvt<<" "<<fRun<<" "<<iC<<" "<<count <<endl;
-	  //cout<<fHLTmatch<<" "<<fHLTmatch2<<" "<<fEvt<<" "<<fRun<<" "<<iC<<endl;
+	  //count++; //dk
+	  //if(select_print) cout<<" write "<<fHLTmatch<<" "<<fHLTmatch2<<" "<<fEvt<<" "<<fRun<<" "<<iC<<" "<<count<<endl;
 	  
 	} else {	 
 
@@ -933,6 +936,37 @@ void candAna::triggerSelection() {
   }
 
 
+  // Test trigger object for trigger matching TESTING ONLY
+  if (true && fGoodHLT) {    
+    ((TH1D*)fHistDir->Get("test10"))->Fill(0.);
+    bool passed[20];
+    for(int i=0;i<20;i++) passed[i]=false;
+    TTrgObj *p;     
+    for (int i = 0; i < fpEvt->nTrgObj(); ++i) {
+      p = fpEvt->getTrgObj(i); 
+      //      cout << p->fLabel << endl;      
+      if ( p->fLabel.Contains("mu") || p->fLabel.Contains("Mu") ) {passed[0]=true; if( p->fLabel.Contains("L3")) passed[10]=true;}
+      if ( p->fLabel.Contains("Displaced") ) {passed[1]=true; if( p->fLabel.Contains("L3")) passed[11]=true;}
+      if ( p->fLabel.Contains("Jpsi") )      {passed[2]=true; if( p->fLabel.Contains("L3")) passed[12]=true;}
+      if ( p->fLabel.Contains("Bs") )        {passed[3]=true; if( p->fLabel.Contains("L3")) passed[13]=true;}
+      if ( p->fLabel.Contains("LowMass") )   {passed[4]=true; if( p->fLabel.Contains("L3")) passed[14]=true;}
+      if ( p->fLabel.Contains("Vertex") )    {passed[5]=true; if( p->fLabel.Contains("L3")) passed[15]=true;}
+      if ( p->fLabel.Contains("SameSign") )  {passed[6]=true; if( p->fLabel.Contains("L3")) passed[16]=true;}
+      
+    } // for look 
+    bool passedFinal=false, passedL3=false;
+    for(int i=0;i<20;i++) {
+      if(passed[i]) {
+	passedFinal=true;
+	((TH1D*)fHistDir->Get("test10"))->Fill(float(i+1));
+	if(i>=10) passedL3=true; // count only with L3
+      }
+    }
+    if(passedFinal) ((TH1D*)fHistDir->Get("test10"))->Fill(9.);
+    if(passedL3) ((TH1D*)fHistDir->Get("test10"))->Fill(10.);
+
+  } // if true
+
 }
 
 // ----------------------------------------------------------------------
@@ -967,6 +1001,7 @@ void candAna::bookHist() {
   h11 = new TH1D("test7", "test7", 400, 0., 4.);
   h11 = new TH1D("test8", "test8",1000, 0., 2.); 
   h11 = new TH1D("test9", "test9",10, -0.5, 9.5); 
+  h11 = new TH1D("test10", "test10",20, -0.5, 19.5); 
 
 
   h11 = new TH1D("gp1cms", "p1cms", 50, 0, 10.); 
@@ -2757,7 +2792,7 @@ double candAna::doTriggerMatchingR(TAnaTrack *pt, bool anyTrig) {
   for(int i=0; i!=fpEvt->nTrgObj(); i++) {
     tto = fpEvt->getTrgObj(i);
     
-    if (0) { // (fVerbose > 97 || localPrint ) {
+    if (fVerbose > 97 || localPrint ) {
       cout << "i: " << i << " "; 
       //cout << tto->fLabel << tto->fP.DeltaR(tlvMu1)<<" ";
       cout << tto->fP.DeltaR(tlvMu1)<<" ";
@@ -2776,7 +2811,14 @@ double candAna::doTriggerMatchingR(TAnaTrack *pt, bool anyTrig) {
       // select objects with "mu" or "Mu" in the name.  Add also the "L3" selection. 
       //cout<<tto->fLabel.Contains("mu")<<" "<<tto->fLabel.Contains("Mu")<<endl;
       //if( (tto->fLabel.Contains("mu")  || tto->fLabel.Contains("Mu")) ) selected = true;
-      if( tto->fLabel.Contains("L3") && (tto->fLabel.Contains("mu")  || tto->fLabel.Contains("Mu")) ) selected = true;
+
+      if ( fYear==2012) 
+	{if( tto->fLabel.Contains("L3") && (tto->fLabel.Contains("mu")  || tto->fLabel.Contains("Mu")) ) selected = true;}
+
+      else  // 2011 cannot do Mu.AND.L3, some triger do not have it in the name
+	{if( (tto->fLabel.Contains("mu")||tto->fLabel.Contains("Mu")||tto->fLabel.Contains("Jpsi")||
+	      tto->fLabel.Contains("Displaced")||tto->fLabel.Contains("Vertex")||tto->fLabel.Contains("LowMass")) 
+	     ) selected = true;}
 
       // Select all bsmm anaysis triggers
 //       if( (tto->fLabel == "hltDisplacedmumuFilterDoubleMu4Jpsi:HLT::") || //2012 data jpsi disp. 
