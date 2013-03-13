@@ -168,13 +168,13 @@ int treeReader01::loop(int nevents, int start) {
     fpEvt->Clear();                        
     nb += fpChain->GetEvent(jEvent);          
     
-    fEvt = fpEvt->fEventNumber;   
-    fRun = fpEvt->fRunNumber;
+    fEvt = static_cast<long int>(fpEvt->fEventNumber);		
+    fRun = static_cast<long int>(fpEvt->fRunNumber);
     fLS  = fpEvt->fLumiSection;
 
     if (jEvent%step == 0) {
       TTimeStamp ts; 
-      cout  << " (run: " << Form("%8d", fRun) << ", event: " << Form("%10d", fEvt) << ", " << ts.AsString("lc") << ")" << endl;	
+      cout  << " (run: " << Form("%8ld", fRun) << ", event: " << Form("%10ld", fEvt) << ", " << ts.AsString("lc") << ")" << endl;	
     }
 
     if (fForceJson && !fpJSON->good(fRun, fLS)) {
