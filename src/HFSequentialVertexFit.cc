@@ -624,7 +624,6 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 
     TSimpleTrack *sTrack = gHFEvent->getSimpleTrack(allTreeTracks[j].trackIx);
     pTrack = gHFEvent->addSigTrack();
-
     TrackBaseRef baseRef(fhTracks, allTreeTracks[j].trackIx);
     Track trackView(*baseRef);
 
@@ -701,8 +700,8 @@ void HFSequentialVertexFit::doFit(HFDecayTree *tree)
   
   try {
     tree->resetKinematicTree(1);
-	if(fitTree(tree))
-		saveTree(tree);
+    if(fitTree(tree))
+      saveTree(tree);
   } catch (cms::Exception &ex) {
     if (fVerbose > 0) cout << "==> HFSequentialVertexFit: cms exception caught: " << ex.what() << endl;
   } catch (VertexException &ex) {
