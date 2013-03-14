@@ -27,7 +27,7 @@ process.GlobalTag.globaltag = "START53_V7G::All"
 POOLSOURCE
 
 # ----------------------------------------------------------------------
-rootFileName = "onia-mc-2012-XXXX.root"
+rootFileName = "hadronic-mc-2012-XXXX.root"
 
 
 process.tree = cms.EDAnalyzer(
@@ -41,12 +41,24 @@ process.tree = cms.EDAnalyzer(
 # ----------------------------------------------------------------------
 process.load("Configuration.StandardSequences.Reconstruction_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFRecoStuff_cff")
-process.load("HeavyFlavorAnalysis.Bs2MuMu.HFOnia_cff")
+process.load("HeavyFlavorAnalysis.Bs2MuMu.HFHadronic_cff")
 process.load("HeavyFlavorAnalysis.Bs2MuMu.HFPhysicsDeclared_cff")
+process.load("HeavyFlavorAnalysis.Bs2MuMu.HFMCTruth_cff")
+process.load("HeavyFlavorAnalysis.Bs2MuMu.HFTruthCandidates_cff")
+
+# ----------------------------------------------------------------------
+process.genDump = cms.EDAnalyzer(
+    "HFDumpGenerator",
+    generatorCandidates = cms.untracked.string('genParticles'),
+    generatorEvent = cms.untracked.string('generator')
+    )
 
 # ----------------------------------------------------------------------
 process.p = cms.Path(
+    process.genDump*
     process.recoStuffSequence*
-    process.oniaSequence*
+    process.hadronicSequence*
+    process.truthDstarToD0PiToKPiPi*
+    process.truthBd2DstarPiDump*
     process.tree
 )
