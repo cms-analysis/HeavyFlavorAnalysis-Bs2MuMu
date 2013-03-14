@@ -33,6 +33,7 @@ my %syncDirectories = (
 
     # -- bmm MC
     "/cmsRun/2012/mc-cms/BsToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
+    "/cmsRun/2012/mc-cms/BdToKPi_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg", 
     "/cmsRun/2012/mc-cms/BdToJpsiKstar_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmBgMCBg",
     "/cmsRun/2012/mc-cms/BdToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",
     "/cmsRun/2012/mc-cms/BdToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" => "bmmMCBg",

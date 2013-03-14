@@ -1,9 +1,9 @@
 #!/usr/bin/env perl
 
-# usage: se2se [-s T2_CH_CSCS] [-t T3_CH_PSI] -d /store/user/bstomumu/v14/cmsRun/2012/data-hadronic-nonMuon/B
+# usage: se2se [-n 4] [-s T2_CH_CSCS] [-t T3_CH_PSI] -d /store/user/bstomumu/v14/cmsRun/2012/data-hadronic-nonMuon/B
 
 use Getopt::Std;
-getopts('d:p:s:t:');
+getopts('d:n:p:s:t:');
 
 if (!$opt_s) { 
     $opt_s = "T2_CH_CSCS";
@@ -21,10 +21,16 @@ if (!$opt_t) {
     $opt_t = "T3_CH_PSI";
 }
 
+if (!$opt_n) {
+    $opt_n = 4;
+}
+
 if ($opt_t eq "T3_CH_PSI") {
     $tPrefix  = "srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat";
     $tMount   = "/pnfs/psi.ch/cms/trivcat";
 }
+
+my $drexe = "/shome/ursl/perl/data_replica.py --streams=$opt_n";
 
 my $srmLsOptions = "\\.root\$";
 if ($opt_p) {
@@ -41,6 +47,6 @@ if (!-d "$tMount/$opt_d") {
 }
 
 # -- now transfer
-$cmd = "data_replica.py --from-site $opt_s --to-site $opt_t $dr $opt_d";
+$cmd = "$drexe --from-site $opt_s --to-site $opt_t $dr $opt_d";
 system("$cmd");
 

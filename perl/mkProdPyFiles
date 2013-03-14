@@ -32,56 +32,30 @@ if ($opt_s eq "V7A") {
     $opt_d = "../../bmm-2012";
     $soptions = "-t ../../bmm-mc-2012-XXXX.py -e 50000";
     %catalog = (
-	"BdToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BdToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM",
-	"BdToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BdToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BdToMuMu_BdFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1"
-	=> "BdToMuMu_BdFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM",
-	"BdToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BdToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BdToMuMuPi0_MuMuPi0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BdToMuMuPi0_MuMuPi0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM",
-	"BdToMuMu_BdFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1"
-	=> "BdToMuMu_BdFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BdToPiPi_2PiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2" 
-	=> "BdToPiPi_2PiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2__AODSIM", 
-	"BsToJPsiPhi_2K2MuFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BsToJPsiPhi_2K2MuFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BsToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BsToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BsToKMuNu_KMuNuEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BsToKMuNu_KMuNuEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BsToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BsToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BsToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BsToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BsToMuMu_BsFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BsToMuMu_BsFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BsToPiPi_2PiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BsToPiPi_2PiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BuToJPsiK_K2MuFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BuToJPsiK_K2MuFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2" 
-	=> "BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2__AODSIM", 
-	"BuToMuMuK0_MuMuK0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BuToMuMuK0_MuMuK0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BuToMuMuK_MuMuKEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BuToMuMuK_MuMuKEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"BuToMuMuPi_MuMuPiEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "BuToMuMuPi_MuMuPiEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"LambdaBToPK_PKPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2" 
-	=> "LambdaBToPK_PKPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2__AODSIM", 
-	"LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"LambdaBToPPi_PPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 
-	=> "LambdaBToPPi_PPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM"
+	"BdToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	        => "BdToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM",
+	"BdToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	        => "BdToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BdToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	=> "BdToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BdToMuMuPi0_MuMuPi0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	=> "BdToMuMuPi0_MuMuPi0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM",
+	"BdToMuMu_BdFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1"	                => "BdToMuMu_BdFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM",
+	"BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	=> "BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BdToPiPi_2PiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2" 	        => "BdToPiPi_2PiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2__AODSIM", 
+	"BsToJPsiPhi_2K2MuFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	        => "BsToJPsiPhi_2K2MuFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	=> "BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	=> "BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BsToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	        => "BsToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BsToKMuNu_KMuNuEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	        => "BsToKMuNu_KMuNuEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BsToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	        => "BsToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BsToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	=> "BsToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BsToMuMu_BsFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1"                   => "BsToMuMu_BsFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BsToPiPi_2PiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	        => "BsToPiPi_2PiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BuToJPsiK_K2MuFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	        => "BuToJPsiK_K2MuFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2" 	=> "BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2__AODSIM", 
+	"BuToMuMuK0_MuMuK0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	=> "BuToMuMuK0_MuMuK0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BuToMuMuK_MuMuKEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	        => "BuToMuMuK_MuMuKEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"BuToMuMuPi_MuMuPiEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	=> "BuToMuMuPi_MuMuPiEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"LambdaBToPK_PKPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2" 	        => "LambdaBToPK_PKPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2__AODSIM", 
+	"LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	=> "LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"LambdaBToPPi_PPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" 	=> "LambdaBToPPi_PPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM"
 	) ;
 }
 
@@ -90,67 +64,43 @@ if ($opt_s eq "V7C") {
     $mkdir = 1; 
     $opt_d = "../../bmm-2013";
     $soptions = "-t ../../bmm-mc-2012-XXXX.py -e 50000";
+    $hoptions = "-t ../../hadronic-mc-2012-XXXX.py -e 50000";
     %catalog = (
-	"BdToJpsiKstar_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BdToJpsiKstar_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BdToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BdToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BdToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BdToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BdToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BdToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BdToMuMuK0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BdToMuMuK0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BdToMuMuPi0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BdToMuMuPi0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BdToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BdToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BdToPiMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BdToPiMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BdToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BdToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BdToRohPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BdToRohPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BsToJPsiPhi_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BsToJPsiPhi_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BsToJPsiPhi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BsToJPsiPhi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BsToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BsToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BsToKMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BsToKMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BsToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"
-	=> "BsToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM",
-	"BsToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BsToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BsToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BsToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BsToMuMu_M-51_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BsToMuMu_M-51_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BsToMuMu_M-57_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BsToMuMu_M-57_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BsToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BsToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BuToJPsiK_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BuToJPsiK_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BuToJpsiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BuToJpsiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BuToMuMuK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BuToMuMuK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BuToMuMuK_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BuToMuMuK_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"BuToMuMuPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "BuToMuMuPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"LambdaBToPK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "LambdaBToPK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"LambdaBToPMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "LambdaBToPMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
-	"LambdaBToPPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1" 
-	=> "LambdaBToPPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM" 
+	"BdToD0starPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"            => "/BdToD0starPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM",
+	"BdToJpsiKstar_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"           => "BdToJpsiKstar_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BdToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"                  => "BdToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BdToKK_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"              => "BdToKK_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BdToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"                 => "BdToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BdToKPi_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"             => "BdToKPi_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM",
+	"BdToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"           => "BdToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BdToMuMuK0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"              => "BdToMuMuK0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BdToMuMuPi0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"             => "BdToMuMuPi0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BdToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"                => "BdToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BdToPiMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"              => "BdToPiMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BdToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"                => "BdToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BdToPiPi_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"            => "BdToPiPi_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM",
+	"BdToRohPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"               => "BdToRohPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BsToJPsiPhi_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"                         => "BsToJPsiPhi_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BsToJPsiPhi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"             => "BsToJPsiPhi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BsToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"                  => "BsToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BsToKMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"               => "BsToKMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BsToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"                 => "BsToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM",
+	"BsToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"           => "BsToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"                            => "BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BsToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"                => "BsToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BsToMuMu_M-51_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"                       => "BsToMuMu_M-51_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BsToMuMu_M-57_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"                       => "BsToMuMu_M-57_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BsToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"                => "BsToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BuToJPsiK_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"                           => "BuToJPsiK_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"        => "BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BuToJpsiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"              => "BuToJpsiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BuToMuMuK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"               => "BuToMuMuK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BuToMuMuK_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"           => "BuToMuMuK_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"BuToMuMuPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"              => "BuToMuMuPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"LambdaBToPK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"             => "LambdaBToPK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"LambdaBToPMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"          => "LambdaBToPMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM", 
+	"LambdaBToPPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"            => "LambdaBToPPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM",
+	"LambdaBToPPi_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"        => "LambdaBToPPi_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1__AODSIM"
 	); 
 }	
 
@@ -160,16 +110,11 @@ if ($opt_s eq "onia") {
     $soptions = "-t ../../onia-mc-2012-XXXX.py -e 50000";
 
     %catalog = (
-	"JPsiToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2" 
-	=> "JPsiToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2__AODSIM", 
-	"Psi2SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1"
-	=> "Psi2SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"Upsilon1SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1"
-	=> "Upsilon1SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"Upsilon2SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1"
-	=> "Upsilon2SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
-	"Upsilon3SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6__Summer12_DR53X-PU_S10_START53_V7A-v1"
-	=> "Upsilon3SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM"
+	"JPsiToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2"      => "JPsiToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2__AODSIM", 
+	"Psi2SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1"     => "Psi2SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"Upsilon1SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" => "Upsilon1SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"Upsilon2SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" => "Upsilon2SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM", 
+	"Upsilon3SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6__Summer12_DR53X-PU_S10_START53_V7A-v1"        => "Upsilon3SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6__Summer12_DR53X-PU_S10_START53_V7A-v1__AODSIM"
     ); 
 } 
 
@@ -185,6 +130,9 @@ foreach $i (keys %catalog) {
 	$cdir = $opt_d;
     }
     $cmd = "mkPyFiles -f $cdir/$catalog{$i} -s $opt_v-$i $soptions ";
+    if ($i =~ /BdToD0starPi/) {
+	$cmd = "mkPyFiles -f $cdir/$catalog{$i} -s $opt_v-$i $hoptions ";
+    }
     print "==> $cmd\n";
     system("$cmd");
     if (1 == $mkdir) {
