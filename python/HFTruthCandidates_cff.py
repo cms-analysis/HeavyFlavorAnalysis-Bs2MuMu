@@ -183,7 +183,7 @@ truthBdToRhoPiDump = cms.EDAnalyzer(
     type         = cms.untracked.int32(98),
     GenType      = cms.untracked.int32(-98),
 #    daughtersID  = cms.untracked.vint32(213, 211),
-    daughtersID  = cms.untracked.vint32(211, 211),
+    daughtersID  = cms.untracked.vint32(213, 211, 111, 211),
     partialDecayMatching = cms.untracked.bool(True)
     )
 
@@ -323,7 +323,7 @@ truthBd2DstarPiDump = cms.EDAnalyzer(
     motherID     = cms.untracked.int32(511),
     type         = cms.untracked.int32(30),
     GenType      = cms.untracked.int32(-30),
-    daughtersID  = cms.untracked.vint32(-413, 211, -421, 321, -211, 211)
+    daughtersID  = cms.untracked.vint32(-413, 211, -421, -211, 321, 211)
     )
 
 
@@ -378,7 +378,7 @@ truthDstarToD0PiToKPiPi = cms.EDAnalyzer(
     motherID     = cms.untracked.int32(413),
     type         = cms.untracked.int32(54),
     GenType      = cms.untracked.int32(-54),
-    daughtersID  = cms.untracked.vint32(421, -321, 211, 211)
+    daughtersID  = cms.untracked.vint32(421, 211, -321, -211)
     )
 
 # ----------------------------------------------------------------------
