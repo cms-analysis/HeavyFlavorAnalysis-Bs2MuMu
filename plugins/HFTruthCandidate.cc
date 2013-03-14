@@ -481,7 +481,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
       if (30 == fType) {
         for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
           IDX = trackIndices[ii];
-          ID  = gHFEvent->getRecTrack(IDX)->fMCID;
+          ID  = gHFEvent->getSimpleTrackMCID(IDX);
           int mcidx   = gHFEvent->getSimpleTrack(IDX)->getGenIndex();
           int mcmoidx = gHFEvent->getGenCand(mcidx)->fMom1;
           int mcmoID  = gHFEvent->getGenCand(mcmoidx)->fID;
