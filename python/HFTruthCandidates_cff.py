@@ -170,8 +170,9 @@ truthBdToMuMuK0Dump = cms.EDAnalyzer(
     motherID     = cms.untracked.int32(511),
     type         = cms.untracked.int32(97),
     GenType      = cms.untracked.int32(-97),
-#    daughtersID  = cms.untracked.vint32(13, -13, 310, 211, 211)
-    daughtersID  = cms.untracked.vint32(13, -13, 311)
+#    daughtersID  = cms.untracked.vint32(13, -13, 311),
+    daughtersID  = cms.untracked.vint32(13, -13),
+    partialDecayMatching = cms.untracked.bool(True)
     )
     
 # ----------------------------------0000------------------------------------
@@ -181,7 +182,9 @@ truthBdToRhoPiDump = cms.EDAnalyzer(
     motherID     = cms.untracked.int32(511),
     type         = cms.untracked.int32(98),
     GenType      = cms.untracked.int32(-98),
-    daughtersID  = cms.untracked.vint32(113, 111)
+#    daughtersID  = cms.untracked.vint32(213, 211),
+    daughtersID  = cms.untracked.vint32(211, 211),
+    partialDecayMatching = cms.untracked.bool(True)
     )
 
 
