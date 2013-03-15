@@ -2,12 +2,12 @@
 #
 # Usage: cd chains/subdir; runAll -t tarfile [-h] [-r] [-d] [-l] [-C] [-s]
 # ------
-#            -d                           printout only, don't do anything
-#            -h                           hadd the output rootfiles
-#            -C                           run crashed jobs
-#            -s {mc,data,signal,norm,cs}  run jobs of a specific sample
-#            -r rootdir                   place where to put output 
-#            -l {mc, data}                place where to put the output 
+#            -d                                printout only, don't do anything
+#            -h                                hadd the output rootfiles
+#            -C                                run crashed jobs
+#            -s {mc,data,signal,norm,cs,rare}  run jobs of a specific sample
+#            -r rootdir                        place where to put output 
+#            -l {mc, data}                     place where to put the output 
 #
 # 2012/06/11 added rare backgrounds (again)
 # 2013/03/11 added the START53_V7C samples
