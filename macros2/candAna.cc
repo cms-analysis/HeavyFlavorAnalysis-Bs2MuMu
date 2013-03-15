@@ -351,8 +351,9 @@ void candAna::candAnalysis() {
   fpMuon1 = p1; 
   fpMuon2 = p2; 
   fMu1TrkLayer  = fpReader->numberOfTrackerLayers(p1);
-  fMu1Id        = tightMuon(p1); 
+  fMu1TmId      = tightMuon(p1); 
   fMu1MvaId     = mvaMuon(p1, fMu1BDT);        
+  fMu1Id        = fMu1TmId; 
   fMu1Pt        = p1->fRefPlab.Perp(); 
   fMu1Eta       = p1->fRefPlab.Eta(); 
   fMu1Phi       = p1->fRefPlab.Phi(); 
@@ -390,8 +391,9 @@ void candAna::candAnalysis() {
   //cout<<" check muon 2"<<endl;
   //  fMu2Id        = goodMuon(p2); 
   fMu2TrkLayer  = fpReader->numberOfTrackerLayers(p2);
-  fMu2Id        = tightMuon(p2); 
+  fMu2TmId      = tightMuon(p2); 
   fMu2MvaId     = mvaMuon(p2, fMu2BDT);        
+  fMu2Id        = fMu2TmId; 
   fMu2Pt        = p2->fRefPlab.Perp(); 
   fMu2Eta       = p2->fRefPlab.Eta(); 
   fMu2Phi       = p2->fRefPlab.Phi(); 
@@ -625,6 +627,8 @@ void candAna::candAnalysis() {
   fWideMass       = ((fpCand->fMass > MASSMIN) && (fpCand->fMass < MASSMAX)); 
 
   fGoodMuonsID    = (fMu1Id && fMu2Id);
+  fGoodMuonsTmID  = (fMu1TmId && fMu2TmId);
+  fGoodMuonsMvaID = (fMu1MvaId && fMu2MvaId); 
   fGoodMuonsPt    = ((fMu1Pt > MUPTLO) && (fMu1Pt < MUPTHI) && (fMu2Pt > MUPTLO) && (fMu2Pt < MUPTHI));
   fGoodMuonsEta   = ((fMu1Eta > MUETALO) && (fMu1Eta < MUETAHI) && (fMu2Eta > MUETALO) && (fMu2Eta < MUETAHI));
   fGoodTracks     = (highPurity(p1) && highPurity(p2));
@@ -1087,6 +1091,8 @@ void candAna::bookHist() {
   fEffTree->Branch("m1q",    &fETm1q,             "m1q/I");
   fEffTree->Branch("m1gt",   &fETm1gt,            "m1gt/O");
   fEffTree->Branch("m1id",   &fETm1id,            "m1id/O");
+  fEffTree->Branch("m1tmid", &fETm1tmid,          "m1tmid/O");
+  fEffTree->Branch("m1mvaid",&fETm1mvaid,         "m1mvaid/O");
 
   fEffTree->Branch("m2pt",   &fETm2pt,            "m2pt/F");
   fEffTree->Branch("g2pt",   &fETg2pt,            "g2pt/F");
@@ -1095,6 +1101,8 @@ void candAna::bookHist() {
   fEffTree->Branch("m2q",    &fETm2q,             "m2q/I");
   fEffTree->Branch("m2gt",   &fETm2gt,            "m2gt/O");
   fEffTree->Branch("m2id",   &fETm2id,            "m2id/O");
+  fEffTree->Branch("m2tmid", &fETm2tmid,          "m2tmid/O");
+  fEffTree->Branch("m2mvaid",&fETm2mvaid,         "m2mvaid/O");
 
   fEffTree->Branch("m",      &fETcandMass,        "m/F");
 
@@ -1127,6 +1135,8 @@ void candAna::setupReducedTree(TTree *t) {
 
   // -- global cuts and weights
   t->Branch("gmuid",   &fGoodMuonsID,       "gmuid/O");
+  t->Branch("gmutmid", &fGoodMuonsTmID,     "gmutmid/O");
+  t->Branch("gmumvaid",&fGoodMuonsMvaID,    "gmumvaid/O");
   t->Branch("gmupt",   &fGoodMuonsPt,       "gmupt/O");
   t->Branch("gmueta",  &fGoodMuonsEta,      "gmueta/O");
   t->Branch("gtqual",  &fGoodTracks,        "gtqual/O");
@@ -1184,6 +1194,8 @@ void candAna::setupReducedTree(TTree *t) {
   // -- muons
   t->Branch("m1q",     &fMu1Q,              "m1q/I");
   t->Branch("m1id",    &fMu1Id,             "m1id/O");
+  t->Branch("m1tmid",  &fMu1TmId,           "m1tmid/O");
+  t->Branch("m1mvaid", &fMu1MvaId,          "m1mvaid/O");
   t->Branch("m1pt",    &fMu1Pt,             "m1pt/D");
   t->Branch("m1eta",   &fMu1Eta,            "m1eta/D");
   t->Branch("m1phi",   &fMu1Phi,            "m1phi/D");
@@ -1196,6 +1208,8 @@ void candAna::setupReducedTree(TTree *t) {
   t->Branch("m1pv",    &fMu1PV,             "m1pv/I");
   t->Branch("m2q",     &fMu2Q,              "m2q/I");
   t->Branch("m2id",    &fMu2Id,             "m2id/O");
+  t->Branch("m2tmid",  &fMu2TmId,           "m2tmid/O");
+  t->Branch("m2mvaid", &fMu2MvaId,          "m2mvaid/O");
   t->Branch("m2pt",    &fMu2Pt,             "m2pt/D");
   t->Branch("m2eta",   &fMu2Eta,            "m2eta/D");
   t->Branch("m2phi",   &fMu2Phi,            "m2phi/D");

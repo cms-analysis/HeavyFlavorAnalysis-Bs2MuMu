@@ -7,7 +7,7 @@ struct RedTreeData {
   bool json, hlt, cb;
   double bdt, bdt2, pvw8;
 
-  bool gmuid, gmupt, gmueta, gtqual, gtpt, gteta;
+  bool gmuid, gmutmid, gmumvaid, gmupt, gmueta, gtqual, gtpt, gteta;
   double w8mu, w8tr;
 
   double pvlip, pvlips, pvlip2, pvlips2, pvip, pvips, pvip3d, pvips3d;
@@ -25,7 +25,7 @@ struct RedTreeData {
   double kpt, keta, kphi; 
   double k1pt, k1eta, k1phi, k2pt, k2eta, k2phi; 
 
-  bool m1id, m2id; 
+  bool m1id, m2id, m1tmid, m2tmid, m1mvaid, m2mvaid; 
   int m1gt, m2gt, k1gt, k2gt; 
   int m1pix, m1bpix, m1bpixl1, m1pv; 
   int m2pix, m2bpix, m2bpixl1, m2pv; 

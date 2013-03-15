@@ -454,11 +454,14 @@ void candAnaBs2JpsiPhi::efficiencyCalculation() {
 
   // -- reco level
   TSimpleTrack *prM1(0), *prM2(0), *prK1(0), *prK2(0); 
-  int m1Matched(0), m2Matched(0), k1Matched(0), k2Matched(0), m1ID(0), m2ID(0), m1GT(0), m2GT(0), k1GT(0), k2GT(0);
+  double bla(0); 
+  int m1Matched(0), m2Matched(0), k1Matched(0), k2Matched(0), m1ID(0), m1tmID(0), m1mvaID(0), m2ID(0), m2tmID(0), m2mvaID(0), 
+    m1GT(0), m2GT(0), k1GT(0), k2GT(0);
   if (fRecM1Tmi > -1) {
     m1Matched = 1; 
     prM1 = fpEvt->getSimpleTrack(fRecM1Tmi); 
-    if (tightMuon(prM1)) m1ID = 1; 
+    if (tightMuon(prM1)) m1tmID = 1; 
+    if (mvaMuon(prM1, bla)) m1mvaID = 1; 
     if (prM1->getHighPurity()) {
       m1GT = 1; 
     } else {
@@ -469,7 +472,8 @@ void candAnaBs2JpsiPhi::efficiencyCalculation() {
   if (fRecM2Tmi > -1) {
     m2Matched = 1; 
     prM2 = fpEvt->getSimpleTrack(fRecM2Tmi); 
-    if (tightMuon(prM2)) m2ID = 1; 
+    if (tightMuon(prM2)) m2tmID = 1; 
+    if (mvaMuon(prM2, bla)) m2mvaID = 1; 
     if (prM2->getHighPurity()) {
       m2GT = 1; 
     } else {
@@ -503,6 +507,9 @@ void candAnaBs2JpsiPhi::efficiencyCalculation() {
     pCand = fpEvt->getCand(fCandTmi);
   }
 
+  m1ID = m1tmID; 
+  m2ID = m2tmID; 
+
   // -- EffTree filling for all events with a signal decay
   fETgpt   = pB->fP.Perp(); 
   fETgeta  = pB->fP.Eta(); 
@@ -520,12 +527,16 @@ void candAnaBs2JpsiPhi::efficiencyCalculation() {
     fETm1q   = prM1->getCharge();
     fETm1gt  = (m1GT>0?true:false); 
     fETm1id  = (m1ID>0?true:false);
+    fETm1tmid  = (m1tmID>0?true:false);
+    fETm1mvaid = (m1mvaID>0?true:false);
   } else {
     fETm1pt  = -99.; 
     fETm1eta = -99.; 
     fETm1q   = -99;
     fETm1gt  = false; 
     fETm1id  = false;
+    fETm1tmid  = false;
+    fETm1mvaid = false;
   }
   if (m2Matched) {
     fETm2pt  = prM2->getP().Perp(); 
@@ -533,12 +544,16 @@ void candAnaBs2JpsiPhi::efficiencyCalculation() {
     fETm2q   = prM2->getCharge();
     fETm2gt  = (m2GT>0?true:false); 
     fETm2id  = (m2ID>0?true:false);
+    fETm2tmid  = (m2tmID>0?true:false);
+    fETm2mvaid = (m2mvaID>0?true:false);
   } else {
     fETm2pt  = -99.; 
     fETm2eta = -99.; 
     fETm2q   = -99;
     fETm2gt  = false; 
     fETm2id  = false;
+    fETm2tmid  = false;
+    fETm2mvaid = false;
   }
   if (k1Matched) {
     fETk1pt  = prK1->getP().Perp(); 
