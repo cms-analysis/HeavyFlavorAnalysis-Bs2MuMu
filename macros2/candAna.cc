@@ -81,11 +81,12 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     if (fVerbose > 29) cout << "candidate at " << iC << " which is of type " << pCand->fType << endl;
 
     if (TYPE != pCand->fType) {
-      if (fVerbose > 19) cout << "Skipping candidate at " << iC << " which is of type " << pCand->fType <<endl;
+      if (fVerbose > 19) cout << "  skipping candidate at " << iC << " which is of type " << pCand->fType <<endl;
       continue;
     }
 
-    //if(select_print) cout<<"--------------- candidate ------------------- "<<iC<<" "<<fEvt<<endl;
+    if (fVerbose > 29) 
+      cout<<"--------------- found candidate ------------------- " << iC << " type = " << pCand->fType << " evt = " << fEvt << endl;
 
     if (fVerbose > 10) {
       
@@ -322,11 +323,11 @@ void candAna::candAnalysis() {
   }
 
   // Special case for Dstar (prompt and from Bd)
-  if ( fpCand->fType == 54 || fpCand->fType == 300054 || fpCand->fType == 300031 ) {
+  if (fpCand->fType == 54 || fpCand->fType == 300054 || fpCand->fType == 300031) {
     return;
   }
 
-  if ( fpCand->fType == 300030 ) {  // Bd to D*
+  if (fpCand->fType == 3000030) {  // Bd to D*
     if (fpCand->fDau1 < 0 || fpCand->fDau1 > fpEvt->nCands()) return;
     TAnaCand *pD = fpEvt->getCand(fpCand->fDau1); 
     pD = fpEvt->getCand(pD->fDau1); 
@@ -349,9 +350,9 @@ void candAna::candAnalysis() {
 
   fpMuon1 = p1; 
   fpMuon2 = p2; 
-  //cout<<" check muon 1"<<endl;
   fMu1TrkLayer  = fpReader->numberOfTrackerLayers(p1);
   fMu1Id        = tightMuon(p1); 
+  fMu1MvaId     = mvaMuon(p1, fMu1BDT);        
   fMu1Pt        = p1->fRefPlab.Perp(); 
   fMu1Eta       = p1->fRefPlab.Eta(); 
   fMu1Phi       = p1->fRefPlab.Phi(); 
@@ -390,6 +391,7 @@ void candAna::candAnalysis() {
   //  fMu2Id        = goodMuon(p2); 
   fMu2TrkLayer  = fpReader->numberOfTrackerLayers(p2);
   fMu2Id        = tightMuon(p2); 
+  fMu2MvaId     = mvaMuon(p2, fMu2BDT);        
   fMu2Pt        = p2->fRefPlab.Perp(); 
   fMu2Eta       = p2->fRefPlab.Eta(); 
   fMu2Phi       = p2->fRefPlab.Phi(); 
@@ -403,6 +405,26 @@ void candAna::candAnalysis() {
   fMu2PV        = p2->fPvIdx;
   fMu2IP        = p2->fBsTip;
   fMu2IPE       = p2->fBsTipE;
+
+  if (fMu1Id) {
+    ((TH1D*)fHistDir->Get("tm_pt"))->Fill(fMu1Pt); 
+    ((TH1D*)fHistDir->Get("tm_eta"))->Fill(fMu1Eta); 
+  }
+
+  if (fMu2Id) {
+    ((TH1D*)fHistDir->Get("tm_pt"))->Fill(fMu2Pt); 
+    ((TH1D*)fHistDir->Get("tm_eta"))->Fill(fMu2Eta); 
+  }
+
+  if (fMu1MvaId) {
+    ((TH1D*)fHistDir->Get("bm_pt"))->Fill(fMu1Pt); 
+    ((TH1D*)fHistDir->Get("bm_eta"))->Fill(fMu1Eta); 
+  }
+
+  if (fMu2MvaId) {
+    ((TH1D*)fHistDir->Get("bm_pt"))->Fill(fMu2Pt); 
+    ((TH1D*)fHistDir->Get("bm_eta"))->Fill(fMu2Eta); 
+  }
 
   // -- cut on fMuIndex so that fake muons (from rare backgrounds) can be treated above as real muons
   if (p1->fMuIndex > -1 && p2->fMuIndex > -1) {
@@ -976,6 +998,13 @@ void candAna::bookHist() {
 
   TH1D *h11(0); 
   (void)h11; 
+  h11 = new TH1D("tm_pt", "tight muon pT", 50, 0., 25.); 
+  h11 = new TH1D("bm_pt", "BDT muon pT", 50, 0., 25.); 
+
+  h11 = new TH1D("tm_eta", "tight muon eta", 50, -2.5, 2.5); 
+  h11 = new TH1D("bm_eta", "BDT muon eta", 50, -2.5, 2.5); 
+
+
   h11 = new TH1D("L1_0", "hltL1sL1DoubleMu33HighQ", 50, -2.5, 2.5); 
   h11 = new TH1D("L1_1", "hltL1sL1DoubleMu0or33HighQ", 50, -2.5, 2.5); 
   h11 = new TH1D("L1_2", "hltDimuon33L1Filtered0", 50, -2.5, 2.5); 
@@ -1612,6 +1641,28 @@ void candAna::readCuts(string fileName, int dump) {
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: IP(#mu) :: %3.1f", CutName, MUIP));
     }
 
+    if (!strcmp(CutName, "MUBDTXML")) {
+      char xml[1000]; 
+      sscanf(buffer, "%s %s", CutName, xml);
+      string tl(xml); 
+      if (dump) {
+	cout << "MUBDTXML:       " << xml << endl; 
+      }
+      ibin = 207; 
+      hcuts->SetBinContent(ibin, 1);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: %s", CutName, xml));
+      fMvaMuonID = setupMuonMvaReader(string(xml), mrd); 
+    }
+    
+
+    if (!strcmp(CutName, "MUBDT")) {
+      MUBDT = CutValue; 
+      if (dump) cout << "MUBDT:           " << MUBDT << endl;
+      ibin = 208;
+      hcuts->SetBinContent(ibin, MUBDT);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: BDT(#mu) :: %3.1f", CutName, MUBDT));
+    }
+
 
     sscanf(buffer, "%s %s", CutName, XmlName);
     string ctmp = CutName; 
@@ -1732,30 +1783,101 @@ bool candAna::tightMuon(TAnaTrack *pT) {
 
 // ----------------------------------------------------------------------
 bool candAna::tightMuon(TSimpleTrack *pT) {
-
   if (HLTRANGE.begin()->first == "NOTRIGGER") {
-    //cout << "NOTRIGGER requested... " << endl;
     return true;
   }
-
   if (0 == pT->getMuonID()) {
     return false; 
   }
 
-  //cout<<" simple "<< pT->getMuonID()<<endl;
-
   TAnaMuon *pM(0); 
   int idx = pT->getIndex();
-  //cout<<idx<<endl;
   for (int i = 0; i < fpEvt->nMuons(); ++i) {
     pM = fpEvt->getMuon(i);
     if (idx == pM->fIndex) {
-      //cout<<i<<" "<<pM->fIndex<<endl;
       return tightMuon(pM); 
     }
   }
   return false; 
 }
+
+
+
+
+// ----------------------------------------------------------------------
+bool candAna::mvaMuon(TAnaMuon *pt, double &result) {
+  
+  if (!tightMuon(pt)) return false; 
+  // FIXME add trigger matching!
+
+
+  mrd.trkValidFract = pt->fItrkValidFraction; 
+  mrd.glbNChi2      = pt->fGtrkNormChi2; 
+  mrd.pt            = pt->fPlab.Perp(); 
+  mrd.eta           = pt->fPlab.Eta(); 
+  mrd.segComp       = pt->fSegmentComp; 
+  mrd.chi2LocMom    = pt->fChi2LocalMomentum;
+  mrd.chi2LocPos    = pt->fChi2LocalPosition;
+  mrd.glbTrackProb  = pt->fGtrkProb;
+  mrd.NTrkVHits     = static_cast<float>(pt->fNumberOfValidTrkHits);
+  mrd.NTrkEHitsOut  = static_cast<float>(pt->fNumberOfLostTrkHits);
+
+  result = fMvaMuonID->EvaluateMVA("BDT"); 
+  if (result > MUBDT) return true; 
+  return false; 
+}
+
+
+
+
+// ----------------------------------------------------------------------
+bool candAna::mvaMuon(TSimpleTrack *pt, double &result) {
+
+  if (HLTRANGE.begin()->first == "NOTRIGGER") {
+    return true;
+  }
+
+  if (0 == pt->getMuonID()) {
+    return false; 
+  }
+
+
+  TAnaMuon *pM(0); 
+  int idx = pt->getIndex();
+  for (int i = 0; i < fpEvt->nMuons(); ++i) {
+    pM = fpEvt->getMuon(i);
+    if (idx == pM->fIndex) {
+      return mvaMuon(pM, result); 
+    }
+  }
+  return false; 
+
+}
+
+
+// ----------------------------------------------------------------------
+bool candAna::mvaMuon(TAnaTrack *pt, double &result) {
+
+  if (HLTRANGE.begin()->first == "NOTRIGGER") {
+    return true;
+  }
+
+  if (0 == pt->fMuID) {
+    return false; 
+  }
+
+
+  int idx = pt->fMuIndex;
+  if (idx > -1 && idx < fpEvt->nMuons()) {
+    TAnaMuon *pM = fpEvt->getMuon(idx);
+    return mvaMuon(pM, result); 
+  } else {
+    cout << "muon index out of range!!!!!" << endl;
+  }
+  return false; 
+
+}
+
 
 
 // ----------------------------------------------------------------------
@@ -2287,6 +2409,27 @@ int candAna::detChan(double m1eta, double m2eta) {
   if (TMath::Abs(m1eta) < 1.4 && TMath::Abs(m2eta) < 1.4) return 0; 
   if (TMath::Abs(m1eta) < 2.4 && TMath::Abs(m2eta) < 2.4) return 1; 
   return -1; 
+}
+
+
+// ----------------------------------------------------------------------
+TMVA::Reader* candAna::setupMuonMvaReader(string xmlFile, mvaMuonIDData &d) {
+  TMVA::Reader *reader = new TMVA::Reader( "!Color:!Silent" );
+
+  reader->AddVariable("trkValidFract", &d.trkValidFract); 
+  reader->AddVariable("glbNChi2",      &d.glbNChi2);
+  reader->AddVariable("pt",            &d.pt);   
+  reader->AddVariable("eta",           &d.eta);         
+  reader->AddVariable("segComp",       &d.segComp);      
+  reader->AddVariable("chi2LocMom",    &d.chi2LocMom);   
+  reader->AddVariable("chi2LocPos",    &d.chi2LocPos); 
+  reader->AddVariable("glbTrackProb",  &d.glbTrackProb); 
+  reader->AddVariable("NTrkVHits",     &d.NTrkVHits);    
+  reader->AddVariable("NTrkEHitsOut",  &d.NTrkEHitsOut); 
+
+  string weightfile = "weights/TMVA-" + xmlFile + ".weights.xml"; 
+  reader->BookMVA("BDT", TString(weightfile.c_str())); 
+  return reader; 
 }
 
 

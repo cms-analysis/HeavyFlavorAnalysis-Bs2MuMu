@@ -29,6 +29,13 @@ struct readerData {
   float m;
 };
 
+struct mvaMuonIDData {
+  float trkValidFract, glbNChi2; 
+  float pt, eta; 
+  float segComp, chi2LocMom, chi2LocPos, glbTrackProb;
+  float NTrkVHits, NTrkEHitsOut;
+};
+
 class TTree; 
 class TDirectory; 
 
@@ -57,6 +64,7 @@ public:
   virtual void        replaceAll(std::string &s, std::string a, std::string b);
 
   virtual TMVA::Reader* setupReader(std::string xmlFile, readerData &rd);
+  virtual TMVA::Reader* setupMuonMvaReader(std::string xmlFile, mvaMuonIDData &rd);
   virtual void        calcBDT();
   virtual int         detChan(double m1eta, double m2eta);
     
@@ -73,6 +81,10 @@ public:
   virtual bool        highPurity(TAnaTrack *pt);
   virtual bool        tightMuon(TAnaTrack *pt);
   virtual bool        tightMuon(TSimpleTrack *pt);
+
+  virtual bool        mvaMuon(TAnaMuon *pt, double &result);
+  virtual bool        mvaMuon(TSimpleTrack *pt, double &result);
+  virtual bool        mvaMuon(TAnaTrack *pt, double &result);
 
   virtual std::string splitTrigRange(std::string tl, int &r1, int &r2);
 
@@ -125,6 +137,7 @@ public:
     , TRACKTIP, TRACKLIP
     , MUPTLO, MUPTHI
     , MUETALO, MUETAHI, MUIP
+    , MUBDT
     ;
   
   int BLIND, TYPE, SELMODE, MUIDMASK, MUIDRESULT, TRACKQUALITY, TRUTHCAND, IGNORETRIGGER;
@@ -151,12 +164,15 @@ public:
   double  fBDT; 
   readerData frd; 
 
+  TMVA::Reader *fMvaMuonID; 
+  mvaMuonIDData mrd; 
+  double  fMu1BDT, fMu2BDT; 
 
   // -- variables for reduced tree, they are from fpCand
   bool    fJSON, fCowboy;
   int     fCandTM, fCandType; 
   int     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fCandQ, fMu1PV, fMu2PV;
-  bool    fMu1Id, fMu2Id, fHLTmatch;  
+  bool    fMu1Id, fMu2Id, fHLTmatch, fMu1MvaId, fMu2MvaId;
   double  fMuDist, fMuDeltaR, fMu1Chi2, fMu2Chi2;
   double  fHltMu1Pt, fHltMu1Eta, fHltMu1Phi, fHltMu2Pt, fHltMu2Eta, fHltMu2Phi;
   double  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
