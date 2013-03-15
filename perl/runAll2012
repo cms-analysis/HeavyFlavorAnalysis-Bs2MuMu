@@ -1,14 +1,19 @@
 #!/usr/bin/env perl
 #
-# Usage: cd chains/subdir; runAll -t tarfile [-h] [-m] [-n] [-r] [-a] [-d]
+# Usage: cd chains/subdir; runAll -t tarfile [-h] [-r] [-d] [-l] [-C] [-s]
 # ------
 #            -d                           printout only, don't do anything
 #            -h                           hadd the output rootfiles
 #            -C                           run crashed jobs
 #            -s {mc,data,signal,norm,cs}  run jobs of a specific sample
-#            -r rootdir                   place where to put output
+#            -r rootdir                   place where to put output 
+#            -l {mc, data}                place where to put the output 
 #
 # 2012/06/11 added rare backgrounds (again)
+# 2013/03/11 added the START53_V7C samples
+#
+# Examples: runAll2012 -d -t ../../../../../130313runBmm2.tar.gz -l mc -s signal
+#           runAll2012 -d -h -l mc -s signal
 # ----------------------------------------------------------------------
 # Send all questions, wishes and complaints to the 
 #
@@ -45,7 +50,7 @@ if ($opt_r) {
 %jobs = (
     "signal Bs2MuMu MC mix"  
     => "-y 2012 -m,bmm2Reader.mix-Bs2MuMu,cbmm-mc-2012-v14-BsToMuMu_BsFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BsToMuMu.root"
-    "signal Bs2MuMu MC mix v7c"  
+    , "signal Bs2MuMu MC mix v7c"  
     => "-y 2012 -m,bmm2Reader.mix-Bs2MuMu,cbmm-mc-2012-v14-BsToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,$version-cms-BsToMuMu-v7c.root"
     , "signal Bs2MuMu MC acc"  
     => "-y 2012 -m,bmm2Reader.mix-Bs2MuMu,cbmm-mc-2012-v14-BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,$version-cms-accBsToMuMu.root"
@@ -122,13 +127,13 @@ if ($opt_r) {
     => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuPi0,cbmm-mc-2012-v14-BdToMuMuPi0_MuMuPi0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BdToMuMuPi0.root"
     , "rare Bd2MuMuPi0 MC v7c"  
     => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuPi0,cbmm-mc-2012-v14-BdToMuMuPi0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,$version-cms-BdToMuMuPi0-v7c.root"
-    , "rare Bd2MuMuK0 MC"  #? me nope
+    , "rare Bd2MuMuK0 MC" 
     => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuK0,cbmm-mc-2012-v14-BuToMuMuK0_MuMuK0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BdToMuMuK0.root"
-    , "rare Bd2MuMuK0 MC v7c"  #? me nope
+    , "rare Bd2MuMuK0 MC v7c"  
     => "-y 2012 -m,bmm2Reader.2e33-Bd2MuMuK0,cbmm-mc-2012-v14-BdToMuMuK0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,$version-cms-BdToMuMuK0-v7c.root"
-    , "rare BdToJpsiKstar MC"  #? nope
+    , "rare BdToJpsiKstar MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bd2JpsiKstar,cbmm-mc-2012-v14-BdToJpsiKstar_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,$version-cms-BdToJpsiKstar.root"
-    , "rare BdToRhoPi MC"  #? nope
+    , "rare BdToRhoPi MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bd2RhoPi,cbmm-mc-2012-v14-BdToRohPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,$version-cms-BdToRohPi.root"
 	#
     , "rare Bu2MuMuK MC"  
@@ -139,7 +144,7 @@ if ($opt_r) {
     => "-y 2012 -m,bmm2Reader.2e33-Bu2PiMuMu,cbmm-mc-2012-v14-BuToMuMuPi_MuMuPiEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*,$version-cms-BuToMuMuPi.root"
     , "rare Bu2MuMuPi MC v7c"  
     => "-y 2012 -m,bmm2Reader.2e33-Bu2PiMuMu,cbmm-mc-2012-v14-BuToMuMuPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,$version-cms-BuToMuMuPi-v7c.root"
-    , "rare BuToJpsiPi MC"  #?
+    , "rare BuToJpsiPi MC"  
     => "-y 2012 -m,bmm2Reader.2e33-Bu2JpsiPi,cbmm-mc-2012-v14-BuToJpsiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,$version-cms-BuToJpsiPi.root"
 	#
     , "rare Lb2PK MC"  
@@ -182,6 +187,9 @@ my $storage = "$srm/user/$user/$rootdir";
 #my $runCommand = "run $queue $crash -c ../../treeNoCompNoSE.csh -t $tarfile -m batch";
 #my $runCommand = "run $crash -c ../../treeNoComp.csh -t $tarfile -m batch";
 my $runCommand = "run $crash -c ../../treeNoCompSpecialRoot.csh -t $tarfile -m batch";
+if ($opt_d) {
+	$runCommand = "run -d $crash -c ../../treeNoCompSpecialRoot.csh -t $tarfile -m batch";
+}
 
 
 # ----------------------------------------------------------------------
@@ -215,7 +223,6 @@ if ($opt_h) {
 	if ($#rootfiles == 0) {
 	    @rootfiles = grep(s/.*$user\/$rootdir\///, @rootfiles); 
 	    if ($opt_d) {
-		print "===> In here!! \n";
 		print "$srmcmd $storage/$rootfiles[0] $storage/$output \n";
 		print "$srmcmd $storage/$rootfiles[0] file:///$scratch/$output \n";
 	    } else {
@@ -228,17 +235,19 @@ if ($opt_h) {
 	    @rootfiles = grep(s/.*\/trivcat/$dcap/, @rootfiles); 
 
 	    if ($opt_d) {
-		print "hadd $scratch/$output \n";
-		foreach $f (@rootfiles) {print "  $f\n";}
-		print "srmrm $storage/$class/$output \n";
-		#print "srmrm $storage/$class/$output \n";
-		print "$srmcmd file:///$scratch/$output $storage/$class/$output \n";
+			print "srmrm $storage/$class/$output \n";
+			print "hadd $scratch/$output @rootfiles\n";
+			#print "hadd $dcap/store/user/$user/$rootdir/$output @rootfiles\n";
+			foreach $f (@rootfiles) {print "  $f\n";}
+			print "srmls $storage/$class/$output \n";
+			print "$srmcmd file:///$scratch/$output $storage/$class/$output \n";
 	    } else {
-		print "hadd $scratch/$output @rootfiles\n";
-		if (-e "$scratch/$output") {unlink("$scratch/$output"); }
-		system("hadd $scratch/$output @rootfiles");
-		system("srmrm $storage/$class/$output");
-		system("$srmcmd file:///$scratch/$output $storage/$class/$output");
+			print "hadd $scratch/$output @rootfiles\n";
+			if (-e "$scratch/$output") {unlink("$scratch/$output"); }
+			system("hadd $scratch/$output @rootfiles");
+			system("srmrm $storage/$class/$output");
+			system("$srmcmd file:///$scratch/$output $storage/$class/$output");
+			#system("$srmcmd file:////scratch/lazo-flores/$output $storage/$class/$output");
 	    }
 	}
     }
@@ -268,8 +277,9 @@ foreach $j (keys %jobs) {
     }
 
     if ($opt_d) {
-	#print "$j \n$command\n";
-	print "$command\n";
+	#$command = "$runCommand -q all.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/$class' ./$dataset";
+	print "$command \n";
+	system($command);
     } else {
 	print "$command\n";
 	system($command);
