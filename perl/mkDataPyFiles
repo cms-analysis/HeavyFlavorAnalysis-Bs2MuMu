@@ -1,0 +1,52 @@
+#!/usr/bin/env perl
+
+# ----------------------------------------------------------------------
+# usage: 
+#         cd bmm-2013
+#         mkDataPyFiles -s MinimumBias
+#
+# ----------------------------------------------------------------------
+
+use Getopt::Std;
+getopts('cps:v:');
+
+if (!$opt_s) {
+    $opt_s = "MinimumBias";
+}
+
+if (!$opt_v) {
+    $opt_v = "v14";
+}
+
+
+# mkPyFiles -t ../hadronic-2012-XXXX.py -f ../../bmm-2013/HT__Run2012A-13Jul2012-v1__AOD -s v14-HT__Run2012A-13Jul2012-v1 -e 100000
+@epochs = ("Run2012A-13Jul2012-v1", 
+	   "Run2012A-recover-06Aug2012-v1", 
+	   "Run2012B-13Jul2012-v1", 
+	   "Run2012C-24Aug2012-v1", 
+	   "Run2012C-PromptReco-v2", 
+	   "Run2012D-PromptReco-v1"
+    ) ;
+
+# -- produce the catalogs files
+if ($opt_c) {
+    foreach $i (@epochs) {
+	print "==> $i\n";
+	$filename = "$opt_s"."__"."$i"."__AOD";
+	$dbsCmd = "dbs search --query='find file, file.numevents where dataset=/$opt_s/$i/AOD' > $filename"; 
+	print "$dbsCmd\n";
+	system("$dbsCmd");
+    }
+}
+
+# -- py files
+if ($opt_p) {
+    foreach $i (@epochs) {
+	print "==> $i\n";
+	$filename = "$opt_s"."__"."$i"."__AOD";
+	$prefix   = "$opt_v-$opt_s" . "__" . "$i"; 
+	$pyCmd = "mkPyFiles -t ../hadronic-2012-XXXX.py -f $filename -s $prefix -e 100000";
+	print "$pyCmd\n";
+	system("$pyCmd");
+    }
+}
