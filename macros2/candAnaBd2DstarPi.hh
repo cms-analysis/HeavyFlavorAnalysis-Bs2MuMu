@@ -45,7 +45,7 @@ public:
   double            fDeltaR, fMD0, fMDs, fDeltaM;
   bool              fGoodDeltaR, fGoodMD0, fGoodMDs, fGoodDeltaM;
 
-  double fPTD0, fPTPiS, fPTPi2, fPTPi, fPTKa;
+  double fPTDs, fPTD0, fPTPiS, fPTPiB, fPTPi, fPTKa;
 
 
 };

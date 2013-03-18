@@ -31,25 +31,62 @@ void candAnaBd2DstarPi::candAnalysis() {
   fGoodMD0 = fGoodDeltaM = fGoodMDs = false; 
   TLorentzVector ppi, ppipi, ppislow, pd0, pdstar; 
   if (fpCand->fDau1 < 0 || fpCand->fDau1 > fpEvt->nCands()) return;
+  //   cout << "----------------------------------------------------------------------" << endl;
+  //   cout << " fpCand = " << fpCand << " type = " << fpCand->fType << " mass = " << fpCand->fMass 
+  //        << " daus = " << fpCand->fDau1 << " .. " << fpCand->fDau2 << endl;
+  //   cout << "   sigs: " << fpCand->fSig1 << " .. " << fpCand->fSig2 << endl;
+  //   for (int i = fpCand->fSig1; i <= fpCand->fSig2; ++i) {
+  //     cout << "  sig: " << i << " " << fpEvt->getSigTrack(i)->fMCID 
+  // 	 << " pT: " << fpEvt->getSigTrack(i)->fPlab.Perp() 
+  // 	 << endl;
+  //   }
+
+  // -- the fast pion is at fSig1
+  fPTPiB = fpEvt->getSigTrack(fpCand->fSig1)->fPlab.Perp();
+
+  // -- get DSTAR (sub)cand
   pD = fpEvt->getCand(fpCand->fDau1); 
   if (0 == pD) return;
-  //   cout << "----------------------------------------------------------------------" << endl;
-  //   cout << " fpCand = " << fpCand << " type = " << fpCand->fType << " mass = " << fpCand->fMass << endl;
-  //   cout << " 1 pD   = " << pD << " type = " << pD->fType << " mass = " << pD->fMass << endl;
-  // -- get DSTAR (sub)cand
-
   if (pD->fType == DSTARTYPE) {
     fMDs =  pD->fMass;  
+    fPTDs = pD->fPlab.Perp();
+    // -- the slow pion is at fSig1
+    fPTPiS = fpEvt->getSigTrack(pD->fSig1)->fPlab.Perp();
   }
-  
+  //   cout << " 1 pD   = " << pD << " type = " << pD->fType << " mass = " << pD->fMass << " daus = " << pD->fDau1 << " .. " << pD->fDau2 << endl;
+  //   cout << "   sigs: " << pD->fSig1 << " .. " << pD->fSig2 << endl;
+  //   for (int i = pD->fSig1; i <= pD->fSig2; ++i) {
+  //     cout << "  sig: " << i << " " << fpEvt->getSigTrack(i)->fMCID 
+  // 	 << " pT: " << fpEvt->getSigTrack(i)->fPlab.Perp() 
+  // 	 << endl;
+  //   }
+
+ 
   // -- get D0 (sub)cand
   pD = fpEvt->getCand(pD->fDau1); 
-  //   cout << " 2 pD   = " << pD << " type = " << pD->fType << " mass = " << pD->fMass << endl;
+    //   cout << " 2 pD   = " << pD << " type = " << pD->fType << " mass = " << pD->fMass  << " daus = " << pD->fDau1 << " .. " << pD->fDau2 << endl;
+    //   cout << "   sigs: " << pD->fSig1 << " .. " << pD->fSig2 << endl;
+    //   for (int i = pD->fSig1; i <= pD->fSig2; ++i) {
+    //     cout << "  sig: " << i << " " << fpEvt->getSigTrack(i)->fMCID 
+    // 	 << " pT: " << fpEvt->getSigTrack(i)->fPlab.Perp() 
+    // 	 << endl;
+    //   }
+
   if (pD->fType == D0TYPE) {
     fMD0 = pD->fMass; 
     fPTD0 = pD->fPlab.Perp();
     if ((MD0LO < fMD0) && (fMD0 < MD0HI)) {
       fGoodMD0 = true;
+    }
+    // -- the two daughters: kaon and pion
+    for (int i = pD->fSig1; i <= pD->fSig2; ++i) {
+      TAnaTrack *pT = fpEvt->getSigTrack(i); 
+      if (TMath::Abs(pT->fMCID) == 321) {
+	fPTKa = pT->fPlab.Perp(); 
+      }
+      if (TMath::Abs(pT->fMCID) == 211) {
+	fPTPi = pT->fPlab.Perp(); 
+      }
     }
   }
 
@@ -71,16 +108,10 @@ void candAnaBd2DstarPi::candAnalysis() {
   if (fGoodDeltaM && fGoodMD0) ((TH1D*)fHistDir->Get("chmds"))->Fill(fMDs); 
   if (fGoodDeltaM && fGoodMD0) ((TH1D*)fHistDir->Get("chmb0"))->Fill(fCandM); 
 
-  //  fPTPiS, fPTPi2, fPTPi, fPTKa;
-
   candAna::candAnalysis();
   fCandTau   = fCandFL3d*MBPLUS/fCandP/TMath::Ccgs();
 
-  fPreselection = fWideMass && fGoodTracks && fGoodTracksPt && fGoodTracksEta && fGoodMuonsPt && fGoodMuonsEta; 
-  fPreselection = fPreselection && fGoodQ;
-  fPreselection = fPreselection && (fCandA < 0.2) && (fCandFLS3d > 2) && (fCandChi2/fCandDof < 5); 
   fPreselection = fPreselection && fGoodMD0 && fGoodDeltaM;
-  fPreselection = true;
   return;
 
 }
@@ -137,9 +168,10 @@ void candAnaBd2DstarPi::bookHist() {
 // ----------------------------------------------------------------------
 void candAnaBd2DstarPi::moreReducedTree(TTree *t) {
   // -- Additional reduced tree variables
+  t->Branch("ptds", &fPTDs, "ptds/D");
   t->Branch("ptd0", &fPTD0, "ptd0/D");
   t->Branch("ptpis", &fPTPiS, "ptpis/D");
-  t->Branch("ptpi2", &fPTPi2, "ptpi2/D");
+  t->Branch("ptpib", &fPTPiB, "ptpib/D");
   t->Branch("ptpi",  &fPTPi,  "ptpi/D");
   t->Branch("ptka",  &fPTKa,  "ptka/D");
   t->Branch("md0", &fMD0, "md0/D");

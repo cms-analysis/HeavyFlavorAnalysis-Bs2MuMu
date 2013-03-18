@@ -74,21 +74,25 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   if(!fIsMC && !fGoodHLT) {return;}  
 
   TAnaCand *pCand(0);
+  if (fVerbose == -66) { cout << "----------------------------------------------------------------------" << endl;}
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
     pCand = fpEvt->getCand(iC);
 
 
-    if (fVerbose > 29) cout << "candidate at " << iC << " which is of type " << pCand->fType << endl;
-
-    if (TYPE != pCand->fType) {
-      if (fVerbose > 19) cout << "  skipping candidate at " << iC << " which is of type " << pCand->fType <<endl;
+    if (fVerbose == -66) {
+      cout << Form("%4d", iC) << " cand -> " << pCand->fType << endl;
       continue;
     }
 
-    if (fVerbose > 29) 
+    if (TYPE != pCand->fType) {
+      if (fVerbose > 39) cout << "  skipping candidate at " << iC << " which is of type " << pCand->fType <<endl;
+      continue;
+    }
+
+    if (fVerbose > 19) 
       cout<<"--------------- found candidate ------------------- " << iC << " type = " << pCand->fType << " evt = " << fEvt << endl;
 
-    if (fVerbose > 10) {
+    if (fVerbose > 99) {
       
       int gen1(-1), gen2(-1), gen0(-1);
  
@@ -327,10 +331,12 @@ void candAna::candAnalysis() {
     return;
   }
 
-  if (fpCand->fType == 3000030) {  // Bd to D*
+  // -- Bd2DstarPi
+  if (fpCand->fType == 600030 || fpCand->fType == 3000030) {
     if (fpCand->fDau1 < 0 || fpCand->fDau1 > fpEvt->nCands()) return;
     TAnaCand *pD = fpEvt->getCand(fpCand->fDau1); 
     pD = fpEvt->getCand(pD->fDau1); 
+    // -- the pion and kaon of the D0 assume the "muon" roles (??)
     p1 = fpEvt->getSigTrack(pD->fSig1); 
     p2 = fpEvt->getSigTrack(pD->fSig2); 
   }
