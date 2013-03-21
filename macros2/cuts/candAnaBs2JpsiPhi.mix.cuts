@@ -1,16 +1,20 @@
 TYPE          3000067
 TRUTHCAND         531
-# old 2011 private MC samples
-TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v1_Bs1E33v1p3V13(1:99999999)
-TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v1_Bs1E33v2p3V1(1:99999999)
-TRIGRANGE    HLT_DoubleMu3p5_Jpsi_Displaced_v2_Bs2E33v1p2V4(1:99999999)
-# new 2011 private MC samples
-TRIGRANGE    HLT_DoubleMu3p5_Jpsi_Displaced_v2(1:99999999)
+#
+TRIGRANGE    HLT_DoubleMu3_Jpsi_v1(1:99999999)
+TRIGRANGE    HLT_DoubleMu3_Jpsi_v2(1:99999999)
+TRIGRANGE    HLT_Dimuon6p5_Jpsi_Displaced_v1(1:99999999)
 TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v1(1:99999999)
 TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v2(1:99999999)
+TRIGRANGE    HLT_Dimuon7_Jpsi_Displaced_v3(1:99999999)
+TRIGRANGE    HLT_DoubleMu3p5_Jpsi_Displaced_v2(1:99999999)
 TRIGRANGE    HLT_DoubleMu4_Jpsi_Displaced_v1(1:99999999)
-# 2012 DR53 MC samples
+TRIGRANGE    HLT_DoubleMu4_Jpsi_Displaced_v4(1:99999999)
+TRIGRANGE    HLT_DoubleMu4_Jpsi_Displaced_v5(1:99999999)
 TRIGRANGE    HLT_DoubleMu4_Jpsi_Displaced_v9(1:99999999)
+TRIGRANGE    HLT_DoubleMu4_Jpsi_Displaced_v10(1:99999999)
+TRIGRANGE    HLT_DoubleMu4_Jpsi_Displaced_v11(1:99999999)
+TRIGRANGE    HLT_DoubleMu4_Jpsi_Displaced_v12(1:99999999)
 # -- boxes
 +input cuts/boxes.Bs2JpsiPhi.cuts
 # -- tracks
