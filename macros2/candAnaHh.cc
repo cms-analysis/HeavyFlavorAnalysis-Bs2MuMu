@@ -494,8 +494,10 @@ void candAnaHh::hhAnalysis() {
     ((TH1D*)fHistDir->Get("status"))->Fill(20.);
     if(tm==1) ((TH1D*)fHistDir->Get("status"))->Fill(30.);
 
-    //                       dcaCut(cm) ptCut(GeV)         
-    int close = nCloseTracks(pCand,0.03, 0.5); // around Bd
+    pair<int, int> pclose; 
+    //                       dcaCut(cm) dcas ptCut(GeV)         
+    pclose = nCloseTracks(pCand,0.03, 2, 0.5); // around Bd
+    int close = pclose.first; 
     //                                      dca   R    Pt
     double iso = isoClassicWithDOCA(pCand, 0.05,0.7, 0.9); // arount Bd
 

@@ -535,8 +535,11 @@ void candAnaDstar::candAnalysis() {
   // Isolation 
   //                       dcaCut(cm) ptCut(GeV)         
   //int close1 = nCloseTracks(fpCand,0.03, 0.5); // around D*
-  int close2 = nCloseTracks(pC,    0.03, 0.5); // around D0
-  //                                      dca   R    Pt
+  pair<int, int> pclose; 
+  pclose = nCloseTracks(pC,    0.03, 2, 0.5); // around D0
+  int close2 = pclose.first; 
+  
+  //                                         dca   R    Pt
   //double iso1 = isoClassicWithDOCA(fpCand, 0.05,0.7, 0.9); // D*
   double iso2 = isoClassicWithDOCA(pC,     0.05,0.7, 0.9); // D0
   

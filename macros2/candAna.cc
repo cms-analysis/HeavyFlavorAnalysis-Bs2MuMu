@@ -8,6 +8,16 @@
 using namespace std;
 //bool select_print; //dk
 
+
+struct near_track_t {
+  int ix;
+  float doca;
+  float p;
+  float pt;
+  float pt_rel;
+  float deltaR;
+};
+
 // ----------------------------------------------------------------------
 candAna::candAna(bmm2Reader *pReader, string name, string cutsFile) {
   cout << "======================================================================" << endl;
@@ -287,10 +297,17 @@ void candAna::candAnalysis() {
   fCandPvLipS12 = fCandPvLipS/(fpCand->fPvLip2/fpCand->fPvLipE2);
 
   // -- 3d impact parameter wrt PV
-  fCandPvIp     = TMath::Sqrt(fCandPvLip*fCandPvLip + fCandPvTip*fCandPvTip); 
-  fCandPvIpE    = (fCandPvLip*fCandPvLip*fCandPvLipE*fCandPvLipE + fCandPvTip*fCandPvTip*fCandPvTipE*fCandPvTipE)/(fCandPvIp*fCandPvIp); 
-  fCandPvIpE    = TMath::Sqrt(fCandPvIpE); 
-  fCandPvIpS    = fCandPvIp/fCandPvIpE;
+  if (0) {
+    fCandPvIp     = TMath::Sqrt(fCandPvLip*fCandPvLip + fCandPvTip*fCandPvTip); 
+    fCandPvIpE    = (fCandPvLip*fCandPvLip*fCandPvLipE*fCandPvLipE + fCandPvTip*fCandPvTip*fCandPvTipE*fCandPvTipE)/(fCandPvIp*fCandPvIp); 
+    fCandPvIpE    = TMath::Sqrt(fCandPvIpE); 
+    fCandPvIpS    = fCandPvIp/fCandPvIpE;
+    if (TMath::IsNaN(fCandPvIpS)) fCandPvIpS = -1.;
+  }
+  // -- new version directly from CMSSSW and no longer patched...
+  fCandPvIp     = fpCand->fPvIP3d;
+  fCandPvIpE    = fpCand->fPvIP3dE;
+  fCandPvIpS    = fpCand->fPvIP3d/fpCand->fPvIP3dE;
   if (TMath::IsNaN(fCandPvIpS)) fCandPvIpS = -1.;
 
   fCandPvIp3D   = fpCand->fPvIP3d; 
@@ -299,6 +316,9 @@ void candAna::candAnalysis() {
   if (TMath::IsNaN(fCandPvIpS3D)) fCandPvIpS3D = -1.;
 
   fCandM2 = constrainedMass();
+
+  // -- new variables
+  fCandPvDeltaChi2 = fpCand->fDeltaChi2;
   
   TAnaTrack *p0; 
   TAnaTrack *p1(0);
@@ -375,9 +395,13 @@ void candAna::candAnalysis() {
   fMu1IPE       = p1->fBsTipE;
 
   if (p1->fMuIndex > -1) {
-    fMu1Chi2      = fpEvt->getMuon(p1->fMuIndex)->fMuonChi2;
+    TAnaMuon *pm = fpEvt->getMuon(p1->fMuIndex);
+    fMu1Chi2     = pm->fMuonChi2;
+    fMu1Iso      = isoMuon(fpCand, pm); 
+    fMu1VtxProb  = pm->fVtxProb;
   } else {
     fMu1Chi2 = -98.;
+    fMu1Iso  = -98.; 
   }
 
   if (fCandTM && fGenM1Tmi < 0) fpEvt->dump();
@@ -455,10 +479,17 @@ void candAna::candAnalysis() {
   }
 
   if (p2->fMuIndex > -1) {
-    fMu2Chi2      = fpEvt->getMuon(p2->fMuIndex)->fMuonChi2;
+    TAnaMuon *pm = fpEvt->getMuon(p2->fMuIndex);
+    fMu2Chi2      = pm->fMuonChi2;
+    fMu2Iso       = isoMuon(fpCand, pm); 
+    fMu2VtxProb   = pm->fVtxProb;
   } else {
     fMu2Chi2 = -98.;
+    fMu2Iso  = -98.; 
   }
+
+
+  xpDistMuons();    
 
   if ((TMath::Abs(fMu1Eta) < 1.4) && (TMath::Abs(fMu2Eta) < 1.4)) {
     fBarrel = true; 
@@ -549,7 +580,14 @@ void candAna::candAnalysis() {
   fCandIso      = iso; 
   fCandPvTrk    = fCandI0trk;
   fCandIsoTrk   = fCandI2trk;
-  fCandCloseTrk = nCloseTracks(fpCand, 0.03, 0.5);
+  pair<int, int> pclose; 
+  pclose = nCloseTracks(fpCand, 0.03, 1, 0.5);
+  fCandCloseTrk = pclose.first;
+  fCandCloseTrkS1 = pclose.second;   
+  pclose = nCloseTracks(fpCand, 0.03, 2, 0.5);
+  fCandCloseTrkS2 = pclose.second;   
+  pclose = nCloseTracks(fpCand, 0.03, 3, 0.5);
+  fCandCloseTrkS3 = pclose.second;   
 
   fCandChi2  = sv.fChi2;
   fCandDof   = sv.fNdof;
@@ -1191,6 +1229,12 @@ void candAna::setupReducedTree(TTree *t) {
   t->Branch("lipE",    &fCandPvLipE,        "lipE/D");
   t->Branch("tip",     &fCandPvTip,         "tip/D");
   t->Branch("tipE",    &fCandPvTipE,        "tipE/D");
+
+  t->Branch("pvdchi2",   &fCandPvDeltaChi2, "pvdchi2/D");
+  t->Branch("closetrks1", &fCandCloseTrkS1,   "closetrks1/I");
+  t->Branch("closetrks2", &fCandCloseTrkS2,   "closetrks2/I");
+  t->Branch("closetrks3", &fCandCloseTrkS3,   "closetrks3/I");
+
   t->Branch("osiso",   &fOsIso,             "osiso/D");
   t->Branch("osreliso",&fOsRelIso,          "osreliso/D");
   t->Branch("osmpt",   &fOsMuonPt,          "osmpt/D");
@@ -1212,6 +1256,10 @@ void candAna::setupReducedTree(TTree *t) {
   t->Branch("m1bpixl1",&fMu1BPixL1,         "m1bpixl1/I");
   t->Branch("m1chi2",  &fMu1Chi2,           "m1chi2/D");
   t->Branch("m1pv",    &fMu1PV,             "m1pv/I");
+  t->Branch("m1vtxprob",&fMu1VtxProb,       "m1vtxprob/D");
+  t->Branch("m1xpdist",&fMu1XpDist,         "m1xpdist/D");
+  t->Branch("m1iso",   &fMu1Iso,            "m1iso/D"); 
+  
   t->Branch("m2q",     &fMu2Q,              "m2q/I");
   t->Branch("m2id",    &fMu2Id,             "m2id/O");
   t->Branch("m2tmid",  &fMu2TmId,           "m2tmid/O");
@@ -1226,6 +1274,9 @@ void candAna::setupReducedTree(TTree *t) {
   t->Branch("m2bpixl1",&fMu2BPixL1,         "m2bpixl1/I");
   t->Branch("m2chi2",  &fMu2Chi2,           "m2chi2/D");
   t->Branch("m2pv",    &fMu2PV,             "m2pv/I");
+  t->Branch("m2vtxprob",&fMu2VtxProb,       "m2vtxprob/D");
+  t->Branch("m2xpdist",&fMu2XpDist,         "m2xpdist/D");
+  t->Branch("m2iso",   &fMu2Iso,            "m2iso/D"); 
 
   t->Branch("mudist",  &fMuDist,            "mudist/D");
   t->Branch("mudeltar",&fMuDeltaR,          "mudeltar/D");
@@ -1923,37 +1974,13 @@ string candAna::splitTrigRange(string tl, int &r1, int &r2) {
 
 
 // ----------------------------------------------------------------------
-int candAna::nCloseTracks(TAnaCand *pC, double dcaCut, double ptCut) {
-  int cnt(0); 
+pair<int, int> candAna::nCloseTracks(TAnaCand *pC, double dcaCut, double dcaCutS, double ptCut) {
+  int cnt(0), cnts(0); 
   int nsize = pC->fNstTracks.size(); 
   int pvIdx = pC->fPvIdx;
   int pvIdx2= nearestPV(pvIdx, 0.1);
   if (TMath::Abs(fCandPvLipS2) > 2) pvIdx2 = -1;
   
-  if (0) {
-    if (TMath::Abs(pC->fPvLip2) < 3 || TMath::Abs(pC->fPvLip2/pC->fPvLipE2) < 3) {
-      cout << "XXXXXXXX " << fEvt << " XXX this cand (" << pC->fType << ") from PVidx = " << pvIdx 
-	   << ") LIP: " << pC->fPvLip << " E = " << pC->fPvLipE 
-	   << " LIP2: " << pC->fPvLip2 << " 2E = " << pC->fPvLipE2 
-	   << endl;
-      if (pvIdx2 > -1) cout << "   z = " << fpEvt->getPV(pC->fPvIdx)->fPoint.Z() << " (" << fpEvt->getPV(pC->fPvIdx)->getNtracks() << ")"
-			    << " -> PV2 z = " << fpEvt->getPV(pvIdx2)->fPoint.Z() << " (" << fpEvt->getPV(pvIdx2)->getNtracks() << ")" 
-			    << " cand z = " << pC->fVtx.fPoint.Z()
-			    << endl;
-      cout << " muon 1 pT = " << fpMuon1->fPlab.Perp() << " from " << fpMuon1->fPvIdx << " IPz = " << fpMuon1->fLip << "+/-" << fpMuon1->fLipE 
-	   << " IPt = " << fpMuon1->fTip << "+/-" << fpMuon1->fTipE 
-	   << " IPbsl = " << fpMuon1->fBsLip << "+/-" << fpMuon1->fBsLipE 
-	   << " IPbst = " << fpMuon1->fBsTip << "+/-" << fpMuon1->fBsTipE 
-	   << endl;
-      
-      cout << " muon 2 pT = " << fpMuon2->fPlab.Perp() << " from " << fpMuon2->fPvIdx << " IPz = " << fpMuon2->fLip << "+/-" << fpMuon2->fLipE 
-	   << " IP = " << fpMuon2->fTip << "+/-" << fpMuon2->fTipE 
-	   << " IPbsl = " << fpMuon2->fBsLip << "+/-" << fpMuon2->fBsLipE 
-	   << " IPbst = " << fpMuon2->fBsTip << "+/-" << fpMuon2->fBsTipE 
-	   << endl;
-    }
-  }
-
   TSimpleTrack *pT; 
   double pt(0.); 
   if (nsize > 0) {
@@ -1973,7 +2000,26 @@ int candAna::nCloseTracks(TAnaCand *pC, double dcaCut, double ptCut) {
       ++cnt;
     }
   }
-  return cnt;
+
+  if (nsize > 0) {
+    for (int i = 0; i<nsize; ++i) {
+      int trkId = pC->fNstTracks[i].first;
+      double docas = pC->fNstTracks[i].second.first/pC->fNstTracks[i].second.second;
+      
+      if (docas > dcaCutS) continue; // check the doca cut
+      
+      pT = fpEvt->getSimpleTrack(trkId);
+      // -- check that any track associated with a definitive vertex is from the same or the closest (compatible) other PV
+      if ((pT->getPvIndex() > -1) && (pT->getPvIndex() != pvIdx)) continue;
+      
+      pt = pT->getP().Perp();  
+      if (pt < ptCut) continue;
+      
+      ++cnts;
+    }
+  }
+
+  return make_pair(cnt, cnts);
 }
 
 
@@ -2223,6 +2269,102 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
 
   return iso; 
 }
+
+
+// ----------------------------------------------------------------------
+void candAna::xpDistMuons() {
+
+  fMu1XpDist = -99.;
+  fMu2XpDist = -99.;
+
+  if (fpMuon1->fMuIndex < 0) return;
+  if (fpMuon2->fMuIndex < 0) return;
+
+  TAnaMuon *m1 = fpEvt->getMuon(fpMuon1->fMuIndex); 
+  TAnaMuon *m2 = fpEvt->getMuon(fpMuon2->fMuIndex); 
+
+  int m1Idx = m1->fIndex;
+  int m2Idx = m2->fIndex;
+
+  int xp1t0 = m1->fXpTracks[0].idx;
+  int xp2t0 = m2->fXpTracks[0].idx;
+
+  if (xp1t0 != m2Idx) {
+    fMu1XpDist = m1->fXpTracks[0].dist; 
+  } else {
+    fMu1XpDist = m1->fXpTracks[1].dist; 
+  }
+
+  if (xp2t0 != m1Idx) {
+    fMu2XpDist = m2->fXpTracks[0].dist; 
+  } else {
+    fMu2XpDist = m2->fXpTracks[1].dist; 
+  }
+}
+
+
+
+// ----------------------------------------------------------------------
+double candAna::isoMuon(TAnaCand *pCand, TAnaMuon *pMuon) {
+
+  TSimpleTrack *sTrack;
+  std::vector<near_track_t> nearTracks;
+  std::map<int,float>::const_iterator it;
+  std::map<int,int> cand_tracks;
+  near_track_t nt;
+  size_t k;
+	
+  // get the candidate structure
+  findAllTrackIndices(pCand, &cand_tracks);
+	
+  TVector3 plabMu = pMuon->fPlab;
+  for (it = pMuon->fNstTracks.begin(); it != pMuon->fNstTracks.end(); ++it) {
+    
+    // no tracks from candidate...
+    if (cand_tracks.count(it->first) > 0)
+      continue;
+    
+    sTrack = fpEvt->getSimpleTrack(it->first);
+    
+    // no tracks from foreign primary vertex
+    if (sTrack->getPvIndex() >= 0 && sTrack->getPvIndex() != pCand->fPvIdx)
+      continue;
+    
+    nt.ix = it->first;
+    nt.doca = it->second;
+    nt.p = sTrack->getP().Mag();
+    nt.pt = sTrack->getP().Perp();
+    TVector3 recTrack = sTrack->getP();
+    nt.pt_rel = (recTrack - (recTrack * plabMu) * plabMu).Mag() / plabMu.Mag2();
+    nt.deltaR = plabMu.DeltaR(recTrack);
+    nearTracks.push_back(nt);
+  }
+	
+  // compute isolation variable
+  double result = 0;
+  for (k = 0; k < nearTracks.size(); k++) {
+    if (nearTracks[k].deltaR < 0.5 && nearTracks[k].pt > 0.5 && nearTracks[k].doca < 0.1) // 1 mm
+      result += nearTracks[k].p;
+  }
+  result = plabMu.Mag()/(plabMu.Mag() + result);
+  
+  return result;
+}
+
+
+// ----------------------------------------------------------------------
+void candAna::findAllTrackIndices(TAnaCand* pCand, map<int,int> *indices) {
+  int j;
+	
+  // iterate through all own tracks. has to be done first, so the duplicate signal tracks
+  // won't be added in the daughter anymore
+  for (j = pCand->fSig1; j <= pCand->fSig2 && j>=0; j++)
+    indices->insert(make_pair(fpEvt->getSigTrack(j)->fIndex,j));
+	
+  for (j = pCand->fDau1; j <= pCand->fDau2 && j>=0; j++)
+    findAllTrackIndices(fpEvt->getCand(j),indices);
+}
+
  
 // ----------------------------------------------------------------------
 double candAna::constrainedMass() {

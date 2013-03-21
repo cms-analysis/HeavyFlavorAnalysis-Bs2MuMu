@@ -89,7 +89,10 @@ public:
   virtual std::string splitTrigRange(std::string tl, int &r1, int &r2);
 
   virtual double      isoClassicWithDOCA(TAnaCand*, double dca, double r = 0.7, double ptmin = 0.9); 
-  virtual int         nCloseTracks(TAnaCand*, double dca, double pt = 0.5); 
+  virtual std::pair<int, int> nCloseTracks(TAnaCand*, double dca, double dcaS, double pt = 0.5); 
+  virtual double      isoMuon(TAnaCand *, TAnaMuon *); 
+  virtual void        xpDistMuons(); 
+  virtual void        findAllTrackIndices(TAnaCand* pCand, std::map<int,int> *indices);
 
   virtual TAnaCand*   osCand(TAnaCand *pC);
   virtual double      osIsolation(TAnaCand *pC, double r = 1.0, double ptmin = 0.9); 
@@ -180,6 +183,10 @@ public:
   double  fMu1PtNrf, fMu2PtNrf, fMu1EtaNrf, fMu2EtaNrf; // "now refitted"
   int     fMu1TrkLayer, fMu1Pix, fMu1BPix, fMu1BPixL1, fMu2TrkLayer, fMu2Pix, fMu2BPix, fMu2BPixL1;
   double  fMu1W8Mu, fMu1W8Tr, fMu2W8Mu, fMu2W8Tr; 
+  double  fMu1Iso, fMu2Iso; 
+  double  fMu1VtxProb, fMu2VtxProb;
+  bool    fMu1OtherVtx, fMu2OtherVtx;
+  double  fMu1XpDist, fMu2XpDist;
   double  fPvX, fPvY, fPvZ, fPvNtrk, fPvNdof, fPvAveW8; 
   int     fPvN;
   double  fCandPt, fCandP, fCandTau, fCandEta, fCandPhi, fCandM, fCandME, fCandM2, fCandW8Tr, fCandW8Mu; 
@@ -187,11 +194,13 @@ public:
   double  fCandChi2, fCandDof, fCandProb, fCandFL3d, fCandFL3dE, fCandFLS3d, fCandFLxy, fCandFLSxy, fCandDoca; 
   double  f2MChi2,   f2MDof,   f2MProb,   f2MFL3d,   f2MFL3dE,   f2MFLS3d,   f2MFLSxy; 
   double  fCandIso;
-  int     fCandIsoTrk, fCandCloseTrk, fCandPvTrk, fCandI0trk, fCandI1trk, fCandI2trk; 
+  int     fCandIsoTrk, fCandCloseTrk, fCandCloseTrkS1, fCandCloseTrkS2, fCandCloseTrkS3, fCandPvTrk, fCandI0trk, fCandI1trk, fCandI2trk; 
   double  fCandDocaTrk, fCandDocaTrkBdt, fMu1IP, fMu1IPE, fMu2IP, fMu2IPE; 
   double  fCandPvTip, fCandPvTipE, fCandPvTipS, fCandPvLip, fCandPvLipE, fCandPvLipS, fCandPvIp, fCandPvIpE, fCandPvIpS;
   double  fCandPvIp3D, fCandPvIpE3D, fCandPvIpS3D; 
   double  fCandPvLip2, fCandPvLipS2, fCandPvLip12, fCandPvLipE12, fCandPvLipS12; 
+  double  fCandPvDeltaChi2; 
+  double  fCandOtherVtx; 
 
   double  fOsMuonPt, fOsMuonPtRel, fOsIso, fOsRelIso, fOsMuonDeltaR;
 
