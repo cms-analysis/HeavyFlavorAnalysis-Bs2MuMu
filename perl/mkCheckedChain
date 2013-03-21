@@ -1,7 +1,9 @@
 #!/usr/bin/env perl
 
 # ----------------------------------------------------------------------
-# mkCheckedChain [-t T1] chainfile1 [chainfile*]
+# mkCheckedChain [-c] [-t T1] chainfile1 [chainfile*]
+#
+# -c checks the checked chain
 #
 # Given a chainfile1 this script will produce cchainfile1 which contains 
 # on each line the "filename" and the number of events in the rootfile with "filename"
@@ -10,7 +12,7 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('t:');
+getopts('ct:');
 
 if (!$opt_t) {
     $opt_t = "T1";
@@ -22,7 +24,13 @@ if (!-e "checkChain.C") {
 
 foreach $file (@ARGV) {
     print "$file\n";
-    system(" $ENV{ROOTSYS}/bin/root -n -l -b -q 'checkChain.C(\"$file\", \"$opt_t\")' ");
+    if ($opt_c) {
+	
+	
+	
+    } else {
+	system(" $ENV{ROOTSYS}/bin/root -n -l -b -q 'checkChain.C(\"$file\", \"$opt_t\")' ");
+    }
 }
 
 
@@ -47,7 +55,7 @@ void checkChain(const char *chain, const char *tree) {
 
   ifstream is(chain);  
 
-  while (is.getline(buffer, 2000, '\n')) {
+  while (is.getline(buffer, 2000, '\\n')) {
     nentries = -1; 
     sscanf(buffer, "%s", meta); 
     f = 0;

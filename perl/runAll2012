@@ -2,6 +2,7 @@
 #
 # Usage: cd chains/subdir; runAll2012 -t tarfile [-h] [-r v14/bmm/2012/test] [-d] [-l] [-C] [-s]
 # ------
+#            -a                                split checked chains (why a? because this is how you have to start)
 #            -d                                printout only, don't do anything
 #            -h                                hadd the output rootfiles
 #            -m                                copy merged files from SE to local scratch area
@@ -37,6 +38,7 @@ getopts('aCdhj:m:r:s:t:v:');
 # -- no input needed from this script ...
 if ($opt_a) {
     &callA;
+    die "done with splitting of checked chains\n";
 }
 
 my $job = "2012";
@@ -181,7 +183,8 @@ $version-2012-cms-BsToPiPi.root"
     => "-y 2012 -m,
 bmm2Reader.2e33-Bd2KK,
  cbmm-mc-2012-v14-BdToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*
- cbmm-mc-2012-v14-BdToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,
+ cbmm-mc-2012-v14-BdToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*
+ cbmm-mc-2012-v14-BdToKK_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,
 $version-2012-cms-BdToKK.root"
     , "rareMC Bd2KPi"  	
     => "-y 2012 -m,
@@ -190,18 +193,19 @@ bmm2Reader.2e33-Bd2KPi,
  cbmm-mc-2012-v14-BdToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-* 
  cbmm-mc-2012-v14-BdToKPi_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,
 $version-2012-cms-BdToKPi.root"
+    , "rareMC Bd2PiPi"  
+    => "-y 2012 -m,
+bmm2Reader.2e33-Bd2PiPi,
+ cbmm-mc-2012-v14-BdToPiPi_2PiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2-* 
+ cbmm-mc-2012-v14-BdToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*
+ cbmm-mc-2012-v14-BdToPiPi_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,
+$version-2012-cms-BdToPiPi.root"
     , "slMC Bd2PiMuNu"  
     => "-y 2012 -m,
 bmm2Reader.2e33-Bd2PiMuNu,
  cbmm-mc-2012-v14-BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*
  cbmm-mc-2012-v14-BdToPiMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,
 $version-2012-cms-BdToPiMuNu.root"
-    , "rareMC Bd2PiPi"  
-    => "-y 2012 -m,
-bmm2Reader.2e33-Bd2PiPi,
- cbmm-mc-2012-v14-BdToPiPi_2PiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2-* 
- cbmm-mc-2012-v14-BdToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,
-$version-2012-cms-BdToPiPi.root"
     , "rareMC Bd2MuMuGamma"  
     => "-y 2012 -m,
 bmm2Reader.2e33-Bd2MuMuGamma,
@@ -255,7 +259,8 @@ $version-2012-cms-LambdaBToPK.root"
     => "-y 2012 -m,
 bmm2Reader.2e33-Lb2PiP,
  cbmm-mc-2012-v14-LambdaBToPPi_PPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*
- cbmm-mc-2012-v14-LambdaBToPPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,
+ cbmm-mc-2012-v14-LambdaBToPPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*
+ cbmm-mc-2012-v14-LambdaBToPPi_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,
 $version-2012-cms-LambdaBToPPi.root"
     , "slMC Lb2PMuNu"  
     => "-y 2012 -m,
@@ -388,8 +393,11 @@ sub callH() {
 # ----------------------------------------------------------------------
 sub callA() {
 
-    my $datasplit = 350000; 
-    my $mcsplit   = 700000; 
+#    my $datasplit = 350000; 
+#    my $mcsplit   = 700000; 
+
+    my $datasplit = 500000; 
+    my $mcsplit   = 800000; 
     
     @data = (
 	"splitCheckedChain -n $datasplit ../cbmm-2012-v14-MuOnia__Run2012A-13Jul2012-v1", 
@@ -404,36 +412,43 @@ sub callA() {
     
     
     @signal = (
-	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToMuMu_BsFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
+#this is useless "splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToMuMu_BsFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToMuMu_BdFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"
 	);
     
     @normalization = (
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BuToJPsiK_K2MuFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
-	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BuToJPsiK_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
+	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"
 	); 
     
     @controlsample = (
-	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToJPsiPhi_2K2MuFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToJPsiPhi_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
+	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToJPsiPhi_2K2MuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToJPsiPhi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"
 	); 
     
     @rareBs = (
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToKMuNu_KMuNuEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToKMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToPiPi_2PiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BsToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"
 	);
@@ -441,29 +456,42 @@ sub callA() {
     @rareBd = (
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToKK_2KPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToKK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToKK_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToKPi_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
-	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
-	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToPiMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToPiPi_2PiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToPiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToPiPi_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
+	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
+	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToPiMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToMuMuPi0_MuMuPi0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToMuMuPi0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToMuMuK0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BuToMuMuK0_MuMuK0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToJpsiKstar_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToRohPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BdToD0starPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"
 	);
     
     @rareBu = (
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BuToJpsiPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BuToMuMuK_MuMuKEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BuToMuMuK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BuToMuMuK_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BuToMuMuPi_MuMuPiEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-BuToMuMuPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"
 	); 
@@ -471,10 +499,13 @@ sub callA() {
     @rareLb = (
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-LambdaBToPK_PKPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2",
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-LambdaBToPK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-LambdaBToPPi_PPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
+	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-LambdaBToPPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-LambdaBToPPi_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
+
 	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-LambdaBToPMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
-	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
-	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-LambdaBToPPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"
+	"splitCheckedChain -n $mcsplit ../cbmm-mc-2012-v14-LambdaBToPMuNu_PMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1"
 	);
 
     foreach $c (@data, @signal, @normalization, @controlsample, @rareBs, @rareBd, @rareBu, @rareLb) {

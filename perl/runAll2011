@@ -2,6 +2,7 @@
 #
 # Usage: cd chains/subdir; runAll2011 -t tarfile [-h] [-r v14/bmm/2011/test] [-d] [-l] [-C] [-s]
 # ------
+#            -a                                split checked chains (why a? because this is how you have to start)
 #            -d                                printout only, don't do anything
 #            -h                                hadd the output rootfiles
 #            -m                                copy merged files from SE to local scratch area
@@ -36,6 +37,7 @@ getopts('aCdhj:m:r:s:t:v:');
 # -- no input needed from this script ...
 if ($opt_a) {
     &callA;
+    die "done with splitting of checked chains\n";
 }
 
 my $job = "2011";
@@ -175,9 +177,9 @@ foreach $j (keys %jobs) {
     ($options, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
     if ($opt_s && !($j =~ /$opt_s/)) {next;}
     if ($j =~ /data/) {
-	$command = "$runCommand -q all.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/data' $dataset"; 
+	$command = "$runCommand -q short.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/data' $dataset"; 
     } else {
-	$command = "$runCommand -q all.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/mc' $dataset"; 
+	$command = "$runCommand -q short.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/mc' $dataset"; 
     }
 
     if ($opt_d) {
@@ -272,8 +274,11 @@ sub callH() {
 # ----------------------------------------------------------------------
 sub callA() {
 
-    my $datasplit = 350000; 
-    my $mcsplit   = 700000; 
+#    my $datasplit = 350000; 
+#    my $mcsplit   = 700000; 
+
+    my $datasplit = 500000; 
+    my $mcsplit   = 800000; 
     
     @data = (
 	"splitCheckedChain -n $datasplit ../cbmm-2011-v14-MuOnia__Run2011A-08Nov2011-v1", 
