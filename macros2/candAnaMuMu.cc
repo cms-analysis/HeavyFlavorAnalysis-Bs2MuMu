@@ -38,8 +38,23 @@ void candAnaMuMu::genMatch() {
   fNGenPhotons = 0; 
 
   int id1(13), id2(13); 
-  if (1000095 == TYPE) {id1 = 211; id2 = 13;}
+
+  // -- modifications for rare backgrounds
+  if (1000082 == TYPE) {id1 = 321; id2 = 321;}
+  if (1000083 == TYPE) {id1 = 321; id2 = 211;}
+  if (1000084 == TYPE) {id1 = 211; id2 = 211;}
+  if (1000085 == TYPE) {id1 = 211; id2 = 13;}
   if (1000086 == TYPE) {id1 = 321; id2 = 13;}
+
+  if (1000091 == TYPE) {id1 = 211; id2 = 211;}
+  if (1000092 == TYPE) {id1 = 321; id2 = 211;}
+  if (1000093 == TYPE) {id1 = 321; id2 = 321;}
+  if (1000095 == TYPE) {id1 = 211; id2 = 13;}
+  if (1000098 == TYPE) {id1 = 211; id2 = 211;}
+
+  if (1000060 == TYPE) {id1 = 2212; id2 = 211;}
+  if (1000061 == TYPE) {id1 = 2212; id2 = 321;}
+  if (1000062 == TYPE) {id1 = 2212; id2 = 13;}
 
   TGenCand *pC(0), *pM1(0), *pM2(0), *pB(0); 
   bool goodMatch(false); 
