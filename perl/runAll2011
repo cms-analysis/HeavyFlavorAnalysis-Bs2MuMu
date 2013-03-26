@@ -32,7 +32,7 @@ use lib '/shome/ursl/perl/modules/Tie-IxHash-1.23/lib';
 use Tie::IxHash;
 
 use Getopt::Std;
-getopts('aCdhj:m:r:s:t:v:');
+getopts('aCdhj:m:q:r:s:t:v:');
 
 # -- no input needed from this script ...
 if ($opt_a) {
@@ -54,6 +54,11 @@ if ($opt_v) {
 my $rootdir = "$version/bmm/$job"; 
 if ($opt_r) {
     $rootdir = $opt_r; 
+}
+
+my $queue = "short.q"; 
+if ($opt_q) {
+    $queue = $opt_q; 
 }
 
 
@@ -177,9 +182,9 @@ foreach $j (keys %jobs) {
     ($options, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
     if ($opt_s && !($j =~ /$opt_s/)) {next;}
     if ($j =~ /data/) {
-	$command = "$runCommand -q short.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/data' $dataset"; 
+	$command = "$runCommand -q $queue -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/data' $dataset"; 
     } else {
-	$command = "$runCommand -q short.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/mc' $dataset"; 
+	$command = "$runCommand -q $queue -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/mc' $dataset"; 
     }
 
     if ($opt_d) {
@@ -277,8 +282,8 @@ sub callA() {
 #    my $datasplit = 350000; 
 #    my $mcsplit   = 700000; 
 
-    my $datasplit = 500000; 
-    my $mcsplit   = 800000; 
+    my $datasplit = 400000; 
+    my $mcsplit   = 500000; 
     
     @data = (
 	"splitCheckedChain -n $datasplit ../cbmm-2011-v14-MuOnia__Run2011A-08Nov2011-v1", 
@@ -315,7 +320,7 @@ sub callA() {
 	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bd2PiPi",
 	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bd2RhoPi",
 	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bd2DstarPi", 
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-mix-accBd2PiMuNu"
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-accBd2PiMuNu" 
 	);
     
     @rareBu = (

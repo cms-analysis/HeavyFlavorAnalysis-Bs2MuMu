@@ -19,6 +19,7 @@
 #            combine V7A and V7C
 #            -m to mirror reduced trees onto local scratch disk
 #            remove -l and fix data output into data and mc output into mc
+# 2013/03/25 added opt_q, changed chunk size
 #
 # Examples: runAll2012 -d -t ../../../../../130313runBmm2.tar.gz -s signal
 #           runAll2012 -d -h -s signal
@@ -33,7 +34,7 @@ use lib '/shome/ursl/perl/modules/Tie-IxHash-1.23/lib';
 use Tie::IxHash;
 
 use Getopt::Std;
-getopts('aCdhj:m:r:s:t:v:');
+getopts('aCdhj:m:q:r:s:t:v:');
 
 # -- no input needed from this script ...
 if ($opt_a) {
@@ -55,6 +56,11 @@ if ($opt_v) {
 my $rootdir = "$version/bmm/$job"; 
 if ($opt_r) {
     $rootdir = $opt_r; 
+}
+
+my $queue = "short.q"; 
+if ($opt_q) {
+    $queue = $opt_q; 
 }
 
 
@@ -297,9 +303,9 @@ foreach $j (keys %jobs) {
     ($options, $cutfile, $dataset, $output) = split(/,/, $jobs{$j});
     if ($opt_s && !($j =~ /$opt_s/)) {next;}
     if ($j =~ /data/) {
-	$command = "$runCommand -q all.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/data' $dataset"; 
+	$command = "$runCommand -q $queue -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/data' $dataset"; 
     } else {
-	$command = "$runCommand -q all.q -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/mc' $dataset"; 
+	$command = "$runCommand -q $queue -x 'bin/runBmm2 $options -C cuts/$cutfile' -r 'STORAGE1 $storage/mc' $dataset"; 
     }
 
     if ($opt_d) {
@@ -396,8 +402,8 @@ sub callA() {
 #    my $datasplit = 350000; 
 #    my $mcsplit   = 700000; 
 
-    my $datasplit = 500000; 
-    my $mcsplit   = 800000; 
+    my $datasplit = 400000; 
+    my $mcsplit   = 500000; 
     
     @data = (
 	"splitCheckedChain -n $datasplit ../cbmm-2012-v14-MuOnia__Run2012A-13Jul2012-v1", 
