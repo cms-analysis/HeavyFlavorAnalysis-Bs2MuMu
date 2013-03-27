@@ -14,8 +14,8 @@ struct RedTreeData {
 
   int q, type;
   double pt, eta, phi, tau, m, me, cm, cosa, alpha, iso;
-  int isotrk, closetrk; 
-  double chi2, dof, pchi2dof, fls3d, fl3d, flxy, fl3dE, flsxy, docatrk, docatrkbdt, maxdoca, lip, lipE, tip, tipE;
+  int isotrk, closetrk, closetrks1, closetrks2, closetrks3; 
+  double chi2, dof, chi2dof, pchi2dof, fls3d, fl3d, flxy, fl3dE, flsxy, docatrk, docatrkbdt, maxdoca, lip, lipE, tip, tipE;
   
   double osiso, osreliso, osmpt, osmptrel, osmdr; 
 
@@ -40,7 +40,7 @@ struct RedTreeData {
 
   double hm1pt, hm1eta, hm1phi, hm2pt, hm2eta, hm2phi; 
 
-  double pvdchi2, m1iso, m1xpdist, m2iso, m2xpdist;
+  double pvdchi2, m1iso, m1xpdist, m2iso, m2xpdist, othervtx;
 
 };
 

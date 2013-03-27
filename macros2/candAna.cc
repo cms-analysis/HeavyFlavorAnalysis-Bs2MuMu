@@ -838,6 +838,8 @@ void candAna::efficiencyCalculation() {
 void candAna::triggerSelection() {
 
   fGoodHLT = false; 
+  fhltType = 0; 
+
   TString a; 
   int ps(0); 
   bool result(false), wasRun(false), error(false); 
@@ -2308,6 +2310,7 @@ void candAna::xpDistMuons() {
   int m1Idx = m1->fIndex;
   int m2Idx = m2->fIndex;
 
+  // -- FIXME: add selection of PV to choice of closest xp track!!!!
   int xp1t0 = m1->fXpTracks[0].idx;
   int xp2t0 = m2->fXpTracks[0].idx;
 
@@ -2322,6 +2325,28 @@ void candAna::xpDistMuons() {
   } else {
     fMu2XpDist = m2->fXpTracks[1].dist; 
   }
+
+  if (fMu1XpDist > 98.9999 && fMu1XpDist < 99.00001) {
+    cout << "This is muon1 track idx = " << m1->fIndex << " with pT = " << m1->fPlab.Perp() << " eta = " << m1->fPlab.Eta() 
+	 << " tight muon = " << fMu1TmId
+	 << " global muon = " <<  (m1->fMuID & 2)
+	 << " M1 mpos = " << m1->fMuonTrackPosAtM1.X() << "/" << m1->fMuonTrackPosAtM1.Y() << "/" << m1->fMuonTrackPosAtM1.Z()
+	 << " M1 tpos = " << m1->fPositionAtM1.X() << "/" << m1->fPositionAtM1.Y() << "/" << m1->fPositionAtM1.Z()
+	 << " m1iso = " << fMu1Iso
+	 << endl;
+    cout << "This is muon2 track idx = " << m2->fIndex << " with pT = " << m2->fPlab.Perp() << " eta = " << m2->fPlab.Eta() 
+	 << " tight muon = " << fMu2TmId
+	 << " global muon = " <<  (m2->fMuID & 2)
+	 << " M1 pos = " << m2->fMuonTrackPosAtM1.X() << "/" << m2->fMuonTrackPosAtM1.Y() << "/" << m2->fMuonTrackPosAtM1.Z()
+	 << " m2iso = " << fMu2Iso
+	 << endl;
+    for (int i = 0; i < TAnaMuon::NXPTRACKS; ++i) {
+      cout << i << ": idx = " << m1->fXpTracks[i].idx << " dist = " << m1->fXpTracks[i].dist 
+	   << " second muon: idx = " << m2->fXpTracks[i].idx << " dist = " << m2->fXpTracks[i].dist 
+	   << endl;
+    }
+  }
+
 }
 
 
