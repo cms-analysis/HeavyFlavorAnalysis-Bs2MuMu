@@ -136,10 +136,11 @@ void candAnaBs2JpsiPhi::candAnalysis() {
   fPreselection = fPreselection && fWideMass;
 
   // -- overwrite specific variables
-  fCandTau   = fCandFL3d*MBPLUS/fCandP/TMath::Ccgs();
-  fCandChi2  = chi2; 
-  fCandDof   = ndof;
-
+  fCandTau     = fCandFL3d*MBPLUS/fCandP/TMath::Ccgs();
+  fCandChi2    = chi2; 
+  fCandDof     = ndof;
+  fCandChi2Dof = chi2/ndof;
+  
 
   ((TH1D*)fHistDir->Get("../monEvents"))->Fill(3); 
 }

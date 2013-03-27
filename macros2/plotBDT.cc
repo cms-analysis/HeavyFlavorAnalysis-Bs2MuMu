@@ -200,17 +200,16 @@ void plotBDT::makeAll(int channels) {
     cout << "--> bdtScan()" << endl;
     bdtScan();
     cout << "--> plotEffVsBg(...)" << endl;
-    plotEffVsBg(0);   
-    plotEffVsBg(1);   
+    for (int i = 0; i < fNchan; ++i) {
+      fBdtString = Form("%s", fCuts[i]->xmlFile.c_str());
+      plotEffVsBg(i);   
+    }
 
     cout << "--> bdtDependencies(\"SgData\")" << endl;
     bdtDependencies("SgData");
 
     cout << "--> xmlParsing()" << endl;
     xmlParsing(); 
-
-//     cout << "--> bdtDependencies(\"SgMcPU\")" << endl;
-//     bdtDependencies("SgMcPU");
 
     cout << "--> hackedMC(...)" << endl;
     if (0) {
@@ -444,7 +443,7 @@ void  plotBDT::overlayBdtOutput() {
       legg->AddEntry(htr2, "BDT 2 (test) ", "l"); 
       legg->Draw();
 
-      c0->SaveAs(Form("%s/TMVA-%d-b-overlays-%s.pdf", fDirectory.c_str(), i, type[j].c_str())); 
+      c0->SaveAs(Form("%s/%s-b-overlays-%s.pdf", fDirectory.c_str(), fCuts[i]->xmlFile.c_str(), type[j].c_str())); 
 
       SetSignalAndBackgroundStyle(hap0, hap1, hap2);            
       setTitles(hap0, "b", "candidates", 0.05, 1.2, 1.5); 
@@ -456,7 +455,7 @@ void  plotBDT::overlayBdtOutput() {
       legg->AddEntry(hap1, "BDT 1", "p"); 
       legg->AddEntry(hap2, "BDT 2", "p"); 
       legg->Draw();
-      c0->SaveAs(Form("%s/TMVA-%d-b-all-overlays-%s.pdf", fDirectory.c_str(), i, type[j].c_str())); 
+      c0->SaveAs(Form("%s/%s-b-all-overlays-%s.pdf", fDirectory.c_str(), fCuts[i]->xmlFile.c_str(), type[j].c_str())); 
 
     }
   }
@@ -577,7 +576,7 @@ void plotBDT::bdtDependencies(string mode) {
     if (fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
 				  fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
 				  fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-nocuts-pol%d-chan0.pdf", fDirectory.c_str(), mode.c_str(), j));
+    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-nocuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[0]->xmlFile.c_str()));
 
     fmeanNpvAcBDTchan0->SetAxisRange(0., npvmax, "X");
     fmeanNpvAcBDTchan0->Fit(Form("pol%d", j));  
@@ -587,7 +586,7 @@ void plotBDT::bdtDependencies(string mode) {
     if (fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
 				  fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
 				  fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-accuts-pol%d-chan0.pdf", fDirectory.c_str(), mode.c_str(), j));
+    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-accuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[0]->xmlFile.c_str()));
 
     fmeanNpvAdBDTchan0->SetAxisRange(0., npvmax, "X");
     fmeanNpvAdBDTchan0->Fit(Form("pol%d", j));  
@@ -597,7 +596,7 @@ void plotBDT::bdtDependencies(string mode) {
     if (fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
 				  fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
 				  fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-adcuts-pol%d-chan0.pdf", fDirectory.c_str(), mode.c_str(), j));
+    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-adcuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[0]->xmlFile.c_str()));
 
   
     fmeanNpvBDTchan1->SetAxisRange(0., npvmax, "X");
@@ -608,7 +607,7 @@ void plotBDT::bdtDependencies(string mode) {
     if (fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
 				  fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
 				  fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-nocuts-pol%d-chan1.pdf", fDirectory.c_str(), mode.c_str(), j));
+    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-nocuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[1]->xmlFile.c_str()));
 
     fmeanNpvAcBDTchan1->SetAxisRange(0., npvmax, "X");
     fmeanNpvAcBDTchan1->Fit(Form("pol%d", j));  
@@ -618,7 +617,7 @@ void plotBDT::bdtDependencies(string mode) {
     if (fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
 				  fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
 				  fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-accuts-pol%d-chan1.pdf", fDirectory.c_str(), mode.c_str(), j));
+    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-accuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[1]->xmlFile.c_str()));
 
     fmeanNpvAdBDTchan1->SetAxisRange(0., npvmax, "X");
     fmeanNpvAdBDTchan1->Fit(Form("pol%d", j));  
@@ -628,7 +627,7 @@ void plotBDT::bdtDependencies(string mode) {
     if (fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
 				  fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
 				  fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-adcuts-pol%d-chan1.pdf", fDirectory.c_str(), mode.c_str(), j));
+    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-adcuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[1]->xmlFile.c_str()));
 
 
     // -- RMS
@@ -640,7 +639,7 @@ void plotBDT::bdtDependencies(string mode) {
     if (frmsNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
 				  frmsNpvBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
 				  frmsNpvBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-nocuts-pol%d-chan0.pdf", fDirectory.c_str(), mode.c_str(), j));
+    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-nocuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[0]->xmlFile.c_str()));
 
     frmsNpvAcBDTchan0->SetAxisRange(0., npvmax, "X");
     frmsNpvAcBDTchan0->Fit(Form("pol%d", j));  
@@ -650,7 +649,7 @@ void plotBDT::bdtDependencies(string mode) {
     if (frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
 				  frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
 				  frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-accuts-pol%d-chan0.pdf", fDirectory.c_str(), mode.c_str(), j));
+    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-accuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[0]->xmlFile.c_str()));
 
     frmsNpvAdBDTchan0->SetAxisRange(0., npvmax, "X");
     frmsNpvAdBDTchan0->Fit(Form("pol%d", j));  
@@ -660,7 +659,7 @@ void plotBDT::bdtDependencies(string mode) {
     if (frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
 				  frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
 				  frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-adcuts-pol%d-chan0.pdf", fDirectory.c_str(), mode.c_str(), j));
+    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-adcuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[0]->xmlFile.c_str()));
 
     
     frmsNpvBDTchan1->SetAxisRange(0., npvmax, "X");
@@ -671,7 +670,7 @@ void plotBDT::bdtDependencies(string mode) {
     if (frmsNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
 				  frmsNpvBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
 				  frmsNpvBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-nocuts-pol%d-chan1.pdf", fDirectory.c_str(), mode.c_str(), j));
+    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-nocuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[1]->xmlFile.c_str()));
 
     frmsNpvAcBDTchan1->SetAxisRange(0., npvmax, "X");
     frmsNpvAcBDTchan1->Fit(Form("pol%d", j));  
@@ -681,7 +680,7 @@ void plotBDT::bdtDependencies(string mode) {
     if (frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
 				  frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
 				  frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-accuts-pol%d-chan1.pdf", fDirectory.c_str(), mode.c_str(), j));
+    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-accuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[1]->xmlFile.c_str()));
 
     frmsNpvAdBDTchan1->SetAxisRange(0., npvmax, "X");
     frmsNpvAdBDTchan1->Fit(Form("pol%d", j));  
@@ -691,23 +690,18 @@ void plotBDT::bdtDependencies(string mode) {
     if (frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
 				  frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
 				  frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-adcuts-pol%d-chan1.pdf", fDirectory.c_str(), mode.c_str(), j));
+    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-adcuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[1]->xmlFile.c_str()));
   }
   
   for (unsigned int i = 0; i < fNchan; ++i) {
     fpMassBDT[i]->SetAxisRange(4.9, 5.9, "X");
     fpMassBDT[i]->Fit("pol0");  
-    c0->SaveAs(Form("%s/dep-bdt-%s-mass-nocuts%d.pdf", fDirectory.c_str(), mode.c_str(), i));
+    c0->SaveAs(Form("%s/dep-bdt-%s-%s-mass-nocuts%d.pdf", fDirectory.c_str(), fCuts[i]->xmlFile.c_str(), mode.c_str(), i));
 
     fpMassAcBDT[i]->SetAxisRange(4.9, 5.9, "X");
     fpMassAcBDT[i]->Fit("pol0");  
-    c0->SaveAs(Form("%s/dep-bdt-%s-mass-aftercuts%d.pdf", fDirectory.c_str(), mode.c_str(), i));
+    c0->SaveAs(Form("%s/dep-bdt-%s-%s-mass-aftercuts%d.pdf", fDirectory.c_str(), fCuts[1]->xmlFile.c_str(), mode.c_str(), i));
 
-    //     fpNpvBDT[i]->Fit("pol0");  
-    //     c0->SaveAs(Form("%s/dep-bdt-%s-npv-nocuts%d.pdf", fDirectory.c_str(), mode.c_str(), i));
-
-    //     fpNpvAcBDT[i]->Fit("pol0");  
-    //     c0->SaveAs(Form("%s/dep-bdt-%s-npv-aftercuts%d.pdf", fDirectory.c_str(), mode.c_str(), i));
   }
 
 }
@@ -842,11 +836,11 @@ void plotBDT::bdtScan() {
   legg->AddEntry(H2, "high sideband", "l"); 
   legg->Draw();
 
-  c0->SaveAs(Form("%s/bdt-lin-Bg-HiLo-Efficiency-chan0.pdf", fDirectory.c_str())); 
+  c0->SaveAs(Form("%s/%s-lin-Bg-HiLo-Efficiency-chan0.pdf", fDirectory.c_str(), fCuts[0]->xmlFile.c_str())); 
   gPad->SetLogy(1); 
   H1->Draw();
   H2->Draw("same");
-  c0->SaveAs(Form("%s/bdt-log-Bg-HiLo-Efficiency-chan0.pdf", fDirectory.c_str())); 
+  c0->SaveAs(Form("%s/%s-log-Bg-HiLo-Efficiency-chan0.pdf", fDirectory.c_str(), fCuts[1]->xmlFile.c_str())); 
 
   zone();
   H1 = (TH1D*)gDirectory->Get("hBgLoEff1"); 
@@ -866,11 +860,11 @@ void plotBDT::bdtScan() {
   legg->AddEntry(H2, "high sideband", "l"); 
   legg->Draw();
 
-  c0->SaveAs(Form("%s/bdt-lin-Bg-HiLo-Efficiency-chan1.pdf", fDirectory.c_str())); 
+  c0->SaveAs(Form("%s/%s-lin-Bg-HiLo-Efficiency-chan1.pdf", fDirectory.c_str(), fCuts[0]->xmlFile.c_str())); 
   gPad->SetLogy(1);
   H1->Draw();
   H2->Draw("same");
-  c0->SaveAs(Form("%s/bdt-log-Bg-HiLo-Efficiency-chan1.pdf", fDirectory.c_str())); 
+  c0->SaveAs(Form("%s/%s-log-Bg-HiLo-Efficiency-chan1.pdf", fDirectory.c_str(), fCuts[1]->xmlFile.c_str())); 
 
 }
 
@@ -886,7 +880,7 @@ void plotBDT::tmvaControlPlots() {
   for (int j = 0; j < 3; ++j) {
 
     for (unsigned int i = 0; i < fNchan; ++i) {
-      
+    
       XmlName = "weights/" + fCuts[i]->xmlFile + Form("-%s_BDT.weights.xml", type[j].c_str()); 
       string rootfile = XmlName; 
       replaceAll(rootfile, "_BDT.weights.xml", ".root"); 
@@ -896,7 +890,7 @@ void plotBDT::tmvaControlPlots() {
       fBdtString = fRootFile->GetName(); 
       fBdtString = fBdtString.substr(0, fBdtString.find(".root"));
       fBdtString = fBdtString.substr(fBdtString.find("/")+1);
-      fBdtString = Form("TMVA-%d-%s", i, type[j].c_str()); 
+      fBdtString = Form("%s-%s", fCuts[i]->xmlFile.c_str(), type[j].c_str()); 
       cout << "fBdtString: " << fBdtString << endl;
       
       dumpParameters();
@@ -962,7 +956,7 @@ void plotBDT::tmvaControlPlots() {
 	sscanf(g->GetTitle(), "integral = %f", &integral); 
 	fTEX << formatTex(integral, Form("%s:%s:ROCintegral",  fSuffix.c_str(), fBdtString.c_str()), 3) << endl;
 	  
-	c0->SaveAs(Form("%s/TMVA-%d-roc.pdf", fDirectory.c_str(), i)); 
+	c0->SaveAs(Form("%s/%s-roc.pdf", fDirectory.c_str(), fCuts[i]->xmlFile.c_str())); 
 
 
 	fRootFile->Close();
@@ -985,7 +979,7 @@ void plotBDT::plotSSB() {
     fBdtString = fRootFile->GetName(); 
     fBdtString = fBdtString.substr(0, fBdtString.find(".root"));
     fBdtString = fBdtString.substr(fBdtString.find("/")+1);
-    fBdtString = Form("TMVA-%d", i); 
+    fBdtString = Form("%s", fCuts[i]->xmlFile.c_str()); 
     cout << "fBdtString: " << fBdtString << endl;
     
     ssb();
@@ -1062,7 +1056,7 @@ void plotBDT::validateDistributions(int channel, const char *type, int classID) 
   string fname2 = Form("weights/%s-Events2.root", fCuts[channel]->xmlFile.c_str());
 
   //  string sname  = Form("%s-%s-%s", fCuts[channel]->xmlFile.c_str(), type, (classID == 0?"sg":"bg")); 
-  string sname  = Form("TMVA-%d-%s-%s", channel, type, (classID == 0?"sg":"bg")); 
+  string sname  = Form("%s-%s-%s", fCuts[channel]->xmlFile.c_str(), type, (classID == 0?"sg":"bg")); 
 
   TFile *fEvt0 = TFile::Open(fname0.c_str()); 
   TFile *fEvt1 = TFile::Open(fname1.c_str()); 
@@ -1512,19 +1506,26 @@ void plotBDT::tmvaPlots(string type) {
   TCanvas *cc = new TCanvas("cc", "", 300, 200, 1000, 400);
 
   cc->cd();
-  ((TH1F*)dir->Get("BoostWeight"))->Draw(); 
-  cc->SaveAs(Form("%s/%s-BoostWeight.pdf", fDirectory.c_str(), fBdtString.c_str())); 
-
-  cc->Clear();
-  ((TH1F*)dir->Get("BoostWeightVsTree"))->Draw(); 
+  shrinkPad(0.20, 0.15, 0.1, 0.);
+  TH1F *hf = (TH1F*)((TH1F*)dir->Get("BoostWeightVsTree"))->Clone("hf");
+  setTitles(hf, hf->GetXaxis()->GetTitle(), hf->GetYaxis()->GetTitle(), 0.09, 1.02, 0.8, 0.09); 
+  hf->Draw(); 
   cc->SaveAs(Form("%s/%s-BoostWeightVsTree.pdf", fDirectory.c_str(), fBdtString.c_str())); 
 
   cc->Clear();
-  ((TH1F*)dir->Get("ErrFractHist"))->Draw(); 
+  shrinkPad(0.20, 0.15, 0.1, 0.);
+  delete hf; 
+  hf = (TH1F*)((TH1F*)dir->Get("ErrFractHist"))->Clone("hf");
+  setTitles(hf, hf->GetXaxis()->GetTitle(), hf->GetYaxis()->GetTitle(), 0.09, 1.02, 0.8, 0.09); 
+  hf->Draw(); 
   cc->SaveAs(Form("%s/%s-ErrFractHist.pdf", fDirectory.c_str(), fBdtString.c_str())); 
 
   cc->Clear();
-  ((TH1F*)dir->Get("NodesBeforePruning"))->Draw(); 
+  shrinkPad(0.20, 0.15, 0.1, 0.);
+  delete hf; 
+  hf = (TH1F*)((TH1F*)dir->Get("NodesBeforePruning"))->Clone("hf");
+  setTitles(hf, hf->GetXaxis()->GetTitle(), hf->GetYaxis()->GetTitle(), 0.09, 1.02, 0.8, 0.09); 
+  hf->Draw();
   cc->SaveAs(Form("%s/%s-NodesBeforePruning.pdf", fDirectory.c_str(), fBdtString.c_str())); 
   
 
@@ -1582,7 +1583,7 @@ void plotBDT::xmlParsing() {
   for (unsigned int ichan = 0; ichan < fNchan; ++ichan) {
     for (unsigned int i = 0; i < etype.size(); ++i) {
       xmlfile = "weights/" + fCuts[ichan]->xmlFile + etype[i] + "_BDT.weights.xml";
-      fBdtString = Form("TMVA-%d", ichan); 
+      fBdtString = fCuts[ichan]->xmlFile;
       cout << xmlfile << endl;
 
       xmlResetHists();
@@ -1654,11 +1655,11 @@ void plotBDT::xmlParsingVariables(string weightfile) {
     if (imap->second == "closetrk") h1 = new TH1D("closetrk", "closetrk", 21, 0., 21.); 
     if (imap->second == "docatrk")  h1 = new TH1D("docatrk", "docatrk", 100, 0., 0.2); 
     if (imap->second == "chi2/dof") h1 = new TH1D("chi2dof", "chi2dof", 100, 0., 10.); 
-    h1->SetLineColor(kRed); 
+    h1->SetLineColor(kRed); h1->SetLineStyle(kDashed); 
     fhBdtVariableCuts.push_back(h1); 
 
     h1 = (TH1D*)h1->Clone(Form("w8_%s", h1->GetName())); 
-    h1->SetLineColor(kBlue); 
+    h1->SetLineColor(kBlue); h1->SetLineStyle(kSolid);
     fhBdtVariableCutsW8.push_back(h1); 
   }  
 
@@ -1724,10 +1725,11 @@ void plotBDT::xmlParsingReadTree(string xmlfile) {
   }
 
   zone(3,5); 
-  gStyle->SetOptTitle(1); 
-  gStyle->SetOptStat(11111); 
+  gStyle->SetOptTitle(0); 
+  gStyle->SetOptStat(0); 
   for (unsigned int i = 0; i < fhBdtVariableCuts.size(); ++i) {
-    c0->cd(i+1); 
+    c0->cd(i+1); shrinkPad(0.18, 0.15);
+    setTitles(fhBdtVariableCuts[i], Form("%s cut", fhBdtVariableCuts[i]->GetTitle()), "Number of decision trees", 0.07, 1.1, 1.1);
     fhBdtVariableCuts[i]->Draw("hist"); 
     fhBdtVariableCutsW8[i]->Scale(fhBdtVariableCuts[i]->GetSumOfWeights()/fhBdtVariableCutsW8[i]->GetSumOfWeights()); 
     fhBdtVariableCutsW8[i]->Draw("samehist"); 
@@ -1742,25 +1744,28 @@ void plotBDT::xmlParsingReadTree(string xmlfile) {
   rmSubString(pdfname, "_BDT.weights.xml");
 
   c0->Clear();
+  shrinkPad(0.20, 0.15); 
+  setTitles(fhBdtVariables, "BDT Variables", "Number of decision trees", 0.06, 1.1, 1.3); 
+  setHist(fhBdtVariables, kRed, 20, 1, 3); fhBdtVariables->SetLineStyle(kDashed); 
   fhBdtVariables->Draw();
+
+  fhBdtVariablesW8->Scale(fhBdtVariables->GetSumOfWeights()/fhBdtVariablesW8->GetSumOfWeights()); 
+  setHist(fhBdtVariablesW8, kBlue, 20, 1, 3);  
+  fhBdtVariablesW8->Draw("same");
   c0->Modified();  c0->Update();
   c0->SaveAs(Form("%s/%s-bdtVariables.pdf", fDirectory.c_str(), fBdtString.c_str())); 
 
   c0->Clear();
-  fhBdtVariablesW8->Draw();
-  c0->Modified();  c0->Update();
-  c0->SaveAs(Form("%s/%s-bdtVariablesW8.pdf", fDirectory.c_str(), fBdtString.c_str())); 
-
-  c0->Clear();
+  shrinkPad(0.20, 0.15); 
+  setTitles(fhBdtNodes, "BDT Nodes", "Number of decision trees", 0.06, 1.1, 1.3); 
+  setHist(fhBdtNodes, kRed, 20, 1, 3); fhBdtNodes->SetLineStyle(kDashed); 
   fhBdtNodes->Draw();
+
+  setHist(fhBdtNodesW8, kBlue, 20, 1, 3); 
+  fhBdtNodesW8->Scale(fhBdtNodes->GetSumOfWeights()/fhBdtNodesW8->GetSumOfWeights()); 
+  fhBdtNodesW8->Draw("same");
   c0->Modified();  c0->Update();
   c0->SaveAs(Form("%s/%s-bdtNodes.pdf", fDirectory.c_str(), fBdtString.c_str())); 
-
-  c0->Clear();
-  fhBdtNodesW8->Draw();
-  c0->Modified();  c0->Update();
-  c0->SaveAs(Form("%s/%s-bdtNodesW8.pdf", fDirectory.c_str(), fBdtString.c_str())); 
-
 }
 
 
@@ -2021,7 +2026,7 @@ void plotBDT::plotEffVsBg(int offset) {
   axis->Draw();
 
   
-  c0->SaveAs(Form("%s/bdt-SgEff-BgEvts-chan%d.pdf", fDirectory.c_str(), offset)); 
+  c0->SaveAs(Form("%s/bdt-SgEff-BgEvts-%s.pdf", fDirectory.c_str(), fBdtString.c_str())); 
 
   // -- dump table of numbers
   h0 = (TH1D*)(gDirectory->Get(Form("hBgEvts%d", offset)))->Clone("H0"); 

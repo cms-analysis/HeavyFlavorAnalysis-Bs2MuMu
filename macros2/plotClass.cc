@@ -1155,18 +1155,6 @@ void plotClass::loadFiles(const char *files) {
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "HT")); 
       }
-      if (string::npos != stype.find("bmt,Photon")) {
-	sname = "BmtPhoton"; 
-	fF.insert(make_pair(sname, pF)); 
-	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "Photon")); 
-      }
-      if (string::npos != stype.find("bmt,Jet")) {
-	sname = "BmtJet"; 
-	fF.insert(make_pair(sname, pF)); 
-	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "Jet")); 
-      }
     } else {
       string sfilter = sdset; 
       replaceAll(sfilter, "mc,", ""); 
@@ -1183,7 +1171,7 @@ void plotClass::loadFiles(const char *files) {
 	fBFE.insert(make_pair(sname, 0.06)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (MC)")); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-}")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
       if (string::npos != stype.find("1e33") && string::npos != stype.find("sg")) {
@@ -1274,7 +1262,7 @@ void plotClass::loadFiles(const char *files) {
 	fBFE.insert(make_pair(sname, 0.1)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} (MC)")); 
+	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-}")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
       if (string::npos != stype.find("1e33") && string::npos != stype.find("bd")) {
@@ -1325,7 +1313,7 @@ void plotClass::loadFiles(const char *files) {
 	fBFE.insert(make_pair(sname, 0.03)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	//	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+} (MC)")); 
+	//	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+}")); 
 	fName.insert(make_pair(sname, "MC simulation")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
@@ -1397,7 +1385,7 @@ void plotClass::loadFiles(const char *files) {
 	fBFE.insert(make_pair(sname, 0.32)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	//	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (MC)")); 
+	//	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi")); 
 	fName.insert(make_pair(sname, "MC simulation")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
@@ -1579,8 +1567,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bu2PiMuMu")) {
 	sname = "bgBu2PiMuMu"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 4.9e-8)); 
-	fBFE.insert(make_pair(sname, 0.2)); 
+	fBF.insert(make_pair(sname, 2.3e-8)); 
+	fBFE.insert(make_pair(sname, 0.26)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{+} #rightarrow #pi^{+}#mu^{+}#mu^{-}")); 
@@ -1590,22 +1578,55 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bu2KMuMu")) {
 	sname = "bgBu2KMuMu"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 5.0e-7)); 
-	fBFE.insert(make_pair(sname, 0.2)); 
+	fBF.insert(make_pair(sname, 5.1e-7)); 
+	fBFE.insert(make_pair(sname, 0.098)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{+} #rightarrow K^{+}#mu^{+}#mu^{-}")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
 
-      if (string::npos != stype.find("bg,Bs2PhiMuMu")) {
-	sname = "bgBs2PhiMuMu"; 
+      if (string::npos != stype.find("bg,Bd2Pi0MuMu")) {
+	sname = "bgBd2Pi0MuMu"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 1.4e-6)); 
-	fBFE.insert(make_pair(sname, 0.4)); 
+	fBF.insert(make_pair(sname, 1.2e-7)); 
+	fBFE.insert(make_pair(sname, 0.5)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B^{0}_{s} #rightarrow #phi#mu^{+}#mu^{-}")); 
+	fName.insert(make_pair(sname, "B^{0} #rightarrow #pi^{0}#mu^{+}#mu^{-}")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }	
+
+      if (string::npos != stype.find("bg,Bd2K0MuMu")) {
+	sname = "bgBd2K0MuMu"; 
+	fF.insert(make_pair(sname, pF)); 
+	fBF.insert(make_pair(sname, 5.0e-7)); 
+	fBFE.insert(make_pair(sname, 0.2)); 
+	fProdR.insert(make_pair(sname, 1.0)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{0} #rightarrow K^{0}#mu^{+}#mu^{-}")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }	
+
+      if (string::npos != stype.find("bg,Bd2MuMuGamma")) {
+	sname = "bgBd2MuMuGamma"; 
+	fF.insert(make_pair(sname, pF)); 
+	fBF.insert(make_pair(sname, 3.0e-10)); 
+	fBFE.insert(make_pair(sname, 0.2)); 
+	fProdR.insert(make_pair(sname, 1.0)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{0} #rightarrow #mu^{+}#mu^{-} #gamma")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }	
+
+      if (string::npos != stype.find("bg,Bs2MuMuGamma")) {
+	sname = "bgBs2MuMuGamma"; 
+	fF.insert(make_pair(sname, pF)); 
+	fBF.insert(make_pair(sname, 1.0e-8)); 
+	fBFE.insert(make_pair(sname, 0.2)); 
+	fProdR.insert(make_pair(sname, 1.0)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B^{0}_{s} #rightarrow #mu^{+}#mu^{-} #gamma")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }	
 
@@ -1614,27 +1635,27 @@ void plotClass::loadFiles(const char *files) {
 
   
   // https://docs.google.com/spreadsheet/ccc?key=0AhrdqmQ22qAldHREbHpVOGVMaHhQaU9ULXAydkpZc2c&hl=en#gid=0
-  fNgen.insert(make_pair("bgLb2KP",    356.e6)); 
-  fNgen.insert(make_pair("bgLb2PiP",    374.e6)); 
-  fNgen.insert(make_pair("bgLb2PMuNu", 6910.e6)); 
-
-  fNgen.insert(make_pair("SgMc",      249.e6)); 
-  fNgen.insert(make_pair("bgBs2KK",    1392.e6)); 
-  fNgen.insert(make_pair("bgBs2KPi",    598.e6)); 
-  fNgen.insert(make_pair("bgBs2PiPi",   148.e6)); 
-  fNgen.insert(make_pair("bgBs2KMuNu", 6702.e6)); 
-
-  fNgen.insert(make_pair("BdMc",        40.e6)); 
-  fNgen.insert(make_pair("bgBd2PiPi",    394.e6)); 
-  fNgen.insert(make_pair("bgBd2KPi",     996.e6)); 
-  fNgen.insert(make_pair("bgBd2KK",      200.e6)); 
-  fNgen.insert(make_pair("bgBd2PiMuNu", 6742.e6)); 
-
-  fNgen.insert(make_pair("NoMc",15166.e6)); 
-  fNgen.insert(make_pair("CsMc", 9970.e6)); 
-
-  fNgen.insert(make_pair("NoMcAcc", 1)); 
-  fNgen.insert(make_pair("CsMcAcc", 1)); 
+  //   fNgen.insert(make_pair("bgLb2KP",    356.e6)); 
+  //   fNgen.insert(make_pair("bgLb2PiP",    374.e6)); 
+  //   fNgen.insert(make_pair("bgLb2PMuNu", 6910.e6)); 
+  
+  //   fNgen.insert(make_pair("SgMc",      249.e6)); 
+  //   fNgen.insert(make_pair("bgBs2KK",    1392.e6)); 
+  //   fNgen.insert(make_pair("bgBs2KPi",    598.e6)); 
+  //   fNgen.insert(make_pair("bgBs2PiPi",   148.e6)); 
+  //   fNgen.insert(make_pair("bgBs2KMuNu", 6702.e6)); 
+  
+  //   fNgen.insert(make_pair("BdMc",        40.e6)); 
+  //   fNgen.insert(make_pair("bgBd2PiPi",    394.e6)); 
+  //   fNgen.insert(make_pair("bgBd2KPi",     996.e6)); 
+  //   fNgen.insert(make_pair("bgBd2KK",      200.e6)); 
+  //   fNgen.insert(make_pair("bgBd2PiMuNu", 6742.e6)); 
+  
+  //   fNgen.insert(make_pair("NoMc",15166.e6)); 
+  //   fNgen.insert(make_pair("CsMc", 9970.e6)); 
+  
+  //   fNgen.insert(make_pair("NoMcAcc", 1)); 
+  //   fNgen.insert(make_pair("CsMcAcc", 1)); 
 
 }
 
@@ -1658,7 +1679,7 @@ void plotClass::dumpSamples() {
 
   fTEX << "% ----------------------------------------------------------------------" << endl;
   string name; 
-  double lumi(0), n(0), f(0); 
+  double lumi(0.), n(0.), f(0.), bf(0.); 
   for (map<string, string>::iterator imap = fName.begin(); imap != fName.end(); ++imap) {  
     cout << "===> " << imap->first;
     cout << ": " << fF[imap->first]->GetName();
@@ -1667,40 +1688,21 @@ void plotClass::dumpSamples() {
     name = imap->second; 
     lumi = fLumi[imap->first];
     n = fNgen[imap->first];
+    bf = fBF[imap->first];
     f = ((TH1D*)fF[imap->first]->Get("monEvents"))->GetBinContent(1);
     replaceAll(name, "#", "\\"); 
-    //    cout <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
     fTEX <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
-    //    cout <<  Form("\\vdef{%s:lumi:%s}   {\\ensuremath{{%4.1f } } }", fSuffix.c_str(), imap->first.c_str(), lumi) << endl;
+    fTEX <<  Form("\\vdef{%s:bf:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
     fTEX <<  Form("\\vdef{%s:lumi:%s}   {\\ensuremath{{%4.1f } } }", fSuffix.c_str(), imap->first.c_str(), lumi) << endl;
 
-//     double base(1.); 
-//     double bf = fBF[imap->first]; 
-//     for (int i = 0; i < 12; ++i) {
-//       if (bf < TMath::Power(10., -i)) {
-// 	base = TMath::Power(10., -i);
-//       } else {
-// 	base = TMath::Power(10., -i);
-// 	break;
-//       }
-//     }
-//     //    cout << "xxxx: bf = " << bf << " +/- " << bf*fBFE[imap->first] << " base = " << base << endl;
-
-// //     fTEX << scientificTex(bf, bf*fBFE[imap->first], 
-// // 			  Form("%s:bf:%s", fSuffix.c_str(), imap->first.c_str(), name.c_str()), base, 2) << endl;
-
     if (n>0) {
-      //      cout <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{%4.0f } } }", fSuffix.c_str(), imap->first.c_str(), n) << endl;
       fTEX <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{%4.0f} } }", fSuffix.c_str(), imap->first.c_str(), n) << endl;
     } else {
-      //      cout <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{n/a } } }", fSuffix.c_str(), imap->first.c_str() ) << endl;
       fTEX <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{n/a } } }", fSuffix.c_str(), imap->first.c_str()) << endl;
     }
     if (f>0) {
-      //      cout <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{%4.0f } } }", fSuffix.c_str(), imap->first.c_str(), n) << endl;
       fTEX <<  Form("\\vdef{%s:nfilt:%s}   {\\ensuremath{{%4.0f} } }", fSuffix.c_str(), imap->first.c_str(), f) << endl;
     } else {
-      //      cout <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{n/a } } }", fSuffix.c_str(), imap->first.c_str() ) << endl;
       fTEX <<  Form("\\vdef{%s:nfilt:%s}   {\\ensuremath{{n/a } } }", fSuffix.c_str(), imap->first.c_str()) << endl;
     }
   }

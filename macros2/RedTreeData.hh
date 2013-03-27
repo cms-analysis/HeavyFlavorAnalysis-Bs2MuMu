@@ -39,6 +39,9 @@ struct RedTreeData {
   double md0, dm, ptd0; 
 
   double hm1pt, hm1eta, hm1phi, hm2pt, hm2eta, hm2phi; 
+
+  double pvdchi2, m1iso, m1xpdist, m2iso, m2xpdist;
+
 };
 
 #endif

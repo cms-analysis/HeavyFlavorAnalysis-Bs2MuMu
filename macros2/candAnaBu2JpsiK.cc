@@ -94,6 +94,7 @@ void candAnaBu2JpsiK::candAnalysis() {
   fCandTau   = fCandFL3d*MBPLUS/fCandP/TMath::Ccgs();
   fCandChi2  = chi2; 
   fCandDof   = ndof;
+  fCandChi2Dof = chi2/ndof;
 
   fPreselection = fPreselection && fGoodJpsiMass;
   fPreselection = fPreselection && fWideMass;

@@ -81,7 +81,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   //return;
 
   // Skip data events where there was no valid trigger
-  if(!fIsMC && !fGoodHLT) {return;}  
+  // NO!  if(!fIsMC && !fGoodHLT) {return;}  
 
   TAnaCand *pCand(0);
   if (fVerbose == -66) { cout << "----------------------------------------------------------------------" << endl;}
@@ -181,6 +181,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
       if(fJSON&&fGoodHLT&&fHLTmatch)       ((TH1D*)fHistDir->Get("test3"))->Fill(9.);  
 
     } else {  // DATA
+      if (NOPRESELECTION) fPreselection = true; 
       if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX) {
 	if (fPreselection && !fGoodMuonsID) fAmsTree->Fill();
 	// do nothing
@@ -402,6 +403,7 @@ void candAna::candAnalysis() {
   } else {
     fMu1Chi2 = -98.;
     fMu1Iso  = -98.; 
+    fMu1VtxProb = 99.;
   }
 
   if (fCandTM && fGenM1Tmi < 0) fpEvt->dump();
@@ -486,6 +488,7 @@ void candAna::candAnalysis() {
   } else {
     fMu2Chi2 = -98.;
     fMu2Iso  = -98.; 
+    fMu2VtxProb = 99.;
   }
 
 
@@ -589,9 +592,13 @@ void candAna::candAnalysis() {
   pclose = nCloseTracks(fpCand, 0.03, 3, 0.5);
   fCandCloseTrkS3 = pclose.second;   
 
-  fCandChi2  = sv.fChi2;
-  fCandDof   = sv.fNdof;
-  fCandProb  = sv.fProb;
+  fCandChi2    = sv.fChi2;
+  fCandDof     = sv.fNdof;
+  fCandProb    = sv.fProb;
+  fCandChi2Dof = fCandChi2/fCandDof;
+
+  fCandOtherVtx = TMath::Max(fMu1VtxProb, fMu2VtxProb) - sv.fProb;
+
   fCandFL3d  = sv.fD3d;
   fCandFL3dE = sv.fD3dE;
   fCandFLS3d = sv.fD3d/sv.fD3dE; 
@@ -932,7 +939,7 @@ void candAna::triggerSelection() {
 	// special hlt test, check and store which trigger has fired 
         if (a.Contains("Mu") || a.Contains("mu")) {
           fhltType = fhltType | 0x10;
-          if (fVerbose > 1) cout << a << " " << fhltType<<" "<<wasRun << " "<< result <<  endl;
+          if (fVerbose > 2) cout << a << " " << fhltType<<" "<<wasRun << " "<< result <<  endl;
           ((TH1D*)fHistDir->Get("test9"))->Fill(9.);
 	  if (a.Contains("L3") ) {
 	    fhltType = fhltType | 0x20;
@@ -1036,6 +1043,11 @@ void candAna::triggerSelection() {
     if(passedL3) ((TH1D*)fHistDir->Get("test10"))->Fill(10.);
 
   } // if true
+
+
+  if (false == fGoodHLT) {
+    if (fVerbose > 1) cout << "------->  event NOT triggered!" << endl;
+  }
 
 }
 
@@ -1216,6 +1228,7 @@ void candAna::setupReducedTree(TTree *t) {
   t->Branch("closetrk",&fCandCloseTrk,      "closetrk/I");
   t->Branch("chi2",    &fCandChi2,          "chi2/D");
   t->Branch("dof",     &fCandDof,           "dof/D");
+  t->Branch("chi2dof", &fCandChi2Dof,       "chi2dof/D");
   t->Branch("prob",    &fCandProb,          "prob/D");
   t->Branch("fls3d",   &fCandFLS3d,         "fls3d/D");
   t->Branch("fl3d",    &fCandFL3d,          "fl3d/D");
@@ -1234,6 +1247,7 @@ void candAna::setupReducedTree(TTree *t) {
   t->Branch("closetrks1", &fCandCloseTrkS1,   "closetrks1/I");
   t->Branch("closetrks2", &fCandCloseTrkS2,   "closetrks2/I");
   t->Branch("closetrks3", &fCandCloseTrkS3,   "closetrks3/I");
+  t->Branch("othervtx", &fCandOtherVtx, "othervtx/D"); 
 
   t->Branch("osiso",   &fOsIso,             "osiso/D");
   t->Branch("osreliso",&fOsRelIso,          "osreliso/D");
@@ -1393,6 +1407,14 @@ void candAna::readCuts(string fileName, int dump) {
       ibin = 5;
       hcuts->SetBinContent(ibin, IGNORETRIGGER);
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: Ignore trigger :: %i", CutName, IGNORETRIGGER));
+    }
+
+    if (!strcmp(CutName, "NOPRESELECTION")) {
+      NOPRESELECTION = int(CutValue); 
+      if (dump) cout << "NOPRESELECTION     " << NOPRESELECTION << endl;
+      ibin = 6;
+      hcuts->SetBinContent(ibin, NOPRESELECTION);
+      hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: Ignore preselection :: %i", CutName, NOPRESELECTION));
     }
 
     if (!strcmp(CutName, "CANDPTLO")) {

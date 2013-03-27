@@ -1,0 +1,15 @@
+TYPE             1313
+TRUTHCAND         531
+NOPRESELECTION      1
+# -- trigger
++input cuts/triggerBs.cuts
+# -- boxes
++input cuts/boxes.cuts
+# -- tracks
++input cuts/tracks.cuts
+# -- muons
++input cuts/muons.cuts
+# -- candidate
++input cuts/candidate.cuts
+# -- bdt input
++input cuts/bdt.2012.cuts
