@@ -17,12 +17,30 @@ my $se2se = "/shome/ursl/perl/se2se";
 
 my %syncDirectories = (
     # -- hadronic non-muon PD
-    "/cmsRun/2011/data-hadronic-nonMuon/A" => "hadronic",
-    "/cmsRun/2011/data-hadronic-nonMuon/B" => "hadronic",
-    "/cmsRun/2012/data-hadronic-nonMuon/A" => "hadronic",
-    "/cmsRun/2012/data-hadronic-nonMuon/B" => "hadronic",
-    "/cmsRun/2012/data-hadronic-nonMuon/C" => "hadronic",
-    "/cmsRun/2012/data-hadronic-nonMuon/D" => "hadronic",
+    "/cmsRun/2011/data-hadronic-nonMuon/A" => "ht",
+    "/cmsRun/2011/data-hadronic-nonMuon/B" => "ht",
+    "/cmsRun/2012/data-hadronic-nonMuon/A" => "ht",
+    "/cmsRun/2012/data-hadronic-nonMuon/B" => "ht",
+    "/cmsRun/2012/data-hadronic-nonMuon/C" => "ht",
+    "/cmsRun/2012/data-hadronic-nonMuon/D" => "ht",
+
+    # -- hadronic non-muon PD
+    "/cmsRun/2012/data-hadronic-singleElectron/A" => "singleElectron",
+    "/cmsRun/2012/data-hadronic-singleElectron/B" => "singleElectron",
+    "/cmsRun/2012/data-hadronic-singleElectron/C" => "singleElectron",
+    "/cmsRun/2012/data-hadronic-singleElectron/D" => "singleElectron",
+
+    # -- hadronic non-muon PD
+    "/cmsRun/2012/data-hadronic-minimumBias/A" => "minimumBias",
+    "/cmsRun/2012/data-hadronic-minimumBias/B" => "minimumBias",
+    "/cmsRun/2012/data-hadronic-minimumBias/C" => "minimumBias",
+    "/cmsRun/2012/data-hadronic-minimumBias/D" => "minimumBias",
+
+    # -- hadronic non-muon PD
+    "/cmsRun/2012/data-hadronic-multiJet/A" => "multiJet",
+    "/cmsRun/2012/data-hadronic-multiJet/B" => "multiJet",
+    "/cmsRun/2012/data-hadronic-multiJet/C" => "multiJet",
+    "/cmsRun/2012/data-hadronic-multiJet/D" => "multiJet",
     
     # -- onia MC
     "/cmsRun/2012/mc-cms/Upsilon1SToMuMu_2MuPtEtaFilter_tuneD6T_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1" => "oniaMC",
