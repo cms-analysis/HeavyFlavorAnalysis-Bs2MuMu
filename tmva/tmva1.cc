@@ -45,9 +45,9 @@ using namespace std;
 // --
 // ----------------------------------------------------------------------
 
-tmva1::tmva1() {
+tmva1::tmva1(int year) {
 
-  cout << "tmva1 hello" << endl;
+  cout << "tmva1 hello: setup for year = " << year << endl;
 
   legg = 0;
   legge = 0; 
@@ -56,22 +56,15 @@ tmva1::tmva1() {
   tl->SetTextSize(0.03);
   tl->SetNDC(kTRUE); 
 
-  // -- 2012 change lumi scale!!!
-  fInputFiles.sname = "/shome/ursl/scratch/v12-mctruth-cms-BsToMuMu.root"; 
-  fInputFiles.dname = "/shome/ursl/scratch/v12-2012-data-bdt.root";
+  fYear = year; 
 
-//   fInputFiles.sname = "/scratch/ursl/120509/v11-mix-newSignalMC-Bs2MuMu.root"; 
-//   fInputFiles.dname = "/scratch/ursl/120509/v11-2011-data-looseBmm.root";
-
-//   fInputFiles.sname = "/shome/ursl/scratch/oldschema/v11-mix-newSignalMC-Bs2MuMu.root"; 
-//   fInputFiles.dname = "/shome/ursl/scratch/oldschema/v11-2011-data-looseBmm.root";
-
-//   // -- 2011 change lumi scale!!!
-//   fInputFiles.sname = "/shome/ursl/scratch/v11-mix-Bs2MuMu-newSignalMC.root"; 
-//   fInputFiles.dname = "/shome/ursl/scratch/v11-2011-data-bdt.root";
-                                                  
-//   fInputFiles.sname = "/shome/lazo-flores/scratch/v11-mix-Bs2MuMu-newSignalMC.root"; 
-//   fInputFiles.dname = "/shome/lazo-flores/scratch/v11-2011-data.root";
+  if (year == 2011) {
+      fInputFiles.sname = "/scratch/ursl/bdt/v14-2011-mix-Bs2MuMu.root"; 
+      fInputFiles.dname = "/scratch/ursl/bdt/v14-2011-bmmLoose.root";
+  } else {
+      fInputFiles.sname = "/scratch/ursl/bdt/v14-2012-cms-BsToMuMu.root"; 
+      fInputFiles.dname = "/scratch/ursl/bdt/v14-2012-bmmLoose.root";
+  }
 
   // -- BDT setup 108/109
   fBdtSetup.NTrees = 800;
@@ -131,6 +124,12 @@ void tmva1::setupTree(TTree *t, RedTreeData &b) {
   t->SetBranchAddress("dof", &b.dof);
   t->SetBranchAddress("closetrk", &b.closetrk);
   t->SetBranchAddress("m", &b.m);
+
+  t->SetBranchAddress("m1iso",&b.m1iso);
+  t->SetBranchAddress("m2iso",&b.m2iso);
+  t->SetBranchAddress("pvdchi2",&b.pvdchi2);
+  t->SetBranchAddress("m1xpdist",&b.m1xpdist);
+  t->SetBranchAddress("m2xpdist",&b.m2xpdist);
 }
 
 
@@ -184,6 +183,11 @@ void tmva1::train(string oname, string filename) {
    factory->AddVariable("docatrk",    'F' );
    factory->AddVariable("closetrk",   'I' );
    factory->AddVariable("chi2dof := chi2/dof",    'F' );
+
+   factory->AddVariable("m1iso",   'F' );
+   factory->AddVariable("m2iso",   'F' );
+   factory->AddVariable("pvdchi2", 'F' );
+
 
    factory->AddSpectator("m",  "mass", "GeV", 'F' );
    
@@ -1466,6 +1470,16 @@ void tmva1::cleanup(string fname) {
 void tmva1::makeAll(int offset, string filename, int clean) {
   // createInputFile(filename); 
 
+  if (filename == "") {
+    if (2011 == fYear) {
+      filename = "/scratch/ursl/bdt/tmva-trees-2011.root"; 
+    } 
+    if (2012 == fYear) {
+      filename = "/scratch/ursl/bdt/tmva-trees-2012.root"; 
+    } 
+  }
+
+
   make(offset, filename, 0, clean);
   make(offset, filename, 1, clean);
   make(offset, filename, 2, clean);
@@ -1633,6 +1647,10 @@ void tmva1::calcBDT() {
   frd.docatrk = ftd.docatrk; 
   frd.chi2dof = ftd.chi2/ftd.dof; 
   frd.closetrk = ftd.closetrk; 
+
+  frd.m1iso = ftd.m1iso; 
+  frd.m2iso = ftd.m2iso; 
+  frd.pvdchi2 = ftd.pvdchi2; 
   
   frd.m  = ftd.m; 
   int ichan = 0; 
@@ -1739,6 +1757,18 @@ TMVA::Reader* setupReader(string xmlFile, readerData &rd) {
 	if (stype == "chi2/dof") {
 	  cout << "  adding chi2/dof" << endl;
 	  reader->AddVariable( "chi2dof := chi2/dof", &rd.chi2dof);
+	}
+	if (stype == "m1iso") {
+	  cout << "  adding m1iso" << endl;
+	  reader->AddVariable( "m1iso", &rd.m1iso);
+	}
+	if (stype == "m2iso") {
+	  cout << "  adding m2iso" << endl;
+	  reader->AddVariable( "m2iso", &rd.m2iso);
+	}
+	if (stype == "pvdchi2") {
+	  cout << "  adding pvdchi2" << endl;
+	  reader->AddVariable( "pvdchi2", &rd.pvdchi2);
 	}
       }
       break;
@@ -1935,6 +1965,9 @@ void tmva1::createToyData(string ifilename, string ofilename, int seed, int nsg,
   vNames.push_back("closetrk"); vMin.push_back(0.); vMax.push_back(21); vNbins.push_back(21); 
   vNames.push_back("docatrk"); vMin.push_back(0.); vMax.push_back(0.1); vNbins.push_back(100); 
   vNames.push_back("chi2dof"); vMin.push_back(0.); vMax.push_back(5); vNbins.push_back(100); 
+  vNames.push_back("m1iso"); vMin.push_back(0.); vMax.push_back(1.01); vNbins.push_back(101); 
+  vNames.push_back("m2iso"); vMin.push_back(0.); vMax.push_back(1.01); vNbins.push_back(101); 
+  vNames.push_back("pvdchi2"); vMin.push_back(0.); vMax.push_back(10.0); vNbins.push_back(100); 
 
   TFile *inFile = TFile::Open(ifilename.c_str());
   TTree *tsg = (TTree*)inFile->Get(Form("signalChan%dEvents0/events", channel));
@@ -1989,6 +2022,11 @@ void tmva1::createToyData(string ifilename, string ofilename, int seed, int nsg,
     rd.docatrk = ((TH1D*)inFile->Get("hs_docatrk"))->GetRandom();
     rd.chi2dof = ((TH1D*)inFile->Get("hs_chi2dof"))->GetRandom();
     rd.closetrk = ((TH1D*)inFile->Get("hs_closetrk"))->GetRandom();
+
+    rd.m1iso = ((TH1D*)inFile->Get("hs_m1iso"))->GetRandom();
+    rd.m2iso = ((TH1D*)inFile->Get("hs_m2iso"))->GetRandom();
+    rd.pvdchi2 = ((TH1D*)inFile->Get("hs_pvdchi2"))->GetRandom();
+
     osg0->Fill();
   }
 
@@ -2013,6 +2051,11 @@ void tmva1::createToyData(string ifilename, string ofilename, int seed, int nsg,
     rd.docatrk = ((TH1D*)inFile->Get("hs_docatrk"))->GetRandom();
     rd.chi2dof = ((TH1D*)inFile->Get("hs_chi2dof"))->GetRandom();
     rd.closetrk = ((TH1D*)inFile->Get("hs_closetrk"))->GetRandom();
+
+    rd.m1iso = ((TH1D*)inFile->Get("hs_m1iso"))->GetRandom();
+    rd.m2iso = ((TH1D*)inFile->Get("hs_m2iso"))->GetRandom();
+    rd.pvdchi2 = ((TH1D*)inFile->Get("hs_pvdchi2"))->GetRandom();
+
     osg1->Fill();
   }
 
@@ -2037,6 +2080,11 @@ void tmva1::createToyData(string ifilename, string ofilename, int seed, int nsg,
     rd.docatrk = ((TH1D*)inFile->Get("hb_docatrk"))->GetRandom();
     rd.chi2dof = ((TH1D*)inFile->Get("hb_chi2dof"))->GetRandom();
     rd.closetrk = ((TH1D*)inFile->Get("hb_closetrk"))->GetRandom();
+
+    rd.m1iso = ((TH1D*)inFile->Get("hb_m1iso"))->GetRandom();
+    rd.m2iso = ((TH1D*)inFile->Get("hb_m2iso"))->GetRandom();
+    rd.pvdchi2 = ((TH1D*)inFile->Get("hb_pvdchi2"))->GetRandom();
+
     obg0->Fill();
   }
 
@@ -2061,6 +2109,11 @@ void tmva1::createToyData(string ifilename, string ofilename, int seed, int nsg,
     rd.docatrk = ((TH1D*)inFile->Get("hb_docatrk"))->GetRandom();
     rd.chi2dof = ((TH1D*)inFile->Get("hb_chi2dof"))->GetRandom();
     rd.closetrk = ((TH1D*)inFile->Get("hb_closetrk"))->GetRandom();
+
+    rd.m1iso = ((TH1D*)inFile->Get("hb_m1iso"))->GetRandom();
+    rd.m2iso = ((TH1D*)inFile->Get("hb_m2iso"))->GetRandom();
+    rd.pvdchi2 = ((TH1D*)inFile->Get("hb_pvdchi2"))->GetRandom();
+
     obg1->Fill();
   }
 
@@ -2108,6 +2161,10 @@ void tmva1::trainOnToyData(string iname, string oname) {
   factory->AddVariable("docatrk",    'F' );
   factory->AddVariable("closetrk",   'I' );
   factory->AddVariable("chi2dof",    'F' );
+
+  factory->AddVariable("m1iso",    'F' );
+  factory->AddVariable("m2iso",    'F' );
+  factory->AddVariable("pvdchi2",    'F' );
   
   factory->AddSpectator("m",  "mass", "GeV", 'F' );
   
@@ -2228,5 +2285,10 @@ TTree* tmva1::createTree(struct readerData &rd) {
   tree->Branch("docatrk", &rd.docatrk, "docatrk/F");
   tree->Branch("chi2dof", &rd.chi2dof, "chi2dof/F");
   tree->Branch("closetrk", &rd.closetrk, "closetrk/F");
+
+  tree->Branch("m1iso", &rd.m1iso, "m1iso/F");
+  tree->Branch("m2iso", &rd.m2iso, "m2iso/F");
+  tree->Branch("pvdchi2", &rd.pvdchi2, "pvdchi2/F");
+
   return tree; 
 }

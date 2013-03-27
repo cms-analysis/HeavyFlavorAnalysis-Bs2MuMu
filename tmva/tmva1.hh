@@ -35,6 +35,7 @@ struct bdtSetup {
 struct readerData {
   float pt, eta, m1eta, m2eta, m1pt, m2pt;
   float fls3d, alpha, maxdoca, pvip, pvips, iso, docatrk, chi2dof, closetrk; 
+  float m1iso, m2iso, pvdchi2;
   float m;
 };
 
@@ -50,14 +51,14 @@ class tmva1: public TObject {
 
   public:
 
-  tmva1();
+  tmva1(int year = 2012);
   ~tmva1();
 
   TCanvas* getC0();
   void train(std::string oname = "TMVA-0", std::string filename = "/scratch/ursl/tmva-trees.root");
   void apply(const char *fname = "TMVA-0");
   void analyze(const char *fname = "TMVA-0");
-  void makeAll(int offset, std::string filename = "/scratch/ursl/tmva-trees.root", int clean = 1);
+  void makeAll(int offset, std::string filename = "", int clean = 1);
   void make(int offset, std::string filename, int evt, int clean);
 
   void reAnalyze(int imin, int imax);
@@ -97,7 +98,7 @@ class tmva1: public TObject {
 
   bool fApplyOn0, fApplyOn1, fApplyOn2; 
   bool fTrainAntiMuon;
-  int fChannel;
+  int fChannel, fYear;
   double fRsigma; 
 
   RedTreeData ftd;  

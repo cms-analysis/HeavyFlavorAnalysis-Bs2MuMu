@@ -1,0 +1,57 @@
+#!/usr/bin/env perl
+#
+# Usage: trainBDT [-s 2011] [-f tmva-trees-0] [-o 1020] 
+# ------
+
+use Getopt::Std;
+getopts('dD:f:o:s:');
+
+use lib '/shome/ursl/perl/modules/Tie-IxHash-1.23/lib';
+use Tie::IxHash;
+
+my $directory = "/scratch/ursl/bdt"; 
+if ($opt_D) {
+    $directory = $opt_D; 
+}
+
+my $offset = 1000; 
+if ($opt_o) {
+    $offset = $opt_o; 
+}
+
+my $file = "tmva-trees"; 
+if ($opt_f) {
+    $file = $opt_f; 
+}
+
+
+tie %jobs, "Tie::IxHash";
+
+%jobs = (
+    "2011 barrel" => "0", 
+    "2011 endcap" => "1", 
+    "2012 barrel" => "2", 
+    "2012 endcap" => "3", 
+    );
+
+# -- run the jobs
+foreach $j (keys %jobs) {
+    # -- if a subset is requested, skip all other 
+    if ($opt_s && !($j =~ /$opt_s/)) {next;}
+
+    if ($j =~ /2011/) {
+	$year = 2011; 
+    } else {
+	$year = 2012; 
+    }
+    if ($j =~ /barrel/) {
+	$channel = 0;
+    } else {
+	$channel = 1; 
+    }
+    $version  = $offset + $jobs{$j};
+    $tmvaFile = $directory . "/" . $file . "-$year" . ".root"; 
+    $command = "root -b -q 'runBDT.C($version, \"$tmvaFile\", $channel); > TMVA-$version.log' &";
+    print "$command\n";
+    if (!$opt_d) {system("$command"); }
+}

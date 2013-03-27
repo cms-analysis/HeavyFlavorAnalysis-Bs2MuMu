@@ -5,7 +5,7 @@ void runAll() {
 }
 
 // ----------------------------------------------------------------------
-void runBDT(int seed, string filename, int iChannel = 0) {
+void runBDT(int seed, string filename, int iChannel = 0, int year = 2011) {
   gSystem->Load("libTMVA.so");
   gRandom->SetSeed(seed);
 
@@ -55,7 +55,7 @@ void runBDT(int seed, string filename, int iChannel = 0) {
        << maxdepth << " ncuts = " << ncuts << " beta = " << beta << " nnodesmax = " << nnodesmax
        << endl;
 
-  tmva1 aT;
+  tmva1 aT(year);
 
   aT.setChannel(iChannel);
 
