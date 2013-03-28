@@ -1,0 +1,58 @@
+Fitting with resolution, scale, bgr function # 45 50 0 - Iteration 0
+ Scale fit parameters:
+  Results of the fit: parameter 13 has value -1.1e-06+-0 
+  Results of the fit: parameter 14 has value 0.000594+-0 
+  Results of the fit: parameter 15 has value 1.052921+-0 
+  Results of the fit: parameter 16 has value -0.000134+-0 
+  Results of the fit: parameter 17 has value -2.100000+-0 
+  Results of the fit: parameter 18 has value 0.000054+-0 
+  Results of the fit: parameter 19 has value 1.169067+-0 
+  Results of the fit: parameter 20 has value -0.000124+-0 
+  Results of the fit: parameter 21 has value -1.500000+-0 
+  Results of the fit: parameter 22 has value 0.000218+-0 
+  Results of the fit: parameter 23 has value -1.403807+-0 
+  Results of the fit: parameter 24 has value 0.000022+-0 
+  Results of the fit: parameter 25 has value 1.500000+-0 
+  Results of the fit: parameter 26 has value 0.000016+-0 
+  Results of the fit: parameter 27 has value -1.193576+-0 
+  Results of the fit: parameter 28 has value -0.000171+-0 
+  Results of the fit: parameter 29 has value 2.100000+-0 
+  Results of the fit: parameter 30 has value 0.000573+-0 
+  Results of the fit: parameter 31 has value 2.325263+-0 
+  Results of the fit: parameter 32 has value -0.000358+-0 
+  Results of the fit: parameter 33 has value -0.000003+-0 
+  Results of the fit: parameter 34 has value 0.000023+-0 
+  Results of the fit: parameter 35 has value 2.000000+-0 
+  Results of the fit: parameter 36 has value 3.061226+-0 
+  Results of the fit: parameter 37 has value 0.000467+-0 
+  Results of the fit: parameter 38 has value 2.000000+-0 
+  Results of the fit: parameter 39 has value -1.034762+-0 
+ Resolution fit parameters (data):
+  Results of the fit: parameter 0 has value 0.000249342+-1.41921e-05 + 0 - 0
+  Results of the fit: parameter 1 has value 0.0310375+-0.000579977 + 0 - 0
+  Results of the fit: parameter 2 has value 0.0170683+-0.000658282 + 0 - 0
+  Results of the fit: parameter 3 has value 0.0124545+-0.000816811 + 0 - 0
+  Results of the fit: parameter 4 has value 0.0128944+-0.000627245 + 0 - 0
+  Results of the fit: parameter 5 has value 0.00870262+-0.000731055 + 0 - 0
+  Results of the fit: parameter 6 has value 0.00275124+-0.000652318 + 0 - 0
+  Results of the fit: parameter 7 has value 0.00283493+-0.000843826 + 0 - 0
+  Results of the fit: parameter 8 has value 0.00879817+-0.000614346 + 0 - 0
+  Results of the fit: parameter 9 has value 0.0126588+-0.000588442 + 0 - 0
+  Results of the fit: parameter 10 has value 0.0123198+-0.000761688 + 0 - 0
+  Results of the fit: parameter 11 has value 0.0168372+-0.000659754 + 0 - 0
+  Results of the fit: parameter 12 has value 0.0302055+-0.000577065 + 0 - 0
+ Resolution fit parameters (mc):
+  Results of the fit: parameter 0 has value 0.000229363+-2.26927e-05 + 0 - 0
+  Results of the fit: parameter 1 has value 0.0265407+-0.000854695 + 0 - 0
+  Results of the fit: parameter 2 has value 0.0145915+-0.000947871 + 0 - 0
+  Results of the fit: parameter 3 has value 0.0106324+-0.00092515 + 0 - 0
+  Results of the fit: parameter 4 has value 0.0105898+-0.000954341 + 0 - 0
+  Results of the fit: parameter 5 has value 0.00654558+-0.000943192 + 0 - 0
+  Results of the fit: parameter 6 has value 0.00145569+-0.0014105 + 0 - 0
+  Results of the fit: parameter 7 has value 0.0020046+-0.0013345 + 0 - 0
+  Results of the fit: parameter 8 has value 0.0070051+-0.00111007 + 0 - 0
+  Results of the fit: parameter 9 has value 0.00920529+-0.00102673 + 0 - 0
+  Results of the fit: parameter 10 has value 0.00959078+-0.00124504 + 0 - 0
+  Results of the fit: parameter 11 has value 0.0142512+-0.000957983 + 0 - 0
+  Results of the fit: parameter 12 has value 0.0253355+-0.000755513 + 0 - 0
+

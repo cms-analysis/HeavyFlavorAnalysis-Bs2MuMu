@@ -54,6 +54,7 @@ public:
   virtual int         nearestPV(int pvIdx, double maxDist = 99.);
   virtual void        getSigTracks(std::vector<int> &v, TAnaCand *pC);
   virtual double      constrainedMass();
+  virtual double      muScaleCorrectedMass();
   virtual void        runRange();
   virtual void        genMatch(); 
   virtual void        recoMatch(); 
@@ -189,7 +190,7 @@ public:
   double  fMu1XpDist, fMu2XpDist;
   double  fPvX, fPvY, fPvZ, fPvNtrk, fPvNdof, fPvAveW8; 
   int     fPvN;
-  double  fCandPt, fCandP, fCandTau, fCandEta, fCandPhi, fCandM, fCandME, fCandM2, fCandW8Tr, fCandW8Mu; 
+  double  fCandPt, fCandP, fCandTau, fCandEta, fCandPhi, fCandM, fCandME, fCandM2, fCandM3, fCandW8Tr, fCandW8Mu; 
   double  fCandCosA, fCandA;
   double  fCandChi2, fCandDof, fCandChi2Dof, fCandProb, fCandFL3d, fCandFL3dE, fCandFLS3d, fCandFLxy, fCandFLSxy, fCandDoca; 
   double  f2MChi2,   f2MDof,   f2MProb,   f2MFL3d,   f2MFL3dE,   f2MFLS3d,   f2MFLSxy; 

@@ -31,6 +31,7 @@
 #define DR      57.29577951
 
 class PidTable; 
+class MuScleFitCorrector; 
 class candAna;
 
 class bmm2Reader : public treeReader01 {
@@ -56,6 +57,8 @@ public:
   PidTable *ptSgMUID, *ptCbMUID; 
   PidTable *ptSgMUT1, *ptCbMUT1; 
   PidTable *ptSgMUT2, *ptCbMUT2; 
+
+  MuScleFitCorrector *msc; 
 
   int fProcessType; 
   int fYear; 

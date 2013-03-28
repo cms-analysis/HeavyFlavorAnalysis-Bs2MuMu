@@ -4,6 +4,7 @@
 
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
 #include "../interface/HFMasses.hh"
+#include "MuScleFitCorrector_v3/MuScleFitCorrector.h"
 
 #include "candAna.hh"
 #include "candAnaMuMu.hh"
@@ -213,6 +214,15 @@ void bmm2Reader::readCuts(TString filename, int dump) {
       ptCbMUT2 = new PidTable(name); 
       if (dump) cout << "Cowboys MUT2:            " << name << endl;
     }
+
+    if (!strcmp(className, "muScaleCorrector")) {
+      char name[1000];
+      sscanf(buffer, "%s %s", className, name);
+      TString tname(name);  
+      msc = new MuScleFitCorrector(tname);
+      if (dump) cout << "MuScaleCorrector:            " << name << endl;
+    }
+
 
   }
 

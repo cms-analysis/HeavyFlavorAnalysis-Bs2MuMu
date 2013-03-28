@@ -317,6 +317,7 @@ void candAna::candAnalysis() {
   if (TMath::IsNaN(fCandPvIpS3D)) fCandPvIpS3D = -1.;
 
   fCandM2 = constrainedMass();
+  fCandM3 = muScaleCorrectedMass(); 
 
   // -- new variables
   fCandPvDeltaChi2 = fpCand->fDeltaChi2;
@@ -2410,6 +2411,13 @@ void candAna::findAllTrackIndices(TAnaCand* pCand, map<int,int> *indices) {
 	
   for (j = pCand->fDau1; j <= pCand->fDau2 && j>=0; j++)
     findAllTrackIndices(fpEvt->getCand(j),indices);
+}
+
+
+// ----------------------------------------------------------------------
+double candAna::muScaleCorrectedMass() {
+
+
 }
 
  
