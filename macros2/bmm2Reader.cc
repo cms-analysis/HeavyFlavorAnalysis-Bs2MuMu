@@ -4,7 +4,7 @@
 
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
 #include "../interface/HFMasses.hh"
-#include "MuScleFitCorrector_v3/MuScleFitCorrector.h"
+#include "MuScleFitCorrector.hh"
 
 #include "candAna.hh"
 #include "candAnaMuMu.hh"
@@ -20,6 +20,7 @@ using namespace std;
 bmm2Reader::bmm2Reader(TChain *tree, TString evtClassName): treeReader01(tree, evtClassName) {
   cout << "==> bmm2Reader: constructor..." << endl;
   fVerbose = 0; 
+  msc = 0; 
 }
 
 
@@ -226,6 +227,27 @@ void bmm2Reader::readCuts(TString filename, int dump) {
 
   }
 
+
+  // -- in case the muon scale corrections were not initialized: 
+  if (0 == msc) {
+    TString tname;  
+    if (2011 == fYear) {
+      if (fIsMC) {
+	tname = "MuScleFitCorrector_v3/MuScleFit_2011_MC_44X.txt";
+      } else {
+	tname = "MuScleFitCorrector_v3/MuScleFit_2011_DATA_44X.txt";
+      }
+    }
+    if (2012 == fYear) { 
+      if (fIsMC) {
+	tname = "MuScleFitCorrector_v3/MuScleFit_2012_MC_52X.txt";
+      } else {
+	tname = "MuScleFitCorrector_v3/MuScleFit_2012_DATA_53X.txt";
+      }
+    }
+    cout << "==> Initializing MuScleFitCorrector with " << tname << endl;
+    msc = new  MuScleFitCorrector(tname);
+  }  
 }
 
 

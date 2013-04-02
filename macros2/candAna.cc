@@ -3,6 +3,7 @@
 #include "../interface/HFMasses.hh"
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
 #include "../macros/AnalysisDistribution.hh"
+#include "MuScleFitCorrector.hh"
 
 
 using namespace std;
@@ -326,7 +327,6 @@ void candAna::candAnalysis() {
   if (TMath::IsNaN(fCandPvIpS3D)) fCandPvIpS3D = -1.;
 
   fCandM2 = constrainedMass();
-  fCandM3 = muScaleCorrectedMass(); 
 
   // -- new variables
   fCandPvDeltaChi2 = fpCand->fDeltaChi2;
@@ -387,6 +387,8 @@ void candAna::candAnalysis() {
 
   fpMuon1 = p1; 
   fpMuon2 = p2; 
+  muScaleCorrectedMasses(); 
+  
   fMu1TrkLayer  = fpReader->numberOfTrackerLayers(p1);
   fMu1TmId      = tightMuon(p1); 
   fMu1MvaId     = mvaMuon(p1, fMu1BDT);        
@@ -1246,6 +1248,8 @@ void candAna::setupReducedTree(TTree *t) {
   t->Branch("m",       &fCandM,             "m/D");
   t->Branch("me",      &fCandME,            "me/D");
   t->Branch("cm",      &fCandM2,            "cm/D");
+  t->Branch("m3",      &fCandM3,            "m3/D");
+  t->Branch("m4",      &fCandM4,            "m4/D");
   t->Branch("cosa",    &fCandCosA,          "cosa/D");
   t->Branch("alpha",   &fCandA,             "alpha/D");
   t->Branch("iso",     &fCandIso,           "iso/D");
@@ -2349,27 +2353,6 @@ void candAna::xpDistMuons() {
     fMu2XpDist = m2->fXpTracks[1].dist; 
   }
 
-  if (fMu1XpDist > 98.9999 && fMu1XpDist < 99.00001) {
-    cout << "This is muon1 track idx = " << m1->fIndex << " with pT = " << m1->fPlab.Perp() << " eta = " << m1->fPlab.Eta() 
-	 << " tight muon = " << fMu1TmId
-	 << " global muon = " <<  (m1->fMuID & 2)
-	 << " M1 mpos = " << m1->fMuonTrackPosAtM1.X() << "/" << m1->fMuonTrackPosAtM1.Y() << "/" << m1->fMuonTrackPosAtM1.Z()
-	 << " M1 tpos = " << m1->fPositionAtM1.X() << "/" << m1->fPositionAtM1.Y() << "/" << m1->fPositionAtM1.Z()
-	 << " m1iso = " << fMu1Iso
-	 << endl;
-    cout << "This is muon2 track idx = " << m2->fIndex << " with pT = " << m2->fPlab.Perp() << " eta = " << m2->fPlab.Eta() 
-	 << " tight muon = " << fMu2TmId
-	 << " global muon = " <<  (m2->fMuID & 2)
-	 << " M1 pos = " << m2->fMuonTrackPosAtM1.X() << "/" << m2->fMuonTrackPosAtM1.Y() << "/" << m2->fMuonTrackPosAtM1.Z()
-	 << " m2iso = " << fMu2Iso
-	 << endl;
-    for (int i = 0; i < TAnaMuon::NXPTRACKS; ++i) {
-      cout << i << ": idx = " << m1->fXpTracks[i].idx << " dist = " << m1->fXpTracks[i].dist 
-	   << " second muon: idx = " << m2->fXpTracks[i].idx << " dist = " << m2->fXpTracks[i].dist 
-	   << endl;
-    }
-  }
-
 }
 
 
@@ -2437,8 +2420,24 @@ void candAna::findAllTrackIndices(TAnaCand* pCand, map<int,int> *indices) {
 
 
 // ----------------------------------------------------------------------
-double candAna::muScaleCorrectedMass() {
+void candAna::muScaleCorrectedMasses() {
+  fCandM3 = fCandM4 = -99.;
+  TLorentzVector myNegMuon, myPosMuon; 
+  if (fpMuon1->fQ < 0) { 
+    myNegMuon.SetXYZM(fpMuon1->fRefPlab.X(), fpMuon1->fRefPlab.Y(), fpMuon1->fRefPlab.Z(), MMUON);
+    myPosMuon.SetXYZM(fpMuon2->fRefPlab.X(), fpMuon2->fRefPlab.Y(), fpMuon2->fRefPlab.Z(), MMUON);
+  } else {
+    myPosMuon.SetXYZM(fpMuon1->fRefPlab.X(), fpMuon1->fRefPlab.Y(), fpMuon1->fRefPlab.Z(), MMUON);
+    myNegMuon.SetXYZM(fpMuon2->fRefPlab.X(), fpMuon2->fRefPlab.Y(), fpMuon2->fRefPlab.Z(), MMUON);
+  }
 
+  double mass0 = (myNegMuon + myPosMuon).Mag(); 
+  fpReader->msc->applyPtCorrection(myNegMuon,-1);
+  fpReader->msc->applyPtCorrection(myPosMuon,1);
+  double mass1 = (myNegMuon + myPosMuon).Mag(); 
+  //  cout << "candMass: " << fCandM << " TLV mass = " << mass0 << " msc mass = " << mass1 << endl;
+  fCandM3 = (mass1/mass0)*fCandM; 
+  fCandM4 = mass1;
 
 }
 
