@@ -2424,11 +2424,11 @@ void candAna::muScaleCorrectedMasses() {
   fCandM3 = fCandM4 = -99.;
   TLorentzVector myNegMuon, myPosMuon; 
   if (fpMuon1->fQ < 0) { 
-    myNegMuon.SetXYZM(fpMuon1->fRefPlab.X(), fpMuon1->fRefPlab.Y(), fpMuon1->fRefPlab.Z(), MMUON);
-    myPosMuon.SetXYZM(fpMuon2->fRefPlab.X(), fpMuon2->fRefPlab.Y(), fpMuon2->fRefPlab.Z(), MMUON);
+    myNegMuon.SetXYZM(fpMuon1->fPlab.X(), fpMuon1->fPlab.Y(), fpMuon1->fPlab.Z(), MMUON);
+    myPosMuon.SetXYZM(fpMuon2->fPlab.X(), fpMuon2->fPlab.Y(), fpMuon2->fPlab.Z(), MMUON);
   } else {
-    myPosMuon.SetXYZM(fpMuon1->fRefPlab.X(), fpMuon1->fRefPlab.Y(), fpMuon1->fRefPlab.Z(), MMUON);
-    myNegMuon.SetXYZM(fpMuon2->fRefPlab.X(), fpMuon2->fRefPlab.Y(), fpMuon2->fRefPlab.Z(), MMUON);
+    myPosMuon.SetXYZM(fpMuon1->fPlab.X(), fpMuon1->fPlab.Y(), fpMuon1->fPlab.Z(), MMUON);
+    myNegMuon.SetXYZM(fpMuon2->fPlab.X(), fpMuon2->fPlab.Y(), fpMuon2->fPlab.Z(), MMUON);
   }
 
   double mass0 = (myNegMuon + myPosMuon).Mag(); 
@@ -2436,8 +2436,8 @@ void candAna::muScaleCorrectedMasses() {
   fpReader->msc->applyPtCorrection(myPosMuon,1);
   double mass1 = (myNegMuon + myPosMuon).Mag(); 
   //  cout << "candMass: " << fCandM << " TLV mass = " << mass0 << " msc mass = " << mass1 << endl;
-  fCandM3 = (mass1/mass0)*fCandM; 
-  fCandM4 = mass1;
+  fCandM3 = mass1;
+  fCandM4 = (mass1/mass0)*fCandM; 
 
 }
 
