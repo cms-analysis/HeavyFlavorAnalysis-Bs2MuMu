@@ -1,42 +1,48 @@
 # for SE access: change /scratch/ursl to dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/v14/bmm/2011/
 # ----------------------------------------------------------------------
-type=sg,default       dset=data     lumi=12.8    file=/scratch/ursl/v14-2012-bmm-data.root
-type=sg,2011          dset=data     lumi=12.8    file=/scratch/ursl/v14-2011-bmm-data.root
-type=sg,default       dset=mc,0.583 lumi=7405.3  file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
-type=sg,acc           dset=mc,1.00  lumi=7405.3  file=/scratch/ursl/v14-2012-cms-accBsToMuMu.root
-# -- note the changed filename for the signal acceptance MC!!!
-type=bd,default       dset=mc       lumi=14767.2 file=/scratch/ursl/v14-2012-cms-BdToMuMu.root
-type=bd,acc           dset=mc,1.0   lumi=14767.2 file=/scratch/ursl/v14-2012-cms-accBdToMuMu.root
-type=sg,Bs2MuMu       dset=mc       lumi=1600.0  file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
-type=sg,Bx2MuMu       dset=mc       lumi=1600.0  file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
-type=sg,By2MuMu       dset=mc       lumi=1600.0  file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
+type=sg,default       dset=data     lumi=20.0    file=/scratch/ursl/v14-2012-bmm-data.root
+type=sg,2011          dset=data     lumi=5.0     file=/scratch/ursl/v14-2011-bmm-data.root
+#
+type=sg,default       dset=mc,0.583 lumi=6500000 file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
+type=sg,acc           dset=mc,1.00  lumi=0.0     file=/scratch/ursl/v14-2012-cms-accBsToMuMu.root
+#
+type=bd,default       dset=mc       lumi=9100000 file=/scratch/ursl/v14-2012-cms-BdToMuMu.root
+type=bd,acc           dset=mc,1.0   lumi=0.0     file=/scratch/ursl/v14-2012-cms-accBdToMuMu.root
+#
+type=sg,Bs2MuMu       dset=mc       lumi=6500000 file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
+type=sg,Bx2MuMu       dset=mc       lumi=0.0     file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
+type=sg,By2MuMu       dset=mc       lumi=0.0     file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
 # --------------------------------------------------------------------
 # control sample  data and MC
-type=cs,default       dset=data      lumi=12.8   file=/scratch/ursl/v14-2012-bmm-data.root
-type=cs,default       dset=mc,0.0168 lumi=17.5   file=/scratch/ursl/v14-2012-cms-BsToJpsiPhi.root
-type=cs,acc           dset=mc,1.00   lumi=0.36   file=/scratch/ursl/v14-2012-cms-accBsToJpsiPhi.root
+type=cs,default       dset=data      lumi=50.0   file=/scratch/ursl/v14-2012-bmm-data.root
+type=cs,default       dset=mc,0.0168 lumi=0.0    file=/scratch/ursl/v14-2012-cms-BsToJpsiPhi.root
+type=cs,acc           dset=mc,1.00   lumi=0.0    file=/scratch/ursl/v14-2012-cms-accBsToJpsiPhi.root
 # --------------------------------------------------------------------
 # normalization data and MC
-type=no,default       dset=data      lumi=12.8   file=/scratch/ursl/v14-2012-bmm-data.root
-type=no,default       dset=mc,0.0207 lumi=10.3   file=/scratch/ursl/v14-2012-cms-BuToJpsiK.root 
-type=no,acc           dset=mc,1.00   lumi=0.22   file=/scratch/ursl/v14-2012-cms-accBuToJpsiK.root
+type=no,default       dset=data      lumi=20.0   file=/scratch/ursl/v14-2012-bmm-data.root
+type=no,default       dset=mc,0.0207 lumi=0.0    file=/scratch/ursl/v14-2012-cms-BuToJpsiK.root 
+type=no,acc           dset=mc,1.00   lumi=0.0    file=/scratch/ursl/v14-2012-cms-accBuToJpsiK.root
 # ----------------------------------------------------------------------
 # rare background MC
-type=bg,Bs2KK         dset=mc,0.06   lumi=16.2  file=/scratch/ursl/v14-2012-cms-BsToKK.root
-type=bg,Bs2KPi        dset=mc,0.06   lumi=15.3  file=/scratch/ursl/v14-2012-cms-BsToKPi.root 
-type=bg,Bs2PiPi       dset=mc,0.06   lumi=33.7  file=/scratch/ursl/v14-2012-cms-BsToPiPi.root 
-type=bg,Bd2KK         dset=mc,0.06   lumi=16.2  file=/scratch/ursl/v14-2012-cms-BdToKK.root
-type=bg,Bd2KPi        dset=mc,0.06   lumi=15.2  file=/scratch/ursl/v14-2012-cms-BdToKPi.root
-type=bg,Bd2PiPi       dset=mc,0.06   lumi=17.7  file=/scratch/ursl/v14-2012-cms-BdToPiPi.root
-type=bg,Lb2KP         dset=mc,0.06   lumi=11.0  file=/scratch/ursl/v14-2012-cms-LambdaBToPK.root
-type=bg,Lb2PiP        dset=mc,0.06   lumi=8.97  file=/scratch/ursl/v14-2012-cms-LambdaBToPPi.root
-type=bg,Bd2PiMuNu     dset=mc,0.024  lumi=13.9  file=/scratch/ursl/v14-2012-cms-BdToPiMuNu.root
-type=bg,Bs2KMuNu      dset=mc,0.024  lumi=16.8  file=/scratch/ursl/v14-2012-cms-BsToKMuNu.root
-type=bg,Lb2PMuNu      dset=mc,0.024  lumi=5.8   file=/scratch/ursl/v14-2012-cms-LambdaBToPMuNu.root
+type=bg,Bs2KK         dset=mc,0.06   lumi=35.6   file=/scratch/ursl/v14-2012-cms-BsToKK.root
+type=bg,Bs2KPi        dset=mc,0.06   lumi=40.0   file=/scratch/ursl/v14-2012-cms-BsToKPi.root 
+type=bg,Bs2PiPi       dset=mc,0.06   lumi=51.1   file=/scratch/ursl/v14-2012-cms-BsToPiPi.root 
 #
-type=bg,Bu2PiMuMu     dset=mc,0.06  lumi=99.0  file=/scratch/ursl/v14-2012-cms-BuToMuMuPi.root
-type=bg,Bu2KMuMu      dset=mc,0.06  lumi=99.0  file=/scratch/ursl/v14-2012-cms-BuToMuMuK.root 
-type=bg,BdToPi0MuMu   dset=mc,0.06  lumi=99.0  file=/scratch/ursl/v14-2012-cms-BdToMuMuPi0.root 
-type=bg,BdToK0MuMu    dset=mc,0.06  lumi=99.0  file=/scratch/ursl/v14-2012-cms-BdToMuMuK0.root 
-type=bg,Bd2MuMuGamma  dset=mc,0.06  lumi=99.0  file=/scratch/ursl/v14-2012-cms-BdToMuMuGamma.root 
-type=bg,Bs2MuMuGamma  dset=mc,0.06  lumi=99.0  file=/scratch/ursl/v14-2012-cms-BsToMuMuGamma.root 
+type=bg,Bd2KK         dset=mc,0.06   lumi=54.0   file=/scratch/ursl/v14-2012-cms-BdToKK.root
+type=bg,Bd2KPi        dset=mc,0.06   lumi=6.1    file=/scratch/ursl/v14-2012-cms-BdToKPi.root
+type=bg,Bd2PiPi       dset=mc,0.06   lumi=192.3  file=/scratch/ursl/v14-2012-cms-BdToPiPi.root
+#
+type=bg,Lb2KP         dset=mc,0.06   lumi=20.8   file=/scratch/ursl/v14-2012-cms-LambdaBToPK.root
+type=bg,Lb2PiP        dset=mc,0.06   lumi=17.3   file=/scratch/ursl/v14-2012-cms-LambdaBToPPi.root
+#
+type=bg,Bd2PiMuNu     dset=mc,0.024  lumi=36.9   file=/scratch/ursl/v14-2012-cms-BdToPiMuNu.root
+type=bg,Bs2KMuNu      dset=mc,0.024  lumi=4.6    file=/scratch/ursl/v14-2012-cms-BsToKMuNu.root
+type=bg,Lb2PMuNu      dset=mc,0.024  lumi=24.1   file=/scratch/ursl/v14-2012-cms-LambdaBToPMuNu.root
+#
+type=bg,Bd2MuMuGamma  dset=mc,0.06  lumi=700000.0 file=/scratch/ursl/v14-2012-cms-BdToMuMuGamma.root 
+type=bg,Bs2MuMuGamma  dset=mc,0.06  lumi=10000.0  file=/scratch/ursl/v14-2012-cms-BsToMuMuGamma.root 
+#
+type=bg,Bu2PiMuMu     dset=mc,0.06  lumi=669.0   file=/scratch/ursl/v14-2012-cms-BuToMuMuPi.root
+type=bg,Bu2KMuMu      dset=mc,0.06  lumi=292.0   file=/scratch/ursl/v14-2012-cms-BuToMuMuK.root 
+type=bg,BdToPi0MuMu   dset=mc,0.06  lumi=130.0   file=/scratch/ursl/v14-2012-cms-BdToMuMuPi0.root 
+type=bg,BdToK0MuMu    dset=mc,0.06  lumi=45.5    file=/scratch/ursl/v14-2012-cms-BdToMuMuK0.root 
