@@ -1082,6 +1082,13 @@ void plotBDT::validateDistributions(int channel, const char *type, int classID) 
   vNames.push_back("docatrk"); vMin.push_back(0.); vMax.push_back(0.1); vNbins.push_back(100); vLog.push_back(0); vA.push_back("d_{ca}^{0} [cm]"); 
   vNames.push_back("chi2dof"); vMin.push_back(0.); vMax.push_back(5); vNbins.push_back(100); vLog.push_back(0); vA.push_back("#chi^{2}/dof"); 
 
+  vNames.push_back("closetrks1"); vMin.push_back(0.); vMax.push_back(21); vNbins.push_back(21); vLog.push_back(0); vA.push_back("N_{trk}^{close,1 #sigma}"); 
+  vNames.push_back("closetrks2"); vMin.push_back(0.); vMax.push_back(21); vNbins.push_back(21); vLog.push_back(0); vA.push_back("N_{trk}^{close,2 #sigma}"); 
+  vNames.push_back("closetrks3"); vMin.push_back(0.); vMax.push_back(21); vNbins.push_back(21); vLog.push_back(0); vA.push_back("N_{trk}^{close,1 #sigma}"); 
+  vNames.push_back("m1iso"); vMin.push_back(0.6); vMax.push_back(1.01); vNbins.push_back(41); vLog.push_back(0); vA.push_back("I_{#mu1}"); 
+  vNames.push_back("m2iso"); vMin.push_back(0.6); vMax.push_back(1.01); vNbins.push_back(41); vLog.push_back(0); vA.push_back("I_{#mu2}"); 
+  vNames.push_back("pvdchi2"); vMin.push_back(0.); vMax.push_back(10.0); vNbins.push_back(101); vLog.push_back(0); vA.push_back("#Delta #chi^{2}"); 
+  vNames.push_back("othervtx"); vMin.push_back(0.); vMax.push_back(1.01); vNbins.push_back(101); vLog.push_back(0); vA.push_back("P(other vtx)"); 
   
   TTree *tEvt0(0), *tEvt1(0), *tEvt2(0); 
   if (!strcmp("test", type)) {
@@ -1155,8 +1162,8 @@ void plotBDT::validateDistributions(int channel, const char *type, int classID) 
       gPad->SetLogy(0); 
     }
 
-    c0->SaveAs(Form("%s/ks-%s_%s.pdf", 
-		    fDirectory.c_str(), sname.c_str(), vNames[i].c_str())); 
+    c0->SaveAs(Form("%s/ks-%d-%s_%s.pdf", 
+		    fDirectory.c_str(), fYear, sname.c_str(), vNames[i].c_str())); 
   }
 
 
@@ -1172,8 +1179,8 @@ void plotBDT::validateDistributions(int channel, const char *type, int classID) 
     bgKS->Draw();
     tl->DrawLatex(0.15, 0.92, Form("mean = %4.3f", bgKS->GetMean())); 
     tl->DrawLatex(0.60, 0.92, Form("RMS = %4.3f",  bgKS->GetRMS())); 
-    c0->SaveAs(Form("%s/ks-%s-bg-probs.pdf", 
-		    fDirectory.c_str(), sname.c_str())); 
+    c0->SaveAs(Form("%s/ks-%d-%s-bg-probs.pdf", 
+		    fDirectory.c_str(), fYear, sname.c_str())); 
   }
 
 } 
@@ -1189,10 +1196,17 @@ void plotBDT::tmvaPlots(string type) {
   zone();
   shrinkPad(0.15, 0.15, 0.15); 
   TH2 *h2 = (TH2*)fRootFile->Get("CorrelationMatrixS");
+  h2->SetLabelSize(0.05, "x"); 
+  h2->SetLabelSize(0.05, "y"); 
+  h2->GetXaxis()->LabelsOption("v"); 
+
   h2->Draw("colztext");
   c0->SaveAs(Form("%s/%s-CorrelationMatrixS.pdf", fDirectory.c_str(), fBdtString.c_str()));
 
   h2 = (TH2*)fRootFile->Get("CorrelationMatrixB");
+  h2->SetLabelSize(0.05, "x"); 
+  h2->SetLabelSize(0.05, "y"); 
+  h2->GetXaxis()->LabelsOption("v"); 
   h2->Draw("colztext");
   c0->SaveAs(Form("%s/%s-CorrelationMatrixB.pdf", fDirectory.c_str(), fBdtString.c_str()));
 
@@ -1551,6 +1565,14 @@ string plotBDT::replaceLabelWithTex(string label) {
   if ("m1eta" == label) return "\\etamuone";
   if ("m2eta" == label) return "\\etamutwo";
   if ("chi2dof" == label) return "\\chidof";
+  if ("m1iso" == label) return "\\isomuone";
+  if ("m2iso" == label) return "\\isomutwo";
+  if ("pvdchi2" == label) return "\\pvdchi";
+  if ("othervtx" == label) return "\\othervtx";
+  if ("closetrks1" == label) return "\\closetrkA";
+  if ("closetrks2" == label) return "\\closetrkB";
+  if ("closetrks3" == label) return "\\closetrkC";
+
   return "unknown";
 }
 
@@ -1654,7 +1676,17 @@ void plotBDT::xmlParsingVariables(string weightfile) {
     if (imap->second == "iso")      h1 = new TH1D("iso", "iso", 101, 0., 1.01); 
     if (imap->second == "closetrk") h1 = new TH1D("closetrk", "closetrk", 21, 0., 21.); 
     if (imap->second == "docatrk")  h1 = new TH1D("docatrk", "docatrk", 100, 0., 0.2); 
-    if (imap->second == "chi2/dof") h1 = new TH1D("chi2dof", "chi2dof", 100, 0., 10.); 
+    if (imap->second == "chi2dof")  h1 = new TH1D("chi2dof", "chi2dof", 100, 0., 10.); 
+
+    if (imap->second == "m1iso")      h1 = new TH1D("m1iso", "m1iso", 101, 0., 1.01); 
+    if (imap->second == "m2iso")      h1 = new TH1D("m2iso", "m2iso", 101, 0., 1.01); 
+    if (imap->second == "closetrks1") h1 = new TH1D("closetrks1", "closetrks1", 21, 0., 21.); 
+    if (imap->second == "closetrks2") h1 = new TH1D("closetrks2", "closetrks2", 21, 0., 21.); 
+    if (imap->second == "closetrks3") h1 = new TH1D("closetrks3", "closetrks3", 21, 0., 21.); 
+
+    if (imap->second == "pvdchi2") h1 = new TH1D("pvdchi2", "pvdchi2", 100, 0., 10.); 
+    if (imap->second == "othervtx") h1 = new TH1D("othervtx", "othervtx", 101, 0., 1.01); 
+
     h1->SetLineColor(kRed); h1->SetLineStyle(kDashed); 
     fhBdtVariableCuts.push_back(h1); 
 

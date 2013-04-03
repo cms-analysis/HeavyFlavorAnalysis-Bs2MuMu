@@ -3288,6 +3288,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     // -- debug HLT
     if (fSaveLargerTree) {
       small->Branch("hlt", &fb.hlt ,"hlt/O");
+      small->Branch("hltm", &fb.hltm ,"hltm/O");
       small->Branch("muid", &fb.gmuid ,"muid/O");
       small->Branch("pt",   &fb.pt ,"hlt/D");
       small->Branch("eta",  &fb.eta ,"eta/D");
@@ -3317,6 +3318,8 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
       // -- debug HLT
     }
     small->Branch("m",     &fb.m,"m/D");
+    small->Branch("m3",    &fb.m3,"m3/D");
+    small->Branch("m4",    &fb.m4,"m4/D");
     small->Branch("me",    &fb.me,"me/D");
     small->Branch("tau",   &fb.tau ,"tau/D");
     small->Branch("gtau",  &fb.gtau ,"gtau/D");
@@ -3325,6 +3328,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     small->Branch("eta",   &fb.eta,"eta/D");
   }
 
+  // -- the real loop starts here
   cout << "loopOverTree: nevts = " << nentries << " nstart = " << nstart << endl;
   for (int jentry = nbegin; jentry < nend; jentry++) {
     t->GetEntry(jentry);
@@ -3479,8 +3483,12 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("tm",     &fb.tm);
   t->SetBranchAddress("procid", &fb.procid);
   t->SetBranchAddress("m",      &fb.m);
+  t->SetBranchAddress("m3",     &fb.m3);
+  t->SetBranchAddress("m4",     &fb.m4);
   t->SetBranchAddress("me",     &fb.me);
   t->SetBranchAddress("cm",     &fb.cm);
+  t->SetBranchAddress("m3",     &fb.m3);
+  t->SetBranchAddress("m4",     &fb.m4);
   t->SetBranchAddress("pt",     &fb.pt);
   t->SetBranchAddress("phi",    &fb.phi);
   t->SetBranchAddress("eta",    &fb.eta);
@@ -3897,9 +3905,37 @@ TMVA::Reader* plotClass::setupReader(string xmlFile, readerData &rd) {
 	  cout << "  adding closetrk" << endl;
 	  reader->AddVariable( "closetrk", &rd.closetrk);
 	}
-	if (stype == "chi2/dof") {
-	  cout << "  adding chi2/dof" << endl;
-	  reader->AddVariable( "chi2dof := chi2/dof", &rd.chi2dof);
+	if (stype == "chi2dof") {
+	  cout << "  adding chi2dof" << endl;
+	  reader->AddVariable( "chi2dof", &rd.chi2dof);
+	}
+	if (stype == "closetrks1") {
+	  cout << "  adding closetrks1" << endl;
+	  reader->AddVariable( "closetrks1", &rd.closetrks1);
+	}
+	if (stype == "closetrks2") {
+	  cout << "  adding closetrks2" << endl;
+	  reader->AddVariable( "closetrks2", &rd.closetrks2);
+	}
+	if (stype == "closetrks3") {
+	  cout << "  adding closetrks3" << endl;
+	  reader->AddVariable( "closetrks3", &rd.closetrks3);
+	}
+	if (stype == "m1iso") {
+	  cout << "  adding m1iso" << endl;
+	  reader->AddVariable( "m1iso", &rd.m1iso);
+	}
+	if (stype == "m2iso") {
+	  cout << "  adding m2iso" << endl;
+	  reader->AddVariable( "m2iso", &rd.m2iso);
+	}
+	if (stype == "othervtx") {
+	  cout << "  adding othervtx" << endl;
+	  reader->AddVariable( "othervtx", &rd.othervtx);
+	}
+	if (stype == "pvdchi2") {
+	  cout << "  adding pvdchi2" << endl;
+	  reader->AddVariable( "pvdchi2", &rd.pvdchi2);
 	}
       }
       break;
