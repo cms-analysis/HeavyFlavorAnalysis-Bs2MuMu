@@ -63,6 +63,18 @@ plotClass(files, dir, cuts, mode) {
   fDoList.push_back("pvn");
   fDoList.push_back("pvavew8");
 
+  fDoList.push_back("lip");
+  fDoList.push_back("lips");
+
+  fDoList.push_back("m1iso");
+  fDoList.push_back("m2iso");
+  fDoList.push_back("othervtx");
+  fDoList.push_back("pvdchi2");
+  fDoList.push_back("closetrks1");
+  fDoList.push_back("closetrks2");
+  fDoList.push_back("closetrks3");
+
+
   fDoList.push_back("bdt");
   fDoList.push_back("bdtsel0");
   fDoList.push_back("bdtsel1");
@@ -313,6 +325,19 @@ void plotReducedOverlays::bookDistributions(string mode) {
 
   fpBDT[fOffset]       = bookDistribution(Form("%sbdt", name.c_str()), "BDT", "fGoodHLT", 200, -1.0, 1.0);   
 
+  fpCloseTrkS1[fOffset]= bookDistribution(Form("%sclosetrks1", name.c_str()),  "N_{trk}^{close, 1#sigma}", "fGoodCloseTrack", 10, 0., 10.); 
+  fpCloseTrkS2[fOffset]= bookDistribution(Form("%sclosetrks2", name.c_str()),  "N_{trk}^{close, 2#sigma}", "fGoodCloseTrack", 10, 0., 10.); 
+  fpCloseTrkS3[fOffset]= bookDistribution(Form("%sclosetrks3", name.c_str()),  "N_{trk}^{close, 3#sigma}", "fGoodCloseTrack", 10, 0., 10.); 
+  fpM1Iso[fOffset]     = bookDistribution(Form("%sm1iso", name.c_str()),  "m1 isolation", "fGoodIso", 52, 0., 1.04); 
+  fpM2Iso[fOffset]     = bookDistribution(Form("%sm2iso", name.c_str()),  "m2 isolation", "fGoodIso", 52, 0., 1.04); 
+
+  fpPvDchi2[fOffset]   = bookDistribution(Form("%spvdchi2", name.c_str()),  "#Delta(#chi^{2})", "fGoodChi2", 100, 0., 2000.); 
+  fpOtherVtx[fOffset]  = bookDistribution(Form("%sothervtx", name.c_str()),  "othervtx", "fGoodChi2", 40, 0., 1.); 
+
+  fpLip[fOffset]       = bookDistribution(Form("%slip", name.c_str()), "l_{z} [cm]", "fGoodLip", 50, 0., 0.015);   
+  fpLipS[fOffset]      = bookDistribution(Form("%slips", name.c_str()), "l_{z}/#sigma(l_{z})", "fGoodLipS", 50, 0., 4);
+
+
   fpBDTSel0[fOffset]   = bookSpecialDistribution(Form("%sbdtsel0", name.c_str()), "BDTsel0", "fGoodHLT", 200, -1.0, 1.0, &fSel0);   
   fpBDTSel1[fOffset]   = bookSpecialDistribution(Form("%sbdtsel1", name.c_str()), "BDTsel1", "fGoodHLT", 200, -1.0, 1.0, &fSel1);   
   fpBDTSel2[fOffset]   = bookSpecialDistribution(Form("%sbdtsel2", name.c_str()), "BDTsel2", "fGoodHLT", 200, -1.0, 1.0, &fSel2);   
@@ -426,6 +451,7 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
     setFilledHist(hpv2, kBlue, kBlue, 3365); 
   }
 
+  shrinkPad(0.15, 0.18); 
   hpv1->SetMinimum(0.); 
   hpv1->Draw();
   hpv2->Scale(hpv1->GetSumOfWeights()/hpv2->GetSumOfWeights()); 
@@ -821,6 +847,19 @@ void plotReducedOverlays::fillDistributions() {
   //  fpPvZ[fOffset]->fill(fb.pvz, mass);
   fpPvN[fOffset]->fill(fb.pvn, mass); 
   fpPvAveW8[fOffset]->fill(fb.pvw8, mass);
+
+  fpCloseTrkS1[fOffset]->fill(fb.closetrks1, mass);
+  fpCloseTrkS2[fOffset]->fill(fb.closetrks2, mass);
+  fpCloseTrkS3[fOffset]->fill(fb.closetrks3, mass);
+
+  fpM1Iso[fOffset]->fill(fb.m1iso, mass);
+  fpM2Iso[fOffset]->fill(fb.m2iso, mass);
+
+  fpLip[fOffset]->fill(fb.pvlip, mass); 
+  fpLipS[fOffset]->fill(fb.pvlips, mass); 
+
+  fpOtherVtx[fOffset]->fill(fb.othervtx, mass); 
+  fpPvDchi2[fOffset]->fill(fb.pvdchi2, mass); 
 
   fpBDT[fOffset]->fill(fBDT, mass);
 	      

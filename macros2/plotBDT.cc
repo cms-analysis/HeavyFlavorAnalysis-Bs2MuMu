@@ -840,7 +840,7 @@ void plotBDT::bdtScan() {
   gPad->SetLogy(1); 
   H1->Draw();
   H2->Draw("same");
-  c0->SaveAs(Form("%s/%s-log-Bg-HiLo-Efficiency-chan0.pdf", fDirectory.c_str(), fCuts[1]->xmlFile.c_str())); 
+  c0->SaveAs(Form("%s/%s-log-Bg-HiLo-Efficiency-chan0.pdf", fDirectory.c_str(), fCuts[0]->xmlFile.c_str())); 
 
   zone();
   H1 = (TH1D*)gDirectory->Get("hBgLoEff1"); 
@@ -860,7 +860,7 @@ void plotBDT::bdtScan() {
   legg->AddEntry(H2, "high sideband", "l"); 
   legg->Draw();
 
-  c0->SaveAs(Form("%s/%s-lin-Bg-HiLo-Efficiency-chan1.pdf", fDirectory.c_str(), fCuts[0]->xmlFile.c_str())); 
+  c0->SaveAs(Form("%s/%s-lin-Bg-HiLo-Efficiency-chan1.pdf", fDirectory.c_str(), fCuts[1]->xmlFile.c_str())); 
   gPad->SetLogy(1);
   H1->Draw();
   H2->Draw("same");
@@ -1162,8 +1162,8 @@ void plotBDT::validateDistributions(int channel, const char *type, int classID) 
       gPad->SetLogy(0); 
     }
 
-    c0->SaveAs(Form("%s/ks-%d-%s_%s.pdf", 
-		    fDirectory.c_str(), fYear, sname.c_str(), vNames[i].c_str())); 
+    c0->SaveAs(Form("%s/ks-%s_%s.pdf", 
+		    fDirectory.c_str(), sname.c_str(), vNames[i].c_str())); 
   }
 
 
@@ -1179,8 +1179,8 @@ void plotBDT::validateDistributions(int channel, const char *type, int classID) 
     bgKS->Draw();
     tl->DrawLatex(0.15, 0.92, Form("mean = %4.3f", bgKS->GetMean())); 
     tl->DrawLatex(0.60, 0.92, Form("RMS = %4.3f",  bgKS->GetRMS())); 
-    c0->SaveAs(Form("%s/ks-%d-%s-bg-probs.pdf", 
-		    fDirectory.c_str(), fYear, sname.c_str())); 
+    c0->SaveAs(Form("%s/ks-%s-bg-probs.pdf", 
+		    fDirectory.c_str(), sname.c_str())); 
   }
 
 } 
@@ -1621,8 +1621,8 @@ void plotBDT::xmlParsing() {
 // ----------------------------------------------------------------------
 void plotBDT::xmlParsingVariables(string weightfile) {
 
-  fhBdtVariables   = new TH1D("bdtVariables", "", 15, 0., 15.); 
-  fhBdtVariablesW8 = new TH1D("bdtVariablesW8", "", 15, 0., 15.); 
+  fhBdtVariables   = new TH1D("bdtVariables", "", 20, 0., 20.); 
+  fhBdtVariablesW8 = new TH1D("bdtVariablesW8", "", 20, 0., 20.); 
 
   fhBdtNodes       = new TH1D("bdtNodes", "", 10, 0., 10.); 
   fhBdtNodesW8     = new TH1D("bdtNodesW8", "", 10, 0., 10.); 
@@ -1760,8 +1760,8 @@ void plotBDT::xmlParsingReadTree(string xmlfile) {
   gStyle->SetOptTitle(0); 
   gStyle->SetOptStat(0); 
   for (unsigned int i = 0; i < fhBdtVariableCuts.size(); ++i) {
-    c0->cd(i+1); shrinkPad(0.18, 0.15);
-    setTitles(fhBdtVariableCuts[i], Form("%s cut", fhBdtVariableCuts[i]->GetTitle()), "Number of decision trees", 0.07, 1.1, 1.1);
+    c0->cd(i+1); shrinkPad(0.20, 0.15);
+    setTitles(fhBdtVariableCuts[i], Form("%s cut", fhBdtVariableCuts[i]->GetTitle()), "N(decision trees)", 0.09, 1.01, 0.85, 0.08);
     fhBdtVariableCuts[i]->Draw("hist"); 
     fhBdtVariableCutsW8[i]->Scale(fhBdtVariableCuts[i]->GetSumOfWeights()/fhBdtVariableCutsW8[i]->GetSumOfWeights()); 
     fhBdtVariableCutsW8[i]->Draw("samehist"); 
@@ -1777,12 +1777,14 @@ void plotBDT::xmlParsingReadTree(string xmlfile) {
 
   c0->Clear();
   shrinkPad(0.20, 0.15); 
-  setTitles(fhBdtVariables, "BDT Variables", "Number of decision trees", 0.06, 1.1, 1.3); 
+  setTitles(fhBdtVariables, "BDT Variables", "Number of decision trees", 0.06, 1.7, 1.3); 
+  fhBdtVariables->GetXaxis()->LabelsOption("v"); 
   setHist(fhBdtVariables, kRed, 20, 1, 3); fhBdtVariables->SetLineStyle(kDashed); 
   fhBdtVariables->Draw();
 
   fhBdtVariablesW8->Scale(fhBdtVariables->GetSumOfWeights()/fhBdtVariablesW8->GetSumOfWeights()); 
   setHist(fhBdtVariablesW8, kBlue, 20, 1, 3);  
+  fhBdtVariablesW8->GetXaxis()->LabelsOption("v"); 
   fhBdtVariablesW8->Draw("same");
   c0->Modified();  c0->Update();
   c0->SaveAs(Form("%s/%s-bdtVariables.pdf", fDirectory.c_str(), fBdtString.c_str())); 
@@ -1880,7 +1882,7 @@ void plotBDT::ssb() {
   TH1D *sm = new TH1D("sm", "m(signal)", 100, 4.9, 5.9); sm->Sumw2();
   TH1D *dm = new TH1D("dm", "m(data)", 100, 4.9, 5.9); dm->Sumw2();
   TH1D *h  = new TH1D("s1", "S/Sqrt(S+B)", bdtBins, bdtMin, bdtMax); h->Sumw2();
-  setTitles(h, "b >", "S/#sqrt{S+B}"); 
+  setTitles(h, "b >", "S/#sqrt{S+B}", 0.05, 1.05); 
 
   double bdt, m, w8; 
   int classID;

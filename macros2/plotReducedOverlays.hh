@@ -64,6 +64,10 @@ public:
     , *fpBDT[NAD]   
     , *fpBDTSel0[NAD], *fpBDTSel1[NAD], *fpBDTSel2[NAD]
     , *fpPvZ[NAD], *fpPvN[NAD], *fpPvAveW8[NAD]
+    , *fpLip[NAD], *fpLipS[NAD]
+    , *fpCloseTrkS1[NAD], *fpCloseTrkS2[NAD], *fpCloseTrkS3[NAD]
+    , *fpM1Iso[NAD], *fpM2Iso[NAD]
+    , *fpPvDchi2[NAD], *fpOtherVtx[NAD]
     ;
   int fOffset;
   int fMode;

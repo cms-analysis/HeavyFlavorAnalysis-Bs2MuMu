@@ -44,5 +44,5 @@ type=bg,Bs2MuMuGamma  dset=mc,0.06  lumi=10000.0  file=/scratch/ursl/v14-2012-cm
 #
 type=bg,Bu2PiMuMu     dset=mc,0.06  lumi=669.0   file=/scratch/ursl/v14-2012-cms-BuToMuMuPi.root
 type=bg,Bu2KMuMu      dset=mc,0.06  lumi=292.0   file=/scratch/ursl/v14-2012-cms-BuToMuMuK.root 
-type=bg,BdToPi0MuMu   dset=mc,0.06  lumi=130.0   file=/scratch/ursl/v14-2012-cms-BdToMuMuPi0.root 
-type=bg,BdToK0MuMu    dset=mc,0.06  lumi=45.5    file=/scratch/ursl/v14-2012-cms-BdToMuMuK0.root 
+type=bg,Bd2Pi0MuMu    dset=mc,0.06  lumi=130.0   file=/scratch/ursl/v14-2012-cms-BdToMuMuPi0.root 
+type=bg,Bd2K0MuMu     dset=mc,0.06  lumi=45.5    file=/scratch/ursl/v14-2012-cms-BdToMuMuK0.root 

@@ -1356,6 +1356,10 @@ void candAna::setupReducedTree(TTree *t) {
 // ----------------------------------------------------------------------
 void candAna::readCuts(string fileName, int dump) {
 
+  // -- define default values for some cuts
+  NOPRESELECTION = 0; 
+  IGNORETRIGGER  = 0; 
+
   // -- set up cut sequence for analysis
   basicCuts(); 
   moreBasicCuts(); 
@@ -2760,9 +2764,37 @@ TMVA::Reader* candAna::setupReader(string xmlFile, readerData &rd) {
 	  cout << "  adding closetrk" << endl;
 	  reader->AddVariable( "closetrk", &rd.closetrk);
 	}
-	if (stype == "chi2/dof") {
-	  cout << "  adding chi2/dof" << endl;
-	  reader->AddVariable( "chi2dof := chi2/dof", &rd.chi2dof);
+	if (stype == "closetrks1") {
+	  cout << "  adding closetrks1" << endl;
+	  reader->AddVariable( "closetrks1", &rd.closetrks1);
+	}
+	if (stype == "closetrks2") {
+	  cout << "  adding closetrks2" << endl;
+	  reader->AddVariable( "closetrks2", &rd.closetrks2);
+	}
+	if (stype == "closetrks3") {
+	  cout << "  adding closetrks3" << endl;
+	  reader->AddVariable( "closetrks3", &rd.closetrks3);
+	}
+	if (stype == "chi2dof") {
+	  cout << "  adding chi2dof" << endl;
+	  reader->AddVariable( "chi2dof", &rd.chi2dof);
+	}
+	if (stype == "m1iso") {
+	  cout << "  adding m1iso" << endl;
+	  reader->AddVariable( "m1iso", &rd.m1iso);
+	}
+	if (stype == "m2iso") {
+	  cout << "  adding m2iso" << endl;
+	  reader->AddVariable( "m2iso", &rd.m2iso);
+	}
+	if (stype == "pvdchi2") {
+	  cout << "  adding pvdchi2" << endl;
+	  reader->AddVariable( "pvdchi2", &rd.pvdchi2);
+	}
+	if (stype == "othervtx") {
+	  cout << "  adding othervtx" << endl;
+	  reader->AddVariable( "othervtx", &rd.othervtx);
 	}
       }
       break;

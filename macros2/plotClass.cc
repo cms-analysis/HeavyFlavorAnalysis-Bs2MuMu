@@ -244,6 +244,8 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   fAnaCuts.addCut("fGoodPvAveW8", "<w8>", fGoodPvAveW8); 
   fAnaCuts.addCut("fGoodIp", "IP", fGoodIp); 
   fAnaCuts.addCut("fGoodIpS", "IPS", fGoodIpS); 
+  fAnaCuts.addCut("fGoodLip", "LIP", fGoodLip); 
+  fAnaCuts.addCut("fGoodLipS", "LIPS", fGoodLipS); 
   fAnaCuts.addCut("fGoodMaxDoca", "MAXDOCA", fGoodMaxDoca); 
   fAnaCuts.addCut("fGoodPt", "p_{T,B}", fGoodPt); 
   fAnaCuts.addCut("fGoodEta", "#eta_{B}", fGoodEta); 
@@ -1679,7 +1681,7 @@ void plotClass::dumpSamples() {
 
   fTEX << "% ----------------------------------------------------------------------" << endl;
   string name; 
-  double lumi(0.), n(0.), f(0.), bf(0.); 
+  double lumi(0.), n(0.), f(0.), bf(0.), bfe(0.); 
   for (map<string, string>::iterator imap = fName.begin(); imap != fName.end(); ++imap) {  
     cout << "===> " << imap->first;
     cout << ": " << fF[imap->first]->GetName();
@@ -1689,10 +1691,15 @@ void plotClass::dumpSamples() {
     lumi = fLumi[imap->first];
     n = fNgen[imap->first];
     bf = fBF[imap->first];
+    bfe = bf*fBFE[imap->first];
     f = ((TH1D*)fF[imap->first]->Get("monEvents"))->GetBinContent(1);
     replaceAll(name, "#", "\\"); 
     fTEX <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
-    fTEX <<  Form("\\vdef{%s:bf:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
+    cout <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
+    //FIXME    fTEX <<  Form("\\vdef{%s:bf:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
+    //     cout << "dumpSamples bf = " << bf << " bfe = " << bfe << endl;
+    //     cout <<  scientificTex(bf, bfe, Form("%s:bf:%s", fSuffix.c_str(), imap->first.c_str()), -1, 2) << endl;
+    fTEX <<  scientificTex(bf, bfe, Form("%s:bf:%s", fSuffix.c_str(), imap->first.c_str()), -1, 2) << endl;
     fTEX <<  Form("\\vdef{%s:lumi:%s}   {\\ensuremath{{%4.1f } } }", fSuffix.c_str(), imap->first.c_str(), lumi) << endl;
 
     if (n>0) {
@@ -2610,29 +2617,38 @@ void plotClass::dumpCutNames(const char *hname) {
 
 
 // ----------------------------------------------------------------------
-string plotClass::scientificTex(double n, double nE, std::string name, double base, int digits) {
+string plotClass::scientificTex(double n, double nE, const char *name, double base, int digits) {
 
   char line[200]; 
-  double a1 = n/base; 
-  double a2 = nE/base; 
-  int  expo = static_cast<int>(TMath::Log10(base)); 
+  float a1 = n/TMath::Abs(base); 
+  float a2 = nE/TMath::Abs(base); 
+
+  int expo(0); 
+  if (base < 0) {
+    expo = static_cast<int>(TMath::Log10(n)); 
+    if (expo < 0) expo -= 1; 
+    a1 = n/TMath::Abs(TMath::Power(10, expo));
+    a2 = nE/TMath::Abs(TMath::Power(10, expo));
+  } else {
+    expo = static_cast<int>(TMath::Log10(base)); 
+  }
 
   if ( isnan(n) ) {
-    sprintf(line, "\\vdef{%s}   {\\ensuremath{{\\mathrm{NaN} } } }", name.c_str());
+    sprintf(line, "\\vdef{%s}   {\\ensuremath{{\\mathrm{NaN} } } }", name);
   } else if (0 == digits ) {
-    sprintf(line, "\\vdef{%s}   {\\ensuremath{{%i } } }", name.c_str(), static_cast<int>(n));
+    sprintf(line, "\\vdef{%s}   {\\ensuremath{{%i } } }", name, static_cast<int>(n));
   } else if (1 == digits ) {
-    sprintf(line, "\\vdef{%s}   {\\ensuremath{{(%2.1f \\pm %2.1f)\\times 10^{%i}} } }", name.c_str(), a1, a2, expo);
+    sprintf(line, "\\vdef{%s}   {\\ensuremath{{(%2.1f \\pm %2.1f)\\times 10^{%i}} } }", name, a1, a2, expo);
   } else if (2 == digits ) {
-    sprintf(line, "\\vdef{%s}   {\\ensuremath{{(%3.2f \\pm %3.2f)\\times 10^{%i}} } }", name.c_str(), a1, a2, expo);
+    sprintf(line, "\\vdef{%s}   {\\ensuremath{{(%3.2f \\pm %3.2f)\\times 10^{%i}} } }", name, a1, a2, expo);
   } else if (3 == digits ) {
-    sprintf(line, "\\vdef{%s}   {\\ensuremath{{(%4.3f \\pm %4.3f)\\times 10^{%i}} } }", name.c_str(), a1, a2, expo);
+    sprintf(line, "\\vdef{%s}   {\\ensuremath{{(%4.3f \\pm %4.3f)\\times 10^{%i}} } }", name, a1, a2, expo);
   } else if (4 == digits ) {
-    sprintf(line, "\\vdef{%s}   {\\ensuremath{{(%5.4f \\pm %5.4f)\\times 10^{%i}} } }", name.c_str(), a1, a2, expo);
+    sprintf(line, "\\vdef{%s}   {\\ensuremath{{(%5.4f \\pm %5.4f)\\times 10^{%i}} } }", name, a1, a2, expo);
   } else if (5 == digits ) {
-    sprintf(line, "\\vdef{%s}   {\\ensuremath{{(%6.5f \\pm %6.5f)\\times 10^{%i}} } }", name.c_str(), a1, a2, expo);
+    sprintf(line, "\\vdef{%s}   {\\ensuremath{{(%6.5f \\pm %6.5f)\\times 10^{%i}} } }", name, a1, a2, expo);
   } else {
-    sprintf(line, "\\vdef{%s}   {\\ensuremath{{(%f \\pm %f)\\times 10^{%i}} } }", name.c_str(), a1, a2, expo);
+    sprintf(line, "\\vdef{%s}   {\\ensuremath{{(%f \\pm %f)\\times 10^{%i}} } }", name, a1, a2, expo);
   }
 
   return string(line); 
@@ -3514,6 +3530,14 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("m2q",    &fb.m2q);
   t->SetBranchAddress("docatrk",&fb.docatrk);
 
+  t->SetBranchAddress("m1iso",     &fb.m1iso);
+  t->SetBranchAddress("m2iso",     &fb.m2iso);
+  t->SetBranchAddress("closetrks1",&fb.closetrks1);
+  t->SetBranchAddress("closetrks2",&fb.closetrks2);
+  t->SetBranchAddress("closetrks3",&fb.closetrks3);
+  t->SetBranchAddress("othervtx",  &fb.othervtx);
+  t->SetBranchAddress("pvdchi2",   &fb.pvdchi2);
+
   t->SetBranchAddress("g1pt",   &fb.g1pt);
   t->SetBranchAddress("g2pt",   &fb.g2pt);
   t->SetBranchAddress("g1eta",  &fb.g1eta);
@@ -3982,11 +4006,12 @@ int plotClass::detChan(double m1eta, double m2eta) {
 // ----------------------------------------------------------------------
 double plotClass::getValueByLabel(TH1D *h, string label) {
   string axislabel; 
-  for (int i = 1; i <= h->GetNbinsX(); ++i) {
-    axislabel = h->GetXaxis()->GetBinLabel(i);
-    if (string::npos != axislabel.find(label)) return h->GetBinContent(i);
+  if (h) {
+    for (int i = 1; i <= h->GetNbinsX(); ++i) {
+      axislabel = h->GetXaxis()->GetBinLabel(i);
+      if (string::npos != axislabel.find(label)) return h->GetBinContent(i);
+    }
   }
-  
   return -999.; 
 }
 

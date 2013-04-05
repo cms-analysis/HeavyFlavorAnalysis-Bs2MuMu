@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     cuts("nada"), 
     files("nada");
   bool restricted(false), remove(false), doUseBDT(true);
-  int year(2012), mode(255), suffixMode(0);   
+  int year(2012), mode(255), suffixMode(0), nevents(-1);   
 
   // -- command line arguments
   for (int i = 0; i < argc; i++){
@@ -40,6 +40,7 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i], "-c"))  {cuts  = string(argv[++i]);}     
     if (!strcmp(argv[i], "-f"))  {files = string(argv[++i]);}     
     if (!strcmp(argv[i], "-m"))  {mode  = atoi(argv[++i]);}     
+    if (!strcmp(argv[i], "-n"))  {nevents = atoi(argv[++i]);}     
     if (!strcmp(argv[i], "-x"))  {remove= true;}     
     if (!strcmp(argv[i], "-y"))  {year  = atoi(argv[++i]);}     
   }
@@ -112,7 +113,7 @@ int main(int argc, char *argv[]) {
     gROOT->Clear();  gROOT->DeleteAll();
     plotResults a(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
     if (!doUseBDT) a.fDoUseBDT = false; 
-    a.makeAll(1);
+    a.makeAll(1, nevents);
   }
   if (mode & 2) {
     gROOT->Clear();  gROOT->DeleteAll();

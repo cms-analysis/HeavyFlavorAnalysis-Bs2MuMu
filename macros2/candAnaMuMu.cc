@@ -265,6 +265,7 @@ void candAnaMuMu::efficiencyCalculation() {
   fETg1eta = pM1->fP.Eta(); 
   fETg2pt  = pM2->fP.Perp(); 
   fETg2eta = pM2->fP.Eta(); 
+
   if (m1Matched) {
     fETm1pt    = prM1->getP().Perp(); 
     fETm1eta   = prM1->getP().Eta(); 

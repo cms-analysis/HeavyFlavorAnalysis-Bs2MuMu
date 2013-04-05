@@ -49,7 +49,7 @@ plotResults::~plotResults() {
 
 
 // ----------------------------------------------------------------------
-void plotResults::makeAll(int channels) {
+void plotResults::makeAll(int channels, int nevents) {
 
   if (fDoUseBDT) {
     fStampString = "BDT preliminary"; 
@@ -59,7 +59,7 @@ void plotResults::makeAll(int channels) {
  
   zone(1);
   if (channels & 1) {
-    fillAndSaveHistograms(); 
+    fillAndSaveHistograms(nevents); 
   }
 
   if (channels & 2) {
@@ -277,7 +277,7 @@ void plotResults::calculateNumbers(int mode) {
     initNumbers(fNumbersBs[chan], false); 
     initNumbers(fNumbersBd[chan], false); 
     calculateNoNumbers(chan, mode);
-    //    calculateCsNumbers(chan, mode);
+    calculateCsNumbers(chan, mode);
     calculateRareBgNumbers(chan);
     calculateSgNumbers(chan);
   }
@@ -287,6 +287,8 @@ void plotResults::calculateNumbers(int mode) {
   cout << "===> Storing ULC numbers in file " << bla << endl;
   system(Form("/bin/rm -f %s", bla.c_str()));
   printUlcalcNumbers(bla);
+  printCsBFNumbers();
+
   createAllCfgFiles(bla); 
 
 
@@ -1126,55 +1128,6 @@ void plotResults::fillAndSaveHistograms(int nevents) {
 
   fSaveSmallTree = true; 
 
-
-
-//   // -- study efficiencies for Paola/Luca
-//   {
-//   fHistFile->Close();
-//   fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
-
-//   // -- normalization
-//   resetHistograms();
-//   fSetup = "NoData"; 
-//   t = getTree(fSetup); 
-//   setupTree(t, fSetup); 
-//   loopOverTree(t, fSetup, 1, nevents);
-//   saveHists(fSetup);
-
-//   resetHistograms();
-//   fSetup = "NoMc";
-//   t = getTree(fSetup); 
-//   setupTree(t, fSetup); 
-//   loopOverTree(t, fSetup, 1, nevents);
-//   otherNumbers(fSetup); 
-//   saveHists(fSetup);
-
-//   fHistFile->Close();
-
-//   // -- dump histograms
-//   string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
-//   cout << "fHistFile: " << hfname;
-//   fHistFile = TFile::Open(hfname.c_str());
-//   cout << " opened " << endl;
-
- 
-//   for (int chan = 0; chan < fNchan; ++chan) {
-//     fChan = chan; 
-//     initNumbers(fNumbersNo[chan], false); 
-
-//     // -- efficiency and acceptance
-//     fSetup = "NoMc"; 
-//     calculateNoNumbers(chan, 2);
-//   }
-
-//   cout << "printing fNumbersNo" << endl;
-//   printNumbers(*fNumbersNo[0], cout); 
-//   printNumbers(*fNumbersNo[1], cout); 
-
-//   }
-//   return;
-
-
   if (0) { 
     resetHistograms();
     fSetup = "SgMc3e33"; 
@@ -1199,7 +1152,7 @@ void plotResults::fillAndSaveHistograms(int nevents) {
     // -- rare backgrounds
     fSetup = "BgRare"; 
     resetHistograms();
-    rareBgHists(); 
+    rareBgHists("nada", nevents); 
   }
     
   if (1) {
@@ -1247,7 +1200,7 @@ void plotResults::fillAndSaveHistograms(int nevents) {
   }
 
 
-  if (0) {
+  if (1) {
     // -- control sample
     resetHistograms();
     fSetup = "CsData"; 
@@ -1671,7 +1624,7 @@ void plotResults::loopFunction1(int mode) {
   fhMassWithAllCutsManyBins[fChan]->Fill(mass); 
   
   fhNorm[fChan]->Fill(mass);
-  fhNormC[fChan]->Fill(fb.cm);
+    fhNormC[fChan]->Fill(fb.cm);
   fhDstarPi[fChan]->Fill(mass);
   
   //FIXME  if (!fDoUseBDT) elist->Enter(jentry); 

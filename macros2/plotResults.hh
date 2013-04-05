@@ -10,7 +10,7 @@ public:
   plotResults(const char *files="anaBmm.default.files", const char *dir = "default", const char *cuts = "default", int mode = 0);
   ~plotResults();
 
-  void makeAll(int channels = 1);
+  void makeAll(int channels = 1, int nevents = -1);
 
   void setupNorm();
   void fitHists(int chan = 0);

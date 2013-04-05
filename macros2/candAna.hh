@@ -26,6 +26,8 @@ struct isoNumbers {
 struct readerData {
   float pt, eta, m1eta, m2eta, m1pt, m2pt;
   float fls3d, alpha, maxdoca, pvip, pvips, iso, docatrk, chi2dof, closetrk; 
+  float closetrks1, closetrks2, closetrks3; 
+  float m1iso, m2iso, pvdchi2, othervtx;
   float m;
 };
 
