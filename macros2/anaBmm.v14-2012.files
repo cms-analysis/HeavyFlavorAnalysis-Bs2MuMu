@@ -3,24 +3,24 @@
 type=sg,default       dset=data     lumi=20.0    file=/scratch/ursl/v14-2012-bmm-data.root
 type=sg,2011          dset=data     lumi=5.0     file=/scratch/ursl/v14-2011-bmm-data.root
 #
-type=sg,default       dset=mc,0.583 lumi=6500000 file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
-type=sg,acc           dset=mc,1.00  lumi=0.0     file=/scratch/ursl/v14-2012-cms-accBsToMuMu.root
+type=sg,default       dset=mc,0.583 lumi=650000  file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
+type=sg,acc           dset=mc,1.00  lumi=11300   file=/scratch/ursl/v14-2012-cms-accBsToMuMu.root
 #
 type=bd,default       dset=mc       lumi=9100000 file=/scratch/ursl/v14-2012-cms-BdToMuMu.root
-type=bd,acc           dset=mc,1.0   lumi=0.0     file=/scratch/ursl/v14-2012-cms-accBdToMuMu.root
+type=bd,acc           dset=mc,1.0   lumi=15820   file=/scratch/ursl/v14-2012-cms-accBdToMuMu.root
 #
-type=sg,Bs2MuMu       dset=mc       lumi=6500000 file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
+type=sg,Bs2MuMu       dset=mc       lumi=650000  file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
 type=sg,Bx2MuMu       dset=mc       lumi=0.0     file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
 type=sg,By2MuMu       dset=mc       lumi=0.0     file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
 # --------------------------------------------------------------------
 # control sample  data and MC
-type=cs,default       dset=data      lumi=50.0   file=/scratch/ursl/v14-2012-bmm-data.root
-type=cs,default       dset=mc,0.0168 lumi=0.0    file=/scratch/ursl/v14-2012-cms-BsToJpsiPhi.root
+type=cs,default       dset=data      lumi=20.0   file=/scratch/ursl/v14-2012-bmm-data.root
+type=cs,default       dset=mc,0.0168 lumi=69.0    file=/scratch/ursl/v14-2012-cms-BsToJpsiPhi.root
 type=cs,acc           dset=mc,1.00   lumi=0.0    file=/scratch/ursl/v14-2012-cms-accBsToJpsiPhi.root
 # --------------------------------------------------------------------
 # normalization data and MC
 type=no,default       dset=data      lumi=20.0   file=/scratch/ursl/v14-2012-bmm-data.root
-type=no,default       dset=mc,0.0207 lumi=0.0    file=/scratch/ursl/v14-2012-cms-BuToJpsiK.root 
+type=no,default       dset=mc,0.0207 lumi=18.5   file=/scratch/ursl/v14-2012-cms-BuToJpsiK.root 
 type=no,acc           dset=mc,1.00   lumi=0.0    file=/scratch/ursl/v14-2012-cms-accBuToJpsiK.root
 # ----------------------------------------------------------------------
 # rare background MC
