@@ -4,6 +4,7 @@
 #include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
 #include "../interface/HFMasses.hh"
 
+
 #include "TF1.h"
 #include "THStack.h"
 #include "TKey.h"
@@ -182,6 +183,16 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
 		 static_cast<int>((fMassHi-fMassLo)*1000), fMassLo, fMassHi);
     fhMassWithAllCutsManyBins.push_back(h); 
 
+
+    h = new TH1D(Form("hW8MassWithAllCuts%d", i), Form("hW8MassWithAllCuts%d", i), NBINS, fMassLo, fMassHi);
+    fhW8MassWithAllCuts.push_back(h); 
+    h = new TH1D(Form("hW8MassWithAllCutsBlind%d", i), Form("hW8MassWithAllCutsBlind%d", i), NBINS, fMassLo, fMassHi);
+    fhW8MassWithAllCutsBlind.push_back(h); 
+    h = new TH1D(Form("hW8MassWithAllCutsManyBins%d", i), Form("hW8MassWithAllCutsManyBins%d", i), 
+		 static_cast<int>((fMassHi-fMassLo)*1000), fMassLo, fMassHi);
+    fhW8MassWithAllCutsManyBins.push_back(h); 
+
+
     h = new TH1D(Form("hNorm%d", i), Form("hNorm%d", i), 100, 4.9, 5.9);
     fhNorm.push_back(h); 
 
@@ -257,6 +268,15 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   fAnaCuts.addCut("fGoodDocaTrk", "d_{ca}(trk)", fGoodDocaTrk); 
   fAnaCuts.addCut("fGoodLastCut", "lastCut", fGoodLastCut); 
 
+
+  fptFakePosKaons     = new PidTable("../macros/pidtables/130409/kaonFakes.dat"); 
+  fptFakeNegKaons     = new PidTable("../macros/pidtables/130409/kaonFakes.dat"); 
+
+  fptFakePosPions     = new PidTable("../macros/pidtables/130409/pionFakes.dat"); 
+  fptFakeNegPions     = new PidTable("../macros/pidtables/130409/pionFakes.dat"); 
+
+  fptFakePosProtons   = new PidTable("../macros/pidtables/130409/protonFakes.dat"); 
+  fptFakeNegProtons   = new PidTable("../macros/pidtables/130409/protonFakes.dat"); 
 
   if (2012 == fYear) {
     fptT1     = new PidTable("../macros/pidtables/130104/L1L2_data_all.dat"); 	
@@ -1558,8 +1578,11 @@ void plotClass::loadFiles(const char *files) {
 	sname = "bgLb2PMuNu"; 
 	fF.insert(make_pair(sname, pF)); 
 	//	fBF.insert(make_pair(sname, 1.36e-4)); 
-	fBF.insert(make_pair(sname, 3.0e-4)); 
-	fBFE.insert(make_pair(sname, 0.33)); 
+	// 8e-5 to 1.3e-3
+	//	fBF.insert(make_pair(sname, 3.0e-4)); 
+	//	fBFE.insert(make_pair(sname, 0.33)); 
+	fBF.insert(make_pair(sname, 6.5e-4)); 
+	fBFE.insert(make_pair(sname, 1.0)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#Lambda^{0}_{b} #rightarrow p#mu^{-}#bar{#nu}")); 
@@ -3483,6 +3506,7 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("m2bpix",   &fb.m2bpix);
   t->SetBranchAddress("m1bpixl1", &fb.m1bpixl1);
   t->SetBranchAddress("m2bpixl1", &fb.m2bpixl1);
+  t->SetBranchAddress("w8mu",     &fb.w8mu); 
 
   t->SetBranchAddress("rr",     &fb.rr);
   t->SetBranchAddress("pvn",    &fb.pvn);
@@ -3503,8 +3527,6 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("m4",     &fb.m4);
   t->SetBranchAddress("me",     &fb.me);
   t->SetBranchAddress("cm",     &fb.cm);
-  t->SetBranchAddress("m3",     &fb.m3);
-  t->SetBranchAddress("m4",     &fb.m4);
   t->SetBranchAddress("pt",     &fb.pt);
   t->SetBranchAddress("phi",    &fb.phi);
   t->SetBranchAddress("eta",    &fb.eta);
@@ -3542,6 +3564,8 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("g2pt",   &fb.g2pt);
   t->SetBranchAddress("g1eta",  &fb.g1eta);
   t->SetBranchAddress("g2eta",  &fb.g2eta);
+  t->SetBranchAddress("g1id",   &fb.g1id);
+  t->SetBranchAddress("g2id",   &fb.g2id);
   if (string::npos != mode.find("No")) {
     if (string::npos != mode.find("Mc")) {
       t->SetBranchAddress("g3pt", &fb.g3pt);
@@ -3726,6 +3750,39 @@ void plotClass::candAnalysis(int mode) {
   }
 
   fGoodMuonsID    = fb.gmuid;
+
+  // -- the new world: MVA plus trigger matched
+  fGoodMuonsID    = fb.gmumvaid && fb.hltm;
+
+  fW8 = 1.;
+  if (fIsMC) {
+    fW8 = fb.w8mu; // be careful with this one: This is the product of the TNP single muon id efficiencies
+    if (98 == mode) {
+      double w1(1.), w2(1.); 
+      // -- track 1
+      if (  321 == fb.g1id) w1 = fptFakePosKaons->effD(fb.m1pt, TMath::Abs(fb.m1eta), 1.);
+      if ( -321 == fb.g1id) w1 = fptFakeNegKaons->effD(fb.m1pt, TMath::Abs(fb.m1eta), 1.);
+
+      if (  211 == fb.g1id) w1 = fptFakePosPions->effD(fb.m1pt, TMath::Abs(fb.m1eta), 1.);
+      if ( -211 == fb.g1id) w1 = fptFakeNegPions->effD(fb.m1pt, TMath::Abs(fb.m1eta), 1.);
+
+      if ( 2212 == fb.g1id) w1 = fptFakePosProtons->effD(fb.m1pt, TMath::Abs(fb.m1eta), 1.);
+      if (-2212 == fb.g1id) w1 = fptFakeNegProtons->effD(fb.m1pt, TMath::Abs(fb.m1eta), 1.);
+
+      // -- track 2
+      if (  321 == fb.g2id) w2 = fptFakePosKaons->effD(fb.m2pt, TMath::Abs(fb.m2eta), 1.);
+      if ( -321 == fb.g2id) w2 = fptFakeNegKaons->effD(fb.m2pt, TMath::Abs(fb.m2eta), 1.);
+
+      if (  211 == fb.g2id) w2 = fptFakePosPions->effD(fb.m2pt, TMath::Abs(fb.m2eta), 1.);
+      if ( -211 == fb.g2id) w2 = fptFakeNegPions->effD(fb.m2pt, TMath::Abs(fb.m2eta), 1.);
+
+      if ( 2212 == fb.g2id) w2 = fptFakePosProtons->effD(fb.m2pt, TMath::Abs(fb.m2eta), 1.);
+      if (-2212 == fb.g2id) w2 = fptFakeNegProtons->effD(fb.m2pt, TMath::Abs(fb.m2eta), 1.);
+
+      fW8 = w1*w2; 
+    }
+
+  }
   
   fGoodQ          = (fb.m1q*fb.m2q < 0); 
   fGoodPvAveW8    = (fb.pvw8 > 0.7);
@@ -3749,8 +3806,7 @@ void plotClass::candAnalysis(int mode) {
   fGoodLastCut    = true; 
 
   fGoodHLT        = fb.hlt;
-  fPreselection   = ((fBDT > 0.) && fb.hlt && fGoodMuonsID ); 
-  //  fPreselection   = ((fBDT > -0.5) && fb.hlt && fGoodMuonsID ); 
+  fPreselection   = ((fBDT > 0.) && fGoodHLT && fGoodMuonsID ); 
 
   fAnaCuts.update(); 
 

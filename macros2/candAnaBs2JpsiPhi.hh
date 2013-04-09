@@ -60,6 +60,7 @@ public:
   double       fKa2PtNrf, fKa2EtaNrf;
 
   double       fKa1PtGen, fKa1EtaGen, fKa2PtGen, fKa2EtaGen;
+  int          fKa1GenID, fKa2GenID; 
   int          fKa1TkQuality, fKa2TkQuality;
 
   // -- TM 

@@ -618,7 +618,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
   THStack *hslRareBg = new THStack("hslRareBg","");
 
 
-  TH1D *hRare; 
+  TH1D *hRare, *hRareW8; 
   double tot, bd, bs, efftot, pss, pdd;
   double eps(0.00001);
   for (map<string, string>::iterator imap = fName.begin(); imap != fName.end(); ++imap) {  
@@ -660,7 +660,15 @@ void plotResults::calculateRareBgNumbers(int chan) {
     //    the relevant numbers are extracted from the integrals over specific regions
     double yield = scaledYield(fNumbersBla[chan], fNumbersNo[chan], fRareName, pRatio);
     hRare->Scale(yield*misid*teff[chan]/tot);
+
+    cout << "NNNNNN%%%%%NNNNNNNNNN scaled:   " << hRare->GetSumOfWeights() << endl;
     
+    name = Form("hW8MassWithAllCuts_%s_%s_chan%d", modifier.c_str(), fRareName.c_str(), chan);
+    hRareW8 = (TH1D*)fHistFile->Get(name.c_str());
+    hRareW8->Scale(yield*teff[chan]/tot); 
+    cout << "NNNNNN%%%%%NNNNNNNNNN weighted: " << hRareW8->GetSumOfWeights() << endl;
+    
+
     valInc = hRare->Integral(hRare->FindBin(4.9), hRare->FindBin(fCuts[chan]->mBdLo-eps));
     error  = valInc*err[fRareName];
     fTEX <<  Form("\\vdef{%s:%s:loSideband%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
@@ -1150,7 +1158,7 @@ void plotResults::fillAndSaveHistograms(int nevents) {
 
   if (1) {
     // -- rare backgrounds
-    fSetup = "BgRare"; 
+    fSetup = "BgRareMc"; 
     resetHistograms();
     rareBgHists("nada", nevents); 
   }
@@ -1606,11 +1614,18 @@ void plotResults::loopFunction1(int mode) {
   fhMuTrMC[fChan]->Fill(trw8); 
 
 
+  // -- weighted with fake rate
+  fhW8MassWithAllCuts[fChan]->Fill(mass, fW8);
+  if (5 == mode && !(5.2 < mass && mass < 5.45)) {
+    fhW8MassWithAllCutsBlind[fChan]->Fill(mass, fW8);
+  }
+  fhW8MassWithAllCutsManyBins[fChan]->Fill(mass, fW8);
+
   // -- MUON ID
   if (false == fb.gmuid) return;
   fhMassWithMuonCuts[fChan]->Fill(mass); 
   fhMassWithMuonCutsManyBins[fChan]->Fill(mass); 
-  
+
   // -- TRIGGER
   if (false == fb.hlt) return;
   fhMassWithTriggerCuts[fChan]->Fill(mass); 
@@ -1675,6 +1690,10 @@ void plotResults::resetHistograms() {
     fhMassWithAllCuts[i]->Reset();
     fhMassWithAllCutsBlind[i]->Reset();
     fhMassWithAllCutsManyBins[i]->Reset();
+
+    fhW8MassWithAllCuts[i]->Reset();
+    fhW8MassWithAllCutsBlind[i]->Reset();
+    fhW8MassWithAllCutsManyBins[i]->Reset();
 
     fhNorm[i]->Reset();
     fhNormC[i]->Reset();
@@ -2955,6 +2974,17 @@ void plotResults::rareBgHists(std::string mode, int nevents) {
 
       h1 = (TH1D*)(fhMassWithAllCuts[ichan]->Clone(Form("hMassWithAllCuts_%s_%s_chan%d", smode.c_str(), fRareName.c_str(), ichan)));  
       h1->SetTitle(Form("hMassWithAllCuts_%s_%s_chan%d", smode.c_str(), fRareName.c_str(), ichan));
+      h1->SetDirectory(fHistFile); 
+      h1->Write();
+
+      h1 = (TH1D*)(fhW8MassWithAllCutsManyBins[ichan]->Clone(Form("hW8MassWithAllCutsManyBins_%s_%s_chan%d", 
+								smode.c_str(), fRareName.c_str(), ichan)));  
+      h1->SetTitle(Form("hW8MassWithAllCutsManyBins_%s_%s_chan%d", smode.c_str(), fRareName.c_str(), ichan));
+      h1->SetDirectory(fHistFile); 
+      h1->Write();
+
+      h1 = (TH1D*)(fhW8MassWithAllCuts[ichan]->Clone(Form("hW8MassWithAllCuts_%s_%s_chan%d", smode.c_str(), fRareName.c_str(), ichan)));  
+      h1->SetTitle(Form("hW8MassWithAllCuts_%s_%s_chan%d", smode.c_str(), fRareName.c_str(), ichan));
       h1->SetDirectory(fHistFile); 
       h1->Write();
     }

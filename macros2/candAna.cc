@@ -1334,6 +1334,8 @@ void candAna::setupReducedTree(TTree *t) {
   t->Branch("g2phi",   &fMu2PhiGen,         "g2phi/D");
   t->Branch("gmass",   &fGenMass,           "gmass/D");
   t->Branch("gtau",    &fGenLifeTime,       "gtau/D");
+  t->Branch("g1id",    &fMu1GenID,          "g1id/I");
+  t->Branch("g2id",    &fMu2GenID,          "g2id/I");
 
   t->Branch("t1pt",    &fMu1PtNrf,          "t1pt/D");
   t->Branch("t1eta",   &fMu1EtaNrf,         "t1eta/D");
@@ -2335,27 +2337,41 @@ void candAna::xpDistMuons() {
   if (fpMuon1->fMuIndex < 0) return;
   if (fpMuon2->fMuIndex < 0) return;
 
-  TAnaMuon *m1 = fpEvt->getMuon(fpMuon1->fMuIndex); 
-  TAnaMuon *m2 = fpEvt->getMuon(fpMuon2->fMuIndex); 
+  TAnaMuon *pm[2]; 
+  pm[0] = fpEvt->getMuon(fpMuon1->fMuIndex); 
+  pm[1] = fpEvt->getMuon(fpMuon2->fMuIndex); 
 
-  int m1Idx = m1->fIndex;
-  int m2Idx = m2->fIndex;
+  //int set0(-99), set1(-99); 
+  for (int m = 0; m < 2; ++m) {
+    for (int i = 0; i < 10; ++i) {
+      
+      int trackIdx = pm[m]->fXpTracks[i].idx; 
+      if (trackIdx < 0 || trackIdx > fpEvt->nSimpleTracks()) continue;
 
-  // -- FIXME: add selection of PV to choice of closest xp track!!!!
-  int xp1t0 = m1->fXpTracks[0].idx;
-  int xp2t0 = m2->fXpTracks[0].idx;
+      // -- ignore this track if it is the other muon of this decay
+      if (trackIdx == pm[1-m]->fIndex) continue;
 
-  if (xp1t0 != m2Idx) {
-    fMu1XpDist = m1->fXpTracks[0].dist; 
-  } else {
-    fMu1XpDist = m1->fXpTracks[1].dist; 
+      // -- check that the track's PV is the current one of it is set
+      int pvIdx = fpEvt->getSimpleTrack(trackIdx)->getPvIndex();
+      if (pvIdx > -1) {
+	if (pvIdx != fpCand->fPvIdx) continue;
+      }
+
+      // -- now set the mu i xp dist and break for this one
+      if (0 == m) {
+	fMu1XpDist = pm[m]->fXpTracks[i].dist; 
+	//set0 = i; 
+	break;
+      } 
+      if (1 == m) {
+	fMu2XpDist = pm[m]->fXpTracks[i].dist; 
+	//set1 = i; 
+	break;
+      } 
+    }
   }
 
-  if (xp2t0 != m1Idx) {
-    fMu2XpDist = m2->fXpTracks[0].dist; 
-  } else {
-    fMu2XpDist = m2->fXpTracks[1].dist; 
-  }
+  //  cout << "used tracks " << set0 << " and " << set1 << endl;
 
 }
 

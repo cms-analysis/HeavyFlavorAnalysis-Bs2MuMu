@@ -32,6 +32,7 @@ struct RedTreeData {
 
   double mudist, mudeltar; 
   double g1pt, g2pt, g3pt, g4pt, g1eta, g2eta, g3eta, g4eta, gtau;
+  int    g1id, g2id; 
   double t1pt, t1eta, t2pt, t2eta, t3pt, t3eta, t4pt, t4eta; 
 
   double mpsi, mkk;

@@ -88,6 +88,8 @@ void candAnaMuMu::genMatch() {
   fGenBTmi = -1; 
   if (goodMatch) {
     fGenBTmi = pB->fNumber; 
+    fMu1GenID = pM1->fID;
+    fMu2GenID = pM2->fID;
     double m = pB->fP.Mag();
     double p = pB->fP.P();
     // Meson pointer

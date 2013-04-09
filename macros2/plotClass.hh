@@ -293,6 +293,11 @@ public:
   std::vector<TH1D*> fhMassWithAllCuts;
   std::vector<TH1D*> fhMassWithAllCutsManyBins; 
   std::vector<TH1D*> fhMassWithAllCutsBlind;
+
+  std::vector<TH1D*> fhW8MassWithAllCuts;
+  std::vector<TH1D*> fhW8MassWithAllCutsManyBins; 
+  std::vector<TH1D*> fhW8MassWithAllCutsBlind;
+
   std::vector<TH1D*> fhMassWithMassCuts;
   std::vector<TH1D*> fhMassWithMassCutsManyBins; 
   std::vector<TH1D*> fhNorm, fhNormC, fhDstarPi;
@@ -347,9 +352,11 @@ public:
   readerData frd; 
   double MASSMIN, MASSMAX, SIGBOXMIN, SIGBOXMAX, BGLBOXMIN, BGLBOXMAX, BGHBOXMIN, BGHBOXMAX; 
   
-  bool fGoodAcceptance, fPreselection,	fWideMass, fGoodHLT, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta, fGoodTracks, fGoodTracksPt, fGoodTracksEta, fGoodQ,
-       fGoodPvAveW8, fGoodLip, fGoodLipS, fGoodIp, fGoodIpS, fGoodMaxDoca, fGoodPt, fGoodEta, fGoodAlpha, fGoodFLS, fGoodChi2, fGoodIso, fGoodCloseTrack, 
-       fGoodDocaTrk, fGoodJpsiCuts, fGoodLastCut; 
+  bool fGoodAcceptance, fPreselection,	fWideMass, fGoodHLT, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta, fGoodTracks, fGoodTracksPt, fGoodTracksEta; 
+  bool fGoodQ, fGoodPvAveW8, fGoodLip, fGoodLipS, fGoodIp, fGoodIpS, fGoodMaxDoca, fGoodPt, fGoodEta, fGoodAlpha, fGoodFLS, fGoodChi2, fGoodIso;
+  bool fGoodCloseTrack, fGoodDocaTrk, fGoodJpsiCuts, fGoodLastCut; 
+
+  double fW8;
 
   int fRunMin, fRunMax; // if you want to look at a specific run range
   
@@ -383,6 +390,9 @@ public:
   PidTable *fptCbT1MC;
   PidTable *fptCbT2MC;
   PidTable *fptCbMMC; 
+  
+  PidTable *fptFakePosKaons, *fptFakePosPions, *fptFakePosProtons;
+  PidTable *fptFakeNegKaons, *fptFakeNegPions, *fptFakeNegProtons;
 
 
   ClassDef(plotClass,1) //Testing plotClass

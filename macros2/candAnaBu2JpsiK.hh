@@ -44,6 +44,7 @@ public:
 
   double       fKaonPt, fKaonEta, fKaonPhi;
   double       fKPtGen, fKEtaGen;
+  int          fKGenID; 
   double       fKaonPtNrf, fKaonEtaNrf;
   int          fKaonTkQuality;
   double       fJpsiMass, fJpsiPt, fJpsiEta, fJpsiPhi;

@@ -218,7 +218,13 @@ void candAnaBs2JpsiPhi::genMatch() {
   }
 
   fGenBTmi = -1; 
+  fKa1GenID = -99999; 
+  fKa2GenID = -99999; 
   if (goodMatch) {
+    fMu1GenID = pM1->fID;
+    fMu2GenID = pM2->fID;
+    fKa1GenID = pK1->fID;
+    fKa2GenID = pK2->fID;
     fGenBTmi = pB->fNumber; 
     double m = pB->fP.Mag();
     double p = pB->fP.P();
@@ -425,8 +431,11 @@ void candAnaBs2JpsiPhi::moreReducedTree(TTree *t) {
 
   t->Branch("g3pt", &fKa1PtGen,  "g3pt/D");
   t->Branch("g3eta",&fKa1EtaGen, "g3eta/D");
+  t->Branch("g3id", &fKa1GenID,  "g3id/I");
+
   t->Branch("g4pt", &fKa2PtGen,  "g4pt/D");
   t->Branch("g4eta",&fKa2EtaGen, "g4eta/D");
+  t->Branch("g4id", &fKa2GenID,  "g4id/I");
 }
 
 
