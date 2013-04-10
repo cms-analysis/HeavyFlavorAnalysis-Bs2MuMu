@@ -3,7 +3,19 @@
 #  ./link 0 1293
 
 use Getopt::Std;
-getopts('cn:');
+getopts('a:cn:');
+
+if ($opt_a) {
+    for ($i = $opt_a; $i < $opt_a + 4; $i++) {
+	system("/bin/cp ../../tmva/TMVA-$i-combined.root ."); 
+	system("/bin/cp ../../tmva/TMVA-$i-Events?.root ."); 
+	system("/bin/cp ../../tmva/TMVA-$i.log ."); 
+	system("/bin/cp ../../tmva/weights/TMVA-$i-Events?_BDT.weights.xml ."); 
+	$base = $i-$opt_a;
+	system("./link $base $i"); 
+    }
+    die "that's it for starters\n";
+}
 
 if ($#ARGV < 1) {
     die "usage: ./link 0 1293\n";
