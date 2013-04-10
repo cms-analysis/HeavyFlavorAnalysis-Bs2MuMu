@@ -191,7 +191,7 @@ void pdf_analysis::set_pdf_constant(string name) {
 
 void pdf_analysis::define_bs(int i, int j) {
 
-  RooRealVar Mean_bs(name("Mean_bs", i, j), "Mean_bs", 5.35, 5.30, 5.4);
+  RooRealVar Mean_bs(name("Mean_bs", i, j), "Mean_bs", 5.35, 5.30, 5.40);
   RooRealVar Sigma_bs(name("Sigma_bs", i, j), "Sigma_bs", 0.02, 0.005, 0.2);
   RooRealVar Alpha_bs(name("Alpha_bs", i, j), "Alpha_bs", 2.8, 0.1, 3.0);
   RooRealVar Enne_bs(name("Enne_bs", i, j), "Enne_bs", 1., 0., 10.);
@@ -210,7 +210,6 @@ void pdf_analysis::define_bs(int i, int j) {
     else {
       RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
       ws_->import(pdf_bs);
-
     }
   }
   else {
@@ -218,12 +217,12 @@ void pdf_analysis::define_bs(int i, int j) {
     RooFormulaVar SigmaRes_bs(name("SigmaRes_bs", i, j), "@0*@1", RooArgList(*ws_->var("MassRes"), PeeK_bs));
     ws_->import(SigmaRes_bs);
     RooCBShape CB_bs(name("CB_bs", i, j), "CB_bs", *ws_->var("Mass"), Mean_bs, *ws_->function(name("SigmaRes_bs", i, j)), Alpha_bs, Enne_bs);
-    RooProdPdf pdf_bs_mass(name("pdf_bs_mass", i, j), "pdf_bs_mass", *ws_->pdf(name("MassRes_pdf_bs", i, j)), Conditional(CB_bs, *ws_->var("Mass")));
     if (!bdt_fit_) {
       RooProdPdf pdf_bs (name("pdf_bs", i, j), "pdf_bs", *ws_->pdf(name("MassRes_pdf_bs", i, j)), Conditional(CB_bs, *ws_->var("Mass")));
       ws_->import(pdf_bs);
     }
     else {
+    	RooProdPdf pdf_bs_mass(name("pdf_bs_mass", i, j), "pdf_bs_mass", *ws_->pdf(name("MassRes_pdf_bs", i, j)), Conditional(CB_bs, *ws_->var("Mass")));
       RooProdPdf pdf_bs(name("pdf_bs", i, j), "pdf_bs", pdf_bs_mass, *ws_->pdf(name("bdt_pdf_bs", i, j)));
       ws_->import(pdf_bs);
     }
@@ -529,7 +528,7 @@ void pdf_analysis::print(RooAbsData* data, string output) {
   RooPlot *rp = ws_->var("Mass")->frame();
   RooPlot *rp_bdt = ws_->var("bdt")->frame();
   data->plotOn(rp, Binning(20));
-  if (bdt_fit_) data->plotOn(rp_bdt, Binning(20));
+  if (bdt_fit_) data->plotOn(rp_bdt, Binning(100));
   if (!pee) {
     ws_->pdf(pdf_name.c_str())->plotOn(rp, LineColor(kBlue));
     if (bdt_fit_) ws_->pdf(pdf_name.c_str())->plotOn(rp_bdt, LineColor(kBlue));
@@ -709,7 +708,7 @@ RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
   RooArgList varlist(*MassRes, *weight);
   RooDataSet* subdata_res = new RooDataSet("subdata_res", "subdata_res", varlist, "weight");
   const RooArgSet* aRow;
-  TH1D histo(rds->GetTitle(), rds->GetTitle(), 40, -2.4, 2.4);
+  TH1D histo(rds->GetTitle(), rds->GetTitle(), 40, 0, 0.2);
   for (Int_t j = 0; j < rds->numEntries(); j++) {
     aRow = rds->get(j);
     RooRealVar* massres = (RooRealVar*)aRow->find("MassRes");
@@ -727,8 +726,9 @@ RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
   name_rdh << "MassRes_rdh_" << name;
   if (simul_) name_rdh << "_" << channel;
   if (simul_bdt_ || simul_all_) name_rdh << "_" << channel_bdt;
-  RooDataHist *MassRes_rdh = subdata_res->binnedClone(name_rdh.str().c_str());
-  //RooDataHist *MassRes_rdh = new RooDataHist(name_rdh.str().c_str(), name_rdh.str().c_str(), *ws_->var("MassRes"), &histo);
+  histo.SetName(name_rdh.str().c_str());
+//  RooDataHist *MassRes_rdh = subdata_res->binnedClone(name_rdh.str().c_str());
+  RooDataHist *MassRes_rdh = new RooDataHist(name_rdh.str().c_str(), name_rdh.str().c_str(), *ws_->var("MassRes"), &histo);
   ostringstream name_pdf;
   name_pdf << "MassRes_pdf_" << name;
   if (simul_) name_pdf << "_" << channel;
@@ -771,6 +771,8 @@ RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name) {
   if (simul_) name_pdf << "_" << channel;
   if (simul_bdt_ || simul_all_) name_pdf << "_" << channel_bdt;
   RooHistPdf * bdt_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), RooArgList(*ws_->var("bdt")), *bdt_rdh);
+  RooRealVar * alpha = new RooRealVar("alpha", "alpha", 0, -1, 1);
+  RooIntegralMorph * bdt_rim = new RooIntegralMorph(name_pdf.str().c_str(), name_pdf.str().c_str(), *bdt_rhpdf, *bdt_rhpdf, *ws_->var("bdt"), *alpha);
   ws_->import(*bdt_rhpdf);
 
   if (name == "comb") print_pdf(bdt_rhpdf, ws_->var("bdt"));

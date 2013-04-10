@@ -779,57 +779,62 @@ void pdf_fitData::define_simul() {
 }
 
 void pdf_fitData::set_syst() {
-//  if (BF_ > 0) {
-    ws_->var("fs_over_fu")->setConstant(!syst);
-    ws_->var("one_over_BRBR")->setConstant(!syst);
-    for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < bdt_index_max(i); j++) {
-        ws_->var(name("N_bu", i, j))->setConstant(!syst);
-        ws_->var(name("effratio_bs", i, j))->setConstant(!syst);
-        if (rare_constr_) {
-        	ws_->var(name("N_peak", i, j))->setConstant(!syst);
-        	ws_->var(name("N_semi", i, j))->setConstant(!syst);
-        }
-        else {
-        	ws_->var(name("N_peak", i, j))->setConstant(true);
-        	ws_->var(name("N_semi", i, j))->setConstant(true);
-        }
-        if (BF_ > 1) ws_->var(name("effratio_bd", i, j))->setConstant(!syst);
-        ws_->var(name("Mean_bs", i, j))->setConstant(!syst);
-        ws_->var(name("Mean_bd", i, j))->setConstant(!syst);
-        ws_->var(name("Enne_bs", i, j))->setConstant(!syst);
-        ws_->var(name("Alpha_bs", i, j))->setConstant(!syst);
-        ws_->var(name("Enne_bd", i, j))->setConstant(!syst);
-        ws_->var(name("Alpha_bd", i, j))->setConstant(!syst);
-      }
-    }
-    string constraints("");
-    if (syst) {
-      constraints += "fs_over_fu,one_over_BRBR";
-      for (int i = 0; i < channels; i++) {
-      	if (years_=="0" && i > 1) break;
-      	if (years_=="1" && i < 2) continue;
-        for (int j = 0; j < bdt_index_max(i); j++) {
-          constraints += "," + (string)name("N_bu", i, j);
-          constraints += "," + (string)name("effratio_bs", i, j);
-          if (rare_constr_) {
-          	constraints += "," + (string)name("N_peak", i, j);
-          	constraints += "," + (string)name("N_semi", i, j);
-          }
-          if (BF_ > 1) constraints += "," + (string)name("effratio_bd", i, j);
-          constraints += "," + (string)name("Mean_bs", i, j);
-          constraints += "," + (string)name("Mean_bd", i, j);
 
-          constraints += "," + (string)name("Enne_bs", i, j);
-          constraints += "," + (string)name("Alpha_bs", i, j);
-          constraints += "," + (string)name("Enne_bd", i, j);
-          constraints += "," + (string)name("Alpha_bd", i, j);
-        }
+	ws_->var("fs_over_fu")->setConstant(!syst);
+	ws_->var("one_over_BRBR")->setConstant(!syst);
+	for (int i = 0; i < channels; i++) {
+		for (int j = 0; j < bdt_index_max(i); j++) {
+			ws_->var(name("N_bu", i, j))->setConstant(!syst);
+			ws_->var(name("effratio_bs", i, j))->setConstant(!syst);
+			if (rare_constr_) {
+				ws_->var(name("N_peak", i, j))->setConstant(!syst);
+				ws_->var(name("N_semi", i, j))->setConstant(!syst);
       }
-    }
-    ws_->defineSet("constr", constraints.c_str());
-    ws_->set("constr")->Print();
-//  }
+			else {
+				ws_->var(name("N_peak", i, j))->setConstant(true);
+				ws_->var(name("N_semi", i, j))->setConstant(true);
+			}
+			if (BF_ > 1) ws_->var(name("effratio_bd", i, j))->setConstant(!syst);
+			ws_->var(name("Mean_bs", i, j))->setConstant(!syst);
+			ws_->var(name("Mean_bd", i, j))->setConstant(!syst);
+			ws_->var(name("Enne_bs", i, j))->setConstant(!syst);
+			ws_->var(name("Alpha_bs", i, j))->setConstant(!syst);
+			ws_->var(name("Enne_bd", i, j))->setConstant(!syst);
+			ws_->var(name("Alpha_bd", i, j))->setConstant(!syst);
+
+//			if (BF_ == 0) {
+//				ws_->var(name("Mean_bs", i, j))->setConstant(false);
+//				ws_->var(name("Mean_bd", i, j))->setConstant(false);
+//			}
+		}
+	}
+	string constraints("");
+	if (syst) {
+		constraints += "fs_over_fu,one_over_BRBR";
+		for (int i = 0; i < channels; i++) {
+			if (years_=="0" && i > 1) break;
+			if (years_=="1" && i < 2) continue;
+			for (int j = 0; j < bdt_index_max(i); j++) {
+				constraints += "," + (string)name("N_bu", i, j);
+				constraints += "," + (string)name("effratio_bs", i, j);
+				if (rare_constr_) {
+					constraints += "," + (string)name("N_peak", i, j);
+					constraints += "," + (string)name("N_semi", i, j);
+				}
+				if (BF_ > 1) constraints += "," + (string)name("effratio_bd", i, j);
+				constraints += "," + (string)name("Mean_bs", i, j);
+				constraints += "," + (string)name("Mean_bd", i, j);
+
+				constraints += "," + (string)name("Enne_bs", i, j);
+				constraints += "," + (string)name("Alpha_bs", i, j);
+				constraints += "," + (string)name("Enne_bd", i, j);
+				constraints += "," + (string)name("Alpha_bd", i, j);
+			}
+		}
+	}
+	ws_->defineSet("constr", constraints.c_str());
+	cout << "constrain set: ";
+	ws_->set("constr")->Print();
 }
 
 void pdf_fitData::save() {

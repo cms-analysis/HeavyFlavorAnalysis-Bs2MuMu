@@ -42,6 +42,7 @@
 #include "RooSimWSTool.h"
 #include "RooSuperCategory.h"
 #include "RooMultiCategory.h"
+#include "RooIntegralMorph.h"
 
 using namespace std;
 using namespace RooFit;
