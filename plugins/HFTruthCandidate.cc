@@ -466,7 +466,7 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	    iterator->addTrack(IDX, 321);
 	  }
 	  if (211 == TMath::Abs(ID)) {
-	    iterator->addTrack(IDX, 321); // assign the pion mass!
+	    iterator->addTrack(IDX, 321); // assign the kaon mass! do we ever get here?
 	  }
 	}
 	iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
@@ -474,6 +474,71 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
 	if (fVerbose > 5) cout << "==>HFTruthCandidate> sequential fit for Bs2JpsiPhi" << endl;
 	aSeq.doFit(&theTree4);
+      }
+
+      // -- special case for B0 -> J/psi Kstar reconstructed as B+ -> J/psi K (leaving out the pion)
+      if (10 == fType) {
+	HFDecayTree theTree5(3000000 + fType, true, MBPLUS, false, -1.0, true);
+
+	HFDecayTreeIterator iterator = theTree5.addDecayTree(300443, false, MJPSI, false);
+	for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
+	  IDX = trackIndices[ii];
+	  ID  = gHFEvent->getSimpleTrackMCID(IDX);
+	  if (13 == TMath::Abs(ID)) {
+	    iterator->addTrack(IDX, 13);
+	  }
+	}
+	iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+	iterator = theTree5.addDecayTree(300333, false, MPHI, false);
+	for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
+	  IDX = trackIndices[ii];
+	  ID  = gHFEvent->getSimpleTrackMCID(IDX);
+	  if (321 == TMath::Abs(ID)) {
+	    iterator->addTrack(IDX, 321);
+	  }
+	  if (211 == TMath::Abs(ID)) {
+	    //do nothing and ignore the pion from the K*!
+	  }
+	}
+	iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+	theTree5.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+	if (fVerbose > 5) cout << "==>HFTruthCandidate> sequential fit for Bu2JpsiK of Bd2JpsiKstar" << endl;
+	aSeq.doFit(&theTree5);
+      }
+
+
+      // -- special case for B0 -> J/psi Kstar reconstructed as Bs -> J/psi KK 
+      if (11 == fType) {
+	HFDecayTree theTree6(3000000 + fType, true, MBS, false, -1.0, true);
+
+	HFDecayTreeIterator iterator = theTree6.addDecayTree(300443, false, MJPSI, false);
+	for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
+	  IDX = trackIndices[ii];
+	  ID  = gHFEvent->getSimpleTrackMCID(IDX);
+	  if (13 == TMath::Abs(ID)) {
+	    iterator->addTrack(IDX, 13);
+	  }
+	}
+	iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+	iterator = theTree6.addDecayTree(300333, false, MPHI, false);
+	for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
+	  IDX = trackIndices[ii];
+	  ID  = gHFEvent->getSimpleTrackMCID(IDX);
+	  if (321 == TMath::Abs(ID)) {
+	    iterator->addTrack(IDX, 321);
+	  }
+	  if (211 == TMath::Abs(ID)) {
+	    iterator->addTrack(IDX, 321);
+	  }
+	}
+	iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+	theTree6.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
+
+	if (fVerbose > 5) cout << "==>HFTruthCandidate> sequential fit for Bs2JpsiPhi of Bd2JpsiKstar" << endl;
+	aSeq.doFit(&theTree6);
       }
 
       // -- special case for B0 -> D*-pi+
