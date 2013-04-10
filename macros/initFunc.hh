@@ -52,11 +52,13 @@ public:
   TF1* expoErrgauss2f(TH1 *h, double peak = 5.3, double sigma1 = 0.04, double peak2 = 5.425, double sigma2 = 0.079, double fraction = -1.,
 		      double preco = -1.); 
 
+  TF1* pol1CrystalBall(TH1 *h, double peak = 5.3, double sigma = 0.04, double alpha = 1., double tailLength = 1.); 
+
   TF1* pol0BsBlind(TH1 *h); 
   TF1* pol1BsBlind(TH1 *h); 
   TF1* expoBsBlind(TH1 *h); 
 
-  // Added to include ladaus
+  // Added to include landaus
   TF1* land(TH1 *h, double peak=5.3, double sigma=0.04); 
   TF1* landsimp(TH1 *h, double peak=5.3, double sigma=0.04); 
   TF1* expoErrgauss2Landau(TH1 *h, double peak = 5.3, double sigma = 0.04, double peak2 = 5.3, double sigma2 = 0.1, double preco = 5.14); 

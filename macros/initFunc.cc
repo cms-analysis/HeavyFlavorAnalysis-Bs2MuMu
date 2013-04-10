@@ -39,6 +39,34 @@ namespace {
     return par[3]*(TMath::Erf((par[0]-x[0])/par[1])+par[2]); 
   } 
 
+  // ----------------------------------------------------------------------
+  double iF_cb(double *x, double *par) {
+    // par[0]:  mean
+    // par[1]:  sigma
+    // par[2]:  alpha, crossover point
+    // par[3]:  n, length of tail
+    // par[4]:  N, normalization
+    
+    Double_t cb = 0.0;
+    Double_t exponent = 0.0;
+    
+    if (x[0] > par[0] - par[2]*par[1]) {
+      exponent = (x[0] - par[0])/par[1];
+      cb = TMath::Exp(-exponent*exponent/2.);
+    } else {
+    double nenner  = TMath::Power(par[3]/par[2], par[3])*TMath::Exp(-par[2]*par[2]/2.);
+    double zaehler = (par[0] - x[0])/par[1] + par[3]/par[2] - par[2];
+    zaehler = TMath::Power(zaehler, par[3]);
+    cb = nenner/zaehler;
+    }
+    
+    if (par[4] > 0.) {
+      cb *= par[4];
+    }
+    
+    return cb;
+  }
+
 
   // ----------------------------------------------------------------------
   double iF_gauss(double *x, double *par) {
@@ -194,6 +222,20 @@ namespace {
     }
     return par[0]*TMath::Exp(x[0]*par[1]);
   }
+
+  // ----------------------------------------------------------------------
+  // pol1 and crystal ball
+  double iF_pol1_cb(double *x, double *par) {
+    // par[0]:  mean
+    // par[1]:  sigma
+    // par[2]:  alpha, crossover point
+    // par[3]:  n, length of tail
+    // par[4]:  N, normalization
+    // par[5] = par 0 of pol1
+    // par[6] = par 1 of pol1
+    return  (iF_pol1(x, &par[5]) + iF_cb(x, &par[0]));
+  }
+
 
   // ----------------------------------------------------------------------
   // pol1 and gauss 
@@ -673,6 +715,64 @@ TF1* initFunc::pol0BsBlind(TH1 *h) {
     
   return f; 
 
+}
+
+// ----------------------------------------------------------------------
+TF1* initFunc::pol1CrystalBall(TH1 *h, double peak, double sigma, double alpha, double tailLength) {
+  TF1 *f = new TF1("f1", iF_pol1_cb, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 7);
+  f->SetParNames("peak", "sigma", "crossover", "tail", "normalization", "constant", "slope"); 			   
+
+  int lbin(1), hbin(h->GetNbinsX()+1); 
+  if (fLo < fHi) {
+    lbin = h->FindBin(fLo); 
+    hbin = h->FindBin(fHi); 
+  }
+  
+  double p0, p1; 
+  initPol1(p0, p1, h);
+  double A   = 0.5*p1*(fHi*fHi - fLo*fLo) + p0*(fHi - fLo);
+
+  double g0 = (h->Integral(lbin, hbin) - A/h->GetBinWidth(1))*h->GetBinWidth(1);  
+
+  f->SetParameters(peak, sigma, alpha, tailLength, g0, p0, p1); 
+
+  f->ReleaseParameter(0);     
+  if (fLimit[0]) {
+    cout << "initFunc::pol1CrystalBall> limiting par 0 from " << fLimitLo[0] << " .. " << fLimitHi[0] << endl;
+    f->SetParLimits(0, fLimitLo[0], fLimitHi[0]); 
+  } else {
+    f->SetParLimits(0, 0., 1.e7); 
+  }
+
+  if (fLimit[1]) {
+    cout << "initFunc::pol1CrystalBall> limiting par 1 from " << fLimitLo[1] << " .. " << fLimitHi[1] << endl;
+    f->SetParLimits(1, fLimitLo[1], fLimitHi[1]); 
+  } else {
+    f->ReleaseParameter(1);     
+  }
+
+  if (fLimit[2]) {
+    cout << "initFunc::pol1CrystalBall> limiting par 2 from " << fLimitLo[2] << " .. " << fLimitHi[2] << endl;
+    f->SetParLimits(2, fLimitLo[2], fLimitHi[2]); 
+  } else {
+    f->ReleaseParameter(2);     
+  }
+
+  if (fLimit[3]) {
+    cout << "initFunc::pol1CrystalBall> limiting par 3 from " << fLimitLo[3] << " .. " << fLimitHi[3] << endl;
+    f->SetParLimits(3, fLimitLo[3], fLimitHi[3]); 
+  } else {
+    f->ReleaseParameter(3);     
+  }
+
+  if (fLimit[4]) {
+    cout << "initFunc::pol1CrystalBall> limiting par 4 from " << fLimitLo[4] << " .. " << fLimitHi[4] << endl;
+    f->SetParLimits(4, fLimitLo[4], fLimitHi[4]); 
+  } else {
+    f->ReleaseParameter(4);     
+  }
+
+  return f; 
 }
 
 
