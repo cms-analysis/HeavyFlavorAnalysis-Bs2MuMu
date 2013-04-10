@@ -105,7 +105,7 @@ void mkPidTables(const char *filename) {
     
     a.flush(); 
     b.flush(); 
-    b.readFromHist(f1, Form("pass_pion_%s", charge[iq].c_str()), Form("all_pion%s", charge[iq].c_str())); 
+    b.readFromHist(f1, Form("pass_pion_%s", charge[iq].c_str()), Form("all_pion_%s", charge[iq].c_str())); 
     a.fillEff(b); 
     mean = a.getMean(); 
     sf = 0.00015/mean; 
@@ -116,4 +116,52 @@ void mkPidTables(const char *filename) {
     a.scale(sf); 
     a.dumpToFile(Form("proton%sFakeRate-mvaTmMuon.dat", charge[iq].c_str())); 
   }
+}
+
+
+// ----------------------------------------------------------------------
+void drawPidTables(const char *qual = "mvaTmMuon") {
+
+  PidTable a;
+  std::vector<string> charge; 
+  charge.push_back("Plus"); 
+  charge.push_back("Minus"); 
+
+  std::vector<string> sample; 
+  sample.push_back("pion"); 
+  sample.push_back("kaon"); 
+  sample.push_back("proton"); 
+
+  std::vector<string> ssample; 
+  ssample.push_back("#pi"); 
+  ssample.push_back("K"); 
+  ssample.push_back("p"); 
+
+  string name; 
+
+  double xbins[] = {0., 1.4, 2.4};
+  double ybins[] = {0., 4., 5., 7., 10., 15., 20., 50.}; 
+  TH2D *h2 = new TH2D("h2", "", 2, xbins, 7, ybins); 
+  h2->SetMinimum(0.0); 
+  h2->SetMaximum(0.001); 
+  
+  gStyle->SetOptStat(0); 
+
+  for (int is = 0; is < sample.size(); ++is) {
+    for (int iq = 0; iq < charge.size(); ++iq) {
+
+      shrinkPad(0.15, 0.15, 0.2); 
+      a.clear(); 
+      name = Form("%s%sFakeRate-%s.dat", sample[is].c_str(), charge[iq].c_str(), qual); 
+      h2->Reset();
+      setTitles(h2, Form("|#eta(%s^{%s} )|", ssample[is].c_str(), (iq==0?"+":"-")), Form("p_{T}(%s^{%s} )", ssample[is].c_str(), (iq==0?"+":"-"))); 
+
+      a.readFromFile(name.c_str()); 
+      a.eff2d(h2); 
+      h2->Draw("colztext");
+      c0->SaveAs(Form("%s%sFakeRate-%s.pdf", sample[is].c_str(), charge[iq].c_str(), qual)); 
+    }
+  }
+
+
 }
