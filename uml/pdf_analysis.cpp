@@ -102,7 +102,7 @@ void pdf_analysis::initialize () {
   super_cat = new RooSuperCategory("super_cat", "super_cat", cat_set);
   ws_->import(*super_cat);
 
-  MassRes = new RooRealVar("MassRes", "mass resolution", 0.0, 0.2, "GeV/c^{2}");
+  MassRes = new RooRealVar("MassRes", "mass resolution", 0., 0.2, "GeV");
   ws_->import(*MassRes);
 
   obs = new RooArgSet(*ws_->var("Mass"), *ws_->var("bdt"), "obs");
@@ -706,9 +706,8 @@ double pdf_analysis::getErrorLow(RooRealVar *var) {
 
 RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
   RooArgList varlist(*MassRes, *weight);
-  RooDataSet* subdata_res = new RooDataSet("subdata_res", "subdata_res", varlist, "weight");
   const RooArgSet* aRow;
-  TH1D histo(rds->GetTitle(), rds->GetTitle(), 40, 0, 0.2);
+  TH1D histo(rds->GetTitle(), rds->GetTitle(), 50, 0., 0.2);
   for (Int_t j = 0; j < rds->numEntries(); j++) {
     aRow = rds->get(j);
     RooRealVar* massres = (RooRealVar*)aRow->find("MassRes");
@@ -716,24 +715,21 @@ RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
     RooArgSet varlist_tmp_res(*massres);
     if (aRow->getCatIndex("etacat") == channel) {
       if ((!simul_bdt_ && !simul_all_) || aRow->getCatIndex("bdtcat") == channel_bdt) {
-        subdata_res->add(varlist_tmp_res, Weight);
-        //      histo.Fill(massres->getVal(), Weight);
+        histo.Fill(massres->getVal(), Weight);
       }
     }
   }
-  cout << "resolution entries = " <<  subdata_res->sumEntries() << endl;
+  cout << "resolution entries = " <<  histo.GetEntries() << endl;
   ostringstream name_rdh;
   name_rdh << "MassRes_rdh_" << name;
   if (simul_) name_rdh << "_" << channel;
   if (simul_bdt_ || simul_all_) name_rdh << "_" << channel_bdt;
-  histo.SetName(name_rdh.str().c_str());
-//  RooDataHist *MassRes_rdh = subdata_res->binnedClone(name_rdh.str().c_str());
   RooDataHist *MassRes_rdh = new RooDataHist(name_rdh.str().c_str(), name_rdh.str().c_str(), *ws_->var("MassRes"), &histo);
   ostringstream name_pdf;
   name_pdf << "MassRes_pdf_" << name;
   if (simul_) name_pdf << "_" << channel;
   if (simul_bdt_ || simul_all_) name_pdf << "_" << channel_bdt;
-  RooHistPdf * MassRes_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), RooArgList(*ws_->var("MassRes")), *MassRes_rdh, 2);
+  RooHistPdf * MassRes_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), RooArgList(*ws_->var("MassRes")), *MassRes_rdh);
   ws_->import(*MassRes_rhpdf);
 
   if (name == "comb") print_pdf(MassRes_rhpdf, ws_->var("MassRes"));
@@ -741,11 +737,10 @@ RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
   return MassRes_rhpdf;
 }
 
-RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name) {
+RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name, Double_t bdt_min) {
   RooArgList varlist(*bdt, *weight);
-//  RooDataSet* subdata_bdt = new RooDataSet("subdata_bdt", "subdata_bdt", varlist, "weight");
   const RooArgSet* aRow;
-  TH1D histo(rds->GetTitle(), rds->GetTitle(), 100, -1., 1.);
+  TH1D histo(rds->GetTitle(), rds->GetTitle(), 50, bdt_min, 1.);
   for (Int_t j = 0; j < rds->numEntries(); j++) {
     aRow = rds->get(j);
     RooRealVar* BDT = (RooRealVar*)aRow->find("bdt");
@@ -753,18 +748,15 @@ RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name) {
     RooArgSet varlist_tmp_bdt(*BDT);
     if (aRow->getCatIndex("etacat") == channel) {
       if ((!simul_bdt_ && !simul_all_) || aRow->getCatIndex("bdtcat") == channel_bdt) {
-        //      subdata_bdt->add(varlist_tmp_bdt, Weight);
         histo.Fill(BDT->getVal(), Weight);
       }
     }
   }
-//  cout << "bdt entries = " <<  subdata_bdt->sumEntries() << endl;
   cout << "bdt entries = " <<  histo.GetEntries() << endl;
   ostringstream name_rdh;
   name_rdh << "bdt_rdh_" << name;
   if (simul_) name_rdh << "_" << channel;
   if (simul_bdt_ || simul_all_) name_rdh << "_" << channel_bdt;
-  //RooDataHist *bdt_rdh = subdata_bdt->binnedClone(name_rdh.str().c_str());
   RooDataHist *bdt_rdh = new RooDataHist(name_rdh.str().c_str(), name_rdh.str().c_str(), *ws_->var("bdt"), &histo);
   ostringstream name_pdf;
   name_pdf << "bdt_pdf_" << name;
@@ -1217,7 +1209,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
   for (int i = 0; i < channels_ && i < 2; i++) {
     if (simul_) ii = i;
     else ii = ch_i_;
-    cout << "etacat " << ii + offset << endl;
+    cout << "etacat " << ii + offset << ":" << endl;
     cout << "bd eff = " << eff_bd_val[i+offset][0] << " \\pm " << eff_bd_err[i+offset][0] << endl;
     cout << "bs eff = " << eff_bs_val[i+offset][0] << " \\pm " << eff_bs_err[i+offset][0] << endl;
     cout << "bu eff = " << eff_bu_val[i+offset][0] << " \\pm " << eff_bu_err[i+offset][0] << endl;

@@ -26,7 +26,6 @@ int main(int argc, char* argv[]) {
   if (SM && bd_const) {cout << "please select SM OR bd_const, not both" << endl; return EXIT_FAILURE;}
 
   pdf_analysis ana1(print, ch_s, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit);
-//  ana1.initialize();
   ana1.set_SMratio(0.09);
   if (no_legend) ana1.no_legend = true;
   RooWorkspace *ws = ana1.get_ws();
@@ -44,10 +43,8 @@ int main(int argc, char* argv[]) {
     years_i = atoi(years_opt.c_str());
   }
 
-  vector <double> cuts_v(2*years, -10);
+  vector <double> cuts_v(2*years, -1);
   if (cuts_f_b) cuts_v = cut_bdt_file();
-//  TF1* MassRes_0_h = Fit_MassRes("input/2011/small-SgMc.root", cuts, cuts_v, 0);
-//  TF1* MassRes_2_h = Fit_MassRes("input/2012/small-SgMc.root", cuts, cuts_v, 1);
 
   vector <string> decays_filename(decays_n);
   vector <string> decays_treename(decays_n);
@@ -88,7 +85,7 @@ int main(int argc, char* argv[]) {
       cout << decays_filename[i] << endl;
       TFile* smalltree_f = new TFile(decays_filename[i].c_str(), "UPDATE");
       TTree* smalltree = (TTree*)smalltree_f->Get(decays_treename[i].c_str());
-      TTree* reduced_tree = smalltree->CopyTree(cuts.c_str());
+      TTree* reduced_tree = smalltree->CopyTree(cuts.c_str()); // string cuts
       Double_t m_t, eta_t, m1eta_t, m2eta_t, bdt_t, me_t;
       reduced_tree->SetBranchAddress("m",     &m_t);
       reduced_tree->SetBranchAddress("bdt",   &bdt_t);
@@ -118,9 +115,6 @@ int main(int argc, char* argv[]) {
         bdt->setVal(bdt_t);
         if (m_t > 5.20 && m_t < 5.45 && i == 13) continue; // skip signal windows for comb bkg
         if (m_t < 4.90 || m_t > 5.90) continue; // skip outside range
-        /// mass resolution
-//        if (y == 0) MassRes->setVal(MassRes_0_h->Eval(eta_t));
-//        else if (y == 1) MassRes->setVal(MassRes_2_h->Eval(eta_t));
         if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass scale
         MassRes->setVal(me_t);
         /// eta channels
@@ -209,14 +203,13 @@ int main(int argc, char* argv[]) {
     }
     /// 2D
     if (bdt_fit) {
-      ana1.define_bdt_pdf(rds_smalltree[0], "bs");
-      ana1.define_bdt_pdf(rds_smalltree[1], "bd");
-      ana1.define_bdt_pdf(rds_semi, "semi");
-      ana1.define_bdt_pdf(rds_peak, "peak");
-      ana1.define_bdt_pdf(rds_smalltree[13], "comb");
+      ana1.define_bdt_pdf(rds_smalltree[0], "bs", 0.);
+      ana1.define_bdt_pdf(rds_smalltree[1], "bd", 0.);
+      ana1.define_bdt_pdf(rds_semi, "semi", 0.);
+      ana1.define_bdt_pdf(rds_peak, "peak", 0.);
+      ana1.define_bdt_pdf(rds_smalltree[13], "comb", 0.);
     }
   }
-
   ana1.define_N();
 
   get_rare_normalization("anaBmm.plotResults.2011.tex", "./input/2011/");

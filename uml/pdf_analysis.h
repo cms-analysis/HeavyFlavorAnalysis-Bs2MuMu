@@ -55,7 +55,7 @@ public:
   
   void initialize();
   RooHistPdf* define_MassRes_pdf(RooDataSet *rds, string name);
-  RooHistPdf* define_bdt_pdf(RooDataSet *rds, string name);
+  RooHistPdf* define_bdt_pdf(RooDataSet *rds, string name, Double_t bdt_min = -1.);
 
   void define_N();
   void define_pdfs();
