@@ -256,6 +256,34 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   }
 
   if (hltF) {
+    // -- HLT L3 muon candidates
+    string L3NameCollection("hltL3MuonCandidates");
+    trigger::size_type Index(0);
+    Index = trgEvent->collectionIndex(edm::InputTag(L3NameCollection, "", fTriggerEventLabel.process()));
+
+    if (Index < trgEvent->sizeCollections()) {
+      TString label = TString(L3NameCollection.c_str());
+      const trigger::Keys& Keys(trgEvent->collectionKeys());
+      const trigger::size_type n0 (Index == 0? 0 : Keys.at(Index-1));
+      const trigger::size_type n1 (Keys.at(Index));
+      for (trigger::size_type i = n0; i != n1; ++i) {
+	const trigger::TriggerObject& obj( trgEvent->getObjects().at(i) );
+	// cout << i << " id: " << obj.id() << " m = " << obj.mass() 
+	// << " pT,eta,phi = " << obj.pt() << "," <<  obj.eta() << "," << obj.phi() << endl;
+
+	TTrgObj *pTO = gHFEvent->addTrgObj();
+	pTO->fP.SetPtEtaPhiE(obj.pt(), 
+			     obj.eta(), 
+			     obj.phi(), 
+			     obj.energy()
+			     ); 
+	pTO->fID     = obj.id(); 
+	pTO->fLabel  = label;
+
+      }
+    }
+
+    // -- muon filter objects
     TriggerObjectCollection allObjects = trgEvent->getObjects();
     for (int i=0; i < trgEvent->sizeFilters(); i++){         
       Keys keys = trgEvent->filterKeys(i);
@@ -263,7 +291,21 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
 	if (fVerbose > 1) cout << trgEvent->filterTag(i) << endl; 
 
-	TString label = TString(trgEvent->filterTag(i).label() +":" + trgEvent->filterTag(i).process() +":"+ trgEvent->filterTag(i).instance() +":");
+	TString label = TString(trgEvent->filterTag(i).label()+":"+trgEvent->filterTag(i).process()+":"+trgEvent->filterTag(i).instance()+":");
+
+	// -- the following removes cross trigger filter objects even when they have Mu in the name!
+	if (label.Contains("Jet")) continue;
+	if (label.Contains("EG")) continue;
+	if (label.Contains("HT")) continue;
+	if (label.Contains("Pi0")) continue;
+	if (label.Contains("Tau")) continue;
+	if (label.Contains("AlCa")) continue;
+
+	if (label.Contains("Mu") || label.Contains("mu")) {
+	  // fill
+	} else {
+	  continue;
+	}
 
 	for (unsigned int j=0; j<keys.size(); j++){
 	  TTrgObj *pTO = gHFEvent->addTrgObj();
