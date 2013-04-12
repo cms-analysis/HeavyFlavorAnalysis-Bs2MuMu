@@ -388,11 +388,18 @@ void candAna::candAnalysis() {
   fpMuon1 = p1; 
   fpMuon2 = p2; 
   muScaleCorrectedMasses(); 
-  
+
   fMu1TrkLayer  = fpReader->numberOfTrackerLayers(p1);
   fMu1TmId      = tightMuon(p1); 
   fMu1MvaId     = mvaMuon(p1, fMu1BDT);        
-  fMu1Id        = fMu1TmId; 
+  fMu1rTmId     = tightMuon(p1, false); 
+  fMu1rBDT      = -1.;
+  fMu1rMvaId    = mvaMuon(p1, fMu1rBDT, false);
+  fTrigMatchDeltaPt = 99.;
+  fMu1TrigM     = doTriggerMatchingR(p1, true);
+  if (fTrigMatchDeltaPt > 0.05) fMu1TrigM *= -1.;
+  fMu1Id        = fMu1MvaId && (fMu1TrigM < 0.05) && (fMu1TrigM > 0); 
+
   fMu1Pt        = p1->fRefPlab.Perp(); 
   fMu1Eta       = p1->fRefPlab.Eta(); 
   fMu1Phi       = p1->fRefPlab.Phi(); 
@@ -437,7 +444,15 @@ void candAna::candAnalysis() {
   fMu2TrkLayer  = fpReader->numberOfTrackerLayers(p2);
   fMu2TmId      = tightMuon(p2); 
   fMu2MvaId     = mvaMuon(p2, fMu2BDT);        
-  fMu2Id        = fMu2TmId; 
+  fMu2rTmId     = tightMuon(p2, false); 
+  fMu2rBDT      = -1.;
+  fMu2rMvaId    = mvaMuon(p2, fMu2rBDT, false);
+  fTrigMatchDeltaPt = 99.;
+  fMu2TrigM     = doTriggerMatchingR(p2, true);
+  if (fTrigMatchDeltaPt > 0.05) fMu2TrigM *= -1.;
+  fMu2Id        = fMu2MvaId && fMu2TrigM; 
+  fMu2Id        = fMu2MvaId && (fMu2TrigM < 0.05) && (fMu2TrigM > 0); 
+
   fMu2Pt        = p2->fRefPlab.Perp(); 
   fMu2Eta       = p2->fRefPlab.Eta(); 
   fMu2Phi       = p2->fRefPlab.Phi(); 
@@ -1289,6 +1304,12 @@ void candAna::setupReducedTree(TTree *t) {
   t->Branch("m1id",    &fMu1Id,             "m1id/O");
   t->Branch("m1tmid",  &fMu1TmId,           "m1tmid/O");
   t->Branch("m1mvaid", &fMu1MvaId,          "m1mvaid/O");
+  t->Branch("m1rtmid", &fMu1rTmId,          "m1rtmid/O");
+  t->Branch("m1rmvaid",&fMu1rMvaId,          "m1rmvaid/O");
+  t->Branch("m1mvabdt",&fMu1BDT,            "m1mvabdt/D");
+  t->Branch("m1rmvabdt",&fMu1rBDT,          "m1rmvabdt/D");
+  t->Branch("m1trigm", &fMu1TrigM,          "m1trigm/D");
+
   t->Branch("m1pt",    &fMu1Pt,             "m1pt/D");
   t->Branch("m1eta",   &fMu1Eta,            "m1eta/D");
   t->Branch("m1phi",   &fMu1Phi,            "m1phi/D");
@@ -1307,6 +1328,12 @@ void candAna::setupReducedTree(TTree *t) {
   t->Branch("m2id",    &fMu2Id,             "m2id/O");
   t->Branch("m2tmid",  &fMu2TmId,           "m2tmid/O");
   t->Branch("m2mvaid", &fMu2MvaId,          "m2mvaid/O");
+  t->Branch("m2rtmid", &fMu2rTmId,          "m2rtmid/O");
+  t->Branch("m2rmvaid",&fMu2rMvaId,         "m2rmvaid/O");
+  t->Branch("m2mvabdt",&fMu2BDT,            "m2mvabdt/D");
+  t->Branch("m2rmvabdt",&fMu2rBDT,          "m2rmvabdt/D");
+  t->Branch("m2trigm", &fMu2TrigM,          "m2trigm/D");
+  
   t->Branch("m2pt",    &fMu2Pt,             "m2pt/D");
   t->Branch("m2eta",   &fMu2Eta,            "m2eta/D");
   t->Branch("m2phi",   &fMu2Phi,            "m2phi/D");
@@ -1851,13 +1878,13 @@ void candAna::readFile(string filename, vector<string> &lines) {
 
 
 // ----------------------------------------------------------------------
-bool candAna::tightMuon(TAnaTrack *pT) {
+bool candAna::tightMuon(TAnaTrack *pT, bool hadronsPass) {
 
   const int verbose(0); 
 
   if (verbose) cout << fYear << " --------- pT = " << pT->fPlab.Perp() << endl;
 
-  if (HLTRANGE.begin()->first == "NOTRIGGER") {
+  if (hadronsPass && HLTRANGE.begin()->first == "NOTRIGGER") {
     //cout << "NOTRIGGER requested... " << endl;
     return true;
   }
@@ -1910,8 +1937,8 @@ bool candAna::tightMuon(TAnaTrack *pT) {
 
 
 // ----------------------------------------------------------------------
-bool candAna::tightMuon(TSimpleTrack *pT) {
-  if (HLTRANGE.begin()->first == "NOTRIGGER") {
+bool candAna::tightMuon(TSimpleTrack *pT, bool hadronsPass) {
+  if (hadronsPass && HLTRANGE.begin()->first == "NOTRIGGER") {
     return true;
   }
   if (0 == pT->getMuonID()) {
@@ -1933,11 +1960,16 @@ bool candAna::tightMuon(TSimpleTrack *pT) {
 
 
 // ----------------------------------------------------------------------
-bool candAna::mvaMuon(TAnaMuon *pt, double &result) {
+bool candAna::mvaMuon(TAnaMuon *pt, double &result, bool hadronsPass) {
   
-  if (!tightMuon(pt)) return false; 
-  // FIXME add trigger matching!
+  if (!tightMuon(pt)) {
+    result = -1.;
+    return false; 
+  }
 
+  if (hadronsPass && HLTRANGE.begin()->first == "NOTRIGGER") {
+    return true;
+  }
 
   mrd.trkValidFract = pt->fItrkValidFraction; 
   mrd.glbNChi2      = pt->fGtrkNormChi2; 
@@ -1959,16 +1991,15 @@ bool candAna::mvaMuon(TAnaMuon *pt, double &result) {
 
 
 // ----------------------------------------------------------------------
-bool candAna::mvaMuon(TSimpleTrack *pt, double &result) {
+bool candAna::mvaMuon(TSimpleTrack *pt, double &result, bool hadronsPass) {
 
-  if (HLTRANGE.begin()->first == "NOTRIGGER") {
+  if (hadronsPass && HLTRANGE.begin()->first == "NOTRIGGER") {
     return true;
   }
 
   if (0 == pt->getMuonID()) {
     return false; 
   }
-
 
   TAnaMuon *pM(0); 
   int idx = pt->getIndex();
@@ -1984,9 +2015,9 @@ bool candAna::mvaMuon(TSimpleTrack *pt, double &result) {
 
 
 // ----------------------------------------------------------------------
-bool candAna::mvaMuon(TAnaTrack *pt, double &result) {
+bool candAna::mvaMuon(TAnaTrack *pt, double &result, bool hadronsPass) {
 
-  if (HLTRANGE.begin()->first == "NOTRIGGER") {
+  if (hadronsPass && HLTRANGE.begin()->first == "NOTRIGGER") {
     return true;
   }
 
@@ -2812,6 +2843,14 @@ TMVA::Reader* candAna::setupReader(string xmlFile, readerData &rd) {
 	  cout << "  adding othervtx" << endl;
 	  reader->AddVariable( "othervtx", &rd.othervtx);
 	}
+	if (stype == "pvlip2") {
+	  cout << "  adding pvlip2" << endl;
+	  reader->AddVariable( "pvlip2", &rd.pvlip2);
+	}
+	if (stype == "pvlips2") {
+	  cout << "  adding pvlips2" << endl;
+	  reader->AddVariable( "pvlips2", &rd.pvlips2);
+	}
       }
       break;
     }
@@ -3076,6 +3115,7 @@ bool candAna::doTriggerMatching(TAnaTrack *pt, bool anyTrig) {
 // pt - track
 // anyTrig - if true use all trigger objects
 double candAna::doTriggerMatchingR(TAnaTrack *pt, bool anyTrig) {
+  fTrigMatchDeltaPt = 99.;
 
   const bool localPrint = false;
   //bool localPrint = true;
@@ -3205,6 +3245,11 @@ double candAna::doTriggerMatchingR(TAnaTrack *pt, bool anyTrig) {
         deltaRminMu1 = deltaR1;
         mu1match = i;
         hlt1 = tto->fLabel;
+	if (pt->fPlab.Mag() > 0.) {
+	  fTrigMatchDeltaPt = TMath::Abs(tto->fP.Rho() - pt->fPlab.Mag())/pt->fPlab.Mag(); 
+	} else {
+	  fTrigMatchDeltaPt = 98.;
+	}
       } // if delta 
     } // selected 
     

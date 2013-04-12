@@ -28,6 +28,7 @@ struct readerData {
   float fls3d, alpha, maxdoca, pvip, pvips, iso, docatrk, chi2dof, closetrk; 
   float closetrks1, closetrks2, closetrks3; 
   float m1iso, m2iso, pvdchi2, othervtx;
+  float pvlip2, pvlips2;
   float m;
 };
 
@@ -82,12 +83,12 @@ public:
   virtual void        readFile(std::string fileName, std::vector<std::string> &lines);
 
   virtual bool        highPurity(TAnaTrack *pt);
-  virtual bool        tightMuon(TAnaTrack *pt);
-  virtual bool        tightMuon(TSimpleTrack *pt);
+  virtual bool        tightMuon(TAnaTrack *pt, bool hadronsPass = true);
+  virtual bool        tightMuon(TSimpleTrack *pt, bool hadronsPass = true);
 
-  virtual bool        mvaMuon(TAnaMuon *pt, double &result);
-  virtual bool        mvaMuon(TSimpleTrack *pt, double &result);
-  virtual bool        mvaMuon(TAnaTrack *pt, double &result);
+  virtual bool        mvaMuon(TAnaMuon *pt, double &result, bool hadronsPass = true);
+  virtual bool        mvaMuon(TSimpleTrack *pt, double &result, bool hadronsPass = true);
+  virtual bool        mvaMuon(TAnaTrack *pt, double &result, bool hadronsPass = true);
 
   virtual std::string splitTrigRange(std::string tl, int &r1, int &r2);
 
@@ -172,13 +173,16 @@ public:
 
   TMVA::Reader *fMvaMuonID; 
   mvaMuonIDData mrd; 
-  double  fMu1BDT, fMu2BDT; 
+  double  fMu1BDT, fMu2BDT, fMu1rBDT, fMu2rBDT; 
 
   // -- variables for reduced tree, they are from fpCand
   bool    fJSON, fCowboy;
   int     fCandTM, fCandType; 
   int     fMu1TkQuality, fMu2TkQuality, fMu1Q, fMu2Q, fCandQ, fMu1PV, fMu2PV;
   bool    fMu1Id, fMu2Id, fHLTmatch, fMu1MvaId, fMu2MvaId, fMu1TmId, fMu2TmId;
+  bool    fMu1rTmId, fMu1rMvaId, fMu2rTmId, fMu2rMvaId;
+  double  fMu1TrigM, fMu2TrigM;
+
   double  fMuDist, fMuDeltaR, fMu1Chi2, fMu2Chi2;
   double  fHltMu1Pt, fHltMu1Eta, fHltMu1Phi, fHltMu2Pt, fHltMu2Eta, fHltMu2Phi;
   double  fMu1Pt, fMu1Eta, fMu1Phi, fMu2Pt, fMu2Eta, fMu2Phi;
@@ -242,6 +246,7 @@ public:
   bool    fBadEvent;
   int     fhltType; // to hold the HLT information d.k.
   bool    fHLTmatch2; // test anothe matching method, for tesing only 
+  double  fTrigMatchDeltaPt;
 
   struct RedTreeData fRTD;
 
