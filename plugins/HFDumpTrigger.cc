@@ -256,9 +256,66 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   }
 
   if (hltF) {
-    // -- HLT L3 muon candidates
-    string L3NameCollection("hltL3MuonCandidates");
-    trigger::size_type Index(0);
+	  // -- HLT L1 muon candidates
+	  string L1NameCollection("hltL1extraParticles");
+//	  cout << "===> Found L1 trigger collection -> " << L1NameCollection << "." << endl;
+	  trigger::size_type Index(0);
+	  Index = trgEvent->collectionIndex(edm::InputTag(L1NameCollection, "", fTriggerEventLabel.process()));
+	  
+	  if (Index < trgEvent->sizeCollections()) {
+		  TString label = TString(L1NameCollection.c_str());
+		  const trigger::Keys& Keys(trgEvent->collectionKeys());
+		  const trigger::size_type n0 (Index == 0? 0 : Keys.at(Index-1));
+		  const trigger::size_type n1 (Keys.at(Index));
+		  for (trigger::size_type i = n0; i != n1; ++i) {
+			  const trigger::TriggerObject& obj( trgEvent->getObjects().at(i) );
+//			  cout << "===> For L1: " << i << " id: " << obj.id() << " m = " << obj.mass() 
+//			  << " pT,eta,phi = " << obj.pt() << "," <<  obj.eta() << "," << obj.phi() << endl;
+			  
+			  TTrgObj *pTO = gHFEvent->addTrgObj();
+			  pTO->fP.SetPtEtaPhiE(obj.pt(), 
+								   obj.eta(), 
+								   obj.phi(), 
+								   obj.energy()
+								   ); 
+			  pTO->fID     = obj.id(); 
+			  pTO->fLabel  = label;
+			  
+		  }
+	  }
+
+	  // -- HLT L2 muon candidates 
+	  string L2NameCollection("hltL2MuonCandidates");
+//	  cout << "===> Found L2 trigger collection -> " << L2NameCollection << "." << endl;
+	  Index = trgEvent->collectionIndex(edm::InputTag(L2NameCollection, "", fTriggerEventLabel.process()));
+	  
+	  if (Index < trgEvent->sizeCollections()) {
+		  TString label = TString(L2NameCollection.c_str());
+		  const trigger::Keys& Keys(trgEvent->collectionKeys());
+		  const trigger::size_type n0 (Index == 0? 0 : Keys.at(Index-1));
+		  const trigger::size_type n1 (Keys.at(Index));
+		  for (trigger::size_type i = n0; i != n1; ++i) {
+			  const trigger::TriggerObject& obj( trgEvent->getObjects().at(i) );
+//			  cout << "===> For L2: " << i << " id: " << obj.id() << " m = " << obj.mass() 
+//				<< " pT,eta,phi = " << obj.pt() << "," <<  obj.eta() << "," << obj.phi() << endl;
+			  
+			  TTrgObj *pTO = gHFEvent->addTrgObj();
+			  pTO->fP.SetPtEtaPhiE(obj.pt(), 
+								   obj.eta(), 
+								   obj.phi(), 
+								   obj.energy()
+								   ); 
+			  pTO->fID     = obj.id(); 
+			  pTO->fLabel  = label;
+			  
+		  }
+	  }
+
+	// -- HLT L3 muon candidates
+	  string L3NameCollection("hltL3MuonCandidates");
+//	  cout << "===> Found L3 trigger collection -> " << L2NameCollection << "." << endl;
+//	trigger::size_type Index(0);
+//	  Index(0);
     Index = trgEvent->collectionIndex(edm::InputTag(L3NameCollection, "", fTriggerEventLabel.process()));
 
     if (Index < trgEvent->sizeCollections()) {
@@ -266,21 +323,21 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       const trigger::Keys& Keys(trgEvent->collectionKeys());
       const trigger::size_type n0 (Index == 0? 0 : Keys.at(Index-1));
       const trigger::size_type n1 (Keys.at(Index));
-      for (trigger::size_type i = n0; i != n1; ++i) {
-	const trigger::TriggerObject& obj( trgEvent->getObjects().at(i) );
-	// cout << i << " id: " << obj.id() << " m = " << obj.mass() 
-	// << " pT,eta,phi = " << obj.pt() << "," <<  obj.eta() << "," << obj.phi() << endl;
-
-	TTrgObj *pTO = gHFEvent->addTrgObj();
-	pTO->fP.SetPtEtaPhiE(obj.pt(), 
-			     obj.eta(), 
-			     obj.phi(), 
-			     obj.energy()
-			     ); 
-	pTO->fID     = obj.id(); 
-	pTO->fLabel  = label;
-
-      }
+		for (trigger::size_type i = n0; i != n1; ++i) {
+			const trigger::TriggerObject& obj( trgEvent->getObjects().at(i) );
+//			cout << "===> For L3: " << i << " id: " << obj.id() << " m = " << obj.mass() 
+//				<< " pT,eta,phi = " << obj.pt() << "," <<  obj.eta() << "," << obj.phi() << endl;
+			
+			TTrgObj *pTO = gHFEvent->addTrgObj();
+			pTO->fP.SetPtEtaPhiE(obj.pt(), 
+								 obj.eta(), 
+								 obj.phi(), 
+								 obj.energy()
+								 ); 
+			pTO->fID     = obj.id(); 
+			pTO->fLabel  = label;
+			
+		}
     }
 
     // -- muon filter objects
