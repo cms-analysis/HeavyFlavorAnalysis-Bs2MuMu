@@ -2,10 +2,11 @@
 
 # ----------------------------------------------------------------------
 #
-# Usage: srmLs -x URI -p pattern [-s 13362] [-c] [-b basename -n 10G]
+# Usage: srmLs -x URI -p pattern [-s 13362] [-c] [-C] [-b basename -n 10G]
 # -----
 #          -c  create output suitable for chain files
 #          -b  combine files into chainbasename_i as long as its size < $opt_n
+#          -p  pattern to search for
 #
 # Examples:  srmLs -x srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/ursl/root/dana/v06-data -p \\.root -s 13362 
 #
@@ -13,13 +14,14 @@
 # History: 2010/04/29 First shot
 #          2010/05/03 Bug fix
 #          2010/10/18 Produce chains with maximum size
+#          2011/05/17 -C to produce only /store/... lists
 # ----------------------------------------------------------------------
 
 $cprefix = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
 
 # -- Get arguments
 use Getopt::Std;
-getopts('b:cn:p:x:s:');
+getopts('b:cCn:p:x:s:');
 
 # -- cross check for chain production
 if ($opt_n && !$opt_b) {die "provide a maximum size if requesting split chain files\n";}
@@ -50,6 +52,8 @@ foreach $f (@filelist) {
 	if ($opt_c) {
 	    print "$cprefix/$lfn\n";
 	# } elsif ($opt_p && !$opt_s) {
+	} elsif ($opt_C) {
+	    print "/$lfn\n";
 	} elsif (!$opt_s) {
 	    print "$size $ffn\n";
 	}
