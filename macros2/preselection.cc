@@ -17,7 +17,7 @@ using namespace std;
 #define M2PTMAX 999.0     
                 	         
 #define FL3DMAX 2.0            
-#define CHI2DOFMAX 10.0 
+#define CHI2DOFMAX 20.0 
                 	         
 #define PVIPMAX 0.1       
 #define PVIPSMAX 5.0        
@@ -40,32 +40,20 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 std::string preselection() {
-
-//   TCut sgcut = "hlt&&gmuid&&pt<70&&pt>6"; 
-//   sgcut += "m1pt>4.0&&m1pt<50";
-//   sgcut += "m2pt>4.0&&m2pt<20"; 
-//   sgcut += "fl3d<2&&chi2/dof<10&&pvip<0.02&&!TMath::IsNaN(pvips)&&pvips<5&&pvips>0&&maxdoca<0.02";
-//   sgcut += "closetrk<21"; 
-//   sgcut += "fls3d<100&&docatrk<0.2";
-//   sgcut += "alpha<0.3&&iso>0.6&&chi2/dof<10"; 
-
-  std::string cut = Form("hlt && gmuid && (%3.2f<pt)&&(pt<%3.2f) && (%3.2f<m1pt)&&(m1pt<%3.2f) && (%3.2f<m2pt)&&(m2pt<%3.2f)", 
+  std::string cut = Form("gmuid && (%3.2f<pt)&&(pt<%3.2f) && (%3.2f<m1pt)&&(m1pt<%3.2f) && (%3.2f<m2pt)&&(m2pt<%3.2f)", 
 			 PTMIN, PTMAX, M1PTMIN, M1PTMAX, M2PTMIN, M2PTMAX);
   cut += Form(" && (flsxy>%3.2f) && (fl3d<%3.2f) && (pvip<%3.2f) && !(TMath::IsNaN(pvips)) && (pvips>0) && (pvips<%3.2f)", 
 	      FLSXYMIN, FL3DMAX, PVIPMAX, PVIPSMAX);
   cut += Form(" && abs(pvlip) < %3.2f && abs(pvlips) < %3.2f", PVLIPMAX, PVLIPSMAX);
   cut += Form(" && (closetrk<%d) && (fls3d>%3.2f) && (fls3d<%3.2f) && (docatrk<%3.2f) && (maxdoca<%3.2f)",
 			  CLOSETRKMAX, FLS3DMIN, FLS3DMAX, DOCATRKMAX, MAXDOCAMAX);
-  cut += Form(" && (chi2/dof<%3.2f) && (iso>%3.2f) && (alpha<%3.2f)", CHI2DOFMAX, ISOMIN, ALPHAMAX); 
+  cut += Form(" && (chi2dof<%3.2f) && (iso>%3.2f) && (alpha<%3.2f)", CHI2DOFMAX, ISOMIN, ALPHAMAX); 
   return cut; 
 }
 
 // ----------------------------------------------------------------------
 bool preselection(RedTreeData &b, int channel) {
-  //   if (fTrainAntiMuon && b.gmuid) return false;
-  //   if (!fTrainAntiMuon && !b.gmuid) return false;
-  //   if (!b.hlt) return false;
-  int verbose(0); 
+  const int verbose(0); 
   if (b.pt < PTMIN) return false;
   if (b.pt > PTMAX) return false;
   if (verbose > 9) cout << "passed pT" << endl;
@@ -102,7 +90,7 @@ bool preselection(RedTreeData &b, int channel) {
   if (verbose > 4) cout << "passed mass cuts" << endl;
 
   // -- physics preselection: reduce background by factor 7, signal efficiency >90%
-  if (b.chi2/b.dof > CHI2DOFMAX) return false;
+  if (b.chi2dof > CHI2DOFMAX) return false;
   if (b.iso < ISOMIN) return false; 
   if (b.alpha > ALPHAMAX) return false; 
   if (verbose > 0) cout << "passed physics cuts" << endl;

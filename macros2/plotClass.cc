@@ -269,14 +269,49 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   fAnaCuts.addCut("fGoodLastCut", "lastCut", fGoodLastCut); 
 
 
-  fptFakePosKaons     = new PidTable("../macros/pidtables/130409/kaonFakes.dat"); 
-  fptFakeNegKaons     = new PidTable("../macros/pidtables/130409/kaonFakes.dat"); 
+  if (0) {
+    fptFakePosKaons     = new PidTable("../macros/pidtables/130409/kaonFakeRate-mvaTmMuon.dat"); 
+    fptFakeNegKaons     = new PidTable("../macros/pidtables/130409/kaonFakeRate-mvaTmMuon.dat"); 
+    
+    fptFakePosPions     = new PidTable("../macros/pidtables/130409/pionFakeRate-mvaTmMuon.dat"); 
+    fptFakeNegPions     = new PidTable("../macros/pidtables/130409/pionFakeRate-mvaTmMuon.dat"); 
+    
+    fptFakePosProtons   = new PidTable("../macros/pidtables/130409/protonFakeRate-mvaTmMuon.dat"); 
+    fptFakeNegProtons   = new PidTable("../macros/pidtables/130409/protonFakeRate-mvaTmMuon.dat"); 
+  }
 
-  fptFakePosPions     = new PidTable("../macros/pidtables/130409/pionFakes.dat"); 
-  fptFakeNegPions     = new PidTable("../macros/pidtables/130409/pionFakes.dat"); 
+  if (0) {
+    fptFakePosKaons     = new PidTable("../macros/pidtables/130410/kaonPlusFakeRate-mvaTmMuon.dat"); 
+    fptFakeNegKaons     = new PidTable("../macros/pidtables/130410/kaonMinusFakeRate-mvaTmMuon.dat"); 
+    
+    fptFakePosPions     = new PidTable("../macros/pidtables/130410/pionPlusFakeRate-mvaTmMuon.dat"); 
+    fptFakeNegPions     = new PidTable("../macros/pidtables/130410/pionMinusFakeRate-mvaTmMuon.dat"); 
+    
+    fptFakePosProtons   = new PidTable("../macros/pidtables/130410/protonPlusFakeRate-mvaTmMuon.dat"); 
+    fptFakeNegProtons   = new PidTable("../macros/pidtables/130410/protonMinusFakeRate-mvaTmMuon.dat"); 
+  }
 
-  fptFakePosProtons   = new PidTable("../macros/pidtables/130409/protonFakes.dat"); 
-  fptFakeNegProtons   = new PidTable("../macros/pidtables/130409/protonFakes.dat"); 
+
+  if (1) {
+    fptFakePosKaons     = new PidTable("../macros/pidtables/130409/flat-kaon.dat"); 
+    fptFakeNegKaons     = new PidTable("../macros/pidtables/130409/flat-kaon.dat"); 
+    
+    fptFakePosPions     = new PidTable("../macros/pidtables/130409/flat-pion.dat"); 
+    fptFakeNegPions     = new PidTable("../macros/pidtables/130409/flat-pion.dat"); 
+    
+    fptFakePosProtons   = new PidTable("../macros/pidtables/130409/flat-proton.dat"); 
+    fptFakeNegProtons   = new PidTable("../macros/pidtables/130409/flat-proton.dat"); 
+  }
+
+  // -- this if for testing
+  //   fptFakePosKaons     = new PidTable("../macros/pidtables/130409/flat-kaon.dat"); 
+  //   fptFakeNegKaons     = new PidTable("../macros/pidtables/130409/flat-kaon.dat"); 
+  
+  //   fptFakePosPions     = new PidTable("../macros/pidtables/130409/flat-pion.dat"); 
+  //   fptFakeNegPions     = new PidTable("../macros/pidtables/130409/flat-pion.dat"); 
+  
+  //   fptFakePosProtons   = new PidTable("../macros/pidtables/130409/flat-proton.dat"); 
+  //   fptFakeNegProtons   = new PidTable("../macros/pidtables/130409/flat-proton.dat"); 
 
   if (2012 == fYear) {
     fptT1     = new PidTable("../macros/pidtables/130104/L1L2_data_all.dat"); 	
@@ -1196,46 +1231,6 @@ void plotClass::loadFiles(const char *files) {
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-}")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
-      if (string::npos != stype.find("1e33") && string::npos != stype.find("sg")) {
-	sname = "SgMc1e33"; 
-	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-9)); 
-	fBFE.insert(make_pair(sname, 0.06)); 
-	fProdR.insert(make_pair(sname, fsfu)); 
-	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (1e33)")); 
-	fFilterEff.insert(make_pair(sname, effFilter)); 
-      }
-      if (string::npos != stype.find("2e33") && string::npos != stype.find("sg")) {
-	sname = "SgMc2e33"; 
-	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-9)); 
-	fBFE.insert(make_pair(sname, 0.06)); 
-	fProdR.insert(make_pair(sname, fsfu)); 
-	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (2e33)")); 
-	fFilterEff.insert(make_pair(sname, effFilter)); 
-      }
-      if (string::npos != stype.find("3e33") && string::npos != stype.find("sg")) {
-	sname = "SgMc3e33"; 
-	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-9)); 
-	fBFE.insert(make_pair(sname, 0.06)); 
-	fProdR.insert(make_pair(sname, fsfu)); 
-	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (3e33)")); 
-	fFilterEff.insert(make_pair(sname, effFilter)); 
-      }
-      if (string::npos != stype.find("pu") && string::npos != stype.find("sg")) {
-	sname = "SgMcPU"; 
-	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-9)); 
-	fBFE.insert(make_pair(sname, 0.06)); 
-	fProdR.insert(make_pair(sname, fsfu)); 
-	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (PU)")); 
-	fFilterEff.insert(make_pair(sname, effFilter)); 
-      }
       if (string::npos != stype.find("acc") && string::npos != stype.find("sg")) {
 	sname = "SgMcAcc"; 
 	fF.insert(make_pair(sname, pF)); 
@@ -1246,8 +1241,8 @@ void plotClass::loadFiles(const char *files) {
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (acc)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
-      if (string::npos != stype.find("Bx2MuMu") && string::npos != stype.find("sg")) {
-	sname = "SgBx2MuMu"; 
+      if (string::npos != stype.find("m57") && string::npos != stype.find("sg")) {
+	sname = "SgM57Bs2MuMu"; 
 	fF.insert(make_pair(sname, pF)); 
 	fBF.insert(make_pair(sname, 3.2e-9)); 
 	fBFE.insert(make_pair(sname, 0.06)); 
@@ -1256,24 +1251,14 @@ void plotClass::loadFiles(const char *files) {
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (5.7GeV)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
-      if (string::npos != stype.find("By2MuMu") && string::npos != stype.find("sg")) {
-	sname = "SgBy2MuMu"; 
+      if (string::npos != stype.find("m51") && string::npos != stype.find("sg")) {
+	sname = "SgM51Bs2MuMu"; 
 	fF.insert(make_pair(sname, pF)); 
 	fBF.insert(make_pair(sname, 3.2e-9)); 
 	fBFE.insert(make_pair(sname, 0.06)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (5.1GeV)")); 
-	fFilterEff.insert(make_pair(sname, effFilter)); 
-      }
-      if (string::npos != stype.find("Bs2MuMu") && string::npos != stype.find("sg")) {
-	sname = "SgBs2MuMu"; 
-	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-9)); 
-	fBFE.insert(make_pair(sname, 0.06)); 
-	fProdR.insert(make_pair(sname, fsfu)); 
-	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
-	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (5.37GeV)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
 
@@ -1331,8 +1316,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("default") && string::npos != stype.find("no")) {
 	sname = "NoMc"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 6.0e-5)); 
-	fBFE.insert(make_pair(sname, 0.03)); 
+	fBF.insert(make_pair(sname, 6.02e-5)); 
+	fBFE.insert(make_pair(sname, 0.03322)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	//	fName.insert(make_pair(sname, "B^{+} #rightarrow J/#psi K^{+}")); 
@@ -1403,8 +1388,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("default") && string::npos != stype.find("cs")) {
 	sname = "CsMc"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-5)); 
-	fBFE.insert(make_pair(sname, 0.32)); 
+	fBF.insert(make_pair(sname, 3.16e-5)); 
+	fBFE.insert(make_pair(sname, 0.24050)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	//	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi")); 
@@ -1414,8 +1399,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("1e33") && string::npos != stype.find("cs")) {
 	sname = "CsMc1e33"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-5)); 
-	fBFE.insert(make_pair(sname, 0.32)); 
+	fBF.insert(make_pair(sname, 3.16e-5)); 
+	fBFE.insert(make_pair(sname, 0.24050)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (1e33)")); 
@@ -1424,8 +1409,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("2e33") && string::npos != stype.find("cs")) {
 	sname = "CsMc2e33"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-5)); 
-	fBFE.insert(make_pair(sname, 0.32)); 
+	fBF.insert(make_pair(sname, 3.16e-5)); 
+	fBFE.insert(make_pair(sname, 0.24050)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (2e33)")); 
@@ -1434,8 +1419,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("3e33") && string::npos != stype.find("cs")) {
 	sname = "CsMc3e33"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-5)); 
-	fBFE.insert(make_pair(sname, 0.32)); 
+	fBF.insert(make_pair(sname, 3.16e-5)); 
+	fBFE.insert(make_pair(sname, 0.24050)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (3e33)")); 
@@ -1444,8 +1429,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("acc") && string::npos != stype.find("cs")) {
 	sname = "CsMcAcc"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-5)); 
-	fBFE.insert(make_pair(sname, 0.32)); 
+	fBF.insert(make_pair(sname, 3.16e-5)); 
+	fBFE.insert(make_pair(sname, 0.24050)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (acc)")); 
@@ -1454,8 +1439,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("pu") && string::npos != stype.find("cs")) {
 	sname = "CsMcPU"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.8e-5)); 
-	fBFE.insert(make_pair(sname, 0.32)); 
+	fBF.insert(make_pair(sname, 3.16e-5)); 
+	fBFE.insert(make_pair(sname, 0.24050)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow J/#psi #phi (PU)")); 
@@ -1497,7 +1482,7 @@ void plotClass::loadFiles(const char *files) {
 	sname = "bgBs2PiPi"; 
 	fF.insert(make_pair(sname, pF)); 
 	fBF.insert(make_pair(sname, 0.73e-6)); 
-	fBFE.insert(make_pair(sname, 0.19)); 
+	fBFE.insert(make_pair(sname, 0.1917808)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #pi^{+}#pi^{-}")); 
@@ -1506,7 +1491,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bs2KMuNu")) {
 	sname = "bgBs2KMuNu"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 1.4e-4)); 
+	fBF.insert(make_pair(sname, 1.42e-4)); 
 	fBFE.insert(make_pair(sname, 0.05)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -1517,7 +1502,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bd2PiMuNu")) {
 	sname = "bgBd2PiMuNu"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 1.4e-4)); 
+	fBF.insert(make_pair(sname, 1.42e-4)); 
 	fBFE.insert(make_pair(sname, 0.05)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -1548,7 +1533,7 @@ void plotClass::loadFiles(const char *files) {
 	sname = "bgBd2PiPi"; 
 	fF.insert(make_pair(sname, pF)); 
 	fBF.insert(make_pair(sname, 5.11e-6)); 
-	fBFE.insert(make_pair(sname, 0.04)); 
+	fBFE.insert(make_pair(sname, 0.043052)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow #pi^{+}#pi^{-}")); 
@@ -1558,7 +1543,7 @@ void plotClass::loadFiles(const char *files) {
 	sname = "bgLb2KP"; 
 	fF.insert(make_pair(sname, pF)); 
 	fBF.insert(make_pair(sname, 5.5e-6)); 
-	fBFE.insert(make_pair(sname, 0.25)); 
+	fBFE.insert(make_pair(sname, 0.254545)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#Lambda_{b}^{0} #rightarrow p K^{-}")); 
@@ -1568,7 +1553,7 @@ void plotClass::loadFiles(const char *files) {
 	sname = "bgLb2PiP"; 
 	fF.insert(make_pair(sname, pF)); 
 	fBF.insert(make_pair(sname, 3.5e-6)); 
-	fBFE.insert(make_pair(sname, 0.29)); 
+	fBFE.insert(make_pair(sname, 0.285714)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "#Lambda_{b}^{0} #rightarrow p #pi^{-}")); 
@@ -1603,8 +1588,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bu2KMuMu")) {
 	sname = "bgBu2KMuMu"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 5.1e-7)); 
-	fBFE.insert(make_pair(sname, 0.098)); 
+	fBF.insert(make_pair(sname, 4.8e-7)); 
+	fBFE.insert(make_pair(sname, 0.0833333)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{+} #rightarrow K^{+}#mu^{+}#mu^{-}")); 
@@ -1614,7 +1599,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bd2Pi0MuMu")) {
 	sname = "bgBd2Pi0MuMu"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 1.2e-7)); 
+	fBF.insert(make_pair(sname, 1.2e-8)); 
 	fBFE.insert(make_pair(sname, 0.5)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -1625,8 +1610,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bd2K0MuMu")) {
 	sname = "bgBd2K0MuMu"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 5.0e-7)); 
-	fBFE.insert(make_pair(sname, 0.2)); 
+	fBF.insert(make_pair(sname, 3.8e-7)); 
+	fBFE.insert(make_pair(sname, 0.21052)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B^{0} #rightarrow K^{0}#mu^{+}#mu^{-}")); 
@@ -1636,7 +1621,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bd2MuMuGamma")) {
 	sname = "bgBd2MuMuGamma"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.0e-10)); 
+	fBF.insert(make_pair(sname, 1.34e-10)); 
 	fBFE.insert(make_pair(sname, 0.2)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -1647,7 +1632,7 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("bg,Bs2MuMuGamma")) {
 	sname = "bgBs2MuMuGamma"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 1.0e-8)); 
+	fBF.insert(make_pair(sname, 1.89e-8)); 
 	fBFE.insert(make_pair(sname, 0.2)); 
 	fProdR.insert(make_pair(sname, 1.0)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
@@ -1718,7 +1703,8 @@ void plotClass::dumpSamples() {
     f = ((TH1D*)fF[imap->first]->Get("monEvents"))->GetBinContent(1);
     replaceAll(name, "#", "\\"); 
     fTEX <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
-    cout <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
+    cout <<  "                       " 
+	 << Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
     //FIXME    fTEX <<  Form("\\vdef{%s:bf:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
     //     cout << "dumpSamples bf = " << bf << " bfe = " << bfe << endl;
     //     cout <<  scientificTex(bf, bfe, Form("%s:bf:%s", fSuffix.c_str(), imap->first.c_str()), -1, 2) << endl;
@@ -2976,7 +2962,7 @@ void plotClass::readCuts(const char *filename) {
     string sXmlName;
     replaceAll(ctmp, " ", ""); 
     if (!strcmp(ctmp.c_str(), "xml")) {
-      a->xmlFile = XmlName;
+      a->xmlFile = XmlName; ok = 1; 
       sXmlName = "weights/" + a->xmlFile + "-Events0_BDT.weights.xml"; 
       //      fReaderEvents0.push_back(setupReader(sXmlName, frd)); 
       TMVA::Reader *ar = setupReader(sXmlName, frd); 
@@ -3329,6 +3315,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
       small->Branch("hlt", &fb.hlt ,"hlt/O");
       small->Branch("hltm", &fb.hltm ,"hltm/O");
       small->Branch("muid", &fb.gmuid ,"muid/O");
+      small->Branch("mvamuid", &fb.gmumvaid ,"mvamuid/O");
       small->Branch("pt",   &fb.pt ,"hlt/D");
       small->Branch("eta",  &fb.eta ,"eta/D");
       small->Branch("m1pt", &fb.m1pt ,"hlt/D");
@@ -3339,10 +3326,10 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
       small->Branch("fls3d", &fb.fls3d ,"fls3d/D");
       small->Branch("pvlip", &fb.pvlip ,"pvlip/D");
       small->Branch("pvlips", &fb.pvlips ,"pvlips/D");
+      small->Branch("pvlip2", &fb.pvlip2 ,"pvlip2/D");
+      small->Branch("pvlips2", &fb.pvlips2 ,"pvlips2/D");
       small->Branch("pvip", &fb.pvip ,"pvip/D");
       small->Branch("pvips", &fb.pvips ,"pvips/D");
-      small->Branch("pvip3d", &fb.pvip3d ,"pvip3d/D");
-      small->Branch("pvips3d", &fb.pvips3d ,"pvips3d/D");
       small->Branch("pvn", &fb.pvn ,"pvn/I");
       small->Branch("pvw8", &fb.pvw8 ,"pvw8/D");
       small->Branch("gtqual", &fb.gtqual ,"gtqual/O");
@@ -3513,10 +3500,12 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("run",    &fb.run);
   t->SetBranchAddress("evt",    &fb.evt);
   t->SetBranchAddress("hlt",    &fb.hlt);
+  t->SetBranchAddress("hltm",   &fb.hltm);
   t->SetBranchAddress("ls",     &fb.ls);
   t->SetBranchAddress("cb",     &fb.cb);
   t->SetBranchAddress("json",   &fb.json);
   t->SetBranchAddress("gmuid",  &fb.gmuid);
+  t->SetBranchAddress("gmumvaid", &fb.gmumvaid);
   t->SetBranchAddress("gtqual", &fb.gtqual);
   t->SetBranchAddress("w8mu",   &fb.w8mu);
   t->SetBranchAddress("w8tr",   &fb.w8tr);
@@ -3752,7 +3741,7 @@ void plotClass::candAnalysis(int mode) {
   fGoodMuonsID    = fb.gmuid;
 
   // -- the new world: MVA plus trigger matched
-  fGoodMuonsID    = fb.gmumvaid && fb.hltm;
+  //  fGoodMuonsID    = fb.gmumvaid && fb.hltm;
 
   fW8 = 1.;
   if (fIsMC) {
@@ -3850,8 +3839,18 @@ void plotClass::calcBDT() {
   frd.pvips = fb.pvips; 
   frd.iso = fb.iso; 
   frd.docatrk = fb.docatrk; 
-  frd.chi2dof = fb.chi2/fb.dof; 
+  frd.chi2dof = fb.chi2dof; 
   frd.closetrk = fb.closetrk; 
+
+  frd.m1iso = fb.m1iso; 
+  frd.m2iso = fb.m2iso; 
+
+  frd.closetrks1 = fb.closetrks1; 
+  frd.closetrks2 = fb.closetrks2; 
+  frd.closetrks3 = fb.closetrks3; 
+
+  frd.pvlip2  = fb.pvlip2; 
+  frd.pvlips2 = fb.pvlips2; 
   
   frd.m  = fb.m; 
   int remainder = TMath::Abs(fb.evt%3);
@@ -4016,6 +4015,14 @@ TMVA::Reader* plotClass::setupReader(string xmlFile, readerData &rd) {
 	if (stype == "pvdchi2") {
 	  cout << "  adding pvdchi2" << endl;
 	  reader->AddVariable( "pvdchi2", &rd.pvdchi2);
+	}
+	if (stype == "pvlip2") {
+	  cout << "  adding pvlip2" << endl;
+	  reader->AddVariable( "pvlip2", &rd.pvlip2);
+	}
+	if (stype == "pvlips2") {
+	  cout << "  adding pvlips2" << endl;
+	  reader->AddVariable( "pvlips2", &rd.pvlips2);
 	}
       }
       break;

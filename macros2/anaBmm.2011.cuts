@@ -20,7 +20,7 @@ closetrk 2
 pvip     0.008
 pvips     2.0
 #bdt      0.18
-bdt      0.14
+bdt      0.23
 bdtMax   10.0
 xml      TMVA-0
 pvlip    100.
@@ -49,7 +49,7 @@ docatrk  0.015
 closetrk 2
 pvip     0.008
 pvips     2.0
-bdt      0.13
+bdt      0.22
 bdtMax   10.
 xml      TMVA-1
 pvlip    100.

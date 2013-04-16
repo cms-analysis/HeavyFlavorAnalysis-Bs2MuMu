@@ -399,6 +399,8 @@ void candAna::candAnalysis() {
   fMu1TrigM     = doTriggerMatchingR(p1, true);
   if (fTrigMatchDeltaPt > 0.05) fMu1TrigM *= -1.;
   fMu1Id        = fMu1MvaId && (fMu1TrigM < 0.05) && (fMu1TrigM > 0); 
+  if (HLTRANGE.begin()->first == "NOTRIGGER") fMu1Id = true; 
+
 
   fMu1Pt        = p1->fRefPlab.Perp(); 
   fMu1Eta       = p1->fRefPlab.Eta(); 
@@ -450,8 +452,8 @@ void candAna::candAnalysis() {
   fTrigMatchDeltaPt = 99.;
   fMu2TrigM     = doTriggerMatchingR(p2, true);
   if (fTrigMatchDeltaPt > 0.05) fMu2TrigM *= -1.;
-  fMu2Id        = fMu2MvaId && fMu2TrigM; 
   fMu2Id        = fMu2MvaId && (fMu2TrigM < 0.05) && (fMu2TrigM > 0); 
+  if (HLTRANGE.begin()->first == "NOTRIGGER") fMu2Id = true; 
 
   fMu2Pt        = p2->fRefPlab.Perp(); 
   fMu2Eta       = p2->fRefPlab.Eta(); 
@@ -870,7 +872,25 @@ void candAna::triggerSelection() {
   TString a; 
   int ps(0); 
   bool result(false), wasRun(false), error(false); 
-  //  cout << " ----------------------------------------------------------------------" << endl;
+
+  if (0) {
+    cout << " ----------------------------------------------------------------------" << endl;
+    TAnaMuon *pM(0);
+    for (int i = 0; i < fpEvt->nMuons(); ++i) {
+      pM = fpEvt->getMuon(i);
+      if (pM->fMuID & 1) {
+	cout << "STA pt = " << pM->fPlab.Pt() << " eta = " << pM->fPlab.Eta() << " phi = " << pM->fPlab.Phi() << endl;
+      }
+    }
+
+    TTrgObj *p; 
+    
+    for (int i = 0; i < fpEvt->nTrgObj(); ++i) {
+      p = fpEvt->getTrgObj(i); 
+      p->dump();
+    }
+  }
+
 
   if (0) {
     TTrgObj *p; 
@@ -1950,7 +1970,7 @@ bool candAna::tightMuon(TSimpleTrack *pT, bool hadronsPass) {
   for (int i = 0; i < fpEvt->nMuons(); ++i) {
     pM = fpEvt->getMuon(i);
     if (idx == pM->fIndex) {
-      return tightMuon(pM); 
+      return tightMuon(pM, hadronsPass); 
     }
   }
   return false; 
@@ -1962,13 +1982,13 @@ bool candAna::tightMuon(TSimpleTrack *pT, bool hadronsPass) {
 // ----------------------------------------------------------------------
 bool candAna::mvaMuon(TAnaMuon *pt, double &result, bool hadronsPass) {
   
-  if (!tightMuon(pt)) {
-    result = -1.;
-    return false; 
-  }
-
   if (hadronsPass && HLTRANGE.begin()->first == "NOTRIGGER") {
     return true;
+  }
+
+  if (!tightMuon(pt)) {
+    result = -2.;
+    return false; 
   }
 
   mrd.trkValidFract = pt->fItrkValidFraction; 
@@ -1994,10 +2014,12 @@ bool candAna::mvaMuon(TAnaMuon *pt, double &result, bool hadronsPass) {
 bool candAna::mvaMuon(TSimpleTrack *pt, double &result, bool hadronsPass) {
 
   if (hadronsPass && HLTRANGE.begin()->first == "NOTRIGGER") {
+    result = 99.;
     return true;
   }
 
   if (0 == pt->getMuonID()) {
+    result = -3.; 
     return false; 
   }
 
@@ -2006,7 +2028,7 @@ bool candAna::mvaMuon(TSimpleTrack *pt, double &result, bool hadronsPass) {
   for (int i = 0; i < fpEvt->nMuons(); ++i) {
     pM = fpEvt->getMuon(i);
     if (idx == pM->fIndex) {
-      return mvaMuon(pM, result); 
+      return mvaMuon(pM, result, hadronsPass); 
     }
   }
   return false; 
@@ -2018,10 +2040,12 @@ bool candAna::mvaMuon(TSimpleTrack *pt, double &result, bool hadronsPass) {
 bool candAna::mvaMuon(TAnaTrack *pt, double &result, bool hadronsPass) {
 
   if (hadronsPass && HLTRANGE.begin()->first == "NOTRIGGER") {
+    result = 99.;
     return true;
   }
 
   if (0 == pt->fMuID) {
+    result = -3.;
     return false; 
   }
 
@@ -2029,7 +2053,7 @@ bool candAna::mvaMuon(TAnaTrack *pt, double &result, bool hadronsPass) {
   int idx = pt->fMuIndex;
   if (idx > -1 && idx < fpEvt->nMuons()) {
     TAnaMuon *pM = fpEvt->getMuon(idx);
-    return mvaMuon(pM, result); 
+    return mvaMuon(pM, result, hadronsPass); 
   } else {
     cout << "muon index out of range!!!!!" << endl;
   }

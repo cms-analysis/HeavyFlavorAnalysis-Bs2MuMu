@@ -66,6 +66,9 @@ plotClass(files, dir, cuts, mode) {
   fDoList.push_back("lip");
   fDoList.push_back("lips");
 
+  fDoList.push_back("lip2");
+  fDoList.push_back("lips2");
+
   fDoList.push_back("m1iso");
   fDoList.push_back("m2iso");
   fDoList.push_back("othervtx");
@@ -336,6 +339,9 @@ void plotReducedOverlays::bookDistributions(string mode) {
 
   fpLip[fOffset]       = bookDistribution(Form("%slip", name.c_str()), "l_{z} [cm]", "fGoodLip", 50, 0., 0.015);   
   fpLipS[fOffset]      = bookDistribution(Form("%slips", name.c_str()), "l_{z}/#sigma(l_{z})", "fGoodLipS", 50, 0., 4);
+
+  fpLip2[fOffset]      = bookDistribution(Form("%slip2", name.c_str()), "l_{z}^{(2)} [cm]", "fGoodLip", 50, 0., 0.015);   
+  fpLipS2[fOffset]     = bookDistribution(Form("%slips2", name.c_str()), "l_{z}^{(2)}/#sigma(l_{z}^{(2)})", "fGoodLipS", 50, 0., 4);
 
 
   fpBDTSel0[fOffset]   = bookSpecialDistribution(Form("%sbdtsel0", name.c_str()), "BDTsel0", "fGoodHLT", 200, -1.0, 1.0, &fSel0);   
@@ -770,7 +776,7 @@ void plotReducedOverlays::loopFunction(int function, int mode) {
 void plotReducedOverlays::loopFunction1(int mode) {
 
   // -- modify here the fGoodHLT to increase S/B for the BDT distribution
-  fGoodHLT        = fb.hlt && fGoodMuonsID && (fBDT > -1.);
+  fGoodHLT        = fb.hlt && (fBDT > -1.);
 
   // -- update ana cuts!
   fAnaCuts.update(); 
@@ -857,6 +863,9 @@ void plotReducedOverlays::fillDistributions() {
 
   fpLip[fOffset]->fill(fb.pvlip, mass); 
   fpLipS[fOffset]->fill(fb.pvlips, mass); 
+
+  fpLip2[fOffset]->fill(fb.pvlip2, mass); 
+  fpLipS2[fOffset]->fill(fb.pvlips2, mass); 
 
   fpOtherVtx[fOffset]->fill(fb.othervtx, mass); 
   fpPvDchi2[fOffset]->fill(fb.pvdchi2, mass); 

@@ -10,8 +10,8 @@ type=bd,default       dset=mc       lumi=9100000 file=/scratch/ursl/v14-2012-cms
 type=bd,acc           dset=mc,1.0   lumi=15820   file=/scratch/ursl/v14-2012-cms-accBdToMuMu.root
 #
 type=sg,Bs2MuMu       dset=mc       lumi=650000  file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
-type=sg,Bx2MuMu       dset=mc       lumi=0.0     file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
-type=sg,By2MuMu       dset=mc       lumi=0.0     file=/scratch/ursl/v14-2012-cms-BsToMuMu.root
+type=sg,m57           dset=mc       lumi=0.0     file=/scratch/ursl/v14-2012-cms-m57BsToMuMu.root
+type=sg,m51           dset=mc       lumi=0.0     file=/scratch/ursl/v14-2012-cms-m51BsToMuMu.root
 # --------------------------------------------------------------------
 # control sample  data and MC
 type=cs,default       dset=data      lumi=20.0   file=/scratch/ursl/v14-2012-bmm-data.root

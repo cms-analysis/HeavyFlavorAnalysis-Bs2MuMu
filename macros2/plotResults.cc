@@ -618,7 +618,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
   THStack *hslRareBg = new THStack("hslRareBg","");
 
 
-  TH1D *hRare, *hRareW8; 
+  TH1D *hRare, *hRareNw8, *hRareW8; 
   double tot, bd, bs, efftot, pss, pdd;
   double eps(0.00001);
   for (map<string, string>::iterator imap = fName.begin(); imap != fName.end(); ++imap) {  
@@ -635,7 +635,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
     h1 = (TH1D*)fHistFile->Get(name.c_str()); 
     name = Form("hMassWithAllCutsManyBins_%s_%s_chan%d", modifier.c_str(), fRareName.c_str(), chan);
     h2 = (TH1D*)fHistFile->Get(name.c_str()); 
-    hRare = h1;
+    hRareNw8 = h1; 
 
     tot  = h2->Integral(0, h2->GetNbinsX()+1); 
     bd   = h2->Integral(h2->FindBin(fCuts[chan]->mBdLo), h2->FindBin(fCuts[chan]->mBdHi));
@@ -659,15 +659,16 @@ void plotResults::calculateRareBgNumbers(int chan) {
     //    it is used to normalize the rare bg histogram
     //    the relevant numbers are extracted from the integrals over specific regions
     double yield = scaledYield(fNumbersBla[chan], fNumbersNo[chan], fRareName, pRatio);
-    hRare->Scale(yield*misid*teff[chan]/tot);
+    hRareNw8->Scale(yield*misid*teff[chan]/tot);
 
-    cout << "NNNNNN%%%%%NNNNNNNNNN scaled:   " << hRare->GetSumOfWeights() << endl;
+    cout << "NNNNNN%%%%%NNNNNNNNNN scaled:   " << hRareNw8->GetSumOfWeights() << endl;
     
     name = Form("hW8MassWithAllCuts_%s_%s_chan%d", modifier.c_str(), fRareName.c_str(), chan);
     hRareW8 = (TH1D*)fHistFile->Get(name.c_str());
     hRareW8->Scale(yield*teff[chan]/tot); 
     cout << "NNNNNN%%%%%NNNNNNNNNN weighted: " << hRareW8->GetSumOfWeights() << endl;
-    
+
+    hRare = hRareW8;    
 
     valInc = hRare->Integral(hRare->FindBin(4.9), hRare->FindBin(fCuts[chan]->mBdLo-eps));
     error  = valInc*err[fRareName];

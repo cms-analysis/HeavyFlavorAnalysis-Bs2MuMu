@@ -70,17 +70,20 @@ pwd
 echo "--> Extract tar file"
 date
 tar zxf ../../$JOB.tar.gz
-echo "--> Building HeavyFlavorObjects"
-cd AnalysisDataFormats/HeavyFlavorObjects
-make clean; make
-cd - 
-echo "--> Building TreeReader"
-cd HeavyFlavorAnalysis/Bs2MuMu/macros
-make clean; make
-cd -
-echo "--> Building TreeReader2"
+# -- start test w/o compilation
+#echo "--> Building HeavyFlavorObjects"
+#cd AnalysisDataFormats/HeavyFlavorObjects
+#make clean; make
+#cd - 
+#echo "--> Building TreeReader"
+#cd HeavyFlavorAnalysis/Bs2MuMu/macros
+#make clean; make
+#cd -
+#echo "--> Building TreeReader2"
+#cd HeavyFlavorAnalysis/Bs2MuMu/macros2
+#make clean; make
+# -- end test w/o compilation
 cd HeavyFlavorAnalysis/Bs2MuMu/macros2
-make clean; make
 mkdir -p chains
 mv ../../../../../$JOB chains/
 cd -

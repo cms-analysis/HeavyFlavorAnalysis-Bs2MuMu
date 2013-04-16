@@ -48,6 +48,7 @@ struct readerData {
   float closetrks1, closetrks2, closetrks3;
   float m1iso, m2iso; 
   float pvdchi2, othervtx;
+  float pvlip2, pvlips2;
 };
 
 

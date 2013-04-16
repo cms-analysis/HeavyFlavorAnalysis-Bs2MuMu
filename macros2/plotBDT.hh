@@ -43,7 +43,8 @@ public:
   void overlap();
   void overlayBdtOutput(); 
 
-  void hackedMC(int chan = 0);
+  void hackedMC();
+  void hackedMCOld(int chan);
   void hackedMC1(std::string cuts = "1", double xmin = -0.4, double xmax = 0.5, std::string func = "pol0");
   void hackedMC2(double bdtCut1 = 0.0, double bdtCut2 = 0.2, std::string func = "pol0");
   void hackedMC3(int chan = 0);
@@ -62,6 +63,7 @@ public:
   virtual void loopFunction(int function, int mode = 0); 
   virtual void loopFunction1(int mode); 
   virtual void loopFunction2(int mode);
+  virtual void loopFunction3(int mode);
   void  resetHistograms();
   void plotEffVsBg(int offset);
 
@@ -82,7 +84,7 @@ public:
   
   // -- histograms/profiles  filled in loopFunction
   std::vector<TH1D*> fhMass, fhMassNoCuts;
-  std::vector<TH1D*> fhBDT, fhLoBDT, fhInBDT, fhHiBDT; 
+  std::vector<TH1D*> fhBDT, fhAnaBDT, fhLoBDT, fhInBDT, fhHiBDT; 
 
   std::vector<TProfile*> fpMassBDT, fpMassAcBDT, fpMassAdBDT, fpNpvBDT, fpNpvAcBDT, fpNpvAdBDT; 
   std::vector<TH1D*> fhNpvBDTchan0, fhNpvBDTchan1, fhNpvAcBDTchan0, fhNpvAcBDTchan1, fhNpvAdBDTchan0, fhNpvAdBDTchan1; 
