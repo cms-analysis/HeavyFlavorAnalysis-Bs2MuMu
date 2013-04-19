@@ -17,6 +17,7 @@
 #include "plotResults.hh"
 #include "plotReducedOverlays.hh"
 #include "plotEfficiencies.hh"
+#include "plotMisc.hh"
 
 using namespace std;
 
@@ -96,6 +97,11 @@ int main(int argc, char *argv[]) {
     }
     if (mode & 32) {
       rootfile = Form("anaBmm.plotEfficiencies.%s.root", cuts.c_str()); 
+      cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
+      system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
+    }
+    if (mode & 64) {
+      rootfile = Form("anaBmm.plotMisc.%s.root", cuts.c_str()); 
       cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
       system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
     }
@@ -216,6 +222,16 @@ int main(int argc, char *argv[]) {
     a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
     if (!doUseBDT) a->fDoUseBDT = false; 
     a->makeAll(2); 
+    delete a;
+  }
+
+
+  // -- miscellaneous stuff
+  if (mode & 64) {
+    gROOT->Clear();  gROOT->DeleteAll();
+    plotMisc *a = new plotMisc(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+    if (!doUseBDT) a->fDoUseBDT = false; 
+    a->makeAll(); 
     delete a;
   }
 

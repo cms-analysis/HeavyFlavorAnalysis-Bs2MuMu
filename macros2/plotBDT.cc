@@ -741,7 +741,7 @@ void plotBDT::bdtDependencies(string mode) {
 
     fpMassAcBDT[i]->SetAxisRange(4.9, 5.9, "X");
     fpMassAcBDT[i]->Fit("pol0");  
-    c0->SaveAs(Form("%s/dep-bdt-%s-%s-mass-aftercuts%d.pdf", fDirectory.c_str(), fCuts[1]->xmlFile.c_str(), mode.c_str(), i));
+    c0->SaveAs(Form("%s/dep-bdt-%s-%s-mass-aftercuts%d.pdf", fDirectory.c_str(), fCuts[i]->xmlFile.c_str(), mode.c_str(), i));
 
   }
 
@@ -1921,6 +1921,7 @@ void plotBDT::ssb() {
     cout << "%%%%%%% bdtTree not found in " << fRootFile->GetName() << endl;
     return;
   }
+  cout << "bdtTree with entries = " << t->GetEntries() << endl;
 
   int bdtBins(200); 
   double bdtMin(-1.0), bdtMax(1.0); 
@@ -1931,12 +1932,13 @@ void plotBDT::ssb() {
 
   double bdt, m, w8; 
   int classID;
-  bool gmuid, hlt;
+  bool gmuid, hlt, hltm;
   t->SetBranchAddress("bdt", &bdt);
   t->SetBranchAddress("classID", &classID);
   t->SetBranchAddress("m", &m);
   t->SetBranchAddress("weight", &w8);
-  t->SetBranchAddress("hlt", &hlt);
+  t->SetBranchAddress("hlt", &hlt);  
+  t->SetBranchAddress("hltm", &hltm);
   t->SetBranchAddress("gmuid", &gmuid);
 
   // -- compute S and B
@@ -1952,6 +1954,7 @@ void plotBDT::ssb() {
     for (Long64_t ievt=0; ievt<nEvent; ievt++) {
       t->GetEntry(ievt);
       if (false == hlt) continue;
+      if (false == hltm) continue;
       if (false == gmuid) continue;
       if (bdt < bdtCut) continue;
       
@@ -1980,6 +1983,8 @@ void plotBDT::ssb() {
     double b = fBsBgExp;
     if (s+b >0) {
       double ssb = s/TMath::Sqrt(s+b+pbg);
+      cout << "bdt> " << bdtCut << " d = " << d << " s = " << s  << " b = " << b
+	   << " ssb = " << ssb << endl;
       double ssbsimple = s/TMath::Sqrt(s+bsimple);
       if (ssbsimple > maxSSBsimple) {
 	maxSSBsimple = ssbsimple; 
@@ -2048,10 +2053,6 @@ void plotBDT::ssb() {
 
   c0->SaveAs(Form("%s/%s-fit-ssb.pdf", fDirectory.c_str(), fBdtString.c_str())); 
 
-
-  if (fYear == 2012) {
-    cout << "FIXME FIXME: patched MC weight with 0.6 to account for gen-level filters" << endl;
-  }
 }
 
 
@@ -2252,9 +2253,7 @@ void plotBDT::hackedMC() {
     ndof = fhMcRatio[4+ic]->GetFunction(fitstring.c_str())->GetNDF();
     tl->SetTextColor(kBlack);  
     tl->DrawLatex(0.25, 0.92, Form("#chi^{2}/dof = %3.1f/%d", chi2, ndof)); 
-    
-    cout << Form("%s/hackedMC-bdt-for-shiftedSignalMC-%s-chan%d.pdf", fDirectory.c_str(), fitstring.c_str(), ic) << endl;
-    c0->SaveAs(Form("%s/hackedMC-bdt-for-shiftedSignalMC-%s-chan%d.pdf", fDirectory.c_str(), fitstring.c_str(), ic));
+    c0->SaveAs(Form("%s/hackedMC-bdt-for-shiftedSignalMC-%s-%s.pdf", fDirectory.c_str(), fitstring.c_str(), fCuts[ic]->xmlFile.c_str()));
   }
 
   // ----------------------------------------------------------------------
@@ -2323,7 +2322,7 @@ void plotBDT::hackedMC() {
       pdfname = "bs"; 
       if (1 == i) pdfname = "bx"; 
       if (2 == i) pdfname = "by"; 
-      c1->SaveAs(Form("%s/hackedMC-massratio-%s-chan%d.pdf", fDirectory.c_str(), pdfname.c_str(), ic));
+      c1->SaveAs(Form("%s/hackedMC-massratio-%s-%s.pdf", fDirectory.c_str(), pdfname.c_str(), fCuts[ic]->xmlFile.c_str()));
     }
   }
 
@@ -2355,7 +2354,7 @@ void plotBDT::hackedMC() {
     legg->AddEntry(fhMcBDT5[8+ic], "B^{+} #rightarrow J/#psi K", "f"); 
     legg->Draw();
     
-    c0->SaveAs(Form("%s/hackedMC-bdt-overlays-chan%d.pdf", fDirectory.c_str(), ic));
+    c0->SaveAs(Form("%s/hackedMC-bdt-overlays-%s.pdf", fDirectory.c_str(), fCuts[ic]->xmlFile.c_str()));
   }
 }
 

@@ -17,6 +17,7 @@ public:
   void tnpVsMC(double m1pt, double m2pt, std::string what = "default");
   void triggerSignal(std::string cuts = "fls3d>8&&chi2/dof<2");
   void triggerNormalization(std::string cuts = "fls3d>8&&chi2/dof<2&&alpha<0.05&&iso>0.5");
+  void misid(int pdgid, std::string sample);
 
   // -- works only on specific large small trees
   void allOverlayStudy();
@@ -25,6 +26,7 @@ public:
 
   virtual void loopFunction(int function, int mode = 0); 
   virtual void loopFunction1(int mode); 
+  virtual void loopFunction2(int mode); 
 
   void resetHistograms();
   void saveHists(string smode, double m1pt, double m2pt, std::string what);
@@ -37,6 +39,11 @@ public:
   void read2Files(PidTable &a, const char *f1name, const char *f2name, const char *hname);
 
   bool fSplitSeagullsFromCowboys; 
+
+  std::vector<TH1D*> fhptPosAll, fhptPosPass, fhptNegAll, fhptNegPass;
+  std::vector<TH1D*> fhptPosAllSel, fhptPosPassSel, fhptNegAllSel, fhptNegPassSel;
+
+  int fPdgId; 
 
   ClassDef(plotEfficiencies,1) //Testing plotEfficiencies
 

@@ -3,10 +3,21 @@
 #  ./link 0 1293
 
 use Getopt::Std;
-getopts('a:cn:');
+getopts('a:A:cn:');
 
+# -- single file copy for $opt_A
+if ($opt_A) {
+    system("/bin/cp ../../tmva/TMVA-$opt_A-combined.root ."); 
+    system("/bin/cp ../../tmva/TMVA-$opt_A-Events?.root ."); 
+    system("/bin/cp ../../tmva/TMVA-$opt_A.log ."); 
+    system("/bin/cp ../../tmva/weights/TMVA-$opt_A-Events?_BDT.weights.xml ."); 
+    die "that's it for starters\n";
+}
+
+# -- copy all four files, starting from $opt_a
 if ($opt_a) {
     for ($i = $opt_a; $i < $opt_a + 4; $i++) {
+	if ($opt_C && $i != $opt_C) {next;}
 	system("/bin/cp ../../tmva/TMVA-$i-combined.root ."); 
 	system("/bin/cp ../../tmva/TMVA-$i-Events?.root ."); 
 	system("/bin/cp ../../tmva/TMVA-$i.log ."); 

@@ -112,7 +112,7 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   fInvertedIso = false; 
   fNormProcessed = false; 
   fSaveSmallTree = false;
-  fSaveLargerTree = false;
+  fSaveLargerTree = true;
 
   fCutsFileName = cuts; 
   init(files, cuts, dir, mode);
@@ -3310,12 +3310,10 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     small->Branch("ls", &fb.ls,"ls/I");
     
     small->Branch("bdt", &fBDT ,"bdt/D");
-    // -- debug HLT
     if (fSaveLargerTree) {
       small->Branch("hlt", &fb.hlt ,"hlt/O");
       small->Branch("hltm", &fb.hltm ,"hltm/O");
       small->Branch("muid", &fb.gmuid ,"muid/O");
-      small->Branch("mvamuid", &fb.gmumvaid ,"mvamuid/O");
       small->Branch("pt",   &fb.pt ,"hlt/D");
       small->Branch("eta",  &fb.eta ,"eta/D");
       small->Branch("m1pt", &fb.m1pt ,"hlt/D");
@@ -3324,6 +3322,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
       small->Branch("chi2", &fb.chi2 ,"chi2/D");
       small->Branch("dof",  &fb.dof ,"dof/D");
       small->Branch("fls3d", &fb.fls3d ,"fls3d/D");
+      small->Branch("flsxy", &fb.flsxy ,"flsxy/D");
       small->Branch("pvlip", &fb.pvlip ,"pvlip/D");
       small->Branch("pvlips", &fb.pvlips ,"pvlips/D");
       small->Branch("pvlip2", &fb.pvlip2 ,"pvlip2/D");
@@ -3335,13 +3334,14 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
       small->Branch("gtqual", &fb.gtqual ,"gtqual/O");
       small->Branch("q", &fb.q ,"q/I");
       small->Branch("iso", &fb.iso ,"iso/D");
+      small->Branch("m1iso", &fb.m1iso ,"m1iso/D");
+      small->Branch("m2iso", &fb.m1iso ,"m2iso/D");
       small->Branch("alpha", &fb.alpha ,"alpha/D");
       small->Branch("closetrk", &fb.closetrk ,"closetrk/I");
       small->Branch("docatrk", &fb.docatrk ,"docatrk/D");
       small->Branch("maxdoca", &fb.maxdoca ,"maxdoca/D");
       small->Branch("lip", &fb.lip ,"lip/D");
       small->Branch("tip", &fb.tip ,"tip/D");
-      // -- debug HLT
     }
     small->Branch("m",     &fb.m,"m/D");
     small->Branch("m3",    &fb.m3,"m3/D");
@@ -3396,6 +3396,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
 TTree* plotClass::getTree(string mode) {
   TTree *t(0);
   cout << "retrieve tree events for mode " << mode << " from file " << fF[mode]->GetName() << endl;
+  t = (TTree*)fF[mode]->Get("candAnaMuMu/events"); 
   if (string::npos != mode.find("No")) t = (TTree*)fF[mode]->Get("candAnaBu2JpsiK/events"); 
   if (string::npos != mode.find("Cs")) t = (TTree*)fF[mode]->Get("candAnaBs2JpsiPhi/events"); 
   if (string::npos != mode.find("Sg")) t = (TTree*)fF[mode]->Get("candAnaMuMu/events"); 
@@ -3540,6 +3541,15 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("m2phi",  &fb.m2phi);
   t->SetBranchAddress("m2q",    &fb.m2q);
   t->SetBranchAddress("docatrk",&fb.docatrk);
+
+  t->SetBranchAddress("m1id",   &fb.m1id);
+  t->SetBranchAddress("m1rmvaid", &fb.m1rmvaid);
+  t->SetBranchAddress("m1trigm",  &fb.m1trigm);
+
+  t->SetBranchAddress("m2id",     &fb.m2id);
+  t->SetBranchAddress("m2rmvaid", &fb.m2rmvaid);
+  t->SetBranchAddress("m2trigm",  &fb.m2trigm);
+
 
   t->SetBranchAddress("m1iso",     &fb.m1iso);
   t->SetBranchAddress("m2iso",     &fb.m2iso);

@@ -40,7 +40,7 @@ using namespace std;
 
 // ----------------------------------------------------------------------
 std::string preselection() {
-  std::string cut = Form("gmuid && (%3.2f<pt)&&(pt<%3.2f) && (%3.2f<m1pt)&&(m1pt<%3.2f) && (%3.2f<m2pt)&&(m2pt<%3.2f)", 
+  std::string cut = Form("gmuid &&hlt&&hltm && (%3.2f<pt)&&(pt<%3.2f) && (%3.2f<m1pt)&&(m1pt<%3.2f) && (%3.2f<m2pt)&&(m2pt<%3.2f)", 
 			 PTMIN, PTMAX, M1PTMIN, M1PTMAX, M2PTMIN, M2PTMAX);
   cut += Form(" && (flsxy>%3.2f) && (fl3d<%3.2f) && (pvip<%3.2f) && !(TMath::IsNaN(pvips)) && (pvips>0) && (pvips<%3.2f)", 
 	      FLSXYMIN, FL3DMAX, PVIPMAX, PVIPSMAX);

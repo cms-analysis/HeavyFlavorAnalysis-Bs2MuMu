@@ -147,14 +147,14 @@ void candAna::evtAnalysis(TAna01Event *evt) {
     }
 
     // TESTING d.k.
-//     if(fGoodHLT) {
-//      cout<<fHLTmatch<<" "<<fHLTmatch2<<endl;
-//     cout << " candidate at " << iC << " which is of type " << TYPE << " mass "<< pCand->fMass<<endl;
-//     }
-//     //if((fHLTmatch!=fHLTmatch2)) 
-//      if(fGoodHLT && (fHLTmatch!=fHLTmatch2)) 
-//        cout<<fHLTmatch<<" "<<fHLTmatch2
-//  	  << " candidate at " << iC << " which is of type " << TYPE << " mass "<< pCand->fMass<<" "<<fGoodHLT<<endl;
+    //     if(fGoodHLT) {
+    //      cout<<fHLTmatch<<" "<<fHLTmatch2<<endl;
+    //     cout << " candidate at " << iC << " which is of type " << TYPE << " mass "<< pCand->fMass<<endl;
+    //     }
+    //     //if((fHLTmatch!=fHLTmatch2)) 
+    //      if(fGoodHLT && (fHLTmatch!=fHLTmatch2)) 
+    //        cout<<fHLTmatch<<" "<<fHLTmatch2
+    //  	  << " candidate at " << iC << " which is of type " << TYPE << " mass "<< pCand->fMass<<" "<<fGoodHLT<<endl;
 
     if (0 && fCandM > 4.99 && fCandM < 5.02 && fCandFLS3d > 13 && fCandA < 0.05 && fMu1Pt > 4.5 && fMu2Pt > 4.5) {
       cout << "----------------------------------------------------------------------" << endl;

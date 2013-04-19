@@ -29,6 +29,36 @@ plotEfficiencies::plotEfficiencies(const char *files, const char *dir, const cha
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);
 
+
+  string hfname  = fDirectory + "/anaBmm.plotEfficiencies." + fSuffix + ".root";
+  cout << "fHistFile: " << hfname << endl;
+  //  if (fHistFile) fHistFile->Close();
+  fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
+
+  TH1D *h1(0); 
+  fHistFile->cd(); 
+  for (int i = 0; i < fNchan; ++i) {
+    h1 = new TH1D(Form("hptPosAll%d", i), Form("hptPosAll%d", i), 150, 0., 30.); h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin"); 
+    fhptPosAll.push_back(h1);  
+    h1 = new TH1D(Form("hptPosPass%d", i), Form("hptPosAll%d", i), 150, 0., 30.);h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin"); 
+    fhptPosPass.push_back(h1); 
+
+    h1 = new TH1D(Form("hptPosAllSel%d", i), Form("hptPosAllSel%d", i), 150, 0., 30.);h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin");
+    fhptPosAllSel.push_back(h1); 
+    h1 = new TH1D(Form("hptPosPassSel%d", i), Form("hptPosAllSel%d", i), 150, 0., 30.);h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin");
+    fhptPosPassSel.push_back(h1); 
+
+    h1 = new TH1D(Form("hptNegAll%d", i), Form("hptNegAll%d", i), 150, 0., 30.);h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin"); 
+    fhptNegAll.push_back(h1); 
+    h1 = new TH1D(Form("hptNegPass%d", i), Form("hptNegAll%d", i), 150, 0., 30.);h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin"); 
+    fhptNegPass.push_back(h1); 
+
+    h1 = new TH1D(Form("hptNegAllSel%d", i), Form("hptNegAllSel%d", i), 150, 0., 30.);h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin"); 
+    fhptNegAllSel.push_back(h1); 
+    h1 = new TH1D(Form("hptNegPassSel%d", i), Form("hptNegAllSel%d", i), 150, 0., 30.);h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin");
+    fhptNegPassSel.push_back(h1); 
+  }
+
 }
 
 // ----------------------------------------------------------------------
@@ -89,6 +119,13 @@ void plotEfficiencies::makeAll(int channel) {
     // -- MC trigger efficiencies
     mcTriggerEffs();
   }
+
+
+  if (channel &8) {
+    misid(211, "bgBd2PiPi"); 
+    misid(321, "bgBs2KK"); 
+    misid(2212, "bgLb2KP"); 
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -102,6 +139,16 @@ void plotEfficiencies::mcTriggerEffs() {
 void plotEfficiencies::resetHistograms() {
   
   for (unsigned int i = 0; i < fNchan; ++i) {
+
+    fhptPosAll[i]->Reset();
+    fhptPosPass[i]->Reset();
+    fhptPosAllSel[i]->Reset();
+    fhptPosPassSel[i]->Reset();
+
+    fhptNegAll[i]->Reset();
+    fhptNegPass[i]->Reset();
+    fhptNegAllSel[i]->Reset();
+    fhptNegPassSel[i]->Reset();
 
     fhMuId[i]->Reset();
     fhMuTr[i]->Reset();
@@ -138,8 +185,60 @@ void plotEfficiencies::resetHistograms() {
 // ----------------------------------------------------------------------
 void plotEfficiencies::loopFunction(int function, int mode) {
   if (1 == function) loopFunction1(mode);
+  if (2 == function) loopFunction2(mode);
 }
 
+// ----------------------------------------------------------------------
+void plotEfficiencies::loopFunction2(int mode) {
+
+  int id(0); 
+  bool mu(0); 
+  double pt(0.), eta(0.); 
+  int chan(-1); 
+  for (int i = 0; i < 2; ++i) {
+    if (0 == i) {
+      id = fb.g1id; 
+      pt = fb.m1pt;
+      //      mu = fb.m1id;
+      mu = fb.m1rmvaid && (fb.m1trigm>0) && (fb.m1trigm<0.05);
+      eta = fb.m1eta;
+      chan = (TMath::Abs(fb.m1eta)<1.4?0:1); 
+    }
+    
+    if (1 == i) {
+      id = fb.g2id; 
+      pt = fb.m2pt;
+      //      mu = fb.m2id;
+      mu = fb.m2rmvaid && (fb.m2trigm>0) && (fb.m2trigm<0.05);
+      eta = fb.m2eta;
+      chan = (TMath::Abs(fb.m2eta)<1.4?0:1); 
+    }
+
+    if (pt < 4.) continue;
+    
+
+    if (fPdgId == TMath::Abs(id)) {
+      if (id > 0) {
+	fhptPosAll[chan]->Fill(pt);
+	if (mu) fhptPosPass[chan]->Fill(pt);
+      } else {
+	fhptNegAll[chan]->Fill(pt);
+	if (mu) fhptNegPass[chan]->Fill(pt);
+      }
+      
+      if (fBDT > fCuts[chan]->bdt) {
+	if (id > 0) { 
+	  fhptPosAllSel[chan]->Fill(pt);
+	  if (mu) fhptPosPassSel[chan]->Fill(pt);
+	} else {
+	  fhptNegAllSel[chan]->Fill(pt);
+	  if (mu) fhptNegPassSel[chan]->Fill(pt);
+	}
+      }
+    }
+    
+  }
+}
 
 
 // ----------------------------------------------------------------------
@@ -306,6 +405,91 @@ void plotEfficiencies::loopFunction1(int mode) {
   fhBdtMass[fChan]->Fill(mass, fBDT); 
   //  if (fBDT > 0.3) cout << "mass = " << mass << " bdt = " << fBDT << endl;
 }
+
+
+ 
+// ----------------------------------------------------------------------
+void plotEfficiencies::misid(int pdgid, string sample) {
+  
+  TTree *t(0); 
+  resetHistograms();
+  fSetup = sample; 
+  t = getTree(fSetup); 
+  setupTree(t, "Mc"); 
+  fPdgId = pdgid; 
+  loopOverTree(t, fSetup, 2);
+  
+  
+  c0->Clear(); 
+  TH1D *hratio = (TH1D*)(fhptPosPass[0]->Clone("hratio")); hratio->Sumw2(); hratio->Reset();
+  double all, pass; 
+  string title, charge; 
+
+  if (321 == pdgid) title = "kaons"; 
+  if (211 == pdgid) title = "pions"; 
+  if (2212 == pdgid) title = "protons"; 
+  
+  gStyle->SetOptStat(0); 
+  for (int i = 0; i < 2; ++i) {
+
+    charge = "positive "; 
+    if (2212 == pdgid) charge = ""; 
+
+    fhptPosAll[i]->SetTitle((charge + title).c_str()); 
+    fhptPosAll[i]->Draw("hist");    
+    fhptPosPass[i]->Draw("samee");    
+    c0->SaveAs(Form("%s/%d-fake-spectrum-%s-pos-%d-chan%d.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
+
+    all  = fhptPosAll[i]->GetSumOfWeights(); 
+    pass = fhptPosPass[i]->GetSumOfWeights(); 
+    hratio->Divide(fhptPosPass[i], fhptPosAll[i], 1., 1., "b"); 
+    hratio->SetTitle((charge + title).c_str()); 
+    setTitles(hratio, "p_{T} [GeV]", "misidentification probability"); 
+    hratio->Draw();    
+    tl->DrawLatex(0.2, 0.92, Form("%d/%d = %6.5f", static_cast<int>(pass), static_cast<int>(all), pass/all)); 
+    c0->SaveAs(Form("%s/%d-fake-rate-%s-pos-%d-chan%d.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
+
+    all  = fhptPosAllSel[i]->GetSumOfWeights(); 
+    pass = fhptPosPassSel[i]->GetSumOfWeights(); 
+    hratio->Divide(fhptPosPassSel[i], fhptPosAllSel[i], 1., 1., "b"); 
+    hratio->SetTitle((charge + title).c_str()); 
+    hratio->Draw();    
+    tl->DrawLatex(0.2, 0.92, Form("%d/%d = %6.5f", static_cast<int>(pass), static_cast<int>(all), pass/all)); 
+    c0->SaveAs(Form("%s/%d-fake-rate-%s-pos-%d-chan%d-sel.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
+
+
+    charge = "negative "; 
+    if (2212 == pdgid) charge = "anti"; 
+
+    fhptNegAll[i]->SetTitle((charge + title).c_str()); 
+    fhptNegAll[i]->Draw("hist");    
+    fhptNegPass[i]->Draw("samee");    
+    c0->SaveAs(Form("%s/%d-fake-spectrum-%s-neg-%d-chan%d.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
+
+    all  = fhptNegAll[i]->GetSumOfWeights(); 
+    pass = fhptNegPass[i]->GetSumOfWeights(); 
+    hratio->Divide(fhptNegPass[i], fhptNegAll[i], 1., 1., "b"); 
+    hratio->SetTitle((charge + title).c_str()); 
+    hratio->Draw();    
+    tl->DrawLatex(0.2, 0.92, Form("%d/%d = %6.5f", static_cast<int>(pass), static_cast<int>(all), pass/all)); 
+    c0->SaveAs(Form("%s/%d-fake-rate-%s-neg-%d-chan%d.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
+
+    all  = fhptNegAllSel[i]->GetSumOfWeights(); 
+    pass = fhptNegPassSel[i]->GetSumOfWeights(); 
+    hratio->Divide(fhptNegPassSel[i], fhptNegAllSel[i], 1., 1., "b"); 
+    hratio->SetTitle((charge + title).c_str()); 
+    hratio->Draw();    
+    tl->DrawLatex(0.2, 0.92, Form("%d/%d = %6.5f", static_cast<int>(pass), static_cast<int>(all), pass/all)); 
+    c0->SaveAs(Form("%s/%d-fake-rate-%s-neg-%d-chan%d-sel.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
+
+
+  }
+  
+
+}
+
+
+
 
 
 
@@ -552,98 +736,98 @@ void plotEfficiencies::saveHists(string smode, double m1pt, double m2pt, string 
     string modifier = (fDoUseBDT?"bdt":"cnc"); 
     modifier = Form("%s:%2.1f:%2.1f", modifier.c_str(), m1pt, m2pt); 
     h1 = (TH1D*)(fhGenAndAccNumbers[i]->Clone(Form("hGenAndAccNumbers_%s_%d_chan%d", modifier.c_str(), mode, i))); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
 
     h1 = (TH1D*)(fhMuId[i]->Clone(Form("hMuId_%s_%d_chan%d", modifier.c_str(), mode, i))); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
 
     h1 = (TH1D*)(fhMuIdMC[i]->Clone(Form("hMuIdMC_%s_%d_chan%d", modifier.c_str(), mode, i))); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
 
     h1 = (TH1D*)(fhMuTr[i]->Clone(Form("hMuTr_%s_%d_chan%d", modifier.c_str(), mode, i))); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
-
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
+    
     h1 = (TH1D*)(fhMuTrMC[i]->Clone(Form("hMuTrMC_%s_%d_chan%d", modifier.c_str(), mode, i))); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
-
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
+    
     h1 = (TH1D*)(fhMassAbsNoCuts[i]->Clone(Form("hMassAbsNoCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassAbsNoCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
 
     h1 = (TH1D*)(fhMassNoCuts[i]->Clone(Form("hMassNoCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassNoCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
 
     h1 = (TH1D*)(fhMassNoCuts[i]->Clone(Form("hMassNoCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassNoCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
 
     h1 = (TH1D*)(fhMassWithAnaCuts[i]->Clone(Form("hMassWithAnaCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithAnaCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
 
     h1 = (TH1D*)(fhMassWithMuonCuts[i]->Clone(Form("hMassWithMuonCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithMuonCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
 
     h1 = (TH1D*)(fhMassWithTriggerCuts[i]->Clone(Form("hMassWithTriggerCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithTriggerCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
 
     h1 = (TH1D*)(fhMassWithAllCuts[i]->Clone(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithAllCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
 
     h1 = (TH1D*)(fhMassWithAllCutsManyBins[i]->Clone(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithAllCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
 
     h1 = (TH1D*)(fhMassWithMassCuts[i]->Clone(Form("hMassWithMassCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithMassCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
 
     h1 = (TH1D*)(fhMassWithMassCutsManyBins[i]->Clone(Form("hMassWithMassCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithMassCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    h1->SetDirectory(fHistFile); 
-    h1->Write();
+    //     h1->SetDirectory(fHistFile); 
+    //     h1->Write();
 
     if (string::npos != fSetup.find("No") || string::npos != fSetup.find("Cs")) {
       h1 = (TH1D*)(fhNorm[i]->Clone(Form("hNorm_%s_%d_chan%d", modifier.c_str(), mode, i)));       
       h1->SetTitle(Form("hNorm_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-      h1->SetDirectory(fHistFile); 
-      h1->Write();
+      //       h1->SetDirectory(fHistFile); 
+      //       h1->Write();
 
       h1 = (TH1D*)(fhNormC[i]->Clone(Form("hNormC_%s_%d_chan%d", modifier.c_str(), mode, i)));     
       h1->SetTitle(Form("hNormC_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-      h1->SetDirectory(fHistFile); 
-      h1->Write();
+      //       h1->SetDirectory(fHistFile); 
+      //       h1->Write();
     }
 
     if (string::npos != fSetup.find("DstarPi")) {
       h1 = (TH1D*)(fhDstarPi[i]->Clone(Form("hDstarPi_%s_%d_chan%d", modifier.c_str(), mode, i))); 
       h1->SetTitle(Form("hDstarPi_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-      h1->SetDirectory(fHistFile); 
-      h1->Write();
+      //       h1->SetDirectory(fHistFile); 
+      //       h1->Write();
     }
     
     if (fDoUseBDT) {
       h2 = (TH2D*)(fhBdtMass[i]->Clone(Form("hBdtMass_%s_%d_chan%d", modifier.c_str(), mode, i))); 
-      h2->SetDirectory(fHistFile); 
-      h2->Write();
+      //       h2->SetDirectory(fHistFile); 
+      //       h2->Write();
     }
 
   }

@@ -49,6 +49,8 @@ plotMisc::~plotMisc() {
 
 // ----------------------------------------------------------------------
 void plotMisc::makeAll() {
+  signalMass(); 
+  pidTableDisplay();
 
 }
 
@@ -75,6 +77,77 @@ void plotMisc::loopFunction1(int mode) {
 // ----------------------------------------------------------------------
 void plotMisc::loopFunction2(int mode) {
 }
+
+// ----------------------------------------------------------------------
+void plotMisc::pidTableDisplay() {
+
+  PidTable *a; 
+
+  // -- fake rates
+  double xbins[] = {0., 1.4, 2.4};
+  double ybins[] = {0., 4., 5., 7., 10., 15., 20., 50.}; 
+  TH2D *h2 = new TH2D("h2", "", 2, xbins, 7, ybins); 
+  setTitles(h2, "|#eta|", "p_{T} [GeV]"); 
+  h2->SetMinimum(0.0); 
+  h2->SetMaximum(0.001); 
+  h2->SetMarkerSize(1.3);
+  h2->SetMarkerColor(kWhite);
+  
+  gStyle->SetOptStat(0); 
+
+  shrinkPad(0.15, 0.15, 0.25); 
+  a = fptFakePosKaons;  h2->Reset(); h2->SetTitle("positive kaons"); 
+  a->eff2d(h2);  h2->Draw("colztext");  c0->SaveAs(Form("%s/%d-fakePosKaons.pdf", fDirectory.c_str(), fYear));
+
+  a = fptFakeNegKaons;  h2->Reset(); h2->SetTitle("negative kaons"); 
+  a->eff2d(h2);  h2->Draw("colztext");  c0->SaveAs(Form("%s/%d-fakeNegKaons.pdf", fDirectory.c_str(), fYear));
+																              
+  a = fptFakePosPions;  h2->Reset(); h2->SetTitle("positive pions"); 
+  a->eff2d(h2);  h2->Draw("colztext");  c0->SaveAs(Form("%s/%d-fakePosPions.pdf", fDirectory.c_str(), fYear));
+  
+  a = fptFakeNegPions;  h2->Reset(); h2->SetTitle("negative pions"); 
+  a->eff2d(h2);  h2->Draw("colztext");  c0->SaveAs(Form("%s/%d-fakeNegPions.pdf", fDirectory.c_str(), fYear));
+
+  a = fptFakePosProtons;  h2->Reset(); h2->SetTitle("positive protons"); 
+  a->eff2d(h2);  h2->Draw("colztext");  c0->SaveAs(Form("%s/%d-fakePosProtons.pdf", fDirectory.c_str(), fYear));
+
+  a = fptFakeNegProtons;  h2->Reset(); h2->SetTitle("negative protons"); 
+  a->eff2d(h2);  h2->Draw("colztext");  c0->SaveAs(Form("%s/%d-fakeNegProtons.pdf", fDirectory.c_str(), fYear));
+
+
+//   PidTable *fptT1;
+//   PidTable *fptT2;
+//   PidTable *fptM; 
+
+//   PidTable *fptT1MC;
+//   PidTable *fptT2MC;
+//   PidTable *fptMMC; 
+
+//   // -- split into seagull and cowboys
+//   PidTable *fptSgT1;
+//   PidTable *fptSgT2;
+//   PidTable *fptSgM; 
+
+//   PidTable *fptSgT1MC;
+//   PidTable *fptSgT2MC;
+//   PidTable *fptSgMMC; 
+
+//   PidTable *fptCbT1;
+//   PidTable *fptCbT2;
+//   PidTable *fptCbM; 
+
+//   PidTable *fptCbT1MC;
+//   PidTable *fptCbT2MC;
+//   PidTable *fptCbMMC; 
+  
+//   PidTable *fptFakePosKaons, *fptFakePosPions, *fptFakePosProtons;
+//   PidTable *fptFakeNegKaons, *fptFakeNegPions, *fptFakeNegProtons;
+
+  
+
+}
+
+
 
 // ----------------------------------------------------------------------
 void plotMisc::signalMass() {
