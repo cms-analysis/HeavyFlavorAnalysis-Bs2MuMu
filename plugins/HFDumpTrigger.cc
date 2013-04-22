@@ -174,6 +174,9 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
   Handle<TriggerResults> hHLTresults;
   bool hltF = true;
+  int selected=0;  // to store the right trigger objects
+  string selectedObj[10];
+
   try {
     iEvent.getByLabel(fHLTResultsLabel, hHLTresults);
   } catch (cms::Exception &ex) {
@@ -216,6 +219,20 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 		const vector<string>& moduleLabels(hltConfig.moduleLabels(index));
 		const unsigned int moduleIndex(hHLTresults->index(index));
 
+		// Find L3 Muon modules 
+		// Do only for passed HLT
+ 		if(result) {
+		  if (fVerbose > 1) cout<<" passed "<<validTriggerNames[it]<<" "<<moduleLabels.size()<<endl;
+		  for(unsigned int j=0;j<moduleLabels.size();j++) {
+		    const string & type = hltConfig.moduleType(moduleLabels[j]);
+		    if(type == "HLTMuonDimuonL3Filter") {
+		      if(selected<10) selectedObj[selected] = moduleLabels[j];
+		      selected++;
+		      if (fVerbose > 1) cout<<j<<" "<<type<<" "<<moduleLabels[j]<<" "<<selected<<endl;
+		    } // if
+		  } // for j
+		} // if passe d
+
 		//  cout << " Last active module - label/type: "
 		//   << moduleLabels[moduleIndex] << "/" << hltConfig.moduleType(moduleLabels[moduleIndex])
 		//   << endl;
@@ -242,6 +259,13 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 	}
   }
   
+  // Testing only 
+  if (fVerbose > 9)  {
+    cout<<"Selected HLT modules "<<selected<<" : ";
+    for(int i=0; i<selected; ++i) cout<<selectedObj[i]<<" ";
+    cout<<endl;
+    if(selected>1) cout<<" MORE THAN ONE OBJECT SELECTED "<<endl;
+  }
 
   // ----------------------------------------------------------------------
   // -- Get trigger objects
@@ -350,6 +374,16 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
 	TString label = TString(trgEvent->filterTag(i).label()+":"+trgEvent->filterTag(i).process()+":"+trgEvent->filterTag(i).instance()+":");
 
+
+	// Check if this path was in the fired FLT path 
+	bool matched=false;
+	for(int n=0;n<selected; ++n) if ( trgEvent->filterTag(i).label() == selectedObj[n] ) {
+	  matched=true; 
+	  if (fVerbose > 1) cout<<" This is it --> "<<i<<" "<<trgEvent->filterTag(i).label()<<endl;
+	  break;
+	}
+
+
 	// -- the following removes cross trigger filter objects even when they have Mu in the name!
 	if (label.Contains("Jet")) continue;
 	if (label.Contains("EG")) continue;
@@ -373,7 +407,8 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 			  ); 
 	  pTO->fID     = allObjects[keys[j]].id(); 
 	  pTO->fLabel  = label;
-	  // pTO->fNumber = i;
+	  if(matched) pTO->fNumber = i;  // marked selected objects for later analysis  
+ 	  else        pTO->fNumber = -1; 
 	  if (fVerbose > 1) 
 	    cout << " pt = " <<  allObjects[keys[j]].pt() 
 		 << " eta = " << allObjects[keys[j]].eta() 
@@ -381,6 +416,7 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 		 << " e = " << allObjects[keys[j]].energy() 
 		 << " id = " << allObjects[keys[j]].id() 
 		 << " label: " << pTO->fLabel
+		 << " number:" << pTO->fNumber
 		 << endl;
 	}
       }
