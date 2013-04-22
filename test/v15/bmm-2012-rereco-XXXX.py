@@ -20,7 +20,7 @@ process.load("Configuration.StandardSequences.MagneticField_38T_cff")
 process.load("Configuration.StandardSequences.Geometry_cff")
 process.load("RecoVertex.BeamSpotProducer.BeamSpot_cfi")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = "FT53_V10A_AN3::All"
+process.GlobalTag.globaltag = "FT53_V10A_AN4::All"
 
 # ----------------------------------------------------------------------
 # -- Input files
