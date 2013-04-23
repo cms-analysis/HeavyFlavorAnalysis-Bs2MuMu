@@ -50,13 +50,13 @@ public:
 
   std::vector<candAna*> lCandAnalysis;
 
-  // -- PidTables
-  PidTable *fpMuonID;
-  PidTable *fpMuonTr, *fpMuonTr1, *fpMuonTr2;
+//   // -- PidTables
+//   PidTable *fpMuonID;
+//   PidTable *fpMuonTr, *fpMuonTr1, *fpMuonTr2;
   
-  PidTable *ptSgMUID, *ptCbMUID; 
-  PidTable *ptSgMUT1, *ptCbMUT1; 
-  PidTable *ptSgMUT2, *ptCbMUT2; 
+//   PidTable *ptSgMUID, *ptCbMUID; 
+//   PidTable *ptSgMUT1, *ptCbMUT1; 
+//   PidTable *ptSgMUT2, *ptCbMUT2; 
 
   MuScleFitCorrector *msc; 
 

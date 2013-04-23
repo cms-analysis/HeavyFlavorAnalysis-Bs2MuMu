@@ -8,7 +8,6 @@ struct RedTreeData {
   double bdt, bdt2, pvw8;
 
   bool gmuid, gmutmid, gmumvaid, gmupt, gmueta, gtqual, gtpt, gteta;
-  double w8mu, w8tr;
 
   double pvlip, pvlips, pvlip2, pvlips2, pvip, pvips, pvip3d, pvips3d;
 

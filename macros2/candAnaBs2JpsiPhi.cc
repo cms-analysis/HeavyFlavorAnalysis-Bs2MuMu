@@ -495,9 +495,9 @@ void candAnaBs2JpsiPhi::efficiencyCalculation() {
     k1Matched = 1; 
     prK1 = fpEvt->getSimpleTrack(fRecK1Tmi); 
     if (prK1->getHighPurity()) {
-      k1GT = 0; 
+      k1GT = 1; 
     } else {
-      k1GT = 1;
+      k1GT = 0;
     }
   } 
 
@@ -505,9 +505,9 @@ void candAnaBs2JpsiPhi::efficiencyCalculation() {
     k2Matched = 1; 
     prK2 = fpEvt->getSimpleTrack(fRecK2Tmi); 
     if (prK2->getHighPurity()) {
-      k2GT = 0; 
+      k2GT = 1; 
     } else {
-      k2GT = 1;
+      k2GT = 0;
     }
   } 
 

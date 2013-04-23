@@ -1,9 +1,3 @@
 candAnaBd2DstarPi  cuts/candAnaBd2DstarPi.2012.cuts
 #
 JSON               cuts/Cert_AllRuns_7TeV-8TeV_ReReco_PromptReco_Collisions11-12_JSON_MuonPhys.txt
-ptSgMUID         ../macros/pidtables/130104/MuonID_data_seagulls.dat
-ptCbMUID         ../macros/pidtables/130104/MuonID_data_cowboys.dat
-ptSgMUT1         ../macros/pidtables/130104/L1L2_data_seagulls.dat
-ptCbMUT1         ../macros/pidtables/130104/L1L2_data_cowboys.dat
-ptSgMUT2         ../macros/pidtables/130104/L3_data_seagulls.dat
-ptCbMUT2         ../macros/pidtables/130104/L3_data_cowboys.dat

@@ -39,10 +39,10 @@ type=bg,Bd2PiMuNu     dset=mc,0.024  lumi=36.9   file=/scratch/ursl/v14-2012-cms
 type=bg,Bs2KMuNu      dset=mc,0.024  lumi=4.6    file=/scratch/ursl/v14-2012-cms-BsToKMuNu.root
 type=bg,Lb2PMuNu      dset=mc,0.024  lumi=24.1   file=/scratch/ursl/v14-2012-cms-LambdaBToPMuNu.root
 #
-type=bg,Bd2MuMuGamma  dset=mc,0.06  lumi=700000.0 file=/scratch/ursl/v14-2012-cms-BdToMuMuGamma.root 
-type=bg,Bs2MuMuGamma  dset=mc,0.06  lumi=10000.0  file=/scratch/ursl/v14-2012-cms-BsToMuMuGamma.root 
+type=bg,Bd2MuMuGamma  dset=mc,0.06   lumi=700000.0 file=/scratch/ursl/v14-2012-cms-BdToMuMuGamma.root 
+type=bg,Bs2MuMuGamma  dset=mc,0.06   lumi=10000.0  file=/scratch/ursl/v14-2012-cms-BsToMuMuGamma.root 
 #
-type=bg,Bu2PiMuMu     dset=mc,0.06  lumi=669.0   file=/scratch/ursl/v14-2012-cms-BuToMuMuPi.root
-type=bg,Bu2KMuMu      dset=mc,0.06  lumi=292.0   file=/scratch/ursl/v14-2012-cms-BuToMuMuK.root 
-type=bg,Bd2Pi0MuMu    dset=mc,0.06  lumi=130.0   file=/scratch/ursl/v14-2012-cms-BdToMuMuPi0.root 
-type=bg,Bd2K0MuMu     dset=mc,0.06  lumi=45.5    file=/scratch/ursl/v14-2012-cms-BdToMuMuK0.root 
+type=bg,Bu2PiMuMu     dset=mc,0.024  lumi=669.0   file=/scratch/ursl/v14-2012-cms-BuToMuMuPi.root
+type=bg,Bu2KMuMu      dset=mc,0.024  lumi=292.0   file=/scratch/ursl/v14-2012-cms-BuToMuMuK.root 
+type=bg,Bd2Pi0MuMu    dset=mc,0.024  lumi=130.0   file=/scratch/ursl/v14-2012-cms-BdToMuMuPi0.root 
+type=bg,Bd2K0MuMu     dset=mc,0.024  lumi=45.5    file=/scratch/ursl/v14-2012-cms-BdToMuMuK0.root 

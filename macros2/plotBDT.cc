@@ -2234,7 +2234,7 @@ void plotBDT::hackedMC() {
     cout << "dbx: " << fhMcMass[2+ic]->GetSumOfWeights() << endl;
     cout << "dbx: " << fhMcRatio[2+ic]->GetSumOfWeights() << endl;
     fhMcRatio[2+ic]->Draw("e");
-    fhMcRatio[2+ic]->SetMaximum(2.);  fhMcRatio[2+ic]->SetMinimum(0.);
+    fhMcRatio[2+ic]->SetMaximum(1.5);  fhMcRatio[2+ic]->SetMinimum(0.);
     fhMcRatio[2+ic]->Fit(fitstring.c_str(), "", "same"); 
     fhMcRatio[2+ic]->GetFunction(fitstring.c_str())->SetLineColor(kRed); 
     fhMcRatio[2+ic]->GetFunction(fitstring.c_str())->SetLineWidth(2); 
@@ -2245,7 +2245,7 @@ void plotBDT::hackedMC() {
     
     c0->cd(4);
     fhMcRatio[4+ic]->Draw("e");
-    fhMcRatio[4+ic]->SetMaximum(2.);  fhMcRatio[2]->SetMinimum(0.);
+    fhMcRatio[4+ic]->SetMaximum(1.5);  fhMcRatio[2]->SetMinimum(0.);
     fhMcRatio[4+ic]->Fit(fitstring.c_str(), "", "same"); 
     fhMcRatio[4+ic]->GetFunction(fitstring.c_str())->SetLineColor(kBlue); 
     fhMcRatio[4+ic]->GetFunction(fitstring.c_str())->SetLineWidth(2); 
@@ -2298,7 +2298,7 @@ void plotBDT::hackedMC() {
       if (2 == i) fhMcRatio1[2*i+ic]->SetAxisRange(5.4, 5.9, "X"); 
       
       setTitles(fhMcRatio1[2*i+ic], "m [GeV]", "ratio"); 
-      fhMcRatio1[2*i+ic]->SetMinimum(0.);    fhMcRatio1[2*i+ic]->SetMaximum(2.);
+      fhMcRatio1[2*i+ic]->SetMinimum(0.);    fhMcRatio1[2*i+ic]->SetMaximum(1.5);
       fhMcRatio1[2*i+ic]->Fit(func.c_str(), "", "e1");
       fhMcRatio2[2*i+ic]->Fit(func.c_str(), "", "same");
       if (fhMcRatio1[2*i+ic]->GetFunction(func.c_str())) fhMcRatio1[2*i+ic]->GetFunction(func.c_str())->SetLineColor(color); 
@@ -2461,7 +2461,7 @@ void plotBDT::hackedMCOld(int chan) {
 
   c0->cd(3);
   fhMcRatio[1]->Draw("e");
-  fhMcRatio[1]->SetMaximum(2.);  fhMcRatio[1]->SetMinimum(0.);
+  fhMcRatio[1]->SetMaximum(1.5);  fhMcRatio[1]->SetMinimum(0.);
   fhMcRatio[1]->Fit(fitstring.c_str(), "", "same"); 
   fhMcRatio[1]->GetFunction(fitstring.c_str())->SetLineColor(kRed); 
   fhMcRatio[1]->GetFunction(fitstring.c_str())->SetLineWidth(2); 
@@ -2472,7 +2472,7 @@ void plotBDT::hackedMCOld(int chan) {
 
   c0->cd(4);
   fhMcRatio[2]->Draw("e");
-  fhMcRatio[2]->SetMaximum(2.);  fhMcRatio[2]->SetMinimum(0.);
+  fhMcRatio[2]->SetMaximum(1.5);  fhMcRatio[2]->SetMinimum(0.);
   fhMcRatio[2]->Fit(fitstring.c_str(), "", "same"); 
   fhMcRatio[2]->GetFunction(fitstring.c_str())->SetLineColor(kBlue); 
   fhMcRatio[2]->GetFunction(fitstring.c_str())->SetLineWidth(2); 
@@ -2525,7 +2525,7 @@ void plotBDT::hackedMCOld(int chan) {
     if (2 == i) fhMcRatio1[i]->SetAxisRange(5.4, 5.9, "X"); 
 
     setTitles(fhMcRatio1[i], "m [GeV]", "ratio"); 
-    fhMcRatio1[i]->SetMinimum(0.);    fhMcRatio1[i]->SetMaximum(2.);
+    fhMcRatio1[i]->SetMinimum(0.);    fhMcRatio1[i]->SetMaximum(1.5);
     fhMcRatio1[i]->Fit(func.c_str(), "", "e1");
     fhMcRatio2[i]->Fit(func.c_str(), "", "same");
     if (fhMcRatio1[i]->GetFunction(func.c_str())) fhMcRatio1[i]->GetFunction(func.c_str())->SetLineColor(color); 

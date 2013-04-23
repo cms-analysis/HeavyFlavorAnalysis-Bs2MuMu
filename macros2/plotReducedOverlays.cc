@@ -354,11 +354,11 @@ void plotReducedOverlays::bookDistributions(string mode) {
 // ----------------------------------------------------------------------
 void plotReducedOverlays::sbsDistributions(string mode, string selection, string what) {
 
-  string sbsControlPlotsFileName = "ad";
+  string sbsControlPlotsFileName = Form("%d-ad", fYear);
   //  fHistFile->cd();
 
   AnalysisDistribution a(Form("%s_%s_muon1pt", fSetup.c_str(), mode.c_str())); 
-  a.fVerbose = 1; 
+  a.fVerbose = 0; 
   a.fControlPlotsFileName = sbsControlPlotsFileName;
   a.fDirectory = fDirectory;
 
@@ -370,8 +370,13 @@ void plotReducedOverlays::sbsDistributions(string mode, string selection, string
   double preco(5.15);
   if (string::npos != mode.find("CsData")) {
     preco = 5.2;
-    a.fMassPeak = 5.37;
-    a.fMassSigma = 0.06;
+    if (fSetup == "B") {
+      a.fMassPeak = 5.37;
+      a.fMassSigma = 0.06;
+    } else {
+      a.fMassPeak = 5.37;
+      a.fMassSigma = 0.06;
+    }
   } else {
     a.fMassPeak = 5.27;
     if (fSetup == "B") {
@@ -464,6 +469,7 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
   hpv2->Draw("samehist"); 
   tl->DrawLatex(0.15, 0.92, Form("Data: %3.2f#pm%3.2f", hpv1->GetMean(), hpv1->GetMeanError())); 
   tl->DrawLatex(0.6, 0.92, Form("MC: %3.2f#pm%3.2f", hpv2->GetMean(), hpv2->GetMeanError())); 
+
   c0->SaveAs(Form("%s/%s-systematics-npv_%s_%s_chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), sample1.c_str(), sample2.c_str(), chan)); 
 
 
@@ -525,7 +531,9 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
   legg->AddEntry(h2, Form("#varepsilon = %4.3f#pm%4.3f, %s", eps2, eps2E, text2.c_str()), "f");
   legg->Draw();
 
-  tl->DrawLatex(0.2, 0.92, Form("rel difference: %4.3f", rdeltaEps)); 
+  tl->SetTextSize(0.035); 
+  tl->DrawLatex(0.21, 0.70, Form("rel difference: %4.3f", rdeltaEps)); 
+  tl->DrawLatex(0.21, 0.65, Form("b> %4.3f", bdtCut)); 
 
   double yhi = 0.3*h1->GetMaximum();
   double ylo = 0.;

@@ -1019,7 +1019,7 @@ void plotResults::calculateSgNumbers(int chan) {
   fNumbersBs[chan]->fBgRslsBsE1 = fNumbersBs[chan]->fBgRslBsE1;
   fNumbersBs[chan]->fBgRslsBsE2 = fNumbersBs[chan]->fBgRslBsE2;
 
-  fNumbersBs[chan]->fBgRslsHi   = fBsSlBgExp;
+  fNumbersBs[chan]->fBgRslsHi   = fHiSlBgExp;
   fNumbersBs[chan]->fBgRslsHiE1 = fNumbersBs[chan]->fBgRslHiE1;
   fNumbersBs[chan]->fBgRslsHiE2 = fNumbersBs[chan]->fBgRslHiE2;
 

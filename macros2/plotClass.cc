@@ -111,8 +111,8 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   fDoApplyCowboyVetoAlsoInSignal = false; 
   fInvertedIso = false; 
   fNormProcessed = false; 
-  fSaveSmallTree = false;
-  fSaveLargerTree = true;
+  fSaveSmallTree = true;
+  fSaveLargerTree = false ;
 
   fCutsFileName = cuts; 
   init(files, cuts, dir, mode);
@@ -2041,7 +2041,7 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
 
     fpFunc->fLo = lo; //5.0;
     fpFunc->fHi = hi; //5.5;
-    lF1 = fpFunc->expoErrGaussLandau(h, 5.27, 0.056, pReco); 
+    lF1 = fpFunc->expoErrGaussLandau(h, 5.28, 0.056, pReco); 
     lF1->SetNpx(100000);
     lBg = fpFunc->expoErr(fpFunc->fLo, fpFunc->fHi); 
   }
@@ -3494,7 +3494,6 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("m2bpix",   &fb.m2bpix);
   t->SetBranchAddress("m1bpixl1", &fb.m1bpixl1);
   t->SetBranchAddress("m2bpixl1", &fb.m2bpixl1);
-  t->SetBranchAddress("w8mu",     &fb.w8mu); 
 
   t->SetBranchAddress("rr",     &fb.rr);
   t->SetBranchAddress("pvn",    &fb.pvn);
@@ -3508,8 +3507,6 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("gmuid",  &fb.gmuid);
   t->SetBranchAddress("gmumvaid", &fb.gmumvaid);
   t->SetBranchAddress("gtqual", &fb.gtqual);
-  t->SetBranchAddress("w8mu",   &fb.w8mu);
-  t->SetBranchAddress("w8tr",   &fb.w8tr);
   t->SetBranchAddress("tm",     &fb.tm);
   t->SetBranchAddress("procid", &fb.procid);
   t->SetBranchAddress("m",      &fb.m);
@@ -3755,7 +3752,7 @@ void plotClass::candAnalysis(int mode) {
 
   fW8 = 1.;
   if (fIsMC) {
-    fW8 = fb.w8mu; // be careful with this one: This is the product of the TNP single muon id efficiencies
+    fW8 = 0.;
     if (98 == mode) {
       double w1(1.), w2(1.); 
       // -- track 1

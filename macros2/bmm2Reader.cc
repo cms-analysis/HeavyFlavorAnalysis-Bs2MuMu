@@ -174,47 +174,47 @@ void bmm2Reader::readCuts(TString filename, int dump) {
       if (dump) cout << "JSON FILE:           " << JSONFILE << endl;
     }
 
-    if (!strcmp(className, "ptSgMUID")) {
-      char name[1000];
-      sscanf(buffer, "%s %s", className, name);
-      ptSgMUID = new PidTable(name); 
-      if (dump) cout << "Seagulls MUID:           " << name << endl;
-    }
+//     if (!strcmp(className, "ptSgMUID")) {
+//       char name[1000];
+//       sscanf(buffer, "%s %s", className, name);
+//       ptSgMUID = new PidTable(name); 
+//       if (dump) cout << "Seagulls MUID:           " << name << endl;
+//     }
 
-    if (!strcmp(className, "ptCbMUID")) {
-      char name[1000];
-      sscanf(buffer, "%s %s", className, name);
-      ptCbMUID = new PidTable(name); 
-      if (dump) cout << "Cowboys MUID:            " << name << endl;
-    }
+//     if (!strcmp(className, "ptCbMUID")) {
+//       char name[1000];
+//       sscanf(buffer, "%s %s", className, name);
+//       ptCbMUID = new PidTable(name); 
+//       if (dump) cout << "Cowboys MUID:            " << name << endl;
+//     }
 
-    if (!strcmp(className, "ptSgMUT1")) {
-      char name[1000];
-      sscanf(buffer, "%s %s", className, name);
-      ptSgMUT1 = new PidTable(name); 
-      if (dump) cout << "Seagulls MUT1:           " << name << endl;
-    }
+//     if (!strcmp(className, "ptSgMUT1")) {
+//       char name[1000];
+//       sscanf(buffer, "%s %s", className, name);
+//       ptSgMUT1 = new PidTable(name); 
+//       if (dump) cout << "Seagulls MUT1:           " << name << endl;
+//     }
 
-    if (!strcmp(className, "ptCbMUT1")) {
-      char name[1000];
-      sscanf(buffer, "%s %s", className, name);
-      ptCbMUT1 = new PidTable(name); 
-      if (dump) cout << "Cowboys MUT1:            " << name << endl;
-    }
+//     if (!strcmp(className, "ptCbMUT1")) {
+//       char name[1000];
+//       sscanf(buffer, "%s %s", className, name);
+//       ptCbMUT1 = new PidTable(name); 
+//       if (dump) cout << "Cowboys MUT1:            " << name << endl;
+//     }
 
-    if (!strcmp(className, "ptSgMUT2")) {
-      char name[1000];
-      sscanf(buffer, "%s %s", className, name);
-      ptSgMUT2 = new PidTable(name); 
-      if (dump) cout << "Seagulls MUT2:           " << name << endl;
-    }
+//     if (!strcmp(className, "ptSgMUT2")) {
+//       char name[1000];
+//       sscanf(buffer, "%s %s", className, name);
+//       ptSgMUT2 = new PidTable(name); 
+//       if (dump) cout << "Seagulls MUT2:           " << name << endl;
+//     }
 
-    if (!strcmp(className, "ptCbMUT2")) {
-      char name[1000];
-      sscanf(buffer, "%s %s", className, name);
-      ptCbMUT2 = new PidTable(name); 
-      if (dump) cout << "Cowboys MUT2:            " << name << endl;
-    }
+//     if (!strcmp(className, "ptCbMUT2")) {
+//       char name[1000];
+//       sscanf(buffer, "%s %s", className, name);
+//       ptCbMUT2 = new PidTable(name); 
+//       if (dump) cout << "Cowboys MUT2:            " << name << endl;
+//     }
 
     if (!strcmp(className, "muScaleCorrector")) {
       char name[1000];

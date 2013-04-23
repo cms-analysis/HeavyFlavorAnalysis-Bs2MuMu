@@ -115,34 +115,6 @@ void plotMisc::pidTableDisplay() {
   a->eff2d(h2);  h2->Draw("colztext");  c0->SaveAs(Form("%s/%d-fakeNegProtons.pdf", fDirectory.c_str(), fYear));
 
 
-//   PidTable *fptT1;
-//   PidTable *fptT2;
-//   PidTable *fptM; 
-
-//   PidTable *fptT1MC;
-//   PidTable *fptT2MC;
-//   PidTable *fptMMC; 
-
-//   // -- split into seagull and cowboys
-//   PidTable *fptSgT1;
-//   PidTable *fptSgT2;
-//   PidTable *fptSgM; 
-
-//   PidTable *fptSgT1MC;
-//   PidTable *fptSgT2MC;
-//   PidTable *fptSgMMC; 
-
-//   PidTable *fptCbT1;
-//   PidTable *fptCbT2;
-//   PidTable *fptCbM; 
-
-//   PidTable *fptCbT1MC;
-//   PidTable *fptCbT2MC;
-//   PidTable *fptCbMMC; 
-  
-//   PidTable *fptFakePosKaons, *fptFakePosPions, *fptFakePosProtons;
-//   PidTable *fptFakeNegKaons, *fptFakeNegPions, *fptFakeNegProtons;
-
   
 
 }

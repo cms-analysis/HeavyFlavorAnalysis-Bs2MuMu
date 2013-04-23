@@ -1,7 +1,6 @@
 #include "candAna.hh"
 
 #include "../interface/HFMasses.hh"
-#include "../../../AnalysisDataFormats/HeavyFlavorObjects/rootio/PidTable.hh"
 #include "../macros/AnalysisDistribution.hh"
 #include "MuScleFitCorrector.hh"
 
@@ -397,8 +396,8 @@ void candAna::candAnalysis() {
   fMu1rMvaId    = mvaMuon(p1, fMu1rBDT, false);
   fTrigMatchDeltaPt = 99.;
   fMu1TrigM     = doTriggerMatchingR(p1, true);
-  if (fTrigMatchDeltaPt > 0.05) fMu1TrigM *= -1.;
-  fMu1Id        = fMu1MvaId && (fMu1TrigM < 0.05) && (fMu1TrigM > 0); 
+  if (fTrigMatchDeltaPt > 0.1) fMu1TrigM *= -1.;
+  fMu1Id        = fMu1MvaId && (fMu1TrigM < 0.1) && (fMu1TrigM > 0); 
   if (HLTRANGE.begin()->first == "NOTRIGGER") fMu1Id = true; 
 
 
@@ -451,8 +450,8 @@ void candAna::candAnalysis() {
   fMu2rMvaId    = mvaMuon(p2, fMu2rBDT, false);
   fTrigMatchDeltaPt = 99.;
   fMu2TrigM     = doTriggerMatchingR(p2, true);
-  if (fTrigMatchDeltaPt > 0.05) fMu2TrigM *= -1.;
-  fMu2Id        = fMu2MvaId && (fMu2TrigM < 0.05) && (fMu2TrigM > 0); 
+  if (fTrigMatchDeltaPt > 0.1) fMu2TrigM *= -1.;
+  fMu2Id        = fMu2MvaId && (fMu2TrigM < 0.1) && (fMu2TrigM > 0); 
   if (HLTRANGE.begin()->first == "NOTRIGGER") fMu2Id = true; 
 
   fMu2Pt        = p2->fRefPlab.Perp(); 
@@ -535,25 +534,27 @@ void candAna::candAnalysis() {
   fCowboy = (p1->fQ*dphi > 0); 
 
   // -- Muon weights
-  PidTable *pT, *pT1, *pT2; 
-  if (fCowboy) {
-    pT = fpReader->ptCbMUID; 
-  } else {
-    pT = fpReader->ptSgMUID; 
-  }
-
-  fMu1W8Mu      = pT->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi);
-  fMu2W8Mu      = pT->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi);
+  //   PidTable *pT, *pT1, *pT2; 
+  //   if (fCowboy) {
+  //     pT = fpReader->ptCbMUID; 
+  //   } else {
+  //     pT = fpReader->ptSgMUID; 
+  //   }
   
-  if (fCowboy) {
-    pT1 = fpReader->ptCbMUT1;
-    pT2 = fpReader->ptCbMUT2;
-  } else {
-    pT1 = fpReader->ptSgMUT1;
-    pT2 = fpReader->ptSgMUT2;
-  }
-  fMu1W8Tr      = pT1->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi)*pT2->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi);
-  fMu2W8Tr      = pT1->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi)*pT2->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi);
+  //   fMu1W8Mu      = pT->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi);
+  //   fMu2W8Mu      = pT->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi);
+  
+  //   if (fCowboy) {
+  //     pT1 = fpReader->ptCbMUT1;
+  //     pT2 = fpReader->ptCbMUT2;
+  //   } else {
+  //     pT1 = fpReader->ptSgMUT1;
+  //     pT2 = fpReader->ptSgMUT2;
+  //   }
+  //   fMu1W8Tr      = pT1->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi)*pT2->effD(fMu1Pt, TMath::Abs(fMu1Eta), fMu1Phi);
+  //   fMu2W8Tr      = pT1->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi)*pT2->effD(fMu2Pt, TMath::Abs(fMu2Eta), fMu2Phi);
+
+  fMu1W8Mu = fMu2W8Mu = fMu1W8Tr = fMu2W8Tr = -2.;
 
   if (fCandTmi > -1) {
     pg2           = fpEvt->getGenTWithIndex(p2->fGenIndex);
@@ -1267,8 +1268,6 @@ void candAna::setupReducedTree(TTree *t) {
   t->Branch("gtqual",  &fGoodTracks,        "gtqual/O");
   t->Branch("gtpt",    &fGoodTracksPt,      "gtpt/O");
   t->Branch("gteta",   &fGoodTracksEta,     "gteta/O");
-  t->Branch("w8mu",    &fCandW8Mu,          "w8mu/D");
-  t->Branch("w8tr",    &fCandW8Tr,          "w8tr/D");
 
   // -- PV
   t->Branch("pvlip",    &fCandPvLip,        "pvlip/D");
