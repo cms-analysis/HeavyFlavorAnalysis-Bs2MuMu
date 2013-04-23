@@ -1,0 +1,19 @@
+TYPE          300054
+TRUTHCAND        413
+TRIGRANGE    ALLTRIGGER
+# -- special cuts
+DSTARTYPE 300054
+D0TYPE    300050
+MD0LO     1.815
+MD0HI     1.915
+DELTAM    0.01
+# -- boxes
++input cuts/boxes.cuts
+# -- tracks
++input cuts/tracks.cuts
+# -- muons
++input cuts/muons.cuts
+# -- candidate
++input cuts/candidate.cuts
+# -- bdt input
++input cuts/bdt.2011.cuts
