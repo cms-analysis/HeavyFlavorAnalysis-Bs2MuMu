@@ -314,54 +314,70 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   //   fptFakeNegProtons   = new PidTable("../macros/pidtables/130409/flat-proton.dat"); 
 
   if (2012 == fYear) {
-    fptT1     = new PidTable("../macros/pidtables/130104/L1L2_data_all.dat"); 	
-    fptT2     = new PidTable("../macros/pidtables/130104/L3_data_all.dat"); 
-    fptM      = new PidTable("../macros/pidtables/130104/MuonID_data_all.dat");
+    string name(""); 
+    string directory("../macros/pidtables/130104/"); 
+    name = directory + "L1L2_data_all.dat";        fptT1     = new PidTable(name.c_str());
+    name = directory + "L3_data_all.dat";          fptT2     = new PidTable(name.c_str());
+    name = directory + "MVATM_data_all.dat";       fptT3     = new PidTable(name.c_str());
+    name = directory + "MuonID_data_all.dat";      fptM      = new PidTable(name.c_str());
     
-    fptT1MC   = new PidTable("../macros/pidtables/130104/L1L2_mc_all.dat"); 	
-    fptT2MC   = new PidTable("../macros/pidtables/130104/L3_mc_all.dat"); 	
-    fptMMC    = new PidTable("../macros/pidtables/130104/MuonID_mc_all.dat");  
+    name = directory + "L1L2_mc_all.dat";          fptT1MC   = new PidTable(name.c_str()); 	
+    name = directory + "L3_mc_all.dat";            fptT2MC   = new PidTable(name.c_str()); 	
+    name = directory + "MVATM_mc_all.dat";         fptT3MC   = new PidTable(name.c_str());
+    name = directory + "MuonID_mc_all.dat";        fptMMC    = new PidTable(name.c_str());  
 
-    fptSgT1   = new PidTable("../macros/pidtables/130104/L1L2_data_seagulls.dat");  
-    fptSgT2   = new PidTable("../macros/pidtables/130104/L3_data_seagulls.dat");    
-    fptSgM    = new PidTable("../macros/pidtables/130104/MuonID_data_seagulls.dat");
+    name = directory + "L1L2_data_seagulls.dat";   fptSgT1   = new PidTable(name.c_str());  
+    name = directory + "L3_data_seagulls.dat";     fptSgT2   = new PidTable(name.c_str());    
+    name = directory + "MVATM_data_seagulls.dat";  fptSgT3   = new PidTable(name.c_str());
+    name = directory + "MuonID_data_seagulls.dat"; fptSgM    = new PidTable(name.c_str());
     
-    fptSgT1MC = new PidTable("../macros/pidtables/130104/L1L2_mc_seagulls.dat");    
-    fptSgT2MC = new PidTable("../macros/pidtables/130104/L3_mc_seagulls.dat");      
-    fptSgMMC  = new PidTable("../macros/pidtables/130104/MuonID_mc_seagulls.dat");  
+    name = directory + "L1L2_mc_seagulls.dat";     fptSgT1MC = new PidTable(name.c_str());    
+    name = directory + "L3_mc_seagulls.dat";       fptSgT2MC = new PidTable(name.c_str());      
+    name = directory + "MVATM_mc_seagulls.dat";    fptSgT3MC = new PidTable(name.c_str());
+    name = directory + "MuonID_mc_seagulls.dat";   fptSgMMC  = new PidTable(name.c_str());  
 
-    fptCbT1   = new PidTable("../macros/pidtables/130104/L1L2_data_cowboys.dat");  
-    fptCbT2   = new PidTable("../macros/pidtables/130104/L3_data_cowboys.dat");    
-    fptCbM    = new PidTable("../macros/pidtables/130104/MuonID_data_cowboys.dat");
+    name = directory + "L1L2_data_cowboys.dat";    fptCbT1   = new PidTable(name.c_str());  
+    name = directory + "L3_data_cowboys.dat";      fptCbT2   = new PidTable(name.c_str());    
+    name = directory + "MVATM_data_cowboys.dat";   fptCbT3   = new PidTable(name.c_str());
+    name = directory + "MuonID_data_cowboys.dat";  fptCbM    = new PidTable(name.c_str());
     
-    fptCbT1MC = new PidTable("../macros/pidtables/130104/L1L2_mc_cowboys.dat");    
-    fptCbT2MC = new PidTable("../macros/pidtables/130104/L3_mc_cowboys.dat");      
-    fptCbMMC  = new PidTable("../macros/pidtables/130104/MuonID_mc_cowboys.dat");  
+    name = directory + "L1L2_mc_cowboys.dat";      fptCbT1MC = new PidTable(name.c_str());    
+    name = directory + "L3_mc_cowboys.dat";        fptCbT2MC = new PidTable(name.c_str());      
+    name = directory + "MVATM_mc_cowboys.dat";     fptCbT3MC = new PidTable(name.c_str());
+    name = directory + "MuonID_mc_cowboys.dat";    fptCbMMC  = new PidTable(name.c_str());  
 
   } else {
-    fptT1     = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo.dat"); 	
-    fptT2     = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.dat"); 	
-    fptM      = new PidTable("../macros/pidtables/111210/MuonID_VBTF_data_all_histo.dat"); 
-    
-    fptT1MC   = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo.dat"); 	
-    fptT2MC   = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.dat"); 	
-    fptMMC    = new PidTable("../macros/pidtables/111210/MuonID_VBTF_datalike_mc_histo.dat"); 
+    string name(""); 
+    string directory("../macros/pidtables/111210/"); 
+    name = directory + "L1L2Efficiency_VBTF_data_all_histo.dat";       fptT1     = new PidTable(name.c_str()); 	
+    name = directory + "L3Efficiency_VBTF_data_all_histo.dat";         fptT2     = new PidTable(name.c_str()); 	
+    name = directory + "flat1.dat";                                    fptT3     = new PidTable(name.c_str()); 	
+    name = directory + "MuonID_VBTF_data_all_histo.dat";               fptM      = new PidTable(name.c_str()); 
 
-    fptSgT1   = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo_sg.dat");  
-    fptSgT2   = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.dat");    
-    fptSgM    = new PidTable("../macros/pidtables/111210/MuonID_VBTF_data_all_histo_sg.dat");
-    
-    fptSgT1MC = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo_sg.dat");    
-    fptSgT2MC = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.dat");      
-    fptSgMMC  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_datalike_mc_histo_sg.dat");  
+    name = directory + "L1L2Efficiency_VBTF_datalike_mc_histo.dat";    fptT1MC   = new PidTable(name.c_str()); 	
+    name = directory + "L3Efficiency_VBTF_datalike_mc_histo.dat";      fptT2MC   = new PidTable(name.c_str()); 	
+    name = directory + "flat1.dat";                                    fptT3MC   = new PidTable(name.c_str()); 	
+    name = directory + "MuonID_VBTF_datalike_mc_histo.dat";            fptMMC    = new PidTable(name.c_str()); 
 
-    fptCbT1   = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_data_all_histo_cb.dat");  
-    fptCbT2   = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_data_all_histo.dat");    
-    fptCbM    = new PidTable("../macros/pidtables/111210/MuonID_VBTF_data_all_histo_cb.dat");
+    name = directory + "L1L2Efficiency_VBTF_data_all_histo_sg.dat";    fptSgT1   = new PidTable(name.c_str());  
+    name = directory + "L3Efficiency_VBTF_data_all_histo.dat";         fptSgT2   = new PidTable(name.c_str());    
+    name = directory + "flat1.dat";                                    fptSgT3   = new PidTable(name.c_str());    
+    name = directory + "MuonID_VBTF_data_all_histo_sg.dat";            fptSgM    = new PidTable(name.c_str());
     
-    fptCbT1MC = new PidTable("../macros/pidtables/111210/L1L2Efficiency_VBTF_datalike_mc_histo_cb.dat");    
-    fptCbT2MC = new PidTable("../macros/pidtables/111210/L3Efficiency_VBTF_datalike_mc_histo.dat");      
-    fptCbMMC  = new PidTable("../macros/pidtables/111210/MuonID_VBTF_datalike_mc_histo_cb.dat");  
+    name = directory + "L1L2Efficiency_VBTF_datalike_mc_histo_sg.dat"; fptSgT1MC = new PidTable(name.c_str());    
+    name = directory + "L3Efficiency_VBTF_datalike_mc_histo.dat";      fptSgT2MC = new PidTable(name.c_str());      
+    name = directory + "flat1.dat";                                    fptSgT3MC = new PidTable(name.c_str());      
+    name = directory + "MuonID_VBTF_datalike_mc_histo_sg.dat";         fptSgMMC  = new PidTable(name.c_str());  
+
+    name = directory + "L1L2Efficiency_VBTF_data_all_histo_cb.dat";    fptCbT1   = new PidTable(name.c_str());  
+    name = directory + "L3Efficiency_VBTF_data_all_histo.dat";         fptCbT2   = new PidTable(name.c_str());    
+    name = directory + "flat1.dat";                                    fptCbT3   = new PidTable(name.c_str());    
+    name = directory + "MuonID_VBTF_data_all_histo_cb.dat";            fptCbM    = new PidTable(name.c_str());
+    
+    name = directory + "L1L2Efficiency_VBTF_datalike_mc_histo_cb.dat"; fptCbT1MC = new PidTable(name.c_str());    
+    name = directory + "L3Efficiency_VBTF_datalike_mc_histo.dat";      fptCbT2MC = new PidTable(name.c_str());      
+    name = directory + "flat1.dat";                                    fptCbT3MC = new PidTable(name.c_str());      
+    name = directory + "MuonID_VBTF_datalike_mc_histo_cb.dat";         fptCbMMC  = new PidTable(name.c_str());  
   }
 
   fNumbersFileName = fDirectory + "/anaBmm.plotClass." + fSuffix + ".tex";
@@ -3634,11 +3650,7 @@ void plotClass::candAnalysis(int mode) {
   fGoodTracksPt   = true;
   fGoodTracksEta  = true;
 
-  TLorentzVector vm1, vm2;
-  vm1.SetPtEtaPhiM(fb.m1pt, fb.m1eta, fb.m1phi, MMUON);
-  vm2.SetPtEtaPhiM(fb.m2pt, fb.m2eta, fb.m2phi, MMUON);
-  double dphi = vm1.DeltaPhi(vm2); 
-  fIsCowboy = (fb.m1q*dphi > 0); 
+  fIsCowboy = fb.cb;
 
   if (fIsMC) {
     if (fb.g1pt < fAccPt) fGoodAcceptance = false; 
@@ -3751,31 +3763,86 @@ void plotClass::candAnalysis(int mode) {
   //  fGoodMuonsID    = fb.gmumvaid && fb.hltm;
 
   fW8 = 1.;
+  fW8MmuID = fW8Mtrig = fW8DmuID = fW8Dtrig = -1.;
+  double w1(-1.), w2(-1.); 
+  
   if (fIsMC) {
-    fW8 = 0.;
+    PidTable *pT, *pT1, *pT2, *pT3; 
+
+    // -- Weights with data PidTables
+    if (fIsCowboy) {
+      pT  = fptCbM; 
+      pT1 = fptCbT1;
+      pT2 = fptCbT2;
+      pT3 = fptCbT3;
+    } else {
+      pT  = fptSgM; 
+      pT1 = fptSgT1;
+      pT2 = fptSgT2;
+      pT3 = fptSgT3;
+    }
+
+    double am1eta = TMath::Abs(fb.m1eta);
+    double am2eta = TMath::Abs(fb.m2eta);
+
+    w1       = pT->effD(fb.m1pt, am1eta, fb.m1phi);
+    w2       = pT->effD(fb.m2pt, am2eta, fb.m2phi);
+    fW8DmuID = w1*w2; 
+    
+    w1       = pT1->effD(fb.m1pt, am1eta, fb.m1phi) * pT2->effD(fb.m1pt, am1eta, fb.m1phi) * pT3->effD(fb.m1pt, am1eta, fb.m1phi);
+    w2       = pT1->effD(fb.m2pt, am2eta, fb.m2phi) * pT2->effD(fb.m2pt, am2eta, fb.m2phi) * pT3->effD(fb.m2pt, am2eta, fb.m2phi);
+    fW8Dtrig = w1*w2; 
+
+    // -- Weights with MC PidTables
+    if (fIsCowboy) {
+      pT  = fptCbMMC; 
+      pT1 = fptCbT1MC;
+      pT2 = fptCbT2MC;
+      pT3 = fptCbT3MC;
+    } else {
+      pT  = fptSgMMC; 
+      pT1 = fptSgT1MC;
+      pT2 = fptSgT2MC;
+      pT3 = fptSgT3MC;
+    }
+
+    w1       = pT->effD(fb.m1pt, am1eta, fb.m1phi);
+    w2       = pT->effD(fb.m2pt, am2eta, fb.m2phi);
+    fW8MmuID = w1*w2; 
+    
+    w1       = pT1->effD(fb.m1pt, am1eta, fb.m1phi) * pT2->effD(fb.m1pt, am1eta, fb.m1phi) * pT3->effD(fb.m1pt, am1eta, fb.m1phi);
+    w2       = pT1->effD(fb.m2pt, am2eta, fb.m2phi) * pT2->effD(fb.m2pt, am2eta, fb.m2phi) * pT3->effD(fb.m2pt, am2eta, fb.m2phi);
+    fW8Mtrig = w1*w2; 
+
     if (98 == mode) {
-      double w1(1.), w2(1.); 
+      w1 = w2 = -1.;
       // -- track 1
-      if (  321 == fb.g1id) w1 = fptFakePosKaons->effD(fb.m1pt, TMath::Abs(fb.m1eta), 1.);
-      if ( -321 == fb.g1id) w1 = fptFakeNegKaons->effD(fb.m1pt, TMath::Abs(fb.m1eta), 1.);
+      if (  13 == fb.g1id) w1 = pT->effD(fb.m1pt, am1eta, 1.);
+      if ( -13 == fb.g1id) w1 = pT->effD(fb.m1pt, am1eta, 1.);
 
-      if (  211 == fb.g1id) w1 = fptFakePosPions->effD(fb.m1pt, TMath::Abs(fb.m1eta), 1.);
-      if ( -211 == fb.g1id) w1 = fptFakeNegPions->effD(fb.m1pt, TMath::Abs(fb.m1eta), 1.);
+      if (  321 == fb.g1id) w1 = fptFakePosKaons->effD(fb.m1pt, am1eta, 1.);
+      if ( -321 == fb.g1id) w1 = fptFakeNegKaons->effD(fb.m1pt, am1eta, 1.);
 
-      if ( 2212 == fb.g1id) w1 = fptFakePosProtons->effD(fb.m1pt, TMath::Abs(fb.m1eta), 1.);
-      if (-2212 == fb.g1id) w1 = fptFakeNegProtons->effD(fb.m1pt, TMath::Abs(fb.m1eta), 1.);
+      if (  211 == fb.g1id) w1 = fptFakePosPions->effD(fb.m1pt, am1eta, 1.);
+      if ( -211 == fb.g1id) w1 = fptFakeNegPions->effD(fb.m1pt, am1eta, 1.);
+
+      if ( 2212 == fb.g1id) w1 = fptFakePosProtons->effD(fb.m1pt, am1eta, 1.);
+      if (-2212 == fb.g1id) w1 = fptFakeNegProtons->effD(fb.m1pt, am1eta, 1.);
 
       // -- track 2
-      if (  321 == fb.g2id) w2 = fptFakePosKaons->effD(fb.m2pt, TMath::Abs(fb.m2eta), 1.);
-      if ( -321 == fb.g2id) w2 = fptFakeNegKaons->effD(fb.m2pt, TMath::Abs(fb.m2eta), 1.);
+      if (  13 == fb.g2id) w2 = pT->effD(fb.m2pt, am2eta, 1.);
+      if ( -13 == fb.g2id) w2 = pT->effD(fb.m2pt, am2eta, 1.);
 
-      if (  211 == fb.g2id) w2 = fptFakePosPions->effD(fb.m2pt, TMath::Abs(fb.m2eta), 1.);
-      if ( -211 == fb.g2id) w2 = fptFakeNegPions->effD(fb.m2pt, TMath::Abs(fb.m2eta), 1.);
+      if (  321 == fb.g2id) w2 = fptFakePosKaons->effD(fb.m2pt, am1eta, 1.);
+      if ( -321 == fb.g2id) w2 = fptFakeNegKaons->effD(fb.m2pt, am2eta, 1.);
 
-      if ( 2212 == fb.g2id) w2 = fptFakePosProtons->effD(fb.m2pt, TMath::Abs(fb.m2eta), 1.);
-      if (-2212 == fb.g2id) w2 = fptFakeNegProtons->effD(fb.m2pt, TMath::Abs(fb.m2eta), 1.);
+      if (  211 == fb.g2id) w2 = fptFakePosPions->effD(fb.m2pt, am1eta, 1.);
+      if ( -211 == fb.g2id) w2 = fptFakeNegPions->effD(fb.m2pt, am2eta, 1.);
 
-      fW8 = w1*w2; 
+      if ( 2212 == fb.g2id) w2 = fptFakePosProtons->effD(fb.m2pt, am1eta, 1.);
+      if (-2212 == fb.g2id) w2 = fptFakeNegProtons->effD(fb.m2pt, am2eta, 1.);
+
+      fW8MisId = w1*w2; 
     }
 
   }

@@ -357,7 +357,7 @@ public:
   bool fGoodQ, fGoodPvAveW8, fGoodLip, fGoodLipS, fGoodIp, fGoodIpS, fGoodMaxDoca, fGoodPt, fGoodEta, fGoodAlpha, fGoodFLS, fGoodChi2, fGoodIso;
   bool fGoodCloseTrack, fGoodDocaTrk, fGoodJpsiCuts, fGoodLastCut; 
 
-  double fW8;
+  double fW8, fW8MisId, fW8MmuID, fW8Mtrig, fW8DmuID, fW8Dtrig;
 
   int fRunMin, fRunMax; // if you want to look at a specific run range
   
@@ -367,29 +367,23 @@ public:
   bool fSaveSmallTree, fSaveLargerTree; 
   bool fIsCowboy;
 
-  PidTable *fptT1;
-  PidTable *fptT2;
+  PidTable *fptT1, *fptT2, *fptT3; 
   PidTable *fptM; 
 
-  PidTable *fptT1MC;
-  PidTable *fptT2MC;
+  PidTable *fptT1MC, *fptT2MC, *fptT3MC;
   PidTable *fptMMC; 
 
   // -- split into seagull and cowboys
-  PidTable *fptSgT1;
-  PidTable *fptSgT2;
+  PidTable *fptSgT1, *fptSgT2, *fptSgT3;
   PidTable *fptSgM; 
 
-  PidTable *fptSgT1MC;
-  PidTable *fptSgT2MC;
+  PidTable *fptSgT1MC, *fptSgT2MC, *fptSgT3MC;
   PidTable *fptSgMMC; 
 
-  PidTable *fptCbT1;
-  PidTable *fptCbT2;
+  PidTable *fptCbT1, *fptCbT2, *fptCbT3;
   PidTable *fptCbM; 
 
-  PidTable *fptCbT1MC;
-  PidTable *fptCbT2MC;
+  PidTable *fptCbT1MC, *fptCbT2MC, *fptCbT3MC;
   PidTable *fptCbMMC; 
   
   PidTable *fptFakePosKaons, *fptFakePosPions, *fptFakePosProtons;

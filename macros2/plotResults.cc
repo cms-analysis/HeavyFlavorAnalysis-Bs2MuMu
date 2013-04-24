@@ -552,6 +552,14 @@ void plotResults::calculateRareBgNumbers(int chan) {
   colors.insert(make_pair(cname, 34)); hatches.insert(make_pair(cname, 3008)); mscale.insert(make_pair(cname, epsKa[chan]*epsMu[chan])); 
   err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2[chan]))); 
 
+//   cname = "bgBs2PhiMuMu";
+//   colors.insert(make_pair(cname,35));hatches.insert(make_pair(cname,3006));mscale.insert(make_pair(cname,epsMu[chan]*epsMu[chan]));
+//   err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
+
+  cname = "bgBs2MuMuGamma";
+  colors.insert(make_pair(cname, 36));hatches.insert(make_pair(cname, 3009));mscale.insert(make_pair(cname, epsPi[chan]*epsMu[chan]));
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan]))); 
+
 
   cname = "bgBd2KK";
   colors.insert(make_pair(cname, 40)); hatches.insert(make_pair(cname, 3004)); mscale.insert(make_pair(cname, epsKa[chan]*epsKa[chan])); 
@@ -569,22 +577,23 @@ void plotResults::calculateRareBgNumbers(int chan) {
   colors.insert(make_pair(cname, 43));hatches.insert(make_pair(cname, 3008));mscale.insert(make_pair(cname, epsPi[chan]*epsMu[chan]));
   err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan]))); 
 
+  cname = "bgBd2Pi0MuMu";
+  colors.insert(make_pair(cname, 44));hatches.insert(make_pair(cname, 3003));mscale.insert(make_pair(cname, epsPi[chan]*epsMu[chan]));
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan]))); 
+
+  cname = "bgBd2MuMuGamma";
+  colors.insert(make_pair(cname, 45));hatches.insert(make_pair(cname, 3002));mscale.insert(make_pair(cname, epsPi[chan]*epsMu[chan]));
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan]))); 
+
 
   cname = "bgBu2PiMuMu";
   colors.insert(make_pair(cname, 50));hatches.insert(make_pair(cname, 3004));mscale.insert(make_pair(cname, epsMu[chan]*epsMu[chan]));
   err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
 
   cname = "bgBu2KMuMu";
-  colors.insert(make_pair(cname, 51));hatches.insert(make_pair(cname, 3005));mscale.insert(make_pair(cname, epsMu[chan]*epsMu[chan]));
-  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
-
-  cname = "bgBu2KMuMu";
   colors.insert(make_pair(cname, 52));hatches.insert(make_pair(cname, 3005));mscale.insert(make_pair(cname, epsMu[chan]*epsMu[chan]));
   err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
 
-  cname = "bgBs2PhiMuMu";
-  colors.insert(make_pair(cname,53));hatches.insert(make_pair(cname,3006));mscale.insert(make_pair(cname,epsMu[chan]*epsMu[chan]));
-  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
 
   newLegend(0.55, 0.3, 0.80, 0.85); 
   TLegend *leggsl = new TLegend(0.55, 0.3, 0.80, 0.85); 
@@ -721,7 +730,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
     hRare->SetFillColor(colors[fRareName]);
     hRare->SetFillStyle(1000);
     
-    if (string::npos != fRareName.find("Nu")) {
+    if ((string::npos != fRareName.find("Nu")) || (string::npos != fRareName.find("MuMu"))) {
       cout << "&&&&&&&&&&&&&&&&& adding to bslRare: " << fRareName << endl;
       bslRare->Add(hRare); 
       hslRareBg->Add(hRare); 
@@ -1575,52 +1584,21 @@ void plotResults::loopFunction1(int mode) {
   fhMassWithAnaCuts[fChan]->Fill(mass); 
   fhMassWithAnaCutsManyBins[fChan]->Fill(mass); 
 
-  double tr1w8(0.), tr2w8(0.), trw8(0.), m1w8(0.), m2w8(0.), mw8(0.0);
   // -- muon ID: Data PidTables
-  m1w8 = fptM->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
-  m2w8 = fptM->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
-  mw8  = m1w8*m2w8; 
-  fhMuId[fChan]->Fill(mw8); 
-  
+  fhMuId[fChan]->Fill(fW8DmuID); 
   // -- muon ID: MC PidTables
-  m1w8 = fptMMC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
-  m2w8 = fptMMC->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
-  mw8  = m1w8*m2w8; 
-  if (mw8 > 0.) {
-    fhMuIdMC[fChan]->Fill(mw8, 1./mw8); 
-  }
-
+  fhMuIdMC[fChan]->Fill(fW8MmuID); 
   // -- muon trigger: Data PidTables
-  tr1w8 = fptT1->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*fptT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
-  tr2w8 = fptT1->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.)*fptT2->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
-  trw8  = tr1w8*tr2w8; 
-  if (bs2jpsiphi || bp2jpsikp) {
-    if (fb.rr >= 3) {
-      if (TMath::Abs(fb.m1eta) > 2.2) trw8 = 0; 
-      if (TMath::Abs(fb.m2eta) > 2.2) trw8 = 0; 
-    }
-  }
-  fhMuTr[fChan]->Fill(trw8); 
-  
+  fhMuTr[fChan]->Fill(fW8Dtrig); 
   // -- muon trigger: MC PidTables
-  tr1w8 = fptT1MC->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.)*fptT2->effD(fb.m1pt, TMath::Abs(fb.m1eta), 0.);
-  tr2w8 = fptT1MC->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.)*fptT2->effD(fb.m2pt, TMath::Abs(fb.m2eta), 0.);
-  trw8  = tr1w8*tr2w8; 
-  if (bs2jpsiphi || bp2jpsikp) {
-    if (fb.rr >= 3) {
-      if (TMath::Abs(fb.m1eta) > 2.2) trw8 = 0; 
-      if (TMath::Abs(fb.m2eta) > 2.2) trw8 = 0; 
-    }
-  }
-  fhMuTrMC[fChan]->Fill(trw8); 
-
+  fhMuTrMC[fChan]->Fill(fW8Mtrig); 
 
   // -- weighted with fake rate
-  fhW8MassWithAllCuts[fChan]->Fill(mass, fW8);
+  fhW8MassWithAllCuts[fChan]->Fill(mass, fW8MisId);
   if (5 == mode && !(5.2 < mass && mass < 5.45)) {
-    fhW8MassWithAllCutsBlind[fChan]->Fill(mass, fW8);
+    fhW8MassWithAllCutsBlind[fChan]->Fill(mass, fW8MisId);
   }
-  fhW8MassWithAllCutsManyBins[fChan]->Fill(mass, fW8);
+  fhW8MassWithAllCutsManyBins[fChan]->Fill(mass, fW8MisId);
 
   // -- MUON ID
   if (false == fb.gmuid) return;
@@ -1640,7 +1618,7 @@ void plotResults::loopFunction1(int mode) {
   fhMassWithAllCutsManyBins[fChan]->Fill(mass); 
   
   fhNorm[fChan]->Fill(mass);
-    fhNormC[fChan]->Fill(fb.cm);
+  fhNormC[fChan]->Fill(fb.cm);
   fhDstarPi[fChan]->Fill(mass);
   
   //FIXME  if (!fDoUseBDT) elist->Enter(jentry); 

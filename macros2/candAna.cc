@@ -398,6 +398,7 @@ void candAna::candAnalysis() {
   fMu1TrigM     = doTriggerMatchingR(p1, true);
   if (fTrigMatchDeltaPt > 0.1) fMu1TrigM *= -1.;
   fMu1Id        = fMu1MvaId && (fMu1TrigM < 0.1) && (fMu1TrigM > 0); 
+  fMu1Id        = fMu1MvaId;
   if (HLTRANGE.begin()->first == "NOTRIGGER") fMu1Id = true; 
 
 
@@ -452,6 +453,7 @@ void candAna::candAnalysis() {
   fMu2TrigM     = doTriggerMatchingR(p2, true);
   if (fTrigMatchDeltaPt > 0.1) fMu2TrigM *= -1.;
   fMu2Id        = fMu2MvaId && (fMu2TrigM < 0.1) && (fMu2TrigM > 0); 
+  fMu2Id        = fMu2MvaId;
   if (HLTRANGE.begin()->first == "NOTRIGGER") fMu2Id = true; 
 
   fMu2Pt        = p2->fRefPlab.Perp(); 
@@ -3189,8 +3191,26 @@ double candAna::doTriggerMatchingR(TAnaTrack *pt, bool anyTrig) {
     // the label changes according to datataking era, so we need to distinguish them
     bool selected = false;
 
+#define OLD_MATCH
     if ( anyTrig ) {
-      
+#ifndef OLD_MATCH
+      // Use the already selected objects
+      if ( tto->fNumber > -1 ) {selected = true;}
+#else
+
+      if ( fYear==2012) {
+	 //{if( tto->fLabel.Contains("L3") && (tto->fLabel.Contains("mu")  || tto->fLabel.Contains("Mu")) ) selected = true;}
+	if( (tto->fLabel.Contains("mu")  || tto->fLabel.Contains("Mu")) ) {
+	  selected = true;
+	}
+      } else { // 2011 cannot do Mu.AND.L3, some triger do not have it in the name
+	if( (tto->fLabel.Contains("mu")||tto->fLabel.Contains("Mu")||tto->fLabel.Contains("Jpsi")||
+	     tto->fLabel.Contains("Displaced")||tto->fLabel.Contains("Vertex")||tto->fLabel.Contains("LowMass"))
+	    ) {
+	  selected = true;
+	}
+      }
+#endif      
       // Use the already selected objects 
       if ( tto->fNumber > -1 ) {selected = true;}
       
