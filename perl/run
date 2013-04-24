@@ -47,7 +47,7 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('Cc:dD:j:m:q:r:R:t:v:x:');
+getopts('Cc:dD:l:m:q:r:R:t:v:x:');
 
 # -- User setup
 my $user  = $ENV{'USER'};
@@ -66,6 +66,11 @@ my $SRMCP = "\"lcg-cp -b -D srmv2\"";
 if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 -globus_tcp_port_range 20000,25000\"";}
 if ($opt_m eq "batch") {$SRMCP = "\"srmcp -2 --streams_num=1\"";}
 if ($opt_m eq "batch") {$SRMCP = "\"lcg-cp -b -D srmv2\"";}
+
+my $jobsList = "jobs.list"; 
+if ($opt_l) {
+    $jobsList = $opt_l;
+}
 
 if (!-e "$glite") {
     print "$glite does not exist, using /shome/ursl/grid/glite.conf\n";
@@ -115,8 +120,8 @@ my $pwd = `pwd`;
 chop($pwd); 
 
 # -- Make sure that the combined jobs.list exist
-if (!(-e "../jobs.list")) { 
-    open(TMP, ">../jobs.list"); 
+if (!(-e "../$jobsList")) { 
+    open(TMP, ">../$jobsList"); 
     print TMP "###Submitted Job Ids###\n";
     close(TMP); 
 }
@@ -148,15 +153,15 @@ foreach $jobfile (@ARGV) {
     if ($opt_C) {
 	if (-e "$tdir/NOK") {
 	    print "resubmitting $job\n";
-	    # -- remove old entry in jobs.list
-	    $https = `/bin/grep https $tdir/jobs.list`; chop($https); 	    
+	    # -- remove old entry in $jobsList
+	    $https = `/bin/grep https $tdir/$jobsList`; chop($https); 	    
 	    if ($opt_d) {
-		if ($opt_m eq "grid") {print "would remove from jobs.list: $https \n";}
-		print "would remove from jobs.list: $tdir \n";
+		if ($opt_m eq "grid") {print "would remove from $jobsList: $https \n";}
+		print "would remove from $jobsList: $tdir \n";
 		next;
 	    } else {
-		if ($opt_m eq "grid") {&remove("jobs.list", $https); }
-		&remove("jobs.list", $tdir); # this will also remove the sge lines which contain $tdir
+		if ($opt_m eq "grid") {&remove("$jobsList", $https); }
+		&remove("$jobsList", $tdir); # this will also remove the sge lines which contain $tdir
 	    }
 	} else {
 	    next; 
@@ -211,29 +216,29 @@ foreach $jobfile (@ARGV) {
 	    $sgeName =~ s/\ //g;
 	    print "Submitted ->$sgeNumber<- with name ->$sgeName<-\n";
 
-	    open(IN, ">>jobs.list") || die "Cannot open jobs.list\n";
+	    open(IN, ">>$jobsList") || die "Cannot open $jobsList\n";
 	    print IN "###Submitted Job Ids###\n";
 	    print IN "sge $tdir \n";
 	    print IN "\# $timeStamp $pwd/$tdir $sgeName $sgeNumber\n"; 
 	    close(IN); 
-	    system("/usr/bin/tail -2 jobs.list >> ../jobs.list");
+	    system("/usr/bin/tail -2 $jobsList >> ../$jobsList");
 	}
     } elsif ($opt_m eq "grid") {
 	if ($opt_d) {
 	    print "grid running: $job.jdl\n";
-	    print("glite-wms-job-submit -o jobs.list $rb -a --config $glite $job.jdl\n"); 
+	    print("glite-wms-job-submit -o $jobsList $rb -a --config $glite $job.jdl\n"); 
 	} else {
 	    if ($opt_D eq "unl.edu") {
-		 print("glite-wms-job-submit -o jobs.list -a $rb --config $glite $job.jdl\n"); 
-		system("glite-wms-job-submit -o jobs.list -a $rb --config $glite $job.jdl"); 
+		 print("glite-wms-job-submit -o $jobsList -a $rb --config $glite $job.jdl\n"); 
+		system("glite-wms-job-submit -o $jobsList -a $rb --config $glite $job.jdl"); 
 	    } else {
-  		 print("glite-wms-job-submit -o jobs.list -a $rb --config $glite $job.jdl\n"); 
-		system("glite-wms-job-submit -o jobs.list -a $rb --config $glite $job.jdl"); 
+  		 print("glite-wms-job-submit -o $jobsList -a $rb --config $glite $job.jdl\n"); 
+		system("glite-wms-job-submit -o $jobsList -a $rb --config $glite $job.jdl"); 
 	    }
-	    open(IN, ">>jobs.list") || die "Cannot open jobs.list\n";
+	    open(IN, ">>$jobsList") || die "Cannot open $jobsList\n";
 	    print IN "\# $timeStamp $pwd/$tdir $job.jdl\n"; 
 	    close(IN); 
-	    system("/usr/bin/tail -2 jobs.list >> ../jobs.list");
+	    system("/usr/bin/tail -2 $jobsList >> ../$jobsList");
 	}
     }
 

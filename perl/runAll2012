@@ -34,7 +34,7 @@ use lib '/shome/ursl/perl/modules/Tie-IxHash-1.23/lib';
 use Tie::IxHash;
 
 use Getopt::Std;
-getopts('aCdhj:m:q:r:s:t:v:');
+getopts('aCdhj:l:m:q:r:s:t:v:');
 
 # -- no input needed from this script ...
 if ($opt_a) {
@@ -45,6 +45,11 @@ if ($opt_a) {
 my $job = "2012";
 if ($opt_j) {
     $job = $opt_j; 
+}
+
+my $jobsList = "jobs.list";
+if ($opt_l) {
+    $jobsList = $opt_l; 
 }
 
 if ($opt_v) {
@@ -89,9 +94,9 @@ my $scratch = "/scratch/$scrtuser";
 my $srm     = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store";
 my $storage = "$srm/user/$user/$rootdir";
 
-my $runCommand = "run $crash -c ../../treeNoCompSpecialRoot.csh -t $tarfile -m batch";
+my $runCommand = "run -l $jobsList $crash -c ../../treeNoCompSpecialRoot.csh -t $tarfile -m batch";
 if ($opt_d) {
-    $runCommand = "run -d $crash -c ../../treeNoCompSpecialRoot.csh -t $tarfile -m batch";
+    $runCommand = "run -d -l $jobsList $crash -c ../../treeNoCompSpecialRoot.csh -t $tarfile -m batch";
 }
 
 
