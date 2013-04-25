@@ -292,7 +292,7 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   }
 
 
-  if (1) {
+  if (0) {
     fptFakePosKaons     = new PidTable("../macros/pidtables/130409/flat-kaon.dat"); 
     fptFakeNegKaons     = new PidTable("../macros/pidtables/130409/flat-kaon.dat"); 
     
@@ -303,17 +303,18 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
     fptFakeNegProtons   = new PidTable("../macros/pidtables/130409/flat-proton.dat"); 
   }
 
-  // -- this if for testing
-  //   fptFakePosKaons     = new PidTable("../macros/pidtables/130409/flat-kaon.dat"); 
-  //   fptFakeNegKaons     = new PidTable("../macros/pidtables/130409/flat-kaon.dat"); 
-  
-  //   fptFakePosPions     = new PidTable("../macros/pidtables/130409/flat-pion.dat"); 
-  //   fptFakeNegPions     = new PidTable("../macros/pidtables/130409/flat-pion.dat"); 
-  
-  //   fptFakePosProtons   = new PidTable("../macros/pidtables/130409/flat-proton.dat"); 
-  //   fptFakeNegProtons   = new PidTable("../macros/pidtables/130409/flat-proton.dat"); 
+  if (1) {
+    fptFakePosKaons     = new PidTable("../macros/pidtables/130419/kaonPlusFakeRate-mvaMuon.dat"); 
+    fptFakeNegKaons     = new PidTable("../macros/pidtables/130419/kaonMinusFakeRate-mvaMuon.dat"); 
+    
+    fptFakePosPions     = new PidTable("../macros/pidtables/130419/pionPlusFakeRate-mvaMuon.dat"); 
+    fptFakeNegPions     = new PidTable("../macros/pidtables/130419/pionMinusFakeRate-mvaMuon.dat"); 
+    
+    fptFakePosProtons   = new PidTable("../macros/pidtables/130419/protonPlusFakeRate-mvaMuon.dat"); 
+    fptFakeNegProtons   = new PidTable("../macros/pidtables/130419/protonMinusFakeRate-mvaMuon.dat"); 
+  }
 
-  if (2012 == fYear) {
+  if (1) { // if (2012 == fYear) {
     string name(""); 
     string directory("../macros/pidtables/130104/"); 
     name = directory + "L1L2_data_all.dat";        fptT1     = new PidTable(name.c_str());
@@ -345,8 +346,9 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
     name = directory + "L3_mc_cowboys.dat";        fptCbT2MC = new PidTable(name.c_str());      
     name = directory + "MVATM_mc_cowboys.dat";     fptCbT3MC = new PidTable(name.c_str());
     name = directory + "MuonID_mc_cowboys.dat";    fptCbMMC  = new PidTable(name.c_str());  
+  }
 
-  } else {
+  if (0) {
     string name(""); 
     string directory("../macros/pidtables/111210/"); 
     name = directory + "L1L2Efficiency_VBTF_data_all_histo.dat";       fptT1     = new PidTable(name.c_str()); 	

@@ -32,6 +32,20 @@ struct readerData {
   float m;
 };
 
+struct muonData {
+  // -- tight muon variables
+  float validMuonHits, glbNChi2;
+  int   nMatchedStations, validPixelHits, trkLayerWithHits;
+  // -- Luca's additional variables
+  float trkValidFract; 
+  float pt, eta; 
+  float segComp, chi2LocMom, chi2LocPos, glbTrackProb;
+  float NTrkVHits, NTrkEHitsOut;
+  // -- Mario's and other additional variables
+  float kink;
+  float dpt, dptrel, deta, dphi, dr; 
+};
+
 struct mvaMuonIDData {
   float trkValidFract, glbNChi2; 
   float pt, eta; 
@@ -53,6 +67,7 @@ public:
   virtual void        candAnalysis();
   virtual void        efficiencyCalculation();
   virtual void        setupReducedTree(TTree *);
+  virtual void        setupMuonIdTree(TTree *);
   
   virtual int         nearestPV(int pvIdx, double maxDist = 99.);
   virtual void        getSigTracks(std::vector<int> &v, TAnaCand *pC);
@@ -175,6 +190,8 @@ public:
   mvaMuonIDData mrd; 
   double  fMu1BDT, fMu2BDT, fMu1rBDT, fMu2rBDT; 
 
+  muonData fMuonData; 
+
   // -- variables for reduced tree, they are from fpCand
   bool    fJSON, fCowboy;
   int     fCandTM, fCandType; 
@@ -224,6 +241,8 @@ public:
   float fETm2pt, fETm2eta, fETg2pt, fETg2eta;
 
   bool    fGoodEffCand; 
+
+  TTree       *fMuonIdTree;
 
   TAnaTrack *fpMuon1, *fpMuon2; 
 

@@ -201,6 +201,7 @@ void plotEfficiencies::loopFunction2(int mode) {
       pt = fb.m1pt;
       //      mu = fb.m1id;
       mu = fb.m1rmvaid && (fb.m1trigm>0) && (fb.m1trigm<0.05);
+      //      mu = fb.m1rmvaid;
       eta = fb.m1eta;
       chan = (TMath::Abs(fb.m1eta)<1.4?0:1); 
     }
@@ -210,6 +211,7 @@ void plotEfficiencies::loopFunction2(int mode) {
       pt = fb.m2pt;
       //      mu = fb.m2id;
       mu = fb.m2rmvaid && (fb.m2trigm>0) && (fb.m2trigm<0.05);
+      //      mu = fb.m2rmvaid;
       eta = fb.m2eta;
       chan = (TMath::Abs(fb.m2eta)<1.4?0:1); 
     }
@@ -417,7 +419,7 @@ void plotEfficiencies::misid(int pdgid, string sample) {
   t = getTree(fSetup); 
   setupTree(t, "Mc"); 
   fPdgId = pdgid; 
-  loopOverTree(t, fSetup, 2);
+  loopOverTree(t, fSetup, 2, 1000000);
   
   
   c0->Clear(); 
@@ -445,6 +447,7 @@ void plotEfficiencies::misid(int pdgid, string sample) {
     hratio->Divide(fhptPosPass[i], fhptPosAll[i], 1., 1., "b"); 
     hratio->SetTitle((charge + title).c_str()); 
     setTitles(hratio, "p_{T} [GeV]", "misidentification probability"); 
+    hratio->SetMaximum(0.002); 
     hratio->Draw();    
     tl->DrawLatex(0.2, 0.92, Form("%d/%d = %6.5f", static_cast<int>(pass), static_cast<int>(all), pass/all)); 
     c0->SaveAs(Form("%s/%d-fake-rate-%s-pos-%d-chan%d.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
@@ -453,6 +456,7 @@ void plotEfficiencies::misid(int pdgid, string sample) {
     pass = fhptPosPassSel[i]->GetSumOfWeights(); 
     hratio->Divide(fhptPosPassSel[i], fhptPosAllSel[i], 1., 1., "b"); 
     hratio->SetTitle((charge + title).c_str()); 
+    hratio->SetMaximum(0.002); 
     hratio->Draw();    
     tl->DrawLatex(0.2, 0.92, Form("%d/%d = %6.5f", static_cast<int>(pass), static_cast<int>(all), pass/all)); 
     c0->SaveAs(Form("%s/%d-fake-rate-%s-pos-%d-chan%d-sel.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
@@ -470,6 +474,7 @@ void plotEfficiencies::misid(int pdgid, string sample) {
     pass = fhptNegPass[i]->GetSumOfWeights(); 
     hratio->Divide(fhptNegPass[i], fhptNegAll[i], 1., 1., "b"); 
     hratio->SetTitle((charge + title).c_str()); 
+    hratio->SetMaximum(0.002); 
     hratio->Draw();    
     tl->DrawLatex(0.2, 0.92, Form("%d/%d = %6.5f", static_cast<int>(pass), static_cast<int>(all), pass/all)); 
     c0->SaveAs(Form("%s/%d-fake-rate-%s-neg-%d-chan%d.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
@@ -478,6 +483,7 @@ void plotEfficiencies::misid(int pdgid, string sample) {
     pass = fhptNegPassSel[i]->GetSumOfWeights(); 
     hratio->Divide(fhptNegPassSel[i], fhptNegAllSel[i], 1., 1., "b"); 
     hratio->SetTitle((charge + title).c_str()); 
+    hratio->SetMaximum(0.002); 
     hratio->Draw();    
     tl->DrawLatex(0.2, 0.92, Form("%d/%d = %6.5f", static_cast<int>(pass), static_cast<int>(all), pass/all)); 
     c0->SaveAs(Form("%s/%d-fake-rate-%s-neg-%d-chan%d-sel.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 

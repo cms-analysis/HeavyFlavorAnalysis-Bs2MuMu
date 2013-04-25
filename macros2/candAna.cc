@@ -470,6 +470,62 @@ void candAna::candAnalysis() {
   fMu2IP        = p2->fBsTip;
   fMu2IPE       = p2->fBsTipE;
 
+  // -- fill tree for muon id MVA studies
+  if (1 && (fMu1rTmId || fMu2rTmId)) {
+    TAnaMuon *pt(0);
+    for (int i = 0; i < 2; ++i) {
+      pt = 0; 
+      if (0 == i) {
+	if (!fMu1rTmId) continue;
+	int idx = p1->fMuIndex;
+	if (idx > -1 && idx < fpEvt->nMuons()) {
+	  pt = fpEvt->getMuon(idx);
+	}
+      }
+      if (1 == i) {
+	if (!fMu2rTmId) continue;
+	int idx = p2->fMuIndex;
+	if (idx > -1 && idx < fpEvt->nMuons()) {
+	  pt = fpEvt->getMuon(idx);
+	}
+      }
+
+      if (0 == pt) {
+	cout << "no TAnaMuon found despite fMu1TmId != 0!!" << endl;
+	continue;
+      }
+
+      fMuonData.pt            = pt->fPlab.Perp(); 
+      fMuonData.eta           = pt->fPlab.Eta(); 
+
+      fMuonData.validMuonHits    = 0; 
+      fMuonData.glbNChi2         = pt->fGtrkNormChi2; 
+      fMuonData.nMatchedStations = pt->fNmatchedStations; 
+      fMuonData.validPixelHits   = fpReader->numberOfPixLayers(pt); // FIXME, kind of correct
+      fMuonData.trkLayerWithHits = fpReader->numberOfTrackerLayers(pt);
+
+      fMuonData.trkValidFract = pt->fItrkValidFraction; 
+      fMuonData.segComp       = pt->fSegmentComp; 
+      fMuonData.chi2LocMom    = pt->fChi2LocalMomentum;
+      fMuonData.chi2LocPos    = pt->fChi2LocalPosition;
+      fMuonData.glbTrackProb  = pt->fGtrkProb;
+      fMuonData.NTrkVHits     = static_cast<float>(pt->fNumberOfValidTrkHits);
+      fMuonData.NTrkEHitsOut  = static_cast<float>(pt->fNumberOfLostTrkHits);
+      
+      fMuonData.kink          = pt->fMuonChi2;
+
+      fMuonData.dpt           = pt->fInnerPlab.Mag() - pt->fOuterPlab.Mag();
+      fMuonData.dptrel        = TMath::Abs(pt->fInnerPlab.Mag() - pt->fOuterPlab.Mag())/pt->fInnerPlab.Mag();
+      fMuonData.deta          = pt->fInnerPlab.Eta() - pt->fOuterPlab.Eta();
+      fMuonData.dphi          = pt->fInnerPlab.DeltaPhi(pt->fOuterPlab);
+      fMuonData.dr            = pt->fInnerPlab.DeltaR(pt->fOuterPlab);
+      
+      fMuonIdTree->Fill();
+    }
+  }
+      
+
+
   if (fMu1Id) {
     ((TH1D*)fHistDir->Get("tm_pt"))->Fill(fMu1Pt); 
     ((TH1D*)fHistDir->Get("tm_eta"))->Fill(fMu1Eta); 
@@ -700,7 +756,7 @@ void candAna::candAnalysis() {
   }
 
   fillRedTreeData();
-  
+
   if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX  && fCandIso < 0.7) {
     calcBDT();
   } else {
@@ -1201,6 +1257,10 @@ void candAna::bookHist() {
   fAmsTree = new TTree("amsevents", "amsevents");
   setupReducedTree(fAmsTree); 
 
+  // -- tree for AMS
+  fMuonIdTree = new TTree("muonidtree", "muonidtree");
+  setupMuonIdTree(fMuonIdTree); 
+
   // -- Efficiency/Acceptance Tree
   fEffTree = new TTree("effTree", "effTree");
   fEffTree->Branch("run",    &fRun,               "run/L");
@@ -1242,6 +1302,35 @@ void candAna::bookHist() {
 }
 
 
+// ----------------------------------------------------------------------
+void candAna::setupMuonIdTree(TTree *t) {
+
+  t->Branch("pt",                   &fMuonData.pt,  "pt/F");
+  t->Branch("eta",                  &fMuonData.eta, "eta/F");
+
+  t->Branch("intvalidmuonhits",     &fMuonData.validMuonHits, "validmuonhits/I");
+  t->Branch("intnmatchedstations",  &fMuonData.nMatchedStations, "nmatchedstations/I");
+  t->Branch("intvalidpixelhits",    &fMuonData.validPixelHits, "validpixelhits/I");
+  t->Branch("inttrklayerswithhits", &fMuonData.trkLayerWithHits, "trklayerswithhits/I");
+
+  t->Branch("gchi2",                &fMuonData.glbNChi2, "gchi2/F");
+
+  t->Branch("itrkvalidfraction",    &fMuonData.trkValidFract, "itrkvalidfraction/F");
+  t->Branch("segcomp",              &fMuonData.segComp, "segcomp/F");
+  t->Branch("chi2lmom",             &fMuonData.chi2LocMom, "chi2lmom/F");
+  t->Branch("chi2lpos",             &fMuonData.chi2LocPos, "chi2lpos/F");
+  t->Branch("gtrkprob",             &fMuonData.glbTrackProb, "gtrkprob/F");
+  t->Branch("ntrkvhits",            &fMuonData.NTrkVHits, "ntrkvhits/F");
+  t->Branch("ntrkehitsout",         &fMuonData.NTrkEHitsOut, "ntrkehitsout/F");
+
+  t->Branch("kink",                 &fMuonData.kink, "kink/F");
+  t->Branch("dpt",                  &fMuonData.dpt, "dpt/F");
+  t->Branch("dptrel",               &fMuonData.dptrel, "dptrel/F");
+  t->Branch("deta",                 &fMuonData.deta, "deta/F");
+  t->Branch("dphi",                 &fMuonData.dphi, "dphi/F");
+  t->Branch("dr",                   &fMuonData.dr, "dr/F");
+
+}
 
 // ----------------------------------------------------------------------
 void candAna::setupReducedTree(TTree *t) {
@@ -2925,6 +3014,7 @@ void candAna::replaceAll(std::string &s, std::string a, std::string b) {
   s = ts.Data(); 
 
 }
+
 
 
 // ----------------------------------------------------------------------
