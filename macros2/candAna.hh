@@ -47,10 +47,14 @@ struct muonData {
 };
 
 struct mvaMuonIDData {
+  // -- Luca's original setup
   float trkValidFract, glbNChi2; 
   float pt, eta; 
   float segComp, chi2LocMom, chi2LocPos, glbTrackProb;
   float NTrkVHits, NTrkEHitsOut;
+  // -- new/additional setup
+  int intnmatchedstations, intvalidpixelhits, inttrklayerswithhits;
+  float kink, dpt, dptrel, dphi, deta, dr;
 };
 
 class TTree; 

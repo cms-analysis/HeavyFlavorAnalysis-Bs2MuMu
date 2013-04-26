@@ -2088,16 +2088,30 @@ bool candAna::mvaMuon(TAnaMuon *pt, double &result, bool hadronsPass) {
     return false; 
   }
 
-  mrd.trkValidFract = pt->fItrkValidFraction; 
-  mrd.glbNChi2      = pt->fGtrkNormChi2; 
-  mrd.pt            = pt->fPlab.Perp(); 
-  mrd.eta           = pt->fPlab.Eta(); 
-  mrd.segComp       = pt->fSegmentComp; 
-  mrd.chi2LocMom    = pt->fChi2LocalMomentum;
-  mrd.chi2LocPos    = pt->fChi2LocalPosition;
-  mrd.glbTrackProb  = pt->fGtrkProb;
-  mrd.NTrkVHits     = static_cast<float>(pt->fNumberOfValidTrkHits);
-  mrd.NTrkEHitsOut  = static_cast<float>(pt->fNumberOfLostTrkHits);
+  mrd.trkValidFract    = pt->fItrkValidFraction; 
+  mrd.glbNChi2         = pt->fGtrkNormChi2; 
+  mrd.pt               = pt->fPlab.Perp(); 
+  mrd.eta              = pt->fPlab.Eta(); 
+  mrd.segComp          = pt->fSegmentComp; 
+  mrd.chi2LocMom       = pt->fChi2LocalMomentum;
+  mrd.chi2LocPos       = pt->fChi2LocalPosition;
+  mrd.glbTrackProb     = pt->fGtrkProb;
+  mrd.NTrkVHits        = static_cast<float>(pt->fNumberOfValidTrkHits);
+  mrd.NTrkEHitsOut     = static_cast<float>(pt->fNumberOfLostTrkHits);
+
+  mrd.dpt                  = pt->fNmatchedStations; 
+  mrd.intvalidpixelhits    = fpReader->numberOfPixLayers(pt); // FIXME, kind of correct
+  mrd.inttrklayerswithhits = fpReader->numberOfTrackerLayers(pt);
+  mrd.intnmatchedstations  = pt->fNmatchedStations;
+
+  mrd.kink             = pt->fMuonChi2;
+  
+  mrd.dpt              = pt->fInnerPlab.Mag() - pt->fOuterPlab.Mag();
+  mrd.dptrel           = TMath::Abs(pt->fInnerPlab.Mag() - pt->fOuterPlab.Mag())/pt->fInnerPlab.Mag();
+  mrd.deta             = pt->fInnerPlab.Eta() - pt->fOuterPlab.Eta();
+  mrd.dphi             = pt->fInnerPlab.DeltaPhi(pt->fOuterPlab);
+  mrd.dr               = pt->fInnerPlab.DeltaR(pt->fOuterPlab);
+
 
   result = fMvaMuonID->EvaluateMVA("BDT"); 
   if (result > MUBDT) return true; 
@@ -2826,19 +2840,187 @@ int candAna::detChan(double m1eta, double m2eta) {
 TMVA::Reader* candAna::setupMuonMvaReader(string xmlFile, mvaMuonIDData &d) {
   TMVA::Reader *reader = new TMVA::Reader( "!Color:!Silent" );
 
-  reader->AddVariable("trkValidFract", &d.trkValidFract); 
-  reader->AddVariable("glbNChi2",      &d.glbNChi2);
-  reader->AddVariable("pt",            &d.pt);   
-  reader->AddVariable("eta",           &d.eta);         
-  reader->AddVariable("segComp",       &d.segComp);      
-  reader->AddVariable("chi2LocMom",    &d.chi2LocMom);   
-  reader->AddVariable("chi2LocPos",    &d.chi2LocPos); 
-  reader->AddVariable("glbTrackProb",  &d.glbTrackProb); 
-  reader->AddVariable("NTrkVHits",     &d.NTrkVHits);    
-  reader->AddVariable("NTrkEHitsOut",  &d.NTrkEHitsOut); 
+  TString dir    = "weights/";
+  TString methodNameprefix = "BDT";
 
-  string weightfile = "weights/TMVA-" + xmlFile + ".weights.xml"; 
-  reader->BookMVA("BDT", TString(weightfile.c_str())); 
+  // -- read in variables from weight file
+  vector<string> allLines; 
+  char  buffer[2000];
+  string weightFile = "weights/TMVA-" + xmlFile + ".weights.xml"; 
+  cout << "setupMuonMvaReader, open file " << weightFile << endl;
+  ifstream is(weightFile.c_str()); 
+  while (is.getline(buffer, 2000, '\n')) allLines.push_back(string(buffer));
+  int nvars(-1); 
+  string::size_type m1, m2;
+  string stype; 
+  cout << "  read " << allLines.size() << " lines " << endl;
+  for (unsigned int i = 0; i < allLines.size(); ++i) {
+    // -- parse and add variables
+    if (string::npos != allLines[i].find("Variables NVar")) {
+      m1 = allLines[i].find("=\""); 
+      stype = allLines[i].substr(m1+2, allLines[i].size()-m1-2-2); 
+      cout << "  " << stype << " variables" << endl;
+      nvars = atoi(stype.c_str());
+      if (-1 == nvars) continue;
+      for (unsigned int j = i+1; j < i+nvars+1; ++j) {
+	m1 = allLines[j].find("Expression=\"")+10; 
+	m2 = allLines[j].find("\" Label=\"");
+	stype = allLines[j].substr(m1+2, m2-m1-2); 
+	if (stype == "trkValidFract") {
+	  cout << "  adding trkValidFract" << endl;
+	  reader->AddVariable( "trkValidFract", &d.trkValidFract);
+	  continue;
+	}
+	if (stype == "glbNChi2") {
+	  reader->AddVariable("glbNChi2", &d.glbNChi2);
+	  cout << "  adding glbNChi2" << endl;
+	  continue;
+	}
+	if (stype == "eta") {
+	  cout << "  adding eta" << endl;
+	  reader->AddVariable("eta", &d.eta);
+	  continue;
+	}
+	if (stype == "pt") {
+	  cout << "  adding pt" << endl;
+	  reader->AddVariable("pt", &d.pt);
+	  continue;
+	}
+	if (stype == "segComp") {
+	  cout << "  adding segComp" << endl;
+	  reader->AddVariable("segComp", &d.segComp);
+	  continue;
+	}
+	if (stype == "chi2LocMom") {
+	  cout << "  adding chi2LocMom" << endl;
+	  reader->AddVariable("chi2LocMom", &d.chi2LocMom);
+	  continue;
+	}
+	if (stype == "chi2LocPos") {
+	  cout << "  adding chi2LocPos" << endl;
+	  reader->AddVariable("chi2LocPos", &d.chi2LocPos);
+	  continue;
+	}
+	if (stype == "glbTrackProb") {
+	  cout << "  adding glbTrackProb" << endl;
+	  reader->AddVariable("glbTrackProb", &d.glbTrackProb);
+	  continue;
+	}
+	if (stype == "NTrkVHits") {
+	  cout << "  adding NTrkVHits" << endl;
+	  reader->AddVariable("NTrkVHits", &d.NTrkVHits);
+	  continue;
+	}
+	if (stype == "NTrkEHitsOut") {
+	  cout << "  adding NTrkEHitsOut" << endl;
+	  reader->AddVariable("NTrkEHitsOut", &d.NTrkEHitsOut);
+	  continue;
+	}
+	if (stype == "NTrkEHitsOut") {
+	  cout << "  adding NTrkEHitsOut" << endl;
+	  reader->AddVariable("NTrkEHitsOut", &d.NTrkEHitsOut);
+	  continue;
+	}
+
+	// -- new convention for UL's BDT
+	if (stype == "intnmatchedstations") {
+	  cout << "  adding intnmatchedstations" << endl;
+	  reader->AddVariable("intnmatchedstations", &d.intnmatchedstations);
+	  continue;
+	}
+	if (stype == "intvalidpixelhits") {
+	  cout << "  adding intvalidpixelhits" << endl;
+	  reader->AddVariable("intvalidpixelhits", &d.intvalidpixelhits);
+	  continue;
+	}
+	if (stype == "inttrklayerswithhits") {
+	  cout << "  adding inttrklayerswithhits" << endl;
+	  reader->AddVariable("inttrklayerswithhits", &d.inttrklayerswithhits);
+	  continue;
+	}
+	if (stype == "gchi2") {
+	  cout << "  adding gchi2" << endl;
+	  reader->AddVariable("gchi2", &d.glbNChi2);
+	  continue;
+	}
+	if (stype == "itrkvalidfraction") {
+	  cout << "  adding itrkvalidfraction" << endl;
+	  reader->AddVariable("itrkvalidfraction", &d.trkValidFract);
+	  continue;
+	}
+	if (stype == "segcomp") {
+	  cout << "  adding segcomp" << endl;
+	  reader->AddVariable("segcomp", &d.segComp);
+	  continue;
+	}
+	if (stype == "chi2lmom") {
+	  cout << "  adding chi2lmom" << endl;
+	  reader->AddVariable("chi2lmom", &d.chi2LocMom);
+	  continue;
+	}
+	if (stype == "chi2lpos") {
+	  cout << "  adding chi2lpos" << endl;
+	  reader->AddVariable("chi2lpos", &d.chi2LocPos);
+	  continue;
+	}
+	if (stype == "gtrkprob") {
+	  cout << "  adding gtrkprob" << endl;
+	  reader->AddVariable("gtrkprob", &d.glbTrackProb);
+	  continue;
+	}
+	if (stype == "ntrkvhits") {
+	  cout << "  adding ntrkvhits" << endl;
+	  reader->AddVariable("ntrkvhits", &d.NTrkVHits);
+	  continue;
+	}
+	if (stype == "inttrklayerswithhits") {
+	  cout << "  adding inttrklayerswithhits" << endl;
+	  reader->AddVariable("inttrklayerswithhits", &d.inttrklayerswithhits);
+	  continue;
+	}
+	if (stype == "ntrkehitsout") {
+	  cout << "  adding ntrkehitsout" << endl;
+	  reader->AddVariable("ntrkehitsout", &d.NTrkEHitsOut);
+	  continue;
+	}
+	if (stype == "kink") {
+	  cout << "  adding kink" << endl;
+	  reader->AddVariable("kink", &d.kink);
+	  continue;
+	}
+	if (stype == "dpt") {
+	  cout << "  adding dpt" << endl;
+	  reader->AddVariable("dpt", &d.dpt);
+	  continue;
+	}
+	if (stype == "deta") {
+	  cout << "  adding deta" << endl;
+	  reader->AddVariable("deta", &d.deta);
+	  continue;
+	}
+	if (stype == "dphi") {
+	  cout << "  adding dphi" << endl;
+	  reader->AddVariable("dphi", &d.dphi);
+	  continue;
+	}
+	if (stype == "dr") {
+	  cout << "  adding dr" << endl;
+	  reader->AddVariable("dr", &d.dr);
+	  continue;
+	}
+	if (stype == "dptrel") {
+	  cout << "  adding dptrel" << endl;
+	  reader->AddVariable("dptrel", &d.dptrel);
+	  continue;
+	}
+
+
+      }
+      break;
+    }
+  }
+
+  reader->BookMVA("BDT", TString(weightFile.c_str())); 
   return reader; 
 }
 
