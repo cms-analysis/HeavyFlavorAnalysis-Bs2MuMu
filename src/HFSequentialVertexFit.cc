@@ -496,7 +496,16 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  
 	  anaVtx.fD3d = a3d.distance(currentPV,kinVertex->vertexState()).value();
 	  anaVtx.fD3dE = a3d.distance(currentPV,kinVertex->vertexState()).error();
-
+	  
+	  // -- recompute impact parameter: lip & ip3d
+	  tsos = extrapolator.extrapolate(kinParticle->currentState().freeTrajectoryState(),RecoVertex::convertPos(currentPV.position()));
+	  pvImpParams.lip = IPTools::signedDecayLength3D(tsos,GlobalVector(0,0,1),currentPV).second;
+	  pvImpParams.ip3d = IPTools::absoluteImpactParameter(tsos,currentPV,a3d).second;
+	  
+	  // -- recompute impact parameter: tip
+	  tsos = transverseExtrapolator.extrapolate(kinParticle->currentState().freeTrajectoryState(),RecoVertex::convertPos(currentPV.position()));
+	  pvImpParams.tip = axy.distance(VertexState(tsos.globalPosition(),tsos.cartesianError().position()),VertexState(RecoVertex::convertPos(currentPV.position()),RecoVertex::convertError(currentPV.error())));
+	  
 	  // -- get covariance matrix for error propagation in lifetime calculation
 	  vtxDistanceCov = makeCovarianceMatrix(GlobalError2SMatrix_33(currentPV.error()),
 		  kinParticle->currentState().kinematicParametersError().matrix());
@@ -591,6 +600,8 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   pCand->fPv2IP3dE = pvImpParams2nd.ip3d.error();
   
   pCand->fDeltaChi2 = diffChi2;
+  
+  pCand->fDouble1 = vtxDistanceCosAlphaPlab;
   
   // -- calculate lifetime
   {
