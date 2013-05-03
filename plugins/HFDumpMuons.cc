@@ -226,6 +226,7 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
   if (gTrack.isNonnull()) {
     Track trk(*gTrack);
     pM->fGlobalPlab.SetPtEtaPhi(trk.pt(), trk.eta(), trk.phi());
+    pM->fNvalidMuonHits = gTrack->hitPattern().numberOfValidMuonHits();
 
     if (!fRunOnAOD) {
       vector<unsigned int> hits = muonStatHits(trk);
