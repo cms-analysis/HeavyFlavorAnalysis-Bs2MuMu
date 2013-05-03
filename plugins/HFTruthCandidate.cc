@@ -490,18 +490,18 @@ void HFTruthCandidate::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	}
 	iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 
-	iterator = theTree5.addDecayTree(300333, false, MPHI, false);
 	for (unsigned int ii = 0; ii < trackIndices.size(); ++ii) {
 	  IDX = trackIndices[ii];
 	  ID  = gHFEvent->getSimpleTrackMCID(IDX);
 	  if (321 == TMath::Abs(ID)) {
-	    iterator->addTrack(IDX, 321);
+		  theTree5.addTrack(IDX, 321);
 	  }
-	  if (211 == TMath::Abs(ID)) {
-	    //do nothing and ignore the pion from the K*!
-	  }
+		// Comment to leave out the pion
+//	  if (211 == TMath::Abs(ID)) {
+//	    //do nothing and ignore the pion from the K*!
+//		  theTree5.addTrack(IDX, 321); // assign the kaon mass!
+//	  }
 	}
-	iterator->setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 	theTree5.setNodeCut(RefCountedHFNodeCut(new HFMaxDocaCut(fMaxDoca)));
 
 	if (fVerbose > 5) cout << "==>HFTruthCandidate> sequential fit for Bu2JpsiK of Bd2JpsiKstar" << endl;
