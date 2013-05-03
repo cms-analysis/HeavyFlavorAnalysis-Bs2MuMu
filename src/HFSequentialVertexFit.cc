@@ -313,6 +313,11 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   AnalyticalImpactPointExtrapolator extrapolator(magneticField);
   TransverseImpactPointExtrapolator transverseExtrapolator(magneticField);
   TrajectoryStateOnSurface tsos;
+  
+  TransientVertex newVtx;
+  vector<track_entry_t> completeTrackList = tree->getAllTracks(0);
+  vector<TrackBaseRef>::const_iterator itTBR;
+  vector<track_entry_t>::const_iterator trackIt;
 
   if (tree->particleID() == 0) return pCand; // i.e. null
   if (kinTree->isEmpty()) return pCand;
@@ -361,19 +366,38 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 		  std::pair<bool,Measurement1D> currentIp;
 		  std::pair<bool,Measurement1D> cur3DIP;
 		  
+		  // refit this vertex w/o signal tracks
+		  AdaptiveVertexFitter avf; // PV refit
+		  vector<TransientTrack> vrtxRefit;
+		  for (itTBR = vertexIt->tracks_begin(); itTBR != vertexIt->tracks_end(); ++itTBR) {
+			TrackRef tref = itTBR->castTo<TrackRef>();
+			for (trackIt = completeTrackList.begin(); removeCandTracksFromVtx_ && trackIt != completeTrackList.end(); ++trackIt) {
+				TrackBaseRef curTr(fhTracks,trackIt->trackIx);
+				TrackRef curTref = curTr.castTo<TrackRef>();
+				if (tref == curTref)
+					break;
+			}
+			
+			if (!removeCandTracksFromVtx_ || trackIt == completeTrackList.end()) {
+				TransientTrack tTrk = fpTTB->build(*(*itTBR));
+				vrtxRefit.push_back(tTrk);
+			}
+		  }
+		  
+		  if (vrtxRefit.size() < 2) continue; // next one
+		  newVtx = avf.vertex(vrtxRefit,fBeamSpot);
+		  if (!newVtx.isValid()) continue; // no valid refit, take next one
+		  Vertex currentPV = reco::Vertex(newVtx);
+		  
 		  // extrapolate to PCA
-		  tsos = extrapolator.extrapolate(kinParticle->currentState().freeTrajectoryState(),RecoVertex::convertPos(vertexIt->position()));
+		  tsos = extrapolator.extrapolate(kinParticle->currentState().freeTrajectoryState(),RecoVertex::convertPos(currentPV.position()));
 		  
 		  // compute with iptools
-		  currentIp = IPTools::signedDecayLength3D(tsos,GlobalVector(0,0,1),*vertexIt);
-		  cur3DIP = IPTools::absoluteImpactParameter(tsos,*vertexIt,a3d);
+		  currentIp = IPTools::signedDecayLength3D(tsos,GlobalVector(0,0,1),currentPV);
+		  cur3DIP = IPTools::absoluteImpactParameter(tsos,currentPV,a3d);
 		  
 		  // Compute the PV weight
-		  double weight = (vertexIt->ndof()+2.)/(2.*vertexIt->tracksSize());
-		  //cout<<j<<" "<<nGoodVtx<<" "<<vertexIt->position()<<" "<<vertexIt->chi2()<<" "
-		  //<<vertexIt->ndof()<<" "<<vertexIt->tracksSize()<<" "<<vertexIt->nTracks()<<" "
-		  //<<vertexIt->isFake()<<" "<<vertexIt->isValid()<<" "<<vertexIt->normalizedChi2()<<" "<<weight<<" "
-		  //<<currentIp.second.value()<<" "<<pvWeightCut<<endl;
+		  double weight = (currentPV.ndof()+2.)/(2. * currentPV.tracksSize());
 
 		  if( weight < pvWeightCut) { // Check the PV weight and skip it if lower than the cut 
 		    if (fVerbose > 2) cout<<"==>HFSequentialVertexFit: PV "<<j<<" rejected because of too low weight "<<weight<<endl; 
@@ -434,6 +458,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  }
 	  
 	  // now, compute the tip w.r.t. PV
+	  // this code might be obsolete but certainly does not do anything wrong
 	  tsos = transverseExtrapolator.extrapolate(kinParticle->currentState().freeTrajectoryState(),RecoVertex::convertPos((*fPVCollection)[pvIx].position()));
 	  pvImpParams.tip = axy.distance(VertexState(tsos.globalPosition(),tsos.cartesianError().position()),VertexState(RecoVertex::convertPos((*fPVCollection)[pvIx].position()),RecoVertex::convertError((*fPVCollection)[pvIx].error())));
 	  if (fVerbose > 2) cout<<"==> HFSequentialVertexFit: Selected best PVs "<<pvIx<<" "<<pvIx2<<endl;
@@ -460,15 +485,11 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  vtxDistanceCosAlphaPlab = plab.Dot(tv3diff) / (plab.Mag() * tv3diff.Mag());
   } else if (pvIx >= 0) {
 	  // -- Distance w.r.t primary vertex
-	  TransientVertex newVtx;
 	  AdaptiveVertexFitter avf; // PV refit
 	  KalmanVertexFitter kvf; // delta chi2
 	  Vertex currentPV = (*fPVCollection)[pvIx];
 	  Vertex currentPVWithSignal;
 	  vector<TransientTrack> vrtxRefit;
-	  vector<TrackBaseRef>::const_iterator itTBR;
-	  vector<track_entry_t>::const_iterator trackIt;
-	  vector<track_entry_t> completeTrackList = tree->getAllTracks(0);
 	  
 	  if (fVerbose > 5) cout << "HFSequentialVertexFit::addCandidate(): currentPV.tracksSize() = " << currentPV.tracksSize() << endl;
 	  for (itTBR = currentPV.tracks_begin(); itTBR != currentPV.tracks_end(); ++itTBR) {
@@ -601,7 +622,7 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
   
   pCand->fDeltaChi2 = diffChi2;
   
-  pCand->fDouble1 = vtxDistanceCosAlphaPlab;
+  pCand->fAlpha = TMath::ACos(vtxDistanceCosAlphaPlab);
   
   // -- calculate lifetime
   {
