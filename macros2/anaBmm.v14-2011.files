@@ -2,12 +2,12 @@
 # ----------------------------------------------------------------------
 # signal data and MC
 type=sg,default       dset=data      lumi=4.9     file=/scratch/ursl/v14-2011-bmm-data.root
-type=sg,default       dset=mc        lumi=16000.0 file=/scratch/ursl/v14-2011-mix-Bs2MuMu.root
+type=sg,default       dset=mc,1.00   lumi=16000.0 file=/scratch/ursl/v14-2011-mix-Bs2MuMu.root
 type=sg,acc           dset=mc,1.00   lumi=16000.0 file=/scratch/ursl/v14-2011-mix-Bs2MuMu.root
-type=bd,default       dset=mc        lumi=8200.0  file=/scratch/ursl/v14-2011-mix-Bd2MuMu.root
+type=bd,default       dset=mc,1.00   lumi=8200.0  file=/scratch/ursl/v14-2011-mix-Bd2MuMu.root
 type=bd,acc           dset=mc,1.00   lumi=8200.0  file=/scratch/ursl/v14-2011-mix-Bd2MuMu.root
-type=sg,m57           dset=mc        lumi=0.0     file=/scratch/ursl/v14-2011-cms-m57BsToMuMu.root
-type=sg,m51           dset=mc        lumi=0.0     file=/scratch/ursl/v14-2011-cms-m51BsToMuMu.root
+type=sg,m57           dset=mc,1.00   lumi=0.0     file=/scratch/ursl/v14-2011-cms-m57BsToMuMu.root
+type=sg,m51           dset=mc,1.00   lumi=0.0     file=/scratch/ursl/v14-2011-cms-m51BsToMuMu.root
 # --------------------------------------------------------------------
 # control sample  data and MC
 type=cs,default       dset=data      lumi=4.9     file=/scratch/ursl/v14-2011-bmm-data.root
@@ -32,8 +32,8 @@ type=bg,Bd2PiMuNu     dset=mc,0.024  lumi=1.8     file=/scratch/ursl/v14-2011-2e
 type=bg,Bs2KMuNu      dset=mc,0.024  lumi=1.4     file=/scratch/ursl/v14-2011-2e33-Bs2KMuNu.root
 type=bg,Lb2PMuNu      dset=mc,0.024  lumi=1.1     file=/scratch/ursl/v14-2011-2e33-Lb2PMuNu.root
 #
-type=bg,Bd2MuMuGamma  dset=mc,0.06   lumi=700000.0 file=/scratch/ursl/v14-2012-cms-BdToMuMuGamma.root 
-type=bg,Bs2MuMuGamma  dset=mc,0.06   lumi=10000.0  file=/scratch/ursl/v14-2012-cms-BsToMuMuGamma.root 
+type=bg,Bd2MuMuGamma  dset=mc,0.0404 lumi=700000.0 file=/scratch/ursl/v14-2012-cms-BdToMuMuGamma.root 
+type=bg,Bs2MuMuGamma  dset=mc,0.0404 lumi=10000.0  file=/scratch/ursl/v14-2012-cms-BsToMuMuGamma.root 
 #
 type=bg,Bu2PiMuMu     dset=mc,0.0300 lumi=669.0   file=/scratch/ursl/v14-2012-cms-BuToMuMuPi.root
 type=bg,Bu2KMuMu      dset=mc,0.0224 lumi=292.0   file=/scratch/ursl/v14-2012-cms-BuToMuMuK.root 
