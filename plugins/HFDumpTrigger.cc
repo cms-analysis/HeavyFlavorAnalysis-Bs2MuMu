@@ -195,74 +195,78 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     int psSet = -1; 
     psSet = hltConfig.prescaleSet(iEvent, iSetup);
     //    cout << "validTriggerNames.size() = " << validTriggerNames.size() << endl;
-	for (unsigned int it = 0; it < validTriggerNames.size(); ++it) {
-		index    = trigName.triggerIndex(validTriggerNames[it]); 
-		if (index >= hHLTresults->size())
-			continue;
+    for (unsigned int it = 0; it < validTriggerNames.size(); ++it) {
+      index    = trigName.triggerIndex(validTriggerNames[it]); 
+      if (index >= hHLTresults->size())
+	continue;
 		
-		result   = hHLTresults->accept(index);
-		wasrun   = hHLTresults->wasrun(index);
-		error    = hHLTresults->error(index);
-		if (psSet > -1) {
-			prescale = hltConfig.prescaleValue(psSet, validTriggerNames[it]);
-		} else {
-			//	cout << "==>HFDumpTrigger> error in prescale set!?" << endl;
-			prescale = 0;
-		}
+      result   = hHLTresults->accept(index);
+      wasrun   = hHLTresults->wasrun(index);
+      error    = hHLTresults->error(index);
+      if (psSet > -1) {
+	prescale = hltConfig.prescaleValue(psSet, validTriggerNames[it]);
+      } else {
+	//	cout << "==>HFDumpTrigger> error in prescale set!?" << endl;
+	prescale = 0;
+      }
 
-		gHFEvent->fHLTNames[index]    = TString(validTriggerNames[it]);
-		gHFEvent->fHLTResult[index]   = result;
-		gHFEvent->fHLTWasRun[index]   = wasrun;
-		gHFEvent->fHLTError[index]    = error;
-		gHFEvent->fHLTPrescale[index] = prescale;
+      gHFEvent->fHLTNames[index]    = TString(validTriggerNames[it]);
+      gHFEvent->fHLTResult[index]   = result;
+      gHFEvent->fHLTWasRun[index]   = wasrun;
+      gHFEvent->fHLTError[index]    = error;
+      gHFEvent->fHLTPrescale[index] = prescale;
 
-		const vector<string>& moduleLabels(hltConfig.moduleLabels(index));
-		const unsigned int moduleIndex(hHLTresults->index(index));
+      const vector<string>& moduleLabels(hltConfig.moduleLabels(index));
+      const unsigned int moduleIndex(hHLTresults->index(index));
 
-		// Find L3 Muon modules 
-		// Do only for passed HLT
- 		if(result) {
-		  if (fVerbose > 1) cout<<" passed "<<validTriggerNames[it]<<" "<<moduleLabels.size()<<endl;
-		  for(unsigned int j=0;j<moduleLabels.size();j++) {
-		    const string & type = hltConfig.moduleType(moduleLabels[j]);
-		    if(type == "HLTMuonDimuonL3Filter") {
-		      if(selected<10) selectedObj[selected] = moduleLabels[j];
-		      selected++;
-		      if (fVerbose > 1) cout<<j<<" "<<type<<" "<<moduleLabels[j]<<" "<<selected<<endl;
-		    } // if
-		  } // for j
-		} // if passe d
+      // Find L3 Muon modules 
+      // Do only for passed HLT
+      if(result) {
+	if (fVerbose > 1) cout<<" passed "<<validTriggerNames[it]<<" "<<moduleLabels.size()<<endl;
+	for(unsigned int j=0;j<moduleLabels.size();j++) {
+	  const string & type = hltConfig.moduleType(moduleLabels[j]);
+	  if(type == "HLTMuonDimuonL3Filter") {
+	    if(selected<10) {
+	      selectedObj[selected] = moduleLabels[j];
+	      selected++;
+	      if (fVerbose > 1) cout<<j<<" "<<type<<" "<<moduleLabels[j]<<" "<<selected<<endl;
+	    }
+	  } // if
+	} // for j
+      } // if passe d
 
-		//  cout << " Last active module - label/type: "
-		//   << moduleLabels[moduleIndex] << "/" << hltConfig.moduleType(moduleLabels[moduleIndex])
-		//   << endl;
-		if ( moduleIndex < moduleLabels.size() && hltConfig.moduleType(moduleLabels[moduleIndex]) == "HLTPrescaler" ){
-			if (fVerbose > 1) cout << " HLTPrescaler  " << endl;
-			int tmp = gHFEvent->fHLTError[index];
-			gHFEvent->fHLTError[index] = (tmp<<2);
-			gHFEvent->fHLTError[index] |= 1;
-		}
+      //  cout << " Last active module - label/type: "
+      //   << moduleLabels[moduleIndex] << "/" << hltConfig.moduleType(moduleLabels[moduleIndex])
+      //   << endl;
+      if ( moduleIndex < moduleLabels.size() && hltConfig.moduleType(moduleLabels[moduleIndex]) == "HLTPrescaler" ){
+	if (fVerbose > 1) cout << " HLTPrescaler  " << endl;
+	int tmp = gHFEvent->fHLTError[index];
+	gHFEvent->fHLTError[index] = (tmp<<2);
+	gHFEvent->fHLTError[index] |= 1;
+      }
 
-		// cout << "gHFEvent->fHLTError[index] = " << gHFEvent->fHLTError[index] << endl;
-		if ( (gHFEvent->fHLTError[index] & 1)  && (fVerbose > 1) )
-			cout << " Last active module type =  " << hltConfig.moduleType(moduleLabels[moduleIndex]) << endl;
+      // cout << "gHFEvent->fHLTError[index] = " << gHFEvent->fHLTError[index] << endl;
+      if ( (gHFEvent->fHLTError[index] & 1)  && (fVerbose > 1) )
+	cout << " Last active module type =  " << hltConfig.moduleType(moduleLabels[moduleIndex]) << endl;
 
 
-		if (fVerbose > 1) 
-			cout << " HLTName = " << gHFEvent->fHLTNames[index]
-			<< " Index = " << index
-			<< " Result = " <<  gHFEvent->fHLTResult[index]
-			<< " WasRun = " <<  gHFEvent->fHLTWasRun[index]
-			<< " Error = " <<  gHFEvent->fHLTError[index]
-			<< " Presacle = " <<  gHFEvent->fHLTPrescale[index] 
-			<< endl;
-	}
+      if (fVerbose > 1) 
+	cout << " HLTName = " << gHFEvent->fHLTNames[index]
+	     << " Index = " << index
+	     << " Result = " <<  gHFEvent->fHLTResult[index]
+	     << " WasRun = " <<  gHFEvent->fHLTWasRun[index]
+	     << " Error = " <<  gHFEvent->fHLTError[index]
+	     << " Presacle = " <<  gHFEvent->fHLTPrescale[index] 
+	     << endl;
+    }
   }
   
   // Testing only 
   if (fVerbose > 9)  {
     cout<<"Selected HLT modules "<<selected<<" : ";
-    for(int i=0; i<selected; ++i) cout<<selectedObj[i]<<" ";
+    for(int i=0; i<selected; ++i) {
+      cout<<selectedObj[i]<<" ";
+    }
     cout<<endl;
     if(selected>1) cout<<" MORE THAN ONE OBJECT SELECTED "<<endl;
   }
@@ -280,66 +284,66 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   }
 
   if (hltF) {
-	  // -- HLT L1 muon candidates
-	  string L1NameCollection("hltL1extraParticles");
-//	  cout << "===> Found L1 trigger collection -> " << L1NameCollection << "." << endl;
-	  trigger::size_type Index(0);
-	  Index = trgEvent->collectionIndex(edm::InputTag(L1NameCollection, "", fTriggerEventLabel.process()));
+    // -- HLT L1 muon candidates
+    string L1NameCollection("hltL1extraParticles");
+    //	  cout << "===> Found L1 trigger collection -> " << L1NameCollection << "." << endl;
+    trigger::size_type Index(0);
+    Index = trgEvent->collectionIndex(edm::InputTag(L1NameCollection, "", fTriggerEventLabel.process()));
 	  
-	  if (Index < trgEvent->sizeCollections()) {
-		  TString label = TString(L1NameCollection.c_str());
-		  const trigger::Keys& Keys(trgEvent->collectionKeys());
-		  const trigger::size_type n0 (Index == 0? 0 : Keys.at(Index-1));
-		  const trigger::size_type n1 (Keys.at(Index));
-		  for (trigger::size_type i = n0; i != n1; ++i) {
-			  const trigger::TriggerObject& obj( trgEvent->getObjects().at(i) );
-//			  cout << "===> For L1: " << i << " id: " << obj.id() << " m = " << obj.mass() 
-//			  << " pT,eta,phi = " << obj.pt() << "," <<  obj.eta() << "," << obj.phi() << endl;
+    if (Index < trgEvent->sizeCollections()) {
+      TString label = TString(L1NameCollection.c_str());
+      const trigger::Keys& Keys(trgEvent->collectionKeys());
+      const trigger::size_type n0 (Index == 0? 0 : Keys.at(Index-1));
+      const trigger::size_type n1 (Keys.at(Index));
+      for (trigger::size_type i = n0; i != n1; ++i) {
+	const trigger::TriggerObject& obj( trgEvent->getObjects().at(i) );
+	//			  cout << "===> For L1: " << i << " id: " << obj.id() << " m = " << obj.mass() 
+	//			  << " pT,eta,phi = " << obj.pt() << "," <<  obj.eta() << "," << obj.phi() << endl;
 			  
-			  TTrgObj *pTO = gHFEvent->addTrgObj();
-			  pTO->fP.SetPtEtaPhiE(obj.pt(), 
-								   obj.eta(), 
-								   obj.phi(), 
-								   obj.energy()
-								   ); 
-			  pTO->fID     = obj.id(); 
-			  pTO->fLabel  = label;
+	TTrgObj *pTO = gHFEvent->addTrgObj();
+	pTO->fP.SetPtEtaPhiE(obj.pt(), 
+			     obj.eta(), 
+			     obj.phi(), 
+			     obj.energy()
+			     ); 
+	pTO->fID     = obj.id(); 
+	pTO->fLabel  = label;
 			  
-		  }
-	  }
+      }
+    }
 
-	  // -- HLT L2 muon candidates 
-	  string L2NameCollection("hltL2MuonCandidates");
-//	  cout << "===> Found L2 trigger collection -> " << L2NameCollection << "." << endl;
-	  Index = trgEvent->collectionIndex(edm::InputTag(L2NameCollection, "", fTriggerEventLabel.process()));
+    // -- HLT L2 muon candidates 
+    string L2NameCollection("hltL2MuonCandidates");
+    //	  cout << "===> Found L2 trigger collection -> " << L2NameCollection << "." << endl;
+    Index = trgEvent->collectionIndex(edm::InputTag(L2NameCollection, "", fTriggerEventLabel.process()));
 	  
-	  if (Index < trgEvent->sizeCollections()) {
-		  TString label = TString(L2NameCollection.c_str());
-		  const trigger::Keys& Keys(trgEvent->collectionKeys());
-		  const trigger::size_type n0 (Index == 0? 0 : Keys.at(Index-1));
-		  const trigger::size_type n1 (Keys.at(Index));
-		  for (trigger::size_type i = n0; i != n1; ++i) {
-			  const trigger::TriggerObject& obj( trgEvent->getObjects().at(i) );
-//			  cout << "===> For L2: " << i << " id: " << obj.id() << " m = " << obj.mass() 
-//				<< " pT,eta,phi = " << obj.pt() << "," <<  obj.eta() << "," << obj.phi() << endl;
+    if (Index < trgEvent->sizeCollections()) {
+      TString label = TString(L2NameCollection.c_str());
+      const trigger::Keys& Keys(trgEvent->collectionKeys());
+      const trigger::size_type n0 (Index == 0? 0 : Keys.at(Index-1));
+      const trigger::size_type n1 (Keys.at(Index));
+      for (trigger::size_type i = n0; i != n1; ++i) {
+	const trigger::TriggerObject& obj( trgEvent->getObjects().at(i) );
+	//			  cout << "===> For L2: " << i << " id: " << obj.id() << " m = " << obj.mass() 
+	//				<< " pT,eta,phi = " << obj.pt() << "," <<  obj.eta() << "," << obj.phi() << endl;
 			  
-			  TTrgObj *pTO = gHFEvent->addTrgObj();
-			  pTO->fP.SetPtEtaPhiE(obj.pt(), 
-								   obj.eta(), 
-								   obj.phi(), 
-								   obj.energy()
-								   ); 
-			  pTO->fID     = obj.id(); 
-			  pTO->fLabel  = label;
+	TTrgObj *pTO = gHFEvent->addTrgObj();
+	pTO->fP.SetPtEtaPhiE(obj.pt(), 
+			     obj.eta(), 
+			     obj.phi(), 
+			     obj.energy()
+			     ); 
+	pTO->fID     = obj.id(); 
+	pTO->fLabel  = label;
 			  
-		  }
-	  }
+      }
+    }
 
-	// -- HLT L3 muon candidates
-	  string L3NameCollection("hltL3MuonCandidates");
-//	  cout << "===> Found L3 trigger collection -> " << L2NameCollection << "." << endl;
-//	trigger::size_type Index(0);
-//	  Index(0);
+    // -- HLT L3 muon candidates
+    string L3NameCollection("hltL3MuonCandidates");
+    //	  cout << "===> Found L3 trigger collection -> " << L2NameCollection << "." << endl;
+    //	trigger::size_type Index(0);
+    //	  Index(0);
     Index = trgEvent->collectionIndex(edm::InputTag(L3NameCollection, "", fTriggerEventLabel.process()));
 
     if (Index < trgEvent->sizeCollections()) {
@@ -347,21 +351,21 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
       const trigger::Keys& Keys(trgEvent->collectionKeys());
       const trigger::size_type n0 (Index == 0? 0 : Keys.at(Index-1));
       const trigger::size_type n1 (Keys.at(Index));
-		for (trigger::size_type i = n0; i != n1; ++i) {
-			const trigger::TriggerObject& obj( trgEvent->getObjects().at(i) );
-//			cout << "===> For L3: " << i << " id: " << obj.id() << " m = " << obj.mass() 
-//				<< " pT,eta,phi = " << obj.pt() << "," <<  obj.eta() << "," << obj.phi() << endl;
+      for (trigger::size_type i = n0; i != n1; ++i) {
+	const trigger::TriggerObject& obj( trgEvent->getObjects().at(i) );
+	//			cout << "===> For L3: " << i << " id: " << obj.id() << " m = " << obj.mass() 
+	//				<< " pT,eta,phi = " << obj.pt() << "," <<  obj.eta() << "," << obj.phi() << endl;
 			
-			TTrgObj *pTO = gHFEvent->addTrgObj();
-			pTO->fP.SetPtEtaPhiE(obj.pt(), 
-								 obj.eta(), 
-								 obj.phi(), 
-								 obj.energy()
-								 ); 
-			pTO->fID     = obj.id(); 
-			pTO->fLabel  = label;
+	TTrgObj *pTO = gHFEvent->addTrgObj();
+	pTO->fP.SetPtEtaPhiE(obj.pt(), 
+			     obj.eta(), 
+			     obj.phi(), 
+			     obj.energy()
+			     ); 
+	pTO->fID     = obj.id(); 
+	pTO->fLabel  = label;
 			
-		}
+      }
     }
 
     // -- muon filter objects
@@ -377,12 +381,13 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
 	// Check if this path was in the fired FLT path 
 	bool matched=false;
-	for(int n=0;n<selected; ++n) if ( trgEvent->filterTag(i).label() == selectedObj[n] ) {
-	  matched=true; 
-	  if (fVerbose > 1) cout<<" This is it --> "<<i<<" "<<trgEvent->filterTag(i).label()<<endl;
-	  break;
+	for(int n=0;n<selected; ++n) {
+	  if ( trgEvent->filterTag(i).label() == selectedObj[n] ) {
+	    matched=true; 
+	    if (fVerbose > 1) cout<<" This is it --> "<<i<<" "<<trgEvent->filterTag(i).label()<<endl;
+	    break;
+	  }
 	}
-
 
 	// -- the following removes cross trigger filter objects even when they have Mu in the name!
 	if (label.Contains("Jet")) continue;
@@ -401,10 +406,10 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 	for (unsigned int j=0; j<keys.size(); j++){
 	  TTrgObj *pTO = gHFEvent->addTrgObj();
 	  pTO->fP.SetPtEtaPhiE(allObjects[keys[j]].pt(), 
-			  allObjects[keys[j]].eta(), 
-			  allObjects[keys[j]].phi(), 
-			  allObjects[keys[j]].energy()
-			  ); 
+			       allObjects[keys[j]].eta(), 
+			       allObjects[keys[j]].phi(), 
+			       allObjects[keys[j]].energy()
+			       ); 
 	  pTO->fID     = allObjects[keys[j]].id(); 
 	  pTO->fLabel  = label;
 	  if(matched) pTO->fNumber = i;  // marked selected objects for later analysis  
@@ -434,7 +439,7 @@ void  HFDumpTrigger::beginRun(const Run &run, const EventSetup &iSetup)
 
 void HFDumpTrigger::endRun(Run const&, EventSetup const&)
 {
-	validHLTConfig = false;
+  validHLTConfig = false;
 } // HFDumpTrigger::endRun()
 
 // ------------ method called once each job just before starting event loop  ------------
