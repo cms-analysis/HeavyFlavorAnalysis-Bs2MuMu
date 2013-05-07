@@ -185,7 +185,7 @@ bmm2Reader.2e33-Bs2KPi,
  cbmm-mc-2012-v14-BsToKPi_KPiPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*
  cbmm-mc-2012-v14-BsToKPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,
 $version-2012-cms-BsToKPi.root"
-    , "rareMC Bs2MuMuGamma"  
+    , "slMC Bs2MuMuGamma"  
     => "-y 2012 -m,
 bmm2Reader.2e33-Bs2MuMuGamma,
  cbmm-mc-2012-v14-BsToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*
@@ -225,19 +225,19 @@ bmm2Reader.2e33-Bd2PiMuNu,
  cbmm-mc-2012-v14-BdToPiMuNu_PiMuNuPtEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*
  cbmm-mc-2012-v14-BdToPiMuNu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,
 $version-2012-cms-BdToPiMuNu.root"
-    , "rareMC Bd2MuMuGamma"  
+    , "slMC Bd2MuMuGamma"  
     => "-y 2012 -m,
 bmm2Reader.2e33-Bd2MuMuGamma,
  cbmm-mc-2012-v14-BdToMuMuGamma_MuMuEtaPtGammaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*
  cbmm-mc-2012-v14-BdToMuMuGamma_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,
 $version-2012-cms-BdToMuMuGamma.root"
-    , "rareMC Bd2MuMuPi0"  
+    , "slMC Bd2MuMuPi0"  
     => "-y 2012 -m,
 bmm2Reader.2e33-Bd2MuMuPi0,
  cbmm-mc-2012-v14-BdToMuMuPi0_MuMuPi0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*
  cbmm-mc-2012-v14-BdToMuMuPi0_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,
 $version-2012-cms-BdToMuMuPi0.root"
-    , "rareMC Bd2MuMuK0" 
+    , "slMC Bd2MuMuK0" 
     => "-y 2012 -m,
 bmm2Reader.2e33-Bd2MuMuK0,
  cbmm-mc-2012-v14-BuToMuMuK0_MuMuK0EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*
@@ -254,14 +254,14 @@ bmm2Reader.2e33-Bd2RhoPi,
  cbmm-mc-2012-v14-BdToRohPi_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,
 $version-2012-cms-BdToRohPi.root"
     # -- rare Bu bg
-    , "rareMC Bu2MuMuK"  
+    , "slMC Bu2MuMuK"  
     => "-y 2012 -m,
 bmm2Reader.2e33-Bu2MuMuK,
  cbmm-mc-2012-v14-BuToMuMuK_MuMuKEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*
  cbmm-mc-2012-v14-BuToMuMuK_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*
  cbmm-mc-2012-v14-BuToMuMuK_EtaPtFilter_8TeV_ext-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1-*,
 $version-2012-cms-BuToMuMuK.root"
-    , "rareMC Bu2MuMuPi"  
+    , "slMC Bu2MuMuPi"  
     => "-y 2012 -m,
 bmm2Reader.2e33-Bu2PiMuMu,
  cbmm-mc-2012-v14-BuToMuMuPi_MuMuPiEtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1-*
