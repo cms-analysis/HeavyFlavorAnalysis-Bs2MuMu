@@ -34,6 +34,21 @@ if ($opt_n  =~ /G/i) {$opt_n =~ s/G/000000000/ig;}
 $prefix = substr($opt_x, 0, index($opt_x, '/store')); 
 @filelist = `srmls $opt_x`; 
 
+# -- migration to lcg-ls
+# assume printout of the following form: 
+# -rw-rw-r--   1     2     2 1581348806               ONLINE /pnfs/psi.ch/cms/trivcat/store/user/bstomumu/v16/bla.root
+#	* Checksum: 364c78ef (adler32)
+#	* Space tokens: 7522060
+
+@filelist = `lcg-ls -l $opt_x`; 
+@filelist = grep(!/Checksum/, @filelist);
+@filelist = grep(!/Space tokens/, @filelist);
+@filelist = grep(s/\ {1,99}/ /g, @filelist);
+foreach $line (@filelist) {
+    @parts = split(/ /, $line); 
+    $line = $parts[4] . " " . $parts[6]; 
+}
+
 my $sum = 0; 
 my $fidx = 0; 
 $filename = "$opt_b"."_$fidx";
