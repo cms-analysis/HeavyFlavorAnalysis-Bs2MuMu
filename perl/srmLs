@@ -15,6 +15,7 @@
 #          2010/05/03 Bug fix
 #          2010/10/18 Produce chains with maximum size
 #          2011/05/17 -C to produce only /store/... lists
+#          2012/05/07 migrate to lcg-ls
 # ----------------------------------------------------------------------
 
 $cprefix = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
