@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Usage: cd chains/subdir; runAll2011 -t tarfile [-h] [-r v14/bmm/2011/test] [-d] [-l] [-C] [-s data]
+# Usage: cd chains/subdir; runAll2011 -t tarfile [-h] [-r v16/bmm/2011/test] [-d] [-l] [-C] [-s data]
 # ------
 #            -a                                split checked chains (why a? because this is how you have to start)
 #            -d                                printout only, don't do anything
@@ -53,7 +53,7 @@ if ($opt_l) {
 if ($opt_v) {
     $version = $opt_v; 
 } else {
-    $version = "v14";
+    $version = "v16";
 }
 
 my $rootdir = "$version/bmm/$job"; 
@@ -107,10 +107,10 @@ tie %jobs, "Tie::IxHash";
     => "-y 2011 -m,bmm2Reader.mix-Bs2MuMu,cbmm-2011-$version-mix-Bs2MuMu-0*,$version-2011-mix-Bs2MuMu.root"
     , "signalMC Bd2MuMu"  
     => "-y 2011 -m,bmm2Reader.mix-Bd2MuMu,cbmm-2011-$version-mix-Bd2MuMu-0*,$version-2011-mix-Bd2MuMu.root"
-    , "signalMChacked m57Bs2MuMu"  
-    => "-y 2011 -m,bmm2Reader.mix-Bs2MuMu,cbmm-mc-2011-v14-BsToMuMu_M-57-*,$version-2011-cms-m57BsToMuMu.root"
-    , "signalMChacked m51Bs2MuMu"  
-    => "-y 2011 -m,bmm2Reader.mix-Bs2MuMu,cbmm-mc-2011-v14-BsToMuMu_M-51-*,$version-2011-cms-m51BsToMuMu.root"
+#    , "signalMChacked m57Bs2MuMu"  
+#    => "-y 2011 -m,bmm2Reader.mix-Bs2MuMu,cbmm-mc-2011-v16-BsToMuMu_M-57-*,$version-2011-cms-m57BsToMuMu.root"
+#    , "signalMChacked m51Bs2MuMu"  
+#    => "-y 2011 -m,bmm2Reader.mix-Bs2MuMu,cbmm-mc-2011-v16-BsToMuMu_M-51-*,$version-2011-cms-m51BsToMuMu.root"
     #
     , "normMCfilter Bu2JpsiK"  
     => "-y 2011 -m,bmm2Reader.mix-Bu2JpsiK,cbmm-2011-$version-mix-Bu2JpsiK-*,$version-2011-mix-Bu2JpsiK.root"
@@ -295,55 +295,55 @@ sub callA() {
     my $mcsplit   = 500000; 
     
     @data = (
-	"splitCheckedChain -n $datasplit ../cbmm-2011-v14-MuOnia__Run2011A-08Nov2011-v1", 
-	"splitCheckedChain -n $datasplit ../cbmm-2011-v14-MuOnia__Run2011B-19Nov2011-v1" 
+	"splitCheckedChain -n $datasplit ../cbmm-2011-v16-MuOnia__Run2011A-08Nov2011-v1", 
+	"splitCheckedChain -n $datasplit ../cbmm-2011-v16-MuOnia__Run2011B-19Nov2011-v1" 
 	);
     
     @signal = (
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-mix-Bs2MuMu",
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-mix-Bd2MuMu",
-	"splitCheckedChain -n $mcsplit ../cbmm-mc-2011-v14-BsToMuMu_M-51",
-	"splitCheckedChain -n $mcsplit ../cbmm-mc-2011-v14-BsToMuMu_M-57"
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-mix-Bs2MuMu",
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-mix-Bd2MuMu",
+	"splitCheckedChain -n $mcsplit ../cbmm-mc-2011-v16-BsToMuMu_M-51",
+	"splitCheckedChain -n $mcsplit ../cbmm-mc-2011-v16-BsToMuMu_M-57"
 	);
     
     @normalization = (
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-mix-Bu2JpsiK",
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-accBu2JpsiK"
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-mix-Bu2JpsiK",
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-accBu2JpsiK"
 	); 
     
     @controlsample = (
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-mix-Bs2JpsiPhi",
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-accBs2JpsiPhi"
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-mix-Bs2JpsiPhi",
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-accBs2JpsiPhi"
 	); 
     
     @rareBs = (
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bs2KK",
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bs2KMuNu",
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bs2KPi",
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bs2PhiMuMu",
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bs2PiPi"
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Bs2KK",
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Bs2KMuNu",
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Bs2KPi",
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Bs2PhiMuMu",
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Bs2PiPi"
 	);
     
     @rareBd = (
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bd2KK",
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bd2KPi",
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bd2PiMuNu",
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bd2PiPi",
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bd2RhoPi",
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bd2DstarPi", 
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-accBd2PiMuNu" 
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Bd2KK",
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Bd2KPi",
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Bd2PiMuNu",
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Bd2PiPi",
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Bd2RhoPi",
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Bd2DstarPi", 
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-accBd2PiMuNu" 
 	);
     
     @rareBu = (
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bu2JpsiPi", 
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bu2KMuMu", 
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Bu2PiMuMu"
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Bu2JpsiPi", 
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Bu2KMuMu", 
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Bu2PiMuMu"
 	); 
     
     @rareLb = (
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Lb2KP",
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Lb2PMuNu",
-	"splitCheckedChain -n $mcsplit ../cbmm-2011-v14-2e33-Lb2PiP"
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Lb2KP",
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Lb2PMuNu",
+	"splitCheckedChain -n $mcsplit ../cbmm-2011-v16-2e33-Lb2PiP"
 	);
 
     foreach $c (@data, @signal, @normalization, @controlsample, @rareBs, @rareBd, @rareBu, @rareLb) {
