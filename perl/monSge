@@ -20,7 +20,7 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('i:koru:');
+getopts('di:koru:');
 
 # -- jobs list
 my $jobslist = "jobs.list";
@@ -73,7 +73,7 @@ while(<IN>) {
 	($rsize, $lsize, $srmFile) = rootFileSize("$mdir/$logfile"); 
 	$lsize = -s "$mdir/$logfile";
     } else {
-	if (-e "$mdir/jobs.list") {
+	if (-e "$mdir/$jobslist") {
 	    $ok = "waiting";
 	} else {
 	    print "$mdir/$logfile not found???\n";
@@ -101,13 +101,17 @@ while(<IN>) {
 	    # print "Killing job $jname $sgeNumber\n";
 	    $bla = `qdel $sgeNumber`;
 	    print $bla;
-	    system("/bin/rm -f  $mdir/OK"); 
-	    system("/bin/touch $mdir/NOK"); 
+	    if (!$opt_d) {
+		system("/bin/rm -f  $mdir/OK"); 
+		system("/bin/touch $mdir/NOK"); 
+	    }
 	}
     } else { 
 	print OUT "$workerNode: $sgeNumber ($jname) $mdir\n";
-	system("/bin/rm -f  $mdir/OK"); 
-	system("/bin/touch $mdir/NOK"); 
+	if (!$opt_d) {
+	    system("/bin/rm -f  $mdir/OK"); 
+	    system("/bin/touch $mdir/NOK"); 
+	}
 	$badJobs++; 
 	if ($opt_r) {
 	    print "--> removing $srmFile\n"; 
