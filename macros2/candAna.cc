@@ -372,14 +372,10 @@ void candAna::candAnalysis() {
   }
 
 
-  if (1301 == fpCand->fType ||1302 == fpCand->fType || 1313 == fpCand->fType) {
-    // do nothing, these types are for efficiency/TNP studies
-  } else {
-    if (p1->fPlab.Perp() < p2->fPlab.Perp()) {
-      p0 = p1; 
-      p1 = p2; 
-      p2 = p0; 
-    }
+  if (p1->fPlab.Perp() < p2->fPlab.Perp()) {
+    p0 = p1; 
+    p1 = p2; 
+    p2 = p0; 
   }
 
   //cout<<p1->fMuIndex<<" "<<p2->fMuIndex<<endl;
@@ -397,7 +393,7 @@ void candAna::candAnalysis() {
   fTrigMatchDeltaPt = 99.;
   fMu1TrigM     = doTriggerMatchingR(p1, true);
   if (fTrigMatchDeltaPt > 0.1) fMu1TrigM *= -1.;
-  fMu1Id        = fMu1MvaId && (fMu1TrigM < 0.1) && (fMu1TrigM > 0); 
+  //  fMu1Id        = fMu1MvaId && (fMu1TrigM < 0.1) && (fMu1TrigM > 0); 
   fMu1Id        = fMu1MvaId;
   if (HLTRANGE.begin()->first == "NOTRIGGER") fMu1Id = true; 
 
@@ -452,7 +448,7 @@ void candAna::candAnalysis() {
   fTrigMatchDeltaPt = 99.;
   fMu2TrigM     = doTriggerMatchingR(p2, true);
   if (fTrigMatchDeltaPt > 0.1) fMu2TrigM *= -1.;
-  fMu2Id        = fMu2MvaId && (fMu2TrigM < 0.1) && (fMu2TrigM > 0); 
+  //  fMu2Id        = fMu2MvaId && (fMu2TrigM < 0.1) && (fMu2TrigM > 0); 
   fMu2Id        = fMu2MvaId;
   if (HLTRANGE.begin()->first == "NOTRIGGER") fMu2Id = true; 
 
@@ -497,7 +493,6 @@ void candAna::candAnalysis() {
 
       fMuonData.pt            = pt->fPlab.Perp(); 
       fMuonData.eta           = pt->fPlab.Eta(); 
-
       fMuonData.validMuonHits    = 0; 
       fMuonData.glbNChi2         = pt->fGtrkNormChi2; 
       fMuonData.nMatchedStations = pt->fNmatchedStations; 
@@ -516,9 +511,15 @@ void candAna::candAnalysis() {
 
       fMuonData.dpt           = pt->fInnerPlab.Mag() - pt->fOuterPlab.Mag();
       fMuonData.dptrel        = TMath::Abs(pt->fInnerPlab.Mag() - pt->fOuterPlab.Mag())/pt->fInnerPlab.Mag();
-      fMuonData.deta          = pt->fInnerPlab.Eta() - pt->fOuterPlab.Eta();
-      fMuonData.dphi          = pt->fInnerPlab.DeltaPhi(pt->fOuterPlab);
-      fMuonData.dr            = pt->fInnerPlab.DeltaR(pt->fOuterPlab);
+      if (pt->fOuterPlab.Mag() > 3.) {
+	fMuonData.deta          = pt->fInnerPlab.Eta() - pt->fOuterPlab.Eta();
+	fMuonData.dphi          = pt->fInnerPlab.DeltaPhi(pt->fOuterPlab);
+	fMuonData.dr            = pt->fInnerPlab.DeltaR(pt->fOuterPlab);
+      } else {
+	fMuonData.deta          = -99.;
+	fMuonData.dphi          = -99.;
+	fMuonData.dr            = -99.;
+      }
       
       fMuonIdTree->Fill();
     }
@@ -661,10 +662,8 @@ void candAna::candAnalysis() {
   // -- go back to original!
   sv = fpCand->fVtx;
 
-  TVector3 svpv(sv.fPoint - fpEvt->getPV(pvidx)->fPoint); 
-  double alpha = svpv.Angle(fpCand->fPlab);
-  fCandCosA   = TMath::Cos(alpha);
-  fCandA      = alpha; 
+  fCandA      = fpCand->fAlpha;
+  fCandCosA   = TMath::Cos(fCandA);
 
   //  virtual double      isoClassicWithDOCA(TAnaCand*, double dca, double r = 1.0, double ptmin = 0.9); 
   double iso = isoClassicWithDOCA(fpCand, 0.05, 0.7, 0.9); // 500um DOCA cut
@@ -696,6 +695,21 @@ void candAna::candAnalysis() {
   if (TMath::IsNaN(fCandFLSxy)) fCandFLSxy = -1.;
 
   fCandTau   = fCandFL3d*MBS/fCandP/TMath::Ccgs();
+
+//   cout << "event : " << fEvt << " " << fEvent << endl;
+//   cout << "muon 1: " << p1->fRefPlab.X() << " " << p1->fRefPlab.Y() << " " << p1->fRefPlab.Z() << endl;
+//   cout << "muon 2: " << p2->fRefPlab.X() << " " << p2->fRefPlab.Y() << " " << p2->fRefPlab.Z() << endl;
+//   cout << "PV: x = " << fpEvt->getPV(pvidx)->fPoint.X() 
+//        << " y = " << fpEvt->getPV(pvidx)->fPoint.Y() 
+//        << " z = " << fpEvt->getPV(pvidx)->fPoint.Z() 
+//        << " c = " << fpEvt->getPV(pvidx)->fChi2 << "/" << fpEvt->getPV(pvidx)->fNdof
+//        << endl;
+//   cout << "SV: x = " << sv.fPoint.X() << " y = " << sv.fPoint.Y() << " z = " << sv.fPoint.Z() 
+//        << " c = " << sv.fChi2 << "/" << sv.fNdof
+//        << endl;
+//   cout << "fl3d = " << fCandFL3d << " fl3de = " << fCandFL3dE << " fls3d = " << fCandFLS3d << endl;
+//   cout << "pvip = " << fCandPvIp3D << " pvipe = " << fCandPvIpE3D << " pvips = " << fCandPvIpS3D << endl;
+//   cout << "alpha = " << fCandA << " cosalpha = " <<  fCandCosA << endl;
 
   // -- variables for production mechanism studies
   //  fpOsCand      = osCand(fpCand);
@@ -2007,32 +2021,37 @@ bool candAna::tightMuon(TAnaTrack *pT, bool hadronsPass) {
   }
 
   //             654 3210
-  //80 = 0x50 = 0101 0000
-  bool muflag = ((pT->fMuID & 80) == 80);
-  //  bool muflag = ((pT->fMuID & 16) == 16);
+  // 80 = 0x50 = 0101 0000
+  // global muon
+  //  bool muflag = ((pT->fMuID & 2) == 2);
+  // GMPT&&TMA:
+  //  bool muflag = ((pT->fMuID & 80) == 80);
+  // GMPT: 0100 0000 = 0x40
+  bool muflag = ((pT->fMuID & 0x40) == 0x40);
   if (verbose) cout << "muflag: " << hex << pT->fMuID << dec << " -> " << muflag << endl;
 
-  bool mucuts(false); 
+  bool mucuts(true); 
   if (verbose) cout << "mu index: " << pT->fMuIndex << " track index: " << pT->fIndex << endl;
   if (pT->fMuIndex > -1) {
     TAnaMuon *pM = fpEvt->getMuon(pT->fMuIndex);
-    if (pM->fNmatchedStations > 1) mucuts = true; 
+    if (pM->fGtrkNormChi2 > 10) mucuts = false; 
+    if (pM->fNmatchedStations < 2) mucuts = false; 
     if (verbose) cout << "matched muon stations: " << pM->fNmatchedStations << " -> " << mucuts << endl;
+  } else {
+    mucuts = false; 
   }
 
   bool trackcuts(true); 
 
-  if (TMath::Abs(pT->fBsTip) > 0.2) trackcuts = false;
-  if (verbose)  cout << "fBsTip: " << pT->fBsTip << " -> " << trackcuts << endl;
-  //if(pT->fBsTip != -99) cout << "fBsTip: " << pT->fBsTip << " -> " << trackcuts << endl;
   if (fpReader->numberOfPixLayers(pT) < 1) trackcuts = false;
   if (verbose)  cout << "pixel layers: " << fpReader->numberOfPixLayers(pT) << " -> " << trackcuts << endl;
 
+  int trkHits = fpReader->numberOfTrackerLayers(pT);
   if (fYear == 2011) {
-    if (pT->fValidHits < 11) trackcuts = false; 
+    // old version!! if (pT->fValidHits < 11) trackcuts = false; 
+    if (trkHits < 9) trackcuts = false; 
     if (verbose)  cout << "valid hits: " << pT->fValidHits << " -> " << trackcuts << endl;
   } else if (fYear == 2012) {
-    int trkHits = fpReader->numberOfTrackerLayers(pT);
     if (trkHits < 6) trackcuts = false; 
     if (verbose)  cout << "number of tracker layers: " << trkHits << " -> " << trackcuts << endl;
   } else {
@@ -2108,9 +2127,15 @@ bool candAna::mvaMuon(TAnaMuon *pt, double &result, bool hadronsPass) {
   
   mrd.dpt              = pt->fInnerPlab.Mag() - pt->fOuterPlab.Mag();
   mrd.dptrel           = TMath::Abs(pt->fInnerPlab.Mag() - pt->fOuterPlab.Mag())/pt->fInnerPlab.Mag();
-  mrd.deta             = pt->fInnerPlab.Eta() - pt->fOuterPlab.Eta();
-  mrd.dphi             = pt->fInnerPlab.DeltaPhi(pt->fOuterPlab);
-  mrd.dr               = pt->fInnerPlab.DeltaR(pt->fOuterPlab);
+  if (pt->fOuterPlab.Mag() > 3.) {
+    mrd.deta             = pt->fInnerPlab.Eta() - pt->fOuterPlab.Eta();
+    mrd.dphi             = pt->fInnerPlab.DeltaPhi(pt->fOuterPlab);
+    mrd.dr               = pt->fInnerPlab.DeltaR(pt->fOuterPlab);
+  } else {
+    mrd.deta             = -99.;
+    mrd.dphi             = -99.;
+    mrd.dr               = -99.;
+  }
 
 
   result = fMvaMuonID->EvaluateMVA("BDT"); 
@@ -3448,7 +3473,7 @@ double candAna::doTriggerMatchingR(TAnaTrack *pt, bool anyTrig) {
   
   ((TH1D*)fHistDir->Get("test1"))->Fill(20.); 
   tlvMu1.SetPtEtaPhiM(pt->fPlab.Perp(),pt->fPlab.Eta(),pt->fPlab.Phi(),MMUON); // assume a muon
-  
+
   for(int i=0; i!=fpEvt->nTrgObj(); i++) {
     tto = fpEvt->getTrgObj(i);
     

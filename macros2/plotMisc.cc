@@ -82,40 +82,132 @@ void plotMisc::loopFunction2(int mode) {
 void plotMisc::pidTableDisplay() {
 
   PidTable *a; 
+  gStyle->SetOptTitle(0);
+  tl->SetTextSize(0.07); 
 
   // -- fake rates
-  double xbins[] = {0., 1.4, 2.4};
-  double ybins[] = {0., 4., 5., 7., 10., 15., 20., 50.}; 
-  TH2D *h2 = new TH2D("h2", "", 2, xbins, 7, ybins); 
-  setTitles(h2, "|#eta|", "p_{T} [GeV]"); 
-  h2->SetMinimum(0.0); 
-  h2->SetMaximum(0.001); 
-  h2->SetMarkerSize(1.3);
-  h2->SetMarkerColor(kWhite);
-  
-  gStyle->SetOptStat(0); 
+  if (1) {
+    gStyle->SetPaintTextFormat("5.4f");
+    double xbins[] = {0., 1.4, 2.4};
+    double ybins[] = {0., 4., 5., 7., 10., 15., 20., 50.}; 
+    TH2D *h2 = new TH2D("h2", "", 2, xbins, 7, ybins); 
+    setTitles(h2, "|#eta|", "p_{T} [GeV]"); 
+    h2->SetMinimum(0.0); 
+    h2->SetMaximum(0.002); 
+    h2->SetMarkerSize(1.3);
+    h2->SetMarkerColor(kBlack);
+    
+    gStyle->SetOptStat(0); 
+    
+    shrinkPad(0.15, 0.15, 0.25); 
+    gPad->SetLogy(0); 
+    a = fptFakePosKaons;  h2->Reset(); h2->SetTitle(Form("positive kaons (%d)", fYear)); 
+    a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+    c0->SaveAs(Form("%s/%d-fakePosKaons.pdf", fDirectory.c_str(), fYear));
+    
+    a = fptFakeNegKaons;  h2->Reset(); h2->SetTitle(Form("negative kaons (%d)", fYear)); 
+    a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+    c0->SaveAs(Form("%s/%d-fakeNegKaons.pdf", fDirectory.c_str(), fYear));
+    
+    a = fptFakePosPions;  h2->Reset(); h2->SetTitle(Form("positive pions (%d)", fYear)); 
+    a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+    c0->SaveAs(Form("%s/%d-fakePosPions.pdf", fDirectory.c_str(), fYear));
+    
+    a = fptFakeNegPions;  h2->Reset(); h2->SetTitle(Form("negative pions (%d)", fYear)); 
+    a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+    c0->SaveAs(Form("%s/%d-fakeNegPions.pdf", fDirectory.c_str(), fYear));
+    
+    a = fptFakePosProtons;  h2->Reset(); h2->SetTitle(Form("positive protons (%d)", fYear)); 
+    a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+    c0->SaveAs(Form("%s/%d-fakePosProtons.pdf", fDirectory.c_str(), fYear));
+    
+    a = fptFakeNegProtons;  h2->Reset(); h2->SetTitle(Form("negative protons (%d)", fYear)); 
+    a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+    c0->SaveAs(Form("%s/%d-fakeNegProtons.pdf", fDirectory.c_str(), fYear));
+  }
 
-  shrinkPad(0.15, 0.15, 0.25); 
-  a = fptFakePosKaons;  h2->Reset(); h2->SetTitle("positive kaons"); 
-  a->eff2d(h2);  h2->Draw("colztext");  c0->SaveAs(Form("%s/%d-fakePosKaons.pdf", fDirectory.c_str(), fYear));
+  // -- muon id and trigger
+  gStyle->SetPaintTextFormat("3.2f");
+  if (1) {
+    double xbins[] = {0.0, 0.2, 0.3, 0.6, 0.8, 1.2, 1.4, 1.6, 1.8, 2.0};
+    double ybins[] = {4.0, 4.5, 5.0, 5.5, 6.0, 7.0, 8.0, 10., 15., 20., 50.}; 
+    TH2D *h2 = new TH2D("h2", "", 9, xbins, 10, ybins); 
+    setTitles(h2, "|#eta|", "p_{T} [GeV]"); 
+    h2->SetMinimum(0.0); 
+    h2->SetMaximum(1.0); 
+    h2->SetMarkerSize(1.3);
+    //    h2->SetMarkerColor(kWhite);
+    
+    gStyle->SetOptStat(0); 
+    
+    shrinkPad(0.15, 0.15, 0.25); 
+    gPad->SetLogy(1); 
 
-  a = fptFakeNegKaons;  h2->Reset(); h2->SetTitle("negative kaons"); 
-  a->eff2d(h2);  h2->Draw("colztext");  c0->SaveAs(Form("%s/%d-fakeNegKaons.pdf", fDirectory.c_str(), fYear));
-																              
-  a = fptFakePosPions;  h2->Reset(); h2->SetTitle("positive pions"); 
-  a->eff2d(h2);  h2->Draw("colztext");  c0->SaveAs(Form("%s/%d-fakePosPions.pdf", fDirectory.c_str(), fYear));
-  
-  a = fptFakeNegPions;  h2->Reset(); h2->SetTitle("negative pions"); 
-  a->eff2d(h2);  h2->Draw("colztext");  c0->SaveAs(Form("%s/%d-fakeNegPions.pdf", fDirectory.c_str(), fYear));
+    // -- muon id 
+    a = fptSgM;  h2->Reset(); h2->SetTitle(Form("%d seagulls muon id (data)", fYear)); 
+    a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+    c0->SaveAs(Form("%s/%d-sg-da-muonid.pdf", fDirectory.c_str(), fYear));
 
-  a = fptFakePosProtons;  h2->Reset(); h2->SetTitle("positive protons"); 
-  a->eff2d(h2);  h2->Draw("colztext");  c0->SaveAs(Form("%s/%d-fakePosProtons.pdf", fDirectory.c_str(), fYear));
+    a = fptCbM;  h2->Reset(); h2->SetTitle(Form("%d cowboys muon id (data)", fYear)); 
+    a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+    c0->SaveAs(Form("%s/%d-cb-da-muonid.pdf", fDirectory.c_str(), fYear));
 
-  a = fptFakeNegProtons;  h2->Reset(); h2->SetTitle("negative protons"); 
-  a->eff2d(h2);  h2->Draw("colztext");  c0->SaveAs(Form("%s/%d-fakeNegProtons.pdf", fDirectory.c_str(), fYear));
+    a = fptSgMMC; h2->Reset(); h2->SetTitle(Form("%d seagulls muon id (MC)", fYear)); 
+    a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+    c0->SaveAs(Form("%s/%d-sg-mc-muonid.pdf", fDirectory.c_str(), fYear));
+
+    a = fptCbMMC;  h2->Reset(); h2->SetTitle(Form("%d cowboys muon id (MC)", fYear)); 
+    a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+    c0->SaveAs(Form("%s/%d-cb-mc-muonid.pdf", fDirectory.c_str(), fYear));
+
+    // -- L1L2 
+    a = fptSgT1;  h2->Reset(); h2->SetTitle(Form("%d seagulls L1L2 (data)", fYear)); 
+    a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+    c0->SaveAs(Form("%s/%d-sg-da-L1L2.pdf", fDirectory.c_str(), fYear));
+
+    a = fptCbT1;  h2->Reset(); h2->SetTitle(Form("%d cowboys L1L2 (data)", fYear)); 
+    a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+    c0->SaveAs(Form("%s/%d-cb-da-L1L2.pdf", fDirectory.c_str(), fYear));
+
+    a = fptSgT1MC; h2->Reset(); h2->SetTitle(Form("%d seagulls L1L2 (MC)", fYear)); 
+    a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+    c0->SaveAs(Form("%s/%d-sg-mc-L1L2.pdf", fDirectory.c_str(), fYear));
+
+    a = fptCbT1MC;  h2->Reset(); h2->SetTitle(Form("%d cowboys L1L2 (MC)", fYear)); 
+    a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+    c0->SaveAs(Form("%s/%d-cb-mc-L1L2.pdf", fDirectory.c_str(), fYear));
 
 
-  
+    // -- L3
+    {
+      gPad->SetLogy(1); 
+      double xbins[] = {0.0, 0.4, 0.8, 1.2, 1.6, 2.0, 2.4};
+      double ybins[] = {4.0, 4.5, 5.0, 5.5, 6.0, 7.0, 8.0, 10., 15., 20., 50.}; 
+      TH2D *h2 = new TH2D("h2", "", 6, xbins, 10, ybins); 
+      setTitles(h2, "|#eta|", "p_{T} [GeV]"); 
+      h2->SetMinimum(0.0); 
+      h2->SetMaximum(1.0); 
+      h2->SetMarkerSize(1.3);
+      //      h2->SetMarkerColor(kWhite);
+      
+      a = fptSgT2;  h2->Reset(); h2->SetTitle(Form("%d seagulls L3 (data)", fYear)); 
+      a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+      c0->SaveAs(Form("%s/%d-sg-da-L3.pdf", fDirectory.c_str(), fYear));
+      
+      a = fptCbT2;  h2->Reset(); h2->SetTitle(Form("%d cowboys L3 (data)", fYear)); 
+      a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+      c0->SaveAs(Form("%s/%d-cb-da-L3.pdf", fDirectory.c_str(), fYear));
+      
+      a = fptSgT2MC; h2->Reset(); h2->SetTitle(Form("%d seagulls L3 (MC)", fYear)); 
+      a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+      c0->SaveAs(Form("%s/%d-sg-mc-L3.pdf", fDirectory.c_str(), fYear));
+      
+      a = fptCbT2MC;  h2->Reset(); h2->SetTitle(Form("%d cowboys L3 (MC)", fYear)); 
+      a->eff2d(h2);  h2->Draw("colztext");  tl->DrawLatex(0.10, 0.92, h2->GetTitle()); 
+      c0->SaveAs(Form("%s/%d-cb-mc-L3.pdf", fDirectory.c_str(), fYear));
+    }
+
+  }
 
 }
 

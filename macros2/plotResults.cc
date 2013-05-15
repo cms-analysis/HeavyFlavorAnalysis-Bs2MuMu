@@ -503,13 +503,22 @@ void plotResults::calculateRareBgNumbers(int chan) {
   TH1D *h1(0), *h2(0); 
   string name(""); 
 
-  // -- 'tight muon' values
+//   // -- 'tight muon' values
+//   double epsMu[]  = {0.83, 0.90}; // this is the square of the muon ID efficiency
+//   double epsPi[]  = {0.001, 0.001}; 
+//   double errPi2[] = {0.40*0.40, 0.40*0.40}; // changed to 40% uncertainty to be consistent with Michael's central value
+//   double epsKa[]  = {0.001, 0.001}; 
+//   double errKa2[] = {0.40*0.40, 0.40*0.40}; 
+//   double epsPr[]  = {0.00015, 0.00015};
+//   double errPr2[] = {1.00*1.00, 1.00*1.00};
+
+  // -- mean 'MVA' values
   double epsMu[]  = {0.83, 0.90}; // this is the square of the muon ID efficiency
-  double epsPi[]  = {0.001, 0.001}; 
+  double epsPi[]  = {0.00087, 0.00087}; 
   double errPi2[] = {0.40*0.40, 0.40*0.40}; // changed to 40% uncertainty to be consistent with Michael's central value
-  double epsKa[]  = {0.001, 0.001}; 
+  double epsKa[]  = {0.0015, 0.0015}; 
   double errKa2[] = {0.40*0.40, 0.40*0.40}; 
-  double epsPr[]  = {0.00015, 0.00015};
+  double epsPr[]  = {0.00061, 0.00061};
   double errPr2[] = {1.00*1.00, 1.00*1.00};
 
   double teff[] = {0.62, 0.44}; // new numbers for BDT selection
@@ -524,11 +533,11 @@ void plotResults::calculateRareBgNumbers(int chan) {
   string cname; 
   
   cname = "bgLb2KP";
-  colors.insert(make_pair(cname, 46)); hatches.insert(make_pair(cname, 3004)); mscale.insert(make_pair(cname, epsPi[chan]*epsPr[chan])); 
+  colors.insert(make_pair(cname, 46)); hatches.insert(make_pair(cname, 3004)); mscale.insert(make_pair(cname, epsKa[chan]*epsPr[chan])); 
   err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan] + errPr2[chan]))); 
 
   cname = "bgLb2PiP";
-  colors.insert(make_pair(cname, 49)); hatches.insert(make_pair(cname, 3005)); mscale.insert(make_pair(cname, epsKa[chan]*epsPr[chan])); 
+  colors.insert(make_pair(cname, 49)); hatches.insert(make_pair(cname, 3005)); mscale.insert(make_pair(cname, epsPi[chan]*epsPr[chan])); 
   err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2[chan] + errPr2[chan]))); 
 
   cname = "bgLb2PMuNu";
@@ -552,12 +561,8 @@ void plotResults::calculateRareBgNumbers(int chan) {
   colors.insert(make_pair(cname, 34)); hatches.insert(make_pair(cname, 3008)); mscale.insert(make_pair(cname, epsKa[chan]*epsMu[chan])); 
   err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2[chan]))); 
 
-//   cname = "bgBs2PhiMuMu";
-//   colors.insert(make_pair(cname,35));hatches.insert(make_pair(cname,3006));mscale.insert(make_pair(cname,epsMu[chan]*epsMu[chan]));
-//   err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
-
   cname = "bgBs2MuMuGamma";
-  colors.insert(make_pair(cname, 36));hatches.insert(make_pair(cname, 3009));mscale.insert(make_pair(cname, epsPi[chan]*epsMu[chan]));
+  colors.insert(make_pair(cname, 36));hatches.insert(make_pair(cname, 3009));mscale.insert(make_pair(cname, epsMu[chan]*epsMu[chan]));
   err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan]))); 
 
 
@@ -578,11 +583,11 @@ void plotResults::calculateRareBgNumbers(int chan) {
   err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan]))); 
 
   cname = "bgBd2Pi0MuMu";
-  colors.insert(make_pair(cname, 44));hatches.insert(make_pair(cname, 3003));mscale.insert(make_pair(cname, epsPi[chan]*epsMu[chan]));
+  colors.insert(make_pair(cname, 44));hatches.insert(make_pair(cname, 3003));mscale.insert(make_pair(cname, epsMu[chan]*epsMu[chan]));
   err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan]))); 
 
   cname = "bgBd2MuMuGamma";
-  colors.insert(make_pair(cname, 45));hatches.insert(make_pair(cname, 3002));mscale.insert(make_pair(cname, epsPi[chan]*epsMu[chan]));
+  colors.insert(make_pair(cname, 45));hatches.insert(make_pair(cname, 3002));mscale.insert(make_pair(cname, epsMu[chan]*epsMu[chan]));
   err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan]))); 
 
 
@@ -638,7 +643,8 @@ void plotResults::calculateRareBgNumbers(int chan) {
 
     double misid = mscale[fRareName];
     double ngenfile = ((TH1D*)fF[fRareName]->Get("monEvents"))->GetBinContent(1); 
-    cout << "======> " << fRareName << " with misid: " << misid << endl;
+    cout << "======> " << fRareName << " with ngenfile = " << ngenfile
+	 << " with old constant misid: " << misid << endl;
 
     name = Form("hMassWithAllCuts_%s_%s_chan%d", modifier.c_str(), fRareName.c_str(), chan);
     h1 = (TH1D*)fHistFile->Get(name.c_str()); 
@@ -649,11 +655,18 @@ void plotResults::calculateRareBgNumbers(int chan) {
     tot  = h2->Integral(0, h2->GetNbinsX()+1); 
     bd   = h2->Integral(h2->FindBin(fCuts[chan]->mBdLo), h2->FindBin(fCuts[chan]->mBdHi));
     bs   = h2->Integral(h2->FindBin(fCuts[chan]->mBsLo), h2->FindBin(fCuts[chan]->mBsHi));
+
+    cout << "NNNNNN%%%%%NNNNNNNNNN input: No = " << fNumbersNo[chan]->fitYield 
+	 << " h1 : " << h1->GetName() << " " << h1->GetSumOfWeights()  
+	 << " h2 : " << h2->GetName() << " " << h2->GetSumOfWeights() 
+	 << endl;
     
     efftot = tot/static_cast<double>(ngenfile)*fFilterEff[fRareName];
     
-    pss = bs/tot; 
-    pdd = bd/tot;
+    if (tot>0) pss = bs/tot; 
+    else pss = 0.;
+    if (tot>0) pdd = bd/tot;
+    else pdd = 0.;
     
     fNumbersBla[chan]->effTot = efftot;
     fNumbersBla[chan]->pss = pss;
@@ -683,6 +696,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
     error  = valInc*err[fRareName];
     fTEX <<  Form("\\vdef{%s:%s:loSideband%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
     fTEX <<  Form("\\vdef{%s:%s:loSideband%d:err}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
+    // FIXME: add also MuMu to sl!
     if (string::npos == fRareName.find("Nu")) {
       vRare[0]    += valInc; 
       vRareE[0]   += error*error; 
@@ -1146,29 +1160,8 @@ void plotResults::fillAndSaveHistograms(int nevents) {
 
   fSaveSmallTree = true; 
 
-  if (0) { 
-    resetHistograms();
-    fSetup = "SgMc3e33"; 
-    t = getTree(fSetup); 
-    setupTree(t, fSetup); 
-    loopOverTree(t, fSetup, 1, nevents);
-    saveHists(fSetup);
-
-    resetHistograms();
-    fSetup = "NoMc3e33"; 
-    t = getTree(fSetup); 
-    setupTree(t, fSetup); 
-    loopOverTree(t, fSetup, 1, nevents);
-    saveHists(fSetup);
-    // -- close the file
-    fHistFile->cd();
-    fHistFile->Close(); 
-    return;
-  }
-
   if (1) {
     // -- rare backgrounds
-    fSetup = "BgRareMc"; 
     resetHistograms();
     rareBgHists("nada", nevents); 
   }
@@ -1601,12 +1594,12 @@ void plotResults::loopFunction1(int mode) {
   fhW8MassWithAllCutsManyBins[fChan]->Fill(mass, fW8MisId);
 
   // -- MUON ID
-  if (false == fb.gmuid) return;
+  if (false == fGoodMuonsID) return;
   fhMassWithMuonCuts[fChan]->Fill(mass); 
   fhMassWithMuonCutsManyBins[fChan]->Fill(mass); 
 
   // -- TRIGGER
-  if (false == fb.hlt) return;
+  if (false == fGoodHLT) return;
   fhMassWithTriggerCuts[fChan]->Fill(mass); 
   fhMassWithTriggerCutsManyBins[fChan]->Fill(mass); 
   
@@ -2727,7 +2720,8 @@ void plotResults::numbersFromHist(int chan, int mode, numbers *aa) {
   aa->anaTriggerYieldE = TMath::Sqrt(d); 
   aa->anaWmcYield      = f; 
   aa->anaWmcYieldE     = TMath::Sqrt(f);
-  aa->effAna           = b/a*aa->effPtReco;
+  //  aa->effAna           = b/a*aa->effPtReco;
+  aa->effAna           = b/a;
   aa->effAnaE          = dEff(static_cast<int>(b), static_cast<int>(a)); // FIXME add error from effPtReco
   aa->effMuidMC        = c/b;
   aa->effMuidMCE       = dEff(static_cast<int>(c), static_cast<int>(b));
@@ -2840,7 +2834,8 @@ void plotResults::numbersAfterLoopOverTree(int chan, int mode, numbers *aa, stri
   aa->anaTriggerYieldE = TMath::Sqrt(d); 
   aa->anaWmcYield      = f; 
   aa->anaWmcYieldE     = TMath::Sqrt(f);
-  aa->effAna           = b/a*aa->effPtReco;
+  //  aa->effAna           = b/a*aa->effPtReco;
+  aa->effAna           = b/a;
   aa->effAnaE          = dEff(static_cast<int>(b), static_cast<int>(a)); // FIXME add error from effPtReco
   aa->effMuidMC        = c/b;
   aa->effMuidMCE       = dEff(static_cast<int>(c), static_cast<int>(b));
@@ -2917,6 +2912,8 @@ void plotResults::numbersAfterLoopOverTree(int chan, int mode, numbers *aa, stri
 
 // ----------------------------------------------------------------------
 void plotResults::rareBgHists(std::string mode, int nevents) {
+
+  fSetup = "BgRareMc"; 
 
   TH1D *h1(0); 
   TTree *t(0); 
@@ -3000,19 +2997,19 @@ void plotResults::acceptancePerProcess() {
       
       if (0 == mode) {
 	if (0 == chan) {
-	  cuts = "g1pt>1&&g2pt>1&&abs(g1eta)<1.4&&abs(g2eta)<1.4";
-	  cuts += "&&m1pt>1&&m2pt>1&&abs(m1eta)<1.4&&abs(m2eta)<1.4&&m1gt&&m2gt";
+	  cuts = "g1pt>3.5&&g2pt>3.5&&abs(g1eta)<1.4&&abs(g2eta)<1.4";
+	  cuts += "&&m1pt>3.5&&m2pt>3.5&&abs(m1eta)<1.4&&abs(m2eta)<1.4&&m1gt&&m2gt";
 	} else {
-	  cuts = "g1pt>1&&g2pt>1&&(abs(g1eta)>1.4||abs(g2eta)>1.4)&&abs(g1eta)<2.5&&abs(g2eta)<2.5";
-	  cuts += "&&m1pt>1&&m2pt>1&&(abs(m1eta)>1.4||abs(m2eta)>1.4)&&abs(m1eta)<2.4&&abs(m2eta)<2.4&&m1gt&&m2gt";
+	  cuts = "g1pt>3.5&&g2pt>3.5&&(abs(g1eta)>1.4||abs(g2eta)>1.4)&&abs(g1eta)<2.5&&abs(g2eta)<2.5";
+	  cuts += "&&m1pt>3.5&&m2pt>3.5&&(abs(m1eta)>1.4||abs(m2eta)>1.4)&&abs(m1eta)<2.4&&abs(m2eta)<2.4&&m1gt&&m2gt";
 	}
       } else if (10 == mode) {
 	if (0 == chan) {
-	  cuts = "g1pt>1&&g2pt>1&&g3pt>0.4&&abs(g1eta)<1.4&&abs(g2eta)<1.4&&abs(g3eta)<2.5";
-	  cuts += "&&m1pt>1&&m2pt>1&&k1pt>0.5&&abs(m1eta)<1.4&&abs(m2eta)<1.4&&abs(k1eta)<2.4&&m1gt&&m2gt&&k1gt";
+	  cuts = "g1pt>3.5&&g2pt>3.5&&g3pt>0.4&&abs(g1eta)<1.4&&abs(g2eta)<1.4&&abs(g3eta)<2.5";
+	  cuts += "&&m1pt>3.5&&m2pt>3.5&&k1pt>0.5&&abs(m1eta)<1.4&&abs(m2eta)<1.4&&abs(k1eta)<2.4&&m1gt&&m2gt&&k1gt";
 	} else {
-	  cuts = "g1pt>1&&g2pt>1&&g3pt>0.4&&(abs(g1eta)>1.4||abs(g2eta)>1.4)&&abs(g1eta)<2.5&&abs(g2eta)<2.5&&abs(g3eta)<2.5";
-	  cuts += "&&m1pt>1&&m2pt>1&&k1pt>0.5&&(abs(m1eta)>1.4||abs(m2eta)>1.4)&&abs(m1eta)<2.4&&abs(m2eta)<2.4&&abs(k1eta)<2.4&&m1gt&&m2gt&&k1gt";
+	  cuts = "g1pt>3.5&&g2pt>3.5&&g3pt>0.4&&(abs(g1eta)>1.4||abs(g2eta)>1.4)&&abs(g1eta)<2.5&&abs(g2eta)<2.5&&abs(g3eta)<2.5";
+	  cuts += "&&m1pt>3.5&&m2pt>3.5&&k1pt>0.5&&(abs(m1eta)>1.4||abs(m2eta)>1.4)&&abs(m1eta)<2.4&&abs(m2eta)<2.4&&abs(k1eta)<2.4&&m1gt&&m2gt&&k1gt";
 	}
       }
       

@@ -44,10 +44,6 @@ public:
   void overlayBdtOutput(); 
 
   void hackedMC();
-  void hackedMCOld(int chan);
-  void hackedMC1(std::string cuts = "1", double xmin = -0.4, double xmax = 0.5, std::string func = "pol0");
-  void hackedMC2(double bdtCut1 = 0.0, double bdtCut2 = 0.2, std::string func = "pol0");
-  void hackedMC3(int chan = 0);
 
   void allCorrelationPlots(double bdtcut, std::string fname = "TMVA-0");
   void correlationPlot(double bdtcut, std::string var, double xmin, double xmax, std::string fname);

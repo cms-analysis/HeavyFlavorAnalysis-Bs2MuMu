@@ -25,6 +25,7 @@ struct RedTreeData {
   double k1pt, k1eta, k1phi, k2pt, k2eta, k2phi; 
 
   bool m1id, m2id, m1tmid, m2tmid, m1mvaid, m2mvaid, m1rmvaid, m2rmvaid; 
+  double m1rmvabdt, m2rmvabdt; 
   double m1trigm, m2trigm; 
   int m1gt, m2gt, k1gt, k2gt; 
   int m1pix, m1bpix, m1bpixl1, m1pv; 

@@ -17,7 +17,8 @@ public:
   void tnpVsMC(double m1pt, double m2pt, std::string what = "default");
   void triggerSignal(std::string cuts = "fls3d>8&&chi2/dof<2");
   void triggerNormalization(std::string cuts = "fls3d>8&&chi2/dof<2&&alpha<0.05&&iso>0.5");
-  void misid(int pdgid, std::string sample);
+  void misid(int pdgid, double bdtCut, std::string sample);
+  void pidtables(int pdgid, std::string sample); 
 
   // -- works only on specific large small trees
   void allOverlayStudy();
@@ -29,7 +30,7 @@ public:
   virtual void loopFunction2(int mode); 
 
   void resetHistograms();
-  void saveHists(string smode, double m1pt, double m2pt, std::string what);
+  void saveHists(std::string smode, double m1pt, double m2pt, std::string what);
   void numbersFromHist(int chan, int mode, double m1pt, double m2pt, numbers *aa);
   void texNumbers(double m1pt, double m2pt, std::string what);
 
@@ -41,9 +42,9 @@ public:
   bool fSplitSeagullsFromCowboys; 
 
   std::vector<TH1D*> fhptPosAll, fhptPosPass, fhptNegAll, fhptNegPass;
-  std::vector<TH1D*> fhptPosAllSel, fhptPosPassSel, fhptNegAllSel, fhptNegPassSel;
-
-  int fPdgId; 
+  TH2D *fh2PosAll, *fh2PosPass, *fh2NegAll, *fh2NegPass;
+  int fPdgId;
+  double fBDTcut; 
 
   ClassDef(plotEfficiencies,1) //Testing plotEfficiencies
 

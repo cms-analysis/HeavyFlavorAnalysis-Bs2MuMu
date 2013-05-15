@@ -223,9 +223,16 @@ void plotBDT::makeAll(int channels) {
     //    npvSpecial("SgData");
     //    npvSpecial("NoData");
 
+    cout << "--> bdtScan()" << endl;
+    bdtScan();
+    cout << "--> plotEffVsBg(...)" << endl;
+    for (int i = 0; i < fNchan; ++i) {
+      fBdtString = Form("%s", fCuts[i]->xmlFile.c_str());
+      plotEffVsBg(i);   
+    }
+
     cout << "--> xmlParsing()" << endl;
     xmlParsing(); 
-
 
     cout << "--> tmvaControlPlots()" << endl;
     tmvaControlPlots();
@@ -238,13 +245,6 @@ void plotBDT::makeAll(int channels) {
     cout << "--> allCorrelationPlots(...)" << endl;
     allCorrelationPlots(0., fCuts[0]->xmlFile.c_str());
     allCorrelationPlots(0., fCuts[1]->xmlFile.c_str());
-    cout << "--> bdtScan()" << endl;
-    bdtScan();
-    cout << "--> plotEffVsBg(...)" << endl;
-    for (int i = 0; i < fNchan; ++i) {
-      fBdtString = Form("%s", fCuts[i]->xmlFile.c_str());
-      plotEffVsBg(i);   
-    }
 
     cout << "--> bdtDependencies(\"SgData\")" << endl;
     bdtDependencies("SgData");
@@ -254,15 +254,6 @@ void plotBDT::makeAll(int channels) {
     if (1) {
       hackedMC(); 
     }
-  }
-
-  if (0) {
-    hackedMC2(0.0, 0.2); 
-    hackedMC2(0.0, 0.3); 
-    hackedMC1("abs(m1eta)<1.4&&abs(m2eta)<1.4", -0.3, 0.5, "chan0");
-    hackedMC1("!(abs(m1eta)<1.4&&abs(m2eta)<1.4)", -0.3, 0.5, "chan1");
-    hackedMC3(0); 
-    hackedMC3(1); 
   }
 
   if (channels & 8) {
@@ -287,22 +278,6 @@ void plotBDT::loopFunction1(int mode) {
 
   if (fChan < 0) return;
 
-  // -- gen-level acceptance cuts
-  if (fIsMC) {
-    if (TMath::Abs(fb.g1eta) > 2.5) return;
-    if (TMath::Abs(fb.g2eta) > 2.5) return;
-    if (fb.g1pt < 1.0) return;
-    if (fb.g2pt < 1.0) return;
-  }
-
-  // -- immutable cuts: require basic muon and trackQual cuts
-  if (false == fb.gtqual)  return;
-  if (TMath::Abs(fb.m1eta) > 2.4) return;
-  if (TMath::Abs(fb.m2eta) > 2.4) return;
-  
-  if (fb.m1pt < 1.0) return;
-  if (fb.m2pt < 1.0) return;
-  
   // -- no cuts for normalization
   fhMassNoCuts[fChan]->Fill(fb.m); 
 
@@ -311,14 +286,18 @@ void plotBDT::loopFunction1(int mode) {
   }
 
   // -- the good events must also pass GMUID and HLT!
-  //  if (fb.gmuid && fb.hlt && fb.gtqual) {
   if (!fGoodAcceptance) return;
+  if (!fGoodQ) return;
+  if (!fGoodPvAveW8) return;
   if (!fGoodTracks) return;
   if (!fGoodTracksPt) return;
   if (!fGoodTracksEta) return;
   if (!fGoodMuonsPt) return;
   if (!fGoodMuonsEta) return;
   if (!fGoodJpsiCuts) return;
+  if (fb.m<4.9) return;
+  if (fb.m>5.9) return;
+
   fhAnaBDT[fChan]->Fill(fBDT);
 
   if (!fGoodMuonsID) return;
@@ -2109,8 +2088,8 @@ void plotBDT::plotEffVsBg(int offset) {
   c0->SaveAs(Form("%s/bdt-SgEff-BgEvts-%s.pdf", fDirectory.c_str(), fBdtString.c_str())); 
 
   // -- dump table of numbers
-  h0 = (TH1D*)(gDirectory->Get(Form("hBgEvts%d", offset)))->Clone("H0"); 
-  h1 = (TH1D*)(gDirectory->Get(Form("hSgEff%d", offset)))->Clone("H1"); 
+  //?? h0 = (TH1D*)(gDirectory->Get(Form("hBgEvts%d", offset)))->Clone("H0"); 
+  //?? h1 = (TH1D*)(gDirectory->Get(Form("hSgEff%d", offset)))->Clone("H1"); 
   int icnt(0); 
   double eff(h1->GetBinContent(1)), step(0.002); 
   for (int i = 1; i < h0->GetNbinsX(); ++i) {
@@ -2122,6 +2101,12 @@ void plotBDT::plotEffVsBg(int offset) {
     ++icnt;
     if (h1->GetBinContent(i) < 1e-5) break;
   }
+
+  int ibin = h0->FindBin(fCuts[offset]->bdt);
+  fTEX << formatTex(h0->GetBinLowEdge(ibin), Form("%s:bdtChan%d:Bdt:ana",  fSuffix.c_str(), offset), 2) << endl;
+  fTEX << formatTex(h0->GetBinContent(ibin), Form("%s:bdtChan%d:BgCnt:ana",  fSuffix.c_str(), offset), 0) << endl;
+  fTEX << formatTex(h1->GetBinContent(ibin), Form("%s:bdtChan%d:SgEff:ana",  fSuffix.c_str(), offset), 3) << endl;
+
 }
 
 
@@ -2136,7 +2121,7 @@ void plotBDT::hackedMC() {
   resetHistograms();
   
   // -- Bs2MuMu
-  mode = "SgMc";
+  mode = "SgM53Bs2MuMu";
   fMode = 0; 
   t = getTree(mode); 
   if (0 == t) {
@@ -2199,13 +2184,15 @@ void plotBDT::hackedMC() {
   // ----------------------------------------------------------------------
   // -- hacked MC1 analysis/display
   // ----------------------------------------------------------------------
+  string fitstring("pol0"); 
   for (int ic = 0; ic < 2; ++ic) {
-    string fitstring("pol0"); 
     gStyle->SetOptTitle(0); 
     zone(2,2);
     fhMcBDT[2+ic]->Scale(fhMcBDT[0+ic]->GetSumOfWeights()/fhMcBDT[2+ic]->GetSumOfWeights()); 
     fhMcBDT[4+ic]->Scale(fhMcBDT[0+ic]->GetSumOfWeights()/fhMcBDT[4+ic]->GetSumOfWeights()); 
     
+    cout << "dbx1 " << fhMcMass[2+ic]->GetSumOfWeights() << endl;
+    cout << "dbx2 " << fhMcMass[4+ic]->GetSumOfWeights() << endl;
     fhMcMass[2+ic]->Scale(fhMcMass[0+ic]->GetSumOfWeights()/fhMcMass[2+ic]->GetSumOfWeights()); 
     fhMcMass[4+ic]->Scale(fhMcMass[0+ic]->GetSumOfWeights()/fhMcMass[4+ic]->GetSumOfWeights()); 
     
@@ -2358,233 +2345,6 @@ void plotBDT::hackedMC() {
   }
 }
 
-
-// ----------------------------------------------------------------------
-void plotBDT::hackedMCOld(int chan) {
-  if (0 == chan) fSetup = "B";
-  if (1 == chan) fSetup = "E";
-
-  cout << "==> " << fDirectory << endl;
-  
-  string mode; 
-  TTree *t(0); 
-
-  resetHistograms();
-  
-  // -- Bs2MuMu
-  mode = "SgMc";
-  fMode = 0; 
-  t = getTree(mode); 
-  if (0 == t) {
-    cout << "plotBDT: no tree found for mode  " << mode << endl;
-    return;
-  } 
-  setupTree(t, mode);
-  loopOverTree(t, mode, 2); 
-
-  // -- Bx2MuMu
-  mode = "SgM51Bs2MuMu";
-  fMode = 1; 
-  t = getTree(mode); 
-  if (0 == t) {
-    cout << "plotBDT: no tree found for mode  " << mode << endl;
-    return;
-  } 
-  setupTree(t, mode);
-  loopOverTree(t, mode, 2); 
-
-  // -- By2MuMu
-  mode = "SgM57Bs2MuMu";
-  fMode = 2; 
-  t = getTree(mode); 
-  if (0 == t) {
-    cout << "plotBDT: no tree found for mode  " << mode << endl;
-    return;
-  } 
-  setupTree(t, mode);
-  loopOverTree(t, mode, 2); 
-
-  // -- Bs2JpsiPhi
-  mode = "CsMc";
-  fMode = 3; 
-  t = getTree(mode); 
-  if (0 == t) {
-    cout << "plotBDT: no tree found for mode  " << mode << endl;
-    return;
-  } 
-  setupTree(t, mode);
-  loopOverTree(t, mode, 2); 
-
-  // -- Bu2JpsiK
-  mode = "NoMc";
-  fMode = 4; 
-  t = getTree(mode); 
-  if (0 == t) {
-    cout << "plotBDT: no tree found for mode  " << mode << endl;
-    return;
-  } 
-  setupTree(t, mode);
-  loopOverTree(t, mode, 2); 
-
-
-  // ----------------------------------------------------------------------
-  // -- hacked MC1 analysis/display
-  // ----------------------------------------------------------------------
-  string fitstring("pol0"); 
-  gStyle->SetOptTitle(0); 
-  zone(2,2);
-  fhMcBDT[1]->Scale(fhMcBDT[0]->GetSumOfWeights()/fhMcBDT[1]->GetSumOfWeights()); 
-  fhMcBDT[2]->Scale(fhMcBDT[0]->GetSumOfWeights()/fhMcBDT[2]->GetSumOfWeights()); 
-
-  fhMcMass[1]->Scale(fhMcMass[0]->GetSumOfWeights()/fhMcMass[1]->GetSumOfWeights()); 
-  fhMcMass[2]->Scale(fhMcMass[0]->GetSumOfWeights()/fhMcMass[2]->GetSumOfWeights()); 
-
-  fhMcRatio[1]->Divide(fhMcBDT[1], fhMcBDT[0], 1., 1.); 
-  fhMcRatio[2]->Divide(fhMcBDT[2], fhMcBDT[0], 1., 1.); 
-
-  c0->cd(1);
-  double ymax = fhMcMass[0]->GetMaximum();
-  if (fhMcMass[1]->GetMaximum() > ymax) ymax = fhMcMass[1]->GetMaximum();
-  if (fhMcMass[2]->GetMaximum() > ymax) ymax = fhMcMass[2]->GetMaximum();
-  fhMcMass[0]->SetMaximum(1.2*ymax); 
-  fhMcMass[0]->Draw();
-  fhMcMass[1]->Draw("same");
-  fhMcMass[2]->Draw("same");
-  tl->SetTextColor(kBlue);  tl->DrawLatex(0.48, 0.6, "1");
-  tl->SetTextColor(kBlack); tl->DrawLatex(0.60, 0.6, "0");
-  tl->SetTextColor(kRed);   tl->DrawLatex(0.77, 0.6, "2");
-
-  c0->cd(2);
-  fhMcBDT[0]->Draw("e");
-  fhMcBDT[1]->Draw("samehist");
-  fhMcBDT[2]->Draw("samehist");
-
-  c0->cd(3);
-  fhMcRatio[1]->Draw("e");
-  fhMcRatio[1]->SetMaximum(1.5);  fhMcRatio[1]->SetMinimum(0.);
-  fhMcRatio[1]->Fit(fitstring.c_str(), "", "same"); 
-  fhMcRatio[1]->GetFunction(fitstring.c_str())->SetLineColor(kRed); 
-  fhMcRatio[1]->GetFunction(fitstring.c_str())->SetLineWidth(2); 
-  double chi2 = fhMcRatio[1]->GetFunction(fitstring.c_str())->GetChisquare(); 
-  int    ndof = fhMcRatio[1]->GetFunction(fitstring.c_str())->GetNDF();
-  tl->SetTextColor(kBlack);  
-  tl->DrawLatex(0.25, 0.92, Form("#chi^{2}/dof = %3.1f/%d", chi2, ndof)); 
-
-  c0->cd(4);
-  fhMcRatio[2]->Draw("e");
-  fhMcRatio[2]->SetMaximum(1.5);  fhMcRatio[2]->SetMinimum(0.);
-  fhMcRatio[2]->Fit(fitstring.c_str(), "", "same"); 
-  fhMcRatio[2]->GetFunction(fitstring.c_str())->SetLineColor(kBlue); 
-  fhMcRatio[2]->GetFunction(fitstring.c_str())->SetLineWidth(2); 
-  chi2 = fhMcRatio[2]->GetFunction(fitstring.c_str())->GetChisquare(); 
-  ndof = fhMcRatio[2]->GetFunction(fitstring.c_str())->GetNDF();
-  tl->SetTextColor(kBlack);  
-  tl->DrawLatex(0.25, 0.92, Form("#chi^{2}/dof = %3.1f/%d", chi2, ndof)); 
-
-  cout << Form("%s/hackedMC-bdt-for-shiftedSignalMC-%s-chan%d.pdf", fDirectory.c_str(), fitstring.c_str(), chan) << endl;
-  c0->SaveAs(Form("%s/hackedMC-bdt-for-shiftedSignalMC-%s-chan%d.pdf", fDirectory.c_str(), fitstring.c_str(), chan));
-
-
-  // ----------------------------------------------------------------------
-  // -- hacked MC2 analysis/display
-  // ----------------------------------------------------------------------
-  for (int i = 0; i < 3; ++i) {
-    fhMcMass1[i]->Scale(fhMcMass0[i]->GetSumOfWeights()/fhMcMass1[i]->GetSumOfWeights());
-    fhMcMass2[i]->Scale(fhMcMass0[i]->GetSumOfWeights()/fhMcMass2[i]->GetSumOfWeights());
-    fhMcRatio1[i]->Divide(fhMcMass1[i], fhMcMass0[i], 1., 1.); 
-    fhMcRatio2[i]->Divide(fhMcMass2[i], fhMcMass0[i], 1., 1.); 
-  }
-
-  // -- Bs
-  string func("pol0"); 
-  makeCanvas(1);
-  
-  string pdfname; 
-  int color(kBlack); 
-  for (int i = 0; i < 3; ++i) {
-    zone(2, 1, c1);
-    fhMcMass0[i]->SetMaximum(1.3*fhMcMass0[i]->GetMaximum());
-    fhMcMass0[i]->SetMinimum(0.1);
-    setTitles(fhMcMass0[i], "m [GeV]", "candidates", 0.05, 1.1, 1.5); 
-    fhMcMass0[i]->Draw("hist");
-    fhMcMass1[i]->Draw("samee");
-    fhMcMass2[i]->Draw("samee0");
-    
-    newLegend(0.25, 0.7, 0.45, 0.85); 
-    legg->AddEntry(fhMcMass0[i], Form("b>%3.1f", 0.0), "l"); 
-    legg->AddEntry(fhMcMass1[i], Form("b>%3.1f", 0.1), "p"); 
-    legg->AddEntry(fhMcMass2[i], Form("b>%3.1f", 0.2), "p"); 
-    legg->Draw();
-    
-    if (1 == i ) color = kRed;
-    if (2 == i ) color = kBlue;
-
-    c1->cd(2);  
-    if (0 == i) fhMcRatio1[i]->SetAxisRange(4.9, 5.6, "X"); 
-    if (1 == i) fhMcRatio1[i]->SetAxisRange(4.9, 5.4, "X"); 
-    if (2 == i) fhMcRatio1[i]->SetAxisRange(5.4, 5.9, "X"); 
-
-    setTitles(fhMcRatio1[i], "m [GeV]", "ratio"); 
-    fhMcRatio1[i]->SetMinimum(0.);    fhMcRatio1[i]->SetMaximum(1.5);
-    fhMcRatio1[i]->Fit(func.c_str(), "", "e1");
-    fhMcRatio2[i]->Fit(func.c_str(), "", "same");
-    if (fhMcRatio1[i]->GetFunction(func.c_str())) fhMcRatio1[i]->GetFunction(func.c_str())->SetLineColor(color); 
-    else cout << "NOT FOUND: fhMcRatio1[" << i << "]->GetFunction(" << func.c_str() << ")" << endl;
-
-    if (fhMcRatio2[i]->GetFunction(func.c_str())) fhMcRatio2[i]->GetFunction(func.c_str())->SetLineColor(color);   
-    else cout << "NOT FOUND: fhMcRatio2[" << i << "]->GetFunction(" << func.c_str() << ")" << endl;
-
-    if (fhMcRatio2[i]->GetFunction(func.c_str())) fhMcRatio2[i]->GetFunction(func.c_str())->SetLineStyle(kDashed); 
-    else cout << "NOT FOUND: fhMcRatio2[" << i << "]->GetFunction(" << func.c_str() << ")" << endl;
-    
-    tl->SetTextSize(0.04);
-    tl->DrawLatex(0.15, 0.92, Form("b>0.2: #chi^{2}/dof = %3.1f/%d", 
-				   fhMcRatio1[i]->GetFunction(func.c_str())->GetChisquare(), 
-				   fhMcRatio1[i]->GetFunction(func.c_str())->GetNDF()));
-    
-    tl->DrawLatex(0.55, 0.92, Form("b>0.2: #chi^{2}/dof = %3.1f/%d", 
-				   fhMcRatio2[i]->GetFunction(func.c_str())->GetChisquare(), 
-				   fhMcRatio2[i]->GetFunction(func.c_str())->GetNDF()));
-    
-    pdfname = "bs"; 
-    if (1 == i) pdfname = "bx"; 
-    if (2 == i) pdfname = "by"; 
-    c1->SaveAs(Form("%s/hackedMC-massratio-%s-chan%d.pdf", fDirectory.c_str(), pdfname.c_str(), chan));
-  }
-
-
-
-  // ----------------------------------------------------------------------
-  // -- hacked MC3 analysis/display
-  // ----------------------------------------------------------------------
-  gStyle->SetOptTitle(0); 
-  zone(1);
-  fhMcBDT5[1]->Scale(fhMcBDT5[0]->GetSumOfWeights()/fhMcBDT5[1]->GetSumOfWeights());
-  fhMcBDT5[2]->Scale(fhMcBDT5[0]->GetSumOfWeights()/fhMcBDT5[2]->GetSumOfWeights());
-  fhMcBDT5[3]->Scale(fhMcBDT5[0]->GetSumOfWeights()/fhMcBDT5[3]->GetSumOfWeights());
-  fhMcBDT5[4]->Scale(fhMcBDT5[0]->GetSumOfWeights()/fhMcBDT5[4]->GetSumOfWeights());
-
-  zone();
-  fhMcBDT5[0]->SetMaximum(1.2*fhMcBDT5[0]->GetMaximum());
-  fhMcBDT5[0]->Draw("");
-  fhMcBDT5[1]->Draw("samehist");
-  fhMcBDT5[2]->Draw("samehist");
-  fhMcBDT5[3]->Draw("samehist");
-  fhMcBDT5[4]->Draw("samehist");
-
-  newLegend(0.25, 0.6, 0.45, 0.85); 
-  legg->AddEntry(fhMcBDT5[0], "B_{s} #rightarrow #mu #mu", "p"); 
-  legg->AddEntry(fhMcBDT5[1], "B_{x} #rightarrow #mu #mu", "l"); 
-  legg->AddEntry(fhMcBDT5[2], "B_{y} #rightarrow #mu #mu", "l"); 
-  legg->AddEntry(fhMcBDT5[3], "B_{s} #rightarrow J/#psi #phi", "f"); 
-  legg->AddEntry(fhMcBDT5[4], "B^{+} #rightarrow J/#psi K", "f"); 
-  legg->Draw();
-
-  c0->SaveAs(Form("%s/hackedMC-bdt-overlays-chan%d.pdf", fDirectory.c_str(), chan));
-
-}
-
-
 // ----------------------------------------------------------------------
 void plotBDT::loopFunction2(int mode) {
   if (fChan < 0) return;
@@ -2646,27 +2406,39 @@ void plotBDT::loopFunction3(int mode) {
   if (!fGoodMuonsEta) return;
   if (!fGoodJpsiCuts) return;
   if (!fGoodMuonsID) return;
-  if (!fGoodHLT) return;
+  // -- cannot use fGoodHLT because HLT matching does not work for 2011 hacked MC!
+  if (!fb.hlt) return;
 
   if (fBDT < -1.) return; 
 
+ 
   if (fMode < 6) {
     fhMcMass[fMode+fChan]->Fill(fb.m); 
     if (0 == fMode) {
-      if (fb.m > 5.30) fhMcBDT[fMode+fChan]->Fill(fBDT); 
+      if (fb.m > 5.30) {
+	fhMcBDT[fMode+fChan]->Fill(fBDT); 
+	//cout << " fMode == 0 filled fhMcBDT[" << fMode+fChan << " with " << fBDT << endl;
+      }
     }
     
     if (2 == fMode) {
-      if (fb.m > 5.03) fhMcBDT[fMode+fChan]->Fill(fBDT); 
+      if (fb.m > 5.03) {
+	fhMcBDT[fMode+fChan]->Fill(fBDT); 
+	//cout << " fMode == 2 filled fhMcBDT[" << fMode+fChan << " with " << fBDT << endl;
+      }
     }
     
     if (4 == fMode) {
-      if (fb.m > 5.63) fhMcBDT[fMode+fChan]->Fill(fBDT); 
+      if (fb.m > 5.63) {
+	fhMcBDT[fMode+fChan]->Fill(fBDT); 
+	//cout << " fMode == 4 filled fhMcBDT[" << fMode+fChan << " with " << fBDT << endl;
+      }
     }
     
     if (fBDT>0) fhMcMass0[fMode+fChan]->Fill(fb.m);
     if (fBDT>0.1) fhMcMass1[fMode+fChan]->Fill(fb.m);
     if (fBDT>0.2) fhMcMass2[fMode+fChan]->Fill(fb.m);
+    //cout << " filled fhMcMassX[" << fMode+fChan << " with " << fb.m << endl;
   }
   
   // -- fill BDT response for hacked MC3 analysis (overlay of three signals with Jpsi X)
@@ -2678,328 +2450,6 @@ void plotBDT::loopFunction3(int mode) {
     fhMcBDT5[fMode+fChan]->Fill(fBDT);
   }
 }
-
-
-
-
-// ----------------------------------------------------------------------
-void plotBDT::hackedMC3(int chan) {
-
-  gStyle->SetOptTitle(0);
-
-  string defaultCuts = "hlt&&gmuid&&m1pt>4&&m2pt>4&&flsxy>3&&pt>6.9&&alpha<0.45&&prob>0.1&&maxdoca<0.5";
-  string chanCuts = (0 == chan? "(abs(m1eta)<1.4&&abs(m2eta)<1.4)" : "!(abs(m1eta)<1.4&&abs(m2eta)<1.4)");
-
-  fF["SgMc"]->cd("candAnaMuMu"); 
-  TH1D *hs0 = new TH1D("hs0", "B_{s} #rightarrow #mu #mu", 100, -0.6, 0.6); hs0->Sumw2(); setHist(hs0, kBlack); 
-  setTitles(hs0, "b", "# candidates", 0.05, 1.1, 1.5);
-  TTree *t0 = (TTree*)gDirectory->Get("events"); 
-  t0->Draw("bdt>>hs0", Form("%s&&%s", defaultCuts.c_str(), chanCuts.c_str()));
-
-  fF["SgM51Bs2MuMu"]->cd("candAnaMuMu"); 
-  TH1D *hx0 = new TH1D("hx0", "B_{x} #rightarrow #mu #mu", 100, -0.6, 0.6); hx0->Sumw2(); setHist(hx0, kBlue); 
-  t0 = (TTree*)gDirectory->Get("events"); 
-  t0->Draw("bdt>>hx0", Form("%s&&%s", defaultCuts.c_str(), chanCuts.c_str()));
-
-  fF["SgM57Bs2MuMu"]->cd("candAnaMuMu"); 
-  TH1D *hy0 = new TH1D("hy0", "B_{y} #rightarrow #mu #mu", 100, -0.6, 0.6); hy0->Sumw2(); setHist(hy0, kRed); 
-  t0 = (TTree*)gDirectory->Get("events"); 
-  t0->Draw("bdt>>hy0", Form("%s&&%s", defaultCuts.c_str(), chanCuts.c_str()));
-
-  fF["CsMc"]->cd("candAnaBs2JpsiPhi"); 
-  TH1D *ha0 = new TH1D("ha0", "B_{s} #rightarrow J/#psi #phi", 100, -0.6, 0.6); ha0->Sumw2(); setFilledHist(ha0, 35, 35, 3365); 
-  t0 = (TTree*)gDirectory->Get("events"); 
-  t0->Draw("bdt>>ha0", Form("%s&&%s", defaultCuts.c_str(), chanCuts.c_str()));
-
-  fF["NoMc"]->cd("candAnaBu2JpsiK"); 
-  TH1D *hb0 = new TH1D("hb0", "B^{+} #rightarrow J/#psi K^{+}", 100, -0.6, 0.6); hb0->Sumw2(); setFilledHist(hb0, 45, 45, 3356); 
-  t0 = (TTree*)gDirectory->Get("events"); 
-  t0->Draw("bdt>>hb0", Form("%s&&%s", defaultCuts.c_str(), chanCuts.c_str()));
-
-  hb0->Scale(hs0->GetSumOfWeights()/hb0->GetSumOfWeights());
-  ha0->Scale(hs0->GetSumOfWeights()/ha0->GetSumOfWeights());
-  hx0->Scale(hs0->GetSumOfWeights()/hx0->GetSumOfWeights());
-  hy0->Scale(hs0->GetSumOfWeights()/hy0->GetSumOfWeights());
-
-  zone();
-  hs0->SetMaximum(1.2*hs0->GetMaximum());
-  hs0->Draw("");
-  hx0->Draw("samehist");
-  hy0->Draw("samehist");
-  ha0->Draw("samehist");
-  hb0->Draw("samehist");
-
-  newLegend(0.25, 0.6, 0.45, 0.85); 
-  legg->AddEntry(hs0, "B_{s} #rightarrow #mu #mu", "p"); 
-  legg->AddEntry(hx0, "B_{x} #rightarrow #mu #mu", "l"); 
-  legg->AddEntry(hy0, "B_{y} #rightarrow #mu #mu", "l"); 
-  legg->AddEntry(ha0, "B_{s} #rightarrow J/#psi #phi", "f"); 
-  legg->AddEntry(hb0, "B^{+} #rightarrow J/#psi K", "f"); 
-  legg->Draw();
-
-  c0->SaveAs(Form("%s/hackedMC-bdt-overlays-%d.pdf", fDirectory.c_str(), chan));
-  
-
-}
-
-
-
-// ----------------------------------------------------------------------
-void plotBDT::hackedMC2(double bdtCut0, double bdtCut1, std::string func) {
-
-  gStyle->SetOptStat(0);
-  gStyle->SetOptFit(0);
-  gStyle->SetOptTitle(0);
-
-  string defaultCuts = "hlt&&gmuid&&m1pt>4&&m2pt>4&&abs(m1eta)<2.4&&abs(m2eta)<2.4";
-
-  TH1D *hrs1 = new TH1D("hrs1", Form("ratio"), 100, 4.5, 6.0); hrs1->Sumw2(); setHist(hrs1, kBlack, 20); 
-  TH1D *hrs2 = new TH1D("hrs2", Form("ratio"), 100, 4.5, 6.0); hrs2->Sumw2(); setHist(hrs2, kBlack, 24);  
-
-  TH1D *hrx1 = new TH1D("hrx1", Form("ratio"), 100, 4.5, 6.0); hrx1->Sumw2(); setHist(hrx1, kRed, 20); 
-  TH1D *hrx2 = new TH1D("hrx2", Form("ratio"), 100, 4.5, 6.0); hrx2->Sumw2(); setHist(hrx2, kRed, 24);  
-
-  TH1D *hry1 = new TH1D("hry1", Form("ratio"), 100, 4.5, 6.0); hry1->Sumw2(); setHist(hry1, kBlue, 20);  
-  TH1D *hry2 = new TH1D("hry2", Form("ratio"), 100, 4.5, 6.0); hry2->Sumw2(); setHist(hry2, kBlue, 24);  
-
-  fF["SgMc"]->cd("candAnaMuMu"); 
-  cout << "SgMc: " << gDirectory << endl;
-  TH1D *hs0 = new TH1D("hs0", "B_{s} #rightarrow #mu #mu", 100, 4.5, 6.0); hs0->Sumw2(); setHist(hs0, kBlack); 
-  TH1D *hs1 = new TH1D("hs1", "B_{s} #rightarrow #mu #mu", 100, 4.5, 6.0); hs1->Sumw2(); setHist(hs1, kBlack); 
-  TH1D *hs2 = new TH1D("hs2", "B_{s} #rightarrow #mu #mu", 100, 4.5, 6.0); hs2->Sumw2(); setHist(hs2, kBlack, 24); 
-  TTree *t0 = (TTree*)gDirectory->Get("events"); 
-  t0->Draw("m>>hs0", Form("%s&&bdt>%f", defaultCuts.c_str(), 0.));
-  t0->Draw("m>>hs1", Form("%s&&bdt>%f", defaultCuts.c_str(), 0.2));
-  t0->Draw("m>>hs2", Form("%s&&bdt>%f", defaultCuts.c_str(), 0.3));
-	  
-  fF["SgM51Bs2MuMu"]->cd("candAnaMuMu"); 
-  cout << "SgM51Bs2MuMu: " << gDirectory << endl;
-  TH1D *hx0 = new TH1D("hx0", "B_{x} #rightarrow #mu #mu ", 100, 4.5, 6.0); hx0->Sumw2(); setHist(hx0, kRed); 
-  TH1D *hx1 = new TH1D("hx1", "B_{x} #rightarrow #mu #mu ", 100, 4.5, 6.0); hx1->Sumw2(); setHist(hx1, kRed); 
-  TH1D *hx2 = new TH1D("hx2", "B_{x} #rightarrow #mu #mu ", 100, 4.5, 6.0); hx2->Sumw2(); setHist(hx2, kRed, 24); 
-  TTree *t1 = (TTree*)gDirectory->Get("events"); 
-  t1->Draw("m>>hx0", Form("%s&&bdt>%f", defaultCuts.c_str(), 0.));
-  t1->Draw("m>>hx1", Form("%s&&bdt>%f", defaultCuts.c_str(), 0.2));
-  t1->Draw("m>>hx2", Form("%s&&bdt>%f", defaultCuts.c_str(), 0.3));
-
-  fF["SgM57Bs2MuMu"]->cd("candAnaMuMu"); 
-  cout << "SgM57Bs2MuMu: " << gDirectory << endl;
-  TH1D *hy0 = new TH1D("hy0", "B_{y} #rightarrow #mu #mu ", 100, 4.5, 6.0); hy0->Sumw2(); setHist(hy0, kBlue); 
-  TH1D *hy1 = new TH1D("hy1", "B_{y} #rightarrow #mu #mu ", 100, 4.5, 6.0); hy1->Sumw2(); setHist(hy1, kBlue); 
-  TH1D *hy2 = new TH1D("hy2", "B_{y} #rightarrow #mu #mu ", 100, 4.5, 6.0); hy2->Sumw2(); setHist(hy2, kBlue, 24); 
-  TTree *t2 = (TTree*)gDirectory->Get("events"); 
-  t2->Draw("m>>hy0", Form("%s&&bdt>%f", defaultCuts.c_str(), 0.));
-  t2->Draw("m>>hy1", Form("%s&&bdt>%f", defaultCuts.c_str(), 0.2));
-  t2->Draw("m>>hy2", Form("%s&&bdt>%f", defaultCuts.c_str(), 0.3));
-
-  hs1->Scale(hs0->GetSumOfWeights()/hs1->GetSumOfWeights());
-  hs2->Scale(hs0->GetSumOfWeights()/hs2->GetSumOfWeights());
-  hrs1->Divide(hs1, hs0, 1., 1.);
-  hrs2->Divide(hs2, hs0, 1., 1.);
-
-  hx1->Scale(hx0->GetSumOfWeights()/hx1->GetSumOfWeights());
-  hx2->Scale(hx0->GetSumOfWeights()/hx2->GetSumOfWeights());
-  hrx1->Divide(hx1, hx0, 1., 1.);
-  hrx2->Divide(hx2, hx0, 1., 1.);
-
-  hy1->Scale(hy0->GetSumOfWeights()/hy1->GetSumOfWeights());
-  hy2->Scale(hy0->GetSumOfWeights()/hy2->GetSumOfWeights());
-  hry1->Divide(hy1, hy0, 1., 1.);
-  hry2->Divide(hy2, hy0, 1., 1.);
-
-  // -- Bs
-  makeCanvas(1);
-  zone(2,1, c1);
-  hs0->SetMaximum(1.3*hs0->GetMaximum());
-  setTitles(hs0, "m [GeV]", "candidates", 0.05, 1.1, 1.5); 
-  hs0->Draw();
-  hs1->Draw("samee");
-  hs2->Draw("samee0");
-
-  newLegend(0.25, 0.7, 0.45, 0.85); 
-  legg->AddEntry(hs0, Form("b>%3.1f", 0.0), "l"); 
-  legg->AddEntry(hs1, Form("b>%3.1f", 0.2), "p"); 
-  legg->AddEntry(hs2, Form("b>%3.1f", 0.3), "p"); 
-  legg->Draw();
-
-  c1->cd(2);  
-  hrs1->SetAxisRange(4.9, 5.6, "X"); 
-  setTitles(hrs1, "m [GeV]", "ratio"); 
-  hrs1->Fit(func.c_str(), "", "e1");
-  hrs2->Fit(func.c_str(), "", "same");
-  hrs1->GetFunction(func.c_str())->SetLineColor(kBlack); 
-  hrs2->GetFunction(func.c_str())->SetLineColor(kBlack);   hrs2->GetFunction(func.c_str())->SetLineStyle(kDashed); 
-  
-  tl->SetTextSize(0.04);
-  tl->DrawLatex(0.15, 0.92, Form("b>0.2: #chi^{2}/dof = %3.1f/%d", 
-				hrs1->GetFunction(func.c_str())->GetChisquare(), hrs1->GetFunction(func.c_str())->GetNDF()));
-
-  tl->DrawLatex(0.55, 0.92, Form("b>0.3: #chi^{2}/dof = %3.1f/%d", 
-				hrs2->GetFunction(func.c_str())->GetChisquare(), hrs2->GetFunction(func.c_str())->GetNDF()));
-
-  c1->SaveAs(Form("%s/hackedMC-massratio-bs.pdf", fDirectory.c_str()));
-
-  // -- Bx
-  zone(2,1, c1);
-  hx0->SetMaximum(1.3*hx0->GetMaximum());
-  setTitles(hx0, "m [GeV]", "candidates", 0.05, 1.1, 1.5); 
-  hx0->Draw();
-  hx1->Draw("samee");
-  hx2->Draw("samee0");
-
-  newLegend(0.25, 0.7, 0.45, 0.85); 
-  legg->AddEntry(hx0, Form("b>%3.1f", 0.0), "l"); 
-  legg->AddEntry(hx1, Form("b>%3.1f", 0.2), "p"); 
-  legg->AddEntry(hx2, Form("b>%3.1f", 0.3), "p"); 
-  legg->Draw();
-
-  c1->cd(2);  
-  setTitles(hrx1, "m [GeV]", "ratio"); 
-  hrx1->SetAxisRange(5.4, 5.9, "X"); 
-  hrx1->Fit(func.c_str(), "", "e1");
-  hrx2->Fit(func.c_str(), "", "same");
-  hrx1->GetFunction(func.c_str())->SetLineColor(kRed); 
-  hrx2->GetFunction(func.c_str())->SetLineColor(kRed);   hrx2->GetFunction(func.c_str())->SetLineStyle(kDashed); 
-  
-  tl->SetTextSize(0.04);
-  tl->DrawLatex(0.15, 0.92, Form("b>0.2: #chi^{2}/dof = %3.1f/%d", 
-				hrx1->GetFunction(func.c_str())->GetChisquare(), hrx1->GetFunction(func.c_str())->GetNDF()));
-
-  tl->DrawLatex(0.55, 0.92, Form("b>0.3: #chi^{2}/dof = %3.1f/%d", 
-				hrx2->GetFunction(func.c_str())->GetChisquare(), hrx2->GetFunction(func.c_str())->GetNDF()));
-
-  c1->SaveAs(Form("%s/hackedMC-massratio-bx.pdf", fDirectory.c_str()));
-
-
-  // -- By
-  zone(2,1, c1);
-  hy0->SetMaximum(1.3*hy0->GetMaximum());
-  setTitles(hy0, "m [GeV]", "candidates", 0.05, 1.1, 1.5); 
-  hy0->Draw();
-  hy1->Draw("samee");
-  hy2->Draw("samee0");
-
-  newLegend(0.25, 0.7, 0.45, 0.85); 
-  legg->AddEntry(hy0, Form("b>%3.1f", 0.0), "l"); 
-  legg->AddEntry(hy1, Form("b>%3.1f", 0.2), "p"); 
-  legg->AddEntry(hy2, Form("b>%3.1f", 0.3), "p"); 
-  legg->Draw();
-
-  c1->cd(2);  
-  setTitles(hry1, "m [GeV]", "ratio"); 
-  hry1->SetAxisRange(4.9, 5.4, "X"); 
-  hry1->Fit(func.c_str(), "", "e1");
-  hry2->Fit(func.c_str(), "", "same");
-  hry1->GetFunction(func.c_str())->SetLineColor(kBlue); 
-  hry2->GetFunction(func.c_str())->SetLineColor(kBlue);   hry2->GetFunction(func.c_str())->SetLineStyle(kDashed); 
-  
-  tl->SetTextSize(0.04);
-  tl->DrawLatex(0.15, 0.92, Form("b>0.2: #chi^{2}/dof = %3.1f/%d", 
-				hry1->GetFunction(func.c_str())->GetChisquare(), hry1->GetFunction(func.c_str())->GetNDF()));
-
-  tl->DrawLatex(0.55, 0.92, Form("b>0.3: #chi^{2}/dof = %3.1f/%d", 
-				hry2->GetFunction(func.c_str())->GetChisquare(), hry2->GetFunction(func.c_str())->GetNDF()));
-
-  c1->SaveAs(Form("%s/hackedMC-massratio-by.pdf", fDirectory.c_str()));
-  
-
-}
-
-// ----------------------------------------------------------------------
-void plotBDT::hackedMC1(string cuts, double xmin, double xmax, string func) {
-
-  gStyle->SetOptStat(0);
-  gStyle->SetOptFit(1111);
-
-
-  string defaultCuts = "hlt&&gmuid&&m1pt>4&&m2pt>4&&abs(m1eta)<2.4&&abs(m2eta)<2.4";
-
-  int nbins = static_cast<int>((xmax - xmin)/0.05);
-
-  TH1D *hsr1 = new TH1D("hsr1", "ratio 1/0", nbins, xmin, xmax); hsr1->Sumw2(); hsr1->SetMarkerColor(kRed); 
-  TH1D *hsr2 = new TH1D("hsr2", "ratio 2/0", nbins, xmin, xmax); hsr2->Sumw2(); hsr2->SetMarkerColor(kBlue);
-  TH1D *hsr3 = new TH1D("hsr3", "ratio 1/0", nbins, xmin, xmax); hsr3->Sumw2(); hsr3->SetMarkerColor(kRed); 
-  TH1D *hsr4 = new TH1D("hsr4", "ratio 2/0", nbins, xmin, xmax); hsr4->Sumw2(); hsr4->SetMarkerColor(kBlue);
-
-  fF["SgMc"]->cd("candAnaMuMu"); 
-  TH1D *hs0 = new TH1D("hs0", "BDT response ", nbins, xmin, xmax); setHist(hs0, kBlack, 24); 
-  TH1D *hm0 = new TH1D("hm0", "Masses", 100, 4.5, 6.0); setHist(hm0, kBlack, 24); 
-  TTree *t0 = (TTree*)gDirectory->Get("events"); 
-  t0->Draw("bdt>>hs0", Form("m>5.3&&%s&&%s", defaultCuts.c_str(), cuts.c_str()));
-  t0->Draw("m>>hm0", Form("%s&&%s", defaultCuts.c_str(), cuts.c_str()));
-	  
-  fF["SgM51Bs2MuMu"]->cd("candAnaMuMu"); 
-  TH1D *hs1 = new TH1D("hs1", "Bx -> mu mu ", nbins, xmin, xmax);  setHist(hs1, kRed, kRed); 
-  TH1D *hm1 = new TH1D("hm1", "Bx -> mu mu ", 100, 4.5, 6.0); setHist(hm1, kRed, kRed); 
-  TTree *t1 = (TTree*)gDirectory->Get("events"); 
-  t1->Draw("bdt>>hs1", Form("m>5.63&&%s&&%s", defaultCuts.c_str(), cuts.c_str()));
-  t1->Draw("m>>hm1", Form("%s&&%s", defaultCuts.c_str(), cuts.c_str()));
-  
-  fF["SgM57Bs2MuMu"]->cd("candAnaMuMu"); 
-  TH1D *hs2 = new TH1D("hs2", "By -> mu mu ", nbins, xmin, xmax);  setHist(hs2, kBlue, kBlue); 
-  TH1D *hm2 = new TH1D("hm2", "By -> mu mu ", 100, 4.5, 6.0); setHist(hm2, kBlue, kBlue); 
-  TTree *t2 = (TTree*)gDirectory->Get("events"); 
-  t2->Draw("bdt>>hs2", Form("m>5.03&&%s&&%s", defaultCuts.c_str(), cuts.c_str()));
-  t2->Draw("m>>hm2", Form("%s&&%s", defaultCuts.c_str(), cuts.c_str()));
-
-  //  gStyle->SetOptStat(0);
-  //  gStyle->SetOptFit(1111);
-  
-  zone(2,3);
-  hm1->Scale(hm0->GetSumOfWeights()/hm1->GetSumOfWeights()); 
-  hm2->Scale(hm0->GetSumOfWeights()/hm2->GetSumOfWeights()); 
-  hm0->Draw();
-  hm1->Draw("same");
-  hm2->Draw("same");
-
-  tl->SetTextColor(kRed);    tl->DrawLatex(0.48, 0.6, "1");
-  tl->SetTextColor(kBlack);  tl->DrawLatex(0.60, 0.6, "0");
-  tl->SetTextColor(kBlue);   tl->DrawLatex(0.77, 0.6, "2");
-
-  c0->cd(2);
-  hs1->Scale(hs0->GetSumOfWeights()/hs1->GetSumOfWeights()); 
-  hs2->Scale(hs0->GetSumOfWeights()/hs2->GetSumOfWeights()); 
-
-  hs0->Draw("e");
-  hs1->Draw("samehist");
-  hs2->Draw("samehist");
-  
-  c0->cd(3);
-  string lfunc = "pol0"; 
-  hsr1->Divide(hs1, hs0, 1., 1.);
-  hsr2->Divide(hs2, hs0, 1., 1.);
-  hsr1->SetMaximum(2.); hsr1->SetMinimum(0.);
-  hsr1->Draw("e");
-  hsr1->Fit(lfunc.c_str()); 
-  hsr1->GetFunction(lfunc.c_str())->SetLineColor(kBlack); 
-  hsr1->GetFunction(lfunc.c_str())->SetLineWidth(2); 
-  c0->cd(4);
-  hsr2->SetMaximum(2.); hsr2->SetMinimum(0.);
-  hsr2->Draw("e");
-  hsr2->Fit(lfunc.c_str()); 
-  hsr2->GetFunction(lfunc.c_str())->SetLineColor(kBlack); 
-  hsr2->GetFunction(lfunc.c_str())->SetLineWidth(2); 
-
-  c0->cd(5);
-  lfunc = "pol1";
-  hsr3->Divide(hs1, hs0, 1., 1.);
-  hsr4->Divide(hs2, hs0, 1., 1.);
-  hsr3->SetMaximum(2.); hsr3->SetMinimum(0.);
-  hsr3->Draw("e");
-  hsr3->Fit(lfunc.c_str()); 
-  hsr3->GetFunction(lfunc.c_str())->SetLineColor(kBlack); 
-  hsr3->GetFunction(lfunc.c_str())->SetLineWidth(2); 
-  c0->cd(6);
-  hsr4->SetMaximum(2.); hsr4->SetMinimum(0.);
-  hsr4->Draw("e");
-  hsr4->Fit(lfunc.c_str()); 
-  hsr4->GetFunction(lfunc.c_str())->SetLineColor(kBlack); 
-  hsr4->GetFunction(lfunc.c_str())->SetLineWidth(2); 
-
-  c0->SaveAs(Form("%s/hackedMC-bdt-for-shiftedSignalMC-%s.pdf", fDirectory.c_str(), func.c_str()));
-}
-
-
 
 
 // ----------------------------------------------------------------------

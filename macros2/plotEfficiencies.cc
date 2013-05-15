@@ -33,37 +33,39 @@ plotEfficiencies::plotEfficiencies(const char *files, const char *dir, const cha
   string hfname  = fDirectory + "/anaBmm.plotEfficiencies." + fSuffix + ".root";
   cout << "fHistFile: " << hfname << endl;
   //  if (fHistFile) fHistFile->Close();
-  fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
 
   TH1D *h1(0); 
-  fHistFile->cd(); 
   for (int i = 0; i < fNchan; ++i) {
     h1 = new TH1D(Form("hptPosAll%d", i), Form("hptPosAll%d", i), 150, 0., 30.); h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin"); 
     fhptPosAll.push_back(h1);  
     h1 = new TH1D(Form("hptPosPass%d", i), Form("hptPosAll%d", i), 150, 0., 30.);h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin"); 
     fhptPosPass.push_back(h1); 
 
-    h1 = new TH1D(Form("hptPosAllSel%d", i), Form("hptPosAllSel%d", i), 150, 0., 30.);h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin");
-    fhptPosAllSel.push_back(h1); 
-    h1 = new TH1D(Form("hptPosPassSel%d", i), Form("hptPosAllSel%d", i), 150, 0., 30.);h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin");
-    fhptPosPassSel.push_back(h1); 
-
     h1 = new TH1D(Form("hptNegAll%d", i), Form("hptNegAll%d", i), 150, 0., 30.);h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin"); 
     fhptNegAll.push_back(h1); 
     h1 = new TH1D(Form("hptNegPass%d", i), Form("hptNegAll%d", i), 150, 0., 30.);h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin"); 
     fhptNegPass.push_back(h1); 
 
-    h1 = new TH1D(Form("hptNegAllSel%d", i), Form("hptNegAllSel%d", i), 150, 0., 30.);h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin"); 
-    fhptNegAllSel.push_back(h1); 
-    h1 = new TH1D(Form("hptNegPassSel%d", i), Form("hptNegAllSel%d", i), 150, 0., 30.);h1->Sumw2(); setTitles(h1, "p_{T} [GeV]", "Entries/bin");
-    fhptNegPassSel.push_back(h1); 
   }
+
+  // -- 2D versions for PidTables
+  fh2PosAll = new TH2D("h2PosAll", "hptPosAll", 2, 0., 2.8, 150, 0., 30.); 
+  fh2PosAll->Sumw2(); setTitles(fh2PosAll, "p_{T} [GeV]", "#eta");
+
+  fh2PosPass = new TH2D("h2PosPass", "hptPosPass", 2, 0., 2.8, 150, 0., 30.); 
+  fh2PosPass->Sumw2(); setTitles(fh2PosPass, "p_{T} [GeV]", "#eta");
+
+  fh2NegAll = new TH2D("h2NegAll", "hptNegAll", 2., 0., 2.8, 150, 0., 30.); 
+  fh2NegAll->Sumw2(); setTitles(fh2NegAll, "p_{T} [GeV]", "#eta"); 
+  
+  fh2NegPass = new TH2D("h2NegPass", "hptNegPass", 2, 0., 2.8, 150, 0., 30.); 
+  fh2NegPass->Sumw2(); setTitles(fh2NegPass, "p_{T} [GeV]", "#eta"); 
+
 
 }
 
 // ----------------------------------------------------------------------
 plotEfficiencies::~plotEfficiencies() {
-  fHistFile->Write();
   fHistFile->Close();
 }
 
@@ -122,9 +124,15 @@ void plotEfficiencies::makeAll(int channel) {
 
 
   if (channel &8) {
-    misid(211, "bgBd2PiPi"); 
-    misid(321, "bgBs2KK"); 
-    misid(2212, "bgLb2KP"); 
+    misid(211,  0.3, "bgBd2PiPi"); 
+    misid(321,  0.3, "bgBs2KK"); 
+    misid(2212, 0.3, "bgLb2KP"); 
+  }
+
+  if (channel &16) {
+    pidtables(211,  "bgBd2PiPi"); 
+    pidtables(321,  "bgBs2KK"); 
+    pidtables(2212, "bgLb2KP"); 
   }
 }
 
@@ -137,18 +145,21 @@ void plotEfficiencies::mcTriggerEffs() {
 
 // ----------------------------------------------------------------------
 void plotEfficiencies::resetHistograms() {
+
+  fh2PosAll->Reset(); 
+  fh2PosPass->Reset(); 
+
+  fh2NegAll->Reset(); 
+  fh2NegPass->Reset(); 
+
   
   for (unsigned int i = 0; i < fNchan; ++i) {
 
     fhptPosAll[i]->Reset();
     fhptPosPass[i]->Reset();
-    fhptPosAllSel[i]->Reset();
-    fhptPosPassSel[i]->Reset();
 
     fhptNegAll[i]->Reset();
     fhptNegPass[i]->Reset();
-    fhptNegAllSel[i]->Reset();
-    fhptNegPassSel[i]->Reset();
 
     fhMuId[i]->Reset();
     fhMuTr[i]->Reset();
@@ -190,18 +201,18 @@ void plotEfficiencies::loopFunction(int function, int mode) {
 
 // ----------------------------------------------------------------------
 void plotEfficiencies::loopFunction2(int mode) {
+  //  cout << "fBDTcut = " << fBDTcut << endl;
 
   int id(0); 
-  bool mu(0); 
+  bool mu(false), rmvaid(false); 
   double pt(0.), eta(0.); 
   int chan(-1); 
   for (int i = 0; i < 2; ++i) {
     if (0 == i) {
       id = fb.g1id; 
       pt = fb.m1pt;
-      //      mu = fb.m1id;
-      mu = fb.m1rmvaid && (fb.m1trigm>0) && (fb.m1trigm<0.05);
-      //      mu = fb.m1rmvaid;
+      mu = (fb.m1rmvabdt > fBDTcut);
+      rmvaid = fb.m1rmvaid; 
       eta = fb.m1eta;
       chan = (TMath::Abs(fb.m1eta)<1.4?0:1); 
     }
@@ -209,9 +220,8 @@ void plotEfficiencies::loopFunction2(int mode) {
     if (1 == i) {
       id = fb.g2id; 
       pt = fb.m2pt;
-      //      mu = fb.m2id;
-      mu = fb.m2rmvaid && (fb.m2trigm>0) && (fb.m2trigm<0.05);
-      //      mu = fb.m2rmvaid;
+      mu = (fb.m2rmvaid > fBDTcut);
+      rmvaid = fb.m2rmvaid; 
       eta = fb.m2eta;
       chan = (TMath::Abs(fb.m2eta)<1.4?0:1); 
     }
@@ -221,22 +231,22 @@ void plotEfficiencies::loopFunction2(int mode) {
 
     if (fPdgId == TMath::Abs(id)) {
       if (id > 0) {
+	fh2PosAll->Fill(eta, pt); 
 	fhptPosAll[chan]->Fill(pt);
-	if (mu) fhptPosPass[chan]->Fill(pt);
+	if (mu) {
+	  if (!rmvaid) { cout << "???????????????????????????????????" << endl;}
+	  fhptPosPass[chan]->Fill(pt);
+	  fh2PosPass->Fill(eta, pt); 
+	}
       } else {
+	fh2NegAll->Fill(eta, pt); 
 	fhptNegAll[chan]->Fill(pt);
-	if (mu) fhptNegPass[chan]->Fill(pt);
-      }
-      
-      if (fBDT > fCuts[chan]->bdt) {
-	if (id > 0) { 
-	  fhptPosAllSel[chan]->Fill(pt);
-	  if (mu) fhptPosPassSel[chan]->Fill(pt);
-	} else {
-	  fhptNegAllSel[chan]->Fill(pt);
-	  if (mu) fhptNegPassSel[chan]->Fill(pt);
+	if (mu) {
+	  fhptNegPass[chan]->Fill(pt);
+	  fh2NegPass->Fill(eta, pt); 
 	}
       }
+      
     }
     
   }
@@ -409,17 +419,75 @@ void plotEfficiencies::loopFunction1(int mode) {
 }
 
 
+
+// ----------------------------------------------------------------------
+void plotEfficiencies::pidtables(int pdgid, string sample) {
+
+
+  double xbins[] = {0., 1.4, 2.4};
+  double ybins[] = {0., 4., 5., 7.5, 10., 50.}; 
+  TH2D *h2 = new TH2D("h2", "", 2, xbins, 5, ybins); 
+  h2->SetMinimum(0.0); 
+  h2->SetMaximum(0.003); 
+
+  string hfname  = fDirectory + "/anaBmm.plotEfficiencies." + fSuffix + ".root";
+  fHistFile = TFile::Open(hfname.c_str());
+
+  map<int, string> names; 
+  names.insert(make_pair(211, "pion"));
+  names.insert(make_pair(321, "kaon"));
+  names.insert(make_pair(2212, "proton"));
+  
+  vector<string> q; 
+  q.push_back("Pos"); 
+  q.push_back("Neg"); 
+
+  PidTable a("fakeTemplate.dat");
+  PidTable b;
+  PidTable c;
+  string name;
+  for (int iq = 0; iq < q.size(); ++iq) {
+    TH2D *h1 = (TH2D*)fHistFile->Get(Form("h2%sPass_%s_%d", q[iq].c_str(), sample.c_str(), pdgid)); 
+    TH2D *h2 = (TH2D*)fHistFile->Get(Form("h2%sAll_%s_%d", q[iq].c_str(), sample.c_str(), pdgid)); 
+
+    a.flush(); 
+    b.flush(); 
+
+    b.readFromHist(fHistFile, Form("h2%sPass_%s_%d", q[iq].c_str(), sample.c_str(), pdgid), 
+		   Form("h2%sAll_%s_%d", q[iq].c_str(), sample.c_str(), pdgid)); 
+    
+    a.fillEff(b); 
+    name = Form("%s/%d-%s%sFakeRate-mvaMuon.dat", fDirectory.c_str(), fYear, names[pdgid].c_str(), q[iq].c_str());
+    cout << name << endl;
+    a.dumpToFile(name.c_str()); 
+
+    // -- display of pidtables (all!) is in plotMisc
+  }      
+
+  
+  fHistFile->Close();
+
+}
  
 // ----------------------------------------------------------------------
-void plotEfficiencies::misid(int pdgid, string sample) {
+void plotEfficiencies::misid(int pdgid, double bdtCut, string sample) {
+
+  string hfname  = fDirectory + "/anaBmm.plotEfficiencies." + fSuffix + ".root";
+  fHistFile = TFile::Open(hfname.c_str(), "UPDATE");
+  fHistFile->cd(); 
   
+  fBDTcut = bdtCut; 
+
+  cout << "sample: " << sample << " bdtCut: " <<  bdtCut << " -> fBDTcut = " << fBDTcut << endl;
+
   TTree *t(0); 
   resetHistograms();
   fSetup = sample; 
   t = getTree(fSetup); 
   setupTree(t, "Mc"); 
   fPdgId = pdgid; 
-  loopOverTree(t, fSetup, 2, 1000000);
+  //  loopOverTree(t, fSetup, 2, 100000);
+  loopOverTree(t, fSetup, 2);
   
   
   c0->Clear(); 
@@ -432,15 +500,24 @@ void plotEfficiencies::misid(int pdgid, string sample) {
   if (2212 == pdgid) title = "protons"; 
   
   gStyle->SetOptStat(0); 
+  TH1D *h1(0); 
   for (int i = 0; i < 2; ++i) {
+
+    if (0 == i) {
+      saveHist(fh2PosAll, Form("%s_%s_%d", fh2PosAll->GetName(), sample.c_str(), pdgid));
+      saveHist(fh2PosPass, Form("%s_%s_%d", fh2PosPass->GetName(), sample.c_str(), pdgid));
+      saveHist(fh2NegAll, Form("%s_%s_%d", fh2NegAll->GetName(), sample.c_str(), pdgid));
+      saveHist(fh2NegPass, Form("%s_%s_%d", fh2NegPass->GetName(), sample.c_str(), pdgid));
+    }
 
     charge = "positive "; 
     if (2212 == pdgid) charge = ""; 
-
     fhptPosAll[i]->SetTitle((charge + title).c_str()); 
     fhptPosAll[i]->Draw("hist");    
     fhptPosPass[i]->Draw("samee");    
-    c0->SaveAs(Form("%s/%d-fake-spectrum-%s-pos-%d-chan%d.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
+    saveHist(fhptPosAll[i], Form("%s_%s_%d", fhptPosAll[i]->GetName(), sample.c_str(), pdgid));
+    saveHist(fhptPosPass[i], Form("%s_%s_%d", fhptPosPass[i]->GetName(), sample.c_str(), pdgid));
+    //    c0->SaveAs(Form("%s/%d-fake-spectrum-%s-pos-%d-chan%d.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
 
     all  = fhptPosAll[i]->GetSumOfWeights(); 
     pass = fhptPosPass[i]->GetSumOfWeights(); 
@@ -450,17 +527,7 @@ void plotEfficiencies::misid(int pdgid, string sample) {
     hratio->SetMaximum(0.002); 
     hratio->Draw();    
     tl->DrawLatex(0.2, 0.92, Form("%d/%d = %6.5f", static_cast<int>(pass), static_cast<int>(all), pass/all)); 
-    c0->SaveAs(Form("%s/%d-fake-rate-%s-pos-%d-chan%d.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
-
-    all  = fhptPosAllSel[i]->GetSumOfWeights(); 
-    pass = fhptPosPassSel[i]->GetSumOfWeights(); 
-    hratio->Divide(fhptPosPassSel[i], fhptPosAllSel[i], 1., 1., "b"); 
-    hratio->SetTitle((charge + title).c_str()); 
-    hratio->SetMaximum(0.002); 
-    hratio->Draw();    
-    tl->DrawLatex(0.2, 0.92, Form("%d/%d = %6.5f", static_cast<int>(pass), static_cast<int>(all), pass/all)); 
-    c0->SaveAs(Form("%s/%d-fake-rate-%s-pos-%d-chan%d-sel.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
-
+    //    c0->SaveAs(Form("%s/%d-fake-rate-%s-pos-%d-chan%d.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
 
     charge = "negative "; 
     if (2212 == pdgid) charge = "anti"; 
@@ -468,7 +535,9 @@ void plotEfficiencies::misid(int pdgid, string sample) {
     fhptNegAll[i]->SetTitle((charge + title).c_str()); 
     fhptNegAll[i]->Draw("hist");    
     fhptNegPass[i]->Draw("samee");    
-    c0->SaveAs(Form("%s/%d-fake-spectrum-%s-neg-%d-chan%d.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
+    saveHist(fhptNegAll[i], Form("%s_%s_%d", fhptNegAll[i]->GetName(), sample.c_str(), pdgid));
+    saveHist(fhptNegPass[i], Form("%s_%s_%d", fhptNegPass[i]->GetName(), sample.c_str(), pdgid));
+    //    c0->SaveAs(Form("%s/%d-fake-spectrum-%s-neg-%d-chan%d.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
 
     all  = fhptNegAll[i]->GetSumOfWeights(); 
     pass = fhptNegPass[i]->GetSumOfWeights(); 
@@ -477,20 +546,11 @@ void plotEfficiencies::misid(int pdgid, string sample) {
     hratio->SetMaximum(0.002); 
     hratio->Draw();    
     tl->DrawLatex(0.2, 0.92, Form("%d/%d = %6.5f", static_cast<int>(pass), static_cast<int>(all), pass/all)); 
-    c0->SaveAs(Form("%s/%d-fake-rate-%s-neg-%d-chan%d.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
-
-    all  = fhptNegAllSel[i]->GetSumOfWeights(); 
-    pass = fhptNegPassSel[i]->GetSumOfWeights(); 
-    hratio->Divide(fhptNegPassSel[i], fhptNegAllSel[i], 1., 1., "b"); 
-    hratio->SetTitle((charge + title).c_str()); 
-    hratio->SetMaximum(0.002); 
-    hratio->Draw();    
-    tl->DrawLatex(0.2, 0.92, Form("%d/%d = %6.5f", static_cast<int>(pass), static_cast<int>(all), pass/all)); 
-    c0->SaveAs(Form("%s/%d-fake-rate-%s-neg-%d-chan%d-sel.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
-
+    //    c0->SaveAs(Form("%s/%d-fake-rate-%s-neg-%d-chan%d.pdf", fDirectory.c_str(), fYear, sample.c_str(), pdgid, i)); 
 
   }
-  
+
+  fHistFile->Close(); 
 
 }
 
@@ -517,16 +577,18 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, string what) {
   loopOverTree(t, fSetup, 1);
   saveHists(fSetup, m1pt, m2pt, what);
 
-
+  
   resetHistograms();
   fSetup = "NoMc"; 
   t = getTree(fSetup); 
   setupTree(t, fSetup); 
   loopOverTree(t, fSetup, 1);
   saveHists(fSetup, m1pt, m2pt, what);
-
+  
+  fHistFile->Close(); 
+  
 }
-
+ 
 
 // ----------------------------------------------------------------------
 void plotEfficiencies::texNumbers(double m1pt, double m2pt, string what) {

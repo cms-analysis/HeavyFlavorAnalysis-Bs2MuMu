@@ -86,7 +86,9 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   delete gRandom;
   gRandom = (TRandom*) new TRandom3;
 
-  fAccPt = 1.0;
+  fAccPt = 3.5;
+  fAccEtaGen = 2.5;
+  fAccEtaRec = 2.4;
 
   fRunMin = -1; 
   fRunMax = -2; 
@@ -303,7 +305,7 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
     fptFakeNegProtons   = new PidTable("../macros/pidtables/130409/flat-proton.dat"); 
   }
 
-  if (1) {
+  if (0) {
     fptFakePosKaons     = new PidTable("../macros/pidtables/130419/kaonPlusFakeRate-mvaMuon.dat"); 
     fptFakeNegKaons     = new PidTable("../macros/pidtables/130419/kaonMinusFakeRate-mvaMuon.dat"); 
     
@@ -314,73 +316,45 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
     fptFakeNegProtons   = new PidTable("../macros/pidtables/130419/protonMinusFakeRate-mvaMuon.dat"); 
   }
 
+  if (1) {
+    fptFakePosKaons     = new PidTable("../macros/pidtables/130510/2012-kaonPosFakeRate-mvaMuon.dat"); 
+    fptFakeNegKaons     = new PidTable("../macros/pidtables/130510/2012-kaonNegFakeRate-mvaMuon.dat"); 
+    
+    fptFakePosPions     = new PidTable("../macros/pidtables/130510/2012-pionPosFakeRate-mvaMuon.dat"); 
+    fptFakeNegPions     = new PidTable("../macros/pidtables/130510/2012-pionNegFakeRate-mvaMuon.dat"); 
+    
+    fptFakePosProtons   = new PidTable("../macros/pidtables/130510/2012-protonPosFakeRate-mvaMuon.dat"); 
+    fptFakeNegProtons   = new PidTable("../macros/pidtables/130510/2012-protonNegFakeRate-mvaMuon.dat"); 
+  }
+
   if (1) { // if (2012 == fYear) {
     string name(""); 
-    string directory("../macros/pidtables/130104/"); 
-    name = directory + "L1L2_data_all.dat";        fptT1     = new PidTable(name.c_str());
-    name = directory + "L3_data_all.dat";          fptT2     = new PidTable(name.c_str());
-    name = directory + "MVATM_data_all.dat";       fptT3     = new PidTable(name.c_str());
-    name = directory + "MuonID_data_all.dat";      fptM      = new PidTable(name.c_str());
+    string directory("../macros/pidtables/130510/"); 
+    name = directory + Form("%d-L1L2_data_all.dat", fYear);        fptT1     = new PidTable(name.c_str());
+    name = directory + Form("%d-L3_data_all.dat", fYear);          fptT2     = new PidTable(name.c_str());
+    name = directory + Form("%d-MuonID_data_all.dat", fYear);      fptM      = new PidTable(name.c_str());
     
-    name = directory + "L1L2_mc_all.dat";          fptT1MC   = new PidTable(name.c_str()); 	
-    name = directory + "L3_mc_all.dat";            fptT2MC   = new PidTable(name.c_str()); 	
-    name = directory + "MVATM_mc_all.dat";         fptT3MC   = new PidTable(name.c_str());
-    name = directory + "MuonID_mc_all.dat";        fptMMC    = new PidTable(name.c_str());  
+    name = directory + Form("%d-L1L2_mc_all.dat", fYear);          fptT1MC   = new PidTable(name.c_str()); 	
+    name = directory + Form("%d-L3_mc_all.dat", fYear);            fptT2MC   = new PidTable(name.c_str()); 	
+    name = directory + Form("%d-MuonID_mc_all.dat", fYear);        fptMMC    = new PidTable(name.c_str());  
 
-    name = directory + "L1L2_data_seagulls.dat";   fptSgT1   = new PidTable(name.c_str());  
-    name = directory + "L3_data_seagulls.dat";     fptSgT2   = new PidTable(name.c_str());    
-    name = directory + "MVATM_data_seagulls.dat";  fptSgT3   = new PidTable(name.c_str());
-    name = directory + "MuonID_data_seagulls.dat"; fptSgM    = new PidTable(name.c_str());
+    name = directory + Form("%d-L1L2_data_seagulls.dat", fYear);   fptSgT1   = new PidTable(name.c_str());  
+    name = directory + Form("%d-L3_data_seagulls.dat", fYear);     fptSgT2   = new PidTable(name.c_str());    
+    name = directory + Form("%d-MuonID_data_seagulls.dat", fYear); fptSgM    = new PidTable(name.c_str());
     
-    name = directory + "L1L2_mc_seagulls.dat";     fptSgT1MC = new PidTable(name.c_str());    
-    name = directory + "L3_mc_seagulls.dat";       fptSgT2MC = new PidTable(name.c_str());      
-    name = directory + "MVATM_mc_seagulls.dat";    fptSgT3MC = new PidTable(name.c_str());
-    name = directory + "MuonID_mc_seagulls.dat";   fptSgMMC  = new PidTable(name.c_str());  
+    name = directory + Form("%d-L1L2_mc_seagulls.dat", fYear);     fptSgT1MC = new PidTable(name.c_str());    
+    name = directory + Form("%d-L3_mc_seagulls.dat", fYear);       fptSgT2MC = new PidTable(name.c_str());      
+    name = directory + Form("%d-MuonID_mc_seagulls.dat", fYear);   fptSgMMC  = new PidTable(name.c_str());  
 
-    name = directory + "L1L2_data_cowboys.dat";    fptCbT1   = new PidTable(name.c_str());  
-    name = directory + "L3_data_cowboys.dat";      fptCbT2   = new PidTable(name.c_str());    
-    name = directory + "MVATM_data_cowboys.dat";   fptCbT3   = new PidTable(name.c_str());
-    name = directory + "MuonID_data_cowboys.dat";  fptCbM    = new PidTable(name.c_str());
+    name = directory + Form("%d-L1L2_data_cowboys.dat", fYear);    fptCbT1   = new PidTable(name.c_str());  
+    name = directory + Form("%d-L3_data_cowboys.dat", fYear);      fptCbT2   = new PidTable(name.c_str());    
+    name = directory + Form("%d-MuonID_data_cowboys.dat", fYear);  fptCbM    = new PidTable(name.c_str());
     
-    name = directory + "L1L2_mc_cowboys.dat";      fptCbT1MC = new PidTable(name.c_str());    
-    name = directory + "L3_mc_cowboys.dat";        fptCbT2MC = new PidTable(name.c_str());      
-    name = directory + "MVATM_mc_cowboys.dat";     fptCbT3MC = new PidTable(name.c_str());
-    name = directory + "MuonID_mc_cowboys.dat";    fptCbMMC  = new PidTable(name.c_str());  
+    name = directory + Form("%d-L1L2_mc_cowboys.dat", fYear);      fptCbT1MC = new PidTable(name.c_str());    
+    name = directory + Form("%d-L3_mc_cowboys.dat", fYear);        fptCbT2MC = new PidTable(name.c_str());      
+    name = directory + Form("%d-MuonID_mc_cowboys.dat", fYear);    fptCbMMC  = new PidTable(name.c_str());  
   }
 
-  if (0) {
-    string name(""); 
-    string directory("../macros/pidtables/111210/"); 
-    name = directory + "L1L2Efficiency_VBTF_data_all_histo.dat";       fptT1     = new PidTable(name.c_str()); 	
-    name = directory + "L3Efficiency_VBTF_data_all_histo.dat";         fptT2     = new PidTable(name.c_str()); 	
-    name = directory + "flat1.dat";                                    fptT3     = new PidTable(name.c_str()); 	
-    name = directory + "MuonID_VBTF_data_all_histo.dat";               fptM      = new PidTable(name.c_str()); 
-
-    name = directory + "L1L2Efficiency_VBTF_datalike_mc_histo.dat";    fptT1MC   = new PidTable(name.c_str()); 	
-    name = directory + "L3Efficiency_VBTF_datalike_mc_histo.dat";      fptT2MC   = new PidTable(name.c_str()); 	
-    name = directory + "flat1.dat";                                    fptT3MC   = new PidTable(name.c_str()); 	
-    name = directory + "MuonID_VBTF_datalike_mc_histo.dat";            fptMMC    = new PidTable(name.c_str()); 
-
-    name = directory + "L1L2Efficiency_VBTF_data_all_histo_sg.dat";    fptSgT1   = new PidTable(name.c_str());  
-    name = directory + "L3Efficiency_VBTF_data_all_histo.dat";         fptSgT2   = new PidTable(name.c_str());    
-    name = directory + "flat1.dat";                                    fptSgT3   = new PidTable(name.c_str());    
-    name = directory + "MuonID_VBTF_data_all_histo_sg.dat";            fptSgM    = new PidTable(name.c_str());
-    
-    name = directory + "L1L2Efficiency_VBTF_datalike_mc_histo_sg.dat"; fptSgT1MC = new PidTable(name.c_str());    
-    name = directory + "L3Efficiency_VBTF_datalike_mc_histo.dat";      fptSgT2MC = new PidTable(name.c_str());      
-    name = directory + "flat1.dat";                                    fptSgT3MC = new PidTable(name.c_str());      
-    name = directory + "MuonID_VBTF_datalike_mc_histo_sg.dat";         fptSgMMC  = new PidTable(name.c_str());  
-
-    name = directory + "L1L2Efficiency_VBTF_data_all_histo_cb.dat";    fptCbT1   = new PidTable(name.c_str());  
-    name = directory + "L3Efficiency_VBTF_data_all_histo.dat";         fptCbT2   = new PidTable(name.c_str());    
-    name = directory + "flat1.dat";                                    fptCbT3   = new PidTable(name.c_str());    
-    name = directory + "MuonID_VBTF_data_all_histo_cb.dat";            fptCbM    = new PidTable(name.c_str());
-    
-    name = directory + "L1L2Efficiency_VBTF_datalike_mc_histo_cb.dat"; fptCbT1MC = new PidTable(name.c_str());    
-    name = directory + "L3Efficiency_VBTF_datalike_mc_histo.dat";      fptCbT2MC = new PidTable(name.c_str());      
-    name = directory + "flat1.dat";                                    fptCbT3MC = new PidTable(name.c_str());      
-    name = directory + "MuonID_VBTF_datalike_mc_histo_cb.dat";         fptCbMMC  = new PidTable(name.c_str());  
-  }
 
   fNumbersFileName = fDirectory + "/anaBmm.plotClass." + fSuffix + ".tex";
   system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
@@ -580,255 +554,255 @@ void plotClass::filterEfficiency(string fname, string name) {
 // ----------------------------------------------------------------------
 void plotClass::accEffFromEffTreeBac(string fname, string dname, numbers &a, cuts &b, int proc) {
 
-  TFile *f = fF[fname];
-  if (0 == f) {
-    cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): no file " << fname << " found " << endl;
-    return;
-  }
-  TTree *t  = (TTree*)(f->Get(Form("%s/effTree", dname.c_str())));
-  double effFilter(1.); 
-  if (!t) {
-    cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): no tree `effTree' found in " 
-	 << f->GetName() << " and dir = " << Form("%s/effTree", dname.c_str()) 
-	 << endl;
+  //   TFile *f = fF[fname];
+  //   if (0 == f) {
+  //     cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): no file " << fname << " found " << endl;
+  //     return;
+  //   }
+  //   TTree *t  = (TTree*)(f->Get(Form("%s/effTree", dname.c_str())));
+  //   double effFilter(1.); 
+  //   if (!t) {
+  //     cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): no tree `effTree' found in " 
+  // 	 << f->GetName() << " and dir = " << Form("%s/effTree", dname.c_str()) 
+  // 	 << endl;
     
-    return;
-  } else {
-    effFilter = fFilterEff[fname]; 
-    cout << "anaBmm::accEffFromEffTreeBac(" << a.name << ")" << endl
-	 << " get acceptance from file " << f->GetName() << " and dir = " << Form("%s/effTree", dname.c_str()) 
-	 << " with filterEff = " << effFilter
-	 << endl;
-  }
+  //     return;
+  //   } else {
+  //     effFilter = fFilterEff[fname]; 
+  //     cout << "anaBmm::accEffFromEffTreeBac(" << a.name << ")" << endl
+  // 	 << " get acceptance from file " << f->GetName() << " and dir = " << Form("%s/effTree", dname.c_str()) 
+  // 	 << " with filterEff = " << effFilter
+  // 	 << endl;
+  //   }
 
-  bool sg(false), no(false), cs(false); 
+  //   bool sg(false), no(false), cs(false); 
 
-  int   bprocid, bidx; 
-  bool  bhlt;
-  float bg1pt, bg2pt, bg1eta, bg2eta;
-  float bm1pt, bm1eta, bm2pt, bm2eta;
-  bool  bm1gt, bm2gt; 
-  bool  bm1id, bm2id; 
-  float bm;
+  //   int   bprocid, bidx; 
+  //   bool  bhlt;
+  //   float bg1pt, bg2pt, bg1eta, bg2eta;
+  //   float bm1pt, bm1eta, bm2pt, bm2eta;
+  //   bool  bm1gt, bm2gt; 
+  //   bool  bm1id, bm2id; 
+  //   float bm;
 
-  float bg3pt, bg4pt, bg3eta, bg4eta; 
-  float bk1pt, bk2pt, bk1eta, bk2eta; 
-  bool  bk1gt, bk2gt; 
+  //   float bg3pt, bg4pt, bg3eta, bg4eta; 
+  //   float bk1pt, bk2pt, bk1eta, bk2eta; 
+  //   bool  bk1gt, bk2gt; 
 
-  t->SetBranchAddress("hlt",&bhlt);
-  t->SetBranchAddress("procid",&bprocid);
-  t->SetBranchAddress("bidx",&bidx);
+  //   t->SetBranchAddress("hlt",&bhlt);
+  //   t->SetBranchAddress("procid",&bprocid);
+  //   t->SetBranchAddress("bidx",&bidx);
 
-  t->SetBranchAddress("g1pt",&bg1pt);
-  t->SetBranchAddress("g2pt",&bg2pt);
-  t->SetBranchAddress("g1eta",&bg1eta);
-  t->SetBranchAddress("g2eta",&bg2eta);
+  //   t->SetBranchAddress("g1pt",&bg1pt);
+  //   t->SetBranchAddress("g2pt",&bg2pt);
+  //   t->SetBranchAddress("g1eta",&bg1eta);
+  //   t->SetBranchAddress("g2eta",&bg2eta);
 
-  t->SetBranchAddress("m1pt",&bm1pt);
-  t->SetBranchAddress("m2pt",&bm2pt);
-  t->SetBranchAddress("m1eta",&bm1eta);
-  t->SetBranchAddress("m2eta",&bm2eta);
+  //   t->SetBranchAddress("m1pt",&bm1pt);
+  //   t->SetBranchAddress("m2pt",&bm2pt);
+  //   t->SetBranchAddress("m1eta",&bm1eta);
+  //   t->SetBranchAddress("m2eta",&bm2eta);
 
-  t->SetBranchAddress("m1gt",&bm1gt);
-  t->SetBranchAddress("m2gt",&bm2gt);
-  t->SetBranchAddress("m1id",&bm1id);
-  t->SetBranchAddress("m2id",&bm2id);
-
-
-  if (string::npos != a.name.find("signal")) {
-    cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): SIGNAL " << endl;
-    sg = true; 
-  }
-
-  if (string::npos != a.name.find("normalization")) {
-    cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): NORMALIZATION " << endl;
-    no = true; 
-    t->SetBranchAddress("g3pt", &bg3pt);
-    t->SetBranchAddress("g3eta",&bg3eta);
-    t->SetBranchAddress("k1pt", &bk1pt);
-    t->SetBranchAddress("k1eta",&bk1eta);
-    t->SetBranchAddress("k1gt", &bk1gt);
-  }
-
-  if (string::npos != a.name.find("control sample")) {
-    cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): CONTROL SAMPLE " << endl;
-    cs = true; 
-    t->SetBranchAddress("g3pt", &bg3pt);
-    t->SetBranchAddress("g3eta",&bg3eta);
-    t->SetBranchAddress("k1pt", &bk1pt);
-    t->SetBranchAddress("k1eta",&bk1eta);
-    t->SetBranchAddress("k1gt", &bk1gt);
-
-    t->SetBranchAddress("g4pt", &bg4pt);
-    t->SetBranchAddress("g4eta",&bg4eta);
-    t->SetBranchAddress("k2pt", &bk2pt);
-    t->SetBranchAddress("k2eta",&bk2eta);
-    t->SetBranchAddress("k2gt", &bk2gt);
-  }
-
-  t->SetBranchAddress("m",&bm);
+  //   t->SetBranchAddress("m1gt",&bm1gt);
+  //   t->SetBranchAddress("m2gt",&bm2gt);
+  //   t->SetBranchAddress("m1id",&bm1id);
+  //   t->SetBranchAddress("m2id",&bm2id);
 
 
-  int nentries = Int_t(t->GetEntries());
-  int ngen(0), nchangen(0), nreco(0), nchan(0), nmuid(0), nhlt(0), ncand(0), ncand2(0); 
-  int chan(-1); 
-  int recoPtA(0), recoPtB(0); 
-  cout << "channel = " << a.index << endl;
-  for (int jentry = 0; jentry < nentries; jentry++) {
-    t->GetEntry(jentry);
-    if (bidx < 0) continue;
-    ++ngen;
-    if (proc > 0 && bprocid != proc) continue;
-    if (sg) {
-      // -- Signal
-      chan = detChan(bg1eta, bg2eta); 
-      if (chan == a.index) {
-	++nchangen;
-	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5) {
-	  if (bg1pt > 1. && bg2pt > 1.) {
-	    if (bm1pt > 1. && bm2pt > 1.
-		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4
-		&& bm1gt && bm2gt
-		) {
-	      chan = detChan(bm1eta, bm2eta); 
-	      if (chan == a.index) {
-		++nreco;
-		if (bm > 0) {
-		  ++ncand2;
-		}
-		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
-		if (bm1pt > 3.5 && bm2pt > 3.5) {
-		  ++nchan; 
-		  if (bm > 0) {
-		    ++ncand;
-		  }
-		  if (bm1id && bm2id) {
-		    ++nmuid;
-		    if (bhlt) {
-		      ++nhlt;
-		    }
-		  }
-		}
-	      }
-	    }
-	  }
-	}
-      }
-    } else if (no) {
-      // -- Normalization
-      chan = detChan(bg1eta, bg2eta); 
-      if (chan == a.index) {
-	++nchangen;
-	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5) {
-	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4) {
-	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.5
-		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4
-		&& bm1gt && bm2gt && bk1gt
-		) {
-	      ++recoPtA; 
-	      if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
-	      chan = detChan(bm1eta, bm2eta); 
-	      if (chan == a.index) {
-		++nreco;
-		if (bm1pt > b.m1pt && bm2pt > b.m2pt
-		    ) {
-		  ++nchan; 
-		  if (bm > 0) {
-		    ++ncand;
-		  }
-		  if (bm1id && bm2id) {
-		    ++nmuid;
-		    if (bhlt) {
-		      ++nhlt;
-		    }
-		  }
-		}
-	      }
-	    }
-	  }
-	}
-      }
-    } else if (cs) {
-      // -- Control sample
-      chan = detChan(bg1eta, bg2eta); 
-      if (chan == a.index) {
-	++nchangen;
-	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5 && TMath::Abs(bg4eta) < 2.5) {
-	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4 && bg4pt > 0.4) {
-	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.5 && bk2pt > 0.5
-		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4 && TMath::Abs(bk2eta) < 2.4
-		&& bm1gt && bm2gt && bk1gt && bk2gt
-		) {
-	      ++recoPtA; 
-	      if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
-	      chan = detChan(bm1eta, bm2eta); 
-	      if (chan == a.index) {
-		++nreco;
-		if (bm > 0) {
-		  ++ncand2;
-		}
-		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
-		if (bm1pt > 3.5 && bm2pt > 3.5) {
-		  ++nchan; 
-		  if (bm > 0) {
-		    ++ncand;
-		  }
-		  if (bm1id && bm2id) {
-		    ++nmuid;
-		    if (bhlt) {
-		      ++nhlt;
-		    }
-		  }
-		}
-	      }
-	    }
-	  }
-	}
-      }
-    }
-  }
-  if (recoPtA > 0) {
-    a.effPtReco     = static_cast<double>(recoPtB)/static_cast<double>(recoPtA); 
-    a.effPtRecoE    = dEff(recoPtB, recoPtA);
-  } else {
-    a.effPtReco     = 1.; 
-    a.effPtRecoE    = 0.;
-  }
-  a.genAccFileYield = ngen;
-  a.genAccYield     = a.genAccFileYield/effFilter; 
-  a.recoYield       = nreco; // reco'ed in chan, basic global reconstruction cuts 
-  a.muidYield       = nmuid;
-  a.trigYield       = nhlt;
-  a.chanYield       = nchan;
-  a.candYield       = ncand;
-  a.candYield       = ncand2;
+  //   if (string::npos != a.name.find("signal")) {
+  //     cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): SIGNAL " << endl;
+  //     sg = true; 
+  //   }
 
-  if (a.genAccYield > 0) {
-    a.acc = a.recoYield/a.genAccYield;
-    a.accE = dEff(static_cast<int>(a.recoYield), static_cast<int>(a.genAccYield));
-  }  
+  //   if (string::npos != a.name.find("normalization")) {
+  //     cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): NORMALIZATION " << endl;
+  //     no = true; 
+  //     t->SetBranchAddress("g3pt", &bg3pt);
+  //     t->SetBranchAddress("g3eta",&bg3eta);
+  //     t->SetBranchAddress("k1pt", &bk1pt);
+  //     t->SetBranchAddress("k1eta",&bk1eta);
+  //     t->SetBranchAddress("k1gt", &bk1gt);
+  //   }
 
-  if (a.trigYield > 0) {
-    a.effCand  = a.candYield/a.trigYield;
-    a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.trigYield));
-    a.effCand  = 0.98; // estimate
+  //   if (string::npos != a.name.find("control sample")) {
+  //     cout << "anaBmm::accEffFromEffTreeBac(" << a.name << "): CONTROL SAMPLE " << endl;
+  //     cs = true; 
+  //     t->SetBranchAddress("g3pt", &bg3pt);
+  //     t->SetBranchAddress("g3eta",&bg3eta);
+  //     t->SetBranchAddress("k1pt", &bk1pt);
+  //     t->SetBranchAddress("k1eta",&bk1eta);
+  //     t->SetBranchAddress("k1gt", &bk1gt);
 
-    a.effCand  = a.candYield/a.recoYield;
-    a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.recoYield));
+  //     t->SetBranchAddress("g4pt", &bg4pt);
+  //     t->SetBranchAddress("g4eta",&bg4eta);
+  //     t->SetBranchAddress("k2pt", &bk2pt);
+  //     t->SetBranchAddress("k2eta",&bk2eta);
+  //     t->SetBranchAddress("k2gt", &bk2gt);
+  //   }
 
-    a.effCand  = a.candYield/a.recoYield;
-    a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.recoYield));
+  //   t->SetBranchAddress("m",&bm);
 
-    //     a.effCand  = 0.98; 
-    //     a.effCandE = 0.04; 
-  } 
 
-  cout << "genAccFileYield:  " << a.genAccFileYield << endl;
-  cout << "genAccYield:      " << a.genAccYield << endl;
-  cout << "recoYield:        " << a.recoYield << endl;
-  cout << "candYield:        " << a.candYield << endl;
-  cout << "recoPtB:          " << recoPtB << endl;
-  cout << "recoPtA:          " << recoPtA << endl;
+  //   int nentries = Int_t(t->GetEntries());
+  //   int ngen(0), nchangen(0), nreco(0), nchan(0), nmuid(0), nhlt(0), ncand(0), ncand2(0); 
+  //   int chan(-1); 
+  //   int recoPtA(0), recoPtB(0); 
+  //   cout << "channel = " << a.index << endl;
+  //   for (int jentry = 0; jentry < nentries; jentry++) {
+  //     t->GetEntry(jentry);
+  //     if (bidx < 0) continue;
+  //     ++ngen;
+  //     if (proc > 0 && bprocid != proc) continue;
+  //     if (sg) {
+  //       // -- Signal
+  //       chan = detChan(bg1eta, bg2eta); 
+  //       if (chan == a.index) {
+  // 	++nchangen;
+  // 	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5) {
+  // 	  if (bg1pt > 1. && bg2pt > 1.) {
+  // 	    if (bm1pt > 1. && bm2pt > 1.
+  // 		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4
+  // 		&& bm1gt && bm2gt
+  // 		) {
+  // 	      chan = detChan(bm1eta, bm2eta); 
+  // 	      if (chan == a.index) {
+  // 		++nreco;
+  // 		if (bm > 0) {
+  // 		  ++ncand2;
+  // 		}
+  // 		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
+  // 		if (bm1pt > 3.5 && bm2pt > 3.5) {
+  // 		  ++nchan; 
+  // 		  if (bm > 0) {
+  // 		    ++ncand;
+  // 		  }
+  // 		  if (bm1id && bm2id) {
+  // 		    ++nmuid;
+  // 		    if (bhlt) {
+  // 		      ++nhlt;
+  // 		    }
+  // 		  }
+  // 		}
+  // 	      }
+  // 	    }
+  // 	  }
+  // 	}
+  //       }
+  //     } else if (no) {
+  //       // -- Normalization
+  //       chan = detChan(bg1eta, bg2eta); 
+  //       if (chan == a.index) {
+  // 	++nchangen;
+  // 	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5) {
+  // 	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4) {
+  // 	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.5
+  // 		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4
+  // 		&& bm1gt && bm2gt && bk1gt
+  // 		) {
+  // 	      ++recoPtA; 
+  // 	      if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
+  // 	      chan = detChan(bm1eta, bm2eta); 
+  // 	      if (chan == a.index) {
+  // 		++nreco;
+  // 		if (bm1pt > b.m1pt && bm2pt > b.m2pt
+  // 		    ) {
+  // 		  ++nchan; 
+  // 		  if (bm > 0) {
+  // 		    ++ncand;
+  // 		  }
+  // 		  if (bm1id && bm2id) {
+  // 		    ++nmuid;
+  // 		    if (bhlt) {
+  // 		      ++nhlt;
+  // 		    }
+  // 		  }
+  // 		}
+  // 	      }
+  // 	    }
+  // 	  }
+  // 	}
+  //       }
+  //     } else if (cs) {
+  //       // -- Control sample
+  //       chan = detChan(bg1eta, bg2eta); 
+  //       if (chan == a.index) {
+  // 	++nchangen;
+  // 	if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5 && TMath::Abs(bg4eta) < 2.5) {
+  // 	  if (bg1pt > 1. && bg2pt > 1. && bg3pt > 0.4 && bg4pt > 0.4) {
+  // 	    if (bm1pt > 1. && bm2pt > 1. && bk1pt > 0.5 && bk2pt > 0.5
+  // 		&& TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4 && TMath::Abs(bk2eta) < 2.4
+  // 		&& bm1gt && bm2gt && bk1gt && bk2gt
+  // 		) {
+  // 	      ++recoPtA; 
+  // 	      if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
+  // 	      chan = detChan(bm1eta, bm2eta); 
+  // 	      if (chan == a.index) {
+  // 		++nreco;
+  // 		if (bm > 0) {
+  // 		  ++ncand2;
+  // 		}
+  // 		//if (bm1pt > b.m1pt && bm2pt > b.m2pt) {
+  // 		if (bm1pt > 3.5 && bm2pt > 3.5) {
+  // 		  ++nchan; 
+  // 		  if (bm > 0) {
+  // 		    ++ncand;
+  // 		  }
+  // 		  if (bm1id && bm2id) {
+  // 		    ++nmuid;
+  // 		    if (bhlt) {
+  // 		      ++nhlt;
+  // 		    }
+  // 		  }
+  // 		}
+  // 	      }
+  // 	    }
+  // 	  }
+  // 	}
+  //       }
+  //     }
+  //   }
+  //   if (recoPtA > 0) {
+  //     a.effPtReco     = static_cast<double>(recoPtB)/static_cast<double>(recoPtA); 
+  //     a.effPtRecoE    = dEff(recoPtB, recoPtA);
+  //   } else {
+  //     a.effPtReco     = 1.; 
+  //     a.effPtRecoE    = 0.;
+  //   }
+  //   a.genAccFileYield = ngen;
+  //   a.genAccYield     = a.genAccFileYield/effFilter; 
+  //   a.recoYield       = nreco; // reco'ed in chan, basic global reconstruction cuts 
+  //   a.muidYield       = nmuid;
+  //   a.trigYield       = nhlt;
+  //   a.chanYield       = nchan;
+  //   a.candYield       = ncand;
+  //   a.candYield       = ncand2;
+
+  //   if (a.genAccYield > 0) {
+  //     a.acc = a.recoYield/a.genAccYield;
+  //     a.accE = dEff(static_cast<int>(a.recoYield), static_cast<int>(a.genAccYield));
+  //   }  
+
+  //   if (a.trigYield > 0) {
+  //     a.effCand  = a.candYield/a.trigYield;
+  //     a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.trigYield));
+  //     a.effCand  = 0.98; // estimate
+
+  //     a.effCand  = a.candYield/a.recoYield;
+  //     a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.recoYield));
+
+  //     a.effCand  = a.candYield/a.recoYield;
+  //     a.effCandE = dEff(static_cast<int>(a.candYield), static_cast<int>(a.recoYield));
+
+  //     //     a.effCand  = 0.98; 
+  //     //     a.effCandE = 0.04; 
+  //   } 
+
+  //   cout << "genAccFileYield:  " << a.genAccFileYield << endl;
+  //   cout << "genAccYield:      " << a.genAccYield << endl;
+  //   cout << "recoYield:        " << a.recoYield << endl;
+  //   cout << "candYield:        " << a.candYield << endl;
+  //   cout << "recoPtB:          " << recoPtB << endl;
+  //   cout << "recoPtA:          " << recoPtA << endl;
 
 }
 
@@ -937,15 +911,17 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
     if (proc > 0 && bprocid != proc) continue;
     if (sg) {
       // -- Signal
-      if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 
+      if (TMath::Abs(bg1eta) < fAccEtaGen && TMath::Abs(bg2eta) < fAccEtaGen
 	  && bg1pt > fAccPt && bg2pt > fAccPt 
 	  && bm1pt > fAccPt && bm2pt > fAccPt 
-	  && TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4
+	  && TMath::Abs(bm1eta) < fAccEtaRec && TMath::Abs(bm2eta) < fAccEtaRec
 	  && bm1gt && bm2gt
 	  ) {
 	chan = detChan(bm1eta, bm2eta); 
 	if (chan == a.index) {
 	  ++nreco; // for acceptance
+	  ++recoPtA; 
+	  if (bm1pt > 3.5 && bm2pt > 3.5) ++recoPtB;
 	  if (bm > 0) {
 	    ++ncand; // for cand efficiency
 	  }
@@ -953,10 +929,10 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
       }
     } else if (no) {
       // -- Normalization
-      if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5  && TMath::Abs(bg3eta) < 2.5 
+      if (TMath::Abs(bg1eta) < fAccEtaGen && TMath::Abs(bg2eta) < fAccEtaGen  && TMath::Abs(bg3eta) < fAccEtaGen
 	  && bg1pt > fAccPt && bg2pt > fAccPt && bg3pt > 0.4
 	  && bm1pt > fAccPt && bm2pt > fAccPt && bk1pt > 0.5
-	  && TMath::Abs(bm1eta) < 2.4 && TMath::Abs(bm2eta) < 2.4 && TMath::Abs(bk1eta) < 2.4
+	  && TMath::Abs(bm1eta) < fAccEtaRec && TMath::Abs(bm2eta) < fAccEtaRec && TMath::Abs(bk1eta) < fAccEtaRec
 	  && bm1gt && bm2gt && bk1gt
 	  ) {
 	chan = detChan(bm1eta, bm2eta); 
@@ -971,9 +947,10 @@ void plotClass::accEffFromEffTree(string fname, string dname, numbers &a, cuts &
       }
     } else if (cs) {
       // -- control sample
-      if (TMath::Abs(bg1eta) < 2.5 && TMath::Abs(bg2eta) < 2.5 && TMath::Abs(bg3eta) < 2.5 && TMath::Abs(bg4eta) < 2.5 
+      if (TMath::Abs(bg1eta) < fAccEtaGen && TMath::Abs(bg2eta) < fAccEtaGen && TMath::Abs(bg3eta) < fAccEtaGen && TMath::Abs(bg4eta) < fAccEtaGen
 	  && bg1pt > fAccPt && bg2pt > fAccPt && bg3pt > 0.4 && bg4pt > 0.4
 	  && bm1pt > fAccPt && bm2pt > fAccPt && bk1pt > 0.5 && bk2pt > 0.5
+	  && TMath::Abs(bm1eta) < fAccEtaRec && TMath::Abs(bm2eta) < fAccEtaRec && TMath::Abs(bk1eta) < fAccEtaRec && TMath::Abs(bk2eta) < fAccEtaRec
 	  && bm1gt && bm2gt && bk1gt && bk2gt
 	  ) {
 	chan = detChan(bm1eta, bm2eta); 
@@ -1233,7 +1210,8 @@ void plotClass::loadFiles(const char *files) {
     } else {
       string sfilter = sdset; 
       replaceAll(sfilter, "mc,", ""); 
-      double effFilter = atof(sfilter.c_str());
+      double effFilter(-1.); 
+      effFilter = atof(sfilter.c_str());
       // -- MC
       cout << "open MC file "  << sfile  << " as " << sname << " (" << stype << ") with lumi = " << slumi 
 	   << " filter eff = " << effFilter 
@@ -1267,6 +1245,16 @@ void plotClass::loadFiles(const char *files) {
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (5.7GeV)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }
+      if (string::npos != stype.find("m53") && string::npos != stype.find("sg")) {
+	sname = "SgM53Bs2MuMu"; 
+	fF.insert(make_pair(sname, pF)); 
+	fBF.insert(make_pair(sname, 3.2e-9)); 
+	fBFE.insert(make_pair(sname, 0.06)); 
+	fProdR.insert(make_pair(sname, fsfu)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (5.37GeV)")); 
 	fFilterEff.insert(make_pair(sname, effFilter)); 
       }
       if (string::npos != stype.find("m51") && string::npos != stype.find("sg")) {
@@ -1707,7 +1695,7 @@ void plotClass::dumpSamples() {
 
   fTEX << "% ----------------------------------------------------------------------" << endl;
   string name; 
-  double lumi(0.), n(0.), f(0.), bf(0.), bfe(0.); 
+  double lumi(0.), n(0.), f(0.), bf(0.), bfe(0.), fe(0.); 
   for (map<string, string>::iterator imap = fName.begin(); imap != fName.end(); ++imap) {  
     cout << "===> " << imap->first;
     cout << ": " << fF[imap->first]->GetName();
@@ -1718,17 +1706,19 @@ void plotClass::dumpSamples() {
     n = fNgen[imap->first];
     bf = fBF[imap->first];
     bfe = bf*fBFE[imap->first];
+    fe = fFilterEff[imap->first];
     f = ((TH1D*)fF[imap->first]->Get("monEvents"))->GetBinContent(1);
     replaceAll(name, "#", "\\"); 
     fTEX <<  Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
     cout <<  "                       " 
 	 << Form("\\vdef{%s:sampleName:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
-    //FIXME    fTEX <<  Form("\\vdef{%s:bf:%s}   {\\ensuremath{{%s } } }", fSuffix.c_str(), imap->first.c_str(), name.c_str()) << endl;
-    //     cout << "dumpSamples bf = " << bf << " bfe = " << bfe << endl;
-    //     cout <<  scientificTex(bf, bfe, Form("%s:bf:%s", fSuffix.c_str(), imap->first.c_str()), -1, 2) << endl;
     fTEX <<  scientificTex(bf, bfe, Form("%s:bf:%s", fSuffix.c_str(), imap->first.c_str()), -1, 2) << endl;
     fTEX <<  Form("\\vdef{%s:lumi:%s}   {\\ensuremath{{%4.1f } } }", fSuffix.c_str(), imap->first.c_str(), lumi) << endl;
-
+    if (fe > 1.e-6) {
+      fTEX <<  Form("\\vdef{%s:efilt:%s}   {\\ensuremath{{%5.4f } } }", fSuffix.c_str(), imap->first.c_str(), fe) << endl;
+    } else {
+      fTEX <<  Form("\\vdef{%s:efilt:%s}   {\\ensuremath{{n/a } } }", fSuffix.c_str(), imap->first.c_str()) << endl;
+    }
     if (n>0) {
       fTEX <<  Form("\\vdef{%s:ngen:%s}   {\\ensuremath{{%4.0f} } }", fSuffix.c_str(), imap->first.c_str(), n) << endl;
     } else {
@@ -3560,10 +3550,12 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("m1id",   &fb.m1id);
   t->SetBranchAddress("m1rmvaid", &fb.m1rmvaid);
   t->SetBranchAddress("m1trigm",  &fb.m1trigm);
+  t->SetBranchAddress("m1rmvabdt", &fb.m1rmvabdt);
 
   t->SetBranchAddress("m2id",     &fb.m2id);
   t->SetBranchAddress("m2rmvaid", &fb.m2rmvaid);
   t->SetBranchAddress("m2trigm",  &fb.m2trigm);
+  t->SetBranchAddress("m2rmvabdt", &fb.m2rmvabdt);
 
 
   t->SetBranchAddress("m1iso",     &fb.m1iso);
@@ -3761,27 +3753,22 @@ void plotClass::candAnalysis(int mode) {
 
   fGoodMuonsID    = fb.gmuid;
 
-  // -- the new world: MVA plus trigger matched
-  //  fGoodMuonsID    = fb.gmumvaid && fb.hltm;
-
   fW8 = 1.;
   fW8MmuID = fW8Mtrig = fW8DmuID = fW8Dtrig = -1.;
   double w1(-1.), w2(-1.); 
   
   if (fIsMC) {
-    PidTable *pT, *pT1, *pT2, *pT3; 
+    PidTable *pT, *pT1, *pT2; 
 
     // -- Weights with data PidTables
     if (fIsCowboy) {
       pT  = fptCbM; 
       pT1 = fptCbT1;
       pT2 = fptCbT2;
-      pT3 = fptCbT3;
     } else {
       pT  = fptSgM; 
       pT1 = fptSgT1;
       pT2 = fptSgT2;
-      pT3 = fptSgT3;
     }
 
     double am1eta = TMath::Abs(fb.m1eta);
@@ -3791,8 +3778,8 @@ void plotClass::candAnalysis(int mode) {
     w2       = pT->effD(fb.m2pt, am2eta, fb.m2phi);
     fW8DmuID = w1*w2; 
     
-    w1       = pT1->effD(fb.m1pt, am1eta, fb.m1phi) * pT2->effD(fb.m1pt, am1eta, fb.m1phi) * pT3->effD(fb.m1pt, am1eta, fb.m1phi);
-    w2       = pT1->effD(fb.m2pt, am2eta, fb.m2phi) * pT2->effD(fb.m2pt, am2eta, fb.m2phi) * pT3->effD(fb.m2pt, am2eta, fb.m2phi);
+    w1       = pT1->effD(fb.m1pt, am1eta, fb.m1phi) * pT2->effD(fb.m1pt, am1eta, fb.m1phi);
+    w2       = pT1->effD(fb.m2pt, am2eta, fb.m2phi) * pT2->effD(fb.m2pt, am2eta, fb.m2phi);
     fW8Dtrig = w1*w2; 
 
     // -- Weights with MC PidTables
@@ -3800,20 +3787,18 @@ void plotClass::candAnalysis(int mode) {
       pT  = fptCbMMC; 
       pT1 = fptCbT1MC;
       pT2 = fptCbT2MC;
-      pT3 = fptCbT3MC;
     } else {
       pT  = fptSgMMC; 
       pT1 = fptSgT1MC;
       pT2 = fptSgT2MC;
-      pT3 = fptSgT3MC;
     }
 
     w1       = pT->effD(fb.m1pt, am1eta, fb.m1phi);
     w2       = pT->effD(fb.m2pt, am2eta, fb.m2phi);
     fW8MmuID = w1*w2; 
     
-    w1       = pT1->effD(fb.m1pt, am1eta, fb.m1phi) * pT2->effD(fb.m1pt, am1eta, fb.m1phi) * pT3->effD(fb.m1pt, am1eta, fb.m1phi);
-    w2       = pT1->effD(fb.m2pt, am2eta, fb.m2phi) * pT2->effD(fb.m2pt, am2eta, fb.m2phi) * pT3->effD(fb.m2pt, am2eta, fb.m2phi);
+    w1       = pT1->effD(fb.m1pt, am1eta, fb.m1phi) * pT2->effD(fb.m1pt, am1eta, fb.m1phi);
+    w2       = pT1->effD(fb.m2pt, am2eta, fb.m2phi) * pT2->effD(fb.m2pt, am2eta, fb.m2phi);
     fW8Mtrig = w1*w2; 
 
     if (98 == mode) {
@@ -3870,7 +3855,10 @@ void plotClass::candAnalysis(int mode) {
   fGoodDocaTrk    = (fb.docatrk > pCuts->docatrk);
   fGoodLastCut    = true; 
 
-  fGoodHLT        = fb.hlt;
+  fGoodHLT        = fb.hlt && fb.hltm;
+  // -- no trigger matching for rare decays!
+  if (98 == mode) fGoodHLT = fb.hlt; 
+
   fPreselection   = ((fBDT > 0.) && fGoodHLT && fGoodMuonsID ); 
 
   fAnaCuts.update(); 
@@ -4183,3 +4171,18 @@ double plotClass::quadraticSum(int n, ...) {
   va_end(vl);
   return TMath::Sqrt(sum); 
 }
+
+// ----------------------------------------------------------------------
+void plotClass::saveHist(TH1* h, string add2name) {
+  if (h->InheritsFrom(TH1::Class())) {
+    TH1D *h1 = (TH1D*)(h->Clone(Form("%s", add2name.c_str()))); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write(); 
+  } else if (h->InheritsFrom(TH2::Class())) {
+    TH2D *h1 = (TH2D*)(h->Clone(Form("%s", add2name.c_str()))); 
+    h1->SetDirectory(fHistFile); 
+    h1->Write(); 
+  }
+}
+
+

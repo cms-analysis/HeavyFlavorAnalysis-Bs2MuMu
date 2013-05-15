@@ -203,6 +203,7 @@ public:
   virtual void printCuts(ostream &OUT); 
   virtual double recalcMass(double m1, double m2);
 
+  virtual void saveHist(TH1* h, std::string name);
   virtual void setErrors(TH1D *h);
   virtual void stamp(double x1, std::string text1, double x2, std::string text2);
   virtual std::string scientificTex(double n, double nE, const char *name, double base = 1.e-2, int digits = 2);
@@ -240,7 +241,8 @@ public:
   std::string fCutsFileName;
   std::vector<cuts*> fCuts; 
 
-  double fAccPt; 
+  double fAccPt, fAccEtaGen, fAccEtaRec;
+
 
   // -- functions
   TF1 *f0, *f1, *f2, *f3, *f4, *f5, *f6, *f7, *f8, *f9; 
@@ -367,23 +369,23 @@ public:
   bool fSaveSmallTree, fSaveLargerTree; 
   bool fIsCowboy;
 
-  PidTable *fptT1, *fptT2, *fptT3; 
+  PidTable *fptT1, *fptT2; 
   PidTable *fptM; 
 
-  PidTable *fptT1MC, *fptT2MC, *fptT3MC;
+  PidTable *fptT1MC, *fptT2MC;
   PidTable *fptMMC; 
 
   // -- split into seagull and cowboys
-  PidTable *fptSgT1, *fptSgT2, *fptSgT3;
+  PidTable *fptSgT1, *fptSgT2;
   PidTable *fptSgM; 
 
-  PidTable *fptSgT1MC, *fptSgT2MC, *fptSgT3MC;
+  PidTable *fptSgT1MC, *fptSgT2MC;
   PidTable *fptSgMMC; 
 
-  PidTable *fptCbT1, *fptCbT2, *fptCbT3;
+  PidTable *fptCbT1, *fptCbT2;
   PidTable *fptCbM; 
 
-  PidTable *fptCbT1MC, *fptCbT2MC, *fptCbT3MC;
+  PidTable *fptCbT1MC, *fptCbT2MC;
   PidTable *fptCbMMC; 
   
   PidTable *fptFakePosKaons, *fptFakePosPions, *fptFakePosProtons;

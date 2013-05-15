@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     cuts("nada"), 
     files("nada");
   bool restricted(false), remove(false), doUseBDT(true);
-  int year(2012), mode(255), suffixMode(0), nevents(-1);   
+  int year(2012), mode(255), Mode(-1), suffixMode(0), nevents(-1);   
 
   // -- command line arguments
   for (int i = 0; i < argc; i++){
@@ -41,24 +41,26 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i], "-c"))  {cuts  = string(argv[++i]);}     
     if (!strcmp(argv[i], "-f"))  {files = string(argv[++i]);}     
     if (!strcmp(argv[i], "-m"))  {mode  = atoi(argv[++i]);}     
+    if (!strcmp(argv[i], "-M"))  {Mode  = atoi(argv[++i]);}     
     if (!strcmp(argv[i], "-n"))  {nevents = atoi(argv[++i]);}     
     if (!strcmp(argv[i], "-x"))  {remove= true;}     
     if (!strcmp(argv[i], "-y"))  {year  = atoi(argv[++i]);}     
   }
 
   if (2012 == year) {
-    if ("nada" == files) files = "anaBmm.v14-2012.files";
+    if ("nada" == files) files = "anaBmm.v16-2012.files";
     if ("nada" == cuts)  cuts  = "2012";    
     if ("nada" == dir)   dir   = "2012";
   }
 
   if (2011 == year) {
-    if ("nada" == files) files = "anaBmm.v14-2011.files";
+    if ("nada" == files) files = "anaBmm.v16-2011.files";
     if ("nada" == cuts)  cuts  = "2011";    
     if ("nada" == dir)   dir   = "2011";
   }
 
   cout << "mode:       " << mode << endl;
+  cout << "Mode:       " << Mode << endl;
   cout << "  1:  BDT " << endl;
   cout << "  2:  results " << endl;
   cout << "  4:  overlays filling " << endl;
@@ -119,14 +121,17 @@ int main(int argc, char *argv[]) {
     gROOT->Clear();  gROOT->DeleteAll();
     plotResults a(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
     if (!doUseBDT) a.fDoUseBDT = false; 
-    a.makeAll(1, nevents);
+    if (Mode > -1) {
+      a.makeAll(Mode, nevents);
+    } else {
+      a.makeAll(1, nevents);
+      
+      gROOT->Clear();  gROOT->DeleteAll();
+      plotResults b(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+      if (!doUseBDT) b.fDoUseBDT = false; 
+      b.makeAll(2);
+    } 
   }
-  if (mode & 2) {
-    gROOT->Clear();  gROOT->DeleteAll();
-    plotResults b(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
-    if (!doUseBDT) b.fDoUseBDT = false; 
-    b.makeAll(2);
-  } 
 
   // -- overlays histogram filling
   if (mode & 4) {
