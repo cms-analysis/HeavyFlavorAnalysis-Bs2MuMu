@@ -47,7 +47,7 @@ sub splitChain() {
     foreach $line (@lines) {
 	($fname, $fcnt) = split(/\s{1,99}/, $line);
 	if ($cnt + $fcnt > $nmax) {
-	    print "$cfile-$ccnt: $cnt\n";
+	    print "  $cfile-$ccnt: $cnt\n";
 	    close(OUT); 
 	    $ccnt++;
 	    open(OUT, ">$cfile-$ccnt") || die "Cannot open $cfile-$ccnt\n";

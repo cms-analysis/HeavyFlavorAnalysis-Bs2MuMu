@@ -146,7 +146,7 @@ $version-2012-cms-7e33CBsToMuMu.root"
     => "-y 2012 -m,bmm2Reader.mix-Bs2MuMu,
 cbmm-2012-v16-BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-HLT8E33_PU_S10_START53_V19D-*,
 $version-2012-cms-8e33DBsToMuMu.root"
-# -- normaliation and control samples (plus backgrounds)
+# -- normalization and control samples (plus backgrounds)
     , "normMCfilter Bu2JpsiK"  
     => "-y 2012 -m,
 bmm2Reader.mix-Bu2JpsiK,
@@ -474,7 +474,11 @@ sub callA() {
 	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BdToMuMu_BdFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BdToMuMu_EtaPtFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
 	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BsToMuMu_M-51_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v2",
-	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BsToMuMu_M-57_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v2"
+	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BsToMuMu_M-57_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v2",
+	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-HLT5E33_PU_S10_START53_V19A-v1", 
+	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-HLT7E33_PU_S10_START53_V19B-v1", 
+	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-HLT7E33_PU_S10_START53_V19C-v1", 
+	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-HLT8E33_PU_S10_START53_V19D-v1", 
 	);
     
     @normalization = (
@@ -482,7 +486,11 @@ sub callA() {
 	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BuToJPsiK_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1",
 
 	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7A-v2",
-	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1"
+	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BuToJPsiK_K2MuPtEtaEtaFilter_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V7C-v1", 
+	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BuToJPsiK_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V19A-v1", 
+	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BuToJPsiK_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V19B-v1", 
+	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BuToJPsiK_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V19C-v1", 
+	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BuToJPsiK_8TeV-pythia6-evtgen__Summer12_DR53X-PU_S10_START53_V19D-v1", 
 	); 
     
     @controlsample = (
