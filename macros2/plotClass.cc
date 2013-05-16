@@ -2556,9 +2556,6 @@ void plotClass::printNumbers(numbers &a, ostream &OUT) {
   OUT << "genFileYield    = " << a.genFileYield << endl;
   OUT << "genYield        = " << a.genYield << endl;
   OUT << "recoYield       = " << a.recoYield << endl;
-  OUT << "muidYield       = " << a.muidYield << endl;
-  OUT << "trigYield       = " << a.trigYield << endl;
-  OUT << "chanYield       = " << a.chanYield << endl;
   OUT << "candYield       = " << a.candYield << endl;
   OUT << "absNoCutsYield  = " << a.absNoCutsYield << endl;
   OUT << "ana0Yield       = " << a.ana0Yield << endl;
@@ -3316,6 +3313,8 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     small->Branch("run", &fb.run,"run/I");
     small->Branch("evt", &fb.evt,"evt/I");
     small->Branch("ls", &fb.ls,"ls/I");
+    small->Branch("m1bdt", &fb.m1rmvabdt ,"m1bdt/D");
+    small->Branch("m2bdt", &fb.m2rmvabdt ,"m2bdt/D");
     
     small->Branch("bdt", &fBDT ,"bdt/D");
     if (fSaveLargerTree) {
@@ -3384,7 +3383,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
 	&& fGoodMuonsPt
 	&& fGoodMuonsEta
 	&& fGoodJpsiCuts
- 	&& (fSaveLargerTree || fGoodMuonsID)
+	// 	&& (fSaveLargerTree || fGoodMuonsID)
 	&& (fSaveLargerTree || fGoodHLT)
 	) {
       small->Fill();
@@ -3751,7 +3750,7 @@ void plotClass::candAnalysis(int mode) {
     }
   }
 
-  fGoodMuonsID    = fb.gmuid;
+  fGoodMuonsID  = fb.gmuid;
 
   fW8 = 1.;
   fW8MmuID = fW8Mtrig = fW8DmuID = fW8Dtrig = -1.;

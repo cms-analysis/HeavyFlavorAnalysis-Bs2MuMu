@@ -386,6 +386,7 @@ void candAna::candAnalysis() {
 
   fMu1TrkLayer  = fpReader->numberOfTrackerLayers(p1);
   fMu1TmId      = tightMuon(p1); 
+  fMu1BDT       = -1.;
   fMu1MvaId     = mvaMuon(p1, fMu1BDT);        
   fMu1rTmId     = tightMuon(p1, false); 
   fMu1rBDT      = -1.;
@@ -441,6 +442,7 @@ void candAna::candAnalysis() {
   //  fMu2Id        = goodMuon(p2); 
   fMu2TrkLayer  = fpReader->numberOfTrackerLayers(p2);
   fMu2TmId      = tightMuon(p2); 
+  fMu2BDT       = -1.;
   fMu2MvaId     = mvaMuon(p2, fMu2BDT);        
   fMu2rTmId     = tightMuon(p2, false); 
   fMu2rBDT      = -1.;
@@ -3319,7 +3321,7 @@ bool candAna::doTriggerMatching() { // call the normal version with (true)
 
 // 	if( (fCandType==3000068 || fCandType==3000067) && tto->fLabel == "hltDisplacedmumuFilterDoubleMu4Jpsi:HLT::") 
 // 	  selected = true; // 2012 data, psik&psiphi
-// 	else if ( (fCandType==1000080 || fCandType==1000082|| fCandType==1000091 ) &&  //BsMuMu, BsKK, Bdpipi 
+// 	else if ( (fCandType==1000080 || fCandType == 1000090 || fCandType==1000082|| fCandType==1000091 ) &&  //BsMuMu, BsKK, Bdpipi 
 // 		  ( tto->fLabel == "hltVertexmumuFilterBs345:HLT::"   // 2012 data, mumu, central 34
 // 		 || tto->fLabel == "hltVertexmumuFilterBs3p545:HLT::" // 2012 data, mumu, central 3p54
 // 		 || tto->fLabel == "hltVertexmumuFilterBs47:HLT::") ) // 2012 data, mumu, forward
@@ -3550,7 +3552,7 @@ double candAna::doTriggerMatchingR(TAnaTrack *pt, bool anyTrig) {
 	  //if(tto->fLabel == "hltDoubleMu4JpsiDisplacedL3Filtered:HLT::") selected = true;
 	  
 	} else if ( fCandType==301313 ||fCandType==1313 || fCandType==211211 ||  // mumu and HH 
-		    fCandType==1000080 || fCandType==1000082|| fCandType==1000091 ) {  //MC BsMuMu, BsKK, Bdpipi 
+		    fCandType==1000080 || fCandType==1000090 || fCandType==1000082|| fCandType==1000091 ) {  //MC BsMuMu, BsKK, Bdpipi 
 	  // Same comment as above 
 	  if( tto->fLabel == "hltVertexmumuFilterBs345:HLT::"  // 2012 data, mumu, central 34
 	      || tto->fLabel == "hltVertexmumuFilterBs3p545:HLT::" // 2012 data, mumu, central 3p54
@@ -3570,7 +3572,7 @@ double candAna::doTriggerMatchingR(TAnaTrack *pt, bool anyTrig) {
 		||tto->fLabel == "hltDisplacedmumuFilterDoubleMu4Jpsi:HLT::") // 3E33, 5E33
 	    selected = true;
 	} else if ( fCandType==301313 || fCandType==1313 || fCandType==211211 ||                        // data mumu and HH 
-		    fCandType==1000080 || fCandType==1000082|| fCandType==1000091 ) {  //MC BsMuMu, BsKK, Bdpipi 
+		    fCandType==1000080 || fCandType==1000090 || fCandType==1000082|| fCandType==1000091 ) {  //MC BsMuMu, BsKK, Bdpipi 
 
 	  if ( tto->fLabel   == "hltDoubleMu3BsL3Filtered:HLT::"         // 5E32
 	       ||tto->fLabel == "hltDoubleMu2BsL3Filtered:HLT::"         // 1E33, 1.4E33
