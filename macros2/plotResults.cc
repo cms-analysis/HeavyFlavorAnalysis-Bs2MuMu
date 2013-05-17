@@ -2001,6 +2001,28 @@ void plotResults::printUlcalcNumbers(string fname) {
       fTEX << scientificTex(fNumbersNo[i]->effTot, fNumbersNo[i]->effTotTE, 
 			    Form("%s:N-EFF-TOT-BPLUS%i:all", fSuffix.c_str(), i), 1e-3, 2) << endl;
 
+      OUT << "#EFF_PRODMC_BPLUS\t" << i << "\t" << fNumbersNo[i]->effProdMC << endl;
+      fTEX << formatTex(fNumbersNo[i]->effProdMC, Form("%s:N-EFF-PRODMC-BPLUS%i:val", fSuffix.c_str(), i), 5) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effProdMCE, Form("%s:N-EFF-PRODMC-BPLUS%i:err", fSuffix.c_str(), i), 6) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effProdMCE, Form("%s:N-EFF-PRODMC-BPLUS%i:tot", fSuffix.c_str(), i), 5) << endl;
+      fTEX << scientificTex(fNumbersNo[i]->effProdMC, fNumbersNo[i]->effProdMCE, 
+			    Form("%s:N-EFF-PRODMC-BPLUS%i:all", fSuffix.c_str(), i), 1e-3, 2) << endl;
+
+      OUT << "#EFF_PRODTNP_BPLUS\t" << i << "\t" << fNumbersNo[i]->effProdTNP << endl;
+      fTEX << formatTex(fNumbersNo[i]->effProdTNP, Form("%s:N-EFF-PRODTNP-BPLUS%i:val", fSuffix.c_str(), i), 5) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effProdTNPE, Form("%s:N-EFF-PRODTNP-BPLUS%i:err", fSuffix.c_str(), i), 6) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effProdTNPE, Form("%s:N-EFF-PRODTNP-BPLUS%i:tot", fSuffix.c_str(), i), 5) << endl;
+      fTEX << scientificTex(fNumbersNo[i]->effProdTNP, fNumbersNo[i]->effProdTNPE, 
+			    Form("%s:N-EFF-PRODTNP-BPLUS%i:all", fSuffix.c_str(), i), 1e-3, 2) << endl;
+
+      OUT << "#EFF_PRODTNPMC_BPLUS\t" << i << "\t" << fNumbersNo[i]->effProdTNPMC << endl;
+      fTEX << formatTex(fNumbersNo[i]->effProdTNPMC, Form("%s:N-EFF-PRODTNPMC-BPLUS%i:val", fSuffix.c_str(), i), 5) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effProdTNPMCE, Form("%s:N-EFF-PRODTNPMC-BPLUS%i:err", fSuffix.c_str(), i), 6) << endl;
+      fTEX << formatTex(fNumbersNo[i]->effProdTNPMCE, Form("%s:N-EFF-PRODTNPMC-BPLUS%i:tot", fSuffix.c_str(), i), 5) << endl;
+      fTEX << scientificTex(fNumbersNo[i]->effProdMC, fNumbersNo[i]->effProdTNPMCE, 
+			    Form("%s:N-EFF-PRODTNPMC-BPLUS%i:all", fSuffix.c_str(), i), 1e-3, 2) << endl;
+
+
       OUT << "ACC_BPLUS\t" << i << "\t" << fNumbersNo[i]->acc <<"\t" << fNumbersNo[i]->accTE  << endl;
       fTEX << formatTex(fNumbersNo[i]->acc, Form("%s:N-ACC-BPLUS%i:val", fSuffix.c_str(), i), 3) << endl;
       fTEX << formatTex(fNumbersNo[i]->accE, Form("%s:N-ACC-BPLUS%i:err", fSuffix.c_str(), i), 3) << endl;
@@ -2145,6 +2167,51 @@ void plotResults::printUlcalcNumbers(string fname) {
     fTEX << scientificTex(fNumbersBs[i]->effTot, fNumbersBs[i]->effTotTE, 
 			  Form("%s:N-EFF-TOT-BSMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
 
+    OUT << "#EFF_PRODMC_BSMM\t" << i << "\t" << fNumbersBs[i]->effProdMC << endl;
+    fTEX << formatTex(fNumbersBs[i]->effProdMC, Form("%s:N-EFF-PRODMC-BSMM%i:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effProdMCE, Form("%s:N-EFF-PRODMC-BSMM%i:err", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effProdMCE, Form("%s:N-EFF-PRODMC-BSMM%i:tot", fSuffix.c_str(), i), 4) << endl;
+    fTEX << scientificTex(fNumbersBs[i]->effProdMC, fNumbersBs[i]->effProdMCE, 
+			  Form("%s:N-EFF-PRODMC-BSMM%i:all", fSuffix.c_str(), i), 1e-3, 2) << endl;
+
+    // -- efficiency ratio
+    fTEX << formatTex(fNumbersNo[i]->effTot/fNumbersBs[i]->effTot, 
+		      Form("%s:N-EFFRATIO-TOT-BSMM%i:val", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(dRatio(fNumbersNo[i]->effTot, fNumbersNo[i]->effTotE, fNumbersBs[i]->effTot, fNumbersBs[i]->effTotE), 
+		      Form("%s:N-EFFRATIO-TOT-BSMM%i:err", fSuffix.c_str(), i), 3) << endl;
+
+    fTEX << formatTex(fNumbersNo[i]->effProdMC/fNumbersBs[i]->effProdMC, 
+		      Form("%s:N-EFFRATIO-PRODMC-BSMM%i:val", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(dRatio(fNumbersNo[i]->effProdMC, fNumbersNo[i]->effProdMCE, fNumbersBs[i]->effProdMC, fNumbersBs[i]->effProdMCE), 
+		      Form("%s:N-EFFRATIO-PRODMC-BSMM%i:err", fSuffix.c_str(), i), 3) << endl;
+
+    fTEX << formatTex(fNumbersNo[i]->effProdTNP/fNumbersBs[i]->effProdTNP, 
+		      Form("%s:N-EFFRATIO-PRODTNP-BSMM%i:val", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(dRatio(fNumbersNo[i]->effProdTNP, fNumbersNo[i]->effProdTNPE, fNumbersBs[i]->effProdTNP, fNumbersBs[i]->effProdTNPE),
+		      Form("%s:N-EFFRATIO-PRODTNP-BSMM%i:err", fSuffix.c_str(), i), 3) << endl;
+
+    fTEX << formatTex(fNumbersNo[i]->effProdTNPMC/fNumbersBs[i]->effProdTNPMC, 
+		      Form("%s:N-EFFRATIO-PRODTNPMC-BSMM%i:val", fSuffix.c_str(), i), 3) << endl;
+    fTEX << formatTex(dRatio(fNumbersNo[i]->effProdTNPMC, fNumbersNo[i]->effProdTNPMCE, 
+			     fNumbersBs[i]->effProdTNPMC, fNumbersBs[i]->effProdTNPMCE), 
+		      Form("%s:N-EFFRATIO-PRODTNPMC-BSMM%i:err", fSuffix.c_str(), i), 3) << endl;
+
+    
+    OUT << "#EFF_PRODTNP_BSMM\t" << i << "\t" << fNumbersBs[i]->effProdTNP << endl;
+    fTEX << formatTex(fNumbersBs[i]->effProdTNP, Form("%s:N-EFF-PRODTNP-BSMM%i:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effProdTNPE, Form("%s:N-EFF-PRODTNP-BSMM%i:err", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effProdTNPE, Form("%s:N-EFF-PRODTNP-BSMM%i:tot", fSuffix.c_str(), i), 4) << endl;
+    fTEX << scientificTex(fNumbersBs[i]->effProdTNP, fNumbersBs[i]->effProdTNPE, 
+			  Form("%s:N-EFF-PRODTNP-BSMM%i:all", fSuffix.c_str(), i), 1e-3, 2) << endl;
+    
+    OUT << "#EFF_PRODTNPMC_BSMM\t" << i << "\t" << fNumbersBs[i]->effProdTNPMC << endl;
+    fTEX << formatTex(fNumbersBs[i]->effProdTNPMC, Form("%s:N-EFF-PRODTNPMC-BSMM%i:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effProdTNPMCE, Form("%s:N-EFF-PRODTNPMC-BSMM%i:err", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBs[i]->effProdTNPMCE, Form("%s:N-EFF-PRODTNPMC-BSMM%i:tot", fSuffix.c_str(), i), 4) << endl;
+    fTEX << scientificTex(fNumbersBs[i]->effProdMC, fNumbersBs[i]->effProdTNPMCE, 
+			  Form("%s:N-EFF-PRODTNPMC-BSMM%i:all", fSuffix.c_str(), i), 1e-3, 2) << endl;
+
+
     OUT << "ACC_BSMM\t" << i << "\t" << fNumbersBs[i]->acc << "\t" << fNumbersBs[i]->accTE << endl;
     fTEX << formatTex(fNumbersBs[i]->acc, Form("%s:N-ACC-BSMM%d:val", fSuffix.c_str(), i), 3) << endl;
     fTEX << formatTex(fNumbersBs[i]->accE, Form("%s:N-ACC-BSMM%d:err", fSuffix.c_str(), i), 3) << endl;
@@ -2207,9 +2274,30 @@ void plotResults::printUlcalcNumbers(string fname) {
     OUT << "#EFF_TOT_BDMM\t" << i << "\t" << fNumbersBd[i]->effTot << endl;
     fTEX << formatTex(fNumbersBd[i]->effTot, Form("%s:N-EFF-TOT-BDMM%d:val", fSuffix.c_str(), i), 4) << endl;
     fTEX << formatTex(fNumbersBd[i]->effTotE, Form("%s:N-EFF-TOT-BDMM%d:err", fSuffix.c_str(), i), 4) << endl;
-    fTEX << formatTex(fNumbersBs[i]->effTotTE, Form("%s:N-EFF-TOT-BDMM%d:tot", fSuffix.c_str(), i), 4) << endl;
-    fTEX << scientificTex(fNumbersBs[i]->effTot, fNumbersBs[i]->effTotTE, 
+    fTEX << formatTex(fNumbersBd[i]->effTotTE, Form("%s:N-EFF-TOT-BDMM%d:tot", fSuffix.c_str(), i), 4) << endl;
+    fTEX << scientificTex(fNumbersBd[i]->effTot, fNumbersBd[i]->effTotTE, 
 			  Form("%s:N-EFF-TOT-BDMM%d:all", fSuffix.c_str(), i), 1e-2, 2) << endl;
+
+    OUT << "#EFF_PRODMC_BDMM\t" << i << "\t" << fNumbersBd[i]->effProdMC << endl;
+    fTEX << formatTex(fNumbersBd[i]->effProdMC, Form("%s:N-EFF-PRODMC-BDMM%i:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effProdMCE, Form("%s:N-EFF-PRODMC-BDMM%i:err", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effProdMCE, Form("%s:N-EFF-PRODMC-BDMM%i:tot", fSuffix.c_str(), i), 4) << endl;
+    fTEX << scientificTex(fNumbersBd[i]->effProdMC, fNumbersBd[i]->effProdMCE, 
+			  Form("%s:N-EFF-PRODMC-BDMM%i:all", fSuffix.c_str(), i), 1e-3, 2) << endl;
+    
+    OUT << "#EFF_PRODTNP_BDMM\t" << i << "\t" << fNumbersBd[i]->effProdTNP << endl;
+    fTEX << formatTex(fNumbersBd[i]->effProdTNP, Form("%s:N-EFF-PRODTNP-BDMM%i:val", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effProdTNPE, Form("%s:N-EFF-PRODTNP-BDMM%i:err", fSuffix.c_str(), i), 4) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effProdTNPE, Form("%s:N-EFF-PRODTNP-BDMM%i:tot", fSuffix.c_str(), i), 4) << endl;
+    fTEX << scientificTex(fNumbersBd[i]->effProdTNP, fNumbersBd[i]->effProdTNPE, 
+			  Form("%s:N-EFF-PRODTNP-BDMM%i:all", fSuffix.c_str(), i), 1e-3, 2) << endl;
+    
+    OUT << "#EFF_PRODTNPMC_BDMM\t" << i << "\t" << fNumbersBd[i]->effProdTNPMC << endl;
+    fTEX << formatTex(fNumbersBd[i]->effProdTNPMC, Form("%s:N-EFF-PRODTNPMC-BDMM%i:val", fSuffix.c_str(), i), 5) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effProdTNPMCE, Form("%s:N-EFF-PRODTNPMC-BDMM%i:err", fSuffix.c_str(), i), 6) << endl;
+    fTEX << formatTex(fNumbersBd[i]->effProdTNPMCE, Form("%s:N-EFF-PRODTNPMC-BDMM%i:tot", fSuffix.c_str(), i), 5) << endl;
+    fTEX << scientificTex(fNumbersBd[i]->effProdMC, fNumbersBd[i]->effProdTNPMCE, 
+			  Form("%s:N-EFF-PRODTNPMC-BDMM%i:all", fSuffix.c_str(), i), 1e-3, 2) << endl;
 
     OUT << "ACC_BDMM\t" << i << "\t" << fNumbersBd[i]->acc << "\t" << fNumbersBd[i]->accTE << endl;
     fTEX << formatTex(fNumbersBd[i]->acc, Form("%s:N-ACC-BDMM%d:val", fSuffix.c_str(), i), 3) << endl;
@@ -2740,10 +2828,12 @@ void plotResults::numbersFromHist(int chan, int mode, numbers *aa) {
   aa->genYield         = aa->genFileYield/aa->effGenFilter;
   aa->effTot           = e/aa->genYield;
   aa->effTotE          = dEff(static_cast<int>(e), static_cast<int>(aa->genYield));
-  aa->effProdMC        = aa->effCand * aa->effAna * aa->effMuidMC * aa->effTrigMC;
+  aa->effProdMC        = aa->acc * aa->effCand * aa->effAna * aa->effMuidMC * aa->effTrigMC;
   aa->effProdMCE       = 0.;
-  aa->effProdTNP       = aa->effCand * aa->effAna * aa->effMuidTNP * aa->effTrigTNP;
+  aa->effProdTNP       = aa->acc * aa->effCand * aa->effAna * aa->effMuidTNP * aa->effTrigTNP;
   aa->effProdTNPE      = 0.;
+  aa->effProdTNPMC     = aa->acc * aa->effCand * aa->effAna * aa->effMuidTNPMC * aa->effTrigTNPMC;
+  aa->effProdTNPMCE    = 0.;
 
   aa->combGenYield     = e/(aa->acc * aa->effProdMC);
   aa->prodGenYield     = e/(aa->effTot); 
@@ -2854,10 +2944,22 @@ void plotResults::numbersAfterLoopOverTree(int chan, int mode, numbers *aa, stri
   aa->genYield         = aa->genFileYield/aa->effGenFilter;
   aa->effTot           = e/aa->genYield;
   aa->effTotE          = dEff(static_cast<int>(e), static_cast<int>(aa->genYield));
-  aa->effProdMC        = aa->effCand * aa->effAna * aa->effMuidMC * aa->effTrigMC;
-  aa->effProdMCE       = 0.;
-  aa->effProdTNP       = aa->effCand * aa->effAna * aa->effMuidTNP * aa->effTrigTNP;
-  aa->effProdTNPE      = 0.;
+
+  aa->effProdMC        = aa->acc * aa->effCand * aa->effAna * aa->effMuidMC * aa->effTrigMC;
+  aa->effProdMCE       = aa->effProdMC * 
+                         (aa->accE/aa->acc + aa->effCandE/aa->effCand + aa->effAnaE/aa->effAna + 
+			  aa->effMuidMCE/aa->effMuidMC + aa->effTrigMCE/aa->effTrigMC);
+
+  aa->effProdTNP       = aa->acc * aa->effCand * aa->effAna * aa->effMuidTNP * aa->effTrigTNP;
+  aa->effProdTNPE      = aa->effProdTNP * 
+                         (aa->accE/aa->acc + aa->effCandE/aa->effCand + aa->effAnaE/aa->effAna + 
+			  aa->effMuidTNPE/aa->effMuidTNP + aa->effTrigTNPE/aa->effTrigTNP);
+
+  aa->effProdTNPMC     = aa->acc * aa->effCand * aa->effAna * aa->effMuidTNPMC * aa->effTrigTNPMC;
+  aa->effProdTNPMCE    = aa->effProdTNPMC * 
+                         (aa->accE/aa->acc + aa->effCandE/aa->effCand + aa->effAnaE/aa->effAna + 
+			  aa->effMuidTNPMCE/aa->effMuidTNPMC + aa->effTrigTNPMCE/aa->effTrigTNPMC);
+
 
   aa->combGenYield     = e/(aa->acc * aa->effProdMC);
   aa->prodGenYield     = e/(aa->effTot); 

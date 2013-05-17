@@ -92,7 +92,7 @@ struct numbers {
   double effMuidTNPMC, effMuidTNPMCE, effTrigTNPMC, effTrigTNPMCE;
   double effCand, effCandE, effCandTE; 
   double effAna, effAnaE; 
-  double effTot, effTotE, aEffProdMC, aEffProdMCE, effProdMC, effProdMCE, effProdTNP, effProdTNPE; 
+  double effTot, effTotE, aEffProdMC, aEffProdMCE, effProdMC, effProdMCE, effProdTNP, effProdTNPE, effProdTNPMC, effProdTNPMCE; 
   double effTotChan, effTotChanE; 
   double prodGenYield, combGenYield, chanGenYield; // eps*A corrected
   // -- signal stuff

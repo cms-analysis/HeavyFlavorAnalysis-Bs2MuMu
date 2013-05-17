@@ -41,6 +41,7 @@ public:
   ~bmm2Reader();
 
   virtual void   startAnalysis();
+  virtual void   endAnalysis();
   virtual void   eventProcessing();
   virtual void   readCuts(TString filename, int dump = 1);
   virtual void   bookHist();

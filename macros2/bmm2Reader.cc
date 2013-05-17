@@ -36,6 +36,15 @@ void bmm2Reader::startAnalysis() {
   fpJSON = new JSON(JSONFILE.c_str(), (fVerbose!=0?1:0)); 
 }
 
+// ----------------------------------------------------------------------
+void bmm2Reader::endAnalysis() {
+  cout << "==> bmm2Reader: endAnalysis() destroying cand analysis modules" << endl;
+  for (unsigned int i = 0; i < lCandAnalysis.size(); ++i) {
+    lCandAnalysis[i]->endAnalysis();
+  }
+  
+}
+
 
 // ----------------------------------------------------------------------
 void bmm2Reader::eventProcessing() {

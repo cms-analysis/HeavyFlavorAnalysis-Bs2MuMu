@@ -142,7 +142,8 @@ void candAnaBs2JpsiPhi::candAnalysis() {
   fCandChi2Dof = chi2/ndof;
   
 
-  ((TH1D*)fHistDir->Get("../monEvents"))->Fill(3); 
+  ((TH1D*)fHistDir->Get(Form("mon%s", fName.c_str())))->Fill(10);
+  ((TH1D*)fHistDir->Get("../monEvents"))->Fill(4); 
 }
 
 // ----------------------------------------------------------------------

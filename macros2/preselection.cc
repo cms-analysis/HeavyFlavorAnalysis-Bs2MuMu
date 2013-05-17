@@ -17,7 +17,7 @@ using namespace std;
 #define M2PTMAX 999.0     
                 	         
 #define FL3DMAX 2.0            
-#define CHI2DOFMAX 10.0 
+#define CHI2DOFMAX 20.0 
                 	         
 #define PVIPMAX 0.1       
 #define PVIPSMAX 5.0        
@@ -28,15 +28,15 @@ using namespace std;
 #define MAXDOCAMAX 0.1  
 #define CLOSETRKMAX 21  
                 	         
-#define FLSXYMIN   3.0  
+#define FLSXYMIN   2.0  
 	                     	    
 #define FLS3DMIN   0.0  
-#define FLS3DMAX 120.0  
+#define FLS3DMAX 200.0  
                 	           
-#define DOCATRKMAX 0.25 
+#define DOCATRKMAX 2.5 
                 	         
 #define ISOMIN 0.0           
-#define ALPHAMAX 0.3    
+#define ALPHAMAX 1.0   
 
 // ----------------------------------------------------------------------
 std::string preselection() {
@@ -89,7 +89,7 @@ bool preselection(RedTreeData &b, int channel) {
   //   if (b.m > 5.9) return false;
   if (verbose > 4) cout << "passed mass cuts" << endl;
 
-  // -- physics preselection: reduce background by factor 7, signal efficiency >90%
+  // -- physics preselection
   if (b.chi2dof > CHI2DOFMAX) return false;
   if (b.iso < ISOMIN) return false; 
   if (b.alpha > ALPHAMAX) return false; 
@@ -102,7 +102,7 @@ bool preselection(RedTreeData &b, int channel) {
     if (TMath::Abs(b.m1eta) < 1.4 && TMath::Abs(b.m2eta) < 1.4) return false;
     if (TMath::Abs(b.m1eta) > 2.4 || TMath::Abs(b.m2eta) > 2.4) return false;
   }
-  if (verbose > 0) cout << "passed channel cuts" << endl;
+  if (verbose > 0) cout << "passed channel cuts, return true!" << endl;
 
   return true;
 }

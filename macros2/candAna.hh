@@ -69,6 +69,7 @@ public:
 
   virtual void        evtAnalysis(TAna01Event *evt);
   virtual void        candAnalysis();
+  virtual void        endAnalysis();
   virtual void        efficiencyCalculation();
   virtual void        setupReducedTree(TTree *);
   virtual void        setupMuonIdTree(TTree *);

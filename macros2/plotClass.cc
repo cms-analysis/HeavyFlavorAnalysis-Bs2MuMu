@@ -2584,9 +2584,9 @@ void plotClass::printNumbers(numbers &a, ostream &OUT) {
   OUT << "effTrigMC       = " << a.effTrigMC << "+/-" << a.effTrigMCE << endl;
   OUT << "effTrigTNP      = " << a.effTrigTNP << "+/-" << a.effTrigTNPE << endl;
   OUT << "effTrigTNPMC    = " << a.effTrigTNPMC << "+/-" << a.effTrigTNPMCE << endl;
-  OUT << "effProd(MC)     = " << a.effProdMC << endl;
-  OUT << "effProd(TNP)    = " << a.effProdTNP << endl;
-  OUT << "effProd(MC)A    = " << a.effProdMC*a.acc << endl;
+  OUT << "effProd(MC)     = " << a.effProdMC << "+/-" << a.effProdMCE << endl;
+  OUT << "effProd(TNP)    = " << a.effProdTNP << "+/-" << a.effProdTNPE << endl;
+  OUT << "effProd(TNPMC)  = " << a.effProdTNPMC << "+/-" << a.effProdTNPMCE << endl;
   OUT << "effTot          = " << a.effTot << "+/-" << a.effTotE << endl; 
   OUT << "combGenYield    = " << a.combGenYield << endl; 
   OUT << "prodGenYield    = " << a.prodGenYield << endl; 
@@ -3315,12 +3315,12 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     small->Branch("ls", &fb.ls,"ls/I");
     small->Branch("m1bdt", &fb.m1rmvabdt ,"m1bdt/D");
     small->Branch("m2bdt", &fb.m2rmvabdt ,"m2bdt/D");
+    small->Branch("muid", &fb.gmuid ,"muid/O");
     
     small->Branch("bdt", &fBDT ,"bdt/D");
     if (fSaveLargerTree) {
       small->Branch("hlt", &fb.hlt ,"hlt/O");
       small->Branch("hltm", &fb.hltm ,"hltm/O");
-      small->Branch("muid", &fb.gmuid ,"muid/O");
       small->Branch("pt",   &fb.pt ,"hlt/D");
       small->Branch("eta",  &fb.eta ,"eta/D");
       small->Branch("m1pt", &fb.m1pt ,"hlt/D");

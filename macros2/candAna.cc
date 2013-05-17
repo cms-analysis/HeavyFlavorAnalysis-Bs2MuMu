@@ -45,6 +45,22 @@ candAna::~candAna() {
   cout << "==> candAna: destructor..." << endl;
 }
 
+// ----------------------------------------------------------------------
+void candAna::endAnalysis() {
+  TH1D *h1 = ((TH1D*)fHistDir->Get(Form("mon%s", fName.c_str())));
+  if (h1) {
+    cout << Form("==> mon%s: events seen    = %d", fName.c_str(), static_cast<int>(h1->GetBinContent(2))) << endl;
+    cout << Form("==> mon%s: cands analysed = %d", fName.c_str(), static_cast<int>(h1->GetBinContent(11))) << endl;
+    cout << Form("==> mon%s: cands passed   = %d", fName.c_str(), static_cast<int>(h1->GetBinContent(12))) << endl;
+    cout << Form("==> mon%s: cands failed   = %d", fName.c_str(), static_cast<int>(h1->GetBinContent(21))) << endl;
+    if (h1->GetBinContent(2) < 1) {
+      cout << Form("==> mon%s: error, no events seen!", fName.c_str()) << endl; 
+    }
+  } else {
+    cout << Form("==> mon%s: error, histogram not found!", fName.c_str()) << endl; 
+  }    
+}
+
 
 
 // ----------------------------------------------------------------------
@@ -86,6 +102,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 
   TAnaCand *pCand(0);
   if (fVerbose == -66) { cout << "----------------------------------------------------------------------" << endl;}
+  ((TH1D*)fHistDir->Get(Form("mon%s", fName.c_str())))->Fill(1);
   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
     pCand = fpEvt->getCand(iC);
 
@@ -183,6 +200,8 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 
     if (fIsMC) {
       fTree->Fill(); 
+      ((TH1D*)fHistDir->Get(Form("mon%s", fName.c_str())))->Fill(11);
+      ((TH1D*)fHistDir->Get(Form("mon%s", fName.c_str())))->Fill(31);
       if (!fGoodMuonsID) fAmsTree->Fill();
 
       //if (fVerbose > 10) cout<<" write "<<fpCand->fType<<" "<<fEvt<<" "<<fGoodHLT<<" "<<fHLTmatch<<endl;
@@ -193,7 +212,10 @@ void candAna::evtAnalysis(TAna01Event *evt) {
       if(fJSON&&fGoodHLT&&fHLTmatch)       ((TH1D*)fHistDir->Get("test3"))->Fill(9.);  
 
     } else {  // DATA
-      if (NOPRESELECTION) fPreselection = true; 
+      if (NOPRESELECTION) {
+	fPreselection = true; 
+	((TH1D*)fHistDir->Get(Form("mon%s", fName.c_str())))->Fill(32);
+      }
       if (BLIND && fpCand->fMass > SIGBOXMIN && fpCand->fMass < SIGBOXMAX) {
 	if (fPreselection && !fGoodMuonsID) fAmsTree->Fill();
 	// do nothing
@@ -219,11 +241,12 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 	  if(fJSON&&fGoodHLT&&fHLTmatch) ((TH1D*)fHistDir->Get("run4"))->Fill(fRun); 
 
 	  fTree->Fill(); 
+	  ((TH1D*)fHistDir->Get(Form("mon%s", fName.c_str())))->Fill(11);
 	  if (!fGoodMuonsID) fAmsTree->Fill();
 	  
 	} else {	 
-
-           if ( fVerbose > 5 ) cout << " failed preselection" << endl;        
+	  ((TH1D*)fHistDir->Get(Form("mon%s", fName.c_str())))->Fill(20);
+	  if ( fVerbose > 5 ) cout << " failed preselection" << endl;        
 
 	} // if preselection
       } // if blind
@@ -469,7 +492,7 @@ void candAna::candAnalysis() {
   fMu2IPE       = p2->fBsTipE;
 
   // -- fill tree for muon id MVA studies
-  if (1 && (fMu1rTmId || fMu2rTmId)) {
+  if (0 && (fMu1rTmId || fMu2rTmId)) {
     TAnaMuon *pt(0);
     for (int i = 0; i < 2; ++i) {
       pt = 0; 
@@ -826,6 +849,7 @@ void candAna::candAnalysis() {
 
   fPreselection = fPreselection && fGoodHLT;
   if(fPreselection) ((TH1D*)fHistDir->Get("test3"))->Fill(3.); 
+
 
   //  fPreselection = true; 
 
@@ -1202,6 +1226,8 @@ void candAna::bookHist() {
 
   TH1D *h11(0); 
   (void)h11; 
+  h11 = new TH1D(Form("mon%s", fName.c_str()), Form("mon%s", fName.c_str()), 50, 0., 50.); 
+
   h11 = new TH1D("tm_pt", "tight muon pT", 50, 0., 25.); 
   h11 = new TH1D("bm_pt", "BDT muon pT", 50, 0., 25.); 
 
@@ -1273,9 +1299,11 @@ void candAna::bookHist() {
   fAmsTree = new TTree("amsevents", "amsevents");
   setupReducedTree(fAmsTree); 
 
-  // -- tree for AMS
-  fMuonIdTree = new TTree("muonidtree", "muonidtree");
-  setupMuonIdTree(fMuonIdTree); 
+  // -- tree for muon id MVA
+  if (0) {
+    fMuonIdTree = new TTree("muonidtree", "muonidtree");
+    setupMuonIdTree(fMuonIdTree); 
+  }
 
   // -- Efficiency/Acceptance Tree
   fEffTree = new TTree("effTree", "effTree");
@@ -3255,6 +3283,7 @@ void candAna::fillRedTreeData() {
   fRTD.fl3d      = fCandFL3d;
   fRTD.fls3d     = fCandFLS3d;
 
+  fRTD.chi2dof   = fCandChi2Dof;
   fRTD.chi2      = fCandChi2;
   fRTD.dof       = fCandDof;
 

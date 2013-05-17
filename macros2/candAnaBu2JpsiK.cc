@@ -99,6 +99,7 @@ void candAnaBu2JpsiK::candAnalysis() {
   fPreselection = fPreselection && fGoodJpsiMass;
   fPreselection = fPreselection && fWideMass;
 
+  ((TH1D*)fHistDir->Get(Form("mon%s", fName.c_str())))->Fill(10);
   ((TH1D*)fHistDir->Get("../monEvents"))->Fill(3); 
 
 }
