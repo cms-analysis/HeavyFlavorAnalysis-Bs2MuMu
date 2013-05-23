@@ -157,9 +157,8 @@ void candAna::evtAnalysis(TAna01Event *evt) {
 
  
     if(fpMuon1 != NULL && fpMuon2 != NULL) { // do only when 2 muons exist
-      fHLTmatch  = doTriggerMatching(false);      // match only with the specific objects 
-      fHLTmatch2 = doTriggerMatching(true); // =true - check matching to all Mu L3 HLT FOR TESTING
-      //fHLTmatch2 = doTriggerMatching(); // OLD
+      fHLTmatch  = doTriggerMatching(true);      // check matching to the fired HLT objects 
+      fHLTmatch2 = doTriggerMatching(false);     // check matching to Bs and displaced JPsi
     }
 
     // TESTING d.k.
@@ -3519,26 +3518,30 @@ double candAna::doTriggerMatchingR(TAnaTrack *pt, bool anyTrig) {
     // the label changes according to datataking era, so we need to distinguish them
     bool selected = false;
 
-#define OLD_MATCH
-    if ( anyTrig ) {
-#ifndef OLD_MATCH
-      // Use the already selected objects
-      if ( tto->fNumber > -1 ) {selected = true;}
-#else
+    //#define OLD_MATCH
 
-      if ( fYear==2012) {
-	 //{if( tto->fLabel.Contains("L3") && (tto->fLabel.Contains("mu")  || tto->fLabel.Contains("Mu")) ) selected = true;}
-	if( (tto->fLabel.Contains("mu")  || tto->fLabel.Contains("Mu")) ) {
-	  selected = true;
-	}
-      } else { // 2011 cannot do Mu.AND.L3, some triger do not have it in the name
-	if( (tto->fLabel.Contains("mu")||tto->fLabel.Contains("Mu")||tto->fLabel.Contains("Jpsi")||
-	     tto->fLabel.Contains("Displaced")||tto->fLabel.Contains("Vertex")||tto->fLabel.Contains("LowMass"))
-	    ) {
-	  selected = true;
-	}
-      }
-#endif      
+    if ( anyTrig ) {
+
+// #ifndef OLD_MATCH
+//       // Use the already selected objects
+//       if ( tto->fNumber > -1 ) {selected = true;}
+// #else
+
+//       if ( fYear==2012) {
+// 	 //{if( tto->fLabel.Contains("L3") && (tto->fLabel.Contains("mu")  || tto->fLabel.Contains("Mu")) ) selected = true;}
+// 	if( (tto->fLabel.Contains("mu")  || tto->fLabel.Contains("Mu")) ) {
+// 	  selected = true;
+// 	}
+//       } else { // 2011 cannot do Mu.AND.L3, some triger do not have it in the name
+// 	if( (tto->fLabel.Contains("mu")||tto->fLabel.Contains("Mu")||tto->fLabel.Contains("Jpsi")||
+// 	     tto->fLabel.Contains("Displaced")||tto->fLabel.Contains("Vertex")||tto->fLabel.Contains("LowMass"))
+// 	    ) {
+// 	  selected = true;
+// 	}
+//       }
+// #endif      
+
+
       // Use the already selected objects 
       if ( tto->fNumber > -1 ) {selected = true;}
       
