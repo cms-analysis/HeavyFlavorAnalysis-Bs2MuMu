@@ -1,11 +1,12 @@
 #!/usr/bin/env perl
 
-# Usage:       monGrid [-i jobs.list] [-u grid-url] [-o]
+# Usage:       monGrid [-i jobs.list] [-u grid-url] [-o] [-r] [-x]
 # ------
 #              check status of grid jobs
 #              if done, retrieve sandbox and put files into job directory 
 #              if sandbox retrieved, check for successful job completion
 #
+# 2013/05/27   add -x to allow for resubmission of jobs that have not completed (even when they are still in "SUBMIT")
 # 2011/09/16   copy logfile out from sandbox
 # 2010/05/03   reworked some bugs
 # 2010/03/09   remove capability of checking SGE jobs,use monSge instead
@@ -19,7 +20,7 @@
 
 use File::Copy; 
 use Getopt::Std;
-getopts('i:oru:');
+getopts('i:oru:x');
 
 my $user  = $ENV{'USER'};
 
@@ -128,6 +129,10 @@ while(<IN>) {
     	printf("%60s %s %15s; %s\n", $mdir, $url, $jobStatus, $jobStatus);
 	system("/bin/touch $mdir/NOK"); 
 	$badJobs++; 
+    } elsif ($jobStatus =~ /Submitted/ && $opt_x) {
+    	printf("%60s %s %15s; %s\n", $mdir, $url, $jobStatus, $jobStatus);
+	system("/bin/touch $mdir/NOK"); 
+	$badJobs++; 
     } elsif ($jobStatus =~ /Cleared/ && $opt_o) {
 	$logfile = getOutputSandBox($url, $dir, $jdl, $jobStatus); 
 	$ok = parseOutput($sdir, $logfile); 
@@ -169,6 +174,10 @@ if ($opt_o) {
 sub parseStatus {
     ($in) = @_;
     @in = split(/\n/, $in); 
+    $jobStatus = ""; 
+    $jobStatusReason = ""; 
+    $jobExitCode = ""; 
+    $jobDestination = ""; 
     foreach $line (@in) {
 	if ($line =~ s/Current Status:\ *//) { $jobStatus = $line; }
 	if ($line =~ s/Status Reason:\ *//)  { $jobStatusReason = $line; }

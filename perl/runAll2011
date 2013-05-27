@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# Usage: cd chains/subdir; runAll2011 -t tarfile [-h] [-r v16/bmm/2011/test] [-d] [-l] [-C] [-s data]
+# Usage: cd chains/subdir; runAll2011 -t tarfile [-h] [-r v16/bmm/2011/test] [-d] [-l jobs.list] [-C] [-s data]
 # ------
 #            -a                                split checked chains (why a? because this is how you have to start)
 #            -d                                printout only, don't do anything
@@ -69,7 +69,7 @@ if ($opt_q) {
 
 # -- more definitions
 my $scrtuser  = $ENV{'USER'};
-my $user  = bstomumu;
+my $user  = "bstomumu";
 
 my $tarfile = "../../../../../120416.tar.gz";
 if ($opt_t) {
@@ -85,8 +85,10 @@ my $crash = "";
 if ($opt_C) {$crash = "-C";}
 
 #my $srmcmd  = "lcg-cp -b -D srmv2";
-my $srmcmd  = "srmcp -2 --streams_num=2";
-my $srmpf   = "file:///";
+#my $srmcmd  = "srmcp -2 --streams_num=2";
+#my $srmpf   = "file:///";
+my $srmcmd  = "lcg-cp  -b -D srmv2";
+my $srmpf   = "";
 my $dcap    = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
 my $scratch = "/scratch/$scrtuser";
 my $srm     = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store";
@@ -223,10 +225,10 @@ sub callM() {
 
 # ----------------------------------------------------------------------
 sub callH() {
-    print "srmls $storage/data |grep root \n";
-    print "srmls $storage/mc |grep root \n";
-    @dlines = `srmls $storage/data |grep root `;
-    @mlines = `srmls $storage/mc |grep root `;
+    print "srmLs -x $storage/data -c -p root \n";
+    print "srmLs -x $storage/mc -c -p root \n";
+    @dlines = `srmLs -x $storage/data -c -p root `;
+    @mlines = `srmLs -x $storage/mc -c -p root `;
     
     push(@lines, @dlines); 
     push(@lines, @mlines); 
@@ -291,8 +293,8 @@ sub callA() {
 #    my $datasplit = 350000; 
 #    my $mcsplit   = 700000; 
 
-    my $datasplit = 400000; 
-    my $mcsplit   = 500000; 
+    my $datasplit = 300000; 
+    my $mcsplit   = 400000; 
     
     @data = (
 	"splitCheckedChain -n $datasplit ../cbmm-2011-v16-MuOnia__Run2011A-08Nov2011-v1", 

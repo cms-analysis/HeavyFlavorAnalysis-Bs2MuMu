@@ -15,7 +15,8 @@
 #          2010/05/03 Bug fix
 #          2010/10/18 Produce chains with maximum size
 #          2011/05/17 -C to produce only /store/... lists
-#          2012/05/07 migrate to lcg-ls
+#          2013/05/07 migrate to lcg-ls
+#          2013/05/27 removed forgotten srmls 
 # ----------------------------------------------------------------------
 
 $cprefix = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
@@ -33,7 +34,7 @@ if ($opt_n  =~ /M/i) {$opt_n =~ s/M/000000/ig;}
 if ($opt_n  =~ /G/i) {$opt_n =~ s/G/000000000/ig;}
 
 $prefix = substr($opt_x, 0, index($opt_x, '/store')); 
-@filelist = `srmls $opt_x`; 
+#@filelist = `srmls $opt_x`; 
 
 # -- migration to lcg-ls
 # assume printout of the following form: 

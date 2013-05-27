@@ -4,6 +4,7 @@
 # ------
 #              check status of SGE jobs
 #
+# 2013/05/17   added check against "no events seen" in candAna
 # 2013/02/28   fix again for the root file size and check that the file exists on the SE
 # 2012/08/23   adapt to changed sge output at the end
 # 2012/08/13   -k adds NOK file for terminated waiting/running jobs
@@ -20,7 +21,7 @@
 # ----------------------------------------------------------------------
 
 use Getopt::Std;
-getopts('di:koru:');
+getopts('di:koru:v');
 
 # -- jobs list
 my $jobslist = "jobs.list";
@@ -51,7 +52,7 @@ while(<IN>) {
     # -- parse one job: one URL/sge and one additional line with information
     my $url  = $_;   chop($url); 
     my $line = <IN>; chop($line); 
-
+    
     # -- fixed screwed jobs.list input
     while ($line =~ /https/ || $line =~ /sge/) {
 	$url = $line;
@@ -60,6 +61,7 @@ while(<IN>) {
 
     if ($url =~ /https/) {next;}
 
+    if ($opt_v) {print "$line\n";}
     $line =~ s/\# //;
     ($machine, $date, $time, $dir, $jname, $sgeNumber) = split(/ /, $line); 
     my $pwd = `pwd`; chop($pwd);
@@ -69,6 +71,7 @@ while(<IN>) {
     $logfile .= ".sge.log";
 
     if (-e "$mdir/$logfile") {
+	if ($opt_v) {print "parseOutput(\"$mdir/$logfile\")\n";}
 	$ok = parseOutput("$mdir/$logfile"); 
 	($rsize, $lsize, $srmFile) = rootFileSize("$mdir/$logfile"); 
 	$lsize = -s "$mdir/$logfile";
@@ -134,15 +137,17 @@ sub parseOutput {
 
     my $return = "running"; 
 
+    if ($opt_v) {print "/bin/grep Linux $llogfile | awk '{print \$2}'\n";}
     $workerNode     = `/bin/grep Linux $llogfile | awk '{print \$2}'`;
     chop($workerNode);
+    if ($opt_v) {print "-> $workerNode\n";}
 
     # -- now search for possible problems in the logfile
+    $foundException = `/bin/grep -i "error, no events seen" $llogfile`;
+    if ($foundException) { return "no events seen"; }
+
     $foundException = `/bin/grep -i cms::exception  $llogfile`;
     if ($foundException) { return "cms::exception found"; }
-
-    $foundException = `/bin/grep -i StdLibException $llogfile`;
-    if ($foundException) { return "StdLibException found"; }
 
     $foundException = `/bin/grep -i 'Abort (core dumped)'  $llogfile`;
     if ($foundException) { return "abort/core dump detected"; }
@@ -172,6 +177,7 @@ sub parseOutput {
     $foundTerminated = `/bin/grep -i "JOB Historical Resources USAGE for job" $llogfile`; 
     if ($foundTerminated) {return "terminated job  "; }
 
+    if ($opt_v) {print "-> return $return\n";}
     return $return;
 }
 

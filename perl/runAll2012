@@ -20,6 +20,7 @@
 #            -m to mirror reduced trees onto local scratch disk
 #            remove -l and fix data output into data and mc output into mc
 # 2013/03/25 added opt_q, changed chunk size
+# 2013/05/27 migration to lcg-* commands
 #
 # Examples: runAll2012 -d -t ../../../../../130313runBmm2.tar.gz -s signal
 #           runAll2012 -d -h -s signal
@@ -71,7 +72,7 @@ if ($opt_q) {
 
 # -- more definitions
 my $scrtuser  = $ENV{'USER'};
-my $user  = bstomumu;
+my $user  = "bstomumu";
 
 my $tarfile = "../../../../../120416.tar.gz";
 if ($opt_t) {
@@ -87,8 +88,10 @@ my $crash = "";
 if ($opt_C) {$crash = "-C";}
 
 #my $srmcmd  = "lcg-cp -b -D srmv2";
-my $srmcmd  = "srmcp -2 --streams_num=2";
-my $srmpf   = "file:///";
+#my $srmcmd  = "srmcp -2 --streams_num=2";
+#my $srmpf   = "file:///";
+my $srmcmd  = "lcg-cp  -b -D srmv2";
+my $srmpf   = "";
 my $dcap    = "dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat";
 my $scratch = "/scratch/$scrtuser";
 my $srm     = "srm://t3se01.psi.ch:8443/srm/managerv2\\?SFN=/pnfs/psi.ch/cms/trivcat/store";
@@ -384,11 +387,11 @@ sub callM() {
 
 # ----------------------------------------------------------------------
 sub callH() {
-    print "srmls $storage/data |grep root \n";
-    print "srmls $storage/mc |grep root \n";
-    @dlines = `srmls $storage/data |grep root `;
-    @mlines = `srmls $storage/mc |grep root `;
-    
+    print "srmLs -x $storage/data -c -p root \n";
+    print "srmLs -x $storage/mc -c -p root \n";
+    @dlines = `srmLs -x $storage/data -c -p root `;
+    @mlines = `srmLs -x $storage/mc -c -p root `;
+     
     push(@lines, @dlines); 
     push(@lines, @mlines); 
 
@@ -451,8 +454,8 @@ sub callA() {
 #    my $datasplit = 350000; 
 #    my $mcsplit   = 700000; 
 
-    my $datasplit = 400000; 
-    my $mcsplit   = 500000; 
+    my $datasplit = 300000; 
+    my $mcsplit   = 400000; 
     
     @data = (
 	"splitCheckedChain -n $datasplit ../cbmm-2012-v16-MuOnia__Run2012A-13Jul2012-v1", 
@@ -478,7 +481,7 @@ sub callA() {
 	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-HLT5E33_PU_S10_START53_V19A-v1", 
 	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-HLT7E33_PU_S10_START53_V19B-v1", 
 	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-HLT7E33_PU_S10_START53_V19C-v1", 
-	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-HLT8E33_PU_S10_START53_V19D-v1", 
+	"splitCheckedChain -n $mcsplit ../cbmm-2012-v16-BsToMuMu_8TeV-pythia6-evtgen__Summer12_DR53X-HLT8E33_PU_S10_START53_V19D-v1"
 	);
     
     @normalization = (
