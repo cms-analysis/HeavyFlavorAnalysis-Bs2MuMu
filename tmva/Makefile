@@ -26,8 +26,8 @@ else
   endif
 endif
 
-CXXFLAGS      = -g -O3 -Wall -fPIC -pipe
 CXXFLAGS      = -g -O0 -Wall -fPIC -pipe
+CXXFLAGS      = -g -O3 -Wall -fPIC -pipe
 LD            = $(CXX)
 LDFLAGS       = -g
 SOFLAGS       = -shared
@@ -41,10 +41,13 @@ RELLIBPATH    = ../../macros2/lib
 #########
 # FILES #
 #########
-READER_HEADERS = tmva1.hh
-READER = tmva1.o
+READER_HEADERS = tmva1.hh tmva10.hh
+READER = tmva1.o tmva10.o
 
 READERDICT = ${READER:.o=Dict.o}
+
+CSTUFF = tmvaglob.o
+
 
 #################
 # PATTERN RULES #
