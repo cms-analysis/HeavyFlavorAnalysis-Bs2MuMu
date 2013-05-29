@@ -82,7 +82,6 @@ void copyReader::readCuts(TString filename, int dump) {
   ifstream is(buffer);
   char CutName[100];
   float CutValue;
-  int ok(0);
   
   TString fn(fCutFile.Data());
   
@@ -93,29 +92,28 @@ void copyReader::readCuts(TString filename, int dump) {
   }
   
   while (is.getline(buffer, 200, '\n')) {
-    ok = 0;
     if (buffer[0] == '#') {continue;}
     if (buffer[0] == '/') {continue;}
     sscanf(buffer, "%s %f", CutName, &CutValue);
     
     if (!strcmp(CutName, "TYPE")) {
-      TYPE = int(CutValue); ok = 1;
+      TYPE = int(CutValue);
       fTypeList.push_back(CutValue); 
       if (dump) cout << " added TYPE:      " << TYPE << endl;
     }
 
     if (!strcmp(CutName, "FILTERONMASS")) {
-      FILTERONMASS = int(CutValue); ok = 1;
+      FILTERONMASS = int(CutValue);
       if (dump) cout << " FILTERONMASS:      " << FILTERONMASS << endl;
     }
 
     if (!strcmp(CutName, "MASSHI")) {
-      MASSHI = double(CutValue); ok = 1;
+      MASSHI = double(CutValue);
       if (dump) cout << " MASSHI:      " << MASSHI << endl;
     }
 
     if (!strcmp(CutName, "MASSLO")) {
-      MASSLO = double(CutValue); ok = 1;
+      MASSLO = double(CutValue);
       if (dump) cout << " MASSLO:      " << MASSLO << endl;
     }
   }

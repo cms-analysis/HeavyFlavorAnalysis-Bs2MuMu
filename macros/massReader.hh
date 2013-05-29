@@ -162,8 +162,8 @@ class massReader : public treeReader01 {
 		float fPtMu2_Gen; // pt of generator muon
 		float fEtaMu1_Gen; // eta of gen muon 1
 		float fEtaMu2_Gen; // eta of gen muon 2
-		int fTrackQual_mu1; // track quality of muon 1
-		int fTrackQual_mu2; // track quality of muon 2
+		int fHighPur_mu1; // track 1 is high purity
+		int fHighPur_mu2; // track 2 is high purity
 		int fQ_mu1; // charge of muon 1
 		int fQ_mu2;	// charge of muon 2	
 		// J/Psi
@@ -181,8 +181,8 @@ class massReader : public treeReader01 {
 		float fPtKp_Gen2;
 		float fEtaKp_Gen1;
 		float fEtaKp_Gen2;
-		int fTrackQual_kp1;
-		int fTrackQual_kp2;
+		int fHighPur_kp1;
+		int fHighPur_kp2;
 		int fQ_kp1;
 		int fQ_kp2;
 		float fDeltaR_Kaons; // delta R of the two Kaons
@@ -212,16 +212,12 @@ class massReader : public treeReader01 {
 		double fCutPt;
 		double fCutAlpha;
 		double fCutChi2ByNdof;
-		int fCutTrackQual_mu1;
-		int fCutTrackQual_mu2;
 		bool fCutMuID_reqall;
 		bool fCutOppSign_mu;
 		// Additional cut variables for j/psi
 		double fCutMass_JPsiLow;
 		double fCutMass_JPsiHigh;
 		// Additional cut variables for kaon
-		int fCutTrackQual_kp1;
-		int fCutTrackQual_kp2;
 		double fCutPt_Kaon1;
 		double fCutPt_Kaon2;
 		bool fCutOppSign_kp;

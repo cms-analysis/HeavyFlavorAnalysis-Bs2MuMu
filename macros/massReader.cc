@@ -80,14 +80,10 @@ massReader::massReader(TChain *tree, TString evtClassName) : treeReader01(tree, 
 	fCutPt(0.0),
 	fCutAlpha(0.0),
 	fCutChi2ByNdof(0.0),
-	fCutTrackQual_mu1(0),
-	fCutTrackQual_mu2(0),
 	fCutMuID_reqall(false),
 	fCutOppSign_mu(false),
 	fCutMass_JPsiLow(0.0),
 	fCutMass_JPsiHigh(0.0),
-	fCutTrackQual_kp1(0),
-	fCutTrackQual_kp2(0),
 	fCutPt_Kaon1(0.0),
 	fCutPt_Kaon2(0.0),
 	fCutOppSign_kp(false),
@@ -197,7 +193,7 @@ void massReader::clearVariables()
 	fMuTight1 = fMuTight2 = 0;
 	fMuTight1_PV = fMuTight2_PV = 0;
 	fMuTight1_SV = fMuTight2_PV = 0;
-	fTrackQual_mu1 = fTrackQual_mu2 = 0;
+	fHighPur_mu1 = fHighPur_mu2 = 0;
 	fQ_mu1 = fQ_mu2 = 0;
 	fDeltaR = 0.0f; // deltaR
 	fNbrPV = 0;
@@ -218,7 +214,7 @@ void massReader::clearVariables()
 	fEtaKp1 = fEtaKp2 = 0.0;
 	fPtKp_Gen1 = fPtKp_Gen2 = 0.0;
 	fEtaKp_Gen1 = fEtaKp_Gen2 = 0.0;
-	fTrackQual_kp1 = fTrackQual_kp2 = 0;
+	fHighPur_kp1 = fHighPur_kp2 = 0;
 	fQ_kp1 = fQ_kp2 = 0;
 	fDeltaR_Kaons = 0.0f;
 	
@@ -229,7 +225,7 @@ void massReader::clearVariables()
 int massReader::loadCandidateVariables(TAnaCand *pCand)
 {
 	TAnaTrack *sigTrack;
-	TAnaTrack *recTrack;
+	TSimpleTrack *simTrack;
 	TAnaCand *momCand;
 	TAnaCand *dauCand;
 	TGenCand *dauGen;
@@ -289,11 +285,11 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	for (map<int,int>::const_iterator it = cand_tracks.begin(); it!=cand_tracks.end(); ++it) {
 		
 		sigTrack = fpEvt->getSigTrack(it->second);
-		recTrack = fpEvt->getRecTrack(sigTrack->fIndex);
+		simTrack = fpEvt->getSimpleTrack(sigTrack->fIndex);
 		
 		dauGen = NULL;
-		if (0 <= recTrack->fGenIndex && recTrack->fGenIndex < fpEvt->nGenCands())
-			dauGen = fpEvt->getGenCand(recTrack->fGenIndex);
+		if (0 <= simTrack->getGenIndex() && simTrack->getGenIndex() < fpEvt->nGenCands())
+			dauGen = fpEvt->getGenCand(simTrack->getGenIndex());
 		
 		switch (abs(sigTrack->fMCID)) {
 			case 13: // muon
@@ -301,9 +297,9 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 					ixMu1 = sigTrack->fIndex;
 					plabMu1 = sigTrack->fPlab;
 					fPtMu1 = sigTrack->fPlab.Perp();
-					fTrackQual_mu1 = recTrack->fTrackQuality;
+					fHighPur_mu1 = simTrack->getHighPurity();
 					fEtaMu1 = sigTrack->fPlab.Eta();
-					fQ_mu1 = recTrack->fQ;
+					fQ_mu1 = simTrack->getCharge();
 					fMuTight1 = isMuonTight(sigTrack);
 					fMuTight1_PV = sigTrack->fInt1;
 					fMuTight1_SV = sigTrack->fInt2;
@@ -317,9 +313,9 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 					ixMu2 = sigTrack->fIndex;
 					plabMu2 = sigTrack->fPlab;
 					fPtMu2 = sigTrack->fPlab.Perp();
-					fTrackQual_mu2 = recTrack->fTrackQuality;
+					fHighPur_mu2 = simTrack->getHighPurity();
 					fEtaMu2 = sigTrack->fPlab.Eta();
-					fQ_mu2 = recTrack->fQ;
+					fQ_mu2 = simTrack->getCharge();
 					fMuTight2 = isMuonTight(sigTrack);
 					fMuTight2_PV = sigTrack->fInt1;
 					fMuTight2_SV = sigTrack->fInt2;
@@ -337,8 +333,8 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 					plabKp1 = sigTrack->fPlab;
 					fPtKp1 = plabKp1.Perp();
 					fEtaKp1 = plabKp1.Eta();
-					fQ_kp1 = recTrack->fQ;
-					fTrackQual_kp1 = recTrack->fTrackQuality;					
+					fQ_kp1 = simTrack->getCharge();
+					fHighPur_kp1 = simTrack->getHighPurity();
 					if (dauGen) {
 						fPtKp_Gen1 = dauGen->fP.Perp();
 						if (fPtKp_Gen1 > 0)
@@ -348,8 +344,8 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 					plabKp2 = sigTrack->fPlab;
 					fPtKp2 = plabKp2.Perp();
 					fEtaKp2 = plabKp2.Eta();
-					fQ_kp2 = recTrack->fQ;
-					fTrackQual_kp2 = recTrack->fTrackQuality;
+					fQ_kp2 = simTrack->getCharge();
+					fHighPur_kp2 = simTrack->getHighPurity();
 					if (dauGen) {
 						fPtKp_Gen2 = dauGen->fP.Perp();
 						if (fPtKp_Gen2 > 0)
@@ -369,7 +365,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		swap(plabMu1,plabMu2);
 		swap(fPtMu1,fPtMu2);
 		swap(fEtaMu1,fEtaMu2);
-		swap(fTrackQual_mu1,fTrackQual_mu2);
+		swap(fHighPur_mu1,fHighPur_mu2);
 		swap(fQ_mu1,fQ_mu2);
 		swap(fMuTight1,fMuTight2);
 		swap(fMuTight1_PV, fMuTight2_PV);
@@ -385,7 +381,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		swap(fPtKp1,fPtKp2);
 		swap(fEtaKp1,fEtaKp2);
 		swap(fQ_kp1,fQ_kp2);
-		swap(fTrackQual_kp1,fTrackQual_kp2);
+		swap(fHighPur_kp1,fHighPur_kp2);
 		swap(fPtKp_Gen1,fPtKp_Gen2);
 		swap(fEtaKp_Gen1,fEtaKp_Gen2);
 	}
@@ -486,8 +482,8 @@ void massReader::bookHist()
 	reduced_tree->Branch("tight_mu2_sv",&fMuTight2_SV,"tight_mu2_sv/I");
 	reduced_tree->Branch("eta_mu1",&fEtaMu1,"eta_mu1/F");
 	reduced_tree->Branch("eta_mu2",&fEtaMu2,"eta_mu2/F");
-	reduced_tree->Branch("track_qual_mu1",&fTrackQual_mu1,"track_qual_mu1/I");
-	reduced_tree->Branch("track_qual_mu2",&fTrackQual_mu2,"track_qual_mu2/I");
+	reduced_tree->Branch("highpur_mu1",&fHighPur_mu1,"highpur_mu1/I");
+	reduced_tree->Branch("highpur_mu2",&fHighPur_mu2,"highpur_mu2/I");
 	reduced_tree->Branch("q_mu1",&fQ_mu1,"q_mu1/I");
 	reduced_tree->Branch("q_mu2",&fQ_mu2,"q_mu2/I");
 	reduced_tree->Branch("delta_phi",&fDeltaPhiMu,"delta_phi/F");
@@ -523,8 +519,8 @@ void massReader::bookHist()
 	reduced_tree->Branch("eta_kp2",&fEtaKp2,"eta_kp2/F");
 	reduced_tree->Branch("eta_kp1_gen",&fEtaKp_Gen1,"eta_kp1_gen/F");
 	reduced_tree->Branch("eta_kp2_gen",&fEtaKp_Gen2,"eta_kp2_gen/F");
-	reduced_tree->Branch("track_qual_kp1",&fTrackQual_kp1,"track_qual_kp1/I");
-	reduced_tree->Branch("track_qual_kp2",&fTrackQual_kp2,"track_qual_kp2/I");
+	reduced_tree->Branch("highpur_kp1",&fHighPur_kp1,"highpur_kp1/I");
+	reduced_tree->Branch("highpur_kp2",&fHighPur_kp2,"highpur_kp2/I");
 	reduced_tree->Branch("q_kp1",&fQ_kp1,"q_kp1/I");
 	reduced_tree->Branch("q_kp2",&fQ_kp2,"q_kp2/I");
 	reduced_tree->Branch("mass_dikaon",&fMassPhi,"mass_dikaon/F");
@@ -553,33 +549,33 @@ void massReader::closeHistFile()
 int massReader::sameMother(TAnaCand *cand)
 {
 	int result = -1;
-	TAnaTrack *pTrack;
+	TAnaTrack *sigTrack;
+	TSimpleTrack *simTrack;
 	TGenCand *motherParticle = NULL;
 	TGenCand *trackParticle;
 	int nGens, j;
 		
 	nGens = fpEvt->nGenCands();
 	for (j = cand->fSig1; j >= 0 && j <= cand->fSig2; j++) {
-		pTrack = fpEvt->getSigTrack(j);
-		pTrack = fpEvt->getRecTrack(pTrack->fIndex);
+		sigTrack = fpEvt->getSigTrack(j);
+		simTrack = fpEvt->getSimpleTrack(sigTrack->fIndex);
 		
 		// get the generator info
-		if (pTrack->fGenIndex < 0 || pTrack->fGenIndex >= nGens) goto bail;
+		if (simTrack->getGenIndex() < 0 || simTrack->getGenIndex() >= nGens) goto bail;
 		
 		// look for the mother particle
-		trackParticle = fpEvt->getGenCand(pTrack->fGenIndex);
+		trackParticle = fpEvt->getGenCand(simTrack->getGenIndex());
 		while (validMothers.count(abs(trackParticle->fID)) == 0) {
 			if (trackParticle->fMom1 < 0 || trackParticle->fMom1 >= nGens) goto bail;
 			trackParticle = fpEvt->getGenCand(trackParticle->fMom1);
 		}
 		
+		
 		if (motherParticle) {
 			if (motherParticle->fNumber != trackParticle->fNumber)
 				goto bail;
-		} else {
+		} else
 			motherParticle = trackParticle;
-		}
-
 	}
 	
 	// still here? all particle from the same 'valid' mother
@@ -750,15 +746,15 @@ float massReader::calculateIsolation(TAnaCand *pCand)
 
 float massReader::calculateDoca0(TAnaCand *pCand)
 {
-	TAnaTrack *pTrack;
+	TSimpleTrack *simTrack;
 	float doca0 = FLT_MAX;
 	int j,ntracks = pCand->fNstTracks.size();
 	
 	for (j = 0; j < ntracks; j++) {
 		
-		pTrack = fpEvt->getRecTrack(pCand->fNstTracks[j].first);
+		simTrack = fpEvt->getSimpleTrack(pCand->fNstTracks[j].first);
 		
-		if (pTrack->fPvIdx < 0 || pTrack->fPvIdx == pCand->fPvIdx) {
+		if (simTrack->getPvIndex() < 0 || simTrack->getPvIndex() == pCand->fPvIdx) {
 			if (pCand->fNstTracks[j].second.first < doca0)
 				doca0 = pCand->fNstTracks[j].second.first;
 		}
@@ -832,16 +828,16 @@ int massReader::countTracksNearby(TAnaCand *pCand)
 	int j,ntracks = pCand->fNstTracks.size();
 	const double pt_thres = 0.5;
 	const double maxDocaSV = 0.03;
-	TAnaTrack *pTrack;
+	TSimpleTrack *sTrack;
 	
 	for (j = 0; j < ntracks; j++) {
 		
-		pTrack = fpEvt->getRecTrack(pCand->fNstTracks[j].first);
+		sTrack = fpEvt->getSimpleTrack(pCand->fNstTracks[j].first);
 		
-		if (pTrack->fPlab.Pt() <= pt_thres)
+		if (sTrack->getP().Pt() <= pt_thres)
 			continue;
 		
-		if (pTrack->fPvIdx > -1 && pTrack->fPvIdx != pCand->fPvIdx)
+		if (sTrack->getPvIndex() > -1 && sTrack->getPvIndex() != pCand->fPvIdx)
 			continue; // track from a different PV
 		
 		// count absolute distance
@@ -915,42 +911,8 @@ int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 
 int massReader::isMuonTight(TAnaTrack *sigTrack)
 {
-	int result;
-	TAnaTrack *recTrack = fpEvt->getRecTrack(sigTrack->fIndex);
-	TAnaMuon *mu;
-	
-	// high purity track
-	result = (recTrack->fTrackQuality & 4) != 0;
-	if (!result) goto bail;
-	
-	// muon::GlobalMuonPromptTight()
-	result = (0 <= recTrack->fMuIndex) && (recTrack->fMuIndex < fpEvt->nMuons());
-	if(!result) goto bail;
-	
-	// check for the muon id (muon::TrackerMuonArbitrated && muon::GlobalMuonPromptTight)
-	result = ((recTrack->fMuID & 80) == 80);
-	if (!result) goto bail;
-	
-	// Additional requirements
-	mu = fpEvt->getMuon(recTrack->fMuIndex);
-	
-	//	* at least two muon stations are matched to the track
-	result = mu->fTimeNdof >= 2;
-	if (!result) goto bail;
-	
-	//	* the transverse impact parameter with respect to the beamspot is < 0.2cm
-	result = (recTrack->fBsTip < 0.2);
-	if (!result) goto bail;
-	
-	//	* at least one pixel detector hit be part of the muon track
-	result = (numberOfPixLayers(recTrack) >= 1);
-	if (!result) goto bail;
-	
-	//	* the muon track has at least 11 (strip or pixel) hits
-	result = (recTrack->fValidHits >= 11);
-	
-bail:
-	return result;
+	// FIXME: Implement this again...
+	return 0;
 } // isMuonTight()
 
 int massReader::hasTriggeredNorm()
@@ -1086,37 +1048,10 @@ bool massReader::parseCut(char *cutName, float cutLow, float cutHigh, int dump)
 		goto bail;
 	}
 	
-	parsed = (strcmp(cutName,"TRACK_QUAL_MU1") == 0);
-	if (parsed) {
-		fCutTrackQual_mu1 = (int)cutLow;
-		if (dump) cout << "TRACK_QUAL_MU1: " << fCutTrackQual_mu1 << endl;
-		goto bail;
-	}
-	
-	parsed = (strcmp(cutName,"TRACK_QUAL_MU2") == 0);
-	if (parsed) {
-		fCutTrackQual_mu2 = (int)cutLow;
-		if (dump) cout << "TRACK_QUAL_MU2: " << fCutTrackQual_mu2 << endl;
-		goto bail;
-	}
-	
 	parsed = (strcmp(cutName,"OPPOSITE_SIGN_MU") == 0);
 	if (parsed) {
 		fCutOppSign_mu = (cutLow != 0.0f);
 		if (dump) cout << "OPPOSITE_SIGN_MU: " << fCutOppSign_mu << endl;
-		goto bail;
-	}
-	
-	parsed = (strcmp(cutName,"TRACK_QUAL_KP1") == 0);
-	if (parsed) {
-		fCutTrackQual_kp1 = (int)cutLow;
-		if (dump) cout << "TRACK_QUAL_KP1: " << fCutTrackQual_kp1 << endl;
-		goto bail;
-	}
-	parsed = (strcmp(cutName,"TRACK_QUAL_KP2") == 0);
-	if (parsed) {
-		fCutTrackQual_kp2 = (int)cutLow;
-		if (dump) cout << "TRACK_QUAL_KP2: " << fCutTrackQual_kp2 << endl;
 		goto bail;
 	}
 	
@@ -1202,34 +1137,11 @@ bool massReader::applyCut()
 		if (!pass) goto bail;
 	}
 	
-	// check track quality of mu1
-	if (fCutTrackQual_mu1) {
-		pass = (fTrackQual_mu1 & fCutTrackQual_mu1) != 0;
-		if (!pass) goto bail;
-	}
-	
-	// check track quality of mu2
-	if (fCutTrackQual_mu2) {
-		pass = (fTrackQual_mu2 & fCutTrackQual_mu2) != 0;
-		if (!pass) goto bail;
-	}
-	
 	// check opposite sign of muons
 	if (fCutOppSign_mu) {
 		pass = fQ_mu1 != fQ_mu2;
 		if (!pass) goto bail;
 	}	
-	
-	// check track quality of kp
-	if (fCutTrackQual_kp1) {
-		pass = (fTrackQual_kp1 & fCutTrackQual_kp1) != 0;
-		if (!pass) goto bail;
-	}
-	
-	if (fCutTrackQual_kp2) {
-		pass = (fTrackQual_kp2 & fCutTrackQual_kp2) != 0;
-		if (!pass) goto bail;
-	}
 	
 	if (fCutMass_JPsiLow > 0.0) {
 		pass = fMassJPsi > fCutMass_JPsiLow;
