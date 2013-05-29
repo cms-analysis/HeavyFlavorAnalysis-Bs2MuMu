@@ -14,7 +14,6 @@
 #include "TUnixSystem.h"
 
 #include "massReader.hh"
-#include "ksReader.hh"
 #include "copyReader.hh"
 #include "genLevel.hh"
 #include "impactReader.hh"
@@ -186,7 +185,6 @@ int main(int argc, char *argv[]) {
   // -- Now instantiate the tree-analysis class object, initialize, and run it ...
   treeReader01 *a = NULL;
   if (readerName == "massReader") a = new massReader(chain,TString(evtClassName));
-  else if (readerName == "ksReader") a = new ksReader(chain,TString(evtClassName));
   else if (readerName == "copyReader") a = new copyReader(chain,TString(evtClassName));
   else if (readerName == "genLevel") a = new genLevel(chain,TString(evtClassName));
   else if (readerName == "impactReader") a = new impactReader(chain,TString(evtClassName));
