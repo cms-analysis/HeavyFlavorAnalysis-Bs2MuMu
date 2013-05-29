@@ -405,6 +405,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	}
 	
 	fAlpha = v1.Angle(v2);
+	fAlpha = pCand->fAlpha; // newly computed in HFSequentialVertexFit. Access to refitted PV position there.
 	
 	// project to xy plane
 	v1.SetZ(0);
