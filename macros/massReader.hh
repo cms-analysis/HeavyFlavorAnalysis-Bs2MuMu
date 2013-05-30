@@ -143,7 +143,6 @@ class massReader : public treeReader01 {
 		float fAlphaXY; // Angle between momentum and dist(vertex, motherVertex) in xy-plane
 		float fChi2; // chi2 of the vertex
 		float fNdof; // number of degrees of freedom of vertex
-		float fDeltaChi2; // diff of chi2 of pv with / without signal tracks
 		// Isolation variables
 		float fIsoMoriond12; // isolation variable defined as for moriond 12
 		float fDoca0;
@@ -151,8 +150,6 @@ class massReader : public treeReader01 {
 		// muon properties
 		float fPtMu1,fPtMu2;
 		int fMuTight1,fMuTight2;
-		int fMuTight1_PV,fMuTight2_PV;
-		int fMuTight1_SV,fMuTight2_SV;
 		float fEtaMu1,fEtaMu2;
 		float fDeltaPhiMu; // mu1.Phi(mu2)
 		float fDeltaR; // deltaR of the muons
@@ -196,6 +193,7 @@ class massReader : public treeReader01 {
 		
 		// PV
 		int fNbrPV; // nbr of PV in this event
+		float fPVz;
 		float fPVTrkWeight;
 		
 		// muon isolation

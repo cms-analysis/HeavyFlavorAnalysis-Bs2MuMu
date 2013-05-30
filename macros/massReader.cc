@@ -167,7 +167,6 @@ void massReader::clearVariables()
 	fAlphaXY = 0.0;
 	fChi2 = 0.0;
 	fNdof = 0.0;
-	fDeltaChi2 = 9999;
 	fMaxDoca = 0.0;
 	fIsoMoriond12 = 0.0;
 	fDoca0 = FLT_MAX;
@@ -191,12 +190,11 @@ void massReader::clearVariables()
 	fPtMu1 = fPtMu2 = 0.0f;
 	fEtaMu1 = fEtaMu2 = 0.0f;
 	fMuTight1 = fMuTight2 = 0;
-	fMuTight1_PV = fMuTight2_PV = 0;
-	fMuTight1_SV = fMuTight2_PV = 0;
 	fHighPur_mu1 = fHighPur_mu2 = 0;
 	fQ_mu1 = fQ_mu2 = 0;
 	fDeltaR = 0.0f; // deltaR
 	fNbrPV = 0;
+	fPVz = -99.f;
 	fDeltaPhiMu = 0;
 	fIPCand = 0.0f;
 	fIPCandE = 0.0f;
@@ -256,9 +254,9 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fDxyE = pCand->fVtx.fDxyE;
 	fChi2 = pCand->fVtx.fChi2;
 	fNdof = pCand->fVtx.fNdof;
-	fDeltaChi2 = pCand->fDeltaChi2;
 	fMaxDoca = pCand->fMaxDoca;
 	fNbrPV = fpEvt->nPV();
+	fPVz = fpEvt->getPV(pCand->fPvIdx)->fPoint.Z();
 	fIPCand = TMath::Sqrt(pCand->fPvLip*pCand->fPvLip + pCand->fPvTip*pCand->fPvTip);
 	fIPCandE = TMath::Sqrt((pCand->fPvLip*pCand->fPvLip)/(fIPCand*fIPCand)*(pCand->fPvLipE*pCand->fPvLipE) + (pCand->fPvTip*pCand->fPvTip)/(fIPCand*fIPCand)*(pCand->fPvTipE*pCand->fPvTipE));
 	fIsoMoriond12 = calculateIsolation(pCand);
@@ -301,8 +299,6 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 					fEtaMu1 = sigTrack->fPlab.Eta();
 					fQ_mu1 = simTrack->getCharge();
 					fMuTight1 = isMuonTight(sigTrack);
-					fMuTight1_PV = sigTrack->fInt1;
-					fMuTight1_SV = sigTrack->fInt2;
 					if (dauGen) {
 						fPtMu1_Gen = dauGen->fP.Perp();
 						if (fPtMu1_Gen > 0)
@@ -317,8 +313,6 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 					fEtaMu2 = sigTrack->fPlab.Eta();
 					fQ_mu2 = simTrack->getCharge();
 					fMuTight2 = isMuonTight(sigTrack);
-					fMuTight2_PV = sigTrack->fInt1;
-					fMuTight2_SV = sigTrack->fInt2;
 					if (dauGen) {
 						fPtMu2_Gen = dauGen->fP.Perp();
 						if (fPtMu2_Gen > 0)
@@ -368,8 +362,6 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		swap(fHighPur_mu1,fHighPur_mu2);
 		swap(fQ_mu1,fQ_mu2);
 		swap(fMuTight1,fMuTight2);
-		swap(fMuTight1_PV, fMuTight2_PV);
-		swap(fMuTight1_SV, fMuTight2_SV);
 		swap(fPtMu1_Gen,fPtMu2_Gen);
 		swap(fEtaMu1_Gen,fEtaMu2_Gen);
 		swap(fPMu1_Gen,fPMu2_Gen);
@@ -477,10 +469,6 @@ void massReader::bookHist()
 	reduced_tree->Branch("pt_mu2",&fPtMu2,"pt_mu2/F");
 	reduced_tree->Branch("tight_mu1",&fMuTight1,"tight_mu1/I");
 	reduced_tree->Branch("tight_mu2",&fMuTight2,"tight_mu2/I");
-	reduced_tree->Branch("tight_mu1_pv",&fMuTight1_PV,"tight_mu1_pv/I");
-	reduced_tree->Branch("tight_mu2_pv",&fMuTight2_PV,"tight_mu2_pv/I");
-	reduced_tree->Branch("tight_mu1_sv",&fMuTight1_SV,"tight_mu1_sv/I");
-	reduced_tree->Branch("tight_mu2_sv",&fMuTight2_SV,"tight_mu2_sv/I");
 	reduced_tree->Branch("eta_mu1",&fEtaMu1,"eta_mu1/F");
 	reduced_tree->Branch("eta_mu2",&fEtaMu2,"eta_mu2/F");
 	reduced_tree->Branch("highpur_mu1",&fHighPur_mu1,"highpur_mu1/I");
@@ -497,7 +485,6 @@ void massReader::bookHist()
 	reduced_tree->Branch("alpha_xy",&fAlphaXY,"alpha_xy/F");
 	reduced_tree->Branch("chi2",&fChi2,"chi2/F");
 	reduced_tree->Branch("Ndof",&fNdof,"Ndof/F");
-	reduced_tree->Branch("diff_chi2",&fDeltaChi2,"diff_chi2/F");
 	reduced_tree->Branch("max_doca",&fMaxDoca,"max_doca/F");
 	reduced_tree->Branch("pt_mu1_gen",&fPtMu1_Gen,"pt_mu1_gen/F");
 	reduced_tree->Branch("pt_mu2_gen",&fPtMu2_Gen,"pt_mu2_gen/F");
@@ -535,6 +522,7 @@ void massReader::bookHist()
 	reduced_tree->Branch("ctaue",&fCtauE,"ctaue/F");
 	reduced_tree->Branch("eta",&fEta,"eta/F");
 	reduced_tree->Branch("nbr_pv",&fNbrPV,"nbr_pv/I");
+	reduced_tree->Branch("pv_z",&fPVz,"pv_z/F");
 	reduced_tree->Branch("ip",&fIPCand,"ip/F");
 	reduced_tree->Branch("ipe",&fIPCandE,"ipe/F");
 	reduced_tree->Branch("iso_mu1",&fIsoMu1,"iso_mu1/F");
