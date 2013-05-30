@@ -256,7 +256,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 	fNdof = pCand->fVtx.fNdof;
 	fMaxDoca = pCand->fMaxDoca;
 	fNbrPV = fpEvt->nPV();
-	fPVz = fpEvt->getPV(pCand->fPvIdx)->fPoint.Z();
+	if (0 <= pCand->fPvIdx && pCand->fPvIdx < fpEvt->nPV()) fPVz = fpEvt->getPV(pCand->fPvIdx)->fPoint.Z();
 	fIPCand = TMath::Sqrt(pCand->fPvLip*pCand->fPvLip + pCand->fPvTip*pCand->fPvTip);
 	fIPCandE = TMath::Sqrt((pCand->fPvLip*pCand->fPvLip)/(fIPCand*fIPCand)*(pCand->fPvLipE*pCand->fPvLipE) + (pCand->fPvTip*pCand->fPvTip)/(fIPCand*fIPCand)*(pCand->fPvTipE*pCand->fPvTipE));
 	fIsoMoriond12 = calculateIsolation(pCand);
