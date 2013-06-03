@@ -693,7 +693,7 @@ float massReader::calculateIsolation(TAnaCand *pCand)
 	int j,ntracks;
 	map<int,int> candTracks;
 	set<int> nearSV;
-	TAnaTrack *pTrack;
+	TSimpleTrack *sTrack;
 	
 	// build a set of all tracks near SV
 	ntracks = pCand->fNstTracks.size();
@@ -705,26 +705,26 @@ float massReader::calculateIsolation(TAnaCand *pCand)
 	// find the candidate tracks
 	findAllTrackIndices(pCand,&candTracks);
 	
-	ntracks = fpEvt->nRecTracks();
+	ntracks = fpEvt->nSimpleTracks();
 	for (j = 0; j < ntracks; j++) {
 		if (candTracks.count(j) > 0) // this track belongs to the candidate...
 			continue;
 		
-		pTrack = fpEvt->getRecTrack(j);
+		sTrack = fpEvt->getSimpleTrack(j);
 		
 		// check for sufficient pt of track
-		if (pTrack->fPlab.Pt() <= pt_thres)
+		if (sTrack->getP().Pt() <= pt_thres)
 			continue;
 		
 		// check if track_j is within cone
-		if (pCand->fPlab.DeltaR(pTrack->fPlab) >= cone)
+		if (pCand->fPlab.DeltaR(sTrack->getP()) >= cone)
 			continue;
 		
 		// check that not the same PV
-		if ((pCand->fPvIdx != pTrack->fPvIdx) && (nearSV.count(j)==0 || pTrack->fPvIdx >= 0))
+		if ((pCand->fPvIdx != sTrack->getPvIndex()) && (nearSV.count(j)==0 || sTrack->getPvIndex() >= 0))
 			continue;
 		
-		sum_pt += pTrack->fPlab.Pt();
+		sum_pt += sTrack->getP().Pt();
 	}
 	
 	isolation = pCand->fPlab.Pt();
