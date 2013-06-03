@@ -1559,9 +1559,10 @@ void candAna::setupReducedTree(TTree *t) {
   // for testing only 
   t->Branch("hltm2",    &fHLTmatch2,          "hltm2/O");
   t->Branch("hltm3",    &fHLTmatch3,          "hltm3/O");
-  t->Branch("tmp1",     &ftmp1,          "tmp1/I");
-  t->Branch("tmp2",     &ftmp2,          "tmp2/I");
-
+  if(0) {
+    t->Branch("tmp1",     &ftmp1,          "tmp1/I");
+    t->Branch("tmp2",     &ftmp2,          "tmp2/I");
+  }
 }
 
 
