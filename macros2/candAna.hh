@@ -127,8 +127,10 @@ public:
   virtual void        boostGames();
   virtual double      matchToMuon(TAnaTrack *pt, bool skipSame = false); // match a single track to ALL muons
   virtual void        play(); 
+  virtual void        play2(); 
   // To return the full deltaR not just a bool
   virtual double      doTriggerMatchingR(TAnaTrack *pt, bool anyTrig = false); // match a single track to HLT
+  virtual double      doTriggerMatchingR_OLD(TAnaTrack *pt, bool anyTrig = false); // match a single track to HLT
 
   std::string fName; 
   std::string fCutFile; 
@@ -269,8 +271,11 @@ public:
 
   bool    fBadEvent;
   int     fhltType; // to hold the HLT information d.k.
-  bool    fHLTmatch2; // test anothe matching method, for tesing only 
+  bool    fHLTmatch2, fHLTmatch3; // test anothe matching method, for tesing only 
   double  fTrigMatchDeltaPt;
+
+  // test 
+  int ftmp1, ftmp2;
 
   struct RedTreeData fRTD;
 
