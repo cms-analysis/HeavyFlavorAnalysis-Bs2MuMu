@@ -161,7 +161,7 @@ void candAnaBs2JpsiPhi::candAnalysis() {
   fCandChi2Dof = chi2/ndof;
   
   
-  if(1) { // misid test d.k.
+  if(0) { // misid test d.k.
     if( (p1->fIndex == fpMuon1->fIndex) || (p1->fIndex ==fpMuon2->fIndex) ) 
       cout<<" Kaon1 is a MUON "<<fEvt<<" "<<fpCand<<" "<<p1->fIndex<<" "<<fpMuon1->fIndex<<" "<<fpMuon2->fIndex<<" "<<fEvt<<endl;
     if( (p2->fIndex == fpMuon1->fIndex) || (p2->fIndex ==fpMuon2->fIndex) ) 
