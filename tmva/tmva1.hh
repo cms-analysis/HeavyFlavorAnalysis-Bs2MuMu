@@ -34,7 +34,8 @@ struct bdtSetup {
 
 struct readerData {
   float pt, eta, m1eta, m2eta, m1pt, m2pt;
-  float fls3d, alpha, maxdoca, pvip, pvips, iso, docatrk, chi2dof, closetrk; 
+  float fls3d, alpha, maxdoca, pvip, pvips, iso, docatrk, chi2dof; 
+  float closetrk; 
   float closetrks1, closetrks2, closetrks3; 
   float m1iso, m2iso, pvdchi2, othervtx;
   float pvlips2, pvlip2; 
@@ -96,9 +97,10 @@ class tmva1: public TObject {
   void toyRun(std::string modifier, std::string vars, std::string bdtpars, int seed = 0, int nsg = 15000, int nbg = 10000);
   void createToyData(std::string sgfilename, std::string bgfilename, std::string ofilename, int seed, int nsg, int nbg);
 
-  void analyzeTexFiles(std::string ofilename, int start, int end); 
+  void analyzeTexFiles(std::string ofilename, int start, int end, std::string what = "ssbfit"); 
   void readTexFile(std::string filename, std::vector<std::string> &lines);
   float parseTexLine(std::string line);
+  std::string parseXmlOption(std::string line);
 
   files fInputFiles;
   bdtSetup fBdtSetup;

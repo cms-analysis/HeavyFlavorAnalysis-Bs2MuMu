@@ -20,6 +20,7 @@
 #include "TGraph.h"
 #include "TPaveStats.h"
 #include "TMinuit.h"
+#include "TVirtualFitter.h"
 
 #include "tmva1.hh"
 #include "../macros/initFunc.hh"
@@ -118,14 +119,21 @@ TCanvas* tmva1::getC0() {
 // ----------------------------------------------------------------------
 void tmva1::setupTree(TTree *t, RedTreeData &b) {
   t->SetBranchAddress("evt", &b.evt);
+  t->SetBranchAddress("run", &b.run);
+  t->SetBranchAddress("json", &b.json);
+  t->SetBranchAddress("pvw8", &b.pvw8);
   t->SetBranchAddress("gmuid", &b.gmuid);
   t->SetBranchAddress("gmutmid", &b.gmutmid);
+  t->SetBranchAddress("gtqual", &b.gtqual);
   t->SetBranchAddress("hlt", &b.hlt);
   t->SetBranchAddress("hltm", &b.hltm);
+  t->SetBranchAddress("hltm2", &b.hltm2);
   t->SetBranchAddress("m1pt", &b.m1pt);
-  t->SetBranchAddress("m2pt", &b.m2pt);
   t->SetBranchAddress("m1eta", &b.m1eta);
+  t->SetBranchAddress("m1q", &b.m1q);
+  t->SetBranchAddress("m2pt", &b.m2pt);
   t->SetBranchAddress("m2eta", &b.m2eta);
+  t->SetBranchAddress("m2q", &b.m2q);
   t->SetBranchAddress("pt", &b.pt);
   t->SetBranchAddress("eta", &b.eta);
   t->SetBranchAddress("pvlip", &b.pvlip);
@@ -211,11 +219,11 @@ void tmva1::train(string oname, string filename, int nsg, int nbg) {
 
    for (unsigned int i = 0; i < vVar.size(); ++i) {
      cout << "  " << vVar[i] << endl;
-     if (string::npos != vVar[i].find("closetrk")) {
-       factory->AddVariable(vVar[i].c_str(), 'I');        
-     } else {
-       factory->AddVariable(vVar[i].c_str(), 'F');        
-     }
+     //      if (string::npos != vVar[i].find("closetrk")) {
+     //        factory->AddVariable(vVar[i].c_str(), 'I');        
+     //      } else {
+     factory->AddVariable(vVar[i].c_str(), 'F');        
+     //      }
    }
 
    factory->AddSpectator("m",  "mass", "GeV", 'F' );
@@ -386,7 +394,7 @@ void tmva1::apply(const char *fname) {
   int classID;
   double w8; 
   tt->Branch("m",       &ftd.m,     "m/D");
-  tt->Branch("eta",     &ftd.eta,   "eta/D");
+  tt->Branch("me",      &ftd.me,     "me/D");
   tt->Branch("weight",  &w8,        "weight/D");
   tt->Branch("bdt",     &fBDT,      "bdt/D");
   tt->Branch("bdt0",    &fBDT0,     "bdt0/D");
@@ -395,29 +403,34 @@ void tmva1::apply(const char *fname) {
   tt->Branch("classID", &classID,   "classID/I");
   tt->Branch("hlt",     &ftd.hlt,   "hlt/O");
   tt->Branch("hltm",    &ftd.hltm,  "hltm/O");
+  tt->Branch("hltm2",   &ftd.hltm2,  "hltm2/O");
   tt->Branch("gmuid",   &ftd.gmuid, "gmuid/O");
   tt->Branch("evt",     &ftd.evt,   "evt/I");
 
   // -- add the usual variables
-  tt->Branch("m1pt",    &ftd.m1pt);
-  tt->Branch("m2pt",    &ftd.m2pt);
-  tt->Branch("m1eta",   &ftd.m1eta);
-  tt->Branch("m2eta",   &ftd.m2eta);
-  tt->Branch("pt",      &ftd.pt);
-  tt->Branch("eta",     &ftd.eta);
+  tt->Branch("m1pt",    &ftd.m1pt,     "m1pt/D");
+  tt->Branch("m2pt",    &ftd.m2pt,     "m2pt/D");
+  tt->Branch("m1eta",   &ftd.m1eta,    "m1eta/D");
+  tt->Branch("m2eta",   &ftd.m2eta,    "m2etat/D");
+  tt->Branch("pt",      &ftd.pt,       "pt/D");
+  tt->Branch("eta",     &ftd.eta,      "eta/D");
 
-  tt->Branch("chi2dof", &ftd.chi2dof);
-  tt->Branch("maxdoca", &ftd.maxdoca);
-  tt->Branch("fls3d",   &ftd.fls3d);
-  tt->Branch("alpha",   &ftd.alpha);
-  tt->Branch("pvip",    &ftd.pvip);
-  tt->Branch("pvips",   &ftd.pvips);
+  tt->Branch("chi2dof", &ftd.chi2dof,  "chi2dof/D");
+  tt->Branch("maxdoca", &ftd.maxdoca,  "maxdoca/D");
+  tt->Branch("fls3d",   &ftd.fls3d,  "fls3d/D");
+  tt->Branch("fl3d",    &ftd.fl3d,  "fl3d/D");
+  tt->Branch("flsxy",   &ftd.flsxy,  "flsxy/D");
+  tt->Branch("alpha",   &ftd.alpha,  "alpha/D");
+  tt->Branch("pvip",    &ftd.pvip,  "pvip/D");
+  tt->Branch("pvips",   &ftd.pvips,  "pvips/D");
+  tt->Branch("pvlip",   &ftd.pvlip,  "pvlip/D");
+  tt->Branch("pvlips",  &ftd.pvlips,  "pvlips/D");
 
-  tt->Branch("iso",     &ftd.iso);
-  tt->Branch("m1iso",   &ftd.m1iso);
-  tt->Branch("m2iso",   &ftd.m2iso);
-  tt->Branch("docatrk", &ftd.docatrk);
-  tt->Branch("closetrk",&ftd.closetrk);
+  tt->Branch("iso",     &ftd.iso,  "iso/D");
+  tt->Branch("m1iso",   &ftd.m1iso,  "m1iso/D");
+  tt->Branch("m2iso",   &ftd.m2iso,  "m2iso/D");
+  tt->Branch("docatrk", &ftd.docatrk,  "docatrk/D");
+  tt->Branch("closetrk",&ftd.closetrk,  "closetrk/D");
 
 
   TH1D *hd = new TH1D("bdtTreeData", "", 20, 0., 20.);
@@ -433,12 +446,15 @@ void tmva1::apply(const char *fname) {
   int nEvent = t->GetEntries();
   double lostEvents(0); 
   double totalEvents(0); 
+  bool otherCuts(false);
   for (Long64_t ievt=0; ievt<nEvent; ievt++) {
     if (ievt%1000000 == 0) std::cout << "--- ... Processing data event: " << ievt << std::endl;
     t->GetEntry(ievt);
     fBDT = fBDT0 = fBDT1 =  fBDT2 = -99.;
     totalEvents += w8; 
-    if (ftd.gmuid && ftd.hlt && ftd.hltm && preselection(ftd, fChannel)) {
+    otherCuts = (ftd.m > 4.9 && ftd.m < 5.9) && (ftd.m1q*ftd.m2q < 0) && (ftd.pvw8 > 0.7) && (ftd.gtqual);
+    
+    if (ftd.json && otherCuts && ftd.gmuid && ftd.hlt && ftd.hltm2 && preselection(ftd, fChannel)) {
       calcBDT();
       tt->Fill();
     } else {
@@ -465,7 +481,8 @@ void tmva1::apply(const char *fname) {
 
     fBDT = fBDT0 = fBDT1 =  fBDT2 = -99.;
     totalEvents += w8; 
-    if (ftd.gmuid && ftd.hlt && ftd.hltm && preselection(ftd, fChannel)) {
+    otherCuts = (ftd.m > 4.9 && ftd.m < 5.9) && (ftd.m1q*ftd.m2q < 0) && (ftd.pvw8 > 0.7) && (ftd.gtqual);
+    if (otherCuts && ftd.gmuid && ftd.hlt && ftd.hltm2 && preselection(ftd, fChannel)) {
       calcBDT();
       tt->Fill();
     } else {
@@ -523,9 +540,6 @@ void tmva1::analyze(const char *fname) {
   TFile *f = TFile::Open(Form("%s-combined.root", fname), "UPDATE"); 
   TH1D *hd = (TH1D*)f->Get("bdtTreeData"); 
   double dLostEvents  = hd->GetBinContent(10); 
-  double dLostEvents0 = hd->GetBinContent(1); 
-  double dLostEvents1 = hd->GetBinContent(2); 
-  double dLostEvents2 = hd->GetBinContent(3); 
   TH1D *hs = (TH1D*)f->Get("bdtTreeSignal"); 
   double sLostEvents  = hs->GetBinContent(10); 
 
@@ -660,13 +674,6 @@ void tmva1::analyze(const char *fname) {
   for (Long64_t ievt=0; ievt<nEvent; ievt++) {
     t->GetEntry(ievt);
     if (1 == classID) {
-      if (hlt && hltm && gmuid) bBDT->Fill(bdt);
-      if (hlt && hltm && !gmuid) cBDT->Fill(bdt);
-
-      if (!hlt) continue;
-      if (!hltm) continue;
-      if (!gmuid) continue;
-
       ap0bgBDT->Fill(bdt0);
       ap1bgBDT->Fill(bdt1);
       ap2bgBDT->Fill(bdt2);
@@ -687,10 +694,6 @@ void tmva1::analyze(const char *fname) {
     }
 
     if (0 == classID) {
-      if (!hlt) continue;
-      if (!hltm) continue;
-      if (!gmuid) continue;
-
       ap0sgBDT->Fill(bdt0);
       ap1sgBDT->Fill(bdt1);
       ap2sgBDT->Fill(bdt2);
@@ -860,6 +863,7 @@ void tmva1::analyze(const char *fname) {
   double vDeffMax[4]; 
   double vSeffBinD99[4], vBmax[4], vMaxSSB[4], vMaxBDT[4];
   double vMaxSSBsimple[4], vMaxBDTsimple[4];
+  double vMaxSSBfit[4], vMaxBDTfit[4];
 
   TH1D *hvsg[4], *hvbg[4];
   TH1D *hvsgAll[4], *hvbgAll[4];
@@ -874,7 +878,8 @@ void tmva1::analyze(const char *fname) {
     vSeffTot[ie] = vSeffMax[ie] = vSmax[ie] = 
       vDeffMax[ie] = 
       vSeffBinD99[ie] = vBmax[ie] = vMaxSSB[ie] = vMaxBDT[ie] = 
-      vMaxSSBsimple[ie] = vMaxBDTsimple[ie] = 0; 
+      vMaxSSBsimple[ie] = vMaxBDTsimple[ie] = 
+      vMaxSSBfit[ie] = vMaxBDTfit[ie] = 0; 
 
     hrocs[ie] = new TH1D(Form("hroc%d", ie), Form("hroc%d", ie), 200, 0., 1.); 
     hssb[ie]  = new TH1D(Form("hssb%d", ie), Form("hssb%d", ie), bdtBins, bdtMin, bdtMax); hssb[ie]->Sumw2();
@@ -914,9 +919,6 @@ void tmva1::analyze(const char *fname) {
     nEvent = t->GetEntries();
     for (Long64_t ievt=0; ievt<nEvent; ievt++) {
       t->GetEntry(ievt);
-      if (false == hlt) continue;
-      if (false == hltm) continue;
-      if (false == gmuid) continue;
       if (0 == classID) {
 	hvsgAll[3]->Fill(m, w8); 
 	if (0 == TMath::Abs(evt%3)) hvsgAll[0]->Fill(m, w8); 
@@ -964,11 +966,13 @@ void tmva1::analyze(const char *fname) {
       if ((1.-deff) > 0.999998) vSeffBinD99[ie] = seff;
       grocs[ie]->SetPoint(ibin, seff, 1.-deff); 
       hrocs[ie]->SetBinContent(hrocs[ie]->FindBin(seff), 1.-deff); 
-
+      
+      double ssb(0.); 
+      cout << "** " << ie << "** bdt> " << bdtCut << " d = " << d << " s = " << s << " b = " << b
+	   << " seff = " << seff << " deff = " << deff << endl;
       if (s+b+pbg >0) {
-	double ssb = s/TMath::Sqrt(s+b+pbg);
-	cout << "** " << ie << "** bdt> " << bdtCut << " d = " << d << " s = " << s << " b = " << b
-	     << " seff = " << seff << " deff = " << deff << " ssb = " << ssb << endl;
+	ssb = s/TMath::Sqrt(s+b+pbg);
+	cout << "** ** ssb " << ssb << endl;
 	if (ssb > vMaxSSB[ie]) {
 	  vSmax[ie] = s;
 	  vDmax[ie] = static_cast<int>(d); 
@@ -985,25 +989,31 @@ void tmva1::analyze(const char *fname) {
 	hssb[ie]->SetBinContent(ibin, 0); 
       }
 
+      double ssbs(0.); 
       if (s+bsimple >0) {
-	double ssb = s/TMath::Sqrt(s+bsimple);
-	if (ssb > vMaxSSBsimple[ie]) {
-	  vMaxSSBsimple[ie] = ssb; 
+	ssbs = s/TMath::Sqrt(s+bsimple);
+	cout << "** ** ssbs " << ssbs << endl;
+	if (ssbs > vMaxSSBsimple[ie]) {
+	  vMaxSSBsimple[ie] = ssbs; 
 	  vMaxBDTsimple[ie] = bdtCut;
 	}
-	h2ssb[ie]->SetBinContent(ibin, ssb); 
+	h2ssb[ie]->SetBinContent(ibin, ssbs); 
       } else {
 	h2ssb[ie]->SetBinContent(ibin, 0); 
       }
+
+
       //    cout << "S = " << s << " B = " << b << " => S/sqrt(S+B) = " << s/TMath::Sqrt(s+b) << endl;
       c0->Clear();
-      hvbg[ie]->SetTitle(Form("bdt >%f, S/B = %5.2f/%5.2f = %4.3f   D = %5.0f", bdtCut, s, b, s/b, d));
-      hvbg[ie]->Draw("e");
-      hvsg[ie]->Draw("samehist");
-      c0->Modified();
-      c0->Update();
+      if (3 == ie) {
+	hvbg[ie]->SetTitle(Form("evt type %d, bdt >%3.2f, S/B/D = %5.2f/%5.2f/%5.0f ssb = %4.3f/%4.3f", 
+				ie, bdtCut, s, b, d, ssb, ssbs));
+	hvbg[ie]->Draw("e");
+	hvsg[ie]->Draw("samehist");
+	c0->Modified();
+	c0->Update();
+      }
     }
-
   }
 
   for (int ie = 0; ie < 4; ++ie) {
@@ -1028,6 +1038,40 @@ void tmva1::analyze(const char *fname) {
   }
 
 
+  // -- fit for the maximum ssb and bdt cut
+  initFunc *pFunc  = new initFunc(); 
+  gStyle->SetOptFit(0); 
+  for (int ie = 0; ie < 4; ++ie) {
+    double xmax(0.), xmin(0.); 
+    int nbins(0); 
+    double maxVal = -1.;
+    for (int i = 1; i < hssb[ie]->GetNbinsX(); ++i) 
+      if (hssb[ie]->GetBinContent(i) > maxVal) maxVal = hssb[ie]->GetBinContent(i);
+    
+    for (int i = 1; i < hssb[ie]->GetNbinsX(); ++i) {
+      if (hssb[ie]->GetBinContent(i) > 0.7*maxVal) {
+	xmax = hssb[ie]->GetBinCenter(i); 
+	nbins = i - hssb[ie]->GetMaximumBin(); 
+      }
+      hssb[ie]->SetBinError(i, 0.03*hssb[ie]->GetBinContent(i)); 
+    }
+    xmin = hssb[ie]->GetBinCenter(hssb[ie]->GetMaximumBin() - TMath::Abs(nbins)); 
+    
+    cout << "maxval: " << hssb[ie]->GetMaximum() << endl;
+    cout << "maxbin: " << hssb[ie]->GetMaximumBin() << endl;
+    cout << "xmax: " << xmax << endl;
+    cout << "xmin: " << xmin << endl;
+    cout << "nbins: " << nbins << endl;
+    
+    TF1 *f1 = pFunc->pol2local(hssb[ie], 0.05); 
+    hssb[ie]->Fit(f1, "r", "", xmin, xmax); 
+    double maxfitssbX = hssb[ie]->GetFunction("iF_pol2local")->GetParameter(2); 
+    double maxfitssbY = hssb[ie]->GetFunction("iF_pol2local")->GetParameter(0); 
+    vMaxSSBfit[ie] = maxfitssbX; 
+    vMaxBDTfit[ie] = maxfitssbY; 
+  }
+  delete pFunc; 
+
   // -- BG overlays
   // --------------
   gStyle->SetOptTitle(0); 
@@ -1043,8 +1087,21 @@ void tmva1::analyze(const char *fname) {
 
   int dMaxSum(0);
   double bMaxSum(0.), sMaxSum(0.); 
+  double a(0.), dMaxBDT(0.), dMaxBDT3(0.); 
 
+  dMaxBDT = TMath::Abs(vMaxBDT[0] - vMaxBDT[1]);
+  a = TMath::Abs(vMaxBDT[0] - vMaxBDT[2]);
+  if (a > dMaxBDT) dMaxBDT = a; 
+  a = TMath::Abs(vMaxBDT[1] - vMaxBDT[2]);
+  if (a > dMaxBDT) dMaxBDT = a; 
+
+  a = 0.; 
   for (int ie = 0; ie < 4; ++ie) {
+
+    if (ie < 3) {
+      a = TMath::Abs(vMaxBDT[3] - vMaxBDT[ie]);
+      if (a > dMaxBDT3) dMaxBDT3 = a; 
+    }
 
     c0->Clear();
     frame->Draw();  
@@ -1073,6 +1130,8 @@ void tmva1::analyze(const char *fname) {
     double maxBDT = vMaxBDT[ie];
     double maxBDTsimple = vMaxBDTsimple[ie];
     double maxSSBsimple = vMaxSSBsimple[ie];
+    double maxBDTfit = vMaxSSBfit[ie];
+    double maxSSBfit = vMaxBDTfit[ie];
     double seffMax = vSeffMax[ie];
     double seffTot = vSeffTot[ie];
 
@@ -1097,6 +1156,8 @@ void tmva1::analyze(const char *fname) {
     TEX << Form("\\vdef{s%s:ie%d:maxbdt}       {%4.3f}", fname, ie, maxBDT) << endl;
     TEX << Form("\\vdef{s%s:ie%d:ssbsimple}    {%4.3f}", fname, ie, maxSSBsimple) << endl;
     TEX << Form("\\vdef{s%s:ie%d:maxbdtsimple} {%4.3f}", fname, ie, maxBDTsimple) << endl;
+    TEX << Form("\\vdef{s%s:ie%d:ssbfit}       {%4.3f}", fname, ie, maxSSBfit) << endl;
+    TEX << Form("\\vdef{s%s:ie%d:maxbdtfit}    {%4.3f}", fname, ie, maxBDTfit) << endl;
     TEX << Form("\\vdef{s%s:ie%d:Smc}          {%4.3f}", fname, ie, sMax) << endl;
     TEX << Form("\\vdef{s%s:ie%d:D}            {%d}", fname, ie, dMax) << endl;
     TEX << Form("\\vdef{s%s:ie%d:Dhi}          {%d}", fname, ie, dhiMax) << endl;
@@ -1126,12 +1187,13 @@ void tmva1::analyze(const char *fname) {
       TEX << Form("\\vdef{s%s:ie0:ksSg}    {%4.3f}", fname, ks0) << endl;
       TEX << Form("\\vdef{s%s:ie1:ksSg}    {%4.3f}", fname, ks1) << endl;
       TEX << Form("\\vdef{s%s:ie2:ksSg}    {%4.3f}", fname, ks2) << endl;
+      TEX << Form("\\vdef{s%s:dMaxBDT}     {%4.3f}", fname, dMaxBDT) << endl;
+      TEX << Form("\\vdef{s%s:dMaxBDT3}    {%4.3f}", fname, dMaxBDT3) << endl;
     }
 
     TEX.close();
-
-
-    
+    system(Form("/bin/cp %s plots", texname.c_str())); 
+   
     newLegend(0.22, 0.47, 0.55, 0.67); 
     
     legg->SetTextSize(0.035);  
@@ -1149,8 +1211,8 @@ void tmva1::analyze(const char *fname) {
     hssb[ie]->Draw();
     h2ssb[ie]->Draw("same");
     tl->DrawLatex(0.2, 0.90, Form("event type %d", ie)); 
-    tl->DrawLatex(0.2, 0.85, Form("SSB_{max} = %4.3f (%4.3f)", maxSSB, maxSSBsimple)); 
-    tl->DrawLatex(0.2, 0.80, Form("BDT_{max} > %4.3f (%4.3f)", maxBDT, maxBDTsimple)); 
+    tl->DrawLatex(0.2, 0.85, Form("SSB_{max} = %4.3f (%4.3f/%4.3f)", maxSSB, maxSSBsimple, maxSSBfit)); 
+    tl->DrawLatex(0.2, 0.80, Form("BDT_{max} > %4.3f (%4.3f/%4.3f)", maxBDT, maxBDTsimple, maxBDTfit)); 
     tl->DrawLatex(0.2, 0.75, Form("ROC_{int} = %4.3f", rocInt)); 
     c0->SaveAs(Form("plots/%s-ssb-ie%d.pdf", fname, ie)); 
     
@@ -1163,300 +1225,6 @@ void tmva1::analyze(const char *fname) {
     grocs[ie]->Write();
   }
 
-
-
-  /*
-  // -- compute S and B, SSB
-  double bdtCut, maxSSB(-1.), maxBDT(-1.), sCnt(0.), dCnt(0.); 
-  double maxSSBsimple(-1.), maxBDTsimple(-1.);
-  double sCnt0(0.), dCnt0(0.), sCnt1(0.), dCnt1(0.), sCnt2(0.), dCnt2(0.);
-  double seffTot(0.), seffMax(0.), deffMax(0.); 
-  double seffBinD99(0.), sMax(-1.), bMax(-1);
-  int ibin(0), gbin(0), dMax(-1), dhiMax(-1); 
-  for (ibin = bdtBins; ibin >=0; --ibin) {
-    bdtCut = bdtMin + ibin*(bdtMax-bdtMin)/bdtBins;
-    if (0 == ibin%10) cout << " bin " << ibin << " cutting at bdt > " << bdtCut << endl;
-    nEvent = t->GetEntries();
-    sm->Reset();    dm->Reset();
-    sm0->Reset();   dm0->Reset();
-    sm1->Reset();   dm1->Reset();
-    sm2->Reset();   dm2->Reset();
-    sCnt = dCnt = 0.;
-    sCnt0 = dCnt0 = sCnt1 = dCnt1 = sCnt2 = dCnt2 = 0.;
-    for (Long64_t ievt=0; ievt<nEvent; ievt++) {
-      t->GetEntry(ievt);
-
-      if (false == hlt) continue;
-      if (false == hltm) continue;
-      if (false == gmuid) continue;
-      if (0 == classID) {
-	sCnt += w8; 
-	if (0 == TMath::Abs(evt%3)) sCnt0 += w8;
-	if (1 == TMath::Abs(evt%3)) sCnt1 += w8;
-	if (2 == TMath::Abs(evt%3)) sCnt2 += w8;
-      } else {
-	dCnt += w8; 
-	if (0 == TMath::Abs(evt%3)) dCnt0 += w8;
-	if (1 == TMath::Abs(evt%3)) dCnt1 += w8;
-	if (2 == TMath::Abs(evt%3)) dCnt2 += w8;
-      }
-
-      if (bdt <= bdtCut) continue;
-
-      if (0 == classID) {
-	sm->Fill(m, w8); 
-	if (0 == TMath::Abs(evt%3)) sm0->Fill(m, w8); 
-	if (1 == TMath::Abs(evt%3)) sm1->Fill(m, w8); 
-	if (2 == TMath::Abs(evt%3)) sm2->Fill(m, w8); 
-      } else {
-	dm->Fill(m, w8); 
-	if (0 == TMath::Abs(evt%3)) dm0->Fill(m, w8); 
-	if (1 == TMath::Abs(evt%3)) dm1->Fill(m, w8); 
-	if (2 == TMath::Abs(evt%3)) dm2->Fill(m, w8); 
-      }
-    }
-
-    double s = sm->Integral(sm->FindBin(5.3), sm->FindBin(5.45));
-    double d = dm->Integral(0, dm->GetNbinsX());
-    double seff = s/sCnt;
-    double bsimple = d*(5.45-5.30)/(5.9-4.9-0.25);
-    double deff = bsimple/(dLostEvents + dCnt);
-
-    double dhi = dm->Integral(dm->FindBin(5.45), dm->GetNbinsX());
-    double pbg = 0.07*s;
-
-    double b = bgBlind(dm, 3, 4.9, 5.9);
-
-    if ((1.-deff) > 0.999998) seffBinD99 = seff;
-
-    groc->SetPoint(gbin, seff, 1.-deff); 
-    hroc->SetBinContent(hroc->FindBin(seff), 1.-deff); 
-
-    double s0 = sm0->Integral(sm0->FindBin(5.3), sm0->FindBin(5.45));
-    double d0 = dm0->Integral(0, dm0->GetNbinsX());
-    double b0 = d0*(5.45-5.30)/(5.9-4.9-0.25);
-    double seff0 = s0/sCnt0;
-    double deff0 = b0/(dLostEvents0 + dCnt0);
-
-    groc0->SetPoint(gbin, seff0, 1.-deff0); 
-    hroc0->SetBinContent(hroc0->FindBin(seff0), 1.-deff0); 
-
-    double s1 = sm1->Integral(sm1->FindBin(5.3), sm1->FindBin(5.45));
-    double d1 = dm1->Integral(1, dm1->GetNbinsX());
-    double b1 = d1*(5.45-5.30)/(5.9-4.9-0.25);
-    double seff1 = s1/sCnt1;
-    double deff1 = b1/(dLostEvents1 + dCnt1);
-
-    groc1->SetPoint(gbin, seff1, 1.-deff1); 
-    hroc1->SetBinContent(hroc1->FindBin(seff1), 1.-deff1); 
-
-    double s2 = sm2->Integral(sm2->FindBin(5.3), sm2->FindBin(5.45));
-    double d2 = dm2->Integral(1, dm2->GetNbinsX());
-    double b2 = d2*(5.45-5.30)/(5.9-4.9-0.25);
-    double seff2 = s2/sCnt2;
-    double deff2 = b2/(dLostEvents2 + dCnt2);
-
-    groc2->SetPoint(gbin, seff2, 1.-deff2); 
-    hroc2->SetBinContent(hroc2->FindBin(seff2), 1.-deff2); 
-    //    cout << "roc2: " << seff2 << " " << 1.-deff2 << endl;
-
-    ++gbin;
-    if (s+b+pbg >0) {
-      double ssb = s/TMath::Sqrt(s+b+pbg);
-      cout << "bdt> " << bdtCut << " d = " << d << " s = " << s << " b = " << b
-	   << " ssb = " << ssb << endl;
-      if (ssb > maxSSB) {
-	sMax = s;
-	dMax = static_cast<int>(d); 
-	dhiMax = static_cast<int>(dhi); 
-	bMax = b+pbg; 
-	maxSSB = ssb; 
-	maxBDT = bdtCut;
-	seffMax = seff;
-	deffMax = deff;
-	seffTot = s/(sLostEvents + sCnt); 
-      }
-      h->SetBinContent(ibin, ssb); 
-    } else {
-      h->SetBinContent(ibin, 0); 
-    }
-    if (s+bsimple >0) {
-      double ssb = s/TMath::Sqrt(s+bsimple);
-      if (ssb > maxSSBsimple) {
-	maxSSBsimple = ssb; 
-	maxBDTsimple = bdtCut;
-      }
-      hs2->SetBinContent(ibin, ssb); 
-    } else {
-      hs2->SetBinContent(ibin, 0); 
-    }
-    //    cout << "S = " << s << " B = " << b << " => S/sqrt(S+B) = " << s/TMath::Sqrt(s+b) << endl;
-    c0->Clear();
-    dm->SetTitle(Form("bdt >%f, S/B = %5.2f/%5.2f = %4.3f   D = %5.0f", bdtCut, s, b, s/b, d));
-    dm->Draw("e");
-    sm->Draw("samehist");
-    c0->Modified();
-    c0->Update();
-  }
-
-  grocop->SetPoint(0, seffMax, 1.-deffMax); 
-
-  // -- patch hroc for empty bins
-  double okVal(1.); 
-  for (int i = 1; i< hroc->GetNbinsX(); ++i) {
-    if (hroc->GetBinContent(i) < 1.e-5) hroc->SetBinContent(i, okVal); 
-    okVal = hroc->GetBinContent(i);
-  }
-
-  okVal = 1.;
-  for (int i = 1; i< hroc0->GetNbinsX(); ++i) {
-    if (hroc0->GetBinContent(i) < 1.e-5) hroc0->SetBinContent(i, okVal); 
-    okVal = hroc0->GetBinContent(i);
-  }
-
-  okVal = 1.;
-  for (int i = 1; i< hroc1->GetNbinsX(); ++i) {
-    if (hroc1->GetBinContent(i) < 1.e-5) hroc1->SetBinContent(i, okVal); 
-    okVal = hroc1->GetBinContent(i);
-  }
-
-  okVal = 1.;
-  for (int i = 1; i< hroc2->GetNbinsX(); ++i) {
-    if (hroc2->GetBinContent(i) < 1.e-5) hroc2->SetBinContent(i, okVal); 
-    okVal = hroc2->GetBinContent(i);
-  }
-
-  for (int i = hroc->GetNbinsX()-1; i > 0; --i) {
-    if (!(hroc->GetBinContent(i) < hroc->GetBinContent(i-1))) {
-      hroc->SetBinContent(i, 0); 
-    } else {
-      break;
-    }
-  }
-
-  for (int i = hroc0->GetNbinsX()-1; i > 0; --i) {
-    if (!(hroc0->GetBinContent(i) < hroc0->GetBinContent(i-1))) {
-      hroc0->SetBinContent(i, 0); 
-    } else {
-      break;
-    }
-  }
-
-  for (int i = hroc1->GetNbinsX()-1; i > 0; --i) {
-    if (!(hroc1->GetBinContent(i) < hroc1->GetBinContent(i-1))) {
-      hroc1->SetBinContent(i, 0); 
-    } else {
-      break;
-    }
-  }
-
-  for (int i = hroc2->GetNbinsX()-1; i > 0; --i) {
-    if (!(hroc2->GetBinContent(i) < hroc2->GetBinContent(i-1))) {
-      hroc2->SetBinContent(i, 0); 
-    } else {
-      break;
-    }
-  }
-
-  bBDT->Scale(1./bBDT->GetSumOfWeights());
-  cBDT->Scale(1./cBDT->GetSumOfWeights());
-
-  // -- BG overlays
-  // --------------
-  c0->Clear();
-  TH2F* frame(0); 
-  frame = new TH2F("frame", "BDT output distributions", 100, 0., 0.65, 100, 0.99999, 1.000001);
-  frame->GetXaxis()->SetTitle(" #epsilon_{S}");
-  frame->GetYaxis()->SetTitle(" 1 - #epsilon_{B}");
-  frame->Draw();  
-
-  gPad->SetLogy(0);
-  gPad->SetLeftMargin(0.15);
-  groc->Draw("p"); 
-  groc->GetXaxis()->SetTitle("#epsilon_{ S}"); 
-  groc->GetYaxis()->SetTitle("1 - #epsilon_{ B}"); 
-  double rocInt = hroc->Integral(1, hroc->GetNbinsX())*hroc->GetBinWidth(1); 
-  double rocInt2= hroc->Integral(1, hroc->FindBin(seffBinD99))*hroc->GetBinWidth(1); 
-  cout << " ==> seffBinD99 " << seffBinD99 << " in bin " << hroc->FindBin(seffBinD99) << endl;
-  groc->SetName("groc"); 
-  groc->SetTitle(Form("integral = %5.3f", rocInt));
-
-  grocop->SetName("grocop"); 
-  groc0->SetName("groc0"); 
-  groc1->SetName("groc1"); 
-  groc2->SetName("groc2"); 
-
-  groc0->Draw("p");
-  groc1->Draw("p");
-  groc2->Draw("p");
-  grocop->Draw("p");
-  
-  tl->DrawLatex(0.25, 0.44, Form("D/B/S = %d/%2.1f/%2.1f", dMax, bMax, sMax)); 
-  tl->DrawLatex(0.25, 0.40, Form("S/#sqrt{S+B}(MC) = %4.3f (%4.3f)", maxSSB, maxSSBsimple)); 
-  tl->DrawLatex(0.25, 0.36, Form("b_{max}(MC) = %4.3f (%4.3f)", maxBDT, maxBDTsimple)); 
-  tl->DrawLatex(0.25, 0.32, Form("#epsilon_{BDT} = %4.3f", seffMax)); 
-  tl->DrawLatex(0.25, 0.28, Form("#epsilon_{tot} = %6.5f", seffTot)); 
-  tl->DrawLatex(0.25, 0.24, Form("I_{tot} = %6.5f", rocInt)); 
-  tl->DrawLatex(0.25, 0.20, Form("I_{part} = %6.5f", rocInt2)); 
-
-  string texname = string(fname) + ".tex";
-  ofstream TEX(texname.c_str());
-  
-  TEX << Form("\\vdef{s%s:string}       {%s}", fname, fname) << endl;
-  TEX << Form("\\vdef{s%s:ssb}          {%4.3f}", fname, maxSSB) << endl;
-  TEX << Form("\\vdef{s%s:maxbdt}       {%4.3f}", fname, maxBDT) << endl;
-  TEX << Form("\\vdef{s%s:ssbsimple}    {%4.3f}", fname, maxSSBsimple) << endl;
-  TEX << Form("\\vdef{s%s:maxbdtsimple} {%4.3f}", fname, maxBDTsimple) << endl;
-  TEX << Form("\\vdef{s%s:Smc}          {%4.3f}", fname, sMax) << endl;
-  TEX << Form("\\vdef{s%s:D}            {%d}", fname, dMax) << endl;
-  TEX << Form("\\vdef{s%s:Dhi}          {%d}", fname, dhiMax) << endl;
-  TEX << Form("\\vdef{s%s:B}            {%4.3f}", fname, bMax) << endl;
-  TEX << Form("\\vdef{s%s:ipart}        {%6.5f}", fname, rocInt2) << endl;
-  TEX << Form("\\vdef{s%s:itot}         {%6.5f}", fname, rocInt) << endl;
-  TEX << Form("\\vdef{s%s:epstot}       {%6.5f}", fname, seffTot) << endl;
-  TEX << Form("\\vdef{s%s:epsbdt}       {%6.5f}", fname, seffMax) << endl;
-  TEX.close();
-
-  newLegend(0.22, 0.47, 0.55, 0.67); 
-
-  legg->SetTextSize(0.035);  
-  legg->AddEntry(grocop, Form("operating point b > %4.3f", maxBDT), "p"); 
-  legg->AddEntry(groc,  "combined", "p"); 
-  legg->AddEntry(groc0,  "BDT 0", "p"); 
-  legg->AddEntry(groc1,  "BDT 1", "p"); 
-  legg->AddEntry(groc2,  "BDT 2", "p"); 
-  legg->Draw();
-
-  
-  c0->SaveAs(Form("plots/%s-roc0.pdf", fname)); 
-  //   gPad->SetLogy(1);
-  //   groc->SetMinimum(1.e-6); 
-  //   groc->Draw("ap"); 
-  //   c0->SaveAs(Form("plots/%s-roc1.pdf", fname)); 
-
-  c0->Clear();
-  h->Draw();
-  hs2->Draw("same");
-  tl->DrawLatex(0.2, 0.85, Form("SSB_{max} = %4.3f (%4.3f)", maxSSB, maxSSBsimple)); 
-  tl->DrawLatex(0.2, 0.80, Form("BDT_{max} > %4.3f (%4.3f)", maxBDT, maxBDTsimple)); 
-  tl->DrawLatex(0.2, 0.75, Form("ROC_{int} = %4.3f", rocInt)); 
-  c0->SaveAs(Form("plots/%s-ssb.pdf", fname)); 
-
-  cout << "Write out SSB histograms" << endl;
-  cout << "  maxSSB: " << maxSSB << " at BDT > " << maxBDT << endl;
-  h->SetDirectory(f);
-
-  h2->SetBinContent(1, maxSSB);  h2->GetXaxis()->SetBinLabel(1, "maxSSB");
-  h2->SetBinContent(2, maxBDT);  h2->GetXaxis()->SetBinLabel(2, "maxBDT");
-  h2->SetBinContent(3, rocInt);  h2->GetXaxis()->SetBinLabel(3, "rocInt");
-
-  f->cd();
-  grocop->Write();
-  groc->Write();
-  groc0->Write();
-  groc1->Write();
-  groc2->Write();
-  */
 
   f->Write();
   f->Close();
@@ -2275,9 +2043,9 @@ TTree* tmva1::createTree(struct readerData &rd) {
   tree->Branch("docatrk", &rd.docatrk, "docatrk/F");
   tree->Branch("chi2dof", &rd.chi2dof, "chi2dof/F");
   tree->Branch("closetrk", &rd.closetrk, "closetrk/F");
-  tree->Branch("closetrks1", &rd.closetrks1, "closetrks1/F");
-  tree->Branch("closetrks2", &rd.closetrks2, "closetrks2/F");
-  tree->Branch("closetrks3", &rd.closetrks3, "closetrks3/F");
+  tree->Branch("closetrks1", &rd.closetrks1, "closetrks1/I");
+  tree->Branch("closetrks2", &rd.closetrks2, "closetrks2/I");
+  tree->Branch("closetrks3", &rd.closetrks3, "closetrks3/I");
 
   tree->Branch("m1iso", &rd.m1iso, "m1iso/F");
   tree->Branch("m2iso", &rd.m2iso, "m2iso/F");
@@ -2293,6 +2061,8 @@ TTree* tmva1::createTree(struct readerData &rd) {
 // ----------------------------------------------------------------------
 double tmva1::bgBlind(TH1 *h, int mode, double lo, double hi) {
   
+  TVirtualFitter::SetMaxIterations(20000);
+
   if (0 == h) { 
     cout << "tmva1::bgBlind(...): No histogram passed! mode = " << mode << endl;
     return -1.;
@@ -2321,14 +2091,15 @@ double tmva1::bgBlind(TH1 *h, int mode, double lo, double hi) {
   }
 
   if (3 == mode) {
-    lF1 = pFunc->expoBsBlind(h); 
-    lF2 = pFunc->expo(h); 
+    pFunc->resetLimits(); 
+    lF1 = pFunc->pol1BsBlind(h); 
+    lF2 = pFunc->pol1(4.9, 5.9); 
   } else {
     cout << " implement missing code!" << endl;
   }
   
   lF2->SetLineStyle(kDashed);
-  h->Fit(lF1, "rlq", "", lo, hi); 
+  h->Fit(lF1, "rl", "", lo, hi); 
   h->DrawCopy();
   lF2->SetLineColor(kBlue);
   lF2->Draw("same");
@@ -2349,6 +2120,7 @@ double tmva1::bgBlind(TH1 *h, int mode, double lo, double hi) {
 
   delete lF1; 
   delete lF2; 
+  delete pFunc; 
 
   return BsBgExp;
 }
@@ -2403,7 +2175,7 @@ void tmva1::createToyData(string sgfilename, string bgfilename, string ofilename
        << endl
        << presel
        << endl;
-  for (int i = 0; i < vNames.size(); ++i) {
+  for (unsigned int i = 0; i < vNames.size(); ++i) {
     hsName = Form("hs_%s", vNames[i].c_str());
     hs  = new TH1D(hsName.c_str(), vNames[i].c_str(), vNbins[i], vMin[i], vMax[i]);
     setHist(hs, kBlue); 
@@ -2603,46 +2375,71 @@ void tmva1::toyRun(string modifier, string vars, string bdtpars, int seed, int n
 
 
 // ----------------------------------------------------------------------
-void tmva1::analyzeTexFiles(std::string ofilename, int start, int end) {
+void tmva1::analyzeTexFiles(std::string dir, int start, int end, string what) {
 
-  ofstream TEX(ofilename.c_str(), ios::app);
-  
+  int ivar(0); 
+  if (string::npos != what.find("ssbfit")) {
+    ivar = 1; 
+  } else   if (string::npos != what.find("ssbsimple")) {
+    ivar = 2; 
+  } else if (string::npos != what.find("ssb")) {
+    ivar = 3; 
+  }
+
   vector<string> lines; 
-  double best_ssb(-1.); 
+  double best_x(-1.); 
   int best_idx(-1);
 
   const double KSCUT(0.1); 
   int combD, combDhi, sumD, sumDhi;
-  double ssb, ssbs, combBg, combSg, sumBg, sumSg, sssb; 
+  double x, ssbfit, ssb, ssbs, combBg, combSg, sumBg, sumSg, sssb; 
   double bks0, bks1, bks2, sks0, sks1, sks2; 
+  double dMaxBDT, dMaxBDT3; 
+  string setup;
   for (int i = start; i <= end; ++i) {
-    readTexFile(Form("tmp-%d/TMVA-%d.tex", i, i), lines); 
+    lines.clear(); 
+    readTexFile(Form("%s/tmp-%d/TMVA-%d.tex", dir.c_str(), i, i), lines); 
     sumD = sumDhi = combD = combDhi = -99;
-    ssb = ssbs = combBg = combSg = sumBg = sumSg = sssb = -99.;
+    x = ssbfit = ssb = ssbs = combBg = combSg = sumBg = sumSg = sssb = -99.;
     sks0 = sks1 = sks2 = bks0 = bks1 = bks2 = -99.;
+    dMaxBDT = dMaxBDT3 = 99.; 
+    setup = ""; 
 
     for (unsigned int j = 0; j < lines.size(); ++j) {
-      if (string::npos != lines[j].find("ie0:ksBg")) {bks0 = parseTexLine(lines[j]); continue;}
-      if (string::npos != lines[j].find("ie1:ksBg")) {bks1 = parseTexLine(lines[j]); continue;}
-      if (string::npos != lines[j].find("ie2:ksBg")) {bks2 = parseTexLine(lines[j]); continue;}
+      if (string::npos != lines[j].find("ie0:ksBg}")) {bks0 = parseTexLine(lines[j]); continue;}
+      if (string::npos != lines[j].find("ie1:ksBg}")) {bks1 = parseTexLine(lines[j]); continue;}
+      if (string::npos != lines[j].find("ie2:ksBg}")) {bks2 = parseTexLine(lines[j]); continue;}
 
-      if (string::npos != lines[j].find("ie0:ksSg")) {sks0 = parseTexLine(lines[j]); continue;}
-      if (string::npos != lines[j].find("ie1:ksSg")) {sks1 = parseTexLine(lines[j]); continue;}
-      if (string::npos != lines[j].find("ie2:ksSg")) {sks2 = parseTexLine(lines[j]); continue;}
+      if (string::npos != lines[j].find("ie0:ksSg}")) {sks0 = parseTexLine(lines[j]); continue;}
+      if (string::npos != lines[j].find("ie1:ksSg}")) {sks1 = parseTexLine(lines[j]); continue;}
+      if (string::npos != lines[j].find("ie2:ksSg}")) {sks2 = parseTexLine(lines[j]); continue;}
       
-      if (string::npos != lines[j].find("sum:ssb")) {sssb = parseTexLine(lines[j]); continue;}
-      if (string::npos != lines[j].find("sum:Smc")) {sumSg = parseTexLine(lines[j]); continue;}
-      if (string::npos != lines[j].find("sum:D"))   {sumD = static_cast<int>(parseTexLine(lines[j])); continue;}
-      if (string::npos != lines[j].find("sum:Dhi")) {sumDhi = static_cast<int>(parseTexLine(lines[j])); continue;}
-      if (string::npos != lines[j].find("sum:B"))   {sumBg = parseTexLine(lines[j]); continue;}
+      if (string::npos != lines[j].find("sum:ssb}")) {sssb = parseTexLine(lines[j]); continue;}
+      if (string::npos != lines[j].find("sum:Smc}")) {sumSg = parseTexLine(lines[j]); continue;}
+      if (string::npos != lines[j].find("sum:D}"))   {sumD = static_cast<int>(parseTexLine(lines[j])); continue;}
+      if (string::npos != lines[j].find("sum:Dhi}")) {sumDhi = static_cast<int>(parseTexLine(lines[j])); continue;}
+      if (string::npos != lines[j].find("sum:B}"))   {sumBg = parseTexLine(lines[j]); continue;}
 
-      if (string::npos != lines[j].find("ie3:Smc")) {combSg = parseTexLine(lines[j]); continue;}
-      if (string::npos != lines[j].find("ie3:D"))   {combD = static_cast<int>(parseTexLine(lines[j])); continue;}
-      if (string::npos != lines[j].find("ie3:Dhi")) {combDhi = static_cast<int>(parseTexLine(lines[j])); continue;}
-      if (string::npos != lines[j].find("ie3:B"))   {combBg = parseTexLine(lines[j]); continue;}
+      if (string::npos != lines[j].find("ie3:Smc}")) {combSg = parseTexLine(lines[j]); continue;}
+      if (string::npos != lines[j].find("ie3:Dhi}")) {combDhi = static_cast<int>(parseTexLine(lines[j])); continue;}
+      if (string::npos != lines[j].find("ie3:D}"))   {combD = static_cast<int>(parseTexLine(lines[j])); continue;}
+      if (string::npos != lines[j].find("ie3:B}"))   {combBg = parseTexLine(lines[j]); continue;}
+
+      if (string::npos != lines[j].find("dMaxBDT}"))   {dMaxBDT = parseTexLine(lines[j]); continue;}
+      if (string::npos != lines[j].find("dMaxBDT3}"))   {dMaxBDT3 = parseTexLine(lines[j]); continue;}
 
       if (string::npos != lines[j].find("ie3:ssb}")) {ssb = parseTexLine(lines[j]); continue;}
-      if (string::npos != lines[j].find("ie3:ssbsimple")) {ssbs = parseTexLine(lines[j]); continue;}
+      if (string::npos != lines[j].find("ie3:ssbfit}")) {ssbfit = parseTexLine(lines[j]); continue;}
+      if (string::npos != lines[j].find("ie3:ssbsimple}")) {ssbs = parseTexLine(lines[j]); continue;}
+
+      if (string::npos != lines[j].find("BDTparameters}")) {
+	setup += lines[j].substr(lines[j].find("BDTparameters} ")+string("BDTparameters} ").length()); 
+	continue;
+      }
+      if (string::npos != lines[j].find("BDTvariables}")) {
+	setup += lines[j].substr(lines[j].find("BDTvariables} ")+string("BDTvariables} ").length()); 
+	continue;
+      }
   
     }
 
@@ -2654,10 +2451,24 @@ void tmva1::analyzeTexFiles(std::string ofilename, int start, int end) {
       continue;
     }
 
-    if (ssb > best_ssb) {
-      cout << "at " << i << " new better ssb: " << ssb << endl;
-      best_ssb = ssb; 
+    if (1 == ivar) {
+      x = ssbfit;
+    } else if (2 == ivar) {
+      x = ssbs;
+    } else if (3 == ivar) {
+      x = ssb;
+    }
+
+    if (x > best_x) {
+      cout << "at " << i << " new better " << what << ": " << ssb << "/" << ssbs << "/" << ssbfit 
+	   << "S/B/D = " << combSg << "/" << combBg << "/" << combD
+	   << " dmaxBDT = " << dMaxBDT << "/" << dMaxBDT3 << " " << setup << endl;
+      best_x = x; 
       best_idx = i; 
+    } else if (x > 0.99*best_x) {
+      cout << "   at " << i << " similar " << what << ": " << ssb << "/" << ssbs << "/" << ssbfit 
+	   << "S/B/D = " << combSg << "/" << combBg << "/" << combD
+	   << " dmaxBDT = " << dMaxBDT << "/" << dMaxBDT3 << " " << setup << endl;
     }
     
   }

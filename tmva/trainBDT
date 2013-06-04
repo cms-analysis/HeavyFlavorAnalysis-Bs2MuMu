@@ -4,7 +4,7 @@
 # ------
 
 use Getopt::Std;
-getopts('a:dD:f:ho:p:s:t:v:');
+getopts('a:b:dD:f:ho:p:s:t:v:');
 
 use lib '/shome/ursl/perl/modules/Tie-IxHash-1.23/lib';
 use Tie::IxHash;
@@ -36,8 +36,8 @@ if ($opt_v) {
     $vars = $opt_v; 
 }
 
-my $pars = ""; # -- use TMVA defaults
-if ($opt_v) {
+my $pars = ":nEventsMin=100"; # -- nearly the TMVA defaults
+if ($opt_p) {
     $pars = $opt_p; 
 }
 
@@ -45,6 +45,11 @@ if ($opt_v) {
 if ($opt_a) {
     if (!$opt_t) {die "provide a tar file\n";}
     &callA(); 
+}
+
+if ($opt_b) {
+    if (!$opt_t) {die "provide a tar file\n";}
+    &callB(); 
 }
 
 
@@ -76,7 +81,7 @@ foreach $j (keys %jobs) {
 #    $version  = $offset + $jobs{$j};
     $version  = $offset;
     $tmvaFile = $directory . "/" . $file . "-$year" . ".root"; 
-    $command = "root -b -q 'runBDT.C($version, \"$tmvaFile\", \"$vars\", \"$pars\", $channel); > TMVA-$version.log' ";
+    $command = "root -b -q 'runBDT.C($version, \"$tmvaFile\", \"$vars\", \"$pars\", $channel, $year); > TMVA-$version.log' ";
     print "$command\n";
     if (!$opt_d) {system("$command"); }
 }
@@ -116,6 +121,39 @@ sub callA() {
 	}
     }
 
+    die "\n";
+
+}
+
+
+# ----------------------------------------------------------------------
+sub callB() {
+    
+    $setVar1  = "fls3d:alpha:pvips:iso:m1iso:m2iso";
+
+    @setVars  = (":pt", ":eta", ":maxdoca", ":chi2dof", ":pvip", ":docatrk", ":closetrk"); $nVars = $#setVars + 1; 
+
+    my $loffset = $opt_b; 
+    
+    for ($iVar = 0; $iVar < 2**$nVars; $iVar++) {
+	$vars = ""; 
+	for ($jVar = 0; $jVar < $nVars; $jVar++) {
+	    if ($iVar & (0x1<<$jVar)) {
+		$vars .= $setVars[$jVar];
+	    }
+	}
+	$allVars = $setVar1 . $vars; 
+
+	$command = "./trainBDT -v $allVars -p $pars -f $file -s $opt_s -o $loffset";
+	$runCommand = "run -c ./runBDT.csh -m batch -t $opt_t -q short.q -x '$command  ' $loffset";
+	print "$runCommand\n";
+	if (!$opt_d) {
+	    system("$runCommand");
+	}
+	$loffset++;
+	
+    }
+    
     die "\n";
 
 }
