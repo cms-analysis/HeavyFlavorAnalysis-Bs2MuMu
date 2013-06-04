@@ -65,7 +65,7 @@ struct cuts {
   double iso, chi2dof, alpha, fls3d, docatrk; 
   // -- new variables
   double closetrk, pvlip, pvlips; 
-  double bdt, bdtMax; 
+  double bdtpt, bdt, bdtMax; 
   double maxdoca, pvlip2, pvlips2;
   double pvip, pvips; 
 };
@@ -209,6 +209,7 @@ public:
   virtual std::string scientificTex(double n, double nE, const char *name, double base = 1.e-2, int digits = 2);
   virtual std::string formatTex(double n, std::string name, int digits, int sgn = 0);
   virtual std::string formatTex(double n, std::string name, std::string tag);
+  virtual std::string formatTex(std::string s, std::string name);
   virtual void drawArrow(double height, int mode = 0, double y = 0.1);
   virtual void drawBox(int mode, double hi = 0.5, double ylo = 0.01);
   virtual void replaceAll(std::string &s, std::string a, std::string b);
@@ -355,8 +356,10 @@ public:
   readerData frd; 
   double MASSMIN, MASSMAX, SIGBOXMIN, SIGBOXMAX, BGLBOXMIN, BGLBOXMAX, BGHBOXMIN, BGHBOXMAX; 
   
-  bool fGoodAcceptance, fPreselection,	fWideMass, fGoodHLT, fGoodMuonsID, fGoodMuonsPt, fGoodMuonsEta, fGoodTracks, fGoodTracksPt, fGoodTracksEta; 
-  bool fGoodQ, fGoodPvAveW8, fGoodLip, fGoodLipS, fGoodIp, fGoodIpS, fGoodMaxDoca, fGoodPt, fGoodEta, fGoodAlpha, fGoodFLS, fGoodChi2, fGoodIso;
+  bool fGoodAcceptance, fPreselection, fWideMass, fGoodHLT, fGoodMuonsID, 
+       fGoodBdtPt, fGoodMuonsPt, fGoodMuonsEta, fGoodTracks, fGoodTracksPt, fGoodTracksEta; 
+  bool fGoodQ, fGoodPvAveW8, fGoodLip, fGoodLipS, fGoodIp, fGoodIpS, fGoodMaxDoca,
+       fGoodPt, fGoodEta, fGoodAlpha, fGoodFLS, fGoodChi2, fGoodIso;
   bool fGoodCloseTrack, fGoodDocaTrk, fGoodJpsiCuts, fGoodLastCut; 
 
   double fW8, fW8MisId, fW8MmuID, fW8Mtrig, fW8DmuID, fW8Dtrig;

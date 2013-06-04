@@ -114,7 +114,7 @@ plotBDT::plotBDT(const char *files, const char *dir, const char *cuts, int mode)
   }
 
 
-  double xmin(-0.2), xmax(0.6); 
+  double xmin(-1.0), xmax(1.0); 
   int nbins; 
   string htitle;
   for (unsigned int i = 0; i < 3; ++i) {
@@ -228,7 +228,7 @@ void plotBDT::makeAll(int channels) {
     cout << "--> plotEffVsBg(...)" << endl;
     for (int i = 0; i < fNchan; ++i) {
       fBdtString = Form("%s", fCuts[i]->xmlFile.c_str());
-      plotEffVsBg(i);   
+      plotEffVsBg(i);   // this must be after bdtScan!
     }
 
     cout << "--> xmlParsing()" << endl;
@@ -467,13 +467,17 @@ void  plotBDT::overlayBdtOutput() {
 
       SetSignalAndBackgroundStyle(hap0, hap1, hap2);            
       setTitles(hap0, "b", "candidates", 0.05, 1.2, 1.5); 
+      double ymax = hap0->GetMaximum(); 
+      if (hap1->GetMaximum() > ymax) ymax = hap1->GetMaximum(); 
+      if (hap2->GetMaximum() > ymax) ymax = hap2->GetMaximum(); 
+      hap0->SetMaximum(1.3*ymax); 
       hap0->Draw("");
       hap1->Draw("same");
       hap2->Draw("same");
       newLegend(x, 0.6, x+0.3, 0.85, (i==0?(j==0?"Barrel signal":"Barrel background"):(j==0)?"Endcap signal":"Endcap background")); 
-      legg->AddEntry(hap0, "BDT 0", "p"); 
-      legg->AddEntry(hap1, "BDT 1", "p"); 
-      legg->AddEntry(hap2, "BDT 2", "p"); 
+      legg->AddEntry(hap0, "BDT 0", "f"); 
+      legg->AddEntry(hap1, "BDT 1", "f"); 
+      legg->AddEntry(hap2, "BDT 2", "f"); 
       legg->Draw();
       c0->SaveAs(Form("%s/%s-b-all-overlays-%s.pdf", fDirectory.c_str(), fCuts[i]->xmlFile.c_str(), type[j].c_str())); 
 
@@ -942,7 +946,7 @@ void plotBDT::tmvaControlPlots() {
 	frame->GetYaxis()->SetTitle(" 1 - #epsilon_{B}");
 	frame->Draw();  
 
-	TGraph *g = (TGraph*)fRootFile->Get("groc"); 
+	TGraph *g = (TGraph*)fRootFile->Get("groc3"); 
 	g->Draw("p");
 	TGraph *g0 = (TGraph*)fRootFile->Get("groc0"); 
 	g0->SetMarkerColor(kBlue);
@@ -960,7 +964,7 @@ void plotBDT::tmvaControlPlots() {
 	g2->SetLineWidth(2);
 	g2->Draw("l");
 
-	TGraph *grocop = (TGraph*)fRootFile->Get("grocop"); 
+	TGraph *grocop = (TGraph*)fRootFile->Get("grocsOp3"); 
 	grocop->SetMarkerColor(kBlack);
 	grocop->SetLineColor(kBlack);
 	grocop->SetLineWidth(2);
@@ -1016,24 +1020,6 @@ void plotBDT::plotSSB() {
 void plotBDT::dumpParameters() {
   TH1D *h = (TH1D*)fRootFile->Get("hSetup");
   for (int ibin = 1; ibin < h->GetNbinsX(); ++ibin) {
-    if (!strcmp("NTrees", h->GetXaxis()->GetBinLabel(ibin))) { 
-      fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s:NTrees",  fSuffix.c_str(), fBdtString.c_str()), 0) << endl;
-    }
-    if (!strcmp("nEventsMin", h->GetXaxis()->GetBinLabel(ibin))) { 
-      fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s:nEventsMin",  fSuffix.c_str(), fBdtString.c_str()), 0) << endl;
-    }
-    if (!strcmp("MaxDepth", h->GetXaxis()->GetBinLabel(ibin))) { 
-      fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s:MaxDepth",  fSuffix.c_str(), fBdtString.c_str()), 0) << endl;
-    }
-    if (!strcmp("nCuts", h->GetXaxis()->GetBinLabel(ibin)))  {
-      fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s:nCuts",  fSuffix.c_str(), fBdtString.c_str()), 0) << endl;
-    }
-    if (!strcmp("AdaBoostBeta", h->GetXaxis()->GetBinLabel(ibin))) {
-      fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s:AdaBoostBeta",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
-    }
-    if (!strcmp("NNodesMax", h->GetXaxis()->GetBinLabel(ibin))) {
-      fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s:NNodesMax",  fSuffix.c_str(), fBdtString.c_str()), 0) << endl;
-    }
 
     if (!strcmp("sgcnt", h->GetXaxis()->GetBinLabel(ibin))) {
       fTEX << formatTex(h->GetBinContent(ibin), Form("%s:%s:sgcnt",  fSuffix.c_str(), fBdtString.c_str()), 0) << endl;
@@ -1602,16 +1588,18 @@ string plotBDT::replaceLabelWithTex(string label) {
 
 // ----------------------------------------------------------------------
 void plotBDT::xmlResetHists() {
-  fhBdtNodes->Reset(); 
-  fhBdtNodesW8->Reset(); 
+  if (fhBdtNodes) fhBdtNodes->Reset(); 
+  if (fhBdtNodesW8) fhBdtNodesW8->Reset(); 
 
-  fhBdtVariables->Reset(); 
-  fhBdtVariablesW8->Reset(); 
-  for (unsigned int i = 0; i < fhBdtVariableCuts.size(); ++i) {
-    fhBdtVariableCuts[i]->Reset(); 
-    fhBdtVariableCutsW8[i]->Reset();
-  }
+  if (fhBdtVariables) fhBdtVariables->Reset(); 
+  if (fhBdtVariablesW8) fhBdtVariablesW8->Reset(); 
+//   for (unsigned int i = 0; i < fhBdtVariableCuts.size(); ++i) {
+//     delete fhBdtVariableCuts[i]; 
+//     delete fhBdtVariableCutsW8[i];
+//   }
 
+  fhBdtVariableCuts.clear();
+  fhBdtVariableCutsW8.clear();
 }
 
 
@@ -1624,22 +1612,58 @@ void plotBDT::xmlParsing() {
   etype.push_back("-Events2"); 
 
   string xmlfile = "weights/" + fCuts[0]->xmlFile + etype[0] + "_BDT.weights.xml";
-  xmlParsingVariables(xmlfile);
   
   for (unsigned int ichan = 0; ichan < fNchan; ++ichan) {
     for (unsigned int i = 0; i < etype.size(); ++i) {
       xmlfile = "weights/" + fCuts[ichan]->xmlFile + etype[i] + "_BDT.weights.xml";
-      fBdtString = fCuts[ichan]->xmlFile;
       cout << xmlfile << endl;
-
-      xmlResetHists();
+      fBdtString = fCuts[ichan]->xmlFile;
+      xmlParsingParameters(xmlfile);
+      xmlParsingVariables(xmlfile);
       xmlParsingReadTree(xmlfile);
-
+      xmlResetHists();
+      
 
     }    
   }
 
 
+}
+
+
+// ----------------------------------------------------------------------
+void plotBDT::xmlParsingParameters(string weightfile) {
+  cout << "XXXX plotBDT::xmlParsingParameters " << weightfile << " XXXX" << endl;
+  // -- read in parameters from weight file
+  vector<string> allLines; 
+  char  buffer[2000];
+  ifstream is(weightfile.c_str()); 
+  while (is.getline(buffer, 2000, '\n')) allLines.push_back(string(buffer));
+  is.close();
+  string par, tmvaDefault; 
+  vector<string> parsToDump; 
+  parsToDump.push_back("NTrees"); 
+  parsToDump.push_back("AdaBoostBeta"); 
+  parsToDump.push_back("nEventsMin"); 
+  parsToDump.push_back("nCuts"); 
+  parsToDump.push_back("MaxDepth"); 
+  parsToDump.push_back("NNodesMax"); 
+
+  for (unsigned int i = 0; i < allLines.size(); ++i) {
+    for (unsigned ip = 0; ip < parsToDump.size(); ++ip) {
+      if (string::npos != allLines[i].find(Form("<Option name=\"%s\"", parsToDump[ip].c_str()))) {
+	cout << "parsing: " << allLines[i] << endl;
+	par = parseXmlOption(allLines[i]); 
+	if (string::npos != allLines[i].find("modified=\"No\"")) {
+	  tmvaDefault = "yes"; 
+	} else {
+	  tmvaDefault = "no"; 
+	} 
+	fTEX << formatTex(par, Form("%s:%s:%s",  fSuffix.c_str(), fBdtString.c_str(), parsToDump[ip].c_str())) << endl;
+	fTEX << formatTex(tmvaDefault, Form("%s:%s:%s:tmvaDefault",  fSuffix.c_str(), fBdtString.c_str(), parsToDump[ip].c_str())) << endl;
+      }
+    }
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -1765,12 +1789,12 @@ void plotBDT::xmlParsingReadTree(string xmlfile) {
       m1 = allLines[i].find("\" Cut");
       stype = allLines[i].substr(m0, m1-m0); 
       ivar = atoi(stype.c_str()); 
-      //cout << "  ivar: ->" << stype << "<- " << ivar << endl;
+      //      cout << "  ivar: ->" << stype << "<- " << ivar << endl;
       m0 = allLines[i].find("Cut=\"") + 5; 
       m1 = allLines[i].find("\" cType=");
       stype = allLines[i].substr(m0, m1-m0); 
       cut = atof(stype.c_str()); 
-      //cout << "  cut: ->" << stype << "<- " << cut << endl;
+      //      cout << "  cut: ->" << stype << "<- " << cut << endl;
 
       fhBdtVariables->Fill(ivar); 
       fhBdtVariablesW8->Fill(ivar, w8); 
@@ -1909,16 +1933,22 @@ void plotBDT::ssb() {
   TH1D *h  = new TH1D("s1", "S/Sqrt(S+B)", bdtBins, bdtMin, bdtMax); h->Sumw2();
   setTitles(h, "b >", "S/#sqrt{S+B}", 0.05, 1.05); 
 
-  double bdt, m, w8; 
-  int classID;
-  bool gmuid, hlt, hltm;
+  double bdt, m, w8, pvw8; 
+  int classID, m1q, m2q;
+  bool gmuid, gtqual, hlt, hltm, hltm2, json;
   t->SetBranchAddress("bdt", &bdt);
   t->SetBranchAddress("classID", &classID);
   t->SetBranchAddress("m", &m);
   t->SetBranchAddress("weight", &w8);
-  t->SetBranchAddress("hlt", &hlt);  
+  t->SetBranchAddress("json", &json);  
+  t->SetBranchAddress("hlt", &hlt);    
+  t->SetBranchAddress("gtqual", &gtqual);  
+  t->SetBranchAddress("pvw8", &pvw8);  
   t->SetBranchAddress("hltm", &hltm);
+  t->SetBranchAddress("hltm2", &hltm2);
   t->SetBranchAddress("gmuid", &gmuid);
+  t->SetBranchAddress("m1q", &m2q);
+  t->SetBranchAddress("m2q", &m1q);
 
   // -- compute S and B
   double bdtCut, maxSSB(-1.), maxBDT(-1.), maxSSBsimple(-1.); 
@@ -1932,19 +1962,18 @@ void plotBDT::ssb() {
     dm->Reset();
     for (Long64_t ievt=0; ievt<nEvent; ievt++) {
       t->GetEntry(ievt);
+      if (1 == classID && false == json) continue;
       if (false == hlt) continue;
       if (false == hltm) continue;
       if (false == gmuid) continue;
       if (bdt < bdtCut) continue;
       
-      if (1 == classID && 5.2<m&&m<5.45) continue;
+      if (1 == classID && 5.2<m && m<5.45) continue;
+      if (1 == classID && m<4.9) continue;
+      if (1 == classID && m>5.9) continue;
 
       if (0 == classID) {
-	if (fYear == 2012) {
-	  sm->Fill(m, w8);
-	} else {
-	  sm->Fill(m, w8);
-	}	  
+	sm->Fill(m, w8);
       } else {
 	dm->Fill(m, w8); 
       }
@@ -2002,27 +2031,40 @@ void plotBDT::ssb() {
   c0->SaveAs(Form("%s/%s-ssb.pdf", fDirectory.c_str(), fBdtString.c_str())); 
 
   double xmax(0.), xmin(0.); 
-  int nbins(0); 
-  double maxVal = -1.;
-  for (int i = 1; i < h->GetNbinsX(); ++i) 
-    if (h->GetBinContent(i) > maxVal) maxVal = h->GetBinContent(i);
-
-  for (int i = 1; i < h->GetNbinsX(); ++i) {
-    if (h->GetBinContent(i) > 0.7*maxVal) {
-      xmax = h->GetBinCenter(i); 
-      nbins = i - h->GetMaximumBin(); 
-    }
-    h->SetBinError(i, 0.03*h->GetBinContent(i)); 
-  }
-  xmin = h->GetBinCenter(h->GetMaximumBin() - TMath::Abs(nbins)); 
-
-  cout << "maxval: " << h->GetMaximum() << endl;
-  cout << "maxbin: " << h->GetMaximumBin() << endl;
-  cout << "xmax: " << xmax << endl;
-  cout << "xmin: " << xmin << endl;
-  cout << "nbins: " << nbins << endl;
+  int maxbin = h->GetMaximumBin(); 
+  double maxVal = h->GetBinContent(maxbin);
+  double thr(0.80*maxVal); 
   
-  TF1 *f1 = fpFunc->pol2local(h, 0.05); 
+  for (int i =  maxbin; i > 0;  --i) {
+    if (h->GetBinContent(i) < thr) {
+      xmin = h->GetBinLowEdge(i); 
+      cout << "xmin = " << xmin << " with " << h->GetBinContent(i) << " in bin " << i 
+	   << " next one: " << h->GetBinContent(i-1)
+	   << endl;
+      break;
+    }
+  }
+
+  for (int i = maxbin; i < h->GetNbinsX(); ++i) {
+    if (h->GetBinContent(i) < thr) {
+      xmax = h->GetBinCenter(i+1); 
+      cout << "xmax = " << xmax << " with " << h->GetBinContent(i) << " in bin " << i 
+	   << " next one: " << h->GetBinContent(i+1)
+	   << endl;
+      break;
+    }
+  }
+
+  for (int i = 0; i < h->GetNbinsX(); ++i) h->SetBinError(i, 0.03*h->GetBinContent(i)); 
+
+
+  cout << "maxval: " << maxVal << endl;
+  cout << "maxbin: " << maxbin << endl;
+  cout << "xmin:   " << xmin << endl;
+  cout << "max x:  " << h->GetBinCenter(maxbin) << endl;
+  cout << "xmax:   " << xmax << endl;
+  
+  TF1 *f1 = fpFunc->pol2local(h, 0.1); 
   h->Fit(f1, "r", "", xmin, xmax); 
   double maxfitssbX = h->GetFunction("iF_pol2local")->GetParameter(2); 
   double maxfitssbY = h->GetFunction("iF_pol2local")->GetParameter(0); 
@@ -2801,3 +2843,12 @@ int plotBDT::GetNumberOfInputVariables( TDirectory *dir )   {
 
 
 
+// ----------------------------------------------------------------------
+string plotBDT::parseXmlOption(std::string line) {
+
+  string::size_type m0 = line.find("</Option>");
+  string::size_type m1 = line.rfind(">", m0);
+  //  cout << "==========" << line.substr(m1+1, m0-m1) << endl;
+  return line.substr(m1+1, m0-m1-1); 
+
+}

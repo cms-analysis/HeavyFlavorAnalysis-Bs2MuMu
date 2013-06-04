@@ -4,7 +4,7 @@
 struct RedTreeData {
   Long64_t run, evt; 
   int ls, tm, pr, procid, pvn, rr;
-  bool json, hlt, hltm, cb;
+  bool json, hlt, hltm, hltm2, cb;
   double bdt, bdt2, pvw8;
 
   bool gmuid, gmutmid, gmumvaid, gmupt, gmueta, gtqual, gtpt, gteta;

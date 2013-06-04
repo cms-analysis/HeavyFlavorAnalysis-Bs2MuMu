@@ -398,7 +398,7 @@ void plotClass::initNumbers(numbers *a, bool initAll) {
   a->effAna       = a->effAnaE = 0; 
   a->effPtReco    = a->effPtRecoE = 0;
   a->effTot       = a->effTotE = a->aEffProdMC = a->aEffProdMCE = a->effProdMC = a->effProdMCE = a->effProdTNP = a->effProdTNPE = 0.; 
-  a->prodGenYield = a->combGenYield;
+  a->prodGenYield = a->combGenYield = 0;
   // -- this is only relevant for the signal(s)
   a->expSignal = 0.;
   a->pss   = a->pdd  = 1.;
@@ -1820,6 +1820,8 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
     fHiBgExp  = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
     fBsBgExpE = fBsBgExp*(fBgHistE/fBgHist);
     fBdBgExpE = fBdBgExp*(fBgHistE/fBgHist);
+    cout << "bgBlind: after fit integrals/hist:  lo: " << fLoBgExp << "/" << fBgHistLo
+	 << " hi: " << fHiBgExp << "/" << fBgHistHi << endl; 
   } else {
     cout << "+++ Fit did not converge, take flat bg interpretation, fCstatu = ->" << gMinuit->fCstatu.Data() << "<-" << endl;
     fBsBgExp  = (5.45-5.30)/(5.9-4.9-0.25)*fBgHist;
@@ -2704,6 +2706,12 @@ string plotClass::formatTex(double n, std::string name, int digits, int sgn) {
 }
 
 
+// ----------------------------------------------------------------------
+string plotClass::formatTex(string s, string name) {
+  char line[1000]; 
+  sprintf(line, "\\vdef{%s}   {%s } ", name.c_str(), s.c_str());
+  return string(line); 
+}
 
 // ----------------------------------------------------------------------
 string plotClass::formatTex(double n, string name, string tag) {
@@ -2835,6 +2843,11 @@ void plotClass::readCuts(const char *filename) {
     if (!strcmp(CutName, "mBdLo")) {
       a->mBdLo = CutValue; ok = 1;
       if (dump) cout << "mBdLo:            " << CutValue << endl;
+    }
+
+    if (!strcmp(CutName, "bdtpt")) {
+      a->bdtpt = CutValue; ok = 1;
+      if (dump) cout << "bdtpt:              " << CutValue << endl;
     }
 
     if (!strcmp(CutName, "bdt")) {
@@ -3321,13 +3334,19 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     if (fSaveLargerTree) {
       small->Branch("hlt", &fb.hlt ,"hlt/O");
       small->Branch("hltm", &fb.hltm ,"hltm/O");
+      small->Branch("hltm2", &fb.hltm2 ,"hltm2/O");
+      small->Branch("gtqual", &fb.gtqual ,"gtqual/O");
       small->Branch("pt",   &fb.pt ,"hlt/D");
       small->Branch("eta",  &fb.eta ,"eta/D");
       small->Branch("m1pt", &fb.m1pt ,"hlt/D");
+      small->Branch("m1q", &fb.m1q ,"m1q/I");
       small->Branch("m2pt", &fb.m2pt ,"hlt/D");
+      small->Branch("m2q", &fb.m2q ,"m2q/I");
       small->Branch("pchi2dof", &fb.pchi2dof ,"pchi2dof/D");
       small->Branch("chi2", &fb.chi2 ,"chi2/D");
       small->Branch("dof",  &fb.dof ,"dof/D");
+      small->Branch("chi2dof", &fb.chi2dof ,"chi2dof/D");
+      small->Branch("fl3d", &fb.fl3d ,"fl3d/D");
       small->Branch("fls3d", &fb.fls3d ,"fls3d/D");
       small->Branch("flsxy", &fb.flsxy ,"flsxy/D");
       small->Branch("pvlip", &fb.pvlip ,"pvlip/D");
@@ -3362,17 +3381,22 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
   }
 
   // -- the real loop starts here
-  cout << "loopOverTree: nevts = " << nentries << " nstart = " << nstart << endl;
+  cout << "loopOverTree: nevts = " << nentries << " nstart = " << nstart << " nbegin: " << nbegin << " nend: " << nend << endl;
+  bool ptcutOK(false); 
   for (int jentry = nbegin; jentry < nend; jentry++) {
     t->GetEntry(jentry);
     if (jentry%step == 0) cout << Form(" .. Event %8d, run = %6ld evt = %10ld", jentry, 
 				       static_cast<Long64_t>(fb.run), static_cast<Long64_t>(fb.evt)) << endl;
+
     if (fRunMax > fRunMin) {
       if (fb.run < fRunMin) continue; 
       if (fb.run > fRunMax) continue; 
     }
     candAnalysis(imode);
     loopFunction(function, imode);
+    ptcutOK = fGoodMuonsPt;
+    if (fDoUseBDT) ptcutOK = fGoodBdtPt; 
+
     if (fSaveSmallTree
 	&& fGoodAcceptance 
 	&& fGoodQ
@@ -3380,7 +3404,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
 	&& fGoodTracks 
 	&& fGoodTracksPt 
 	&& fGoodTracksEta 
-	&& fGoodMuonsPt
+	&& ptcutOK
 	&& fGoodMuonsEta
 	&& fGoodJpsiCuts
 	// 	&& (fSaveLargerTree || fGoodMuonsID)
@@ -3508,6 +3532,7 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("evt",    &fb.evt);
   t->SetBranchAddress("hlt",    &fb.hlt);
   t->SetBranchAddress("hltm",   &fb.hltm);
+  t->SetBranchAddress("hltm2",  &fb.hltm2);
   t->SetBranchAddress("ls",     &fb.ls);
   t->SetBranchAddress("cb",     &fb.cb);
   t->SetBranchAddress("json",   &fb.json);
@@ -3530,6 +3555,7 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("chi2",   &fb.chi2);
   t->SetBranchAddress("dof",    &fb.dof);
   t->SetBranchAddress("prob",   &fb.pchi2dof);
+  t->SetBranchAddress("chi2dof",&fb.chi2dof);
   t->SetBranchAddress("flsxy",  &fb.flsxy);
   t->SetBranchAddress("fls3d",  &fb.fls3d);
   t->SetBranchAddress("fl3d",   &fb.fl3d);
@@ -3616,6 +3642,7 @@ void plotClass::setupTree(TTree *t, string mode) {
 
 // ----------------------------------------------------------------------
 void plotClass::candAnalysis(int mode) {
+
   cuts *pCuts(0); 
   fChan = detChan(fb.m1eta, fb.m2eta); 
   if (fChan < 0) {
@@ -3637,9 +3664,10 @@ void plotClass::candAnalysis(int mode) {
   fGoodJpsiCuts = true;
 
   fGoodAcceptance = true; 
+  fGoodBdtPt      = true; 
   fGoodMuonsPt    = true;
   fGoodMuonsEta   = true;
-  fGoodTracks     = true;
+  fGoodTracks     = fb.gtqual;
   fGoodTracksPt   = true;
   fGoodTracksEta  = true;
 
@@ -3660,6 +3688,13 @@ void plotClass::candAnalysis(int mode) {
   if (fb.m2pt < fAccPt) fGoodAcceptance = false; 
   if (0 == fb.m1gt)  fGoodAcceptance = false; 
   if (0 == fb.m2gt)  fGoodAcceptance = false; 
+
+  if (fb.m1pt < pCuts->bdtpt) {
+    fGoodBdtPt = false; 
+  }
+  if (fb.m2pt < pCuts->bdtpt) {
+    fGoodBdtPt = false; 
+  }
 
   if (fb.m1pt < pCuts->m1pt) {
     fGoodMuonsPt = false; 
@@ -3742,7 +3777,7 @@ void plotClass::candAnalysis(int mode) {
 	&& fGoodTracks
 	&& fGoodTracksPt
 	&& fGoodTracksEta
-	&& fGoodMuonsPt
+	&& fGoodBdtPt
 	&& fGoodMuonsEta
 	&& fGoodJpsiCuts
 	) {
@@ -3855,6 +3890,8 @@ void plotClass::candAnalysis(int mode) {
   fGoodLastCut    = true; 
 
   fGoodHLT        = fb.hlt && fb.hltm;
+  if (2011 == fYear && fIsMC)   fGoodHLT = fb.hlt && fb.hltm2;
+
   // -- no trigger matching for rare decays!
   if (98 == mode) fGoodHLT = fb.hlt; 
 

@@ -12,6 +12,7 @@ TH1D* getPreselectionNumbers();
 
 // ----------------------------------------------------------------------
 bool preselection(RedTreeData &b, int channel);
+void printRedTreeEvt(RedTreeData &b);
 
 #endif
 

@@ -34,6 +34,7 @@ public:
   void variableRanking(); 
 
   void xmlParsing(); 
+  void xmlParsingParameters(std::string xmlfile); 
   void xmlParsingVariables(std::string xmlfile); 
   void xmlParsingReadTree(std::string xmlfile); 
   void xmlResetHists(); 
@@ -72,6 +73,7 @@ public:
   void GetMethodTitle( TString & name, TDirectory * idir);
   int  GetNumberOfTargets( TDirectory *dir);
   int  GetNumberOfInputVariables( TDirectory *dir);
+  std::string parseXmlOption(std::string line);
 
   std::string fXmlFile, fBdtString;
   TFile *fRootFile; 

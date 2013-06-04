@@ -38,6 +38,8 @@ using namespace std;
 #define ISOMIN 0.0           
 #define ALPHAMAX 1.0   
 
+#define MASSERRORMAX 0.2   
+
 // ----------------------------------------------------------------------
 std::string preselection() {
   std::string cut = Form("gmuid && (%3.2f<pt)&&(pt<%3.2f) && (%3.2f<m1pt)&&(m1pt<%3.2f) && (%3.2f<m2pt)&&(m2pt<%3.2f)", 
@@ -47,13 +49,15 @@ std::string preselection() {
   cut += Form(" && abs(pvlip) < %3.2f && abs(pvlips) < %3.2f", PVLIPMAX, PVLIPSMAX);
   cut += Form(" && (closetrk<%d) && (fls3d>%3.2f) && (fls3d<%3.2f) && (docatrk<%3.2f) && (maxdoca<%3.2f)",
 			  CLOSETRKMAX, FLS3DMIN, FLS3DMAX, DOCATRKMAX, MAXDOCAMAX);
-  cut += Form(" && (chi2dof<%3.2f) && (iso>%3.2f) && (alpha<%3.2f)", CHI2DOFMAX, ISOMIN, ALPHAMAX); 
+  cut += Form(" && (chi2dof<%3.2f) && (iso>%3.2f) && (alpha<%3.2f) && (me<%3.2f)", CHI2DOFMAX, ISOMIN, ALPHAMAX, MASSERRORMAX); 
+  cut += Form(" && (m1q*m2q<0)"); 
   return cut; 
 }
 
 // ----------------------------------------------------------------------
 bool preselection(RedTreeData &b, int channel) {
   const int verbose(0); 
+  
   if (b.pt < PTMIN) return false;
   if (b.pt > PTMAX) return false;
   if (verbose > 9) cout << "passed pT" << endl;
@@ -138,4 +142,16 @@ TH1D* getPreselectionNumbers() {
   ibin = 41; h->SetBinContent(ibin, ALPHAMAX); h->GetXaxis()->SetBinLabel(ibin, "alphamax");
  
   return h; 
+}
+
+// ----------------------------------------------------------------------
+void printRedTreeEvt(RedTreeData &b) {
+  std::cout << b.run << "/" << b.evt << " " << b.gmuid << "/" << b.hlt << "/" << b.hltm
+	    << " mu: " << b.pt << " " << b.m1pt << " " << b.m2pt << " "  << b.m1eta << " " << b.m2eta 
+	    << " " << ((TMath::Abs(b.m1eta) < 1.4 && TMath::Abs(b.m2eta) < 1.4)?0 :1)
+	    << " fl: " << b.flsxy << " " << b.fl3d << " " << b.fls3d
+	    << " ip: " << b.pvip << " " << b.pvips << " " << b.pvlip << " " << b.pvlips << " " 
+	    << " iso: " << b.iso << " " << b.closetrk  << " " << b.docatrk << " " 
+	    << " vtx: " << b.maxdoca << " " << b.chi2dof << " " << b.alpha
+	    << std::endl;
 }
