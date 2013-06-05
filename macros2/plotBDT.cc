@@ -1964,7 +1964,7 @@ void plotBDT::ssb() {
       t->GetEntry(ievt);
       if (1 == classID && false == json) continue;
       if (false == hlt) continue;
-      if (false == hltm) continue;
+      if (false == hltm2) continue;
       if (false == gmuid) continue;
       if (bdt < bdtCut) continue;
       
@@ -1987,7 +1987,7 @@ void plotBDT::ssb() {
     double d = dm->Integral(0, dm->GetNbinsX());
     double bsimple = d*(5.45-5.30)/(5.9-4.9-0.25);
 
-    bgBlind(dm, 3, 4.9, 5.9);
+    bgBlind(dm, 2, 4.9, 5.9);
     double b = fBsBgExp;
     if (s+b >0) {
       double ssb = s/TMath::Sqrt(s+b+pbg);

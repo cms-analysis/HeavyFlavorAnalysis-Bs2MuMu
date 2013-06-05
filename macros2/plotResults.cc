@@ -58,9 +58,13 @@ void plotResults::makeAll(int channels, int nevents) {
   }
  
   zone(1);
+  fSaveLargerTree = true; //FIXME
+
   if (channels & 1) {
     fillAndSaveHistograms(nevents); 
   }
+
+  return; // FIXME
 
   if (channels & 2) {
     calculateNumbers(2);
@@ -660,7 +664,8 @@ void plotResults::calculateRareBgNumbers(int chan) {
 	 << " h1 : " << h1->GetName() << " " << h1->GetSumOfWeights()  
 	 << " h2 : " << h2->GetName() << " " << h2->GetSumOfWeights() 
 	 << endl;
-    
+
+    // XXX acc XXX
     efftot = tot/static_cast<double>(ngenfile)*fFilterEff[fRareName];
     
     if (tot>0) pss = bs/tot; 
@@ -1154,11 +1159,24 @@ void plotResults::fillAndSaveHistograms(int nevents) {
   string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
   cout << "fHistFile: " << hfname;
   fHistFile = TFile::Open(hfname.c_str(), "UPDATE");
-  cout << " opened " << endl;
+  cout << " opened, running on " << nevents << " entries" << endl;
 
   TTree *t(0);
 
   fSaveSmallTree = true; 
+
+  // -- debug
+  if (1) {
+    resetHistograms();
+    fSetup = "SgData"; 
+    t = getTree(fSetup); 
+    setupTree(t, fSetup); 
+    loopOverTree(t, fSetup, 1, nevents);
+    saveHists(fSetup);
+    fHistFile->cd();
+    fHistFile->Close(); 
+    return;
+  } // FIXME
 
   if (1) {
     // -- rare backgrounds
@@ -1523,6 +1541,15 @@ void plotResults::loopFunction(int function, int mode) {
 // ----------------------------------------------------------------------
 void plotResults::loopFunction1(int mode) {
 
+  // 173692/2704432277
+  // 172992/459341492
+  //  const Long64_t printRun(172992), printEvt(459341492); 
+  //   const Long64_t printRun(170854), printEvt(280769371); 
+  //   if (fb.run == printRun && fb.evt == printEvt) {
+  //     cout << "BDT = " << fBDT << ": "; 
+  //     printRedTreeEvt(fb); 
+  //   }
+
   if (fChan < 0) return;
   
   double mass = fb.m; 
@@ -1537,22 +1564,39 @@ void plotResults::loopFunction1(int mode) {
   fhMassAbsNoCuts[fChan]->Fill(mass);
 
   if (!fGoodAcceptance) return;
+  //   if (fb.run == printRun && fb.evt == printEvt) cout << "after acceptance" << endl;
 
   // -- this is the base, after the raw acceptance cuts
   fhMassNoCuts[fChan]->Fill(mass);
   fhMassNoCutsManyBins[fChan]->Fill(mass); 
 
   if (fDoUseBDT) {
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "plotResults fGoodQ: " << fGoodQ << " from " 
+    // 						       << fb.m1q << " " << fb.m2q << endl;
     if (!fGoodQ) return;
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "after goodq" << endl;
     if (!fGoodPvAveW8) return;
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "after pvw8" << endl;
     if (!fGoodTracks) return;
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "after gtqual" << endl;
     if (!fGoodTracksPt) return;
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "after gtpt" << endl;
     if (!fGoodTracksEta) return;
-    if (!fGoodMuonsPt) return;
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "after gteta" << endl;
+    if (!fGoodBdtPt) return;
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "after gmpt" << endl;
     if (!fGoodMuonsEta) return;
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "after gmeta" << endl;
     if (!fGoodJpsiCuts) return;
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "after jpsi" << endl;
     if (fBDT < fCuts[fChan]->bdt) return;
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "after maxbdt" << endl;
     if (fBDT > fCuts[fChan]->bdtMax) return;
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "after minbdt" << endl;
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "chan = " << fChan << endl;
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "muonid = " << fGoodMuonsID << endl;
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "hlt = " << fGoodHLT << endl;
+    //     if (fb.run == printRun && fb.evt == printEvt) cout << "mass = " << mass << endl;
   } else {
     if (!fGoodQ) return;
     if (!fGoodMuonsPt) return;
@@ -1574,6 +1618,13 @@ void plotResults::loopFunction1(int mode) {
     if (!fGoodDocaTrk) return;
   }
 
+  //   if (fBDT > 0.2 
+  //       && fChan == 0 
+  //       && fGoodMuonsID 
+  //       && fGoodHLT 
+  //       && 4.9 < mass && mass < 5.9) 
+  //     printRedTreeEvt(fb); 
+    
   fhMassWithAnaCuts[fChan]->Fill(mass); 
   fhMassWithAnaCutsManyBins[fChan]->Fill(mass); 
 
@@ -2835,7 +2886,7 @@ void plotResults::numbersFromHist(int chan, int mode, numbers *aa) {
   aa->effProdTNPMC     = aa->acc * aa->effCand * aa->effAna * aa->effMuidTNPMC * aa->effTrigTNPMC;
   aa->effProdTNPMCE    = 0.;
 
-  aa->combGenYield     = e/(aa->acc * aa->effProdMC);
+  aa->combGenYield     = e/(aa->effProdMC);
   aa->prodGenYield     = e/(aa->effTot); 
 
 
@@ -2961,7 +3012,7 @@ void plotResults::numbersAfterLoopOverTree(int chan, int mode, numbers *aa, stri
 			  aa->effMuidTNPMCE/aa->effMuidTNPMC + aa->effTrigTNPMCE/aa->effTrigTNPMC);
 
 
-  aa->combGenYield     = e/(aa->acc * aa->effProdMC);
+  aa->combGenYield     = e/(aa->effProdMC);
   aa->prodGenYield     = e/(aa->effTot); 
 
 

@@ -1738,6 +1738,8 @@ void plotClass::dumpSamples() {
 // ----------------------------------------------------------------------
 void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
   double eps(0.00001); 
+
+  TVirtualFitter::SetMaxIterations(20000);
   
   if (0 == h) { 
     cout << "plotClass::bgBlind(...): No histogram passed! mode = " << mode << endl;
@@ -3889,8 +3891,7 @@ void plotClass::candAnalysis(int mode) {
   fGoodDocaTrk    = (fb.docatrk > pCuts->docatrk);
   fGoodLastCut    = true; 
 
-  fGoodHLT        = fb.hlt && fb.hltm;
-  if (2011 == fYear && fIsMC)   fGoodHLT = fb.hlt && fb.hltm2;
+  fGoodHLT        = fb.hlt && fb.hltm2;
 
   // -- no trigger matching for rare decays!
   if (98 == mode) fGoodHLT = fb.hlt; 
