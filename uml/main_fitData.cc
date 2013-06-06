@@ -30,9 +30,18 @@ int main(int argc, char** argv) {
   if (simul && channel) help();
 
   pdf_fitData* fitdata = new pdf_fitData(false, input_estimates, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, rare_constr, NExp, Bd, years_opt);
+  FILE *file = fopen(input_name.c_str(), "r");
+  if (!file) {
+  	cout << "no file name, making random" << endl;
+  	fitdata->random = true;
+  }
+
   fitdata->make_pdf_input(input_ws);
+  fitdata->set_estimate();
+  fitdata->parse_estimate();
   fitdata->make_pdf();
   fitdata->set_final_pdf();
+  fitdata->print_estimate();
   if (hack_semi2011) fitdata->hack_ws("output/frozen/ws_simul4_bdt_BF2_PEE.root");
   fitdata->setnewlumi();
   fitdata->set_syst();
@@ -42,10 +51,7 @@ int main(int argc, char** argv) {
   if (cuts_f_b) cuts_v = cut_bdt_file();
 
   vector <string> inputnamess(0);
-  FILE *file = fopen(input_name.c_str(), "r");
   if (!file) {
-    cout << "no file name, making random" << endl;
-    fitdata->random = true;
     fitdata->make_dataset(cuts_f_b, cuts_v, cuts, 0, 0);
   }
   else {

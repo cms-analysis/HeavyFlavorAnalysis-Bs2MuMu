@@ -34,10 +34,13 @@ int main(int argc, char** argv) {
   TFile* input_f = new TFile(input_ws.c_str());
   RooWorkspace* ws = (RooWorkspace*)input_f->Get("ws");
   toy1.set_ws(ws);
+  toy1.set_estimate();
+  toy1.parse_estimate();
   toy1.set_final_pdf();
   if (hack_semi2011) toy1.hack_ws("output/frozen/ws_simul4_bdt_BF2_PEE.root");
   toy1.setnewlumi();
   toy1.set_syst();
+  toy1.print_estimate();
   if (roomcs) toy1.mcstudy(pdf_toy, pdf_test);
   if (!roomcs) toy1.generate(pdf_toy, pdf_test);
   return EXIT_SUCCESS;

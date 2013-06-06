@@ -40,6 +40,7 @@ pdf_analysis::pdf_analysis(bool print, string ch_s, string range, int BF, bool S
   purple_color_bold = "\033[1;31m";
 
   initialize();
+  RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING);
 }
 
 void pdf_analysis::initialize () {
@@ -523,8 +524,8 @@ string pdf_analysis::define_pdf_sum(string name) {
 
 void pdf_analysis::print(RooAbsData* data, string output) {
   int colors[11] = {632, 400, 616, 432, 800, 416, 820, 840, 860, 880, 900};
-  RooAbsData* subdata_res;
-  if (pee) subdata_res = (RooAbsData*)ws_->data(Form("MassRes_rdh_%s", output.c_str()))->Clone();
+  RooAbsData* subdata_res = data;
+//  if (pee) subdata_res = (RooAbsData*)ws_->data(Form("MassRes_rdh_%s", output.c_str()))->Clone();
   RooPlot *rp = ws_->var("Mass")->frame();
   RooPlot *rp_bdt = ws_->var("bdt")->frame();
   data->plotOn(rp, Binning(20));
@@ -543,14 +544,17 @@ void pdf_analysis::print(RooAbsData* data, string output) {
     mass_eta_h->GetYaxis()->SetTitleOffset(2.) ;
     mass_eta_h->GetZaxis()->SetTitleOffset(2.5) ;
     TCanvas* cetad_surf = new TCanvas("cetad_surf", "cetad_surf", 600, 600);
+//    cetad_surf->SetTheta(18.14516);
+//    cetad_surf->SetPhi(198.2215);
     mass_eta_h->Draw("surf");
     cetad_surf->Print( (get_address("Mass_MassEta", pdf_name) + ".gif").c_str());
     cetad_surf->Print( (get_address("Mass_MassEta", pdf_name) + ".pdf").c_str());
 
     TCanvas* cetad_mres = new TCanvas("cetad_mres", "cetad_mres", 600, 600);
     RooPlot *rp_res = ws_->var("MassRes")->frame();
-    ws_->data(Form("MassRes_rdh_%s", output.c_str()))->plotOn(rp_res);
-    cetad_mres->Draw();
+    subdata_res->plotOn(rp_res);
+    ws_->pdf(pdf_name.c_str())->plotOn(rp_res);
+    rp_res->Draw();
     cetad_mres->Print( (get_address("MassEta", pdf_name) + ".gif").c_str());
     cetad_mres->Print( (get_address("MassEta", pdf_name) + ".pdf").c_str());
 
@@ -561,7 +565,7 @@ void pdf_analysis::print(RooAbsData* data, string output) {
   }
   if(!no_legend) {
     ws_->pdf(pdf_name.c_str())->paramOn(rp, Layout(0.50, 0.9, 0.9));
-    //if (bdt_fit_) ws_->pdf(pdf_name.c_str())->paramOn(rp_bdt, Layout(0.50, 0.9, 0.9));
+//    if (bdt_fit_) ws_->pdf(pdf_name.c_str())->paramOn(rp_bdt, Layout(0.0, 0.4, 0.9));
   }
   
   //components
@@ -704,10 +708,16 @@ double pdf_analysis::getErrorLow(RooRealVar *var) {
   return error;
 }
 
-RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
+RooAbsPdf* pdf_analysis::define_massRes_pdf(RooDataSet *rds, string name, bool rkeys) {
+	ostringstream suffix;
+	suffix << name;
+	if (simul_) suffix << "_" << channel;
+	if (simul_bdt_ || simul_all_) suffix << "_" << channel_bdt;
+
   RooArgList varlist(*MassRes, *weight);
+  RooDataSet* subdata_bdt = new RooDataSet("subdata_bdt", "subdata_bdt", varlist, "weight");
   const RooArgSet* aRow;
-  TH1D histo(rds->GetTitle(), rds->GetTitle(), 50, 0., 0.2);
+  TH1D histo(rds->GetTitle(), rds->GetTitle(), 100, 0., 0.2);
   for (Int_t j = 0; j < rds->numEntries(); j++) {
     aRow = rds->get(j);
     RooRealVar* massres = (RooRealVar*)aRow->find("MassRes");
@@ -715,32 +725,48 @@ RooHistPdf* pdf_analysis::define_MassRes_pdf(RooDataSet *rds, string name) {
     RooArgSet varlist_tmp_res(*massres);
     if (aRow->getCatIndex("etacat") == channel) {
       if ((!simul_bdt_ && !simul_all_) || aRow->getCatIndex("bdtcat") == channel_bdt) {
+      	subdata_bdt->add(varlist_tmp_res, Weight);
         histo.Fill(massres->getVal(), Weight);
       }
     }
   }
-  cout << "resolution entries = " <<  histo.GetEntries() << endl;
-  ostringstream name_rdh;
-  name_rdh << "MassRes_rdh_" << name;
-  if (simul_) name_rdh << "_" << channel;
-  if (simul_bdt_ || simul_all_) name_rdh << "_" << channel_bdt;
-  RooDataHist *MassRes_rdh = new RooDataHist(name_rdh.str().c_str(), name_rdh.str().c_str(), *ws_->var("MassRes"), &histo);
-  ostringstream name_pdf;
-  name_pdf << "MassRes_pdf_" << name;
-  if (simul_) name_pdf << "_" << channel;
-  if (simul_bdt_ || simul_all_) name_pdf << "_" << channel_bdt;
-  RooHistPdf * MassRes_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), RooArgList(*ws_->var("MassRes")), *MassRes_rdh);
-  ws_->import(*MassRes_rhpdf);
+  cout << name << " resolution entries = " <<  histo.GetEntries() << endl;
+  string name_rdh("MassRes_rdh_");
+  name_rdh = name_rdh + suffix.str();
+  RooDataHist *MassRes_rdh = new RooDataHist(name_rdh.c_str(), name_rdh.c_str(), *ws_->var("MassRes"), &histo);
+  string name_pdf("MassRes_pdf_");
+  name_pdf = name_pdf + suffix.str();
+  RooHistPdf * MassRes_rhpdf = new RooHistPdf(name_pdf.c_str(), name_pdf.c_str(), RooArgList(*ws_->var("MassRes")), *MassRes_rdh);
+  if (!rkeys) {
+  	ws_->import(*MassRes_rhpdf);
+  	print_pdf(MassRes_rhpdf, ws_->var("MassRes"));
+  	return MassRes_rhpdf;
+  }
 
-  if (name == "comb") print_pdf(MassRes_rhpdf, ws_->var("MassRes"));
+  if (subdata_bdt->numEntries() < 10000) {
+  }
+  else {
+  	cout << "too many entries for RooKeysPdf, switching to random-generated distribution with 10000 events" << endl;
+  	subdata_bdt = MassRes_rhpdf->generate(*ws_->var("MassRes"), 10000, Extended(false), AutoBinned(false));
+  }
 
-  return MassRes_rhpdf;
+  RooKeysPdf *kest = new RooKeysPdf(name_pdf.c_str(), name_pdf.c_str(), *ws_->var("MassRes"), *subdata_bdt, RooKeysPdf::MirrorBoth) ;
+  //  ws_->import(*MassRes_rhpdf);
+  ws_->import(*kest);
+  print_pdf(kest, ws_->var("MassRes"));
+  return kest;
 }
 
-RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name, Double_t bdt_min) {
+RooAbsPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name, TFile* bdt_syst_f, bool rkeys, Double_t bdt_min) {
+	ostringstream suffix;
+	suffix << name;
+	if (simul_) suffix << "_" << channel;
+	if (simul_bdt_ || simul_all_) suffix << "_" << channel_bdt;
+
   RooArgList varlist(*bdt, *weight);
+  RooDataSet* subdata_bdt = new RooDataSet("subdata_bdt", "subdata_bdt", varlist, "weight");
   const RooArgSet* aRow;
-  TH1D histo(rds->GetTitle(), rds->GetTitle(), 50, bdt_min, 1.);
+  TH1F histo(rds->GetTitle(), rds->GetTitle(), 100, -1, 1);
   for (Int_t j = 0; j < rds->numEntries(); j++) {
     aRow = rds->get(j);
     RooRealVar* BDT = (RooRealVar*)aRow->find("bdt");
@@ -748,38 +774,94 @@ RooHistPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name, Double_t 
     RooArgSet varlist_tmp_bdt(*BDT);
     if (aRow->getCatIndex("etacat") == channel) {
       if ((!simul_bdt_ && !simul_all_) || aRow->getCatIndex("bdtcat") == channel_bdt) {
+      	subdata_bdt->add(varlist_tmp_bdt, Weight);
         histo.Fill(BDT->getVal(), Weight);
       }
     }
   }
-  cout << "bdt entries = " <<  histo.GetEntries() << endl;
-  ostringstream name_rdh;
-  name_rdh << "bdt_rdh_" << name;
-  if (simul_) name_rdh << "_" << channel;
-  if (simul_bdt_ || simul_all_) name_rdh << "_" << channel_bdt;
-  RooDataHist *bdt_rdh = new RooDataHist(name_rdh.str().c_str(), name_rdh.str().c_str(), *ws_->var("bdt"), &histo);
-  ostringstream name_pdf;
-  name_pdf << "bdt_pdf_" << name;
-  if (simul_) name_pdf << "_" << channel;
-  if (simul_bdt_ || simul_all_) name_pdf << "_" << channel_bdt;
-  RooHistPdf * bdt_rhpdf = new RooHistPdf(name_pdf.str().c_str(), name_pdf.str().c_str(), RooArgList(*ws_->var("bdt")), *bdt_rdh);
-  RooRealVar * alpha = new RooRealVar("alpha", "alpha", 0, -1, 1);
-  RooIntegralMorph * bdt_rim = new RooIntegralMorph(name_pdf.str().c_str(), name_pdf.str().c_str(), *bdt_rhpdf, *bdt_rhpdf, *ws_->var("bdt"), *alpha);
-  ws_->import(*bdt_rhpdf);
+  cout << name  << " bdt entries = " <<  histo.GetEntries() << endl;
 
-  if (name == "comb") print_pdf(bdt_rhpdf, ws_->var("bdt"));
+  string name_rdh("bdt_rdh_");
+  name_rdh = name_rdh + suffix.str();
+  RooDataHist *bdt_rdh = new RooDataHist(name_rdh.c_str(), name_rdh.c_str(), *ws_->var("bdt"), &histo);
+  string name_pdf("bdt_pdf_");
+  name_pdf = name_pdf + suffix.str();
+  RooHistPdf * bdt_rhpdf = new RooHistPdf(name_pdf.c_str(), name_pdf.c_str(), RooArgList(*ws_->var("bdt")), *bdt_rdh);
 
-  return bdt_rhpdf;
+  if (bdt_syst_f == 0 || !rkeys) {
+  	ws_->import(*bdt_rhpdf);
+  	print_pdf(bdt_rhpdf, ws_->var("bdt"));
+  	return bdt_rhpdf;
+  }
+  else {
+  	string name_rhpdf("bdt_rhpdf_");
+  	name_rhpdf += suffix.str();
+  	bdt_rhpdf->SetName(name_rhpdf.c_str());
+  	string bdt_syst_histo_name("bdt_div_jpsiK");
+  	if (name.compare("comb") == 0) bdt_syst_histo_name = "bdt_div_5_1";
+  	TH1F * bdt_syst_histo = (TH1F*)bdt_syst_f->Get(bdt_syst_histo_name.c_str());
+  	TH1F bdt_biased_histo("bdt_biased_histo", "bdt_biased_histo", histo.GetNbinsX(), bdt_min, histo.GetXaxis()->GetXmax());
+    RooDataSet* subdata_biased_bdt = new RooDataSet("subdata_biased_bdt", "subdata_biased_bdt", varlist, "weight");
+  	for (int i = 1; i <= bdt_syst_histo->GetNbinsX(); i++) {
+  		double biased_value = (bdt_syst_histo->GetBinContent(i)) * (histo.GetBinContent(i));
+  		bdt_biased_histo.SetBinContent(i, biased_value);
+  		if (biased_value < 0) bdt_biased_histo.SetBinContent(i, 0);
+  	}
+  	if (subdata_bdt->numEntries() < 10000) {
+  		for (int i = 0; i < subdata_bdt->numEntries(); i++) {
+  			aRow = subdata_bdt->get(i);
+  			RooRealVar* BDT = (RooRealVar*)aRow->find("bdt");
+  			double bdt_val = BDT->getVal();
+  			int bin = bdt_syst_histo->FindBin(bdt_val);
+  			float correction = bdt_syst_histo->GetBinContent(bin);
+  			double Weight = subdata_bdt->weight() * correction;
+  			RooArgSet varlist_tmp_bdt(*BDT);
+  			subdata_biased_bdt->add(varlist_tmp_bdt, Weight);
+  		}
+  	}
+  	else {
+  		cout << "too many entries for RooKeysPdf, switching to random-generated distribution with 10000 events" << endl;
+  		string name_biased_rdh("bdt_biased_rdh_");
+  		name_biased_rdh += suffix.str();
+  		RooDataHist *bdt_biased_rdh = new RooDataHist(name_biased_rdh.c_str(), name_biased_rdh.c_str(), *ws_->var("bdt"), &bdt_biased_histo);
+  		string name_biased_rhpdf("bdt_biased_rhpdf_");
+  		name_biased_rhpdf += suffix.str();
+  		RooHistPdf * bdt_biased_rhpdf = new RooHistPdf(name_biased_rhpdf.c_str(), name_biased_rhpdf.c_str(), RooArgList(*ws_->var("bdt")), *bdt_biased_rdh);
+  		subdata_biased_bdt = bdt_biased_rhpdf->generate(*ws_->var("bdt"), 10000, Extended(false), AutoBinned(false));
+  		subdata_bdt = bdt_rhpdf->generate(*ws_->var("bdt"), 10000, Extended(false), AutoBinned(false));
+  	}
+  	string kest1_name("bdt_kest_");
+  	kest1_name += suffix.str();
+  	string kest2_name("bdt_kest_biased_");
+  	kest2_name += suffix.str();
+  	RooKeysPdf * kest1 = new RooKeysPdf(kest1_name.c_str(), kest1_name.c_str(), *ws_->var("bdt"), *subdata_bdt, RooKeysPdf::MirrorBoth) ;
+  	RooKeysPdf * kest2 = new RooKeysPdf(kest2_name.c_str(), kest2_name.c_str(), *ws_->var("bdt"), *subdata_biased_bdt, RooKeysPdf::MirrorBoth) ;
+
+  	string beta_name("beta_");
+  	beta_name += suffix.str();
+  	RooRealVar beta(beta_name.c_str(), beta_name.c_str(), 0., 0., 1.);
+  	ws_->var("bdt")->setBins(1000, "cache") ;
+  	beta.setBins(100, "cache") ;
+//  	RooIntegralMorph * bdt_rim = new RooIntegralMorph(name_pdf.c_str(), name_pdf.c_str(), kest1, kest2, *ws_->var("bdt"), beta, true);
+//  	beta.setConstant(true);
+//  	ws_->import(*bdt_rim);
+  	kest1->SetName(name_pdf.c_str());
+  	ws_->import(*kest1);
+  	print_pdf(kest1, ws_->var("bdt"));
+//  	print_pdf(bdt_rim, ws_->var("bdt"));
+  	return bdt_rhpdf;
+  }
 }
 
 void pdf_analysis::print_pdf(RooAbsPdf* pdf, RooRealVar * var) {
   RooPlot *rp = var->frame();
   pdf->plotOn(rp);
-  pdf->paramOn(rp, ShowConstants(kTRUE));
+  pdf->paramOn(rp, Layout(0, 0.40, 0.90), ShowConstants(kTRUE));
   TCanvas canvas("canvas", "canvas", 600, 600);
+//  canvas.SetLogy();
   rp->Draw();
-  canvas.Print((get_address("pdf", pdf->GetName(), kTRUE) + ".gif").c_str());
-  canvas.Print((get_address("pdf", pdf->GetName(), kTRUE) + ".pdf").c_str());
+  canvas.Print((get_address("distro", pdf->GetName(), kTRUE) + ".gif").c_str());
+  canvas.Print((get_address("distro", pdf->GetName(), kTRUE) + ".pdf").c_str());
   delete rp;
 }
 
@@ -993,8 +1075,8 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
       effratio_bd_val[i][j] = eff_bd_val[i][j] / eff_bu_val[i][j];
       effratio_bs_err[i][j] = eff_rel_err[i][j] * effratio_bs_val[i][j];
       effratio_bd_err[i][j] = eff_rel_err[i][j] * effratio_bd_val[i][j];
-      cout << "effratio_bs ("<< i << "," << j << ") = " << effratio_bs_val[i][j] << "; +/- " << effratio_bs_err[i][j] << endl;
-      cout << "effratio_bd ("<< i << "," << j << ") = " << effratio_bd_val[i][j] << "; +/- " << effratio_bd_err[i][j] << endl;
+      cout << "effratio_bs ("<< i << "," << j << ") = " << effratio_bs_val[i][j] << " +/- " << effratio_bs_err[i][j] << endl;
+      cout << "effratio_bd ("<< i << "," << j << ") = " << effratio_bd_val[i][j] << " +/- " << effratio_bd_err[i][j] << endl;
     }
   }
 }
@@ -1023,7 +1105,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
 
   char buffer[2048];
   char left[1024];
-  double number;
+  double number = 0;
 
   vector < pair<string, string> > end_bd(channels_);
   vector < pair<string, string> > end_bs(channels_);
@@ -1136,9 +1218,10 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
       if (found != string::npos) reco_eff_ratio_err_d[i] = number;
     }
   }
-  vector<double> eff_rel_err_sq(channels_);
+  vector <double> eff_rel_err_sq(channels_, 0.);
   for (int i = 0; i < channels_; i++) {
-    eff_rel_err_sq[i] = pow(trig_eff_ratio_err_d[i] / trig_eff_ratio_val_d[i], 2) + pow(reco_eff_ratio_err_d[i] / reco_eff_ratio_val_d[i], 2);
+  	if (trig_eff_ratio_val_d[i] != 0.) eff_rel_err_sq[i] = pow(trig_eff_ratio_err_d[i] / trig_eff_ratio_val_d[i], 2);
+    if (reco_eff_ratio_val_d[i] != 0.) eff_rel_err_sq[i] += pow(reco_eff_ratio_err_d[i] / reco_eff_ratio_val_d[i], 2);
   }
 //  fclose(file_ef);
 

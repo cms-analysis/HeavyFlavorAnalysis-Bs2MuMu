@@ -45,7 +45,7 @@ bool randomsyst = false;
 bool shapesyst = false;
 static string cuts = "bdt>-10.";
 static string years_opt = "0";
-bool input = false, output = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false, asimov = false, rare_constr = false;
+bool input = false, output = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false, asimov = false, rare_constr = false, rkeys = false;
 static bool newcomb = false;
 static bool method = true;
 static bool Bd = false;
@@ -73,6 +73,7 @@ void help() {
   cout << "-pee \t per-event-error" << endl;
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << "-newcomb \t exponential combinatorial bkg study" << endl;
+  cout << "-rkeys \t RooKeysPdf for MassRes and BDT" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_fitData.o: fits events with pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-i #filename \t input for fitting events (MANDATORY)" << endl;
@@ -315,6 +316,10 @@ void parse_options(int argc, char* argv[]){
       cout << "rare yield is constrained, so it is with systematics" << endl;
       syst = true;
     }
+    if (!strcmp(argv[i],"-rkeys")) {
+    	rkeys = true;
+      cout << "RooKeysPdf for MassRes and BDT" << endl;
+    }
     if (!strcmp(argv[i],"-h")) help();
   }
 }
@@ -490,8 +495,8 @@ vector <double> cut_bdt_file() {
 
 vector < double > get_singlerare_normalization(string filename, int endcap, int size) {
 
-  string peakdecays[] = {"bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgLb2KP", "bgLb2PiP"};
-  string semidecays[] = {"bgBd2PiMuNu", "bgBs2KMuNu", "bgLb2PMuNu"};
+  string peakdecays[] = {"bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgLb2PiP", "bgLb2KP"};
+  string semidecays[] = {"bgBs2KMuNu", "bgBd2PiMuNu", "bgLb2PMuNu", "bgBu2PiMuMu", "bgBu2KMuMu", "bgBd2Pi0MuMu", "bgBd2K0MuMu", "bgBd2MuMuGamma", "bgBs2MuMuGamma"};
 
   FILE *file = fopen(filename.c_str(), "r");
   if (!file) {cout << "file " << filename << " does not exist"; exit(1);}
@@ -528,7 +533,7 @@ vector < double > get_singlerare_normalization(string filename, int endcap, int 
         for (int j = 0; j < 3; j++) {
           found = left_s.find(end[j]);
           if (found != string::npos) {
-            output[i+10] += number;
+            output[i+2+peak_n] += number;
           }
         }
       }
@@ -539,11 +544,12 @@ vector < double > get_singlerare_normalization(string filename, int endcap, int 
   output[0] = 1.;
   output[1] = 1.;
   output[size-1] = 1.;
-  cout << "expected = ";
-  for (int i = 0; i < size; i++) cout << output[i] << " ";
+  cout << " rare expected:" << endl;
+  for (int i = 0; i < peak_n; i++) cout << peakdecays[i] << " = " << output[i+2] << "; ";
   cout << endl;
+  for (int i = 0; i < semi_n; i++) cout << semidecays[i] << " = " << output[i+2+peak_n] << "; ";
+  cout << endl << endl;
   return output;
-
 }
 
 TObjArray Create_MassRes(TTree* tree, std::string cuts, vector <double> cuts_v, int year = 0) {

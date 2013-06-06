@@ -32,6 +32,11 @@ class pdf_fitData : public pdf_analysis {
   public:
     pdf_fitData(bool print, string input_estimates = "", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, int simul = 1, int simulbdt = 1, int simulall = 1, bool pee_ = false , bool bdt_fit = false , string ch_s = "0", int sig = -1, bool asimov = false, bool syste = false, bool randomsyste = false, bool rare_constr = false, int nexp = 10, bool bd = false, string years = "0");
     ~pdf_fitData();
+
+    void set_estimate();
+    void parse_estimate();
+    void print_estimate();
+
     void print();
     void print_each_channel(string var = "Mass", string output = "", RooWorkspace *ws = 0, RooDataSet *rds_ = 0);
 
@@ -75,33 +80,36 @@ class pdf_fitData : public pdf_analysis {
     string input_estimates_;
     vector <double> estimate_bs;
     vector <double> estimate_bd;
+    vector <double> estimate_peak;
     vector <double> estimate_semi;
     vector <double> estimate_comb;
 
     vector <vector <double> > estimate2D_bs;
     vector <vector <double> > estimate2D_bd;
+    vector <vector <double> > estimate2D_peak;
     vector <vector <double> > estimate2D_semi;
     vector <vector <double> > estimate2D_comb;
     vector <vector <double> > estimate2D_channel;
 
-    void parse_estimate();
     bool parse(char *cutName, float cut);
     string input_cuts_;
     bool asimov_;
     int sign;
 
-    string input_systematics_;
-    vector <double> systematics_bs;
-    vector <double> systematics_bd;
-    vector <double> systematics_semi;
-    vector <double> systematics_comb;
-    vector <double> systematics_channel;
-
-    vector <vector <double> > systematics2D_bs;
-    vector <vector <double> > systematics2D_bd;
-    vector <vector <double> > systematics2D_semi;
-    vector <vector <double> > systematics2D_comb;
-    vector <vector <double> > systematics2D_channel;
+//    string input_systematics_;
+//    vector <double> systematics_bs;
+//    vector <double> systematics_bd;
+//    vector <double> systematics_peak;
+//    vector <double> systematics_semi;
+//    vector <double> systematics_comb;
+//    vector <double> systematics_channel;
+//
+//    vector <vector <double> > systematics2D_bs;
+//    vector <vector <double> > systematics2D_bd;
+//    vector <vector <double> > systematics2D_peak;
+//    vector <vector <double> > systematics2D_semi;
+//    vector <vector <double> > systematics2D_comb;
+//    vector <vector <double> > systematics2D_channel;
 
     string pdfname;
     int NExp;
@@ -113,7 +121,7 @@ class pdf_fitData : public pdf_analysis {
     TFile* ws_file_input;
     RooWorkspace* ws_input;
 
-    void FillRooDataSet(RooDataSet* dataset, bool cut_b, vector<double> cut_, string cuts, TTree *tree, int offset);
+    void fill_dataset(RooDataSet* dataset, bool cut_b, vector<double> cut_, string cuts, TTree *tree, int offset);
     void changeName(RooWorkspace *ws, int str);
 
     Double_t sig_hand();

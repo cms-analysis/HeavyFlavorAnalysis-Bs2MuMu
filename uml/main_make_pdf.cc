@@ -32,7 +32,11 @@ int main(int argc, char* argv[]) {
 
   /// INPUTS
 
-  static string decays[] = {"SgMc", "BdMc", "bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgLb2KP", "bgLb2PiP", "bgBd2PiMuNu", "bgBs2KMuNu", "bgLb2PMuNu", "SgData"};
+  static string decays[] = {"SgMc", "BdMc",
+  													"bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgLb2PiP", "bgLb2KP",
+  													"bgBs2KMuNu", "bgBd2PiMuNu", "bgLb2PMuNu",
+  													"bgBu2PiMuMu", "bgBu2KMuMu", "bgBd2Pi0MuMu", "bgBd2K0MuMu", "bgBd2MuMuGamma", "bgBs2MuMuGamma",
+  													"SgData"};
   int decays_n = sizeof(decays)/sizeof(string);
 
   string year_s[2] = {"2011", "2012"};
@@ -63,9 +67,13 @@ int main(int argc, char* argv[]) {
   RooCategory* bdt_cat = ws->cat("bdtcat");
   RooCategory* all_cat = ws->cat("allcat");
 
+  cout << "2011 barrel";
   vector < double > exp_v_0(get_singlerare_normalization("input/2011/anaBmm.plotResults.2011.tex", 0, decays_n));
+  cout << "2011 endcap";
   vector < double > exp_v_1(get_singlerare_normalization("input/2011/anaBmm.plotResults.2011.tex", 1, decays_n));
+  cout << "2012 barrel";
   vector < double > exp_v_2(get_singlerare_normalization("input/2012/anaBmm.plotResults.2012.tex", 0, decays_n));
+  cout << "2012 endcap";
   vector < double > exp_v_3(get_singlerare_normalization("input/2012/anaBmm.plotResults.2012.tex", 1, decays_n));
 
   for (int i = 0; i < decays_n; i++) {
@@ -82,20 +90,23 @@ int main(int argc, char* argv[]) {
     for (int yy = 0; yy < years; yy++) {
       int y = (years == 2) ? yy : years_i;
       decays_filename[i] = "input/" + year_s[y] + "/small-" + decays[i] + ".root";
-      cout << decays_filename[i] << endl;
+      cout << endl << decays_filename[i] << endl;
       TFile* smalltree_f = new TFile(decays_filename[i].c_str(), "UPDATE");
       TTree* smalltree = (TTree*)smalltree_f->Get(decays_treename[i].c_str());
-      TTree* reduced_tree = smalltree->CopyTree(cuts.c_str()); // string cuts
+      TTree* smalltree_cutted = smalltree->CopyTree("4.9<m&&m<5.9&&muid");
+      TTree* reduced_tree = smalltree_cutted->CopyTree(cuts.c_str()); // string cuts
       Double_t m_t, eta_t, m1eta_t, m2eta_t, bdt_t, me_t;
+      Bool_t muid_t;
       reduced_tree->SetBranchAddress("m",     &m_t);
       reduced_tree->SetBranchAddress("bdt",   &bdt_t);
       reduced_tree->SetBranchAddress("eta",   &eta_t);
       reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
       reduced_tree->SetBranchAddress("m2eta", &m2eta_t);
       reduced_tree->SetBranchAddress("me",    &me_t);
+      reduced_tree->SetBranchAddress("muid",  &muid_t);
       double entries = reduced_tree->GetEntries();
       double events_0 = 0, events_1 = 0, events_2 = 0, events_3 = 0;
-      for (int j = 0; j < entries; j++) {
+      for (int j = 0; j < entries && (j < 50000 || i == decays_n - 1); j++) {
         reduced_tree->GetEntry(j);
         if (y == 0) {
           if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) events_0++;
@@ -106,23 +117,23 @@ int main(int argc, char* argv[]) {
           else events_3++;
         }
       }
-      for (int j = 0; j < entries; j++) {
+      for (int j = 0; j < entries && (j < 50000 || i == decays_n - 1); j++) {
         reduced_tree->GetEntry(j);
         m->setVal(m_t);
         eta->setVal(eta_t);
         m1eta->setVal(m1eta_t);
         m2eta->setVal(m2eta_t);
         bdt->setVal(bdt_t);
-        if (m_t > 5.20 && m_t < 5.45 && i == 13) continue; // skip signal windows for comb bkg
+        if (m_t > 5.20 && m_t < 5.45 && i == decays_n-1) continue; // skip signal windows for comb bkg
         if (m_t < 4.90 || m_t > 5.90) continue; // skip outside range
-        if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass scale
+        if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass error
         MassRes->setVal(me_t);
         /// eta channels
         int eta_channel = -1;
         if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) {
           eta_channel = 0 + 2*yy;
           channel_cat->setIndex(eta_channel);
-          if (i != 13 || newcomb) {
+          if (i != decays_n-1 || newcomb) {
             if (cuts_f_b && bdt_t < cuts_v[0 + 2*yy]) continue;
           }
           else {
@@ -132,7 +143,7 @@ int main(int argc, char* argv[]) {
         else {
           eta_channel = 1 + 2*yy;
           channel_cat->setIndex(eta_channel);
-          if (i != 13 || newcomb ) {
+          if (i != decays_n-1 || newcomb ) {
             if (cuts_f_b && bdt_t < cuts_v[1 + 2*yy]) continue;
           }
           else {
@@ -148,7 +159,7 @@ int main(int argc, char* argv[]) {
         if (simul_all) all_cat->setIndex(ana1.super_index(eta_channel, bdt_channel));
 
         double weight = 1;
-        if (i > 1 && i < 13) {
+        if (i > 1 && i < decays_n-1) {
           if (y == 0) {
             if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) weight = exp_v_0[i] / events_0;
             else weight = exp_v_1[i] / events_1;
@@ -164,7 +175,7 @@ int main(int argc, char* argv[]) {
         if (simul_all) varlist_tmp.add(*all_cat);
         rds_smalltree[i]->add(varlist_tmp, weight);
       }
-      cout << rds_smalltree[i]->GetName() << " done: " << rds_smalltree[i]->sumEntries() << " <--- " << smalltree->GetEntries() << endl;
+      cout << rds_smalltree[i]->GetName() << " done: " << rds_smalltree[i]->numEntries() << " <--- " << smalltree_cutted->GetEntries() << " <--- " << smalltree->GetEntries() << endl;
     }
   }
 
@@ -173,41 +184,36 @@ int main(int argc, char* argv[]) {
 
   RooAbsData* rad_bd = rds_smalltree[1];
 
-  RooDataSet* rds_semi = (RooDataSet*)rds_smalltree[10]->Clone("rds_semi");
-  rds_semi->append(*rds_smalltree[11]);
-  rds_semi->append(*rds_smalltree[12]);
-  RooAbsData* rad_semi = rds_semi;
-
   RooDataSet* rds_peak = (RooDataSet*)rds_smalltree[2]->Clone("rds_peak");
-  rds_peak->append(*rds_smalltree[3]);
-  rds_peak->append(*rds_smalltree[4]);
-  rds_peak->append(*rds_smalltree[5]);
-  rds_peak->append(*rds_smalltree[6]);
-  rds_peak->append(*rds_smalltree[7]);
-  rds_peak->append(*rds_smalltree[8]);
-  rds_peak->append(*rds_smalltree[9]);
+  for (int i = 3; i <= 9; i++) rds_peak->append(*rds_smalltree[i]);
   RooAbsData* rad_peak = rds_peak;
 
-  RooAbsData* rad_comb = rds_smalltree[13];
+  RooDataSet* rds_semi = (RooDataSet*)rds_smalltree[10]->Clone("rds_semi");
+  for (int i = 11; i <= 18; i++) rds_semi->append(*rds_smalltree[i]);
+  RooAbsData* rad_semi = rds_semi;
+
+  RooAbsData* rad_comb = rds_smalltree[decays_n-1];
 
   for (int j = 0; j < inputs; j++) {
     ana1.channel = simul ? j : ch_i;
     /// 1D
     for (int k = 0; k < ana1.bdt_index_max(j); k++) {
       ana1.channel_bdt = (simul_bdt || simul_all) ? k : ch_bdt_i;
-      ana1.define_MassRes_pdf(rds_smalltree[0], "bs");
-      ana1.define_MassRes_pdf(rds_smalltree[1], "bd");
-      ana1.define_MassRes_pdf(rds_semi, "semi");
-      ana1.define_MassRes_pdf(rds_peak, "peak");
-      ana1.define_MassRes_pdf(rds_smalltree[13], "comb");
+      ana1.define_massRes_pdf(rds_smalltree[0], "bs", rkeys);
+      ana1.define_massRes_pdf(rds_smalltree[1], "bd", rkeys);
+      ana1.define_massRes_pdf(rds_semi, "semi", rkeys);
+      ana1.define_massRes_pdf(rds_peak, "peak", rkeys);
+      ana1.define_massRes_pdf(rds_smalltree[decays_n-1], "comb", rkeys);
     }
     /// 2D
     if (bdt_fit) {
-      ana1.define_bdt_pdf(rds_smalltree[0], "bs", 0.);
-      ana1.define_bdt_pdf(rds_smalltree[1], "bd", 0.);
-      ana1.define_bdt_pdf(rds_semi, "semi", 0.);
-      ana1.define_bdt_pdf(rds_peak, "peak", 0.);
-      ana1.define_bdt_pdf(rds_smalltree[13], "comb", 0.);
+    	TFile *bdt_syst_f = new TFile("input/div_bdt_jpsi_bin0.root");
+    	ana1.define_bdt_pdf(rds_smalltree[0], "bs", bdt_syst_f, rkeys);
+      ana1.define_bdt_pdf(rds_smalltree[1], "bd", bdt_syst_f, rkeys);
+      ana1.define_bdt_pdf(rds_semi, "semi", bdt_syst_f, rkeys);
+      ana1.define_bdt_pdf(rds_peak, "peak", bdt_syst_f, rkeys);
+      TFile *bdt_syst_comb_f = new TFile("input/div_bdt.root");
+      ana1.define_bdt_pdf(rds_smalltree[decays_n-1], "comb", bdt_syst_comb_f, rkeys);
     }
   }
   ana1.define_N();
@@ -218,7 +224,6 @@ int main(int argc, char* argv[]) {
   ana1.set_rare_normalization("input/rare_frac.txt");
 
   ana1.define_pdfs();
-//  if (simul) ana1.define_simul();
 
   /// FITS
   for (int j = 0; j < inputs; j++) {

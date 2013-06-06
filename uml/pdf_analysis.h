@@ -43,6 +43,7 @@
 #include "RooSuperCategory.h"
 #include "RooMultiCategory.h"
 #include "RooIntegralMorph.h"
+#include "RooKeysPdf.h"
 
 using namespace std;
 using namespace RooFit;
@@ -54,8 +55,8 @@ public:
   RooWorkspace* get_ws() {return ws_;}
   
   void initialize();
-  RooHistPdf* define_MassRes_pdf(RooDataSet *rds, string name);
-  RooHistPdf* define_bdt_pdf(RooDataSet *rds, string name, Double_t bdt_min = -1.);
+  RooAbsPdf* define_massRes_pdf(RooDataSet *rds, string name, bool rkeys);
+  RooAbsPdf* define_bdt_pdf(RooDataSet *rds, string name, TFile* bdt_syst_f = 0, bool rkeys = false, Double_t bdt_min = -1.);
 
   void define_N();
   void define_pdfs();

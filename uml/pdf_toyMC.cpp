@@ -131,6 +131,8 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
         if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setConstant(kFALSE);
         ws_temp->var(name("N_comb", j))->setConstant(kFALSE);
         if (!rare_constr_) {
+        	ws_temp->var(name("N_peak", j))->setVal((int)estimate_peak[j]);
+        	ws_temp->var(name("N_peak", j))->setConstant(kFALSE);
         	ws_temp->var(name("N_semi", j))->setVal((int)estimate_semi[j]);
         	ws_temp->var(name("N_semi", j))->setConstant(kFALSE);
         }
@@ -146,6 +148,8 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
           if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setConstant(kFALSE);
           ws_temp->var(name("N_comb", i, j))->setConstant(kFALSE);
           if (!rare_constr_) {
+          	ws_temp->var(name("N_peak", i, j))->setConstant(kFALSE);
+          	ws_temp->var(name("N_peak", i, j))->setVal((int)estimate2D_peak[i][j]);
           	ws_temp->var(name("N_semi", i, j))->setConstant(kFALSE);
           	ws_temp->var(name("N_semi", i, j))->setVal((int)estimate2D_semi[i][j]);
           }
@@ -159,7 +163,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
       }
     }
 
-/// generation
+/// GENERATION
 //    if (syst) randomize_constraints(ws_temp);
     if (!simul_bdt_ && !simul_all_) { /// simple 1D or 2D fit
       bd_b = true;
