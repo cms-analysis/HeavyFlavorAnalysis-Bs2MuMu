@@ -900,8 +900,29 @@ int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 
 int massReader::isMuonTight(TAnaTrack *sigTrack)
 {
-	// FIXME: Implement this again...
-	return 0;
+	TAnaMuon *pMuon = NULL;
+	int trkGblBit = (0x1<<4) | (0x1<<6); // see HFDumpUtilities.cc
+	int result = ((sigTrack->fMuID & trkGblBit) == trkGblBit); // start with tracker & global
+		
+	if (!result) goto bail;
+	
+	if ((result = (0 <= sigTrack->fMuIndex && sigTrack->fMuIndex < fpEvt->nMuons()))) {
+		pMuon = fpEvt->getMuon(sigTrack->fMuIndex);
+		result = pMuon->fNmatchedStations > 1;
+	}
+	
+	if (!result) goto bail;
+	
+	result = TMath::Abs(sigTrack->fBsTip) <= 0.2;
+	if (!result) goto bail;
+	
+	result = numberOfPixLayers(sigTrack) >= 1;
+	if (!result) goto bail;
+	
+	result = sigTrack->fValidHits >= 11;
+	
+bail:
+	return result;
 } // isMuonTight()
 
 int massReader::hasTriggeredNorm()
