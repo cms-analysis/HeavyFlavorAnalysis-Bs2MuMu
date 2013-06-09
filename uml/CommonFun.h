@@ -53,7 +53,7 @@ static bool SMIsNull = false;
 static bool LLprofile = false;
 static bool hack_semi2011 = false;
 bool simul_all = false;
-int free_rare = 0;
+int free_rare = 3;
 
 void help() {
 
