@@ -41,14 +41,21 @@ private:
   
   vector <vector <RooDataSet*> > residual_rds_bs;
   vector <vector <RooDataSet*> > residual_rds_bd;
+//  vector <vector <RooDataSet*> > residual_rds_peak;
+//  vector <vector <RooDataSet*> > residual_rds_semi;
   vector <vector <RooDataSet*> > pull_rds_bs;
   vector <vector <RooDataSet*> > pull_rds_bd;
+  vector <vector <RooDataSet*> > pull_rds_peak;
   vector <vector <RooDataSet*> > pull_rds_semi;
   vector <vector <RooDataSet*> > pull_rds_comb;
+
   vector <vector <RooRealVar*> > residual_bs;
   vector <vector <RooRealVar*> > residual_bd;
-  vector <vector <RooRealVar*> > pull_bd;
+//  vector <vector <RooRealVar*> > residual_peak;
+//  vector <vector <RooRealVar*> > residual_semi;
   vector <vector <RooRealVar*> > pull_bs;
+  vector <vector <RooRealVar*> > pull_bd;
+  vector <vector <RooRealVar*> > pull_peak;
   vector <vector <RooRealVar*> > pull_semi;
   vector <vector <RooRealVar*> > pull_comb;
   RooRealVar* pull_BF_bs;

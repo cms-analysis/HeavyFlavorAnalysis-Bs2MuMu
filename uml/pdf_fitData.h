@@ -43,7 +43,7 @@ class pdf_fitData : public pdf_analysis {
     void define_dataset();
     void make_dataset(bool cut_b, vector<double> cut_, string cuts, TTree *tree, int offset = 0);
     void make_pdf_input(string root_s);
-    void make_pdf();
+    void set_starting_N();
     void hack_ws(string frozen_ws_address);
 
     RooDataSet* global_data;
@@ -70,6 +70,7 @@ class pdf_fitData : public pdf_analysis {
     void reset_minmax();
 
     void print_gaussian_constraints();
+    void free_rare(int free = 0);
 
   protected:
 

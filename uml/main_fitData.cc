@@ -40,12 +40,13 @@ int main(int argc, char** argv) {
   fitdata.make_pdf_input(input_ws);
   fitdata.set_estimate();
   fitdata.parse_estimate();
-  fitdata.make_pdf();
+  fitdata.set_starting_N();
+  fitdata.setnewlumi();
   fitdata.set_final_pdf();
   fitdata.print_estimate();
   if (hack_semi2011) fitdata.hack_ws("output/frozen/ws_simul4_bdt_BF2_PEE.root");
-  fitdata.setnewlumi();
   fitdata.set_syst();
+  fitdata.free_rare(free_rare);
   fitdata.define_dataset();
 
   vector <double> cuts_v(inputs, -10);

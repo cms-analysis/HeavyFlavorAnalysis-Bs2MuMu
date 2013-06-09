@@ -13,35 +13,49 @@ pdf_toyMC::pdf_toyMC(bool print, string input_estimates, string range, int BF, b
 
   residual_bs.resize(channels);
   residual_bd.resize(channels);
+//  residual_peak.resize(channels);
+//  residual_semi.resize(channels);
   pull_bs.resize(channels);
   pull_bd.resize(channels);
+  pull_peak.resize(channels);
   pull_semi.resize(channels);
   pull_comb.resize(channels);
+
   residual_rds_bs.resize(channels);
   residual_rds_bd.resize(channels);
+//  residual_rds_peak.resize(channels);
+//  residual_rds_semi.resize(channels);
   pull_rds_bs.resize(channels);
   pull_rds_bd.resize(channels);
+  pull_rds_peak.resize(channels);
   pull_rds_semi.resize(channels);
   pull_rds_comb.resize(channels);
 
   for (int k = 0; k < channels; k++) {
     residual_bs[k].resize(channels_bdt);
     residual_bd[k].resize(channels_bdt);
+//    residual_peak[k].resize(channels_bdt);
+//    residual_semi[k].resize(channels_bdt);
     pull_bs[k].resize(channels_bdt);
     pull_bd[k].resize(channels_bdt);
+    pull_peak[k].resize(channels_bdt);
     pull_semi[k].resize(channels_bdt);
     pull_comb[k].resize(channels_bdt);
+
     residual_rds_bs[k].resize(channels_bdt);
     residual_rds_bd[k].resize(channels_bdt);
+//    residual_rds_peak[k].resize(channels_bdt);
+//    residual_rds_semi[k].resize(channels_bdt);
     pull_rds_bs[k].resize(channels_bdt);
     pull_rds_bd[k].resize(channels_bdt);
+    pull_rds_peak[k].resize(channels_bdt);
     pull_rds_semi[k].resize(channels_bdt);
     pull_rds_comb[k].resize(channels_bdt);
   }
 
-  pull_BF_bs = new RooRealVar("pull_BF_bs", "pull_BF_bs", -8., 8.);
+  pull_BF_bs = new RooRealVar("pull_BF_bs", "pull_BF_bs", -10., 10.);
   pull_rds_BF_bs = new RooDataSet("pull_rds_BF_bs", "pull_rds_BF_bs", *pull_BF_bs);
-  pull_BF_bd = new RooRealVar("pull_BF_bd", "pull_BF_bd", -8., 8.);
+  pull_BF_bd = new RooRealVar("pull_BF_bd", "pull_BF_bd", -10., 10.);
   pull_rds_BF_bd = new RooDataSet("pull_rds_BF_bd", "pull_rds_BF_bd", *pull_BF_bd);
 
 }
@@ -55,15 +69,18 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
   vector < vector  <TH1D*> > correlation_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > bs_mean_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > bd_mean_h(channels, vector <TH1D*> (channels_bdt));
+  vector < vector  <TH1D*> > peak_mean_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > semi_mean_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > comb_mean_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > bs_sigma_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > bd_sigma_h(channels, vector <TH1D*> (channels_bdt));
+  vector < vector  <TH1D*> > peak_sigma_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > semi_sigma_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH1D*> > comb_sigma_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH2D*> > corr_Nbs_Nbd_vs_N_bs_h(channels, vector <TH2D*> (channels_bdt));
 
   TH1D * sign_h = new TH1D("sign_h", "sign_h;#sigma", 100, 0, 10);
+  TH1D * BF_bs_pull_h = new TH1D("BF_bs_pull_h", "BF_bs_pull_h", 100, -10, 10);
   TH1D * BF_bs_mean_h = new TH1D("BF_bs_mean_h", "BF_bs_mean_h", 100, 1.e-10, 1.e-8);
   TH1D * BF_bs_sigma_h = new TH1D("BF_bs_sigma_h", "BF_bs_sigma_h", 100, 1.e-10, 1.e-8);
   TH1D * BF_bd_mean_h = new TH1D("BF_bd_mean_h", "BF_bd_mean_h", 100, 1.e-10, 1.e-8);
@@ -72,25 +89,33 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     for (int j = 0; j < bdt_index_max(i); j++) {
       residual_bs[i][j] = new RooRealVar(name("residual_bs", i, j), "residual_bs", -20., 20.);
       residual_bd[i][j] = new RooRealVar(name("residual_bd", i, j), "residual_bd", -20., 20.);
-      pull_bs[i][j] = new RooRealVar(name("pull_bs", i, j), "pull_bs", -8., 8.);
-      pull_bd[i][j] = new RooRealVar(name("pull_bd", i, j), "pull_bd", -8., 8.);
-      pull_semi[i][j] = new RooRealVar(name("pull_semi", i, j), "pull_semi", -8., 8.);
-      pull_comb[i][j] = new RooRealVar(name("pull_comb", i, j), "pull_comb", -8., 8.);
+//      residual_peak[i][j] = new RooRealVar(name("residual_peak", i, j), "residual_peak", -20., 20.);
+//      residual_semi[i][j] = new RooRealVar(name("residual_semi", i, j), "residual_semi", -20., 20.);
+      pull_bs[i][j] = new RooRealVar(name("pull_bs", i, j), "pull_bs", -10., 10.);
+      pull_bd[i][j] = new RooRealVar(name("pull_bd", i, j), "pull_bd", -10., 10.);
+      pull_peak[i][j] = new RooRealVar(name("pull_peak", i, j), "pull_peak", -10., 10.);
+      pull_semi[i][j] = new RooRealVar(name("pull_semi", i, j), "pull_semi", -10., 10.);
+      pull_comb[i][j] = new RooRealVar(name("pull_comb", i, j), "pull_comb", -10., 10.);
       residual_rds_bs[i][j] = new RooDataSet(name("residual_rds_bs", i, j), "residual_rds_bs", *residual_bs[i][j]);
       residual_rds_bd[i][j] = new RooDataSet(name("residual_rds_bd", i, j), "residual_rds_bd", *residual_bd[i][j]);
+//      residual_rds_peak[i][j] = new RooDataSet(name("residual_rds_peak", i, j), "residual_rds_peak", *residual_peak[i][j]);
+//      residual_rds_semi[i][j] = new RooDataSet(name("residual_rds_semi", i, j), "residual_rds_semi", *residual_semi[i][j]);
       pull_rds_bs[i][j] = new RooDataSet(name("pull_rds_bs", i, j), "pull_rds_bs", *pull_bs[i][j]);
       pull_rds_bd[i][j] = new RooDataSet(name("pull_rds_bd", i, j), "pull_rds_bd", *pull_bd[i][j]);
+      pull_rds_peak[i][j] = new RooDataSet(name("pull_rds_peak", i, j), "pull_rds_peak", *pull_peak[i][j]);
       pull_rds_semi[i][j] = new RooDataSet(name("pull_rds_semi", i, j), "pull_rds_semi", *pull_semi[i][j]);
       pull_rds_comb[i][j] = new RooDataSet(name("pull_rds_comb", i, j), "pull_rds_comb", *pull_comb[i][j]);
       correlation_h[i][j] = new TH1D(name("correlation_h", i, j), name("correlation_h", i, j), 100, -1., 1.);
       bs_mean_h[i][j] = new TH1D(name("bs_mean_h", i, j), name("bs_mean_h", i, j), 100, 0., 100);
-      bs_sigma_h[i][j] = new TH1D(name("bs_sigma_h", i, j), name("bs_sigma_h", i, j), 100, 0., 100);
+      bs_sigma_h[i][j] = new TH1D(name("bs_sigma_h", i, j), name("bs_sigma_h", i, j), 100, 0., 40);
       bd_mean_h[i][j] = new TH1D(name("bd_mean_h", i, j), name("bd_mean_h", i, j), 100, 0., 100);
-      bd_sigma_h[i][j] = new TH1D(name("bd_sigma_h", i, j), name("bd_sigma_h", i, j), 100, 0., 100);
+      bd_sigma_h[i][j] = new TH1D(name("bd_sigma_h", i, j), name("bd_sigma_h", i, j), 100, 0., 40);
+      peak_mean_h[i][j] = new TH1D(name("peak_mean_h", i, j), name("peak_mean_h", i, j), 100, 0., 100);
+      peak_sigma_h[i][j] = new TH1D(name("peak_sigma_h", i, j), name("peak_sigma_h", i, j), 100, 0., 40);
       semi_mean_h[i][j] = new TH1D(name("semi_mean_h", i, j), name("semi_mean_h", i, j), 100, 0., 100);
+      semi_sigma_h[i][j] = new TH1D(name("semi_sigma_h", i, j), name("semi_sigma_h", i, j), 100, 0., 40);
       comb_mean_h[i][j] = new TH1D(name("comb_mean_h", i, j), name("comb_mean_h", i, j), 100, 0., 100);
-      semi_sigma_h[i][j] = new TH1D(name("semi_sigma_h", i, j), name("semi_sigma_h", i, j), 100, 0., 100);
-      comb_sigma_h[i][j] = new TH1D(name("comb_sigma_h", i, j), name("comb_sigma_h", i, j), 100, 0., 100);
+      comb_sigma_h[i][j] = new TH1D(name("comb_sigma_h", i, j), name("comb_sigma_h", i, j), 100, 0., 40);
       corr_Nbs_Nbd_vs_N_bs_h[i][j] = new TH2D(Form("corr_Nbs_Nbd_vs_N_bs_%d_%d_h", i, j), "corr_Nbs_Nbd_vs_N_bs_h", 30, 0., 30., 100, -1., 1.);
     }
   }
@@ -109,7 +134,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
   for (int k = 1; k <= NExp; k++) {
     if (k % 100 == 0) cout << "Exp # " << k << " / " << NExp << endl;
     double printlevel = -1;
-    if (k == 1) printlevel = 1;
+    if (k == 1 || k == 2) printlevel = 1;
     RooWorkspace* ws_temp = (RooWorkspace*)ws_->Clone("ws_temp");
 /// vars
     RooArgSet vars(*ws_temp->var("Mass"), *ws_temp->var("MassRes"), "vars");
@@ -122,49 +147,49 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     if (bdt_fit_) vars.add(*ws_temp->var("bdt"));
     RooDataSet* data = new RooDataSet("data", "data", vars);
 /// setup
-    if (!simul_bdt_ && !simul_all_) { /// simple 1D or 2D
-      for (int j = 0; j < channels; j++) {
-        ws_temp->var(name("N_bs", j))->setVal((int)estimate_bs[j]);
-        if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setVal((int)estimate_bd[j]);
-        ws_temp->var(name("N_comb", j))->setVal((int)estimate_comb[j]);
-//        ws_temp->var(name("N_bs", j))->setConstant(kFALSE);
-        if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setConstant(kFALSE);
-//        ws_temp->var(name("N_comb", j))->setConstant(kFALSE);
-        if (!rare_constr_) {
-        	ws_temp->var(name("N_peak", j))->setVal((int)estimate_peak[j]);
-//        	ws_temp->var(name("N_peak", j))->setConstant(kFALSE);
-        	ws_temp->var(name("N_semi", j))->setVal((int)estimate_semi[j]);
-//        	ws_temp->var(name("N_semi", j))->setConstant(kFALSE);
-        }
-      }
-    }
-    else { /// 1D with 2 categories
-      for (int i = 0; i < channels; i++) {
-        for (int j = 0; j < bdt_index_max(i); j++) {
-          ws_temp->var(name("N_bs", i, j))->setVal((int)estimate2D_bs[i][j]);
-          if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setVal((int)estimate2D_bd[i][j]);
-          ws_temp->var(name("N_comb", i, j))->setVal((int)estimate2D_comb[i][j]);
-//          ws_temp->var(name("N_bs", i, j))->setConstant(kFALSE);
-          if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setConstant(kFALSE);
-//          ws_temp->var(name("N_comb", i, j))->setConstant(kFALSE);
-          if (!rare_constr_) {
-//          	ws_temp->var(name("N_peak", i, j))->setConstant(kFALSE);
-          	ws_temp->var(name("N_peak", i, j))->setVal((int)estimate2D_peak[i][j]);
-//          	ws_temp->var(name("N_semi", i, j))->setConstant(kFALSE);
-          	ws_temp->var(name("N_semi", i, j))->setVal((int)estimate2D_semi[i][j]);
-          }
-        }
-      }
-    }
-    if (BF_ > 0) {
-      ws_temp->var("BF_bs")->setVal(Bs2MuMu_SM_BF_val);
-      if (BF_ > 1) {
-        ws_temp->var("BF_bd")->setVal(Bd2MuMu_SM_BF_val);
-      }
-    }
+//    if (!simul_bdt_ && !simul_all_) { /// simple 1D or 2D
+//      for (int j = 0; j < channels; j++) {
+//        ws_temp->var(name("N_bs", j))->setVal((int)estimate_bs[j]);
+//        if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setVal((int)estimate_bd[j]);
+//        ws_temp->var(name("N_comb", j))->setVal((int)estimate_comb[j]);
+////        ws_temp->var(name("N_bs", j))->setConstant(kFALSE);
+//        if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setConstant(kFALSE);
+////        ws_temp->var(name("N_comb", j))->setConstant(kFALSE);
+//        if (!rare_constr_) {
+//        	ws_temp->var(name("N_peak", j))->setVal((int)estimate_peak[j]);
+////        	ws_temp->var(name("N_peak", j))->setConstant(kFALSE);
+//        	ws_temp->var(name("N_semi", j))->setVal((int)estimate_semi[j]);
+////        	ws_temp->var(name("N_semi", j))->setConstant(kFALSE);
+//        }
+//      }
+//    }
+//    else { /// 1D with 2 categories
+//      for (int i = 0; i < channels; i++) {
+//        for (int j = 0; j < bdt_index_max(i); j++) {
+//          ws_temp->var(name("N_bs", i, j))->setVal((int)estimate2D_bs[i][j]);
+//          if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setVal((int)estimate2D_bd[i][j]);
+//          ws_temp->var(name("N_comb", i, j))->setVal((int)estimate2D_comb[i][j]);
+////          ws_temp->var(name("N_bs", i, j))->setConstant(kFALSE);
+//          if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setConstant(kFALSE);
+////          ws_temp->var(name("N_comb", i, j))->setConstant(kFALSE);
+//          if (!rare_constr_) {
+////          	ws_temp->var(name("N_peak", i, j))->setConstant(kFALSE);
+//          	ws_temp->var(name("N_peak", i, j))->setVal((int)estimate2D_peak[i][j]);
+////          	ws_temp->var(name("N_semi", i, j))->setConstant(kFALSE);
+//          	ws_temp->var(name("N_semi", i, j))->setVal((int)estimate2D_semi[i][j]);
+//          }
+//        }
+//      }
+//    }
+//    if (BF_ > 0) {
+//      ws_temp->var("BF_bs")->setVal(Bs2MuMu_SM_BF_val);
+//      if (BF_ > 1) {
+//        ws_temp->var("BF_bd")->setVal(Bd2MuMu_SM_BF_val);
+//      }
+//    }
 
 /// GENERATION
-//    if (syst) randomize_constraints(ws_temp);
+    if (syst && randomsyst) randomize_constraints(ws_temp);
     if (!simul_bdt_ && !simul_all_) { /// simple 1D or 2D fit
       bd_b = true;
       data = ws_temp->pdf(pdfname.c_str())->generate(vars, Extended());
@@ -215,30 +240,39 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
         else bs_mean_h[i][j]->Fill(ws_temp->function(name("N_bs_formula", i, j))->getVal());
         if (!(SM_ || bd_constr_ || BF_ == 2)) bd_mean_h[i][j]->Fill(ws_temp->var(name("N_bd", i, j))->getVal());
         else if (BF_ == 2) bd_mean_h[i][j]->Fill(ws_temp->function(name("N_bd_formula", i, j))->getVal());
-        if (!rare_constr_) semi_mean_h[i][j]->Fill(ws_temp->var(name("N_semi", i, j))->getVal());
+        peak_mean_h[i][j]->Fill(ws_temp->var(name("N_peak", i, j))->getVal());
+        semi_mean_h[i][j]->Fill(ws_temp->var(name("N_semi", i, j))->getVal());
         comb_mean_h[i][j]->Fill(ws_temp->var(name("N_comb", i, j))->getVal());
 
         if (BF_ == 0) bs_sigma_h[i][j]->Fill(ws_temp->var(name("N_bs", i, j))->getError());
         if (!(SM_ || bd_constr_ || BF_ == 2)) bd_sigma_h[i][j]->Fill(ws_temp->var(name("N_bd", i, j))->getError());
-        if (!rare_constr_) semi_sigma_h[i][j]->Fill(ws_temp->var(name("N_semi", i, j))->getError());
+        peak_sigma_h[i][j]->Fill(ws_temp->var(name("N_peak", i, j))->getError());
+        semi_sigma_h[i][j]->Fill(ws_temp->var(name("N_semi", i, j))->getError());
         comb_sigma_h[i][j]->Fill(ws_temp->var(name("N_comb", i, j))->getError());
         // PULL
-        double bs_pull, bd_pull, semi_pull, comb_pull, bs_residual, bd_residual;
+        double bs_pull, bd_pull, peak_pull, semi_pull, comb_pull, bs_residual, bd_residual;
         if (!simul_bdt_ && !simul_all_) {
-          if (BF_ == 0) bs_pull = (ws_temp->var(name("N_bs", i, j))->getVal() - estimate_bs[i]) / ws_temp->var(name("N_bs", i, j))->getError();
+          if (BF_ == 0) {
+          	bs_pull = (ws_temp->var(name("N_bs", i, j))->getVal() - ws_->var(name("N_bs", i, j))->getVal()) / ws_temp->var(name("N_bs", i, j))->getError();
+          	cout << ws_temp->var(name("N_bs", i, j))->getVal() << " " << ws_->var(name("N_bs", i, j))->getVal() << " " << ws_temp->var(name("N_bs", i, j))->getError() <<  "  " << bs_pull << endl;
+          }
+
           bs_residual = (ws_temp->function(name("N_bs_formula", i, j))->getVal() - estimate_bs_formula[i][0]);
-          if (!(SM_ || bd_constr_ || BF_ == 2)) bd_pull = (ws_temp->var(name("N_bd", i, j))->getVal() - estimate_bd[i]) / ws_temp->var(name("N_bd", i, j))->getError();
+          if (!(SM_ || bd_constr_ || BF_ == 2)) bd_pull = (ws_temp->var(name("N_bd", i, j))->getVal() - ws_->var(name("N_bd", i, j))->getVal()) / ws_temp->var(name("N_bd", i, j))->getError();
           else if (BF_ == 2) bd_residual = (ws_temp->function(name("N_bd_formula", i, j))->getVal() - estimate_bd_formula[i][0]);
-          if (!rare_constr_) semi_pull = (ws_temp->var(name("N_semi", i, j))->getVal() - estimate_semi[i]) / ws_temp->var(name("N_semi", i, j))->getError();
-          comb_pull = (ws_temp->var(name("N_comb", i, j))->getVal() - estimate_comb[i]) / ws_temp->var(name("N_comb", i, j))->getError();
+          peak_pull = (ws_temp->var(name("N_peak", i, j))->getVal() - ws_->var(name("N_peak", i, j))->getVal()) / ws_temp->var(name("N_peak", i, j))->getError();
+          semi_pull = (ws_temp->var(name("N_semi", i, j))->getVal() - ws_->var(name("N_semi", i, j))->getVal()) / ws_temp->var(name("N_semi", i, j))->getError();
+          comb_pull = (ws_temp->var(name("N_comb", i, j))->getVal() - ws_->var(name("N_comb", i, j))->getVal()) / ws_temp->var(name("N_comb", i, j))->getError();
+//          cout << "comb " << ws_temp->var(name("N_comb", i, j))->getVal() << " " <<  ws_temp->var(name("N_comb", i, j))->getError() << " " << ws_->var(name("N_comb", i, j))->getVal() << " " <<  estimate_bs_formula[i][0] << endl;
         }
         else {
-          if (BF_ == 0) bs_pull = (ws_temp->var(name("N_bs", i, j))->getVal() - estimate2D_bs[i][j]) / ws_temp->var(name("N_bs", i, j))->getError();
+          if (BF_ == 0) bs_pull = (ws_temp->var(name("N_bs", i, j))->getVal() - ws_->var(name("N_bs", i, j))->getVal()) / ws_temp->var(name("N_bs", i, j))->getError();
           else bs_residual = (ws_temp->function(name("N_bs_formula", i, j))->getVal() - estimate_bs_formula[i][j]);
-          if (!(SM_ || bd_constr_|| BF_ == 2)) bd_pull = (ws_temp->var(name("N_bd", i, j))->getVal() - estimate2D_bd[i][j]) / ws_temp->var(name("N_bd", i, j))->getError();
+          if (!(SM_ || bd_constr_|| BF_ == 2)) bd_pull = (ws_temp->var(name("N_bd", i, j))->getVal() - ws_->var(name("N_bd", i, j))->getVal()) / ws_temp->var(name("N_bd", i, j))->getError();
           else if (BF_ == 2) bd_residual = (ws_temp->function(name("N_bd_formula", i, j))->getVal() - estimate_bd_formula[i][j]);
-          if (!rare_constr_) semi_pull = (ws_temp->var(name("N_semi", i, j))->getVal() - estimate2D_semi[i][j]) / ws_temp->var(name("N_semi", i, j))->getError();
-          comb_pull = (ws_temp->var(name("N_comb", i, j))->getVal() - estimate2D_comb[i][j]) / ws_temp->var(name("N_comb", i, j))->getError();
+          peak_pull = (ws_temp->var(name("N_peak", i, j))->getVal() - ws_->var(name("N_peak", i, j))->getVal()) / ws_temp->var(name("N_peak", i, j))->getError();
+          semi_pull = (ws_temp->var(name("N_semi", i, j))->getVal() - ws_->var(name("N_semi", i, j))->getVal()) / ws_temp->var(name("N_semi", i, j))->getError();
+          comb_pull = (ws_temp->var(name("N_comb", i, j))->getVal() - ws_->var(name("N_comb", i, j))->getVal()) / ws_temp->var(name("N_comb", i, j))->getError();
         }
 
         if (BF_ == 0) {
@@ -257,10 +291,12 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
           residual_bd[i][j]->setVal(bd_residual);
           residual_rds_bd[i][j]->add(*residual_bd[i][j]);
         }
-        if (!rare_constr_) {
-        	pull_semi[i][j]->setVal(semi_pull);
-        	pull_rds_semi[i][j]->add(*pull_semi[i][j]);
-        }
+//        if (!rare_constr_) {
+        pull_peak[i][j]->setVal(peak_pull);
+        pull_rds_peak[i][j]->add(*pull_peak[i][j]);
+        pull_semi[i][j]->setVal(semi_pull);
+        pull_rds_semi[i][j]->add(*pull_semi[i][j]);
+//        }
         pull_comb[i][j]->setVal(comb_pull);
         pull_rds_comb[i][j]->add(*pull_comb[i][j]);
         if (BF_ == 0) correlation_h[i][j]->Fill(RFR->correlation(*ws_temp->var(name("N_bs", i, j)), *ws_temp->var(name("N_bd", i, j))));
@@ -274,6 +310,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
       double BF_pull = (ws_temp->var("BF_bs")->getVal() - Bs2MuMu_SM_BF_val) / ws_temp->var("BF_bs")->getError();
       pull_BF_bs->setVal(BF_pull);
       pull_rds_BF_bs->add(*pull_BF_bs);
+      BF_bs_pull_h->Fill(BF_pull);
     }
     if (BF_ > 1) {
       BF_bd_mean_h->Fill(ws_temp->var("BF_bd")->getVal());
@@ -301,17 +338,20 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
       if (BF_ > 0) fit_pulls(residual_bs[i][j], residual_rds_bs[i][j], i, j);
       if (!(SM_ || bd_constr_ || BF_ == 2)) fit_pulls(pull_bd[i][j], pull_rds_bd[i][j], i, j);
       else if (BF_ == 2) fit_pulls(residual_bd[i][j], residual_rds_bd[i][j], i, j);
-      if (!rare_constr_) fit_pulls(pull_semi[i][j], pull_rds_semi[i][j], i, j);
+      fit_pulls(pull_peak[i][j], pull_rds_peak[i][j], i, j);
+      fit_pulls(pull_semi[i][j], pull_rds_semi[i][j], i, j);
       fit_pulls(pull_comb[i][j], pull_rds_comb[i][j], i, j);
 
       print_histos(bs_mean_h[i][j], i, j);
       if (!(SM_ || bd_constr_)) print_histos(bd_mean_h[i][j], i, j);
-      if (!rare_constr_) print_histos(semi_mean_h[i][j], i, j);
+      print_histos(peak_mean_h[i][j], i, j);
+      print_histos(semi_mean_h[i][j], i, j);
       print_histos(comb_mean_h[i][j], i, j);
 
       if (BF_ == 0) print_histos(bs_sigma_h[i][j], i, j);
-      if (!(SM_ || bd_constr_)) print_histos(bd_sigma_h[i][j], i, j);
-      if (!rare_constr_) print_histos(semi_sigma_h[i][j], i, j);
+      if (!(SM_ || bd_constr_ || BF_ == 2)) print_histos(bd_sigma_h[i][j], i, j);
+      print_histos(peak_sigma_h[i][j], i, j);
+      print_histos(semi_sigma_h[i][j], i, j);
       print_histos(comb_sigma_h[i][j], i, j);
     }
   }
@@ -319,6 +359,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     fit_pulls(pull_BF_bs, pull_rds_BF_bs, 0, 0);
     print_histos(BF_bs_mean_h, 0, 0);
     print_histos(BF_bs_sigma_h, 0, 0);
+    print_histos(BF_bs_pull_h, 0, 0);
   }
   if (BF_ > 1) {
     fit_pulls(pull_BF_bd, pull_rds_BF_bd, 0, 0);
@@ -421,23 +462,23 @@ void pdf_toyMC::do_bias(RooWorkspace* ws) {
 RooFitResult* pdf_toyMC::fit_pdf(RooAbsData* data, int printlevel, RooWorkspace* ws) {
   RooFitResult* result;
   if (printlevel < 0) RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
-  result = ws->pdf(pdfname.c_str())->fitTo(*data, pee ? ConditionalObservables(*ws->var("MassRes")) : RooCmdArg::none(), Extended(true), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(1)/*, Verbose(10)*/, Save(kTRUE), NumCPU( simul_all_? 1 : 2));
+  result = ws->pdf(pdfname.c_str())->fitTo(*data, pee ? ConditionalObservables(*ws->var("MassRes")) : RooCmdArg::none(), Extended(true), Hesse(kFALSE), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(1)/*, Verbose(10)*/, Save(kTRUE), NumCPU( simul_all_? 1 : 2));
   if (printlevel < 0) RooMsgService::instance().cleanup();
   return result;
 }
 
 void pdf_toyMC::fit_pulls(RooRealVar* pull, RooDataSet* rds, int i, int j) {
 
-  RooRealVar* mean = new RooRealVar("mean", "mean", -5., 5.);
-  RooRealVar* sigma = new RooRealVar("sigma", "sigma", 0.001, 5.);
-  RooGaussian* gauss = new RooGaussian("gauss", "gauss", *pull, *mean, *sigma);
-  gauss->fitTo(*rds);
+  RooRealVar* mean_pull = new RooRealVar("mean_pull", "mean", 0., -10., 10.);
+  RooRealVar* sigma_pull = new RooRealVar("sigma_pull", "sigma", 1., 0.1, 5.);
+  RooGaussian* gauss_pull = new RooGaussian("gauss_pull", "gauss", *pull, *mean_pull, *sigma_pull);
+  gauss_pull->fitTo(*rds);
   
   RooPlot *rp_bs = pull->frame();
   rds->plotOn(rp_bs, Binning(40));
-  rds->statOn(rp_bs, Layout(0.55, 0.9, 0.9));
-  gauss->plotOn(rp_bs, LineColor(kBlue));
-  gauss->paramOn(rp_bs, Layout(0.55, 0.9, 0.7));
+//  rds->statOn(rp_bs, Layout(0.55, 0.9, 0.9));
+  gauss_pull->plotOn(rp_bs, LineColor(kBlue));
+  gauss_pull->paramOn(rp_bs, Layout(0.55, 0.9, 0.9));
   TCanvas* canvas_bs = new TCanvas("canvas_bs", "canvas_bs", 600, 600);
   rp_bs->Draw();
   channel = simul_ ? i : ch_i_;
@@ -446,9 +487,9 @@ void pdf_toyMC::fit_pulls(RooRealVar* pull, RooDataSet* rds, int i, int j) {
   canvas_bs->Print((get_address(pull->GetName(), pdfname) + ".pdf").c_str());
   delete rp_bs;
   delete canvas_bs;
-  delete gauss;
-  delete mean;
-  delete sigma;
+  delete gauss_pull;
+  delete mean_pull;
+  delete sigma_pull;
 }
 
 void pdf_toyMC::print_histos(TH1D* histos, int i, int j) {
@@ -495,10 +536,10 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
       for (int i = 0; i < channels; i++) {
       	if (years_=="0" && i > 1) continue;
       	if (years_=="1" && i < 2) continue;
-        ws_temp->var(name(alt_name.c_str(), i))->setVal(estimate_bs[i]);
+        ws_temp->var(name(alt_name.c_str(), i))->setVal(ws_->var(name(alt_name.c_str(), i))->getVal());
         ws_temp->var(name(alt_name.c_str(), i))->setConstant(0);
         if (bd_constr_) {
-          ws_temp->var("Bd_over_Bs")->setVal(estimate_bd[i]/estimate_bs[i]);
+          ws_temp->var("Bd_over_Bs")->setVal(ws_->var(name("N_bd", i))->getVal()/ws_->var(name("N_bs", i))->getVal());
           ws_temp->var("Bd_over_Bs")->setConstant(0);
         }
       }
@@ -508,10 +549,10 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
       	if (years_=="0" && i > 1) continue;
       	if (years_=="1" && i < 2) continue;
         for (int j = 0; j < bdt_index_max(i); j++) {
-          ws_temp->var(name(alt_name.c_str(), i, j))->setVal(estimate2D_bs[i][j]);
+          ws_temp->var(name(alt_name.c_str(), i, j))->setVal(ws_->var(name(alt_name.c_str(), i, j))->getVal());
           ws_temp->var(name(alt_name.c_str(), i, j))->setConstant(0);
           if (bd_constr_) {
-            ws_temp->var("Bd_over_Bs")->setVal(estimate2D_bd[i][j]/estimate2D_bs[i][j]);
+            ws_temp->var("Bd_over_Bs")->setVal(ws_->var(name("N_bd", i, j))->getVal()/ws_->var(name("N_bs", i, j))->getVal());
             ws_temp->var("Bd_over_Bs")->setConstant(0);
           }
         }
@@ -531,32 +572,32 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
 }
 
 void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
-  if (!simul_bdt_ && !simul_all_) {
-    for (int i = 0; i < channels; i++) {
-      ws_->var(name("N_bs", i))->setVal(estimate_bs[i]);
-      if (!rare_constr_) ws_->var(name("N_semi", i))->setVal(estimate_semi[i]);
-      ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
-      if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i))->setVal(estimate_bd[i]);
-    }
-    if (bd_constr_) {
-      double ratio = (double) estimate_bd[0] / estimate_bs[0]; // it's the same in every channel
-      ws_->var("Bd_over_Bs")->setVal(ratio);
-    }
-  }
-  else {
-    for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < bdt_index_max(i); j++) {
-        ws_->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
-        if (!rare_constr_) ws_->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
-        ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
-        if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
-      }
-    }
-    if (bd_constr_) {
-      double ratio = (double) estimate2D_bd[0][0] / estimate2D_bs[0][0]; // it's the same in every channel
-      ws_->var("Bd_over_Bs")->setVal(ratio);
-    }
-  }
+//  if (!simul_bdt_ && !simul_all_) {
+//    for (int i = 0; i < channels; i++) {
+//      ws_->var(name("N_bs", i))->setVal(estimate_bs[i]);
+//      if (!rare_constr_) ws_->var(name("N_semi", i))->setVal(estimate_semi[i]);
+//      ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
+//      if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i))->setVal(estimate_bd[i]);
+//    }
+//    if (bd_constr_) {
+//      double ratio = (double) estimate_bd[0] / estimate_bs[0]; // it's the same in every channel
+//      ws_->var("Bd_over_Bs")->setVal(ratio);
+//    }
+//  }
+//  else {
+//    for (int i = 0; i < channels; i++) {
+//      for (int j = 0; j < bdt_index_max(i); j++) {
+//        ws_->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
+//        if (!rare_constr_) ws_->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
+//        ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
+//        if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
+//      }
+//    }
+//    if (bd_constr_) {
+//      double ratio = (double) estimate2D_bd[0][0] / estimate2D_bs[0][0]; // it's the same in every channel
+//      ws_->var("Bd_over_Bs")->setVal(ratio);
+//    }
+//  }
   RooArgSet obsv(*ws_->var("Mass"), "obsv");
   if (bdt_fit_) obsv.add(*ws_->var("bdt"));
   if (simul_ && !simul_bdt_ && !simul_all_) obsv.add(*ws_->cat("etacat"));
@@ -583,12 +624,12 @@ void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
 
   vector <vector <RooDLLSignificanceMCSModule*> > sigModule(channels, vector <RooDLLSignificanceMCSModule*> (channels_bdt));
   if (BF_ == 0) {
-    for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < bdt_index_max(i); j++) {
-        sigModule[i][j] = new RooDLLSignificanceMCSModule(*ws_->var(name("N_bs", i, j)), 0);
-        mcstudy->addModule(*sigModule[i][j]);
-      }
-    }
+//    for (int i = 0; i < channels; i++) {
+//      for (int j = 0; j < bdt_index_max(i); j++) {
+//        sigModule[i][j] = new RooDLLSignificanceMCSModule(*ws_->var(name("N_bs", i, j)), 0);
+//        mcstudy->addModule(*sigModule[i][j]);
+//      }
+//    }
   }
   else {
     sigModule[0][0] = new RooDLLSignificanceMCSModule(*ws_->var("BF_bs"), 0);

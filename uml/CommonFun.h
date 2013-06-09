@@ -53,6 +53,7 @@ static bool SMIsNull = false;
 static bool LLprofile = false;
 static bool hack_semi2011 = false;
 bool simul_all = false;
+int free_rare = 0;
 
 void help() {
 
@@ -105,6 +106,7 @@ void help() {
   cout << "-LLprofile" << endl;
   cout << "-hack2011 \t hack 2011 semi to 2012" << endl;
   cout << "-ws \t input workspace" << endl;
+  cout << "-free # \t rare decays are not constant: 1 = semi, 2 = peak, 3 = both" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -130,6 +132,7 @@ void help() {
   cout << "-randomsyst \t syst constraints are randomized" << endl;
   cout << "-rare_constr \t rare yield is constraint" << endl;
   cout << "-hack2011 \t hack 2011 semi to 2012" << endl;
+  cout << "-free # \t rare decays are not constant: 1 = semi, 2 = peak, 3 = both" << endl;
   cout << endl;
 
   exit(EXIT_SUCCESS);
@@ -319,6 +322,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-rkeys")) {
     	rkeys = true;
       cout << "RooKeysPdf for MassRes and BDT" << endl;
+    }
+    if (!strcmp(argv[i],"-free")) {
+      free_rare = atoi(argv[i+1]);
+      cout << "free rare decays, option " << free_rare << endl;
     }
     if (!strcmp(argv[i],"-h")) help();
   }

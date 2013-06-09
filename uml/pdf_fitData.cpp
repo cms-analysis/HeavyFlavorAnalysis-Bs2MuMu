@@ -121,31 +121,31 @@ bool pdf_fitData::parse(char *cutName, float cut) {
       char test_cut[128];
       sprintf(test_cut, "bs_%d", i);
       if (!strcmp(cutName, test_cut)) {
-        estimate_bs[i] = (int)cut;
+        estimate_bs[i] = (double)cut;
         cout << "bs[" << i <<"]: " << estimate_bs[i] << endl;
         return true;
       }
       sprintf(test_cut, "bd_%d", i);
       if (!strcmp(cutName, test_cut)) {
-        estimate_bd[i] = (int)cut;
+        estimate_bd[i] = (double)cut;
         cout << "bd[" << i <<"]: " << estimate_bd[i] << endl;
         return true;
       }
       sprintf(test_cut, "peak_%d", i);
       if (!strcmp(cutName, test_cut)) {
-        estimate_peak[i] = (int)cut;
+        estimate_peak[i] = (double)cut;
         cout << "peak[" << i <<"]: " << estimate_peak[i] << endl;
         return true;
       }
       sprintf(test_cut, "semi_%d", i);
       if (!strcmp(cutName, test_cut)) {
-        estimate_semi[i] = (int)cut;
+        estimate_semi[i] = (double)cut;
         cout << "semi[" << i <<"]: " << estimate_semi[i] << endl;
         return true;
       }
       sprintf(test_cut, "comb_%d", i);
       if (!strcmp(cutName, test_cut)) {
-        estimate_comb[i] = (int)cut;
+        estimate_comb[i] = (double)cut;
         cout << "comb[" << i <<"]: " << estimate_comb[i] << endl;
         return true;
       }
@@ -156,31 +156,31 @@ bool pdf_fitData::parse(char *cutName, float cut) {
     char test_cut[128];
     sprintf(test_cut, "bs_%d", i);
     if (!strcmp(cutName, test_cut)) {
-      estimate_bs[0] = (int)cut;
+      estimate_bs[0] = (double)cut;
       cout << "bs[" << i <<"]: " << estimate_bs[0] << endl;
       return true;
     }
     sprintf(test_cut, "bd_%d", i);
     if (!strcmp(cutName, test_cut)) {
-      estimate_bd[0] = (int)cut;
+      estimate_bd[0] = (double)cut;
       cout << "bd[" << i <<"]: " << estimate_bd[0] << endl;
       return true;
     }
     sprintf(test_cut, "peak_%d", i);
     if (!strcmp(cutName, test_cut)) {
-      estimate_peak[0] = (int)cut;
+      estimate_peak[0] = (double)cut;
       cout << "peak[" << i <<"]: " << estimate_peak[0] << endl;
       return true;
     }
     sprintf(test_cut, "semi_%d", i);
     if (!strcmp(cutName, test_cut)) {
-      estimate_semi[0] = (int)cut;
+      estimate_semi[0] = (double)cut;
       cout << "semi[" << i <<"]: " << estimate_semi[0] << endl;
       return true;
     }
     sprintf(test_cut, "comb_%d", i);
     if (!strcmp(cutName, test_cut)) {
-      estimate_comb[0] = (int)cut;
+      estimate_comb[0] = (double)cut;
       cout << "comb[" << i <<"]: " << estimate_comb[0] << endl;
       return true;
     }
@@ -192,31 +192,31 @@ bool pdf_fitData::parse(char *cutName, float cut) {
         char test_cut[128];
         sprintf(test_cut, "bs_%d_%d", i, j);
         if (!strcmp(cutName, test_cut)) {
-          estimate2D_bs[i][j] = (int)cut;
+          estimate2D_bs[i][j] = (double)cut;
           cout << "bs[" << i <<"][" << j << "]: " << estimate2D_bs[i][j] << endl;
           return true;
         }
         sprintf(test_cut, "bd_%d_%d", i, j);
         if (!strcmp(cutName, test_cut)) {
-          estimate2D_bd[i][j] = (int)cut;
+          estimate2D_bd[i][j] = (double)cut;
           cout << "bd[" << i <<"][" << j << "]: " << estimate2D_bd[i][j] << endl;
           return true;
         }
         sprintf(test_cut, "peak_%d_%d", i, j);
         if (!strcmp(cutName, test_cut)) {
-          estimate2D_peak[i][j] = (int)cut;
+          estimate2D_peak[i][j] = (double)cut;
           cout << "peak[" << i <<"][" << j << "]: " << estimate2D_peak[i][j] << endl;
           return true;
         }
         sprintf(test_cut, "semi_%d_%d", i, j);
         if (!strcmp(cutName, test_cut)) {
-          estimate2D_semi[i][j] = (int)cut;
+          estimate2D_semi[i][j] = (double)cut;
           cout << "semi[" << i <<"][" << j << "]: " << estimate2D_semi[i][j] << endl;
           return true;
         }
         sprintf(test_cut, "comb_%d_%d", i, j);
         if (!strcmp(cutName, test_cut)) {
-          estimate2D_comb[i][j] = (int)cut;
+          estimate2D_comb[i][j] = (double)cut;
           cout << "comb[" << i <<"][" << j << "]: " << estimate2D_comb[i][j] << endl;
           return true;
         }
@@ -602,7 +602,7 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TT
   if (!random) fill_dataset(global_data, cut_b, cut_, cuts, tree, offset);
 
   else {
-    if (syst) randomize_constraints(ws_);
+    if (syst && randomsyst) randomize_constraints(ws_);
 
     if (!simul_) {
 //      ws_->var("N_bs")->setVal(estimate_bs[ch_i_]);
@@ -620,7 +620,6 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TT
 //        ws_->var(name("N_semi", i))->setVal(estimate_semi[i]);
 //        ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
       }
-
       if (!asimov_) global_data = ws_->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")), Extended());
       else global_datahist = ws_->pdf("pdf_ext_simul")->generateBinned(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")), ExpectedData());
     }
@@ -664,11 +663,13 @@ void pdf_fitData::make_pdf_input(string root_s) {
   set_ws(ws_input);
 }
 
-void pdf_fitData::make_pdf() {
+void pdf_fitData::set_starting_N() {
   cout << red_color_bold << "making pdf" << default_console_color << endl;
   if (random) {
     if (simul_ && !simul_bdt_ && !simul_all_) {
       for (int i = 0; i < channels; i++) {
+      	ws_->var(name("N_bu", i))->setVal(N_bu_val[i][0]);
+      	ws_->var(name("N_bu", i))->setError(N_bu_err[i][0]);
       	ws_->var(name("N_bs", i))->setVal(estimate_bs[i]);
         ws_->var(name("N_bd", i))->setVal(estimate_bd[i]);
         ws_->var(name("N_peak", i))->setVal(estimate_peak[i]);
@@ -677,6 +678,8 @@ void pdf_fitData::make_pdf() {
       }
     }
     else if (!simul_) {
+    	ws_->var("N_bu")->setVal(N_bu_val[ch_i_][0]);
+    	ws_->var("N_bu")->setError(N_bu_err[ch_i_][0]);
       ws_->var("N_bs")->setVal(estimate_bs[ch_i_]);
       ws_->var("N_bd")->setVal(estimate_bd[ch_i_]);
       ws_->var("N_peak")->setVal(estimate_peak[ch_i_]);
@@ -686,6 +689,8 @@ void pdf_fitData::make_pdf() {
     else {
       for (int i = 0; i < channels; i++) {
         for (int j = 0; j < bdt_index_max(i); j++) {
+        	ws_->var(name("N_bu", i, j))->setVal(N_bu_val[i][j]);
+        	ws_->var(name("N_bu", i, j))->setError(N_bu_err[i][j]);
           ws_->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
           ws_->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
           ws_->var(name("N_peak", i, j))->setVal(estimate2D_peak[i][j]);
@@ -727,7 +732,8 @@ void pdf_fitData::define_constraints(int i, int j) {
     ws_->import(one_over_BRBR_gau);
   }
 
-  RooGaussian N_bu_gau(name("N_bu_gau", i, j), "N_bu_gau", *ws_->var(name("N_bu", i, j)), RooConst(N_bu_val[i][j]), RooConst(N_bu_err[i][j]));
+//  RooGaussian N_bu_gau(name("N_bu_gau", i, j), "N_bu_gau", *ws_->var(name("N_bu", i, j)), RooConst(N_bu_val[i][j]), RooConst(N_bu_err[i][j]));
+  RooGaussian N_bu_gau(name("N_bu_gau", i, j), "N_bu_gau", *ws_->var(name("N_bu", i, j)), RooConst(ws_->var(name("N_bu", i, j))->getVal()), RooConst(ws_->var(name("N_bu", i, j))->getError()));
   ws_->import(N_bu_gau);
 
   RooGaussian effratio_gau_bs(name("effratio_gau_bs", i, j), "effratio_gau_bs", *ws_->var(name("effratio_bs", i, j)), RooConst(effratio_bs_val[i][j]), RooConst(effratio_bs_err[i][j]));
@@ -1369,11 +1375,18 @@ void pdf_fitData::setnewlumi() {
   if (BF_ > 0) {
     for (int i = 0; i < channels; i++) {
       for (int j = 0; j < bdt_index_max(i); j++) {
-        double old_val = ws_->var(name("N_bu", i, j))->getVal();
-        double old_err = ws_->var(name("N_bu", i, j))->getError();
-        ws_->var(name("N_bu", i, j))->setVal(old_val * lumi);
-        ws_->var(name("N_bu", i, j))->setError(old_err * sqrt(lumi));
-        cout << "channel " << i << " " << j << "; Bs expected: " << ws_->function(name("N_bs_formula", i, j))->getVal() << "; Bd expected: " << ws_->function(name("N_bd_formula", i, j))->getVal() << endl;
+      	Double_t old_val = ws_->var(name("N_bu", i, j))->getVal();
+      	Double_t old_err = ws_->var(name("N_bu", i, j))->getError();;
+        Double_t new_val = old_val*lumi;
+        Double_t new_err = old_err*sqrt(lumi);
+        ws_->var(name("N_bu", i, j))->setMax(10*new_val);
+        ws_->var(name("N_bu", i, j))->setVal(new_val);
+        ws_->var(name("N_bu", i, j))->setError(new_err);
+        cout << "channel " << i << " " << j << "; Bu expected " << new_val << " +- " << new_err << "; Bs expected: " << ws_->function(name("N_bs_formula", i, j))->getVal() << "; Bd expected: " << ws_->function(name("N_bd_formula", i, j))->getVal() << endl;
+        ws_->var(name("N_peak", i, j))->setVal(ws_->var(name("N_peak", i, j))->getVal()*lumi);
+        ws_->var(name("N_semi", i, j))->setVal(ws_->var(name("N_semi", i, j))->getVal()*lumi);
+        ws_->var(name("N_comb", i, j))->setVal(ws_->var(name("N_comb", i, j))->getVal()*lumi);
+        cout << "channel " << i << " " << j << "; peak expected: " << ws_->var(name("N_peak", i, j))->getVal() << "; semi expected: " << ws_->var(name("N_semi", i, j))->getVal()  << "; comb expected: " << ws_->var(name("N_comb", i, j))->getVal() << endl;
       }
     }
   }
@@ -1385,7 +1398,6 @@ void pdf_fitData::randomize_constraints(RooWorkspace* ws) {
     cout << "no BF!" << endl;
     return;
   }
-  if (!randomsyst) return;
 
   RooDataSet* fs_over_fu_ds = ws->pdf("fs_over_fu_gau")->generate(RooArgSet(*ws->var("fs_over_fu")), 1);
   ws->var("fs_over_fu")->setVal(fs_over_fu_ds->get(0)->getRealValue("fs_over_fu"));
@@ -1542,4 +1554,22 @@ void pdf_fitData::print_gaussian_constraints() {
 		size_t found1 = name.find("gau");
 		if (found1 != string::npos) var_Obj2->Print();
 	}
+}
+
+void pdf_fitData::free_rare(int free) {
+	bool peak_const = true;
+	bool semi_const = true;
+	if (free == 1) semi_const = false;
+	if (free == 2) peak_const = false;
+	if (free == 3) {
+		semi_const = false;
+		peak_const = false;
+	}
+
+  for (int i = 0; i < channels; i++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
+    	ws_->var(name("N_peak", i, j))->setConstant(peak_const);
+    	ws_->var(name("N_semi", i, j))->setConstant(semi_const);
+    }
+  }
 }
