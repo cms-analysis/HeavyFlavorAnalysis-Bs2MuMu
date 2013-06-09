@@ -451,8 +451,8 @@ void pdf_analysis::define_bf(int i, int j) {
     RooRealVar BF_bd("BF_bd", "Bd2MuMu branching fraction", Bd2MuMu_SM_BF_val, 0., 1e-8);
     RooRealVar BF_bsbd("BF_bsbd", "Bs2MuMu / Bd2MuMu branching fraction ratio", Bd2MuMu_SM_BF_val/Bs2MuMu_SM_BF_val, 0., 20.);
 
-    RooRealVar fs_over_fu("fs_over_fu", "fs_over_fu", fs_over_fu_val, fs_over_fu_val - 10*fs_over_fu_err, fs_over_fu_val + 10*fs_over_fu_err);
-    RooRealVar one_over_BRBR("one_over_BRBR", "one_over_BRBR", one_over_BRBR_val, one_over_BRBR_val - 10*one_over_BRBR_err, one_over_BRBR_val + 10*one_over_BRBR_err);
+    RooRealVar fs_over_fu("fs_over_fu", "fs_over_fu", fs_over_fu_val, max(fs_over_fu_val - 10*fs_over_fu_err, 0.), fs_over_fu_val + 10*fs_over_fu_err);
+    RooRealVar one_over_BRBR("one_over_BRBR", "one_over_BRBR", one_over_BRBR_val, max(one_over_BRBR_val - 10*one_over_BRBR_err, 0.), one_over_BRBR_val + 10*one_over_BRBR_err);
 
     ws_->import(BF_bs);
     ws_->import(BF_bd);
@@ -461,11 +461,11 @@ void pdf_analysis::define_bf(int i, int j) {
     ws_->import(one_over_BRBR);
   }
 
-  RooRealVar N_bu(name("N_bu", i, j), "N_bu", N_bu_val[i][j], N_bu_val[i][j] - 10*N_bu_err[i][j], N_bu_val[i][j] + 10*N_bu_err[i][j]);
+  RooRealVar N_bu(name("N_bu", i, j), "N_bu", N_bu_val[i][j], max(N_bu_val[i][j] - 10*N_bu_err[i][j], 0.), N_bu_val[i][j] + 10*N_bu_err[i][j]);
   ws_->import(N_bu);
 
-  RooRealVar effratio_bs(name("effratio_bs", i, j), "effratio_bs", effratio_bs_val[i][j], effratio_bs_val[i][j] - 10*effratio_bs_err[i][j], effratio_bs_val[i][j] + 10*effratio_bs_err[i][j]);
-  RooRealVar effratio_bd(name("effratio_bd", i, j), "effratio_bd", effratio_bd_val[i][j], effratio_bd_val[i][j] - 10*effratio_bd_err[i][j], effratio_bd_val[i][j] + 10*effratio_bd_err[i][j]);
+  RooRealVar effratio_bs(name("effratio_bs", i, j), "effratio_bs", effratio_bs_val[i][j], max(effratio_bs_val[i][j] - 10*effratio_bs_err[i][j], 0.), effratio_bs_val[i][j] + 10*effratio_bs_err[i][j]);
+  RooRealVar effratio_bd(name("effratio_bd", i, j), "effratio_bd", effratio_bd_val[i][j], max(effratio_bd_val[i][j] - 10*effratio_bd_err[i][j], 0.), effratio_bd_val[i][j] + 10*effratio_bd_err[i][j]);
 
   RooFormulaVar N_bs_constr(name("N_bs_formula", i, j), "N_bs(i) = BF * K(i)",  "@0*@1*@2*@3*@4", RooArgList( *ws_->var("BF_bs"), *ws_->var(name("N_bu", i, j)), *ws_->var("fs_over_fu"), effratio_bs, *ws_->var("one_over_BRBR")));
   RooFormulaVar N_bsbd_constr(name("N_bs_formula", i, j), "N_bs(i) = BF * K(i)",  "@0*@1*@2*@3*@4*@5", RooArgList( *ws_->var("BF_bd"), *ws_->var("BF_bsbd"), *ws_->var(name("N_bu", i, j)), *ws_->var("fs_over_fu"), effratio_bs, *ws_->var("one_over_BRBR")));
@@ -1144,7 +1144,10 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
       found = left_s.find(end_Nbu[i].first);
       if (found != string::npos) N_bu_val[i+offset][0] = number;
       found = left_s.find(end_Nbu[i].second);
-      if (found != string::npos) N_bu_err[i+offset][0] = number;
+      if (found != string::npos) {
+      	if (number > 1000000) N_bu_err[i+offset][0] = sqrt(N_bu_val[i+offset][0]);
+      	else N_bu_err[i+offset][0] = number;
+      }
     }
   }
 
@@ -1404,6 +1407,15 @@ void pdf_analysis::setSBslope(string pdf, RooAbsData *sb_data) {
   }
 }
 
+string pdf_analysis::get_title(int i) {
+	string output(" ");
+	if (i == 0) output = "CMS preliminary - #sqrt{s} = 7 TeV - Barrel 2011";
+	if (i == 1) output = "CMS preliminary - #sqrt{s} = 7 TeV - Endcap 2011";
+	if (i == 2) output = "CMS preliminary - #sqrt{s} = 7 TeV - Barrel 2012";
+	if (i == 3) output = "CMS preliminary - #sqrt{s} = 7 TeV - Endcap 2012";
+	return output;
+}
+
 int pdf_analysis::bdt_index(int eta_ch, double bdt) {
   if (bdt < 0.1) return -1;
   if (eta_ch == 0) {
@@ -1514,3 +1526,4 @@ vector <int> pdf_analysis::get_EtaBdt_bins(int index) {
   }
   return indexes;
 }
+

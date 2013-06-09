@@ -69,6 +69,8 @@ class pdf_fitData : public pdf_analysis {
     void set_final_pdf();
     void reset_minmax();
 
+    void print_gaussian_constraints();
+
   protected:
 
     void define_constraints(int i, int j);

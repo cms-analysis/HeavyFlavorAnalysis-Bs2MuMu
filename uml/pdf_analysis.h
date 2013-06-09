@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <algorithm>
 
 #include "TFile.h"
 #include "TH1.h"
@@ -138,11 +139,11 @@ protected:
   string ch_s_;
   int ch_i_;
   RooWorkspace* ws_;
-//  RooAbsData* rds_;
 
   double ratio_;
 
   string get_address(string name, string pdf = "", bool channeling = true);
+  string get_title(int i);
 
   RooArgSet* obs;
 

@@ -228,7 +228,7 @@ bool pdf_fitData::parse(char *cutName, float cut) {
 
 void pdf_fitData::print_estimate() {
 	cout << "used estimates" << endl;
-	cout << "bs bd peak semi comb" << endl;
+	cout << "canale bs bd peak semi comb" << endl;
 	if (simul_ && !simul_bdt_ && !simul_all_) {
 		for (int i = 0; i < channels; i++) {
 			cout << i << " " ;
@@ -242,6 +242,7 @@ void pdf_fitData::print_estimate() {
 				cout << " " << ws_->function(pdf_analysis::name("N_bd_formula", i))->getVal();
 			}
 			cout << " " << ws_->var(pdf_analysis::name("N_peak", i))->getVal() << " " << ws_->var(pdf_analysis::name("N_semi", i))->getVal()  << " " << ws_->var(pdf_analysis::name("N_comb", i))->getVal() << endl;
+			cout << " " << ws_->var(pdf_analysis::name("N_peak", i))->getError() << " " << ws_->var(pdf_analysis::name("N_semi", i))->getError()  << " " << ws_->var(pdf_analysis::name("N_comb", i))->getError() << endl << endl;
 		}
 	}
 	else if (!simul_) {
@@ -374,13 +375,13 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
         slice_set.add(*ws->cat("etacat"));
         projw_set.add(*ws->cat("etacat"));
         cut = Form("etacat==etacat::etacat_%d", i);
-        title = Form("Candidate invariant mass for etacat %d", i);
+        title = get_title(i);
       }
       else if (simul_bdt_ && !simul_all_) {
         slice_set.add(*ws->cat("etacat"));
         projw_set.add(*ws->cat("etacat"));
         cut = Form("etacat==etacat::etacat_%d&&bdtcat==bdtcat::bdtcat_%d", i, j);
-        title = Form("Candidate invariant mass for etacat %d and bdtcat %d", i, j);
+        title = Form("%s - bdt bin %d", get_title(i).c_str(), j);
         slice_set.add(*ws->cat("bdtcat"));
         projw_set.add(*ws->cat("bdtcat"));
       }
@@ -388,7 +389,7 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
         slice_set.add(*ws->cat("allcat"));
         projw_set.add(*ws->cat("allcat"));
         cut = Form("allcat==allcat::allcat_%d", super_index(i, j));
-        title = Form("Candidate invariant mass for etacat %d and bdtcat %d", i, j);
+        title = Form("%s - bdt bin %d", get_title(i).c_str(), j);
       }
       if (pee) projw_set.add(*ws->var("MassRes"));
 
@@ -549,8 +550,8 @@ void pdf_fitData::fill_dataset(RooDataSet* dataset, bool cut_b, vector <double> 
     reduced_tree->SetBranchAddress("muid",  &muid_t);
     for (int i = 0; i < reduced_tree->GetEntries(); i++) {
       reduced_tree->GetEntry(i);
-      if (m_t > 4.9 && m_t < 5.9 && muid_t) {
-      	if (me_t < 0.0 || me_t > 0.1) continue; //skip wrong mass scale
+      if (m_t > 4.9 && m_t < 5.9 && muid_t && muid_t) {
+      	if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass scale
         events++;
         Mass->setVal(m_t);
         bdt->setVal(bdt_t);
@@ -726,7 +727,7 @@ void pdf_fitData::define_constraints(int i, int j) {
     ws_->import(one_over_BRBR_gau);
   }
 
-  RooGaussian N_bu_gau(name("N_bu_gau", i, j), "N_bu_gau", *ws_->var(name("N_bu", i, j)), RooConst(N_bu_val[i][j]), RooConst(N_bu_err[i][j] < 1000000 ? N_bu_err[i][j] : sqrt(N_bu_val[i][j])));
+  RooGaussian N_bu_gau(name("N_bu_gau", i, j), "N_bu_gau", *ws_->var(name("N_bu", i, j)), RooConst(N_bu_val[i][j]), RooConst(N_bu_err[i][j]));
   ws_->import(N_bu_gau);
 
   RooGaussian effratio_gau_bs(name("effratio_gau_bs", i, j), "effratio_gau_bs", *ws_->var(name("effratio_bs", i, j)), RooConst(effratio_bs_val[i][j]), RooConst(effratio_bs_err[i][j]));
@@ -1123,8 +1124,10 @@ void pdf_fitData::make_models() {
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < bdt_index_max(i); j++) {
       nuisanceParams.add(*ws_->var(name("N_comb", i, j)));
-      nuisanceParams.add(*ws_->var(name("N_semi", i, j)));
-      if (rare_constr_) nuisanceParams.add(*ws_->var(name("N_peak", i, j)));
+      if (rare_constr_) {
+      	nuisanceParams.add(*ws_->var(name("N_peak", i, j)));
+      	nuisanceParams.add(*ws_->var(name("N_semi", i, j)));
+      }
       nuisanceParams.add(*ws_->var(name("exp_comb", i, j)));
       if (!SM_ && !bd_constr_ && BF_ < 2 && !Bd) nuisanceParams.add(*ws_->var(name("N_bd", i, j)));
       else if (Bd && BF_ < 1) nuisanceParams.add(*ws_->var(name("N_bs", i, j)));
@@ -1311,7 +1314,9 @@ void pdf_fitData::plot_hypotest(HypoTestResult *hts) {
   c_plot.Print( (get_address(Form("hypotest%d", sign), Bd ? "Bd" : "") + ".pdf").c_str());
   c_plot.Print( (get_address(Form("hypotest%d", sign), Bd ? "Bd" : "") + ".root").c_str());
   c_plot.Print( (get_address(Form("hypotest%d", sign), Bd ? "Bd" : "") + ".C").c_str());
+  if (NExp < 100) return;
   plot->SetLogYaxis(true);
+  plot->Draw();
   c_plot.Print( (get_address(Form("hypotest_log_%d", sign), Bd ? "Bd" : "") + ".gif").c_str());
   c_plot.Print( (get_address(Form("hypotest_log_%d", sign), Bd ? "Bd" : "") + ".pdf").c_str());
   c_plot.Print( (get_address(Form("hypotest_log_%d", sign), Bd ? "Bd" : "") + ".root").c_str());
@@ -1365,7 +1370,9 @@ void pdf_fitData::setnewlumi() {
     for (int i = 0; i < channels; i++) {
       for (int j = 0; j < bdt_index_max(i); j++) {
         double old_val = ws_->var(name("N_bu", i, j))->getVal();
+        double old_err = ws_->var(name("N_bu", i, j))->getError();
         ws_->var(name("N_bu", i, j))->setVal(old_val * lumi);
+        ws_->var(name("N_bu", i, j))->setError(old_err * sqrt(lumi));
         cout << "channel " << i << " " << j << "; Bs expected: " << ws_->function(name("N_bs_formula", i, j))->getVal() << "; Bd expected: " << ws_->function(name("N_bd_formula", i, j))->getVal() << endl;
       }
     }
@@ -1523,4 +1530,16 @@ void pdf_fitData::reset_minmax() {
       ws_->var(name("N_comb", i, j))->setMax(ws_->var(name("N_comb", i, j))->getVal() + 10 * ws_->var(name("N_comb", i, j))->getError());
     }
   }
+}
+
+void pdf_fitData::print_gaussian_constraints() {
+	cout << "gaussian constraints" << endl;
+	RooArgSet * set2 = ws_->pdf(pdfname.c_str())->getComponents();
+	TIterator* it2 = set2->createIterator();
+	RooAbsPdf* var_Obj2 = 0;
+	while((var_Obj2 = (RooAbsPdf*)it2->Next())){
+		string name = var_Obj2->GetName();
+		size_t found1 = name.find("gau");
+		if (found1 != string::npos) var_Obj2->Print();
+	}
 }

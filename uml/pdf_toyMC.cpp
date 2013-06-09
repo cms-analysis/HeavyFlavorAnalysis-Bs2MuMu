@@ -63,7 +63,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
   vector < vector  <TH1D*> > comb_sigma_h(channels, vector <TH1D*> (channels_bdt));
   vector < vector  <TH2D*> > corr_Nbs_Nbd_vs_N_bs_h(channels, vector <TH2D*> (channels_bdt));
 
-  TH1D * sign_h = new TH1D("sign_h", "sign_h", 100, 0, 10);
+  TH1D * sign_h = new TH1D("sign_h", "sign_h;#sigma", 100, 0, 10);
   TH1D * BF_bs_mean_h = new TH1D("BF_bs_mean_h", "BF_bs_mean_h", 100, 1.e-10, 1.e-8);
   TH1D * BF_bs_sigma_h = new TH1D("BF_bs_sigma_h", "BF_bs_sigma_h", 100, 1.e-10, 1.e-8);
   TH1D * BF_bd_mean_h = new TH1D("BF_bd_mean_h", "BF_bd_mean_h", 100, 1.e-10, 1.e-8);
@@ -127,14 +127,14 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
         ws_temp->var(name("N_bs", j))->setVal((int)estimate_bs[j]);
         if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setVal((int)estimate_bd[j]);
         ws_temp->var(name("N_comb", j))->setVal((int)estimate_comb[j]);
-        ws_temp->var(name("N_bs", j))->setConstant(kFALSE);
+//        ws_temp->var(name("N_bs", j))->setConstant(kFALSE);
         if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setConstant(kFALSE);
-        ws_temp->var(name("N_comb", j))->setConstant(kFALSE);
+//        ws_temp->var(name("N_comb", j))->setConstant(kFALSE);
         if (!rare_constr_) {
         	ws_temp->var(name("N_peak", j))->setVal((int)estimate_peak[j]);
-        	ws_temp->var(name("N_peak", j))->setConstant(kFALSE);
+//        	ws_temp->var(name("N_peak", j))->setConstant(kFALSE);
         	ws_temp->var(name("N_semi", j))->setVal((int)estimate_semi[j]);
-        	ws_temp->var(name("N_semi", j))->setConstant(kFALSE);
+//        	ws_temp->var(name("N_semi", j))->setConstant(kFALSE);
         }
       }
     }
@@ -144,13 +144,13 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
           ws_temp->var(name("N_bs", i, j))->setVal((int)estimate2D_bs[i][j]);
           if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setVal((int)estimate2D_bd[i][j]);
           ws_temp->var(name("N_comb", i, j))->setVal((int)estimate2D_comb[i][j]);
-          ws_temp->var(name("N_bs", i, j))->setConstant(kFALSE);
+//          ws_temp->var(name("N_bs", i, j))->setConstant(kFALSE);
           if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setConstant(kFALSE);
-          ws_temp->var(name("N_comb", i, j))->setConstant(kFALSE);
+//          ws_temp->var(name("N_comb", i, j))->setConstant(kFALSE);
           if (!rare_constr_) {
-          	ws_temp->var(name("N_peak", i, j))->setConstant(kFALSE);
+//          	ws_temp->var(name("N_peak", i, j))->setConstant(kFALSE);
           	ws_temp->var(name("N_peak", i, j))->setVal((int)estimate2D_peak[i][j]);
-          	ws_temp->var(name("N_semi", i, j))->setConstant(kFALSE);
+//          	ws_temp->var(name("N_semi", i, j))->setConstant(kFALSE);
           	ws_temp->var(name("N_semi", i, j))->setVal((int)estimate2D_semi[i][j]);
           }
         }
@@ -428,9 +428,9 @@ RooFitResult* pdf_toyMC::fit_pdf(RooAbsData* data, int printlevel, RooWorkspace*
 
 void pdf_toyMC::fit_pulls(RooRealVar* pull, RooDataSet* rds, int i, int j) {
 
-  RooRealVar* mean_bs = new RooRealVar("mean_bs", "mean_bs", -5., 5.);
-  RooRealVar* sigma_bs = new RooRealVar("sigma_bs", "sigma_bs", 0.001, 5.);
-  RooGaussian* gauss_bs = new RooGaussian("gauss_bs", "gauss_bs", *pull, *mean_bs, *sigma_bs);
+  RooRealVar* mean_bs = new RooRealVar("mean", "mean", -5., 5.);
+  RooRealVar* sigma_bs = new RooRealVar("sigma", "sigma", 0.001, 5.);
+  RooGaussian* gauss_bs = new RooGaussian("gauss", "gauss", *pull, *mean_bs, *sigma_bs);
   gauss_bs->fitTo(*rds);
   
   RooPlot *rp_bs = pull->frame();

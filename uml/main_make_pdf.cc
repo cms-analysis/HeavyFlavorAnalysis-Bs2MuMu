@@ -93,8 +93,7 @@ int main(int argc, char* argv[]) {
       cout << endl << decays_filename[i] << endl;
       TFile* smalltree_f = new TFile(decays_filename[i].c_str(), "UPDATE");
       TTree* smalltree = (TTree*)smalltree_f->Get(decays_treename[i].c_str());
-      TTree* smalltree_cutted = smalltree->CopyTree("4.9<m&&m<5.9&&muid");
-      TTree* reduced_tree = smalltree_cutted->CopyTree(cuts.c_str()); // string cuts
+      TTree* reduced_tree = smalltree->CopyTree(cuts.c_str()); // string cuts
       Double_t m_t, eta_t, m1eta_t, m2eta_t, bdt_t, me_t;
       Bool_t muid_t;
       reduced_tree->SetBranchAddress("m",     &m_t);
@@ -106,31 +105,48 @@ int main(int argc, char* argv[]) {
       reduced_tree->SetBranchAddress("muid",  &muid_t);
       double entries = reduced_tree->GetEntries();
       double events_0 = 0, events_1 = 0, events_2 = 0, events_3 = 0;
-      for (int j = 0; j < entries && (j < 50000 || i == decays_n - 1); j++) {
+      for (int j = 0; j < entries && (j < 100000 || i == decays_n - 1); j++) {
         reduced_tree->GetEntry(j);
+        Bool_t barrel = fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4;
+        if (m_t > 5.20 && m_t < 5.45 && i == decays_n-1) continue; // skip signal windows for comb bkg
+        if (m_t < 4.90 || m_t > 5.90 || !muid_t) continue; // skip outside range
+        if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass error
         if (y == 0) {
-          if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) events_0++;
-          else events_1++;
+          if (barrel) {
+          	if (cuts_f_b && bdt_t < cuts_v[0]) continue;
+          	events_0++;
+          }
+          else {
+          	if (cuts_f_b && bdt_t < cuts_v[1]) continue;
+          	events_1++;
+          }
         }
         else {
-          if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) events_2++;
-          else events_3++;
+          if (barrel) {
+          	if (cuts_f_b && bdt_t < cuts_v[2]) continue;
+          	events_2++;
+          }
+          else {
+          	if (cuts_f_b && bdt_t < cuts_v[3]) continue;
+          	events_3++;
+          }
         }
       }
-      for (int j = 0; j < entries && (j < 50000 || i == decays_n - 1); j++) {
+      for (int j = 0; j < entries && (j < 100000 || i == decays_n - 1); j++) {
         reduced_tree->GetEntry(j);
+        Bool_t barrel = fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4;
         m->setVal(m_t);
         eta->setVal(eta_t);
         m1eta->setVal(m1eta_t);
         m2eta->setVal(m2eta_t);
         bdt->setVal(bdt_t);
         if (m_t > 5.20 && m_t < 5.45 && i == decays_n-1) continue; // skip signal windows for comb bkg
-        if (m_t < 4.90 || m_t > 5.90) continue; // skip outside range
+        if (m_t < 4.90 || m_t > 5.90 || !muid_t) continue; // skip outside range
         if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass error
         MassRes->setVal(me_t);
         /// eta channels
         int eta_channel = -1;
-        if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) {
+        if (barrel) {
           eta_channel = 0 + 2*yy;
           channel_cat->setIndex(eta_channel);
           if (i != decays_n-1 || newcomb) {
@@ -161,11 +177,11 @@ int main(int argc, char* argv[]) {
         double weight = 1;
         if (i > 1 && i < decays_n-1) {
           if (y == 0) {
-            if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) weight = exp_v_0[i] / events_0;
+            if (barrel) weight = exp_v_0[i] / events_0;
             else weight = exp_v_1[i] / events_1;
           }
           else {
-            if ( fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4) weight = exp_v_2[i] / events_2;
+            if (barrel) weight = exp_v_2[i] / events_2;
             else weight = exp_v_3[i] / events_3;
           }
         }
@@ -175,7 +191,7 @@ int main(int argc, char* argv[]) {
         if (simul_all) varlist_tmp.add(*all_cat);
         rds_smalltree[i]->add(varlist_tmp, weight);
       }
-      cout << rds_smalltree[i]->GetName() << " done: " << rds_smalltree[i]->numEntries() << " <--- " << smalltree_cutted->GetEntries() << " <--- " << smalltree->GetEntries() << endl;
+      cout << rds_smalltree[i]->GetName() << " done: " << rds_smalltree[i]->numEntries() << " <--- " << smalltree->GetEntries() << endl;
     }
   }
 
