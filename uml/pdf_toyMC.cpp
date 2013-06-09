@@ -428,16 +428,16 @@ RooFitResult* pdf_toyMC::fit_pdf(RooAbsData* data, int printlevel, RooWorkspace*
 
 void pdf_toyMC::fit_pulls(RooRealVar* pull, RooDataSet* rds, int i, int j) {
 
-  RooRealVar* mean_bs = new RooRealVar("mean", "mean", -5., 5.);
-  RooRealVar* sigma_bs = new RooRealVar("sigma", "sigma", 0.001, 5.);
-  RooGaussian* gauss_bs = new RooGaussian("gauss", "gauss", *pull, *mean_bs, *sigma_bs);
-  gauss_bs->fitTo(*rds);
+  RooRealVar* mean = new RooRealVar("mean", "mean", -5., 5.);
+  RooRealVar* sigma = new RooRealVar("sigma", "sigma", 0.001, 5.);
+  RooGaussian* gauss = new RooGaussian("gauss", "gauss", *pull, *mean, *sigma);
+  gauss->fitTo(*rds);
   
   RooPlot *rp_bs = pull->frame();
   rds->plotOn(rp_bs, Binning(40));
   rds->statOn(rp_bs, Layout(0.55, 0.9, 0.9));
-  gauss_bs->plotOn(rp_bs, LineColor(kBlue));
-  gauss_bs->paramOn(rp_bs, Layout(0.55, 0.9, 0.7));
+  gauss->plotOn(rp_bs, LineColor(kBlue));
+  gauss->paramOn(rp_bs, Layout(0.55, 0.9, 0.7));
   TCanvas* canvas_bs = new TCanvas("canvas_bs", "canvas_bs", 600, 600);
   rp_bs->Draw();
   channel = simul_ ? i : ch_i_;
@@ -446,6 +446,9 @@ void pdf_toyMC::fit_pulls(RooRealVar* pull, RooDataSet* rds, int i, int j) {
   canvas_bs->Print((get_address(pull->GetName(), pdfname) + ".pdf").c_str());
   delete rp_bs;
   delete canvas_bs;
+  delete gauss;
+  delete mean;
+  delete sigma;
 }
 
 void pdf_toyMC::print_histos(TH1D* histos, int i, int j) {
