@@ -9,22 +9,12 @@ pdf_fitData::pdf_fitData(bool print, string input_estimates, string range, int B
   estimate_semi.resize(channels, -1);
   estimate_comb.resize(channels, -1);
 
-//  systematics_bs.resize(channels);
-//  systematics_bd.resize(channels);
-//  systematics_semi.resize(channels);
-//  systematics_comb.resize(channels);
-
   estimate2D_channel.resize(channels, vector<double> (channels_bdt, -1));
   estimate2D_bs.resize(channels, vector<double> (channels_bdt, -1));
   estimate2D_bd.resize(channels, vector<double> (channels_bdt, -1));
   estimate2D_peak.resize(channels, vector<double> (channels_bdt, -1));
   estimate2D_semi.resize(channels, vector<double> (channels_bdt, -1));
   estimate2D_comb.resize(channels, vector<double> (channels_bdt, -1));
-//  systematics2D_channel.resize(channels, vector<double> (channels_bdt));
-//  systematics2D_bs.resize(channels, vector<double> (channels_bdt));
-//  systematics2D_bd.resize(channels, vector<double> (channels_bdt));
-//  systematics2D_semi.resize(channels, vector<double> (channels_bdt));
-//  systematics2D_comb.resize(channels, vector<double> (channels_bdt));
 
   lumi = -1;
 
@@ -604,24 +594,9 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TT
   else {
     if (syst && randomsyst) randomize_constraints(ws_);
 
-    if (!simul_) {
-//      ws_->var("N_bs")->setVal(estimate_bs[ch_i_]);
-//      if (!SM_ && !bd_constr_) ws_->var("N_bd")->setVal(estimate_bd[ch_i_]);
-//      else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate_bd[ch_i_]/estimate_bd[ch_i_]);
-//      ws_->var("N_semi")->setVal(estimate_semi[ch_i_]);
-//      ws_->var("N_comb")->setVal(estimate_comb[ch_i_]);
-      global_data = ws_->pdf("pdf_ext_total")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")), Extended());
-    }
-    else if (simul_ && !simul_bdt_ && !simul_all_) {
-      for (int i = 0; i < channels; i++) {
-//        ws_->var(name("N_bs", i))->setVal(estimate_bs[i]);
-//        if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i))->setVal(estimate_bd[i]);
-//        else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate_bd[i]/estimate_bd[i]);
-//        ws_->var(name("N_semi", i))->setVal(estimate_semi[i]);
-//        ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
-      }
-      if (!asimov_) global_data = ws_->pdf("pdf_ext_simul")->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")), Extended());
-      else global_datahist = ws_->pdf("pdf_ext_simul")->generateBinned(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")), ExpectedData());
+    if (!simul_ || (simul_ && !simul_bdt_ && !simul_all_)) {
+      if (!asimov_) global_data = ws_->pdf(pdfname.c_str())->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")), Extended());
+      else global_datahist = ws_->pdf(pdfname.c_str())->generateBinned(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->var("bdt"), *ws_->cat("etacat")), ExpectedData());
     }
     else if (simul_ && (simul_bdt_ || simul_all_)) {
       RooArgSet set(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->cat("etacat"), *ws_->cat("bdtcat"));
@@ -631,11 +606,6 @@ void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TT
       	if (years_ == "0" && i > 1) break;
       	if (years_ == "1" && i < 2) continue;
         for (int j = 0; j < bdt_index_max(i); j++) {
-//          ws_->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
-//          if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
-//          else if (bd_constr_) ws_->var("bd_over_bs")->setVal(estimate2D_bd[i][j]/estimate2D_bd[i][j]);
-//          if (!rare_constr_) ws_->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
-//          ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
           RooDataSet* data_i = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes")), Extended());
           channels_cat->setIndex(i);
           bdt_cat->setIndex(j);
@@ -771,10 +741,8 @@ void pdf_fitData::define_constraints(int i, int j) {
 
 void pdf_fitData::define_total_extended(int i, int j) {
   RooArgList pdf_list(*ws_->pdf(name("pdf_bs", i, j)), *ws_->pdf(name("pdf_bd", i, j)), *ws_->pdf(name("pdf_comb", i, j)));
-//  if (BF_ > 0) {
-  	pdf_list.add(*ws_->pdf(name("pdf_semi", i, j)));
-  	pdf_list.add(*ws_->pdf(name("pdf_peak", i, j)));
-//  }
+  pdf_list.add(*ws_->pdf(name("pdf_semi", i, j)));
+  pdf_list.add(*ws_->pdf(name("pdf_peak", i, j)));
 
   RooArgList N_list("varlist");
   if (BF_ > 0) N_list.add(*ws_->function(name("N_bs_formula", i, j)));
@@ -783,10 +751,8 @@ void pdf_fitData::define_total_extended(int i, int j) {
   else if (BF_ > 1) N_list.add(*ws_->function(name("N_bd_formula", i, j)));
   else N_list.add(*ws_->var(name("N_bd", i, j)));
   N_list.add(*ws_->var(name("N_comb", i, j)));
-//  if (BF_ > 0) {
-  	N_list.add(*ws_->var(name("N_semi", i, j)));
-  	N_list.add(*ws_->var(name("N_peak", i, j)));
-//  }
+  N_list.add(*ws_->var(name("N_semi", i, j)));
+  N_list.add(*ws_->var(name("N_peak", i, j)));
 
   RooAddPdf pdf_ext_sum(name("pdf_ext_sum", i, j), "pdf_ext_sum", pdf_list, N_list);
   RooArgList constraints_list(*ws_->pdf(name("N_bu_gau", i, j)), *ws_->pdf("fs_over_fu_gau"), *ws_->pdf(name("effratio_gau_bs", i, j)), *ws_->pdf("one_over_BRBR_gau"));
@@ -1573,3 +1539,4 @@ void pdf_fitData::free_rare(int free) {
     }
   }
 }
+

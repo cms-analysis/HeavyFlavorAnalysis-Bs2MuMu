@@ -146,47 +146,6 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     if (simul_ && !simul_bdt_ && simul_all_) vars.add(*ws_temp->cat("allcat"));
     if (bdt_fit_) vars.add(*ws_temp->var("bdt"));
     RooDataSet* data = new RooDataSet("data", "data", vars);
-/// setup
-//    if (!simul_bdt_ && !simul_all_) { /// simple 1D or 2D
-//      for (int j = 0; j < channels; j++) {
-//        ws_temp->var(name("N_bs", j))->setVal((int)estimate_bs[j]);
-//        if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setVal((int)estimate_bd[j]);
-//        ws_temp->var(name("N_comb", j))->setVal((int)estimate_comb[j]);
-////        ws_temp->var(name("N_bs", j))->setConstant(kFALSE);
-//        if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", j))->setConstant(kFALSE);
-////        ws_temp->var(name("N_comb", j))->setConstant(kFALSE);
-//        if (!rare_constr_) {
-//        	ws_temp->var(name("N_peak", j))->setVal((int)estimate_peak[j]);
-////        	ws_temp->var(name("N_peak", j))->setConstant(kFALSE);
-//        	ws_temp->var(name("N_semi", j))->setVal((int)estimate_semi[j]);
-////        	ws_temp->var(name("N_semi", j))->setConstant(kFALSE);
-//        }
-//      }
-//    }
-//    else { /// 1D with 2 categories
-//      for (int i = 0; i < channels; i++) {
-//        for (int j = 0; j < bdt_index_max(i); j++) {
-//          ws_temp->var(name("N_bs", i, j))->setVal((int)estimate2D_bs[i][j]);
-//          if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setVal((int)estimate2D_bd[i][j]);
-//          ws_temp->var(name("N_comb", i, j))->setVal((int)estimate2D_comb[i][j]);
-////          ws_temp->var(name("N_bs", i, j))->setConstant(kFALSE);
-//          if (!SM_ && !bd_constr_) ws_temp->var(name("N_bd", i, j))->setConstant(kFALSE);
-////          ws_temp->var(name("N_comb", i, j))->setConstant(kFALSE);
-//          if (!rare_constr_) {
-////          	ws_temp->var(name("N_peak", i, j))->setConstant(kFALSE);
-//          	ws_temp->var(name("N_peak", i, j))->setVal((int)estimate2D_peak[i][j]);
-////          	ws_temp->var(name("N_semi", i, j))->setConstant(kFALSE);
-//          	ws_temp->var(name("N_semi", i, j))->setVal((int)estimate2D_semi[i][j]);
-//          }
-//        }
-//      }
-//    }
-//    if (BF_ > 0) {
-//      ws_temp->var("BF_bs")->setVal(Bs2MuMu_SM_BF_val);
-//      if (BF_ > 1) {
-//        ws_temp->var("BF_bd")->setVal(Bd2MuMu_SM_BF_val);
-//      }
-//    }
 
 /// GENERATION
     if (syst && randomsyst) randomize_constraints(ws_temp);
@@ -476,7 +435,6 @@ void pdf_toyMC::fit_pulls(RooRealVar* pull, RooDataSet* rds, int i, int j) {
   
   RooPlot *rp_bs = pull->frame();
   rds->plotOn(rp_bs, Binning(40));
-//  rds->statOn(rp_bs, Layout(0.55, 0.9, 0.9));
   gauss_pull->plotOn(rp_bs, LineColor(kBlue));
   gauss_pull->paramOn(rp_bs, Layout(0.55, 0.9, 0.9));
   TCanvas* canvas_bs = new TCanvas("canvas_bs", "canvas_bs", 600, 600);
@@ -572,32 +530,7 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
 }
 
 void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
-//  if (!simul_bdt_ && !simul_all_) {
-//    for (int i = 0; i < channels; i++) {
-//      ws_->var(name("N_bs", i))->setVal(estimate_bs[i]);
-//      if (!rare_constr_) ws_->var(name("N_semi", i))->setVal(estimate_semi[i]);
-//      ws_->var(name("N_comb", i))->setVal(estimate_comb[i]);
-//      if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i))->setVal(estimate_bd[i]);
-//    }
-//    if (bd_constr_) {
-//      double ratio = (double) estimate_bd[0] / estimate_bs[0]; // it's the same in every channel
-//      ws_->var("Bd_over_Bs")->setVal(ratio);
-//    }
-//  }
-//  else {
-//    for (int i = 0; i < channels; i++) {
-//      for (int j = 0; j < bdt_index_max(i); j++) {
-//        ws_->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
-//        if (!rare_constr_) ws_->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
-//        ws_->var(name("N_comb", i, j))->setVal(estimate2D_comb[i][j]);
-//        if (!SM_ && !bd_constr_) ws_->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
-//      }
-//    }
-//    if (bd_constr_) {
-//      double ratio = (double) estimate2D_bd[0][0] / estimate2D_bs[0][0]; // it's the same in every channel
-//      ws_->var("Bd_over_Bs")->setVal(ratio);
-//    }
-//  }
+
   RooArgSet obsv(*ws_->var("Mass"), "obsv");
   if (bdt_fit_) obsv.add(*ws_->var("bdt"));
   if (simul_ && !simul_bdt_ && !simul_all_) obsv.add(*ws_->cat("etacat"));
@@ -623,15 +556,7 @@ void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
   }
 
   vector <vector <RooDLLSignificanceMCSModule*> > sigModule(channels, vector <RooDLLSignificanceMCSModule*> (channels_bdt));
-  if (BF_ == 0) {
-//    for (int i = 0; i < channels; i++) {
-//      for (int j = 0; j < bdt_index_max(i); j++) {
-//        sigModule[i][j] = new RooDLLSignificanceMCSModule(*ws_->var(name("N_bs", i, j)), 0);
-//        mcstudy->addModule(*sigModule[i][j]);
-//      }
-//    }
-  }
-  else {
+  if (BF_ != 0) {
     sigModule[0][0] = new RooDLLSignificanceMCSModule(*ws_->var("BF_bs"), 0);
     mcstudy->addModule(*sigModule[0][0]);
   }

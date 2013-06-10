@@ -99,21 +99,6 @@ class pdf_fitData : public pdf_analysis {
     bool asimov_;
     int sign;
 
-//    string input_systematics_;
-//    vector <double> systematics_bs;
-//    vector <double> systematics_bd;
-//    vector <double> systematics_peak;
-//    vector <double> systematics_semi;
-//    vector <double> systematics_comb;
-//    vector <double> systematics_channel;
-//
-//    vector <vector <double> > systematics2D_bs;
-//    vector <vector <double> > systematics2D_bd;
-//    vector <vector <double> > systematics2D_peak;
-//    vector <vector <double> > systematics2D_semi;
-//    vector <vector <double> > systematics2D_comb;
-//    vector <vector <double> > systematics2D_channel;
-
     string pdfname;
     int NExp;
     bool Bd;
