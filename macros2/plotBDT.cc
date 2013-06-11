@@ -18,7 +18,7 @@ plotBDT::plotBDT(const char *files, const char *dir, const char *cuts, int mode)
   string hfname  = fDirectory + "/anaBmm.plotBDT." + fSuffix + ".root";
   cout << "fHistFile: " << hfname << endl;
   //  if (fHistFile) fHistFile->Close();
-  fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
+  fHistFile = TFile::Open(hfname.c_str(), "UPDATE");
 
   fIsMC = false;
 
@@ -95,6 +95,19 @@ plotBDT::plotBDT(const char *files, const char *dir, const char *cuts, int mode)
   setTitles(frmsNpvAdBDTchan0, "N_{PV}", "rms(b)", 0.05, 1.2, 1.5);
   frmsNpvAdBDTchan1 = new TH1D("frmsNpvAdBDTchan1", "frmsNpvAdBDTchan0", 50, 0., 100.);    
   setTitles(frmsNpvAdBDTchan1, "N_{PV}", "rms(b)", 0.05, 1.2, 1.5);
+
+  feffNpvBDTchan0   = new TH1D("feffNpvBDTchan0", "feffNpvBDTchan0", 50, 0., 100.);        
+  setTitles(feffNpvBDTchan0, "N_{PV}", "eff(b)", 0.05, 1.2, 1.5);  
+  feffNpvBDTchan1   = new TH1D("feffNpvBDTchan1", "feffNpvBDTchan0", 50, 0., 100.); 	   
+  setTitles(feffNpvBDTchan1, "N_{PV}", "eff(b)", 0.05, 1.2, 1.5);  
+  feffNpvAcBDTchan0 = new TH1D("feffNpvAcBDTchan0", "feffNpvAcBDTchan0", 50, 0., 100.);    
+  setTitles(feffNpvAcBDTchan0, "N_{PV}", "eff(b)", 0.05, 1.2, 1.5);
+  feffNpvAcBDTchan1 = new TH1D("feffNpvAcBDTchan1", "feffNpvAcBDTchan0", 50, 0., 100.);    
+  setTitles(feffNpvAcBDTchan1, "N_{PV}", "eff(b)", 0.05, 1.2, 1.5);
+  feffNpvAdBDTchan0 = new TH1D("feffNpvAdBDTchan0", "feffNpvAdBDTchan0", 50, 0., 100.);    
+  setTitles(feffNpvAdBDTchan0, "N_{PV}", "eff(b)", 0.05, 1.2, 1.5);
+  feffNpvAdBDTchan1 = new TH1D("feffNpvAdBDTchan1", "feffNpvAdBDTchan0", 50, 0., 100.);    
+  setTitles(feffNpvAdBDTchan1, "N_{PV}", "eff(b)", 0.05, 1.2, 1.5);
 
   for (unsigned int pv = 0; pv < 50; ++pv) {
     h = new TH1D(Form("hNpvBDTChan0_%d", pv), Form("hNpvBDTChan0_%d", pv), 200, -1., 1.);
@@ -207,7 +220,6 @@ plotBDT::plotBDT(const char *files, const char *dir, const char *cuts, int mode)
 plotBDT::~plotBDT() { 
  
   if (fHistFile) {
-    fHistFile->Write();
     fHistFile->Close();
   }
 }
@@ -223,6 +235,8 @@ void plotBDT::makeAll(int channels) {
     //    npvSpecial("SgData");
     //    npvSpecial("NoData");
 
+    cout << "--> plotSSB()" << endl;
+    plotSSB();
     cout << "--> bdtScan()" << endl;
     bdtScan();
     cout << "--> plotEffVsBg(...)" << endl;
@@ -236,8 +250,6 @@ void plotBDT::makeAll(int channels) {
 
     cout << "--> tmvaControlPlots()" << endl;
     tmvaControlPlots();
-    cout << "--> plotSSB()" << endl;
-    plotSSB();
     cout << "--> overlayBdtOutput()" << endl;
     overlayBdtOutput(); 
     cout << "--> validateAllDistributions()" << endl;
@@ -292,7 +304,7 @@ void plotBDT::loopFunction1(int mode) {
   if (!fGoodTracks) return;
   if (!fGoodTracksPt) return;
   if (!fGoodTracksEta) return;
-  if (!fGoodMuonsPt) return;
+  if (!fGoodBdtPt) return;
   if (!fGoodMuonsEta) return;
   if (!fGoodJpsiCuts) return;
   if (fb.m<4.9) return;
@@ -365,6 +377,13 @@ void  plotBDT::resetHistograms() {
   frmsNpvAcBDTchan1->Reset();
   frmsNpvAdBDTchan0->Reset();
   frmsNpvAcBDTchan1->Reset();
+
+  feffNpvBDTchan0->Reset();  
+  feffNpvBDTchan1->Reset();  
+  feffNpvAcBDTchan0->Reset();
+  feffNpvAcBDTchan1->Reset();
+  feffNpvAdBDTchan0->Reset();
+  feffNpvAcBDTchan1->Reset();
 
   for (unsigned int i = 0; i < 50; ++i) {
     fhNpvBDTchan0[i]->Reset();
@@ -499,234 +518,282 @@ void plotBDT::overlap() {
 // ----------------------------------------------------------------------
 void plotBDT::bdtDependencies(string mode) {
 
-  //  string mode = "SgData";
-  cout << "bdtDependencies: running over " << mode << endl;
-  TTree *t = getTree(mode); 
-  if (0 == t) {
-    cout << "plotBDT: no tree found for mode  " << mode << endl;
-    return;
-  } 
-  resetHistograms();
-  setupTree(t, mode);
-  loopOverTree(t, mode, 1); 
+  TH1D *h1 = (TH1D*)fHistFile->Get(Form("%s_hNpvBDTChan0_0", mode.c_str())); 
+  if (0 == h1) {
+    // -- create and save histograms and profiles
+    cout << "bdtDependencies: running over " << mode << endl;
+    TTree *t = getTree(mode); 
+    if (0 == t) {
+      cout << "plotBDT: no tree found for mode  " << mode << endl;
+      return;
+    } 
+    resetHistograms();
+    setupTree(t, mode);
+    loopOverTree(t, mode, 1);  
 
-  // -- rescale errors for low-stats entries
-  for (unsigned int i = 0; i < fNchan; ++i) {
-    for (int j = 1; j < fpMassAcBDT[i]->GetNbinsX(); ++j) {
-      if (fpMassAcBDT[i]->GetBinEntries(j) < 5) fpMassAcBDT[i]->SetBinEntries(j, 0); 
+    for (unsigned int i = 0; i < fNchan; ++i) {
+      fpMassBDT[i]->SetName(Form("%s_pMassBDT%d", mode.c_str(), i));
+      fpMassBDT[i]->SetDirectory(fHistFile);       
+      fpMassBDT[i]->Write(); 
+
+      fpMassAcBDT[i]->SetName(Form("%s_pMassAcBDT%d", mode.c_str(), i));
+      fpMassAcBDT[i]->SetDirectory(fHistFile);       
+      fpMassAcBDT[i]->Write(); 
+
+      fpMassAdBDT[i]->SetName(Form("%s_pMassAdBDT%d", mode.c_str(), i));
+      fpMassAdBDT[i]->SetDirectory(fHistFile);       
+      fpMassAdBDT[i]->Write(); 
+
+      fpNpvBDT[i]->SetName(Form("%s_pNpvBDT%d", mode.c_str(), i));
+      fpNpvBDT[i]->SetDirectory(fHistFile);       
+      fpNpvBDT[i]->Write(); 
+
+      fpNpvAcBDT[i]->SetName(Form("%s_pNpvAcBDT%d", mode.c_str(), i));
+      fpNpvAcBDT[i]->SetDirectory(fHistFile);       
+      fpNpvAcBDT[i]->Write(); 
+
+      fpNpvAdBDT[i]->SetName(Form("%s_pNpvAdBDT%d", mode.c_str(), i));
+      fpNpvAdBDT[i]->SetDirectory(fHistFile);       
+      fpNpvAdBDT[i]->Write(); 
+    }      
+      
+
+    for (unsigned int pv = 0; pv < fhNpvBDTchan0.size(); ++pv) {
+      fhNpvBDTchan0[pv]->SetName(Form("%s_hNpvBDTChan0_%d", mode.c_str(), pv));
+      fhNpvBDTchan0[pv]->SetDirectory(fHistFile); 
+      fhNpvBDTchan0[pv]->Write(); 
+
+      fhNpvBDTchan1[pv]->SetName(Form("%s_hNpvBDTChan1_%d", mode.c_str(), pv));
+      fhNpvBDTchan1[pv]->SetDirectory(fHistFile); 
+      fhNpvBDTchan1[pv]->Write(); 
+
+      fhNpvAcBDTchan0[pv]->SetName(Form("%s_hNpvAcBDTChan0_%d", mode.c_str(), pv));
+      fhNpvAcBDTchan0[pv]->SetDirectory(fHistFile); 
+      fhNpvAcBDTchan0[pv]->Write(); 
+
+      fhNpvAcBDTchan1[pv]->SetName(Form("%s_hNpvAcBDTChan1_%d", mode.c_str(), pv));
+      fhNpvAcBDTchan1[pv]->SetDirectory(fHistFile); 
+      fhNpvAcBDTchan1[pv]->Write(); 
+
+      fhNpvAdBDTchan0[pv]->SetName(Form("%s_hNpvAdBDTChan0_%d", mode.c_str(), pv));
+      fhNpvAdBDTchan0[pv]->SetDirectory(fHistFile); 
+      fhNpvAdBDTchan0[pv]->Write(); 
+
+      fhNpvAdBDTchan1[pv]->SetName(Form("%s_hNpvAdBDTChan1_%d", mode.c_str(), pv));
+      fhNpvAdBDTchan1[pv]->SetDirectory(fHistFile); 
+      fhNpvAdBDTchan1[pv]->Write(); 
     }
 
-    for (int j = 1; j < fpMassBDT[i]->GetNbinsX(); ++j) {
-      if (fpMassBDT[i]->GetBinEntries(j) < 5) fpMassBDT[i]->SetBinEntries(j, 0); 
+  } else {
+    // -- read in histograms and profiles
+    fhNpvBDTchan0.clear(); 
+    fhNpvAcBDTchan0.clear(); 
+    fhNpvAdBDTchan0.clear(); 
+
+    fhNpvBDTchan1.clear(); 
+    fhNpvAcBDTchan1.clear(); 
+    fhNpvAdBDTchan1.clear(); 
+
+    fpMassBDT.clear(); 
+    fpMassAcBDT.clear(); 
+    fpMassAdBDT.clear(); 
+
+    fpNpvBDT.clear(); 
+    fpNpvAcBDT.clear(); 
+    fpNpvAdBDT.clear(); 
+
+    TH1D *h(0); 
+    for (unsigned int pv = 0; pv < 50; ++pv) {
+      h = (TH1D*)fHistFile->Get(Form("%s_hNpvBDTChan0_%d", mode.c_str(), pv));
+      h->Draw(); 
+      fhNpvBDTchan0.push_back(h);
+      h = (TH1D*)fHistFile->Get(Form("%s_hNpvBDTChan1_%d", mode.c_str(), pv));
+      h->Draw(); 
+      fhNpvBDTchan1.push_back(h);
+      
+      h = (TH1D*)fHistFile->Get(Form("%s_hNpvAcBDTChan0_%d", mode.c_str(), pv));
+      h->Draw(); 
+      fhNpvAcBDTchan0.push_back(h);
+      h = (TH1D*)fHistFile->Get(Form("%s_hNpvAcBDTChan1_%d", mode.c_str(), pv));
+      h->Draw(); 
+      fhNpvAcBDTchan1.push_back(h);
+      
+      h = (TH1D*)fHistFile->Get(Form("%s_hNpvAdBDTChan0_%d", mode.c_str(), pv));
+      h->Draw(); 
+      fhNpvAdBDTchan0.push_back(h);
+      h = (TH1D*)fHistFile->Get(Form("%s_hNpvAdBDTChan1_%d", mode.c_str(), pv));
+      h->Draw(); 
+      fhNpvAdBDTchan1.push_back(h);
     }
 
-    for (int j = 1; j < fpNpvBDT[i]->GetNbinsX(); ++j) {
-      if (fpNpvBDT[i]->GetBinEntries(j) < 5) fpNpvBDT[i]->SetBinEntries(j, 0); 
-    }
+    TProfile *p(0); 
+    for (unsigned int i = 0; i < fNchan; ++i) {
+      p = (TProfile*)fHistFile->Get(Form("%s_pMassBDT%d", mode.c_str(), i));
+      p->Draw(); 
+      fpMassBDT.push_back(p); 
 
-    for (int j = 1; j < fpNpvAcBDT[i]->GetNbinsX(); ++j) {
-      if (fpNpvAcBDT[i]->GetBinEntries(j) < 5) fpNpvAcBDT[i]->SetBinEntries(j, 0); 
-    }
+      p = (TProfile*)fHistFile->Get(Form("%s_pMassAcBDT%d", mode.c_str(), i));
+      p->Draw(); 
+      fpMassAcBDT.push_back(p); 
 
-    for (int j = 1; j < fpMassAcBDT[i]->GetNbinsX(); ++j) {
-      if (fpMassAcBDT[i]->GetBinEntries(j) < 5) fpMassAcBDT[i]->SetBinEntries(j, 0); 
-    }
+      p = (TProfile*)fHistFile->Get(Form("%s_pMassAdBDT%d", mode.c_str(), i));
+      p->Draw(); 
+      fpMassAdBDT.push_back(p); 
 
+      p = (TProfile*)fHistFile->Get(Form("%s_pNpvBDT%d", mode.c_str(), i));
+      p->Draw(); 
+      fpNpvBDT.push_back(p); 
+
+      p = (TProfile*)fHistFile->Get(Form("%s_pNpvAcBDT%d", mode.c_str(), i));
+      p->Draw(); 
+      fpNpvAcBDT.push_back(p); 
+
+      p = (TProfile*)fHistFile->Get(Form("%s_pNpvAdBDT%d", mode.c_str(), i));
+      p->Draw(); 
+      fpNpvAdBDT.push_back(p); 
+    }      
   }
-
-  // -- produce summary plots
+   
+  // -- reset errors for low-stats entries
   int nmin(10); 
+  fShow = nmin; 
+  for (unsigned int i = 0; i < fNchan; ++i) {
+
+    for (int j = 1; j <= fpMassBDT[i]->GetNbinsX(); ++j) {
+      if (fpMassBDT[i]->GetBinEntries(j) < nmin) flushProfileBin(fpMassBDT[i], j);
+    }
+    
+    for (int j = 1; j <= fpMassAcBDT[i]->GetNbinsX(); ++j) {
+      if (fpMassAcBDT[i]->GetBinEntries(j) < nmin) flushProfileBin(fpMassAcBDT[i], j); 
+    }
+
+    for (int j = 1; j <= fpMassAdBDT[i]->GetNbinsX(); ++j) {
+      if (fpMassAdBDT[i]->GetBinEntries(j) < nmin) flushProfileBin(fpMassAdBDT[i], j); 
+    }
+
+    for (int j = 1; j <= fpNpvBDT[i]->GetNbinsX(); ++j) {
+      if (fpNpvBDT[i]->GetBinEntries(j) < nmin) flushProfileBin(fpNpvBDT[i], j); 
+    }
+    
+    for (int j = 1; j <= fpNpvAcBDT[i]->GetNbinsX(); ++j) {
+      if (fpNpvAcBDT[i]->GetBinEntries(j) < nmin) flushProfileBin(fpNpvAcBDT[i], j); 
+    }
+
+    for (int j = 1; j <= fpNpvAdBDT[i]->GetNbinsX(); ++j) {
+      if (fpNpvAdBDT[i]->GetBinEntries(j) < nmin) flushProfileBin(fpNpvAdBDT[i], j); 
+    }
+    
+  }
+  
+  // -- produce summary plots
+  double bdtCut(-0.1); 
+  int i0lo = fhNpvBDTchan0[0]->FindBin(bdtCut); 
+  int i0hi = fhNpvBDTchan0[0]->GetNbinsX(); 
+  int i1lo = fhNpvBDTchan1[0]->FindBin(bdtCut); 
+  int i1hi = fhNpvBDTchan1[0]->GetNbinsX(); 
+  double eff(0.), effE(0.); 
+
+  cout << "EFFICIENCY cut: " << 0. << " i0lo: " << i0lo << " .. " << i0hi << endl;
+
   for (int j = 0; j < 50; ++j) {
     if (fhNpvBDTchan0[j]->GetEntries() > nmin) {
       fmeanNpvBDTchan0->SetBinContent(j, fhNpvBDTchan0[j]->GetMean()); fmeanNpvBDTchan0->SetBinError(j, fhNpvBDTchan0[j]->GetMeanError());
-    }
-    if (fhNpvBDTchan1[j]->GetEntries() > nmin) {
-      fmeanNpvBDTchan1->SetBinContent(j, fhNpvBDTchan1[j]->GetMean()); fmeanNpvBDTchan1->SetBinError(j, fhNpvBDTchan1[j]->GetMeanError());
-    }
-
-    if (fhNpvAcBDTchan0[j]->GetEntries() > nmin) {
-      fmeanNpvAcBDTchan0->SetBinContent(j, fhNpvAcBDTchan0[j]->GetMean()); fmeanNpvAcBDTchan0->SetBinError(j, fhNpvAcBDTchan0[j]->GetMeanError());
-    }
-    if (fhNpvAcBDTchan1[j]->GetEntries() > nmin) {
-      fmeanNpvAcBDTchan1->SetBinContent(j, fhNpvAcBDTchan1[j]->GetMean()); fmeanNpvAcBDTchan1->SetBinError(j, fhNpvAcBDTchan1[j]->GetMeanError());
-    }
-
-    if (fhNpvAdBDTchan0[j]->GetEntries() > nmin) {
-      fmeanNpvAdBDTchan0->SetBinContent(j, fhNpvAdBDTchan0[j]->GetMean()); fmeanNpvAdBDTchan0->SetBinError(j, fhNpvAdBDTchan0[j]->GetMeanError());
-    }
-    if (fhNpvAdBDTchan1[j]->GetEntries() > nmin) {
-      fmeanNpvAdBDTchan1->SetBinContent(j, fhNpvAdBDTchan1[j]->GetMean()); fmeanNpvAdBDTchan1->SetBinError(j, fhNpvAdBDTchan1[j]->GetMeanError());
-    }
-
-    if (fhNpvBDTchan0[j]->GetEntries() > nmin) {
       frmsNpvBDTchan0->SetBinContent(j, fhNpvBDTchan0[j]->GetRMS()); frmsNpvBDTchan0->SetBinError(j, fhNpvBDTchan0[j]->GetRMSError());
     }
     if (fhNpvBDTchan1[j]->GetEntries() > nmin) {
+      fmeanNpvBDTchan1->SetBinContent(j, fhNpvBDTchan1[j]->GetMean()); fmeanNpvBDTchan1->SetBinError(j, fhNpvBDTchan1[j]->GetMeanError());
       frmsNpvBDTchan1->SetBinContent(j, fhNpvBDTchan1[j]->GetRMS()); frmsNpvBDTchan1->SetBinError(j, fhNpvBDTchan1[j]->GetRMSError());
     }
-
+    
     if (fhNpvAcBDTchan0[j]->GetEntries() > nmin) {
+      fmeanNpvAcBDTchan0->SetBinContent(j, fhNpvAcBDTchan0[j]->GetMean()); fmeanNpvAcBDTchan0->SetBinError(j, fhNpvAcBDTchan0[j]->GetMeanError());
       frmsNpvAcBDTchan0->SetBinContent(j, fhNpvAcBDTchan0[j]->GetRMS()); frmsNpvAcBDTchan0->SetBinError(j, fhNpvAcBDTchan0[j]->GetRMSError());
+      eff = (fhNpvBDTchan0[j]->Integral() > 0 ? fhNpvAcBDTchan0[j]->Integral()/fhNpvBDTchan0[j]->Integral() : 0.);
+      effE = dEff(static_cast<int>(fhNpvAcBDTchan0[j]->Integral()), static_cast<int>(fhNpvBDTchan0[j]->Integral()));
+      feffNpvAcBDTchan0->SetBinContent(j, eff); 
+      feffNpvAcBDTchan0->SetBinError(j, effE); 
     }
-
     if (fhNpvAcBDTchan1[j]->GetEntries() > nmin) {
+      fmeanNpvAcBDTchan1->SetBinContent(j, fhNpvAcBDTchan1[j]->GetMean()); fmeanNpvAcBDTchan1->SetBinError(j, fhNpvAcBDTchan1[j]->GetMeanError());
       frmsNpvAcBDTchan1->SetBinContent(j, fhNpvAcBDTchan1[j]->GetRMS()); frmsNpvAcBDTchan1->SetBinError(j, fhNpvAcBDTchan1[j]->GetRMSError());
+      eff = (fhNpvBDTchan1[j]->Integral() > 0 ? fhNpvAcBDTchan1[j]->Integral()/fhNpvBDTchan1[j]->Integral() : 0.);
+      effE = dEff(static_cast<int>(fhNpvAcBDTchan1[j]->Integral()), static_cast<int>(fhNpvBDTchan1[j]->Integral()));
+      feffNpvAcBDTchan1->SetBinContent(j, eff); 
+      feffNpvAcBDTchan1->SetBinError(j, effE); 
     }
-
+    
     if (fhNpvAdBDTchan0[j]->GetEntries() > nmin) {
+      fmeanNpvAdBDTchan0->SetBinContent(j, fhNpvAdBDTchan0[j]->GetMean()); fmeanNpvAdBDTchan0->SetBinError(j, fhNpvAdBDTchan0[j]->GetMeanError());
       frmsNpvAdBDTchan0->SetBinContent(j, fhNpvAdBDTchan0[j]->GetRMS()); frmsNpvAdBDTchan0->SetBinError(j, fhNpvAdBDTchan0[j]->GetRMSError());
+      eff = (fhNpvBDTchan0[j]->Integral() > 0 ? fhNpvAdBDTchan0[j]->Integral()/fhNpvBDTchan0[j]->Integral() : 0.);
+      effE = dEff(static_cast<int>(fhNpvAdBDTchan0[j]->Integral()), static_cast<int>(fhNpvBDTchan0[j]->Integral()));
+      feffNpvAdBDTchan0->SetBinContent(j, eff); 
+      feffNpvAdBDTchan0->SetBinError(j, effE); 
     }
-
     if (fhNpvAdBDTchan1[j]->GetEntries() > nmin) {
+      fmeanNpvAdBDTchan1->SetBinContent(j, fhNpvAdBDTchan1[j]->GetMean()); fmeanNpvAdBDTchan1->SetBinError(j, fhNpvAdBDTchan1[j]->GetMeanError());
       frmsNpvAdBDTchan1->SetBinContent(j, fhNpvAdBDTchan1[j]->GetRMS()); frmsNpvAdBDTchan1->SetBinError(j, fhNpvAdBDTchan1[j]->GetRMSError());
+      eff = (fhNpvBDTchan1[j]->Integral() > 0 ? fhNpvAdBDTchan1[j]->Integral()/fhNpvBDTchan1[j]->Integral() : 0.);
+      effE = dEff(static_cast<int>(fhNpvAdBDTchan1[j]->Integral()), static_cast<int>(fhNpvBDTchan1[j]->Integral()));
+      feffNpvAdBDTchan1->SetBinContent(j, eff); 
+      feffNpvAdBDTchan1->SetBinError(j, effE); 
     }
   }
 
-
-  double npvmax(30.); 
   gStyle->SetOptStat(0); 
   gStyle->SetOptFit(0); 
   gStyle->SetOptTitle(0); 
   tl->SetTextSize(0.03);
-  for (int j = 0; j < 2; ++j) {
-    zone(1);
-    shrinkPad(0.15, 0.15); 
-    // -- mean 
-    fmeanNpvBDTchan0->SetAxisRange(0., npvmax, "X");
-    fmeanNpvBDTchan0->Fit(Form("pol%d", j));  
-    if (fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
-				  fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  fmeanNpvBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-nocuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[0]->xmlFile.c_str()));
+  double ypoint(0.74); 
+  zone(1);
+  shrinkPad(0.15, 0.15); 
 
-    fmeanNpvAcBDTchan0->SetAxisRange(0., npvmax, "X");
-    fmeanNpvAcBDTchan0->Fit(Form("pol%d", j));  
-    if (fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
-				  fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  fmeanNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-accuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[0]->xmlFile.c_str()));
+  // -- mean(bdt) vs npv
+  plotAndFitIt(fmeanNpvBDTchan0, Form("%s/dep-bdt-%s-bmean-npv-nocuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(fmeanNpvBDTchan1, Form("%s/dep-bdt-%s-bmean-npv-nocuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[1]->xmlFile.c_str()));
 
-    fmeanNpvAdBDTchan0->SetAxisRange(0., npvmax, "X");
-    fmeanNpvAdBDTchan0->Fit(Form("pol%d", j));  
-    if (fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
-				  fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  fmeanNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-adcuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(fmeanNpvAcBDTchan0, Form("%s/dep-bdt-%s-bmean-npv-accuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(fmeanNpvAcBDTchan1, Form("%s/dep-bdt-%s-bmean-npv-accuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[1]->xmlFile.c_str()));
 
-  
-    fmeanNpvBDTchan1->SetAxisRange(0., npvmax, "X");
-    fmeanNpvBDTchan1->Fit(Form("pol%d", j));  
-    if (fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
-				  fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  fmeanNpvBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-nocuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[1]->xmlFile.c_str()));
+  plotAndFitIt(fmeanNpvAdBDTchan0, Form("%s/dep-bdt-%s-bmean-npv-adcuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(fmeanNpvAdBDTchan1, Form("%s/dep-bdt-%s-bmean-npv-adcuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[1]->xmlFile.c_str()));
 
-    fmeanNpvAcBDTchan1->SetAxisRange(0., npvmax, "X");
-    fmeanNpvAcBDTchan1->Fit(Form("pol%d", j));  
-    if (fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
-				  fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  fmeanNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-accuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[1]->xmlFile.c_str()));
+  // -- rms(bdt) vs npv
+  plotAndFitIt(frmsNpvBDTchan0, Form("%s/dep-bdt-%s-brms-npv-nocuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(frmsNpvBDTchan1, Form("%s/dep-bdt-%s-brms-npv-nocuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[1]->xmlFile.c_str()));
 
-    fmeanNpvAdBDTchan1->SetAxisRange(0., npvmax, "X");
-    fmeanNpvAdBDTchan1->Fit(Form("pol%d", j));  
-    if (fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
-				  fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  fmeanNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvmean-adcuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[1]->xmlFile.c_str()));
+  plotAndFitIt(frmsNpvAcBDTchan0, Form("%s/dep-bdt-%s-brms-npv-accuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(frmsNpvAcBDTchan1, Form("%s/dep-bdt-%s-brms-npv-accuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[1]->xmlFile.c_str()));
 
+  plotAndFitIt(frmsNpvAdBDTchan0, Form("%s/dep-bdt-%s-brms-npv-adcuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(frmsNpvAdBDTchan1, Form("%s/dep-bdt-%s-brms-npv-adcuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[1]->xmlFile.c_str()));
 
-    // -- RMS
-    frmsNpvBDTchan0->SetAxisRange(0., npvmax, "X");
-    frmsNpvBDTchan0->Fit(Form("pol%d", j));  
-    if (frmsNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
-				  frmsNpvBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  frmsNpvBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (frmsNpvBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  frmsNpvBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  frmsNpvBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-nocuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[0]->xmlFile.c_str()));
+  // -- eff(bdt) vs npv
+  plotAndFitIt(feffNpvAcBDTchan0, Form("%s/dep-bdt-%s-beff-npv-accuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(feffNpvAcBDTchan1, Form("%s/dep-bdt-%s-beff-npv-accuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[1]->xmlFile.c_str()));
 
-    frmsNpvAcBDTchan0->SetAxisRange(0., npvmax, "X");
-    frmsNpvAcBDTchan0->Fit(Form("pol%d", j));  
-    if (frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
-				  frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  frmsNpvAcBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-accuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(feffNpvAdBDTchan0, Form("%s/dep-bdt-%s-beff-npv-adcuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(feffNpvAdBDTchan1, Form("%s/dep-bdt-%s-beff-npv-adcuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[1]->xmlFile.c_str()));
 
-    frmsNpvAdBDTchan0->SetAxisRange(0., npvmax, "X");
-    frmsNpvAdBDTchan0->Fit(Form("pol%d", j));  
-    if (frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
-				  frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  frmsNpvAdBDTchan0->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-adcuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[0]->xmlFile.c_str()));
+  // -- bdt vs mass
+  plotAndFitIt(fpMassBDT[0], Form("%s/dep-bdt-%s-b-mass-nocuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(fpMassBDT[1], Form("%s/dep-bdt-%s-b-mass-nocuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[1]->xmlFile.c_str()));
 
-    
-    frmsNpvBDTchan1->SetAxisRange(0., npvmax, "X");
-    frmsNpvBDTchan1->Fit(Form("pol%d", j));  
-    if (frmsNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
-				  frmsNpvBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  frmsNpvBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (frmsNpvBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  frmsNpvBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  frmsNpvBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-nocuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[1]->xmlFile.c_str()));
+  plotAndFitIt(fpMassAcBDT[0], Form("%s/dep-bdt-%s-b-mass-accuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(fpMassAcBDT[1], Form("%s/dep-bdt-%s-b-mass-accuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[1]->xmlFile.c_str()));
 
-    frmsNpvAcBDTchan1->SetAxisRange(0., npvmax, "X");
-    frmsNpvAcBDTchan1->Fit(Form("pol%d", j));  
-    if (frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
-				  frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  frmsNpvAcBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-accuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[1]->xmlFile.c_str()));
+  plotAndFitIt(fpMassAdBDT[0], Form("%s/dep-bdt-%s-b-mass-adcuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(fpMassAdBDT[1], Form("%s/dep-bdt-%s-b-mass-adcuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[1]->xmlFile.c_str()));
 
-    frmsNpvAdBDTchan1->SetAxisRange(0., npvmax, "X");
-    frmsNpvAdBDTchan1->Fit(Form("pol%d", j));  
-    if (frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.2, 0.92, Form("p%d = %5.4f #pm %5.4f", j,
-				  frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetParameter(j), 
-				  frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetParError(j)));
-    if (frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))) tl->DrawLatex(0.6, 0.92, Form("#chi^{2}/dof = %3.1f/%3d", 
-				  frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetChisquare(), 
-				  frmsNpvAdBDTchan1->GetFunction(Form("pol%d", j))->GetNDF()));
-    c0->SaveAs(Form("%s/dep-bdt-%s-npvrms-adcuts-pol%d-%s.pdf", fDirectory.c_str(), mode.c_str(), j, fCuts[1]->xmlFile.c_str()));
-  }
-  
-  for (unsigned int i = 0; i < fNchan; ++i) {
-    fpMassBDT[i]->SetAxisRange(4.9, 5.9, "X");
-    fpMassBDT[i]->Fit("pol0");  
-    c0->SaveAs(Form("%s/dep-bdt-%s-%s-mass-nocuts%d.pdf", fDirectory.c_str(), fCuts[i]->xmlFile.c_str(), mode.c_str(), i));
+  // -- bdt vs npv
+  plotAndFitIt(fpNpvBDT[0], Form("%s/dep-bdt-%s-b-npv-nocuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(fpNpvBDT[1], Form("%s/dep-bdt-%s-b-npv-nocuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[1]->xmlFile.c_str()));
 
-    fpMassAcBDT[i]->SetAxisRange(4.9, 5.9, "X");
-    fpMassAcBDT[i]->Fit("pol0");  
-    c0->SaveAs(Form("%s/dep-bdt-%s-%s-mass-aftercuts%d.pdf", fDirectory.c_str(), fCuts[i]->xmlFile.c_str(), mode.c_str(), i));
+  plotAndFitIt(fpNpvAcBDT[0], Form("%s/dep-bdt-%s-b-npv-accuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(fpNpvAcBDT[1], Form("%s/dep-bdt-%s-b-npv-accuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[1]->xmlFile.c_str()));
 
-  }
+  plotAndFitIt(fpNpvAdBDT[0], Form("%s/dep-bdt-%s-b-npv-adcuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[0]->xmlFile.c_str()));
+  plotAndFitIt(fpNpvAdBDT[1], Form("%s/dep-bdt-%s-b-npv-adcuts-pol-%s.pdf", fDirectory.c_str(), mode.c_str(), fCuts[1]->xmlFile.c_str()));
 
 }
 
@@ -735,113 +802,121 @@ void plotBDT::bdtDependencies(string mode) {
 void plotBDT::bdtScan() { 
 
   TH1D *h(0);
-  string mode = "SgMc";
-  fIsMC = true; 
-  cout << "bdtScan: running over " << mode << endl;
-  TTree *t = getTree(mode); 
-  if (0 == t) {
-    cout << "plotBDT: no tree found for mode  " << mode << endl;
-    return;
-  } 
-  resetHistograms();
-  setupTree(t, mode);
-  loopOverTree(t, mode, 1); 
-  //  loopOverTree(t, mode, 1, 50000); 
-  // -- for the signal: do NOT apply the gmuid and HLT requirements (to have comparable efficiency value as in big table!
-  fhSgBDT.push_back((TH1D*)fhAnaBDT[0]->Clone("hSgBDT0"));
-  fhSgBDT.push_back((TH1D*)fhAnaBDT[1]->Clone("hSgBDT1"));
 
-  // -- efficiency histogram (includes muid and HLT!)
-  double pass(0.), all(0.), eff(0.);
-  for (unsigned int i = 0; i < fNchan; ++i) {
-    cout << "channel " << i << endl;
-    h = new TH1D(Form("hSgEff%d", i), Form("hSgEff%d", i), 200, -1., 1.); 
-    h->SetDirectory(fHistFile); 
+  fHistFile->cd(); 
+  h = (TH1D*)fHistFile->Get("hBgLoEff0");
 
-    all  = fhMassNoCuts[i]->GetSumOfWeights();
-    for (unsigned int j = 1; j < 201; ++j) {
-      pass = fhSgBDT[i]->Integral(j, 200);
-      eff = pass/all;
-      h->SetBinContent(j, eff); 
+  if (0 == h) {
+    string mode = "SgMc";
+    fIsMC = true; 
+    cout << "bdtScan: running over " << mode << endl;
+    TTree *t = getTree(mode); 
+    if (0 == t) {
+      cout << "plotBDT: no tree found for mode  " << mode << endl;
+      return;
+    } 
+    resetHistograms();
+    setupTree(t, mode);
+    int nevts2use(-1); 
+    if (t->GetEntries() > 5.e6) nevts2use = 5e6; 
+    loopOverTree(t, mode, 1, nevts2use); 
+    //    loopOverTree(t, mode, 1, 50000); 
+    // -- for the signal: do NOT apply the gmuid and HLT requirements (to have comparable efficiency value as in big table!
+    fhSgBDT.push_back((TH1D*)fhAnaBDT[0]->Clone("hSgBDT0"));
+    fhSgBDT.push_back((TH1D*)fhAnaBDT[1]->Clone("hSgBDT1"));
+    
+    // -- efficiency histogram (includes muid and HLT!)
+    double pass(0.), all(0.), eff(0.);
+    for (unsigned int i = 0; i < fNchan; ++i) {
+      cout << "channel " << i << endl;
+      h = new TH1D(Form("hSgEff%d", i), Form("hSgEff%d", i), 200, -1., 1.); 
+      h->SetDirectory(fHistFile); 
+      
+      all  = fhMassNoCuts[i]->GetSumOfWeights();
+      for (unsigned int j = 1; j < 201; ++j) {
+	pass = fhSgBDT[i]->Integral(j, 200);
+	eff = pass/all;
+	h->SetBinContent(j, eff); 
+      }
+      
     }
-
+    
+    mode = "SgData";
+    fIsMC = false;
+    cout << "bdtScan: running over " << mode << endl;
+    t = getTree(mode); 
+    if (0 == t) {
+      cout << "plotBDT: no tree found for mode  " << mode << endl;
+      return;
+    } 
+    resetHistograms();
+    setupTree(t, mode);
+    loopOverTree(t, mode, 1); 
+    //    loopOverTree(t, mode, 1, 50000); 
+    
+    // -- for the background: apply the gmuid and HLT requirements!!
+    fhBgBDT.push_back((TH1D*)fhBDT[0]->Clone("hBgBDT0"));
+    fhBgBDT.push_back((TH1D*)fhBDT[1]->Clone("hBgBDT1"));
+    
+    // -- background count histogram
+    for (unsigned int i = 0; i < fNchan; ++i) {
+      cout << "channel " << i << endl;
+      h = new TH1D(Form("hBgEvts%d", i), Form("hBgEvts%d", i), 200, -1., 1.); 
+      h->SetDirectory(fHistFile); 
+      
+      for (int j = 1; j < 201; ++j) {
+	pass = fhBgBDT[i]->Integral(j, 200);
+	h->SetBinContent(j, pass); 
+      }
+      
+      // -- all mass range
+      h = new TH1D(Form("hBgEff%d", i), Form("hBgEff%d", i), 200, -1., 1.); 
+      h->SetDirectory(fHistFile); 
+      
+      all  = fhMassNoCuts[i]->GetSumOfWeights();
+      for (int j = 1; j < 201; ++j) {
+	pass = fhBgBDT[i]->Integral(j, 200);
+	eff = pass/all;
+	h->SetBinContent(j, eff); 
+      }
+      
+      // -- low mass range
+      h = new TH1D(Form("hBgLoEff%d", i), Form("hBgLoEff%d", i), 200, -1., 1.); 
+      h->SetDirectory(fHistFile); 
+      
+      all  = fhMassNoCuts[i]->Integral(fhMassNoCuts[i]->FindBin(4.9), fhMassNoCuts[i]->FindBin(5.2));
+      for (int j = 1; j < 201; ++j) {
+	pass = fhLoBDT[i]->Integral(j, 200);
+	eff = pass/all;
+	h->SetBinContent(j, eff); 
+      }
+      
+      // -- high mass range
+      h = new TH1D(Form("hBgHiEff%d", i), Form("hBgHiEff%d", i), 200, -1., 1.); 
+      h->SetDirectory(fHistFile); 
+      
+      all  = fhMassNoCuts[i]->Integral(fhMassNoCuts[i]->FindBin(5.45), fhMassNoCuts[i]->FindBin(5.9));
+      for (int j = 1; j < 201; ++j) {
+	pass = fhHiBDT[i]->Integral(j, 200);
+	eff = pass/all;
+	h->SetBinContent(j, eff); 
+      }
+      
+    }
+    
+    fHistFile->cd();
+    
+    ((TH1D*)gDirectory->Get("hBgEvts0"))->Write();
+    ((TH1D*)gDirectory->Get("hBgEvts1"))->Write();
+    ((TH1D*)gDirectory->Get("hSgEff0"))->Write();
+    ((TH1D*)gDirectory->Get("hSgEff1"))->Write();
+    
+    ((TH1D*)gDirectory->Get("hBgLoEff0"))->Write();
+    ((TH1D*)gDirectory->Get("hBgLoEff1"))->Write();
+    
+    ((TH1D*)gDirectory->Get("hBgHiEff0"))->Write();
+    ((TH1D*)gDirectory->Get("hBgHiEff1"))->Write();
   }
-
-  mode = "SgData";
-  fIsMC = false;
-  cout << "bdtScan: running over " << mode << endl;
-  t = getTree(mode); 
-  if (0 == t) {
-    cout << "plotBDT: no tree found for mode  " << mode << endl;
-    return;
-  } 
-  resetHistograms();
-  setupTree(t, mode);
-  loopOverTree(t, mode, 1); 
-  //  loopOverTree(t, mode, 1, 50000); 
-  
-  // -- for the background: apply the gmuid and HLT requirements!!
-  fhBgBDT.push_back((TH1D*)fhBDT[0]->Clone("hBgBDT0"));
-  fhBgBDT.push_back((TH1D*)fhBDT[1]->Clone("hBgBDT1"));
-  
-  // -- background count histogram
-  for (unsigned int i = 0; i < fNchan; ++i) {
-    cout << "channel " << i << endl;
-    h = new TH1D(Form("hBgEvts%d", i), Form("hBgEvts%d", i), 200, -1., 1.); 
-    h->SetDirectory(fHistFile); 
-
-    for (int j = 1; j < 201; ++j) {
-      pass = fhBgBDT[i]->Integral(j, 200);
-      h->SetBinContent(j, pass); 
-    }
-
-    // -- all mass range
-    h = new TH1D(Form("hBgEff%d", i), Form("hBgEff%d", i), 200, -1., 1.); 
-    h->SetDirectory(fHistFile); 
-    
-    all  = fhMassNoCuts[i]->GetSumOfWeights();
-    for (int j = 1; j < 201; ++j) {
-      pass = fhBgBDT[i]->Integral(j, 200);
-      eff = pass/all;
-      h->SetBinContent(j, eff); 
-    }
-
-    // -- low mass range
-    h = new TH1D(Form("hBgLoEff%d", i), Form("hBgLoEff%d", i), 200, -1., 1.); 
-    h->SetDirectory(fHistFile); 
-    
-    all  = fhMassNoCuts[i]->Integral(fhMassNoCuts[i]->FindBin(4.9), fhMassNoCuts[i]->FindBin(5.2));
-    for (int j = 1; j < 201; ++j) {
-      pass = fhLoBDT[i]->Integral(j, 200);
-      eff = pass/all;
-      h->SetBinContent(j, eff); 
-    }
-
-    // -- high mass range
-    h = new TH1D(Form("hBgHiEff%d", i), Form("hBgHiEff%d", i), 200, -1., 1.); 
-    h->SetDirectory(fHistFile); 
-    
-    all  = fhMassNoCuts[i]->Integral(fhMassNoCuts[i]->FindBin(5.45), fhMassNoCuts[i]->FindBin(5.9));
-    for (int j = 1; j < 201; ++j) {
-      pass = fhHiBDT[i]->Integral(j, 200);
-      eff = pass/all;
-      h->SetBinContent(j, eff); 
-    }
-    
-  }
-  
-  fHistFile->cd();
-  
-  ((TH1D*)gDirectory->Get("hBgEvts0"))->Write();
-  ((TH1D*)gDirectory->Get("hBgEvts1"))->Write();
-  ((TH1D*)gDirectory->Get("hSgEff0"))->Write();
-  ((TH1D*)gDirectory->Get("hSgEff1"))->Write();
-
-  ((TH1D*)gDirectory->Get("hBgLoEff0"))->Write();
-  ((TH1D*)gDirectory->Get("hBgLoEff1"))->Write();
-
-  ((TH1D*)gDirectory->Get("hBgHiEff0"))->Write();
-  ((TH1D*)gDirectory->Get("hBgHiEff1"))->Write();
 
   // -- overlay low and high mass efficiencies
   gStyle->SetOptTitle(0);
@@ -972,7 +1047,6 @@ void plotBDT::tmvaControlPlots() {
 	grocop->SetMarkerSize(3.); 
 	grocop->Draw("p");
 
-
 	newLegend(0.25, 0.3, 0.50, 0.5); 
 	legg->AddEntry(g, "combined", "p"); 
 	legg->AddEntry(g0, "BDT0", "l"); 
@@ -985,8 +1059,6 @@ void plotBDT::tmvaControlPlots() {
 	fTEX << formatTex(integral, Form("%s:%s:ROCintegral",  fSuffix.c_str(), fBdtString.c_str()), 3) << endl;
 	  
 	c0->SaveAs(Form("%s/%s-roc.pdf", fDirectory.c_str(), fCuts[i]->xmlFile.c_str())); 
-
-
 	fRootFile->Close();
       }
 
@@ -998,19 +1070,14 @@ void plotBDT::tmvaControlPlots() {
 
 // ----------------------------------------------------------------------
 void plotBDT::plotSSB() {
-  cout << "fNchan: " << fNchan << "   " << fCuts[1]->xmlFile << endl;
   for (unsigned int i = 0; i < fNchan; ++i) {
     string rootfile = "weights/" + fCuts[i]->xmlFile + "-combined.root";
     cout << "fRootFile: " << rootfile << endl;
     fRootFile = TFile::Open(rootfile.c_str());
-    
-    fBdtString = fRootFile->GetName(); 
-    fBdtString = fBdtString.substr(0, fBdtString.find(".root"));
-    fBdtString = fBdtString.substr(fBdtString.find("/")+1);
     fBdtString = Form("%s", fCuts[i]->xmlFile.c_str()); 
     cout << "fBdtString: " << fBdtString << endl;
     
-    ssb();
+    ssb(i);
     fRootFile->Close();
   }
 }
@@ -1122,8 +1189,12 @@ void plotBDT::validateDistributions(int channel, const char *type, int classID) 
   gStyle->SetOptStat(0); 
   for (unsigned int i = 0; i < vNames.size(); ++i) {
     
-    if (fReaderVariables.end() == find(fReaderVariables.begin(), fReaderVariables.end(), vNames[i]))  {
+    if (fReaderVariables[channel].end() == find(fReaderVariables[channel].begin(), fReaderVariables[channel].end(), vNames[i]))  {
       //      cout << " =====> " << vNames[i] << " not found in fReaderVariables" << endl;
+      // -- create empty plot to avoid LaTex errors
+      c0->Clear(); 
+      c0->SaveAs(Form("%s/ks-%s_%s.pdf", 
+		      fDirectory.c_str(), sname.c_str(), vNames[i].c_str())); 
       continue;
     }
 
@@ -1226,7 +1297,6 @@ void plotBDT::tmvaPlots(string type) {
   
   // this defines how many canvases we need
   TCanvas *c = new TCanvas( Form("canvas%d", 1), "canvas1",  200, 20, width, static_cast<int>(width*0.78) ); 
-
 
   // search for the right histograms in full list of keys
   TIter next(fRootFile->GetListOfKeys());
@@ -1434,6 +1504,29 @@ void plotBDT::tmvaPlots(string type) {
   dir->cd();
 
 
+  // -- create empty pdfs to be overwritten for the real variables
+  c->Clear(); 
+  vector<string> allvars; 
+  allvars.push_back("pt"); 
+  allvars.push_back("eta"); 
+  allvars.push_back("pvips"); 
+  allvars.push_back("pvip"); 
+  allvars.push_back("alpha"); 
+  allvars.push_back("chi2dof"); 
+  allvars.push_back("maxdoca"); 
+  allvars.push_back("fls3d"); 
+  allvars.push_back("closetrk"); 
+  allvars.push_back("docatrk"); 
+  allvars.push_back("iso"); 
+  allvars.push_back("m1iso"); 
+  allvars.push_back("m2iso"); 
+  for (unsigned int i = 0; i < allvars.size(); ++i) {
+    c->Clear(); 
+    c->SaveAs(Form("%s/%s-%s.pdf", fDirectory.c_str(), fBdtString.c_str(), allvars[i].c_str())); 
+  }
+
+
+
   // loop over all objects in directory
   TIter next1(dir->GetListOfKeys());
   while ((key = (TKey*)next1())) {
@@ -1634,6 +1727,9 @@ void plotBDT::xmlParsing() {
 // ----------------------------------------------------------------------
 void plotBDT::xmlParsingParameters(string weightfile) {
   cout << "XXXX plotBDT::xmlParsingParameters " << weightfile << " XXXX" << endl;
+  string strippedXml = weightfile; 
+  rmSubString(strippedXml, "weights/"); 
+  rmSubString(strippedXml, "_BDT.weights.xml"); 
   // -- read in parameters from weight file
   vector<string> allLines; 
   char  buffer[2000];
@@ -1659,8 +1755,8 @@ void plotBDT::xmlParsingParameters(string weightfile) {
 	} else {
 	  tmvaDefault = "no"; 
 	} 
-	fTEX << formatTex(par, Form("%s:%s:%s",  fSuffix.c_str(), fBdtString.c_str(), parsToDump[ip].c_str())) << endl;
-	fTEX << formatTex(tmvaDefault, Form("%s:%s:%s:tmvaDefault",  fSuffix.c_str(), fBdtString.c_str(), parsToDump[ip].c_str())) << endl;
+	fTEX << formatTex(par, Form("%s:%s:%s",  fSuffix.c_str(), strippedXml.c_str(), parsToDump[ip].c_str())) << endl;
+	fTEX << formatTex(tmvaDefault, Form("%s:%s:%s:tmvaDefault",  fSuffix.c_str(), strippedXml.c_str(), parsToDump[ip].c_str())) << endl;
       }
     }
   }
@@ -1807,11 +1903,14 @@ void plotBDT::xmlParsingReadTree(string xmlfile) {
   zone(3,5); 
   gStyle->SetOptTitle(0); 
   gStyle->SetOptStat(0); 
+  double maxh(0.); 
   for (unsigned int i = 0; i < fhBdtVariableCuts.size(); ++i) {
     c0->cd(i+1); shrinkPad(0.20, 0.15);
     setTitles(fhBdtVariableCuts[i], Form("%s cut", fhBdtVariableCuts[i]->GetTitle()), "N(decision trees)", 0.09, 1.01, 0.85, 0.08);
-    fhBdtVariableCuts[i]->Draw("hist"); 
     fhBdtVariableCutsW8[i]->Scale(fhBdtVariableCuts[i]->GetSumOfWeights()/fhBdtVariableCutsW8[i]->GetSumOfWeights()); 
+    maxh = getMaximum(fhBdtVariableCuts[i], fhBdtVariableCutsW8[i]); 
+    fhBdtVariableCuts[i]->SetMaximum(1.3*maxh); 
+    fhBdtVariableCuts[i]->Draw("hist"); 
     fhBdtVariableCutsW8[i]->Draw("samehist"); 
   }
   c0->SaveAs(Form("%s/%s-bdtVariableCuts.pdf", fDirectory.c_str(), fBdtString.c_str())); 
@@ -1828,10 +1927,13 @@ void plotBDT::xmlParsingReadTree(string xmlfile) {
   setTitles(fhBdtVariables, "BDT Variables", "Number of decision trees", 0.06, 1.7, 1.3); 
   fhBdtVariables->GetXaxis()->LabelsOption("v"); 
   setHist(fhBdtVariables, kRed, 20, 1, 3); fhBdtVariables->SetLineStyle(kDashed); 
-  fhBdtVariables->Draw();
-
   fhBdtVariablesW8->Scale(fhBdtVariables->GetSumOfWeights()/fhBdtVariablesW8->GetSumOfWeights()); 
   setHist(fhBdtVariablesW8, kBlue, 20, 1, 3);  
+
+  maxh = getMaximum(fhBdtVariables, fhBdtVariablesW8); 
+  fhBdtVariables->SetMaximum(1.3*maxh); 
+  fhBdtVariables->Draw();
+
   fhBdtVariablesW8->GetXaxis()->LabelsOption("v"); 
   fhBdtVariablesW8->Draw("same");
   c0->Modified();  c0->Update();
@@ -1841,10 +1943,14 @@ void plotBDT::xmlParsingReadTree(string xmlfile) {
   shrinkPad(0.20, 0.15); 
   setTitles(fhBdtNodes, "BDT Nodes", "Number of decision trees", 0.06, 1.1, 1.3); 
   setHist(fhBdtNodes, kRed, 20, 1, 3); fhBdtNodes->SetLineStyle(kDashed); 
+  fhBdtNodesW8->Scale(fhBdtNodes->GetSumOfWeights()/fhBdtNodesW8->GetSumOfWeights()); 
+  setHist(fhBdtNodesW8, kBlue, 20, 1, 3); 
+
+  maxh = getMaximum(fhBdtNodes, fhBdtNodesW8); 
+  fhBdtNodes->SetMaximum(1.3*maxh); 
+  
   fhBdtNodes->Draw();
 
-  setHist(fhBdtNodesW8, kBlue, 20, 1, 3); 
-  fhBdtNodesW8->Scale(fhBdtNodes->GetSumOfWeights()/fhBdtNodesW8->GetSumOfWeights()); 
   fhBdtNodesW8->Draw("same");
   c0->Modified();  c0->Update();
   c0->SaveAs(Form("%s/%s-bdtNodes.pdf", fDirectory.c_str(), fBdtString.c_str())); 
@@ -1862,6 +1968,10 @@ void plotBDT::variableRanking() {
   splits.push_back("events0"); 
   splits.push_back("events1"); 
   splits.push_back("events2"); 
+
+  int channel = bdtString2Channel(fBdtString);
+
+  cout << "}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}} " << fBdtString << " -> " << channel << endl;
 
   for (unsigned int i = 0; i < splits.size(); ++i) {
     which = "IdTransformation";
@@ -1890,7 +2000,10 @@ void plotBDT::variableRanking() {
       string label = h->GetXaxis()->GetBinLabel(ibin);
       if ("" == label) break;
       replaceAll(label, " ", ""); 
-      if (0 == i) fReaderVariables.push_back(label); 
+      if (0 == i) {
+	fReaderVariables[channel].push_back(label); 
+	cout << "  --> pushing " << label << " into fReaderVariables[" << channel << "]" << endl;
+      }
       string texlabel = replaceLabelWithTex(label);
       fTEX << Form("\\vdef{%s:%s_%s_%s:%d:name} {%s}", 
 		   fSuffix.c_str(), fBdtString.c_str(), splits[i].c_str(), which.c_str(), ibin, texlabel.c_str()) 
@@ -1904,173 +2017,228 @@ void plotBDT::variableRanking() {
     }
   }
 
-  cout << "==> Read BDT variables" << endl;
-  for (unsigned int i = 0; i < fReaderVariables.size(); ++i) {
-    cout << "  " << fReaderVariables[i] << endl;
+  cout << "==> Read BDT variables for channel " << channel << endl;
+  for (unsigned int i = 0; i < fReaderVariables[channel].size(); ++i) {
+    cout << "  " << fReaderVariables[channel][i] << endl;
   }
 
 }
 
 
 // ----------------------------------------------------------------------
-void plotBDT::ssb() {
+void plotBDT::ssb(int ichan) {
 
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(1);
-
-  TTree *t(0); 
-  t = (TTree*)fRootFile->Get("bdtTree");
-  if (0 == t) {
-    cout << "%%%%%%% bdtTree not found in " << fRootFile->GetName() << endl;
-    return;
-  }
-  cout << "bdtTree with entries = " << t->GetEntries() << endl;
-
-  int bdtBins(200); 
+  
+  TH1D *hssb0(0), *hssbs(0); 
+  hssb0 = (TH1D*)fHistFile->Get(Form("ssb0c%d", ichan)); 
+  hssbs = (TH1D*)fHistFile->Get(Form("ssbsc%d", ichan)); 
   double bdtMin(-1.0), bdtMax(1.0); 
-  TH1D *sm = new TH1D("sm", "m(signal)", 100, 4.9, 5.9); sm->Sumw2();
-  TH1D *dm = new TH1D("dm", "m(data)", 100, 4.9, 5.9); dm->Sumw2();
-  TH1D *h  = new TH1D("s1", "S/Sqrt(S+B)", bdtBins, bdtMin, bdtMax); h->Sumw2();
-  setTitles(h, "b >", "S/#sqrt{S+B}", 0.05, 1.05); 
-
-  double bdt, m, w8, pvw8; 
-  int classID, m1q, m2q;
-  bool gmuid, gtqual, hlt, hltm, hltm2, json;
-  t->SetBranchAddress("bdt", &bdt);
-  t->SetBranchAddress("classID", &classID);
-  t->SetBranchAddress("m", &m);
-  t->SetBranchAddress("weight", &w8);
-  t->SetBranchAddress("json", &json);  
-  t->SetBranchAddress("hlt", &hlt);    
-  t->SetBranchAddress("gtqual", &gtqual);  
-  t->SetBranchAddress("pvw8", &pvw8);  
-  t->SetBranchAddress("hltm", &hltm);
-  t->SetBranchAddress("hltm2", &hltm2);
-  t->SetBranchAddress("gmuid", &gmuid);
-  t->SetBranchAddress("m1q", &m2q);
-  t->SetBranchAddress("m2q", &m1q);
-
-  // -- compute S and B
-  double bdtCut, maxSSB(-1.), maxBDT(-1.), maxSSBsimple(-1.); 
-  int nEvent(0); 
-  //    for (int ibin = 80; ibin < 82; ++ibin) {
-  for (int ibin = 0; ibin < bdtBins; ++ibin) {
-    bdtCut = bdtMin + ibin*(bdtMax-bdtMin)/bdtBins;
-    nEvent = t->GetEntries();
-    cout << "=============>  bin " << ibin << " cutting at bdt > " << bdtCut << " with " << nEvent << " entries" << endl;
-    sm->Reset();
-    dm->Reset();
-    for (Long64_t ievt=0; ievt<nEvent; ievt++) {
-      t->GetEntry(ievt);
-      if (1 == classID && false == json) continue;
-      if (false == hlt) continue;
-      if (false == hltm2) continue;
-      if (false == gmuid) continue;
-      if (bdt < bdtCut) continue;
+  int bdtBins(200); 
+  if (0 == hssb0) {
+    
+    TTree *t(0); 
+    t = (TTree*)fRootFile->Get("bdtTree");
+    if (0 == t) {
+      cout << "%%%%%%% bdtTree not found in " << fRootFile->GetName() << endl;
+      return;
+    }
+    cout << "bdtTree with entries = " << t->GetEntries() << endl;
+    
+    fHistFile->cd();
+    TH1D *sm = new TH1D("sm", "m(signal)", 100, 4.9, 5.9); sm->Sumw2();
+    TH1D *dm = new TH1D("dm", "m(data)", 100, 4.9, 5.9); dm->Sumw2();
+    hssb0 = new TH1D(Form("ssb0c%d", ichan), "S/Sqrt(S+B)", bdtBins, bdtMin, bdtMax); hssb0->Sumw2();
+    hssb0->SetDirectory(fHistFile); 
+    hssbs = new TH1D(Form("ssbsc%d", ichan), "S/Sqrt(S+B) (simple)", bdtBins, bdtMin, bdtMax); hssbs->Sumw2();
+    hssbs->SetDirectory(fHistFile); 
+    setTitles(hssb0, "b >", "S/#sqrt{S+B}", 0.05, 1.01); 
+    setTitles(hssbs, "b >", "S/#sqrt{S+B}", 0.05, 1.01); 
+    
+    double bdt, m, w8, pvw8; 
+    int classID, m1q, m2q;
+    bool gmuid, gtqual, hlt, hltm, hltm2, json;
+    t->SetBranchAddress("bdt", &bdt);
+    t->SetBranchAddress("classID", &classID);
+    t->SetBranchAddress("m", &m);
+    t->SetBranchAddress("weight", &w8);
+    t->SetBranchAddress("json", &json);  
+    t->SetBranchAddress("hlt", &hlt);    
+    t->SetBranchAddress("gtqual", &gtqual);  
+    t->SetBranchAddress("pvw8", &pvw8);  
+    t->SetBranchAddress("hltm", &hltm);
+    t->SetBranchAddress("hltm2", &hltm2);
+    t->SetBranchAddress("gmuid", &gmuid);
+    t->SetBranchAddress("m1q", &m2q);
+    t->SetBranchAddress("m2q", &m1q);
+    
+    // -- compute S and B
+    double bdtCut, maxSSB(-1.), maxBDT(-1.), maxSSBsimple(-1.); 
+    int nEvent(0); 
+    //    for (int ibin = 80; ibin < 82; ++ibin) {
+    for (int ibin = 0; ibin < bdtBins; ++ibin) {
+      bdtCut = bdtMin + ibin*(bdtMax-bdtMin)/bdtBins;
+      nEvent = t->GetEntries();
+      cout << "=============>  bin " << ibin << " cutting at bdt > " << bdtCut << " with " << nEvent << " entries" << endl;
+      sm->Reset();
+      dm->Reset();
+      for (Long64_t ievt=0; ievt<nEvent; ievt++) {
+	t->GetEntry(ievt);
+	if (1 == classID && false == json) continue;
+	if (false == hlt) continue;
+	if (false == hltm2) continue;
+	if (false == gmuid) continue;
+	if (bdt < bdtCut) continue;
+	
+	if (1 == classID && 5.2<m && m<5.45) continue;
+	if (1 == classID && m<4.9) continue;
+	if (1 == classID && m>5.9) continue;
+	
+	if (0 == classID) {
+	  sm->Fill(m, w8);
+	} else {
+	  dm->Fill(m, w8); 
+	}
+	
+      }
       
-      if (1 == classID && 5.2<m && m<5.45) continue;
-      if (1 == classID && m<4.9) continue;
-      if (1 == classID && m>5.9) continue;
-
-      if (0 == classID) {
-	sm->Fill(m, w8);
+      double s = sm->Integral(sm->FindBin(5.3), sm->FindBin(5.45));
+      double pbg = 0.07*s;
+      double d0 = dm->Integral(dm->FindBin(4.9), dm->FindBin(5.3));
+      double d1 = dm->Integral(dm->FindBin(5.45), dm->GetNbinsX());
+      double d = dm->Integral(0, dm->GetNbinsX());
+      double bsimple = d*(5.45-5.30)/(5.9-4.9-0.25);
+      
+      bgBlind(dm, 2, 4.9, 5.9);
+      double b = fBsBgExp;
+      if (s+b >0) {
+	double ssb = s/TMath::Sqrt(s+b+pbg);
+	cout << "bdt> " << bdtCut << " d = " << d << " s = " << s  << " b = " << b
+	     << " ssb = " << ssb << endl;
+	double ssbsimple = s/TMath::Sqrt(s+bsimple);
+	if (ssbsimple > maxSSBsimple) {
+	  maxSSBsimple = ssbsimple; 
+	}
+	if (ssb > maxSSB) {
+	  maxSSB = ssb; 
+	  maxBDT = bdtCut;
+	}
+	hssb0->SetBinContent(ibin, ssb); 
+	hssb0->SetBinError(ibin, 0.03*ssb); 
+	hssbs->SetBinContent(ibin, ssbsimple); 
+	hssbs->SetBinError(ibin, 0.03*ssbsimple); 
       } else {
-	dm->Fill(m, w8); 
+	hssb0->SetBinContent(ibin, 0.); 
+	hssbs->SetBinContent(ibin, 0.); 
       }
-      
+      c0->Clear();
+      dm->SetTitle(Form("b >%f", bdtCut));
+      dm->Draw("e");
+      sm->Draw("samehist");
+      c0->Modified();
+      c0->Update();
+      if (s < 1e-6) break;
     }
 
-    double s = sm->Integral(sm->FindBin(5.3), sm->FindBin(5.45));
-    double pbg = 0.07*s;
-    double d0 = dm->Integral(dm->FindBin(4.9), dm->FindBin(5.3));
-    double d1 = dm->Integral(dm->FindBin(5.45), dm->GetNbinsX());
-    double d = dm->Integral(0, dm->GetNbinsX());
-    double bsimple = d*(5.45-5.30)/(5.9-4.9-0.25);
-
-    bgBlind(dm, 2, 4.9, 5.9);
-    double b = fBsBgExp;
-    if (s+b >0) {
-      double ssb = s/TMath::Sqrt(s+b+pbg);
-      cout << "bdt> " << bdtCut << " d = " << d << " s = " << s  << " b = " << b
-	   << " ssb = " << ssb << endl;
-      double ssbsimple = s/TMath::Sqrt(s+bsimple);
-      if (ssbsimple > maxSSBsimple) {
-	maxSSBsimple = ssbsimple; 
-      }
-      if (ssb > maxSSB) {
-	maxSSB = ssb; 
-	maxBDT = bdtCut;
-      }
-      h->SetBinContent(ibin, ssb); 
-      //      h->SetBinError(ibin, TMath::Abs(ssb-ssbsimple)); 
-    } else {
-      h->SetBinContent(ibin, 0); 
-    }
-    //    cout << "S = " << s << " B = " << b << " => S/sqrt(S+B) = " << s/TMath::Sqrt(s+b) << endl;
-    c0->Clear();
-    dm->SetTitle(Form("b >%f", bdtCut));
-    dm->Draw("e");
-    sm->Draw("samehist");
-    c0->Modified();
-    c0->Update();
-    if (s < 1e-6) break;
+    hssb0->Write(); 
+    hssbs->Write(); 
   }
+
+  //   hssb0 = (TH1D*)fHistFile->Get(Form("ssb0c%d", ichan)); 
+  //   hssbs = (TH1D*)fHistFile->Get(Form("ssbsc%d", ichan)); 
+
+  double maxSSB(0.), maxBDT(0.), maxSSBsimple(0.), maxBDTsimple(0.); 
+  double ssb0(0.), ssbs(0.), bdtCut(0.); 
+  for (int i = 1; i < bdtBins; ++i) {
+    bdtCut = bdtMin + i*(bdtMax-bdtMin)/bdtBins;
+    ssb0 = hssb0->GetBinContent(i); 
+    ssbs = hssbs->GetBinContent(i); 
+    if (ssb0 > maxSSB) {
+      maxSSB = ssb0; 
+      maxBDT = bdtCut;
+    }
+    if (ssbs > maxSSBsimple) {
+      maxSSBsimple = ssbs; 
+      maxBDTsimple = bdtCut; 
+    }
+  }
+
   fTEX << formatTex(maxSSB, Form("%s:%s:maxSSB:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
-  //  fTEX << formatTex(maxSSBsimple, Form("%s:%s:maxSSBsimple:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
   fTEX << formatTex(maxBDT, Form("%s:%s:maxSSB:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+  fTEX << formatTex(maxSSBsimple, Form("%s:%s:maxSSBsimple:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+  fTEX << formatTex(maxBDTsimple, Form("%s:%s:maxBDTsimple:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
 
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
   
 
-  h->SetMaximum(maxSSB+0.5); 
-  h->Draw();
-  //  tl->DrawLatex(0.25, 0.75, Form("S_{max} = %4.3f (%4.3f)", maxSSB, maxSSBsimple));
-  tl->DrawLatex(0.25, 0.75, Form("S_{max} = %4.3f", maxSSB));
-  tl->DrawLatex(0.25, 0.68, Form("B_{max} = %4.3f", maxBDT));
-  c0->SaveAs(Form("%s/%s-ssb.pdf", fDirectory.c_str(), fBdtString.c_str())); 
+  hssb0->SetMaximum(maxSSB+0.5); 
+  hssb0->SetMarkerStyle(24); 
+  hssb0->Draw("e");
+  hssbs->SetLineWidth(2); 
+  hssbs->Draw("histsame");
 
   double xmax(0.), xmin(0.); 
-  int maxbin = h->GetMaximumBin(); 
-  double maxVal = h->GetBinContent(maxbin);
+  int maxbin = hssb0->GetMaximumBin(); 
+  double maxVal = hssb0->GetBinContent(maxbin);
   double thr(0.80*maxVal); 
   
   for (int i =  maxbin; i > 0;  --i) {
-    if (h->GetBinContent(i) < thr) {
-      xmin = h->GetBinLowEdge(i); 
-      cout << "xmin = " << xmin << " with " << h->GetBinContent(i) << " in bin " << i 
-	   << " next one: " << h->GetBinContent(i-1)
-	   << endl;
+    if (hssb0->GetBinContent(i) < thr) {
+      xmin = hssb0->GetBinLowEdge(i); 
       break;
     }
   }
 
-  for (int i = maxbin; i < h->GetNbinsX(); ++i) {
-    if (h->GetBinContent(i) < thr) {
-      xmax = h->GetBinCenter(i+1); 
-      cout << "xmax = " << xmax << " with " << h->GetBinContent(i) << " in bin " << i 
-	   << " next one: " << h->GetBinContent(i+1)
-	   << endl;
+  for (int i = maxbin; i < hssb0->GetNbinsX(); ++i) {
+    if (hssb0->GetBinContent(i) < thr) {
+      xmax = hssb0->GetBinCenter(i+1); 
       break;
     }
   }
-
-  for (int i = 0; i < h->GetNbinsX(); ++i) h->SetBinError(i, 0.03*h->GetBinContent(i)); 
-
 
   cout << "maxval: " << maxVal << endl;
   cout << "maxbin: " << maxbin << endl;
   cout << "xmin:   " << xmin << endl;
-  cout << "max x:  " << h->GetBinCenter(maxbin) << endl;
+  cout << "max x:  " << hssb0->GetBinCenter(maxbin) << endl;
   cout << "xmax:   " << xmax << endl;
   
-  TF1 *f1 = fpFunc->pol2local(h, 0.1); 
-  h->Fit(f1, "r", "", xmin, xmax); 
-  double maxfitssbX = h->GetFunction("iF_pol2local")->GetParameter(2); 
-  double maxfitssbY = h->GetFunction("iF_pol2local")->GetParameter(0); 
+  TF1 *f1 = fpFunc->pol2local(hssb0, 0.2); 
+  gStyle->SetOptFit(0); 
+  hssb0->Fit(f1, "r", "same", xmin, xmax); 
+  double maxfitssbX = hssb0->GetFunction("iF_pol2local")->GetParameter(2); 
+  double maxfitssbY = hssb0->GetFunction("iF_pol2local")->GetParameter(0); 
 
   fTEX << formatTex(maxfitssbX, Form("%s:%s:maxfitSSB:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
   fTEX << formatTex(maxfitssbY, Form("%s:%s:maxfitSSB:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+
+  double avgBDT = (maxBDT + maxBDTsimple + maxfitssbX)/3; 
+  double avgSSB = (hssb0->GetBinContent(hssb0->FindBin(avgBDT))
+		   +  hssbs->GetBinContent(hssbs->FindBin(avgBDT))
+		   +  f1->Eval(avgBDT))/3;
+
+  fTEX << formatTex(avgSSB, Form("%s:%s:avgSSB:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+  fTEX << formatTex(avgBDT, Form("%s:%s:avgSSB:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+
+  tl->DrawLatex(0.27, 0.83, "S_{max}");
+  tl->DrawLatex(0.41, 0.83, "B_{max}");
+
+  tl->DrawLatex(0.18, 0.75, "V_{1}");
+  tl->DrawLatex(0.27, 0.75, Form("%4.3f", maxSSB));
+  tl->DrawLatex(0.41, 0.75, Form("%4.3f", maxBDT));
+
+  tl->DrawLatex(0.18, 0.69, "V_{2}");
+  tl->DrawLatex(0.27, 0.69, Form("%4.3f", maxSSBsimple));
+  tl->DrawLatex(0.41, 0.69, Form("%4.3f", maxBDTsimple));
+
+  tl->DrawLatex(0.18, 0.63, "fit");
+  tl->DrawLatex(0.27, 0.63, Form("%4.3f", maxfitssbY));
+  tl->DrawLatex(0.41, 0.63, Form("%4.3f", maxfitssbX));
+
+  tl->DrawLatex(0.18, 0.57, "avg");
+  tl->DrawLatex(0.27, 0.57, Form("%4.3f", avgSSB));
+  tl->DrawLatex(0.41, 0.57, Form("%4.3f", avgBDT));
 
   c0->SaveAs(Form("%s/%s-fit-ssb.pdf", fDirectory.c_str(), fBdtString.c_str())); 
 
@@ -2089,8 +2257,6 @@ void plotBDT::plotEffVsBg(int offset) {
   shrinkPad(0.15, 0.15, 0.18); 
   double sf(1.1);
   
-  //  TFile *f = TFile::Open("default/anaBmm.plotBDT.default-11.root");
-
   TH1D *h0 = (TH1D*)(gDirectory->Get(Form("hBgEvts%d", offset)))->Clone("h0"); 
   TH1D *h1 = (TH1D*)(gDirectory->Get(Form("hSgEff%d", offset)))->Clone("h1"); 
 
@@ -2496,28 +2662,42 @@ void plotBDT::loopFunction3(int mode) {
 
 // ----------------------------------------------------------------------
 void plotBDT::allCorrelationPlots(double bdtcut, std::string fname) {  
-  correlationPlot(bdtcut, "pvips", 0., 5., fname);
-  correlationPlot(bdtcut, "pvip", 0., 0.02, fname);
+  
+  int channel = bdtString2Channel(fname);
+  
+  for (unsigned int j = 0; j < 2; ++j) {
+    cout << "channel " << j << " size = " << fReaderVariables[j].size() << endl;
+    for (unsigned int i = 0; i < fReaderVariables[j].size(); ++i) {
+      cout << "channel " << j << " var " << i << ": " << fReaderVariables[j][i] << endl;
+    }
+  }
 
-  correlationPlot(bdtcut, "pt", 6., 40., fname);
-  correlationPlot(bdtcut, "eta", -2.4, 2.4, fname);
+  for (unsigned int i = 0; i < fReaderVariables[channel].size(); ++i) {
+    
+    if (!fReaderVariables[channel][i].compare("pvips"))    correlationPlot(bdtcut, "pvips", 0., 5., fname);
+    if (!fReaderVariables[channel][i].compare("pvip"))     correlationPlot(bdtcut, "pvip", 0., 0.02, fname);
+    
+    if (string::npos != fReaderVariables[channel][i].find("pt"))       correlationPlot(bdtcut, "pt", 6., 40., fname);
+    if (string::npos != fReaderVariables[channel][i].find("eta"))      correlationPlot(bdtcut, "eta", -2.4, 2.4, fname);
+    
+    if (string::npos != fReaderVariables[channel][i].find("fls3d"))    correlationPlot(bdtcut, "fls3d", 0, 100, fname);
+    if (string::npos != fReaderVariables[channel][i].find("alpha"))    correlationPlot(bdtcut, "alpha", 0, 0.2, fname);
+    if (string::npos != fReaderVariables[channel][i].find("maxdoca"))  correlationPlot(bdtcut, "maxdoca", 0, 0.04, fname);
 
-  correlationPlot(bdtcut, "fls3d", 0, 100, fname);
-  correlationPlot(bdtcut, "alpha", 0, 0.2, fname);
-  correlationPlot(bdtcut, "maxdoca", 0, 0.04, fname);
-
-  correlationPlot(bdtcut, "iso", 0.21, 1.01, fname);
-  correlationPlot(bdtcut, "closetrk", 0., 21, fname);
-  correlationPlot(bdtcut, "docatrk", 0., 0.03,  fname);
-
-  correlationPlot(bdtcut, "m1iso", 0., 0.03,  fname);
-  correlationPlot(bdtcut, "m2iso", 0., 0.03,  fname);
-
+    if (string::npos != fReaderVariables[channel][i].find("iso"))      correlationPlot(bdtcut, "iso", 0.21, 1.01, fname);
+    if (string::npos != fReaderVariables[channel][i].find("closetrk")) correlationPlot(bdtcut, "closetrk", 0., 21, fname);
+    if (string::npos != fReaderVariables[channel][i].find("docatrk"))  correlationPlot(bdtcut, "docatrk", 0., 0.03,  fname);
+    
+    if (string::npos != fReaderVariables[channel][i].find("m1iso"))    correlationPlot(bdtcut, "m1iso", 0., 0.03,  fname);
+    if (string::npos != fReaderVariables[channel][i].find("m2iso"))    correlationPlot(bdtcut, "m2iso", 0., 0.03,  fname);
+  }
 }
 
 
 // ----------------------------------------------------------------------
 void plotBDT::correlationPlot(double bdtcut, std::string var, double xmin, double xmax, std::string fname) {  
+
+  cout << "     correlationPlot: " << var << " in fname = " << fname << endl;
 
   // -- Events1
   TFile *f0 = TFile::Open(Form("weights/%s-Events0.root", fname.c_str()));
@@ -2596,28 +2776,6 @@ void plotBDT::correlationPlot(double bdtcut, std::string var, double xmin, doubl
 
   zone(2,2);
   
-//   c0->cd(1);
-//   hs1->Draw();
-//   hs2->Scale(hs1->GetSumOfWeights()/hs2->GetSumOfWeights());
-//   hs2->SetMarkerColor(kRed);  hs2->SetMarkerSize(1.);
-//   hs2->Draw("esame");
-
-//   tl->SetTextColor(kBlack);
-//   tl->DrawLatex(0.5, 0.5, Form("signal && BDT>%3.1f", bdtcut)); 
-//   tl->SetTextColor(kRed);
-//   tl->DrawLatex(0.5, 0.45, Form("signal (same area)")); 
-
-//   c0->cd(2);
-//   hb1->Draw();
-//   hb2->Scale(hb1->GetSumOfWeights()/hb2->GetSumOfWeights());
-//   hb2->SetMarkerColor(kRed); hb2->SetMarkerSize(1.);
-//   hb2->Draw("esame");
-
-//   tl->SetTextColor(kBlack);
-//   tl->DrawLatex(0.5, 0.5, Form("bg && BDT>%3.1f", bdtcut)); 
-//   tl->SetTextColor(kRed);
-//   tl->DrawLatex(0.5, 0.45, Form("bg (same area)")); 
-
   c0->cd(1);
   hsr0->Draw("hist");
   hsr1->SetLineColor(kRed);  hsr1->Draw("histsame");
@@ -2851,4 +3009,68 @@ string plotBDT::parseXmlOption(std::string line) {
   //  cout << "==========" << line.substr(m1+1, m0-m1) << endl;
   return line.substr(m1+1, m0-m1-1); 
 
+}
+
+
+// ----------------------------------------------------------------------
+void plotBDT::plotAndFitIt(TH1D* h, string name) {
+  double npvmax(30.); 
+  double ypoint = (h->GetMaximum() > 0. ? 0.34 : 0.84); 
+  h->SetAxisRange(0., npvmax, "X");
+  h->SetAxisRange(-0.4, 0.4, "Y");
+  setHist(h, kBlack, 20, 2, 3); 
+  h->Fit("pol0", "+");  
+  tl->DrawLatex(0.2, 0.92, Form("(n_{min} > %d)", fShow)); 
+  if (h->GetFunction("pol0")) {
+    h->GetFunction("pol0")->SetLineColor(kBlue); 
+    h->GetFunction("pol0")->SetLineStyle(kDashed); 
+    tl->DrawLatex(0.2, ypoint, Form("p0 = %5.4f #pm %5.4f", 
+				    h->GetFunction("pol0")->GetParameter(0), 
+				    h->GetFunction("pol0")->GetParError(0))
+		  );
+    
+    tl->DrawLatex(0.5, ypoint, Form("#chi^{2}/dof = %3.1f/%3d (pol0)", 
+				    h->GetFunction("pol0")->GetChisquare(), 
+				    h->GetFunction("pol0")->GetNDF())
+		  );
+  }
+  
+  h->Fit("pol1", "+", "same");  
+  if (h->GetFunction("pol1")) {
+    h->GetFunction("pol1")->SetLineColor(kRed); 
+    h->GetFunction("pol1")->SetLineStyle(kSolid); 
+    tl->DrawLatex(0.2, ypoint-0.1, Form("p0 = %5.4f #pm %5.4f", 
+					h->GetFunction("pol1")->GetParameter(0), 
+					h->GetFunction("pol1")->GetParError(0))
+		  );
+    tl->DrawLatex(0.2, ypoint-0.14, Form("p1 = %5.4f #pm %5.4f", 
+					 h->GetFunction("pol1")->GetParameter(1), 
+					 h->GetFunction("pol1")->GetParError(1))
+		  );
+    
+    tl->DrawLatex(0.5, ypoint-0.1, Form("#chi^{2}/dof = %3.1f/%3d (pol1)", 
+					h->GetFunction("pol1")->GetChisquare(), 
+					h->GetFunction("pol1")->GetNDF())
+		  );
+  }
+  
+  c0->SaveAs(name.c_str()); 
+}
+
+// ----------------------------------------------------------------------
+void plotBDT::flushProfileBin(TProfile *p, int j) {
+  p->SetBinError(j, 0.); 
+  p->SetBinEntries(j, 0.); 
+  p->SetBinContent(j, 0.); 
+
+}
+
+// ----------------------------------------------------------------------
+int plotBDT::bdtString2Channel(string s) {
+  int channel(-1); 
+  if (string::npos != s.find("TMVA-0")) channel = 0; 
+  if (string::npos != s.find("TMVA-1")) channel = 1; 
+  if (string::npos != s.find("TMVA-2")) channel = 0; 
+  if (string::npos != s.find("TMVA-3")) channel = 1; 
+  return channel;
 }

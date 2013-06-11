@@ -40,7 +40,7 @@ public:
   void xmlResetHists(); 
 
   void plotSSB();
-  void ssb();
+  void ssb(int ichan);
   void overlap();
   void overlayBdtOutput(); 
 
@@ -54,6 +54,9 @@ public:
 
   void bdtScan();
   void bdtDependencies(std::string mode = "SgData");
+  void plotAndFitIt(TH1D* h, std::string name);
+  void flushProfileBin(TProfile *p, int j);
+
   void illustrateAntiMuonSample(const char *cuts = "hlt&&fls3d>5&&alpha<0.03&&chi2/dof<2&&iso>0.7"); 
 
   void testLoop(std::string mode);
@@ -74,11 +77,12 @@ public:
   int  GetNumberOfTargets( TDirectory *dir);
   int  GetNumberOfInputVariables( TDirectory *dir);
   std::string parseXmlOption(std::string line);
+  int bdtString2Channel(std::string s);
 
   std::string fXmlFile, fBdtString;
   TFile *fRootFile; 
   
-  std::vector<string> fReaderVariables;
+  std::vector<string> fReaderVariables[2];
   
   // -- histograms/profiles  filled in loopFunction
   std::vector<TH1D*> fhMass, fhMassNoCuts;
@@ -88,6 +92,7 @@ public:
   std::vector<TH1D*> fhNpvBDTchan0, fhNpvBDTchan1, fhNpvAcBDTchan0, fhNpvAcBDTchan1, fhNpvAdBDTchan0, fhNpvAdBDTchan1; 
   TH1D *fmeanNpvBDTchan0, *fmeanNpvBDTchan1, *fmeanNpvAcBDTchan0, *fmeanNpvAcBDTchan1, *fmeanNpvAdBDTchan0, *fmeanNpvAdBDTchan1;
   TH1D *frmsNpvBDTchan0, *frmsNpvBDTchan1, *frmsNpvAcBDTchan0, *frmsNpvAcBDTchan1, *frmsNpvAdBDTchan0, *frmsNpvAdBDTchan1;
+  TH1D *feffNpvBDTchan0, *feffNpvBDTchan1, *feffNpvAcBDTchan0, *feffNpvAcBDTchan1, *feffNpvAdBDTchan0, *feffNpvAdBDTchan1;
 
   // -- hacked MC plots
   std::vector<TH1D*> fhMcMass, fhMcBDT, fhMcRatio;

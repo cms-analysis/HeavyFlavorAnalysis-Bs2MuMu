@@ -26,7 +26,7 @@ plotResults::plotResults(const char *files, const char *dir, const char *cuts, i
   cout << "==> plotResults files: " << files << " dir: " << dir << " cuts: " << cuts << endl;
 
   fNumbersFileName = fDirectory + "/anaBmm.plotResults." + fSuffix + ".tex";
-  system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
+  //  system(Form("/bin/rm -f %s", fNumbersFileName.c_str()));
   fTEX.open(fNumbersFileName.c_str(), ios::app);
 
   printCuts(cout); 
@@ -58,13 +58,13 @@ void plotResults::makeAll(int channels, int nevents) {
   }
  
   zone(1);
-  fSaveLargerTree = true; //FIXME
+  //DBX  fSaveLargerTree = true; //FIXME
 
   if (channels & 1) {
     fillAndSaveHistograms(nevents); 
   }
 
-  return; // FIXME
+  //DBX  return; // FIXME
 
   if (channels & 2) {
     calculateNumbers(2);
@@ -337,7 +337,7 @@ void plotResults::calculateNoNumbers(int chan, int mode) {
   if (1 == mode) {
     normYield(h1, chan, 5.0); 
   } else if (2 == mode) {
-    normYield2(h1, chan, 5.0); 
+    normYield2(h1, chan, 5.0, 5.6); 
   }
   fNumbersNo[chan]->fitYield  = fNoSig; 
   fNumbersNo[chan]->fitYieldE = fNoSigE; 
@@ -956,7 +956,7 @@ void plotResults::calculateSgNumbers(int chan) {
   stamp(0.18, fStampString, 0.67, fStampCms); 
   if (fDoPrint)  {
     if (fDoUseBDT) c0->SaveAs(Form("%s/%s-bdtsig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
-    else c0->SaveAs(Form("%s/%s-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
+    else c0->SaveAs(Form("%s/%s-cncsig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
   }
 
 
@@ -976,7 +976,7 @@ void plotResults::calculateSgNumbers(int chan) {
   stamp(0.18, fStampString, 0.67, fStampCms); 
   if (fDoPrint)  {
     if (fDoUseBDT) c0->SaveAs(Form("%s/%s-bdtunblinded-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
-    else c0->SaveAs(Form("%s/%s-unblinded-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
+    else c0->SaveAs(Form("%s/%s-cncunblinded-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
   }
   
 
@@ -990,7 +990,7 @@ void plotResults::calculateSgNumbers(int chan) {
   stamp(0.18, fStampString, 0.67, fStampCms); 
   if (fDoPrint)  {
     if (fDoUseBDT) c0->SaveAs(Form("%s/%s-bdtunblinded-manybins-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
-    else c0->SaveAs(Form("%s/%s-unblinded-manybins-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
+    else c0->SaveAs(Form("%s/%s-cncunblinded-manybins-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
   }
   
 
@@ -1008,7 +1008,7 @@ void plotResults::calculateSgNumbers(int chan) {
   fNumbersBs[chan]->bgBdExp    = fBdBgExp; 
   fNumbersBs[chan]->bgBdExpE   = fBdBgExpE;
   
-  double relCombError = 1./TMath::Sqrt(fBgHistHi); 
+  double relCombError = (fBgHistHi>0?1./TMath::Sqrt(fBgHistHi): 1.);
   cout << "^^^^^^^^^^^ relative statistical error on combinatorial bg: " << relCombError << " from " << fBgHistHi << endl;
 
   // -- new numbers: combined combinatorial and scaled rare sl bg  (E2 means stat + syst here!)
@@ -1165,8 +1165,8 @@ void plotResults::fillAndSaveHistograms(int nevents) {
 
   fSaveSmallTree = true; 
 
-  // -- debug
-  if (1) {
+  // -- DBX
+  if (0) {
     resetHistograms();
     fSetup = "SgData"; 
     t = getTree(fSetup); 

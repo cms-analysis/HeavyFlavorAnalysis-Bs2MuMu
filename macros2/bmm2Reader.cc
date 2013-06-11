@@ -57,7 +57,7 @@ void bmm2Reader::eventProcessing() {
     processType(); 
   } else {
     json = fpJSON->good(fRun, fLS); 
-    if (fVerbose > 1 && !json) {
+    if (fVerbose > 100 && !json) {
       cout << "JSON = 0 for run = " << fRun << " and LS = " << fLS << endl;
     }
     fProcessType = -98; 

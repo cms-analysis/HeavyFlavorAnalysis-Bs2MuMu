@@ -2000,10 +2000,10 @@ void plotClass::normYield(TH1 *h, int mode, double lo, double hi, double preco) 
     string pdfname;
     string hname(h->GetName());
     if (string::npos != hname.find("NormC")) {
-      pdfname = Form("%s/%s-normC-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
+      pdfname = Form("%s/%s-cncnormC-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
       if (fDoUseBDT)  pdfname = Form("%s/bdtnormC-data-chan%d.pdf", fDirectory.c_str(), mode);
     } else {
-      pdfname = Form("%s/%s-norm-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
+      pdfname = Form("%s/%s-cncnorm-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
       if (fDoUseBDT)  pdfname = Form("%s/bdtnorm-data-chan%d.pdf", fDirectory.c_str(), mode);
     }
 
@@ -2183,10 +2183,10 @@ void plotClass::normYield2(TH1 *h, int mode, double lo, double hi, double preco)
     string pdfname;
     string hname(h->GetName());
     if (string::npos != hname.find("NormC")) {
-      pdfname = Form("%s/%s-normC-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
+      pdfname = Form("%s/%s-cncnormC-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
       if (fDoUseBDT)  pdfname = Form("%s/%s-bdtnormC-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
     } else {
-      pdfname = Form("%s/%s-norm-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
+      pdfname = Form("%s/%s-cncnorm-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
       if (fDoUseBDT)  pdfname = Form("%s/%s-bdtnorm-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode);
     }
 
@@ -2332,7 +2332,7 @@ void plotClass::csYield2(TH1 *h, int mode, double lo, double hi, double fraction
   string hname(h->GetName());
   if (fDoPrint) {
     if (fDoUseBDT) c0->SaveAs(Form("%s/%s-bdtcs-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode));
-    else c0->SaveAs(Form("%s/%s-cs-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode));
+    else c0->SaveAs(Form("%s/%s-cnccs-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode));
   }
 
   cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
@@ -2431,7 +2431,7 @@ void plotClass::csYield(TH1 *h, int mode, double lo, double hi, double preco) {
   string hname(h->GetName());
   if (fDoPrint) {
     if (fDoUseBDT) c0->SaveAs(Form("%s/%s-bdtcs-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode));
-    else c0->SaveAs(Form("%s/%s-cs-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode));
+    else c0->SaveAs(Form("%s/%s-cnccs-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), mode));
   }
 
   cout << "N(Sig) = " << fCsSig << " +/- " << fCsSigE << endl;
@@ -4223,3 +4223,12 @@ void plotClass::saveHist(TH1* h, string add2name) {
 }
 
 
+// ----------------------------------------------------------------------
+double plotClass::getMaximum(TH1 *h1, TH1 *h2) {
+  if (0 == h1 || 0 == h2) return -1.;
+  double max1 = h1->GetMaximum(); 
+  double max2 = h2->GetMaximum(); 
+  if (max2 > max1) return max2; 
+  return max1; 
+
+}

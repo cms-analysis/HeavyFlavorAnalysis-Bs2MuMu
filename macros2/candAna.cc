@@ -70,6 +70,7 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   fBadEvent = false;
 
 
+ 
   // TESTING d.k.
   //static int count = 0; //dk
   //select_print = false; //dk
@@ -805,6 +806,8 @@ void candAna::candAnalysis() {
     }
     
   }
+
+  //  play(); 
 
   fillRedTreeData();
 
@@ -2457,7 +2460,7 @@ int candAna::osMuon(TAnaCand *pC, double r) {
 // ----------------------------------------------------------------------
 double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, double ptmin) {
   const double ptCut(ptmin), coneSize(r); 
-  const bool verbose(false);
+  const bool verbose(true);
 
   double iso(-1.), pt(0.), sumPt(0.), candPt(0.), candPtScalar(0.); 
   TSimpleTrack *ps; 
@@ -2514,7 +2517,7 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
       pIdx.push_back(i); 
       ++fCandI0trk;
       sumPt += pt; 
-      if (verbose) cout << endl;
+      if (verbose) cout << " USED THIS ONE" << endl;
     } 
     else {
       if (verbose) cout << " skipped because of deltaR = " << ps->getP().DeltaR(pC->fPlab) << endl;
@@ -2532,16 +2535,18 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
       if(doca > docaCut) continue; // check the doca cut
 
       ps = fpEvt->getSimpleTrack(trkId);
+      pt = ps->getP().Perp();  
 
 
       if ((ps->getPvIndex() > -1) && (ps->getPvIndex() != pvIdx)) { 	 
-	if (verbose) cout << " doca track " << trkId << " skipped because it is from a different PV " << ps->getPvIndex() <<endl; 	 
+	if (verbose) cout << " doca track " << trkId  << " doca = " << doca  << " pt = " << pt
+			  << " skipped because it is from a different PV " << ps->getPvIndex() <<endl; 	 
 	continue; 	 
       }
 
-      pt = ps->getP().Perp();  
       if (pt < ptCut) {
-	if (verbose) cout << " doca track " << trkId << " skipped because of pt = " << pt << endl;
+	if (verbose) cout << " doca track " << trkId  << " doca = " << doca << " pt = " << pt
+			  << " skipped because of pt = " << pt << endl;
 	continue;
       }
 
@@ -2553,6 +2558,8 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
       // -- Skip tracks already included above
       if (pIdx.end() != find(pIdx.begin(), pIdx.end(), trkId))  continue;
       if (cIdx.end() != find(cIdx.begin(), cIdx.end(), trkId))  continue;
+
+      cout << "doca trk " << trkId << " doca = " << doca << endl;
 
       ++fCandI1trk;
       sumPt += pt; 
@@ -3890,6 +3897,15 @@ double candAna::matchToMuon(TAnaTrack *pt, bool skipSame) {
 
 // ----------------------------------------------------------------------
 void candAna::play() {
+  cout << "PV: " <<   fPvX << ", " << fPvY << ", " << fPvZ << endl;
+
+  TAnaVertex sv = fpCand->fVtx;
+  cout << "SV: x = " << sv.fPoint.X() << " y = " << sv.fPoint.Y() << " z = " << sv.fPoint.Z() 
+       << " c = " << sv.fChi2 << "/" << sv.fNdof 
+       << endl;
+
+  cout << "muon 1 pt/eta/phi = " <<   fMu1Pt << "/" << fMu1Eta << "/" << fMu1Phi << endl;
+  cout << "muon 2 pt/eta/phi = " <<   fMu2Pt << "/" << fMu2Eta << "/" << fMu2Phi << endl;
 
 }
 

@@ -82,7 +82,7 @@ void plotEfficiencies::makeAll(int channel) {
 
     fSplitSeagullsFromCowboys = false; 
     fDoApplyMuonPtCuts = false; 
-    tnpVsMC(fCuts[0]->m1pt, fCuts[0]->m2pt, "analysis");
+    tnpVsMC(fCuts[0]->bdtpt, fCuts[0]->bdtpt, "analysis");
 
     fDoApplyMuonPtCuts = true; 
     
@@ -94,7 +94,7 @@ void plotEfficiencies::makeAll(int channel) {
     
     fDoApplyMuonPtCuts = false; 
     fSplitSeagullsFromCowboys = true; 
-    tnpVsMC(fCuts[0]->m1pt, fCuts[0]->m2pt, "splitSeagullsFromCowboys");
+    tnpVsMC(fCuts[0]->bdtpt, fCuts[0]->bdtpt, "splitSeagullsFromCowboys");
   }
 
   if (channel &2) {
@@ -106,7 +106,7 @@ void plotEfficiencies::makeAll(int channel) {
     fHistFile = TFile::Open(hfname.c_str());
     cout << " opened " << endl;
 
-    texNumbers(fCuts[0]->m1pt, fCuts[0]->m2pt, "analysis"); 
+    texNumbers(fCuts[0]->bdtpt, fCuts[0]->bdtpt, "analysis"); 
 
     for (int i = 0; i < 6; ++i) {
       double pt = 4.0 + i*1; 
@@ -114,7 +114,7 @@ void plotEfficiencies::makeAll(int channel) {
       texNumbers(pt, pt, "woCowboyVeto");
     }
 
-    texNumbers(fCuts[0]->m1pt, fCuts[0]->m2pt, "splitSeagullsFromCowboys"); 
+    texNumbers(fCuts[0]->bdtpt, fCuts[0]->bdtpt, "splitSeagullsFromCowboys"); 
   }
 
   if (channel &4) {
@@ -574,7 +574,9 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, string what) {
   fSetup = "SgMc"; 
   t = getTree(fSetup); 
   setupTree(t, fSetup); 
-  loopOverTree(t, fSetup, 1);
+  int nevts2use(-1); 
+  if (t->GetEntries() > 5.e6) nevts2use = 5e6; 
+  loopOverTree(t, fSetup, 1, nevts2use);
   saveHists(fSetup, m1pt, m2pt, what);
 
   
@@ -582,10 +584,9 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, string what) {
   fSetup = "NoMc"; 
   t = getTree(fSetup); 
   setupTree(t, fSetup); 
-  loopOverTree(t, fSetup, 1);
+  if (t->GetEntries() > 5.e6) nevts2use = 5e6; 
+  loopOverTree(t, fSetup, 1, nevts2use);
   saveHists(fSetup, m1pt, m2pt, what);
-  
-  fHistFile->Close(); 
   
 }
  
@@ -804,98 +805,98 @@ void plotEfficiencies::saveHists(string smode, double m1pt, double m2pt, string 
     string modifier = (fDoUseBDT?"bdt":"cnc"); 
     modifier = Form("%s:%2.1f:%2.1f", modifier.c_str(), m1pt, m2pt); 
     h1 = (TH1D*)(fhGenAndAccNumbers[i]->Clone(Form("hGenAndAccNumbers_%s_%d_chan%d", modifier.c_str(), mode, i))); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
 
     h1 = (TH1D*)(fhMuId[i]->Clone(Form("hMuId_%s_%d_chan%d", modifier.c_str(), mode, i))); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
 
     h1 = (TH1D*)(fhMuIdMC[i]->Clone(Form("hMuIdMC_%s_%d_chan%d", modifier.c_str(), mode, i))); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
 
     h1 = (TH1D*)(fhMuTr[i]->Clone(Form("hMuTr_%s_%d_chan%d", modifier.c_str(), mode, i))); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
     
     h1 = (TH1D*)(fhMuTrMC[i]->Clone(Form("hMuTrMC_%s_%d_chan%d", modifier.c_str(), mode, i))); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
     
     h1 = (TH1D*)(fhMassAbsNoCuts[i]->Clone(Form("hMassAbsNoCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassAbsNoCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
 
     h1 = (TH1D*)(fhMassNoCuts[i]->Clone(Form("hMassNoCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassNoCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
 
     h1 = (TH1D*)(fhMassNoCuts[i]->Clone(Form("hMassNoCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassNoCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
 
     h1 = (TH1D*)(fhMassWithAnaCuts[i]->Clone(Form("hMassWithAnaCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithAnaCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
 
     h1 = (TH1D*)(fhMassWithMuonCuts[i]->Clone(Form("hMassWithMuonCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithMuonCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
 
     h1 = (TH1D*)(fhMassWithTriggerCuts[i]->Clone(Form("hMassWithTriggerCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithTriggerCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
 
     h1 = (TH1D*)(fhMassWithAllCuts[i]->Clone(Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithAllCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
 
     h1 = (TH1D*)(fhMassWithAllCutsManyBins[i]->Clone(Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithAllCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
 
     h1 = (TH1D*)(fhMassWithMassCuts[i]->Clone(Form("hMassWithMassCuts_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithMassCuts_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
 
     h1 = (TH1D*)(fhMassWithMassCutsManyBins[i]->Clone(Form("hMassWithMassCutsManyBins_%s_%d_chan%d", modifier.c_str(), mode, i))); 
     h1->SetTitle(Form("hMassWithMassCutsManyBins_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-    //     h1->SetDirectory(fHistFile); 
-    //     h1->Write();
+    h1->SetDirectory(fHistFile); 
+    h1->Write();
 
     if (string::npos != fSetup.find("No") || string::npos != fSetup.find("Cs")) {
       h1 = (TH1D*)(fhNorm[i]->Clone(Form("hNorm_%s_%d_chan%d", modifier.c_str(), mode, i)));       
       h1->SetTitle(Form("hNorm_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-      //       h1->SetDirectory(fHistFile); 
-      //       h1->Write();
+      h1->SetDirectory(fHistFile); 
+      h1->Write();
 
       h1 = (TH1D*)(fhNormC[i]->Clone(Form("hNormC_%s_%d_chan%d", modifier.c_str(), mode, i)));     
       h1->SetTitle(Form("hNormC_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-      //       h1->SetDirectory(fHistFile); 
-      //       h1->Write();
+      h1->SetDirectory(fHistFile); 
+      h1->Write();
     }
 
     if (string::npos != fSetup.find("DstarPi")) {
       h1 = (TH1D*)(fhDstarPi[i]->Clone(Form("hDstarPi_%s_%d_chan%d", modifier.c_str(), mode, i))); 
       h1->SetTitle(Form("hDstarPi_%s_%d_chan%d %s", modifier.c_str(), mode, i, smode.c_str())); 
-      //       h1->SetDirectory(fHistFile); 
-      //       h1->Write();
+      h1->SetDirectory(fHistFile); 
+      h1->Write();
     }
     
     if (fDoUseBDT) {
       h2 = (TH2D*)(fhBdtMass[i]->Clone(Form("hBdtMass_%s_%d_chan%d", modifier.c_str(), mode, i))); 
-      //       h2->SetDirectory(fHistFile); 
-      //       h2->Write();
+      h2->SetDirectory(fHistFile); 
+      h2->Write();
     }
 
   }

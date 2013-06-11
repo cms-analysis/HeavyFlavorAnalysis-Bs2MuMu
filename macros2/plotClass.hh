@@ -218,6 +218,7 @@ public:
   virtual double getValueByLabel(TH1D *h, std::string label); 
   virtual void rmSubString(std::string &sinput, const std::string &remove);
   virtual void rmPath(string &sInput);
+  virtual double getMaximum(TH1 *h1, TH1 *h2);
 
   std::string fFiles; 
   // -- Files for Signal and Normalization modes in data and MC

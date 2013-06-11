@@ -32,6 +32,7 @@ public:
   void makeSample(std::string sample1, std::string selection, std::string = "B", int nevents = -1, int nstart = 0);
 
   void makeOverlay(std::string sample1, std::string sample2, std::string channel, std::string selection);
+  void makeOverlay2Channels(string sample, string channel1, string channel2, string selection);
   void allSystematics();
   void systematics(std::string sample1, std::string selection, int chan = 0);
 
@@ -43,7 +44,8 @@ public:
   void sbsSingleFile(string file1, string sample1 = "NoData", string channel = "B", string selection = "Presel");
   void overlay2Files(std::string file1, std::string sample1, 
 		     std::string file2, std::string sample2, 
-		     std::string chan = "B", std::string selection = "Presel", std::string what = ""); 
+		     std::string chan = "BLoPU", std::string chan = "BHiPU", 
+		     std::string selection = "Presel", std::string what = ""); 
   
   AnalysisDistribution* bookDistribution(std::string hn, std::string ht, std::string hc, int nbins, double lo, double hi); 
   AnalysisDistribution* bookSpecialDistribution(string hn, string ht, string hc, int nbins, double lo, double hi, bool *presel);
@@ -70,7 +72,7 @@ public:
     , *fpPvDchi2[NAD], *fpOtherVtx[NAD]
     ;
   int fOffset;
-  int fMode;
+  int fChanMode;
 
   vector<std::string> fDoList; 
 

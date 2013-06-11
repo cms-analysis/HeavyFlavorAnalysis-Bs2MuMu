@@ -97,28 +97,6 @@ plotReducedOverlays::~plotReducedOverlays() {
 
 // ----------------------------------------------------------------------
 void plotReducedOverlays::makeAll(string selection) {
-//   vector<string> dolist; 
-//   dolist.push_back("B"); 
-//   dolist.push_back("E"); 
-
-//   string hfname  = fDirectory + "/anaBmm.plotReducedOverlays." + fSuffix + ".root";
-//   cout << "fHistFile: " << hfname << endl;
-//   fHistFile = TFile::Open(hfname.c_str(), "UPDATE");
-
-//   for (unsigned i = 0; i < dolist.size(); ++i) {
-//     fSetup = dolist[i]; 
-//     makeSampleOverlay("NoData", "NoMc", selection); 
-//     makeSampleOverlay("CsData", "CsMc", selection); 
-//     makeSampleOverlay("SgData", "SgMc", selection); 
-
-//     // -- unconventional overlays
-//     overlay("SgMc", "CsData", "HLT", "bdt"); 
-//     overlay("SgMc", "CsMc", "HLT", "bdt"); 
-//     overlay("SgMc", "NoMc", "HLT", "bdt"); 
-//     overlay("NoMc", "CsMc", "HLT", "bdt"); 
-//     overlay("NoData", "CsData", "HLT", "bdt"); 
-//   }
-//   //  systematics("SgMc", "NoMc"); 
 }
 
 
@@ -216,11 +194,28 @@ void plotReducedOverlays::makeOverlay(string sample1, string sample2, string cha
   fHistFile->Close();
 }
 
+// ----------------------------------------------------------------------
+void plotReducedOverlays::makeOverlay2Channels(string sample, string channel1, string channel2, string selection) {
+}
+
+
 
 // ----------------------------------------------------------------------
 void plotReducedOverlays::makeSample(string mode, string selection, string channel, int nevents, int nstart) {
 
   fSetup = channel;
+
+  fChanMode = -1; 
+  if (fSetup == "B") fChanMode = 0; 
+  if (fSetup == "E") fChanMode = 1; 
+  if (fSetup == "BLoPU") fChanMode = 10; 
+  if (fSetup == "BHiPU") fChanMode = 11; 
+  if (fSetup == "ELoPU") fChanMode = 12; 
+  if (fSetup == "EHiPU") fChanMode = 13; 
+  if (fChanMode < 0) {
+    cout << "XXXXXXXXXXXXXXXXXXXX unknown mode XXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    return;
+  }
 
   // -- dump histograms
   string hfname  = fDirectory + "/anaBmm.plotReducedOverlays." + fSuffix + ".root";
@@ -608,12 +603,6 @@ void plotReducedOverlays::overlay(string sample1, string sample2, string selecti
     h1->Draw("e");
     h2->Draw("samehist");
 
-//     if (leftList.end() != find(leftList.begin(), leftList.end(), doList[i])) {
-//       newLegend(0.25, 0.7, 0.50, 0.85); 
-//     } else {
-//       newLegend(0.50, 0.7, 0.75, 0.85); 
-//     }
-
     if (doLegend) {
       newLegend(0.50, 0.7, 0.75, 0.85); 
       
@@ -687,7 +676,8 @@ void plotReducedOverlays::overlay(string sample1, string sample2, string selecti
 // ----------------------------------------------------------------------
 void plotReducedOverlays::overlay2Files(std::string file1, std::string sample1, 
 					std::string file2, std::string sample2, 
-					std::string chan, std::string selection, std::string what) {
+					std::string chan1, std::string chan2, 
+					std::string selection, std::string what) {
   
   TFile *f1 =  TFile::Open(file1.c_str(), "");
   string fn1 = file1;   
@@ -705,8 +695,8 @@ void plotReducedOverlays::overlay2Files(std::string file1, std::string sample1,
   TH1D *h1(0), *h2(0); 
   string n1, n2; 
   for (unsigned int i = 0; i < fDoList.size(); ++i) {
-    n1 =  Form("sbs_%s_%s_%s%s", chan.c_str(), sample1.c_str(), fDoList[i].c_str(), selection.c_str());
-    n2 =  Form("sbs_%s_%s_%s%s", chan.c_str(), sample2.c_str(), fDoList[i].c_str(), selection.c_str());
+    n1 =  Form("sbs_%s_%s_%s%s", chan1.c_str(), sample1.c_str(), fDoList[i].c_str(), selection.c_str());
+    n2 =  Form("sbs_%s_%s_%s%s", chan2.c_str(), sample2.c_str(), fDoList[i].c_str(), selection.c_str());
     h1 = (TH1D*)f1->Get(n1.c_str());
     cout << "n1: " << n1 << " -> " << h1 << endl;
     h2 = (TH1D*)f2->Get(n2.c_str());
@@ -744,20 +734,31 @@ void plotReducedOverlays::overlay2Files(std::string file1, std::string sample1,
     double ks = h1->KolmogorovTest(h2);
     tl->DrawLatex(0.2, 0.85, Form("P(KS)= %4.3f", ks)); 
 
-    newLegend(0.2, 0.91, 0.75, 0.98); 
+    newLegend(0.1, 0.91, 0.75, 0.98); 
     legg->SetTextSize(0.025);  
     string text1, text2;
-   
     
-    if (string::npos != sample1.find("Mc")) {
-      legg->AddEntry(h1, Form("%s", fn1.c_str()), "f");
-    } else {
-      legg->AddEntry(h1, Form("%s", fn1.c_str()), "p");
+    if (!what.compare("multichan")) {
+      if (string::npos != sample1.find("Mc")) {
+	legg->AddEntry(h1, Form("%s/%s", sample1.c_str(), chan1.c_str()), "f");
+      } else {
+	legg->AddEntry(h1, Form("%s/%s", sample1.c_str(), chan1.c_str()), "p");
+      }
+      if (string::npos != sample2.find("Mc")) {
+	legg->AddEntry(h2, Form("%s/%s", sample2.c_str(), chan2.c_str()), "f");
+      } else {
+	legg->AddEntry(h2, Form("%s/%s", sample2.c_str(), chan2.c_str()), "p");
+      }
+    } else { 
+      if (string::npos != sample1.find("Mc")) {
+	legg->AddEntry(h1, Form("%s", fn1.c_str()), "f");
+      } else {
+	legg->AddEntry(h1, Form("%s", fn1.c_str()), "p");
+      }
+      legg->AddEntry(h2, Form("%s", fn2.c_str()), "f");
     }
-    legg->AddEntry(h2, Form("%s", fn2.c_str()), "f");
     legg->Draw();
-
-
+      
 
     c0->Modified();
     c0->Update();
@@ -789,8 +790,24 @@ void plotReducedOverlays::loopFunction1(int mode) {
   // -- update ana cuts!
   fAnaCuts.update(); 
 
-  if (fSetup == "B" && fChan != 0) return;
-  if (fSetup == "E" && fChan != 1) return;
+  bool loPU = (fb.pvn <  6);
+  bool hiPU = (fb.pvn > 15);
+  if (0 == fChanMode && fChan != 0) {
+    return;
+  } else if (1 == fChanMode && fChan != 1) {
+    return;
+  } else if (10 == fChanMode) {
+    if (!(0 == fChan && loPU)) return;
+  } else if (11 == fChanMode) {
+    if (!(0 == fChan && hiPU)) return;
+  } else if (12 == fChanMode) {
+    if (!(1 == fChan && loPU)) return;
+  } else if (13 == fChanMode) {
+    if (!(1 == fChan && hiPU)) return;
+  } else {
+    cout << "screw it" << endl;
+    return;
+  }
 
   if (fb.hlt && fGoodMuonsID && (fBDT > -1.) && fb.fls3d > 10) {
     fSel0 = true;

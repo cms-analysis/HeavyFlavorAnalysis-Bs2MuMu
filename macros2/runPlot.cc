@@ -61,12 +61,14 @@ int main(int argc, char *argv[]) {
 
   cout << "mode:       " << mode << endl;
   cout << "Mode:       " << Mode << endl;
-  cout << "  1:  BDT " << endl;
-  cout << "  2:  results " << endl;
-  cout << "  4:  overlays filling " << endl;
-  cout << "  8:  overlays sbs/overlays " << endl;
-  cout << " 16:  overlays systematics " << endl;
-  cout << " 32:  muon ID/trigger " << endl;
+  cout << " -m 1:       BDT " << endl;
+  cout << " -m 2 -M 1:  results tree loops" << endl;
+  cout << " -m 2 -M 2:  results finalization" << endl;
+  cout << " -m 4 -M 1:  overlays filling " << endl;
+  cout << " -m 4 -M 2:  overlays sbs/overlays " << endl;
+  cout << " -m 4 -M 3:  overlays systematics " << endl;
+  cout << " -m 8:       PU overlays " << endl;
+  cout << " 32:         muon ID/trigger " << endl;
   cout << "dir:        " << dir << endl;
   cout << "cuts:       " << cuts << endl;
   cout << "files:      " << files << endl;
@@ -87,12 +89,12 @@ int main(int argc, char *argv[]) {
       system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
     }
     rootfile = Form("anaBmm.plotReducedOverlays.%s.root", cuts.c_str()); 
-    if (mode & 4) {
+    if ((mode & 4) && (1 == Mode)) {
       rootfile = Form("anaBmm.plotReducedOverlays.%s.root", cuts.c_str()); 
       cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
       system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
     }
-    if (mode & 8) {
+    if ((mode & 4) && (2 == Mode)) {
       rootfile = Form("anaBmm.plotReducedOverlaysSystematics.%s.root", cuts.c_str()); 
       cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
       system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
@@ -135,84 +137,171 @@ int main(int argc, char *argv[]) {
 
   // -- overlays histogram filling
   if (mode & 4) {
-    gROOT->Clear();  gROOT->DeleteAll();
-    plotReducedOverlays *a;
+    if (1 == Mode) {
+      gROOT->Clear();  gROOT->DeleteAll();
+      plotReducedOverlays *a;
+      
+      vector<string> chanlist; 
+      chanlist.push_back("B"); 
+      chanlist.push_back("E"); 
+      
+      vector<string> dolist; 
+      
+      if (restricted) {
+	dolist.push_back(sample);
+      } else {
+	dolist.push_back("Cs"); 
+	dolist.push_back("Sg"); 
+	dolist.push_back("No"); 
+      }
+      
+      string mode1, mode2; 
+      for (unsigned int j = 0; j < chanlist.size(); ++j) {
+	for (unsigned int i = 0; i < dolist.size(); ++i) {
+	  mode1 = dolist[i] + string("Data");
+	  mode2 = dolist[i] + string("Mc");
+	  gROOT->Clear();  gROOT->DeleteAll();
+	  a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+	  if (!doUseBDT) a->fDoUseBDT = false; 
+	  
+	  a->makeSample(mode1, "Presel", chanlist[j]);
+	  a->makeSample(mode2, "Presel", chanlist[j]);
+	  
+	  delete a;
+	}
+      }
+    }
+
+    // -- overlays histogram: sbs and overlay
+    if (2 == Mode) {
+      gROOT->Clear();  gROOT->DeleteAll();
+      plotReducedOverlays *a;
+      
+      vector<string> chanlist; 
+      chanlist.push_back("B"); 
+      chanlist.push_back("E"); 
+      
+      vector<string> dolist; 
+      
+      if (restricted) {
+	dolist.push_back(sample);
+      } else {
+	dolist.push_back("Cs"); 
+	dolist.push_back("Sg"); 
+	dolist.push_back("No"); 
+      }
     
-    vector<string> chanlist; 
-    chanlist.push_back("B"); 
-    chanlist.push_back("E"); 
-    
-    vector<string> dolist; 
-    
-    if (restricted) {
-      dolist.push_back(sample);
-    } else {
-      dolist.push_back("Cs"); 
-      dolist.push_back("Sg"); 
-      dolist.push_back("No"); 
+      string mode1, mode2; 
+      for (unsigned int j = 0; j < chanlist.size(); ++j) {
+	for (unsigned int i = 0; i < dolist.size(); ++i) {
+	  mode1 = dolist[i] + string("Data");
+	  mode2 = dolist[i] + string("Mc");
+	  gROOT->Clear();  gROOT->DeleteAll();
+	  a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+	  if (!doUseBDT) a->fDoUseBDT = false; 
+	  
+	  a->makeOverlay(mode1, mode2, chanlist[j], "Presel"); 
+	  
+	  delete a;
+	}
+      }
+      
     }
     
-    string mode1, mode2; 
-    for (unsigned int j = 0; j < chanlist.size(); ++j) {
-      for (unsigned int i = 0; i < dolist.size(); ++i) {
-	mode1 = dolist[i] + string("Data");
-	mode2 = dolist[i] + string("Mc");
-	gROOT->Clear();  gROOT->DeleteAll();
-	a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
-	if (!doUseBDT) a->fDoUseBDT = false; 
-    
-  	a->makeSample(mode1, "Presel", chanlist[j]);
-  	a->makeSample(mode2, "Presel", chanlist[j]);
 
-	delete a;
-      }
+    // -- systematics
+    if (3 == Mode) {
+      gROOT->Clear();  gROOT->DeleteAll();
+      plotReducedOverlays *a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+      if (!doUseBDT) a->fDoUseBDT = false; 
+      a->allSystematics(); 
+      delete a;
     }
   }
 
-  // -- overlays histogram: sbs and overlay
+
+  // -- PU overlays
   if (mode & 8) {
-    gROOT->Clear();  gROOT->DeleteAll();
-    plotReducedOverlays *a;
-    
-    vector<string> chanlist; 
-    chanlist.push_back("B"); 
-    chanlist.push_back("E"); 
-    
-    vector<string> dolist; 
-    
-    if (restricted) {
-      dolist.push_back(sample);
-    } else {
-      dolist.push_back("Cs"); 
-      dolist.push_back("Sg"); 
-      dolist.push_back("No"); 
-    }
-    
-    string mode1, mode2; 
-    for (unsigned int j = 0; j < chanlist.size(); ++j) {
-      for (unsigned int i = 0; i < dolist.size(); ++i) {
-	mode1 = dolist[i] + string("Data");
-	mode2 = dolist[i] + string("Mc");
-	gROOT->Clear();  gROOT->DeleteAll();
-	a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
-	if (!doUseBDT) a->fDoUseBDT = false; 
 
-	a->makeOverlay(mode1, mode2, chanlist[j], "Presel"); 
-
-	delete a;
+    if (1 == Mode) {
+      gROOT->Clear();  gROOT->DeleteAll();
+      plotReducedOverlays *a;
+      
+      vector<string> chanlist; 
+      chanlist.push_back("BLoPU"); 
+      chanlist.push_back("BHiPU"); 
+      chanlist.push_back("ELoPU"); 
+      chanlist.push_back("EHiPU"); 
+      
+      vector<string> dolist; 
+      
+      if (restricted) {
+	dolist.push_back(sample);
+      } else {
+	dolist.push_back("Sg"); 
+	dolist.push_back("No"); 
+      }
+      
+      string mode1, mode2; 
+      for (unsigned int j = 0; j < chanlist.size(); ++j) {
+	for (unsigned int i = 0; i < dolist.size(); ++i) {
+	  mode1 = dolist[i] + string("Data");
+	  mode2 = dolist[i] + string("Mc");
+	  gROOT->Clear();  gROOT->DeleteAll();
+	  a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+	  if (!doUseBDT) a->fDoUseBDT = false; 
+	  
+	  a->makeSample(mode1, "Presel", chanlist[j], nevents);
+	  a->makeSample(mode2, "Presel", chanlist[j], nevents);
+	  
+	  delete a;
+	}
       }
     }
     
-  }
+    if (2 == Mode) {
+      gROOT->Clear();  gROOT->DeleteAll();
+      plotReducedOverlays *a;
+      
+      vector<string> chanlist; 
+      chanlist.push_back("BLoPU"); 
+      chanlist.push_back("BHiPU"); 
+      chanlist.push_back("ELoPU"); 
+      chanlist.push_back("EHiPU"); 
+      
+      vector<string> dolist; 
+      
+      if (restricted) {
+	dolist.push_back(sample);
+      } else {
+	dolist.push_back("SgMc"); 
+	dolist.push_back("NoMc"); 
+      }
 
+      string rootfile = Form("%s/anaBmm.plotReducedOverlays.%s.root", dir.c_str(), cuts.c_str()); 
+      // should be: sbs_EHiPU_SgMc_lipPresel;2
+      //            sbs_SgMc_BLoPU_muon1ptPresel
+      gROOT->Clear();  gROOT->DeleteAll();
+      a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+      if (!doUseBDT) a->fDoUseBDT = false; 
+      return 0;
+      
+      string mode1, mode2; 
+      for (unsigned int j = 0; j < chanlist.size(); ++j) {
+	for (unsigned int i = 0; i < dolist.size(); ++i) {
+	  gROOT->Clear();  gROOT->DeleteAll();
+	  a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+	  if (!doUseBDT) a->fDoUseBDT = false; 
 
-  // -- systematics
-  if (mode & 16) {
-    gROOT->Clear();  gROOT->DeleteAll();
-    plotReducedOverlays *a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
-    if (!doUseBDT) a->fDoUseBDT = false; 
-    a->allSystematics(); 
-    delete a;
+	  a->sbsSingleFile(rootfile, dolist[i], chanlist[j], "Presel"); 
+	  
+	  rootfile = Form("%s/anaBmm.plotReducedOverlaysSbs.%s.root", dir.c_str(), cuts.c_str()); 
+	  a->overlay2Files(rootfile, "SgMc", rootfile, "SgMc", "BLoPU", "BHiPU", "Presel", "multichan"); 
+	  
+	  delete a;
+	}
+      }
+    }
   }
 
   // -- muon id/trigger efficiency numbers
@@ -220,16 +309,19 @@ int main(int argc, char *argv[]) {
     gROOT->Clear();  gROOT->DeleteAll();
     plotEfficiencies *a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
     if (!doUseBDT) a->fDoUseBDT = false; 
-    a->makeAll(1); 
-    delete a;
-
-    gROOT->Clear();  gROOT->DeleteAll();
-    a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
-    if (!doUseBDT) a->fDoUseBDT = false; 
-    a->makeAll(2); 
-    delete a;
+    if (Mode > -1) {
+      a->makeAll(Mode);
+    } else {
+      a->makeAll(1); 
+      delete a;
+      
+      gROOT->Clear();  gROOT->DeleteAll();
+      a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+      if (!doUseBDT) a->fDoUseBDT = false; 
+      a->makeAll(2); 
+      delete a;
+    }
   }
-
 
   // -- miscellaneous stuff
   if (mode & 64) {
