@@ -86,6 +86,7 @@ bool preselection(RedTreeData &b, int channel) {
   if (b.fls3d > FLS3DMAX) return false;
   if (b.docatrk > DOCATRKMAX) return false;
   if (b.maxdoca > MAXDOCAMAX) return false;
+  if (b.me > MASSERRORMAX) return false; 
   if (verbose > 6) cout << "passed misc cuts" << endl;
 
   // NONONO if we want to use the onia for any x-checks!
