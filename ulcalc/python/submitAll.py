@@ -5,7 +5,7 @@ import os
 
 if len(sys.argv) < 3:
     print "usage: " + sys.argv[0] + " input.ulc prefix <additional>"
-    exit(0)
+    sys.exit(0)
 
 INPUT = sys.argv[1]
 OUTPUT = sys.argv[2]
@@ -34,7 +34,7 @@ for j in range(0,100):
 			os.system("cp ../%s %s/%s-%s-%s-%d" % (INPUT,res,OUTPUT,dec,res,j))
 
 print "==> Prepare Storage element..."
-os.system("srmmkdir srm://t3se01.psi.ch:8443/srm/managerv2?SFN=/pnfs/psi.ch/cms/trivcat/store/user/naegelic/ulcalc/" + OUTPUT);
+os.system("srmmkdir srm://t3se01.psi.ch:8443/srm/managerv2?SFN=/pnfs/psi.ch/cms/trivcat/store/user/" + os.environ["USER"] + "/ulcalc/" + OUTPUT);
 
 # Submit the jobs
 BATCH_SCRIPT = os.environ['CMSSW_BASE'] + "/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/batch_calc.csh"
@@ -43,7 +43,7 @@ TAR = os.environ['CMSSW_BASE'] + "/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/ulcalc
 os.chdir(BKG)
 TOY_COUNT = 10000
 ALGO_NAME = "bkg"
-CMD = "run -q all.q -c %s -t %s -m batch -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/naegelic/ulcalc/%s' -x 'bin/ulcalc --SM-exp --fixed-bkg --toys %d --seed %s -a %s' *%s*" % (BATCH_SCRIPT,TAR,OUTPUT,TOY_COUNT,ADD_ARG,ALGO_NAME,BKG)
+CMD = "run -q all.q -c %s -t %s -m batch -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/%s/ulcalc/%s' -x 'bin/ulcalc --SM-exp --fixed-bkg --toys %d --seed %s -a %s' *%s*" % (BATCH_SCRIPT,TAR,os.environ["USER"],OUTPUT,TOY_COUNT,ADD_ARGS,ALGO_NAME,BKG)
 print CMD
 os.system(CMD)
 os.chdir("..")
@@ -64,7 +64,7 @@ for res in RESULTS:
         if dec=="bdmm": RANGE *= 10
         RANGE_ARG = "-n 31 -r 0,%d" % RANGE
         if res=="sign": RANGE_ARG = ""
-        CMD = "run -q all.q -c %s -t %s -m batch -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/naegelic/ulcalc/%s' -x 'bin/ulcalc --SM-exp %s --fixed-bkg --toys %d --seed %s -a %s %s' *%s*" % (BATCH_SCRIPT,TAR,OUTPUT,BDMM_OPT,TOY_COUNT,ADD_ARGS,ALGO_NAME,RANGE_ARG,dec)
+        CMD = "run -q all.q -c %s -t %s -m batch -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/%s/ulcalc/%s' -x 'bin/ulcalc --SM-exp %s --fixed-bkg --toys %d --seed %s -a %s %s' *%s*" % (BATCH_SCRIPT,TAR,os.environ["USER"],OUTPUT,BDMM_OPT,TOY_COUNT,ADD_ARGS,ALGO_NAME,RANGE_ARG,dec)
         print CMD
         os.system(CMD)
         os.chdir("..")
