@@ -23,7 +23,6 @@
 int main(int argc, char** argv) {
 
   parse_options(argc, argv);
-  if (!estimate) help();
   if (!simul) {
     if (!input || !pdf) help();
     parse_input(input_ws);
@@ -35,6 +34,7 @@ int main(int argc, char** argv) {
   TFile* input_f = new TFile(input_ws.c_str());
   RooWorkspace* ws = (RooWorkspace*)input_f->Get("ws");
   toy1.set_ws(ws);
+  toy1.get_bkg_from_tex();
   toy1.set_estimate();
   toy1.parse_estimate();
   toy1.set_starting_N();

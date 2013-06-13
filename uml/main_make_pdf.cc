@@ -299,11 +299,7 @@ int main(int argc, char* argv[]) {
   }
 
   ana1.define_N();
-
-  get_rare_normalization("anaBmm.plotResults.2011.tex", "./input/2011/");
-  get_rare_normalization("anaBmm.plotResults.2012.tex", "./input/2012/", 2);
-  system("rm input/rare_frac.txt; cat input/2011/rare_frac.txt >> input/rare_frac.txt; cat input/2012/rare_frac.txt >> input/rare_frac.txt;");
-  ana1.set_rare_normalization("input/rare_frac.txt");
+  ana1.get_bkg_from_tex();
 
   ana1.define_pdfs();
 

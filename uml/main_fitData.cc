@@ -38,6 +38,7 @@ int main(int argc, char** argv) {
   }
 
   fitdata.make_pdf_input(input_ws);
+  fitdata.get_bkg_from_tex();
   fitdata.set_estimate();
   fitdata.parse_estimate();
   fitdata.set_starting_N();

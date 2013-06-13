@@ -98,7 +98,7 @@ void pdf_analysis::initialize () {
   }
   ws_->import(*bdt_cat);
   all_cat = new RooCategory("allcat", "channels");
-  for (unsigned int i = 0; i < super_index(channels-1, channels_bdt-1); i++) {
+  for (unsigned int i = 0; i < super_index(channels, channels_bdt) + 1; i++) {
     all_cat->defineType(Form("allcat_%d", i), i);
   }
   ws_->import(*all_cat);
@@ -164,9 +164,9 @@ void pdf_analysis::fit_pdf (string pdf, RooAbsData* data, bool extended, bool su
 //  rds_ = subdata;
   string rdh_name = subdata->GetName();
   cout << "**************************" << endl;
-  cout << red_color_bold << "fitting " << rdh_name << default_console_color << endl;
+  cout << red_color_bold << "fitting " << rdh_name << endl;
   subdata->Print();
-  cout << " with " << pdf_name << ":" << endl;
+  cout << " with " << pdf_name << ":" << default_console_color << endl;
   ws_->pdf( pdf_name.c_str())->Print();
   if (!pee) {
     RFR = ws_->pdf( pdf_name.c_str())->fitTo(*subdata, Extended(extended), SumW2Error(sumw2error), NumCPU(2), Hesse(hesse), Save());
@@ -881,19 +881,19 @@ const char* pdf_analysis::name(string name, unsigned int i, unsigned int j) {
   }
 }
 
-void pdf_analysis::set_rare_normalization(string input) {
+void pdf_analysis::set_bkg_normalization(string input) {
   FILE *estimate_file = fopen(input.c_str(), "r");
   for (unsigned int i = 0; i < channels; i++) {
     for (unsigned int j = 0; j < bdt_index_max(i); j++) {
       char buffer[1024];
-      char cutName[128];
-      double value, error;
+      char bkg_type[128];
       while (fgets(buffer, sizeof(buffer), estimate_file)) {
         if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
         if (buffer[0] == '#') continue;
-        sscanf(buffer, "%s\t%lf\t%lf", cutName, &value, &error);
-        if ( (simul_ && !strcmp(cutName, Form("N_peak_%d", i))) || (!simul_ && !strcmp(cutName, Form("N_peak_%d", channel))) ) {
-        	if (simul_bdt_ || simul_all_) {
+        double value, error;
+        sscanf(buffer, "%s\t%lf\t%lf", bkg_type, &value, &error);
+        if ( (simul_ && !strcmp(bkg_type, Form("N_peak_%d", i))) || (!simul_ && !strcmp(bkg_type, Form("N_peak_%d", channel))) ) {
+        	if (simul_bdt_ || simul_all_ || bdt_fit_) {
         		value *= peak_bdt_factor[i][j]; /// factor
         		error *= peak_bdt_factor[i][j]; /// factor
         	}
@@ -901,14 +901,23 @@ void pdf_analysis::set_rare_normalization(string input) {
         	ws_->var(name("N_peak", i, j))->setError(error);
         	cout << name("N_peak", i, j) << " set val to " << value << "; set error to " << error << endl;
         }
-        if ( (simul_ && !strcmp(cutName, Form("N_semi_%d", i))) || (!simul_ && !strcmp(cutName, Form("N_semi_%d", channel))) ) {
-          if (simul_bdt_ || simul_all_) {
+        if ( (simul_ && !strcmp(bkg_type, Form("N_semi_%d", i))) || (!simul_ && !strcmp(bkg_type, Form("N_semi_%d", channel))) ) {
+          if (simul_bdt_ || simul_all_ || bdt_fit_) {
           	value *= semi_bdt_factor[i][j]; /// factor
           	error *= semi_bdt_factor[i][j]; /// factor
           }
           ws_->var(name("N_semi", i, j))->setVal(value);
           ws_->var(name("N_semi", i, j))->setError(error);
           cout << name("N_semi", i, j) << " set val to " << value << "; set error to " << error << endl;
+        }
+        if ( (simul_ && !strcmp(bkg_type, Form("N_comb_%d", i))) || (!simul_ && !strcmp(bkg_type, Form("N_comb_%d", channel))) ) {
+        	if (simul_bdt_ || simul_all_ || bdt_fit_) {
+        		value *= comb_bdt_factor[i][j]; /// factor
+        		error *= comb_bdt_factor[i][j]; /// factor
+        	}
+        	ws_->var(name("N_comb", i, j))->setVal(value);
+        	ws_->var(name("N_comb", i, j))->setError(error);
+        	cout << name("N_comb", i, j) << " set val to " << value << "; set error to " << error << endl;
         }
       }
       rewind(estimate_file);
@@ -1083,8 +1092,7 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
   parse_external_numbers(numbers_filename);
   parse_efficiency_numbers();
   if (channels == 4) parse_efficiency_numbers(2);
-  if (simul_bdt_ || simul_all_) simulBdt_effs();
-//  if (bdt_fit_) bdt_fit_effs();
+  if (simul_bdt_ || simul_all_ || bdt_fit_) bdt_effs();
   cout << red_color_bold << "channels = " << channels << "; channels_bdt = " << channels_bdt << "; channels_all = " << channels_all << default_console_color << endl;
 
   one_over_BRBR_val = 1./ (Bu2JpsiK_BF_val * Jpsi2MuMu_BF_val);
@@ -1365,9 +1373,9 @@ void pdf_analysis::parse_external_numbers(string filename) {
   }
 }
 
-void pdf_analysis::simulBdt_effs() {
-//  cout << "parsing simulBdt_effs.txt to change eff in each bdt and eta bin" << endl;
-
+void pdf_analysis::bdt_effs() {
+	string input_file = "input/eff_bdtbins_fact.txt";
+	if (bdt_fit_) input_file = "input/eff_2d_fact.txt";
   FILE *file = fopen("input/eff_fact.txt", "r");
   if (!file) {cout << "file input/eff_fact.txt does not exist" << endl; exit(1);}
   char buffer[1024];
@@ -1380,6 +1388,9 @@ void pdf_analysis::simulBdt_effs() {
         bs_oss << "bdt_bs_" << i << "_" << j << "\t%lf";
         bd_oss << "bdt_bd_" << i << "_" << j << "\t%lf";
         bu_oss << "bdt_bu_" << i << "_" << j << "\t%lf";
+        peak_oss << "bdt_peak_" << i << "_" << j << "\t%lf";
+        semi_oss << "bdt_semi_" << i << "_" << j << "\t%lf";
+        comb_oss << "bdt_comb_" << i << "_" << j << "\t%lf";
         sscanf(buffer, bs_oss.str().c_str(), &bs_bdt_factor[i][j]);
         sscanf(buffer, bd_oss.str().c_str(), &bd_bdt_factor[i][j]);
         sscanf(buffer, bu_oss.str().c_str(), &bu_bdt_factor[i][j]);
@@ -1400,8 +1411,9 @@ void pdf_analysis::simulBdt_effs() {
     	eff_bd_val[i][j] = bd_bdt_factor[i][j] * eff_bd_val[i][j];
     	eff_bu_val[i][j] = bu_bdt_factor[i][j] * eff_bu_val[i][j];
     	N_bu_val[i][j] = bu_bdt_factor[i][j] * N_bu_val[i][j];
-    	N_bu_err[i][j] = bu_bdt_factor[i][j] * sqrt(N_bu_val[i][j]);
+    	N_bu_err[i][j] = bu_bdt_factor[i][j] * N_bu_err[i][j];
       cout << "[" << i << "," << j << "]  bu eff = " <<  eff_bu_val[i][j] << " bs eff = " << eff_bs_val[i][j] << " bd eff = " << eff_bd_val[i][j] << " bu yield = " << N_bu_val[i][j] << " +/- " << N_bu_err[i][j] << endl;
+      cout << "\t peak factor " << peak_bdt_factor[i][j] << " semi factor " << semi_bdt_factor[i][j] << " comb factor " << comb_bdt_factor[i][j] << endl;
     }
   }
   channels_all = allchannels;
@@ -1495,7 +1507,7 @@ unsigned int pdf_analysis::bdt_index_max(unsigned int eta_ch) {
 unsigned int pdf_analysis::super_index(unsigned int eta_ch, unsigned int bdt_ch) {
 	int superindex = -1;
 	for (unsigned int i = 0; i < bdt_boundaries.size(); i++) {
-		for (unsigned int j = 0; j < bdt_boundaries[i].size(); j++) {
+		for (unsigned int j = 0; j < bdt_boundaries[i].size() - 1; j++) {
 			superindex++;
 			if (eta_ch == i && bdt_ch == j) return superindex;
 		}
@@ -1531,7 +1543,7 @@ vector <unsigned int> pdf_analysis::get_EtaBdt_bins(unsigned int index) {
 
 	for (unsigned int i = 0; i < bdt_boundaries.size(); i++) {
 		indexes[0]++;
-		for (unsigned int j = 0; j < bdt_boundaries[i].size(); j++) {
+		for (unsigned int j = 0; j < bdt_boundaries[i].size() - 1; j++) {
 			indexes[1]++;
 			superindex++;
 			if (index == superindex) return indexes;
@@ -1613,4 +1625,159 @@ void pdf_analysis::fill_bdt_boundaries() {
 		in++;
 	}
 	fclose(file);
+}
+
+void pdf_analysis::get_bkg_yields(string filename, string dir, int offset) {
+
+  string peakdecays[] = {"BgPeakLo", "BgPeakBd", "BgPeakBs", "BgPeakHi"};
+  string semidecays[] = {"BgRslLo", "BgRslBd", "BgRslBs", "BgRslHi"};
+  string combdecays[] = {"BgCombLo", "BgCombBd", "BgCombBs", "BgCombHi"};
+
+  string full_address = dir + filename;
+  FILE *file = fopen(full_address.c_str(), "r");
+  if (!file) {cout << "file " << full_address << " does not exist"; exit(1);}
+
+  char buffer[1024];
+  char left[1024];
+  double number;
+  int peak_n = sizeof(peakdecays)/sizeof(string);
+  int semi_n = sizeof(semidecays)/sizeof(string);
+  int comb_n = sizeof(combdecays)/sizeof(string);
+  vector <double> peak_exp(2, 0);
+  vector <double> semi_exp(2, 0);
+  vector <double> comb_exp(2, 0);
+  vector <double> peak_syst_err(2, 0);
+  vector <double> semi_syst_err(2, 0);
+  vector <double> comb_syst_err(2, 0);
+  vector <double> peak_stat_err(2, 0);
+  vector <double> semi_stat_err(2, 0);
+  vector <double> comb_stat_err(2, 0);
+  string end_0("0:val}");
+  string end_1("1:val}");
+  string err_stat_0("0:e1}");
+  string err_stat_1("1:e1}");
+  string err_syst_0("0:e2}");
+  string err_syst_1("1:e2}");
+
+  while (fgets(buffer, sizeof(buffer), file)) {
+    if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
+    if (buffer[0] == '\045') continue;
+    sscanf(buffer, "%s   {\\ensuremath{{%lf } } }", left, &number);
+    string left_s(left);
+    for (int i = 0; i < peak_n; i++) { /// peak
+      size_t found = left_s.find(peakdecays[i]);
+      if (found != string::npos) {
+        found = left_s.find(end_0);
+        if (found != string::npos) {
+          peak_exp[0] += number;
+        }
+        found = left_s.find(end_1);
+        if (found != string::npos) {
+          peak_exp[1] += number;
+        }
+        found = left_s.find(err_syst_0);
+        if (found != string::npos) {
+          peak_syst_err[0] += number;
+        }
+        found = left_s.find(err_syst_1);
+        if (found != string::npos) {
+          peak_syst_err[1] += number;
+        }
+        found = left_s.find(err_stat_0);
+        if (found != string::npos) {
+        	peak_stat_err[0] += number;
+        }
+        found = left_s.find(err_stat_1);
+        if (found != string::npos) {
+        	peak_stat_err[1] += number;
+        }
+      }
+    }
+    for (int i = 0; i < semi_n; i++) { /// semi
+      size_t found = left_s.find(semidecays[i]);
+      if (found != string::npos) {
+        found = left_s.find(end_0);
+        if (found != string::npos) {
+          semi_exp[0] += number;
+        }
+        found = left_s.find(end_1);
+        if (found != string::npos) {
+          semi_exp[1] += number;
+        }
+        found = left_s.find(err_syst_0);
+        if (found != string::npos) {
+        	semi_syst_err[0] += number;
+        }
+        found = left_s.find(err_syst_1);
+        if (found != string::npos) {
+        	semi_syst_err[1] += number;
+        }
+        found = left_s.find(err_stat_0);
+        if (found != string::npos) {
+        	semi_stat_err[0] += number;
+        }
+        found = left_s.find(err_stat_1);
+        if (found != string::npos) {
+        	semi_stat_err[1] += number;
+        }
+      }
+    }
+    for (int i = 0; i < comb_n; i++) { /// semi
+    	size_t found = left_s.find(combdecays[i]);
+    	if (found != string::npos) {
+    		found = left_s.find(end_0);
+    		if (found != string::npos) {
+    			comb_exp[0] += number;
+    		}
+    		found = left_s.find(end_1);
+    		if (found != string::npos) {
+    			comb_exp[1] += number;
+    		}
+    		found = left_s.find(err_syst_0);
+    		if (found != string::npos) {
+    			comb_syst_err[0] += number;
+    		}
+    		found = left_s.find(err_syst_1);
+    		if (found != string::npos) {
+    			comb_syst_err[1] += number;
+    		}
+    		found = left_s.find(err_stat_0);
+    		if (found != string::npos) {
+    			comb_stat_err[0] += number;
+    		}
+    		found = left_s.find(err_stat_1);
+    		if (found != string::npos) {
+    			comb_stat_err[1] += number;
+    		}
+    	}
+    }
+  }
+  fclose(file);
+
+  vector <double> peak_err(2, 0);
+  vector <double> semi_err(2, 0);
+  vector <double> comb_err(2, 0);
+  for (int i = 0; i < 2; i++) {
+  	peak_err[i] = sqrt(pow(peak_stat_err[i], 2) + pow(peak_syst_err[i], 2));
+  	semi_err[i] = sqrt(pow(semi_stat_err[i], 2) + pow(semi_syst_err[i], 2));
+  	comb_err[i] = sqrt(pow(comb_stat_err[i], 2) + pow(comb_syst_err[i], 2));
+  }
+
+  string full_output = dir + "/bkg_yields.txt";
+  FILE* file_out = fopen(full_output.c_str(), "w");
+  for (int i = 0; i < 2; i++) {
+    fprintf(file_out, "N_peak_%d\t%lf\t%lf\n", i+offset, peak_exp[i], peak_err[i]);
+    fprintf(file_out, "N_semi_%d\t%lf\t%lf\n", i+offset, semi_exp[i], semi_err[i]);
+    fprintf(file_out, "N_comb_%d\t%lf\t%lf\n", i+offset, (offset == 0 && i == 0) ? comb_exp[i] + 1: comb_exp[i], comb_err[i]); /////SUPERHACKKKKKKK
+  }
+  fprintf(file_out, "######\n");
+  fclose(file_out);
+  system(Form("cat %s", full_output.c_str()));
+}
+
+void pdf_analysis::get_bkg_from_tex() {
+  get_bkg_yields("anaBmm.plotResults.2011.tex", "./input/2011/");
+  get_bkg_yields("anaBmm.plotResults.2012.tex", "./input/2012/", 2);
+  system("rm input/bkg_yields.txt; cat input/2011/bkg_yields.txt >> input/bkg_yields.txt; cat input/2012/bkg_yields.txt >> input/bkg_yields.txt;");
+  set_bkg_normalization("input/bkg_yields.txt");
 }

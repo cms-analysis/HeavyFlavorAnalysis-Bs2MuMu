@@ -13,7 +13,19 @@ int main(int argc, char* argv[]) {
 
 	parse_options(argc, argv);
 
-	FILE *file = fopen("input/bdtbins.txt", "r");
+	if (cuts_f=="no") {
+		cout << "insert initial cut file: -cuts_file input/channel_cuts.txt" << endl;
+		return 1;
+	}
+	if (!simul_all && !bdt_fit) {
+		cout << "choose between -simul_all 12 or -bdt_fit" << endl;
+		return 1;
+	}
+
+	string input_s("input/bdtbins.txt");
+	if (bdt_fit) input_s = "input/2dbins.txt";
+
+	FILE *file = fopen(input_s.c_str(), "r");
 	char buffer[1024];
 
 	vector < vector <double> > binnings(4);
@@ -57,9 +69,23 @@ int main(int argc, char* argv[]) {
   vector <double> cuts_v(binnings.size(), -1);
   if (cuts_f_b) cuts_v = cut_bdt_file();
 
-  string full_output = "input/eff_scale.txt";
-  string ini_output = "input/eff_ini.txt";
-  string fact_output = "input/eff_fact.txt";
+  string full_output = "input/eff_";
+  string ini_output = "input/eff_";
+  string fact_output = "input/eff_";
+  if (bdt_fit) {
+  	full_output += "2d";
+  	ini_output += "2d";
+  	fact_output += "2d";
+  }
+  else {
+  	full_output += "bdtbins";
+  	ini_output += "bdtbins";
+  	fact_output += "bdtbins";
+  }
+	full_output += "_full.txt";
+	ini_output += "_ini.txt";
+	fact_output += "_fact.txt";
+
   FILE* file_out = fopen(full_output.c_str(), "w");
   FILE* file_ini = fopen(ini_output.c_str(), "w");
   FILE* file_fact = fopen(fact_output.c_str(), "w");

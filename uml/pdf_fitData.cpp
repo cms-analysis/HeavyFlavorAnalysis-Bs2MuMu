@@ -82,6 +82,11 @@ void pdf_fitData::parse_estimate() {
   char cutName[128];
   double cut;
   FILE *estimate_file = fopen(input_estimates_.c_str(), "r");
+  if (!estimate_file) {
+  	cout << "no estimation from outside files" << endl;
+  	lumi = 1;
+  	return;
+  }
   cout << "event estimates in " << input_estimates_ << " :" << endl;
   while (fgets(buffer, sizeof(buffer), estimate_file)) {
     if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
@@ -278,7 +283,7 @@ RooFitResult* pdf_fitData::fit_pdf(bool do_not_import, string pdf_name) {
   cout << red_color_bold << ">>>>>>>>>>>>>>>>> fitting " << global_data->GetName() << " in range " << range_ << " with " << pdf_name << default_console_color << endl;
   global_data->Print();
   ws_->pdf(pdf_name.c_str())->Print();
-  RFR = ws_->pdf(pdf_name.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : true), pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none()/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
+  RFR = ws_->pdf(pdf_name.c_str())->fitTo(*global_data, Extended(), Save(1), Minos(asimov_ ? false : false), pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none()/*, syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()*/);
   if (!do_not_import) ws_->import(*global_data);
   if (verbosity > 0) RFR->Print();
 
@@ -396,7 +401,7 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
 
       ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_comb", i, j)), LineColor(kBlue - 1),   LineStyle(2), LineWidth(3), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
       if (output == "") {
-        ws->pdf(pdfname.c_str())->plotOn(final_p, VisualizeError(*RFR, 1, 1), FillColor(kYellow), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_), MoveToBack());
+  ///      ws->pdf(pdfname.c_str())->plotOn(final_p, VisualizeError(*RFR, 1, 1), FillColor(kYellow), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_), MoveToBack());
         if (BF_ > 0) ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_semi", i, j)), LineColor(kBlack),  LineStyle(1), DrawOption("L"), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
         ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_bs", i, j)), LineColor(kBlack),        LineStyle(1), DrawOption("L"), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
         ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_bd", i, j)), LineColor(kBlack), LineStyle(1), DrawOption("L"), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));

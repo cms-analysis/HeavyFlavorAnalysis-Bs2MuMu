@@ -73,7 +73,11 @@ public:
 
   void fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error = true, bool hesse = true, bool setconstant = true);
   void set_pdf_constant(string pdf);
-  void set_rare_normalization(string input); //set peak fraction parameter to Bu2JpsiK
+  void set_bkg_normalization(string input); //set peak fraction parameter to Bu2JpsiK
+
+
+  void get_bkg_from_tex();
+  void get_bkg_yields(string filename, string dir, int offset = 0);
 
   string pdf_name;
 
@@ -209,7 +213,7 @@ private:
   void define_rare3(unsigned int i, unsigned int j);
   void define_bf(unsigned int i, unsigned int j);
   void print_pdf(RooAbsPdf* pdf, RooRealVar * var);
-  void simulBdt_effs();
+  void bdt_effs();
   void bdt_fit_effs();
 
   void print(RooAbsData *data, string output = "");
