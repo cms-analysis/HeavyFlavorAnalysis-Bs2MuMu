@@ -39,8 +39,8 @@ etaMax   2.4
 pt       8.5
 m1pt     4.5
 m2pt     4.2
-m1eta    2.4
-m2eta    2.4
+m1eta    2.0
+m2eta    2.0
 iso      0.80
 chi2dof  1.8
 alpha    0.03

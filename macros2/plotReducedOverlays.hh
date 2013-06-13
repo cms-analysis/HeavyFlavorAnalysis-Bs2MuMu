@@ -35,6 +35,7 @@ public:
   void makeOverlay2Channels(string sample, string channel1, string channel2, string selection);
   void allSystematics();
   void systematics(std::string sample1, std::string selection, int chan = 0);
+  void compareTheYears(std::string sample, std::string channel, std::string file1, std::string file2); 
 
   // -- 
   void bookDistributions(std::string sample);

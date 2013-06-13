@@ -235,22 +235,31 @@ void plotRatio::computeCsNoRatio() {
 
 
   cout << "--> loopTree: CS MC" << endl;
-  loopTree(20);  // CS signal eff
-  c0->Modified(); c0->Update();
-  
-  cout << "--> loopTree: signal data" << endl;
-  loopTree(25);  // control sample data 
-  c0->Modified(); c0->Update();
-  
+
+  fSetup = "CsMc"; 
+  TTree *t = getTree(fSetup); 
+  setupTree(t, fSetup); 
+  loopOverTree(t, fSetup, 1, 100000);
+
+  fSetup = "CsData"; 
+  t = getTree(fSetup); 
+  setupTree(t, fSetup); 
+  loopOverTree(t, fSetup, 1, 100000);
+ 
   if (false == fNormProcessed) {
     fNormProcessed = true; 
     cout << "--> loopTree: norm MC" << endl;
-    loopTree(10); // normalization eff
-    c0->Modified(); c0->Update();
-    
+    fSetup = "NoMc"; 
+    t = getTree(fSetup); 
+    setupTree(t, fSetup); 
+    loopOverTree(t, fSetup, 1, 100000);
+
     cout << "--> loopTree: norm data" << endl;
-    loopTree(15); // data normalization 
-    c0->Modified(); c0->Update();
+    fSetup = "NoData"; 
+    t = getTree(fSetup); 
+    setupTree(t, fSetup); 
+    loopOverTree(t, fSetup, 1, 100000);
+    
   }
 
   fTEX << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << endl;    

@@ -28,7 +28,7 @@ using namespace std;
 #define MAXDOCAMAX 0.1  
 #define CLOSETRKMAX 21  
                 	         
-#define FLSXYMIN   2.0  
+#define FLSXYMIN   3.0  
 	                     	    
 #define FLS3DMIN   0.0  
 #define FLS3DMAX 200.0  

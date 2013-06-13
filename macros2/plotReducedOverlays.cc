@@ -199,6 +199,10 @@ void plotReducedOverlays::makeOverlay2Channels(string sample, string channel1, s
 }
 
 
+// ----------------------------------------------------------------------
+void plotReducedOverlays::compareTheYears(string sample, string channel, string file1, string file2) {
+  overlay2Files(file1, sample, file2, sample, channel, channel, "Presel", "multichan"); 
+}
 
 // ----------------------------------------------------------------------
 void plotReducedOverlays::makeSample(string mode, string selection, string channel, int nevents, int nstart) {
@@ -744,22 +748,22 @@ void plotReducedOverlays::overlay2Files(std::string file1, std::string sample1,
     
     if (!what.compare("multichan")) {
       if (string::npos != sample1.find("Mc")) {
-	legg->AddEntry(h1, Form("%s/%s", sample1.c_str(), chan1.c_str()), "f");
+	legg->AddEntry(h1, Form("%s:%s/%s", file1.c_str(), sample1.c_str(), chan1.c_str()), "f");
       } else {
-	legg->AddEntry(h1, Form("%s/%s", sample1.c_str(), chan1.c_str()), "p");
+	legg->AddEntry(h1, Form("%s:%s/%s", file1.c_str(), sample1.c_str(), chan1.c_str()), "p");
       }
       if (string::npos != sample2.find("Mc")) {
-	legg->AddEntry(h2, Form("%s/%s", sample2.c_str(), chan2.c_str()), "f");
+	legg->AddEntry(h2, Form("%s:%s/%s", file2.c_str(), sample2.c_str(), chan2.c_str()), "f");
       } else {
-	legg->AddEntry(h2, Form("%s/%s", sample2.c_str(), chan2.c_str()), "p");
+	legg->AddEntry(h2, Form("%s:%s/%s", file2.c_str(), sample2.c_str(), chan2.c_str()), "p");
       }
     } else { 
       if (string::npos != sample1.find("Mc")) {
-	legg->AddEntry(h1, Form("%s", fn1.c_str()), "f");
+	legg->AddEntry(h1, Form("%s:%s", file1.c_str(), fn1.c_str()), "f");
       } else {
-	legg->AddEntry(h1, Form("%s", fn1.c_str()), "p");
+	legg->AddEntry(h1, Form("%s:%s", file1.c_str(), fn1.c_str()), "p");
       }
-      legg->AddEntry(h2, Form("%s", fn2.c_str()), "f");
+      legg->AddEntry(h2, Form("%s:%s", file2.c_str(), fn2.c_str()), "f");
     }
     legg->Draw();
       

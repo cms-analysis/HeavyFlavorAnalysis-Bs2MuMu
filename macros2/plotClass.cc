@@ -3708,13 +3708,19 @@ void plotClass::candAnalysis(int mode) {
   }
   if (TMath::Abs(fb.m1eta) > 2.4) {
     fGoodAcceptance = false; 
-    fGoodMuonsEta = false; 
   }
   if (TMath::Abs(fb.m2eta) > 2.4) {
     fGoodAcceptance = false; 
+  }
+
+  if (TMath::Abs(fb.m1eta) > pCuts->m1eta) {
     fGoodMuonsEta = false; 
   }
 
+  if (TMath::Abs(fb.m2eta) > pCuts->m2eta) {
+    fGoodMuonsEta = false; 
+  }
+  
   if (bp2jpsikp) {
     if (fIsMC) {
       // gen-level cuts for Bu2JpsiKp
