@@ -85,8 +85,8 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
   TH1D * BF_bs_sigma_h = new TH1D("BF_bs_sigma_h", "BF_bs_sigma_h", 100, 1.e-10, 1.e-8);
   TH1D * BF_bd_mean_h = new TH1D("BF_bd_mean_h", "BF_bd_mean_h", 100, 1.e-10, 1.e-8);
   TH1D * BF_bd_sigma_h = new TH1D("BF_bd_sigma_h", "BF_bd_sigma_h", 100, 1.e-10, 1.e-8);
-  for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < bdt_index_max(i); j++) {
+  for (unsigned int i = 0; i < channels; i++) {
+    for (unsigned int j = 0; j < bdt_index_max(i); j++) {
       residual_bs[i][j] = new RooRealVar(name("residual_bs", i, j), "residual_bs", -20., 20.);
       residual_bd[i][j] = new RooRealVar(name("residual_bd", i, j), "residual_bd", -20., 20.);
 //      residual_peak[i][j] = new RooRealVar(name("residual_peak", i, j), "residual_peak", -20., 20.);
@@ -123,8 +123,8 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
   vector < vector < Double_t > > estimate_bs_formula(channels, vector < Double_t > (channels_bdt, 0.));
   vector < vector < Double_t > > estimate_bd_formula(channels, vector < Double_t > (channels_bdt, 0.));
   if (BF_ > 0) {
-    for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < bdt_index_max(i); j++) {
+    for (unsigned int i = 0; i < channels; i++) {
+      for (unsigned int j = 0; j < bdt_index_max(i); j++) {
         estimate_bs_formula[i][j] = ws_->function(name("N_bs_formula", i, j))->getVal();
         if (BF_ > 1) estimate_bd_formula[i][j] = ws_->function(name("N_bd_formula", i, j))->getVal();
       }
@@ -156,10 +156,10 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     else {
       RooArgSet set(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->cat("etacat"), *ws_->cat("bdtcat"));
       if (simul_all_) set.add(*ws_->cat("allcat"));
-      for (int i = 0; i < channels; i++) {
+      for (unsigned int i = 0; i < channels; i++) {
       	if (years_=="0" && i > 1) continue;
       	if (years_=="1" && i < 2) continue;
-      	for (int j = 0; j < bdt_index_max(i); j++) {
+      	for (unsigned int j = 0; j < bdt_index_max(i); j++) {
           RooDataSet* data_i = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes")), Extended());
           channels_cat->setIndex(i);
           bdt_cat->setIndex(j);
@@ -191,10 +191,10 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
       }
     }
     /// pull
-    for (int i = 0; i < channels; i++) {
+    for (unsigned int i = 0; i < channels; i++) {
     	if (years_=="0" && i > 1) continue;
     	if (years_=="1" && i < 2) continue;
-      for (int j = 0; j < bdt_index_max(i); j++) {
+      for (unsigned int j = 0; j < bdt_index_max(i); j++) {
         if (BF_ == 0) bs_mean_h[i][j]->Fill(ws_temp->var(name("N_bs", i, j))->getVal());
         else bs_mean_h[i][j]->Fill(ws_temp->function(name("N_bs_formula", i, j))->getVal());
         if (!(SM_ || bd_constr_ || BF_ == 2)) bd_mean_h[i][j]->Fill(ws_temp->var(name("N_bd", i, j))->getVal());
@@ -289,10 +289,10 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     delete ws_temp;
   }
   cout << red_color_bold << "END OF EXPERIMENTS!" << default_console_color << endl;
-  for (int i = 0; i < channels; i++) {
+  for (unsigned int i = 0; i < channels; i++) {
   	if (years_=="0" && i > 1) continue;
   	if (years_=="1" && i < 2) continue;
-    for (int j = 0; j < bdt_index_max(i); j++) {
+    for (unsigned int j = 0; j < bdt_index_max(i); j++) {
       if (BF_ == 0) fit_pulls(pull_bs[i][j], pull_rds_bs[i][j], i, j);
       if (BF_ > 0) fit_pulls(residual_bs[i][j], residual_rds_bs[i][j], i, j);
       if (!(SM_ || bd_constr_ || BF_ == 2)) fit_pulls(pull_bd[i][j], pull_rds_bd[i][j], i, j);
@@ -328,10 +328,10 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
   if (!SM_ && bd_b && !simul_) {
     TCanvas* corr_c = new TCanvas("corr_c", "corr_c", 600*channels, 600*channels_bdt);
     corr_c->Divide(channels, channels_bdt);
-    for (int i = 0; i < channels; i++) {
+    for (unsigned int i = 0; i < channels; i++) {
     	if (years_=="0" && i > 1) continue;
     	if (years_=="1" && i < 2) continue;
-      for (int j = 0; j < channels_bdt; j++) {
+      for (unsigned int j = 0; j < channels_bdt; j++) {
         corr_c->cd(j + 1);
         correlation_h[i][j]->Draw();
       }
@@ -356,10 +356,10 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
 void pdf_toyMC::do_bias(RooWorkspace* ws) {
 
   if (bias_.compare("no")) {
-    for (int i = 0; i < channels; i++) {
+    for (unsigned int i = 0; i < channels; i++) {
     	if (years_=="0" && i > 1) continue;
     	if (years_=="1" && i < 2) continue;
-      for (int j = 0; j < bdt_index_max(i); j++) {
+      for (unsigned int j = 0; j < bdt_index_max(i); j++) {
         if (!simul_ && !simul_bdt_) i = ch_i_;
         size_t found;
         found = bias_.find("tau");
@@ -469,10 +469,10 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
   if (Bd) alt_name = "N_bd";
   if (Bd && BF_ > 0) alt_name = "BF_bd";
   if (BF_ == 0) {
-    for (int i = 0; i < channels; i++) {
+    for (unsigned int i = 0; i < channels; i++) {
     	if (years_=="0" && i > 1) continue;
     	if (years_=="1" && i < 2) continue;
-      for (int j = 0; j < bdt_index_max(i); j++) {
+      for (unsigned int j = 0; j < bdt_index_max(i); j++) {
         ws_temp->var(name(alt_name.c_str(), i, j))->setVal(0);
         ws_temp->var(name(alt_name.c_str(), i, j))->setConstant(1);
         if (bd_constr_) {
@@ -491,7 +491,7 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
 
   if (BF_ == 0) {
     if (!simul_bdt_) {
-      for (int i = 0; i < channels; i++) {
+      for (unsigned int i = 0; i < channels; i++) {
       	if (years_=="0" && i > 1) continue;
       	if (years_=="1" && i < 2) continue;
         ws_temp->var(name(alt_name.c_str(), i))->setVal(ws_->var(name(alt_name.c_str(), i))->getVal());
@@ -503,10 +503,10 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
       }
     }
     else {
-      for (int i = 0; i < channels; i++) {
+      for (unsigned int i = 0; i < channels; i++) {
       	if (years_=="0" && i > 1) continue;
       	if (years_=="1" && i < 2) continue;
-        for (int j = 0; j < bdt_index_max(i); j++) {
+        for (unsigned int j = 0; j < bdt_index_max(i); j++) {
           ws_temp->var(name(alt_name.c_str(), i, j))->setVal(ws_->var(name(alt_name.c_str(), i, j))->getVal());
           ws_temp->var(name(alt_name.c_str(), i, j))->setConstant(0);
           if (bd_constr_) {
@@ -570,10 +570,10 @@ void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
   for (int k = 0; k < 4; k++) {
     if ((SM_ || bd_constr_) && k == 1) continue;
     if (rare_constr_ && k == 3) continue;
-    for (int i = 0; i < channels; i++) {
+    for (unsigned int i = 0; i < channels; i++) {
     	if (years_=="0" && i > 1) continue;
     	if (years_=="1" && i < 2) continue;
-      for (int j = 0; j < bdt_index_max(i); j++) {
+      for (unsigned int j = 0; j < bdt_index_max(i); j++) {
         if (k == 0 && BF_ > 0 && (i > 0 || j > 0)) continue;
         if (k == 1 && BF_ > 1 && (i > 0 || j > 0)) continue;
         string name_;
@@ -637,10 +637,10 @@ void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
   TCanvas* sig_c = new TCanvas("sig_c", "sig_c", 600*channels, 600*channels_bdt);
   if (BF_) sig_c->SetCanvasSize(600, 600);
   else sig_c->Divide(channels, channels_bdt);
-  for (int i = 0; i < channels; i++) {
+  for (unsigned int i = 0; i < channels; i++) {
   	if (years_=="0" && i > 1) continue;
   	if (years_=="1" && i < 2) continue;
-    for (int j = 0; j < bdt_index_max(i); j++) {
+    for (unsigned int j = 0; j < bdt_index_max(i); j++) {
       if (BF_ > 0 && (i > 0 || j > 0)) continue;
       string name_(name("significance_nullhypo_N_bs", i, j));
       if (BF_ > 0) name_ = "significance_nullhypo_BF_bs";
@@ -672,4 +672,19 @@ void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
   sig_c->Print((get_address("RooMCStudy_sig", "bs") + ".gif").c_str());
   sig_c->Print((get_address("RooMCStudy_sig", "bs") + ".pdf").c_str());
   delete sig_c;
+}
+
+Double_t pdf_toyMC::median(TH1D *h) {
+   //compute the median for 1-d histogram h
+   Int_t nbins = h->GetXaxis()->GetNbins();
+   Double_t *x = new Double_t[nbins];
+   Double_t *y = new Double_t[nbins];
+   for (Int_t i = 0; i < nbins; i++) {
+      x[i] = h->GetXaxis()->GetBinCenter(i+1);
+      y[i] = h->GetBinContent(i+1);
+   }
+   Double_t median = TMath::Median(nbins, x, y);
+   delete [] x;
+   delete [] y;
+   return median;
 }

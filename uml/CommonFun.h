@@ -54,6 +54,8 @@ static bool LLprofile = false;
 static bool hack_semi2011 = false;
 bool simul_all = false;
 int free_rare = 3;
+bool make_bdt_binning_inputs = false;
+static string bdtbinnings_s = "input/bdtbinnings.root";
 
 void help() {
 
@@ -75,6 +77,10 @@ void help() {
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << "-newcomb \t exponential combinatorial bkg study" << endl;
   cout << "-rkeys \t RooKeysPdf for MassRes and BDT" << endl;
+  cout << "-bdtbins \t produces only inputs for evaluation of bdt binnings" << endl;
+  cout << endl;
+  cout << ">>>>>>>>> make_bdt_uml_inputs.o: make bdt effs" << endl;
+  cout << "-bins ### 1 \t ### is a sequence of numbers describing the bdt binning vector. e.g. -bins -0.2 0.2 0.5 1" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_fitData.o: fits events with pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-i #filename \t input for fitting events (MANDATORY)" << endl;
@@ -327,6 +333,10 @@ void parse_options(int argc, char* argv[]){
       free_rare = atoi(argv[i+1]);
       cout << "free rare decays, option " << free_rare << endl;
     }
+    if (!strcmp(argv[i],"-bdtbins")) {
+    	make_bdt_binning_inputs = true;
+      cout << "saves bdt histos to " << bdtbinnings_s << endl;
+    }
     if (!strcmp(argv[i],"-h")) help();
   }
 }
@@ -365,7 +375,7 @@ void parse_input (string input) {
     size_t found2;
     found2 = input.find_first_of("0123456789");
     ostringstream number;
-    number<< input[found2];
+    number << input[found2];
     inputs = atoi(number.str().c_str());
     cout << "simultaneous " << inputs << endl;
   }
@@ -497,6 +507,7 @@ vector <double> cut_bdt_file() {
   }
   cout << "bdt_0 cut = " << bdt_[0] << "; bdt_1 cut = " << bdt_[1] << endl;
   cout << "bdt_2 cut = " << bdt_[2] << "; bdt_3 cut = " << bdt_[3] << endl;
+  fclose(file);
   return bdt_;
 }
 

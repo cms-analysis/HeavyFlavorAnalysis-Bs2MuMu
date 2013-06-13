@@ -5,7 +5,7 @@ ROOTGLIBS     = $(shell root-config --glibs)
 
 CXX           = g++
 CXXFLAGS      = -fPIC -ansi -D_GNU_SOURCE -O2 -Wall -Wextra
-LDFLAGS       = -g3 -lRooFit -lRooFitCore -lMinuit -lFoam -lGraf -lRooStats
+LDFLAGS       = -g3 -lRooFit -lRooFitCore -lMinuit -lFoam -lGraf -lRooStats -lTMVA
 
 SOFLAGS       = -shared
 
@@ -28,7 +28,7 @@ CXX	         += -I$(INCLUDEDIR)
 # TARGETS #
 ###########
 
-all: main_make_pdf main_fitData main_toyMC
+all: main_make_pdf make_bdt_uml_inputs main_fitData main_toyMC
 
 mass_vs_bdt: mass_vs_bdt.cc
 		$(CXX) $(CXXFLAGS) -o mass_vs_bdt.o $(GLIBS)  $(LDFLAGS)  $<
@@ -38,6 +38,9 @@ main_toyMC: main_toyMC.cc pdf_analysis.o pdf_fitData.o pdf_toyMC.o
 
 main_fitData: main_fitData.cc pdf_analysis.o pdf_fitData.o
 		$(CXX) $(CXXFLAGS) -o main_fitData.o pdf_analysis.o pdf_fitData.o $(GLIBS)  $(LDFLAGS)  $<
+
+make_bdt_uml_inputs: make_bdt_uml_inputs.cc pdf_analysis.o 
+		$(CXX) $(CXXFLAGS) -o make_bdt_uml_inputs.o pdf_analysis.o $(GLIBS)  $(LDFLAGS)  $<
 
 main_make_pdf: main_make_pdf.cc pdf_analysis.o
 		$(CXX) $(CXXFLAGS) -o main_make_pdf.o pdf_analysis.o $(GLIBS)  $(LDFLAGS)  $<

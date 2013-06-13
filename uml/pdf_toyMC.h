@@ -11,22 +11,11 @@
 #include "pdf_fitData.h"
 
 #include "TPaveStats.h"
-#include "TH2D.h"
+#include "TMath.h"
 
-#include "RooRandom.h"
 #include "RooArgSet.h"
 #include "RooMCStudy.h"
 #include "RooDLLSignificanceMCSModule.h"
-
-#include "RooStats/ModelConfig.h"
-#include "RooStats/ToyMCSampler.h"
-#include "RooStats/HypoTestResult.h"
-#include "RooStats/HypoTestPlot.h"
-#include "RooStats/ProfileLikelihoodCalculator.h"
-#include "RooStats/FrequentistCalculator.h"
-#include "RooStats/ProfileLikelihoodTestStat.h"
-#include "RooStats/RatioOfProfiledLikelihoodsTestStat.h"
-#include "RooStats/HybridCalculator.h"
 
 class pdf_toyMC : public pdf_fitData {
 public:
@@ -68,6 +57,7 @@ private:
   RooFitResult* fit_pdf (RooAbsData* data, int printlevel = -1, RooWorkspace *ws = 0);
   Double_t sig_hand(RooAbsData *data, int printlevel, RooWorkspace *ws);
   void do_bias(RooWorkspace* ws);
+  Double_t median(TH1D * h);
 
 };
 

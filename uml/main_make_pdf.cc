@@ -91,6 +91,9 @@ int main(int argc, char* argv[]) {
       int y = (years == 2) ? yy : years_i;
       decays_filename[i] = "input/" + year_s[y] + "/small-" + decays[i] + ".root";
       cout << endl << decays_filename[i] << endl;
+//      TFile* smalltree_f = new TFile(decays_filename[i].c_str());
+//      TTree* smalltree = new TTree("smalltree", "smalltree");
+//      smalltree = (TTree*)smalltree_f->Get(decays_treename[i].c_str());
       TFile* smalltree_f = new TFile(decays_filename[i].c_str(), "UPDATE");
       TTree* smalltree = (TTree*)smalltree_f->Get(decays_treename[i].c_str());
       TTree* reduced_tree = smalltree->CopyTree(cuts.c_str()); // string cuts
@@ -105,7 +108,7 @@ int main(int argc, char* argv[]) {
       reduced_tree->SetBranchAddress("muid",  &muid_t);
       double entries = reduced_tree->GetEntries();
       double events_0 = 0, events_1 = 0, events_2 = 0, events_3 = 0;
-      for (int j = 0; j < entries && (j < 100000 || i == decays_n - 1); j++) {
+      for (int j = 0; j < entries && (j < 100000 || i == decays_n - 1 || make_bdt_binning_inputs); j++) {
         reduced_tree->GetEntry(j);
         Bool_t barrel = fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4;
         if (m_t > 5.20 && m_t < 5.45 && i == decays_n-1) continue; // skip signal windows for comb bkg
@@ -132,7 +135,7 @@ int main(int argc, char* argv[]) {
           }
         }
       }
-      for (int j = 0; j < entries && (j < 100000 || i == decays_n - 1); j++) {
+      for (int j = 0; j < entries && (j < 100000 || i == decays_n - 1 || make_bdt_binning_inputs); j++) {
         reduced_tree->GetEntry(j);
         Bool_t barrel = fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4;
         m->setVal(m_t);
@@ -153,7 +156,7 @@ int main(int argc, char* argv[]) {
             if (cuts_f_b && bdt_t < cuts_v[0 + 2*yy]) continue;
           }
           else {
-            if (cuts_f_b && bdt_t < 0.1) continue; // give some statistics to comb!
+            if (cuts_f_b && bdt_t < -0.2) continue; // give some statistics to comb!
           }
         }
         else {
@@ -163,13 +166,13 @@ int main(int argc, char* argv[]) {
             if (cuts_f_b && bdt_t < cuts_v[1 + 2*yy]) continue;
           }
           else {
-            if (cuts_f_b && bdt_t < 0.1) continue; // give some statistics to comb!
+            if (cuts_f_b && bdt_t < -0.2) continue; // give some statistics to comb!
           }
         }
         /// bdt channels
         int bdt_channel = ana1.bdt_index(eta_channel, bdt_t);
         if (simul_bdt || simul_all) {
-          if (bdt_channel == -1) continue; /// bdt < 0.1
+          if (bdt_channel == -1) continue; /// bdt < ###
           bdt_cat->setIndex(bdt_channel);
         }
         if (simul_all) all_cat->setIndex(ana1.super_index(eta_channel, bdt_channel));
@@ -210,10 +213,16 @@ int main(int argc, char* argv[]) {
 
   RooAbsData* rad_comb = rds_smalltree[decays_n-1];
 
+  TH1D * bs_bdt_histo[inputs];
+  TH1D * bd_bdt_histo[inputs];
+  TH1D * peak_bdt_histo[inputs];
+  TH1D * semi_bdt_histo[inputs];
+  TH1D * comb_bdt_histo[inputs];
+  TH1D * bu_bdt_histo[inputs];
   for (int j = 0; j < inputs; j++) {
     ana1.channel = simul ? j : ch_i;
     /// 1D
-    for (int k = 0; k < ana1.bdt_index_max(j); k++) {
+    for (unsigned int k = 0; k < ana1.bdt_index_max(j); k++) {
       ana1.channel_bdt = (simul_bdt || simul_all) ? k : ch_bdt_i;
       ana1.define_massRes_pdf(rds_smalltree[0], "bs", rkeys);
       ana1.define_massRes_pdf(rds_smalltree[1], "bd", rkeys);
@@ -224,14 +233,71 @@ int main(int argc, char* argv[]) {
     /// 2D
     if (bdt_fit) {
     	TFile *bdt_syst_f = new TFile("input/div_bdt_jpsi_bin0.root");
-    	ana1.define_bdt_pdf(rds_smalltree[0], "bs", bdt_syst_f, rkeys);
-      ana1.define_bdt_pdf(rds_smalltree[1], "bd", bdt_syst_f, rkeys);
-      ana1.define_bdt_pdf(rds_semi, "semi", bdt_syst_f, rkeys);
-      ana1.define_bdt_pdf(rds_peak, "peak", bdt_syst_f, rkeys);
+    	bs_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_smalltree[0], "bs", bdt_syst_f, rkeys);
+    	bd_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_smalltree[1], "bd", bdt_syst_f, rkeys);
+    	peak_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_semi, "semi", bdt_syst_f, rkeys);
+    	semi_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_peak, "peak", bdt_syst_f, rkeys);
       TFile *bdt_syst_comb_f = new TFile("input/div_bdt.root");
-      ana1.define_bdt_pdf(rds_smalltree[decays_n-1], "comb", bdt_syst_comb_f, rkeys);
+      comb_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_smalltree[decays_n-1], "comb", bdt_syst_comb_f, rkeys);
     }
   }
+
+  if (make_bdt_binning_inputs) { /// Normalization
+  	if (!bdt_fit) {
+  		cout << "make_bdt_binning_inputs works only with bdt_fit" << endl;
+  		return EXIT_FAILURE;
+  	}
+  	for (int j = 0; j < inputs; j++) {
+  		bu_bdt_histo[j] = new TH1D(Form("bdt_bu_%d_h", j), "bdt_bu", 1000, -1, 1);
+  	}
+  	for (int yy = 0; yy < years; yy++) {
+  		int y = (years == 2) ? yy : years_i;
+  		string filename = "input/" + year_s[y] + "/small-NoMc.root";
+  		cout << endl << filename << endl;
+  		TFile* smalltree_f = new TFile(filename.c_str(), "UPDATE");
+  		TTree* smalltree = (TTree*)smalltree_f->Get("NoMc_bdt");
+  		TTree* reduced_tree = smalltree->CopyTree(cuts.c_str()); // string cuts
+  		Double_t m_t, eta_t, m1eta_t, m2eta_t, bdt_t, me_t;
+  		Bool_t muid_t;
+  		reduced_tree->SetBranchAddress("m",     &m_t);
+  		reduced_tree->SetBranchAddress("bdt",   &bdt_t);
+  		reduced_tree->SetBranchAddress("eta",   &eta_t);
+  		reduced_tree->SetBranchAddress("m1eta", &m1eta_t);
+  		reduced_tree->SetBranchAddress("m2eta", &m2eta_t);
+  		reduced_tree->SetBranchAddress("me",    &me_t);
+  		reduced_tree->SetBranchAddress("muid",  &muid_t);
+  		double entries = reduced_tree->GetEntries();
+  		for (int j = 0; j < entries; j++) {
+  			reduced_tree->GetEntry(j);
+  			Bool_t barrel = fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4;
+  			if (m_t < 4.90 || m_t > 5.90 || !muid_t) continue; // skip outside range
+  			if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass error
+  			if (y == 0) {
+  				if (barrel)	bu_bdt_histo[0]->Fill(bdt_t);
+  				else	bu_bdt_histo[1]->Fill(bdt_t);
+  			}
+  			else {
+  				if (barrel) bu_bdt_histo[2]->Fill(bdt_t);
+  				else bu_bdt_histo[3]->Fill(bdt_t);
+  			}
+  		}
+  		smalltree_f->Close();
+  	}
+
+  	TFile * bdt_f = new TFile(bdtbinnings_s.c_str(), "RECREATE");
+  	for (int j = 0; j < inputs; j++) {
+  		bs_bdt_histo[j]->Write();
+  		bd_bdt_histo[j]->Write();
+  		peak_bdt_histo[j]->Write();
+  		semi_bdt_histo[j]->Write();
+  		comb_bdt_histo[j]->Write();
+  		bu_bdt_histo[j]->Write();
+  	}
+  	bdt_f->Close();
+  	cout << "written bdt pdfs to " << bdtbinnings_s << endl;
+  	return EXIT_SUCCESS;
+  }
+
   ana1.define_N();
 
   get_rare_normalization("anaBmm.plotResults.2011.tex", "./input/2011/");
@@ -243,7 +309,7 @@ int main(int argc, char* argv[]) {
 
   /// FITS
   for (int j = 0; j < inputs; j++) {
-    for (int k = 0; k < ana1.bdt_index_max(j); k++) {
+    for (unsigned int k = 0; k < ana1.bdt_index_max(j); k++) {
       ana1.channel = simul ? j : ch_i;
       ana1.channel_bdt = (simul_bdt || simul_all) ? k : ch_bdt_i;
       /// bs
@@ -283,8 +349,6 @@ int main(int argc, char* argv[]) {
   output_s += ".root";
   TFile * output_f = new TFile(output_s.c_str(), "RECREATE");
   ws->Write();
-//  MassRes_0_h->Write();
-//  MassRes_2_h->Write();
   output_f->Close();
   if (!simul && !simul_bdt) ws->pdf("pdf_ext_total")->graphVizTree(Form("ext_%s.dot", ch_s.c_str()));
   ws->Print();

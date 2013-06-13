@@ -34,10 +34,12 @@ pdf_analysis::pdf_analysis(bool print, string ch_s, string range, int BF, bool S
   syst = false;
   randomsyst = false;
 
-  if (simul_all_) channels_bdt = 4;
+  if (simul_all_) channels_bdt = 5;
   default_console_color = "\033[0m";
   red_color_bold = "\033[1;31m";
   purple_color_bold = "\033[1;31m";
+
+  bdt_boundaries.resize(channels);
 
   initialize();
   RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING);
@@ -84,18 +86,19 @@ void pdf_analysis::initialize () {
   bdt  = new RooRealVar("bdt", "bdt cut", -1., 1.);
   ws_->import(*bdt);
 
+  fill_bdt_boundaries();
   channels_cat = new RooCategory("etacat", "eta channels");
   for (int i = 0; i < 4; i++) {
     channels_cat->defineType(Form("etacat_%d", i), i);
   }
   ws_->import(*channels_cat);
   bdt_cat = new RooCategory("bdtcat", "bdt channels");
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 5; i++) {
     bdt_cat->defineType(Form("bdtcat_%d", i), i);
   }
   ws_->import(*bdt_cat);
   all_cat = new RooCategory("allcat", "channels");
-  for (int i = 0; i < 12; i++) {
+  for (unsigned int i = 0; i < super_index(channels-1, channels_bdt-1); i++) {
     all_cat->defineType(Form("allcat_%d", i), i);
   }
   ws_->import(*all_cat);
@@ -116,8 +119,8 @@ void pdf_analysis::initialize () {
 
 void pdf_analysis::define_N () {
 
-  for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < bdt_index_max(i); j++) {
+  for (unsigned int i = 0; i < channels; i++) {
+    for (unsigned int j = 0; j < bdt_index_max(i); j++) {
     	RooRealVar N_bs(name("N_bs", i, j), "N_bs", 0, 10000);
     	ws_->import(N_bs);
       RooRealVar N_bd(name("N_bd", i, j), "N_bd", 0, 10000);
@@ -135,8 +138,8 @@ void pdf_analysis::define_N () {
 
 void pdf_analysis::define_pdfs () {
 
-  for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < bdt_index_max(i); j++) {
+  for (unsigned int i = 0; i < channels; i++) {
+    for (unsigned int j = 0; j < bdt_index_max(i); j++) {
       define_bs(i, j);
       define_bd(i, j);
       define_peak(i, j);
@@ -190,7 +193,7 @@ void pdf_analysis::set_pdf_constant(string name) {
   }
 }
 
-void pdf_analysis::define_bs(int i, int j) {
+void pdf_analysis::define_bs(unsigned int i, unsigned int j) {
 
   RooRealVar Mean_bs(name("Mean_bs", i, j), "Mean_bs", 5.35, 5.30, 5.40);
   RooRealVar Sigma_bs(name("Sigma_bs", i, j), "Sigma_bs", 0.02, 0.005, 0.2);
@@ -230,7 +233,7 @@ void pdf_analysis::define_bs(int i, int j) {
   }
 }
 
-void pdf_analysis::define_bd(int i, int j) {
+void pdf_analysis::define_bd(unsigned int i, unsigned int j) {
 
   RooRealVar Mean_bd(name("Mean_bd", i, j), "Mean_bd", 5.25, 5.20, 5.30);
   RooRealVar Sigma_bd(name("Sigma_bd", i, j), "Sigma_bd", 0.02, 0.005, 0.2);
@@ -283,7 +286,7 @@ void pdf_analysis::define_bd(int i, int j) {
   }
 }
 
-void pdf_analysis::define_peak(int i, int j) {
+void pdf_analysis::define_peak(unsigned int i, unsigned int j) {
 
   if (old_tree) {
     RooRealVar Mean_peak(name("Mean_peak", i, j), "Mean_peak", 5.25, 5.20, 5.3);
@@ -327,7 +330,7 @@ void pdf_analysis::define_peak(int i, int j) {
   }
 }
 
-void pdf_analysis::define_semi(int i, int j) {
+void pdf_analysis::define_semi(unsigned int i, unsigned int j) {
 
   if (old_tree) {
     RooRealVar m0_semi(name("m0_semi", i, j), "m0_semi", 5., 6.);
@@ -379,7 +382,7 @@ void pdf_analysis::define_semi(int i, int j) {
   }
 }
 
-void pdf_analysis::define_comb(int i, int j) {
+void pdf_analysis::define_comb(unsigned int i, unsigned int j) {
 
   RooRealVar exp(name("exp_comb", i, j), "exp_comb", 0., -10., 10.);
 
@@ -408,7 +411,7 @@ void pdf_analysis::define_comb(int i, int j) {
   }
 }
 
-void pdf_analysis::define_signals(int i, int j) {
+void pdf_analysis::define_signals(unsigned int i, unsigned int j) {
 
   RooRealVar N_signals(name("N_signals", i, j), "N_signals", 0., 1000);
   ws_->import(N_signals);
@@ -418,7 +421,7 @@ void pdf_analysis::define_signals(int i, int j) {
   ws_->import(pdf_signals);
 }
 
-void pdf_analysis::define_rare(int i, int j) {
+void pdf_analysis::define_rare(unsigned int i, unsigned int j) {
   
   RooRealVar N_rare(name("N_rare", i, j), "N_rare", 0, 10000);
   ws_->import(N_rare);
@@ -428,7 +431,7 @@ void pdf_analysis::define_rare(int i, int j) {
   ws_->import(pdf_rare);
 }
 
-void pdf_analysis::define_rare3(int i, int j) {
+void pdf_analysis::define_rare3(unsigned int i, unsigned int j) {
   RooRealVar N_expo(name("N_expo3", i, j), "N_expo3", 0, 10000);
   ws_->import(N_expo);
   RooRealVar tau3(name("tau3", i, j), "tau3", -5, -20., -0.01);
@@ -444,7 +447,7 @@ void pdf_analysis::define_rare3(int i, int j) {
   //ws_->factory("SUM::pdf_expo(expo1frac_rare[0.,1.]*Exponential::expo1(Mass,Alpha1[-10.,10.]),Exponential::expo2(Mass,Alpha2[-10.,10.]))");
 }
 
-void pdf_analysis::define_bf(int i, int j) {
+void pdf_analysis::define_bf(unsigned int i, unsigned int j) {
 
   if (i == 0 && j == 0) {
     RooRealVar BF_bs("BF_bs", "Bs2MuMu branching fraction", Bs2MuMu_SM_BF_val, 0., 1e-8);
@@ -708,7 +711,7 @@ double pdf_analysis::getErrorLow(RooRealVar *var) {
   return error;
 }
 
-RooAbsPdf* pdf_analysis::define_massRes_pdf(RooDataSet *rds, string name, bool rkeys) {
+TH1D* pdf_analysis::define_massRes_pdf(RooDataSet *rds, string name, bool rkeys) {
 	ostringstream suffix;
 	suffix << name;
 	if (simul_) suffix << "_" << channel;
@@ -717,7 +720,10 @@ RooAbsPdf* pdf_analysis::define_massRes_pdf(RooDataSet *rds, string name, bool r
   RooArgList varlist(*MassRes, *weight);
   RooDataSet* subdata_bdt = new RooDataSet("subdata_bdt", "subdata_bdt", varlist, "weight");
   const RooArgSet* aRow;
-  TH1D histo(rds->GetTitle(), rds->GetTitle(), 100, 0., 0.2);
+  string name_h("MassRes_h_");
+  name_h = name_h + suffix.str();
+  TH1D histo(name_h.c_str(), rds->GetTitle(), 100, 0., 0.2);
+  TH1D * histo_fine = new TH1D(Form("%s_massRes_%s_h", name.c_str(), suffix.str().c_str()), rds->GetTitle(), 1000, 0., 0.2); // no filled
   for (Int_t j = 0; j < rds->numEntries(); j++) {
     aRow = rds->get(j);
     RooRealVar* massres = (RooRealVar*)aRow->find("MassRes");
@@ -740,7 +746,7 @@ RooAbsPdf* pdf_analysis::define_massRes_pdf(RooDataSet *rds, string name, bool r
   if (!rkeys) {
   	ws_->import(*MassRes_rhpdf);
   	print_pdf(MassRes_rhpdf, ws_->var("MassRes"));
-  	return MassRes_rhpdf;
+  	return histo_fine;
   }
 
   if (subdata_bdt->numEntries() < 10000) {
@@ -754,10 +760,10 @@ RooAbsPdf* pdf_analysis::define_massRes_pdf(RooDataSet *rds, string name, bool r
   //  ws_->import(*MassRes_rhpdf);
   ws_->import(*kest);
   print_pdf(kest, ws_->var("MassRes"));
-  return kest;
+  return histo_fine;
 }
 
-RooAbsPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name, TFile* bdt_syst_f, bool rkeys, Double_t bdt_min) {
+TH1D* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name, TFile* bdt_syst_f, bool rkeys, Double_t bdt_min) {
 	ostringstream suffix;
 	suffix << name;
 	if (simul_) suffix << "_" << channel;
@@ -766,7 +772,8 @@ RooAbsPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name, TFile* bdt
   RooArgList varlist(*bdt, *weight);
   RooDataSet* subdata_bdt = new RooDataSet("subdata_bdt", "subdata_bdt", varlist, "weight");
   const RooArgSet* aRow;
-  TH1F histo(rds->GetTitle(), rds->GetTitle(), 100, -1, 1);
+  TH1D histo(rds->GetTitle(), rds->GetTitle(), 100, -1, 1);
+  TH1D * histo_fine = new TH1D(Form("bdt_%s_h", suffix.str().c_str()), rds->GetTitle(), 1000, -1, 1);
   for (Int_t j = 0; j < rds->numEntries(); j++) {
     aRow = rds->get(j);
     RooRealVar* BDT = (RooRealVar*)aRow->find("bdt");
@@ -776,6 +783,7 @@ RooAbsPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name, TFile* bdt
       if ((!simul_bdt_ && !simul_all_) || aRow->getCatIndex("bdtcat") == channel_bdt) {
       	subdata_bdt->add(varlist_tmp_bdt, Weight);
         histo.Fill(BDT->getVal(), Weight);
+        histo_fine->Fill(BDT->getVal(), Weight);
       }
     }
   }
@@ -791,7 +799,7 @@ RooAbsPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name, TFile* bdt
   if (bdt_syst_f == 0 || !rkeys) {
   	ws_->import(*bdt_rhpdf);
   	print_pdf(bdt_rhpdf, ws_->var("bdt"));
-  	return bdt_rhpdf;
+  	return histo_fine;
   }
   else {
   	string name_rhpdf("bdt_rhpdf_");
@@ -799,8 +807,8 @@ RooAbsPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name, TFile* bdt
   	bdt_rhpdf->SetName(name_rhpdf.c_str());
   	string bdt_syst_histo_name("bdt_div_jpsiK");
   	if (name.compare("comb") == 0) bdt_syst_histo_name = "bdt_div_5_1";
-  	TH1F * bdt_syst_histo = (TH1F*)bdt_syst_f->Get(bdt_syst_histo_name.c_str());
-  	TH1F bdt_biased_histo("bdt_biased_histo", "bdt_biased_histo", histo.GetNbinsX(), bdt_min, histo.GetXaxis()->GetXmax());
+  	TH1D * bdt_syst_histo = (TH1D*)bdt_syst_f->Get(bdt_syst_histo_name.c_str());
+  	TH1D bdt_biased_histo("bdt_biased_histo", "bdt_biased_histo", histo.GetNbinsX(), bdt_min, histo.GetXaxis()->GetXmax());
     RooDataSet* subdata_biased_bdt = new RooDataSet("subdata_biased_bdt", "subdata_biased_bdt", varlist, "weight");
   	for (int i = 1; i <= bdt_syst_histo->GetNbinsX(); i++) {
   		double biased_value = (bdt_syst_histo->GetBinContent(i)) * (histo.GetBinContent(i));
@@ -849,7 +857,7 @@ RooAbsPdf* pdf_analysis::define_bdt_pdf(RooDataSet *rds, string name, TFile* bdt
   	ws_->import(*kest1);
   	print_pdf(kest1, ws_->var("bdt"));
 //  	print_pdf(bdt_rim, ws_->var("bdt"));
-  	return bdt_rhpdf;
+  	return histo_fine;
   }
 }
 
@@ -865,7 +873,7 @@ void pdf_analysis::print_pdf(RooAbsPdf* pdf, RooRealVar * var) {
   delete rp;
 }
 
-const char* pdf_analysis::name(string name, int i, int j) {
+const char* pdf_analysis::name(string name, unsigned int i, unsigned int j) {
   if (!simul_) return name.c_str();
   else {
     if (!simul_bdt_ && !simul_all_) return Form("%s_%d", name.c_str(), i);
@@ -875,30 +883,32 @@ const char* pdf_analysis::name(string name, int i, int j) {
 
 void pdf_analysis::set_rare_normalization(string input) {
   FILE *estimate_file = fopen(input.c_str(), "r");
-  for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < bdt_index_max(i); j++) {
+  for (unsigned int i = 0; i < channels; i++) {
+    for (unsigned int j = 0; j < bdt_index_max(i); j++) {
       char buffer[1024];
       char cutName[128];
-      double cut, error;
+      double value, error;
       while (fgets(buffer, sizeof(buffer), estimate_file)) {
         if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
         if (buffer[0] == '#') continue;
-        sscanf(buffer, "%s\t%lf\t%lf", cutName, &cut, &error);
+        sscanf(buffer, "%s\t%lf\t%lf", cutName, &value, &error);
         if ( (simul_ && !strcmp(cutName, Form("N_peak_%d", i))) || (!simul_ && !strcmp(cutName, Form("N_peak_%d", channel))) ) {
-        	ws_->var(name("N_peak", i, j))->setConstant(kFALSE);
-        	if (simul_bdt_ || simul_all_) cut *= bs_bdt_factor[i][j]; /// factor from bs bdt
-        	ws_->var(name("N_peak", i, j))->setVal(cut);
+        	if (simul_bdt_ || simul_all_) {
+        		value *= peak_bdt_factor[i][j]; /// factor
+        		error *= peak_bdt_factor[i][j]; /// factor
+        	}
+        	ws_->var(name("N_peak", i, j))->setVal(value);
         	ws_->var(name("N_peak", i, j))->setError(error);
-          // ws_->var(name("N_peak", i, j))->setConstant(kTRUE);
-        	cout << name("N_peak", i, j) << " set val to " << cut << "; set error to " << error << endl;
+        	cout << name("N_peak", i, j) << " set val to " << value << "; set error to " << error << endl;
         }
         if ( (simul_ && !strcmp(cutName, Form("N_semi_%d", i))) || (!simul_ && !strcmp(cutName, Form("N_semi_%d", channel))) ) {
-          ws_->var(name("N_semi", i, j))->setConstant(kFALSE);
-          if (simul_bdt_ || simul_all_) cut *= bs_bdt_factor[i][j]; /// factor from bs bdt
-          ws_->var(name("N_semi", i, j))->setVal(cut);
+          if (simul_bdt_ || simul_all_) {
+          	value *= semi_bdt_factor[i][j]; /// factor
+          	error *= semi_bdt_factor[i][j]; /// factor
+          }
+          ws_->var(name("N_semi", i, j))->setVal(value);
           ws_->var(name("N_semi", i, j))->setError(error);
-          	// ws_->var(name("N_semi", i, j))->setConstant(kTRUE);
-          cout << name("N_semi", i, j) << " set val to " << cut << "; set error to " << error << endl;
+          cout << name("N_semi", i, j) << " set val to " << value << "; set error to " << error << endl;
         }
       }
       rewind(estimate_file);
@@ -1037,24 +1047,45 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
   eff_bu_err.resize(channels);
   N_bu_err.resize(channels);
   eff_rel_err.resize(channels);
-  for (int i = 0; i < channels; i++) {
-    eff_bd_val[i].resize(channels_bdt);
-    eff_bs_val[i].resize(channels_bdt);
-    eff_bu_val[i].resize(channels_bdt);
-    N_bu_val[i].resize(channels_bdt);
-    eff_bd_err[i].resize(channels_bdt);
-    eff_bs_err[i].resize(channels_bdt);
-    eff_bu_err[i].resize(channels_bdt);
-    N_bu_err[i].resize(channels_bdt);
-    eff_rel_err[i].resize(channels_bdt);
+
+  if (simul_bdt_ || simul_all_) {
+  	bs_bdt_factor.resize(channels);
+  	bd_bdt_factor.resize(channels);
+  	bu_bdt_factor.resize(channels);
+  	peak_bdt_factor.resize(channels);
+  	semi_bdt_factor.resize(channels);
+  	comb_bdt_factor.resize(channels);
+  }
+  for (unsigned int i = 0; i < channels; i++) {
+  	int size = 1;
+  	if (simul_bdt_ || simul_all_) size = bdt_boundaries[i].size() - 1;
+  	eff_bd_val[i].resize(size);
+  	eff_bs_val[i].resize(size);
+  	eff_bu_val[i].resize(size);
+  	N_bu_val[i].resize(size);
+  	eff_bd_err[i].resize(size);
+  	eff_bs_err[i].resize(size);
+  	eff_bu_err[i].resize(size);
+  	N_bu_err[i].resize(size);
+  	eff_rel_err[i].resize(size);
+  	if (simul_bdt_ || simul_all_) {
+  		bs_bdt_factor[i].resize(size);
+  		bd_bdt_factor[i].resize(size);
+  		bu_bdt_factor[i].resize(size);
+  		peak_bdt_factor[i].resize(size);
+  		semi_bdt_factor[i].resize(size);
+  		comb_bdt_factor[i].resize(size);
+  	}
   }
   mass_scale_sys.resize(2);
-  cout << red_color_bold << "channels = " << channels << "; channels_bdt = " << channels_bdt << "; channels_all = " << channels_all << default_console_color << endl;
+
+
   parse_external_numbers(numbers_filename);
   parse_efficiency_numbers();
   if (channels == 4) parse_efficiency_numbers(2);
   if (simul_bdt_ || simul_all_) simulBdt_effs();
-  if (bdt_fit_) bdt_fit_effs();
+//  if (bdt_fit_) bdt_fit_effs();
+  cout << red_color_bold << "channels = " << channels << "; channels_bdt = " << channels_bdt << "; channels_all = " << channels_all << default_console_color << endl;
 
   one_over_BRBR_val = 1./ (Bu2JpsiK_BF_val * Jpsi2MuMu_BF_val);
   one_over_BRBR_err = one_over_BRBR_val * sqrt(pow(Bu2JpsiK_BF_err/Bu2JpsiK_BF_val, 2) + pow(Jpsi2MuMu_BF_err/Jpsi2MuMu_BF_val, 2));
@@ -1063,14 +1094,16 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
   effratio_bd_val.resize(channels);
   effratio_bs_err.resize(channels);
   effratio_bd_err.resize(channels);
-  for (int i = 0; i < channels; i++) {
-    effratio_bs_val[i].resize(channels_bdt);
-    effratio_bd_val[i].resize(channels_bdt);
-    effratio_bs_err[i].resize(channels_bdt);
-    effratio_bd_err[i].resize(channels_bdt);
+  for (unsigned  int i = 0; i < channels; i++) {
+  	int size = 1;
+  	if (simul_bdt_ || simul_all_) size = bdt_boundaries[i].size() - 1;
+    effratio_bs_val[i].resize(size);
+    effratio_bd_val[i].resize(size);
+    effratio_bs_err[i].resize(size);
+    effratio_bd_err[i].resize(size);
   }
-  for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < bdt_index_max(i); j++) {
+  for (unsigned int i = 0; i < channels; i++) {
+    for (unsigned int j = 0; j < bdt_index_max(i); j++) {
       effratio_bs_val[i][j] = eff_bs_val[i][j] / eff_bu_val[i][j];
       effratio_bd_val[i][j] = eff_bd_val[i][j] / eff_bu_val[i][j];
       effratio_bs_err[i][j] = eff_rel_err[i][j] * effratio_bs_val[i][j];
@@ -1086,7 +1119,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
   string filename = "anaBmm.plotResults.2011.tex";
   if (offset == 2) filename = "anaBmm.plotResults.2012.tex";
   string file_address = "./input/";
-  int channels_;
+  unsigned int channels_;
   if (offset == 0) {
     file_address += "2011/" + filename;
     channels_ = channels;
@@ -1112,7 +1145,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
   vector < pair<string, string> > end_bu(channels_);
   vector < pair<string, string> > end_Nbu(channels_);
   int ii = -1;
-  for (int i = 0; i < channels_; i++) {
+  for (unsigned int i = 0; i < channels_; i++) {
     if (simul_) ii = i;
     else ii = ch_i_;
     end_bd[i] = make_pair(Form("N-EFF-TOT-BDMM%d:val", ii), Form("N-EFF-TOT-BDMM%d:tot", ii));
@@ -1127,7 +1160,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
     if (buffer[0] == '\040') continue;
     sscanf(buffer, "%s   {\\ensuremath{{%lf } } }", left, &number);
     string left_s(left);
-    for (int i = 0; i < channels_; i++) {
+    for (unsigned int i = 0; i < channels_; i++) {
       size_t found;
       found = left_s.find(end_bd[i].first);
       if (found != string::npos) eff_bd_val[i+offset][0] = number;
@@ -1152,8 +1185,8 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
   }
 
   /// HACK!!!!! we do not know eff and yields for the different bdt categories for the normalization channel
-  for (int i = 0; i < channels_; i++) {
-    for (int j = 1; j < bdt_index_max(i+offset); j++) {
+  for (unsigned int i = 0; i < channels_; i++) {
+    for (unsigned int j = 1; j < bdt_index_max(i+offset); j++) {
       eff_bd_val[i+offset][j] = eff_bd_val[i+offset][0];
       eff_bd_err[i+offset][j] = eff_bd_err[i+offset][0];
       eff_bs_val[i+offset][j] = eff_bs_val[i+offset][0];
@@ -1188,7 +1221,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
   vector < string > reco_eff_ratio_val(channels_);
   vector < string > reco_eff_ratio_err(channels_);
   ii = -1;
-  for (int i = 0; i < channels_; i++) {
+  for (unsigned int i = 0; i < channels_; i++) {
     if (simul_) ii = i;
     else ii = ch_i_;
     trig_eff_ratio_val[i] = Form("rMcTrig%d-pT11pT11:val", ii);
@@ -1208,7 +1241,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
     if (buffer[0] == '\040') continue;
     sscanf(buffer, "%s   {\\ensuremath{{%lf } } }", left, &number);
     string left_s(left);
-    for (int i = 0; i < channels_; i++) {
+    for (unsigned int i = 0; i < channels_; i++) {
       size_t found;
       found = left_s.find(trig_eff_ratio_val[i]);
       if (found != string::npos) trig_eff_ratio_val_d[i] = number;
@@ -1222,7 +1255,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
     }
   }
   vector <double> eff_rel_err_sq(channels_, 0.);
-  for (int i = 0; i < channels_; i++) {
+  for (unsigned int i = 0; i < channels_; i++) {
   	if (trig_eff_ratio_val_d[i] != 0.) eff_rel_err_sq[i] = pow(trig_eff_ratio_err_d[i] / trig_eff_ratio_val_d[i], 2);
     if (reco_eff_ratio_val_d[i] != 0.) eff_rel_err_sq[i] += pow(reco_eff_ratio_err_d[i] / reco_eff_ratio_val_d[i], 2);
   }
@@ -1249,7 +1282,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
   vector < string > CS_err(channels_);
   vector < string > MC_err(channels_);
   ii = -1;
-  for (int i = 0; i < channels_; i++) {
+  for (unsigned int i = 0; i < channels_; i++) {
     if (simul_) ii = i;
     else ii = ch_i_;
     NO_err[i] = Form("relDeltaEpsNoDataNoMcchan%d:val", ii);
@@ -1267,7 +1300,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
     if (buffer[0] == '\040') continue;
     sscanf(buffer, "%s   {\\ensuremath{{%lf } } }", left, &number);
     string left_s(left);
-    for (int i = 0; i < channels_; i++) {
+    for (unsigned int i = 0; i < channels_; i++) {
       size_t found;
       found = left_s.find(NO_err[i]);
       if (found != string::npos) NO_err_d[i] = number;
@@ -1279,20 +1312,20 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
       if (found != string::npos) MC_err_d[i] = number;
     }
   }
-  for (int i = 0; i < channels_; i++) {
+  for (unsigned int i = 0; i < channels_; i++) {
     eff_rel_err_sq[i] += pow(NO_err_d[i], 2) + pow(CS_err_d[i], 2) + pow(MC_err_d[i], 2);
   }
 
-  for (int i = 0; i < channels_; i++) {
+  for (unsigned int i = 0; i < channels_; i++) {
     eff_rel_err[i+offset][0] = sqrt(eff_rel_err_sq[i]);
   }
-  for (int i = 0; i < channels_; i++) {
-    for (int j = 1; j < bdt_index_max(i+offset); j++) {
+  for (unsigned int i = 0; i < channels_; i++) {
+    for (unsigned int j = 1; j < bdt_index_max(i+offset); j++) {
       eff_rel_err[i+offset][j] = eff_rel_err[i+offset][0];
     }
   }
 
-  for (int i = 0; i < channels_ && i < 2; i++) {
+  for (unsigned int i = 0; i < channels_ && i < 2; i++) {
     if (simul_) ii = i;
     else ii = ch_i_;
     cout << "etacat " << ii + offset << ":" << endl;
@@ -1333,38 +1366,45 @@ void pdf_analysis::parse_external_numbers(string filename) {
 }
 
 void pdf_analysis::simulBdt_effs() {
-  cout << "parsing simulBdt_effs.txt to change eff in each bdt and eta bin" << endl;
-  FILE *file = fopen("input/simulBdt_effs.txt", "r");
-  if (!file) {cout << "file simulBdt_effs.txt does not exist" << endl; exit(1);}
-  bs_bdt_factor.resize(channels);
-  bd_bdt_factor.resize(channels);
-  for (int i = 0; i < channels; i++) {
-	  bs_bdt_factor[i].resize(channels_bdt);
-	  bd_bdt_factor[i].resize(channels_bdt);
-  }
+//  cout << "parsing simulBdt_effs.txt to change eff in each bdt and eta bin" << endl;
+
+  FILE *file = fopen("input/eff_fact.txt", "r");
+  if (!file) {cout << "file input/eff_fact.txt does not exist" << endl; exit(1);}
   char buffer[1024];
   while (fgets(buffer, sizeof(buffer), file)) {
     if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
     if (buffer[0] == '\045') continue;
-    for (int i = 0; i < channels; i++) {
-      for (int j = 0; j < bdt_index_max(i); j++) {
-        ostringstream bs_oss, bd_oss;
-        bs_oss << "eff_bs_" << i << "_" << j << " %lf";
-        bd_oss << "eff_bd_" << i << "_" << j << " %lf";
+    for (unsigned int i = 0; i < channels; i++) {
+      for (unsigned int j = 0; j < bdt_index_max(i); j++) {
+        ostringstream bu_oss, bs_oss, bd_oss, peak_oss, semi_oss, comb_oss;
+        bs_oss << "bdt_bs_" << i << "_" << j << "\t%lf";
+        bd_oss << "bdt_bd_" << i << "_" << j << "\t%lf";
+        bu_oss << "bdt_bu_" << i << "_" << j << "\t%lf";
         sscanf(buffer, bs_oss.str().c_str(), &bs_bdt_factor[i][j]);
         sscanf(buffer, bd_oss.str().c_str(), &bd_bdt_factor[i][j]);
+        sscanf(buffer, bu_oss.str().c_str(), &bu_bdt_factor[i][j]);
+        sscanf(buffer, peak_oss.str().c_str(), &peak_bdt_factor[i][j]);
+        sscanf(buffer, semi_oss.str().c_str(), &semi_bdt_factor[i][j]);
+        sscanf(buffer, comb_oss.str().c_str(), &comb_bdt_factor[i][j]);
       }
     }
   }
-  for (int i = 0; i < channels; i++) {
-    for (int j = 0; j < bdt_index_max(i); j++) {
-      eff_bs_val[i][j] *= bs_bdt_factor[i][j];
-      eff_bs_err[i][j] *= bs_bdt_factor[i][j];
-      eff_bd_val[i][j] *= bd_bdt_factor[i][j];
-      eff_bd_err[i][j] *= bd_bdt_factor[i][j];
-      cout << i << "," << j << "  bs eff = " <<  eff_bs_val[i][j] << " bd eff = " << eff_bd_val[i][j] << endl;
+  fclose(file);
+
+  cout << "efficiencies and bu yields for every category:" << endl;
+  unsigned int allchannels = 0;
+  for (unsigned int i = 0; i < channels; i++) {
+    for (unsigned int j = 0; j < bdt_index_max(i); j++) {
+    	allchannels++;
+    	eff_bs_val[i][j] = bs_bdt_factor[i][j] * eff_bs_val[i][j];
+    	eff_bd_val[i][j] = bd_bdt_factor[i][j] * eff_bd_val[i][j];
+    	eff_bu_val[i][j] = bu_bdt_factor[i][j] * eff_bu_val[i][j];
+    	N_bu_val[i][j] = bu_bdt_factor[i][j] * N_bu_val[i][j];
+    	N_bu_err[i][j] = bu_bdt_factor[i][j] * sqrt(N_bu_val[i][j]);
+      cout << "[" << i << "," << j << "]  bu eff = " <<  eff_bu_val[i][j] << " bs eff = " << eff_bs_val[i][j] << " bd eff = " << eff_bd_val[i][j] << " bu yield = " << N_bu_val[i][j] << " +/- " << N_bu_err[i][j] << endl;
     }
   }
+  channels_all = allchannels;
 }
 
 void pdf_analysis::bdt_fit_effs() {
@@ -1378,7 +1418,7 @@ void pdf_analysis::bdt_fit_effs() {
   eff_Bd_bdt01.push_back(1039./563.);
   eff_Bd_bdt01.push_back(2007./1597.);
   eff_Bd_bdt01.push_back(889./629.);
-  for (int i = 0; i < channels; i++) {
+  for (unsigned int i = 0; i < channels; i++) {
   	eff_bs_val[i][0] *= eff_Bs_bdt01[i];
   	eff_bs_err[i][0] *= eff_Bs_bdt01[i];
   	eff_bd_val[i][0] *= eff_Bd_bdt01[i];
@@ -1411,119 +1451,166 @@ string pdf_analysis::get_title(int i) {
 	string output(" ");
 	if (i == 0) output = "CMS preliminary - #sqrt{s} = 7 TeV - Barrel 2011";
 	if (i == 1) output = "CMS preliminary - #sqrt{s} = 7 TeV - Endcap 2011";
-	if (i == 2) output = "CMS preliminary - #sqrt{s} = 7 TeV - Barrel 2012";
-	if (i == 3) output = "CMS preliminary - #sqrt{s} = 7 TeV - Endcap 2012";
+	if (i == 2) output = "CMS preliminary - #sqrt{s} = 8 TeV - Barrel 2012";
+	if (i == 3) output = "CMS preliminary - #sqrt{s} = 8 TeV - Endcap 2012";
 	return output;
 }
 
-int pdf_analysis::bdt_index(int eta_ch, double bdt) {
-  if (bdt < 0.1) return -1;
-  if (eta_ch == 0) {
-    if (bdt < 0.17) return 0;
-    if (bdt < 0.24) return 1;
-    return 2;
-  }
-  if (eta_ch == 1) {
-    if (bdt < 0.19) return 0;
-    return 1;
-  }
-  if (eta_ch == 2) {
-    if (bdt < 0.14) return 0;
-    if (bdt < 0.18) return 1;
-    if (bdt < 0.22) return 2;
-    return 3;
-  }
-  if (eta_ch == 3) {
-    if (bdt < 0.14) return 0;
-    if (bdt < 0.18) return 1;
-    return 2;
-  }
-  return -1;
+unsigned int pdf_analysis::bdt_index(unsigned int eta_ch, double bdt) {
+	for (unsigned int index = 0; index < bdt_boundaries[eta_ch].size(); index++){
+		if (bdt > bdt_boundaries[eta_ch][index+1]) continue;
+		else return index;
+	}
+	return -1;
+//
+//  if (bdt < 0.1) return -1;
+//  if (eta_ch == 0) {
+//    if (bdt < 0.17) return 0;
+//    if (bdt < 0.24) return 1;
+//    return 2;
+//  }
+//  if (eta_ch == 1) {
+//    if (bdt < 0.19) return 0;
+//    return 1;
+//  }
+//  if (eta_ch == 2) {
+//    if (bdt < 0.14) return 0;
+//    if (bdt < 0.18) return 1;
+//    if (bdt < 0.22) return 2;
+//    return 3;
+//  }
+//  if (eta_ch == 3) {
+//    if (bdt < 0.14) return 0;
+//    if (bdt < 0.18) return 1;
+//    return 2;
+//  }
+//  return -1;
 }
 
-int pdf_analysis::bdt_index_max(int eta_ch) {
+unsigned int pdf_analysis::bdt_index_max(unsigned int eta_ch) {
   if (!simul_bdt_ && !simul_all_) return 1;
-  if (eta_ch == 0) return 3;
-  if (eta_ch == 1) return 2;
-  if (eta_ch == 2) return 4;
-  if (eta_ch == 3) return 3;
-  return -1;
+  return bdt_boundaries[eta_ch].size() - 1;
 }
 
-int pdf_analysis::super_index(int eta_ch, int bdt_ch) {
-  if (eta_ch == 0) {
-    if (bdt_ch == 0) return 0;
-    if (bdt_ch == 1) return 1;
-    if (bdt_ch == 2) return 2;
-  }
-  if (eta_ch == 1) {
-    if (bdt_ch == 0) return 3;
-    if (bdt_ch == 1) return 4;
-  }
-  if (eta_ch == 2) {
-    if (bdt_ch == 0) return 5;
-    if (bdt_ch == 1) return 6;
-    if (bdt_ch == 2) return 7;
-    if (bdt_ch == 3) return 8;
-  }
-  if (eta_ch == 3) {
-    if (bdt_ch == 0) return 9;
-    if (bdt_ch == 1) return 10;
-    if (bdt_ch == 2) return 11;
-  }
-  return -1;
+unsigned int pdf_analysis::super_index(unsigned int eta_ch, unsigned int bdt_ch) {
+	int superindex = -1;
+	for (unsigned int i = 0; i < bdt_boundaries.size(); i++) {
+		for (unsigned int j = 0; j < bdt_boundaries[i].size(); j++) {
+			superindex++;
+			if (eta_ch == i && bdt_ch == j) return superindex;
+		}
+	}
+	return superindex;
+//  if (eta_ch == 0) {
+//    if (bdt_ch == 0) return 0;
+//    if (bdt_ch == 1) return 1;
+//    if (bdt_ch == 2) return 2;
+//  }
+//  if (eta_ch == 1) {
+//    if (bdt_ch == 0) return 3;
+//    if (bdt_ch == 1) return 4;
+//  }
+//  if (eta_ch == 2) {
+//    if (bdt_ch == 0) return 5;
+//    if (bdt_ch == 1) return 6;
+//    if (bdt_ch == 2) return 7;
+//    if (bdt_ch == 3) return 8;
+//  }
+//  if (eta_ch == 3) {
+//    if (bdt_ch == 0) return 9;
+//    if (bdt_ch == 1) return 10;
+//    if (bdt_ch == 2) return 11;
+//  }
+//  return -1;
 }
 
-vector <int> pdf_analysis::get_EtaBdt_bins(int index) {
-  vector <int> indexes(2, -1);
-  if (index == 0) {
-    indexes[0] = 0;
-    indexes[1] = 0;
-  }
-  if (index == 1) {
-    indexes[0] = 0;
-    indexes[1] = 1;
-  }
-  if (index == 2) {
-    indexes[0] = 0;
-    indexes[1] = 2;
-  }
-  if (index == 3) {
-    indexes[0] = 1;
-    indexes[1] = 0;
-  }
-  if (index == 4) {
-    indexes[0] = 1;
-    indexes[1] = 1;
-  }
-  if (index == 5) {
-    indexes[0] = 2;
-    indexes[1] = 0;
-  }
-  if (index == 6) {
-    indexes[0] = 2;
-    indexes[1] = 1;
-  }
-  if (index == 7) {
-    indexes[0] = 2;
-    indexes[1] = 2;
-  }
-  if (index == 8) {
-    indexes[0] = 2;
-    indexes[1] = 3;
-  }
-  if (index == 9) {
-    indexes[0] = 3;
-    indexes[1] = 0;
-  }
-  if (index == 10) {
-    indexes[0] = 3;
-    indexes[1] = 1;
-  }
-  if (index == 11) {
-    indexes[0] = 3;
-    indexes[1] = 2;
-  }
-  return indexes;
+vector <unsigned int> pdf_analysis::get_EtaBdt_bins(unsigned int index) {
+  vector <unsigned int> indexes(2, -1);
+
+  unsigned int superindex = -1;
+
+	for (unsigned int i = 0; i < bdt_boundaries.size(); i++) {
+		indexes[0]++;
+		for (unsigned int j = 0; j < bdt_boundaries[i].size(); j++) {
+			indexes[1]++;
+			superindex++;
+			if (index == superindex) return indexes;
+		}
+		indexes[1] = -1;
+	}
+	return indexes;
+//
+//  if (index == 0) {
+//    indexes[0] = 0;
+//    indexes[1] = 0;
+//  }
+//  if (index == 1) {
+//    indexes[0] = 0;
+//    indexes[1] = 1;
+//  }
+//  if (index == 2) {
+//    indexes[0] = 0;
+//    indexes[1] = 2;
+//  }
+//  if (index == 3) {
+//    indexes[0] = 1;
+//    indexes[1] = 0;
+//  }
+//  if (index == 4) {
+//    indexes[0] = 1;
+//    indexes[1] = 1;
+//  }
+//  if (index == 5) {
+//    indexes[0] = 2;
+//    indexes[1] = 0;
+//  }
+//  if (index == 6) {
+//    indexes[0] = 2;
+//    indexes[1] = 1;
+//  }
+//  if (index == 7) {
+//    indexes[0] = 2;
+//    indexes[1] = 2;
+//  }
+//  if (index == 8) {
+//    indexes[0] = 2;
+//    indexes[1] = 3;
+//  }
+//  if (index == 9) {
+//    indexes[0] = 3;
+//    indexes[1] = 0;
+//  }
+//  if (index == 10) {
+//    indexes[0] = 3;
+//    indexes[1] = 1;
+//  }
+//  if (index == 11) {
+//    indexes[0] = 3;
+//    indexes[1] = 2;
+//  }
+//  return indexes;
 }
 
+void pdf_analysis::fill_bdt_boundaries() {
+	FILE *file = fopen("input/bdtbins.txt", "r");
+	char buffer[1024];
+	int in = 0;
+	while (fgets(buffer, sizeof(buffer), file)) {
+		cout << "eta category " << in << "; binning = " << buffer << endl;
+		string binning = buffer;
+		bool not_ended = true;
+		while (not_ended) {
+			size_t found;
+			found = binning.find_first_of(",");
+			string sub = binning.substr(0, found);
+			binning.erase(0, found+1);
+			ostringstream number_oss;
+			number_oss << sub;
+			double n = atof(number_oss.str().c_str());
+			bdt_boundaries[in].push_back(n);
+			if (n > 0.999) not_ended = false;
+		}
+		in++;
+	}
+	fclose(file);
+}
