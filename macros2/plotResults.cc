@@ -499,6 +499,10 @@ void plotResults::calculateCsNumbers(int i, int mode) {
 
 // ----------------------------------------------------------------------
 void plotResults::calculateRareBgNumbers(int chan) {
+  
+  fSetup = "SgMc"; 
+  numbersFromHist(chan, 0, fNumbersBs[chan]); 
+  numbersFromHist(chan, 1, fNumbersBd[chan]); 
 
   string cache = fSuffix; 
   fSuffix = (fDoUseBDT? "bdt":"cnc") + fSuffix; 
@@ -525,7 +529,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
   double epsPr[]  = {0.00061, 0.00061};
   double errPr2[] = {1.00*1.00, 1.00*1.00};
 
-  double teff[] = {0.62, 0.44}; // new numbers for BDT selection
+  double teff[] = {fNumbersBs[0]->effTrigMC, fNumbersBs[1]->effTrigMC};
 
   c0->Clear();
   gStyle->SetOptStat(0);
@@ -648,6 +652,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
     double misid = mscale[fRareName];
     double ngenfile = ((TH1D*)fF[fRareName]->Get("monEvents"))->GetBinContent(1); 
     cout << "======> " << fRareName << " with ngenfile = " << ngenfile
+	 << " filterEff = " << fFilterEff[fRareName] 
 	 << " with old constant misid: " << misid << endl;
 
     name = Form("hMassWithAllCuts_%s_%s_chan%d", modifier.c_str(), fRareName.c_str(), chan);
@@ -660,14 +665,15 @@ void plotResults::calculateRareBgNumbers(int chan) {
     bd   = h2->Integral(h2->FindBin(fCuts[chan]->mBdLo), h2->FindBin(fCuts[chan]->mBdHi));
     bs   = h2->Integral(h2->FindBin(fCuts[chan]->mBsLo), h2->FindBin(fCuts[chan]->mBsHi));
 
+    efftot = tot/static_cast<double>(ngenfile)*fFilterEff[fRareName];
+
     cout << "NNNNNN%%%%%NNNNNNNNNN input: No = " << fNumbersNo[chan]->fitYield 
-	 << " h1 : " << h1->GetName() << " " << h1->GetSumOfWeights()  
-	 << " h2 : " << h2->GetName() << " " << h2->GetSumOfWeights() 
+      //	 << " h1 : " << h1->GetName() << " " << h1->GetSumOfWeights()  
+	 << " rare : " << hRareNw8->GetName() << " " << hRareNw8->GetSumOfWeights() 
+	 << " tot: " << tot << " in B0 box: " << bd << " in Bs box: " << bs
 	 << endl;
 
-    // XXX acc XXX
-    efftot = tot/static_cast<double>(ngenfile)*fFilterEff[fRareName];
-    
+   
     if (tot>0) pss = bs/tot; 
     else pss = 0.;
     if (tot>0) pdd = bd/tot;
@@ -688,12 +694,16 @@ void plotResults::calculateRareBgNumbers(int chan) {
     double yield = scaledYield(fNumbersBla[chan], fNumbersNo[chan], fRareName, pRatio);
     hRareNw8->Scale(yield*misid*teff[chan]/tot);
 
-    cout << "NNNNNN%%%%%NNNNNNNNNN scaled:   " << hRareNw8->GetSumOfWeights() << endl;
+    cout << "NNNNNN%%%%%NNNNNNNNNN scaled:        " << hRareNw8->GetSumOfWeights() << endl;
+    // -- until here everything was unweighted!
     
     name = Form("hW8MassWithAllCuts_%s_%s_chan%d", modifier.c_str(), fRareName.c_str(), chan);
     hRareW8 = (TH1D*)fHistFile->Get(name.c_str());
+    cout << "NNNNNN%%%%%NNNNNNNNNN raw weighted:  " << hRareW8->GetSumOfWeights() << endl;
+    cout << "NNNNNN%%%%%NNNNNNNNNN ave fake rate: " << hRareW8->GetSumOfWeights()/hRareW8->GetEntries() << endl;
     hRareW8->Scale(yield*teff[chan]/tot); 
-    cout << "NNNNNN%%%%%NNNNNNNNNN weighted: " << hRareW8->GetSumOfWeights() << endl;
+    cout << "NNNNNN%%%%%NNNNNNNNNN scale factor:  " << yield << "*" << teff[chan] << "/" << tot << " = " << yield*teff[chan]/tot << endl;
+    cout << "NNNNNN%%%%%NNNNNNNNNN B+  weighted:  " << hRareW8->GetSumOfWeights() << endl;
 
     hRare = hRareW8;    
 
@@ -724,6 +734,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
 
     valInc = hRare->Integral(hRare->FindBin(fCuts[chan]->mBsLo+eps), hRare->FindBin(fCuts[chan]->mBsHi-eps));
     error  = valInc*err[fRareName];
+    cout << "NNNNNN%%%%%NNNNNNNNNN inside Bs box: " << valInc << endl;
     fTEX <<  Form("\\vdef{%s:%s:bsRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
     fTEX <<  Form("\\vdef{%s:%s:bsRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
     if (string::npos == fRareName.find("Nu")) {
@@ -835,7 +846,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
   fNumbersBs[chan]->bdRareE= rareBdE; 
 
   double relErr(0.05); 
-
+  
   fNumbersBs[chan]->offLoRare = bRare->Integral(bRare->FindBin(4.9001), bRare->FindBin(5.1999));
   fNumbersBs[chan]->offLoRareE= (vRareE[0]/vRare[0])*fNumbersBs[chan]->offLoRare; 
   fNumbersBs[chan]->offHiRare = bRare->Integral(bRare->FindBin(5.4501), bRare->FindBin(5.8999));
@@ -2861,7 +2872,7 @@ void plotResults::numbersFromHist(int chan, int mode, numbers *aa) {
   aa->anaWmcYieldE     = TMath::Sqrt(f);
   //  aa->effAna           = b/a*aa->effPtReco;
   aa->effAna           = b/a;
-  aa->effAnaE          = dEff(static_cast<int>(b), static_cast<int>(a)); // FIXME add error from effPtReco
+  aa->effAnaE          = dEff(static_cast<int>(b), static_cast<int>(a)); 
   aa->effMuidMC        = c/b;
   aa->effMuidMCE       = dEff(static_cast<int>(c), static_cast<int>(b));
   aa->effMuidTNP       = hMuId->GetMean();
@@ -2977,7 +2988,7 @@ void plotResults::numbersAfterLoopOverTree(int chan, int mode, numbers *aa, stri
   aa->anaWmcYieldE     = TMath::Sqrt(f);
   //  aa->effAna           = b/a*aa->effPtReco;
   aa->effAna           = b/a;
-  aa->effAnaE          = dEff(static_cast<int>(b), static_cast<int>(a)); // FIXME add error from effPtReco
+  aa->effAnaE          = dEff(static_cast<int>(b), static_cast<int>(a));
   aa->effMuidMC        = c/b;
   aa->effMuidMCE       = dEff(static_cast<int>(c), static_cast<int>(b));
   aa->effMuidTNP       = hMuId->GetMean();

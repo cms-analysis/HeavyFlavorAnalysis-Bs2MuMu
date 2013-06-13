@@ -223,84 +223,70 @@ int main(int argc, char *argv[]) {
   // -- PU overlays
   if (mode & 8) {
 
+    vector<string> chanlist; 
+    chanlist.push_back("BLoPU"); 
+    chanlist.push_back("BHiPU"); 
+    chanlist.push_back("ELoPU"); 
+    chanlist.push_back("EHiPU"); 
+    
+    chanlist.push_back("BClosePV"); 
+    chanlist.push_back("BFarPV"); 
+    chanlist.push_back("EClosePV"); 
+    chanlist.push_back("EFarPV"); 
+
+    vector<string> dolist; 
+    if (restricted) {
+      dolist.push_back(sample);
+    } else {
+      dolist.push_back("SgMc"); 
+      dolist.push_back("NoMc"); 
+    }
+
+    plotReducedOverlays *a;
     if (1 == Mode) {
       gROOT->Clear();  gROOT->DeleteAll();
-      plotReducedOverlays *a;
       
-      vector<string> chanlist; 
-      chanlist.push_back("BLoPU"); 
-      chanlist.push_back("BHiPU"); 
-      chanlist.push_back("ELoPU"); 
-      chanlist.push_back("EHiPU"); 
-      
-      vector<string> dolist; 
-      
-      if (restricted) {
-	dolist.push_back(sample);
-      } else {
-	dolist.push_back("Sg"); 
-	dolist.push_back("No"); 
-      }
-      
-      string mode1, mode2; 
       for (unsigned int j = 0; j < chanlist.size(); ++j) {
 	for (unsigned int i = 0; i < dolist.size(); ++i) {
-	  mode1 = dolist[i] + string("Data");
-	  mode2 = dolist[i] + string("Mc");
 	  gROOT->Clear();  gROOT->DeleteAll();
 	  a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
 	  if (!doUseBDT) a->fDoUseBDT = false; 
-	  
-	  a->makeSample(mode1, "Presel", chanlist[j], nevents);
-	  a->makeSample(mode2, "Presel", chanlist[j], nevents);
-	  
+	  a->makeSample(dolist[i], "Presel", chanlist[j], nevents);
 	  delete a;
 	}
       }
     }
     
     if (2 == Mode) {
-      gROOT->Clear();  gROOT->DeleteAll();
-      plotReducedOverlays *a;
-      
-      vector<string> chanlist; 
-      chanlist.push_back("BLoPU"); 
-      chanlist.push_back("BHiPU"); 
-      chanlist.push_back("ELoPU"); 
-      chanlist.push_back("EHiPU"); 
-      
-      vector<string> dolist; 
-      
-      if (restricted) {
-	dolist.push_back(sample);
-      } else {
-	dolist.push_back("SgMc"); 
-	dolist.push_back("NoMc"); 
-      }
+      string rootfile = Form("%s/anaBmm.plotReducedOverlaysSbs.%s.root", dir.c_str(), cuts.c_str()); 
+      system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
 
-      string rootfile = Form("%s/anaBmm.plotReducedOverlays.%s.root", dir.c_str(), cuts.c_str()); 
-      // should be: sbs_EHiPU_SgMc_lipPresel;2
-      //            sbs_SgMc_BLoPU_muon1ptPresel
+      rootfile = Form("%s/anaBmm.plotReducedOverlays.%s.root", dir.c_str(), cuts.c_str()); 
+      string mode1, mode2; 
+      // -- sbs
       gROOT->Clear();  gROOT->DeleteAll();
       a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
-      if (!doUseBDT) a->fDoUseBDT = false; 
-      return 0;
-      
-      string mode1, mode2; 
       for (unsigned int j = 0; j < chanlist.size(); ++j) {
 	for (unsigned int i = 0; i < dolist.size(); ++i) {
-	  gROOT->Clear();  gROOT->DeleteAll();
-	  a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
 	  if (!doUseBDT) a->fDoUseBDT = false; 
-
 	  a->sbsSingleFile(rootfile, dolist[i], chanlist[j], "Presel"); 
-	  
-	  rootfile = Form("%s/anaBmm.plotReducedOverlaysSbs.%s.root", dir.c_str(), cuts.c_str()); 
-	  a->overlay2Files(rootfile, "SgMc", rootfile, "SgMc", "BLoPU", "BHiPU", "Presel", "multichan"); 
-	  
-	  delete a;
 	}
       }
+      delete a; 
+      
+      gROOT->Clear();  gROOT->DeleteAll();
+      a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+      for (unsigned int i = 0; i < dolist.size(); ++i) {
+	if (!doUseBDT) a->fDoUseBDT = false; 
+	rootfile = Form("%s/anaBmm.plotReducedOverlaysSbs.%s.root", dir.c_str(), cuts.c_str()); 
+	a->overlay2Files(rootfile, dolist[i], rootfile, dolist[i], "BLoPU", "BHiPU", "Presel", "multichan"); 
+	a->overlay2Files(rootfile, dolist[i], rootfile, dolist[i], "ELoPU", "EHiPU", "Presel", "multichan"); 
+
+	a->overlay2Files(rootfile, dolist[i], rootfile, dolist[i], "BClosePV", "BFarPV", "Presel", "multichan"); 
+	a->overlay2Files(rootfile, dolist[i], rootfile, dolist[i], "EClosePV", "EFarPV", "Presel", "multichan"); 
+      }
+      delete a;
+
     }
   }
 

@@ -115,6 +115,7 @@ public:
   virtual double      isoClassicWithDOCA(TAnaCand*, double dca, double r = 0.7, double ptmin = 0.9); 
   virtual std::pair<int, int> nCloseTracks(TAnaCand*, double dca, double dcaS, double pt = 0.5); 
   virtual double      isoMuon(TAnaCand *, TAnaMuon *); 
+  virtual double      isoTrack(TAnaCand *pC, TAnaTrack *pTrack, double docaCut = 0.1, double r = 0.5, double pmin = 0.5);
   virtual void        xpDistMuons(); 
   virtual void        findAllTrackIndices(TAnaCand* pCand, std::map<int,int> *indices);
 

@@ -448,16 +448,19 @@ void candAna::candAnalysis() {
   fMu1IP        = p1->fBsTip;
   fMu1IPE       = p1->fBsTipE;
 
-  if (p1->fMuIndex > -1) {
-    TAnaMuon *pm = fpEvt->getMuon(p1->fMuIndex);
-    fMu1Chi2     = pm->fMuonChi2;
-    fMu1Iso      = isoMuon(fpCand, pm); 
-    fMu1VtxProb  = pm->fVtxProb;
-  } else {
-    fMu1Chi2 = -98.;
-    fMu1Iso  = -98.; 
-    fMu1VtxProb = 99.;
-  }
+  // -- this does not work for rare bg
+  //   if (p1->fMuIndex > -1) {
+  //     TAnaMuon *pm = fpEvt->getMuon(p1->fMuIndex);
+  //     fMu1Chi2     = pm->fMuonChi2;
+  //     fMu1Iso      = isoMuon(fpCand, pm); 
+  //     fMu1VtxProb  = pm->fVtxProb;
+  //   } else {
+  //     fMu1Chi2 = -98.;
+  //     fMu1Iso  = -98.; 
+  //     fMu1VtxProb = 99.;
+  //   }
+  
+  fMu1Iso      = isoTrack(fpCand, p1, 0.1, 0.5, 0.5); 
 
   if (fCandTM && fGenM1Tmi < 0) fpEvt->dump();
   
@@ -604,17 +607,20 @@ void candAna::candAnalysis() {
     fMuDist   = -99.; 
     fMuDeltaR = -99.; 
   }
+  
+  // -- useless for rare bg!
+  //   if (p2->fMuIndex > -1) {
+  //     TAnaMuon *pm = fpEvt->getMuon(p2->fMuIndex);
+  //     fMu2Chi2      = pm->fMuonChi2;
+  //     fMu2Iso       = isoMuon(fpCand, pm); 
+  //     fMu2VtxProb   = pm->fVtxProb;
+  //   } else {
+  //     fMu2Chi2 = -98.;
+  //     fMu2Iso  = -98.; 
+  //     fMu2VtxProb = 99.;
+  //   }
 
-  if (p2->fMuIndex > -1) {
-    TAnaMuon *pm = fpEvt->getMuon(p2->fMuIndex);
-    fMu2Chi2      = pm->fMuonChi2;
-    fMu2Iso       = isoMuon(fpCand, pm); 
-    fMu2VtxProb   = pm->fVtxProb;
-  } else {
-    fMu2Chi2 = -98.;
-    fMu2Iso  = -98.; 
-    fMu2VtxProb = 99.;
-  }
+  fMu2Iso      = isoTrack(fpCand, p2, 0.1, 0.5, 0.5); 
 
 
   xpDistMuons();    
@@ -2460,7 +2466,7 @@ int candAna::osMuon(TAnaCand *pC, double r) {
 // ----------------------------------------------------------------------
 double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, double ptmin) {
   const double ptCut(ptmin), coneSize(r); 
-  const bool verbose(true);
+  const bool verbose(false);
 
   double iso(-1.), pt(0.), sumPt(0.), candPt(0.), candPtScalar(0.); 
   TSimpleTrack *ps; 
@@ -2559,7 +2565,7 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
       if (pIdx.end() != find(pIdx.begin(), pIdx.end(), trkId))  continue;
       if (cIdx.end() != find(cIdx.begin(), cIdx.end(), trkId))  continue;
 
-      cout << "doca trk " << trkId << " doca = " << doca << endl;
+      //      cout << "doca trk " << trkId << " doca = " << doca << endl;
 
       ++fCandI1trk;
       sumPt += pt; 
@@ -2673,6 +2679,108 @@ double candAna::isoMuon(TAnaCand *pCand, TAnaMuon *pMuon) {
   result = plabMu.Mag()/(plabMu.Mag() + result);
   
   return result;
+}
+
+
+// ----------------------------------------------------------------------
+double candAna::isoTrack(TAnaCand *pC, TAnaTrack *pTrack, double docaCut, double r, double pmin) {
+
+  const double pCut(pmin), coneSize(r); 
+  const bool verbose(false);
+
+  double iso(-1.), p(0.), sumP(0.);
+  TSimpleTrack *ps; 
+  vector<int> cIdx, pIdx; 
+  int pvIdx = pC->fPvIdx;
+
+  double trackP = pTrack->fPlab.Mag(); 
+  
+  getSigTracks(cIdx, pC); 
+  
+  // -- look at all tracks that are associated to the same vertex
+  for (int i = 0; i < fpEvt->nSimpleTracks(); ++i) {
+    ps = fpEvt->getSimpleTrack(i); 
+    if (verbose) {
+      cout << "   track " << i 
+     	   << " with p = " << ps->getP().Mag()
+     	   << " eta = " << ps->getP().Eta()
+     	   << " pointing at PV " << ps->getPvIndex();
+    }
+    
+
+    if (ps->getPvIndex() != pvIdx) { 	 
+      if (verbose) cout << " skipped because of PV index mismatch" << endl; 	     //FIXME
+      continue;
+    }
+    
+    // -- despite the name use momentum (FIXME?)
+    p = ps->getP().Mag(); 
+    if (p < pCut) {
+      if (verbose) cout << " skipped because of p = " << p << endl;
+      continue;
+    }
+    if (cIdx.end() != find(cIdx.begin(), cIdx.end(), i))  {
+      if (verbose) cout << " skipped because it is a sig track " << endl;
+      continue;
+    }
+    if (ps->getP().DeltaR(pTrack->fPlab) < coneSize) {
+      pIdx.push_back(i); 
+      sumP += p; 
+      if (verbose) cout << " USED THIS ONE" << endl;
+    } 
+    else {
+      if (verbose) cout << " skipped because of deltaR = " << ps->getP().DeltaR(pC->fPlab) << endl;
+    }
+  }
+
+  // -- Now consider the DOCA tracks
+  int nsize = pC->fNstTracks.size(); 
+  if (nsize>0) {
+    for(int i = 0; i<nsize; ++i) {
+      int trkId = pC->fNstTracks[i].first;
+      double doca = pC->fNstTracks[i].second.first;
+      // double docaE = pC->fNstTracks[i].second.second;
+
+      if(doca > docaCut) continue; // check the doca cut
+
+      ps = fpEvt->getSimpleTrack(trkId);
+      p = ps->getP().Mag();  
+
+
+      if ((ps->getPvIndex() > -1) && (ps->getPvIndex() != pvIdx)) { 	 
+	if (verbose) cout << " doca track " << trkId  << " doca = " << doca  << " p = " << p
+			  << " skipped because it is from a different PV " << ps->getPvIndex() <<endl; 	 
+	continue; 	 
+      }
+
+      if (p < pCut) {
+	if (verbose) cout << " doca track " << trkId  << " doca = " << doca << " p = " << p
+			  << " skipped because of p = " << p << endl;
+	continue;
+      }
+
+      if (ps->getP().DeltaR(pC->fPlab) > coneSize) {
+	if (verbose) cout << " doca track " << trkId << " skipped because of deltaR = " << ps->getP().DeltaR(pC->fPlab) << endl;
+	continue;
+      }
+
+      // -- Skip tracks already included above
+      if (pIdx.end() != find(pIdx.begin(), pIdx.end(), trkId))  continue;
+      if (cIdx.end() != find(cIdx.begin(), cIdx.end(), trkId))  continue;
+
+      //      cout << "doca trk " << trkId << " doca = " << doca << endl;
+
+      sumP += p; 
+      if (verbose) cout << " doca track " << trkId << " included "<<doca<<" "<<p<<endl;
+
+    } // for loop over tracks
+  } // end if 
+
+
+  iso = trackP/(trackP + sumP); 
+
+
+  return iso; 
 }
 
 

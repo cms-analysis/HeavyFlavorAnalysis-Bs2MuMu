@@ -3514,6 +3514,8 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("closetrk",&fb.closetrk);
   t->SetBranchAddress("pvlip",   &fb.pvlip);
   t->SetBranchAddress("pvlips",  &fb.pvlips);
+  t->SetBranchAddress("pvlip2",  &fb.pvlip2);
+  t->SetBranchAddress("pvlips2", &fb.pvlips2);
   t->SetBranchAddress("maxdoca", &fb.maxdoca);
   t->SetBranchAddress("pvip",    &fb.pvip);
   t->SetBranchAddress("pvips",   &fb.pvips);
@@ -3856,13 +3858,13 @@ void plotClass::candAnalysis(int mode) {
       if (  13 == fb.g2id) w2 = pT->effD(fb.m2pt, am2eta, 1.);
       if ( -13 == fb.g2id) w2 = pT->effD(fb.m2pt, am2eta, 1.);
 
-      if (  321 == fb.g2id) w2 = fptFakePosKaons->effD(fb.m2pt, am1eta, 1.);
+      if (  321 == fb.g2id) w2 = fptFakePosKaons->effD(fb.m2pt, am2eta, 1.);
       if ( -321 == fb.g2id) w2 = fptFakeNegKaons->effD(fb.m2pt, am2eta, 1.);
 
-      if (  211 == fb.g2id) w2 = fptFakePosPions->effD(fb.m2pt, am1eta, 1.);
+      if (  211 == fb.g2id) w2 = fptFakePosPions->effD(fb.m2pt, am2eta, 1.);
       if ( -211 == fb.g2id) w2 = fptFakeNegPions->effD(fb.m2pt, am2eta, 1.);
 
-      if ( 2212 == fb.g2id) w2 = fptFakePosProtons->effD(fb.m2pt, am1eta, 1.);
+      if ( 2212 == fb.g2id) w2 = fptFakePosProtons->effD(fb.m2pt, am2eta, 1.);
       if (-2212 == fb.g2id) w2 = fptFakeNegProtons->effD(fb.m2pt, am2eta, 1.);
 
       fW8MisId = w1*w2; 

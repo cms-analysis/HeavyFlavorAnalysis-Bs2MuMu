@@ -207,12 +207,16 @@ void plotReducedOverlays::makeSample(string mode, string selection, string chann
 
   fChanMode = -1; 
   if (fSetup == "B") fChanMode = 0; 
-  if (fSetup == "E") fChanMode = 1; 
-  if (fSetup == "BLoPU") fChanMode = 10; 
-  if (fSetup == "BHiPU") fChanMode = 11; 
-  if (fSetup == "ELoPU") fChanMode = 12; 
-  if (fSetup == "EHiPU") fChanMode = 13; 
-  if (fChanMode < 0) {
+  else if (fSetup == "E") fChanMode = 1; 
+  else if (fSetup == "BLoPU") fChanMode = 10; 
+  else if (fSetup == "BHiPU") fChanMode = 11; 
+  else if (fSetup == "ELoPU") fChanMode = 12; 
+  else if (fSetup == "EHiPU") fChanMode = 13; 
+  else if (fSetup == "BClosePV") fChanMode = 20; 
+  else if (fSetup == "BFarPV") fChanMode = 21; 
+  else if (fSetup == "EClosePV") fChanMode = 22; 
+  else if (fSetup == "EFarPV") fChanMode = 23; 
+  else if (fChanMode < 0) {
     cout << "XXXXXXXXXXXXXXXXXXXX unknown mode XXXXXXXXXXXXXXXXXXXXXXXX" << endl;
     return;
   }
@@ -335,8 +339,8 @@ void plotReducedOverlays::bookDistributions(string mode) {
   fpLip[fOffset]       = bookDistribution(Form("%slip", name.c_str()), "l_{z} [cm]", "fGoodLip", 50, 0., 0.015);   
   fpLipS[fOffset]      = bookDistribution(Form("%slips", name.c_str()), "l_{z}/#sigma(l_{z})", "fGoodLipS", 50, 0., 4);
 
-  fpLip2[fOffset]      = bookDistribution(Form("%slip2", name.c_str()), "l_{z}^{(2)} [cm]", "fGoodLip", 50, 0., 0.015);   
-  fpLipS2[fOffset]     = bookDistribution(Form("%slips2", name.c_str()), "l_{z}^{(2)}/#sigma(l_{z}^{(2)})", "fGoodLipS", 50, 0., 4);
+  fpLip2[fOffset]      = bookDistribution(Form("%slip2", name.c_str()), "l_{z}^{(2)} [cm]", "fGoodLip", 400, 0., 4.0);   
+  fpLipS2[fOffset]     = bookDistribution(Form("%slips2", name.c_str()), "l_{z}^{(2)}/#sigma(l_{z}^{(2)})", "fGoodLipS", 50, 0., 20.);
 
 
   fpBDTSel0[fOffset]   = bookSpecialDistribution(Form("%sbdtsel0", name.c_str()), "BDTsel0", "fGoodHLT", 200, -1.0, 1.0, &fSel0);   
@@ -762,8 +766,8 @@ void plotReducedOverlays::overlay2Files(std::string file1, std::string sample1,
 
     c0->Modified();
     c0->Update();
-    c0->SaveAs(Form("%s/%s-overlay2files_%s-%s_%s-%s_%s.pdf", 
-		    fDirectory.c_str(), fSuffix.c_str(), what.c_str(), sample1.c_str(), sample2.c_str(), 
+    c0->SaveAs(Form("%s/%s-overlay2files-%s-%s-%s_%s-%s_%s-%s.pdf", 
+		    fDirectory.c_str(), fSuffix.c_str(), what.c_str(), sample1.c_str(), chan1.c_str(), sample2.c_str(), chan2.c_str(),
 		    fDoList[i].c_str(), selection.c_str())); 
   }
 
@@ -792,6 +796,16 @@ void plotReducedOverlays::loopFunction1(int mode) {
 
   bool loPU = (fb.pvn <  6);
   bool hiPU = (fb.pvn > 15);
+
+  bool closePV(false); 
+  if (1 == fChan) {
+    closePV = (fb.pvlip2 < 0.15 && fb.pvlip2 > 0.04);
+  } else {
+    closePV = (fb.pvlip2 < 0.15 && fb.pvlip2 > 0.02);
+  } 
+
+  bool farPV   = (fb.pvlip2 > 0.5);
+  
   if (0 == fChanMode && fChan != 0) {
     return;
   } else if (1 == fChanMode && fChan != 1) {
@@ -804,6 +818,14 @@ void plotReducedOverlays::loopFunction1(int mode) {
     if (!(1 == fChan && loPU)) return;
   } else if (13 == fChanMode) {
     if (!(1 == fChan && hiPU)) return;
+  } else if (20 == fChanMode) {
+    if (!(0 == fChan && closePV)) return;
+  } else if (21 == fChanMode) {
+    if (!(0 == fChan && farPV)) return;
+  } else if (22 == fChanMode) {
+    if (!(1 == fChan && closePV)) return;
+  } else if (23 == fChanMode) {
+    if (!(1 == fChan && farPV)) return;
   } else {
     cout << "screw it" << endl;
     return;
