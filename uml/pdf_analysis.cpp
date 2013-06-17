@@ -42,7 +42,12 @@ pdf_analysis::pdf_analysis(bool print, string ch_s, string range, int BF, bool S
   bdt_boundaries.resize(channels);
 
   initialize();
-  RooMsgService::instance().setGlobalKillBelow(RooFit::WARNING);
+//  RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
+  RooMsgService::instance().getStream(0).removeTopic(Eval);
+  RooMsgService::instance().getStream(1).removeTopic(Eval);
+  RooMsgService::instance().getStream(1).removeTopic(NumIntegration);
+  RooMsgService::instance().Print() ;
+
 }
 
 void pdf_analysis::initialize () {
@@ -92,16 +97,19 @@ void pdf_analysis::initialize () {
     channels_cat->defineType(Form("etacat_%d", i), i);
   }
   ws_->import(*channels_cat);
+
   bdt_cat = new RooCategory("bdtcat", "bdt channels");
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 6; i++) {
     bdt_cat->defineType(Form("bdtcat_%d", i), i);
   }
   ws_->import(*bdt_cat);
+
   all_cat = new RooCategory("allcat", "channels");
   for (unsigned int i = 0; i < super_index(channels, channels_bdt) + 1; i++) {
     all_cat->defineType(Form("allcat_%d", i), i);
   }
   ws_->import(*all_cat);
+
   RooArgSet cat_set(*ws_->cat("etacat"), *ws_->cat("bdtcat"));
   super_cat = new RooSuperCategory("super_cat", "super_cat", cat_set);
   ws_->import(*super_cat);
@@ -1057,7 +1065,7 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
   N_bu_err.resize(channels);
   eff_rel_err.resize(channels);
 
-  if (simul_bdt_ || simul_all_) {
+  if (simul_bdt_ || simul_all_ || bdt_fit_) {
   	bs_bdt_factor.resize(channels);
   	bd_bdt_factor.resize(channels);
   	bu_bdt_factor.resize(channels);
@@ -1077,7 +1085,7 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
   	eff_bu_err[i].resize(size);
   	N_bu_err[i].resize(size);
   	eff_rel_err[i].resize(size);
-  	if (simul_bdt_ || simul_all_) {
+  	if (simul_bdt_ || simul_all_ || bdt_fit_) {
   		bs_bdt_factor[i].resize(size);
   		bd_bdt_factor[i].resize(size);
   		bu_bdt_factor[i].resize(size);
@@ -1126,7 +1134,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
 
   string filename = "anaBmm.plotResults.2011.tex";
   if (offset == 2) filename = "anaBmm.plotResults.2012.tex";
-  string file_address = "./input/";
+  string file_address = "../uml/input/";
   unsigned int channels_;
   if (offset == 0) {
     file_address += "2011/" + filename;
@@ -1209,7 +1217,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
 
   filename = "anaBmm.plotEfficiencies.2011.tex";
   if (offset == 2) filename = "anaBmm.plotEfficiencies.2012.tex";
-  file_address = "./input/";
+  file_address = "../uml/input/";
   if (offset == 0) {
     file_address += "2011/" + filename;
   }
@@ -1271,7 +1279,7 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
 
   filename = "anaBmm.plotReducedOverlays.2011.tex";
   if (offset == 2) filename = "anaBmm.plotReducedOverlays.2012.tex";
-  file_address = "./input/";
+  file_address = "../uml/input/";
   if (offset == 0) {
     file_address += "2011/" + filename;
   }
@@ -1376,8 +1384,8 @@ void pdf_analysis::parse_external_numbers(string filename) {
 void pdf_analysis::bdt_effs() {
 	string input_file = "input/eff_bdtbins_fact.txt";
 	if (bdt_fit_) input_file = "input/eff_2d_fact.txt";
-  FILE *file = fopen("input/eff_fact.txt", "r");
-  if (!file) {cout << "file input/eff_fact.txt does not exist" << endl; exit(1);}
+  FILE *file = fopen(input_file.c_str(), "r");
+  if (!file) {cout << "file " << input_file << " does not exist" << endl; exit(1);}
   char buffer[1024];
   while (fgets(buffer, sizeof(buffer), file)) {
     if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
@@ -1604,7 +1612,9 @@ vector <unsigned int> pdf_analysis::get_EtaBdt_bins(unsigned int index) {
 }
 
 void pdf_analysis::fill_bdt_boundaries() {
-	FILE *file = fopen("input/bdtbins.txt", "r");
+	string input_file("input/bdtbins.txt");
+	if (bdt_fit_) input_file = "input/2dbins.txt";
+	FILE *file = fopen(input_file.c_str(), "r");
 	char buffer[1024];
 	int in = 0;
 	while (fgets(buffer, sizeof(buffer), file)) {

@@ -26,6 +26,10 @@ int main(int argc, char* argv[]) {
 	if (bdt_fit) input_s = "input/2dbins.txt";
 
 	FILE *file = fopen(input_s.c_str(), "r");
+	if (!file) {
+		cout << input_s << " does not exist" << endl;
+		return 1;
+	}
 	char buffer[1024];
 
 	vector < vector <double> > binnings(4);

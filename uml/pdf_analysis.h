@@ -12,6 +12,8 @@
 #include "TCanvas.h"
 #include "TPaveText.h"
 #include "TLatex.h"
+#include "TError.h"
+#include "RooGlobalFunc.h"
 
 #include "RooWorkspace.h"
 #include "RooGaussian.h"
@@ -45,6 +47,7 @@
 #include "RooMultiCategory.h"
 #include "RooIntegralMorph.h"
 #include "RooKeysPdf.h"
+#include "RooMsgService.h"
 
 using namespace std;
 using namespace RooFit;

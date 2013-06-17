@@ -41,7 +41,7 @@ class pdf_fitData : public pdf_analysis {
     void print_each_channel(string var = "Mass", string output = "", RooWorkspace *ws = 0, RooDataSet *rds_ = 0);
 
     void define_dataset();
-    void make_dataset(bool cut_b, vector<double> cut_, string cuts, TTree *tree, int offset = 0);
+    void make_dataset(bool cut_b, vector<double> cut_, double bdt_cut, TTree *tree, int offset = 0);
     void make_pdf_input(string root_s);
     void set_starting_N();
     void hack_ws(string frozen_ws_address);
@@ -109,7 +109,7 @@ class pdf_fitData : public pdf_analysis {
     TFile* ws_file_input;
     RooWorkspace* ws_input;
 
-    void fill_dataset(RooDataSet* dataset, bool cut_b, vector<double> cut_, string cuts, TTree *tree, int offset);
+    void fill_dataset(RooDataSet* dataset, bool cut_b, vector<double> cut_, double bdt_cut, TTree *tree, int offset);
     void changeName(RooWorkspace *ws, int str);
 
     Double_t sig_hand();

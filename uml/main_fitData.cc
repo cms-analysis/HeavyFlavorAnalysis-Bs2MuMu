@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
 
   vector <string> inputnamess(0);
   if (!file) {
-    fitdata.make_dataset(cuts_f_b, cuts_v, cuts, 0, 0);
+    fitdata.make_dataset(cuts_f_b, cuts_v, bdt_cut, 0, 0);
   }
   else {
     fitdata.random = false;
@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
         data_t = (TTree*)input_data_f->Get(tree_name.c_str());
         if (!data_t) {cout << "no tree called " << tree_name.c_str() << endl; return EXIT_FAILURE;}
       }
-      fitdata.make_dataset(cuts_f_b, cuts_v, cuts, data_t, y);
+      fitdata.make_dataset(cuts_f_b, cuts_v, bdt_cut, data_t, y);
     }
   }
 

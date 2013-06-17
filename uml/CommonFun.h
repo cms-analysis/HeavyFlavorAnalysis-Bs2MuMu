@@ -43,7 +43,7 @@ static int proof = 1;
 bool syst = false;
 bool randomsyst = false;
 bool shapesyst = false;
-static string cuts = "bdt>-10.";
+//static string cuts = "bdt>-10.";
 static string years_opt = "0";
 bool input = false, output = false, channel = false, estimate = false, pdf = false, roomcs = false, SM = false, bd_const = false, pdf_test_b = false, bias = false, SB = false, pee = false, no_legend = false, bdt_fit = false, cuts_b = false, cuts_f_b = false, channel_bdt = false, asimov = false, rare_constr = false, rkeys = false;
 static bool newcomb = false;
@@ -56,6 +56,7 @@ bool simul_all = false;
 int free_rare = 3;
 bool make_bdt_binning_inputs = false;
 static string bdtbinnings_s = "input/bdtbinnings.root";
+double bdt_cut = -1;
 
 void help() {
 
@@ -71,13 +72,14 @@ void help() {
   cout << "-SM \t with SM constraints (incompatible with -bd_const)" << endl;
   cout << "-bd_const \t with Bd constrainted to Bs, over all different channels (incompatible with -SM)" << endl;
   cout << "-print \t save the fits to gif and pdf if -no_legend without parameters on canvas" << endl;
-  cout << "-cuts #cutstring \t string cut for small tree: i.e. \"bdt>0.&&bdt<0.18\"; default is \"" << cuts << "\"" << endl;
+//  cout << "-cuts #cutstring \t string cut for small tree: i.e. \"bdt>0.&&bdt<0.18\"; default is \"" << cuts << "\"" << endl;
   cout << "-cuts_file \t file containing bdt cuts for small tree" << endl;
   cout << "-pee \t per-event-error" << endl;
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << "-newcomb \t exponential combinatorial bkg study" << endl;
   cout << "-rkeys \t RooKeysPdf for MassRes and BDT" << endl;
   cout << "-bdtbins \t produces only inputs for evaluation of bdt binnings" << endl;
+  cout << "-bdt_cut # \t minimum bdt" << endl;
   cout << endl;
   cout << ">>>>>>>>> make_bdt_uml_inputs.o: make bdt effs" << endl;
   cout << "-bins ### 1 \t ### is a sequence of numbers describing the bdt binning vector. e.g. -bins -0.2 0.2 0.5 1" << endl;
@@ -98,7 +100,7 @@ void help() {
   cout << "-e #filename \t estimates file (useful for significance)" << endl;
   cout << "-pee \t per-event-error" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;
-  cout << "-cuts #cutstring \t string cut for small tree: i.e. \"bdt>0.&&bdt<0.18\"; default is \"" << cuts << "\"" << endl;
+//  cout << "-cuts #cutstring \t string cut for small tree: i.e. \"bdt>0.&&bdt<0.18\"; default is \"" << cuts << "\"" << endl;
   cout << "-cuts_file \t file containing bdt cuts for small tree" << endl;
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
   cout << "-asimov \t asimov dataset for significance estimation" << endl;
@@ -113,6 +115,7 @@ void help() {
   cout << "-hack2011 \t hack 2011 semi to 2012" << endl;
   cout << "-ws \t input workspace" << endl;
   cout << "-free # \t rare decays are not constant: 1 = semi, 2 = peak, 3 = both" << endl;
+  cout << "-bdt_cut # \t minimum bdt" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -250,11 +253,11 @@ void parse_options(int argc, char* argv[]){
       sig_meth = atoi(argv[i+1]);
       cout << "significance with method " << sig_meth << endl;
     }
-    if (!strcmp(argv[i],"-cuts")) {
-      cuts_b = true;
-      cuts = argv[i+1];
-      cout << "cut string = " << cuts << endl;
-    }
+//    if (!strcmp(argv[i],"-cuts")) {
+//      cuts_b = true;
+//      cuts = argv[i+1];
+//      cout << "cut string = " << cuts << endl;
+//    }
     if (!strcmp(argv[i],"-cuts_file")) {
       cuts_f_b = true;
       cuts_f = argv[i+1];
@@ -337,6 +340,10 @@ void parse_options(int argc, char* argv[]){
     	make_bdt_binning_inputs = true;
       cout << "saves bdt histos to " << bdtbinnings_s << endl;
     }
+    if (!strcmp(argv[i],"-bdt_cut")) {
+    	bdt_cut = atof(argv[i+1]);
+    	cout << "bdt_cut = " << bdt_cut << endl;
+    }
     if (!strcmp(argv[i],"-h")) help();
   }
 }
@@ -380,8 +387,6 @@ void parse_input (string input) {
     cout << "simultaneous " << inputs << endl;
   }
 }
-
-
 
 vector <double> cut_bdt_file() {
   FILE *file = fopen(cuts_f.c_str(), "r");

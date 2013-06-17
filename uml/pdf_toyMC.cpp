@@ -134,7 +134,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
   for (int k = 1; k <= NExp; k++) {
     if (k % 100 == 0) cout << "Exp # " << k << " / " << NExp << endl;
     double printlevel = -1;
-    if (k == 1 || k == 2) printlevel = 1;
+    if (k == 1) printlevel = 1;
     RooWorkspace* ws_temp = (RooWorkspace*)ws_->Clone("ws_temp");
 /// vars
     RooArgSet vars(*ws_temp->var("Mass"), *ws_temp->var("MassRes"), "vars");
@@ -343,7 +343,14 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
 
   if (sign == 0) {
     TCanvas* sign_c = new TCanvas("sign_c", "sign_c", 600, 600);
+    Double_t mediana = median(sign_h);
     sign_h->Draw("e");
+    TLatex* t = new TLatex();
+    t->SetNDC();
+    t->SetTextSize(0.04);
+    char median_c[256];
+    sprintf(median_c, "median = %.2f", mediana);
+    t->DrawLatex(0.15, 0.85, median_c);
     sign_c->Print((get_address("sign", Bd ? "Bd" : "Bs", false) + ".gif").c_str());
     sign_c->Print((get_address("sign", Bd ? "Bd" : "Bs", false) + ".pdf").c_str());
     sign_c->Print((get_address("sign", Bd ? "Bd" : "Bs", false) + ".root").c_str());
@@ -420,9 +427,9 @@ void pdf_toyMC::do_bias(RooWorkspace* ws) {
 
 RooFitResult* pdf_toyMC::fit_pdf(RooAbsData* data, int printlevel, RooWorkspace* ws) {
   RooFitResult* result;
-  if (printlevel < 0) RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
+//  if (printlevel < 0) RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
   result = ws->pdf(pdfname.c_str())->fitTo(*data, pee ? ConditionalObservables(*ws->var("MassRes")) : RooCmdArg::none(), Extended(true), Hesse(kFALSE), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(1)/*, Verbose(10)*/, Save(kTRUE), NumCPU( simul_all_? 1 : 2));
-  if (printlevel < 0) RooMsgService::instance().cleanup();
+//  if (printlevel < 0) RooMsgService::instance().cleanup();
   return result;
 }
 

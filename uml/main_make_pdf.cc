@@ -68,13 +68,13 @@ int main(int argc, char* argv[]) {
   RooCategory* all_cat = ws->cat("allcat");
 
   cout << "2011 barrel";
-  vector < double > exp_v_0(get_singlerare_normalization("input/2011/anaBmm.plotResults.2011.tex", 0, decays_n));
+  vector < double > exp_v_0(get_singlerare_normalization("../uml/input/2011/anaBmm.plotResults.2011.tex", 0, decays_n));
   cout << "2011 endcap";
-  vector < double > exp_v_1(get_singlerare_normalization("input/2011/anaBmm.plotResults.2011.tex", 1, decays_n));
+  vector < double > exp_v_1(get_singlerare_normalization("../uml/input/2011/anaBmm.plotResults.2011.tex", 1, decays_n));
   cout << "2012 barrel";
-  vector < double > exp_v_2(get_singlerare_normalization("input/2012/anaBmm.plotResults.2012.tex", 0, decays_n));
+  vector < double > exp_v_2(get_singlerare_normalization("../uml/input/2012/anaBmm.plotResults.2012.tex", 0, decays_n));
   cout << "2012 endcap";
-  vector < double > exp_v_3(get_singlerare_normalization("input/2012/anaBmm.plotResults.2012.tex", 1, decays_n));
+  vector < double > exp_v_3(get_singlerare_normalization("../uml/input/2012/anaBmm.plotResults.2012.tex", 1, decays_n));
 
   for (int i = 0; i < decays_n; i++) {
 
@@ -89,14 +89,10 @@ int main(int argc, char* argv[]) {
 
     for (int yy = 0; yy < years; yy++) {
       int y = (years == 2) ? yy : years_i;
-      decays_filename[i] = "input/" + year_s[y] + "/small-" + decays[i] + ".root";
+      decays_filename[i] = "../uml/input/" + year_s[y] + "/small-" + decays[i] + ".root";
       cout << endl << decays_filename[i] << endl;
-//      TFile* smalltree_f = new TFile(decays_filename[i].c_str());
-//      TTree* smalltree = new TTree("smalltree", "smalltree");
-//      smalltree = (TTree*)smalltree_f->Get(decays_treename[i].c_str());
-      TFile* smalltree_f = new TFile(decays_filename[i].c_str(), "UPDATE");
-      TTree* smalltree = (TTree*)smalltree_f->Get(decays_treename[i].c_str());
-      TTree* reduced_tree = smalltree->CopyTree(cuts.c_str()); // string cuts
+      TFile smalltree_f(decays_filename[i].c_str());
+      TTree* reduced_tree = (TTree*)smalltree_f.Get(decays_treename[i].c_str());
       Double_t m_t, eta_t, m1eta_t, m2eta_t, bdt_t, me_t;
       Bool_t muid_t;
       reduced_tree->SetBranchAddress("m",     &m_t);
@@ -114,6 +110,7 @@ int main(int argc, char* argv[]) {
         if (m_t > 5.20 && m_t < 5.45 && i == decays_n-1) continue; // skip signal windows for comb bkg
         if (m_t < 4.90 || m_t > 5.90 || !muid_t) continue; // skip outside range
         if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass error
+        if (bdt_t < bdt_cut) continue;
         if (y == 0) {
           if (barrel) {
           	if (cuts_f_b && bdt_t < cuts_v[0]) continue;
@@ -146,28 +143,29 @@ int main(int argc, char* argv[]) {
         if (m_t > 5.20 && m_t < 5.45 && i == decays_n-1) continue; // skip signal windows for comb bkg
         if (m_t < 4.90 || m_t > 5.90 || !muid_t) continue; // skip outside range
         if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass error
+        if (bdt_t < bdt_cut) continue;
         MassRes->setVal(me_t);
         /// eta channels
         int eta_channel = -1;
         if (barrel) {
           eta_channel = 0 + 2*yy;
           channel_cat->setIndex(eta_channel);
-          if (i != decays_n-1 || newcomb) {
+//          if (i != decays_n-1 || newcomb) {
             if (cuts_f_b && bdt_t < cuts_v[0 + 2*yy]) continue;
-          }
-          else {
-            if (cuts_f_b && bdt_t < -0.2) continue; // give some statistics to comb!
-          }
+//          }
+//          else {
+//            if (cuts_f_b && bdt_t < -0.2) continue; // give some statistics to comb!
+//          }
         }
         else {
           eta_channel = 1 + 2*yy;
           channel_cat->setIndex(eta_channel);
-          if (i != decays_n-1 || newcomb ) {
+//          if (i != decays_n-1 || newcomb ) {
             if (cuts_f_b && bdt_t < cuts_v[1 + 2*yy]) continue;
-          }
-          else {
-            if (cuts_f_b && bdt_t < -0.2) continue; // give some statistics to comb!
-          }
+//          }
+//          else {
+//            if (cuts_f_b && bdt_t < -0.2) continue; // give some statistics to comb!
+//          }
         }
         /// bdt channels
         int bdt_channel = ana1.bdt_index(eta_channel, bdt_t);
@@ -194,7 +192,8 @@ int main(int argc, char* argv[]) {
         if (simul_all) varlist_tmp.add(*all_cat);
         rds_smalltree[i]->add(varlist_tmp, weight);
       }
-      cout << rds_smalltree[i]->GetName() << " done: " << rds_smalltree[i]->numEntries() << " <--- " << smalltree->GetEntries() << endl;
+      cout << rds_smalltree[i]->GetName() << " done: " << rds_smalltree[i]->numEntries() << "(" << rds_smalltree[i]->sumEntries() << " weighted) from tree " << reduced_tree->GetEntries() << endl;
+      smalltree_f.Close();
     }
   }
 
@@ -252,11 +251,10 @@ int main(int argc, char* argv[]) {
   	}
   	for (int yy = 0; yy < years; yy++) {
   		int y = (years == 2) ? yy : years_i;
-  		string filename = "input/" + year_s[y] + "/small-NoMc.root";
+  		string filename = "../uml/input/" + year_s[y] + "/small-NoMc.root";
   		cout << endl << filename << endl;
-  		TFile* smalltree_f = new TFile(filename.c_str(), "UPDATE");
-  		TTree* smalltree = (TTree*)smalltree_f->Get("NoMc_bdt");
-  		TTree* reduced_tree = smalltree->CopyTree(cuts.c_str()); // string cuts
+  		TFile smalltree_f(filename.c_str());
+  		TTree* reduced_tree = (TTree*)smalltree_f.Get("NoMc_bdt");
   		Double_t m_t, eta_t, m1eta_t, m2eta_t, bdt_t, me_t;
   		Bool_t muid_t;
   		reduced_tree->SetBranchAddress("m",     &m_t);
@@ -281,7 +279,7 @@ int main(int argc, char* argv[]) {
   				else bu_bdt_histo[3]->Fill(bdt_t);
   			}
   		}
-  		smalltree_f->Close();
+  		smalltree_f.Close();
   	}
 
   	TFile * bdt_f = new TFile(bdtbinnings_s.c_str(), "RECREATE");

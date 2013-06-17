@@ -528,10 +528,10 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
   }
 }
 
-void pdf_fitData::fill_dataset(RooDataSet* dataset, bool cut_b, vector <double> cut_, string cuts, TTree* tree, int offset) {
+void pdf_fitData::fill_dataset(RooDataSet* dataset, bool cut_b, vector <double> cut_, double bdt_cut, TTree* tree, int offset) {
   int events = 0;
   if (!strcmp(tree->GetName(), "SgData_bdt")) {
-    TTree* reduced_tree = tree->CopyTree(cuts.c_str());
+    TTree* reduced_tree = tree;
     Double_t m1eta_t, m2eta_t, m_t, eta_B_t, bdt_t, me_t;
     Int_t evt_t;
     Bool_t muid_t;
@@ -547,6 +547,7 @@ void pdf_fitData::fill_dataset(RooDataSet* dataset, bool cut_b, vector <double> 
       reduced_tree->GetEntry(i);
       if (m_t > 4.9 && m_t < 5.9 && muid_t && muid_t) {
       	if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass scale
+      	if (bdt_t < bdt_cut) continue;
         events++;
         Mass->setVal(m_t);
         bdt->setVal(bdt_t);
@@ -591,10 +592,10 @@ void pdf_fitData::define_dataset() {
   global_data = new RooDataSet("global_data", "global_data", varlist);
 }
 
-void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, string cuts, TTree* tree, int offset) {
+void pdf_fitData::make_dataset(bool cut_b, vector <double> cut_, double bdt_cut, TTree* tree, int offset) {
   cout << red_color_bold << "making dataset" << default_console_color << endl;
 
-  if (!random) fill_dataset(global_data, cut_b, cut_, cuts, tree, offset);
+  if (!random) fill_dataset(global_data, cut_b, cut_, bdt_cut, tree, offset);
 
   else {
     if (syst && randomsyst) randomize_constraints(ws_);
