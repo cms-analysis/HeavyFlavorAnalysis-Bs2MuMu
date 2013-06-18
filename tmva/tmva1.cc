@@ -67,11 +67,11 @@ tmva1::tmva1(int year, string vars) {
   if (year == 2011) {
     fLumiScale = 3.1e-4; // 4.9/16000
     fInputFiles.sname = "/scratch/ursl/bdt/v16-2011-mix-Bs2MuMu.root"; 
-    fInputFiles.dname = "/scratch/ursl/bdt/v16-2011-data-bmmLoose-2.root";
+    fInputFiles.dname = "/scratch/ursl/bdt/v16-2011-data-bmmLoose-3.root";
   } else {
     fLumiScale = 2.8e-4; // 20/714000
     fInputFiles.sname = "/scratch/ursl/bdt/v16-2012-cms-BsToMuMu-small.root"; 
-    fInputFiles.dname = "/scratch/ursl/bdt/v16-2012-data-bmmLoose-2.root";
+    fInputFiles.dname = "/scratch/ursl/bdt/v16-2012-data-bmmLoose-3.root";
   }
 
 //   // -- BDT setup 108/109
@@ -393,8 +393,10 @@ void tmva1::apply(const char *fname) {
   TTree *tt = new TTree("bdtTree", "bdtTree");
   int classID;
   double w8; 
+  tt->Branch("run",     &ftd.run,   "run/I");
+  tt->Branch("evt",     &ftd.evt,   "evt/I");
   tt->Branch("m",       &ftd.m,     "m/D");
-  tt->Branch("me",      &ftd.me,     "me/D");
+  tt->Branch("me",      &ftd.me,    "me/D");
   tt->Branch("weight",  &w8,        "weight/D");
   tt->Branch("bdt",     &fBDT,      "bdt/D");
   tt->Branch("bdt0",    &fBDT0,     "bdt0/D");
@@ -403,15 +405,19 @@ void tmva1::apply(const char *fname) {
   tt->Branch("classID", &classID,   "classID/I");
   tt->Branch("hlt",     &ftd.hlt,   "hlt/O");
   tt->Branch("hltm",    &ftd.hltm,  "hltm/O");
-  tt->Branch("hltm2",   &ftd.hltm2,  "hltm2/O");
+  tt->Branch("hltm2",   &ftd.hltm2, "hltm2/O");
   tt->Branch("gmuid",   &ftd.gmuid, "gmuid/O");
-  tt->Branch("evt",     &ftd.evt,   "evt/I");
+  tt->Branch("gtqual",  &ftd.gtqual,"gtqual/O");
+  tt->Branch("json",    &ftd.json,  "json/O");
+  tt->Branch("pvw8",    &ftd.pvw8,  "pvw8/D");
 
   // -- add the usual variables
   tt->Branch("m1pt",    &ftd.m1pt,     "m1pt/D");
   tt->Branch("m2pt",    &ftd.m2pt,     "m2pt/D");
   tt->Branch("m1eta",   &ftd.m1eta,    "m1eta/D");
   tt->Branch("m2eta",   &ftd.m2eta,    "m2etat/D");
+  tt->Branch("m1q",     &ftd.m1q,      "m1q/I");
+  tt->Branch("m2q",     &ftd.m2q,      "m2q/I");
   tt->Branch("pt",      &ftd.pt,       "pt/D");
   tt->Branch("eta",     &ftd.eta,      "eta/D");
 
@@ -1687,8 +1693,10 @@ void tmva1::createInputFile(string filename, int randomSeed) {
   TFile *outFile = TFile::Open(filename.c_str(),"RECREATE");
 
   // -- channel selection/definition
+  float etaCut(2.4); 
+  if (fYear == 2012) etaCut = 2.1; 
   string chanDef[] = {"TMath::Abs(m1eta) < 1.4 && TMath::Abs(m2eta) < 1.4", 
-		      "(TMath::Abs(m1eta)>1.4||TMath::Abs(m2eta)>1.4)&&TMath::Abs(m1eta)<2.4&&TMath::Abs(m2eta)<2.4"
+		      Form("(TMath::Abs(m1eta)>1.4||TMath::Abs(m2eta)>1.4)&&TMath::Abs(m1eta)<%3.1f&&TMath::Abs(m2eta)<%3.1f", etaCut, etaCut)
   };
 
   int nchan = 2; 
@@ -2390,7 +2398,7 @@ void tmva1::analyzeTexFiles(std::string dir, int start, int end, string what) {
   double best_x(-1.); 
   int best_idx(-1);
 
-  const double KSCUT(0.1); 
+  const double KSCUT(0.05); 
   int combD, combDhi, sumD, sumDhi;
   double x, ssbfit, ssb, ssbs, combBg, combSg, sumBg, sumSg, sssb; 
   double bks0, bks1, bks2, sks0, sks1, sks2; 

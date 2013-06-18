@@ -26,7 +26,7 @@ if ($opt_o) {
     $offset = $opt_o; 
 }
 
-my $file = "tmva-trees-22"; 
+my $file = "tmva-trees-24"; 
 if ($opt_f) {
     $file = $opt_f; 
 }
@@ -129,9 +129,9 @@ sub callA() {
 # ----------------------------------------------------------------------
 sub callB() {
     
-    $setVar1  = "fls3d:alpha:pvips:iso:m1iso:m2iso";
+    $setVar1  = "fls3d:alpha:pvips:iso:m1iso:m2iso:chi2dof";
 
-    @setVars  = (":pt", ":eta", ":maxdoca", ":chi2dof", ":pvip", ":docatrk", ":closetrk"); $nVars = $#setVars + 1; 
+    @setVars  = (":pt", ":eta", ":maxdoca", ":pvip", ":docatrk", ":closetrk"); $nVars = $#setVars + 1; 
 
     my $loffset = $opt_b; 
     
