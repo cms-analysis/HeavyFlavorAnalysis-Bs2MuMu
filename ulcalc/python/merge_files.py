@@ -4,7 +4,7 @@ import sys
 import os
 
 if len(sys.argv) < 3:
-    print "usage: " + sys.argv[0] + " <targetfile> <name> <sourcefiles>"
+    print "usage: " + sys.argv[0] + " <targetfile> <sourcefiles>"
     sys.exit(0)
 
 
