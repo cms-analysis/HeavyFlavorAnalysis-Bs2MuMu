@@ -86,6 +86,8 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   delete gRandom;
   gRandom = (TRandom*) new TRandom3;
 
+  fEpsilon = 0.00001; 
+
   fAccPt = 3.5;
   fAccEtaGen = 2.5;
   fAccEtaRec = 2.4;
@@ -93,9 +95,9 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   fRunMin = -1; 
   fRunMax = -2; 
 
-  // PDG 2010:
+  // PDG 2012:
   fu  = 0.401;
-  fs  = 0.113;
+  fs  = 0.105;
   // -- CMS with PDG input
   fsfu = 0.282;
   fsfuE = 0.037/0.282;
@@ -164,6 +166,22 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
     a->name  = Form("Bla %i", i); 
     fNumbersBla.push_back(a); 
     
+    h2 = new TH2D(Form("hAccAll%d", i), Form("hAccAll%d", i), 25, 0., 2.5, 25, 0., 50.);
+    fhAccAll.push_back(h2); 
+    h2 = new TH2D(Form("hAccPass%d", i), Form("hAccPass%d", i), 25, 0., 2.5, 25, 0., 50.);
+    fhAccPass.push_back(h2); 
+
+    h = new TH1D(Form("hAccPtAll%d", i), Form("hAccPtAll%d", i), 25, 0., 50.);
+    fhAccPtAll.push_back(h); 
+    h = new TH1D(Form("hAccPtPass%d", i), Form("hAccPtPass%d", i), 25, 0., 50.);
+    fhAccPtPass.push_back(h); 
+
+    h = new TH1D(Form("hAccEtaAll%d", i), Form("hAccEtaAll%d", i), 25, 0., 2.5);
+    fhAccEtaAll.push_back(h); 
+    h = new TH1D(Form("hAccEtaPass%d", i), Form("hAccEtaPass%d", i), 25, 0., 2.5);
+    fhAccEtaPass.push_back(h); 
+
+
     
     h2 = new TH2D(Form("hBdtMass%d", i), Form("hBdtMass%d", i), NBINS, fMassLo, fMassHi, 100, 0., 1.0);
     fhBdtMass.push_back(h2); 
@@ -203,8 +221,6 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
 
     h = new TH1D(Form("hDstarPi%d", i), Form("hDstarPi%d", i), 20, 4.9, 5.9);
     fhDstarPi.push_back(h); 
-
-
 
     h = new TH1D(Form("hMassWithTriggerCuts%d", i), Form("hMassWithTriggerCuts%d", i), NBINS, fMassLo, fMassHi);
     fhMassWithTriggerCuts.push_back(h); 
@@ -382,82 +398,87 @@ plotClass::~plotClass() {
 void plotClass::initNumbers(numbers *a, bool initAll) {
 
   if (initAll) a->name = "";
-  a->genAccYield  = a->genAccFileYield = 0; 
-  a->effGenFilter = a->effGenFilterE = 1.;
-  a->genFileYield = a->genYield = 0.;
-  a->recoYield    = a->muidYield = a->trigYield = a->candYield = a->ana0Yield = a->anaYield = a->anaWmcYield = a-> chanYield = 0; 
-  a->ana0YieldE   = a->anaYieldE = a->anaMuonYieldE = a->anaTriggerYieldE = a->anaWmcYieldE = 0.;
-  a->anaMuonYield = a->anaTriggerYield = 0.;
-  a->fitYield     = a->fitYieldE = 0.;
-  a->fitYieldC    = a->fitYieldCE = 0.;
-  a->acc          = a->accE = 0; 
-  a->effMuidMC    = a->effMuidMCE = a->effTrigMC = a->effTrigMCE = 0; 
-  a->effMuidTNP   = a->effMuidTNPE = a->effTrigTNP = a->effTrigTNPE = 0; 
-  a->effMuidTNPMC = a->effMuidTNPMCE = a->effTrigTNPMC = a->effTrigTNPMCE = 0.;
-  a->effCand      = a->effCandE = 0; 
-  a->effAna       = a->effAnaE = 0; 
-  a->effPtReco    = a->effPtRecoE = 0;
-  a->effTot       = a->effTotE = a->aEffProdMC = a->aEffProdMCE = a->effProdMC = a->effProdMCE = a->effProdTNP = a->effProdTNPE = 0.; 
-  a->prodGenYield = a->combGenYield = 0;
-  // -- this is only relevant for the signal(s)
+  a->index          = -1; 
+  a->effPtReco = 0.; a->effPtRecoE = 0.;
+  a->fitYield = 0.; a->fitYieldE = 0.;
+  a->fitYieldC = 0.; a->fitYieldCE = 0.;
+  a->genAccFileYield = 0.; a->genYield = 0.; a->genFileYield = 0.; a->genAccYield = 0.;
+  a->recoYield = 0.; a->muidYield = 0.; a->trigYield = 0.; a->chanYield = 0.; a->candYield = 0.;
+  a->genFileYieldE = 0.; a->genYieldE = 0.; a->recoYieldE = 0.; a->chanYieldE = 0.; 
+  a->muidYieldE = 0.; a->trigYieldE = 0.; a->candYieldE = 0.;
+  a->absNoCutsYield = 0.; a->ana0Yield = 0.;  a->anaYield = 0.;  a->anaMuonYield = 0.;  a->anaTriggerYield = 0.;  a->anaWmcYield = 0.;
+  a->ana0YieldE = 0.; a->anaYieldE = 0.; a->anaMuonYieldE = 0.; a->anaTriggerYieldE = 0.; a->anaWmcYieldE = 0.;
+  a->acc = 0.; a->accE = 0.;
+  a->effChan = 0.; a->effChanE = 0.; 
+  a->effMuidMC = 0.; a->effMuidMCE = 0.; a->effTrigMC = 0.; a->effTrigMCE = 0.;
+  a->effMuidTNP = 0.; a->effMuidTNPE = 0.; a->effTrigTNP = 0.; a->effTrigTNPE = 0.;
+  a->effMuidTNPMC = 0.; a->effMuidTNPMCE = 0.; a->effTrigTNPMC = 0.; a->effTrigTNPMCE = 0.;
+  a->effRhoMuidTNPMC = 0.; a->effRhoMuidTNPMCE = 0.; a->effRhoTrigTNPMC = 0.; a->effRhoTrigTNPMCE = 0.;
+  a->effRhoMuidTNP = 0.; a->effRhoMuidTNPE = 0.; a->effRhoTrigTNP = 0.; a->effRhoTrigTNPE = 0.;
+  a->rhoMuidTNPMC = 0.; a->rhoMuidTNPMCE = 0.; a->rhoTrigTNPMC = 0.; a->rhoTrigTNPMCE = 0.;
+  a->effCand = 0.; a->effCandE = 0.; a->effCandTE = 0.; 
+  a->effAna = 0.; a->effAnaE = 0.; 
+  a->effTot = 0.; a->effTotE = 0.; a->aEffProdMC = 0.; a->aEffProdMCE = 0.; a->effProdMC = 0.; a->effProdMCE = 0.; 
+  a->effProdTNP = 0.; a->effProdTNPE = 0.; a->effProdTNPMC = 0.; a->effProdTNPMCE = 0.; 
+  a->effTotChan = 0.; a->effTotChanE = 0.; 
+  a->prodGenYield = 0.; a->combGenYield = 0.; a->chanGenYield = 0.; 
   a->expSignal = 0.;
-  a->pss   = a->pdd  = 1.;
-  a->psd   = a->pds  = 1.;
-  a->pssE  = a->pddE = 1.;
-  a->psdE  = a->pdsE = 1.;
-  a->bgObs = a->bgBsExp = a->bgBsExpE = a->bgBdExp = a->bgBdExpE =0; 
-  a->bsObs = a->bdObs = 0; 
-  a->mBdLo = a->mBdHi = a->mBsLo = a->mBsHi = 0.;
-
-  a->genFileYieldE = a->genYieldE = a->recoYieldE = a->muidYieldE = a->trigYieldE = a->candYieldE = 0;
-
-  a->tauBs = a->tauBsE = a->tauBd = a->tauBdE = 0.; 
-
-  a->offLoRare = a->offLoRareE = a->offHiRare = a->offHiRareE = a->bsRare = a->bsRareE = a->bdRare = a->bdRareE = 0.; 
-  a->bsNoScaled = a->bsNoScaledE = a->bdNoScaled = a->bdNoScaledE = 0.;
-  a->mBdLo = a->mBdHi = a->mBsLo = a->mBsHi = 0.;
-
-  // -- new numbers
-  a->fBgPeakLo   = a->fBgPeakHi   = a->fBgPeakBs   = a->fBgPeakBd   = 0.;
-  a->fBgPeakLoE1 = a->fBgPeakHiE1 = a->fBgPeakBsE1 = a->fBgPeakBdE1 = 0.;
-  a->fBgPeakLoE2 = a->fBgPeakHiE2 = a->fBgPeakBsE2 = a->fBgPeakBdE2 = 0.;
-
-  a->fFitSg      = a->fFitBd      = a->fFitNo      = a->fFitNoC     = a->fFitCs     = a->fFitCsC   = 0.;
-  a->fFitSgE1    = a->fFitBdE1    = a->fFitNoE1    = a->fFitNoCE1   = a->fFitCsE1   = a->fFitCsCE1 = 0.;
-  a->fFitSgE2    = a->fFitBdE2    = a->fFitNoE2    = a->fFitNoCE2   = a->fFitCsE2   = a->fFitCsCE2 = 0.;
-
-  a->fBgNonpLo   = a->fBgNonpHi   = a->fBgNonpBs   = a->fBgNonpBd   = 0.; 
-  a->fBgNonpLoE1 = a->fBgNonpHiE1 = a->fBgNonpBsE1 = a->fBgNonpBdE1 = 0.;
-  a->fBgNonpLoE2 = a->fBgNonpHiE2 = a->fBgNonpBsE2 = a->fBgNonpBdE2 = 0.;
-
-  a->fBgCombLo   = a->fBgCombHi   = a->fBgCombBs   = a->fBgCombBd   = 0.; 
-  a->fBgCombLoE1 = a->fBgCombHiE1 = a->fBgCombBsE1 = a->fBgCombBdE1 = 0.;
-  a->fBgCombLoE2 = a->fBgCombHiE2 = a->fBgCombBsE2 = a->fBgCombBdE2 = 0.;
-
-  a->fBgRslsLo   = a->fBgRslsHi   = a->fBgRslsBs   = a->fBgRslsBd   = 0.; 
-  a->fBgRslsLoE1 = a->fBgRslsHiE1 = a->fBgRslsBsE1 = a->fBgRslsBdE1 = 0.;
-  a->fBgRslsLoE2 = a->fBgRslsHiE2 = a->fBgRslsBsE2 = a->fBgRslsBdE2 = 0.;
-
-  a->fBgRareLo   = a->fBgRareHi   = a->fBgRareBs   = a->fBgRareBd   = 0.; 
-  a->fBgRareLoE1 = a->fBgRareHiE1 = a->fBgRareBsE1 = a->fBgRareBdE1 = 0.;
-  a->fBgRareLoE2 = a->fBgRareHiE2 = a->fBgRareBsE2 = a->fBgRareBdE2 = 0.;
-
-  a->fBgTotLo    = a->fBgTotHi    = a->fBgTotBs    = a->fBgTotBd    = 0.;
-  a->fBgTotLoE1  = a->fBgTotHiE1  = a->fBgTotBsE1  = a->fBgTotBdE1  = 0.; 
-  a->fBgTotLoE2  = a->fBgTotHiE2  = a->fBgTotBsE2  = a->fBgTotBdE2  = 0.; 
-
-  a->fSgLo       = a->fSgHi       = a->fSgBs       = a->fSgBd    = 0.;
-  a->fSgLoE1     = a->fSgHiE1     = a->fSgBsE1     = a->fSgBdE1  = 0.; 
-  a->fSgLoE2     = a->fSgHiE2     = a->fSgBsE2     = a->fSgBdE2  = 0.; 
-
-  a->fBdLo       = a->fBdHi       = a->fBdBs       = a->fBdBd    = 0.;
-  a->fBdLoE1     = a->fBdHiE1     = a->fBdBsE1     = a->fBdBdE1  = 0.; 
-  a->fBdLoE2     = a->fBdHiE2     = a->fBdBsE2     = a->fBdBdE2  = 0.; 
-
-  a->fSgAndBgLo  = a->fSgAndBgHi  = a->fSgAndBgBs  = a->fSgAndBgBd   = 0.;
-  a->fSgAndBgLoE1= a->fSgAndBgHiE1= a->fSgAndBgBsE1= a->fSgAndBgBdE1 = 0.;
-  a->fSgAndBgLoE2= a->fSgAndBgHiE2= a->fSgAndBgBsE2= a->fSgAndBgBdE2 = 0.;
-
+  a->bgObs = 0.; a->bgBsExp = 0.; a->bgBsExpE = 0.; a->bgBsExpTE = 0.; a->bgBdExp = 0.; a->bgBdExpE = 0.; a->bgBdExpTE = 0.;
+  a->bsObs = 0.; a->bdObs = 0.; 
+  a->bsExpObs = 0.; a->bdExpObs = 0.; a->bsExpObsE = 0.; a->bdExpObsE = 0.; a->bsExpObsTE = 0.; a->bdExpObsTE = 0.; 
+  a->tauBs = 0.; a->tauBsE = 0.; a->tauBd = 0.; a->tauBdE = 0.; 
+  a->offHiRare = 0.; a->offHiRareE = 0.; a->offLoRare = 0.; a->offLoRareE = 0.; 
+  a->bsRare = 0.; a->bsRareE = 0.; a->bdRare = 0.; a->bdRareE = 0.; 
+  a->offHi = 0.; a->offLo = 0.;
+  a->bsNoScaled = 0.; a->bsNoScaledE = 0.; a->bdNoScaled = 0.; a->bdNoScaledE = 0.;
+  a->pss = 0.; a->pssE = 0.; a->pssTE = 0.; a->pdd = 0.; a->pddE = 0.; a->pddTE = 0.;
+  a->pls = 0.; a->plsE = 0.; a->plsTE = 0.; a->pld = 0.; a->pldE = 0.; a->pldTE = 0.;
+  a->phs = 0.; a->phsE = 0.; a->phsTE = 0.; a->phd = 0.; a->phdE = 0.; a->phdTE = 0.;
+  a->psd = 0.; a->psdE = 0.; a->psdTE = 0.; a->pds = 0.; a->pdsE = 0.; a->pdsTE = 0.;
+  a->mBdLo = 0.; a->mBdHi = 0.; a->mBsLo = 0.; a->mBsHi = 0.;
+  a->accTE = 0.; a->effAnaTE = 0.; a->effTotTE = 0.; 
+  a->tauTE = 0.; 
+  a->fitYieldTE = 0.;
+  a->effMuidTE = 0.; a->effMuidTNPTE = 0.; a->effMuidMCTE = 0.; a->effMuidTNPMCTE = 0.; a->effTrigTE = 0.; a->effTrigMCTE = 0.;
+  a->effTrigTNPTE = 0.; a->effTrigTNPMCTE = 0.; a->effRhoMuidTNPTE = 0.; 
+  a->effRhoMuidTNPMCTE = 0.; a->effRhoTrigTNPTE = 0.; a->effRhoTrigTNPMCTE = 0.; 
+  a->fBgPeakLo = 0.;   a->fBgPeakHi = 0.;   a->fBgPeakBs = 0.;   a->fBgPeakBd = 0.;    
+  a->fBgPeakLoE1 = 0.; a->fBgPeakHiE1 = 0.; a->fBgPeakBsE1 = 0.; a->fBgPeakBdE1 = 0.;  
+  a->fBgPeakLoE2 = 0.; a->fBgPeakHiE2 = 0.; a->fBgPeakBsE2 = 0.; a->fBgPeakBdE2 = 0.;  
+  a->fBgRslLo = 0.;    a->fBgRslHi = 0.;    a->fBgRslBs = 0.;    a->fBgRslBd = 0.;     
+  a->fBgRslLoE1 = 0.;  a->fBgRslHiE1 = 0.;  a->fBgRslBsE1 = 0.;  a->fBgRslBdE1 = 0.;   
+  a->fBgRslLoE2 = 0.;  a->fBgRslHiE2 = 0.;  a->fBgRslBsE2 = 0.;  a->fBgRslBdE2 = 0.;   
+  a->fBgRareLo = 0.;   a->fBgRareHi = 0.;   a->fBgRareBs = 0.;   a->fBgRareBd = 0.;    
+  a->fBgRareLoE1 = 0.; a->fBgRareHiE1 = 0.; a->fBgRareBsE1 = 0.; a->fBgRareBdE1 = 0.;  
+  a->fBgRareLoE2 = 0.; a->fBgRareHiE2 = 0.; a->fBgRareBsE2 = 0.; a->fBgRareBdE2 = 0.;  
+  a->fBgRslsLo = 0.;   a->fBgRslsHi = 0.;   a->fBgRslsBs = 0.;   a->fBgRslsBd = 0.;    
+  a->fBgRslsLoE1 = 0.; a->fBgRslsHiE1 = 0.; a->fBgRslsBsE1 = 0.; a->fBgRslsBdE1 = 0.;  
+  a->fBgRslsLoE2 = 0.; a->fBgRslsHiE2 = 0.; a->fBgRslsBsE2 = 0.; a->fBgRslsBdE2 = 0.;  
+  a->fBgCombLo = 0.;   a->fBgCombHi = 0.;   a->fBgCombBs = 0.;   a->fBgCombBd = 0.;    
+  a->fBgCombLoE1 = 0.; a->fBgCombHiE1 = 0.; a->fBgCombBsE1 = 0.; a->fBgCombBdE1 = 0.;                            
+  a->fBgCombLoE2 = 0.; a->fBgCombHiE2 = 0.; a->fBgCombBsE2 = 0.; a->fBgCombBdE2 = 0.;                            
+  a->fBgNonpLo = 0.;   a->fBgNonpHi = 0.;   a->fBgNonpBs = 0.;   a->fBgNonpBd = 0.;    
+  a->fBgNonpLoE1 = 0.; a->fBgNonpHiE1 = 0.; a->fBgNonpBsE1 = 0.; a->fBgNonpBdE1 = 0.;                            
+  a->fBgNonpLoE2 = 0.; a->fBgNonpHiE2 = 0.; a->fBgNonpBsE2 = 0.; a->fBgNonpBdE2 = 0.;                            
+  a->fBgTotLo = 0.;    a->fBgTotHi = 0.;    a->fBgTotBs = 0.;    a->fBgTotBd = 0.;    
+  a->fBgTotLoE1 = 0.;  a->fBgTotHiE1 = 0.;  a->fBgTotBsE1 = 0.;  a->fBgTotBdE1 = 0.;                             
+  a->fBgTotLoE2 = 0.;  a->fBgTotHiE2 = 0.;  a->fBgTotBsE2 = 0.;  a->fBgTotBdE2 = 0.;                             
+  a->fSgLo = 0.;       a->fSgHi = 0.;       a->fSgBs = 0.;       a->fSgBd = 0.;       
+  a->fSgLoE1 = 0.;     a->fSgHiE1 = 0.;     a->fSgBsE1 = 0.;     a->fSgBdE1 = 0.;                                
+  a->fSgLoE2 = 0.;     a->fSgHiE2 = 0.;     a->fSgBsE2 = 0.;     a->fSgBdE2 = 0.;                                
+  a->fBdLo = 0.;       a->fBdHi = 0.;       a->fBdBs = 0.;       a->fBdBd = 0.;       
+  a->fBdLoE1 = 0.;     a->fBdHiE1 = 0.;     a->fBdBsE1 = 0.;     a->fBdBdE1 = 0.;                                
+  a->fBdLoE2 = 0.;     a->fBdHiE2 = 0.;     a->fBdBsE2 = 0.;     a->fBdBdE2 = 0.;                                
+  a->fSgTot = 0.;      a->fBdTot = 0.;      a->fNoTot = 0.;      a->fCsTot = 0.;      
+  a->fSgTotE1 = 0.;    a->fBdTotE1 = 0.;    a->fNoTotE1 = 0.;    a->fCsTotE1 = 0.; 
+  a->fSgTotE2 = 0.;    a->fBdTotE2 = 0.;    a->fNoTotE2 = 0.;    a->fCsTotE2 = 0.; 
+  a->fFitSg = 0.;      a->fFitBd = 0.;      a->fFitNo = 0.;      a->fFitNoC = 0.;     a->fFitCs = 0.;    a->fFitCsC = 0.; 
+  a->fFitSgE1 = 0.;    a->fFitBdE1 = 0.;    a->fFitNoE1 = 0.;    a->fFitNoCE1 = 0.;   a->fFitCsE1 = 0.;  a->fFitCsCE1 = 0.;
+  a->fFitSgE2 = 0.;    a->fFitBdE2 = 0.;    a->fFitNoE2 = 0.;    a->fFitNoCE2 = 0.;   a->fFitCsE2 = 0.;  a->fFitCsCE2 = 0.;
+  a->fSgAndBgLo = 0.;  a->fSgAndBgHi = 0.;  a->fSgAndBgBs = 0.;  a->fSgAndBgBd = 0.;  
+  a->fSgAndBgLoE1 = 0.;a->fSgAndBgHiE1 = 0.;a->fSgAndBgBsE1 = 0.;a->fSgAndBgBdE1 = 0.;                                         
+  a->fSgAndBgLoE2 = 0.;a->fSgAndBgHiE2 = 0.;a->fSgAndBgBsE2 = 0.;a->fSgAndBgBdE2 = 0.;                                         
+  a->fObsLo = 0.;      a->fObsHi = 0.;      a->fObsBs = 0.;      a->fObsBd = 0.;      
 
 }
 
@@ -1737,7 +1758,6 @@ void plotClass::dumpSamples() {
 
 // ----------------------------------------------------------------------
 void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
-  double eps(0.00001); 
 
   TVirtualFitter::SetMaxIterations(20000);
   
@@ -1750,7 +1770,7 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
 
   string modifier = (fDoUseBDT?"bdt":"cnc"); 
 
-  double histCount = h->Integral(h->FindBin(fBgLo+0.0001), h->FindBin(fBgHi-0.0001)); 
+  double histCount = h->Integral(h->FindBin(fBgLo+0.0001), h->FindBin(fBgHi)); 
   cout << "bgBlind: histCount = " << histCount 
        << " starting at " << fBgLo+0.0001 << " bin(" << h->FindBin(fBgLo+0.0001) << ")"
        << " to " << fBgHi-0.0001 << " bin(" << h->FindBin(fBgHi-0.0001) << ")" 
@@ -1775,13 +1795,15 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
   }
 
   double blind = fSgHi - fSgLo; 
-  double scaleBs = (5.45-5.30)/(fBgHi-fBgLo-blind);
+  double scaleBlind = (5.45-5.30)/(fBgHi-fBgLo-blind);
+  double scaleBs = (fCuts[fChan]->mBsHi-fCuts[fChan]->mBsLo)/(fBgHi-fBgLo-blind);
+  double scaleBd = (fCuts[fChan]->mBdHi-fCuts[fChan]->mBdLo)/(fBgHi-fBgLo-blind);
 
   if (0 == mode) {
     fBsBgExp = fBgHist*scaleBs;
     fBsBgExpE = fBgHistE*scaleBs;
-    fBdBgExp = fBgHist*scaleBs;
-    fBdBgExpE = fBgHistE*scaleBs;
+    fBdBgExp = fBgHist*scaleBd;
+    fBdBgExpE = fBgHistE*scaleBd;
     h->DrawCopy();
     return;
   } else if (1 == mode) { 
@@ -1815,9 +1837,9 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
 
   if (!strcmp(gMinuit->fCstatu.Data(), "CONVERGED ")) {
     lF2->Update();
-    double integral = lF2->Integral(5.30, 5.45, static_cast<const Double_t*>(0), 1.e-15);
+    double integral = lF2->Integral(fCuts[fChan]->mBsLo, fCuts[fChan]->mBsHi, static_cast<const Double_t*>(0), 1.e-15);
     fBsBgExp  = integral/h->GetBinWidth(1); 
-    fBdBgExp  = lF2->Integral(5.20, 5.30)/h->GetBinWidth(1); 
+    fBdBgExp  = lF2->Integral(fCuts[fChan]->mBdLo, fCuts[fChan]->mBdHi)/h->GetBinWidth(1); 
     fLoBgExp  = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1); 
     fHiBgExp  = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
     fBsBgExpE = fBsBgExp*(fBgHistE/fBgHist);
@@ -1826,12 +1848,13 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
 	 << " hi: " << fHiBgExp << "/" << fBgHistHi << endl; 
   } else {
     cout << "+++ Fit did not converge, take flat bg interpretation, fCstatu = ->" << gMinuit->fCstatu.Data() << "<-" << endl;
-    fBsBgExp  = (5.45-5.30)/(5.9-4.9-0.25)*fBgHist;
-    fBdBgExp  = (5.30-5.20)/(5.9-4.9-0.25)*fBgHist;
+    fBsBgExp  = (fCuts[fChan]->mBsHi-fCuts[fChan]->mBsLo)/(5.9-4.9-0.25)*fBgHist;
+    fBdBgExp  = (fCuts[fChan]->mBdHi-fCuts[fChan]->mBdLo)/(5.9-4.9-0.25)*fBgHist;
     fLoBgExp  = (5.20-4.90)/(5.9-4.9-0.25)*fBgHist;
     fHiBgExp  = (5.90-5.45)/(5.9-4.9-0.25)*fBgHist;
     fBsBgExpE = fBsBgExp*(fBgHistE/fBgHist);
     fBdBgExpE = fBdBgExp*(fBgHistE/fBgHist);
+    cout << "+++ fBsBgExp = " << fBsBgExp << " fLoBgExp: " << fLoBgExp << " fHiBgExp: " << fHiBgExp << endl;
   }
 
   if (4 == mode) {
@@ -1843,44 +1866,56 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
     hr->DrawCopy("same");
     
     // -- build up total bg
-    fBsBgExp   = lF2->Integral(5.30, 5.45)/h->GetBinWidth(1); 
-    fBdBgExp   = lF2->Integral(5.20, 5.30)/h->GetBinWidth(1); 
+    fBsBgExp   = lF2->Integral(fCuts[fChan]->mBsLo, fCuts[fChan]->mBsHi)/h->GetBinWidth(1); 
+    fBdBgExp   = lF2->Integral(fCuts[fChan]->mBdLo, fCuts[fChan]->mBsHi)/h->GetBinWidth(1); 
     fLoBgExp   = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1); 
     fHiBgExp   = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
     cout << "flat combinatorial Expectations Lo: " << fLoBgExp << " Bs: " << fBsBgExp << " Hi: " << fHiBgExp << endl;
     
-    fBsBgExp  += hr->Integral(hr->FindBin(5.30+eps), hr->FindBin(5.45-eps)); 
-    fBdBgExp  += hr->Integral(hr->FindBin(5.20+eps), hr->FindBin(5.30-eps)); 
-    fLoBgExp  += hr->Integral(hr->FindBin(4.90+eps), hr->FindBin(5.20-eps)); 
-    fHiBgExp  += hr->Integral(hr->FindBin(5.45+eps), hr->FindBin(5.90-eps)); 
+    fBsBgExp  += hr->Integral(hr->FindBin(fCuts[fChan]->mBsLo+fEpsilon), hr->FindBin(fCuts[fChan]->mBsHi-fEpsilon)); 
+    fBdBgExp  += hr->Integral(hr->FindBin(fCuts[fChan]->mBdLo+fEpsilon), hr->FindBin(fCuts[fChan]->mBdHi-fEpsilon)); 
+    fLoBgExp  += hr->Integral(hr->FindBin(4.90+fEpsilon), hr->FindBin(5.20-fEpsilon)); 
+    fHiBgExp  += hr->Integral(hr->FindBin(5.45+fEpsilon), hr->FindBin(5.90-fEpsilon)); 
     cout << "+ rare bg Expectations Lo:          " << fLoBgExp << " Bs: " << fBsBgExp << " Hi: " << fHiBgExp << endl;
   }
 
 
   if (5 == mode) {
+    if (fBgHistHi < 1) {
+      lF2->SetParameter(0, 0.); 
+      lF2->SetParError(0, 0.); 
+    }
+
     string dname = h->GetName();
     string rname =  Form("bslRare_%s", modifier.c_str());
     TH1D *hr = (TH1D*)fHistFile->Get(rname.c_str()); 
     cout << "rare bg histogram: " << rname << " at: " << hr << endl;
     hr = (TH1D*)(hr->Clone(Form("%s-mode5", rname.c_str())));
 
-    double rareBgLo    = hr->Integral(hr->FindBin(4.90+eps), hr->FindBin(5.20-eps));
+    double rareBgLo    = hr->Integral(hr->FindBin(4.90+fEpsilon), hr->FindBin(5.20-fEpsilon));
     double flatCombLo  = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1);
+    if (flatCombLo < 0) {
+      flatCombLo = 0.; 
+      cout << "+++ negative lF2 integral, take 0 " << endl;
+    }
     double scaleRareBg = (fBgHistLo-flatCombLo)/rareBgLo; 
 
+    cout << "+++ rareBgLo: " << rareBgLo << " flatCombLo: " << flatCombLo << " scaleRareBg: " << scaleRareBg << endl;
+
+    // -- Now RESCALE THE RARE SL BACKGROUND!
     hr->Scale(scaleRareBg); 
     setFilledHist(hr, kBlue, kBlue, 3344);
     hr->DrawCopy("same");
 
-    fBsCoBgExp  = lF2->Integral(5.30, 5.45)/h->GetBinWidth(1); 
-    fBdCoBgExp  = lF2->Integral(5.20, 5.30)/h->GetBinWidth(1); 
-    fLoCoBgExp  = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1);
-    fHiCoBgExp  = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
+    fBsCoBgExp  = lF2->Integral(fCuts[fChan]->mBsLo, fCuts[fChan]->mBsHi)/h->GetBinWidth(1); if (fBsCoBgExp < 0) fBsCoBgExp = 0.;
+    fBdCoBgExp  = lF2->Integral(fCuts[fChan]->mBdLo, fCuts[fChan]->mBdHi)/h->GetBinWidth(1); if (fBdCoBgExp < 0) fBdCoBgExp = 0.;
+    fLoCoBgExp  = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1); if (fLoCoBgExp < 0) fLoCoBgExp = 0.;
+    fHiCoBgExp  = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); if (fHiCoBgExp < 0) fHiCoBgExp = 0.;
 
-    fBsSlBgExp  = hr->Integral(hr->FindBin(5.30+eps), hr->FindBin(5.45-eps)); 
-    fBdSlBgExp  = hr->Integral(hr->FindBin(5.20+eps), hr->FindBin(5.30-eps)); 
-    fLoSlBgExp  = hr->Integral(hr->FindBin(4.90+eps), hr->FindBin(5.20-eps));
-    fHiSlBgExp  = hr->Integral(hr->FindBin(5.45+eps), hr->FindBin(5.90-eps)); 
+    fBsSlBgExp  = hr->Integral(hr->FindBin(fCuts[fChan]->mBsLo+fEpsilon), hr->FindBin(fCuts[fChan]->mBsHi-fEpsilon)); if (fBsSlBgExp < 0) fBsSlBgExp = 0.;
+    fBdSlBgExp  = hr->Integral(hr->FindBin(fCuts[fChan]->mBdLo+fEpsilon), hr->FindBin(fCuts[fChan]->mBdHi-fEpsilon)); if (fBdSlBgExp < 0) fBdSlBgExp = 0.; 
+    fLoSlBgExp  = hr->Integral(hr->FindBin(4.90+fEpsilon), hr->FindBin(5.20-fEpsilon)); if (fLoSlBgExp < 0) fLoSlBgExp = 0.;
+    fHiSlBgExp  = hr->Integral(hr->FindBin(5.45+fEpsilon), hr->FindBin(5.90-fEpsilon)); if (fHiSlBgExp < 0) fHiSlBgExp = 0.;
 
     // -- build up total bg
     fBsBgExp = fBsCoBgExp;
@@ -2582,12 +2617,21 @@ void plotClass::printNumbers(numbers &a, ostream &OUT) {
   OUT << "acceptance      = " << a.acc << "+/-" << a.accE << endl;
   OUT << "effCand         = " << a.effCand << "+/-" << a.effCandE << endl;
   OUT << "effAna          = " << a.effAna << "+/-" << a.effAnaE << endl; 
+
   OUT << "effMuidMC       = " << a.effMuidMC << "+/-" << a.effMuidMCE << endl;
-  OUT << "effMuidTNP      = " << a.effMuidTNP << "+/-" << a.effMuidTNPE << endl;
+  OUT << "effRhoMuidTNPMC = " << a.effRhoMuidTNPMC << "+/-" << a.effRhoMuidTNPMCE << endl;
   OUT << "effMuidTNPMC    = " << a.effMuidTNPMC << "+/-" << a.effMuidTNPMCE << endl;
+  OUT << "effRhoMuidTNP   = " << a.effRhoMuidTNP << "+/-" << a.effRhoMuidTNPE << endl;
+  OUT << "effMuidTNP      = " << a.effMuidTNP << "+/-" << a.effMuidTNPE << endl;
+  OUT << "rhoMuidTNPMC    = " << a.rhoMuidTNPMC << "+/-" << a.rhoMuidTNPMCE << endl;
+
   OUT << "effTrigMC       = " << a.effTrigMC << "+/-" << a.effTrigMCE << endl;
-  OUT << "effTrigTNP      = " << a.effTrigTNP << "+/-" << a.effTrigTNPE << endl;
+  OUT << "effRhoTrigTNPMC = " << a.effRhoTrigTNPMC << "+/-" << a.effRhoTrigTNPMCE << endl;
   OUT << "effTrigTNPMC    = " << a.effTrigTNPMC << "+/-" << a.effTrigTNPMCE << endl;
+  OUT << "effRhoTrigTNP   = " << a.effRhoTrigTNP << "+/-" << a.effRhoTrigTNPE << endl;
+  OUT << "effTrigTNP      = " << a.effTrigTNP << "+/-" << a.effTrigTNPE << endl;
+  OUT << "rhoTrigTNPMC    = " << a.rhoTrigTNPMC << "+/-" << a.rhoTrigTNPMCE << endl;
+
   OUT << "effProd(MC)     = " << a.effProdMC << "+/-" << a.effProdMCE << endl;
   OUT << "effProd(TNP)    = " << a.effProdTNP << "+/-" << a.effProdTNPE << endl;
   OUT << "effProd(TNPMC)  = " << a.effProdTNPMC << "+/-" << a.effProdTNPMCE << endl;
@@ -3387,7 +3431,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
   bool ptcutOK(false); 
   for (int jentry = nbegin; jentry < nend; jentry++) {
     t->GetEntry(jentry);
-    if (jentry%step == 0) cout << Form(" .. Event %8d, run = %6ld evt = %10ld", jentry, 
+    if (jentry%step == 0) cout << Form(" .. Event %8d, run = %6lld evt = %10lld", jentry, 
 				       static_cast<Long64_t>(fb.run), static_cast<Long64_t>(fb.evt)) << endl;
 
     if (fRunMax > fRunMin) {

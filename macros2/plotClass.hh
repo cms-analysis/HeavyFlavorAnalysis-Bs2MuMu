@@ -90,6 +90,9 @@ struct numbers {
   double effMuidMC, effMuidMCE, effTrigMC, effTrigMCE;
   double effMuidTNP, effMuidTNPE, effTrigTNP, effTrigTNPE;
   double effMuidTNPMC, effMuidTNPMCE, effTrigTNPMC, effTrigTNPMCE;
+  double effRhoMuidTNPMC, effRhoMuidTNPMCE, effRhoTrigTNPMC, effRhoTrigTNPMCE;
+  double effRhoMuidTNP, effRhoMuidTNPE, effRhoTrigTNP, effRhoTrigTNPE;
+  double rhoMuidTNPMC, rhoMuidTNPMCE, rhoTrigTNPMC, rhoTrigTNPMCE;
   double effCand, effCandE, effCandTE; 
   double effAna, effAnaE; 
   double effTot, effTotE, aEffProdMC, aEffProdMCE, effProdMC, effProdMCE, effProdTNP, effProdTNPE, effProdTNPMC, effProdTNPMCE; 
@@ -113,7 +116,8 @@ struct numbers {
   double accTE, effAnaTE, effTotTE; 
   double tauTE; 
   double fitYieldTE;
-  double effMuidTE, effMuidTNPTE, effMuidMCTE, effMuidTNPMCTE, effTrigTE, effTrigMCTE, effTrigTNPTE, effTrigTNPMCTE; 
+  double effMuidTE, effMuidTNPTE, effMuidMCTE, effMuidTNPMCTE, effTrigTE, effTrigMCTE, effTrigTNPTE, effTrigTNPMCTE, 
+    effRhoMuidTNPTE, effRhoMuidTNPMCTE, effRhoTrigTNPTE, effRhoTrigTNPMCTE; 
   // -- new numbers
   double fBgPeakLo,   fBgPeakHi,   fBgPeakBs,   fBgPeakBd;    // (B+ normalized peaking background)    
   double fBgPeakLoE1, fBgPeakHiE1, fBgPeakBsE1, fBgPeakBdE1;  
@@ -310,6 +314,9 @@ public:
   std::vector<TH1D*> fhMuTr, fhMuTrMC;
   std::vector<TH2D*> fhBdtMass;
 
+  std::vector<TH2D*> fhAccAll, fhAccPass; 
+  std::vector<TH1D*> fhAccPtAll, fhAccPtPass, fhAccEtaAll, fhAccEtaPass; 
+
   std::vector<numbers*> fNumbersBs, fNumbersBd, fNumbersNo, fNumbersCs, fNumbersBla; 
 
   bool fDoPrintSingleEvent;
@@ -395,6 +402,7 @@ public:
   PidTable *fptFakePosKaons, *fptFakePosPions, *fptFakePosProtons;
   PidTable *fptFakeNegKaons, *fptFakeNegPions, *fptFakeNegProtons;
 
+  double fEpsilon; 
 
   ClassDef(plotClass,1) //Testing plotClass
 };

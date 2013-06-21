@@ -9,6 +9,7 @@
 #include "initFunc.hh"
 
 #include "TMath.h"
+#include "TArrow.h"
 #include "TDirectory.h"
 #include "TStyle.h"
 #include "TCanvas.h"
@@ -361,6 +362,50 @@ TH1D* AnalysisDistribution::sbsDistributionExpoErrGauss(const char *variable, co
 	 << Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut) 
 	 << endl;
     c0->SaveAs(Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut));
+  } else {
+    c0 = (TCanvas*)gROOT->FindObject("c1"); 
+    if (c0) {
+      delete c0; 
+    }
+    c0 = new TCanvas("c1"); 
+    c0->Clear(); 
+    gStyle->SetOptStat(0); 
+    gStyle->SetOptFit(0); 
+    gStyle->SetOptTitle(0); 
+    hm->SetXTitle("mass [GeV]"); 
+    hm->SetYTitle("candidates/bin"); 
+    hm->Draw();
+    TArrow aa; 
+    double x0 = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
+    double y0 = 1.1*hm->GetBinContent(hMassBGL->FindFirstBinAbove(1.));  
+    double x1 = hMassBGL->GetBinLowEdge(hMassBGL->FindLastBinAbove(1.)+1);
+    double y1 = 1.1*hm->GetBinContent(hMassBGL->FindLastBinAbove(1.)+1);  
+    double x2 = hMassBGH->GetBinLowEdge(hMassBGH->FindFirstBinAbove(1.));
+    double y2 = 1.1*hm->GetBinContent(hMassBGH->FindFirstBinAbove(1.));  
+    double x3 = hMassBGH->GetBinLowEdge(hMassBGH->FindLastBinAbove(1.)+1);
+    double y3 = 1.1*hm->GetBinContent(hMassBGH->FindLastBinAbove(1.)+1);  
+
+    double x4 = hMassSG->GetBinLowEdge(hMassSG->FindFirstBinAbove(1.));
+    double y4 = 1.1*hm->GetBinContent(hMassSG->FindFirstBinAbove(1.));  
+    double x5 = hMassSG->GetBinLowEdge(hMassSG->FindLastBinAbove(1.)+1);
+    double y5 = 1.1*hm->GetBinContent(hMassSG->FindLastBinAbove(1.)+1);  
+
+    aa.SetLineColor(kRed); 
+    aa.DrawArrow(x0, y0, x0, 0.); 
+    aa.DrawArrow(x1, y1, x1, 0.); 
+    aa.SetLineColor(kBlue); 
+    aa.DrawArrow(x2, y2, x2, 0.); 
+    aa.DrawArrow(x3, y3, x3, 0.); 
+
+    aa.SetLineColor(kBlack); 
+    aa.DrawArrow(x4, y4, x4, 0.); 
+    aa.DrawArrow(x5, y5, x5, 0.); 
+
+    TString fname = fControlPlotsFileName;
+    cout << "=========> " 
+	 << Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut) 
+	 << endl;
+    c0->SaveAs(Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut));
   }
 
   return h; 
@@ -470,6 +515,51 @@ TH1D* AnalysisDistribution::sbsDistributionPol1ErrGauss(const char *variable, co
 	 << Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut) 
 	 << endl;
     c0->SaveAs(Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut));
+  } else {
+    c0 = (TCanvas*)gROOT->FindObject("c1"); 
+    if (c0) {
+      delete c0; 
+    }
+    c0 = new TCanvas("c1"); 
+    c0->Clear(); 
+    gStyle->SetOptStat(0); 
+    gStyle->SetOptFit(0); 
+    gStyle->SetOptTitle(0); 
+    hm->SetXTitle("mass [GeV]"); 
+    hm->SetYTitle("candidates/bin"); 
+    hm->Draw();
+    TArrow aa; 
+    double x0 = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
+    double y0 = 1.1*hm->GetBinContent(hMassBGL->FindFirstBinAbove(1.));  
+    double x1 = hMassBGL->GetBinLowEdge(hMassBGL->FindLastBinAbove(1.)+1);
+    double y1 = 1.1*hm->GetBinContent(hMassBGL->FindLastBinAbove(1.)+1);  
+    double x2 = hMassBGH->GetBinLowEdge(hMassBGH->FindFirstBinAbove(1.));
+    double y2 = 1.1*hm->GetBinContent(hMassBGH->FindFirstBinAbove(1.));  
+    double x3 = hMassBGH->GetBinLowEdge(hMassBGH->FindLastBinAbove(1.)+1);
+    double y3 = 1.1*hm->GetBinContent(hMassBGH->FindLastBinAbove(1.)+1);  
+
+    double x4 = hMassSG->GetBinLowEdge(hMassSG->FindFirstBinAbove(1.));
+    double y4 = 1.1*hm->GetBinContent(hMassSG->FindFirstBinAbove(1.));  
+    double x5 = hMassSG->GetBinLowEdge(hMassSG->FindLastBinAbove(1.)+1);
+    double y5 = 1.1*hm->GetBinContent(hMassSG->FindLastBinAbove(1.)+1);  
+
+    aa.SetLineColor(kRed); 
+    aa.DrawArrow(x0, y0, x0, 0.); 
+    aa.DrawArrow(x1, y1, x1, 0.); 
+    aa.SetLineColor(kBlue); 
+    aa.DrawArrow(x2, y2, x2, 0.); 
+    aa.DrawArrow(x3, y3, x3, 0.); 
+
+    aa.SetLineColor(kBlack); 
+    aa.DrawArrow(x4, y4, x4, 0.); 
+    aa.DrawArrow(x5, y5, x5, 0.); 
+
+
+    TString fname = fControlPlotsFileName;
+    cout << "=========> " 
+	 << Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut) 
+	 << endl;
+    c0->SaveAs(Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut));
   }
 
   return h; 
@@ -478,8 +568,6 @@ TH1D* AnalysisDistribution::sbsDistributionPol1ErrGauss(const char *variable, co
 
 // ----------------------------------------------------------------------  
 TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const char *cut) {
-  fVerbose = 1; 
-  cout << "fVerbose: " << fVerbose << endl;
 
   TCanvas *c0(0);
   if (fVerbose > 0) {
@@ -543,8 +631,6 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
   cout << " peak = " << peak << " sigma = " << sigma << endl;
   fpIF->resetLimits();
   TF1 *f1 = fpIF->expoGauss(hm, peak, sigma);
-  // -- desperate measures: 
-  f1->SetParameter(4, -1.*f1->GetParameter(4)); 
   hm->SetMinimum(0.);
   
   if (fVerbose > 0) {
@@ -594,6 +680,51 @@ TH1D* AnalysisDistribution::sbsDistributionExpoGauss(const char *variable, const
   if (fVerbose > 0) {
     c0->cd(4); 
     h->Draw();
+    TString fname = fControlPlotsFileName;
+    cout << "=========> " 
+	 << Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut) 
+	 << endl;
+    c0->SaveAs(Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut));
+  } else {
+    gStyle->SetOptTitle(1);
+    c0 = (TCanvas*)gROOT->FindObject("c1"); 
+    if (c0) {
+      delete c0; 
+    }
+    c0 = new TCanvas("c1"); 
+    c0->Clear(); 
+    gStyle->SetOptStat(0); 
+    gStyle->SetOptFit(0); 
+    gStyle->SetOptTitle(0); 
+    hm->SetXTitle("mass [GeV]"); 
+    hm->SetYTitle("candidates/bin"); 
+    hm->Draw();
+    TArrow aa; 
+    double x0 = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
+    double y0 = 1.1*hm->GetBinContent(hMassBGL->FindFirstBinAbove(1.));  
+    double x1 = hMassBGL->GetBinLowEdge(hMassBGL->FindLastBinAbove(1.)+1);
+    double y1 = 1.1*hm->GetBinContent(hMassBGL->FindLastBinAbove(1.)+1);  
+    double x2 = hMassBGH->GetBinLowEdge(hMassBGH->FindFirstBinAbove(1.));
+    double y2 = 1.1*hm->GetBinContent(hMassBGH->FindFirstBinAbove(1.));  
+    double x3 = hMassBGH->GetBinLowEdge(hMassBGH->FindLastBinAbove(1.)+1);
+    double y3 = 1.1*hm->GetBinContent(hMassBGH->FindLastBinAbove(1.)+1);  
+
+    double x4 = hMassSG->GetBinLowEdge(hMassSG->FindFirstBinAbove(1.));
+    double y4 = 1.1*hm->GetBinContent(hMassSG->FindFirstBinAbove(1.));  
+    double x5 = hMassSG->GetBinLowEdge(hMassSG->FindLastBinAbove(1.)+1);
+    double y5 = 1.1*hm->GetBinContent(hMassSG->FindLastBinAbove(1.)+1); 
+ 
+    aa.SetLineColor(kRed); 
+    aa.DrawArrow(x0, y0, x0, 0.); 
+    aa.DrawArrow(x1, y1, x1, 0.); 
+    aa.SetLineColor(kBlue); 
+    aa.DrawArrow(x2, y2, x2, 0.); 
+    aa.DrawArrow(x3, y3, x3, 0.); 
+
+    aa.SetLineColor(kBlack); 
+    aa.DrawArrow(x4, y4, x4, 0.); 
+    aa.DrawArrow(x5, y5, x5, 0.); 
+
     TString fname = fControlPlotsFileName;
     cout << "=========> " 
 	 << Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut) 
@@ -697,6 +828,51 @@ TH1D* AnalysisDistribution::sbsDistribution(const char *variable, const char *cu
   if (fVerbose > 0) {
     c0->cd(4); 
     h->Draw();
+    TString fname = fControlPlotsFileName;
+    cout << "=========> " 
+	 << Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut) 
+	 << endl;
+    c0->SaveAs(Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut));
+  } else {
+    gStyle->SetOptTitle(1);
+    c0 = (TCanvas*)gROOT->FindObject("c1"); 
+    if (c0) {
+      delete c0; 
+    }
+    c0 = new TCanvas("c1"); 
+    c0->Clear(); 
+    gStyle->SetOptStat(0); 
+    gStyle->SetOptFit(0); 
+    gStyle->SetOptTitle(0); 
+    hm->SetXTitle("mass [GeV]"); 
+    hm->SetYTitle("candidates/bin"); 
+    hm->Draw();
+    TArrow aa; 
+    double x0 = hMassBGL->GetBinLowEdge(hMassBGL->FindFirstBinAbove(1.));
+    double y0 = 1.1*hm->GetBinContent(hMassBGL->FindFirstBinAbove(1.));  
+    double x1 = hMassBGL->GetBinLowEdge(hMassBGL->FindLastBinAbove(1.)+1);
+    double y1 = 1.1*hm->GetBinContent(hMassBGL->FindLastBinAbove(1.)+1);  
+    double x2 = hMassBGH->GetBinLowEdge(hMassBGH->FindFirstBinAbove(1.));
+    double y2 = 1.1*hm->GetBinContent(hMassBGH->FindFirstBinAbove(1.));  
+    double x3 = hMassBGH->GetBinLowEdge(hMassBGH->FindLastBinAbove(1.)+1);
+    double y3 = 1.1*hm->GetBinContent(hMassBGH->FindLastBinAbove(1.)+1);  
+
+    double x4 = hMassSG->GetBinLowEdge(hMassSG->FindFirstBinAbove(1.));
+    double y4 = 1.1*hm->GetBinContent(hMassSG->FindFirstBinAbove(1.));  
+    double x5 = hMassSG->GetBinLowEdge(hMassSG->FindLastBinAbove(1.)+1);
+    double y5 = 1.1*hm->GetBinContent(hMassSG->FindLastBinAbove(1.)+1);  
+
+    aa.SetLineColor(kRed); 
+    aa.DrawArrow(x0, y0, x0, 0.); 
+    aa.DrawArrow(x1, y1, x1, 0.); 
+    aa.SetLineColor(kBlue); 
+    aa.DrawArrow(x2, y2, x2, 0.); 
+    aa.DrawArrow(x3, y3, x3, 0.); 
+
+    aa.SetLineColor(kBlack); 
+    aa.DrawArrow(x4, y4, x4, 0.); 
+    aa.DrawArrow(x5, y5, x5, 0.); 
+
     TString fname = fControlPlotsFileName;
     cout << "=========> " 
 	 << Form("%s/%s-%s-%s.pdf", fDirectory.c_str(), fname.Data(), variable, cut) 

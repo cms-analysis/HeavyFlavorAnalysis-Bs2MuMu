@@ -19,6 +19,7 @@ void treeReader01::init(TString evtClassName) {
   fpEvt = new TAna01Event(0);
   cout << "==> treeReader01: init ..." << fpEvt << endl;
   fpChain->SetBranchAddress(evtClassName, &fpEvt);
+  initVariables();
 }
 
 // ----------------------------------------------------------------------

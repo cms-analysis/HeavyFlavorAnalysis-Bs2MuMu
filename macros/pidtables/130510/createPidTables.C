@@ -13,7 +13,7 @@ void makeAll(const char *dir = ".") {
   read1File(Form("%s/TnP_MVAmuID_L3.root", dir), "",          Form("%s/L3_data_all.dat", dir)); 
   read1File(Form("%s/TnP_MVAmuID_L3.root", dir), "_seagulls", Form("%s/L3_data_seagulls.dat", dir)); 
   read1File(Form("%s/TnP_MVAmuID_L3.root", dir), "_cowboys",  Form("%s/L3_data_cowboys.dat", dir)); 
-  
+
   // -- single file cases: mc
   read1File(Form("%s/TnP_MVAmuID_L3.root", dir), "_mc",          Form("%s/L3_mc_all.dat", dir)); 
   read1File(Form("%s/TnP_MVAmuID_L3.root", dir), "_seagulls_mc", Form("%s/L3_mc_seagulls.dat", dir)); 
@@ -98,14 +98,10 @@ void read1File(const char *fname = "TnP_L3.root", const char *pfix = "_seagulls"
   
   a.shiftPmax(24., 500.);   
   a.shiftTmax(2.39, 2.5); 
-  a.contLowEfficiencyBins(0.05); 
   a.printAll();
 
   TString pname(oname); 
   a.dumpToFile(pname.Data()); 
-
-  pname.ReplaceAll(".dat", ".pdf"); 
-  draw(a, pname.Data()); 
 }
 
 
@@ -145,7 +141,6 @@ void read2Files(const char *f1name = "TnP_L1L2_Track2.root", const char *f2name 
   hc1->DrawCopy("colz");
 
   PidTable a;
-
   // -- read in table from histogram
   a.readFromEffHist(gDirectory, "hc1"); 
 
@@ -219,8 +214,6 @@ void read2Files(const char *f1name = "TnP_L1L2_Track2.root", const char *f2name 
   cc.fillTable(b); 
   cc.shiftPmax(24., 500.);   
   cc.shiftTmax(2.39, 2.5); 
-
-  a.contLowEfficiencyBins(0.05); 
   cc.printAll();
   
   cc.eff2d(h3);
@@ -230,67 +223,6 @@ void read2Files(const char *f1name = "TnP_L1L2_Track2.root", const char *f2name 
   
   TString pname(oname); 
   cc.dumpToFile(pname.Data()); 
-
-  pname.ReplaceAll(".dat", ".pdf"); 
 }
 
 
-// ----------------------------------------------------------------------
-void drawTables() {
-
-  c0.Clear(); 
-
-  double x1bins[] = {0., 0.2, 0.3, 0.6, 0.8, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4};
-  double x2bins[] = {0., 0.4, 0.8, 1.2, 1.6, 2.0, 2.4};
-  double ybins[]  = {4., 4.5, 5., 5.5, 6., 7., 8., 10., 15., 20., 30.};
-
-  TH2D *h1 = new TH2D("h1", "", 11, x1bins, 10, ybins); 
-  TH2D *h2 = new TH2D("h2", "",  6, x2bins, 10, ybins); 
-  h2->SetMinimum(0.0);   h2->SetMaximum(1.0); 
-  h1->SetMinimum(0.0);   h1->SetMaximum(1.0); 
-  setTitles(h1, "muon #eta", "muon pT [GeV]");
-  setTitles(h2, "muon #eta", "muon pT [GeV]");
-  
-  vector<string> samples, what;
-  samples.push_back("data_all.dat");
-  samples.push_back("data_seagulls.dat"); 
-  samples.push_back("data_cowboys.dat"); 
-  samples.push_back("mc_all.dat");
-  samples.push_back("mc_seagulls.dat");
-  samples.push_back("mc_cowboys.dat"); 
-
-  what.push_back("L3_");
-  what.push_back("L1L2_");
-  what.push_back("MuonID_"); 
-  
-  gStyle->SetOptStat(0); 
-  gStyle->SetPaintTextFormat("3.2f");
-  
-  string taname; 
-  string psname; 
-  string::size_type foundpos;
-
-  PidTable a; 
-  for (unsigned int i = 0; i < samples.size(); ++i) {
-    for (unsigned j = 0; j < what.size(); ++j) {
-      taname = what[j] + samples[i]; 
-      psname = taname;
-      foundpos = psname.find(".dat");
-      if (foundpos != string::npos)  psname.erase(psname.begin() + foundpos, psname.begin() + foundpos + 4);
-      psname += ".pdf"; 
-      cout << "==> " << taname + " -> " << psname << endl;
-      a.clear(); 
-      a.readFromFile(taname.c_str());
-      if (string::npos != psname.find("L3")) {
-	h2->Reset(); 
-	a.eff2d(h2); 
-	h2->Draw("colztext");
-      } else {
-	h1->Reset(); 
-	a.eff2d(h1); 
-	h1->Draw("colztext");
-      }
-      c0.SaveAs(psname.c_str()); 
-    }
-  }
-}

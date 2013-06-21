@@ -96,7 +96,7 @@ void treeReader01::initVariables() {
   cout << "treeReader01: initVariables: ..." << endl;
 
   fRun = -1; 
-
+  BLIND = 0; 
 }
 
 // ----------------------------------------------------------------------

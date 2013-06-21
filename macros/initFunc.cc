@@ -565,15 +565,15 @@ TF1* initFunc::expo(TH1 *h) {
   while ((f = (TF1*)gROOT->FindObject("iF_expo"))) if (f) delete f; 
   f = new TF1("iF_expo", iF_expo, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 2);
   f->SetParNames("norm", "exp"); 			   
-  cout << "Created f1 from " << h->GetBinLowEdge(1) << " to " << h->GetBinLowEdge(h->GetNbinsX()+1) << endl;
+  //  cout << "Created f1 from " << h->GetBinLowEdge(1) << " to " << h->GetBinLowEdge(h->GetNbinsX()+1) << endl;
   
   double p1(0.), p0(0.); 
   initExpo(p0, p1, h); 
   f->SetParameters(p0, p1); 
   f->Update();
   if (1) {
-    cout << Form("  initialized to %f and %f", p0,  p1) << endl;
-    cout << "  -> Integrals:  func = " 
+    cout << Form("  expo initialized to %f and %f", p0,  p1) 
+	 << "  -> Integrals:  func = " 
 	 << f->Integral(h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1))/h->GetBinWidth(1)
 	 << " histogram = " 
 	 << h->GetSumOfWeights() 
@@ -601,7 +601,7 @@ TF1* initFunc::pol1BsBlind(TH1 *h) {
   f->SetParNames("offset", "slope"); 			   
   //   cout << "Created f1 from " << h->GetBinLowEdge(1) << " to " << h->GetBinLowEdge(h->GetNbinsX()+1) << endl;
   
-  int lbin(1), hbin(h->GetNbinsX()), EDG(4), NB(EDG+1); 
+  int lbin(1), hbin(h->GetNbinsX()+1), EDG(4), NB(EDG+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 
@@ -618,6 +618,16 @@ TF1* initFunc::pol1BsBlind(TH1 *h) {
   double p1 = (yhi-ylo)/dx;
   double p0 = ylo - p1*h->GetBinLowEdge(1);
   f->SetParameters(p0, p1); 
+
+  double yintlo = h->Integral(h->FindBin(4.90), h->FindBin(5.20)); 
+  double yinthi = h->Integral(h->FindBin(5.45), h->FindBin(5.90));
+  if (yinthi < 1.e-03 ||yintlo < 1.e-03) {
+    f->SetParameter(1, 0.); 
+    f->FixParameter(1, 0.); 
+    cout << "pol1BsBlind:  fixed slope because of zero entries in one sideband" << endl;
+  }
+	
+
   //   cout << "  initialized to " << p0 << " and " << p1 << endl;
   //   cout << "  -> Integrals:  func = " 
   //        << f->Integral(h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1))/h->GetBinWidth(1)
@@ -639,28 +649,53 @@ TF1* initFunc::expoBsBlind(TH1 *h) {
   f = new TF1("iF_expobsblind", iF_expo_BsBlind, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 2);
   f->SetParNames("offset", "slope"); 			   
   
-  int lbin(1), hbin(h->GetNbinsX()), EDG(4), NB(EDG+1); 
+  int lbin(1), hbin(h->GetNbinsX()+1), EDG(4), NB(EDG+1); 
   if (fLo < fHi) {
     lbin = h->FindBin(fLo); 
     hbin = h->FindBin(fHi); 
   }
 
-  double p0(3.), p1(-1.); 
+  double p0(50.), p1(-0.5); 
 
-  double dx  = fHi - fLo;
+  double dx = h->GetBinLowEdge(hbin) - h->GetBinLowEdge(lbin);
   double ylo = h->Integral(lbin, lbin+EDG)/NB; 
   double yhi = h->Integral(hbin-EDG, hbin)/NB;
+
+  double yintlo = h->Integral(h->FindBin(4.90), h->FindBin(5.20)); 
+  double yinthi = h->Integral(h->FindBin(5.45), h->FindBin(5.90));
 
   if (yhi > 0) {
     p1 = (TMath::Log(yhi) - TMath::Log(ylo))/dx; 
     p0 = ylo/TMath::Exp(p1*fLo); 
+  } else {
+    p0 = 50.;
+    if (yhi > ylo) {
+      p1 = 1.;
+    } else {
+      p1 = -1.*yinthi/yintlo;
+    }
+    cout << "initFunc::expoBsBlind: using default parameters for function initialization!" << endl;
   } 
+
+  bool loStats = (h->GetSumOfWeights() < 10); 
     
-  cout << "fLo: " << fLo << " fHi: " << fHi << endl;
-  cout << "ylo: " << ylo << " yhi: " << yhi << endl;
+  cout << "fLo: " << fLo << " fHi: " << fHi << " dx = " << dx << endl;
+  cout << "ylo: " << ylo << " yhi: " << yhi << " log: " << TMath::Log(yhi) << " .. " << TMath::Log(ylo) << endl;
   cout << "p0:  " << p0  << " p1:  " << p1 << endl;
 
   f->SetParameters(p0, p1); 
+
+  if (fLimit[0]) {
+    f->SetParLimits(0, fLimitLo[0], fLimitHi[0]); 
+  } else if (loStats) {
+    f->SetParLimits(0, 10., 100.); 
+  }
+
+  if (fLimit[1]) {
+    f->SetParLimits(1, fLimitLo[1], fLimitHi[1]); 
+  } else if (loStats) {
+    f->SetParLimits(1, -10., -0.5); 
+  }
 
   return f; 
 }
@@ -716,6 +751,61 @@ TF1* initFunc::pol0BsBlind(TH1 *h) {
   return f; 
 
 }
+
+// ----------------------------------------------------------------------
+TF1* initFunc::crystalBall(TH1 *h, double peak, double sigma, double alpha, double tailLength) {
+  TF1 *f = new TF1("f1", iF_cb, h->GetBinLowEdge(1), h->GetBinLowEdge(h->GetNbinsX()+1), 5);
+  f->SetParNames("peak", "sigma", "crossover", "tail", "normalization"); 			   
+
+  int lbin(1), hbin(h->GetNbinsX()+1); 
+  if (fLo < fHi) {
+    lbin = h->FindBin(fLo); 
+    hbin = h->FindBin(fHi); 
+  }
+  
+  double g0 = h->Integral(lbin, hbin)*h->GetBinWidth(1);  
+
+  f->SetParameters(peak, sigma, alpha, tailLength, g0); 
+
+  f->ReleaseParameter(0);     
+  if (fLimit[0]) {
+    cout << "initFunc::pol1CrystalBall> limiting par 0 from " << fLimitLo[0] << " .. " << fLimitHi[0] << endl;
+    f->SetParLimits(0, fLimitLo[0], fLimitHi[0]); 
+  } else {
+    f->SetParLimits(0, 0., 1.e7); 
+  }
+
+  if (fLimit[1]) {
+    cout << "initFunc::pol1CrystalBall> limiting par 1 from " << fLimitLo[1] << " .. " << fLimitHi[1] << endl;
+    f->SetParLimits(1, fLimitLo[1], fLimitHi[1]); 
+  } else {
+    f->ReleaseParameter(1);     
+  }
+
+  if (fLimit[2]) {
+    cout << "initFunc::pol1CrystalBall> limiting par 2 from " << fLimitLo[2] << " .. " << fLimitHi[2] << endl;
+    f->SetParLimits(2, fLimitLo[2], fLimitHi[2]); 
+  } else {
+    f->ReleaseParameter(2);     
+  }
+
+  if (fLimit[3]) {
+    cout << "initFunc::pol1CrystalBall> limiting par 3 from " << fLimitLo[3] << " .. " << fLimitHi[3] << endl;
+    f->SetParLimits(3, fLimitLo[3], fLimitHi[3]); 
+  } else {
+    f->ReleaseParameter(3);     
+  }
+
+  if (fLimit[4]) {
+    cout << "initFunc::pol1CrystalBall> limiting par 4 from " << fLimitLo[4] << " .. " << fLimitHi[4] << endl;
+    f->SetParLimits(4, fLimitLo[4], fLimitHi[4]); 
+  } else {
+    f->ReleaseParameter(4);     
+  }
+
+  return f; 
+}
+
 
 // ----------------------------------------------------------------------
 TF1* initFunc::pol1CrystalBall(TH1 *h, double peak, double sigma, double alpha, double tailLength) {
@@ -864,9 +954,12 @@ TF1* initFunc::pol2local(TH1 *h, double width) {
   
   double maxVal   = h->GetMaximum(); 
   double maxPlace = h->GetBinCenter(h->GetMaximumBin()); 
-  double ytop     = h->GetBinContent(h->GetMaximumBin() + width*h->GetNbinsX()); //FIXME!
-  double slope    = (ytop-maxVal);
+  int    ytopbin  = h->FindBin(maxPlace + width);
+  double ytop     = h->GetBinContent(ytopbin);
+  double xtop     = h->GetBinCenter(ytopbin);
+  double slope    = (ytop-maxVal)/(xtop-maxPlace)/(xtop-maxPlace);
   f->SetParameters(maxVal, slope, maxPlace); 
+  cout << "pol2local initialized to " << maxVal << " " << slope << " " << maxPlace << endl;
   f->SetLineWidth(2);
 
   return f; 
@@ -1490,7 +1583,7 @@ void initFunc::initPol1(double &p0, double &p1, TH1 *h) {
     hbin = h->FindBin(fHi); 
   }
   
-  double dx  = fHi - fLo;
+  double dx = h->GetBinLowEdge(hbin) - h->GetBinLowEdge(lbin);
   double ylo = h->Integral(lbin, lbin+EDG)/NB; 
   double yhi = h->Integral(hbin-EDG, hbin)/NB;
 
@@ -1512,27 +1605,25 @@ void initFunc::initExpo(double &p0, double &p1, TH1 *h) {
     hbin = h->FindBin(fHi); 
   }
   
-  double dx  = fHi - fLo;
+  double dx = h->GetBinLowEdge(hbin) - h->GetBinLowEdge(lbin);
   double ylo = h->Integral(lbin, lbin+EDG)/NB; 
   double yhi = h->Integral(hbin-EDG, hbin)/NB;
 
+  if (ylo > 0 && yhi > 0) {
+    p1 = (TMath::Log(yhi) - TMath::Log(ylo))/dx; 
+    p0 = ylo/TMath::Exp(p1*fLo); 
+  } else {
+    if (yhi > ylo) {
+      p1 = 1.;
+    } else {
+      p1 = -1.;
+    }
+    p0 = 50.;
+  }
+
   cout << "fLo: " << fLo << " fHi: " << fHi << endl;
   cout << "ylo: " << ylo << " yhi: " << yhi << endl;
-  
-  p1 = (TMath::Log(yhi) - TMath::Log(ylo))/dx; 
-  p0 = ylo/TMath::Exp(p1*fLo); 
-
-//   h->Fit("expo", "0q");
-//   p0 = h->GetFunction("expo")->GetParameter(0); 
-//   p1 = h->GetFunction("expo")->GetParameter(1); 
-
-//   cout << "new p0: " << p0 << endl;
-//   cout << "new p1: " << p1 << endl;
-
-//   if (p0 > 1000*h->GetMaximum()) p0 = ylo;
-//   cout << "p0: " << p0 << " reset" << endl;
-//   if (p1 > 2) p1 = 1;
-//   cout << "p1: " << p1 << " reset" << endl;
+  cout << "p0:  " << p0 <<  " p1:  " << p1 << endl;
 
 }
 

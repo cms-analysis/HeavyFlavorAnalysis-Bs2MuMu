@@ -3,6 +3,8 @@
 #include <algorithm>
 
 #include "TMath.h"
+#include "TVirtualFitter.h"
+#include "TGraphErrors.h"
 
 using namespace std; 
 using std::string; 
@@ -20,23 +22,35 @@ plotMisc::plotMisc(const char *files, const char *dir, const char *cuts, int mod
   string hfname  = fDirectory + "/anaBmm.plotMisc." + fSuffix + ".root";
   cout << "fHistFile: " << hfname << endl;
   //  if (fHistFile) fHistFile->Close();
-  fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
+  fHistFile = TFile::Open(hfname.c_str(), "UPDATE");
 
   fIsMC = false;
 
   fDoUseBDT = true; 
   fSaveSmallTree = false; 
 
-  TH1D *h(0); 
-  for (int i = 0; i < 10; ++i) {
-    h = new TH1D(Form("fh0M0_%d", i), Form("fh0M0_%d", i), 60, 4.8, 6.0); 
-    fh0M0.insert(make_pair(Form("fh0M0_%d", i), h)); 
-    h = new TH1D(Form("fh0M3_%d", i), Form("fh0M3_%d", i), 60, 4.8, 6.0); 
-    fh0M3.insert(make_pair(Form("fh0M3_%d", i), h)); 
-    h = new TH1D(Form("fh0M4_%d", i), Form("fh0M4_%d", i), 60, 4.8, 6.0); 
-    fh0M4.insert(make_pair(Form("fh0M4_%d", i), h)); 
+  TH1D *h = (TH1D*)fHistFile->Get("fh0M0_0"); 
+  if (0 == h) {
+    fNormProcessed = false; 
+    for (int i = 0; i < 10; ++i) {
+      h = new TH1D(Form("fh0M0_%d", i), Form("fh0M0_%d", i), 60, 4.8, 6.0); 
+      fh0M0.insert(make_pair(Form("fh0M0_%d", i), h)); 
+      h = new TH1D(Form("fh0M3_%d", i), Form("fh0M3_%d", i), 60, 4.8, 6.0); 
+      fh0M3.insert(make_pair(Form("fh0M3_%d", i), h)); 
+      h = new TH1D(Form("fh0M4_%d", i), Form("fh0M4_%d", i), 60, 4.8, 6.0); 
+      fh0M4.insert(make_pair(Form("fh0M4_%d", i), h)); 
+    }
+  } else {
+    fNormProcessed = true; 
+    for (int i = 0; i < 10; ++i) {
+      h = (TH1D*)fHistFile->Get(Form("fh0M0_%d", i)); 
+      fh0M0.insert(make_pair(Form("fh0M0_%d", i), h)); 
+      h = (TH1D*)fHistFile->Get(Form("fh0M3_%d", i)); 
+      fh0M3.insert(make_pair(Form("fh0M3_%d", i), h)); 
+      h = (TH1D*)fHistFile->Get(Form("fh0M4_%d", i)); 
+      fh0M4.insert(make_pair(Form("fh0M4_%d", i), h)); 
+    }
   }
-
 }
 
 
@@ -129,9 +143,9 @@ void plotMisc::pidTableDisplay() {
   // -- muon id and trigger
   gStyle->SetPaintTextFormat("3.2f");
   if (1) {
-    double xbins[] = {0.0, 0.2, 0.3, 0.6, 0.8, 1.2, 1.4, 1.6, 1.8, 2.0};
+    double xbins[] = {0.0, 0.2, 0.3, 0.6, 0.8, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4};
     double ybins[] = {4.0, 4.5, 5.0, 5.5, 6.0, 7.0, 8.0, 10., 15., 20., 50.}; 
-    TH2D *h2 = new TH2D("h2", "", 9, xbins, 10, ybins); 
+    TH2D *h2 = new TH2D("h2", "", 11, xbins, 10, ybins); 
     setTitles(h2, "|#eta|", "p_{T} [GeV]"); 
     h2->SetMinimum(0.0); 
     h2->SetMaximum(1.0); 
@@ -214,16 +228,167 @@ void plotMisc::pidTableDisplay() {
 
 
 // ----------------------------------------------------------------------
-void plotMisc::signalMass() {
-  fF["SgMc"]->cd("candAnaMuMu"); 
-  string mode("SgMc"); 
-  TTree *t = getTree(mode); 
-  if (0 == t) {
-    cout << "plotBDT: no tree found for mode  " << mode << endl;
-    return;
+void plotMisc::fakeRateOverlays(string mode) {
+
+  double ymax(2.5e-3); 
+
+  // K, data
+  const int points21 = 8;
+  //                                      mu12  ht12  jet12 el12 psik12 phi12 mu11  ht11
+  double v_x21[points21] = {8.04, 11.5, 11.4, 10.3, 8.28, 6.56, 7.79, 11.7};  // pt
+  double v_y21[points21] = {0.88e-3,  0.1e-3, 0.12e-3, 0.69e-3, 0.93e-3, 0.87e-3, 0.46e-3,  1.1e-3};  // ratio
+  double e_y21[points21] = {0.26e-3,  1.6e-3, 0.16e-3, 0.28e-3, 0.23e-3, 0.20e-3, 0.22e-3,  0.3e-3};  // error
+  
+  // K, MC
+  const int points22 = 4;
+  //                     dstar  psik  phi   bskk
+  double v_x22[points22] = {7.18, 8.59, 6.80, 7.17};
+  double v_y22[points22] = {1.63e-3, 0.87e-3, 0.86e-3, 1.40e-3};
+  double e_y22[points22] = {0.17e-3, 0.08e-3, 0.12e-3, 0.20e-3};
+
+
+  // pi, data
+  const int points23 = 7;
+  //                      mu12  ht12  jet12 el12  mu11  ht11  mike(Ks)
+  double v_x23[points23] = {8.74, 12.2, 12.1, 11.0, 8.41, 12.5, 8.1};
+  double v_y23[points23] = {1.19e-3, 0.1e-3,  0.65e-3, 1.53e-3, 0.77e-3, 1.8e-3, 0.65e-3};
+  double e_y23[points23] = {0.28e-3, 1.2e-3,  0.21e-3, 0.30e-3, 0.24e-3, 0.8e-3, 0.04e-3};
+  
+  // pi,mc
+  const int points24 = 2;
+  //                    dstar-12 bdpipi
+  double v_x24[points24] = {7.19,  7.16};
+  double v_y24[points24] = {0.87e-3,  0.86e-3};
+  double e_y24[points24] = {0.13e-3,  0.02e-3};
+
+
+  TH1D *hpt = new TH1D("hpt", "", 20, 0., 20.); hpt->Sumw2();
+  setHist(hpt, kBlue, 20, 0.001);
+  hpt->SetFillColor(kBlue); 
+  //  setFilledHist(hpt);
+
+  TGraphErrors *gD(0), *gM(0); 
+
+  if (mode == "kaons") {
+    fptFakePosKaons->projectP(hpt, -2.4, 2.4, -180., 180., 1); 
+    for (int i = 1; i < hpt->GetNbinsX(); ++i) hpt->SetBinError(i, 0.5*hpt->GetBinContent(i)); 
+    gD = new TGraphErrors(points21, v_x21, v_y21, 0, e_y21); 
+    gM = new TGraphErrors(points22, v_x22, v_y22, 0, e_y22); 
   } 
-  setupTree(t, mode);
-  loopOverTree(t, mode, 1); 
+
+  if (mode == "pions") {
+    fptFakePosPions->projectP(hpt, -2.4, 2.4, -180., 180., 1); 
+    for (int i = 1; i < hpt->GetNbinsX(); ++i) hpt->SetBinError(i, 0.5*hpt->GetBinContent(i)); 
+    gD = new TGraphErrors(points23, v_x23, v_y23, 0, e_y23); 
+    gM = new TGraphErrors(points24, v_x24, v_y24, 0, e_y24); 
+  } 
+
+  if (mode == "protons") {
+    fptFakePosProtons->projectP(hpt, -2.4, 2.4, -180., 180., 1); 
+    for (int i = 1; i < hpt->GetNbinsX(); ++i) hpt->SetBinError(i, 0.5*hpt->GetBinContent(i)); 
+  } 
+
+  if (gD) {
+    gD->SetMarkerStyle(20); 
+    gD->SetMarkerColor(kBlack); 
+    gD->SetMarkerSize(1.5); 
+    gM->SetMarkerStyle(20); 
+    gM->SetMarkerColor(kRed); 
+    gM->SetMarkerSize(1.5); 
+  }
+
+  zone(); 
+  shrinkPad(0.11, 0.25); 
+  gStyle->SetOptStat(0); 
+  gStyle->SetOptTitle(0); 
+  TH1D *hFrame = new TH1D("hFrame", "", 10, 0., 20.);
+  setTitles(hFrame, "p_{T} [GeV]", "fake rate", 0.05, 1.1, 2.1);
+  hFrame->SetMinimum(0.); 
+  hFrame->SetMaximum(ymax); 
+  hFrame->Draw(); 
+  hpt->Draw("e5same][");
+  hpt->Draw("histsame][");
+  if (gD) {
+    gD->Draw("p");
+    gM->Draw("p");
+  }
+
+  newLegend(0.6, 0.65, 0.80, 0.89);
+  if (mode == "pions") legg->SetHeader("Pion fake rates"); 
+  if (mode == "kaons") legg->SetHeader("Kaon fake rates"); 
+  if (mode == "protons") legg->SetHeader("Proton fake rates"); 
+  legg->AddEntry(hpt, "MC vs p_{T}", "f"); 
+  if (gD) {
+    legg->AddEntry(gM, "MC vs <p_{T}>", "p"); 
+    legg->AddEntry(gD, "data vs <p_{T}>", "p"); 
+  }
+  legg->Draw(); 
+
+  c0->SaveAs(Form("%s/%s-fakeRateOverlays-%s.pdf", fDirectory.c_str(), fSuffix.c_str(), mode.c_str())); 
+  
+  
+}
+
+
+
+// ----------------------------------------------------------------------
+void plotMisc::massError() {
+
+  double bdtmin(0.3); 
+
+  TProfile *hd = new TProfile("hd", "", 100, -2.5, 2.5); 
+  hd->SetMinimum(0.);
+  hd->SetMaximum(0.1);
+
+  TProfile *hm = new TProfile("hm", "", 100, -2.5, 2.5); 
+  hm->SetMinimum(0.01);
+  hm->SetMaximum(0.06);
+
+  string mode("NoMc"); 
+  TTree *t = getTree(mode); 
+  t->Draw("me:eta>>hd", Form("bdt>%f", bdtmin), "goff");
+
+  mode = "NoData"; 
+  t = getTree(mode); 
+  t->Draw("me:eta>>hm", Form("bdt>%f", bdtmin), "goff");
+
+  gStyle->SetOptStat(0); 
+  gStyle->SetOptTitle(0); 
+  setTitles(hd, "#eta(B)", "mass error [GeV]", 0.05, 1.1, 1.5); 
+  hd->Draw();
+  hm->Draw("samehist");
+  
+  newLegend(0.3, 0.6, 0.5, 0.7);
+  legg->SetHeader("Dimuon (J/#psi) mass error"); 
+  legg->AddEntry(hd, "data", "p"); 
+  legg->AddEntry(hm, "MC", "f"); 
+  legg->Draw(); 
+
+  int i = 0; 
+  c0->SaveAs(Form("%s/%s-me-eta-%d.pdf", fDirectory.c_str(), fSuffix.c_str(), i)); 
+  
+
+}
+
+// ----------------------------------------------------------------------
+void plotMisc::signalMass() {
+
+  TVirtualFitter::SetMaxIterations(20000);
+
+  fHistFile->cd(); 
+  if (!fNormProcessed) {
+    fF["SgMc"]->cd("candAnaMuMu"); 
+    string mode("SgMc"); 
+    TTree *t = getTree(mode); 
+    if (0 == t) {
+      cout << "plotBDT: no tree found for mode  " << mode << endl;
+      return;
+    } 
+    int nevts2use(-1); 
+    setupTree(t, mode);
+    if (t->GetEntries() > 5000000) nevts2use = 5000000; 
+    loopOverTree(t, fSetup, 1, nevts2use);
+  }
 
   double eps(0.1), eps2(2*eps); 
   TH1D *hM0 = new TH1D("hM0", "vtx mass", 10, 0., 10.); hM0->Sumw2(); setHist(hM0, kBlack, 20, 2); 
@@ -236,17 +401,18 @@ void plotMisc::signalMass() {
   hM0->SetLabelSize(0.04, "x"); 
 
   TF1 *f(0); 
+  double mean(0.), sigma(0.04); 
   // -- fit histograms: m0
   int ibin(0); 
   for (map<string, TH1D*>::iterator imap = fh0M0.begin(); imap != fh0M0.end(); ++imap) {  
     TH1D *h = imap->second;
     if (h->GetSumOfWeights() < 100) continue;
     sscanf(h->GetName(), "fh0M0_%d", &ibin); 
-    f = fpFunc->pol1CrystalBall(h, 5.37, 0.04, 1., 1.); 
+    f = fpFunc->crystalBall(h, 5.37, sigma, 1., 1.); 
     h->Fit(f); 
-    c0->SaveAs(Form("%s/misc-signalMass-%s.pdf", fDirectory.c_str(), imap->first.c_str())); 
-    double mean  = f->GetParameter(0); 
-    double sigma = f->GetParameter(1); 
+    c0->SaveAs(Form("%s/misc-signalMass-m0-%s.pdf", fDirectory.c_str(), imap->first.c_str())); 
+    mean  = f->GetParameter(0); 
+    sigma = f->GetParameter(1); 
     cout << "ibin = " << ibin << " mean: " << mean << " sigma: " << sigma << endl;
     hM0->SetBinContent(ibin+1, mean); 
     hM0->SetBinError(ibin+1, sigma); 
@@ -260,15 +426,17 @@ void plotMisc::signalMass() {
   c0->SaveAs(Form("%s/misc-signalMass-m0-eta.pdf", fDirectory.c_str())); 
 
   // -- fit histograms: m3
+  mean = 5.365;
+  sigma = 0.04; 
   for (map<string, TH1D*>::iterator imap = fh0M3.begin(); imap != fh0M3.end(); ++imap) {  
     TH1D *h = imap->second;
     if (h->GetSumOfWeights() < 100) continue;
     sscanf(h->GetName(), "fh0M3_%d", &ibin); 
-    f = fpFunc->pol1CrystalBall(h, 5.37, 0.04, 1., 1.); 
+    f = fpFunc->crystalBall(h, mean, 1.1*sigma, 1., 1.); 
     h->Fit(f); 
-    c0->SaveAs(Form("%s/misc-signalMass-%s.pdf", fDirectory.c_str(), imap->first.c_str())); 
-    double mean  = f->GetParameter(0); 
-    double sigma = f->GetParameter(1); 
+    c0->SaveAs(Form("%s/misc-signalMass-m3-%s.pdf", fDirectory.c_str(), imap->first.c_str())); 
+    mean  = f->GetParameter(0); 
+    sigma = f->GetParameter(1); 
     cout << "ibin = " << ibin << " mean: " << mean << " sigma: " << sigma << endl;
     hM3->SetBinContent(ibin+1, mean); 
     hM3->SetBinError(ibin+1, sigma); 
@@ -282,16 +450,18 @@ void plotMisc::signalMass() {
   c0->SaveAs(Form("%s/misc-signalMass-m3-eta.pdf", fDirectory.c_str())); 
 
   // -- fit histograms: m4
+  mean = 5.365;
+  sigma = 0.04; 
   for (map<string, TH1D*>::iterator imap = fh0M4.begin(); imap != fh0M4.end(); ++imap) {  
     TH1D *h = imap->second;
     sscanf(h->GetName(), "fh0M4_%d", &ibin); 
     if (h->GetSumOfWeights() < 100) continue;
-    f = fpFunc->pol1CrystalBall(h, 5.37, 0.04, 1., 1.); 
+    f = fpFunc->crystalBall(h, mean, 1.05*sigma, 1., 1.); 
     h->Fit(f); 
-    c0->SaveAs(Form("%s/misc-signaMass-%s.pdf", fDirectory.c_str(), imap->first.c_str())); 
+    c0->SaveAs(Form("%s/misc-signalMass-m4-%s.pdf", fDirectory.c_str(), imap->first.c_str())); 
     //    h->Fit("gaus");
-    double mean  = f->GetParameter(0); 
-    double sigma = f->GetParameter(1); 
+    mean  = f->GetParameter(0); 
+    sigma = f->GetParameter(1); 
     cout << "ibin = " << ibin << " mean: " << mean << " sigma: " << sigma << endl;
     hM4->SetBinContent(ibin+1, mean); 
     hM4->SetBinError(ibin+1, sigma); 

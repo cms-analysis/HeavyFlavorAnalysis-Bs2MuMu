@@ -269,6 +269,7 @@ void HFDumpMuons::fillMuon(const reco::Muon& rm, int im) {
     if (oTrack.isNonnull()) {
       TrajectoryStateOnSurface propOuter = fpropM1.extrapolate(*oTrack);
       if (propOuter.isValid()) {
+	// -- FIXME: not sure whether the next two lines would not be better in prop_M1.isValid() block?!
 	validM1 = true; 
 	muPosM1.SetXYZ(propOuter.globalPosition().x(),propOuter.globalPosition().y(),propOuter.globalPosition().z());
 	pM->fMuonTrackPosAtM1.SetXYZ(propOuter.globalPosition().x(),propOuter.globalPosition().y(),propOuter.globalPosition().z());

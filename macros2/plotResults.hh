@@ -21,8 +21,7 @@ public:
   void otherNumbers(std::string smode);
   void saveHists(std::string smode);
   
-  void testAccEff(string smode);
-  void numbersAfterLoopOverTree(int chan, int mode, numbers *aa, std::string directory);
+  void acceptanceMaps(int mode = 1); 
 
   void play1(int mode); 
   void play2(int mode); 

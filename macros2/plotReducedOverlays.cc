@@ -830,10 +830,7 @@ void plotReducedOverlays::loopFunction1(int mode) {
     if (!(1 == fChan && closePV)) return;
   } else if (23 == fChanMode) {
     if (!(1 == fChan && farPV)) return;
-  } else {
-    cout << "screw it" << endl;
-    return;
-  }
+  } 
 
   if (fb.hlt && fGoodMuonsID && (fBDT > -1.) && fb.fls3d > 10) {
     fSel0 = true;

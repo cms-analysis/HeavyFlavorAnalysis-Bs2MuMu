@@ -23,6 +23,8 @@ public:
 
   void signalMass();
   void pidTableDisplay();
+  void fakeRateOverlays(std::string mode = "pions");
+  void massError();
 
 
 

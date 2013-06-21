@@ -508,7 +508,8 @@ TAnaCand *HFSequentialVertexFit::addCandidate(HFDecayTree *tree, VertexState *wr
 	  }
 	  if (vrtxRefit.size() < 2) throw PVRefitException(); // do not try to fit with less than two tracks
 	  if (fVerbose > 5) cout << "==> HFSequentialVertexFit::addCandidate(): refitting with vrtxRefit.size() = " << vrtxRefit.size() << endl;
-	  newVtx = avf.vertex(vrtxRefit,fBeamSpot);
+
+	  newVtx = avf.vertex(vrtxRefit, fBeamSpot);
 	  if (newVtx.isValid()) currentPV = reco::Vertex(newVtx);
 	  else					throw PVRefitException();
 	  

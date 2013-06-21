@@ -26,8 +26,8 @@ else
   endif
 endif
 
-CXXFLAGS      = -g -O3 -Wall -fPIC -pipe
-CXXFLAGS      = -g -O0 -Wall -fPIC -pipe
+CXXFLAGS      = -g -O0 -Wall -fPIC -pipe -Wuninitialized -O 
+CXXFLAGS      = -g -O3 -Wall -fPIC -pipe -Wuninitialized
 #CXXFLAGS      = -g -Wall -fPIC -pipe
 LD            = $(CXX)
 LDFLAGS       = -g 

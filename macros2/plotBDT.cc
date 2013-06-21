@@ -503,6 +503,53 @@ void  plotBDT::overlayBdtOutput() {
     }
   }
 
+
+  // -- now show the correlations between the different BDTs (suggestion from stat committee)
+  TTree *t(0); 
+
+  for (unsigned int i = 0; i < fNchan; ++i) {
+    string rootfile = "weights/" + fCuts[i]->xmlFile + "-combined.root";
+    fRootFile = TFile::Open(rootfile.c_str());
+    TH2D *h2s = new TH2D("h2s", "", 50, -1., 1., 50, -1., 1.); h2s->SetLineColor(kBlue); h2s->SetFillStyle(1000);  h2s->SetFillColor(kBlue); 
+    TH2D *h2b = new TH2D("h2b", "", 50, -1., 1., 50, -1., 1.); h2b->SetLineColor(kRed); 
+    cout << "fRootFile: " << rootfile << endl;
+    t = (TTree*)fRootFile->Get("bdtTree"); 
+
+    h2s->Reset(); h2b->Reset(); 
+    t->Draw("bdt0:bdt1>>h2s", "classID==0", ""); 
+    t->Draw("bdt0:bdt1>>h2b", "classID==1", ""); 
+    zone(1);
+    setTitles(h2s, "b_{0}", "b_{1}"); 
+    h2s->Draw("box"); 
+    h2b->Draw("boxsame"); 
+
+    newLegend(0.20, 0.7, 0.35, 0.8, (i==0?Form("%d barrel", fYear):Form("%d endcap", fYear))); 
+    legg->AddEntry(h2s, "signal", "f"); 
+    legg->AddEntry(h2b, "background", "f"); 
+    legg->Draw();
+    c0->SaveAs(Form("%s/%s-b0-vs-b1.pdf", fDirectory.c_str(), fCuts[i]->xmlFile.c_str())); 
+
+    h2s->Reset(); h2b->Reset(); 
+    t->Draw("bdt1:bdt2>>h2s", "classID==0", ""); 
+    t->Draw("bdt1:bdt2>>h2b", "classID==1", ""); 
+    zone(1);
+    setTitles(h2s, "b_{1}", "b_{2}"); 
+    h2s->Draw("box"); 
+    h2b->Draw("boxsame"); 
+    legg->Draw();
+    c0->SaveAs(Form("%s/%s-b1-vs-b2.pdf", fDirectory.c_str(), fCuts[i]->xmlFile.c_str())); 
+
+    h2s->Reset(); h2b->Reset(); 
+    t->Draw("bdt0:bdt2>>h2s", "classID==0", ""); 
+    t->Draw("bdt0:bdt2>>h2b", "classID==1", ""); 
+    zone(1);
+    setTitles(h2s, "b_{0}", "b_{2}"); 
+    h2s->Draw("box"); 
+    h2b->Draw("boxsame"); 
+    legg->Draw();
+    c0->SaveAs(Form("%s/%s-b0-vs-b2.pdf", fDirectory.c_str(), fCuts[i]->xmlFile.c_str())); 
+  }
+
 }
 
 
@@ -2506,7 +2553,7 @@ void plotBDT::hackedMC() {
       else cout << "NOT FOUND: fhMcRatio2[" << i << "]->GetFunction(" << func.c_str() << ")" << endl;
       
       tl->SetTextSize(0.04);
-      tl->DrawLatex(0.15, 0.92, Form("b>0.2: #chi^{2}/dof = %3.1f/%d", 
+      tl->DrawLatex(0.15, 0.92, Form("b>0.1: #chi^{2}/dof = %3.1f/%d", 
 				     fhMcRatio1[2*i+ic]->GetFunction(func.c_str())->GetChisquare(), 
 				     fhMcRatio1[2*i+ic]->GetFunction(func.c_str())->GetNDF()));
       

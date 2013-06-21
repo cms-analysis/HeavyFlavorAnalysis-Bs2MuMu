@@ -180,7 +180,11 @@ foreach $jobfile (@ARGV) {
     }
 
     #print " --> /bin/cp $jobDirectory/$jobFile .\n";
-    system("/bin/cp $jobDirectory/$jobFile .");
+    if (-e "$jobDirectory/$jobFile") {
+	system("/bin/cp $jobDirectory/$jobFile .");
+    } else {
+	system("touch $jobFile"); 
+    }
     &makeTarLink($job);
     system("/bin/chmod 755 $job.csh"); 
 
@@ -228,13 +232,10 @@ foreach $jobfile (@ARGV) {
 	    print "grid running: $job.jdl\n";
 	    print("glite-wms-job-submit -o $jobsList $rb -a --config $glite $job.jdl\n"); 
 	} else {
-	    if ($opt_D eq "unl.edu") {
-		 print("glite-wms-job-submit -o $jobsList -a $rb --config $glite $job.jdl\n"); 
-		system("glite-wms-job-submit -o $jobsList -a $rb --config $glite $job.jdl"); 
-	    } else {
-  		 print("glite-wms-job-submit -o $jobsList -a $rb --config $glite $job.jdl\n"); 
-		system("glite-wms-job-submit -o $jobsList -a $rb --config $glite $job.jdl"); 
-	    }
+	     print("glite-wms-job-submit -o $jobsList -a $job.jdl\n"); 
+#	    system("glite-wms-job-submit -o $jobsList -a $rb --config $glite $job.jdl"); 
+	    system("glite-wms-job-submit -o $jobsList -a $job.jdl"); 
+
 	    open(IN, ">>$jobsList") || die "Cannot open $jobsList\n";
 	    print IN "\# $timeStamp $pwd/$tdir $job.jdl\n"; 
 	    close(IN); 

@@ -69,8 +69,15 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   fpEvt = evt; 
   fBadEvent = false;
 
+  //  cout << "candAna blind = " << BLIND << endl;
 
- 
+
+  //   if (fEvt == 239800563) {
+  //     fVerbose = 100; 
+  //   } else {
+  //     fVerbose = 0;
+  //   }
+
   // TESTING d.k.
   //static int count = 0; //dk
   //select_print = false; //dk
@@ -2466,7 +2473,8 @@ int candAna::osMuon(TAnaCand *pC, double r) {
 // ----------------------------------------------------------------------
 double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, double ptmin) {
   const double ptCut(ptmin), coneSize(r); 
-  const bool verbose(false);
+  const   bool verbose(false);
+  //  if (fVerbose > 10) verbose = true; 
 
   double iso(-1.), pt(0.), sumPt(0.), candPt(0.), candPtScalar(0.); 
   TSimpleTrack *ps; 
@@ -2532,6 +2540,7 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
 
   // -- Now consider the DOCA tracks
   int nsize = pC->fNstTracks.size(); 
+  if (verbose) cout << "size of close tracks array: " << nsize << endl;
   if (nsize>0) {
     for(int i = 0; i<nsize; ++i) {
       int trkId = pC->fNstTracks[i].first;
@@ -2578,7 +2587,7 @@ double candAna::isoClassicWithDOCA(TAnaCand *pC, double docaCut, double r, doubl
 
   iso = candPt/(candPt + sumPt); 
 
-  //   if (verbose) cout << "--> iso = " << candPt << " .. " << sumPt << " = " << iso << endl;
+  if (verbose) cout << "--> iso: " << candPt << " .. " << sumPt << " = " << iso << endl;
   //   if (verbose) cout << "--> iso = " << pC->fPlab.Perp() << " .. " << sumPt << " = " << pC->fPlab.Perp()/(pC->fPlab.Perp() + sumPt) << endl;
 
   return iso; 
@@ -2759,8 +2768,8 @@ double candAna::isoTrack(TAnaCand *pC, TAnaTrack *pTrack, double docaCut, double
 	continue;
       }
 
-      if (ps->getP().DeltaR(pC->fPlab) > coneSize) {
-	if (verbose) cout << " doca track " << trkId << " skipped because of deltaR = " << ps->getP().DeltaR(pC->fPlab) << endl;
+      if (ps->getP().DeltaR(pTrack->fPlab) > coneSize) {
+	if (verbose) cout << " doca track " << trkId << " skipped because of deltaR = " << ps->getP().DeltaR(pTrack->fPlab) << endl;
 	continue;
       }
 

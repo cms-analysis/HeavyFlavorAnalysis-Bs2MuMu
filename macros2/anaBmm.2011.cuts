@@ -21,7 +21,7 @@ pvip     0.008
 pvips     2.0
 bdtpt    4.0
 #2011: bdt      0.30
-bdt      0.33
+bdt      0.29
 bdtMax   10.0
 xml      TMVA-0
 pvlip    100.

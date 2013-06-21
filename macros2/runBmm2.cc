@@ -204,6 +204,8 @@ int main(int argc, char *argv[]) {
     } else {
       a->setMC(0); 
     }
+
+    cout << "blind? " << blind << endl;
     if (1 == blind) a->runBlind();
 
     a->readCuts(cutFile.c_str(), 1);

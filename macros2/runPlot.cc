@@ -80,31 +80,49 @@ int main(int argc, char *argv[]) {
   if (remove) {
     string rootfile(Form("anaBmm.plotBDT.%s.root", cuts.c_str())); 
     if (mode & 1) {
+      rootfile = Form("anaBmm.plotBDT.%s.tex", cuts.c_str()); 
+      cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
+      system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
+      rootfile = Form("anaBmm.plotBDT.%s.root", cuts.c_str()); 
       cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
       system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
     }
-    rootfile = Form("anaBmm.plotResults.%s.root", cuts.c_str()); 
     if (mode & 2) {
+      rootfile = Form("anaBmm.plotResults.%s.tex", cuts.c_str()); 
+      cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
+      system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
+      rootfile = Form("anaBmm.plotResults.%s.root", cuts.c_str()); 
       cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
       system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
     }
-    rootfile = Form("anaBmm.plotReducedOverlays.%s.root", cuts.c_str()); 
     if ((mode & 4) && (1 == Mode)) {
+      rootfile = Form("anaBmm.plotReducedOverlays.%s.tex", cuts.c_str()); 
+      cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
+      system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
       rootfile = Form("anaBmm.plotReducedOverlays.%s.root", cuts.c_str()); 
       cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
       system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
     }
     if ((mode & 4) && (2 == Mode)) {
+      rootfile = Form("anaBmm.plotReducedOverlaysSystematics.%s.tex", cuts.c_str()); 
+      cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
+      system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
       rootfile = Form("anaBmm.plotReducedOverlaysSystematics.%s.root", cuts.c_str()); 
       cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
       system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
     }
     if (mode & 32) {
+      rootfile = Form("anaBmm.plotEfficiencies.%s.tex", cuts.c_str()); 
+      cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
+      system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
       rootfile = Form("anaBmm.plotEfficiencies.%s.root", cuts.c_str()); 
       cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
       system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
     }
     if (mode & 64) {
+      rootfile = Form("anaBmm.plotMisc.%s.tex", cuts.c_str()); 
+      cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
+      system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
       rootfile = Form("anaBmm.plotMisc.%s.root", cuts.c_str()); 
       cout << "Removing " << dir.c_str() << "/" <<  rootfile.c_str() << endl;
       system(Form("/bin/rm -f %s/%s", dir.c_str(), rootfile.c_str()));
@@ -164,8 +182,8 @@ int main(int argc, char *argv[]) {
 	  a = new plotReducedOverlays(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
 	  if (!doUseBDT) a->fDoUseBDT = false; 
 	  
-	  a->makeSample(mode1, "Presel", chanlist[j]);
-	  a->makeSample(mode2, "Presel", chanlist[j]);
+	  a->makeSample(mode1, "Presel", chanlist[j], nevents);
+	  a->makeSample(mode2, "Presel", chanlist[j], nevents);
 	  
 	  delete a;
 	}

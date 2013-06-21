@@ -90,7 +90,7 @@ void candAnaBu2JpsiK::candAnalysis() {
   TAnaCand *pD = 0; 
   fGoodJpsiMass = false; 
   double chi2(0.);
-  double ndof(0.); 
+  double ndof(0.), masse(0.); 
   for (int i = fpCand->fDau1; i <= fpCand->fDau2; ++i) {
     if (i < 0) break;
     pD = fpEvt->getCand(i); 
@@ -105,6 +105,7 @@ void candAnaBu2JpsiK::candAnalysis() {
 
       chi2 = pD->fVtx.fChi2;
       ndof = pD->fVtx.fNdof;
+      masse = pD->fMassE;
       break;
     }
   }
@@ -115,6 +116,7 @@ void candAnaBu2JpsiK::candAnalysis() {
   fCandChi2  = chi2; 
   fCandDof   = ndof;
   fCandChi2Dof = chi2/ndof;
+  fCandME      = masse;
 
   fPreselection = fPreselection && fGoodJpsiMass;
   fPreselection = fPreselection && fWideMass;
