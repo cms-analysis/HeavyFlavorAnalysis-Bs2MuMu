@@ -140,7 +140,8 @@ int main(int argc, char* argv[]) {
         m1eta->setVal(m1eta_t);
         m2eta->setVal(m2eta_t);
         bdt->setVal(bdt_t);
-        if (m_t > 5.20 && m_t < 5.45 && i == decays_n-1) continue; // skip signal windows for comb bkg
+//        if (m_t > 5.20 && m_t < 5.45 && i == decays_n-1) continue; // skip signal windows for comb bkg
+        if (m_t < 5.45 && i == decays_n-1) continue; // for comb bkg, take right SB only
         if (m_t < 4.90 || m_t > 5.90 || !muid_t) continue; // skip outside range
         if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass error
         if (bdt_t < bdt_cut) continue;
@@ -150,22 +151,22 @@ int main(int argc, char* argv[]) {
         if (barrel) {
           eta_channel = 0 + 2*yy;
           channel_cat->setIndex(eta_channel);
-//          if (i != decays_n-1 || newcomb) {
+          if (i != decays_n-1) {
             if (cuts_f_b && bdt_t < cuts_v[0 + 2*yy]) continue;
-//          }
-//          else {
-//            if (cuts_f_b && bdt_t < -0.2) continue; // give some statistics to comb!
-//          }
+          }
+          else {
+            if (cuts_f_b && bdt_t < 0.1) continue; // give some statistics to comb!
+          }
         }
         else {
           eta_channel = 1 + 2*yy;
           channel_cat->setIndex(eta_channel);
-//          if (i != decays_n-1 || newcomb ) {
+          if (i != decays_n-1) {
             if (cuts_f_b && bdt_t < cuts_v[1 + 2*yy]) continue;
-//          }
-//          else {
-//            if (cuts_f_b && bdt_t < -0.2) continue; // give some statistics to comb!
-//          }
+          }
+          else {
+            if (cuts_f_b && bdt_t < 0.1) continue; // give some statistics to comb!
+          }
         }
         /// bdt channels
         int bdt_channel = ana1.bdt_index(eta_channel, bdt_t);
