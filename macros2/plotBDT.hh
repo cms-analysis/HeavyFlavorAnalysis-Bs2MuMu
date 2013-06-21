@@ -41,6 +41,10 @@ public:
 
   void plotSSB();
   void ssb(int ichan);
+  
+  void plotAmsSSB(); 
+  void amsSSB(int chan); 
+
   void overlap();
   void overlayBdtOutput(); 
 
@@ -107,7 +111,9 @@ public:
   std::vector<TH1D*> fhBdtVariableCuts;
   std::vector<TH1D*> fhBdtVariableCutsW8;
 
-  
+  // -- SSB new world
+  std::vector<TH1D*> fhSsbBg, fhSsbSg;
+
   ClassDef(plotBDT,1) //Testing plotBDT
 
 };

@@ -2768,8 +2768,9 @@ double candAna::isoTrack(TAnaCand *pC, TAnaTrack *pTrack, double docaCut, double
 	continue;
       }
 
-      if (ps->getP().DeltaR(pTrack->fPlab) > coneSize) {
-	if (verbose) cout << " doca track " << trkId << " skipped because of deltaR = " << ps->getP().DeltaR(pTrack->fPlab) << endl;
+      //      if (ps->getP().DeltaR(pTrack->fPlab) > coneSize) {
+      if (ps->getP().DeltaR(pC->fPlab) > coneSize) {
+	if (verbose) cout << " doca track " << trkId << " skipped because of deltaR = " << ps->getP().DeltaR(pC->fPlab) << endl;
 	continue;
       }
 

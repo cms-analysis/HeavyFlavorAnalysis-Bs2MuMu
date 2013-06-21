@@ -3962,6 +3962,7 @@ void plotClass::calcBDT() {
   if (!preselection(fb, fChan)) return;
 
   if (fDoApplyMuonPtCuts) {
+    if (1) cout << "applying muon pT cuts?!" << endl;
     if (fb.m1pt < fCuts[fChan]->m1pt) return;
     if (fb.m2pt < fCuts[fChan]->m2pt) return;
   }
