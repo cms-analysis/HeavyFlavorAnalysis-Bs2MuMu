@@ -148,7 +148,9 @@ void draw_brazil(TGraphAsymmErrors *graph, TCanvas *canvas)
 	TMultiGraph *mg = new TMultiGraph;
 	TGraph* med = new TGraph(*graph);
 	
-	graph->SetFillColor(kGreen);
+	mg->SetTitle(graph->GetTitle());
+
+	graph->SetFillColor(kGreen);	
 	mg->Add(graph,"3");
 	med->SetLineStyle(2);
 	med->SetLineWidth(2);
@@ -157,6 +159,9 @@ void draw_brazil(TGraphAsymmErrors *graph, TCanvas *canvas)
 	graph->Draw("A");
 	med->Draw("Lsame");
 	mg->Draw("same");
+
+	mg->GetXaxis()->SetTitle(graph->GetXaxis()->GetTitle());
+	mg->GetYaxis()->SetTitle(graph->GetYaxis()->GetTitle());
 	
 	gPad->RedrawAxis();
 } // draw_brazil()
