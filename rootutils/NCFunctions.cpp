@@ -7,7 +7,10 @@
  */
 
 #include "NCFunctions.h"
+#include "NCIdeogram.h"
+
 #include <TMath.h>
+
 #include <cmath>
 
 // ----------------------------------------------------------------------
@@ -420,3 +423,39 @@ double f_skewnormal(double *x, double *par)
 	
 	return result;
 } // f_skewnormal()
+
+/* rectangular clock signal
+ *  par[0] = amplitude
+ *  par[1] = offset
+ *  par[2] = period
+ *  par[3] = phase shift in radians
+ */
+double f_clock(double *x, double *par)
+{
+    double result;
+    
+    // add up phase
+    result = x[0] + par[3]*par[2]/TMath::TwoPi();
+    
+    // transform into primitive interval
+    result = fmod(result,par[2]);
+    if (result < 0)
+        result += par[2];
+    
+    result = (result < par[2]/2.0) ? 1.0 : -1.0;
+    result = par[1] + par[0]*result;
+    
+    return result;
+} // f_clock()
+
+/* ideogram
+ *  par[0] = entry in the ideogram list
+ *  par[1] = normalization
+ */
+double f_ideo(double *x, double *par)
+{
+	int ix = (int)par[0];
+	NCIdeogram *ideo = NCIdeogram::getDefaultIdeogram(ix);
+	
+	return par[1]*ideo->evaluate(x[0]);
+} // f_ideo()

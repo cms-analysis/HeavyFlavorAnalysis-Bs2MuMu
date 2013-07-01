@@ -18,6 +18,7 @@
 #include <TCut.h>
 #include <TString.h>
 #include <TF1.h>
+#include <TGraphAsymmErrors.h>
 
 /* The classes below are exported */
 #pragma GCC visibility push(default)
@@ -34,6 +35,8 @@ void dump_tree_formula(TTree *tree, const char *formula, unsigned max = 100u);
 /* Canvas utility functions */
 void draw_to_pad(TH1* histo, TCanvas *canvas = new TCanvas, int pad_nbr = 1, const char *option = "");
 void draw_to_pad(TGraph *graph, TCanvas *canvas = new TCanvas, int pad_nbr = 1, const char *option = "ap");
+/* Brazil plots */
+void draw_brazil(TGraphAsymmErrors *graph, TCanvas *canvas = new TCanvas);
 
 /* Graph functions */
 void set_graph_appearance(TGraph* graph, int mstyle, const char *title = "", const char *xname = "", const char *yname = "");

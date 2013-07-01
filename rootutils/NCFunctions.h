@@ -65,6 +65,12 @@ double f_charact(double *x, double *par);
 // skew normal function
 double f_skewnormal(double *x, double *par);
 
+// clock
+double f_clock(double *x, double *par);
+
+// ideogram
+double f_ideo(double *x, double *par);
+
 #pragma GCC visibility pop
 
 #endif

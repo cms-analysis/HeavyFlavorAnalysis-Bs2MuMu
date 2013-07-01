@@ -50,4 +50,8 @@
 #pragma link C++ function f_charact(double*,double*);
 #pragma link C++ function f_skewnormal(double*,double*);
 
+#pragma link C++ function f_clock(double*,double*);
+
+#pragma link C++ function f_ideo(double*,double*);
+
 #endif

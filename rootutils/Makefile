@@ -20,7 +20,7 @@ endif
 # FILES #
 #########
 
-UTILS = NCRootUtils.o NCFunctions.o NCMatrix.o
+UTILS = NCRootUtils.o NCFunctions.o NCMatrix.o NCIdeogram.o
 UTILS_HEADER = ${UTILS:.o=.h}
 UTILS_DICTS = ${UTILS:.o=Dict.o}
 

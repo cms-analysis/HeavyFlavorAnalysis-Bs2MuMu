@@ -38,6 +38,9 @@
 #pragma link C++ function draw_to_pad(TGraph*,TCanvas*,int);
 #pragma link C++ function draw_to_pad(TGraph*,TCanvas*,int,const char*);
 
+#pragma link C++ function draw_brazil(TGraphAsymmErrors*);
+#pragma link C++ function draw_brazil(TGraphAsymmErrors*,TCanvas*);
+
 #pragma link C++ function set_graph_appearance(TGraph*,int,const char *,const char*,const char*);
 
 #pragma link C++ function adjust_parameter_gaussian(TH1D*, TF1*);

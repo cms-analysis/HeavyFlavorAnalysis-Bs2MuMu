@@ -23,6 +23,7 @@
 #include <TMath.h>
 #include <TROOT.h>
 #include <TTreeFormula.h>
+#include <TMultiGraph.h>
 
 // boost headers
 #include <boost/scoped_ptr.hpp>
@@ -141,6 +142,24 @@ void draw_to_pad(TGraph *graph, TCanvas *canvas, int pad_nbr, const char *option
 	canvas->cd(pad_nbr);
 	graph->Draw(option);
 } // draw_to_pad()
+
+void draw_brazil(TGraphAsymmErrors *graph, TCanvas *canvas)
+{
+	TMultiGraph *mg = new TMultiGraph;
+	TGraph* med = new TGraph(*graph);
+	
+	graph->SetFillColor(kGreen);
+	mg->Add(graph,"3");
+	med->SetLineStyle(2);
+	med->SetLineWidth(2);
+	mg->Add(med,"L");
+	
+	graph->Draw("A");
+	med->Draw("Lsame");
+	mg->Draw("same");
+	
+	gPad->RedrawAxis();
+} // draw_brazil()
 
 void set_graph_appearance(TGraph* graph, int mstyle, const char *title, const char *xname, const char *yname)
 {
@@ -479,7 +498,7 @@ void adjust_parameter_double_gauss_linear(TH1D* h, TF1* fct, map<int,double>* fi
 
 double signal_events(TF1 *signalFct, double mu, double sigma, double bin_width)
 {
-	return signalFct->Integral(mu - 2*sigma, mu + 2*sigma) / bin_width;
+	return signalFct->Integral(mu - 3*sigma, mu + 3*sigma) / bin_width;
 } // signal_events()
 
 double signal_events_gauss_linear(TF1 *fct, double bin_width)
