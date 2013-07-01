@@ -175,7 +175,7 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   Handle<TriggerResults> hHLTresults;
   bool hltF = true;
   int selected=0;  // to store the right trigger objects
-  string selectedObj[10];
+  string selectedObj[100];
 
   try {
     iEvent.getByLabel(fHLTResultsLabel, hHLTresults);
@@ -226,7 +226,7 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 	for(unsigned int j=0;j<moduleLabels.size();j++) {
 	  const string & type = hltConfig.moduleType(moduleLabels[j]);
 	  if(type == "HLTMuonDimuonL3Filter") {
-	    if(selected<10) {
+	    if(selected<100) {
 	      selectedObj[selected] = moduleLabels[j];
 	      selected++;
 	      if (fVerbose > 1) cout<<j<<" "<<type<<" "<<moduleLabels[j]<<" "<<selected<<endl;
@@ -381,9 +381,10 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
 	// Check if this path was in the fired FLT path 
 	bool matched=false;
+	int n0=-1;
 	for(int n=0;n<selected; ++n) {
 	  if ( trgEvent->filterTag(i).label() == selectedObj[n] ) {
-	    matched=true; 
+	    matched=true; n0=n; 
 	    if (fVerbose > 1) cout<<" This is it --> "<<i<<" "<<trgEvent->filterTag(i).label()<<endl;
 	    break;
 	  }
@@ -403,6 +404,7 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 	  continue;
 	}
 
+	int pairIndex = i; // identifies the pair
 	for (unsigned int j=0; j<keys.size(); j++){
 	  TTrgObj *pTO = gHFEvent->addTrgObj();
 	  pTO->fP.SetPtEtaPhiE(allObjects[keys[j]].pt(), 
@@ -412,7 +414,9 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 			       ); 
 	  pTO->fID     = allObjects[keys[j]].id(); 
 	  pTO->fLabel  = label;
-	  if(matched) pTO->fNumber = i;  // marked selected objects for later analysis  
+	  int muonIndex = keys[j]; // idenifies the muon
+	  //if(matched) pTO->fNumber = i;  // marked selected objects for later analysis  
+	  if(matched) pTO->fNumber = muonIndex*1000 + i;  // marked selected objects for later analysis  
  	  else        pTO->fNumber = -1; 
 	  if (fVerbose > 1) 
 	    cout << " pt = " <<  allObjects[keys[j]].pt() 
@@ -422,6 +426,7 @@ void HFDumpTrigger::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 		 << " id = " << allObjects[keys[j]].id() 
 		 << " label: " << pTO->fLabel
 		 << " number:" << pTO->fNumber
+		 << " indices "<<pairIndex<<" "<<muonIndex<<" "<<j<<" "<<n0
 		 << endl;
 	}
       }
