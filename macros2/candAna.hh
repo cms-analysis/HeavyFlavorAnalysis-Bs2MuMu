@@ -115,14 +115,13 @@ public:
   virtual double      isoClassicWithDOCA(TAnaCand*, double dca, double r = 0.7, double ptmin = 0.9); 
   virtual std::pair<int, int> nCloseTracks(TAnaCand*, double dca, double dcaS, double pt = 0.5); 
   virtual double      isoMuon(TAnaCand *, TAnaMuon *); 
-  virtual double      isoTrack(TAnaCand *pC, TAnaTrack *pTrack, double docaCut = 0.1, double r = 0.5, double pmin = 0.5);
   virtual void        xpDistMuons(); 
   virtual void        findAllTrackIndices(TAnaCand* pCand, std::map<int,int> *indices);
 
   virtual TAnaCand*   osCand(TAnaCand *pC);
   virtual double      osIsolation(TAnaCand *pC, double r = 1.0, double ptmin = 0.9); 
   virtual int         osMuon(TAnaCand *pC, double r = 1.0); 
-  virtual bool        doTriggerMatching(); // match the 2 muons from the dimuon to HLT
+  virtual bool        doTriggerMatching(TAnaTrack *pt1, TAnaTrack *pt2); // match the 2 muons from the dimuon to HLT
   virtual bool        doTriggerMatching(bool anyTrig); // match the 2 muons from the dimuon to HLT
   virtual bool        doTriggerMatching(TAnaTrack *pt, bool anyTrig = false); // match a single track to HLT
   virtual void        boostGames();
@@ -276,7 +275,7 @@ public:
   double  fTrigMatchDeltaPt;
 
   // test 
-  int ftmp1, ftmp2;
+  int ftmp1, ftmp2, ftmp3, ftmp4, ftmp5, ftmp6;
 
   struct RedTreeData fRTD;
 
