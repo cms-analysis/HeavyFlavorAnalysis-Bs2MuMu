@@ -285,10 +285,7 @@ int massReader::loadCandidateVariables(TAnaCand *pCand)
 		sigTrack = fpEvt->getSigTrack(it->second);
 		simTrack = fpEvt->getSimpleTrack(sigTrack->fIndex);
 		
-		dauGen = NULL;
-		if (0 <= simTrack->getGenIndex() && simTrack->getGenIndex() < fpEvt->nGenCands())
-			dauGen = fpEvt->getGenCand(simTrack->getGenIndex());
-		
+		dauGen = fpEvt->getGenTWithIndex(simTrack->getGenIndex());
 		switch (abs(sigTrack->fMCID)) {
 			case 13: // muon
 				if (firstMu) {
@@ -537,28 +534,23 @@ void massReader::closeHistFile()
 
 int massReader::sameMother(TAnaCand *cand)
 {
-	int result = -1;
+	int result = -1,j;
 	TAnaTrack *sigTrack;
 	TSimpleTrack *simTrack;
 	TGenCand *motherParticle = NULL;
 	TGenCand *trackParticle;
-	int nGens, j;
 		
-	nGens = fpEvt->nGenCands();
 	for (j = cand->fSig1; j >= 0 && j <= cand->fSig2; j++) {
 		sigTrack = fpEvt->getSigTrack(j);
 		simTrack = fpEvt->getSimpleTrack(sigTrack->fIndex);
 		
-		// get the generator info
-		if (simTrack->getGenIndex() < 0 || simTrack->getGenIndex() >= nGens) goto bail;
+		trackParticle = fpEvt->getGenTWithIndex(simTrack->getGenIndex());
+		if (!trackParticle) goto bail;
 		
-		// look for the mother particle
-		trackParticle = fpEvt->getGenCand(simTrack->getGenIndex());
 		while (validMothers.count(abs(trackParticle->fID)) == 0) {
-			if (trackParticle->fMom1 < 0 || trackParticle->fMom1 >= nGens) goto bail;
-			trackParticle = fpEvt->getGenCand(trackParticle->fMom1);
+			trackParticle = fpEvt->getGenTWithIndex(trackParticle->fMom1);
+			if (!trackParticle) goto bail;
 		}
-		
 		
 		if (motherParticle) {
 			if (motherParticle->fNumber != trackParticle->fNumber)
@@ -571,20 +563,21 @@ int massReader::sameMother(TAnaCand *cand)
 	if (motherParticle) result = motherParticle->fNumber;
 bail:
 	return result;
-} // checkTruth()
+} // sameMother()
 
 int massReader::loadDecay(TAnaCand *anaCand)
 {
-	TGenCand *mother;
+	TGenCand *mother,*daughter;
 	int ix, result = 0;
 	decay_t dec;
 	map<decay_t,int>::const_iterator it;
 	bool correct;
-	TAnaTrack *sigTrack,*recTrack;
+	TAnaTrack *sigTrack;
+	TSimpleTrack *simTrack;
 	
-	// search for the decay..
+	// search for the decay...
 	if ((ix = sameMother(anaCand)) >= 0)
-		mother = fpEvt->getGenCand(ix);
+		mother = fpEvt->getGenTWithIndex(ix);
 	else goto bail;
 	
 	buildDecay(mother, &dec);
@@ -595,8 +588,10 @@ int massReader::loadDecay(TAnaCand *anaCand)
 		correct = true;
 		for (ix = anaCand->fSig1; correct && 0 <= ix && ix <= anaCand->fSig2; ix++) {
 			sigTrack = fpEvt->getSigTrack(ix);
-			recTrack = fpEvt->getRecTrack(sigTrack->fIndex);
-			correct = (abs(sigTrack->fMCID) == abs(recTrack->fMCID)); // track was assigned correctly
+			simTrack = fpEvt->getSimpleTrack(sigTrack->fIndex);
+			
+			daughter = fpEvt->getGenTWithIndex(simTrack->getGenIndex());
+			correct = (daughter != NULL) && (abs(sigTrack->fMCID) == abs(daughter->fID));
 		}
 		if (correct)
 			result = it->second;
@@ -607,9 +602,14 @@ bail:
 
 void massReader::buildDecay(TGenCand *gen, multiset<int> *particles)
 {
+	if(!gen) goto bail;
+	
 	particles->insert(abs(gen->fID));
 	for (int j = gen->fDau1; j <= gen->fDau2 && j>= 0; j++)
-		buildDecay(fpEvt->getGenCand(j),particles);
+		buildDecay(fpEvt->getGenTWithIndex(j),particles);
+	
+bail:
+	return;
 } // buildDecay()
 
 TAnaCand* massReader::findCandidate(int candID, map<int,int> *particles)
@@ -658,6 +658,8 @@ void massReader::findGenStructure(TGenCand *pGen, map<int,int> *particles)
 	map<int,int>::const_iterator it;
 	int j;
 	
+	if (!pGen) goto bail;
+	
 	// insert this
 	for (j = 0; j < fpEvt->nRecTracks(); j++) {
 		if (fpEvt->getRecTrack(j)->fGenIndex == pGen->fNumber)
@@ -665,9 +667,11 @@ void massReader::findGenStructure(TGenCand *pGen, map<int,int> *particles)
 	}
 	particles->insert(make_pair<int,int>(pGen->fNumber, j < fpEvt->nRecTracks() ? j : -1));
 	
-	
 	for (j = pGen->fDau1; j <= pGen->fDau2; j++)
-		findGenStructure(fpEvt->getGenCand(j),particles);
+		findGenStructure(fpEvt->getGenTWithIndex(j),particles);
+	
+bail:
+	return;
 } // findGenStructure()
 
 void massReader::findAllTrackIndices(TAnaCand* pCand, map<int,int> *indices)

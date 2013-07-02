@@ -3,6 +3,7 @@
 # -----
 #
 # ======================================================================
+.PHONY: all clean cleanall
 
 ifdef ROOTSYS
   ROOTCINT      = $(ROOTSYS)/bin/rootcint
