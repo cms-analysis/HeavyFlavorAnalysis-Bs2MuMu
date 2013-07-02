@@ -218,20 +218,20 @@ plotRatio::~plotRatio() {
 
 
 // ----------------------------------------------------------------------
-void plotRatio::makeAll(int channels) {
+void plotRatio::makeAll(int channels, int eventsToLoop) {
 
   zone(1);
   if (channels & 2) {
     fNormProcessed = false; 
     fDoUseBDT = true; 
-//    computeCsNoRatio();
-    computeCsNoRatioNew();
+//    computeCsNoRatio(eventsToLoop);
+    computeCsNoRatioNew(eventsToLoop);
   }
 
 }
 
 // ----------------------------------------------------------------------
-void plotRatio::computeCsNoRatio() {
+void plotRatio::computeCsNoRatio(int eventsToLoop) {
 
 
   cout << "--> loopTree: CS MC" << endl;
@@ -239,12 +239,12 @@ void plotRatio::computeCsNoRatio() {
   fSetup = "CsMc"; 
   TTree *t = getTree(fSetup); 
   setupTree(t, fSetup); 
-  loopOverTree(t, fSetup, 1, 100000);
+  loopOverTree(t, fSetup, 1, eventsToLoop);
 
   fSetup = "CsData"; 
   t = getTree(fSetup); 
   setupTree(t, fSetup); 
-  loopOverTree(t, fSetup, 1, 100000);
+  loopOverTree(t, fSetup, 1, eventsToLoop);
  
   if (false == fNormProcessed) {
     fNormProcessed = true; 
@@ -252,13 +252,13 @@ void plotRatio::computeCsNoRatio() {
     fSetup = "NoMc"; 
     t = getTree(fSetup); 
     setupTree(t, fSetup); 
-    loopOverTree(t, fSetup, 1, 100000);
+    loopOverTree(t, fSetup, 1, eventsToLoop);
 
     cout << "--> loopTree: norm data" << endl;
     fSetup = "NoData"; 
     t = getTree(fSetup); 
     setupTree(t, fSetup); 
-    loopOverTree(t, fSetup, 1, 100000);
+    loopOverTree(t, fSetup, 1, eventsToLoop);
     
   }
 
@@ -389,16 +389,15 @@ void plotRatio::printCsBFNumbers() {
   fSuffix = cache; 
 }
 
-void plotRatio::computeCsNoRatioNew() {
+void plotRatio::computeCsNoRatioNew(int eventsToLoop) {
 
 cout << "just to test. bdt barrel cut = " << fCuts[0]->bdt << "  and endcap = " << fCuts[1]->bdt << endl;
 
-  int eventsToLoop = -1;
 
 // I don't understand where these values come from
 // they are supplied externally in the input file...
-  float effFilterCs = 0.0162;
-  float effFilterNo = 0.0181;
+  float effFilterCs = 0.0160;
+  float effFilterNo = 0.0205;
   float fracCsKst[2];
   float effTurnon[2];
   

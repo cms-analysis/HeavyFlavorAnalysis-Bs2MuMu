@@ -10,11 +10,11 @@ public:
   plotRatio(const char *files="anaBmm.v11.files", const char *dir = "default", const char *cuts = "default", int mode = 11);
   ~plotRatio();
 
-  void makeAll(int channels = 3);
+  void makeAll(int channels = 3, int eventsToLoop = -1);
 
-  void computeCsNoRatio();
+  void computeCsNoRatio(int eventsToLoop);
   void printCsBFNumbers();
-  void computeCsNoRatioNew();
+  void computeCsNoRatioNew(int eventsToLoop);
   
   virtual void loopFunction(int mode); 
   virtual void loopFunction(int mode, int imode); 
