@@ -29,13 +29,16 @@ int main(int argc, char** argv) {
   if (SM && bd_const) help();
   if (simul && channel) help();
 
-  //pdf_fitData* fitdata = new pdf_fitData(false, input_estimates, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, rare_constr, NExp, Bd, years_opt);
   pdf_fitData fitdata(false, input_estimates, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, rare_constr, NExp, Bd, years_opt);
   FILE *file = fopen(input_name.c_str(), "r");
   if (!file) {
   	cout << "no file name, making random" << endl;
   	fitdata.random = true;
   }
+
+  vector <double> cuts_v(inputs, -1);
+  if (cuts_f_b) cuts_v = cut_bdt_file();
+  if (bdt_fit) fitdata.set_bdt_min(cuts_v);
 
   fitdata.make_pdf_input(input_ws);
   fitdata.get_bkg_from_tex();
@@ -50,8 +53,6 @@ int main(int argc, char** argv) {
   fitdata.free_rare(free_rare);
   fitdata.define_dataset();
 
-  vector <double> cuts_v(inputs, -10);
-  if (cuts_f_b) cuts_v = cut_bdt_file();
 
   vector <string> inputnamess(0);
   if (!file) {

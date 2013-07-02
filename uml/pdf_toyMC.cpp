@@ -58,6 +58,14 @@ pdf_toyMC::pdf_toyMC(bool print, string input_estimates, string range, int BF, b
   pull_BF_bd = new RooRealVar("pull_BF_bd", "pull_BF_bd", -10., 10.);
   pull_rds_BF_bd = new RooDataSet("pull_rds_BF_bd", "pull_rds_BF_bd", *pull_BF_bd);
 
+  //  RooMsgService::instance().getStream(0).removeTopic(Eval);
+  RooMsgService::instance().getStream(1).removeTopic(Fitting);
+  RooMsgService::instance().getStream(1).removeTopic(Minimization);
+  RooMsgService::instance().getStream(1).removeTopic(NumIntegration);
+  RooMsgService::instance().getStream(1).removeTopic(Eval);
+  RooMsgService::instance().getStream(0).removeTopic(Tracing);
+  RooMsgService::instance().Print() ;
+
 }
 
 pdf_toyMC::~pdf_toyMC() {
@@ -85,8 +93,8 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
   TH1D * BF_bs_sigma_h = new TH1D("BF_bs_sigma_h", "BF_bs_sigma_h", 100, 1.e-10, 1.e-8);
   TH1D * BF_bd_mean_h = new TH1D("BF_bd_mean_h", "BF_bd_mean_h", 100, 1.e-10, 1.e-8);
   TH1D * BF_bd_sigma_h = new TH1D("BF_bd_sigma_h", "BF_bd_sigma_h", 100, 1.e-10, 1.e-8);
-  for (unsigned int i = 0; i < channels; i++) {
-    for (unsigned int j = 0; j < bdt_index_max(i); j++) {
+  for (int i = 0; i < channels; i++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       residual_bs[i][j] = new RooRealVar(name("residual_bs", i, j), "residual_bs", -20., 20.);
       residual_bd[i][j] = new RooRealVar(name("residual_bd", i, j), "residual_bd", -20., 20.);
 //      residual_peak[i][j] = new RooRealVar(name("residual_peak", i, j), "residual_peak", -20., 20.);
@@ -123,8 +131,8 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
   vector < vector < Double_t > > estimate_bs_formula(channels, vector < Double_t > (channels_bdt, 0.));
   vector < vector < Double_t > > estimate_bd_formula(channels, vector < Double_t > (channels_bdt, 0.));
   if (BF_ > 0) {
-    for (unsigned int i = 0; i < channels; i++) {
-      for (unsigned int j = 0; j < bdt_index_max(i); j++) {
+    for (int i = 0; i < channels; i++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         estimate_bs_formula[i][j] = ws_->function(name("N_bs_formula", i, j))->getVal();
         if (BF_ > 1) estimate_bd_formula[i][j] = ws_->function(name("N_bd_formula", i, j))->getVal();
       }
@@ -137,14 +145,21 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     if (k == 1) printlevel = 1;
     RooWorkspace* ws_temp = (RooWorkspace*)ws_->Clone("ws_temp");
 /// vars
-    RooArgSet vars(*ws_temp->var("Mass"), *ws_temp->var("MassRes"), "vars");
+    RooArgSet vars(*ws_temp->var("Mass"), *ws_temp->var("ReducedMassRes"), "vars");
     if (simul_ && !simul_bdt_ && !simul_all_) vars.add(*ws_temp->cat("etacat"));
     if (simul_ && simul_bdt_ && !simul_all_) {
     	vars.add(*ws_temp->cat("bdtcat"));
     	vars.add(*ws_temp->cat("etacat"));
     }
     if (simul_ && !simul_bdt_ && simul_all_) vars.add(*ws_temp->cat("allcat"));
-    if (bdt_fit_) vars.add(*ws_temp->var("bdt"));
+    if (bdt_fit_) {
+//    	vars.add(*ws_temp->var("bdt"));
+    	for (int i = 0; i < channels; i++) {
+      	if (years_=="0" && i > 1) continue;
+      	if (years_=="1" && i < 2) continue;
+      	vars.add(*ws_temp->var(name("bdt", i)));
+    	}
+    }
     RooDataSet* data = new RooDataSet("data", "data", vars);
 
 /// GENERATION
@@ -154,13 +169,13 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
       data = ws_temp->pdf(pdfname.c_str())->generate(vars, Extended());
     }
     else {
-      RooArgSet set(*ws_->var("Mass"), *ws_->var("MassRes"), *ws_->cat("etacat"), *ws_->cat("bdtcat"));
+      RooArgSet set(*ws_->var("Mass"), *ws_->var("ReducedMassRes"), *ws_->cat("etacat"), *ws_->cat("bdtcat"));
       if (simul_all_) set.add(*ws_->cat("allcat"));
-      for (unsigned int i = 0; i < channels; i++) {
+      for (int i = 0; i < channels; i++) {
       	if (years_=="0" && i > 1) continue;
       	if (years_=="1" && i < 2) continue;
-      	for (unsigned int j = 0; j < bdt_index_max(i); j++) {
-          RooDataSet* data_i = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("MassRes")), Extended());
+      	for (int j = 0; j < bdt_index_max(i); j++) {
+          RooDataSet* data_i = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("ReducedMassRes")), Extended());
           channels_cat->setIndex(i);
           bdt_cat->setIndex(j);
           data_i->addColumn(*channels_cat);
@@ -185,16 +200,18 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     if (simul_) {
       if (k == 1) {
         print_each_channel("Mass", "_first", ws_temp, data);
+        if (bdt_fit_) print_each_channel("bdt", "_first_BDT", ws_temp, data);
       }
       if (k == NExp) {
         print_each_channel("Mass", "_last", ws_temp, data);
+        if (bdt_fit_) print_each_channel("bdt", "_last_BDT", ws_temp, data);
       }
     }
     /// pull
-    for (unsigned int i = 0; i < channels; i++) {
+    for (int i = 0; i < channels; i++) {
     	if (years_=="0" && i > 1) continue;
     	if (years_=="1" && i < 2) continue;
-      for (unsigned int j = 0; j < bdt_index_max(i); j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         if (BF_ == 0) bs_mean_h[i][j]->Fill(ws_temp->var(name("N_bs", i, j))->getVal());
         else bs_mean_h[i][j]->Fill(ws_temp->function(name("N_bs_formula", i, j))->getVal());
         if (!(SM_ || bd_constr_ || BF_ == 2)) bd_mean_h[i][j]->Fill(ws_temp->var(name("N_bd", i, j))->getVal());
@@ -266,7 +283,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     if (BF_ > 0) {
       BF_bs_mean_h->Fill(ws_temp->var("BF_bs")->getVal());
       BF_bs_sigma_h->Fill(ws_temp->var("BF_bs")->getError());
-      double BF_pull = (ws_temp->var("BF_bs")->getVal() - Bs2MuMu_SM_BF_val) / ws_temp->var("BF_bs")->getError();
+      double BF_pull = (ws_temp->var("BF_bs")->getVal() - ws_->var("BF_bs")->getVal()) / ws_temp->var("BF_bs")->getError();
       pull_BF_bs->setVal(BF_pull);
       pull_rds_BF_bs->add(*pull_BF_bs);
       BF_bs_pull_h->Fill(BF_pull);
@@ -274,7 +291,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     if (BF_ > 1) {
       BF_bd_mean_h->Fill(ws_temp->var("BF_bd")->getVal());
       BF_bd_sigma_h->Fill(ws_temp->var("BF_bd")->getError());
-      double BF_pull = (ws_temp->var("BF_bd")->getVal() - Bd2MuMu_SM_BF_val) / ws_temp->var("BF_bd")->getError();
+      double BF_pull = (ws_temp->var("BF_bd")->getVal() - ws_->var("BF_bd")->getVal()) / ws_temp->var("BF_bd")->getError();
       pull_BF_bd->setVal(BF_pull);
       pull_rds_BF_bd->add(*pull_BF_bd);
     }
@@ -289,10 +306,10 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     delete ws_temp;
   }
   cout << red_color_bold << "END OF EXPERIMENTS!" << default_console_color << endl;
-  for (unsigned int i = 0; i < channels; i++) {
+  for (int i = 0; i < channels; i++) {
   	if (years_=="0" && i > 1) continue;
   	if (years_=="1" && i < 2) continue;
-    for (unsigned int j = 0; j < bdt_index_max(i); j++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       if (BF_ == 0) fit_pulls(pull_bs[i][j], pull_rds_bs[i][j], i, j);
       if (BF_ > 0) fit_pulls(residual_bs[i][j], residual_rds_bs[i][j], i, j);
       if (!(SM_ || bd_constr_ || BF_ == 2)) fit_pulls(pull_bd[i][j], pull_rds_bd[i][j], i, j);
@@ -328,10 +345,10 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
   if (!SM_ && bd_b && !simul_) {
     TCanvas* corr_c = new TCanvas("corr_c", "corr_c", 600*channels, 600*channels_bdt);
     corr_c->Divide(channels, channels_bdt);
-    for (unsigned int i = 0; i < channels; i++) {
+    for (int i = 0; i < channels; i++) {
     	if (years_=="0" && i > 1) continue;
     	if (years_=="1" && i < 2) continue;
-      for (unsigned int j = 0; j < channels_bdt; j++) {
+      for (int j = 0; j < channels_bdt; j++) {
         corr_c->cd(j + 1);
         correlation_h[i][j]->Draw();
       }
@@ -356,6 +373,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     sign_c->Print((get_address("sign", Bd ? "Bd" : "Bs", false) + ".root").c_str());
     sign_c->Print((get_address("sign", Bd ? "Bd" : "Bs", false) + ".C").c_str());
     delete sign_c;
+    cout << "median of significance = " << mediana << endl;
   }
   return;
 }
@@ -363,10 +381,10 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
 void pdf_toyMC::do_bias(RooWorkspace* ws) {
 
   if (bias_.compare("no")) {
-    for (unsigned int i = 0; i < channels; i++) {
+    for (int i = 0; i < channels; i++) {
     	if (years_=="0" && i > 1) continue;
     	if (years_=="1" && i < 2) continue;
-      for (unsigned int j = 0; j < bdt_index_max(i); j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         if (!simul_ && !simul_bdt_) i = ch_i_;
         size_t found;
         found = bias_.find("tau");
@@ -428,7 +446,7 @@ void pdf_toyMC::do_bias(RooWorkspace* ws) {
 RooFitResult* pdf_toyMC::fit_pdf(RooAbsData* data, int printlevel, RooWorkspace* ws) {
   RooFitResult* result;
 //  if (printlevel < 0) RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
-  result = ws->pdf(pdfname.c_str())->fitTo(*data, pee ? ConditionalObservables(*ws->var("MassRes")) : RooCmdArg::none(), Extended(true), Hesse(kFALSE), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(1)/*, Verbose(10)*/, Save(kTRUE), NumCPU( simul_all_? 1 : 2));
+  result = ws->pdf(pdfname.c_str())->fitTo(*data, pee ? ConditionalObservables(*ws->var("ReducedMassRes")) : RooCmdArg::none(), Extended(true), Hesse(kFALSE), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(1)/*, Verbose(10)*/, Save(kTRUE), NumCPU( simul_all_? 1 : 2));
 //  if (printlevel < 0) RooMsgService::instance().cleanup();
   return result;
 }
@@ -476,10 +494,10 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
   if (Bd) alt_name = "N_bd";
   if (Bd && BF_ > 0) alt_name = "BF_bd";
   if (BF_ == 0) {
-    for (unsigned int i = 0; i < channels; i++) {
+    for (int i = 0; i < channels; i++) {
     	if (years_=="0" && i > 1) continue;
     	if (years_=="1" && i < 2) continue;
-      for (unsigned int j = 0; j < bdt_index_max(i); j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         ws_temp->var(name(alt_name.c_str(), i, j))->setVal(0);
         ws_temp->var(name(alt_name.c_str(), i, j))->setConstant(1);
         if (bd_constr_) {
@@ -498,7 +516,7 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
 
   if (BF_ == 0) {
     if (!simul_bdt_) {
-      for (unsigned int i = 0; i < channels; i++) {
+      for (int i = 0; i < channels; i++) {
       	if (years_=="0" && i > 1) continue;
       	if (years_=="1" && i < 2) continue;
         ws_temp->var(name(alt_name.c_str(), i))->setVal(ws_->var(name(alt_name.c_str(), i))->getVal());
@@ -510,10 +528,10 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
       }
     }
     else {
-      for (unsigned int i = 0; i < channels; i++) {
+      for (int i = 0; i < channels; i++) {
       	if (years_=="0" && i > 1) continue;
       	if (years_=="1" && i < 2) continue;
-        for (unsigned int j = 0; j < bdt_index_max(i); j++) {
+        for (int j = 0; j < bdt_index_max(i); j++) {
           ws_temp->var(name(alt_name.c_str(), i, j))->setVal(ws_->var(name(alt_name.c_str(), i, j))->getVal());
           ws_temp->var(name(alt_name.c_str(), i, j))->setConstant(0);
           if (bd_constr_) {
@@ -539,7 +557,14 @@ Double_t pdf_toyMC::sig_hand(RooAbsData* data, int printlevel, RooWorkspace* ws_
 void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
 
   RooArgSet obsv(*ws_->var("Mass"), "obsv");
-  if (bdt_fit_) obsv.add(*ws_->var("bdt"));
+  if (bdt_fit_) {
+  	for (int i = 0; i < channels; i++) {
+  		if (years_=="0" && i > 1) continue;
+  		if (years_=="1" && i < 2) continue;
+  		obsv.add(*ws_->var(name("bdt", i)));
+//  	obsv.add(*ws_->var("bdt"));
+  	}
+  }
   if (simul_ && !simul_bdt_ && !simul_all_) obsv.add(*ws_->cat("etacat"));
   if (simul_bdt_) {
     cout << "RooMCStudy seems not to work with RooSuperCategory" << endl;
@@ -547,19 +572,19 @@ void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
     exit(0);
   }
   if (simul_all_) obsv.add(*ws_->cat("allcat"));
-  if (pee) obsv.add(*ws_->var("MassRes"));
+  if (pee) obsv.add(*ws_->var("ReducedMassRes"));
 
   RooMCStudy * mcstudy;
   if (bias_.compare("no")) { /// bias
     RooWorkspace* fitws = (RooWorkspace*)ws_->Clone("fitws");
     do_bias(fitws);
-    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, FitModel(*fitws->pdf(pdfname.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), NumCPU(2)));
+    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, FitModel(*fitws->pdf(pdfname.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("ReducedMassRes")) : RooCmdArg::none(), NumCPU(2)));
   }
   else if (pdf_test == pdfname) { /// same pdf
-    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), NumCPU(2)));
+    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("ReducedMassRes")) : RooCmdArg::none(), NumCPU(2)));
   }
   else { /// different pdf
-    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, FitModel(*ws_->pdf(pdf_test.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("MassRes")) : RooCmdArg::none(), NumCPU(2)));
+    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, FitModel(*ws_->pdf(pdf_test.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("ReducedMassRes")) : RooCmdArg::none(), NumCPU(2)));
   }
 
   vector <vector <RooDLLSignificanceMCSModule*> > sigModule(channels, vector <RooDLLSignificanceMCSModule*> (channels_bdt));
@@ -577,10 +602,10 @@ void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
   for (int k = 0; k < 4; k++) {
     if ((SM_ || bd_constr_) && k == 1) continue;
     if (rare_constr_ && k == 3) continue;
-    for (unsigned int i = 0; i < channels; i++) {
+    for (int i = 0; i < channels; i++) {
     	if (years_=="0" && i > 1) continue;
     	if (years_=="1" && i < 2) continue;
-      for (unsigned int j = 0; j < bdt_index_max(i); j++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
         if (k == 0 && BF_ > 0 && (i > 0 || j > 0)) continue;
         if (k == 1 && BF_ > 1 && (i > 0 || j > 0)) continue;
         string name_;
@@ -644,10 +669,10 @@ void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
   TCanvas* sig_c = new TCanvas("sig_c", "sig_c", 600*channels, 600*channels_bdt);
   if (BF_) sig_c->SetCanvasSize(600, 600);
   else sig_c->Divide(channels, channels_bdt);
-  for (unsigned int i = 0; i < channels; i++) {
+  for (int i = 0; i < channels; i++) {
   	if (years_=="0" && i > 1) continue;
   	if (years_=="1" && i < 2) continue;
-    for (unsigned int j = 0; j < bdt_index_max(i); j++) {
+    for (int j = 0; j < bdt_index_max(i); j++) {
       if (BF_ > 0 && (i > 0 || j > 0)) continue;
       string name_(name("significance_nullhypo_N_bs", i, j));
       if (BF_ > 0) name_ = "significance_nullhypo_BF_bs";

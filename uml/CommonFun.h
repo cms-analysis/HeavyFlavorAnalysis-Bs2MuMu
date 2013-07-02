@@ -57,6 +57,8 @@ int free_rare = 3;
 bool make_bdt_binning_inputs = false;
 static string bdtbinnings_s = "input/bdtbinnings.root";
 double bdt_cut = -1;
+bool semi = false;
+bool bdtsplit = false;
 
 void help() {
 
@@ -80,6 +82,8 @@ void help() {
   cout << "-rkeys \t RooKeysPdf for MassRes and BDT" << endl;
   cout << "-bdtbins \t produces only inputs for evaluation of bdt binnings" << endl;
   cout << "-bdt_cut # \t minimum bdt" << endl;
+  cout << "-semi \t semi mass shape from mc data" << endl;
+  cout << "-bdtsplit \t splits bdt in 1,2,3,4" << endl;
   cout << endl;
   cout << ">>>>>>>>> make_bdt_uml_inputs.o: make bdt effs" << endl;
   cout << "-bins ### 1 \t ### is a sequence of numbers describing the bdt binning vector. e.g. -bins -0.2 0.2 0.5 1" << endl;
@@ -344,6 +348,14 @@ void parse_options(int argc, char* argv[]){
     	bdt_cut = atof(argv[i+1]);
     	cout << "bdt_cut = " << bdt_cut << endl;
     }
+    if (!strcmp(argv[i],"-semi")) {
+    	semi = true;
+      cout << "semi mass pdf from mc data" << endl;
+    }
+    if (!strcmp(argv[i],"-bdtsplit")) {
+    	bdtsplit = true;
+      cout << "bdt splitted in 1,2,3,4" << endl;
+    }
     if (!strcmp(argv[i],"-h")) help();
   }
 }
@@ -388,11 +400,51 @@ void parse_input (string input) {
   }
 }
 
+vector <double> parse_bdt_cuts() {
+
+	vector <double> cuts_v(4, -1);
+	for (int y = 0; y < 2; y++) {
+		int year = y == 0 ? 2011 : 2012;
+		string filename(Form("../uml/input/%d/anaBmm.plotResults.%d.tex", year, year));
+		FILE *file = fopen(filename.c_str(), "r");
+		if (!file) {cout << "file " << filename << " does not exist"; exit(1);}
+		char buffer[1024];
+		char left[1024];
+		double number;
+
+		string lefty[2];
+		lefty[0] = Form("\\vdef{%d:bdt:0}", year);
+		lefty[1] = Form("\\vdef{%d:bdt:1}", year);
+
+
+		while (fgets(buffer, sizeof(buffer), file)) {
+			if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
+			if (buffer[0] == '\045') continue;
+			sscanf(buffer, "%s   {\\ensuremath{{%lf } } }", left, &number);
+
+			string left_s(left);
+			for (int i = 0; i < 2; i++) {
+				size_t found = left_s.find(lefty[i]);
+				if (found != string::npos) {
+					cuts_v[2*y+i] = number;
+        }
+      }
+    }
+		fclose(file);
+  }
+  cout << " bdt cuts:" << endl;
+  for (int i = 0; i < 4; i++) cout << "channel " << i << "; bdt > " << cuts_v[i] << endl;
+  return cuts_v;
+}
+
 vector <double> cut_bdt_file() {
   FILE *file = fopen(cuts_f.c_str(), "r");
-  if (!file) {cout << "file " << cuts_f << " does not exist"; exit(1);}
   char buffer[1024];
-  vector <double> bdt_(4);
+  vector <double> bdt_(4, -1);
+  if (!file) {
+  	cout << "file " << cuts_f << " does not exist, parsing" << endl;
+  	return parse_bdt_cuts();
+  }
   while (fgets(buffer, sizeof(buffer), file)) {
     if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
     if (buffer[0] == '#') continue;
@@ -407,10 +459,13 @@ vector <double> cut_bdt_file() {
   return bdt_;
 }
 
+
+
 vector < double > get_singlerare_normalization(string filename, int endcap, int size) {
 
   string peakdecays[] = {"bgBs2KK", "bgBs2KPi", "bgBs2PiPi", "bgBd2KK", "bgBd2KPi", "bgBd2PiPi", "bgLb2PiP", "bgLb2KP"};
   string semidecays[] = {"bgBs2KMuNu", "bgBd2PiMuNu", "bgLb2PMuNu", "bgBu2PiMuMu", "bgBu2KMuMu", "bgBd2Pi0MuMu", "bgBd2K0MuMu", "bgBd2MuMuGamma", "bgBs2MuMuGamma"};
+
 
   FILE *file = fopen(filename.c_str(), "r");
   if (!file) {cout << "file " << filename << " does not exist"; exit(1);}
@@ -420,6 +475,9 @@ vector < double > get_singlerare_normalization(string filename, int endcap, int 
   double number;
   int peak_n = sizeof(peakdecays)/sizeof(string);
   int semi_n = sizeof(semidecays)/sizeof(string);
+
+  Double_t peak_t[peak_n][3];
+  Double_t semi_t[semi_n][3];
 
   string end[3] = {Form("bsRare%d}", endcap), Form("bdRare%d}", endcap), Form("loSideband%d:val}", endcap)};
 
@@ -436,7 +494,8 @@ vector < double > get_singlerare_normalization(string filename, int endcap, int 
         for (int j = 0; j < 3; j++) {
           found = left_s.find(end[j]);
           if (found != string::npos) {
-            output[i+2] += number;
+//            output[i+2] += number;
+            peak_t[i][j] = number;
           }
         }
       }
@@ -447,13 +506,25 @@ vector < double > get_singlerare_normalization(string filename, int endcap, int 
         for (int j = 0; j < 3; j++) {
           found = left_s.find(end[j]);
           if (found != string::npos) {
-            output[i+2+peak_n] += number;
+//            output[i+2+peak_n] += number;
+            semi_t[i][j] = number;
           }
         }
       }
     }
   }
   fclose(file);
+
+  for (int i = 0; i < peak_n; i++) {
+  	for (int j = 0; j < 3; j++) {
+  		output[i+2] += peak_t[i][j];
+  	}
+  }
+  for (int i = 0; i < semi_n; i++) {
+  	for (int j = 0; j < 3; j++) {
+  		output[i+2+peak_n] += semi_t[i][j];
+  	}
+  }
 
   output[0] = 1.;
   output[1] = 1.;
@@ -465,6 +536,4 @@ vector < double > get_singlerare_normalization(string filename, int endcap, int 
   cout << endl << endl;
   return output;
 }
-
-
 

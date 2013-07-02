@@ -15,6 +15,14 @@
 #include "TError.h"
 #include "RooGlobalFunc.h"
 
+#include "Math/WrappedMultiTF1.h"
+#include "Fit/DataOptions.h"
+#include "Fit/DataRange.h"
+#include "Fit/BinData.h"
+#include "HFitInterface.h"
+#include "Fit/Chi2FCN.h"
+#include "Fit/Fitter.h"
+
 #include "RooWorkspace.h"
 #include "RooGaussian.h"
 #include "RooArgusBG.h"
@@ -52,25 +60,47 @@
 using namespace std;
 using namespace RooFit;
 
+struct GlobalChi2 {
+   GlobalChi2(  ROOT::Math::IMultiGenFunction & f1,  ROOT::Math::IMultiGenFunction & f2) :
+      fChi2_1(&f1), fChi2_2(&f2) {}
+
+   // parameter vector is first background (in common 1 and 2) and then is signal (only in 2)
+   double operator() (const double *par) const {
+      double p1[2];
+      p1[0] = par[0]; // exp amplitude in B histo
+      p1[1] = par[2]; // exp common parameter
+
+      double p2[2];
+      p2[0] = par[1]; // exp amplitude in S+B histo
+      p2[1] = par[2]; // exp common parameter
+      return (*fChi2_1)(p1) + (*fChi2_2)(p2);
+   }
+
+   const  ROOT::Math::IMultiGenFunction * fChi2_1;
+   const  ROOT::Math::IMultiGenFunction * fChi2_2;
+};
+
 class pdf_analysis {
 public:
   pdf_analysis(bool print, string ch_s = "0", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, int simul = 1, int simulbdt = 1, int simulall = 1, bool pee_ = false, bool bdt_fit = false);
+  ~pdf_analysis();
   void set_ws(RooWorkspace *ws) {ws_ = ws;}
   RooWorkspace* get_ws() {return ws_;}
   
   void initialize();
   TH1D* define_massRes_pdf(RooDataSet *rds, string name, bool rkeys);
+  TH1D* define_semi_pdf(RooDataSet *rds, string name, bool rkeys);
   TH1D* define_bdt_pdf(RooDataSet *rds, string name, TFile* bdt_syst_f = 0, bool rkeys = false, Double_t bdt_min = -1.);
 
   void define_N();
-  void define_pdfs();
+  void define_pdfs(bool semi);
 
   void set_SMratio(double ratio) {ratio_ = ratio;}
 
   double getformulaerror(RooFormulaVar* formula, int vars);
   
   string define_pdf_sum(string name);
-  void define_total_fractional(unsigned int i, unsigned int j); // final pdf with fractional components, and also extended
+  void define_total_fractional(int i, int j); // final pdf with fractional components, and also extended
 
   void getBFnumbers(string numbers_filename);
 
@@ -95,7 +125,12 @@ public:
   int BF_;
   RooRealVar* Mass;
   RooRealVar* MassRes;
+  RooRealVar* ReducedMassRes;
   RooRealVar* bdt;
+//  RooRealVar* bdt_0;
+//  RooRealVar* bdt_1;
+//  RooRealVar* bdt_2;
+//  RooRealVar* bdt_3;
   RooRealVar* eta;
   RooRealVar* m1eta;
   RooRealVar* m2eta;
@@ -106,9 +141,9 @@ public:
   RooCategory* all_cat;
   RooSuperCategory* super_cat;
 
-  unsigned int channels;
-  unsigned int channels_bdt;
-  unsigned int channels_all;
+  int channels;
+  int channels_bdt;
+  int channels_all;
   string range_;
   RooFitResult* RFR;
 
@@ -127,16 +162,20 @@ public:
   void gen_and_fit(string pdfname);
   bool print_;
 
-  const char* name(string name, unsigned int i, unsigned int j = -1);
+  const char* name(string name, int i, int j = -1);
 
   bool newcomb_;
   void setSBslope(string pdf, RooAbsData* sb_data);
   bool rare_constr_;
 
-  unsigned int bdt_index(unsigned int eta_ch, double bdt);
-  unsigned int bdt_index_max(unsigned int eta_ch) ;
-  unsigned int super_index(unsigned int eta_ch, unsigned int bdt_ch);
-  unsigned int supercatdim;
+  int bdt_index(int eta_ch, double bdt);
+  int bdt_index_max(int eta_ch) ;
+  int super_index(int eta_ch, int bdt_ch);
+  int supercatdim;
+
+  void set_bdt_min(vector <double> cuts);
+
+  bool bdtsplit;
 
 protected:
   string default_console_color;
@@ -144,7 +183,7 @@ protected:
   string purple_color_bold;
   string meth_;
   string ch_s_;
-  unsigned int ch_i_;
+  int ch_i_;
   RooWorkspace* ws_;
 
   double ratio_;
@@ -201,20 +240,22 @@ protected:
   bool randomsyst;
 
   vector <string> massrange_names;
-  vector <unsigned int> get_EtaBdt_bins(unsigned int index);
+  vector <int> get_EtaBdt_bins(int index);
   vector < vector <double> > bdt_boundaries;
   void fill_bdt_boundaries();
 
+  vector <double> bdt_cuts;
+
 private:
-  void define_bs(unsigned int i, unsigned int j);
-  void define_bd(unsigned int i, unsigned int j);
-  void define_peak(unsigned int i, unsigned int j);
-  void define_semi(unsigned int i, unsigned int j);
-  void define_comb(unsigned int i, unsigned int j);
-  void define_signals(unsigned int i, unsigned int j);
-  void define_rare(unsigned int i, unsigned int j);
-  void define_rare3(unsigned int i, unsigned int j);
-  void define_bf(unsigned int i, unsigned int j);
+  void define_bs(int i, int j);
+  void define_bd(int i, int j);
+  void define_peak(int i, int j);
+  void define_semi(int i, int j, bool semi);
+  void define_comb(int i, int j);
+  void define_signals(int i, int j);
+  void define_rare(int i, int j);
+  void define_rare3(int i, int j);
+  void define_bf(int i, int j);
   void print_pdf(RooAbsPdf* pdf, RooRealVar * var);
   void bdt_effs();
   void bdt_fit_effs();

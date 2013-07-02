@@ -33,7 +33,11 @@ int main(int argc, char** argv) {
   toy1.random = true;
   TFile* input_f = new TFile(input_ws.c_str());
   RooWorkspace* ws = (RooWorkspace*)input_f->Get("ws");
+  vector <double> cuts_v(inputs, -1);
+  if (cuts_f_b) cuts_v = cut_bdt_file();
+  if (bdt_fit) toy1.set_bdt_min(cuts_v);
   toy1.set_ws(ws);
+
   toy1.get_bkg_from_tex();
   toy1.set_estimate();
   toy1.parse_estimate();
@@ -46,6 +50,8 @@ int main(int argc, char** argv) {
   toy1.print_estimate();
   if (roomcs) toy1.mcstudy(pdf_toy, pdf_test);
   if (!roomcs) toy1.generate(pdf_toy, pdf_test);
+  cout << "finishing time ";
+  system("date");
   return EXIT_SUCCESS;
 }
 

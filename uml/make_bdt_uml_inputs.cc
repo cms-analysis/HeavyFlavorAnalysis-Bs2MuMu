@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
 		 cout << endl;
 	 }
 
-	TFile* bdt_f = new TFile("input/bdtbinnings.root");
+	TFile* bdt_f = new TFile("../uml/input/bdtbinnings.root");
   vector <string> type_s;
   type_s.push_back("bs");
   type_s.push_back("bd");
