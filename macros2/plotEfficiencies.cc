@@ -7,6 +7,7 @@
 #include "TTree.h"
 #include "TH2.h"
 #include "TLorentzVector.h"
+#include "TGraphErrors.h"
 
 using namespace std; 
 using std::string; 
@@ -124,9 +125,9 @@ void plotEfficiencies::makeAll(int channel) {
 
 
   if (channel &8) {
-    misid(211,  0.3, "bgBd2PiPi"); 
-    misid(321,  0.3, "bgBs2KK"); 
-    misid(2212, 0.3, "bgLb2KP"); 
+    misid(211,  0.36, "bgBd2PiPi"); 
+    misid(321,  0.36, "bgBs2KK"); 
+    misid(2212, 0.36, "bgLb2KP"); 
   }
 
   if (channel &16) {
@@ -134,7 +135,10 @@ void plotEfficiencies::makeAll(int channel) {
     pidtables(321,  "bgBs2KK"); 
     pidtables(2212, "bgLb2KP"); 
   }
+
 }
+
+
 
 // ----------------------------------------------------------------------
 void plotEfficiencies::mcTriggerEffs() {
@@ -211,7 +215,7 @@ void plotEfficiencies::loopFunction2(int mode) {
     if (0 == i) {
       id = fb.g1id; 
       pt = fb.m1pt;
-      mu = (fb.m1rmvabdt > fBDTcut);
+      mu = fb.m1gt && (fb.m1rmvabdt > fBDTcut);
       rmvaid = fb.m1rmvaid; 
       eta = fb.m1eta;
       chan = (TMath::Abs(fb.m1eta)<1.4?0:1); 
@@ -220,14 +224,13 @@ void plotEfficiencies::loopFunction2(int mode) {
     if (1 == i) {
       id = fb.g2id; 
       pt = fb.m2pt;
-      mu = (fb.m2rmvaid > fBDTcut);
+      mu = fb.m2gt && (fb.m2rmvabdt > fBDTcut);
       rmvaid = fb.m2rmvaid; 
       eta = fb.m2eta;
       chan = (TMath::Abs(fb.m2eta)<1.4?0:1); 
     }
 
     if (pt < 4.) continue;
-    
 
     if (fPdgId == TMath::Abs(id)) {
       if (id > 0) {
@@ -237,13 +240,18 @@ void plotEfficiencies::loopFunction2(int mode) {
 	  if (!rmvaid) { cout << "???????????????????????????????????" << endl;}
 	  fhptPosPass[chan]->Fill(pt);
 	  fh2PosPass->Fill(eta, pt); 
+	} else {
+	  if (rmvaid) { cout << "???????????????????????????????????" << endl;}
 	}
       } else {
 	fh2NegAll->Fill(eta, pt); 
 	fhptNegAll[chan]->Fill(pt);
 	if (mu) {
+	  if (!rmvaid) { cout << "???????????????????????????????????" << endl;}
 	  fhptNegPass[chan]->Fill(pt);
 	  fh2NegPass->Fill(eta, pt); 
+	} else {
+	  if (rmvaid) { cout << "???????????????????????????????????" << endl;}
 	}
       }
       

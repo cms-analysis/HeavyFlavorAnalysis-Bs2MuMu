@@ -237,7 +237,6 @@ void plotBDT::makeAll(int channels) {
 
 
     plotAmsSSB();
-    return; //FIXME!!
 
     cout << "--> plotSSB()" << endl;
     plotSSB();
@@ -1137,10 +1136,209 @@ void plotBDT::plotAmsSSB(){
 void plotBDT::amsSSB(int chan) {
 
   fChan = chan; 
+
+  TH1D *hssb0(0); 
+
+  hssb0 = (TH1D*)fHistFile->Get(Form("ams_ssb0c%d", chan)); 
+
+  if (0 == hssb0) {
+  
+    TTree *t(0), *td(0); 
+    
+    // -- for the data, get the AMS tree
+    td = (TTree*)fF["SgData"]->Get("candAnaMuMu/amsevents"); 
+    if (0 == td) {
+      cout << "%%%%%%% data AMS tree not found in " << fF["SgData"]->GetName() << endl;
+      return;
+    }
+    cout << "amstree with entries = " << td->GetEntries() << endl;
+    setupTree(td, "SgData"); 
+    
+    
+    // -- for the signal, get the bdtTree from the combined rootfile
+    t = (TTree*)fRootFile->Get("bdtTree");
+    if (0 == t) {
+      cout << "%%%%%%% bdtTree not found in " << fRootFile->GetName() << endl;
+      return;
+    }
+    cout << "bdtTree with entries = " << t->GetEntries() << endl;
+    
+    fHistFile->cd();
+    TH1D *sm(0); 
+    TH1D *dm(0); 
+    TH1D *am(0); 
+    
+    double bdt, m, w8, pvw8; 
+    int classID, m1q, m2q;
+    bool gmuid, gtqual, hlt, hltm, hltm2, json;
+    t->SetBranchAddress("bdt", &bdt);
+    t->SetBranchAddress("classID", &classID);
+    t->SetBranchAddress("m", &m);
+    t->SetBranchAddress("weight", &w8);
+    t->SetBranchAddress("json", &json);  
+    t->SetBranchAddress("hlt", &hlt);    
+    t->SetBranchAddress("gtqual", &gtqual);  
+    t->SetBranchAddress("pvw8", &pvw8);  
+    t->SetBranchAddress("hltm", &hltm);
+    t->SetBranchAddress("hltm2", &hltm2);
+    t->SetBranchAddress("gmuid", &gmuid);
+    t->SetBranchAddress("m1q", &m2q);
+    t->SetBranchAddress("m2q", &m1q);
+    
+    double bdtCut, maxBDT(-1.); 
+    int nEvent(t->GetEntries()), ndEvent(td->GetEntries());
+    double bdtMin(-1.0), bdtMax(1.0); 
+    int bdtBins(200); 
+    int dNorm(0); 
+
+    hssb0 = new TH1D(Form("amsssb0c%d", chan), "AMS S/Sqrt(S+B)", bdtBins, bdtMin, bdtMax); hssb0->Sumw2();
+    hssb0->SetDirectory(fHistFile); 
+
+    for (int ibin = 0; ibin < bdtBins; ibin = ++ibin) {
+      bdtCut = bdtMin + ibin*(bdtMax-bdtMin)/bdtBins;
+      cout << "=============>  bin " << ibin << " cutting at bdt > " << bdtCut
+	   << endl;
+      
+      sm = new TH1D(Form("sm_%d_%d", chan, ibin), Form("m(signal) chan = %d bdt > %4.3f", chan, bdtCut), 100, 4.9, 5.9); sm->Sumw2(); 
+      dm = new TH1D(Form("dm_%d_%d", chan, ibin), Form("m(data) chan = %d bdt > %4.3f", chan, bdtCut), 100, 4.9, 5.9);   dm->Sumw2(); 
+      am = new TH1D(Form("am_%d_%d", chan, ibin), Form("m(ams) chan = %d bdt > %4.3f", chan, bdtCut), 100, 4.9, 5.9);    am->Sumw2(); 
+      
+      // -- compute S
+      for (Long64_t ievt=0; ievt<nEvent; ievt++) {
+	t->GetEntry(ievt);
+	if (1 == classID && false == json) continue;
+	if (false == hlt) continue;
+	if (false == hltm2) continue;
+	if (false == gmuid) continue;
+	if (bdt < bdtCut) continue;
+	
+	if (1 == classID && 5.2<m && m<5.45) continue;
+	if (1 == classID && m<4.9) continue;
+	if (1 == classID && m>5.9) continue;
+	
+	if (0 == classID) {
+	  sm->Fill(m, w8);
+	} else {
+	  dm->Fill(m, w8); 
+	}
+      }
+      
+      // -- compute B
+      for (int jentry = 0; jentry < ndEvent; jentry++) {
+	td->GetEntry(jentry);
+	if (fb.m < 4.9) continue;
+	if (fb.m > 5.9) continue;
+	if (fb.m1pt < fCuts[chan]->bdtpt) continue;
+	if (fb.m2pt < fCuts[chan]->bdtpt) continue;
+	if (fb.m1q*fb.m2q > 0) continue;
+	if (fb.pvw8 < 0.7) continue;
+	if (!fb.gtqual) continue;
+	if (chan != detChan(fb.m1eta, fb.m2eta)) continue;
+	calcBDT(); 
+	if (fBDT < bdtCut) continue;
+	am->Fill(fb.m);
+      }
+      
+      am->DrawCopy(); 
+    
+      sm->SetDirectory(fHistFile); sm->Write(); 
+      dm->SetDirectory(fHistFile); dm->Write(); 
+      am->SetDirectory(fHistFile); am->Write(); 
+    }
+    
+
+    double b(0.), a(0.), s(0.), ssb0(0.), sb(0.); 
+    double dSideband(0.), aSideband(0.); 
+    TH1D *hs(0), *hd(0), *ha(0); 
+    for (int i = 0; i < 200; ++i) {
+      hs = (TH1D*)fHistFile->Get(Form("sm_%d_%d", chan, i)); 
+      hd = (TH1D*)fHistFile->Get(Form("dm_%d_%d", chan, i)); 
+      ha = (TH1D*)fHistFile->Get(Form("am_%d_%d", chan, i)); 
+      
+      s = hs->Integral(hs->FindBin(5.20001), hs->FindBin(5.44999));  
+      a = ha->Integral(ha->FindBin(5.20001), ha->FindBin(5.44999));  
+      bgBlind(hd, 2, 4.9, 5.9);
+      b = fBsBgExp;
+      ssb0 = (b+s > 0? (s/TMath::Sqrt(s+b)) : 0.); 
+      ha->Draw("hist"); 
+      hd->Draw("samee"); 
+      hs->Draw("histsame"); 
+      cout << "ams: " << a << " b = " << b << " -> " << ssb0 << endl;
+      hssb0->SetBinContent(i, ssb0); 
+    }
+    hssb0->Draw();
+
+    hssb0->Write(); 
+  }
+
+
+  double xmax(0.), xmin(0.); 
+  int maxbin = hssb0->GetMaximumBin(); 
+  double maxVal = hssb0->GetBinContent(maxbin);
+  double thr(0.85*maxVal); 
+  
+  for (int i =  maxbin; i > 0;  --i) {
+    if (hssb0->GetBinContent(i) < thr) {
+      xmin = hssb0->GetBinLowEdge(i); 
+      break;
+    }
+  }
+
+  for (int i = maxbin; i < hssb0->GetNbinsX(); ++i) {
+    if (hssb0->GetBinContent(i) < thr) {
+      xmax = hssb0->GetBinCenter(i+1); 
+      break;
+    }
+  }
+
+  cout << "maxval: " << maxVal << endl;
+  cout << "maxbin: " << maxbin << endl;
+  cout << "xmin:   " << xmin << endl;
+  cout << "max x:  " << hssb0->GetBinCenter(maxbin) << endl;
+  cout << "xmax:   " << xmax << endl;
+
+  TF1 *f1 = fpFunc->pol2local(hssb0, 0.2); 
+  hssb0->Fit(f1, "r", "", xmin, xmax); 
+  if (hssb0->GetFunction("iF_pol2local")) {
+    double maxfitssbX = hssb0->GetFunction("iF_pol2local")->GetParameter(2); 
+    double maxfitssbY = hssb0->GetFunction("iF_pol2local")->GetParameter(0); 
+    
+    fTEX << formatTex(maxfitssbX, Form("%s:%s:maxfitSSBams:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+    fTEX << formatTex(maxfitssbY, Form("%s:%s:maxfitSSBams:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+  } else {
+    cout << "could not retrieve iF_pol2local" << endl;
+  }
+
+  c0->SaveAs(Form("ams-ssb-%d-%d.pdf", fYear, chan)); 
+
+  
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotBDT::plotAmsBdtOutput(){
+  for (int i = 0; i < fNchan; ++i) {
+    string rootfile = "weights/" + fCuts[i]->xmlFile + "-combined.root";
+    cout << "fRootFile: " << rootfile << endl;
+    fRootFile = TFile::Open(rootfile.c_str());
+    fBdtString = Form("%s", fCuts[i]->xmlFile.c_str()); 
+    cout << "fBdtString: " << fBdtString << endl;
+
+    amsBdtOutput(i); 
+  }
+  
+} 
+
+
+// ----------------------------------------------------------------------
+void plotBDT::amsBdtOutput(int chan) {
+
+  fChan = chan; 
   
   TTree *t(0), *td(0); 
 
-  // -- for the data, get the AMS tree
+  // -- get the AMS tree
   td = (TTree*)fF["SgData"]->Get("candAnaMuMu/amsevents"); 
   if (0 == td) {
     cout << "%%%%%%% data AMS tree not found in " << fF["SgData"]->GetName() << endl;
@@ -1150,7 +1348,7 @@ void plotBDT::amsSSB(int chan) {
   setupTree(td, "SgData"); 
 
 
-  // -- for the signal, get the bdtTree from the combined rootfile
+  // -- get the normal "bdtTree"
   t = (TTree*)fRootFile->Get("bdtTree");
   if (0 == t) {
     cout << "%%%%%%% bdtTree not found in " << fRootFile->GetName() << endl;
@@ -1161,7 +1359,14 @@ void plotBDT::amsSSB(int chan) {
   fHistFile->cd();
   TH1D *sm(0); 
   TH1D *dm(0); 
-  TH1D *am(0); 
+  TH1D *am(0), *am0(0), *am1(0); 
+  
+  sm = new TH1D(Form("sm_%d", chan), Form("BDT(signal) chan = %d", chan), 40, -1.0, 1.0); sm->Sumw2(); 
+  dm = new TH1D(Form("dm_%d", chan), Form("BDT(data) chan = %d", chan), 40, -1.0, 1.0);   dm->Sumw2(); 
+  am = new TH1D(Form("am_%d", chan), Form("BDT(ams) chan = %d", chan), 40, -1.0, 1.0);    am->Sumw2(); 
+  am0= new TH1D(Form("am0_%d", chan), Form("BDT(ams blind box) chan = %d", chan), 40, -1.0, 1.0);   am0->Sumw2(); 
+  am1= new TH1D(Form("am1_%d", chan), Form("BDT(ams sidebands) chan = %d", chan), 40, -1.0, 1.0);   am1->Sumw2(); 
+
 
   double bdt, m, w8, pvw8; 
   int classID, m1q, m2q;
@@ -1180,67 +1385,69 @@ void plotBDT::amsSSB(int chan) {
   t->SetBranchAddress("m1q", &m2q);
   t->SetBranchAddress("m2q", &m1q);
   
-  double bdtCut, maxBDT(-1.); 
   int nEvent(t->GetEntries()), ndEvent(td->GetEntries());
-  double bdtMin(-1.0), bdtMax(1.0); 
-  int bdtBins(200); 
-  int dNorm(0); 
-  for (int ibin = 0; ibin < bdtBins; ibin = ++ibin) {
-    bdtCut = bdtMin + ibin*(bdtMax-bdtMin)/bdtBins;
-    cout << "=============>  bin " << ibin << " cutting at bdt > " << bdtCut
-	 << endl;
 
-    sm = new TH1D(Form("sm_%d_%d", chan, ibin), Form("m(signal) chan = %d bdt > %4.3f", chan, bdtCut), 100, 4.9, 5.9); sm->Sumw2(); 
-    dm = new TH1D(Form("dm_%d_%d", chan, ibin), Form("m(data) chan = %d bdt > %4.3f", chan, bdtCut), 100, 4.9, 5.9);   dm->Sumw2(); 
-    am = new TH1D(Form("am_%d_%d", chan, ibin), Form("m(ams) chan = %d bdt > %4.3f", chan, bdtCut), 100, 4.9, 5.9);    am->Sumw2(); 
-
-    // -- compute S
-    for (Long64_t ievt=0; ievt<nEvent; ievt++) {
-      t->GetEntry(ievt);
-      if (1 == classID && false == json) continue;
-      if (false == hlt) continue;
-      if (false == hltm2) continue;
-      if (false == gmuid) continue;
-      if (bdt < bdtCut) continue;
-      
-      if (1 == classID && 5.2<m && m<5.45) continue;
-      if (1 == classID && m<4.9) continue;
-      if (1 == classID && m>5.9) continue;
-      
-      if (0 == classID) {
-	sm->Fill(m, w8);
-      } else {
-	dm->Fill(m, w8); 
-      }
+  // -- normal tree
+  for (Long64_t ievt=0; ievt<nEvent; ievt++) {
+    t->GetEntry(ievt);
+    if (1 == classID && false == json) continue;
+    if (false == hlt) continue;
+    if (false == hltm2) continue;
+    if (false == gmuid) continue;
+    
+    if (1 == classID && 5.2<m && m<5.45) continue;
+    if (1 == classID && m<4.9) continue;
+    if (1 == classID && m>5.9) continue;
+    
+    if (0 == classID) {
+      sm->Fill(bdt, w8);
+    } else {
+      dm->Fill(bdt, w8); 
     }
-
-    // -- compute B
-    for (int jentry = 0; jentry < ndEvent; jentry++) {
-      td->GetEntry(jentry);
-      if (fb.m < 4.9) continue;
-      if (fb.m > 5.9) continue;
-      if (fb.m1pt < fCuts[chan]->bdtpt) continue;
-      if (fb.m2pt < fCuts[chan]->bdtpt) continue;
-      if (fb.m1q*fb.m2q > 0) continue;
-      if (fb.pvw8 < 0.7) continue;
-      if (!fb.gtqual) continue;
-      if (chan != detChan(fb.m1eta, fb.m2eta)) continue;
-      calcBDT(); 
-      if (fBDT < bdtCut) continue;
-      am->Fill(fb.m);
-    }
-
-    am->DrawCopy(); 
-    c0->Modified(); 
-    c0->Update();
-
-    sm->SetDirectory(fHistFile); sm->Write(); 
-    dm->SetDirectory(fHistFile); dm->Write(); 
-    am->SetDirectory(fHistFile); am->Write(); 
   }
+
+  // -- AMS
+  for (int jentry = 0; jentry < ndEvent; jentry++) {
+    td->GetEntry(jentry);
+    if (false == fb.hlt) continue;
+    if (false == fb.hltm2) continue;
+    if (false == fb.gmutmid) continue;
+
+    if (fb.m < 4.9) continue;
+    if (fb.m > 5.9) continue;
+    if (fb.m1pt < fCuts[chan]->bdtpt) continue;
+    if (fb.m2pt < fCuts[chan]->bdtpt) continue;
+    if (fb.m1q*fb.m2q > 0) continue;
+    if (fb.pvw8 < 0.7) continue;
+    if (!fb.gtqual) continue;
+    if (chan != detChan(fb.m1eta, fb.m2eta)) continue;
+    calcBDT(); 
+    if (fBDT < -1.) continue; 
+    am->Fill(fBDT);
+    if (5.2<fb.m && fb.m<5.45) {
+      am0->Fill(fBDT); 
+    } else {
+      am1->Fill(fBDT); 
+    }
+  }
+  
+  dm->DrawCopy(); 
+  c0->Modified(); 
+  c0->Update();
+  am->DrawCopy(); 
+  c0->Modified(); 
+  c0->Update();
+
+  sm->SetDirectory(fHistFile); sm->Write(); 
+  dm->SetDirectory(fHistFile); dm->Write(); 
+
+  am->SetDirectory(fHistFile); am->Write(); 
+  am0->SetDirectory(fHistFile); am0->Write(); 
+  am1->SetDirectory(fHistFile); am1->Write(); 
 
   
 
+  
 }
 
 

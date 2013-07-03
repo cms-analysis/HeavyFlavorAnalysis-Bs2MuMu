@@ -228,7 +228,7 @@ void plotMisc::pidTableDisplay() {
 
 
 // ----------------------------------------------------------------------
-void plotMisc::fakeRateOverlays(string mode) {
+void plotMisc::fakeRateOverlaysDK(string mode) {
 
   double ymax(2.5e-3); 
 
@@ -324,11 +324,219 @@ void plotMisc::fakeRateOverlays(string mode) {
   }
   legg->Draw(); 
 
-  c0->SaveAs(Form("%s/%s-fakeRateOverlays-%s.pdf", fDirectory.c_str(), fSuffix.c_str(), mode.c_str())); 
+  c0->SaveAs(Form("%s/%s-fakeRateOverlaysDK-%s.pdf", fDirectory.c_str(), fSuffix.c_str(), mode.c_str())); 
   
   
 }
 
+
+// ----------------------------------------------------------------------
+void plotMisc::fakeRateOverlaysMM(string mode) {
+
+  double ymax(2.5e-3); 
+
+
+// TightMVA Muons:
+//   Pions:
+//     Pt 4-6 GeV:  0.00066 +- 0.00005
+//     Pt 6-10 GeV:  0.00066 +- 0.00008
+//     Pt 10-30 GeV:  0.00048 +- 0.00009
+//     |Eta| 0.0-0.9:  0.00056 +- 0.00004
+//     |Eta| 0.9-1.4:  0.00080 +- 0.00008
+//     |Eta| 1.4-2.4:  0.00092 +- 0.00013
+//     Integrated:  0.00064 +- 0.00003
+//   Protons:
+//     Pt 4-6 GeV:  0.00013 +- 0.00007
+//     Pt 6-10 GeV:  0.00010 +- 0.00007
+//     Pt 10-30 GeV:  0.00000 +- 0.00008
+//     |Eta| 0.0-0.9:  0.00011 +- 0.00004
+//     |Eta| 0.9-1.4:  0.00009 +- 0.00010
+//     |Eta| 1.4-2.4:  0.00000 +- 0.00010
+//     Integrated:  0.00009 +- 0.00004
+
+
+  // pi, data
+  const int points21 = 3;
+  double v_x21[points21] = {5.0,     8.0,     20.}; 
+  double v_y21[points21] = {0.00066, 0.00066, 0.00048};
+  double e_y21[points21] = {0.00005, 0.00008, 0.00009};
+
+  // p, data
+  const int points23 = 3;
+  double v_x23[points23] = {5.0, 8.0, 20.}; 
+  double v_y23[points23] = {0.00013, 0.00010, 0.00000};
+  double e_y23[points23] = {0.00007, 0.00007, 0.00008};
+  
+
+
+  TH1D *hpt = new TH1D("hpt", "", 20, 0., 20.); hpt->Sumw2();
+  setHist(hpt, kBlue, 20, 0.001);
+  hpt->SetFillColor(kBlue); 
+  //  setFilledHist(hpt);
+
+  TGraphErrors *gD(0); 
+
+  if (mode == "pions") {
+    fptFakePosPions->projectP(hpt, -2.4, 2.4, -180., 180., 1); 
+    for (int i = 1; i < hpt->GetNbinsX(); ++i) hpt->SetBinError(i, 0.5*hpt->GetBinContent(i)); 
+    gD = new TGraphErrors(points21, v_x21, v_y21, 0, e_y21); 
+  } 
+
+  if (mode == "protons") {
+    fptFakePosProtons->projectP(hpt, -2.4, 2.4, -180., 180., 1); 
+    for (int i = 1; i < hpt->GetNbinsX(); ++i) hpt->SetBinError(i, 0.5*hpt->GetBinContent(i)); 
+    gD = new TGraphErrors(points23, v_x23, v_y23, 0, e_y23); 
+  } 
+
+  if (gD) {
+    gD->SetMarkerStyle(20); 
+    gD->SetMarkerColor(kBlack); 
+    gD->SetMarkerSize(1.5); 
+  }
+
+  zone(); 
+  shrinkPad(0.11, 0.25); 
+  gStyle->SetOptStat(0); 
+  gStyle->SetOptTitle(0); 
+  TH1D *hFrame = new TH1D("hFrame", "", 10, 0., 20.);
+  setTitles(hFrame, "p_{T} [GeV]", "fake rate", 0.05, 1.1, 2.1);
+  hFrame->SetMinimum(0.); 
+  hFrame->SetMaximum(ymax); 
+  hFrame->Draw(); 
+  hpt->Draw("e5same][");
+  hpt->Draw("histsame][");
+  if (gD) {
+    gD->Draw("p");
+  }
+
+  newLegend(0.6, 0.65, 0.80, 0.89);
+  if (mode == "pions") legg->SetHeader("Pion fake rates"); 
+  if (mode == "kaons") legg->SetHeader("Kaon fake rates"); 
+  if (mode == "protons") legg->SetHeader("Proton fake rates"); 
+  legg->AddEntry(hpt, "MC", "f"); 
+  if (gD) {
+    legg->AddEntry(gD, "data", "p"); 
+  }
+  legg->Draw(); 
+
+  c0->SaveAs(Form("%s/%s-fakeRateOverlaysMM-%s.pdf", fDirectory.c_str(), fSuffix.c_str(), mode.c_str())); 
+  
+  
+}
+
+
+// ----------------------------------------------------------------------
+void plotMisc::fakeRateOverlaysMG(string mode, string charge, string chan) {
+
+  if (mode == "all") {
+    fakeRateOverlaysMG("pions", "pos", "barrel");
+    fakeRateOverlaysMG("pions", "neg", "barrel");
+
+    fakeRateOverlaysMG("kaons", "pos", "barrel");
+    fakeRateOverlaysMG("kaons", "neg", "barrel");
+
+    fakeRateOverlaysMG("pions", "pos", "endcap");
+    fakeRateOverlaysMG("pions", "neg", "endcap");
+
+    fakeRateOverlaysMG("kaons", "pos", "endcap");
+    fakeRateOverlaysMG("kaons", "neg", "endcap");
+    return;
+  }
+
+  double ymax(2.5e-3); 
+
+  TH1D *hpt = new TH1D("hpt", "", 20, 0., 20.); hpt->Sumw2();
+  setHist(hpt, kBlue, 20, 0.001);
+  hpt->SetFillColor(kBlue); 
+  //  setFilledHist(hpt);
+
+  TH1D *marioA(0), *marioP(0), *marioE(0); 
+
+  TGraphErrors *gD(0), *gM(0); 
+
+  PidTable *fptFakePosPions = new PidTable("../macros/pidtables/130702/2012-pionPosFakeRate-mvaMuon.dat"); 
+  PidTable *fptFakeNegPions = new PidTable("../macros/pidtables/130702/2012-pionNegFakeRate-mvaMuon.dat"); 
+
+  PidTable *fptFakePosKaons = new PidTable("../macros/pidtables/130702/2012-kaonPosFakeRate-mvaMuon.dat"); 
+  PidTable *fptFakeNegKaons = new PidTable("../macros/pidtables/130702/2012-kaonNegFakeRate-mvaMuon.dat"); 
+
+  string etaString = (chan=="barrel"? "Eta_0_1.4" : "Eta_1.4_2.4"); 
+
+  if (mode == "pions") {
+    if (charge == "pos") {
+      fptFakePosPions->projectP(hpt, -1.4, 1.4, -180., 180., 1); 
+      for (int i = 1; i < hpt->GetNbinsX(); ++i) hpt->SetBinError(i, 0.5*hpt->GetBinContent(i)); 
+      TFile *fa = TFile::Open(Form("mg/hAllGenParticlePlusRecoPt_%s_pion.root", chan.c_str())); 
+      marioA = (TH1D*)fa->Get(Form("hAssocTkGenParticlePlusRecoPt_%s", etaString.c_str())); 
+      cout << "marioA: " << marioA << endl;
+      TFile *fp = TFile::Open(Form("mg/hAssocGenParticlePlusRecoPt_%s_pion.root", chan.c_str())); 
+      marioP = (TH1D*)fp->Get(Form("hAssocGenParticlePlusRecoPt_%s", etaString.c_str())); 
+      cout << "marioP: " << marioP << endl;
+      marioE = (TH1D*)marioA->Clone("eff"); marioE->Reset(); 
+      marioE->Divide(marioP, marioA, 1., 1., "b");
+
+    } else {
+      fptFakeNegPions->projectP(hpt, -1.4, 1.4, -180., 180., 1); 
+      for (int i = 1; i < hpt->GetNbinsX(); ++i) hpt->SetBinError(i, 0.5*hpt->GetBinContent(i)); 
+      TFile *fa = TFile::Open(Form("mg/hAllGenParticleMinusRecoPt_%s_pion.root", chan.c_str())); 
+      marioA = (TH1D*)fa->Get(Form("hAssocTkGenParticleMinusRecoPt_%s", etaString.c_str()));  
+      cout << "marioA: " << marioA << endl;
+      TFile *fp = TFile::Open(Form("mg/hAssocGenParticleMinusRecoPt_%s_pion.root", chan.c_str())); 
+      marioP = (TH1D*)fp->Get(Form("hAssocGenParticleMinusRecoPt_%s", etaString.c_str())); 
+      cout << "marioP: " << marioP << endl;
+      marioE = (TH1D*)marioA->Clone("eff"); marioE->Reset(); 
+      marioE->Divide(marioP, marioA, 1., 1., "b");
+    }
+  } 
+
+  if (mode == "kaons") {
+    if (charge == "pos") {
+      fptFakePosKaons->projectP(hpt, -1.4, 1.4, -180., 180., 1); 
+      for (int i = 1; i < hpt->GetNbinsX(); ++i) hpt->SetBinError(i, 0.5*hpt->GetBinContent(i)); 
+      TFile *fa = TFile::Open(Form("mg/hAllGenParticlePlusRecoPt_%s_kaon.root", chan.c_str())); 
+      marioA = (TH1D*)fa->Get(Form("hAssocTkGenParticlePlusRecoPt_%s", etaString.c_str())); 
+      cout << "marioA: " << marioA << endl;
+      TFile *fp = TFile::Open(Form("mg/hAssocGenParticlePlusRecoPt_%s_kaon.root", chan.c_str())); 
+      marioP = (TH1D*)fp->Get(Form("hAssocGenParticlePlusRecoPt_%s", etaString.c_str())); 
+      cout << "marioP: " << marioP << endl;
+    } else {
+      fptFakeNegKaons->projectP(hpt, -1.4, 1.4, -180., 180., 1); 
+      for (int i = 1; i < hpt->GetNbinsX(); ++i) hpt->SetBinError(i, 0.5*hpt->GetBinContent(i)); 
+      TFile *fa = TFile::Open(Form("mg/hAllGenParticleMinusRecoPt_%s_kaon.root", chan.c_str())); 
+      marioA = (TH1D*)fa->Get(Form("hAssocTkGenParticleMinusRecoPt_%s", etaString.c_str())); 
+      cout << "marioA: " << marioA << endl;
+      TFile *fp = TFile::Open(Form("mg/hAssocGenParticleMinusRecoPt_%s_kaon.root", chan.c_str())); 
+      marioP = (TH1D*)fp->Get(Form("hAssocGenParticleMinusRecoPt_%s", etaString.c_str())); 
+      cout << "marioP: " << marioP << endl;
+    }
+
+    marioE = (TH1D*)marioA->Clone("eff"); marioE->Reset(); 
+    marioE->Divide(marioP, marioA, 1., 1., "b");
+
+  } 
+
+
+  zone(); 
+  shrinkPad(0.11, 0.25); 
+  gStyle->SetOptStat(0); 
+  gStyle->SetOptTitle(0); 
+  TH1D *hFrame = new TH1D("hFrame", "", 10, 0., 20.);
+  setTitles(hFrame, "p_{T} [GeV]", "fake rate", 0.05, 1.1, 2.1);
+  hFrame->SetMinimum(0.); 
+  hFrame->SetMaximum(ymax); 
+  hFrame->Draw(); 
+  hpt->Draw("e5same][");
+  hpt->Draw("histsame][");
+  marioE->Draw("esame");
+
+  tl->SetTextColor(kBlack); tl->DrawLatex(0.6, 0.82, Form("%s %s", charge.c_str(), mode.c_str())); 
+  tl->SetTextColor(kBlack); tl->DrawLatex(0.6, 0.75, chan.c_str()); 
+  tl->SetTextColor(kBlack); tl->DrawLatex(0.25, 0.92, "Mario"); 
+  tl->SetTextColor(kBlue);  tl->DrawLatex(0.6, 0.92, "Urs"); 
+
+  c0->SaveAs(Form("%s-%s-%s.pdf", chan.c_str(), mode.c_str(), charge.c_str())); 
+
+}
 
 
 // ----------------------------------------------------------------------

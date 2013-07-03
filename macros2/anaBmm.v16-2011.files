@@ -2,6 +2,7 @@
 # ----------------------------------------------------------------------
 # signal data and MC
 type=sg,default       dset=data      lumi=4.9     file=/scratch/ursl/v16-2011-bmm-data.root
+#type=sg,default       dset=data      lumi=4.9     file=/scratch/ursl/tmp/looseBmm0-2011-data.root
 type=sg,default       dset=mc,1.00   lumi=16000.0 file=/scratch/ursl/v16-2011-mix-Bs2MuMu.root
 type=sg,acc           dset=mc,1.00   lumi=16000.0 file=/scratch/ursl/v16-2011-mix-Bs2MuMu.root
 type=bd,default       dset=mc,1.00   lumi=8200.0  file=/scratch/ursl/v16-2011-mix-Bd2MuMu.root

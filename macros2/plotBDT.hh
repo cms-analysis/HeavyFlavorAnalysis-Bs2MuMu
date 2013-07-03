@@ -44,6 +44,8 @@ public:
   
   void plotAmsSSB(); 
   void amsSSB(int chan); 
+  void plotAmsBdtOutput(); 
+  void amsBdtOutput(int chan); 
 
   void overlap();
   void overlayBdtOutput(); 

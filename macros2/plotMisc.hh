@@ -23,7 +23,9 @@ public:
 
   void signalMass();
   void pidTableDisplay();
-  void fakeRateOverlays(std::string mode = "pions");
+  void fakeRateOverlaysDK(std::string mode = "pions");
+  void fakeRateOverlaysMM(std::string mode = "pions");
+  void fakeRateOverlaysMG(std::string mode = "pions", std::string charge = "pos", std::string chan = "barrel");
   void massError();
 
 

@@ -1670,29 +1670,6 @@ void plotClass::loadFiles(const char *files) {
     }
   }
 
-  
-  // https://docs.google.com/spreadsheet/ccc?key=0AhrdqmQ22qAldHREbHpVOGVMaHhQaU9ULXAydkpZc2c&hl=en#gid=0
-  //   fNgen.insert(make_pair("bgLb2KP",    356.e6)); 
-  //   fNgen.insert(make_pair("bgLb2PiP",    374.e6)); 
-  //   fNgen.insert(make_pair("bgLb2PMuNu", 6910.e6)); 
-  
-  //   fNgen.insert(make_pair("SgMc",      249.e6)); 
-  //   fNgen.insert(make_pair("bgBs2KK",    1392.e6)); 
-  //   fNgen.insert(make_pair("bgBs2KPi",    598.e6)); 
-  //   fNgen.insert(make_pair("bgBs2PiPi",   148.e6)); 
-  //   fNgen.insert(make_pair("bgBs2KMuNu", 6702.e6)); 
-  
-  //   fNgen.insert(make_pair("BdMc",        40.e6)); 
-  //   fNgen.insert(make_pair("bgBd2PiPi",    394.e6)); 
-  //   fNgen.insert(make_pair("bgBd2KPi",     996.e6)); 
-  //   fNgen.insert(make_pair("bgBd2KK",      200.e6)); 
-  //   fNgen.insert(make_pair("bgBd2PiMuNu", 6742.e6)); 
-  
-  //   fNgen.insert(make_pair("NoMc",15166.e6)); 
-  //   fNgen.insert(make_pair("CsMc", 9970.e6)); 
-  
-  //   fNgen.insert(make_pair("NoMcAcc", 1)); 
-  //   fNgen.insert(make_pair("CsMcAcc", 1)); 
 
 }
 
@@ -3377,16 +3354,17 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     small->Branch("muid", &fb.gmuid ,"muid/O");
     
     small->Branch("bdt", &fBDT ,"bdt/D");
+    small->Branch("pvn", &fb.pvn ,"pvn/I");
+    small->Branch("pt",   &fb.pt ,"hlt/D");
+    small->Branch("eta",  &fb.eta ,"eta/D");
+    small->Branch("m1pt", &fb.m1pt ,"hlt/D");
+    small->Branch("m2pt", &fb.m2pt ,"hlt/D");
     if (fSaveLargerTree) {
       small->Branch("hlt", &fb.hlt ,"hlt/O");
       small->Branch("hltm", &fb.hltm ,"hltm/O");
       small->Branch("hltm2", &fb.hltm2 ,"hltm2/O");
       small->Branch("gtqual", &fb.gtqual ,"gtqual/O");
-      small->Branch("pt",   &fb.pt ,"hlt/D");
-      small->Branch("eta",  &fb.eta ,"eta/D");
-      small->Branch("m1pt", &fb.m1pt ,"hlt/D");
       small->Branch("m1q", &fb.m1q ,"m1q/I");
-      small->Branch("m2pt", &fb.m2pt ,"hlt/D");
       small->Branch("m2q", &fb.m2q ,"m2q/I");
       small->Branch("pchi2dof", &fb.pchi2dof ,"pchi2dof/D");
       small->Branch("chi2", &fb.chi2 ,"chi2/D");
@@ -3401,7 +3379,6 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
       small->Branch("pvlips2", &fb.pvlips2 ,"pvlips2/D");
       small->Branch("pvip", &fb.pvip ,"pvip/D");
       small->Branch("pvips", &fb.pvips ,"pvips/D");
-      small->Branch("pvn", &fb.pvn ,"pvn/I");
       small->Branch("pvw8", &fb.pvw8 ,"pvw8/D");
       small->Branch("gtqual", &fb.gtqual ,"gtqual/O");
       small->Branch("q", &fb.q ,"q/I");
@@ -3423,7 +3400,6 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     small->Branch("gtau",  &fb.gtau ,"gtau/D");
     small->Branch("m1eta", &fb.m1eta,"m1eta/D");
     small->Branch("m2eta", &fb.m2eta,"m2eta/D");
-    small->Branch("eta",   &fb.eta,"eta/D");
   }
 
   // -- the real loop starts here
@@ -3585,6 +3561,7 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("cb",     &fb.cb);
   t->SetBranchAddress("json",   &fb.json);
   t->SetBranchAddress("gmuid",  &fb.gmuid);
+  t->SetBranchAddress("gmutmid", &fb.gmutmid);
   t->SetBranchAddress("gmumvaid", &fb.gmumvaid);
   t->SetBranchAddress("gtqual", &fb.gtqual);
   t->SetBranchAddress("tm",     &fb.tm);

@@ -69,6 +69,35 @@ void candAna::evtAnalysis(TAna01Event *evt) {
   fpEvt = evt; 
   fBadEvent = false;
 
+  // -- cross check Marco's truth-matching problem with 92 as mothers of the muons (on special file)
+  //   bool evtOK(false); 
+  //   static int n80(0); 
+  //   cout << "evt " << fEvent << " ncands = " << fpEvt->nCands() << ": " ;
+  //   for (int iC = 0; iC < fpEvt->nCands(); ++iC) {
+  //     TAnaCand *pCand = fpEvt->getCand(iC);
+  //     cout << pCand->fType << " "; 
+  //     if (-80 == pCand->fType) { 
+  //       ++n80;
+  //       evtOK = true; 
+  //     }
+  //   }
+  //   cout << " n80 = " << n80 << endl;
+  //   if (!evtOK) {
+  //     cout << "XXX TRUTH CAND NOT FOUND" << endl;
+  //     fpEvt->dumpGenBlock();
+  //   }
+  //   return;
+
+
+
+  //  cout << "candAna blind = " << BLIND << endl;
+
+
+  //   if (fEvt == 239800563) {
+  //     fVerbose = 100; 
+  //   } else {
+  //     fVerbose = 0;
+  //   }
 
   // TESTING d.k.
   //static int count = 0; //dk
@@ -2097,18 +2126,19 @@ bool candAna::tightMuon(TAnaTrack *pT, bool hadronsPass) {
   //             654 3210
   // 80 = 0x50 = 0101 0000
   // global muon
-  //  bool muflag = ((pT->fMuID & 2) == 2);
+  bool muflag = ((pT->fMuID & 2) == 2);
   // GMPT&&TMA:
   //  bool muflag = ((pT->fMuID & 80) == 80);
   // GMPT: 0100 0000 = 0x40
-  bool muflag = ((pT->fMuID & 0x40) == 0x40);
+  //  bool muflag = ((pT->fMuID & 0x40) == 0x40);
   if (verbose) cout << "muflag: " << hex << pT->fMuID << dec << " -> " << muflag << endl;
 
   bool mucuts(true); 
   if (verbose) cout << "mu index: " << pT->fMuIndex << " track index: " << pT->fIndex << endl;
   if (pT->fMuIndex > -1) {
     TAnaMuon *pM = fpEvt->getMuon(pT->fMuIndex);
-    if (pM->fGtrkNormChi2 > 10) mucuts = false; 
+    if (pM->fGtrkNormChi2 > 10.) mucuts = false; 
+    if (pM->fNvalidMuonHits < 1) mucuts = false; 
     if (pM->fNmatchedStations < 2) mucuts = false; 
     if (verbose) cout << "matched muon stations: " << pM->fNmatchedStations << " -> " << mucuts << endl;
   } else {
@@ -2123,7 +2153,8 @@ bool candAna::tightMuon(TAnaTrack *pT, bool hadronsPass) {
   int trkHits = fpReader->numberOfTrackerLayers(pT);
   if (fYear == 2011) {
     // old version!! if (pT->fValidHits < 11) trackcuts = false; 
-    if (trkHits < 9) trackcuts = false; 
+    // not any more for MVA muon ID!!    if (trkHits < 9) trackcuts = false; 
+    if (trkHits < 6) trackcuts = false; 
     if (verbose)  cout << "valid hits: " << pT->fValidHits << " -> " << trackcuts << endl;
   } else if (fYear == 2012) {
     if (trkHits < 6) trackcuts = false; 

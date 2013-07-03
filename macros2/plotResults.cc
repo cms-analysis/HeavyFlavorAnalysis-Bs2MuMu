@@ -568,13 +568,19 @@ void plotResults::calculateRareBgNumbers(int chan) {
 //   double errPr2[] = {1.00*1.00, 1.00*1.00};
 
   // -- mean 'MVA' values
-  double epsMu[]  = {0.83, 0.90}; // this is the square of the muon ID efficiency
-  double epsPi[]  = {0.00087, 0.00087}; 
-  double errPi2[] = {0.40*0.40, 0.40*0.40}; // changed to 40% uncertainty to be consistent with Michael's central value
+  double epsMu[]  = {fNumbersBs[0]->effMuidMC, fNumbersBs[1]->effMuidMC}; // this is the square of the muon ID efficiency
+  double epsPi[]  = {0.0009, 0.0009}; 
+  double epsPi2[] = {epsPi[0]*epsPi[0], epsPi[1]*epsPi[1]}; 
+  double errPi[]  = {0.50, 0.50};          
+  double errPi2[] = {errPi[0]*errPi[0], errPi[1]*errPi[1]};
   double epsKa[]  = {0.0015, 0.0015}; 
-  double errKa2[] = {0.40*0.40, 0.40*0.40}; 
+  double epsKa2[] = {epsKa[0]*epsKa[0], epsKa[1]*epsKa[1]}; 
+  double errKa[]  = {0.50, 0.50}; 
+  double errKa2[] = {errKa[0]*errKa[0], errKa[1]*errKa[1]};
   double epsPr[]  = {0.00061, 0.00061};
-  double errPr2[] = {1.00*1.00, 1.00*1.00};
+  double epsPr2[] = {epsPr[0]*epsPr[0], epsPr[1]*epsPr[1]}; 
+  double errPr[]  = {0.50, 0.50};
+  double errPr2[] = {errKa[0]*errKa[0], errKa[1]*errKa[1]};
 
   double teff[] = {fNumbersBs[0]->effTrigMC, fNumbersBs[1]->effTrigMC};
 
@@ -602,7 +608,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
 
   cname = "bgBs2KK";
   colors.insert(make_pair(cname, 30)); hatches.insert(make_pair(cname, 3004)); mscale.insert(make_pair(cname, epsKa[chan]*epsKa[chan])); 
-  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2[chan] + errKa2[chan]))); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + 1.))); //  + errKa2[chan] + errKa2[chan]))); 
 
   cname = "bgBs2KPi";
   colors.insert(make_pair(cname, 32)); hatches.insert(make_pair(cname, 3005)); mscale.insert(make_pair(cname, epsPi[chan]*epsKa[chan])); 
@@ -610,7 +616,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
 
   cname = "bgBs2PiPi"; 
   colors.insert(make_pair(cname, 33)); hatches.insert(make_pair(cname, 3007)); mscale.insert(make_pair(cname, epsPi[chan]*epsPi[chan])); 
-  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan] + errPi2[chan]))); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + 1.))); //  + errPi2[chan] + errPi2[chan]))); 
 
   cname = "bgBs2KMuNu";
   colors.insert(make_pair(cname, 34)); hatches.insert(make_pair(cname, 3008)); mscale.insert(make_pair(cname, epsKa[chan]*epsMu[chan])); 
@@ -618,12 +624,12 @@ void plotResults::calculateRareBgNumbers(int chan) {
 
   cname = "bgBs2MuMuGamma";
   colors.insert(make_pair(cname, 36));hatches.insert(make_pair(cname, 3009));mscale.insert(make_pair(cname, epsMu[chan]*epsMu[chan]));
-  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan]))); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
 
 
   cname = "bgBd2KK";
   colors.insert(make_pair(cname, 40)); hatches.insert(make_pair(cname, 3004)); mscale.insert(make_pair(cname, epsKa[chan]*epsKa[chan])); 
-  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errKa2[chan] + errKa2[chan]))); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + 1.))); //  + errKa2[chan] + errKa2[chan]))); 
 
   cname = "bgBd2KPi";
   colors.insert(make_pair(cname, 41)); hatches.insert(make_pair(cname, 3005)); mscale.insert(make_pair(cname, epsKa[chan]*epsPi[chan])); 
@@ -631,7 +637,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
 
   cname = "bgBd2PiPi";
   colors.insert(make_pair(cname, 42)); hatches.insert(make_pair(cname, 3007)); mscale.insert(make_pair(cname, epsPi[chan]*epsPi[chan])); 
-  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan] + errPi2[chan]))); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + 1.))); //  + errPi2[chan] + errPi2[chan]))); 
 
   cname = "bgBd2PiMuNu";
   colors.insert(make_pair(cname, 43));hatches.insert(make_pair(cname, 3008));mscale.insert(make_pair(cname, epsPi[chan]*epsMu[chan]));
@@ -639,11 +645,11 @@ void plotResults::calculateRareBgNumbers(int chan) {
 
   cname = "bgBd2Pi0MuMu";
   colors.insert(make_pair(cname, 44));hatches.insert(make_pair(cname, 3003));mscale.insert(make_pair(cname, epsMu[chan]*epsMu[chan]));
-  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan]))); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
 
   cname = "bgBd2MuMuGamma";
   colors.insert(make_pair(cname, 45));hatches.insert(make_pair(cname, 3002));mscale.insert(make_pair(cname, epsMu[chan]*epsMu[chan]));
-  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname] + errPi2[chan]))); 
+  err.insert(make_pair(cname, TMath::Sqrt(fBFE[cname]*fBFE[cname]))); 
 
 
   cname = "bgBu2PiMuMu";
@@ -665,8 +671,13 @@ void plotResults::calculateRareBgNumbers(int chan) {
 
   double valInc(0.), error(0.); 
   double vRare[4], vRareSl[4], vRareE[4], vRareSlE[4]; 
+  double vRareHh[4], vRarePiPi[4], vRareKPi[4], vRareKK[4], vRarePiP[4], vRareKP[4]; 
+  double vRareHhE[4], vRarePiPiE[4], vRareKPiE[4], vRareKKE[4], vRarePiPE[4], vRareKPE[4]; 
   for (int i = 0; i < 4; ++i) {
     vRare[i] = vRareSl[i] = vRareE[i] = vRareSlE[i] = 0.;
+
+    vRareHh[i] = vRarePiPi[i] = vRareKPi[i] = vRareKK[i] = vRarePiP[i] = vRareKP[i] 
+      = vRareHhE[i] = vRarePiPiE[i] = vRareKPiE[i] = vRareKKE[i] = vRarePiPE[i] = vRareKPE[i] = 0.;
   }
 
   double rareBs    = 0.;
@@ -690,6 +701,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
   TH1D *hRare, *hRareNw8, *hRareW8; 
   double tot, bd, bs, efftot, pss, pdd;
   double eps(0.00001);
+  int mbin(0); 
   for (map<string, string>::iterator imap = fName.begin(); imap != fName.end(); ++imap) {  
     fRareName = imap->first; 
     if (string::npos == fRareName.find("bg")) continue;
@@ -754,55 +766,85 @@ void plotResults::calculateRareBgNumbers(int chan) {
 
     hRare = hRareW8;    
 
+    mbin = 0; 
     valInc = hRare->Integral(hRare->FindBin(4.9), hRare->FindBin(fCuts[chan]->mBdLo-fEpsilon));
     error  = valInc*err[fRareName];
     fTEX <<  Form("\\vdef{%s:%s:loSideband%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
     fTEX <<  Form("\\vdef{%s:%s:loSideband%d:err}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
     // FIXME: add also MuMu to sl!
-    if (string::npos == fRareName.find("Nu")) {
-      vRare[0]    += valInc; 
-      vRareE[0]   += error*error; 
+    //    if (string::npos == fRareName.find("Nu")) {
+    if ((string::npos != fRareName.find("Nu")) || (string::npos != fRareName.find("MuMu"))) {
+      vRareSl[mbin]  += valInc; 
+      vRareSlE[mbin] += error*error; 
     } else {
-      vRareSl[0]  += valInc; 
-      vRareSlE[0] += error*error; 
+      vRare[mbin]    += valInc; 
+      vRareE[mbin]   += error*error; 
     }
+    
+    if ((string::npos != fRareName.find("PiPi")))     { vRarePiPi[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("KK")))       { vRareKK[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("KPi")))      { vRareKPi[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("bgLb2KP")))  { vRareKP[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("bgLb2PiP"))) { vRarePiP[mbin]  += valInc; }
+    
 
+    mbin = 1; 
     valInc = hRare->Integral(hRare->FindBin(fCuts[chan]->mBdLo+fEpsilon), hRare->FindBin(fCuts[chan]->mBsLo-fEpsilon));
     error  = valInc*err[fRareName];
     fTEX <<  Form("\\vdef{%s:%s:bdRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
     fTEX <<  Form("\\vdef{%s:%s:bdRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
-    if (string::npos == fRareName.find("Nu")) {
-      vRare[1]    += valInc; 
-      vRareE[1]   += error*error; 
+    //    if (string::npos == fRareName.find("Nu")) {
+    if ((string::npos != fRareName.find("Nu")) || (string::npos != fRareName.find("MuMu"))) {
+      vRareSl[mbin]  += valInc; 
+      vRareSlE[mbin] += error*error; 
     } else {
-      vRareSl[1]  += valInc; 
-      vRareSlE[1] += error*error; 
+      vRare[mbin]    += valInc; 
+      vRareE[mbin]   += error*error; 
     }
+    if ((string::npos != fRareName.find("PiPi")))     { vRarePiPi[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("KK")))       { vRareKK[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("KPi")))      { vRareKPi[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("bgLb2KP")))  { vRareKP[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("bgLb2PiP"))) { vRarePiP[mbin]  += valInc; }
 
+    mbin = 2; 
     valInc = hRare->Integral(hRare->FindBin(fCuts[chan]->mBsLo+fEpsilon), hRare->FindBin(fCuts[chan]->mBsHi-fEpsilon));
     error  = valInc*err[fRareName];
     cout << "NNNNNN%%%%%NNNNNNNNNN inside Bs box: " << valInc << endl;
     fTEX <<  Form("\\vdef{%s:%s:bsRare%d}   {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
     fTEX <<  Form("\\vdef{%s:%s:bsRare%dE}  {\\ensuremath{{%7.6f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
-    if (string::npos == fRareName.find("Nu")) {
-      vRare[2]    += valInc; 
-      vRareE[2]   += error*error; 
+    //    if (string::npos == fRareName.find("Nu")) {
+    if ((string::npos != fRareName.find("Nu")) || (string::npos != fRareName.find("MuMu"))) {
+      vRareSl[mbin]  += valInc; 
+      vRareSlE[mbin] += error*error; 
     } else {
-      vRareSl[2]  += valInc; 
-      vRareSlE[2] += error*error; 
+      vRare[mbin]    += valInc; 
+      vRareE[mbin]   += error*error; 
     }
+    if ((string::npos != fRareName.find("PiPi")))     { vRarePiPi[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("KK")))       { vRareKK[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("KPi")))      { vRareKPi[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("bgLb2KP")))  { vRareKP[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("bgLb2PiP"))) { vRarePiP[mbin]  += valInc; }
 
+    mbin = 3; 
     valInc = hRare->Integral(hRare->FindBin(fCuts[chan]->mBsHi+fEpsilon), hRare->FindBin(5.9));
     error  = valInc*err[fRareName];
     fTEX <<  Form("\\vdef{%s:%s:hiSideband%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
     fTEX <<  Form("\\vdef{%s:%s:hiSideband%d:err}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
-    if (string::npos == fRareName.find("Nu")) {
-      vRare[3]    += valInc; 
-      vRareE[3]   += error*error; 
+    //    if (string::npos == fRareName.find("Nu")) {
+    if ((string::npos != fRareName.find("Nu")) || (string::npos != fRareName.find("MuMu"))) {
+      vRareSl[mbin]  += valInc; 
+      vRareSlE[mbin] += error*error; 
     } else {
-      vRareSl[3]  += valInc; 
-      vRareSlE[3] += error*error; 
+      vRare[mbin]    += valInc; 
+      vRareE[mbin]   += error*error; 
     }
+    if ((string::npos != fRareName.find("PiPi")))     { vRarePiPi[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("KK")))       { vRareKK[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("KPi")))      { vRareKPi[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("bgLb2KP")))  { vRareKP[mbin]  += valInc; }
+    if ((string::npos != fRareName.find("bgLb2PiP"))) { vRarePiP[mbin]  += valInc; }
 
     hRare->SetFillColor(colors[fRareName]);
     hRare->SetFillStyle(1000);
@@ -839,6 +881,13 @@ void plotResults::calculateRareBgNumbers(int chan) {
   for (int i = 0; i < 4; ++i) {
     vRareE[i]   = TMath::Sqrt(vRareE[i]); 
     vRareSlE[i] = TMath::Sqrt(vRareSlE[i]); 
+
+    vRareHh[i] = vRarePiPi[i] + vRareKK[i] + vRareKPi[i] + vRareKP[i] + vRarePiP[i];
+    vRareHhE[i]= quadraticSum(3, 
+			      (vRareKPi[i]/epsKa[0] + 2.*vRareKK[i]/epsKa[0] + vRareKP[i]/epsKa[0])*errKa[0]*epsKa[0], 
+			      (vRareKPi[i]/epsPi[0] + 2.*vRarePiPi[i]/epsPi[0] + vRareKP[i]/epsPi[0])*errPi[0]*epsPi[0], 
+			      (vRareKP[i]/epsPr[0] + 2.*vRarePiP[i]/epsPr[0])*errPr[0]*epsPr[0]
+			      );
   }
 	 
   shrinkPad(0.12, 0.18); 
@@ -938,6 +987,36 @@ void plotResults::calculateRareBgNumbers(int chan) {
   fNumbersBs[chan]->fBgRareHi   = fNumbersBs[chan]->fBgRslHi + fNumbersBs[chan]->fBgPeakHi;
   fNumbersBs[chan]->fBgRareHiE1 = quadraticSum(2, fNumbersBs[chan]->fBgRslHiE1, fNumbersBs[chan]->fBgPeakHiE1);
   fNumbersBs[chan]->fBgRareHiE2 = quadraticSum(2, fNumbersBs[chan]->fBgRslHiE2, fNumbersBs[chan]->fBgPeakHiE2);
+
+
+// -- This comparison agrees perfectly!
+  cout << "COMPARISON: " 
+       << fNumbersBs[chan]->fBgPeakLo 
+       << " vs hh sum: " << (vRarePiPi[0]+vRareKK[0]+vRareKPi[0]+vRareKP[0]+vRarePiP[0])
+       << " vs hh: " << vRareHh[0]
+       << " +/- " << vRareHhE[0]
+       << endl;
+
+  cout << "COMPARISON: " 
+       << fNumbersBs[chan]->fBgPeakBd 
+       << " vs hh sum: " << (vRarePiPi[1]+vRareKK[1]+vRareKPi[1]+vRareKP[1]+vRarePiP[1])
+       << " vs hh: " << vRareHh[1]
+       << " +/- " << vRareHhE[1]
+       << endl;
+
+  cout << "COMPARISON: " 
+       << fNumbersBs[chan]->fBgPeakBs
+       << " vs hh sum: " << (vRarePiPi[2]+vRareKK[2]+vRareKPi[2]+vRareKP[2]+vRarePiP[2])
+       << " vs hh: " << vRareHh[2]
+       << " +/- " << vRareHhE[2]
+       << endl;
+
+  cout << "COMPARISON: " 
+       << fNumbersBs[chan]->fBgPeakHi 
+       << " vs hh sum: " << (vRarePiPi[3]+vRareKK[3]+vRareKPi[3]+vRareKP[3]+vRarePiP[3])
+       << " vs hh: " << vRareHh[3]
+       << " +/- " << vRareHhE[3]
+       << endl;
 
 
   fTEX << "% ----------------------------------------------------------------------" << endl;
