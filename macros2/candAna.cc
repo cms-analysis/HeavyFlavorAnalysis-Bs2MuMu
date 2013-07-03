@@ -2126,11 +2126,11 @@ bool candAna::tightMuon(TAnaTrack *pT, bool hadronsPass) {
   //             654 3210
   // 80 = 0x50 = 0101 0000
   // global muon
-  bool muflag = ((pT->fMuID & 2) == 2);
+  //  bool muflag = ((pT->fMuID & 2) == 2);
   // GMPT&&TMA:
   //  bool muflag = ((pT->fMuID & 80) == 80);
   // GMPT: 0100 0000 = 0x40
-  //  bool muflag = ((pT->fMuID & 0x40) == 0x40);
+  bool muflag = ((pT->fMuID & 0x40) == 0x40);
   if (verbose) cout << "muflag: " << hex << pT->fMuID << dec << " -> " << muflag << endl;
 
   bool mucuts(true); 
@@ -2151,18 +2151,22 @@ bool candAna::tightMuon(TAnaTrack *pT, bool hadronsPass) {
   if (verbose)  cout << "pixel layers: " << fpReader->numberOfPixLayers(pT) << " -> " << trackcuts << endl;
 
   int trkHits = fpReader->numberOfTrackerLayers(pT);
-  if (fYear == 2011) {
-    // old version!! if (pT->fValidHits < 11) trackcuts = false; 
-    // not any more for MVA muon ID!!    if (trkHits < 9) trackcuts = false; 
-    if (trkHits < 6) trackcuts = false; 
-    if (verbose)  cout << "valid hits: " << pT->fValidHits << " -> " << trackcuts << endl;
-  } else if (fYear == 2012) {
-    if (trkHits < 6) trackcuts = false; 
-    if (verbose)  cout << "number of tracker layers: " << trkHits << " -> " << trackcuts << endl;
-  } else {
-    if (pT->fValidHits < 11) trackcuts = false; 
-    if (verbose)  cout << "valid hits: " << pT->fValidHits << " -> " << trackcuts << endl;
+  if (0) {
+    if (fYear == 2011) {
+      // old version!! if (pT->fValidHits < 11) trackcuts = false; 
+      // not any more for MVA muon ID!!    if (trkHits < 9) trackcuts = false; 
+      if (trkHits < 6) trackcuts = false; 
+      if (verbose)  cout << "valid hits: " << pT->fValidHits << " -> " << trackcuts << endl;
+    } else if (fYear == 2012) {
+      if (trkHits < 6) trackcuts = false; 
+      if (verbose)  cout << "number of tracker layers: " << trkHits << " -> " << trackcuts << endl;
+    } else {
+      if (pT->fValidHits < 11) trackcuts = false; 
+      if (verbose)  cout << "valid hits: " << pT->fValidHits << " -> " << trackcuts << endl;
+    }
   }
+
+  if (trkHits < 6) trackcuts = false; 
 
   if (muflag && mucuts && trackcuts) {
     if (verbose) cout << " +++ passed "<<endl;
