@@ -7,7 +7,7 @@
 
 #include "pdf_toyMC.h"
 
-pdf_toyMC::pdf_toyMC(bool print, string input_estimates, string range, int BF, bool SM, bool bd_constr, int simul, int simulbdt, int simulall, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, bool randomsyste, bool rare_constr_, int nexp, bool bd, string years, string bias): pdf_fitData( print, input_estimates, range, BF, SM, bd_constr, simul, simulbdt, simulall, pee_, bdt_fit, ch_s, sig, asimov, syste, randomsyste, rare_constr_, nexp, bd, years) {
+pdf_toyMC::pdf_toyMC(bool print, string input_estimates, string range, int BF, bool SM, bool bd_constr, int simul, int simulbdt, int simulall, bool pee_, bool bdt_fit, bool final, string ch_s, int sig, bool asimov, bool syste, bool randomsyste, bool rare_constr_, int nexp, bool bd, string years, string bias): pdf_fitData( print, input_estimates, range, BF, SM, bd_constr, simul, simulbdt, simulall, pee_, bdt_fit, final, ch_s, sig, asimov, syste, randomsyste, rare_constr_, nexp, bd, years) {
   cout << "pdf_toyMC constructor" << endl;
   bias_ = bias;
 
@@ -197,7 +197,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     //////
     //////////
 
-    if (simul_) {
+    if (simul_ && print_) {
       if (k == 1) {
         print_each_channel("Mass", "_first", ws_temp, data);
         if (bdt_fit_) print_each_channel("bdt", "_first_BDT", ws_temp, data);

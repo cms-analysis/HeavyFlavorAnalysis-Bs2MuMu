@@ -59,6 +59,8 @@ static string bdtbinnings_s = "input/bdtbinnings.root";
 double bdt_cut = -1;
 bool semi = false;
 bool bdtsplit = false;
+bool final = false;
+bool hack = false;
 
 void help() {
 
@@ -84,6 +86,7 @@ void help() {
   cout << "-bdt_cut # \t minimum bdt" << endl;
   cout << "-semi \t semi mass shape from mc data" << endl;
   cout << "-bdtsplit \t splits bdt in 1,2,3,4" << endl;
+  cout << "-final \t don't change input numbers, take the ones from AN" << endl;
   cout << endl;
   cout << ">>>>>>>>> make_bdt_uml_inputs.o: make bdt effs" << endl;
   cout << "-bins ### 1 \t ### is a sequence of numbers describing the bdt binning vector. e.g. -bins -0.2 0.2 0.5 1" << endl;
@@ -104,6 +107,7 @@ void help() {
   cout << "-e #filename \t estimates file (useful for significance)" << endl;
   cout << "-pee \t per-event-error" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;
+  cout << "-free_rare #" << endl;
 //  cout << "-cuts #cutstring \t string cut for small tree: i.e. \"bdt>0.&&bdt<0.18\"; default is \"" << cuts << "\"" << endl;
   cout << "-cuts_file \t file containing bdt cuts for small tree" << endl;
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
@@ -120,6 +124,7 @@ void help() {
   cout << "-ws \t input workspace" << endl;
   cout << "-free # \t rare decays are not constant: 1 = semi, 2 = peak, 3 = both" << endl;
   cout << "-bdt_cut # \t minimum bdt" << endl;
+  cout << "-final \t don't change input numbers, take the ones from AN" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -146,6 +151,7 @@ void help() {
   cout << "-rare_constr \t rare yield is constraint" << endl;
   cout << "-hack2011 \t hack 2011 semi to 2012" << endl;
   cout << "-free # \t rare decays are not constant: 1 = semi, 2 = peak, 3 = both" << endl;
+  cout << "-final \t don't change input numbers, take the ones from AN" << endl;
   cout << endl;
 
   exit(EXIT_SUCCESS);
@@ -327,6 +333,10 @@ void parse_options(int argc, char* argv[]){
       hack_semi2011 = true;
       cout << "hack2011" << endl;
     }
+    if (!strcmp(argv[i],"-hack")) {
+      hack = true;
+      cout << "hack" << endl;
+    }
     if (!strcmp(argv[i],"-rare_constr")) {
     	rare_constr = true;
       cout << "rare yield is constrained, so it is with systematics" << endl;
@@ -355,6 +365,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-bdtsplit")) {
     	bdtsplit = true;
       cout << "bdt splitted in 1,2,3,4" << endl;
+    }
+    if (!strcmp(argv[i],"-final")) {
+    	final = true;
+    	cout << "numbers from AN" << endl;
     }
     if (!strcmp(argv[i],"-h")) help();
   }

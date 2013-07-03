@@ -60,29 +60,9 @@
 using namespace std;
 using namespace RooFit;
 
-struct GlobalChi2 {
-   GlobalChi2(  ROOT::Math::IMultiGenFunction & f1,  ROOT::Math::IMultiGenFunction & f2) :
-      fChi2_1(&f1), fChi2_2(&f2) {}
-
-   // parameter vector is first background (in common 1 and 2) and then is signal (only in 2)
-   double operator() (const double *par) const {
-      double p1[2];
-      p1[0] = par[0]; // exp amplitude in B histo
-      p1[1] = par[2]; // exp common parameter
-
-      double p2[2];
-      p2[0] = par[1]; // exp amplitude in S+B histo
-      p2[1] = par[2]; // exp common parameter
-      return (*fChi2_1)(p1) + (*fChi2_2)(p2);
-   }
-
-   const  ROOT::Math::IMultiGenFunction * fChi2_1;
-   const  ROOT::Math::IMultiGenFunction * fChi2_2;
-};
-
 class pdf_analysis {
 public:
-  pdf_analysis(bool print, string ch_s = "0", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, int simul = 1, int simulbdt = 1, int simulall = 1, bool pee_ = false, bool bdt_fit = false);
+  pdf_analysis(bool print, string ch_s = "0", string range = "all", int BF = 0, bool SM = false, bool bd_constr = false, int simul = 1, int simulbdt = 1, int simulall = 1, bool pee_ = false, bool bdt_fit = false, bool final = false);
   ~pdf_analysis();
   void set_ws(RooWorkspace *ws) {ws_ = ws;}
   RooWorkspace* get_ws() {return ws_;}
@@ -106,11 +86,10 @@ public:
 
   void fit_pdf (string pdf, RooAbsData* data, bool extended, bool sumw2error = true, bool hesse = true, bool setconstant = true);
   void set_pdf_constant(string pdf);
-  void set_bkg_normalization(string input); //set peak fraction parameter to Bu2JpsiK
 
 
   void get_bkg_from_tex();
-  void get_bkg_yields(string filename, string dir, int offset = 0);
+  void get_bkg_yields(string filename, string dir, int offset = 0, int bdtcats = -1);
 
   string pdf_name;
 
@@ -127,10 +106,10 @@ public:
   RooRealVar* MassRes;
   RooRealVar* ReducedMassRes;
   RooRealVar* bdt;
-//  RooRealVar* bdt_0;
-//  RooRealVar* bdt_1;
-//  RooRealVar* bdt_2;
-//  RooRealVar* bdt_3;
+  RooRealVar* bdt_0;
+  RooRealVar* bdt_1;
+  RooRealVar* bdt_2;
+  RooRealVar* bdt_3;
   RooRealVar* eta;
   RooRealVar* m1eta;
   RooRealVar* m2eta;
@@ -176,6 +155,7 @@ public:
   void set_bdt_min(vector <double> cuts);
 
   bool bdtsplit;
+  void hack_comb_slope();
 
 protected:
   string default_console_color;
@@ -245,6 +225,8 @@ protected:
   void fill_bdt_boundaries();
 
   vector <double> bdt_cuts;
+  bool final_;
+  void set_bkg_normalization(string input); //set peak fraction parameter to Bu2JpsiK
 
 private:
   void define_bs(int i, int j);

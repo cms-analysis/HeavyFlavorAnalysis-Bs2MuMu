@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
   /// MC shapes
   if (SM && bd_const) {cout << "please select SM OR bd_const, not both" << endl; return EXIT_FAILURE;}
 
-  pdf_analysis ana1(print, ch_s, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit);
+  pdf_analysis ana1(print, ch_s, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit, final);
   if (bdtsplit) ana1.bdtsplit = true;
   ana1.set_SMratio(0.09);
   if (no_legend) ana1.no_legend = true;
@@ -57,14 +57,15 @@ int main(int argc, char* argv[]) {
   vector <string> decays_rdsname(decays_n);
 
   vector <RooDataSet*> rds_smalltree(decays_n);
-  RooDataSet* hi_stat_comb;
+  RooDataSet* rds_me_comb;
+  RooDataSet* rds_m_comb;
 
   RooRealVar* m = ws->var("Mass");
   RooRealVar* bdt = ws->var("bdt");
-//  RooRealVar* bdt_0 = ws->var("bdt_0");
-//  RooRealVar* bdt_1 = ws->var("bdt_1");
-//  RooRealVar* bdt_2 = ws->var("bdt_2");
-//  RooRealVar* bdt_3 = ws->var("bdt_3");
+  RooRealVar* bdt_0 = ws->var("bdt_0");
+  RooRealVar* bdt_1 = ws->var("bdt_1");
+  RooRealVar* bdt_2 = ws->var("bdt_2");
+  RooRealVar* bdt_3 = ws->var("bdt_3");
   RooRealVar* eta = ws->var("eta");
   RooRealVar* m1eta = ws->var("m1eta");
   RooRealVar* m2eta = ws->var("m2eta");
@@ -91,16 +92,19 @@ int main(int argc, char* argv[]) {
     RooArgList varlist(*m, *MassRes, *ReducedMassRes, *channel_cat);
     if (bdt_fit) {
     	varlist.add(*bdt);
-//    	varlist.add(*bdt_0);
-//    	varlist.add(*bdt_1);
-//    	varlist.add(*bdt_2);
-//    	varlist.add(*bdt_3);
+    	varlist.add(*bdt_0);
+    	varlist.add(*bdt_1);
+    	varlist.add(*bdt_2);
+    	varlist.add(*bdt_3);
     }
     if (simul_bdt || simul_all) varlist.add(*bdt_cat);
     if (simul_all) varlist.add(*all_cat);
     varlist.add(*weight);
     rds_smalltree[i] = new RooDataSet(decays_rdsname[i].c_str(), decays_rdsname[i].c_str(), varlist, "weight");
-    if (i == decays_n - 1) hi_stat_comb = new RooDataSet(decays[decays_n-1].c_str(), decays[decays_n-1].c_str(), varlist, "weight");
+    if (i == decays_n - 1) {
+    	rds_me_comb = new RooDataSet(decays[decays_n-1].c_str(), decays[decays_n-1].c_str(), varlist, "weight");
+    	rds_m_comb = new RooDataSet(decays[decays_n-1].c_str(), decays[decays_n-1].c_str(), varlist, "weight");
+    }
 
     for (int yy = 0; yy < years; yy++) {
       int y = (years == 2) ? yy : years_i;
@@ -185,12 +189,10 @@ int main(int argc, char* argv[]) {
         if (barrel) {
           eta_channel = 0 + 2*yy;
           channel_cat->setIndex(eta_channel);
-
         }
         else {
           eta_channel = 1 + 2*yy;
           channel_cat->setIndex(eta_channel);
-
         }
 
         /// bdt channels
@@ -214,19 +216,20 @@ int main(int argc, char* argv[]) {
         RooArgList varlist_tmp(*m, *MassRes, *ReducedMassRes, *channel_cat);
         if (bdt_fit) {
         	varlist_tmp.add(*bdt);
-//        	bdt_0->setVal(bdt_t);
-//        	bdt_1->setVal(bdt_t);
-//        	bdt_2->setVal(bdt_t);
-//        	bdt_3->setVal(bdt_t);
-//        	varlist_tmp.add(*bdt_0);
-//        	varlist_tmp.add(*bdt_1);
-//        	varlist_tmp.add(*bdt_2);
-//        	varlist_tmp.add(*bdt_3);
+        	bdt_0->setVal(bdt_t);
+        	bdt_1->setVal(bdt_t);
+        	bdt_2->setVal(bdt_t);
+        	bdt_3->setVal(bdt_t);
+        	varlist_tmp.add(*bdt_0);
+        	varlist_tmp.add(*bdt_1);
+        	varlist_tmp.add(*bdt_2);
+        	varlist_tmp.add(*bdt_3);
         }
         if (simul_bdt || simul_all) varlist_tmp.add(*bdt_cat);
         if (simul_all) varlist_tmp.add(*all_cat);
 
-        if (i == decays_n - 1 && bdt_t > -0.2 && muid_t) hi_stat_comb->add(varlist_tmp, weight); // only for bdt > 0.1
+        if (i == decays_n-1 && bdt_t > -0.2 && bdt_t < 0.1 && muid_t) rds_me_comb->add(varlist_tmp, weight); // comb mass res
+        if (i == decays_n-1 && bdt_t > 0.05 && muid_t) rds_m_comb->add(varlist_tmp, weight); // comb mass slope starting from bdt > 0
 
         if (barrel) {
         		if (cuts_f_b && bdt_t < cuts_v[0 + 2*yy]) continue;
@@ -234,9 +237,10 @@ int main(int argc, char* argv[]) {
         else {
             if (cuts_f_b && bdt_t < cuts_v[1 + 2*yy]) continue;
         }
-        if (!muid_t) continue;
-//        if (i != decays_n-1 && !muid_t) continue;  ///muon sample for all
-//        if (i == decays_n-1 && (m1bdt > 0.360 && m2bdt > 0.360)) continue; ///antimuon sample for combinatorics
+//        if (!muid_t) continue;
+        if (i != decays_n-1 && !(muid_t)) continue;  ///muon sample for all
+        if (y == 0 && i == decays_n-1 && ((m1bdt > 0.450 && m2bdt > 0.450) || (m1bdt < -1 || m2bdt < -1)) ) continue; ///antimuon sample for comb pdf and too small statistics for 2011
+        if (y == 1 && i == decays_n-1 && ((m1bdt > 0.360 && m2bdt > 0.360) || (m1bdt < -1 || m2bdt < -1)) ) continue; ///antimuon sample for comb pdf
 
         if (simul_bdt || simul_all) {
         	if (bdt_channel == -1) continue; /// bdt < ###
@@ -277,24 +281,27 @@ int main(int argc, char* argv[]) {
     ana1.channel = simul ? j : ch_i;
     /// 1D
     for (int k = 0; k < ana1.bdt_index_max(j); k++) {
-      ana1.channel_bdt = (simul_bdt || simul_all) ? k : ch_bdt_i;
+
+    	ana1.channel_bdt = (simul_bdt || simul_all) ? k : ch_bdt_i;
+
+    	if (semi) ana1.define_semi_pdf(rds_semi, "semi", rkeys);
+
       ana1.define_massRes_pdf(rds_smalltree[0], "bs", rkeys);
       ana1.define_massRes_pdf(rds_smalltree[1], "bd", rkeys);
-      ana1.define_massRes_pdf(rds_semi, "semi", rkeys);
       ana1.define_massRes_pdf(rds_peak, "peak", rkeys);
-      ana1.define_massRes_pdf(hi_stat_comb, "comb", rkeys); // high statistics for mass resolution!
+    	ana1.define_massRes_pdf(rds_semi, "semi", rkeys);
+      ana1.define_massRes_pdf(rds_me_comb, "comb", rkeys); // high statistics for mass resolution!
 
-      if (semi) ana1.define_semi_pdf(rds_semi, "semi", rkeys);
     }
     /// 2D
     if (bdt_fit) {
     	TFile *bdt_syst_f = new TFile("input/div_bdt_jpsi_bin0.root");
-    	bs_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_smalltree[0], "bs", 0, rkeys);
-    	bd_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_smalltree[1], "bd", 0, rkeys);
-    	peak_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_semi, "semi", 0, rkeys);
-    	semi_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_peak, "peak", 0, rkeys);
+    	bs_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_smalltree[0], "bs", 0, rkeys, -1);
+    	bd_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_smalltree[1], "bd", 0, rkeys, -1);
+    	peak_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_peak, "peak", 0, rkeys, -1);
+    	semi_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_semi, "semi", 0, rkeys, -1);
       TFile *bdt_syst_comb_f = new TFile("input/div_bdt.root");
-      comb_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_smalltree[decays_n-1], "comb", 0, rkeys);
+      comb_bdt_histo[ana1.channel] = ana1.define_bdt_pdf(rds_smalltree[decays_n-1], "comb", 0, rkeys, -1);
     }
   }
 
@@ -377,8 +384,8 @@ int main(int argc, char* argv[]) {
       ana1.fit_pdf(ana1.name("semi", j, k), rad_semi, false, true, false);
 
       /// comb
-      ana1.fit_pdf(ana1.name("comb", j, k), rad_comb, false, true, false, false);
-      ana1.setSBslope(ana1.name("comb", j, k), rad_comb);
+//      ana1.fit_pdf(ana1.name("comb", j, k), rad_comb, false, true, false, false);
+      ana1.setSBslope(ana1.name("comb", j, k), rds_m_comb);
 
 //      ana1.print_ = false;
 //      ana1.define_rare3(j, k);

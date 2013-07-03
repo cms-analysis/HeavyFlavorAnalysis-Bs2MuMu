@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
   }
   if (!(!bias_s.compare("no") || !bias_s.compare("c+") || !bias_s.compare("c-") || !bias_s.compare("tau+") || !bias_s.compare("tau-") || !bias_s.compare("sig+") || !bias_s.compare("sig-"))) { cout << "I don't understand what to bias: please enter -bias c+, c-, tau+, tau-, sig+, sig-" << endl; exit(EXIT_FAILURE);}
   if (!pdf_test_b) pdf_test = pdf_toy;
-  pdf_toyMC toy1(print, input_estimates, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit, ch_s, sig_meth, asimov, syst, randomsyst, rare_constr, NExp, Bd, years_opt, bias_s);
+  pdf_toyMC toy1(print, input_estimates, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit, final, ch_s, sig_meth, asimov, syst, randomsyst, rare_constr, NExp, Bd, years_opt, bias_s);
   toy1.random = true;
   TFile* input_f = new TFile(input_ws.c_str());
   RooWorkspace* ws = (RooWorkspace*)input_f->Get("ws");
@@ -48,6 +48,7 @@ int main(int argc, char** argv) {
   toy1.set_syst();
   toy1.free_rare(free_rare);
   toy1.print_estimate();
+  if (!simul_all && !simul_bdt && hack) toy1.hack_comb_slope();
   if (roomcs) toy1.mcstudy(pdf_toy, pdf_test);
   if (!roomcs) toy1.generate(pdf_toy, pdf_test);
   cout << "finishing time ";

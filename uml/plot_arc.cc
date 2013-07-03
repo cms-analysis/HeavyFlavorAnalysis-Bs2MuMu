@@ -63,6 +63,7 @@ int main(int argc, char* argv[]) {
 	for (int j = 0; j < entries; j++) {
 		reduced_tree->GetEntry(j);
 		Bool_t barrel = fabs(m1eta_t) < 1.4 && fabs(m2eta_t) < 1.4;
+//		if (barrel) continue;
 		if (m_t > 5.20 && m_t < 5.45) continue; // skip signal windows for comb bkg
 		if (m_t < 4.90 || m_t > 5.90 ) continue; // skip outside range
 		if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass error
@@ -76,9 +77,9 @@ int main(int argc, char* argv[]) {
 		m_rme.Fill(m_t, rme_t);
 	}
 
-	TH1D *bdt_ID = new TH1D("bdt_ID", "bdt_ID", 50, -.7, .5);
-	TH1D *bdt_antiID = new TH1D("bdt_antiID", "bdt_antiID", 50, -.7, 0.5);
-	TH1D *bdt_ratioID = new TH1D("bdt_ratioID", "bdt_ratioID", 50, -.7, 0.5);
+	TH1D *bdt_ID = new TH1D("bdt_ID", "bdt_ID", 50, -1, 1);
+	TH1D *bdt_antiID = new TH1D("bdt_antiID", "bdt_antiID", 50, -1, 1);
+	TH1D *bdt_ratioID = new TH1D("bdt_ratioID", "bdt_ratioID", 50, -1, 1);
 	bdt_ID->Sumw2();
 	bdt_antiID->Sumw2();
 
@@ -180,7 +181,7 @@ int main(int argc, char* argv[]) {
 	bdt_ID->Scale(1./bdt_ID->Integral());
 	bdt_antiID->Scale(1./bdt_antiID->Integral());
 	bdt_ratioID->Divide(bdt_ID, bdt_antiID);
-	print_prof(bdt_ratioID, -0.7, 0.5);
+	print_prof(bdt_ratioID, -1, 1);
 	TCanvas c_bdt("c_bdt");
 	bdt_ID->Draw();
 	bdt_antiID->SetLineColor(kRed);
@@ -239,24 +240,27 @@ int main(int argc, char* argv[]) {
 	c_inbdt_rme.Print("plots/rme_inbdt_antiID.gif");
 	c_inbdt_rme.Print("plots/rme_inbdt_antiID.pdf");
 
-	int colors[4] = {kBlue, kRed, kGreen, kBlack};
+	int colors[4] = {kBlue, kRed, kBlack, kGreen};
+
+	int bins[5] = {42, 47, 50, 100};
 
 	TH1D * m_bdt_px[4];
 	TCanvas * m_bdt_px_c = new TCanvas("m_bdt_px_c");
-	for (int i = 0; i < 4; i++) {
-		m_bdt_px[i]  = m_bdt.ProjectionX(Form("_px%d", i), i*20+10, (i+1)*20+10, "e");
+	for (int i = 0; i < 3; i++) {
+		m_bdt_px[i]  = m_bdt.ProjectionX(Form("_px%d", i), bins[i], bins[i+1], "e");
 		m_bdt_px[i]->SetLineColor(colors[i]);
 		m_bdt_px[i]->Rebin(4);
 		m_bdt_px[i]->Scale(1./m_bdt_px[i]->Integral());
 		m_bdt_px[i]->Draw(i == 0 ? "" : "same");
 		if (i > 0) cout << "KS " << m_bdt_px[i]->KolmogorovTest(m_bdt_px[i-1]) << endl;
+		cout << "bdt range = " << m_bdt.GetYaxis()->GetBinCenter(bins[i]) <<  "  " << m_bdt.GetYaxis()->GetBinCenter(bins[i+1]) << endl;
 	}
 	m_bdt_px_c->Print("./plots/m_bdt_px.pdf");
 
 	TH1D * bdt_rme_px[4];
 	TCanvas * bdt_rme_px_c = new TCanvas("bdt_rme_px_c");
-	for (int i = 0; i < 4; i++) {
-		bdt_rme_px[i]  = bdt_rme.ProjectionX(Form("_px%d", i), i*20+10, (i+1)*20+10, "e");
+	for (int i = 0; i < 3; i++) {
+		bdt_rme_px[i]  = bdt_rme.ProjectionX(Form("_px%d", i), bins[i], bins[i+1], "e");
 		bdt_rme_px[i]->SetLineColor(colors[i]);
 		bdt_rme_px[i]->Rebin(4);
 		bdt_rme_px[i]->Scale(1./bdt_rme_px[i]->Integral());
@@ -265,10 +269,23 @@ int main(int argc, char* argv[]) {
 	}
 	bdt_rme_px_c->Print("./plots/bdt_rme_px.pdf");
 
+	TH1D * bdt_rme_py[4];
+	TCanvas * bdt_rme_py_c = new TCanvas("bdt_rme_py_c");
+	for (int i = 0; i < 3; i++) {
+		bdt_rme_py[i]  = bdt_rme.ProjectionY(Form("_py%d", i), bins[i], bins[i+1], "e");
+		bdt_rme_py[i]->SetLineColor(colors[i]);
+		bdt_rme_py[i]->Rebin(4);
+		bdt_rme_py[i]->Scale(1./bdt_rme_py[i]->Integral());
+		bdt_rme_py[i]->Draw(i == 0 ? "" : "same");
+		if (i > 0) cout << "KS " << bdt_rme_py[i]->KolmogorovTest(bdt_rme_py[i-1]) << endl;
+		cout << "bdt range = " << bdt_rme.GetXaxis()->GetBinCenter(bins[i]) <<  "  " << bdt_rme.GetXaxis()->GetBinCenter(bins[i+1]) << endl;
+	}
+	bdt_rme_py_c->Print("./plots/bdt_rme_py.pdf");
+
 	TH1D * m_rme_px[4];
 	TCanvas * m_rme_px_c = new TCanvas("m_rme_px_c");
-	for (int i = 0; i < 4; i++) {
-		m_rme_px[i]  = m_rme.ProjectionX(Form("_px%d", i), i*20+10, (i+1)*20+10, "e");
+	for (int i = 0; i < 3; i++) {
+		m_rme_px[i]  = m_rme.ProjectionX(Form("_px%d", i), bins[i], bins[i+1], "e");
 		m_rme_px[i]->SetLineColor(colors[i]);
 		m_rme_px[i]->Rebin(4);
 		m_rme_px[i]->Scale(1./m_rme_px[i]->Integral());

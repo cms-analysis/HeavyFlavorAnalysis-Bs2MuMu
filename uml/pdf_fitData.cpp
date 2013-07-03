@@ -1,6 +1,6 @@
 #include "pdf_fitData.h"
 
-pdf_fitData::pdf_fitData(bool print, string input_estimates, string range, int BF, bool SM, bool bd_constr, int simul, int simulbdt, int simulall, bool pee_, bool bdt_fit, string ch_s, int sig, bool asimov, bool syste, bool randomsyste, bool rare_constr, int nexp, bool bd, string years): pdf_analysis(print, ch_s, range, BF, SM, bd_constr, simul, simulbdt, simulall, pee_, bdt_fit) {
+pdf_fitData::pdf_fitData(bool print, string input_estimates, string range, int BF, bool SM, bool bd_constr, int simul, int simulbdt, int simulall, bool pee_, bool bdt_fit, bool final, string ch_s, int sig, bool asimov, bool syste, bool randomsyste, bool rare_constr, int nexp, bool bd, string years): pdf_analysis(print, ch_s, range, BF, SM, bd_constr, simul, simulbdt, simulall, pee_, bdt_fit, final) {
   cout << "fitData constructor" << endl;
   input_estimates_ = input_estimates;
   estimate_bs.resize(channels, -1);
@@ -229,7 +229,7 @@ bool pdf_fitData::parse(char *cutName, float cut) {
 
 void pdf_fitData::print_estimate() {
 	if (bdt_fit_) {
-		for (int i = 0; i < channels; i++) {
+		for (int i = 0; i < channels; i++) {cout << name("bdt", i) << endl;
 			cout << "minimum " << name("bdt", i) << " = " << ws_->var(name("bdt", i))->getMin() << endl;
 		}
 	}
@@ -424,6 +424,9 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
 
       TCanvas* final_c = new TCanvas("final_c", "final_c", 600, 600);
       final_p->Draw();
+//      if (var.find("bdt") != string::npos) {
+//      	final_c->SetLogy();
+//      }
 
       if (output == "") {
         // legend
@@ -600,17 +603,17 @@ void pdf_fitData::fill_dataset(RooDataSet* dataset, bool cut_b, vector <double> 
           bdt_cat->setIndex(bdt_channel);
         }
         if (simul_all_) all_cat->setIndex(super_index(eta_channel, bdt_channel));
-//      	bdt_0->setVal(bdt_t);
-//      	bdt_1->setVal(bdt_t);
-//      	bdt_2->setVal(bdt_t);
-//      	bdt_3->setVal(bdt_t);
+      	bdt_0->setVal(bdt_t);
+      	bdt_1->setVal(bdt_t);
+      	bdt_2->setVal(bdt_t);
+      	bdt_3->setVal(bdt_t);
         RooArgSet varlist_tmp(*Mass, *ReducedMassRes, *channels_cat);
         if (bdt_fit_) {
         	varlist_tmp.add(*bdt);
-//        	varlist_tmp.add(*bdt_0);
-//        	varlist_tmp.add(*bdt_1);
-//        	varlist_tmp.add(*bdt_2);
-//        	varlist_tmp.add(*bdt_3);
+        	varlist_tmp.add(*bdt_0);
+        	varlist_tmp.add(*bdt_1);
+        	varlist_tmp.add(*bdt_2);
+        	varlist_tmp.add(*bdt_3);
         }
         if (simul_bdt_ || simul_all_) varlist_tmp.add(*bdt_cat);
         if (simul_all_) varlist_tmp.add(*all_cat);
@@ -628,11 +631,11 @@ void pdf_fitData::fill_dataset(RooDataSet* dataset, bool cut_b, vector <double> 
 void pdf_fitData::define_dataset() {
   cout << red_color_bold << "defining dataset" << default_console_color << endl;
   RooArgSet varlist(*Mass, *ReducedMassRes, *channels_cat);
-	varlist.add(*bdt);
-//        	varlist.add(*bdt_0);
-//        	varlist.add(*bdt_1);
-//        	varlist.add(*bdt_2);
-//        	varlist.add(*bdt_3);
+//	varlist.add(*bdt);
+        	varlist.add(*bdt_0);
+        	varlist.add(*bdt_1);
+        	varlist.add(*bdt_2);
+        	varlist.add(*bdt_3);
   if (simul_bdt_ || simul_all_) varlist.add(*bdt_cat);
   if (simul_all_) varlist.add(*all_cat);
   global_data = new RooDataSet("global_data", "global_data", varlist);
@@ -773,8 +776,10 @@ void pdf_fitData::define_constraints(int i, int j) {
   if (rare_constr_) {
   	RooGaussian N_peak_gau(name("N_peak_gau", i, j), "N_peak_gau", *ws_->var(name("N_peak", i, j)), RooConst(ws_->var(name("N_peak", i, j))->getVal()), RooConst(ws_->var(name("N_peak", i, j))->getError()));
   	ws_->import(N_peak_gau);
-  	RooGaussian N_semi_gau(name("N_semi_gau", i, j), "N_semi_gau", *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
-  	ws_->import(N_semi_gau);
+  	if (ws_->var(name("N_semi", i, j))->getVal() > 0) {
+  		RooGaussian N_semi_gau(name("N_semi_gau", i, j), "N_semi_gau", *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
+  		ws_->import(N_semi_gau);
+  	}
   }
 
 //  int eta = -1;
@@ -1118,9 +1123,9 @@ void pdf_fitData::make_models() {
   /// obs
   string observables("Mass");
   if (bdt_fit_) {
-//  	if (channels == 4) observables += ",bdt_0,bdt_1,bdt_2,bdt_3";
-//  	else observables += ",bdt_0,bdt_1";
-  	observables += ",bdt";
+  	if (channels == 4) observables += ",bdt_0,bdt_1,bdt_2,bdt_3";
+  	else observables += ",bdt_0,bdt_1";
+//  	observables += ",bdt";
   }
   if (simul_) {
   	if (!simul_bdt_ && !simul_all_) observables += ",etacat";
@@ -1433,28 +1438,37 @@ void pdf_fitData::randomize_constraints(RooWorkspace* ws) {
     return;
   }
 
-  RooDataSet* fs_over_fu_ds = ws->pdf("fs_over_fu_gau")->generate(RooArgSet(*ws->var("fs_over_fu")), 1);
-  ws->var("fs_over_fu")->setVal(fs_over_fu_ds->get(0)->getRealValue("fs_over_fu"));
-
-  RooDataSet* one_over_BRBR_ds = ws->pdf("one_over_BRBR_gau")->generate(RooArgSet(*ws->var("one_over_BRBR")), 1);
-  ws->var("one_over_BRBR")->setVal(one_over_BRBR_ds->get(0)->getRealValue("one_over_BRBR"));
+//  RooDataSet* fs_over_fu_ds = ws->pdf("fs_over_fu_gau")->generate(RooArgSet(*ws->var("fs_over_fu")), 1);
+//  ws->var("fs_over_fu")->setVal(fs_over_fu_ds->get(0)->getRealValue("fs_over_fu"));
+//
+//  RooDataSet* one_over_BRBR_ds = ws->pdf("one_over_BRBR_gau")->generate(RooArgSet(*ws->var("one_over_BRBR")), 1);
+//  ws->var("one_over_BRBR")->setVal(one_over_BRBR_ds->get(0)->getRealValue("one_over_BRBR"));
+//
+//  for (int i = 0; i < channels; i++) {
+//    for (int j = 0; j < bdt_index_max(i); j++) {
+//      RooDataSet* N_bu_ds = ws->pdf(name("N_bu_gau", i, j))->generate(RooArgSet(*ws->var(name("N_bu", i, j))), 1);
+//      RooDataSet* effratio_bs_ds = ws->pdf(name("effratio_gau_bs", i, j))->generate(RooArgSet(*ws->var(name("effratio_bs", i, j))), 1);
+//      if (rare_constr_) {
+//      	RooDataSet* N_peak_ds = ws->pdf(name("N_peak_gau", i, j))->generate(RooArgSet(*ws->var(name("N_peak", i, j))), 1);
+//      	RooDataSet* N_semi_ds = ws->pdf(name("N_semi_gau", i, j))->generate(RooArgSet(*ws->var(name("N_semi", i, j))), 1);
+//      	ws->var(name("N_peak", i, j))->setVal(N_peak_ds->get(0)->getRealValue(name("N_peak", i, j)));
+//      	ws->var(name("N_semi", i, j))->setVal(N_semi_ds->get(0)->getRealValue(name("N_semi", i, j)));
+//      }
+//
+//      ws->var(name("N_bu", i, j))->setVal(N_bu_ds->get(0)->getRealValue(name("N_bu", i, j)));
+//      ws->var(name("effratio_bs", i, j))->setVal(effratio_bs_ds->get(0)->getRealValue(name("effratio_bs", i, j)));
+//      if (BF_ > 1) {
+//        RooDataSet* effratio_bd_ds = ws->pdf(name("effratio_gau_bd", i, j))->generate(RooArgSet(*ws->var(name("effratio_bd", i, j))), 1);
+//        ws->var(name("effratio_bd", i, j))->setVal(effratio_bd_ds->get(0)->getRealValue(name("effratio_bd", i, j)));
+//      }
+//    }
+//  }
 
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < bdt_index_max(i); j++) {
-      RooDataSet* N_bu_ds = ws->pdf(name("N_bu_gau", i, j))->generate(RooArgSet(*ws->var(name("N_bu", i, j))), 1);
-      RooDataSet* effratio_bs_ds = ws->pdf(name("effratio_gau_bs", i, j))->generate(RooArgSet(*ws->var(name("effratio_bs", i, j))), 1);
-      if (rare_constr_) {
-      	RooDataSet* N_peak_ds = ws->pdf(name("N_peak_gau", i, j))->generate(RooArgSet(*ws->var(name("N_peak", i, j))), 1);
-      	RooDataSet* N_semi_ds = ws->pdf(name("N_semi_gau", i, j))->generate(RooArgSet(*ws->var(name("N_semi", i, j))), 1);
-      	ws->var(name("N_peak", i, j))->setVal(N_peak_ds->get(0)->getRealValue(name("N_peak", i, j)));
-      	ws->var(name("N_semi", i, j))->setVal(N_semi_ds->get(0)->getRealValue(name("N_semi", i, j)));
-      }
-      ws->var(name("N_bu", i, j))->setVal(N_bu_ds->get(0)->getRealValue(name("N_bu", i, j)));
-      ws->var(name("effratio_bs", i, j))->setVal(effratio_bs_ds->get(0)->getRealValue(name("effratio_bs", i, j)));
-      if (BF_ > 1) {
-        RooDataSet* effratio_bd_ds = ws->pdf(name("effratio_gau_bd", i, j))->generate(RooArgSet(*ws->var(name("effratio_bd", i, j))), 1);
-        ws->var(name("effratio_bd", i, j))->setVal(effratio_bd_ds->get(0)->getRealValue(name("effratio_bd", i, j)));
-      }
+      RooGaussian exp_comb_gau(name("exp_comb_gau", i, j), "exp_comb_gau", *ws_->var(name("exp_comb", i, j)), RooConst(ws_->var(name("exp_comb", i, j))->getVal()), RooConst(ws_->var(name("exp_comb", i, j))->getVal()));
+      RooDataSet* exp_comb_ds = exp_comb_gau.generate(RooArgSet(*ws->var(name("exp_comb", i, j))), 1);
+      ws->var(name("exp_comb", i, j))->setVal(exp_comb_ds->get(0)->getRealValue(name("exp_comb", i, j)));
     }
   }
 }
@@ -1604,7 +1618,7 @@ void pdf_fitData::free_rare(int free) {
     for (int j = 0; j < bdt_index_max(i); j++) {
     	ws_->var(name("N_peak", i, j))->setConstant(peak_const);
     	ws_->var(name("N_semi", i, j))->setConstant(semi_const);
-    	ws_->var(name("exp_comb", i, j))->setMax(0.01);
+//    	ws_->var(name("exp_comb", i, j))->setMax(0.01);
     }
   }
 }
