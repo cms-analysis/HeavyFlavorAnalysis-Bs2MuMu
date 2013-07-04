@@ -5,6 +5,8 @@
 
 using namespace std; 
 
+#define BDTBINS 200
+
 ClassImp(plotBDT)
 
 // ----------------------------------------------------------------------
@@ -240,6 +242,9 @@ void plotBDT::makeAll(int channels) {
 
     cout << "--> plotSSB()" << endl;
     plotSSB();
+    
+    overlaySSB("hssb0"); 
+
     cout << "--> bdtScan()" << endl;
     bdtScan();
     cout << "--> plotEffVsBg(...)" << endl;
@@ -266,15 +271,20 @@ void plotBDT::makeAll(int channels) {
 
 
     cout << "--> hackedMC(...)" << endl;
-    if (1) {
-      hackedMC(); 
-    }
+    hackedMC(); 
+  }
+
+  if (channels & 2) {
+    plotAmsSSB();
+    plotSSB();
   }
 
   if (channels & 8) {
     illustrateAntiMuonSample();
   }
 
+
+  
 
 }
 
@@ -1118,6 +1128,132 @@ void plotBDT::tmvaControlPlots() {
 
 }
 
+
+// ----------------------------------------------------------------------
+void plotBDT::calcSSB() {
+
+  double bdtCut(0.), bdtMin(-1.0), bdtMax(1.0); 
+  int bdtBins(BDTBINS); 
+
+  TH1D *norSm(0), *norDm(0);
+  TH1D *amsSm(0), *amsDm(0), *amsAm(0); 
+  TH1D *assb0[fNchan], *assbs[fNchan], *hssb0[fNchan], *hssbs[fNchan];
+  TH1D *dA[fNchan]; 
+  for (int ichan = 0; ichan < fNchan; ++ichan) {
+    
+    dA[ichan] = new TH1D(Form("dAc%d", ichan), "delta(yield)", bdtBins, bdtMin, bdtMax); dA[ichan]->Sumw2();
+
+    assb0[ichan] = new TH1D(Form("assb0c%d", ichan), "AMS S/Sqrt(S+B)", bdtBins, bdtMin, bdtMax); assb0[ichan]->Sumw2();
+    assbs[ichan] = new TH1D(Form("assbsc%d", ichan), "AMS S/Sqrt(S+B) simple", bdtBins, bdtMin, bdtMax); assbs[ichan]->Sumw2();
+    hssb0[ichan] = new TH1D(Form("hssb0c%d", ichan), "S/Sqrt(S+B)", bdtBins, bdtMin, bdtMax); hssb0[ichan]->Sumw2();
+    hssbs[ichan] = new TH1D(Form("hssbsc%d", ichan), "S/Sqrt(S+B) (simple)", bdtBins, bdtMin, bdtMax); hssbs[ichan]->Sumw2();
+    setTitles(assb0[ichan], "b >", "S/#sqrt{S+B}", 0.05, 1.01); 
+    setTitles(assbs[ichan], "b >", "S/#sqrt{S+B}", 0.05, 1.01); 
+    setTitles(hssb0[ichan], "b >", "S/#sqrt{S+B}", 0.05, 1.01); 
+    setTitles(hssbs[ichan], "b >", "S/#sqrt{S+B}", 0.05, 1.01); 
+    setTitles(dA[ichan],    "b >", "(meas-pred)/meas (if >0)", 0.05, 1.01); 
+    
+    for (int ibin = 0; ibin < bdtBins; ++ibin) {
+      bdtCut = bdtMin + ibin*(bdtMax-bdtMin)/bdtBins;
+
+      norSm = (TH1D*)fHistFile->Get(Form("nor_sm_%d_%d", ichan, ibin)); 
+      norDm = (TH1D*)fHistFile->Get(Form("nor_dm_%d_%d", ichan, ibin)); 
+
+      amsSm = (TH1D*)fHistFile->Get(Form("ams_sm_%d_%d", ichan, ibin)); 
+      amsDm = (TH1D*)fHistFile->Get(Form("ams_dm_%d_%d", ichan, ibin)); 
+      amsAm = (TH1D*)fHistFile->Get(Form("ams_am_%d_%d", ichan, ibin)); 
+
+      amsAm->Scale(norDm->Integral(norSm->FindBin(4.9), norSm->FindBin(5.9))/
+		   (amsAm->Integral(amsAm->FindBin(4.9), amsAm->FindBin(5.2))
+		    + amsAm->Integral(amsAm->FindBin(5.45), amsAm->FindBin(5.9))
+		    ));
+
+      cout << "bin " << ibin << " bdt > " << bdtCut << " norSm: " << norSm << " norDm: " << norDm << endl;
+
+      // -- default version
+      double s = norSm->Integral(norSm->FindBin(5.3), norSm->FindBin(5.45));
+      double pbg = 0.07*s;
+      double d0 = norDm->Integral(norDm->FindBin(4.9), norDm->FindBin(5.3));
+      double d1 = norDm->Integral(norDm->FindBin(5.45), norDm->GetNbinsX());
+      double d = norDm->Integral(0, norDm->GetNbinsX());
+      double bsimple = d*(5.45-5.30)/(5.9-4.9-0.25);
+      bgBlind(norDm, 2, 4.9, 5.9);
+      double b = fBsBgExp;
+
+
+      if (s+b >0) {
+	double ssb = s/TMath::Sqrt(s+b+pbg);
+	double ssbsimple = s/TMath::Sqrt(s+bsimple);
+	hssb0[ichan]->SetBinContent(ibin, ssb); 
+	hssb0[ichan]->SetBinError(ibin, 0.03*ssb); 
+	hssbs[ichan]->SetBinContent(ibin, ssbsimple); 
+	hssbs[ichan]->SetBinError(ibin, 0.03*ssbsimple); 
+      } else {
+	hssb0[ichan]->SetBinContent(ibin, 0.); 
+	hssbs[ichan]->SetBinContent(ibin, 0.); 
+      }
+
+
+      // -- AMS
+      double as = amsSm->Integral(amsSm->FindBin(5.20001), amsSm->FindBin(5.44999));  
+      double apbg= 0.07*as;
+      double aa = amsAm->Integral(amsAm->FindBin(5.20001), amsAm->FindBin(5.44999));  
+      bgBlind(amsAm, 2, 4.9, 5.9);
+      double ab = fBsBgExp;
+      double diff = (aa>0? (aa-ab)/aa : 0.);
+      cout << "AMS box: " << aa << " expected: " << ab << " -> a-b = " << aa-ab << " -> diff = " << diff << endl;
+
+      dA[ichan]->SetBinContent(ibin, diff);
+
+      if (as+ab >0) {
+	double assb = as/TMath::Sqrt(as+ab+apbg);
+	assb0[ichan]->SetBinContent(ibin, assb); 
+	assb0[ichan]->SetBinError(ibin, 0.03*assb); 
+      } else {
+	assb0[ichan]->SetBinContent(ibin, 0.); 
+      }
+
+      if (as+aa >0) {
+	double assb = as/TMath::Sqrt(as+aa);
+	assbs[ichan]->SetBinContent(ibin, assb); 
+	assbs[ichan]->SetBinError(ibin, 0.03*assb); 
+      } else {
+	assbs[ichan]->SetBinContent(ibin, 0.); 
+      }
+
+
+      c0->Clear();
+      norDm->SetTitle(Form("b >%f", bdtCut));
+      norDm->Draw("e");
+      norSm->SetLineColor(kBlue); 
+      norSm->Draw("samehist");
+      amsAm->Draw("samehist");
+      c0->SaveAs(Form("%s/%s-ssbxcheck-bin%d-c%d.pdf", fDirectory.c_str(), fCuts[ichan]->xmlFile.c_str(), ibin, ichan)); 
+      if (s < 1e-6) break;
+    }
+
+    hssb0[ichan]->Draw("");
+    assb0[ichan]->Draw("samehist");
+    c0->SaveAs(Form("%s/%s-ssb0overlay-c%d.pdf", fDirectory.c_str(), fCuts[ichan]->xmlFile.c_str(), ichan)); 
+
+    hssbs[ichan]->Draw("");
+    assbs[ichan]->Draw("samehist");
+    c0->SaveAs(Form("%s/%s-ssb1overlay-c%d.pdf", fDirectory.c_str(), fCuts[ichan]->xmlFile.c_str(), ichan)); 
+
+    hssb0[ichan]->Draw("");
+    assbs[ichan]->Draw("samehist");
+    c0->SaveAs(Form("%s/%s-ssb2overlay-c%d.pdf", fDirectory.c_str(), fCuts[ichan]->xmlFile.c_str(), ichan)); 
+
+    dA[ichan]->Draw("");
+    c0->SaveAs(Form("%s/%s-dA-c%d.pdf", fDirectory.c_str(), fCuts[ichan]->xmlFile.c_str(), ichan)); 
+
+  }
+
+
+}
+
+
+
 // ----------------------------------------------------------------------
 void plotBDT::plotAmsSSB(){
   for (int i = 0; i < fNchan; ++i) {
@@ -1133,16 +1269,17 @@ void plotBDT::plotAmsSSB(){
 } 
 
 // ----------------------------------------------------------------------
+// -- loop over ams (and normal) tree and produce signal and background hists for each BDT bin
 void plotBDT::amsSSB(int chan) {
 
   fChan = chan; 
 
-  TH1D *hssb0(0); 
+  TH1D *h(0); 
 
-  hssb0 = (TH1D*)fHistFile->Get(Form("ams_ssb0c%d", chan)); 
-
-  if (0 == hssb0) {
+  h = (TH1D*)fHistFile->Get(Form("ams_sm_%d_0", chan)); 
   
+  if (0 == h) {
+    
     TTree *t(0), *td(0); 
     
     // -- for the data, get the AMS tree
@@ -1188,20 +1325,20 @@ void plotBDT::amsSSB(int chan) {
     double bdtCut, maxBDT(-1.); 
     int nEvent(t->GetEntries()), ndEvent(td->GetEntries());
     double bdtMin(-1.0), bdtMax(1.0); 
-    int bdtBins(200); 
+    int bdtBins(BDTBINS); 
     int dNorm(0); 
-
-    hssb0 = new TH1D(Form("amsssb0c%d", chan), "AMS S/Sqrt(S+B)", bdtBins, bdtMin, bdtMax); hssb0->Sumw2();
-    hssb0->SetDirectory(fHistFile); 
-
-    for (int ibin = 0; ibin < bdtBins; ibin = ++ibin) {
+    
+    //     hssb0 = new TH1D(Form("amsssb0c%d", chan), "AMS S/Sqrt(S+B)", bdtBins, bdtMin, bdtMax); hssb0->Sumw2();
+    //     hssb0->SetDirectory(fHistFile); 
+    
+    for (int ibin = 0; ibin < bdtBins; ++ibin) {
       bdtCut = bdtMin + ibin*(bdtMax-bdtMin)/bdtBins;
       cout << "=============>  bin " << ibin << " cutting at bdt > " << bdtCut
 	   << endl;
       
-      sm = new TH1D(Form("sm_%d_%d", chan, ibin), Form("m(signal) chan = %d bdt > %4.3f", chan, bdtCut), 100, 4.9, 5.9); sm->Sumw2(); 
-      dm = new TH1D(Form("dm_%d_%d", chan, ibin), Form("m(data) chan = %d bdt > %4.3f", chan, bdtCut), 100, 4.9, 5.9);   dm->Sumw2(); 
-      am = new TH1D(Form("am_%d_%d", chan, ibin), Form("m(ams) chan = %d bdt > %4.3f", chan, bdtCut), 100, 4.9, 5.9);    am->Sumw2(); 
+      sm = new TH1D(Form("ams_sm_%d_%d", chan, ibin), Form("ams m(signal) chan = %d bdt > %4.3f", chan, bdtCut), 100, 4.9, 5.9); sm->Sumw2(); 
+      dm = new TH1D(Form("ams_dm_%d_%d", chan, ibin), Form("ams m(sideband) chan = %d bdt > %4.3f", chan, bdtCut), 100, 4.9, 5.9); dm->Sumw2(); 
+      am = new TH1D(Form("ams_am_%d_%d", chan, ibin), Form("ams m(box) chan = %d bdt > %4.3f", chan, bdtCut), 100, 4.9, 5.9); am->Sumw2(); 
       
       // -- compute S
       for (Long64_t ievt=0; ievt<nEvent; ievt++) {
@@ -1247,73 +1384,100 @@ void plotBDT::amsSSB(int chan) {
     }
     
 
-    double b(0.), a(0.), s(0.), ssb0(0.), sb(0.); 
-    double dSideband(0.), aSideband(0.); 
-    TH1D *hs(0), *hd(0), *ha(0); 
-    for (int i = 0; i < 200; ++i) {
-      hs = (TH1D*)fHistFile->Get(Form("sm_%d_%d", chan, i)); 
-      hd = (TH1D*)fHistFile->Get(Form("dm_%d_%d", chan, i)); 
-      ha = (TH1D*)fHistFile->Get(Form("am_%d_%d", chan, i)); 
+//     double b(0.), a(0.), s(0.), ssb0(0.), sb(0.); 
+//     double dSideband(0.), aSideband(0.); 
+//     TH1D *hs(0), *hd(0), *ha(0); 
+//     for (int i = 0; i < bdtBins; ++i) {
+//       hs = (TH1D*)fHistFile->Get(Form("sm_%d_%d", chan, i)); 
+//       hd = (TH1D*)fHistFile->Get(Form("dm_%d_%d", chan, i)); 
+//       ha = (TH1D*)fHistFile->Get(Form("am_%d_%d", chan, i)); 
       
-      s = hs->Integral(hs->FindBin(5.20001), hs->FindBin(5.44999));  
-      a = ha->Integral(ha->FindBin(5.20001), ha->FindBin(5.44999));  
-      bgBlind(hd, 2, 4.9, 5.9);
-      b = fBsBgExp;
-      ssb0 = (b+s > 0? (s/TMath::Sqrt(s+b)) : 0.); 
-      ha->Draw("hist"); 
-      hd->Draw("samee"); 
-      hs->Draw("histsame"); 
-      cout << "ams: " << a << " b = " << b << " -> " << ssb0 << endl;
-      hssb0->SetBinContent(i, ssb0); 
-    }
-    hssb0->Draw();
+//       s = hs->Integral(hs->FindBin(5.20001), hs->FindBin(5.44999));  
+//       a = ha->Integral(ha->FindBin(5.20001), ha->FindBin(5.44999));  
+//       //       bgBlind(hd, 2, 4.9, 5.9);
+//       //       b = fBsBgExp;
+//       ssb0 = (a+s > 0? (s/TMath::Sqrt(s+a)) : 0.); 
+//       ha->Draw("hist"); 
+//       hd->Draw("samee"); 
+//       hs->Draw("histsame"); 
+//       cout << "ams: " << a << " b = " << b << " -> " << ssb0 << endl;
+//       hssb0->SetBinContent(i, ssb0); 
+//     }
+//     hssb0->Draw();
 
-    hssb0->Write(); 
-  }
+//     hssb0->Write(); 
+//   }
 
 
-  double xmax(0.), xmin(0.); 
-  int maxbin = hssb0->GetMaximumBin(); 
-  double maxVal = hssb0->GetBinContent(maxbin);
-  double thr(0.85*maxVal); 
+//   double xmax(0.), xmin(0.); 
+//   int maxbin = hssb0->GetMaximumBin(); 
+//   double maxVal = hssb0->GetBinContent(maxbin);
+//   double thr(0.85*maxVal); 
   
-  for (int i =  maxbin; i > 0;  --i) {
-    if (hssb0->GetBinContent(i) < thr) {
-      xmin = hssb0->GetBinLowEdge(i); 
-      break;
-    }
-  }
+//   for (int i =  maxbin; i > 0;  --i) {
+//     if (hssb0->GetBinContent(i) < thr) {
+//       xmin = hssb0->GetBinLowEdge(i); 
+//       break;
+//     }
+//   }
 
-  for (int i = maxbin; i < hssb0->GetNbinsX(); ++i) {
-    if (hssb0->GetBinContent(i) < thr) {
-      xmax = hssb0->GetBinCenter(i+1); 
-      break;
-    }
-  }
+//   for (int i = maxbin; i < hssb0->GetNbinsX(); ++i) {
+//     if (hssb0->GetBinContent(i) < thr) {
+//       xmax = hssb0->GetBinCenter(i+1); 
+//       break;
+//     }
+//   }
 
-  cout << "maxval: " << maxVal << endl;
-  cout << "maxbin: " << maxbin << endl;
-  cout << "xmin:   " << xmin << endl;
-  cout << "max x:  " << hssb0->GetBinCenter(maxbin) << endl;
-  cout << "xmax:   " << xmax << endl;
+//   cout << "maxval: " << maxVal << endl;
+//   cout << "maxbin: " << maxbin << endl;
+//   cout << "xmin:   " << xmin << endl;
+//   cout << "max x:  " << hssb0->GetBinCenter(maxbin) << endl;
+//   cout << "xmax:   " << xmax << endl;
 
-  TF1 *f1 = fpFunc->pol2local(hssb0, 0.2); 
-  hssb0->Fit(f1, "r", "", xmin, xmax); 
-  if (hssb0->GetFunction("iF_pol2local")) {
-    double maxfitssbX = hssb0->GetFunction("iF_pol2local")->GetParameter(2); 
-    double maxfitssbY = hssb0->GetFunction("iF_pol2local")->GetParameter(0); 
+//   TF1 *f1 = fpFunc->pol2local(hssb0, 0.2); 
+//   hssb0->Fit(f1, "r", "", xmin, xmax); 
+//   if (hssb0->GetFunction("iF_pol2local")) {
+//     double maxfitssbX = hssb0->GetFunction("iF_pol2local")->GetParameter(2); 
+//     double maxfitssbY = hssb0->GetFunction("iF_pol2local")->GetParameter(0); 
     
-    fTEX << formatTex(maxfitssbX, Form("%s:%s:maxfitSSBams:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
-    fTEX << formatTex(maxfitssbY, Form("%s:%s:maxfitSSBams:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
-  } else {
-    cout << "could not retrieve iF_pol2local" << endl;
+//     fTEX << formatTex(maxfitssbX, Form("%s:%s:maxfitSSBams:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+//     fTEX << formatTex(maxfitssbY, Form("%s:%s:maxfitSSBams:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+//   } else {
+//     cout << "could not retrieve iF_pol2local" << endl;
+//   }
+
+//   c0->SaveAs(Form("ams-ssb-%d-%d.pdf", fYear, chan)); 
+
   }
+}
 
-  c0->SaveAs(Form("ams-ssb-%d-%d.pdf", fYear, chan)); 
 
+// ----------------------------------------------------------------------
+void plotBDT::overlaySSB(std::string hname) {
   
+
+  c0->Clear(); 
+  c0->Divide(1,2);
+  string histn; 
+  for (int chan = 0; chan < fNchan; ++chan) {
+    c0->cd(chan+1);
+    histn = Form("ams%sc%d", hname.c_str(), chan);
+    cout << "getting: " << histn << endl;
+    TH1D *hams = (TH1D*)fHistFile->Get(histn.c_str()); 
+    histn = Form("%sc%d", hname.c_str(), chan);
+    cout << "getting: " << histn << endl;
+    TH1D *hnor = (TH1D*)fHistFile->Get(histn.c_str()); 
+
+    if (hams) hams->Draw(); 
+    if (hnor) hnor->Draw("samee"); 
+
+    c0->Modified(); 
+    c0->Update();
+
+  }
 
 }
+
 
 
 // ----------------------------------------------------------------------
@@ -1463,6 +1627,7 @@ void plotBDT::plotSSB() {
     ssb(i);
     fRootFile->Close();
   }
+
 }
 
 
@@ -2409,18 +2574,17 @@ void plotBDT::variableRanking() {
 
 
 // ----------------------------------------------------------------------
+// -- loop over normal trees and produce signal and background hists for each BDT bin
 void plotBDT::ssb(int ichan) {
 
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(1);
   
-  TH1D *hssb0(0), *hssbs(0); 
-  hssb0 = (TH1D*)fHistFile->Get(Form("ssb0c%d", ichan)); 
-  hssbs = (TH1D*)fHistFile->Get(Form("ssbsc%d", ichan)); 
+  TH1D *h = (TH1D*)fHistFile->Get(Form("nor_sm_%d_0", ichan));
+
   double bdtMin(-1.0), bdtMax(1.0); 
-  int bdtBins(200); 
-  if (0 == hssb0) {
-    
+  int bdtBins(BDTBINS); 
+  if (0 == h) {
     TTree *t(0); 
     t = (TTree*)fRootFile->Get("bdtTree");
     if (0 == t) {
@@ -2430,14 +2594,14 @@ void plotBDT::ssb(int ichan) {
     cout << "bdtTree with entries = " << t->GetEntries() << endl;
     
     fHistFile->cd();
-    TH1D *sm = new TH1D("sm", "m(signal)", 100, 4.9, 5.9); sm->Sumw2();
-    TH1D *dm = new TH1D("dm", "m(data)", 100, 4.9, 5.9); dm->Sumw2();
-    hssb0 = new TH1D(Form("ssb0c%d", ichan), "S/Sqrt(S+B)", bdtBins, bdtMin, bdtMax); hssb0->Sumw2();
-    hssb0->SetDirectory(fHistFile); 
-    hssbs = new TH1D(Form("ssbsc%d", ichan), "S/Sqrt(S+B) (simple)", bdtBins, bdtMin, bdtMax); hssbs->Sumw2();
-    hssbs->SetDirectory(fHistFile); 
-    setTitles(hssb0, "b >", "S/#sqrt{S+B}", 0.05, 1.01); 
-    setTitles(hssbs, "b >", "S/#sqrt{S+B}", 0.05, 1.01); 
+    TH1D *sm(0);
+    TH1D *dm(0); 
+//     hssb0 = new TH1D(Form("ssb0c%d", ichan), "S/Sqrt(S+B)", bdtBins, bdtMin, bdtMax); hssb0->Sumw2();
+//     hssb0->SetDirectory(fHistFile); 
+//     hssbs = new TH1D(Form("ssbsc%d", ichan), "S/Sqrt(S+B) (simple)", bdtBins, bdtMin, bdtMax); hssbs->Sumw2();
+//     hssbs->SetDirectory(fHistFile); 
+//     setTitles(hssb0, "b >", "S/#sqrt{S+B}", 0.05, 1.01); 
+//     setTitles(hssbs, "b >", "S/#sqrt{S+B}", 0.05, 1.01); 
     
     double bdt, m, w8, pvw8; 
     int classID, m1q, m2q;
@@ -2464,8 +2628,8 @@ void plotBDT::ssb(int ichan) {
       bdtCut = bdtMin + ibin*(bdtMax-bdtMin)/bdtBins;
       nEvent = t->GetEntries();
       cout << "=============>  bin " << ibin << " cutting at bdt > " << bdtCut << " with " << nEvent << " entries" << endl;
-      sm->Reset();
-      dm->Reset();
+      sm = new TH1D(Form("nor_sm_%d_%d", ichan, ibin), Form("m(signal) chan = %d bdt > %4.3f", ichan, bdtCut), 100, 4.9, 5.9); sm->Sumw2();
+      dm = new TH1D(Form("nor_dm_%d_%d", ichan, ibin), Form("m(data) chan = %d bdt > %4.3f", ichan, bdtCut), 100, 4.9, 5.9); dm->Sumw2();
       for (Long64_t ievt=0; ievt<nEvent; ievt++) {
 	t->GetEntry(ievt);
 	if (1 == classID && false == json) continue;
@@ -2486,144 +2650,148 @@ void plotBDT::ssb(int ichan) {
 	
       }
       
-      double s = sm->Integral(sm->FindBin(5.3), sm->FindBin(5.45));
-      double pbg = 0.07*s;
-      double d0 = dm->Integral(dm->FindBin(4.9), dm->FindBin(5.3));
-      double d1 = dm->Integral(dm->FindBin(5.45), dm->GetNbinsX());
-      double d = dm->Integral(0, dm->GetNbinsX());
-      double bsimple = d*(5.45-5.30)/(5.9-4.9-0.25);
+//       double s = sm->Integral(sm->FindBin(5.3), sm->FindBin(5.45));
+//       double pbg = 0.07*s;
+//       double d0 = dm->Integral(dm->FindBin(4.9), dm->FindBin(5.3));
+//       double d1 = dm->Integral(dm->FindBin(5.45), dm->GetNbinsX());
+//       double d = dm->Integral(0, dm->GetNbinsX());
+//       double bsimple = d*(5.45-5.30)/(5.9-4.9-0.25);
+
+      sm->SetDirectory(fHistFile); sm->Write(); 
+      dm->SetDirectory(fHistFile); dm->Write(); 
+
       
-      bgBlind(dm, 2, 4.9, 5.9);
-      double b = fBsBgExp;
-      if (s+b >0) {
-	double ssb = s/TMath::Sqrt(s+b+pbg);
-	cout << "bdt> " << bdtCut << " d = " << d << " s = " << s  << " b = " << b
-	     << " ssb = " << ssb << endl;
-	double ssbsimple = s/TMath::Sqrt(s+bsimple);
-	if (ssbsimple > maxSSBsimple) {
-	  maxSSBsimple = ssbsimple; 
-	}
-	if (ssb > maxSSB) {
-	  maxSSB = ssb; 
-	  maxBDT = bdtCut;
-	}
-	hssb0->SetBinContent(ibin, ssb); 
-	hssb0->SetBinError(ibin, 0.03*ssb); 
-	hssbs->SetBinContent(ibin, ssbsimple); 
-	hssbs->SetBinError(ibin, 0.03*ssbsimple); 
-      } else {
-	hssb0->SetBinContent(ibin, 0.); 
-	hssbs->SetBinContent(ibin, 0.); 
-      }
-      c0->Clear();
-      dm->SetTitle(Form("b >%f", bdtCut));
-      dm->Draw("e");
-      sm->Draw("samehist");
-      c0->Modified();
-      c0->Update();
-      if (s < 1e-6) break;
+//       bgBlind(dm, 2, 4.9, 5.9);
+//       double b = fBsBgExp;
+//       if (s+b >0) {
+// 	double ssb = s/TMath::Sqrt(s+b+pbg);
+// 	cout << "bdt> " << bdtCut << " d = " << d << " s = " << s  << " b = " << b
+// 	     << " ssb = " << ssb << endl;
+// 	double ssbsimple = s/TMath::Sqrt(s+bsimple);
+// 	if (ssbsimple > maxSSBsimple) {
+// 	  maxSSBsimple = ssbsimple; 
+// 	}
+// 	if (ssb > maxSSB) {
+// 	  maxSSB = ssb; 
+// 	  maxBDT = bdtCut;
+// 	}
+// 	hssb0->SetBinContent(ibin, ssb); 
+// 	hssb0->SetBinError(ibin, 0.03*ssb); 
+// 	hssbs->SetBinContent(ibin, ssbsimple); 
+// 	hssbs->SetBinError(ibin, 0.03*ssbsimple); 
+//       } else {
+// 	hssb0->SetBinContent(ibin, 0.); 
+// 	hssbs->SetBinContent(ibin, 0.); 
+//       }
+//       c0->Clear();
+//       dm->SetTitle(Form("b >%f", bdtCut));
+//       dm->Draw("e");
+//       sm->Draw("samehist");
+//       c0->Modified();
+//       c0->Update();
+//       if (s < 1e-6) break;
     }
 
-    hssb0->Write(); 
-    hssbs->Write(); 
+//     hssb0->Write(); 
+//     hssbs->Write(); 
   }
 
   //   hssb0 = (TH1D*)fHistFile->Get(Form("ssb0c%d", ichan)); 
   //   hssbs = (TH1D*)fHistFile->Get(Form("ssbsc%d", ichan)); 
 
-  double maxSSB(0.), maxBDT(0.), maxSSBsimple(0.), maxBDTsimple(0.); 
-  double ssb0(0.), ssbs(0.), bdtCut(0.); 
-  for (int i = 1; i < bdtBins; ++i) {
-    bdtCut = bdtMin + i*(bdtMax-bdtMin)/bdtBins;
-    ssb0 = hssb0->GetBinContent(i); 
-    ssbs = hssbs->GetBinContent(i); 
-    if (ssb0 > maxSSB) {
-      maxSSB = ssb0; 
-      maxBDT = bdtCut;
-    }
-    if (ssbs > maxSSBsimple) {
-      maxSSBsimple = ssbs; 
-      maxBDTsimple = bdtCut; 
-    }
-  }
+//   double maxSSB(0.), maxBDT(0.), maxSSBsimple(0.), maxBDTsimple(0.); 
+//   double ssb0(0.), ssbs(0.), bdtCut(0.); 
+//   for (int i = 1; i < bdtBins; ++i) {
+//     bdtCut = bdtMin + i*(bdtMax-bdtMin)/bdtBins;
+//     ssb0 = hssb0->GetBinContent(i); 
+//     ssbs = hssbs->GetBinContent(i); 
+//     if (ssb0 > maxSSB) {
+//       maxSSB = ssb0; 
+//       maxBDT = bdtCut;
+//     }
+//     if (ssbs > maxSSBsimple) {
+//       maxSSBsimple = ssbs; 
+//       maxBDTsimple = bdtCut; 
+//     }
+//   }
 
-  fTEX << formatTex(maxSSB, Form("%s:%s:maxSSB:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
-  fTEX << formatTex(maxBDT, Form("%s:%s:maxSSB:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
-  fTEX << formatTex(maxSSBsimple, Form("%s:%s:maxSSBsimple:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
-  fTEX << formatTex(maxBDTsimple, Form("%s:%s:maxBDTsimple:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+//   fTEX << formatTex(maxSSB, Form("%s:%s:maxSSB:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+//   fTEX << formatTex(maxBDT, Form("%s:%s:maxSSB:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+//   fTEX << formatTex(maxSSBsimple, Form("%s:%s:maxSSBsimple:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+//   fTEX << formatTex(maxBDTsimple, Form("%s:%s:maxBDTsimple:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
 
-  gStyle->SetOptStat(0);
-  gStyle->SetOptTitle(0);
+//   gStyle->SetOptStat(0);
+//   gStyle->SetOptTitle(0);
   
 
-  hssb0->SetMaximum(maxSSB+0.5); 
-  hssb0->SetMarkerStyle(24); 
-  hssb0->Draw("e");
-  hssbs->SetLineWidth(2); 
-  hssbs->Draw("histsame");
+//   hssb0->SetMaximum(maxSSB+0.5); 
+//   hssb0->SetMarkerStyle(24); 
+//   hssb0->Draw("e");
+//   hssbs->SetLineWidth(2); 
+//   hssbs->Draw("histsame");
 
-  double xmax(0.), xmin(0.); 
-  int maxbin = hssb0->GetMaximumBin(); 
-  double maxVal = hssb0->GetBinContent(maxbin);
-  double thr(0.80*maxVal); 
+//   double xmax(0.), xmin(0.); 
+//   int maxbin = hssb0->GetMaximumBin(); 
+//   double maxVal = hssb0->GetBinContent(maxbin);
+//   double thr(0.80*maxVal); 
   
-  for (int i =  maxbin; i > 0;  --i) {
-    if (hssb0->GetBinContent(i) < thr) {
-      xmin = hssb0->GetBinLowEdge(i); 
-      break;
-    }
-  }
+//   for (int i =  maxbin; i > 0;  --i) {
+//     if (hssb0->GetBinContent(i) < thr) {
+//       xmin = hssb0->GetBinLowEdge(i); 
+//       break;
+//     }
+//   }
 
-  for (int i = maxbin; i < hssb0->GetNbinsX(); ++i) {
-    if (hssb0->GetBinContent(i) < thr) {
-      xmax = hssb0->GetBinCenter(i+1); 
-      break;
-    }
-  }
+//   for (int i = maxbin; i < hssb0->GetNbinsX(); ++i) {
+//     if (hssb0->GetBinContent(i) < thr) {
+//       xmax = hssb0->GetBinCenter(i+1); 
+//       break;
+//     }
+//   }
 
-  cout << "maxval: " << maxVal << endl;
-  cout << "maxbin: " << maxbin << endl;
-  cout << "xmin:   " << xmin << endl;
-  cout << "max x:  " << hssb0->GetBinCenter(maxbin) << endl;
-  cout << "xmax:   " << xmax << endl;
+//   cout << "maxval: " << maxVal << endl;
+//   cout << "maxbin: " << maxbin << endl;
+//   cout << "xmin:   " << xmin << endl;
+//   cout << "max x:  " << hssb0->GetBinCenter(maxbin) << endl;
+//   cout << "xmax:   " << xmax << endl;
   
-  TF1 *f1 = fpFunc->pol2local(hssb0, 0.2); 
-  gStyle->SetOptFit(0); 
-  hssb0->Fit(f1, "r", "same", xmin, xmax); 
-  double maxfitssbX = hssb0->GetFunction("iF_pol2local")->GetParameter(2); 
-  double maxfitssbY = hssb0->GetFunction("iF_pol2local")->GetParameter(0); 
+//   TF1 *f1 = fpFunc->pol2local(hssb0, 0.2); 
+//   gStyle->SetOptFit(0); 
+//   hssb0->Fit(f1, "r", "same", xmin, xmax); 
+//   double maxfitssbX = hssb0->GetFunction("iF_pol2local")->GetParameter(2); 
+//   double maxfitssbY = hssb0->GetFunction("iF_pol2local")->GetParameter(0); 
 
-  fTEX << formatTex(maxfitssbX, Form("%s:%s:maxfitSSB:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
-  fTEX << formatTex(maxfitssbY, Form("%s:%s:maxfitSSB:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+//   fTEX << formatTex(maxfitssbX, Form("%s:%s:maxfitSSB:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+//   fTEX << formatTex(maxfitssbY, Form("%s:%s:maxfitSSB:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
 
-  double avgBDT = (maxBDT + maxBDTsimple + maxfitssbX)/3; 
-  double avgSSB = (hssb0->GetBinContent(hssb0->FindBin(avgBDT))
-		   +  hssbs->GetBinContent(hssbs->FindBin(avgBDT))
-		   +  f1->Eval(avgBDT))/3;
+//   double avgBDT = (maxBDT + maxBDTsimple + maxfitssbX)/3; 
+//   double avgSSB = (hssb0->GetBinContent(hssb0->FindBin(avgBDT))
+// 		   +  hssbs->GetBinContent(hssbs->FindBin(avgBDT))
+// 		   +  f1->Eval(avgBDT))/3;
 
-  fTEX << formatTex(avgSSB, Form("%s:%s:avgSSB:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
-  fTEX << formatTex(avgBDT, Form("%s:%s:avgSSB:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+//   fTEX << formatTex(avgSSB, Form("%s:%s:avgSSB:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+//   fTEX << formatTex(avgBDT, Form("%s:%s:avgSSB:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
 
-  tl->DrawLatex(0.27, 0.83, "S_{max}");
-  tl->DrawLatex(0.41, 0.83, "B_{max}");
+//   tl->DrawLatex(0.27, 0.83, "S_{max}");
+//   tl->DrawLatex(0.41, 0.83, "B_{max}");
 
-  tl->DrawLatex(0.18, 0.75, "V_{1}");
-  tl->DrawLatex(0.27, 0.75, Form("%4.3f", maxSSB));
-  tl->DrawLatex(0.41, 0.75, Form("%4.3f", maxBDT));
+//   tl->DrawLatex(0.18, 0.75, "V_{1}");
+//   tl->DrawLatex(0.27, 0.75, Form("%4.3f", maxSSB));
+//   tl->DrawLatex(0.41, 0.75, Form("%4.3f", maxBDT));
 
-  tl->DrawLatex(0.18, 0.69, "V_{2}");
-  tl->DrawLatex(0.27, 0.69, Form("%4.3f", maxSSBsimple));
-  tl->DrawLatex(0.41, 0.69, Form("%4.3f", maxBDTsimple));
+//   tl->DrawLatex(0.18, 0.69, "V_{2}");
+//   tl->DrawLatex(0.27, 0.69, Form("%4.3f", maxSSBsimple));
+//   tl->DrawLatex(0.41, 0.69, Form("%4.3f", maxBDTsimple));
 
-  tl->DrawLatex(0.18, 0.63, "fit");
-  tl->DrawLatex(0.27, 0.63, Form("%4.3f", maxfitssbY));
-  tl->DrawLatex(0.41, 0.63, Form("%4.3f", maxfitssbX));
+//   tl->DrawLatex(0.18, 0.63, "fit");
+//   tl->DrawLatex(0.27, 0.63, Form("%4.3f", maxfitssbY));
+//   tl->DrawLatex(0.41, 0.63, Form("%4.3f", maxfitssbX));
 
-  tl->DrawLatex(0.18, 0.57, "avg");
-  tl->DrawLatex(0.27, 0.57, Form("%4.3f", avgSSB));
-  tl->DrawLatex(0.41, 0.57, Form("%4.3f", avgBDT));
+//   tl->DrawLatex(0.18, 0.57, "avg");
+//   tl->DrawLatex(0.27, 0.57, Form("%4.3f", avgSSB));
+//   tl->DrawLatex(0.41, 0.57, Form("%4.3f", avgBDT));
 
-  c0->SaveAs(Form("%s/%s-fit-ssb.pdf", fDirectory.c_str(), fBdtString.c_str())); 
+//   c0->SaveAs(Form("%s/%s-fit-ssb.pdf", fDirectory.c_str(), fBdtString.c_str())); 
 
 }
 

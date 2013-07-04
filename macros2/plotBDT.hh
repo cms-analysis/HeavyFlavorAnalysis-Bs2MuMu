@@ -39,13 +39,19 @@ public:
   void xmlParsingReadTree(std::string xmlfile); 
   void xmlResetHists(); 
 
+  // -- loops to produce hists
   void plotSSB();
   void ssb(int ichan);
-  
   void plotAmsSSB(); 
   void amsSSB(int chan); 
+
+  // -- interpretation
+  void calcSSB();
+
   void plotAmsBdtOutput(); 
   void amsBdtOutput(int chan); 
+
+  void overlaySSB(std::string hname = "ssb0"); 
 
   void overlap();
   void overlayBdtOutput(); 

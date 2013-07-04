@@ -28,6 +28,7 @@ public:
   void fakeRateOverlaysMG(std::string mode = "pions", std::string charge = "pos", std::string chan = "barrel");
   void massError();
 
+  void calcTauError();
 
 
   // -- histograms

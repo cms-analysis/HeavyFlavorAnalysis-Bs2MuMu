@@ -1,7 +1,6 @@
 # for SE access: change /scratch/ursl to dcap://t3se01.psi.ch:22125/pnfs/psi.ch/cms/trivcat/store/user/bstomumu/v16/bmm/2012/
 # ----------------------------------------------------------------------
 type=sg,default       dset=data      lumi=20.0     file=/scratch/ursl/v16-2012-bmm-data.root
-#type=sg,default       dset=data      lumi=20.0     file=/scratch/ursl/tmp/looseBmm0-2012-data.root
 #type=sg,2011          dset=data      lumi=5.0      file=/scratch/ursl/v16-2011-bmm-data.root
 #
 type=sg,default       dset=mc,0.1576 lumi=714000   file=/scratch/ursl/v16-2012-cms-BsToMuMu.root

@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     dir("nada"), 
     cuts("nada"), 
     files("nada");
-  bool restricted(false), remove(false), doUseBDT(true);
+  bool restricted(false), remove(false), doUseBDT(true), smallTree(true);
   int year(2012), mode(255), Mode(-1), suffixMode(0), nevents(-1);   
 
   // -- command line arguments
@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i], "-m"))  {mode  = atoi(argv[++i]);}     
     if (!strcmp(argv[i], "-M"))  {Mode  = atoi(argv[++i]);}     
     if (!strcmp(argv[i], "-n"))  {nevents = atoi(argv[++i]);}     
+    if (!strcmp(argv[i], "-nst")) {smallTree = false;}     
     if (!strcmp(argv[i], "-x"))  {remove= true;}     
     if (!strcmp(argv[i], "-y"))  {year  = atoi(argv[++i]);}     
   }
@@ -133,14 +134,19 @@ int main(int argc, char *argv[]) {
   if (mode & 1 && doUseBDT) {
     gROOT->Clear();  gROOT->DeleteAll();
     plotBDT a(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
-    a.makeAll(1);
-  } 
+    if (Mode > -1) {
+      a.makeAll(Mode);
+    } else {
+      a.makeAll(1); 
+    } 
+  }
 
   // -- results
   if (mode & 2) {
     gROOT->Clear();  gROOT->DeleteAll();
     plotResults a(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
     if (!doUseBDT) a.fDoUseBDT = false; 
+    a.fSaveSmallTree = smallTree; 
     if (Mode > -1) {
       a.makeAll(Mode, nevents);
     } else {
@@ -315,6 +321,7 @@ int main(int argc, char *argv[]) {
     if (!doUseBDT) a->fDoUseBDT = false; 
     if (Mode > -1) {
       a->makeAll(Mode);
+      delete a;
     } else {
       a->makeAll(1); 
       delete a;
@@ -323,6 +330,18 @@ int main(int argc, char *argv[]) {
       a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
       if (!doUseBDT) a->fDoUseBDT = false; 
       a->makeAll(2); 
+      delete a;
+
+      gROOT->Clear();  gROOT->DeleteAll();
+      a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+      if (!doUseBDT) a->fDoUseBDT = false; 
+      a->makeAll(8); 
+      delete a;
+
+      gROOT->Clear();  gROOT->DeleteAll();
+      a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+      if (!doUseBDT) a->fDoUseBDT = false; 
+      a->makeAll(16); 
       delete a;
     }
   }

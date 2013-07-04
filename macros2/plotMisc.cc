@@ -92,6 +92,13 @@ void plotMisc::loopFunction1(int mode) {
 void plotMisc::loopFunction2(int mode) {
 }
 
+
+// ----------------------------------------------------------------------
+void plotMisc::calcTauError() {
+
+}
+
+
 // ----------------------------------------------------------------------
 void plotMisc::pidTableDisplay() {
 
@@ -333,6 +340,16 @@ void plotMisc::fakeRateOverlaysDK(string mode) {
 // ----------------------------------------------------------------------
 void plotMisc::fakeRateOverlaysMM(string mode) {
 
+  if (mode == "all") {
+    fakeRateOverlaysMM("pions");
+    fakeRateOverlaysMM("pions");
+
+    fakeRateOverlaysMM("protons");
+    fakeRateOverlaysMM("protons");
+    return;
+  }
+
+
   double ymax(2.5e-3); 
 
 
@@ -367,7 +384,6 @@ void plotMisc::fakeRateOverlaysMM(string mode) {
   double v_y23[points23] = {0.00013, 0.00010, 0.00000};
   double e_y23[points23] = {0.00007, 0.00007, 0.00008};
   
-
 
   TH1D *hpt = new TH1D("hpt", "", 20, 0., 20.); hpt->Sumw2();
   setHist(hpt, kBlue, 20, 0.001);
@@ -420,8 +436,7 @@ void plotMisc::fakeRateOverlaysMM(string mode) {
   legg->Draw(); 
 
   c0->SaveAs(Form("%s/%s-fakeRateOverlaysMM-%s.pdf", fDirectory.c_str(), fSuffix.c_str(), mode.c_str())); 
-  
-  
+
 }
 
 
@@ -534,7 +549,7 @@ void plotMisc::fakeRateOverlaysMG(string mode, string charge, string chan) {
   tl->SetTextColor(kBlack); tl->DrawLatex(0.25, 0.92, "Mario"); 
   tl->SetTextColor(kBlue);  tl->DrawLatex(0.6, 0.92, "Urs"); 
 
-  c0->SaveAs(Form("%s-%s-%s.pdf", chan.c_str(), mode.c_str(), charge.c_str())); 
+  c0->SaveAs(Form("%s/%s-fakeRateOverlaysMG-%s-%s-%s.pdf", fDirectory.c_str(), fSuffix.c_str(), chan.c_str(), mode.c_str(), charge.c_str())); 
 
 }
 

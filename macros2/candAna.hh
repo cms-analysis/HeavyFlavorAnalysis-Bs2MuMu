@@ -33,9 +33,10 @@ struct readerData {
 };
 
 struct muonData {
+  float mbdt;
   // -- tight muon variables
   float validMuonHits, glbNChi2;
-  int   nMatchedStations, validPixelHits, trkLayerWithHits;
+  int   nMatchedStations, validPixelHits, validPixelHits2, trkLayerWithHits;
   // -- Luca's additional variables
   float trkValidFract; 
   float pt, eta; 
@@ -85,6 +86,7 @@ public:
   virtual void        triggerSelection();
   virtual void        fillCandidateHistograms(int offset);
   virtual void        fillRedTreeData();
+  virtual void        fillMuonData(muonData &a, TAnaMuon *pM);
   virtual void        replaceAll(std::string &s, std::string a, std::string b);
 
   virtual TMVA::Reader* setupReader(std::string xmlFile, readerData &rd);
@@ -198,6 +200,7 @@ public:
   double  fMu1BDT, fMu2BDT, fMu1rBDT, fMu2rBDT; 
 
   muonData fMuonData; 
+  muonData fMu1Data, fMu2Data; 
 
   // -- variables for reduced tree, they are from fpCand
   bool    fJSON, fCowboy;

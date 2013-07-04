@@ -474,7 +474,6 @@ void candAna::candAnalysis() {
   fMu1Id        = fMu1MvaId;
   if (HLTRANGE.begin()->first == "NOTRIGGER") fMu1Id = true; 
 
-
   fMu1Pt        = p1->fRefPlab.Perp(); 
   fMu1Eta       = p1->fRefPlab.Eta(); 
   fMu1Phi       = p1->fRefPlab.Phi(); 
@@ -491,10 +490,14 @@ void candAna::candAnalysis() {
 
   if (p1->fMuIndex > -1) {
     TAnaMuon *pm = fpEvt->getMuon(p1->fMuIndex);
+    //     fillMuonData(fMu1Data, pm); 
+    //     fMu1Data.mbdt = fMu1rBDT; 
     fMu1Chi2     = pm->fMuonChi2;
     fMu1Iso      = isoMuon(fpCand, pm); 
     fMu1VtxProb  = pm->fVtxProb;
   } else {
+//     fillMuonData(fMu1Data, 0); 
+//     fMu1Data.mbdt = -98.; 
     fMu1Chi2 = -98.;
     fMu1Iso  = -98.; 
     fMu1VtxProb = 99.;
@@ -569,6 +572,8 @@ void candAna::candAnalysis() {
 	cout << "no TAnaMuon found despite fMu1TmId != 0!!" << endl;
 	continue;
       }
+
+      //      fillMuonData(fMuonData, pt); 
 
       fMuonData.pt            = pt->fPlab.Perp(); 
       fMuonData.eta           = pt->fPlab.Eta(); 
@@ -648,10 +653,14 @@ void candAna::candAnalysis() {
 
   if (p2->fMuIndex > -1) {
     TAnaMuon *pm = fpEvt->getMuon(p2->fMuIndex);
+//     fillMuonData(fMu2Data, pm); 
+//     fMu2Data.mbdt = fMu2rBDT; 
     fMu2Chi2      = pm->fMuonChi2;
     fMu2Iso       = isoMuon(fpCand, pm); 
     fMu2VtxProb   = pm->fVtxProb;
   } else {
+//     fillMuonData(fMu2Data, 0); 
+//     fMu2Data.mbdt = -98.; 
     fMu2Chi2 = -98.;
     fMu2Iso  = -98.; 
     fMu2VtxProb = 99.;
@@ -1602,6 +1611,57 @@ void candAna::setupReducedTree(TTree *t) {
   t->Branch("hm2eta", &fHltMu2Eta, "hm2eta/D");  
   t->Branch("hm2phi", &fHltMu2Phi, "hm2phi/D");  
 
+  // -- all muon variables for Marco
+//   t->Branch("m1bdt", &fMu1Data.mbdt, "m1bdt/F");  
+//   t->Branch("m1validMuonHits", &fMu1Data.validMuonHits, "m1validMuonHits/F");  
+//   t->Branch("m1glbNChi2", &fMu1Data.glbNChi2, "m1glbNChi2/F");  
+
+//   t->Branch("m1nMatchedStations", &fMu1Data.nMatchedStations, "m1nMatchedStations/I");  
+//   t->Branch("m1validPixelHits", &fMu1Data.validPixelHits, "m1validPixelHits/I");  
+//   t->Branch("m1validPixelHits2", &fMu1Data.validPixelHits2, "m1validPixelHits2/I");  
+
+//   t->Branch("m1trkValidFract", &fMu1Data.trkValidFract, "m1trkValidFract/F");  
+//   t->Branch("m1pt", &fMu1Data.pt, "m1pt/F");  
+//   t->Branch("m1eta", &fMu1Data.eta, "m1eta/F");  
+//   t->Branch("m1segComp", &fMu1Data.segComp, "m1segComp/F");  
+//   t->Branch("m1chi2LocMom", &fMu1Data.chi2LocMom, "m1chi2LocMom/F");  
+//   t->Branch("m1chi2LocPos", &fMu1Data.chi2LocPos, "m1chi2LocPos/F");  
+//   t->Branch("m1glbTrackProb", &fMu1Data.glbTrackProb, "m1glbTrackProb/F");  
+//   t->Branch("m1NTrkVHits", &fMu1Data.NTrkVHits, "m1NTrkVHits/F");  
+//   t->Branch("m1NTrkEHitsOut", &fMu1Data.NTrkEHitsOut, "m1NTrkEHitsOut/F");  
+//   t->Branch("m1kink", &fMu1Data.kink, "m1kink/F");  
+//   t->Branch("m1dpt", &fMu1Data.dpt, "m1dpt/F");  
+//   t->Branch("m1dptrel", &fMu1Data.dptrel, "m1dptrel/F");  
+//   t->Branch("m1deta", &fMu1Data.deta, "m1deta/F");  
+//   t->Branch("m1dphi", &fMu1Data.dphi, "m1dphi/F");  
+//   t->Branch("m1dr", &fMu1Data.dr, "m1dr/F");  
+
+
+//   t->Branch("m2bdt", &fMu2Data.mbdt, "m2bdt/F");  
+//   t->Branch("m2validMuonHits", &fMu2Data.validMuonHits, "m2validMuonHits/F");  
+//   t->Branch("m2glbNChi2", &fMu2Data.glbNChi2, "m2glbNChi2/F");  
+
+//   t->Branch("m2nMatchedStations", &fMu2Data.nMatchedStations, "m2nMatchedStations/I");  
+//   t->Branch("m2validPixelHits", &fMu2Data.validPixelHits, "m2validPixelHits/I");  
+//   t->Branch("m2validPixelHits2", &fMu2Data.validPixelHits2, "m2validPixelHits2/I");  
+
+//   t->Branch("m2trkValidFract", &fMu2Data.trkValidFract, "m2trkValidFract/F");  
+//   t->Branch("m2pt", &fMu2Data.pt, "m2pt/F");  
+//   t->Branch("m2eta", &fMu2Data.eta, "m2eta/F");  
+//   t->Branch("m2segComp", &fMu2Data.segComp, "m2segComp/F");  
+//   t->Branch("m2chi2LocMom", &fMu2Data.chi2LocMom, "m2chi2LocMom/F");  
+//   t->Branch("m2chi2LocPos", &fMu2Data.chi2LocPos, "m2chi2LocPos/F");  
+//   t->Branch("m2glbTrackProb", &fMu2Data.glbTrackProb, "m2glbTrackProb/F");  
+//   t->Branch("m2NTrkVHits", &fMu2Data.NTrkVHits, "m2NTrkVHits/F");  
+//   t->Branch("m2NTrkEHitsOut", &fMu2Data.NTrkEHitsOut, "m2NTrkEHitsOut/F");  
+//   t->Branch("m2kink", &fMu2Data.kink, "m2kink/F");  
+//   t->Branch("m2dpt", &fMu2Data.dpt, "m2dpt/F");  
+//   t->Branch("m2dptrel", &fMu2Data.dptrel, "m2dptrel/F");  
+//   t->Branch("m2deta", &fMu2Data.deta, "m2deta/F");  
+//   t->Branch("m2dphi", &fMu2Data.dphi, "m2dphi/F");  
+//   t->Branch("m2dr", &fMu2Data.dr, "m2dr/F");  
+
+
   // for testing only 
   t->Branch("hltm2",    &fHLTmatch2,          "hltm2/O");
   t->Branch("hltm3",    &fHLTmatch3,          "hltm3/O");
@@ -2052,40 +2112,34 @@ void candAna::readCuts(string fileName, int dump) {
       hcuts->GetXaxis()->SetBinLabel(ibin, Form("%s :: BDT(#mu) :: %3.1f", CutName, MUBDT));
     }
 
-
-    sscanf(buffer, "%s %s", CutName, XmlName);
-    string ctmp = CutName; 
-    string sXmlName;
-    replaceAll(ctmp, " ", ""); 
-    // -- barrel
-    if (!strcmp(ctmp.c_str(), "xml0")) {
-      sXmlName = "weights/" + string(XmlName) + "-Events0_BDT.weights.xml"; 
-      if (dump) cout << "xml:                   " << sXmlName << endl;
-      fReaderEvents0.push_back(setupReader(sXmlName, frd)); 
-      sXmlName = "weights/" + string(XmlName) + "-Events1_BDT.weights.xml"; 
-      if (dump) cout << "xml:                   " << sXmlName << endl;
-      fReaderEvents1.push_back(setupReader(sXmlName, frd)); 
-      sXmlName = "weights/" + string(XmlName) + "-Events2_BDT.weights.xml"; 
-      if (dump) cout << "xml:                   " << sXmlName << endl;
-      fReaderEvents2.push_back(setupReader(sXmlName, frd)); 
-    }
-
-    // -- endcap
-    if (!strcmp(ctmp.c_str(), "xml1")) {
-      sXmlName = "weights/" + string(XmlName) + "-Events0_BDT.weights.xml"; 
-      if (dump) cout << "xml:                   " << sXmlName << endl;
-      fReaderEvents0.push_back(setupReader(sXmlName, frd)); 
-      sXmlName = "weights/" + string(XmlName) + "-Events1_BDT.weights.xml"; 
-      if (dump) cout << "xml:                   " << sXmlName << endl;
-      fReaderEvents1.push_back(setupReader(sXmlName, frd)); 
-      sXmlName = "weights/" + string(XmlName) + "-Events2_BDT.weights.xml"; 
-      if (dump) cout << "xml:                   " << sXmlName << endl;
-      fReaderEvents2.push_back(setupReader(sXmlName, frd)); 
-    }
-
-
   }
 
+  // -- this is now hard-coded!
+  string sXmlName;
+  // -- barrel
+  string bXml = (fYear == 2011?"TMVA-0":"TMVA-2"); 
+  sXmlName = "weights/" + bXml + "-Events0_BDT.weights.xml"; 
+  if (dump) cout << "xml:                   " << sXmlName << endl;
+  fReaderEvents0.push_back(setupReader(sXmlName, frd)); 
+  sXmlName = "weights/" + bXml + "-Events1_BDT.weights.xml"; 
+  if (dump) cout << "xml:                   " << sXmlName << endl;
+  fReaderEvents1.push_back(setupReader(sXmlName, frd)); 
+  sXmlName = "weights/" + bXml + "-Events2_BDT.weights.xml"; 
+  if (dump) cout << "xml:                   " << sXmlName << endl;
+  fReaderEvents2.push_back(setupReader(sXmlName, frd)); 
+  
+  // -- endcap
+  string fXml = (fYear == 2011?"TMVA-1":"TMVA-3"); 
+  sXmlName = "weights/" + fXml + "-Events0_BDT.weights.xml"; 
+  if (dump) cout << "xml:                   " << sXmlName << endl;
+  fReaderEvents0.push_back(setupReader(sXmlName, frd)); 
+  sXmlName = "weights/" + fXml + "-Events1_BDT.weights.xml"; 
+  if (dump) cout << "xml:                   " << sXmlName << endl;
+  fReaderEvents1.push_back(setupReader(sXmlName, frd)); 
+  sXmlName = "weights/" + fXml + "-Events2_BDT.weights.xml"; 
+  if (dump) cout << "xml:                   " << sXmlName << endl;
+  fReaderEvents2.push_back(setupReader(sXmlName, frd)); 
+  
   if (dump)  cout << "------------------------------------" << endl;
 }
 
@@ -2151,22 +2205,17 @@ bool candAna::tightMuon(TAnaTrack *pT, bool hadronsPass) {
   if (verbose)  cout << "pixel layers: " << fpReader->numberOfPixLayers(pT) << " -> " << trackcuts << endl;
 
   int trkHits = fpReader->numberOfTrackerLayers(pT);
-  if (0) {
-    if (fYear == 2011) {
-      // old version!! if (pT->fValidHits < 11) trackcuts = false; 
-      // not any more for MVA muon ID!!    if (trkHits < 9) trackcuts = false; 
-      if (trkHits < 6) trackcuts = false; 
-      if (verbose)  cout << "valid hits: " << pT->fValidHits << " -> " << trackcuts << endl;
-    } else if (fYear == 2012) {
-      if (trkHits < 6) trackcuts = false; 
-      if (verbose)  cout << "number of tracker layers: " << trkHits << " -> " << trackcuts << endl;
-    } else {
-      if (pT->fValidHits < 11) trackcuts = false; 
-      if (verbose)  cout << "valid hits: " << pT->fValidHits << " -> " << trackcuts << endl;
-    }
+  if (fYear == 2011) {
+    if (trkHits < 9) trackcuts = false; 
+    if (verbose)  cout << "valid hits: " << pT->fValidHits << " -> " << trackcuts << endl;
+  } else if (fYear == 2012) {
+    if (trkHits < 6) trackcuts = false; 
+    if (verbose)  cout << "number of tracker layers: " << trkHits << " -> " << trackcuts << endl;
+  } else {
+    if (pT->fValidHits < 11) trackcuts = false; 
+    if (verbose)  cout << "valid hits: " << pT->fValidHits << " -> " << trackcuts << endl;
   }
 
-  if (trkHits < 6) trackcuts = false; 
 
   if (muflag && mucuts && trackcuts) {
     if (verbose) cout << " +++ passed "<<endl;
@@ -4104,4 +4153,73 @@ void candAna::play2() {
   ftmp5 = muPairHlt;
   ftmp6 = muPairTightHlt;
 
+}
+
+
+// ----------------------------------------------------------------------
+void candAna::fillMuonData(muonData &a, TAnaMuon *pt) {
+
+  if (0 == pt) {
+
+    a.mbdt          = -99.;
+    a.pt            = -99.;
+    a.eta           = -99.; 
+    a.validMuonHits    = -99.; 
+    a.glbNChi2         = -99.; 
+    a.nMatchedStations = -99; 
+    a.validPixelHits   = -99;
+    a.validPixelHits2  = -99;
+    a.trkLayerWithHits = -99.;
+  
+    a.trkValidFract = -99.; 
+    a.segComp       = -99.; 
+    a.chi2LocMom    = -99.;
+    a.chi2LocPos    = -99.;
+    a.glbTrackProb  = -99.;
+    a.NTrkVHits     = -99.;
+    a.NTrkEHitsOut  = -99.;
+  
+    a.kink          = -99.;
+  
+    a.dpt           = -99.;
+    a.dptrel        = -99.;
+    a.deta          = -99.;
+    a.dphi          = -99.;
+    a.dr            = -99.;
+
+  } else {
+    
+    a.mbdt          = -99.;
+    a.pt            = pt->fPlab.Perp(); 
+    a.eta           = pt->fPlab.Eta(); 
+    a.validMuonHits    = pt->fNvalidMuonHits; 
+    a.glbNChi2         = pt->fGtrkNormChi2; 
+    a.nMatchedStations = pt->fNmatchedStations; 
+    a.validPixelHits   = fpReader->numberOfPixLayers(pt);
+    a.validPixelHits2  = fpReader->numberOfPixelHits(pt);
+    a.trkLayerWithHits = fpReader->numberOfTrackerLayers(pt);
+  
+    a.trkValidFract = pt->fItrkValidFraction; 
+    a.segComp       = pt->fSegmentComp; 
+    a.chi2LocMom    = pt->fChi2LocalMomentum;
+    a.chi2LocPos    = pt->fChi2LocalPosition;
+    a.glbTrackProb  = pt->fGtrkProb;
+    a.NTrkVHits     = static_cast<float>(pt->fNumberOfValidTrkHits);
+    a.NTrkEHitsOut  = static_cast<float>(pt->fNumberOfLostTrkHits);
+  
+    a.kink          = pt->fMuonChi2;
+  
+    a.dpt           = pt->fInnerPlab.Mag() - pt->fOuterPlab.Mag();
+    a.dptrel        = TMath::Abs(pt->fInnerPlab.Mag() - pt->fOuterPlab.Mag())/pt->fInnerPlab.Mag();
+    if (pt->fOuterPlab.Mag() > 3.) {
+      a.deta          = pt->fInnerPlab.Eta() - pt->fOuterPlab.Eta();
+      a.dphi          = pt->fInnerPlab.DeltaPhi(pt->fOuterPlab);
+      a.dr            = pt->fInnerPlab.DeltaR(pt->fOuterPlab);
+    } else {
+      a.deta          = -99.;
+      a.dphi          = -99.;
+      a.dr            = -99.;
+    }
+
+  }
 }

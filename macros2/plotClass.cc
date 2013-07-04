@@ -332,7 +332,7 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
     fptFakeNegProtons   = new PidTable("../macros/pidtables/130419/protonMinusFakeRate-mvaMuon.dat"); 
   }
 
-  if (1) {
+  if (0) {
     fptFakePosKaons     = new PidTable("../macros/pidtables/130510/2012-kaonPosFakeRate-mvaMuon.dat"); 
     fptFakeNegKaons     = new PidTable("../macros/pidtables/130510/2012-kaonNegFakeRate-mvaMuon.dat"); 
     
@@ -341,6 +341,17 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
     
     fptFakePosProtons   = new PidTable("../macros/pidtables/130510/2012-protonPosFakeRate-mvaMuon.dat"); 
     fptFakeNegProtons   = new PidTable("../macros/pidtables/130510/2012-protonNegFakeRate-mvaMuon.dat"); 
+  }
+
+  if (1) {
+    fptFakePosKaons     = new PidTable(Form("../macros/pidtables/130703/%d-kaonPosFakeRate-mvaMuon.dat", fYear)); 
+    fptFakeNegKaons     = new PidTable(Form("../macros/pidtables/130703/%d-kaonNegFakeRate-mvaMuon.dat", fYear)); 
+    
+    fptFakePosPions     = new PidTable(Form("../macros/pidtables/130703/%d-pionPosFakeRate-mvaMuon.dat", fYear)); 
+    fptFakeNegPions     = new PidTable(Form("../macros/pidtables/130703/%d-pionNegFakeRate-mvaMuon.dat", fYear)); 
+    
+    fptFakePosProtons   = new PidTable(Form("../macros/pidtables/130703/%d-protonPosFakeRate-mvaMuon.dat", fYear)); 
+    fptFakeNegProtons   = new PidTable(Form("../macros/pidtables/130703/%d-protonNegFakeRate-mvaMuon.dat", fYear)); 
   }
 
   if (1) { // if (2012 == fYear) {
@@ -1805,7 +1816,11 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
   }
   
   lF2->SetLineStyle(kDashed);
-  h->Fit(lF1, "rl", "", lo, hi); 
+  if (2 == mode) {
+    h->Fit(lF1, "qrl", "", lo, hi); 
+  } else {
+    h->Fit(lF1, "rl", "", lo, hi); 
+  }
   h->DrawCopy();
   lF2->SetLineColor(kBlue);
   lF2->Draw("same");
@@ -3384,7 +3399,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
       small->Branch("q", &fb.q ,"q/I");
       small->Branch("iso", &fb.iso ,"iso/D");
       small->Branch("m1iso", &fb.m1iso ,"m1iso/D");
-      small->Branch("m2iso", &fb.m1iso ,"m2iso/D");
+      small->Branch("m2iso", &fb.m2iso ,"m2iso/D");
       small->Branch("alpha", &fb.alpha ,"alpha/D");
       small->Branch("closetrk", &fb.closetrk ,"closetrk/I");
       small->Branch("docatrk", &fb.docatrk ,"docatrk/D");

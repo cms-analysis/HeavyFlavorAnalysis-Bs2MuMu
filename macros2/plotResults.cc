@@ -58,13 +58,18 @@ void plotResults::makeAll(int channels, int nevents) {
   }
  
   zone(1);
-  //DBX  fSaveLargerTree = true; //FIXME
+
+  if (channels & 8) {
+    fSaveLargerTree = true;
+    fillAndSaveHistograms(-2); 
+    return;
+  }
 
   if (channels & 1) {
+    fSaveSmallTree = true; 
     fillAndSaveHistograms(nevents); 
   }
 
-  //DBX  return; // FIXME
 
   if (channels & 2) {
     calculateNumbers(2);
@@ -95,8 +100,8 @@ void plotResults::makeAll(int channels, int nevents) {
       double ymax0 = 3; 
       double yleg = ymax0 - 0.3;
       h1->SetMaximum(ymax0); 
-      double b0  = h1->Integral(h1->FindBin(5.2), h1->FindBin(5.3)); 
-      double bs  = h1->Integral(h1->FindBin(5.3), h1->FindBin(5.45)); 
+      double b0  = h1->Integral(h1->FindBin(5.2+fEpsilon), h1->FindBin(5.3-fEpsilon)); 
+      double bs  = h1->Integral(h1->FindBin(5.3+fEpsilon), h1->FindBin(5.45-fEpsilon)); 
     
       drawArrow(0.6, 1, yleg); 
       drawArrow(0.4, 2, yleg-0.35); 
@@ -771,8 +776,6 @@ void plotResults::calculateRareBgNumbers(int chan) {
     error  = valInc*err[fRareName];
     fTEX <<  Form("\\vdef{%s:%s:loSideband%d:val}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, valInc) << endl;
     fTEX <<  Form("\\vdef{%s:%s:loSideband%d:err}   {\\ensuremath{{%4.3f } } }", fSuffix.c_str(), fRareName.c_str(), chan, error) << endl;
-    // FIXME: add also MuMu to sl!
-    //    if (string::npos == fRareName.find("Nu")) {
     if ((string::npos != fRareName.find("Nu")) || (string::npos != fRareName.find("MuMu"))) {
       vRareSl[mbin]  += valInc; 
       vRareSlE[mbin] += error*error; 
@@ -951,16 +954,16 @@ void plotResults::calculateRareBgNumbers(int chan) {
   // -- new numbers
   fNumbersBs[chan]->fBgPeakLo   = bRare->Integral(bRare->FindBin(4.9001), bRare->FindBin(5.1999));
   fNumbersBs[chan]->fBgPeakLoE1 = relErr * fNumbersBs[chan]->fBgPeakLo; 
-  fNumbersBs[chan]->fBgPeakLoE2 = (vRareE[0]/vRare[0]) * fNumbersBs[chan]->fBgPeakLo; 
+  fNumbersBs[chan]->fBgPeakLoE2 = vRareHhE[0]; 
   fNumbersBs[chan]->fBgPeakBd   = bRare->Integral(bRare->FindBin(fCuts[chan]->mBdLo+fEpsilon), bRare->FindBin(fCuts[chan]->mBdHi-fEpsilon));
   fNumbersBs[chan]->fBgPeakBdE1 = relErr * fNumbersBs[chan]->fBgPeakBd; 
-  fNumbersBs[chan]->fBgPeakBdE2 = (vRareE[1]/vRare[1]) * fNumbersBs[chan]->fBgPeakBd; 
+  fNumbersBs[chan]->fBgPeakBdE2 = vRareHhE[1]; 
   fNumbersBs[chan]->fBgPeakBs   = bRare->Integral(bRare->FindBin(fCuts[chan]->mBsLo+fEpsilon), bRare->FindBin(fCuts[chan]->mBsHi-fEpsilon));
   fNumbersBs[chan]->fBgPeakBsE1 = relErr * fNumbersBs[chan]->fBgPeakBs; 
-  fNumbersBs[chan]->fBgPeakBsE2 = (vRareE[2]/vRare[2]) * fNumbersBs[chan]->fBgPeakBs;
+  fNumbersBs[chan]->fBgPeakBsE2 = vRareHhE[2]; 
   fNumbersBs[chan]->fBgPeakHi   = bRare->Integral(bRare->FindBin(5.4501), bRare->FindBin(5.8999));
   fNumbersBs[chan]->fBgPeakHiE1 = relErr * fNumbersBs[chan]->fBgPeakHi; 
-  fNumbersBs[chan]->fBgPeakHiE2 = (vRareE[3]/vRare[3]) * fNumbersBs[chan]->fBgPeakHi;
+  fNumbersBs[chan]->fBgPeakHiE2 = vRareHhE[3]; 
 
   fNumbersBs[chan]->fBgRslLo   = bslRare->Integral(bslRare->FindBin(4.9001), bslRare->FindBin(5.1999));
   fNumbersBs[chan]->fBgRslLoE1 = relErr * fNumbersBs[chan]->fBgRslLo; 
@@ -989,34 +992,34 @@ void plotResults::calculateRareBgNumbers(int chan) {
   fNumbersBs[chan]->fBgRareHiE2 = quadraticSum(2, fNumbersBs[chan]->fBgRslHiE2, fNumbersBs[chan]->fBgPeakHiE2);
 
 
-// -- This comparison agrees perfectly!
-  cout << "COMPARISON: " 
-       << fNumbersBs[chan]->fBgPeakLo 
-       << " vs hh sum: " << (vRarePiPi[0]+vRareKK[0]+vRareKPi[0]+vRareKP[0]+vRarePiP[0])
-       << " vs hh: " << vRareHh[0]
-       << " +/- " << vRareHhE[0]
-       << endl;
+  // -- This comparison agrees perfectly!
+  //   cout << "COMPARISON: " 
+  //        << fNumbersBs[chan]->fBgPeakLo 
+  //        << " vs hh sum: " << (vRarePiPi[0]+vRareKK[0]+vRareKPi[0]+vRareKP[0]+vRarePiP[0])
+  //        << " vs hh: " << vRareHh[0]
+  //        << " +/- " << vRareHhE[0]
+  //        << endl;
 
-  cout << "COMPARISON: " 
-       << fNumbersBs[chan]->fBgPeakBd 
-       << " vs hh sum: " << (vRarePiPi[1]+vRareKK[1]+vRareKPi[1]+vRareKP[1]+vRarePiP[1])
-       << " vs hh: " << vRareHh[1]
-       << " +/- " << vRareHhE[1]
-       << endl;
+  //   cout << "COMPARISON: " 
+  //        << fNumbersBs[chan]->fBgPeakBd 
+  //        << " vs hh sum: " << (vRarePiPi[1]+vRareKK[1]+vRareKPi[1]+vRareKP[1]+vRarePiP[1])
+  //        << " vs hh: " << vRareHh[1]
+  //        << " +/- " << vRareHhE[1]
+  //        << endl;
 
-  cout << "COMPARISON: " 
-       << fNumbersBs[chan]->fBgPeakBs
-       << " vs hh sum: " << (vRarePiPi[2]+vRareKK[2]+vRareKPi[2]+vRareKP[2]+vRarePiP[2])
-       << " vs hh: " << vRareHh[2]
-       << " +/- " << vRareHhE[2]
-       << endl;
+  //   cout << "COMPARISON: " 
+  //        << fNumbersBs[chan]->fBgPeakBs
+  //        << " vs hh sum: " << (vRarePiPi[2]+vRareKK[2]+vRareKPi[2]+vRareKP[2]+vRarePiP[2])
+  //        << " vs hh: " << vRareHh[2]
+  //        << " +/- " << vRareHhE[2]
+  //        << endl;
 
-  cout << "COMPARISON: " 
-       << fNumbersBs[chan]->fBgPeakHi 
-       << " vs hh sum: " << (vRarePiPi[3]+vRareKK[3]+vRareKPi[3]+vRareKP[3]+vRarePiP[3])
-       << " vs hh: " << vRareHh[3]
-       << " +/- " << vRareHhE[3]
-       << endl;
+  //   cout << "COMPARISON: " 
+  //        << fNumbersBs[chan]->fBgPeakHi 
+  //        << " vs hh sum: " << (vRarePiPi[3]+vRareKK[3]+vRareKPi[3]+vRareKP[3]+vRarePiP[3])
+  //        << " vs hh: " << vRareHh[3]
+  //        << " +/- " << vRareHhE[3]
+  //        << endl;
 
 
   fTEX << "% ----------------------------------------------------------------------" << endl;
@@ -1314,19 +1317,17 @@ void plotResults::fillAndSaveHistograms(int nevents) {
 
   TTree *t(0);
 
-  fSaveSmallTree = true; 
-
   // -- DBX
-  if (0) {
+  if (nevents == -2) {
     resetHistograms();
-    fSetup = "SgMcAcc";
+    fSetup = "SgData";
     t = getTree(fSetup); 
     setupTree(t, fSetup); 
-    loopOverTree(t, fSetup, 1, nevents);
-    otherNumbers(fSetup); 
+    loopOverTree(t, fSetup, 1);
+    //    otherNumbers(fSetup); 
     saveHists(fSetup);
     return;
-  } // FIXME
+  } 
 
   if (1) {
     // -- rare backgrounds
