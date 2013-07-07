@@ -51,6 +51,8 @@ private:
   RooDataSet* pull_rds_BF_bs;
   RooRealVar* pull_BF_bd;
   RooDataSet* pull_rds_BF_bd;
+  RooRealVar * pull_BF_bs_minos;
+  RooDataSet* pull_rds_BF_bs_minos;
 
   void fit_pulls(RooRealVar *pull, RooDataSet *rds, int i, int j);
   void print_histos(TH1D* histos, int i, int j);

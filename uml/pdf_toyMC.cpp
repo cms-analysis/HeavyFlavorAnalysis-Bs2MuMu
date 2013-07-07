@@ -55,6 +55,7 @@ pdf_toyMC::pdf_toyMC(bool print, string input_estimates, string range, int BF, b
 
   pull_BF_bs = new RooRealVar("pull_BF_bs", "pull_BF_bs", -10., 10.);
   pull_rds_BF_bs = new RooDataSet("pull_rds_BF_bs", "pull_rds_BF_bs", *pull_BF_bs);
+  pull_rds_BF_bs_minos = new RooDataSet("pull_rds_BF_bs_minos", "pull_rds_BF_bs_minos", *pull_BF_bs);
   pull_BF_bd = new RooRealVar("pull_BF_bd", "pull_BF_bd", -10., 10.);
   pull_rds_BF_bd = new RooDataSet("pull_rds_BF_bd", "pull_rds_BF_bd", *pull_BF_bd);
 
@@ -89,10 +90,11 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
 
   TH1D * sign_h = new TH1D("sign_h", "sign_h;#sigma", 100, 0, 10);
   TH1D * BF_bs_pull_h = new TH1D("BF_bs_pull_h", "BF_bs_pull_h", 100, -10, 10);
-  TH1D * BF_bs_mean_h = new TH1D("BF_bs_mean_h", "BF_bs_mean_h", 100, 1.e-10, 1.e-8);
-  TH1D * BF_bs_sigma_h = new TH1D("BF_bs_sigma_h", "BF_bs_sigma_h", 100, 1.e-10, 1.e-8);
-  TH1D * BF_bd_mean_h = new TH1D("BF_bd_mean_h", "BF_bd_mean_h", 100, 1.e-10, 1.e-8);
-  TH1D * BF_bd_sigma_h = new TH1D("BF_bd_sigma_h", "BF_bd_sigma_h", 100, 1.e-10, 1.e-8);
+  TH1D * BF_bs_mean_h = new TH1D("BF_bs_mean_h", "BF_bs_mean_h", 100, 0., 1.e-8);
+  TH1D * BF_bs_sigma_h = new TH1D("BF_bs_sigma_h", "BF_bs_sigma_h", 100, 0., 1.e-8);
+  TH1D * BF_bd_pull_h = new TH1D("BF_bd_pull_h", "BF_bd_pull_h", 100, -10, 10);
+  TH1D * BF_bd_mean_h = new TH1D("BF_bd_mean_h", "BF_bd_mean_h", 100, 0., 1.e-8);
+  TH1D * BF_bd_sigma_h = new TH1D("BF_bd_sigma_h", "BF_bd_sigma_h", 100, 0., 1.e-8);
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < bdt_index_max(i); j++) {
       residual_bs[i][j] = new RooRealVar(name("residual_bs", i, j), "residual_bs", -20., 20.);
@@ -122,7 +124,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
       peak_sigma_h[i][j] = new TH1D(name("peak_sigma_h", i, j), name("peak_sigma_h", i, j), 100, 0., 40);
       semi_mean_h[i][j] = new TH1D(name("semi_mean_h", i, j), name("semi_mean_h", i, j), 100, 0., 100);
       semi_sigma_h[i][j] = new TH1D(name("semi_sigma_h", i, j), name("semi_sigma_h", i, j), 100, 0., 40);
-      comb_mean_h[i][j] = new TH1D(name("comb_mean_h", i, j), name("comb_mean_h", i, j), 100, 0., 100);
+      comb_mean_h[i][j] = new TH1D(name("comb_mean_h", i, j), name("comb_mean_h", i, j), 1000, 0., 1000);
       comb_sigma_h[i][j] = new TH1D(name("comb_sigma_h", i, j), name("comb_sigma_h", i, j), 100, 0., 40);
       corr_Nbs_Nbd_vs_N_bs_h[i][j] = new TH2D(Form("corr_Nbs_Nbd_vs_N_bs_%d_%d_h", i, j), "corr_Nbs_Nbd_vs_N_bs_h", 30, 0., 30., 100, -1., 1.);
     }
@@ -139,6 +141,18 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     }
   }
   cout << red_color_bold << "START OF EXPERIMENTS!" << default_console_color << endl;
+  RooWorkspace* ws_original = (RooWorkspace*)ws_->Clone("ws_original");
+  if (!(bias_.compare("expo"))) {
+  	cout << "double expo" << endl;
+  	for (int i = 0; i < channels; i++) {
+  		for (int j = 0; j < bdt_index_max(i); j++) {
+  			define_comb2(i, j);
+  		}
+  	}
+
+  	ws_->function(name("pdf_comb", 0, 0))->Print();
+  }
+//  exit(1);
   for (int k = 1; k <= NExp; k++) {
     if (k % 100 == 0) cout << "Exp # " << k << " / " << NExp << endl;
     double printlevel = -1;
@@ -166,16 +180,16 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     if (syst && randomsyst) randomize_constraints(ws_temp);
     if (!simul_bdt_ && !simul_all_) { /// simple 1D or 2D fit
       bd_b = true;
-      data = ws_temp->pdf(pdfname.c_str())->generate(vars, Extended());
+      data = ws_original->pdf(pdfname.c_str())->generate(vars, Extended());
     }
     else {
-      RooArgSet set(*ws_->var("Mass"), *ws_->var("ReducedMassRes"), *ws_->cat("etacat"), *ws_->cat("bdtcat"));
-      if (simul_all_) set.add(*ws_->cat("allcat"));
+      RooArgSet set(*ws_original->var("Mass"), *ws_original->var("ReducedMassRes"), *ws_original->cat("etacat"), *ws_original->cat("bdtcat"));
+      if (simul_all_) set.add(*ws_original->cat("allcat"));
       for (int i = 0; i < channels; i++) {
       	if (years_=="0" && i > 1) continue;
       	if (years_=="1" && i < 2) continue;
       	for (int j = 0; j < bdt_index_max(i); j++) {
-          RooDataSet* data_i = ws_->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_->var("Mass"), *ws_->var("ReducedMassRes")), Extended());
+          RooDataSet* data_i = ws_original->pdf(name("pdf_ext_total", i, j))->generate(RooArgSet(*ws_original->var("Mass"), *ws_original->var("ReducedMassRes")), Extended());
           channels_cat->setIndex(i);
           bdt_cat->setIndex(j);
           data_i->addColumn(*channels_cat);
@@ -190,7 +204,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     }
     data->SetName("global_data");
 
-    do_bias(ws_temp);
+//    do_bias(ws_temp);
     ///////////
     //////
     RFR = pdf_toyMC::fit_pdf(data, printlevel, ws_temp);
@@ -287,6 +301,11 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
       pull_BF_bs->setVal(BF_pull);
       pull_rds_BF_bs->add(*pull_BF_bs);
       BF_bs_pull_h->Fill(BF_pull);
+      if (minos) {
+      	double BF_pull_minos = (ws_temp->var("BF_bs")->getVal() - ws_->var("BF_bs")->getVal()) / sqrt(pow(ws_temp->var("BF_bs")->getErrorLo(), 2) + pow(ws_temp->var("BF_bs")->getErrorHi(), 2));
+      	pull_BF_bs_minos->setVal(BF_pull_minos);
+      	pull_rds_BF_bs_minos->add(*pull_BF_bs_minos);
+      }
     }
     if (BF_ > 1) {
       BF_bd_mean_h->Fill(ws_temp->var("BF_bd")->getVal());
@@ -294,6 +313,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
       double BF_pull = (ws_temp->var("BF_bd")->getVal() - ws_->var("BF_bd")->getVal()) / ws_temp->var("BF_bd")->getError();
       pull_BF_bd->setVal(BF_pull);
       pull_rds_BF_bd->add(*pull_BF_bd);
+      BF_bd_pull_h->Fill(BF_pull);
     }
     if (k == NExp) ws_temp->pdf(pdfname.c_str())->Print();
 
@@ -333,6 +353,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
   }
   if (BF_ > 0) {
     fit_pulls(pull_BF_bs, pull_rds_BF_bs, 0, 0);
+    if (minos) fit_pulls(pull_BF_bs_minos, pull_rds_BF_bs_minos, 0, 0);
     print_histos(BF_bs_mean_h, 0, 0);
     print_histos(BF_bs_sigma_h, 0, 0);
     print_histos(BF_bs_pull_h, 0, 0);
@@ -341,6 +362,7 @@ void pdf_toyMC::generate(string pdf_toy, string pdf_test) {
     fit_pulls(pull_BF_bd, pull_rds_BF_bd, 0, 0);
     print_histos(BF_bd_mean_h, 0, 0);
     print_histos(BF_bd_sigma_h, 0, 0);
+    print_histos(BF_bd_pull_h, 0, 0);
   }
   if (!SM_ && bd_b && !simul_) {
     TCanvas* corr_c = new TCanvas("corr_c", "corr_c", 600*channels, 600*channels_bdt);
@@ -446,7 +468,7 @@ void pdf_toyMC::do_bias(RooWorkspace* ws) {
 RooFitResult* pdf_toyMC::fit_pdf(RooAbsData* data, int printlevel, RooWorkspace* ws) {
   RooFitResult* result;
 //  if (printlevel < 0) RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
-  result = ws->pdf(pdfname.c_str())->fitTo(*data, pee ? ConditionalObservables(*ws->var("ReducedMassRes")) : RooCmdArg::none(), Extended(true), Hesse(kFALSE), SumW2Error(0), PrintLevel(printlevel), PrintEvalErrors(1)/*, Verbose(10)*/, Save(kTRUE), NumCPU( simul_all_? 1 : 2));
+  result = ws->pdf(pdfname.c_str())->fitTo(*data, pee ? ConditionalObservables(*ws->var("ReducedMassRes")) : RooCmdArg::none(), Extended(true), Hesse(kFALSE), Minos(minos), SumW2Error(0), PrintLevel(printlevel), Save(kTRUE), NumCPU(2));
 //  if (printlevel < 0) RooMsgService::instance().cleanup();
   return result;
 }
@@ -482,7 +504,7 @@ void pdf_toyMC::print_histos(TH1D* histos, int i, int j) {
   histos->Draw("e");
   channel = simul_ ? i : ch_i_;
   channel_bdt = simul_bdt_ ? j : 0;
-  N_mean_c->Print((get_address(histos->GetName(), pdfname) + ".gif").c_str());
+  N_mean_c->Print((get_address(histos->GetName(), pdfname) + ".root").c_str());
   N_mean_c->Print((get_address(histos->GetName(), pdfname) + ".pdf").c_str());
   delete N_mean_c;
 }

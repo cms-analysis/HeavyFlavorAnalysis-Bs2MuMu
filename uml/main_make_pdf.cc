@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
 
     for (int yy = 0; yy < years; yy++) {
       int y = (years == 2) ? yy : years_i;
-      decays_filename[i] = "../uml/input/" + year_s[y] + "/small-" + decays[i] + ".root";
+      decays_filename[i] = "./input/" + year_s[y] + "/small-" + decays[i] + ".root";
       cout << endl << decays_filename[i] << endl;
       TFile smalltree_f(decays_filename[i].c_str());
       TTree* reduced_tree = (TTree*)smalltree_f.Get(decays_treename[i].c_str());
@@ -237,8 +237,7 @@ int main(int argc, char* argv[]) {
         else {
             if (cuts_f_b && bdt_t < cuts_v[1 + 2*yy]) continue;
         }
-//        if (!muid_t) continue;
-        if (i != decays_n-1 && !(muid_t)) continue;  ///muon sample for all
+        if (i != decays_n-1 && !muid_t) continue;  ///muon sample for all but comb
         if (y == 0 && i == decays_n-1 && ((m1bdt > 0.450 && m2bdt > 0.450) || (m1bdt < -1 || m2bdt < -1)) ) continue; ///antimuon sample for comb pdf and too small statistics for 2011
         if (y == 1 && i == decays_n-1 && ((m1bdt > 0.360 && m2bdt > 0.360) || (m1bdt < -1 || m2bdt < -1)) ) continue; ///antimuon sample for comb pdf
 
@@ -384,8 +383,8 @@ int main(int argc, char* argv[]) {
       ana1.fit_pdf(ana1.name("semi", j, k), rad_semi, false, true, false);
 
       /// comb
-//      ana1.fit_pdf(ana1.name("comb", j, k), rad_comb, false, true, false, false);
-      ana1.setSBslope(ana1.name("comb", j, k), rds_m_comb);
+      ana1.fit_pdf(ana1.name("comb", j, k), rad_comb, false, true, false, false);
+      ana1.setSBslope(ana1.name("comb", j, k), rad_comb);
 
 //      ana1.print_ = false;
 //      ana1.define_rare3(j, k);

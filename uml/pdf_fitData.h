@@ -15,6 +15,7 @@
 #include "RooRandom.h"
 #include "RooGamma.h"
 #include "RooMinuit.h"
+#include "RooLognormal.h"
 
 #include "RooStats/ModelConfig.h"
 #include "RooStats/ProfileLikelihoodCalculator.h"
@@ -34,7 +35,7 @@ class pdf_fitData : public pdf_analysis {
     ~pdf_fitData();
 
     void set_estimate();
-    void parse_estimate();
+    void parse_estimate(string input = "");
     void print_estimate();
 
     void print();
@@ -71,6 +72,8 @@ class pdf_fitData : public pdf_analysis {
 
     void print_gaussian_constraints();
     void free_rare(int free = 0);
+
+    bool berns_;
 
   protected:
 

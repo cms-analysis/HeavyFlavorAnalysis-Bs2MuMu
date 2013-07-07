@@ -56,6 +56,7 @@
 #include "RooIntegralMorph.h"
 #include "RooKeysPdf.h"
 #include "RooMsgService.h"
+#include "RooBernstein.h"
 
 using namespace std;
 using namespace RooFit;
@@ -156,6 +157,7 @@ public:
 
   bool bdtsplit;
   void hack_comb_slope();
+  bool minos;
 
 protected:
   string default_console_color;
@@ -228,6 +230,8 @@ protected:
   bool final_;
   void set_bkg_normalization(string input); //set peak fraction parameter to Bu2JpsiK
 
+  void define_comb2(int i, int j);
+
 private:
   void define_bs(int i, int j);
   void define_bd(int i, int j);
@@ -241,6 +245,8 @@ private:
   void print_pdf(RooAbsPdf* pdf, RooRealVar * var);
   void bdt_effs();
   void bdt_fit_effs();
+
+
 
   void print(RooAbsData *data, string output = "");
 };

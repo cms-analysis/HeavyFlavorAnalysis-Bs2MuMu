@@ -61,6 +61,8 @@ bool semi = false;
 bool bdtsplit = false;
 bool final = false;
 bool hack = false;
+bool minos = false;
+bool berns = false;
 
 void help() {
 
@@ -107,7 +109,7 @@ void help() {
   cout << "-e #filename \t estimates file (useful for significance)" << endl;
   cout << "-pee \t per-event-error" << endl;
   cout << "-bdt_fit \t bdt_fit" << endl;
-  cout << "-free_rare #" << endl;
+  cout << "-free #" << endl;
 //  cout << "-cuts #cutstring \t string cut for small tree: i.e. \"bdt>0.&&bdt<0.18\"; default is \"" << cuts << "\"" << endl;
   cout << "-cuts_file \t file containing bdt cuts for small tree" << endl;
   cout << "-y {0,1,all} \t year 2011, 2012 or both (this last works only with simul)" << endl;
@@ -125,6 +127,7 @@ void help() {
   cout << "-free # \t rare decays are not constant: 1 = semi, 2 = peak, 3 = both" << endl;
   cout << "-bdt_cut # \t minimum bdt" << endl;
   cout << "-final \t don't change input numbers, take the ones from AN" << endl;
+  cout << "-berns \t linear" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -152,6 +155,8 @@ void help() {
   cout << "-hack2011 \t hack 2011 semi to 2012" << endl;
   cout << "-free # \t rare decays are not constant: 1 = semi, 2 = peak, 3 = both" << endl;
   cout << "-final \t don't change input numbers, take the ones from AN" << endl;
+  cout << "-minos \t toyMc with MINOS" << endl;
+  cout << "-berns \t linear" << endl;
   cout << endl;
 
   exit(EXIT_SUCCESS);
@@ -369,6 +374,14 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-final")) {
     	final = true;
     	cout << "numbers from AN" << endl;
+    }
+    if (!strcmp(argv[i],"-minos")) {
+    	minos = true;
+    	cout << "MINOS" << endl;
+    }
+    if (!strcmp(argv[i],"-berns")) {
+    	berns = true;
+    	cout << "bernstein" << endl;
     }
     if (!strcmp(argv[i],"-h")) help();
   }

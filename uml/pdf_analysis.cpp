@@ -3,11 +3,13 @@
 pdf_analysis::pdf_analysis(bool print, string ch_s, string range, int BF, bool SM, bool bd_constr, int simul, int simulbdt, int simulall, bool pee_, bool bdt_fit, bool final) {
   cout << "analysis constructor" << endl;
 
+  minos = false;
   print_ = print;
   meth_ = "bdt";
   ch_s_ = ch_s;
   ch_i_ = atoi(ch_s_.c_str());
   range_ = range;
+
   SM_ = SM;
   bd_constr_ = bd_constr;
   verbosity = 1;
@@ -151,15 +153,15 @@ void pdf_analysis::define_N () {
 
   for (int i = 0; i < channels; i++) {
     for (int j = 0; j < bdt_index_max(i); j++) {
-    	RooRealVar N_bs(name("N_bs", i, j), "N_bs", 0, 10000);
+    	RooRealVar N_bs(name("N_bs", i, j), "N_bs", 0, 1000);
     	ws_->import(N_bs);
-      RooRealVar N_bd(name("N_bd", i, j), "N_bd", 0, 10000);
+      RooRealVar N_bd(name("N_bd", i, j), "N_bd", 0, 1000);
       ws_->import(N_bd);
-      RooRealVar N_peak(name("N_peak", i, j), "N_peak", 0, 10000);
+      RooRealVar N_peak(name("N_peak", i, j), "N_peak", 0, 1000);
       ws_->import(N_peak);
       RooRealVar N_semi(name("N_semi", i, j), "N_semi", 0, 10000);
       ws_->import(N_semi);
-      RooRealVar N_comb(name("N_comb", i, j), "N_comb", 0, 1000000);
+      RooRealVar N_comb(name("N_comb", i, j), "N_comb", 0, 10000);
       ws_->import(N_comb);
     }
   }
@@ -463,6 +465,59 @@ void pdf_analysis::define_comb(int i, int j) {
   }
 }
 
+void pdf_analysis::define_comb2(int i, int j) {
+
+  RooRealVar B1(name("B_1comb", i, j), "B_1comb", 1);
+  RooRealVar B2(name("B_2comb", i, j), "B_2comb", 0.5, 0, 1.);
+
+  RooFormulaVar bkgp1c(name("bkgp1c", i, j), "", "0. + 0.5*(1.-0.)*(TMath::Sin(@0)+1.0)", RooArgList(B2));
+
+//  RooRealVar exp2(name("exp_2comb", i, j), "exp_2comb", -1., -10., 10);
+//  RooRealVar exp_fract(name("exp_fract_2comb", i, j), "exp_fract_2comb", 0.5, 0., 1.);
+
+  RooRealVar bkgp1("bkgp1","",0.1);
+//  bkgp0.setConstant(false);
+
+  RooProduct bkgp1positive(name("bkgp1positive", i, j), "", RooArgList(bkgp1,bkgp1));
+
+
+
+  if (!pee) {
+//    if (!bdt_fit_) {
+//      RooExponential pdf_1comb(name("pdf_1comb", i, j), "pdf_1comb", *ws_->var("Mass"), exp1);
+//      RooExponential pdf_2comb(name("pdf_2comb", i, j), "pdf_2comb", *ws_->var("Mass"), exp2);
+//      RooAddPdf pdf_comb(name("pdf_12comb", i, j), ("pdf_comb"), RooArgList(pdf_1comb, pdf_2comb), RooArgList(exp_fract));
+//      ws_->import(pdf_comb);
+//    }
+//    else {
+//    	RooExponential pdf_1comb(name("pdf_1comb", i, j), "pdf_1comb", *ws_->var("Mass"), exp1);
+//    	RooExponential pdf_2comb(name("pdf_2comb", i, j), "pdf_2comb", *ws_->var("Mass"), exp2);
+//    	RooAddPdf pdf_comb_mass(name("pdf_comb_mass", i, j), ("pdf_comb"), RooArgList(pdf_1comb, pdf_2comb), RooArgList(exp_fract));
+//      RooProdPdf pdf_comb(name("pdf_12comb", i, j), "pdf_comb", pdf_comb_mass, *ws_->pdf(name("bdt_pdf_comb", i, j)));
+//      ws_->import(pdf_comb);
+//    }
+  }
+  else  {
+  	RooArgList coeff(B1, bkgp1c);
+//  	RooArgList coeff(B1);
+//  	RooPolynomial mass_comb(name("mass_1comb", i, j), "mass_comb", *ws_->var("Mass"), coeff);
+//  	RooChebychev mass_comb(name("mass_1comb", i, j), "mass_comb", *ws_->var("Mass"), coeff);
+//  	RooBernstein mass_comb("mass_1comb", "mass_comb",  *ws_->var("Mass") ,RooConst(1.), bkgp1positive);
+  	RooBernstein mass_comb(name("mass_1comb", i, j), "mass_comb", *ws_->var("Mass"), coeff);
+//  	RooAddPdf mass_comb(name("mass_comb", i, j), ("pdf_comb"), RooArgList(pdf_1comb, pdf_2comb), RooArgList(exp_fract));
+    if (!bdt_fit_) {
+      RooProdPdf pdf_comb (name("pdf_1comb", i, j), "pdf_comb", *ws_->pdf(name("ReducedMassRes_pdf_comb", i, j)), Conditional(mass_comb, *ws_->var("Mass")));
+      ws_->import(pdf_comb);
+    }
+    else {
+//      RooProdPdf pdf_comb_mass (name("pdf_comb_mass", i, j), "pdf_comb_mass", *ws_->pdf(name("ReducedMassRes_pdf_comb", i, j)), Conditional(mass_comb, *ws_->var("Mass")));
+//      RooProdPdf pdf_comb(name("pdf_12comb", i, j),"pdf_comb", pdf_comb_mass, *ws_->pdf(name("bdt_pdf_comb", i, j)));
+//      ws_->import(pdf_comb);
+    }
+  }
+}
+
+
 void pdf_analysis::define_signals(int i, int j) {
 
   RooRealVar N_signals(name("N_signals", i, j), "N_signals", 0., 1000);
@@ -582,7 +637,8 @@ void pdf_analysis::print(RooAbsData* data, string output) {
   RooAbsData* subdata_res = data;
 //  if (pee) subdata_res = (RooAbsData*)ws_->data(Form("MassRes_rdh_%s", output.c_str()))->Clone();
   RooPlot *rp = ws_->var("Mass")->frame();
-  RooPlot *rp_bdt = ws_->var(name("bdt", channel))->frame();
+  RooPlot *rp_bdt;
+  if (bdt_fit_) rp_bdt = ws_->var(name("bdt", channel))->frame();
   data->plotOn(rp, Binning(40));
   if (bdt_fit_) data->plotOn(rp_bdt, Binning(100));
   if (!pee) {
@@ -665,7 +721,7 @@ void pdf_analysis::print(RooAbsData* data, string output) {
     c_bdt->Print((get_address("BDT", pdf_name) + ".gif").c_str());
     delete c_bdt;
   }
-  delete rp_bdt;
+  if (bdt_fit_)	 delete rp_bdt;
 
   return;
 }
@@ -1222,12 +1278,19 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
 void pdf_analysis::parse_efficiency_numbers(int offset) {
 
 	vector < string> bdt_s(6);
-	bdt_s[0] = "-0.10-0.29";
-	bdt_s[1] = "-0.29-1.00";
-	bdt_s[2] = "-cat1";
-	bdt_s[3] = "-cat2";
-	bdt_s[4] = "-cat3";
-	bdt_s[5] = "-cat4";
+	bdt_s[0] = "-cat20";
+	bdt_s[1] = "-cat21";
+	bdt_s[2] = "-cat20";
+	bdt_s[3] = "-cat21";
+	bdt_s[4] = "-cat22";
+	bdt_s[5] = "-cat23";
+
+//	bdt_s[0] = "-0.10-0.29";
+//	bdt_s[1] = "-0.29-1.00";
+//	bdt_s[2] = "-cat10";
+//	bdt_s[3] = "-cat11";
+//	bdt_s[4] = "-cat12";
+//	bdt_s[5] = "-cat13";
 
 	int channels_;
 	vector <vector <double> > eff_ratio_err;
@@ -1250,11 +1313,12 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
 		string filename = "anaBmm.plotResults.";
 		if (offset == 0) filename += "2011";
 		else filename += "2012";
-		if (bdt_fit_ && final_) filename += "-0.1";
+		if (bdt_fit_ && final_ && offset == 0) filename += "-0.1";
+		if (bdt_fit_ && final_ && offset == 2) filename += "-0.2";
 		if ((simul_all_ || simul_bdt_) && final_) filename += bdt_s[kkkk + offset];
 		filename += ".tex";
 
-		string file_address = "../uml/input/";
+		string file_address = "./input/";
 
 		if (offset == 0) {
 			file_address += "2011/" + filename;
@@ -1317,8 +1381,8 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
 				found = left_s.find(end_Nbu[i].second);
 				if (found != string::npos) {
 					if (number > 1000000) {
-						cout << "something wrong with Bu error: " << number << endl;
-						N_bu_err[i+offset][kkkk] = sqrt(N_bu_val[i+offset][kkkk]);
+						cout << "something wrong with Bu error: " <<i+offset << " " << kkkk << " " << number << endl;
+						N_bu_err[i+offset][kkkk] = N_bu_val[i+offset][kkkk]*5./100.;
 					}
 					else N_bu_err[i+offset][kkkk] = number;
 				}
@@ -1614,8 +1678,8 @@ void pdf_analysis::bdt_fit_effs() {
 void pdf_analysis::setSBslope(string pdf, RooAbsData *sb_data) {
 
   RooAbsData* subdata;
-  /*if (!simul_bdt_ && !simul_all_)*/ subdata = sb_data->reduce(Form("etacat==etacat::etacat_%d", channel));
-//  else subdata = sb_data->reduce(Form("etacat==etacat::etacat_%d&&bdtcat==bdtcat::bdtcat_%d", channel, channel_bdt));
+  if (!simul_bdt_ && !simul_all_) subdata = sb_data->reduce(Form("etacat==etacat::etacat_%d", channel));
+  else subdata = sb_data->reduce(Form("etacat==etacat::etacat_%d&&bdtcat==bdtcat::bdtcat_%d", channel, channel_bdt));
 
   RooExponential expo_temp("expo_temp", "expo_temp", *ws_->var("Mass"), *ws_->var(name("exp_comb", channel, channel_bdt)));
   cout << "comb fitting " << subdata->numEntries() << endl;
@@ -1712,6 +1776,7 @@ void pdf_analysis::fill_bdt_boundaries() {
 			if (n > 0.999 || in >= channels) not_ended = false;
 		}
 		in++;
+		if (in >= channels) break;
 	}
 	fclose(file);
 }
@@ -1719,8 +1784,8 @@ void pdf_analysis::fill_bdt_boundaries() {
 void pdf_analysis::get_bkg_yields(string filename, string dir, int offset, int bdtcats) {
 
   string peakdecays[] = {"BgPeakLo", "BgPeakBd", "BgPeakBs", "BgPeakHi"};
-  string semidecays[] = {"BgRslsLo", "BgRslsBd", "BgRslsBs", "BgRslsHi"};
-//  string semidecays[] = {"BgRslLo", "BgRslBd", "BgRslBs", "BgRslHi"};
+//  string semidecays[] = {"BgRslsLo", "BgRslsBd", "BgRslsBs", "BgRslsHi"};
+  string semidecays[] = {"BgRslLo", "BgRslBd", "BgRslBs", "BgRslHi"};
   string combdecays[] = {"BgCombLo", "BgCombBd", "BgCombBs", "BgCombHi"};
 
   Double_t peak_exp_t[4][2];
@@ -1917,23 +1982,29 @@ void pdf_analysis::get_bkg_yields(string filename, string dir, int offset, int b
 void pdf_analysis::get_bkg_from_tex() {
 
 	vector <string> input_dir(2);
-	input_dir[0] = "../uml/input/2011/";
-	input_dir[1] = "../uml/input/2012/";
+	input_dir[0] = "./input/2011/";
+	input_dir[1] = "./input/2012/";
 
 	vector <string> input_file(2);
 	input_file[0] = "anaBmm.plotResults.2011.tex";
 	input_file[1] = "anaBmm.plotResults.2012.tex";
 	if (bdt_fit_ && final_) {
 		input_file[0] = "anaBmm.plotResults.2011-0.1.tex";
-		input_file[1] = "anaBmm.plotResults.2012-0.1.tex";
+		input_file[1] = "anaBmm.plotResults.2012-0.2.tex";
 	}
 	if ((simul_all_ || simul_bdt_) && final_) {
-		input_file[0] = "anaBmm.plotResults.2011-0.10-0.29.tex";
-		input_file[1] = "anaBmm.plotResults.2011-0.29-1.00.tex";
-		input_file.push_back("anaBmm.plotResults.2012-cat1.tex");
-		input_file.push_back("anaBmm.plotResults.2012-cat2.tex");
-		input_file.push_back("anaBmm.plotResults.2012-cat3.tex");
-		input_file.push_back("anaBmm.plotResults.2012-cat4.tex");
+		input_file[0] = "anaBmm.plotResults.2011-cat20.tex";
+		input_file[1] = "anaBmm.plotResults.2011-cat21.tex";
+		input_file.push_back("anaBmm.plotResults.2012-cat20.tex");
+		input_file.push_back("anaBmm.plotResults.2012-cat21.tex");
+		input_file.push_back("anaBmm.plotResults.2012-cat22.tex");
+		input_file.push_back("anaBmm.plotResults.2012-cat23.tex");
+//		input_file[0] = "anaBmm.plotResults.2011-0.10-0.29.tex";
+//		input_file[1] = "anaBmm.plotResults.2011-0.29-1.00.tex";
+//		input_file.push_back("anaBmm.plotResults.2012-cat10.tex");
+//		input_file.push_back("anaBmm.plotResults.2012-cat11.tex");
+//		input_file.push_back("anaBmm.plotResults.2012-cat12.tex");
+//		input_file.push_back("anaBmm.plotResults.2012-cat13.tex");
 	}
 
 	for (int i = 0; i < input_file.size(); i++) {
