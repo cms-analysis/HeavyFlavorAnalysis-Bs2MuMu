@@ -1426,8 +1426,18 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
 				}
 	}
 
-  /// id and trigger efficiency errors
-  string filename = "anaBmm.plotEfficiencies.";
+	/// eff systs
+  vector <double> eff_rel_err_sq(channels_, 0.);
+  for (int i = 0; i < channels_; i++) {
+  	eff_rel_err_sq[i] =   pow(acceptance_sys[i], 2)
+												+ pow(mass_scale_sys[i], 2)
+  											+ pow(trigger_sys[i], 2)
+    										+ pow(muon_id_sys[i], 2)
+    										+ pow(kaon_track_sys[i], 2);
+  }
+
+  /// BDT efficiency errors
+  string filename = "anaBmm.plotReducedOverlays.";
   if (offset == 0) filename += "2011";
   else filename += "2012";
   if (bdt_fit_ && false) filename += "-0.1"; //////////////////// not yet done!
@@ -1445,89 +1455,13 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
     exit(1);
   }
   cout << "parsing " << file_address << endl;
-  FILE *file_ef = fopen(file_address.c_str(), "r");
-  if (!file_ef) {cout << "file " << file_address << " does not exist" << endl; exit(1);}
-
-  vector < string > trig_eff_ratio_val(channels_);
-  vector < string > trig_eff_ratio_err(channels_);
-  vector < string > reco_eff_ratio_val(channels_);
-  vector < string > reco_eff_ratio_err(channels_);
-  int ii = -1;
-  for (int i = 0; i < channels_; i++) {
-    if (simul_) ii = i;
-    else ii = ch_i_;
-    trig_eff_ratio_val[i] = Form("rMcTrig%d-pT11pT11:val", ii);
-    trig_eff_ratio_err[i] = Form("rMcTrig%d-pT11pT11:err", ii);
-    reco_eff_ratio_val[i] = Form("rMcMuid%d-pT11pT11:val", ii);
-    reco_eff_ratio_err[i] = Form("rMcMuid%d-pT11pT11:err", ii);
-  }
-
-	char buffer[2048];
-	char left[1024];
-	double number = 0;
-
-  vector <double> trig_eff_ratio_val_d(channels_);
-  vector <double> reco_eff_ratio_val_d(channels_);
-  vector <double> trig_eff_ratio_err_d(channels_);
-  vector <double> reco_eff_ratio_err_d(channels_);
-
-  while (fgets(buffer, sizeof(buffer), file_ef)) {
-    if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
-    if (buffer[0] == '\045') continue;
-    if (buffer[0] == '\040') continue;
-    sscanf(buffer, "%s   {\\ensuremath{{%lf } } }", left, &number);
-    string left_s(left);
-    for (int i = 0; i < channels_; i++) {
-      size_t found;
-      found = left_s.find(trig_eff_ratio_val[i]);
-      if (found != string::npos) trig_eff_ratio_val_d[i] = number;
-      found = left_s.find(trig_eff_ratio_err[i]);
-      if (found != string::npos) trig_eff_ratio_err_d[i] = number;
-
-      found = left_s.find(reco_eff_ratio_val[i]);
-      if (found != string::npos) reco_eff_ratio_val_d[i] = number;
-      found = left_s.find(reco_eff_ratio_err[i]);
-      if (found != string::npos) reco_eff_ratio_err_d[i] = number;
-    }
-  }
-  cout << "new numbers" << endl;
-  vector <double> eff_rel_err_sq(channels_, 0.);
-  for (int i = 0; i < channels_; i++) {
-  	eff_rel_err_sq[i] =   pow(acceptance_sys[i], 2)
-												+ pow(mass_scale_sys[i], 2)
-  											+ pow(trigger_sys[i], 2)
-    										+ pow(muon_id_sys[i], 2)
-    										+ pow(kaon_track_sys[i], 2);
-  }
-  fclose(file_ef);
-
-
-  /// BDT efficiency errors
-  filename = "anaBmm.plotReducedOverlays.";
-  if (offset == 0) filename += "2011";
-  else filename += "2012";
-  if (bdt_fit_ && false) filename += "-0.1"; //////////////////// not yet done!
-  filename += ".tex";
-
-  file_address = "../uml/input/";
-  if (offset == 0) {
-    file_address += "2011/" + filename;
-  }
-  else if (offset == 2) {
-    file_address += "2012/" + filename;
-  }
-  else {
-    cout << "not ready " << endl;
-    exit(1);
-  }
-  cout << "parsing " << file_address << endl;
   FILE *file_bdt = fopen(file_address.c_str(), "r");
   if (!file_bdt) {cout << "file " << file_address << " does not exist" << endl; exit(1);}
 
   vector < string > NO_err(channels_);
   vector < string > CS_err(channels_);
   vector < string > MC_err(channels_);
-  ii = -1;
+  int ii = -1;
   for (int i = 0; i < channels_; i++) {
     if (simul_) ii = i;
     else ii = ch_i_;
@@ -1539,6 +1473,10 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
   vector <double> NO_err_d(channels_);
   vector <double> CS_err_d(channels_);
   vector <double> MC_err_d(channels_);
+
+  char buffer[2048];
+  char left[1024];
+  double number = 0;
 
   while (fgets(buffer, sizeof(buffer), file_bdt)) {
     if (buffer[strlen(buffer)-1] == '\n') buffer[strlen(buffer)-1] = '\0';
