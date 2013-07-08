@@ -467,8 +467,10 @@ void pdf_analysis::define_comb(int i, int j) {
 
 void pdf_analysis::define_comb2(int i, int j) {
 
-  RooRealVar B1(name("B_1comb", i, j), "B_1comb", 1);
-  RooRealVar B2(name("B_2comb", i, j), "B_2comb", 0.5, 0, 1.);
+//  RooRealVar B1(name("B_1comb", i, j), "B_1comb", 1);
+	RooRealVar B1(name("B_1comb", i, j), "B_1comb", 0.5, 0. ,1);
+//  RooRealVar B2(name("B_2comb", i, j), "B_2comb", 0, -100., 100.);
+  RooRealVar B2(name("B_2comb", i, j), "B_2comb", 0.5, 0., 1.);
 
   RooFormulaVar bkgp1c(name("bkgp1c", i, j), "", "0. + 0.5*(1.-0.)*(TMath::Sin(@0)+1.0)", RooArgList(B2));
 
@@ -478,7 +480,7 @@ void pdf_analysis::define_comb2(int i, int j) {
   RooRealVar bkgp1("bkgp1","",0.1);
 //  bkgp0.setConstant(false);
 
-  RooProduct bkgp1positive(name("bkgp1positive", i, j), "", RooArgList(bkgp1,bkgp1));
+//  RooProduct bkgp1positive(name("bkgp1positive", i, j), "", RooArgList(bkgp1,bkgp1));
 
 
 
@@ -499,6 +501,7 @@ void pdf_analysis::define_comb2(int i, int j) {
   }
   else  {
   	RooArgList coeff(B1, bkgp1c);
+//  	RooArgList coeff(B1, B2);
 //  	RooArgList coeff(B1);
 //  	RooPolynomial mass_comb(name("mass_1comb", i, j), "mass_comb", *ws_->var("Mass"), coeff);
 //  	RooChebychev mass_comb(name("mass_1comb", i, j), "mass_comb", *ws_->var("Mass"), coeff);
@@ -1239,7 +1242,11 @@ void pdf_analysis::getBFnumbers(string numbers_filename) {
   		comb_bdt_factor[i].resize(size);
   	}
   }
+  acceptance_sys.resize(2);
   mass_scale_sys.resize(2);
+  kaon_track_sys.resize(2);
+  trigger_sys.resize(2);
+  muon_id_sys.resize(2);
 
   parse_external_numbers(numbers_filename);
   parse_efficiency_numbers();
@@ -1413,6 +1420,11 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
 		}
 	}
 
+	for (int i = 0; i < channels_; i++) {
+				for (int j = 1; j < bdt_index_max(i+offset); j++) {
+
+				}
+	}
 
   /// id and trigger efficiency errors
   string filename = "anaBmm.plotEfficiencies.";
@@ -1478,10 +1490,14 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
       if (found != string::npos) reco_eff_ratio_err_d[i] = number;
     }
   }
+  cout << "new numbers" << endl;
   vector <double> eff_rel_err_sq(channels_, 0.);
   for (int i = 0; i < channels_; i++) {
-  	if (trig_eff_ratio_val_d[i] != 0.) eff_rel_err_sq[i] = pow(trig_eff_ratio_err_d[i] / trig_eff_ratio_val_d[i], 2);
-    if (reco_eff_ratio_val_d[i] != 0.) eff_rel_err_sq[i] += pow(reco_eff_ratio_err_d[i] / reco_eff_ratio_val_d[i], 2);
+  	eff_rel_err_sq[i] =   pow(acceptance_sys[i], 2)
+												+ pow(mass_scale_sys[i], 2)
+  											+ pow(trigger_sys[i], 2)
+    										+ pow(muon_id_sys[i], 2)
+    										+ pow(kaon_track_sys[i], 2);
   }
   fclose(file_ef);
 
@@ -1543,7 +1559,11 @@ void pdf_analysis::parse_efficiency_numbers(int offset) {
     }
   }
   for (int i = 0; i < channels_; i++) {
-    eff_rel_err_sq[i] += pow(NO_err_d[i], 2) + pow(CS_err_d[i], 2) /* + pow(MC_err_d[i], 2)*/;
+    eff_rel_err_sq[i] += pow(NO_err_d[i], 2)
+    										+ pow(CS_err_d[i], 2)
+    										/* + pow(MC_err_d[i], 2)*/
+    									  ;
+
   }
   fclose(file_bdt);
 
@@ -1595,8 +1615,21 @@ void pdf_analysis::parse_external_numbers(string filename) {
     sscanf(buffer, "Bs2MuMu_BF\t%lf\t%lf", &Bs2MuMu_SM_BF_val, &Bs2MuMu_SM_BF_err);
     sscanf(buffer, "Bd2MuMu_BF\t%lf\t%lf", &Bd2MuMu_SM_BF_val, &Bd2MuMu_SM_BF_err);
 
-    sscanf(buffer, "MassScale_0\t%lf\t0.", &mass_scale_sys[0]);
-    sscanf(buffer, "MassScale_1\t%lf\t0.", &mass_scale_sys[1]);
+    sscanf(buffer, "Acceptance_0\t%lf", &acceptance_sys[0]);
+    sscanf(buffer, "Acceptance_1\t%lf", &acceptance_sys[1]);
+
+    sscanf(buffer, "MassScale_0\t%lf", &mass_scale_sys[0]);
+    sscanf(buffer, "MassScale_1\t%lf", &mass_scale_sys[1]);
+
+    sscanf(buffer, "KaonTrack_0\t%lf", &kaon_track_sys[0]);
+    sscanf(buffer, "KaonTrack_1\t%lf", &kaon_track_sys[1]);
+
+    sscanf(buffer, "Trigger_0\t%lf", &trigger_sys[0]);
+    sscanf(buffer, "Trigger_1\t%lf", &trigger_sys[1]);
+
+    sscanf(buffer, "MuonID_0\t%lf", &muon_id_sys[0]);
+    sscanf(buffer, "MuonID_1\t%lf", &muon_id_sys[1]);
+
   }
   cout << "Bs2MuMu_SM_BF " <<  Bs2MuMu_SM_BF_val << " \\pm " << Bs2MuMu_SM_BF_err << endl;
   cout << "Bd2MuMu_SM_BF " <<  Bd2MuMu_SM_BF_val << " \\pm " << Bd2MuMu_SM_BF_err << endl;
@@ -1604,7 +1637,11 @@ void pdf_analysis::parse_external_numbers(string filename) {
   cout << "Bu2JpsiK_BF  " <<  Bu2JpsiK_BF_val << " \\pm " << Bu2JpsiK_BF_err << endl;
   cout << "Jpsi2MuMu_BF " <<  Jpsi2MuMu_BF_val << " \\pm " << Jpsi2MuMu_BF_err << endl;
   for (int i = 0; i < 2; i++) {
-  	cout << "Mass scale " << i << " = " <<  mass_scale_sys[i] << " MeV" << endl;
+  	cout << "Acceptance " << i << " = " <<  acceptance_sys[i] << endl;
+  	cout << "Mass scale " << i << " = " <<  mass_scale_sys[i] << endl;
+  	cout << "Kaon track " << i << " = " <<  kaon_track_sys[i] << endl;
+  	cout << "Trigger " << i << " = " <<  trigger_sys[i] << endl;
+  	cout << "Muon ID " << i << " = " <<  muon_id_sys[i] << endl;
   }
 }
 

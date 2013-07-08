@@ -3,5 +3,13 @@ BuToKpsiK	0.001016	0.000033
 JpsiToMuMu	0.0593		0.0006
 Bs2MuMu_BF	3.2e-9		0.
 Bd2MuMu_BF	1.0e-10		0.
-MassScale_0	0.007		0.
-MassScale_1	0.006		0.
+Acceptance_0	0.035
+Acceptance_1	0.05
+MassScale_0	0.05		
+MassScale_1	0.05
+KaonTrack_0	0.04
+KaonTrack_1	0.04
+Trigger_0	0.03
+Trigger_1	0.06
+MuonID_0	0.04
+MuonID_1	0.04

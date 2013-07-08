@@ -216,7 +216,11 @@ protected:
   vector <vector <double> > semi_bdt_factor;
   vector <vector <double> > comb_bdt_factor;
 
+  vector <double> acceptance_sys;
   vector <double> mass_scale_sys;
+  vector <double> kaon_track_sys;
+  vector <double> trigger_sys;
+  vector <double> muon_id_sys;
 
   bool syst;
   bool randomsyst;
