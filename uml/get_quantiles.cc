@@ -34,7 +34,7 @@ void get_quantiles() {
 	for (int i = 0; i< nq; i++) zq[i+1] = yq[i];
 	for (int i = 0; i< nq; i++) cout << _h0->Integral(_h0->FindBin(zq[i]), _h0->FindBin(zq[i+1])) / _h0->Integral() << endl;
 
-	TFile *_file1 = TFile::Open("input/2011/small-SgData.root");
+	TFile *_file1 = TFile::Open("input/2012/small-SgData.root");
 	TTree *_tree1 = (TTree*)_file1->Get("SgData_bdt");
 
 	TH1D  *_h1 = new TH1D("_h1", "_h1", 900, 0.1, 1);
@@ -42,7 +42,8 @@ void get_quantiles() {
 
 	Double_t factor1 = _tree1->Draw("m", "m>4.9 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && muid && bdt > 0.1");
 	Double_t factor2 = _tree1->Draw("m", "m>4.9 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && !muid && bdt > 0.1");
-	Double_t large = 5.9 - 5.45 + 5.2 - 4.9;
+//	Double_t large = 5.9 - 5.45 + 5.2 - 4.9;
+	Double_t large = 1.;
 	Double_t small = 5.9 - 5.45;
 	Double_t wind = large / small;
 	Double_t factor3 = factor1/factor2;
@@ -50,16 +51,16 @@ void get_quantiles() {
 
 //	string cat1[4];
 //	cat1[0] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && muid && bdt > 0.1 && bdt < 0.22";
-//	cat1[1] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && muid && bdt > 0.23 && bdt < 0.33";
+//	cat1[1] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && muid && bdt > 0.22 && bdt < 0.33";
 //	cat1[2] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && muid && bdt > 0.33 && bdt < 0.45";
-//	cat1[3] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && muid && bdt > 0.44 && bdt < 1";
-//
+//	cat1[3] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && muid && bdt > 0.45 && bdt < 1";
+
 //	string cat2[4];
 //	cat2[0] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && !muid && bdt > 0.1 && bdt < 0.22";
-//	cat2[1] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && !muid && bdt > 0.23 && bdt < 0.33";
+//	cat2[1] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && !muid && bdt > 0.22 && bdt < 0.33";
 //	cat2[2] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && !muid && bdt > 0.33 && bdt < 0.45";
-//	cat2[3] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && !muid && bdt > 0.44 && bdt < 1";
-//
+//	cat2[3] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && !muid && bdt > 0.45 && bdt < 1";
+
 //	Double_t comb_new[4];
 //	Double_t comb_true[4];
 //	for (int i = 0; i < 4; i++) {
@@ -70,12 +71,12 @@ void get_quantiles() {
 
 
 	string cat1[2];
-	cat1[0] = "m>5.45 && m<5.9 && (abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && muid && bdt > 0.1 && bdt < 0.29";
-	cat1[1] = "m>5.45 && m<5.9 && (abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && muid && bdt > 0.29 && bdt < 1";
+	cat1[0] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && muid && bdt > 0.1 && bdt < 0.26";
+	cat1[1] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && muid && bdt > 0.38 && bdt < 1";
 
 	string cat2[2];
-	cat2[0] = "m>5.45 && m<5.9 && (abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && !muid && bdt > 0.1 && bdt < 0.29";
-	cat2[1] = "m>5.45 && m<5.9 && (abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && !muid && bdt > 0.29 && bdt < 1";
+	cat2[0] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && !muid && bdt > 0.1 && bdt < 0.26";
+	cat2[1] = "m>5.45 && m<5.9 && !(abs(m1eta)<1.4&&abs(m2eta)<1.4) && m1bdt > -1 && m2bdt > -1 && !muid && bdt > 0.38 && bdt < 1";
 
 	Double_t comb_new[2];
 	Double_t comb_true[2];

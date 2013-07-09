@@ -114,6 +114,7 @@ int main(int argc, char** argv) {
   fitdata.proof = proof;
   if (SMIsNull) fitdata.SMIsNull = true;
   fitdata.reset_minmax();
+  fitdata.freeze = freeze;
   fitdata.significance();
   if (LLprofile) fitdata.profile_NLL();
   //fitdata.save();

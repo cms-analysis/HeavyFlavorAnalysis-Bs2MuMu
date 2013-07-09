@@ -74,6 +74,7 @@ class pdf_fitData : public pdf_analysis {
     void free_rare(int free = 0);
 
     bool berns_;
+    bool freeze;
 
   protected:
 
@@ -106,6 +107,8 @@ class pdf_fitData : public pdf_analysis {
     int NExp;
     bool Bd;
     string years_;
+
+    void freeze_norm (bool set);
 
   private:
 

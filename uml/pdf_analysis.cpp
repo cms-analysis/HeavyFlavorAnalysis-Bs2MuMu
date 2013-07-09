@@ -470,18 +470,13 @@ void pdf_analysis::define_comb2(int i, int j) {
 //  RooRealVar B1(name("B_1comb", i, j), "B_1comb", 1);
 	RooRealVar B1(name("B_1comb", i, j), "B_1comb", 0.5, 0. ,1);
 //  RooRealVar B2(name("B_2comb", i, j), "B_2comb", 0, -100., 100.);
-  RooRealVar B2(name("B_2comb", i, j), "B_2comb", 0.5, 0., 1.);
+//  RooRealVar B2(name("B_2comb", i, j), "B_2comb", 0.5, 0., 1.);
+  RooFormulaVar B2(name("B_2comb", i, j), "B_2comb", "1.-@0", RooArgList(B1));
 
-  RooFormulaVar bkgp1c(name("bkgp1c", i, j), "", "0. + 0.5*(1.-0.)*(TMath::Sin(@0)+1.0)", RooArgList(B2));
+//  RooFormulaVar bkgp1c(name("bkgp1c", i, j), "", "0. + 0.5*(1.-0.)*(TMath::Sin(@0)+1.0)", RooArgList(B2));
 
 //  RooRealVar exp2(name("exp_2comb", i, j), "exp_2comb", -1., -10., 10);
 //  RooRealVar exp_fract(name("exp_fract_2comb", i, j), "exp_fract_2comb", 0.5, 0., 1.);
-
-  RooRealVar bkgp1("bkgp1","",0.1);
-//  bkgp0.setConstant(false);
-
-//  RooProduct bkgp1positive(name("bkgp1positive", i, j), "", RooArgList(bkgp1,bkgp1));
-
 
 
   if (!pee) {
@@ -500,8 +495,8 @@ void pdf_analysis::define_comb2(int i, int j) {
 //    }
   }
   else  {
-  	RooArgList coeff(B1, bkgp1c);
-//  	RooArgList coeff(B1, B2);
+//  	RooArgList coeff(B1, bkgp1c);
+  	RooArgList coeff(B1, B2);
 //  	RooArgList coeff(B1);
 //  	RooPolynomial mass_comb(name("mass_1comb", i, j), "mass_comb", *ws_->var("Mass"), coeff);
 //  	RooChebychev mass_comb(name("mass_1comb", i, j), "mass_comb", *ws_->var("Mass"), coeff);

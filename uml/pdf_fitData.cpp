@@ -47,6 +47,7 @@ pdf_fitData::pdf_fitData(bool print, string input_estimates, string range, int B
   RooMsgService::instance().getStream(1).removeTopic(Fitting);
 
   berns_ = false;
+  freeze = false;
 }
 
 pdf_fitData::~pdf_fitData() {
@@ -786,7 +787,8 @@ void pdf_fitData::define_constraints(int i, int j) {
   ws_->import(effratio_gau_bd);
 
   if (rare_constr_) {
-  	RooLognormal N_peak_gau(name("N_peak_gau", i, j), "N_peak_gau", *ws_->var(name("N_peak", i, j)), RooConst(ws_->var(name("N_peak", i, j))->getVal()), RooConst(ws_->var(name("N_peak", i, j))->getError()));
+//  	  	RooLognormal N_peak_gau(name("N_peak_gau", i, j), "N_peak_gau", *ws_->var(name("N_peak", i, j)), RooConst(ws_->var(name("N_peak", i, j))->getVal()), RooConst(ws_->var(name("N_peak", i, j))->getError()));
+  	RooLognormal N_peak_gau(name("N_peak_gau", i, j), "N_peak_gau", *ws_->var(name("N_peak", i, j)), RooConst(ws_->var(name("N_peak", i, j))->getVal()), RooConst(1. + ws_->var(name("N_peak", i, j))->getError() / ws_->var(name("N_peak", i, j))->getVal()));
   	ws_->import(N_peak_gau);
 //  	if (ws_->var(name("N_semi", i, j))->getVal() > 0) {
   	RooGaussian N_semi_gau(name("N_semi_gau", i, j), "N_semi_gau", *ws_->var(name("N_semi", i, j)), RooConst(ws_->var(name("N_semi", i, j))->getVal()), RooConst(ws_->var(name("N_semi", i, j))->getError()));
@@ -1661,3 +1663,12 @@ void pdf_fitData::free_rare(int free) {
 //  ws_->var("BF_bd")->setConstant(true);
 }
 
+void pdf_fitData::freeze_norm (bool set) {
+   ws_->var("fs_over_fu")->setConstant(set);
+   ws_->var("one_over_BRBR")->setConstant(set);
+   for (int i = 0; i < channels; i++) {
+       for (int j = 0; j < bdt_index_max(i); j++) {
+           ws_->var(name("N_bu", i, j))->setConstant(set);
+       }
+   }
+}

@@ -63,6 +63,7 @@ bool final = false;
 bool hack = false;
 bool minos = false;
 bool berns = false;
+bool freeze = false;
 
 void help() {
 
@@ -128,6 +129,7 @@ void help() {
   cout << "-bdt_cut # \t minimum bdt" << endl;
   cout << "-final \t don't change input numbers, take the ones from AN" << endl;
   cout << "-berns \t linear" << endl;
+  cout << "-freeze \t freeze components for significance" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -382,6 +384,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-berns")) {
     	berns = true;
     	cout << "bernstein" << endl;
+    }
+    if (!strcmp(argv[i],"-freeze")) {
+    	freeze = true;
+    	cout << "freezes components for significance" << endl;
     }
     if (!strcmp(argv[i],"-h")) help();
   }
