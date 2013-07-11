@@ -43,6 +43,7 @@ int main(int argc, char** argv) {
   toy1.parse_estimate();
   toy1.set_starting_N();
   toy1.setnewlumi();
+  if (berns) toy1.berns_ = true;
   toy1.set_final_pdf();
 
   if (simul_bdt || simul_all) toy1.parse_estimate("input/estimates_5_20_bdt_semi.txt");
