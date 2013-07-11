@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 
   if (hack_semi2011) toy1.hack_ws("output/frozen/ws_simul4_bdt_BF2_PEE.root");
   toy1.set_syst();
-  toy1.free_rare(free_rare);
+  toy1.tweak_pdf(free_rare);
   toy1.print_estimate();
   if (!simul_all && !simul_bdt && hack) toy1.hack_comb_slope();
   if (roomcs) toy1.mcstudy(pdf_toy, pdf_test);

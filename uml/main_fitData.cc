@@ -31,6 +31,7 @@ int main(int argc, char** argv) {
 
   pdf_fitData fitdata(false, input_estimates, "all", BF, SM, bd_const, inputs, (!simul_all) ? inputs_bdt : 1, inputs_all, pee, bdt_fit, final, ch_s, sig_meth, asimov, syst, randomsyst, rare_constr, NExp, Bd, years_opt);
   if (minos) fitdata.minos = true;
+  if (stat_only) fitdata.stat_only_ = true;
   FILE *file = fopen(input_name.c_str(), "r");
   if (!file) {
   	cout << "no file name, making random" << endl;
@@ -57,7 +58,7 @@ int main(int argc, char** argv) {
   fitdata.print_estimate();
   if (hack_semi2011) fitdata.hack_ws("output/frozen/ws_simul4_bdt_BF2_PEE.root");
   fitdata.set_syst();
-  fitdata.free_rare(free_rare);
+  fitdata.tweak_pdf(free_rare);
   fitdata.define_dataset();
 
 

@@ -71,10 +71,11 @@ class pdf_fitData : public pdf_analysis {
     void reset_minmax();
 
     void print_gaussian_constraints();
-    void free_rare(int free = 0);
+    void tweak_pdf(int free = 0);
 
     bool berns_;
     bool freeze;
+    bool stat_only_;
 
   protected:
 
@@ -109,6 +110,8 @@ class pdf_fitData : public pdf_analysis {
     string years_;
 
     void freeze_norm (bool set);
+    void stat_error(bool stat_only);
+
 
   private:
 
@@ -127,6 +130,7 @@ class pdf_fitData : public pdf_analysis {
     void make_models();
 
     void plot_hypotest(HypoTestResult * hts);
+
 };
 
 #endif // PDF_FITDATA_H

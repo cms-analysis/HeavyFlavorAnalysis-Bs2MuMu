@@ -162,7 +162,7 @@ public:
 protected:
   string default_console_color;
   string red_color_bold;
-  string purple_color_bold;
+  string green_color_bold;
   string meth_;
   string ch_s_;
   int ch_i_;
@@ -235,6 +235,7 @@ protected:
   void set_bkg_normalization(string input); //set peak fraction parameter to Bu2JpsiK
 
   void define_comb2(int i, int j);
+
 
 private:
   void define_bs(int i, int j);

@@ -39,7 +39,7 @@ pdf_analysis::pdf_analysis(bool print, string ch_s, string range, int BF, bool S
   if (simul_all_) channels_bdt = 4;
   default_console_color = "\033[0m";
   red_color_bold = "\033[1;31m";
-  purple_color_bold = "\033[1;31m";
+  green_color_bold = "\033[1;32m";
 
   bdt_boundaries.resize(channels);
 
@@ -468,12 +468,18 @@ void pdf_analysis::define_comb(int i, int j) {
 void pdf_analysis::define_comb2(int i, int j) {
 
 //  RooRealVar B1(name("B_1comb", i, j), "B_1comb", 1);
-	RooRealVar B1(name("B_1comb", i, j), "B_1comb", 0.5, 0. ,1);
-//  RooRealVar B2(name("B_2comb", i, j), "B_2comb", 0, -100., 100.);
-//  RooRealVar B2(name("B_2comb", i, j), "B_2comb", 0.5, 0., 1.);
-  RooFormulaVar B2(name("B_2comb", i, j), "B_2comb", "1.-@0", RooArgList(B1));
+	RooRealVar B1(name("B_1comb", i, j), "B_1comb", 0.5, 0. , 1);
+//	  RooRealVar B1(name("B_1comb", i, j), "B_1comb", 0., -3.1416, 3.1416);
 
-//  RooFormulaVar bkgp1c(name("bkgp1c", i, j), "", "0. + 0.5*(1.-0.)*(TMath::Sin(@0)+1.0)", RooArgList(B2));
+//  RooRealVar B2(name("B_2comb", i, j), "B_2comb", 0, -100., 100.);
+//  RooRealVar B2(name("B_2comb", i, j), "B_2comb", 0., -3.1416, 3.1416);
+  RooFormulaVar B2(name("B_2comb", i, j), "B_2comb", "1.-@0", RooArgList(B1));
+//
+//  RooFormulaVar bkgp2c(name("bkgp2c", i, j), "", "0. + 0.5*(1.-0.)*(TMath::Sin(@0)+1.0)", RooArgList(B2));
+//	RooFormulaVar bkgp1c(name("bkgp1c", i, j), "", "0. + 0.5*(1.-0.)*(TMath::Sin(@0)+1.0)", RooArgList(B1));
+
+
+//  RooFormulaVar B2(name("B_2comb", i, j), "B_2comb", "1.-@0", RooArgList(bkgp1c));
 
 //  RooRealVar exp2(name("exp_2comb", i, j), "exp_2comb", -1., -10., 10);
 //  RooRealVar exp_fract(name("exp_fract_2comb", i, j), "exp_fract_2comb", 0.5, 0., 1.);
@@ -495,9 +501,10 @@ void pdf_analysis::define_comb2(int i, int j) {
 //    }
   }
   else  {
-//  	RooArgList coeff(B1, bkgp1c);
+//  	RooArgList coeff(B1, bkgp2c);
   	RooArgList coeff(B1, B2);
-//  	RooArgList coeff(B1);
+//  	RooArgList coeff(bkgp1c, B2);
+
 //  	RooPolynomial mass_comb(name("mass_1comb", i, j), "mass_comb", *ws_->var("Mass"), coeff);
 //  	RooChebychev mass_comb(name("mass_1comb", i, j), "mass_comb", *ws_->var("Mass"), coeff);
 //  	RooBernstein mass_comb("mass_1comb", "mass_comb",  *ws_->var("Mass") ,RooConst(1.), bkgp1positive);
