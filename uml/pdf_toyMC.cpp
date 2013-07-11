@@ -468,7 +468,7 @@ void pdf_toyMC::do_bias(RooWorkspace* ws) {
 RooFitResult* pdf_toyMC::fit_pdf(RooAbsData* data, int printlevel, RooWorkspace* ws) {
   RooFitResult* result;
 //  if (printlevel < 0) RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
-  result = ws->pdf(pdfname.c_str())->fitTo(*data, pee ? ConditionalObservables(*ws->var("ReducedMassRes")) : RooCmdArg::none(), Extended(true), Hesse(kFALSE), Minos(minos), SumW2Error(0), PrintLevel(printlevel), Save(kTRUE), NumCPU(2));
+  result = ws->pdf(pdfname.c_str())->fitTo(*data, pee ? ConditionalObservables(*ws->var("ReducedMassRes")) : RooCmdArg::none(), Extended(true), Hesse(kFALSE), Minos(minos), Strategy(2), PrintLevel(printlevel), Save(kTRUE), NumCPU(2));
 //  if (printlevel < 0) RooMsgService::instance().cleanup();
   return result;
 }

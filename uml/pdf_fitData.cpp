@@ -302,7 +302,7 @@ RooFitResult* pdf_fitData::fit_pdf(bool do_not_import, string pdf_name) {
   cout << red_color_bold << ">>>>>>>>>>>>>>>>> fitting " << global_data->GetName() << " in range " << range_ << " with " << pdf_name << default_console_color << endl;
   global_data->Print();
   ws_->pdf(pdf_name.c_str())->Print();
-  RFR = ws_->pdf(pdf_name.c_str())->fitTo(*global_data, Extended(), Save(1)/*, Range(range_.c_str())*/ , Minos(minos), Hesse(1), pee ? ConditionalObservables(*ws_->var("ReducedMassRes")) : RooCmdArg::none());
+  RFR = ws_->pdf(pdf_name.c_str())->fitTo(*global_data, Strategy(2) ,Extended(), Save(1)/*, Range(range_.c_str())*/ , Minos(minos), Hesse(1), pee ? ConditionalObservables(*ws_->var("ReducedMassRes")) : RooCmdArg::none());
   if (!do_not_import) ws_->import(*global_data);
   if (verbosity > 0) RFR->Print();
 
