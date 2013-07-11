@@ -93,9 +93,236 @@ void plotMisc::loopFunction2(int mode) {
 }
 
 
+
+
 // ----------------------------------------------------------------------
 void plotMisc::calcTauError() {
 
+  const int MIN(5);
+
+  TFile *f = TFile::Open(Form("%s/anaBmm.plotBDT.%d.root", fDirectory.c_str(), fYear)); 
+
+  TH1D *hd(0), *ha(0);
+  int BDTBINS(0); 
+  hd = (TH1D*)f->Get("nor_dm_0_0");
+  while (hd) {
+    hd = (TH1D*)f->Get(Form("nor_dm_0_%d", BDTBINS));
+    ++BDTBINS;
+  }
+  --BDTBINS;
+  hd = (TH1D*)f->Get("nor_dm_0_0");
+      
+  cout << "BDTBINS: " << BDTBINS << endl;
+
+  float bdtCut(0.); 
+  string title, cutVal; 
+
+  TH1D *h(0), *hdSlope[fNchan], *haSlope[fNchan], *hDelta[fNchan];
+  int NCAT(5); 
+  if (2011 == fYear) NCAT = 3; 
+  TH1D *hdMassCat[fNchan][NCAT]; 
+  TH1D *haMassCat[fNchan][NCAT]; 
+  double slope(0.), slopeE(0.); 
+  int bCat(-1), histCount(0); 
+  if (1) {
+    c0->Clear();
+    for (int ichan = 0; ichan < fNchan; ++ichan) {
+      hdSlope[ichan] = new TH1D(Form("hdSlope_c%d", ichan), Form("slope vs BDT cut C%d", ichan), BDTBINS, -1., 1.); 
+      hdSlope[ichan]->Sumw2();
+      haSlope[ichan] = new TH1D(Form("haSlope_c%d", ichan), Form("AMS slope vs BDT cut C%d", ichan), BDTBINS, -1.005, 1.005); 
+      haSlope[ichan]->Sumw2();
+
+      for (int i = 0; i < BDTBINS; ++i) {
+	//      for (int i = 0; i < BDTBINS; i = i+20) {
+	hd = (TH1D*)f->Get(Form("nor_dm_%d_%d", ichan, i));
+	h = (TH1D*)hd->Clone("h"); 
+
+	title = h->GetTitle(); 
+	string::size_type n2 = title.find_last_of(">"); 
+	cutVal = title.substr(n2+2); 
+	bdtCut = atof(cutVal.c_str()); 
+
+	histCount = h->Integral(h->FindBin(5.45+fEpsilon), h->FindBin(5.9-fEpsilon));
+	cout << hd->GetTitle() << " histCount: " << histCount << endl;
+	if (histCount < MIN) continue;
+	// 	for (int j = 0; j <= h->GetNbinsX(); ++j) {
+	// 	  h->SetBinContent(j, h->GetBinContent(j)/histCount); 
+	// 	  h->SetBinError(j, h->GetBinError(j)/histCount); 
+	// 	}
+
+	// -- hd numbers
+	bgBlind(h, 2, 5.45, 5.9);
+	c0->SaveAs(Form("%s/%d-amshdxcheckFit_c%d_%d.pdf", fDirectory.c_str(), fYear, ichan, i)); 
+	if (h->GetFunction("f1")) {
+	  slope  = h->GetFunction("f1")->GetParameter(1)/histCount; 
+	  slopeE = h->GetFunction("f1")->GetParError(1)/histCount; 
+	  cout << "==> HD " << fYear << " bdtbin:  "  << i << ", b > " << bdtCut << " B0: " << fBdBgExp << " Bs: " << fBsBgExp 
+	       << " slope = " << slope << " +/- " << slopeE 
+	       << endl;     
+	  hdSlope[ichan]->SetBinContent(i, slope); 
+	  hdSlope[ichan]->SetBinError(i, slopeE); 
+	}
+	delete h; 
+      
+	// -- ha numbers
+	ha = (TH1D*)f->Get(Form("ams_am_%d_%d", ichan, i));
+	h = (TH1D*)ha->Clone("h"); 
+
+	histCount = h->Integral(h->FindBin(5.45+fEpsilon), h->FindBin(5.9-fEpsilon));
+	cout << ha->GetTitle() << " histCount: " << histCount << endl;
+	if (histCount < MIN) continue;
+	// 	for (int j = 0; j <= h->GetNbinsX(); ++j) {
+	// 	  h->SetBinContent(j, h->GetBinContent(j)/histCount); 
+	// 	  h->SetBinError(j, h->GetBinError(j)/histCount); 
+	// 	}
+
+	bgBlind(h, 2, 5.45, 5.9);
+	c0->SaveAs(Form("%s/%d-amshaxcheckFit_c%d_%d.pdf", fDirectory.c_str(), fYear, ichan, i)); 
+	if (h->GetFunction("f1")) {
+	  slope  = h->GetFunction("f1")->GetParameter(1)/histCount; 
+	  slopeE = h->GetFunction("f1")->GetParError(1)/histCount; 
+	  cout << "==> HA " << fYear << " bdtbin: "  << i << ", b > " << bdtCut << " B0: " << fBdBgExp << " Bs: " << fBsBgExp 
+	       << " slope = " << slope << " +/- " << slopeE
+	       << endl;     
+	  haSlope[ichan]->SetBinContent(i, slope); 
+	  haSlope[ichan]->SetBinError(i, slopeE); 
+	}
+	delete h; 
+
+
+      }
+    }
+  
+    c0->Clear(); 
+    c0->Divide(1,2);
+    
+    setHist(hdSlope[0], kBlack); 
+    setHist(haSlope[0], kBlue); 
+    
+    setHist(hdSlope[1], kBlack); 
+    setHist(haSlope[1], kBlue); 
+    
+    c0->cd(1); 
+    hdSlope[0]->SetAxisRange(-0.08, 0.08, "Y"); 
+    hdSlope[0]->SetAxisRange(0., 0.5-fEpsilon, "X");
+    hdSlope[0]->Draw();
+    haSlope[0]->Draw("same");
+    pl->DrawLine(0., 0., 0.5-fEpsilon, 0.); 
+    
+    c0->cd(2); 
+    hdSlope[1]->SetAxisRange(-0.08, 0.08, "Y"); 
+    hdSlope[1]->SetAxisRange(0., 0.5, "X");
+    hdSlope[1]->Draw();
+    haSlope[1]->Draw("same");
+
+    pl->DrawLine(0., 0., 0.5-fEpsilon, 0.); 
+    
+    c0->SaveAs(Form("%s/plotMisc-%d-slope-btdCut.pdf", fDirectory.c_str(), fYear)); 
+  }
+
+  // -- mass histograms in BDT categories
+  if (1) {
+    TH1D *hfirst(0), *hlast(0); 
+    TH1D *aSlopes[fNchan], *nSlopes[fNchan]; 
+    int oldCat(-1), hmin(0), hmax(0); 
+    for (int ichan = 0; ichan < fNchan; ++ichan) {
+      nSlopes[ichan] = new TH1D(Form("nSlopesCat_c%d", ichan), Form("%d Channel %d", fYear, ichan), NCAT, 0., NCAT);  nSlopes[ichan]->Sumw2();
+      setHist(nSlopes[ichan], kBlack); 
+      aSlopes[ichan] = new TH1D(Form("aSlopesCat_c%d", ichan), Form("%d AMS Channel %d", fYear, ichan), NCAT, 0.+0.2, NCAT+0.2); aSlopes[ichan]->Sumw2();
+      setHist(aSlopes[ichan], kBlue); 
+      for (int j = 0; j < NCAT; ++j) {
+	hdMassCat[ichan][j] = new TH1D(Form("hdMass_b%d_c%d", j, ichan), Form("%d BDT cat %d C%d", fYear, j, ichan), 
+				       hd->GetNbinsX(), hd->GetBinLowEdge(1), hd->GetBinLowEdge(hd->GetNbinsX()+1)); 
+	setHist(hdMassCat[ichan][j], kBlack, 24); 
+	
+	haMassCat[ichan][j] = new TH1D(Form("haMass_b%d_c%d", j, ichan), Form("%d AMS BDT cat %d C%d", fYear, j, ichan), 
+				       hd->GetNbinsX(), hd->GetBinLowEdge(1), hd->GetBinLowEdge(hd->GetNbinsX()+1)); 
+	setHist(haMassCat[ichan][j], kBlue, 24); 
+
+	bdtCatIdx(j, ichan, hmin, hmax);
+	cout << " --> chan " << ichan << " cat " << j << " hists " << hmin << " " << hmax << endl;
+      
+	hfirst = (TH1D*)f->Get(Form("nor_dm_%d_%d", ichan, hmin));
+	hlast = (TH1D*)f->Get(Form("nor_dm_%d_%d", ichan, hmax));
+
+	hdMassCat[ichan][j]->Add(hfirst); 
+	hdMassCat[ichan][j]->Add(hlast, -1.); 
+	hdMassCat[ichan][j]->Draw();
+	c0->SaveAs(Form("%s/plotMisc-hdmassCat%dc%d.pdf", fDirectory.c_str(), j, ichan)); 
+
+	hfirst = (TH1D*)f->Get(Form("ams_am_%d_%d", ichan, hmin));
+	hlast = (TH1D*)f->Get(Form("ams_am_%d_%d", ichan, hmax));
+
+	haMassCat[ichan][j]->Add(hfirst); 
+	haMassCat[ichan][j]->Add(hlast, -1.); 
+	haMassCat[ichan][j]->Draw();
+	c0->SaveAs(Form("%s/plotMisc-hamassCat%dc%d.pdf", fDirectory.c_str(), j, ichan)); 
+	
+      }
+    
+
+      c0->Clear();
+      double ap1, ap1E, np1, np1E; 
+      for (int j = 0; j < NCAT; ++j) {
+	h = hdMassCat[ichan][j]; 
+	histCount = h->Integral(h->FindBin(5.45+fEpsilon), h->FindBin(5.9-fEpsilon));
+	if (histCount < 4) {
+	  cout << "XXX no more counts in ha, continue" << endl;
+	  continue;
+	}
+	// 	for (int k = 0; k <= h->GetNbinsX(); ++k) {
+	// 	  h->SetBinContent(k, h->GetBinContent(k)/histCount); 
+	// 	  h->SetBinError(k, h->GetBinError(k)/histCount); 
+	// 	}
+
+	h->SetMinimum(0.);
+	setHist(h, kBlack); 
+	bgBlind(h, 2, 5.45, 5.9);
+	h->GetFunction("f1")->SetLineColor(kBlack); 	h->GetFunction("f1")->SetLineWidth(2); 
+	np1  = h->GetFunction("f1")->GetParameter(1)/histCount; 
+	np1E = h->GetFunction("f1")->GetParError(1)/histCount; 
+	nSlopes[ichan]->SetBinContent(j+1, np1); 
+	nSlopes[ichan]->SetBinError(j+1, np1E); 
+
+	h = haMassCat[ichan][j]; 
+	histCount = h->Integral(h->FindBin(5.45+fEpsilon), h->FindBin(5.9-fEpsilon));
+	if (histCount < 4) {
+	  cout << "XXX no more counts in ha, continue" << endl;
+	  continue;
+	}
+	// 	for (int k = 0; k <= h->GetNbinsX(); ++k) {
+	// 	  h->SetBinContent(k, h->GetBinContent(k)/histCount); 
+	// 	  h->SetBinError(k, h->GetBinError(k)/histCount); 
+	// 	}
+	h->SetMinimum(0.);
+	setHist(h, kBlue); 
+	bgBlind(h, 2, 5.45, 5.9);
+	h->GetFunction("f1")->SetLineColor(kBlue); h->GetFunction("f1")->SetLineWidth(2); 
+	ap1  = h->GetFunction("f1")->GetParameter(1)/histCount; 
+	ap1E = h->GetFunction("f1")->GetParError(1)/histCount; 
+	aSlopes[ichan]->SetBinContent(j+1, ap1); 
+	aSlopes[ichan]->SetBinError(j+1, ap1E); 
+	
+	c0->Clear();
+	hdMassCat[ichan][j]->Draw("");
+	haMassCat[ichan][j]->Draw("same");
+
+	tl->SetTextSize(0.03); 
+	tl->SetTextColor(kBlack); 
+	tl->DrawLatex(0.2, 0.92, Form("p1: %5.4f+/-%5.4f", np1, np1E)); 
+	tl->SetTextColor(kBlue); 
+	tl->DrawLatex(0.6, 0.92, Form("p1: %5.4f+/-%5.4f", ap1, ap1E)); 
+	c0->SaveAs(Form("%s/plotMisc-%d-slope-chan%d-btdCat%d.pdf", fDirectory.c_str(), fYear, ichan, j)); 
+      }
+
+      c0->Clear(); 
+      nSlopes[ichan]->SetAxisRange(-0.08, 0.08, "Y"); 
+      nSlopes[ichan]->Draw();
+      aSlopes[ichan]->Draw("same");
+      pl->DrawLine(0., 0., NCAT, 0.); 
+      c0->SaveAs(Form("%s/plotMisc-%d-slope-chan%d-overlay.pdf", fDirectory.c_str(), fYear, ichan)); 
+    }
+  }
 }
 
 
@@ -467,8 +694,6 @@ void plotMisc::fakeRateOverlaysMG(string mode, string charge, string chan) {
 
   TH1D *marioA(0), *marioP(0), *marioE(0); 
 
-  TGraphErrors *gD(0), *gM(0); 
-
   PidTable *fptFakePosPions = new PidTable("../macros/pidtables/130702/2012-pionPosFakeRate-mvaMuon.dat"); 
   PidTable *fptFakeNegPions = new PidTable("../macros/pidtables/130702/2012-pionNegFakeRate-mvaMuon.dat"); 
 
@@ -719,6 +944,34 @@ void plotMisc::signalMass() {
 
 
 // ----------------------------------------------------------------------
+void plotMisc::effImpactTrkHit() {
+
+  TFile *f = TFile::Open(Form("%s/anaBmm.plotResults.2012.root", fDirectory.c_str())); 
+  TH1D *hAnPass(0), *hCoPass(0), *hAnAll(0), *hCoAll(0);
+  int ybin(30); 
+  for (int y = 0; y < 2; ++y) {
+    ybin = 30 + y*2; 
+    for (int i = 0; i < fNchan; ++i) {
+      hCoPass = (TH1D*)f->Get(Form("hMassWithMuonCuts_bdt_%d_chan%d", ybin+0, i));
+      hAnPass = (TH1D*)f->Get(Form("hMassWithMuonCuts_bdt_%d_chan%d", ybin+1, i));
+
+      hCoAll  = (TH1D*)f->Get(Form("hMassWithAnaCuts_bdt_%d_chan%d", ybin+0, i));
+      hAnAll  = (TH1D*)f->Get(Form("hMassWithAnaCuts_bdt_%d_chan%d", ybin+1, i));
+
+      cout << "Year: " << (y == 0?2011:2012) << " chan " << i << " analysis: " << hAnPass->Integral()/hAnAll->Integral() << endl;
+      cout << "Year: " << (y == 0?2011:2012) << " chan " << i << " correct:  " << hCoPass->Integral()/hCoAll->Integral() << endl;
+      cout << "relative difference: " << (hAnPass->Integral()/hAnAll->Integral()) / (hCoPass->Integral()/hCoAll->Integral()) << endl;
+    }
+  }
+    
+
+
+}
+
+
+
+
+// ----------------------------------------------------------------------
 int plotMisc::etaBin(double eta) {
   const int NSTEP(10); 
   double step(2.5/NSTEP); 
@@ -728,4 +981,63 @@ int plotMisc::etaBin(double eta) {
   }
   
   return 9; 
+}
+
+// ----------------------------------------------------------------------
+int plotMisc::bdtCat(double bdt, int chan) {
+
+  if (2011 == fYear) {
+    if (0 == chan) {
+      if (0.10 < bdt && bdt <= 0.31) return 0; 
+      if (0.31 < bdt && bdt <= 1.00) return 1; 
+    } else if (1 == chan) {
+      if (0.10 < bdt && bdt <= 0.26) return 0; 
+      if (0.26 < bdt && bdt <= 1.00) return 1; 
+    }
+  } else if (2012 == fYear) {
+    if (0 == chan) {
+      if (0.10 < bdt && bdt <= 0.23) return 0; 
+      if (0.23 < bdt && bdt <= 0.33) return 1; 
+      if (0.33 < bdt && bdt <= 0.44) return 2; 
+      if (0.44 < bdt && bdt <= 1.00) return 3; 
+    } else if (1 == chan) {
+      if (0.10 < bdt && bdt <= 0.22) return 0; 
+      if (0.22 < bdt && bdt <= 0.29) return 1; 
+      if (0.29 < bdt && bdt <= 0.45) return 2; 
+      if (0.45 < bdt && bdt <= 1.00) return 3; 
+    }
+  }
+  return -1; 
+
+}
+
+// ----------------------------------------------------------------------
+void plotMisc::bdtCatIdx(int cat, int chan, int &hmin, int &hmax) {
+  
+  if (2011 == fYear) {
+    if (0 == chan) {
+      if (0 == cat) {hmin = 120; hmax = 199;}
+      if (1 == cat) {hmin = 110; hmax = 130;}
+      if (2 == cat) {hmin = 131; hmax = 199;}
+    } else if (1 == chan) {
+      if (0 == cat) {hmin = 120; hmax = 199;}
+      if (1 == cat) {hmin = 110; hmax = 125;}
+      if (2 == cat) {hmin = 126; hmax = 199;}
+    }
+  } else if (2012 == fYear) {
+    if (0 == chan) {
+      if (0 == cat) {hmin = 120; hmax = 199;}
+      if (1 == cat) {hmin = 110; hmax = 122;}
+      if (2 == cat) {hmin = 123; hmax = 132;}
+      if (3 == cat) {hmin = 133; hmax = 143;}
+      if (4 == cat) {hmin = 144; hmax = 199;}
+    } else if (1 == chan) {
+      if (0 == cat) {hmin = 120; hmax = 199;}
+      if (1 == cat) {hmin = 110; hmax = 121;}
+      if (2 == cat) {hmin = 122; hmax = 128;}
+      if (3 == cat) {hmin = 129; hmax = 144;}
+      if (4 == cat) {hmin = 145; hmax = 199;}
+    }
+  }
+
 }

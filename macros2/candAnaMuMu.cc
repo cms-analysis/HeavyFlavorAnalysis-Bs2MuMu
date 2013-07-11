@@ -89,8 +89,6 @@ void candAnaMuMu::genMatch() {
   fGenBTmi = -1; 
   if (goodMatch) {
     fGenBTmi = pB->fNumber; 
-    fMu1GenID = pM1->fID;
-    fMu2GenID = pM2->fID;
     double m = pB->fP.Mag();
     double p = pB->fP.P();
     // Meson pointer
@@ -102,9 +100,13 @@ void candAnaMuMu::genMatch() {
     fGenLifeTime = x*m/p/TMath::Ccgs();
 
     if (pM1->fP.Perp() > pM2->fP.Perp()) {
+      fMu1GenID = pM1->fID;
+      fMu2GenID = pM2->fID;
       fGenM1Tmi = pM1->fNumber; 
       fGenM2Tmi = pM2->fNumber; 
     } else {
+      fMu1GenID = pM2->fID;
+      fMu2GenID = pM1->fID;
       fGenM1Tmi = pM2->fNumber; 
       fGenM2Tmi = pM1->fNumber; 
     }

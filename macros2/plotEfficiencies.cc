@@ -81,21 +81,20 @@ void plotEfficiencies::makeAll(int channel) {
     fHistFile = TFile::Open(hfname.c_str(), "RECREATE");
     cout << " opened " << endl;
 
-    fSplitSeagullsFromCowboys = false; 
+    fSplitSeagullsFromCowboys = true; 
     fDoApplyMuonPtCuts = false; 
     tnpVsMC(fCuts[0]->bdtpt, fCuts[0]->bdtpt, "analysis");
 
-    fDoApplyMuonPtCuts = true; 
     
-    for (int i = 0; i < 6; ++i) {
-      double pt = 4.0 + i*1; 
-      cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
-      tnpVsMC(pt, pt, "study");
-    }
+    //     for (int i = 0; i < 6; ++i) {
+    //       double pt = 4.0 + i*1; 
+    //       cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
+    //       tnpVsMC(pt, pt, "study");
+    //     }
     
-    fDoApplyMuonPtCuts = false; 
-    fSplitSeagullsFromCowboys = true; 
-    tnpVsMC(fCuts[0]->bdtpt, fCuts[0]->bdtpt, "splitSeagullsFromCowboys");
+    //     fDoApplyMuonPtCuts = false; 
+    //     fSplitSeagullsFromCowboys = true; 
+    //     tnpVsMC(fCuts[0]->bdtpt, fCuts[0]->bdtpt, "splitSeagullsFromCowboys");
   }
 
   if (channel &2) {
@@ -109,13 +108,13 @@ void plotEfficiencies::makeAll(int channel) {
 
     texNumbers(fCuts[0]->bdtpt, fCuts[0]->bdtpt, "analysis"); 
 
-    for (int i = 0; i < 6; ++i) {
-      double pt = 4.0 + i*1; 
-      cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
-      texNumbers(pt, pt, "woCowboyVeto");
-    }
+//     for (int i = 0; i < 6; ++i) {
+//       double pt = 4.0 + i*1; 
+//       cout << "tnpVsMC(" << pt << ", " << pt << ")" << endl;
+//       texNumbers(pt, pt, "woCowboyVeto");
+//     }
 
-    texNumbers(fCuts[0]->bdtpt, fCuts[0]->bdtpt, "splitSeagullsFromCowboys"); 
+//    texNumbers(fCuts[0]->bdtpt, fCuts[0]->bdtpt, "splitSeagullsFromCowboys"); 
   }
 
   if (channel &4) {
@@ -357,10 +356,8 @@ void plotEfficiencies::loopFunction1(int mode) {
 
   trw8  = tr1w8*tr2w8; 
   if (bs2jpsiphi || bp2jpsikp) {
-    if (fb.rr >= 3) {
-      if (TMath::Abs(fb.m1eta) > 2.2) trw8 = 0; 
-      if (TMath::Abs(fb.m2eta) > 2.2) trw8 = 0; 
-    }
+      if (TMath::Abs(fb.m1eta) > 2.0) trw8 = 0; 
+      if (TMath::Abs(fb.m2eta) > 2.0) trw8 = 0; 
   }
   fhMuTr[fChan]->Fill(trw8); 
   
@@ -379,10 +376,8 @@ void plotEfficiencies::loopFunction1(int mode) {
 
   trw8  = tr1w8*tr2w8; 
   if (bs2jpsiphi || bp2jpsikp) {
-    if (fb.rr >= 3) {
-      if (TMath::Abs(fb.m1eta) > 2.2) trw8 = 0; 
-      if (TMath::Abs(fb.m2eta) > 2.2) trw8 = 0; 
-    }
+    if (TMath::Abs(fb.m1eta) > 2.) trw8 = 0; 
+    if (TMath::Abs(fb.m2eta) > 2.) trw8 = 0; 
   }
   fhMuTrMC[fChan]->Fill(trw8); 
 
@@ -583,7 +578,8 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, string what) {
   t = getTree(fSetup); 
   setupTree(t, fSetup); 
   int nevts2use(-1); 
-  if (t->GetEntries() > 5.e6) nevts2use = 5e6; 
+  int maxevents(50000); 
+  if (t->GetEntries() > maxevents) nevts2use = maxevents; 
   loopOverTree(t, fSetup, 1, nevts2use);
   saveHists(fSetup, m1pt, m2pt, what);
 
@@ -592,7 +588,7 @@ void plotEfficiencies::tnpVsMC(double m1pt, double m2pt, string what) {
   fSetup = "NoMc"; 
   t = getTree(fSetup); 
   setupTree(t, fSetup); 
-  if (t->GetEntries() > 5.e6) nevts2use = 5e6; 
+  if (t->GetEntries() > maxevents) nevts2use = maxevents; 
   loopOverTree(t, fSetup, 1, nevts2use);
   saveHists(fSetup, m1pt, m2pt, what);
   

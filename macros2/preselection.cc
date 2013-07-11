@@ -147,12 +147,22 @@ TH1D* getPreselectionNumbers() {
 
 // ----------------------------------------------------------------------
 void printRedTreeEvt(RedTreeData &b) {
-  std::cout << b.run << "/" << b.evt << " " << b.gmuid << "/" << b.hlt << "/" << b.hltm
-	    << " mu: " << b.pt << " " << b.m1pt << " " << b.m2pt << " "  << b.m1eta << " " << b.m2eta 
-	    << " " << ((TMath::Abs(b.m1eta) < 1.4 && TMath::Abs(b.m2eta) < 1.4)?0 :1)
-	    << " fl: " << b.flsxy << " " << b.fl3d << " " << b.fls3d
-	    << " ip: " << b.pvip << " " << b.pvips << " " << b.pvlip << " " << b.pvlips << " " 
+  std::cout << b.run << "/" << b.evt << " mu&hlt: " << b.gmuid << "/" << b.hlt << "/" << b.hltm2
+	    << " mu 1: " << b.m1rmvabdt << "/" << b.m1tmid << " mu 2: " << b.m2rmvabdt << "/" << b.m2tmid 
+	    << std::endl << "  " 
+	    << " B: " << " " << b.pt << "/" << b.eta << " " 
+	    << " mu: " << " " << b.m1q << "/" << b.m2q << " " 
+	    << b.m1pt << "/" << b.m2pt << ", "  << b.m1eta << "/" << b.m2eta 
+	    << " ->c" << ((TMath::Abs(b.m1eta) < 1.4 && TMath::Abs(b.m2eta) < 1.4)?0 :1)
+	    << " fl: " << b.flsxy << " " << b.fls3d << " (" << b.fl3d
+	    << ") ip: " << b.pvip << " " << b.pvips << " " << b.pvlip << " " << b.pvlips << " " 
+	    << std::endl << "  " 
 	    << " iso: " << b.iso << " " << b.closetrk  << " " << b.docatrk << " " 
-	    << " vtx: " << b.maxdoca << " " << b.chi2dof << " " << b.alpha
+	    << " miso: " << b.m1iso << " " << b.m2iso
+	    << " vtx: dca " << b.maxdoca << " chi " << b.chi2dof << " a " << b.alpha << " me " << b.me
+	    << std::endl << "  " 
+	    << " pvw8: " << b.pvw8 << " gt: " << b.gtqual
+	    << std::endl << "   " 
+	    << preselection() 
 	    << std::endl;
 }

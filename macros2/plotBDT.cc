@@ -244,6 +244,7 @@ void plotBDT::makeAll(int channels) {
     plotSSB();
     
     overlaySSB("hssb0"); 
+    calcSSB();
 
     cout << "--> bdtScan()" << endl;
     bdtScan();
@@ -1236,6 +1237,86 @@ void plotBDT::calcSSB() {
     assb0[ichan]->Draw("samehist");
     c0->SaveAs(Form("%s/%s-ssb0overlay-c%d.pdf", fDirectory.c_str(), fCuts[ichan]->xmlFile.c_str(), ichan)); 
 
+
+    double xmax(0.), xmin(0.); 
+    int maxbin = hssb0[ichan]->GetMaximumBin(); 
+    double maxVal = hssb0[ichan]->GetBinContent(maxbin);
+    double thr(0.85*maxVal); 
+    
+    for (int i =  maxbin; i > 0;  --i) {
+      if (hssb0[ichan]->GetBinContent(i) < thr) {
+	xmin = hssb0[ichan]->GetBinLowEdge(i); 
+	break;
+      }
+    }
+    
+    for (int i = maxbin; i < hssb0[ichan]->GetNbinsX(); ++i) {
+      if (hssb0[ichan]->GetBinContent(i) < thr) {
+	xmax = hssb0[ichan]->GetBinCenter(i+1); 
+	break;
+      }
+    }
+    
+    cout << "maxval: " << maxVal << endl;
+    cout << "maxbin: " << maxbin << endl;
+    cout << "xmin:   " << xmin << endl;
+    cout << "max x:  " << hssb0[ichan]->GetBinCenter(maxbin) << endl;
+    cout << "xmax:   " << xmax << endl;
+    
+    
+    TF1 *f1 = fpFunc->pol2local(hssb0[ichan], 0.2); 
+    hssb0[ichan]->Fit(f1, "r", "", xmin, xmax); 
+    if (hssb0[ichan]->GetFunction("iF_pol2local")) {
+      double maxfitssbX = hssb0[ichan]->GetFunction("iF_pol2local")->GetParameter(2); 
+      double maxfitssbY = hssb0[ichan]->GetFunction("iF_pol2local")->GetParameter(0); 
+      
+      fTEX << formatTex(maxfitssbX, Form("%s:%s:maxfitSSB:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+      fTEX << formatTex(maxfitssbY, Form("%s:%s:maxfitSSB:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+    } else {
+      cout << "could not retrieve iF_pol2local" << endl;
+    }
+    c0->SaveAs(Form("%s/%s-ssb0overlayfit-c%d.pdf", fDirectory.c_str(), fCuts[ichan]->xmlFile.c_str(), ichan)); 
+
+
+
+    maxbin = assb0[ichan]->GetMaximumBin(); 
+    maxVal = assb0[ichan]->GetBinContent(maxbin);
+    thr = 0.85*maxVal; 
+    
+    for (int i =  maxbin; i > 0;  --i) {
+      if (assb0[ichan]->GetBinContent(i) < thr) {
+	xmin = assb0[ichan]->GetBinLowEdge(i); 
+	break;
+      }
+    }
+    
+    for (int i = maxbin; i < assb0[ichan]->GetNbinsX(); ++i) {
+      if (assb0[ichan]->GetBinContent(i) < thr) {
+	xmax = assb0[ichan]->GetBinCenter(i+1); 
+	break;
+      }
+    }
+    
+    cout << "maxval: " << maxVal << endl;
+    cout << "maxbin: " << maxbin << endl;
+    cout << "xmin:   " << xmin << endl;
+    cout << "max x:  " << assb0[ichan]->GetBinCenter(maxbin) << endl;
+    cout << "xmax:   " << xmax << endl;
+
+    TF1 *f2 = fpFunc->pol2local(assb0[ichan], 0.2); 
+    assb0[ichan]->Fit(f1, "r", "", xmin, xmax); 
+    if (assb0[ichan]->GetFunction("iF_pol2local")) {
+      double maxfitssbX = assb0[ichan]->GetFunction("iF_pol2local")->GetParameter(2); 
+      double maxfitssbY = assb0[ichan]->GetFunction("iF_pol2local")->GetParameter(0); 
+      
+      fTEX << formatTex(maxfitssbX, Form("%s:%s:maxfitamsSSB:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+      fTEX << formatTex(maxfitssbY, Form("%s:%s:maxfitamsSSB:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
+    } else {
+      cout << "could not retrieve iF_pol2local" << endl;
+    }
+    c0->SaveAs(Form("%s/%s-assb0overlayfit-c%d.pdf", fDirectory.c_str(), fCuts[ichan]->xmlFile.c_str(), ichan)); 
+
+
     hssbs[ichan]->Draw("");
     assbs[ichan]->Draw("samehist");
     c0->SaveAs(Form("%s/%s-ssb1overlay-c%d.pdf", fDirectory.c_str(), fCuts[ichan]->xmlFile.c_str(), ichan)); 
@@ -1382,72 +1463,6 @@ void plotBDT::amsSSB(int chan) {
       dm->SetDirectory(fHistFile); dm->Write(); 
       am->SetDirectory(fHistFile); am->Write(); 
     }
-    
-
-//     double b(0.), a(0.), s(0.), ssb0(0.), sb(0.); 
-//     double dSideband(0.), aSideband(0.); 
-//     TH1D *hs(0), *hd(0), *ha(0); 
-//     for (int i = 0; i < bdtBins; ++i) {
-//       hs = (TH1D*)fHistFile->Get(Form("sm_%d_%d", chan, i)); 
-//       hd = (TH1D*)fHistFile->Get(Form("dm_%d_%d", chan, i)); 
-//       ha = (TH1D*)fHistFile->Get(Form("am_%d_%d", chan, i)); 
-      
-//       s = hs->Integral(hs->FindBin(5.20001), hs->FindBin(5.44999));  
-//       a = ha->Integral(ha->FindBin(5.20001), ha->FindBin(5.44999));  
-//       //       bgBlind(hd, 2, 4.9, 5.9);
-//       //       b = fBsBgExp;
-//       ssb0 = (a+s > 0? (s/TMath::Sqrt(s+a)) : 0.); 
-//       ha->Draw("hist"); 
-//       hd->Draw("samee"); 
-//       hs->Draw("histsame"); 
-//       cout << "ams: " << a << " b = " << b << " -> " << ssb0 << endl;
-//       hssb0->SetBinContent(i, ssb0); 
-//     }
-//     hssb0->Draw();
-
-//     hssb0->Write(); 
-//   }
-
-
-//   double xmax(0.), xmin(0.); 
-//   int maxbin = hssb0->GetMaximumBin(); 
-//   double maxVal = hssb0->GetBinContent(maxbin);
-//   double thr(0.85*maxVal); 
-  
-//   for (int i =  maxbin; i > 0;  --i) {
-//     if (hssb0->GetBinContent(i) < thr) {
-//       xmin = hssb0->GetBinLowEdge(i); 
-//       break;
-//     }
-//   }
-
-//   for (int i = maxbin; i < hssb0->GetNbinsX(); ++i) {
-//     if (hssb0->GetBinContent(i) < thr) {
-//       xmax = hssb0->GetBinCenter(i+1); 
-//       break;
-//     }
-//   }
-
-//   cout << "maxval: " << maxVal << endl;
-//   cout << "maxbin: " << maxbin << endl;
-//   cout << "xmin:   " << xmin << endl;
-//   cout << "max x:  " << hssb0->GetBinCenter(maxbin) << endl;
-//   cout << "xmax:   " << xmax << endl;
-
-//   TF1 *f1 = fpFunc->pol2local(hssb0, 0.2); 
-//   hssb0->Fit(f1, "r", "", xmin, xmax); 
-//   if (hssb0->GetFunction("iF_pol2local")) {
-//     double maxfitssbX = hssb0->GetFunction("iF_pol2local")->GetParameter(2); 
-//     double maxfitssbY = hssb0->GetFunction("iF_pol2local")->GetParameter(0); 
-    
-//     fTEX << formatTex(maxfitssbX, Form("%s:%s:maxfitSSBams:val",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
-//     fTEX << formatTex(maxfitssbY, Form("%s:%s:maxfitSSBams:bdt",  fSuffix.c_str(), fBdtString.c_str()), 2) << endl;
-//   } else {
-//     cout << "could not retrieve iF_pol2local" << endl;
-//   }
-
-//   c0->SaveAs(Form("ams-ssb-%d-%d.pdf", fYear, chan)); 
-
   }
 }
 

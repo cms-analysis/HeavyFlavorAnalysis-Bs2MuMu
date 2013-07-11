@@ -490,14 +490,14 @@ void candAna::candAnalysis() {
 
   if (p1->fMuIndex > -1) {
     TAnaMuon *pm = fpEvt->getMuon(p1->fMuIndex);
-    //     fillMuonData(fMu1Data, pm); 
-    //     fMu1Data.mbdt = fMu1rBDT; 
+    fillMuonData(fMu1Data, pm); 
+    fMu1Data.mbdt = fMu1rBDT; 
     fMu1Chi2     = pm->fMuonChi2;
     fMu1Iso      = isoMuon(fpCand, pm); 
     fMu1VtxProb  = pm->fVtxProb;
   } else {
-//     fillMuonData(fMu1Data, 0); 
-//     fMu1Data.mbdt = -98.; 
+    fillMuonData(fMu1Data, 0); 
+    fMu1Data.mbdt = -98.; 
     fMu1Chi2 = -98.;
     fMu1Iso  = -98.; 
     fMu1VtxProb = 99.;
@@ -653,14 +653,14 @@ void candAna::candAnalysis() {
 
   if (p2->fMuIndex > -1) {
     TAnaMuon *pm = fpEvt->getMuon(p2->fMuIndex);
-//     fillMuonData(fMu2Data, pm); 
-//     fMu2Data.mbdt = fMu2rBDT; 
+    fillMuonData(fMu2Data, pm); 
+    fMu2Data.mbdt = fMu2rBDT; 
     fMu2Chi2      = pm->fMuonChi2;
     fMu2Iso       = isoMuon(fpCand, pm); 
     fMu2VtxProb   = pm->fVtxProb;
   } else {
-//     fillMuonData(fMu2Data, 0); 
-//     fMu2Data.mbdt = -98.; 
+    fillMuonData(fMu2Data, 0); 
+    fMu2Data.mbdt = -98.; 
     fMu2Chi2 = -98.;
     fMu2Iso  = -98.; 
     fMu2VtxProb = 99.;
@@ -1612,54 +1612,56 @@ void candAna::setupReducedTree(TTree *t) {
   t->Branch("hm2phi", &fHltMu2Phi, "hm2phi/D");  
 
   // -- all muon variables for Marco
-//   t->Branch("m1bdt", &fMu1Data.mbdt, "m1bdt/F");  
-//   t->Branch("m1validMuonHits", &fMu1Data.validMuonHits, "m1validMuonHits/F");  
-//   t->Branch("m1glbNChi2", &fMu1Data.glbNChi2, "m1glbNChi2/F");  
+  t->Branch("m1bdt", &fMu1Data.mbdt, "m1bdt/F");  
+  t->Branch("m1validMuonHits", &fMu1Data.validMuonHits, "m1validMuonHits/F");  
+  t->Branch("m1glbNChi2", &fMu1Data.glbNChi2, "m1glbNChi2/F");  
 
-//   t->Branch("m1nMatchedStations", &fMu1Data.nMatchedStations, "m1nMatchedStations/I");  
-//   t->Branch("m1validPixelHits", &fMu1Data.validPixelHits, "m1validPixelHits/I");  
-//   t->Branch("m1validPixelHits2", &fMu1Data.validPixelHits2, "m1validPixelHits2/I");  
+  t->Branch("m1nMatchedStations", &fMu1Data.nMatchedStations, "m1nMatchedStations/I");  
+  t->Branch("m1validPixelHits", &fMu1Data.validPixelHits, "m1validPixelHits/I");  
+  t->Branch("m1validPixelHits2", &fMu1Data.validPixelHits2, "m1validPixelHits2/I");  
+  t->Branch("m1trkLayerWithHits", &fMu1Data.trkLayerWithHits, "m1trkLayerWithHits/I");  
 
-//   t->Branch("m1trkValidFract", &fMu1Data.trkValidFract, "m1trkValidFract/F");  
-//   t->Branch("m1pt", &fMu1Data.pt, "m1pt/F");  
-//   t->Branch("m1eta", &fMu1Data.eta, "m1eta/F");  
-//   t->Branch("m1segComp", &fMu1Data.segComp, "m1segComp/F");  
-//   t->Branch("m1chi2LocMom", &fMu1Data.chi2LocMom, "m1chi2LocMom/F");  
-//   t->Branch("m1chi2LocPos", &fMu1Data.chi2LocPos, "m1chi2LocPos/F");  
-//   t->Branch("m1glbTrackProb", &fMu1Data.glbTrackProb, "m1glbTrackProb/F");  
-//   t->Branch("m1NTrkVHits", &fMu1Data.NTrkVHits, "m1NTrkVHits/F");  
-//   t->Branch("m1NTrkEHitsOut", &fMu1Data.NTrkEHitsOut, "m1NTrkEHitsOut/F");  
-//   t->Branch("m1kink", &fMu1Data.kink, "m1kink/F");  
-//   t->Branch("m1dpt", &fMu1Data.dpt, "m1dpt/F");  
-//   t->Branch("m1dptrel", &fMu1Data.dptrel, "m1dptrel/F");  
-//   t->Branch("m1deta", &fMu1Data.deta, "m1deta/F");  
-//   t->Branch("m1dphi", &fMu1Data.dphi, "m1dphi/F");  
-//   t->Branch("m1dr", &fMu1Data.dr, "m1dr/F");  
+  t->Branch("m1trkValidFract", &fMu1Data.trkValidFract, "m1trkValidFract/F");  
+  t->Branch("m1pt", &fMu1Data.pt, "m1pt/F");  
+  t->Branch("m1eta", &fMu1Data.eta, "m1eta/F");  
+  t->Branch("m1segComp", &fMu1Data.segComp, "m1segComp/F");  
+  t->Branch("m1chi2LocMom", &fMu1Data.chi2LocMom, "m1chi2LocMom/F");  
+  t->Branch("m1chi2LocPos", &fMu1Data.chi2LocPos, "m1chi2LocPos/F");  
+  t->Branch("m1glbTrackProb", &fMu1Data.glbTrackProb, "m1glbTrackProb/F");  
+  t->Branch("m1NTrkVHits", &fMu1Data.NTrkVHits, "m1NTrkVHits/F");  
+  t->Branch("m1NTrkEHitsOut", &fMu1Data.NTrkEHitsOut, "m1NTrkEHitsOut/F");  
+  t->Branch("m1kink", &fMu1Data.kink, "m1kink/F");  
+  t->Branch("m1dpt", &fMu1Data.dpt, "m1dpt/F");  
+  t->Branch("m1dptrel", &fMu1Data.dptrel, "m1dptrel/F");  
+  t->Branch("m1deta", &fMu1Data.deta, "m1deta/F");  
+  t->Branch("m1dphi", &fMu1Data.dphi, "m1dphi/F");  
+  t->Branch("m1dr", &fMu1Data.dr, "m1dr/F");  
 
 
-//   t->Branch("m2bdt", &fMu2Data.mbdt, "m2bdt/F");  
-//   t->Branch("m2validMuonHits", &fMu2Data.validMuonHits, "m2validMuonHits/F");  
-//   t->Branch("m2glbNChi2", &fMu2Data.glbNChi2, "m2glbNChi2/F");  
+  t->Branch("m2bdt", &fMu2Data.mbdt, "m2bdt/F");  
+  t->Branch("m2validMuonHits", &fMu2Data.validMuonHits, "m2validMuonHits/F");  
+  t->Branch("m2glbNChi2", &fMu2Data.glbNChi2, "m2glbNChi2/F");  
 
-//   t->Branch("m2nMatchedStations", &fMu2Data.nMatchedStations, "m2nMatchedStations/I");  
-//   t->Branch("m2validPixelHits", &fMu2Data.validPixelHits, "m2validPixelHits/I");  
-//   t->Branch("m2validPixelHits2", &fMu2Data.validPixelHits2, "m2validPixelHits2/I");  
+  t->Branch("m2nMatchedStations", &fMu2Data.nMatchedStations, "m2nMatchedStations/I");  
+  t->Branch("m2validPixelHits", &fMu2Data.validPixelHits, "m2validPixelHits/I");  
+  t->Branch("m2validPixelHits2", &fMu2Data.validPixelHits2, "m2validPixelHits2/I");  
+  t->Branch("m2trkLayerWithHits", &fMu2Data.trkLayerWithHits, "m2trkLayerWithHits/I");  
 
-//   t->Branch("m2trkValidFract", &fMu2Data.trkValidFract, "m2trkValidFract/F");  
-//   t->Branch("m2pt", &fMu2Data.pt, "m2pt/F");  
-//   t->Branch("m2eta", &fMu2Data.eta, "m2eta/F");  
-//   t->Branch("m2segComp", &fMu2Data.segComp, "m2segComp/F");  
-//   t->Branch("m2chi2LocMom", &fMu2Data.chi2LocMom, "m2chi2LocMom/F");  
-//   t->Branch("m2chi2LocPos", &fMu2Data.chi2LocPos, "m2chi2LocPos/F");  
-//   t->Branch("m2glbTrackProb", &fMu2Data.glbTrackProb, "m2glbTrackProb/F");  
-//   t->Branch("m2NTrkVHits", &fMu2Data.NTrkVHits, "m2NTrkVHits/F");  
-//   t->Branch("m2NTrkEHitsOut", &fMu2Data.NTrkEHitsOut, "m2NTrkEHitsOut/F");  
-//   t->Branch("m2kink", &fMu2Data.kink, "m2kink/F");  
-//   t->Branch("m2dpt", &fMu2Data.dpt, "m2dpt/F");  
-//   t->Branch("m2dptrel", &fMu2Data.dptrel, "m2dptrel/F");  
-//   t->Branch("m2deta", &fMu2Data.deta, "m2deta/F");  
-//   t->Branch("m2dphi", &fMu2Data.dphi, "m2dphi/F");  
-//   t->Branch("m2dr", &fMu2Data.dr, "m2dr/F");  
+  t->Branch("m2trkValidFract", &fMu2Data.trkValidFract, "m2trkValidFract/F");  
+  t->Branch("m2pt", &fMu2Data.pt, "m2pt/F");  
+  t->Branch("m2eta", &fMu2Data.eta, "m2eta/F");  
+  t->Branch("m2segComp", &fMu2Data.segComp, "m2segComp/F");  
+  t->Branch("m2chi2LocMom", &fMu2Data.chi2LocMom, "m2chi2LocMom/F");  
+  t->Branch("m2chi2LocPos", &fMu2Data.chi2LocPos, "m2chi2LocPos/F");  
+  t->Branch("m2glbTrackProb", &fMu2Data.glbTrackProb, "m2glbTrackProb/F");  
+  t->Branch("m2NTrkVHits", &fMu2Data.NTrkVHits, "m2NTrkVHits/F");  
+  t->Branch("m2NTrkEHitsOut", &fMu2Data.NTrkEHitsOut, "m2NTrkEHitsOut/F");  
+  t->Branch("m2kink", &fMu2Data.kink, "m2kink/F");  
+  t->Branch("m2dpt", &fMu2Data.dpt, "m2dpt/F");  
+  t->Branch("m2dptrel", &fMu2Data.dptrel, "m2dptrel/F");  
+  t->Branch("m2deta", &fMu2Data.deta, "m2deta/F");  
+  t->Branch("m2dphi", &fMu2Data.dphi, "m2dphi/F");  
+  t->Branch("m2dr", &fMu2Data.dr, "m2dr/F");  
 
 
   // for testing only 
@@ -2204,10 +2206,12 @@ bool candAna::tightMuon(TAnaTrack *pT, bool hadronsPass) {
   if (fpReader->numberOfPixLayers(pT) < 1) trackcuts = false;
   if (verbose)  cout << "pixel layers: " << fpReader->numberOfPixLayers(pT) << " -> " << trackcuts << endl;
 
-  int trkHits = fpReader->numberOfTrackerLayers(pT);
+  int trkHitsOld = fpReader->numberOfTrackerLayers(pT);
+  int trkHits    = pT->fLayersWithHits;
+
   if (fYear == 2011) {
     if (trkHits < 9) trackcuts = false; 
-    if (verbose)  cout << "valid hits: " << pT->fValidHits << " -> " << trackcuts << endl;
+    if (verbose)  cout << "valid hits: " << pT->fValidHits << " trackHist: " << trkHits << " -> " << trackcuts << endl;
   } else if (fYear == 2012) {
     if (trkHits < 6) trackcuts = false; 
     if (verbose)  cout << "number of tracker layers: " << trkHits << " -> " << trackcuts << endl;
@@ -4198,7 +4202,7 @@ void candAna::fillMuonData(muonData &a, TAnaMuon *pt) {
     a.validPixelHits   = fpReader->numberOfPixLayers(pt);
     a.validPixelHits2  = fpReader->numberOfPixelHits(pt);
     a.trkLayerWithHits = fpReader->numberOfTrackerLayers(pt);
-  
+    
     a.trkValidFract = pt->fItrkValidFraction; 
     a.segComp       = pt->fSegmentComp; 
     a.chi2LocMom    = pt->fChi2LocalMomentum;

@@ -214,7 +214,7 @@ public:
   virtual std::string formatTex(double n, std::string name, int digits, int sgn = 0);
   virtual std::string formatTex(double n, std::string name, std::string tag);
   virtual std::string formatTex(std::string s, std::string name);
-  virtual void drawArrow(double height, int mode = 0, double y = 0.1);
+  virtual void drawArrow(double height, int mode = 0, double y = 0.1, int yield = -1); 
   virtual void drawBox(int mode, double hi = 0.5, double ylo = 0.01);
   virtual void replaceAll(std::string &s, std::string a, std::string b);
   virtual void makeCanvas(int i = 3);

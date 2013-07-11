@@ -183,7 +183,7 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
 
 
     
-    h2 = new TH2D(Form("hBdtMass%d", i), Form("hBdtMass%d", i), NBINS, fMassLo, fMassHi, 100, 0., 1.0);
+    h2 = new TH2D(Form("hBdtMass%d", i), Form("hBdtMass%d", i), NBINS, fMassLo, fMassHi, 80, 0.2, 1.0);
     fhBdtMass.push_back(h2); 
 
     h = new TH1D(Form("hGenAndAccNumbers%d", i), Form("hGenAndAccNumbers%d", i), 100, 0., 100.);
@@ -500,7 +500,7 @@ void plotClass::filterEfficiency(string fname, string name) {
  
   TFile *f = fF[fname];
   if (0 == f) {
-    cout << "anaBmm::filterEffciciency(" << name << "): no file " << fname << " found " << endl;
+    cout << "anaBmm::filterEfficiency(" << name << "): no file " << fname << " found " << endl;
     return;
   }
   TTree *t  = (TTree*)(f->Get(Form("%s/effTree", name.c_str())));
@@ -1108,7 +1108,7 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
   
   loadFiles(files);
 
-  fStampString = "CMS, 5fb^{-1}"; 
+  fStampString = "CMS, 20+5fb^{-1}"; 
   if (fDoUseBDT) {
     fStampString = "BDT preliminary"; 
   } else {
@@ -1125,6 +1125,8 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
     fYear = 2012; 
     fStampCms = "#sqrt{s} = 8 TeV";
   } 
+
+  fBDT = -99.; 
 
   string hfname  = fDirectory + "/anaBmm." + fSuffix + ".root";
 
@@ -1261,6 +1263,16 @@ void plotClass::loadFiles(const char *files) {
       }
       if (string::npos != stype.find("acc") && string::npos != stype.find("sg")) {
 	sname = "SgMcAcc"; 
+	fF.insert(make_pair(sname, pF)); 
+	fBF.insert(make_pair(sname, 3.2e-9)); 
+	fBFE.insert(make_pair(sname, 0.06)); 
+	fProdR.insert(make_pair(sname, fsfu)); 
+	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
+	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (acc)")); 
+	fFilterEff.insert(make_pair(sname, effFilter)); 
+      }
+      if (string::npos != stype.find("2011") && string::npos != stype.find("sg")) {
+	sname = "SgMc2011"; 
 	fF.insert(make_pair(sname, pF)); 
 	fBF.insert(make_pair(sname, 3.2e-9)); 
 	fBFE.insert(make_pair(sname, 0.06)); 
@@ -3145,14 +3157,14 @@ void plotClass::stamp(double x1, string text1, double x2, string text2) {
 
 
 // ----------------------------------------------------------------------
-void plotClass::drawArrow(double height, int mode, double ylegend) {
+void plotClass::drawArrow(double height, int mode, double ylegend, int yield) {
 
   double ylo(0.01); 
   pl->SetLineWidth(static_cast<Width_t>(3.)); 
   
   double d(0.08), y(0.80), x(5.25); 
   
-  double yoffset(0.2); 
+  double yoffset(0.1); 
 
   if (1 == mode) {
     pl->SetLineColor(kBlue); 
@@ -3165,7 +3177,7 @@ void plotClass::drawArrow(double height, int mode, double ylegend) {
 
     if (1) {
       y = ylegend;
-      x = 5.25; 
+      x = 5.15; 
       d = 0.05;
       pl->SetLineWidth(static_cast<Width_t>(3.)); 
       pl->DrawLine(x, y, x+0.1, y); 
@@ -3174,7 +3186,7 @@ void plotClass::drawArrow(double height, int mode, double ylegend) {
       pl->DrawLine(x+0.1, y+d, x+0.1, y-d); 
       tl->SetNDC(kFALSE);
       tl->SetTextSize(0.05); 
-      tl->DrawLatex(x+0.15, y-yoffset, "B_{s}^{0} signal window");
+      tl->DrawLatex(x+0.15, y-yoffset, Form("B_{s}^{0} signal window: %d", yield));
     }
 
   } else if (2 == mode) {
@@ -3188,7 +3200,7 @@ void plotClass::drawArrow(double height, int mode, double ylegend) {
     pl->DrawLine(fCuts[0]->mBdHi, height+d, fCuts[0]->mBdHi, height-d); 
 
     if (1) {
-      x = 5.25; 
+      x = 5.15; 
       y = ylegend;
       d = 0.05;
       pl->SetLineWidth(static_cast<Width_t>(3.)); 
@@ -3200,7 +3212,7 @@ void plotClass::drawArrow(double height, int mode, double ylegend) {
       pl->DrawLine(x+0.1, y+d, x+0.1, y-d); 
       tl->SetNDC(kFALSE);
       tl->SetTextSize(0.05); 
-      tl->DrawLatex(x+0.15, y-yoffset, "B^{0} signal window");
+      tl->DrawLatex(x+0.15, y-yoffset, Form("B^{0} signal window: %d", yield));
     }
 
   } else if (3 == mode) {
@@ -3339,6 +3351,7 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
   cout << "==> plotClass::loopOverTree> looping in mode " << mode << " -> imode = " << imode 
        << " fDoUseBDT = " << fDoUseBDT
        << " with " << nentries << " entries" 
+       << " in file " << t->GetDirectory()->GetName() 
        << endl;
 
   string tname; 
@@ -3429,6 +3442,26 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
       if (fb.run < fRunMin) continue; 
       if (fb.run > fRunMax) continue; 
     }
+
+//     const Long64_t printRun(208307), printEvt(1127720136);
+//     //     const Long64_t printRun(208307), printEvt(1127720136);
+//     if (fb.run == printRun && fb.evt == printEvt) {
+//       cout << "BDT = " << fBDT << ": " << fb.bdt << endl; 
+//       printRedTreeEvt(fb); 
+//       candAnalysis(imode);
+//       loopFunction(function, imode);
+//       cout << "acceptance:    " << fGoodAcceptance  << endl;
+//       cout << "fGoodPvAveW8:  " << fGoodPvAveW8 << endl;
+//       cout << "goodtracks:    " << fGoodTracks  << endl;
+//       cout << "goodtrackspt:  " << fGoodTracksPt  << endl;
+//       cout << "goodtrackseta: " << fGoodTracksEta  << endl;
+//       cout << "goodBdtPt:     " << fGoodBdtPt  << endl;
+//       cout << "goodMuonsEta:  " << fGoodMuonsEta  << endl;
+//       cout << "goodJpsiCuts:  " << fGoodJpsiCuts  << endl;
+//       cout << "goodQ:         " << fGoodQ  << endl;
+//       cout << "goodHLT:       " << fGoodHLT  << endl;
+//     } else continue;
+
     candAnalysis(imode);
     loopFunction(function, imode);
     ptcutOK = fGoodMuonsPt;
@@ -3469,6 +3502,7 @@ TTree* plotClass::getTree(string mode) {
   if (string::npos != mode.find("Cs")) t = (TTree*)fF[mode]->Get("candAnaBs2JpsiPhi/events"); 
   if (string::npos != mode.find("Sg")) t = (TTree*)fF[mode]->Get("candAnaMuMu/events"); 
   if (string::npos != mode.find("Bd")) t = (TTree*)fF[mode]->Get("candAnaMuMu/events"); 
+  if (mode == "SgDataAMS") t = (TTree*)fF[mode]->Get("candAnaMuMu/amsevents"); 
   return t; 
 }
 
@@ -3540,7 +3574,7 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("gtau", &fb.gtau);
 
   t->SetBranchAddress("bdt",&fb.bdt);
-  t->SetBranchAddress("bdt",&fBDT);
+  t->SetBranchAddress("bdt",&fb.bdt);
   t->SetBranchAddress("lip",&fb.lip);
   t->SetBranchAddress("lipE",&fb.lipE);
   t->SetBranchAddress("tip",&fb.tip);
@@ -3612,15 +3646,17 @@ void plotClass::setupTree(TTree *t, string mode) {
   t->SetBranchAddress("m2q",    &fb.m2q);
   t->SetBranchAddress("docatrk",&fb.docatrk);
 
-  t->SetBranchAddress("m1id",   &fb.m1id);
+  t->SetBranchAddress("m1id",     &fb.m1id);
   t->SetBranchAddress("m1rmvaid", &fb.m1rmvaid);
   t->SetBranchAddress("m1trigm",  &fb.m1trigm);
-  t->SetBranchAddress("m1rmvabdt", &fb.m1rmvabdt);
-
+  t->SetBranchAddress("m1rmvabdt",&fb.m1rmvabdt);
+  t->SetBranchAddress("m1tmid",   &fb.m1tmid);
+ 
   t->SetBranchAddress("m2id",     &fb.m2id);
   t->SetBranchAddress("m2rmvaid", &fb.m2rmvaid);
   t->SetBranchAddress("m2trigm",  &fb.m2trigm);
-  t->SetBranchAddress("m2rmvabdt", &fb.m2rmvabdt);
+  t->SetBranchAddress("m2rmvabdt",&fb.m2rmvabdt);
+  t->SetBranchAddress("m2tmid",   &fb.m2tmid);
 
 
   t->SetBranchAddress("m1iso",     &fb.m1iso);
@@ -3686,7 +3722,8 @@ void plotClass::candAnalysis(int mode) {
   cuts *pCuts(0); 
   fChan = detChan(fb.m1eta, fb.m2eta); 
   if (fChan < 0) {
-    //    cout << "plotClass::candAnalysis: could not determine channel: " << fb.m1eta << " " << fb.m2eta << endl;
+    //    cout << "plotClass::candAnalysis: " << fb.run << " " << fb.evt 
+    //    << " could not determine channel: " << fb.m1eta << " " << fb.m2eta << endl;
     return;
   }
   pCuts = fCuts[fChan]; 
@@ -3828,7 +3865,17 @@ void plotClass::candAnalysis(int mode) {
 	&& fGoodJpsiCuts
 	) {
       calcBDT(); 
-    }
+      fb.bdt = fBDT; 
+    } 
+//     else {
+//       cout << "acceptance:    " << fGoodAcceptance  << endl;
+//       cout << "goodtracks:    " << fGoodTracks  << endl;
+//       cout << "goodtrackspt:  " << fGoodTracksPt  << endl;
+//       cout << "goodtrackseta: " << fGoodTracksEta  << endl;
+//       cout << "goodBdtPt:     " << fGoodBdtPt  << endl;
+//       cout << "goodMuonsEta:  " << fGoodMuonsEta  << endl;
+//       cout << "goodJpsiCuts:  " << fGoodJpsiCuts  << endl;
+//     }
   }
 
   fGoodMuonsID  = fb.gmuid;

@@ -205,6 +205,18 @@ void plotReducedOverlays::compareTheYears(string sample, string channel, string 
 }
 
 // ----------------------------------------------------------------------
+void plotReducedOverlays::compareBsAndBp(string file) {
+  overlay2Files(file.c_str(), "NoMc", file.c_str(), "CsMc", "B", "B");
+  overlay2Files(file.c_str(), "NoMc", file.c_str(), "CsMc", "E", "E");
+ 
+  overlay2Files(file.c_str(), "NoData", file.c_str(), "CsData", "B", "B");
+  overlay2Files(file.c_str(), "NoData", file.c_str(), "CsData", "E", "E");
+
+}
+
+
+
+// ----------------------------------------------------------------------
 void plotReducedOverlays::makeSample(string mode, string selection, string channel, int nevents, int nstart) {
 
   fSetup = channel;
@@ -740,30 +752,37 @@ void plotReducedOverlays::overlay2Files(std::string file1, std::string sample1,
     }
     h2->Draw("samehist");
     double ks = h1->KolmogorovTest(h2);
-    tl->DrawLatex(0.2, 0.85, Form("P(KS)= %4.3f", ks)); 
+    //    tl->DrawLatex(0.2, 0.85, Form("P(KS)= %4.3f", ks)); 
 
-    newLegend(0.1, 0.91, 0.75, 0.98); 
-    legg->SetTextSize(0.025);  
+    newLegend(0.0, 0.91, 0.75, 0.98); 
+    legg->SetTextSize(0.022);  
     string text1, text2;
     
     if (!what.compare("multichan")) {
       if (string::npos != sample1.find("Mc")) {
-	legg->AddEntry(h1, Form("%s:%s/%s", file1.c_str(), sample1.c_str(), chan1.c_str()), "f");
+	//	legg->AddEntry(h1, Form("%s:%s/%s", file1.c_str(), sample1.c_str(), chan1.c_str()), "f");
+	legg->AddEntry(h1, Form("%s:%s", sample1.c_str(), chan1.c_str()), "f");
       } else {
-	legg->AddEntry(h1, Form("%s:%s/%s", file1.c_str(), sample1.c_str(), chan1.c_str()), "p");
+	//	legg->AddEntry(h1, Form("%s:%s/%s", file1.c_str(), sample1.c_str(), chan1.c_str()), "p");
+	legg->AddEntry(h1, Form("%s:%s", sample1.c_str(), chan1.c_str()), "p");
       }
       if (string::npos != sample2.find("Mc")) {
-	legg->AddEntry(h2, Form("%s:%s/%s", file2.c_str(), sample2.c_str(), chan2.c_str()), "f");
+	//	legg->AddEntry(h2, Form("%s:%s/%s", file2.c_str(), sample2.c_str(), chan2.c_str()), "f");
+	legg->AddEntry(h2, Form("%s:%s", sample2.c_str(), chan2.c_str()), "f");
       } else {
-	legg->AddEntry(h2, Form("%s:%s/%s", file2.c_str(), sample2.c_str(), chan2.c_str()), "p");
+	//	legg->AddEntry(h2, Form("%s:%s/%s", file2.c_str(), sample2.c_str(), chan2.c_str()), "p");
+	legg->AddEntry(h2, Form("%s:%s", sample2.c_str(), chan2.c_str()), "p");
       }
     } else { 
       if (string::npos != sample1.find("Mc")) {
-	legg->AddEntry(h1, Form("%s:%s", file1.c_str(), fn1.c_str()), "f");
+	//	legg->AddEntry(h1, Form("%s:%s", file1.c_str(), fn1.c_str()), "f");
+	legg->AddEntry(h1, Form("%s:%s", sample1.c_str(), chan1.c_str()), "f");
       } else {
-	legg->AddEntry(h1, Form("%s:%s", file1.c_str(), fn1.c_str()), "p");
+	//	legg->AddEntry(h1, Form("%s:%s", file1.c_str(), fn1.c_str()), "p");
+	legg->AddEntry(h1, Form("%s:%s", sample1.c_str(), chan1.c_str()), "p");
       }
-      legg->AddEntry(h2, Form("%s:%s", file2.c_str(), fn2.c_str()), "f");
+      //      legg->AddEntry(h2, Form("%s:%s", file2.c_str(), fn2.c_str()), "f");
+      legg->AddEntry(h2, Form("%s:%s", sample2.c_str(), chan2.c_str()), "f");
     }
     legg->Draw();
       

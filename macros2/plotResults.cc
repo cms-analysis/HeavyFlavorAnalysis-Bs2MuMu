@@ -59,14 +59,29 @@ void plotResults::makeAll(int channels, int nevents) {
  
   zone(1);
 
+  // -- debugging only on data
   if (channels & 8) {
     fSaveLargerTree = true;
+    fSaveSmallTree = true;
     fillAndSaveHistograms(-2); 
     return;
   }
 
+  // -- dump only AMS data
+  if (channels & 16) {
+    fillAndSaveHistograms(-3); 
+    return;
+  }
+
+  if (channels & 32) {
+    fSaveLargerTree = true;
+    fSaveSmallTree = true;
+    fillAndSaveHistograms(-4); 
+    return;
+  }
+
   if (channels & 1) {
-    fSaveSmallTree = true; 
+    //    fSaveSmallTree = true; 
     fillAndSaveHistograms(nevents); 
   }
 
@@ -79,6 +94,20 @@ void plotResults::makeAll(int channels, int nevents) {
 
   // -- dimuons unblinded
   if (channels & 4) {
+    string hfname  = fDirectory + "/anaBmm.plotResults." + fSuffix + ".root";
+    cout << "fHistFile: " << hfname;
+    fHistFile = TFile::Open(hfname.c_str(), "UPDATE");
+    cout << " opened, running on " << nevents << " entries" << endl;
+
+    makeCanvas(1);
+    c1->Clear();
+    c1->Divide(2,1);
+
+    zone(1,2);
+    gStyle->SetOptStat(0); 
+    gStyle->SetOptTitle(0); 
+
+
     TTree *t(0);
     string modifier("bdt"); 
     resetHistograms();
@@ -87,30 +116,61 @@ void plotResults::makeAll(int channels, int nevents) {
     t = getTree(fSetup); 
     setupTree(t, fSetup); 
     loopOverTree(t, fSetup, 1);
+    saveHists(fSetup);
 
-    zone(1,2);
-    gStyle->SetOptStat(0); 
-    gStyle->SetOptTitle(0); 
     TH1D *h1(0); 
+    int cntB0[fNchan], cntBs[fNchan]; 
     for (unsigned int i = 0; i < fNchan; ++i) {
       c0->cd(i+1); 
-      h1 = (TH1D*)(fhMassWithAllCutsManyBins[i]->Clone(Form("hMassWithAllCutsManyBins_%s_5_chan%d", modifier.c_str(), i))); 
+      h1 = (TH1D*)fHistFile->Get(Form("hMassWithAllCutsManyBins_%s_5_chan%d", modifier.c_str(), i)); 
       h1->SetAxisRange(4.9, 5.9, "X"); 
       h1->Draw();
-      double ymax0 = 3; 
-      double yleg = ymax0 - 0.3;
-      h1->SetMaximum(ymax0); 
-      double b0  = h1->Integral(h1->FindBin(5.2+fEpsilon), h1->FindBin(5.3-fEpsilon)); 
-      double bs  = h1->Integral(h1->FindBin(5.3+fEpsilon), h1->FindBin(5.45-fEpsilon)); 
-    
-      drawArrow(0.6, 1, yleg); 
-      drawArrow(0.4, 2, yleg-0.35); 
-      tl->DrawLatex(0.4, yleg, Form("obs: %3.0f", bs));
-      tl->DrawLatex(0.4, yleg-0.35, Form("obs: %3.0f", b0));
-      tl->DrawLatex(0.2, 0.92, (0 == i?"Barrel":"Endcap"));
+      double ymax0 = h1->GetBinContent(h1->GetMaximumBin());
+      h1->SetMaximum(ymax0+2); 
+      double yleg = ymax0 + 2.0 - 0.3;
+      cntB0[i] = h1->Integral(h1->FindBin(5.2+fEpsilon), h1->FindBin(5.3-fEpsilon)); 
+      cntBs[i] = h1->Integral(h1->FindBin(5.3+fEpsilon), h1->FindBin(5.45-fEpsilon)); 
+      cout << "chan " << i << " B0: " << cntB0[i] << " Bs: " << cntBs[i] << endl;
+      drawArrow(0.6, 1, yleg, cntBs[i]); 
+      drawArrow(0.4, 2, yleg-0.35, cntB0[i]); 
+      tl->DrawLatex(4.95, yleg, (0 == i?"Barrel":"Endcap"));
     }
+    c0->SaveAs(Form("%s/%s-mass-unblinding.pdf", fDirectory.c_str(), fSuffix.c_str())); 
+    
+    TH2D *h2d(0), *h2s(0), *h2S(0); 
+    for (unsigned int i = 0; i < fNchan; ++i) {
+      c1->cd(i+1); 
+      h2d = (TH2D*)fHistFile->Get(Form("hBdtMass_%s_5_chan%d", modifier.c_str(), i)); 
+      h2s = (TH2D*)fHistFile->Get(Form("hBdtMass_%s_0_chan%d", modifier.c_str(), i)); 
+      h2S = (TH2D*)fHistFile->Get(Form("hBdtMass_%s_1_chan%d", modifier.c_str(), i)); 
+      h2d->SetAxisRange(4.9, 5.9-fEpsilon, "X");
+      h2d->SetAxisRange(0.2, 1.0, "Y");
+
+      h2d->Draw("");
+      h2s->Draw("colsame");
+      h2d->Draw("same");
+
+      pl->SetLineWidth(2); 
+      pl->SetLineColor(kBlack); 
+      pl->DrawLine(4.9, fCuts[i]->bdt, 5.9, fCuts[i]->bdt); 
+      box->SetLineWidth(2); 
+      box->SetLineColor(kBlue); 
+      box->SetFillStyle(0); 
+      box->DrawBox(fCuts[i]->mBsLo, fCuts[i]->bdt, fCuts[i]->mBsHi, 1.0);
+      box->SetLineColor(kRed); 
+      box->SetFillStyle(0); 
+      box->DrawBox(fCuts[i]->mBdLo, fCuts[i]->bdt, fCuts[i]->mBdHi, 1.0);
+
+      tl->DrawLatex(4.95, 1.02, (0 == i? Form("Barrel %d", fYear) : Form("Endcap %d", fYear)));
+      tl->DrawLatex(5.22, 0.95, Form("%d", cntB0[i]));
+      tl->DrawLatex(5.32, 0.95, Form("%d", cntBs[i]));
+    }
+    c1->SaveAs(Form("%s/%s-bdtMass-unblinding.pdf", fDirectory.c_str(), fSuffix.c_str())); 
+    
+
   }
-  c0->SaveAs(Form("%s/%s-unblinding.pdf", fDirectory.c_str(), fSuffix.c_str())); 
+
+
 }
 
 
@@ -1100,15 +1160,18 @@ void plotResults::calculateSgNumbers(int chan) {
   }
 
 
-
   // -- unblinded version
   h1u->SetAxisRange(4.9, 5.9-fEpsilon, "X"); 
   h1u->Draw();
   double yleg = ymax0 - 0.3;
   h1u->SetMaximum(ymax0); 
+
+  int cntB0 = h1u->Integral(h1u->FindBin(5.2+fEpsilon), h1u->FindBin(5.3-fEpsilon)); 
+  int cntBs = h1u->Integral(h1u->FindBin(5.3+fEpsilon), h1u->FindBin(5.45-fEpsilon)); 
+  cout << "chan " << chan << " B0: " << cntB0 << " Bs: " << cntBs << endl;
   
-  drawArrow(0.6, 1, yleg); 
-  drawArrow(0.4, 2, yleg-0.5); 
+  drawArrow(0.6, 1, yleg, cntBs); 
+  drawArrow(0.4, 2, yleg-0.5, cntB0); 
   //   tl->DrawLatex(0.4, yleg, Form("obs: %3.0f", bs));
   //   tl->DrawLatex(0.4, yleg-0.35, Form("obs: %3.0f", b0));
   //   tl->DrawLatex(0.2, 0.92, (0 == i?"Barrel":"Endcap"));
@@ -1124,8 +1187,8 @@ void plotResults::calculateSgNumbers(int chan) {
   h->SetAxisRange(4.9, 5.9, "X"); 
   h->Draw();
   
-  drawArrow(0.6, 1, yleg); 
-  drawArrow(0.4, 2, yleg-0.5); 
+  drawArrow(0.6, 1, yleg, cntBs); 
+  drawArrow(0.4, 2, yleg-0.5, cntB0); 
 
   stamp(0.18, fStampString, 0.67, fStampCms); 
   if (fDoPrint)  {
@@ -1326,8 +1389,88 @@ void plotResults::fillAndSaveHistograms(int nevents) {
     loopOverTree(t, fSetup, 1);
     //    otherNumbers(fSetup); 
     saveHists(fSetup);
+    fHistFile->cd();
+    fHistFile->Close(); 
     return;
   } 
+
+  // -- AMS sidebands
+  if (nevents == -3) {
+    resetHistograms();
+    fSetup = "SgDataAMS";
+    t = getTree(fSetup); 
+    setupTree(t, fSetup); 
+    loopOverTree(t, fSetup, 1);
+    //    otherNumbers(fSetup); 
+    saveHists(fSetup);
+
+    for (int i = 0; i < fNchan; ++i) {
+      string modifier = (fDoUseBDT?"bdt":"cnc"); 
+      string name = Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), 6, i);
+      TH1D *h1 = (TH1D*)fHistFile->Get(name.c_str());
+      name = Form("hMassWithAllCuts_%s_%d_chan%d", modifier.c_str(), 5, i);
+      TH1D *realh1 = (TH1D*)fHistFile->Get(name.c_str());
+      name = Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), 6, i);
+      TH1D *h = (TH1D*)fHistFile->Get(name.c_str());
+      name = Form("hMassWithAllCutsManyBins_%s_%d_chan%d", modifier.c_str(), 5, i);
+      TH1D *realh = (TH1D*)fHistFile->Get(name.c_str());
+
+      
+
+      bgBlind(h1, 5, 5.45, 5.9);
+    }
+
+    fHistFile->cd();
+    fHistFile->Close(); 
+
+    return;
+  } 
+
+
+  // -- DBX
+  if (nevents == -4) {
+    resetHistograms();
+
+    TFile *f = TFile::Open("/scratch/ursl/correctTrkHits-2011.root"); 
+    TTree *t = (TTree*)f->Get("candAnaMuMu/events"); 
+
+    fCuts[0]->bdt = 0.29; 
+    fCuts[1]->bdt = 0.29; 
+    fSetup = "SgMc";
+    setupTree(t, fSetup); 
+    fSetup = "co2011"; 
+    loopOverTree(t, fSetup, 1, -1);
+    saveHists(fSetup);
+
+    fSetup = "SgMc2011"; 
+    t = getTree(fSetup); 
+    setupTree(t, fSetup); 
+    fSetup = "an2011"; 
+    loopOverTree(t, fSetup, 1, -1);
+    saveHists(fSetup);
+
+    f = TFile::Open("/scratch/ursl/correctTrkHits-2012.root"); 
+    t = (TTree*)f->Get("candAnaMuMu/events"); 
+    fCuts[0]->bdt = 0.36; 
+    fCuts[1]->bdt = 0.38; 
+    fSetup = "SgMc";
+    setupTree(t, fSetup); 
+    fSetup = "co2012"; 
+    loopOverTree(t, fSetup, 1, 100000);
+    saveHists(fSetup);
+
+    fSetup = "SgMc"; 
+    t = getTree(fSetup); 
+    setupTree(t, fSetup); 
+    fSetup = "an2012"; 
+    loopOverTree(t, fSetup, 1, 100000);
+    saveHists(fSetup);
+
+    fHistFile->cd();
+    fHistFile->Close(); 
+    return;
+  } 
+
 
   if (1) {
     // -- rare backgrounds
@@ -1519,7 +1662,13 @@ void plotResults::saveHists(string smode) {
   if ("SgMc" == smode)   mode = 0; 
   if ("BdMc" == smode)   mode = 1; 
   if ("SgMcAcc" == smode)mode = 2; 
+  if ("co2011" == smode)mode = 30; 
+  if ("an2011" == smode)mode = 31; 
+  if ("co2012" == smode)mode = 32; 
+  if ("an2012" == smode)mode = 33; 
+
   if ("SgData" == smode) mode = 5; 
+  if ("SgDataAMS" == smode) mode = 6; 
 
   if ("NoMc" == smode)   mode = 10; 
   if ("NoData" == smode) mode = 15; 
@@ -1666,16 +1815,29 @@ void plotResults::loopFunction1(int mode) {
 
   // 173692/2704432277
   // 172992/459341492
-  //  const Long64_t printRun(172992), printEvt(459341492); 
-  //   const Long64_t printRun(170854), printEvt(280769371); 
-  //   if (fb.run == printRun && fb.evt == printEvt) {
-  //     cout << "BDT = " << fBDT << ": "; 
-  //     printRedTreeEvt(fb); 
-  //   }
+  // const Long64_t printRun(207488), printEvt(148229979); 
+  // const Long64_t printRun(196197), printEvt(755745263); 
+  // const Long64_t printRun(201168), printEvt(367815521); 
+  //  const Long64_t printRun(207491), printEvt(94960167);
+  //  const Long64_t printRun(203987), printEvt(25818972);
+//   const Long64_t printRun(208307), printEvt(1127720136);
+  //  const Long64_t printRun(208307), printEvt(262785584);
+
+  //  const Long64_t printRun(200991), printEvt(659534454);
+  //  const Long64_t printRun(207920), printEvt(491167455); 
+  //run:201671, evt:249102695
+  //   const Long64_t printRun(201671), printEvt(249102695); 
+
+//   if (fb.run == printRun && fb.evt == printEvt) {
+//     cout << "BDT = " << fBDT << ": "; 
+//     printRedTreeEvt(fb); 
+//   } else return;
 
   if (fChan < 0) return;
   
   double mass = fb.m; 
+
+  //  cout << "fIsMC: " << fIsMC << " acc: " << fGoodAcceptance << endl;
 
   bool bp2jpsikp(false), bs2jpsiphi(false); 
   if (10 == mode) bp2jpsikp = true; 
@@ -1719,6 +1881,9 @@ void plotResults::loopFunction1(int mode) {
     //     if (fb.run == printRun && fb.evt == printEvt) cout << "after gmeta" << endl;
     if (!fGoodJpsiCuts) return;
     //     if (fb.run == printRun && fb.evt == printEvt) cout << "after jpsi" << endl;
+    if (fGoodMuonsID && fGoodHLT)  fhBdtMass[fChan]->Fill(mass, fBDT); 
+
+
     if (fBDT < fCuts[fChan]->bdt) return;
     //     if (fb.run == printRun && fb.evt == printEvt) cout << "after maxbdt" << endl;
     if (fBDT > fCuts[fChan]->bdtMax) return;
@@ -1837,7 +2002,6 @@ void plotResults::loopFunction1(int mode) {
   fhMassWithMassCuts[fChan]->Fill(mass);
   fhMassWithMassCutsManyBins[fChan]->Fill(mass); 
   
-  fhBdtMass[fChan]->Fill(mass, fBDT); 
   //  if (fBDT > 0.3) cout << "mass = " << mass << " bdt = " << fBDT << endl;
 }
 
