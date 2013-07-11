@@ -473,6 +473,7 @@ void pdf_analysis::define_comb2(int i, int j) {
 
 //  RooRealVar B2(name("B_2comb", i, j), "B_2comb", 0, -100., 100.);
 //  RooRealVar B2(name("B_2comb", i, j), "B_2comb", 0., -3.1416, 3.1416);
+//  RooRealVar B2(name("B_2comb", i, j), "B_2comb", 0.5, 0., 1.);
   RooFormulaVar B2(name("B_2comb", i, j), "B_2comb", "1.-@0", RooArgList(B1));
 //
 //  RooFormulaVar bkgp2c(name("bkgp2c", i, j), "", "0. + 0.5*(1.-0.)*(TMath::Sin(@0)+1.0)", RooArgList(B2));

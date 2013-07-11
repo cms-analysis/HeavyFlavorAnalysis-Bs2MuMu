@@ -424,8 +424,8 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
       if (BF_ > 0) ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_peak", i, j)), DrawOption("F"), FillColor(kBlack), FillStyle(3001), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
 
 
-//      if (!berns_) ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_comb", i, j)), LineColor(kBlue - 1),   LineStyle(2), LineWidth(3), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
-//      else ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_1comb", i, j)), LineColor(kBlue - 1),   LineStyle(2), LineWidth(3), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
+      if (!berns_) ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_comb", i, j)), LineColor(kBlue - 1),   LineStyle(2), LineWidth(3), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
+      else ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_1comb", i, j)), LineColor(kBlue - 1),   LineStyle(2), LineWidth(3), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
       if (output == "") {
 //        ws->pdf(pdfname.c_str())->plotOn(final_p, VisualizeError(*RFR, 1, 1), FillColor(kYellow), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_), MoveToBack());
         if (BF_ > 0) ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_semi", i, j)), LineColor(kGreen),  LineStyle(1), DrawOption("L"), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
@@ -494,17 +494,17 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
         if (!bd_constr_ && !SM_ && BF_ < 2) {
           ostringstream fitresult_tex;
           fitresult_tex << setprecision(2) << fixed << "N(B_{d}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
-          fitresult_tex_vec.push_back(fitresult_tex.str());
+//          fitresult_tex_vec.push_back(fitresult_tex.str());
         }
         else if (bd_constr_) {
           ostringstream fitresult_tex;
           fitresult_tex << setprecision(2) << fixed << "N(B_{d}) / N(B_{s}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
-          fitresult_tex_vec.push_back(fitresult_tex.str());
+//          fitresult_tex_vec.push_back(fitresult_tex.str());
         }
         else if (BF_ > 1) {
           ostringstream fitresult_tex;
           fitresult_tex << setprecision(2) << scientific << "BF(B^{0}) = " << N_bd->getVal() << " ^{+" << getErrorHigh(N_bd) << "}_{" << getErrorLow(N_bd) << "}";
-          fitresult_tex_vec.push_back(fitresult_tex.str());
+//          fitresult_tex_vec.push_back(fitresult_tex.str());
           ostringstream fitresult_tex2;
           fitresult_tex2 << "(N(B^{0}) = " << setprecision(2) << fixed << ws->function(name("N_bd_formula", i, j))->getVal();
           Double_t BF_bd_val = ws->var("BF_bd")->getVal();
@@ -519,7 +519,7 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
           Double_t N_bd_error_down = N_bd_ - N_bd_down;
           fitresult_tex2 << "}_{-" << N_bd_error_down << "}" << ")";
           ws->var("BF_bd")->setVal(BF_bd_val);
-          fitresult_tex_vec.push_back(fitresult_tex2.str());
+//          fitresult_tex_vec.push_back(fitresult_tex2.str());
         }
         ostringstream fitresult_tex;
         fitresult_tex << setprecision(2) << fixed << "N(comb. bkg) = " << N_comb->getVal() << " ^{+" << getErrorHigh(N_comb) << "}_{" << getErrorLow(N_comb) << "}";
@@ -759,7 +759,7 @@ void pdf_fitData::set_starting_N() {
           ws_->var(name("N_bs", i, j))->setVal(estimate2D_bs[i][j]);
           ws_->var(name("N_bd", i, j))->setVal(estimate2D_bd[i][j]);
           ws_->var(name("N_peak", i, j))->setVal(estimate2D_peak[i][j]);
-          ws_->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j]);
+          ws_->var(name("N_semi", i, j))->setVal(estimate2D_semi[i][j] == 0 ? 0.1 : estimate2D_semi[i][j] );
           ws_->var(name("N_comb", i, j))->setVal( estimate2D_comb[i][j] == 0 ? 0.1 : estimate2D_comb[i][j] );
         }
       }
