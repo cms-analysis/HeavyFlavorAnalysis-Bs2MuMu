@@ -20,6 +20,12 @@ struct near_track_t {
 bool operator<(near_track_t a, near_track_t b)
 { return (a.doca < b.doca);}
 
+trigger_table_t g_trigger_table_tagnprobe [] = {
+	{kHLT_Mu5_L2Mu2_Jpsi_Bit, "HLT_Mu5_L2Mu2_Jpsi", std::pair<int64_t,int64_t>(0ll,1000000ll)},
+	{kHLT_Mu5_Track2_Jpsi_Bit, "HLT_Mu5_Track2_Jpsi", std::pair<int64_t,int64_t>(0ll,1000000ll)},
+	{kHLT_Mu7_Track7_Jpsi_Bit, "HLT_Mu7_Track7_Jpsi", std::pair<int64_t,int64_t>(0ll,1000000ll)}
+};
+
 trigger_table_t g_trigger_table_signal_barrel [] = {
 	{kHLT_DoubleMu3_Bs_Bit,	"HLT_DoubleMu3_Bs", std::pair<int64_t,int64_t>(160329ll,161176ll)},
 	{kHLT_DoubleMu2_Bs_Bit, "HLT_DoubleMu2_Bs", std::pair<int64_t,int64_t>(161216ll,167913ll)},
@@ -853,6 +859,20 @@ int massReader::loadTrigger(int *errTriggerOut, int *triggersFoundOut)
 		std::string name(fpEvt->fHLTNames[j].Data());
 		
 		// check the name...
+		for (k = 0; k < sizeof(g_trigger_table_tagnprobe)/sizeof(trigger_table_t); k++) {
+			
+			trg = g_trigger_table_tagnprobe[k];
+			if (name.find(trg.trigger_name.c_str()) <= name.size()) {
+				triggers_found |= trg.t_bit;
+				if (fpEvt->fHLTError[j]) {
+					triggers_err |= trg.t_bit;
+					continue;
+				}
+				if (fpEvt->fHLTResult[j])
+					triggers |= trg.t_bit;
+			}
+		}
+		
 		for (k = 0; k < sizeof(g_trigger_table_signal_barrel)/sizeof(trigger_table_t); k++) {
 			
 			trg = g_trigger_table_signal_barrel[k];

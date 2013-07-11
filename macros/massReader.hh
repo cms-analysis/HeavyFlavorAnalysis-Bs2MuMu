@@ -66,7 +66,10 @@ enum trigger_bits
 	kHLT_DoubleMu4_Jpsi_Displaced_Bit			= 1 << 13,
 	kHLT_DoubleMu3_4_Dimuon5_Bs_Central_Bit		= 1 << 14,
 	kHLT_DoubleMu3p5_4_Dimuon5_Bs_Central_Bit	= 1 << 15,
-	kHLT_DoubleMu4_Dimuon7_Bs_Forward_Bit		= 1 << 16
+	kHLT_DoubleMu4_Dimuon7_Bs_Forward_Bit		= 1 << 16,
+	kHLT_Mu5_L2Mu2_Jpsi_Bit						= 1 << 17,
+	kHLT_Mu5_Track2_Jpsi_Bit					= 1 << 18,
+	kHLT_Mu7_Track7_Jpsi_Bit					= 1 << 19
 };
 
 struct trigger_table_t {
