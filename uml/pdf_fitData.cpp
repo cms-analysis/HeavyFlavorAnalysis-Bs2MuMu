@@ -1050,6 +1050,7 @@ void pdf_fitData::save() {
 
 void pdf_fitData::significance() {
 	cout << red_color_bold << "significance" << default_console_color << endl;
+	freeze_norm(freeze);
 //  ProfileLikelihoodTestStat::SetAlwaysReuseNLL(true);
 //  RatioOfProfiledLikelihoodsTestStat::SetAlwaysReuseNLL(true);
 	if (sign < 0) return;
@@ -1715,6 +1716,7 @@ void pdf_fitData::tweak_pdf(int free) {
 }
 
 void pdf_fitData::freeze_norm(bool set) {
+	cout << "freezing" << endl;
 	ws_->var("fs_over_fu")->setConstant(set);
 	ws_->var("one_over_BRBR")->setConstant(set);
 	for (int i = 0; i < channels; i++) {
