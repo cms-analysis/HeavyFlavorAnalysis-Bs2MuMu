@@ -55,6 +55,7 @@
 #include "RooMultiCategory.h"
 #include "RooIntegralMorph.h"
 #include "RooKeysPdf.h"
+#include "RooNDKeysPdf.h"
 #include "RooMsgService.h"
 #include "RooBernstein.h"
 

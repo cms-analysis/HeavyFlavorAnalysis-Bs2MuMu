@@ -65,6 +65,7 @@ bool minos = false;
 bool berns = false;
 bool freeze = false;
 bool stat_only = false;
+bool null = false;
 
 void help() {
 
@@ -132,6 +133,7 @@ void help() {
   cout << "-berns \t linear" << endl;
   cout << "-freeze \t freeze components for significance" << endl;
   cout << "-stat \t only statistical uncertainties" << endl;
+  cout << "-null \t Bs and Bd = 0" << endl;
   cout << endl;
   cout << ">>>>>>>>> main_toyMC.o: studies the pdf given by main_pdf_choise or main_simul_maker" << endl;
   cout << "-e #filename \t estimates of events file (MANDATORY)" << endl;
@@ -394,6 +396,10 @@ void parse_options(int argc, char* argv[]){
     if (!strcmp(argv[i],"-stat")) {
     	stat_only = true;
     	cout << "only statistica uncertainties" << endl;
+    }
+    if (!strcmp(argv[i],"-null")) {
+    	null = true;
+    	cout << "Bs and Bd = 0" << endl;
     }
     if (!strcmp(argv[i],"-h")) help();
   }

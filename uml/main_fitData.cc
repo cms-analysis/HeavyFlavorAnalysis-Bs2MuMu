@@ -116,6 +116,7 @@ int main(int argc, char** argv) {
   if (SMIsNull) fitdata.SMIsNull = true;
   fitdata.reset_minmax();
   fitdata.freeze = freeze;
+  if (null) fitdata.doubleNull = true;
   fitdata.significance();
   if (LLprofile) fitdata.profile_NLL();
   //fitdata.save();

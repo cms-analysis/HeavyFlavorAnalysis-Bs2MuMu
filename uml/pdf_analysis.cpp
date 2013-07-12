@@ -138,7 +138,7 @@ void pdf_analysis::initialize () {
   MassRes = new RooRealVar("MassRes", "mass error", 0., 0.2, "GeV");
   ws_->import(*MassRes);
 
-  ReducedMassRes = new RooRealVar("ReducedMassRes", "reduced mass error", 0.0, 0.045);
+  ReducedMassRes = new RooRealVar("ReducedMassRes", "reduced mass error", 0.0009, 0.045);
   ws_->import(*ReducedMassRes);
 
 //  obs = new RooArgSet(*ws_->var("Mass"), *ws_->var("bdt"), "obs");
@@ -428,7 +428,7 @@ void pdf_analysis::define_semi(int i, int j, bool semi_keys) {
       	else {
 //      		ws_->pdf(name("pdf_semi", i, j))->SetName(name("pdf_semi_masse", i, j));
       		RooProdPdf pdf_semi_mass (name("pdf_semi_mass", i, j), "pdf_semi_mass", *ws_->pdf(name("ReducedMassRes_pdf_semi", i, j)), Conditional(*ws_->pdf(name("keys_semi", i, j)), *ws_->var("Mass")));
-      		RooProdPdf pdf_semi(name("pdf_semi", i, j),"pdf_semi",pdf_semi_mass,*ws_->pdf(name("bdt_pdf_semi", i, j)));
+      		RooProdPdf pdf_semi(name("pdf_semi", i, j),"pdf_semi", pdf_semi_mass,*ws_->pdf(name("bdt_pdf_semi", i, j)));
       		ws_->import(pdf_semi);
       	}
       }
@@ -811,7 +811,7 @@ TH1D* pdf_analysis::define_massRes_pdf(RooDataSet *rds, string name, bool rkeys)
   const RooArgSet* aRow;
   string name_h("ReducedMassRes_h_");
   name_h = name_h + suffix.str();
-  TH1D histo(name_h.c_str(), rds->GetTitle(), 200, 0.00, 0.045);
+  TH1D histo(name_h.c_str(), rds->GetTitle(), 200, 0.0009, 0.045);
   TH1D * histo_fine = new TH1D(Form("%s_ReducedMassRes_%s_h", name.c_str(), suffix.str().c_str()), rds->GetTitle(), 1000, 0., 0.2); // no filled
   for (Int_t j = 0; j < rds->numEntries(); j++) {
     aRow = rds->get(j);
@@ -2050,3 +2050,5 @@ void pdf_analysis::hack_comb_slope() {
 		ws_->var(name("exp_comb", 3))->setVal(-7.24);
 	}
 }
+
+

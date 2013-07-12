@@ -76,6 +76,7 @@ class pdf_fitData : public pdf_analysis {
     bool berns_;
     bool freeze;
     bool stat_only_;
+    bool doubleNull;
 
   protected:
 
@@ -83,7 +84,7 @@ class pdf_fitData : public pdf_analysis {
     void define_simul();
     void define_perchannel_pdf();
     void randomize_constraints(RooWorkspace* ws);
-    void define_total_extended(int i, int j); // final pdf with all extended components
+    void define_total_extended(int i, int j, bool h = false); // final pdf with all extended components
 
     string input_estimates_;
     vector <double> estimate_bs;
@@ -112,6 +113,8 @@ class pdf_fitData : public pdf_analysis {
     void freeze_norm (bool set);
     void stat_error(bool stat_only);
 
+    RooHistPdf * pdf_to_hist(RooAbsPdf* kpdf);
+    void merge_mass_to_hist();
 
   private:
 
