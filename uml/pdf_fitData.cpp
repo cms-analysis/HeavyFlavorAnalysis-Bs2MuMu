@@ -1384,7 +1384,7 @@ void pdf_fitData::make_models() {
 //  ws_->import(*modelpdf);
 
   ModelConfig* H1 = new ModelConfig("H1", "background + signal hypothesis", ws_);
-  if (pee) H1->SetConditionalObservables(*ws_->set("CO"));
+//  if (pee) H1->SetConditionalObservables(*ws_->set("CO"));
   H1->SetPdf(*ws_->pdf(pdfname.c_str()));
   H1->SetParametersOfInterest(*ws_->set("poi"));
   H1->SetObservables(*ws_->set("obs"));
@@ -1393,7 +1393,7 @@ void pdf_fitData::make_models() {
   H1->SetSnapshot(*ws_->set("poi"));
 
   ModelConfig* H0 = new ModelConfig("H0", "null hypothesis", ws_);
-  if (pee) H0->SetConditionalObservables(*ws_->set("CO"));
+//  if (pee) H0->SetConditionalObservables(*ws_->set("CO"));
   H0->SetPdf(*ws_->pdf(pdfname.c_str()));
   H0->SetParametersOfInterest(*ws_->set("poi"));
   H0->SetObservables(*ws_->set("obs"));
@@ -1438,7 +1438,7 @@ void pdf_fitData::sig_plhts() {
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(pdfname.c_str()));
 //  pl_ts.SetPrintLevel(2);
   pl_ts.SetOneSidedDiscovery(true);
-  if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
+//  if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
 
   ProofConfig* pc = NULL;
   pc = new ProofConfig(*ws_, proof, Form("workers=%d", proof), kTRUE); // machine with 4 cores
@@ -1463,7 +1463,7 @@ void pdf_fitData::sig_hybrid_plhts() {
   ProfileLikelihoodTestStat pl_ts(*ws_->pdf(pdfname.c_str()));
 //  pl_ts.SetPrintLevel(2);
   pl_ts.SetOneSidedDiscovery(true);
-  if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
+//  if (pee) pl_ts.SetConditionalObservables(*ws_->set("CO"));
 
   ProofConfig* pc = NULL;
   pc = new ProofConfig(*ws_, proof, Form("workers=%d", proof), kTRUE); // machine with "proof" cores
@@ -1501,7 +1501,7 @@ void pdf_fitData::sig_hybrid_roplhts() {
 
   RatioOfProfiledLikelihoodsTestStat ropl_ts(*H1->GetPdf(),*H0->GetPdf(), ws_->set("poi"));
   ropl_ts.SetSubtractMLE(false);
-  if (pee) ropl_ts.SetConditionalObservables(*ws_->set("CO"));
+//  if (pee) ropl_ts.SetConditionalObservables(*ws_->set("CO"));
 
   ProofConfig* pc = NULL;
   pc = new ProofConfig(*ws_, proof, Form("workers=%d", proof), kTRUE); // machine with 4 cores
@@ -1722,7 +1722,7 @@ void pdf_fitData::profile_NLL() {
 //  RooNLLVar nll0("nll0","nll0",ws_->pdf(pdfname.c_str()),*global_data) ;
 
   // Construct unbinned likelihood
-  RooAbsReal* nll = ws_->pdf(pdfname.c_str())->createNLL(*global_data, NumCPU(2), Extended(), pee ? ConditionalObservables(*ws_->var("ReducedMassRes")) : RooCmdArg::none(), syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()) ;
+  RooAbsReal* nll = ws_->pdf(pdfname.c_str())->createNLL(*global_data, NumCPU(2), Extended(), pee ? /*ConditionalObservables(*ws_->var("ReducedMassRes")) */ RooCmdArg::none(): RooCmdArg::none(), syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()) ;
   // Minimize likelihood w.r.t all parameters before making plots
   RooMinuit(*nll).migrad() ;
 
