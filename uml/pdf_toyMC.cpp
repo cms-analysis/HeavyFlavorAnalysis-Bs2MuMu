@@ -468,7 +468,7 @@ void pdf_toyMC::do_bias(RooWorkspace* ws) {
 RooFitResult* pdf_toyMC::fit_pdf(RooAbsData* data, int printlevel, RooWorkspace* ws) {
   RooFitResult* result;
 //  if (printlevel < 0) RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
-  result = ws->pdf(pdfname.c_str())->fitTo(*data, pee ? RooCmdArg::none() /*ConditionalObservables(*ws->var("ReducedMassRes"))*/ : RooCmdArg::none(), Extended(true), Hesse(kFALSE), Minos(minos), Strategy(2), PrintLevel(printlevel), Save(kTRUE), NumCPU(2));
+  result = ws->pdf(pdfname.c_str())->fitTo(*data, Extended(true), Hesse(kFALSE), Minos(minos), Strategy(2), PrintLevel(printlevel), Save(kTRUE), NumCPU(8));
 //  if (printlevel < 0) RooMsgService::instance().cleanup();
   return result;
 }
@@ -602,13 +602,13 @@ void pdf_toyMC::mcstudy(string pdf_toy, string pdf_test) {
   if (bias_.compare("no")) { /// bias
     RooWorkspace* fitws = (RooWorkspace*)ws_->Clone("fitws");
     do_bias(fitws);
-    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, FitModel(*fitws->pdf(pdfname.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("ReducedMassRes")) : RooCmdArg::none(), NumCPU(2)));
+    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, FitModel(*fitws->pdf(pdfname.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(NumCPU(2)));
   }
   else if (pdf_test == pdfname) { /// same pdf
-    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("ReducedMassRes")) : RooCmdArg::none(), NumCPU(2)));
+    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(NumCPU(2)));
   }
   else { /// different pdf
-    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, FitModel(*ws_->pdf(pdf_test.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(pee ? ConditionalObservables(*ws_->var("ReducedMassRes")) : RooCmdArg::none(), NumCPU(2)));
+    mcstudy = new RooMCStudy( *ws_->pdf(pdfname.c_str()), obsv, FitModel(*ws_->pdf(pdf_test.c_str())), Binned(kFALSE), Silence(), Extended(kTRUE), FitOptions(NumCPU(2)));
   }
 
   vector <vector <RooDLLSignificanceMCSModule*> > sigModule(channels, vector <RooDLLSignificanceMCSModule*> (channels_bdt));

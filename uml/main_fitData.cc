@@ -55,10 +55,11 @@ int main(int argc, char** argv) {
   else fitdata.parse_estimate("input/estimates_5_20_semi.txt");
   fitdata.set_starting_N();
 
-  fitdata.print_estimate();
+
   if (hack_semi2011) fitdata.hack_ws("output/frozen/ws_simul4_bdt_BF2_PEE.root");
   fitdata.set_syst();
   fitdata.tweak_pdf(free_rare);
+  fitdata.print_estimate();
   fitdata.define_dataset();
 
 

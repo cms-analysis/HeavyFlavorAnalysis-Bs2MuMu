@@ -16,6 +16,7 @@
 #include "RooGamma.h"
 #include "RooMinuit.h"
 #include "RooLognormal.h"
+#include "TLegendEntry.h"
 
 #include "RooStats/ModelConfig.h"
 #include "RooStats/ProfileLikelihoodCalculator.h"

@@ -385,7 +385,7 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
 
   std::vector<double> ssbweights;
   std::vector<double> bsnorms;
-  
+
   for (int i = 0; i < channels; i++) {
   	if (var.find("bdt") != string::npos) var = name("bdt", i);
   	if (years_ == "0" && i > 1) break;
@@ -424,6 +424,8 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
       int bins = 25;
       if (pee) projw_set.add(*ws->var("ReducedMassRes"));
 
+      ws->var(var.c_str())->SetTitle("M_{#mu#mu}");
+      ws->var(var.c_str())->setUnit("GeV");
       RooPlot* final_p = ws->var(var.c_str())->frame(Bins(bins), Title(title.c_str()));
       rds_->plotOn(final_p, Cut(cut.c_str()), Invisible());
 //      ws->pdf(pdfname.c_str())->plotOn(final_p, Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_), LineColor(kBlue), LineWidth(3));
@@ -442,7 +444,7 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
 //        ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_bd", i, j)), LineColor(kBlack), LineStyle(1), DrawOption("L"), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
 //        if (BF_ > 0) ws->pdf(pdfname.c_str())->plotOn(final_p, Components(name("pdf_peak", i, j)), LineColor(kBlack),  LineStyle(1), DrawOption("L"), LineWidth(2), Slice(slice_set), ProjWData(projw_set, *rds_, bdt_fit_));
 //      }
-      
+
       bool plotpdfs = true;
 
       RooArgList pdf_list("pdflist");
@@ -465,32 +467,32 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
 
       RooAbsPdf *fullsumpdf = ws->pdf(name("pdf_ext_sum", i, j));
       double fullsumpdfnorm = fullsumpdf->expectedEvents(*ws->var(var.c_str()));
-      if (plotpdfs) pdf_ext_sum.plotOn(final_p, Normalization(fullsumpdfnorm, RooAbsReal::NumEvent), LineColor(kBlue), LineWidth(3), NumCPU(16));
+      pdf_ext_sum.plotOn(final_p, Normalization(fullsumpdfnorm, RooAbsReal::NumEvent), LineColor(kBlue), LineWidth(3), NumCPU(16), RooFit::Name("fullpdf"));
       cout << "full printed" << endl;
-//      pdf_ext_sum.plotOn(final_p, Normalization(fullsumpdfnorm, RooAbsReal::NumEvent), LineColor(kBlue), LineWidth(3));
+      pdf_ext_sum.plotOn(final_p, Normalization(fullsumpdfnorm, RooAbsReal::NumEvent), LineColor(kBlue), LineWidth(3));
       RooAbsPdf *bspdf = ws_->pdf(name("pdf_h_bs", i, j));
       double bsnorm = ws->function(name("N_bs_formula",i,j))->getVal();
-      if (plotpdfs) bspdf->plotOn(final_p, Normalization(bsnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kRed),           FillStyle(3001), NumCPU(16));
-      ////      bspdf->plotOn(final_p, Normalization(bsnorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kBlack), LineWidth(2), LineStyle(1));
+      bspdf->plotOn(final_p, Normalization(bsnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kRed),           FillStyle(3001), NumCPU(16), RooFit::Name("bs"));
+      bspdf->plotOn(final_p, Normalization(bsnorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kRed), LineWidth(2), LineStyle(1), NumCPU(16));
       cout << "bs printed" << endl;
       RooAbsPdf *bdpdf = ws_->pdf(name("pdf_h_bd", i, j));
       double bdnorm = ws->function(name("N_bd_formula",i,j))->getVal();
-      if (plotpdfs) bdpdf->plotOn(final_p, Normalization(bdnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kViolet - 4),    FillStyle(3001), NumCPU(16));
-//      bdpdf->plotOn(final_p, Normalization(bdnorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kBlack), LineWidth(2), LineStyle(1));
+      bdpdf->plotOn(final_p, Normalization(bdnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kViolet - 4),    FillStyle(3001), NumCPU(16), RooFit::Name("bd"));
+      bdpdf->plotOn(final_p, Normalization(bdnorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kViolet - 4), LineWidth(2), LineStyle(1), NumCPU(16));
       cout << "bd printed" << endl;
       RooAbsPdf *peakpdf = ws_->pdf(name("pdf_h_peak", i, j));
       double peaknorm = ws->var(name("N_peak",i,j))->getVal();
-      if (plotpdfs) peakpdf->plotOn(final_p, Normalization(peaknorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kBlack),     FillStyle(3001), NumCPU(16));
-      if (plotpdfs) peakpdf->plotOn(final_p, Normalization(peaknorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kBlack), LineWidth(2), LineStyle(1));
+//      peakpdf->plotOn(final_p, Normalization(peaknorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kBlack),     FillStyle(3001), NumCPU(16));
+      peakpdf->plotOn(final_p, Normalization(peaknorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kBlack), LineWidth(3), LineStyle(3), NumCPU(16), RooFit::Name("peak"));
       cout << "peak printed" << endl;
       RooAbsPdf *semipdf = ws_->pdf(name("pdf_h_semi", i, j));
       double seminorm = ws->var(name("N_semi",i,j))->getVal();
-      if (plotpdfs) semipdf->plotOn(final_p, Normalization(seminorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kGreen - 3), FillStyle(3004), NumCPU(16));
-      if (plotpdfs) semipdf->plotOn(final_p, Normalization(seminorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kGreen -3), LineWidth(2), LineStyle(1));
+//      semipdf->plotOn(final_p, Normalization(seminorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kGreen - 3), FillStyle(3004), NumCPU(16));
+      semipdf->plotOn(final_p, Normalization(seminorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kGreen -3), LineWidth(3), LineStyle(2), NumCPU(16), RooFit::Name("semi"));
       cout << "semi printed" << endl;
       RooAbsPdf *combpdf = ws_->pdf(name(berns_ ? "pdf_h_1comb" : "pdf_h_comb", i, j));
       double combnorm = ws->var(name("N_comb",i,j))->getVal();
-      if (plotpdfs) combpdf->plotOn(final_p, Normalization(combnorm, RooAbsReal::NumEvent), LineColor(kBlue - 1),  LineStyle(2), LineWidth(3), NumCPU(16));
+      combpdf->plotOn(final_p, Normalization(combnorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kBlue - 1),  LineStyle(2), LineWidth(3), NumCPU(16), RooFit::Name("comb"));
       cout << "comb printed" << endl;
 
       rds_->plotOn(final_p, Cut(cut.c_str()), Invisible());
@@ -500,28 +502,61 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
       histo_data->SetMarkerStyle(20);
       histo_data->SetLineColor(kBlack);
       final_p->SetMinimum(0);
-      if (!simul_all_ && !simul_bdt_ && !bdt_fit_) final_p->SetMaximum(10);
+      bool legend = false;
+      if (legend) {
+      	if (simul_all_ &&  i == 1 && j == 0) final_p->SetMaximum(50);
+      	if (simul_all_ &&  i == 2 && j == 0) final_p->SetMaximum(290);
+      	if (simul_all_ &&  i == 2 && j == 1) final_p->SetMaximum(50);
+      	if (simul_all_ &&  i == 2 && j == 2) final_p->SetMaximum(15);
+      	if (simul_all_ &&  i == 3 && j == 0) final_p->SetMaximum(160);
+      	if (simul_all_ &&  i == 3 && j == 1) final_p->SetMaximum(22);
+      	if (!simul_all_ && !simul_bdt_ && !bdt_fit_) final_p->SetMaximum(10);
+      }
       TCanvas* final_c = new TCanvas("final_c", "final_c", 600, 600);
       final_p->Draw();
       histo_data->Draw("Esame");
+      if (legend) {
+      	final_c->Update();
+      	TLegend *leg1 = new TLegend(0.55,0.63,0.86,0.87);
+      	leg1->SetFillColor(kWhite);
+      	leg1->SetLineColor(kWhite);
+      	TLegendEntry *data_entry = new TLegendEntry(histo_data, "data", "lep");
+      	data_entry->SetMarkerStyle(20);
+      	leg1->AddEntry(data_entry, "data", "lep");
+      	leg1->AddEntry(final_p->findObject("fullpdf"),"full PDF","L");
+      	TLegendEntry *bs_entry = new TLegendEntry(final_p->findObject("bs"), "B_{s}#rightarrow#mu^{+}#mu^{-}", "f");
+      	bs_entry->SetLineColor(kRed);
+      	bs_entry->SetFillColor(kRed);
+      	bs_entry->SetFillStyle(3001);
+      	leg1->AddEntry(bs_entry,"B_{s}#rightarrow#mu^{+}#mu^{-}","f");
+      	TLegendEntry *bd_entry = new TLegendEntry(final_p->findObject("bd"), "B_{d}#rightarrow#mu^{+}#mu^{-}", "f");
+      	bd_entry->SetLineColor(kViolet - 4);
+      	bd_entry->SetFillColor(kViolet - 4);
+      	bd_entry->SetFillStyle(3001);
+      	leg1->AddEntry(bd_entry,"B_{d}#rightarrow#mu^{+}#mu^{-}","f");
+      	leg1->AddEntry(final_p->findObject("comb"),"combinatorial bkg","L");
+      	leg1->AddEntry(final_p->findObject("semi"),"semileptonic bkg","L");
+      	leg1->AddEntry(final_p->findObject("peak"),"peaking bkg","L");
+      	leg1->Draw();
+      }
 
       //compute s/(s+b) weights
       bsnorms.push_back(bsnorm);
-      
+
       //set mass variable to peak position to compute s/(s+b) in b_s peak
       double meanbsval = ws->var(name("Mean_bs",i,j))->getVal();
-      
+
       //create projections over reduced mass error to compute average pdf values in the mass dimension
       RooAbsPdf *fullsumpdfproj = pdf_ext_sum.createProjection(*ws->var("ReducedMassRes"));
       RooAbsPdf *bspdfproj = bspdf->createProjection(*ws->var("ReducedMassRes"));
-      
+
       static_cast<RooRealVar*>(fullsumpdfproj->getObservables(*ws->var(var.c_str()))->find(*ws->var(var.c_str())))->setVal(meanbsval);
       static_cast<RooRealVar*>(bspdfproj->getObservables(*ws->var(var.c_str()))->find(*ws->var(var.c_str())))->setVal(meanbsval);
-      
+
       double ssbweight = bsnorm*bspdfproj->getVal(*ws->var(var.c_str()))/(fullsumpdfnorm*fullsumpdfproj->getVal(*ws->var(var.c_str())));
       ssbweights.push_back(ssbweight);
-      
-      
+
+
       if (output == "" && false) {
         // legend
         RooArgSet* vars =  ws->pdf(pdfname.c_str())->getVariables();
@@ -663,7 +698,7 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
       cout << "channel " << i << " " << j << "  entries =" << rds_->sumEntries(cut.c_str()) << endl;
     }
   }
-  
+
   //compute normalization factor for s/(s+b) weights to conserve fitted b_s normalization
   double nbstotal = 0;
   double nbstotalweighted = 0;
@@ -676,8 +711,8 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
 
   for (unsigned int i=0; i<ssbweights.size(); ++i) {
     printf("i = %i, ssbweightnorm = %5f\n",i,weightscale*ssbweights[i]);
-  }  
-  
+  }
+
   RooArgList totalpdflist;
   RooArgList bspdflist;
   RooArgList bdpdflist;
@@ -690,15 +725,15 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
   RooArgList bdcoeflist;
   RooArgList peakcoeflist;
   RooArgList semicoeflist;
-  RooArgList combcoeflist;  
-   
+  RooArgList combcoeflist;
+
   RooRealVar weightvar("weightvar","",1.);
-  
+
   RooArgSet dvars(*rds_->get());
   dvars.add(weightvar);
-  
+
   RooDataSet wdata("wdata","",dvars,WeightVar(weightvar));
-  
+
   //build lists of pdfs and normalizations for weighted sum, as well as weighted dataset
   int icat = 0;
   for (int i = 0; i < channels; i++) {
@@ -706,7 +741,7 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
   	if (years_ == "0" && i > 1) break;
   	if (years_ == "1" && i < 2) continue;
     for (int j = 0; j < bdt_index_max(i); j++) {
-     
+
       string cut;
       if (!simul_bdt_ && !simul_all_) {
         cut = Form("etacat==etacat::etacat_%d", i);
@@ -716,17 +751,17 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
       }
       else if (!simul_bdt_ && simul_all_) {
         cut = Form("allcat==allcat::allcat_%d", super_index(i, j));
-      }      
-      
+      }
+
       double weight = ssbweights[icat]*weightscale;
-      
+
       //fill weighted data
       RooDataSet *dcat = (RooDataSet*)rds_->reduce(cut.c_str());
       for (int iev=0; iev<dcat->numEntries(); ++iev) {
 	const RooArgSet *dset = dcat->get(iev);
 	wdata.add(*dset,weight);
       }
-      
+
       bspdflist.add(*ws_->pdf(name("pdf_h_bs", i, j)));
       bdpdflist.add(*ws_->pdf(name("pdf_h_bd", i, j)));
       if (berns_) combpdflist.add(*ws_->pdf(name("pdf_h_1comb", i, j)));
@@ -742,77 +777,101 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
       combcoeflist.add(RooConst(weight*ws_->var(name("N_comb", i, j))->getVal()));
       semicoeflist.add(RooConst(weight*ws_->var(name("N_semi", i, j))->getVal()));
       peakcoeflist.add(RooConst(weight*ws_->var(name("N_peak", i, j))->getVal()));
-      
+
       ++icat;
     }
   }
-  
+
   totalpdflist.add(bspdflist);
   totalpdflist.add(bdpdflist);
   totalpdflist.add(peakpdflist);
   totalpdflist.add(semipdflist);
   totalpdflist.add(combpdflist);
-  
+
   totalcoeflist.add(bscoeflist);
   totalcoeflist.add(bdcoeflist);
   totalcoeflist.add(peakcoeflist);
   totalcoeflist.add(semicoeflist);
   totalcoeflist.add(combcoeflist);
- 
+
   RooAddPdf wpdfsum("wpdfsum", "", totalpdflist, totalcoeflist);
   RooAddPdf wpdfbs("wpdfbs", "", bspdflist, bscoeflist);
   RooAddPdf wpdfbd("wpdfbd", "", bdpdflist, bdcoeflist);
   RooAddPdf wpdfpeak("wpdfpeak", "", peakpdflist, peakcoeflist);
   RooAddPdf wpdfsemi("wpdfsemi", "", semipdflist, semicoeflist);
   RooAddPdf wpdfcomb("wpdfcomb", "", combpdflist, combcoeflist);
-  
+
   bool plotpdfs = true;
-  
+
   //final weighted plot
-  int bins = 25;  
+  int bins = 25;
   RooPlot* final_p = ws->var(var.c_str())->frame(Bins(bins), Title("S/(S+B) Weighted Combination"));
-  wdata.plotOn(final_p, Invisible());  
-  
+  wdata.plotOn(final_p, Invisible(), Name("data"));
+
   double fullsumpdfnorm = wpdfsum.expectedEvents(*ws->var(var.c_str()));
-  if (plotpdfs) wpdfsum.plotOn(final_p, Normalization(fullsumpdfnorm, RooAbsReal::NumEvent), LineColor(kBlue), LineWidth(3), NumCPU(16));
+  if (plotpdfs) wpdfsum.plotOn(final_p, Normalization(fullsumpdfnorm, RooAbsReal::NumEvent), LineColor(kBlue), LineWidth(3), NumCPU(16), Name("fullpdf"));
   cout << "full printed" << endl;
 
-  double bsnorm = wpdfbs.expectedEvents(*ws->var(var.c_str()));  
-  if (plotpdfs) wpdfbs.plotOn(final_p, Normalization(bsnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kRed),           FillStyle(3001), NumCPU(16));
+  double bsnorm = wpdfbs.expectedEvents(*ws->var(var.c_str()));
+  if (plotpdfs) wpdfbs.plotOn(final_p, Normalization(bsnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kRed),           FillStyle(3001), NumCPU(16), Name("bs"));
   cout << "bs printed" << endl;
 
-  double bdnorm = wpdfbd.expectedEvents(*ws->var(var.c_str()));    
-  if (plotpdfs) wpdfbd.plotOn(final_p, Normalization(bdnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kViolet - 4),    FillStyle(3001), NumCPU(16));
+  double bdnorm = wpdfbd.expectedEvents(*ws->var(var.c_str()));
+  if (plotpdfs) wpdfbd.plotOn(final_p, Normalization(bdnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kViolet - 4),    FillStyle(3001), NumCPU(16), Name("bd"));
   cout << "bd printed" << endl;
 
-  double peaknorm = wpdfpeak.expectedEvents(*ws->var(var.c_str()));      
-  if (plotpdfs) wpdfpeak.plotOn(final_p, Normalization(peaknorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kBlack),     FillStyle(3001), NumCPU(16));
-  if (plotpdfs) wpdfpeak.plotOn(final_p, Normalization(peaknorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kBlack), LineWidth(2), LineStyle(1));
+  double peaknorm = wpdfpeak.expectedEvents(*ws->var(var.c_str()));
+//  if (plotpdfs) wpdfpeak.plotOn(final_p, Normalization(peaknorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kBlack),     FillStyle(3001), NumCPU(16));
+  if (plotpdfs) wpdfpeak.plotOn(final_p, Normalization(peaknorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kBlack), LineWidth(2), LineStyle(3), NumCPU(16), Name("peak"));
   cout << "peak printed" << endl;
 
-  double seminorm = wpdfsemi.expectedEvents(*ws->var(var.c_str()));      
-  if (plotpdfs) wpdfsemi.plotOn(final_p, Normalization(seminorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kGreen - 3), FillStyle(3004), NumCPU(16));
-  if (plotpdfs) wpdfsemi.plotOn(final_p, Normalization(seminorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kGreen -3), LineWidth(2), LineStyle(1));
+  double seminorm = wpdfsemi.expectedEvents(*ws->var(var.c_str()));
+//  if (plotpdfs) wpdfsemi.plotOn(final_p, Normalization(seminorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kGreen - 3), FillStyle(3004), NumCPU(16));
+  if (plotpdfs) wpdfsemi.plotOn(final_p, Normalization(seminorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kGreen -3), LineWidth(2), LineStyle(2), NumCPU(16), Name("semi"));
   cout << "semi printed" << endl;
 
-  double combnorm = wpdfcomb.expectedEvents(*ws->var(var.c_str()));      
-  if (plotpdfs) wpdfcomb.plotOn(final_p, Normalization(combnorm, RooAbsReal::NumEvent), LineColor(kBlue - 1),  LineStyle(2), LineWidth(3), NumCPU(16));
+  double combnorm = wpdfcomb.expectedEvents(*ws->var(var.c_str()));
+  if (plotpdfs) wpdfcomb.plotOn(final_p, Normalization(combnorm, RooAbsReal::NumEvent), LineColor(kBlue - 1),  LineStyle(2), LineWidth(3), NumCPU(16), Name("comb"));
   cout << "comb printed" << endl;
 
   wdata.plotOn(final_p, DataError(RooAbsData::SumW2));
 
-  final_p->GetYaxis()->SetTitle("S/(S+B) Weighted Events / ( 0.04 GeV/c^2 )");  
-  
+  final_p->GetYaxis()->SetTitle("S/(S+B) Weighted Events / ( 0.04 GeV)");
+
   TCanvas* final_c = new TCanvas("final_c", "final_c", 600, 600);
+  final_p->SetMinimum(0);
   final_p->Draw();
-  
+
+  final_c->Update();
+  TLegend *leg1 = new TLegend(0.55,0.63,0.86,0.87);
+  leg1->SetFillColor(kWhite);
+  leg1->SetLineColor(kWhite);
+  TLegendEntry *data_entry = new TLegendEntry(final_p->findObject("data"), "data", "lep");
+  data_entry->SetMarkerStyle(20);
+  leg1->AddEntry(data_entry, "data", "lep");
+  leg1->AddEntry(final_p->findObject("fullpdf"),"full PDF","L");
+  TLegendEntry *bs_entry = new TLegendEntry(final_p->findObject("bs"), "B_{s}#rightarrow#mu^{+}#mu^{-}", "f");
+  bs_entry->SetLineColor(kRed);
+  bs_entry->SetFillColor(kRed);
+  bs_entry->SetFillStyle(3001);
+  leg1->AddEntry(bs_entry,"B_{s}#rightarrow#mu^{+}#mu^{-}","f");
+  TLegendEntry *bd_entry = new TLegendEntry(final_p->findObject("bd"), "B_{d}#rightarrow#mu^{+}#mu^{-}", "f");
+  bd_entry->SetLineColor(kViolet - 4);
+  bd_entry->SetFillColor(kViolet - 4);
+  bd_entry->SetFillStyle(3001);
+  leg1->AddEntry(bd_entry,"B_{d}#rightarrow#mu^{+}#mu^{-}","f");
+  leg1->AddEntry(final_p->findObject("comb"),"combinatorial bkg","L");
+  leg1->AddEntry(final_p->findObject("semi"),"semileptonic bkg","L");
+  leg1->AddEntry(final_p->findObject("peak"),"peaking bkg","L");
+  leg1->Draw();
 
 
-  
+
   string output_name = "fig/data_weighted";
   final_c->Print( (output_name + ".gif").c_str() );
-  final_c->Print( (output_name + ".pdf").c_str() );  
-  
+  final_c->Print( (output_name + ".pdf").c_str() );
+  delete final_c;
+  delete final_p;
 }
 
 void pdf_fitData::fill_dataset(RooDataSet* dataset, bool cut_b, vector <double> cut_, double bdt_cut, TTree* tree, int offset) {
@@ -2034,7 +2093,7 @@ RooHistPdf * pdf_fitData::pdf_to_hist(RooAbsPdf* kpdf) {
 	RooDataHist * rdh = new RooDataHist(name_temp.c_str(), "histo", *ws_->var("ReducedMassRes"), h);
 	name_temp = kpdf->GetName();
 	name_temp += "_hp";
-	RooHistPdf * hp = new RooHistPdf(name_temp.c_str(), "histo", RooArgList(*ws_->var("ReducedMassRes")), *rdh, 5);
+	RooHistPdf * hp = new RooHistPdf(name_temp.c_str(), "histo", RooArgList(*ws_->var("ReducedMassRes")), *rdh, 4);
 	return hp;
 }
 
