@@ -73,7 +73,7 @@ void pdf_analysis::initialize () {
   source[4] = "peak";
 
   ws_ = new RooWorkspace("ws", "ws");
-  Mass = new RooRealVar("Mass", "Candidate invariant mass", 4.90, 5.90, "GeV/c^{2}");
+  Mass = new RooRealVar("Mass", "M_{#mu#mu}", 4.90, 5.90, "GeV");
   ws_->import(*Mass);
   massrange_names.resize(4);
   massrange_names[0] = "sb_lo";

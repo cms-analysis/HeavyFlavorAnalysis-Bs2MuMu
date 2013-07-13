@@ -490,6 +490,7 @@ void pdf_toyMC::fit_pulls(RooRealVar* pull, RooDataSet* rds, int i, int j) {
   channel_bdt = simul_bdt_ ? j : 0;
   canvas_bs->Print((get_address(pull->GetName(), pdfname) + ".gif").c_str());
   canvas_bs->Print((get_address(pull->GetName(), pdfname) + ".pdf").c_str());
+  canvas_bs->Print((get_address(pull->GetName(), pdfname) + ".C").c_str());
   delete rp_bs;
   delete canvas_bs;
   delete gauss_pull;
@@ -505,6 +506,7 @@ void pdf_toyMC::print_histos(TH1D* histos, int i, int j) {
   channel = simul_ ? i : ch_i_;
   channel_bdt = simul_bdt_ ? j : 0;
   N_mean_c->Print((get_address(histos->GetName(), pdfname) + ".root").c_str());
+  N_mean_c->Print((get_address(histos->GetName(), pdfname) + ".C").c_str());
   N_mean_c->Print((get_address(histos->GetName(), pdfname) + ".pdf").c_str());
   delete N_mean_c;
 }

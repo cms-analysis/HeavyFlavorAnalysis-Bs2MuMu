@@ -50,6 +50,8 @@ pdf_fitData::pdf_fitData(bool print, string input_estimates, string range, int B
   freeze = false;
   stat_only_ = false;
   doubleNull = false;
+
+
 }
 
 pdf_fitData::~pdf_fitData() {
@@ -496,7 +498,7 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
       if (!simul_all_ && !simul_bdt_ && !bdt_fit_) final_p->SetMaximum(10);
       TCanvas* final_c = new TCanvas("final_c", "final_c", 600, 600);
       final_p->Draw();
-      histo_data->Draw("E0same");
+      histo_data->Draw("Esame");
 
       if (output == "" && false) {
         // legend
@@ -1731,7 +1733,7 @@ void pdf_fitData::profile_NLL() {
   // Plot the profile likelihood
   RooPlot* frame = ws_->var(var_alt.c_str())->frame(Bins(20), Range(0, Bd ? 1.4e-9 : 5e-9), Title(Form("profileLL in %s", var_alt.c_str()))) ;
 
-  double_pll->plotOn(frame, LineColor(kRed)) ;
+  double_pll->plotOn(frame, LineColor(kRed), ShiftToZero()) ;
 //  nll0.plotOn(frame, ShiftToZero()) ;
 
   TCanvas *c = new TCanvas("c","c",600, 600);
@@ -1750,7 +1752,8 @@ void pdf_fitData::profile_NLL() {
 //  	if ( abs(y - 1) < 0.05) cout << i << " " << x << " " << y << endl;
   	cout << i << " " << x << " " << y << endl;
   }
-
+  delete frame;
+  delete c;
 }
 
 void pdf_fitData::hack_ws(string frozen_ws_address) {
@@ -1789,6 +1792,10 @@ void pdf_fitData::print_gaussian_constraints() {
 }
 
 void pdf_fitData::tweak_pdf(int free) {
+
+	ws_->var("BF_bs")->setVal(Bs2MuMu_SM_BF_val);
+	ws_->var("BF_bd")->setVal(Bd2MuMu_SM_BF_val);
+
 	bool peak_const = true;
 	bool semi_const = true;
 	if (free == 1) semi_const = false;
@@ -1817,7 +1824,7 @@ void pdf_fitData::tweak_pdf(int free) {
 }
 
 void pdf_fitData::freeze_norm(bool set) {
-	cout << "freezing" << endl;
+	if (set) cout << "freezing" << endl;
 	ws_->var("fs_over_fu")->setConstant(set);
 	ws_->var("one_over_BRBR")->setConstant(set);
 	for (int i = 0; i < channels; i++) {
