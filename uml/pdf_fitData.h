@@ -27,6 +27,7 @@
 #include "RooStats/HybridCalculator.h"
 #include "RooStats/HypoTestPlot.h"
 #include "RooStats/RatioOfProfiledLikelihoodsTestStat.h"
+#include "RooStats/RooStatsUtils.h"
 
 using namespace RooStats;
 
