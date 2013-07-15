@@ -2298,7 +2298,7 @@ TH2D* pdf_fitData::frameTH2D(TH2D *in, double threshold){
 #endif
 }
 
-TList* pdf_fitData::contourFromTH2(TH2 *h2in, double threshold, int minPoints) {
+void pdf_fitData::contourFromTH2(TH2 *h2in, double threshold, int minPoints) {
     std::cout << "Getting contour at threshold " << threshold << " from " << h2in->GetName() << std::endl;
     //http://root.cern.ch/root/html/tutorials/hist/ContourList.C.html
     Double_t contours[1];
@@ -2319,25 +2319,25 @@ TList* pdf_fitData::contourFromTH2(TH2 *h2in, double threshold, int minPoints) {
     c->Print((get_address("doubleprofileLL", "", false) + ".root").c_str());
 
     // Get Contours
-    TObjArray *conts = (TObjArray*)gROOT->GetListOfSpecials()->FindObject("contours");
-    TList* contLevel = NULL;
-
-    if (conts == NULL || conts->GetSize() == 0){
-        printf("*** No Contours Were Extracted!\n");
-        return 0;
-    }
-
-    TList *ret = new TList();
-    for(int i = 0; i < conts->GetSize(); i++){
-        contLevel = (TList*)conts->At(i);
-        printf("Contour %d has %d Graphs\n", i, contLevel->GetSize());
-        for (int j = 0, n = contLevel->GetSize(); j < n; ++j) {
-            TGraph *gr1 = (TGraph*) contLevel->At(j);
-            if (gr1->GetN() > minPoints) ret->Add(gr1->Clone());
-            //break;
-        }
-    }
-    return ret;
+//    TObjArray *conts = (TObjArray*)gROOT->GetListOfSpecials()->FindObject("contours");
+//    TList* contLevel = NULL;
+//
+//    if (conts == NULL || conts->GetSize() == 0){
+//        printf("*** No Contours Were Extracted!\n");
+//        return 0;
+//    }
+//
+//    TList *ret = new TList();
+//    for(int i = 0; i < conts->GetSize(); i++){
+//        contLevel = (TList*)conts->At(i);
+//        printf("Contour %d has %d Graphs\n", i, contLevel->GetSize());
+//        for (int j = 0, n = contLevel->GetSize(); j < n; ++j) {
+//            TGraph *gr1 = (TGraph*) contLevel->At(j);
+//            if (gr1->GetN() > minPoints) ret->Add(gr1->Clone());
+//            //break;
+//        }
+//    }
+//    return ret;
 }
 
 void pdf_fitData::doublescan() {
